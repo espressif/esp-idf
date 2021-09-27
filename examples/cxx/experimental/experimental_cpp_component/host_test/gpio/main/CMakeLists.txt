@@ -10,4 +10,4 @@ idf_component_register(SRCS "gpio_cxx_test.cpp"
                     "${cpp_component}/include"
                     "${cpp_component}/test" # FIXME for unity_cxx.hpp, make it generally available instead
                     $ENV{IDF_PATH}/tools/catch
-                    REQUIRES driver cmock esp_common)
+                    REQUIRES driver cmock)

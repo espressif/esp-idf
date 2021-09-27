@@ -125,16 +125,15 @@ extern int _vector_table;
 
 static const char *TAG = "cpu_start";
 
-#if CONFIG_IDF_TARGET_ESP32
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
 extern int _ext_ram_bss_start;
 extern int _ext_ram_bss_end;
 #endif
+
 #ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
 extern int _iram_bss_start;
 extern int _iram_bss_end;
 #endif
-#endif // CONFIG_IDF_TARGET_ESP32
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 static volatile bool s_cpu_up[SOC_CPU_CORES_NUM] = { false };
@@ -306,7 +305,7 @@ void IRAM_ATTR call_start_cpu0(void)
     // from panic handler we can be reset by RWDT or TG0WDT
     if (rst_reas[0] == RESET_REASON_CORE_RTC_WDT || rst_reas[0] == RESET_REASON_CORE_MWDT0
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-        || rst_reas[1] == RESET_REASON_CORE_RTC_WDT || rst_reas[1] == RESET_REASON_CORE_MWDT0
+            || rst_reas[1] == RESET_REASON_CORE_RTC_WDT || rst_reas[1] == RESET_REASON_CORE_MWDT0
 #endif
        ) {
         wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
@@ -363,10 +362,19 @@ void IRAM_ATTR call_start_cpu0(void)
     extern int _rodata_reserved_start;
     uint32_t rodata_reserved_start_align = (uint32_t)&_rodata_reserved_start & ~(MMU_PAGE_SIZE - 1);
     uint32_t cache_mmu_irom_size = ((rodata_reserved_start_align - SOC_DROM_LOW) / MMU_PAGE_SIZE) * sizeof(uint32_t);
+
+#if CONFIG_IDF_TARGET_ESP32S3
+    extern int _rodata_reserved_end;
+    uint32_t cache_mmu_drom_size = (((uint32_t)&_rodata_reserved_end - rodata_reserved_start_align + MMU_PAGE_SIZE - 1)/MMU_PAGE_SIZE)*sizeof(uint32_t);
+#endif
+
     Cache_Set_IDROM_MMU_Size(cache_mmu_irom_size, CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
 #endif // CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
 
     esp_mspi_pin_init();
+    // For Octal flash, it's hard to implement a read_id function in OPI mode for all vendors.
+    // So we have to read it here in SPI mode, before entering the OPI mode.
+    bootloader_flash_update_id();
 #if CONFIG_ESPTOOLPY_OCT_FLASH
     bool efuse_opflash_en = REG_GET_FIELD(EFUSE_RD_REPEAT_DATA3_REG, EFUSE_FLASH_TYPE);
     if (!efuse_opflash_en) {
@@ -374,13 +382,16 @@ void IRAM_ATTR call_start_cpu0(void)
         abort();
     }
     esp_opiflash_init();
+#endif
+#if CONFIG_IDF_TARGET_ESP32S3
+    //On other chips, this feature is not provided by HW, or hasn't been tested yet.
     spi_timing_flash_tuning();
 #endif
 
     bootloader_init_mem();
 #if CONFIG_SPIRAM_BOOT_INIT
     if (esp_spiram_init() != ESP_OK) {
-#if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
         ESP_EARLY_LOGE(TAG, "Failed to init external RAM, needed for external .bss segment");
         abort();
@@ -453,16 +464,41 @@ void IRAM_ATTR call_start_cpu0(void)
     esp_spiram_enable_rodata_access();
 #endif
 
-#if CONFIG_ESP32S2_INSTRUCTION_CACHE_WRAP || CONFIG_ESP32S2_DATA_CACHE_WRAP
+#if CONFIG_IDF_TARGET_ESP32S3
+    int s_instr_flash2spiram_off = 0;
+    int s_rodata_flash2spiram_off = 0;
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+    s_instr_flash2spiram_off = instruction_flash2spiram_offset();
+#endif
+#if CONFIG_SPIRAM_RODATA
+    s_rodata_flash2spiram_off = rodata_flash2spiram_offset();
+#endif
+
+    extern void Cache_Set_IDROM_MMU_Info(uint32_t instr_page_num, uint32_t rodata_page_num, uint32_t rodata_start, uint32_t rodata_end, int i_off, int ro_off);
+    Cache_Set_IDROM_MMU_Info(cache_mmu_irom_size/sizeof(uint32_t), \
+                            cache_mmu_drom_size/sizeof(uint32_t), \
+                            (uint32_t)&_rodata_reserved_start, \
+                            (uint32_t)&_rodata_reserved_end, \
+                            s_instr_flash2spiram_off, \
+                            s_rodata_flash2spiram_off);
+#endif
+
+#if CONFIG_ESP32S2_INSTRUCTION_CACHE_WRAP || CONFIG_ESP32S2_DATA_CACHE_WRAP || \
+    CONFIG_ESP32S3_INSTRUCTION_CACHE_WRAP || CONFIG_ESP32S3_DATA_CACHE_WRAP
     uint32_t icache_wrap_enable = 0, dcache_wrap_enable = 0;
-#if CONFIG_ESP32S2_INSTRUCTION_CACHE_WRAP
+#if CONFIG_ESP32S2_INSTRUCTION_CACHE_WRAP || CONFIG_ESP32S3_INSTRUCTION_CACHE_WRAP
     icache_wrap_enable = 1;
 #endif
-#if CONFIG_ESP32S2_DATA_CACHE_WRAP
+#if CONFIG_ESP32S2_DATA_CACHE_WRAP || CONFIG_ESP32S3_DATA_CACHE_WRAP
     dcache_wrap_enable = 1;
 #endif
     extern void esp_enable_cache_wrap(uint32_t icache_wrap_enable, uint32_t dcache_wrap_enable);
     esp_enable_cache_wrap(icache_wrap_enable, dcache_wrap_enable);
+#endif
+
+#if CONFIG_ESP32S3_DATA_CACHE_16KB
+    Cache_Invalidate_DCache_All();
+    Cache_Occupy_Addr(SOC_DROM_LOW, 0x4000);
 #endif
 
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
@@ -514,18 +550,30 @@ void IRAM_ATTR call_start_cpu0(void)
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
     // Memprot cannot be locked during OS startup as the lock-on prevents any PMS changes until a next reboot
     // If such a situation appears, it is likely an malicious attempt to bypass the system safety setup -> print error & reset
-    if ( esp_memprot_is_locked_any() ) {
+    if (esp_memprot_is_locked_any()) {
         ESP_EARLY_LOGE(TAG, "Memprot feature locked after the system reset! Potential safety corruption, rebooting.");
         esp_restart_noos_dig();
     }
+    esp_err_t memp_err = ESP_OK;
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE_LOCK
+#if CONFIG_IDF_TARGET_ESP32S2 //specific for ESP32S2 unless IDF-3024 is merged
+    memp_err = esp_memprot_set_prot(true, true, NULL);
+#else
     esp_memprot_set_prot(true, true, NULL);
+#endif
+#else
+#if CONFIG_IDF_TARGET_ESP32S2 //specific for ESP32S2 unless IDF-3024 is merged
+    memp_err = esp_memprot_set_prot(true, false, NULL);
 #else
     esp_memprot_set_prot(true, false, NULL);
 #endif
 #endif
+    if (memp_err != ESP_OK) {
+        ESP_EARLY_LOGE(TAG, "Failed to set Memprot feature (error 0x%08X), rebooting.", memp_err);
+        esp_restart_noos_dig();
+    }
+#endif
 
-    bootloader_flash_update_id();
     // Read the application binary image header. This will also decrypt the header if the image is encrypted.
     __attribute__((unused)) esp_image_header_t fhdr = {0};
 #ifdef CONFIG_APP_BUILD_TYPE_ELF_RAM

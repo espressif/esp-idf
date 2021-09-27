@@ -6,19 +6,8 @@
 # Includes information which is not shown in "xtensa-esp32-elf-size",
 # or easy to parse from "xtensa-esp32-elf-objdump" or raw map files.
 #
-# Copyright 2017-2021 Espressif Systems (Shanghai) CO LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 #
 from __future__ import division, print_function, unicode_literals
 
@@ -28,15 +17,13 @@ import json
 import os.path
 import re
 import sys
+from typing import Any, Callable, Collection, Dict, Iterable, List, Optional, TextIO, Tuple, Union
 
 from future.utils import iteritems
 
-try:
-    from typing import Any, Callable, Collection, Dict, Iterable, List, Optional, TextIO, Tuple, Union
-    Section = Dict[str, Union[str, int]]
-    SectionDict = Dict[str, Section]
-except ImportError:
-    pass
+Section = Dict[str, Union[str, int]]
+SectionDict = Dict[str, Section]
+
 
 try:
     basestring
@@ -50,7 +37,6 @@ GLOBAL_JSON_SEPARATORS = (',', ': ')
 
 class MemRegions(object):
     # Regions determined by the chip target.
-
     # DIRAM is not added here. The DIRAM is indicated by the `secondary_addr` of each MemRegDef
     (DRAM_ID, IRAM_ID, CACHE_D_ID, CACHE_I_ID, RTC_FAST_D_ID, RTC_FAST_I_ID, RTC_SLOW_D_ID) = range(7)
 
@@ -59,15 +45,14 @@ class MemRegions(object):
 
     class Region(object):
         # Helper class to store region information
-        def __init__(self, start, length, region, section=None):
-            # type: (MemRegions.Region, int, int, MemRegions.MemRegDef, Optional[str]) -> None
+        def __init__(self, start: int, length: int, region: 'MemRegions.MemRegDef', section: Optional[str]=None) -> None:
             self.start = start
             self.len = length
             self.region = region
             self.section = section
 
     @staticmethod
-    def get_mem_regions(target):  # type: (str) -> List
+    def get_mem_regions(target: str) -> List:
         # The target specific memory structure is deduced from soc_memory_types defined in
         # $IDF_PATH/components/soc/**/soc_memory_layout.c files.
 
@@ -124,41 +109,46 @@ class MemRegions(object):
         else:
             raise RuntimeError('Target not detected.')
 
-    def __init__(self, target):  # type: (MemRegions, str) -> None
+    def __init__(self, target: str) -> None:
         self.chip_mem_regions = self.get_mem_regions(target)
         if not self.chip_mem_regions:
             raise RuntimeError('Target {} is not implemented in idf_size'.format(target))
 
-    def _get_first_region(self, start, length):
-        # type: (int, int) -> Tuple[MemRegions.MemRegDef, int]
+    def _get_first_region(self, start: int, length: int) -> Tuple[Union['MemRegions.MemRegDef', None], int]:
         for region in self.chip_mem_regions:  # type: ignore
             if region.primary_addr <= start < region.primary_addr + region.length:
-                return (region, min(length, region.primary_addr + region.length - start))
+                return (region, length)
+            if region.secondary_addr and region.secondary_addr <= start < region.secondary_addr + region.length:
+                return (region, length)
+        print('WARNING: Given section not found in any memory region.')
+        print('Check whether the LD file is compatible with the definitions in get_mem_regions in idf_size.py')
+        return (None, length)
 
-            if (region.secondary_addr and region.secondary_addr <= start < region.secondary_addr + region.length):
-                return (region, min(length, region.secondary_addr + region.length - start))
-        raise RuntimeError('Given section not found in any memory region. '
-                           'Check whether the LD file is compatible with the definitions in get_mem_regions in idf_size.py')
-
-    def _get_regions(self, start, length, name=None):  # type: (int, int, Optional[str]) -> List
+    def _get_regions(self, start: int, length: int, name: Optional[str]=None) -> List:
         ret = []
         while length > 0:
             (region, cur_len) = self._get_first_region(start, length)
+            if region is None:
+                # skip regions that not in given section
+                length -= cur_len
+                start += cur_len
+                continue
             ret.append(MemRegions.Region(start, cur_len, region, name))
             length -= cur_len
             start += cur_len
 
         return ret
 
-    def fit_segments_into_regions(self, segments):  # type: (MemRegions, Dict) -> List
+    def fit_segments_into_regions(self, segments: Dict) -> List:
         region_list = []
+
         for segment in segments.values():
             sorted_segments = self._get_regions(segment['origin'], segment['length'])
             region_list.extend(sorted_segments)
 
         return region_list
 
-    def fit_sections_into_regions(self, sections):  # type: (MemRegions, Dict) -> List
+    def fit_sections_into_regions(self, sections: Dict) -> List:
         region_list = []
 
         for section in sections.values():
@@ -181,7 +171,7 @@ class LinkingSections(object):
     }.items()}
 
     @staticmethod
-    def in_section(section, section_name_or_list):  # type: (str, Union[str, Iterable]) -> bool
+    def in_section(section: str, section_name_or_list: Union[str, Iterable]) -> bool:
         if isinstance(section_name_or_list, basestring):
             section_name_or_list = [section_name_or_list]
 
@@ -191,18 +181,18 @@ class LinkingSections(object):
         return False
 
     @staticmethod
-    def filter_sections(sections):  # type: (Dict) -> Dict
+    def filter_sections(sections: Dict) -> Dict:
         return {k: v for k, v in sections.items()
                 if LinkingSections.in_section(k, LinkingSections._section_type_dict.keys())}
 
     @staticmethod
-    def get_display_name_order(section_name_list):  # type: (List[str]) -> Tuple[List[str], List[str]]
+    def get_display_name_order(section_name_list: List[str]) -> Tuple[List[str], List[str]]:
         '''
         Return two lists, in the suggested display order.
         First list is the reordered section_name_list, second list is the suggested display name, corresponding to the first list
         '''
 
-        def get_name_score(name):  # type: (str) -> int
+        def get_name_score(name: str) -> int:
             score_dict = {
                 '.dram': 30,
                 '.iram': 20,
@@ -227,6 +217,7 @@ class LinkingSections(object):
         memory_name = ''
         display_name_list = sorted(display_name_list)
         ordered_name_list = sorted(ordered_name_list)
+        ordered_name_list = check_is_dict_sort(ordered_name_list)
         for i, section in enumerate(ordered_name_list):
             if memory_name and section.startswith(memory_name):
                 # If the section has same memory type with the previous one, use shorter name
@@ -234,6 +225,7 @@ class LinkingSections(object):
                 continue
 
             memory_name = ''
+
             split_name = section.split('.')
             if len(split_name) > 1:
                 # If the section has a memory type, update the type and try to display the type properly
@@ -254,7 +246,7 @@ class LinkingSections(object):
         return ordered_name_list, display_name_list
 
 
-def scan_to_header(f, header_line):  # type: (Iterable, str) -> None
+def scan_to_header(f: Iterable, header_line: str) -> None:
     """ Scan forward in a file until you reach 'header_line', then return """
     for line in f:
         if line.strip() == header_line:
@@ -262,14 +254,14 @@ def scan_to_header(f, header_line):  # type: (Iterable, str) -> None
     raise RuntimeError("Didn't find line '%s' in file" % header_line)
 
 
-def format_json(json_object):  # type: (Dict) -> str
+def format_json(json_object: Dict) -> str:
     return json.dumps(json_object,
                       allow_nan=True,
                       indent=GLOBAL_JSON_INDENT,
                       separators=GLOBAL_JSON_SEPARATORS) + os.linesep
 
 
-def load_map_data(map_file):  # type: (TextIO) -> Tuple[str, Dict, Dict]
+def load_map_data(map_file: TextIO) -> Tuple[str, Dict, Dict]:
     segments = load_segments(map_file)
     detected_chip = detect_target_chip(map_file)
     sections = load_sections(map_file)
@@ -282,7 +274,7 @@ def load_map_data(map_file):  # type: (TextIO) -> Tuple[str, Dict, Dict]
     return detected_chip, segments, sections
 
 
-def load_segments(map_file):  # type: (TextIO) -> Dict
+def load_segments(map_file: TextIO) -> Dict:
     """ Memory Configuration section is the total size of each segment """
     result = {}  # type: Dict[Any, Dict]
     scan_to_header(map_file, 'Memory Configuration')
@@ -305,7 +297,7 @@ def load_segments(map_file):  # type: (TextIO) -> Dict
     raise RuntimeError('End of file while scanning memory configuration?')
 
 
-def detect_target_chip(map_file):  # type: (Iterable) -> str
+def detect_target_chip(map_file: Iterable) -> str:
     ''' Detect target chip based on the target archive name in the linker script part of the MAP file '''
     scan_to_header(map_file, 'Linker script and memory map')
 
@@ -333,7 +325,7 @@ def detect_target_chip(map_file):  # type: (Iterable) -> str
     raise RuntimeError('Target not detected')
 
 
-def load_sections(map_file):  # type: (TextIO) -> Dict
+def load_sections(map_file: TextIO) -> Dict:
     """ Load section size information from the MAP file.
 
     Returns a dict of 'sections', where each key is a section name and the value
@@ -365,7 +357,7 @@ def load_sections(map_file):  # type: (TextIO) -> Dict
     # Extract archive and object_file from the file_info field
     RE_FILE = re.compile(r'((?P<archive>[^ ]+\.a)?\(?(?P<object_file>[^ ]+\.(o|obj))\)?)')
 
-    def dump_src_line(src):  # type: (Dict) -> str
+    def dump_src_line(src: Dict) -> str:
         return '%s(%s) addr: 0x%08x, size: 0x%x+%d' % (src['sym_name'], src['file'], src['address'], src['size'], src['fill'])
 
     sections = {}  # type: Dict[Any, Dict]
@@ -474,13 +466,13 @@ def load_sections(map_file):  # type: (TextIO) -> Dict
     return sections
 
 
-def check_target(target, map_file):  # type: (str, TextIO) -> None
+def check_target(target: str, map_file: TextIO) -> None:
     if target is None:
         raise RuntimeError('The target chip cannot be detected for {}. '
                            'Please report the issue.'.format(map_file.name))
 
 
-def main():  # type: () -> None
+def main() -> None:
     parser = argparse.ArgumentParser(description='idf_size - a tool to print size information from an IDF MAP file')
 
     parser.add_argument(
@@ -545,7 +537,7 @@ def main():  # type: () -> None
     if not args.json or not (args.archives or args.files or args.archive_details):
         output += get_summary(args.map_file.name, segments, sections, detected_target,
                               args.json,
-                              args.another_map_file, segments_diff, sections_diff, detected_target_diff)
+                              args.another_map_file, segments_diff, sections_diff, detected_target_diff, not (args.archives or args.files))
 
     if args.archives:
         output += get_detailed_sizes(sections, 'archive', 'Archive File', args.json, sections_diff)
@@ -560,8 +552,6 @@ def main():  # type: () -> None
 
 
 class StructureForSummary(object):
-    # this is from main branch
-    # used_dram_data, used_dram_bss, used_dram_other, used_dram, dram_total, dram_remain = (0, ) * 6
     used_dram_data, used_dram_bss, used_dram_rodata, used_dram_other, used_dram, dram_total, dram_remain = (0, ) * 7
 
     used_dram_ratio = 0.
@@ -571,7 +561,7 @@ class StructureForSummary(object):
     used_diram_ratio = 0.
     used_flash_text, used_flash_rodata, used_flash_other, used_flash, total_size = (0, ) * 5
 
-    def __sub__(self, rhs):  # type: (StructureForSummary) -> StructureForSummary
+    def __sub__(self, rhs: 'StructureForSummary') -> 'StructureForSummary':
         assert isinstance(rhs, StructureForSummary)
         ret = self
         for key in StructureForSummary.get_required_items():
@@ -579,24 +569,33 @@ class StructureForSummary(object):
 
         return ret
 
+    def get_dram_overflowed(self) -> bool:
+        return self.used_dram_ratio > 1.0
+
+    def get_iram_overflowed(self) -> bool:
+        return self.used_iram_ratio > 1.0
+
+    def get_diram_overflowed(self) -> bool:
+        return self.used_diram_ratio > 1.0
+
     @classmethod
-    def get_required_items(cls):  # type: (Any) -> List
+    def get_required_items(cls: Any) -> List:
         whole_list = list(filter(lambda x: not (x.startswith('__') or x.endswith('__') or callable(getattr(cls, x))), dir(cls)))
         return whole_list
 
     @staticmethod
-    def get(segments, sections):  # type: (List, List) -> StructureForSummary
+    def get(segments: List, sections: List) -> 'StructureForSummary':
 
-        def get_size(sections):  # type: (Iterable) -> int
+        def get_size(sections: Iterable) -> int:
             return sum([x.len for x in sections])
 
-        def in_diram(x):  # type: (MemRegions.Region) -> bool
+        def in_diram(x: MemRegions.Region) -> bool:
             return x.region.type in (MemRegions.DRAM_ID, MemRegions.IRAM_ID) and x.region.secondary_addr > 0
 
-        def in_dram(x):  # type: (MemRegions.Region) -> bool
+        def in_dram(x: MemRegions.Region) -> bool:
             return x.region.type == MemRegions.DRAM_ID and x.region.secondary_addr == 0  # type: ignore
 
-        def in_iram(x):  # type: (MemRegions.Region) -> bool
+        def in_iram(x: MemRegions.Region) -> bool:
             return x.region.type == MemRegions.IRAM_ID and x.region.secondary_addr == 0  # type: ignore
 
         r = StructureForSummary()
@@ -612,7 +611,7 @@ class StructureForSummary(object):
         if r.diram_total == 0:
             r.diram_total = r.dram_total + r.iram_total
 
-        def filter_in_section(sections, section_to_check):  # type: (Iterable[MemRegions.Region], str) -> List[MemRegions.Region]
+        def filter_in_section(sections: Iterable[MemRegions.Region], section_to_check: str) -> List[MemRegions.Region]:
             return list(filter(lambda x: LinkingSections.in_section(x.section, section_to_check), sections))  # type: ignore
 
         dram_sections = list(filter(in_dram, sections))
@@ -650,7 +649,7 @@ class StructureForSummary(object):
         try:
             r.used_dram_ratio = r.used_dram / r.dram_total
         except ZeroDivisionError:
-            r.used_dram_ratio = float('nan')
+            r.used_dram_ratio = float('nan') if r.used_dram != 0 else 0
         r.dram_remain = r.dram_total - r.used_dram
 
         r.used_iram_vectors = get_size((iram_vectors_list))
@@ -660,7 +659,7 @@ class StructureForSummary(object):
         try:
             r.used_iram_ratio = r.used_iram / r.iram_total
         except ZeroDivisionError:
-            r.used_iram_ratio = float('nan')
+            r.used_iram_ratio = float('nan') if r.used_iram != 0 else 0
         r.iram_remain = r.iram_total - r.used_iram
 
         r.used_diram_data = get_size(diram_data_list)
@@ -673,7 +672,7 @@ class StructureForSummary(object):
         try:
             r.used_diram_ratio = r.used_diram / r.diram_total
         except ZeroDivisionError:
-            r.used_diram_ratio = float('nan')
+            r.used_diram_ratio = float('nan') if r.used_diram != 0 else 0
         r.diram_remain = r.diram_total - r.used_diram
 
         r.used_flash_text = get_size(flash_text_list)
@@ -686,7 +685,7 @@ class StructureForSummary(object):
         r.total_size = r.used_dram - r.used_dram_bss + r.used_iram + r.used_diram - r.used_diram_bss + r.used_flash
         return r
 
-    def get_json_dic(self):  # type: (StructureForSummary) -> collections.OrderedDict
+    def get_json_dic(self) -> collections.OrderedDict:
         ret = collections.OrderedDict([
             ('dram_data', self.used_dram_data),
             ('dram_bss', self.used_dram_bss),
@@ -727,19 +726,27 @@ class StructureForSummary(object):
         return ret
 
 
-def get_summary(path, segments, sections, target,
-                as_json=False,
-                path_diff='', segments_diff=None, sections_diff=None, target_diff=''):
-    # type: (str, Dict, Dict, str, bool, str, Optional[Dict], Optional[Dict], str) -> str
+def get_structure_for_target(segments: Dict, sections: Dict, target: str) -> StructureForSummary:
+    """
+    Return StructureForSummary for spasific target
+    """
+    mem_regions = MemRegions(target)
+    segment_layout = mem_regions.fit_segments_into_regions(segments)
+    section_layout = mem_regions.fit_sections_into_regions(LinkingSections.filter_sections(sections))
+    current = StructureForSummary.get(segment_layout, section_layout)
+    return current
+
+
+def get_summary(path: str, segments: Dict, sections: Dict, target: str,
+                as_json: bool=False,
+                path_diff: str='', segments_diff: Optional[Dict]=None, sections_diff: Optional[Dict]=None,
+                target_diff: str='', print_suggestions: bool=True) -> str:
     if segments_diff is None:
         segments_diff = {}
     if sections_diff is None:
         sections_diff = {}
 
-    mem_regions = MemRegions(target)
-    segment_layout = mem_regions.fit_segments_into_regions(segments)
-    section_layout = mem_regions.fit_sections_into_regions(LinkingSections.filter_sections(sections))
-    current = StructureForSummary.get(segment_layout, section_layout)
+    current = get_structure_for_target(segments, sections, target)
 
     if path_diff:
         diff_en = True
@@ -768,11 +775,11 @@ def get_summary(path, segments, sections, target,
             title = ''
             name = ''
 
-            def __init__(self, title, name):  # type: (LineDef, str, str) -> None
+            def __init__(self, title: str, name: str) -> None:
                 self.title = title
                 self.name = name
 
-            def format_line(self):  # type: (LineDef) -> Tuple[str, str, str, str]
+            def format_line(self) -> Tuple[str, str, str, str]:
                 return (self.title + ': {%s:>7} bytes' % self.name,
                         '{%s:>7}' % self.name,
                         '{%s:+}' % self.name,
@@ -782,39 +789,46 @@ def get_summary(path, segments, sections, target,
             remain = ''
             ratio = ''
             total = ''
+            warning_message = ''
 
-            def __init__(self, title, name, remain, ratio, total):  # type: (HeadLineDef, str, str, str, str, str) -> None
+            def __init__(self, title: str, name: str, remain: str, ratio: str, total: str, warning_message: str) -> None:
                 super(HeadLineDef, self).__init__(title, name)
                 self.remain = remain
                 self.ratio = ratio
                 self.total = total
+                self.warning_message = warning_message
 
-            def format_line(self):  # type: (HeadLineDef) -> Tuple[str, str, str, str]
-                return ('%s: {%s:>7} bytes ({%s:>7} remain, {%s:.1%%} used)' % (self.title, self.name, self.remain, self.ratio),
+            def format_line(self) -> Tuple[str, str, str, str]:
+                return ('%s: {%s:>7} bytes ({%s:>7} remain, {%s:.1%%} used)%s' % (self.title, self.name, self.remain, self.ratio, self.warning_message),
                         '{%s:>7}' % self.name,
                         '{%s:+}' % self.name,
                         '({%s:>+7} remain, {%s:>+7} total)' % (self.remain, self.total))
 
         class TotalLineDef(LineDef):
 
-            def format_line(self):  # type: (TotalLineDef) -> Tuple[str, str, str, str]
+            def format_line(self) -> Tuple[str, str, str, str]:
                 return (self.title + ': {%s:>7} bytes (.bin may be padded larger)' % self.name,
                         '{%s:>7}' % self.name,
                         '{%s:+}' % self.name,
                         '')
 
+        warning_message = ' Overflow detected!' + (' You can run idf.py size-files for more information.' if print_suggestions else '')
+
         format_list = [
-            HeadLineDef('Used static DRAM', 'used_dram', remain='dram_remain', ratio='used_dram_ratio', total='dram_total'),
+            HeadLineDef('Used static DRAM', 'used_dram', remain='dram_remain', ratio='used_dram_ratio', total='dram_total',
+                        warning_message=warning_message if current.get_dram_overflowed() else ''),
             LineDef('      .data size', 'used_dram_data'),
             LineDef('      .bss  size', 'used_dram_bss'),
             LineDef('   .rodata  size', 'used_dram_rodata'),
             LineDef(' DRAM other size', 'used_dram_other'),
 
-            HeadLineDef('Used static IRAM', 'used_iram', remain='iram_remain', ratio='used_iram_ratio', total='iram_total'),
+            HeadLineDef('Used static IRAM', 'used_iram', remain='iram_remain', ratio='used_iram_ratio', total='iram_total',
+                        warning_message=warning_message if current.get_iram_overflowed() else ''),
             LineDef('      .text size', 'used_iram_text'),
             LineDef('   .vectors size', 'used_iram_vectors'),
 
-            HeadLineDef('Used stat D/IRAM', 'used_diram', remain='diram_remain', ratio='used_diram_ratio', total='diram_total'),
+            HeadLineDef('Used stat D/IRAM', 'used_diram', remain='diram_remain', ratio='used_diram_ratio', total='diram_total',
+                        warning_message=warning_message if current.get_diram_overflowed() else ''),
             LineDef('      .data size', 'used_diram_data'),
             LineDef('      .bss  size', 'used_diram_bss'),
             LineDef('      .text size', 'used_diram_text'),
@@ -829,7 +843,7 @@ def get_summary(path, segments, sections, target,
             TotalLineDef('Total image size', 'total_size')
         ]
 
-        def convert_to_fmt_dict(summary, suffix=''):  # type: (StructureForSummary, str) -> Dict
+        def convert_to_fmt_dict(summary: StructureForSummary, suffix: str='') -> Dict:
             required_items = StructureForSummary.get_required_items()
             return dict([(key + suffix, getattr(summary, key)) for key in required_items])
 
@@ -840,8 +854,7 @@ def get_summary(path, segments, sections, target,
 
         lf = '{:60}{:>15}{:>15} {}'  # Width for a, b, c, d columns
 
-        def print_in_columns(a, b='', c='', d=''):
-            # type: (str, Optional[str], Optional[str], Optional[str]) -> str
+        def print_in_columns(a: str, b: Optional[str]='', c: Optional[str]='', d: Optional[str]='') -> str:
             return lf.format(a, b, c, d).rstrip() + os.linesep
 
         output = ''
@@ -871,19 +884,23 @@ def get_summary(path, segments, sections, target,
     return output
 
 
-def check_is_dict_sort(non_sort_list):  # type: (List) -> List
-    # keeping the order data, bss, other, iram, diram, ram_st_total, flash_text, flash_rodata, flash_total
+def check_is_dict_sort(non_sort_list: List) -> List:
+    '''
+    sort with keeping the order data, bss, other, iram, diram, ram_st_total, flash_text, flash_rodata, flash_total
+    '''
     start_of_other = 0
     props_sort = []  # type: List
-    props_elem = ['data', 'bss', 'other', 'iram', 'diram', 'ram_st_total', 'flash_text', 'flash_rodata', 'flash_total']
+    props_elem = ['.data', '.bss', 'other', 'iram', 'diram', 'ram_st_total', 'flash.text', 'flash.rodata', 'flash', 'flash_total']
     for i in props_elem:
         for j in non_sort_list:
             if i == 'other':
+                # remembering where 'other' will start
                 start_of_other = len(props_sort)
-            elif i in j[0]:
+            elif i in j and j not in props_sort:
                 props_sort.append(j)
     for j in non_sort_list:
         if j not in props_sort:
+            # add all item that fit in other in dict
             props_sort.insert(start_of_other, j)
     return props_sort
 
@@ -891,7 +908,7 @@ def check_is_dict_sort(non_sort_list):  # type: (List) -> List
 class StructureForDetailedSizes(object):
 
     @staticmethod
-    def sizes_by_key(sections, key, include_padding=False):  # type: (SectionDict, str, Optional[bool]) -> Dict[str, Dict[str, int]]
+    def sizes_by_key(sections: SectionDict, key: str, include_padding: Optional[bool]=False) -> Dict[str, Dict[str, int]]:
         """ Takes a dict of sections (from load_sections) and returns
         a dict keyed by 'key' with aggregate output size information.
 
@@ -911,7 +928,7 @@ class StructureForDetailedSizes(object):
         return result
 
     @staticmethod
-    def get(sections, by_key):  # type: (SectionDict, str) -> collections.OrderedDict
+    def get(sections: SectionDict, by_key: str) -> collections.OrderedDict:
         # Get the detailed structure before using the filter to remove undesired sections,
         # to show entries without desired sections
         sizes = StructureForDetailedSizes.sizes_by_key(sections, by_key)
@@ -927,18 +944,17 @@ class StructureForDetailedSizes(object):
             section_dict['flash_total'] = flash_total
 
             sorted_dict = sorted(section_dict.items(), key=lambda elem: elem[0])
-            sorted_dict = check_is_dict_sort(sorted_dict)
 
             s.append((key, collections.OrderedDict(sorted_dict)))
 
         s = sorted(s, key=lambda elem: elem[0])
         # do a secondary sort in order to have consistent order (for diff-ing the output)
-        # s = sorted(s, key=lambda elem: elem[1]['flash_total'], reverse=True)
+        s = sorted(s, key=lambda elem: elem[1]['flash_total'], reverse=True)
 
         return collections.OrderedDict(s)
 
 
-def get_detailed_sizes(sections, key, header, as_json=False, sections_diff=None):  # type: (Dict, str, str, bool, Dict) -> str
+def get_detailed_sizes(sections: Dict, key: str, header: str, as_json: bool=False, sections_diff: Dict=None) -> str:
 
     key_name_set = set()
     current = StructureForDetailedSizes.get(sections, key)
@@ -955,7 +971,6 @@ def get_detailed_sizes(sections, key, header, as_json=False, sections_diff=None)
 
     key_name_list = list(key_name_set)
     ordered_key_list, display_name_list = LinkingSections.get_display_name_order(key_name_list)
-
     if as_json:
         if diff_en:
             diff_json_dic = collections.OrderedDict()
@@ -973,13 +988,12 @@ def get_detailed_sizes(sections, key, header, as_json=False, sections_diff=None)
         else:
             output = format_json(current)
     else:
-        def _get_header_format(disp_list=display_name_list):  # type: (List) -> str
+        def _get_header_format(disp_list: List=display_name_list) -> str:
             len_list = [len(x) for x in disp_list]
             len_list.insert(0, 24)
             return ' '.join(['{:>%d}' % x for x in len_list]) + os.linesep
 
-        def _get_output(data, selection, key_list=ordered_key_list, disp_list=display_name_list):
-            # type: (Dict[str, Dict[str, int]], Collection, List, List) -> str
+        def _get_output(data: Dict[str, Dict[str, int]], selection: Collection, key_list: List=ordered_key_list, disp_list: List=display_name_list) -> str:
             header_format = _get_header_format(disp_list)
             output = header_format.format(header, *disp_list)
 
@@ -994,14 +1008,14 @@ def get_detailed_sizes(sections, key, header, as_json=False, sections_diff=None)
                     # k remains the same
                     pass
 
-                def get_section_size(section_dict):  # type: (Dict) -> Callable[[str], int]
+                def get_section_size(section_dict: Dict) -> Callable[[str], int]:
                     return lambda x: section_dict.get(x, 0)
 
                 section_size_list = map(get_section_size(section_dict=v), key_list)
                 output += header_format.format(k[:24], *(section_size_list))
             return output
 
-        def _get_header_format_diff(disp_list=display_name_list, columns=False):  # type: (List, bool) -> str
+        def _get_header_format_diff(disp_list: List=display_name_list, columns: bool=False) -> str:
             if columns:
                 len_list = (24, ) + (7, ) * 3 * len(disp_list)
                 return '|'.join(['{:>%d}' % x for x in len_list]) + os.linesep
@@ -1009,8 +1023,7 @@ def get_detailed_sizes(sections, key, header, as_json=False, sections_diff=None)
             len_list = (24, ) + (23, ) * len(disp_list)
             return ' '.join(['{:>%d}' % x for x in len_list]) + os.linesep
 
-        def _get_output_diff(curr, ref, key_list=ordered_key_list, disp_list=display_name_list):
-            # type: (Dict, Dict, List, List) -> str
+        def _get_output_diff(curr: Dict, ref: Dict, key_list: List=ordered_key_list, disp_list: List=display_name_list) -> str:
             # First header without Current/Ref/Diff columns
             header_format = _get_header_format_diff(columns=False)
             output = header_format.format(header, *disp_list)
@@ -1038,8 +1051,7 @@ def get_detailed_sizes(sections, key, header, as_json=False, sections_diff=None)
                     # k remains the same
                     pass
 
-                def _get_items(name, section_dict=v, section_dict_ref=v2):
-                    # type: (str, Dict, Dict) -> Tuple[str, str, str]
+                def _get_items(name: str, section_dict: Dict=v, section_dict_ref: Dict=v2) -> Tuple[str, str, str]:
                     a = section_dict.get(name, 0)
                     b = section_dict_ref.get(name, 0)
                     diff = a - b
@@ -1079,7 +1091,7 @@ def get_detailed_sizes(sections, key, header, as_json=False, sections_diff=None)
 
 class StructureForArchiveSymbols(object):
     @staticmethod
-    def get(archive, sections):  # type: (str, Dict) -> Dict
+    def get(archive: str, sections: Dict) -> Dict:
         interested_sections = LinkingSections.filter_sections(sections)
 
         result = dict([(t, {}) for t in interested_sections])  # type: Dict[str, Dict[str, int]]
@@ -1104,7 +1116,7 @@ class StructureForArchiveSymbols(object):
         return section_symbols
 
 
-def get_archive_symbols(sections, archive, as_json=False, sections_diff=None):  # type: (Dict, str, bool, Dict) -> str
+def get_archive_symbols(sections: Dict, archive: str, as_json: bool=False, sections_diff: Dict=None) -> str:
     diff_en = sections_diff is not None
     current = StructureForArchiveSymbols.get(archive, sections)
     reference = StructureForArchiveSymbols.get(archive, sections_diff) if sections_diff else {}
@@ -1126,10 +1138,10 @@ def get_archive_symbols(sections, archive, as_json=False, sections_diff=None):  
         else:
             output = format_json(current)
     else:
-        def _get_item_pairs(name, section):  # type: (str, collections.OrderedDict) -> collections.OrderedDict
+        def _get_item_pairs(name: str, section: collections.OrderedDict) -> collections.OrderedDict:
             return collections.OrderedDict([(key.replace(name + '.', ''), val) for key, val in iteritems(section)])
 
-        def _get_output(section_symbols):  # type: (Dict) -> str
+        def _get_output(section_symbols: Dict) -> str:
             output = ''
             for t, s in iteritems(section_symbols):
                 output += '{}Symbols from section: {}{}'.format(os.linesep, t, os.linesep)
@@ -1144,8 +1156,7 @@ def get_archive_symbols(sections, archive, as_json=False, sections_diff=None):  
         output = 'Symbols within the archive: {} (Not all symbols may be reported){}'.format(archive, os.linesep)
         if diff_en:
 
-            def _generate_line_tuple(curr, ref, name):
-                # type: (collections.OrderedDict, collections.OrderedDict, str) -> Tuple[str, int, int, str]
+            def _generate_line_tuple(curr: collections.OrderedDict, ref: collections.OrderedDict, name: str) -> Tuple[str, int, int, str]:
                 cur_val = curr.get(name, 0)
                 ref_val = ref.get(name, 0)
                 diff_val = cur_val - ref_val

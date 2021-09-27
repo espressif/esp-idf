@@ -20,6 +20,9 @@
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/error.h"
 #include "mbedtls/certs.h"
+#ifdef CONFIG_ESP_TLS_SERVER_SESSION_TICKETS
+#include "mbedtls/ssl_ticket.h"
+#endif
 #elif CONFIG_ESP_TLS_USING_WOLFSSL
 #include "wolfssl/wolfcrypt/settings.h"
 #include "wolfssl/ssl.h"
@@ -53,6 +56,15 @@ typedef struct psk_key_hint {
     const size_t   key_size;                /*!< length of the key */
     const char* hint;                       /*!< hint in PSK authentication mode in string format */
 } psk_hint_key_t;
+
+/**
+ * @brief esp-tls client session ticket ctx
+ */
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+typedef struct esp_tls_client_session {
+    mbedtls_ssl_session saved_session;
+} esp_tls_client_session_t;
+#endif /* CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS */
 
 /**
 *  @brief Keep alive parameters structure
@@ -168,9 +180,27 @@ typedef struct esp_tls_cfg {
                                                  directly with esp_tls_plain_tcp_connect() API */
 
     struct ifreq *if_name;                  /*!< The name of interface for data to go through. Use the default interface without setting */
+
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+    esp_tls_client_session_t *client_session; /*! Pointer for the client session ticket context. */
+#endif /* CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS */
 } esp_tls_cfg_t;
 
 #ifdef CONFIG_ESP_TLS_SERVER
+#if defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
+/**
+ * @brief Data structures necessary to support TLS session tickets according to RFC5077
+ */
+typedef struct esp_tls_server_session_ticket_ctx {
+    mbedtls_entropy_context entropy;                                            /*!< mbedTLS entropy context structure */
+
+    mbedtls_ctr_drbg_context ctr_drbg;                                          /*!< mbedTLS ctr drbg context structure.
+                                                                                     CTR_DRBG is deterministic random
+                                                                                     bit generation based on AES-256 */
+    mbedtls_ssl_ticket_context ticket_ctx;                                     /*!< Session ticket generation context */
+} esp_tls_server_session_ticket_ctx_t;
+#endif
+
 typedef struct esp_tls_cfg_server {
     const char **alpn_protos;                   /*!< Application protocols required for HTTP2.
                                                      If HTTP2/ALPN support is required, a list
@@ -222,7 +252,39 @@ typedef struct esp_tls_cfg_server {
     unsigned int serverkey_password_len;        /*!< String length of the password pointed to by
                                                      serverkey_password */
 
+#if defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
+    esp_tls_server_session_ticket_ctx_t * ticket_ctx; /*!< Session ticket generation context.
+                                                    You have to call esp_tls_cfg_server_session_tickets_init
+                                                    to use it.
+                                                    Call esp_tls_cfg_server_session_tickets_free
+                                                    to free the data associated with this context. */
+#endif
 } esp_tls_cfg_server_t;
+
+/**
+ * @brief Initialize the server side TLS session ticket context
+ *
+ * This function initializes the server side tls session ticket context
+ * which holds all necessary data structures to enable tls session tickets
+ * according to RFC5077.
+ * Use esp_tls_cfg_server_session_tickets_free to free the data.
+ *
+ * @param[in]  cfg server configuration as esp_tls_cfg_server_t
+ * @return
+ *             ESP_OK if setup succeeded
+ *             ESP_ERR_INVALID_ARG if context is already initialized
+ *             ESP_ERR_NO_MEM if memory allocation failed
+ *             ESP_ERR_NOT_SUPPORTED if session tickets are not available due to build configuration
+ *             ESP_FAIL if setup failed
+ */
+esp_err_t esp_tls_cfg_server_session_tickets_init(esp_tls_cfg_server_t *cfg);
+
+/**
+ * @brief Free the server side TLS session ticket context
+ *
+ * @param cfg server configuration as esp_tls_cfg_server_t
+ */
+void esp_tls_cfg_server_session_tickets_free(esp_tls_cfg_server_t *cfg);
 #endif /* ! CONFIG_ESP_TLS_SERVER */
 
 /**
@@ -404,6 +466,10 @@ int esp_tls_conn_http_new_async(const char *url, const esp_tls_cfg_t *cfg, esp_t
  *                   of bytes actually written to the TLS/SSL connection.
  *             - <0  if write operation was not successful, because either an
  *                   error occured or an action must be taken by the calling process.
+ *             - ESP_TLS_ERR_SSL_WANT_READ/
+ *               ESP_TLS_ERR_SSL_WANT_WRITE.
+ *                  if the handshake is incomplete and waiting for data to be available for reading.
+ *                  In this case this functions needs to be called again when the underlying transport is ready for operation.
  */
 static inline ssize_t esp_tls_conn_write(esp_tls_t *tls, const void *data, size_t datalen)
 {
@@ -609,6 +675,20 @@ void esp_tls_server_session_delete(esp_tls_t *tls);
  */
 esp_err_t esp_tls_plain_tcp_connect(const char *host, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_error_handle_t error_handle, int *sockfd);
 
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+/**
+ * @brief Obtain the client session ticket
+ *
+ * This function should be called when the TLS connection is already established.
+ * This can be passed again in the esp_tls_cfg_t structure, to appropriate tls session create (e.g. esp_tls_conn_http_new) API for session resumption.
+ *
+ * @param[in]  esp_tls context as esp_tls_t
+ * @return
+ *             Pointer to the saved client session.
+ *             NULL     on Failure
+ */
+esp_tls_client_session_t *esp_tls_get_client_session(esp_tls_t *tls);
+#endif /* CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS */
 #ifdef __cplusplus
 }
 #endif

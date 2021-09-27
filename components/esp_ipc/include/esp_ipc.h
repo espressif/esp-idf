@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-#ifndef CONFIG_FREERTOS_UNICORE
+#if !defined(CONFIG_FREERTOS_UNICORE) || defined(CONFIG_APPTRACE_GCOV_ENABLE)
 
 /** @cond */
 typedef void (*esp_ipc_func_t)(void* arg);
@@ -88,7 +88,7 @@ esp_err_t esp_ipc_call(uint32_t cpu_id, esp_ipc_func_t func, void* arg);
  */
 esp_err_t esp_ipc_call_blocking(uint32_t cpu_id, esp_ipc_func_t func, void* arg);
 
-#endif // not CONFIG_FREERTOS_UNICORE
+#endif // not CONFIG_FREERTOS_UNICORE or CONFIG_APPTRACE_GCOV_ENABLE
 
 #ifdef __cplusplus
 }

@@ -286,14 +286,7 @@ The tools installer downloads a number of files attached to GitHub Releases. If 
 Windows
 -------
 
-To prefer the Espressif download server when running the ESP-IDF Tools Installer check out the following option in the installer window: ``Use Espressif download server instead of downloading tool packages from GitHub.``
-
-.. figure:: ../../_static/esp-idf-installer-download-server.png
-    :align: center
-    :alt: Configuring the ESP-IDF Tools Setup Wizard Espressif download server
-    :figclass: align-center
-
-    Configuring the ESP-IDF Tools Setup Wizard Espressif download server
+To prefer the Espressif download server when running the ESP-IDF Tools Installer, mark the **Use Espressif download mirror instead of GitHub** in the screen **Select Components** section **Optimization**.
 
 Linux and macOS
 ---------------

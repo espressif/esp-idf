@@ -620,75 +620,78 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED
     ERR_TBL_IT(ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED),           /* 32773 0x8005 failed to set/get socket option */
 #   endif
-#   ifdef      ESP_ERR_MBEDTLS_CERT_PARTLY_OK
-    ERR_TBL_IT(ESP_ERR_MBEDTLS_CERT_PARTLY_OK),                 /* 32774 0x8006 mbedtls parse certificates was partly successful */
-#   endif
-#   ifdef      ESP_ERR_MBEDTLS_CTR_DRBG_SEED_FAILED
-    ERR_TBL_IT(ESP_ERR_MBEDTLS_CTR_DRBG_SEED_FAILED),           /* 32775 0x8007 mbedtls api returned error */
-#   endif
-#   ifdef      ESP_ERR_MBEDTLS_SSL_SET_HOSTNAME_FAILED
-    ERR_TBL_IT(ESP_ERR_MBEDTLS_SSL_SET_HOSTNAME_FAILED),        /* 32776 0x8008 mbedtls api returned error */
-#   endif
-#   ifdef      ESP_ERR_MBEDTLS_SSL_CONFIG_DEFAULTS_FAILED
-    ERR_TBL_IT(ESP_ERR_MBEDTLS_SSL_CONFIG_DEFAULTS_FAILED),     /* 32777 0x8009 mbedtls api returned error */
-#   endif
-#   ifdef      ESP_ERR_MBEDTLS_SSL_CONF_ALPN_PROTOCOLS_FAILED
-    ERR_TBL_IT(ESP_ERR_MBEDTLS_SSL_CONF_ALPN_PROTOCOLS_FAILED), /* 32778 0x800a mbedtls api returned error */
-#   endif
-#   ifdef      ESP_ERR_MBEDTLS_X509_CRT_PARSE_FAILED
-    ERR_TBL_IT(ESP_ERR_MBEDTLS_X509_CRT_PARSE_FAILED),          /* 32779 0x800b mbedtls api returned error */
-#   endif
-#   ifdef      ESP_ERR_MBEDTLS_SSL_CONF_OWN_CERT_FAILED
-    ERR_TBL_IT(ESP_ERR_MBEDTLS_SSL_CONF_OWN_CERT_FAILED),       /* 32780 0x800c mbedtls api returned error */
-#   endif
-#   ifdef      ESP_ERR_MBEDTLS_SSL_SETUP_FAILED
-    ERR_TBL_IT(ESP_ERR_MBEDTLS_SSL_SETUP_FAILED),               /* 32781 0x800d mbedtls api returned error */
-#   endif
-#   ifdef      ESP_ERR_MBEDTLS_SSL_WRITE_FAILED
-    ERR_TBL_IT(ESP_ERR_MBEDTLS_SSL_WRITE_FAILED),               /* 32782 0x800e mbedtls api returned error */
-#   endif
-#   ifdef      ESP_ERR_MBEDTLS_PK_PARSE_KEY_FAILED
-    ERR_TBL_IT(ESP_ERR_MBEDTLS_PK_PARSE_KEY_FAILED),            /* 32783 0x800f mbedtls api returned failed */
-#   endif
-#   ifdef      ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED
-    ERR_TBL_IT(ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED),           /* 32784 0x8010 mbedtls api returned failed */
-#   endif
-#   ifdef      ESP_ERR_MBEDTLS_SSL_CONF_PSK_FAILED
-    ERR_TBL_IT(ESP_ERR_MBEDTLS_SSL_CONF_PSK_FAILED),            /* 32785 0x8011 mbedtls api returned failed */
-#   endif
 #   ifdef      ESP_ERR_ESP_TLS_CONNECTION_TIMEOUT
-    ERR_TBL_IT(ESP_ERR_ESP_TLS_CONNECTION_TIMEOUT),             /* 32786 0x8012 new connection in esp_tls_low_level_conn
+    ERR_TBL_IT(ESP_ERR_ESP_TLS_CONNECTION_TIMEOUT),             /* 32774 0x8006 new connection in esp_tls_low_level_conn
                                                                                 connection timeouted */
 #   endif
-#   ifdef      ESP_ERR_WOLFSSL_SSL_SET_HOSTNAME_FAILED
-    ERR_TBL_IT(ESP_ERR_WOLFSSL_SSL_SET_HOSTNAME_FAILED),        /* 32787 0x8013 wolfSSL api returned error */
-#   endif
-#   ifdef      ESP_ERR_WOLFSSL_SSL_CONF_ALPN_PROTOCOLS_FAILED
-    ERR_TBL_IT(ESP_ERR_WOLFSSL_SSL_CONF_ALPN_PROTOCOLS_FAILED), /* 32788 0x8014 wolfSSL api returned error */
-#   endif
-#   ifdef      ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED
-    ERR_TBL_IT(ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED),       /* 32789 0x8015 wolfSSL api returned error */
-#   endif
-#   ifdef      ESP_ERR_WOLFSSL_KEY_VERIFY_SETUP_FAILED
-    ERR_TBL_IT(ESP_ERR_WOLFSSL_KEY_VERIFY_SETUP_FAILED),        /* 32790 0x8016 wolfSSL api returned error */
-#   endif
-#   ifdef      ESP_ERR_WOLFSSL_SSL_HANDSHAKE_FAILED
-    ERR_TBL_IT(ESP_ERR_WOLFSSL_SSL_HANDSHAKE_FAILED),           /* 32791 0x8017 wolfSSL api returned failed */
-#   endif
-#   ifdef      ESP_ERR_WOLFSSL_CTX_SETUP_FAILED
-    ERR_TBL_IT(ESP_ERR_WOLFSSL_CTX_SETUP_FAILED),               /* 32792 0x8018 wolfSSL api returned failed */
-#   endif
-#   ifdef      ESP_ERR_WOLFSSL_SSL_SETUP_FAILED
-    ERR_TBL_IT(ESP_ERR_WOLFSSL_SSL_SETUP_FAILED),               /* 32793 0x8019 wolfSSL api returned failed */
-#   endif
-#   ifdef      ESP_ERR_WOLFSSL_SSL_WRITE_FAILED
-    ERR_TBL_IT(ESP_ERR_WOLFSSL_SSL_WRITE_FAILED),               /* 32794 0x801a wolfSSL api returned failed */
-#   endif
 #   ifdef      ESP_ERR_ESP_TLS_SE_FAILED
-    ERR_TBL_IT(ESP_ERR_ESP_TLS_SE_FAILED),                      /* 32795 0x801b */
+    ERR_TBL_IT(ESP_ERR_ESP_TLS_SE_FAILED),                      /* 32775 0x8007 */
 #   endif
 #   ifdef      ESP_ERR_ESP_TLS_TCP_CLOSED_FIN
-    ERR_TBL_IT(ESP_ERR_ESP_TLS_TCP_CLOSED_FIN),                 /* 32796 0x801c */
+    ERR_TBL_IT(ESP_ERR_ESP_TLS_TCP_CLOSED_FIN),                 /* 32776 0x8008 */
+#   endif
+#   ifdef      ESP_ERR_MBEDTLS_CERT_PARTLY_OK
+    ERR_TBL_IT(ESP_ERR_MBEDTLS_CERT_PARTLY_OK),                 /* 32784 0x8010 mbedtls parse certificates was partly successful */
+#   endif
+#   ifdef      ESP_ERR_MBEDTLS_CTR_DRBG_SEED_FAILED
+    ERR_TBL_IT(ESP_ERR_MBEDTLS_CTR_DRBG_SEED_FAILED),           /* 32785 0x8011 mbedtls api returned error */
+#   endif
+#   ifdef      ESP_ERR_MBEDTLS_SSL_SET_HOSTNAME_FAILED
+    ERR_TBL_IT(ESP_ERR_MBEDTLS_SSL_SET_HOSTNAME_FAILED),        /* 32786 0x8012 mbedtls api returned error */
+#   endif
+#   ifdef      ESP_ERR_MBEDTLS_SSL_CONFIG_DEFAULTS_FAILED
+    ERR_TBL_IT(ESP_ERR_MBEDTLS_SSL_CONFIG_DEFAULTS_FAILED),     /* 32787 0x8013 mbedtls api returned error */
+#   endif
+#   ifdef      ESP_ERR_MBEDTLS_SSL_CONF_ALPN_PROTOCOLS_FAILED
+    ERR_TBL_IT(ESP_ERR_MBEDTLS_SSL_CONF_ALPN_PROTOCOLS_FAILED), /* 32788 0x8014 mbedtls api returned error */
+#   endif
+#   ifdef      ESP_ERR_MBEDTLS_X509_CRT_PARSE_FAILED
+    ERR_TBL_IT(ESP_ERR_MBEDTLS_X509_CRT_PARSE_FAILED),          /* 32789 0x8015 mbedtls api returned error */
+#   endif
+#   ifdef      ESP_ERR_MBEDTLS_SSL_CONF_OWN_CERT_FAILED
+    ERR_TBL_IT(ESP_ERR_MBEDTLS_SSL_CONF_OWN_CERT_FAILED),       /* 32790 0x8016 mbedtls api returned error */
+#   endif
+#   ifdef      ESP_ERR_MBEDTLS_SSL_SETUP_FAILED
+    ERR_TBL_IT(ESP_ERR_MBEDTLS_SSL_SETUP_FAILED),               /* 32791 0x8017 mbedtls api returned error */
+#   endif
+#   ifdef      ESP_ERR_MBEDTLS_SSL_WRITE_FAILED
+    ERR_TBL_IT(ESP_ERR_MBEDTLS_SSL_WRITE_FAILED),               /* 32792 0x8018 mbedtls api returned error */
+#   endif
+#   ifdef      ESP_ERR_MBEDTLS_PK_PARSE_KEY_FAILED
+    ERR_TBL_IT(ESP_ERR_MBEDTLS_PK_PARSE_KEY_FAILED),            /* 32793 0x8019 mbedtls api returned failed */
+#   endif
+#   ifdef      ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED
+    ERR_TBL_IT(ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED),           /* 32794 0x801a mbedtls api returned failed */
+#   endif
+#   ifdef      ESP_ERR_MBEDTLS_SSL_CONF_PSK_FAILED
+    ERR_TBL_IT(ESP_ERR_MBEDTLS_SSL_CONF_PSK_FAILED),            /* 32795 0x801b mbedtls api returned failed */
+#   endif
+#   ifdef      ESP_ERR_MBEDTLS_SSL_TICKET_SETUP_FAILED
+    ERR_TBL_IT(ESP_ERR_MBEDTLS_SSL_TICKET_SETUP_FAILED),        /* 32796 0x801c mbedtls api returned failed */
+#   endif
+#   ifdef      ESP_ERR_WOLFSSL_SSL_SET_HOSTNAME_FAILED
+    ERR_TBL_IT(ESP_ERR_WOLFSSL_SSL_SET_HOSTNAME_FAILED),        /* 32817 0x8031 wolfSSL api returned error */
+#   endif
+#   ifdef      ESP_ERR_WOLFSSL_SSL_CONF_ALPN_PROTOCOLS_FAILED
+    ERR_TBL_IT(ESP_ERR_WOLFSSL_SSL_CONF_ALPN_PROTOCOLS_FAILED), /* 32818 0x8032 wolfSSL api returned error */
+#   endif
+#   ifdef      ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED
+    ERR_TBL_IT(ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED),       /* 32819 0x8033 wolfSSL api returned error */
+#   endif
+#   ifdef      ESP_ERR_WOLFSSL_KEY_VERIFY_SETUP_FAILED
+    ERR_TBL_IT(ESP_ERR_WOLFSSL_KEY_VERIFY_SETUP_FAILED),        /* 32820 0x8034 wolfSSL api returned error */
+#   endif
+#   ifdef      ESP_ERR_WOLFSSL_SSL_HANDSHAKE_FAILED
+    ERR_TBL_IT(ESP_ERR_WOLFSSL_SSL_HANDSHAKE_FAILED),           /* 32821 0x8035 wolfSSL api returned failed */
+#   endif
+#   ifdef      ESP_ERR_WOLFSSL_CTX_SETUP_FAILED
+    ERR_TBL_IT(ESP_ERR_WOLFSSL_CTX_SETUP_FAILED),               /* 32822 0x8036 wolfSSL api returned failed */
+#   endif
+#   ifdef      ESP_ERR_WOLFSSL_SSL_SETUP_FAILED
+    ERR_TBL_IT(ESP_ERR_WOLFSSL_SSL_SETUP_FAILED),               /* 32823 0x8037 wolfSSL api returned failed */
+#   endif
+#   ifdef      ESP_ERR_WOLFSSL_SSL_WRITE_FAILED
+    ERR_TBL_IT(ESP_ERR_WOLFSSL_SSL_WRITE_FAILED),               /* 32824 0x8038 wolfSSL api returned failed */
 #   endif
     // components/esp_https_ota/include/esp_https_ota.h
 #   ifdef      ESP_ERR_HTTPS_OTA_BASE

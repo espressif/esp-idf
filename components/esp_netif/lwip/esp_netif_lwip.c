@@ -101,10 +101,12 @@ extern sys_thread_t g_lwip_task;
 
 static const char *TAG = "esp_netif_lwip";
 
-static sys_sem_t api_sync_sem = NULL;
-static sys_sem_t api_lock_sem = NULL;
 static bool tcpip_initialized = false;
 static esp_netif_t *s_last_default_esp_netif = NULL;
+
+#if !LWIP_TCPIP_CORE_LOCKING
+static sys_sem_t api_sync_sem = NULL;
+static sys_sem_t api_lock_sem = NULL;
 
 /**
  * @brief Api callback from tcpip thread used to call esp-netif
@@ -124,6 +126,7 @@ static void esp_netif_api_cb(void *api_msg)
     sys_sem_signal(&api_sync_sem);
 
 }
+#endif
 
 /**
  * @brief Initiates a tcpip remote call if called from another task
@@ -136,6 +139,7 @@ static inline esp_err_t esp_netif_lwip_ipc_call(esp_netif_api_fn fn, esp_netif_t
             .data = data,
             .api_fn = fn
     };
+#if !LWIP_TCPIP_CORE_LOCKING
     if (g_lwip_task != xTaskGetCurrentTaskHandle()) {
         ESP_LOGD(TAG, "check: remote, if=%p fn=%p\n", netif, fn);
         sys_arch_sem_wait(&api_lock_sem, 0);
@@ -143,6 +147,7 @@ static inline esp_err_t esp_netif_lwip_ipc_call(esp_netif_api_fn fn, esp_netif_t
         sys_sem_signal(&api_lock_sem);
         return msg.ret;
     }
+#endif /* !LWIP_TCPIP_CORE_LOCKING */
     ESP_LOGD(TAG, "check: local, if=%p fn=%p\n", netif, fn);
     return fn(&msg);
 }
@@ -178,7 +183,7 @@ static void esp_netif_set_default_netif(esp_netif_t *esp_netif)
         esp_netif_ppp_set_default_netif(esp_netif->netif_handle);
 #endif
     } else {
-        netif_set_default(esp_netif->netif_handle);
+        netif_set_default(esp_netif->lwip_netif);
     }
 }
 
@@ -324,6 +329,7 @@ esp_err_t esp_netif_init(void)
         ESP_LOGD(TAG, "LwIP stack has been initialized");
     }
 
+#if !LWIP_TCPIP_CORE_LOCKING
     if (!api_sync_sem) {
         if (ERR_OK != sys_sem_new(&api_sync_sem, 0)) {
             ESP_LOGE(TAG, "esp netif api sync sem init fail");
@@ -337,6 +343,7 @@ esp_err_t esp_netif_init(void)
             return ESP_FAIL;
         }
     }
+#endif
 
     ESP_LOGD(TAG, "esp-netif has been successfully initialized");
     return ESP_OK;
@@ -779,7 +786,7 @@ esp_err_t esp_netif_start(esp_netif_t *esp_netif)
     if (_IS_NETIF_POINT2POINT_TYPE(esp_netif, PPP_LWIP_NETIF)) {
 #if CONFIG_PPP_SUPPORT
         // No need to start PPP interface in lwip thread
-        esp_err_t ret = esp_netif_start_ppp(esp_netif->related_data);
+        esp_err_t ret = esp_netif_start_ppp(esp_netif);
         if (ret == ESP_OK) {
             esp_netif_update_default_netif(esp_netif, ESP_NETIF_STARTED);
         }

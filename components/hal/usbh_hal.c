@@ -291,26 +291,18 @@ void usbh_hal_chan_activate(usbh_hal_chan_t *chan_obj, void *xfer_desc_list, int
 bool usbh_hal_chan_request_halt(usbh_hal_chan_t *chan_obj)
 {
     //Cannot request halt on a channel that is pending error handling
-    HAL_ASSERT(!chan_obj->flags.error_pending);
-    if (usbh_ll_chan_is_active(chan_obj->regs) || chan_obj->flags.active) {
+    HAL_ASSERT(chan_obj->flags.active && !chan_obj->flags.error_pending);
+    if (usbh_ll_chan_is_active(chan_obj->regs)) {
         usbh_ll_chan_halt(chan_obj->regs);
         chan_obj->flags.halt_requested = 1;
         return false;
+    } else {
+        chan_obj->flags.active = 0;
+        return true;
     }
-    return true;
 }
 
 // ------------------------------------------------- Event Handling ----------------------------------------------------
-
-//When a device on the port is no longer valid (e.g., disconnect, port error). All channels are no longer valid
-static void chan_all_halt(usbh_hal_context_t *hal)
-{
-    for (int i = 0; i < USBH_HAL_NUM_CHAN; i++) {
-        if (hal->channels.hdls[i] != NULL) {
-            hal->channels.hdls[i]->flags.active = 0;
-        }
-    }
-}
 
 usbh_hal_port_event_t usbh_hal_decode_intr(usbh_hal_context_t *hal)
 {
@@ -321,7 +313,7 @@ usbh_hal_port_event_t usbh_hal_decode_intr(usbh_hal_context_t *hal)
         intrs_port = usbh_ll_hprt_intr_read_and_clear(hal->dev);
     }
     //Note: Do not change order of checks. Regressing events (e.g. enable -> disabled, connected -> connected)
-    //always take precendance. ENABLED < DISABLED < CONN < DISCONN < OVRCUR
+    //always take precedence. ENABLED < DISABLED < CONN < DISCONN < OVRCUR
     usbh_hal_port_event_t event = USBH_HAL_PORT_EVENT_NONE;
 
     //Check if this is a core or port event
@@ -330,13 +322,11 @@ usbh_hal_port_event_t usbh_hal_decode_intr(usbh_hal_context_t *hal)
         if (intrs_core & USB_LL_INTR_CORE_DISCONNINT) {
             event = USBH_HAL_PORT_EVENT_DISCONN;
             debounce_lock_enable(hal);
-            chan_all_halt(hal); //All channels are halted on a disconnect
             //Mask the port connection and disconnection interrupts to prevent repeated triggering
         } else if (intrs_port & USBH_LL_INTR_HPRT_PRTOVRCURRCHNG) {
             //Check if this is an overcurrent or an overcurrent cleared
             if (usbh_ll_hprt_get_port_overcur(hal->dev)) {
                 event = USBH_HAL_PORT_EVENT_OVRCUR;
-                chan_all_halt(hal); //All channels are halted on an overcurrent
             } else {
                 event = USBH_HAL_PORT_EVENT_OVRCUR_CLR;
             }
@@ -345,14 +335,13 @@ usbh_hal_port_event_t usbh_hal_decode_intr(usbh_hal_context_t *hal)
                 event = USBH_HAL_PORT_EVENT_ENABLED;
             } else {    //Host port has been disabled
                 event = USBH_HAL_PORT_EVENT_DISABLED;
-                chan_all_halt(hal); //All channels are halted when the port is disabled
             }
         } else if (intrs_port & USBH_LL_INTR_HPRT_PRTCONNDET && !hal->flags.dbnc_lock_enabled) {
             event = USBH_HAL_PORT_EVENT_CONN;
             debounce_lock_enable(hal);
         }
     }
-    //Port events always take precendance over channel events
+    //Port events always take precedence over channel events
     if (event == USBH_HAL_PORT_EVENT_NONE && (intrs_core & USB_LL_INTR_CORE_HCHINT)) {
         //One or more channels have pending interrupts. Store the mask of those channels
         hal->channels.chan_pend_intrs_msk = usbh_ll_get_chan_intrs_msk(hal->dev);

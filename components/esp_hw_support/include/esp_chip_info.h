@@ -22,7 +22,7 @@ extern "C" {
 typedef enum {
     CHIP_ESP32  = 1, //!< ESP32
     CHIP_ESP32S2 = 2, //!< ESP32-S2
-    CHIP_ESP32S3 = 4, //!< ESP32-S3
+    CHIP_ESP32S3 = 9, //!< ESP32-S3
     CHIP_ESP32C3 = 5, //!< ESP32-C3
     CHIP_ESP32H2 = 6, //!< ESP32-H2
 } esp_chip_model_t;

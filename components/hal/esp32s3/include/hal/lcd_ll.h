@@ -15,9 +15,11 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "hal/misc.h"
 #include "soc/lcd_cam_reg.h"
 #include "soc/lcd_cam_struct.h"
 #include "hal/assert.h"
+#include "hal/lcd_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,11 +31,6 @@ extern "C" {
 #define LCD_LL_EVENT_VSYNC_END  (1 << 0)
 #define LCD_LL_EVENT_TRANS_DONE (1 << 1)
 
-// Clock source ID represented in register
-#define LCD_LL_CLOCK_SRC_XTAL    (1)
-#define LCD_LL_CLOCK_SRC_APLL    (2)
-#define LCD_LL_CLOCK_SRC_PLL160M (3)
-
 // Maximum coefficient of clock prescaler
 #define LCD_LL_CLOCK_PRESCALE_MAX (64)
 
@@ -42,14 +39,28 @@ static inline void lcd_ll_enable_clock(lcd_cam_dev_t *dev, bool en)
     dev->lcd_clock.clk_en = en;
 }
 
-static inline void lcd_ll_set_group_clock_src(lcd_cam_dev_t *dev, int src, int div_num, int div_a, int div_b)
+static inline void lcd_ll_set_group_clock_src(lcd_cam_dev_t *dev, lcd_clock_source_t src, int div_num, int div_a, int div_b)
 {
     // lcd_clk = module_clock_src / (div_num + div_b / div_a)
     HAL_ASSERT(div_num >= 2);
     dev->lcd_clock.lcd_clk_sel = src;
-    dev->lcd_clock.lcd_clkm_div_num = div_num;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->lcd_clock, lcd_clkm_div_num, div_num);
     dev->lcd_clock.lcd_clkm_div_a = div_a;
     dev->lcd_clock.lcd_clkm_div_b = div_b;
+    switch (src) {
+    case LCD_CLK_SRC_PLL160M:
+        dev->lcd_clock.lcd_clk_sel = 3;
+        break;
+    case LCD_CLK_SRC_APLL:
+        dev->lcd_clock.lcd_clk_sel = 2;
+        break;
+    case LCD_CLK_SRC_XTAL:
+        dev->lcd_clock.lcd_clk_sel = 1;
+        break;
+    default:
+        HAL_ASSERT(false && "unsupported clock source");
+        break;
+    }
 }
 
 static inline void lcd_ll_set_clock_idle_level(lcd_cam_dev_t *dev, bool level)
@@ -131,15 +142,14 @@ static inline void lcd_ll_reverse_data_bit_order(lcd_cam_dev_t *dev, bool en)
     dev->lcd_user.lcd_bit_order = en;
 }
 
-static inline void lcd_ll_reverse_data_byte_order(lcd_cam_dev_t *dev, uint32_t data_width, bool en)
+static inline void lcd_ll_reverse_data_byte_order(lcd_cam_dev_t *dev, bool en)
 {
-    if (data_width == 8) {
-        dev->lcd_user.lcd_8bits_order = en; // valid in 8bit mode
-        dev->lcd_user.lcd_byte_order = 0;
-    } else if (data_width == 16) {
-        dev->lcd_user.lcd_byte_order = en;  // valid in 16bit mode
-        dev->lcd_user.lcd_8bits_order = 0;
-    }
+    dev->lcd_user.lcd_byte_order = en;
+}
+
+static inline void lcd_ll_reverse_data_8bits_order(lcd_cam_dev_t *dev, bool en)
+{
+    dev->lcd_user.lcd_8bits_order = en;
 }
 
 static inline void lcd_ll_fifo_reset(lcd_cam_dev_t *dev)
@@ -189,7 +199,7 @@ static inline void lcd_ll_enable_output_hsync_in_porch_region(lcd_cam_dev_t *dev
 
 static inline void lcd_ll_set_hsync_position(lcd_cam_dev_t *dev, uint32_t offset_in_line)
 {
-    dev->lcd_ctrl2.lcd_hsync_position = offset_in_line;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->lcd_ctrl2, lcd_hsync_position, offset_in_line);
 }
 
 static inline void lcd_ll_set_horizontal_timing(lcd_cam_dev_t *dev, uint32_t hsw, uint32_t hbp, uint32_t active_width, uint32_t hfp)
@@ -203,7 +213,7 @@ static inline void lcd_ll_set_horizontal_timing(lcd_cam_dev_t *dev, uint32_t hsw
 static inline void lcd_ll_set_vertical_timing(lcd_cam_dev_t *dev, uint32_t vsw, uint32_t vbp, uint32_t active_height, uint32_t vfp)
 {
     dev->lcd_ctrl2.lcd_vsync_width = vsw - 1;
-    dev->lcd_ctrl1.lcd_vb_front = vbp + vsw - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->lcd_ctrl1, lcd_vb_front, vbp + vsw - 1);
     dev->lcd_ctrl.lcd_va_height = active_height - 1;
     dev->lcd_ctrl.lcd_vt_height = vsw + vbp + active_height + vfp - 1;
 }

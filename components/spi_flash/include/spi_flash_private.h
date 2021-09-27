@@ -26,6 +26,8 @@
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/spi_flash.h"
 #endif
+#include "esp_flash.h"
+#include "hal/spi_flash_hal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,13 +40,15 @@ esp_err_t esp_opiflash_init(void);
 
 /**
  * @brief Make MSPI work under 20Mhz
+ * @param control_spi1  Select whether to control SPI1. For tuning, we need to use SPI1. After tuning (during startup stage), let the flash driver to control SPI1
  */
-void spi_timing_enter_mspi_low_speed_mode(void);
+void spi_timing_enter_mspi_low_speed_mode(bool control_spi1);
 
 /**
  * @brief Make MSPI work under the frequency as users set
+ * @param control_spi1  Select whether to control SPI1. For tuning, we need to use SPI1. After tuning (during startup stage), let the flash driver to control SPI1
  */
-void spi_timing_enter_mspi_high_speed_mode(void);
+void spi_timing_enter_mspi_high_speed_mode(bool control_spi1);
 
 /**
  * @brief Tune MSPI flash timing to make it work under high frequency
@@ -66,6 +70,23 @@ void esp_mspi_pin_init(void);
  * @note This function is used for setting SPI1 registers to the state that ROM SPI functions work
  */
 void spi_flash_set_rom_required_regs(void);
+
+/**
+ * @brief Initialize main flash
+ * @param chip Pointer to main SPI flash(SPI1 CS0) chip to use..
+ */
+esp_err_t esp_flash_init_main(esp_flash_t *chip);
+
+/**
+ * @brief Should be only used by SPI1 Flash driver to know the necessary timing registers
+ * @param out_timing_config Pointer to timing_tuning parameters.
+ */
+void spi_timing_get_flash_timing_param(spi_flash_hal_timing_config_t *out_timing_config);
+
+/**
+ * @brief Judge if the flash in tuned
+ */
+bool spi_timine_config_flash_is_tuned(void);
 
 #ifdef __cplusplus
 }

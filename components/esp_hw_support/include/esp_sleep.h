@@ -41,7 +41,9 @@ typedef enum {
     ESP_PD_DOMAIN_RTC_SLOW_MEM,    //!< RTC slow memory
     ESP_PD_DOMAIN_RTC_FAST_MEM,    //!< RTC fast memory
     ESP_PD_DOMAIN_XTAL,            //!< XTAL oscillator
+#if SOC_PM_SUPPORT_CPU_PD
     ESP_PD_DOMAIN_CPU,             //!< CPU core
+#endif
     ESP_PD_DOMAIN_VDDSDIO,         //!< VDD_SDIO
     ESP_PD_DOMAIN_MAX              //!< Number of domains
 } esp_sleep_pd_domain_t;
@@ -371,6 +373,8 @@ esp_err_t esp_light_sleep_start(void);
  *     - esp_wifi_stop
  *
  * This function does not return.
+ *
+ * @note The device will wake up immediately if the deep-sleep time is set to 0
  *
  * @param time_in_us  deep-sleep time, unit: microsecond
  */

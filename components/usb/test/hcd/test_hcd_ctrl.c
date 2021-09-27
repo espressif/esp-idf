@@ -22,7 +22,7 @@
 #define TEST_DEV_ADDR               0
 #define NUM_URBS                    3
 #define TRANSFER_MAX_BYTES          256
-#define URB_DATA_BUFF_SIZE          (sizeof(usb_ctrl_req_t) + TRANSFER_MAX_BYTES)   //256 is worst case size for configuration descriptors
+#define URB_DATA_BUFF_SIZE          (sizeof(usb_setup_packet_t) + TRANSFER_MAX_BYTES)   //256 is worst case size for configuration descriptors
 
 /*
 Test HCD control pipe URBs (normal completion and early abort)
@@ -54,8 +54,8 @@ TEST_CASE("Test HCD control pipe URBs", "[hcd][ignore]")
     for (int i = 0; i < NUM_URBS; i++) {
         urb_list[i] = test_hcd_alloc_urb(0, URB_DATA_BUFF_SIZE);
         //Initialize with a "Get Config Descriptor request"
-        urb_list[i]->transfer.num_bytes = TRANSFER_MAX_BYTES;
-        USB_CTRL_REQ_INIT_GET_CONFIG_DESC((usb_ctrl_req_t *)urb_list[i]->transfer.data_buffer, 0, TRANSFER_MAX_BYTES);
+        urb_list[i]->transfer.num_bytes = sizeof(usb_setup_packet_t) + TRANSFER_MAX_BYTES;
+        USB_SETUP_PACKET_INIT_GET_CONFIG_DESC((usb_setup_packet_t *)urb_list[i]->transfer.data_buffer, 0, TRANSFER_MAX_BYTES);
         urb_list[i]->transfer.context = URB_CONTEXT_VAL;
     }
 
@@ -68,19 +68,19 @@ TEST_CASE("Test HCD control pipe URBs", "[hcd][ignore]")
     for (int i = 0; i < NUM_URBS; i++) {
         test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_URB_DONE);
     }
-    //Dequeue URBs
+    //Dequeue URBs, check, and print
     for (int i = 0; i < NUM_URBS; i++) {
         urb_t *urb = hcd_urb_dequeue(default_pipe);
         TEST_ASSERT_EQUAL(urb_list[i], urb);
         TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.status);
         TEST_ASSERT_EQUAL(URB_CONTEXT_VAL, urb->transfer.context);
+        //We must have transmitted at least the setup packet, but device may return less than bytes requested
+        TEST_ASSERT_GREATER_OR_EQUAL(sizeof(usb_setup_packet_t), urb->transfer.actual_num_bytes);
+        TEST_ASSERT_LESS_OR_EQUAL(urb->transfer.num_bytes, urb->transfer.actual_num_bytes);
+        usb_config_desc_t *config_desc = (usb_config_desc_t *)(urb->transfer.data_buffer + sizeof(usb_setup_packet_t));
+        TEST_ASSERT_EQUAL(USB_B_DESCRIPTOR_TYPE_CONFIGURATION , config_desc->bDescriptorType);
+        printf("Config Desc wTotalLength %d\n", config_desc->wTotalLength);
     }
-
-    //Print config desc
-    for (int i = 0; i < urb_list[0]->transfer.actual_num_bytes; i++) {
-        printf("%d\t0x%x\n", i, urb_list[0]->transfer.data_buffer[sizeof(usb_ctrl_req_t) + i]);
-    }
-
 
     //Enqueue URBs again but abort them short after
     for (int i = 0; i < NUM_URBS; i++) {
@@ -98,8 +98,11 @@ TEST_CASE("Test HCD control pipe URBs", "[hcd][ignore]")
         //No need to check for URB pointer address as they may be out of order
         TEST_ASSERT(urb->transfer.status == USB_TRANSFER_STATUS_COMPLETED || urb->transfer.status == USB_TRANSFER_STATUS_CANCELED);
         if (urb->transfer.status == USB_TRANSFER_STATUS_COMPLETED) {
-            TEST_ASSERT_GREATER_THAN(0, urb->transfer.actual_num_bytes);
+            //We must have transmitted at least the setup packet, but device may return less than bytes requested
+            TEST_ASSERT_GREATER_OR_EQUAL(sizeof(usb_setup_packet_t), urb->transfer.actual_num_bytes);
+            TEST_ASSERT_LESS_OR_EQUAL(urb->transfer.num_bytes, urb->transfer.actual_num_bytes);
         } else {
+            //A failed transfer should 0 actual number of bytes transmitted
             TEST_ASSERT_EQUAL(0, urb->transfer.actual_num_bytes);
         }
         TEST_ASSERT_EQUAL(urb->transfer.context, URB_CONTEXT_VAL);
@@ -119,8 +122,8 @@ TEST_CASE("Test HCD control pipe URBs", "[hcd][ignore]")
 Test HCD control pipe STALL condition, abort, and clear
 
 Purpose:
-    - Test that a control pipe can react to a STALL (i.e., a HCD_PIPE_EVENT_HALTED event)
-    - The HCD_PIPE_CMD_ABORT can retire all URBs
+    - Test that a control pipe can react to a STALL (i.e., a HCD_PIPE_EVENT_ERROR_STALL event)
+    - The HCD_PIPE_CMD_FLUSH can retire all URBs
     - Pipe clear command can return the pipe to being active
 
 Procedure:
@@ -128,7 +131,7 @@ Procedure:
     - Setup default pipe and allocate URBs
     - Corrupt the first URB so that it will trigger a STALL, then enqueue all the URBs
     - Check that a HCD_PIPE_EVENT_ERROR_STALL event is triggered
-    - Check that all URBs can be retired using HCD_PIPE_CMD_ABORT
+    - Check that all URBs can be retired using HCD_PIPE_CMD_FLUSH, a HCD_PIPE_EVENT_URB_DONE event should be generated
     - Check that the STALL can be cleared by using HCD_PIPE_CMD_CLEAR
     - Fix the corrupt first URB and retry the URBs
     - Dequeue URBs
@@ -146,12 +149,12 @@ TEST_CASE("Test HCD control pipe STALL", "[hcd][ignore]")
     for (int i = 0; i < NUM_URBS; i++) {
         urb_list[i] = test_hcd_alloc_urb(0, URB_DATA_BUFF_SIZE);
         //Initialize with a "Get Config Descriptor request"
-        urb_list[i]->transfer.num_bytes = TRANSFER_MAX_BYTES;
-        USB_CTRL_REQ_INIT_GET_CONFIG_DESC((usb_ctrl_req_t *)urb_list[i]->transfer.data_buffer, 0, TRANSFER_MAX_BYTES);
+        urb_list[i]->transfer.num_bytes = sizeof(usb_setup_packet_t) + TRANSFER_MAX_BYTES;
+        USB_SETUP_PACKET_INIT_GET_CONFIG_DESC((usb_setup_packet_t *)urb_list[i]->transfer.data_buffer, 0, TRANSFER_MAX_BYTES);
         urb_list[i]->transfer.context = URB_CONTEXT_VAL;
     }
     //Corrupt the first URB so that it triggers a STALL
-    ((usb_ctrl_req_t *)urb_list[0]->transfer.data_buffer)->bRequest = 0xAA;
+    ((usb_setup_packet_t *)urb_list[0]->transfer.data_buffer)->bRequest = 0xAA;
 
     //Enqueue URBs. A STALL should occur
     int num_enqueued = 0;
@@ -168,14 +171,18 @@ TEST_CASE("Test HCD control pipe STALL", "[hcd][ignore]")
     TEST_ASSERT_EQUAL(HCD_PIPE_STATE_HALTED, hcd_pipe_get_state(default_pipe));
 
     //Call the pipe abort command to retire all URBs then dequeue them all
-    TEST_ASSERT_EQUAL(ESP_OK, hcd_pipe_command(default_pipe, HCD_PIPE_CMD_ABORT));
+    TEST_ASSERT_EQUAL(ESP_OK, hcd_pipe_command(default_pipe, HCD_PIPE_CMD_FLUSH));
+    test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_URB_DONE);
     for (int i = 0; i < num_enqueued; i++) {
         urb_t *urb = hcd_urb_dequeue(default_pipe);
         TEST_ASSERT_EQUAL(urb_list[i], urb);
         TEST_ASSERT(urb->transfer.status == USB_TRANSFER_STATUS_STALL || urb->transfer.status == USB_TRANSFER_STATUS_CANCELED);
         if (urb->transfer.status == USB_TRANSFER_STATUS_COMPLETED) {
-            TEST_ASSERT_GREATER_THAN(0, urb->transfer.actual_num_bytes);
+            //We must have transmitted at least the setup packet, but device may return less than bytes requested
+            TEST_ASSERT_GREATER_OR_EQUAL(sizeof(usb_setup_packet_t), urb->transfer.actual_num_bytes);
+            TEST_ASSERT_LESS_OR_EQUAL(urb->transfer.num_bytes, urb->transfer.actual_num_bytes);
         } else {
+            //A failed transfer should 0 actual number of bytes transmitted
             TEST_ASSERT_EQUAL(0, urb->transfer.actual_num_bytes);
         }
         TEST_ASSERT_EQUAL(URB_CONTEXT_VAL, urb->transfer.context);
@@ -187,7 +194,7 @@ TEST_CASE("Test HCD control pipe STALL", "[hcd][ignore]")
 
     printf("Retrying\n");
     //Correct first URB then requeue
-    USB_CTRL_REQ_INIT_GET_CONFIG_DESC((usb_ctrl_req_t *)urb_list[0]->transfer.data_buffer, 0, TRANSFER_MAX_BYTES);
+    USB_SETUP_PACKET_INIT_GET_CONFIG_DESC((usb_setup_packet_t *)urb_list[0]->transfer.data_buffer, 0, TRANSFER_MAX_BYTES);
     for (int i = 0; i < NUM_URBS; i++) {
         TEST_ASSERT_EQUAL(ESP_OK, hcd_urb_enqueue(default_pipe, urb_list[i]));
     }
@@ -199,8 +206,13 @@ TEST_CASE("Test HCD control pipe STALL", "[hcd][ignore]")
         urb_t *urb = hcd_urb_dequeue(default_pipe);
         TEST_ASSERT_EQUAL(urb_list[i], urb);
         TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.status);
-        TEST_ASSERT_GREATER_THAN(0, urb->transfer.actual_num_bytes);
         TEST_ASSERT_EQUAL(URB_CONTEXT_VAL, urb->transfer.context);
+        //We must have transmitted at least the setup packet, but device may return less than bytes requested
+        TEST_ASSERT_GREATER_OR_EQUAL(sizeof(usb_setup_packet_t), urb->transfer.actual_num_bytes);
+        TEST_ASSERT_LESS_OR_EQUAL(urb->transfer.num_bytes, urb->transfer.actual_num_bytes);
+        usb_config_desc_t *config_desc = (usb_config_desc_t *)(urb->transfer.data_buffer + sizeof(usb_setup_packet_t));
+        TEST_ASSERT_EQUAL(USB_B_DESCRIPTOR_TYPE_CONFIGURATION , config_desc->bDescriptorType);
+        printf("Config Desc wTotalLength %d\n", config_desc->wTotalLength);
     }
 
     //Free URB list and pipe
@@ -224,9 +236,10 @@ Purpose:
 Procedure:
     - Setup HCD and wait for connection
     - Setup default pipe and allocate URBs
-    - Enqqueue URBs but execute a HCD_PIPE_CMD_HALT command immediately after. Halt command should let on
-      the current going URB finish before actually halting the pipe.
-    - Un-halt the pipe a HCD_PIPE_CMD_HALT command. Enqueued URBs will be resumed
+    - Enqqueue URBs but execute a HCD_PIPE_CMD_HALT command immediately after.
+        - Halt command should immediately halt the current URB and generate a HCD_PIPE_EVENT_URB_DONE
+        - Other pending URBs should be untouched.
+    - Un-halt the pipe using a HCD_PIPE_CMD_CLEAR command. Enqueued URBs will be resumed
     - Check that all URBs have completed successfully
     - Dequeue URBs and teardown
 */
@@ -242,8 +255,8 @@ TEST_CASE("Test HCD control pipe runtime halt and clear", "[hcd][ignore]")
     for (int i = 0; i < NUM_URBS; i++) {
         urb_list[i] = test_hcd_alloc_urb(0, URB_DATA_BUFF_SIZE);
         //Initialize with a "Get Config Descriptor request"
-        urb_list[i]->transfer.num_bytes = TRANSFER_MAX_BYTES;
-        USB_CTRL_REQ_INIT_GET_CONFIG_DESC((usb_ctrl_req_t *)urb_list[i]->transfer.data_buffer, 0, TRANSFER_MAX_BYTES);
+        urb_list[i]->transfer.num_bytes = sizeof(usb_setup_packet_t) + TRANSFER_MAX_BYTES;
+        USB_SETUP_PACKET_INIT_GET_CONFIG_DESC((usb_setup_packet_t *)urb_list[i]->transfer.data_buffer, 0, TRANSFER_MAX_BYTES);
         urb_list[i]->transfer.context = URB_CONTEXT_VAL;
     }
 
@@ -253,6 +266,7 @@ TEST_CASE("Test HCD control pipe runtime halt and clear", "[hcd][ignore]")
         TEST_ASSERT_EQUAL(ESP_OK, hcd_urb_enqueue(default_pipe, urb_list[i]));
     }
     TEST_ASSERT_EQUAL(ESP_OK, hcd_pipe_command(default_pipe, HCD_PIPE_CMD_HALT));
+    test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_URB_DONE);
     TEST_ASSERT_EQUAL(HCD_PIPE_STATE_HALTED, hcd_pipe_get_state(default_pipe));
     printf("Pipe halted\n");
 
@@ -264,11 +278,20 @@ TEST_CASE("Test HCD control pipe runtime halt and clear", "[hcd][ignore]")
 
     //Wait for each URB to be done, dequeue, and check results
     for (int i = 0; i < NUM_URBS; i++) {
-        test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_URB_DONE);
         urb_t *urb = hcd_urb_dequeue(default_pipe);
         TEST_ASSERT_EQUAL(urb_list[i], urb);
-        TEST_ASSERT_EQUAL(USB_TRANSFER_STATUS_COMPLETED, urb->transfer.status);
-        TEST_ASSERT_GREATER_THAN(0, urb->transfer.actual_num_bytes);
+        TEST_ASSERT(urb->transfer.status == USB_TRANSFER_STATUS_COMPLETED || urb->transfer.status == USB_TRANSFER_STATUS_CANCELED);
+        if (urb->transfer.status == USB_TRANSFER_STATUS_COMPLETED) {
+             //We must have transmitted at least the setup packet, but device may return less than bytes requested
+            TEST_ASSERT_GREATER_OR_EQUAL(sizeof(usb_setup_packet_t), urb->transfer.actual_num_bytes);
+            TEST_ASSERT_LESS_OR_EQUAL(urb->transfer.num_bytes, urb->transfer.actual_num_bytes);
+            usb_config_desc_t *config_desc = (usb_config_desc_t *)(urb->transfer.data_buffer + sizeof(usb_setup_packet_t));
+            TEST_ASSERT_EQUAL(USB_B_DESCRIPTOR_TYPE_CONFIGURATION , config_desc->bDescriptorType);
+            printf("Config Desc wTotalLength %d\n", config_desc->wTotalLength);
+        } else {
+            //A failed transfer should 0 actual number of bytes transmitted
+            TEST_ASSERT_EQUAL(0, urb->transfer.actual_num_bytes);
+        }
         TEST_ASSERT_EQUAL(URB_CONTEXT_VAL, urb->transfer.context);
     }
 

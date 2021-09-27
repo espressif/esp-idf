@@ -446,12 +446,6 @@ function run_tests()
     mv CMakeLists.bak CMakeLists.txt
     assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
 
-    print_status "Can find toolchain file in component directory"
-    clean_build_dir
-    mv ${IDF_PATH}/tools/cmake/toolchain-esp32.cmake ${IDF_PATH}/components/esp32/
-    (idf.py reconfigure > /dev/null && grep "${IDF_PATH}/components/esp32/toolchain-esp32.cmake" build/CMakeCache.txt) || failure  "Failed to find toolchain file in component directory"
-    mv ${IDF_PATH}/components/esp32/toolchain-esp32.cmake ${IDF_PATH}/tools/cmake/
-
     print_status "Setting EXTRA_COMPONENT_DIRS works"
     clean_build_dir
     (idf.py reconfigure | grep "$PWD/main") || failure  "Failed to verify original `main` directory"
@@ -717,14 +711,9 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
 
     print_status "Compiles with dependencies delivered by component manager"
     clean_build_dir
-    # Make sure that component manager is not installed
-    pip uninstall -y idf_component_manager
     printf "\n#include \"test_component.h\"\n" >> main/main.c
     printf "dependencies:\n  test_component:\n    path: test_component\n    git: ${COMPONENT_MANAGER_TEST_REPO}\n" >> main/idf_component.yml
-    ! idf.py build || failure "Build should fail if dependencies are not installed"
-    pip install ${COMPONENT_MANAGER_PACKAGE} --upgrade || failure "Failed to install component manager"
     idf.py reconfigure build || failure "Build didn't succeed with required components installed by package manager"
-    pip uninstall -y idf_component_manager
     rm main/idf_component.yml
     git checkout main/main.c
 

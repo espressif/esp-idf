@@ -18,18 +18,11 @@
 #include "esp_types.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#include "esp_check.h"
 #include "driver/adc.h"
 #include "hal/adc_ll.h"
 #include "esp_efuse_rtc_calib.h"
 #include "esp_adc_cal.h"
-
-
-#define ADC_CALIB_CHECK(cond, err_msg, ret) do {\
-             if (!(cond)) { \
-                ESP_LOGE(LOG_TAG, err_msg); \
-                return (ret); \
-            } \
-        } while(0)
 
 const static char LOG_TAG[] = "adc_calib";
 
@@ -110,13 +103,13 @@ esp_adc_cal_value_t esp_adc_cal_characterize(adc_unit_t adc_num,
     esp_err_t ret;
     adc_calib_parsed_info efuse_parsed_data = {0};
     // Check parameters
-    ADC_CALIB_CHECK(adc_num == ADC_UNIT_1 || adc_num == ADC_UNIT_2, "Invalid unit num", ESP_ADC_CAL_VAL_NOT_SUPPORTED);
-    ADC_CALIB_CHECK(chars != NULL, "Invalid characteristic", ESP_ADC_CAL_VAL_NOT_SUPPORTED);
-    ADC_CALIB_CHECK(bit_width == ADC_WIDTH_BIT_12, "Invalid bit_width", ESP_ADC_CAL_VAL_NOT_SUPPORTED);
-    ADC_CALIB_CHECK(atten < 4, "Invalid attenuation", ESP_ADC_CAL_VAL_NOT_SUPPORTED);
+    ESP_RETURN_ON_FALSE(adc_num == ADC_UNIT_1 || adc_num == ADC_UNIT_2, ESP_ADC_CAL_VAL_NOT_SUPPORTED, LOG_TAG, "Invalid unit num");
+    ESP_RETURN_ON_FALSE(chars != NULL, ESP_ADC_CAL_VAL_NOT_SUPPORTED, LOG_TAG, "Ivalid characteristic");
+    ESP_RETURN_ON_FALSE(bit_width == ADC_WIDTH_BIT_12, ESP_ADC_CAL_VAL_NOT_SUPPORTED, LOG_TAG, "Invalid bit_width");
+    ESP_RETURN_ON_FALSE(atten < 4, ESP_ADC_CAL_VAL_NOT_SUPPORTED, LOG_TAG, "Invalid attenuation");
 
     int version_num = esp_efuse_rtc_calib_get_ver();
-    ADC_CALIB_CHECK(version_num == 1, "No calibration efuse burnt", ESP_ADC_CAL_VAL_NOT_SUPPORTED);
+    ESP_RETURN_ON_FALSE(version_num == 1, ESP_ADC_CAL_VAL_NOT_SUPPORTED, LOG_TAG, "No calibration efuse burnt");
 
     memset(chars, 0, sizeof(esp_adc_cal_characteristics_t));
 
@@ -140,8 +133,7 @@ esp_adc_cal_value_t esp_adc_cal_characterize(adc_unit_t adc_num,
 
 uint32_t esp_adc_cal_raw_to_voltage(uint32_t adc_reading, const esp_adc_cal_characteristics_t *chars)
 {
-    ADC_CALIB_CHECK(chars != NULL, "No characteristic input.", ESP_ERR_INVALID_ARG);
-
+    assert(chars != NULL);
     return adc_reading * chars->coeff_a / coeff_a_scaling + chars->coeff_b / coeff_b_scaling;
 }
 
@@ -150,21 +142,20 @@ esp_err_t esp_adc_cal_get_voltage(adc_channel_t channel,
                                   uint32_t *voltage)
 {
     // Check parameters
-    ADC_CALIB_CHECK(chars != NULL, "No characteristic input.", ESP_ERR_INVALID_ARG);
-    ADC_CALIB_CHECK(voltage != NULL, "No output buffer.", ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(chars != NULL, ESP_ERR_INVALID_ARG, LOG_TAG, "No characteristic input");
+    ESP_RETURN_ON_FALSE(voltage != NULL, ESP_ERR_INVALID_ARG, LOG_TAG, "No output buffer");
 
+    esp_err_t ret = ESP_OK;
     int adc_reading;
     if (chars->adc_num == ADC_UNIT_1) {
         //Check if channel is valid on ADC1
-        ADC_CALIB_CHECK((adc1_channel_t)channel < ADC1_CHANNEL_MAX, "Invalid channel", ESP_ERR_INVALID_ARG);
+        ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(0), ESP_ERR_INVALID_ARG, LOG_TAG, "Invalid channel");
         adc_reading = adc1_get_raw(channel);
     } else {
         //Check if channel is valid on ADC2
-        ADC_CALIB_CHECK((adc2_channel_t)channel < ADC2_CHANNEL_MAX, "Invalid channel", ESP_ERR_INVALID_ARG);
-        if (adc2_get_raw(channel, chars->bit_width, &adc_reading) != ESP_OK) {
-            return ESP_ERR_TIMEOUT;     //Timed out waiting for ADC2
-        }
+        ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(1), ESP_ERR_INVALID_ARG, LOG_TAG, "Invalid channel");
+        ret = adc2_get_raw(channel, chars->bit_width, &adc_reading);
     }
     *voltage = esp_adc_cal_raw_to_voltage((uint32_t)adc_reading, chars);
-    return ESP_OK;
+    return ret;
 }

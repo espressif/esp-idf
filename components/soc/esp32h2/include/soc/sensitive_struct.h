@@ -20,7 +20,7 @@ extern "C" {
 #endif
 #include "soc.h"
 
-typedef volatile struct {
+typedef volatile struct sensitive_dev_s {
     union {
         struct {
             uint32_t reg_rom_table_lock            :    1;  /*rom_table_lock*/

@@ -646,6 +646,7 @@ menu "ESP32-specific"
             select ESP_SYSTEM_RTC_EXT_XTAL
         config ESP32_RTC_CLK_SRC_EXT_OSC
             bool "External 32kHz oscillator at 32K_XN pin"
+            select ESP_SYSTEM_RTC_EXT_OSC
         config ESP32_RTC_CLK_SRC_INT_8MD256
             bool "Internal 8.5MHz oscillator, divided by 256 (~33kHz)"
     endchoice
@@ -846,7 +847,7 @@ menu "ESP32-specific"
         depends on ESP32_USE_FIXED_STATIC_RAM_SIZE
         help
             RAM size dedicated for static variables (.data & .bss sections).
-            Please note that the actual length will be reduced by BT_RESERVE_DRAM if Bluetooth
+            Please note that the actual length will be reduced by BTDM_RESERVE_DRAM if Bluetooth
             controller is enabled.
 
     config ESP32_DPORT_DIS_INTERRUPT_LVL

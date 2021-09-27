@@ -128,7 +128,7 @@ esp_err_t esp_crypto_shared_gdma_start(const lldesc_t *input, const lldesc_t *ou
     }
 
     /* tx channel is reset by gdma_connect(), also reset rx to ensure a known state */
-    gdma_get_channel_id(tx_channel, &rx_ch_id);
+    gdma_get_channel_id(rx_channel, &rx_ch_id);
     gdma_ll_rx_reset_channel(&GDMA, rx_ch_id);
 
     gdma_start(tx_channel, (intptr_t)input);

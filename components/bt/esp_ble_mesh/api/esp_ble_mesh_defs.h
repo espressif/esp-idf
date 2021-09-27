@@ -573,8 +573,10 @@ typedef struct {
     esp_ble_mesh_prov_oob_info_t oob_info;
 
     /* NOTE: In order to avoid suffering brute-forcing attack (CVE-2020-26559).
-     * The Bluetooth SIG recommends that potentially vulnerable mesh node
+     * The Bluetooth SIG recommends that potentially vulnerable mesh provisioners
      * support an out-of-band mechanism to exchange the public keys.
+     * So as an unprovisioned device, it should enable this flag to support
+     * using an out-of-band mechanism to exchange Public Key.
      */
     /** Flag indicates whether unprovisioned devices support OOB public key */
     bool oob_pub_key;
@@ -629,7 +631,7 @@ typedef struct {
     /** Provisioning Algorithm for the Provisioner */
     uint8_t        prov_algorithm;
 
-    /* NOTE: In order to avoid suffering brute-forcing attack(CVE-2020-26559).
+    /* NOTE: In order to avoid suffering brute-forcing attack (CVE-2020-26559).
      * The Bluetooth SIG recommends that potentially vulnerable mesh provisioners
      * use an out-of-band mechanism to exchange the public keys.
      */
@@ -643,6 +645,14 @@ typedef struct {
      * selected AuthValue using all of the available bits, where permitted by the
      * implementation. A large entropy helps ensure that a brute-force of the AuthValue,
      * even a static AuthValue, cannot normally be completed in a reasonable time (CVE-2020-26557).
+     *
+     * AuthValues selected using a cryptographically secure random or pseudorandom number
+     * generator and having the maximum permitted entropy (128-bits) will be most difficult
+     * to brute-force. AuthValues with reduced entropy or generated in a predictable manner
+     * will not grant the same level of protection against this vulnerability. Selecting a
+     * new AuthValue with each provisioning attempt can also make it more difficult to launch
+     * a brute-force attack by requiring the attacker to restart the search with each
+     * provisioning attempt (CVE-2020-26556).
      */
     /** Provisioner static oob value */
     uint8_t        *prov_static_oob_val;

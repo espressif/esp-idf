@@ -22,7 +22,9 @@ extern "C" {
 #endif
 
 #include <stdlib.h>
+#include "hal/misc.h"
 #include "soc/timer_periph.h"
+#include "soc/timer_group_struct.h"
 #include "hal/timer_types.h"
 #include "hal/assert.h"
 
@@ -52,11 +54,11 @@ static inline void timer_ll_set_divider(timg_dev_t *hw, timer_idx_t timer_num, u
     if (divider >= 65536) {
         divider = 0;
     }
-    int timer_en = hw->hw_timer[timer_num].config.enable;
-    hw->hw_timer[timer_num].config.enable = 0;
-    hw->hw_timer[timer_num].config.divcnt_rst = 1;
-    hw->hw_timer[timer_num].config.divider = divider;
-    hw->hw_timer[timer_num].config.enable = timer_en;
+    int timer_en = hw->hw_timer[timer_num].config.tx_en;
+    hw->hw_timer[timer_num].config.tx_en = 0;
+    hw->hw_timer[timer_num].config.tx_divcnt_rst = 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hw_timer[timer_num].config, tx_divider, divider);
+    hw->hw_timer[timer_num].config.tx_en = timer_en;
 }
 
 /**
@@ -70,7 +72,7 @@ static inline void timer_ll_set_divider(timg_dev_t *hw, timer_idx_t timer_num, u
  */
 static inline void timer_ll_get_divider(timg_dev_t *hw, timer_idx_t timer_num, uint32_t *divider)
 {
-    uint32_t d = hw->hw_timer[timer_num].config.divider;
+    uint32_t d = HAL_FORCE_READ_U32_REG_FIELD(hw->hw_timer[timer_num].config, tx_divider);
     if (d == 0) {
         d = 65536;
     } else if (d == 1) {
@@ -90,9 +92,9 @@ static inline void timer_ll_get_divider(timg_dev_t *hw, timer_idx_t timer_num, u
  */
 static inline void timer_ll_set_counter_value(timg_dev_t *hw, timer_idx_t timer_num, uint64_t load_val)
 {
-    hw->hw_timer[timer_num].load_high.load_hi = (uint32_t) (load_val >> 32);
-    hw->hw_timer[timer_num].load_low = (uint32_t) load_val;
-    hw->hw_timer[timer_num].reload = 1;
+    hw->hw_timer[timer_num].loadhi.tx_load_hi = (uint32_t) (load_val >> 32);
+    hw->hw_timer[timer_num].loadlo.tx_load_lo = (uint32_t) load_val;
+    hw->hw_timer[timer_num].load.tx_load = 1;
 }
 
 /**
@@ -106,9 +108,9 @@ static inline void timer_ll_set_counter_value(timg_dev_t *hw, timer_idx_t timer_
  */
 FORCE_INLINE_ATTR void timer_ll_get_counter_value(timg_dev_t *hw, timer_idx_t timer_num, uint64_t *timer_val)
 {
-    hw->hw_timer[timer_num].update.update = 1;
-    while (hw->hw_timer[timer_num].update.update) {}
-    *timer_val = ((uint64_t) hw->hw_timer[timer_num].cnt_high.hi << 32) | (hw->hw_timer[timer_num].cnt_low);
+    hw->hw_timer[timer_num].update.tx_update = 1;
+    while (hw->hw_timer[timer_num].update.tx_update) {}
+    *timer_val = ((uint64_t) hw->hw_timer[timer_num].hi.tx_hi << 32) | (hw->hw_timer[timer_num].lo.tx_lo);
 }
 
 /**
@@ -122,7 +124,7 @@ FORCE_INLINE_ATTR void timer_ll_get_counter_value(timg_dev_t *hw, timer_idx_t ti
  */
 static inline void timer_ll_set_counter_increase(timg_dev_t *hw, timer_idx_t timer_num, bool increase_en)
 {
-    hw->hw_timer[timer_num].config.increase = increase_en;
+    hw->hw_timer[timer_num].config.tx_increase = increase_en;
 }
 
 /**
@@ -137,7 +139,7 @@ static inline void timer_ll_set_counter_increase(timg_dev_t *hw, timer_idx_t tim
  */
 static inline bool timer_ll_get_counter_increase(timg_dev_t *hw, timer_idx_t timer_num)
 {
-    return hw->hw_timer[timer_num].config.increase;
+    return hw->hw_timer[timer_num].config.tx_increase;
 }
 
 /**
@@ -151,7 +153,7 @@ static inline bool timer_ll_get_counter_increase(timg_dev_t *hw, timer_idx_t tim
  */
 FORCE_INLINE_ATTR void timer_ll_set_counter_enable(timg_dev_t *hw, timer_idx_t timer_num, bool counter_en)
 {
-    hw->hw_timer[timer_num].config.enable = counter_en;
+    hw->hw_timer[timer_num].config.tx_en = counter_en;
 }
 
 /**
@@ -166,7 +168,7 @@ FORCE_INLINE_ATTR void timer_ll_set_counter_enable(timg_dev_t *hw, timer_idx_t t
  */
 static inline bool timer_ll_get_counter_enable(timg_dev_t *hw, timer_idx_t timer_num)
 {
-    return hw->hw_timer[timer_num].config.enable;
+    return hw->hw_timer[timer_num].config.tx_en;
 }
 
 /**
@@ -180,7 +182,7 @@ static inline bool timer_ll_get_counter_enable(timg_dev_t *hw, timer_idx_t timer
  */
 static inline void timer_ll_set_auto_reload(timg_dev_t *hw, timer_idx_t timer_num, bool auto_reload_en)
 {
-    hw->hw_timer[timer_num].config.autoreload = auto_reload_en;
+    hw->hw_timer[timer_num].config.tx_autoreload = auto_reload_en;
 }
 
 /**
@@ -195,7 +197,7 @@ static inline void timer_ll_set_auto_reload(timg_dev_t *hw, timer_idx_t timer_nu
  */
 FORCE_INLINE_ATTR bool timer_ll_get_auto_reload(timg_dev_t *hw, timer_idx_t timer_num)
 {
-    return hw->hw_timer[timer_num].config.autoreload;
+    return hw->hw_timer[timer_num].config.tx_autoreload;
 }
 
 /**
@@ -209,8 +211,8 @@ FORCE_INLINE_ATTR bool timer_ll_get_auto_reload(timg_dev_t *hw, timer_idx_t time
  */
 FORCE_INLINE_ATTR void timer_ll_set_alarm_value(timg_dev_t *hw, timer_idx_t timer_num, uint64_t alarm_value)
 {
-    hw->hw_timer[timer_num].alarm_high.alarm_hi = (uint32_t) (alarm_value >> 32);
-    hw->hw_timer[timer_num].alarm_low = (uint32_t) alarm_value;
+    hw->hw_timer[timer_num].alarmhi.tx_alarm_hi = (uint32_t) (alarm_value >> 32);
+    hw->hw_timer[timer_num].alarmlo.tx_alarm_lo = (uint32_t) alarm_value;
 }
 
 /**
@@ -224,7 +226,7 @@ FORCE_INLINE_ATTR void timer_ll_set_alarm_value(timg_dev_t *hw, timer_idx_t time
  */
 static inline void timer_ll_get_alarm_value(timg_dev_t *hw, timer_idx_t timer_num, uint64_t *alarm_value)
 {
-    *alarm_value = ((uint64_t) hw->hw_timer[timer_num].alarm_high.alarm_hi << 32) | (hw->hw_timer[timer_num].alarm_low);
+    *alarm_value = ((uint64_t) hw->hw_timer[timer_num].alarmhi.tx_alarm_hi << 32) | (hw->hw_timer[timer_num].alarmlo.tx_alarm_lo);
 }
 
 /**
@@ -238,7 +240,7 @@ static inline void timer_ll_get_alarm_value(timg_dev_t *hw, timer_idx_t timer_nu
  */
 FORCE_INLINE_ATTR void timer_ll_set_alarm_enable(timg_dev_t *hw, timer_idx_t timer_num, bool alarm_en)
 {
-    hw->hw_timer[timer_num].config.alarm_en = alarm_en;
+    hw->hw_timer[timer_num].config.tx_alarm_en = alarm_en;
 }
 
 /**
@@ -253,7 +255,7 @@ FORCE_INLINE_ATTR void timer_ll_set_alarm_enable(timg_dev_t *hw, timer_idx_t tim
  */
 static inline bool timer_ll_get_alarm_enable(timg_dev_t *hw, timer_idx_t timer_num)
 {
-    return hw->hw_timer[timer_num].config.alarm_en;
+    return hw->hw_timer[timer_num].config.tx_alarm_en;
 }
 
 /**
@@ -266,7 +268,7 @@ static inline bool timer_ll_get_alarm_enable(timg_dev_t *hw, timer_idx_t timer_n
  */
 FORCE_INLINE_ATTR void timer_ll_intr_enable(timg_dev_t *hw, timer_idx_t timer_num)
 {
-    hw->int_ena.val |= BIT(timer_num);
+    hw->int_ena_timers.val |= BIT(timer_num);
 }
 
 /**
@@ -279,7 +281,7 @@ FORCE_INLINE_ATTR void timer_ll_intr_enable(timg_dev_t *hw, timer_idx_t timer_nu
  */
 FORCE_INLINE_ATTR void timer_ll_intr_disable(timg_dev_t *hw, timer_idx_t timer_num)
 {
-    hw->int_ena.val &= (~BIT(timer_num));
+    hw->int_ena_timers.val &= (~BIT(timer_num));
 }
 
 /**
@@ -292,7 +294,7 @@ FORCE_INLINE_ATTR void timer_ll_intr_disable(timg_dev_t *hw, timer_idx_t timer_n
  */
 FORCE_INLINE_ATTR void timer_ll_clear_intr_status(timg_dev_t *hw, timer_idx_t timer_num)
 {
-    hw->int_clr.val |= BIT(timer_num);
+    hw->int_clr_timers.val |= BIT(timer_num);
 }
 
 /**
@@ -305,7 +307,7 @@ FORCE_INLINE_ATTR void timer_ll_clear_intr_status(timg_dev_t *hw, timer_idx_t ti
  */
 FORCE_INLINE_ATTR void timer_ll_get_intr_status(timg_dev_t *hw, uint32_t *intr_status)
 {
-    *intr_status = hw->int_st.val & 0x01;
+    *intr_status = hw->int_st_timers.val & 0x01;
 }
 
 /**
@@ -319,7 +321,7 @@ FORCE_INLINE_ATTR void timer_ll_get_intr_status(timg_dev_t *hw, uint32_t *intr_s
 FORCE_INLINE_ATTR void timer_ll_get_intr_raw_status(timer_group_t group_num, uint32_t *intr_raw_status)
 {
     timg_dev_t *hw = TIMER_LL_GET_HW(group_num);
-    *intr_raw_status = hw->int_raw.val & 0x01;
+    *intr_raw_status = hw->int_raw_timers.val & 0x01;
 }
 
 /**
@@ -391,7 +393,7 @@ static inline bool timer_ll_get_edge_int_enable(timg_dev_t *hw, timer_idx_t time
  */
 static inline uint32_t timer_ll_get_intr_status_reg(timg_dev_t *hw)
 {
-    return (uint32_t) & (hw->int_st.val);
+    return (uint32_t) & (hw->int_st_timers.val);
 }
 
 static inline uint32_t timer_ll_get_intr_mask_bit(timg_dev_t *hw, timer_idx_t timer_num)
@@ -409,7 +411,7 @@ static inline uint32_t timer_ll_get_intr_mask_bit(timg_dev_t *hw, timer_idx_t ti
  */
 static inline void timer_ll_set_use_xtal(timg_dev_t *hw, timer_idx_t timer_num, bool use_xtal_en)
 {
-    hw->hw_timer[timer_num].config.use_xtal = use_xtal_en;
+    hw->hw_timer[timer_num].config.tx_use_xtal = use_xtal_en;
 }
 
 /**
@@ -423,7 +425,7 @@ static inline void timer_ll_set_use_xtal(timg_dev_t *hw, timer_idx_t timer_num, 
  */
 static inline bool timer_ll_get_use_xtal(timg_dev_t *hw, timer_idx_t timer_num)
 {
-    return hw->hw_timer[timer_num].config.use_xtal;
+    return hw->hw_timer[timer_num].config.tx_use_xtal;
 }
 
 #ifdef __cplusplus

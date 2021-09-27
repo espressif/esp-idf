@@ -15,12 +15,16 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include "regi2c_ctrl.h"
+
 #include "soc/adc_periph.h"
 #include "hal/adc_types.h"
 #include "soc/apb_saradc_struct.h"
+#include "soc/sens_struct.h"
 #include "soc/apb_saradc_reg.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_cntl_reg.h"
+#include "hal/misc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -109,11 +113,11 @@ typedef struct {
 static inline void adc_ll_digi_set_fsm_time(uint32_t rst_wait, uint32_t start_wait, uint32_t standby_wait)
 {
     // Internal FSM reset wait time
-    APB_SARADC.fsm_wait.rstb_wait = rst_wait;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.fsm_wait, rstb_wait, rst_wait);
     // Internal FSM start wait time
-    APB_SARADC.fsm_wait.xpd_wait = start_wait;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.fsm_wait, xpd_wait, start_wait);
     // Internal FSM standby wait time
-    APB_SARADC.fsm_wait.standby_wait = standby_wait;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.fsm_wait, standby_wait, standby_wait);
 }
 
 /**
@@ -125,8 +129,12 @@ static inline void adc_ll_digi_set_fsm_time(uint32_t rst_wait, uint32_t start_wa
  */
 static inline void adc_ll_set_sample_cycle(uint32_t sample_cycle)
 {
-    //To be added including RTC_CNTR reg and functions
-    abort();
+    /* Should be called before writing I2C registers. */
+    SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_PU_M);
+    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_SAR_M);
+    SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_SAR_CFG2_M);
+
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_SAMPLE_CYCLE_ADDR, sample_cycle);
 }
 
 /**
@@ -138,7 +146,7 @@ static inline void adc_ll_set_sample_cycle(uint32_t sample_cycle)
 static inline void adc_ll_digi_set_clk_div(uint32_t div)
 {
     /* ADC clock divided from digital controller clock clk */
-    APB_SARADC.ctrl.sar_clk_div = div;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.ctrl, sar_clk_div, div);
 }
 
 /**
@@ -149,7 +157,7 @@ static inline void adc_ll_digi_set_clk_div(uint32_t div)
  */
 static inline void adc_ll_digi_set_convert_limit_num(uint32_t meas_num)
 {
-    APB_SARADC.ctrl2.max_meas_num = meas_num;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.ctrl2, max_meas_num, meas_num);
 }
 
 /**
@@ -307,7 +315,7 @@ static inline void adc_ll_digi_trigger_disable(void)
  */
 static inline void adc_ll_digi_controller_clk_div(uint32_t div_num, uint32_t div_b, uint32_t div_a)
 {
-    APB_SARADC.apb_adc_clkm_conf.clkm_div_num = div_num;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.apb_adc_clkm_conf, clkm_div_num, div_num);
     APB_SARADC.apb_adc_clkm_conf.clkm_div_b = div_b;
     APB_SARADC.apb_adc_clkm_conf.clkm_div_a = div_a;
 }
@@ -450,7 +458,7 @@ static inline void adc_ll_digi_monitor_enable(adc_ll_num_t adc_n, bool enable)
  */
 static inline void adc_ll_digi_dma_set_eof_num(uint32_t num)
 {
-    APB_SARADC.dma_conf.apb_adc_eof_num = num;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.dma_conf, apb_adc_eof_num, num);
 }
 
 /**
@@ -702,18 +710,46 @@ static inline void adc_ll_disable_sleep_controller(void)
 }
 
 /**
+ * @brief Set common calibration configuration. Should be shared with other parts (PWDET).
+ */
+static inline void adc_ll_calibration_init(adc_ll_num_t adc_n)
+{
+    if (adc_n == ADC_NUM_1) {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_DREF_ADDR, 4);
+    } else {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_DREF_ADDR, 4);
+    }
+}
+
+/**
  * Configure the registers for ADC calibration. You need to call the ``adc_ll_calibration_finish`` interface to resume after calibration.
  *
- * @note  Different ADC units and different attenuation options use different calibration data (initial data).
- *
  * @param adc_n ADC index number.
- * @param channel adc channel number.
+ * @param channel Not used
  * @param internal_gnd true:  Disconnect from the IO port and use the internal GND as the calibration voltage.
  *                     false: Use IO external voltage as calibration voltage.
  */
 static inline void adc_ll_calibration_prepare(adc_ll_num_t adc_n, adc_channel_t channel, bool internal_gnd)
 {
-    abort();
+    /* Should be called before writing I2C registers. */
+    SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_PU_M);
+    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_SAR_M);
+    SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_SAR_CFG2_M);
+
+    /* Enable/disable internal connect GND (for calibration). */
+    if (adc_n == ADC_NUM_1) {
+        if (internal_gnd) {
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 1);
+        } else {
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 0);
+        }
+    } else {    //adc_n == ADC_NUM_2
+        if (internal_gnd) {
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_ENCAL_GND_ADDR, 1);
+        } else {
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_ENCAL_GND_ADDR, 0);
+        }
+    }
 }
 
 /**
@@ -723,7 +759,11 @@ static inline void adc_ll_calibration_prepare(adc_ll_num_t adc_n, adc_channel_t 
  */
 static inline void adc_ll_calibration_finish(adc_ll_num_t adc_n)
 {
-    abort();
+    if (adc_n == ADC_NUM_1) {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 0);
+    } else {    //adc_n == ADC_NUM_2
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_ENCAL_GND_ADDR, 0);
+    }
 }
 
 /**
@@ -735,7 +775,15 @@ static inline void adc_ll_calibration_finish(adc_ll_num_t adc_n)
  */
 static inline void adc_ll_set_calibration_param(adc_ll_num_t adc_n, uint32_t param)
 {
-    abort();
+    uint8_t msb = param >> 8;
+    uint8_t lsb = param & 0xFF;
+    if (adc_n == ADC_NUM_1) {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_HIGH_ADDR, msb);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_LOW_ADDR, lsb);
+    } else {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_HIGH_ADDR, msb);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_LOW_ADDR, lsb);
+    }
 }
 
 /**
@@ -765,9 +813,9 @@ static inline void adc_ll_vref_output(adc_ll_num_t adc, adc_channel_t channel, b
 static inline void adc_ll_set_sar_clk_div(adc_ll_num_t adc_n, uint32_t div)
 {
     if (adc_n == ADC_NUM_1) {
-        SENS.sar_reader1_ctrl.sar1_clk_div = div;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_reader1_ctrl, sar1_clk_div, div);
     } else { // adc_n == ADC_NUM_2
-        SENS.sar_reader2_ctrl.sar2_clk_div = div;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_reader2_ctrl, sar2_clk_div, div);
     }
 }
 
@@ -828,7 +876,7 @@ static inline void adc_ll_rtc_disable_channel(adc_ll_num_t adc_n)
 static inline void adc_ll_rtc_start_convert(adc_ll_num_t adc_n, int channel)
 {
     if (adc_n == ADC_NUM_1) {
-        while (SENS.sar_slave_addr1.meas_status != 0);
+        while (HAL_FORCE_READ_U32_REG_FIELD(SENS.sar_slave_addr1, meas_status) != 0) {}
         SENS.sar_meas1_ctrl2.meas1_start_sar = 0;
         SENS.sar_meas1_ctrl2.meas1_start_sar = 1;
     } else { // adc_n == ADC_NUM_2
@@ -867,9 +915,9 @@ static inline int adc_ll_rtc_get_convert_value(adc_ll_num_t adc_n)
 {
     int ret_val = 0;
     if (adc_n == ADC_NUM_1) {
-        ret_val = SENS.sar_meas1_ctrl2.meas1_data_sar;
+        ret_val = HAL_FORCE_READ_U32_REG_FIELD(SENS.sar_meas1_ctrl2, meas1_data_sar);
     } else { // adc_n == ADC_NUM_2
-        ret_val = SENS.sar_meas2_ctrl2.meas2_data_sar;
+        ret_val = HAL_FORCE_READ_U32_REG_FIELD(SENS.sar_meas2_ctrl2, meas2_data_sar);
     }
     return ret_val;
 }
@@ -1010,6 +1058,22 @@ static inline void adc_ll_set_atten(adc_ll_num_t adc_n, adc_channel_t channel, a
         SENS.sar_atten1 = ( SENS.sar_atten1 & ~(0x3 << (channel * 2)) ) | ((atten & 0x3) << (channel * 2));
     } else { // adc_n == ADC_NUM_2
         SENS.sar_atten2 = ( SENS.sar_atten2 & ~(0x3 << (channel * 2)) ) | ((atten & 0x3) << (channel * 2));
+    }
+}
+
+/**
+ * Get the attenuation of a particular channel on ADCn.
+ *
+ * @param adc_n ADC unit.
+ * @param channel ADCn channel number.
+ * @return atten The attenuation option.
+ */
+static inline adc_atten_t adc_ll_get_atten(adc_ll_num_t adc_n, adc_channel_t channel)
+{
+    if (adc_n == ADC_NUM_1) {
+        return (adc_atten_t)((SENS.sar_atten1 >> (channel * 2)) & 0x3);
+    } else {
+        return (adc_atten_t)((SENS.sar_atten2 >> (channel * 2)) & 0x3);
     }
 }
 

@@ -9,7 +9,7 @@ else()
 endif()
 
 if(IDF_TARGET STREQUAL "esp32h2")
-    set(srcs "src/esp32h2/phy_init.c")
+    set(srcs "src/phy_init_esp32hxx.c")
 else()
     set(srcs "src/phy_init.c")
 endif()
@@ -28,15 +28,22 @@ if(link_binary_libs)
     target_link_libraries(${COMPONENT_LIB} PUBLIC phy)
 
     idf_component_get_property(esp_phy_lib esp_phy COMPONENT_LIB)
-    target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> libphy.a
-                          $<TARGET_FILE:${esp_phy_lib}>)
 
     if(CONFIG_IDF_TARGET_ESP32)
         target_link_libraries(${COMPONENT_LIB} PUBLIC rtc)
+        target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> libphy.a librtc.a
+        $<TARGET_FILE:${esp_phy_lib}>)
     endif()
 
-    if(CONFIG_IDF_TARGET_ESP32C3 OR CONFIG_IDF_TARGET_ESP32S3)
+    if(CONFIG_IDF_TARGET_ESP32S2)
+        target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> libphy.a
+        $<TARGET_FILE:${esp_phy_lib}>)
+    endif()
+
+    if(CONFIG_IDF_TARGET_ESP32C3 OR CONFIG_IDF_TARGET_ESP32S3 OR CONFIG_IDF_TARGET_ESP32H2)
         target_link_libraries(${COMPONENT_LIB} PUBLIC btbb)
+        target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> libphy.a libbtbb.a
+        $<TARGET_FILE:${esp_phy_lib}>)
     endif()
 endif()
 

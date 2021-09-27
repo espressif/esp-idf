@@ -41,6 +41,7 @@
 #include "esp_flash_encrypt.h"
 #include "esp_secure_boot.h"
 #include "esp_sleep.h"
+#include "esp_xt_wdt.h"
 
 /***********************************************/
 // Headers for other components init functions
@@ -343,6 +344,15 @@ static void do_core_init(void)
 #if defined(CONFIG_SECURE_BOOT) || defined(CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT)
     // Note: in some configs this may read flash, so placed after flash init
     esp_secure_boot_init_checks();
+#endif
+
+#if CONFIG_ESP_XT_WDT
+    esp_xt_wdt_config_t cfg = {
+        .timeout                = CONFIG_ESP_XT_WDT_TIMEOUT,
+        .auto_backup_clk_enable = CONFIG_ESP_XT_WDT_BACKUP_CLK_ENABLE,
+    };
+    err = esp_xt_wdt_init(&cfg);
+    assert(err == ESP_OK && "Failed to init xtwdt");
 #endif
 }
 

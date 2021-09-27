@@ -1,5 +1,16 @@
 menu "Example Configuration"
 
+    config EXAMPLE_GPIO_RANGE_MIN
+        int
+        default 0
+
+    config EXAMPLE_GPIO_RANGE_MAX
+        int
+        default 33 if IDF_TARGET_ESP32
+        default 46 if IDF_TARGET_ESP32S2
+        default 19 if IDF_TARGET_ESP32C3
+        default 48 if IDF_TARGET_ESP32S3
+
     config EXAMPLE_USE_SPI_ETHERNET
         bool
 
@@ -95,12 +106,14 @@ menu "Example Configuration"
 
         config EXAMPLE_ETH_MDC_GPIO
             int "SMI MDC GPIO number"
+            range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
             default 23
             help
                 Set the GPIO number used by SMI MDC.
 
         config EXAMPLE_ETH_MDIO_GPIO
             int "SMI MDIO GPIO number"
+            range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
             default 18
             help
                 Set the GPIO number used by SMI MDIO.
@@ -116,45 +129,36 @@ menu "Example Configuration"
 
         config EXAMPLE_ETH_SPI_SCLK_GPIO
             int "SPI SCLK GPIO number"
-            range 0 34 if IDF_TARGET_ESP32
-            range 0 46 if IDF_TARGET_ESP32S2
-            range 0 19 if IDF_TARGET_ESP32C3
-            default 18 if IDF_TARGET_ESP32
-            default 20 if IDF_TARGET_ESP32S2
+            range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+            default 14 if IDF_TARGET_ESP32
+            default 12 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
             default 6 if IDF_TARGET_ESP32C3
             help
                 Set the GPIO number used by SPI SCLK.
 
         config EXAMPLE_ETH_SPI_MOSI_GPIO
             int "SPI MOSI GPIO number"
-            range 0 34 if IDF_TARGET_ESP32
-            range 0 46 if IDF_TARGET_ESP32S2
-            range 0 19 if IDF_TARGET_ESP32C3
-            default 23 if IDF_TARGET_ESP32
-            default 19 if IDF_TARGET_ESP32S2
+            range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+            default 13 if IDF_TARGET_ESP32
+            default 11 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
             default 7 if IDF_TARGET_ESP32C3
             help
                 Set the GPIO number used by SPI MOSI.
 
         config EXAMPLE_ETH_SPI_MISO_GPIO
             int "SPI MISO GPIO number"
-            range 0 34 if IDF_TARGET_ESP32
-            range 0 46 if IDF_TARGET_ESP32S2
-            range 0 19 if IDF_TARGET_ESP32C3
-            default 19 if IDF_TARGET_ESP32
-            default 18 if IDF_TARGET_ESP32S2
+            range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+            default 12 if IDF_TARGET_ESP32
+            default 13 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
             default 2 if IDF_TARGET_ESP32C3
             help
                 Set the GPIO number used by SPI MISO.
 
         config EXAMPLE_ETH_SPI_CS_GPIO
             int "SPI CS GPIO number"
-            range 0 34 if IDF_TARGET_ESP32
-            range 0 46 if IDF_TARGET_ESP32S2
-            range 0 19 if IDF_TARGET_ESP32C3
-            default 16 if IDF_TARGET_ESP32
-            default 21 if IDF_TARGET_ESP32S2
-            default 10 if IDF_TARGET_ESP32C3
+            range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+            default 15 if IDF_TARGET_ESP32
+            default 10 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
             help
                 Set the GPIO number used by SPI CS.
 
@@ -162,20 +166,21 @@ menu "Example Configuration"
             int "SPI clock speed (MHz)"
             range 5 80
             default 12 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32C3
-            default 36 if IDF_TARGET_ESP32S2
+            default 36 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
             help
                 Set the clock speed (MHz) of SPI interface.
 
         config EXAMPLE_ETH_SPI_INT_GPIO
             int "Interrupt GPIO number"
-            default 17 if IDF_TARGET_ESP32
-            default 4 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3
+            range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+            default 4 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
             help
                 Set the GPIO number used by the SPI Ethernet module interrupt line.
     endif # EXAMPLE_USE_SPI_ETHERNET
 
     config EXAMPLE_ETH_PHY_RST_GPIO
         int "PHY Reset GPIO number"
+        range -1 EXAMPLE_GPIO_RANGE_MAX
         default 5
         help
             Set the GPIO number used to reset PHY chip.

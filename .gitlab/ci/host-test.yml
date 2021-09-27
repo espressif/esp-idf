@@ -220,11 +220,6 @@ test_efuse_table_on_host_esp32s2:
   variables:
     IDF_TARGET: esp32s2
 
-test_efuse_table_on_host_esp32s2:
-  extends: .test_efuse_table_on_host_template
-  variables:
-    IDF_TARGET: esp32s2
-
 test_efuse_table_on_host_esp32s3:
   extends: .test_efuse_table_on_host_template
   variables:
@@ -250,10 +245,11 @@ test_espcoredump:
     expire_in: 1 week
   variables:
     IDF_COREDUMP_ELF_REPO: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/idf/idf-coredump-elf.git"
+    IDF_COREDUMP_ELF_TAG: idf-20210910-00
     # install CMake version specified in tools.json
     SETUP_TOOLS_LIST: "all"
   script:
-    - retry_failed git clone ${IDF_COREDUMP_ELF_REPO} -b master
+    - retry_failed git clone ${IDF_COREDUMP_ELF_REPO} -b $IDF_COREDUMP_ELF_TAG
     - cd ${IDF_PATH}/components/espcoredump/test/
     - ./test_espcoredump.sh ${CI_PROJECT_DIR}/idf-coredump-elf
 
@@ -295,22 +291,6 @@ test_mkuf2:
     - cd ${IDF_PATH}/tools/test_mkuf2
     - ./test_mkuf2.py
 
-test_docs:
-  extends: .host_test_template
-  image: $ESP_IDF_DOC_ENV_IMAGE
-  variables:
-    PYTHON_VER: 3.6.13
-  artifacts:
-    when: on_failure
-    paths:
-      - docs/test/_build/*/*/*/html/*
-    expire_in: 1 week
-  script:
-    - cd ${IDF_PATH}/docs/test
-    - python -m pip install -r ${IDF_PATH}/docs/requirements.txt
-    - ./test_docs.py
-    - ./test_sphinx_idf_extensions.py
-
 test_autocomplete:
   extends: .host_test_template
   image: $CI_DOCKER_REGISTRY/linux-shells:1
@@ -340,7 +320,7 @@ test_nvs_page:
   script:
     - cd ${IDF_PATH}/components/nvs_flash/host_test/nvs_page_test
     - idf.py build
-    - build/host_nvs_page_test.elf
+    - build/test_nvs_page_host.elf
 
 test_log:
   extends: .host_test_template
@@ -355,6 +335,13 @@ test_esp_event:
     - cd ${IDF_PATH}/components/esp_event/host_test/esp_event_unit_test
     - idf.py build
     - build/test_esp_event_host.elf
+
+test_esp_timer_cxx:
+  extends: .host_test_template
+  script:
+    - cd ${IDF_PATH}/examples/cxx/experimental/experimental_cpp_component/host_test/esp_timer
+    - idf.py build
+    - build/test_esp_timer_cxx_host.elf
 
 test_eh_frame_parser:
   extends: .host_test_template
@@ -376,3 +363,10 @@ test_cxx_gpio:
     - cd ${IDF_PATH}/examples/cxx/experimental/experimental_cpp_component/host_test/gpio
     - idf.py build
     - build/test_gpio_cxx_host.elf
+
+test_linux_example:
+  extends: .host_test_template
+  script:
+    - cd ${IDF_PATH}/examples/build_system/cmake/linux_host_app
+    - idf.py build
+    - build/linux_host_app.elf

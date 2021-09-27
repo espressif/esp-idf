@@ -34,8 +34,8 @@ const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_port"
 #define COREDUMP_EM_RISCV                   0xF3
 
 #define COREDUMP_INVALID_CAUSE_VALUE        0xFFFF
-#define COREDUMP_FAKE_STACK_START           0x20000000
-#define COREDUMP_FAKE_STACK_LIMIT           0x30000000
+#define COREDUMP_FAKE_STACK_START           0x20000000U
+#define COREDUMP_FAKE_STACK_LIMIT           0x30000000U
 
 #if CONFIG_ESP_COREDUMP_ENABLE
 
@@ -424,7 +424,7 @@ void esp_core_dump_summary_parse_backtrace_info(esp_core_dump_bt_info_t *bt_info
     /* Check whether the stack is a fake stack created during coredump generation
      * If its a fake stack, we don't have any actual stack dump
      */
-    if (vaddr >= COREDUMP_FAKE_STACK_START && vaddr < COREDUMP_FAKE_STACK_LIMIT) {
+    if (vaddr >= (void*) COREDUMP_FAKE_STACK_START && vaddr < (void*) COREDUMP_FAKE_STACK_LIMIT) {
         bt_info->dump_size = 0;
         return;
     }

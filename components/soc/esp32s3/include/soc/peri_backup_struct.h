@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct peri_backup_dev_s {
     union {
         struct {
             uint32_t reg_peri_backup_flow_err      :    3;

@@ -88,7 +88,7 @@ myota_0, 0, 0x10,, 0x100000
 myota_1, 0, 0x11,, 0x100000
 myota_15, 0, 0x1f,, 0x100000
 mytest, 0, 0x20,, 0x100000
-myota_status, 1, 0,, 0x100000
+myota_status, 1, 0,, 0x2000
         """
         csv_nomagicnumbers = """
 # Name, Type, SubType, Offset, Size
@@ -97,7 +97,7 @@ myota_0, app, ota_0,, 0x100000
 myota_1, app, ota_1,, 0x100000
 myota_15, app, ota_15,, 0x100000
 mytest, app, test,, 0x100000
-myota_status, data, ota,, 0x100000
+myota_status, data, ota,, 0x2000
 """
         # make two equivalent partition tables, one using
         # magic numbers and one using shortcuts. Ensure they match
@@ -218,6 +218,30 @@ first, app, factory,, 1M, encrypted
         tb = _strip_trailing_ffs(t.to_binary())
         tr = gen_esp32part.PartitionTable.from_binary(tb)
         self.assertTrue(tr[0].encrypted)
+
+    def test_only_empty_subtype_is_not_0(self):
+        csv_txt = """
+# Name,Type, SubType,Offset,Size
+nvs,            data,    nvs,          , 0x4000,
+otadata,        data,    ota,          , 0x2000,
+phy_init,       data,    phy,          , 0x1000,
+factory,        app, factory,          , 1M
+ota_0,             0,  ota_0,          , 1M,
+ota_1,             0,  ota_1,          , 1M,
+storage,        data,       ,          , 512k,
+storage2,       data, undefined,       , 12k,
+"""
+        t = gen_esp32part.PartitionTable.from_csv(csv_txt)
+        t.verify()
+        self.assertEqual(t[1].name,   'otadata')
+        self.assertEqual(t[1].type,    1)
+        self.assertEqual(t[1].subtype, 0)
+        self.assertEqual(t[6].name,   'storage')
+        self.assertEqual(t[6].type,    1)
+        self.assertEqual(t[6].subtype, 0x06)
+        self.assertEqual(t[7].name,   'storage2')
+        self.assertEqual(t[7].type,    1)
+        self.assertEqual(t[7].subtype, 0x06)
 
 
 class BinaryParserTests(Py23TestCase):
@@ -372,6 +396,46 @@ app,app, factory, 32K, 1M
             t = gen_esp32part.PartitionTable.from_csv(csv)
             t.verify()
 
+    def test_only_one_otadata(self):
+        csv_txt = """
+# Name,Type, SubType,Offset,Size
+nvs,            data,    nvs,          , 0x4000,
+otadata,        data,    ota,          , 0x2000,
+otadata2,       data,    ota,          , 0x2000,
+factory,        app, factory,          , 1M
+ota_0,             0,  ota_0,          , 1M,
+ota_1,             0,  ota_1,          , 1M,
+"""
+        with self.assertRaisesRegex(gen_esp32part.InputError, r'Found multiple otadata partitions'):
+            t = gen_esp32part.PartitionTable.from_csv(csv_txt)
+            t.verify()
+
+    def test_otadata_must_have_fixed_size(self):
+        csv_txt = """
+# Name,Type, SubType,Offset,Size
+nvs,            data,    nvs,          , 0x4000,
+otadata,        data,    ota,          , 0x3000,
+factory,        app, factory,          , 1M
+ota_0,             0,  ota_0,          , 1M,
+ota_1,             0,  ota_1,          , 1M,
+"""
+        with self.assertRaisesRegex(gen_esp32part.InputError, r'otadata partition must have size = 0x2000'):
+            t = gen_esp32part.PartitionTable.from_csv(csv_txt)
+            t.verify()
+
+    def test_app_cannot_have_empty_subtype(self):
+        csv_txt = """
+# Name,Type, SubType,Offset,Size
+nvs,            data,    nvs,          , 0x4000,
+otadata,        data,    ota,          , 0x2000,
+factory,        app,        ,          , 1M
+ota_0,             0,  ota_0,          , 1M,
+ota_1,             0,  ota_1,          , 1M,
+"""
+        with self.assertRaisesRegex(gen_esp32part.InputError, r'App partition cannot have an empty subtype'):
+            t = gen_esp32part.PartitionTable.from_csv(csv_txt)
+            t.verify()
+
     def test_warnings(self):
         try:
             sys.stderr = io.StringIO()  # capture stderr
@@ -386,6 +450,19 @@ app,app, factory, 32K, 1M
             gen_esp32part.PartitionTable.from_csv(csv_2).verify()
             self.assertIn('WARNING', sys.stderr.getvalue())
             self.assertIn('partition subtype', sys.stderr.getvalue())
+
+            sys.stderr = io.StringIO()
+            csv_3 = 'nvs, data, nvs, 0x8800, 32k'
+            gen_esp32part.PartitionTable.from_csv(csv_3).verify()
+            self.assertIn('WARNING', sys.stderr.getvalue())
+            self.assertIn('not aligned to 0x1000', sys.stderr.getvalue())
+
+            sys.stderr = io.StringIO()
+            csv_4 = 'factory, app, factory, 0x10000, 0x100100\n' \
+                    'nvs, data, nvs, , 32k'
+            gen_esp32part.PartitionTable.from_csv(csv_4).verify()
+            self.assertIn('WARNING', sys.stderr.getvalue())
+            self.assertIn('not aligned to 0x1000', sys.stderr.getvalue())
 
         finally:
             sys.stderr = sys.__stderr__

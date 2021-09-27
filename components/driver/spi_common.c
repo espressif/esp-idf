@@ -15,6 +15,7 @@
 #include "esp_err.h"
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
+#include "soc/soc_pins.h"
 #include "soc/lldesc.h"
 #include "driver/gpio.h"
 #include "driver/periph_ctrl.h"
@@ -350,30 +351,114 @@ esp_err_t spicommon_slave_free_dma(spi_host_device_t host_id)
 }
 
 //----------------------------------------------------------IO general-------------------------------------------------------//
-static bool bus_uses_iomux_pins(spi_host_device_t host, const spi_bus_config_t* bus_config)
+#if SOC_SPI_SUPPORT_OCT
+static bool check_iomux_pins_oct(spi_host_device_t host, const spi_bus_config_t* bus_config)
+{
+    if (host != SPI2_HOST) {
+        return false;
+    }
+    int io_nums[] = {bus_config->data0_io_num, bus_config->data1_io_num, bus_config->data2_io_num, bus_config->data3_io_num,
+        bus_config->sclk_io_num, bus_config->data4_io_num, bus_config->data5_io_num, bus_config->data6_io_num, bus_config->data7_io_num};
+    int io_mux_nums[] = {SPI2_IOMUX_PIN_NUM_MOSI_OCT, SPI2_IOMUX_PIN_NUM_MISO_OCT, SPI2_IOMUX_PIN_NUM_WP_OCT, SPI2_IOMUX_PIN_NUM_HD_OCT,
+        SPI2_IOMUX_PIN_NUM_CLK_OCT, SPI2_IOMUX_PIN_NUM_IO4_OCT, SPI2_IOMUX_PIN_NUM_IO5_OCT, SPI2_IOMUX_PIN_NUM_IO6_OCT, SPI2_IOMUX_PIN_NUM_IO7_OCT};
+    for (size_t i = 0; i < sizeof(io_nums)/sizeof(io_nums[0]); i++) {
+        if (io_nums[i] >= 0 && io_nums[i] != io_mux_nums[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+#endif
+
+static bool check_iomux_pins_quad(spi_host_device_t host, const spi_bus_config_t* bus_config)
 {
     if (bus_config->sclk_io_num>=0 &&
         bus_config->sclk_io_num != spi_periph_signal[host].spiclk_iomux_pin) {
-            return false;
-        }
+        return false;
+    }
     if (bus_config->quadwp_io_num>=0 &&
         bus_config->quadwp_io_num != spi_periph_signal[host].spiwp_iomux_pin) {
-            return false;
-        }
+        return false;
+    }
     if (bus_config->quadhd_io_num>=0 &&
         bus_config->quadhd_io_num != spi_periph_signal[host].spihd_iomux_pin) {
-            return false;
-            }
+        return false;
+    }
     if (bus_config->mosi_io_num >= 0 &&
         bus_config->mosi_io_num != spi_periph_signal[host].spid_iomux_pin) {
-            return false;
-        }
+        return false;
+    }
     if (bus_config->miso_io_num>=0 &&
         bus_config->miso_io_num != spi_periph_signal[host].spiq_iomux_pin) {
-            return false;
-        }
-
+        return false;
+    }
     return true;
+}
+
+static bool bus_uses_iomux_pins(spi_host_device_t host, const spi_bus_config_t* bus_config)
+{
+//Check if SPI pins could be routed to iomux.
+#if SOC_SPI_SUPPORT_OCT
+    //The io mux pins available for Octal mode is not the same as the ones we use for non-Octal mode.
+    if ((bus_config->flags & SPICOMMON_BUSFLAG_OCTAL) == SPICOMMON_BUSFLAG_OCTAL) {
+        return check_iomux_pins_oct(host, bus_config);
+    }
+#endif
+    return check_iomux_pins_quad(host, bus_config);
+}
+
+#if SOC_SPI_SUPPORT_OCT
+static void bus_iomux_pins_set_oct(spi_host_device_t host, const spi_bus_config_t* bus_config)
+{
+    assert(host == SPI2_HOST);
+    int io_nums[] = {bus_config->data0_io_num, bus_config->data1_io_num, bus_config->data2_io_num, bus_config->data3_io_num,
+        bus_config->sclk_io_num, bus_config->data4_io_num, bus_config->data5_io_num, bus_config->data6_io_num, bus_config->data7_io_num};
+    int io_signals[] = {spi_periph_signal[host].spid_in, spi_periph_signal[host].spiq_in, spi_periph_signal[host].spiwp_in,
+        spi_periph_signal[host].spihd_in,spi_periph_signal[host].spiclk_in, spi_periph_signal[host].spid4_out,
+        spi_periph_signal[host].spid5_out, spi_periph_signal[host].spid6_out, spi_periph_signal[host].spid7_out};
+    for (size_t i = 0; i < sizeof(io_nums)/sizeof(io_nums[0]); i++) {
+        if (io_nums[i] > 0) {
+            gpio_iomux_in(io_nums[i], io_signals[i]);
+            // In Octal mode use function channel 2
+            gpio_iomux_out(io_nums[i], SPI2_FUNC_NUM_OCT, false);
+        }
+    }
+}
+#endif //SOC_SPI_SUPPORT_OCT
+
+static void bus_iomux_pins_set_quad(spi_host_device_t host, const spi_bus_config_t* bus_config)
+{
+    if (bus_config->mosi_io_num >= 0) {
+        gpio_iomux_in(bus_config->mosi_io_num, spi_periph_signal[host].spid_in);
+        gpio_iomux_out(bus_config->mosi_io_num, spi_periph_signal[host].func, false);
+    }
+    if (bus_config->miso_io_num >= 0) {
+        gpio_iomux_in(bus_config->miso_io_num, spi_periph_signal[host].spiq_in);
+        gpio_iomux_out(bus_config->miso_io_num, spi_periph_signal[host].func, false);
+    }
+    if (bus_config->quadwp_io_num >= 0) {
+        gpio_iomux_in(bus_config->quadwp_io_num, spi_periph_signal[host].spiwp_in);
+        gpio_iomux_out(bus_config->quadwp_io_num, spi_periph_signal[host].func, false);
+    }
+    if (bus_config->quadhd_io_num >= 0) {
+        gpio_iomux_in(bus_config->quadhd_io_num, spi_periph_signal[host].spihd_in);
+        gpio_iomux_out(bus_config->quadhd_io_num, spi_periph_signal[host].func, false);
+    }
+    if (bus_config->sclk_io_num >= 0) {
+        gpio_iomux_in(bus_config->sclk_io_num, spi_periph_signal[host].spiclk_in);
+        gpio_iomux_out(bus_config->sclk_io_num, spi_periph_signal[host].func, false);
+    }
+}
+
+static void bus_iomux_pins_set(spi_host_device_t host, const spi_bus_config_t* bus_config)
+{
+#if SOC_SPI_SUPPORT_OCT
+    if ((bus_config->flags & SPICOMMON_BUSFLAG_OCTAL) == SPICOMMON_BUSFLAG_OCTAL) {
+        bus_iomux_pins_set_oct(host, bus_config);
+        return;
+    }
+#endif
+    bus_iomux_pins_set_quad(host, bus_config);
 }
 
 /*
@@ -383,6 +468,17 @@ it should be able to be initialized.
 */
 esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_config_t *bus_config, uint32_t flags, uint32_t* flags_o)
 {
+#if SOC_SPI_SUPPORT_OCT
+    // In the driver of previous version, spi data4 ~ spi data7 are not in spi_bus_config_t struct. So the new-added pins come as 0
+    // if they are not really set. Add this boolean variable to check if the user has set spi data4 ~spi data7 pins .
+    bool io4_7_is_blank = !bus_config->data4_io_num && !bus_config->data5_io_num && !bus_config->data6_io_num && !bus_config->data7_io_num;
+    // This boolean variable specifies if user sets pins used for octal mode (users can set spi data4 ~ spi data7 to -1).
+    bool io4_7_enabled = !io4_7_is_blank && bus_config->data4_io_num >= 0 && bus_config->data5_io_num >= 0 &&
+                         bus_config->data6_io_num >= 0 && bus_config->data7_io_num >= 0;
+    SPI_CHECK((flags & SPICOMMON_BUSFLAG_MASTER) || !((flags & SPICOMMON_BUSFLAG_OCTAL) == SPICOMMON_BUSFLAG_OCTAL), "Octal SPI mode / OPI mode only works when SPI is used as Master", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(host == SPI2_HOST || !((flags & SPICOMMON_BUSFLAG_OCTAL) == SPICOMMON_BUSFLAG_OCTAL), "Only SPI2 supports Octal SPI mode / OPI mode", ESP_ERR_INVALID_ARG);
+#endif //SOC_SPI_SUPPORT_OCT
+
     uint32_t temp_flag = 0;
 
     bool miso_need_output;
@@ -414,13 +510,36 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
     if (bus_config->quadhd_io_num>=0) {
         SPI_CHECK_PIN(bus_config->quadhd_io_num, "hd", hd_need_output);
     }
+#if SOC_SPI_SUPPORT_OCT
+    const bool io4_need_output = true;
+    const bool io5_need_output = true;
+    const bool io6_need_output = true;
+    const bool io7_need_output = true;
+    // set flags for OCTAL mode according to the existence of spi data4 ~ spi data7
+    if (io4_7_enabled) {
+        temp_flag |= SPICOMMON_BUSFLAG_IO4_IO7;
+        if (bus_config->data4_io_num >= 0) {
+            SPI_CHECK_PIN(bus_config->data4_io_num, "spi data4", io4_need_output);
+        }
+        if (bus_config->data5_io_num >= 0) {
+            SPI_CHECK_PIN(bus_config->data5_io_num, "spi data5", io5_need_output);
+        }
+        if (bus_config->data6_io_num >= 0) {
+            SPI_CHECK_PIN(bus_config->data6_io_num, "spi data6", io6_need_output);
+        }
+        if (bus_config->data7_io_num >= 0) {
+            SPI_CHECK_PIN(bus_config->data7_io_num, "spi data7", io7_need_output);
+        }
+    }
+#endif //SOC_SPI_SUPPORT_OCT
+
     //set flags for QUAD mode according to the existence of wp and hd
     if (bus_config->quadhd_io_num >= 0 && bus_config->quadwp_io_num >= 0) temp_flag |= SPICOMMON_BUSFLAG_WPHD;
     if (bus_config->mosi_io_num >= 0) {
         temp_flag |= SPICOMMON_BUSFLAG_MOSI;
         SPI_CHECK_PIN(bus_config->mosi_io_num, "mosi", mosi_need_output);
     }
-    if (bus_config->miso_io_num>=0) {
+    if (bus_config->miso_io_num >= 0) {
         temp_flag |= SPICOMMON_BUSFLAG_MISO;
         SPI_CHECK_PIN(bus_config->miso_io_num, "miso", miso_need_output);
     }
@@ -443,12 +562,29 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
 
     if (missing_flag != 0) {
     //check pins existence
-        if (missing_flag & SPICOMMON_BUSFLAG_SCLK) ESP_LOGE(SPI_TAG, "sclk pin required.");
-        if (missing_flag & SPICOMMON_BUSFLAG_MOSI) ESP_LOGE(SPI_TAG, "mosi pin required.");
-        if (missing_flag & SPICOMMON_BUSFLAG_MISO) ESP_LOGE(SPI_TAG, "miso pin required.");
-        if (missing_flag & SPICOMMON_BUSFLAG_DUAL) ESP_LOGE(SPI_TAG, "not both mosi and miso output capable");
-        if (missing_flag & SPICOMMON_BUSFLAG_WPHD) ESP_LOGE(SPI_TAG, "both wp and hd required.");
-        if (missing_flag & SPICOMMON_BUSFLAG_IOMUX_PINS) ESP_LOGE(SPI_TAG, "not using iomux pins");
+        if (missing_flag & SPICOMMON_BUSFLAG_SCLK) {
+            ESP_LOGE(SPI_TAG, "sclk pin required.");
+        }
+        if (missing_flag & SPICOMMON_BUSFLAG_MOSI) {
+            ESP_LOGE(SPI_TAG, "mosi pin required.");
+        }
+        if (missing_flag & SPICOMMON_BUSFLAG_MISO) {
+            ESP_LOGE(SPI_TAG, "miso pin required.");
+        }
+        if (missing_flag & SPICOMMON_BUSFLAG_DUAL) {
+            ESP_LOGE(SPI_TAG, "not both mosi and miso output capable");
+        }
+        if (missing_flag & SPICOMMON_BUSFLAG_WPHD) {
+            ESP_LOGE(SPI_TAG, "both wp and hd required.");
+        }
+        if (missing_flag & SPICOMMON_BUSFLAG_IOMUX_PINS) {
+            ESP_LOGE(SPI_TAG, "not using iomux pins");
+        }
+#if SOC_SPI_SUPPORT_OCT
+        if (missing_flag & SPICOMMON_BUSFLAG_IO4_IO7) {
+            ESP_LOGE(SPI_TAG, "spi data4 ~ spi data7 are required.");
+        }
+#endif
         SPI_CHECK(missing_flag == 0, "not all required capabilities satisfied.", ESP_ERR_INVALID_ARG);
     }
 
@@ -456,27 +592,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         //All SPI iomux pin selections resolve to 1, so we put that here instead of trying to figure
         //out which FUNC_GPIOx_xSPIxx to grab; they all are defined to 1 anyway.
         ESP_LOGD(SPI_TAG, "SPI%d use iomux pins.", host+1);
-        if (bus_config->mosi_io_num >= 0) {
-            gpio_iomux_in(bus_config->mosi_io_num, spi_periph_signal[host].spid_in);
-            gpio_iomux_out(bus_config->mosi_io_num, spi_periph_signal[host].func, false);
-        }
-        if (bus_config->miso_io_num >= 0) {
-            gpio_iomux_in(bus_config->miso_io_num, spi_periph_signal[host].spiq_in);
-            gpio_iomux_out(bus_config->miso_io_num, spi_periph_signal[host].func, false);
-        }
-        if (bus_config->quadwp_io_num >= 0) {
-            gpio_iomux_in(bus_config->quadwp_io_num, spi_periph_signal[host].spiwp_in);
-            gpio_iomux_out(bus_config->quadwp_io_num, spi_periph_signal[host].func, false);
-        }
-        if (bus_config->quadhd_io_num >= 0) {
-            gpio_iomux_in(bus_config->quadhd_io_num, spi_periph_signal[host].spihd_in);
-            gpio_iomux_out(bus_config->quadhd_io_num, spi_periph_signal[host].func, false);
-        }
-        if (bus_config->sclk_io_num >= 0) {
-            gpio_iomux_in(bus_config->sclk_io_num, spi_periph_signal[host].spiclk_in);
-            gpio_iomux_out(bus_config->sclk_io_num, spi_periph_signal[host].func, false);
-        }
-        temp_flag |= SPICOMMON_BUSFLAG_IOMUX_PINS;
+        bus_iomux_pins_set(host, bus_config);
     } else {
         //Use GPIO matrix
         ESP_LOGD(SPI_TAG, "SPI%d use gpio matrix.", host+1);
@@ -537,6 +653,26 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
 #endif
             gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[bus_config->sclk_io_num], FUNC_GPIO);
         }
+#if SOC_SPI_SUPPORT_OCT
+        if (flags & SPICOMMON_BUSFLAG_OCTAL) {
+            int io_nums[] = {bus_config->data4_io_num, bus_config->data5_io_num, bus_config->data6_io_num, bus_config->data7_io_num};
+            uint8_t io_signals[4][2] = {{spi_periph_signal[host].spid4_out, spi_periph_signal[host].spid4_in},
+                                        {spi_periph_signal[host].spid5_out, spi_periph_signal[host].spid5_in},
+                                        {spi_periph_signal[host].spid6_out, spi_periph_signal[host].spid6_in},
+                                        {spi_periph_signal[host].spid7_out, spi_periph_signal[host].spid7_in}};
+            for (size_t i = 0; i < sizeof(io_nums) / sizeof(io_nums[0]); i++) {
+                if (io_nums[i] >= 0) {
+                    gpio_set_direction(io_nums[i], GPIO_MODE_INPUT_OUTPUT);
+                    esp_rom_gpio_connect_out_signal(io_nums[i], io_signals[i][0], false, false);
+                    esp_rom_gpio_connect_in_signal(io_nums[i], io_signals[i][1], false);
+#if CONFIG_IDF_TARGET_ESP32S2
+                    PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[io_nums[i]]);
+#endif
+                    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[io_nums[i]], FUNC_GPIO);
+                }
+            }
+        }
+#endif //SOC_SPI_SUPPORT_OCT
     }
 
     if (flags_o) *flags_o = temp_flag;

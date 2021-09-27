@@ -34,6 +34,7 @@
 #include "bootloader_mem.h"
 #include "bootloader_console.h"
 #include "bootloader_flash_priv.h"
+#include "bootloader_soc.h"
 #include "esp_efuse.h"
 
 
@@ -139,7 +140,7 @@ static void print_flash_info(const esp_image_header_t *bootloader_hdr)
         str = "20MHz";
         break;
     }
-    ESP_LOGI(TAG, "SPI Speed      : %s", str);
+    ESP_LOGI(TAG, "Boot SPI Speed : %s", str);
 
     /* SPI mode could have been set to QIO during boot already,
        so test the SPI registers not the flash header */
@@ -296,9 +297,18 @@ static void bootloader_super_wdt_auto_feed(void)
     REG_WRITE(RTC_CNTL_SWD_WPROTECT_REG, 0);
 }
 
+static inline void bootloader_ana_reset_config(void)
+{
+    //Enable WDT, BOR, and GLITCH reset
+    bootloader_ana_super_wdt_reset_config(true);
+    bootloader_ana_bod_reset_config(true);
+    bootloader_ana_clock_glitch_reset_config(true);
+}
+
 esp_err_t bootloader_init(void)
 {
     esp_err_t ret = ESP_OK;
+    bootloader_ana_reset_config();
     bootloader_super_wdt_auto_feed();
     // protect memory region
     bootloader_init_mem();
@@ -328,6 +338,11 @@ esp_err_t bootloader_init(void)
     bootloader_print_banner();
     // update flash ID
     bootloader_flash_update_id();
+    // Check and run XMC startup flow
+    if ((ret = bootloader_flash_xmc_startup()) != ESP_OK) {
+        ESP_LOGE(TAG, "failed when running XMC startup flow, reboot!");
+        goto err;
+    }
     // read bootloader header
     if ((ret = bootloader_read_bootloader_header()) != ESP_OK) {
         goto err;

@@ -632,6 +632,10 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
         }
     }
 
+    if (config->client_key_password && config->client_key_password_len > 0) {
+        esp_transport_ssl_set_client_key_password(ssl, config->client_key_password, config->client_key_password_len);
+    }
+
     if (config->skip_cert_common_name_check) {
         esp_transport_ssl_skip_common_name_check(ssl);
     }
@@ -993,12 +997,19 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
                 }
                 ESP_LOG_LEVEL(sev, TAG, "esp_transport_read returned:%d and errno:%d ", rlen, errno);
             }
+#ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS
+            if (rlen == ESP_TLS_ERR_SSL_WANT_READ || errno == EAGAIN) {
+#else
+            if (errno == EAGAIN) {
+#endif
+                ESP_LOGD(TAG, "Received EAGAIN! rlen = %d, errno %d", rlen, errno);
+                return ridx;
+            }
             if (rlen < 0 && ridx == 0 && !esp_http_client_is_complete_data_received(client)) {
                 http_dispatch_event(client, HTTP_EVENT_ERROR, esp_transport_get_error_handle(client->transport), 0);
                 return ESP_FAIL;
-            } else {
-                return ridx;
             }
+            return ridx;
         }
         res_buffer->output_ptr = buffer + ridx;
         http_parser_execute(client->parser, client->parser_settings, res_buffer->data, rlen);
@@ -1056,7 +1067,7 @@ esp_err_t esp_http_client_perform(esp_http_client_handle_t client)
                     if (client->is_async && errno == EAGAIN) {
                         return ESP_ERR_HTTP_EAGAIN;
                     }
-                    if (esp_tls_get_and_clear_last_error(esp_transport_get_error_handle(client->transport), NULL, NULL) == ESP_ERR_ESP_TLS_TCP_CLOSED_FIN) {
+                    if (esp_transport_get_errno(client->transport) == ENOTCONN) {
                         ESP_LOGW(TAG, "Close connection due to FIN received");
                         esp_http_client_close(client);
                         http_dispatch_event(client, HTTP_EVENT_ERROR, esp_transport_get_error_handle(client->transport), 0);

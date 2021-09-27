@@ -23,6 +23,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "hal/misc.h"
 #include "hal/eth_types.h"
 #include "soc/emac_dma_struct.h"
 #include "soc/emac_mac_struct.h"
@@ -136,7 +137,7 @@ extern "C" {
 #define EMAC_LL_INTR_OVERFLOW_ENABLE                    0x00000010U
 #define EMAC_LL_INTR_UNDERFLOW_ENABLE                   0x00000020U
 #define EMAC_LL_INTR_RECEIVE_ENABLE                     0x00000040U
-#define EMAC_LL_INTR_REVEIVE_BUFF_UNAVAILABLE_ENABLE    0x00000080U
+#define EMAC_LL_INTR_RECEIVE_BUFF_UNAVAILABLE_ENABLE    0x00000080U
 #define EMAC_LL_INTR_RECEIVE_STOP_ENABLE                0x00000100U
 #define EMAC_LL_INTR_RECEIVE_TIMEOUT_ENABLE             0x00000200U
 #define EMAC_LL_INTR_TRANSMIT_FIRST_BYTE_ENABLE         0x00000400U
@@ -310,7 +311,7 @@ static inline void emac_ll_promiscuous_mode_enable(emac_mac_dev_t *mac_regs, boo
 /* gmacfc */
 static inline void emac_ll_set_pause_time(emac_mac_dev_t *mac_regs, uint32_t time)
 {
-    mac_regs->gmacfc.pause_time = time;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mac_regs->gmacfc, pause_time, time);
 }
 
 static inline void emac_ll_zero_quanta_pause_enable(emac_mac_dev_t *mac_regs, bool enable)
@@ -346,18 +347,18 @@ static inline void emac_ll_clear(emac_mac_dev_t *mac_regs)
 /* emacmiidata */
 static inline void emac_ll_set_phy_data(emac_mac_dev_t *mac_regs, uint32_t data)
 {
-    mac_regs->emacmiidata.mii_data = data;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mac_regs->emacmiidata, mii_data, data);
 }
 
 static inline uint32_t emac_ll_get_phy_data(emac_mac_dev_t *mac_regs)
 {
-    return mac_regs->emacmiidata.mii_data;
+    return HAL_FORCE_READ_U32_REG_FIELD(mac_regs->emacmiidata, mii_data);
 }
 
 /* emacaddr0 */
 static inline void emac_ll_set_addr(emac_mac_dev_t *mac_regs, const uint8_t *addr)
 {
-    mac_regs->emacaddr0high.address0_hi = (addr[5] << 8) | addr[4];
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mac_regs->emacaddr0high, address0_hi, (addr[5] << 8) | addr[4]);
     mac_regs->emacaddr0low = (addr[3] << 24) | (addr[2] << 16) | (addr[1] << 8) | (addr[0]);
 }
 /*************** End of mac regs operation *********************/
@@ -405,7 +406,7 @@ static inline void emac_ll_flush_recv_frame_enable(emac_dma_dev_t *dma_regs, boo
 
 static inline void emac_ll_trans_store_forward_enable(emac_dma_dev_t *dma_regs, bool enable)
 {
-    dma_regs->dmaoperation_mode.tx_str_fwd = !enable;
+    dma_regs->dmaoperation_mode.tx_str_fwd = enable;
 }
 
 static inline void emac_ll_flush_trans_fifo_enable(emac_dma_dev_t *dma_regs, bool enable)

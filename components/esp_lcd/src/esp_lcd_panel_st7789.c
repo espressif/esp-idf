@@ -82,6 +82,7 @@ esp_err_t esp_lcd_new_panel_st7789(const esp_lcd_panel_io_handle_t io, const esp
         ESP_GOTO_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, err, TAG, "unsupported pixel width");
         break;
     }
+
     st7789->io = io;
     st7789->bits_per_pixel = panel_dev_config->bits_per_pixel;
     st7789->reset_gpio_num = panel_dev_config->reset_gpio_num;
@@ -134,8 +135,8 @@ static esp_err_t panel_st7789_reset(esp_lcd_panel_t *panel)
         gpio_set_level(st7789->reset_gpio_num, !st7789->reset_level);
         vTaskDelay(pdMS_TO_TICKS(10));
     } else { // perform software reset
-        esp_lcd_panel_io_tx_param(io, LCD_CMD_SWRESET, 8, NULL, 0);
-        vTaskDelay(pdMS_TO_TICKS(10)); // spec, wait at least 5m before sending new command
+        esp_lcd_panel_io_tx_param(io, LCD_CMD_SWRESET, NULL, 0);
+        vTaskDelay(pdMS_TO_TICKS(20)); // spec, wait at least 5m before sending new command
     }
 
     return ESP_OK;
@@ -146,16 +147,16 @@ static esp_err_t panel_st7789_init(esp_lcd_panel_t *panel)
     st7789_panel_t *st7789 = __containerof(panel, st7789_panel_t, base);
     esp_lcd_panel_io_handle_t io = st7789->io;
     // LCD goes into sleep mode and display will be turned off after power on reset, exit sleep mode first
-    esp_lcd_panel_io_tx_param(io, LCD_CMD_SLPOUT, 8, NULL, 0);
+    esp_lcd_panel_io_tx_param(io, LCD_CMD_SLPOUT, NULL, 0);
     vTaskDelay(pdMS_TO_TICKS(100));
-    esp_lcd_panel_io_tx_param(io, LCD_CMD_MADCTL, 8, (uint8_t[]) {
-        0
+    esp_lcd_panel_io_tx_param(io, LCD_CMD_MADCTL, (uint8_t[]) {
+        st7789->madctl_val,
     }, 1);
-    esp_lcd_panel_io_tx_param(io, LCD_CMD_COLMOD, 8, (uint8_t[]) {
+    esp_lcd_panel_io_tx_param(io, LCD_CMD_COLMOD, (uint8_t[]) {
         st7789->colmod_cal,
     }, 1);
     // turn on display
-    esp_lcd_panel_io_tx_param(io, LCD_CMD_DISPON, 8, NULL, 0);
+    esp_lcd_panel_io_tx_param(io, LCD_CMD_DISPON, NULL, 0);
 
     return ESP_OK;
 }
@@ -172,13 +173,13 @@ static esp_err_t panel_st7789_draw_bitmap(esp_lcd_panel_t *panel, int x_start, i
     y_end += st7789->y_gap;
 
     // define an area of frame memory where MCU can access
-    esp_lcd_panel_io_tx_param(io, LCD_CMD_CASET, 8, (uint8_t[]) {
+    esp_lcd_panel_io_tx_param(io, LCD_CMD_CASET, (uint8_t[]) {
         (x_start >> 8) & 0xFF,
         x_start & 0xFF,
         ((x_end - 1) >> 8) & 0xFF,
         (x_end - 1) & 0xFF,
     }, 4);
-    esp_lcd_panel_io_tx_param(io, LCD_CMD_RASET, 8, (uint8_t[]) {
+    esp_lcd_panel_io_tx_param(io, LCD_CMD_RASET, (uint8_t[]) {
         (y_start >> 8) & 0xFF,
         y_start & 0xFF,
         ((y_end - 1) >> 8) & 0xFF,
@@ -186,7 +187,7 @@ static esp_err_t panel_st7789_draw_bitmap(esp_lcd_panel_t *panel, int x_start, i
     }, 4);
     // transfer frame buffer
     size_t len = (x_end - x_start) * (y_end - y_start) * st7789->bits_per_pixel / 8;
-    esp_lcd_panel_io_tx_color(io, LCD_CMD_RAMWR, 8, color_data, len);
+    esp_lcd_panel_io_tx_color(io, LCD_CMD_RAMWR, color_data, len);
 
     return ESP_OK;
 }
@@ -201,7 +202,7 @@ static esp_err_t panel_st7789_invert_color(esp_lcd_panel_t *panel, bool invert_c
     } else {
         command = LCD_CMD_INVOFF;
     }
-    esp_lcd_panel_io_tx_param(io, command, 8, NULL, 0);
+    esp_lcd_panel_io_tx_param(io, command, NULL, 0);
     return ESP_OK;
 }
 
@@ -219,7 +220,7 @@ static esp_err_t panel_st7789_mirror(esp_lcd_panel_t *panel, bool mirror_x, bool
     } else {
         st7789->madctl_val &= ~LCD_CMD_MY_BIT;
     }
-    esp_lcd_panel_io_tx_param(io, LCD_CMD_MADCTL, 8, (uint8_t[]) {
+    esp_lcd_panel_io_tx_param(io, LCD_CMD_MADCTL, (uint8_t[]) {
         st7789->madctl_val
     }, 1);
     return ESP_OK;
@@ -234,7 +235,7 @@ static esp_err_t panel_st7789_swap_xy(esp_lcd_panel_t *panel, bool swap_axes)
     } else {
         st7789->madctl_val &= ~LCD_CMD_MV_BIT;
     }
-    esp_lcd_panel_io_tx_param(io, LCD_CMD_MADCTL, 8, (uint8_t[]) {
+    esp_lcd_panel_io_tx_param(io, LCD_CMD_MADCTL, (uint8_t[]) {
         st7789->madctl_val
     }, 1);
     return ESP_OK;
@@ -258,6 +259,6 @@ static esp_err_t panel_st7789_disp_off(esp_lcd_panel_t *panel, bool off)
     } else {
         command = LCD_CMD_DISPON;
     }
-    esp_lcd_panel_io_tx_param(io, command, 8, NULL, 0);
+    esp_lcd_panel_io_tx_param(io, command, NULL, 0);
     return ESP_OK;
 }

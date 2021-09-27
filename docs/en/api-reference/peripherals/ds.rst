@@ -1,5 +1,5 @@
-Digital Signature
-=================
+Digital Signature (DS)
+======================
 
 The Digital Signature (DS) module provides hardware acceleration of signing messages based on RSA.
 It uses pre-encrypted parameters to calculate a signature.

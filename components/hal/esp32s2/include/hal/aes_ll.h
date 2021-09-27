@@ -1,4 +1,4 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2020-2021 Espressif Systems (Shanghai) CO LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include <string.h>
 #include "soc/hwcrypto_reg.h"
 #include "hal/aes_types.h"
 
@@ -46,10 +47,11 @@ static inline uint8_t aes_ll_write_key(const uint8_t *key, size_t key_word_len)
 {
     /* This variable is used for fault injection checks, so marked volatile to avoid optimisation */
     volatile uint8_t key_in_hardware = 0;
-    uint32_t *key_words = (uint32_t *)key;
-
+    /* Memcpy to avoid potential unaligned access */
+    uint32_t key_word;
     for (int i = 0; i < key_word_len; i++) {
-        REG_WRITE(AES_KEY_BASE + i * 4, *(key_words + i));
+        memcpy(&key_word, key + 4 * i, 4);
+        REG_WRITE(AES_KEY_BASE + i * 4,  key_word);
         key_in_hardware += 4;
     }
     return key_in_hardware;
@@ -77,22 +79,12 @@ static inline void aes_ll_set_mode(int mode, uint8_t key_bytes)
  */
 static inline void aes_ll_write_block(const void *input)
 {
-    const uint32_t *input_words = (const uint32_t *)input;
-    uint32_t i0, i1, i2, i3;
+    uint32_t input_word;
 
-    /* Storing i0,i1,i2,i3 in registers not an array
-    helps a lot with optimisations at -Os level */
-    i0 = input_words[0];
-    REG_WRITE(AES_TEXT_IN_BASE, i0);
-
-    i1 = input_words[1];
-    REG_WRITE(AES_TEXT_IN_BASE + 4, i1);
-
-    i2 = input_words[2];
-    REG_WRITE(AES_TEXT_IN_BASE + 8, i2);
-
-    i3 = input_words[3];
-    REG_WRITE(AES_TEXT_IN_BASE + 12, i3);
+    for (int i = 0; i < AES_BLOCK_WORDS; i++) {
+        memcpy(&input_word, (uint8_t*)input + 4 * i, 4);
+        REG_WRITE(AES_TEXT_IN_BASE + i * 4, input_word);
+    }
 }
 
 /**
@@ -102,11 +94,13 @@ static inline void aes_ll_write_block(const void *input)
  */
 static inline void aes_ll_read_block(void *output)
 {
-    uint32_t *output_words = (uint32_t *)output;
+    uint32_t output_word;
     const size_t REG_WIDTH = sizeof(uint32_t);
 
     for (size_t i = 0; i < AES_BLOCK_WORDS; i++) {
-        output_words[i] = REG_READ(AES_TEXT_OUT_BASE + (i * REG_WIDTH));
+        output_word = REG_READ(AES_TEXT_OUT_BASE + (i * REG_WIDTH));
+        /* Memcpy to avoid potential unaligned access */
+        memcpy( (uint8_t*)output + i * 4, &output_word, sizeof(output_word));
     }
 }
 
@@ -190,11 +184,13 @@ static inline void aes_ll_set_num_blocks(size_t num_blocks)
  */
 static inline void aes_ll_set_iv(const uint8_t *iv)
 {
-    uint32_t *iv_words = (uint32_t *)iv;
     uint32_t *reg_addr_buf = (uint32_t *)(AES_IV_BASE);
+    uint32_t iv_word;
 
     for (int i = 0; i < IV_WORDS; i++ ) {
-        REG_WRITE(&reg_addr_buf[i], iv_words[i]);
+        /* Memcpy to avoid potential unaligned access */
+        memcpy(&iv_word, iv + 4 * i, sizeof(iv_word));
+        REG_WRITE(&reg_addr_buf[i], iv_word);
     }
 }
 
@@ -203,11 +199,13 @@ static inline void aes_ll_set_iv(const uint8_t *iv)
  */
 static inline void aes_ll_read_iv(uint8_t *iv)
 {
-    uint32_t *iv_words = (uint32_t *)iv;
+    uint32_t iv_word;
     const size_t REG_WIDTH = sizeof(uint32_t);
 
     for (size_t i = 0; i < IV_WORDS; i++) {
-        iv_words[i] = REG_READ(AES_IV_BASE + (i * REG_WIDTH));
+        iv_word = REG_READ(AES_IV_BASE + (i * REG_WIDTH));
+        /* Memcpy to avoid potential unaligned access */
+        memcpy(iv + i * 4, &iv_word, sizeof(iv_word));
     }
 }
 
@@ -247,13 +245,14 @@ static inline void aes_ll_interrupt_clear(void)
  */
 static inline void aes_ll_gcm_read_hash(uint8_t *gcm_hash)
 {
-    uint32_t *hash_words = (uint32_t *)gcm_hash;
     const size_t REG_WIDTH = sizeof(uint32_t);
+    uint32_t hash_word;
 
     for (size_t i = 0; i < AES_BLOCK_WORDS; i++) {
-        hash_words[i] = REG_READ(AES_H_BASE + (i * REG_WIDTH));
+        hash_word = REG_READ(AES_H_BASE + (i * REG_WIDTH));
+        /* Memcpy to avoid potential unaligned access */
+        memcpy(gcm_hash + i * 4, &hash_word, sizeof(hash_word));
     }
-
 }
 
 /**
@@ -277,11 +276,13 @@ static inline void aes_ll_gcm_set_aad_num_blocks(size_t aad_num_blocks)
  */
 static inline void aes_ll_gcm_set_j0(const uint8_t *j0)
 {
-    uint32_t *j0_words = (uint32_t *)j0;
     uint32_t *reg_addr_buf = (uint32_t *)(AES_J_BASE);
+    uint32_t j0_word;
 
     for (int i = 0; i < AES_BLOCK_WORDS; i++ ) {
-        REG_WRITE(&reg_addr_buf[i], j0_words[i]);
+    /* Memcpy to avoid potential unaligned access */
+        memcpy(&j0_word, j0 + 4 * i, sizeof(j0_word));
+        REG_WRITE(&reg_addr_buf[i], j0_word);
     }
 }
 
@@ -304,11 +305,13 @@ static inline void aes_ll_gcm_set_num_valid_bit(size_t num_valid_bits)
  */
 static inline void aes_ll_gcm_read_tag(uint8_t *tag)
 {
-    uint32_t *tag_words = (uint32_t *)tag;
+    uint32_t tag_word;
     const size_t REG_WIDTH = sizeof(uint32_t);
 
     for (size_t i = 0; i < TAG_WORDS; i++) {
-        tag_words[i] = REG_READ(AES_T_BASE + (i * REG_WIDTH));
+        tag_word = REG_READ(AES_T_BASE + (i * REG_WIDTH));
+        /* Memcpy to avoid potential unaligned access */
+        memcpy(tag + i * 4, &tag_word, sizeof(tag_word));
     }
 }
 

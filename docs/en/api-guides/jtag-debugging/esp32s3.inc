@@ -111,14 +111,17 @@
 
     * - ESP32-S3 Pin
       - JTAG Signal
-    * - MTDO
+    * - MTDO / GPIO40
       - TDO
-    * - MTDI
+    * - MTDI / GPIO41
       - TDI
-    * - MTCK
+    * - MTCK / GPIO39
       - TCK
-    * - MTMS
+    * - MTMS / GPIO42
       - TMS
+
+.. |jtag-sel-gpio| replace:: GPIO3
+.. |jtag-gpio-list| replace:: GPIO39-GPIO42
 
 ---
 

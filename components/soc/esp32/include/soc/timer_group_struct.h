@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 typedef volatile struct timg_dev_s {
-    struct{
+    struct {
         union {
             struct {
                 uint32_t reserved0:   10;

@@ -228,7 +228,7 @@ static esp_err_t esp_core_dump_get_regs_from_stack(void* stack_addr,
             regs->ar[i] = stack_arr[XT_STK_AR_START + i];
         }
         regs->sar = exc_frame->sar;
-#if CONFIG_IDF_TARGET_ESP32
+#if XCHAL_HAVE_LOOPS
         regs->lbeg = exc_frame->lbeg;
         regs->lend = exc_frame->lend;
         regs->lcount = exc_frame->lcount;

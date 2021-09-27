@@ -70,13 +70,25 @@ static int lwip_ioctl_r_wrapper(int fd, int cmd, va_list args)
     return lwip_ioctl(fd, cmd, va_arg(args, void *));
 }
 
+static int lwip_fstat(int fd, struct stat * st)
+{
+    if (st == NULL || fd < LWIP_SOCKET_OFFSET || fd > (MAX_FDS - 1)) {
+        errno = EBADF;
+        return -1;
+    }
+    memset(st, 0, sizeof(*st));
+    /* set the stat mode to socket type */
+    st->st_mode = S_IFSOCK;
+    return 0;
+}
+
 void esp_vfs_lwip_sockets_register(void)
 {
     esp_vfs_t vfs = {
         .flags = ESP_VFS_FLAG_DEFAULT,
         .write = &lwip_write,
         .open = NULL,
-        .fstat = NULL,
+        .fstat = &lwip_fstat,
         .close = &lwip_close,
         .read = &lwip_read,
         .fcntl = &lwip_fcntl_r_wrapper,

@@ -404,6 +404,16 @@ FreeModBus
 
 If using Modbus, enable or disable :ref:`CONFIG_FMB_COMM_MODE_TCP_EN`, :ref:`CONFIG_FMB_COMM_MODE_RTU_EN`, :ref:`CONFIG_FMB_COMM_MODE_ASCII_EN` as applicable for the necessary functionality.
 
+VFS
+@@@
+
+:doc:`Virtual filesystem </api-reference/storage/vfs>` feature in ESP-IDF allows multiple filesystem drivers and file-like peripheral drivers to be accessed using standard I/O functions (``open``, ``read``, ``write``, etc.) and C library functions (``fopen``, ``fread``, ``fwrite``, etc.). When filesystem or file-like peripheral driver functionality is not used in the application this feature can be fully or partially disabled. VFS component provides the following configuration options:
+
+* :ref:`CONFIG_VFS_SUPPORT_TERMIOS` — can be disabled if the application doesn't use ``termios`` family of functions. Currently, these functions are implemented only for UART VFS driver. Most applications can disable this option. Disabling this option reduces the code size by about 1.8 kB.
+* :ref:`CONFIG_VFS_SUPPORT_SELECT` — can be disabled if the application doesn't use ``select`` function with file descriptors. Currently, only the UART and eventfd VFS drivers implement ``select`` support. Note that when this option is disabled, ``select`` can still be used for socket file descriptors. Disabling this option reduces the code size by about 2.7 kB.
+* :ref:`CONFIG_VFS_SUPPORT_DIR` — can be disabled if the application doesn't use directory related functions, such as ``readdir`` (see the description of this option for the complete list). Applications which only open, read and write specific files and don't need to enumerate or create directories can disable this option, reducing the code size by 0.5 kB or more, depending on the filesystem drivers in use.
+* :ref:`CONFIG_VFS_SUPPORT_IO` — can be disabled if the application doesn't use filesystems or file-like peripheral drivers. This disables all VFS functionality, including the three options mentioned above. When this option is disabled, :doc:`console </api-reference/system/console>` can't be used. Note that the application can still use standard I/O functions with socket file descriptors when this option is disabled. Compared to the default configuration, disabling this option reduces code size by about 9.4 kB. 
+
 Bootloader Size
 ---------------
 

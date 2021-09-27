@@ -13,6 +13,9 @@
 // limitations under the License.
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 /** DHCP Options
 
     This macros are not part of the public dhcpserver.h interface.
@@ -132,3 +135,7 @@ typedef enum
     DOMAIN_SEARCH = 119,
     CLASSLESS_ROUTE = 121,
 } dhcp_msg_option;
+
+#ifdef __cplusplus
+}
+#endif

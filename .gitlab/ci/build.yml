@@ -221,6 +221,14 @@ build_examples_cmake_esp32s2:
   variables:
     IDF_TARGET: esp32s2
 
+build_examples_cmake_esp32s3:
+  extends:
+    - .build_examples_cmake_template
+    - .rules:build:example_test-esp32s3
+  parallel: 8
+  variables:
+    IDF_TARGET: esp32s3
+
 build_examples_cmake_esp32c3:
   extends:
     - .build_examples_cmake_template
@@ -344,6 +352,7 @@ build_docker:
     - .before_script_minimal
     - .rules:build:docker
   stage: host_test
+  needs: []
   image: espressif/docker-builder:1
   tags:
     - build_docker_amd64_brno
@@ -366,6 +375,7 @@ build_docker:
     - .before_script_minimal
     - .rules:build:windows
   stage: host_test
+  needs: []
   image: $CI_DOCKER_REGISTRY/esp32-toolchain-win-cross
   tags:
     - build

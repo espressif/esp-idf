@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct interrupt_dev_s {
 } interrupt_dev_t;
 extern interrupt_dev_t INTERRUPT;
 #ifdef __cplusplus

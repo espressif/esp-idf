@@ -4,7 +4,7 @@ Dedicated GPIO
 Overview
 --------
 
-The dedicated GPIO is designed for CPU interaction with GPIO matrix and IO MUX. Any GPIO that is configured as "dedicated" can be access by CPU instructions directly, which makes it easy to achieve a high GPIO flip speed, and simulate serial/parallel interface in a bit-banging way.
+The dedicated GPIO is designed for CPU interaction with GPIO matrix and IO MUX. Any GPIO that is configured as "dedicated" can be access by CPU instructions directly, which makes it easy to achieve a high GPIO flip speed, and simulate serial/parallel interface in a bit-banging way. As toggling a GPIO in this "CPU Dedicated" way costs few overhead, it would be great for cases like performance measurement using an oscilloscope.
 
 
 Create/Destroy GPIO Bundle
@@ -75,7 +75,7 @@ GPIO Bundle Operations
 .. note::
     The functions above just wrap the customized instructions defined for {IDF_TARGET_NAME}, for the details of those instructions, please refer to *{IDF_TARGET_NAME} Technical Reference Manual* > *IO MUX and GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__].
 
-.. only:: esp32s2
+.. only:: SOC_DEDIC_GPIO_HAS_INTERRUPT
 
     Interrupt Handling
     ------------------
@@ -112,11 +112,21 @@ For advanced users, they can always manipulate the GPIOs by writing assembly cod
 1. Allocate a GPIO bundle: :cpp:func:`dedic_gpio_new_bundle`
 2. Query the mask occupied by that bundle: :cpp:func:`dedic_gpio_get_out_mask` or/and :cpp:func:`dedic_gpio_get_in_mask`
 3. Call CPU LL apis (e.g. `cpu_ll_write_dedic_gpio_mask`) or write assembly code with that mask
+4. The fasted way of toggling IO is to use the dedicated "set/clear" instructions:
 
-For details of supported dedicated GPIO instructions, please refer to *{IDF_TARGET_NAME} Technical Reference Manual* > *IO MUX and GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__].
++----------+---------------------------+---------------------------+------------------------------------------------------------------------+
+| CPU Arch | Set bits of GPIO          | Clear bits of GPIO        | Remarks                                                                |
++==========+===========================+===========================+========================================================================+
+| Xtensa   | set_bit_gpio_out imm[7:0] | clr_bit_gpio_out imm[7:0] | immediate value width depends on the number of dedicated GPIO channels |
++----------+---------------------------+---------------------------+------------------------------------------------------------------------+
+| RISC-V   | csrrsi rd, csr, imm[4:0]  | csrrci rd, csr, imm[4:0]  | can only control the lowest 4 GPIO channels                            |
++----------+---------------------------+---------------------------+------------------------------------------------------------------------+
+
+
+For details of supported dedicated GPIO instructions, please refer to *{IDF_TARGET_NAME} Technical Reference Manual* > *IO MUX and GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__]. The supported dedicated CPU instructions are also wrapped inside `soc/cpu_ll.h` as helper inline functions.
 
 .. note::
-    Writing assembly code in application could make your code hard to port between targets, because those customized instructions are not guaranteed to remain the same format in different targets.
+    Writing assembly code in application could make your code hard to port between targets, because those customized instructions are not guaranteed to remain the same format on different targets.
 
 
 Application Example

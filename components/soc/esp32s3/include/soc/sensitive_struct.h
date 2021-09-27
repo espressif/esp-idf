@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct sensitive_dev_s {
     union {
         struct {
             uint32_t cache_dataarray_connect_lock  :    1;

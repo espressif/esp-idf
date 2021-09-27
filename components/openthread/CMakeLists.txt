@@ -1,50 +1,9 @@
 if(CONFIG_OPENTHREAD_ENABLED)
-    set(public_include_dirs
-        "include"
-        "openthread/include")
-
-    set(private_include_dirs
-        "openthread/src"
-        "openthread/src/core"
-        "openthread/src/lib/hdlc"
-        "openthread/src/lib/spinel"
-        "openthread/src/ncp"
-        "openthread/examples/platforms/")
-
-    set(src_dirs
-        "openthread/examples/apps/cli"
-        "openthread/examples/platforms/utils"
-        "openthread/src/cli"
-        "openthread/src/core/api"
-        "openthread/src/core/backbone_router"
-        "openthread/src/core/coap"
-        "openthread/src/core/common"
-        "openthread/src/core/crypto"
-        "openthread/src/core/diags"
-        "openthread/src/core/mac"
-        "openthread/src/core/meshcop"
-        "openthread/src/core/net"
-        "openthread/src/core/radio"
-        "openthread/src/core/thread"
-        "openthread/src/core/utils"
-        "openthread/src/lib/platform"
-        "openthread/src/lib/hdlc"
-        "openthread/src/lib/spinel")
-
-    if(CONFIG_OPENTHREAD_BORDER_ROUTER)
-        list(APPEND src_dirs
-            "openthread/src/core/border_router")
+    if(CONFIG_OPENTHREAD_FTD)
+        include(ftd.cmake)
+    else()
+        include(radio.cmake)
     endif()
-
-    set(exclude_srcs
-        "openthread/examples/apps/cli/main.c"
-        "openthread/examples/platforms/utils/logging_rtt.c"
-        "openthread/examples/platforms/utils/soft_source_match_table.c"
-        "openthread/src/core/common/extension_example.cpp")
-
-    set_source_files_properties("openthread/src/core/net/srp_server.cpp"
-        PROPERTIES COMPILE_FLAGS
-        -Wno-maybe-uninitialized)
 
     if(CONFIG_OPENTHREAD_FTD)
         set(device_type "OPENTHREAD_FTD=1")
@@ -75,13 +34,19 @@ idf_component_register(SRC_DIRS "${src_dirs}"
                        REQUIRES mbedtls ieee802154)
 
 if(CONFIG_OPENTHREAD_ENABLED)
+    if(CONFIG_OPENTHREAD_RADIO)
+        set(CONFIG_FILE_TYPE "radio")
+    else()
+        set(CONFIG_FILE_TYPE "ftd")
+    endif()
+
     target_compile_definitions(
         ${COMPONENT_LIB}
         PUBLIC
-            "OPENTHREAD_CONFIG_FILE=\"openthread-core-esp32x-config.h\""
+        "OPENTHREAD_CONFIG_FILE=\"openthread-core-esp32x-${CONFIG_FILE_TYPE}-config.h\""
             "${device_type}"
         PRIVATE
-            "PACKAGE_VERSION=\"${IDF_VERSION_FOR_OPENTHREAD_PACKAGE}-${OPENTHREAD_VERSION}\"")
+        "PACKAGE_VERSION=\"${IDF_VERSION_FOR_OPENTHREAD_PACKAGE}-${OPENTHREAD_VERSION}\"")
 
     if(CONFIG_OPENTHREAD_ESP_LIB_FROM_INTERNAL_SRC)
         idf_component_get_property(openthread_port_lib openthread_port COMPONENT_LIB)

@@ -1908,7 +1908,7 @@ extern "C" {
 #define EFUSE_DIS_DOWNLOAD_MODE_ERR_V  0x1
 #define EFUSE_DIS_DOWNLOAD_MODE_ERR_S  0
 
-#define EFUSE_RD_REPEAT_ERR4_REG          (DR_REG_EFUSE_BASE + 0x190)
+#define EFUSE_RD_REPEAT_ERR4_REG          (DR_REG_EFUSE_BASE + 0x18C)
 /* EFUSE_RPT1_RESERVED0_ERR : RO ;bitpos:[31:24] ;default: 8'h0 ; */
 /*description: Reserved.*/
 #define EFUSE_RPT1_RESERVED0_ERR  0x000000FF

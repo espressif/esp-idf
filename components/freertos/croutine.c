@@ -1,5 +1,5 @@
 /*
- * FreeRTOS Kernel V10.2.1
+ * FreeRTOS Kernel V10.4.3
  * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -281,31 +281,36 @@
 
     void vCoRoutineSchedule( void )
     {
-        /* See if any co-routines readied by events need moving to the ready lists. */
-        prvCheckPendingReadyList();
-
-        /* See if any delayed co-routines have timed out. */
-        prvCheckDelayedList();
-
-        /* Find the highest priority queue that contains ready co-routines. */
-        while( listLIST_IS_EMPTY( &( pxReadyCoRoutineLists[ uxTopCoRoutineReadyPriority ] ) ) )
+        /* Only run a co-routine after prvInitialiseCoRoutineLists() has been
+         * called.  prvInitialiseCoRoutineLists() is called automatically when a
+         * co-routine is created. */
+        if( pxDelayedCoRoutineList != NULL )
         {
-            if( uxTopCoRoutineReadyPriority == 0 )
+            /* See if any co-routines readied by events need moving to the ready lists. */
+            prvCheckPendingReadyList();
+
+            /* See if any delayed co-routines have timed out. */
+            prvCheckDelayedList();
+
+            /* Find the highest priority queue that contains ready co-routines. */
+            while( listLIST_IS_EMPTY( &( pxReadyCoRoutineLists[ uxTopCoRoutineReadyPriority ] ) ) )
             {
-                /* No more co-routines to check. */
-                return;
+                if( uxTopCoRoutineReadyPriority == 0 )
+                {
+                    /* No more co-routines to check. */
+                    return;
+                }
+
+                --uxTopCoRoutineReadyPriority;
             }
-            --uxTopCoRoutineReadyPriority;
+
+            /* listGET_OWNER_OF_NEXT_ENTRY walks through the list, so the co-routines
+             * of the same priority get an equal share of the processor time. */
+            listGET_OWNER_OF_NEXT_ENTRY( pxCurrentCoRoutine, &( pxReadyCoRoutineLists[ uxTopCoRoutineReadyPriority ] ) );
+
+            /* Call the co-routine. */
+            ( pxCurrentCoRoutine->pxCoRoutineFunction )( pxCurrentCoRoutine, pxCurrentCoRoutine->uxIndex );
         }
-
-        /* listGET_OWNER_OF_NEXT_ENTRY walks through the list, so the co-routines
-         * of the same priority get an equal share of the processor time. */
-        listGET_OWNER_OF_NEXT_ENTRY( pxCurrentCoRoutine, &( pxReadyCoRoutineLists[ uxTopCoRoutineReadyPriority ] ) );
-
-        /* Call the co-routine. */
-        ( pxCurrentCoRoutine->pxCoRoutineFunction )( pxCurrentCoRoutine, pxCurrentCoRoutine->uxIndex );
-
-        return;
     }
 /*-----------------------------------------------------------*/
 

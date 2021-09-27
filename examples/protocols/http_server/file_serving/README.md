@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- |
+
 # Simple HTTP File Server Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -49,3 +52,22 @@ File server implementation can be found under `main/file_server.c` which uses SP
 ## Note
 
 Browsers often send large header fields when an HTML form is submit. Therefore, for the purpose of this example, `HTTPD_MAX_REQ_HDR_LEN` has been increased to 1024 in `sdkconfig.defaults`. User can adjust this value as per their requirement, keeping in mind the memory constraint of the hardware in use.
+
+## Example Output
+
+```
+I (5583) example_connect: Got IPv6 event: Interface "example_connect: sta" address: fe80:0000:0000:0000:266f:28ff:fe80:2c74, type: ESP_IP6_ADDR_IS_LINK_LOCAL
+I (5583) example_connect: Connected to example_connect: sta
+I (5593) example_connect: - IPv4 address: 192.168.194.219
+I (5593) example_connect: - IPv6 address: fe80:0000:0000:0000:266f:28ff:fe80:2c74, type: ESP_IP6_ADDR_IS_LINK_LOCAL
+I (5603) example: Initializing SPIFFS
+I (5723) example: Partition size: total: 896321, used: 0
+I (5723) file_server: Starting HTTP Server on port: '80'
+I (28933) file_server: Receiving file : /test.html...
+I (28933) file_server: Remaining size : 574
+I (28943) file_server: File reception complete
+I (28993) file_server: Found file : test.html (574 bytes)
+I (35943) file_server: Sending file : /test.html (574 bytes)...
+I (35953) file_server: File sending complete
+I (45363) file_server: Deleting file : /test.html
+```

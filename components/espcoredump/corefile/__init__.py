@@ -29,7 +29,7 @@ except ImportError:
     pass
 
 IDF_PATH = os.path.normpath(os.getenv('IDF_PATH', '.'))
-XTENSA_TARGETS = ['esp32', 'esp32s2']
+XTENSA_TARGETS = ['esp32', 'esp32s2', 'esp32s3']
 RISCV_TARGETS = ['esp32c3']
 SUPPORTED_TARGETS = XTENSA_TARGETS + RISCV_TARGETS
 

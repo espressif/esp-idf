@@ -118,6 +118,11 @@ Overview
          - 
          - 
          -
+
+       * - GPIO20
+         - 
+         -
+         - This pin is only available on ESP32-PICO-V3 chip package
        
        * - GPIO21
          - 

@@ -195,6 +195,11 @@ static esp_err_t dm9051_reset_hw(esp_eth_phy_t *phy)
     return ESP_OK;
 }
 
+/**
+ * @note This function is responsible for restarting a new auto-negotiation,
+ *       the result of negotiation won't be relected to uppler layers.
+ *       Instead, the negotiation result is fetched by linker timer, see `dm9051_get_link()`
+ */
 static esp_err_t dm9051_negotiate(esp_eth_phy_t *phy)
 {
     esp_err_t ret = ESP_OK;
@@ -222,7 +227,7 @@ static esp_err_t dm9051_negotiate(esp_eth_phy_t *phy)
             break;
         }
     }
-    if (to >= dm9051->autonego_timeout_ms / 100) {
+    if ((to >= dm9051->autonego_timeout_ms / 100) && (dm9051->link_status == ETH_LINK_UP)) {
         ESP_LOGW(TAG, "Ethernet PHY auto negotiation timeout");
     }
     return ESP_OK;
@@ -311,6 +316,25 @@ err:
     return ret;
 }
 
+static esp_err_t dm9051_loopback(esp_eth_phy_t *phy, bool enable)
+{
+    esp_err_t ret = ESP_OK;
+    phy_dm9051_t *dm9051 = __containerof(phy, phy_dm9051_t, parent);
+    esp_eth_mediator_t *eth = dm9051->eth;
+    /* Set Loopback function */
+    bmcr_reg_t bmcr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, dm9051->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+    if (enable) {
+        bmcr.en_loopback = 1;
+    } else {
+        bmcr.en_loopback = 0;
+    }
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, dm9051->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+    return ESP_OK;
+err:
+    return ret;
+}
+
 static esp_err_t dm9051_init(esp_eth_phy_t *phy)
 {
     esp_err_t ret = ESP_OK;
@@ -367,6 +391,7 @@ esp_eth_phy_t *esp_eth_phy_new_dm9051(const eth_phy_config_t *config)
     dm9051->parent.get_addr = dm9051_get_addr;
     dm9051->parent.set_addr = dm9051_set_addr;
     dm9051->parent.advertise_pause_ability = dm9051_advertise_pause_ability;
+    dm9051->parent.loopback = dm9051_loopback;
     dm9051->parent.del = dm9051_del;
     return &(dm9051->parent);
 err:

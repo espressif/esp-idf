@@ -77,6 +77,14 @@ menu "OpenThread"
             Select this option to enable Joiner in OpenThread. This allows a device to join the Thread network with a
             pre-shared key using the Thread commissioning protocol.
 
+    config OPENTHREAD_SRP_CLIENT
+        bool "Enable SRP Client"
+        depends on OPENTHREAD_ENABLED
+        default n
+        help
+            Select this option to enable SRP Client in OpenThread. This allows a device to register SRP services to SRP
+            Server.
+
     config OPENTHREAD_BORDER_ROUTER
         bool "Enable Border Router"
         depends on OPENTHREAD_ENABLED
@@ -90,5 +98,11 @@ menu "OpenThread"
         default n
         help
             Override the shipped libopenthread_br.a and libopenthread_port.a, for internal builds.
+
+    config OPENTHREAD_NUM_MESSAGE_BUFFERS
+        int "The number of openthread message buffers"
+        depends on OPENTHREAD_ENABLED
+        default 65
+        range 50 100
 
 endmenu

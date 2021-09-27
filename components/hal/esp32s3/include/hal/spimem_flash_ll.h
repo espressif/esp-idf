@@ -28,6 +28,7 @@
 #include <string.h>
 
 #include "soc/spi_periph.h"
+#include "soc/spi_mem_struct.h"
 #include "hal/spi_types.h"
 #include "hal/spi_flash_types.h"
 
@@ -157,7 +158,7 @@ static inline void spimem_flash_ll_auto_resume_init(spi_mem_dev_t *dev, bool aut
  */
 static inline void spimem_flash_ll_suspend_cmd_setup(spi_mem_dev_t *dev, uint32_t sus_cmd)
 {
-    dev->flash_sus_ctrl.flash_pes_command = sus_cmd;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->flash_sus_ctrl, flash_pes_command, sus_cmd);
 }
 
 /**
@@ -169,7 +170,7 @@ static inline void spimem_flash_ll_suspend_cmd_setup(spi_mem_dev_t *dev, uint32_
  */
 static inline void spimem_flash_ll_resume_cmd_setup(spi_mem_dev_t *dev, uint32_t res_cmd)
 {
-    dev->flash_sus_ctrl.flash_per_command = res_cmd;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->flash_sus_ctrl, flash_per_command, res_cmd);
 }
 
 /**
@@ -226,7 +227,7 @@ static inline void spimem_flash_ll_set_read_sus_status(spi_mem_dev_t *dev, uint3
  */
 static inline void spimem_flash_ll_auto_wait_idle_init(spi_mem_dev_t *dev, bool auto_waiti)
 {
-    dev->flash_waiti_ctrl.waiti_cmd = 0x05; // Set the command to send, to fetch flash status reg value.
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->flash_waiti_ctrl, waiti_cmd, 0x05); // Set the command to send, to fetch flash status reg value.
     dev->flash_waiti_ctrl.waiti_en = auto_waiti;  // enable auto wait-idle function.
 }
 
@@ -381,7 +382,8 @@ static inline void spimem_flash_ll_set_cs_pin(spi_mem_dev_t *dev, int pin)
 static inline void spimem_flash_ll_set_read_mode(spi_mem_dev_t *dev, esp_flash_io_mode_t read_mode)
 {
     typeof (dev->ctrl) ctrl = dev->ctrl;
-    ctrl.val &= ~(SPI_MEM_FREAD_QIO_M | SPI_MEM_FREAD_QUAD_M | SPI_MEM_FREAD_DIO_M | SPI_MEM_FREAD_DUAL_M);
+    ctrl.val &= ~(SPI_MEM_FREAD_QIO_M | SPI_MEM_FREAD_QUAD_M | SPI_MEM_FREAD_DIO_M | SPI_MEM_FREAD_DUAL_M | SPI_MEM_FCMD_OCT | SPI_MEM_FADDR_OCT | SPI_MEM_FDIN_OCT | SPI_MEM_FDOUT_OCT);
+    dev->ddr.fmem_ddr_en = 0;
     ctrl.val |= SPI_MEM_FASTRD_MODE_M;
     switch (read_mode) {
     case SPI_FLASH_FASTRD:
@@ -401,6 +403,19 @@ static inline void spimem_flash_ll_set_read_mode(spi_mem_dev_t *dev, esp_flash_i
         break;
     case SPI_FLASH_SLOWRD:
         ctrl.fastrd_mode = 0;
+        break;
+    case SPI_FLASH_OPI_STR:
+        ctrl.faddr_oct = 1;
+        ctrl.fcmd_oct = 1;
+        ctrl.fdin_oct = 1;
+        ctrl.fdout_oct = 1;
+        break;
+    case SPI_FLASH_OPI_DTR:
+        ctrl.faddr_oct = 1;
+        ctrl.fcmd_oct = 1;
+        ctrl.fdin_oct = 1;
+        ctrl.fdout_oct = 1;
+        dev->ddr.fmem_ddr_en = 1;
         break;
     default:
         abort();
@@ -543,6 +558,11 @@ static inline void spimem_flash_ll_set_cs_setup(spi_mem_dev_t *dev, uint32_t cs_
 {
     dev->user.cs_setup = (cs_setup_time > 0 ? 1 : 0);
     dev->ctrl2.cs_setup_time = cs_setup_time - 1;
+}
+
+static inline void spimem_flash_ll_set_extra_dummy(spi_mem_dev_t *dev, uint32_t extra_dummy)
+{
+    dev->timing_cali.extra_dummy_cyclelen = extra_dummy;
 }
 
 #ifdef __cplusplus

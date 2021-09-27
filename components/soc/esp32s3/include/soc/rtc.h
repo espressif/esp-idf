@@ -92,7 +92,7 @@ extern "C" {
  * 1. running at 240 MHz
  * 2. running with 80MHz Flash frequency
  */
-#ifdef CONFIG_ESPTOOLPY_FLASHFREQ_80M
+#if CONFIG_ESPTOOLPY_FLASHFREQ_80M || CONFIG_ESPTOOLPY_FLASHFREQ_120M
 #define DIG_DBIAS_80M_160M  RTC_CNTL_DBIAS_1V25
 #else
 #define DIG_DBIAS_80M_160M  RTC_CNTL_DBIAS_1V10
@@ -202,7 +202,8 @@ typedef enum {
 typedef enum {
     RTC_CAL_RTC_MUX = 0,       //!< Currently selected RTC SLOW_CLK
     RTC_CAL_8MD256 = 1,        //!< Internal 8 MHz RC oscillator, divided by 256
-    RTC_CAL_32K_XTAL = 2       //!< External 32 kHz XTAL
+    RTC_CAL_32K_XTAL = 2,      //!< External 32 kHz XTAL
+    RTC_CAL_INTERNAL_OSC = 3   //!< Internal 150 kHz oscillator
 } rtc_cal_sel_t;
 
 /**
