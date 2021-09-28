@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -1000,8 +992,14 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
 
         TickType_t ticks_to_wait = portMAX_DELAY;
         if (timeout) {
-            uint32_t timeout_ms = timeout->tv_sec * 1000 + timeout->tv_usec / 1000;
-            ticks_to_wait = timeout_ms / portTICK_PERIOD_MS;
+            uint32_t timeout_ms = (timeout->tv_sec * 1000) + (timeout->tv_usec / 1000);
+            /* Round up the number of ticks.
+             * Not only we need to round up the number of ticks, but we also need to add 1.
+             * Indeed, `select` function shall wait for AT LEAST timeout, but on FreeRTOS,
+             * if we specify a timeout of 1 tick to `xSemaphoreTake`, it will take AT MOST
+             * 1 tick before triggering a timeout. Thus, we need to pass 2 ticks as a timeout
+             * to `xSemaphoreTake`. */
+            ticks_to_wait = ((timeout_ms + portTICK_PERIOD_MS - 1) / portTICK_PERIOD_MS) + 1;
             ESP_LOGD(TAG, "timeout is %dms", timeout_ms);
         }
         ESP_LOGD(TAG, "waiting without calling socket_select");
