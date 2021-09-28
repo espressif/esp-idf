@@ -100,6 +100,8 @@ void i2s_hal_tx_set_pdm_mode_default(i2s_hal_context_t *hal, uint32_t sample_rat
     i2s_ll_tx_enable_clock(hal->dev);
     i2s_ll_tx_clk_set_src(hal->dev, I2S_CLK_D2CLK); // Set I2S_CLK_D2CLK as default
     i2s_ll_mclk_use_tx_clk(hal->dev);
+    /* Still need to enable the first 2 TDM channel mask to get the correct number of frame */
+    i2s_ll_tx_set_active_chan_mask(hal->dev, I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1);
 #else
     i2s_ll_tx_force_enable_fifo_mod(hal->dev, true);
 #endif
@@ -146,6 +148,8 @@ void i2s_hal_rx_set_pdm_mode_default(i2s_hal_context_t *hal)
     i2s_ll_rx_enable_clock(hal->dev);
     i2s_ll_rx_clk_set_src(hal->dev, I2S_CLK_D2CLK); // Set I2S_CLK_D2CLK as default
     i2s_ll_mclk_use_rx_clk(hal->dev);
+    /* Still need to enable the first 2 TDM channel mask to get the correct number of frame */
+    i2s_ll_rx_set_active_chan_mask(hal->dev, I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1);
 #else
     i2s_ll_rx_force_enable_fifo_mod(hal->dev, true);
 #endif
@@ -326,4 +330,36 @@ void i2s_hal_config_param(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cf
             i2s_hal_enable_slave_fd_mode(hal);
         }
     }
+}
+
+void i2s_hal_start_tx(i2s_hal_context_t *hal)
+{
+#if SOC_I2S_SUPPORTS_TDM
+    i2s_ll_tx_enable_clock(hal->dev);
+#endif
+    i2s_ll_tx_start(hal->dev);
+}
+
+void i2s_hal_start_rx(i2s_hal_context_t *hal)
+{
+#if SOC_I2S_SUPPORTS_TDM
+    i2s_ll_rx_enable_clock(hal->dev);
+#endif
+    i2s_ll_rx_start(hal->dev);
+}
+
+void i2s_hal_stop_tx(i2s_hal_context_t *hal)
+{
+    i2s_ll_tx_stop(hal->dev);
+#if SOC_I2S_SUPPORTS_TDM
+    i2s_ll_tx_disable_clock(hal->dev);
+#endif
+}
+
+void i2s_hal_stop_rx(i2s_hal_context_t *hal)
+{
+    i2s_ll_rx_stop(hal->dev);
+#if SOC_I2S_SUPPORTS_TDM
+    i2s_ll_rx_disable_clock(hal->dev);
+#endif
 }

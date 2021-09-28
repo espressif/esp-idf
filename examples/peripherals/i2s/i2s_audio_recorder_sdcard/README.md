@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 |
-| ----------------- | ----- |
+| Supported Targets | ESP32 | ESP32S3 |
+| ----------------- | ----- | ------- |
 
 # I2S Digital Microphone Recording Example
 
@@ -18,7 +18,7 @@ The audio is recorded into the SDCard using WAVE file format.
 
 ### Hardware Required
 
-* A development board with ESP32 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
+* A development board with ESP32 or ESP32S3 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
 * A USB cable for power supply and programming
 * A digital microphone (SPK0838HT4H PDM output was used in this example)
 
@@ -28,17 +28,17 @@ The default GPIO configuration is the following:
 
 |Mic        | GPIO   |
 |:---------:|:------:|
-| PDM Clock | GPIO22 |
-| PDM Data  | GPIO23 |
+| PDM Clock | GPIO4 |
+| PDM Data  | GPIO5 |
 
 The SDCard is connected using SPI peripheral.
 
 | SPI  | SDCard |  GPIO  |
 |:----:|:------:|:------:|
-| MISO | DAT0   | GPIO2  |
-| MOSI | CMD    | GPIO15 |
-| SCLK | CLK    | GPIO14 |
-| CS   | CD     | GPIO13 |
+| MISO | DAT0   | GPIO17 |
+| MOSI | CMD    | GPIO16 |
+| SCLK | CLK    | GPIO18 |
+| CS   | CD     | GPIO19 |
 
 To change the GPIO configuration, see the `Example Configuration` from the menuconfig.
 
