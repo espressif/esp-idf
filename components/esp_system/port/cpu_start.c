@@ -86,8 +86,6 @@
 
 #if CONFIG_APP_BUILD_TYPE_ELF_RAM
 #include "esp_rom_spiflash.h"
-#elif CONFIG_IDF_TARGET_ESP8684
-#include "esp8684/rom/spi_flash.h"
 #endif // CONFIG_APP_BUILD_TYPE_ELF_RAM
 
 // Set efuse ROM_LOG_MODE on first boot

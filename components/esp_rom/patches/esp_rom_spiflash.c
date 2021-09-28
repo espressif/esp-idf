@@ -3,18 +3,19 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #include "sdkconfig.h"
-#include "esp32/rom/spi_flash.h"
+#include "esp_rom_spiflash.h"
 #include "soc/spi_periph.h"
-#include "spi_flash_defs.h"
 #include "esp_rom_spiflash.h"
 
-
 #define SPI_IDX   1
-#define OTH_IDX   0
-
 
 extern esp_rom_spiflash_chip_t g_rom_spiflash_chip;
+
+#if CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
+
+#if CONFIG_IDF_TARGET_ESP32
 
 static inline bool is_issi_chip(const esp_rom_spiflash_chip_t* chip)
 {
@@ -24,25 +25,17 @@ static inline bool is_issi_chip(const esp_rom_spiflash_chip_t* chip)
 esp_rom_spiflash_result_t esp_rom_spiflash_wait_idle(esp_rom_spiflash_chip_t *spi)
 {
     uint32_t status;
-#if CONFIG_IDF_TARGET_ESP32
     //wait for spi control ready
     while ((REG_READ(SPI_EXT2_REG(1)) & SPI_ST)) {
     }
     while ((REG_READ(SPI_EXT2_REG(0)) & SPI_ST)) {
     }
-#elif CONFIG_IDF_TARGET_ESP32S2
-    while ((REG_READ(SPI_MEM_FSM_REG(1)) & SPI_MEM_ST)) {
-    }
-    while ((REG_READ(SPI_MEM_FSM_REG(0)) & SPI_MEM_ST)) {
-    }
-#endif
     //wait for flash status ready
     if ( ESP_ROM_SPIFLASH_RESULT_OK != esp_rom_spiflash_read_status(spi, &status)) {
         return ESP_ROM_SPIFLASH_RESULT_ERR;
     }
     return  ESP_ROM_SPIFLASH_RESULT_OK;
 }
-
 
 /* Modified version of esp_rom_spiflash_unlock() that replaces version in ROM.
 
@@ -104,10 +97,6 @@ __attribute__((__unused__)) esp_rom_spiflash_result_t esp_rom_spiflash_unlock(vo
     return ret;
 }
 
-#if CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
-
-extern uint8_t g_rom_spiflash_dummy_len_plus[];
-
 
 static esp_rom_spiflash_result_t esp_rom_spiflash_enable_write(esp_rom_spiflash_chip_t *spi);
 
@@ -118,7 +107,8 @@ static esp_rom_spiflash_result_t esp_rom_spiflash_erase_chip_internal(esp_rom_sp
 
     // Chip erase.
     WRITE_PERI_REG(PERIPHS_SPI_FLASH_CMD, SPI_FLASH_CE);
-    while (READ_PERI_REG(PERIPHS_SPI_FLASH_CMD) != 0);
+    while (READ_PERI_REG(PERIPHS_SPI_FLASH_CMD) != 0) {
+    }
 
     // check erase is finished.
     esp_rom_spiflash_wait_idle(spi);
@@ -139,7 +129,8 @@ static esp_rom_spiflash_result_t esp_rom_spiflash_erase_sector_internal(esp_rom_
     // sector erase  4Kbytes erase is sector erase.
     WRITE_PERI_REG(PERIPHS_SPI_FLASH_ADDR, addr & 0xffffff);
     WRITE_PERI_REG(PERIPHS_SPI_FLASH_CMD, SPI_FLASH_SE);
-    while (READ_PERI_REG(PERIPHS_SPI_FLASH_CMD) != 0);
+    while (READ_PERI_REG(PERIPHS_SPI_FLASH_CMD) != 0) {
+    }
 
     esp_rom_spiflash_wait_idle(spi);
 
@@ -154,7 +145,8 @@ static esp_rom_spiflash_result_t esp_rom_spiflash_erase_block_internal(esp_rom_s
     // sector erase  4Kbytes erase is sector erase.
     WRITE_PERI_REG(PERIPHS_SPI_FLASH_ADDR, addr & 0xffffff);
     WRITE_PERI_REG(PERIPHS_SPI_FLASH_CMD, SPI_FLASH_BE);
-    while (READ_PERI_REG(PERIPHS_SPI_FLASH_CMD) != 0);
+    while (READ_PERI_REG(PERIPHS_SPI_FLASH_CMD) != 0) {
+    }
 
     esp_rom_spiflash_wait_idle(spi);
 
@@ -208,7 +200,8 @@ static esp_rom_spiflash_result_t esp_rom_spiflash_program_page_internal(esp_rom_
             temp_bl = 0;
         }
         WRITE_PERI_REG(PERIPHS_SPI_FLASH_CMD, SPI_FLASH_PP);
-        while ( READ_PERI_REG(PERIPHS_SPI_FLASH_CMD ) != 0 );
+        while ( READ_PERI_REG(PERIPHS_SPI_FLASH_CMD ) != 0 ) {
+        }
 
         esp_rom_spiflash_wait_idle(spi);
     }
@@ -224,7 +217,8 @@ esp_rom_spiflash_result_t esp_rom_spiflash_read_status(esp_rom_spiflash_chip_t *
         while (ESP_ROM_SPIFLASH_BUSY_FLAG == (status_value & ESP_ROM_SPIFLASH_BUSY_FLAG)) {
             WRITE_PERI_REG(PERIPHS_SPI_FLASH_STATUS, 0);       // clear regisrter
             WRITE_PERI_REG(PERIPHS_SPI_FLASH_CMD, SPI_FLASH_RDSR);
-            while (READ_PERI_REG(PERIPHS_SPI_FLASH_CMD) != 0);
+            while (READ_PERI_REG(PERIPHS_SPI_FLASH_CMD) != 0) {
+            }
 
             status_value = READ_PERI_REG(PERIPHS_SPI_FLASH_STATUS) & (spi->status_mask);
         }
@@ -254,7 +248,8 @@ esp_rom_spiflash_result_t esp_rom_spiflash_write_status(esp_rom_spiflash_chip_t 
     // update status value by status_value
     WRITE_PERI_REG(PERIPHS_SPI_FLASH_STATUS, status_value);    // write status regisrter
     WRITE_PERI_REG(PERIPHS_SPI_FLASH_CMD, SPI_FLASH_WRSR);
-    while (READ_PERI_REG(PERIPHS_SPI_FLASH_CMD) != 0);
+    while (READ_PERI_REG(PERIPHS_SPI_FLASH_CMD) != 0) {
+    }
     esp_rom_spiflash_wait_idle(spi);
 
     return ESP_ROM_SPIFLASH_RESULT_OK;
@@ -285,7 +280,8 @@ static esp_rom_spiflash_result_t esp_rom_spiflash_read_data(esp_rom_spiflash_chi
             REG_WRITE(SPI_MISO_DLEN_REG(1),  ((ESP_ROM_SPIFLASH_BUFF_BYTE_READ_NUM << 3) - 1) << SPI_USR_MISO_DBITLEN_S);
             WRITE_PERI_REG(PERIPHS_SPI_FLASH_ADDR, temp_addr << 8);
             REG_WRITE(PERIPHS_SPI_FLASH_CMD, SPI_USR);
-            while (REG_READ(PERIPHS_SPI_FLASH_CMD) != 0);
+            while (REG_READ(PERIPHS_SPI_FLASH_CMD) != 0) {
+            }
 
             for (i = 0; i < (ESP_ROM_SPIFLASH_BUFF_BYTE_READ_NUM >> 2); i++) {
                 *addr_dest++ = READ_PERI_REG(PERIPHS_SPI_FLASH_C0 + i * 4);
@@ -297,7 +293,8 @@ static esp_rom_spiflash_result_t esp_rom_spiflash_read_data(esp_rom_spiflash_chi
             WRITE_PERI_REG(PERIPHS_SPI_FLASH_ADDR, temp_addr << 8);
             REG_WRITE(SPI_MISO_DLEN_REG(1),  ((ESP_ROM_SPIFLASH_BUFF_BYTE_READ_NUM << 3) - 1) << SPI_USR_MISO_DBITLEN_S);
             REG_WRITE(PERIPHS_SPI_FLASH_CMD, SPI_USR);
-            while (REG_READ(PERIPHS_SPI_FLASH_CMD) != 0);
+            while (REG_READ(PERIPHS_SPI_FLASH_CMD) != 0) {
+            };
 
             remain_word_num = (0 == (temp_length & 0x3)) ? (temp_length >> 2) : (temp_length >> 2) + 1;
             for (i = 0; i < remain_word_num; i++) {
@@ -318,7 +315,8 @@ static esp_rom_spiflash_result_t esp_rom_spiflash_enable_write(esp_rom_spiflash_
 
     //enable write
     WRITE_PERI_REG(PERIPHS_SPI_FLASH_CMD, SPI_FLASH_WREN);     // enable write operation
-    while (READ_PERI_REG(PERIPHS_SPI_FLASH_CMD) != 0);
+    while (READ_PERI_REG(PERIPHS_SPI_FLASH_CMD) != 0) {
+    }
 
     // make sure the flash is ready for writing
     while (ESP_ROM_SPIFLASH_WRENABLE_FLAG != (flash_status & ESP_ROM_SPIFLASH_WRENABLE_FLAG)) {
@@ -476,8 +474,9 @@ esp_rom_spiflash_result_t esp_rom_spiflash_erase_sector(uint32_t sector_num)
 esp_rom_spiflash_result_t esp_rom_spiflash_write(uint32_t target, const uint32_t *src_addr, int32_t len)
 {
     uint32_t  page_size;
-    uint32_t  pgm_len, pgm_num;
-    uint8_t    i;
+    uint32_t  pgm_len;
+    uint32_t  pgm_num;
+    uint32_t    i;
 
     // flash write is always 1 line currently
     REG_CLR_BIT(PERIPHS_SPI_FLASH_USRREG, SPI_USR_DUMMY);
@@ -679,8 +678,21 @@ esp_rom_spiflash_result_t esp_rom_spiflash_erase_area(uint32_t start_addr, uint3
 esp_rom_spiflash_result_t esp_rom_spiflash_write_disable(void)
 {
     REG_WRITE(SPI_CMD_REG(SPI_IDX), SPI_FLASH_WRDI);
-    while (READ_PERI_REG(PERIPHS_SPI_FLASH_CMD) != 0);
+    while (READ_PERI_REG(PERIPHS_SPI_FLASH_CMD) != 0) {
+    }
     return ESP_ROM_SPIFLASH_RESULT_OK;
 }
 
-#endif
+#elif CONFIG_IDF_TARGET_ESP32S2
+
+esp_rom_spiflash_result_t esp_rom_spiflash_write_disable(void)
+{
+    REG_WRITE(SPI_MEM_CMD_REG(SPI_IDX), SPI_MEM_FLASH_WRDI);
+    while (READ_PERI_REG(PERIPHS_SPI_FLASH_CMD) != 0) {
+    }
+    return ESP_ROM_SPIFLASH_RESULT_OK;
+}
+
+#endif // IDF_TARGET
+
+#endif // CONFIG_SPI_FLASH_ROM_DRIVER_PATCH

@@ -52,7 +52,6 @@
 #include "soc/mmu.h"
 #elif CONFIG_IDF_TARGET_ESP8684
 #include "esp8684/rom/cache.h"
-#include "esp8684/rom/spi_flash.h"
 #include "soc/cache_memory.h"
 #include "soc/mmu.h"
 #endif

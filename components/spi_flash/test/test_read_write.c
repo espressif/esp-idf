@@ -18,10 +18,6 @@
 #include "../cache_utils.h"
 #include "soc/timer_periph.h"
 #include "esp_heap_caps.h"
-
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/spi_flash.h"
-#endif
 #include "esp_rom_spiflash.h"
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)

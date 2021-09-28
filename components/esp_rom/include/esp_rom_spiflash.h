@@ -11,8 +11,23 @@
 extern "C" {
 #endif
 
+#include "sdkconfig.h"
 #include <stdint.h>
 #include <stdbool.h>
+
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP8684
+#include "esp32h2/rom/spi_flash.h"
+#endif
 
 /** \defgroup spi_flash_apis, spi flash operation related apis
   * @brief spi_flash apis
@@ -35,12 +50,6 @@ typedef enum {
     ESP_ROM_SPIFLASH_OIO_STR_MODE,
     ESP_ROM_SPIFLASH_OIO_DTR_MODE,
 } esp_rom_spiflash_read_mode_t;
-
-typedef enum {
-    ESP_ROM_SPIFLASH_RESULT_OK,
-    ESP_ROM_SPIFLASH_RESULT_ERR,
-    ESP_ROM_SPIFLASH_RESULT_TIMEOUT
-} esp_rom_spiflash_result_t;
 
 typedef struct {
     uint32_t device_id;

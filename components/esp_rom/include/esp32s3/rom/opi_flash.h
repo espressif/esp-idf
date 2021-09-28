@@ -9,7 +9,6 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "spi_flash.h"
 #include "esp_rom_spiflash.h"
 
 #ifdef __cplusplus

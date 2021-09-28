@@ -16,6 +16,7 @@ else()
     list(APPEND sources "patches/esp_rom_crc.c"
                         "patches/esp_rom_sys.c"
                         "patches/esp_rom_uart.c"
+                        "patches/esp_rom_spiflash.c"
                         "patches/esp_rom_tjpgd.c")
     list(APPEND private_required_comp soc hal)
 endif()
@@ -26,7 +27,8 @@ endif()
 
 idf_component_register(SRCS ${sources}
                        INCLUDE_DIRS ${include_dirs}
-                       PRIV_REQUIRES ${private_required_comp})
+                       PRIV_REQUIRES ${private_required_comp}
+                       LDFRAGMENTS linker.lf)
 
 if(target STREQUAL "esp32h2")
     if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1)

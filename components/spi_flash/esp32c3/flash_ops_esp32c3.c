@@ -10,7 +10,6 @@
 #include "esp_spi_flash.h"
 #include "soc/system_reg.h"
 #include "soc/soc_memory_layout.h"
-#include "esp32c3/rom/spi_flash.h"
 #include "esp32c3/rom/cache.h"
 #include "hal/spi_flash_hal.h"
 #include "esp_flash.h"

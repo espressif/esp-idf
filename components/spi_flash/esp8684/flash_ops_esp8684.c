@@ -10,14 +10,14 @@
 #include "esp_spi_flash.h"
 #include "soc/system_reg.h"
 #include "soc/soc_memory_layout.h"
-#include "esp8684/rom/spi_flash.h"
 #include "esp8684/rom/cache.h"
 #include "hal/spi_flash_hal.h"
 #include "esp_flash.h"
 #include "esp_log.h"
 #include "esp_attr.h"
+#include "esp_rom_spiflash.h"
 
-static const char *TAG = "spiflash_c3";
+static const char *TAG = "spiflash_8684";
 
 #define SPICACHE SPIMEM0
 #define SPIFLASH SPIMEM1
