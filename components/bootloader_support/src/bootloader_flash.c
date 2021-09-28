@@ -23,19 +23,7 @@
 #   define SPIFLASH SPIMEM1
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP8684
-#include "esp8684/rom/spi_flash.h"
-#endif
+#include "esp_rom_spiflash.h"
 
 #ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
 #define ENCRYPTION_IS_VIRTUAL 1
@@ -150,6 +138,7 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 #include "esp8684/rom/cache.h"
 #include "soc/cache_memory.h"
 #endif
+#include "esp_rom_spiflash.h"
 static const char *TAG = "bootloader_flash";
 
 #if CONFIG_IDF_TARGET_ESP32

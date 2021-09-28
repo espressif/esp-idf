@@ -35,6 +35,7 @@
 #include "driver/spi_common.h"
 #include "esp_private/periph_ctrl.h"
 #include "bootloader_common.h"
+#include "esp_rom_spiflash.h"
 
 #if CONFIG_SPIRAM_MODE_QUAD
 #include "soc/rtc.h"

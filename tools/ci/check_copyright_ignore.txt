@@ -623,7 +623,6 @@ components/esp_rom/include/esp32/rom/miniz.h
 components/esp_rom/include/esp32/rom/rsa_pss.h
 components/esp_rom/include/esp32/rom/rtc.h
 components/esp_rom/include/esp32/rom/sha.h
-components/esp_rom/include/esp32/rom/spi_flash.h
 components/esp_rom/include/esp32/rom/tbconsole.h
 components/esp_rom/include/esp32/rom/tjpgd.h
 components/esp_rom/include/esp32/rom/uart.h
@@ -646,7 +645,6 @@ components/esp_rom/include/esp32c3/rom/rom_layout.h
 components/esp_rom/include/esp32c3/rom/rsa_pss.h
 components/esp_rom/include/esp32c3/rom/rtc.h
 components/esp_rom/include/esp32c3/rom/sha.h
-components/esp_rom/include/esp32c3/rom/spi_flash.h
 components/esp_rom/include/esp32c3/rom/tjpgd.h
 components/esp_rom/include/esp32c3/rom/uart.h
 components/esp_rom/include/esp32h2/rom/aes.h
@@ -668,7 +666,6 @@ components/esp_rom/include/esp32h2/rom/rom_layout.h
 components/esp_rom/include/esp32h2/rom/rsa_pss.h
 components/esp_rom/include/esp32h2/rom/rtc.h
 components/esp_rom/include/esp32h2/rom/sha.h
-components/esp_rom/include/esp32h2/rom/spi_flash.h
 components/esp_rom/include/esp32h2/rom/tjpgd.h
 components/esp_rom/include/esp32h2/rom/uart.h
 components/esp_rom/include/esp32s2/rom/aes.h
@@ -688,7 +685,6 @@ components/esp_rom/include/esp32s2/rom/opi_flash.h
 components/esp_rom/include/esp32s2/rom/rsa_pss.h
 components/esp_rom/include/esp32s2/rom/rtc.h
 components/esp_rom/include/esp32s2/rom/sha.h
-components/esp_rom/include/esp32s2/rom/spi_flash.h
 components/esp_rom/include/esp32s2/rom/uart.h
 components/esp_rom/include/esp32s2/rom/usb/cdc_acm.h
 components/esp_rom/include/esp32s2/rom/usb/chip_usb_dw_wrapper.h
@@ -718,7 +714,6 @@ components/esp_rom/include/esp32s3/rom/opi_flash.h
 components/esp_rom/include/esp32s3/rom/rom_layout.h
 components/esp_rom/include/esp32s3/rom/rsa_pss.h
 components/esp_rom/include/esp32s3/rom/sha.h
-components/esp_rom/include/esp32s3/rom/spi_flash.h
 components/esp_rom/include/esp32s3/rom/tjpgd.h
 components/esp_rom/include/esp32s3/rom/uart.h
 components/esp_rom/include/esp32s3/rom/usb/cdc_acm.h
@@ -2047,15 +2042,6 @@ components/soc/include/soc/usb_periph.h
 components/soc/lldesc.c
 components/soc/soc_include_legacy_warn.c
 components/spi_flash/cache_utils.h
-components/spi_flash/esp32/flash_ops_esp32.c
-components/spi_flash/esp32/spi_flash_rom_patch.c
-components/spi_flash/esp32c3/flash_ops_esp32c3.c
-components/spi_flash/esp32c3/spi_flash_rom_patch.c
-components/spi_flash/esp32h2/flash_ops_esp32h2.c
-components/spi_flash/esp32h2/spi_flash_rom_patch.c
-components/spi_flash/esp32s2/flash_ops_esp32s2.c
-components/spi_flash/esp32s2/spi_flash_rom_patch.c
-components/spi_flash/esp32s3/flash_ops_esp32s3.c
 components/spi_flash/include/esp_flash.h
 components/spi_flash/include/esp_flash_internal.h
 components/spi_flash/include/esp_flash_spi_init.h
@@ -2073,7 +2059,6 @@ components/spi_flash/include/spi_flash_chip_mxic.h
 components/spi_flash/include/spi_flash_chip_winbond.h
 components/spi_flash/memspi_host_driver.c
 components/spi_flash/sim/SpiFlash.cpp
-components/spi_flash/sim/SpiFlash.h
 components/spi_flash/sim/flash_mock.cpp
 components/spi_flash/sim/flash_mock_util.c
 components/spi_flash/sim/sdkconfig/sdkconfig.h
@@ -2086,7 +2071,6 @@ components/spi_flash/spi_flash_chip_mxic_opi.c
 components/spi_flash/spi_flash_chip_winbond.c
 components/spi_flash/test/test_esp_flash.c
 components/spi_flash/test/test_flash_encryption.c
-components/spi_flash/test/test_large_flash_writes.c
 components/spi_flash/test/test_mmap.c
 components/spi_flash/test/test_out_of_bounds_write.c
 components/spi_flash/test/test_partition_ext.c

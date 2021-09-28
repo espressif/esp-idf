@@ -32,7 +32,7 @@
 #include "esp_rom_gpio.h"
 #include "esp_rom_efuse.h"
 #include "esp_rom_sys.h"
-#include "esp32/rom/spi_flash.h"
+#include "esp_rom_spiflash.h"
 #include "esp_efuse.h"
 
 static const char *TAG = "boot.esp32";

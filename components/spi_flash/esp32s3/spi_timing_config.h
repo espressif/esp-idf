@@ -8,6 +8,7 @@
 
 #include "esp_flash_partitions.h"
 #include "esp32s3/rom/spi_flash.h"
+#include "esp_rom_spiflash.h"
 #include "esp32s3/rom/opi_flash.h"
 #include "mspi_timing_tuning_configs.h"
 

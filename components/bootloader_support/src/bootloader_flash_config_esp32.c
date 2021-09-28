@@ -21,6 +21,7 @@
 #include "flash_qio_mode.h"
 #include "bootloader_common.h"
 #include "bootloader_flash_config.h"
+#include "esp_rom_spiflash.h"
 
 void bootloader_flash_update_id(void)
 {
