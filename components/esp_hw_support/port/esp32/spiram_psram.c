@@ -31,6 +31,7 @@
 #include "bootloader_common.h"
 #include "esp_rom_gpio.h"
 #include "bootloader_flash_config.h"
+#include "esp_rom_spiflash.h"
 
 #if CONFIG_SPIRAM
 #include "soc/rtc.h"

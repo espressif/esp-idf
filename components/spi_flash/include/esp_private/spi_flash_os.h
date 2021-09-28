@@ -19,19 +19,11 @@
  */
 #pragma once
 
+#include "esp_rom_spiflash.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include "sdkconfig.h"
 #include "esp_err.h"
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/spi_flash.h"
-#endif
 #include "esp_flash.h"
 #include "hal/spi_flash_hal.h"
 

@@ -10,6 +10,7 @@
 #include "esp_rom_gpio.h"
 #include "esp32s3/rom/gpio.h"
 #include "esp32s3/rom/spi_flash.h"
+#include "esp_rom_spiflash.h"
 #include "esp32s3/rom/opi_flash.h"
 #include "esp_private/spi_flash_os.h"
 #include "opi_flash_private.h"

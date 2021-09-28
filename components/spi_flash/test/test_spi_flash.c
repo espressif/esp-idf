@@ -13,20 +13,12 @@
 #include "ccomp_timer.h"
 #include "esp_log.h"
 #include "esp_rom_sys.h"
+#include "esp_rom_spiflash.h"
 #include "esp_timer.h"
 
 #include "bootloader_flash.h"   //for bootloader_flash_xmc_startup
 
 #include "sdkconfig.h"
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/spi_flash.h"
-#endif
 
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)

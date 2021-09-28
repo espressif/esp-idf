@@ -21,15 +21,8 @@
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/spi_flash.h"
 #endif
+#include "esp_rom_spiflash.h"
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)
 // TODO: SPI_FLASH IDF-4025

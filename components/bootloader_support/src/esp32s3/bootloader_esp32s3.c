@@ -23,7 +23,7 @@
 #include "esp_rom_gpio.h"
 #include "esp_rom_efuse.h"
 #include "esp_rom_sys.h"
-#include "esp32s3/rom/spi_flash.h"
+#include "esp_rom_spiflash.h"
 #include "esp32s3/rom/cache.h"
 #include "esp32s3/rom/rtc.h"
 
