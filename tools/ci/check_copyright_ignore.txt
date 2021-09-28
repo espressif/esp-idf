@@ -1670,7 +1670,6 @@ components/hal/gdma_hal.c
 components/hal/gpio_hal.c
 components/hal/i2c_hal.c
 components/hal/i2c_hal_iram.c
-components/hal/i2s_hal.c
 components/hal/include/hal/adc_hal.h
 components/hal/include/hal/adc_types.h
 components/hal/include/hal/aes_hal.h

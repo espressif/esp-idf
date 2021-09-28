@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 
 // The HAL layer for I2S (common part)
@@ -104,6 +96,13 @@ void i2s_hal_tx_set_pdm_mode_default(i2s_hal_context_t *hal, uint32_t sample_rat
 {
     /* enable pdm tx mode */
     i2s_ll_tx_enable_pdm(hal->dev, true);
+#if SOC_I2S_SUPPORTS_TDM
+    i2s_ll_tx_enable_clock(hal->dev);
+    i2s_ll_tx_clk_set_src(hal->dev, I2S_CLK_D2CLK); // Set I2S_CLK_D2CLK as default
+    i2s_ll_mclk_use_tx_clk(hal->dev);
+#else
+    i2s_ll_tx_force_enable_fifo_mod(hal->dev, true);
+#endif
     /* set pdm tx default presacle */
     i2s_ll_tx_set_pdm_prescale(hal->dev, 0);
     /* set pdm tx default sacle of high pass filter */
@@ -140,6 +139,16 @@ void i2s_hal_rx_set_pdm_mode_default(i2s_hal_context_t *hal)
     i2s_ll_rx_enable_pdm(hal->dev, true);
     /* set pdm rx downsample number */
     i2s_ll_rx_set_pdm_dsr(hal->dev, I2S_PDM_DSR_8S);
+#if !SOC_I2S_SUPPORTS_TDM
+    i2s_ll_rx_force_enable_fifo_mod(hal->dev, true);
+#endif
+#if SOC_I2S_SUPPORTS_TDM
+    i2s_ll_rx_enable_clock(hal->dev);
+    i2s_ll_rx_clk_set_src(hal->dev, I2S_CLK_D2CLK); // Set I2S_CLK_D2CLK as default
+    i2s_ll_mclk_use_rx_clk(hal->dev);
+#else
+    i2s_ll_rx_force_enable_fifo_mod(hal->dev, true);
+#endif
 }
 #endif // SOC_I2S_SUPPORTS_PDM_RX
 
@@ -286,8 +295,8 @@ void i2s_hal_config_param(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cf
         {
             /* Set tx common mode */
             i2s_hal_tx_set_common_mode(hal, hal_cfg);
-            i2s_hal_tx_set_channel_style(hal, hal_cfg);
         }
+        i2s_hal_tx_set_channel_style(hal, hal_cfg);
     }
 
     /* Set configurations for RX mode */
@@ -304,8 +313,8 @@ void i2s_hal_config_param(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cf
         {
             /* Set rx common mode */
             i2s_hal_rx_set_common_mode(hal, hal_cfg);
-            i2s_hal_rx_set_channel_style(hal, hal_cfg);
         }
+        i2s_hal_rx_set_channel_style(hal, hal_cfg);
     }
 
     /* Set configurations for full-duplex mode */
