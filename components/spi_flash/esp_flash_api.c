@@ -20,8 +20,6 @@
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp_crypto_lock.h" // for locking flash encryption peripheral
 #endif //CONFIG_IDF_TARGET_ESP32S2
-#elif CONFIG_IDF_TARGET_ESP8684
-#include "esp8684/rom/spi_flash.h"
 
 static const char TAG[] = "spi_flash";
 

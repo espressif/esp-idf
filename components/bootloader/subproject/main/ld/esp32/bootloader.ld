@@ -63,6 +63,7 @@ SECTIONS
     *libesp_hw_support.a:rtc_clk.*(.literal .text .literal.* .text.*)
     *libesp_hw_support.a:rtc_time.*(.literal .text .literal.* .text.*)
     *libefuse.a:*.*(.literal .text .literal.* .text.*)
+    *libesp_rom.a:*.*(.literal .text .literal.* .text.*)
     *(.fini.literal)
     *(.fini)
     *(.gnu.version)

@@ -115,6 +115,12 @@ extern "C" {
 
 #define FLASH_ID_GD25LQ32C  0xC86016
 
+typedef enum {
+    ESP_ROM_SPIFLASH_RESULT_OK,
+    ESP_ROM_SPIFLASH_RESULT_ERR,
+    ESP_ROM_SPIFLASH_RESULT_TIMEOUT
+} esp_rom_spiflash_result_t;
+
 extern uint8_t g_rom_spiflash_dummy_len_plus[];
 
 /**

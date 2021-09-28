@@ -16,7 +16,6 @@
 #include "esp_types.h"
 #include "esp_log.h"
 #include "spiram_psram.h"
-#include "esp32s3/rom/spi_flash.h"
 #include "esp32s3/rom/opi_flash.h"
 #include "esp32s3/rom/cache.h"
 #include "esp32s3/rom/efuse.h"

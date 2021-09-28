@@ -100,19 +100,19 @@ extern "C" {
 
 
 typedef enum {
-    SPI_FLASH_RESULT_OK,
-    SPI_FLASH_RESULT_ERR,
-    SPI_FLASH_RESULT_TIMEOUT
-} SpiFlashOpResult;
+    ESP_ROM_SPIFLASH_RESULT_OK,
+    ESP_ROM_SPIFLASH_RESULT_ERR,
+    ESP_ROM_SPIFLASH_RESULT_TIMEOUT
+} esp_rom_spiflash_result_t;
 
 typedef void (*spi_flash_func_t)(void);
-typedef SpiFlashOpResult (*spi_flash_op_t)(void);
-typedef SpiFlashOpResult (*spi_flash_erase_t)(uint32_t);
-typedef SpiFlashOpResult (*spi_flash_rd_t)(uint32_t, void*, int);
-typedef SpiFlashOpResult (*spi_flash_wr_t)(uint32_t, const uint32_t*, int);
-typedef SpiFlashOpResult (*spi_flash_ewr_t)(uint32_t, const void*, uint32_t);
-typedef SpiFlashOpResult (*spi_flash_wren_t)(void*);
-typedef SpiFlashOpResult (* spi_flash_erase_area_t)(uint32_t, uint32_t);
+typedef esp_rom_spiflash_result_t (*spi_flash_op_t)(void);
+typedef esp_rom_spiflash_result_t (*spi_flash_erase_t)(uint32_t);
+typedef esp_rom_spiflash_result_t (*spi_flash_rd_t)(uint32_t, void*, int);
+typedef esp_rom_spiflash_result_t (*spi_flash_wr_t)(uint32_t, const uint32_t*, int);
+typedef esp_rom_spiflash_result_t (*spi_flash_ewr_t)(uint32_t, const void*, uint32_t);
+typedef esp_rom_spiflash_result_t (*spi_flash_wren_t)(void*);
+typedef esp_rom_spiflash_result_t (* spi_flash_erase_area_t)(uint32_t, uint32_t);
 
 typedef struct {
     uint8_t pp_addr_bit_len;

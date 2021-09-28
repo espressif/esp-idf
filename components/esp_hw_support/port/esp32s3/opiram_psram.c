@@ -12,7 +12,6 @@
 #include "esp_log.h"
 #include "spiram_psram.h"
 #include "esp32s3/rom/ets_sys.h"
-#include "esp32s3/rom/spi_flash.h"
 #include "esp32s3/rom/opi_flash.h"
 #include "esp32s3/rom/gpio.h"
 #include "esp32s3/rom/cache.h"

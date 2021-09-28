@@ -9,7 +9,6 @@
 #include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_log.h"
-#include "esp32s3/rom/spi_flash.h"
 #include "soc/efuse_reg.h"
 #include "soc/spi_reg.h"
 #include "soc/spi_mem_reg.h"

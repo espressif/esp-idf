@@ -1,6 +1,5 @@
 idf_build_get_property(target IDF_TARGET)
 if(BOOTLOADER_BUILD)
-    set(srcs "${target}/spi_flash_rom_patch.c")
     set(cache_srcs "")
     set(priv_requires bootloader_support soc)
 else()
@@ -12,7 +11,6 @@ else()
     )
     set(srcs
         "partition.c"
-        "${target}/spi_flash_rom_patch.c"
     )
 
     if(CONFIG_ESPTOOLPY_OCT_FLASH)

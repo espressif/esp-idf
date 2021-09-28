@@ -52,7 +52,6 @@
 #include "esp8684/rom/cache.h"
 #include "esp8684/rom/efuse.h"
 #include "esp8684/rom/ets_sys.h"
-#include "esp8684/rom/spi_flash.h"
 #include "esp8684/rom/crc.h"
 #include "esp8684/rom/rtc.h"
 #include "esp8684/rom/uart.h"

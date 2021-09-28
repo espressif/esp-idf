@@ -21,7 +21,6 @@
 #include "esp_rom_gpio.h"
 #include "esp_private/spi_flash_os.h"
 #include "esp_rom_spiflash.h"
-#include "esp32c3/rom/efuse.h"
 
 __attribute__((unused)) static const char TAG[] = "spi_flash";
 

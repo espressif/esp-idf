@@ -22,8 +22,6 @@
 #include "esp_vfs.h"
 #include "esp_err.h"
 #include "esp_rom_spiflash.h"
-#elif CONFIG_IDF_TARGET_ESP8684
-#include "esp8684/rom/spi_flash.h"
 
 #include "spiffs_api.h"
 
