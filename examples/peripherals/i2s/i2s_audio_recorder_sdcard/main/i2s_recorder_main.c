@@ -25,7 +25,7 @@
 
 static const char* TAG = "pdm_rec_example";
 
-#define SPI_DMA_CHAN        (1)
+#define SPI_DMA_CHAN        SPI_DMA_CH_AUTO
 #define NUM_CHANNELS        (1) // For mono recording only!
 #define SD_MOUNT_POINT      "/sdcard"
 #define SAMPLE_SIZE         (CONFIG_EXAMPLE_BIT_SAMPLE * 1024)
@@ -90,7 +90,7 @@ void mount_sdcard(void)
     sdmmc_card_print_info(stdout, card);
 }
 
-void wavHeader(char* wav_header, uint32_t wav_size, uint32_t sample_rate){
+void generate_wav_header(char* wav_header, uint32_t wav_size, uint32_t sample_rate){
 
     // See this for reference: http://soundfile.sapp.org/doc/WaveFormat/
     uint32_t file_size = wav_size + WAVE_HEADER_SIZE - 8;
@@ -124,7 +124,7 @@ void record_wav(uint32_t rec_time)
     char wav_header_fmt[WAVE_HEADER_SIZE];
 
     uint32_t flash_rec_time = BYTE_RATE * rec_time;
-    wavHeader(wav_header_fmt, flash_rec_time, CONFIG_EXAMPLE_SAMPLE_RATE);
+    generate_wav_header(wav_header_fmt, flash_rec_time, CONFIG_EXAMPLE_SAMPLE_RATE);
 
     // First check if file exists before creating a new file.
     struct stat st;
@@ -165,7 +165,6 @@ void record_wav(uint32_t rec_time)
 
 void init_microphone(void)
 {
-
     // Set the I2S configuration as PDM and 16bits per sample
     i2s_config_t i2s_config = {
         .mode = I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_PDM,
@@ -175,8 +174,8 @@ void init_microphone(void)
         .communication_format = I2S_COMM_FORMAT_STAND_I2S,
         .intr_alloc_flags = ESP_INTR_FLAG_LEVEL2,
         .dma_buf_count = 8,
-        .dma_buf_len = 1024,
-        .use_apll = 1,
+        .dma_buf_len = 200,
+        .use_apll = 0,
     };
 
     // Set the pinout configuration (set using menuconfig)
