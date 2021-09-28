@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "freertos/FreeRTOS.h"
@@ -16,7 +22,8 @@
 #define NO_OF_RB_TYPES              3
 #define ITEM_HDR_SIZE               8
 #define SMALL_ITEM_SIZE             8
-#define LARGE_ITEM_SIZE             (2 * SMALL_ITEM_SIZE)
+#define MEDIUM_ITEM_SIZE            ((3 * SMALL_ITEM_SIZE) >> 1)  //12 bytes
+#define LARGE_ITEM_SIZE             (2 * SMALL_ITEM_SIZE)  //16 bytes
 #define BUFFER_SIZE                 160     //4Byte aligned size
 
 static const uint8_t small_item[SMALL_ITEM_SIZE] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
@@ -34,6 +41,17 @@ static void send_item_and_check(RingbufHandle_t handle, const uint8_t *item,  si
         ret = xRingbufferSend(handle, (void *)item, item_size, ticks_to_wait);
     }
     TEST_ASSERT_MESSAGE(ret == pdTRUE, "Failed to send item");
+}
+
+static void send_item_and_check_failure(RingbufHandle_t handle, const uint8_t *item,  size_t item_size, TickType_t ticks_to_wait, bool in_isr)
+{
+    BaseType_t ret;
+    if (in_isr) {
+        ret = xRingbufferSendFromISR(handle, (void *)item, item_size, NULL);
+    } else {
+        ret = xRingbufferSend(handle, (void *)item, item_size, ticks_to_wait);
+    }
+    TEST_ASSERT_MESSAGE(ret == pdFALSE, "Sent an item to a full buffer");
 }
 
 static void receive_check_and_return_item_no_split(RingbufHandle_t handle, const uint8_t *expected_data, size_t expected_size, TickType_t ticks_to_wait, bool in_isr)
@@ -72,7 +90,6 @@ static void receive_check_and_return_item_allow_split(RingbufHandle_t handle, co
     } else {
         ret = xRingbufferReceiveSplit(handle, (void**)&item1, (void **)&item2, &item_size1, &item_size2, ticks_to_wait);
     }
-    //= xRingbufferReceiveSplit(handle, (void**)&item1, (void **)&item2, &item_size1, &item_size2, ticks_to_wait);
     TEST_ASSERT_MESSAGE(ret == pdTRUE, "Failed to receive item");
     TEST_ASSERT_MESSAGE(item1 != NULL, "Failed to receive item");
 
@@ -158,19 +175,37 @@ static void receive_check_and_return_item_byte_buffer(RingbufHandle_t handle, co
 }
 
 /* ----------------- Basic ring buffer behavior tests cases --------------------
- * The following test cases will test basic send, receive, and wrap around
- * behavior of each type of ring buffer. Each test case will do the following
- * 1) Send multiple items (nearly fill the buffer)
- * 2) Receive and check the sent items (also prepares the buffer for a wrap around
- * 3) Send a final item that causes a wrap around
- * 4) Receive and check the wrapped item
+ * The following set of test cases will test basic send, receive, wrap around and buffer full
+ * behavior of each type of ring buffer.
+ * Test Case 1:
+ *     1) Send multiple items (nearly fill the buffer)
+ *     2) Receive and check the sent items (also prepares the buffer for a wrap around)
+ *     3) Send a final item that causes a wrap around
+ *     4) Receive and check the wrapped item
+ *
+ * Test Case 2:
+ *     1) Send multiple items (completely fill the buffer)
+ *     2) Send another item and verify that send failure occurs
+ *     3) Receive one item and verify that space is freed up in the buffer
+ *     4) Receive and check the remaining sent items
+ *
+ * Test Case 3:
+ *     1) Send multiple items (nearly fill the buffer)
+ *     2) Send another small sized item to fill the buffer without causing a wrap around (not needed in case of byte buffer)
+ *     2) Send another item and verify that send failure occurs
+ *     4) Receive and check the sent items
  */
 
-TEST_CASE("Test ring buffer No-Split", "[esp_ringbuf]")
+TEST_CASE("TC#1: No-Split", "[esp_ringbuf]")
 {
     //Create buffer
     RingbufHandle_t buffer_handle = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_NOSPLIT);
     TEST_ASSERT_MESSAGE(buffer_handle != NULL, "Failed to create ring buffer");
+
+    //Check buffer free size and max item size upon buffer creation. Should be BUFFER_SIZE/2 - ITEM_HDR_SIZE.
+    TEST_ASSERT_MESSAGE(xRingbufferGetCurFreeSize(buffer_handle) == ((BUFFER_SIZE >> 1) - ITEM_HDR_SIZE), "Incorrect buffer free size received");
+    TEST_ASSERT_MESSAGE(xRingbufferGetMaxItemSize(buffer_handle) == ((BUFFER_SIZE >> 1) - ITEM_HDR_SIZE), "Incorrect max item size received");
+
     //Calculate number of items to send. Aim to almost fill buffer to setup for wrap around
     int no_of_items = (BUFFER_SIZE - (ITEM_HDR_SIZE + SMALL_ITEM_SIZE)) / (ITEM_HDR_SIZE + SMALL_ITEM_SIZE);
 
@@ -178,10 +213,20 @@ TEST_CASE("Test ring buffer No-Split", "[esp_ringbuf]")
     for (int i = 0; i < no_of_items; i++) {
         send_item_and_check(buffer_handle, small_item, SMALL_ITEM_SIZE, TIMEOUT_TICKS, false);
     }
+
+    //Verify items waiting matches with the number of items sent
+    UBaseType_t items_waiting;
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, NULL, NULL, &items_waiting);
+    TEST_ASSERT_MESSAGE(items_waiting == no_of_items, "Incorrect items waiting");
+
     //Test receiving items
     for (int i = 0; i < no_of_items; i++) {
         receive_check_and_return_item_no_split(buffer_handle, small_item, SMALL_ITEM_SIZE, TIMEOUT_TICKS, false);
     }
+
+    //Verify that no items are waiting
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, NULL, NULL, &items_waiting);
+    TEST_ASSERT_MESSAGE(items_waiting == 0, "Incorrect items waiting");
 
     //Write pointer should be near the end, test wrap around
     uint32_t write_pos_before, write_pos_after;
@@ -197,11 +242,112 @@ TEST_CASE("Test ring buffer No-Split", "[esp_ringbuf]")
     vRingbufferDelete(buffer_handle);
 }
 
-TEST_CASE("Test ring buffer Allow-Split", "[esp_ringbuf]")
+TEST_CASE("TC#2: No-Split", "[esp_ringbuf]")
+{
+    //Create buffer
+    RingbufHandle_t buffer_handle = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_NOSPLIT);
+    TEST_ASSERT_MESSAGE(buffer_handle != NULL, "Failed to create ring buffer");
+
+    //Check buffer free size and max item size upon buffer creation. Should be BUFFER_SIZE/2 - ITEM_HDR_SIZE.
+    TEST_ASSERT_MESSAGE(xRingbufferGetCurFreeSize(buffer_handle) == ((BUFFER_SIZE >> 1) - ITEM_HDR_SIZE), "Incorrect buffer free size received");
+    TEST_ASSERT_MESSAGE(xRingbufferGetMaxItemSize(buffer_handle) == ((BUFFER_SIZE >> 1) - ITEM_HDR_SIZE), "Incorrect max item size received");
+
+    //Calculate number of items to send. Aim to fill the buffer
+    int no_of_items = (BUFFER_SIZE) / (ITEM_HDR_SIZE + SMALL_ITEM_SIZE);
+
+    //Test sending items
+    for (int i = 0; i < no_of_items; i++) {
+        send_item_and_check(buffer_handle, small_item, SMALL_ITEM_SIZE, TIMEOUT_TICKS, false);
+    }
+
+    //Verify items waiting matches with the number of items sent
+    UBaseType_t items_waiting;
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, NULL, NULL, &items_waiting);
+    TEST_ASSERT_MESSAGE(items_waiting == no_of_items, "Incorrect items waiting");
+
+    //At this point, the buffer should be full.
+    TEST_ASSERT_MESSAGE(xRingbufferGetCurFreeSize(buffer_handle) == 0, "Buffer full not achieved");
+
+    //Send an item. The item should not be sent to a full buffer.
+    send_item_and_check_failure(buffer_handle, small_item, SMALL_ITEM_SIZE, TIMEOUT_TICKS, false);
+
+    //Receive one item
+    receive_check_and_return_item_no_split(buffer_handle, small_item, SMALL_ITEM_SIZE, TIMEOUT_TICKS, false);
+
+    //At this point, the buffer should not be full any more
+    TEST_ASSERT_MESSAGE(xRingbufferGetCurFreeSize(buffer_handle) > 0, "Buffer should have free space");
+
+    //Test receiving remaining items
+    for (int i = 0; i < no_of_items - 1; i++) {
+        receive_check_and_return_item_no_split(buffer_handle, small_item, SMALL_ITEM_SIZE, TIMEOUT_TICKS, false);
+    }
+
+    //Verify that no items are waiting
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, NULL, NULL, &items_waiting);
+    TEST_ASSERT_MESSAGE(items_waiting == 0, "Incorrect items waiting");
+
+    //Cleanup
+    vRingbufferDelete(buffer_handle);
+}
+
+TEST_CASE("TC#3: No-Split", "[esp_ringbuf]")
+{
+    //Create buffer
+    RingbufHandle_t buffer_handle = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_NOSPLIT);
+    TEST_ASSERT_MESSAGE(buffer_handle != NULL, "Failed to create ring buffer");
+
+    //Check buffer free size and max item size upon buffer creation. Should be BUFFER_SIZE/2 - ITEM_HDR_SIZE.
+    TEST_ASSERT_MESSAGE(xRingbufferGetCurFreeSize(buffer_handle) == ((BUFFER_SIZE >> 1) - ITEM_HDR_SIZE), "Incorrect buffer free size received");
+    TEST_ASSERT_MESSAGE(xRingbufferGetMaxItemSize(buffer_handle) == ((BUFFER_SIZE >> 1) - ITEM_HDR_SIZE), "Incorrect max item size received");
+
+    //Calculate number of medium items to send. Aim to almost fill the buffer
+    int no_of_medium_items = (BUFFER_SIZE - (ITEM_HDR_SIZE + MEDIUM_ITEM_SIZE)) / (ITEM_HDR_SIZE + MEDIUM_ITEM_SIZE);
+
+    //Test sending items
+    for (int i = 0; i < no_of_medium_items; i++) {
+        send_item_and_check(buffer_handle, large_item, MEDIUM_ITEM_SIZE, TIMEOUT_TICKS, false);
+    }
+
+    //Verify items waiting matches with the number of medium items sent
+    UBaseType_t items_waiting;
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, NULL, NULL, &items_waiting);
+    TEST_ASSERT_MESSAGE(items_waiting == no_of_medium_items, "Incorrect items waiting");
+
+    //Send one small sized item. This will ensure that the item fits at the end of the buffer without causing the write pointer to wrap around.
+    send_item_and_check(buffer_handle, small_item, SMALL_ITEM_SIZE, TIMEOUT_TICKS, false);
+
+    //The buffer should not have any free space as the number of bytes remaining should be < ITEM_HDR_SIZE.
+    TEST_ASSERT_MESSAGE(xRingbufferGetCurFreeSize(buffer_handle) == 0, "Buffer full not achieved");
+
+    //Send an item. The item should not be sent to a full buffer.
+    send_item_and_check_failure(buffer_handle, small_item, SMALL_ITEM_SIZE, TIMEOUT_TICKS, false);
+
+    //Test receiving medium items
+    for (int i = 0; i < no_of_medium_items; i++) {
+        receive_check_and_return_item_no_split(buffer_handle, large_item, MEDIUM_ITEM_SIZE, TIMEOUT_TICKS, false);
+    }
+
+    //Test receiving small item
+    receive_check_and_return_item_no_split(buffer_handle, small_item, SMALL_ITEM_SIZE, TIMEOUT_TICKS, false);
+
+    //Verify that no items are waiting
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, NULL, NULL, &items_waiting);
+    TEST_ASSERT_MESSAGE(items_waiting == 0, "Incorrect items waiting");
+
+    //Cleanup
+    vRingbufferDelete(buffer_handle);
+}
+
+TEST_CASE("TC#1: Allow-Split", "[esp_ringbuf]")
 {
     //Create buffer
     RingbufHandle_t buffer_handle = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_ALLOWSPLIT);
     TEST_ASSERT_MESSAGE(buffer_handle != NULL, "Failed to create ring buffer");
+
+    //Check buffer free size and max item size upon buffer creation. Should be BUFFER_SIZE - (ITEM_HDR_SIZE * 2).
+    TEST_ASSERT_MESSAGE(xRingbufferGetCurFreeSize(buffer_handle) == (BUFFER_SIZE - (ITEM_HDR_SIZE * 2)), "Incorrect buffer free size received");
+    TEST_ASSERT_MESSAGE(xRingbufferGetMaxItemSize(buffer_handle) == (BUFFER_SIZE - (ITEM_HDR_SIZE * 2)), "Incorrect max item size received");
+
     //Calculate number of items to send. Aim to almost fill buffer to setup for wrap around
     int no_of_items = (BUFFER_SIZE - (ITEM_HDR_SIZE + SMALL_ITEM_SIZE)) / (ITEM_HDR_SIZE + SMALL_ITEM_SIZE);
 
@@ -209,10 +355,20 @@ TEST_CASE("Test ring buffer Allow-Split", "[esp_ringbuf]")
     for (int i = 0; i < no_of_items; i++) {
         send_item_and_check(buffer_handle, small_item, SMALL_ITEM_SIZE, TIMEOUT_TICKS, false);
     }
+
+    //Verify items waiting matches with the number of items sent
+    UBaseType_t items_waiting;
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, NULL, NULL, &items_waiting);
+    TEST_ASSERT_MESSAGE(items_waiting == no_of_items, "Incorrect items waiting");
+
     //Test receiving items
     for (int i = 0; i < no_of_items; i++) {
         receive_check_and_return_item_allow_split(buffer_handle, small_item, SMALL_ITEM_SIZE, TIMEOUT_TICKS, false);
     }
+
+    //Verify that no items are waiting
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, NULL, NULL, &items_waiting);
+    TEST_ASSERT_MESSAGE(items_waiting == 0, "Incorrect items waiting");
 
     //Write pointer should be near the end, test wrap around
     uint32_t write_pos_before, write_pos_after;
@@ -228,11 +384,112 @@ TEST_CASE("Test ring buffer Allow-Split", "[esp_ringbuf]")
     vRingbufferDelete(buffer_handle);
 }
 
-TEST_CASE("Test ring buffer Byte Buffer", "[esp_ringbuf]")
+TEST_CASE("TC#2: Allow-Split", "[esp_ringbuf]")
+{
+    //Create buffer
+    RingbufHandle_t buffer_handle = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_ALLOWSPLIT);
+    TEST_ASSERT_MESSAGE(buffer_handle != NULL, "Failed to create ring buffer");
+
+    //Check buffer free size and max item size upon buffer creation. Should be BUFFER_SIZE - (ITEM_HDR_SIZE * 2).
+    TEST_ASSERT_MESSAGE(xRingbufferGetCurFreeSize(buffer_handle) == (BUFFER_SIZE - (ITEM_HDR_SIZE * 2)), "Incorrect buffer free size received");
+    TEST_ASSERT_MESSAGE(xRingbufferGetMaxItemSize(buffer_handle) == (BUFFER_SIZE - (ITEM_HDR_SIZE * 2)), "Incorrect max item size received");
+
+    //Calculate number of items to send. Aim to fill the buffer
+    int no_of_items = (BUFFER_SIZE) / (ITEM_HDR_SIZE + SMALL_ITEM_SIZE);
+
+    //Test sending items
+    for (int i = 0; i < no_of_items; i++) {
+        send_item_and_check(buffer_handle, small_item, SMALL_ITEM_SIZE, TIMEOUT_TICKS, false);
+    }
+
+    //Verify items waiting matches with the number of items sent
+    UBaseType_t items_waiting;
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, NULL, NULL, &items_waiting);
+    TEST_ASSERT_MESSAGE(items_waiting == no_of_items, "Incorrect items waiting");
+
+    //At this point, the buffer should be full.
+    TEST_ASSERT_MESSAGE(xRingbufferGetCurFreeSize(buffer_handle) == 0, "Buffer full not achieved");
+
+    //Send an item. The item should not be sent to a full buffer.
+    send_item_and_check_failure(buffer_handle, small_item, SMALL_ITEM_SIZE, TIMEOUT_TICKS, false);
+
+    //Receive one item
+    receive_check_and_return_item_allow_split(buffer_handle, small_item, SMALL_ITEM_SIZE, TIMEOUT_TICKS, false);
+
+    //At this point, the buffer should not be full any more
+    TEST_ASSERT_MESSAGE(xRingbufferGetCurFreeSize(buffer_handle) > 0, "Buffer should have free space");
+
+    //Test receiving remaining items
+    for (int i = 0; i < no_of_items - 1; i++) {
+        receive_check_and_return_item_allow_split(buffer_handle, small_item, SMALL_ITEM_SIZE, TIMEOUT_TICKS, false);
+    }
+
+    //Verify that no items are waiting
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, NULL, NULL, &items_waiting);
+    TEST_ASSERT_MESSAGE(items_waiting == 0, "Incorrect items waiting");
+
+    //Cleanup
+    vRingbufferDelete(buffer_handle);
+}
+
+TEST_CASE("TC#3: Allow-Split", "[esp_ringbuf]")
+{
+    //Create buffer
+    RingbufHandle_t buffer_handle = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_ALLOWSPLIT);
+    TEST_ASSERT_MESSAGE(buffer_handle != NULL, "Failed to create ring buffer");
+
+    //Check buffer free size and max item size upon buffer creation. Should be BUFFER_SIZE - (ITEM_HDR_SIZE * 2).
+    TEST_ASSERT_MESSAGE(xRingbufferGetCurFreeSize(buffer_handle) == (BUFFER_SIZE - (ITEM_HDR_SIZE * 2)), "Incorrect buffer free size received");
+    TEST_ASSERT_MESSAGE(xRingbufferGetMaxItemSize(buffer_handle) == (BUFFER_SIZE - (ITEM_HDR_SIZE * 2)), "Incorrect max item size received");
+
+    //Calculate number of medium items to send. Aim to almost fill the buffer
+    int no_of_medium_items = (BUFFER_SIZE - (ITEM_HDR_SIZE + MEDIUM_ITEM_SIZE)) / (ITEM_HDR_SIZE + MEDIUM_ITEM_SIZE);
+
+    //Test sending items
+    for (int i = 0; i < no_of_medium_items; i++) {
+        send_item_and_check(buffer_handle, large_item, MEDIUM_ITEM_SIZE, TIMEOUT_TICKS, false);
+    }
+
+    //Verify items waiting matches with the number of medium items sent
+    UBaseType_t items_waiting;
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, NULL, NULL, &items_waiting);
+    TEST_ASSERT_MESSAGE(items_waiting == no_of_medium_items, "Incorrect items waiting");
+
+    //Send one small sized item. This will ensure that the item fits at the end of the buffer without causing the write pointer to wrap around.
+    send_item_and_check(buffer_handle, small_item, SMALL_ITEM_SIZE, TIMEOUT_TICKS, false);
+
+    //The buffer should not have any free space as the number of bytes remaining should be < ITEM_HDR_SIZE.
+    TEST_ASSERT_MESSAGE(xRingbufferGetCurFreeSize(buffer_handle) == 0, "Buffer full not achieved");
+
+    //Send an item. The item should not be sent to a full buffer.
+    send_item_and_check_failure(buffer_handle, small_item, SMALL_ITEM_SIZE, TIMEOUT_TICKS, false);
+
+    //Test receiving medium items
+    for (int i = 0; i < no_of_medium_items; i++) {
+        receive_check_and_return_item_allow_split(buffer_handle, large_item, MEDIUM_ITEM_SIZE, TIMEOUT_TICKS, false);
+    }
+
+    //Test receiving small item
+    receive_check_and_return_item_allow_split(buffer_handle, small_item, SMALL_ITEM_SIZE, TIMEOUT_TICKS, false);
+
+    //Verify that no items are waiting
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, NULL, NULL, &items_waiting);
+    TEST_ASSERT_MESSAGE(items_waiting == 0, "Incorrect items waiting");
+
+    //Cleanup
+    vRingbufferDelete(buffer_handle);
+}
+
+TEST_CASE("TC#1: Byte buffer", "[esp_ringbuf]")
 {
     //Create buffer
     RingbufHandle_t buffer_handle = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_BYTEBUF);
     TEST_ASSERT_MESSAGE(buffer_handle != NULL, "Failed to create ring buffer");
+
+    //Check buffer free size and max item size upon buffer creation. Should be BUFFER_SIZE
+    TEST_ASSERT_MESSAGE(xRingbufferGetCurFreeSize(buffer_handle) == BUFFER_SIZE, "Incorrect buffer free size received");
+    TEST_ASSERT_MESSAGE(xRingbufferGetMaxItemSize(buffer_handle) == BUFFER_SIZE, "Incorrect max item size received");
+
     //Calculate number of items to send. Aim to almost fill buffer to setup for wrap around
     int no_of_items = (BUFFER_SIZE - SMALL_ITEM_SIZE) / SMALL_ITEM_SIZE;
 
@@ -240,10 +497,20 @@ TEST_CASE("Test ring buffer Byte Buffer", "[esp_ringbuf]")
     for (int i = 0; i < no_of_items; i++) {
         send_item_and_check(buffer_handle, small_item, SMALL_ITEM_SIZE, TIMEOUT_TICKS, false);
     }
+
+    //Verify items waiting matches with the number of items sent
+    UBaseType_t items_waiting;
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, NULL, NULL, &items_waiting);
+    TEST_ASSERT_MESSAGE(items_waiting == no_of_items * SMALL_ITEM_SIZE, "Incorrect number of bytes waiting");
+
     //Test receiving items
     for (int i = 0; i < no_of_items; i++) {
         receive_check_and_return_item_byte_buffer(buffer_handle, small_item, SMALL_ITEM_SIZE, TIMEOUT_TICKS, false);
     }
+
+    //Verify that no items are waiting
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, NULL, NULL, &items_waiting);
+    TEST_ASSERT_MESSAGE(items_waiting == 0, "Incorrect number of bytes waiting");
 
     //Write pointer should be near the end, test wrap around
     uint32_t write_pos_before, write_pos_after;
@@ -254,6 +521,96 @@ TEST_CASE("Test ring buffer Byte Buffer", "[esp_ringbuf]")
     receive_check_and_return_item_byte_buffer(buffer_handle, large_item, LARGE_ITEM_SIZE, TIMEOUT_TICKS, false);
     vRingbufferGetInfo(buffer_handle, NULL, NULL, &write_pos_after, NULL, NULL);
     TEST_ASSERT_MESSAGE(write_pos_after < write_pos_before, "Failed to wrap around");
+
+    //Cleanup
+    vRingbufferDelete(buffer_handle);
+}
+
+TEST_CASE("TC#2: Byte buffer", "[esp_ringbuf]")
+{
+    //Create buffer
+    RingbufHandle_t buffer_handle = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_BYTEBUF);
+    TEST_ASSERT_MESSAGE(buffer_handle != NULL, "Failed to create ring buffer");
+
+    //Check buffer free size and max item size upon buffer creation. Should be BUFFER_SIZE.
+    TEST_ASSERT_MESSAGE(xRingbufferGetCurFreeSize(buffer_handle) == BUFFER_SIZE, "Incorrect buffer free size received");
+    TEST_ASSERT_MESSAGE(xRingbufferGetMaxItemSize(buffer_handle) == BUFFER_SIZE, "Incorrect max item size received");
+
+    //Calculate number of items to send. Aim to fill the buffer
+    int no_of_items = BUFFER_SIZE / SMALL_ITEM_SIZE;
+
+    //Test sending items
+    for (int i = 0; i < no_of_items; i++) {
+        send_item_and_check(buffer_handle, small_item, SMALL_ITEM_SIZE, TIMEOUT_TICKS, false);
+    }
+
+    //Verify items waiting matches with the number of items sent
+    UBaseType_t items_waiting;
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, NULL, NULL, &items_waiting);
+    TEST_ASSERT_MESSAGE(items_waiting == no_of_items * SMALL_ITEM_SIZE, "Incorrect number of bytes waiting");
+
+    //At this point, the buffer should be full.
+    TEST_ASSERT_MESSAGE(xRingbufferGetCurFreeSize(buffer_handle) == 0, "Buffer full not achieved");
+
+    //Send an item. The item should not be sent to a full buffer.
+    send_item_and_check_failure(buffer_handle, small_item, SMALL_ITEM_SIZE, TIMEOUT_TICKS, false);
+
+    //Receive one item
+    receive_check_and_return_item_byte_buffer(buffer_handle, small_item, SMALL_ITEM_SIZE, TIMEOUT_TICKS, false);
+
+    //At this point, the buffer should not be full any more
+    TEST_ASSERT_MESSAGE(xRingbufferGetCurFreeSize(buffer_handle) > 0, "Buffer should have free space");
+
+    //Test receiving remaining items
+    for (int i = 0; i < no_of_items - 1; i++) {
+        receive_check_and_return_item_byte_buffer(buffer_handle, small_item, SMALL_ITEM_SIZE, TIMEOUT_TICKS, false);
+    }
+
+    //Verify that no items are waiting
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, NULL, NULL, &items_waiting);
+    TEST_ASSERT_MESSAGE(items_waiting == 0, "Incorrect items waiting");
+
+    //Cleanup
+    vRingbufferDelete(buffer_handle);
+}
+
+TEST_CASE("TC#3: Byte buffer", "[esp_ringbuf]")
+{
+    //Create buffer
+    RingbufHandle_t buffer_handle = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_BYTEBUF);
+    TEST_ASSERT_MESSAGE(buffer_handle != NULL, "Failed to create ring buffer");
+
+    //Check buffer free size and max item size upon buffer creation. Should be BUFFER_SIZE.
+    TEST_ASSERT_MESSAGE(xRingbufferGetCurFreeSize(buffer_handle) == BUFFER_SIZE, "Incorrect buffer free size received");
+    TEST_ASSERT_MESSAGE(xRingbufferGetMaxItemSize(buffer_handle) == BUFFER_SIZE, "Incorrect max item size received");
+
+    //Calculate number of medium items to send. Aim to almost fill the buffer
+    int no_of_medium_items = BUFFER_SIZE / MEDIUM_ITEM_SIZE;
+
+    //Test sending items
+    for (int i = 0; i < no_of_medium_items; i++) {
+        send_item_and_check(buffer_handle, large_item, MEDIUM_ITEM_SIZE, TIMEOUT_TICKS, false);
+    }
+
+    //Verify items waiting matches with the number of medium items sent
+    UBaseType_t items_waiting;
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, NULL, NULL, &items_waiting);
+    TEST_ASSERT_MESSAGE(items_waiting == no_of_medium_items * MEDIUM_ITEM_SIZE, "Incorrect number of bytes waiting");
+
+    //The buffer should not have any free space for one small item.
+    TEST_ASSERT_MESSAGE(xRingbufferGetCurFreeSize(buffer_handle) < SMALL_ITEM_SIZE, "Buffer full not achieved");
+
+    //Send an item. The item should not be sent to a full buffer.
+    send_item_and_check_failure(buffer_handle, small_item, SMALL_ITEM_SIZE, TIMEOUT_TICKS, false);
+
+    //Test receiving medium items
+    for (int i = 0; i < no_of_medium_items; i++) {
+        receive_check_and_return_item_byte_buffer(buffer_handle, large_item, MEDIUM_ITEM_SIZE, TIMEOUT_TICKS, false);
+    }
+
+    //Verify that no items are waiting
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, NULL, NULL, &items_waiting);
+    TEST_ASSERT_MESSAGE(items_waiting == 0, "Incorrect items waiting");
 
     //Cleanup
     vRingbufferDelete(buffer_handle);
