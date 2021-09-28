@@ -26,7 +26,7 @@
 #define rbITEM_FREE_FLAG            ( ( UBaseType_t ) 1 )   //Item has been retrieved and returned by application, free to overwrite
 #define rbITEM_DUMMY_DATA_FLAG      ( ( UBaseType_t ) 2 )   //Data from here to end of the ring buffer is dummy data. Restart reading at start of head of the buffer
 #define rbITEM_SPLIT_FLAG           ( ( UBaseType_t ) 4 )   //Valid for RINGBUF_TYPE_ALLOWSPLIT, indicating that rest of the data is wrapped around
-#define rbITEM_WRITTEN_FLAG         ( ( UBaseType_t ) 8 )   //Item has been written to by the application, thus it is free to be read
+#define rbITEM_WRITTEN_FLAG         ( ( UBaseType_t ) 8 )   //Item has been written to by the application, thus can be read
 
 //Static allocation related
 #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
@@ -135,16 +135,41 @@ static BaseType_t prvCheckItemFitsDefault( Ringbuffer_t *pxRingbuffer, size_t xI
 //Checks if an item will currently fit in a byte buffer
 static BaseType_t prvCheckItemFitsByteBuffer( Ringbuffer_t *pxRingbuffer, size_t xItemSize);
 
-//Copies an item to a no-split ring buffer. Only call this function after calling prvCheckItemFitsDefault()
+/*
+Copies an item to a no-split ring buffer
+Entry:
+    - Must have already guaranteed there is sufficient space for item by calling prvCheckItemFitsDefault()
+Exit:
+    - New item copied into ring buffer
+    - pucAcquire and pucWrite updated.
+    - Dummy item added if necessary
+*/
 static void prvCopyItemNoSplit(Ringbuffer_t *pxRingbuffer, const uint8_t *pucItem, size_t xItemSize);
 
-//Copies an item to a allow-split ring buffer. Only call this function after calling prvCheckItemFitsDefault()
+/*
+Copies an item to a allow-split ring buffer
+Entry:
+    - Must have already guaranteed there is sufficient space for item by calling prvCheckItemFitsDefault()
+Exit:
+    - New item copied into ring buffer
+    - pucAcquire and pucWrite updated
+    - Item may be split
+*/
 static void prvCopyItemAllowSplit(Ringbuffer_t *pxRingbuffer, const uint8_t *pucItem, size_t xItemSize);
 
 //Copies an item to a byte buffer. Only call this function  after calling prvCheckItemFitsByteBuffer()
 static void prvCopyItemByteBuf(Ringbuffer_t *pxRingbuffer, const uint8_t *pucItem, size_t xItemSize);
 
 //Retrieve item from no-split/allow-split ring buffer. *pxIsSplit is set to pdTRUE if the retrieved item is split
+/*
+Entry:
+    - Must have already guaranteed that there is an item available for retrieval by calling prvCheckItemAvail()
+    - Guaranteed that pucREAD points to a valid item (i.e., not a dummy item)
+Exit:
+    - Item is returned. Only first half returned if split
+    - pucREAD updated to point to next valid item to read, or equals to pucWrite if there are no more valid items to read
+    - pucREAD update must skip over dummy items
+*/
 static void *prvGetItemDefault(Ringbuffer_t *pxRingbuffer,
                                BaseType_t *pxIsSplit,
                                size_t xUnusedParam,
@@ -156,7 +181,12 @@ static void *prvGetItemByteBuf(Ringbuffer_t *pxRingbuffer,
                                size_t xMaxSize,
                                size_t *pxItemSize);
 
-//Return an item to a split/no-split ring buffer
+/*
+Return an item to a split/no-split ring buffer
+Exit:
+    - Item is marked free rbITEM_FREE_FLAG
+    - pucFree is progressed as far as possible, skipping over already freed items or dummy items
+*/
 static void prvReturnItemDefault(Ringbuffer_t *pxRingbuffer, uint8_t *pucItem);
 
 //Return data to a byte buffer
@@ -384,7 +414,7 @@ static void prvSendItemDoneNoSplit(Ringbuffer_t *pxRingbuffer, uint8_t* pucItem)
             //Redundancy check to ensure write pointer has not overshot buffer bounds
             configASSERT(pxRingbuffer->pucWrite <= pxRingbuffer->pucHead + pxRingbuffer->xSize);
         }
-        //Check if pucAcquire requires wrap around
+        //Check if pucWrite requires wrap around
         if ((pxRingbuffer->pucTail - pxRingbuffer->pucWrite) < rbHEADER_SIZE) {
             pxRingbuffer->pucWrite = pxRingbuffer->pucHead;
         }
@@ -525,7 +555,7 @@ static void *prvGetItemDefault(Ringbuffer_t *pxRingbuffer,
         //Inclusive of pucTail for special case where item of zero length just fits at the end of the buffer
         configASSERT(pcReturn >= pxRingbuffer->pucHead && pcReturn <= pxRingbuffer->pucTail);
     } else {
-        //Exclusive of pucTali if length is larger than zero, pcReturn should never point to pucTail
+        //Exclusive of pucTail if length is larger than zero, pcReturn should never point to pucTail
         configASSERT(pcReturn >= pxRingbuffer->pucHead && pcReturn < pxRingbuffer->pucTail);
     }
     *pxItemSize = pxHeader->xItemLen;   //Get length of item
@@ -615,7 +645,7 @@ static void prvReturnItemDefault(Ringbuffer_t *pxRingbuffer, uint8_t *pucItem)
             //Redundancy check to ensure free pointer has not overshot buffer bounds
             configASSERT(pxRingbuffer->pucFree <= pxRingbuffer->pucHead + pxRingbuffer->xSize);
         }
-        //Check if pucRead requires wrap around
+        //Check if pucFree requires wrap around
         if ((pxRingbuffer->pucTail - pxRingbuffer->pucFree) < rbHEADER_SIZE) {
             pxRingbuffer->pucFree = pxRingbuffer->pucHead;
         }
@@ -666,12 +696,15 @@ static size_t prvGetCurMaxSizeNoSplit(Ringbuffer_t *pxRingbuffer)
 
     //No-split ring buffer items need space for a header
     xFreeSize -= rbHEADER_SIZE;
-    //Limit free size to be within bounds
-    if (xFreeSize > pxRingbuffer->xMaxItemSize) {
-        xFreeSize = pxRingbuffer->xMaxItemSize;
-    } else if (xFreeSize < 0) {
+
+    //Check for xFreeSize < 0 before checking xFreeSize > pxRingbuffer->xMaxItemSize
+    //to avoid incorrect comparison operation when xFreeSize is negative
+    if (xFreeSize < 0) {
         //Occurs when free space is less than header size
         xFreeSize = 0;
+    } else if (xFreeSize > pxRingbuffer->xMaxItemSize) {
+        //Limit free size to be within bounds
+        xFreeSize = pxRingbuffer->xMaxItemSize;
     }
     return xFreeSize;
 }
@@ -696,11 +729,13 @@ static size_t prvGetCurMaxSizeAllowSplit(Ringbuffer_t *pxRingbuffer)
                     (rbHEADER_SIZE * 2);
     }
 
-    //Limit free size to be within bounds
-    if (xFreeSize > pxRingbuffer->xMaxItemSize) {
-        xFreeSize = pxRingbuffer->xMaxItemSize;
-    } else if (xFreeSize < 0) {
+    //Check for xFreeSize < 0 before checking xFreeSize > pxRingbuffer->xMaxItemSize
+    //to avoid incorrect comparison operation when xFreeSize is negative
+    if (xFreeSize < 0) {
         xFreeSize = 0;
+    } else if (xFreeSize > pxRingbuffer->xMaxItemSize) {
+        //Limit free size to be within bounds
+        xFreeSize = pxRingbuffer->xMaxItemSize;
     }
     return xFreeSize;
 }
