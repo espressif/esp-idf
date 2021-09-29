@@ -362,7 +362,6 @@ int wpa_parse_wpa_ie_wpa(const u8 *wpa_ie, size_t wpa_ie_len,
 	return 0;
 }
 
-
 /**
  * wpa_eapol_key_mic - Calculate EAPOL-Key MIC
  * @key: EAPOL-Key Key Confirmation Key (KCK)

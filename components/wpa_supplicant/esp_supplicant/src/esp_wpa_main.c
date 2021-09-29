@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "utils/includes.h"
 #include "utils/common.h"
@@ -123,6 +115,8 @@ bool  wpa_attach(void)
     if(ret) {
         ret = (esp_wifi_register_tx_cb_internal(eapol_txcb, WIFI_TXCB_EAPOL_ID) == ESP_OK);
     }
+    esp_set_scan_ie();
+    esp_set_assoc_ie();
     return ret;
 }
 
@@ -185,7 +179,7 @@ void  wpa_sta_connect(uint8_t *bssid)
 void wpa_config_done(void)
 {
     /* used in future for setting scan and assoc IEs */
-    esp_set_rm_enabled_ie();
+    esp_set_assoc_ie();
 }
 
 int wpa_parse_wpa_ie_wrapper(const u8 *wpa_ie, size_t wpa_ie_len, wifi_wpa_ie_t *data)
@@ -230,6 +224,7 @@ static void wpa_sta_disconnected_cb(uint8_t reason_code)
 static inline void esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
 {
 	wpa_cb->wpa_sta_rx_mgmt = NULL;
+	wpa_cb->wpa_sta_profile_match = NULL;
 }
 static inline void esp_supplicant_common_deinit(void)
 {

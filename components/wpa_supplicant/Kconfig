@@ -59,12 +59,18 @@ menu "Supplicant"
             and on the radio environment. Current implementation adds beacon report,
             link measurement, neighbor report.
 
-    if WPA_11KV_SUPPORT
-        config WPA_SCAN_CACHE
-            bool "Keep scan results in cache"
-            default n
-            help
-                Keep scan results in cache, if not enabled, those
-                will be flushed immediately.
-    endif
+    menuconfig WPA_SCAN_CACHE
+        bool "Keep scan results in cache"
+        depends on WPA_11KV_SUPPORT
+        default n
+        help
+            Keep scan results in cache, if not enabled, those
+            will be flushed immediately.
+
+    menuconfig WPA_MBO_SUPPORT
+        bool "Enable MBO support in supplicant"
+        depends on WPA_11KV_SUPPORT
+        default n
+        help
+            Select this option to enable WiFi Multiband operation certification support.
 endmenu

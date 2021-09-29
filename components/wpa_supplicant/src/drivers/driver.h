@@ -143,6 +143,7 @@ struct wpa_driver_scan_params {
 	 u16 duration;
 
 	 unsigned int duration_mandatory;
+	 u8 mode;
 };
 
 /**
@@ -174,6 +175,20 @@ struct scan_info {
 	u8 scan_start_tsf_bssid[ETH_ALEN];
 } scan_info;
 
+struct wpa_bss_trans_info {
+	u8 mbo_transition_reason;
+	u8 n_candidates;
+	u8 *bssid;
+};
+
+struct wpa_bss_candidate_info {
+	u8 num;
+	struct candidate_list {
+		u8 bssid[ETH_ALEN];
+		u8 is_accept;
+		u32 reject_reason;
+	} *candidates;
+};
 
 /* driver_common.c */
 void wpa_scan_results_free(struct wpa_scan_results *res);

@@ -154,8 +154,13 @@ if(CONFIG_WPA_11KV_SUPPORT)
 else()
     set(roaming_src "")
 endif()
+if(CONFIG_WPA_MBO_SUPPORT)
+    set(mbo_src "src/common/mbo.c")
+else()
+    set(mbo_src "")
+endif()
 
-idf_component_register(SRCS "${srcs}" ${esp_srcs} "${tls_src}" "${roaming_src}" "${crypto_src}"
+idf_component_register(SRCS "${srcs}" ${esp_srcs} "${tls_src}" "${roaming_src}" "${crypto_src}" "${mbo_src}"
                     INCLUDE_DIRS include port/include esp_supplicant/include
                     PRIV_INCLUDE_DIRS src src/utils esp_supplicant/src
                     PRIV_REQUIRES mbedtls esp_timer)
@@ -190,4 +195,7 @@ if(CONFIG_WPA_WPS_STRICT)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_WPS_STRICT)
 endif()
 
+if(CONFIG_WPA_MBO_SUPPORT)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_MBO)
+endif()
 set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 3)
