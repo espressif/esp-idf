@@ -11,7 +11,11 @@
 
 #define LINESIZE 1024
 
+#ifdef __GNUC__
 static void fail(LPCSTR message, ...) __attribute__((noreturn));
+#else
+__declspec(noreturn) static void fail(LPCSTR message, ...);
+#endif
 
 static void fail(LPCSTR message, ...)
 {
@@ -58,7 +62,7 @@ int main(int argc, LPTSTR argv[])
     LPCTSTR idfpy_script_name = TEXT("idf.py");
 
     /* Get IDF_PATH */
-    TCHAR idf_path[LINESIZE] = {};
+    TCHAR idf_path[LINESIZE] = { 0 };
     if (GetEnvironmentVariable(TEXT("IDF_PATH"), idf_path, sizeof(idf_path)) == 0) {
         DWORD err = GetLastError();
         if (err == ERROR_ENVVAR_NOT_FOUND) {
@@ -69,7 +73,7 @@ int main(int argc, LPTSTR argv[])
     }
 
     /* Prepare the command line: python.exe "%IDF_PATH%\\tools\idf.py" <rest of the args> */
-    TCHAR cmdline[LINESIZE] = {};
+    TCHAR cmdline[LINESIZE] = { 0 };
     StringCchCat(cmdline, sizeof(cmdline), TEXT("python.exe \""));
     StringCchCat(cmdline, sizeof(cmdline), idf_path);
     StringCchCat(cmdline, sizeof(cmdline), TEXT("\\tools\\"));
