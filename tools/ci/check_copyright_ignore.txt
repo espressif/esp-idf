@@ -1378,7 +1378,6 @@ components/freemodbus/tcp_slave/port/port_tcp_slave.c
 components/freemodbus/tcp_slave/port/port_tcp_slave.h
 components/freertos/FreeRTOS-openocd.c
 components/freertos/croutine.c
-components/freertos/esp_additions/task_snapshot.c
 components/freertos/event_groups.c
 components/freertos/freertos_v8_compat.c
 components/freertos/include/esp_additions/freertos/FreeRTOSConfig.h

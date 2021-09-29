@@ -307,4 +307,6 @@ extern void vPortCleanUpTCB ( void *pxTCB );
 // backward compatibility for 4.4
 #define xTaskRemoveFromUnorderedEventList vTaskRemoveFromUnorderedEventList
 
+#define configNUM_CORES                                 portNUM_PROCESSORS
+
 #endif /* FREERTOS_CONFIG_H */

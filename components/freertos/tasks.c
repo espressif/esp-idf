@@ -243,7 +243,7 @@
  * task should be used in place of the parameter.  This macro simply checks to
  * see if the parameter is NULL and returns a pointer to the appropriate TCB.
  */
-#if portNUM_PROCESSORS > 1
+#if configNUM_CORES > 1
 /* In SMP, we need to disable interrupts if getting the current task handle outside a critical section. Calling xTaskGetCurrentTaskHandle() ensures this. */
 #define prvGetTCBFromHandle( pxHandle ) ( ( ( pxHandle ) == NULL ) ? xTaskGetCurrentTaskHandle() : ( (TaskHandle_t)pxHandle ) )
 #else
@@ -358,7 +358,7 @@ typedef tskTCB TCB_t;
 
 /*lint -save -e956 A manual analysis and inspection has been used to determine
  * which static variables must be declared volatile. */
-PRIVILEGED_DATA TCB_t * volatile pxCurrentTCB[portNUM_PROCESSORS] = {NULL};
+PRIVILEGED_DATA TCB_t * volatile pxCurrentTCB[configNUM_CORES] = {NULL};
 
 /* Lists for ready and blocked tasks. --------------------
  * xDelayedTaskList1 and xDelayedTaskList2 could be moved to function scope but
@@ -369,7 +369,7 @@ PRIVILEGED_DATA static List_t xDelayedTaskList1;                         /*< Del
 PRIVILEGED_DATA static List_t xDelayedTaskList2;                         /*< Delayed tasks (two lists are used - one for delays that have overflowed the current tick count. */
 PRIVILEGED_DATA static List_t * volatile pxDelayedTaskList;              /*< Points to the delayed task list currently being used. */
 PRIVILEGED_DATA static List_t * volatile pxOverflowDelayedTaskList;      /*< Points to the delayed task list currently being used to hold tasks that have overflowed the current tick count. */
-PRIVILEGED_DATA static List_t xPendingReadyList[ portNUM_PROCESSORS ];                      /*< Tasks that have been readied while the scheduler was suspended.  They will be moved to the ready list when the scheduler is resumed. */
+PRIVILEGED_DATA static List_t xPendingReadyList[ configNUM_CORES ];                      /*< Tasks that have been readied while the scheduler was suspended.  They will be moved to the ready list when the scheduler is resumed. */
 
 #ifdef ESP_PLATFORM
 PRIVILEGED_DATA static portMUX_TYPE xTaskQueueMutex = portMUX_INITIALIZER_UNLOCKED;
@@ -400,11 +400,11 @@ PRIVILEGED_DATA static volatile TickType_t xTickCount = ( TickType_t ) configINI
 PRIVILEGED_DATA static volatile UBaseType_t uxTopReadyPriority = tskIDLE_PRIORITY;
 PRIVILEGED_DATA static volatile BaseType_t xSchedulerRunning = pdFALSE;
 PRIVILEGED_DATA static volatile TickType_t xPendedTicks = ( TickType_t ) 0U;
-PRIVILEGED_DATA static volatile BaseType_t xYieldPending[portNUM_PROCESSORS] = {pdFALSE};
+PRIVILEGED_DATA static volatile BaseType_t xYieldPending[configNUM_CORES] = {pdFALSE};
 PRIVILEGED_DATA static volatile BaseType_t xNumOfOverflows = ( BaseType_t ) 0;
 PRIVILEGED_DATA static UBaseType_t uxTaskNumber = ( UBaseType_t ) 0U;
 PRIVILEGED_DATA static volatile TickType_t xNextTaskUnblockTime = ( TickType_t ) 0U; /* Initialised to portMAX_DELAY before the scheduler starts. */
-PRIVILEGED_DATA static TaskHandle_t xIdleTaskHandle[portNUM_PROCESSORS] = {NULL};    /*< Holds the handle of the idle task.  The idle task is created automatically when the scheduler is started. */
+PRIVILEGED_DATA static TaskHandle_t xIdleTaskHandle[configNUM_CORES] = {NULL};    /*< Holds the handle of the idle task.  The idle task is created automatically when the scheduler is started. */
 
 /* Context switches are held pending while the scheduler is suspended.  Also,
  * interrupts must not manipulate the xStateListItem of a TCB, or any of the
@@ -414,13 +414,13 @@ PRIVILEGED_DATA static TaskHandle_t xIdleTaskHandle[portNUM_PROCESSORS] = {NULL}
  * kernel to move the task from the pending ready list into the real ready list
  * when the scheduler is unsuspended.  The pending ready list itself can only be
  * accessed from a critical section. */
-PRIVILEGED_DATA static volatile UBaseType_t uxSchedulerSuspended[portNUM_PROCESSORS] = {( UBaseType_t ) pdFALSE};
+PRIVILEGED_DATA static volatile UBaseType_t uxSchedulerSuspended[configNUM_CORES] = {( UBaseType_t ) pdFALSE};
 
 #if ( configGENERATE_RUN_TIME_STATS == 1 )
 
 /* Do not move these variables to function scope as doing so prevents the
  * code working with debuggers that need to remove the static qualifier. */
-    PRIVILEGED_DATA static uint32_t ulTaskSwitchedInTime[portNUM_PROCESSORS] = {0U}; /*< Holds the value of a timer/counter the last time a task was switched in. */
+    PRIVILEGED_DATA static uint32_t ulTaskSwitchedInTime[configNUM_CORES] = {0U}; /*< Holds the value of a timer/counter the last time a task was switched in. */
     PRIVILEGED_DATA static uint32_t ulTotalRunTime = 0UL;                            /*< Holds the total amount of execution time as defined by the run time counter clock. */
 
 #endif
@@ -428,7 +428,7 @@ PRIVILEGED_DATA static volatile UBaseType_t uxSchedulerSuspended[portNUM_PROCESS
 // per-CPU flags indicating that we are doing context switch, it is used by apptrace and sysview modules
 // in order to avoid calls of vPortYield from traceTASK_SWITCHED_IN/OUT when waiting
 // for locks to be free or for host to read full trace buffer
-PRIVILEGED_DATA static volatile BaseType_t xSwitchingContext[ portNUM_PROCESSORS ]  = { pdFALSE };
+PRIVILEGED_DATA static volatile BaseType_t xSwitchingContext[ configNUM_CORES ]  = { pdFALSE };
 
 /*lint -restore */
 
@@ -641,7 +641,7 @@ void taskYIELD_OTHER_CORE( BaseType_t xCoreID, UBaseType_t uxPriority )
     else
     {
         /* The task has no affinity. See if we can find a CPU to put it on.*/
-        for (i=0; i<portNUM_PROCESSORS; i++) {
+        for (i=0; i<configNUM_CORES; i++) {
             if (i != xPortGetCoreID() && pxCurrentTCB[ i ]->uxPriority < uxPriority)
             {
                 vPortYieldOtherCore( i );
@@ -669,7 +669,7 @@ void taskYIELD_OTHER_CORE( BaseType_t xCoreID, UBaseType_t uxPriority )
 
         configASSERT( portVALID_TCB_MEM(pxTaskBuffer) );
         configASSERT( portVALID_STACK_MEM(pxStackBuffer) );
-        configASSERT( (xCoreID>=0 && xCoreID<portNUM_PROCESSORS) || (xCoreID==tskNO_AFFINITY) );
+        configASSERT( (xCoreID>=0 && xCoreID<configNUM_CORES) || (xCoreID==tskNO_AFFINITY) );
 
         #if ( configASSERT_DEFINED == 1 )
             {
@@ -918,7 +918,7 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
     StackType_t * pxTopOfStack;
     UBaseType_t x;
 
-    #if (portNUM_PROCESSORS < 2)
+    #if (configNUM_CORES < 2)
     xCoreID = 0;
     #endif
 
@@ -1183,7 +1183,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
 {
     TCB_t *curTCB, *tcb0, *tcb1;
 
-    #if (portNUM_PROCESSORS < 2)
+    #if (configNUM_CORES < 2)
     xCoreID = 0;
     #endif
 
@@ -1195,7 +1195,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
 
         if ( xCoreID == tskNO_AFFINITY )
         {
-            if ( portNUM_PROCESSORS == 1 )
+            if ( configNUM_CORES == 1 )
             {
                 xCoreID = 0;
             }
@@ -1361,10 +1361,10 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
 
             if( pxTCB == curTCB ||
                 /* in SMP, we also can't immediately delete the task active on the other core */
-                (portNUM_PROCESSORS > 1 && pxTCB == pxCurrentTCB[ !core ]) ||
+                (configNUM_CORES > 1 && pxTCB == pxCurrentTCB[ !core ]) ||
                 /* ... and we can't delete a non-running task pinned to the other core, as
                    FPU cleanup has to happen on the same core */
-                (portNUM_PROCESSORS > 1 && pxTCB->xCoreID == (!core)) )
+                (configNUM_CORES > 1 && pxTCB->xCoreID == (!core)) )
             {
                 /* A task is deleting itself.  This cannot complete within the
                  * task itself, as a context switch to another task is required.
@@ -1385,7 +1385,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
                  * required. */
                 portPRE_TASK_DELETE_HOOK( pxTCB, &xYieldPending[core] );
 
-                if (portNUM_PROCESSORS > 1 && pxTCB == pxCurrentTCB[ !core ])
+                if (configNUM_CORES > 1 && pxTCB == pxCurrentTCB[ !core ])
                 {
                     /* SMP case of deleting a task running on a different core. Same issue
                     as a task deleting itself, but we need to send a yield to this task now
@@ -1611,7 +1611,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
             /* The task calling this function is querying its own state. */
             eReturn = eRunning;
         }
-        #if (portNUM_PROCESSORS > 1)
+        #if (configNUM_CORES > 1)
         else if (pxTCB == pxCurrentTCB[!xPortGetCoreID()])
         {
             /* The task calling this function is querying its own state. */
@@ -2261,12 +2261,12 @@ void vTaskStartScheduler( void )
     BaseType_t xReturn;
 
     #if ( configSUPPORT_STATIC_ALLOCATION == 1 && configSUPPORT_STATIC_ALLOCATION == 0 )
-    StaticTask_t *pxIdleTaskTCBBuffer[portNUM_PROCESSORS] = {NULL};
-    StackType_t *pxIdleTaskStackBuffer[portNUM_PROCESSORS]  = {NULL};
+    StaticTask_t *pxIdleTaskTCBBuffer[configNUM_CORES] = {NULL};
+    StackType_t *pxIdleTaskStackBuffer[configNUM_CORES]  = {NULL};
     uint32_t ulIdleTaskStackSize;
     #endif
 
-    for(BaseType_t i = 0; i < portNUM_PROCESSORS; i++)
+    for(BaseType_t i = 0; i < configNUM_CORES; i++)
     {
         /* Add the idle task at the lowest priority. */
         #if( 0 ) /* configSUPPORT_STATIC_ALLOCATION == 1 ) Temporarily unsupported IDF-2243 */
@@ -2439,7 +2439,7 @@ void vTaskSuspendAll( void )
 
 #if ( configUSE_TICKLESS_IDLE != 0 )
 
-#if ( portNUM_PROCESSORS > 1 )
+#if ( configNUM_CORES > 1 )
 
     static BaseType_t xHaveReadyTasks( void )
     {
@@ -2457,7 +2457,7 @@ void vTaskSuspendAll( void )
         return pdFALSE;
     }
 
-#endif // portNUM_PROCESSORS > 1
+#endif // configNUM_CORES > 1
 
     static TickType_t prvGetExpectedIdleTime( void )
     {
@@ -2469,7 +2469,7 @@ void vTaskSuspendAll( void )
         {
             xReturn = 0;
         }
-#if portNUM_PROCESSORS > 1
+#if configNUM_CORES > 1
         /* This function is called from Idle task; in single core case this
          * means that no higher priority tasks are ready to run, and we can
          * enter sleep. In SMP case, there might be ready tasks waiting for
@@ -2479,8 +2479,8 @@ void vTaskSuspendAll( void )
         {
             xReturn = 0;
         }
-#endif // portNUM_PROCESSORS > 1
-        else if( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ tskIDLE_PRIORITY ] ) ) > portNUM_PROCESSORS )
+#endif // configNUM_CORES > 1
+        else if( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ tskIDLE_PRIORITY ] ) ) > configNUM_CORES )
         {
             /* There are other idle priority tasks in the ready state.  If
              * time slicing is used then the very next tick interrupt must be
@@ -2928,7 +2928,7 @@ char * pcTaskGetName( TaskHandle_t xTaskToQuery ) /*lint !e971 Unqualified char 
 
     TaskHandle_t xTaskGetIdleTaskHandleForCPU( UBaseType_t cpuid )
     {
-        configASSERT( cpuid < portNUM_PROCESSORS );
+        configASSERT( cpuid < configNUM_CORES );
         configASSERT( ( xIdleTaskHandle[cpuid] != NULL ) );
         return xIdleTaskHandle[cpuid];
     }
@@ -3462,7 +3462,7 @@ void vTaskSwitchContext( void )
                     already being executed by another core */
                     foundNonExecutingWaiter = pdTRUE;
                     portBASE_TYPE i = 0;
-                    for ( i=0; i<portNUM_PROCESSORS; i++ ) {
+                    for ( i=0; i<configNUM_CORES; i++ ) {
                         if (i == xPortGetCoreID()) {
                             continue;
                         } else if (pxCurrentTCB[i] == pxTCB) {
@@ -3649,7 +3649,7 @@ BaseType_t xTaskRemoveFromEventList( const List_t * const pxEventList )
     if ( pxUnblockedTCB->xCoreID == tskNO_AFFINITY )
     {
         uxTargetCPU = xPortGetCoreID();
-        for (i = 0; i < portNUM_PROCESSORS; i++)
+        for (i = 0; i < configNUM_CORES; i++)
         {
             if ( uxSchedulerSuspended[ i ] == ( UBaseType_t ) pdFALSE )
             {
@@ -4163,8 +4163,8 @@ static void prvInitialiseTaskLists( void )
     vListInitialise( &xDelayedTaskList1 );
     vListInitialise( &xDelayedTaskList2 );
 
-    #if ( portNUM_PROCESSORS > 1 )
-    for(BaseType_t i = 0; i < portNUM_PROCESSORS; i++) {
+    #if ( configNUM_CORES > 1 )
+    for(BaseType_t i = 0; i < configNUM_CORES; i++) {
         vListInitialise( &xPendingReadyList[ i ] );
     }
     #else
@@ -4217,7 +4217,7 @@ static void prvCheckTasksWaitingTermination( void )
                             TCB_t *tgt_tcb = ( TCB_t * )listGET_LIST_ITEM_OWNER(target);
                             int affinity = tgt_tcb->xCoreID;
                             //Self deleting tasks are added to Termination List before they switch context. Ensure they aren't still currently running
-                            if( pxCurrentTCB[core] == tgt_tcb || (portNUM_PROCESSORS > 1 && pxCurrentTCB[!core] == tgt_tcb) ){
+                            if( pxCurrentTCB[core] == tgt_tcb || (configNUM_CORES > 1 && pxCurrentTCB[!core] == tgt_tcb) ){
                                 continue;   //Can't free memory of task that is still running
                             }
                             if(affinity == core || affinity == tskNO_AFFINITY){     //Find first item not pinned to other core
@@ -4613,7 +4613,7 @@ static void prvResetNextTaskUnblockTime( void )
 }
 /*-----------------------------------------------------------*/
 
-#if ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) || (portNUM_PROCESSORS > 1) )
+#if ( ( INCLUDE_xTaskGetCurrentTaskHandle == 1 ) || ( configUSE_MUTEXES == 1 ) || (configNUM_CORES > 1) )
 
     TaskHandle_t xTaskGetCurrentTaskHandle( void )
     {
@@ -4632,7 +4632,7 @@ static void prvResetNextTaskUnblockTime( void )
     TaskHandle_t xReturn=NULL;
 
         //Xtensa-specific: the pxCurrentPCB pointer is atomic so we shouldn't need a lock.
-        if (cpuid < portNUM_PROCESSORS) {
+        if (cpuid < configNUM_CORES) {
             xReturn = pxCurrentTCB[ cpuid ];
         }
 
@@ -5928,7 +5928,7 @@ static void prvAddCurrentTaskToDelayedList( const portBASE_TYPE xCoreID, const T
     TickType_t xTimeToWake;
     const TickType_t xConstTickCount = xTickCount;
 
-    if (portNUM_PROCESSORS > 1 && listIS_CONTAINED_WITHIN(&xTasksWaitingTermination,  &( pxCurrentTCB[xCoreID]->xStateListItem))) {
+    if (configNUM_CORES > 1 && listIS_CONTAINED_WITHIN(&xTasksWaitingTermination,  &( pxCurrentTCB[xCoreID]->xStateListItem))) {
         /* vTaskDelete() has been called to delete this task. This would have happened from the other core while this task was spinning on xTaskQueueMutex,
            so don't move the running task to the delayed list - as soon as this core re-enables interrupts this task will
            be suspended permanently */
