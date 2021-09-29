@@ -283,6 +283,17 @@ function(add_c_compile_options)
     endforeach()
 endfunction()
 
+# add_compile_options variant for ASM code only
+#
+# This adds global options, set target properties for
+# component-specific flags
+function(add_asm_compile_options)
+    foreach(option ${ARGV})
+        # note: the Visual Studio Generator doesn't support this...
+        add_compile_options($<$<COMPILE_LANGUAGE:ASM>:${option}>)
+    endforeach()
+endfunction()
+
 
 # add_prebuild_library
 #
