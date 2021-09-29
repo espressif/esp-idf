@@ -121,6 +121,10 @@ static int tls_mbedtls_read(void *ctx, unsigned char *buf, size_t len)
 	struct wpabuf *local_buf;
 	size_t data_len = len;
 
+	if (data->in_data == NULL) {
+		return MBEDTLS_ERR_SSL_WANT_READ;
+	}
+
 	if (len > wpabuf_len(data->in_data)) {
 		wpa_printf(MSG_ERROR, "don't have suffient data\n");
 		data_len = wpabuf_len(data->in_data);
@@ -556,54 +560,24 @@ struct wpabuf * tls_connection_handshake(void *tls_ctx,
 	if (wpabuf_len(in_data)) {
 		conn->tls_io_data.in_data = wpabuf_dup(in_data);
 	}
-	ret = mbedtls_ssl_handshake_step(&tls->ssl);
-	if (ret < 0) {
-		wpa_printf(MSG_ERROR, "%s:%d", __func__, __LINE__);
-		goto end;
-	}
 
 	/* Multiple reads */
-	while (conn->tls_io_data.in_data) {
+	while (tls->ssl.state != MBEDTLS_SSL_HANDSHAKE_OVER) {
+		if (tls->ssl.state == MBEDTLS_SSL_CLIENT_CERTIFICATE) {
+			/* Read random data before session completes, not present after handshake */
+			if (tls->ssl.handshake) {
+				os_memcpy(conn->randbytes, tls->ssl.handshake->randbytes,
+					  TLS_RANDOM_LEN * 2);
+			}
+		}
 		ret = mbedtls_ssl_handshake_step(&tls->ssl);
+
 		if (ret < 0)
 			break;
 	}
-
-	/* State machine just started, get client hello */
-	if (tls->ssl.state == MBEDTLS_SSL_CLIENT_HELLO) {
-		ret = mbedtls_ssl_handshake_step(&tls->ssl);
-	}
-
-	if (ret < 0) {
-		wpa_printf(MSG_ERROR, "%s:%d", __func__, __LINE__);
+	if (ret < 0 && ret != MBEDTLS_ERR_SSL_WANT_READ) {
+		wpa_printf(MSG_INFO, "%s: ret is %d line:%d", __func__, ret, __LINE__);
 		goto end;
-	}
-
-	/* Already read sever data till hello done */
-	if (tls->ssl.state == MBEDTLS_SSL_CLIENT_CERTIFICATE) {
-		/* Read random data before session completes, not present after handshake */
-		if (tls->ssl.handshake) {
-			os_memcpy(conn->randbytes, tls->ssl.handshake->randbytes,
-				  TLS_RANDOM_LEN * 2);
-		}
-
-		/* trigger state machine multiple times to reach till finish */
-		while (tls->ssl.state <= MBEDTLS_SSL_CLIENT_FINISHED) {
-			ret = mbedtls_ssl_handshake_step(&tls->ssl);
-			if (ret < 0) {
-				break;
-			}
-		}
-	}
-
-	/* Trigger state machine till handshake is complete or error occures */
-	if (tls->ssl.state == MBEDTLS_SSL_FLUSH_BUFFERS) {
-		while (tls->ssl.state <= MBEDTLS_SSL_HANDSHAKE_OVER) {
-			ret = mbedtls_ssl_handshake_step(&tls->ssl);
-			if (ret < 0) {
-				break;
-			}
-		}
 	}
 
 	if (!conn->tls_io_data.out_data) {
