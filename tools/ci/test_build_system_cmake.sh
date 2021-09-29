@@ -354,6 +354,24 @@ function run_tests()
     rm sdkconfig
     rm sdkconfig.defaults
 
+    print_status "Compiler flags on build command line are taken into account"
+    clean_build_dir
+    # Backup original source file
+    cp main/main.c main/main.c.bak
+    # Alter source file to check user flag
+    echo -e "\n#ifndef USER_FLAG \n \
+#error \"USER_FLAG is not defined!\" \n \
+#endif\n" >> main/main.c
+    idf.py build -DCMAKE_C_FLAGS=-DUSER_FLAG || failure "User flags should have been taken into account"
+    # Restore original file
+    mv main/main.c.bak main/main.c
+
+    print_status "Compiler flags cannot be overwritten"
+    clean_build_dir
+    # If the compiler flags are overriden, the following build command will
+    # cause issues at link time.
+    idf.py build -DCMAKE_C_FLAGS= -DCMAKE_CXX_FLAGS= || failure "CMake compiler flags have been overriden"
+
     # the next tests use the esp32s2 target
     export other_target=esp32s2
 
