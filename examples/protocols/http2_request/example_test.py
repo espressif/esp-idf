@@ -25,10 +25,7 @@ def is_test_server_available():  # type: () -> bool
     return False
 
 
-# Disabling the Test in CI as the leaf certificate of http2.golang.org is expired from 8 July.
-# There is no timeline when the cert will be updated.
-# Disabling this test till an alternative is found for testing the http2 support.
-@ttfw_idf.idf_example_test(env_tag='Example_EthKitV1', ignore=True)
+@ttfw_idf.idf_example_test(env_tag='Example_EthKitV1')
 def test_examples_protocol_http2_request(env, extra_data):  # type: (tiny_test_fw.Env.Env, None) -> None # pylint: disable=unused-argument
     """
     steps: |
