@@ -1165,7 +1165,6 @@ components/esp_system/port/soc/esp32s3/system_internal.c
 components/esp_system/port/soc/esp32s3/usb_console.c
 components/esp_system/stack_check.c
 components/esp_system/system_time.c
-components/esp_system/task_wdt.c
 components/esp_system/test/test_delay.c
 components/esp_system/test/test_reset_reason.c
 components/esp_system/test/test_sleep.c
