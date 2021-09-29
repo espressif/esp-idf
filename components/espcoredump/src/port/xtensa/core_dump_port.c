@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /**
  * @file
@@ -531,7 +523,8 @@ void esp_core_dump_summary_parse_backtrace_info(esp_core_dump_bt_info_t *bt_info
     frame.next_pc = stack->a0;
 
     corrupted = !(esp_stack_ptr_is_sane(frame.sp) &&
-                esp_ptr_executable((void *)esp_cpu_process_stack_pc(frame.pc)));
+                (esp_ptr_executable((void *)esp_cpu_process_stack_pc(frame.pc)) ||
+                stack->exccause == EXCCAUSE_INSTR_PROHIBITED)); /* Ignore the first corrupted PC in case of InstrFetchProhibited */
 
     /* vaddr is actual stack address when crash occurred. However that stack is now saved
      * in the flash at a different location. Hence for each SP, we need to adjust the offset
