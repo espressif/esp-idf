@@ -10,7 +10,7 @@ Wi-Fi Driver
 - Support WPA/WPA2/WPA3/WPA2-Enterprise and WPS
 - Support AMPDU, HT40, QoS and other key features
 - Support Modem-sleep
-- Support an Espressif-specific protocol which, in turn, supports up to **1 km** of data traffic
+- Support the Espressif-specific ESP-NOW protocol and Long Range mode, which supports up to **1 km** of data traffic
 - Up to 20 MBit/s TCP throughput and 30 MBit/s UDP throughput over the air
 - Support Sniffer
 - Support both fast scan and all-channel scan
@@ -1560,6 +1560,50 @@ The table below shows the best throughput results we got in Espressif's lab and 
 
     When the throughput is tested by iperf example, the sdkconfig is :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32c3`.
 
+.. only:: esp32s3
+
+     .. list-table::
+        :header-rows: 1
+        :widths: 10 10 10 15 20
+
+        * - Type/Throughput
+          - Air In Lab
+          - Shield-box
+          - Test Tool
+          - IDF Version (commit ID)
+        * - Raw 802.11 Packet RX
+          - N/A
+          - **130 MBit/s**
+          - Internal tool
+          - NA
+        * - Raw 802.11 Packet TX
+          - N/A
+          - **130 MBit/s**
+          - Internal tool
+          - NA
+        * - UDP RX
+          - 30 MBit/s
+          - 88 MBit/s
+          - iperf example
+          - 15575346
+        * - UDP TX
+          - 30 MBit/s
+          - 98 MBit/s
+          - iperf example
+          - 15575346
+        * - TCP RX
+          - 20 MBit/s
+          - 73 MBit/s
+          - iperf example
+          - 15575346
+        * - TCP TX
+          - 20 MBit/s
+          - 83 MBit/s
+          - iperf example
+          - 15575346
+
+    When the throughput is tested by iperf example, the sdkconfig is :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32s3`.
+
 Wi-Fi 80211 Packet Send
 ---------------------------
 
@@ -1859,9 +1903,9 @@ Wi-Fi Fragment
 
     supports Wi-Fi receiving fragment, but doesn't support Wi-Fi transmitting fragment.
 
-.. only:: esp32c3
+.. only:: esp32c3 or esp32s3
 
-    ESP32C3 supports Wi-Fi receiving and transmitting fragment.
+    {IDF_TARGET_NAME} supports Wi-Fi receiving and transmitting fragment.
 
 WPS Enrollee
 -------------------------
@@ -1984,10 +2028,32 @@ Increasing the size or number of the buffers mentioned above properly can improv
     **CACHE:**
 
      - :ref:`CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE`
-        Configure the size of the instruction cache.
+        Configure the size of the instruction Cache.
 
      - :ref:`CONFIG_ESP32S2_INSTRUCTION_CACHE_LINE_SIZE`
-        Configure the width of the instruction cache bus.
+        Configure the width of the instruction Cache bus.
+
+.. only:: esp32s3
+
+    **CACHE:**
+
+     - :ref:`CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE`
+        Configure the size of the instruction Cache.
+
+     - :ref:`CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_SIZE`
+        Configure the size of the instruction Cache bus.
+
+     - :ref:`CONFIG_ESP32S3_ICACHE_ASSOCIATED_WAYS`
+        Configure the associated ways of the instruction Cache.
+
+     - :ref:`CONFIG_ESP32S3_DATA_CACHE_SIZE`
+        Configure the size of the Data Cache.
+
+     - :ref:`CONFIG_ESP32S3_DATA_CACHE_LINE_SIZE`
+        Configure the line size of the Data Cache.
+
+     - :ref:`CONFIG_ESP32S3_DCACHE_ASSOCIATED_WAYS`
+        Configure the associated ways of the Data Cache.
 
 .. note::
     The buffer size mentioned above is fixed as 1.6 KB.
@@ -2199,7 +2265,7 @@ The parameters not mentioned in the following table should be set to the default
      - **Minimum rank**
         This is the minimum configuration rank of {IDF_TARGET_NAME}. The protocol stack only uses the necessary memory for running. It is suitable for scenarios that have no requirement for performance and the application requires lots of space.
 
-.. only:: esp32c3
+.. only:: esp32c3 or esp32s3
 
     **Ranks:**
 
