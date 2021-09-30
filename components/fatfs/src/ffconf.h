@@ -181,7 +181,7 @@
 / Drive/Volume Configurations
 /---------------------------------------------------------------------------*/
 
-#define FF_VOLUMES		2
+#define FF_VOLUMES		CONFIG_FATFS_VOLUME_COUNT
 /* Number of volumes (logical drives) to be used. (1-10) */
 
 
