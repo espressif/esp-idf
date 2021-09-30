@@ -1,16 +1,8 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef MDNS_PRIVATE_H_
 #define MDNS_PRIVATE_H_
 
@@ -176,6 +168,7 @@ typedef enum {
     ACTION_SERVICE_TXT_REPLACE,
     ACTION_SERVICE_TXT_SET,
     ACTION_SERVICE_TXT_DEL,
+    ACTION_SERVICE_SUBTYPE_ADD,
     ACTION_SERVICES_CLEAR,
     ACTION_SEARCH_ADD,
     ACTION_SEARCH_SEND,
@@ -225,6 +218,7 @@ typedef struct {
 typedef struct mdns_parsed_question_s {
     struct mdns_parsed_question_s * next;
     uint16_t type;
+    bool sub;
     bool unicast;
     char * host;
     char * service;
@@ -279,6 +273,11 @@ typedef struct mdns_txt_linked_item_s {
     struct mdns_txt_linked_item_s * next;   /*!< next result, or NULL for the last result in the list */
 } mdns_txt_linked_item_t;
 
+typedef struct mdns_subtype_s {
+    const char *subtype;                    /*!< subtype */
+    struct mdns_subtype_s * next;           /*!< next result, or NULL for the last result in the list */
+} mdns_subtype_t;
+
 typedef struct {
     const char * instance;
     const char * service;
@@ -288,6 +287,7 @@ typedef struct {
     uint16_t weight;
     uint16_t port;
     mdns_txt_linked_item_t * txt;
+    mdns_subtype_t *subtype;
 } mdns_service_t;
 
 typedef struct mdns_srv_item_s {
@@ -431,6 +431,10 @@ typedef struct {
             mdns_srv_item_t * service;
             char * key;
         } srv_txt_del;
+        struct {
+            mdns_srv_item_t * service;
+            char * subtype;
+        } srv_subtype_add;
         struct {
             mdns_search_once_t * search;
         } search_add;
