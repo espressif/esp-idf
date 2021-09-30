@@ -74,6 +74,7 @@ enum {
     BTM_SET_PRIVACY_FAIL,               /* 24 enable/disable local privacy failed*/
     BTM_SET_STATIC_RAND_ADDR_FAIL,      /* 25 Command failed */
     BTM_INVALID_STATIC_RAND_ADDR,       /* 26 invalid static rand addr */
+    BTM_SEC_DEV_REC_REMOVED,            /* 27 Device record relate to the bd_addr is removed */
 };
 
 typedef uint8_t tBTM_STATUS;
