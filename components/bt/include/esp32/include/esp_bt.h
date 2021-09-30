@@ -117,6 +117,8 @@ the adv packet will be discarded until the memory is restored. */
 #define BTDM_CTRL_AUTO_LATENCY_EFF false
 #endif
 
+#define BTDM_CTRL_HLI false
+
 #ifdef CONFIG_BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF
 #define BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF CONFIG_BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF
 #else
@@ -151,6 +153,7 @@ the adv packet will be discarded until the memory is restored. */
     .ble_sca = CONFIG_BTDM_BLE_SLEEP_CLOCK_ACCURACY_INDEX_EFF,             \
     .pcm_role = CONFIG_BTDM_CTRL_PCM_ROLE_EFF,                             \
     .pcm_polar = CONFIG_BTDM_CTRL_PCM_POLAR_EFF,                           \
+    .hli = BTDM_CTRL_HLI,                                                  \
     .magic = ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL,                           \
 };
 
@@ -192,6 +195,7 @@ typedef struct {
     uint8_t ble_sca;                        /*!< BLE low power crystal accuracy index */
     uint8_t pcm_role;                       /*!< PCM role (master & slave)*/
     uint8_t pcm_polar;                      /*!< PCM polar trig (falling clk edge & rising clk edge) */
+    bool hli;                               /*!< Using high level interrupt or not */
     uint32_t magic;                         /*!< Magic number */
 } esp_bt_controller_config_t;
 
