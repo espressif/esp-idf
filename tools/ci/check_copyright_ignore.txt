@@ -1178,7 +1178,6 @@ components/esp_system/port/soc/esp32s3/reset_reason.c
 components/esp_system/port/soc/esp32s3/system_internal.c
 components/esp_system/port/soc/esp32s3/usb_console.c
 components/esp_system/stack_check.c
-components/esp_system/startup.c
 components/esp_system/system_time.c
 components/esp_system/task_wdt.c
 components/esp_system/test/test_delay.c
@@ -1207,8 +1206,6 @@ components/esp_websocket_client/esp_websocket_client.c
 components/esp_websocket_client/include/esp_websocket_client.h
 components/esp_websocket_client/test/test_websocket_client.c
 components/esp_wifi/esp32/esp_adapter.c
-components/esp_wifi/esp32c3/esp_adapter.c
-components/esp_wifi/esp32s2/esp_adapter.c
 components/esp_wifi/esp32s3/esp_adapter.c
 components/esp_wifi/include/esp_coexist_adapter.h
 components/esp_wifi/include/esp_mesh.h
@@ -1225,13 +1222,11 @@ components/esp_wifi/include/esp_wifi_crypto_types.h
 components/esp_wifi/include/esp_wifi_default.h
 components/esp_wifi/include/esp_wifi_netif.h
 components/esp_wifi/include/smartconfig_ack.h
-components/esp_wifi/src/coexist.c
 components/esp_wifi/src/lib_printf.c
 components/esp_wifi/src/mesh_event.c
 components/esp_wifi/src/smartconfig.c
 components/esp_wifi/src/smartconfig_ack.c
 components/esp_wifi/src/wifi_default.c
-components/esp_wifi/src/wifi_init.c
 components/esp_wifi/src/wifi_netif.c
 components/esp_wifi/test/test_wifi.c
 components/esp_wifi/test/test_wifi_init.c
