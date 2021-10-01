@@ -304,4 +304,7 @@ extern void vPortCleanUpTCB ( void *pxTCB );
 
 #define configTASK_NOTIFICATION_ARRAY_ENTRIES           1
 
+// backward compatibility for 4.4
+#define xTaskRemoveFromUnorderedEventList vTaskRemoveFromUnorderedEventList
+
 #endif /* FREERTOS_CONFIG_H */

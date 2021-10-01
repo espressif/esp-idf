@@ -2347,11 +2347,13 @@ void vTaskStartScheduler( void )
         portDISABLE_INTERRUPTS();
 
         #if ( configUSE_NEWLIB_REENTRANT == 1 )
-        {
-            // /* Switch Newlib's _impure_ptr variable to point to the _reent
-            // structure specific to the task that will run first. */
+            {
+                /* Switch Newlib's _impure_ptr variable to point to the _reent
+                 * structure specific to the task that will run first.
+                 * See the third party link http://www.nadler.com/embedded/newlibAndFreeRTOS.html
+                 * for additional information. */
             // _impure_ptr = &( pxCurrentTCB[xPortGetCoreID()]->xNewLib_reent );
-        }
+            }
         #endif /* configUSE_NEWLIB_REENTRANT */
 
         xNextTaskUnblockTime = portMAX_DELAY;
@@ -3105,6 +3107,7 @@ BaseType_t xTaskIncrementTick( void )
      * Increments the tick then checks to see if the new tick value will cause any
      * tasks to be unblocked. */
     traceTASK_INCREMENT_TICK( xTickCount );
+
     if( uxSchedulerSuspended[xPortGetCoreID()] == ( UBaseType_t ) pdFALSE )
     {
         taskENTER_CRITICAL_ISR();
@@ -3326,7 +3329,8 @@ BaseType_t xTaskIncrementTick( void )
 
 #if ( configUSE_APPLICATION_TASK_TAG == 1 )
 
-    BaseType_t xTaskCallApplicationTaskHook( TaskHandle_t xTask, void *pvParameter )
+    BaseType_t xTaskCallApplicationTaskHook( TaskHandle_t xTask,
+                                             void * pvParameter )
     {
         TCB_t * xTCB;
         BaseType_t xReturn;
@@ -3529,7 +3533,8 @@ void vTaskSwitchContext( void )
 }
 /*-----------------------------------------------------------*/
 
-void vTaskPlaceOnEventList( List_t * const pxEventList, const TickType_t xTicksToWait )
+void vTaskPlaceOnEventList( List_t * const pxEventList,
+                            const TickType_t xTicksToWait )
 {
     configASSERT( pxEventList );
     taskENTER_CRITICAL();
@@ -3548,7 +3553,9 @@ void vTaskPlaceOnEventList( List_t * const pxEventList, const TickType_t xTicksT
 }
 /*-----------------------------------------------------------*/
 
-void vTaskPlaceOnUnorderedEventList( List_t * pxEventList, const TickType_t xItemValue, const TickType_t xTicksToWait )
+void vTaskPlaceOnUnorderedEventList( List_t * pxEventList,
+                                     const TickType_t xItemValue,
+                                     const TickType_t xTicksToWait )
 {
     configASSERT( pxEventList );
     taskENTER_CRITICAL();
@@ -3709,10 +3716,10 @@ BaseType_t xTaskRemoveFromEventList( const List_t * const pxEventList )
 }
 /*-----------------------------------------------------------*/
 
-BaseType_t xTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem, const TickType_t xItemValue )
+void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
+                                        const TickType_t xItemValue )
 {
     TCB_t * pxUnblockedTCB;
-    BaseType_t xReturn;
 
     taskENTER_CRITICAL();
 
@@ -3733,12 +3740,6 @@ BaseType_t xTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem, cons
 
     if ( tskCAN_RUN_HERE(pxUnblockedTCB->xCoreID) && pxUnblockedTCB->uxPriority >= pxCurrentTCB[ xPortGetCoreID() ]->uxPriority )
     {
-        /* Return true if the task removed from the event list has
-         * a higher priority than the calling task.  This allows
-         * the calling task to know if it should force a context
-         * switch now. */
-        xReturn = pdTRUE;
-
         /* Mark that a yield is pending in case the user is not using the
          * "xHigherPriorityTaskWoken" parameter to an ISR safe FreeRTOS function. */
         xYieldPending[ xPortGetCoreID() ] = pdTRUE;
@@ -3746,15 +3747,9 @@ BaseType_t xTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem, cons
     else if ( pxUnblockedTCB->xCoreID != xPortGetCoreID() )
     {
         taskYIELD_OTHER_CORE( pxUnblockedTCB->xCoreID, pxUnblockedTCB->uxPriority );
-        xReturn = pdFALSE;
-    }
-    else
-    {
-        xReturn = pdFALSE;
     }
 
     taskEXIT_CRITICAL();
-    return xReturn;
 }
 /*-----------------------------------------------------------*/
 
@@ -3778,7 +3773,8 @@ void vTaskInternalSetTimeOutState( TimeOut_t * const pxTimeOut )
 }
 /*-----------------------------------------------------------*/
 
-BaseType_t xTaskCheckForTimeOut( TimeOut_t * const pxTimeOut, TickType_t * const pxTicksToWait )
+BaseType_t xTaskCheckForTimeOut( TimeOut_t * const pxTimeOut,
+                                 TickType_t * const pxTicksToWait )
 {
     BaseType_t xReturn;
 
@@ -3872,7 +3868,8 @@ void vTaskMissedYield( void )
 
 #if ( configUSE_TRACE_FACILITY == 1 )
 
-    void vTaskSetTaskNumber( TaskHandle_t xTask, const UBaseType_t uxHandle )
+    void vTaskSetTaskNumber( TaskHandle_t xTask,
+                             const UBaseType_t uxHandle )
     {
         TCB_t * pxTCB;
 
@@ -5423,6 +5420,7 @@ TickType_t uxTaskResetEventItemValue( void )
         BaseType_t xReturn;
 
         configASSERT( uxIndexToWait < configTASK_NOTIFICATION_ARRAY_ENTRIES );
+
         taskENTER_CRITICAL();
         {
             /* Only block if a notification is not already pending. */

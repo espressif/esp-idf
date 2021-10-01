@@ -430,14 +430,14 @@ typedef enum
 #if ( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
 
     static inline IRAM_ATTR BaseType_t xTaskCreate(
-            TaskFunction_t pvTaskCode,
-            const char * const pcName,
-            const uint32_t usStackDepth,
-            void * const pvParameters,
-            UBaseType_t uxPriority,
-            TaskHandle_t * const pvCreatedTask)
+                            TaskFunction_t pvTaskCode,
+                            const char * const pcName,     /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+                            const uint32_t usStackDepth,
+                            void * const pvParameters,
+                            UBaseType_t uxPriority,
+                            TaskHandle_t * const pxCreatedTask) PRIVILEGED_FUNCTION
     {
-        return xTaskCreatePinnedToCore( pvTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pvCreatedTask, tskNO_AFFINITY );
+        return xTaskCreatePinnedToCore( pvTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pxCreatedTask, tskNO_AFFINITY );
     }
 
 #endif
@@ -599,15 +599,15 @@ typedef enum
 
 #if( configSUPPORT_STATIC_ALLOCATION == 1 )
     static inline IRAM_ATTR TaskHandle_t xTaskCreateStatic(
-            TaskFunction_t pvTaskCode,
-            const char * const pcName,
-            const uint32_t ulStackDepth,
-            void * const pvParameters,
-            UBaseType_t uxPriority,
-            StackType_t * const pxStackBuffer,
-            StaticTask_t * const pxTaskBuffer)
+                                    TaskFunction_t pvTaskCode,
+                                    const char * const pcName,     /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+                                    const uint32_t ulStackDepth,
+                                    void * const pvParameters,
+                                    UBaseType_t uxPriority,
+                                    StackType_t * const puxStackBuffer,
+                                    StaticTask_t * const pxTaskBuffer) PRIVILEGED_FUNCTION
     {
-        return xTaskCreateStaticPinnedToCore( pvTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, pxStackBuffer, pxTaskBuffer, tskNO_AFFINITY );
+        return xTaskCreateStaticPinnedToCore( pvTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, puxStackBuffer, pxTaskBuffer, tskNO_AFFINITY );
     }
 #endif /* configSUPPORT_STATIC_ALLOCATION */
 
@@ -690,7 +690,7 @@ typedef enum
  */
 #if ( portUSING_MPU_WRAPPERS == 1 )
     BaseType_t xTaskCreateRestricted( const TaskParameters_t * const pxTaskDefinition,
-                                      TaskHandle_t * pxCreatedTask );
+                                      TaskHandle_t * pxCreatedTask ) PRIVILEGED_FUNCTION;
 #endif
 
 /**
@@ -3335,8 +3335,8 @@ void vTaskPlaceOnEventListRestricted( List_t * const pxEventList,
  * making the call, otherwise pdFALSE.
  */
 BaseType_t xTaskRemoveFromEventList( const List_t * const pxEventList ) PRIVILEGED_FUNCTION;
-BaseType_t xTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
-                                              const TickType_t xItemValue ) PRIVILEGED_FUNCTION;
+void vTaskRemoveFromUnorderedEventList( ListItem_t * pxEventListItem,
+                                        const TickType_t xItemValue ) PRIVILEGED_FUNCTION;
 
 /*
  * THIS FUNCTION MUST NOT BE USED FROM APPLICATION CODE.  IT IS ONLY
@@ -3398,11 +3398,6 @@ void vTaskPriorityDisinheritAfterTimeout( TaskHandle_t const pxMutexHolder,
  * Get the uxTCBNumber assigned to the task referenced by the xTask parameter.
  */
 UBaseType_t uxTaskGetTaskNumber( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
-
-/*
- * Get the current core affinity of a task
- */
-BaseType_t xTaskGetAffinity( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
 
 /*
  * Set the uxTaskNumber of the task referenced by the xTask parameter to

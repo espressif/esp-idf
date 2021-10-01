@@ -26,7 +26,7 @@ entries:
         tasks: vTaskSuspendAll (default)
         tasks: uxTaskGetNumberOfTasks (default)
         tasks: xTaskGetIdleTaskHandle (default)
-        tasks: xTaskRemoveFromUnorderedEventList (default)
+        tasks: vTaskRemoveFromUnorderedEventList (default)
         tasks: uxTaskPriorityGet (default)
         tasks: vTaskPrioritySet (default)
         tasks: vTaskSetThreadLocalStoragePointerAndDelCallback (default)
