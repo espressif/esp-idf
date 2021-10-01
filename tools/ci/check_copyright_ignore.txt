@@ -1272,7 +1272,6 @@ components/espcoredump/src/core_dump_elf.c
 components/espcoredump/src/core_dump_flash.c
 components/espcoredump/src/core_dump_uart.c
 components/espcoredump/src/port/riscv/core_dump_port.c
-components/espcoredump/src/port/xtensa/core_dump_port.c
 components/espcoredump/test/test_espcoredump.py
 components/espcoredump/test_apps/main/test_core_dump.c
 components/expat/port/include/expat_config.h
