@@ -37,7 +37,7 @@ typedef enum {
     USB_SERIAL_JTAG_INTR_TOKEN_REC_IN_EP1       = (1 << 8),
     USB_SERIAL_JTAG_INTR_BUS_RESET              = (1 << 9),
     USB_SERIAL_JTAG_INTR_EP1_ZERO_PAYLOAD       = (1 << 10),
-} usb_serial_jtag_intr_t;
+} usb_serial_jtag_ll_intr_t;
 
 /**
  * @brief  Enable the USB_SERIAL_JTAG interrupt based on the given mask.
@@ -155,6 +155,9 @@ static inline int usb_serial_jtag_ll_txfifo_writable(void)
 /**
  * @brief  Flushes the TX buffer, that is, make it available for the
  *         host to pick up.
+ *
+ * @note  When fifo is full (with 64 byte), HW will flush the buffer automatically.
+ *        It won't be executed if there is nothing in the fifo.
  *
  * @return na
  */

@@ -1,16 +1,8 @@
-// Copyright 2016-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdlib.h>
 #include <ctype.h>
@@ -19,6 +11,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "esp_log.h"
+#include "esp_check.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc_io_reg.h"
 #include "soc/rtc_io_struct.h"
@@ -31,12 +24,6 @@
 
 static const char *TAG = "tsens";
 
-#define TSENS_CHECK(res, ret_val) ({                                    \
-    if (!(res)) {                                                       \
-        ESP_LOGE(TAG, "%s(%d)", __FUNCTION__, __LINE__);                \
-        return (ret_val);                                               \
-    }                                                                   \
-})
 #define TSENS_XPD_WAIT_DEFAULT 0xFF   /* Set wait cycle time(8MHz) from power up to reset enable. */
 #define TSENS_ADC_FACTOR  (0.4386)
 #define TSENS_DAC_FACTOR  (27.88)
@@ -60,12 +47,25 @@ static const tsens_dac_offset_t dac_offset[TSENS_DAC_MAX] = {
     {TSENS_DAC_L4,    2,    10,   -40,   20,   3},
 };
 
+typedef enum {
+    TSENS_HW_STATE_UNCONFIGURED,
+    TSENS_HW_STATE_CONFIGURED,
+    TSENS_HW_STATE_STARTED,
+} tsens_hw_state_t;
+
+static tsens_hw_state_t tsens_hw_state = TSENS_HW_STATE_UNCONFIGURED;
+
 static SemaphoreHandle_t rtc_tsens_mux = NULL;
 
 static float s_deltaT = NAN; // Unused number
 
 esp_err_t temp_sensor_set_config(temp_sensor_config_t tsens)
 {
+    esp_err_t err = ESP_OK;
+    if (tsens_hw_state == TSENS_HW_STATE_STARTED) {
+        ESP_LOGE(TAG, "Do not configure the temp sensor when it's running!");
+        err = ESP_ERR_INVALID_STATE;
+    }
     CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PD_M);
     SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
     CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_SAR_M);
@@ -81,12 +81,13 @@ esp_err_t temp_sensor_set_config(temp_sensor_config_t tsens)
              dac_offset[tsens.dac_offset].range_min,
              dac_offset[tsens.dac_offset].range_max,
              dac_offset[tsens.dac_offset].error_max);
-    return ESP_OK;
+    tsens_hw_state = TSENS_HW_STATE_CONFIGURED;
+    return err;
 }
 
 esp_err_t temp_sensor_get_config(temp_sensor_config_t *tsens)
 {
-    TSENS_CHECK(tsens != NULL, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(tsens != NULL, ESP_ERR_INVALID_ARG, TAG, "no tsens specified");
     CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PD_M);
     SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
     CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_SAR_M);
@@ -104,14 +105,20 @@ esp_err_t temp_sensor_get_config(temp_sensor_config_t *tsens)
 
 esp_err_t temp_sensor_start(void)
 {
+    esp_err_t err = ESP_OK;
+    if (tsens_hw_state != TSENS_HW_STATE_CONFIGURED) {
+        ESP_LOGE(TAG, "Temperature sensor is already running or not be configured");
+        err = ESP_ERR_INVALID_STATE;
+    }
     if (rtc_tsens_mux == NULL) {
         rtc_tsens_mux = xSemaphoreCreateMutex();
     }
-    TSENS_CHECK(rtc_tsens_mux != NULL, ESP_ERR_NO_MEM);
+    ESP_RETURN_ON_FALSE(rtc_tsens_mux != NULL, ESP_ERR_NO_MEM, TAG, "failed to create mutex");
     SENS.sar_tctrl.tsens_dump_out = 0;
     SENS.sar_tctrl2.tsens_clkgate_en = 1;
     SENS.sar_tctrl.tsens_power_up = 1;
-    return ESP_OK;
+    tsens_hw_state = TSENS_HW_STATE_STARTED;
+    return err;
 }
 
 esp_err_t temp_sensor_stop(void)
@@ -127,8 +134,8 @@ esp_err_t temp_sensor_stop(void)
 
 esp_err_t temp_sensor_read_raw(uint32_t *tsens_out)
 {
-    TSENS_CHECK(tsens_out != NULL, ESP_ERR_INVALID_ARG);
-    TSENS_CHECK(rtc_tsens_mux != NULL, ESP_ERR_INVALID_STATE);
+    ESP_RETURN_ON_FALSE(tsens_out != NULL, ESP_ERR_INVALID_ARG, TAG, "no tsens_out specified");
+    ESP_RETURN_ON_FALSE(rtc_tsens_mux != NULL, ESP_ERR_INVALID_STATE, TAG, "mutex not ready");
     xSemaphoreTake(rtc_tsens_mux, portMAX_DELAY);
     SENS.sar_tctrl.tsens_dump_out = 1;
     while (!SENS.sar_tctrl.tsens_ready);
@@ -162,13 +169,13 @@ static float parse_temp_sensor_raw_value(uint32_t tsens_raw, const int dac_offse
 
 esp_err_t temp_sensor_read_celsius(float *celsius)
 {
-    TSENS_CHECK(celsius != NULL, ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(celsius != NULL, ESP_ERR_INVALID_ARG, TAG, "celsius points to nothing");
     temp_sensor_config_t tsens;
     uint32_t tsens_out = 0;
     esp_err_t ret = temp_sensor_get_config(&tsens);
     if (ret == ESP_OK) {
         ret = temp_sensor_read_raw(&tsens_out);
-        TSENS_CHECK(ret == ESP_OK, ret);
+        ESP_RETURN_ON_FALSE(ret == ESP_OK, ret, TAG, "failed to read raw data");
         const tsens_dac_offset_t *dac = &dac_offset[tsens.dac_offset];
         *celsius = parse_temp_sensor_raw_value(tsens_out, dac->offset);
         if (*celsius < dac->range_min || *celsius > dac->range_max) {

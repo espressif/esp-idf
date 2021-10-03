@@ -270,6 +270,7 @@ _frxt_int_exit:
 *
 **********************************************************************************************************
 */
+#ifdef CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
     .globl  _frxt_timer_int
     .type   _frxt_timer_int,@function
     .align  4
@@ -321,7 +322,7 @@ _frxt_timer_int:
     s32i    a3, sp, 8
     #endif
 
-    /* Call the FreeRTOS tick handler (see port.c). */
+    /* Call the FreeRTOS tick handler (see port_systick.c). */
     #ifdef __XTENSA_CALL0_ABI__
     call0   xPortSysTickHandler
     #else
@@ -347,6 +348,7 @@ _frxt_timer_int:
 #endif // CONFIG_PM_TRACE
 
     RET(16)
+#endif // CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
 
     /*
 **********************************************************************************************************
@@ -358,6 +360,7 @@ _frxt_timer_int:
 *
 **********************************************************************************************************
 */
+#ifdef CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
     .globl  _frxt_tick_timer_init
     .type   _frxt_tick_timer_init,@function
     .align  4
@@ -391,6 +394,7 @@ _frxt_tick_timer_init:
     #endif
 
     RET(16)
+#endif // CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
 
 /*
 **********************************************************************************************************

@@ -10,4 +10,14 @@ entries:
     memspi_host_driver (noflash)
 
     if IDF_TARGET_ESP32 = n:
-            spi_flash_chip_boya (noflash)
+        spi_flash_chip_boya (noflash)
+
+    if IDF_TARGET_ESP32S3 = y:
+        spi_flash_timing_tuning (noflash)
+        spi_timing_config (noflash)
+
+    if IDF_TARGET_ESP32S3 = y && ESPTOOLPY_OCT_FLASH = y:
+        spi_flash_oct_flash_init (noflash)
+
+    if IDF_TARGET_ESP32S3 = y :
+        spi_flash_chip_mxic_opi (noflash)

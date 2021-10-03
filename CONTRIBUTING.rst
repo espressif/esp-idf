@@ -56,7 +56,6 @@ Related Documents
     style-guide
     install-pre-commit-hook
     documenting-code
-    add-ons-reference
     creating-examples
     ../api-reference/template
     contributor-agreement

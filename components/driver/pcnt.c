@@ -1,25 +1,19 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
 #include "esp_log.h"
+#include "esp_check.h"
 #include "soc/soc_caps.h"
 #if SOC_PCNT_SUPPORTED
 #include "driver/periph_ctrl.h"
 #include "driver/pcnt.h"
 #include "hal/pcnt_hal.h"
+#include "hal/pcnt_ll.h"
 #include "hal/gpio_hal.h"
+#include "soc/pcnt_periph.h"
 #include "esp_rom_gpio.h"
 
 #define PCNT_CHANNEL_ERR_STR  "PCNT CHANNEL ERROR"
@@ -39,11 +33,7 @@
 
 static const char *TAG = "pcnt";
 
-#define PCNT_CHECK(a, str, ret_val) \
-    if (!(a)) { \
-        ESP_LOGE(TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str); \
-        return (ret_val); \
-    }
+#define PCNT_CHECK(a, str, ret_val) ESP_RETURN_ON_FALSE(a, ret_val, TAG, "%s", str)
 
 typedef struct {
     pcnt_hal_context_t hal;        /*!< PCNT hal context*/
@@ -68,19 +58,20 @@ static portMUX_TYPE pcnt_spinlock = portMUX_INITIALIZER_UNLOCKED;
 static inline esp_err_t _pcnt_set_mode(pcnt_port_t pcnt_port, pcnt_unit_t unit, pcnt_channel_t channel, pcnt_count_mode_t pos_mode, pcnt_count_mode_t neg_mode, pcnt_ctrl_mode_t hctrl_mode, pcnt_ctrl_mode_t lctrl_mode)
 {
     PCNT_OBJ_CHECK(pcnt_port);
-    PCNT_CHECK(unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
+    PCNT_CHECK(unit < SOC_PCNT_UNITS_PER_GROUP, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_CHECK(channel < PCNT_CHANNEL_MAX, PCNT_CHANNEL_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_CHECK((pos_mode < PCNT_COUNT_MAX) && (neg_mode < PCNT_COUNT_MAX), PCNT_COUNT_MODE_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_CHECK((hctrl_mode < PCNT_MODE_MAX) && (lctrl_mode < PCNT_MODE_MAX), PCNT_CTRL_MODE_ERR_STR, ESP_ERR_INVALID_ARG);
 
-    pcnt_hal_set_mode(&(p_pcnt_obj[pcnt_port]->hal), unit, channel, pos_mode, neg_mode, hctrl_mode, lctrl_mode);
+    pcnt_ll_set_edge_action(p_pcnt_obj[pcnt_port]->hal.dev, unit, channel, pos_mode, neg_mode);
+    pcnt_ll_set_level_action(p_pcnt_obj[pcnt_port]->hal.dev, unit, channel, hctrl_mode, lctrl_mode);
     return ESP_OK;
 }
 
 static inline esp_err_t _pcnt_set_pin(pcnt_port_t pcnt_port, pcnt_unit_t unit, pcnt_channel_t channel, int pulse_io, int ctrl_io)
 {
     PCNT_OBJ_CHECK(pcnt_port);
-    PCNT_CHECK(unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
+    PCNT_CHECK(unit < SOC_PCNT_UNITS_PER_GROUP, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_CHECK(channel < PCNT_CHANNEL_MAX, PCNT_CHANNEL_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_CHECK(GPIO_IS_VALID_GPIO(pulse_io) || pulse_io < 0, PCNT_GPIO_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_CHECK(GPIO_IS_VALID_GPIO(ctrl_io) || ctrl_io < 0, PCNT_GPIO_ERR_STR, ESP_ERR_INVALID_ARG);
@@ -89,14 +80,14 @@ static inline esp_err_t _pcnt_set_pin(pcnt_port_t pcnt_port, pcnt_unit_t unit, p
         gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[pulse_io], PIN_FUNC_GPIO);
         gpio_set_direction(pulse_io, GPIO_MODE_INPUT);
         gpio_set_pull_mode(pulse_io, GPIO_PULLUP_ONLY);
-        esp_rom_gpio_connect_in_signal(pulse_io, pcnt_periph_signals.units[unit].channels[channel].pulse_sig, 0);
+        esp_rom_gpio_connect_in_signal(pulse_io, pcnt_periph_signals.groups[pcnt_port].units[unit].channels[channel].pulse_sig, 0);
     }
 
     if (ctrl_io >= 0) {
         gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[ctrl_io], PIN_FUNC_GPIO);
         gpio_set_direction(ctrl_io, GPIO_MODE_INPUT);
         gpio_set_pull_mode(ctrl_io, GPIO_PULLUP_ONLY);
-        esp_rom_gpio_connect_in_signal(ctrl_io, pcnt_periph_signals.units[unit].channels[channel].control_sig, 0);
+        esp_rom_gpio_connect_in_signal(ctrl_io, pcnt_periph_signals.groups[pcnt_port].units[unit].channels[channel].control_sig, 0);
     }
 
     return ESP_OK;
@@ -105,18 +96,18 @@ static inline esp_err_t _pcnt_set_pin(pcnt_port_t pcnt_port, pcnt_unit_t unit, p
 static inline esp_err_t _pcnt_get_counter_value(pcnt_port_t pcnt_port, pcnt_unit_t pcnt_unit, int16_t *count)
 {
     PCNT_OBJ_CHECK(pcnt_port);
-    PCNT_CHECK(pcnt_unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
+    PCNT_CHECK(pcnt_unit < SOC_PCNT_UNITS_PER_GROUP, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_CHECK(count != NULL, PCNT_ADDRESS_ERR_STR, ESP_ERR_INVALID_ARG);
-    pcnt_hal_get_counter_value(&(p_pcnt_obj[pcnt_port]->hal), pcnt_unit, count);
+    *count = pcnt_ll_get_count(p_pcnt_obj[pcnt_port]->hal.dev, pcnt_unit);
     return ESP_OK;
 }
 
 static inline esp_err_t _pcnt_counter_pause(pcnt_port_t pcnt_port, pcnt_unit_t pcnt_unit)
 {
     PCNT_OBJ_CHECK(pcnt_port);
-    PCNT_CHECK(pcnt_unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
+    PCNT_CHECK(pcnt_unit < SOC_PCNT_UNITS_PER_GROUP, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_ENTER_CRITICAL(&pcnt_spinlock);
-    pcnt_hal_counter_pause(&(p_pcnt_obj[pcnt_port]->hal), pcnt_unit);
+    pcnt_ll_stop_count(p_pcnt_obj[pcnt_port]->hal.dev, pcnt_unit);
     PCNT_EXIT_CRITICAL(&pcnt_spinlock);
     return ESP_OK;
 }
@@ -124,9 +115,9 @@ static inline esp_err_t _pcnt_counter_pause(pcnt_port_t pcnt_port, pcnt_unit_t p
 static inline esp_err_t _pcnt_counter_resume(pcnt_port_t pcnt_port, pcnt_unit_t pcnt_unit)
 {
     PCNT_OBJ_CHECK(pcnt_port);
-    PCNT_CHECK(pcnt_unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
+    PCNT_CHECK(pcnt_unit < SOC_PCNT_UNITS_PER_GROUP, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_ENTER_CRITICAL(&pcnt_spinlock);
-    pcnt_hal_counter_resume(&(p_pcnt_obj[pcnt_port]->hal), pcnt_unit);
+    pcnt_ll_start_count(p_pcnt_obj[pcnt_port]->hal.dev, pcnt_unit);
     PCNT_EXIT_CRITICAL(&pcnt_spinlock);
     return ESP_OK;
 }
@@ -134,115 +125,136 @@ static inline esp_err_t _pcnt_counter_resume(pcnt_port_t pcnt_port, pcnt_unit_t 
 static inline esp_err_t _pcnt_counter_clear(pcnt_port_t pcnt_port, pcnt_unit_t pcnt_unit)
 {
     PCNT_OBJ_CHECK(pcnt_port);
-    PCNT_CHECK(pcnt_unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
+    PCNT_CHECK(pcnt_unit < SOC_PCNT_UNITS_PER_GROUP, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_ENTER_CRITICAL(&pcnt_spinlock);
-    pcnt_hal_counter_clear(&(p_pcnt_obj[pcnt_port]->hal), pcnt_unit);
+    pcnt_ll_clear_count(p_pcnt_obj[pcnt_port]->hal.dev, pcnt_unit);
     PCNT_EXIT_CRITICAL(&pcnt_spinlock);
     return ESP_OK;
 }
 
-static inline esp_err_t _pcnt_intr_enable(pcnt_port_t pcnt_port, pcnt_unit_t pcnt_unit)
+static inline esp_err_t _pcnt_intr_enable(pcnt_port_t pcnt_port, pcnt_unit_t pcnt_unit, bool enable)
 {
     PCNT_OBJ_CHECK(pcnt_port);
-    PCNT_CHECK(pcnt_unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
+    PCNT_CHECK(pcnt_unit < SOC_PCNT_UNITS_PER_GROUP, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_ENTER_CRITICAL(&pcnt_spinlock);
-    pcnt_hal_intr_enable(&(p_pcnt_obj[pcnt_port]->hal), pcnt_unit);
+    pcnt_ll_enable_intr(p_pcnt_obj[pcnt_port]->hal.dev, 1 << pcnt_unit, enable);
     PCNT_EXIT_CRITICAL(&pcnt_spinlock);
     return ESP_OK;
 }
 
-static inline esp_err_t _pcnt_intr_disable(pcnt_port_t pcnt_port, pcnt_unit_t pcnt_unit)
+static inline esp_err_t _pcnt_event_enable(pcnt_port_t pcnt_port, pcnt_unit_t unit, pcnt_evt_type_t evt_type, bool enable)
 {
     PCNT_OBJ_CHECK(pcnt_port);
-    PCNT_CHECK(pcnt_unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
-    PCNT_ENTER_CRITICAL(&pcnt_spinlock);
-    pcnt_hal_intr_disable(&(p_pcnt_obj[pcnt_port]->hal), pcnt_unit);
-    PCNT_EXIT_CRITICAL(&pcnt_spinlock);
-    return ESP_OK;
-}
-
-static inline esp_err_t _pcnt_event_enable(pcnt_port_t pcnt_port, pcnt_unit_t unit, pcnt_evt_type_t evt_type)
-{
-    PCNT_OBJ_CHECK(pcnt_port);
-    PCNT_CHECK(unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
+    PCNT_CHECK(unit < SOC_PCNT_UNITS_PER_GROUP, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_CHECK(evt_type < PCNT_EVT_MAX, PCNT_EVT_TYPE_ERR_STR, ESP_ERR_INVALID_ARG);
-    pcnt_hal_event_enable(&(p_pcnt_obj[pcnt_port]->hal), unit, evt_type);
-    return ESP_OK;
-}
-
-static inline esp_err_t _pcnt_event_disable(pcnt_port_t pcnt_port, pcnt_unit_t unit, pcnt_evt_type_t evt_type)
-{
-    PCNT_OBJ_CHECK(pcnt_port);
-    PCNT_CHECK(unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
-    PCNT_CHECK(evt_type < PCNT_EVT_MAX, PCNT_EVT_TYPE_ERR_STR, ESP_ERR_INVALID_ARG);
-    pcnt_hal_event_disable(&(p_pcnt_obj[pcnt_port]->hal), unit, evt_type);
+    switch (evt_type) {
+    case PCNT_EVT_THRES_1:
+        pcnt_ll_enable_thres_event(p_pcnt_obj[pcnt_port]->hal.dev, unit, 1, enable);
+        break;
+    case PCNT_EVT_THRES_0:
+        pcnt_ll_enable_thres_event(p_pcnt_obj[pcnt_port]->hal.dev, unit, 0, enable);
+        break;
+    case PCNT_EVT_L_LIM:
+        pcnt_ll_enable_low_limit_event(p_pcnt_obj[pcnt_port]->hal.dev, unit, enable);
+        break;
+    case PCNT_EVT_H_LIM:
+        pcnt_ll_enable_high_limit_event(p_pcnt_obj[pcnt_port]->hal.dev, unit, enable);
+        break;
+    case PCNT_EVT_ZERO:
+        pcnt_ll_enable_zero_cross_event(p_pcnt_obj[pcnt_port]->hal.dev, unit, enable);
+        break;
+    default:
+        PCNT_CHECK(false, PCNT_EVT_TYPE_ERR_STR, ESP_ERR_INVALID_ARG);
+        break;
+    }
     return ESP_OK;
 }
 
 static inline esp_err_t _pcnt_set_event_value(pcnt_port_t pcnt_port, pcnt_unit_t unit, pcnt_evt_type_t evt_type, int16_t value)
 {
     PCNT_OBJ_CHECK(pcnt_port);
-    PCNT_CHECK(unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
+    PCNT_CHECK(unit < SOC_PCNT_UNITS_PER_GROUP, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_CHECK(evt_type < PCNT_EVT_MAX, PCNT_EVT_TYPE_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_CHECK(!(evt_type == PCNT_EVT_L_LIM && value > 0), PCNT_LIMT_VAL_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_CHECK(!(evt_type == PCNT_EVT_H_LIM && value < 0), PCNT_LIMT_VAL_ERR_STR, ESP_ERR_INVALID_ARG);
-    pcnt_hal_set_event_value(&(p_pcnt_obj[pcnt_port]->hal), unit, evt_type, value);
+    switch (evt_type) {
+    case PCNT_EVT_THRES_1:
+        pcnt_ll_set_thres_value(p_pcnt_obj[pcnt_port]->hal.dev, unit, 1, value);
+        break;
+    case PCNT_EVT_THRES_0:
+        pcnt_ll_set_thres_value(p_pcnt_obj[pcnt_port]->hal.dev, unit, 0, value);
+        break;
+    case PCNT_EVT_L_LIM:
+        pcnt_ll_set_low_limit_value(p_pcnt_obj[pcnt_port]->hal.dev, unit, value);
+        break;
+    case PCNT_EVT_H_LIM:
+        pcnt_ll_set_high_limit_value(p_pcnt_obj[pcnt_port]->hal.dev, unit, value);
+        break;
+    default:
+        break;
+    }
     return ESP_OK;
 }
 
 static inline esp_err_t _pcnt_get_event_value(pcnt_port_t pcnt_port, pcnt_unit_t unit, pcnt_evt_type_t evt_type, int16_t *value)
 {
     PCNT_OBJ_CHECK(pcnt_port);
-    PCNT_CHECK(unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
+    PCNT_CHECK(unit < SOC_PCNT_UNITS_PER_GROUP, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_CHECK(evt_type < PCNT_EVT_MAX, PCNT_EVT_TYPE_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_CHECK(value != NULL, PCNT_ADDRESS_ERR_STR, ESP_ERR_INVALID_ARG);
-
-    pcnt_hal_get_event_value(&(p_pcnt_obj[pcnt_port]->hal), unit, evt_type, value);
+    switch (evt_type) {
+    case PCNT_EVT_THRES_1:
+        *value = pcnt_ll_get_thres_value(p_pcnt_obj[pcnt_port]->hal.dev, unit, 1);
+        break;
+    case PCNT_EVT_THRES_0:
+        *value = pcnt_ll_get_thres_value(p_pcnt_obj[pcnt_port]->hal.dev, unit, 0);
+        break;
+    case PCNT_EVT_L_LIM:
+        *value = pcnt_ll_get_low_limit_value(p_pcnt_obj[pcnt_port]->hal.dev, unit);
+        break;
+    case PCNT_EVT_H_LIM:
+        *value = pcnt_ll_get_high_limit_value(p_pcnt_obj[pcnt_port]->hal.dev, unit);
+        break;
+    default:
+        break;
+    }
     return ESP_OK;
 }
 
 static inline esp_err_t _pcnt_get_event_status(pcnt_port_t pcnt_port, pcnt_unit_t unit, uint32_t *status)
 {
     PCNT_OBJ_CHECK(pcnt_port);
-    PCNT_CHECK(unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
+    PCNT_CHECK(unit < SOC_PCNT_UNITS_PER_GROUP, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_CHECK(status != NULL, PCNT_ADDRESS_ERR_STR, ESP_ERR_INVALID_ARG);
 
-    *status = pcnt_hal_get_event_status(&(p_pcnt_obj[pcnt_port]->hal), unit);
+    *status = pcnt_ll_get_unit_status(p_pcnt_obj[pcnt_port]->hal.dev, unit);
     return ESP_OK;
 }
 
 static inline esp_err_t _pcnt_set_filter_value(pcnt_port_t pcnt_port, pcnt_unit_t unit, uint16_t filter_val)
 {
     PCNT_OBJ_CHECK(pcnt_port);
-    PCNT_CHECK(unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
+    PCNT_CHECK(unit < SOC_PCNT_UNITS_PER_GROUP, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_CHECK(filter_val < 1024, PCNT_PARAM_ERR_STR, ESP_ERR_INVALID_ARG);
-    pcnt_hal_set_filter_value(&(p_pcnt_obj[pcnt_port]->hal), unit, filter_val);
+    pcnt_ll_set_glitch_filter_thres(p_pcnt_obj[pcnt_port]->hal.dev, unit, filter_val);
     return ESP_OK;
 }
 
 static inline esp_err_t _pcnt_get_filter_value(pcnt_port_t pcnt_port, pcnt_unit_t unit, uint16_t *filter_val)
 {
     PCNT_OBJ_CHECK(pcnt_port);
-    PCNT_CHECK(unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
+    PCNT_CHECK(unit < SOC_PCNT_UNITS_PER_GROUP, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_CHECK(filter_val != NULL, PCNT_ADDRESS_ERR_STR, ESP_ERR_INVALID_ARG);
 
-    pcnt_hal_get_filter_value(&(p_pcnt_obj[pcnt_port]->hal), unit, filter_val);
+    *filter_val = (uint16_t)pcnt_ll_get_glitch_filter_thres(p_pcnt_obj[pcnt_port]->hal.dev, unit);
     return ESP_OK;
 }
 
-static inline esp_err_t _pcnt_filter_enable(pcnt_port_t pcnt_port, pcnt_unit_t unit)
+static inline esp_err_t _pcnt_filter_enable(pcnt_port_t pcnt_port, pcnt_unit_t unit, bool enable)
 {
     PCNT_OBJ_CHECK(pcnt_port);
-    PCNT_CHECK(unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
-    pcnt_hal_filter_enable(&(p_pcnt_obj[pcnt_port]->hal), unit);
-    return ESP_OK;
-}
-
-static inline esp_err_t _pcnt_filter_disable(pcnt_port_t pcnt_port, pcnt_unit_t unit)
-{
-    PCNT_OBJ_CHECK(pcnt_port);
-    PCNT_CHECK(unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
-    pcnt_hal_filter_disable(&(p_pcnt_obj[pcnt_port]->hal), unit);
+    PCNT_CHECK(unit < SOC_PCNT_UNITS_PER_GROUP, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
+    pcnt_ll_enable_glitch_filter(p_pcnt_obj[pcnt_port]->hal.dev, unit, enable);
     return ESP_OK;
 }
 
@@ -250,16 +262,16 @@ static inline esp_err_t _pcnt_isr_handler_add(pcnt_port_t pcnt_port, pcnt_unit_t
 {
     PCNT_OBJ_CHECK(pcnt_port);
     PCNT_CHECK(pcnt_isr_func != NULL, "ISR service is not installed, call pcnt_install_isr_service() first", ESP_ERR_INVALID_STATE);
-    PCNT_CHECK(unit < PCNT_UNIT_MAX, "PCNT unit error", ESP_ERR_INVALID_ARG);
+    PCNT_CHECK(unit < SOC_PCNT_UNITS_PER_GROUP, "PCNT unit error", ESP_ERR_INVALID_ARG);
     PCNT_ENTER_CRITICAL(&pcnt_spinlock);
-    _pcnt_intr_disable(PCNT_PORT_0, unit);
+    _pcnt_intr_enable(PCNT_PORT_0, unit, false);
 
     if (pcnt_isr_func) {
         pcnt_isr_func[unit].fn = isr_handler;
         pcnt_isr_func[unit].args = args;
     }
 
-    _pcnt_intr_enable(PCNT_PORT_0, unit);
+    _pcnt_intr_enable(PCNT_PORT_0, unit, true);
     PCNT_EXIT_CRITICAL(&pcnt_spinlock);
     return ESP_OK;
 }
@@ -268,9 +280,9 @@ static inline esp_err_t _pcnt_isr_handler_remove(pcnt_port_t pcnt_port, pcnt_uni
 {
     PCNT_OBJ_CHECK(pcnt_port);
     PCNT_CHECK(pcnt_isr_func != NULL, "ISR service is not installed", ESP_ERR_INVALID_STATE);
-    PCNT_CHECK(unit < PCNT_UNIT_MAX, "PCNT unit error", ESP_ERR_INVALID_ARG);
+    PCNT_CHECK(unit < SOC_PCNT_UNITS_PER_GROUP, "PCNT unit error", ESP_ERR_INVALID_ARG);
     PCNT_ENTER_CRITICAL(&pcnt_spinlock);
-    _pcnt_intr_disable(PCNT_PORT_0, unit);
+    _pcnt_intr_enable(PCNT_PORT_0, unit, false);
 
     if (pcnt_isr_func) {
         pcnt_isr_func[unit].fn = NULL;
@@ -286,8 +298,8 @@ static void IRAM_ATTR pcnt_intr_service(void *arg)
 {
     uint32_t status = 0;
     pcnt_port_t pcnt_port = (pcnt_port_t)arg;
-    pcnt_hal_get_intr_status(&(p_pcnt_obj[pcnt_port]->hal), &status);
-    pcnt_hal_clear_intr_status(&(p_pcnt_obj[pcnt_port]->hal), status);
+    status = pcnt_ll_get_intr_status(p_pcnt_obj[pcnt_port]->hal.dev);
+    pcnt_ll_clear_intr_status(p_pcnt_obj[pcnt_port]->hal.dev, status);
 
     while (status) {
         int unit = __builtin_ffs(status) - 1;
@@ -304,7 +316,7 @@ static inline esp_err_t _pcnt_isr_service_install(pcnt_port_t pcnt_port, int int
     PCNT_OBJ_CHECK(pcnt_port);
     PCNT_CHECK(pcnt_isr_func == NULL, "ISR service already installed", ESP_ERR_INVALID_STATE);
     esp_err_t ret = ESP_FAIL;
-    pcnt_isr_func = (pcnt_isr_func_t *) calloc(PCNT_UNIT_MAX, sizeof(pcnt_isr_func_t));
+    pcnt_isr_func = (pcnt_isr_func_t *) calloc(SOC_PCNT_UNITS_PER_GROUP, sizeof(pcnt_isr_func_t));
 
     if (pcnt_isr_func == NULL) {
         ret = ESP_ERR_NO_MEM;
@@ -341,7 +353,7 @@ static inline esp_err_t _pcnt_unit_config(pcnt_port_t pcnt_port, const pcnt_conf
     int input_io = pcnt_config->pulse_gpio_num;
     int ctrl_io = pcnt_config->ctrl_gpio_num;
 
-    PCNT_CHECK(unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
+    PCNT_CHECK(unit < SOC_PCNT_UNITS_PER_GROUP, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_CHECK(channel < PCNT_CHANNEL_MAX, PCNT_CHANNEL_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_CHECK(input_io < 0 || (GPIO_IS_VALID_GPIO(input_io) && (input_io != ctrl_io)), "PCNT pulse input io error", ESP_ERR_INVALID_ARG);
     PCNT_CHECK(ctrl_io < 0 || GPIO_IS_VALID_GPIO(ctrl_io), "PCNT ctrl io error", ESP_ERR_INVALID_ARG);
@@ -350,18 +362,18 @@ static inline esp_err_t _pcnt_unit_config(pcnt_port_t pcnt_port, const pcnt_conf
     /*Enalbe hardware module*/
     static bool pcnt_enable = false;
     if (pcnt_enable == false) {
-        periph_module_reset(pcnt_periph_signals.module);
+        periph_module_reset(pcnt_periph_signals.groups[pcnt_port].module);
         pcnt_enable = true;
     }
-    periph_module_enable(pcnt_periph_signals.module);
+    periph_module_enable(pcnt_periph_signals.groups[pcnt_port].module);
     /*Set counter range*/
     _pcnt_set_event_value(pcnt_port, unit, PCNT_EVT_H_LIM, pcnt_config->counter_h_lim);
     _pcnt_set_event_value(pcnt_port, unit, PCNT_EVT_L_LIM, pcnt_config->counter_l_lim);
     /*Default value after reboot is positive, we disable these events like others*/
-    _pcnt_event_disable(pcnt_port, unit, PCNT_EVT_H_LIM);
-    _pcnt_event_disable(pcnt_port, unit, PCNT_EVT_L_LIM);
-    _pcnt_event_disable(pcnt_port, unit, PCNT_EVT_ZERO);
-    _pcnt_filter_disable(pcnt_port, unit);
+    _pcnt_event_enable(pcnt_port, unit, PCNT_EVT_H_LIM, false);
+    _pcnt_event_enable(pcnt_port, unit, PCNT_EVT_L_LIM, false);
+    _pcnt_event_enable(pcnt_port, unit, PCNT_EVT_ZERO, false);
+    _pcnt_filter_enable(pcnt_port, unit, false);
     /*set pulse input and control mode*/
     _pcnt_set_mode(pcnt_port, unit, channel, pcnt_config->pos_mode, pcnt_config->neg_mode, pcnt_config->hctrl_mode, pcnt_config->lctrl_mode);
     /*Set pulse input and control pins*/
@@ -393,8 +405,6 @@ esp_err_t pcnt_init(pcnt_port_t pcnt_port)
     pcnt_hal_init(&(p_pcnt_obj[pcnt_port]->hal), pcnt_port);
     return ESP_OK;
 }
-
-// TODO: The following functions are wrappers, for compatibility with current API.
 
 esp_err_t pcnt_unit_config(const pcnt_config_t *pcnt_config)
 {
@@ -441,22 +451,22 @@ esp_err_t pcnt_counter_clear(pcnt_unit_t pcnt_unit)
 
 esp_err_t pcnt_intr_enable(pcnt_unit_t pcnt_unit)
 {
-    return _pcnt_intr_enable(PCNT_PORT_0, pcnt_unit);
+    return _pcnt_intr_enable(PCNT_PORT_0, pcnt_unit, true);
 }
 
 esp_err_t pcnt_intr_disable(pcnt_unit_t pcnt_unit)
 {
-    return _pcnt_intr_disable(PCNT_PORT_0, pcnt_unit);
+    return _pcnt_intr_enable(PCNT_PORT_0, pcnt_unit, false);
 }
 
 esp_err_t pcnt_event_enable(pcnt_unit_t unit, pcnt_evt_type_t evt_type)
 {
-    return _pcnt_event_enable(PCNT_PORT_0, unit, evt_type);
+    return _pcnt_event_enable(PCNT_PORT_0, unit, evt_type, true);
 }
 
 esp_err_t pcnt_event_disable(pcnt_unit_t unit, pcnt_evt_type_t evt_type)
 {
-    return _pcnt_event_disable(PCNT_PORT_0, unit, evt_type);
+    return _pcnt_event_enable(PCNT_PORT_0, unit, evt_type, false);
 }
 
 esp_err_t pcnt_set_event_value(pcnt_unit_t unit, pcnt_evt_type_t evt_type, int16_t value)
@@ -486,12 +496,12 @@ esp_err_t pcnt_get_filter_value(pcnt_unit_t unit, uint16_t *filter_val)
 
 esp_err_t pcnt_filter_enable(pcnt_unit_t unit)
 {
-    return _pcnt_filter_enable(PCNT_PORT_0, unit);
+    return _pcnt_filter_enable(PCNT_PORT_0, unit, true);
 }
 
 esp_err_t pcnt_filter_disable(pcnt_unit_t unit)
 {
-    return _pcnt_filter_disable(PCNT_PORT_0, unit);
+    return _pcnt_filter_enable(PCNT_PORT_0, unit, false);
 }
 
 esp_err_t pcnt_isr_unregister(pcnt_isr_handle_t handle)
@@ -508,7 +518,7 @@ esp_err_t pcnt_isr_register(void (*fun)(void *), void *arg, int intr_alloc_flags
     esp_err_t ret = ESP_FAIL;
     PCNT_CHECK(fun != NULL, PCNT_ADDRESS_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_ENTER_CRITICAL(&pcnt_spinlock);
-    ret = esp_intr_alloc(pcnt_periph_signals.irq, intr_alloc_flags, fun, arg, handle);
+    ret = esp_intr_alloc(pcnt_periph_signals.groups[0].irq, intr_alloc_flags, fun, arg, handle);
     PCNT_EXIT_CRITICAL(&pcnt_spinlock);
     return ret;
 }
@@ -522,7 +532,6 @@ esp_err_t pcnt_isr_handler_remove(pcnt_unit_t unit)
 {
     return _pcnt_isr_handler_remove(PCNT_PORT_0, unit);
 }
-
 
 esp_err_t pcnt_isr_service_install(int intr_alloc_flags)
 {

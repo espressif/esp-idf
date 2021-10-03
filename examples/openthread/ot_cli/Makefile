@@ -3,6 +3,8 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := ot_esp_cli
+PROJECT_NAME := esp_ot_cli
+
+EXTRA_COMPONENT_DIRS = $(IDF_PATH)/examples/common_components/iperf
 
 include $(IDF_PATH)/make/project.mk

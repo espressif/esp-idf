@@ -1,22 +1,15 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 #include "esp_flash_partitions.h"
 #include "esp_image_format.h"
 #include "esp_app_format.h"
-// RESET_REASON is declared in rom/rtc.h
+// [refactor-todo]: we shouldn't expose ROM header files in a public API header, remove them in v5.0
+// Tracked in IDF-1968
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -25,6 +18,8 @@
 #include "esp32s3/rom/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/rtc.h"
 #endif
 
 #ifdef __cplusplus
@@ -68,17 +63,36 @@ bool bootloader_common_ota_select_valid(const esp_ota_select_entry_t *s);
 bool bootloader_common_ota_select_invalid(const esp_ota_select_entry_t *s);
 
 /**
- * @brief Check if the GPIO input is a long hold or a short hold.
+ * @brief Check if a GPIO input is held low for a long period, short period, or not
+ * at all.
  *
- * Number of the GPIO input will be configured as an input with internal pull-up enabled.
+ * This function will configure the specified GPIO as an input with internal pull-up enabled.
+ *
  * If the GPIO input is held low continuously for delay_sec period then it is a long hold.
  * If the GPIO input is held low for less period then it is a short hold.
  *
  * @param[in] num_pin Number of the GPIO input.
  * @param[in] delay_sec Input must be driven low for at least this long, continuously.
- * @return esp_comm_gpio_hold_t Defines type of hold a GPIO in low state.
+ * @return esp_comm_gpio_hold_t Type of low level hold detected, if any.
  */
 esp_comm_gpio_hold_t bootloader_common_check_long_hold_gpio(uint32_t num_pin, uint32_t delay_sec);
+
+/**
+ * @brief Check if a GPIO input is held low or high for a long period, short period, or not
+ * at all.
+ *
+ * This function will configure the specified GPIO as an input with internal pull-up enabled.
+ *
+ * If the GPIO input is held at 'level' continuously for delay_sec period then it is a long hold.
+ * If the GPIO input is held at 'level' for less period then it is a short hold.
+ *
+ * @param[in] num_pin Number of the GPIO input.
+ * @param[in] delay_sec Input must be driven to 'level' for at least this long, continuously.
+ * @param[in] level Input pin level to trigger on hold
+ * @return esp_comm_gpio_hold_t Type of hold detected, if any.
+ */
+esp_comm_gpio_hold_t bootloader_common_check_long_hold_gpio_level(uint32_t num_pin, uint32_t delay_sec, bool level);
+
 
 /**
  * @brief Erase the partition data that is specified in the transferred list.
@@ -104,6 +118,15 @@ bool bootloader_common_label_search(const char *list, char *label);
  * @param drv GPIO drive level (determined by clock frequency)
  */
 void bootloader_configure_spi_pins(int drv);
+
+/**
+ * @brief Get flash CS IO
+ *
+ * Can be determined by eFuse values, or the default value
+ *
+ * @return Flash CS IO
+ */
+uint8_t bootloader_flash_get_cs_io(void);
 
 /**
  * @brief Calculates a sha-256 for a given partition or returns a appended digest.

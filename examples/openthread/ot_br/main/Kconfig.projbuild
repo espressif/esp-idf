@@ -1,0 +1,41 @@
+menu "OpenThread Border Router Example"
+
+    config OPENTHREAD_NETWORK_NAME
+        string "OpenThread network name"
+        default "OpenThread"
+        help
+            The OpenThread network name for example to use
+
+    config OPENTHREAD_NETWORK_CHANNEL
+        int "OpenThread network channel"
+        range 11 26
+        default 15
+        help
+            The OpenThread network channel to use
+
+    config OPENTHREAD_NETWORK_PANID
+        hex "OpenThread network pan id"
+        range 0 0x1234
+        default 0x1234
+        help
+            The OpenThread network pan id to use
+
+    config OPENTHREAD_NETWORK_EXTPANID
+        string "OpenThread extended pan id"
+        default "dead00beef00cafe"
+        help
+            The OpenThread network extended pan id in hex string format
+
+    config OPENTHREAD_NETWORK_MASTERKEY
+        string "OpenThread master key"
+        default "00112233445566778899aabbccddeeff"
+        help
+            The OpenThread network master key in hex string format
+
+    config OPENTHREAD_NETWORK_PSKC
+        string "OpenThread pre-shared commissioner key"
+        default "104810e2315100afd6bc9215a6bfac53"
+        help
+            The OpenThread pre-shared commissioner key in hex string format
+
+endmenu

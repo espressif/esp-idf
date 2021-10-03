@@ -30,6 +30,8 @@
 #include "esp32s3/rom/cache.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/cache.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/cache.h"
 #endif
 
 #define FUNC_SPI    1
@@ -84,12 +86,12 @@ static uint8_t sector_buf[4096];
 #define SPI1_HD_IO          27  //the pin which is usually used by the PSRAM hd
 #define SPI1_WP_IO          28  //the pin which is usually used by the PSRAM wp
 
-#define FSPI_PIN_NUM_MOSI   35
-#define FSPI_PIN_NUM_MISO   37
-#define FSPI_PIN_NUM_CLK    36
-#define FSPI_PIN_NUM_HD     33
-#define FSPI_PIN_NUM_WP     38
-#define FSPI_PIN_NUM_CS     34
+#define FSPI_PIN_NUM_MOSI   11
+#define FSPI_PIN_NUM_MISO   13
+#define FSPI_PIN_NUM_CLK    12
+#define FSPI_PIN_NUM_HD     9
+#define FSPI_PIN_NUM_WP     14
+#define FSPI_PIN_NUM_CS     10
 
 // Just use the same pins for HSPI
 #define HSPI_PIN_NUM_MOSI   FSPI_PIN_NUM_MOSI
@@ -138,7 +140,6 @@ typedef void (*flash_test_func_t)(const esp_partition_t *part);
    These tests run for all the flash chip configs shown in config_list, below (internal and external).
  */
 #if defined(CONFIG_SPIRAM)
-
 #define FLASH_TEST_CASE_3(STR, FUNCT_TO_RUN)
 #define FLASH_TEST_CASE_3_IGNORE(STR, FUNCT_TO_RUN)
 #else //CONFIG_SPIRAM
@@ -157,14 +158,9 @@ typedef void (*flash_test_func_t)(const esp_partition_t *part);
 #endif // !CONFIG_IDF_TARGET_ESP32C3
 #endif //CONFIG_SPIRAM
 
-#if SOC_CCOMP_TIMER_SUPPORTED
 #define TEST_FLASH_PERFORMANCE_CCOMP_GREATER_THAN(name, value, chip) \
     printf("[Performance][" PERFORMANCE_STR(name) "]: %d, flash_chip: %s\n", value, chip);\
     _TEST_PERFORMANCE_ASSERT(value > PERFORMANCE_CON(IDF_PERFORMANCE_MIN_, name));
-#else
-#define TEST_FLASH_PERFORMANCE_CCOMP_GREATER_THAN(name, value, chip) \
-    printf("[Performance][" PERFORMANCE_STR(name) "]: %d, flash_chip: %s\n", value, chip);
-#endif //SOC_CCOMP_TIMER_SUPPORTED
 
 //currently all the configs are the same with esp_flash_spi_device_config_t, no more information required
 typedef esp_flash_spi_device_config_t flashtest_config_t;
@@ -233,8 +229,11 @@ flashtest_config_t config_list[] = {
 };
 #elif CONFIG_IDF_TARGET_ESP32S3
 flashtest_config_t config_list[] = {
-    FLASHTEST_CONFIG_COMMON,
-    /* No runners for esp32s3 for these config yet */
+    /* No SPI1 CS1 flash on esp32S3 test */
+    {
+        /* no need to init */
+        .host_id = -1,
+    },
     {
         .io_mode = TEST_SPI_READ_MODE,
         .speed = TEST_SPI_SPEED,
@@ -618,6 +617,13 @@ void test_erase_large_region(const esp_partition_t *part)
     TEST_ASSERT_EQUAL(ESP_OK, esp_flash_read(chip, &readback, part->address, 4));
     TEST_ASSERT_EQUAL_HEX32(0, readback & (~written_data));
 
+    /* Erase zero bytes, check that nothing got erased */
+    TEST_ASSERT_EQUAL(ESP_OK, esp_flash_erase_region(chip, part->address, 0));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_flash_read(chip, &readback, part->address + part->size - 5, 4));
+    TEST_ASSERT_EQUAL_HEX32(0, readback & (~written_data));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_flash_read(chip, &readback, part->address, 4));
+    TEST_ASSERT_EQUAL_HEX32(0, readback & (~written_data));
+
     /* Erase whole region */
     TEST_ASSERT_EQUAL(ESP_OK, esp_flash_erase_region(chip, part->address, part->size));
 
@@ -721,6 +727,7 @@ static void write_large_buffer(const esp_partition_t *part, const uint8_t *sourc
 static void read_and_check(const esp_partition_t *part, const uint8_t *source, size_t length);
 
 // Internal functions for testing, from esp_flash_api.c
+#if !CONFIG_ESPTOOLPY_OCT_FLASH
 esp_err_t esp_flash_set_io_mode(esp_flash_t* chip, bool qe);
 esp_err_t esp_flash_get_io_mode(esp_flash_t* chip, bool* qe);
 esp_err_t esp_flash_read_chip_id(esp_flash_t* chip, uint32_t* flash_id);
@@ -795,16 +802,17 @@ IRAM_ATTR NOINLINE_ATTR static void test_toggle_qe(const esp_partition_t* part)
 // `spi_flash_common_set_io_mode` and then run this test.
 FLASH_TEST_CASE_IGNORE("Test esp_flash_write can toggle QE bit", test_toggle_qe);
 FLASH_TEST_CASE_3_IGNORE("Test esp_flash_write can toggle QE bit", test_toggle_qe);
+#endif //CONFIG_ESPTOOLPY_OCT_FLASH
 
 void test_permutations_part(const flashtest_config_t* config, esp_partition_t* part, void* source_buf, size_t length)
 {
     if (config->host_id != -1) {
         esp_flash_speed_t speed = ESP_FLASH_SPEED_MIN;
-        while (speed != ESP_FLASH_SPEED_MAX) {
+        while (speed != ESP_FLASH_120MHZ) {
             //test io_mode in the inner loop to test QE set/clear function, since
             //the io mode will switch frequently.
             esp_flash_io_mode_t io_mode = SPI_FLASH_READ_MODE_MIN;
-            while (io_mode != SPI_FLASH_READ_MODE_MAX) {
+            while (io_mode != SPI_FLASH_QIO + 1) {
                 if (io_mode > SPI_FLASH_FASTRD &&
                     !SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(config->host_id)) {
                     io_mode++;
@@ -1151,7 +1159,10 @@ static void test_flash_read_write_performance(const esp_partition_t *part)
     free(data_read);
 }
 
+
+
 TEST_CASE("Test esp_flash read/write performance", "[esp_flash][test_env=UT_T1_ESP_FLASH]") {flash_test_func(test_flash_read_write_performance, 1);}
+
 #endif // !CONFIG_SPIRAM
 FLASH_TEST_CASE_3("Test esp_flash read/write performance"", 3 chips", test_flash_read_write_performance);
 

@@ -2,6 +2,11 @@
  * ROM APIs
  */
 
+/* user may provide newer version of tjpgd */
+/* so here directly assign the symbols with the ROM API address to make sure one from rom is correctly linked */
+PROVIDE ( esp_rom_tjpgd_decomp = 0x40000864 );
+PROVIDE ( esp_rom_tjpgd_prepare = 0x40000858 );
+
 PROVIDE ( esp_rom_crc32_le = crc32_le );
 PROVIDE ( esp_rom_crc16_le = crc16_le );
 PROVIDE ( esp_rom_crc8_le  = crc8_le );
@@ -30,14 +35,13 @@ PROVIDE ( esp_rom_uart_set_as_console = uart_tx_switch );
 PROVIDE ( esp_rom_uart_usb_acm_init   = Uart_Init_USB );
 PROVIDE ( esp_rom_uart_putc           = ets_write_char_uart );
 
-/* wpa_supplicant re-implements the MD5 functions: MD5Init, MD5Update, MD5Final */
-/* so here we directly assign the symbols with the ROM API address */
-PROVIDE ( esp_rom_md5_init   = 0x40001ac4 );
-PROVIDE ( esp_rom_md5_update = 0x40001ad0 );
-PROVIDE ( esp_rom_md5_final  = 0x40001adc );
+PROVIDE ( esp_rom_md5_init   = MD5Init );
+PROVIDE ( esp_rom_md5_update = MD5Update );
+PROVIDE ( esp_rom_md5_final  = MD5Final );
 
 PROVIDE ( esp_rom_printf   = ets_printf );
 PROVIDE ( esp_rom_delay_us = ets_delay_us );
 PROVIDE ( esp_rom_install_uart_printf = ets_install_uart_printf );
+PROVIDE ( esp_rom_get_reset_reason = rtc_get_reset_reason );
 
 PROVIDE( esp_rom_spiflash_attach = spi_flash_attach );

@@ -2,6 +2,12 @@ ESP-IDF 编程指南
 =========================
 :link_to_translation:`en:[English]`
 
+.. only:: fast_build
+
+    .. warning::
+
+        The function API documentation is excluded from the preview. Add docs_full label to the MR to generate the complete documentation.
+
 这里是乐鑫 IoT 开发框架 (`esp-idf <https://github.com/espressif/esp-idf>`_) 的文档中心。ESP-IDF 是 `ESP32、ESP32-S 和 ESP32-C <https://www.espressif.com/en/products/hardware/socs>`_ 系列芯片的官方开发框架。
 
 .. only:: html
@@ -12,11 +18,11 @@ ESP-IDF 编程指南
 
     本文档仅包含针对 {IDF_TARGET_NAME} 芯片的 ESP-IDF 使用。
 
-.. only:: esp32c3
+.. only:: esp32s3
 
     .. warning::
 
-        ESP32-C3 的相关文档尚未全部更新完毕。
+        ESP32-S3 的相关文档尚未全部更新完毕。
 
 ==================  ==================  ==================
 |快速入门|_          |API 参考|_         |H/W 参考|_

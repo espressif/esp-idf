@@ -21,6 +21,7 @@
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 #include "freertos/portable.h"
+#include "esp_rom_caps.h"
 
 /* Notes on our newlib lock implementation:
  *
@@ -210,7 +211,6 @@ void IRAM_ATTR _lock_release_recursive(_lock_t *lock) {
     lock_release_generic(lock, queueQUEUE_TYPE_RECURSIVE_MUTEX);
 }
 
-#ifdef _RETARGETABLE_LOCKING
 /* To ease the transition to newlib 3.3.0, this part is kept under an ifdef.
  * After the toolchain with newlib 3.3.0 is released and merged, the ifdefs
  * can be removed.
@@ -252,8 +252,8 @@ static StaticSemaphore_t s_common_mutex;
 static StaticSemaphore_t s_common_recursive_mutex;
 
 
-#ifdef CONFIG_IDF_TARGET_ESP32C3
-/* C3 ROM is built without Newlib static lock symbols exported, and
+#if defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3) || defined(CONFIG_IDF_TARGET_ESP32H2)
+/* C3 and S3 ROMs are built without Newlib static lock symbols exported, and
  * with an extra level of _LOCK_T indirection in mind.
  * The following is a workaround for this:
  * - on startup, we call esp_rom_newlib_init_common_mutexes to set
@@ -267,7 +267,7 @@ static StaticSemaphore_t s_common_recursive_mutex;
  */
 
 #define ROM_NEEDS_MUTEX_OVERRIDE
-#endif // CONFIG_IDF_TARGET_ESP32C3
+#endif // defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3) || defined(CONFIG_IDF_TARGET_ESP32H2)
 
 #ifdef ROM_NEEDS_MUTEX_OVERRIDE
 #define ROM_MUTEX_MAGIC  0xbb10c433
@@ -393,7 +393,7 @@ void esp_newlib_locks_init(void)
     __sinit_recursive_mutex = (_lock_t) &s_common_recursive_mutex;
     extern _lock_t __sfp_recursive_mutex;
     __sfp_recursive_mutex = (_lock_t) &s_common_recursive_mutex;
-#elif defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3)
+#elif defined(CONFIG_IDF_TARGET_ESP32C3) || defined(CONFIG_IDF_TARGET_ESP32S3) || defined(CONFIG_IDF_TARGET_ESP32H2)
     /* Newlib 3.3.0 is used in ROM, built with _RETARGETABLE_LOCKING.
      * No access to lock variables for the purpose of ECO forward compatibility,
      * however we have an API to initialize lock variables used in the ROM.
@@ -407,11 +407,3 @@ void esp_newlib_locks_init(void)
 #error Unsupported target
 #endif
 }
-
-#else  // _RETARGETABLE_LOCKING
-
-void esp_newlib_locks_init(void)
-{
-}
-
-#endif // _RETARGETABLE_LOCKING

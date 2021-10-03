@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "test/test_common_spi.h"
 #include "driver/spi_slave.h"
 #include "esp_log.h"
@@ -232,4 +237,13 @@ void same_pin_func_sel(spi_bus_config_t bus, spi_device_interface_config_t dev, 
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     GPIO.func_in_sel_cfg[FSPIQ_IN_IDX].sig_in_sel = 1;
 #endif
+}
+
+void get_tx_buffer(uint32_t seed, uint8_t *master_send_buf, uint8_t *slave_send_buf, int send_buf_size)
+{
+    srand(seed);
+    for (int i = 0; i < send_buf_size; i++) {
+        slave_send_buf[i] = rand();
+        master_send_buf[i] = rand();
+    }
 }

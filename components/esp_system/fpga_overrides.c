@@ -13,6 +13,9 @@
 // limitations under the License.
 #include "sdkconfig.h"
 #include "soc/soc.h"
+#ifndef CONFIG_IDF_TARGET_ESP32
+#include "soc/system_reg.h"
+#endif // not CONFIG_IDF_TARGET_ESP32
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "esp_log.h"
@@ -21,6 +24,13 @@
 #include "esp_attr.h"
 
 static const char *TAG = "fpga";
+
+#ifdef CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/rtc.h"
+#endif
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/rtc.h"
+#endif
 
 extern void ets_update_cpu_frequency(uint32_t ticks_per_us);
 
@@ -37,11 +47,15 @@ void bootloader_clock_configure(void)
     uint32_t xtal_freq_mhz = 40;
 #ifdef CONFIG_IDF_TARGET_ESP32S2
     uint32_t apb_freq_hz = 20000000;
+#elif CONFIG_IDF_TARGET_ESP32S2H2
+    uint32_t apb_freq_hz = 32000000;
 #else
     uint32_t apb_freq_hz = 40000000;
 #endif // CONFIG_IDF_TARGET_ESP32S2
     ets_update_cpu_frequency(apb_freq_hz / 1000000);
-    REG_WRITE(RTC_CNTL_STORE5_REG, (apb_freq_hz >> 12) | ((apb_freq_hz >> 12) << 16));
+#ifdef RTC_APB_FREQ_REG
+    REG_WRITE(RTC_APB_FREQ_REG, (apb_freq_hz >> 12) | ((apb_freq_hz >> 12) << 16));
+#endif
     REG_WRITE(RTC_CNTL_STORE4_REG, (xtal_freq_mhz) | ((xtal_freq_mhz) << 16));
 }
 

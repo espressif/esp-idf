@@ -27,6 +27,35 @@ Steps For Creating Custom Chip Drivers and Overriding the IDF Default Driver Lis
 
    Modify the files above properly.
 
+.. note::
+   - When writing your own flash chip driver, you can set your flash chip capabilities through `spi_flash_chip_***(vendor)_get_caps` and points the function pointer `get_chip_caps` for protection to the `spi_flash_chip_***_get_caps` function. The steps are as follows.
+      
+      1. Please check whether your flash chip have the capabilities listed in `spi_flash_caps_t` by checking the flash datasheet.
+      2. Write a function named `spi_flash_chip_***(vendor)_get_caps`. Take the example below as a reference. (if the flash support `suspend` and `read unique id`).
+      3. Points the the pointer `get_chip_caps` (in `spi_flash_chip_t`) to the function mentioned above.
+
+      .. code-block:: c
+
+         spi_flash_caps_t spi_flash_chip_***(vendor)_get_caps(esp_flash_t *chip)
+         {
+            spi_flash_caps_t caps_flags = 0;
+            // 32-bit-address flash is not supported
+            flash-suspend is supported
+            caps_flags |= SPI_FLAHS_CHIP_CAP_SUSPEND;
+            // flash read unique id.
+            caps_flags |= SPI_FLASH_CHIP_CAP_UNIQUE_ID;
+            return caps_flags;
+         }
+
+      .. code-block:: c
+
+         const spi_flash_chip_t esp_flash_chip_eon = {
+            // Other function pointers
+            .get_chip_caps = spi_flash_chip_eon_get_caps,
+         };
+
+   - You also can see how to implement this in the example :example:`storage/custom_flash_driver`.
+
 4. Add linking dependency from `spi_flash` component to the new `custom_chip_driver` component, by adding the following lines after the `idf_component_register`, in the `CMakeLists.txt` file of the `custom_chip_driver` component:
 
       idf_component_get_property(spi_flash_lib spi_flash COMPONENT_LIB)

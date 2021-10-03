@@ -24,12 +24,32 @@
 #include "esp32s3/rom/lldesc.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/lldesc.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/lldesc.h"
 #endif
 
 //the size field has 12 bits, but 0 not for 4096.
 //to avoid possible problem when the size is not word-aligned, we only use 4096-4 per desc.
 /** Maximum size of data in the buffer that a DMA descriptor can hold. */
 #define LLDESC_MAX_NUM_PER_DESC (4096-4)
+
+// Some DMA operations might impose certain alignment restrictions on the length
+#define LLDESC_MAX_NUM_PER_DESC_16B_ALIGNED (4096 - 16)
+#define LLDESC_MAX_NUM_PER_DESC_32B_ALIGNED (4096 - 32)
+
+/**
+ * Generate a linked list pointing to a (huge) buffer in an descriptor array.
+ *
+ * The caller should ensure there is enough size to hold the array, by calling
+ * ``lldesc_get_required_num_constrained`` with the same max_desc_size argument.
+ *
+ * @param[out] out_desc_array Output of a descriptor array, the head should be fed to the DMA.
+ * @param buffer Buffer for the descriptors to point to.
+ * @param size Size (or length for TX) of the buffer
+ * @param max_desc_size Maximum length of each descriptor
+ * @param isrx The RX DMA may require the buffer to be word-aligned, set to true for a RX link, otherwise false.
+ */
+void lldesc_setup_link_constrained(lldesc_t *out_desc_array, const void *buffer, int size, int max_desc_size, bool isrx);
 
 /**
  * Generate a linked list pointing to a (huge) buffer in an descriptor array.
@@ -42,7 +62,7 @@
  * @param size Size (or length for TX) of the buffer
  * @param isrx The RX DMA may require the buffer to be word-aligned, set to true for a RX link, otherwise false.
  */
-void lldesc_setup_link(lldesc_t *out_desc_array, const void *buffer, int size, bool isrx);
+#define lldesc_setup_link(out_desc_array, buffer, size, isrx) lldesc_setup_link_constrained(out_desc_array, buffer, size, LLDESC_MAX_NUM_PER_DESC, isrx)
 
 /**
  * @brief Get the received length of a linked list, until end of the link or eof.
@@ -61,7 +81,16 @@ int lldesc_get_received_len(lldesc_t* head, lldesc_t** out_next);
  *
  * @return Numbers required.
  */
-static inline int lldesc_get_required_num(int data_size)
+static inline int lldesc_get_required_num_constrained(int data_size, int max_desc_size)
 {
-    return (data_size + LLDESC_MAX_NUM_PER_DESC - 1) / LLDESC_MAX_NUM_PER_DESC;
+    return (data_size + max_desc_size - 1) / max_desc_size;
 }
+
+/**
+ * Get the number of descriptors required for a given buffer size.
+ *
+ * @param data_size Size to check descriptor num.
+ * @param max_desc_size Maximum length of each descriptor
+ * @return Numbers required.
+ */
+#define lldesc_get_required_num(data_size) lldesc_get_required_num_constrained(data_size, LLDESC_MAX_NUM_PER_DESC)

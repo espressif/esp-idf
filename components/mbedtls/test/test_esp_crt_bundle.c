@@ -82,6 +82,9 @@ typedef enum {
 
 int esp_crt_verify_callback(void *buf, mbedtls_x509_crt *crt, int data, uint32_t *flags);
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+// TODO ESP32-S3 IDF-1878
+
 static const char *TAG = "cert_bundle_test";
 
 static volatile bool exit_flag;
@@ -164,6 +167,9 @@ void server_task(void *pvParameters)
         ESP_LOGE(TAG, "SSL server setup failed");
         goto exit;
     }
+
+    /* Signal that server is up and hence client task can start now */
+    xSemaphoreGive(*sema);
 
     bool connected = false;
     while (!exit_flag) {
@@ -269,8 +275,6 @@ int client_task(const uint8_t *bundle, esp_crt_validate_res_t *res)
         esp_crt_bundle_set(bundle);
     }
 
-
-
     ESP_LOGI(TAG, "Connecting to %s:%s...", SERVER_ADDRESS, SERVER_PORT);
     if ((ret = mbedtls_net_connect(&client.client_fd, SERVER_ADDRESS, SERVER_PORT, MBEDTLS_NET_PROTO_TCP)) != 0) {
         ESP_LOGE(TAG, "mbedtls_net_connect returned -%x", -ret);
@@ -316,13 +320,16 @@ TEST_CASE("custom certificate bundle", "[mbedtls]")
 
    test_case_uses_tcpip();
 
-   xSemaphoreHandle exit_sema = xSemaphoreCreateBinary();
+   xSemaphoreHandle signal_sem = xSemaphoreCreateBinary();
+   TEST_ASSERT_NOT_NULL(signal_sem);
 
    exit_flag = false;
-   xTaskCreate(server_task, "server task", 8192, &exit_sema, 10, NULL);
+   xTaskCreate(server_task, "server task", 8192, &signal_sem, 10, NULL);
 
    // Wait for the server to start up
-   vTaskDelay(100 / portTICK_PERIOD_MS);
+   if (!xSemaphoreTake(signal_sem, 10000 / portTICK_PERIOD_MS)) {
+       TEST_FAIL_MESSAGE("signal_sem not released, server start failed");
+   }
 
    /* Test with default crt bundle that doesnt contain the ca crt */
    client_task(NULL, &validate_res);
@@ -334,12 +341,14 @@ TEST_CASE("custom certificate bundle", "[mbedtls]")
 
    exit_flag = true;
 
-   if (!xSemaphoreTake(exit_sema, 10000 / portTICK_PERIOD_MS)) {
-       TEST_FAIL_MESSAGE("exit_sem not released by server task");
+   if (!xSemaphoreTake(signal_sem, 10000 / portTICK_PERIOD_MS)) {
+       TEST_FAIL_MESSAGE("signal_sem not released, server exit failed");
    }
 
-   vSemaphoreDelete(exit_sema);
+   vSemaphoreDelete(signal_sem);
 }
+
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
 
 TEST_CASE("custom certificate bundle - weak hash", "[mbedtls]")
 {

@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <sys/param.h>
 #include "soc/soc_caps.h"
 #include "hal/adc_hal.h"
 #include "hal/adc_hal_conf.h"
+#include "hal/assert.h"
 #include "sdkconfig.h"
-#include <sys/param.h>
 
 
-#if CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
 #include "soc/gdma_channel.h"
 #include "soc/soc.h"
 #include "esp_rom_sys.h"
@@ -43,12 +44,18 @@ void adc_hal_init(void)
     adc_ll_digi_set_clk_div(SOC_ADC_DIGI_SAR_CLK_DIV_DEFAULT);
 }
 
+#if SOC_ADC_ARBITER_SUPPORTED
+void adc_hal_arbiter_config(adc_arbiter_t *config)
+{
+    adc_ll_set_arbiter_work_mode(config->mode);
+    adc_ll_set_arbiter_priority(config->rtc_pri, config->dig_pri, config->pwdet_pri);
+}
+#endif
+
 /*---------------------------------------------------------------
                     ADC calibration setting
 ---------------------------------------------------------------*/
-#if SOC_ADC_HW_CALIBRATION_V1
-// ESP32-S2 and C3 support HW offset calibration.
-
+#if SOC_ADC_CALIBRATION_V1_SUPPORTED
 void adc_hal_calibration_init(adc_ll_num_t adc_n)
 {
     adc_ll_calibration_init(adc_n);
@@ -64,10 +71,14 @@ void adc_hal_set_calibration_param(adc_ll_num_t adc_n, uint32_t param)
     }
 }
 
-#if CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 static void cal_setup(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten, bool internal_gnd)
 {
+#if CONFIG_IDF_TARGET_ESP32S2
     adc_hal_set_controller(adc_n, ADC_CTRL_RTC);    //Set controller
+#else
+    adc_hal_set_controller(adc_n, ADC_LL_CTRL_ARB);    //Set controller
+#endif
 
     /* Enable/disable internal connect GND (for calibration). */
     if (internal_gnd) {
@@ -86,14 +97,14 @@ static uint32_t read_cal_channel(adc_ll_num_t adc_n, int channel)
     return (uint32_t)adc_ll_rtc_get_convert_value(adc_n);
 }
 
-#elif CONFIG_IDF_TARGET_ESP32C3
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
 static void cal_setup(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten, bool internal_gnd)
 {
     adc_ll_onetime_sample_enable(ADC_NUM_1, false);
     adc_ll_onetime_sample_enable(ADC_NUM_2, false);
     /* Enable/disable internal connect GND (for calibration). */
     if (internal_gnd) {
-        const int esp32c3_invalid_chan = (adc_n == ADC_NUM_1)? 0xF: 0x1;
+        const int esp32c3_invalid_chan = (adc_n == ADC_NUM_1) ? 0xF : 0x1;
         adc_ll_onetime_set_channel(adc_n, esp32c3_invalid_chan);
     } else {
         adc_ll_onetime_set_channel(adc_n, channel);
@@ -109,7 +120,7 @@ static uint32_t read_cal_channel(adc_ll_num_t adc_n, int channel)
     esp_rom_delay_us(5);
     adc_ll_onetime_start(true);
 
-    while(!adc_ll_intr_get_raw(ADC_LL_INTR_ADC1_DONE | ADC_LL_INTR_ADC2_DONE));
+    while (!adc_ll_intr_get_raw(ADC_LL_INTR_ADC1_DONE | ADC_LL_INTR_ADC2_DONE));
 
     uint32_t read_val = -1;
     if (adc_n == ADC_NUM_1) {
@@ -178,15 +189,16 @@ uint32_t adc_hal_self_calibration(adc_ll_num_t adc_n, adc_channel_t channel, adc
 
     chk_code = code_h + code_l;
     uint32_t ret = ((code_sum - chk_code) % (ADC_HAL_CAL_TIMES - 2) < 4)
-           ? (code_sum - chk_code) / (ADC_HAL_CAL_TIMES - 2)
-           : (code_sum - chk_code) / (ADC_HAL_CAL_TIMES - 2) + 1;
+                   ? (code_sum - chk_code) / (ADC_HAL_CAL_TIMES - 2)
+                   : (code_sum - chk_code) / (ADC_HAL_CAL_TIMES - 2) + 1;
 
     adc_ll_calibration_finish(adc_n);
+
     return ret;
 }
-#endif //SOC_ADC_HW_CALIBRATION_V1
+#endif //SOC_ADC_CALIBRATION_V1_SUPPORTED
 
-#if CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
 //This feature is currently supported on ESP32C3, will be supported on other chips soon
 /*---------------------------------------------------------------
                     DMA setting
@@ -202,8 +214,8 @@ void adc_hal_context_config(adc_hal_context_t *hal, const adc_hal_config_t *conf
 
 void adc_hal_digi_init(adc_hal_context_t *hal)
 {
-    gdma_ll_clear_interrupt_status(hal->dev, hal->dma_chan, UINT32_MAX);
-    gdma_ll_enable_interrupt(hal->dev, hal->dma_chan, GDMA_LL_EVENT_RX_SUC_EOF, true);
+    gdma_ll_rx_clear_interrupt_status(hal->dev, hal->dma_chan, UINT32_MAX);
+    gdma_ll_rx_enable_interrupt(hal->dev, hal->dma_chan, GDMA_LL_EVENT_RX_SUC_EOF, true);
     adc_ll_digi_dma_set_eof_num(hal->eof_num);
     adc_ll_onetime_sample_enable(ADC_NUM_1, false);
     adc_ll_onetime_sample_enable(ADC_NUM_2, false);
@@ -217,8 +229,8 @@ void adc_hal_fifo_reset(adc_hal_context_t *hal)
 
 static void adc_hal_digi_dma_link_descriptors(dma_descriptor_t *desc, uint8_t *data_buf, uint32_t size, uint32_t num)
 {
-    assert(((uint32_t)data_buf % 4) == 0);
-    assert((size % 4) == 0);
+    HAL_ASSERT(((uint32_t)data_buf % 4) == 0);
+    HAL_ASSERT((size % 4) == 0);
     uint32_t n = 0;
 
     while (num--) {
@@ -226,11 +238,11 @@ static void adc_hal_digi_dma_link_descriptors(dma_descriptor_t *desc, uint8_t *d
         desc[n].dw0.suc_eof = 0;
         desc[n].dw0.owner = 1;
         desc[n].buffer = data_buf;
-        desc[n].next = &desc[n+1];
+        desc[n].next = &desc[n + 1];
         data_buf += size;
         n++;
     }
-    desc[n-1].next = NULL;
+    desc[n - 1].next = NULL;
 }
 
 void adc_hal_digi_rxdma_start(adc_hal_context_t *hal, uint8_t *data_buf)
@@ -252,7 +264,7 @@ void adc_hal_digi_start(adc_hal_context_t *hal)
 
 adc_hal_dma_desc_status_t adc_hal_get_reading_result(adc_hal_context_t *hal, const intptr_t eof_desc_addr, dma_descriptor_t **cur_desc)
 {
-    assert(hal->cur_desc_ptr);
+    HAL_ASSERT(hal->cur_desc_ptr);
     if (!hal->cur_desc_ptr->next) {
         return ADC_HAL_DMA_DESC_NULL;
     }
@@ -273,12 +285,12 @@ void adc_hal_digi_rxdma_stop(adc_hal_context_t *hal)
 
 void adc_hal_digi_clr_intr(adc_hal_context_t *hal, uint32_t mask)
 {
-    gdma_ll_clear_interrupt_status(hal->dev, hal->dma_chan, mask);
+    gdma_ll_rx_clear_interrupt_status(hal->dev, hal->dma_chan, mask);
 }
 
 void adc_hal_digi_dis_intr(adc_hal_context_t *hal, uint32_t mask)
 {
-    gdma_ll_enable_interrupt(hal->dev, hal->dma_chan, mask, false);
+    gdma_ll_rx_enable_interrupt(hal->dev, hal->dma_chan, mask, false);
 }
 
 void adc_hal_digi_stop(adc_hal_context_t *hal)
@@ -333,13 +345,14 @@ static void adc_hal_onetime_start(void)
     //3 ADC digital controller clock cycle
     delay = delay * 3;
     //This coefficient (8) is got from test. When digi_clk is not smaller than ``APB_CLK_FREQ/8``, no delay is needed.
-    if (digi_clk >= APB_CLK_FREQ/8) {
+    if (digi_clk >= APB_CLK_FREQ / 8) {
         delay = 0;
     }
 
     adc_ll_onetime_start(false);
     esp_rom_delay_us(delay);
     adc_ll_onetime_start(true);
+
     //No need to delay here. Becuase if the start signal is not seen, there won't be a done intr.
 }
 
@@ -351,7 +364,7 @@ static esp_err_t adc_hal_single_read(adc_ll_num_t adc_n, int *out_raw)
         *out_raw = adc_ll_adc2_read();
         if (adc_ll_analysis_raw_data(adc_n, *out_raw)) {
             return ESP_ERR_INVALID_STATE;
-        }
+       }
     }
     return ESP_OK;
 }
@@ -382,7 +395,7 @@ esp_err_t adc_hal_convert(adc_ll_num_t adc_n, int channel, int *out_raw)
 
     return ret;
 }
-#else // !CONFIG_IDF_TARGET_ESP32C3
+#else // !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2
 esp_err_t adc_hal_convert(adc_ll_num_t adc_n, int channel, int *out_raw)
 {
     adc_ll_rtc_enable_channel(adc_n, channel);
@@ -396,4 +409,4 @@ esp_err_t adc_hal_convert(adc_ll_num_t adc_n, int channel, int *out_raw)
 
     return ESP_OK;
 }
-#endif  //#if !CONFIG_IDF_TARGET_ESP32C3
+#endif  //#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C3

@@ -16,16 +16,18 @@
 #include "esp32s3/rom/ets_sys.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/ets_sys.h"
 #endif
+
+static void test_correct_delay_timer_func(void* arg)
+{
+    struct timeval* ptv = (struct timeval*) arg;
+    gettimeofday(ptv, NULL);
+}
 
 TEST_CASE("ets_timer produces correct delay", "[ets_timer]")
 {
-    void timer_func(void* arg)
-    {
-        struct timeval* ptv = (struct timeval*) arg;
-        gettimeofday(ptv, NULL);
-    }
-
     ETSTimer timer1 = {0};
 
     const int delays_ms[] = {20, 100, 200, 250};
@@ -34,7 +36,7 @@ TEST_CASE("ets_timer produces correct delay", "[ets_timer]")
     for (size_t i = 0; i < delays_count; ++i) {
         struct timeval tv_end = {0};
 
-        ets_timer_setfn(&timer1, &timer_func, &tv_end);
+        ets_timer_setfn(&timer1, &test_correct_delay_timer_func, &tv_end);
         struct timeval tv_start;
         gettimeofday(&tv_start, NULL);
 
@@ -52,42 +54,43 @@ TEST_CASE("ets_timer produces correct delay", "[ets_timer]")
     ets_timer_done(&timer1);
 }
 
-TEST_CASE("periodic ets_timer produces correct delays", "[ets_timer]")
-{
-    // no, we can't make this a const size_t (§6.7.5.2)
+// no, we can't make this a const size_t (§6.7.5.2)
 #define NUM_INTERVALS 16
 
-    typedef struct {
-        ETSTimer *timer;
-        size_t cur_interval;
-        int intervals[NUM_INTERVALS];
-        struct timeval tv_start;
-    } test_args_t;
+typedef struct {
+    ETSTimer *timer;
+    size_t cur_interval;
+    int intervals[NUM_INTERVALS];
+    struct timeval tv_start;
+} test_periodic_correct_delays_args_t;
 
-    void timer_func(void *arg) {
-        test_args_t *p_args = (test_args_t *) arg;
-        struct timeval tv_now;
-        gettimeofday(&tv_now, NULL);
-        int32_t ms_diff = (tv_now.tv_sec - p_args->tv_start.tv_sec) * 1000 +
-                          (tv_now.tv_usec - p_args->tv_start.tv_usec) / 1000;
-        printf("timer #%d %dms\n", p_args->cur_interval, ms_diff);
-        p_args->intervals[p_args->cur_interval++] = ms_diff;
-        // Deliberately make timer handler run longer.
-        // We check that this doesn't affect the result.
-        esp_rom_delay_us(10 * 1000);
-        if (p_args->cur_interval == NUM_INTERVALS) {
-            printf("done\n");
-            ets_timer_disarm(p_args->timer);
-        }
+static void test_periodic_correct_delays_timer_func(void* arg)
+{
+    test_periodic_correct_delays_args_t *p_args = (test_periodic_correct_delays_args_t *) arg;
+    struct timeval tv_now;
+    gettimeofday(&tv_now, NULL);
+    int32_t ms_diff = (tv_now.tv_sec - p_args->tv_start.tv_sec) * 1000 +
+                      (tv_now.tv_usec - p_args->tv_start.tv_usec) / 1000;
+    printf("timer #%d %dms\n", p_args->cur_interval, ms_diff);
+    p_args->intervals[p_args->cur_interval++] = ms_diff;
+    // Deliberately make timer handler run longer.
+    // We check that this doesn't affect the result.
+    esp_rom_delay_us(10 * 1000);
+    if (p_args->cur_interval == NUM_INTERVALS) {
+        printf("done\n");
+        ets_timer_disarm(p_args->timer);
     }
+}
 
+TEST_CASE("periodic ets_timer produces correct delays", "[ets_timer]")
+{
     const int delay_ms = 100;
     ETSTimer timer1 = {0};
-    test_args_t args = {0};
+    test_periodic_correct_delays_args_t args = {0};
 
     args.timer = &timer1;
     gettimeofday(&args.tv_start, NULL);
-    ets_timer_setfn(&timer1, &timer_func, &args);
+    ets_timer_setfn(&timer1, &test_periodic_correct_delays_timer_func, &args);
     ets_timer_arm(&timer1, delay_ms, true);
     vTaskDelay(delay_ms * (NUM_INTERVALS + 1));
 
@@ -96,67 +99,66 @@ TEST_CASE("periodic ets_timer produces correct delays", "[ets_timer]")
         TEST_ASSERT_INT32_WITHIN(portTICK_PERIOD_MS, (i + 1) * delay_ms, args.intervals[i]);
     }
     ets_timer_done(&timer1);
-
+}
 #undef NUM_INTERVALS
+
+#define N 5
+
+typedef struct {
+    const int order[N * 3];
+    size_t count;
+} test_timers_ordered_correctly_common_t;
+
+typedef struct {
+    int timer_index;
+    const int intervals[N];
+    size_t intervals_count;
+    ETSTimer* timer;
+    test_timers_ordered_correctly_common_t* common;
+    bool pass;
+    SemaphoreHandle_t done;
+} test_timers_ordered_correctly_args_t;
+
+static void test_timers_ordered_correctly_timer_func(void* arg)
+{
+    test_timers_ordered_correctly_args_t* p_args = (test_timers_ordered_correctly_args_t*) arg;
+    // check order
+    size_t count = p_args->common->count;
+    int expected_index = p_args->common->order[count];
+    printf("At count %d, expected timer %d, got timer %d\n",
+            count, expected_index, p_args->timer_index);
+    if (expected_index != p_args->timer_index) {
+        p_args->pass = false;
+        ets_timer_disarm(p_args->timer);
+        xSemaphoreGive(p_args->done);
+        return;
+    }
+    p_args->common->count++;
+    if (++p_args->intervals_count == N) {
+        ets_timer_disarm(p_args->timer);
+        xSemaphoreGive(p_args->done);
+        return;
+    }
+    int next_interval = p_args->intervals[p_args->intervals_count];
+    printf("timer %d interval #%d, %d ms\n",
+            p_args->timer_index, p_args->intervals_count, next_interval);
+    ets_timer_arm(p_args->timer, next_interval, false);
 }
 
 TEST_CASE("multiple ETSTimers are ordered correctly", "[ets_timer]")
 {
-#define N 5
-
-    typedef struct {
-        const int order[N * 3];
-        size_t count;
-    } test_common_t;
-
-    typedef struct {
-        int timer_index;
-        const int intervals[N];
-        size_t intervals_count;
-        ETSTimer* timer;
-        test_common_t* common;
-        bool pass;
-        SemaphoreHandle_t done;
-    } test_args_t;
-
-    void timer_func(void* arg)
-    {
-        test_args_t* p_args = (test_args_t*) arg;
-        // check order
-        size_t count = p_args->common->count;
-        int expected_index = p_args->common->order[count];
-        printf("At count %d, expected timer %d, got timer %d\n",
-                count, expected_index, p_args->timer_index);
-        if (expected_index != p_args->timer_index) {
-            p_args->pass = false;
-            ets_timer_disarm(p_args->timer);
-            xSemaphoreGive(p_args->done);
-            return;
-        }
-        p_args->common->count++;
-        if (++p_args->intervals_count == N) {
-            ets_timer_disarm(p_args->timer);
-            xSemaphoreGive(p_args->done);
-            return;
-        }
-        int next_interval = p_args->intervals[p_args->intervals_count];
-        printf("timer %d interval #%d, %d ms\n",
-                p_args->timer_index, p_args->intervals_count, next_interval);
-        ets_timer_arm(p_args->timer, next_interval, false);
-    }
-
     ETSTimer timer1;
     ETSTimer timer2;
     ETSTimer timer3;
 
-    test_common_t common = {
+    test_timers_ordered_correctly_common_t common = {
         .order = {1, 2, 3, 2, 1, 3, 1, 2, 1, 3, 2, 1, 3, 3, 2},
         .count = 0
     };
 
     SemaphoreHandle_t done = xSemaphoreCreateCounting(3, 0);
 
-    test_args_t args1 = {
+    test_timers_ordered_correctly_args_t args1 = {
             .timer_index = 1,
             .intervals = {10, 40, 20, 40, 30},
             .timer = &timer1,
@@ -165,7 +167,7 @@ TEST_CASE("multiple ETSTimers are ordered correctly", "[ets_timer]")
             .done = done
     };
 
-    test_args_t args2 = {
+    test_timers_ordered_correctly_args_t args2 = {
             .timer_index = 2,
             .intervals = {20, 20, 60, 30, 40},
             .timer = &timer2,
@@ -174,7 +176,7 @@ TEST_CASE("multiple ETSTimers are ordered correctly", "[ets_timer]")
             .done = done
     };
 
-    test_args_t args3 = {
+    test_timers_ordered_correctly_args_t args3 = {
             .timer_index = 3,
             .intervals = {30, 30, 60, 30, 10},
             .timer = &timer3,
@@ -183,9 +185,9 @@ TEST_CASE("multiple ETSTimers are ordered correctly", "[ets_timer]")
             .done = done
     };
 
-    ets_timer_setfn(&timer1, &timer_func, &args1);
-    ets_timer_setfn(&timer2, &timer_func, &args2);
-    ets_timer_setfn(&timer3, &timer_func, &args3);
+    ets_timer_setfn(&timer1, &test_timers_ordered_correctly_timer_func, &args1);
+    ets_timer_setfn(&timer2, &test_timers_ordered_correctly_timer_func, &args2);
+    ets_timer_setfn(&timer3, &test_timers_ordered_correctly_timer_func, &args3);
 
     ets_timer_arm(&timer1, args1.intervals[0], false);
     ets_timer_arm(&timer2, args2.intervals[0], false);
@@ -202,25 +204,24 @@ TEST_CASE("multiple ETSTimers are ordered correctly", "[ets_timer]")
     ets_timer_done(&timer1);
     ets_timer_done(&timer2);
     ets_timer_done(&timer3);
-
+}
 #undef N
+
+static void IRAM_ATTR test_iram_timer_func(void* arg)
+{
+    volatile bool *b = (volatile bool *)arg;
+    *b = true;
 }
 
 /* WiFi/BT coexistence will sometimes arm/disarm
    timers from an ISR where flash may be disabled. */
 IRAM_ATTR TEST_CASE("ETSTimers arm & disarm run from IRAM", "[ets_timer]")
 {
-    void timer_func(void* arg)
-    {
-        volatile bool *b = (volatile bool *)arg;
-        *b = true;
-    }
-
     volatile bool flag = false;
     ETSTimer timer1;
     const int INTERVAL = 5;
 
-    ets_timer_setfn(&timer1, &timer_func, (void *)&flag);
+    ets_timer_setfn(&timer1, &test_iram_timer_func, (void *)&flag);
 
     /* arm a disabled timer, then disarm a live timer */
 

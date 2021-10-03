@@ -113,12 +113,17 @@ int pthread_key_delete(pthread_key_t key)
    This is called from one of two places:
 
    If the thread was created via pthread_create() then it's called by pthread_task_func() when that thread ends,
-   and the FreeRTOS thread-local-storage is removed before the FreeRTOS task is deleted.
+   or calls pthread_exit(), and the FreeRTOS thread-local-storage is removed before the FreeRTOS task is deleted.
 
    For other tasks, this is called when the FreeRTOS idle task performs its task cleanup after the task is deleted.
 
-   (The reason for calling it early for pthreads is to keep the timing consistent with "normal" pthreads, so after
-   pthread_join() the task's destructors have all been called even if the idle task hasn't run cleanup yet.)
+   There are two reasons for calling it early for pthreads:
+
+   - To keep the timing consistent with "normal" pthreads, so after pthread_join() the task's destructors have all
+     been called even if the idle task hasn't run cleanup yet.
+
+   - The destructor is always called in the context of the thread itself - which is important if the task then calls
+     pthread_getspecific() or pthread_setspecific() to update the state further, as allowed for in the spec.
 */
 static void pthread_local_storage_thread_deleted_callback(int index, void *v_tls)
 {
@@ -126,8 +131,13 @@ static void pthread_local_storage_thread_deleted_callback(int index, void *v_tls
     assert(tls != NULL);
 
     /* Walk the list, freeing all entries and calling destructors if they are registered */
-    value_entry_t *entry = SLIST_FIRST(tls);
-    while(entry != NULL) {
+    while (1) {
+        value_entry_t *entry = SLIST_FIRST(tls);
+        if (entry == NULL) {
+            break;
+        }
+        SLIST_REMOVE_HEAD(tls, next);
+
         // This is a little slow, walking the linked list of keys once per value,
         // but assumes that the thread's value list will have less entries
         // than the keys list
@@ -135,9 +145,7 @@ static void pthread_local_storage_thread_deleted_callback(int index, void *v_tls
         if (key != NULL && key->destructor != NULL) {
             key->destructor(entry->value);
         }
-        value_entry_t *next_entry = SLIST_NEXT(entry, next);
         free(entry);
-        entry = next_entry;
     }
     free(tls);
 }
@@ -250,7 +258,22 @@ int pthread_setspecific(pthread_key_t key, const void *value)
         }
         entry->key = key;
         entry->value = (void *) value; // see note above about cast
-        SLIST_INSERT_HEAD(tls, entry, next);
+
+        // insert the new entry at the end of the list. this is important because
+        // a destructor may call pthread_setspecific() to add a new non-NULL value
+        // to the list, and this should be processed after all other entries.
+        //
+        // See pthread_local_storage_thread_deleted_callback()
+        value_entry_t *last_entry = NULL;
+        value_entry_t *it;
+        SLIST_FOREACH(it, tls, next) {
+            last_entry = it;
+        }
+        if (last_entry == NULL) {
+            SLIST_INSERT_HEAD(tls, entry, next);
+        } else {
+            SLIST_INSERT_AFTER(last_entry, entry, next);
+        }
     }
 
     return 0;

@@ -35,19 +35,10 @@ Linux 平台工具链的标准设置
 
 使用某些 Linux 版本向 {IDF_TARGET_NAME} 烧录固件时，可能会出现 ``Failed to open port /dev/ttyUSB0`` 错误消息。此时可以将用户添加至 :ref:`Linux Dialout 组<linux-dialout-group>`。
 
-修复 Ubuntu 16.04 损坏的 pip 
+兼容的 Python 版本
 =================================
 
-``python3-pip`` 包可能已损坏无法升级。需使用脚本 `get-pip.py <https://bootstrap.pypa.io/get-pip.py>`_ 手动删除并安装该包::
-
-    apt remove python3-pip python3-virtualenv; rm -r ~/.local
-    rm -r ~/.espressif/python_env && python get-pip.py
-
-停用 Python 2 
-====================
-
-Python 2 已经 `结束生命周期 <https://www.python.org/doc/sunset-python-2/>`_，ESP-IDF 很快将不再支持 Python 2。请安装 Python 3.6 或以上版本。可参考上面列出的目前主流 Linux 发行版的安装说明。
-
+ESP-IDF 支持 Python 3.6 及以上版本，建议升级操作系统到最新版本从而更新 Python。也可选择从 `sources <https://www.python.org/downloads/>`_ 安装最新版 Python，或使用 Python 管理系统如 `pyenv <https://github.com/pyenv/pyenv>`_ 对版本进行升级管理。
 
 后续步骤
 ==========

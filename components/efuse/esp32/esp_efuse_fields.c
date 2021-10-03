@@ -1,16 +1,8 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "esp_efuse.h"
 #include "esp_efuse_utility.h"
@@ -23,7 +15,7 @@
 #include "soc/efuse_periph.h"
 #include "bootloader_random.h"
 #include "sys/param.h"
-#include "soc/apb_ctrl_reg.h"
+#include "soc/syscon_reg.h"
 
 const static char *TAG = "efuse";
 
@@ -35,7 +27,7 @@ uint8_t esp_efuse_get_chip_ver(void)
     uint8_t eco_bit0, eco_bit1, eco_bit2;
     esp_efuse_read_field_blob(ESP_EFUSE_CHIP_VER_REV1, &eco_bit0, 1);
     esp_efuse_read_field_blob(ESP_EFUSE_CHIP_VER_REV2, &eco_bit1, 1);
-    eco_bit2 = (REG_READ(APB_CTRL_DATE_REG) & 0x80000000) >> 31;
+    eco_bit2 = (REG_READ(SYSCON_DATE_REG) & 0x80000000) >> 31;
     uint32_t combine_value = (eco_bit2 << 2) | (eco_bit1 << 1) | eco_bit0;
     uint8_t chip_ver = 0;
     switch (combine_value) {
@@ -122,4 +114,10 @@ void esp_efuse_write_random_key(uint32_t blk_wdata0_reg)
     }
     bzero(buf, sizeof(buf));
     bzero(raw, sizeof(raw));
+}
+
+// Permanently update values written to the efuse write registers
+void esp_efuse_burn_new_values(void)
+{
+    esp_efuse_utility_burn_efuses();
 }

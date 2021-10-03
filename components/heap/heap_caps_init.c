@@ -20,7 +20,7 @@
 #include "multi_heap.h"
 #include "multi_heap_platform.h"
 #include "esp_heap_caps_init.h"
-#include "soc/soc_memory_layout.h"
+#include "heap_memory_layout.h"
 
 static const char *TAG = "heap_init";
 

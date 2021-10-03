@@ -4,7 +4,7 @@ Watchdogs
 Overview
 --------
 
-The ESP-IDF has support for two types of watchdogs: The Interrupt Watchdog Timer
+The ESP-IDF has support for multiple types of watchdogs, with the two main ones being: The Interrupt Watchdog Timer
 and the Task Watchdog Timer (TWDT). The Interrupt Watchdog Timer and the TWDT
 can both be enabled using :ref:`project-configuration-menu`, however the TWDT can also be
 enabled during runtime. The Interrupt Watchdog is responsible for detecting
@@ -54,6 +54,8 @@ sections or interrupt handlers should ever block waiting for another event to oc
 If changing the code to reduce the processing time is not possible or desirable, it's possible to
 increase the :ref:`CONFIG_ESP_INT_WDT_TIMEOUT_MS` setting instead.
 
+.. _task-watchdog-timer:
+
 Task Watchdog Timer
 ^^^^^^^^^^^^^^^^^^^
 
@@ -99,13 +101,13 @@ timeout at runtime by calling :cpp:func:`esp_task_wdt_init`.
 
 The following config options control TWDT configuration at startup. They are all enabled by default:
 
-{IDF_TARGET_IDLE_TASK:default="Idle task", esp32="CPU0 Idle task"}
+{IDF_TARGET_IDLE_TASK:default="Idle task", esp32="CPU0 Idle task", esp32s3="CPU0 Idle task"}
 
 .. list::
 
     - :ref:`CONFIG_ESP_TASK_WDT` - the TWDT is initialized automatically during startup. If this option is disabled, it is still possible to initialize the Task WDT at runtime by calling :cpp:func:`esp_task_wdt_init`.
     - :ref:`CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0` - {IDF_TARGET_IDLE_TASK} is subscribed to the TWDT during startup. If this option is disabled, it is still possible to subscribe the idle task by calling :cpp:func:`esp_task_wdt_add` at any time.
-    :esp32: - :ref:`CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1` - CPU1 Idle task is subscribed to the TWDT during startup.
+    :not CONFIG_FREERTOS_UNICORE: - :ref:`CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1` - CPU1 Idle task is subscribed to the TWDT during startup.
 
 
 JTAG and watchdogs
@@ -121,6 +123,26 @@ and task watchdog functionality will essentially be disabled. No warnings or
 panics from either watchdogs will be generated when the {IDF_TARGET_NAME} is connected to
 OpenOCD via JTAG.
 
+
+.. only:: SOC_XT_WDT_SUPPORTED
+
+  XTAL32K Watchdog Timer (XTWDT)
+  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  The XTAL32K watchdog makes sure the (optional) external 32 KHz crystal or oscillator is functioning correctly.
+
+  When `XTAL32K_CLK` works as the clock source of `RTC_SLOW_CLK` and stops oscillating, the XTAL32K watchdog timer will detect this and generate an interrupt.
+  It also provides functionality for automatically switching over to the internal, but less accurate oscillator as the `RTC_SLOW_CLK` source.
+
+  Since the switch to the backup clock is done in hardware it can also happen during deep sleep. This means that even if `XTAL32K_CLK` stops functioning while the chip in deep sleep, waiting for a timer to expire, it will still be able to wake-up as planned.
+
+  If the `XTAL32K_CLK` starts functioning normally again, you can call `esp_xt_wdt_restore_clk` to switch back to this clock source and re-enable the watchdog timer.
+
+  Configuration
+  @@@@@@@@@@@@@
+
+  When the external 32KHz crystal or oscillator is selected (:ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_RTC_CLK_SRC`) the XTAL32K watchdog can be enabled via the :ref:`CONFIG_ESP_XT_WDT` configuration
+  flag. The timeout is configured by setting :ref:`CONFIG_ESP_XT_WDT_TIMEOUT`. The automatic backup clock functionality is enabled via the ref:`CONFIG_ESP_XT_WDT_BACKUP_CLK_ENABLE` configuration.
 
 Interrupt Watchdog API Reference
 --------------------------------

@@ -1,21 +1,14 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 
 #include <string.h>
 #include "esp_log.h"
 #include "esp_err.h"
+#include "esp_check.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/timers.h"
@@ -26,21 +19,14 @@
 
 extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate position after the rtc module is finished.
 
-static const char *DAC_TAG = "DAC";
-
-#define DAC_CHECK(a, str, ret_val) ({                                               \
-    if (!(a)) {                                                                     \
-        ESP_LOGE(DAC_TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str);                \
-        return (ret_val);                                                           \
-    }                                                                               \
-})
+static const char *TAG = "DAC";
 
 /*---------------------------------------------------------------
                     DAC
 ---------------------------------------------------------------*/
 esp_err_t dac_pad_get_io_num(dac_channel_t channel, gpio_num_t *gpio_num)
 {
-    DAC_CHECK(channel < DAC_CHANNEL_MAX, "DAC channel error", ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(channel < DAC_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, "DAC channel error");
 
     *gpio_num = (gpio_num_t)dac_periph_signal.dac_channel_io_num[channel];
 
@@ -49,7 +35,7 @@ esp_err_t dac_pad_get_io_num(dac_channel_t channel, gpio_num_t *gpio_num)
 
 static esp_err_t dac_rtc_pad_init(dac_channel_t channel)
 {
-    DAC_CHECK(channel < DAC_CHANNEL_MAX, "DAC channel error", ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(channel < DAC_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, "DAC channel error");
 
     gpio_num_t gpio_num = 0;
     dac_pad_get_io_num(channel, &gpio_num);
@@ -63,7 +49,7 @@ static esp_err_t dac_rtc_pad_init(dac_channel_t channel)
 
 esp_err_t dac_output_enable(dac_channel_t channel)
 {
-    DAC_CHECK(channel < DAC_CHANNEL_MAX, "DAC channel error", ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(channel < DAC_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, "DAC channel error");
 
     dac_rtc_pad_init(channel);
     portENTER_CRITICAL(&rtc_spinlock);
@@ -76,7 +62,7 @@ esp_err_t dac_output_enable(dac_channel_t channel)
 
 esp_err_t dac_output_disable(dac_channel_t channel)
 {
-    DAC_CHECK(channel < DAC_CHANNEL_MAX, "DAC channel error", ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(channel < DAC_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, "DAC channel error");
 
     portENTER_CRITICAL(&rtc_spinlock);
     dac_hal_power_down(channel);
@@ -87,7 +73,7 @@ esp_err_t dac_output_disable(dac_channel_t channel)
 
 esp_err_t dac_output_voltage(dac_channel_t channel, uint8_t dac_value)
 {
-    DAC_CHECK(channel < DAC_CHANNEL_MAX, "DAC channel error", ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(channel < DAC_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, "DAC channel error");
 
     portENTER_CRITICAL(&rtc_spinlock);
     dac_hal_update_output_value(channel, dac_value);
@@ -98,7 +84,7 @@ esp_err_t dac_output_voltage(dac_channel_t channel, uint8_t dac_value)
 
 esp_err_t dac_out_voltage(dac_channel_t channel, uint8_t dac_value)
 {
-    DAC_CHECK(channel < DAC_CHANNEL_MAX, "DAC channel error", ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(channel < DAC_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, "DAC channel error");
 
     portENTER_CRITICAL(&rtc_spinlock);
     dac_hal_update_output_value(channel, dac_value);
@@ -127,7 +113,7 @@ esp_err_t dac_cw_generator_disable(void)
 
 esp_err_t dac_cw_generator_config(dac_cw_config_t *cw)
 {
-    if (!cw) return ESP_ERR_INVALID_ARG;
+    ESP_RETURN_ON_FALSE(cw, ESP_ERR_INVALID_ARG, TAG, "invalid clock configuration");
 
     portENTER_CRITICAL(&rtc_spinlock);
     dac_hal_cw_generator_config(cw);

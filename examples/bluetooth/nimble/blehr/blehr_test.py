@@ -36,37 +36,35 @@ from tiny_test_fw import Utility
 # > make print_flash_cmd | tail -n 1 > build/download.config
 
 
-def blehr_client_task(hr_obj, dut_addr):
+def blehr_client_task(hr_obj, dut, dut_addr):
     interface = 'hci0'
     ble_devname = 'blehr_sensor_1.0'
     hr_srv_uuid = '180d'
     hr_char_uuid = '2a37'
 
     # Get BLE client module
-    ble_client_obj = lib_ble_client.BLE_Bluez_Client(interface, devname=ble_devname, devaddr=dut_addr)
-    if not ble_client_obj:
-        raise RuntimeError('Failed to get DBus-Bluez object')
+    ble_client_obj = lib_ble_client.BLE_Bluez_Client(iface=interface)
 
     # Discover Bluetooth Adapter and power on
     is_adapter_set = ble_client_obj.set_adapter()
     if not is_adapter_set:
-        raise RuntimeError('Adapter Power On failed !!')
+        return
 
     # Connect BLE Device
-    is_connected = ble_client_obj.connect()
+    is_connected = ble_client_obj.connect(
+        devname=ble_devname,
+        devaddr=dut_addr)
     if not is_connected:
-        # Call disconnect to perform cleanup operations before exiting application
-        ble_client_obj.disconnect()
-        raise RuntimeError('Connection to device ' + str(ble_devname) + ' failed !!')
+        return
 
-    # Read Services
-    services_ret = ble_client_obj.get_services()
-    if services_ret:
-        Utility.console_log('\nServices\n')
-        Utility.console_log(str(services_ret))
-    else:
+    # Get services of the connected device
+    services = ble_client_obj.get_services()
+    if not services:
         ble_client_obj.disconnect()
-        raise RuntimeError('Failure: Read Services failed')
+        return
+
+    # Get characteristics of the connected device
+    ble_client_obj.get_chars()
 
     '''
     Blehr application run:
@@ -74,26 +72,48 @@ def blehr_client_task(hr_obj, dut_addr):
         Retrieve updated value
         Stop Notifications
     '''
-    blehr_ret = ble_client_obj.hr_update_simulation(hr_srv_uuid, hr_char_uuid)
-    if blehr_ret:
-        Utility.console_log('Success: blehr example test passed')
+    # Get service if exists
+    service = ble_client_obj.get_service_if_exists(hr_srv_uuid)
+    if service:
+        # Get characteristic if exists
+        char = ble_client_obj.get_char_if_exists(hr_char_uuid)
+        if not char:
+            ble_client_obj.disconnect()
+            return
     else:
-        raise RuntimeError('Failure: blehr example test failed')
+        ble_client_obj.disconnect()
+        return
+
+    # Start Notify
+    # Read updated value
+    # Stop Notify
+    notify = ble_client_obj.start_notify(char)
+    if not notify:
+        ble_client_obj.disconnect()
+        return
+
+    # Check dut responses
+    dut.expect('subscribe event; cur_notify=1', timeout=30)
+    dut.expect('subscribe event; cur_notify=0', timeout=30)
 
     # Call disconnect to perform cleanup operations before exiting application
     ble_client_obj.disconnect()
 
+    # Check dut responses
+    dut.expect('disconnect;', timeout=30)
+
 
 class BleHRThread(threading.Thread):
-    def __init__(self, dut_addr, exceptions_queue):
+    def __init__(self, dut, dut_addr, exceptions_queue):
         threading.Thread.__init__(self)
+        self.dut = dut
         self.dut_addr = dut_addr
         self.exceptions_queue = exceptions_queue
 
     def run(self):
         try:
-            blehr_client_task(self, self.dut_addr)
-        except Exception:
+            blehr_client_task(self, self.dut, self.dut_addr)
+        except RuntimeError:
             self.exceptions_queue.put(traceback.format_exc(), block=False)
 
 
@@ -107,8 +127,9 @@ def test_example_app_ble_hr(env, extra_data):
             4. Updated value is retrieved
             5. Stop Notifications
     """
-    subprocess.check_output(['rm','-rf','/var/lib/bluetooth/*'])
-    subprocess.check_output(['hciconfig','hci0','reset'])
+    # Remove cached bluetooth devices of any previous connections
+    subprocess.check_output(['rm', '-rf', '/var/lib/bluetooth/*'])
+    subprocess.check_output(['hciconfig', 'hci0', 'reset'])
 
     # Acquire DUT
     dut = env.get_dut('blehr', 'examples/bluetooth/nimble/blehr', dut_class=ttfw_idf.ESP32DUT)
@@ -127,7 +148,7 @@ def test_example_app_ble_hr(env, extra_data):
     dut_addr = dut.expect(re.compile(r'Device Address: ([a-fA-F0-9:]+)'), timeout=30)[0]
     exceptions_queue = Queue.Queue()
     # Starting a py-client in a separate thread
-    blehr_thread_obj = BleHRThread(dut_addr, exceptions_queue)
+    blehr_thread_obj = BleHRThread(dut, dut_addr, exceptions_queue)
     blehr_thread_obj.start()
     blehr_thread_obj.join()
 
@@ -141,12 +162,7 @@ def test_example_app_ble_hr(env, extra_data):
             Utility.console_log('\n' + exception_msg)
 
     if exception_msg:
-        raise Exception('Thread did not run successfully')
-
-    # Check dut responses
-    dut.expect('subscribe event; cur_notify=1', timeout=30)
-    dut.expect('subscribe event; cur_notify=0', timeout=30)
-    dut.expect('disconnect;', timeout=30)
+        raise Exception('Blehr thread did not run successfully')
 
 
 if __name__ == '__main__':

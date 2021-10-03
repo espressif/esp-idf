@@ -16,6 +16,8 @@ Non-constant static data (.data) and zero-initialized data (.bss) is placed by t
 
 .. only:: esp32
 
+   By applying the ``EXT_RAM_ATTR`` macro, zero-initialized data can also be placed into external RAM. To use this macro, the :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` needs to be enabled. See :ref:`external_ram_config_bss`.
+
    The available size of the internal DRAM region is reduced by 64kB (by shifting start address to ``0x3FFC0000``) if Bluetooth stack is used. Length of this region is also reduced by 16 kB or 32kB if trace memory is used. Due to some memory fragmentation issues caused by ROM, it is also not possible to use all available DRAM for static allocations - however the remaining DRAM is still available as heap at runtime.
 
 .. only:: not esp32
@@ -30,6 +32,10 @@ Constant data may also be placed into DRAM, for example if it is used in an non-
 =============
 
 The macro ``__NOINIT_ATTR`` can be used as attribute to place data into ``.noinit`` section. The values placed into this section will not be initialized at startup and should keep its value after software restart.
+
+.. only:: esp32
+
+    By applying the ``EXT_RAM_NOINIT_ATTR`` macro, Non-initialized value could also be placed in external RAM. To do this, the :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY` needs to be enabled. See :ref:`external_ram_config_noinit`. If the :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY` is not enabled, ``EXT_RAM_NOINIT_ATTR`` will behave just as ``__NOINIT_ATTR``, it will make data to be placed into ``.noinit`` segment in internal RAM.
 
 Example::
 
@@ -93,15 +99,11 @@ There are some possible issues with placement in IRAM, that may cause problems w
 
   Note that knowing which data should be marked with ``DRAM_ATTR`` can be hard, the compiler will sometimes recognize that a variable or expression is constant (even if it is not marked ``const``) and optimize it into flash, unless it is marked with ``DRAM_ATTR``.
 
-* GCC optimizations that automatically generate jump tables or switch/case lookup tables place these tables in flash. There are two possible ways to resolve this issue:
 
-  - Use a :doc:`linker script fragment <linker-script-generation>` to mark the entire source file as ``noflash``
-  - Pass specific flags to the compiler to disable these optimizations in the relevant source files. For CMake, place the following in the component CMakeLists.txt file:
+* GCC optimizations that automatically generate jump tables or switch/case lookup tables place these tables in flash. IDF by default builds all files with `-fno-jump-tables -fno-tree-switch-conversion` flags to avoid this.
 
-    .. code-block:: cmake
+ Jump table optimizations can be re-enabled for individual source files that don't need to be placed in IRAM. For instructions on how to add the -fjump-tables -ftree-switch-conversion options when compiling individual source files, see :ref:`component_build_control`
 
-        set_source_files_properties("${CMAKE_CURRENT_LIST_DIR}/relative/path/to/file" PROPERTIES
-                                    COMPILE_FLAGS "-fno-jump-tables -fno-tree-switch-conversion")
 
 .. _irom:
 
@@ -213,5 +215,3 @@ Placing DMA buffers in the stack is possible but discouraged. If doing so, pay a
             spi_device_transmit(spi, &temp);
             // other stuff
         }
-
-

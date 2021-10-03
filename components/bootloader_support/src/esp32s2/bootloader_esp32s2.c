@@ -1,17 +1,10 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <stdint.h>
+#include <string.h>
 #include "sdkconfig.h"
 #include "bootloader_common.h"
 #include "soc/efuse_reg.h"
@@ -31,7 +24,6 @@
 #include "esp_rom_sys.h"
 #include "esp32s2/rom/cache.h"
 #include "esp32s2/rom/spi_flash.h"
-#include "esp32s2/rom/rtc.h"
 
 #include "esp_attr.h"
 #include "esp_log.h"
@@ -43,7 +35,7 @@
 #include "soc/extmem_reg.h"
 #include "soc/rtc.h"
 #include "soc/spi_periph.h"
-#include <string.h>
+#include "esp_efuse.h"
 
 static const char *TAG = "boot.esp32s2";
 void IRAM_ATTR bootloader_configure_spi_pins(int drv)
@@ -206,7 +198,7 @@ static esp_err_t bootloader_init_spi_flash(void)
     }
 #endif
 
-    esp_rom_spiflash_unlock();
+    bootloader_flash_unlock();
 
 #if CONFIG_ESPTOOLPY_FLASHMODE_QIO || CONFIG_ESPTOOLPY_FLASHMODE_QOUT
     bootloader_enable_qio_mode();
@@ -263,11 +255,9 @@ static void wdt_reset_info_dump(int cpu)
 static void bootloader_check_wdt_reset(void)
 {
     int wdt_rst = 0;
-    RESET_REASON rst_reas[2];
-
-    rst_reas[0] = rtc_get_reset_reason(0);
-    if (rst_reas[0] == RTCWDT_SYS_RESET || rst_reas[0] == TG0WDT_SYS_RESET || rst_reas[0] == TG1WDT_SYS_RESET ||
-        rst_reas[0] == TG0WDT_CPU_RESET || rst_reas[0] == TG1WDT_CPU_RESET || rst_reas[0] == RTCWDT_CPU_RESET) {
+    soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
+    if (rst_reason == RESET_REASON_CORE_RTC_WDT || rst_reason == RESET_REASON_CORE_MWDT0 || rst_reason == RESET_REASON_CORE_MWDT1 ||
+        rst_reason == RESET_REASON_CPU0_MWDT0 || rst_reason == RESET_REASON_CPU0_MWDT1 || rst_reason == RESET_REASON_CPU0_RTC_WDT) {
         ESP_LOGW(TAG, "PRO CPU has been reset by WDT.");
         wdt_rst = 1;
     }
@@ -300,6 +290,13 @@ esp_err_t bootloader_init(void)
 #endif
     // clear bss section
     bootloader_clear_bss_section();
+    // init eFuse virtual mode (read eFuses to RAM)
+#ifdef CONFIG_EFUSE_VIRTUAL
+    ESP_LOGW(TAG, "eFuse virtual mode is enabled. If Secure boot or Flash encryption is enabled then it does not provide any security. FOR TESTING ONLY!");
+#ifndef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+    esp_efuse_init_virtual_mode_in_ram();
+#endif
+#endif
     // reset MMU
     bootloader_reset_mmu();
     // config clock
@@ -310,6 +307,11 @@ esp_err_t bootloader_init(void)
     bootloader_print_banner();
     // update flash ID
     bootloader_flash_update_id();
+    // Check and run XMC startup flow
+    if ((ret = bootloader_flash_xmc_startup()) != ESP_OK) {
+        ESP_LOGE(TAG, "failed when running XMC startup flow, reboot!");
+        goto err;
+    }
     // read bootloader header
     if ((ret = bootloader_read_bootloader_header()) != ESP_OK) {
         goto err;

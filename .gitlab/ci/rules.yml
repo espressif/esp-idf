@@ -1,19 +1,12 @@
 ############
 # Patterns #
 ############
-.patterns-docs: &patterns-docs
-  - ".gitlab/ci/docs.yml"
-  - "docs/**/*"
-  - "components/**/*.h"
-  - "components/**/Kconfig*"
-  - "components/**/CMakeList.txt"
-  - "components/**/sdkconfig*"
-  - "tools/kconfig_new/**/*"
-  - "CONTRIBUTING.rst"
-
 .patterns-c-files: &patterns-c-files
   - ".gitlab/ci/static-code-analysis.yml"
+
   - "tools/ci/static-analysis-rules.yml"
+  - "tools/ci/clang_tidy_dirs.txt"
+
   - "**/*.{c,C}"
   - "**/*.{h,H}"
   - "components/**/Kconfig"
@@ -22,6 +15,9 @@
 .patterns-python-files: &patterns-python-files
   - ".gitlab/ci/static-code-analysis.yml"
   - "**/*.py"
+
+.patterns-sonarqube-files: &patterns-sonarqube-files
+  - "tools/ci/sonar_exclude_list.txt"
 
 .patterns-example_test: &patterns-example_test
   - "tools/ci/python_packages/gitlab_api.py"
@@ -44,11 +40,13 @@
 
 .patterns-build_components: &patterns-build_components
   - "components/**/*"
+  - "examples/cxx/experimental/experimental_cpp_component/*"
 
 .patterns-build_system: &patterns-build_system
   - "tools/cmake/**/*"
   - "tools/kconfig_new/**/*"
   - "tools/tools.json"
+  - "tools/ci/test_build_system*.sh"
 
 .patterns-custom_test: &patterns-custom_test
   - "components/espcoredump/**/*"
@@ -94,6 +92,9 @@
 
 .patterns-host_test: &patterns-host_test
   - ".gitlab/ci/host-test.yml"
+
+  - "components/**/*"
+
   - "tools/ci/test_autocomplete.py"
   - "tools/ci/test_build_system.sh"
   - "tools/ci/test_build_system_cmake.sh"
@@ -101,12 +102,11 @@
   - "tools/ci/test_configure_ci_environment.sh"
 
   - "tools/mass_mfg/**/*"
-  - "components/nvs_flash/test_nvs_host/**/*"
 
   - "tools/esp_app_trace/**/*"
   - "tools/ldgen/**/*"
 
-  - "tools/gdb_panic_server.py"
+  - "tools/idf_monitor_base/*"
   - "tools/idf_monitor.py"
   - "tools/test_idf_monitor/**/*"
 
@@ -117,6 +117,7 @@
   - "tools/idf_size.py"
   - "tools/test_idf_size/**/*"
 
+  - "tools/tools.json"
   - "tools/tools_schema.json"
   - "tools/idf_tools.py"
   - "tools/test_idf_tools/**/*"
@@ -147,6 +148,7 @@
   - "components/cmock/CMock/vendor/unity"
   - "components/coap/libcoap"
   - "components/coap/libcoap/ext/tinydtls"
+  - "components/esp_phy/lib"
   - "components/esp_wifi/lib"
   - "components/esptool_py/esptool"
   - "components/expat/expat"
@@ -158,6 +160,7 @@
   - "components/nghttp/nghttp2"
   - "components/nghttp/nghttp2/third-party/mruby"
   - "components/nghttp/nghttp2/third-party/neverbleed"
+  - "components/openthread/lib"
   - "components/protobuf-c/protobuf-c"
   - "components/spiffs/spiffs"
   - "components/tinyusb/tinyusb"
@@ -242,6 +245,8 @@
       changes: *patterns-c-files
     - <<: *if-dev-push
       changes: *patterns-python-files
+    - <<: *if-dev-push
+      changes: *patterns-sonarqube-files
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # DO NOT place comments or maintain any code from this line
@@ -257,9 +262,6 @@
 ##################
 .if-label-build: &if-label-build
   if: '$BOT_LABEL_BUILD || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*build(?:,[^,\n\r]+)*$/i'
-
-.if-label-build_docs: &if-label-build_docs
-  if: '$BOT_LABEL_BUILD_DOCS || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*build_docs(?:,[^,\n\r]+)*$/i'
 
 .if-label-component_ut: &if-label-component_ut
   if: '$BOT_LABEL_COMPONENT_UT || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*component_ut(?:,[^,\n\r]+)*$/i'
@@ -293,9 +295,6 @@
 
 .if-label-docker: &if-label-docker
   if: '$BOT_LABEL_DOCKER || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*docker(?:,[^,\n\r]+)*$/i'
-
-.if-label-docs: &if-label-docs
-  if: '$BOT_LABEL_DOCS || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*docs(?:,[^,\n\r]+)*$/i'
 
 .if-label-example_test: &if-label-example_test
   if: '$BOT_LABEL_EXAMPLE_TEST || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*example_test(?:,[^,\n\r]+)*$/i'
@@ -432,6 +431,7 @@
     - <<: *if-label-build
     - <<: *if-label-custom_test
     - <<: *if-label-custom_test_esp32
+    - <<: *if-label-weekend_test
     - <<: *if-dev-push
       changes: *patterns-build_components
     - <<: *if-dev-push
@@ -486,29 +486,6 @@
     - <<: *if-dev-push
       changes: *patterns-docker
 
-.rules:build:docs:
-  rules:
-    - <<: *if-protected
-    - <<: *if-label-build_docs
-    - <<: *if-label-docs
-    - <<: *if-dev-push
-      changes: *patterns-docs
-
-.rules:build:docs-production:
-  rules:
-    - <<: *if-protected-no_label
-
-.rules:build:docs:label-only:
-  rules:
-    - <<: *if-protected
-    - <<: *if-label-build_docs
-    - <<: *if-label-docs
-
-.rules:build:docs:label-only-preview:
-  rules:
-    - <<: *if-label-build_docs
-    - <<: *if-label-docs
-
 .rules:build:example_test-esp32:
   rules:
     - <<: *if-protected
@@ -516,7 +493,6 @@
     - <<: *if-label-example_test
     - <<: *if-label-example_test_esp32
     - <<: *if-label-iperf_stress_test
-    - <<: *if-label-weekend_test
     - <<: *if-dev-push
       changes: *patterns-build-example_test
     - <<: *if-dev-push
@@ -612,11 +588,13 @@
     - <<: *if-label-example_test_esp32s2
     - <<: *if-label-example_test_esp32s3
     - <<: *if-label-integration_test
+    - <<: *if-label-iperf_stress_test
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32
     - <<: *if-label-unit_test_esp32c3
     - <<: *if-label-unit_test_esp32s2
     - <<: *if-label-unit_test_esp32s3
+    - <<: *if-label-weekend_test
     - <<: *if-dev-push
       changes: *patterns-build-example_test
     - <<: *if-dev-push
@@ -740,11 +718,13 @@
     - <<: *if-label-example_test_esp32s3
     - <<: *if-label-host_test
     - <<: *if-label-integration_test
+    - <<: *if-label-iperf_stress_test
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32
     - <<: *if-label-unit_test_esp32c3
     - <<: *if-label-unit_test_esp32s2
     - <<: *if-label-unit_test_esp32s3
+    - <<: *if-label-weekend_test
     - <<: *if-dev-push
       changes: *patterns-build-example_test
     - <<: *if-dev-push

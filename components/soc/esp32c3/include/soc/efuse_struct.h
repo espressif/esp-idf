@@ -17,12 +17,12 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct efuse_dev_s {
     uint32_t pgm_data0;                                          /*Register 0 that stores data to be programmed.*/
     union {
         struct {
             uint32_t rd_dis:                      7;             /*Set this bit to disable reading from BlOCK4-10.*/
-            uint32_t dis_rtc_ram_boot:            1;             /*Set this bit to disable boot from RTC RAM.*/
+            uint32_t rpt4_reserved5:              1;             /*Reserved*/
             uint32_t dis_icache:                  1;             /*Set this bit to disable Icache.*/
             uint32_t dis_usb_jtag:                1;             /*Set this bit to disable function of usb switch to jtag in module of usb device.*/
             uint32_t dis_download_icache:         1;             /*Set this bit to disable Icache in download mode (boot_mode[3:0] is 0  1  2  3  6  7).*/
@@ -106,7 +106,7 @@ typedef volatile struct {
     union {
         struct {
             uint32_t rd_dis:                      7;             /*The value of RD_DIS.*/
-            uint32_t dis_rtc_ram_boot:            1;             /*The value of DIS_RTC_RAM_BOOT.*/
+            uint32_t rpt4_reserved5:              1;             /*Reserved*/
             uint32_t dis_icache:                  1;             /*The value of DIS_ICACHE.*/
             uint32_t dis_usb_jtag:                1;             /*The value of DIS_USB_JTAG.*/
             uint32_t dis_download_icache:         1;             /*The value of DIS_DOWNLOAD_ICACHE.*/
@@ -274,7 +274,7 @@ typedef volatile struct {
     union {
         struct {
             uint32_t rd_dis_err:                      7;         /*If any bit in RD_DIS is 1  then it indicates a programming error.*/
-            uint32_t dis_rtc_ram_boot_err:            1;         /*If DIS_RTC_RAM_BOOT is 1  then it indicates a programming error.*/
+            uint32_t rpt4_reserved5_err:              1;         /*Reserved.*/
             uint32_t dis_icache_err:                  1;         /*If DIS_ICACHE is 1  then it indicates a programming error.*/
             uint32_t dis_usb_jtag_err:                1;         /*If DIS_USB_JTAG is 1  then it indicates a programming error.*/
             uint32_t dis_download_icache:             1;         /*If DIS_DOWNLOAD_ICACHE is 1  then it indicates a programming error.*/
@@ -342,7 +342,6 @@ typedef volatile struct {
         };
         uint32_t val;
     } rd_repeat_err3;
-    uint32_t reserved_18c;
     union {
         struct {
             uint32_t rpt4_reserved4_err:24;                      /*Reserved.*/
@@ -350,6 +349,7 @@ typedef volatile struct {
         };
         uint32_t val;
     } rd_repeat_err4;
+    uint32_t reserved_190;
     uint32_t reserved_194;
     uint32_t reserved_198;
     uint32_t reserved_19c;

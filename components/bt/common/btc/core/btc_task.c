@@ -21,17 +21,17 @@
 #include "osi/allocator.h"
 #include "btc/btc_alarm.h"
 
+#include "btc/btc_manage.h"
+#include "btc_blufi_prf.h"
+#include "blufi_int.h"
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
 #include "common/bt_target.h"
 #include "btc/btc_main.h"
-#include "btc/btc_manage.h"
 #include "btc/btc_dev.h"
 #include "btc_gatts.h"
 #include "btc_gattc.h"
 #include "btc_gatt_common.h"
 #include "btc_gap_ble.h"
-#include "btc_blufi_prf.h"
-#include "blufi_int.h"
 #include "btc/btc_dm.h"
 #include "bta/bta_gatt_api.h"
 #if CLASSIC_BT_INCLUDED
@@ -53,6 +53,12 @@
 #if BTC_HF_CLIENT_INCLUDED
 #include "btc_hf_client.h"
 #endif  /* #if BTC_HF_CLIENT_INCLUDED */
+#if BTC_HD_INCLUDED == TRUE
+#include "btc_hd.h"
+#endif /* BTC_HD_INCLUDED */
+#if BTC_HH_INCLUDED == TRUE
+#include "btc_hh.h"
+#endif /* BTC_HH_INCLUDED */
 #endif /* #if CLASSIC_BT_INCLUDED */
 #endif
 
@@ -94,11 +100,11 @@ static const btc_func_t profile_tab[BTC_PID_NUM] = {
 #endif  ///BLE_INCLUDED == TRUE
     [BTC_PID_BLE_HID]     = {NULL, NULL},
     [BTC_PID_SPPLIKE]     = {NULL, NULL},
+    [BTC_PID_DM_SEC]      = {NULL,                        btc_dm_sec_cb_handler   },
+#endif
 #if (BLUFI_INCLUDED == TRUE)
     [BTC_PID_BLUFI]       = {btc_blufi_call_handler,      btc_blufi_cb_handler    },
 #endif  ///BLUFI_INCLUDED == TRUE
-    [BTC_PID_DM_SEC]      = {NULL,                        btc_dm_sec_cb_handler   },
-#endif
     [BTC_PID_ALARM]       = {btc_alarm_handler,           NULL                    },
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
 #if CLASSIC_BT_INCLUDED
@@ -120,6 +126,12 @@ static const btc_func_t profile_tab[BTC_PID_NUM] = {
 #if BTC_HF_CLIENT_INCLUDED
     [BTC_PID_HF_CLIENT]   = {btc_hf_client_call_handler,  btc_hf_client_cb_handler},
 #endif  /* #if BTC_HF_CLIENT_INCLUDED */
+#if BTC_HD_INCLUDED
+    [BTC_PID_HD]          = {btc_hd_call_handler,          btc_hd_cb_handler      },
+#endif
+#if BTC_HH_INCLUDED
+    [BTC_PID_HH]          = {btc_hh_call_handler,          btc_hh_cb_handler      },
+#endif
 #endif /* #if CLASSIC_BT_INCLUDED */
 #endif
 #if CONFIG_BLE_MESH

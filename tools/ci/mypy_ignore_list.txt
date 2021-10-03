@@ -1,7 +1,6 @@
 components/app_update/otatool.py
 components/efuse/efuse_table_gen.py
 components/efuse/test_efuse_host/efuse_tests.py
-components/esp32s2/test/gen_digital_signature_tests.py
 components/esp_local_ctrl/python/esp_local_ctrl_pb2.py
 components/esp_netif/test_apps/component_ut_test.py
 components/espcoredump/corefile/gdb.py
@@ -19,21 +18,19 @@ components/protocomm/python/constants_pb2.py
 components/protocomm/python/sec0_pb2.py
 components/protocomm/python/sec1_pb2.py
 components/protocomm/python/session_pb2.py
-components/spiffs/spiffsgen.py
 components/ulp/esp32ulp_mapgen.py
 components/wifi_provisioning/python/wifi_config_pb2.py
 components/wifi_provisioning/python/wifi_constants_pb2.py
 components/wifi_provisioning/python/wifi_scan_pb2.py
 components/xtensa/trax/traceparse.py
 docs/build_docs.py
-docs/conf_common.py
-docs/en/conf.py
 docs/extensions/google_analytics.py
 docs/extensions/html_redirects.py
 docs/extensions/list_filter.py
 docs/extensions/toctree_filter.py
 docs/generate_chart.py
 docs/get_github_rev.py
+docs/idf_extensions/build_system/__init__.py
 docs/idf_extensions/esp_err_definitions.py
 docs/idf_extensions/exclude_docs.py
 docs/idf_extensions/format_idf_target.py
@@ -76,7 +73,7 @@ examples/protocols/cbor/example_test.py
 examples/protocols/esp_http_client/esp_http_client_test.py
 examples/protocols/esp_local_ctrl/example_test.py
 examples/protocols/esp_local_ctrl/scripts/esp_local_ctrl.py
-examples/protocols/esp_local_ctrl/scripts/proto.py
+examples/protocols/esp_local_ctrl/scripts/proto_lc.py
 examples/protocols/http_server/advanced_tests/http_server_advanced_test.py
 examples/protocols/http_server/advanced_tests/scripts/test.py
 examples/protocols/http_server/persistent_sockets/http_server_persistence_test.py
@@ -97,6 +94,7 @@ examples/protocols/openssl_client/example_test.py
 examples/protocols/openssl_server/example_test.py
 examples/protocols/pppos_client/example_test.py
 examples/protocols/sntp/example_test.py
+examples/protocols/sockets/non_blocking/example_test.py
 examples/protocols/sockets/tcp_client/example_test.py
 examples/protocols/sockets/tcp_server/example_test.py
 examples/protocols/sockets/udp_client/example_test.py
@@ -125,7 +123,6 @@ examples/system/app_trace_to_host/example_test.py
 examples/system/base_mac_address/example_test.py
 examples/system/console/example_test.py
 examples/system/deep_sleep/example_test.py
-examples/system/efuse/example_test.py
 examples/system/esp_event/default_event_loop/example_test.py
 examples/system/esp_event/user_event_loops/example_test.py
 examples/system/esp_timer/example_test.py
@@ -145,8 +142,8 @@ examples/system/startup_time/example_test.py
 examples/system/sysview_tracing/example_test.py
 examples/system/sysview_tracing_heap_log/example_test.py
 examples/system/task_watchdog/example_test.py
-examples/system/ulp/example_test.py
-examples/system/ulp_adc/example_test.py
+examples/system/ulp_fsm/ulp/example_test.py
+examples/system/ulp_fsm/ulp_adc/example_test.py
 examples/system/unit_test/example_test.py
 examples/wifi/iperf/iperf_test.py
 tools/ble/lib_ble_client.py
@@ -191,11 +188,10 @@ tools/ci/python_packages/tiny_test_fw/Utility/TestCase.py
 tools/ci/python_packages/tiny_test_fw/bin/Runner.py
 tools/ci/python_packages/tiny_test_fw/bin/example.py
 tools/ci/python_packages/tiny_test_fw/docs/conf.py
-tools/ci/python_packages/ttfw_idf/CIScanTests.py
 tools/ci/python_packages/ttfw_idf/DebugUtils.py
-tools/ci/python_packages/ttfw_idf/IDFApp.py
 tools/ci/python_packages/ttfw_idf/IDFAssignTest.py
 tools/ci/python_packages/ttfw_idf/IDFDUT.py
+tools/ci/python_packages/ttfw_idf/__init__.py
 tools/ci/python_packages/ttfw_idf/unity_test_parser.py
 tools/ci/python_packages/wifi_tools.py
 tools/ci/test_autocomplete.py
@@ -219,13 +215,10 @@ tools/esp_prov/transport/transport_console.py
 tools/esp_prov/transport/transport_http.py
 tools/esp_prov/utils/convenience.py
 tools/find_apps.py
-tools/find_build_apps/cmake.py
 tools/find_build_apps/common.py
 tools/find_build_apps/make.py
-tools/gdb_panic_server.py
 tools/gen_esp_err_to_name.py
 tools/idf.py
-tools/idf_py_actions/constants.py
 tools/idf_py_actions/core_ext.py
 tools/idf_py_actions/create_ext.py
 tools/idf_py_actions/debug_ext.py
@@ -235,7 +228,6 @@ tools/idf_py_actions/global_options.py
 tools/idf_py_actions/serial_ext.py
 tools/idf_py_actions/tools.py
 tools/idf_py_actions/uf2_ext.py
-tools/idf_size.py
 tools/kconfig_new/confgen.py
 tools/kconfig_new/confserver.py
 tools/kconfig_new/esp-windows-curses/setup.py
@@ -276,7 +268,6 @@ tools/test_idf_py/extra_path/some_ext.py
 tools/test_idf_py/idf_ext.py
 tools/test_idf_py/test_idf_extensions/test_ext/test_extension.py
 tools/test_idf_py/test_idf_py.py
-tools/test_idf_size/test_idf_size.py
 tools/test_idf_tools/test_idf_tools.py
 tools/test_mkdfu/test_mkdfu.py
 tools/test_mkuf2/test_mkuf2.py
@@ -285,6 +276,3 @@ tools/unit-test-app/tools/CreateSectionTable.py
 tools/unit-test-app/tools/UnitTestParser.py
 tools/unit-test-app/unit_test.py
 tools/windows/eclipse_make.py
-tools/windows/tool_setup/system_check/system_check_download.py
-tools/windows/tool_setup/system_check/system_check_subprocess.py
-tools/windows/tool_setup/system_check/system_check_virtualenv.py

@@ -148,15 +148,13 @@ static esp_err_t w5500_negotiate(esp_eth_phy_t *phy)
     esp_err_t ret = ESP_OK;
     phy_w5500_t *w5500 = __containerof(phy, phy_w5500_t, parent);
     esp_eth_mediator_t *eth = w5500->eth;
-
+    /* in case any link status has changed, let's assume we're in link down status */
+    w5500->link_status = ETH_LINK_DOWN;
     phycfg_reg_t phycfg;
     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, w5500->addr, W5500_REG_PHYCFGR, (uint32_t *) & (phycfg.val)), err, TAG, "read PHYCFG failed");
     phycfg.opsel = 1;  // PHY working mode configured by register
     phycfg.opmode = 7; // all capable, auto-negotiation enabled
     ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, w5500->addr, W5500_REG_PHYCFGR, phycfg.val), err, TAG, "write PHYCFG failed");
-
-    /* Update information about link, speed, duplex */
-    ESP_GOTO_ON_ERROR(w5500_update_link_duplex_speed(w5500), err, TAG, "update link duplex speed failed");
     return ESP_OK;
 err:
     return ret;
@@ -197,6 +195,12 @@ static esp_err_t w5500_advertise_pause_ability(esp_eth_phy_t *phy, uint32_t abil
 {
     // pause ability advertisement is not supported for W5500 internal PHY
     return ESP_OK;
+}
+
+static esp_err_t w5500_loopback(esp_eth_phy_t *phy, bool enable)
+{
+    // Loopback is not supported for W5500 internal PHY
+    return ESP_ERR_NOT_SUPPORTED;
 }
 
 static esp_err_t w5500_init(esp_eth_phy_t *phy)
@@ -243,6 +247,7 @@ esp_eth_phy_t *esp_eth_phy_new_w5500(const eth_phy_config_t *config)
     w5500->parent.get_addr = w5500_get_addr;
     w5500->parent.set_addr = w5500_set_addr;
     w5500->parent.advertise_pause_ability = w5500_advertise_pause_ability;
+    w5500->parent.loopback = w5500_loopback;
     w5500->parent.del = w5500_del;
     return &(w5500->parent);
 err:

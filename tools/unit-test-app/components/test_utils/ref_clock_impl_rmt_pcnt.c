@@ -39,11 +39,13 @@
 #include "hal/rmt_hal.h"
 #include "hal/rmt_ll.h"
 #include "hal/pcnt_hal.h"
+#include "hal/pcnt_ll.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
 
 #define REF_CLOCK_RMT_CHANNEL 0 // RMT channel 0
-#define REF_CLOCK_PCNT_UNIT 0   // PCNT unit 0 channel 0
+#define REF_CLOCK_PCNT_UNIT 0   // PCNT unit 0
+#define REF_CLOCK_PCNT_CHANNEL 0// PCNT channel 0
 #define REF_CLOCK_GPIO 21       // GPIO used to combine RMT out signal with PCNT input signal
 
 #define REF_CLOCK_PRESCALER_MS 30 // PCNT high threshold interrupt fired every 30ms
@@ -109,19 +111,17 @@ void ref_clock_init(void)
     periph_module_enable(PERIPH_PCNT_MODULE);
     pcnt_hal_init(&s_pcnt_hal, REF_CLOCK_PCNT_UNIT);
 
-    pcnt_ll_set_mode(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT, PCNT_CHANNEL_0,
-                     PCNT_COUNT_INC, PCNT_COUNT_INC,
-                     PCNT_MODE_KEEP, PCNT_MODE_KEEP);
-    pcnt_ll_event_disable(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT, PCNT_EVT_L_LIM);
-    pcnt_ll_event_enable(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT, PCNT_EVT_H_LIM);
-    pcnt_ll_event_disable(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT, PCNT_EVT_ZERO);
-    pcnt_ll_event_disable(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT, PCNT_EVT_THRES_0);
-    pcnt_ll_event_disable(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT, PCNT_EVT_THRES_1);
-    pcnt_ll_set_event_value(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT, PCNT_EVT_H_LIM, REF_CLOCK_PRESCALER_MS * 1000);
+    pcnt_ll_set_edge_action(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT, REF_CLOCK_PCNT_CHANNEL,
+                            PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_EDGE_ACTION_INCREASE);
+    pcnt_ll_set_level_action(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT, REF_CLOCK_PCNT_CHANNEL,
+                             PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_KEEP);
+    pcnt_ll_disable_all_events(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT);
+    pcnt_ll_set_high_limit_value(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT, REF_CLOCK_PRESCALER_MS * 1000);
+    pcnt_ll_enable_high_limit_event(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT, true);
 
     // Enable PCNT and wait for it to start counting
-    pcnt_ll_counter_resume(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT);
-    pcnt_ll_counter_clear(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT);
+    pcnt_ll_start_count(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT);
+    pcnt_ll_clear_count(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT);
 
     esp_rom_delay_us(10000);
 
@@ -129,7 +129,7 @@ void ref_clock_init(void)
     s_milliseconds = 0;
     ESP_ERROR_CHECK(esp_intr_alloc(ETS_PCNT_INTR_SOURCE, ESP_INTR_FLAG_IRAM, pcnt_isr, NULL, &s_intr_handle));
     pcnt_ll_clear_intr_status(s_pcnt_hal.dev, BIT(REF_CLOCK_PCNT_UNIT));
-    pcnt_ll_intr_enable(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT);
+    pcnt_ll_enable_intr(s_pcnt_hal.dev, 1 << REF_CLOCK_PCNT_UNIT, true);
 }
 
 static void IRAM_ATTR pcnt_isr(void *arg)
@@ -145,7 +145,7 @@ void ref_clock_deinit()
     assert(s_intr_handle && "ref clock deinit called without init");
 
     // Disable interrupt
-    pcnt_ll_intr_disable(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT);
+    pcnt_ll_enable_intr(s_pcnt_hal.dev, 1 << REF_CLOCK_PCNT_UNIT, false);
     esp_intr_free(s_intr_handle);
     s_intr_handle = NULL;
 
@@ -154,21 +154,20 @@ void ref_clock_deinit()
     periph_module_disable(PERIPH_RMT_MODULE);
 
     // Disable PCNT
-    pcnt_ll_counter_pause(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT);
+    pcnt_ll_stop_count(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT);
     periph_module_disable(PERIPH_PCNT_MODULE);
 }
 
 uint64_t ref_clock_get()
 {
     portENTER_CRITICAL(&s_lock);
-    int16_t microseconds = 0;
-    pcnt_ll_get_counter_value(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT, &microseconds);
+    int microseconds = 0;
+    microseconds = pcnt_ll_get_count(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT);
     uint32_t milliseconds = s_milliseconds;
-    uint32_t intr_status = 0;
-    pcnt_ll_get_intr_status(s_pcnt_hal.dev, &intr_status);
+    uint32_t intr_status = pcnt_ll_get_intr_status(s_pcnt_hal.dev);
     if (intr_status & BIT(REF_CLOCK_PCNT_UNIT)) {
         // refresh counter value, in case the overflow has happened after reading cnt_val
-        pcnt_ll_get_counter_value(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT, &microseconds);
+        microseconds = pcnt_ll_get_count(s_pcnt_hal.dev, REF_CLOCK_PCNT_UNIT);
         milliseconds += REF_CLOCK_PRESCALER_MS;
     }
     portEXIT_CRITICAL(&s_lock);

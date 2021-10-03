@@ -147,7 +147,7 @@ PR_BEGIN_EXTERN_C
 #define MB_FUNC_READWRITE_HOLDING_ENABLED       (  1 )
 
 /*! \brief Check the option to place timer handler into IRAM */
-#define MB_PORT_TIMER_ISR_IN_IRAM                          (  CONFIG_FMB_TIMER_ISR_IN_IRAM )
+#define MB_PORT_TIMER_ISR_IN_IRAM               (  CONFIG_FMB_TIMER_ISR_IN_IRAM )
 
 /*! @} */
 #ifdef __cplusplus

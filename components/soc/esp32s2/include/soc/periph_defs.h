@@ -27,7 +27,6 @@ typedef enum {
     PERIPH_I2C0_MODULE,
     PERIPH_I2C1_MODULE,
     PERIPH_I2S0_MODULE,
-    PERIPH_I2S1_MODULE,
     PERIPH_TIMG0_MODULE,
     PERIPH_TIMG1_MODULE,
     PERIPH_UHCI0_MODULE,
@@ -86,15 +85,14 @@ typedef enum {
     ETS_DEDICATED_GPIO_INTR_SOURCE,             /**< interrupt of dedicated GPIO, level*/
     ETS_FROM_CPU_INTR0_SOURCE,                  /**< interrupt0 generated from a CPU, level*/ /* Used for FreeRTOS */
     ETS_FROM_CPU_INTR1_SOURCE,                  /**< interrupt1 generated from a CPU, level*/ /* Used for FreeRTOS */
-    ETS_FROM_CPU_INTR2_SOURCE,                  /**< interrupt2 generated from a CPU, level*/ /* Used for DPORT Access */
-    ETS_FROM_CPU_INTR3_SOURCE,                  /**< interrupt3 generated from a CPU, level*/ /* Used for DPORT Access */
+    ETS_FROM_CPU_INTR2_SOURCE,                  /**< interrupt2 generated from a CPU, level*/
+    ETS_FROM_CPU_INTR3_SOURCE,                  /**< interrupt3 generated from a CPU, level*/
 
     ETS_SPI1_INTR_SOURCE = 32,                  /**< interrupt of SPI1, level, SPI1 is for flash read/write, do not use this*/
     ETS_SPI2_INTR_SOURCE,                       /**< interrupt of SPI2, level*/
     ETS_SPI3_INTR_SOURCE,                       /**< interrupt of SPI3, level*/
     ETS_I2S0_INTR_SOURCE,                       /**< interrupt of I2S0, level*/
-    ETS_I2S1_INTR_SOURCE,                       /**< interrupt of I2S1, level*/
-    ETS_UART0_INTR_SOURCE,                      /**< interrupt of UART0, level*/
+    ETS_UART0_INTR_SOURCE = 37,                 /**< interrupt of UART0, level*/
     ETS_UART1_INTR_SOURCE,                      /**< interrupt of UART1, level*/
     ETS_UART2_INTR_SOURCE,                      /**< interrupt of UART2, level*/
     ETS_SDIO_HOST_INTR_SOURCE,                  /**< interrupt of SD/SDIO/MMC HOST, level*/

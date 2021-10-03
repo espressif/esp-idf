@@ -35,7 +35,7 @@ tusb_desc_device_t descriptor_tinyusb = {
     .bDeviceProtocol = 0x00,
 #endif
 
-    .bMaxPacketSize0 = CFG_TUD_ENDOINT0_SIZE,
+    .bMaxPacketSize0 = CFG_TUD_ENDPOINT0_SIZE,
 
     .idVendor = 0xCafe,
     .idProduct = USB_TUSB_PID,
@@ -78,21 +78,21 @@ tusb_desc_device_t descriptor_kconfig = {
     .bDeviceProtocol = 0x00,
 #endif
 
-    .bMaxPacketSize0 = CFG_TUD_ENDOINT0_SIZE,
+    .bMaxPacketSize0 = CFG_TUD_ENDPOINT0_SIZE,
 
-#if CONFIG_USB_DESC_USE_ESPRESSIF_VID
+#if CONFIG_TINYUSB_DESC_USE_ESPRESSIF_VID
     .idVendor = USB_ESPRESSIF_VID,
 #else
-    .idVendor = CONFIG_USB_DESC_CUSTOM_VID,
+    .idVendor = CONFIG_TINYUSB_DESC_CUSTOM_VID,
 #endif
 
-#if CONFIG_USB_DESC_USE_DEFAULT_PID
+#if CONFIG_TINYUSB_DESC_USE_DEFAULT_PID
     .idProduct = USB_TUSB_PID,
 #else
-    .idProduct = CONFIG_USB_DESC_CUSTOM_PID,
+    .idProduct = CONFIG_TINYUSB_DESC_CUSTOM_PID,
 #endif
 
-    .bcdDevice = CONFIG_USB_DESC_BCDDEVICE,
+    .bcdDevice = CONFIG_TINYUSB_DESC_BCD_DEVICE,
 
     .iManufacturer = 0x01,
     .iProduct = 0x02,
@@ -104,24 +104,24 @@ tusb_desc_device_t descriptor_kconfig = {
 tusb_desc_strarray_device_t descriptor_str_kconfig = {
     // array of pointer to string descriptors
     (char[]){0x09, 0x04},                // 0: is supported language is English (0x0409)
-    CONFIG_USB_DESC_MANUFACTURER_STRING, // 1: Manufacturer
-    CONFIG_USB_DESC_PRODUCT_STRING,      // 2: Product
-    CONFIG_USB_DESC_SERIAL_STRING,       // 3: Serials, should use chip ID
+    CONFIG_TINYUSB_DESC_MANUFACTURER_STRING, // 1: Manufacturer
+    CONFIG_TINYUSB_DESC_PRODUCT_STRING,      // 2: Product
+    CONFIG_TINYUSB_DESC_SERIAL_STRING,       // 3: Serials, should use chip ID
 
-#if CONFIG_USB_CDC_ENABLED
-    CONFIG_USB_DESC_CDC_STRING,          // 4: CDC Interface
+#if CONFIG_TINYUSB_CDC_ENABLED
+    CONFIG_TINYUSB_DESC_CDC_STRING,          // 4: CDC Interface
 #else
     "",
 #endif
 
-#if CONFIG_USB_MSC_ENABLED
-    CONFIG_USB_DESC_MSC_STRING,          // 5: MSC Interface
+#if CONFIG_TINYUSB_MSC_ENABLED
+    CONFIG_TINYUSB_DESC_MSC_STRING,          // 5: MSC Interface
 #else
     "",
 #endif
 
-#if CONFIG_USB_HID_ENABLED
-    CONFIG_USB_DESC_HID_STRING           // 6: HIDs
+#if CONFIG_TINYUSB_HID_ENABLED
+    CONFIG_TINYUSB_DESC_HID_STRING           // 6: HIDs
 #else
     "",
 #endif

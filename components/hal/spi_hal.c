@@ -15,6 +15,7 @@
 // The HAL layer for SPI (common part)
 
 #include "hal/spi_hal.h"
+#include "hal/log.h"
 #include "soc/soc_caps.h"
 
 //This GDMA related part will be introduced by GDMA dedicated APIs in the future. Here we temporarily use macros.

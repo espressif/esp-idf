@@ -1,26 +1,22 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
+
 #include "sdkconfig.h"
 #include "esp_err.h"
+#include <stdbool.h>
+#include "esp_intr_alloc.h"
+#if !CONFIG_IDF_TARGET_LINUX
 #include <esp_types.h>
 #include <esp_bit_defs.h>
 #include "esp_attr.h"
-#include "esp_intr_alloc.h"
 #include "soc/soc_caps.h"
 #include "soc/gpio_periph.h"
+#endif // !CONFIG_IDF_TARGET_LINUX
 #include "hal/gpio_types.h"
 
 // |================================= WARNING ====================================================== |
@@ -35,6 +31,10 @@
 #include "esp32s3/rom/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/gpio.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/gpio.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/gpio.h"
 #endif
 
 #ifdef CONFIG_LEGACY_INCLUDE_COMMON_HEADERS
@@ -215,9 +215,9 @@ esp_err_t gpio_wakeup_disable(gpio_num_t gpio_num);
  * per-GPIO ISRs.
  *
  * @param  fn  Interrupt handler function.
+ * @param  arg  Parameter for handler function
  * @param  intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
  *            ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
- * @param  arg  Parameter for handler function
  * @param  handle Pointer to return handle. If non-NULL, a handle for the interrupt will be returned here.
  *
  * \verbatim embed:rst:leading-asterisk

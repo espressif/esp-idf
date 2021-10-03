@@ -14,13 +14,12 @@
 
 #pragma once
 
-#include "esp_gdbstub_arch.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void esp_gdbstub_panic_handler(esp_gdbstub_frame_t *frame) __attribute__((noreturn));
+void esp_gdbstub_init(void);
+void esp_gdbstub_panic_handler(void *frame);
 
 #ifdef __cplusplus
 }

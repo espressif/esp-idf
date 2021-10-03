@@ -38,6 +38,8 @@ TEST_CASE("esp_netif: get from if_key", "[esp_netif][leaks=0]")
 
 }
 
+// This is a private esp-netif API, but include here to test it
+bool esp_netif_is_netif_listed(esp_netif_t *esp_netif);
 
 TEST_CASE("esp_netif: create and delete multiple netifs", "[esp_netif][leaks=0]")
 {
@@ -54,12 +56,19 @@ TEST_CASE("esp_netif: create and delete multiple netifs", "[esp_netif][leaks=0]"
         TEST_ASSERT_NOT_NULL(netifs[i]);
     }
 
-    // there's no AP within created stations
-    TEST_ASSERT_EQUAL(NULL, esp_netif_get_handle_from_ifkey("WIFI_AP_DEF"));
+    // there's no AP within created netifs
+    TEST_ASSERT_NULL(esp_netif_get_handle_from_ifkey("WIFI_AP_DEF"));
 
-    // destroy
+    // check that the created netifs are correctly found by their interface keys and globally listed
+    for (int i=0; i<nr_of_netifs; ++i) {
+        TEST_ASSERT_EQUAL(netifs[i], esp_netif_get_handle_from_ifkey(if_keys[i]));
+        TEST_ASSERT_TRUE(esp_netif_is_netif_listed(netifs[i]));
+    }
+
+    // destroy one by one and check it's been removed
     for (int i=0; i<nr_of_netifs; ++i) {
         esp_netif_destroy(netifs[i]);
+        TEST_ASSERT_FALSE(esp_netif_is_netif_listed(netifs[i]));
     }
 
 }
@@ -334,18 +343,13 @@ TEST_CASE("esp_netif: create and destroy default wifi interfaces", "[esp_netif][
     TEST_ASSERT_EQUAL(default_ap_cfg.route_prio, esp_netif_get_route_prio(ap));
 
     // destroy the station
-    esp_wifi_clear_default_wifi_driver_and_handlers(sta);
-    esp_netif_destroy(sta);
-
+    esp_netif_destroy_default_wifi(sta);
     // destroy the AP
-    esp_wifi_clear_default_wifi_driver_and_handlers(ap);
-    esp_netif_destroy(ap);
-
+    esp_netif_destroy_default_wifi(ap);
 
     // quick check on create-destroy cycle of the default station again
     sta = NULL;
     sta = esp_netif_create_default_wifi_sta();
     TEST_ASSERT_NOT_NULL(sta);
-    esp_wifi_clear_default_wifi_driver_and_handlers(sta);
-    esp_netif_destroy(sta);
+    esp_netif_destroy_default_wifi(sta);
 }

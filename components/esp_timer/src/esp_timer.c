@@ -39,6 +39,8 @@
 #include "esp32s3/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rtc.h"
 #endif
 
 #include "sdkconfig.h"
@@ -597,4 +599,32 @@ int64_t IRAM_ATTR esp_timer_get_next_alarm(void)
         timer_list_unlock(dispatch_method);
     }
     return next_alarm;
+}
+
+int64_t IRAM_ATTR esp_timer_get_next_alarm_for_wake_up(void)
+{
+    int64_t next_alarm = INT64_MAX;
+    for (esp_timer_dispatch_t dispatch_method = ESP_TIMER_TASK; dispatch_method < ESP_TIMER_MAX; ++dispatch_method) {
+        timer_list_lock(dispatch_method);
+        esp_timer_handle_t it;
+        LIST_FOREACH(it, &s_timers[dispatch_method], list_entry) {
+            if (it == NULL) {
+                break;
+            }
+            // timers with the SKIP_UNHANDLED_EVENTS flag do not want to wake up CPU from a sleep mode.
+            if ((it->flags & FL_SKIP_UNHANDLED_EVENTS) == 0) {
+                if (next_alarm > it->alarm) {
+                    next_alarm = it->alarm;
+                }
+                break;
+            }
+        }
+        timer_list_unlock(dispatch_method);
+    }
+    return next_alarm;
+}
+
+bool esp_timer_is_active(esp_timer_handle_t timer)
+{
+    return timer_armed(timer);
 }

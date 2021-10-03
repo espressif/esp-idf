@@ -1,5 +1,8 @@
-Pulse Counter
-=============
+Pulse Counter (PCNT)
+====================
+
+{IDF_TARGET_PCNT_UNIT_NUM:default="8", esp32s2="4"}
+{IDF_TARGET_PCNT_MAX_UNIT_NUM:default="7", esp32s2="3"}
 
 Introduction
 ------------
@@ -22,13 +25,8 @@ Description of functionality of this API has been broken down into four sections
 
 Configuration
 -------------
-.. only:: esp32
 
-    The PCNT module has eight independent counting "units" numbered from 0 to 7. In the API they are referred to using :cpp:type:`pcnt_unit_t`. Each unit has two independent channels numbered as 0 and 1 and specified with :cpp:type:`pcnt_channel_t`.
-
-.. only:: esp32s2
-
-    The PCNT module has four independent counting "units" numbered from 0 to 3. In the API they are referred to using :cpp:type:`pcnt_unit_t`. Each unit has two independent channels numbered as 0 and 1 and specified with :cpp:type:`pcnt_channel_t`.
+The PCNT module has {IDF_TARGET_PCNT_UNIT_NUM} independent counting "units" numbered from 0 to {IDF_TARGET_PCNT_MAX_UNIT_NUM}. In the API they are referred to using :cpp:type:`pcnt_unit_t`. Each unit has two independent channels numbered as 0 and 1 and specified with :cpp:type:`pcnt_channel_t`.
 
 The configuration is provided separately per unit's channel using :cpp:type:`pcnt_config_t` and covers:
 

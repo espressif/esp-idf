@@ -6,9 +6,9 @@ ESP32-S2-DevKitM-1(U)
 
 This user guide provides information on Espressif's small-sized development board ESP32-S2-DevKitM-1(U).
 
-ESP32-S2-DevKitM-1(U) is a general-purpose development board based on `ESP32-S2FH4 <https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_en.pdf>`__ chip, which falls into ESP32-S2 chip family. With a rich peripheral set and optimized pinout, this board allows rapid prototyping.
+ESP32-S2-DevKitM-1(U) is a general-purpose development board based on `ESP32-S2FH4 <https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_en.pdf>`__ chip, which falls into ESP32-S2 chip series. With a rich peripheral set and optimized pinout, this board allows rapid prototyping.
 
-ESP32-S2-DevKitM-1 is embedded with `ESP32-S2-MINI-1 <https://www.espressif.com/sites/default/files/documentation/esp32-s2-mini-1_esp32-s2-mini-1u_datasheet_en.pdf>`__ module (on-board PCB antenna), while ESP32-S2-DevKitM-1U with `ESP32-S2-MINI-1U <https://www.espressif.com/sites/default/files/documentation/esp32-s2-mini-1_esp32-s2-mini-1u_datasheet_en.pdf>`__ module (U.FL connector to support external IPEX antenna).
+ESP32-S2-DevKitM-1 is embedded with `ESP32-S2-MINI-1 <https://www.espressif.com/sites/default/files/documentation/esp32-s2-mini-1_esp32-s2-mini-1u_datasheet_en.pdf>`__ module (on-board PCB antenna), while ESP32-S2-DevKitM-1U with `ESP32-S2-MINI-1U <https://www.espressif.com/sites/default/files/documentation/esp32-s2-mini-1_esp32-s2-mini-1u_datasheet_en.pdf>`__ module (external antenna connector).
 
 +----------------------+-----------------------+
 | |ESP32-S2-DevKitM-1| | |ESP32-S2-DevKitM-1U| | 
@@ -24,6 +24,7 @@ The document consists of the following major sections:
 
 - `Getting started`_: Provides an overview of the ESP32-S2-DevKitM-1(U) and hardware/software setup instructions to get started.
 - `Hardware reference`_: Provides more detailed information about the ESP32-S2-DevKitM-1(U)'s hardware.
+- `Hardware Revision Details`_: Revision history, known issues, and links to user guides for previous versions (if any) of ESP32-S2-DevKitM-1(U).
 - `Related Documents`_: Gives links to related documentation.
 
 Getting Started
@@ -52,7 +53,7 @@ Wholesale Orders
 
 If you order in bulk, the boards come in large cardboard boxes.
 
-For wholesale orders, please check `Espressif Product Ordering Information <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>`_ (PDF).
+For wholesale orders, please go to https://www.espressif.com/en/contact-us/sales-questions.
 
 Description of Components
 -------------------------
@@ -73,6 +74,8 @@ Description of Components
 
     ESP32-S2-DevKitM-1U - front
 
+The key components of the board are described in a clockwise direction. 
+
 .. list-table::
    :widths: 30 70
    :header-rows: 1
@@ -80,13 +83,13 @@ Description of Components
    * - Key Component
      - Description
    * - ESP32-S2-MINI-1 or ESP32-S2-MINI-1U
-     - ESP32-S2-MINI-1 and ESP32-S2-MINI-1U are two powerful, generic Wi-Fi MCU modules that integrate ESP32-S2FH4 chip. ESP32-S2-MINI-1 comes with a PCB antenna, and ESP32-S2-MINI-1U with a U.FL connector for external IPEX antenna. They both feature a 4 MB external SPI flash.
+     - ESP32-S2-MINI-1 and ESP32-S2-MINI-1U are two powerful, generic Wi-Fi MCU modules that integrate ESP32-S2FH4 chip. ESP32-S2-MINI-1 comes with a PCB antenna, and ESP32-S2-MINI-1U with an external antenna connector. They both feature a 4 MB external SPI flash.
+   * - Pin Headers
+     - All available GPIO pins (except for the SPI bus for flash) are broken out to the pin headers on the board. Users can program ESP32-S2FH4 chip to enable multiple functions such as SPI, I2S, UART, I2C, touch sensors, PWM etc. For details, please see :ref:`user-guide-devkitm-1-v1-header-blocks`.
    * - 3.3 V Power On LED
      - Turns on when the USB power is connected to the board.
    * - USB to UART Bridge
      - Single USB-UART bridge chip provides transfer rates up to 3 Mbps.
-   * - I/O Connector
-     - All available GPIO pins (except for the SPI bus for flash) are broken out to the pin headers on the board. Users can program ESP32-S2FH4 chip to enable multiple functions such as SPI, I2S, UART, I2C, touch sensors, PWM etc. For details, please see :ref:`user-guide-devkitm-1-v1-header-blocks`.
    * - Reset Button
      - Reset button.
    * - Micro-USB Port
@@ -94,12 +97,11 @@ Description of Components
    * - Boot Button
      - Download button. Holding down **Boot** and then pressing **Reset** initiates Firmware Download mode for downloading firmware through the serial port.
    * - RGB LED
-     - Addressable RGB LED (WS2812), driven by GPIO18.
+     - Addressable RGB LED, driven by GPIO18.
    * - 5 V to 3.3 V LDO
      - Power regulator that converts a 5 V supply into a 3.3 V output.
-   * - U.FL Connector
-     - On **ESP32-S2-MINI-1U** module only. Connects to an external IPEX antenna.
-
+   * - External Antenna Connector
+     - On **ESP32-S2-MINI-1U** module only. For connector dimensions, please refer to Section External Antenna Connector Dimensions in `ESP32-S2-MINI-1 & ESP32-S2-MINI-1U Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-s2-mini-1_esp32-s2-mini-1u_datasheet_en.pdf>`_. 
 
 Start Application Development
 -----------------------------
@@ -111,10 +113,14 @@ Required Hardware
 
 - ESP32-S2-DevKitM-1(U)
 
-  + For ESP32-S2-DevKitM-1U, an IPEX antenna is also required.
+  + For ESP32-S2-DevKitM-1U, an antenna is also required.
   
 - USB 2.0 cable (Standard-A to Micro-B)
 - Computer running Windows, Linux, or macOS
+
+.. note::
+
+  Be sure to use an appropriate USB cable. Some cables are for charging only and do not provide the needed data lines nor work for programming the boards.
 
 Software Setup
 ^^^^^^^^^^^^^^
@@ -123,7 +129,7 @@ Please proceed to :doc:`../../get-started/index`, where Section :ref:`get-starte
 
 .. note::
     
-    ESP32-S2 family chip only is only supported in ESP-IDF master or version v4.2 and higher.
+    ESP32-S2 series of chips only is only supported in ESP-IDF master or version v4.2 and higher.
 
 Hardware Reference
 ==================
@@ -146,46 +152,46 @@ Power Supply Options
 
 There are three mutually exclusive ways to provide power to the board:
 
-- Micro USB port, default power supply
-- 5V and GND header pins
-- 3V3 and GND header pins
+- Micro-USB Port, default power supply
+- 5V and GND pin headers
+- 3V3 and GND pin headers
 
-It is recommended to use the first option: micro USB port.
+It is recommended to use the first option: Micro-USB Port.
 
 .. _user-guide-devkitm-1-v1-header-blocks:
 
 Header Block
 ------------
 
-The two tables below provide the **Name** and **Function** of I/O header pins on both sides of the board, as shown in :ref:`user-guide-devkitm-1-v1-board-front`. The numbering and names are the same as in the `ESP32-S2-DevKitM-1(U) Schematics <https://dl.espressif.com/dl/schematics/ESP32-S2-DevKitM-1_V1_Schematics.pdf>`_ (PDF).
+The two tables below provide the **Name** and **Function** of the pin headers on both sides of the board (J1 and J3). The pin header names are shown in :ref:`user-guide-devkitm-1-v1-board-front`. The numbering is the same as in the `ESP32-S2-DevKitM-1(U) Schematics <https://dl.espressif.com/dl/schematics/ESP32-S2-DevKitM-1_V1_Schematics.pdf>`_ (PDF).
 
 J1
 ^^^
-===  ====  =====  ========================================================
-No.  Name  Type   Function
-===  ====  =====  ========================================================
-1    3V3   P      3.3 V power supply
-2    0     I/O/T  RTC_GPIO0, GPIO0
-3    1     I/O/T  RTC_GPIO1, GPIO1, TOUCH1, ADC1_CH0
-4    2     I/O/T  RTC_GPIO2, GPIO2, TOUCH2, ADC1_CH1
-5    3     I/O/T  RTC_GPIO3, GPIO3, TOUCH3, ADC1_CH2
-6    4     I/O/T  RTC_GPIO4, GPIO4, TOUCH4, ADC1_CH3
-7    5     I/O/T  RTC_GPIO5, GPIO5, TOUCH5, ADC1_CH4
-8    6     I/O/T  RTC_GPIO6, GPIO6, TOUCH6, ADC1_CH5
-9    7     I/O/T  RTC_GPIO7, GPIO7, TOUCH7, ADC1_CH6
-10   8     I/O/T  RTC_GPIO8, GPIO8, TOUCH8, ADC1_CH7
-11   9     I/O/T  RTC_GPIO9, GPIO9, TOUCH9, ADC1_CH8, FSPIHD
-12   10    I/O/T  RTC_GPIO10, GPIO10, TOUCH10, ADC1_CH9, FSPICS0, FSPIIO4
-13   11    I/O/T  RTC_GPIO11, GPIO11, TOUCH11, ADC2_CH0, FSPID, FSPIIO5
-14   12    I/O/T  RTC_GPIO12, GPIO12, TOUCH12, ADC2_CH1, FSPICLK, FSPIIO6
-15   13    I/O/T  RTC_GPIO13, GPIO13, TOUCH13, ADC2_CH2, FSPIQ, FSPIIO7
-16   14    I/O/T  RTC_GPIO14, GPIO14, TOUCH14, ADC2_CH3, FSPIWP, FSPIDQS
-17   15    I/O/T  RTC_GPIO15, GPIO15, U0RTS, ADC2_CH4, XTAL_32K_P
-18   16    I/O/T  RTC_GPIO16, GPIO16, U0CTS, ADC2_CH5, XTAL_32K_N
-19   17    I/O/T  RTC_GPIO17,  GPIO17, U1TXD, ADC2_CH6, DAC_1
-20   5V    P      5 V power supply
-21   G     G      Ground
-===  ====  =====  ========================================================
+===  ====  ==========  =============================================================
+No.  Name  Type [#]_    Function 
+===  ====  ==========  =============================================================
+1    3V3    P           3.3 V power supply
+2    0      I/O/T       RTC_GPIO0, GPIO0
+3    1      I/O/T       RTC_GPIO1, GPIO1, TOUCH1, ADC1_CH0
+4    2      I/O/T       RTC_GPIO2, GPIO2, TOUCH2, ADC1_CH1
+5    3      I/O/T       RTC_GPIO3, GPIO3, TOUCH3, ADC1_CH2
+6    4      I/O/T       RTC_GPIO4, GPIO4, TOUCH4, ADC1_CH3
+7    5      I/O/T       RTC_GPIO5, GPIO5, TOUCH5, ADC1_CH4
+8    6      I/O/T       RTC_GPIO6, GPIO6, TOUCH6, ADC1_CH5
+9    7      I/O/T       RTC_GPIO7, GPIO7, TOUCH7, ADC1_CH6
+10   8      I/O/T       RTC_GPIO8, GPIO8, TOUCH8, ADC1_CH7
+11   9      I/O/T       RTC_GPIO9, GPIO9, TOUCH9, ADC1_CH8, FSPIHD
+12   10     I/O/T       RTC_GPIO10, GPIO10, TOUCH10, ADC1_CH9, FSPICS0, FSPIIO4
+13   11     I/O/T       RTC_GPIO11, GPIO11, TOUCH11, ADC2_CH0, FSPID, FSPIIO5
+14   12     I/O/T       RTC_GPIO12, GPIO12, TOUCH12, ADC2_CH1, FSPICLK, FSPIIO6
+15   13     I/O/T       RTC_GPIO13, GPIO13, TOUCH13, ADC2_CH2, FSPIQ, FSPIIO7
+16   14     I/O/T       RTC_GPIO14, GPIO14, TOUCH14, ADC2_CH3, FSPIWP, FSPIDQS
+17   15     I/O/T       RTC_GPIO15, GPIO15, U0RTS, ADC2_CH4, XTAL_32K_P
+18   16     I/O/T       RTC_GPIO16, GPIO16, U0CTS, ADC2_CH5, XTAL_32K_N
+19   17     I/O/T       RTC_GPIO17,  GPIO17, U1TXD, ADC2_CH6, DAC_1
+20   5V     P           5 V power supply
+21   G      G           Ground
+===  ====  ==========  =============================================================
 
 J3
 ^^^
@@ -212,16 +218,33 @@ No.  Name  Type   Function
 18   21    I/O/T  RTC_GPIO21, GPIO21
 19   20    I/O/T  RTC_GPIO20, GPIO20, U1CTS, ADC2_CH9, CLK_OUT1, USB_D+
 20   19    I/O/T  RTC_GPIO19, GPIO19, U1RTS, ADC2_CH8, CLK_OUT2, USB_D-
-21   18    I/O/T  RTC_GPIO18, GPIO18, U1RXD, ADC2_CH7, DAC_2, CLK_OUT3
+21   18    I/O/T  RTC_GPIO18, GPIO18, U1RXD, ADC2_CH7, DAC_2, CLK_OUT3, RGB LED
 ===  ====  =====  ========================================================
+
+.. [#] P: Power supply; I: Input; O: Output; T: High impedance. 
+
+Pin Layout
+^^^^^^^^^^^
+.. figure:: ../../../_static/esp32-s2-devkitm-1-v1-pin-layout.png
+    :align: center
+    :scale: 15%
+    :alt: ESP32-S2-DevKitM-1(U) (click to enlarge)
+    :figclass: align-center
+
+    ESP32-S2-DevKitM-1(U) Pin Layout (click to enlarge)
+    
+Hardware Revision Details
+=========================
+
+This is the first revision of this board released.
 
 Related Documents
 =================
 * `ESP32-S2-DevKitM-1(U) Schematics <https://dl.espressif.com/dl/schematics/ESP32-S2-DevKitM-1_V1_Schematics.pdf>`_ (PDF)
 * `ESP32-S2-DevKitM-1(U) PCB Layout <https://dl.espressif.com/dl/schematics/ESP32-S2-DevKitM-1_V1_PCB_Layout.pdf>`_ (PDF)
 * `ESP32-S2-DevKitM-1(U) Dimensions <https://dl.espressif.com/dl/schematics/ESP32-S2-DevKitM-1_V1_Dimensions.pdf>`_ (PDF)
-* `ESP32-S2 Family Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_en.pdf>`_ (PDF)
+* `ESP32-S2 Series Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-s2_datasheet_en.pdf>`_ (PDF)
 * `ESP32-S2-MINI-1 & ESP32-S2-MINI-1U Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-s2-mini-1_esp32-s2-mini-1u_datasheet_en.pdf>`_ (PDF)
-* `Espressif Product Ordering Information <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>`_ (PDF) 
+* `ESP Product Selector <https://products.espressif.com/#/product-selector?names=>`_ 
 
-For other design documentation for the board, please contact us at sales@espressif.com.
+For other design documentation for the board, please contact us at `sales@espressif.com <sales@espressif.com>`_.

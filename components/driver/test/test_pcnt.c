@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /**
  * this case is used for test PCNT
  * prepare job for test environment UT_T1_PCNT:
@@ -23,13 +28,14 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "soc/gpio_periph.h"
+#include "soc/pcnt_struct.h"
 #include "unity.h"
 #include "esp_rom_gpio.h"
 
 #define PULSE_IO 21
 #define PCNT_INPUT_IO 4
 #define PCNT_CTRL_VCC_IO 5
-#define PCNT_CTRL_GND_IO 19
+#define PCNT_CTRL_GND_IO 2
 #define HIGHEST_LIMIT 10
 #define LOWEST_LIMIT 0
 #define MAX_THRESHOLD 5
@@ -54,7 +60,7 @@ static void pcnt_test_io_config(int ctrl_level)
     gpio_set_direction(PULSE_IO, GPIO_MODE_INPUT_OUTPUT);
     esp_rom_gpio_connect_out_signal(PULSE_IO, LEDC_LS_SIG_OUT1_IDX, 0, 0); // LEDC_TIMER_1, LEDC_LOW_SPEED_MODE
     esp_rom_gpio_connect_in_signal(PULSE_IO, PCNT_SIG_CH0_IN0_IDX, 0); // PCNT_UNIT_0, PCNT_CHANNEL_0
-    esp_rom_gpio_connect_in_signal(ctrl_level ? GPIO_MATRIX_CONST_ONE_INPUT: GPIO_MATRIX_CONST_ZERO_INPUT, PCNT_CTRL_CH0_IN0_IDX, 0); // PCNT_UNIT_0, PCNT_CHANNEL_0
+    esp_rom_gpio_connect_in_signal(ctrl_level ? GPIO_MATRIX_CONST_ONE_INPUT : GPIO_MATRIX_CONST_ZERO_INPUT, PCNT_CTRL_CH0_IN0_IDX, 0); // PCNT_UNIT_0, PCNT_CHANNEL_0
 }
 
 /* use LEDC to produce pulse for PCNT
@@ -91,7 +97,7 @@ static void IRAM_ATTR pcnt_intr_handler(void *arg)
     uint32_t status;
     BaseType_t port_status = pdFALSE;
 
-    for (i = 0; i < PCNT_UNIT_MAX; i++) {
+    for (i = 0; i < SOC_PCNT_UNITS_PER_GROUP; i++) {
         if (intr_status & (BIT(i))) {
             status = PCNT.status_unit[i].val;
             PCNT.int_clr.val = BIT(i);
@@ -103,7 +109,7 @@ static void IRAM_ATTR pcnt_intr_handler(void *arg)
     }
 }
 
-static void event_calculate(event_times* event)
+static void event_calculate(event_times *event)
 {
     int16_t test_counter = 0;
     int times = 0;
@@ -142,7 +148,7 @@ static void event_calculate(event_times* event)
         times++;
     }
     printf("%d, %d, %d, %d, %d, %d\n", event->h_threshold, event->l_threshold,
-            event->l_limit, event->h_limit, event->zero_times, event->filter_time);
+           event->l_limit, event->h_limit, event->zero_times, event->filter_time);
 }
 
 /*
@@ -328,11 +334,11 @@ TEST_CASE("PCNT test config", "[pcnt]")
     pcnt_config_t temp_pcnt_config = pcnt_config;
     TEST_ESP_OK(pcnt_unit_config(&pcnt_config));
 
-    // test PCNT_UNIT_MAX units, from 0-(PCNT_UNIT_MAX-1)
+    // test SOC_PCNT_UNITS_PER_GROUP units, from 0-(SOC_PCNT_UNITS_PER_GROUP-1)
     pcnt_config = temp_pcnt_config;
-    pcnt_config.unit = PCNT_UNIT_MAX;
+    pcnt_config.unit = SOC_PCNT_UNITS_PER_GROUP;
     TEST_ASSERT_NOT_NULL((void *)pcnt_unit_config(&pcnt_config));
-    for (int i = 0; i < PCNT_UNIT_MAX; i++) {
+    for (int i = 0; i < SOC_PCNT_UNITS_PER_GROUP; i++) {
         pcnt_config.unit = i;
         TEST_ESP_OK(pcnt_unit_config(&pcnt_config));
     }

@@ -307,8 +307,8 @@
 #define ETS_GPIO_NMI_SOURCE                     23/**< interrupt of GPIO, NMI*/
 #define ETS_FROM_CPU_INTR0_SOURCE               24/**< interrupt0 generated from a CPU, level*/ /* Used for FreeRTOS */
 #define ETS_FROM_CPU_INTR1_SOURCE               25/**< interrupt1 generated from a CPU, level*/ /* Used for FreeRTOS */
-#define ETS_FROM_CPU_INTR2_SOURCE               26/**< interrupt2 generated from a CPU, level*/ /* Used for DPORT Access */
-#define ETS_FROM_CPU_INTR3_SOURCE               27/**< interrupt3 generated from a CPU, level*/ /* Used for DPORT Access */
+#define ETS_FROM_CPU_INTR2_SOURCE               26/**< interrupt2 generated from a CPU, level*/ /* Used for IPC_ISR */
+#define ETS_FROM_CPU_INTR3_SOURCE               27/**< interrupt3 generated from a CPU, level*/ /* Used for IPC_ISR */
 #define ETS_SPI0_INTR_SOURCE                    28/**< interrupt of SPI0, level, SPI0 is for Cache Access, do not use this*/
 #define ETS_SPI1_INTR_SOURCE                    29/**< interrupt of SPI1, level, SPI1 is for flash read/write, do not use this*/
 #define ETS_SPI2_INTR_SOURCE                    30/**< interrupt of SPI2, level*/
@@ -351,6 +351,60 @@
 #define ETS_CACHE_IA_INTR_SOURCE                68/**< interrupt of Cache Invalied Access, LEVEL*/
 #define ETS_MAX_INTR_SOURCE                     69/**< total number of interrupt sources*/
 
+#if CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_5
+//interrupt cpu using table, Please see the core-isa.h
+/*************************************************************************************************************
+ *      Intr num                Level           Type                    PRO CPU usage           APP CPU uasge
+ *      0                       1               extern level            WMAC                    Reserved
+ *      1                       1               extern level            BT/BLE Host HCI DMA     BT/BLE Host HCI DMA
+ *      2                       1               extern level
+ *      3                       1               extern level
+ *      4                       1               extern level            WBB
+ *      5                       1               extern level
+ *      6                       1               timer                   FreeRTOS Tick(L1)       FreeRTOS Tick(L1)
+ *      7                       1               software                BT/BLE VHCI             BT/BLE VHCI
+ *      8                       1               extern level            BT/BLE BB(RX/TX)        BT/BLE BB(RX/TX)
+ *      9                       1               extern level
+ *      10                      1               extern edge
+ *      11                      3               profiling
+ *      12                      1               extern level
+ *      13                      1               extern level
+ *      14                      7               nmi                     Reserved                Reserved
+ *      15                      3               timer                   FreeRTOS Tick(L3)       FreeRTOS Tick(L3)
+ *      16                      5               timer                   Reserved                Reserved
+ *      17                      1               extern level
+ *      18                      1               extern level
+ *      19                      2               extern level
+ *      20                      2               extern level
+ *      21                      2               extern level
+ *      22                      3               extern edge
+ *      23                      3               extern level
+ *      24                      4               extern level
+ *      25                      4               extern level            BT/BLE Controller       BT/BLE Controller
+ *      26                      5               extern level            TG1_WDT & CACHEERR
+ *      27                      3               extern level            Reserved                Reserved
+ *      28                      4               extern edge
+ *      29                      3               software                BT/BLE hli              BT/BLE hli
+ *      30                      4               extern edge             Reserved                Reserved
+ *      31                      5               extern level            IPC_ISR                 IPC_ISR
+ *************************************************************************************************************
+ */
+
+//CPU0 Interrupt number reserved, not touch this.
+#define ETS_WMAC_INUM                           0
+#define ETS_BT_HOST_INUM                        1
+#define ETS_WBB_INUM                            4
+#define ETS_TG0_T1_INUM                         10 /**< use edge interrupt*/
+#define ETS_FRC1_INUM                           22
+#define ETS_T1_WDT_CACHEERR_INUM                26
+#define ETS_T1_WDT_INUM                         ETS_T1_WDT_CACHEERR_INUM
+#define ETS_MEMACCESS_ERR_INUM                  ETS_T1_WDT_CACHEERR_INUM
+/* backwards compatibility only, use ETS_MEMACCESS_ERR_INUM instead*/
+#define ETS_CACHEERR_INUM                       ETS_MEMACCESS_ERR_INUM
+#define ETS_IPC_ISR_INUM                        31
+
+#elif CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_4
+
 //interrupt cpu using table, Please see the core-isa.h
 /*************************************************************************************************************
  *      Intr num                Level           Type                    PRO CPU usage           APP CPU uasge
@@ -382,7 +436,7 @@
  *      25                      4               extern level            CACHEERR
  *      26                      5               extern level
  *      27                      3               extern level            Reserved                Reserved
- *      28                      4               extern edge             DPORT ACCESS            DPORT ACCESS
+ *      28                      4               extern edge             IPC_ISR                 IPC_ISR
  *      29                      3               software                Reserved                Reserved
  *      30                      4               extern edge             Reserved                Reserved
  *      31                      5               extern level
@@ -399,7 +453,9 @@
 #define ETS_MEMACCESS_ERR_INUM                  25
 /* backwards compatibility only, use ETS_MEMACCESS_ERR_INUM instead*/
 #define ETS_CACHEERR_INUM                       ETS_MEMACCESS_ERR_INUM
-#define ETS_DPORT_INUM                          28
+#define ETS_IPC_ISR_INUM                        28
+
+#endif /* CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_5 */
 
 //CPU0 Interrupt number used in ROM, should be cancelled in SDK
 #define ETS_SLC_INUM                            1

@@ -1,4 +1,5 @@
 menu "CoAP Configuration"
+    visible if LWIP_IPV6
 
     choice COAP_MBEDTLS_ENCRYPTION_MODE
         prompt "CoAP Encryption method"
@@ -51,6 +52,8 @@ menu "CoAP Configuration"
             bool "Info"
         config COAP_LOG_DEBUG
             bool "Debug"
+        config COAP_LOG_MBEDTLS
+            bool "mbedTLS"
     endchoice
 
     config COAP_LOG_DEFAULT_LEVEL
@@ -64,5 +67,6 @@ menu "CoAP Configuration"
         default 5 if COAP_LOG_NOTICE
         default 6 if COAP_LOG_INFO
         default 7 if COAP_LOG_DEBUG
+        default 9 if COAP_LOG_MBEDTLS
 
 endmenu

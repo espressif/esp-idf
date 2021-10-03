@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct efuse_dev_s {
     uint32_t pgm_data0;                                         /**/
     union {
         struct {
@@ -357,7 +357,6 @@ typedef volatile struct {
         };
         uint32_t val;
     } rd_repeat_err3;
-    uint32_t reserved_18c;
     union {
         struct {
             uint32_t rd_chip_version_err:24;
@@ -365,6 +364,18 @@ typedef volatile struct {
         };
         uint32_t val;
     } rd_repeat_err4;
+    uint32_t reserved_190;
+    uint32_t reserved_194;
+    uint32_t reserved_198;
+    uint32_t reserved_19c;
+    uint32_t reserved_1a0;
+    uint32_t reserved_1a4;
+    uint32_t reserved_1a8;
+    uint32_t reserved_1ac;
+    uint32_t reserved_1b0;
+    uint32_t reserved_1b4;
+    uint32_t reserved_1b8;
+    uint32_t reserved_1bc;
     union {
         struct {
             uint32_t rd_mac_spi_8m_err_num: 3;
@@ -500,17 +511,6 @@ typedef volatile struct {
         };
         uint32_t val;
     } wr_tim_conf1;
-    uint32_t reserved_1cc;
-    uint32_t reserved_1d0;
-    uint32_t reserved_1d4;
-    uint32_t reserved_1d8;
-    uint32_t reserved_1dc;
-    uint32_t reserved_1e0;
-    uint32_t reserved_1e4;
-    uint32_t reserved_1e8;
-    uint32_t reserved_1ec;
-    uint32_t reserved_1f0;
-    uint32_t reserved_1f4;
     uint32_t reserved_1f8;
     uint32_t date;                                              /**/
 } efuse_dev_t;

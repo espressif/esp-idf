@@ -24,11 +24,10 @@ consist of two ota app without factory or test partitions.")
 
     # Generate flasher_args.json for tools that need it. The variables below are used
     # in configuring the template flasher_args.json.in.
-    # Some of the variables (flash mode, size, frequency) are already set in project_include.cmake.
+    # Some of the variables (flash mode, size, frequency, chip) are already set in project_include.cmake.
 
     set(ESPTOOLPY_BEFORE "${CONFIG_ESPTOOLPY_BEFORE}")
     set(ESPTOOLPY_AFTER  "${CONFIG_ESPTOOLPY_AFTER}")
-    set(ESPTOOLPY_CHIP "${target}")
     if(CONFIG_ESPTOOLPY_NO_STUB)
         set(ESPTOOLPY_WITH_STUB false)
     else()

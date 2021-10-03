@@ -3,12 +3,21 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_TIMER_COUNTER_BIT_WIDTH:default="54", esp32="64", esp32s2="64"}
+{IDF_TARGET_TIMER_COUNTER_BIT_WIDTH:default="54", esp32="64", esp32s2="64", esp32c3="54"}
 
 简介
 ----
 
-{IDF_TARGET_NAME} 芯片提供两组硬件定时器，每组包含两个通用硬件定时器。所有定时器均为 {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH} 位通用定时器，包括 16 位预分频器和 {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH} 位自动重载向上/向下计数器。
+.. only:: not esp32c3
+
+    {IDF_TARGET_NAME} 芯片提供两组硬件定时器，每组包含两个通用硬件定时器。
+
+
+.. only:: esp32c3
+
+    {IDF_TARGET_NAME} 芯片提供两组硬件定时器，每组包含一个通用硬件定时器和一个主系统看门狗定时器。
+
+所有通用定时器均基于 16 位预分频器和 {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH} 位可自动重新加载向上/向下计数器。
 
 
 功能概述
@@ -31,12 +40,14 @@
 
 首先调用 :cpp:func:`timer_init` 函数，并将 :cpp:type:`timer_config_t` 结构体传递给此函数，用于定义定时器的工作方式，实现定时器初始化。特别注意以下定时器参数可设置为：
 
-    * **时钟源**: 选择时钟源，它同时钟分频器一起决定了定时器的分辨率。默认的时钟源是 APB_CLK (一般是 80 MHz)。
-    * **分频器**: 设置定时器中计数器计数的速度，:cpp:member:`divider` 的设置将用作输入时钟源的除数。
-    * **模式**: 设置计数器是递增还是递减。可通过从 :cpp:type:`timer_count_dir_t` 中选取一个值，后使用 :cpp:member:`counter_dir` 来选择模式。
-    * **计数器使能**: 如果计数器已使能，则在调用 :cpp:func:`timer_init` 后计数器将立即开始递增/递减。您可通过从 :cpp:type:`timer_start_t` 中选取一个值，后使用 :cpp:member:`counter_en` 改变此行为。
-    * **报警使能**: 可使用 :cpp:member:`alarm_en` 设置。
-    * **自动重载**: 设置计数器是否应该在定时器警报上使用 :cpp:member:`auto_reload` 自动重载首个计数值，还是继续递增或递减。
+.. list::
+
+    :not esp32: - **时钟源**: 选择时钟源，与时钟分频器一起决定了定时器的分辨率。
+    - **分频器**: 设置定时器中计数器计数的速度，:cpp:member:`divider` 的设置将用作输入时钟源的除数。默认的时钟源是 APB_CLK (一般是 80 MHz)。更多有关 APB_CLK 时钟频率信息，请查看 *{IDF_TARGET_NAME} 技术参考手册* > *复位和时钟* [`PDF <{IDF_TARGET_TRM_CN_URL}#resclk>`__] 章节。
+    - **模式**: 设置计数器是递增还是递减。可通过从 :cpp:type:`timer_count_dir_t` 中选取一个值，后使用 :cpp:member:`counter_dir` 来选择模式。
+    - **计数器使能**: 如果计数器已使能，则在调用 :cpp:func:`timer_init` 后计数器将立即开始递增/递减。您可通过从 :cpp:type:`timer_start_t` 中选取一个值，后使用 :cpp:member:`counter_en` 改变此行为。
+    - **报警使能**: 可使用 :cpp:member:`alarm_en` 设置。
+    - **自动重载**: 设置计数器是否应该在定时器警报上使用 :cpp:member:`auto_reload` 自动重载首个计数值，还是继续递增或递减。
 
 要获取定时器设置的当前值，请使用函数 :cpp:func:`timer_get_config`。
 
@@ -97,6 +108,7 @@
 --------
 
 {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH} 位通用硬件定时器示例：:example:`peripherals/timer_group`。
+
 
 API 参考
 --------

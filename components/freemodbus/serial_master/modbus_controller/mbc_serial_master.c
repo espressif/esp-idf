@@ -61,7 +61,7 @@ static void modbus_master_task(void *pvParameters)
             // Send response buffer if ready to be sent
             BOOL xSentState = xMBMasterPortSerialTxPoll();
             if (xSentState) {
-                // Let state machine know that response was transmitted out
+                // Let state machine know that request frame was transmitted out
                 (void)xMBMasterPortEventPost(EV_MASTER_FRAME_SENT);
             }
         }
@@ -410,8 +410,9 @@ static esp_err_t mbc_serial_master_get_parameter(uint16_t cid, char* name,
         // Set the type of parameter found in the table
         *type = reg_info.param_type;
     } else {
-        ESP_LOGD(MB_MASTER_TAG, "%s: The cid(%u) not found in the data dictionary.",
+        ESP_LOGE(MB_MASTER_TAG, "%s: The cid(%u) not found in the data dictionary.",
                                                     __FUNCTION__, reg_info.cid);
+        error = ESP_ERR_INVALID_ARG;
     }
     return error;
 }
@@ -446,6 +447,7 @@ static esp_err_t mbc_serial_master_set_parameter(uint16_t cid, char* name,
     } else {
         ESP_LOGE(MB_MASTER_TAG, "%s: The requested cid(%u) not found in the data dictionary.",
                                     __FUNCTION__, reg_info.cid);
+        error = ESP_ERR_INVALID_ARG;
     }
     return error;
 }
@@ -671,12 +673,13 @@ esp_err_t mbc_serial_master_create(void** handler)
     MB_MASTER_CHECK((mbm_opts->mbm_event_group != NULL),
                         ESP_ERR_NO_MEM, "mb event group error.");
     // Create modbus controller task
-    status = xTaskCreate((void*)&modbus_master_task,
+    status = xTaskCreatePinnedToCore((void*)&modbus_master_task,
                             "modbus_matask",
                             MB_CONTROLLER_STACK_SIZE,
                             NULL,                       // No parameters
                             MB_CONTROLLER_PRIORITY,
-                            &mbm_opts->mbm_task_handle);
+                            &mbm_opts->mbm_task_handle,
+                            MB_PORT_TASK_AFFINITY);
     if (status != pdPASS) {
         vTaskDelete(mbm_opts->mbm_task_handle);
         MB_MASTER_CHECK((status == pdPASS), ESP_ERR_NO_MEM,

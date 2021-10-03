@@ -20,12 +20,12 @@
 
 // The Lowlevel layer for SPI Flash Encryption.
 
+#include <stdbool.h>
+#include <string.h>
 #include "soc/system_reg.h"
 #include "soc/hwcrypto_reg.h"
 #include "soc/soc.h"
-#include "string.h"
-#include "assert.h"
-#include <stdbool.h>
+#include "hal/assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,7 +67,7 @@ static inline void spi_flash_encrypt_ll_disable(void)
 static inline void spi_flash_encrypt_ll_type(flash_encrypt_ll_type_t type)
 {
     // Our hardware only support flash encryption
-    assert(type == FLASH_ENCRYPTION_MANU);
+    HAL_ASSERT(type == FLASH_ENCRYPTION_MANU);
     REG_WRITE(AES_XTS_DESTINATION_REG, type);
 }
 

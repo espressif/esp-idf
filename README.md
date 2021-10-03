@@ -2,21 +2,32 @@
 
 * [中文版](./README_CN.md)
 
-ESP-IDF is the official development framework for the **ESP32** and **ESP32-S** Series SoCs provided for Windows, Linux and macOS.
+ESP-IDF is the development framework for Espressif SoCs supported on Windows, Linux and macOS.
+
+# ESP-IDF Release and SoC Compatibility
+
+The following table shows ESP-IDF support of Espressif SoCs where ![alt text][preview] and ![alt text][supported] denote preview status and support, respectively. In preview status the build is not yet enabled and some crucial parts could be missing (like documentation, datasheet). Please use an ESP-IDF release where the desired SoC is already supported.
+
+|Chip         |         v3.3           |          v4.0          |           v4.1         |          v4.2          |         v4.3           |          v4.4          |                                                            |
+|:----------- |:---------------------: | :---------------------:| :---------------------:| :---------------------:| :---------------------:| :---------------------:|:---------------------------------------------------------- |
+|ESP32        | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |                                                            |
+|ESP32-S2     |                        |                        |                        | ![alt text][supported] | ![alt text][supported] | ![alt text][supported] |                                                            |
+|ESP32-C3     |                        |                        |                        |                        | ![alt text][supported] | ![alt text][supported] |                                                            |
+|ESP32-S3     |                        |                        |                        |                        | ![alt text][preview]   | ![alt text][supported] | [Announcement](https://www.espressif.com/en/news/ESP32_S3) |
+|ESP32-H2     |                        |                        |                        |                        |                        | ![alt text][preview]   | [Announcement](https://www.espressif.com/en/news/ESP32_H2) |
+
+[supported]: https://img.shields.io/badge/-supported-green "supported"
+[preview]: https://img.shields.io/badge/-preview-orange "preview"
+
+Espressif SoCs released before 2016 (ESP8266 and ESP8285) are supported by [RTOS SDK](https://github.com/espressif/ESP8266_RTOS_SDK) instead.
 
 # Developing With ESP-IDF
 
 ## Setting Up ESP-IDF
 
-See setup guides for detailed instructions to set up the ESP-IDF:
+See https://idf.espressif.com/ for links to detailed instructions on how to set up the ESP-IDF depending on chip you use.
 
-| Chip | Getting Started Guides for ESP-IDF |
-|:----:|:----|
-| <img src="docs/_static/chip-esp32.svg" height="90" alt="ESP32"> |  <ul><li>[stable](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/) version</li><li>[latest (master branch)](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/) version</li></ul> |
-| <img src="docs/_static/chip-esp32-s2.svg" height="105" alt="ESP32-S2"> | <ul><li>[stable](https://docs.espressif.com/projects/esp-idf/en/stable/esp32s2/get-started/) version</li><li>[latest (master branch)](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/get-started/) version</li></ul> |
-| <img src="docs/_static/chip-esp32-c3.svg" height="75" alt="ESP32-C3"> | <ul><li>[latest (master branch)](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/get-started/) version</li></ul> |
-
-**Note:** Each ESP-IDF release has its own documentation. Please see Section [Versions](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/versions.html) how to find documentation and how to checkout specific release of ESP-IDF.
+**Note:** Each SoC series and each ESP-IDF release has its own documentation. Please see Section [Versions](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/versions.html) on how to find documentation and how to checkout specific release of ESP-IDF.
 
 ### Non-GitHub forks
 
@@ -71,7 +82,7 @@ You don't need to run `idf.py build` before running `idf.py flash`, `idf.py flas
 
 ## Viewing Serial Output
 
-The `idf.py monitor` target uses the [idf_monitor tool](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/idf-monitor.html) to display serial output from ESP32 or ESP32-S Series SoCs. idf_monitor also has a range of features to decode crash output and interact with the device. [Check the documentation page for details](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/idf-monitor.html).
+The `idf.py monitor` target uses the [idf_monitor tool](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/idf-monitor.html) to display serial output from Espressif SoCs. idf_monitor also has a range of features to decode crash output and interact with the device. [Check the documentation page for details](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/idf-monitor.html).
 
 Exit the monitor by typing Ctrl-].
 
@@ -105,5 +116,3 @@ This can be combined with other targets, ie `idf.py -p PORT erase_flash flash` w
 * [Check the Issues section on github](https://github.com/espressif/esp-idf/issues) if you find a bug or have a feature request. Please check existing Issues before opening a new one.
 
 * If you're interested in contributing to ESP-IDF, please check the [Contributions Guide](https://docs.espressif.com/projects/esp-idf/en/latest/contribute/index.html).
-
-

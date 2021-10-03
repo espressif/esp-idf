@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -864,16 +856,35 @@ esp_err_t rmt_remove_channel_from_group(rmt_channel_t channel);
 
 #if SOC_RMT_SUPPORT_TX_LOOP_COUNT
 /**
- * @brief Set loop count for RMT TX channel
+ * @brief Set loop count threshold value for RMT TX channel
+ *
+ * When tx loop count reaches this value, an ISR callback will notify user
  *
  * @param channel RMT channel
- * @param count loop count
+ * @param count loop count, 1 ~ 1023
  * @return
  *      - ESP_ERR_INVALID_ARG Parameter error
  *      - ESP_OK Success
  */
 esp_err_t rmt_set_tx_loop_count(rmt_channel_t channel, uint32_t count);
-#endif
+
+/**
+ * @brief Enable or disable the feature that when loop count reaches the threshold, RMT will stop transmitting.
+ *
+ * - When the loop auto-stop feature is enabled will halt RMT transmission after the loop count reaches a certain threshold
+ * - When disabled, the RMT transmission continue indefinitely until halted by the users
+ *
+ * @note The auto-stop feature is implemented in hardware on particular targets (i.e. those with SOC_RMT_SUPPORT_TX_LOOP_AUTOSTOP defined).
+ *       Otherwise, the auto-stop feature is implemented in software via the interrupt.
+ *
+ * @param channel RMT channel
+ * @param en enable bit
+ * @return
+ *      - ESP_ERR_INVALID_ARG Parameter error
+ *      - ESP_OK Success
+ */
+esp_err_t rmt_enable_tx_loop_autostop(rmt_channel_t channel, bool en);
+#endif // SOC_RMT_SUPPORT_TX_LOOP_COUNT
 
 /**
 * @brief Reset RMT TX/RX memory index.

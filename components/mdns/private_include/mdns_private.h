@@ -14,7 +14,8 @@
 #ifndef MDNS_PRIVATE_H_
 #define MDNS_PRIVATE_H_
 
-#include "esp_event_base.h"
+#include "sdkconfig.h"
+#include "mdns.h"
 #include "esp_task.h"
 #include "esp_timer.h"
 
@@ -182,6 +183,8 @@ typedef enum {
     ACTION_TX_HANDLE,
     ACTION_RX_HANDLE,
     ACTION_TASK_STOP,
+    ACTION_DELEGATE_HOSTNAME_ADD,
+    ACTION_DELEGATE_HOSTNAME_REMOVE,
     ACTION_MAX
 } mdns_action_type_t;
 
@@ -210,7 +213,7 @@ typedef struct {
 } mdns_header_t;
 
 typedef struct {
-    char host[MDNS_NAME_BUF_LEN];
+    char host[MDNS_NAME_BUF_LEN]; // hostname for A/AAAA records, instance name for SRV records
     char service[MDNS_NAME_BUF_LEN];
     char proto[MDNS_NAME_BUF_LEN];
     char domain[MDNS_NAME_BUF_LEN];
@@ -247,7 +250,6 @@ typedef struct mdns_parsed_record_s {
 typedef struct {
     mdns_if_t tcpip_if;
     mdns_ip_protocol_t ip_protocol;
-    //struct udp_pcb *pcb;
     esp_ip_addr_t src;
     uint16_t src_port;
     uint8_t multicast;
@@ -272,7 +274,8 @@ typedef struct {
 
 typedef struct mdns_txt_linked_item_s {
     const char * key;                       /*!< item key name */
-    const char * value;                     /*!< item value string */
+    char * value;                           /*!< item value string */
+    uint8_t value_len;                      /*!< item value length */
     struct mdns_txt_linked_item_s * next;   /*!< next result, or NULL for the last result in the list */
 } mdns_txt_linked_item_t;
 
@@ -280,6 +283,7 @@ typedef struct {
     const char * instance;
     const char * service;
     const char * proto;
+    const char * hostname;
     uint16_t priority;
     uint16_t weight;
     uint16_t port;
@@ -299,7 +303,14 @@ typedef struct mdns_out_question_s {
     const char * service;
     const char * proto;
     const char * domain;
+    bool own_dynamic_memory;
 } mdns_out_question_t;
+
+typedef struct mdns_host_item_t {
+    const char * hostname;
+    mdns_ip_addr_t *address_list;
+    struct mdns_host_item_t *next;
+} mdns_host_item_t;
 
 typedef struct mdns_out_answer_s {
     struct mdns_out_answer_s * next;
@@ -307,6 +318,7 @@ typedef struct mdns_out_answer_s {
     uint8_t bye;
     uint8_t flush;
     mdns_service_t * service;
+    mdns_host_item_t* host;
     const char * custom_instance;
     const char * custom_service;
     const char * custom_proto;
@@ -353,6 +365,7 @@ typedef struct mdns_search_once_s {
     uint32_t started_at;
     uint32_t sent_at;
     uint32_t timeout;
+    mdns_query_notify_t notifier;
     SemaphoreHandle_t done_semaphore;
     uint16_t type;
     uint8_t max_results;
@@ -380,7 +393,10 @@ typedef struct mdns_server_s {
 typedef struct {
     mdns_action_type_t type;
     union {
-        char * hostname;
+        struct {
+            char * hostname;
+            xTaskHandle calling_task;
+        } hostname_set;
         char * instance;
         struct {
             esp_event_base_t event_base;
@@ -409,6 +425,7 @@ typedef struct {
             mdns_srv_item_t * service;
             char * key;
             char * value;
+            uint8_t value_len;
         } srv_txt_set;
         struct {
             mdns_srv_item_t * service;
@@ -423,6 +440,10 @@ typedef struct {
         struct {
             mdns_rx_packet_t * packet;
         } rx_handle;
+        struct {
+            const char * hostname;
+            mdns_ip_addr_t *address_list;
+        } delegate_hostname;
     } data;
 } mdns_action_t;
 

@@ -125,6 +125,9 @@
     * - MTMS / GPIO4
       - TMS
 
+.. |jtag-sel-gpio| replace:: GPIO10
+.. |jtag-gpio-list| replace:: GPIO4-GPIO7
+
 ---
 
 .. run-openocd-d3
@@ -154,7 +157,7 @@
 .. devkit-defs
 
 .. |devkit-name| replace:: ESP32-C3
-.. |devkit-name-with-link| replace:: :doc:`ESP32-C3 <../../hw-reference/modules-and-boards>`
+.. |devkit-name-with-link| replace:: :doc:`ESP32-C3 <../../hw-reference/index>`
 
 ---
 

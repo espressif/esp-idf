@@ -233,7 +233,7 @@ menu "ESP32S2-specific"
         int
         prompt "RTC slow memory reserved for coprocessor" if ESP32S2_ULP_COPROC_ENABLED
         default 2048 if ESP32S2_ULP_COPROC_ENABLED
-        range 32 8192 if ESP32S2_ULP_COPROC_ENABLED
+        range 32 8176 if ESP32S2_ULP_COPROC_ENABLED
         default 0 if !ESP32S2_ULP_COPROC_ENABLED
         range 0 0 if !ESP32S2_ULP_COPROC_ENABLED
         help
@@ -266,6 +266,7 @@ menu "ESP32S2-specific"
 
     config ESP32S2_BROWNOUT_DET
         bool "Hardware brownout detect & reset"
+        depends on !IDF_ENV_FPGA
         default y
         help
             The ESP32-S2 has a built-in brownout detector which can detect if the voltage is lower than
@@ -381,6 +382,7 @@ menu "ESP32S2-specific"
             select ESP_SYSTEM_RTC_EXT_XTAL
         config ESP32S2_RTC_CLK_SRC_EXT_OSC
             bool "External 32kHz oscillator at 32K_XN pin"
+            select ESP_SYSTEM_RTC_EXT_OSC
         config ESP32S2_RTC_CLK_SRC_INT_8MD256
             bool "Internal 8MHz oscillator, divided by 256 (~32kHz)"
     endchoice

@@ -33,6 +33,8 @@ extern "C" {
 #define ESP_ERR_ESP_NETIF_DRIVER_ATTACH_FAILED   ESP_ERR_ESP_NETIF_BASE + 0x08
 #define ESP_ERR_ESP_NETIF_INIT_FAILED           ESP_ERR_ESP_NETIF_BASE + 0x09
 #define ESP_ERR_ESP_NETIF_DNS_NOT_CONFIGURED    ESP_ERR_ESP_NETIF_BASE + 0x0A
+#define ESP_ERR_ESP_NETIF_MLD6_FAILED           ESP_ERR_ESP_NETIF_BASE + 0x0B
+#define ESP_ERR_ESP_NETIF_IP6_ADDR_FAILED       ESP_ERR_ESP_NETIF_BASE + 0x0C
 
 
 /** @brief Type of esp_netif_object server */
@@ -88,6 +90,7 @@ typedef enum {
     IP_EVENT_AP_STAIPASSIGNED,         /*!< soft-AP assign an IP to a connected station */
     IP_EVENT_GOT_IP6,                  /*!< station or ap or ethernet interface v6IP addr is preferred */
     IP_EVENT_ETH_GOT_IP,               /*!< ethernet got IP from connected AP */
+    IP_EVENT_ETH_LOST_IP,              /*!< ethernet lost IP and the IP is reset to 0 */
     IP_EVENT_PPP_GOT_IP,               /*!< PPP interface got IP */
     IP_EVENT_PPP_LOST_IP,              /*!< PPP interface lost IP */
 } ip_event_t;
@@ -123,6 +126,12 @@ typedef struct {
     esp_netif_ip6_info_t ip6_info;   /*!< IPv6 address of the interface */
     int ip_index;                    /*!< IPv6 address index */
 } ip_event_got_ip6_t;
+
+/** Event structure for ADD_IP6 event */
+typedef struct {
+    esp_ip6_addr_t addr;            /*!< The address to be added to the interface */
+    bool preferred;                 /*!< The default preference of the address */
+} ip_event_add_ip6_t;
 
 /** Event structure for IP_EVENT_AP_STAIPASSIGNED event */
 typedef struct {

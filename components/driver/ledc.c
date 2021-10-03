@@ -1,21 +1,14 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <string.h>
 #include <esp_types.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "esp_log.h"
+#include "esp_check.h"
 #include "soc/gpio_periph.h"
 #include "soc/ledc_periph.h"
 #include "soc/rtc.h"
@@ -29,12 +22,8 @@
 
 static const char* LEDC_TAG = "ledc";
 
-#define LEDC_CHECK(a, str, ret_val) \
-    if (!(a)) { \
-        ESP_LOGE(LEDC_TAG, "%s(%d): %s", __FUNCTION__, __LINE__, str); \
-        return (ret_val); \
-    }
-#define LEDC_ARG_CHECK(a, param) LEDC_CHECK(a, param " argument is invalid", ESP_ERR_INVALID_ARG)
+#define LEDC_CHECK(a, str, ret_val) ESP_RETURN_ON_FALSE(a, ret_val, LEDC_TAG, "%s", str)
+#define LEDC_ARG_CHECK(a, param) ESP_RETURN_ON_FALSE(a, ESP_ERR_INVALID_ARG, LEDC_TAG, param " argument is invalid")
 
 typedef struct {
     ledc_mode_t speed_mode;
@@ -48,6 +37,8 @@ typedef struct {
 #if CONFIG_SPIRAM_USE_MALLOC
     StaticQueue_t ledc_fade_sem_storage;
 #endif
+    ledc_cb_t ledc_fade_callback;
+    void *cb_user_arg;
 } ledc_fade_t;
 
 typedef struct {
@@ -372,6 +363,7 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t* ledc_conf)
     uint32_t intr_type = ledc_conf->intr_type;
     uint32_t duty = ledc_conf->duty;
     uint32_t hpoint = ledc_conf->hpoint;
+    bool output_invert = ledc_conf->flags.output_invert;
     LEDC_ARG_CHECK(ledc_channel < LEDC_CHANNEL_MAX, "ledc_channel");
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
     LEDC_ARG_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "gpio_num");
@@ -405,7 +397,7 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t* ledc_conf)
     /*set LEDC signal in gpio matrix*/
     gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
     gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
-    esp_rom_gpio_connect_out_signal(gpio_num, ledc_periph_signal[speed_mode].sig_out0_idx + ledc_channel, 0, 0);
+    esp_rom_gpio_connect_out_signal(gpio_num, ledc_periph_signal[speed_mode].sig_out0_idx + ledc_channel, output_invert, 0);
 
     return ret;
 }
@@ -561,6 +553,7 @@ static inline void ledc_calc_fade_end_channel(uint32_t *fade_end_status, uint32_
 
 void IRAM_ATTR ledc_fade_isr(void* arg)
 {
+    bool cb_yield = false;
     portBASE_TYPE HPTaskAwoken = pdFALSE;
     uint32_t speed_mode = 0;
     uint32_t channel = 0;
@@ -586,17 +579,21 @@ void IRAM_ATTR ledc_fade_isr(void* arg)
 
             uint32_t duty_cur = 0;
             ledc_hal_get_duty(&(p_ledc_obj[speed_mode]->ledc_hal), channel, &duty_cur);
-            if (duty_cur == s_ledc_fade_rec[speed_mode][channel]->target_duty) {
-                xSemaphoreGiveFromISR(s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem, &HPTaskAwoken);
-                if (HPTaskAwoken == pdTRUE) {
-                    portYIELD_FROM_ISR();
-                }
-                continue;
-            }
             uint32_t duty_tar = s_ledc_fade_rec[speed_mode][channel]->target_duty;
             int scale = s_ledc_fade_rec[speed_mode][channel]->scale;
-            if (scale == 0) {
+            if (duty_cur == duty_tar || scale == 0) {
                 xSemaphoreGiveFromISR(s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem, &HPTaskAwoken);
+
+                ledc_cb_param_t param = {
+                    .event = LEDC_FADE_END_EVT,
+                    .speed_mode = speed_mode,
+                    .channel = channel,
+                    .duty = duty_cur
+                };
+                ledc_cb_t fade_cb = s_ledc_fade_rec[speed_mode][channel]->ledc_fade_callback;
+                if (fade_cb) {
+                    cb_yield |= fade_cb(&param, s_ledc_fade_rec[speed_mode][channel]->cb_user_arg);
+                }
                 continue;
             }
             int cycle = s_ledc_fade_rec[speed_mode][channel]->cycle_num;
@@ -627,6 +624,9 @@ void IRAM_ATTR ledc_fade_isr(void* arg)
             ledc_hal_set_duty_start(&(p_ledc_obj[speed_mode]->ledc_hal), channel, true);
             portEXIT_CRITICAL(&ledc_spinlock);
         }
+    }
+    if (HPTaskAwoken == pdTRUE || cb_yield) {
+        portYIELD_FROM_ISR();
     }
 }
 
@@ -833,6 +833,17 @@ void ledc_fade_func_uninstall(void)
         }
     }
     return;
+}
+
+esp_err_t ledc_cb_register(ledc_mode_t speed_mode, ledc_channel_t channel, ledc_cbs_t *cbs, void *user_arg)
+{
+    LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
+    LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
+    LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
+    LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK , LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
+    s_ledc_fade_rec[speed_mode][channel]->ledc_fade_callback = cbs->fade_cb;
+    s_ledc_fade_rec[speed_mode][channel]->cb_user_arg = user_arg;
+    return ESP_OK;
 }
 
 /*

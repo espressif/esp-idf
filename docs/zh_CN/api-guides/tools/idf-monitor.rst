@@ -52,13 +52,19 @@ IDF 监视器是一个串行终端程序，用于收发目标设备串口的串�
      - 激活时，会丢弃所有传入的串行数据。允许在不退出监视器的情况下快速暂停和检查日志输出。                   
    * - * Ctrl+L
      - 停止/恢复向文件写入日志输出
-     - 在工程目录下创建一个文件，用于写入日志输出。可使用快捷键停止/恢复该功能（退出 IDF 监视器也会终止该功能）                                     
+     - 在工程目录下创建一个文件，用于写入日志输出。可使用快捷键停止/恢复该功能（退出 IDF 监视器也会终止该功能） 
+   * - * Ctrl+I (或者 I)
+     - 停止/恢复打印时间标记
+     - IDF 监视器可以在每一行的开头打印一个时间标记。时间标记的格式可以通过 ``--timestamp-format`` 命令行参数来改变。        
    * - * Ctrl+H (或者 H)
      - 显示所有快捷键
      -                                      
    * - * Ctrl+X (或者 X)
      - 退出监视器程序
-     -  
+     - 
+   * - Ctrl+C
+     - 中断正在运行的应用程序
+     - 暂停 IDF 监视器并运行 GDB_ 项目调试器，从而在运行时调试应用程序。这需要启 :ref:CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME 选项。   
 
 除了 ``Ctrl-]`` 和 ``Ctrl-T``，其他快捷键信号会通过串口发送到目标设备。
 
@@ -186,15 +192,17 @@ IDF 监视器在后台运行以下命令，解码各地址::
 
 默认情况下，如果 ESP-IDF 应用程序发生 crash 事件，panic 处理器将在串口上打印相关寄存器和堆栈转储（类似上述情况），然后重置开发板。
 
+此外，可以配置应用程序在后台运行 GDBStub 并处理运行中的应用程序突然中断事件 (Ctrl+C)。
+
 或者选择配置 panic 处理器以运行 GDBStub，GDBStub 工具可以与 GDB_ 项目调试器进行通信，允许读取内存、检查调用堆栈帧和变量等。GDBStub 虽然没有 JTAG 通用，但不需要使用特殊硬件。
 
-如需启用 GDBStub，请运行 ``idf.py menuconfig`` （适用于 CMake 编译系统），并将 :ref:`CONFIG_ESP_SYSTEM_PANIC` 选项设置为 ``Invoke GDBStub``。
+如需在发生 panic 事件时启用 GDBStub，请运行 ``idf.py menuconfig`` 打开项目配置菜单，并将 :ref:`CONFIG_ESP_SYSTEM_PANIC` 选项设置为 ``GDBStub on panic``，或者将 :ref:`CONFIG_ESP_SYSTEM_PANIC` 设置为 ``GDBStub on runtime``。
 
-在这种情况下，如果 panic 处理器被触发，只要 IDF 监视器监控到 GDBStub 已经加载，panic 处理器就会自动暂停串行监控并使用必要的参数运行 GDB。GDB 退出后，通过 RTS 串口线复位开发板。如果未连接 RTS 串口线，请按复位键，手动复位开发板。
+在这种情况下，如果 panic 处理器被触发或应用程序突然中断 (Ctrl+C)，只要 IDF 监视器监控到 GDBStub 已经加载，panic 处理器就会自动暂停串行监控并使用必要的参数运行 GDB。GDB 退出后，通过 RTS 串口线复位开发板。如果未连接 RTS 串口线，请按复位键，手动复位开发板。
 
 IDF 监控器在后台运行如下命令::
 
-  {IDF_TARGET_TOOLCHAIN_PREFIX}-gdb -ex "set serial baud BAUD" -ex "target remote PORT" -ex interrupt build/PROJECT.elf
+  {IDF_TARGET_TOOLCHAIN_PREFIX}-gdb -ex "set serial baud BAUD" -ex "target remote PORT" -ex interrupt build/PROJECT.elf :idf_target:`Hello NAME chip`
 
 
 输出筛选
@@ -262,7 +270,6 @@ IDF 监视器已知问题
 Windows 环境下已知问题
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- 若在 Windows 环境下，出现 "winpty: command not found" 错误，请运行 ``pacman -S winpty`` 进行修复。
 - 由于 Windows 控制台限制，有些箭头键及其他一些特殊键无法在 GDB 中使用。
 - 偶然情况下，``idf.py`` 或 ``make`` 退出时，可能会在 IDF 监视器恢复之前暂停 30 秒。
 - GDB 运行时，可能会暂停一段时间，然后才开始与 GDBStub 进行通信。

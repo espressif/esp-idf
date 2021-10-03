@@ -63,7 +63,7 @@ static void eventfd_timer_init(int timer_idx, double timer_interval_sec)
         .counter_dir = TIMER_COUNT_UP,
         .counter_en = TIMER_PAUSE,
         .alarm_en = TIMER_ALARM_EN,
-        .auto_reload = false,
+        .auto_reload = true,
     };
     ESP_ERROR_CHECK(timer_init(TIMER_GROUP_0, timer_idx, &config));
 

@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,6 +10,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include "sdkconfig.h"
 #include "unity.h"
 #include "driver/gpio.h"
 #include "soc/soc_caps.h"
@@ -30,11 +23,14 @@
 #include "esp_log.h"
 #include "esp_heap_caps.h"
 #include "esp_rom_gpio.h"
+#include "test_utils.h"
 
+// Currently no runners for S3
+#define WITH_SD_TEST    (SOC_SDMMC_HOST_SUPPORTED && !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3))
+// Currently, no runners for S3
+#define WITH_SDSPI_TEST (!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3))
 // Can't test eMMC (slot 0) and PSRAM together
-#ifndef CONFIG_SPIRAM
-#define WITH_EMMC_TEST
-#endif
+#define WITH_EMMC_TEST  (SOC_SDMMC_HOST_SUPPORTED && !CONFIG_SPIRAM && !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3))
 
 /* power supply enable pin */
 #define SD_TEST_BOARD_VSEL_EN_GPIO  27
@@ -44,8 +40,6 @@
 #define SD_TEST_BOARD_VSEL_3V3      1
 #define SD_TEST_BOARD_VSEL_1V8      0
 
-#define TEST_SDSPI_DMACHAN 1
-
 /* time to wait for reset / power-on */
 #define SD_TEST_BOARD_PWR_RST_DELAY_MS  5
 #define SD_TEST_BOARD_PWR_ON_DELAY_MS   50
@@ -53,25 +47,24 @@
 /* gpio which is not connected to actual CD pin, used to simulate CD behavior */
 #define CD_WP_TEST_GPIO 18
 
+/* default GPIO selection */
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+#define SDSPI_TEST_MOSI_PIN GPIO_NUM_35
+#define SDSPI_TEST_MISO_PIN GPIO_NUM_37
+#define SDSPI_TEST_SCLK_PIN GPIO_NUM_36
+#define SDSPI_TEST_CS_PIN GPIO_NUM_34
+#elif defined(CONFIG_IDF_TARGET_ESP32C3)
+#define SDSPI_TEST_MOSI_PIN GPIO_NUM_4
+#define SDSPI_TEST_MISO_PIN GPIO_NUM_6
+#define SDSPI_TEST_SCLK_PIN GPIO_NUM_5
+#define SDSPI_TEST_CS_PIN GPIO_NUM_1
+#else
+#define SDSPI_TEST_MOSI_PIN GPIO_NUM_15
+#define SDSPI_TEST_MISO_PIN GPIO_NUM_2
+#define SDSPI_TEST_SCLK_PIN GPIO_NUM_14
+#define SDSPI_TEST_CS_PIN GPIO_NUM_13
+#endif
 
-__attribute__((unused)) static void sd_test_board_power_on(void)
-{
-    gpio_set_direction(SD_TEST_BOARD_VSEL_GPIO, GPIO_MODE_OUTPUT);
-    gpio_set_level(SD_TEST_BOARD_VSEL_GPIO, SD_TEST_BOARD_VSEL_3V3);
-    gpio_set_direction(SD_TEST_BOARD_VSEL_EN_GPIO, GPIO_MODE_OUTPUT);
-    gpio_set_level(SD_TEST_BOARD_VSEL_EN_GPIO, 0);
-    usleep(SD_TEST_BOARD_PWR_RST_DELAY_MS * 1000);
-    gpio_set_level(SD_TEST_BOARD_VSEL_EN_GPIO, 1);
-    usleep(SD_TEST_BOARD_PWR_ON_DELAY_MS * 1000);
-}
-
-__attribute__((unused)) static void sd_test_board_power_off(void)
-{
-    gpio_set_level(SD_TEST_BOARD_VSEL_EN_GPIO, 0);
-    gpio_set_direction(SD_TEST_BOARD_VSEL_GPIO, GPIO_MODE_INPUT);
-    gpio_set_level(SD_TEST_BOARD_VSEL_GPIO, 0);
-    gpio_set_direction(SD_TEST_BOARD_VSEL_EN_GPIO, GPIO_MODE_INPUT);
-}
 
 TEST_CASE("MMC_RSP_BITS", "[sd]")
 {
@@ -83,7 +76,25 @@ TEST_CASE("MMC_RSP_BITS", "[sd]")
     TEST_ASSERT_EQUAL_HEX32(0x11,  MMC_RSP_BITS(data, 59, 5));
 }
 
-#if SOC_SDMMC_HOST_SUPPORTED
+#if WITH_SD_TEST || WITH_EMMC_TEST
+static void sd_test_board_power_on(void)
+{
+    gpio_set_direction(SD_TEST_BOARD_VSEL_GPIO, GPIO_MODE_OUTPUT);
+    gpio_set_level(SD_TEST_BOARD_VSEL_GPIO, SD_TEST_BOARD_VSEL_3V3);
+    gpio_set_direction(SD_TEST_BOARD_VSEL_EN_GPIO, GPIO_MODE_OUTPUT);
+    gpio_set_level(SD_TEST_BOARD_VSEL_EN_GPIO, 0);
+    usleep(SD_TEST_BOARD_PWR_RST_DELAY_MS * 1000);
+    gpio_set_level(SD_TEST_BOARD_VSEL_EN_GPIO, 1);
+    usleep(SD_TEST_BOARD_PWR_ON_DELAY_MS * 1000);
+}
+
+static void sd_test_board_power_off(void)
+{
+    gpio_set_level(SD_TEST_BOARD_VSEL_EN_GPIO, 0);
+    gpio_set_direction(SD_TEST_BOARD_VSEL_GPIO, GPIO_MODE_INPUT);
+    gpio_set_level(SD_TEST_BOARD_VSEL_GPIO, 0);
+    gpio_set_direction(SD_TEST_BOARD_VSEL_EN_GPIO, GPIO_MODE_INPUT);
+}
 
 static void probe_sd(int slot, int width, int freq_khz, int ddr)
 {
@@ -117,7 +128,9 @@ static void probe_sd(int slot, int width, int freq_khz, int ddr)
     free(card);
     sd_test_board_power_off();
 }
+#endif //WITH_SD_TEST || WITH_EMMC_TEST
 
+#if WITH_SD_TEST
 TEST_CASE("probe SD, slot 1, 4-bit", "[sd][test_env=UT_T1_SDMODE]")
 {
     probe_sd(SDMMC_HOST_SLOT_1, 4, SDMMC_FREQ_PROBING, 0);
@@ -132,7 +145,23 @@ TEST_CASE("probe SD, slot 1, 1-bit", "[sd][test_env=UT_T1_SDMODE]")
     probe_sd(SDMMC_HOST_SLOT_1, 1, SDMMC_FREQ_HIGHSPEED, 0);
 }
 
-#ifdef WITH_EMMC_TEST
+//No runners for slot 0
+TEST_CASE("probe SD, slot 0, 4-bit", "[sd][ignore]")
+{
+    probe_sd(SDMMC_HOST_SLOT_0, 4, SDMMC_FREQ_PROBING, 0);
+    probe_sd(SDMMC_HOST_SLOT_0, 4, SDMMC_FREQ_DEFAULT, 0);
+    probe_sd(SDMMC_HOST_SLOT_0, 4, SDMMC_FREQ_HIGHSPEED, 0);
+}
+
+TEST_CASE("probe SD, slot 0, 1-bit", "[sd][ignore]")
+{
+    probe_sd(SDMMC_HOST_SLOT_0, 1, SDMMC_FREQ_PROBING, 0);
+    probe_sd(SDMMC_HOST_SLOT_0, 1, SDMMC_FREQ_DEFAULT, 0);
+    probe_sd(SDMMC_HOST_SLOT_0, 1, SDMMC_FREQ_HIGHSPEED, 0);
+}
+#endif //WITH_SD_TEST
+
+#if WITH_EMMC_TEST
 TEST_CASE("probe eMMC, slot 0, 4-bit", "[sd][test_env=EMMC]")
 {
     //Test with SDR
@@ -152,24 +181,20 @@ TEST_CASE("probe eMMC, slot 0, 8-bit", "[sd][test_env=EMMC]")
 }
 #endif // WITH_EMMC_TEST
 
-TEST_CASE("probe SD, slot 0, 4-bit", "[sd][test_env=UT_T1_SDCARD][ignore]")
+#if WITH_SDSPI_TEST
+
+#if !WITH_SD_TEST && !WITH_EMMC_TEST
+static void sd_test_board_power_on(void)
 {
-    probe_sd(SDMMC_HOST_SLOT_0, 4, SDMMC_FREQ_PROBING, 0);
-    probe_sd(SDMMC_HOST_SLOT_0, 4, SDMMC_FREQ_DEFAULT, 0);
-    probe_sd(SDMMC_HOST_SLOT_0, 4, SDMMC_FREQ_HIGHSPEED, 0);
+    // do nothing
 }
 
-TEST_CASE("probe SD, slot 0, 1-bit", "[sd][test_env=UT_T1_SDCARD][ignore]")
+static void sd_test_board_power_off(void)
 {
-    probe_sd(SDMMC_HOST_SLOT_0, 1, SDMMC_FREQ_PROBING, 0);
-    probe_sd(SDMMC_HOST_SLOT_0, 1, SDMMC_FREQ_DEFAULT, 0);
-    probe_sd(SDMMC_HOST_SLOT_0, 1, SDMMC_FREQ_HIGHSPEED, 0);
+    // do nothing
 }
-
 #endif
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
-//No runners
 static void test_sdspi_init_bus(spi_host_device_t host, int mosi_pin, int miso_pin, int clk_pin, int dma_chan)
 {
     spi_bus_config_t bus_config = {
@@ -209,7 +234,7 @@ static void probe_spi(int freq_khz, int pin_miso, int pin_mosi, int pin_sck, int
     sdspi_dev_handle_t handle;
     sdspi_device_config_t dev_config = SDSPI_DEVICE_CONFIG_DEFAULT();
     dev_config.gpio_cs = pin_cs;
-    test_sdspi_init_bus(dev_config.host_id, pin_mosi, pin_miso, pin_sck, TEST_SDSPI_DMACHAN);
+    test_sdspi_init_bus(dev_config.host_id, pin_mosi, pin_miso, pin_sck, SPI_DMA_CH_AUTO);
     TEST_ESP_OK(sdspi_host_init());
     TEST_ESP_OK(sdspi_host_init_device(&dev_config, &handle));
 
@@ -229,6 +254,7 @@ static void probe_spi_legacy(int freq_khz, int pin_miso, int pin_mosi, int pin_s
     slot_config.gpio_mosi = pin_mosi;
     slot_config.gpio_sck = pin_sck;
     slot_config.gpio_cs = pin_cs;
+    slot_config.dma_channel = SPI_DMA_CH_AUTO;
 
     TEST_ESP_OK(sdspi_host_init());
     TEST_ESP_OK(sdspi_host_init_slot(config.slot, &slot_config));
@@ -236,26 +262,30 @@ static void probe_spi_legacy(int freq_khz, int pin_miso, int pin_mosi, int pin_s
     probe_core(config.slot);
 
     TEST_ESP_OK(sdspi_host_deinit());
+
+    TEST_ESP_OK(spi_bus_free(config.slot));
+
     sd_test_board_power_off();
 }
 
-TEST_CASE("probe SD in SPI mode, slot 1", "[sd][test_env=UT_T1_SPIMODE]")
+TEST_CASE("probe SD in SPI mode", "[sd][test_env=UT_T1_SPIMODE]")
 {
-    probe_spi(SDMMC_FREQ_DEFAULT, 2, 15, 14, 13);
-    probe_spi_legacy(SDMMC_FREQ_DEFAULT, 2, 15, 14, 13);
+    probe_spi(SDMMC_FREQ_DEFAULT, SDSPI_TEST_MISO_PIN, SDSPI_TEST_MOSI_PIN, SDSPI_TEST_SCLK_PIN, SDSPI_TEST_CS_PIN);
+    probe_spi_legacy(SDMMC_FREQ_DEFAULT, SDSPI_TEST_MISO_PIN, SDSPI_TEST_MOSI_PIN, SDSPI_TEST_SCLK_PIN, SDSPI_TEST_CS_PIN);
 }
 
-TEST_CASE("probe SD in SPI mode, slot 0", "[sd][test_env=UT_T1_SDCARD][ignore]")
+// No runner for this
+TEST_CASE("probe SD in SPI mode, slot 0", "[sd][ignore]")
 {
     probe_spi(SDMMC_FREQ_DEFAULT, 7, 11, 6, 10);
     probe_spi_legacy(SDMMC_FREQ_DEFAULT, 7, 11, 6, 10);
 }
+#endif //WITH_SDSPI_TEST
 
-#endif //DISABLED(ESP32S2)
-
+#if WITH_SD_TEST || WITH_SDSPI_TEST || WITH_EMMC_TEST
 // Fill buffer pointed to by 'dst' with 'count' 32-bit ints generated
 // from 'rand' with the starting value of 'seed'
-__attribute__((unused)) static void fill_buffer(uint32_t seed, uint8_t* dst, size_t count) {
+static void fill_buffer(uint32_t seed, uint8_t* dst, size_t count) {
     srand(seed);
     for (size_t i = 0; i < count; ++i) {
         uint32_t val = rand();
@@ -265,7 +295,7 @@ __attribute__((unused)) static void fill_buffer(uint32_t seed, uint8_t* dst, siz
 
 // Check if the buffer pointed to by 'dst' contains 'count' 32-bit
 // ints generated from 'rand' with the starting value of 'seed'
-__attribute__((unused)) static void check_buffer(uint32_t seed, const uint8_t* src, size_t count) {
+static void check_buffer(uint32_t seed, const uint8_t* src, size_t count) {
     srand(seed);
     for (size_t i = 0; i < count; ++i) {
         uint32_t val;
@@ -274,8 +304,8 @@ __attribute__((unused)) static void check_buffer(uint32_t seed, const uint8_t* s
     }
 }
 
-__attribute__((unused)) static void do_single_write_read_test(sdmmc_card_t* card,
-        size_t start_block, size_t block_count, size_t alignment)
+static void do_single_write_read_test(sdmmc_card_t* card, size_t start_block,
+                    size_t block_count, size_t alignment, bool performance_log)
 {
     size_t block_size = card->csd.sector_size;
     size_t total_size = block_size * block_count;
@@ -307,35 +337,69 @@ __attribute__((unused)) static void do_single_write_read_test(sdmmc_card_t* card
             time_rd, total_size / (time_rd / 1000) / (1024 * 1024));
     check_buffer(start_block, c_buffer, total_size / sizeof(buffer[0]));
     free(buffer);
+
+    if (performance_log) {
+        static const char wr_speed_str[] = "SDMMC_WR_SPEED";
+        static const char rd_speed_str[] = "SDMMC_RD_SPEED";
+        int aligned = ((alignment % 4) == 0)? 1: 0;
+        IDF_LOG_PERFORMANCE(wr_speed_str, "%d, blk_n: %d, aligned: %d",
+                            (int)(total_size * 1000 / time_wr), block_count, aligned);
+        IDF_LOG_PERFORMANCE(rd_speed_str, "%d, blk_n: %d, aligned: %d",
+                            (int)(total_size * 1000 / time_rd), block_count, aligned);
+    }
 }
 
-__attribute__((unused)) static void read_write_test(sdmmc_card_t* card)
+typedef void (*sd_test_func_t)(sdmmc_card_t* card);
+
+static void test_read_write_performance(sdmmc_card_t* card)
 {
     sdmmc_card_print_info(stdout, card);
     printf("  sector  | count | align | size(kB)  | wr_time(ms) | wr_speed(MB/s)  |  rd_time(ms)  | rd_speed(MB/s)\n");
-    do_single_write_read_test(card, 0, 1, 4);
-    do_single_write_read_test(card, 0, 4, 4);
-    do_single_write_read_test(card, 1, 16, 4);
-    do_single_write_read_test(card, 16, 32, 4);
-    do_single_write_read_test(card, 48, 64, 4);
-    do_single_write_read_test(card, 128, 128, 4);
-    do_single_write_read_test(card, card->csd.capacity - 64, 32, 4);
-    do_single_write_read_test(card, card->csd.capacity - 64, 64, 4);
-    do_single_write_read_test(card, card->csd.capacity - 8, 1, 4);
-    do_single_write_read_test(card, card->csd.capacity/2, 1, 4);
-    do_single_write_read_test(card, card->csd.capacity/2, 4, 4);
-    do_single_write_read_test(card, card->csd.capacity/2, 8, 4);
-    do_single_write_read_test(card, card->csd.capacity/2, 16, 4);
-    do_single_write_read_test(card, card->csd.capacity/2, 32, 4);
-    do_single_write_read_test(card, card->csd.capacity/2, 64, 4);
-    do_single_write_read_test(card, card->csd.capacity/2, 128, 4);
-    do_single_write_read_test(card, card->csd.capacity/2, 1, 1);
-    do_single_write_read_test(card, card->csd.capacity/2, 8, 1);
-    do_single_write_read_test(card, card->csd.capacity/2, 128, 1);
+    const int offset = 0;
+    const bool do_log = true;
+    //aligned
+    do_single_write_read_test(card, offset, 1, 4, do_log);
+    do_single_write_read_test(card, offset, 4, 4, do_log);
+    do_single_write_read_test(card, offset, 8, 4, do_log);
+    do_single_write_read_test(card, offset, 16, 4, do_log);
+    do_single_write_read_test(card, offset, 32, 4, do_log);
+    do_single_write_read_test(card, offset, 64, 4, do_log);
+    do_single_write_read_test(card, offset, 128, 4, do_log);
+    //unaligned
+    do_single_write_read_test(card, offset, 1, 1, do_log);
+    do_single_write_read_test(card, offset, 8, 1, do_log);
+    do_single_write_read_test(card, offset, 128, 1, do_log);
 }
 
-#if SOC_SDMMC_HOST_SUPPORTED
-void test_sd_rw_blocks(int slot, int width)
+static void test_read_write_with_offset(sdmmc_card_t* card)
+{
+    sdmmc_card_print_info(stdout, card);
+    printf("  sector  | count | align | size(kB)  | wr_time(ms) | wr_speed(MB/s)  |  rd_time(ms)  | rd_speed(MB/s)\n");
+    const bool no_log = false;;
+    //aligned
+    do_single_write_read_test(card, 1, 16, 4, no_log);
+    do_single_write_read_test(card, 16, 32, 4, no_log);
+    do_single_write_read_test(card, 48, 64, 4, no_log);
+    do_single_write_read_test(card, 128, 128, 4, no_log);
+    do_single_write_read_test(card, card->csd.capacity - 64, 32, 4, no_log);
+    do_single_write_read_test(card, card->csd.capacity - 64, 64, 4, no_log);
+    do_single_write_read_test(card, card->csd.capacity - 8, 1, 4, no_log);
+    do_single_write_read_test(card, card->csd.capacity/2, 1, 4, no_log);
+    do_single_write_read_test(card, card->csd.capacity/2, 4, 4, no_log);
+    do_single_write_read_test(card, card->csd.capacity/2, 8, 4, no_log);
+    do_single_write_read_test(card, card->csd.capacity/2, 16, 4, no_log);
+    do_single_write_read_test(card, card->csd.capacity/2, 32, 4, no_log);
+    do_single_write_read_test(card, card->csd.capacity/2, 64, 4, no_log);
+    do_single_write_read_test(card, card->csd.capacity/2, 128, 4, no_log);
+    //unaligned
+    do_single_write_read_test(card, card->csd.capacity/2, 1, 1, no_log);
+    do_single_write_read_test(card, card->csd.capacity/2, 8, 1, no_log);
+    do_single_write_read_test(card, card->csd.capacity/2, 128, 1, no_log);
+}
+#endif //WITH_SD_TEST || WITH_SDSPI_TEST || WITH_EMMC_TEST
+
+#if WITH_SD_TEST || WITH_EMMC_TEST
+void sd_test_rw_blocks(int slot, int width, sd_test_func_t test_func)
 {
     sdmmc_host_t config = SDMMC_HOST_DEFAULT();
     config.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
@@ -352,64 +416,104 @@ void test_sd_rw_blocks(int slot, int width)
     sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
     TEST_ASSERT_NOT_NULL(card);
     TEST_ESP_OK(sdmmc_card_init(&config, card));
-    read_write_test(card);
+    test_func(card);
     free(card);
     TEST_ESP_OK(sdmmc_host_deinit());
 }
+#endif //WITH_SD_TEST || WITH_EMMC_TEST
 
-TEST_CASE("SDMMC read/write test (SD slot 1)", "[sd][test_env=UT_T1_SDMODE]")
+#if WITH_SD_TEST
+TEST_CASE("SDMMC performance test (SD slot 1, 4 line)", "[sd][test_env=UT_T1_SDMODE]")
 {
     sd_test_board_power_on();
-    test_sd_rw_blocks(1, 4);
+    sd_test_rw_blocks(1, 4, test_read_write_performance);
     sd_test_board_power_off();
 }
 
-#ifdef WITH_EMMC_TEST
-TEST_CASE("SDMMC read/write test (eMMC slot 0, 4 line DDR)", "[sd][test_env=EMMC]")
+TEST_CASE("SDMMC performance test (SD slot 1, 1 line)", "[sd][test_env=UT_T1_SDMODE]")
 {
     sd_test_board_power_on();
-    test_sd_rw_blocks(0, 4);
+    sd_test_rw_blocks(1, 1, test_read_write_performance);
     sd_test_board_power_off();
 }
 
-TEST_CASE("SDMMC read/write test (eMMC slot 0, 8 line)", "[sd][test_env=EMMC]")
+TEST_CASE("SDMMC test read/write with offset (SD slot 1)", "[sd][test_env=UT_T1_SDMODE]")
 {
     sd_test_board_power_on();
-    test_sd_rw_blocks(0, 8);
+    sd_test_rw_blocks(1, 4, test_read_write_with_offset);
+    sd_test_board_power_off();
+}
+#endif //WITH_SD_TEST
+
+#if WITH_EMMC_TEST
+TEST_CASE("SDMMC performance test (eMMC slot 0, 4 line DDR)", "[sd][test_env=EMMC]")
+{
+    sd_test_board_power_on();
+    sd_test_rw_blocks(0, 4, test_read_write_performance);
+    sd_test_board_power_off();
+}
+
+TEST_CASE("SDMMC test read/write with offset (eMMC slot 0, 4 line DDR)", "[sd][test_env=EMMC]")
+{
+    sd_test_board_power_on();
+    sd_test_rw_blocks(0, 4, test_read_write_with_offset);
+    sd_test_board_power_off();
+}
+
+TEST_CASE("SDMMC performance test (eMMC slot 0, 8 line)", "[sd][test_env=EMMC]")
+{
+    sd_test_board_power_on();
+    sd_test_rw_blocks(0, 8, test_read_write_performance);
+    sd_test_board_power_off();
+}
+
+TEST_CASE("SDMMC test read/write with offset (eMMC slot 0, 8 line)", "[sd][test_env=EMMC]")
+{
+    sd_test_board_power_on();
+    sd_test_rw_blocks(0, 8, test_read_write_with_offset);
     sd_test_board_power_off();
 }
 #endif // WITH_EMMC_TEST
-#endif // SDMMC_HOST_SUPPORTED
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
-//No runners
-TEST_CASE("SDMMC read/write test (SD slot 1, in SPI mode)", "[sdspi][test_env=UT_T1_SPIMODE]")
+#if WITH_SDSPI_TEST
+void sdspi_test_rw_blocks(sd_test_func_t test_func)
 {
     sd_test_board_power_on();
 
+    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
     sdspi_dev_handle_t handle;
     sdspi_device_config_t dev_config = SDSPI_DEVICE_CONFIG_DEFAULT();
-    test_sdspi_init_bus(dev_config.host_id, GPIO_NUM_15, GPIO_NUM_2, GPIO_NUM_14, TEST_SDSPI_DMACHAN);
+    dev_config.host_id = config.slot;
+    dev_config.gpio_cs = SDSPI_TEST_CS_PIN;
+    test_sdspi_init_bus(dev_config.host_id, SDSPI_TEST_MOSI_PIN, SDSPI_TEST_MISO_PIN, SDSPI_TEST_SCLK_PIN, SPI_DMA_CH_AUTO);
     TEST_ESP_OK(sdspi_host_init());
     TEST_ESP_OK(sdspi_host_init_device(&dev_config, &handle));
 
-    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
-    config.slot = handle;
     // This test can only run under 20MHz on ESP32, because the runner connects the card to
     // non-IOMUX pins of HSPI.
 
     sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
     TEST_ASSERT_NOT_NULL(card);
     TEST_ESP_OK(sdmmc_card_init(&config, card));
-    read_write_test(card);
+    test_func(card);
     TEST_ESP_OK(sdspi_host_deinit());
     free(card);
     test_sdspi_deinit_bus(dev_config.host_id);
     sd_test_board_power_off();
 }
-#endif //DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
 
-#if SOC_SDMMC_HOST_SUPPORTED
+TEST_CASE("SDMMC performance (SPI mode)", "[sdspi][test_env=UT_T1_SPIMODE]")
+{
+    sdspi_test_rw_blocks(test_read_write_performance);
+}
+
+TEST_CASE("SDMMC test read/write with offset (SPI mode)", "[sdspi][test_env=UT_T1_SPIMODE]")
+{
+    sdspi_test_rw_blocks(test_read_write_with_offset);
+}
+#endif //WITH_SDSPI_TEST
+
+#if WITH_SD_TEST
 TEST_CASE("reads and writes with an unaligned buffer", "[sd][test_env=UT_T1_SDMODE]")
 {
     sd_test_board_power_on();
@@ -447,9 +551,10 @@ TEST_CASE("reads and writes with an unaligned buffer", "[sd][test_env=UT_T1_SDMO
     TEST_ESP_OK(sdmmc_host_deinit());
     sd_test_board_power_off();
 }
-#endif
+#endif //WITH_SD_TEST
 
-__attribute__((unused)) static void test_cd_input(int gpio_cd_num, const sdmmc_host_t* config)
+#if WITH_SD_TEST || WITH_SDSPI_TEST
+static void test_cd_input(int gpio_cd_num, const sdmmc_host_t* config)
 {
     sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
     TEST_ASSERT_NOT_NULL(card);
@@ -473,48 +578,7 @@ __attribute__((unused)) static void test_cd_input(int gpio_cd_num, const sdmmc_h
     free(card);
 }
 
-#if SOC_SDMMC_HOST_SUPPORTED
-TEST_CASE("CD input works in SD mode", "[sd][test_env=UT_T1_SDMODE]")
-{
-    sd_test_board_power_on();
-    sdmmc_host_t config = SDMMC_HOST_DEFAULT();
-    sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
-    slot_config.gpio_cd = CD_WP_TEST_GPIO;
-    TEST_ESP_OK(sdmmc_host_init());
-    TEST_ESP_OK(sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config));
-
-    test_cd_input(CD_WP_TEST_GPIO, &config);
-
-    TEST_ESP_OK(sdmmc_host_deinit());
-    sd_test_board_power_off();
-}
-#endif
-
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
-//No runners
-TEST_CASE("CD input works in SPI mode", "[sd][test_env=UT_T1_SPIMODE]")
-{
-    sd_test_board_power_on();
-
-    sdspi_dev_handle_t handle;
-    sdspi_device_config_t dev_config = SDSPI_DEVICE_CONFIG_DEFAULT();
-    dev_config.gpio_cd = CD_WP_TEST_GPIO;
-    test_sdspi_init_bus(dev_config.host_id, GPIO_NUM_15, GPIO_NUM_2, GPIO_NUM_14, TEST_SDSPI_DMACHAN);
-    TEST_ESP_OK(sdspi_host_init());
-    TEST_ESP_OK(sdspi_host_init_device(&dev_config, &handle));
-
-    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
-    config.slot = handle;
-
-    test_cd_input(CD_WP_TEST_GPIO, &config);
-
-    TEST_ESP_OK(sdspi_host_deinit());
-    test_sdspi_deinit_bus(dev_config.host_id);
-    sd_test_board_power_off();
-}
-#endif //DISABLED_FOR_TARGETS(ESP32S2)
-
-__attribute__((unused)) static void test_wp_input(int gpio_wp_num, const sdmmc_host_t* config)
+static void test_wp_input(int gpio_wp_num, const sdmmc_host_t* config)
 {
     sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
     TEST_ASSERT_NOT_NULL(card);
@@ -546,8 +610,24 @@ __attribute__((unused)) static void test_wp_input(int gpio_wp_num, const sdmmc_h
     free(data);
     free(card);
 }
+#endif //WITH_SD_TEST || WITH_SDSPI_TEST
 
-#if SOC_SDMMC_HOST_SUPPORTED
+#if WITH_SD_TEST
+TEST_CASE("CD input works in SD mode", "[sd][test_env=UT_T1_SDMODE]")
+{
+    sd_test_board_power_on();
+    sdmmc_host_t config = SDMMC_HOST_DEFAULT();
+    sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
+    slot_config.gpio_cd = CD_WP_TEST_GPIO;
+    TEST_ESP_OK(sdmmc_host_init());
+    TEST_ESP_OK(sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config));
+
+    test_cd_input(CD_WP_TEST_GPIO, &config);
+
+    TEST_ESP_OK(sdmmc_host_deinit());
+    sd_test_board_power_off();
+}
+
 TEST_CASE("WP input works in SD mode", "[sd][test_env=UT_T1_SDMODE]")
 {
     sd_test_board_power_on();
@@ -562,23 +642,47 @@ TEST_CASE("WP input works in SD mode", "[sd][test_env=UT_T1_SDMODE]")
     TEST_ESP_OK(sdmmc_host_deinit());
     sd_test_board_power_off();
 }
-#endif
+#endif //WITH_SD_TEST
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
-//No runners
+#if WITH_SDSPI_TEST
+TEST_CASE("CD input works in SPI mode", "[sd][test_env=UT_T1_SPIMODE]")
+{
+    sd_test_board_power_on();
+
+    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
+    sdspi_dev_handle_t handle;
+    sdspi_device_config_t dev_config = SDSPI_DEVICE_CONFIG_DEFAULT();
+    dev_config.host_id = config.slot;
+    dev_config.gpio_cs = SDSPI_TEST_CS_PIN;
+    dev_config.gpio_cd = CD_WP_TEST_GPIO;
+    test_sdspi_init_bus(dev_config.host_id, SDSPI_TEST_MOSI_PIN, SDSPI_TEST_MISO_PIN, SDSPI_TEST_SCLK_PIN, SPI_DMA_CH_AUTO);
+    TEST_ESP_OK(sdspi_host_init());
+    TEST_ESP_OK(sdspi_host_init_device(&dev_config, &handle));
+
+    config.slot = handle;
+
+    test_cd_input(CD_WP_TEST_GPIO, &config);
+
+    TEST_ESP_OK(sdspi_host_deinit());
+    test_sdspi_deinit_bus(dev_config.host_id);
+    sd_test_board_power_off();
+}
+
 TEST_CASE("WP input works in SPI mode", "[sd][test_env=UT_T1_SPIMODE]")
 {
     sd_test_board_power_on();
 
+    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
     sdspi_dev_handle_t handle;
     sdspi_device_config_t dev_config = SDSPI_DEVICE_CONFIG_DEFAULT();
+    dev_config.host_id = config.slot;
+    dev_config.gpio_cs = SDSPI_TEST_CS_PIN;
     dev_config.gpio_wp = CD_WP_TEST_GPIO;
-    test_sdspi_init_bus(dev_config.host_id, GPIO_NUM_15, GPIO_NUM_2, GPIO_NUM_14, TEST_SDSPI_DMACHAN);
+    test_sdspi_init_bus(dev_config.host_id, SDSPI_TEST_MOSI_PIN, SDSPI_TEST_MISO_PIN, SDSPI_TEST_SCLK_PIN, SPI_DMA_CH_AUTO);
 
     TEST_ESP_OK(sdspi_host_init());
     TEST_ESP_OK(sdspi_host_init_device(&dev_config, &handle));
 
-    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
     config.slot = handle;
 
     test_wp_input(CD_WP_TEST_GPIO, &config);
@@ -587,4 +691,4 @@ TEST_CASE("WP input works in SPI mode", "[sd][test_env=UT_T1_SPIMODE]")
     test_sdspi_deinit_bus(dev_config.host_id);
     sd_test_board_power_off();
 }
-#endif //DISABLED_FOR_TARGETS(ESP32S2)
+#endif //WITH_SDSPI_TEST

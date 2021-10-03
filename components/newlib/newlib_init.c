@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "sdkconfig.h"
 #include <string.h>
 #include <stdbool.h>
 #include <unistd.h>
@@ -25,8 +26,8 @@
 #include <assert.h>
 #include "esp_newlib.h"
 #include "esp_attr.h"
-#include "sdkconfig.h"
 #include "soc/soc_caps.h"
+#include "esp_rom_caps.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/libc_stubs.h"
@@ -36,6 +37,8 @@
 #include "esp32s3/rom/libc_stubs.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/libc_stubs.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/libc_stubs.h"
 #endif
 
 static struct _reent s_reent;
@@ -82,7 +85,7 @@ static struct syscall_stub_table s_stub_table = {
     ._write_r = (int (*)(struct _reent *r, int, const void *, int)) &_write_r,
     ._lseek_r = (int (*)(struct _reent *r, int, int, int)) &_lseek_r,
     ._read_r = (int (*)(struct _reent *r, int, void *, int)) &_read_r,
-#if _RETARGETABLE_LOCKING /* TODO: only if RETARGETABLE LOCKING IS IN ROM */
+#if ESP_ROM_HAS_RETARGETABLE_LOCKING
     ._retarget_lock_init = &__retarget_lock_init,
     ._retarget_lock_init_recursive = &__retarget_lock_init_recursive,
     ._retarget_lock_close = &__retarget_lock_close,
@@ -112,7 +115,7 @@ static struct syscall_stub_table s_stub_table = {
     ._printf_float = NULL,
     ._scanf_float = NULL,
 #endif
-#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
     /* TODO IDF-2570 : mark that this assert failed in ROM, to avoid confusion between IDF & ROM
        assertion failures (as function names & source file names will be similar)
     */
@@ -135,7 +138,7 @@ void esp_newlib_init(void)
     syscall_table_ptr_pro = syscall_table_ptr_app = &s_stub_table;
 #elif CONFIG_IDF_TARGET_ESP32S2
     syscall_table_ptr_pro = &s_stub_table;
-#elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+#elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
     syscall_table_ptr = &s_stub_table;
 #endif
 

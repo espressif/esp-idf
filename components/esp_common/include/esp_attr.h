@@ -89,6 +89,14 @@ extern "C" {
 // Forces data into noinit section to avoid initialization after restart.
 #define __NOINIT_ATTR _SECTION_ATTR_IMPL(".noinit", __COUNTER__)
 
+#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+// Forces data into external memory noinit section to avoid initialization after restart.
+#define EXT_RAM_NOINIT_ATTR _SECTION_ATTR_IMPL(".ext_ram_noinit", __COUNTER__)
+#else
+// Place in internal noinit section
+#define EXT_RAM_NOINIT_ATTR __NOINIT_ATTR
+#endif
+
 // Forces data into RTC slow memory of .noinit section.
 // Any variable marked with this attribute will keep its value
 // after restart or during a deep sleep / wake cycle.
@@ -155,4 +163,3 @@ FORCE_INLINE_ATTR TYPE& operator<<=(TYPE& a, int b) { a <<= b; return a; }
 }
 #endif
 #endif /* __ESP_ATTR_H__ */
-

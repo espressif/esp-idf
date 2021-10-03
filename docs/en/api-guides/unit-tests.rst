@@ -2,7 +2,7 @@ Unit Testing in {IDF_TARGET_NAME}
 =================================
 :link_to_translation:`zh_CN:[中文]`
 
-ESP-IDF comes with two possibilities to test software.
+ESP-IDF provides the following methods to test software.
 
 - A unit test application which runs on the target and that is based on the Unity - unit test framework. These unit tests are integrated in the ESP-IDF repository and are placed in the ``test`` subdirectories of each component respectively. Target-based unit tests are covered in this document.
 - Linux-host based unit tests in which all the hardware is abstracted via mocks. Linux-host based tests are still under development and only a small fraction of IDF components supports them currently. They are covered here: :doc:`target based unit testing <linux-host-testing>`.
@@ -29,7 +29,7 @@ Tests are added in a function in the C file as follows:
 .. note::
     There is no need to add a main function with ``UNITY_BEGIN()`` and ``​UNITY_END()`` in each test case. ``unity_platform.c`` will run ``UNITY_BEGIN()`` autonomously, and run the test cases, then call ``​UNITY_END()``.
 
-The ``test`` subdirectory should contain a :ref:`component CMakeLists.txt <component-directories>`, since they are themselves, components. ESP-IDF uses the ``unity`` test framework and should be specified as a requirement for the component. Normally, components :ref:`should list their sources manually <cmake-file-globbing>`; for component tests however, this requirement is relaxed and the use of the ``SRC_DIRS`` argument in ``idf_component_register`` is advised.
+The ``test`` subdirectory should contain a :ref:`component CMakeLists.txt <component-directories>`, since they are themselves components (i.e., a test component). ESP-IDF uses the Unity test framework located in the ``unity`` component. Thus, each test component should specify the ``unity`` component as a component requirement using the ``REQUIRES`` argument. Normally, components :ref:`should list their sources manually <cmake-file-globbing>`; for component tests however, this requirement is relaxed and the use of the ``SRC_DIRS`` argument in ``idf_component_register`` is advised.
 
 Overall, the minimal ``test`` subdirectory ``CMakeLists.txt`` file should contain the following:
 
@@ -108,8 +108,8 @@ The normal test cases are expected to finish without reset (or only need to chec
 
     void check_deepsleep_reset_reason()
     {
-        RESET_REASON reason = rtc_get_reset_reason(0);
-        TEST_ASSERT(reason == DEEPSLEEP_RESET);
+        soc_reset_reason_t reason = esp_rom_get_reset_reason(0);
+        TEST_ASSERT(reason == RESET_REASON_CORE_DEEP_SLEEP);
     }
 
     TEST_CASE_MULTIPLE_STAGES("reset reason check for deepsleep", "[{IDF_TARGET_PATH_NAME}]", trigger_deepsleep, check_deepsleep_reset_reason);
@@ -173,7 +173,7 @@ Change into ``tools/unit-test-app`` directory to configure and build it:
 .. note::
 
     Due to inherent limitations of Windows command prompt, following syntax has to be used in order to build unit-test-app with multiple components: ``idf.py -T xxx -T yyy build`` or with escaped quoates: ``idf.py -T \`"xxx yyy\`" build`` in PowerShell or ``idf.py -T \^"ssd1306 hts221\^" build`` in Windows command prompt.
-    
+
 When the build finishes, it will print instructions for flashing the chip. You can simply run ``idf.py flash`` to flash all build output.
 
 You can also run ``idf.py -T all flash`` or ``idf.py -T xxx flash`` to build and flash. Everything needed will be rebuilt automatically before flashing.
@@ -246,6 +246,8 @@ Similar to multi-device test cases, multi-stage test cases will also print sub-m
 First time you execute this case, input ``1`` to run first stage (trigger deepsleep). After DUT is rebooted and able to run test cases, select this case again and input ``2`` to run the second stage. The case only passes if the last stage passes and all previous stages trigger reset.
 
 
+.. _cache-compensated-timer:
+
 Timing Code with Cache Compensated Timer
 -----------------------------------------
 
@@ -283,7 +285,7 @@ Besides the usual IDF requirements, ``ruby`` is necessary to generate the mocks.
 
 In IDF, adjustments are necessary inside the component(s) that should be mocked as well as inside the unit test, compared to writing normal components or unit tests without mocking.
 
-Adjustments in Mock Component 
+Adjustments in Mock Component
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The component that should be mocked requires a separate ``mock`` directory containing all additional files needed specifically for the mocking. Most importantly, it contains ``mock_config.yaml`` which configures CMock. For more details on what the options inside that configuration file mean and how to write your own, please take a look at the :component_file:`CMock documentation <cmock/CMock/docs/CMock_Summary.md>`. It may be necessary to have some more files related to mocking which should also be placed inside the `mock` directory.

@@ -21,6 +21,7 @@
 #define BT_TARGET_H
 
 #include <bt_common.h>
+#include "soc/soc_caps.h"
 
 #ifndef BUILDCFG
 #define BUILDCFG
@@ -129,10 +130,21 @@
 #define BT_SSP_INCLUDED             TRUE
 #endif /* UC_BT_SSP_ENABLED */
 
+#if UC_BT_HID_ENABLED
+#define BT_HID_INCLUDED             TRUE
+#endif /* UC_BT_HID_ENABLED */
+
 #if UC_BT_HID_HOST_ENABLED
 #define HID_HOST_INCLUDED           TRUE
 #define BTA_HH_INCLUDED             TRUE
+#define BTC_HH_INCLUDED             TRUE
 #endif /* UC_BT_HID_HOST_ENABLED */
+
+#if UC_BT_HID_DEVICE_ENABLED
+#define HID_DEV_INCLUDED            TRUE
+#define BTA_HD_INCLUDED             TRUE
+#define BTC_HD_INCLUDED             TRUE
+#endif /* UC_BT_HID_DEVICE_ENABLED */
 
 #endif /* UC_BT_CLASSIC_ENABLED */
 
@@ -189,12 +201,6 @@
 #else
 #define GATTC_INCLUDED              FALSE
 #endif  /* UC_BT_GATTC_ENABLE */
-
-#if (UC_BT_BLUFI_ENABLE)
-#define BLUFI_INCLUDED              TRUE
-#else
-#define BLUFI_INCLUDED              FALSE
-#endif  /* UC_BT_BLUFI_ENABLE */
 
 #if (UC_BT_GATTC_ENABLE && UC_BT_GATTC_CACHE_NVS_FLASH_ENABLED)
 #define GATTC_CACHE_NVS             TRUE
@@ -263,6 +269,11 @@
 #define BLE_ESTABLISH_LINK_CONNECTION_TIMEOUT UC_BT_BLE_ESTAB_LINK_CONN_TOUT
 #endif
 
+#ifdef SOC_BLE_DONT_UPDATE_OWN_RPA
+#define BLE_UPDATE_BLE_ADDR_TYPE_RPA FALSE
+#else
+#define BLE_UPDATE_BLE_ADDR_TYPE_RPA TRUE
+#endif
 //------------------Added from bdroid_buildcfg.h---------------------
 #ifndef L2CAP_EXTFEA_SUPPORTED_MASK
 #define L2CAP_EXTFEA_SUPPORTED_MASK (L2CAP_EXTFEA_ENH_RETRANS | L2CAP_EXTFEA_STREAM_MODE | L2CAP_EXTFEA_NO_CRC | L2CAP_EXTFEA_FIXED_CHNLS)
@@ -321,6 +332,14 @@
 #define BTC_SPP_INCLUDED FALSE
 #endif
 
+#ifndef BTC_HH_INCLUDED
+#define BTC_HH_INCLUDED FALSE
+#endif
+
+#ifndef BTC_HD_INCLUDED
+#define BTC_HD_INCLUDED FALSE
+#endif
+
 #ifndef SBC_DEC_INCLUDED
 #define SBC_DEC_INCLUDED FALSE
 #endif
@@ -348,6 +367,10 @@
 
 #ifndef BTA_PAN_INCLUDED
 #define BTA_PAN_INCLUDED FALSE
+#endif
+
+#ifndef BTA_HD_INCLUDED
+#define BTA_HD_INCLUDED FALSE
 #endif
 
 #ifndef BTA_HH_INCLUDED
@@ -1378,7 +1401,11 @@
 
 /* The maximum number of attributes in each record. */
 #ifndef SDP_MAX_REC_ATTR
+#if defined(HID_DEV_INCLUDED) && (HID_DEV_INCLUDED==TRUE)
+#define SDP_MAX_REC_ATTR            25
+#else
 #define SDP_MAX_REC_ATTR            8
+#endif /* defined(HID_DEV_INCLUDED) && (HID_DEV_INCLUDED==TRUE) */
 #endif
 
 #ifndef SDP_MAX_PAD_LEN
@@ -1845,6 +1872,18 @@ Range: 2 octets
 ** HID
 **
 ******************************************************************************/
+#ifndef BT_HID_INCLUDED
+#define BT_HID_INCLUDED         FALSE
+#endif
+
+/* HID Device Role Included */
+#ifndef HID_DEV_INCLUDED
+#define HID_DEV_INCLUDED   FALSE
+#endif
+
+#ifndef HID_DEV_SUBCLASS
+#define HID_DEV_SUBCLASS   COD_MINOR_POINTING
+#endif
 
 #ifndef HID_CONTROL_BUF_SIZE
 #define HID_CONTROL_BUF_SIZE            BT_DEFAULT_BUFFER_SIZE
@@ -1852,6 +1891,14 @@ Range: 2 octets
 
 #ifndef HID_INTERRUPT_BUF_SIZE
 #define HID_INTERRUPT_BUF_SIZE          BT_DEFAULT_BUFFER_SIZE
+#endif
+
+#ifndef HID_DEV_MTU_SIZE
+#define HID_DEV_MTU_SIZE 64
+#endif
+
+#ifndef HID_DEV_FLUSH_TO
+#define HID_DEV_FLUSH_TO 0xffff
 #endif
 
 /*************************************************************************

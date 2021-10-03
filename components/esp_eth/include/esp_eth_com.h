@@ -15,6 +15,7 @@
 
 #include "esp_err.h"
 #include "esp_event_base.h"
+#include "hal/eth_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,12 +38,6 @@ extern "C" {
  *
  */
 #define ETH_HEADER_LEN (14)
-
-/**
- * @brief Ethernet frame CRC length
- *
- */
-#define ETH_CRC_LEN (4)
 
 /**
  * @brief Optional 802.1q VLAN Tag length
@@ -94,34 +89,8 @@ typedef enum {
     ETH_CMD_S_PROMISCUOUS, /*!< Set promiscuous mode */
     ETH_CMD_S_FLOW_CTRL,   /*!< Set flow control */
     ETH_CMD_G_DUPLEX_MODE, /*!< Get Duplex mode */
+    ETH_CMD_S_PHY_LOOPBACK,/*!< Set PHY loopback */
 } esp_eth_io_cmd_t;
-
-/**
-* @brief Ethernet link status
-*
-*/
-typedef enum {
-    ETH_LINK_UP,  /*!< Ethernet link is up */
-    ETH_LINK_DOWN /*!< Ethernet link is down */
-} eth_link_t;
-
-/**
-* @brief Ethernet speed
-*
-*/
-typedef enum {
-    ETH_SPEED_10M, /*!< Ethernet speed is 10Mbps */
-    ETH_SPEED_100M /*!< Ethernet speed is 100Mbps */
-} eth_speed_t;
-
-/**
-* @brief Ethernet duplex mode
-*
-*/
-typedef enum {
-    ETH_DUPLEX_HALF, /*!< Ethernet is in half duplex */
-    ETH_DUPLEX_FULL  /*!< Ethernet is in full duplex */
-} eth_duplex_t;
 
 /**
 * @brief Ethernet mediator

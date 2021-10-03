@@ -21,201 +21,722 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-
-#include "esp_bt_hh_api.h"
+#include "osi/fixed_queue.h"
+#include "string.h"
+#include "esp_hidh_api.h"
 
 static const char *TAG = "BT_HIDH";
 
-static esp_event_loop_handle_t event_loop_handle;
+// element of connection queue
+typedef struct {
+    esp_hidh_dev_t* dev;
+} conn_item_t;
 
-static const char *s_bta_hh_evt_names[] = {"ENABLE", "DISABLE", "OPEN", "CLOSE", "GET_RPT", "SET_RPT", "GET_PROTO", "SET_PROTO", "GET_IDLE", "SET_IDLE", "GET_DSCP", "ADD_DEV", "RMV_DEV", "VC_UNPLUG", "DATA", "API_ERR", "UPDATE_SCPP"};
-static const char *s_bta_hh_status_names[] = {"OK", "HS_HID_NOT_READY", "HS_INVALID_RPT_ID", "HS_TRANS_NOT_SPT", "HS_INVALID_PARAM", "HS_ERROR", "ERR", "ERR_SDP", "ERR_PROTO", "ERR_DB_FULL", "ERR_TOD_UNSPT", "ERR_NO_RES", "ERR_AUTH_FAILED", "ERR_HDL", "ERR_SEC"};
+typedef struct {
+    fixed_queue_t *connection_queue; /* Queue of connection */
+    esp_event_loop_handle_t event_loop_handle;
+} hidh_local_param_t;
 
-static inline void WAIT_DEV(esp_hidh_dev_t *dev)
+static hidh_local_param_t hidh_local_param;
+#define TRANS_TO 1000000 // us
+#define is_init() (hidh_local_param.event_loop_handle != NULL)
+
+#define get_protocol_mode(mode) (mode) ? "REPORT" : "BOOT"
+static const char *s_esp_hh_evt_names[] = {"INIT", "DEINIT", "OPEN", "CLOSE", "GET_RPT", "SET_RPT", "GET_PROTO", "SET_PROTO", "GET_IDLE", "SET_IDLE", "GET_DSCP", "ADD_DEV", "RMV_DEV", "VC_UNPLUG", "DATA", "DATA_IND", "SET_INFO"};
+static const char *s_esp_hh_status_names[] = {"OK",
+                                              "HS_HID_NOT_READY",
+                                              "HS_INVALID_RPT_ID",
+                                              "HS_TRANS_NOT_SPT",
+                                              "HS_INVALID_PARAM",
+                                              "HS_ERROR",
+                                              "ERR",
+                                              "ERR_SDP",
+                                              "ERR_PROTO",
+                                              "ERR_DB_FULL",
+                                              "ERR_TOD_UNSPT",
+                                              "ERR_NO_RES",
+                                              "ERR_AUTH_FAILED",
+                                              "ERR_HDL",
+                                              "ERR_SEC",
+                                              "BUSY",
+                                              "NO_DATA",
+                                              "NEED_INIT",
+                                              "NEED_DEINIT",
+                                              "NO_CONNECTION"};
+
+static esp_hidh_dev_t *hidh_dev_ctor(esp_bd_addr_t bda);
+
+static char *get_trans_type_str(esp_hid_trans_type_t trans_type)
 {
-    xSemaphoreTake(dev->semaphore, portMAX_DELAY);
+    switch (trans_type) {
+    case ESP_HID_TRANS_HANDSHAKE:
+        return "TRANS_HANDSHAKE";
+    case ESP_HID_TRANS_CONTROL:
+        return "TRANS_CONTROL";
+    case ESP_HID_TRANS_GET_REPORT:
+        return "TRANS_GET_REPORT";
+    case ESP_HID_TRANS_SET_REPORT:
+        return "TRANS_SET_REPORT";
+    case ESP_HID_TRANS_GET_PROTOCOL:
+        return "TRANS_GET_PROTOCOL";
+    case ESP_HID_TRANS_SET_PROTOCOL:
+        return "TRANS_SET_PROTOCOL";
+    case ESP_HID_TRANS_GET_IDLE:
+        return "TRANS_GET_IDLE";
+    case ESP_HID_TRANS_SET_IDLE:
+        return "TRANS_SET_IDLE";
+    case ESP_HID_TRANS_DATA:
+        return "TRANS_DATA";
+    case ESP_HID_TRANS_DATAC:
+        return "TRANS_DATAC";
+    case ESP_HID_TRANS_MAX:
+        return "TRANS_MAX";
+    default:
+        return "UNKOWN";
+    }
 }
 
-static inline void SEND_DEV(esp_hidh_dev_t *dev)
+static esp_err_t bt_hidh_get_status(esp_hidh_status_t status)
 {
-    xSemaphoreGive(dev->semaphore);
+    esp_err_t ret = ESP_OK;
+    switch (status) {
+    case ESP_HIDH_OK:
+        ret = ESP_OK;
+        break;
+    case ESP_HIDH_ERR_NO_RES:
+        ret = ESP_ERR_NO_MEM;
+        break;
+    default:
+        ret = ESP_FAIL;
+        break;
+    }
+    return ret;
 }
 
-static void bta_hh_cb(tBTA_HH_EVT event, tBTA_HH *p_data)
+static void utl_freebuf(void **p)
 {
-    static esp_hidh_dev_t *descr_dev = NULL;
+    if (*p != NULL) {
+        free(*p);
+        *p = NULL;
+    }
+}
+
+static void transaction_timeout_handler(void *arg)
+{
+    esp_hidh_dev_t *dev = (esp_hidh_dev_t *)arg;
+    if (dev != NULL && esp_hidh_dev_exists(dev)) {
+        ESP_LOGW(TAG, "transaction timeout!");
+        esp_hidh_dev_lock(dev);
+        dev->trans_type = ESP_HID_TRANS_MAX;
+        dev->report_id = 0;
+        dev->report_type = 0;
+        esp_hidh_dev_unlock(dev);
+    }
+}
+
+static inline void set_trans(esp_hidh_dev_t *dev, esp_hid_trans_type_t trans_type)
+{
+    dev->trans_type = trans_type;
+    if (dev->trans_timer == NULL) {
+        esp_timer_create_args_t config = {
+            .callback = &transaction_timeout_handler,
+            .arg = (void *)dev,
+            .name = "hid_trans"
+        };
+        if (esp_timer_create(&config, &dev->trans_timer) != ESP_OK) {
+            ESP_LOGE(TAG, "create trans timer failed! trans:%s", get_trans_type_str(trans_type));
+            return;
+        }
+    }
+    if (!esp_timer_is_active(dev->trans_timer) && esp_timer_start_once(dev->trans_timer, TRANS_TO) != ESP_OK) {
+        ESP_LOGE(TAG, "set trans timer failed! trans:%s", get_trans_type_str(trans_type));
+    }
+}
+
+static inline void reset_trans(esp_hidh_dev_t *dev)
+{
+    esp_hidh_dev_lock(dev);
+    dev->trans_type = ESP_HID_TRANS_MAX;
+    dev->report_id = 0;
+    dev->report_type = 0;
+    if (dev->trans_timer) {
+        esp_timer_stop(dev->trans_timer);
+    }
+    esp_hidh_dev_unlock(dev);
+}
+
+static inline bool is_trans_done(esp_hidh_dev_t *dev)
+{
+    bool ret = (dev->trans_type == ESP_HID_TRANS_MAX);
+    return ret;
+}
+
+static void free_local_param(void)
+{
+    if (hidh_local_param.event_loop_handle) {
+        esp_event_loop_delete(hidh_local_param.event_loop_handle);
+    }
+
+    if (hidh_local_param.connection_queue) {
+        fixed_queue_free(hidh_local_param.connection_queue, free);
+    }
+}
+
+static void open_failed_cb(esp_hidh_dev_t *dev, esp_hidh_status_t status, esp_hidh_event_data_t *p,
+                           size_t event_data_size)
+{
+    p->open.status = bt_hidh_get_status(status);
+    p->open.dev = dev;
+    if (dev != NULL) {
+        esp_hidh_dev_lock(dev);
+        if (dev->connected) {
+            esp_bt_hid_host_disconnect(dev->bda);
+        } else {
+            dev->in_use = false;
+        }
+        esp_hidh_dev_unlock(dev);
+    }
+    esp_event_post_to(hidh_local_param.event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_OPEN_EVENT, p, event_data_size,
+                      portMAX_DELAY);
+}
+
+static void esp_hh_cb(esp_hidh_cb_event_t event, esp_hidh_cb_param_t *param)
+{
+    conn_item_t *conn_item = NULL;
     esp_hidh_dev_t *dev = NULL;
+    esp_hidh_dev_report_t *report = NULL;
+    bool has_report_id = false;
+    size_t data_len = 0;
+    uint8_t *p_data = NULL;
+    esp_hidh_event_data_t p = {0};
+    esp_hidh_event_data_t *p_param = NULL;
+    size_t event_data_size = sizeof(esp_hidh_event_data_t);
+
     switch (event) {
-    case BTA_HH_ENABLE_EVT: {
-        if (p_data->status) {
-            ESP_LOGE(TAG, "ENABLE ERROR: %s", s_bta_hh_status_names[p_data->status]);
+    case ESP_HIDH_INIT_EVT: {
+        p.start.status = bt_hidh_get_status(param->init.status);
+        esp_event_post_to(hidh_local_param.event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_START_EVENT, &p,
+                          event_data_size, portMAX_DELAY);
+        if (param->init.status != ESP_HIDH_OK) {
+            ESP_LOGE(TAG, "ENABLE ERROR: %s", s_esp_hh_status_names[param->init.status]);
+            free_local_param();
         }
-    } break;
-    case BTA_HH_OPEN_EVT: {
-        dev = esp_hidh_dev_get_by_handle(p_data->conn.handle);
-        if (dev == NULL) {
-            ESP_LOGE(TAG, "OPEN ERROR: Device Not Found");
-            return;
-        }
-        dev->status = p_data->conn.status;
-        memcpy(dev->bda, p_data->conn.bda, sizeof(esp_bd_addr_t));
-        if (dev->status == BTA_HH_OK) {
-            descr_dev = dev;
-            BTA_HhGetDscpInfo(dev->bt.handle);
+        break;
+    }
+    case ESP_HIDH_DEINIT_EVT: {
+        p.stop.status = bt_hidh_get_status(param->deinit.status);
+        esp_event_post_to(hidh_local_param.event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_STOP_EVENT, &p,
+                          event_data_size, portMAX_DELAY);
+        if (param->deinit.status != ESP_HIDH_OK) {
+            ESP_LOGE(TAG, "DISABLE ERROR: %s", s_esp_hh_status_names[param->deinit.status]);
         } else {
-            ESP_LOGE(TAG, "OPEN ERROR: %s", s_bta_hh_status_names[dev->status]);
-            if (dev->opened) {
-                SEND_DEV(dev);
-            } else {
-                esp_hidh_dev_free(dev);
-            }
+            free_local_param();
+        }
+        break;
+    }
+    case ESP_HIDH_OPEN_EVT: {
+        if (param->open.conn_status == ESP_HIDH_CONN_STATE_CONNECTING) {
+            // ignore this conn_status
+            break;
         }
 
-    } break;
-    case BTA_HH_GET_DSCP_EVT: {
-        ESP_LOGV(TAG, "DESCRIPTOR: PID: 0x%04x, VID: 0x%04x, VERSION: 0x%04x, REPORT_LEN: %u", p_data->dscp_info.product_id, p_data->dscp_info.vendor_id, p_data->dscp_info.version, p_data->dscp_info.descriptor.dl_len);
-        if (descr_dev == NULL) {
-            ESP_LOGE(TAG, "Device Not Found");
-            return;
-        }
-        dev = descr_dev;
-        dev->config.product_id = p_data->dscp_info.product_id;
-        dev->config.vendor_id = p_data->dscp_info.vendor_id;
-        dev->config.version = p_data->dscp_info.version;
-
-
-        dev->config.report_maps_len = 1;
-        dev->config.report_maps = (esp_hid_raw_report_map_t *)malloc(dev->config.report_maps_len * sizeof(esp_hid_raw_report_map_t));
-        if (dev->config.report_maps == NULL) {
-            ESP_LOGE(TAG, "malloc report maps failed");
-            return;
-        }
-
-        dev->config.report_maps[0].data = (uint8_t *)malloc(p_data->dscp_info.descriptor.dl_len);
-        if (dev->config.report_maps[0].data == NULL) {
-            ESP_LOGE(TAG, "Malloc Report Map Failed");
-            dev->status = BTA_HH_ERR_NO_RES;
-        } else {
-            dev->config.report_maps[0].len = p_data->dscp_info.descriptor.dl_len;
-            memcpy((uint8_t *)dev->config.report_maps[0].data, p_data->dscp_info.descriptor.dsc_list, dev->config.report_maps[0].len);
-            //generate reports
-
-            if (dev->config.report_maps[0].len && dev->config.report_maps[0].data) {
-                esp_hid_report_map_t *map;
-                esp_hidh_dev_report_t *report;
-                esp_hid_report_item_t *r;
-                map = esp_hid_parse_report_map(dev->config.report_maps[0].data, dev->config.report_maps[0].len);
-                if (map) {
-                    if (dev->usage == 0) {
-                        dev->usage = map->usage;
-                    }
-                    dev->connected = true;
-                    dev->reports = NULL;
-                    for (uint8_t i = 0; i < map->reports_len; i++) {
-                        r = &map->reports[i];
-                        report = (esp_hidh_dev_report_t *)malloc(sizeof(esp_hidh_dev_report_t));
-                        if (report == NULL) {
-                            ESP_LOGE(TAG, "Malloc Report Failed");
-                            dev->status = BTA_HH_ERR_NO_RES;
-                            dev->connected = false;
+        do {
+            dev = esp_hidh_dev_get_by_bda(param->open.bd_addr);
+            if (dev == NULL) {
+                if (param->open.is_orig) {
+                    ESP_LOGE(TAG, "OPEN ERROR: Device Not Found");
+                    param->open.status = ESP_HIDH_NO_CONNECTION;
+                    break;
+                } else {
+                    ESP_LOGD(TAG, "incoming device connect");
+                    if (param->open.status == ESP_HIDH_OK) {
+                        if ((dev = hidh_dev_ctor(param->open.bd_addr)) == NULL) {
+                            ESP_LOGE(TAG, "%s create device failed!", __func__);
+                            param->open.status = ESP_HIDH_ERR_NO_RES;
                             break;
                         }
-                        report->map_index = 0;
-                        report->protocol_mode = r->protocol_mode;
-                        report->report_type = r->report_type;
-                        report->report_id = r->report_id;
-                        report->value_len = r->value_len;
-                        report->usage = r->usage;
-                        report->next = dev->reports;
-                        dev->reports = report;
+                        esp_hidh_dev_lock(dev);
+                        dev->opened = false; // not opened by ourself
+                        dev->is_orig = false;
+                        esp_hidh_dev_unlock(dev);
                     }
-                    dev->reports_len = map->reports_len;
-                    free(map->reports);
-                    free(map);
-                    map = NULL;
-                } else {
-                    ESP_LOGE(TAG, "Parse Report Map Failed");
-                    dev->status = BTA_HH_ERR;
                 }
             }
 
+            if (param->open.status != ESP_HIDH_OK) {
+                break;
+            }
+            esp_hidh_dev_lock(dev);
+            dev->connected = true;
+            dev->bt.handle = param->open.handle;
+            esp_hidh_dev_unlock(dev);
+            conn_item = malloc(sizeof(conn_item_t));
+            if (conn_item == NULL) {
+                ESP_LOGE(TAG, "conn_item malloc failed!");
+                param->open.status = ESP_HIDH_ERR_NO_RES;
+                break;
+            }
+            conn_item->dev = dev;
+            bool ret = fixed_queue_enqueue(hidh_local_param.connection_queue, conn_item, FIXED_QUEUE_MAX_TIMEOUT);
+            assert(ret == true);
+        } while (0);
+
+        if (param->open.status != ESP_HIDH_OK) {
+            ESP_LOGE(TAG, "OPEN ERROR: %s", s_esp_hh_status_names[param->open.status]);
+            open_failed_cb(dev, param->open.status, &p, event_data_size);
         }
-        descr_dev = NULL;
-        if (dev->status == BTA_HH_OK) {
-            BTA_HhAddDev(dev->bda, dev->bt.attr_mask, dev->bt.sub_class, dev->bt.app_id, p_data->dscp_info);
-        } else {
-            ESP_LOGE(TAG, "Read Report Map Failed, status: %s", s_bta_hh_status_names[dev->status]);
-            if (dev->opened) {
-                SEND_DEV(dev);
+
+        if (dev != NULL) {
+            esp_hidh_dev_lock(dev);
+            dev->status = param->open.status;
+            esp_hidh_dev_unlock(dev);
+        }
+        break;
+    }
+    case ESP_HIDH_GET_DSCP_EVT: {
+        do {
+            ESP_LOGV(TAG, "DESCRIPTOR: PID: 0x%04x, VID: 0x%04x, VERSION: 0x%04x, REPORT_LEN: %u",
+                     param->dscp.product_id, param->dscp.vendor_id, param->dscp.version, param->dscp.dl_len);
+            if ((conn_item = (conn_item_t *)fixed_queue_dequeue(hidh_local_param.connection_queue,
+                                                                FIXED_QUEUE_MAX_TIMEOUT)) == NULL) {
+                ESP_LOGE(TAG, "No pending connect device!");
+                param->dscp.status = ESP_HIDH_NO_CONNECTION;
+                break;
+            }
+            dev = conn_item->dev;
+            utl_freebuf((void **)&conn_item);
+            // in case the dev has been freed
+            if (!esp_hidh_dev_exists(dev)) {
+                ESP_LOGE(TAG, "Device Not Found");
+                dev = NULL;
+                param->dscp.status = ESP_HIDH_NO_CONNECTION;
+                break;
+            }
+            // check if connected
+            esp_hidh_dev_lock(dev);
+            if (!dev->connected) {
+                esp_hidh_dev_unlock(dev);
+                ESP_LOGE(TAG, "Connection has been released!");
+                param->dscp.status = ESP_HIDH_NO_CONNECTION;
+                break;
+            }
+            // check if get descriptor failed
+            if (param->dscp.status != ESP_HIDH_OK) {
+                esp_hidh_dev_unlock(dev);
+                ESP_LOGE(TAG, "GET_DSCP ERROR: %s", s_esp_hh_status_names[param->dscp.status]);
+                break;
+            }
+            dev->added = param->dscp.added;
+            dev->config.product_id = param->dscp.product_id;
+            dev->config.vendor_id = param->dscp.vendor_id;
+            dev->config.version = param->dscp.version;
+
+            dev->config.report_maps_len = 1;
+            dev->config.report_maps =
+                (esp_hid_raw_report_map_t *)malloc(dev->config.report_maps_len * sizeof(esp_hid_raw_report_map_t));
+            if (dev->config.report_maps == NULL) {
+                esp_hidh_dev_unlock(dev);
+                ESP_LOGE(TAG, "malloc report maps failed");
+                param->dscp.status = ESP_HIDH_ERR_NO_RES;
+                break;
+            }
+
+            dev->config.report_maps[0].data = (uint8_t *)malloc(param->dscp.dl_len);
+            if (dev->config.report_maps[0].data == NULL) {
+                ESP_LOGE(TAG, "Malloc Report Map Failed");
+                param->dscp.status = ESP_HIDH_ERR_NO_RES;
             } else {
-                esp_hidh_dev_free(dev);
+                dev->config.report_maps[0].len = param->dscp.dl_len;
+                memcpy((uint8_t *)dev->config.report_maps[0].data, param->dscp.dsc_list,
+                       dev->config.report_maps[0].len);
+                // generate reports
+
+                if (dev->config.report_maps[0].len && dev->config.report_maps[0].data) {
+                    esp_hid_report_map_t *map;
+                    esp_hidh_dev_report_t *report;
+                    esp_hid_report_item_t *r;
+                    map = esp_hid_parse_report_map(dev->config.report_maps[0].data, dev->config.report_maps[0].len);
+                    if (map) {
+                        if (dev->usage == 0) {
+                            dev->usage = map->usage;
+                        }
+                        dev->reports = NULL;
+                        for (uint8_t i = 0; i < map->reports_len; i++) {
+                            r = &map->reports[i];
+                            report = (esp_hidh_dev_report_t *)malloc(sizeof(esp_hidh_dev_report_t));
+                            if (report == NULL) {
+                                ESP_LOGE(TAG, "Malloc Report Failed");
+                                param->dscp.status = ESP_HIDH_ERR_NO_RES;
+                                break;
+                            }
+                            report->map_index = 0;
+                            report->protocol_mode = r->protocol_mode;
+                            report->report_type = r->report_type;
+                            report->report_id = r->report_id;
+                            report->value_len = r->value_len;
+                            report->usage = r->usage;
+                            report->next = dev->reports;
+                            dev->reports = report;
+                        }
+                        dev->reports_len = map->reports_len;
+                        free(map->reports);
+                        free(map);
+                        map = NULL;
+                    } else {
+                        ESP_LOGE(TAG, "Parse Report Map Failed");
+                        param->dscp.status = ESP_HIDH_ERR;
+                    }
+                }
+            }
+            esp_hidh_dev_unlock(dev);
+        } while (0);
+
+        if (param->dscp.status != ESP_HIDH_OK) {
+            open_failed_cb(dev, param->dscp.status, &p, event_data_size);
+        }
+
+        if (dev != NULL) {
+            esp_hidh_dev_lock(dev);
+            dev->status = param->dscp.status;
+            // if has been added by lower layer, tell up layer
+            if (dev->status == ESP_HIDH_OK && dev->connected && dev->added) {
+                p.open.status = bt_hidh_get_status(ESP_HIDH_OK);
+                p.open.dev = dev;
+                esp_hidh_dev_unlock(dev);
+                esp_event_post_to(hidh_local_param.event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_OPEN_EVENT, &p,
+                                  event_data_size, portMAX_DELAY);
+            } else {
+                esp_hidh_dev_unlock(dev);
             }
         }
-    } break;
-    case BTA_HH_ADD_DEV_EVT: {
-        ESP_LOGV(TAG, "ADD_DEV: BDA: " ESP_BD_ADDR_STR ", handle: %d, status: %s", ESP_BD_ADDR_HEX(p_data->dev_info.bda), p_data->dev_info.handle, s_bta_hh_status_names[p_data->dev_info.status]);
-        dev = esp_hidh_dev_get_by_handle(p_data->conn.handle);
-        if (dev == NULL) {
-            ESP_LOGE(TAG, "Device Not Found");
-            return;
-        }
-        dev->status = p_data->conn.status;
-        if (dev->status == BTA_HH_OK) {
-            esp_hidh_event_data_t p;
-            p.open.dev = dev;
-            esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_OPEN_EVENT, &p, sizeof(esp_hidh_event_data_t), portMAX_DELAY);
-        } else {
-            ESP_LOGE(TAG, "Device Add Failed, status: %s", s_bta_hh_status_names[dev->status]);
-        }
-        if (dev->opened) {
-            SEND_DEV(dev);
-        } else if (dev->status != BTA_HH_OK) {
-            esp_hidh_dev_free(dev);
-        }
-    } break;
-    case BTA_HH_CLOSE_EVT: {
-        ESP_LOGV(TAG, "CLOSE: handle: %d, status: %s", p_data->dev_status.handle, s_bta_hh_status_names[p_data->dev_status.status]);
-        dev = esp_hidh_dev_get_by_handle(p_data->dev_status.handle);
-        if (dev == NULL) {
-            ESP_LOGE(TAG, "Device Not Found");
-            return;
-        }
-        dev->status = p_data->dev_status.status;
-        esp_hidh_event_data_t p;
-        p.close.dev = dev;
-        p.close.reason = 0;
-        esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_CLOSE_EVENT, &p, sizeof(esp_hidh_event_data_t), portMAX_DELAY);
-    } break;
-    case BTA_HH_SET_RPT_EVT: {
-        dev = esp_hidh_dev_get_by_handle(p_data->dev_status.handle);
-        if (dev == NULL) {
-            ESP_LOGE(TAG, "SET_RPT ERROR: hDevice Not Found");
-            return;
-        }
-        if (p_data->dev_status.status) {
-            ESP_LOGE(TAG, "SET_RPT ERROR: handle: %d, status: %s", p_data->dev_status.handle, s_bta_hh_status_names[p_data->dev_status.status]);
-        }
-        dev->status = p_data->dev_status.status;
-        SEND_DEV(dev);
-    } break;
-    case BTA_HH_GET_RPT_EVT: {
-        dev = esp_hidh_dev_get_by_handle(p_data->hs_data.handle);
-        if (dev == NULL) {
-            ESP_LOGE(TAG, "Device Not Found");
-            return;
-        }
-        if (p_data->hs_data.status) {
-            ESP_LOGE(TAG, "GET_RPT ERROR: handle: %d, status: %s", p_data->hs_data.handle, s_bta_hh_status_names[p_data->hs_data.status]);
-        }
-        dev->status = p_data->hs_data.status;
-        BT_HDR *rpt = p_data->hs_data.rsp_data.p_rpt_data;
-        dev->tmp = rpt->data + rpt->offset;
-        dev->tmp_len = rpt->len;
-        SEND_DEV(dev);
-    } break;
-    default:
-        ESP_LOGV(TAG, "BTA_HH EVENT: %s", s_bta_hh_evt_names[event]);
         break;
+    }
+    case ESP_HIDH_ADD_DEV_EVT: {
+        ESP_LOGV(TAG, "ADD_DEV: BDA: " ESP_BD_ADDR_STR ", handle: %d, status: %s",
+                 ESP_BD_ADDR_HEX(param->add_dev.bd_addr), param->add_dev.handle,
+                 s_esp_hh_status_names[param->add_dev.status]);
+        do {
+            dev = esp_hidh_dev_get_by_handle(param->add_dev.handle);
+            if (dev == NULL) {
+                ESP_LOGE(TAG, "Device Not Found");
+                param->add_dev.status = ESP_HIDH_NO_CONNECTION;
+                break;
+            }
+            esp_hidh_dev_lock(dev);
+            dev->added = param->add_dev.status == ESP_HIDH_OK ? true : false;
+            esp_hidh_dev_unlock(dev);
+        } while(0);
+
+        if (param->add_dev.status != ESP_HIDH_OK) {
+            ESP_LOGE(TAG, "ADD_DEV ERROR: %s", s_esp_hh_status_names[param->add_dev.status]);
+            open_failed_cb(dev, param->add_dev.status, &p, event_data_size);
+        }
+        if (dev != NULL) {
+            esp_hidh_dev_lock(dev);
+            dev->status = param->add_dev.status;
+            if (dev->status == ESP_HIDH_OK && dev->connected && dev->added) {
+                p.open.status = bt_hidh_get_status(ESP_HIDH_OK);
+                p.open.dev = dev;
+                esp_hidh_dev_unlock(dev);
+                esp_event_post_to(hidh_local_param.event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_OPEN_EVENT, &p,
+                                  event_data_size, portMAX_DELAY);
+            } else {
+                esp_hidh_dev_unlock(dev);
+            }
+        }
+        break;
+    }
+    case ESP_HIDH_CLOSE_EVT: {
+        if (param->close.conn_status == ESP_HIDH_CONN_STATE_DISCONNECTING) {
+            // ignore this conn_status
+            break;
+        }
+        ESP_LOGV(TAG, "CLOSE: handle: %d, status: %s", param->close.handle, s_esp_hh_status_names[param->close.status]);
+        do {
+            dev = esp_hidh_dev_get_by_handle(param->close.handle);
+            if (dev == NULL) {
+                ESP_LOGE(TAG, "Device Not Found");
+                param->close.status = ESP_HIDH_NO_CONNECTION;
+                break;
+            }
+            esp_hidh_dev_lock(dev);
+            dev->status = param->close.status;
+            if (dev->connected) {
+                dev->connected = false;
+            }
+            // free the device in the wrapper event handler
+            dev->in_use = false;
+            esp_hidh_dev_unlock(dev);
+        } while(0);
+
+        if (param->close.status != ESP_HIDH_OK) {
+            ESP_LOGE(TAG, "CLOSE ERROR: %s", s_esp_hh_status_names[param->close.status]);
+        }
+        p.close.dev = dev;
+        p.close.status = bt_hidh_get_status(param->close.status);
+        esp_event_post_to(hidh_local_param.event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_CLOSE_EVENT, &p,
+                          event_data_size, portMAX_DELAY);
+
+        break;
+    }
+    case ESP_HIDH_SET_RPT_EVT: {
+        if (param->set_rpt.status != ESP_HIDH_OK) {
+            ESP_LOGE(TAG, "SET_RPT ERROR: handle: %d, status: %s", param->set_rpt.handle,
+                     s_esp_hh_status_names[param->set_rpt.status]);
+        }
+        dev = esp_hidh_dev_get_by_handle(param->set_rpt.handle);
+        if (dev == NULL) {
+            ESP_LOGE(TAG, "SET_RPT ERROR: Device Not Found");
+            break;
+        }
+        esp_hidh_dev_lock(dev);
+        dev->status = param->set_rpt.status;
+        p.feature.dev = dev;
+        esp_hidh_dev_unlock(dev);
+        p.feature.status = bt_hidh_get_status(param->set_rpt.status);
+        p.feature.trans_type = ESP_HID_TRANS_SET_REPORT;
+        esp_event_post_to(hidh_local_param.event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_FEATURE_EVENT, &p,
+                          event_data_size, portMAX_DELAY);
+        reset_trans(dev);
+        break;
+    }
+    case ESP_HIDH_GET_RPT_EVT: {
+        if (param->get_rpt.status != ESP_HIDH_OK) {
+            ESP_LOGE(TAG, "GET_RPT ERROR: handle: %d, status: %s", param->get_rpt.handle,
+                     s_esp_hh_status_names[param->get_rpt.status]);
+        } else if (param->get_rpt.len > 0 && param->get_rpt.data) {
+            event_data_size += param->get_rpt.len;
+        }
+        dev = esp_hidh_dev_get_by_handle(param->get_rpt.handle);
+        if (dev == NULL) {
+            ESP_LOGE(TAG, "GET_RPT ERROR: Device Not Found");
+            break;
+        }
+        esp_hidh_dev_lock(dev);
+        dev->status = param->get_rpt.status;
+        if ((p_param = (esp_hidh_event_data_t *)malloc(event_data_size)) != NULL) {
+            memset(p_param, 0, event_data_size);
+            p_param->feature.dev = dev;
+            p_param->feature.status = bt_hidh_get_status(param->get_rpt.status);
+            p_param->feature.trans_type = ESP_HID_TRANS_GET_REPORT;
+            if (param->get_rpt.status == ESP_HIDH_OK && param->get_rpt.len > 0 && param->get_rpt.data) {
+                if (dev->report_id) {
+                    data_len = param->get_rpt.len - 1;
+                    p_data = (uint8_t *)param->get_rpt.data + 1;
+                } else {
+                    data_len = param->get_rpt.len;
+                    p_data = (uint8_t *)param->get_rpt.data;
+                }
+                memcpy(((uint8_t *)p_param) + sizeof(esp_hidh_event_data_t), p_data, data_len);
+                p_param->feature.length = data_len;
+                p_param->feature.data = p_data;
+                p_param->feature.report_id = dev->report_id;
+                esp_hidh_dev_unlock(dev);
+            }
+            esp_event_post_to(hidh_local_param.event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_FEATURE_EVENT, p_param,
+                              event_data_size, portMAX_DELAY);
+        } else {
+            esp_hidh_dev_unlock(dev);
+            ESP_LOGE(TAG, "GET_RPT ERROR: malloc event data failed!");
+        }
+        reset_trans(dev);
+        break;
+    }
+    case ESP_HIDH_GET_IDLE_EVT:{
+        if (param->get_idle.status != ESP_HIDH_OK) {
+            ESP_LOGE(TAG, "GET_IDLE ERROR: handle: %d, status: %s", param->get_idle.handle,
+                     s_esp_hh_status_names[param->get_idle.status]);
+        } else {
+            event_data_size += 1;
+        }
+        dev = esp_hidh_dev_get_by_handle(param->get_idle.handle);
+        if (dev == NULL) {
+            ESP_LOGE(TAG, "GET_IDLE ERROR: Device Not Found");
+            break;
+        }
+        esp_hidh_dev_lock(dev);
+        dev->status = param->get_idle.status;
+        if ((p_param = (esp_hidh_event_data_t *)malloc(event_data_size)) != NULL) {
+            memset(p_param, 0, event_data_size);
+            p_param->feature.dev = dev;
+            p_param->feature.status = bt_hidh_get_status(param->get_idle.status);
+            p_param->feature.trans_type = ESP_HID_TRANS_GET_IDLE;
+            if (param->get_idle.status == ESP_HIDH_OK) {
+                *(((uint8_t *)p_param) + sizeof(esp_hidh_event_data_t)) = param->get_idle.idle_rate;
+                p_param->feature.length = 1;
+                p_param->feature.data = ((uint8_t *)p_param) + sizeof(esp_hidh_event_data_t);
+            }
+            esp_hidh_dev_unlock(dev);
+            esp_event_post_to(hidh_local_param.event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_FEATURE_EVENT, p_param,
+                              event_data_size, portMAX_DELAY);
+        } else {
+            esp_hidh_dev_unlock(dev);
+            ESP_LOGE(TAG, "GET_IDLE ERROR: malloc event data failed!");
+        }
+        reset_trans(dev);
+        break;
+    }
+    case ESP_HIDH_SET_IDLE_EVT: {
+        if (param->set_idle.status != ESP_HIDH_OK) {
+            ESP_LOGE(TAG, "SET_IDLE ERROR: handle: %d, status: %s", param->set_idle.handle,
+                     s_esp_hh_status_names[param->set_idle.status]);
+        }
+        dev = esp_hidh_dev_get_by_handle(param->set_idle.handle);
+        if (dev == NULL) {
+            ESP_LOGE(TAG, "SET_IDLE ERROR: Device Not Found");
+            break;
+        }
+        esp_hidh_dev_lock(dev);
+        dev->status = param->set_idle.status;
+        p.feature.dev = dev;
+        esp_hidh_dev_unlock(dev);
+        p.feature.status = bt_hidh_get_status(param->set_idle.status);
+        p.feature.trans_type = ESP_HID_TRANS_SET_IDLE;
+        esp_event_post_to(hidh_local_param.event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_FEATURE_EVENT, &p,
+                          event_data_size, portMAX_DELAY);
+        reset_trans(dev);
+        break;
+    }
+    case ESP_HIDH_GET_PROTO_EVT: {
+        if (param->get_proto.status != ESP_HIDH_OK) {
+            ESP_LOGE(TAG, "GET_PROTO ERROR: handle: %d, status: %s", param->get_proto.handle,
+                     s_esp_hh_status_names[param->get_proto.status]);
+        } else {
+            event_data_size += 1;
+        }
+        dev = esp_hidh_dev_get_by_handle(param->get_proto.handle);
+        if (dev == NULL) {
+            ESP_LOGE(TAG, "GET_PROTO ERROR: Device Not Found");
+            break;
+        }
+        esp_hidh_dev_lock(dev);
+        dev->status = param->get_proto.status;
+        if ((p_param = (esp_hidh_event_data_t *)malloc(event_data_size)) != NULL) {
+            memset(p_param, 0, event_data_size);
+            p_param->feature.dev = dev;
+            p_param->feature.status = bt_hidh_get_status(param->get_proto.status);
+            p_param->feature.trans_type = ESP_HID_TRANS_GET_PROTOCOL;
+            if (param->get_proto.status == ESP_HIDH_OK) {
+                dev->protocol_mode = param->get_proto.proto_mode; // update the device protocol mode
+                *(((uint8_t *)p_param) + sizeof(esp_hidh_event_data_t)) = param->get_proto.proto_mode;
+                p_param->feature.length = 1;
+                p_param->feature.data = ((uint8_t *)p_param) + sizeof(esp_hidh_event_data_t);
+            }
+            esp_hidh_dev_unlock(dev);
+            esp_event_post_to(hidh_local_param.event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_FEATURE_EVENT, p_param,
+                              event_data_size, portMAX_DELAY);
+        } else {
+            esp_hidh_dev_unlock(dev);
+            ESP_LOGE(TAG, "GET_PROTO ERROR: malloc event data failed!");
+        }
+        reset_trans(dev);
+        break;
+    }
+    case ESP_HIDH_SET_PROTO_EVT: {
+        if (param->set_proto.status != ESP_HIDH_OK) {
+            ESP_LOGE(TAG, "SET_PROTO ERROR: handle: %d, status: %s", param->set_proto.handle,
+                     s_esp_hh_status_names[param->set_proto.status]);
+        }
+        dev = esp_hidh_dev_get_by_handle(param->set_proto.handle);
+        if (dev == NULL) {
+            ESP_LOGE(TAG, "Device Not Found");
+            break;
+        }
+        esp_hidh_dev_lock(dev);
+        dev->status = param->set_proto.status;
+        p.feature.dev = dev;
+        esp_hidh_dev_unlock(dev);
+        p.feature.status = bt_hidh_get_status(param->set_proto.status);
+        p.feature.trans_type = ESP_HID_TRANS_SET_PROTOCOL;
+        esp_event_post_to(hidh_local_param.event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_FEATURE_EVENT, &p,
+                          event_data_size, portMAX_DELAY);
+        reset_trans(dev);
+        break;
+    }
+    case ESP_HIDH_DATA_IND_EVT: {
+        esp_hid_usage_t _usage;
+        if (param->data_ind.status != ESP_HIDH_OK) {
+            ESP_LOGE(TAG, "DATA_IND ERROR: handle: %d, status: %s", param->data_ind.handle,
+                     s_esp_hh_status_names[param->data_ind.status]);
+        }
+        dev = esp_hidh_dev_get_by_handle(param->data_ind.handle);
+        if (dev == NULL) {
+            ESP_LOGE(TAG, "Device Not Found: handle %u", param->data_ind.handle);
+            break;
+        }
+
+        if (param->data_ind.len > 0 && param->data_ind.data != NULL) {
+            esp_hidh_dev_lock(dev);
+            event_data_size += param->data_ind.len;
+            if (param->data_ind.proto_mode == ESP_HID_PROTOCOL_MODE_BOOT) {
+                /**
+                 * first data shall have report_id, according to HID_SPEC_V10
+                 * | Device   | Report ID | Report Size |
+                 * --------------------------------------
+                 * | Keyboard | 1         | 9 Bytes     |
+                 * | Mouse    | 2         | 4 Bytes     |
+                 * | Reserved | 0, 3-255  | N/A         |
+                 */
+                if (param->data_ind.len == 9 && *(param->data_ind.data) == 1) {
+                    has_report_id = true;
+                    _usage = ESP_HID_USAGE_KEYBOARD;
+                } else if (param->data_ind.len == 4 && *(param->data_ind.data) == 2) {
+                    has_report_id = true;
+                    _usage = ESP_HID_USAGE_MOUSE;
+                } else {
+                    esp_hidh_dev_unlock(dev);
+                    ESP_LOGE(TAG, "Invalid Boot Report format, rpt_len:%d, rpt_id:%d!", param->data_ind.len,
+                             *(param->data_ind.data));
+                    break;
+                }
+            } else {
+                report = esp_hidh_dev_get_input_report_by_proto_and_data(
+                    dev, ESP_HID_PROTOCOL_MODE_REPORT, param->data_ind.len, param->data_ind.data, &has_report_id);
+                if (report == NULL) {
+                    esp_hidh_dev_unlock(dev);
+                    ESP_LOGE(TAG, "Not find report handle: %d mode: %s", param->data_ind.handle,
+                             param->data_ind.proto_mode == ESP_HID_PROTOCOL_MODE_REPORT ? "REPORT" : "BOOT");
+                    break;
+                }
+                _usage = report->usage;
+            }
+
+            if ((p_param = (esp_hidh_event_data_t *)malloc(event_data_size)) == NULL) {
+                esp_hidh_dev_unlock(dev);
+                ESP_LOGE(TAG, "DATA_IND ERROR: malloc event data failed!");
+                break;
+            }
+            memset(p_param, 0, event_data_size);
+            p_param->input.dev = dev;
+            p_param->input.usage = _usage;
+            if (has_report_id) {
+                data_len = param->data_ind.len - 1;
+                p_data = (uint8_t *)param->data_ind.data + 1;
+                p_param->input.report_id = *(uint8_t *)param->data_ind.data;
+            } else {
+                data_len = param->data_ind.len;
+                p_data = (uint8_t *)param->data_ind.data;
+                p_param->input.report_id = report->report_id;
+            }
+            memcpy(((uint8_t *)p_param) + sizeof(esp_hidh_event_data_t), p_data, data_len);
+            p_param->input.length = data_len;
+            p_param->input.data = p_data;
+            esp_hidh_dev_unlock(dev);
+            esp_event_post_to(hidh_local_param.event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_INPUT_EVENT, p_param,
+                              event_data_size, portMAX_DELAY);
+        }
+        break;
+    }
+    case ESP_HIDH_DATA_EVT:
+        break;
+    default:
+        ESP_LOGV(TAG, "BTA_HH EVENT: %s", s_esp_hh_evt_names[event]);
+        break;
+    }
+
+    if (p_param) {
+        free(p_param);
+        p_param = NULL;
     }
 }
 
@@ -225,91 +746,244 @@ static void bta_hh_cb(tBTA_HH_EVT event, tBTA_HH *p_data)
 
 static esp_err_t esp_bt_hidh_dev_close(esp_hidh_dev_t *dev)
 {
-    BTA_HhClose(dev->bt.handle);
-    return ESP_OK;
+    esp_err_t ret = ESP_OK;
+    do {
+        if (dev == NULL) {
+            ret = ESP_ERR_INVALID_ARG;
+            break;
+        }
+        if (!dev->connected) {
+            ESP_LOGW(TAG, "%s hdl:0x%02x not connected", __func__, dev->bt.handle);
+            ret = ESP_ERR_INVALID_STATE;
+            break;
+        }
+        ret = esp_bt_hid_host_disconnect(dev->bda);
+    } while (0);
+    return ret;
 }
 
-static esp_err_t esp_bt_hidh_dev_report_write(esp_hidh_dev_t *dev, size_t map_index, size_t report_id, int report_type, uint8_t *data, size_t len)
+static esp_err_t esp_bt_hidh_dev_report_write(esp_hidh_dev_t *dev, size_t map_index, size_t report_id,
+                                              int report_type, uint8_t *data, size_t len)
 {
-    esp_hidh_dev_report_t *report = esp_hidh_dev_get_report_by_id_and_type(dev, map_index, report_id, report_type);
-    if (!report) {
-        ESP_LOGE(TAG, "%s report %d not found", esp_hid_report_type_str(report_type), report_id);
-        return ESP_FAIL;
-    }
-    if (len > report->value_len) {
-        ESP_LOGE(TAG, "%s report %d takes maximum %d bytes. you have provided %d", esp_hid_report_type_str(report_type), report_id, report->value_len, len);
-        return ESP_FAIL;
-    }
+    esp_err_t ret = ESP_OK;
+    uint8_t *p_data = NULL;
+    do {
+        esp_hidh_dev_report_t *report =
+            esp_hidh_dev_get_report_by_id_type_proto(dev, map_index, report_id, report_type, dev->protocol_mode);
+        if (!report) {
+            ESP_LOGE(TAG, "mode:%s report:%s id:%d not found", get_protocol_mode(dev->protocol_mode),
+                     esp_hid_report_type_str(report_type), report_id);
+            ret = ESP_FAIL;
+            break;
+        }
+        if (len > report->value_len) {
+            ESP_LOGE(TAG, "%s report %d takes maximum %d bytes. you have provided %d",
+                     esp_hid_report_type_str(report_type), report_id, report->value_len, len);
+            ret = ESP_FAIL;
+            break;
+        }
 
-#define BT_HDR_HID_DATA_OFFSET 14 //this equals to L2CAP_MIN_OFFSET + 1 (1 byte to hold the HID transaction header)
+        if (report_type != ESP_HID_REPORT_TYPE_OUTPUT) {
+            ESP_LOGE(TAG,
+                     "Only OUTPUT type data can be send on interrupt channel.\n" \
+                     "You have provided %s, try Set_Report!",
+                     esp_hid_report_type_str(report_type));
+            ret = ESP_FAIL;
+            break;
+        }
 
-    uint8_t *pbuf_data;
-    BT_HDR *p_buf = (BT_HDR *)malloc((uint16_t) (len + 1 + BT_HDR_HID_DATA_OFFSET + sizeof(BT_HDR)));
-
-    if (p_buf == NULL) {
-        ESP_LOGE(TAG, "Could not allocate BT_HDR buffer");
-        return ESP_ERR_NO_MEM;
-    }
-
-    p_buf->len = len + 1;
-    p_buf->offset = BT_HDR_HID_DATA_OFFSET;
-
-    pbuf_data = (uint8_t *) (p_buf + 1) + p_buf->offset;
-    pbuf_data[0] = report_id;
-    memcpy(pbuf_data + 1, data, len);
-
-    if (report_type == ESP_HID_REPORT_TYPE_OUTPUT) {
-        p_buf->layer_specific = BTA_HH_RPTT_OUTPUT;
-        BTA_HhSendData(dev->bt.handle, dev->bda, p_buf);
-    } else {
-        BTA_HhSetReport(dev->bt.handle, report_type, p_buf);
-        WAIT_DEV(dev);
-    }
-    if (dev->status) {
-        ESP_LOGE(TAG, "Write %s: %s", esp_hid_report_type_str(report_type), s_bta_hh_status_names[dev->status]);
-        return ESP_FAIL;
-    }
-    return ESP_OK;
+        if (report_id) {
+            if ((p_data = malloc(len + 1)) == NULL) {
+                ESP_LOGE(TAG, "%s malloc failed!", __func__);
+                ret = ESP_FAIL;
+                break;
+            }
+            *p_data = report_id;
+            memcpy(p_data + 1, data, len);
+            data = p_data;
+            len = len + 1;
+        }
+        ret = esp_bt_hid_host_send_data(dev->bda, data, len);
+    } while (0);
+    return ret;
 }
 
-static esp_err_t esp_bt_hidh_dev_report_read(esp_hidh_dev_t *dev, size_t map_index, size_t report_id, int report_type, size_t max_length, uint8_t *value, size_t *value_len)
+static esp_err_t esp_bt_hidh_dev_set_report(esp_hidh_dev_t *dev, size_t map_index, size_t report_id,
+                                            int report_type, uint8_t *data, size_t len)
 {
-    esp_hidh_dev_report_t *report = esp_hidh_dev_get_report_by_id_and_type(dev, map_index, report_id, report_type);
-    if (!report) {
-        ESP_LOGE(TAG, "%s report %d not found", esp_hid_report_type_str(report_type), report_id);
-        return ESP_FAIL;
-    }
-    BTA_HhGetReport(dev->bt.handle, report_type, report_id, max_length);
-    if (xSemaphoreTake(dev->semaphore, 500 / portTICK_PERIOD_MS) != pdTRUE) {
-        ESP_LOGE(TAG, "Read Timeout %s", esp_hid_report_type_str(report_type));
-        return ESP_FAIL;
-    }
-    if (dev->status) {
-        ESP_LOGE(TAG, "Read %s: %s", esp_hid_report_type_str(report_type), s_bta_hh_status_names[dev->status]);
-        return ESP_FAIL;
-    }
-    if (report_id) {
-        dev->tmp++;
-        dev->tmp_len--;
-    }
-    if (dev->tmp_len > max_length) {
-        dev->tmp_len = max_length;
-    }
-    *value_len = dev->tmp_len;
-    memcpy(value, dev->tmp, dev->tmp_len);
-    return ESP_OK;
+    esp_err_t ret = ESP_OK;
+    uint8_t *p_data = NULL;
+    esp_hidh_dev_report_t *report = NULL;
+    do {
+        if (!is_trans_done(dev)) {
+            ESP_LOGE(TAG, "Pending previous tansaction %s done, try later!", get_trans_type_str(dev->trans_type));
+            ret = ESP_FAIL;
+            break;
+        }
+        report = esp_hidh_dev_get_report_by_id_type_proto(dev, map_index, report_id, report_type, dev->protocol_mode);
+        if (!report) {
+            ESP_LOGE(TAG, "mode:%s report:%s id:%d not found", get_protocol_mode(dev->protocol_mode),
+                     esp_hid_report_type_str(report_type), report_id);
+            ret = ESP_FAIL;
+            break;
+        }
+        if (len > report->value_len) {
+            ESP_LOGE(TAG, "%s report %d takes maximum %d bytes. you have provided %d",
+                     esp_hid_report_type_str(report_type), report_id, report->value_len, len);
+            ret = ESP_FAIL;
+            break;
+        }
+
+        if (report_id) {
+            if ((p_data = malloc(len + 1)) == NULL) {
+                ESP_LOGE(TAG, "%s malloc failed!", __func__);
+                ret = ESP_FAIL;
+                break;
+            }
+            *p_data = report_id;
+            memcpy(p_data + 1, data, len);
+            data = p_data;
+            len = len + 1;
+        }
+        ret = esp_bt_hid_host_set_report(dev->bda, report_type, data, len);
+        if (ret == ESP_OK) {
+            set_trans(dev, ESP_HID_TRANS_SET_REPORT);
+        }
+    } while (0);
+    return ret;
+}
+
+static esp_err_t esp_bt_hidh_dev_report_read(esp_hidh_dev_t *dev, size_t map_index, size_t report_id, int report_type,
+                                             size_t max_length, uint8_t *value, size_t *value_len)
+{
+    esp_err_t ret = ESP_OK;
+    esp_hidh_dev_report_t *report = NULL;
+    do {
+        if (!is_trans_done(dev)) {
+            ESP_LOGE(TAG, "Pending previous tansaction %s done, try later!", get_trans_type_str(dev->trans_type));
+            ret = ESP_FAIL;
+            break;
+        }
+        report = esp_hidh_dev_get_report_by_id_type_proto(dev, map_index, report_id, report_type, dev->protocol_mode);
+        if (!report) {
+            ESP_LOGE(TAG, "mode:%s report:%s id:%d not found", get_protocol_mode(dev->protocol_mode),
+                     esp_hid_report_type_str(report_type), report_id);
+            ret = ESP_FAIL;
+            break;
+        }
+        ret = esp_bt_hid_host_get_report(dev->bda, report_type, report_id, max_length);
+        if (ret == ESP_OK) {
+            dev->trans_type = ESP_HID_TRANS_GET_REPORT;
+            dev->report_id = report_id;
+            dev->report_type = report_type;
+        }
+    } while (0);
+    return ret;
+}
+
+static esp_err_t esp_bt_hidh_dev_get_idle(esp_hidh_dev_t *dev)
+{
+    esp_err_t ret = ESP_OK;
+    do {
+        if (!is_trans_done(dev)) {
+            ESP_LOGE(TAG, "Pending previous tansaction %s done, try later!", get_trans_type_str(dev->trans_type));
+            ret = ESP_FAIL;
+            break;
+        }
+        if (!dev->connected) {
+            ESP_LOGW(TAG, "%s hdl:0x%02x not connected", __func__, dev->bt.handle);
+            ret = ESP_ERR_INVALID_STATE;
+            break;
+        }
+        ret = esp_bt_hid_host_get_idle(dev->bda);
+        if (ret == ESP_OK) {
+            set_trans(dev, ESP_HID_TRANS_GET_IDLE);
+        }
+    } while(0);
+
+    return ret;
+}
+
+static esp_err_t esp_bt_hidh_dev_set_idle(esp_hidh_dev_t *dev, uint8_t idle_time)
+{
+    esp_err_t ret = ESP_OK;
+    do {
+        if (!is_trans_done(dev)) {
+            ESP_LOGE(TAG, "Pending previous tansaction %s done, try later!", get_trans_type_str(dev->trans_type));
+            ret = ESP_FAIL;
+            break;
+        }
+        if (!dev->connected) {
+            ESP_LOGW(TAG, "%s hdl:0x%02x not connected", __func__, dev->bt.handle);
+            ret = ESP_ERR_INVALID_STATE;
+            break;
+        }
+        ret = esp_bt_hid_host_set_idle(dev->bda, idle_time);
+        if (ret == ESP_OK) {
+            set_trans(dev, ESP_HID_TRANS_SET_IDLE);
+        }
+    } while(0);
+
+    return ret;
+}
+
+static esp_err_t esp_bt_hidh_dev_get_protocol(esp_hidh_dev_t *dev)
+{
+    esp_err_t ret = ESP_OK;
+    do {
+        if (!is_trans_done(dev)) {
+            ESP_LOGE(TAG, "Pending previous tansaction %s done, try later!", get_trans_type_str(dev->trans_type));
+            ret = ESP_FAIL;
+            break;
+        }
+        if (!dev->connected) {
+            ESP_LOGW(TAG, "%s hdl:0x%02x not connected", __func__, dev->bt.handle);
+            ret = ESP_ERR_INVALID_STATE;
+            break;
+        }
+        ret = esp_bt_hid_host_get_protocol(dev->bda);
+        if (ret == ESP_OK) {
+            set_trans(dev, ESP_HID_TRANS_GET_PROTOCOL);
+        }
+    } while(0);
+
+    return ret;
+}
+
+static esp_err_t esp_bt_hidh_dev_set_protocol(esp_hidh_dev_t *dev, uint8_t protocol_mode)
+{
+    esp_err_t ret = ESP_OK;
+
+    do {
+        if (!is_trans_done(dev)) {
+            ESP_LOGE(TAG, "Pending previous tansaction %s done, try later!", get_trans_type_str(dev->trans_type));
+            ret = ESP_FAIL;
+            break;
+        }
+        if (!dev->connected) {
+            ESP_LOGW(TAG, "%s hdl:0x%02x not connected", __func__, dev->bt.handle);
+            ret = ESP_ERR_INVALID_STATE;
+            break;
+        }
+        ret = esp_bt_hid_host_set_protocol(dev->bda, protocol_mode);
+        if (ret == ESP_OK) {
+            set_trans(dev, ESP_HID_TRANS_SET_PROTOCOL);
+        }
+    } while(0);
+
+    return ret;
 }
 
 static void esp_bt_hidh_dev_dump(esp_hidh_dev_t *dev, FILE *fp)
 {
-    fprintf(fp, "BDA:" ESP_BD_ADDR_STR ", Status: %s, Connected: %s, Handle: %d, Usage: %s\n", ESP_BD_ADDR_HEX(dev->bda), s_bta_hh_status_names[dev->status], dev->connected ? "YES" : "NO", dev->bt.handle, esp_hid_usage_str(dev->usage));
+    fprintf(fp, "BDA:" ESP_BD_ADDR_STR ", Status: %s, Connected: %s, Handle: %d, Usage: %s\n", ESP_BD_ADDR_HEX(dev->bda), s_esp_hh_status_names[dev->status], dev->connected ? "YES" : "NO", dev->bt.handle, esp_hid_usage_str(dev->usage));
     fprintf(fp, "Name: %s, Manufacturer: %s, Serial Number: %s\n", dev->config.device_name ? dev->config.device_name : "", dev->config.manufacturer_name ? dev->config.manufacturer_name : "", dev->config.serial_number ? dev->config.serial_number : "");
     fprintf(fp, "PID: 0x%04x, VID: 0x%04x, VERSION: 0x%04x\n", dev->config.product_id, dev->config.vendor_id, dev->config.version);
     fprintf(fp, "Report Map Length: %d\n", dev->config.report_maps[0].len);
     esp_hidh_dev_report_t *report = dev->reports;
     while (report) {
         fprintf(fp, "  %8s %7s %6s, ID: %3u, Length: %3u\n",
-               esp_hid_usage_str(report->usage), esp_hid_report_type_str(report->report_type), esp_hid_protocol_mode_str(report->protocol_mode),
+               esp_hid_usage_str(report->usage), esp_hid_report_type_str(report->report_type), get_protocol_mode(report->protocol_mode),
                report->report_id, report->value_len);
         report = report->next;
     }
@@ -317,134 +991,108 @@ static void esp_bt_hidh_dev_dump(esp_hidh_dev_t *dev, FILE *fp)
 
 esp_err_t esp_bt_hidh_init(const esp_hidh_config_t *config)
 {
+    esp_err_t ret = ESP_OK;
     if (config == NULL) {
         ESP_LOGE(TAG, "Config is NULL");
-        return ESP_FAIL;
+        return ESP_ERR_INVALID_ARG;
     }
     esp_event_loop_args_t event_task_args = {
         .queue_size = 5,
         .task_name = "esp_bt_hidh_events",
         .task_priority = uxTaskPriorityGet(NULL),
-        .task_stack_size = 2048,
+        .task_stack_size = config->event_stack_size > 0 ? config->event_stack_size : 4096,
         .task_core_id = tskNO_AFFINITY
     };
-    esp_err_t ret = esp_event_loop_create(&event_task_args, &event_loop_handle);
+
+    do {
+        if ((hidh_local_param.connection_queue = fixed_queue_new(QUEUE_SIZE_MAX)) == NULL) {
+            ESP_LOGE(TAG, "connection_queue create failed!");
+            ret = ESP_FAIL;
+            break;
+        }
+        ret = esp_event_loop_create(&event_task_args, &hidh_local_param.event_loop_handle);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "esp_event_loop_create failed!");
+            ret = ESP_FAIL;
+            break;
+        }
+        ret = esp_event_handler_register_with(hidh_local_param.event_loop_handle, ESP_HIDH_EVENTS, ESP_EVENT_ANY_ID,
+                                              esp_hidh_process_event_data_handler, NULL);
+        ret |= esp_event_handler_register_with(hidh_local_param.event_loop_handle, ESP_HIDH_EVENTS, ESP_EVENT_ANY_ID,
+                                               config->callback, config->callback_arg);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "event_loop register failed!");
+            ret = ESP_FAIL;
+            break;
+        }
+        ret = esp_bt_hid_host_register_callback(esp_hh_cb);
+        ret |= esp_bt_hid_host_init();
+    } while (0);
+
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "esp_event_loop_create failed!");
-        return ret;
+        free_local_param();
     }
-    esp_event_handler_register_with(event_loop_handle, ESP_HIDH_EVENTS, ESP_EVENT_ANY_ID, config->callback, NULL);
-    BTA_HhEnable(0, bta_hh_cb);
-    return ESP_OK;
+    return ret;
 }
 
 esp_err_t esp_bt_hidh_deinit(void)
 {
-    if (event_loop_handle) {
-        esp_event_loop_delete(event_loop_handle);
+    esp_err_t ret = esp_bt_hid_host_deinit();
+    return ret;
+}
+
+static esp_hidh_dev_t *hidh_dev_ctor(esp_bd_addr_t bda)
+{
+    esp_hidh_dev_t *dev = NULL;
+    dev = esp_hidh_dev_malloc();
+    if (dev == NULL) {
+        return NULL;
     }
-    BTA_HhDisable();
-    return ESP_OK;
+    dev->in_use = true;
+    dev->transport = ESP_HID_TRANSPORT_BT;
+    dev->trans_type = ESP_HID_TRANS_MAX;
+    dev->trans_timer = NULL;
+    dev->protocol_mode = ESP_HID_PROTOCOL_MODE_REPORT; // device default protocol mode
+    dev->connected = false;
+    dev->opened = true;
+    dev->added = false;
+    dev->is_orig = true;
+    dev->reports = NULL;
+    dev->reports_len = 0;
+    dev->tmp = NULL;
+    dev->tmp_len = 0;
+    memcpy(dev->bda, bda, sizeof(esp_bd_addr_t));
+    dev->bt.handle = 0xff;
+
+    dev->close = esp_bt_hidh_dev_close;
+    dev->report_write = esp_bt_hidh_dev_report_write;
+    dev->report_read = esp_bt_hidh_dev_report_read;
+    dev->set_report = esp_bt_hidh_dev_set_report;
+    dev->get_idle = esp_bt_hidh_dev_get_idle;
+    dev->set_idle = esp_bt_hidh_dev_set_idle;
+    dev->get_protocol = esp_bt_hidh_dev_get_protocol;
+    dev->set_protocol = esp_bt_hidh_dev_set_protocol;
+    dev->dump = esp_bt_hidh_dev_dump;
+
+    return dev;
 }
 
 esp_hidh_dev_t *esp_bt_hidh_dev_open(esp_bd_addr_t bda)
 {
-    esp_hidh_dev_t *dev = esp_hidh_dev_malloc();
+    esp_hidh_dev_t *dev = esp_hidh_dev_get_by_bda(bda);
     if (dev == NULL) {
-        ESP_LOGE(TAG, "malloc esp_hidh_dev_t failed");
-        return NULL;
+        if ((dev = hidh_dev_ctor(bda)) == NULL) {
+            ESP_LOGE(TAG, "%s create device failed!", __func__);
+            return NULL;
+        }
+    } else {
+        ESP_LOGW(TAG, "device has opened, connected: %d", dev->connected);
     }
 
-    dev->transport = ESP_HID_TRANSPORT_BT;
-    memcpy(dev->bda, bda, sizeof(esp_bd_addr_t));
-    dev->bt.handle = -1;
-
-    dev->opened = true;
-    BTA_HhOpen(dev->bda, 0, BTA_HH_PROTO_RPT_MODE, (BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT));
-    WAIT_DEV(dev);
-    if (dev->status != BTA_HH_OK) {
-        esp_hidh_dev_free(dev);
-        return NULL;
+    if (!dev->connected) {
+        esp_bt_hid_host_connect(dev->bda);
     }
-    dev->close = esp_bt_hidh_dev_close;
-    dev->report_write = esp_bt_hidh_dev_report_write;
-    dev->report_read = esp_bt_hidh_dev_report_read;
-    dev->dump = esp_bt_hidh_dev_dump;
     return dev;
 }
-
-/*
- * BlueDroid BT HIDH Stack Callbacks
- * */
-
-/* This callback function is executed by BTA_HH when data is received on an interrupt channel. */
-void bta_hh_co_data(uint8_t handle, uint8_t *p_rpt, uint16_t len, tBTA_HH_PROTO_MODE  mode, uint8_t sub_class, uint8_t country_code, esp_bd_addr_t bda, uint8_t app_id)
-{
-    if (len < 2) {
-        ESP_LOGE(TAG, "Not Enough Data");
-        return;
-    }
-    esp_hidh_dev_t *dev = NULL;
-    esp_hidh_dev_report_t *report = NULL;
-    dev = esp_hidh_dev_get_by_handle(handle);
-    if (dev == NULL) {
-        ESP_LOGE(TAG, "Device Not Found: handle %u", handle);
-        return;
-    }
-    report = esp_hidh_dev_get_input_report_by_id_and_proto(dev, p_rpt[0], mode ? ESP_HID_PROTOCOL_MODE_BOOT : ESP_HID_PROTOCOL_MODE_REPORT);
-    if (report == NULL) {
-        ESP_LOGE(TAG, "Report Not Found: %d mode: %s", p_rpt[0], mode ? "BOOT" : "REPORT");
-        return;
-    }
-    if (len != (report->value_len + 1)) {
-        ESP_LOGW(TAG, "Wrong Data Len: %u != %u", len, (report->value_len + 1));
-    }
-
-    if (event_loop_handle) {
-        esp_hidh_event_data_t p = {0};
-        if (report->report_type == ESP_HID_REPORT_TYPE_FEATURE) {
-            p.feature.dev = dev;
-            p.feature.report_id = report->report_id;
-            p.feature.usage = report->usage;
-            p.feature.data = p_rpt + 1;
-            p.feature.length = len - 1;
-            esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_FEATURE_EVENT, &p, sizeof(esp_hidh_event_data_t), portMAX_DELAY);
-        } else {
-            p.input.dev = dev;
-            p.input.report_id = report->report_id;
-            p.input.usage = report->usage;
-            p.input.data = p_rpt + 1;
-            p.input.length = len - 1;
-            esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_INPUT_EVENT, &p, sizeof(esp_hidh_event_data_t), portMAX_DELAY);
-        }
-    }
-}
-
-/* This callback function is executed by BTA_HH when connection is opened, and application may do some device specific initialization. */
-void bta_hh_co_open(uint8_t handle, uint8_t sub_class, uint16_t attr_mask, uint8_t app_id)
-{
-    esp_hidh_dev_t *dev = NULL;
-    dev = esp_hidh_dev_get_by_handle(-1);
-    if (dev == NULL) {
-        ESP_LOGI(TAG, "Device Not Found? It's probably a reconnect.");
-        dev = esp_hidh_dev_malloc();
-        if (dev == NULL) {
-            ESP_LOGE(TAG, "DEV Malloc Failed");
-            return;
-        }
-        dev->transport = ESP_HID_TRANSPORT_BT;
-        dev->close = esp_bt_hidh_dev_close;
-        dev->report_write = esp_bt_hidh_dev_report_write;
-        dev->report_read = esp_bt_hidh_dev_report_read;
-        dev->dump = esp_bt_hidh_dev_dump;
-    }
-    dev->bt.attr_mask = attr_mask;
-    dev->bt.app_id = app_id;
-    dev->bt.sub_class = sub_class;
-    dev->bt.handle = handle;
-}
-
-/* This callback function is executed by BTA_HH when connection is closed, and device specific finalization may be needed. */
-void bta_hh_co_close(uint8_t dev_handle, uint8_t app_id) {}
 
 #endif /* CONFIG_BT_HID_HOST_ENABLED */

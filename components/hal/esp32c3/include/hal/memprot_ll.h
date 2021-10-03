@@ -16,6 +16,7 @@
 
 #include "soc/sensitive_reg.h"
 #include "soc/cache_memory.h"
+#include "hal/assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,6 +42,18 @@ extern "C" {
 #define I_D_SPLIT_LINE_SHIFT        0x9
 #define I_D_FAULT_ADDR_SHIFT        0x2
 
+typedef union {
+    struct {
+        uint32_t cat0       : 2;
+        uint32_t cat1       : 2;
+        uint32_t cat2       : 2;
+        uint32_t res0       : 8;
+        uint32_t splitaddr  : 8;
+        uint32_t res1       : 10;
+    };
+    uint32_t val;
+} constrain_reg_fields_t;
+
 static inline void memprot_ll_set_iram0_dram0_split_line_lock(void)
 {
     REG_WRITE(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_0_REG, 1);
@@ -53,9 +66,21 @@ static inline bool memprot_ll_get_iram0_dram0_split_line_lock(void)
 
 static inline void* memprot_ll_get_split_addr_from_reg(uint32_t regval, uint32_t base)
 {
-    return (void*)
-        (base + ((regval & SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SRAM_SPLITADDR_M)
-        >> (SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SRAM_SPLITADDR_S - I_D_SPLIT_LINE_SHIFT)));
+    constrain_reg_fields_t reg_val;
+    reg_val.val = regval;
+
+    uint32_t off = reg_val.splitaddr << 9;
+
+    if (reg_val.cat0 == 0x1 || reg_val.cat0 == 0x2) {
+        return (void *)(base + off);
+    } else if (reg_val.cat1 == 0x1 || reg_val.cat1 == 0x2) {
+        return (void *)(base + I_D_SRAM_SEGMENT_SIZE + off);
+    } else if (reg_val.cat2 == 0x1 || reg_val.cat2 == 0x2) {
+        return (void *)(base + (2 * I_D_SRAM_SEGMENT_SIZE) + off);
+    } else {
+        /* Either the register was not configured at all or incorrectly configured */
+        return NULL;
+    }
 }
 
 /* ******************************************************************************************************
@@ -96,7 +121,7 @@ static inline uint32_t memprot_ll_iram0_get_intr_source_num(void)
 static inline void memprot_ll_set_iram0_split_line(const void *line_addr, uint32_t sensitive_reg)
 {
     uint32_t addr = (uint32_t)line_addr;
-    assert( addr >= IRAM0_SRAM_LEVEL_1_LOW && addr <= IRAM0_SRAM_LEVEL_3_HIGH );
+    HAL_ASSERT(addr >= IRAM0_SRAM_LEVEL_1_LOW && addr <= IRAM0_SRAM_LEVEL_3_HIGH);
 
     uint32_t category[3] = {0};
     if (addr <= IRAM0_SRAM_LEVEL_1_HIGH) {
@@ -353,7 +378,7 @@ static inline uint32_t memprot_ll_dram0_get_intr_source_num(void)
 static inline void memprot_ll_set_dram0_split_line(const void *line_addr, uint32_t sensitive_reg)
 {
     uint32_t addr = (uint32_t)line_addr;
-    assert( addr >= DRAM0_SRAM_LEVEL_1_LOW && addr <= DRAM0_SRAM_LEVEL_3_HIGH );
+    HAL_ASSERT(addr >= DRAM0_SRAM_LEVEL_1_LOW && addr <= DRAM0_SRAM_LEVEL_3_HIGH);
 
     uint32_t category[3] = {0};
     if (addr <= DRAM0_SRAM_LEVEL_1_HIGH) {
@@ -381,22 +406,22 @@ static inline void memprot_ll_set_dram0_split_line(const void *line_addr, uint32
 
 static inline void memprot_ll_set_dram0_split_line_D_0(const void *line_addr)
 {
-    memprot_ll_set_dram0_split_line(line_addr, SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_2_REG);
+    memprot_ll_set_dram0_split_line(line_addr, SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_4_REG);
 }
 
 static inline void memprot_ll_set_dram0_split_line_D_1(const void *line_addr)
 {
-    memprot_ll_set_dram0_split_line(line_addr, SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_3_REG);
+    memprot_ll_set_dram0_split_line(line_addr, SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_5_REG);
 }
 
 static inline void* memprot_ll_get_dram0_split_line_D_0(void)
 {
-    return memprot_ll_get_split_addr_from_reg(REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_2_REG), SOC_DIRAM_DRAM_LOW);
+    return memprot_ll_get_split_addr_from_reg(REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_4_REG), SOC_DIRAM_DRAM_LOW);
 }
 
 static inline void* memprot_ll_get_dram0_split_line_D_1(void)
 {
-    return memprot_ll_get_split_addr_from_reg(REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_3_REG), SOC_DIRAM_DRAM_LOW);
+    return memprot_ll_get_split_addr_from_reg(REG_READ(SENSITIVE_CORE_X_IRAM0_DRAM0_DMA_SPLIT_LINE_CONSTRAIN_5_REG), SOC_DIRAM_DRAM_LOW);
 }
 
 

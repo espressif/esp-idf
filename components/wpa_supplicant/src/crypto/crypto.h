@@ -1,15 +1,9 @@
 /*
- * WPA Supplicant / wrapper functions for crypto libraries
- * Copyright (c) 2004-2009, Jouni Malinen <j@w1.fi>
+ * Wrapper functions for crypto libraries
+ * Copyright (c) 2004-2017, Jouni Malinen <j@w1.fi>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * Alternatively, this software may be distributed under the terms of BSD
- * license.
- *
- * See README and COPYING for more details.
+ * This software may be distributed under the terms of the BSD license.
+ * See README for more details.
  *
  * This file defines the cryptographic functions that need to be implemented
  * for wpa_supplicant and hostapd. When TLS is not used, internal
@@ -26,8 +20,6 @@
 
 #ifndef CRYPTO_H
 #define CRYPTO_H
-
-#include "utils/common.h"
 
 /**
  * md4_vector - MD4 hash for data vector
@@ -48,21 +40,6 @@ int md4_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac);
  * Returns: 0 on success, -1 on failure
  */
 int md5_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac);
-
-#ifdef CONFIG_FIPS
-/**
- * md5_vector_non_fips_allow - MD5 hash for data vector (non-FIPS use allowed)
- * @num_elem: Number of elements in the data vector
- * @addr: Pointers to the data areas
- * @len: Lengths of the data blocks
- * @mac: Buffer for the hash
- * Returns: 0 on success, -1 on failure
- */
-int md5_vector_non_fips_allow(size_t num_elem, const u8 *addr[],
-			      const size_t *len, u8 *mac);
-#else /* CONFIG_FIPS */
-#define md5_vector_non_fips_allow md5_vector
-#endif /* CONFIG_FIPS */
 
 
 /**
@@ -103,12 +80,35 @@ int sha256_vector(size_t num_elem, const u8 *addr[], const size_t *len,
 		  u8 *mac);
 
 /**
+ * sha384_vector - SHA384 hash for data vector
+ * @num_elem: Number of elements in the data vector
+ * @addr: Pointers to the data areas
+ * @len: Lengths of the data blocks
+ * @mac: Buffer for the hash
+ * Returns: 0 on success, -1 on failure
+ */
+int sha384_vector(size_t num_elem, const u8 *addr[], const size_t *len,
+		  u8 *mac);
+
+/**
+ * sha512_vector - SHA512 hash for data vector
+ * @num_elem: Number of elements in the data vector
+ * @addr: Pointers to the data areas
+ * @len: Lengths of the data blocks
+ * @mac: Buffer for the hash
+ * Returns: 0 on success, -1 on failure
+ */
+int sha512_vector(size_t num_elem, const u8 *addr[], const size_t *len,
+		  u8 *mac);
+
+/**
  * des_encrypt - Encrypt one block with DES
  * @clear: 8 octets (in)
  * @key: 7 octets (in) (no parity bits included)
  * @cypher: 8 octets (out)
+ * Returns: 0 on success, -1 on failure
  */
-void des_encrypt(const u8 *clear, const u8 *key, u8 *cypher);
+int des_encrypt(const u8 *clear, const u8 *key, u8 *cypher);
 
 /**
  * aes_encrypt_init - Initialize AES for encryption
@@ -123,8 +123,9 @@ void * aes_encrypt_init(const u8 *key, size_t len);
  * @ctx: Context pointer from aes_encrypt_init()
  * @plain: Plaintext data to be encrypted (16 bytes)
  * @crypt: Buffer for the encrypted data (16 bytes)
+ * Returns: 0 on success, -1 on failure
  */
-void aes_encrypt(void *ctx, const u8 *plain, u8 *crypt);
+int aes_encrypt(void *ctx, const u8 *plain, u8 *crypt);
 
 /**
  * aes_encrypt_deinit - Deinitialize AES encryption
@@ -145,8 +146,9 @@ void * aes_decrypt_init(const u8 *key, size_t len);
  * @ctx: Context pointer from aes_encrypt_init()
  * @crypt: Encrypted data (16 bytes)
  * @plain: Buffer for the decrypted data (16 bytes)
+ * Returns: 0 on success, -1 on failure
  */
-void aes_decrypt(void *ctx, const u8 *crypt, u8 *plain);
+int aes_decrypt(void *ctx, const u8 *crypt, u8 *plain);
 
 /**
  * aes_decrypt_deinit - Deinitialize AES decryption
@@ -156,9 +158,10 @@ void aes_decrypt_deinit(void *ctx);
 
 
 enum crypto_hash_alg {
-        CRYPTO_HASH_ALG_MD5, CRYPTO_HASH_ALG_SHA1,
-        CRYPTO_HASH_ALG_HMAC_MD5, CRYPTO_HASH_ALG_HMAC_SHA1,
-        CRYPTO_HASH_ALG_SHA256, CRYPTO_HASH_ALG_HMAC_SHA256
+	CRYPTO_HASH_ALG_MD5, CRYPTO_HASH_ALG_SHA1,
+	CRYPTO_HASH_ALG_HMAC_MD5, CRYPTO_HASH_ALG_HMAC_SHA1,
+	CRYPTO_HASH_ALG_SHA256, CRYPTO_HASH_ALG_HMAC_SHA256,
+	CRYPTO_HASH_ALG_SHA384, CRYPTO_HASH_ALG_SHA512
 };
 
 struct crypto_hash;
@@ -208,6 +211,7 @@ void crypto_hash_update(struct crypto_hash *ctx, const u8 *data, size_t len);
  * to implement this.
  */
 int crypto_hash_finish(struct crypto_hash *ctx, u8 *hash, size_t *len);
+
 
 enum crypto_cipher_alg {
 	CRYPTO_CIPHER_NULL = 0, CRYPTO_CIPHER_ALG_AES, CRYPTO_CIPHER_ALG_3DES,
@@ -273,6 +277,7 @@ int __must_check crypto_cipher_decrypt(struct crypto_cipher *ctx,
  */
 void crypto_cipher_deinit(struct crypto_cipher *ctx);
 
+
 struct crypto_public_key;
 struct crypto_private_key;
 
@@ -291,6 +296,10 @@ struct crypto_private_key;
  * to implement this.
  */
 struct crypto_public_key * crypto_public_key_import(const u8 *key, size_t len);
+
+struct crypto_public_key *
+crypto_public_key_import_parts(const u8 *n, size_t n_len,
+			       const u8 *e, size_t e_len);
 
 /**
  * crypto_private_key_import - Import an RSA private key
@@ -408,6 +417,14 @@ int __must_check crypto_public_key_decrypt_pkcs1(
 	struct crypto_public_key *key, const u8 *crypt, size_t crypt_len,
 	u8 *plain, size_t *plain_len);
 
+int crypto_dh_init(u8 generator, const u8 *prime, size_t prime_len, u8 *privkey,
+		   u8 *pubkey);
+int crypto_dh_derive_secret(u8 generator, const u8 *prime, size_t prime_len,
+			    const u8 *order, size_t order_len,
+			    const u8 *privkey, size_t privkey_len,
+			    const u8 *pubkey, size_t pubkey_len,
+			    u8 *secret, size_t *len);
+
 /**
  * crypto_global_init - Initialize crypto wrapper
  *
@@ -467,6 +484,17 @@ int __must_check crypto_mod_exp(const u8 *base, size_t base_len,
 int rc4_skip(const u8 *key, size_t keylen, size_t skip,
 	     u8 *data, size_t data_len);
 
+/**
+ * crypto_get_random - Generate cryptographically strong pseudo-random bytes
+ * @buf: Buffer for data
+ * @len: Number of bytes to generate
+ * Returns: 0 on success, -1 on failure
+ *
+ * If the PRNG does not have enough entropy to ensure unpredictable byte
+ * sequence, this functions must return -1.
+ */
+int crypto_get_random(void *buf, size_t len);
+
 
 /**
  * struct crypto_bignum - bignum
@@ -499,6 +527,13 @@ struct crypto_bignum * crypto_bignum_init(void);
 struct crypto_bignum * crypto_bignum_init_set(const u8 *buf, size_t len);
 
 /**
+ * crypto_bignum_init_set - Allocate memory for bignum and set the value (uint)
+ * @val: Value to set
+ * Returns: Pointer to allocated bignum or %NULL on failure
+ */
+struct crypto_bignum * crypto_bignum_init_uint(unsigned int val);
+
+/**
  * crypto_bignum_deinit - Free bignum
  * @n: Bignum from crypto_bignum_init() or crypto_bignum_init_set()
  * @clear: Whether to clear the value from memory
@@ -514,7 +549,15 @@ void crypto_bignum_deinit(struct crypto_bignum *n, int clear);
  * Returns: Number of octets written on success, -1 on failure
  */
 int crypto_bignum_to_bin(const struct crypto_bignum *a,
-        u8 *buf, size_t buflen, size_t padlen);
+			 u8 *buf, size_t buflen, size_t padlen);
+
+/**
+ * crypto_bignum_rand - Create a random number in range of modulus
+ * @r: Bignum; set to a random value
+ * @m: Bignum; modulus
+ * Returns: 0 on success, -1 on failure
+ */
+int crypto_bignum_rand(struct crypto_bignum *r, const struct crypto_bignum *m);
 
 /**
  * crypto_bignum_add - c = a + b
@@ -524,8 +567,8 @@ int crypto_bignum_to_bin(const struct crypto_bignum *a,
  * Returns: 0 on success, -1 on failure
  */
 int crypto_bignum_add(const struct crypto_bignum *a,
-        const struct crypto_bignum *b,
-        struct crypto_bignum *c);
+		      const struct crypto_bignum *b,
+		      struct crypto_bignum *c);
 
 /**
  * crypto_bignum_mod - c = a % b
@@ -535,8 +578,8 @@ int crypto_bignum_add(const struct crypto_bignum *a,
  * Returns: 0 on success, -1 on failure
  */
 int crypto_bignum_mod(const struct crypto_bignum *a,
-        const struct crypto_bignum *b,
-        struct crypto_bignum *c);
+		      const struct crypto_bignum *b,
+		      struct crypto_bignum *c);
 
 /**
  * crypto_bignum_exptmod - Modular exponentiation: d = a^b (mod c)
@@ -547,9 +590,9 @@ int crypto_bignum_mod(const struct crypto_bignum *a,
  * Returns: 0 on success, -1 on failure
  */
 int crypto_bignum_exptmod(const struct crypto_bignum *a,
-        const struct crypto_bignum *b,
-        const struct crypto_bignum *c,
-        struct crypto_bignum *d);
+			  const struct crypto_bignum *b,
+			  const struct crypto_bignum *c,
+			  struct crypto_bignum *d);
 
 /**
  * crypto_bignum_inverse - Inverse a bignum so that a * c = 1 (mod b)
@@ -559,8 +602,8 @@ int crypto_bignum_exptmod(const struct crypto_bignum *a,
  * Returns: 0 on success, -1 on failure
  */
 int crypto_bignum_inverse(const struct crypto_bignum *a,
-        const struct crypto_bignum *b,
-        struct crypto_bignum *c);
+			  const struct crypto_bignum *b,
+			  struct crypto_bignum *c);
 
 /**
  * crypto_bignum_sub - c = a - b
@@ -570,8 +613,8 @@ int crypto_bignum_inverse(const struct crypto_bignum *a,
  * Returns: 0 on success, -1 on failure
  */
 int crypto_bignum_sub(const struct crypto_bignum *a,
-        const struct crypto_bignum *b,
-        struct crypto_bignum *c);
+		      const struct crypto_bignum *b,
+		      struct crypto_bignum *c);
 
 /**
  * crypto_bignum_div - c = a / b
@@ -581,8 +624,21 @@ int crypto_bignum_sub(const struct crypto_bignum *a,
  * Returns: 0 on success, -1 on failure
  */
 int crypto_bignum_div(const struct crypto_bignum *a,
-        const struct crypto_bignum *b,
-        struct crypto_bignum *c);
+		      const struct crypto_bignum *b,
+		      struct crypto_bignum *c);
+
+/**
+ * crypto_bignum_addmod - d = a + b (mod c)
+ * @a: Bignum
+ * @b: Bignum
+ * @c: Bignum
+ * @d: Bignum; used to store the result of (a + b) % c
+ * Returns: 0 on success, -1 on failure
+ */
+int crypto_bignum_addmod(const struct crypto_bignum *a,
+			 const struct crypto_bignum *b,
+			 const struct crypto_bignum *c,
+			 struct crypto_bignum *d);
 
 /**
  * crypto_bignum_mulmod - d = a * b (mod c)
@@ -593,9 +649,9 @@ int crypto_bignum_div(const struct crypto_bignum *a,
  * Returns: 0 on success, -1 on failure
  */
 int crypto_bignum_mulmod(const struct crypto_bignum *a,
-        const struct crypto_bignum *b,
-        const struct crypto_bignum *c,
-        struct crypto_bignum *d);
+			 const struct crypto_bignum *b,
+			 const struct crypto_bignum *c,
+			 struct crypto_bignum *d);
 
 /**
  * crypto_bignum_cmp - Compare two bignums
@@ -604,7 +660,7 @@ int crypto_bignum_mulmod(const struct crypto_bignum *a,
  * Returns: -1 if a < b, 0 if a == b, or 1 if a > b
  */
 int crypto_bignum_cmp(const struct crypto_bignum *a,
-        const struct crypto_bignum *b);
+		      const struct crypto_bignum *b);
 
 /**
  * crypto_bignum_bits - Get size of a bignum in bits
@@ -968,15 +1024,6 @@ struct crypto_ec_point *crypto_ec_get_public_key(struct crypto_key *key);
 int crypto_get_order(struct crypto_ec_group *group, struct crypto_bignum *x);
 
 /**
- * crypto_bignum_addmod: a = (b + c) mod d
- * Return : 0 in success
- */
-int crypto_bignum_addmod(struct crypto_bignum *a,
-                      struct crypto_bignum *b,
-                      struct crypto_bignum *c,
-                      struct crypto_bignum *d);
-
-/**
  * crypto_ec_get_affine_coordinates : get affine corrdinate of ec curve
  * @e: ec curve
  * @pt: point
@@ -1019,7 +1066,7 @@ void crypto_free_buffer(unsigned char *buf);
  * @crypto_ec_get_priv_key_der: get private key in der format
  * @key: key structure
  * @key_data: key data in charater buffer
- * @key_len = key lenght of charater buffer
+ * @key_len = key length of charater buffer
  * Return : 0 if success
  */
 int crypto_ec_get_priv_key_der(struct crypto_key *key, unsigned char **key_data, int *key_len);

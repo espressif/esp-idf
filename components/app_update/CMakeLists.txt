@@ -2,7 +2,7 @@ idf_component_register(SRCS "esp_ota_ops.c"
                             "esp_app_desc.c"
                     INCLUDE_DIRS "include"
                     REQUIRES spi_flash partition_table bootloader_support
-                    PRIV_REQUIRES esptool_py)
+                    PRIV_REQUIRES esptool_py efuse)
 
 # esp_app_desc structure is added as an undefined symbol because otherwise the
 # linker will ignore this structure as it has no other files depending on it.
@@ -46,6 +46,7 @@ if(NOT BOOTLOADER_BUILD)
 
         add_custom_target(blank_ota_data ALL DEPENDS ${blank_otadata_file})
         add_dependencies(flash blank_ota_data)
+        add_dependencies(encrypted-flash blank_ota_data)
 
         set(otatool_py ${python} ${COMPONENT_DIR}/otatool.py)
 

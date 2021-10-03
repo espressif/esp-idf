@@ -14,13 +14,15 @@ set(srcs
     )
 
 if(NOT BOOTLOADER_BUILD)
-    list(APPEND srcs "async_memcpy_impl_cp_dma.c")
+    list(APPEND srcs "async_memcpy_impl_cp_dma.c"
+                     "memprot.c"
+                     "esp_hmac.c"
+                     "esp_crypto_lock.c"
+                     "esp_ds.c"
+                     "dport_access.c"
+                     "spiram.c"
+                     "spiram_psram.c")
 endif()
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")
 target_sources(${COMPONENT_LIB} PRIVATE "${srcs}")
-
-if(NOT CMAKE_BUILD_EARLY_EXPANSION)
-    set_source_files_properties("${CMAKE_CURRENT_LIST_DIR}/rtc_clk.c" PROPERTIES
-                                COMPILE_FLAGS "-fno-jump-tables -fno-tree-switch-conversion")
-endif()

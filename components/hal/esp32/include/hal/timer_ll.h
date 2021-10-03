@@ -22,8 +22,11 @@ extern "C" {
 #endif
 
 #include <stdlib.h>
+#include "hal/misc.h"
+#include "hal/assert.h"
 #include "hal/timer_types.h"
 #include "soc/timer_periph.h"
+#include "soc/timer_group_struct.h"
 
 _Static_assert(TIMER_INTR_T0 == TIMG_T0_INT_CLR, "Add mapping to LL interrupt handling, since it's no longer naturally compatible with the timer_intr_t");
 _Static_assert(TIMER_INTR_T1 == TIMG_T1_INT_CLR, "Add mapping to LL interrupt handling, since it's no longer naturally compatible with the timer_intr_t");
@@ -43,13 +46,13 @@ _Static_assert(TIMER_INTR_WDT == TIMG_WDT_INT_CLR, "Add mapping to LL interrupt 
  */
 static inline void timer_ll_set_divider(timg_dev_t *hw, timer_idx_t timer_num, uint32_t divider)
 {
-    assert(divider >= 2 && divider <= 65536);
+    HAL_ASSERT(divider >= 2 && divider <= 65536);
     if (divider >= 65536) {
         divider = 0;
     }
     int timer_en = hw->hw_timer[timer_num].config.enable;
     hw->hw_timer[timer_num].config.enable = 0;
-    hw->hw_timer[timer_num].config.divider = divider;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hw_timer[timer_num].config, divider, divider);
     hw->hw_timer[timer_num].config.enable = timer_en;
 }
 
@@ -64,7 +67,7 @@ static inline void timer_ll_set_divider(timg_dev_t *hw, timer_idx_t timer_num, u
  */
 static inline void timer_ll_get_divider(timg_dev_t *hw, timer_idx_t timer_num, uint32_t *divider)
 {
-    uint32_t d = hw->hw_timer[timer_num].config.divider;
+    uint32_t d = HAL_FORCE_READ_U32_REG_FIELD(hw->hw_timer[timer_num].config, divider);
     if (d == 0) {
         d = 65536;
     } else if (d == 1) {

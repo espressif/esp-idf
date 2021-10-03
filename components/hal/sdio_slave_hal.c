@@ -14,13 +14,14 @@
 
 // The HAL layer for SDIO slave (common part)
 
-#include <soc/slc_struct.h>
-#include <soc/hinf_struct.h>
-#include <hal/sdio_slave_types.h>
-#include <soc/host_struct.h>
 #include <string.h>
+#include "soc/slc_struct.h"
+#include "soc/hinf_struct.h"
+#include "hal/sdio_slave_types.h"
+#include "soc/host_struct.h"
 #include "hal/sdio_slave_hal.h"
-#include "hal/hal_defs.h"
+#include "hal/assert.h"
+#include "hal/log.h"
 #include "esp_attr.h"
 
 
@@ -91,7 +92,7 @@ static esp_err_t sdio_ringbuf_send(sdio_ringbuf_t *buf, esp_err_t (*copy_callbac
     uint8_t* get_ptr = sdio_ringbuf_offset_ptr(buf, RINGBUF_WRITE_PTR, SDIO_SLAVE_SEND_DESC_SIZE);
     esp_err_t err = ESP_OK;
     if (copy_callback) {
-        (*copy_callback)(get_ptr, arg);
+        err = (*copy_callback)(get_ptr, arg);
     }
     if (err != ESP_OK) return err;
 
@@ -103,7 +104,7 @@ static esp_err_t sdio_ringbuf_send(sdio_ringbuf_t *buf, esp_err_t (*copy_callbac
 // since this is designed to be called in the ISR, no parallel logic
 static inline esp_err_t sdio_ringbuf_recv(sdio_ringbuf_t *buf, uint8_t **start, uint8_t **end, ringbuf_get_all_t get_all)
 {
-    assert(buf->free_ptr == buf->read_ptr);   //must return before recv again
+    HAL_ASSERT(buf->free_ptr == buf->read_ptr);   //must return before recv again
     if (start == NULL && end == NULL) return ESP_ERR_INVALID_ARG; // must have a output
     if (buf->read_ptr == buf->write_ptr) return ESP_ERR_NOT_FOUND; // no data
 
@@ -126,10 +127,10 @@ static inline esp_err_t sdio_ringbuf_recv(sdio_ringbuf_t *buf, uint8_t **start, 
 
 static inline int sdio_ringbuf_return(sdio_ringbuf_t* buf, uint8_t *ptr)
 {
-    assert(sdio_ringbuf_offset_ptr(buf, RINGBUF_FREE_PTR, SDIO_SLAVE_SEND_DESC_SIZE) == ptr);
+    HAL_ASSERT(sdio_ringbuf_offset_ptr(buf, RINGBUF_FREE_PTR, SDIO_SLAVE_SEND_DESC_SIZE) == ptr);
     size_t size = (buf->read_ptr + buf->size - buf->free_ptr) % buf->size;
     size_t count = size / SDIO_SLAVE_SEND_DESC_SIZE;
-    assert(count * SDIO_SLAVE_SEND_DESC_SIZE==size);
+    HAL_ASSERT(count * SDIO_SLAVE_SEND_DESC_SIZE==size);
     buf->free_ptr = buf->read_ptr;
     return count;
 }
@@ -208,7 +209,7 @@ static esp_err_t init_send_queue(sdio_slave_context_t *hal)
     //clear the queue
     rcv_res = sdio_ringbuf_recv(buf, (uint8_t **) &first, (uint8_t **) &last, RINGBUF_GET_ALL);
     assert (rcv_res == ESP_OK);
-    assert(first == last); //there should be only one desc remain
+    HAL_ASSERT(first == last); //there should be only one desc remain
     sdio_ringbuf_return(buf, (uint8_t *) first);
     return ESP_OK;
 }
@@ -316,7 +317,7 @@ static void send_new_packet(sdio_slave_context_t *hal)
     // and restart new link list operation
     sdio_slave_hal_send_desc_t *const start_desc = hal->in_flight_head;
     sdio_slave_hal_send_desc_t *const end_desc = hal->in_flight_end;
-    assert(start_desc != NULL && end_desc != NULL);
+    HAL_ASSERT(start_desc != NULL && end_desc != NULL);
 
     sdio_slave_ll_send_stop(hal->slc);
     sdio_slave_ll_send_reset(hal->slc);
@@ -324,11 +325,11 @@ static void send_new_packet(sdio_slave_context_t *hal)
 
     // update pkt_len register to allow host reading.
     sdio_slave_ll_send_write_len(hal->slc, end_desc->pkt_len);
-    ESP_EARLY_LOGV(TAG, "send_length_write: %d, last_len: %08X", end_desc->pkt_len, sdio_slave_ll_send_read_len(hal->host));
+    HAL_EARLY_LOGV(TAG, "send_length_write: %d, last_len: %08X", end_desc->pkt_len, sdio_slave_ll_send_read_len(hal->host));
 
     send_set_state(hal, STATE_SENDING);
 
-    ESP_EARLY_LOGD(TAG, "restart new send: %p->%p, pkt_len: %d", start_desc, end_desc, end_desc->pkt_len);
+    HAL_EARLY_LOGD(TAG, "restart new send: %p->%p, pkt_len: %d", start_desc, end_desc, end_desc->pkt_len);
 }
 
 static esp_err_t send_check_new_packet(sdio_slave_context_t *hal)
@@ -358,7 +359,7 @@ bool sdio_slave_hal_send_eof_happened(sdio_slave_context_t* hal)
     // also update sequence and recycle descs.
     if (sdio_slave_ll_send_done(hal->slc)) {
         //check current state
-        assert(send_get_state(hal) == STATE_SENDING);
+        HAL_ASSERT(send_get_state(hal) == STATE_SENDING);
         sdio_slave_ll_send_intr_clr(hal->slc);
         return true;
     } else {
@@ -373,7 +374,7 @@ esp_err_t sdio_slave_hal_send_reset_counter(sdio_slave_context_t* hal)
                      "reset counter when transmission started", ESP_ERR_INVALID_STATE);
 
     sdio_slave_ll_send_write_len(hal->slc, 0);
-    ESP_EARLY_LOGV(TAG, "last_len: %08X", sdio_slave_ll_send_read_len(hal->host));
+    HAL_EARLY_LOGV(TAG, "last_len: %08X", sdio_slave_ll_send_read_len(hal->host));
 
     hal->tail_pkt_len = 0;
     sdio_slave_hal_send_desc_t *desc = hal->in_flight_head;
@@ -399,7 +400,7 @@ static esp_err_t send_get_inflight_desc(sdio_slave_context_t *hal, void **out_ar
 {
     esp_err_t ret;
     if (init) {
-        assert(hal->returned_desc == NULL);
+        HAL_ASSERT(hal->returned_desc == NULL);
         hal->returned_desc = hal->in_flight_head;
         send_set_state(hal, STATE_GETTING_RESULT);
     }
@@ -411,7 +412,7 @@ static esp_err_t send_get_inflight_desc(sdio_slave_context_t *hal, void **out_ar
     } else {
         if (hal->in_flight_head != NULL) {
             // fix the link broken of last desc when being sent
-            assert(hal->in_flight_end != NULL);
+            HAL_ASSERT(hal->in_flight_end != NULL);
             SEND_DESC_NEXT_SET(hal->in_flight_end, hal->in_flight_next);
 
             *out_returned_cnt = sdio_ringbuf_return(&(hal->send_desc_queue), (uint8_t*)hal->in_flight_head);
@@ -433,7 +434,7 @@ static esp_err_t send_get_unsent_desc(sdio_slave_context_t *hal, void **out_arg,
 
     if (ret == ESP_OK) {
         //currently each packet takes only one desc.
-        assert(head == tail);
+        HAL_ASSERT(head == tail);
         (*out_arg) = head->arg;
         (*out_return_cnt) = sdio_ringbuf_return(&(hal->send_desc_queue), (uint8_t*) head);
     } else if (ret == ESP_ERR_NOT_FOUND) {
@@ -450,9 +451,9 @@ esp_err_t sdio_slave_hal_send_get_next_finished_arg(sdio_slave_context_t *hal, v
 {
     bool init = (send_get_state(hal) == STATE_SENDING);
     if (init) {
-        assert(hal->in_flight_head != NULL);
+        HAL_ASSERT(hal->in_flight_head != NULL);
     } else {
-        assert(send_get_state(hal) == STATE_GETTING_RESULT);
+        HAL_ASSERT(send_get_state(hal) == STATE_GETTING_RESULT);
     }
     *out_returned_cnt = 0;
 
@@ -673,20 +674,20 @@ void sdio_slave_hal_load_buf(sdio_slave_context_t *hal, lldesc_t *desc)
 
 static inline void show_queue_item(lldesc_t *item)
 {
-    ESP_EARLY_LOGI(TAG, "=> %p: size: %d(%d), eof: %d, owner: %d", item, item->size, item->length, item->eof, item->owner);
-    ESP_EARLY_LOGI(TAG, "   buf: %p, stqe_next: %p", item->buf, item->qe.stqe_next);
+    HAL_EARLY_LOGI(TAG, "=> %p: size: %d(%d), eof: %d, owner: %d", item, item->size, item->length, item->eof, item->owner);
+    HAL_EARLY_LOGI(TAG, "   buf: %p, stqe_next: %p", item->buf, item->qe.stqe_next);
 }
 
 static void __attribute((unused)) dump_queue(sdio_slave_hal_recv_stailq_t *queue)
 {
     int cnt = 0;
     lldesc_t *item = NULL;
-    ESP_EARLY_LOGI(TAG, ">>>>> first: %p, last: %p <<<<<", queue->stqh_first, queue->stqh_last);
+    HAL_EARLY_LOGI(TAG, ">>>>> first: %p, last: %p <<<<<", queue->stqh_first, queue->stqh_last);
     STAILQ_FOREACH(item, queue, qe) {
         cnt++;
         show_queue_item(item);
     }
-    ESP_EARLY_LOGI(TAG, "total: %d", cnt);
+    HAL_EARLY_LOGI(TAG, "total: %d", cnt);
 }
 
 /*---------------------------------------------------------------------------

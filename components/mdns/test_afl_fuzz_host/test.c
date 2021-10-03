@@ -18,6 +18,7 @@
 #include <signal.h>
 #include <string.h>
 
+#include "esp32_mock.h"
 #include "mdns.h"
 #include "mdns_private.h"
 
@@ -204,9 +205,8 @@ int main(int argc, char** argv)
         //
         // Note: parameter1 is a file (mangled packet) which caused the crash
         file = fopen(argv[1], "r");
-        if (file) {
-            len = fread(buf, 1, 1460, file);
-        }
+        assert(file >= 0 );
+        len = fread(buf, 1, 1460, file);
         fclose(file);
     }
 

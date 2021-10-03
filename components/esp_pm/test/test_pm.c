@@ -28,6 +28,8 @@
 #include "esp32s3/ulp.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/clk.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/clk.h"
 #endif
 
 TEST_CASE("Can dump power management lock stats", "[pm]")
@@ -48,6 +50,8 @@ static void switch_freq(int mhz)
     esp_pm_config_esp32s3_t pm_config = {
 #elif CONFIG_IDF_TARGET_ESP32C3
     esp_pm_config_esp32c3_t pm_config = {
+#elif CONFIG_IDF_TARGET_ESP32H2
+    esp_pm_config_esp32h2_t pm_config = {
 #endif
         .max_freq_mhz = mhz,
         .min_freq_mhz = MIN(mhz, xtal_freq),
@@ -60,7 +64,7 @@ static void switch_freq(int mhz)
     }
 }
 
-#if CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
 static const int test_freqs[] = {40, 160, 80, 40, 80, 10, 80, 20, 40};
 #else
 static const int test_freqs[] = {240, 40, 160, 240, 80, 40, 240, 40, 80, 10, 80, 20, 40};
@@ -93,6 +97,8 @@ static void light_sleep_enable(void)
     esp_pm_config_esp32s3_t pm_config = {
 #elif CONFIG_IDF_TARGET_ESP32C3
     esp_pm_config_esp32c3_t pm_config = {
+#elif CONFIG_IDF_TARGET_ESP32H2
+    esp_pm_config_esp32h2_t pm_config = {
 #endif
         .max_freq_mhz = cur_freq_mhz,
         .min_freq_mhz = xtal_freq,
@@ -113,6 +119,8 @@ static void light_sleep_disable(void)
     esp_pm_config_esp32s3_t pm_config = {
 #elif CONFIG_IDF_TARGET_ESP32C3
     esp_pm_config_esp32c3_t pm_config = {
+#elif CONFIG_IDF_TARGET_ESP32H2
+    esp_pm_config_esp32h2_t pm_config = {
 #endif
         .max_freq_mhz = cur_freq_mhz,
         .min_freq_mhz = cur_freq_mhz,
@@ -358,6 +366,42 @@ TEST_CASE("esp_timer produces correct delays with light sleep", "[pm]")
     light_sleep_disable();
 
 #undef NUM_INTERVALS
+}
+
+static void timer_cb1(void *arg)
+{
+    ++*((int*) arg);
+}
+
+TEST_CASE("esp_timer with SKIP_UNHANDLED_EVENTS does not wake up CPU from sleep", "[pm]")
+{
+    int count_calls = 0;
+    int timer_interval_ms = 50;
+
+    const esp_timer_create_args_t timer_args = {
+            .name = "timer_cb1",
+            .arg  = &count_calls,
+            .callback = &timer_cb1,
+            .skip_unhandled_events = true,
+    };
+    esp_timer_handle_t periodic_timer;
+    esp_timer_create(&timer_args, &periodic_timer);
+    TEST_ESP_OK(esp_timer_start_periodic(periodic_timer, timer_interval_ms * 1000));
+
+    light_sleep_enable();
+
+    const unsigned count_delays = 5;
+    unsigned i = count_delays;
+    while (i-- > 0) {
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
+    TEST_ASSERT_INT_WITHIN(1, count_delays, count_calls);
+
+    light_sleep_disable();
+
+    TEST_ESP_OK(esp_timer_stop(periodic_timer));
+    TEST_ESP_OK(esp_timer_dump(stdout));
+    TEST_ESP_OK(esp_timer_delete(periodic_timer));
 }
 
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE

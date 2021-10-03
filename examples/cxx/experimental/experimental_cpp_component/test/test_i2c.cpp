@@ -69,6 +69,16 @@ TEST_CASE("I2CMaster SDA and SCL equal", "[cxx i2c][leaks=300]")
     TEST_THROW(I2CMaster(0, 0, 0, 400000), I2CException);
 }
 
+TEST_CASE("I2Transfer timeout", "[cxx i2c][leaks=300]")
+{
+    std::vector<uint8_t> data = {MAGIC_TEST_NUMBER};
+
+    // I2CWrite directly inherits from I2CTransfer; it's representative for I2CRead and I2CComposed, too.
+    I2CWrite writer(data, chrono::milliseconds(50));
+
+    TEST_THROW(writer.do_transfer(I2C_MASTER_NUM, ADDR), I2CTransferException);
+}
+
 // TODO The I2C driver tests are disabled, so disable them here, too. Probably due to no runners.
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
 

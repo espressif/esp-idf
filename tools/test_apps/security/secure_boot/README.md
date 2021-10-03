@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 |
-| ----------------- | ----- |
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-C3 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- |
 
 # Secure Boot
 
@@ -9,7 +9,14 @@ The example checks if the secure boot feature is enabled/disabled and if enabled
 
 ### Hardware Required
 
-ESP32 (supports Secure Boot V1) or ESP32-ECO3 (supports  Secure Boot V2 & Secure Boot V1). It is recommended to use Secure Boot V2 from ESP32-ECO3 onwards.
+Any of the following ESP module:
+* ESP32 (supports Secure Boot V1)
+* ESP32-ECO3 (supports  Secure Boot V2 & Secure Boot V1)
+* ESP32S2 (supports Secure Boot V2)
+* ESP32C3-ECO3 (supports Secure Boot V2)
+* ESP32S3 (supports Secure Boot V2)
+
+It is recommended to use Secure Boot V2 from ESP32-ECO3 onwards.
 
 ### Configure the project
 
@@ -54,3 +61,55 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 ## Troubleshooting
 
+---
+
+# Secure Boot tests (For internal use only)
+
+Purpose of the example test cases (`example_test.py`) is to test the secure boot implementation and detect if it is broken. It consists of positive and negative test cases.
+
+### Hardware required
+
+* FPGA setup with ESP32C3/ESP32S3 image
+
+* COM port for programming and export it as ESPPORT
+    e.g `export ESPPORT=/dev/ttyUSB0`
+
+* Use another COM port for resetting efuses and connect its DTR pin to efuse reset pin on the FPGA board. Export it as EFUSEPORT
+    e.g `export EFUSEPORT=/dev/ttyUSB1`
+
+### Configure the project
+
+```
+export IDF_ENV_FPGA=1
+
+idf.py set-target esp32c3   #(or esp32s3)
+
+idf.py menuconfig
+```
+
+Under `Security features`
+
+- Enable the `Enable hardware Secure Boot`
+
+- Set the secure boot signing key ("test_rsa_3072_key.pem")
+
+- Set UART ROM download mode to ENABLED (Required for the script to read the EFUSE)
+
+- Install and export TTFW requirements
+```
+python -m pip install -r $IDF_PATH/tools/ci/python_packages/ttfw_idf/requirements.txt
+
+export PYTHONPATH="$IDF_PATH/tools:$IDF_PATH/tools/ci/python_packages"
+```
+
+### Build and test
+
+- Build the example
+```
+idf.py build
+```
+
+- Run the example test
+```
+python example_test.py
+```

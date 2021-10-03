@@ -327,6 +327,17 @@ esp_netif_t* esp_netif_create_default_wifi_sta(void)
 }
 
 /**
+ * @brief User init default wifi esp_netif object (official API)
+ */
+void esp_netif_destroy_default_wifi(void *esp_netif)
+{
+    if (esp_netif) {
+        esp_wifi_clear_default_wifi_driver_and_handlers(esp_netif);
+    }
+    esp_netif_destroy(esp_netif);
+}
+
+/**
  * @brief User init custom wifi interface
  */
 esp_netif_t* esp_netif_create_wifi(wifi_interface_t wifi_if, esp_netif_inherent_config_t *esp_netif_config)

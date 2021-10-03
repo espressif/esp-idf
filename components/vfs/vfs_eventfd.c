@@ -260,7 +260,7 @@ static ssize_t event_write(int fd, const void *data, size_t size)
         return ret;
     }
 
-    if (xPortInIsrContext()) {
+    if (!xPortCanYield()) {
         ret = signal_event_fd_from_isr(fd, data, size);
     } else {
         const uint64_t *val = (const uint64_t *)data;

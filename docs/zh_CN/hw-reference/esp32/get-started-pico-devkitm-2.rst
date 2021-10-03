@@ -6,11 +6,11 @@ ESP32-PICO-DevKitM-2
 概述
 ======
 
-ESP32-PICO-DevKitM-2 是一款基于 `ESP32 <https://www.espressif.com/zh-hans/products/socs/esp32>`_ 的乐鑫开发板，板上搭载 `ESP32-PICO-MINI-02 <https://www.espressif.com/zh-hans/products/modules>`_ 模组。ESP32-PICO-MINI-02 模组具备完整的 Wi-Fi 和蓝牙功能。
+ESP32-PICO-DevKitM-2 是一款基于 `ESP32 <https://www.espressif.com/zh-hans/products/socs/esp32>`_ 的乐鑫开发板，板上搭载 `ESP32-PICO-MINI-02(02U) <https://www.espressif.com/zh-hans/products/modules>`_ 模组。ESP32-PICO-MINI-02(02U) 模组具备完整的 Wi-Fi 和蓝牙功能。
 
 ESP32-PICO-DevKitM-2 开发板同时集成了 USB-to-UART 桥接电路，方便开发人员直接通过 PC 的 USB 端口直接进行固件烧录和调试。
 
-为方便硬件连接，ESP32-PICO-MINI-02 上的所有 IO 信号和系统电源管脚均引出至开发板两侧焊盘 (18 x 0.1")。上述 18 个焊盘也均引出至排针，可使用杜邦线连接。
+为方便硬件连接，ESP32-PICO-MINI-02(02U) 上的所有 IO 信号和系统电源管脚均引出至开发板两侧焊盘 (18 x 0.1")。上述 18 个焊盘也均引出至排针，可使用杜邦线连接。
 
 .. note::
 
@@ -44,7 +44,7 @@ ESP32-PICO-DevKitM-2 为用户提供了基于 ESP32 芯片应用开发的硬件�
 组件描述
 ----------
 
-ESP32-PICO-DevKitM-2 开发板的主要组件、接口及控制方式见下图。
+ESP32-PICO-DevKitM-2 开发板的主要组件、接口及控制方式见下图。下文以板载 ESP32-PICO-MINI-02 的开发板为例进行说明。
 
 .. figure:: ../../../_static/esp32-pico-devkitm-2-layout-front.png
     :align: center
@@ -63,7 +63,7 @@ ESP32-PICO-DevKitM-2 开发板的主要组件、接口及控制方式见下图�
    * - 主要组件
      - 描述
    * - ESP32-PICO-MINI-02
-     - ESP32-PICO-DevKitM-2 开发板的板载模组，搭载 ESP32 SoC 芯片。
+     - ESP32-PICO-DevKitM-2 开发板的板载模组，搭载 ESP32 SoC 芯片。用户也可选择板载 ESP32-PICO-MINI-02U 的开发板。
    * - LDO
      - 5V 转 3.3V 低压差稳压器
    * - USB-to-UART
@@ -112,7 +112,7 @@ ESP32-PICO-DevKitM-2 开发板的主要组件、接口及控制方式见下图�
 
 如批量购买，ESP32-PICO-DevKitM-2 开发板将以大纸板箱包装。
 
-批量订单请参考 `乐鑫产品订购信息 <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_cn.pdf>`_ (PDF)。
+批量订单请前往 https://www.espressif.com/zh-hans/contact-us/sales-questions。
 
 硬件参考
 =============
@@ -347,8 +347,8 @@ Header J3
 相关文档
 =========
 
-* `ESP32-PICO-MINI-02 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-pico-mini-02_datasheet_cn.pdf>`_ (PDF)
-* `乐鑫产品订购信息 <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_cn.pdf>`_ (PDF) 
+* `ESP32-PICO-MINI-02 & ESP32-PICO-MINI-02U 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-pico-mini-02_datasheet_cn.pdf>`_ (PDF)
+* `乐鑫产品选型工具 <https://products.espressif.com/#/product-selector?names=>`_
 * `ESP32-PICO-DevKitM-2 原理图 <https://dl.espressif.com/dl/schematics/SCH_ESP32-PICO-DEVKITM-2_V1_0_20200812A.pdf>`_ (PDF)
 * `ESP32-PICO-DevKitM-2 PCB 布局图 <https://dl.espressif.com/dl/schematics/PCB_ESP32-PICO-DevKitM-2_V1.0_20200812.pdf>`_ (PDF)
 

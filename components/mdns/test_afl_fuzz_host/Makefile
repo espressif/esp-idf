@@ -3,8 +3,8 @@ FUZZ=afl-fuzz
 COMPONENTS_DIR=../..
 COMPILER_ICLUDE_DIR=$(shell echo `which xtensa-esp32-elf-gcc | xargs dirname | xargs dirname`/xtensa-esp32-elf)
 
-CFLAGS=-g -Wno-unused-value -Wno-missing-declarations -Wno-pointer-bool-conversion -Wno-macro-redefined -Wno-int-to-void-pointer-cast -DHOOK_MALLOC_FAILED -DESP_EVENT_H_ -D__ESP_LOG_H__ -DMDNS_TEST_MODE \
-                 -I. -I.. -I../include -I../private_include -I ./build/config -include esp32_compat.h \
+CFLAGS=-g -Wno-unused-value -Wno-missing-declarations -Wno-pointer-bool-conversion -Wno-macro-redefined -Wno-int-to-void-pointer-cast -DHOOK_MALLOC_FAILED -DESP_EVENT_H_ -D__ESP_LOG_H__ \
+                 -I. -I.. -I../include -I../private_include -I ./build/config  \
                  -I$(COMPONENTS_DIR) \
                  -I$(COMPONENTS_DIR)/driver/include \
                  -I$(COMPONENTS_DIR)/esp_common/include \
@@ -49,7 +49,7 @@ else
 endif
 CPP=$(CC)
 LD=$(CC)
-OBJECTS=esp32_mock.o esp_netif_loopback_mock.o mdns.o test.o esp_netif_objects_mock.o
+OBJECTS=esp32_mock.o mdns.o test.o esp_netif_mock.o
 
 OS := $(shell uname)
 ifeq ($(OS),Darwin)

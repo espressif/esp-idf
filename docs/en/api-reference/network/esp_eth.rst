@@ -26,7 +26,7 @@ Basic Ethernet Concepts
 Ethernet is an asynchronous Carrier Sense Multiple Access with Collision Detect (CSMA/CD) protocol/interface.
 It is generally not well suited for low power applications. However, with ubiquitous deployment, internet connectivity, high data rates and limitless rage expandability, Ethernet can accommodate nearly all wired communications.
 
-Normal IEEE 802.3 compliant Ethernet frames are between 64 and 1518 bytes in length. They are made up of five or six different fields: a destination MAC address (DA), a source MAC address (SA), a type/length field, data payload, an optional padding field and a Cyclic Redundancy Check (CRC). 
+Normal IEEE 802.3 compliant Ethernet frames are between 64 and 1518 bytes in length. They are made up of five or six different fields: a destination MAC address (DA), a source MAC address (SA), a type/length field, data payload, an optional padding field and a Cyclic Redundancy Check (CRC).
 Additionally, when transmitted on the Ethernet medium, a 7-byte preamble field and Start-of-Frame (SOF) delimiter byte are appended to the beginning of the Ethernet packet.
 
 Thus the traffic on the twist-pair cabling will appear as shown blow:
@@ -41,16 +41,16 @@ Preamble and Start-of-Frame Delimiter
 The preamble contains seven bytes of ``55H``, it allows the receiver to lock onto the stream of data before the actual frame arrives.
 The Start-of-Frame Delimiter (SFD) is a binary sequence ``10101011`` (as seen on the physical medium). It is sometimes considered to be part of the preamble.
 
-When transmitting and receiving data, the preamble and SFD bytes will automatically be generated or stripped from the packets. 
+When transmitting and receiving data, the preamble and SFD bytes will automatically be generated or stripped from the packets.
 
 Destination Address
 ^^^^^^^^^^^^^^^^^^^
 
 The destination address field contains a 6-byte length MAC address of the device that the packet is directed to.
-If the Least Significant bit in the first byte of the MAC address is set, the address is a multi-cast destination. 
+If the Least Significant bit in the first byte of the MAC address is set, the address is a multi-cast destination.
 For example, 01-00-00-00-F0-00 and 33-45-67-89-AB-CD are multi-cast addresses, while 00-00-00-00-F0-00 and 32-45-67-89-AB-CD are not.
-Packets with multi-cast destination addresses are designed to arrive and be important to a selected group of Ethernet nodes. 
-If the destination address field is the reserved multi-cast address, i.e. FF-FF-FF-FF-FF-FF, the packet is a broadcast packet and it will be directed to everyone sharing the network. 
+Packets with multi-cast destination addresses are designed to arrive and be important to a selected group of Ethernet nodes.
+If the destination address field is the reserved multi-cast address, i.e. FF-FF-FF-FF-FF-FF, the packet is a broadcast packet and it will be directed to everyone sharing the network.
 If the Least Significant bit in the first byte of the MAC address is clear, the address is a uni-cast address and will be designed for usage by only the addressed node.
 
 Normally the EMAC controller incorporates receive filters which can be used to discard or accept packets with multi-cast, broadcast and/or uni-cast destination addresses.
@@ -61,7 +61,7 @@ Source Address
 
 The source address field contains a 6-byte length MAC address of the node which created the Ethernet packet.
 Users of Ethernet must generate a unique MAC address for each controller used.
-MAC addresses consist of two portions. The first three bytes are known as the Organizationally Unique Identifier (OUI). OUIs are distributed by the IEEE. 
+MAC addresses consist of two portions. The first three bytes are known as the Organizationally Unique Identifier (OUI). OUIs are distributed by the IEEE.
 The last three bytes are address bytes at the discretion of the company that purchased the OUI. More information about MAC Address used in ESP-IDF, please see :ref:`MAC Address Allocation <MAC-Address-Allocation>`.
 
 When transmitting packets, the assigned source MAC address must be written into the transmit buffer by the host controller.
@@ -89,7 +89,7 @@ Padding and FCS
 
 The padding field is a variable length field added to meet IEEE 802.3 specification requirements when small data payloads are used.
 The DA, SA, type, payload and padding of an Ethernet packet must be no smaller than 60 bytes.
-Adding the required 4-byte FCS field, packets must be no smaller than 64 bytes. 
+Adding the required 4-byte FCS field, packets must be no smaller than 64 bytes.
 If the data field is less than 46 bytes long, a padding field is required.
 
 The FCS field is a 4-byte field which contains an industry standard 32-bit CRC calculated with the data from the DA, SA, type, payload and padding fields.
@@ -99,7 +99,7 @@ Normally, the host controller does not need to concern itself with padding and t
 However, the padding and CRC fields will be written into the receive buffer when packets arrive, so they may be evaluated by the host controller if needed.
 
 .. note::
-    Besides the basic data frame described above, there're two other common frame types in 10/100 Mbps Ethernet: control frames and VLAN tagged frames. 
+    Besides the basic data frame described above, there're two other common frame types in 10/100 Mbps Ethernet: control frames and VLAN tagged frames.
     They're not supported in ESP-IDF.
 
 .. ------------------------------ Driver Operation --------------------------------
@@ -109,17 +109,19 @@ However, the padding and CRC fields will be written into the receive buffer when
 Configure MAC and PHY
 ---------------------
 
-Ethernet driver is composed of two parts: MAC and PHY. The communication between MAC and PHY can have diverse choices: **MII** (Media Independent Interface), **RMII** (Reduced Media Independent Interface) and etc.
+Ethernet driver is composed of two parts: MAC and PHY.
 
-.. figure:: ../../../_static/rmii-interface.png
-    :align: center
-    :scale: 80 %
-    :alt: Ethernet RMII Interface
-    :figclass: align-center
+.. only:: SOC_EMAC_SUPPORTED
 
-    Ethernet RMII Interface
+    The communication between MAC and PHY can have diverse choices: **MII** (Media Independent Interface), **RMII** (Reduced Media Independent Interface) and etc.
 
-.. only:: esp32
+    .. figure:: ../../../_static/rmii-interface.png
+        :align: center
+        :scale: 80 %
+        :alt: Ethernet RMII Interface
+        :figclass: align-center
+
+        Ethernet RMII Interface
 
     One of the obvious difference between MII and RMII is the signal consumption. For MII, it usually costs up to 18 signals. Instead, RMII interface can reduce the consumption to 9.
 
@@ -129,6 +131,9 @@ Ethernet driver is composed of two parts: MAC and PHY. The communication between
     * Some PHY chip can derive the ``REF_CLK`` from its external connected 25MHz crystal oscillator (as seen the option *a* in the picture). In this case, you should select ``CONFIG_ETH_RMII_CLK_INPUT`` in :ref:`CONFIG_ETH_RMII_CLK_MODE`.
     * Some PHY chip uses an external connected 50MHz crystal oscillator or other clock source, which can also be used as the ``REF_CLK`` for MAC side (as seen the option *b* in the picture). In this case, you still need to select ``CONFIG_ETH_RMII_CLK_INPUT`` in :ref:`CONFIG_ETH_RMII_CLK_MODE`.
     * Some EMAC controller can generate the ``REF_CLK`` using its internal high precision PLL (as seen the option *c* in the picture). In this case, you should select ``CONFIG_ETH_RMII_CLK_OUTPUT`` in :ref:`CONFIG_ETH_RMII_CLK_MODE`.
+
+    .. note::
+        ``REF_CLK`` is configured via Project Configuration as described above by default. However, it can be overwritten from user application code by appropriately setting :cpp:member:`interface` and :cpp:member:`clock_config` members of :cpp:class:`eth_mac_config_t` structure. See :cpp:enum:`emac_rmii_clock_mode_t` and :cpp:enum:`emac_rmii_clock_gpio_t` for more details.
 
     .. warning::
         If the RMII clock mode is selected to ``CONFIG_ETH_RMII_CLK_OUTPUT``, then ``GPIO0`` can be used to output the ``REF_CLK`` signal. See :ref:`CONFIG_ETH_RMII_CLK_OUTPUT_GPIO0` for more information.
@@ -157,17 +162,23 @@ We need to setup necessary parameters for MAC and PHY respectively based on your
 
 Configuration for MAC is described in :cpp:class:`eth_mac_config_t`, including:
 
-* :cpp:member:`sw_reset_timeout_ms`: software reset timeout value, in milliseconds, typically MAC reset should be finished within 100ms.
-* :cpp:member:`rx_task_stack_size` and :cpp:member:`rx_task_prio`: the MAC driver creates a dedicated task to process incoming packets, these two parameters are used to set the stack size and priority of the task.
-* :cpp:member:`smi_mdc_gpio_num` and :cpp:member:`smi_mdio_gpio_num`: the GPIO number used to connect the SMI signals.
-* :cpp:member:`flags`: specifying extra features that the MAC driver should have, it could be useful in some special situations. The value of this field can be OR'd with macros prefixed with ``ETH_MAC_FLAG_``. For example, if the MAC driver should work when cache is disabled, then you should configure this field with :c:macro:`ETH_MAC_FLAG_WORK_WITH_CACHE_DISABLE`.
+.. list::
+
+    * :cpp:member:`sw_reset_timeout_ms`: software reset timeout value, in milliseconds, typically MAC reset should be finished within 100ms.
+    * :cpp:member:`rx_task_stack_size` and :cpp:member:`rx_task_prio`: the MAC driver creates a dedicated task to process incoming packets, these two parameters are used to set the stack size and priority of the task.
+    * :cpp:member:`flags`: specifying extra features that the MAC driver should have, it could be useful in some special situations. The value of this field can be OR'd with macros prefixed with ``ETH_MAC_FLAG_``. For example, if the MAC driver should work when cache is disabled, then you should configure this field with :c:macro:`ETH_MAC_FLAG_WORK_WITH_CACHE_DISABLE`.
+    :SOC_EMAC_SUPPORTED: * :cpp:member:`smi_mdc_gpio_num` and :cpp:member:`smi_mdio_gpio_num`: the GPIO number used to connect the SMI signals.
+    :SOC_EMAC_SUPPORTED: * :cpp:member:`interface`: configuration of MAC Data interface to PHY (MII/RMII).
+    :SOC_EMAC_SUPPORTED: * :cpp:member:`clock_config`: configuration of EMAC Interface clock (``REF_CLK`` mode and GPIO number in case of RMII).
 
 Configuration for PHY is described in :cpp:class:`eth_phy_config_t`, including:
 
-* :cpp:member:`phy_addr`: multiple PHY device can share the same SMI bus, so each PHY needs a unique address. Usually this address is configured during hardware design by pulling up/down some PHY strapping pins. You can set the value from 0 to 15 based on your Ethernet board. Especially, if the SMI bus is shared by only one PHY device, setting this value to -1 can enable the driver to detect the PHY address automatically.
-* :cpp:member:`reset_timeout_ms`: reset timeout value, in milliseconds, typically PHY reset should be finished within 100ms.
-* :cpp:member:`autonego_timeout_ms`: auto-negotiation timeout value, in milliseconds. Ethernet driver will start negotiation with the peer Ethernet node automatically, to determine to duplex and speed mode. This value usually depends on the ability of the PHY device on your board.
-* :cpp:member:`reset_gpio_num`: if your board also connect the PHY reset pin to one of the GPIO, then set it here. Otherwise, set this field to -1.
+.. list::
+
+    * :cpp:member:`phy_addr`: multiple PHY device can share the same SMI bus, so each PHY needs a unique address. Usually this address is configured during hardware design by pulling up/down some PHY strapping pins. You can set the value from 0 to 15 based on your Ethernet board. Especially, if the SMI bus is shared by only one PHY device, setting this value to -1 can enable the driver to detect the PHY address automatically.
+    * :cpp:member:`reset_timeout_ms`: reset timeout value, in milliseconds, typically PHY reset should be finished within 100ms.
+    * :cpp:member:`autonego_timeout_ms`: auto-negotiation timeout value, in milliseconds. Ethernet driver will start negotiation with the peer Ethernet node automatically, to determine to duplex and speed mode. This value usually depends on the ability of the PHY device on your board.
+    * :cpp:member:`reset_gpio_num`: if your board also connect the PHY reset pin to one of the GPIO, then set it here. Otherwise, set this field to -1.
 
 ESP-IDF provides a default configuration for MAC and PHY in macro :c:macro:`ETH_MAC_DEFAULT_CONFIG` and :c:macro:`ETH_PHY_DEFAULT_CONFIG`.
 
@@ -177,30 +188,114 @@ Create MAC and PHY Instance
 
 Ethernet driver is implemented in an Object-Oriented style. Any operation on MAC and PHY should be based on the instance of them two.
 
+.. only:: SOC_EMAC_SUPPORTED
+
+    Internal EMAC + External PHY
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    .. highlight:: c
+
+    ::
+
+        eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();      // apply default MAC configuration
+        mac_config.smi_mdc_gpio_num = CONFIG_EXAMPLE_ETH_MDC_GPIO;   // alter the GPIO used for MDC signal
+        mac_config.smi_mdio_gpio_num = CONFIG_EXAMPLE_ETH_MDIO_GPIO; // alter the GPIO used for MDIO signal
+        esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);     // create MAC instance
+
+        eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();      // apply default PHY configuration
+        phy_config.phy_addr = CONFIG_EXAMPLE_ETH_PHY_ADDR;           // alter the PHY address according to your board design
+        phy_config.reset_gpio_num = CONFIG_EXAMPLE_ETH_PHY_RST_GPIO; // alter the GPIO used for PHY reset
+        esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);     // create PHY instance
+        // ESP-IDF officially supports several different Ethernet PHY chip driver
+        // esp_eth_phy_t *phy = esp_eth_phy_new_rtl8201(&phy_config);
+        // esp_eth_phy_t *phy = esp_eth_phy_new_lan8720(&phy_config);
+        // esp_eth_phy_t *phy = esp_eth_phy_new_dp83848(&phy_config);
+
+    Optional Runtime MAC Clock Configuration
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    EMAC ``REF_CLK`` can be optionally configured from user application code.
+
+    .. highlight:: c
+
+    ::
+
+        eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG(); // apply default MAC configuration
+
+        // ...
+
+        mac_config.interface = EMAC_DATA_INTERFACE_RMII; // alter EMAC Data Interface
+        mac_config.clock_config.rmii.clock_mode = EMAC_CLK_OUT; // select EMAC REF_CLK mode
+        mac_config.clock_config.rmii.clock_gpio = EMAC_CLK_OUT_GPIO; // select GPIO number used to input/output EMAC REF_CLK
+        esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config); // create MAC instance
+
+
+SPI-Ethernet Module
+^^^^^^^^^^^^^^^^^^^
+
 .. highlight:: c
 
 ::
 
-    eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();  // apply default MAC configuration
-    mac_config.smi_mdc_gpio_num = 23;  // alter the GPIO used for MDC signal
-    mac_config.smi_mdio_gpio_num = 18; // alter the GPIO used for MDIO signal
-    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config); // create MAC instance
+    eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();      // apply default MAC configuration
+    eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();      // apply default PHY configuration
+    phy_config.phy_addr = CONFIG_EXAMPLE_ETH_PHY_ADDR;           // alter the PHY address according to your board design
+    phy_config.reset_gpio_num = CONFIG_EXAMPLE_ETH_PHY_RST_GPIO; // alter the GPIO used for PHY reset
+    // Install GPIO interrupt service (as the SPI-Ethernet module is interrupt driven)
+    gpio_install_isr_service(0);
+    // SPI bus configuration
+    spi_device_handle_t spi_handle = NULL;
+    spi_bus_config_t buscfg = {
+        .miso_io_num = CONFIG_EXAMPLE_ETH_SPI_MISO_GPIO,
+        .mosi_io_num = CONFIG_EXAMPLE_ETH_SPI_MOSI_GPIO,
+        .sclk_io_num = CONFIG_EXAMPLE_ETH_SPI_SCLK_GPIO,
+        .quadwp_io_num = -1,
+        .quadhd_io_num = -1,
+    };
+    ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_EXAMPLE_ETH_SPI_HOST, &buscfg, 1));
+    // Allocate SPI device from the bus
+    spi_device_interface_config_t devcfg = {
+        .command_bits = 1,
+        .address_bits = 7,
+        .mode = 0,
+        .clock_speed_hz = CONFIG_EXAMPLE_ETH_SPI_CLOCK_MHZ * 1000 * 1000,
+        .spics_io_num = CONFIG_EXAMPLE_ETH_SPI_CS_GPIO,
+        .queue_size = 20
+    };
+    ESP_ERROR_CHECK(spi_bus_add_device(CONFIG_EXAMPLE_ETH_SPI_HOST, &devcfg, &spi_handle));
+    /* dm9051 ethernet driver is based on spi driver */
+    eth_dm9051_config_t dm9051_config = ETH_DM9051_DEFAULT_CONFIG(spi_handle);
+    dm9051_config.int_gpio_num = CONFIG_EXAMPLE_ETH_SPI_INT_GPIO;
+    esp_eth_mac_t *mac = esp_eth_mac_new_dm9051(&dm9051_config, &mac_config);
+    esp_eth_phy_t *phy = esp_eth_phy_new_dm9051(&phy_config);
 
-    eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG(); // apply default PHY configuration
-    phy_config.phy_addr = 1;       // alter the PHY address according to your board design
-    phy_config.reset_gpio_num = 5; // alter the GPIO used for PHY reset
-    esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config); // create PHY instance
-    // ESP-IDF officially supports several different Ethernet PHY
-    // esp_eth_phy_t *phy = esp_eth_phy_new_rtl8201(&phy_config);
-    // esp_eth_phy_t *phy = esp_eth_phy_new_lan8720(&phy_config);
-    // esp_eth_phy_t *phy = esp_eth_phy_new_dp83848(&phy_config);
 
 .. note::
-    Care should be taken, when creating MAC and PHY instance for SPI-Ethernet modules (e.g. DM9051), the constructor function must have the same suffix (e.g. `esp_eth_mac_new_dm9051` and `esp_eth_phy_new_dm9051`). This is because we don't have other choices but the integrated PHY.
-    Besides that, we have to create an SPI device handle firstly and then pass it to the MAC constructor function. More instructions on creating SPI device handle, please refer to :doc:`SPI Master <../peripherals/spi_master>`.
+    * When creating MAC and PHY instance for SPI-Ethernet modules (e.g. DM9051), the constructor function must have the same suffix (e.g. `esp_eth_mac_new_dm9051` and `esp_eth_phy_new_dm9051`). This is because we don't have other choices but the integrated PHY.
+    * We have to create an SPI device handle firstly and then pass it to the MAC constructor function. More instructions on creating SPI device handle, please refer to :doc:`SPI Master <../peripherals/spi_master>`.
+    * The SPI device configuration (i.e. `spi_device_interface_config_t`) can be different for other Ethernet modules. Please check out your module's spec and the examples in esp-idf.
+
 
 Install Driver
 --------------
+
+To install the Ethernet driver, we need to combine the instance of MAC and PHY and set some additional high-level configurations (i.e. not specific to either MAC or PHY) in :cpp:class:`esp_eth_config_t`:
+
+* :cpp:member:`mac`: instance that created from MAC generator (e.g. :cpp:func:`esp_eth_mac_new_esp32`).
+* :cpp:member:`phy`: instance that created from PHY generator (e.g. :cpp:func:`esp_eth_phy_new_ip101`).
+* :cpp:member:`check_link_period_ms`: Ethernet driver starts an OS timer to check the link status periodically, this field is used to set the interval, in milliseconds.
+* :cpp:member:`stack_input`: In most of Ethernet IoT applications, any Ethernet frame that received by driver should be passed to upper layer (e.g. TCP/IP stack). This field is set to a function which is responsible to deal with the incoming frames. You can even update this field at runtime via function :cpp:func:`esp_eth_update_input_path` after driver installation.
+* :cpp:member:`on_lowlevel_init_done` and :cpp:member:`on_lowlevel_deinit_done`: These two fields are used to specify the hooks which get invoked when low level hardware has been initialized or de-initialized.
+
+ESP-IDF provides a default configuration for driver installation in macro :c:macro:`ETH_DEFAULT_CONFIG`.
+
+.. highlight:: c
+
+::
+
+    esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy); // apply default driver configuration
+    esp_eth_handle_t eth_handle = NULL; // after driver installed, we will get the handle of the driver
+    esp_eth_driver_install(&config, &eth_handle); // install driver
 
 Ethernet driver also includes event-driven model, which will send useful and important event to user space. We need to initialize the event loop before installing the Ethernet driver. For more information about event-driven programming, please refer to :doc:`ESP Event <../system/esp_event>`.
 
@@ -221,7 +316,7 @@ Ethernet driver also includes event-driven model, which will send useful and imp
             esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, mac_addr);
             ESP_LOGI(TAG, "Ethernet Link Up");
             ESP_LOGI(TAG, "Ethernet HW Addr %02x:%02x:%02x:%02x:%02x:%02x",
-                     mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
+                        mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
             break;
         case ETHERNET_EVENT_DISCONNECTED:
             ESP_LOGI(TAG, "Ethernet Link Down");
@@ -239,24 +334,6 @@ Ethernet driver also includes event-driven model, which will send useful and imp
 
     esp_event_loop_create_default(); // create a default event loop that running in background
     esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, NULL); // register Ethernet event handler (to deal with user specific stuffs when event like link up/down happened)
-
-To install the Ethernet driver, we need to combine the instance of MAC and PHY and set some additional high-level configurations (i.e. not specific to either MAC or PHY) in :cpp:class:`esp_eth_config_t`:
-
-* :cpp:member:`mac`: instance that created from MAC generator (e.g. :cpp:func:`esp_eth_mac_new_esp32`).
-* :cpp:member:`phy`: instance that created from PHY generator (e.g. :cpp:func:`esp_eth_phy_new_ip101`).
-* :cpp:member:`check_link_period_ms`: Ethernet driver starts an OS timer to check the link status periodically, this field is used to set the interval, in milliseconds.
-* :cpp:member:`stack_input`: In most of Ethernet IoT applications, any Ethernet frame that received by driver should be passed to upper layer (e.g. TCP/IP stack). This field is set to a function which is responsible to deal with the incoming frames. You can even update this field at runtime via function :cpp:func:`esp_eth_update_input_path` after driver installation.
-* :cpp:member:`on_lowlevel_init_done` and :cpp:member:`on_lowlevel_deinit_done`: These two fields are used to specify the hooks which get invoked when low level hardware has been initialized or de-initialized.
-
-ESP-IDF provides a default configuration for driver installation in macro :c:macro:`ETH_DEFAULT_CONFIG`.
-
-.. highlight:: c
-
-::
-
-    esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy); // apply default driver configuration
-    esp_eth_handle_t eth_handle = NULL; // after driver installed, we will get the handle of the driver
-    esp_eth_driver_install(&config, &eth_handle); // install driver
 
 Start Ethernet Driver
 ---------------------
@@ -280,8 +357,8 @@ The TCP/IP stack used in ESP-IDF is called LwIP, for more information about it, 
 To connect Ethernet driver to TCP/IP stack, these three steps need to follow:
 
 1. Create network interface for Ethernet driver
-2. Register IP event handlers
-3. Attach the network interface to Ethernet driver
+2. Attach the network interface to Ethernet driver
+3. Register IP event handlers
 
 More information about network interface, please refer to :doc:`Network Interface <esp_netif>`.
 
@@ -307,11 +384,13 @@ More information about network interface, please refer to :doc:`Network Interfac
     esp_netif_init()); // Initialize TCP/IP network interface (should be called only once in application)
     esp_netif_config_t cfg = ESP_NETIF_DEFAULT_ETH(); // apply default network interface configuration for Ethernet
     esp_netif_t *eth_netif = esp_netif_new(&cfg); // create network interface for Ethernet driver
-    esp_eth_set_default_handlers(eth_netif); // set default handlers to process TCP/IP stuffs
-    esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, NULL); // register user defined IP event handlers
 
     esp_netif_attach(eth_netif, esp_eth_new_netif_glue(eth_handle)); // attach Ethernet driver to TCP/IP stack
+    esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, NULL); // register user defined IP event handlers
     esp_eth_start(eth_handle); // start Ethernet driver state machine
+
+.. warning::
+    It is recommended to fully initialize the Ethernet driver and network interface prior registering user's Ethernet/IP event handlers, i.e. register the event handlers as the last thing prior starting the Ethernet driver. Such approach ensures that Ethernet/IP events get executed first by the Ethernet driver or network interface and so the system is in expected state when executing user's handlers.
 
 .. _misc-operation-of-driver:
 
@@ -327,7 +406,7 @@ The following functions should only be invoked after the Ethernet driver has bee
 .. highlight:: c
 
 ::
-    
+
     /* get MAC address */
     uint8_t mac_addr[6];
     memset(mac_addr, 0, sizeof(mac_addr));

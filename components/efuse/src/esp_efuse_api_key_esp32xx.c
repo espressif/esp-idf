@@ -1,16 +1,8 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "esp_efuse.h"
 #include "esp_efuse_utility.h"
@@ -35,6 +27,7 @@ typedef struct {
 typedef struct {
     const esp_efuse_desc_t** revoke;
     const esp_efuse_desc_t** revoke_wr_dis;
+    const esp_efuse_purpose_t digest_purpose;
 } esp_efuse_revokes_t;
 
 const esp_efuse_keys_t s_table[EFUSE_BLK_KEY_MAX - EFUSE_BLK_KEY0] = {
@@ -50,18 +43,10 @@ const esp_efuse_keys_t s_table[EFUSE_BLK_KEY_MAX - EFUSE_BLK_KEY0] = {
 };
 
 const esp_efuse_revokes_t s_revoke_table[] = {
-    {ESP_EFUSE_SECURE_BOOT_KEY_REVOKE0, ESP_EFUSE_WR_DIS_SECURE_BOOT_KEY_REVOKE0},
-    {ESP_EFUSE_SECURE_BOOT_KEY_REVOKE1, ESP_EFUSE_WR_DIS_SECURE_BOOT_KEY_REVOKE1},
-    {ESP_EFUSE_SECURE_BOOT_KEY_REVOKE2, ESP_EFUSE_WR_DIS_SECURE_BOOT_KEY_REVOKE2},
+    {ESP_EFUSE_SECURE_BOOT_KEY_REVOKE0, ESP_EFUSE_WR_DIS_SECURE_BOOT_KEY_REVOKE0, ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST0},
+    {ESP_EFUSE_SECURE_BOOT_KEY_REVOKE1, ESP_EFUSE_WR_DIS_SECURE_BOOT_KEY_REVOKE1, ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST1},
+    {ESP_EFUSE_SECURE_BOOT_KEY_REVOKE2, ESP_EFUSE_WR_DIS_SECURE_BOOT_KEY_REVOKE2, ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST2},
 };
-
-#define ESP_EFUSE_CHK(ret)       \
-    do                           \
-    {                            \
-        if( ( err = (ret) ) != ESP_OK ) \
-            goto err_exit;        \
-    } while( 0 )
-
 
 bool esp_efuse_block_is_empty(esp_efuse_block_t block)
 {
@@ -157,8 +142,7 @@ esp_err_t esp_efuse_set_key_dis_read(esp_efuse_block_t block)
         return ESP_ERR_INVALID_ARG;
     }
     unsigned idx = block - EFUSE_BLK_KEY0;
-    const uint8_t one = 1;
-    return esp_efuse_write_field_blob(s_table[idx].key_rd_dis, &one, 1);
+    return esp_efuse_write_field_bit(s_table[idx].key_rd_dis);
 }
 
 bool esp_efuse_get_key_dis_write(esp_efuse_block_t block)
@@ -174,8 +158,7 @@ esp_err_t esp_efuse_set_key_dis_write(esp_efuse_block_t block)
         return ESP_ERR_INVALID_ARG;
     }
     unsigned idx = block - EFUSE_BLK_KEY0;
-    const uint8_t one = 1;
-    return esp_efuse_write_field_blob(s_table[idx].key_wr_dis, &one, 1);
+    return esp_efuse_write_field_bit(s_table[idx].key_wr_dis);
 }
 
 esp_efuse_purpose_t esp_efuse_get_key_purpose(esp_efuse_block_t block)
@@ -214,8 +197,7 @@ esp_err_t esp_efuse_set_keypurpose_dis_write(esp_efuse_block_t block)
         return ESP_ERR_INVALID_ARG;
     }
     unsigned idx = block - EFUSE_BLK_KEY0;
-    const uint8_t one = 1;
-    return esp_efuse_write_field_blob(s_table[idx].keypurpose_wr_dis, &one, 1);
+    return esp_efuse_write_field_bit(s_table[idx].keypurpose_wr_dis);
 }
 
 bool esp_efuse_find_purpose(esp_efuse_purpose_t purpose, esp_efuse_block_t *block)
@@ -239,7 +221,7 @@ esp_efuse_block_t esp_efuse_find_unused_key_block(void)
 {
     for (esp_efuse_block_t b = EFUSE_BLK_KEY0; b < EFUSE_BLK_KEY_MAX; b++) {
         if (esp_efuse_key_block_unused(b)) {
-                return b;
+            return b;
         }
     }
     return EFUSE_BLK_KEY_MAX; // nothing
@@ -319,9 +301,11 @@ esp_err_t esp_efuse_write_key(esp_efuse_block_t block, esp_efuse_purpose_t purpo
         unsigned idx = block - EFUSE_BLK_KEY0;
         ESP_EFUSE_CHK(esp_efuse_write_field_blob(s_table[idx].key, key, key_size_bytes * 8));
         ESP_EFUSE_CHK(esp_efuse_set_key_dis_write(block));
-        if (purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1 ||
+        if (purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY ||
+#ifdef SOC_FLASH_ENCRYPTION_XTS_AES_256
+            purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1 ||
             purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2 ||
-            purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY ||
+#endif
             purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL ||
             purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG ||
             purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_DIGITAL_SIGNATURE ||
@@ -337,7 +321,7 @@ err_exit:
     return err;
 }
 
-esp_err_t esp_efuse_write_keys(esp_efuse_purpose_t purposes[], uint8_t keys[][32], unsigned number_of_keys)
+esp_err_t esp_efuse_write_keys(const esp_efuse_purpose_t purposes[], uint8_t keys[][32], unsigned number_of_keys)
 {
     esp_err_t err = ESP_OK;
     if (number_of_keys == 0 || number_of_keys > (EFUSE_BLK_KEY_MAX - EFUSE_BLK_KEY0) || keys == NULL || purposes == NULL) {
@@ -368,4 +352,38 @@ err_exit:
     }
     esp_efuse_batch_write_cancel();
     return err;
+}
+
+esp_err_t esp_secure_boot_read_key_digests(ets_secure_boot_key_digests_t *trusted_keys)
+{
+    bool found = false;
+    esp_efuse_block_t key_block;
+
+    if (trusted_keys == NULL) {
+        return ESP_FAIL;
+    }
+
+    for (unsigned i = 0; i < MAX_KEY_DIGESTS; i++) {
+        trusted_keys->key_digests[i] = NULL;
+        if (esp_efuse_get_digest_revoke(i)) {
+            continue;
+        }
+
+        // Anti-FI check that this efuse really is not revoked
+        assert(esp_efuse_get_digest_revoke(i) == 0);
+
+        if (!esp_efuse_find_purpose(s_revoke_table[i].digest_purpose, &key_block)) {
+            continue;
+        }
+        trusted_keys->key_digests[i] = (const void *)esp_efuse_utility_get_read_register_address(key_block);
+        found = found || (trusted_keys->key_digests[i] != NULL);
+    }
+
+    trusted_keys->allow_key_revoke = false;
+
+    if (!found) {
+        return ESP_FAIL;
+    }
+
+    return ESP_OK;
 }

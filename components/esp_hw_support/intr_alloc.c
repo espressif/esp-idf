@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdint.h>
 #include <stdio.h>
@@ -106,10 +98,6 @@ static uint32_t non_iram_int_mask[SOC_CPU_CORES_NUM];
 //This bitmask has 1 in it if the int was disabled using esp_intr_noniram_disable.
 static uint32_t non_iram_int_disabled[SOC_CPU_CORES_NUM];
 static bool non_iram_int_disabled_flag[SOC_CPU_CORES_NUM];
-
-#if CONFIG_SYSVIEW_ENABLE
-extern uint32_t port_switch_flag[];
-#endif
 
 static portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
 
@@ -415,16 +403,12 @@ static void IRAM_ATTR shared_intr_isr(void *arg)
     while(sh_vec) {
         if (!sh_vec->disabled) {
             if ((sh_vec->statusreg == NULL) || (*sh_vec->statusreg & sh_vec->statusmask)) {
-#if CONFIG_SYSVIEW_ENABLE
                 traceISR_ENTER(sh_vec->source+ETS_INTERNAL_INTR_SOURCE_OFF);
-#endif
                 sh_vec->isr(sh_vec->arg);
-#if CONFIG_SYSVIEW_ENABLE
                 // check if we will return to scheduler or to interrupted task after ISR
-                if (!port_switch_flag[cpu_hal_get_core_id()]) {
+                if (!os_task_switch_is_pended(cpu_hal_get_core_id())) {
                     traceISR_EXIT();
                 }
-#endif
             }
         }
         sh_vec=sh_vec->next;
@@ -432,18 +416,18 @@ static void IRAM_ATTR shared_intr_isr(void *arg)
     portEXIT_CRITICAL_ISR(&spinlock);
 }
 
-#if CONFIG_SYSVIEW_ENABLE
+#if CONFIG_APPTRACE_SV_ENABLE
 //Common non-shared isr handler wrapper.
 static void IRAM_ATTR non_shared_intr_isr(void *arg)
 {
     non_shared_isr_arg_t *ns_isr_arg=(non_shared_isr_arg_t*)arg;
     portENTER_CRITICAL_ISR(&spinlock);
     traceISR_ENTER(ns_isr_arg->source+ETS_INTERNAL_INTR_SOURCE_OFF);
-    // FIXME: can we call ISR and check port_switch_flag after releasing spinlock?
-    // when CONFIG_SYSVIEW_ENABLE = 0 ISRs for non-shared IRQs are called without spinlock
+    // FIXME: can we call ISR and check os_task_switch_is_pended() after releasing spinlock?
+    // when CONFIG_APPTRACE_SV_ENABLE = 0 ISRs for non-shared IRQs are called without spinlock
     ns_isr_arg->isr(ns_isr_arg->isr_arg);
     // check if we will return to scheduler or to interrupted task after ISR
-    if (!port_switch_flag[cpu_hal_get_core_id()]) {
+    if (!os_task_switch_is_pended(cpu_hal_get_core_id())) {
         traceISR_EXIT();
     }
     portEXIT_CRITICAL_ISR(&spinlock);
@@ -539,7 +523,7 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
         //Mark as unusable for other interrupt sources. This is ours now!
         vd->flags=VECDESC_FL_NONSHARED;
         if (handler) {
-#if CONFIG_SYSVIEW_ENABLE
+#if CONFIG_APPTRACE_SV_ENABLE
             non_shared_isr_arg_t *ns_isr_arg=malloc(sizeof(non_shared_isr_arg_t));
             if (!ns_isr_arg) {
                 portEXIT_CRITICAL(&spinlock);
@@ -688,7 +672,7 @@ esp_err_t esp_intr_free(intr_handle_t handle)
 
     if ((handle->vector_desc->flags&VECDESC_FL_NONSHARED) || free_shared_vector) {
         ESP_EARLY_LOGV(TAG, "esp_intr_free: Disabling int, killing handler");
-#if CONFIG_SYSVIEW_ENABLE
+#if CONFIG_APPTRACE_SV_ENABLE
         if (!free_shared_vector) {
             void *isr_arg = interrupt_controller_hal_get_int_handler_arg(handle->vector_desc->intno);
             if (isr_arg) {

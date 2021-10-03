@@ -20,23 +20,14 @@ components/esp_rom/include/esp32s2/rom/rsa_pss.h
 components/esp_common/include/esp_private/
 
 components/esp32/include/esp32/brownout.h
-components/esp32/include/esp32/spiram.h
 components/esp32/include/esp32/cache_err_int.h
 
 components/driver/include/driver/sdmmc_defs.h
 components/driver/include/driver/sdmmc_types.h
 
-components/lwip/include/apps/dhcpserver/dhcpserver_options.h
-components/lwip/include/apps/dhcpserver/dhcpserver.h
-
 components/lwip/lwip/src/include/lwip/priv/memp_std.h
-components/lwip/port/esp32/include/arch/cc.h
-components/lwip/port/esp32/include/debug/lwip_debug.h
-components/lwip/port/esp32/include/arch/cc.h
 
-components/vfs/include/sys/dirent.h
-
-components/esp_wifi/esp32/include/phy_init_data.h
+components/esp_phy/esp32/include/phy_init_data.h
 
 components/spi_flash/include/spi_flash_chip_issi.h
 components/spi_flash/include/spi_flash_chip_mxic.h
@@ -51,6 +42,7 @@ components/bootloader_support/include/esp_app_format.h
 
 components/wpa_supplicant/include/
 components/wpa_supplicant/port/
+components/wpa_supplicant/esp_supplicant/include/
 
 components/mbedtls/port/include/
 components/mbedtls/mbedtls/include/mbedtls/
@@ -83,7 +75,6 @@ components/spiffs/include/spiffs_config.h
 
 components/unity/unity/src/unity_internals.h
 components/unity/unity/extras/
-components/unity/include/unity_fixture_extras.h
 components/unity/include/unity_config.h
 components/unity/include/unity_test_runner.h
 
@@ -116,11 +107,15 @@ components/esp_hw_support/port/esp32/regi2c_ctrl.h
 components/esp_rom/include/esp32/rom/sha.h
 components/esp_rom/include/esp32/rom/secure_boot.h
 components/esp_rom/include/esp32c3/rom/spi_flash.h
+components/esp_rom/include/esp32c3/rom/rtc.h
 components/esp_rom/include/esp32s2/rom/spi_flash.h
 components/esp_rom/include/esp32s2/rom/cache.h
 components/esp_rom/include/esp32s2/rom/secure_boot.h
 components/esp_rom/include/esp32s2/rom/opi_flash.h
+components/esp_rom/include/esp32s2/rom/rtc.h
 components/esp_rom/include/esp32s2/rom/efuse.h
+components/esp_rom/include/esp32s3/rom/rtc.h
+components/esp_rom/include/esp32h2/rom/rtc.h
 components/esp32/include/esp32/dport_access.h
 components/esp32/include/rom/sha.h
 components/esp32/include/rom/secure_boot.h
@@ -153,3 +148,4 @@ components/ulp/include/esp32s2/ulp_riscv.h
 components/lwip/include/apps/sntp/sntp.h
 components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h
+components/spi_flash/include/spi_flash_private.h

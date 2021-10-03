@@ -117,8 +117,8 @@ menu "Bootloader config"
             Allows to reset the device to factory settings:
             - clear one or more data partitions;
             - boot from "factory" partition.
-            The factory reset will occur if there is a GPIO input pulled low while device starts up.
-            See settings below.
+            The factory reset will occur if there is a GPIO input held at the configured level while
+            device starts up. See settings below.
 
     config BOOTLOADER_NUM_PIN_FACTORY_RESET
         int "Number of the GPIO input for factory reset"
@@ -127,9 +127,23 @@ menu "Bootloader config"
         range 0 44 if IDF_TARGET_ESP32S2
         default 4
         help
-            The selected GPIO will be configured as an input with internal pull-up enabled.
-            To trigger a factory reset, this GPIO must be pulled low on reset.
-            Note that GPIO34-39 do not have an internal pullup and an external one must be provided.
+            The selected GPIO will be configured as an input with internal pull-up enabled (note that on some SoCs.
+            not all pins have an internal pull-up, consult the hardware datasheet for details.) To trigger a factory
+            reset, this GPIO must be held high or low (as configured) on startup.
+
+    choice BOOTLOADER_FACTORY_RESET_PIN_LEVEL
+        bool "Factory reset GPIO level"
+        depends on BOOTLOADER_FACTORY_RESET
+        default BOOTLOADER_FACTORY_RESET_PIN_LOW
+        help
+            Pin level for factory reset, can be triggered on low or high.
+
+        config BOOTLOADER_FACTORY_RESET_PIN_LOW
+            bool "Reset on GPIO low"
+
+        config BOOTLOADER_FACTORY_RESET_PIN_HIGH
+            bool "Reset on GPIO high"
+    endchoice
 
     config BOOTLOADER_OTA_DATA_ERASE
         bool "Clear OTA data on factory reset (select factory partition)"
@@ -197,8 +211,11 @@ menu "Bootloader config"
         depends on BOOTLOADER_WDT_ENABLE
         default n
         help
-            If it is set, the client must itself reset or disable rtc_wdt in their code (app_main()).
-            Otherwise rtc_wdt will be disabled before calling app_main function.
+            If this option is set, the ESP-IDF app must explicitly reset, feed, or disable the rtc_wdt in
+            the app's own code.
+            If this option is not set (default), then rtc_wdt will be disabled by ESP-IDF before calling
+            the app_main() function.
+
             Use function rtc_wdt_feed() for resetting counter of rtc_wdt.
             Use function rtc_wdt_disable() for disabling rtc_wdt.
 
@@ -267,10 +284,14 @@ menu "Bootloader config"
         bool "Emulate operations with efuse secure version(only test)"
         default n
         depends on BOOTLOADER_APP_ANTI_ROLLBACK
+        select EFUSE_VIRTUAL
+        select EFUSE_VIRTUAL_KEEP_IN_FLASH
         help
-            This option allow emulate read/write operations with efuse secure version.
-            It allow to test anti-rollback implemention without permanent write eFuse bits.
-            In partition table should be exist this partition `emul_efuse, data, 5, , 0x2000`.
+            This option allows to emulate read/write operations with all eFuses and efuse secure version.
+            It allows to test anti-rollback implemention without permanent write eFuse bits.
+            There should be an entry in partition table with following details: `emul_efuse, data, efuse, , 0x2000`.
+
+            This option enables: EFUSE_VIRTUAL and EFUSE_VIRTUAL_KEEP_IN_FLASH.
 
     config BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP
         bool "Skip image validation when exiting deep sleep"
@@ -365,6 +386,15 @@ menu "Bootloader config"
             in this area of memory, you can increase it. It must be a multiple of 4 bytes.
             This area (rtc_retain_mem_t) is reserved and has access from the bootloader and an application.
 
+    config BOOTLOADER_FLASH_XMC_SUPPORT
+        bool "Enable the support for flash chips of XMC (READ HELP FIRST)"
+        default y
+        help
+            Perform the startup flow recommended by XMC. Please consult XMC for the details of this flow.
+            XMC chips will be forbidden to be used, when this option is disabled.
+
+            DON'T DISABLE THIS UNLESS YOU KNOW WHAT YOU ARE DOING.
+
 endmenu  # Bootloader
 
 
@@ -394,12 +424,12 @@ menu "Security features"
     config SECURE_BOOT_SUPPORTS_RSA
         bool
         default y
-        depends on ESP32_REV_MIN_3 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3
+        depends on ESP32_REV_MIN_3 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
 
     config SECURE_TARGET_HAS_SECURE_ROM_DL_MODE
         bool
         default y
-        depends on IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3
+        depends on IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
 
 
     config SECURE_SIGNED_APPS_NO_SECURE_BOOT
@@ -471,7 +501,8 @@ menu "Security features"
     config SECURE_BOOT
         bool "Enable hardware Secure Boot in bootloader (READ DOCS FIRST)"
         default n
-        depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || ESP32C3_REV_MIN_3
+        depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || ESP32C3_REV_MIN_3 || IDF_TARGET_ESP32S3
+        select ESPTOOLPY_NO_STUB if !IDF_TARGET_ESP32 && !IDF_TARGET_ESP32S2
         help
             Build a bootloader which enables Secure Boot on first boot.
 
@@ -634,7 +665,7 @@ menu "Security features"
     choice SECURE_FLASH_ENCRYPTION_KEYSIZE
         bool "Size of generated AES-XTS key"
         default SECURE_FLASH_ENCRYPTION_AES128
-        depends on IDF_TARGET_ESP32S2 && SECURE_FLASH_ENC_ENABLED
+        depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3) && SECURE_FLASH_ENC_ENABLED
         help
             Size of generated AES-XTS key.
 
@@ -672,6 +703,8 @@ menu "Security features"
 
         config SECURE_FLASH_ENCRYPTION_MODE_RELEASE
             bool "Release"
+            select PARTITION_TABLE_MD5 if !ESP32_COMPATIBLE_PRE_V3_1_BOOTLOADERS
+
     endchoice
 
     menu "Potentially insecure options"
@@ -732,9 +765,17 @@ menu "Security features"
                 efuse when Secure Boot is enabled. This prevents any more efuses from being read protected.
 
                 If this option is set, it will remain possible to write the EFUSE_RD_DIS efuse field after Secure
-                Boot is enabled. This may allow an attacker to read-protect the BLK2 efuse holding the public
-                key digest, causing an immediate denial of service and possibly allowing an additional fault
-                injection attack to bypass the signature protection.
+                Boot is enabled. This may allow an attacker to read-protect the BLK2 efuse (for ESP32) and
+                BLOCK4-BLOCK10 (i.e. BLOCK_KEY0-BLOCK_KEY5)(for other chips) holding the public key digest, causing an
+                immediate denial of service and possibly allowing an additional fault injection attack to
+                bypass the signature protection.
+
+                NOTE: Once a BLOCK is read-protected, the application will read all zeros from that block
+
+                NOTE: If "UART ROM download mode (Permanently disabled (recommended))" or
+                "UART ROM download mode (Permanently switch to Secure mode (recommended))" is set,
+                then it is __NOT__ possible to read/write efuses using espefuse.py utility.
+                However, efuse can be read/written from the application
 
         config SECURE_BOOT_ALLOW_UNUSED_DIGEST_SLOTS
             bool "Leave unused digest slots available (not revoke)"
@@ -851,6 +892,8 @@ menu "Security features"
 
                 It is also possible to enable secure download mode at runtime by calling
                 esp_efuse_enable_rom_secure_download_mode()
+
+                Note: Secure Download mode is not available for ESP32 (includes revisions till ECO3).
 
         config SECURE_INSECURE_ALLOW_DL_MODE
             bool "UART ROM download mode (Enabled (not recommended))"

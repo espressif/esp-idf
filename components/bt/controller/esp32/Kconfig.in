@@ -1,6 +1,5 @@
 choice BTDM_CTRL_MODE
     prompt "Bluetooth controller mode (BR/EDR/BLE/DUALMODE)"
-    depends on BT_CTRL_ESP32
     help
         Specify the bluetooth controller mode (BR/EDR, BLE or dual mode).
 
@@ -31,7 +30,7 @@ config BTDM_CTRL_BR_EDR_MAX_ACL_CONN
     range 1 7
     help
         BR/EDR ACL maximum connections of bluetooth controller.
-        Each connection uses 1.2KB static DRAM whenever the BT controller is enabled.
+        Each connection uses 1.2 KB DRAM whenever the BT controller is enabled.
 
 config BTDM_CTRL_BR_EDR_MAX_SYNC_CONN
     int "BR/EDR Sync(SCO/eSCO) Max Connections"
@@ -40,7 +39,7 @@ config BTDM_CTRL_BR_EDR_MAX_SYNC_CONN
     range 0 3
     help
         BR/EDR Synchronize maximum connections of bluetooth controller.
-        Each connection uses 2KB static DRAM whenever the BT controller is enabled.
+        Each connection uses 2 KB DRAM whenever the BT controller is enabled.
 
 
 
@@ -152,7 +151,7 @@ config BTDM_CTRL_BR_EDR_MAX_SYNC_CONN_EFF
 
 choice BTDM_CTRL_PINNED_TO_CORE_CHOICE
     prompt "The cpu core which bluetooth controller run"
-    depends on BT_CTRL_ESP32 && !FREERTOS_UNICORE
+    depends on !FREERTOS_UNICORE
     help
         Specify the cpu core to run bluetooth controller.
         Can not specify no-affinity.
@@ -172,7 +171,6 @@ config BTDM_CTRL_PINNED_TO_CORE
 
 choice BTDM_CTRL_HCI_MODE_CHOICE
     prompt "HCI mode"
-    depends on BT_CTRL_ESP32
     help
         Speicify HCI mode as VHCI or UART(H4)
 
@@ -210,11 +208,8 @@ menu "HCI UART(H4) Options"
 endmenu
 
 menu "MODEM SLEEP Options"
-    visible if BT_CTRL_ESP32
-
     config BTDM_CTRL_MODEM_SLEEP
         bool "Bluetooth modem sleep"
-        depends on BT_CTRL_ESP32
         default y
         help
             Enable/disable bluetooth controller low power mode.
@@ -416,17 +411,15 @@ config BTDM_BLE_ADV_REPORT_DISCARD_THRSHOLD
         If you set `BTDM_BLE_ADV_REPORT_DISCARD_THRSHOLD` to a small value or printf every adv lost event, it
         may cause adv packets lost more.
 
-menuconfig BTDM_COEX_BT_OPTIONS
-    bool "Coexistence Bluetooth Side Options"
-    depends on ESP32_WIFI_SW_COEXIST_ENABLE
-    default n
-    help
-        Options of Bluetooth Side of WiFi and bluetooth coexistence.
 
-config BTDM_COEX_BLE_ADV_HIGH_PRIORITY
-    bool "Improve BLE ADV priority for WiFi & BLE coexistence"
-    depends on BTDM_COEX_BT_OPTIONS
-    default n
+config BTDM_RESERVE_DRAM
+    hex
+    default 0xdb5c if BT_ENABLED
+    default 0
+
+config BTDM_CTRL_HLI
+    bool "High level interrupt"
+    depends on BT_ENABLED
+    default y
     help
-        Improve BLE ADV coexistence priority to make it better performance.
-        For example, BLE mesh need to enable this option to improve BLE adv performance.
+        Using Level 4 interrupt for Bluetooth.

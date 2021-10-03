@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "sdkconfig.h"
 
 #include <string.h>
@@ -21,6 +13,7 @@
 #include "esp_log.h"
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
+#include "esp_efuse.h"
 
 // Secure boot V2 for bootloader.
 
@@ -72,49 +65,38 @@ static esp_err_t validate_signature_block(const ets_secure_boot_sig_block_t *blo
 
 static esp_err_t get_secure_boot_key_digests(esp_image_sig_public_key_digests_t *public_key_digests)
 {
-#if SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS > 1
     // Read key digests from efuse
     ets_secure_boot_key_digests_t trusted_keys;
     ets_secure_boot_key_digests_t trusted_key_copies[2];
-    ETS_STATUS ets_ret;
 
     memset(&trusted_keys, 0, sizeof(ets_secure_boot_key_digests_t));
     memset(trusted_key_copies, 0, 2 * sizeof(ets_secure_boot_key_digests_t));
 
-
-    ets_ret = ets_secure_boot_read_key_digests(&trusted_keys);
+    esp_err_t err = esp_secure_boot_read_key_digests(&trusted_keys);
 
     // Create the copies for FI checks (assuming result is ETS_OK, if it's not then it'll fail the fault check anyhow)
-    ets_secure_boot_read_key_digests(&trusted_key_copies[0]);
-    ets_secure_boot_read_key_digests(&trusted_key_copies[1]);
+    esp_secure_boot_read_key_digests(&trusted_key_copies[0]);
+    esp_secure_boot_read_key_digests(&trusted_key_copies[1]);
     ESP_FAULT_ASSERT(memcmp(&trusted_keys, &trusted_key_copies[0], sizeof(ets_secure_boot_key_digests_t)) == 0);
     ESP_FAULT_ASSERT(memcmp(&trusted_keys, &trusted_key_copies[1], sizeof(ets_secure_boot_key_digests_t)) == 0);
 
-    if (ets_ret == ETS_OK) {
+    if (err == ESP_OK) {
         for (unsigned i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
             if (trusted_keys.key_digests[i] != NULL) {
                 memcpy(public_key_digests->key_digests[i], (uint8_t *)trusted_keys.key_digests[i], ESP_SECURE_BOOT_DIGEST_LEN);
                 public_key_digests->num_digests++;
             }
         }
+#if SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS == 1
+        if (esp_efuse_block_is_empty(EFUSE_BLK_SECURE_BOOT)) {
+            return ESP_ERR_NOT_FOUND;
+        }
+#endif // SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS
         if (public_key_digests->num_digests > 0) {
             return ESP_OK;
         }
     }
     return ESP_ERR_NOT_FOUND;
-#else
-    bool all_zeroes = true;
-    uint32_t *reg = (uint32_t*)&public_key_digests->key_digests[0];
-    for (int i = 0; i < ESP_SECURE_BOOT_DIGEST_LEN / 4; i++) {
-        *(reg + i) = REG_READ(EFUSE_BLK2_RDATA0_REG + i * 4);
-        all_zeroes = all_zeroes && (*(reg + i) == 0);
-    }
-    if (all_zeroes) {
-        return ESP_ERR_NOT_FOUND;
-    }
-    public_key_digests->num_digests = 1;
-    return ESP_OK;
-#endif // SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS
 }
 
 // if CONFIG_SECURE_BOOT_V2_ENABLED==y and key digests from eFuse are missing, then it is the first boot,

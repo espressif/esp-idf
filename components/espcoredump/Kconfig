@@ -15,9 +15,11 @@ menu "Core dump"
         config ESP_COREDUMP_ENABLE_TO_FLASH
             bool "Flash"
             depends on !SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+            select FREERTOS_ENABLE_TASK_SNAPSHOT
             select ESP_COREDUMP_ENABLE
         config ESP_COREDUMP_ENABLE_TO_UART
             bool "UART"
+            select FREERTOS_ENABLE_TASK_SNAPSHOT
             select ESP_COREDUMP_ENABLE
         config ESP_COREDUMP_ENABLE_TO_NONE
             bool "None"
@@ -89,6 +91,15 @@ menu "Core dump"
             the stack of crashed task/ISR, otherwise special stack will be allocated.
             To ensure that core dump itself will not overflow task/ISR stack set this to the value above 800.
             NOTE: It eats DRAM.
+
+    config ESP_COREDUMP_SUMMARY_STACKDUMP_SIZE
+        int "Size of the stack dump buffer"
+        depends on ESP_COREDUMP_DATA_FORMAT_ELF && ESP_COREDUMP_ENABLE_TO_FLASH && IDF_TARGET_ARCH_RISCV
+        range 512 4096
+        default 1024
+        help
+            Size of the buffer that would be reserved for extracting backtrace info summary.
+            This buffer will contain the stack dump of the crashed task. This dump is useful in generating backtrace
 
     choice ESP_COREDUMP_DECODE
         prompt "Handling of UART core dumps in IDF Monitor"

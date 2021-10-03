@@ -303,3 +303,14 @@ API 参考
 
 .. include-build-file:: inc/esp_ota_ops.inc
 
+OTA 升级失败排查
+------------------
+
+.. figure:: ../../../_static/how-to-debug-when-OTA-fails-cn.png
+    :align: center
+    :scale: 100%
+    :alt: OTA 升级失败时如何排查（点击放大）
+    :figclass: align-center
+
+    OTA 升级失败时如何排查（点击放大）
+

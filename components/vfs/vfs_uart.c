@@ -28,6 +28,7 @@
 #include "driver/uart_select.h"
 #include "esp_rom_uart.h"
 #include "soc/soc_caps.h"
+#include "hal/uart_ll.h"
 
 // TODO: make the number of UARTs chip dependent
 #define UART_NUM SOC_UART_NUM
@@ -158,14 +159,13 @@ static int uart_open(const char * path, int flags, int mode)
 static void uart_tx_char(int fd, int c)
 {
     uart_dev_t* uart = s_ctx[fd]->uart;
-    while (uart->status.txfifo_cnt >= 127) {
+    const uint8_t ch = (uint8_t) c;
+
+    while (uart_ll_get_txfifo_len(uart) < 2) {
         ;
     }
-#if CONFIG_IDF_TARGET_ESP32
-    uart->fifo.rw_byte = c;
-#else // CONFIG_IDF_TARGET_ESP32
-    uart->ahb_fifo.rw_byte = c;
-#endif
+
+    uart_ll_write_txfifo(uart, &ch, 1);
 }
 
 static void uart_tx_char_via_driver(int fd, int c)
@@ -177,14 +177,13 @@ static void uart_tx_char_via_driver(int fd, int c)
 static int uart_rx_char(int fd)
 {
     uart_dev_t* uart = s_ctx[fd]->uart;
-    if (uart->status.rxfifo_cnt == 0) {
+    uint8_t ch;
+    if (uart_ll_get_rxfifo_len(uart) == 0) {
         return NONE;
     }
-#if CONFIG_IDF_TARGET_ESP32
-    return uart->fifo.rw_byte;
-#else // CONFIG_IDF_TARGET_ESP32
-    return READ_PERI_REG(UART_FIFO_AHB_REG(fd));
-#endif
+    uart_ll_read_rxfifo(uart, &ch, 1);
+
+    return ch;
 }
 
 static int uart_rx_char_via_driver(int fd)
@@ -364,9 +363,11 @@ static esp_err_t register_select(uart_select_args_t *args)
     if (args) {
         portENTER_CRITICAL(&s_registered_select_lock);
         const int new_size = s_registered_select_num + 1;
-        if ((s_registered_selects = realloc(s_registered_selects, new_size * sizeof(uart_select_args_t *))) == NULL) {
+        uart_select_args_t **new_selects;
+        if ((new_selects = realloc(s_registered_selects, new_size * sizeof(uart_select_args_t *))) == NULL) {
             ret = ESP_ERR_NO_MEM;
         } else {
+            s_registered_selects = new_selects;
             s_registered_selects[s_registered_select_num] = args;
             s_registered_select_num = new_size;
             ret = ESP_OK;
@@ -390,12 +391,9 @@ static esp_err_t unregister_select(uart_select_args_t *args)
                 // last item.
                 s_registered_selects[i] = s_registered_selects[new_size];
                 s_registered_selects = realloc(s_registered_selects, new_size * sizeof(uart_select_args_t *));
-                if (s_registered_selects || new_size == 0) {
-                    s_registered_select_num = new_size;
-                    ret = ESP_OK;
-                } else {
-                    ret = ESP_ERR_NO_MEM;
-                }
+                // Shrinking a buffer with realloc is guaranteed to succeed.
+                s_registered_select_num = new_size;
+                ret = ESP_OK;
                 break;
             }
         }

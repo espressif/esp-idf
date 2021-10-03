@@ -1,16 +1,8 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <string.h>
 #include <stdint.h>
 #include <limits.h>
@@ -21,23 +13,21 @@
 
 #include "esp_rom_sys.h"
 #include "esp_rom_uart.h"
+#include "sdkconfig.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
 #include "esp32/rom/cache.h"
 #include "esp32/rom/spi_flash.h"
-#include "esp32/rom/rtc.h"
 #include "esp32/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/cache.h"
 #include "esp32s2/rom/spi_flash.h"
-#include "esp32s2/rom/rtc.h"
 #include "esp32s2/rom/secure_boot.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/cache.h"
 #include "esp32s3/rom/spi_flash.h"
-#include "esp32s3/rom/rtc.h"
 #include "esp32s3/rom/secure_boot.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
@@ -47,10 +37,20 @@
 #include "esp32c3/rom/ets_sys.h"
 #include "esp32c3/rom/spi_flash.h"
 #include "esp32c3/rom/crc.h"
-#include "esp32c3/rom/rtc.h"
 #include "esp32c3/rom/uart.h"
 #include "esp32c3/rom/gpio.h"
 #include "esp32c3/rom/secure_boot.h"
+#include "soc/extmem_reg.h"
+#include "soc/cache_memory.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/cache.h"
+#include "esp32h2/rom/efuse.h"
+#include "esp32h2/rom/ets_sys.h"
+#include "esp32h2/rom/spi_flash.h"
+#include "esp32h2/rom/crc.h"
+#include "esp32h2/rom/uart.h"
+#include "esp32h2/rom/gpio.h"
+#include "esp32h2/rom/secure_boot.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
 #else // CONFIG_IDF_TARGET_*
@@ -65,7 +65,6 @@
 #include "soc/rtc_periph.h"
 #include "soc/timer_periph.h"
 
-#include "sdkconfig.h"
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
 #include "esp_flash_encrypt.h"
@@ -77,6 +76,7 @@
 #include "bootloader_utility.h"
 #include "bootloader_sha.h"
 #include "bootloader_console.h"
+#include "bootloader_soc.h"
 #include "esp_efuse.h"
 
 static const char *TAG = "boot";
@@ -194,8 +194,8 @@ bool bootloader_utility_load_partition_table(bootloader_state_t *bs)
                 break;
             case PART_SUBTYPE_DATA_EFUSE_EM:
                 partition_usage = "efuse";
-#ifdef CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
-                esp_efuse_init(partition->pos.offset, partition->pos.size);
+#ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+                esp_efuse_init_virtual_mode_in_flash(partition->pos.offset, partition->pos.size);
 #endif
                 break;
             default:
@@ -452,7 +452,7 @@ static void set_actual_ota_seq(const bootloader_state_t *bs, int index)
 #ifdef CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP
 void bootloader_utility_load_boot_image_from_deep_sleep(void)
 {
-    if (rtc_get_reset_reason(0) == DEEPSLEEP_RESET) {
+    if (esp_rom_get_reset_reason(0) == RESET_REASON_CORE_DEEP_SLEEP) {
         esp_partition_pos_t *partition = bootloader_common_get_rtc_retain_mem_partition();
         if (partition != NULL) {
             esp_image_metadata_t image_data;
@@ -637,6 +637,12 @@ static void load_image(const esp_image_metadata_t *image_data)
     ESP_LOGI(TAG, "Disabling RNG early entropy source...");
     bootloader_random_disable();
 
+    /* Disable glitch reset after all the security checks are completed.
+     * Glitch detection can be falsely triggered by EMI interference (high RF TX power, etc)
+     * and to avoid such false alarms, disable it.
+     */
+    bootloader_ana_clock_glitch_reset_config(false);
+
     // copy loaded segments to RAM, set up caches for mapped segments, and start application
     unpack_load_app(image_data);
 }
@@ -708,6 +714,9 @@ static void set_cache_and_start_app(
 #elif CONFIG_IDF_TARGET_ESP32C3
     uint32_t autoload = Cache_Suspend_ICache();
     Cache_Invalidate_ICache_All();
+#elif CONFIG_IDF_TARGET_ESP32H2
+    uint32_t autoload = Cache_Suspend_ICache();
+    Cache_Invalidate_ICache_All();
 #endif
 
     /* Clear the MMU entries that are already set up,
@@ -733,6 +742,8 @@ static void set_cache_and_start_app(
 #elif CONFIG_IDF_TARGET_ESP32S3
     rc = Cache_Dbus_MMU_Set(MMU_ACCESS_FLASH, drom_load_addr & 0xffff0000, drom_addr & 0xffff0000, 64, drom_page_count, 0);
 #elif CONFIG_IDF_TARGET_ESP32C3
+    rc = Cache_Dbus_MMU_Set(MMU_ACCESS_FLASH, drom_load_addr & 0xffff0000, drom_addr & 0xffff0000, 64, drom_page_count, 0);
+#elif CONFIG_IDF_TARGET_ESP32H2
     rc = Cache_Dbus_MMU_Set(MMU_ACCESS_FLASH, drom_load_addr & 0xffff0000, drom_addr & 0xffff0000, 64, drom_page_count, 0);
 #endif
     ESP_LOGV(TAG, "rc=%d", rc);
@@ -761,6 +772,8 @@ static void set_cache_and_start_app(
     rc = Cache_Ibus_MMU_Set(MMU_ACCESS_FLASH, irom_load_addr & 0xffff0000, irom_addr & 0xffff0000, 64, irom_page_count, 0);
 #elif CONFIG_IDF_TARGET_ESP32C3
     rc = Cache_Ibus_MMU_Set(MMU_ACCESS_FLASH, irom_load_addr & 0xffff0000, irom_addr & 0xffff0000, 64, irom_page_count, 0);
+#elif CONFIG_IDF_TARGET_ESP32H2
+    rc = Cache_Ibus_MMU_Set(MMU_ACCESS_FLASH, irom_load_addr & 0xffff0000, irom_addr & 0xffff0000, 64, irom_page_count, 0);
 #endif
     ESP_LOGV(TAG, "rc=%d", rc);
 #if CONFIG_IDF_TARGET_ESP32
@@ -784,6 +797,9 @@ static void set_cache_and_start_app(
 #elif CONFIG_IDF_TARGET_ESP32C3
     REG_CLR_BIT(EXTMEM_ICACHE_CTRL1_REG, EXTMEM_ICACHE_SHUT_IBUS);
     REG_CLR_BIT(EXTMEM_ICACHE_CTRL1_REG, EXTMEM_ICACHE_SHUT_DBUS);
+#elif CONFIG_IDF_TARGET_ESP32H2
+    REG_CLR_BIT(EXTMEM_ICACHE_CTRL1_REG, EXTMEM_ICACHE_SHUT_IBUS);
+    REG_CLR_BIT(EXTMEM_ICACHE_CTRL1_REG, EXTMEM_ICACHE_SHUT_DBUS);
 #endif
 #if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Enable(0);
@@ -792,6 +808,8 @@ static void set_cache_and_start_app(
 #elif CONFIG_IDF_TARGET_ESP32S3
     Cache_Resume_DCache(autoload);
 #elif CONFIG_IDF_TARGET_ESP32C3
+    Cache_Resume_ICache(autoload);
+#elif CONFIG_IDF_TARGET_ESP32H2
     Cache_Resume_ICache(autoload);
 #endif
     // Application will need to do Cache_Flush(1) and Cache_Read_Enable(1)
@@ -820,7 +838,11 @@ void bootloader_reset(void)
 
 void bootloader_atexit(void)
 {
+#ifdef BOOTLOADER_BUILD
     bootloader_console_deinit();
+#else
+    abort();
+#endif
 }
 
 esp_err_t bootloader_sha256_hex_to_str(char *out_str, const uint8_t *in_array_hex, size_t len)

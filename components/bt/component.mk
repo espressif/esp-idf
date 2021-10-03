@@ -10,6 +10,7 @@ COMPONENT_ADD_INCLUDEDIRS := include
 LIBS := btdm_app
 
 COMPONENT_ADD_LDFLAGS     := -lbt -L $(COMPONENT_PATH)/controller/lib_esp32/esp32 \
+                          -u ld_include_hli_vectors_bt \
                            $(addprefix -l,$(LIBS))
 
 # re-link program if BT binary libs change
@@ -25,6 +26,18 @@ CFLAGS += -Wno-implicit-fallthrough
 COMPONENT_ADD_INCLUDEDIRS +=    include/esp32/include
 COMPONENT_SRCDIRS +=  controller/esp32
 
+COMPONENT_PRIV_INCLUDEDIRS += common/btc/include              	   \
+							  common/include
+
+COMPONENT_ADD_INCLUDEDIRS +=  common/api/include/api                       \
+                              common/btc/profile/esp/blufi/include         \
+                              common/btc/profile/esp/include               \
+		              common/osi/include
+COMPONENT_SRCDIRS +=    common/api        \
+	                common/btc/core                               \
+                        common/osi              \
+                        common/btc/profile/esp/blufi
+
 ifdef CONFIG_BT_BLUEDROID_ENABLED
 
 COMPONENT_PRIV_INCLUDEDIRS +=   host/bluedroid/bta/include                   \
@@ -34,6 +47,7 @@ COMPONENT_PRIV_INCLUDEDIRS +=   host/bluedroid/bta/include                   \
                                 host/bluedroid/bta/hf_client/include         \
                                 host/bluedroid/bta/dm/include                \
                                 host/bluedroid/bta/gatt/include              \
+                                host/bluedroid/bta/hd/include                \
                                 host/bluedroid/bta/hh/include                \
                                 host/bluedroid/bta/jv/include                \
                                 host/bluedroid/bta/sdp/include               \
@@ -45,7 +59,6 @@ COMPONENT_PRIV_INCLUDEDIRS +=   host/bluedroid/bta/include                   \
                                 host/bluedroid/external/sbc/decoder/include  \
                                 host/bluedroid/external/sbc/encoder/include  \
                                 host/bluedroid/external/sbc/plc/include      \
-                                host/bluedroid/btc/profile/esp/blufi/include \
                                 host/bluedroid/btc/profile/esp/include       \
                                 host/bluedroid/btc/profile/std/gatt/include  \
                                 host/bluedroid/btc/profile/std/gap/include   \
@@ -59,6 +72,7 @@ COMPONENT_PRIV_INCLUDEDIRS +=   host/bluedroid/bta/include                   \
                                 host/bluedroid/stack/gap/include             \
                                 host/bluedroid/stack/gatt/include            \
                                 host/bluedroid/stack/hcic/include            \
+                                host/bluedroid/stack/hid/include             \
                                 host/bluedroid/stack/l2cap/include           \
                                 host/bluedroid/stack/sdp/include             \
                                 host/bluedroid/stack/smp/include             \
@@ -72,10 +86,10 @@ COMPONENT_PRIV_INCLUDEDIRS +=   host/bluedroid/bta/include                   \
                                 host/bluedroid/common/include                \
 
 COMPONENT_ADD_INCLUDEDIRS +=    host/bluedroid/api/include/api       \
-								common/osi/include
 
 COMPONENT_SRCDIRS +=    host/bluedroid/bta/dm                      \
                         host/bluedroid/bta/gatt                    \
+                        host/bluedroid/bta/hd                      \
                         host/bluedroid/bta/hh                      \
                         host/bluedroid/bta/sdp                     \
                         host/bluedroid/bta/av                      \
@@ -94,7 +108,6 @@ COMPONENT_SRCDIRS +=    host/bluedroid/bta/dm                      \
                         host/bluedroid/external/sbc/encoder/srce   \
                         host/bluedroid/external/sbc/plc            \
                         host/bluedroid/btc/core                    \
-                        host/bluedroid/btc/profile/esp/blufi       \
                         host/bluedroid/btc/profile/std/gap         \
                         host/bluedroid/btc/profile/std/gatt        \
                         host/bluedroid/btc/profile/std/a2dp        \
@@ -109,6 +122,7 @@ COMPONENT_SRCDIRS +=    host/bluedroid/bta/dm                      \
                         host/bluedroid/stack/gap                   \
                         host/bluedroid/stack/gatt                  \
                         host/bluedroid/stack/hcic                  \
+                        host/bluedroid/stack/hid                   \
                         host/bluedroid/stack/include               \
                         host/bluedroid/stack/l2cap                 \
                         host/bluedroid/stack/sdp                   \
@@ -129,11 +143,7 @@ host/bluedroid/btc/core/btc_config.o: CFLAGS += -Wno-unused-const-variable
 host/bluedroid/stack/btm/btm_sec.o: CFLAGS += -Wno-unused-const-variable
 host/bluedroid/stack/smp/smp_keys.o: CFLAGS += -Wno-unused-const-variable
 
-COMPONENT_PRIV_INCLUDEDIRS += common/btc/include              	   \
-							  common/include
-
-COMPONENT_SRCDIRS += common/osi                         		   \
-					 common/btc/core                               \
+COMPONENT_SRCDIRS += common/btc/profile/esp/blufi/bluedroid_host
 
 ifdef CONFIG_BLE_MESH
 
@@ -219,14 +229,9 @@ endif
 COMPONENT_OBJEXCLUDE += host/nimble/nimble/nimble/host/store/config/src/ble_store_config_conf.o
 
 ifdef CONFIG_BLE_MESH
-COMPONENT_PRIV_INCLUDEDIRS += common/btc/include 	\
-			      common/include
 
-COMPONENT_SRCDIRS += common/osi 		\
-					 common/btc/core 	\
-					 esp_ble_mesh/mesh_core/nimble_host
+COMPONENT_SRCDIRS += esp_ble_mesh/mesh_core/nimble_host
 
-COMPONENT_ADD_INCLUDEDIRS += common/osi/include
 endif
 
 ifdef CONFIG_BT_NIMBLE_MESH
@@ -235,6 +240,7 @@ COMPONENT_ADD_INCLUDEDIRS += host/nimble/nimble/nimble/host/mesh/include
 COMPONENT_SRCDIRS += host/nimble/nimble/nimble/host/mesh/src
 
 endif
+COMPONENT_SRCDIRS += common/btc/profile/esp/blufi/nimble_host
 endif
 
 endif

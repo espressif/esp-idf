@@ -53,13 +53,19 @@ For easy interaction with IDF Monitor, use the keyboard shortcuts given in the t
    * - * Ctrl+L
      - Stop/resume log output saved to file
      - Creates a file in the project directory and the output is written to that file until this is disabled with the same keyboard shortcut (or IDF Monitor exits).                
+   * - * Ctrl+I (or I)
+     - Stop/resume printing timestamps
+     - IDF Monitor can print a timestamp in the beginning of each line. The timestamp format can be changed by the ``--timestamp-format`` command line argument.
    * - * Ctrl+H (or H)
      - Display all keyboard shortcuts
      -                
    * - * Ctrl+X (or X)
      - Exit the program
      -                
-     
+   * - Ctrl+C
+     - Interrupt running application
+     - Pauses IDF monitor and run GDB_ project debugger to debug the application at runtime. This requires :ref:CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME option to be enabled.     
+
 Any keys pressed, other than ``Ctrl-]`` and ``Ctrl-T``, will be sent through the serial port.
 
 
@@ -186,11 +192,13 @@ Launching GDB with GDBStub
 
 By default, if esp-idf crashes, the panic handler prints relevant registers and the stack dump (similar to the ones above) over the serial port. Then it resets the board.
 
+Furthermore, the application can be configured to run GDBStub in the background and handle the Ctrl+C event from the monitor.
+
 Optionally, the panic handler can be configured to run GDBStub, the tool which can communicate with  GDB_ project debugger. GDBStub allows to read memory, examine call stack frames and variables, etc. It is not as versatile as JTAG debugging, but this method does not require any special hardware.
 
-To enable GDBStub, open the project configuration menu (``idf.py menuconfig``) and set :ref:`CONFIG_ESP_SYSTEM_PANIC` to ``Invoke GDBStub``.
+To enable GDBStub on panic, open the project configuration menu (``idf.py menuconfig``) and set :ref:`CONFIG_ESP_SYSTEM_PANIC` to ``GDBStub on panic`` or set :ref:`CONFIG_ESP_SYSTEM_PANIC` to ``GDBStub on runtime``.
 
-In this case, if the panic handler is triggered, as soon as IDF Monitor sees that GDBStub has loaded, it automatically pauses serial monitoring and runs GDB with necessary arguments. After GDB exits, the board is reset via the RTS serial line. If this line is not connected, please reset the board manually by pressing its Reset button.
+In this case, if the panic handler or Ctrl+C command is triggered, as soon as IDF Monitor sees that GDBStub has loaded, it automatically pauses serial monitoring and runs GDB with necessary arguments. After GDB exits, the board is reset via the RTS serial line. If this line is not connected, please reset the board manually by pressing its Reset button.
 
 In the background, IDF Monitor runs the following command::
 
@@ -262,7 +270,6 @@ Known Issues with IDF Monitor
 Issues Observed on Windows
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- If in the Windows environment you receive the error "winpty: command not found", fix it by running ``pacman -S winpty``.
 - Arrow keys, as well as some other keys, do not work in GDB due to Windows Console limitations.
 - Occasionally, when "idf.py" or "make" exits, it might stall for up to 30 seconds before IDF Monitor resumes.
 - When "gdb" is run, it might stall for a short time before it begins communicating with the GDBStub.

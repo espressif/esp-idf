@@ -57,17 +57,10 @@ ESP-IDF 将使用 macOS 上默认安装的 Python 版本。
 
       sudo port install python38
 
-停用 Python 2 
-====================
-
-Python 2 已经 `结束生命周期 <https://www.python.org/doc/sunset-python-2/>`_，ESP-IDF 很快将不再支持 Python 2。请安装 Python 3.6 或以上版本。可参考上面列出的 macOS 安装说明。
-
-
 后续步骤
 ==========
 
 请前往 :ref:`get-started-get-esp-idf` 章节继续设置开发环境。
-
 
 .. _cmake: https://cmake.org/
 .. _ninja: https://ninja-build.org/
@@ -75,4 +68,3 @@ Python 2 已经 `结束生命周期 <https://www.python.org/doc/sunset-python-2/
 .. _homebrew: https://brew.sh/
 .. _MacPorts: https://www.macports.org/install.php
 .. _Catalina 10.15 发布说明: https://developer.apple.com/documentation/macos-release-notes/macos-catalina-10_15-release-notes
-

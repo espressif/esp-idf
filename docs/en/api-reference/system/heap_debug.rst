@@ -213,21 +213,35 @@ An example::
       ...
   }
 
-The output from the heap trace will look something like this::
+The output from the heap trace will look something like this:
 
-  2 allocations trace (100 entry buffer)
-  32 bytes (@ 0x3ffaf214) allocated CPU 0 ccount 0x2e9b7384 caller 0x400d276d:0x400d27c1
-  0x400d276d: leak_some_memory at /path/to/idf/examples/get-started/blink/main/./blink.c:27
+.. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
-  0x400d27c1: blink_task at /path/to/idf/examples/get-started/blink/main/./blink.c:52
+    ::
 
-  8 bytes (@ 0x3ffaf804) allocated CPU 0 ccount 0x2e9b79c0 caller 0x400d2776:0x400d27c1
-  0x400d2776: leak_some_memory at /path/to/idf/examples/get-started/blink/main/./blink.c:29
+        2 allocations trace (100 entry buffer)
+        32 bytes (@ 0x3ffaf214) allocated CPU 0 ccount 0x2e9b7384 caller 0x400d276d:0x400d27c1
+        0x400d276d: leak_some_memory at /path/to/idf/examples/get-started/blink/main/./blink.c:27
 
-  0x400d27c1: blink_task at /path/to/idf/examples/get-started/blink/main/./blink.c:52
+        0x400d27c1: blink_task at /path/to/idf/examples/get-started/blink/main/./blink.c:52
 
-  40 bytes 'leaked' in trace (2 allocations)
-  total allocations 2 total frees 0
+        8 bytes (@ 0x3ffaf804) allocated CPU 0 ccount 0x2e9b79c0 caller 0x400d2776:0x400d27c1
+        0x400d2776: leak_some_memory at /path/to/idf/examples/get-started/blink/main/./blink.c:29
+
+        0x400d27c1: blink_task at /path/to/idf/examples/get-started/blink/main/./blink.c:52
+
+        40 bytes 'leaked' in trace (2 allocations)
+        total allocations 2 total frees 0
+
+.. only:: CONFIG_IDF_TARGET_ARCH_RISCV
+
+    ::
+
+        2 allocations trace (100 entry buffer)
+        32 bytes (@ 0x3ffaf214) allocated CPU 0 ccount 0x2e9b7384 caller
+        8 bytes (@ 0x3ffaf804) allocated CPU 0 ccount 0x2e9b79c0 caller
+        40 bytes 'leaked' in trace (2 allocations)
+        total allocations 2 total frees 0
 
 (Above example output is using :doc:`IDF Monitor </api-guides/tools/idf-monitor>` to automatically decode PC addresses to their source files & line number.)
 
@@ -235,14 +249,17 @@ The first line indicates how many allocation entries are in the buffer, compared
 
 In ``HEAP_TRACE_LEAKS`` mode, for each traced memory allocation which has not already been freed a line is printed with:
 
-- ``XX bytes`` is number of bytes allocated
-- ``@ 0x...`` is the heap address returned from malloc/calloc.
-- ``CPU x`` is the CPU (0 or 1) running when the allocation was made.
-- ``ccount 0x...`` is the CCOUNT (CPU cycle count) register value when the allocation was mode. Is different for CPU 0 vs CPU 1.
-- ``caller 0x...`` gives the call stack of the call to malloc()/free(), as a list of PC addresses.
-  These can be decoded to source files and line numbers, as shown above.
+.. list::
 
-The depth of the call stack recorded for each trace entry can be configured in the project configuration menu, under ``Heap Memory Debugging`` -> ``Enable heap tracing`` -> ``Heap tracing stack depth``. Up to 10 stack frames can be recorded for each allocation (the default is 2). Each additional stack frame increases the memory usage of each ``heap_trace_record_t`` record by eight bytes.
+    - ``XX bytes`` is number of bytes allocated
+    - ``@ 0x...`` is the heap address returned from malloc/calloc.
+    - ``CPU x`` is the CPU (0 or 1) running when the allocation was made.
+    - ``ccount 0x...`` is the CCOUNT (CPU cycle count) register value when the allocation was mode. Is different for CPU 0 vs CPU 1.
+    :CONFIG_IDF_TARGET_ARCH_XTENSA: - ``caller 0x...`` gives the call stack of the call to malloc()/free(), as a list of PC addresses. These can be decoded to source files and line numbers, as shown above.
+
+.. only:: not CONFIG_IDF_TARGET_ARCH_RISCV
+
+    The depth of the call stack recorded for each trace entry can be configured in the project configuration menu, under ``Heap Memory Debugging`` -> ``Enable heap tracing`` -> ``Heap tracing stack depth``. Up to 10 stack frames can be recorded for each allocation (the default is 2). Each additional stack frame increases the memory usage of each ``heap_trace_record_t`` record by eight bytes.
 
 Finally, the total number of 'leaked' bytes (bytes allocated but not freed while trace was running) is printed, and the total number of allocations this represents.
 
@@ -256,7 +273,7 @@ Once you've identified the code which you think is leaking:
 
 - In the project configuration menu, navigate to ``Component settings`` -> ``Heap Memory Debugging`` -> :ref:`CONFIG_HEAP_TRACING_DEST` and select ``Host-Based``.
 - In the project configuration menu, navigate to ``Component settings`` -> ``Application Level Tracing`` -> :ref:`CONFIG_APPTRACE_DESTINATION` and select ``Trace memory``.
-- In the project configuration menu, navigate to ``Component settings`` -> ``Application Level Tracing`` -> ``FreeRTOS SystemView Tracing`` and enable :ref:`CONFIG_SYSVIEW_ENABLE`.
+- In the project configuration menu, navigate to ``Component settings`` -> ``Application Level Tracing`` -> ``FreeRTOS SystemView Tracing`` and enable :ref:`CONFIG_APPTRACE_SV_ENABLE`.
 - Call the function :cpp:func:`heap_trace_init_tohost` early in the program, to initialize JTAG heap tracing module.
 - Call the function :cpp:func:`heap_trace_start` to begin recording all mallocs/frees in the system. Call this immediately before the piece of code which you suspect is leaking memory.
   In host-based mode argument to this function is ignored and heap tracing module behaves like ``HEAP_TRACE_ALL`` was passed: all allocations and deallocations are sent to the host.

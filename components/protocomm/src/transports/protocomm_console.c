@@ -26,6 +26,7 @@
 
 #include "protocomm_priv.h"
 
+#define LINE_BUF_SIZE 256
 static const char *TAG = "protocomm_console";
 
 static uint32_t session_id = PROTOCOMM_NO_SESSION_ID;
@@ -70,18 +71,18 @@ static bool stopped(void)
 static void protocomm_console_task(void *arg)
 {
     int uart_num = (int) arg;
-    uint8_t linebuf[256];
+    uint8_t linebuf[LINE_BUF_SIZE];
     int i, cmd_ret;
     esp_err_t ret;
     QueueHandle_t uart_queue;
     uart_event_t event;
 
     ESP_LOGD(TAG, "Initializing UART on port %d", uart_num);
-    uart_driver_install(uart_num, 256, 0, 8, &uart_queue, 0);
+    uart_driver_install(uart_num, LINE_BUF_SIZE, 0, 8, &uart_queue, 0);
     /* Initialize the console */
     esp_console_config_t console_config = {
             .max_cmdline_args = 8,
-            .max_cmdline_length = 256,
+            .max_cmdline_length = LINE_BUF_SIZE,
     };
 
     esp_console_init(&console_config);
@@ -101,7 +102,7 @@ static void protocomm_console_task(void *arg)
                 }
             }
             if (event.type == UART_DATA) {
-                while (uart_read_bytes(uart_num, (uint8_t *) &linebuf[i], 1, 0)) {
+                while (uart_read_bytes(uart_num, (uint8_t *) &linebuf[i], 1, 0) && (i < LINE_BUF_SIZE)) {
                     if (linebuf[i] == '\r') {
                         uart_write_bytes(uart_num, "\r\n", 2);
                     } else {
@@ -110,7 +111,10 @@ static void protocomm_console_task(void *arg)
                     i++;
                 }
             }
-        } while ((i < 255) && linebuf[i-1] != '\r');
+            if ((i > 0) && (linebuf[i-1] == '\r')) {
+                break;
+            }
+        } while (i < LINE_BUF_SIZE);
         if (stopped()) {
             break;
         }

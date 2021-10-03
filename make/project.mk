@@ -354,7 +354,6 @@ IDF_VER := $(shell echo "$(IDF_VER_T)"  | cut -c 1-31)
 # Set default LDFLAGS
 EXTRA_LDFLAGS ?=
 LDFLAGS ?= -nostdlib \
-	-u call_user_start_cpu0	\
 	$(EXTRA_LDFLAGS) \
 	-Wl,--gc-sections	\
 	-Wl,-static	\
@@ -432,6 +431,11 @@ endif
 ifdef CONFIG_COMPILER_STACK_CHECK_MODE_ALL
 COMMON_FLAGS += -fstack-protector-all
 endif
+
+# Placing jump tables in flash would cause issues with code that required
+# to be placed in IRAM
+COMMON_FLAGS += -fno-jump-tables
+COMMON_FLAGS += -fno-tree-switch-conversion
 
 # Optimization flags are set based on menuconfig choice
 ifdef CONFIG_COMPILER_OPTIMIZATION_SIZE
@@ -519,7 +523,7 @@ CXXFLAGS += -fno-rtti
 LDFLAGS += -fno-rtti
 endif
 
-ARFLAGS := cru
+ARFLAGS := cr
 
 export CFLAGS CPPFLAGS CXXFLAGS ARFLAGS
 
@@ -612,11 +616,14 @@ endef
 define GenerateComponentTargets
 .PHONY: component-$(2)-build component-$(2)-clean
 
+COMPONENT_$(2)_BUILDTARGET ?= build
+COMPONENT_$(2)_CLEANTARGET ?= clean
+
 component-$(2)-build: check-submodules $(call prereq_if_explicit, component-$(2)-clean) | $(BUILD_DIR_BASE)/$(2)
-	$(call ComponentMake,$(1),$(2)) build
+	$(call ComponentMake,$(1),$(2)) $$(COMPONENT_$(2)_BUILDTARGET)
 
 component-$(2)-clean: | $(BUILD_DIR_BASE)/$(2) $(BUILD_DIR_BASE)/$(2)/component_project_vars.mk
-	$(call ComponentMake,$(1),$(2)) clean
+	$(call ComponentMake,$(1),$(2)) $$(COMPONENT_$(2)_CLEANTARGET)
 
 $(BUILD_DIR_BASE)/$(2):
 	@mkdir -p $(BUILD_DIR_BASE)/$(2)

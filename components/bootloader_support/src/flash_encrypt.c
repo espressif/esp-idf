@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <strings.h>
 #include "sdkconfig.h"
@@ -28,8 +20,8 @@
 #define WR_DIS_CRYPT_CNT ESP_EFUSE_WR_DIS_SPI_BOOT_CRYPT_CNT
 #endif
 
-#ifndef BOOTLOADER_BUILD
 static const char *TAG = "flash_encrypt";
+#ifndef BOOTLOADER_BUILD
 
 void esp_flash_encryption_init_checks()
 {
@@ -90,11 +82,11 @@ esp_flash_enc_mode_t esp_get_flash_encryption_mode(void)
     bool flash_crypt_cnt_wr_dis = false;
 #if CONFIG_IDF_TARGET_ESP32
     uint8_t dis_dl_enc = 0, dis_dl_dec = 0, dis_dl_cache = 0;
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     uint8_t dis_dl_enc = 0;
     uint8_t dis_dl_icache = 0;
     uint8_t dis_dl_dcache = 0;
-#elif CONFIG_IDF_TARGET_ESP32C3
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
     uint8_t dis_dl_enc = 0;
     uint8_t dis_dl_icache = 0;
 #endif
@@ -123,7 +115,7 @@ esp_flash_enc_mode_t esp_get_flash_encryption_mode(void)
             if ( dis_dl_cache && dis_dl_enc && dis_dl_dec ) {
                 mode = ESP_FLASH_ENC_MODE_RELEASE;
             }
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
             dis_dl_enc = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT);
             dis_dl_icache = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
             dis_dl_dcache = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_DCACHE);
@@ -131,7 +123,7 @@ esp_flash_enc_mode_t esp_get_flash_encryption_mode(void)
             if (dis_dl_enc && dis_dl_icache && dis_dl_dcache) {
                 mode = ESP_FLASH_ENC_MODE_RELEASE;
             }
-#elif CONFIG_IDF_TARGET_ESP32C3
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
             dis_dl_enc = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT);
             dis_dl_icache = esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
 
@@ -145,4 +137,49 @@ esp_flash_enc_mode_t esp_get_flash_encryption_mode(void)
     }
 
     return mode;
+}
+
+void esp_flash_encryption_set_release_mode(void)
+{
+    esp_flash_enc_mode_t mode = esp_get_flash_encryption_mode();
+    if (mode == ESP_FLASH_ENC_MODE_RELEASE) {
+        return;
+    }
+    if (mode == ESP_FLASH_ENC_MODE_DISABLED) {
+        ESP_LOGE(TAG, "Flash encryption eFuse is not enabled, abort..");
+        abort();
+        return;
+    }
+    // ESP_FLASH_ENC_MODE_DEVELOPMENT -> ESP_FLASH_ENC_MODE_RELEASE
+    esp_efuse_batch_write_begin();
+    if (!esp_efuse_read_field_bit(WR_DIS_CRYPT_CNT)) {
+        size_t flash_crypt_cnt = 0;
+        esp_efuse_read_field_cnt(CRYPT_CNT, &flash_crypt_cnt);
+        if (flash_crypt_cnt != CRYPT_CNT[0]->bit_count) {
+            esp_efuse_write_field_cnt(CRYPT_CNT, CRYPT_CNT[0]->bit_count - flash_crypt_cnt);
+        }
+    }
+#if CONFIG_IDF_TARGET_ESP32
+    esp_efuse_write_field_bit(ESP_EFUSE_DISABLE_DL_CACHE);
+    esp_efuse_write_field_bit(ESP_EFUSE_DISABLE_DL_ENCRYPT);
+    esp_efuse_write_field_bit(ESP_EFUSE_DISABLE_DL_DECRYPT);
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+    esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT);
+    esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
+    esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_DCACHE);
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+    esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT);
+    esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_ICACHE);
+#else
+    ESP_LOGE(TAG, "Flash Encryption support not added, abort..");
+    abort();
+#endif
+    esp_efuse_disable_rom_download_mode();
+    esp_efuse_batch_write_commit();
+
+    if (esp_get_flash_encryption_mode() != ESP_FLASH_ENC_MODE_RELEASE) {
+        ESP_LOGE(TAG, "Flash encryption mode is DEVELOPMENT, abort..");
+        abort();
+    }
+    ESP_LOGI(TAG, "Flash encryption mode is RELEASE");
 }

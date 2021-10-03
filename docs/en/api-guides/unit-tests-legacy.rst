@@ -120,8 +120,8 @@ To support this, we can define multi-stage test cases, to group a set of test fu
 
     void check_deepsleep_reset_reason()
     {
-        RESET_REASON reason = rtc_get_reset_reason(0);
-        TEST_ASSERT(reason == DEEPSLEEP_RESET);
+        soc_reset_reason_t reason = esp_rom_get_reset_reason(0);
+        TEST_ASSERT(reason == RESET_REASON_CORE_DEEP_SLEEP);
     }
 
     TEST_CASE_MULTIPLE_STAGES("reset reason check for deepsleep", "[esp32]", trigger_deepsleep, check_deepsleep_reset_reason);

@@ -66,7 +66,7 @@ typedef struct {
 #define i2c_hal_write_cmd_reg(hal,cmd, cmd_idx)    i2c_ll_write_cmd_reg((hal)->dev,cmd,cmd_idx)
 
 /**
- * @brief  Configure the I2C to triger a trasaction
+ * @brief  Configure the I2C to triger a transaction
  *
  * @param  hal Context of the HAL layer
  *
@@ -109,6 +109,16 @@ typedef struct {
  * @return None
  */
 #define i2c_hal_slave_clr_rx_it(hal)    i2c_ll_slave_clr_rx_it((hal)->dev)
+
+/**
+ * @brief  Set the source clock. This function is meant to be used in
+ *         slave mode, in order to select a source clock abe to handle
+ *         the expected SCL frequency.
+ *
+ * @param  hal Context of the HAL layer
+ * @param  src_clk Source clock to use choosen from `i2c_sclk_t` type
+ */
+#define i2c_hal_set_source_clk(hal, src_clk) i2c_ll_set_source_clk((hal)->dev, src_clk)
 
 /**
  * @brief  Init the I2C master.

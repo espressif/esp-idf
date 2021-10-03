@@ -1,5 +1,5 @@
-I2C Driver
-==========
+Inter-Integrated Circuit (I2C)
+==============================
 
 :link_to_translation:`zh_CN:[中文]`
 
@@ -147,6 +147,25 @@ When :cpp:member:`i2c_config_t::clk_flags` is 0, the clock allocator will select
     Explanations for :cpp:member:`i2c_config_t::clk_flags` are as follows:
     1. :c:macro:`I2C_SCLK_SRC_FLAG_AWARE_DFS`: Clock's baud rate will not change while APB clock is changing.
     2. :c:macro:`I2C_SCLK_SRC_FLAG_LIGHT_SLEEP`: It supports Light-sleep mode, which APB clock cannot do.
+
+.. only:: esp32s3
+
+    .. list-table:: Characteristics of {IDF_TARGET_NAME} clock sources
+       :widths: 5 5 50 20
+       :header-rows: 1
+
+       * - Clock name
+         - Clock frequency
+         - MAX freq for SCL
+         - Clock capabilities
+       * - XTAL clock
+         - 40 MHz
+         - 2 MHz
+         - /
+       * - RTC clock
+         - 20 MHz
+         - 1 MHz
+         - :c:macro:`I2C_SCLK_SRC_FLAG_AWARE_DFS`, :c:macro:`I2C_SCLK_SRC_FLAG_LIGHT_SLEEP`
 
 .. only:: esp32c3
 
@@ -351,6 +370,7 @@ Delete Driver
 
 When the I2C communication is established with the function :cpp:func:`i2c_driver_install` and is not required for some substantial amount of time, the driver may be deinitialized to release allocated resources by calling :cpp:func:`i2c_driver_delete`.
 
+Before calling :cpp:func:`i2c_driver_delete` to remove i2c driver, please make sure that all threads have stopped using the driver in any way, because this function does not guarantee thread safety.
 
 Application Example
 -------------------

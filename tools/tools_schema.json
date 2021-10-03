@@ -55,6 +55,10 @@
           "$ref": "#/definitions/arrayOfStrings",
           "description": "Command to be executed (along with any extra arguments). The executable be present in one of the export_paths."
         },
+        "supported_targets": {
+          "$ref": "#/definitions/arrayOfStrings",
+          "description": "Array of esp_targets that this tool is needed for."
+        },
         "version_regex": {
           "description": "Regex which is to be applied to version_cmd output to extract the version. By default, the version will be the first capture group of the expression. If version_regex_replace is specified, version will be obtained by doing a substitution using version_regex_replace instead.",
           "$ref": "#/definitions/regex"
@@ -213,6 +217,10 @@
         },
         "version_cmd": {
           "description": "Platform-specific replacement for toolInfo/version_cmd",
+          "$ref": "#/definitions/arrayOfStrings"
+        },
+        "supported_targets": {
+          "description": "Platform-specific replacement for toolInfo/supported_targets",
           "$ref": "#/definitions/arrayOfStrings"
         },
         "version_regex": {

@@ -829,7 +829,7 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
 
 #endif // (!CONTROLLER_RPA_LIST_ENABLE)
 
-#if (CONTROLLER_RPA_LIST_ENABLE && CONFIG_BT_CTRL_ESP32)
+#if (CONTROLLER_RPA_LIST_ENABLE)
 
     if (p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) {
         if (btm_cb.ble_ctr_cb.privacy_mode >=  BTM_PRIVACY_1_2) {
@@ -1011,7 +1011,7 @@ void l2c_link_processs_ble_num_bufs (UINT16 num_lm_ble_bufs)
 *******************************************************************************/
 void l2c_ble_link_adjust_allocation (void)
 {
-    UINT16      qq, yy = 0, qq_remainder;
+    UINT16      qq, qq_remainder;
     tL2C_LCB    *p_lcb;
     UINT16      hi_quota, low_quota;
     UINT16      num_lowpri_links = 0;
@@ -1096,8 +1096,8 @@ void l2c_ble_link_adjust_allocation (void)
                 }
             }
 
-            L2CAP_TRACE_EVENT("l2c_ble_link_adjust_allocation LCB %d   Priority: %d  XmitQuota: %d",
-                              yy, p_lcb->acl_priority, p_lcb->link_xmit_quota);
+            L2CAP_TRACE_EVENT("l2c_ble_link_adjust_allocation   Priority: %d  XmitQuota: %d",
+                              p_lcb->acl_priority, p_lcb->link_xmit_quota);
 
             L2CAP_TRACE_EVENT("        SentNotAcked: %d  RRUnacked: %d",
                               p_lcb->sent_not_acked, l2cb.round_robin_unacked);
@@ -1217,12 +1217,32 @@ void l2cble_process_data_length_change_event(UINT16 handle, UINT16 tx_data_len, 
     }
 
     tACL_CONN *p_acl = btm_handle_to_acl(handle);
+    tBTM_LE_SET_PKT_DATA_LENGTH_PARAMS data_length_params;
+    data_length_params.rx_len = rx_data_len;
+    data_length_params.tx_len = tx_data_len;
+    p_acl->data_length_params = data_length_params;
     if (p_acl != NULL && p_acl->p_set_pkt_data_cback){
-       tBTM_LE_SET_PKT_DATA_LENGTH_PARAMS data_length_params;
-       data_length_params.rx_len = tx_data_len;
-       data_length_params.tx_len = rx_data_len;
-       p_acl->data_length_params = data_length_params;
        (*p_acl->p_set_pkt_data_cback)(BTM_SUCCESS, &data_length_params);
+    }
+
+    if(p_acl) {
+        p_acl->data_len_updating = false;
+        if(p_acl->data_len_waiting) {
+            p_acl->data_len_waiting = false;
+            p_acl->p_set_pkt_data_cback = p_acl->p_set_data_len_cback_waiting;
+            p_acl->p_set_data_len_cback_waiting = NULL;
+            // if value is same, triger callback directly
+            if(p_acl->tx_len_waiting == p_acl->data_length_params.tx_len) {
+                if(p_acl->p_set_pkt_data_cback) {
+                    (*p_acl->p_set_pkt_data_cback)(BTM_SUCCESS, &p_acl->data_length_params);
+                }
+                return;
+            }
+            p_acl->data_len_updating = true;
+            /* always set the TxTime to be max, as controller does not care for now */
+            btsnd_hcic_ble_set_data_length(handle, p_acl->tx_len_waiting,
+                                            BTM_BLE_DATA_TX_TIME_MAX);
+        }
     }
 }
 

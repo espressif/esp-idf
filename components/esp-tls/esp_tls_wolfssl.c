@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <string.h>
@@ -55,6 +47,16 @@ static uint8_t psk_key_max_len = 0;
 #ifdef CONFIG_ESP_TLS_SERVER
 static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls);
 #endif /* CONFIG_ESP_TLS_SERVER */
+
+
+/* This function shall return the error message when appropriate log level has been set otherwise this function shall do nothing */
+static void wolfssl_print_error_msg(int error)
+{
+#if (CONFIG_LOG_DEFAULT_LEVEL_DEBUG || CONFIG_LOG_DEFAULT_LEVEL_VERBOSE)
+    static char error_buf[100];
+    ESP_LOGE(TAG, "(%d) : %s", error, ERR_error_string(error, error_buf));
+#endif
+}
 
 typedef enum x509_file_type {
     FILE_TYPE_CA_CERT = 0, /* CA certificate to authenticate entity at other end */
@@ -127,22 +129,24 @@ esp_err_t esp_create_wolfssl_handle(const char *hostname, size_t hostlen, const 
 
     ret = wolfSSL_Init();
     if (ret != WOLFSSL_SUCCESS) {
-        ESP_LOGE(TAG, "Init wolfSSL failed: %d", ret);
-        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_WOLFSSL, -ret);
+        ESP_LOGE(TAG, "Init wolfSSL failed: 0x%04X", ret);
+        wolfssl_print_error_msg(ret);
+        int err = wolfSSL_get_error( (WOLFSSL *)tls->priv_ssl, ret);
+        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_WOLFSSL, err);
         goto exit;
     }
 
     if (tls->role == ESP_TLS_CLIENT) {
         esp_ret = set_client_config(hostname, hostlen, (esp_tls_cfg_t *)cfg, tls);
         if (esp_ret != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to set client configurations");
+            ESP_LOGE(TAG, "Failed to set client configurations, [0x%04X] (%s)", esp_ret, esp_err_to_name(esp_ret));
             goto exit;
         }
     } else if (tls->role == ESP_TLS_SERVER) {
 #ifdef CONFIG_ESP_TLS_SERVER
         esp_ret = set_server_config((esp_tls_cfg_server_t *) cfg, tls);
         if (esp_ret != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to set server configurations");
+            ESP_LOGE(TAG, "Failed to set server configurations, [0x%04X] (%s)", esp_ret, esp_err_to_name(esp_ret));
             goto exit;
         }
 #else
@@ -167,7 +171,7 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
     tls->priv_ctx = (void *)wolfSSL_CTX_new(wolfTLSv1_2_client_method());
     if (!tls->priv_ctx) {
         ESP_LOGE(TAG, "Set wolfSSL ctx failed");
-        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_WOLFSSL, -ret);
+        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_WOLFSSL, ret);
         return ESP_ERR_WOLFSSL_CTX_SETUP_FAILED;
     }
 
@@ -178,13 +182,17 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
 
     if (cfg->use_global_ca_store == true) {
         if ((esp_load_wolfssl_verify_buffer(tls, global_cacert, global_cacert_pem_bytes, FILE_TYPE_CA_CERT, &ret)) != ESP_OK) {
-            ESP_LOGE(TAG, "Error in loading certificate verify buffer, returned %d", ret);
+            int err = wolfSSL_get_error( (WOLFSSL *)tls->priv_ssl, ret);
+            ESP_LOGE(TAG, "Error in loading certificate verify buffer, returned %d, error code: %d", ret, err);
+            wolfssl_print_error_msg(err);
             return ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED;
         }
         wolfSSL_CTX_set_verify( (WOLFSSL_CTX *)tls->priv_ctx, WOLFSSL_VERIFY_PEER, NULL);
     } else if (cfg->cacert_buf != NULL) {
         if ((esp_load_wolfssl_verify_buffer(tls, cfg->cacert_buf, cfg->cacert_bytes, FILE_TYPE_CA_CERT, &ret)) != ESP_OK) {
-            ESP_LOGE(TAG, "Error in loading certificate verify buffer, returned %d", ret);
+            int err = wolfSSL_get_error( (WOLFSSL *)tls->priv_ssl, ret);
+            ESP_LOGE(TAG, "Error in loading certificate verify buffer, returned %d, error code: %d", ret, err);
+            wolfssl_print_error_msg(err);
             return ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED;
         }
         wolfSSL_CTX_set_verify( (WOLFSSL_CTX *)tls->priv_ctx, WOLFSSL_VERIFY_PEER, NULL);
@@ -230,11 +238,15 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
 
     if (cfg->clientcert_buf != NULL && cfg->clientkey_buf != NULL) {
         if ((esp_load_wolfssl_verify_buffer(tls,cfg->clientcert_buf, cfg->clientcert_bytes, FILE_TYPE_SELF_CERT, &ret)) != ESP_OK) {
-            ESP_LOGE(TAG, "Error in loading certificate verify buffer, returned %d", ret);
+            int err = wolfSSL_get_error( (WOLFSSL *)tls->priv_ssl, ret);
+            ESP_LOGE(TAG, "Error in loading certificate verify buffer, returned %d, error code: %d", ret, err);
+            wolfssl_print_error_msg(err);
             return ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED;
         }
         if ((esp_load_wolfssl_verify_buffer(tls,cfg->clientkey_buf, cfg->clientkey_bytes, FILE_TYPE_SELF_KEY, &ret)) != ESP_OK) {
-            ESP_LOGE(TAG, "Error in loading private key verify buffer, returned %d", ret);
+            int err = wolfSSL_get_error( (WOLFSSL *)tls->priv_ssl, ret);
+            ESP_LOGE(TAG, "Error in loading private key verify buffer, returned %d, error code: %d", ret, err);
+            wolfssl_print_error_msg(err);
             return ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED;
         }
     } else if (cfg->clientcert_buf != NULL || cfg->clientkey_buf != NULL) {
@@ -245,7 +257,8 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
     tls->priv_ssl =(void *)wolfSSL_new( (WOLFSSL_CTX *)tls->priv_ctx);
     if (!tls->priv_ssl) {
         ESP_LOGE(TAG, "Create wolfSSL failed");
-        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_WOLFSSL, -ret);
+        int err = wolfSSL_get_error( (WOLFSSL *)tls->priv_ssl, ret);
+        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_WOLFSSL, err);
         return ESP_ERR_WOLFSSL_SSL_SETUP_FAILED;
     }
 
@@ -261,8 +274,9 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
         }
         /* Hostname set here should match CN in server certificate */
         if ((ret = (wolfSSL_check_domain_name( (WOLFSSL *)tls->priv_ssl, use_host))) != WOLFSSL_SUCCESS) {
-            ESP_LOGE(TAG, "wolfSSL_check_domain_name returned -0x%x", -ret);
-            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_WOLFSSL, -ret);
+            int err = wolfSSL_get_error( (WOLFSSL *)tls->priv_ssl, ret);
+            ESP_LOGE(TAG, "wolfSSL_check_domain_name returned %d, error code: %d", ret, err);
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_WOLFSSL, err);
             free(use_host);
             return ESP_ERR_WOLFSSL_SSL_SET_HOSTNAME_FAILED;
         }
@@ -275,8 +289,10 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
         for (; *alpn_list != NULL; alpn_list ++) {
             ESP_LOGD(TAG, "alpn protocol is %s", *alpn_list);
             if ((ret = wolfSSL_UseALPN( (WOLFSSL *)tls->priv_ssl, *alpn_list, strlen(*alpn_list), WOLFSSL_ALPN_FAILED_ON_MISMATCH)) != WOLFSSL_SUCCESS) {
-                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_WOLFSSL, -ret);
-                ESP_LOGE(TAG, "wolfSSL UseALPN failed, returned %d", ret);
+                int err = wolfSSL_get_error( (WOLFSSL *)tls->priv_ssl, ret);
+                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_WOLFSSL, err);
+                ESP_LOGE(TAG, "wolfSSL UseALPN failed, returned %d, error code: %d", ret, err);
+                wolfssl_print_error_msg(err);
                 return ESP_ERR_WOLFSSL_SSL_CONF_ALPN_PROTOCOLS_FAILED;
             }
         }
@@ -302,7 +318,9 @@ static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
 
     if (cfg->cacert_buf != NULL) {
         if ((esp_load_wolfssl_verify_buffer(tls,cfg->cacert_buf, cfg->cacert_bytes, FILE_TYPE_CA_CERT, &ret)) != ESP_OK) {
-            ESP_LOGE(TAG, "Error in loading certificate verify buffer, returned %d", ret);
+            int err = wolfSSL_get_error( (WOLFSSL *)tls->priv_ssl, ret);
+            ESP_LOGE(TAG, "Error in loading certificate verify buffer, returned %d, error code: %d", ret, err);
+            wolfssl_print_error_msg(err);
             return ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED;
         }
         wolfSSL_CTX_set_verify( (WOLFSSL_CTX *)tls->priv_ctx, WOLFSSL_VERIFY_PEER | WOLFSSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
@@ -314,15 +332,19 @@ static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
 
     if (cfg->servercert_buf != NULL && cfg->serverkey_buf != NULL) {
         if ((esp_load_wolfssl_verify_buffer(tls,cfg->servercert_buf, cfg->servercert_bytes, FILE_TYPE_SELF_CERT, &ret)) != ESP_OK) {
-            ESP_LOGE(TAG, "Error in loading certificate verify buffer, returned %d", ret);
+            int err = wolfSSL_get_error( (WOLFSSL *)tls->priv_ssl, ret);
+            ESP_LOGE(TAG, "Error in loading certificate verify buffer, returned %d, error code: %d", ret, err);
+            wolfssl_print_error_msg(err);
             return ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED;
         }
         if ((esp_load_wolfssl_verify_buffer(tls,cfg->serverkey_buf, cfg->serverkey_bytes, FILE_TYPE_SELF_KEY, &ret)) != ESP_OK) {
-            ESP_LOGE(TAG, "Error in loading private key verify buffer, returned %d", ret);
+            int err = wolfSSL_get_error( (WOLFSSL *)tls->priv_ssl, ret);
+            ESP_LOGE(TAG, "Error in loading private key verify buffer, returned %d, error code: %d", ret, err);
+            wolfssl_print_error_msg(err);
             return ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED;
         }
     } else {
-        ESP_LOGE(TAG, "You have to provide both servercert_buf and serverkey_buf for https_server\n\n");
+        ESP_LOGE(TAG, "You have to provide both servercert_buf and serverkey_buf for https_server");
         return ESP_FAIL;
     }
 
@@ -347,8 +369,9 @@ int esp_wolfssl_handshake(esp_tls_t *tls, const esp_tls_cfg_t *cfg)
     } else {
         int err = wolfSSL_get_error( (WOLFSSL *)tls->priv_ssl, ret);
         if (err != WOLFSSL_ERROR_WANT_READ && err != WOLFSSL_ERROR_WANT_WRITE) {
-            ESP_LOGE(TAG, "wolfSSL_connect returned %d, error code: 0x%x", ret, err);
-            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_WOLFSSL, -err);
+            ESP_LOGE(TAG, "wolfSSL_connect returned %d, error code: %d", ret, err);
+            wolfssl_print_error_msg(err);
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_WOLFSSL, err);
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, ESP_ERR_WOLFSSL_SSL_HANDSHAKE_FAILED);
             if (cfg->cacert_buf != NULL || cfg->use_global_ca_store == true) {
                 /* This is to check whether handshake failed due to invalid certificate*/
@@ -367,15 +390,16 @@ ssize_t esp_wolfssl_read(esp_tls_t *tls, char *data, size_t datalen)
 {
     ssize_t ret = wolfSSL_read( (WOLFSSL *)tls->priv_ssl, (unsigned char *)data, datalen);
     if (ret < 0) {
-        ret = wolfSSL_get_error( (WOLFSSL *)tls->priv_ssl, ret);
+        int err = wolfSSL_get_error( (WOLFSSL *)tls->priv_ssl, ret);
         /* peer sent close notify */
-        if (ret == WOLFSSL_ERROR_ZERO_RETURN) {
+        if (err == WOLFSSL_ERROR_ZERO_RETURN) {
             return 0;
         }
 
         if (ret != WOLFSSL_ERROR_WANT_READ && ret != WOLFSSL_ERROR_WANT_WRITE) {
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_WOLFSSL, -ret);
             ESP_LOGE(TAG, "read error :%d:", ret);
+            wolfssl_print_error_msg(ret);
         }
         return esp_tls_convert_wolfssl_err_to_ssize(ret);
     }
@@ -385,13 +409,13 @@ ssize_t esp_wolfssl_read(esp_tls_t *tls, char *data, size_t datalen)
 ssize_t esp_wolfssl_write(esp_tls_t *tls, const char *data, size_t datalen)
 {
     ssize_t ret = wolfSSL_write( (WOLFSSL *)tls->priv_ssl, (unsigned char *) data, datalen);
-    if (ret < 0) {
-        ret = wolfSSL_get_error( (WOLFSSL *)tls->priv_ssl, ret);
-        if (ret != WOLFSSL_ERROR_WANT_READ  && ret != WOLFSSL_ERROR_WANT_WRITE) {
-            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_WOLFSSL, -ret);
+    if (ret <= 0) {
+        int err = wolfSSL_get_error( (WOLFSSL *)tls->priv_ssl, ret);
+        if (err != WOLFSSL_ERROR_WANT_READ  && err != WOLFSSL_ERROR_WANT_WRITE) {
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_WOLFSSL, -err);
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, ESP_ERR_WOLFSSL_SSL_WRITE_FAILED);
-            ESP_LOGE(TAG, "write error :%d:", ret);
-
+            ESP_LOGE(TAG, "write error :%d:", err);
+            wolfssl_print_error_msg(err);
         }
         return esp_tls_convert_wolfssl_err_to_ssize(ret);
     }
@@ -402,7 +426,7 @@ void esp_wolfssl_verify_certificate(esp_tls_t *tls)
 {
     int flags;
     if ((flags = wolfSSL_get_verify_result( (WOLFSSL *)tls->priv_ssl)) != X509_V_OK) {
-        ESP_LOGE(TAG, "Failed to verify peer certificate , returned %d!", flags);
+        ESP_LOGE(TAG, "Failed to verify peer certificate , returned %d", flags);
         ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_WOLFSSL_CERT_FLAGS, flags);
     } else {
         ESP_LOGI(TAG, "Certificate verified.");
@@ -454,7 +478,7 @@ int esp_wolfssl_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp
     tls->sockfd = sockfd;
     esp_err_t esp_ret = esp_create_wolfssl_handle(NULL, 0, cfg, tls);
     if (esp_ret != ESP_OK) {
-        ESP_LOGE(TAG, "create_ssl_handle failed");
+        ESP_LOGE(TAG, "create_ssl_handle failed, [0x%04X] (%s)", esp_ret, esp_err_to_name(esp_ret));
         ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, esp_ret);
         tls->conn_state = ESP_TLS_FAIL;
         return -1;
@@ -463,10 +487,11 @@ int esp_wolfssl_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp
     tls->write = esp_wolfssl_write;
     int ret;
     while ((ret = wolfSSL_accept((WOLFSSL *)tls->priv_ssl)) != WOLFSSL_SUCCESS) {
-        ret = wolfSSL_get_error((WOLFSSL *)tls->priv_ssl, ret);
-        if (ret != WOLFSSL_ERROR_WANT_READ && ret != WOLFSSL_ERROR_WANT_WRITE) {
-            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_WOLFSSL, -ret);
-            ESP_LOGE(TAG, "wolfSSL_handshake_server returned %d", ret);
+        int err = wolfSSL_get_error((WOLFSSL *)tls->priv_ssl, ret);
+        if (err != WOLFSSL_ERROR_WANT_READ && ret != WOLFSSL_ERROR_WANT_WRITE) {
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_WOLFSSL, err);
+            ESP_LOGE(TAG, "wolfSSL_accept returned %d, error code: %d", ret, err);
+            wolfssl_print_error_msg(err);
             tls->conn_state = ESP_TLS_FAIL;
             return -1;
         }
@@ -542,7 +567,9 @@ static esp_err_t esp_wolfssl_set_cipher_list(WOLFSSL_CTX *ctx)
     ESP_LOGD(TAG, "cipher list is %s", defaultCipherList);
     if ((ret = wolfSSL_CTX_set_cipher_list(ctx,defaultCipherList)) != WOLFSSL_SUCCESS) {
         wolfSSL_CTX_free(ctx);
-        ESP_LOGE(TAG, "can't set cipher list, returned %02x", ret);
+        int err = wolfSSL_get_error( (WOLFSSL *)tls->priv_ssl, ret);
+        ESP_LOGE(TAG, "can't set cipher list, returned %d, error code: %d", ret, err);
+        wolfssl_print_error_msg(err);
         return ESP_FAIL;
     }
     return ESP_OK;

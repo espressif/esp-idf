@@ -1,30 +1,26 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at",
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License
+/*
+ * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "sdkconfig.h"
 #include "esp_efuse.h"
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table d9cd89987a033ef74503daeb4dd8dd07
+// md5_digest_table 614c862c2cfa8ccda3a79183ce767255
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
 // To show efuse_table run the command 'show_efuse_table'.
 
+static const esp_efuse_desc_t WR_DIS[] = {
+    {EFUSE_BLK0, 0, 32}, 	 // Write protection,
+};
+
 static const esp_efuse_desc_t WR_DIS_RD_DIS[] = {
-    {EFUSE_BLK0, 0, 1}, 	 // Write protection for RD_DIS_KEY0 RD_DIS_KEY1 RD_DIS_KEY2 RD_DIS_KEY3 RD_DIS_KEY4 RD_DIS_KEY5 RD_DIS_SYS_DATA_PART2,
+    {EFUSE_BLK0, 0, 1}, 	 // Write protection for RD_DIS.KEY0 RD_DIS.KEY1 RD_DIS.KEY2 RD_DIS.KEY3 RD_DIS.KEY4 RD_DIS.KEY5 RD_DIS.SYS_DATA_PART2,
 };
 
 static const esp_efuse_desc_t WR_DIS_DIS_RTC_RAM_BOOT[] = {
@@ -32,7 +28,7 @@ static const esp_efuse_desc_t WR_DIS_DIS_RTC_RAM_BOOT[] = {
 };
 
 static const esp_efuse_desc_t WR_DIS_GROUP_1[] = {
-    {EFUSE_BLK0, 2, 1}, 	 // Write protection for DIS_ICACHE DIS_DCACHE DIS_DOWNLOAD_ICACHE DIS_DOWNLOAD_DCACHE DIS_FORCE_DOWNLOAD DIS_USB DIS_CAN DIS_BOOT_REMAP SOFT_DIS_JTAG HARD_DIS_JTAG DIS_DOWNLOAD_MANUAL_ENCRYPT,
+    {EFUSE_BLK0, 2, 1}, 	 // Write protection for DIS_ICACHE DIS_DCACHE DIS_DOWNLOAD_ICACHE DIS_DOWNLOAD_DCACHE DIS_FORCE_DOWNLOAD DIS_USB DIS_CAN DIS_BOOT_REMAP SOFT_DIS_JTAG HARD_DIS.JTAG DIS_DOWNLOAD_MANUAL_ENCRYPT,
 };
 
 static const esp_efuse_desc_t WR_DIS_GROUP_2[] = {
@@ -133,6 +129,10 @@ static const esp_efuse_desc_t WR_DIS_SYS_DATA_PART2[] = {
 
 static const esp_efuse_desc_t WR_DIS_USB_EXCHG_PINS[] = {
     {EFUSE_BLK0, 30, 1}, 	 // Write protection for USB_EXCHG_PINS,
+};
+
+static const esp_efuse_desc_t RD_DIS[] = {
+    {EFUSE_BLK0, 32, 7}, 	 // Read protection,
 };
 
 static const esp_efuse_desc_t RD_DIS_KEY0[] = {
@@ -388,16 +388,20 @@ static const esp_efuse_desc_t WAFER_VERSION[] = {
     {EFUSE_BLK1, 114, 3}, 	 // WAFER version 0:A,
 };
 
-static const esp_efuse_desc_t PKG_VERSION[] = {
-    {EFUSE_BLK1, 117, 4}, 	 // Package version 0:ESP32-S2 1:ESP32-S2FH16 2:ESP32-S2FH32,
+static const esp_efuse_desc_t FLASH_VERSION[] = {
+    {EFUSE_BLK1, 117, 4}, 	 // Flash_version,
 };
 
 static const esp_efuse_desc_t BLOCK1_VERSION[] = {
-    {EFUSE_BLK1, 121, 3}, 	 // BLOCK1 efuse version 0:No calibration 1:With calibration,
+    {EFUSE_BLK1, 121, 3}, 	 // BLOCK1 efuse version,
 };
 
-static const esp_efuse_desc_t SYS_DATA_PART0[] = {
-    {EFUSE_BLK1, 126, 66}, 	 // System configuration,
+static const esp_efuse_desc_t PSRAM_VERSION[] = {
+    {EFUSE_BLK1, 124, 4}, 	 // PSRAM version,
+};
+
+static const esp_efuse_desc_t PKG_VERSION[] = {
+    {EFUSE_BLK1, 128, 4}, 	 // Package version,
 };
 
 static const esp_efuse_desc_t OPTIONAL_UNIQUE_ID[] = {
@@ -405,11 +409,15 @@ static const esp_efuse_desc_t OPTIONAL_UNIQUE_ID[] = {
 };
 
 static const esp_efuse_desc_t BLOCK2_VERSION[] = {
-    {EFUSE_BLK2, 132, 3}, 	 // Version of BLOCK2,
+    {EFUSE_BLK2, 132, 3}, 	 // Version of BLOCK2: 0-No ADC calib; 1-ADC calib V1; 2-ADC calib V2,
 };
 
 static const esp_efuse_desc_t USER_DATA[] = {
     {EFUSE_BLK3, 0, 256}, 	 // User data,
+};
+
+static const esp_efuse_desc_t USER_DATA_MAC_CUSTOM[] = {
+    {EFUSE_BLK3, 200, 48}, 	 // Custom MAC,
 };
 
 static const esp_efuse_desc_t KEY0[] = {
@@ -444,8 +452,13 @@ static const esp_efuse_desc_t SYS_DATA_PART2[] = {
 
 
 
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS[] = {
+    &WR_DIS[0],    		// Write protection
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RD_DIS[] = {
-    &WR_DIS_RD_DIS[0],    		// Write protection for RD_DIS_KEY0 RD_DIS_KEY1 RD_DIS_KEY2 RD_DIS_KEY3 RD_DIS_KEY4 RD_DIS_KEY5 RD_DIS_SYS_DATA_PART2
+    &WR_DIS_RD_DIS[0],    		// Write protection for RD_DIS.KEY0 RD_DIS.KEY1 RD_DIS.KEY2 RD_DIS.KEY3 RD_DIS.KEY4 RD_DIS.KEY5 RD_DIS.SYS_DATA_PART2
     NULL
 };
 
@@ -455,7 +468,7 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_RTC_RAM_BOOT[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_GROUP_1[] = {
-    &WR_DIS_GROUP_1[0],    		// Write protection for DIS_ICACHE DIS_DCACHE DIS_DOWNLOAD_ICACHE DIS_DOWNLOAD_DCACHE DIS_FORCE_DOWNLOAD DIS_USB DIS_CAN DIS_BOOT_REMAP SOFT_DIS_JTAG HARD_DIS_JTAG DIS_DOWNLOAD_MANUAL_ENCRYPT
+    &WR_DIS_GROUP_1[0],    		// Write protection for DIS_ICACHE DIS_DCACHE DIS_DOWNLOAD_ICACHE DIS_DOWNLOAD_DCACHE DIS_FORCE_DOWNLOAD DIS_USB DIS_CAN DIS_BOOT_REMAP SOFT_DIS_JTAG HARD_DIS.JTAG DIS_DOWNLOAD_MANUAL_ENCRYPT
     NULL
 };
 
@@ -581,6 +594,11 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SYS_DATA_PART2[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_USB_EXCHG_PINS[] = {
     &WR_DIS_USB_EXCHG_PINS[0],    		// Write protection for USB_EXCHG_PINS
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_RD_DIS[] = {
+    &RD_DIS[0],    		// Read protection
     NULL
 };
 
@@ -899,18 +917,23 @@ const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[] = {
-    &PKG_VERSION[0],    		// Package version 0:ESP32-S2 1:ESP32-S2FH16 2:ESP32-S2FH32
+const esp_efuse_desc_t* ESP_EFUSE_FLASH_VERSION[] = {
+    &FLASH_VERSION[0],    		// Flash_version
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_BLOCK1_VERSION[] = {
-    &BLOCK1_VERSION[0],    		// BLOCK1 efuse version 0:No calibration 1:With calibration
+    &BLOCK1_VERSION[0],    		// BLOCK1 efuse version
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_SYS_DATA_PART0[] = {
-    &SYS_DATA_PART0[0],    		// System configuration
+const esp_efuse_desc_t* ESP_EFUSE_PSRAM_VERSION[] = {
+    &PSRAM_VERSION[0],    		// PSRAM version
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[] = {
+    &PKG_VERSION[0],    		// Package version
     NULL
 };
 
@@ -920,12 +943,17 @@ const esp_efuse_desc_t* ESP_EFUSE_OPTIONAL_UNIQUE_ID[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_BLOCK2_VERSION[] = {
-    &BLOCK2_VERSION[0],    		// Version of BLOCK2
+    &BLOCK2_VERSION[0],    		// Version of BLOCK2: 0-No ADC calib; 1-ADC calib V1; 2-ADC calib V2
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_USER_DATA[] = {
     &USER_DATA[0],    		// User data
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_USER_DATA_MAC_CUSTOM[] = {
+    &USER_DATA_MAC_CUSTOM[0],    		// Custom MAC
     NULL
 };
 

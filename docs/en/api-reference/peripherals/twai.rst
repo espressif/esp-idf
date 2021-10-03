@@ -1,5 +1,5 @@
-TWAI
-====
+Two-Wire Automotive Interface (TWAI)
+====================================
 
 .. -------------------------------- Overview -----------------------------------
 
@@ -124,6 +124,8 @@ The TWAI driver contains an alert feature that is used to notify the application
       - No more messages queued for transmission
     * - ``TWAI_ALERT_TX_SUCCESS``
       - The previous transmission was successful
+    * - ``TWAI_ALERT_RX_DATA``
+      - A frame has been received and added to the RX queue
     * - ``TWAI_ALERT_BELOW_ERR_WARN``
       - Both error counters have dropped below error warning limit
     * - ``TWAI_ALERT_ERR_ACTIVE``

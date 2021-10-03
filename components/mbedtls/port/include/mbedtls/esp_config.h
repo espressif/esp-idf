@@ -1193,7 +1193,11 @@
  *
  * Comment to skip keyUsage checking for both CA and leaf certificates.
  */
+#ifdef CONFIG_MBEDTLS_X509_CHECK_KEY_USAGE
 #define MBEDTLS_X509_CHECK_KEY_USAGE
+#else
+#undef MBEDTLS_X509_CHECK_KEY_USAGE
+#endif
 
 /**
  * \def MBEDTLS_X509_CHECK_EXTENDED_KEY_USAGE
@@ -1206,7 +1210,11 @@
  *
  * Comment to skip extendedKeyUsage checking for certificates.
  */
+#ifdef CONFIG_MBEDTLS_X509_CHECK_EXTENDED_KEY_USAGE
 #define MBEDTLS_X509_CHECK_EXTENDED_KEY_USAGE
+#else
+#undef MBEDTLS_X509_CHECK_EXTENDED_KEY_USAGE
+#endif
 
 /**
  * \def MBEDTLS_X509_RSASSA_PSS_SUPPORT
@@ -2458,6 +2466,21 @@
 #define MBEDTLS_THREADING_PTHREAD
 #else
 #undef MBEDTLS_THREADING_PTHREAD
+#endif
+
+/**
+ * \def MBEDTLS_NIST_KW_C
+ *
+ * Enable AES key wrapping as per NIST
+ *
+ * Requires: MBEDTLS_AES_C
+ *
+ * Uncomment this to enable aes key wrap.
+ */
+#ifdef CONFIG_MBEDTLS_NIST_KW_C
+#define MBEDTLS_NIST_KW_C
+#else
+#undef MBEDTLS_NIST_KW_C
 #endif
 
 /* \} name SECTION: Module configuration options */

@@ -160,7 +160,7 @@ function run_tests()
 
     print_status "Touching app-only template ld file should only re-link app"
     take_build_snapshot
-    touch ${IDF_PATH}/components/esp32/ld/esp32.project.ld.in
+    touch ${IDF_PATH}/components/esp_system/ld/esp32/sections.ld.in
     make
     assert_rebuilt ${APP_BINS}
     assert_not_rebuilt ${BOOTLOADER_BINS}
@@ -431,6 +431,32 @@ endmenu\n" >> ${IDF_PATH}/Kconfig;
     (make list-components | grep "$PWD/components/my_component") || failure  "Project components should be prioritized over EXTRA_COMPONENT_DIRS"
     mv Makefile.bak Makefile # revert previous modifications
     rm -rf extra_dir components
+
+    print_status "COMPONENT_OWNBUILDTARGET, COMPONENT_OWNCLEANTARGET can work"
+    take_build_snapshot
+    mkdir -p components/test_component
+    cat > components/test_component/component.mk  <<EOF
+COMPONENT_OWNBUILDTARGET:=custom_build
+COMPONENT_OWNCLEANTARGET:=custom_clean
+
+.PHONY: custom_target
+
+custom_build:
+	echo "Running custom_build!"
+	echo "" | \$(CC) -x c++ -c -o dummy_obj.o -
+	\$(AR) cr libtest_component.a dummy_obj.o
+
+custom_clean:
+	rm -f libtest_component.a dummy_obj.o
+EOF
+    make || failure "Failed to build with custom component build target"
+    [ -f ${BUILD}/test_component/dummy_obj.o ] || failure "Failed to build dummy_obj.o in custom target"
+    [ -f ${BUILD}/test_component/libtest_component.a ] || failure "Failed to build custom component library"
+    grep -q "libtest_component.a" ${BUILD}/*.map || failure "Linker didn't see the custom library"
+    make clean || failure "Failed to make clean with custom clean target"
+    [ -f ${BUILD}/test_component/dummy_obj.o ] && failure "Custom clean target didn't clean object file"
+    [ -f ${BUILD}/test_component/libtest_component.a ] && failure "Custom clean target didn't clean library"
+    rm -rf components/test_component
 
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then

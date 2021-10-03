@@ -24,11 +24,9 @@ extern "C" {
 #endif
 
 /**
- * @brief   Initializes the platform-specific support for the OpenThread stack.
+ * @brief   Initializes the full OpenThread stack.
  *
- * @note This function is not called by and will not call the OpenThread library.
- *       The user needs to call otInstanceInitSingle to intialize the OpenThread
- *       stack after calling this fucntion.
+ * @note The OpenThread instance will also be initialized in this function.
  *
  * @param[in]  init_config      The initialization configuration.
  *
@@ -39,20 +37,30 @@ extern "C" {
  *      - ESP_ERR_INVALID_STATE if already initialized
  *
  */
-esp_err_t esp_openthread_platform_init(const esp_openthread_platform_config_t *init_config);
+esp_err_t esp_openthread_init(const esp_openthread_platform_config_t *init_config);
 
 /**
- * This function performs all platform-specific deinitialization for OpenThread's drivers.
+ * @brief   Launches the OpenThread main loop.
  *
- * @note This function is not called by the OpenThread library. Instead, the user should
- *       call this function when deinitialization of OpenThread's drivers is most appropriate.
+ * @note Thie function will not return unless error happens when running the OpenThread stack.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NO_MEM if allocation has failed
+ *      - ESP_FAIL on other failures
+ *
+ */
+esp_err_t esp_openthread_launch_mainloop(void);
+
+/**
+ * @brief This function performs OpenThread stack and platform driver deinitialization.
  *
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_STATE if not initialized
  *
  */
-esp_err_t esp_openthread_platform_deinit(void);
+esp_err_t esp_openthread_deinit(void);
 
 /**
  * @brief This function acquires the underlying OpenThread instance.
@@ -63,34 +71,6 @@ esp_err_t esp_openthread_platform_deinit(void);
  *
  */
 otInstance *esp_openthread_get_instance(void);
-
-/**
- * @brief This function updates the platform fds and timeouts
- *
- * @note This function will not update the OpenThread core stack pending events.
- *       The users need to call `otTaskletsArePending` to check whether there being
- *       pending OpenThread tasks.
- *
- * @param[inout]    mainloop    The main loop context.
- *
- */
-void esp_openthread_platform_update(esp_openthread_mainloop_context_t *mainloop);
-
-/**
- * @brief This function performs the OpenThread related platform process (radio, uart, alarm etc.)
- *
- * @note This function will call the OpenThread core stack process functions.
- *       The users need to call `otTaskletsProcess` by self.
- *
- * @param[in]    instance   The OpenThread instance.
- * @param[in]    mainloop   The main loop context.
- *
- * @return
- *      - ESP_OK on success
- *      - ESP_FAIL on failure
- *
- */
-esp_err_t esp_openthread_platform_process(otInstance *instance, const esp_openthread_mainloop_context_t *mainloop);
 
 #ifdef __cplusplus
 } // end of extern "C"

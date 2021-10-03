@@ -98,3 +98,15 @@
 [submodule "components/bt/controller/lib_esp32c3_family"]
 	path = components/bt/controller/lib_esp32c3_family
 	url = ../../espressif/esp32c3-bt-lib.git
+
+[submodule "components/esp_phy/lib"]
+	path = components/esp_phy/lib
+	url = ../../espressif/esp-phy-lib.git
+
+[submodule "components/openthread/lib"]
+	path = components/openthread/lib
+	url = ../../espressif/esp-thread-lib.git
+
+[submodule "components/ieee802154/lib"]
+	path = components/ieee802154/lib
+	url = ../../espressif/esp-ieee802154-lib.git

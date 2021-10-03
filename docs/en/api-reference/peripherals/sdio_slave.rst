@@ -1,6 +1,12 @@
 SDIO Card Slave Driver
 ======================
 
+.. only:: esp32c3
+
+    .. warning::
+
+        This document is not updated for ESP32-C3 yet.
+
 Overview
 --------
 
@@ -94,7 +100,7 @@ The SDIO slave driver uses the following terms:
 - Sending: slave to host transfers.
 - Receiving: host to slave transfers.
 
-.. note:: Register names in *{IDF_TARGET_NAME} Technical Reference Manual* > *SDIO Slave Controller* 
+.. note:: Register names in *{IDF_TARGET_NAME} Technical Reference Manual* > *SDIO Slave Controller*
   [`PDF <{IDF_TARGET_TRM_EN_URL}#sdioslave>`__] are oriented from the point of view of the host, i.e. 'rx'
   registers refer to sending, while 'tx' registers refer to receiving. We're not using `tx` or `rx` in the driver to
   avoid ambiguities.
@@ -181,9 +187,14 @@ the buffer number of slave.
 To allow the host sending data to the slave, the application has to load buffers to the slave driver by the following steps:
 
 1. Register the buffer by calling ``sdio_slave_recv_register_buf``, and get the handle of the registered buffer. The driver
-   will allocate memory for the linked-list descriptor needed to link the buffer onto the hardware.
+   will allocate memory for the linked-list descriptor needed to link the buffer onto the hardware. The size of these buffers should equal to the Receiving buffer size.
 2. Load buffers onto the driver by passing the buffer handle to ``sdio_slave_recv_load_buf``.
-3. Call ``sdio_slave_recv`` to get the received data. If non-blocking call is needed, set ``wait=0``.
+3. Get the received data by calling ``sdio_slave_recv`` or ``sdio_slave_recv_packet``. If non-blocking call is needed, set ``wait=0``. 
+
+   The difference between two APIs is that, ``sdio_slave_recv_packet`` gives more information about packet, which can consist of several buffers. When ``ESP_ERR_NOT_FINISHED`` is returned by this API, you should call this API iteratively until the return value is ``ESP_OK``. All the continuous buffers returned with ``ESP_ERR_NOT_FINISHED``, together with the last buffer returned with ``ESP_OK``, belong to one packet from the host. Call ``sdio_slave_recv_get_buf`` to get the address of the received data, and the actual length received in each buffer. The packet length is the sum of received length of all the buffers in the packet. 
+
+   If the host never send data longer than the Receiving buffer size, or you don't care about the packet boundary (e.g. the data is only a byte stream), you can call the simpler version ``sdio_slave_recv`` instead.
+
 4. Pass the handle of processed buffer back to the driver by ``sdio_recv_load_buf`` again.
 
 .. note:: To avoid overhead from copying data, the driver itself doesn't have any buffer inside, the application is

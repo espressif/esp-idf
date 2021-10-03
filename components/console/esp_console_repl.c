@@ -1,16 +1,8 @@
-// Copyright 2016-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdint.h>
 #include <stdio.h>
@@ -22,14 +14,17 @@
 #include "esp_console.h"
 #include "esp_vfs_dev.h"
 #include "esp_vfs_cdcacm.h"
+#include "esp_vfs_usb_serial_jtag.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/uart.h"
+#include "driver/usb_serial_jtag.h"
 #include "linenoise/linenoise.h"
 
 static const char *TAG = "console.repl";
 
 #define CONSOLE_PROMPT_MAX_LEN (32)
+#define CONSOLE_PATH_MAX_LEN   (ESP_VFS_PATH_MAX)
 
 typedef enum {
     CONSOLE_REPL_STATE_DEINIT,
@@ -42,42 +37,39 @@ typedef struct {
     char prompt[CONSOLE_PROMPT_MAX_LEN]; // Prompt to be printed before each line
     repl_state_t state;
     const char *history_save_path;
-    TaskHandle_t task_hdl; // REPL task handle
+    TaskHandle_t task_hdl;              // REPL task handle
+    size_t max_cmdline_length;          // Maximum length of a command line. If 0, default value will be used.
 } esp_console_repl_com_t;
 
 typedef struct {
     esp_console_repl_com_t repl_com; // base class
     int uart_channel;                // uart channel number
-} esp_console_repl_uart_t;
-
-typedef struct {
-    esp_console_repl_com_t repl_com; // base class
-} esp_console_repl_usb_cdc_t;
+} esp_console_repl_universal_t;
 
 static void esp_console_repl_task(void *args);
 static esp_err_t esp_console_repl_uart_delete(esp_console_repl_t *repl);
 static esp_err_t esp_console_repl_usb_cdc_delete(esp_console_repl_t *repl);
-static esp_err_t esp_console_common_init(esp_console_repl_com_t *repl_com);
+#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+static esp_err_t esp_console_repl_usb_serial_jtag_delete(esp_console_repl_t *repl);
+#endif //CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+static esp_err_t esp_console_common_init(size_t max_cmdline_length, esp_console_repl_com_t *repl_com);
 static esp_err_t esp_console_setup_prompt(const char *prompt, esp_console_repl_com_t *repl_com);
 static esp_err_t esp_console_setup_history(const char *history_path, uint32_t max_history_len, esp_console_repl_com_t *repl_com);
 
 esp_err_t esp_console_new_repl_usb_cdc(const esp_console_dev_usb_cdc_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl)
 {
     esp_err_t ret = ESP_OK;
-    esp_console_repl_usb_cdc_t *cdc_repl = NULL;
+    esp_console_repl_universal_t *cdc_repl = NULL;
     if (!repl_config | !dev_config | !ret_repl) {
         ret = ESP_ERR_INVALID_ARG;
         goto _exit;
     }
     // allocate memory for console REPL context
-    cdc_repl = calloc(1, sizeof(esp_console_repl_usb_cdc_t));
+    cdc_repl = calloc(1, sizeof(esp_console_repl_universal_t));
     if (!cdc_repl) {
         ret = ESP_ERR_NO_MEM;
         goto _exit;
     }
-
-    /* Disable buffering on stdin */
-    setvbuf(stdin, NULL, _IONBF, 0);
 
     /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
     esp_vfs_dev_cdcacm_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
@@ -89,7 +81,7 @@ esp_err_t esp_console_new_repl_usb_cdc(const esp_console_dev_usb_cdc_config_t *d
     fcntl(fileno(stdin), F_SETFL, 0);
 
     // initialize console, common part
-    ret = esp_console_common_init(&cdc_repl->repl_com);
+    ret = esp_console_common_init(repl_config->max_cmdline_length, &cdc_repl->repl_com);
     if (ret != ESP_OK) {
         goto _exit;
     }
@@ -103,15 +95,18 @@ esp_err_t esp_console_new_repl_usb_cdc(const esp_console_dev_usb_cdc_config_t *d
     // setup prompt
     esp_console_setup_prompt(repl_config->prompt, &cdc_repl->repl_com);
 
+    /* Fill the structure here as it will be used directly by the created task. */
+    cdc_repl->uart_channel = CONFIG_ESP_CONSOLE_UART_NUM;
+    cdc_repl->repl_com.state = CONSOLE_REPL_STATE_INIT;
+    cdc_repl->repl_com.repl_core.del = esp_console_repl_usb_cdc_delete;
+
     /* spawn a single thread to run REPL */
     if (xTaskCreate(esp_console_repl_task, "console_repl", repl_config->task_stack_size,
-                    &cdc_repl->repl_com, repl_config->task_priority, &cdc_repl->repl_com.task_hdl) != pdTRUE) {
+                    cdc_repl, repl_config->task_priority, &cdc_repl->repl_com.task_hdl) != pdTRUE) {
         ret = ESP_FAIL;
         goto _exit;
     }
 
-    cdc_repl->repl_com.state = CONSOLE_REPL_STATE_INIT;
-    cdc_repl->repl_com.repl_core.del = esp_console_repl_usb_cdc_delete;
     *ret_repl = &cdc_repl->repl_com.repl_core;
     return ESP_OK;
 _exit:
@@ -125,16 +120,94 @@ _exit:
     return ret;
 }
 
+#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+esp_err_t esp_console_new_repl_usb_serial_jtag(const esp_console_dev_usb_serial_jtag_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl)
+{
+    esp_console_repl_universal_t *usb_serial_jtag_repl = NULL;
+    if (!repl_config | !dev_config | !ret_repl) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_err_t ret = ESP_OK;
+    // allocate memory for console REPL context
+    usb_serial_jtag_repl = calloc(1, sizeof(esp_console_repl_universal_t));
+    if (!usb_serial_jtag_repl) {
+        ret = ESP_ERR_NO_MEM;
+        goto _exit;
+    }
+
+    /* Disable buffering on stdin */
+    setvbuf(stdin, NULL, _IONBF, 0);
+
+    /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
+    esp_vfs_dev_usb_serial_jtag_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
+    /* Move the caret to the beginning of the next line on '\n' */
+    esp_vfs_dev_usb_serial_jtag_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
+
+    /* Enable non-blocking mode on stdin and stdout */
+    fcntl(fileno(stdout), F_SETFL, 0);
+    fcntl(fileno(stdin), F_SETFL, 0);
+
+    usb_serial_jtag_driver_config_t usb_serial_jtag_config = USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT();
+
+    /* Install USB-SERIAL-JTAG driver for interrupt-driven reads and writes */
+    ret = usb_serial_jtag_driver_install(&usb_serial_jtag_config);
+    if (ret != ESP_OK) {
+        goto _exit;
+    }
+
+    // initialize console, common part
+    ret = esp_console_common_init(repl_config->max_cmdline_length, &usb_serial_jtag_repl->repl_com);
+    if (ret != ESP_OK) {
+        goto _exit;
+    }
+
+    /* Tell vfs to use usb-serial-jtag driver */
+    esp_vfs_usb_serial_jtag_use_driver();
+
+    // setup history
+    ret = esp_console_setup_history(repl_config->history_save_path, repl_config->max_history_len, &usb_serial_jtag_repl->repl_com);
+    if (ret != ESP_OK) {
+        goto _exit;
+    }
+
+    // setup prompt
+    esp_console_setup_prompt(repl_config->prompt, &usb_serial_jtag_repl->repl_com);
+
+    /* spawn a single thread to run REPL */
+    if (xTaskCreate(esp_console_repl_task, "console_repl", repl_config->task_stack_size,
+                    &usb_serial_jtag_repl->repl_com, repl_config->task_priority, &usb_serial_jtag_repl->repl_com.task_hdl) != pdTRUE) {
+        ret = ESP_FAIL;
+        goto _exit;
+    }
+
+    usb_serial_jtag_repl->uart_channel = CONFIG_ESP_CONSOLE_UART_NUM;
+    usb_serial_jtag_repl->repl_com.state = CONSOLE_REPL_STATE_INIT;
+    usb_serial_jtag_repl->repl_com.repl_core.del = esp_console_repl_usb_serial_jtag_delete;
+    *ret_repl = &usb_serial_jtag_repl->repl_com.repl_core;
+    return ESP_OK;
+_exit:
+    if (usb_serial_jtag_repl) {
+        esp_console_deinit();
+        free(usb_serial_jtag_repl);
+    }
+    if (ret_repl) {
+        *ret_repl = NULL;
+    }
+    return ret;
+}
+#endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+
 esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl)
 {
     esp_err_t ret = ESP_OK;
-    esp_console_repl_uart_t *uart_repl = NULL;
+    esp_console_repl_universal_t *uart_repl = NULL;
     if (!repl_config | !dev_config | !ret_repl) {
         ret = ESP_ERR_INVALID_ARG;
         goto _exit;
     }
     // allocate memory for console REPL context
-    uart_repl = calloc(1, sizeof(esp_console_repl_uart_t));
+    uart_repl = calloc(1, sizeof(esp_console_repl_universal_t));
     if (!uart_repl) {
         ret = ESP_ERR_NO_MEM;
         goto _exit;
@@ -143,9 +216,6 @@ esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_con
     /* Drain stdout before reconfiguring it */
     fflush(stdout);
     fsync(fileno(stdout));
-
-    /* Disable buffering on stdin */
-    setvbuf(stdin, NULL, _IONBF, 0);
 
     /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
     esp_vfs_dev_uart_port_set_rx_line_endings(dev_config->channel, ESP_LINE_ENDINGS_CR);
@@ -180,7 +250,7 @@ esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_con
     esp_vfs_dev_uart_use_driver(dev_config->channel);
 
     // initialize console, common part
-    ret = esp_console_common_init(&uart_repl->repl_com);
+    ret = esp_console_common_init(repl_config->max_cmdline_length, &uart_repl->repl_com);
     if (ret != ESP_OK) {
         goto _exit;
     }
@@ -194,16 +264,19 @@ esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_con
     // setup prompt
     esp_console_setup_prompt(repl_config->prompt, &uart_repl->repl_com);
 
-    /* spawn a single thread to run REPL */
+    /* Fill the structure here as it will be used directly by the created task. */
+    uart_repl->uart_channel = dev_config->channel;
+    uart_repl->repl_com.state = CONSOLE_REPL_STATE_INIT;
+    uart_repl->repl_com.repl_core.del = esp_console_repl_uart_delete;
+
+    /* Spawn a single thread to run REPL, we need to pass `uart_repl` to it as
+     * it also requires the uart channel. */
     if (xTaskCreate(esp_console_repl_task, "console_repl", repl_config->task_stack_size,
-                    &uart_repl->repl_com, repl_config->task_priority, &uart_repl->repl_com.task_hdl) != pdTRUE) {
+                    uart_repl, repl_config->task_priority, &uart_repl->repl_com.task_hdl) != pdTRUE) {
         ret = ESP_FAIL;
         goto _exit;
     }
 
-    uart_repl->uart_channel = dev_config->channel;
-    uart_repl->repl_com.state = CONSOLE_REPL_STATE_INIT;
-    uart_repl->repl_com.repl_core.del = esp_console_repl_uart_delete;
     *ret_repl = &uart_repl->repl_com.repl_core;
     return ESP_OK;
 _exit:
@@ -244,19 +317,10 @@ static esp_err_t esp_console_setup_prompt(const char *prompt, esp_console_repl_c
     }
     snprintf(repl_com->prompt, CONSOLE_PROMPT_MAX_LEN - 1, LOG_COLOR_I "%s " LOG_RESET_COLOR, prompt_temp);
 
-    printf("\r\n"
-           "Type 'help' to get the list of commands.\r\n"
-           "Use UP/DOWN arrows to navigate through command history.\r\n"
-           "Press TAB when typing command name to auto-complete.\r\n");
-
     /* Figure out if the terminal supports escape sequences */
     int probe_status = linenoiseProbe();
     if (probe_status) {
         /* zero indicates success */
-        printf("\r\n"
-               "Your terminal application does not support escape sequences.\n\n"
-               "Line editing and history features are disabled.\n\n"
-               "On Windows, try using Putty instead.\r\n");
         linenoiseSetDumbMode(1);
 #if CONFIG_LOG_COLORS
         /* Since the terminal doesn't support escape sequences,
@@ -290,11 +354,18 @@ _exit:
     return ret;
 }
 
-static esp_err_t esp_console_common_init(esp_console_repl_com_t *repl_com)
+static esp_err_t esp_console_common_init(size_t max_cmdline_length, esp_console_repl_com_t *repl_com)
 {
     esp_err_t ret = ESP_OK;
     /* Initialize the console */
     esp_console_config_t console_config = ESP_CONSOLE_CONFIG_DEFAULT();
+    repl_com->max_cmdline_length = console_config.max_cmdline_length;
+    /* Replace the default command line length if passed as a parameter */
+    if (max_cmdline_length != 0) {
+        console_config.max_cmdline_length = max_cmdline_length;
+        repl_com->max_cmdline_length = max_cmdline_length;
+    }
+
 #if CONFIG_LOG_COLORS
     console_config.hint_color = atoi(LOG_COLOR_CYAN);
 #endif
@@ -325,7 +396,7 @@ static esp_err_t esp_console_repl_uart_delete(esp_console_repl_t *repl)
 {
     esp_err_t ret = ESP_OK;
     esp_console_repl_com_t *repl_com = __containerof(repl, esp_console_repl_com_t, repl_core);
-    esp_console_repl_uart_t *uart_repl = __containerof(repl_com, esp_console_repl_uart_t, repl_com);
+    esp_console_repl_universal_t *uart_repl = __containerof(repl_com, esp_console_repl_universal_t, repl_com);
     // check if already de-initialized
     if (repl_com->state == CONSOLE_REPL_STATE_DEINIT) {
         ESP_LOGE(TAG, "already de-initialized");
@@ -345,7 +416,7 @@ static esp_err_t esp_console_repl_usb_cdc_delete(esp_console_repl_t *repl)
 {
     esp_err_t ret = ESP_OK;
     esp_console_repl_com_t *repl_com = __containerof(repl, esp_console_repl_com_t, repl_core);
-    esp_console_repl_usb_cdc_t *cdc_repl = __containerof(repl_com, esp_console_repl_usb_cdc_t, repl_com);
+    esp_console_repl_universal_t *cdc_repl = __containerof(repl_com, esp_console_repl_universal_t, repl_com);
     // check if already de-initialized
     if (repl_com->state == CONSOLE_REPL_STATE_DEINIT) {
         ESP_LOGE(TAG, "already de-initialized");
@@ -359,11 +430,70 @@ _exit:
     return ret;
 }
 
+#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+static esp_err_t esp_console_repl_usb_serial_jtag_delete(esp_console_repl_t *repl)
+{
+    esp_err_t ret = ESP_OK;
+    esp_console_repl_com_t *repl_com = __containerof(repl, esp_console_repl_com_t, repl_core);
+    esp_console_repl_universal_t *usb_serial_jtag_repl = __containerof(repl_com, esp_console_repl_universal_t, repl_com);
+    // check if already de-initialized
+    if (repl_com->state == CONSOLE_REPL_STATE_DEINIT) {
+        ESP_LOGE(TAG, "already de-initialized");
+        ret = ESP_ERR_INVALID_STATE;
+        goto _exit;
+    }
+    repl_com->state = CONSOLE_REPL_STATE_DEINIT;
+    esp_console_deinit();
+    esp_vfs_usb_serial_jtag_use_nonblocking();
+    usb_serial_jtag_driver_uninstall();
+    free(usb_serial_jtag_repl);
+_exit:
+    return ret;
+}
+#endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+
 static void esp_console_repl_task(void *args)
 {
-    esp_console_repl_com_t *repl_com = (esp_console_repl_com_t *)args;
-    // waiting for task notify
+    esp_console_repl_universal_t *repl_conf = (esp_console_repl_universal_t *) args;
+    esp_console_repl_com_t *repl_com = &repl_conf->repl_com;
+    const int uart_channel = repl_conf->uart_channel;
+
+    /* Waiting for task notify. This happens when `esp_console_start_repl()`
+     * function is called. */
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    /* Change standard input and output of the task if the requested UART is
+     * NOT the default one. This block will replace stdin, stdout and stderr.
+     */
+    if (uart_channel != CONFIG_ESP_CONSOLE_UART_NUM) {
+        char path[CONSOLE_PATH_MAX_LEN] = { 0 };
+        snprintf(path, CONSOLE_PATH_MAX_LEN, "/dev/uart/%d", uart_channel);
+
+        stdin = fopen(path, "r");
+        stdout = fopen(path, "w");
+        stderr = stdout;
+    }
+
+    /* Disable buffering on stdin of the current task.
+     * If the console is ran on a different UART than the default one,
+     * buffering shall only be disabled for the current one. */
+    setvbuf(stdin, NULL, _IONBF, 0);
+
+    /* This message shall be printed here and not earlier as the stdout
+     * has just been set above. */
+    printf("\r\n"
+        "Type 'help' to get the list of commands.\r\n"
+        "Use UP/DOWN arrows to navigate through command history.\r\n"
+        "Press TAB when typing command name to auto-complete.\r\n");
+
+    if (linenoiseIsDumbMode()) {
+        printf("\r\n"
+               "Your terminal application does not support escape sequences.\n\n"
+               "Line editing and history features are disabled.\n\n"
+               "On Windows, try using Putty instead.\r\n");
+    }
+
+    linenoiseSetMaxLineLen(repl_com->max_cmdline_length);
     while (repl_com->state == CONSOLE_REPL_STATE_START) {
         char *line = linenoise(repl_com->prompt);
         if (line == NULL) {

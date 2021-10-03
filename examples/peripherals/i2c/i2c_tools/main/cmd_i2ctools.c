@@ -23,8 +23,17 @@
 
 static const char *TAG = "cmd_i2ctools";
 
+#if CONFIG_IDF_TARGET_ESP32S3
+static gpio_num_t i2c_gpio_sda = 1;
+static gpio_num_t i2c_gpio_scl = 2;
+#elif CONFIG_IDF_TARGET_ESP32C3
+static gpio_num_t i2c_gpio_sda = 5;
+static gpio_num_t i2c_gpio_scl = 6;
+#else
 static gpio_num_t i2c_gpio_sda = 18;
 static gpio_num_t i2c_gpio_scl = 19;
+#endif
+
 static uint32_t i2c_frequency = 100000;
 static i2c_port_t i2c_port = I2C_NUM_0;
 
@@ -34,17 +43,7 @@ static esp_err_t i2c_get_port(int port, i2c_port_t *i2c_port)
         ESP_LOGE(TAG, "Wrong port number: %d", port);
         return ESP_FAIL;
     }
-    switch (port) {
-    case 0:
-        *i2c_port = I2C_NUM_0;
-        break;
-    case 1:
-        *i2c_port = I2C_NUM_1;
-        break;
-    default:
-        *i2c_port = I2C_NUM_0;
-        break;
-    }
+    *i2c_port = port;
     return ESP_OK;
 }
 

@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef _TEST_COMMON_SPI_H_
 #define _TEST_COMMON_SPI_H_
 
@@ -12,6 +17,7 @@
 #include "param_test.h"
 #include "soc/io_mux_reg.h"
 #include "sdkconfig.h"
+#include "soc/spi_periph.h"
 
 // All the tests using the header should use this definition as much as possible,
 // so that the working host can be changed easily in the future.
@@ -287,4 +293,8 @@ void spitest_gpio_input_sel(uint32_t gpio_num, int func, uint32_t signal_idx);
 //then the cs_num of the 1st and 2nd devices are 0 and 1 respectively.
 void same_pin_func_sel(spi_bus_config_t bus, spi_device_interface_config_t dev, uint8_t cs_num);
 
+/**
+ * This function is used to get tx_buffer used in dual-board test
+ */
+void get_tx_buffer(uint32_t seed, uint8_t *master_send_buf, uint8_t *slave_send_buf, int send_buf_size);
 #endif  //_TEST_COMMON_SPI_H_

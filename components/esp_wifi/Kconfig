@@ -1,9 +1,14 @@
 
 menu "Wi-Fi"
+    visible if !IDF_TARGET_ESP32H2
+
+    config ESP32_WIFI_ENABLED
+        bool
+        default "y" if !IDF_TARGET_ESP32H2 # TODO: replace with SOC_CAPS_SUPPORT_WIFI after IDF-2223 is done
 
     config ESP32_WIFI_SW_COEXIST_ENABLE
         bool "Software controls WiFi/Bluetooth coexistence"
-        depends on BT_ENABLED
+        depends on ESP32_WIFI_ENABLED && BT_ENABLED
         default y
         help
             If enabled, WiFi & Bluetooth coexistence is controlled by software rather than hardware.
@@ -218,83 +223,6 @@ menu "Wi-Fi"
         help
             Set the number of WiFi management short buffer.
 
-    config ESP32_WIFI_DEBUG_LOG_ENABLE
-        bool "Enable WiFi debug log"
-        default n
-        help
-            Select this option to enable WiFi debug log
-
-    choice ESP32_WIFI_DEBUG_LOG_LEVEL
-        depends on ESP32_WIFI_DEBUG_LOG_ENABLE
-        prompt "WiFi debug log level"
-        default ESP32_WIFI_DEBUG_LOG_DEBUG
-        help
-            The WiFi log is divided into the following levels: ERROR,WARNING,INFO,DEBUG,VERBOSE.
-            The ERROR,WARNING,INFO levels are enabled by default, and the DEBUG,VERBOSE levels can be enabled here.
-
-        config ESP32_WIFI_DEBUG_LOG_DEBUG
-            bool "WiFi Debug Log Debug"
-        config ESP32_WIFI_DEBUG_LOG_VERBOSE
-            bool "WiFi Debug Log Verbose"
-    endchoice
-
-    choice ESP32_WIFI_DEBUG_LOG_MODULE
-        depends on ESP32_WIFI_DEBUG_LOG_ENABLE
-        prompt "WiFi debug log module"
-        default ESP32_WIFI_DEBUG_LOG_MODULE_WIFI
-        help
-            The WiFi log module contains three parts: WIFI,COEX,MESH. The WIFI module indicates the logs related to
-            WiFi, the COEX module indicates the logs related to WiFi and BT(or BLE) coexist, the MESH module indicates
-            the logs related to Mesh. When ESP32_WIFI_LOG_MODULE_ALL is enabled, all modules are selected.
-
-        config ESP32_WIFI_DEBUG_LOG_MODULE_ALL
-            bool "WiFi Debug Log Module All"
-        config ESP32_WIFI_DEBUG_LOG_MODULE_WIFI
-            bool "WiFi Debug Log Module WiFi"
-        config ESP32_WIFI_DEBUG_LOG_MODULE_COEX
-            bool "WiFi Debug Log Module Coex"
-        config ESP32_WIFI_DEBUG_LOG_MODULE_MESH
-            bool "WiFi Debug Log Module Mesh"
-    endchoice
-
-    config ESP32_WIFI_DEBUG_LOG_SUBMODULE
-        depends on ESP32_WIFI_DEBUG_LOG_ENABLE
-        bool "WiFi debug log submodule"
-        default n
-        help
-            Enable this option to set the WiFi debug log submodule.
-            Currently the log submodule contains the following parts: INIT,IOCTL,CONN,SCAN.
-            The INIT submodule indicates the initialization process.The IOCTL submodule indicates the API calling
-            process.
-            The CONN submodule indicates the connecting process.The SCAN submodule indicates the scaning process.
-
-    config ESP32_WIFI_DEBUG_LOG_SUBMODULE_ALL
-        depends on ESP32_WIFI_DEBUG_LOG_SUBMODULE
-        bool "WiFi Debug Log Submodule All"
-        default n
-        help
-            When this option is enabled, all debug submodules are selected.
-
-    config ESP32_WIFI_DEBUG_LOG_SUBMODULE_INIT
-        depends on ESP32_WIFI_DEBUG_LOG_SUBMODULE && (!ESP32_WIFI_DEBUG_LOG_SUBMODULE_ALL)
-        bool "WiFi Debug Log Submodule Init"
-        default n
-
-    config ESP32_WIFI_DEBUG_LOG_SUBMODULE_IOCTL
-        depends on ESP32_WIFI_DEBUG_LOG_SUBMODULE && (!ESP32_WIFI_DEBUG_LOG_SUBMODULE_ALL)
-        bool "WiFi Debug Log Submodule Ioctl"
-        default n
-
-    config ESP32_WIFI_DEBUG_LOG_SUBMODULE_CONN
-        depends on ESP32_WIFI_DEBUG_LOG_SUBMODULE && (!ESP32_WIFI_DEBUG_LOG_SUBMODULE_ALL)
-        bool "WiFi Debug Log Submodule Conn"
-        default n
-
-    config ESP32_WIFI_DEBUG_LOG_SUBMODULE_SCAN
-        depends on ESP32_WIFI_DEBUG_LOG_SUBMODULE && (!ESP32_WIFI_DEBUG_LOG_SUBMODULE_ALL)
-        bool "WiFi Debug Log Submodule Scan"
-        default n
-
     config ESP32_WIFI_IRAM_OPT
         bool "WiFi IRAM speed optimization"
         default n if (BT_ENABLED && ESP32_SPIRAM_SUPPORT)
@@ -316,6 +244,7 @@ menu "Wi-Fi"
     config ESP32_WIFI_ENABLE_WPA3_SAE
         bool "Enable WPA3-Personal"
         default y
+        depends on WPA_MBEDTLS_CRYPTO
         help
             Select this option to allow the device to establish a WPA3-Personal connection with eligible AP's.
             PMF (Protected Management Frames) is a prerequisite feature for a WPA3 connection, it needs to be
@@ -323,7 +252,6 @@ menu "Wi-Fi"
 
     config ESP_WIFI_SLP_IRAM_OPT
         bool "WiFi SLP IRAM speed optimization"
-        depends on FREERTOS_USE_TICKLESS_IDLE
         select PM_SLP_DEFAULT_PARAMS_OPT
         help
             Select this option to place called Wi-Fi library TBTT process and receive beacon functions in IRAM.
@@ -336,7 +264,7 @@ menu "Wi-Fi"
     config ESP_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME
         int "Minimum active time"
         range 8 60
-        default 8
+        default 50
         depends on ESP_WIFI_SLP_IRAM_OPT
         help
             The minimum timeout for waiting to receive data, unit: milliseconds.
@@ -344,7 +272,7 @@ menu "Wi-Fi"
     config ESP_WIFI_SLP_DEFAULT_MAX_ACTIVE_TIME
         int "Maximum keep alive time"
         range 10 60
-        default 60
+        default 10
         depends on ESP_WIFI_SLP_IRAM_OPT
         help
             The maximum time that wifi keep alive, unit: seconds.
@@ -352,7 +280,7 @@ menu "Wi-Fi"
     config ESP_WIFI_FTM_ENABLE
         bool "WiFi FTM"
         default n
-        depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3)
+        depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
         help
             Enable feature Fine Timing Measurement for calculating WiFi Round-Trip-Time (RTT).
 
@@ -373,107 +301,3 @@ menu "Wi-Fi"
             Chip will do modem-sleep when rf module is not in use any more.
 
 endmenu  # Wi-Fi
-
-menu "PHY"
-
-    config ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
-        # ToDo: remove target dependency once NVS and PHY partial calibration are supported
-        # also re-enable the <RF_calibration> entry in docs/../api-guides/index.rst
-        depends on IDF_TARGET_ESP32
-        bool "Store phy calibration data in NVS"
-        default y
-        help
-            If this option is enabled, NVS will be initialized and calibration data will be loaded from there.
-            PHY calibration will be skipped on deep sleep wakeup. If calibration data is not found, full calibration
-            will be performed and stored in NVS. Normally, only partial calibration will be performed.
-            If this option is disabled, full calibration will be performed.
-
-            If it's easy that your board calibrate bad data, choose 'n'.
-            Two cases for example, you should choose 'n':
-            1.If your board is easy to be booted up with antenna disconnected.
-            2.Because of your board design, each time when you do calibration, the result are too unstable.
-            If unsure, choose 'y'.
-
-    menuconfig ESP32_PHY_INIT_DATA_IN_PARTITION
-        bool "Use a partition to store PHY init data"
-        default n
-        help
-            If enabled, PHY init data will be loaded from a partition.
-            When using a custom partition table, make sure that PHY data
-            partition is included (type: 'data', subtype: 'phy').
-            With default partition tables, this is done automatically.
-            If PHY init data is stored in a partition, it has to be flashed there,
-            otherwise runtime error will occur.
-
-            If this option is not enabled, PHY init data will be embedded
-            into the application binary.
-
-            If unsure, choose 'n'.
-
-    config ESP32_PHY_DEFAULT_INIT_IF_INVALID
-        bool "Reset default PHY init data if invalid"
-        default n
-        depends on ESP32_PHY_INIT_DATA_IN_PARTITION
-        help
-            If enabled, PHY init data will be restored to default if
-            it cannot be verified successfully to avoid endless bootloops.
-
-            If unsure, choose 'n'.
-
-    if ESP32_PHY_INIT_DATA_IN_PARTITION
-        config ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN
-            bool "Support multiple PHY init data bin"
-            depends on ESP32_PHY_INIT_DATA_IN_PARTITION
-            default n
-            help
-                If enabled, the corresponding PHY init data type can be automatically switched
-                according to the country code. China's PHY init data bin is used by default.
-                Can be modified by country information in API esp_wifi_set_country().
-                The priority of switching the PHY init data type is:
-                1. Country configured by API esp_wifi_set_country()
-                and the parameter policy is WIFI_COUNTRY_POLICY_MANUAL.
-                2. Country notified by the connected AP.
-                3. Country configured by API esp_wifi_set_country()
-                and the parameter policy is WIFI_COUNTRY_POLICY_AUTO.
-
-        config ESP32_PHY_INIT_DATA_ERROR
-            bool "Terminate operation when PHY init data error"
-            depends on ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN
-            default n
-            help
-                If enabled, when an error occurs while the PHY init data is updated,
-                the program will terminate and restart.
-                If not enabled, the PHY init data will not be updated when an error occurs.
-    endif
-
-    config ESP32_PHY_MAX_WIFI_TX_POWER
-        int "Max WiFi TX power (dBm)"
-        range 10 20
-        default 20
-        help
-            Set maximum transmit power for WiFi radio. Actual transmit power for high
-            data rates may be lower than this setting.
-
-    config ESP32_PHY_MAX_TX_POWER
-        int
-        default ESP32_PHY_MAX_WIFI_TX_POWER
-
-    config ESP32_PHY_MAC_BB_PD
-        bool "Power down MAC and baseband of Wi-Fi and Bluetooth when PHY is disabled"
-        depends on (IDF_TARGET_ESP32C3 && FREERTOS_USE_TICKLESS_IDLE)
-        default n
-        help
-            If enabled, the MAC and baseband of Wi-Fi and Bluetooth will be powered
-            down when PHY is disabled. Enabling this setting reduces power consumption
-            by a small amount but increases RAM use by approximately 4 KB(Wi-Fi only),
-            2 KB(Bluetooth only) or 5.3 KB(Wi-Fi + Bluetooth).
-
-            #Reduce PHY TX power when brownout reset
-    config ESP32_REDUCE_PHY_TX_POWER
-        bool "Reduce PHY TX power when brownout reset"
-        depends on ESP32_BROWNOUT_DET
-        default y
-        help
-            When brownout reset occurs, reduce PHY TX power to keep the code running.
-
-endmenu  # PHY

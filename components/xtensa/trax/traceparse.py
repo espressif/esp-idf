@@ -55,7 +55,7 @@ import sys
 
 # Check if loaded into GDB
 try:
-    assert gdb.__name__ == 'gdb'
+    assert gdb.__name__ == 'gdb'  # type: ignore
     WITH_GDB = True
 except NameError:
     WITH_GDB = False
@@ -329,10 +329,6 @@ def parse_and_dump(filename, disassemble=WITH_GDB):
 
 
 def main():
-    if sys.version_info[0] < 3:
-        print('WARNING: Support for Python 2 is deprecated and will be removed in future versions.', file=sys.stderr)
-    elif sys.version_info[0] == 3 and sys.version_info[1] < 6:
-        print('WARNING: Python 3 versions older than 3.6 are not supported.', file=sys.stderr)
     if len(sys.argv) < 2:
         sys.stderr.write('Usage: %s <dump_file>\n')
         raise SystemExit(1)

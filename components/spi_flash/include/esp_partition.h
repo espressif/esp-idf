@@ -45,6 +45,8 @@ extern "C" {
 typedef enum {
     ESP_PARTITION_TYPE_APP = 0x00,       //!< Application partition type
     ESP_PARTITION_TYPE_DATA = 0x01,      //!< Data partition type
+
+    ESP_PARTITION_TYPE_ANY = 0xff,       //!< Used to search for partitions with any type
 } esp_partition_type_t;
 
 /**
@@ -85,6 +87,7 @@ typedef enum {
     ESP_PARTITION_SUBTYPE_DATA_COREDUMP = 0x03,                               //!< COREDUMP partition
     ESP_PARTITION_SUBTYPE_DATA_NVS_KEYS = 0x04,                               //!< Partition for NVS keys
     ESP_PARTITION_SUBTYPE_DATA_EFUSE_EM = 0x05,                               //!< Partition for emulate eFuse bits
+    ESP_PARTITION_SUBTYPE_DATA_UNDEFINED = 0x06,                              //!< Undefined (or unspecified) data partition
 
     ESP_PARTITION_SUBTYPE_DATA_ESPHTTPD = 0x80,                               //!< ESPHTTPD partition
     ESP_PARTITION_SUBTYPE_DATA_FAT = 0x81,                                    //!< FAT partition
@@ -123,7 +126,9 @@ typedef struct {
 /**
  * @brief Find partition based on one or more parameters
  *
- * @param type Partition type, one of esp_partition_type_t values or an 8-bit unsigned integer
+ * @param type Partition type, one of esp_partition_type_t values or an 8-bit unsigned integer.
+ *             To find all partitions, no matter the type, use ESP_PARTITION_TYPE_ANY, and set
+ *             subtype argument to ESP_PARTITION_SUBTYPE_ANY.
  * @param subtype Partition subtype, one of esp_partition_subtype_t values or an 8-bit unsigned integer.
  *                To find all partitions of given type, use ESP_PARTITION_SUBTYPE_ANY.
  * @param label (optional) Partition label. Set this value if looking
@@ -139,7 +144,9 @@ esp_partition_iterator_t esp_partition_find(esp_partition_type_t type, esp_parti
 /**
  * @brief Find first partition based on one or more parameters
  *
- * @param type Partition type, one of esp_partition_type_t values or an 8-bit unsigned integer
+ * @param type Partition type, one of esp_partition_type_t values or an 8-bit unsigned integer.
+ *             To find all partitions, no matter the type, use ESP_PARTITION_TYPE_ANY, and set
+ *             subtype argument to ESP_PARTITION_SUBTYPE_ANY.
  * @param subtype Partition subtype, one of esp_partition_subtype_t values or an 8-bit unsigned integer
  *                To find all partitions of given type, use ESP_PARTITION_SUBTYPE_ANY.
  * @param label (optional) Partition label. Set this value if looking

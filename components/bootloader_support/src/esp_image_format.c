@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <string.h>
 #include <sys/param.h>
 #include <soc/cpu.h>
@@ -25,19 +17,18 @@
 #include <bootloader_sha.h>
 #include "bootloader_util.h"
 #include "bootloader_common.h"
-#include "soc/soc_memory_layout.h"
+#include "esp_rom_sys.h"
+#include "soc/soc_memory_types.h"
 #if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/rtc.h"
 #include "esp32/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/rtc.h"
 #include "esp32s2/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/rtc.h"
 #include "esp32s3/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/rtc.h"
 #include "esp32c3/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/secure_boot.h"
 #endif
 
 /* Checking signatures as part of verifying images is necessary:
@@ -47,10 +38,14 @@
 #ifdef BOOTLOADER_BUILD
 #ifdef CONFIG_SECURE_SIGNED_ON_BOOT
 #define SECURE_BOOT_CHECK_SIGNATURE 1
+#else
+#define SECURE_BOOT_CHECK_SIGNATURE 0
 #endif
 #else /* !BOOTLOADER_BUILD */
 #ifdef CONFIG_SECURE_SIGNED_ON_UPDATE
 #define SECURE_BOOT_CHECK_SIGNATURE 1
+#else
+#define SECURE_BOOT_CHECK_SIGNATURE 0
 #endif
 #endif
 
@@ -77,6 +72,7 @@ static bool should_load(uint32_t load_addr);
 /* Return true if load_addr is an address the bootloader should map via flash cache */
 static bool should_map(uint32_t load_addr);
 
+static esp_err_t process_segments(esp_image_metadata_t *data, bool silent, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum);
 /* Load or verify a segment */
 static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segment_header_t *header, bool silent, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum);
 
@@ -98,7 +94,16 @@ static esp_err_t verify_segment_header(int index, const esp_image_segment_header
     }                                               \
     while(0)
 
-static esp_err_t verify_checksum(bootloader_sha256_handle_t sha_handle, uint32_t checksum_word, esp_image_metadata_t *data);
+#define CHECK_ERR(func) do {                        \
+        if ((err = func) != ESP_OK) {               \
+            goto err;                               \
+        }                                           \
+    }                                               \
+    while(0)
+
+static esp_err_t process_image_header(esp_image_metadata_t *data, uint32_t part_offset, bootloader_sha256_handle_t *sha_handle, bool do_verify, bool silent);
+static esp_err_t process_appended_hash(esp_image_metadata_t *data, uint32_t part_len, bool do_verify, bool silent);
+static esp_err_t process_checksum(bootloader_sha256_handle_t sha_handle, uint32_t checksum_word, esp_image_metadata_t *data, bool silent, bool skip_check_checksum);
 
 static esp_err_t __attribute__((unused)) verify_secure_boot_signature(bootloader_sha256_handle_t sha_handle, esp_image_metadata_t *data, uint8_t *image_digest, uint8_t *verified_digest);
 static esp_err_t __attribute__((unused)) verify_simple_hash(bootloader_sha256_handle_t sha_handle, esp_image_metadata_t *data);
@@ -116,12 +121,21 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
     esp_err_t err = ESP_OK;
     // checksum the image a word at a time. This shaves 30-40ms per MB of image size
     uint32_t checksum_word = ESP_ROM_CHECKSUM_INITIAL;
-    uint32_t *checksum = NULL;
+    uint32_t *checksum = (do_verify) ? &checksum_word : NULL;
     bootloader_sha256_handle_t sha_handle = NULL;
-#if SECURE_BOOT_CHECK_SIGNATURE
+#if (SECURE_BOOT_CHECK_SIGNATURE == 1)
      /* used for anti-FI checks */
     uint8_t image_digest[HASH_LEN] = { [ 0 ... 31] = 0xEE };
     uint8_t verified_digest[HASH_LEN] = { [ 0 ... 31 ] = 0x01 };
+#endif
+#if CONFIG_SECURE_BOOT_V2_ENABLED
+    // For Secure Boot V2, we do verify signature on bootloader which includes the SHA calculation.
+    bool verify_sha = do_verify;
+#else // Secure boot not enabled
+    // For secure boot V1 on ESP32, we don't calculate SHA or verify signature on bootloaders.
+    // (For non-secure boot, we don't verify any SHA-256 hash appended to the bootloader because
+    // esptool.py may have rewritten the header - rely on esptool.py having verified the bootloader at flashing time, instead.)
+    bool verify_sha = (part->offset != ESP_BOOTLOADER_OFFSET) && do_verify;
 #endif
 
     if (data == NULL || part == NULL) {
@@ -133,142 +147,41 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
         FAIL_LOAD("partition size 0x%x invalid, larger than 16MB", part->size);
     }
 
-    bzero(data, sizeof(esp_image_metadata_t));
-    data->start_addr = part->offset;
-
-    ESP_LOGD(TAG, "reading image header @ 0x%x", data->start_addr);
-    err = bootloader_flash_read(data->start_addr, &data->image, sizeof(esp_image_header_t), true);
-    if (err != ESP_OK) {
-        goto err;
-    }
-
-    if (do_verify) {
-        checksum = &checksum_word;
-
-        // Calculate SHA-256 of image if secure boot is on, or if image has a hash appended
-#ifdef SECURE_BOOT_CHECK_SIGNATURE
-        if (1) {
-#else
-        if (data->image.hash_appended) {
-#endif
-            sha_handle = bootloader_sha256_start();
-            if (sha_handle == NULL) {
-                return ESP_ERR_NO_MEM;
-            }
-            bootloader_sha256_data(sha_handle, &data->image, sizeof(esp_image_header_t));
-        }
-
-        ESP_LOGD(TAG, "image header: 0x%02x 0x%02x 0x%02x 0x%02x %08x",
-                 data->image.magic,
-                 data->image.segment_count,
-                 data->image.spi_mode,
-                 data->image.spi_size,
-                 data->image.entry_addr);
-
-        err = verify_image_header(data->start_addr, &data->image, silent);
-        if (err != ESP_OK) {
-            goto err;
-        }
-
-        if (data->image.segment_count > ESP_IMAGE_MAX_SEGMENTS) {
-            FAIL_LOAD("image at 0x%x segment count %d exceeds max %d",
-                      data->start_addr, data->image.segment_count, ESP_IMAGE_MAX_SEGMENTS);
-        }
-    } // if (do_verify)
-
-    uint32_t next_addr = data->start_addr + sizeof(esp_image_header_t);
-    for (int i = 0; i < data->image.segment_count; i++) {
-        esp_image_segment_header_t *header = &data->segments[i];
-        ESP_LOGV(TAG, "loading segment header %d at offset 0x%x", i, next_addr);
-
-        err = process_segment(i, next_addr, header, silent, do_load, sha_handle, checksum);
-        if (err != ESP_OK) {
-            goto err;
-        }
-        next_addr += sizeof(esp_image_segment_header_t);
-        data->segment_data[i] = next_addr;
-        next_addr += header->data_len;
-    }
-
-    if (do_verify) {
-        // Segments all loaded, verify length
-        uint32_t end_addr = next_addr;
-        if (end_addr < data->start_addr) {
-            FAIL_LOAD("image offset has wrapped");
-        }
-
-        data->image_len = end_addr - data->start_addr;
-        ESP_LOGV(TAG, "image start 0x%08x end of last section 0x%08x", data->start_addr, end_addr);
-        if (NULL != checksum && !esp_cpu_in_ocd_debug_mode()) {
-            err = verify_checksum(sha_handle, checksum_word, data);
-            if (err != ESP_OK) {
-                goto err;
-            }
-        }
-
-        /* For secure boot V1 on ESP32, we don't calculate SHA or verify signature on bootloaders.
-           For Secure Boot V2, we do verify signature on bootloader which includes the SHA calculation.
-
-           (For non-secure boot, we don't verify any SHA-256 hash appended to the bootloader because
-           esptool.py may have rewritten the header - rely on esptool.py having verified the bootloader at flashing time, instead.)
-        */
-        bool verify_sha;
-#if CONFIG_SECURE_BOOT_V2_ENABLED
-        verify_sha = true;
-#else // Secure boot not enabled
-        verify_sha = (data->start_addr != ESP_BOOTLOADER_OFFSET);
-#endif
-
-        if (verify_sha) {
-            if (data->image_len > part->size) {
-                FAIL_LOAD("Image length %d doesn't fit in partition length %d", data->image_len, part->size);
-            }
-
-#ifdef SECURE_BOOT_CHECK_SIGNATURE
-            // secure boot images have a signature appended
+    bootloader_sha256_handle_t *p_sha_handle = &sha_handle;
+    CHECK_ERR(process_image_header(data, part->offset, (verify_sha) ? p_sha_handle : NULL, do_verify, silent));
+    CHECK_ERR(process_segments(data, silent, do_load, sha_handle, checksum));
+    bool skip_check_checksum = !do_verify || esp_cpu_in_ocd_debug_mode();
+    CHECK_ERR(process_checksum(sha_handle, checksum_word, data, silent, skip_check_checksum));
+    CHECK_ERR(process_appended_hash(data, part->size, do_verify, silent));
+    if (verify_sha) {
+#if (SECURE_BOOT_CHECK_SIGNATURE == 1)
+        // secure boot images have a signature appended
 #if defined(BOOTLOADER_BUILD) && !defined(CONFIG_SECURE_BOOT)
-            // If secure boot is not enabled in hardware, then
-            // skip the signature check in bootloader when the debugger is attached.
-            // This is done to allow for breakpoints in Flash.
-            if (!esp_cpu_in_ocd_debug_mode()) {
+        // If secure boot is not enabled in hardware, then
+        // skip the signature check in bootloader when the debugger is attached.
+        // This is done to allow for breakpoints in Flash.
+        bool do_verify_sig = !esp_cpu_in_ocd_debug_mode();
 #else // CONFIG_SECURE_BOOT
-            if (true) {
+        bool do_verify_sig = true;
 #endif // end checking for JTAG
-                err = verify_secure_boot_signature(sha_handle, data, image_digest, verified_digest);
-                sha_handle = NULL; // verify_secure_boot_signature finishes sha_handle
-            }
-#else // SECURE_BOOT_CHECK_SIGNATURE
-            // No secure boot, but SHA-256 can be appended for basic corruption detection
-            if (sha_handle != NULL && !esp_cpu_in_ocd_debug_mode()) {
-                err = verify_simple_hash(sha_handle, data);
-#ifdef CONFIG_IDF_ENV_FPGA
-                if (err != ESP_OK) {
-                    ESP_LOGW(TAG, "Ignoring invalid SHA-256 as running on FPGA");
-                    err = ESP_OK;
-                }
-#endif
-                sha_handle = NULL; // calling verify_simple_hash finishes sha_handle
-            }
-#endif // SECURE_BOOT_CHECK_SIGNATURE
-        } else { // verify_sha
-            // bootloader may still have a sha256 digest handle open
-            if (sha_handle != NULL) {
-                bootloader_sha256_finish(sha_handle, NULL);
-            }
-            sha_handle = NULL;
-        } //verify_sha
-
-        // Separately, if there's a hash appended to the image then copy it out to the data->image_digest field
-        if (data->image.hash_appended) {
-            const void *hash = bootloader_mmap(data->start_addr + data->image_len - HASH_LEN, HASH_LEN);
-            if (hash == NULL) {
-                err = ESP_FAIL;
-                goto err;
-            }
-            memcpy(data->image_digest, hash, HASH_LEN);
-            bootloader_munmap(hash);
+        if (do_verify_sig) {
+            err = verify_secure_boot_signature(sha_handle, data, image_digest, verified_digest);
+            sha_handle = NULL; // verify_secure_boot_signature finishes sha_handle
         }
-    } // do_verify
+#else // SECURE_BOOT_CHECK_SIGNATURE
+        // No secure boot, but SHA-256 can be appended for basic corruption detection
+        if (sha_handle != NULL && !esp_cpu_in_ocd_debug_mode()) {
+            err = verify_simple_hash(sha_handle, data);
+            sha_handle = NULL; // calling verify_simple_hash finishes sha_handle
+        }
+#endif // SECURE_BOOT_CHECK_SIGNATURE
+    } // verify_sha
+
+    // bootloader may still have a sha256 digest handle open
+    if (sha_handle != NULL) {
+        bootloader_sha256_finish(sha_handle, NULL);
+        sha_handle = NULL;
+    }
 
     if (err != ESP_OK) {
         goto err;
@@ -276,7 +189,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
 
 #ifdef BOOTLOADER_BUILD
 
-#ifdef SECURE_BOOT_CHECK_SIGNATURE
+#if (SECURE_BOOT_CHECK_SIGNATURE == 1)
     /* If signature was checked in bootloader build, verified_digest should equal image_digest
 
        This is to detect any fault injection that caused signature verification to not complete normally.
@@ -307,7 +220,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
             }
         }
     }
-#endif
+#endif // BOOTLOADER_BUILD
 
     // Success!
     return ESP_OK;
@@ -337,7 +250,7 @@ esp_err_t bootloader_load_image(const esp_partition_pos_t *part, esp_image_metad
 #if CONFIG_BOOTLOADER_SKIP_VALIDATE_ALWAYS
     mode = ESP_IMAGE_LOAD_NO_VALIDATE;
 #elif CONFIG_BOOTLOADER_SKIP_VALIDATE_ON_POWER_ON
-    if (rtc_get_reset_reason(0) == POWERON_RESET) {
+    if (esp_rom_get_reset_reason(0) == RESET_REASON_CHIP_POWER_ON) {
         mode = ESP_IMAGE_LOAD_NO_VALIDATE;
     }
 #endif // CONFIG_BOOTLOADER_SKIP_...
@@ -363,63 +276,52 @@ esp_err_t esp_image_verify(esp_image_load_mode_t mode, const esp_partition_pos_t
 
 esp_err_t esp_image_get_metadata(const esp_partition_pos_t *part, esp_image_metadata_t *metadata)
 {
+    esp_err_t err;
     if (metadata == NULL || part == NULL || part->size > SIXTEEN_MB) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    memset(metadata, 0, sizeof(esp_image_metadata_t));
-    metadata->start_addr = part->offset;
-
-    esp_err_t err = bootloader_flash_read(metadata->start_addr, &metadata->image, sizeof(esp_image_header_t), true);
-    if (err != ESP_OK) {
-        return err;
-    }
-    uint32_t next_addr = metadata->start_addr + sizeof(esp_image_header_t);
-    for (int i = 0; i < metadata->image.segment_count; i++) {
-        esp_image_segment_header_t *header = &metadata->segments[i];
-        err = process_segment(i, next_addr, header, true, false, NULL, NULL);
-        if (err != ESP_OK) {
-            return err;
-        }
-        next_addr += sizeof(esp_image_segment_header_t);
-        metadata->segment_data[i] = next_addr;
-        next_addr += header->data_len;
-    }
-    metadata->image_len = next_addr - metadata->start_addr;
-
-    // checksum
-    uint32_t unpadded_length = metadata->image_len;
-    uint32_t length = unpadded_length + 1; // Add a byte for the checksum
-    length = (length + 15) & ~15; // Pad to next full 16 byte block
-    if (metadata->image.hash_appended) {
-        // Account for the hash in the total image length
-        length += HASH_LEN;
-    }
-    metadata->image_len = length;
-
+    bool silent = true;
+    bool do_verify = false;
+    bool do_load = false;
+    CHECK_ERR(process_image_header(metadata, part->offset, NULL, do_verify, silent));
+    CHECK_ERR(process_segments(metadata, silent, do_load, NULL, NULL));
+    bool skip_check_checksum = true;
+    CHECK_ERR(process_checksum(NULL, 0, metadata, silent, skip_check_checksum));
+    CHECK_ERR(process_appended_hash(metadata, part->size, true, silent));
     return ESP_OK;
+err:
+    return err;
 }
 
 static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t *image, bool silent)
 {
     esp_err_t err = ESP_OK;
 
+    ESP_LOGD(TAG, "image header: 0x%02x 0x%02x 0x%02x 0x%02x %08x",
+                image->magic,
+                image->segment_count,
+                image->spi_mode,
+                image->spi_size,
+                image->entry_addr);
+
     if (image->magic != ESP_IMAGE_HEADER_MAGIC) {
-        if (!silent) {
-            ESP_LOGE(TAG, "image at 0x%x has invalid magic byte (nothing flashed here?)", src_addr);
-        }
+        FAIL_LOAD("image at 0x%x has invalid magic byte (nothing flashed here?)", src_addr);
+    }
+
+    // Checking the chip revision header *will* print a bunch of other info
+    // regardless of silent setting as this may be important, but don't bother checking it
+    // if it looks like the app partition is erased or otherwise garbage
+    CHECK_ERR(bootloader_common_check_chip_validity(image, ESP_IMAGE_APPLICATION));
+
+    if (image->segment_count > ESP_IMAGE_MAX_SEGMENTS) {
+        FAIL_LOAD("image at 0x%x segment count %d exceeds max %d", src_addr, image->segment_count, ESP_IMAGE_MAX_SEGMENTS);
+    }
+    return err;
+err:
+    if (err == ESP_OK) {
         err = ESP_ERR_IMAGE_INVALID;
     }
-
-    if (err == ESP_OK) {
-        // Checking the chip revision header *will* print a bunch of other info
-        // regardless of silent setting as this may be important, but don't bother checking it
-        // if it looks like the app partition is erased or otherwise garbage
-        if (bootloader_common_check_chip_validity(image, ESP_IMAGE_APPLICATION) != ESP_OK) {
-            err = ESP_ERR_IMAGE_INVALID;
-        }
-    }
-
     return err;
 }
 
@@ -432,14 +334,15 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
     const char *reason = NULL;
     extern int _dram_start, _dram_end, _loader_text_start, _loader_text_end;
     void *load_addr_p = (void *)load_addr;
-    void *load_end_p = (void *)load_end;
+    void *load_inclusive_end_p = (void *)load_end - 0x1;
+    void *load_exclusive_end_p = (void *)load_end;
 
     if (load_end == load_addr) {
         return true; // zero-length segments are fine
     }
     assert(load_end > load_addr); // data_len<16MB is checked in verify_segment_header() which is called before this, so this should always be true
 
-    if (esp_ptr_in_dram(load_addr_p) && esp_ptr_in_dram(load_end_p)) { /* Writing to DRAM */
+    if (esp_ptr_in_dram(load_addr_p) && esp_ptr_in_dram(load_inclusive_end_p)) { /* Writing to DRAM */
         /* Check if we're clobbering the stack */
         intptr_t sp = (intptr_t)esp_cpu_get_sp();
         if (bootloader_util_regions_overlap(sp - STACK_LOAD_HEADROOM, SOC_ROM_STACK_START,
@@ -474,8 +377,8 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
                 iram_load_addr = (intptr_t)esp_ptr_diram_dram_to_iram((void *)SOC_DIRAM_DRAM_LOW);
             }
 
-            if (esp_ptr_in_diram_dram(load_end_p)) {
-                iram_load_end = (intptr_t)esp_ptr_diram_dram_to_iram(load_end_p);
+            if (esp_ptr_in_diram_dram(load_inclusive_end_p)) {
+                iram_load_end = (intptr_t)esp_ptr_diram_dram_to_iram(load_exclusive_end_p);
             } else {
                 iram_load_end = (intptr_t)esp_ptr_diram_dram_to_iram((void *)SOC_DIRAM_DRAM_HIGH);
             }
@@ -487,7 +390,7 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
             }
         }
     }
-    else if (esp_ptr_in_iram(load_addr_p) && esp_ptr_in_iram(load_end_p)) { /* Writing to IRAM */
+    else if (esp_ptr_in_iram(load_addr_p) && esp_ptr_in_iram(load_inclusive_end_p)) { /* Writing to IRAM */
         /* Check for overlap of 'loader' section of IRAM */
         if (bootloader_util_regions_overlap((intptr_t)&_loader_text_start, (intptr_t)&_loader_text_end,
                                             load_addr, load_end)) {
@@ -511,8 +414,8 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
                 dram_load_addr = (intptr_t)esp_ptr_diram_iram_to_dram((void *)SOC_DIRAM_IRAM_LOW);
             }
 
-            if (esp_ptr_in_diram_iram(load_end_p)) {
-                dram_load_end = (intptr_t)esp_ptr_diram_iram_to_dram(load_end_p);
+            if (esp_ptr_in_diram_iram(load_inclusive_end_p)) {
+                dram_load_end = (intptr_t)esp_ptr_diram_iram_to_dram(load_exclusive_end_p);
             } else {
                 dram_load_end = (intptr_t)esp_ptr_diram_iram_to_dram((void *)SOC_DIRAM_IRAM_HIGH);
             }
@@ -524,11 +427,11 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
             }
         }
     /* Sections entirely in RTC memory won't overlap with a vanilla bootloader but are valid load addresses, thus skipping them from the check */
-    } else if (esp_ptr_in_rtc_iram_fast(load_addr_p) && esp_ptr_in_rtc_iram_fast(load_end_p)){
+    } else if (esp_ptr_in_rtc_iram_fast(load_addr_p) && esp_ptr_in_rtc_iram_fast(load_inclusive_end_p)){
         return true;
-    } else if (esp_ptr_in_rtc_dram_fast(load_addr_p) && esp_ptr_in_rtc_dram_fast(load_end_p)){
+    } else if (esp_ptr_in_rtc_dram_fast(load_addr_p) && esp_ptr_in_rtc_dram_fast(load_inclusive_end_p)){
         return true;
-    } else if (esp_ptr_in_rtc_slow(load_addr_p) && esp_ptr_in_rtc_slow(load_end_p)) {
+    } else if (esp_ptr_in_rtc_slow(load_addr_p) && esp_ptr_in_rtc_slow(load_inclusive_end_p)) {
         return true;
     } else { /* Not a DRAM or an IRAM or RTC Fast IRAM, RTC Fast DRAM or RTC Slow address */
         reason = "bad load address range";
@@ -543,6 +446,63 @@ static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_
     return false;
 }
 #endif // BOOTLOADER_BUILD
+
+static esp_err_t process_image_header(esp_image_metadata_t *data, uint32_t part_offset, bootloader_sha256_handle_t *sha_handle, bool do_verify, bool silent)
+{
+    esp_err_t err;
+    bzero(data, sizeof(esp_image_metadata_t));
+    data->start_addr = part_offset;
+
+    ESP_LOGD(TAG, "reading image header @ 0x%x", data->start_addr);
+    CHECK_ERR(bootloader_flash_read(data->start_addr, &data->image, sizeof(esp_image_header_t), true));
+
+    if (do_verify) {
+        // Calculate SHA-256 of image if secure boot is on, or if image has a hash appended
+        if (SECURE_BOOT_CHECK_SIGNATURE || data->image.hash_appended) {
+            if (sha_handle != NULL) {
+                *sha_handle = bootloader_sha256_start();
+                if (*sha_handle == NULL) {
+                    return ESP_ERR_NO_MEM;
+                }
+                bootloader_sha256_data(*sha_handle, &data->image, sizeof(esp_image_header_t));
+            }
+        }
+        CHECK_ERR(verify_image_header(data->start_addr, &data->image, silent));
+    }
+    data->image_len = sizeof(esp_image_header_t);
+    return ESP_OK;
+err:
+    return err;
+}
+
+static esp_err_t process_segments(esp_image_metadata_t *data, bool silent, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum)
+{
+    esp_err_t err = ESP_OK;
+    uint32_t start_segments = data->start_addr + data->image_len;
+    uint32_t next_addr = start_segments;
+    for (int i = 0; i < data->image.segment_count; i++) {
+        esp_image_segment_header_t *header = &data->segments[i];
+        ESP_LOGV(TAG, "loading segment header %d at offset 0x%x", i, next_addr);
+        CHECK_ERR(process_segment(i, next_addr, header, silent, do_load, sha_handle, checksum));
+        next_addr += sizeof(esp_image_segment_header_t);
+        data->segment_data[i] = next_addr;
+        next_addr += header->data_len;
+    }
+    // Segments all loaded, verify length
+    uint32_t end_addr = next_addr;
+    if (end_addr < data->start_addr) {
+        FAIL_LOAD("image offset has wrapped");
+    }
+
+    data->image_len += end_addr - start_segments;
+    ESP_LOGV(TAG, "image start 0x%08x end of last section 0x%08x", data->start_addr, end_addr);
+    return err;
+err:
+    if (err == ESP_OK) {
+        err = ESP_ERR_IMAGE_INVALID;
+    }
+    return err;
+}
 
 static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segment_header_t *header, bool silent, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum)
 {
@@ -564,10 +524,7 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
 
     ESP_LOGV(TAG, "segment data length 0x%x data starts 0x%x", data_len, data_addr);
 
-    err = verify_segment_header(index, header, data_addr, silent);
-    if (err != ESP_OK) {
-        return err;
-    }
+    CHECK_ERR(verify_segment_header(index, header, data_addr, silent));
 
     if (data_len % 4 != 0) {
         FAIL_LOAD("unaligned segment length 0x%x", data_len);
@@ -598,17 +555,14 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
 
     uint32_t data_len_remain = data_len;
     while (data_len_remain > 0) {
-#if SECURE_BOOT_CHECK_SIGNATURE && defined(BOOTLOADER_BUILD)
+#if (SECURE_BOOT_CHECK_SIGNATURE == 1) && defined(BOOTLOADER_BUILD)
         /* Double check the address verification done above */
         ESP_FAULT_ASSERT(!do_load || verify_load_addresses(0, load_addr, load_addr + data_len_remain, false, false));
 #endif
         uint32_t offset_page = ((data_addr & MMAP_ALIGNED_MASK) != 0) ? 1 : 0;
         /* Data we could map in case we are not aligned to PAGE boundary is one page size lesser. */
         data_len = MIN(data_len_remain, ((free_page_count - offset_page) * SPI_FLASH_MMU_PAGE_SIZE));
-        err = process_segment_data(load_addr, data_addr, data_len, do_load, sha_handle, checksum);
-        if (err != ESP_OK) {
-            return err;
-        }
+        CHECK_ERR(process_segment_data(load_addr, data_addr, data_len, do_load, sha_handle, checksum));
         data_addr += data_len;
         data_len_remain -= data_len;
     }
@@ -727,7 +681,7 @@ static bool should_load(uint32_t load_addr)
 {
     /* Reload the RTC memory segments whenever a non-deepsleep reset
        is occurring */
-    bool load_rtc_memory = rtc_get_reset_reason(0) != DEEPSLEEP_RESET;
+    bool load_rtc_memory = esp_rom_get_reset_reason(0) != RESET_REASON_CORE_DEEP_SLEEP;
 
     if (should_map(load_addr)) {
         return false;
@@ -783,41 +737,64 @@ esp_err_t esp_image_verify_bootloader_data(esp_image_metadata_t *data)
                             data);
 }
 
-
-static esp_err_t verify_checksum(bootloader_sha256_handle_t sha_handle, uint32_t checksum_word, esp_image_metadata_t *data)
+static esp_err_t process_appended_hash(esp_image_metadata_t *data, uint32_t part_len, bool do_verify, bool silent)
 {
+    esp_err_t err = ESP_OK;
+    if (data->image.hash_appended) {
+        // Account for the hash in the total image length
+        if (do_verify) {
+            CHECK_ERR(bootloader_flash_read(data->start_addr + data->image_len, &data->image_digest, HASH_LEN, true));
+        }
+        data->image_len += HASH_LEN;
+    }
+
+    if (data->image_len > part_len) {
+        FAIL_LOAD("Image length %d doesn't fit in partition length %d", data->image_len, part_len);
+    }
+    return err;
+err:
+    if (err == ESP_OK) {
+        err = ESP_ERR_IMAGE_INVALID;
+    }
+
+    return err;
+}
+
+static esp_err_t process_checksum(bootloader_sha256_handle_t sha_handle, uint32_t checksum_word, esp_image_metadata_t *data, bool silent, bool skip_check_checksum)
+{
+    esp_err_t err = ESP_OK;
     uint32_t unpadded_length = data->image_len;
     uint32_t length = unpadded_length + 1; // Add a byte for the checksum
     length = (length + 15) & ~15; // Pad to next full 16 byte block
+    length = length - unpadded_length;
 
     // Verify checksum
     WORD_ALIGNED_ATTR uint8_t buf[16];
-    esp_err_t err = bootloader_flash_read(data->start_addr + unpadded_length, buf, length - unpadded_length, true);
-    uint8_t calc = buf[length - unpadded_length - 1];
-    uint8_t checksum = (checksum_word >> 24)
-                       ^ (checksum_word >> 16)
-                       ^ (checksum_word >> 8)
-                       ^ (checksum_word >> 0);
-    if (err != ESP_OK || checksum != calc) {
-        ESP_LOGE(TAG, "Checksum failed. Calculated 0x%x read 0x%x", checksum, calc);
-        return ESP_ERR_IMAGE_INVALID;
+    if (!skip_check_checksum || sha_handle != NULL) {
+        CHECK_ERR(bootloader_flash_read(data->start_addr + unpadded_length, buf, length, true));
+    }
+    uint8_t read_checksum = buf[length - 1];
+    uint8_t calc_checksum = (checksum_word >> 24) ^ (checksum_word >> 16) ^ (checksum_word >> 8) ^ (checksum_word >> 0);
+    if (!skip_check_checksum && calc_checksum != read_checksum) {
+        FAIL_LOAD("Checksum failed. Calculated 0x%x read 0x%x", calc_checksum, read_checksum);
     }
     if (sha_handle != NULL) {
-        bootloader_sha256_data(sha_handle, buf, length - unpadded_length);
+        bootloader_sha256_data(sha_handle, buf, length);
+    }
+    data->image_len += length;
+
+    return err;
+err:
+    if (err == ESP_OK) {
+        err = ESP_ERR_IMAGE_INVALID;
     }
 
-    if (data->image.hash_appended) {
-        // Account for the hash in the total image length
-        length += HASH_LEN;
-    }
-    data->image_len = length;
-
-    return ESP_OK;
+    return err;
 }
 
 static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_handle, esp_image_metadata_t *data, uint8_t *image_digest, uint8_t *verified_digest)
 {
-#ifdef SECURE_BOOT_CHECK_SIGNATURE
+#if (SECURE_BOOT_CHECK_SIGNATURE == 1)
     uint32_t end = data->start_addr + data->image_len;
 
     ESP_LOGI(TAG, "Verifying image signature...");
@@ -898,15 +875,16 @@ static esp_err_t verify_simple_hash(bootloader_sha256_handle_t sha_handle, esp_i
     bootloader_debug_buffer(image_hash, HASH_LEN, "Calculated hash");
 
     // Simple hash for verification only
-    const void *hash = bootloader_mmap(data->start_addr + data->image_len - HASH_LEN, HASH_LEN);
-    if (memcmp(hash, image_hash, HASH_LEN) != 0) {
+    if (memcmp(data->image_digest, image_hash, HASH_LEN) != 0) {
         ESP_LOGE(TAG, "Image hash failed - image is corrupt");
-        bootloader_debug_buffer(hash, HASH_LEN, "Expected hash");
-        bootloader_munmap(hash);
+        bootloader_debug_buffer(data->image_digest, HASH_LEN, "Expected hash");
+#ifdef CONFIG_IDF_ENV_FPGA
+        ESP_LOGW(TAG, "Ignoring invalid SHA-256 as running on FPGA");
+        return ESP_OK;
+#endif
         return ESP_ERR_IMAGE_INVALID;
     }
 
-    bootloader_munmap(hash);
     return ESP_OK;
 }
 

@@ -18,9 +18,23 @@ menu "FreeRTOS"
         hex
         default 0x7FFFFFFF
 
+    config FREERTOS_TICK_SUPPORT_CORETIMER
+        bool
+        default y if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2
+
+    config FREERTOS_TICK_SUPPORT_SYSTIMER
+        bool
+        default y if !FREERTOS_TICK_SUPPORT_CORETIMER
+        # ESP32-S3, ESP32-C3 and ESP32-H2 can use Systimer for FreeRTOS SysTick
+        # ESP32S2 also has SYSTIMER but it can not be used for the FreeRTOS SysTick because:
+        # - It has only one counter, which already in use esp_timer.
+        #   A counter for SysTick should be stall in debug mode but work esp_timer.
+        # - It is not possible to allocate two handlers for esp_timer and SysTick.
+
     choice FREERTOS_CORETIMER
         prompt "Xtensa timer to use as the FreeRTOS tick source"
-        default FREERTOS_CORETIMER_0
+        default FREERTOS_CORETIMER_0 if FREERTOS_TICK_SUPPORT_CORETIMER
+        default FREERTOS_CORETIMER_SYSTIMER_LVL1 if FREERTOS_TICK_SUPPORT_SYSTIMER
         help
             FreeRTOS needs a timer with an associated interrupt to use as
             the main tick source to increase counters, run timers and do
@@ -29,15 +43,37 @@ menu "FreeRTOS"
 
         config FREERTOS_CORETIMER_0
             bool "Timer 0 (int 6, level 1)"
+            depends on FREERTOS_TICK_SUPPORT_CORETIMER
             help
                 Select this to use timer 0
 
         config FREERTOS_CORETIMER_1
             bool "Timer 1 (int 15, level 3)"
+            depends on FREERTOS_TICK_SUPPORT_CORETIMER
             help
                 Select this to use timer 1
 
+        config FREERTOS_CORETIMER_SYSTIMER_LVL1
+            bool "SYSTIMER 0 (level 1)"
+            depends on FREERTOS_TICK_SUPPORT_SYSTIMER
+            help
+                Select this to use systimer with the 1 interrupt priority.
+
+        config FREERTOS_CORETIMER_SYSTIMER_LVL3
+            bool "SYSTIMER 0 (level 3)"
+            depends on FREERTOS_TICK_SUPPORT_SYSTIMER
+            help
+                Select this to use systimer with the 3 interrupt priority.
+
     endchoice
+
+    config FREERTOS_SYSTICK_USES_SYSTIMER
+        bool
+        default y if FREERTOS_CORETIMER_SYSTIMER_LVL1 || FREERTOS_CORETIMER_SYSTIMER_LVL3
+
+    config FREERTOS_SYSTICK_USES_CCOUNT
+        bool
+        default y if FREERTOS_CORETIMER_0 || FREERTOS_CORETIMER_1
 
     config FREERTOS_OPTIMIZED_SCHEDULER
         bool "Enable FreeRTOS pĺatform optimized scheduler"
@@ -175,7 +211,7 @@ menu "FreeRTOS"
     config FREERTOS_IDLE_TASK_STACKSIZE
         int "Idle Task stack size"
         range 768 32768
-        default 2304
+        default 1536
         help
             The idle task has its own stack, sized in bytes. The default size is enough for most uses. Size can be
             reduced to 768 bytes if no (or simple) FreeRTOS idle hooks are used and pthread local storage or FreeRTOS
@@ -343,6 +379,7 @@ menu "FreeRTOS"
 
         config FREERTOS_RUN_TIME_STATS_USING_CPU_CLK
             bool "Use CPU Clock for run time stats"
+            depends on FREERTOS_SYSTICK_USES_CCOUNT
             help
                 CPU Clock will be used as the clock source for the generation of run
                 time stats. The CPU Clock has a frequency dependent on
@@ -368,6 +405,7 @@ menu "FreeRTOS"
 
             Note that timers created using esp_timer APIs may prevent the system from
             entering sleep mode, even when no tasks need to run.
+            To skip unnecessary wake-up initialize a timer with the "skip_unhandled_events" option as true.
 
             If disabled, automatic light sleep support will be disabled.
 
@@ -427,4 +465,18 @@ menu "FreeRTOS"
             When enabled, the usage of float type is allowed inside Level 1
             ISRs.
 
+    config FREERTOS_ENABLE_TASK_SNAPSHOT
+        bool "Enable task snapshot functions"
+        default y
+        help
+            When enabled, the functions related to snapshots, such as vTaskGetSnapshot or uxTaskGetSnapshotAll,
+            are compiled and linked.
+
+    config FREERTOS_PLACE_SNAPSHOT_FUNS_INTO_FLASH
+        bool "Place task snapshot functions into flash"
+        default n
+        depends on FREERTOS_ENABLE_TASK_SNAPSHOT && !ESP_PANIC_HANDLER_IRAM
+        help
+            When enabled, the functions related to snapshots, such as vTaskGetSnapshot or uxTaskGetSnapshotAll,
+            will be placed in flash. Note that if enabled, these functions cannot be called when cache is disabled.
 endmenu

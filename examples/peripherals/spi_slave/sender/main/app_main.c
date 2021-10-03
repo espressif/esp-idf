@@ -64,20 +64,21 @@ Pins in use. The SPI Master can use the GPIO mux, so feel free to change these i
 #define GPIO_SCLK 6
 #define GPIO_CS 10
 
+#elif CONFIG_IDF_TARGET_ESP32S3
+#define GPIO_HANDSHAKE 2
+#define GPIO_MOSI 11
+#define GPIO_MISO 13
+#define GPIO_SCLK 12
+#define GPIO_CS 10
+
 #endif //CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
 
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #define SENDER_HOST HSPI_HOST
-#define DMA_CHAN    2
 
-#elif defined CONFIG_IDF_TARGET_ESP32S2
+#else
 #define SENDER_HOST SPI2_HOST
-#define DMA_CHAN    SENDER_HOST
-
-#elif defined CONFIG_IDF_TARGET_ESP32C3
-#define SENDER_HOST    SPI2_HOST
-#define DMA_CHAN    SENDER_HOST
 
 #endif
 
@@ -156,7 +157,7 @@ void app_main(void)
     gpio_isr_handler_add(GPIO_HANDSHAKE, gpio_handshake_isr_handler, NULL);
 
     //Initialize the SPI bus and add the device we want to send stuff to.
-    ret=spi_bus_initialize(SENDER_HOST, &buscfg, DMA_CHAN);
+    ret=spi_bus_initialize(SENDER_HOST, &buscfg, SPI_DMA_CH_AUTO);
     assert(ret==ESP_OK);
     ret=spi_bus_add_device(SENDER_HOST, &devcfg, &handle);
     assert(ret==ESP_OK);

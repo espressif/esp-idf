@@ -9,8 +9,12 @@ idf_component_register(SRCS "src/gdbstub.c" "src/packet.c"
 
 if(CONFIG_IDF_TARGET_ARCH_XTENSA)
     target_include_directories(${COMPONENT_LIB} PUBLIC "xtensa" "${target}")
-    target_sources(${COMPONENT_LIB} PRIVATE "xtensa/gdbstub_xtensa.c" "${target}/gdbstub_${target}.c")
+    target_sources(${COMPONENT_LIB} PRIVATE "xtensa/gdbstub_xtensa.c"
+                                            "xtensa/gdbstub-entry.S"
+                                            "esp_common/gdbstub_common.c")
+
 elseif(CONFIG_IDF_TARGET_ARCH_RISCV)
     target_include_directories(${COMPONENT_LIB} PUBLIC "riscv" "${target}")
-    target_sources(${COMPONENT_LIB} PRIVATE "riscv/gdbstub_riscv.c" "${target}/gdbstub_${target}.c")
+    target_sources(${COMPONENT_LIB} PRIVATE "riscv/gdbstub_riscv.c"
+    "${target}/gdbstub_${target}.c")
 endif()

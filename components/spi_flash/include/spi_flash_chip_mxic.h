@@ -25,3 +25,10 @@
  * is not found.
  */
 extern const spi_flash_chip_t esp_flash_chip_mxic;
+
+/**
+ * MXIC OPI flash chip_drv, uses all the above functions for its operations. In
+ * default autodetection, this is used as a catchall if a more specific chip_drv
+ * is not found.
+ */
+extern const spi_flash_chip_t esp_flash_chip_mxic_opi;

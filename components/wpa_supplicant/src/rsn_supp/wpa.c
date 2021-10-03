@@ -21,8 +21,8 @@
 #include "common/eapol_common.h"
 #include "common/ieee802_11_defs.h"
 #include "rsn_supp/wpa_ie.h"
-#include "esp_supplicant/esp_wpas_glue.h"
-#include "esp_supplicant/esp_wifi_driver.h"
+#include "esp_wpas_glue.h"
+#include "esp_wifi_driver.h"
 
 #include "crypto/crypto.h"
 #include "crypto/sha1.h"
@@ -1459,7 +1459,7 @@ failed:
             #endif
             return -1;
         }
-        if (aes_unwrap(sm->ptk.kek, maxkeylen / 8,
+        if (aes_unwrap(sm->ptk.kek, 16, maxkeylen / 8,
         				    (const u8 *) (key + 1), gd->gtk)) {
             #ifdef DEBUG_PRINT
         	wpa_printf(MSG_DEBUG, "WPA: AES unwrap "
@@ -1703,7 +1703,7 @@ failed:
             return -1;
         }
         */
-        if (aes_unwrap(sm->ptk.kek, keydatalen / 8,
+        if (aes_unwrap(sm->ptk.kek, 16, keydatalen / 8,
         				    (u8 *) (key + 1), buf)) {
             #ifdef DEBUG_PRINT
         	wpa_printf(MSG_DEBUG, "WPA: AES unwrap failed - "
@@ -2081,7 +2081,7 @@ bool wpa_sm_init(char * payload, WPA_SEND_FUNC snd_func,
 
     spp_attrubute = esp_wifi_get_spp_attrubute_internal(WIFI_IF_STA);
     sm->spp_sup.capable = ((spp_attrubute & WPA_CAPABILITY_SPP_CAPABLE) ? SPP_AMSDU_CAP_ENABLE : SPP_AMSDU_CAP_DISABLE);
-    sm->spp_sup.require = ((spp_attrubute & WPA_CAPABILITY_SPP_REQUIRED) ? SPP_AMSDU_CAP_ENABLE : SPP_AMSDU_REQ_DISABLE);
+    sm->spp_sup.require = ((spp_attrubute & WPA_CAPABILITY_SPP_REQUIRED) ? SPP_AMSDU_REQ_ENABLE : SPP_AMSDU_REQ_DISABLE);
 
     wpa_sm_set_state(WPA_INACTIVE);
 
@@ -2216,7 +2216,7 @@ wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len)
         if (strlen((char *)esp_wifi_sta_get_prof_password_internal()) == 64) {
             hexstr2bin((char *)esp_wifi_sta_get_prof_password_internal(), esp_wifi_sta_get_ap_info_prof_pmk_internal(), PMK_LEN);
         } else {
-        pbkdf2_sha1((char *)esp_wifi_sta_get_prof_password_internal(), (char *)sta_ssid->ssid, (size_t)sta_ssid->len,
+        pbkdf2_sha1((char *)esp_wifi_sta_get_prof_password_internal(), sta_ssid->ssid, (size_t)sta_ssid->len,
             4096, esp_wifi_sta_get_ap_info_prof_pmk_internal(), PMK_LEN);
         }
         esp_wifi_sta_update_ap_info_internal();

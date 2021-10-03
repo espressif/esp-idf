@@ -2,11 +2,12 @@
 快速入门
 ***********
 
-{IDF_TARGET_CORE_NUM:default="2", esp32="2", esp32s2="1", esp32c3="1"}
+{IDF_TARGET_CORE_NUM:default="2", esp32s2="1", esp32c3="1"}
 
-{IDF_TARGET_FEATURES:default="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32s2="WiFi, silicon revision 0, 2MB external flash", esp32c3="WiFi/BLE, silicon revision 0, 2MB external flash"}
+{IDF_TARGET_FEATURES:default="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32s2="WiFi, silicon revision 0, 2MB external flash", esp32s3="This is esp32s3 chip with 2 CPU core(s), WiFi/BLE, silicon revision 0, 2MB external flash", esp32c3="WiFi/BLE, silicon revision 0, 2MB external flash"}
 
-{IDF_TARGET_HEAP_SIZE:default="298968", esp32="298968", esp32s2="253900", esp32c3="337332"}
+{IDF_TARGET_HEAP_SIZE:default="298968", esp32="298968", esp32s2="253900", esp32s3="390684", esp32c3="337332"}
+
 
 :link_to_translation:`en:[English]`
 
@@ -19,9 +20,9 @@
 概述
 ============
 
-.. only:: esp32
+{IDF_TARGET_NAME} SoC 芯片支持以下功能：
 
-    ESP32 SoC 芯片支持以下功能：
+.. only:: esp32
 
     * 2.4 GHz Wi-Fi
     * 蓝牙
@@ -31,8 +32,6 @@
 
 .. only:: esp32s2
 
-    ESP32-S2 SoC 芯片支持以下功能：
-
     * 2.4 GHz Wi-Fi
     * 高性能 Xtensa® 32 位 LX7 单核处理器
     * 运行 RISC-V 或 FSM 内核的超低功耗协处理器
@@ -40,12 +39,21 @@
     * 内置安全硬件
     * USB OTG 接口
 
-.. only:: esp32c3
-
-    ESP32-C3 SoC 芯片支持以下功能：
+.. only:: esp32s3
 
     * 2.4 GHz Wi-Fi
-    * 低能耗蓝牙
+    * 低功耗蓝牙
+    * 高性能 Xtensa® 32 位 LX7 双核处理器
+    * 运行 RISC-V 或 FSM 内核的超低功耗协处理器
+    * 多种外设
+    * 内置安全硬件
+    * USB OTG 接口
+    * USB 串口/JTAG 控制器
+
+.. only:: esp32c3
+
+    * 2.4 GHz Wi-Fi
+    * 低功耗蓝牙
     * 高性能 32 位 RISC-V 单核处理器
     * 多种外设
     * 内置安全硬件
@@ -53,6 +61,7 @@
 {IDF_TARGET_NAME} 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、稳定性、通用性和可靠性，适用于各种应用场景和不同功耗需求。
 
 乐鑫为用户提供完整的软、硬件资源，进行 {IDF_TARGET_NAME} 硬件设备的开发。其中，乐鑫的软件开发环境 ESP-IDF 旨在协助用户快速开发物联网 (IoT) 应用，可满足用户对 Wi-Fi、蓝牙、低功耗等方面的要求。
+
 
 准备工作
 =============
@@ -110,6 +119,7 @@
 
         ESP32-S2-Saola-1 <../hw-reference/esp32s2/user-guide-saola-1-v1.2>
         ESP32-S2-DevKitM-1(U) <../hw-reference/esp32s2/user-guide-devkitm-1-v1>
+        ESP32-S2-DevKitC-1 <../hw-reference/esp32s2/user-guide-s2-devkitc-1>
         ESP32-S2-Kaluga-Kit <../hw-reference/esp32s2/user-guide-esp32-s2-kaluga-1-kit>
 
 .. only:: esp32c3
@@ -119,6 +129,15 @@
 
         ESP32-C3-DevKitM-1 <../hw-reference/esp32c3/user-guide-devkitm-1>
         ESP32-C3-DevKitC-02 <../hw-reference/esp32c3/user-guide-devkitc-02>
+
+
+.. only:: esp32s3
+
+    .. toctree::
+        :maxdepth: 1
+
+        ESP32-S3-DevKitC-1 <../hw-reference/esp32s3/user-guide-devkitc-1>
+
 
 .. _get-started-step-by-step:
 
@@ -229,14 +248,14 @@ Windows 操作系统
 .. code-block:: batch
 
     cd %userprofile%\esp\esp-idf
-    install.bat
+    install.bat {IDF_TARGET_PATH_NAME}
 
 或使用 Windows PowerShell
 
 .. code-block:: powershell
 
     cd ~/esp/esp-idf
-    ./install.ps1
+    ./install.ps1 {IDF_TARGET_PATH_NAME}
 
 Linux 和 macOS 操作系统
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -244,7 +263,18 @@ Linux 和 macOS 操作系统
 .. code-block:: bash
 
     cd ~/esp/esp-idf
-    ./install.sh
+    ./install.sh {IDF_TARGET_PATH_NAME}
+
+或使用 Fish shell
+
+.. code-block:: fish
+
+    cd ~/esp/esp-idf
+    ./install.fish {IDF_TARGET_PATH_NAME}
+
+.. note::
+    通过一次性指定多个目标，可为多个目标芯片同时安装工具，如运行 ``./install.sh esp32,esp32c3,esp32s3``。
+    通过运行 ``./install.sh`` 或 ``./install.sh all`` 可一次性为所有支持的目标芯片安装工具。
 
 下载工具备选方案
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -256,14 +286,7 @@ ESP-IDF 工具安装器会下载 Github 发布版本中附带的一些工具，�
 Windows 操作系统
 -----------------
 
-如果希望在运行 ESP-IDF 工具安装器时优先选择 Espressif 下载服务器，请在安装程序窗口中勾选 ``Use Espressif download server instead of downloading tool packages from GitHub.`` 选项。
-
-.. figure:: ../../_static/esp-idf-installer-download-server.png
-    :align: center
-    :alt: 配置 ESP-IDF 工具安装向导优先选择 Espressif 下载服务器
-    :figclass: align-center
-
-    配置 ESP-IDF 工具安装向导优先选择 Espressif 下载服务器
+如果希望在运行 ESP-IDF 工具安装器时优先选择 Espressif 下载服务器，请在 **Select Components** 窗口中的 **Optimization** 部分勾选 **Use Espressif download mirror instead of GitHub** 选项。
 
 Linux 和 macOS 操作系统
 --------------------------
@@ -372,8 +395,6 @@ ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照�
 
     ESP-IDF 编译系统不支持带有空格的路径。
 
-
-
 .. _get-started-connect:
 
 第六步：连接设备
@@ -436,14 +457,13 @@ Windows 操作系统
 
     .. attention::
 
-        如果您使用的是 ESP32-DevKitC（板载 ESP32-SOLO-1 模组），请在烧写示例程序前，前往 ``menuconfig`` 中使能单核模式（:ref:`CONFIG_FREERTOS_UNICORE`）。
+        如果您使用的是 ESP32-DevKitC（板载 ESP32-SOLO-1 模组）或 ESP32-DevKitM-1（板载 ESP32-MINI-1(1U) 模组），请在烧写示例程序前，前往 ``menuconfig`` 中使能单核模式（:ref:`CONFIG_FREERTOS_UNICORE`）。
 
 .. 注解::
 
     您终端窗口中显示出的菜单颜色可能会与上图不同。您可以通过选项 ``--style`` 来改变外观。更多信息，请运行 ``idf.py menuconfig --help`` 命令。
 
 .. _get-started-build:
-
 
 第八步：编译工程
 =========================
@@ -503,7 +523,7 @@ Windows 操作系统
 
 烧录过程中可能遇到的问题
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-{IDF_TARGET_STRAP_GPIO:default="GPIO0", esp32="GPIO0", esp32s2="GPIO0", esp32c3="GPIO9"}
+{IDF_TARGET_STRAP_GPIO:default="GPIO0", esp32="GPIO0", esp32s2="GPIO0", esp32s3="GPIO0", esp32c3="GPIO9"}
 
 如果在运行给定命令时出现如“连接失败”这样的错误，原因之一则可能是运行 ``esptool.py`` 出现错误。``esptool.py`` 是构建系统调用的程序，用于重置芯片、与 ROM 引导加载器交互以及烧录固件的工具。解决该问题的一个简单的方法就是按照以下步骤进行手动复位。如果问题仍未解决，请参考 `Troubleshooting <https://github.com/espressif/esptool#bootloader-wont-respond>`_ 获取更多信息。
 
@@ -605,6 +625,51 @@ Windows 操作系统
         Leaving...
         Hard resetting via RTS pin...
         Done
+
+.. only:: esp32s3
+
+    .. code-block:: none
+
+        ...
+        esptool.py esp32s3 -p /dev/ttyUSB0 -b 460800 --before=default_reset --after=hard_reset write_flash --flash_mode dio --flash_freq 80m --flash_size 2MB 0x0 bootloader/bootloader.bin 0x10000 hello-world.bin 0x8000 partition_table/partition-table.bin
+        esptool.py v3.2-dev
+        Serial port /dev/ttyUSB0
+        Connecting....
+        Chip is ESP32-S3
+        Features: WiFi, BLE
+        Crystal is 40MHz
+        MAC: 7c:df:a1:e0:00:64
+        Uploading stub...
+        Running stub...
+        Stub running...
+        Changing baud rate to 460800
+        Changed.
+        Configuring flash size...
+        Flash will be erased from 0x00000000 to 0x00004fff...
+        Flash will be erased from 0x00010000 to 0x00039fff...
+        Flash will be erased from 0x00008000 to 0x00008fff...
+        Compressed 18896 bytes to 11758...
+        Writing at 0x00000000... (100 %)
+        Wrote 18896 bytes (11758 compressed) at 0x00000000 in 0.5 seconds (effective 279.9 kbit/s)...
+        Hash of data verified.
+        Compressed 168208 bytes to 88178...
+        Writing at 0x00010000... (16 %)
+        Writing at 0x0001a80f... (33 %)
+        Writing at 0x000201f1... (50 %)
+        Writing at 0x00025dcf... (66 %)
+        Writing at 0x0002d0be... (83 %)
+        Writing at 0x00036c07... (100 %)
+        Wrote 168208 bytes (88178 compressed) at 0x00010000 in 2.4 seconds (effective 569.2 kbit/s)...
+        Hash of data verified.
+        Compressed 3072 bytes to 103...
+        Writing at 0x00008000... (100 %)
+        Wrote 3072 bytes (103 compressed) at 0x00008000 in 0.1 seconds (effective 478.9 kbit/s)...
+        Hash of data verified.
+
+        Leaving...
+        Hard resetting via RTS pin...
+        Done
+
 
 .. only:: esp32c3
 

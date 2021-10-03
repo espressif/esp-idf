@@ -6,7 +6,23 @@ set(srcs
 
 set(include_dirs "include")
 
-if(CONFIG_SYSVIEW_ENABLE)
+set(priv_include_dirs "private_include" "port/include")
+
+if(CONFIG_APPTRACE_MEMBUFS_APPTRACE_PROTO_ENABLE)
+    list(APPEND srcs
+        "app_trace_membufs_proto.c")
+
+    if(CONFIG_IDF_TARGET_ARCH_XTENSA)
+        list(APPEND srcs
+            "port/xtensa/port.c")
+    endif()
+    if(CONFIG_IDF_TARGET_ARCH_RISCV)
+        list(APPEND srcs
+            "port/riscv/port.c")
+    endif()
+endif()
+
+if(CONFIG_APPTRACE_SV_ENABLE)
     list(APPEND include_dirs
         sys_view/Config
         sys_view/SEGGER
@@ -16,7 +32,7 @@ if(CONFIG_SYSVIEW_ENABLE)
         "sys_view/SEGGER/SEGGER_SYSVIEW.c"
         "sys_view/Sample/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c"
         "sys_view/Sample/OS/SEGGER_SYSVIEW_FreeRTOS.c"
-        "sys_view/esp32/SEGGER_RTT_esp32.c"
+        "sys_view/esp/SEGGER_RTT_esp.c"
         "sys_view/ext/heap_trace_module.c"
         "sys_view/ext/logging.c")
 endif()
@@ -30,7 +46,8 @@ endif()
 
 idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS "${include_dirs}"
-                       PRIV_REQUIRES soc
+                       PRIV_INCLUDE_DIRS "${priv_include_dirs}"
+                       PRIV_REQUIRES soc esp_ipc
                        LDFRAGMENTS linker.lf)
 
 # disable --coverage for this component, as it is used as transport

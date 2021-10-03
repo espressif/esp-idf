@@ -123,7 +123,7 @@ ESP32-PICO-KIT-1 开发板的主要组件、接口及控制方式见下图。
 
 如批量购买，ESP32-PICO-KIT-1 开发板将以大纸板箱包装。
 
-批量订单请参考 `乐鑫产品订购信息 <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_cn.pdf>`_ (PDF)。
+批量订单请前往 https://www.espressif.com/zh-hans/contact-us/sales-questions。
 
 硬件参考
 ========
@@ -359,7 +359,7 @@ Header J3
 =========
 
 * `ESP32-PICO-V3 技术规格书 <http://espressif.com/sites/default/files/documentation/esp32-pico-v3_datasheet_cn.pdf>`_ (PDF)
-* `乐鑫产品订购信息 <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_cn.pdf>`_ (PDF) 
+* `乐鑫产品选型工具 <https://products.espressif.com/#/product-selector?names=>`__ 
 * `ESP32-PICO-KIT-1 原理图 <https://dl.espressif.com/dl/schematics/SCH_ESP32-PICO-KIT-1_V1_0_20200811A.pdf>`_ (PDF)
 * `ESP32-PICO-KIT-1 PCB 布局图 <https://dl.espressif.com/dl/schematics/PCB_ESP32-PICO-KIT-1_V1.0_20200811.pdf>`_ (PDF)
 

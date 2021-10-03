@@ -20,4 +20,4 @@ idf_component_register(SRCS ${srcs}
                     INCLUDE_DIRS include
                     PRIV_INCLUDE_DIRS private_include
                     REQUIRES spi_flash idf_test cmock
-                    PRIV_REQUIRES perfmon esp_ipc)
+                    PRIV_REQUIRES perfmon esp_ipc driver)

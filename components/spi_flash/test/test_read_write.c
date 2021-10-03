@@ -23,10 +23,21 @@
 #include <unity.h>
 #include <test_utils.h>
 #include <esp_spi_flash.h>
-#include <esp32/rom/spi_flash.h>
 #include "../cache_utils.h"
 #include "soc/timer_periph.h"
 #include "esp_heap_caps.h"
+
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/spi_flash.h"
+#endif
 
 #define MIN_BLOCK_SIZE  12
 /* Base offset in flash for tests. */
@@ -141,48 +152,65 @@ TEST_CASE("Test spi_flash_read", "[spi_flash][esp_flash]")
 #endif
 }
 
-#if CONFIG_IDF_TARGET_ESP32
-static void IRAM_ATTR fix_rom_func(void)
-{
-    return; // ESP32 ROM has no compatible issue for now
-}
-# else
 extern void spi_common_set_dummy_output(esp_rom_spiflash_read_mode_t mode);
 extern void spi_dummy_len_fix(uint8_t spi, uint8_t freqdiv);
 static void IRAM_ATTR fix_rom_func(void)
 {
-    esp_rom_spiflash_read_mode_t read_mode;
-    uint8_t freqdiv;
-#if defined CONFIG_ESPTOOLPY_FLASHMODE_QIO
-    read_mode = ESP_ROM_SPIFLASH_QIO_MODE;
-#elif defined CONFIG_ESPTOOLPY_FLASHMODE_QOUT
-    read_mode = ESP_ROM_SPIFLASH_QOUT_MODE;
-#elif defined CONFIG_ESPTOOLPY_FLASHMODE_DIO
-    read_mode = ESP_ROM_SPIFLASH_DIO_MODE;
-#elif defined CONFIG_ESPTOOLPY_FLASHMODE_DOUT
-    read_mode = ESP_ROM_SPIFLASH_DOUT_MODE;
-#endif
+    uint32_t freqdiv = 0;
 
-#  if defined CONFIG_ESPTOOLPY_FLASHFREQ_80M
+#if CONFIG_ESPTOOLPY_FLASHFREQ_80M && !CONFIG_ESPTOOLPY_OCT_FLASH
     freqdiv = 1;
-#  elif defined CONFIG_ESPTOOLPY_FLASHFREQ_40M
+#elif CONFIG_ESPTOOLPY_FLASHFREQ_80M && CONFIG_ESPTOOLPY_OCT_FLASH
     freqdiv = 2;
-#  elif defined CONFIG_ESPTOOLPY_FLASHFREQ_26M
+#elif CONFIG_ESPTOOLPY_FLASHFREQ_40M
+    freqdiv = 2;
+#elif CONFIG_ESPTOOLPY_FLASHFREQ_26M
     freqdiv = 3;
-#  elif defined CONFIG_ESPTOOLPY_FLASHFREQ_20M
+#elif CONFIG_ESPTOOLPY_FLASHFREQ_20M
     freqdiv = 4;
+#elif CONFIG_ESPTOOLPY_FLASHFREQ_120M
+    freqdiv = 2;
 #endif
 
-    spi_flash_disable_interrupts_caches_and_other_cpu();
-    esp_rom_spiflash_config_clk(freqdiv, 1);
+#if CONFIG_IDF_TARGET_ESP32
+    uint32_t dummy_bit = 0;
+#if CONFIG_ESPTOOLPY_FLASHFREQ_80M
+    dummy_bit = ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_80M;
+#elif CONFIG_ESPTOOLPY_FLASHFREQ_40M
+    dummy_bit = ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_40M;
+#elif CONFIG_ESPTOOLPY_FLASHFREQ_26M
+    dummy_bit = ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_26M;
+#elif CONFIG_ESPTOOLPY_FLASHFREQ_20M
+    dummy_bit = ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_20M;
+#endif
+    g_rom_spiflash_dummy_len_plus[1] = dummy_bit;
+#else
     spi_dummy_len_fix(1, freqdiv);
-    esp_rom_spiflash_config_readmode(read_mode);
-#if !CONFIG_IDF_TARGET_ESP32S2
+#endif//CONFIG_IDF_TARGET_ESP32
+
+    esp_rom_spiflash_read_mode_t read_mode;
+#if CONFIG_ESPTOOLPY_FLASHMODE_QIO
+    read_mode = ESP_ROM_SPIFLASH_QIO_MODE;
+#elif CONFIG_ESPTOOLPY_FLASHMODE_QOUT
+    read_mode = ESP_ROM_SPIFLASH_QOUT_MODE;
+#elif CONFIG_ESPTOOLPY_FLASHMODE_DIO
+    read_mode = ESP_ROM_SPIFLASH_DIO_MODE;
+#elif CONFIG_ESPTOOLPY_FLASHMODE_DOUT
+    read_mode = ESP_ROM_SPIFLASH_DOUT_MODE;
+#elif CONFIG_ESPTOOLPY_FLASHMODE_OPI_STR
+    read_mode = ESP_ROM_SPIFLASH_OPI_STR_MODE;
+#elif CONFIG_ESPTOOLPY_FLASHMODE_OPI_DTR
+    read_mode = ESP_ROM_SPIFLASH_OPI_DTR_MODE;
+#endif
+
+#if !CONFIG_IDF_TARGET_ESP32S2 && !CONFIG_IDF_TARGET_ESP32
     spi_common_set_dummy_output(read_mode);
 #endif //!CONFIG_IDF_TARGET_ESP32S2
-    spi_flash_enable_interrupts_caches_and_other_cpu();
-}
+    esp_rom_spiflash_config_clk(freqdiv, 1);
+#if !CONFIG_ESPTOOLPY_OCT_FLASH
+    esp_rom_spiflash_config_readmode(read_mode);
 #endif
+}
 
 static void IRAM_ATTR test_write(int dst_off, int src_off, int len)
 {

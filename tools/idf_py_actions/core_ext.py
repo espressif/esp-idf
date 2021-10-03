@@ -1,15 +1,20 @@
 import fnmatch
+import locale
 import os
+import re
 import shutil
 import subprocess
 import sys
+from urllib.error import URLError
+from urllib.request import Request, urlopen
+from webbrowser import open_new_tab
 
 import click
-from idf_py_actions.constants import GENERATORS, PREVIEW_TARGETS, SUPPORTED_TARGETS
+from idf_py_actions.constants import GENERATORS, PREVIEW_TARGETS, SUPPORTED_TARGETS, URL_TO_DOC
 from idf_py_actions.errors import FatalError
 from idf_py_actions.global_options import global_options
-from idf_py_actions.tools import (TargetChoice, ensure_build_directory, idf_version, merge_action_lists, realpath,
-                                  run_target)
+from idf_py_actions.tools import (TargetChoice, ensure_build_directory, get_target, idf_version, merge_action_lists,
+                                  realpath, run_target)
 
 
 def action_extensions(base_actions, project_path):
@@ -21,6 +26,21 @@ def action_extensions(base_actions, project_path):
         directory (with the specified generator) as needed.
         """
         ensure_build_directory(args, ctx.info_name)
+        run_target(target_name, args)
+
+    def size_target(target_name, ctx, args):
+        """
+        Builds the app and then executes a size-related target passed in 'target_name'.
+        `tool_error_handler` handler is used to suppress errors during the build,
+        so size action can run even in case of overflow.
+
+        """
+
+        def tool_error_handler(e):
+            pass
+
+        ensure_build_directory(args, ctx.info_name)
+        run_target('all', args, custom_error_handler=tool_error_handler)
         run_target(target_name, args)
 
     def list_build_system_targets(target_name, ctx, args):
@@ -192,6 +212,44 @@ def action_extensions(base_actions, project_path):
 
         sys.exit(0)
 
+    def show_docs(action, ctx, args, no_browser, language, starting_page, version, target):
+        if language == 'cn':
+            language = 'zh_CN'
+        if not version:
+            # '0.0-dev' here because if 'dev' in version it will transform in to 'latest'
+            version = re.search(r'v\d+\.\d+\.?\d*(-dev|-beta\d|-rc)?', idf_version() or '0.0-dev').group()
+            if 'dev' in version:
+                version = 'latest'
+        elif version[0] != 'v':
+            version = 'v' + version
+        target = target or get_target(args.project_dir) or 'esp32'
+        link = '/'.join([URL_TO_DOC, language, version, target, starting_page or ''])
+        redirect_link = False
+        try:
+            req = Request(link)
+            webpage = urlopen(req)
+            redirect_link = webpage.geturl().endswith('404.html')
+        except URLError:
+            print("We can't check the link's functionality because you don't have an internet connection")
+        if redirect_link:
+            print('Target', target, 'doesn\'t exist for version', version)
+            link = '/'.join([URL_TO_DOC, language, version, starting_page or ''])
+        if not no_browser:
+            print('Opening documentation in the default browser:')
+            print(link)
+            open_new_tab(link)
+        else:
+            print('Please open the documentation link in the browser:')
+            print(link)
+        sys.exit(0)
+
+    def get_default_language():
+        try:
+            language = 'zh_CN' if locale.getdefaultlocale()[0] == 'zh_CN' else 'en'
+        except ValueError:
+            language = 'en'
+        return language
+
     root_options = {
         'global_options': [
             {
@@ -316,22 +374,19 @@ def action_extensions(base_actions, project_path):
                 'options': global_options,
             },
             'size': {
-                'callback': build_target,
+                'callback': size_target,
                 'help': 'Print basic size information about the app.',
                 'options': global_options,
-                'dependencies': ['app'],
             },
             'size-components': {
-                'callback': build_target,
+                'callback': size_target,
                 'help': 'Print per-component size information.',
                 'options': global_options,
-                'dependencies': ['app'],
             },
             'size-files': {
-                'callback': build_target,
+                'callback': size_target,
                 'help': 'Print per-source-file size information.',
                 'options': global_options,
-                'dependencies': ['app'],
             },
             'bootloader': {
                 'callback': build_target,
@@ -386,6 +441,36 @@ def action_extensions(base_actions, project_path):
                 'callback': fallback_target,
                 'help': 'Handle for targets not known for idf.py.',
                 'hidden': True,
+            },
+            'docs': {
+                'callback': show_docs,
+                'help': 'Open web browser with documentation for ESP-IDF',
+                'options': [
+                    {
+                        'names': ['--no-browser', '-nb'],
+                        'is_flag': True,
+                        'help': 'Don\'t open browser.'
+                    },
+                    {
+                        'names': ['--language', '-l'],
+                        'default': get_default_language(),
+                        'type': click.Choice(['en', 'zh_CN', 'cn']),
+                        'help': 'Documentation language. Your system language by default (en or cn)'
+                    },
+                    {
+                        'names': ['--starting-page', '-sp'],
+                        'help': 'Documentation page (get-started, api-reference etc).'
+                    },
+                    {
+                        'names': ['--version', '-v'],
+                        'help': 'Version of ESP-IDF.'
+                    },
+                    {
+                        'names': ['--target', '-t'],
+                        'type': TargetChoice(SUPPORTED_TARGETS + PREVIEW_TARGETS + ['']),
+                        'help': 'Chip target.'
+                    }
+                ]
             }
         }
     }

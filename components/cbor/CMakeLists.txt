@@ -14,8 +14,7 @@ idf_component_register(SRCS "tinycbor/src/cborencoder_close_container_checked.c"
 # for open_memstream.c
 set_source_files_properties(tinycbor/src/open_memstream.c PROPERTIES COMPILE_DEFINITIONS "__linux__")
 
-# cbortojson.c:378:17: assignment discards 'const' qualifier from pointer target type
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-discarded-qualifiers")
-
-# cborvalidation.c:429:22: 'valf' may be used uninitialized
-target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-maybe-uninitialized")
+# workaround for the fact that we are passing -ffreestanding to Clang
+if(CMAKE_C_COMPILER_ID MATCHES "Clang")
+    target_compile_options(${COMPONENT_LIB} PRIVATE "-U __STDC_HOSTED__")
+endif()

@@ -21,8 +21,9 @@
 #include "sdkconfig.h"
 #include "soc/spi_periph.h"
 #include "soc/lldesc.h"
-#include "hal/spi_slave_hd_hal.h"
 #include "soc/soc_caps.h"
+#include "hal/spi_slave_hd_hal.h"
+#include "hal/assert.h"
 
 //This GDMA related part will be introduced by GDMA dedicated APIs in the future. Here we temporarily use macros.
 #if SOC_GDMA_SUPPORTED
@@ -149,7 +150,6 @@ void spi_slave_hd_hal_rxdma(spi_slave_hd_hal_context_t *hal, uint8_t *out_buf, s
     spi_ll_infifo_full_clr(hal->dev);
     spi_ll_clear_intr(hal->dev, SPI_LL_INTR_CMD7);
 
-    spi_ll_slave_set_rx_bitlen(hal->dev, len * 8);
     spi_ll_dma_rx_enable(hal->dev, 1);
     spi_dma_ll_rx_start(hal->dma_in, hal->rx_dma_chan, &hal->dmadesc_rx->desc);
 }
@@ -297,7 +297,7 @@ bool spi_slave_hd_hal_get_rx_finished_trans(spi_slave_hd_hal_context_t *hal, voi
 //Append mode is only supported on ESP32S2 now
 static void spi_slave_hd_hal_link_append_desc(spi_slave_hd_hal_desc_append_t *dmadesc, const void *data, int len, bool isrx, void *arg)
 {
-    assert(len <= LLDESC_MAX_NUM_PER_DESC);     //TODO: Add support for transaction with length larger than 4092, IDF-2660
+    HAL_ASSERT(len <= LLDESC_MAX_NUM_PER_DESC);     //TODO: Add support for transaction with length larger than 4092, IDF-2660
     int n = 0;
     while (len) {
         int dmachunklen = len;

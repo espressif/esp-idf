@@ -7,10 +7,6 @@ set(include_dirs
     )
 
 set(srcs
-    "apps/dhcpserver/dhcpserver.c"
-    "apps/ping/esp_ping.c"
-    "apps/ping/ping.c"
-    "apps/ping/ping_sock.c"
     "apps/sntp/sntp.c"
     "lwip/src/api/api_lib.c"
     "lwip/src/api/api_msg.c"
@@ -137,11 +133,26 @@ else()
     list(APPEND srcs "port/esp32/no_vfs_syscalls.c")
 endif()
 
+if(CONFIG_OPENTHREAD_ENABLED)
+    list(APPEND srcs "port/esp32/netif/openthreadif.c")
+endif()
+
+if(CONFIG_LWIP_ICMP)
+    list(APPEND srcs
+        "apps/ping/esp_ping.c"
+        "apps/ping/ping.c"
+        "apps/ping/ping_sock.c")
+endif()
+
+if(CONFIG_LWIP_DHCPS)
+    list(APPEND srcs "apps/dhcpserver/dhcpserver.c")
+endif()
+
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "${include_dirs}"
                     LDFRAGMENTS linker.lf
                     REQUIRES vfs esp_wifi
-                    PRIV_REQUIRES esp_eth esp_netif tcpip_adapter nvs_flash)
+                    PRIV_REQUIRES esp_eth esp_netif tcpip_adapter nvs_flash openthread)
 
 # lots of LWIP source files evaluate macros that check address of stack variables
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-address)

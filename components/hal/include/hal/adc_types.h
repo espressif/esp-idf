@@ -56,9 +56,9 @@ typedef enum {
  */
 typedef enum {
     ADC_ATTEN_DB_0   = 0,  /*!<No input attenumation, ADC can measure up to approx. 800 mV. */
-    ADC_ATTEN_DB_2_5 = 1,  /*!<The input voltage of ADC will be attenuated, extending the range of measurement to up to approx. 1100 mV. */
-    ADC_ATTEN_DB_6   = 2,  /*!<The input voltage of ADC will be attenuated, extending the range of measurement to up to  approx. 1350 mV. */
-    ADC_ATTEN_DB_11  = 3,  /*!<The input voltage of ADC will be attenuated, extending the range of measurement to up to  approx. 2600 mV. */
+    ADC_ATTEN_DB_2_5 = 1,  /*!<The input voltage of ADC will be attenuated extending the range of measurement by about 2.5 dB (1.33 x) */
+    ADC_ATTEN_DB_6   = 2,  /*!<The input voltage of ADC will be attenuated extending the range of measurement by about 6 dB (2 x) */
+    ADC_ATTEN_DB_11  = 3,  /*!<The input voltage of ADC will be attenuated extending the range of measurement by about 11 dB (3.55 x) */
     ADC_ATTEN_MAX,
 } adc_atten_t;
 
@@ -133,10 +133,10 @@ typedef struct {
 -                                         2: 11 bit;
 -                                         3: 12 bit. */
             int8_t channel:   4;   /*!< ADC channel index. */
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#elif CONFIG_IDF_TARGET_ESP32S2
             uint8_t reserved:  2;   /*!< reserved0 */
             uint8_t channel:   4;   /*!< ADC channel index. */
-#elif CONFIG_IDF_TARGET_ESP32C3
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
             uint8_t channel:   3;   /*!< ADC channel index. */
             uint8_t unit:      1;   /*!< ADC unit index. */
             uint8_t reserved:  2;   /*!< reserved0 */
@@ -184,7 +184,7 @@ typedef struct {
     };
 } adc_digi_output_data_t;
 #endif
-#if CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
 /**
  * @brief ADC digital controller (DMA mode) output data format.
  *        Used to analyze the acquired ADC (DMA) data.
@@ -269,7 +269,7 @@ typedef struct {
     adc_digi_pattern_table_t *adc2_pattern;  /*!<Refer to `adc1_pattern` */
     adc_digi_convert_mode_t conv_mode;       /*!<ADC conversion mode for digital controller. See ``adc_digi_convert_mode_t``. */
     adc_digi_output_format_t format;         /*!<ADC output data format for digital controller. See ``adc_digi_output_format_t``. */
-#elif CONFIG_IDF_TARGET_ESP32C3
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
     uint32_t adc_pattern_len;                /*!<Pattern table length for digital controller. Range: 0 ~ 7 (0: Don't change the pattern table setting).
                                                  The pattern table that defines the conversion rules for each SAR ADC. Each table has 7 items, in which channel selection,
                                                  resolution and attenuation are stored. When the conversion is started, the controller reads conversion rules from the
@@ -286,7 +286,7 @@ typedef struct {
     uint32_t dma_eof_num;                    /*!<DMA eof num of adc digital controller.
                                                  If the number of measurements reaches `dma_eof_num`, then `dma_in_suc_eof` signal is generated in DMA.
                                                  Note: The converted data in the DMA in link buffer will be multiple of two bytes. */
-#elif CONFIG_IDF_TARGET_ESP32C3
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
     uint32_t sample_freq_hz;  /*!< The expected ADC sampling frequency in Hz. Range: 611Hz ~ 83333Hz
                                    Fs = Fd / interval / 2
                                    Fs: sampling frequency;
@@ -295,7 +295,7 @@ typedef struct {
 #endif
 } adc_digi_config_t;
 
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#if CONFIG_IDF_TARGET_ESP32S2
 /**
  * @brief ADC digital controller (DMA mode) interrupt type options.
  */
@@ -363,7 +363,7 @@ typedef enum {
  *        Expression: filter_data = (k-1)/k * last_data + new_data / k.
  */
 typedef enum {
-#if CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
     ADC_DIGI_FILTER_DIS = -1,  /*!< Disable filter */
 #endif
     ADC_DIGI_FILTER_IIR_2 = 0, /*!<The filter mode is first-order IIR filter. The coefficient is 2. */
@@ -407,7 +407,7 @@ typedef enum {
  *        MONITOR_LOW: If ADC_OUT <  threshold, Generates monitor interrupt.
  */
 typedef enum {
-#if CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
     ADC_DIGI_MONITOR_DIS = 0,  /*!<Disable monitor. */
     ADC_DIGI_MONITOR_EN,       /*!<If ADC_OUT <  threshold, Generates monitor interrupt. */
                                /*!<If ADC_OUT >  threshold, Generates monitor interrupt. */
@@ -430,7 +430,7 @@ typedef struct {
     adc_channel_t channel;          /*!<Set adc channel number for monitor.
                                         For ESP32-S2, it's always `ADC_CHANNEL_MAX` */
     adc_digi_monitor_mode_t mode;   /*!<Set adc monitor mode. See ``adc_digi_monitor_mode_t``. */
-#if CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
     uint32_t h_threshold;             /*!<Set monitor threshold of adc digital controller. */
     uint32_t l_threshold;             /*!<Set monitor threshold of adc digital controller. */
 #else

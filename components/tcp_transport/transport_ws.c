@@ -1,3 +1,17 @@
+// Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -580,6 +594,9 @@ static int ws_get_socket(esp_transport_handle_t t)
 esp_transport_handle_t esp_transport_ws_init(esp_transport_handle_t parent_handle)
 {
     esp_transport_handle_t t = esp_transport_init();
+    if (t == NULL) {
+        return NULL;
+    }
     transport_ws_t *ws = calloc(1, sizeof(transport_ws_t));
     ESP_TRANSPORT_MEM_CHECK(TAG, ws, return NULL);
     ws->parent = parent_handle;
@@ -599,7 +616,7 @@ esp_transport_handle_t esp_transport_ws_init(esp_transport_handle_t parent_handl
     });
 
     esp_transport_set_func(t, ws_connect, ws_read, ws_write, ws_close, ws_poll_read, ws_poll_write, ws_destroy);
-    // webocket underlying transfer is the payload transfer handle
+    // websocket underlying transfer is the payload transfer handle
     esp_transport_set_parent_transport_func(t, ws_get_payload_transport_handle);
 
     esp_transport_set_context_data(t, ws);

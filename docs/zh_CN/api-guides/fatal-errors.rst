@@ -19,6 +19,7 @@
   - 堆栈溢出
   - Stack 粉碎保护检查
   - Heap 完整性检查
+  - 未定义行为清理器（UBSAN）检查
 
 - 使用 ``assert``、``configASSERT`` 等类似的宏断言失败。
 
@@ -63,10 +64,13 @@
 
 紧急处理程序的行为还受到另外两个配置项的影响：
 
+- 如果使能了 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_DEBUG_OCDAWARE` （默认），紧急处理程序会检测 {IDF_TARGET_NAME} 是否已经连接 JTAG 调试器。如果检测成功，程序会暂停运行，并将控制权交给调试器。在这种情况下，寄存器和回溯不会被打印到控制台，并且也不会使用 GDB Stub 和 Core Dump 的功能。
 
-- 如果 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_DEBUG_OCDAWARE` 被使能了（默认），紧急处理程序会检测 {IDF_TARGET_NAME} 是否已经连接 JTAG 调试器。如果检测成功，程序会暂停运行，并将控制权交给调试器。在这种情况下，寄存器和回溯不会被打印到控制台，并且也不会使用 GDB Stub 和 Core Dump 的功能。
+- 如果使能了 :doc:`内核转储 <core_dump>` 功能，系统状态（任务堆栈和寄存器）会被转储到 Flash 或者 UART 以供后续分析。
 
-- 如果使能了 :doc:`Core Dump <core_dump>` 功能（``CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH`` 或者 ``CONFIG_ESP_COREDUMP_ENABLE_TO_UART`` 选项），系统状态（任务堆栈和寄存器）会被转储到 Flash 或者 UART 以供后续分析。
+- 如果 :ref:`CONFIG_ESP_PANIC_HANDLER_IRAM` 被禁用（默认情况下禁用），紧急处理程序的代码会放置在 Flash 而不是 IRAM 中。这意味着，如果 ESP-IDF 在 Flash 高速缓存禁用时崩溃，在运行 GDB Stub 和内核转储之前紧急处理程序会自动重新使能 Flash 高速缓存。如果 Flash 高速缓存也崩溃了，这样做会增加一些小风险。
+
+  如果使能了该选项，紧急处理程序的代码（包括所需的 UART 函数）会放置在 IRAM 中。当禁用 Flash 高速缓存（如写入 SPI flash）时或触发异常导致 Flash 高速缓存崩溃时，可用此选项调试一些复杂的崩溃问题。
 
 下图展示了紧急处理程序的行为：
 
@@ -203,6 +207,36 @@
         MSTATUS : 0x00001881  MTVEC   : 0x40380001  MCAUSE  : 0x00000007  MTVAL   : 0x00000000
         MHARTID : 0x00000000
 
+    此外，由于紧急处理程序中提供了堆栈转储，因此 :doc:`IDF 监视器 <tools/idf-monitor>` 也可以生成并打印回溯。
+    输出结果如下：
+
+    ::
+
+        Backtrace:
+
+        0x42006686 in bar (ptr=ptr@entry=0x0) at ../main/hello_world_main.c:18
+        18	    *ptr = 0x42424242;
+        #0  0x42006686 in bar (ptr=ptr@entry=0x0) at ../main/hello_world_main.c:18
+        #1  0x42006692 in foo () at ../main/hello_world_main.c:22
+        #2  0x420066ac in app_main () at ../main/hello_world_main.c:28
+        #3  0x42015ece in main_task (args=<optimized out>) at /Users/user/esp/components/freertos/port/port_common.c:142
+        #4  0x403859b8 in vPortEnterCritical () at /Users/user/esp/components/freertos/port/riscv/port.c:130
+        #5  0x00000000 in ?? ()
+        Backtrace stopped: frame did not save the PC
+
+    虽然以上的回溯信息非常方便，但要求用户使用 :doc:`IDF 监视器 <tools/idf-monitor>`。因此，如果用户希望使用其它的串口监控软件也能显示堆栈回溯信息，则需要在 menuconfig 中启用 :ref:`CONFIG_ESP_SYSTEM_USE_EH_FRAME` 选项。
+
+    该选项会让编译器为项目的每个函数生成 DWARF 信息。然后，当 CPU 异常发生时，紧急处理程序将解析这些数据并生成出错任务的堆栈回溯信息。输出结果如下：
+    
+    ::
+
+        Backtrace: 0x42009e9a:0x3fc92120 0x42009ea6:0x3fc92120 0x42009ec2:0x3fc92130 0x42024620:0x3fc92150 0x40387d7c:0x3fc92160 0xfffffffe:0x3fc92170    
+    
+    这些 ``PC:SP`` 对代表当前任务每一个栈帧的程序计数器值（Program Counter）和栈顶地址（Stack Pointer）。
+
+
+    :ref:`CONFIG_ESP_SYSTEM_USE_EH_FRAME` 选项的主要优点是，回溯信息可以由程序自己解析生成并打印 (而不依靠 :doc:`IDF 监视器 <tools/idf-monitor>`)。但是该选项会导致编译后的二进制文件更大（增幅可达 20% 甚至 100%）。此外，该选项会将调试信息也保存在二进制文件里。因此，强烈不建议用户在量产/生产版本中启用该选项。
+    
 若要查找发生严重错误的代码位置，请查看 "Backtrace" 的后面几行，发生严重错误的代码显示在顶行，后续几行显示的是调用堆栈。
 
 .. _GDB-Stub:
@@ -294,8 +328,9 @@ Guru Meditation 错误
 
     这类异常通常发生于以下几种场合:
 
-    应用程序尝试从仅支持 32 位加载/存储的内存区域执行 8 位或 16 位加载/存储操作，例如，解引用一个指向指令内存区域(比如 IRAM 或者 IROM)的 char* 指针就会触发这个错误。
-    应用程序尝试保存数据到只读的内存区域（比如 IROM 或者 DROM）也会触发这个错误。
+    - 应用程序尝试从仅支持 32 位加载/存储的内存区域执行 8 位或 16 位加载/存储操作，例如，解引用一个指向指令内存区域（比如 IRAM 或者 IROM）的 char* 指针就会触发这个错误。
+
+    - 应用程序尝试保存数据到只读的内存区域（比如 IROM 或者 DROM）也会触发这个错误。
 
     Unhandled debug exception
     ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -377,7 +412,7 @@ Stack 粉碎保护（基于 GCC ``-fstack-protector*`` 标志）可以通过 ESP
     Backtrace: 0x4008e6c0:0x3ffc1780 0x4008e8b7:0x3ffc17a0 0x400d2138:0x3ffc17c0 0x400e79d5:0x3ffc17e0 0x400e79a7:0x3ffc1840 0x400e79df:0x3ffc18a0 0x400e2235:0x3ffc18c0 0x400e1916:0x3ffc18f0 0x400e19cd:0x3ffc1910 0x400e1a11:0x3ffc1930 0x400e1bb2:0x3ffc1950 0x400d2c44:0x3ffc1a80
     0
 
-回溯信息会指明发生 Stack 粉碎的函数，建议检查函数中是否有代码访问本地数组时发生了越界。
+回溯信息会指明发生 Stack 粉碎的函数，建议检查函数中是否有代码访问局部数组时发生了越界。
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
@@ -390,3 +425,98 @@ Stack 粉碎保护（基于 GCC ``-fstack-protector*`` 标志）可以通过 ESP
     .. |CPU_EXCEPTIONS_LIST| replace:: 非法指令，加载/存储时的内存对齐错误，加载/存储时的访问权限错误。
     .. |ILLEGAL_INSTR_MSG| replace:: Illegal instruction
     .. |CACHE_ERR_MSG| replace:: Cache error
+
+未定义行为清理器（UBSAN）检查
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+未定义行为清理器 (UBSAN) 是一种编译器功能，它会为可能不正确的操作添加运行时检查，例如：
+
+- 溢出（乘法溢出、有符号整数溢出）
+- 移位基数或指数错误（如移位超过 32 位）
+- 整数转换错误
+
+请参考 `GCC 文档 <https://gcc.gnu.org/onlinedocs/gcc/Instrumentation-Options.html>`_ 中的``-fsanitize=undefined`` 选项，查看支持检查的完整列表。
+
+使能 UBSAN
+""""""""""""""
+
+默认情况下未启用 UBSAN。可以通过在构建系统中添加编译器选项 ``-fsanitize=undefined`` 在文件、组件或项目级别上使能 UBSAN。
+
+在对使用硬件寄存器头文件（``soc/xxx_reg.h``）的代码使能 UBSAN 时，建议使用 ``-fno-sanitize=shift-base`` 选项禁用移位基数清理器。这是由于 ESP-IDF 寄存器头文件目前包含的模式会对这个特定的清理器选项造成误报。
+
+要在项目级使能 UBSAN，请在项目 CMakeLists.txt 文件的末尾添加以下内容::
+
+    idf_build_set_property(COMPILE_OPTIONS "-fsanitize=undefined" "-fno-sanitize=shift-base" APPEND)
+
+或者，通过 ``EXTRA_CFLAGS`` 和 ``EXTRA_CXXFLAGS`` 环境变量来传递这些选项。
+
+使能 UBSAN 会明显增加代码量和数据大小。当为整个应用程序使能 UBSAN 时，微控制器的可用 RAM 无法容纳大多数应用程序（除了一些微小程序）。因此，建议为特定的待测组件使能 UBSAN。
+
+要为项目 CMakeLists.txt 文件中的特定组件（``component_name``）启用 UBSAN，请在文件末尾添加以下内容::
+
+    idf_component_get_property(lib component_name COMPONENT_LIB)
+    target_compile_options(${lib} PRIVATE "-fsanitize=undefined" "-fno-sanitize=shift-base")
+
+.. 注意:: 关于 :ref:`构建属性 <cmake-build-properties>` 和 :ref:`组件属性 <cmake-component-properties>` 的更多信息，请查看构建系统文档。
+
+要为同一组件的 CMakeLists.txt 中的特定组件（``component_name``）使能 UBSAN，在文件末尾添加以下内容::
+
+    target_compile_options(${COMPONENT_LIB} PRIVATE "-fsanitize=undefined" "-fno-sanitize=shift-base")
+
+UBSAN 输出
+""""""""""""""""
+
+当 UBSAN 检测到一个错误时，会打印一个信息和回溯，例如::
+
+    Undefined behavior of type out_of_bounds
+
+    Backtrace:0x4008b383:0x3ffcd8b0 0x4008c791:0x3ffcd8d0 0x4008c587:0x3ffcd8f0 0x4008c6be:0x3ffcd950 0x400db74f:0x3ffcd970 0x400db99c:0x3ffcd9a0
+
+当使用 :doc:`IDF 监视器 <tools/idf-monitor>` 时，回溯会被解码为函数名以及源代码位置，并指向问题发生的位置（这里是 ``main.c:128``）::
+
+    0x4008b383: panic_abort at /path/to/esp-idf/components/esp_system/panic.c:367
+
+    0x4008c791: esp_system_abort at /path/to/esp-idf/components/esp_system/system_api.c:106
+
+    0x4008c587: __ubsan_default_handler at /path/to/esp-idf/components/esp_system/ubsan.c:152
+
+    0x4008c6be: __ubsan_handle_out_of_bounds at /path/to/esp-idf/components/esp_system/ubsan.c:223
+
+    0x400db74f: test_ub at main.c:128
+
+    0x400db99c: app_main at main.c:56 (discriminator 1)
+
+UBSAN 报告的错误类型为以下几种：
+
+.. list-table::
+  :widths: 40 60
+  :header-rows: 1
+
+  * - 名称
+    - 含义
+  * - ``type_mismatch``、``type_mismatch_v1``
+    - 指针值不正确：空、未对齐、或与给定类型不兼容
+  * - ``add_overflow``、``sub_overflow``、``mul_overflow``、``negate_overflow``
+    - 加法、减法、乘法、求反过程中的整数溢出
+  * - ``divrem_overflow``
+    - 整数除以 0 或 ``INT_MIN``
+  * - ``shift_out_of_bounds``
+    - 左移或右移运算符导致的溢出
+  * - ``out_of_bounds``
+    - 访问超出数组范围
+  * - ``unreachable``
+    - 执行无法访问的代码
+  * - ``missing_return``
+    - Non-void 函数已结束而没有返回值（仅限 C++）
+  * - ``vla_bound_not_positive``
+    - 可变长度数组的大小不是正数
+  * - ``load_invalid_value``
+    - bool 或 enum（仅 C++）变量的值无效（超出范围）
+  * - ``nonnull_arg``
+    - 对于 ``nonnull`` 属性的函数，传递给函数的参数为空
+  * - ``nonnull_return``
+    - 对于 ``returns_nonnull`` 属性的函数，函数返回值为空
+  * - ``builtin_unreachable``
+    - 调用 ``__builtin_unreachable`` 函数
+  * - ``pointer_overflow``
+    - 指针运算过程中的溢出

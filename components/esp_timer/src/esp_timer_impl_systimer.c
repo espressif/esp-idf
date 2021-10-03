@@ -133,7 +133,7 @@ esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
                                    &timer_alarm_isr, NULL, &s_timer_interrupt_handle);
 
     if (err != ESP_OK) {
-        ESP_EARLY_LOGE(TAG, "esp_intr_alloc failed (%#x)", err);
+        ESP_EARLY_LOGE(TAG, "esp_intr_alloc failed (0x%x)", err);
         goto err_intr_alloc;
     }
 
@@ -155,7 +155,7 @@ esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
 
     err = esp_intr_enable(s_timer_interrupt_handle);
     if (err != ESP_OK) {
-        ESP_EARLY_LOGE(TAG, "esp_intr_enable failed (%#x)", err);
+        ESP_EARLY_LOGE(TAG, "esp_intr_enable failed (0x%x)", err);
         goto err_intr_en;
     }
     return ESP_OK;

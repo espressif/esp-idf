@@ -26,7 +26,7 @@ if(BOOTLOADER_BUILD)
     "src/bootloader_console_loader.c"
     "src/bootloader_panic.c"
     "src/${IDF_TARGET}/bootloader_sha.c"
-    "src/${IDF_TARGET}/flash_encrypt.c"
+    "src/${IDF_TARGET}/bootloader_soc.c"
     "src/${IDF_TARGET}/bootloader_${IDF_TARGET}.c"
     )
     list(APPEND priv_requires hal)
@@ -35,17 +35,31 @@ else()
         "src/idf/bootloader_sha.c")
     set(include_dirs "include")
     set(priv_include_dirs "include_bootloader")
-    set(priv_requires spi_flash mbedtls efuse app_update)
+    # heap is required for `heap_memory_layout.h` header
+    set(priv_requires spi_flash mbedtls efuse app_update heap)
 endif()
 
 if(BOOTLOADER_BUILD)
+    if(CONFIG_SECURE_FLASH_ENC_ENABLED)
+        list(APPEND srcs "src/flash_encryption/flash_encrypt.c"
+                         "src/${IDF_TARGET}/flash_encryption_secure_features.c")
+    endif()
+
     if(CONFIG_SECURE_SIGNED_ON_BOOT)
         if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
             list(APPEND srcs "src/secure_boot_v1/secure_boot_signatures_bootloader.c")
         endif()
+        if(CONFIG_SECURE_BOOT_V1_ENABLED)
+            list(APPEND srcs "src/secure_boot_v1/secure_boot.c"
+                             "src/${IDF_TARGET}/secure_boot_secure_features.c")
+        endif()
 
         if(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
             list(APPEND srcs "src/secure_boot_v2/secure_boot_signatures_bootloader.c")
+        endif()
+        if(CONFIG_SECURE_BOOT_V2_ENABLED)
+            list(APPEND srcs "src/secure_boot_v2/secure_boot.c"
+                             "src/${IDF_TARGET}/secure_boot_secure_features.c")
         endif()
     endif()
 else()
@@ -58,11 +72,6 @@ else()
             list(APPEND srcs "src/secure_boot_v2/secure_boot_signatures_app.c")
         endif()
     endif()
-endif()
-
-if(CONFIG_SECURE_BOOT AND BOOTLOADER_BUILD)
-    list(APPEND srcs
-        "src/${IDF_TARGET}/secure_boot.c")
 endif()
 
 set(requires soc) #unfortunately the header directly uses SOC registers

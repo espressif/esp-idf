@@ -1,19 +1,10 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-#ifndef _DRIVER_SDIO_SLAVE_H_
-#define _DRIVER_SDIO_SLAVE_H_
+#pragma once
 
 #include "freertos/FreeRTOS.h"
 #include "esp_err.h"
@@ -139,6 +130,28 @@ esp_err_t sdio_slave_recv_unregister_buf(sdio_slave_buf_handle_t handle);
  *     - ESP_OK if success
  */
 esp_err_t sdio_slave_recv_load_buf(sdio_slave_buf_handle_t handle);
+
+/** Get buffer of received data if exist with packet information. The driver returns the ownership of the buffer to the app.
+ *
+ * When you see return value is ``ESP_ERR_NOT_FINISHED``, you should call this API iteratively until the return value is ``ESP_OK``.
+ * All the continuous buffers returned with ``ESP_ERR_NOT_FINISHED``, together with the last buffer returned with ``ESP_OK``, belong to one packet from the host.
+ *
+ * You can call simpler ``sdio_slave_recv`` instead, if the host never send data longer than the Receiving buffer size,
+ * or you don't care about the packet boundary (e.g. the data is only a byte stream).
+ *
+ * @param handle_ret Handle of the buffer holding received data. Use this handle in ``sdio_slave_recv_load_buf()`` to receive in the same buffer again.
+ * @param wait Time to wait before data received.
+ *
+ * @note Call ``sdio_slave_load_buf`` with the handle to re-load the buffer onto the link list, and receive with the same buffer again.
+ *       The address and length of the buffer got here is the same as got from `sdio_slave_get_buffer`.
+ *
+ * @return
+ *     - ESP_ERR_INVALID_ARG    if handle_ret is NULL
+ *     - ESP_ERR_TIMEOUT        if timeout before receiving new data
+ *     - ESP_ERR_NOT_FINISHED   if returned buffer is not the end of a packet from the host, should call this API again until the end of a packet
+ *     - ESP_OK if success
+ */
+esp_err_t sdio_slave_recv_packet(sdio_slave_buf_handle_t* handle_ret, TickType_t wait);
 
 /** Get received data if exist. The driver returns the ownership of the buffer to the app.
  *
@@ -273,5 +286,3 @@ esp_err_t sdio_slave_wait_int(int pos, TickType_t wait);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /*_DRIVER_SDIO_SLAVE_H */

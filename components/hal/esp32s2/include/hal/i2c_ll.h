@@ -16,6 +16,7 @@
 
 #pragma once
 #include "soc/i2c_periph.h"
+#include "soc/i2c_struct.h"
 #include "hal/i2c_types.h"
 
 #ifdef __cplusplus
@@ -25,7 +26,7 @@ extern "C" {
 #define I2C_LL_INTR_MASK          (0x1ffff) /*!< I2C all interrupt bitmap */
 
 /**
- * @brief I2C hardware cmd register filed.
+ * @brief I2C hardware cmd register fields.
  */
 typedef union {
     struct {
@@ -680,7 +681,7 @@ static inline void i2c_ll_master_clr_rx_it(i2c_dev_t *hw)
 }
 
 /**
- * @brief
+ * @brief Enable I2C slave TX interrupt
  *
  * @param  hw Beginning address of the peripheral registers
  *
@@ -752,7 +753,7 @@ static inline void i2c_ll_slave_clr_rx_it(i2c_dev_t *hw)
 }
 
 /**
- * @brief Reste I2C master FSM. When the master FSM is stuck, call this function to reset the FSM
+ * @brief Reset I2C master FSM. When the master FSM is stuck, call this function to reset the FSM
  *
  * @param  hw Beginning address of the peripheral registers
  *

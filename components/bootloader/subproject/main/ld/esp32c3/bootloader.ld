@@ -36,10 +36,13 @@ SECTIONS
     *libbootloader_support.a:bootloader_sha.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_console_loader.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:bootloader_panic.*(.literal .text .literal.* .text.*)
+    *libbootloader_support.a:bootloader_soc.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:esp_image_format.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:flash_encrypt.*(.literal .text .literal.* .text.*)
+    *libbootloader_support.a:flash_encryption_secure_features.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:flash_partitions.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:secure_boot.*(.literal .text .literal.* .text.*)
+    *libbootloader_support.a:secure_boot_secure_features.*(.literal .text .literal.* .text.*)
     *libbootloader_support.a:secure_boot_signatures_bootloader.*(.literal .text .literal.* .text.*)
     *libmicro-ecc.a:*.*(.literal .text .literal.* .text.*)
     *libspi_flash.a:*.*(.literal .text .literal.* .text.*)
@@ -174,17 +177,17 @@ SECTIONS
 /**
  *  Appendix: Memory Usage of ROM bootloader
  *
- *  +--------+--------------+------+ 0x3FCC_B000
+ *  +--------+--------------+------+ 0x3FCC_AE00
  *  |        ^              |
  *  |        |              |
  *  |        | data/bss     |
  *  |        |              |
  *  |        v              |
- *  +------------------------------+ 0x3FCD_C910
+ *  +------------------------------+ 0x3FCD_C710
  *  |        ^              |
  *  |        |              |
  *  |        | stack        |
  *  |        |              |
  *  |        v              |
- *  +------------------------------+ 0x3FCD_E910
+ *  +------------------------------+ 0x3FCD_E710
  */

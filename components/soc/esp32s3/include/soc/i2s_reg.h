@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
 #define _SOC_I2S_REG_H_
 
 
+#include "soc.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc.h"
 
 #define I2S_INT_RAW_REG(i)          (REG_I2S_BASE(i) + 0xC)
 /* I2S_TX_HUNG_INT_RAW : RO/WTC/SS ;bitpos:[3] ;default: 1'b0 ; */
@@ -1095,6 +1095,7 @@ n counter value >= 88000/2^i2s_lc_fifo_timeout_shift.*/
 #define I2S_DATE_M  ((I2S_DATE_V)<<(I2S_DATE_S))
 #define I2S_DATE_V  0xFFFFFFF
 #define I2S_DATE_S  0
+
 
 #ifdef __cplusplus
 }

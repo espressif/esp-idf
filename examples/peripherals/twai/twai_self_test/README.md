@@ -25,7 +25,7 @@ idf.py menuconfig
 * Under `Example Configuration`, configure the pin assignments using the options `TX GPIO Number` and `RX GPIO Number` according to how the target was connected to the transceiver. By default, `TX GPIO Number` and `RX GPIO Number` are set to the following values:
     * On the ESP32, `TX GPIO Number` and `RX GPIO Number` default to `21` and `22` respectively
     * On the ESP32-S2, `TX GPIO Number` and `RX GPIO Number` default to `20` and `21` respectively
-    * On the ESP32-S3, `TX GPIO Number` and `RX GPIO Number` default to `20` and `21` respectively
+    * On the ESP32-S3, `TX GPIO Number` and `RX GPIO Number` default to `4` and `5` respectively
     * On the ESP32-C3, `TX GPIO Number` and `RX GPIO Number` default to `2` and `3` respectively
 
 ### Build and Flash

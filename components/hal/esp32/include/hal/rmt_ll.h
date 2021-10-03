@@ -14,8 +14,9 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stddef.h>
+#include "hal/misc.h"
 #include "soc/rmt_struct.h"
-#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -119,23 +120,23 @@ static inline uint32_t rmt_ll_rx_get_mem_blocks(rmt_dev_t *dev, uint32_t channel
 
 static inline void rmt_ll_tx_set_channel_clock_div(rmt_dev_t *dev, uint32_t channel, uint32_t div)
 {
-    dev->conf_ch[channel].conf0.div_cnt = div;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->conf_ch[channel].conf0, div_cnt, div);
 }
 
 static inline void rmt_ll_rx_set_channel_clock_div(rmt_dev_t *dev, uint32_t channel, uint32_t div)
 {
-    dev->conf_ch[channel].conf0.div_cnt = div;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->conf_ch[channel].conf0, div_cnt, div);
 }
 
 static inline uint32_t rmt_ll_tx_get_channel_clock_div(rmt_dev_t *dev, uint32_t channel)
 {
-    uint32_t div = dev->conf_ch[channel].conf0.div_cnt;
+    uint32_t div = HAL_FORCE_READ_U32_REG_FIELD(dev->conf_ch[channel].conf0, div_cnt);
     return div == 0 ? 256 : div;
 }
 
 static inline uint32_t rmt_ll_rx_get_channel_clock_div(rmt_dev_t *dev, uint32_t channel)
 {
-    uint32_t div = dev->conf_ch[channel].conf0.div_cnt;
+    uint32_t div = HAL_FORCE_READ_U32_REG_FIELD(dev->conf_ch[channel].conf0, div_cnt);
     return div == 0 ? 256 : div;
 }
 
@@ -146,12 +147,12 @@ static inline void rmt_ll_tx_enable_pingpong(rmt_dev_t *dev, uint32_t channel, b
 
 static inline void rmt_ll_rx_set_idle_thres(rmt_dev_t *dev, uint32_t channel, uint32_t thres)
 {
-    dev->conf_ch[channel].conf0.idle_thres = thres;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->conf_ch[channel].conf0, idle_thres, thres);
 }
 
 static inline uint32_t rmt_ll_rx_get_idle_thres(rmt_dev_t *dev, uint32_t channel)
 {
-    return dev->conf_ch[channel].conf0.idle_thres;
+    return HAL_FORCE_READ_U32_REG_FIELD(dev->conf_ch[channel].conf0, idle_thres);
 }
 
 static inline void rmt_ll_rx_set_mem_owner(rmt_dev_t *dev, uint32_t channel, uint8_t owner)
@@ -174,6 +175,11 @@ static inline bool rmt_ll_is_tx_loop_enabled(rmt_dev_t *dev, uint32_t channel)
     return dev->conf_ch[channel].conf1.tx_conti_mode;
 }
 
+static inline void rmt_ll_tx_reset_loop(rmt_dev_t *dev, uint32_t channel)
+{
+    // RMT on esp32 doesn't support loop count, adding this only for HAL API consistency
+}
+
 static inline void rmt_ll_rx_enable_filter(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
     dev->conf_ch[channel].conf1.rx_filter_en = enable;
@@ -181,7 +187,7 @@ static inline void rmt_ll_rx_enable_filter(rmt_dev_t *dev, uint32_t channel, boo
 
 static inline void rmt_ll_rx_set_filter_thres(rmt_dev_t *dev, uint32_t channel, uint32_t thres)
 {
-    dev->conf_ch[channel].conf1.rx_filter_thres = thres;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->conf_ch[channel].conf1, rx_filter_thres, thres);
 }
 
 static inline void rmt_ll_tx_enable_idle(rmt_dev_t *dev, uint32_t channel, bool enable)
@@ -217,6 +223,15 @@ static inline uint32_t rmt_ll_tx_get_channel_status(rmt_dev_t *dev, uint32_t cha
 static inline void rmt_ll_tx_set_limit(rmt_dev_t *dev, uint32_t channel, uint32_t limit)
 {
     dev->tx_lim_ch[channel].limit = limit;
+}
+
+static inline void rmt_ll_enable_interrupt(rmt_dev_t *dev, uint32_t mask, bool enable)
+{
+    if (enable) {
+        dev->int_ena.val |= mask;
+    } else {
+        dev->int_ena.val &= ~mask;
+    }
 }
 
 static inline void rmt_ll_enable_tx_end_interrupt(rmt_dev_t *dev, uint32_t channel, bool enable)
@@ -310,14 +325,14 @@ static inline uint32_t rmt_ll_get_tx_thres_interrupt_status(rmt_dev_t *dev)
 
 static inline void rmt_ll_tx_set_carrier_high_low_ticks(rmt_dev_t *dev, uint32_t channel, uint32_t high_ticks, uint32_t low_ticks)
 {
-    dev->carrier_duty_ch[channel].high = high_ticks;
-    dev->carrier_duty_ch[channel].low = low_ticks;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->carrier_duty_ch[channel], high, high_ticks);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->carrier_duty_ch[channel], low, low_ticks);
 }
 
 static inline void rmt_ll_tx_get_carrier_high_low_ticks(rmt_dev_t *dev, uint32_t channel, uint32_t *high_ticks, uint32_t *low_ticks)
 {
-    *high_ticks = dev->carrier_duty_ch[channel].high;
-    *low_ticks = dev->carrier_duty_ch[channel].low;
+    *high_ticks = HAL_FORCE_READ_U32_REG_FIELD(dev->carrier_duty_ch[channel], high);
+    *low_ticks = HAL_FORCE_READ_U32_REG_FIELD(dev->carrier_duty_ch[channel], low);
 }
 
 static inline void rmt_ll_tx_enable_carrier_modulation(rmt_dev_t *dev, uint32_t channel, bool enable)
@@ -330,31 +345,15 @@ static inline void rmt_ll_tx_set_carrier_level(rmt_dev_t *dev, uint32_t channel,
     dev->conf_ch[channel].conf0.carrier_out_lv = level;
 }
 
-//Writes items to the specified TX channel memory with the given offset and writen length.
+//Writes items to the specified TX channel memory with the given offset and length.
 //the caller should ensure that (length + off) <= (memory block * SOC_RMT_MEM_WORDS_PER_CHANNEL)
-static inline void rmt_ll_write_memory(rmt_mem_t *mem, uint32_t channel, const rmt_item32_t *data, uint32_t length, uint32_t off)
+static inline void rmt_ll_write_memory(rmt_mem_t *mem, uint32_t channel, const void *data, size_t length_in_words, size_t off)
 {
-    for (uint32_t i = 0; i < length; i++) {
-        mem->chan[channel].data32[i + off].val = data[i].val;
+    volatile uint32_t *to = (volatile uint32_t *)&mem->chan[channel].data32[off];
+    uint32_t *from = (uint32_t *)data;
+    while (length_in_words--) {
+        *to++ = *from++;
     }
-}
-
-static inline void rmt_ll_config_update(rmt_dev_t *dev, uint32_t channel)
-{
-}
-
-/************************************************************************************************
- * Following Low Level APIs only used for backward compatible, will be deprecated in the IDF v5.0
- ***********************************************************************************************/
-
-static inline void rmt_ll_set_intr_enable_mask(uint32_t mask)
-{
-    RMT.int_ena.val |= mask;
-}
-
-static inline void rmt_ll_clr_intr_enable_mask(uint32_t mask)
-{
-    RMT.int_ena.val &= (~mask);
 }
 
 #ifdef __cplusplus

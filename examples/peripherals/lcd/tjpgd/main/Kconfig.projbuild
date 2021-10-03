@@ -1,0 +1,10 @@
+menu "Example Configuration"
+    config EXAMPLE_LCD_SPI_8_LINE_MODE
+        bool
+        prompt "Drive a LCD with 8 data lines"
+        depends on IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+        default "n"
+        help
+            This option can be chosen when using 8-line lcd.
+
+endmenu

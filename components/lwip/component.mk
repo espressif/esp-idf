@@ -35,9 +35,20 @@ ifndef CONFIG_VFS_SUPPORT_IO
 else
     COMPONENT_OBJEXCLUDE += port/esp32/no_vfs_syscalls.o
 endif
+ifndef CONFIG_OPENTHREAD_ENABLED
+    COMPONENT_OBJEXCLUDE += port/esp32/netif/openthreadif.o
+endif
+
+ifndef CONFIG_LWIP_ICMP
+    COMPONENT_OBJEXCLUDE += apps/ping/esp_ping.o apps/ping/ping.o apps/ping/ping_sock.o
+endif
 
 ifdef CONFIG_LWIP_PPP_SUPPORT
     COMPONENT_SRCDIRS += lwip/src/netif/ppp lwip/src/netif/ppp/polarssl
+endif
+
+ifndef CONFIG_LWIP_DHCPS
+    COMPONENT_OBJEXCLUDE += apps/dhcpserver/dhcpserver.o
 endif
 
 CFLAGS += -Wno-address  # lots of LWIP source files evaluate macros that check address of stack variables

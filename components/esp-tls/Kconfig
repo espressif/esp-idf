@@ -26,7 +26,8 @@ menu "ESP-TLS"
 
     config ESP_TLS_USE_DS_PERIPHERAL
         bool "Use Digital Signature (DS) Peripheral with ESP-TLS"
-        depends on (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S2) && ESP_TLS_USING_MBEDTLS
+        depends on (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32S3)
+        depends on ESP_TLS_USING_MBEDTLS
         default y
         help
             Enable use of the Digital Signature Peripheral for ESP-TLS.The DS peripheral
@@ -39,6 +40,27 @@ menu "ESP-TLS"
         help
             Enable support for creating server side SSL/TLS session, available for mbedTLS
             as well as wolfSSL TLS library.
+
+    config ESP_TLS_CLIENT_SESSION_TICKETS
+        bool "Enable client session tickets"
+        depends on ESP_TLS_USING_MBEDTLS && MBEDTLS_CLIENT_SSL_SESSION_TICKETS
+        default n
+        help
+            Enable session ticket support as specified in RFC5077.
+
+    config ESP_TLS_SERVER_SESSION_TICKETS
+        bool "Enable server session tickets"
+        depends on ESP_TLS_SERVER && ESP_TLS_USING_MBEDTLS && MBEDTLS_SERVER_SSL_SESSION_TICKETS
+        default n
+        help
+            Enable session ticket support as specified in RFC5077
+
+    config ESP_TLS_SERVER_SESSION_TICKET_TIMEOUT
+        int "Server session ticket timeout in seconds"
+        depends on ESP_TLS_SERVER_SESSION_TICKETS
+        default 86400
+        help
+            Sets the session ticket timeout used in the tls server.
 
     config ESP_TLS_PSK_VERIFICATION
         bool "Enable PSK verification"

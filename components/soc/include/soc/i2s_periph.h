@@ -1,4 +1,4 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,16 +27,21 @@ extern "C" {
  Stores a bunch of per-I2S-peripheral data.
 */
 typedef struct {
-    const uint8_t o_bck_in_sig;
-    const uint8_t o_ws_in_sig;
-    const uint8_t o_bck_out_sig;
-    const uint8_t o_ws_out_sig;
-    const uint8_t o_data_out_sig;
-    const uint8_t i_bck_in_sig;
-    const uint8_t i_ws_in_sig;
-    const uint8_t i_bck_out_sig;
-    const uint8_t i_ws_out_sig;
-    const uint8_t i_data_in_sig;
+    const uint8_t mck_out_sig;
+
+    const uint8_t m_tx_bck_sig;
+    const uint8_t m_rx_bck_sig;
+    const uint8_t m_tx_ws_sig;
+    const uint8_t m_rx_ws_sig;
+
+    const uint8_t s_tx_bck_sig;
+    const uint8_t s_rx_bck_sig;
+    const uint8_t s_tx_ws_sig;
+    const uint8_t s_rx_ws_sig;
+
+    const uint8_t data_out_sig;
+    const uint8_t data_in_sig;
+
     const uint8_t irq;
     const periph_module_t module;
 } i2s_signal_conn_t;

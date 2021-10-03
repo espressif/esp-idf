@@ -1,0 +1,10 @@
+menu "LCD and Touch Panel"
+    menu "LCD Peripheral Configuration"
+        config LCD_PANEL_IO_FORMAT_BUF_SIZE
+            int "LCD panel io format buffer size"
+            default 32
+            help
+                LCD driver allocates an internal buffer to transform the data into a proper format, because of
+                the endian order mismatch. This option is to set the size of the buffer, in bytes.
+    endmenu
+endmenu

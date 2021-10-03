@@ -24,6 +24,7 @@
 #include "esp_partition.h"
 #include "esp_flash_encrypt.h"
 #include "esp_log.h"
+#include "esp_rom_md5.h"
 #include "bootloader_common.h"
 #include "bootloader_util.h"
 #include "esp_ota_ops.h"
@@ -35,8 +36,6 @@
 #define INVARIANTS
 #endif
 #include "sys/queue.h"
-
-
 
 typedef struct partition_list_item_ {
     esp_partition_t info;
@@ -88,6 +87,11 @@ esp_partition_iterator_t esp_partition_find(esp_partition_type_t type,
     if (ensure_partitions_loaded() != ESP_OK) {
         return NULL;
     }
+    // Searching for a specific subtype without specifying the type doesn't make
+    // sense, and is likely a usage error.
+    if (type == ESP_PARTITION_TYPE_ANY && subtype != ESP_PARTITION_SUBTYPE_ANY) {
+        return NULL;
+    }
     // create an iterator pointing to the start of the list
     // (next item will be the first one)
     esp_partition_iterator_t it = iterator_create(type, subtype, label);
@@ -108,10 +112,10 @@ esp_partition_iterator_t esp_partition_next(esp_partition_iterator_t it)
     _lock_acquire(&s_partition_list_lock);
     for (; it->next_item != NULL; it->next_item = SLIST_NEXT(it->next_item, next)) {
         esp_partition_t* p = &it->next_item->info;
-        if (it->type != p->type) {
+        if (it->type != ESP_PARTITION_TYPE_ANY && it->type != p->type) {
             continue;
         }
-        if (it->subtype != 0xff && it->subtype != p->subtype) {
+        if (it->subtype != ESP_PARTITION_SUBTYPE_ANY && it->subtype != p->subtype) {
             continue;
         }
         if (it->label != NULL && strcmp(it->label, p->label) != 0) {
@@ -159,24 +163,53 @@ static esp_partition_iterator_opaque_t* iterator_create(esp_partition_type_t typ
 // This function is called only once, with s_partition_list_lock taken.
 static esp_err_t load_partitions(void)
 {
-    const uint32_t* ptr;
+    const uint8_t *p_start;
+    const uint8_t *p_end;
     spi_flash_mmap_handle_t handle;
+
+    // Temporary list of loaded partitions, if valid then we copy this to s_partition_list
+    typeof(s_partition_list) new_partitions_list = SLIST_HEAD_INITIALIZER(s_partition_list);
+    partition_list_item_t* last = NULL;
+
+#if CONFIG_PARTITION_TABLE_MD5
+    const uint8_t *md5_part = NULL;
+    const uint8_t *stored_md5;
+    uint8_t calc_md5[ESP_ROM_MD5_DIGEST_LEN];
+    md5_context_t context;
+
+    esp_rom_md5_init(&context);
+#endif
+
     // map 64kB block where partition table is located
     esp_err_t err = spi_flash_mmap(ESP_PARTITION_TABLE_OFFSET & 0xffff0000,
-            SPI_FLASH_SEC_SIZE, SPI_FLASH_MMAP_DATA, (const void**) &ptr, &handle);
+                                   SPI_FLASH_SEC_SIZE, SPI_FLASH_MMAP_DATA, (const void **)&p_start, &handle);
     if (err != ESP_OK) {
         return err;
     }
     // calculate partition address within mmap-ed region
-    const esp_partition_info_t* it = (const esp_partition_info_t*)
-            (ptr + (ESP_PARTITION_TABLE_OFFSET & 0xffff) / sizeof(*ptr));
-    const esp_partition_info_t* end = it + SPI_FLASH_SEC_SIZE / sizeof(*it);
-    // tail of the linked list of partitions
-    partition_list_item_t* last = NULL;
-    for (; it != end; ++it) {
-        if (it->magic != ESP_PARTITION_MAGIC) {
+    p_start += (ESP_PARTITION_TABLE_OFFSET & 0xffff);
+    p_end = p_start + SPI_FLASH_SEC_SIZE;
+
+    for(const uint8_t *p_entry = p_start; p_entry < p_end; p_entry += sizeof(esp_partition_info_t)) {
+        esp_partition_info_t entry;
+        // copying to RAM instead of using pointer to flash to avoid any chance of TOCTOU due to cache miss
+        // when flash encryption is used
+        memcpy(&entry, p_entry, sizeof(entry));
+
+#if CONFIG_PARTITION_TABLE_MD5
+        if (entry.magic == ESP_PARTITION_MAGIC_MD5) {
+            md5_part = p_entry;
             break;
         }
+#endif
+        if (entry.magic != ESP_PARTITION_MAGIC) {
+            break;
+        }
+
+#if CONFIG_PARTITION_TABLE_MD5
+        esp_rom_md5_update(&context, &entry, sizeof(entry));
+#endif
+
         // allocate new linked list item and populate it with data from partition table
         partition_list_item_t* item = (partition_list_item_t*) calloc(sizeof(partition_list_item_t), 1);
         if (item == NULL) {
@@ -184,35 +217,70 @@ static esp_err_t load_partitions(void)
             break;
         }
         item->info.flash_chip = esp_flash_default_chip;
-        item->info.address = it->pos.offset;
-        item->info.size = it->pos.size;
-        item->info.type = it->type;
-        item->info.subtype = it->subtype;
-        item->info.encrypted = it->flags & PART_FLAG_ENCRYPTED;
+        item->info.address = entry.pos.offset;
+        item->info.size = entry.pos.size;
+        item->info.type = entry.type;
+        item->info.subtype = entry.subtype;
+        item->info.encrypted = entry.flags & PART_FLAG_ENCRYPTED;
         item->user_registered = false;
 
         if (!esp_flash_encryption_enabled()) {
             /* If flash encryption is not turned on, no partitions should be treated as encrypted */
             item->info.encrypted = false;
-        } else if (it->type == PART_TYPE_APP
-                || (it->type == PART_TYPE_DATA && it->subtype == PART_SUBTYPE_DATA_OTA)
-                || (it->type == PART_TYPE_DATA && it->subtype == PART_SUBTYPE_DATA_NVS_KEYS)) {
+        } else if (entry.type == PART_TYPE_APP
+                || (entry.type == PART_TYPE_DATA && entry.subtype == PART_SUBTYPE_DATA_OTA)
+                || (entry.type == PART_TYPE_DATA && entry.subtype == PART_SUBTYPE_DATA_NVS_KEYS)) {
             /* If encryption is turned on, all app partitions and OTA data
                are always encrypted */
             item->info.encrypted = true;
         }
 
-        // it->label may not be zero-terminated
-        strncpy(item->info.label, (const char*) it->label, sizeof(item->info.label) - 1);
-        item->info.label[sizeof(it->label)] = 0;
+        // item->info.label is initialized by calloc, so resulting string will be null terminated
+        strncpy(item->info.label, (const char*) entry.label, sizeof(item->info.label) - 1);
+
         // add it to the list
         if (last == NULL) {
-            SLIST_INSERT_HEAD(&s_partition_list, item, next);
+            SLIST_INSERT_HEAD(&new_partitions_list, item, next);
         } else {
             SLIST_INSERT_AFTER(last, item, next);
         }
         last = item;
     }
+
+#if CONFIG_PARTITION_TABLE_MD5
+    if (md5_part == NULL) {
+        ESP_LOGE(TAG, "No MD5 found in partition table");
+        err = ESP_ERR_NOT_FOUND;
+    } else {
+        stored_md5 = md5_part + ESP_PARTITION_MD5_OFFSET;
+
+        esp_rom_md5_final(calc_md5, &context);
+
+        ESP_LOG_BUFFER_HEXDUMP("calculated md5", calc_md5, ESP_ROM_MD5_DIGEST_LEN, ESP_LOG_VERBOSE);
+        ESP_LOG_BUFFER_HEXDUMP("stored md5", stored_md5, ESP_ROM_MD5_DIGEST_LEN, ESP_LOG_VERBOSE);
+
+        if (memcmp(calc_md5, stored_md5, ESP_ROM_MD5_DIGEST_LEN) != 0) {
+            ESP_LOGE(TAG, "Partition table MD5 mismatch");
+            err = ESP_ERR_INVALID_STATE;
+        } else {
+            ESP_LOGD(TAG, "Partition table MD5 verified");
+        }
+    }
+#endif
+
+    if (err == ESP_OK) {
+        /* Don't copy the list to the static variable unless it's verified */
+        s_partition_list = new_partitions_list;
+    } else {
+        /* Otherwise, free all the memory we just allocated */
+        partition_list_item_t *it = new_partitions_list.slh_first;
+        while (it) {
+            partition_list_item_t *next = it->next.sle_next;
+            free(it);
+            it = next;
+        }
+    }
+
     spi_flash_munmap(handle);
     return err;
 }

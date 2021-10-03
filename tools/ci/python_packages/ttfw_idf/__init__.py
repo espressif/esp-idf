@@ -16,6 +16,7 @@ import json
 import logging
 import os
 import re
+from collections import defaultdict
 from copy import deepcopy
 
 import junit_xml
@@ -23,19 +24,23 @@ from tiny_test_fw import TinyFW, Utility
 
 from .DebugUtils import CustomProcess, GDBBackend, OCDBackend  # noqa: export DebugUtils for users
 from .IDFApp import UT, ComponentUTApp, Example, IDFApp, LoadableElfTestApp, TestApp  # noqa: export all Apps for users
-from .IDFDUT import ESP32C3DUT, ESP32DUT, ESP32QEMUDUT, ESP32S2DUT, ESP8266DUT, IDFDUT  # noqa: export DUTs for users
+from .IDFDUT import (ESP32C3DUT, ESP32C3FPGADUT, ESP32DUT, ESP32QEMUDUT, ESP32S2DUT,  # noqa: export DUTs for users
+                     ESP32S3DUT, ESP32S3FPGADUT, ESP8266DUT, IDFDUT)
 from .unity_test_parser import TestFormat, TestResults
 
 # pass TARGET_DUT_CLS_DICT to Env.py to avoid circular dependency issue.
 TARGET_DUT_CLS_DICT = {
     'ESP32': ESP32DUT,
     'ESP32S2': ESP32S2DUT,
+    'ESP32S3': ESP32S3DUT,
     'ESP32C3': ESP32C3DUT,
+    'ESP32C3FPGA': ESP32C3FPGADUT,
+    'ESP32S3FPGA': ESP32S3FPGADUT,
 }
 
 
 try:
-    string_type = basestring
+    string_type = basestring  # type: ignore
 except NameError:
     string_type = str
 
@@ -79,7 +84,11 @@ def local_test_check(decorator_target):
 
     if isinstance(decorator_target, list):
         if idf_target not in decorator_target:
-            raise ValueError('IDF_TARGET set to {}, not in decorator target value'.format(idf_target))
+            fpga_target = ''.join((idf_target, 'FPGA'))
+            if fpga_target not in decorator_target:
+                raise ValueError('IDF_TARGET set to {}, not in decorator target value'.format(idf_target))
+            else:
+                idf_target = fpga_target
     else:
         if idf_target != decorator_target:
             raise ValueError('IDF_TARGET set to {}, not equal to decorator target value'.format(idf_target))
@@ -221,16 +230,23 @@ class ComponentUTResult:
     Function Class, parse component unit test results
     """
 
+    results_list = defaultdict(list)   # type: dict[str, list[junit_xml.TestSuite]]
+
+    """
+    For origin unity test cases with macro "TEST", please set "test_format" to "TestFormat.UNITY_FIXTURE_VERBOSE".
+    For IDF unity test cases with macro "TEST CASE", please set "test_format" to "TestFormat.UNITY_BASIC".
+    """
     @staticmethod
-    def parse_result(stdout):
+    def parse_result(stdout, test_format=TestFormat.UNITY_FIXTURE_VERBOSE):
         try:
-            results = TestResults(stdout, TestFormat.UNITY_FIXTURE_VERBOSE)
+            results = TestResults(stdout, test_format)
         except (ValueError, TypeError) as e:
             raise ValueError('Error occurs when parsing the component unit test stdout to JUnit report: ' + str(e))
 
         group_name = results.tests()[0].group()
+        ComponentUTResult.results_list[group_name].append(results.to_junit())
         with open(os.path.join(os.getenv('LOG_PATH', ''), '{}_XUNIT_RESULT.xml'.format(group_name)), 'w') as fw:
-            junit_xml.to_xml_report_file(fw, [results.to_junit()])
+            junit_xml.to_xml_report_file(fw, ComponentUTResult.results_list[group_name])
 
         if results.num_failed():
             # raise exception if any case fails

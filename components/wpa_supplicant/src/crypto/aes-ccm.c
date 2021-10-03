@@ -8,10 +8,9 @@
  */
 
 #ifdef CONFIG_IEEE80211W
+#include "includes.h"
 
-#include "utils/includes.h"
-
-#include "utils/common.h"
+#include "common.h"
 #include "aes.h"
 #include "aes_wrap.h"
 
@@ -177,10 +176,9 @@ int aes_ccm_ae(const u8 *key, size_t key_len, const u8 *nonce,
 
 
 /* AES-CCM with fixed L=2 and aad_len <= 30 assumption */
-int aes_ccm_ad(const u8 *key, size_t key_len, u8 *nonce,
+int aes_ccm_ad(const u8 *key, size_t key_len, const u8 *nonce,
 	       size_t M, const u8 *crypt, size_t crypt_len,
-	       const u8 *aad, size_t aad_len, const u8 *auth,
-	       u8 *plain, bool skip_auth)
+	       const u8 *aad, size_t aad_len, const u8 *auth, u8 *plain)
 {
 	const size_t L = 2;
 	void *aes;
@@ -201,17 +199,12 @@ int aes_ccm_ad(const u8 *key, size_t key_len, u8 *nonce,
 	/* plaintext = msg XOR (S_1 | S_2 | ... | S_n) */
 	aes_ccm_encr(aes, L, crypt, crypt_len, plain, a);
 
-	if (skip_auth) {
-		aes_encrypt_deinit(aes);
-		return 0;
-	}
-
 	aes_ccm_auth_start(aes, M, L, nonce, aad, aad_len, crypt_len, x);
 	aes_ccm_auth(aes, plain, crypt_len, x);
 
 	aes_encrypt_deinit(aes);
 
-	if (os_memcmp(x, t, M) != 0) {
+	if (os_memcmp_const(x, t, M) != 0) {
 		wpa_printf(MSG_DEBUG, "CCM: Auth mismatch");
 		return -1;
 	}

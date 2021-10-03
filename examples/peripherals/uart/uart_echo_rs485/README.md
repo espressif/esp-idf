@@ -9,7 +9,7 @@ The approach demonstrated in this example can be used in user application to tra
 ## How to use example
 
 ### Hardware Required
-PC + USB Serial adapter connected to USB port + RS485 line drivers + ESP32-WROVER-KIT board.
+PC + USB Serial adapter connected to USB port + RS485 line drivers + ESP32, ESP32-S or ESP32-C series based board.
 The MAX485 line driver is used for example below but other similar chips can be used as well.
 
 #### RS485 example connection circuit schematic:
@@ -20,7 +20,7 @@ The MAX485 line driver is used for example below but other similar chips can be 
          RXD <------| RO            |               |             RO|-----> RXD
                     |              B|---------------|B              |
          TXD ------>| DI  MAX485    |    \  /       |    MAX485   DI|<----- TXD
-ESP32-WROVER-KIT    |               |   RS-485 side |               |  SERIAL ADAPTER SIDE
+ESP dev kit         |               |   RS-485 side |               |  SERIAL ADAPTER SIDE
          RTS --+--->| DE            |    /  \       |             DE|---+
                |    |              A|---------------|A              |   |
                +----| /RE           |               |            /RE|---+-- RTS
@@ -29,19 +29,19 @@ ESP32-WROVER-KIT    |               |   RS-485 side |               |  SERIAL AD
                            ---                             ---
 ```
 
-#### Connect an external RS485 serial interface to an ESP32 board
-Connect USB to RS485 adapter to computer and connect its D+, D- output lines with the D+, D- lines of RS485 line driver connected to ESP32 (See picture above).
+#### Connect an external RS485 serial interface to an ESP board
+Connect USB to RS485 adapter to computer and connect its D+, D- output lines with the D+, D- lines of RS485 line driver connected to the ESP board (See picture above). To view or adjust default pins please see the `Echo RS485 Example Configuration` submenu in `idf.py menuconfig`.
 ```
-  --------------------------------------------------------------------------------------------------------------------------
-  | ESP32 Interface       | #define            | Default ESP32 Pin     | Default ESP32-S2 Pins | External RS485 Driver Pin |
-  | ----------------------|--------------------|-----------------------|-----------------------|---------------------------|
-  | Transmit Data (TxD)   | CONFIG_MB_UART_TXD | GPIO23                | GPIO20                | DI                        |
-  | Receive Data (RxD)    | CONFIG_MB_UART_RXD | GPIO22                | GPIO19                | RO                        |
-  | Request To Send (RTS) | CONFIG_MB_UART_RTS | GPIO18                | GPIO18                | ~RE/DE                    |
-  | Ground                | n/a                | GND                   | GND                   | GND                       |
-  --------------------------------------------------------------------------------------------------------------------------
+  --------------------------------------------------------------------------------------------------
+  | ESP Interface         | #define            | Default ESP Pin       | External RS485 Driver Pin |
+  | ----------------------|--------------------|-----------------------|---------------------------|
+  | Transmit Data (TxD)   | CONFIG_MB_UART_TXD | CONFIG_ECHO_UART_TXD  | DI                        |
+  | Receive Data (RxD)    | CONFIG_MB_UART_RXD | CONFIG_ECHO_UART_RXD  | RO                        |
+  | Request To Send (RTS) | CONFIG_MB_UART_RTS | CONFIG_ECHO_UART_RTS  | ~RE/DE                    |
+  | Ground                | n/a                | GND                   | GND                       |
+  --------------------------------------------------------------------------------------------------
 ```
-Note: The GPIO22 - GPIO25 can not be used with ESP32-S2 chip because they are used for flash chip connection. Please refer to UART documentation for selected target.
+Note: Some GPIOs can not be used with some chip because they are used for flash chip connection. Please refer to UART documentation for selected target.
 
 ### Configure the project
 ```
@@ -62,7 +62,7 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 Refer to the example and set up a serial terminal program to the same settings as of UART in ESP32-WROVER-KIT board.
 Open the external serial interface in the terminal. By default if no any symbols are received, the application sends character `.` to check transmission side.
 When typing message and push send button in the terminal you should see the message `RS485 Received: [ your message ]`, where "your message" is the message you sent from terminal.
-Verify if echo indeed comes from ESP32 by disconnecting either `TxD` or `RxD` pin. Once done there should be no any `.` displayed.
+Verify if echo indeed comes from your board by disconnecting either `TxD` or `RxD` pin. Once done there should be no any `.` displayed.
 
 ## Example Output
 Example output of the application:

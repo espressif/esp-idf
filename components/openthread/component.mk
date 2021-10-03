@@ -34,17 +34,32 @@ COMPONENT_SRCDIRS :=                      \
     openthread/src/lib/spinel             \
     port
 
+ifdef CONFIG_OPENTHREAD_BORDER_ROUTER
+COMPONENT_SRCDIRS += openthread/src/core/border_router
+endif
+
 COMPONENT_OBJEXCLUDE :=                              \
     openthread/examples/apps/cli/main.o              \
     openthread/src/core/common/extension_example.o   \
+
+
+COMPONENT_SUBMODULES += lib
+
+ALL_LIB_FILES := $(COMPONENT_PATH)/lib/$(IDF_TARGET)/libopenthread_port.a
+
+ifdef CONFIG_OPENTHREAD_BORDER_ROUTER
+    ALL_LIB_FILES += $(COMPONENT_PATH)/lib/$(IDF_TARGET)/libopenthread_br.a
+endif
+COMPONENT_ADD_LDFLAGS += $(ALL_LIB_FILES)
 
 IDF_VERSION_FOR_OPENTHREAD_PACKAGE := $(shell git -C $(COMPONENT_PATH) rev-parse --short HEAD)
 OPENTHREAD_VERSION := $(shell git -C $(COMPONENT_PATH)/openthread rev-parse --short HEAD)
 OPENTHREAD_PACKAGE_VERSION := $(IDF_VERSION_FOR_OPENTHREAD_PACKAGE)-$(OPENTHREAD_VERSION)
 
 COMMON_FLAGS :=                                                              \
-    -DOPENTHREAD_CONFIG_FILE=\<openthread-core-esp32x-config.h\>             \
-    -DPACKAGE_VERSION=\"OPENTHREAD_PACKAGE_VERSION\"
+    -DOPENTHREAD_CONFIG_FILE=\<openthread-core-esp32x-ftd-config.h\>             \
+    -DPACKAGE_VERSION=\"OPENTHREAD_PACKAGE_VERSION\"                         \
+    -Wno-maybe-uninitialized
 
 ifdef CONFIG_OPENTHREAD_FTD
     COMMON_FLAGS += -DOPENTHREAD_FTD=1

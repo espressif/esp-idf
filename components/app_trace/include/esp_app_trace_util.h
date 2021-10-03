@@ -12,6 +12,7 @@ extern "C" {
 
 #include "freertos/FreeRTOS.h"
 #include "esp_err.h"
+#include "esp_timer.h"
 
 /** Infinite waiting timeout */
 #define ESP_APPTRACE_TMO_INFINITE               ((uint32_t)-1)
@@ -22,9 +23,9 @@ extern "C" {
  *  periodically to check timeout for expiration.
  */
 typedef struct {
-    uint32_t   start;   ///< time interval start (in CPU ticks)
-    uint32_t   tmo;     ///< timeout value (in us)
-    uint32_t   elapsed; ///< elapsed time (in us)
+    int64_t   start;   ///< time interval start (in us)
+    int64_t   tmo;     ///< timeout value (in us)
+    int64_t   elapsed; ///< elapsed time (in us)
 } esp_apptrace_tmo_t;
 
 /**
@@ -35,23 +36,23 @@ typedef struct {
 */
 static inline void esp_apptrace_tmo_init(esp_apptrace_tmo_t *tmo, uint32_t user_tmo)
 {
-    tmo->start = portGET_RUN_TIME_COUNTER_VALUE();
-    tmo->tmo = user_tmo;
+    tmo->start = esp_timer_get_time();
+    tmo->tmo = user_tmo == ESP_APPTRACE_TMO_INFINITE ? (int64_t)-1 : (int64_t)user_tmo;
     tmo->elapsed = 0;
 }
 
 /**
  * @brief Checks timeout for expiration.
  *
- * @param tmo Pointer to timeout structure to be initialized.
+ * @param tmo Pointer to timeout structure.
  *
- * @return ESP_OK on success, otherwise \see esp_err_t
+ * @return number of remaining us till tmo.
  */
 esp_err_t esp_apptrace_tmo_check(esp_apptrace_tmo_t *tmo);
 
 static inline uint32_t esp_apptrace_tmo_remaining_us(esp_apptrace_tmo_t *tmo)
 {
-    return tmo->tmo != ESP_APPTRACE_TMO_INFINITE ? (tmo->elapsed - tmo->tmo) : ESP_APPTRACE_TMO_INFINITE;
+    return tmo->tmo != (int64_t)-1 ? (tmo->elapsed - tmo->tmo) : ESP_APPTRACE_TMO_INFINITE;
 }
 
 /** Tracing module synchronization lock */
@@ -159,6 +160,30 @@ uint32_t esp_apptrace_rb_read_size_get(esp_apptrace_rb_t *rb);
  * @note Due to write pointer wrapping returned size can be less then the total size of available data.
  */
 uint32_t esp_apptrace_rb_write_size_get(esp_apptrace_rb_t *rb);
+
+int esp_apptrace_log_lock(void);
+void esp_apptrace_log_unlock(void);
+
+#define ESP_APPTRACE_LOG( format, ... )   \
+    do { \
+        esp_apptrace_log_lock(); \
+        esp_rom_printf(format, ##__VA_ARGS__); \
+        esp_apptrace_log_unlock(); \
+    } while(0)
+
+#define ESP_APPTRACE_LOG_LEV( _L_, level, format, ... )   \
+    do { \
+        if (LOG_LOCAL_LEVEL >= level) { \
+            ESP_APPTRACE_LOG(LOG_FORMAT(_L_, format), esp_log_early_timestamp(), TAG, ##__VA_ARGS__); \
+        } \
+    } while(0)
+
+#define ESP_APPTRACE_LOGE( format, ... )  ESP_APPTRACE_LOG_LEV(E, ESP_LOG_ERROR, format, ##__VA_ARGS__)
+#define ESP_APPTRACE_LOGW( format, ... )  ESP_APPTRACE_LOG_LEV(W, ESP_LOG_WARN, format, ##__VA_ARGS__)
+#define ESP_APPTRACE_LOGI( format, ... )  ESP_APPTRACE_LOG_LEV(I, ESP_LOG_INFO, format, ##__VA_ARGS__)
+#define ESP_APPTRACE_LOGD( format, ... )  ESP_APPTRACE_LOG_LEV(D, ESP_LOG_DEBUG, format, ##__VA_ARGS__)
+#define ESP_APPTRACE_LOGV( format, ... )  ESP_APPTRACE_LOG_LEV(V, ESP_LOG_VERBOSE, format, ##__VA_ARGS__)
+#define ESP_APPTRACE_LOGO( format, ... )  ESP_APPTRACE_LOG_LEV(E, ESP_LOG_NONE, format, ##__VA_ARGS__)
 
 #ifdef __cplusplus
 }

@@ -56,11 +56,13 @@ typedef struct {
     int cts_io_num;                 /*!< CTS Pin Number */
     int rx_buffer_size;             /*!< UART RX Buffer Size */
     int tx_buffer_size;             /*!< UART TX Buffer Size */
-    int pattern_queue_size;         /*!< UART Pattern Queue Size */
     int event_queue_size;           /*!< UART Event Queue Size */
     uint32_t event_task_stack_size; /*!< UART Event Task Stack size */
     int event_task_priority;        /*!< UART Event Task Priority */
-    int line_buffer_size;           /*!< Line buffer size for command mode */
+    union {
+        int dte_buffer_size;        /*!< Internal buffer size */
+        int line_buffer_size;       /*!< Compatible option for the internal buffer size */
+    };
 } esp_modem_dte_config_t;
 
 /**
@@ -87,11 +89,10 @@ typedef esp_err_t (*esp_modem_on_receive)(void *buffer, size_t len, void *contex
         .cts_io_num = 23,                       \
         .rx_buffer_size = 1024,                 \
         .tx_buffer_size = 512,                  \
-        .pattern_queue_size = 20,               \
         .event_queue_size = 30,                 \
         .event_task_stack_size = 2048,          \
         .event_task_priority = 5,               \
-        .line_buffer_size = 512                 \
+        .dte_buffer_size = 512                  \
     }
 
 /**

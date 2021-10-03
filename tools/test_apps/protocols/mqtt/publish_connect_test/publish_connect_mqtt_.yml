@@ -1,0 +1,2 @@
+CaseConfig:
+- name: test_app_protocol_mqtt_publish_connect

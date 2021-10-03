@@ -9,10 +9,10 @@ if BLE_MESH
     config BLE_MESH_USE_DUPLICATE_SCAN
         bool "Support Duplicate Scan in BLE Mesh"
         depends on BT_BLUEDROID_ENABLED
-        select BTDM_BLE_SCAN_DUPL if BT_CTRL_ESP32
-        select BTDM_BLE_MESH_SCAN_DUPL_EN if BT_CTRL_ESP32
-        select BT_CTRL_BLE_SCAN_DUPL if BT_CTRL_ESP32C3
-        select BT_CTRL_BLE_MESH_SCAN_DUPL_EN if BT_CTRL_ESP32C3
+        select BTDM_BLE_SCAN_DUPL if IDF_TARGET_ESP32
+        select BTDM_BLE_MESH_SCAN_DUPL_EN if IDF_TARGET_ESP32
+        select BT_CTRL_BLE_SCAN_DUPL if IDF_TARGET_ESP32C3
+        select BT_CTRL_BLE_MESH_SCAN_DUPL_EN if IDF_TARGET_ESP32C3
         default y
         help
             Enable this option to allow using specific duplicate scan filter
@@ -33,20 +33,25 @@ if BLE_MESH
               behavior in ESP-IDF
             - Internal IRAM memory wherever applicable else internal DRAM
 
-            Recommended mode here is always internal, since that is most preferred
-            from security perspective. But if application requirement does not allow
-            sufficient free internal memory then alternate mode can be selected.
+            Recommended mode here is always internal (*), since that is most preferred
+            from security perspective. But if application requirement does not
+            allow sufficient free internal memory then alternate mode can be
+            selected.
+
+            (*) In case of ESP32-S2/ESP32-S3, hardware allows encryption of external
+            SPIRAM contents provided hardware flash encryption feature is enabled.
+            In that case, using external SPIRAM allocation strategy is also safe choice
+            from security perspective.
 
         config BLE_MESH_MEM_ALLOC_MODE_INTERNAL
             bool "Internal DRAM"
 
         config BLE_MESH_MEM_ALLOC_MODE_EXTERNAL
             bool "External SPIRAM"
-            depends on ESP32_SPIRAM_SUPPORT
+            depends on SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC
 
         config BLE_MESH_MEM_ALLOC_MODE_DEFAULT
             bool "Default alloc mode"
-            depends on ESP32_SPIRAM_SUPPORT
             help
                 Enable this option to use the default memory allocation strategy when
                 external SPIRAM is enabled. See the SPIRAM options for more details.
@@ -266,6 +271,19 @@ if BLE_MESH
             Enable this option to allow the device to be provisioned over the
             advertising bearer. This option should be enabled if PB-ADV is
             going to be used during provisioning procedure.
+
+    config BLE_MESH_UNPROVISIONED_BEACON_INTERVAL
+        int "Interval between two consecutive Unprovisioned Device Beacon"
+        depends on BLE_MESH_NODE && BLE_MESH_PB_ADV
+        default 5
+        default 3 if BLE_MESH_FAST_PROV
+        range 1 100
+        help
+            This option specifies the interval of sending two consecutive unprovisioned
+            device beacon, users can use this option to change the frequency of sending
+            unprovisioned device beacon. For example, if the value is 5, it means the
+            unprovisioned device beacon will send every 5 seconds. When the option of
+            BLE_MESH_FAST_PROV is selected, the value is better to be 3 seconds, or less.
 
     config BLE_MESH_PB_GATT
         bool "Provisioning support using GATT (PB-GATT)"

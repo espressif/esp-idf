@@ -136,7 +136,7 @@ static esp_err_t common_post_handler(httpd_req_t *req)
     size_t recv_size = 0;
     while (recv_size < req->content_len) {
         ret = httpd_req_recv(req, req_body + recv_size, req->content_len - recv_size);
-        if (ret < 0) {
+        if (ret <= 0) {
             ret = ESP_FAIL;
             goto out;
         }

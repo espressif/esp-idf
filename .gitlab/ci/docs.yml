@@ -1,8 +1,44 @@
+.patterns-docs: &patterns-docs
+  - ".gitlab/ci/docs.yml"
+  - "docs/**/*"
+  - "components/**/*.h"
+  - "components/**/Kconfig*"
+  - "components/**/CMakeList.txt"
+  - "components/**/sdkconfig*"
+  - "tools/kconfig_new/**/*"
+  - "CONTRIBUTING.rst"
+
+.if-protected: &if-protected
+  if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/ || $CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/)'
+
+.if-protected-no_label: &if-protected-no_label
+  if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/ || $CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/) && $BOT_TRIGGER_WITH_LABEL == null'
+
+.if-label-build_docs: &if-label-build_docs
+  if: '$BOT_LABEL_BUILD_DOCS || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*build_docs(?:,[^,\n\r]+)*$/i'
+
+.if-label-docs: &if-label-docs
+  if: '$BOT_LABEL_DOCS || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*docs(?:,[^,\n\r]+)*$/i'
+
+.if-label-docs_full: &if-label-docs_full
+  if: '$BOT_LABEL_DOCS_FULL || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*docs_full(?:,[^,\n\r]+)*$/i'
+
+.if-dev-push: &if-dev-push
+  if: '$CI_COMMIT_REF_NAME != "master" && $CI_COMMIT_BRANCH !~ /^release\/v/ && $CI_COMMIT_TAG !~ /^v\d+\.\d+(\.\d+)?($|-)/ && ($CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "merge_request_event")'
+
+.doc-rules:build:docs:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build_docs
+    - <<: *if-label-docs
+    - <<: *if-label-docs_full
+    - <<: *if-dev-push
+      changes: *patterns-docs
+
 # stage: pre_check
 check_readme_links:
   extends:
     - .pre_check_job_template
-    - .rules:build:docs
   tags: ["build", "amd64", "internet"]
   allow_failure: true
   script:
@@ -11,41 +47,44 @@ check_readme_links:
 check_docs_lang_sync:
   extends:
     - .pre_check_job_template
-    - .rules:build:docs
+    - .doc-rules:build:docs
   script:
     - cd docs
     - ./check_lang_folder_sync.sh
 
 .build_docs_template:
   image: $ESP_IDF_DOC_ENV_IMAGE
+  variables:
+    PYTHON_VER: 3.6.13
   tags:
     - build_docs
   dependencies: []
   script:
     - cd docs
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r requirements.txt
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py -bs $DOC_BUILDERS -l $DOCLANG -t $DOCTGT build
+    - pip install -r requirements.txt
+    - build-docs -t $DOCTGT -bs $DOC_BUILDERS -l $DOCLANG build
   parallel:
     matrix:
       - DOCLANG: ["en", "zh_CN"]
-        DOCTGT: ["esp32", "esp32s2", "esp32c3"]
+        DOCTGT: ["esp32", "esp32s2", "esp32s3", "esp32c3"]
 
 check_docs_gh_links:
+  image: $ESP_IDF_DOC_ENV_IMAGE
+  variables:
+    PYTHON_VER: 3.6.13
   extends:
     - .pre_check_job_template
-    - .build_docs_template
-    - .rules:build:docs
+    - .doc-rules:build:docs
   script:
     - cd docs
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r requirements.txt
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py gh-linkcheck
+    - pip install -r requirements.txt
+    - build-docs gh-linkcheck
 
 # stage: build_doc
 # Add this stage to let the build_docs job run in parallel with build
 .build_docs_build_stage_template:
   extends:
     - .build_docs_template
-    - .rules:build:docs
   stage: build_doc
   needs:
     - job: check_docs_lang_sync
@@ -53,9 +92,14 @@ check_docs_gh_links:
     - job: check_docs_gh_links
       artifacts: false
 
-build_docs_html:
+# Doc jobs have a lot of special cases, we specify rules here directly instead
+# in dependencies.yml to simplify things
+build_docs_html_full:
   extends:
     - .build_docs_build_stage_template
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-docs_full
   artifacts:
     when: always
     paths:
@@ -65,10 +109,32 @@ build_docs_html:
   variables:
     DOC_BUILDERS: "html"
 
+build_docs_html_fast:
+  extends:
+    - .build_docs_build_stage_template
+  rules:
+    - <<: *if-label-docs_full
+      when: never
+    - <<: *if-label-build_docs
+    - <<: *if-label-docs
+    - <<: *if-dev-push
+      changes: *patterns-docs
+  artifacts:
+    when: always
+    paths:
+      - docs/_build/*/*/*.txt
+      - docs/_build/*/*/html/*
+    expire_in: 4 days
+  variables:
+    DOC_BUILDERS: "html"
+    DOCS_FAST_BUILD: "yes"
+
 build_docs_pdf:
   extends:
     - .build_docs_build_stage_template
-    - .rules:build:docs:label-only
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-docs_full
   artifacts:
     when: always
     paths:
@@ -81,6 +147,8 @@ build_docs_pdf:
   extends:
     - .before_script_no_sync_submodule
   image: $ESP_IDF_DOC_ENV_IMAGE
+  variables:
+    PYTHON_VER: 3.6.13
   stage: test_deploy
   tags:
     - deploy
@@ -92,16 +160,19 @@ build_docs_pdf:
   script:
     - add_doc_server_ssh_keys $DOCS_DEPLOY_PRIVATEKEY $DOCS_DEPLOY_SERVER $DOCS_DEPLOY_SERVER_USER
     - export GIT_VER=$(git describe --always)
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ${IDF_PATH}/tools/ci/deploy_docs.py
+    - pip install -r docs/requirements.txt
+    - deploy-docs
 
 # stage: test_deploy
 deploy_docs_preview:
   extends:
     - .deploy_docs_template
-    - .rules:build:docs:label-only-preview
-  dependencies:  # set dependencies to null to avoid missing artifacts issue
-  needs:
-    - build_docs_html
+  rules:
+    - <<: *if-label-build_docs
+    - <<: *if-label-docs
+  dependencies:
+    - build_docs_html_fast
+    - build_docs_html_full
     - build_docs_pdf
   variables:
     TYPE: "preview"
@@ -117,11 +188,12 @@ deploy_docs_production:
   # The DOCS_PROD_* variables used by this job are "Protected" so these branches must all be marked "Protected" in Gitlab settings
   extends:
     - .deploy_docs_template
-    - .rules:build:docs-production
+  rules:
+    - <<: *if-protected-no_label
   stage: post_deploy
   dependencies:  # set dependencies to null to avoid missing artifacts issue
   needs: # ensure runs after push_to_github succeeded
-    - build_docs_html
+    - build_docs_html_full
     - build_docs_pdf
     - job: push_to_github
       artifacts: false
@@ -148,6 +220,6 @@ check_doc_links:
   allow_failure: true
   script:
     - cd docs
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r requirements.txt
+    - pip install -r requirements.txt
     # At the moment this check will always fail due to multiple known limitations, ignore result
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py -l $DOCLANG -t $DOCTGT linkcheck || { echo "THERE ARE ISSUES DUE TO KNOWN LIMITATIONS, PLEASE FIX THEM. Nowadays we're ignored them to pass pipeline."; true; }
+    - build-docs -t $DOCTGT -l $DOCLANG linkcheck || { echo "THERE ARE ISSUES DUE TO KNOWN LIMITATIONS, PLEASE FIX THEM. Nowadays we're ignored them to pass pipeline."; true; }

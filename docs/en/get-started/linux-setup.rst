@@ -35,19 +35,10 @@ Permission issues /dev/ttyUSB0
 
 With some Linux distributions you may get the ``Failed to open port /dev/ttyUSB0`` error message when flashing the {IDF_TARGET_NAME}. :ref:`This can be solved by adding the current user to the dialout group<linux-dialout-group>`.
 
-Fixing broken pip on Ubuntu 16.04
-=================================
-
-Package ``python3-pip`` could be broken without possibility to upgrade it. 
-Package has to be removed and installed manually using script `get-pip.py <https://bootstrap.pypa.io/get-pip.py>`_.::
-
-    apt remove python3-pip python3-virtualenv; rm -r ~/.local
-    rm -r ~/.espressif/python_env && python get-pip.py
-
-Python 2 deprecation
+Python compatibility
 ====================
 
-Python 2 reached its `end of life <https://www.python.org/doc/sunset-python-2/>`_ and support for it in ESP-IDF will be removed soon. Please install Python 3.6 or higher. Instructions for popular Linux distributions are listed above.
+ESP-IDF supports Python 3.6 or newer. It is recommended to upgrade your operating system to a recent version satisfying this requirement. Other options include the installation of Python from `sources <https://www.python.org/downloads/>`_ or the use of a Python version management system such as `pyenv <https://github.com/pyenv/pyenv>`_.
 
 Next Steps
 ==========

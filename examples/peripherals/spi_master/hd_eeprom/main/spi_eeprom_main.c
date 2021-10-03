@@ -26,14 +26,12 @@
 #ifdef CONFIG_IDF_TARGET_ESP32
 #  ifdef CONFIG_EXAMPLE_USE_SPI1_PINS
 #    define EEPROM_HOST    SPI1_HOST
-#    define DMA_CHAN    0
 // Use default pins, same as the flash chip.
 #    define PIN_NUM_MISO 7
 #    define PIN_NUM_MOSI 8
 #    define PIN_NUM_CLK  6
 #  else
 #    define EEPROM_HOST    HSPI_HOST
-#    define DMA_CHAN    2
 #    define PIN_NUM_MISO 18
 #    define PIN_NUM_MOSI 23
 #    define PIN_NUM_CLK  19
@@ -42,7 +40,6 @@
 #  define PIN_NUM_CS   13
 #elif defined CONFIG_IDF_TARGET_ESP32S2
 #  define EEPROM_HOST    SPI2_HOST
-#  define DMA_CHAN    EEPROM_HOST
 
 #  define PIN_NUM_MISO 37
 #  define PIN_NUM_MOSI 35
@@ -50,13 +47,21 @@
 #  define PIN_NUM_CS   34
 #elif defined CONFIG_IDF_TARGET_ESP32C3
 #  define EEPROM_HOST    SPI2_HOST
-#  define DMA_CHAN    EEPROM_HOST
 
 #  define PIN_NUM_MISO 2
 #  define PIN_NUM_MOSI 7
 #  define PIN_NUM_CLK  6
 #  define PIN_NUM_CS   10
+
+#elif CONFIG_IDF_TARGET_ESP32S3
+#  define EEPROM_HOST    SPI2_HOST
+
+#  define PIN_NUM_MISO 13
+#  define PIN_NUM_MOSI 11
+#  define PIN_NUM_CLK  12
+#  define PIN_NUM_CS   10
 #endif
+
 
 static const char TAG[] = "main";
 
@@ -74,7 +79,7 @@ void app_main(void)
         .max_transfer_sz = 32,
     };
     //Initialize the SPI bus
-    ret = spi_bus_initialize(EEPROM_HOST, &buscfg, DMA_CHAN);
+    ret = spi_bus_initialize(EEPROM_HOST, &buscfg, SPI_DMA_CH_AUTO);
     ESP_ERROR_CHECK(ret);
 #else
     ESP_LOGI(TAG, "Attach to main flash bus...");

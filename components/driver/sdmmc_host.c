@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -37,13 +29,44 @@
 static void sdmmc_isr(void* arg);
 static void sdmmc_host_dma_init(void);
 
-
 static const char* TAG = "sdmmc_periph";
 static intr_handle_t s_intr_handle;
 static QueueHandle_t s_event_queue;
 static SemaphoreHandle_t s_io_intr_event;
 
-size_t s_slot_width[2] = {1,1};
+static size_t s_slot_width[2] = {1, 1};
+
+/* The following definitions are used to simplify GPIO configuration in the driver,
+ * whether IOMUX or GPIO Matrix is used by the chip.
+ * Two simple "APIs" are provided to the driver code:
+ * - configure_pin(name, slot, mode): Configures signal "name" for the given slot and mode.
+ * - GPIO_NUM(slot, name): Returns the GPIO number of signal "name" for the given slot.
+ *
+ * To make this work, configure_pin is defined as a macro that picks the parameters required
+ * for configuring GPIO matrix or IOMUX from relevant arrays, and passes them to either of
+ * configure_pin_gpio_matrix, configure_pin_iomux functions.
+ * Likewise, GPIO_NUM is a macro that picks the pin number from one of the two structures.
+ *
+ * Macros are used rather than inline functions to look up members of different structures
+ * with same names. E.g. the number of pin d3 is obtained either from .d3 member of
+ * sdmmc_slot_gpio_num array (for IOMUX) or from .d3 member of s_sdmmc_slot_gpio_num array
+ * (for GPIO matrix).
+ */
+#ifdef SOC_SDMMC_USE_GPIO_MATRIX
+static void configure_pin_gpio_matrix(uint8_t gpio_num, uint8_t gpio_matrix_sig, gpio_mode_t mode, const char* name);
+#define configure_pin(name, slot, mode) \
+    configure_pin_gpio_matrix(s_sdmmc_slot_gpio_num[slot].name, sdmmc_slot_gpio_sig[slot].name, mode, #name)
+static sdmmc_slot_io_info_t s_sdmmc_slot_gpio_num[SOC_SDMMC_NUM_SLOTS];
+#define GPIO_NUM(slot, name) s_sdmmc_slot_gpio_num[slot].name
+
+#elif SOC_SDMMC_USE_IOMUX
+static void configure_pin_iomux(uint8_t gpio_num);
+#define configure_pin(name, slot, mode) configure_pin_iomux(sdmmc_slot_gpio_num[slot].name)
+#define GPIO_NUM(slot, name) sdmmc_slot_gpio_num[slot].name
+
+#endif // SOC_SDMMC_USE_GPIO_MATRIX
+
+static esp_err_t sdmmc_host_pullup_en_internal(int slot, int width);
 
 void sdmmc_host_reset(void)
 {
@@ -94,9 +117,21 @@ static void sdmmc_host_set_clk_div(int div)
     SDMMC.clock.div_factor_p = p;
     SDMMC.clock.div_factor_h = h;
     SDMMC.clock.div_factor_m = p;
+
+    // Make sure 160 MHz source clock is used
+#if SOC_SDMMC_SUPPORT_XTAL_CLOCK
+    SDMMC.clock.clk_sel = 1;
+#endif
+#if SOC_SDMMC_USE_GPIO_MATRIX
+    // 90 degree phase on input and output clocks
+    const int inout_clock_phase = 1;
+#else
+    // 180 degree phase on input and output clocks
+    const int inout_clock_phase = 4;
+#endif
     // Set phases for in/out clocks
-    SDMMC.clock.phase_dout = 4;     // 180 degree phase on the output clock
-    SDMMC.clock.phase_din = 4;      // 180 degree phase on the input clock
+    SDMMC.clock.phase_dout = inout_clock_phase;
+    SDMMC.clock.phase_din = inout_clock_phase;
     SDMMC.clock.phase_core = 0;
     // Wait for the clock to propagate
     esp_rom_delay_us(10);
@@ -294,19 +329,40 @@ esp_err_t sdmmc_host_init(void)
     return ESP_OK;
 }
 
-static void configure_pin(int pin)
+#ifdef SOC_SDMMC_USE_IOMUX
+
+static void configure_pin_iomux(uint8_t gpio_num)
 {
     const int sdmmc_func = 3;
     const int drive_strength = 3;
-    assert(pin!=GPIO_NUM_NC);
-    gpio_pulldown_dis(pin);
+    assert(gpio_num != (uint8_t) GPIO_NUM_NC);
+    gpio_pulldown_dis(gpio_num);
 
-    uint32_t reg = GPIO_PIN_MUX_REG[pin];
+    uint32_t reg = GPIO_PIN_MUX_REG[gpio_num];
     assert(reg != UINT32_MAX);
     PIN_INPUT_ENABLE(reg);
     gpio_hal_iomux_func_sel(reg, sdmmc_func);
     PIN_SET_DRV(reg, drive_strength);
 }
+
+#elif SOC_SDMMC_USE_GPIO_MATRIX
+
+static void configure_pin_gpio_matrix(uint8_t gpio_num, uint8_t gpio_matrix_sig, gpio_mode_t mode, const char* name)
+{
+    assert (gpio_num != (uint8_t) GPIO_NUM_NC);
+    ESP_LOGD(TAG, "using GPIO%d as %s pin", gpio_num, name);
+    gpio_reset_pin(gpio_num);
+    gpio_set_direction(gpio_num, mode);
+    gpio_pulldown_dis(gpio_num);
+    if (mode == GPIO_MODE_INPUT || mode == GPIO_MODE_INPUT_OUTPUT) {
+        esp_rom_gpio_connect_in_signal(gpio_num, gpio_matrix_sig, false);
+    }
+    if (mode == GPIO_MODE_OUTPUT || mode == GPIO_MODE_INPUT_OUTPUT) {
+        esp_rom_gpio_connect_out_signal(gpio_num, gpio_matrix_sig, false, false);
+    }
+}
+
+#endif // SOC_SDMMC_USE_{IOMUX,GPIO_MATRIX}
 
 esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t* slot_config)
 {
@@ -319,54 +375,75 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t* slot_config)
     if (slot_config == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    bool pullup = slot_config->flags & SDMMC_SLOT_FLAG_INTERNAL_PULLUP;
-    if (pullup) {
-        sdmmc_host_pullup_en(slot, slot_config->width);
-    }
-    int gpio_cd = slot_config->gpio_cd;
-    int gpio_wp = slot_config->gpio_wp;
+    int gpio_cd = slot_config->cd;
+    int gpio_wp = slot_config->wp;
     uint8_t slot_width = slot_config->width;
 
     // Configure pins
-    const sdmmc_slot_info_t* pslot = &sdmmc_slot_info[slot];
+    const sdmmc_slot_info_t* slot_info = &sdmmc_slot_info[slot];
 
     if (slot_width == SDMMC_SLOT_WIDTH_DEFAULT) {
-        slot_width = pslot->width;
+        slot_width = slot_info->width;
     }
-    else if (slot_width > pslot->width) {
+    else if (slot_width > slot_info->width) {
         return ESP_ERR_INVALID_ARG;
     }
     s_slot_width[slot] = slot_width;
 
-    configure_pin(pslot->clk_gpio);
-    configure_pin(pslot->cmd_gpio);
-    configure_pin(pslot->d0_gpio);
+#if SOC_SDMMC_USE_GPIO_MATRIX
+    /* Save pin configuration for this slot */
+    s_sdmmc_slot_gpio_num[slot].clk = slot_config->clk;
+    s_sdmmc_slot_gpio_num[slot].cmd = slot_config->cmd;
+    s_sdmmc_slot_gpio_num[slot].d0 = slot_config->d0;
+    /* Save d1 even in 1-line mode, it might be needed for SDIO INT line */
+    s_sdmmc_slot_gpio_num[slot].d1 = slot_config->d1;
+    if (slot_width >= 4) {
+        s_sdmmc_slot_gpio_num[slot].d2 = slot_config->d2;
+    }
+    /* Save d3 even for 1-line mode, as it needs to be set high */
+    s_sdmmc_slot_gpio_num[slot].d3 = slot_config->d3;
+    if (slot_width >= 8) {
+        s_sdmmc_slot_gpio_num[slot].d4 = slot_config->d4;
+        s_sdmmc_slot_gpio_num[slot].d5 = slot_config->d5;
+        s_sdmmc_slot_gpio_num[slot].d6 = slot_config->d6;
+        s_sdmmc_slot_gpio_num[slot].d7 = slot_config->d7;
+    }
+#endif
+
+    bool pullup = slot_config->flags & SDMMC_SLOT_FLAG_INTERNAL_PULLUP;
+    if (pullup) {
+        sdmmc_host_pullup_en_internal(slot, slot_config->width);
+    }
+
+    configure_pin(clk, slot, GPIO_MODE_OUTPUT);
+    configure_pin(cmd, slot, GPIO_MODE_INPUT_OUTPUT);
+    configure_pin(d0, slot, GPIO_MODE_INPUT_OUTPUT);
 
     if (slot_width >= 4) {
-        configure_pin(pslot->d1_gpio);
-        configure_pin(pslot->d2_gpio);
+        configure_pin(d1, slot, GPIO_MODE_INPUT_OUTPUT);
+        configure_pin(d2, slot, GPIO_MODE_INPUT_OUTPUT);
         // Force D3 high to make slave enter SD mode.
         // Connect to peripheral after width configuration.
         gpio_config_t gpio_conf = {
-            .pin_bit_mask = BIT64(pslot->d3_gpio),
-            .mode = GPIO_MODE_OUTPUT ,
+            .pin_bit_mask = BIT64(GPIO_NUM(slot, d3)),
+            .mode = GPIO_MODE_OUTPUT,
             .pull_up_en = 0,
             .pull_down_en = 0,
             .intr_type = GPIO_INTR_DISABLE,
         };
         gpio_config(&gpio_conf);
-        gpio_set_level(pslot->d3_gpio, 1);
-        if (slot_width == 8) {
-            configure_pin(pslot->d4_gpio);
-            configure_pin(pslot->d5_gpio);
-            configure_pin(pslot->d6_gpio);
-            configure_pin(pslot->d7_gpio);
-        }
+        gpio_set_level(GPIO_NUM(slot, d3), 1);
+    }
+    if (slot_width == 8) {
+        configure_pin(d4, slot, GPIO_MODE_INPUT_OUTPUT);
+        configure_pin(d5, slot, GPIO_MODE_INPUT_OUTPUT);
+        configure_pin(d6, slot, GPIO_MODE_INPUT_OUTPUT);
+        configure_pin(d7, slot, GPIO_MODE_INPUT_OUTPUT);
     }
 
     // SDIO slave interrupt is edge sensitive to ~(int_n | card_int | card_detect)
     // set this and card_detect to high to enable sdio interrupt
-    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, pslot->card_int, false);
+    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, slot_info->card_int, false);
 
     // Set up Card Detect input
     int matrix_in_cd;
@@ -379,7 +456,7 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t* slot_config)
         // if not set, default to CD low (card present)
         matrix_in_cd = GPIO_MATRIX_CONST_ZERO_INPUT;
     }
-    esp_rom_gpio_connect_in_signal(matrix_in_cd, pslot->card_detect, false);
+    esp_rom_gpio_connect_in_signal(matrix_in_cd, slot_info->card_detect, false);
 
     // Set up Write Protect input
     int matrix_in_wp;
@@ -394,7 +471,7 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t* slot_config)
     }
     // WP signal is normally active low, but hardware expects
     // an active-high signal, so invert it in GPIO matrix
-    esp_rom_gpio_connect_in_signal(matrix_in_wp, pslot->write_protect, true);
+    esp_rom_gpio_connect_in_signal(matrix_in_wp, slot_info->write_protect, true);
 
     // By default, set probing frequency (400kHz) and 1-bit bus
     esp_err_t ret = sdmmc_host_set_card_clk(slot, 400);
@@ -456,11 +533,11 @@ esp_err_t sdmmc_host_set_bus_width(int slot, size_t width)
         SDMMC.ctype.card_width_8 &= ~mask;
         SDMMC.ctype.card_width |= mask;
         // D3 was set to GPIO high to force slave into SD mode, until 4-bit mode is set
-        configure_pin(sdmmc_slot_info[slot].d3_gpio);
+        configure_pin(d3, slot, GPIO_MODE_INPUT_OUTPUT);
     } else if (width == 8) {
         SDMMC.ctype.card_width_8 |= mask;
         // D3 was set to GPIO high to force slave into SD mode, until 4-bit mode is set
-        configure_pin(sdmmc_slot_info[slot].d3_gpio);
+        configure_pin(d3, slot, GPIO_MODE_INPUT_OUTPUT);
     } else {
         return ESP_ERR_INVALID_ARG;
     }
@@ -542,7 +619,7 @@ bool sdmmc_host_card_busy(void)
 
 esp_err_t sdmmc_host_io_int_enable(int slot)
 {
-    configure_pin(sdmmc_slot_info[slot].d1_gpio);
+    configure_pin(d1, slot, GPIO_MODE_INPUT_OUTPUT);
     return ESP_OK;
 }
 
@@ -558,7 +635,7 @@ esp_err_t sdmmc_host_io_int_wait(int slot, TickType_t timeout_ticks)
 
     SDMMC.intmask.sdio &= ~BIT(slot);   /* Disable SDIO interrupt */
     SDMMC.rintsts.sdio = BIT(slot);
-    if (gpio_get_level(sdmmc_slot_info[slot].d1_gpio) == 0) {
+    if (gpio_get_level(GPIO_NUM(slot, d1)) == 0) {
         return ESP_OK;
     }
     /* Otherwise, need to wait for an interrupt. Since D1 was high,
@@ -619,25 +696,28 @@ static void sdmmc_isr(void* arg) {
     }
 }
 
-esp_err_t sdmmc_host_pullup_en(int slot, int width)
+static esp_err_t sdmmc_host_pullup_en_internal(int slot, int width)
 {
     if (width > sdmmc_slot_info[slot].width) {
         //in esp32 we only support 8 bit in slot 0, note this is occupied by the flash by default
         return ESP_ERR_INVALID_ARG;
     }
-    //according to the spec, the host control the clk, we don't to pull it up here
-    gpio_pullup_en(sdmmc_slot_info[slot].cmd_gpio);
-    gpio_pullup_en(sdmmc_slot_info[slot].d0_gpio);
+    // according to the spec, the host controls the clk, we don't to pull it up here
+    gpio_pullup_en(GPIO_NUM(slot, cmd));
+    gpio_pullup_en(GPIO_NUM(slot, d0));
     if (width >= 4) {
-        gpio_pullup_en(sdmmc_slot_info[slot].d1_gpio);
-        gpio_pullup_en(sdmmc_slot_info[slot].d2_gpio);
-        gpio_pullup_en(sdmmc_slot_info[slot].d3_gpio);
+        gpio_pullup_en(GPIO_NUM(slot, d1));
+        gpio_pullup_en(GPIO_NUM(slot, d2));
+        gpio_pullup_en(GPIO_NUM(slot, d3));
     }
     if (width == 8) {
-        gpio_pullup_en(sdmmc_slot_info[slot].d4_gpio);
-        gpio_pullup_en(sdmmc_slot_info[slot].d5_gpio);
-        gpio_pullup_en(sdmmc_slot_info[slot].d6_gpio);
-        gpio_pullup_en(sdmmc_slot_info[slot].d7_gpio);
+        gpio_pullup_en(GPIO_NUM(slot, d4));
+        gpio_pullup_en(GPIO_NUM(slot, d5));
+        gpio_pullup_en(GPIO_NUM(slot, d6));
+        gpio_pullup_en(GPIO_NUM(slot, d7));
     }
     return ESP_OK;
 }
+
+/* Deprecared public function */
+esp_err_t sdmmc_host_pullup_en(int slot, int width) __attribute__((alias("sdmmc_host_pullup_en_internal")));

@@ -15,6 +15,7 @@
 #include "driver/i2s.h"
 #include "driver/gpio.h"
 #include "esp_system.h"
+#include "esp_log.h"
 #include <math.h>
 
 
@@ -22,12 +23,14 @@
 #define I2S_NUM         (0)
 #define WAVE_FREQ_HZ    (100)
 #define PI              (3.14159265)
-#define I2S_BCK_IO      (GPIO_NUM_13)
-#define I2S_WS_IO       (GPIO_NUM_15)
-#define I2S_DO_IO       (GPIO_NUM_21)
+#define I2S_BCK_IO      (GPIO_NUM_4)
+#define I2S_WS_IO       (GPIO_NUM_5)
+#define I2S_DO_IO       (GPIO_NUM_18)
 #define I2S_DI_IO       (-1)
 
 #define SAMPLE_PER_CYCLE (SAMPLE_RATE/WAVE_FREQ_HZ)
+
+static const char* TAG = "i2s_example";
 
 static void setup_triangle_sine_waves(int bits)
 {
@@ -64,7 +67,7 @@ static void setup_triangle_sine_waves(int bits)
         }
 
     }
-
+    ESP_LOGI(TAG, "set clock");
     i2s_set_clk(I2S_NUM, SAMPLE_RATE, bits, 2);
     //Using push
     // for(i = 0; i < SAMPLE_PER_CYCLE; i++) {
@@ -74,6 +77,7 @@ static void setup_triangle_sine_waves(int bits)
     //         i2s_push_sample(0, &samples_data[i*2], 100);
     // }
     // or write
+    ESP_LOGI(TAG, "write data");
     i2s_write(I2S_NUM, samples_data, ((bits+8)/16)*SAMPLE_PER_CYCLE*4, &i2s_bytes_write, 100);
 
     free(samples_data);
@@ -87,10 +91,10 @@ void app_main(void)
     //if 2-channels, 16-bit each channel, total buffer is 360*4 = 1440 bytes
     //if 2-channels, 24/32-bit each channel, total buffer is 360*8 = 2880 bytes
     i2s_config_t i2s_config = {
-        .mode = I2S_MODE_MASTER | I2S_MODE_TX,                                  // Only TX
+        .mode = I2S_MODE_MASTER | I2S_MODE_TX,
         .sample_rate = SAMPLE_RATE,
-        .bits_per_sample = 16,
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,                           //2-channels
+        .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
+        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
         .communication_format = I2S_COMM_FORMAT_STAND_MSB,
         .dma_buf_count = 6,
         .dma_buf_len = 60,

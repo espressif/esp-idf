@@ -9,3 +9,7 @@
 # FreeRTOS upstream code (don't include our port files here)
 components/freertos/*.c
 components/freertos/include/freertos/*.h
+
+# wpa_supplicant upstream code
+components/wpa_supplicant/src/**
+components/wpa_supplicant/include/**

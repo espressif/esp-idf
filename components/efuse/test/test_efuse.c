@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
@@ -664,7 +669,7 @@ static void task2(void* arg)
     TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_MAC_FACTORY, &mac, sizeof(mac) * 8));
     int64_t t2 = esp_timer_get_time();
     int diff_ms = (t2 - t1) / 1000;
-    TEST_ASSERT_GREATER_THAN(delay_ms, diff_ms);
+    TEST_ASSERT_GREATER_THAN(diff_ms, delay_ms);
     ESP_LOGI(TAG, "read MAC address: %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     xSemaphoreGive(sema);
 
@@ -783,7 +788,99 @@ TEST_CASE("Test a write/read protection", "[efuse]")
     esp_efuse_utility_erase_virt_blocks();
 }
 
+static volatile bool cmd_stop_reset_task1;
+static void efuse_burn_task(void* arg)
+{
+    SemaphoreHandle_t sema = (SemaphoreHandle_t) arg;
+    ESP_LOGI(TAG, "Start burn task");
+    size_t test3_len_6 = 2;
+    while (!cmd_stop_reset_task1) {
+        esp_efuse_utility_update_virt_blocks();
+        esp_efuse_utility_reset();
+        TEST_ESP_OK(esp_efuse_write_field_cnt(ESP_EFUSE_TEST3_LEN_6, test3_len_6));
+    }
+    xSemaphoreGive(sema);
+    ESP_LOGI(TAG, "Stop burn task");
+    vTaskDelete(NULL);
+}
+
+static void efuse_read_task(void* arg)
+{
+    SemaphoreHandle_t sema = (SemaphoreHandle_t) arg;
+    ESP_LOGI(TAG, "Start read task");
+    size_t test3_len_6 = 0;
+    while (!cmd_stop_reset_task1) {
+        TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_TEST3_LEN_6, &test3_len_6, 6));
+    }
+    xSemaphoreGive(sema);
+    ESP_LOGI(TAG, "Stop read task");
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("Check a case when ESP_ERR_DAMAGED_READING occurs and read and burn are not blocked", "[efuse]")
+{
+    cmd_stop_reset_task1 = false;
+    TaskHandle_t read_task_hdl;
+    xSemaphoreHandle sema[2];
+    sema[0] = xSemaphoreCreateBinary();
+    sema[1] = xSemaphoreCreateBinary();
+
+    esp_efuse_utility_update_virt_blocks();
+    esp_efuse_utility_debug_dump_blocks();
+
+    xTaskCreatePinnedToCore(efuse_burn_task, "efuse_burn_task", 3072, sema[0], 2, NULL, 0);
+    xTaskCreatePinnedToCore(efuse_read_task, "efuse_read_task", 3072, sema[1], 2, &read_task_hdl, 0);
+    vTaskDelay(10 / portTICK_PERIOD_MS);
+
+    for (unsigned i = 1; i < 30; ++i) {
+        vTaskPrioritySet(read_task_hdl, 2 + i % 2);
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+    }
+    vTaskDelay(10 / portTICK_PERIOD_MS);
+    cmd_stop_reset_task1 = true;
+    vTaskDelay(10 / portTICK_PERIOD_MS);
+    TEST_ASSERT_EQUAL(pdPASS, xSemaphoreTake(sema[0], 1000 / portTICK_PERIOD_MS));
+    TEST_ASSERT_EQUAL(pdPASS, xSemaphoreTake(sema[1], 1000 / portTICK_PERIOD_MS));
+
+    vSemaphoreDelete(sema[0]);
+    vSemaphoreDelete(sema[1]);
+}
 #endif // #ifdef CONFIG_EFUSE_VIRTUAL
+
+#ifndef CONFIG_FREERTOS_UNICORE
+static volatile bool cmd_stop_reset_task;
+static void reset_task(void* arg)
+{
+    ESP_LOGI(TAG, "Start reset task");
+    while (!cmd_stop_reset_task) {
+        esp_efuse_utility_reset();
+        vTaskDelay(2);
+    }
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("Check a case when ESP_ERR_DAMAGED_READING occurs during reading efuses", "[efuse]")
+{
+    cmd_stop_reset_task = false;
+    esp_efuse_utility_update_virt_blocks();
+    esp_efuse_utility_debug_dump_blocks();
+
+    uint8_t mac[6];
+    TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_MAC_FACTORY, &mac, sizeof(mac) * 8));
+    ESP_LOGI(TAG, "read MAC address: %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+    xTaskCreatePinnedToCore(reset_task, "reset_task", 3072, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 1);
+
+    uint8_t new_mac[6];
+    for (int i = 0; i < 1000; ++i) {
+        TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_MAC_FACTORY, &new_mac, sizeof(new_mac) * 8));
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(mac, new_mac, sizeof(mac));
+    }
+    cmd_stop_reset_task = true;
+    ESP_LOGI(TAG, "read new MAC address: %02x:%02x:%02x:%02x:%02x:%02x", new_mac[0], new_mac[1], new_mac[2], new_mac[3], new_mac[4], new_mac[5]);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+}
+#endif // if not CONFIG_FREERTOS_UNICORE
 
 #ifdef CONFIG_IDF_ENV_FPGA
 TEST_CASE("Test a real write (FPGA)", "[efuse]")

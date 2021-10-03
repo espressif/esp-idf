@@ -5,7 +5,7 @@
 #include "hal/adc_ll.h"
 #include "esp_err.h"
 
-#if CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
 #include "soc/gdma_struct.h"
 #include "hal/gdma_ll.h"
 #include "hal/dma_types.h"
@@ -75,7 +75,7 @@ void adc_hal_init(void);
  */
 #define adc_hal_digi_set_clk_div(div) adc_ll_digi_set_clk_div(div)
 
-#if !CONFIG_IDF_TARGET_ESP32C3
+#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2
 /**
  * ADC SAR clock division factor setting. ADC SAR clock devided from `RTC_FAST_CLK`.
  *
@@ -94,7 +94,7 @@ void adc_hal_init(void);
  * @prarm ctrl ADC controller.
  */
 #define adc_hal_set_controller(adc_n, ctrl) adc_ll_set_controller(adc_n, ctrl)
-#endif  //#if !CONFIG_IDF_TARGET_ESP32C3
+#endif  //#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2
 
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 /**
@@ -113,6 +113,22 @@ void adc_hal_init(void);
  */
 #define adc_hal_amp_disable() adc_ll_amp_disable()
 #endif
+
+#if SOC_ADC_ARBITER_SUPPORTED
+//No ADC2 controller arbiter on ESP32
+/**
+ * Config ADC2 module arbiter.
+ * The arbiter is to improve the use efficiency of ADC2. After the control right is robbed by the high priority,
+ * the low priority controller will read the invalid ADC2 data, and the validity of the data can be judged by the flag bit in the data.
+ *
+ * @note Only ADC2 support arbiter.
+ * @note The arbiter's working clock is APB_CLK. When the APB_CLK clock drops below 8 MHz, the arbiter must be in shield mode.
+ * @note Default priority: Wi-Fi > RTC > Digital;
+ *
+ * @param config Refer to ``adc_arbiter_t``.
+ */
+void adc_hal_arbiter_config(adc_arbiter_t *config);
+#endif  //#if SOC_ADC_ARBITER_SUPPORTED
 
 /*---------------------------------------------------------------
                     PWDET(Power detect) controller setting
@@ -137,7 +153,7 @@ void adc_hal_init(void);
 /*---------------------------------------------------------------
                     RTC controller setting
 ---------------------------------------------------------------*/
-#if !CONFIG_IDF_TARGET_ESP32C3
+#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2
 /**
  * Set adc output data format for RTC controller.
  *
@@ -152,7 +168,7 @@ void adc_hal_init(void);
  * @prarm adc_n ADC unit.
  */
 #define adc_hal_rtc_output_invert(adc_n, inv_en) adc_ll_rtc_output_invert(adc_n, inv_en)
-#endif  //#if !CONFIG_IDF_TARGET_ESP32C3
+#endif  //#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2
 
 /**
  *  Enable/disable the output of ADCn's internal reference voltage to one of ADC2's channels.
@@ -193,7 +209,7 @@ void adc_hal_digi_controller_config(const adc_digi_config_t *cfg);
 /*---------------------------------------------------------------
                     ADC Single Read
 ---------------------------------------------------------------*/
-#if !CONFIG_IDF_TARGET_ESP32C3
+#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2
 /**
  * Set the attenuation of a particular channel on ADCn.
  *
@@ -229,7 +245,7 @@ void adc_hal_digi_controller_config(const adc_digi_config_t *cfg);
  */
 #define adc_hal_set_atten(adc_n, channel, atten) adc_ll_set_atten(adc_n, channel, atten)
 
-#else // CONFIG_IDF_TARGET_ESP32C3
+#else // CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
 /**
  * Set the attenuation for ADC to single read
  *
@@ -260,8 +276,8 @@ esp_err_t adc_hal_convert(adc_ll_num_t adc_n, int channel, int *out_raw);
 /*---------------------------------------------------------------
                     ADC calibration setting
 ---------------------------------------------------------------*/
-#if SOC_ADC_HW_CALIBRATION_V1
-// ESP32-S2 and C3 support HW offset calibration.
+#if SOC_ADC_CALIBRATION_V1_SUPPORTED
+// ESP32-S2, C3 and H2 support HW offset calibration.
 
 /**
  * @brief Initialize default parameter for the calibration block.
@@ -296,9 +312,9 @@ void adc_hal_set_calibration_param(adc_ll_num_t adc_n, uint32_t param);
  */
 uint32_t adc_hal_self_calibration(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten, bool internal_gnd);
 
-#endif //SOC_ADC_HW_CALIBRATION_V1
+#endif //SOC_ADC_CALIBRATION_V1_SUPPORTED
 
-#if CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
 /*---------------------------------------------------------------
                     DMA setting
 ---------------------------------------------------------------*/
@@ -380,4 +396,4 @@ void adc_hal_digi_dis_intr(adc_hal_context_t *hal, uint32_t mask);
  */
 void adc_hal_digi_stop(adc_hal_context_t *hal);
 
-#endif  //#if CONFIG_IDF_TARGET_ESP32C3
+#endif  //#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2

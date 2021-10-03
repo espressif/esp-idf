@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
 #define _SOC_USB_DEVICE_REG_H_
 
 
+#include "soc.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc.h"
 
 #define USB_DEVICE_EP1_REG          (DR_REG_USB_DEVICE_BASE + 0x0)
 /* USB_DEVICE_RDWR_BYTE : R/W ;bitpos:[7:0] ;default: 8'h0 ; */

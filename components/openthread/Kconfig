@@ -6,6 +6,25 @@ menu "OpenThread"
         help
             Select this option to enable OpenThread and show the submenu with OpenThread configuration choices.
 
+    choice OPENTHREAD_RADIO_TYPE
+        prompt "Config the Thread radio type"
+        depends on OPENTHREAD_ENABLED
+        default OPENTHREAD_RADIO_NATIVE if IDF_TARGET_ESP32H2
+        default OPENTHREAD_RADIO_SPINEL_UART
+        help
+            Configure how OpenThread connects to the 15.4 radio
+
+        config OPENTHREAD_RADIO_NATIVE
+            bool "Native 15.4 radio"
+            help
+                Select this to use the native 15.4 radio.
+
+        config OPENTHREAD_RADIO_SPINEL_UART
+            bool "Connect via UART"
+            help
+                Select this to connect to a Radio Co-Processor via UART.
+    endchoice
+
     choice OPENTHREAD_DEVICE_TYPE
         prompt "Config the Thread device type"
         depends on OPENTHREAD_ENABLED
@@ -58,11 +77,32 @@ menu "OpenThread"
             Select this option to enable Joiner in OpenThread. This allows a device to join the Thread network with a
             pre-shared key using the Thread commissioning protocol.
 
-    config OPENTHREAD_PARTITION_NAME
-        string "The partition for OpenThread to store its network data"
+    config OPENTHREAD_SRP_CLIENT
+        bool "Enable SRP Client"
         depends on OPENTHREAD_ENABLED
-        default "ot_storage"
+        default n
         help
-            The storage size should be at least 8192 bytes.
+            Select this option to enable SRP Client in OpenThread. This allows a device to register SRP services to SRP
+            Server.
+
+    config OPENTHREAD_BORDER_ROUTER
+        bool "Enable Border Router"
+        depends on OPENTHREAD_ENABLED
+        default n
+        help
+            Select this option to enable border router features in OpenThread.
+
+    config OPENTHREAD_ESP_LIB_FROM_INTERNAL_SRC
+        bool "Build esp_openthread libraries from source"
+        depends on OPENTHREAD_ENABLED
+        default n
+        help
+            Override the shipped libopenthread_br.a and libopenthread_port.a, for internal builds.
+
+    config OPENTHREAD_NUM_MESSAGE_BUFFERS
+        int "The number of openthread message buffers"
+        depends on OPENTHREAD_ENABLED
+        default 65
+        range 50 100
 
 endmenu

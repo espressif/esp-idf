@@ -244,7 +244,7 @@ Wholesale Orders
 
 If you order in bulk, the boards come in large cardboard boxes.
 
-For wholesale orders, please check `Espressif Product Ordering Information <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>`_ (PDF)
+For wholesale orders, please go to https://www.espressif.com/en/contact-us/sales-questions.
 
 
 Hardware Reference
@@ -367,7 +367,7 @@ Related Documents
     user-guide-esp-lyrat-8311a_v1.2
 
 - `ESP32-S2-WROVER Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-s2-wrover_esp32-s2-wrover-i_datasheet_en.pdf>`_ (PDF)
-- `Espressif Product Ordering Information <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>`_ (PDF)
+- `ESP Product Selector <https://products.espressif.com/#/product-selector?names=>`_
 - :doc:`../../api-guides/jtag-debugging/index`
 
 - `ESP32-S2-Kaluga-1 Schematic <https://dl.espressif.com/dl/schematics/ESP32-S2-Kaluga-1_V1_2_SCH_20200424A.pdf>`_ (PDF)

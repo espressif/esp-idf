@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*
  * Soc capabilities file, describing the following chip attributes:
@@ -44,7 +36,7 @@
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 #define SOC_RISCV_COPROC_SUPPORTED      1
-#define SOC_USB_SUPPORTED               1
+#define SOC_USB_OTG_SUPPORTED           1
 #define SOC_PCNT_SUPPORTED              1
 #define SOC_ULP_SUPPORTED               1
 #define SOC_RTC_SLOW_MEM_SUPPORTED      1
@@ -53,26 +45,38 @@
 #define SOC_HMAC_SUPPORTED              1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 3
-
+#define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS 1
+#define SOC_TEMP_SENSOR_SUPPORTED       1
 #define SOC_CACHE_SUPPORT_WRAP          1
+#define SOC_FLASH_ENCRYPTION_XTS_AES      1
+#define SOC_FLASH_ENCRYPTION_XTS_AES_256 1
+#define SOC_PSRAM_DMA_CAPABLE           1
+#define SOC_XT_WDT_SUPPORTED            1
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
-#define SOC_ADC_PERIPH_NUM              (2)
-#define SOC_ADC_PATT_LEN_MAX            (16)
-#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM) (10)
-#define SOC_ADC_MAX_CHANNEL_NUM         (10)
-#define SOC_ADC_MAX_BITWIDTH            (13)
-#define SOC_ADC_HW_CALIBRATION_V1       (1) /*!< support HW offset calibration */
+/*!< SAR ADC Module*/
+#define SOC_ADC_RTC_CTRL_SUPPORTED              1
+#define SOC_ADC_ARBITER_SUPPORTED               1
+#define SOC_ADC_FILTER_SUPPORTED                1
+#define SOC_ADC_MONITOR_SUPPORTED               1
+#define SOC_ADC_PERIPH_NUM                      (2)
+#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         (10)
+#define SOC_ADC_MAX_CHANNEL_NUM                 (10)
 
+/*!< Digital */
+#define SOC_ADC_DIGI_CONTROLLER_NUM             (2)
+#define SOC_ADC_PATT_LEN_MAX                    (32) /*!< Two pattern table, each contains 16 items. Each item takes 1 byte */
+#define SOC_ADC_DIGI_MAX_BITWIDTH               (12)
+/*!< F_sample = F_digi_con / 2 / interval. F_digi_con = 5M for now. 30 <= interva <= 4095 */
+#define SOC_ADC_SAMPLE_FREQ_THRES_HIGH          83333
+#define SOC_ADC_SAMPLE_FREQ_THRES_LOW           611
 
-/**
- * Check if adc support digital controller (DMA) mode.
- * @value
- *      - 1 : support;
- *      - 0 : not support;
- */
-#define SOC_ADC_SUPPORT_DMA_MODE(PERIPH_NUM) ((PERIPH_NUM==0)? 1: 1)
-#define SOC_ADC_SUPPORT_RTC_CTRL        1
+/*!< RTC */
+#define SOC_ADC_MAX_BITWIDTH                    (13)
+
+/*!< Calibration */
+#define SOC_ADC_CALIBRATION_V1_SUPPORTED        (1) /*!< support HW offset calibration version 1*/
+
 
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #define SOC_BROWNOUT_RESET_SUPPORTED 1
@@ -114,6 +118,7 @@
 #define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (8) /*!< 8 inward channels on each CPU core */
 #define SOC_DEDIC_GPIO_ALLOW_REG_ACCESS (1) /*!< Allow access dedicated GPIO channel by register */
 #define SOC_DEDIC_GPIO_HAS_INTERRUPT    (1) /*!< Dedicated GPIO has its own interrupt source */
+#define SOC_DEDIC_GPIO_OUT_AUTO_ENABLE  (1) /*!< Dedicated GPIO output attribution is enabled automatically */
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
 // ESP32-S2 have 2 I2C.
@@ -130,16 +135,20 @@
 #define SOC_I2C_SUPPORT_APB        (1)
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
-// ESP32-S2 have 2 I2S
-#define SOC_I2S_NUM            (1)
+// ESP32-S2 have 1 I2S
+#define SOC_I2S_NUM                (1)
+#define SOC_I2S_SUPPORTS_APLL      (1)// ESP32-S2 support APLL
+#define SOC_I2S_SUPPORTS_DMA_EQUAL (1)
+#define SOC_I2S_APLL_MIN_FREQ      (250000000)
+#define SOC_I2S_APLL_MAX_FREQ      (500000000)
+#define SOC_I2S_APLL_MIN_RATE      (10675) //in Hz, I2S Clock rate limited by hardware
+#define SOC_I2S_LCD_I80_VARIANT    (1)
 
-#define SOC_I2S_SUPPORTS_DMA_EQUAL (1) // ESP32-S2 need dma equal
-
-#define SOC_I2S_MAX_BUFFER_SIZE               (4 * 1024 * 1024) //the maximum RAM can be allocated
-
-#define SOC_I2S_APLL_MIN_FREQ                     (250000000)
-#define SOC_I2S_APLL_MAX_FREQ                     (500000000)
-#define SOC_I2S_APLL_MIN_RATE                 (10675) //in Hz, I2S Clock rate limited by hardware
+/*-------------------------- LCD CAPS ----------------------------------------*/
+/* Notes: On esp32-s2, LCD intel 8080 timing is generated by I2S peripheral */
+#define SOC_LCD_I80_SUPPORTED      (1)  /*!< Intel 8080 LCD is supported */
+#define SOC_LCD_I80_BUSES          (1)  /*!< Only I2S0 has LCD mode */
+#define SOC_LCD_I80_BUS_WIDTH      (24) /*!< Intel 8080 bus width */
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 #define SOC_LEDC_SUPPORT_XTAL_CLOCK  (1)
@@ -155,10 +164,10 @@
 #define SOC_MPU_REGION_WO_SUPPORTED               0
 
 /*-------------------------- PCNT CAPS ---------------------------------------*/
-// ESP32-S2 have 1 PCNT peripheral
-#define SOC_PCNT_PORT_NUM      (1)
-#define SOC_PCNT_UNIT_NUM      (4) // ESP32-S2 only have 4 unit
-#define SOC_PCNT_UNIT_CHANNEL_NUM (2)
+#define SOC_PCNT_GROUPS               (1)
+#define SOC_PCNT_UNITS_PER_GROUP      (4)
+#define SOC_PCNT_CHANNELS_PER_UNIT    (2)
+#define SOC_PCNT_THRES_POINT_PER_UNIT (2)
 
 /*-------------------------- RMT CAPS ----------------------------------------*/
 #define SOC_RMT_GROUPS                  (1)  /*!< One RMT group */
@@ -209,6 +218,7 @@
 #define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT             1
 
 #define SOC_MEMSPI_IS_INDEPENDENT 1
+#define SOC_SPI_SUPPORT_OCT 1
 
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/
 #define SOC_SYSTIMER_COUNTER_NUM  (1)  // Number of counter units
@@ -237,7 +247,7 @@
 #define SOC_TWAI_SUPPORTS_RX_STATUS     1
 
 /*-------------------------- UART CAPS ---------------------------------------*/
-// ESP32-S2 have 2 UART.
+// ESP32-S2 has 2 UART.
 #define SOC_UART_NUM                (2)
 #define SOC_UART_SUPPORT_REF_TICK   (1)         /*!< Support REF_TICK as the clock source */
 #define SOC_UART_FIFO_LEN           (128)       /*!< The UART hardware FIFO length */

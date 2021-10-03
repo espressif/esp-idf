@@ -30,6 +30,7 @@
 
 #include <stdbool.h>
 #include <stdarg.h>
+#include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -123,7 +124,7 @@ void esp_log_level_set(const char *tag, esp_log_level_t level)
             return;
         }
         new_entry->level = (uint8_t) level;
-        strlcpy(new_entry->tag, tag, tag_len);
+        memcpy(new_entry->tag, tag, tag_len); // we know the size and strncpy would trigger a compiler warning here
         SLIST_INSERT_HEAD(&s_log_tags, new_entry, entries);
     }
 
@@ -138,6 +139,35 @@ void esp_log_level_set(const char *tag, esp_log_level_t level)
         }
     }
     esp_log_impl_unlock();
+}
+
+
+/* Common code for getting the log level from cache, esp_log_impl_lock()
+   should be called before calling this function. The function unlocks,
+   as indicated in the name.
+*/
+static esp_log_level_t s_log_level_get_and_unlock(const char *tag)
+{
+    esp_log_level_t level_for_tag;
+    // Look for the tag in cache first, then in the linked list of all tags
+    if (!get_cached_log_level(tag, &level_for_tag)) {
+        if (!get_uncached_log_level(tag, &level_for_tag)) {
+            level_for_tag = esp_log_default_level;
+        }
+        add_to_cache(tag, level_for_tag);
+#ifdef LOG_BUILTIN_CHECKS
+        ++s_log_cache_misses;
+#endif
+    }
+    esp_log_impl_unlock();
+
+    return level_for_tag;
+}
+
+esp_log_level_t esp_log_level_get(const char *tag)
+{
+    esp_log_impl_lock();
+    return s_log_level_get_and_unlock(tag);
 }
 
 void clear_log_level_list(void)
@@ -162,18 +192,7 @@ void esp_log_writev(esp_log_level_t level,
     if (!esp_log_impl_lock_timeout()) {
         return;
     }
-    esp_log_level_t level_for_tag;
-    // Look for the tag in cache first, then in the linked list of all tags
-    if (!get_cached_log_level(tag, &level_for_tag)) {
-        if (!get_uncached_log_level(tag, &level_for_tag)) {
-            level_for_tag = esp_log_default_level;
-        }
-        add_to_cache(tag, level_for_tag);
-#ifdef LOG_BUILTIN_CHECKS
-        ++s_log_cache_misses;
-#endif
-    }
-    esp_log_impl_unlock();
+    esp_log_level_t level_for_tag = s_log_level_get_and_unlock(tag);
     if (!should_output(level, level_for_tag)) {
         return;
     }

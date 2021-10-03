@@ -9,8 +9,6 @@
 #include "esp_sleep.h"
 
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3) // IDF-1780 ESP32-S3 Deep sleep and light sleep
-
 static void timer_cb1(void *arg)
 {
     ++*((int*) arg);
@@ -48,5 +46,3 @@ TEST_CASE("Test the periodic timer does not handle lost events during light slee
     TEST_ESP_OK(esp_timer_dump(stdout));
     TEST_ESP_OK(esp_timer_delete(periodic_timer));
 }
-
-#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)

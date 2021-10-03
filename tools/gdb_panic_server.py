@@ -69,13 +69,14 @@ GDB_REGS_INFO_RISCV_ILP32 = [
 
 
 GDB_REGS_INFO = {
-    'esp32c3': GDB_REGS_INFO_RISCV_ILP32
+    'esp32c3': GDB_REGS_INFO_RISCV_ILP32,
+    'esp32h2': GDB_REGS_INFO_RISCV_ILP32
 }
 
 PanicInfo = namedtuple('PanicInfo', 'core_id regs stack_base_addr stack_data')
 
 
-def build_riscv_panic_output_parser():  # type: () -> typing.Type[ParserElement]
+def build_riscv_panic_output_parser():  # type: () -> typing.Any[typing.Type[ParserElement]]
     """Builds a parser for the panic handler output using pyparsing"""
 
     # We don't match the first line, since "Guru Meditation" will not be printed in case of an abort:
@@ -161,7 +162,8 @@ def parse_idf_riscv_panic_output(panic_text):  # type: (str) -> PanicInfo
 
 
 PANIC_OUTPUT_PARSERS = {
-    'esp32c3': parse_idf_riscv_panic_output
+    'esp32c3': parse_idf_riscv_panic_output,
+    'esp32h2': parse_idf_riscv_panic_output
 }
 
 
@@ -258,7 +260,7 @@ class GdbServer(object):
 
         # For any memory address that is not on the stack, pretend the value is 0x00.
         # GDB should never ask us for program memory, it will be obtained from the ELF file.
-        def in_stack(addr):
+        def in_stack(addr):  # type: (int) -> typing.Any[bool]
             return stack_addr_min <= addr < stack_addr_max
 
         result = ''
@@ -271,7 +273,7 @@ class GdbServer(object):
         self._respond(result)
 
 
-def main():
+def main():  # type: () -> None
     parser = argparse.ArgumentParser()
     parser.add_argument('input_file', type=argparse.FileType('r'),
                         help='File containing the panic handler output')

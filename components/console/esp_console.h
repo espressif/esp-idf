@@ -1,16 +1,8 @@
-// Copyright 2016-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
 #ifdef __cplusplus
@@ -56,6 +48,7 @@ typedef struct {
     uint32_t task_stack_size;      //!< repl task stack size
     uint32_t task_priority;        //!< repl task priority
     const char *prompt;            //!< prompt (NULL represents default: "esp> ")
+    size_t max_cmdline_length;     //!< maximum length of a command line. If 0, default value will be used
 } esp_console_repl_config_t;
 
 /**
@@ -69,6 +62,7 @@ typedef struct {
         .task_stack_size = 4096,          \
         .task_priority = 2,               \
         .prompt = NULL,                   \
+        .max_cmdline_length = 0,          \
 }
 
 /**
@@ -113,6 +107,21 @@ typedef struct {
 #define ESP_CONSOLE_DEV_CDC_CONFIG_DEFAULT() \
 {                                            \
 }
+
+#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+/**
+ * @brief Parameters for console device: USB-SERIAL-JTAG
+ *
+ * @note It's an empty structure for now, reserved for future
+ *
+ */
+typedef struct {
+
+} esp_console_dev_usb_serial_jtag_config_t;
+
+#define ESP_CONSOLE_DEV_USB_SERIAL_JTAG_CONFIG_DEFAULT() {}
+
+#endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
 
 /**
  * @brief initialize console module
@@ -338,6 +347,29 @@ esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_con
  *      - ESP_FAIL Parameter error
  */
 esp_err_t esp_console_new_repl_usb_cdc(const esp_console_dev_usb_cdc_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl);
+
+#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+/**
+ * @brief Establish a console REPL (Read-eval-print loop) environment over USB-SERIAL-JTAG
+ *
+ * @param[in] dev_config USB-SERIAL-JTAG configuration
+ * @param[in] repl_config REPL configuration
+ * @param[out] ret_repl return REPL handle after initialization succeed, return NULL otherwise
+ *
+ * @note This is a all-in-one function to establish the environment needed for REPL, includes:
+ *       - Initializes linenoise
+ *       - Spawn new thread to run REPL in the background
+ *
+ * @attention This function is meant to be used in the examples to make the code more compact.
+ *            Applications which use console functionality should be based on
+ *            the underlying linenoise and esp_console functions.
+ *
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_FAIL Parameter error
+ */
+esp_err_t esp_console_new_repl_usb_serial_jtag(const esp_console_dev_usb_serial_jtag_config_t *dev_config, const esp_console_repl_config_t *repl_config, esp_console_repl_t **ret_repl);
+#endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
 
 /**
  * @brief Start REPL environment

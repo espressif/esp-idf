@@ -26,11 +26,19 @@ menu "ESP System Settings"
                 Just resets the processor without outputting anything
 
         config ESP_SYSTEM_PANIC_GDBSTUB
-            bool "Invoke GDBStub"
+            bool "GDBStub on panic"
             select ESP_GDBSTUB_ENABLED
             help
                 Invoke gdbstub on the serial port, allowing for gdb to attach to it to do a postmortem
                 of the crash.
+
+        config ESP_SYSTEM_GDBSTUB_RUNTIME
+            bool "GDBStub at runtime"
+            select FREERTOS_UNICORE
+            select ESP_GDBSTUB_ENABLED
+            help
+                Invoke gdbstub on the serial port, allowing for gdb to attach to it and to do a debug on runtime.
+                This feature will switch system to single core mode.
     endchoice
 
     config ESP_SYSTEM_SINGLE_CORE_MODE
@@ -42,6 +50,12 @@ menu "ESP System Settings"
     config ESP_SYSTEM_RTC_EXT_XTAL
         # This is a High Layer Kconfig option, invisible, can be selected by other Kconfig option
         # e.g. It will be selected on when ESP32_RTC_CLK_SRC_EXT_CRYS is on
+        bool
+        default n
+
+    config ESP_SYSTEM_RTC_EXT_OSC
+        # This is a High Layer Kconfig option, invisible, can be selected by other Kconfig option
+        # e.g. It will be selected on when ESPX_RTC_CLK_SRC_EXT_OSC is on
         bool
         default n
 
@@ -69,6 +83,7 @@ menu "ESP System Settings"
         default y if IDF_TARGET_ESP32S2
         default y if IDF_TARGET_ESP32C3
         default y if IDF_TARGET_ESP32S3
+        default y if IDF_TARGET_ESP32H2
 
     config ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
         bool "Enable RTC fast memory for dynamic allocations"
@@ -76,6 +91,7 @@ menu "ESP System Settings"
         default y if IDF_TARGET_ESP32S2
         default y if IDF_TARGET_ESP32C3
         default n if IDF_TARGET_ESP32S3  # TODO
+        default y if IDF_TARGET_ESP32H2
         depends on ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK
         help
             This config option allows to add RTC fast memory region to system heap with capability
@@ -83,11 +99,29 @@ menu "ESP System Settings"
             heap initialization order by early startup services and scheduler related code. Speed
             wise RTC fast memory operates on APB clock and hence does not have much performance impact.
 
+    config ESP_SYSTEM_USE_EH_FRAME
+        bool "Generate and use eh_frame for backtracing"
+        default n
+        depends on IDF_TARGET_ARCH_RISCV
+        help
+            Generate DWARF information for each function of the project. These information will parsed and used to
+            perform backtracing when panics occur. Activating this option will activate asynchronous frame unwinding
+            and generation of both .eh_frame and .eh_frame_hdr sections, resulting in a bigger binary size (20% to
+            100% larger). The main purpose of this option is to be able to have a backtrace parsed and printed by
+            the program itself, regardless of the serial monitor used.
+            This option shall NOT be used for production.
+
     menu "Memory protection"
+
+        config ESP_SYSTEM_MEMPROT_DEPCHECK
+            bool
+            default y if IDF_TARGET_ESP32S2
+            default y if IDF_TARGET_ESP32C3
+            default y if IDF_TARGET_ESP32H2
 
         config ESP_SYSTEM_MEMPROT_FEATURE
             bool "Enable memory protection"
-            depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S2
+            depends on ESP_SYSTEM_MEMPROT_DEPCHECK
             default "y"
             help
                 If enabled, the permission control module watches all the memory access and fires the panic handler
@@ -104,6 +138,20 @@ menu "ESP System Settings"
             help
                 Once locked, memory protection settings cannot be changed anymore.
                 The lock is reset only on the chip startup.
+
+        config ESP_SYSTEM_MEMPROT_CPU_PREFETCH_PAD_SIZE
+            # Hidden option for linker script usage
+            int
+            depends on ESP_SYSTEM_MEMPROT_DEPCHECK
+            default 16
+
+        config ESP_SYSTEM_MEMPROT_MEM_ALIGN_SIZE
+            # Hidden option for linker script usage
+            int
+            depends on ESP_SYSTEM_MEMPROT_DEPCHECK
+            default 4   if IDF_TARGET_ESP32S2
+            default 256 if IDF_TARGET_ESP32S3
+            default 512
 
     endmenu  # Memory protection
 
@@ -179,12 +227,13 @@ menu "ESP System Settings"
             bool "Default: UART0"
         config ESP_CONSOLE_USB_CDC
             bool "USB CDC"
-            # The naming is confusing: USB_ENABLED means that TinyUSB driver is enabled, not USB in general.
-            # && !USB_ENABLED is because the ROM CDC driver is currently incompatible with TinyUSB.
-            depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3)  && !USB_ENABLED
+            # && !TINY_USB is because the ROM CDC driver is currently incompatible with TinyUSB.
+            depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3)  && !TINY_USB
         config ESP_CONSOLE_USB_SERIAL_JTAG
             bool "USB Serial/JTAG Controller"
-            depends on IDF_TARGET_ESP32C3
+            select ESPTOOLPY_NO_STUB if IDF_TARGET_ESP32S3  #ESPTOOL-251
+            select ESPTOOLPY_NO_STUB if IDF_TARGET_ESP32C3  #ESPTOOL-252
+            depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
         config ESP_CONSOLE_UART_CUSTOM
             bool "Custom UART"
         config ESP_CONSOLE_NONE
@@ -198,7 +247,7 @@ menu "ESP System Settings"
 
     config ESP_CONSOLE_MULTIPLE_UART
         bool
-        default y if !IDF_TARGET_ESP32C3
+        default y if !IDF_TARGET_ESP32C3 && !IDF_TARGET_ESP32H2
 
     choice ESP_CONSOLE_UART_NUM
         prompt "UART peripheral to use for console output (0-1)"
@@ -366,30 +415,30 @@ menu "ESP System Settings"
             If this option is enabled, the Task Wtachdog Timer will wach the CPU1
             Idle Task.
 
-    config ESP_IPC_TASK_STACK_SIZE
-        int "Inter-Processor Call (IPC) task stack size"
-        range 512 65536 if !APPTRACE_ENABLE
-        range 2048 65536 if APPTRACE_ENABLE
-        default 2048 if APPTRACE_ENABLE
-        default 1024
+    config ESP_XT_WDT
+        bool "Initialize XTAL32K watchdog timer on startup"
+        depends on !IDF_TARGET_ESP32 && (ESP_SYSTEM_RTC_EXT_OSC || ESP_SYSTEM_RTC_EXT_XTAL)
+        default n
         help
-            Configure the IPC tasks stack size. One IPC task runs on each core
-            (in dual core mode), and allows for cross-core function calls.
+            This watchdog timer can detect oscillation failure of the XTAL32K_CLK. When such a failure
+            is detected the hardware can be set up to automatically switch to BACKUP32K_CLK and generate
+            an interrupt.
 
-            See IPC documentation for more details.
+    config ESP_XT_WDT_TIMEOUT
+        int "XTAL32K watchdog timeout period"
+        depends on ESP_XT_WDT
+        range 1 255
+        default 200
+        help
+            Timeout period configuration for the XTAL32K watchdog timer based on RTC_CLK.
 
-            The default stack size should be enough for most common use cases.
-            It can be shrunk if you are sure that you do not use any custom
-            IPC functionality.
-
-    config ESP_IPC_USES_CALLERS_PRIORITY
-        bool "IPC runs at caller's priority"
+    config ESP_XT_WDT_BACKUP_CLK_ENABLE
+        bool "Automatically switch to BACKUP32K_CLK when timer expires"
+        depends on ESP_XT_WDT
         default y
-        depends on !FREERTOS_UNICORE
         help
-            If this option is not enabled then the IPC task will keep behavior
-            same as prior to that of ESP-IDF v4.0, and hence IPC task will run
-            at (configMAX_PRIORITIES - 1) priority.
+            Enable this to automatically switch to BACKUP32K_CLK as the source of RTC_SLOW_CLK when
+            the watchdog timer expires.
 
     config ESP_PANIC_HANDLER_IRAM
         bool "Place panic handler code in IRAM"
@@ -413,5 +462,23 @@ menu "ESP System Settings"
             Debug stubs are used by OpenOCD to execute pre-compiled onboard code
             which does some useful debugging stuff, e.g. GCOV data dump.
 
+    choice ESP_SYSTEM_CHECK_INT_LEVEL
+        prompt "Interrupt level to use for Interrupt Watchdog and other system checks"
+        default ESP_SYSTEM_CHECK_INT_LEVEL_4
+        help
+            Interrupt level to use for Interrupt Watchdog and other system checks.
+
+        config ESP_SYSTEM_CHECK_INT_LEVEL_5
+            bool "Level 5 interrupt"
+            depends on IDF_TARGET_ESP32
+            help
+                Using level 5 interrupt for Interrupt Watchdog and other system checks.
+
+        config ESP_SYSTEM_CHECK_INT_LEVEL_4
+            bool "Level 4 interrupt"
+            depends on !BTDM_CTRL_HLI
+            help
+                Using level 4 interrupt for Interrupt Watchdog and other system checks.
+    endchoice
 
 endmenu  # ESP System Settings

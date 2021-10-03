@@ -1,34 +1,26 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at",
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License
+/*
+ * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "sdkconfig.h"
 #include "esp_efuse.h"
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 6a29c09c943d9cb07bd874af57b5870e
+// md5_digest_table ee5142bc489eee22230a49b5c7cafe00
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
 // To show efuse_table run the command 'show_efuse_table'.
 
-static const esp_efuse_desc_t WR_DIS_RD_DIS[] = {
-    {EFUSE_BLK0, 0, 1}, 	 // Write protection for RD_DIS_KEY0 RD_DIS_KEY1 RD_DIS_KEY2 RD_DIS_KEY3 RD_DIS_KEY4 RD_DIS_KEY5 RD_DIS_SYS_DATA_PART2,
+static const esp_efuse_desc_t WR_DIS[] = {
+    {EFUSE_BLK0, 0, 32}, 	 // Write protection,
 };
 
-static const esp_efuse_desc_t WR_DIS_DIS_RTC_RAM_BOOT[] = {
-    {EFUSE_BLK0, 1, 1}, 	 // Write protection for DIS_RTC_RAM_BOOT,
+static const esp_efuse_desc_t WR_DIS_RD_DIS[] = {
+    {EFUSE_BLK0, 0, 1}, 	 // Write protection for RD_DIS_KEY0 RD_DIS_KEY1 RD_DIS_KEY2 RD_DIS_KEY3 RD_DIS_KEY4 RD_DIS_KEY5 RD_DIS_SYS_DATA_PART2,
 };
 
 static const esp_efuse_desc_t WR_DIS_GROUP_1[] = {
@@ -135,6 +127,10 @@ static const esp_efuse_desc_t WR_DIS_USB_EXCHG_PINS[] = {
     {EFUSE_BLK0, 30, 1}, 	 // Write protection for USB_EXCHG_PINS,
 };
 
+static const esp_efuse_desc_t RD_DIS[] = {
+    {EFUSE_BLK0, 32, 7}, 	 // Read protection,
+};
+
 static const esp_efuse_desc_t RD_DIS_KEY0[] = {
     {EFUSE_BLK0, 32, 1}, 	 // Read protection for EFUSE_BLK4.  KEY0,
 };
@@ -161,10 +157,6 @@ static const esp_efuse_desc_t RD_DIS_KEY5[] = {
 
 static const esp_efuse_desc_t RD_DIS_SYS_DATA_PART2[] = {
     {EFUSE_BLK0, 38, 1}, 	 // Read protection for EFUSE_BLK10. SYS_DATA_PART2,
-};
-
-static const esp_efuse_desc_t DIS_RTC_RAM_BOOT[] = {
-    {EFUSE_BLK0, 39, 1}, 	 // Disable boot from RTC RAM,
 };
 
 static const esp_efuse_desc_t DIS_ICACHE[] = {
@@ -287,6 +279,22 @@ static const esp_efuse_desc_t SECURE_BOOT_AGGRESSIVE_REVOKE[] = {
     {EFUSE_BLK0, 117, 1}, 	 // Enable aggressive secure boot revoke,
 };
 
+static const esp_efuse_desc_t DIS_USB_JTAG[] = {
+    {EFUSE_BLK0, 118, 1}, 	 // Set to disable usb_serial_jtag-to-jtag function,
+};
+
+static const esp_efuse_desc_t DIS_USB_SERIAL_JTAG[] = {
+    {EFUSE_BLK0, 119, 1}, 	 // Set to disable usb_serial_jtag module,
+};
+
+static const esp_efuse_desc_t STRAP_JTAG_SEL[] = {
+    {EFUSE_BLK0, 120, 1}, 	 // Enable selection between usb_to_jtag or pad_to_jtag through gpio10,
+};
+
+static const esp_efuse_desc_t USB_PHY_SEL[] = {
+    {EFUSE_BLK0, 121, 1}, 	 // Select internal/external PHY for USB OTG and usb_serial_jtag,
+};
+
 static const esp_efuse_desc_t FLASH_TPUW[] = {
     {EFUSE_BLK0, 124, 4}, 	 // Flash wait time after power up. (unit is ms). When value is 15. the time is 30 ms,
 };
@@ -401,15 +409,15 @@ static const esp_efuse_desc_t WAFER_VERSION[] = {
 };
 
 static const esp_efuse_desc_t PKG_VERSION[] = {
-    {EFUSE_BLK1, 117, 4}, 	 // Package version 0:ESP32-S2 1:ESP32-S2FH16 2:ESP32-S2FH32,
+    {EFUSE_BLK1, 117, 3}, 	 // Package version,
 };
 
 static const esp_efuse_desc_t BLOCK1_VERSION[] = {
-    {EFUSE_BLK1, 121, 3}, 	 // BLOCK1 efuse version 0:No calibration 1:With calibration,
+    {EFUSE_BLK1, 120, 3}, 	 // BLOCK1 efuse version 0:No calibration 1:With calibration,
 };
 
-static const esp_efuse_desc_t SYS_DATA_PART0[] = {
-    {EFUSE_BLK1, 126, 66}, 	 // System configuration,
+static const esp_efuse_desc_t ADC2_CAL_VOL_ATTEN3[] = {
+    {EFUSE_BLK1, 186, 6}, 	 // ADC2 calibration voltage at atten3,
 };
 
 static const esp_efuse_desc_t OPTIONAL_UNIQUE_ID[] = {
@@ -417,11 +425,83 @@ static const esp_efuse_desc_t OPTIONAL_UNIQUE_ID[] = {
 };
 
 static const esp_efuse_desc_t BLOCK2_VERSION[] = {
-    {EFUSE_BLK2, 132, 3}, 	 // Version of BLOCK2,
+    {EFUSE_BLK2, 128, 4}, 	 // Version of BLOCK2,
+};
+
+static const esp_efuse_desc_t TEMP_CALIB[] = {
+    {EFUSE_BLK2, 132, 9}, 	 // Temperature calibration data,
+};
+
+static const esp_efuse_desc_t OCODE[] = {
+    {EFUSE_BLK2, 141, 8}, 	 // ADC OCode,
+};
+
+static const esp_efuse_desc_t ADC1_INIT_CODE_ATTEN0[] = {
+    {EFUSE_BLK2, 149, 8}, 	 // ADC1 init code at atten0,
+};
+
+static const esp_efuse_desc_t ADC1_INIT_CODE_ATTEN1[] = {
+    {EFUSE_BLK2, 157, 6}, 	 // ADC1 init code at atten1,
+};
+
+static const esp_efuse_desc_t ADC1_INIT_CODE_ATTEN2[] = {
+    {EFUSE_BLK2, 163, 6}, 	 // ADC1 init code at atten2,
+};
+
+static const esp_efuse_desc_t ADC1_INIT_CODE_ATTEN3[] = {
+    {EFUSE_BLK2, 169, 6}, 	 // ADC1 init code at atten3,
+};
+
+static const esp_efuse_desc_t ADC2_INIT_CODE_ATTEN0[] = {
+    {EFUSE_BLK2, 175, 8}, 	 // ADC2 init code at atten0,
+};
+
+static const esp_efuse_desc_t ADC2_INIT_CODE_ATTEN1[] = {
+    {EFUSE_BLK2, 183, 6}, 	 // ADC2 init code at atten1,
+};
+
+static const esp_efuse_desc_t ADC2_INIT_CODE_ATTEN2[] = {
+    {EFUSE_BLK2, 189, 6}, 	 // ADC2 init code at atten2,
+};
+
+static const esp_efuse_desc_t ADC2_INIT_CODE_ATTEN3[] = {
+    {EFUSE_BLK2, 195, 6}, 	 // ADC2 init code at atten3,
+};
+
+static const esp_efuse_desc_t ADC1_CAL_VOL_ATTEN0[] = {
+    {EFUSE_BLK2, 201, 8}, 	 // ADC1 calibration voltage at atten0,
+};
+
+static const esp_efuse_desc_t ADC1_CAL_VOL_ATTEN1[] = {
+    {EFUSE_BLK2, 209, 8}, 	 // ADC1 calibration voltage at atten1,
+};
+
+static const esp_efuse_desc_t ADC1_CAL_VOL_ATTEN2[] = {
+    {EFUSE_BLK2, 217, 8}, 	 // ADC1 calibration voltage at atten2,
+};
+
+static const esp_efuse_desc_t ADC1_CAL_VOL_ATTEN3[] = {
+    {EFUSE_BLK2, 225, 8}, 	 // ADC1 calibration voltage at atten3,
+};
+
+static const esp_efuse_desc_t ADC2_CAL_VOL_ATTEN0[] = {
+    {EFUSE_BLK2, 233, 8}, 	 // ADC2 calibration voltage at atten0,
+};
+
+static const esp_efuse_desc_t ADC2_CAL_VOL_ATTEN1[] = {
+    {EFUSE_BLK2, 241, 7}, 	 // ADC2 calibration voltage at atten1,
+};
+
+static const esp_efuse_desc_t ADC2_CAL_VOL_ATTEN2[] = {
+    {EFUSE_BLK2, 248, 7}, 	 // ADC2 calibration voltage at atten2,
 };
 
 static const esp_efuse_desc_t USER_DATA[] = {
     {EFUSE_BLK3, 0, 256}, 	 // User data,
+};
+
+static const esp_efuse_desc_t USER_DATA_MAC_CUSTOM[] = {
+    {EFUSE_BLK3, 200, 48}, 	 // Custom MAC,
 };
 
 static const esp_efuse_desc_t KEY0[] = {
@@ -456,13 +536,13 @@ static const esp_efuse_desc_t SYS_DATA_PART2[] = {
 
 
 
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RD_DIS[] = {
-    &WR_DIS_RD_DIS[0],    		// Write protection for RD_DIS_KEY0 RD_DIS_KEY1 RD_DIS_KEY2 RD_DIS_KEY3 RD_DIS_KEY4 RD_DIS_KEY5 RD_DIS_SYS_DATA_PART2
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS[] = {
+    &WR_DIS[0],    		// Write protection
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_RTC_RAM_BOOT[] = {
-    &WR_DIS_DIS_RTC_RAM_BOOT[0],    		// Write protection for DIS_RTC_RAM_BOOT
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RD_DIS[] = {
+    &WR_DIS_RD_DIS[0],    		// Write protection for RD_DIS_KEY0 RD_DIS_KEY1 RD_DIS_KEY2 RD_DIS_KEY3 RD_DIS_KEY4 RD_DIS_KEY5 RD_DIS_SYS_DATA_PART2
     NULL
 };
 
@@ -596,6 +676,11 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_USB_EXCHG_PINS[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_RD_DIS[] = {
+    &RD_DIS[0],    		// Read protection
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_KEY0[] = {
     &RD_DIS_KEY0[0],    		// Read protection for EFUSE_BLK4.  KEY0
     NULL
@@ -628,11 +713,6 @@ const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_KEY5[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_SYS_DATA_PART2[] = {
     &RD_DIS_SYS_DATA_PART2[0],    		// Read protection for EFUSE_BLK10. SYS_DATA_PART2
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_DIS_RTC_RAM_BOOT[] = {
-    &DIS_RTC_RAM_BOOT[0],    		// Disable boot from RTC RAM
     NULL
 };
 
@@ -786,6 +866,26 @@ const esp_efuse_desc_t* ESP_EFUSE_SECURE_BOOT_AGGRESSIVE_REVOKE[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_JTAG[] = {
+    &DIS_USB_JTAG[0],    		// Set to disable usb_serial_jtag-to-jtag function
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_SERIAL_JTAG[] = {
+    &DIS_USB_SERIAL_JTAG[0],    		// Set to disable usb_serial_jtag module
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_STRAP_JTAG_SEL[] = {
+    &STRAP_JTAG_SEL[0],    		// Enable selection between usb_to_jtag or pad_to_jtag through gpio10
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_USB_PHY_SEL[] = {
+    &USB_PHY_SEL[0],    		// Select internal/external PHY for USB OTG and usb_serial_jtag
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_FLASH_TPUW[] = {
     &FLASH_TPUW[0],    		// Flash wait time after power up. (unit is ms). When value is 15. the time is 30 ms
     NULL
@@ -927,7 +1027,7 @@ const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[] = {
-    &PKG_VERSION[0],    		// Package version 0:ESP32-S2 1:ESP32-S2FH16 2:ESP32-S2FH32
+    &PKG_VERSION[0],    		// Package version
     NULL
 };
 
@@ -936,8 +1036,8 @@ const esp_efuse_desc_t* ESP_EFUSE_BLOCK1_VERSION[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_SYS_DATA_PART0[] = {
-    &SYS_DATA_PART0[0],    		// System configuration
+const esp_efuse_desc_t* ESP_EFUSE_ADC2_CAL_VOL_ATTEN3[] = {
+    &ADC2_CAL_VOL_ATTEN3[0],    		// ADC2 calibration voltage at atten3
     NULL
 };
 
@@ -951,8 +1051,98 @@ const esp_efuse_desc_t* ESP_EFUSE_BLOCK2_VERSION[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_TEMP_CALIB[] = {
+    &TEMP_CALIB[0],    		// Temperature calibration data
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_OCODE[] = {
+    &OCODE[0],    		// ADC OCode
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN0[] = {
+    &ADC1_INIT_CODE_ATTEN0[0],    		// ADC1 init code at atten0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN1[] = {
+    &ADC1_INIT_CODE_ATTEN1[0],    		// ADC1 init code at atten1
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN2[] = {
+    &ADC1_INIT_CODE_ATTEN2[0],    		// ADC1 init code at atten2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_INIT_CODE_ATTEN3[] = {
+    &ADC1_INIT_CODE_ATTEN3[0],    		// ADC1 init code at atten3
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC2_INIT_CODE_ATTEN0[] = {
+    &ADC2_INIT_CODE_ATTEN0[0],    		// ADC2 init code at atten0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC2_INIT_CODE_ATTEN1[] = {
+    &ADC2_INIT_CODE_ATTEN1[0],    		// ADC2 init code at atten1
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC2_INIT_CODE_ATTEN2[] = {
+    &ADC2_INIT_CODE_ATTEN2[0],    		// ADC2 init code at atten2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC2_INIT_CODE_ATTEN3[] = {
+    &ADC2_INIT_CODE_ATTEN3[0],    		// ADC2 init code at atten3
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN0[] = {
+    &ADC1_CAL_VOL_ATTEN0[0],    		// ADC1 calibration voltage at atten0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN1[] = {
+    &ADC1_CAL_VOL_ATTEN1[0],    		// ADC1 calibration voltage at atten1
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN2[] = {
+    &ADC1_CAL_VOL_ATTEN2[0],    		// ADC1 calibration voltage at atten2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN3[] = {
+    &ADC1_CAL_VOL_ATTEN3[0],    		// ADC1 calibration voltage at atten3
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC2_CAL_VOL_ATTEN0[] = {
+    &ADC2_CAL_VOL_ATTEN0[0],    		// ADC2 calibration voltage at atten0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC2_CAL_VOL_ATTEN1[] = {
+    &ADC2_CAL_VOL_ATTEN1[0],    		// ADC2 calibration voltage at atten1
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC2_CAL_VOL_ATTEN2[] = {
+    &ADC2_CAL_VOL_ATTEN2[0],    		// ADC2 calibration voltage at atten2
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_USER_DATA[] = {
     &USER_DATA[0],    		// User data
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_USER_DATA_MAC_CUSTOM[] = {
+    &USER_DATA_MAC_CUSTOM[0],    		// Custom MAC
     NULL
 };
 

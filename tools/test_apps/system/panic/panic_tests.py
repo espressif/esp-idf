@@ -51,11 +51,13 @@ def task_wdt_inner(env, test_name):
         dut.expect_backtrace()
         dut.expect_elf_sha256()
         dut.expect_none('Guru Meditation')
-        test_common(dut, test_name, expected_backtrace=[
-            # Backtrace interrupted when abort is called, IDF-842.
-            # Task WDT calls abort internally.
-            'panic_abort', 'esp_system_abort'
-        ])
+        if ('gdbstub' in test_name):
+            test_common(dut, test_name, expected_backtrace=[
+                # Backtrace interrupted when abort is called, IDF-842
+                'panic_abort', 'esp_system_abort'
+            ])
+        else:
+            test_common(dut, test_name)
 
 
 def int_wdt_inner(env, test_name):
@@ -101,10 +103,40 @@ def abort_inner(env, test_name):
         dut.expect_backtrace()
         dut.expect_elf_sha256()
         dut.expect_none('Guru Meditation', 'Re-entered core dump')
-        test_common(dut, test_name, expected_backtrace=[
-            # Backtrace interrupted when abort is called, IDF-842
-            'panic_abort', 'esp_system_abort'
-        ])
+        if ('gdbstub' in test_name):
+            test_common(dut, test_name, expected_backtrace=[
+                # Backtrace interrupted when abort is called, IDF-842
+                'panic_abort', 'esp_system_abort'
+            ])
+        else:
+            test_common(dut, test_name)
+
+
+def abort_cached_disabled_inner(env, test_name):
+    with get_dut(env, test_name, 'test_abort_cache_disabled') as dut:
+        dut.expect(re.compile(r'abort\(\) was called at PC [0-9xa-f]+ on core 0'))
+        dut.expect_backtrace()
+        dut.expect_elf_sha256()
+        dut.expect_none('Guru Meditation', 'Re-entered core dump')
+        test_common(dut, test_name)
+
+
+def assert_inner(env, test_name):
+    with get_dut(env, test_name, 'test_assert') as dut:
+        dut.expect(re.compile(r'(assert failed:[\s\w\(\)]*?\s[\.\w\/]*\.(?:c|cpp|h|hpp):\d*.*)'))
+        dut.expect_backtrace()
+        dut.expect_elf_sha256()
+        dut.expect_none('Guru Meditation', 'Re-entered core dump')
+        test_common(dut, test_name)
+
+
+def assert_cached_disabled_inner(env, test_name):
+    with get_dut(env, test_name, 'test_assert_cache_disabled') as dut:
+        dut.expect(re.compile(r'(assert failed: [0-9xa-fA-F]+.*)'))
+        dut.expect_backtrace()
+        dut.expect_elf_sha256()
+        dut.expect_none('Guru Meditation', 'Re-entered core dump')
+        test_common(dut, test_name)
 
 
 def storeprohibited_inner(env, test_name):
@@ -155,7 +187,10 @@ def ub_inner(env, test_name):
         dut.expect_backtrace()
         dut.expect_elf_sha256()
         dut.expect_none('Guru Meditation', 'Re-entered core dump')
-        test_common(dut, test_name, expected_backtrace=[
-            # Backtrace interrupted when abort is called, IDF-842
-            'panic_abort', 'esp_system_abort'
-        ])
+        if ('gdbstub' in test_name):
+            test_common(dut, test_name, expected_backtrace=[
+                # Backtrace interrupted when abort is called, IDF-842
+                'panic_abort', 'esp_system_abort'
+            ])
+        else:
+            test_common(dut, test_name)

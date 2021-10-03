@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include <string.h>
-#include "esp_gdbstub.h"
 #include "esp_gdbstub_common.h"
 #include "soc/cpu.h"
 #include "soc/soc_memory_layout.h"

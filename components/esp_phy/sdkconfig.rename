@@ -1,0 +1,5 @@
+# sdkconfig replacement configurations for deprecated options formatted as
+# CONFIG_DEPRECATED_OPTION CONFIG_NEW_OPTION
+
+CONFIG_MAC_BB_PD                        CONFIG_ESP32_PHY_MAC_BB_PD
+CONFIG_REDUCE_PHY_TX_POWER              CONFIG_ESP32_REDUCE_PHY_TX_POWER

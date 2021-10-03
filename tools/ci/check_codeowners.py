@@ -143,10 +143,9 @@ def action_ci_check(args):
                 add_error('no owners specified for {}'.format(path_pattern))
 
             # Check that the file is sorted by path patterns
-            path_pattern_for_cmp = path_pattern.replace('-', '_')  # ignore difference between _ and - for ordering
-            if prev_path_pattern and path_pattern_for_cmp < prev_path_pattern:
-                add_error('file is not sorted: {} < {}'.format(path_pattern_for_cmp, prev_path_pattern))
-            prev_path_pattern = path_pattern_for_cmp
+            if not in_order(prev_path_pattern, path_pattern):
+                add_error('file is not sorted: {} < {}'.format(path_pattern, prev_path_pattern))
+            prev_path_pattern = path_pattern
 
             # Check that the pattern matches at least one file
             files = files_by_pattern(all_files, path_pattern)
@@ -165,6 +164,40 @@ def action_ci_check(args):
         for e in errors:
             print(e)
         raise SystemExit(1)
+
+
+def in_order(prev, current):
+    """
+    Return True if the ordering is correct for these two lines ('prev' should be before 'current').
+
+    Codeowners should be ordered alphabetically, except that order is also significant for the codeowners
+    syntax (the last matching line has priority).
+
+    This means that wildcards are allowed in either order (if wildcard placed first, it's placed before a
+    more specific pattern as a catch-all fallback. If wildcard placed second, it's to override the match
+    made on a previous line i.e. '/xyz/**/*.py' to override the owner of the Python files inside /xyz/ ).
+    """
+    if not prev:
+        return True  # first element in file
+
+    def is_separator(c):
+        return c in '-_/'  # ignore differences between separators for ordering purposes
+
+    def is_wildcard(c):
+        return c in '?*'
+
+    # looping until we see a different character
+    for a,b in zip(prev, current):
+        if is_separator(a) and is_separator(b):
+            continue
+        if is_wildcard(a) or is_wildcard(b):
+            return True  # if the strings matched up to one of them having a wildcard, treat as in order
+        if a != b:
+            return b > a
+        assert a == b
+
+    # common substrings up to the common length are the same, so the longer string should be after
+    return len(current) >= len(prev)
 
 
 def main():

@@ -17,7 +17,7 @@
 #include "scan.h"
 #include "bss.h"
 #ifdef ESP_SUPPLICANT
-#include "esp_supplicant/esp_wifi_driver.h"
+#include "esp_wifi_driver.h"
 #endif
 
 #define MAX_BSS_COUNT 20
@@ -123,6 +123,7 @@ static int wpa_bss_in_use(struct wpa_supplicant *wpa_s, struct wpa_bss *bss)
 	if (bss == wpa_s->current_bss)
 		return 1;
 
+#ifndef ESP_SUPPLICANT
 	if (wpa_s->current_bss &&
 	    (bss->ssid_len != wpa_s->current_bss->ssid_len ||
 	     os_memcmp(bss->ssid, wpa_s->current_bss->ssid,
@@ -131,6 +132,8 @@ static int wpa_bss_in_use(struct wpa_supplicant *wpa_s, struct wpa_bss *bss)
 
 	return !is_zero_ether_addr(bss->bssid) && wpa_s->current_bss->bssid &&
 		(os_memcmp(bss->bssid, wpa_s->current_bss->bssid, ETH_ALEN) == 0);
+#endif
+	return 0;
 }
 
 static int wpa_bss_remove_oldest_unknown(struct wpa_supplicant *wpa_s)

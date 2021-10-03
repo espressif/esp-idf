@@ -1,6 +1,7 @@
 ********************************
 Build and Flash with Eclipse IDE
 ********************************
+
 :link_to_translation:`zh_CN:[中文]`
 
 ESP-IDF V4.0 has a new CMake-based build system as the default build system.

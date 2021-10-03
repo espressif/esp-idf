@@ -1,5 +1,16 @@
 menu "Example Configuration"
 
+    config EXAMPLE_GPIO_RANGE_MIN
+        int
+        default 0
+
+    config EXAMPLE_GPIO_RANGE_MAX
+        int
+        default 33 if IDF_TARGET_ESP32
+        default 46 if IDF_TARGET_ESP32S2
+        default 19 if IDF_TARGET_ESP32C3
+        default 48 if IDF_TARGET_ESP32S3
+
     config EXAMPLE_USE_SPI_ETHERNET
         bool
 
@@ -32,6 +43,14 @@ menu "Example Configuration"
             select ETH_SPI_ETHERNET_W5500
             help
                 Select external SPI-Ethernet module (W5500).
+
+        config EXAMPLE_USE_KSZ8851SNL
+            bool "KSZ8851SNL Module"
+            select EXAMPLE_USE_SPI_ETHERNET
+            select ETH_USE_SPI_ETHERNET
+            select ETH_SPI_ETHERNET_KSZ8851SNL
+            help
+                Select external SPI-Ethernet module (KSZ8851SNL).
     endchoice # EXAMPLE_ETHERNET_TYPE
 
     if EXAMPLE_USE_INTERNAL_ETHERNET
@@ -53,11 +72,18 @@ menu "Example Configuration"
                     RTL8201F/SR8201F is a single port 10/100Mb Ethernet Transceiver with auto MDIX.
                     Goto http://www.corechip-sz.com/productsview.asp?id=22 for more information about it.
 
-            config EXAMPLE_ETH_PHY_LAN8720
-                bool "LAN8720"
+            config EXAMPLE_ETH_PHY_LAN87XX
+                bool "LAN87xx"
                 help
+                    Below chips are supported:
+                    LAN8710A is a small footprint MII/RMII 10/100 Ethernet Transceiver with HP Auto-MDIX and
+                        flexPWR® Technology.
                     LAN8720A is a small footprint RMII 10/100 Ethernet Transceiver with HP Auto-MDIX Support.
-                    Goto https://www.microchip.com/LAN8720A for more information about it.
+                    LAN8740A/LAN8741A is a small footprint MII/RMII 10/100 Energy Efficient Ethernet Transceiver
+                        with HP Auto-MDIX and flexPWR® Technology.
+                    LAN8742A is a small footprint RMII 10/100 Ethernet Transceiver with HP Auto-MDIX and
+                        flexPWR® Technology.
+                    Goto https://www.microchip.com for more information about them.
 
             config EXAMPLE_ETH_PHY_DP83848
                 bool "DP83848"
@@ -70,16 +96,24 @@ menu "Example Configuration"
                 help
                     The KSZ8041 is a single supply 10Base-T/100Base-TX Physical Layer Transceiver.
                     Goto https://www.microchip.com/wwwproducts/en/KSZ8041 for more information about it.
+
+            config EXAMPLE_ETH_PHY_KSZ8081
+                bool "KSZ8081"
+                help
+                    The KSZ8081 is a single supply 10Base-T/100Base-TX Physical Layer Transceiver.
+                    Goto https://www.microchip.com/wwwproducts/en/KSZ8081 for more information about it.
         endchoice # EXAMPLE_ETH_PHY_MODEL
 
         config EXAMPLE_ETH_MDC_GPIO
             int "SMI MDC GPIO number"
+            range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
             default 23
             help
                 Set the GPIO number used by SMI MDC.
 
         config EXAMPLE_ETH_MDIO_GPIO
             int "SMI MDIO GPIO number"
+            range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
             default 18
             help
                 Set the GPIO number used by SMI MDIO.
@@ -95,48 +129,58 @@ menu "Example Configuration"
 
         config EXAMPLE_ETH_SPI_SCLK_GPIO
             int "SPI SCLK GPIO number"
-            range 0 33
-            default 20
+            range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+            default 14 if IDF_TARGET_ESP32
+            default 12 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+            default 6 if IDF_TARGET_ESP32C3
             help
                 Set the GPIO number used by SPI SCLK.
 
         config EXAMPLE_ETH_SPI_MOSI_GPIO
             int "SPI MOSI GPIO number"
-            range 0 33
-            default 19
+            range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+            default 13 if IDF_TARGET_ESP32
+            default 11 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+            default 7 if IDF_TARGET_ESP32C3
             help
                 Set the GPIO number used by SPI MOSI.
 
         config EXAMPLE_ETH_SPI_MISO_GPIO
             int "SPI MISO GPIO number"
-            range 0 33
-            default 18
+            range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+            default 12 if IDF_TARGET_ESP32
+            default 13 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+            default 2 if IDF_TARGET_ESP32C3
             help
                 Set the GPIO number used by SPI MISO.
 
         config EXAMPLE_ETH_SPI_CS_GPIO
             int "SPI CS GPIO number"
-            range 0 33
-            default 21
+            range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+            default 15 if IDF_TARGET_ESP32
+            default 10 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
             help
                 Set the GPIO number used by SPI CS.
 
         config EXAMPLE_ETH_SPI_CLOCK_MHZ
             int "SPI clock speed (MHz)"
             range 5 80
-            default 36
+            default 12 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32C3
+            default 36 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
             help
                 Set the clock speed (MHz) of SPI interface.
 
         config EXAMPLE_ETH_SPI_INT_GPIO
             int "Interrupt GPIO number"
-            default 4
+            range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+            default 4 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
             help
                 Set the GPIO number used by the SPI Ethernet module interrupt line.
     endif # EXAMPLE_USE_SPI_ETHERNET
 
     config EXAMPLE_ETH_PHY_RST_GPIO
         int "PHY Reset GPIO number"
+        range -1 EXAMPLE_GPIO_RANGE_MAX
         default 5
         help
             Set the GPIO number used to reset PHY chip.

@@ -12,10 +12,10 @@ API 指南
    构建系统 <build-system>
    :esp32: 构建系统 (传统 GNU Make) <build-system-legacy>
    深度睡眠唤醒存根 <deep-sleep-stub>
-   :esp32s2: 通过 USB 升级设备固件 <dfu>
+   :SOC_USB_OTG_SUPPORTED: 通过 USB 升级设备固件 <dfu>
    错误处理 <error-handling>
    :SOC_BT_SUPPORTED: ESP-BLE-MESH <esp-ble-mesh/ble-mesh-index>
-   ESP-MESH (Wi-Fi) <mesh>
+   ESP-WIFI-MESH <esp-wifi-mesh>
    核心转储 <core_dump>
    事件处理 <event-handling>
    :SOC_SPIRAM_SUPPORTED: 片外 SPI RAM <external-ram>
@@ -27,10 +27,11 @@ API 指南
    JTAG 调试 <jtag-debugging/index>
    链接脚本生成机制 <linker-script-generation>
    lwIP TCP/IP 协议栈 <lwip>
+   OpenThread <openthread>
    Memory Types <memory-types>
    分区表 <partition-tables>
-   :esp32: 射频校准 <RF_calibration>
-   :esp32: ROM 调试控制台 <romconsole>
+   Performance <performance/index>
+   射频校准 <RF_calibration>
    :esp32: 安全启动 <../security/secure-boot-v1>
    安全启动 V2 <../security/secure-boot-v2>
    线程本地存储 <thread-local-storage>
@@ -41,6 +42,7 @@ API 指南
    单元测试 (Target) <unit-tests>
    单元测试 (Linux Host) <linux-host-testing>
    :esp32: 单元测试 (传统 GNU Make) <unit-tests-legacy>
-   :SOC_USB_SUPPORTED: USB 控制台 <usb-otg-console>
+   :SOC_USB_OTG_SUPPORTED: USB 控制台 <usb-otg-console>
    :SOC_USB_SERIAL_JTAG_SUPPORTED: USB Serial/JTAG Controller Console <usb-serial-jtag-console>
    Wi-Fi 驱动 <wifi>
+   Wi-Fi Security <wifi-security>

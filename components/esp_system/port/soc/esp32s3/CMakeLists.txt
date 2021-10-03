@@ -1,8 +1,9 @@
-set(srcs "dport_panic_highint_hdl.S"
+set(srcs "highint_hdl.S"
          "clk.c"
          "reset_reason.c"
          "system_internal.c"
          "cache_err_int.c"
+         "apb_backup_dma.c"
          "../../arch/xtensa/panic_arch.c"
          "../../arch/xtensa/panic_handler_asm.S"
          "../../arch/xtensa/expression_with_stack.c"
@@ -18,7 +19,7 @@ if(CONFIG_ESP_CONSOLE_USB_CDC)
     target_sources(${COMPONENT_LIB} PRIVATE "${CMAKE_CURRENT_LIST_DIR}/usb_console.c")
 endif()
 
-#ld_include_panic_highint_hdl is added as an undefined symbol because otherwise the
+#ld_include_highint_hdl is added as an undefined symbol because otherwise the
 #linker will ignore panic_highint_hdl.S as it has no other files depending on any
 #symbols in it.
-set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-u ld_include_panic_highint_hdl")
+set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-u ld_include_highint_hdl")

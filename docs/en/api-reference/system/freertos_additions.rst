@@ -25,8 +25,8 @@ Ring Buffers
 The ESP-IDF FreeRTOS ring buffer is a strictly FIFO buffer that supports arbitrarily sized items.
 Ring buffers are a more memory efficient alternative to FreeRTOS queues in situations where the
 size of items is variable. The capacity of a ring buffer is not measured by the number of items
-it can store, but rather by the amount of memory used for storing items. The ring buffer provides API 
-to send an item, or to allocate space for an item in the ring buffer to be filled manually by the user. 
+it can store, but rather by the amount of memory used for storing items. The ring buffer provides API
+to send an item, or to allocate space for an item in the ring buffer to be filled manually by the user.
 For efficiency reasons,
 **items are always retrieved from the ring buffer by reference**. As a result, all retrieved
 items *must also be returned* to the ring buffer by using :cpp:func:`vRingbufferReturnItem` or :cpp:func:`vRingbufferReturnItemFromISR`, in order for them to be removed from the ring buffer completely.
@@ -531,6 +531,6 @@ Hooks API Reference
 Component Specific Properties
 -----------------------------
 
-Besides standart component variables that could be gotten with basic cmake build properties FreeRTOS component also provides an arguments (only one so far) for simpler integration with other modules:
+Besides standard component variables that could be gotten with basic cmake build properties FreeRTOS component also provides an arguments (only one so far) for simpler integration with other modules:
 
 - `ORIG_INCLUDE_PATH` -  contains an absolute path to freertos root include folder. Thus instead of `#include "freertos/FreeRTOS.h"` you can refer to headers directly: `#include "FreeRTOS.h"`.

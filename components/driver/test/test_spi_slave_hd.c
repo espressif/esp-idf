@@ -1,4 +1,9 @@
 /*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/*
  Tests for the spi slave hd mode
 */
 
@@ -590,7 +595,6 @@ TEST_CASE("test spi slave hd segment mode, master too long", "[spi][spi_slv_hd]"
 }
 
 #endif //SOC_SPI_SUPPORT_SLAVE_HD_VER2
-
 #endif //#if !DISABLED_FOR_TARGETS(ESP32C3)
 
 #if !DISABLED_FOR_TARGETS(ESP32, ESP32S2, ESP32S3)
@@ -611,15 +615,6 @@ TEST_CASE("test spi slave hd segment mode, master too long", "[spi][spi_slv_hd]"
 #include "driver/spi_slave_hd.h"
 #include "unity.h"
 #include "test/test_common_spi.h"
-
-static void get_tx_buffer(uint32_t seed, uint8_t *master_send_buf, uint8_t *slave_send_buf, int send_buf_size)
-{
-    srand(199);
-    for (int i = 0; i < send_buf_size * 2; i++) {
-        slave_send_buf[i] = rand();
-        master_send_buf[i] = rand();
-    }
-}
 
 static void hd_master(void)
 {

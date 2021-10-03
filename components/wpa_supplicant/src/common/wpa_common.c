@@ -23,6 +23,7 @@
 #include "crypto/sha256.h"
 #include "crypto/md5.h"
 #include "crypto/aes.h"
+#include "crypto/aes_wrap.h"
 
 #define MD5_MAC_LEN 16
 

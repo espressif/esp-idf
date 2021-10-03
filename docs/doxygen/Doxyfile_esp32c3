@@ -1,4 +1,4 @@
 INPUT += \
-         $(IDF_PATH)/components/driver/esp32c3/include/driver/temp_sensor.h \
-         $(IDF_PATH)/components/esp32s2/include/esp_ds.h \
-         $(IDF_PATH)/components/esp32c3/include/esp_hmac.h
+         $(PROJECT_PATH)/components/driver/esp32c3/include/driver/temp_sensor.h \
+         $(PROJECT_PATH)/components/esp_hw_support/include/soc/esp32c3/esp_ds.h \
+         $(PROJECT_PATH)/components/esp_hw_support/include/soc/esp32c3/esp_hmac.h

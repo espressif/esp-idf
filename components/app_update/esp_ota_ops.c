@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -19,8 +11,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
 
 #include "esp_err.h"
 #include "esp_partition.h"
@@ -381,7 +371,7 @@ static esp_err_t rewrite_ota_seq(esp_ota_select_entry_t *two_otadata, uint32_t s
     }
 }
 
-static uint8_t get_ota_partition_count(void)
+uint8_t esp_ota_get_app_partition_count(void)
 {
     uint16_t ota_app_count = 0;
     while (esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_APP_OTA_MIN + ota_app_count, NULL) != NULL) {
@@ -399,7 +389,7 @@ static esp_err_t esp_rewrite_ota_data(esp_partition_subtype_t subtype)
         return ESP_ERR_NOT_FOUND;
     }
 
-    uint8_t ota_app_count = get_ota_partition_count();
+    uint8_t ota_app_count = esp_ota_get_app_partition_count();
     if (SUB_TYPE_ID(subtype) >= ota_app_count) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -517,7 +507,7 @@ const esp_partition_t *esp_ota_get_boot_partition(void)
         return NULL;
     }
 
-    int ota_app_count = get_ota_partition_count();
+    int ota_app_count = esp_ota_get_app_partition_count();
     ESP_LOGD(TAG, "found ota app max = %d", ota_app_count);
 
     if ((bootloader_common_ota_select_invalid(&otadata[0]) &&
@@ -662,7 +652,7 @@ bool esp_ota_check_rollback_is_possible(void)
         return false;
     }
 
-    int ota_app_count = get_ota_partition_count();
+    int ota_app_count = esp_ota_get_app_partition_count();
     if (ota_app_count == 0) {
         return false;
     }
@@ -720,7 +710,7 @@ static esp_err_t esp_ota_current_ota_is_workable(bool valid)
     }
 
     int active_otadata = bootloader_common_get_active_otadata(otadata);
-    if (active_otadata != -1 && get_ota_partition_count() != 0) {
+    if (active_otadata != -1 && esp_ota_get_app_partition_count() != 0) {
         if (valid == true && otadata[active_otadata].ota_state != ESP_OTA_IMG_VALID) {
             otadata[active_otadata].ota_state = ESP_OTA_IMG_VALID;
             ESP_LOGD(TAG, "OTA[current] partition is marked as VALID");
@@ -789,7 +779,7 @@ const esp_partition_t* esp_ota_get_last_invalid_partition(void)
 
     int invalid_otadata = get_last_invalid_otadata(otadata);
 
-    int ota_app_count = get_ota_partition_count();
+    int ota_app_count = esp_ota_get_app_partition_count();
     if (invalid_otadata != -1 && ota_app_count != 0) {
         int ota_slot = (otadata[invalid_otadata].ota_seq - 1) % ota_app_count;
         ESP_LOGD(TAG, "Find invalid ota_%d app", ESP_PARTITION_SUBTYPE_APP_OTA_MIN + ota_slot);
@@ -817,7 +807,7 @@ esp_err_t esp_ota_get_state_partition(const esp_partition_t *partition, esp_ota_
     }
 
     esp_ota_select_entry_t otadata[2];
-    int ota_app_count = get_ota_partition_count();
+    int ota_app_count = esp_ota_get_app_partition_count();
     if (read_otadata(otadata) == NULL || ota_app_count == 0) {
         return ESP_ERR_NOT_FOUND;
     }
@@ -849,7 +839,7 @@ esp_err_t esp_ota_erase_last_boot_app_partition(void)
     }
 
     int active_otadata = bootloader_common_get_active_otadata(otadata);
-    int ota_app_count = get_ota_partition_count();
+    int ota_app_count = esp_ota_get_app_partition_count();
     if (active_otadata == -1 || ota_app_count == 0) {
         return ESP_FAIL;
     }
@@ -901,8 +891,71 @@ esp_err_t esp_ota_revoke_secure_boot_public_key(esp_ota_secure_boot_public_key_i
         return ESP_ERR_INVALID_ARG;
     }
 
-    ets_secure_boot_revoke_public_key_digest(index);
-    ESP_LOGI(TAG, "Revoked signature block %d.", index);
+    esp_image_sig_public_key_digests_t app_digests = { 0 };
+    esp_err_t err = esp_secure_boot_get_signature_blocks_for_running_app(true, &app_digests);
+    if (err != ESP_OK || app_digests.num_digests == 0) {
+        ESP_LOGE(TAG, "This app is not signed, but check signature on update is enabled in config. It won't be possible to verify any update.");
+        return ESP_FAIL;
+    }
+
+    esp_err_t ret;
+    ets_secure_boot_key_digests_t trusted_keys;
+    ret = esp_secure_boot_read_key_digests(&trusted_keys);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Could not read the secure boot key digests from efuse. Aborting..");
+        return ESP_FAIL;
+    }
+
+    if (trusted_keys.key_digests[index] == NULL) {
+        ESP_LOGI(TAG, "Trusted Key block(%d) already revoked.", index);
+        return ESP_OK;
+    }
+
+    esp_image_sig_public_key_digests_t trusted_digests = { 0 };
+    for (unsigned i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
+        if (i == index) {
+            continue; // omitting - to find if there is a valid key after revoking this digest
+        }
+
+        if (trusted_keys.key_digests[i] != NULL) {
+            bool all_zeroes = true;
+            for (unsigned j = 0; j < ESP_SECURE_BOOT_DIGEST_LEN; j++) {
+                all_zeroes = all_zeroes && (*(uint8_t *)(trusted_keys.key_digests[i] + j) == 0);
+            }
+            if (!all_zeroes) {
+                memcpy(trusted_digests.key_digests[trusted_digests.num_digests++], (uint8_t *)trusted_keys.key_digests[i], ESP_SECURE_BOOT_DIGEST_LEN);
+            } else {
+                ESP_LOGD(TAG, "Empty trusted key block (%d).", i);
+            }
+        }
+    }
+
+    bool match = false;
+    for (unsigned i = 0; i < trusted_digests.num_digests; i++) {
+        if (match == true) {
+            break;
+        }
+
+        for (unsigned j = 0; j < app_digests.num_digests; j++) {
+            if (memcmp(trusted_digests.key_digests[i], app_digests.key_digests[j], ESP_SECURE_BOOT_DIGEST_LEN) == 0) {
+                ESP_LOGI(TAG, "App key block(%d) matches Trusted key block(%d)[%d -> Next active trusted key block].", j, i, i);
+                esp_err_t err = esp_efuse_set_digest_revoke(index);
+                if (err != ESP_OK) {
+                    ESP_LOGE(TAG, "Failed to revoke digest (0x%x).", err);
+                    return ESP_FAIL;
+                }
+                ESP_LOGI(TAG, "Revoked signature block %d.", index);
+                match = true;
+                break;
+            }
+        }
+    }
+
+    if (match == false) {
+        ESP_LOGE(TAG, "Running app doesn't have another valid secure boot key. Cannot revoke current key(%d).", index);
+        return ESP_FAIL;
+    }
+
     return ESP_OK;
 }
 #endif

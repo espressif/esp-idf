@@ -40,19 +40,19 @@ ESP32-DevKitS(-R) 是乐鑫专为 ESP32 设计的烧录底板，无需将 ESP32 
 ESP32-DevKitS 和 ESP32-DevKitS-R 仅在弹簧布局上有所不同，用于适配不同的 ESP32 模组。
 
 - ESP32-DevKitS:
-   - :ref:`esp-modules-and-boards-esp32-wroom-32`
-   - :ref:`ESP32-WROOM-32D <esp-modules-and-boards-esp32-wroom-32d-and-u>`
-   - :ref:`ESP32-WROOM-32U <esp-modules-and-boards-esp32-wroom-32d-and-u>`
-   - :ref:`esp-modules-and-boards-esp32-solo-1`
-   - `ESP32-WROOM-32E <https://www.espressif.com/en/products/hardware/modules>`_
-   - `ESP32-WROOM-32UE <https://www.espressif.com/en/products/hardware/modules>`_
+   - ESP32-WROOM-32
+   - ESP32-WROOM-32D
+   - ESP32-WROOM-32U
+   - ESP32-SOLO-1
+   - ESP32-WROOM-32E
+   - ESP32-WROOM-32UE
 - ESP32-DevKitS-R:
-   - :ref:`ESP32-WROVER (PCB & IPEX) <esp-modules-and-boards-esp32-wrover>`
-   - :ref:`ESP32-WROVER-B (PCB & IPEX) <esp-modules-and-boards-esp32-wrover>`
-   - `ESP32-WROVER-E <https://www.espressif.com/en/products/hardware/modules>`_
-   - `ESP32-WROVER-IE <https://www.espressif.com/en/products/hardware/modules>`_
+   - ESP32-WROVER (PCB & IPEX)
+   - ESP32-WROVER-B (PCB & IPEX)
+   - ESP32-WROVER-E
+   - ESP32-WROVER-IE
 
-
+有关上述模组的详细信息，请参考 `ESP32 系列模组 <https://www.espressif.com/zh-hans/products/modules?id=ESP32>`_。
 
 组件介绍
 --------
@@ -173,7 +173,7 @@ Windows 用户也可以使用 `Flash 下载工具 <https://www.espressif.com/zh-
 
 如批量购买，ESP32-DevKitS(-R) 烧录底板将以大纸板箱包装。
 
-批量订单请参考 `乐鑫产品订购信息 <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>`__ (PDF)。
+批量订单请前往 https://www.espressif.com/zh-hans/contact-us/sales-questions。
 
 
 硬件参考
@@ -265,4 +265,4 @@ R19      CLK               SD_CLK
 - `ESP32-SOLO-1 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-solo-1_datasheet_cn.pdf>`_ (PDF)
 - `ESP32-WROVER 技术规格书 <https://espressif.com/sites/default/files/documentation/esp32-wrover_datasheet_cn.pdf>`_ (PDF)
 - `ESP32-WROVER-B 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-b_datasheet_cn.pdf>`_ (PDF)
-- `乐鑫产品订购信息 <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_cn.pdf>`__ (PDF) 
+- `乐鑫产品选型工具 <https://products.espressif.com/#/product-selector?names=>`__

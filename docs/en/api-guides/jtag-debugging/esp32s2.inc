@@ -148,13 +148,13 @@
 
 .. devkit-defs
 
-.. |devkit-name| replace:: ESP-S2-Kaluga-1
-.. |devkit-name-with-link| replace:: :doc:`ESP-S2-Kaluga-1 <../../hw-reference/modules-and-boards>`
+.. |devkit-name| replace:: ESP32-S2-Kaluga-1
+.. |devkit-name-with-link| replace:: :doc:`ESP32-S2-Kaluga-1 <../../hw-reference/index>`
 
 ---
 
 .. devkit-hw-config
 
-* Out of the box, ESP32-S2-Kaluga-1 doesn't need any additional hardware configuration for JTAG debugging. However if you are experiencing issues, check that switches 2-5 of the "JTAG" DIP switch block are in "ON" position.
+* Out of the box, ESP32-S2-Kaluga-1 doesn't need any additional hardware configuration for JTAG debugging. However if you are experiencing issues, check that the "JTAG" DIP switches (SW5 in the schematic) labelled TCK, TDO, TDI, TMS are in "ON" position.
 
 ---

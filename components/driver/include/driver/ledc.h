@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -31,6 +23,38 @@ extern "C" {
 #define LEDC_ERR_VAL     (-1)
 
 typedef intr_handle_t ledc_isr_handle_t;
+
+/**
+ * @brief LEDC callback event type
+ */
+typedef enum {
+    LEDC_FADE_END_EVT                   /**< LEDC fade end event */
+} ledc_cb_event_t;
+
+/**
+ * @brief LEDC callback parameter
+ */
+typedef struct {
+    ledc_cb_event_t event;              /**< Event name */
+    uint32_t speed_mode;                /**< Speed mode of the LEDC channel group */
+    uint32_t channel;                   /**< LEDC channel (0 - LEDC_CHANNEL_MAX-1) */
+    uint32_t duty;                      /**< LEDC current duty of the channel, the range of duty is [0, (2**duty_resolution) - 1] */
+} ledc_cb_param_t;
+
+/**
+ * @brief Type of LEDC event callback
+ * @param param LEDC callback parameter
+ * @param user_arg User registered data
+ */
+typedef bool (* ledc_cb_t)(const ledc_cb_param_t *param, void *user_arg);
+
+/**
+ * @brief Group of supported LEDC callbacks
+ * @note The callbacks are all running under ISR environment
+ */
+typedef struct {
+    ledc_cb_t fade_cb;                  /**< LEDC fade_end callback function */
+} ledc_cbs_t;
 
 /**
  * @brief LEDC channel configuration
@@ -65,7 +89,7 @@ esp_err_t ledc_timer_config(const ledc_timer_config_t* timer_conf);
  *        control one LEDC channel in different tasks at the same time.
  *        A thread-safe version of API is ledc_set_duty_and_update
  * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
- * @param channel LEDC channel (0-7), select from ledc_channel_t
+ * @param channel LEDC channel (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
  *
  * @return
  *     - ESP_OK Success
@@ -76,23 +100,24 @@ esp_err_t ledc_update_duty(ledc_mode_t speed_mode, ledc_channel_t channel);
 
 /**
  * @brief Set LEDC output gpio.
+ * @deprecated This function is redundant, please use ledc_channel_config to set gpio pins.
  *
  * @param  gpio_num The LEDC output gpio
  * @param  speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
- * @param  ledc_channel LEDC channel (0-7), select from ledc_channel_t
+ * @param  ledc_channel LEDC channel (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
  *
  * @return
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t ledc_set_pin(int gpio_num, ledc_mode_t speed_mode, ledc_channel_t ledc_channel);
-
+esp_err_t ledc_set_pin(int gpio_num, ledc_mode_t speed_mode, ledc_channel_t ledc_channel)
+    __attribute__((deprecated("use ledc_channel_config instead")));
 /**
  * @brief LEDC stop.
  *        Disable LEDC output, and set idle level
  *
  * @param  speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
- * @param  channel LEDC channel (0-7), select from ledc_channel_t
+ * @param  channel LEDC channel (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
  * @param  idle_level Set output idle level after LEDC stops.
  *
  * @return
@@ -136,8 +161,8 @@ uint32_t ledc_get_freq(ledc_mode_t speed_mode, ledc_timer_t timer_num);
  * @note  If a fade operation is running in progress on that channel, the driver would not allow it to be stopped.
  *        Other duty operations will have to wait until the fade operation has finished.
  * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
- * @param channel LEDC channel (0-7), select from ledc_channel_t
- * @param duty Set the LEDC duty, the range of duty setting is [0, (2**duty_resolution)]
+ * @param channel LEDC channel (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
+ * @param duty Set the LEDC duty, the range of duty setting is [0, (2**duty_resolution) - 1]
  * @param hpoint Set the LEDC hpoint value(max: 0xfffff)
  *
  * @return
@@ -150,7 +175,7 @@ esp_err_t ledc_set_duty_with_hpoint(ledc_mode_t speed_mode, ledc_channel_t chann
  * @brief LEDC get hpoint value, the counter value when the output is set high level.
  *
  * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
- * @param channel LEDC channel (0-7), select from ledc_channel_t
+ * @param channel LEDC channel (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
  * @return
  *     - LEDC_ERR_VAL if parameter error
  *     - Others Current hpoint value of LEDC channel
@@ -167,8 +192,8 @@ int ledc_get_hpoint(ledc_mode_t speed_mode, ledc_channel_t channel);
  * @note  If a fade operation is running in progress on that channel, the driver would not allow it to be stopped.
  *        Other duty operations will have to wait until the fade operation has finished.
  * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
- * @param channel LEDC channel (0-7), select from ledc_channel_t
- * @param duty Set the LEDC duty, the range of duty setting is [0, (2**duty_resolution)]
+ * @param channel LEDC channel (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
+ * @param duty Set the LEDC duty, the range of duty setting is [0, (2**duty_resolution) - 1]
  *
  * @return
  *     - ESP_OK Success
@@ -180,7 +205,7 @@ esp_err_t ledc_set_duty(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t
  * @brief LEDC get duty
  *
  * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
- * @param channel LEDC channel (0-7), select from ledc_channel_t
+ * @param channel LEDC channel (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
  *
  * @return
  *     - LEDC_ERR_DUTY if parameter error
@@ -194,8 +219,8 @@ uint32_t ledc_get_duty(ledc_mode_t speed_mode, ledc_channel_t channel);
  * @note  If a fade operation is running in progress on that channel, the driver would not allow it to be stopped.
  *        Other duty operations will have to wait until the fade operation has finished.
  * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
- * @param channel LEDC channel (0-7), select from ledc_channel_t
- * @param duty Set the start of the gradient duty, the range of duty setting is [0, (2**duty_resolution)]
+ * @param channel LEDC channel (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
+ * @param duty Set the start of the gradient duty, the range of duty setting is [0, (2**duty_resolution) - 1]
  * @param fade_direction Set the direction of the gradient
  * @param step_num Set the number of the gradient
  * @param duty_cycle_num Set how many LEDC tick each time the gradient lasts
@@ -281,7 +306,7 @@ esp_err_t ledc_timer_resume(ledc_mode_t speed_mode, ledc_timer_t timer_sel);
  * @brief Bind LEDC channel with the selected timer
  *
  * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
- * @param channel LEDC channel index (0-7), select from ledc_channel_t
+ * @param channel LEDC channel index (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
  * @param timer_sel LEDC timer index (0-3), select from ledc_timer_t
  *
  * @return
@@ -300,7 +325,7 @@ esp_err_t ledc_bind_channel_timer(ledc_mode_t speed_mode, ledc_channel_t channel
  * @note  If a fade operation is running in progress on that channel, the driver would not allow it to be stopped.
  *        Other duty operations will have to wait until the fade operation has finished.
  * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode. ,
- * @param channel LEDC channel index (0-7), select from ledc_channel_t
+ * @param channel LEDC channel index (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
  * @param target_duty Target duty of fading [0, (2**duty_resolution) - 1]
  * @param scale Controls the increase or decrease step scale.
  * @param cycle_num increase or decrease the duty every cycle_num cycles
@@ -323,8 +348,8 @@ esp_err_t ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t channel
  * @note  If a fade operation is running in progress on that channel, the driver would not allow it to be stopped.
  *        Other duty operations will have to wait until the fade operation has finished.
  * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode. ,
- * @param channel LEDC channel index (0-7), select from ledc_channel_t
- * @param target_duty Target duty of fading.( 0 - (2 ** duty_resolution - 1)))
+ * @param channel LEDC channel index (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
+ * @param target_duty Target duty of fading [0, (2**duty_resolution) - 1]
  * @param max_fade_time_ms The maximum time of the fading ( ms ).
  *
  * @return
@@ -375,8 +400,8 @@ esp_err_t ledc_fade_start(ledc_mode_t speed_mode, ledc_channel_t channel, ledc_f
  *        Other duty operations will have to wait until the fade operation has finished.
  *
  * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
- * @param channel LEDC channel (0-7), select from ledc_channel_t
- * @param duty Set the LEDC duty, the range of duty setting is [0, (2**duty_resolution)]
+ * @param channel LEDC channel (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
+ * @param duty Set the LEDC duty, the range of duty setting is [0, (2**duty_resolution) - 1]
  * @param hpoint Set the LEDC hpoint value(max: 0xfffff)
  *
  */
@@ -388,8 +413,8 @@ esp_err_t ledc_set_duty_and_update(ledc_mode_t speed_mode, ledc_channel_t channe
  * @note  If a fade operation is running in progress on that channel, the driver would not allow it to be stopped.
  *        Other duty operations will have to wait until the fade operation has finished.
  * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
- * @param channel LEDC channel index (0-7), select from ledc_channel_t
- * @param target_duty Target duty of fading.( 0 - (2 ** duty_resolution - 1)))
+ * @param channel LEDC channel index (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
+ * @param target_duty Target duty of fading [0, (2**duty_resolution) - 1]
  * @param max_fade_time_ms The maximum time of the fading ( ms ).
  * @param fade_mode choose blocking or non-blocking mode
  * @return
@@ -406,7 +431,7 @@ esp_err_t ledc_set_fade_time_and_start(ledc_mode_t speed_mode, ledc_channel_t ch
  * @note  If a fade operation is running in progress on that channel, the driver would not allow it to be stopped.
  *        Other duty operations will have to wait until the fade operation has finished.
  * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
- * @param channel LEDC channel index (0-7), select from ledc_channel_t
+ * @param channel LEDC channel index (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
  * @param target_duty Target duty of fading [0, (2**duty_resolution) - 1]
  * @param scale Controls the increase or decrease step scale.
  * @param cycle_num increase or decrease the duty every cycle_num cycles
@@ -421,3 +446,18 @@ esp_err_t ledc_set_fade_step_and_start(ledc_mode_t speed_mode, ledc_channel_t ch
 #ifdef __cplusplus
 }
 #endif
+
+/**
+ * @brief LEDC callback registration function
+ * @note  The callback is called from an ISR, it must never attempt to block, and any FreeRTOS API called must be ISR capable.
+ * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
+ * @param channel LEDC channel index (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
+ * @param cbs Group of LEDC callback functions
+ * @param user_arg user registered data for the callback function
+ * @return
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_STATE Fade function not installed.
+ *     - ESP_FAIL Fade function init error
+ */
+esp_err_t ledc_cb_register(ledc_mode_t speed_mode, ledc_channel_t channel, ledc_cbs_t *cbs, void *user_arg);

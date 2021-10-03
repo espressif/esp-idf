@@ -89,8 +89,8 @@ tinfl_decompress_mem_to_mem = 0x40000100;
  ***************************************/
 
 /* Functions */
-jd_prepare = 0x40000104;
-jd_decomp = 0x40000108;
+PROVIDE( jd_prepare = 0x40000104 );
+PROVIDE( jd_decomp = 0x40000108 );
 
 
 /***************************************
@@ -260,7 +260,7 @@ PROVIDE( esp_flash_chip_driver_initialized = 0x400002fc );
 PROVIDE( esp_flash_read_id = 0x40000300 );
 PROVIDE( esp_flash_get_size = 0x40000304 );
 PROVIDE( esp_flash_erase_chip = 0x40000308 );
-PROVIDE( esp_flash_erase_region = 0x4000030c );
+PROVIDE( rom_esp_flash_erase_region = 0x4000030c );
 PROVIDE( esp_flash_get_chip_write_protect = 0x40000310 );
 PROVIDE( esp_flash_set_chip_write_protect = 0x40000314 );
 PROVIDE( esp_flash_get_protectable_regions = 0x40000318 );
@@ -1577,7 +1577,7 @@ ppRecycleAmpdu = 0x400016f4;
 ppRecycleRxPkt = 0x400016f8;
 ppResortTxAMPDU = 0x400016fc;
 ppResumeTxAMPDU = 0x40001700;
-ppRxFragmentProc = 0x40001704;
+/* ppRxFragmentProc = 0x40001704; */
 ppRxPkt = 0x40001708;
 ppRxProtoProc = 0x4000170c;
 ppSearchTxQueue = 0x40001710;
@@ -1606,7 +1606,7 @@ rcSetTxAmpduLimit = 0x4000176c;
 rcTxUpdatePer = 0x40001770;
 rcUpdateAckSnr = 0x40001774;
 rcUpdateRate = 0x40001778;
-rcUpdateTxDone = 0x4000177c;
+/* rcUpdateTxDone = 0x4000177c; */
 rcUpdateTxDoneAmpdu2 = 0x40001780;
 rcUpSched = 0x40001784;
 rssi_margin = 0x40001788;
@@ -1733,7 +1733,7 @@ ieee80211_search_node = 0x40001890;
 roundup2 = 0x40001894;
 ieee80211_crypto_encap = 0x40001898;
 ieee80211_crypto_decap = 0x4000189c;
-ieee80211_decap = 0x400018a0;
+/* ieee80211_decap = 0x400018a0; */
 ieee80211_set_tx_pti = 0x400018a4;
 wifi_is_started = 0x400018a8;
 /* Data (.data, .bss, .rodata) */

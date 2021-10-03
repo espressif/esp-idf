@@ -56,15 +56,18 @@ Power management locks have acquire/release counters. If the lock has been acqui
 
 {IDF_TARGET_NAME} supports three types of locks described in the table below.
 
-============================  ======================================================
-Lock                          Description
-============================  ======================================================
-``ESP_PM_CPU_FREQ_MAX``       Requests CPU frequency to be at the maximum value set with :cpp:func:`esp_pm_configure`. For {IDF_TARGET_NAME}, this value can be set to 80 MHz, 160 MHz, or 240 MHz.
+.. list-table::
+  :header-rows: 1
+  :widths: 25 60
 
-``ESP_PM_APB_FREQ_MAX``       Requests the APB frequency to be at the maximum supported value. For {IDF_TARGET_NAME}, this is 80 MHz.
-
-``ESP_PM_NO_LIGHT_SLEEP``     Disables automatic switching to light sleep.
-============================  ======================================================
+  * - Lock
+    - Description
+  * - ``ESP_PM_CPU_FREQ_MAX``
+    - Requests CPU frequency to be at the maximum value set with :cpp:func:`esp_pm_configure`. For {IDF_TARGET_NAME}, this value can be set to 80 MHz, 160 MHz, or 240 MHz.
+  * - ``ESP_PM_APB_FREQ_MAX``
+    - Requests the APB frequency to be at the maximum supported value. For {IDF_TARGET_NAME}, this is 80 MHz.
+  * - ``ESP_PM_NO_LIGHT_SLEEP``
+    - Disables automatic switching to light sleep.
 
 {IDF_TARGET_NAME} Power Management Algorithm
 ---------------------------------------
@@ -86,6 +89,8 @@ If none of the locks are acquired, and light sleep is enabled in a call to :cpp:
 - Timers registered with :doc:`High resolution timer <esp_timer>` APIs
 
 Light sleep duration will be chosen to wake up the chip before the nearest event (task being unblocked, or timer elapses).
+
+To skip unnecessary wake-up you can consider initializing an esp_timer with the `skip_unhandled_events` option as true. Timers with this flag will not wake up the system and it helps to reduce consumption.
 
 
 Dynamic Frequency Scaling and Peripheral Drivers

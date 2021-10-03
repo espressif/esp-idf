@@ -1,12 +1,161 @@
-#ifndef ESP32_MOCK_H_
-#define ESP32_MOCK_H_
+// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+#ifndef _ESP32_COMPAT_H_
+#define _ESP32_COMPAT_H_
+
+// Skip these include files
+#define ESP_MDNS_NETWORKING_H_
+#define _TCPIP_ADAPTER_H_
+#define _ESP_TASK_H_
+
+#ifdef USE_BSD_STRING
+#include <bsd/string.h>
+#endif
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <unistd.h>
+#include <signal.h>
+#include <sys/time.h>
 #include "esp_timer.h"
 
+#define ESP_FAIL                    -1
+
+#define ESP_ERR_NO_MEM              0x101
+#define ESP_ERR_INVALID_ARG         0x102
+#define ESP_ERR_INVALID_STATE       0x103
+#define ESP_ERR_INVALID_SIZE        0x104
+#define ESP_ERR_NOT_FOUND           0x105
+#define ESP_ERR_NOT_SUPPORTED       0x106
+#define ESP_ERR_TIMEOUT             0x107
+#define ESP_ERR_INVALID_RESPONSE    0x108
+#define ESP_ERR_INVALID_CRC         0x109
+
+#define pdTRUE                      true
+#define pdFALSE                     false
+#define pdPASS			( pdTRUE )
+#define pdFAIL			( pdFALSE )
+
+#define portMAX_DELAY               0xFFFFFFFF
+#define portTICK_PERIOD_MS          1
+#define ESP_LOGW(a,b)
+#define ESP_LOGD(a,b)
+#define ESP_LOGE(a,b,c)
+#define ESP_LOGV(a,b,c,d)
+
+#define LWIP_HDR_PBUF_H
+#define __ESP_SYSTEM_H__
+#define INC_TASK_H
+
+#define pdMS_TO_TICKS(a) a
+#define portTICK_RATE_MS 10
+#define xSemaphoreTake(s,d)        true
+#define xTaskDelete(a)
+#define vTaskDelete(a)             free(a)
+#define xSemaphoreGive(s)
+#define xQueueCreateMutex(s)
+#define _mdns_pcb_init(a,b)         true
+#define _mdns_pcb_deinit(a,b)       true
+#define xSemaphoreCreateMutex()     malloc(1)
+#define xSemaphoreCreateBinary()    malloc(1)
+#define vSemaphoreDelete(s)         free(s)
+#define queueQUEUE_TYPE_MUTEX       ( ( uint8_t ) 1U
+#define xTaskCreatePinnedToCore(a,b,c,d,e,f,g)     *(f) = malloc(1)
+#define vTaskDelay(m)               usleep((m)*0)
+#define esp_random()                (rand()%UINT32_MAX)
+
+
+#define ESP_TASK_PRIO_MAX 25
+#define ESP_TASKD_EVENT_PRIO 5
+#define _mdns_udp_pcb_write(tcpip_if, ip_protocol, ip, port, data, len) len
+#define xTaskHandle TaskHandle_t
+
+
+typedef int32_t esp_err_t;
+
+typedef void * xSemaphoreHandle;
+typedef void * SemaphoreHandle_t;
+typedef void * xQueueHandle;
+typedef void * QueueHandle_t;
+typedef void * TaskHandle_t;
+typedef int    BaseType_t;
+typedef uint32_t TickType_t;
+typedef uint32_t portTickType;
+
+
+extern const char * WIFI_EVENT;
+extern const char * IP_EVENT;
+extern const char * ETH_EVENT;
+
+/* status of DHCP client or DHCP server */
+typedef enum {
+    TCPIP_ADAPTER_DHCP_INIT = 0,    /**< DHCP client/server in initial state */
+    TCPIP_ADAPTER_DHCP_STARTED,     /**< DHCP client/server already been started */
+    TCPIP_ADAPTER_DHCP_STOPPED,     /**< DHCP client/server already been stopped */
+    TCPIP_ADAPTER_DHCP_STATUS_MAX
+} tcpip_adapter_dhcp_status_t;
+
+struct udp_pcb {
+    uint8_t dummy;
+};
+
+struct ip4_addr {
+  uint32_t addr;
+};
+typedef struct ip4_addr ip4_addr_t;
+
+struct ip6_addr {
+  uint32_t addr[4];
+};
+typedef struct ip6_addr ip6_addr_t;
+
+typedef struct {
+    ip4_addr_t ip;
+    ip4_addr_t netmask;
+    ip4_addr_t gw;
+} tcpip_adapter_ip_info_t;
+
+typedef enum {
+    TCPIP_ADAPTER_IF_STA = 0,     /**< ESP32 station interface */
+    TCPIP_ADAPTER_IF_AP,          /**< ESP32 soft-AP interface */
+    TCPIP_ADAPTER_IF_ETH,         /**< ESP32 ethernet interface */
+    TCPIP_ADAPTER_IF_MAX
+} tcpip_adapter_if_t;
+
+typedef struct {
+    ip6_addr_t ip;
+} tcpip_adapter_ip6_info_t;
+
+typedef void* system_event_t;
+
+struct pbuf {
+  struct pbuf *next;
+  void *payload;
+  uint16_t tot_len;
+  uint16_t  len;
+  uint8_t  /*pbuf_type*/ type;
+  uint8_t  flags;
+  uint16_t  ref;
+};
+
+uint32_t xTaskGetTickCount(void);
 typedef void (*esp_timer_cb_t)(void* arg);
 
 // Queue mock
 QueueHandle_t xQueueCreate( uint32_t uxQueueLength,
-                             uint32_t uxItemSize );
+                            uint32_t uxItemSize );
 
 void vQueueDelete( QueueHandle_t xQueue );
 
@@ -22,6 +171,9 @@ esp_err_t esp_event_handler_register(const char * event_base, int32_t event_id, 
 
 esp_err_t esp_event_handler_unregister(const char * event_base, int32_t event_id, void* event_handler);
 
-#define _mdns_udp_pcb_write(tcpip_if, ip_protocol, ip, port, data, len) len
 
-#endif /* ESP32_MOCK_H_ */
+TaskHandle_t xTaskGetCurrentTaskHandle(void);
+void xTaskNotifyGive(TaskHandle_t task);
+BaseType_t xTaskNotifyWait(uint32_t bits_entry_clear, uint32_t bits_exit_clear, uint32_t *value, TickType_t wait_time );
+
+#endif //_ESP32_COMPAT_H_

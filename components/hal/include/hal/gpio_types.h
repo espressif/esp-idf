@@ -76,6 +76,10 @@ typedef enum {
 #define GPIO_SEL_44             ((uint64_t)(((uint64_t)1)<<44))  /*!< Pin 44 selected */
 #define GPIO_SEL_45             ((uint64_t)(((uint64_t)1)<<45))  /*!< Pin 45 selected */
 #define GPIO_SEL_46             ((uint64_t)(((uint64_t)1)<<46))  /*!< Pin 46 selected */
+#if CONFIG_IDF_TARGET_ESP32S3
+#define GPIO_SEL_47             ((uint64_t)(((uint64_t)1)<<47))  /*!< Pin 47 selected */
+#define GPIO_SEL_48             ((uint64_t)(((uint64_t)1)<<48))  /*!< Pin 48 selected */
+#endif
 #endif
 
 #define GPIO_PIN_REG_0          IO_MUX_GPIO0_REG
@@ -125,6 +129,8 @@ typedef enum {
 #define GPIO_PIN_REG_44          IO_MUX_GPIO44_REG
 #define GPIO_PIN_REG_45          IO_MUX_GPIO45_REG
 #define GPIO_PIN_REG_46          IO_MUX_GPIO46_REG
+#define GPIO_PIN_REG_47          IO_MUX_GPIO47_REG
+#define GPIO_PIN_REG_48          IO_MUX_GPIO48_REG
 
 #if CONFIG_IDF_TARGET_ESP32
 typedef enum {
@@ -265,8 +271,9 @@ typedef enum {
     GPIO_NUM_43 = 43,   /*!< GPIO43, input and output */
     GPIO_NUM_44 = 44,   /*!< GPIO44, input and output */
     GPIO_NUM_45 = 45,   /*!< GPIO45, input and output */
-    GPIO_NUM_46 = 46,   /*!< GPIO46, input mode only */
+    GPIO_NUM_46 = 46,   /*!< GPIO46, input and output */
     GPIO_NUM_47 = 47,   /*!< GPIO47, input and output */
+    GPIO_NUM_48 = 48,   /*!< GPIO48, input and output */
     GPIO_NUM_MAX,
 /** @endcond */
 } gpio_num_t;
@@ -296,6 +303,50 @@ typedef enum {
     GPIO_NUM_20 = 20,   /*!< GPIO20, input and output */
     GPIO_NUM_21 = 21,   /*!< GPIO21, input and output */
     GPIO_NUM_22 = 22,   /*!< GPIO22, input and output */
+    GPIO_NUM_MAX,
+/** @endcond */
+} gpio_num_t;
+#elif CONFIG_IDF_TARGET_ESP32H2
+typedef enum {
+    GPIO_NUM_NC = -1,    /*!< Use to signal not connected to S/W */
+    GPIO_NUM_0 = 0,     /*!< GPIO0, input and output */
+    GPIO_NUM_1 = 1,     /*!< GPIO1, input and output */
+    GPIO_NUM_2 = 2,     /*!< GPIO2, input and output */
+    GPIO_NUM_3 = 3,     /*!< GPIO3, input and output */
+    GPIO_NUM_4 = 4,     /*!< GPIO4, input and output */
+    GPIO_NUM_5 = 5,     /*!< GPIO5, input and output */
+    GPIO_NUM_6 = 6,     /*!< GPIO6, input and output */
+    GPIO_NUM_7 = 7,     /*!< GPIO7, input and output */
+    GPIO_NUM_8 = 8,     /*!< GPIO8, input and output */
+    GPIO_NUM_9 = 9,     /*!< GPIO9, input and output */
+    GPIO_NUM_10 = 10,   /*!< GPIO10, input and output */
+    GPIO_NUM_11 = 11,   /*!< GPIO11, input and output */
+    GPIO_NUM_12 = 12,   /*!< GPIO12, input and output */
+    GPIO_NUM_13 = 13,   /*!< GPIO13, input and output */
+    GPIO_NUM_14 = 14,   /*!< GPIO14, input and output */
+    GPIO_NUM_15 = 15,   /*!< GPIO15, input and output */
+    GPIO_NUM_16 = 16,   /*!< GPIO16, input and output */
+    GPIO_NUM_17 = 17,   /*!< GPIO17, input and output */
+    GPIO_NUM_18 = 18,   /*!< GPIO18, input and output */
+    GPIO_NUM_19 = 19,   /*!< GPIO19, input and output */
+    GPIO_NUM_20 = 20,   /*!< GPIO20, input and output */
+    GPIO_NUM_21 = 21,   /*!< GPIO21, input and output */
+    GPIO_NUM_22 = 22,   /*!< GPIO22, input and output */
+    GPIO_NUM_26 = 26,   /*!< GPIO26, input and output */
+    GPIO_NUM_27 = 27,   /*!< GPIO27, input and output */
+    GPIO_NUM_28 = 28,   /*!< GPIO28, input and output */
+    GPIO_NUM_29 = 29,   /*!< GPIO29, input and output */
+    GPIO_NUM_30 = 30,   /*!< GPIO30, input and output */
+    GPIO_NUM_31 = 31,   /*!< GPIO31, input and output */
+    GPIO_NUM_32 = 32,   /*!< GPIO32, input and output */
+    GPIO_NUM_33 = 33,   /*!< GPIO33, input and output */
+    GPIO_NUM_34 = 34,   /*!< GPIO34, input and output */
+    GPIO_NUM_35 = 35,   /*!< GPIO35, input and output */
+    GPIO_NUM_36 = 36,   /*!< GPIO36, input and output */
+    GPIO_NUM_37 = 37,   /*!< GPIO37, input and output */
+    GPIO_NUM_38 = 38,   /*!< GPIO38, input and output */
+    GPIO_NUM_39 = 39,   /*!< GPIO39, input and output */
+    GPIO_NUM_40 = 40,   /*!< GPIO40, input and output */
     GPIO_NUM_MAX,
 /** @endcond */
 } gpio_num_t;

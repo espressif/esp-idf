@@ -1,6 +1,8 @@
 if(CONFIG_BT_ENABLED)
     if(CONFIG_IDF_TARGET_ESP32)
-        set(srcs "controller/esp32/bt.c")
+        set(srcs "controller/esp32/bt.c"
+                 "controller/esp32/hli_api.c"
+                 "controller/esp32/hli_vectors.S")
     elseif(CONFIG_IDF_TARGET_ESP32C3)
         set(srcs "controller/esp32c3/bt.c")
     elseif(CONFIG_IDF_TARGET_ESP32S3)
@@ -20,10 +22,17 @@ if(CONFIG_BT_ENABLED)
     list(APPEND priv_include_dirs
             common/btc/include
             common/include)
+    list(APPEND include_dirs
+         common/api/include/api
+         common/btc/profile/esp/blufi/include
+         common/btc/profile/esp/include)
 
     list(APPEND srcs "common/btc/core/btc_alarm.c"
+         "common/api/esp_blufi_api.c"
          "common/btc/core/btc_manage.c"
          "common/btc/core/btc_task.c"
+         "common/btc/profile/esp/blufi/blufi_prf.c"
+         "common/btc/profile/esp/blufi/blufi_protocol.c"
          "common/osi/alarm.c"
          "common/osi/allocator.c"
          "common/osi/buffer.c"
@@ -48,6 +57,7 @@ if(CONFIG_BT_ENABLED)
             host/bluedroid/bta/gatt/include
             host/bluedroid/bta/hf_ag/include
             host/bluedroid/bta/hf_client/include
+            host/bluedroid/bta/hd/include
             host/bluedroid/bta/hh/include
             host/bluedroid/bta/jv/include
             host/bluedroid/bta/sdp/include
@@ -57,15 +67,14 @@ if(CONFIG_BT_ENABLED)
             host/bluedroid/external/sbc/decoder/include
             host/bluedroid/external/sbc/encoder/include
             host/bluedroid/external/sbc/plc/include
-            host/bluedroid/btc/profile/esp/blufi/include
             host/bluedroid/btc/profile/esp/include
             host/bluedroid/btc/profile/std/a2dp/include
-            host/bluedroid/btc/profile/std/hid/include
             host/bluedroid/btc/profile/std/include
             host/bluedroid/btc/include
             host/bluedroid/stack/btm/include
             host/bluedroid/stack/gap/include
             host/bluedroid/stack/gatt/include
+            host/bluedroid/stack/hid/include
             host/bluedroid/stack/l2cap/include
             host/bluedroid/stack/sdp/include
             host/bluedroid/stack/smp/include
@@ -81,7 +90,6 @@ if(CONFIG_BT_ENABLED)
 
         list(APPEND srcs "host/bluedroid/api/esp_a2dp_api.c"
                    "host/bluedroid/api/esp_avrc_api.c"
-                   "host/bluedroid/api/esp_blufi_api.c"
                    "host/bluedroid/api/esp_bt_device.c"
                    "host/bluedroid/api/esp_bt_main.c"
                    "host/bluedroid/api/esp_gap_ble_api.c"
@@ -89,6 +97,8 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/api/esp_gatt_common_api.c"
                    "host/bluedroid/api/esp_gattc_api.c"
                    "host/bluedroid/api/esp_gatts_api.c"
+                   "host/bluedroid/api/esp_hidd_api.c"
+                   "host/bluedroid/api/esp_hidh_api.c"
                    "host/bluedroid/api/esp_hf_ag_api.c"
                    "host/bluedroid/api/esp_hf_client_api.c"
                    "host/bluedroid/api/esp_spp_api.c"
@@ -123,6 +133,9 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/bta/gatt/bta_gatts_co.c"
                    "host/bluedroid/bta/gatt/bta_gatts_main.c"
                    "host/bluedroid/bta/gatt/bta_gatts_utils.c"
+                   "host/bluedroid/bta/hd/bta_hd_api.c"
+                   "host/bluedroid/bta/hd/bta_hd_act.c"
+                   "host/bluedroid/bta/hd/bta_hd_main.c"
                    "host/bluedroid/bta/hh/bta_hh_act.c"
                    "host/bluedroid/bta/hh/bta_hh_api.c"
                    "host/bluedroid/bta/hh/bta_hh_cfg.c"
@@ -167,8 +180,6 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/btc/core/btc_sm.c"
                    "host/bluedroid/btc/core/btc_storage.c"
                    "host/bluedroid/btc/core/btc_util.c"
-                   "host/bluedroid/btc/profile/esp/blufi/blufi_prf.c"
-                   "host/bluedroid/btc/profile/esp/blufi/blufi_protocol.c"
                    "host/bluedroid/btc/profile/std/a2dp/bta_av_co.c"
                    "host/bluedroid/btc/profile/std/a2dp/btc_a2dp.c"
                    "host/bluedroid/btc/profile/std/a2dp/btc_a2dp_control.c"
@@ -181,8 +192,9 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/btc/profile/std/hf_ag/btc_hf_ag.c"
                    "host/bluedroid/btc/profile/std/hf_client/btc_hf_client.c"
                    "host/bluedroid/btc/profile/std/hf_client/bta_hf_client_co.c"
-                   "host/bluedroid/btc/profile/std/hid/hidh_api.c"
-                   "host/bluedroid/btc/profile/std/hid/hidh_conn.c"
+                   "host/bluedroid/btc/profile/std/hid/btc_hd.c"
+                   "host/bluedroid/btc/profile/std/hid/btc_hh.c"
+                   "host/bluedroid/btc/profile/std/hid/bta_hh_co.c"
                    "host/bluedroid/btc/profile/std/gap/btc_gap_ble.c"
                    "host/bluedroid/btc/profile/std/gap/btc_gap_bt.c"
                    "host/bluedroid/btc/profile/std/gap/bta_gap_bt_co.c"
@@ -248,6 +260,10 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/stack/avrc/avrc_pars_tg.c"
                    "host/bluedroid/stack/avrc/avrc_sdp.c"
                    "host/bluedroid/stack/avrc/avrc_utils.c"
+                   "host/bluedroid/stack/hid/hidd_api.c"
+                   "host/bluedroid/stack/hid/hidd_conn.c"
+                   "host/bluedroid/stack/hid/hidh_api.c"
+                   "host/bluedroid/stack/hid/hidh_conn.c"
                    "host/bluedroid/stack/btm/btm_acl.c"
                    "host/bluedroid/stack/btm/btm_ble.c"
                    "host/bluedroid/stack/btm/btm_ble_addr.c"
@@ -321,6 +337,7 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/stack/smp/smp_main.c"
                    "host/bluedroid/stack/smp/smp_utils.c")
 
+            list(APPEND srcs "common/btc/profile/esp/blufi/bluedroid_host/esp_blufi.c")
         if(CONFIG_BLE_MESH)
             list(APPEND srcs "esp_ble_mesh/mesh_core/bluedroid_host/mesh_bearer_adapt.c")
         endif()
@@ -540,6 +557,8 @@ if(CONFIG_BT_ENABLED)
                     "host/nimble/esp-hci/src/esp_nimble_hci.c"
                     "host/nimble/port/src/esp_nimble_mem.c")
 
+            list(APPEND srcs
+                    "common/btc/profile/esp/blufi/nimble_host/esp_blufi.c")
         if(CONFIG_BLE_MESH)
             list(APPEND srcs "esp_ble_mesh/mesh_core/nimble_host/mesh_bearer_adapt.c")
         endif()
@@ -582,7 +601,7 @@ endif()
 idf_component_register(SRCS "${srcs}"
                 INCLUDE_DIRS "${include_dirs}"
                 PRIV_INCLUDE_DIRS "${priv_include_dirs}"
-                REQUIRES nvs_flash soc esp_timer esp_pm
+                REQUIRES nvs_flash soc esp_timer esp_pm esp_phy
                 PRIV_REQUIRES esp_ipc
                 LDFRAGMENTS "linker.lf")
 
@@ -591,14 +610,16 @@ if(CONFIG_BT_ENABLED)
     if(CONFIG_IDF_TARGET_ESP32)
         target_link_libraries(${COMPONENT_LIB} INTERFACE "-L${CMAKE_CURRENT_LIST_DIR}/controller/lib_esp32/esp32")
         target_link_libraries(${COMPONENT_LIB} PUBLIC btdm_app)
+
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "-u ld_include_hli_vectors_bt")
     elseif(CONFIG_IDF_TARGET_ESP32C3)
         target_link_libraries(${COMPONENT_LIB} INTERFACE
                 "-L${CMAKE_CURRENT_LIST_DIR}/controller/lib_esp32c3_family/esp32c3")
-        target_link_libraries(${COMPONENT_LIB} PUBLIC btdm_app btbb)
+        target_link_libraries(${COMPONENT_LIB} PUBLIC btdm_app)
     elseif(CONFIG_IDF_TARGET_ESP32S3)
         target_link_libraries(${COMPONENT_LIB} INTERFACE
                 "-L${CMAKE_CURRENT_LIST_DIR}/controller/lib_esp32c3_family/esp32s3")
-        target_link_libraries(${COMPONENT_LIB} PUBLIC btdm_app btbb)
+        target_link_libraries(${COMPONENT_LIB} PUBLIC btdm_app)
     endif()
 endif()
 
@@ -610,4 +631,10 @@ endif()
 if(CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE AND CONFIG_BT_NIMBLE_ENABLED)
     # some variables in NimBLE are only used by asserts
     target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-unused-but-set-variable -Wno-unused-variable)
+endif()
+
+if(NOT CMAKE_BUILD_EARLY_EXPANSION)
+    set_source_files_properties("${CMAKE_CURRENT_LIST_DIR}/host/bluedroid/bta/hf_ag/bta_ag_cmd.c"
+                                "${CMAKE_CURRENT_LIST_DIR}/host/bluedroid/btc/profile/std/gap/btc_gap_ble.c"
+                                 PROPERTIES COMPILE_FLAGS "-fjump-tables -ftree-switch-conversion")
 endif()

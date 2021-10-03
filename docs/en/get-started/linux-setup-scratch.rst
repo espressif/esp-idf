@@ -77,9 +77,7 @@ Toolchain will be built in ``~/esp/crosstool-NG/builds/{IDF_TARGET_TOOLCHAIN_PRE
 Add Toolchain to PATH
 =====================
 
-The custom toolchain needs to be copied to a binary directory and added to the ``PATH``.
-
-Choose a directory, for example ``~/esp/{IDF_TARGET_TOOLCHAIN_PREFIX}/``, and copy the build output to this directory.
+The custom toolchain needs to be copied to a binary directory and added to the ``PATH``. Choose a directory, for example ``~/esp/{IDF_TARGET_TOOLCHAIN_PREFIX}/``, and copy the build output to this directory.
 
 To use it, you will need to update your ``PATH`` environment variable in ``~/.profile`` file. To make ``{IDF_TARGET_TOOLCHAIN_PREFIX}`` available for all terminal sessions, add the following line to your ``~/.profile`` file::
 
@@ -99,12 +97,6 @@ You are looking for similar result containing toolchain's path at the beginning 
     /home/user-name/esp/{IDF_TARGET_TOOLCHAIN_PREFIX}/bin:/home/user-name/bin:/home/user-name/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
 
 Instead of ``/home/user-name`` there should be a home path specific to your installation.
-
-Python 2 deprecation
-====================
-
-Python 2 reached its `end of life <https://www.python.org/doc/sunset-python-2/>`_ and support for it in ESP-IDF will be removed soon. Please install Python 3.6 or higher. Instructions for popular Linux distributions are listed above.
-
 
 Next Steps
 ==========

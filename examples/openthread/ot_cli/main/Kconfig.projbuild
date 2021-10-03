@@ -1,0 +1,23 @@
+menu "OpenThread CLI Example"
+
+    config OPENTHREAD_CLI_ESP_EXTENSION
+        bool "Enable Espressif's extended features"
+        default y
+        help
+            Enable Espressif's extended features include TCP socket, UDP socket.
+
+    config OPENTHREAD_CLI_TCP_SERVER_PORT
+        int "the port of TCP server"
+        default 12345
+        depends on OPENTHREAD_CLI_ESP_EXTENSION
+        help
+            Set the connect port of socket
+
+    config OPENTHREAD_CLI_UDP_SERVER_PORT
+        int "the port of UDP server"
+        default 54321
+        depends on OPENTHREAD_CLI_ESP_EXTENSION
+        help
+            Set the connect port of socket
+
+endmenu

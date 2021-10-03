@@ -296,6 +296,10 @@ esp_err_t esp_flash_deinit_os_functions(esp_flash_t* chip)
 
 esp_err_t esp_flash_init_main_bus_lock(void)
 {
+    /* The following called functions are only defined if CONFIG_SPI_FLASH_SHARE_SPI1_BUS
+     * is set. Thus, we must not call them if the macro is not defined, else the linker
+     * would trigger errors. */
+#if CONFIG_SPI_FLASH_SHARE_SPI1_BUS
     spi_bus_lock_init_main_bus();
     spi_bus_lock_set_bg_control(g_main_spi_bus_lock, cache_enable, cache_disable, NULL);
 
@@ -304,6 +308,9 @@ esp_err_t esp_flash_init_main_bus_lock(void)
         return err;
     }
     return ESP_OK;
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
 }
 
 esp_err_t esp_flash_app_enable_os_functions(esp_flash_t* chip)

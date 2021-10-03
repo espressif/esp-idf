@@ -107,8 +107,7 @@ function(__build_set_default_build_specifications)
                                     # go into the final binary so have no impact on size
                                     "-ggdb")
 
-    list(APPEND c_compile_options   "-std=gnu99"
-                                    "-Wno-old-style-declaration")
+    list(APPEND c_compile_options   "-std=gnu99")
 
     list(APPEND cxx_compile_options "-std=gnu++11")
 
@@ -126,6 +125,9 @@ endfunction()
 # properties used for the processing phase of the build.
 #
 function(__build_init idf_path)
+
+    set(target ${IDF_TARGET})
+
     # Create the build target, to which the ESP-IDF build properties, dependencies are attached to.
     # Must be global so as to be accessible from any subdirectory in custom projects.
     add_library(__idf_build_target STATIC IMPORTED GLOBAL)
@@ -146,17 +148,21 @@ function(__build_init idf_path)
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(prefix __PREFIX)
     file(GLOB component_dirs ${idf_path}/components/*)
+    list(SORT component_dirs)
     foreach(component_dir ${component_dirs})
-        get_filename_component(component_dir ${component_dir} ABSOLUTE)
-        __component_dir_quick_check(is_component ${component_dir})
-        if(is_component)
-            __component_add(${component_dir} ${prefix})
+        # A potential component must be a directory
+        if(IS_DIRECTORY ${component_dir})
+            __component_dir_quick_check(is_component ${component_dir})
+            if(is_component)
+                __component_add(${component_dir} ${prefix})
+            endif()
         endif()
     endforeach()
 
-
-    idf_build_get_property(target IDF_TARGET)
-    if(NOT target STREQUAL "linux")
+    if("${target}" STREQUAL "linux")
+        set(requires_common freertos log esp_rom esp_common)
+        idf_build_set_property(__COMPONENT_REQUIRES_COMMON "${requires_common}")
+    else()
         # Set components required by all other components in the build
         #
         # - lwip is here so that #include <sys/socket.h> works without any special provisions
@@ -410,10 +416,8 @@ macro(idf_build_process target)
 
     idf_build_get_property(target IDF_TARGET)
 
-    if(NOT target STREQUAL "linux")
+    if(NOT "${target}" STREQUAL "linux")
         idf_build_set_property(__COMPONENT_REQUIRES_COMMON ${target} APPEND)
-    else()
-        idf_build_set_property(__COMPONENT_REQUIRES_COMMON "")
     endif()
 
     # Call for component manager to download dependencies for all components

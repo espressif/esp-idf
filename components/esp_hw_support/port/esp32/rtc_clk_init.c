@@ -1,16 +1,8 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -22,7 +14,7 @@
 #include "soc/rtc_periph.h"
 #include "soc/sens_periph.h"
 #include "soc/efuse_periph.h"
-#include "soc/apb_ctrl_reg.h"
+#include "soc/syscon_reg.h"
 #include "hal/cpu_hal.h"
 #include "regi2c_ctrl.h"
 #include "soc_log.h"
@@ -120,8 +112,8 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     rtc_clk_cpu_freq_set_config(&new_config);
 
     /* Configure REF_TICK */
-    REG_WRITE(APB_CTRL_XTAL_TICK_CONF_REG, xtal_freq - 1);
-    REG_WRITE(APB_CTRL_PLL_TICK_CONF_REG, APB_CLK_FREQ / MHZ - 1); /* Under PLL, APB frequency is always 80MHz */
+    REG_WRITE(SYSCON_XTAL_TICK_CONF_REG, xtal_freq - 1);
+    REG_WRITE(SYSCON_PLL_TICK_CONF_REG, APB_CLK_FREQ / MHZ - 1); /* Under PLL, APB frequency is always 80MHz */
 
     /* Re-calculate the ccount to make time calculation correct. */
     cpu_hal_set_cycle_count( (uint64_t)cpu_hal_get_cycle_count() * cfg.cpu_freq_mhz / freq_before );
@@ -140,6 +132,9 @@ void rtc_clk_init(rtc_clk_config_t cfg)
 
 static rtc_xtal_freq_t rtc_clk_xtal_freq_estimate(void)
 {
+#if CONFIG_IDF_ENV_FPGA
+    return RTC_XTAL_FREQ_40M;
+#endif // CONFIG_IDF_ENV_FPGA
     /* Enable 8M/256 clock if needed */
     const bool clk_8m_enabled = rtc_clk_8m_enabled();
     const bool clk_8md256_enabled = rtc_clk_8md256_enabled();

@@ -80,51 +80,24 @@ static void __attribute__((constructor)) s_set_default_wifi_log_level(void)
     esp_log_level_set("ESPNOW", CONFIG_LOG_DEFAULT_LEVEL);
 }
 
-static void esp_wifi_set_debug_log(void)
+static void esp_wifi_set_log_level(void)
 {
-    /* set WiFi log level and module */
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_ENABLE
-    uint32_t g_wifi_log_level = WIFI_LOG_INFO;
-    uint32_t g_wifi_log_module = 0;
-    uint32_t g_wifi_log_submodule = 0;
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_DEBUG
-    g_wifi_log_level = WIFI_LOG_DEBUG;
+    wifi_log_level_t wifi_log_level = WIFI_LOG_INFO;
+    /* set WiFi log level */
+#if CONFIG_LOG_MAXIMUM_LEVEL == 0
+    wifi_log_level = WIFI_LOG_NONE;
+#elif CONFIG_LOG_MAXIMUM_LEVEL == 1
+    wifi_log_level = WIFI_LOG_ERROR;
+#elif CONFIG_LOG_MAXIMUM_LEVEL == 2
+    wifi_log_level = WIFI_LOG_WARNING;
+#elif CONFIG_LOG_MAXIMUM_LEVEL == 3
+    wifi_log_level = WIFI_LOG_INFO;
+#elif CONFIG_LOG_MAXIMUM_LEVEL == 4
+    wifi_log_level = WIFI_LOG_DEBUG;
+#elif CONFIG_LOG_MAXIMUM_LEVEL == 5
+    wifi_log_level = WIFI_LOG_VERBOSE;
 #endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_VERBOSE
-    g_wifi_log_level = WIFI_LOG_VERBOSE;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_MODULE_ALL
-    g_wifi_log_module = WIFI_LOG_MODULE_ALL;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_MODULE_WIFI
-    g_wifi_log_module = WIFI_LOG_MODULE_WIFI;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_MODULE_COEX
-    g_wifi_log_module = WIFI_LOG_MODULE_COEX;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_MODULE_MESH
-    g_wifi_log_module = WIFI_LOG_MODULE_MESH;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_ALL
-    g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_ALL;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_INIT
-    g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_INIT;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_IOCTL
-    g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_IOCTL;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_CONN
-    g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_CONN;
-#endif
-#if CONFIG_ESP32_WIFI_DEBUG_LOG_SUBMODULE_SCAN
-    g_wifi_log_submodule |= WIFI_LOG_SUBMODULE_SCAN;
-#endif
-    esp_wifi_internal_set_log_level(g_wifi_log_level);
-    esp_wifi_internal_set_log_mod(g_wifi_log_module, g_wifi_log_submodule, true);
-
-#endif /* CONFIG_ESP32_WIFI_DEBUG_LOG_ENABLE*/
-
+    esp_wifi_internal_set_log_level(wifi_log_level);
 }
 
 esp_err_t esp_wifi_deinit(void)
@@ -146,14 +119,14 @@ esp_err_t esp_wifi_deinit(void)
 #if CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
     tcpip_adapter_clear_default_wifi_handlers();
 #endif
+#if CONFIG_ESP_WIFI_SLP_IRAM_OPT
+    esp_pm_unregister_light_sleep_default_params_config_callback();
+#endif
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #if SOC_WIFI_HW_TSF
     esp_pm_unregister_skip_light_sleep_callback(esp_wifi_internal_is_tsf_active);
     esp_pm_unregister_inform_out_light_sleep_overhead_callback(esp_wifi_internal_update_light_sleep_wake_ahead_time);
     esp_sleep_disable_wifi_wakeup();
-#endif
-#if CONFIG_ESP_WIFI_SLP_IRAM_OPT
-    esp_pm_unregister_light_sleep_default_params_config_callback();
 #endif
 #endif
 #if CONFIG_MAC_BB_PD
@@ -214,17 +187,6 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
     }
 #endif
 
-#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
-#if CONFIG_MAC_BB_PD
-    if (esp_register_mac_bb_pd_callback(pm_mac_sleep) != ESP_OK
-        || esp_register_mac_bb_pu_callback(pm_mac_wakeup) != ESP_OK) {
-
-        esp_unregister_mac_bb_pd_callback(pm_mac_sleep);
-        esp_unregister_mac_bb_pu_callback(pm_mac_wakeup);
-        return ESP_ERR_INVALID_ARG;
-    }
-#endif
-
 #if CONFIG_ESP_WIFI_SLP_IRAM_OPT
     esp_pm_register_light_sleep_default_params_config_callback(esp_wifi_internal_update_light_sleep_default_params);
 
@@ -237,6 +199,17 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 
     uint32_t keep_alive_time_us = CONFIG_ESP_WIFI_SLP_DEFAULT_MAX_ACTIVE_TIME * 1000 * 1000;
     esp_wifi_set_keep_alive_time(keep_alive_time_us);
+#endif
+
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+#if CONFIG_MAC_BB_PD
+    if (esp_register_mac_bb_pd_callback(pm_mac_sleep) != ESP_OK
+        || esp_register_mac_bb_pu_callback(pm_mac_wakeup) != ESP_OK) {
+
+        esp_unregister_mac_bb_pd_callback(pm_mac_sleep);
+        esp_unregister_mac_bb_pu_callback(pm_mac_wakeup);
+        return ESP_ERR_INVALID_ARG;
+    }
 #endif
 
 #if SOC_WIFI_HW_TSF
@@ -267,13 +240,13 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 #if CONFIG_SW_COEXIST_ENABLE
     coex_init();
 #endif
+    esp_wifi_set_log_level();
     esp_err_t result = esp_wifi_init_internal(config);
     if (result == ESP_OK) {
 #if CONFIG_MAC_BB_PD
         esp_mac_bb_pd_mem_init();
         esp_wifi_internal_set_mac_sleep(true);
 #endif
-        esp_wifi_set_debug_log();
 #if CONFIG_IDF_TARGET_ESP32
         s_wifi_mac_time_update_cb = esp_wifi_internal_update_mac_time;
 #endif

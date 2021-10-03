@@ -16,7 +16,8 @@ COMPONENT_SRCDIRS += \
 	$(LSRC)/crypto_auth/hmacsha512256 \
 	$(LSRC)/crypto_box \
 	$(LSRC)/crypto_box/curve25519xsalsa20poly1305 \
-	$(LSRC)/crypto_core/curve25519/ref10 \
+	$(LSRC)/crypto_core/ed25519 \
+	$(LSRC)/crypto_core/ed25519/ref10 \
 	$(LSRC)/crypto_core/hchacha20 \
 	$(LSRC)/crypto_core/hsalsa20/ref2 \
 	$(LSRC)/crypto_core/hsalsa20 \
@@ -40,6 +41,9 @@ COMPONENT_SRCDIRS += \
 	$(LSRC)/crypto_scalarmult \
 	$(LSRC)/crypto_scalarmult/curve25519 \
 	$(LSRC)/crypto_scalarmult/curve25519/ref10 \
+	$(LSRC)/crypto_scalarmult/curve25519/sandy2x \
+	$(LSRC)/crypto_scalarmult/ed25519/ref10 \
+	$(LSRC)/crypto_scalarmult/ristretto255/ref10 \
 	$(LSRC)/crypto_secretbox \
 	$(LSRC)/crypto_secretbox/xsalsa20poly1305 \
 	$(LSRC)/crypto_shorthash \

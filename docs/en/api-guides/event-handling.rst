@@ -123,11 +123,14 @@ Event IDs and Corresponding Data Structures
 | IP_EVENT_ETH_GOT_IP                | :cpp:class:`ip_event_got_ip_t`                |
 | (SYSTEM_EVENT_ETH_GOT_IP)          |                                               |
 +------------------------------------+-----------------------------------------------+
+| IP_EVENT_ETH_LOST_IP               | n/a                                           |
+| (SYSTEM_EVENT_ETH_LOST_IP)         |                                               |
++------------------------------------+-----------------------------------------------+
 
 Mesh Events
 -----------
 
-ESP-MESH uses a system similar to the :ref:`legacy-event-loop` to deliver events to the application. See :ref:`mesh-events` for details.
+ESP-WIFI-MESH uses a system similar to the :ref:`legacy-event-loop` to deliver events to the application. See :ref:`mesh-events` for details.
 
 Bluetooth Events
 ----------------

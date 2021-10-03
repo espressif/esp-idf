@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "unity.h"
 #include "esp_private/gdma.h"
 #include "soc/soc_caps.h"
@@ -21,6 +26,12 @@ TEST_CASE("GDMA channel allocation", "[gdma]")
     };
     TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, gdma_new_channel(&channel_config, &tx_channels[0]));
 
+    // Free interrupts before installing RX interrupts to ensure enough free interrupts
+    for (int i = 0; i < SOC_GDMA_PAIRS_PER_GROUP; i++) {
+        TEST_ESP_OK(gdma_disconnect(tx_channels[i]));
+        TEST_ESP_OK(gdma_del_channel(tx_channels[i]));
+    }
+
     // install RX channels for different peripherals
     channel_config.direction = GDMA_CHANNEL_DIRECTION_RX;
     for (int i = 0; i < SOC_GDMA_PAIRS_PER_GROUP; i++) {
@@ -31,9 +42,7 @@ TEST_CASE("GDMA channel allocation", "[gdma]")
     TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, gdma_new_channel(&channel_config, &rx_channels[0]));
 
     for (int i = 0; i < SOC_GDMA_PAIRS_PER_GROUP; i++) {
-        TEST_ESP_OK(gdma_disconnect(tx_channels[i]));
         TEST_ESP_OK(gdma_disconnect(rx_channels[i]));
-        TEST_ESP_OK(gdma_del_channel(tx_channels[i]));
         TEST_ESP_OK(gdma_del_channel(rx_channels[i]));
     }
 

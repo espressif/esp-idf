@@ -53,6 +53,8 @@ class Parser(object):
     TOOLCHAIN_FOR_TARGET = {
         'esp32': 'xtensa-esp32-elf-',
         'esp32s2': 'xtensa-esp32s2-elf-',
+        'esp32s3': 'xtensa-esp32s3-elf-',
+        'esp32c3': 'riscv32-esp-elf-',
     }
 
     def __init__(self, binary_folder, node_index):
@@ -120,7 +122,7 @@ class Parser(object):
                 # and we need to check all cases no matter if it's going te be executed by CI
                 # also add app_name here, we allow same case for different apps
                 if (tc['summary'] + stripped_config_name) in self.test_case_names:
-                    self.parsing_errors.append('duplicated test case ID: ' + tc['summary'])
+                    self.parsing_errors.append('{} ({}): duplicated test case ID: {}'.format(stripped_config_name, config_name, tc['summary']))
                 else:
                     self.test_case_names.add(tc['summary'] + stripped_config_name)
 

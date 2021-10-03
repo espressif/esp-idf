@@ -12,6 +12,9 @@ def test_examples_sd_card(env, extra_data):  # type: (ttfw_idf.Env.Env, None ) -
     dut.expect('example: Initializing SD card', timeout=20)
     dut.expect('example: Using SDMMC peripheral', timeout=10)
 
+    # Provide enough time for possible SD card formatting
+    dut.expect('Filesystem mounted', timeout=60)
+
     # These lines are matched separately because of ASCII color codes in the output
     name = dut.expect(re.compile(r'Name: (\w+)'), timeout=10)[0]
     _type = dut.expect(re.compile(r'Type: (\S+)'), timeout=10)[0]

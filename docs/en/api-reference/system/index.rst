@@ -11,7 +11,7 @@ System API
     eFuse Manager <efuse>
     Error Codes and Helper Functions <esp_err>
     ESP HTTPS OTA <esp_https_ota>
-    ESP pthread <esp_pthread>
+    POSIX Threads Support <pthread>
     Event Loop Library <esp_event>
     FreeRTOS <freertos>
     FreeRTOS Additions <freertos_additions>
@@ -27,6 +27,7 @@ System API
     Over The Air Updates (OTA) <ota>
     :CONFIG_IDF_TARGET_ARCH_XTENSA: Performance Monitor <perfmon>
     Power Management <power_management>
+    Random Number Generation <random>
     Sleep Modes <sleep_modes>
     Watchdogs <wdts>
     System Time <system_time>

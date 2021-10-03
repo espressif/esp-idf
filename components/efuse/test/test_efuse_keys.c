@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
@@ -56,9 +61,11 @@ static esp_err_t s_check_key(esp_efuse_block_t num_key, void* wr_key)
 #endif // not CONFIG_IDF_ENV_FPGA
 
     TEST_ASSERT_TRUE(esp_efuse_get_key_dis_write(num_key));
-    if (purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1 ||
+    if (purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY ||
+#ifdef SOC_FLASH_ENCRYPTION_XTS_AES_256
+            purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1 ||
             purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2 ||
-            purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY ||
+#endif
             purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL ||
             purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG ||
             purpose == ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_DIGITAL_SIGNATURE ||
@@ -142,8 +149,13 @@ TEST_CASE("Test 1 esp_efuse_write_key for FPGA", "[efuse]")
     esp_efuse_purpose_t purpose [] = {
         ESP_EFUSE_KEY_PURPOSE_USER,
         ESP_EFUSE_KEY_PURPOSE_RESERVED,
+#ifdef SOC_FLASH_ENCRYPTION_XTS_AES_256
         ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1,
         ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2,
+#else
+        ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY,
+        ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY,
+#endif
         ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY,
         ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL,
     };
@@ -205,10 +217,17 @@ TEST_CASE("Test esp_efuse_write_keys", "[efuse]")
     esp_efuse_block_t key_block = EFUSE_BLK_MAX;
 
     enum { BLOCKS_NEEDED1 = 2 };
+#ifdef SOC_FLASH_ENCRYPTION_XTS_AES_256
     esp_efuse_purpose_t purpose1[BLOCKS_NEEDED1] = {
             ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1,
             ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2,
     };
+#else
+    esp_efuse_purpose_t purpose1[BLOCKS_NEEDED1] = {
+        ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY,
+        ESP_EFUSE_KEY_PURPOSE_RESERVED
+    };
+#endif
     uint8_t keys1[BLOCKS_NEEDED1][32] = {{0xEE}};
 
     for (int num_key = 0; num_key < BLOCKS_NEEDED1; ++num_key) {

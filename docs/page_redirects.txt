@@ -16,11 +16,13 @@ api-reference/ethernet/esp_eth                  api-reference/network/esp_eth
 api-reference/mesh/index                        api-reference/network/index
 api-reference/mesh/esp_mesh                     api-reference/network/esp_mesh
 api-reference/peripherals/can                   api-reference/peripherals/twai
+api-reference/peripherals/usb                   api-reference/peripherals/usb_device
 api-reference/wifi/index                        api-reference/network/index
 api-reference/wifi/esp_now                      api-reference/network/esp_now
 api-reference/wifi/esp_smartconfig              api-reference/network/esp_smartconfig
 api-reference/wifi/esp_wifi                     api-reference/network/esp_wifi
 api-reference/system/tcpip_adapter              api-reference/network/esp_netif
+api-reference/system/esp_pthread                api-reference/system/pthread
 get-started/idf-monitor                         api-guides/tools/idf-monitor
 get-started-cmake/idf-monitor                   api-guides/tools/idf-monitor
 get-started/get-started-devkitc                 hw-reference/esp32/get-started-devkitc
@@ -73,4 +75,10 @@ hw-reference/get-started-ethernet-kit-v1.0      hw-reference/esp32/get-started-e
 hw-reference/get-started-ethernet-kit           hw-reference/esp32/get-started-ethernet-kit
 hw-reference/esp32s2/user-guide-kaluga-1-v1.2   hw-reference/esp32s2/user-guide-esp32-s2-kaluga-1-kit
 
-api-guides/jtag-debugging/configure-wrover      api-guides/jtag-debugging/configure-ft2232h-jtag
+api-guides/jtag-debugging/configure-wrover  api-guides/jtag-debugging/configure-ft2232h-jtag
+hw-reference/modules-and-boards             "https://www.espressif.com/en/products/modules"
+hw-reference/modules-and-boards-previous    "https://www.espressif.com/en/products/modules"
+
+# rename ESP-MESH to ESP-WIFI-MESH
+api-guides/mesh                                 api-guides/esp-wifi-mesh
+api-reference/network/esp_mesh                  api-reference/network/esp-wifi-mesh

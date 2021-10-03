@@ -2,7 +2,7 @@
 #
 # sourced into the "SPIRAM config" submenu for ESP32 or ESP32S2
 
-# invisible option selected by ESP32_SPIRAM_SUPPORT || ESP32S2_SPIRAM_SUPPORT
+# invisible option selected by ${target}_SPIRAM_SUPPORT
 config SPIRAM
     bool
 
@@ -92,7 +92,7 @@ config SPIRAM_MALLOC_RESERVE_INTERNAL
 config SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
     bool "Allow .bss segment placed in external memory"
     default n
-    depends on SPIRAM && IDF_TARGET_ESP32 # TODO ESP32-S2 IDFGH-4320, ESP32-S3 IDF-1974
+    depends on SPIRAM && (IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2) # ESP32-S3 IDF-1974
     select ESP_ALLOW_BSS_SEG_EXTERNAL_MEMORY
     help
         If enabled, variables with EXT_RAM_ATTR attribute will be placed in SPIRAM instead of internal DRAM.
@@ -101,3 +101,13 @@ config SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
         linker fragment scheme `extram_bss`.
 
         Note that the variables placed in SPIRAM using EXT_RAM_ATTR will be zero initialized.
+
+config SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+    bool "Allow .noinit segment placed in external memory"
+    default n
+    depends on SPIRAM && IDF_TARGET_ESP32
+    help
+        If enabled, noinit variables can be placed in PSRAM using EXT_RAM_NOINIT_ATTR.
+
+        Note the values placed into this section will not be initialized at startup and should keep its value
+        after software restart.

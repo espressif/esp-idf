@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <string.h>
 #include <stdlib.h>
 #include "hal/spi_flash_hal.h"
-#include "string.h"
-#include "hal/hal_defs.h"
+#include "hal/assert.h"
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
 
@@ -50,6 +50,8 @@ esp_err_t spi_flash_hal_device_config(spi_flash_host_inst_t *host)
     spi_flash_ll_set_clock(dev, &ctx->clock_conf);
     int cs_hold = ctx->cs_hold;
     spi_flash_ll_set_hold(dev, cs_hold);
+    spi_flash_ll_set_cs_setup(dev, ctx->cs_setup);
+
 #ifndef GPSPI_BUILD
 #if SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
     if ((ctx->flags & SPI_FLASH_HOST_CONTEXT_FLAG_AUTO_SUSPEND) != 0) {
@@ -63,7 +65,14 @@ esp_err_t spi_flash_hal_device_config(spi_flash_host_inst_t *host)
         spi_flash_hal_disable_auto_resume_mode(host);
     }
 #endif //SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
+#if SOC_SPI_MEM_SUPPORT_TIME_TUNING
+    // Always keep the extra dummy on SPI1 is 0, add extra dummy to user dummy
+    spimem_flash_ll_set_extra_dummy((spi_mem_dev_t*)dev, 0);
+#endif
+#else
+    gpspi_flash_ll_set_hold_pol(dev, 1);
 #endif //GPSPI_BUILD
+
     return ESP_OK;
 }
 
@@ -91,26 +100,6 @@ esp_err_t spi_flash_hal_configure_host_io_mode(
     if (!SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id) && io_mode > SPI_FLASH_FASTRD) {
         return ESP_ERR_NOT_SUPPORTED;
     }
-
-#if CONFIG_SPI_FLASH_ROM_IMPL && CONFIG_IDF_TARGET_ESP32S3
-    /*
-     * In S3 ROM, extra bits than 24-bit are used to indicate requirements of M7-M0:
-     * - 24: normal transactions
-     * - 28: 24bit DIO + conf bits (M7-M0 excluded from dummy_bitlen)
-     * - 32: 24bit QIO + conf bits (M7-M0 excluded from dummy_bitlen)
-
-     * Detect requirements for the conf bits by the address len, and modify the length to normal
-     * case (addr_bitlen = 24, dummy_bitlen includes M7-M0) as other chip versions use.
-     */
-    int m70_bits = addr_bitlen - 24;
-    if (m70_bits) {
-        assert(io_mode == SPI_FLASH_DIO || io_mode == SPI_FLASH_QIO);
-        conf_required = true;
-        addr_bitlen -= m70_bits;
-        int line_width = (io_mode == SPI_FLASH_DIO? 2: 4);
-        dummy_cyclelen_base += m70_bits / line_width;
-    }
-#endif //CONFIG_SPI_FLASH_ROM_IMPL
 
 #if SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT
     // The CONTROL_DUMMY_OUTPUT feature is used to control M7-M0 bits.
@@ -154,7 +143,7 @@ esp_err_t spi_flash_hal_common_command(spi_flash_host_inst_t *host, spi_flash_tr
         command = trans->command;
         dummy_bitlen = trans->dummy_bitlen;
         if ((trans->flags & SPI_FLASH_TRANS_FLAG_IGNORE_BASEIO) != 0) {
-            io_mode = ((spi_flash_hal_context_t*)host)->base_io_mode;
+            io_mode = trans->io_mode;
         }
     }
 
@@ -172,7 +161,9 @@ esp_err_t spi_flash_hal_common_command(spi_flash_host_inst_t *host, spi_flash_tr
     spi_flash_ll_set_miso_bitlen(dev, trans->miso_len * 8);
     spi_flash_ll_user_start(dev);
     host->driver->poll_cmd_done(host);
-    spi_flash_ll_get_buffer_data(dev, trans->miso_data, trans->miso_len);
+    if (trans->miso_len > 0) {
+        spi_flash_ll_get_buffer_data(dev, trans->miso_data, trans->miso_len);
+    }
     return ESP_OK;
 }
 
@@ -186,6 +177,8 @@ esp_err_t spi_flash_hal_read(spi_flash_host_inst_t *host, void *buffer, uint32_t
     spi_flash_ll_set_miso_bitlen(dev, read_len * 8);
     spi_flash_ll_user_start(dev);
     host->driver->poll_cmd_done(host);
-    spi_flash_ll_get_buffer_data(dev, buffer, read_len);
+    if (read_len > 0) {
+        spi_flash_ll_get_buffer_data(dev, buffer, read_len);
+    }
     return ESP_OK;
 }

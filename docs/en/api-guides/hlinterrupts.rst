@@ -9,16 +9,39 @@ The Xtensa architecture has support for 32 interrupts, divided over 8 levels, pl
 Interrupt Levels
 ----------------
 
-===== ================= ====================================================
-Level Symbol            Remark
-===== ================= ====================================================
-1     N/A               Exception and level 0 interrupts. Handled by ESP-IDF
-2-3   N/A               Medium level interrupts. Handled by ESP-IDF
-4     xt_highint4       Normally used by ESP-IDF debug logic
-5     xt_highint5       Free to use
-NMI   xt_nmi            Free to use
-dbg   xt_debugexception Debug exception. Called on e.g. a BREAK instruction.
-===== ================= ====================================================
+.. only:: esp32
+
+    ===== ================= ====================================================
+    Level Symbol            Remark
+    ===== ================= ====================================================
+    1     N/A               Exception and level 0 interrupts. Handled by ESP-IDF
+    2-3   N/A               Medium level interrupts. Handled by ESP-IDF
+    4     xt_highint4       Free to use :ref:`(See 1) <hlinterrupts-pin-notes>`
+    5     xt_highint5       Normally used by ESP-IDF debug logic :ref:`(See 1) <hlinterrupts-pin-notes>`
+    NMI   xt_nmi            Free to use
+    dbg   xt_debugexception Debug exception. Called on e.g. a BREAK instruction. :ref:`(See 2) <hlinterrupts-pin-notes>`
+    ===== ================= ====================================================
+
+
+    .. _hlinterrupts-pin-notes:
+
+    The following notes give more information about the items in the tables above.
+
+        1. ESP-IDF debug logic can be configured to run on `xt_highint4` or `xt_highint5` in :ref:`CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL`. Bluetooth's interrupt can be configured to run on level 4 by enabling :ref:`CONFIG_BTDM_CTRL_HLI`. If :ref:`CONFIG_BTDM_CTRL_HLI` is enabled, ESP-IDF debug logic must be running on level 5 interrupt.
+        2. If :ref:`CONFIG_BTDM_CTRL_HLI` is enabled, `xt_debugexception` is used to fix `live lock issue <https://www.espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_en.pdf>`_ in ESP32 ECO3.
+
+.. only:: not esp32
+
+    ===== ================= ====================================================
+    Level Symbol            Remark
+    ===== ================= ====================================================
+    1     N/A               Exception and level 0 interrupts. Handled by ESP-IDF
+    2-3   N/A               Medium level interrupts. Handled by ESP-IDF
+    4     xt_highint4       Normally used by ESP-IDF debug logic
+    5     xt_highint5       Free to use
+    NMI   xt_nmi            Free to use
+    dbg   xt_debugexception Debug exception. Called on e.g. a BREAK instruction.
+    ===== ================= ====================================================
 
 Using these symbols is done by creating an assembly file (suffix .S) and defining the named symbols, like this::
 
@@ -31,7 +54,7 @@ Using these symbols is done by creating an assembly file (suffix .S) and definin
         rsr     a0, EXCSAVE_5
         rfi     5
 
-For a real-life example, see the :component_file:`esp_system/port/soc/{IDF_TARGET_PATH_NAME}/dport_panic_highint_hdl.S` file; the panic handler interrupt is implemented there.
+For a real-life example, see the :component_file:`esp_system/port/soc/{IDF_TARGET_PATH_NAME}/highint_hdl.S` file; the panic handler interrupt is implemented there.
 
 
 Notes
@@ -40,6 +63,10 @@ Notes
  - Do not call C code from a high-level interrupt; because these interrupts still run in critical sections, this can cause crashes.
    (The panic handler interrupt does call normal C code, but this is OK because there is no intention of returning to the normal code
    flow afterwards.)
+
+   .. only:: esp32
+
+       And if :ref:`CONFIG_BTDM_CTRL_HLI` is enabled, it does call normal C code in high-level interrupt, but this is OK becase we add some protection for it.
 
  - Make sure your assembly code gets linked in. If the interrupt handler symbol is the only symbol the rest of the code uses from this
    file, the linker will take the default ISR instead and not link the assembly file into the final project. To get around this, in the

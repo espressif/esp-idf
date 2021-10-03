@@ -24,11 +24,14 @@
 
 #include <stdlib.h> //for abs()
 #include <string.h>
-#include "hal/hal_defs.h"
 #include "esp_types.h"
-#include "soc/spi_periph.h"
-#include "esp32s2/rom/lldesc.h"
 #include "esp_attr.h"
+#include "soc/spi_periph.h"
+#include "soc/spi_struct.h"
+#include "soc/lldesc.h"
+#include "hal/assert.h"
+#include "hal/misc.h"
+#include "hal/spi_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,8 +41,12 @@ extern "C" {
 #define SPI_LL_DMA_FIFO_RST_MASK (SPI_AHBM_RST | SPI_AHBM_FIFO_RST)
 /// Interrupt not used. Don't use in app.
 #define SPI_LL_UNUSED_INT_MASK  (SPI_INT_TRANS_DONE_EN | SPI_INT_WR_DMA_DONE_EN | SPI_INT_RD_DMA_DONE_EN | SPI_INT_WR_BUF_DONE_EN | SPI_INT_RD_BUF_DONE_EN)
+/// These 2 masks together will set SPI transaction to one line mode
+#define SPI_LL_ONE_LINE_CTRL_MASK (SPI_FREAD_OCT | SPI_FREAD_QUAD | SPI_FREAD_DUAL | SPI_FCMD_OCT | \
+        SPI_FCMD_QUAD | SPI_FCMD_DUAL | SPI_FADDR_OCT | SPI_FADDR_QUAD | SPI_FADDR_DUAL)
+#define SPI_LL_ONE_LINE_USER_MASK (SPI_FWRITE_OCT | SPI_FWRITE_QUAD | SPI_FWRITE_DUAL)
 /// Swap the bit order to its correct place to send
-#define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)data<<(32-len))
+#define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)(data) << (32 - len))
 /// This is the expected clock frequency
 #define SPI_LL_PERIPH_CLK_FREQ (80 * 1000000)
 #define SPI_LL_GET_HW(ID) ((ID)==0? ({abort();NULL;}):((ID)==1? &GPSPI2 : &GPSPI3))
@@ -53,15 +60,6 @@ typedef uint32_t spi_ll_clock_val_t;
 
 //On ESP32-S2 and earlier chips, DMA registers are part of SPI registers. So set the registers of SPI peripheral to control DMA.
 typedef spi_dev_t spi_dma_dev_t;
-
-/** IO modes supported by the master. */
-typedef enum {
-    SPI_LL_IO_MODE_NORMAL = 0,  ///< 1-bit mode for all phases
-    SPI_LL_IO_MODE_DIO,         ///< 2-bit mode for address and data phases, 1-bit mode for command phase
-    SPI_LL_IO_MODE_DUAL,        ///< 2-bit mode for data phases only, 1-bit mode for command and address phases
-    SPI_LL_IO_MODE_QIO,         ///< 4-bit mode for address and data phases, 1-bit mode for command phase
-    SPI_LL_IO_MODE_QUAD,        ///< 4-bit mode for data phases only, 1-bit mode for command and address phases
-} spi_ll_io_mode_t;
 
 /// Type definition of all supported interrupts
 typedef enum {
@@ -135,6 +133,9 @@ static inline void spi_ll_slave_init(spi_dev_t *hw)
     //use all 64 bytes of the buffer
     hw->user.usr_miso_highpart = 0;
     hw->user.usr_mosi_highpart = 0;
+
+    // Configure DMA In-Link to not be terminated when transaction bit counter exceeds
+    hw->dma_conf.rx_eof_en = 0;
 
     //Disable unneeded ints
     hw->slave.val &= ~SPI_LL_UNUSED_INT_MASK;
@@ -344,14 +345,16 @@ static inline void spi_ll_read_buffer(spi_dev_t *hw, uint8_t *buffer_to_rcv, siz
 
 static inline void spi_ll_read_buffer_byte(spi_dev_t *hw, int byte_addr, uint8_t *out_data, int len)
 {
-    while (len>0) {
-        uint32_t word = hw->data_buf[byte_addr/4];
+    while (len > 0) {
+        uint32_t word = hw->data_buf[byte_addr / 4];
         int offset = byte_addr % 4;
 
         int copy_len = 4 - offset;
-        if (copy_len > len) copy_len = len;
+        if (copy_len > len) {
+            copy_len = len;
+        }
 
-        memcpy(out_data, ((uint8_t*)&word)+offset, copy_len);
+        memcpy(out_data, ((uint8_t *)&word) + offset, copy_len);
         byte_addr += copy_len;
         out_data += copy_len;
         len -= copy_len;
@@ -360,19 +363,23 @@ static inline void spi_ll_read_buffer_byte(spi_dev_t *hw, int byte_addr, uint8_t
 
 static inline void spi_ll_write_buffer_byte(spi_dev_t *hw, int byte_addr, uint8_t *data, int len)
 {
-    assert( byte_addr + len <= 72);
-    assert(len > 0);
-    assert(byte_addr >= 0);
+    HAL_ASSERT(byte_addr + len <= 72);
+    HAL_ASSERT(len > 0);
+    HAL_ASSERT(byte_addr >= 0);
 
     while (len > 0) {
         uint32_t word;
         int offset = byte_addr % 4;
 
         int copy_len = 4 - offset;
-        if (copy_len > len) copy_len = len;
+        if (copy_len > len) {
+            copy_len = len;
+        }
 
         //read-modify-write
-        if (copy_len != 4) word = hw->data_buf[byte_addr / 4];
+        if (copy_len != 4) {
+            word = hw->data_buf[byte_addr / 4];
+        }
 
         memcpy(((uint8_t *)&word) + offset, data, copy_len);
         hw->data_buf[byte_addr / 4] = word;
@@ -504,47 +511,32 @@ static inline void spi_ll_set_sio_mode(spi_dev_t *hw, int sio_mode)
 }
 
 /**
- * Configure the io mode for the master to work at.
+ * Configure the SPI transaction line mode for the master to use.
  *
- * @param hw Beginning address of the peripheral registers.
- * @param io_mode IO mode to work at, see ``spi_ll_io_mode_t``.
+ * @param hw        Beginning address of the peripheral registers.
+ * @param line_mode SPI transaction line mode to use, see ``spi_line_mode_t``.
  */
-static inline void spi_ll_master_set_io_mode(spi_dev_t *hw, spi_ll_io_mode_t io_mode)
+static inline void spi_ll_master_set_line_mode(spi_dev_t *hw, spi_line_mode_t line_mode)
 {
-    if (io_mode == SPI_LL_IO_MODE_DIO || io_mode == SPI_LL_IO_MODE_DUAL) {
-        hw->ctrl.fcmd_dual= (io_mode == SPI_LL_IO_MODE_DIO) ? 1 : 0;
-        hw->ctrl.faddr_dual= (io_mode == SPI_LL_IO_MODE_DIO) ? 1 : 0;
-        hw->ctrl.fread_dual=1;
-        hw->user.fwrite_dual=1;
-        hw->ctrl.fcmd_quad = 0;
-        hw->ctrl.faddr_quad = 0;
-        hw->ctrl.fread_quad = 0;
-        hw->user.fwrite_quad = 0;
-    } else if (io_mode == SPI_LL_IO_MODE_QIO || io_mode == SPI_LL_IO_MODE_QUAD) {
-        hw->ctrl.fcmd_quad = (io_mode == SPI_LL_IO_MODE_QIO) ? 1 : 0;
-        hw->ctrl.faddr_quad = (io_mode == SPI_LL_IO_MODE_QIO) ? 1 : 0;
-        hw->ctrl.fread_quad=1;
-        hw->user.fwrite_quad=1;
-        hw->ctrl.fcmd_dual = 0;
-        hw->ctrl.faddr_dual = 0;
-        hw->ctrl.fread_dual = 0;
-        hw->user.fwrite_dual = 0;
-    } else {
-        hw->ctrl.fcmd_dual = 0;
-        hw->ctrl.faddr_dual = 0;
-        hw->ctrl.fread_dual = 0;
-        hw->user.fwrite_dual = 0;
-        hw->ctrl.fcmd_quad = 0;
-        hw->ctrl.faddr_quad = 0;
-        hw->ctrl.fread_quad = 0;
-        hw->user.fwrite_quad = 0;
-    }
+    hw->ctrl.val &= ~SPI_LL_ONE_LINE_CTRL_MASK;
+    hw->user.val &= ~SPI_LL_ONE_LINE_USER_MASK;
+    hw->ctrl.fcmd_dual = (line_mode.cmd_lines == 2);
+    hw->ctrl.fcmd_quad = (line_mode.cmd_lines == 4);
+    hw->ctrl.fcmd_oct = (line_mode.cmd_lines == 8);
+    hw->ctrl.faddr_dual = (line_mode.addr_lines == 2);
+    hw->ctrl.faddr_quad = (line_mode.addr_lines == 4);
+    hw->ctrl.faddr_oct = (line_mode.addr_lines == 8);
+    hw->ctrl.fread_dual = (line_mode.data_lines == 2);
+    hw->user.fwrite_dual = (line_mode.data_lines == 2);
+    hw->ctrl.fread_quad = (line_mode.data_lines == 4);
+    hw->user.fwrite_quad = (line_mode.data_lines == 4);
+    hw->ctrl.fread_oct = (line_mode.data_lines == 8);
+    hw->user.fwrite_oct = (line_mode.data_lines == 8);
 }
 
 static inline void spi_ll_slave_set_seg_mode(spi_dev_t *hw, bool seg_trans)
 {
     hw->dma_conf.dma_seg_trans_en = seg_trans;
-    hw->dma_conf.rx_eof_en = seg_trans;
 }
 
 /**
@@ -561,6 +553,17 @@ static inline void spi_ll_master_select_cs(spi_dev_t *hw, int cs_id)
     hw->misc.cs3_dis = (cs_id == 3) ? 0 : 1;
     hw->misc.cs4_dis = (cs_id == 4) ? 0 : 1;
     hw->misc.cs5_dis = (cs_id == 5) ? 0 : 1;
+}
+
+/**
+ * Keep Chip Select activated after the current transaction.
+ *
+ * @param hw Beginning address of the peripheral registers.
+ * @param keep_active if 0 don't keep CS activated, else keep CS activated
+ */
+static inline void spi_ll_master_keep_cs(spi_dev_t *hw, int keep_active)
+{
+    hw->misc.cs_keep_active = (keep_active != 0) ? 1 : 0;
 }
 
 /*------------------------------------------------------------------------------
@@ -732,7 +735,7 @@ static inline void spi_ll_set_miso_delay(spi_dev_t *hw, int delay_mode, int dela
 static inline void spi_ll_set_dummy(spi_dev_t *hw, int dummy_n)
 {
     hw->user.usr_dummy = dummy_n ? 1 : 0;
-    hw->user1.usr_dummy_cyclelen = dummy_n - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->user1, usr_dummy_cyclelen, dummy_n - 1);
 }
 
 /**
@@ -806,7 +809,7 @@ static inline void spi_ll_set_mosi_bitlen(spi_dev_t *hw, size_t bitlen)
  */
 static inline void spi_ll_slave_set_rx_bitlen(spi_dev_t *hw, size_t bitlen)
 {
-    spi_ll_set_miso_bitlen(hw, bitlen);
+    //This is not used in esp32s2
 }
 
 /**
@@ -817,7 +820,7 @@ static inline void spi_ll_slave_set_rx_bitlen(spi_dev_t *hw, size_t bitlen)
  */
 static inline void spi_ll_slave_set_tx_bitlen(spi_dev_t *hw, size_t bitlen)
 {
-    spi_ll_set_miso_bitlen(hw, bitlen);
+    //This is not used in esp32s2
 }
 
 /**
@@ -893,13 +896,13 @@ static inline void spi_ll_set_command(spi_dev_t *hw, uint16_t cmd, int cmdlen, b
 {
     if (lsbfirst) {
         // The output command start from bit0 to bit 15, kept as is.
-        hw->user2.usr_command_value = cmd;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->user2, usr_command_value, cmd);
     } else {
         /* Output command will be sent from bit 7 to 0 of command_value, and
          * then bit 15 to 8 of the same register field. Shift and swap to send
          * more straightly.
          */
-        hw->user2.usr_command_value = HAL_SPI_SWAP_DATA_TX(cmd, cmdlen);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->user2, usr_command_value, HAL_SPI_SWAP_DATA_TX(cmd, cmdlen));
 
     }
 }
@@ -972,35 +975,35 @@ static inline uint32_t spi_ll_slave_get_rcv_bitlen(spi_dev_t *hw)
     item(SPI_LL_INTR_CMDA,          dma_int_ena.cmda,               dma_int_raw.cmda,               dma_int_clr.cmda=1)
 
 
-static inline void spi_ll_enable_intr(spi_dev_t* hw, spi_ll_intr_t intr_mask)
+static inline void spi_ll_enable_intr(spi_dev_t *hw, spi_ll_intr_t intr_mask)
 {
 #define ENA_INTR(intr_bit, en_reg, ...) if (intr_mask & (intr_bit)) hw->en_reg = 1;
     FOR_EACH_ITEM(ENA_INTR, INTR_LIST);
 #undef ENA_INTR
 }
 
-static inline void spi_ll_disable_intr(spi_dev_t* hw, spi_ll_intr_t intr_mask)
+static inline void spi_ll_disable_intr(spi_dev_t *hw, spi_ll_intr_t intr_mask)
 {
 #define DIS_INTR(intr_bit, en_reg, ...) if (intr_mask & (intr_bit)) hw->en_reg = 0;
     FOR_EACH_ITEM(DIS_INTR, INTR_LIST);
 #undef DIS_INTR
 }
 
-static inline void spi_ll_set_intr(spi_dev_t* hw, spi_ll_intr_t intr_mask)
+static inline void spi_ll_set_intr(spi_dev_t *hw, spi_ll_intr_t intr_mask)
 {
 #define SET_INTR(intr_bit, _, st_reg, ...) if (intr_mask & (intr_bit)) hw->st_reg = 1;
     FOR_EACH_ITEM(SET_INTR, INTR_LIST);
 #undef SET_INTR
 }
 
-static inline void spi_ll_clear_intr(spi_dev_t* hw, spi_ll_intr_t intr_mask)
+static inline void spi_ll_clear_intr(spi_dev_t *hw, spi_ll_intr_t intr_mask)
 {
 #define CLR_INTR(intr_bit, _, __, clr_reg) if (intr_mask & (intr_bit)) hw->clr_reg;
     FOR_EACH_ITEM(CLR_INTR, INTR_LIST);
 #undef CLR_INTR
 }
 
-static inline bool spi_ll_get_intr(spi_dev_t* hw, spi_ll_intr_t intr_mask)
+static inline bool spi_ll_get_intr(spi_dev_t *hw, spi_ll_intr_t intr_mask)
 {
 #define GET_INTR(intr_bit, _, st_reg, ...) if (intr_mask & (intr_bit) && hw->st_reg) return true;
     FOR_EACH_ITEM(GET_INTR, INTR_LIST);
@@ -1054,7 +1057,7 @@ static inline void spi_ll_enable_int(spi_dev_t *hw)
 /*------------------------------------------------------------------------------
  * Slave HD
  *----------------------------------------------------------------------------*/
-static inline void spi_ll_slave_hd_set_len_cond(spi_dev_t* hw, spi_ll_trans_len_cond_t cond_mask)
+static inline void spi_ll_slave_hd_set_len_cond(spi_dev_t *hw, spi_ll_trans_len_cond_t cond_mask)
 {
     hw->slv_rd_byte.rdbuf_bytelen_en = (cond_mask & SPI_LL_TRANS_LEN_COND_RDBUF) ? 1 : 0;
     hw->slv_rd_byte.wrbuf_bytelen_en = (cond_mask & SPI_LL_TRANS_LEN_COND_WRBUF) ? 1 : 0;
@@ -1062,14 +1065,14 @@ static inline void spi_ll_slave_hd_set_len_cond(spi_dev_t* hw, spi_ll_trans_len_
     hw->slv_rd_byte.wrdma_bytelen_en = (cond_mask & SPI_LL_TRANS_LEN_COND_WRDMA) ? 1 : 0;
 }
 
-static inline int spi_ll_slave_get_rx_byte_len(spi_dev_t* hw)
+static inline int spi_ll_slave_get_rx_byte_len(spi_dev_t *hw)
 {
     return hw->slv_rd_byte.data_bytelen;
 }
 
-static inline uint32_t spi_ll_slave_hd_get_last_addr(spi_dev_t* hw)
+static inline uint32_t spi_ll_slave_hd_get_last_addr(spi_dev_t *hw)
 {
-    return hw->slave1.last_addr;
+    return HAL_FORCE_READ_U32_REG_FIELD(hw->slave1, last_addr);
 }
 
 /*------------------------------------------------------------------------------
@@ -1088,7 +1091,7 @@ static inline void spi_dma_ll_rx_reset(spi_dma_dev_t *dma_in, uint32_t channel)
 {
     //Reset RX DMA peripheral
     dma_in->dma_in_link.dma_rx_ena = 0;
-    assert(dma_in->dma_in_link.dma_rx_ena == 0);
+    HAL_ASSERT(dma_in->dma_in_link.dma_rx_ena == 0);
 
     dma_in->dma_conf.in_rst = 1;
     dma_in->dma_conf.in_rst = 0;

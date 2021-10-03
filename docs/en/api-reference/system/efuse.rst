@@ -71,7 +71,7 @@ Table header:
 Individual params in CSV file the following meanings:
 
 field_name
-    Name of field. The prefix `ESP_EFUSE_` will be added to the name, and this field name will be available in the code. This name will be used to access the fields. The name must be unique for all fields. If the line has an empty name, then this line is combined with the previous field. This allows you to set an arbitrary order of bits in the field, and expand the field as well (see ``MAC_FACTORY`` field in the common table).
+    Name of field. The prefix `ESP_EFUSE_` will be added to the name, and this field name will be available in the code. This name will be used to access the fields. The name must be unique for all fields. If the line has an empty name, then this line is combined with the previous field. This allows you to set an arbitrary order of bits in the field, and expand the field as well (see ``MAC_FACTORY`` field in the common table). The field_name supports structured format using `.` to show that the field belongs to another field (see ``WR_DIS`` and ``RD_DIS`` in the common table).
 
 efuse_block
     Block number. It determines where the eFuse bits will be placed for this field. Available EFUSE_BLK0..{IDF_TARGET_MAX_EFUSE_BLK}.
@@ -107,6 +107,29 @@ If a non-sequential bit order is required to describe a field, then the field de
     MAC_FACTORY_CRC,        EFUSE_BLK0,    80,    8,    CRC8 for factory MAC address
 
 This field will available in code as ESP_EFUSE_MAC_FACTORY and ESP_EFUSE_MAC_FACTORY_CRC.
+
+Structured efuse fields
+-----------------------
+
+.. code-block:: none
+
+    WR_DIS,                           EFUSE_BLK0,   0,    32,     Write protection
+    WR_DIS.RD_DIS,                    EFUSE_BLK0,   0,    1,      Write protection for RD_DIS
+    WR_DIS.FIELD_1,                   EFUSE_BLK0,   1,    1,      Write protection for FIELD_1
+    WR_DIS.FIELD_2,                   EFUSE_BLK0,   2,    4,      Write protection for FIELD_2 (includes B1 and B2)
+    WR_DIS.FIELD_2.B1,                EFUSE_BLK0,   2,    2,      Write protection for FIELD_2.B1
+    WR_DIS.FIELD_2.B2,                EFUSE_BLK0,   4,    2,      Write protection for FIELD_2.B2
+    WR_DIS.FIELD_3,                   EFUSE_BLK0,   5,    1,      Write protection for FIELD_3
+    WR_DIS.FIELD_3.ALIAS,             EFUSE_BLK0,   5,    1,      Write protection for FIELD_3 (just a alias for WR_DIS.FIELD_3)
+    WR_DIS.FIELD_4,                   EFUSE_BLK0,   7,    1,      Write protection for FIELD_4
+
+The structured eFuse field looks like ``WR_DIS.RD_DIS`` where the dot points that this field belongs to the parent field - ``WR_DIS`` and can not be out of the parent's range.
+
+It is possible to use some levels of structured fields as WR_DIS.FIELD_2.B1 and B2. These fields should not be crossed each other and should be in the range of two fields: ``WR_DIS`` and ``WR_DIS.FIELD_2``.
+
+It is possible to create aliases for fields with the same range, see ``WR_DIS.FIELD_3`` and ``WR_DIS.FIELD_3.ALIAS``.
+
+The IDF names for structured efuse fields should be unique. The ``efuse_table_gen`` tool will generate the final names where the dot will be replaced by ``_``. The names for using in IDF are ESP_EFUSE_WR_DIS, ESP_EFUSE_WR_DIS_RD_DIS, ESP_EFUSE_WR_DIS_FIELD_2_B1, etc.
 
 efuse_table_gen.py tool
 -----------------------
@@ -210,6 +233,16 @@ Access to the fields is via a pointer to the description structure. API function
 * :cpp:func:`esp_efuse_batch_write_begin` - set the batch mode of writing fields.
 * :cpp:func:`esp_efuse_batch_write_commit` - writes all prepared data for batch writing mode and reset the batch writing mode.
 * :cpp:func:`esp_efuse_batch_write_cancel` - reset the batch writing mode and prepared data.
+* :cpp:func:`esp_efuse_get_key_dis_read` - Returns a read protection for the key block.
+* :cpp:func:`esp_efuse_set_key_dis_read` - Sets a read protection for the key block.
+* :cpp:func:`esp_efuse_get_key_dis_write` - Returns a write protection for the key block.
+* :cpp:func:`esp_efuse_set_key_dis_write` - Sets a write protection for the key block.
+* :cpp:func:`esp_efuse_get_key_purpose` - Returns the current purpose set for an eFuse key block.
+* :cpp:func:`esp_efuse_write_key` - Programs a block of key data to an eFuse block
+* :cpp:func:`esp_efuse_write_keys` - Programs keys to unused eFuse blocks
+* :cpp:func:`esp_efuse_find_purpose` - Finds a key block with the particular purpose set.
+* :cpp:func:`esp_efuse_get_keypurpose_dis_write` - Returns a write protection of the key purpose field for an eFuse key block (for esp32 always true).
+* :cpp:func:`esp_efuse_key_block_unused` - Returns true if the key block is unused, false otherwise.
 
 For frequently used fields, special functions are made, like this :cpp:func:`esp_efuse_get_chip_ver`, :cpp:func:`esp_efuse_get_pkg_ver`.
 
@@ -228,24 +261,14 @@ For frequently used fields, special functions are made, like this :cpp:func:`esp
 
     * :cpp:func:`esp_efuse_get_purpose_field` - Returns a pointer to a key purpose for an eFuse key block.
     * :cpp:func:`esp_efuse_get_key` - Returns a pointer to a key block.
-    * :cpp:func:`esp_efuse_get_key_dis_read` - Returns a read protection for the key block.
-    * :cpp:func:`esp_efuse_set_key_dis_read` - Sets a read protection for the key block.
-    * :cpp:func:`esp_efuse_get_key_dis_write` - Returns a write protection for the key block.
-    * :cpp:func:`esp_efuse_set_key_dis_write` - Sets a write protection for the key block.
-    * :cpp:func:`esp_efuse_get_key_purpose` - Returns the current purpose set for an eFuse key block.
     * :cpp:func:`esp_efuse_set_key_purpose` - Sets a key purpose for an eFuse key block.
-    * :cpp:func:`esp_efuse_get_keypurpose_dis_write` - Returns a write protection of the key purpose field for an eFuse key block.
     * :cpp:func:`esp_efuse_set_keypurpose_dis_write` - Sets a write protection of the key purpose field for an eFuse key block.
-    * :cpp:func:`esp_efuse_find_purpose` - Finds a key block with the particular purpose set.
     * :cpp:func:`esp_efuse_find_unused_key_block` - Search for an unused key block and return the first one found.
     * :cpp:func:`esp_efuse_count_unused_key_blocks` - Returns the number of unused eFuse key blocks in the range EFUSE_BLK_KEY0..EFUSE_BLK_KEY_MAX
-    * :cpp:func:`esp_efuse_key_block_unused` - Returns true if the key block is unused, false otherwise.
     * :cpp:func:`esp_efuse_get_digest_revoke` - Returns the status of the Secure Boot public key digest revocation bit.
     * :cpp:func:`esp_efuse_set_digest_revoke` - Sets the Secure Boot public key digest revocation bit.
     * :cpp:func:`esp_efuse_get_write_protect_of_digest_revoke` - Returns a write protection of the Secure Boot public key digest revocation bit.
     * :cpp:func:`esp_efuse_set_write_protect_of_digest_revoke` - Sets a write protection of the Secure Boot public key digest revocation bit.
-    * :cpp:func:`esp_efuse_write_key` - Programs a block of key data to an eFuse block
-    * :cpp:func:`esp_efuse_write_keys` - Programs keys to unused eFuse blocks
 
 
 How to add a new field
@@ -333,6 +356,10 @@ Virtual eFuses
 ^^^^^^^^^^^^^^
 
 The Kconfig option :ref:`CONFIG_EFUSE_VIRTUAL` will virtualize eFuse values inside the eFuse Manager, so writes are emulated and no eFuse values are permanently changed. This can be useful for debugging app and unit tests.
+During startup, the eFuses are copied to RAM. All eFuse operations (read and write) are performed with RAM instead of the real eFuse registers.
+
+In addition to the :ref:`CONFIG_EFUSE_VIRTUAL` option there is :ref:`CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH` option that adds a feature to keep eFuses in flash memory. To use this mode the partition_table should have the `efuse` partition. partition.csv: ``"efuse_em, data, efuse,   ,   0x2000,"``. 
+During startup, the eFuses are copied from flash or, in case if flash is empty, from real eFuse to RAM and then update flash. This option allows keeping eFuses after reboots (possible to test secure_boot and flash_encryption features with this option).
 
 espefuse.py
 ^^^^^^^^^^^

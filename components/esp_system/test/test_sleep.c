@@ -3,7 +3,6 @@
 #include <sys/param.h>
 #include "esp_sleep.h"
 #include "driver/rtc_io.h"
-#include "esp_rom_uart.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -17,6 +16,7 @@
 #include "esp_newlib.h"
 #include "test_utils.h"
 #include "sdkconfig.h"
+#include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
 #include "esp_timer.h"
 
@@ -24,16 +24,14 @@
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/clk.h"
-#include "esp32/rom/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/clk.h"
-#include "esp32s2/rom/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/clk.h"
-#include "esp32s3/rom/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/clk.h"
-#include "esp32c3/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/clk.h"
 #endif
 
 #define ESP_EXT0_WAKEUP_LEVEL_LOW 0
@@ -113,13 +111,13 @@ TEST_CASE("light sleep stress test", "[deepsleep]")
     vSemaphoreDelete(done);
 }
 
+static void timer_func(void* arg)
+{
+    esp_rom_delay_us(50);
+}
+
 TEST_CASE("light sleep stress test with periodic esp_timer", "[deepsleep]")
 {
-    void timer_func(void* arg)
-    {
-        esp_rom_delay_us(50);
-    }
-
     SemaphoreHandle_t done = xSemaphoreCreateCounting(2, 0);
     esp_sleep_enable_timer_wakeup(1000);
     esp_timer_handle_t timer;
@@ -528,8 +526,8 @@ static void trigger_deepsleep(void)
 static void check_time_deepsleep(void)
 {
     struct timeval stop;
-    RESET_REASON reason = rtc_get_reset_reason(0);
-    TEST_ASSERT(reason == DEEPSLEEP_RESET);
+    soc_reset_reason_t reason = esp_rom_get_reset_reason(0);
+    TEST_ASSERT(reason == RESET_REASON_CORE_DEEP_SLEEP);
     gettimeofday(&stop, NULL);
     // Time dt_ms must in any case be positive.
     int dt_ms = (stop.tv_sec - start.tv_sec) * 1000 + (stop.tv_usec - start.tv_usec) / 1000;

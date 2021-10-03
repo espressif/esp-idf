@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /**
  * @file
@@ -228,7 +220,7 @@ static esp_err_t esp_core_dump_get_regs_from_stack(void* stack_addr,
             regs->ar[i] = stack_arr[XT_STK_AR_START + i];
         }
         regs->sar = exc_frame->sar;
-#if CONFIG_IDF_TARGET_ESP32
+#if XCHAL_HAVE_LOOPS
         regs->lbeg = exc_frame->lbeg;
         regs->lend = exc_frame->lend;
         regs->lcount = exc_frame->lcount;
@@ -473,6 +465,8 @@ uint32_t esp_core_dump_get_extra_info(void **info)
     return sizeof(s_extra_info);
 }
 
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
+
 void esp_core_dump_summary_parse_extra_info(esp_core_dump_summary_t *summary, void *ei_data)
 {
     int i;
@@ -513,6 +507,10 @@ void esp_core_dump_summary_parse_exc_regs(esp_core_dump_summary_t *summary, void
 void esp_core_dump_summary_parse_backtrace_info(esp_core_dump_bt_info_t *bt_info, const void *vaddr,
                                                 const void *paddr, uint32_t stack_size)
 {
+    if (!vaddr || !paddr || !bt_info) {
+        return;
+    }
+
     int offset;
     bool corrupted;
     esp_backtrace_frame_t frame;
@@ -525,7 +523,8 @@ void esp_core_dump_summary_parse_backtrace_info(esp_core_dump_bt_info_t *bt_info
     frame.next_pc = stack->a0;
 
     corrupted = !(esp_stack_ptr_is_sane(frame.sp) &&
-                esp_ptr_executable((void *)esp_cpu_process_stack_pc(frame.pc)));
+                (esp_ptr_executable((void *)esp_cpu_process_stack_pc(frame.pc)) ||
+                stack->exccause == EXCCAUSE_INSTR_PROHIBITED)); /* Ignore the first corrupted PC in case of InstrFetchProhibited */
 
     /* vaddr is actual stack address when crash occurred. However that stack is now saved
      * in the flash at a different location. Hence for each SP, we need to adjust the offset
@@ -558,5 +557,7 @@ void esp_core_dump_summary_parse_backtrace_info(esp_core_dump_bt_info_t *bt_info
     bt_info->depth = index;
     bt_info->corrupted = corrupted;
 }
+
+#endif /* #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF */
 
 #endif

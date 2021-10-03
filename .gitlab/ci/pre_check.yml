@@ -1,6 +1,6 @@
 .pre_check_base_template:
   stage: pre_check
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  image: $ESP_ENV_IMAGE
   tags:
     - host_test
   dependencies: []
@@ -50,22 +50,26 @@ check_rom_api_header:
   extends: .pre_check_job_template
   script:
     - tools/ci/check_examples_rom_header.sh
-    - tools/ci/check_rom_apis.sh
+    - tools/ci/check_api_violation.sh
 
 check_python_style:
   extends:
     - .pre_check_base_template
     - .rules:patterns:python-files
+  variables:
+    PYTHON_VER: 3.6.13
   artifacts:
     when: on_failure
     paths:
       - flake8_output.txt
     expire_in: 1 week
   script:
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh python -m flake8 --config=$IDF_PATH/.flake8 --output-file=flake8_output.txt --tee --benchmark $IDF_PATH
+    - python -m flake8 --config=$IDF_PATH/.flake8 --output-file=flake8_output.txt --tee --benchmark $IDF_PATH
 
 test_check_kconfigs:
   extends: .pre_check_job_template
+  variables:
+    PYTHON_VER: 3.6.13
   artifacts:
     when: on_failure
     paths:
@@ -77,7 +81,7 @@ test_check_kconfigs:
       - tools/*/*/*/Kconfig*.new
     expire_in: 1 week
   script:
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ${IDF_PATH}/tools/ci/test_check_kconfigs.py
+    - python ${IDF_PATH}/tools/ci/test_check_kconfigs.py
 
 check_wifi_lib_md5:
   extends: .pre_check_base_template
@@ -91,7 +95,7 @@ check_wifi_lib_md5:
 
 check_fuzzer_compilation:
    extends: .pre_check_base_template
-   image: $CI_DOCKER_REGISTRY/afl-fuzzer-test
+   image: $AFL_FUZZER_TEST_IMAGE
    script:
      - cd ${IDF_PATH}/components/lwip/test_afl_host
      - make MODE=dhcp_server
@@ -108,6 +112,31 @@ check_public_headers:
     - build
   script:
     - python tools/ci/check_public_headers.py --jobs 4 --prefix xtensa-esp32-elf-
+
+check_soc_struct_headers:
+  extends:
+    - .pre_check_base_template
+    - .rules:build
+  tags:
+    - build
+  script:
+    - find ${IDF_PATH}/components/soc/*/include/soc/ -name "*_struct.h" -print0 | xargs -0 -n1 ./tools/ci/check_soc_struct_headers.py
+
+check_esp_err_to_name:
+  extends:
+    - .pre_check_base_template
+    - .rules:build
+  tags:
+    - build
+  artifacts:
+    when: on_failure
+    paths:
+      - components/esp_common/esp_err_to_name.c
+    expire_in: 1 week
+  script:
+    - cd ${IDF_PATH}/tools/
+    - ./gen_esp_err_to_name.py
+    - git diff --exit-code -- ../components/esp_common/src/esp_err_to_name.c || { echo 'Differences found. Please run gen_esp_err_to_name.py and commit the changes.'; exit 1; }
 
 scan_tests:
   extends:

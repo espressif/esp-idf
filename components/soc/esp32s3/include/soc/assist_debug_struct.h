@@ -1,4 +1,4 @@
-// Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2021 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,398 +11,399 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#pragma once
+#ifndef _SOC_ASSIST_DEBUG_STRUCT_H_
+#define _SOC_ASSIST_DEBUG_STRUCT_H_
 
+
+#include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <stdint.h>
-
-typedef volatile struct {
+typedef volatile struct assist_debug_dev_s {
     union {
         struct {
-            uint32_t core_0_area_dram0_0_rd_ena:         1;
-            uint32_t core_0_area_dram0_0_wr_ena:         1;
-            uint32_t core_0_area_dram0_1_rd_ena:         1;
-            uint32_t core_0_area_dram0_1_wr_ena:         1;
-            uint32_t core_0_area_pif_0_rd_ena:           1;
-            uint32_t core_0_area_pif_0_wr_ena:           1;
-            uint32_t core_0_area_pif_1_rd_ena:           1;
-            uint32_t core_0_area_pif_1_wr_ena:           1;
-            uint32_t core_0_sp_spill_min_ena:            1;
-            uint32_t core_0_sp_spill_max_ena:            1;
-            uint32_t core_0_iram0_exception_monitor_ena: 1;
-            uint32_t core_0_dram0_exception_monitor_ena: 1;
-            uint32_t reserved12:                        20;
+            uint32_t core_0_area_dram0_0_rd        :    1;
+            uint32_t core_0_area_dram0_0_wr        :    1;
+            uint32_t core_0_area_dram0_1_rd        :    1;
+            uint32_t core_0_area_dram0_1_wr        :    1;
+            uint32_t core_0_area_pif_0_rd          :    1;
+            uint32_t core_0_area_pif_0_wr          :    1;
+            uint32_t core_0_area_pif_1_rd          :    1;
+            uint32_t core_0_area_pif_1_wr          :    1;
+            uint32_t core_0_sp_spill_min           :    1;
+            uint32_t core_0_sp_spill_max           :    1;
+            uint32_t core_0_iram0_exception_monitor:    1;
+            uint32_t core_0_dram0_exception_monitor:    1;
+            uint32_t reserved12                    :    20;
         };
         uint32_t val;
     } core_0_interrupt_ena;
     union {
         struct {
-            uint32_t core_0_area_dram0_0_rd_raw:         1;
-            uint32_t core_0_area_dram0_0_wr_raw:         1;
-            uint32_t core_0_area_dram0_1_rd_raw:         1;
-            uint32_t core_0_area_dram0_1_wr_raw:         1;
-            uint32_t core_0_area_pif_0_rd_raw:           1;
-            uint32_t core_0_area_pif_0_wr_raw:           1;
-            uint32_t core_0_area_pif_1_rd_raw:           1;
-            uint32_t core_0_area_pif_1_wr_raw:           1;
-            uint32_t core_0_sp_spill_min_raw:            1;
-            uint32_t core_0_sp_spill_max_raw:            1;
-            uint32_t core_0_iram0_exception_monitor_raw: 1;
-            uint32_t core_0_dram0_exception_monitor_raw: 1;
-            uint32_t reserved12:                        20;
+            uint32_t core_0_area_dram0_0_rd        :    1;
+            uint32_t core_0_area_dram0_0_wr        :    1;
+            uint32_t core_0_area_dram0_1_rd        :    1;
+            uint32_t core_0_area_dram0_1_wr        :    1;
+            uint32_t core_0_area_pif_0_rd          :    1;
+            uint32_t core_0_area_pif_0_wr          :    1;
+            uint32_t core_0_area_pif_1_rd          :    1;
+            uint32_t core_0_area_pif_1_wr          :    1;
+            uint32_t core_0_sp_spill_min           :    1;
+            uint32_t core_0_sp_spill_max           :    1;
+            uint32_t core_0_iram0_exception_monitor:    1;
+            uint32_t core_0_dram0_exception_monitor:    1;
+            uint32_t reserved12                    :    20;
         };
         uint32_t val;
     } core_0_interrupt_raw;
     union {
         struct {
-            uint32_t core_0_area_dram0_0_rd_rls:         1;
-            uint32_t core_0_area_dram0_0_wr_rls:         1;
-            uint32_t core_0_area_dram0_1_rd_rls:         1;
-            uint32_t core_0_area_dram0_1_wr_rls:         1;
-            uint32_t core_0_area_pif_0_rd_rls:           1;
-            uint32_t core_0_area_pif_0_wr_rls:           1;
-            uint32_t core_0_area_pif_1_rd_rls:           1;
-            uint32_t core_0_area_pif_1_wr_rls:           1;
-            uint32_t core_0_sp_spill_min_rls:            1;
-            uint32_t core_0_sp_spill_max_rls:            1;
-            uint32_t core_0_iram0_exception_monitor_rls: 1;
-            uint32_t core_0_dram0_exception_monitor_rls: 1;
-            uint32_t reserved12:                        20;
+            uint32_t core_0_area_dram0_0_rd        :    1;
+            uint32_t core_0_area_dram0_0_wr        :    1;
+            uint32_t core_0_area_dram0_1_rd        :    1;
+            uint32_t core_0_area_dram0_1_wr        :    1;
+            uint32_t core_0_area_pif_0_rd          :    1;
+            uint32_t core_0_area_pif_0_wr          :    1;
+            uint32_t core_0_area_pif_1_rd          :    1;
+            uint32_t core_0_area_pif_1_wr          :    1;
+            uint32_t core_0_sp_spill_min           :    1;
+            uint32_t core_0_sp_spill_max           :    1;
+            uint32_t core_0_iram0_exception_monitor:    1;
+            uint32_t core_0_dram0_exception_monitor:    1;
+            uint32_t reserved12                    :    20;
         };
         uint32_t val;
     } core_0_interrupt_rls;
     union {
         struct {
-            uint32_t core_0_area_dram0_0_rd_clr:         1;
-            uint32_t core_0_area_dram0_0_wr_clr:         1;
-            uint32_t core_0_area_dram0_1_rd_clr:         1;
-            uint32_t core_0_area_dram0_1_wr_clr:         1;
-            uint32_t core_0_area_pif_0_rd_clr:           1;
-            uint32_t core_0_area_pif_0_wr_clr:           1;
-            uint32_t core_0_area_pif_1_rd_clr:           1;
-            uint32_t core_0_area_pif_1_wr_clr:           1;
-            uint32_t core_0_sp_spill_min_clr:            1;
-            uint32_t core_0_sp_spill_max_clr:            1;
-            uint32_t core_0_iram0_exception_monitor_clr: 1;
-            uint32_t core_0_dram0_exception_monitor_clr: 1;
-            uint32_t reserved12:                        20;
+            uint32_t core_0_area_dram0_0_rd        :    1;
+            uint32_t core_0_area_dram0_0_wr        :    1;
+            uint32_t core_0_area_dram0_1_rd        :    1;
+            uint32_t core_0_area_dram0_1_wr        :    1;
+            uint32_t core_0_area_pif_0_rd          :    1;
+            uint32_t core_0_area_pif_0_wr          :    1;
+            uint32_t core_0_area_pif_1_rd          :    1;
+            uint32_t core_0_area_pif_1_wr          :    1;
+            uint32_t core_0_sp_spill_min           :    1;
+            uint32_t core_0_sp_spill_max           :    1;
+            uint32_t core_0_iram0_exception_monitor:    1;
+            uint32_t core_0_dram0_exception_monitor:    1;
+            uint32_t reserved12                    :    20;
         };
         uint32_t val;
     } core_0_interrupt_clr;
-    uint32_t core_0_area_dram0_0_min;                         /**/
-    uint32_t core_0_area_dram0_0_max;                         /**/
-    uint32_t core_0_area_dram0_1_min;                         /**/
-    uint32_t core_0_area_dram0_1_max;                         /**/
-    uint32_t core_0_area_pif_0_min;                           /**/
-    uint32_t core_0_area_pif_0_max;                           /**/
-    uint32_t core_0_area_pif_1_min;                           /**/
-    uint32_t core_0_area_pif_1_max;                           /**/
-    uint32_t core_0_area_sp;                                  /**/
-    uint32_t core_0_area_pc;                                  /**/
+    uint32_t core_0_area_dram0_0_min;
+    uint32_t core_0_area_dram0_0_max;
+    uint32_t core_0_area_dram0_1_min;
+    uint32_t core_0_area_dram0_1_max;
+    uint32_t core_0_area_pif_0_min;
+    uint32_t core_0_area_pif_0_max;
+    uint32_t core_0_area_pif_1_min;
+    uint32_t core_0_area_pif_1_max;
+    uint32_t core_0_area_sp;
+    uint32_t core_0_area_pc;
     union {
         struct {
-            uint32_t core_0_sp_unstable: 8;
-            uint32_t reserved8:         24;
+            uint32_t core_0_sp_unstable            :    8;
+            uint32_t reserved8                     :    24;
         };
         uint32_t val;
     } core_0_sp_unstable;
-    uint32_t core_0_sp_min;                                   /**/
-    uint32_t core_0_sp_max;                                   /**/
-    uint32_t core_0_sp_pc;                                    /**/
+    uint32_t core_0_sp_min;
+    uint32_t core_0_sp_max;
+    uint32_t core_0_sp_pc;
     union {
         struct {
-            uint32_t core_0_rcd_pdebugenable: 1;
-            uint32_t reserved1:              31;
+            uint32_t core_0_rcd_pdebugenable       :    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } core_0_rcd_pdebugenable;
     union {
         struct {
-            uint32_t core_0_rcd_recording: 1;
-            uint32_t reserved1:           31;
+            uint32_t core_0_rcd_recording          :    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } core_0_rcd_recording;
-    uint32_t core_0_rcd_pdebuginst;                           /**/
+    uint32_t core_0_rcd_pdebuginst;
     union {
         struct {
-            uint32_t core_0_rcd_pdebugstatus: 8;
-            uint32_t reserved8:              24;
+            uint32_t core_0_rcd_pdebugstatus       :    8;
+            uint32_t reserved8                     :    24;
         };
         uint32_t val;
     } core_0_rcd_pdebugstatus;
-    uint32_t core_0_rcd_pdebugdata;                           /**/
-    uint32_t core_0_rcd_pdebugpc;                             /**/
-    uint32_t core_0_rcd_pdebugls0stat;                        /**/
-    uint32_t core_0_rcd_pdebugls0addr;                        /**/
-    uint32_t core_0_rcd_pdebugls0data;                        /**/
-    uint32_t core_0_rcd_sp;                                   /**/
+    uint32_t core_0_rcd_pdebugdata;
+    uint32_t core_0_rcd_pdebugpc;
+    uint32_t core_0_rcd_pdebugls0stat;
+    uint32_t core_0_rcd_pdebugls0addr;
+    uint32_t core_0_rcd_pdebugls0data;
+    uint32_t core_0_rcd_sp;
     union {
         struct {
-            uint32_t core_0_iram0_recording_addr_0:     24;
-            uint32_t core_0_iram0_recording_wr_0:        1;
-            uint32_t core_0_iram0_recording_loadstore_0: 1;
-            uint32_t reserved26:                         6;
+            uint32_t core_0_iram0_recording_addr_0 :    24;
+            uint32_t core_0_iram0_recording_wr_0   :    1;
+            uint32_t core_0_iram0_recording_loadstore_0:    1;
+            uint32_t reserved26                    :    6;
         };
         uint32_t val;
     } core_0_iram0_exception_monitor_0;
     union {
         struct {
-            uint32_t core_0_iram0_recording_addr_1:     24;
-            uint32_t core_0_iram0_recording_wr_1:        1;
-            uint32_t core_0_iram0_recording_loadstore_1: 1;
-            uint32_t reserved26:                         6;
+            uint32_t core_0_iram0_recording_addr_1 :    24;
+            uint32_t core_0_iram0_recording_wr_1   :    1;
+            uint32_t core_0_iram0_recording_loadstore_1:    1;
+            uint32_t reserved26                    :    6;
         };
         uint32_t val;
     } core_0_iram0_exception_monitor_1;
     union {
         struct {
-            uint32_t core_0_dram0_recording_addr_0: 22;
-            uint32_t core_0_dram0_recording_wr_0:   1;
-            uint32_t reserved23:                    9;
+            uint32_t core_0_dram0_recording_addr_0 :    22;
+            uint32_t core_0_dram0_recording_wr_0   :    1;
+            uint32_t reserved23                    :    9;
         };
         uint32_t val;
     } core_0_dram0_exception_monitor_0;
     union {
         struct {
-            uint32_t core_0_dram0_recording_byteen_0: 16;
-            uint32_t reserved16:                     16;
+            uint32_t core_0_dram0_recording_byteen_0:    16;
+            uint32_t reserved16                    :    16;
         };
         uint32_t val;
     } core_0_dram0_exception_monitor_1;
-    uint32_t core_0_dram0_exception_monitor_2;                /**/
+    uint32_t core_0_dram0_exception_monitor_2;
     union {
         struct {
-            uint32_t core_0_dram0_recording_addr_1: 22;
-            uint32_t core_0_dram0_recording_wr_1:   1;
-            uint32_t reserved23:                    9;
+            uint32_t core_0_dram0_recording_addr_1 :    22;
+            uint32_t core_0_dram0_recording_wr_1   :    1;
+            uint32_t reserved23                    :    9;
         };
         uint32_t val;
     } core_0_dram0_exception_monitor_3;
     union {
         struct {
-            uint32_t core_0_dram0_recording_byteen_1: 16;
-            uint32_t reserved16:                     16;
+            uint32_t core_0_dram0_recording_byteen_1:    16;
+            uint32_t reserved16                    :    16;
         };
         uint32_t val;
     } core_0_dram0_exception_monitor_4;
-    uint32_t core_0_dram0_exception_monitor_5;                /**/
+    uint32_t core_0_dram0_exception_monitor_5;
     union {
         struct {
-            uint32_t core_1_area_dram0_0_rd_ena:         1;
-            uint32_t core_1_area_dram0_0_wr_ena:         1;
-            uint32_t core_1_area_dram0_1_rd_ena:         1;
-            uint32_t core_1_area_dram0_1_wr_ena:         1;
-            uint32_t core_1_area_pif_0_rd_ena:           1;
-            uint32_t core_1_area_pif_0_wr_ena:           1;
-            uint32_t core_1_area_pif_1_rd_ena:           1;
-            uint32_t core_1_area_pif_1_wr_ena:           1;
-            uint32_t core_1_sp_spill_min_ena:            1;
-            uint32_t core_1_sp_spill_max_ena:            1;
-            uint32_t core_1_iram0_exception_monitor_ena: 1;
-            uint32_t core_1_dram0_exception_monitor_ena: 1;
-            uint32_t reserved12:                        20;
+            uint32_t core_1_area_dram0_0_rd        :    1;
+            uint32_t core_1_area_dram0_0_wr        :    1;
+            uint32_t core_1_area_dram0_1_rd        :    1;
+            uint32_t core_1_area_dram0_1_wr        :    1;
+            uint32_t core_1_area_pif_0_rd          :    1;
+            uint32_t core_1_area_pif_0_wr          :    1;
+            uint32_t core_1_area_pif_1_rd          :    1;
+            uint32_t core_1_area_pif_1_wr          :    1;
+            uint32_t core_1_sp_spill_min           :    1;
+            uint32_t core_1_sp_spill_max           :    1;
+            uint32_t core_1_iram0_exception_monitor:    1;
+            uint32_t core_1_dram0_exception_monitor:    1;
+            uint32_t reserved12                    :    20;
         };
         uint32_t val;
     } core_1_interrupt_ena;
     union {
         struct {
-            uint32_t core_1_area_dram0_0_rd_raw:         1;
-            uint32_t core_1_area_dram0_0_wr_raw:         1;
-            uint32_t core_1_area_dram0_1_rd_raw:         1;
-            uint32_t core_1_area_dram0_1_wr_raw:         1;
-            uint32_t core_1_area_pif_0_rd_raw:           1;
-            uint32_t core_1_area_pif_0_wr_raw:           1;
-            uint32_t core_1_area_pif_1_rd_raw:           1;
-            uint32_t core_1_area_pif_1_wr_raw:           1;
-            uint32_t core_1_sp_spill_min_raw:            1;
-            uint32_t core_1_sp_spill_max_raw:            1;
-            uint32_t core_1_iram0_exception_monitor_raw: 1;
-            uint32_t core_1_dram0_exception_monitor_raw: 1;
-            uint32_t reserved12:                        20;
+            uint32_t core_1_area_dram0_0_rd        :    1;
+            uint32_t core_1_area_dram0_0_wr        :    1;
+            uint32_t core_1_area_dram0_1_rd        :    1;
+            uint32_t core_1_area_dram0_1_wr        :    1;
+            uint32_t core_1_area_pif_0_rd          :    1;
+            uint32_t core_1_area_pif_0_wr          :    1;
+            uint32_t core_1_area_pif_1_rd          :    1;
+            uint32_t core_1_area_pif_1_wr          :    1;
+            uint32_t core_1_sp_spill_min           :    1;
+            uint32_t core_1_sp_spill_max           :    1;
+            uint32_t core_1_iram0_exception_monitor:    1;
+            uint32_t core_1_dram0_exception_monitor:    1;
+            uint32_t reserved12                    :    20;
         };
         uint32_t val;
     } core_1_interrupt_raw;
     union {
         struct {
-            uint32_t core_1_area_dram0_0_rd_rls:         1;
-            uint32_t core_1_area_dram0_0_wr_rls:         1;
-            uint32_t core_1_area_dram0_1_rd_rls:         1;
-            uint32_t core_1_area_dram0_1_wr_rls:         1;
-            uint32_t core_1_area_pif_0_rd_rls:           1;
-            uint32_t core_1_area_pif_0_wr_rls:           1;
-            uint32_t core_1_area_pif_1_rd_rls:           1;
-            uint32_t core_1_area_pif_1_wr_rls:           1;
-            uint32_t core_1_sp_spill_min_rls:            1;
-            uint32_t core_1_sp_spill_max_rls:            1;
-            uint32_t core_1_iram0_exception_monitor_rls: 1;
-            uint32_t core_1_dram0_exception_monitor_rls: 1;
-            uint32_t reserved12:                        20;
+            uint32_t core_1_area_dram0_0_rd        :    1;
+            uint32_t core_1_area_dram0_0_wr        :    1;
+            uint32_t core_1_area_dram0_1_rd        :    1;
+            uint32_t core_1_area_dram0_1_wr        :    1;
+            uint32_t core_1_area_pif_0_rd          :    1;
+            uint32_t core_1_area_pif_0_wr          :    1;
+            uint32_t core_1_area_pif_1_rd          :    1;
+            uint32_t core_1_area_pif_1_wr          :    1;
+            uint32_t core_1_sp_spill_min           :    1;
+            uint32_t core_1_sp_spill_max           :    1;
+            uint32_t core_1_iram0_exception_monitor:    1;
+            uint32_t core_1_dram0_exception_monitor:    1;
+            uint32_t reserved12                    :    20;
         };
         uint32_t val;
     } core_1_interrupt_rls;
     union {
         struct {
-            uint32_t core_1_area_dram0_0_rd_clr:         1;
-            uint32_t core_1_area_dram0_0_wr_clr:         1;
-            uint32_t core_1_area_dram0_1_rd_clr:         1;
-            uint32_t core_1_area_dram0_1_wr_clr:         1;
-            uint32_t core_1_area_pif_0_rd_clr:           1;
-            uint32_t core_1_area_pif_0_wr_clr:           1;
-            uint32_t core_1_area_pif_1_rd_clr:           1;
-            uint32_t core_1_area_pif_1_wr_clr:           1;
-            uint32_t core_1_sp_spill_min_clr:            1;
-            uint32_t core_1_sp_spill_max_clr:            1;
-            uint32_t core_1_iram0_exception_monitor_clr: 1;
-            uint32_t core_1_dram0_exception_monitor_clr: 1;
-            uint32_t reserved12:                        20;
+            uint32_t core_1_area_dram0_0_rd        :    1;
+            uint32_t core_1_area_dram0_0_wr        :    1;
+            uint32_t core_1_area_dram0_1_rd        :    1;
+            uint32_t core_1_area_dram0_1_wr        :    1;
+            uint32_t core_1_area_pif_0_rd          :    1;
+            uint32_t core_1_area_pif_0_wr          :    1;
+            uint32_t core_1_area_pif_1_rd          :    1;
+            uint32_t core_1_area_pif_1_wr          :    1;
+            uint32_t core_1_sp_spill_min           :    1;
+            uint32_t core_1_sp_spill_max           :    1;
+            uint32_t core_1_iram0_exception_monitor:    1;
+            uint32_t core_1_dram0_exception_monitor:    1;
+            uint32_t reserved12                    :    20;
         };
         uint32_t val;
     } core_1_interrupt_clr;
-    uint32_t core_1_area_dram0_0_min;                         /**/
-    uint32_t core_1_area_dram0_0_max;                         /**/
-    uint32_t core_1_area_dram0_1_min;                         /**/
-    uint32_t core_1_area_dram0_1_max;                         /**/
-    uint32_t core_1_area_pif_0_min;                           /**/
-    uint32_t core_1_area_pif_0_max;                           /**/
-    uint32_t core_1_area_pif_1_min;                           /**/
-    uint32_t core_1_area_pif_1_max;                           /**/
-    uint32_t core_1_area_pc;                                  /**/
-    uint32_t core_1_area_sp;                                  /**/
+    uint32_t core_1_area_dram0_0_min;
+    uint32_t core_1_area_dram0_0_max;
+    uint32_t core_1_area_dram0_1_min;
+    uint32_t core_1_area_dram0_1_max;
+    uint32_t core_1_area_pif_0_min;
+    uint32_t core_1_area_pif_0_max;
+    uint32_t core_1_area_pif_1_min;
+    uint32_t core_1_area_pif_1_max;
+    uint32_t core_1_area_pc;
+    uint32_t core_1_area_sp;
     union {
         struct {
-            uint32_t core_1_sp_unstable: 8;
-            uint32_t reserved8:         24;
+            uint32_t core_1_sp_unstable            :    8;
+            uint32_t reserved8                     :    24;
         };
         uint32_t val;
     } core_1_sp_unstable;
-    uint32_t core_1_sp_min;                                   /**/
-    uint32_t core_1_sp_max;                                   /**/
-    uint32_t core_1_sp_pc;                                    /**/
+    uint32_t core_1_sp_min;
+    uint32_t core_1_sp_max;
+    uint32_t core_1_sp_pc;
     union {
         struct {
-            uint32_t core_1_rcd_pdebugenable: 1;
-            uint32_t reserved1:              31;
+            uint32_t core_1_rcd_pdebugenable       :    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } core_1_rcd_pdebugenable;
     union {
         struct {
-            uint32_t core_1_rcd_recording: 1;
-            uint32_t reserved1:           31;
+            uint32_t core_1_rcd_recording          :    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } core_1_rcd_recording;
-    uint32_t core_1_rcd_pdebuginst;                           /**/
+    uint32_t core_1_rcd_pdebuginst;
     union {
         struct {
-            uint32_t core_1_rcd_pdebugstatus: 8;
-            uint32_t reserved8:              24;
+            uint32_t core_1_rcd_pdebugstatus       :    8;
+            uint32_t reserved8                     :    24;
         };
         uint32_t val;
     } core_1_rcd_pdebugstatus;
-    uint32_t core_1_rcd_pdebugdata;                           /**/
-    uint32_t core_1_rcd_pdebugpc;                             /**/
-    uint32_t core_1_rcd_pdebugls0stat;                        /**/
-    uint32_t core_1_rcd_pdebugls0addr;                        /**/
-    uint32_t core_1_rcd_pdebugls0data;                        /**/
-    uint32_t core_1_rcd_sp;                                   /**/
+    uint32_t core_1_rcd_pdebugdata;
+    uint32_t core_1_rcd_pdebugpc;
+    uint32_t core_1_rcd_pdebugls0stat;
+    uint32_t core_1_rcd_pdebugls0addr;
+    uint32_t core_1_rcd_pdebugls0data;
+    uint32_t core_1_rcd_sp;
     union {
         struct {
-            uint32_t core_1_iram0_recording_addr_0:     24;
-            uint32_t core_1_iram0_recording_wr_0:        1;
-            uint32_t core_1_iram0_recording_loadstore_0: 1;
-            uint32_t reserved26:                         6;
+            uint32_t core_1_iram0_recording_addr_0 :    24;
+            uint32_t core_1_iram0_recording_wr_0   :    1;
+            uint32_t core_1_iram0_recording_loadstore_0:    1;
+            uint32_t reserved26                    :    6;
         };
         uint32_t val;
     } core_1_iram0_exception_monitor_0;
     union {
         struct {
-            uint32_t core_1_iram0_recording_addr_1:     24;
-            uint32_t core_1_iram0_recording_wr_1:        1;
-            uint32_t core_1_iram0_recording_loadstore_1: 1;
-            uint32_t reserved26:                         6;
+            uint32_t core_1_iram0_recording_addr_1 :    24;
+            uint32_t core_1_iram0_recording_wr_1   :    1;
+            uint32_t core_1_iram0_recording_loadstore_1:    1;
+            uint32_t reserved26                    :    6;
         };
         uint32_t val;
     } core_1_iram0_exception_monitor_1;
     union {
         struct {
-            uint32_t core_1_dram0_recording_addr_0: 22;
-            uint32_t core_1_dram0_recording_wr_0:   1;
-            uint32_t reserved23:                    9;
+            uint32_t core_1_dram0_recording_addr_0 :    22;
+            uint32_t core_1_dram0_recording_wr_0   :    1;
+            uint32_t reserved23                    :    9;
         };
         uint32_t val;
     } core_1_dram0_exception_monitor_0;
     union {
         struct {
-            uint32_t core_1_dram0_recording_byteen_0: 16;
-            uint32_t reserved16:                     16;
+            uint32_t core_1_dram0_recording_byteen_0:    16;
+            uint32_t reserved16                    :    16;
         };
         uint32_t val;
     } core_1_dram0_exception_monitor_1;
-    uint32_t core_1_dram0_exception_monitor_2;                /**/
+    uint32_t core_1_dram0_exception_monitor_2;
     union {
         struct {
-            uint32_t core_1_dram0_recording_addr_1: 22;
-            uint32_t core_1_dram0_recording_wr_1:   1;
-            uint32_t reserved23:                    9;
+            uint32_t core_1_dram0_recording_addr_1 :    22;
+            uint32_t core_1_dram0_recording_wr_1   :    1;
+            uint32_t reserved23                    :    9;
         };
         uint32_t val;
     } core_1_dram0_exception_monitor_3;
     union {
         struct {
-            uint32_t core_1_dram0_recording_byteen_1: 16;
-            uint32_t reserved16:                     16;
+            uint32_t core_1_dram0_recording_byteen_1:    16;
+            uint32_t reserved16                    :    16;
         };
         uint32_t val;
     } core_1_dram0_exception_monitor_4;
-    uint32_t core_1_dram0_exception_monitor_5;                /**/
+    uint32_t core_1_dram0_exception_monitor_5;
     union {
         struct {
-            uint32_t core_x_iram0_dram0_limit_cycle_0: 20;
-            uint32_t reserved20:                      12;
+            uint32_t core_x_iram0_dram0_limit_cycle_0:    20;
+            uint32_t reserved20                    :    12;
         };
         uint32_t val;
     } core_x_iram0_dram0_exception_monitor_0;
     union {
         struct {
-            uint32_t core_x_iram0_dram0_limit_cycle_1: 20;
-            uint32_t reserved20:                      12;
+            uint32_t core_x_iram0_dram0_limit_cycle_1:    20;
+            uint32_t reserved20                    :    12;
         };
         uint32_t val;
     } core_x_iram0_dram0_exception_monitor_1;
     union {
         struct {
-            uint32_t log_ena:             3;
-            uint32_t log_mode:            3;
-            uint32_t log_mem_loop_enable: 1;
-            uint32_t reserved7:          25;
+            uint32_t log                           :    3;
+            uint32_t log_mode                      :    3;
+            uint32_t log_mem_loopble               :    1;
+            uint32_t reserved7                     :    25;
         };
         uint32_t val;
     } log_setting;
-    uint32_t log_data_0;                                      /**/
-    uint32_t log_data_1;                                      /**/
-    uint32_t log_data_2;                                      /**/
-    uint32_t log_data_3;                                      /**/
+    uint32_t log_data_0;
+    uint32_t log_data_1;
+    uint32_t log_data_2;
+    uint32_t log_data_3;
     union {
         struct {
-            uint32_t log_data_size: 16;
-            uint32_t reserved16:   16;
+            uint32_t log_data_size                 :    16;
+            uint32_t reserved16                    :    16;
         };
         uint32_t val;
     } log_data_mask;
-    uint32_t log_min;                                         /**/
-    uint32_t log_max;                                         /**/
-    uint32_t log_mem_start;                                   /**/
-    uint32_t log_mem_end;                                     /**/
-    uint32_t log_mem_writing_addr;                            /**/
+    uint32_t log_min;
+    uint32_t log_max;
+    uint32_t log_mem_start;
+    uint32_t log_mem_end;
+    uint32_t log_mem_writing_addr;
     union {
         struct {
-            uint32_t log_mem_full_flag: 1;
-            uint32_t reserved1:        31;
+            uint32_t log_mem_full_flag             :    1;
+            uint32_t reserved1                     :    31;
         };
         uint32_t val;
     } log_mem_full_flag;
@@ -449,15 +450,17 @@ typedef volatile struct {
     uint32_t reserved_1f8;
     union {
         struct {
-            uint32_t date:      28;
-            uint32_t reserved28: 4;
+            uint32_t assist_debug_reg_date         :    28;
+            uint32_t reserved28                    :    4;
         };
         uint32_t val;
-    } date;
+    } reg_date;
 } assist_debug_dev_t;
-
 extern assist_debug_dev_t ASSIST_DEBUG;
-
 #ifdef __cplusplus
 }
 #endif
+
+
+
+#endif /*_SOC_ASSIST_DEBUG_STRUCT_H_ */

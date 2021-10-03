@@ -25,13 +25,6 @@ Two heap memory related functions are provided:
 
 Note that ESP-IDF supports multiple heaps with different capabilities. Functions mentioned in this section return the size of heap memory which can be allocated using ``malloc`` family of functions. For further information about heap memory see :doc:`Heap Memory Allocation <mem_alloc>`.
 
-Random number generation
-------------------------
-
-{IDF_TARGET_NAME} contains a hardware random number generator, values from it can be obtained using :cpp:func:`esp_random`.
-
-When Wi-Fi or Bluetooth are enabled, numbers returned by hardware random number generator (RNG) can be considered true random numbers. Without Wi-Fi or Bluetooth enabled, hardware RNG is a pseudo-random number generator. At startup, ESP-IDF bootloader seeds the hardware RNG with entropy, but care must be taken when reading random values between the start of ``app_main`` and initialization of Wi-Fi or Bluetooth drivers.
-
 .. _MAC-Address-Allocation:
 
 MAC Address
@@ -109,13 +102,13 @@ The custom base MAC addresses should be allocated such that derived MAC addresse
 
    It is also possible to call the function :cpp:func:`esp_netif_set_mac` to set the specific MAC used by a network interface, after network initialization. It's recommended to use the Base MAC approach documented here instead, to avoid the possibility of the original MAC address briefly appearing on the network before it is changed.
 
-.. This API is ESP32-only, see IDF-1326
+
+Custom MAC address in eFuse
+@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+When reading custom MAC addresses from eFuse, ESP-IDF provides a helper function :cpp:func:`esp_efuse_mac_get_custom`. This loads the MAC address from eFuse BLK3. This function assumes that the custom base MAC address is stored in the following format:
+
 .. only:: esp32
-
-    Custom MAC address in eFuse
-    @@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-    When reading custom MAC addresses from eFuse, ESP-IDF provides a helper function :cpp:func:`esp_efuse_mac_get_custom`. This loads the MAC address from eFuse BLK3. This function assumes that the custom base MAC address is stored in the following format:
 
     +-----------------+-----------+---------------+------------------------------+
     | Field           | # of bits | Range of bits | Notes                        |
@@ -129,7 +122,25 @@ The custom base MAC addresses should be allocated such that derived MAC addresse
     | MAC address CRC | 8         | 7:0           | CRC-8-CCITT, polynomial 0x07 |
     +-----------------+-----------+---------------+------------------------------+
 
-    Once MAC address has been obtained using :cpp:func:`esp_efuse_mac_get_custom`, call :cpp:func:`esp_base_mac_addr_set` to set this MAC address as base MAC address.
+    .. note::
+
+        If the 3/4 coding scheme is enabled, all eFuse fields in this block must be burnt at the same time.
+
+.. only:: not esp32
+
+    +-----------------+-----------+---------------+
+    | Field           | # of bits | Range of bits |
+    +=================+===========+===============+
+    | MAC address     | 48        | 200:248       |
+    +-----------------+-----------+---------------+
+
+    .. note::
+
+        The eFuse BLK3 uses RS-coding during a burn operation it means that all eFuse fields in this block must be burnt at the same time.
+
+Once MAC address has been obtained using :cpp:func:`esp_efuse_mac_get_custom`, call :cpp:func:`esp_base_mac_addr_set` to set this MAC address as base MAC address.
+
+
 
 .. _local-mac-addresses:
 
@@ -189,12 +200,9 @@ To set version in your project manually you need to set ``PROJECT_VER`` variable
 
 If :ref:`CONFIG_APP_PROJECT_VER_FROM_CONFIG` option is set, the value of :ref:`CONFIG_APP_PROJECT_VER` will be used. Otherwise if ``PROJECT_VER`` variable is not set in the project then it will be retrieved from either ``$(PROJECT_PATH)/version.txt`` file (if present) else using git command ``git describe``. If neither is available then ``PROJECT_VER`` will be set to "1". Application can make use of this by calling :cpp:func:`esp_ota_get_app_description` or :cpp:func:`esp_ota_get_partition_description` functions.
 
-
-
 API Reference
 -------------
 
 .. include-build-file:: inc/esp_system.inc
 .. include-build-file:: inc/esp_idf_version.inc
-
 

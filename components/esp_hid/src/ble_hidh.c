@@ -475,22 +475,44 @@ void esp_hidh_gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gatt
             } else {
                 report = esp_hidh_dev_get_report_by_handle(dev, p_data->notify.handle);
                 if (report) {
+                    esp_hidh_event_data_t *p_param = NULL;
+                    size_t event_data_size = sizeof(esp_hidh_event_data_t);
+
+                    if (p_data->notify.value_len && p_data->notify.value) {
+                        event_data_size += p_data->notify.value_len;
+                    }
+
+                    if ((p_param = (esp_hidh_event_data_t *)malloc(event_data_size)) == NULL) {
+                        ESP_LOGE(TAG, "%s malloc event data failed!", __func__);
+                        break;
+                    }
+                    memset(p_param, 0, event_data_size);
+                    if (p_data->notify.value_len && p_data->notify.value) {
+                        memcpy(((uint8_t *)p_param) + sizeof(esp_hidh_event_data_t), p_data->notify.value,
+                               p_data->notify.value_len);
+                    }
+
                     if (report->report_type == ESP_HID_REPORT_TYPE_FEATURE) {
-                        p.feature.dev = dev;
-                        p.feature.map_index = report->map_index;
-                        p.feature.report_id = report->report_id;
-                        p.feature.usage = report->usage;
-                        p.feature.data = p_data->notify.value;
-                        p.feature.length = p_data->notify.value_len;
-                        esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_INPUT_EVENT, &p, sizeof(esp_hidh_event_data_t), portMAX_DELAY);
+                        p_param->feature.dev = dev;
+                        p_param->feature.map_index = report->map_index;
+                        p_param->feature.report_id = report->report_id;
+                        p_param->feature.usage = report->usage;
+                        p_param->feature.length = p_data->notify.value_len;
+                        p_param->feature.data = p_data->notify.value;
+                        esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_FEATURE_EVENT, p_param, event_data_size, portMAX_DELAY);
                     } else {
-                        p.input.dev = dev;
-                        p.input.map_index = report->map_index;
-                        p.input.report_id = report->report_id;
-                        p.input.usage = report->usage;
-                        p.input.data = p_data->notify.value;
-                        p.input.length = p_data->notify.value_len;
-                        esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_INPUT_EVENT, &p, sizeof(esp_hidh_event_data_t), portMAX_DELAY);
+                        p_param->input.dev = dev;
+                        p_param->input.map_index = report->map_index;
+                        p_param->input.report_id = report->report_id;
+                        p_param->input.usage = report->usage;
+                        p_param->input.length = p_data->notify.value_len;
+                        p_param->input.data = p_data->notify.value;
+                        esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_INPUT_EVENT, p_param, event_data_size, portMAX_DELAY);
+                    }
+
+                    if (p_param) {
+                        free(p_param);
+                        p_param = NULL;
                     }
                 }
             }
@@ -512,13 +534,16 @@ void esp_hidh_gattc_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_t gatt
         } else {
             dev->connected = false;
             dev->status = p_data->close.status;
+            // free the device in the wrapper event handler
+            dev->in_use = false;
             if (event_loop_handle) {
                 esp_hidh_event_data_t p = {0};
                 p.close.dev = dev;
                 p.close.reason = p_data->close.reason;
+                p.close.status = ESP_OK;
                 esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_CLOSE_EVENT, &p, sizeof(esp_hidh_event_data_t), portMAX_DELAY);
             } else {
-                esp_hidh_dev_free(dev);
+                esp_hidh_dev_free_inner(dev);
             }
         }
         break;
@@ -617,25 +642,40 @@ esp_err_t esp_ble_hidh_init(const esp_hidh_config_t *config)
         .queue_size = 5,
         .task_name = "esp_ble_hidh_events",
         .task_priority = uxTaskPriorityGet(NULL),
-        .task_stack_size = 2048,
+        .task_stack_size = config->event_stack_size > 0 ? config->event_stack_size : 2048,
         .task_core_id = tskNO_AFFINITY
     };
-    ret = esp_event_loop_create(&event_task_args, &event_loop_handle);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "esp_event_loop_create failed!");
-        return ESP_FAIL;
-    }
 
+    do {
+        ret = esp_event_loop_create(&event_task_args, &event_loop_handle);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "%s esp_event_loop_create failed!", __func__);
+            break;
+        }
 
-    ret = esp_ble_gattc_app_register(0);
+        ret = esp_ble_gattc_app_register(0);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "esp_ble_gattc_app_register failed!");
+            break;
+        }
+        WAIT_CB();
+        ret = esp_event_handler_register_with(event_loop_handle, ESP_HIDH_EVENTS, ESP_EVENT_ANY_ID,
+                                              esp_hidh_process_event_data_handler, NULL);
+        ret |= esp_event_handler_register_with(event_loop_handle, ESP_HIDH_EVENTS, ESP_EVENT_ANY_ID, config->callback,
+                                              config->callback_arg);
+    } while (0);
+
     if (ret != ESP_OK) {
-        vSemaphoreDelete(s_ble_hidh_cb_semaphore);
-        s_ble_hidh_cb_semaphore = NULL;
-        return ret;
+        if (event_loop_handle) {
+            esp_event_loop_delete(event_loop_handle);
+        }
+
+        if (s_ble_hidh_cb_semaphore) {
+            vSemaphoreDelete(s_ble_hidh_cb_semaphore);
+            s_ble_hidh_cb_semaphore = NULL;
+        }
     }
-    WAIT_CB();
-    esp_event_handler_register_with(event_loop_handle, ESP_HIDH_EVENTS, ESP_EVENT_ANY_ID, config->callback, NULL);
-    return ESP_OK;
+    return ret;
 }
 
 esp_err_t esp_ble_hidh_deinit(void)
@@ -669,6 +709,7 @@ esp_hidh_dev_t *esp_ble_hidh_dev_open(esp_bd_addr_t bda, esp_ble_addr_type_t add
         return NULL;
     }
 
+    dev->in_use = true;
     dev->transport = ESP_HID_TRANSPORT_BLE;
     memcpy(dev->bda, bda, sizeof(esp_bd_addr_t));
     dev->ble.address_type = address_type;
@@ -676,7 +717,7 @@ esp_hidh_dev_t *esp_ble_hidh_dev_open(esp_bd_addr_t bda, esp_ble_addr_type_t add
 
     ret = esp_ble_gattc_open(hid_gattc_if, dev->bda, dev->ble.address_type, true);
     if (ret) {
-        esp_hidh_dev_free(dev);
+        esp_hidh_dev_free_inner(dev);
         ESP_LOGE(TAG, "esp_ble_gattc_open failed: %d", ret);
         return NULL;
     }
@@ -684,7 +725,7 @@ esp_hidh_dev_t *esp_ble_hidh_dev_open(esp_bd_addr_t bda, esp_ble_addr_type_t add
     if (dev->ble.conn_id < 0) {
         ret = dev->status;
         ESP_LOGE(TAG, "dev open failed! status: 0x%x", dev->status);
-        esp_hidh_dev_free(dev);
+        esp_hidh_dev_free_inner(dev);
         return NULL;
     }
 
@@ -697,6 +738,7 @@ esp_hidh_dev_t *esp_ble_hidh_dev_open(esp_bd_addr_t bda, esp_ble_addr_type_t add
 
     if (event_loop_handle) {
         esp_hidh_event_data_t p = {0};
+        p.open.status = ESP_OK;
         p.open.dev = dev;
         esp_event_post_to(event_loop_handle, ESP_HIDH_EVENTS, ESP_HIDH_OPEN_EVENT, &p, sizeof(esp_hidh_event_data_t), portMAX_DELAY);
     }

@@ -1,0 +1,33 @@
+menu "Hardware Abstraction Layer (HAL) and Low Level (LL)"
+    choice HAL_DEFAULT_ASSERTION_LEVEL
+        bool "Default HAL assertion level"
+        default HAL_ASSERTION_EQUALS_SYSTEM
+        help
+            Set the assert behavior / level for HAL component.
+            HAL component assert level can be set separately,
+            but the level can't exceed the system assertion level.
+            e.g. If the system assertion is disabled, then the HAL
+            assertion can't be enabled either. If the system assertion
+            is enable, then the HAL assertion can still be disabled
+            by this Kconfig option.
+
+        config HAL_ASSERTION_EQUALS_SYSTEM
+            bool "Same as system assertion level"
+        config HAL_ASSERTION_DISABLE
+            bool "Disabled"
+            depends on COMPILER_OPTIMIZATION_ASSERTION_LEVEL >= 0
+        config HAL_ASSERTION_SILIENT
+            bool "Silent"
+            depends on COMPILER_OPTIMIZATION_ASSERTION_LEVEL >= 1
+        config HAL_ASSERTION_ENABLE
+            bool "Enabled"
+            depends on COMPILER_OPTIMIZATION_ASSERTION_LEVEL >= 2
+    endchoice
+
+    config HAL_DEFAULT_ASSERTION_LEVEL
+        int
+        default COMPILER_OPTIMIZATION_ASSERTION_LEVEL if HAL_ASSERTION_EQUALS_SYSTEM
+        default 0 if HAL_ASSERTION_DISABLE
+        default 1 if HAL_ASSERTION_SILIENT
+        default 2 if HAL_ASSERTION_ENABLE
+endmenu

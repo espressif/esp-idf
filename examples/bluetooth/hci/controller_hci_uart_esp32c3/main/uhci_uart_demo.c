@@ -179,7 +179,7 @@ static void uart_gpio_set(void)
     gpio_config_t io_input_conf = {
         .intr_type = GPIO_PIN_INTR_DISABLE,    //disable interrupt
         .mode = GPIO_MODE_INPUT,    // input mode
-        .pin_bit_mask = GPIO_OUTPUT_PIN_SEL,  // bit mask of the input pins
+        .pin_bit_mask = GPIO_INPUT_PIN_SEL,  // bit mask of the input pins
         .pull_down_en = 0,    // disable pull-down mode
         .pull_up_en = 0,    // disable pull-down mode
     };

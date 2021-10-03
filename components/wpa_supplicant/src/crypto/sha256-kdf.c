@@ -6,10 +6,10 @@
  * See README for more details.
  */
 
-#include "utils/includes.h"
-#include "utils/common.h"
+#include "includes.h"
 
-#include "crypto/sha256.h"
+#include "common.h"
+#include "sha256.h"
 
 
 /**
@@ -69,7 +69,7 @@ int hmac_sha256_kdf(const u8 *secret, size_t secret_len,
 
 		if (iter == 255) {
 			os_memset(out, 0, outlen);
-			os_memset(T, 0, SHA256_MAC_LEN);
+			forced_memzero(T, SHA256_MAC_LEN);
 			return -1;
 		}
 		iter++;
@@ -77,11 +77,11 @@ int hmac_sha256_kdf(const u8 *secret, size_t secret_len,
 		if (hmac_sha256_vector(secret, secret_len, 4, addr, len, T) < 0)
 		{
 			os_memset(out, 0, outlen);
-			os_memset(T, 0, SHA256_MAC_LEN);
+			forced_memzero(T, SHA256_MAC_LEN);
 			return -1;
 		}
 	}
 
-	os_memset(T, 0, SHA256_MAC_LEN);
+	forced_memzero(T, SHA256_MAC_LEN);
 	return 0;
 }

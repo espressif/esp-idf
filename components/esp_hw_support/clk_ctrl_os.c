@@ -1,19 +1,12 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <freertos/FreeRTOS.h>
 #include "soc/clk_ctrl_os.h"
+#include "sdkconfig.h"
 
 #define DELAY_RTC_CLK_SWITCH 5
 
@@ -27,7 +20,11 @@ bool periph_rtc_dig_clk8m_enable(void)
     portENTER_CRITICAL(&periph_spinlock);
     if (s_periph_ref_counts == 0) {
         rtc_dig_clk8m_enable();
+#if CONFIG_IDF_TARGET_ESP32H2
+        s_rtc_clk_freq = rtc_clk_freq_cal(rtc_clk_cal(RTC_CAL_RC32K, 100));
+#else
         s_rtc_clk_freq = rtc_clk_freq_cal(rtc_clk_cal(RTC_CAL_8MD256, 100));
+#endif
         if (s_rtc_clk_freq == 0) {
             portEXIT_CRITICAL(&periph_spinlock);
             return false;

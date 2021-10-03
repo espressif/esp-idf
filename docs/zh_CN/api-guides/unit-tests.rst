@@ -2,7 +2,10 @@
 ============================
 :link_to_translation:`en:[English]`
 
-ESP-IDF 中附带了一个基于 ``Unity`` 的单元测试应用程序框架，且所有的单元测试用例分别保存在 ESP-IDF 仓库中每个组件的 ``test`` 子目录中。
+ESP-IDF 提供以下方法测试软件。
+
+- 一种是在目标芯片上运行并基于 ``Unity`` 测试框架的应用程序。这些单元测试用例都保存在 ESP-IDF 仓库中，分别存放在每个组件的 ``test`` 子目录中。本文主要介绍这种单元测试方法。
+- 另一种是基于 Linux 主机的单元测试，其中所有硬件行为都通过 Mock 组件进行模拟。此测试方法目前仍在开发中，只有一小部分 IDF 组件支持了 Mock，具体请参考 :doc:`基于 Linux 主机的单元测试 <linux-host-testing>`。
 
 添加常规测试用例
 ----------------
@@ -24,9 +27,9 @@ ESP-IDF 中附带了一个基于 ``Unity`` 的单元测试应用程序框架，�
 -  第二个参数用方括号中的标识符来表示，标识符用来对相关测试或具有特定属性的测试进行分组。
 
 .. note::
-    没有必要在每个测试用例中使用 ``UNITY_BEGIN()`` 和 ``UNITY_END()`` 来声明主函数的区域， ``unity_platform.c`` 会自动调用 ``UNITY_BEGIN()``， 然后运行测试用例，最后调用 ``UNITY_END()``。
+    没有必要在每个测试用例中使用 ``UNITY_BEGIN()`` 和 ``UNITY_END()`` 来声明主函数的区域， ``unity_platform.c`` 会自动调用 ``UNITY_BEGIN()``，然后运行测试用例，最后调用 ``UNITY_END()``。
 
-``test`` 子目录应包含 :ref：`组件 CMakeLists.txt <component-directories>`，因为他们本身就是一种组件。ESP-IDF 使用了 ``unity`` 测试框架，需要将其指定为组件的依赖项。通常，组件 :ref：`需要手动指定待编译的源文件 <cmake-file-globbing>；但是，对于测试组件来说，这个要求被放宽为仅建议将参数 ``SRC_DIRS`` 用于 ``idf_component_register``。
+``test`` 子目录应包含 :ref:`组件 CMakeLists.txt <component-directories>`，因为他们本身就是一种组件（即测试组件）。ESP-IDF 使用了 Unity 测试框架, 位于 ``unity`` 组件里。因此，每个测试组件都需要通过 ``REQUIRES`` 参数将 ``unity`` 组件设为依赖项。通常，组件需要 :ref:`手动指定待编译的源文件 <cmake-file-globbing>`，但是，对于测试组件来说，这个要求被放宽为仅建议将参数 ``SRC_DIRS`` 用于 ``idf_component_register``。
 
 总的来说，``test`` 子目录下最小的 CMakeLists.txt 文件可能如下所示:
 
@@ -72,7 +75,7 @@ ESP-IDF 中附带了一个基于 ``Unity`` 的单元测试应用程序框架，�
 
     TEST_CASE_MULTIPLE_DEVICES("gpio multiple devices test example", "[driver]", gpio_master_test, gpio_slave_test);
 
-宏 ``TEST_CASE_MULTIPLE_DEVICES`` 用来声明多设备测试用例，
+宏 ``TEST_CASE_MULTIPLE_DEVICES`` 用来声明多设备测试用例。
 
 -  第一个参数指定测试用例的名字。
 -  第二个参数是测试用例的描述。
@@ -105,8 +108,8 @@ DUT2（slave）终端::
 
    void check_deepsleep_reset_reason()
    {
-       RESET_REASON reason = rtc_get_reset_reason(0);
-       TEST_ASSERT(reason == DEEPSLEEP_RESET);
+       soc_reset_reason_t reason = esp_rom_get_reset_reason(0);
+       TEST_ASSERT(reason == RESET_REASON_CORE_DEEP_SLEEP);
    }
 
    TEST_CASE_MULTIPLE_STAGES("reset reason check for deepsleep", "[{IDF_TARGET_PATH_NAME}]", trigger_deepsleep, check_deepsleep_reset_reason);
@@ -120,7 +123,7 @@ DUT2（slave）终端::
 
 1. 使用宏 ``!(TEMPORARY_)DISABLED_FOR_TARGETS()`` 包装你的测试代码，并将其放于原始的测试文件中，或将代码分成按功能分组的文件。但请确保所有这些文件都会由编译器处理。例::
 
-      #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP8266) 
+      #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP8266)
       TEST_CASE("a test that is not ready for esp32 and esp8266 yet", "[]")
       {
       }
@@ -143,13 +146,13 @@ DUT2（slave）终端::
 
 - 请勿将测试代码放在 ``test/芯片版本`` 目录下面，然后用 CMakeLists.txt 来选择其中一个进行编译。这是因为测试代码比实现代码更容易被复用。如果你将一些代码放在 ``test/esp32`` 目录下来避免 esp32s2 芯片执行它，一旦你需要在新的芯片（比如 esp32s3 ）中启用该测试，你会发现这种结构非常难以保持代码的整洁。
 
-- 请勿继续使用 ``CONFIG_IDF_TARGET_xxx`` 宏来禁止某些测试在一些芯片上编译。这种 方法会让被禁止的测试项目难以追踪和重新打开。并且，相比于白名单式的 ``#if CONFIG_IDF_TARGET_xxx`` ，黑名单式的 ``#if !disabled`` 能避免新芯片引入时，这些测试被自动关闭。但对于用于测试的一些实现， ``#if CONFIG_IDF_TARGET_xxx`` 仍可用于给不同芯片版本选择实现代码。测试项目和测试实现区分如下：
+- 请勿继续使用 ``CONFIG_IDF_TARGET_xxx`` 宏来禁止某些测试在一些芯片上编译。这种方法会让被禁止的测试项目难以追踪和重新打开。并且，相比于白名单式的 ``#if CONFIG_IDF_TARGET_xxx``，黑名单式的 ``#if !disabled`` 能避免新芯片引入时这些测试被自动关闭。但对于用于测试的一些实现，``#if CONFIG_IDF_TARGET_xxx`` 仍可用于给不同芯片版本选择实现代码。测试项目和测试实现区分如下：
 
-  - 测试项目：某些你会在一些芯片上执行，而在另外一些上跳过的项目，例如：
+  - 测试项目：那些会在一些芯片上执行，而在另外一些上跳过的项目，例如：
 
-    有三个测试项目 SD 1-bit 、 SD 4-bit 和 SDSPI 。对于不支持 SD Host 外设的ESP32-S2 芯片，只有 SDSPI 一个项目需要被执行。
+    有三个测试项目 SD 1-bit、SD 4-bit 和 SDSPI。对于不支持 SD Host 外设的 ESP32-S2 芯片，只有 SDSPI 一个项目需要被执行。
 
-  - 测试实现：某些代码始终会发生，但采取不同的做法。例如：
+  - 测试实现：一些始终会发生的代码，但采取不同的实现方式。例如：
 
     ESP8266 芯片没有 SDIO_PKT_LEN 寄存器。如果在测试过程中需要获取从设备的数据长度，你可以用不同方式读取的 ``#if CONFIG_IDF_TARGET_`` 宏来保护不同的实现代码。
 
@@ -170,7 +173,7 @@ DUT2（slave）终端::
 .. note::
 
     由于 Windows 命令提示符固有限制，需使用以下语法来编译多个组件的单元测试程序：``idf.py -T xxx -T yyy build`` 或者在 PowerShell 中使用 ``idf.py -T \`"xxx yyy\`" build``，在 Windows 命令提示符中使用 ``idf.py -T \^"ssd1306 hts221\^" build``。
-  
+
 当编译完成时，它会打印出烧写芯片的指令。您只需要运行 ``idf.py flash`` 即可烧写所有编译输出的文件。
 
 您还可以运行 ``idf.py -T all flash`` 或者 ``idf.py -T xxx flash`` 来编译并烧写，所有需要的文件都会在烧写之前自动重新编译。
@@ -243,6 +246,8 @@ DUT2（slave）终端::
 第一次执行此用例时，输入 ``1`` 来运行第一阶段（触发深度睡眠）。在重启 DUT 并再次选择运行此用例后，输入 ``2`` 来运行第二阶段。只有在最后一个阶段通过并且之前所有的阶段都成功触发了复位的情况下，该测试才算通过。
 
 
+.. _cache-compensated-timer:
+
 带缓存补偿定时器的定时代码
 -----------------------------------------
 
@@ -274,13 +279,24 @@ DUT2（slave）终端::
 Mocks
 ----------
 
-ESP-IDF 有一个集成 CMock mocking 框架的组件。CMock 通常使用 Unity 作为一个子模块，但由于一些 Espressif 内部 CI 的限制，我们仍然将 Unity 作为 ESP-IDF 中的一个普通模块。
+嵌入式系统中单元测试的最大问题之一是硬件依赖性极强。所以 ESP-IDF 有一个集成了 `CMock <https://www.throwtheswitch.org/cmock>`_ mocking 框架的组件。理想情况下，除了需要被测试的组件 *（待测组件）* 之外的所有组件都要被模拟。这样，测试环境就可以完全控制与被测组件之间的所有交互。但是，在模拟过程中如果遇到过于具体而导致的困难，用户可以在测试代码中包含“真正”（非模拟）代码。
 
-要使用 IDF 提供的 Unity 组件（不是子模块)，构建系统需要传递一个环境变量 ``UNITY_IDR`` 给 CMock。该变量仅包含 IDF 中 Unity 目录的路径，如 ``export "UNITY_DIR=${IDF_PATH}/components/unity/unity"``。
+除了常规的 IDF 要求，``ruby`` 是生成 Mock 的必要条件，具体请参考 :component_file:`cmock/CMock/docs/CMock_Summary.md` 了解 CMock 工作原理以及如何创建和使用 Mock。
 
-关于 CMock 中 Unity 目录是如何确定的，请参考 :component_file:`cmock/CMock/lib/cmock_generator.rb`。
- 
-在组件的 CMakeLists.txt 中创建组件的 mock 的 cmake 编译命令可能如下所示：
+在 IDF 中，与编写普通组件或不需要 Mock 的单元测试相比，需要 Mock 的组件以及单元测试内部需要进行一些修改。
+
+修改需要模拟的组件
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+要被模拟的组件需要一个单独的 ``mock`` 目录，用来包含实现模拟的文件。最重要的是，该目录下要包含用于配置 CMock 的 ``mock_config.yaml`` 文件。关于此配置文件中选项的含义以及如何编写自己的配置文件，请参考 :component_file:`CMock 文档 <cmock/CMock/docs/CMock_Summary.md>`。 ``mock`` 目录中可能还需要包括其它与 Mock 有关的文件。
+
+此外，组件的 ``CMakeLists.txt`` 文件中需要一个“开关”来决定是否编译 Mock。通常可以通过检查特定组件的属性 ``USE_MOCK`` 来实现。例如，``spi_flash`` 组件在其 ``CMakeLists.txt`` 中执行以下代码，以检查是否应该编译 Mock。
+
+.. code-block:: cmake
+
+    idf_component_get_property(spi_flash_mock ${COMPONENT_NAME} USE_MOCK)
+
+在组件的 CMakeLists.txt 中创建组件的 Mock 的 CMake 编译命令可能如下所示：
 
 .. code-block:: cmake
 
@@ -290,6 +306,19 @@ ESP-IDF 有一个集成 CMock mocking 框架的组件。CMock 通常使用 Unity
     COMMAND ${CMAKE_COMMAND} -E env "UNITY_DIR=${IDF_PATH}/components/unity/unity" ruby ${CMOCK_DIR}/lib/cmock.rb -o${CMAKE_CURRENT_SOURCE_DIR}/mock/mock_config.yaml ${MOCK_HEADERS}
     )
 
-${MOCK_OUTPUT} 包含所有 CMock 生成的输出文件，${MOCK_HEADERS} 包含所有要 mock 的头文件， ${CMOCK_DIR} 需要设置为 IDF 内的 CMock 目录。${CMAKE_COMMAND} 会自动设置。
+``${MOCK_OUTPUT}`` 包含所有 CMock 生成的输出文件，``${MOCK_HEADERS}`` 包含所有要 Mock 的头文件，``${CMOCK_DIR}`` 需要设置为 IDF 内的 CMock 目录。``${CMAKE_COMMAND}`` 会由 IDF 构建系统自动设置。
 
-更多关于 CMock 如何工作以及如何创建和使用 mock 的信息，请参考 :component_file:`cmock/CMock/docs/CMock_Summary.md`。
+使用 CMock 要特别注意的一个方面是：CMock 通常使用 Unity 作为一个子模块，但由于一些 Espressif 内部 CI 的限制，我们仍然将 Unity 作为 ESP-IDF 中的一个普通模块。要使用 IDF 提供的 Unity 组件（不是子模块），构建系统需要传递一个环境变量 ``UNITY_IDR`` 给 CMock。该变量仅包含 IDF 中 Unity 目录的路径，如 ``export "UNITY_DIR=${IDF_PATH}/components/unity/unity"``。关于 CMock 中 Unity 目录是如何确定的，请参考 :component_file:`cmock/CMock/lib/cmock_generator.rb`。
+
+更多细节可参考 :component_file:`spi_flash <spi_flash/CMakeLists.txt>` 目录下启用 Mock 的 ``CMakeLists.txt`` 示例文件。
+
+修改单元测试文件
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+单元测试要为需要模拟的组件设置 ``USE_MOCK`` 组件属性。这会让依赖组件编译 Mock，而不是实际的组件。例如，在 NVS 主机测试的 :component_file:`CMakeLists.txt <nvs_flash/host_test/nvs_page_test/CMakeLists.txt>` 中，以下代码用于启用 ``spi_flash`` Mock。
+
+.. code-block:: cmake
+
+    idf_component_set_property(spi_flash USE_MOCK 1)
+
+关于如何在单元测试中使用及控制 CMock，请参考 :component_file:`NVS 主机单元测 <nvs_flash/host_test/nvs_page_test/README.md>`。

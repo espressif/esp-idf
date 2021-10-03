@@ -1,16 +1,8 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <stdbool.h>
 #include <assert.h>
 #include "string.h"
@@ -179,9 +171,9 @@ int bootloader_flash_get_wp_pin(void)
     uint8_t chip_ver;
     uint32_t pkg_ver = bootloader_common_get_chip_ver_pkg();
     switch(pkg_ver) {
+    case EFUSE_RD_CHIP_VER_PKG_ESP32U4WDH:
     case EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5:
         return ESP32_D2WD_WP_GPIO;
-    case EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2:
     case EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4:
         /* Same package IDs are used for ESP32-PICO-V3 and ESP32-PICO-D4, silicon version differentiates */
         chip_ver = bootloader_common_get_chip_revision();

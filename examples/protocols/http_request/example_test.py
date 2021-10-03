@@ -36,7 +36,7 @@ def test_examples_protocol_http_request(env, extra_data):  # type: (tiny_test_fw
     ttfw_idf.log_performance('http_request_bin_size', '{}KB'.format(bin_size // 1024))
     # start test
     dut1.start_app()
-    dut1.expect(re.compile(r'DNS lookup succeeded.'))
+    dut1.expect(re.compile(r'DNS lookup succeeded.'), timeout=30)
     # check if connected or not
     dut1.expect(' ... connected', timeout=60)
     dut1.expect(' ... socket send success')

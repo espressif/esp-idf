@@ -165,12 +165,14 @@ static void initialize_ethernet(void)
     esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);
 #elif CONFIG_EXAMPLE_ETH_PHY_RTL8201
     esp_eth_phy_t *phy = esp_eth_phy_new_rtl8201(&phy_config);
-#elif CONFIG_EXAMPLE_ETH_PHY_LAN8720
-    esp_eth_phy_t *phy = esp_eth_phy_new_lan8720(&phy_config);
+#elif CONFIG_EXAMPLE_ETH_PHY_LAN87XX
+    esp_eth_phy_t *phy = esp_eth_phy_new_lan87xx(&phy_config);
 #elif CONFIG_EXAMPLE_ETH_PHY_DP83848
     esp_eth_phy_t *phy = esp_eth_phy_new_dp83848(&phy_config);
 #elif CONFIG_EXAMPLE_ETH_PHY_KSZ8041
     esp_eth_phy_t *phy = esp_eth_phy_new_ksz8041(&phy_config);
+#elif CONFIG_EXAMPLE_ETH_PHY_KSZ8081
+    esp_eth_phy_t *phy = esp_eth_phy_new_ksz8081(&phy_config);
 #endif
 #elif CONFIG_ETH_USE_SPI_ETHERNET
     gpio_install_isr_service(0);
@@ -182,8 +184,22 @@ static void initialize_ethernet(void)
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
     };
-    ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_EXAMPLE_ETH_SPI_HOST, &buscfg, 1));
-#if CONFIG_EXAMPLE_USE_DM9051
+    ESP_ERROR_CHECK(spi_bus_initialize(CONFIG_EXAMPLE_ETH_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
+
+#if CONFIG_EXAMPLE_USE_KSZ8851SNL
+    spi_device_interface_config_t devcfg = {
+        .mode = 0,
+        .clock_speed_hz = CONFIG_EXAMPLE_ETH_SPI_CLOCK_MHZ * 1000 * 1000,
+        .spics_io_num = CONFIG_EXAMPLE_ETH_SPI_CS_GPIO,
+        .queue_size = 20
+    };
+    ESP_ERROR_CHECK(spi_bus_add_device(CONFIG_EXAMPLE_ETH_SPI_HOST, &devcfg, &spi_handle));
+    /* KSZ8851SNL ethernet driver is based on spi driver */
+    eth_ksz8851snl_config_t ksz8851snl_config = ETH_KSZ8851SNL_DEFAULT_CONFIG(spi_handle);
+    ksz8851snl_config.int_gpio_num = CONFIG_EXAMPLE_ETH_SPI_INT_GPIO;
+    esp_eth_mac_t *mac = esp_eth_mac_new_ksz8851snl(&ksz8851snl_config, &mac_config);
+    esp_eth_phy_t *phy = esp_eth_phy_new_ksz8851snl(&phy_config);
+#elif CONFIG_EXAMPLE_USE_DM9051
     spi_device_interface_config_t devcfg = {
         .command_bits = 1,
         .address_bits = 7,
@@ -226,7 +242,8 @@ static void initialize_ethernet(void)
         0x02, 0x00, 0x00, 0x12, 0x34, 0x56
     }));
 #endif
-    esp_eth_ioctl(s_eth_handle, ETH_CMD_S_PROMISCUOUS, (void *)true);
+    bool eth_promiscuous = true;
+    esp_eth_ioctl(s_eth_handle, ETH_CMD_S_PROMISCUOUS, &eth_promiscuous);
     esp_eth_start(s_eth_handle);
 }
 
@@ -278,7 +295,6 @@ void app_main(void)
     ESP_ERROR_CHECK(ret);
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     ESP_ERROR_CHECK(initialize_flow_control());
-
-    initialize_ethernet();
     initialize_wifi();
+    initialize_ethernet();
 }

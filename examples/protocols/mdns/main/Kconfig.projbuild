@@ -12,6 +12,12 @@ menu "Example Configuration"
         help
             mDNS Instance Name for example to use
 
+    config MDNS_PUBLISH_DELEGATE_HOST
+        bool "Publish a delegated host"
+        help
+            Enable publishing a delegated host other than ESP32.
+            The example will also add a mock service for this host.
+
     config MDNS_RESOLVE_TEST_SERVICES
         bool "Resolve test services"
         default n

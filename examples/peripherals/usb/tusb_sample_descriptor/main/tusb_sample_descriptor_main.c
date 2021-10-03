@@ -29,7 +29,7 @@ void app_main(void)
         .bDescriptorType = TUSB_DESC_DEVICE,
         .bcdUSB = 0x0200, // USB version. 0x0200 means version 2.0
         .bDeviceClass = TUSB_CLASS_UNSPECIFIED,
-        .bMaxPacketSize0 = CFG_TUD_ENDOINT0_SIZE,
+        .bMaxPacketSize0 = CFG_TUD_ENDPOINT0_SIZE,
 
         .idVendor = 0x303A,
         .idProduct = 0x3000,

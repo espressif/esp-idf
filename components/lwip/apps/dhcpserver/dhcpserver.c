@@ -916,7 +916,7 @@ POOL_CHECK:
 
         s16_t ret = parse_options(&m->options[4], len);;
 
-        if (ret == DHCPS_STATE_RELEASE) {
+        if (ret == DHCPS_STATE_RELEASE || ret == DHCPS_STATE_NAK) {
             if (pnode != NULL) {
                 node_remove_from_list(&plist, pnode);
                 free(pnode);

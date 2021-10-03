@@ -28,9 +28,12 @@
 #include "esp32s3/memprot.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/memprot.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/memprot.h"
 #endif
 
-#define SHUTDOWN_HANDLERS_NO 4
+#define SHUTDOWN_HANDLERS_NO 5
+
 static shutdown_handler_t shutdown_handlers[SHUTDOWN_HANDLERS_NO];
 
 void IRAM_ATTR esp_restart_noos_dig(void)

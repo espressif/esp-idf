@@ -12,21 +12,40 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import queue
 import textwrap
+from typing import Optional
 
-try:
-    from typing import Optional
-except ImportError:
-    pass
-
-import serial.tools.miniterm as miniterm
+from serial.tools import miniterm
 
 from .constants import (CMD_APP_FLASH, CMD_ENTER_BOOT, CMD_MAKE, CMD_OUTPUT_TOGGLE, CMD_RESET, CMD_STOP,
-                        CMD_TOGGLE_LOGGING, CTRL_A, CTRL_F, CTRL_H, CTRL_L, CTRL_P, CTRL_R, CTRL_RBRACKET, CTRL_T,
-                        CTRL_X, CTRL_Y, TAG_CMD, TAG_KEY, __version__)
+                        CMD_TOGGLE_LOGGING, CMD_TOGGLE_TIMESTAMPS, CTRL_A, CTRL_F, CTRL_H, CTRL_I, CTRL_L, CTRL_P,
+                        CTRL_R, CTRL_RBRACKET, CTRL_T, CTRL_X, CTRL_Y, TAG_CMD, TAG_KEY, __version__)
 from .output_helpers import red_print, yellow_print
 
 key_description = miniterm.key_description
+
+
+def prompt_next_action(reason, console, console_parser, event_queue, cmd_queue):
+    # type: (str, miniterm.Console, ConsoleParser, queue.Queue, queue.Queue) -> None
+    console.setup()  # set up console to trap input characters
+    try:
+        red_print('--- {}'.format(reason))
+        red_print(console_parser.get_next_action_text())
+
+        k = CTRL_T  # ignore CTRL-T here, so people can muscle-memory Ctrl-T Ctrl-F, etc.
+        while k == CTRL_T:
+            k = console.getkey()
+    finally:
+        console.cleanup()
+    ret = console_parser.parse_next_action_key(k)
+    if ret is not None:
+        cmd = ret[1]
+        if cmd == CMD_STOP:
+            # the stop command should be handled last
+            event_queue.put(ret)
+        else:
+            cmd_queue.put(ret)
 
 
 class ConsoleParser(object):
@@ -72,6 +91,8 @@ class ConsoleParser(object):
             ret = (TAG_CMD, CMD_OUTPUT_TOGGLE)
         elif c == CTRL_L:  # Toggle saving output into file
             ret = (TAG_CMD, CMD_TOGGLE_LOGGING)
+        elif c in [CTRL_I, 'i', 'I']:  # Toggle printing timestamps
+            ret = (TAG_CMD, CMD_TOGGLE_TIMESTAMPS)
         elif c == CTRL_P:
             yellow_print('Pause app (enter bootloader mode), press Ctrl-T Ctrl-R to restart')
             # to fast trigger pause without press menu key
@@ -99,6 +120,7 @@ class ConsoleParser(object):
             ---    {appmake:14} Build & flash app only
             ---    {output:14} Toggle output display
             ---    {log:14} Toggle saving output into file
+            ---    {timestamps:14} Toggle printing timestamps
             ---    {pause:14} Reset target into bootloader to pause app via RTS line
             ---    {menuexit:14} Exit program
         """.format(version=__version__,
@@ -109,6 +131,7 @@ class ConsoleParser(object):
                    appmake=key_description(CTRL_A) + ' (or A)',
                    output=key_description(CTRL_Y),
                    log=key_description(CTRL_L),
+                   timestamps=key_description(CTRL_I) + ' (or I)',
                    pause=key_description(CTRL_P),
                    menuexit=key_description(CTRL_X) + ' (or X)')
         return textwrap.dedent(text)

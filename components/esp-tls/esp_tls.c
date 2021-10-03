@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -46,9 +38,12 @@ static const char *TAG = "esp-tls";
 #define _esp_tls_write                      esp_mbedtls_write
 #define _esp_tls_conn_delete                esp_mbedtls_conn_delete
 #define _esp_tls_net_init                   esp_mbedtls_net_init
+#define _esp_tls_get_client_session         esp_mbedtls_get_client_session
 #ifdef CONFIG_ESP_TLS_SERVER
 #define _esp_tls_server_session_create      esp_mbedtls_server_session_create
 #define _esp_tls_server_session_delete      esp_mbedtls_server_session_delete
+#define _esp_tls_server_session_ticket_ctx_init    esp_mbedtls_server_session_ticket_ctx_init
+#define _esp_tls_server_session_ticket_ctx_free    esp_mbedtls_server_session_ticket_ctx_free
 #endif  /* CONFIG_ESP_TLS_SERVER */
 #define _esp_tls_get_bytes_avail            esp_mbedtls_get_bytes_avail
 #define _esp_tls_init_global_ca_store       esp_mbedtls_init_global_ca_store
@@ -267,13 +262,13 @@ static esp_err_t esp_tls_set_socket_non_blocking(int fd, bool non_blocking)
     return ESP_OK;
 }
 
-static esp_err_t esp_tcp_connect(const char *host, int hostlen, int port, int *sockfd, const esp_tls_t *tls, const esp_tls_cfg_t *cfg)
+static inline esp_err_t tcp_connect(const char *host, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_error_handle_t error_handle, int *sockfd)
 {
     struct sockaddr_storage address;
     int fd;
     esp_err_t ret = esp_tls_hostname_to_fd(host, hostlen, port, &address, &fd);
     if (ret != ESP_OK) {
-        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_SYSTEM, errno);
+        ESP_INT_EVENT_TRACKER_CAPTURE(error_handle, ESP_TLS_ERR_TYPE_SYSTEM, errno);
         return ret;
     }
 
@@ -311,7 +306,7 @@ static esp_err_t esp_tcp_connect(const char *host, int hostlen, int port, int *s
             int res = select(fd+1, NULL, &fdset, NULL, &tv);
             if (res < 0) {
                 ESP_LOGE(TAG, "[sock=%d] select() error: %s", fd, strerror(errno));
-                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_SYSTEM, errno);
+                ESP_INT_EVENT_TRACKER_CAPTURE(error_handle, ESP_TLS_ERR_TYPE_SYSTEM, errno);
                 goto err;
             }
             else if (res == 0) {
@@ -328,7 +323,7 @@ static esp_err_t esp_tcp_connect(const char *host, int hostlen, int port, int *s
                     goto err;
                 }
                 else if (sockerr) {
-                    ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_SYSTEM, sockerr);
+                    ESP_INT_EVENT_TRACKER_CAPTURE(error_handle, ESP_TLS_ERR_TYPE_SYSTEM, sockerr);
                     ESP_LOGE(TAG, "[sock=%d] delayed connect error: %s", fd, strerror(sockerr));
                     goto err;
                 }
@@ -371,7 +366,7 @@ static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, c
             _esp_tls_net_init(tls);
             tls->is_tls = true;
         }
-        if ((esp_ret = esp_tcp_connect(hostname, hostlen, port, &tls->sockfd, tls, cfg)) != ESP_OK) {
+        if ((esp_ret = tcp_connect(hostname, hostlen, port, cfg, tls->error_handle, &tls->sockfd)) != ESP_OK) {
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, esp_ret);
             return -1;
         }
@@ -438,6 +433,17 @@ static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, c
         break;
     }
     return -1;
+}
+
+/**
+ * @brief Create a new plain TCP connection
+ */
+esp_err_t esp_tls_plain_tcp_connect(const char *host, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_error_handle_t error_handle, int *sockfd)
+{
+    if (sockfd == NULL || error_handle == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    return tcp_connect(host, hostlen, port, cfg, error_handle, sockfd);
 }
 
 /**
@@ -565,7 +571,45 @@ mbedtls_x509_crt *esp_tls_get_global_ca_store(void)
 }
 
 #endif /* CONFIG_ESP_TLS_USING_MBEDTLS */
+
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+esp_tls_client_session_t *esp_tls_get_client_session(esp_tls_t *tls)
+{
+    return _esp_tls_get_client_session(tls);
+}
+#endif /* CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS */
+
+
 #ifdef CONFIG_ESP_TLS_SERVER
+esp_err_t esp_tls_cfg_server_session_tickets_init(esp_tls_cfg_server_t *cfg)
+{
+#if defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
+    if (!cfg || cfg->ticket_ctx) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    cfg->ticket_ctx = calloc(1, sizeof(esp_tls_server_session_ticket_ctx_t));
+    if (!cfg->ticket_ctx) {
+        return ESP_ERR_NO_MEM;
+    }
+    esp_err_t ret =  _esp_tls_server_session_ticket_ctx_init(cfg->ticket_ctx);
+    if (ret != ESP_OK) {
+        free(cfg->ticket_ctx);
+    }
+    return ret;
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+}
+
+void esp_tls_cfg_server_session_tickets_free(esp_tls_cfg_server_t *cfg)
+{
+#if defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
+    if (cfg && cfg->ticket_ctx) {
+        _esp_tls_server_session_ticket_ctx_free(cfg->ticket_ctx);
+    }
+#endif
+}
+
 /**
  * @brief      Create a server side TLS/SSL connection
  */

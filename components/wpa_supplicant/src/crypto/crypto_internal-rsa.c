@@ -6,30 +6,36 @@
  * See README for more details.
  */
 
-#include "utils/common.h"
+#include "includes.h"
+
+#include "common.h"
 #include "crypto.h"
-
-#include "utils/includes.h"
-#include "utils/common.h"
-#include "utils/wpa_debug.h"
-
 #include "tls/rsa.h"
 #include "tls/pkcs1.h"
 #include "tls/pkcs8.h"
 
-#ifndef USE_MBEDTLS_CRYPTO
 /* Dummy structures; these are just typecast to struct crypto_rsa_key */
 struct crypto_public_key;
 struct crypto_private_key;
 
 
-struct crypto_public_key *  crypto_public_key_import(const u8 *key, size_t len)
+struct crypto_public_key * crypto_public_key_import(const u8 *key, size_t len)
 {
 	return (struct crypto_public_key *)
 		crypto_rsa_import_public_key(key, len);
 }
 
-struct crypto_private_key *  crypto_private_key_import(const u8 *key,
+
+struct crypto_public_key *
+crypto_public_key_import_parts(const u8 *n, size_t n_len,
+			       const u8 *e, size_t e_len)
+{
+	return (struct crypto_public_key *)
+		crypto_rsa_import_public_key_parts(n, n_len, e, e_len);
+}
+
+
+struct crypto_private_key * crypto_private_key_import(const u8 *key,
 						      size_t len,
 						      const char *passwd)
 {
@@ -55,7 +61,7 @@ struct crypto_private_key *  crypto_private_key_import(const u8 *key,
 }
 
 
-struct crypto_public_key *  crypto_public_key_from_cert(const u8 *buf,
+struct crypto_public_key * crypto_public_key_from_cert(const u8 *buf,
 						       size_t len)
 {
 	/* No X.509 support in crypto_internal.c */
@@ -63,7 +69,7 @@ struct crypto_public_key *  crypto_public_key_from_cert(const u8 *buf,
 }
 
 
-int  crypto_public_key_encrypt_pkcs1_v15(struct crypto_public_key *key,
+int crypto_public_key_encrypt_pkcs1_v15(struct crypto_public_key *key,
 					const u8 *in, size_t inlen,
 					u8 *out, size_t *outlen)
 {
@@ -72,7 +78,7 @@ int  crypto_public_key_encrypt_pkcs1_v15(struct crypto_public_key *key,
 }
 
 
-int  crypto_private_key_decrypt_pkcs1_v15(struct crypto_private_key *key,
+int crypto_private_key_decrypt_pkcs1_v15(struct crypto_private_key *key,
 					 const u8 *in, size_t inlen,
 					 u8 *out, size_t *outlen)
 {
@@ -81,7 +87,7 @@ int  crypto_private_key_decrypt_pkcs1_v15(struct crypto_private_key *key,
 }
 
 
-int  crypto_private_key_sign_pkcs1(struct crypto_private_key *key,
+int crypto_private_key_sign_pkcs1(struct crypto_private_key *key,
 				  const u8 *in, size_t inlen,
 				  u8 *out, size_t *outlen)
 {
@@ -90,23 +96,22 @@ int  crypto_private_key_sign_pkcs1(struct crypto_private_key *key,
 }
 
 
-void  crypto_public_key_free(struct crypto_public_key *key)
+void crypto_public_key_free(struct crypto_public_key *key)
 {
 	crypto_rsa_free((struct crypto_rsa_key *) key);
 }
 
 
-void  crypto_private_key_free(struct crypto_private_key *key)
+void crypto_private_key_free(struct crypto_private_key *key)
 {
 	crypto_rsa_free((struct crypto_rsa_key *) key);
 }
 
 
-int  crypto_public_key_decrypt_pkcs1(struct crypto_public_key *key,
+int crypto_public_key_decrypt_pkcs1(struct crypto_public_key *key,
 				    const u8 *crypt, size_t crypt_len,
 				    u8 *plain, size_t *plain_len)
 {
 	return pkcs1_decrypt_public_key((struct crypto_rsa_key *) key,
 					crypt, crypt_len, plain, plain_len);
 }
-#endif

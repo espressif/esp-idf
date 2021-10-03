@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "esp_efuse.h"
 #include "esp_efuse_utility.h"
@@ -112,8 +104,7 @@ esp_err_t esp_efuse_set_key_dis_read(esp_efuse_block_t block)
         return ESP_ERR_INVALID_ARG;
     }
     unsigned idx = block - EFUSE_BLK_KEY0;
-    const uint8_t one = 1;
-    return esp_efuse_write_field_blob(s_table[idx].key_rd_dis, &one, 1);
+    return esp_efuse_write_field_bit(s_table[idx].key_rd_dis);
 }
 
 bool esp_efuse_get_key_dis_write(esp_efuse_block_t block)
@@ -129,8 +120,7 @@ esp_err_t esp_efuse_set_key_dis_write(esp_efuse_block_t block)
         return ESP_ERR_INVALID_ARG;
     }
     unsigned idx = block - EFUSE_BLK_KEY0;
-    const uint8_t one = 1;
-    return esp_efuse_write_field_blob(s_table[idx].key_wr_dis, &one, 1);
+    return esp_efuse_write_field_bit(s_table[idx].key_wr_dis);
 }
 
 bool esp_efuse_key_block_unused(esp_efuse_block_t block)
@@ -146,3 +136,110 @@ bool esp_efuse_key_block_unused(esp_efuse_block_t block)
 
     return true; // Unused
 }
+
+esp_efuse_purpose_t esp_efuse_get_key_purpose(esp_efuse_block_t block)
+{
+    esp_efuse_purpose_t ret_purpose;
+    if (block == EFUSE_BLK0) {
+        ret_purpose = ESP_EFUSE_KEY_PURPOSE_SYSTEM;
+    } else if (block == EFUSE_BLK_ENCRYPT_FLASH) {
+        ret_purpose = ESP_EFUSE_KEY_PURPOSE_FLASH_ENCRYPTION;
+    } else if (block == EFUSE_BLK_SECURE_BOOT) {
+        ret_purpose = ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_V2;
+    } else if (block == EFUSE_BLK3) {
+        ret_purpose = ESP_EFUSE_KEY_PURPOSE_USER;
+    } else {
+        ret_purpose = ESP_EFUSE_KEY_PURPOSE_MAX;
+    }
+    return ret_purpose;
+}
+
+bool esp_efuse_get_keypurpose_dis_write(esp_efuse_block_t block)
+{
+    (void)block;
+    return true;
+}
+
+bool esp_efuse_find_purpose(esp_efuse_purpose_t purpose, esp_efuse_block_t *block)
+{
+    esp_efuse_block_t dummy;
+    if (block == NULL) {
+        block = &dummy;
+    }
+
+    for (esp_efuse_block_t b = EFUSE_BLK_KEY0; b < EFUSE_BLK_KEY_MAX; b++) {
+        if (esp_efuse_get_key_purpose(b) == purpose) {
+            *block = b;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+esp_err_t esp_efuse_write_key(esp_efuse_block_t block, esp_efuse_purpose_t purpose, const void *key, size_t key_size_bytes)
+{
+    esp_err_t err = ESP_OK;
+    if (block < EFUSE_BLK_KEY0 || block >= EFUSE_BLK_KEY_MAX || key_size_bytes > 32 || purpose >= ESP_EFUSE_KEY_PURPOSE_MAX
+        || esp_efuse_get_key_purpose(block) != purpose) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_efuse_batch_write_begin();
+
+    if (!esp_efuse_key_block_unused(block)) {
+        err = ESP_ERR_INVALID_STATE;
+    } else {
+        ESP_EFUSE_CHK(esp_efuse_write_block(block, key, 0, key_size_bytes * 8));
+        ESP_EFUSE_CHK(esp_efuse_set_key_dis_write(block));
+        if (purpose == ESP_EFUSE_KEY_PURPOSE_FLASH_ENCRYPTION) {
+            ESP_EFUSE_CHK(esp_efuse_set_key_dis_read(block));
+        }
+        return esp_efuse_batch_write_commit();
+    }
+err_exit:
+    esp_efuse_batch_write_cancel();
+    return err;
+}
+
+esp_err_t esp_efuse_write_keys(const esp_efuse_purpose_t purposes[], uint8_t keys[][32], unsigned number_of_keys)
+{
+    esp_err_t err = ESP_FAIL;
+    if (number_of_keys == 0 || number_of_keys > (EFUSE_BLK_KEY_MAX - EFUSE_BLK_KEY0) || keys == NULL || purposes == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    size_t key_size = 32;
+    esp_efuse_coding_scheme_t coding_scheme = esp_efuse_get_coding_scheme(EFUSE_BLK_KEY0);
+    if (coding_scheme == EFUSE_CODING_SCHEME_3_4) {
+        key_size = 24;
+    }
+    esp_efuse_purpose_t purpose = 0;
+    esp_efuse_block_t block = EFUSE_BLK_KEY0;
+
+    esp_efuse_batch_write_begin();
+    for (unsigned i_key = 0; (block < EFUSE_BLK_KEY_MAX) && (i_key < number_of_keys); block++) {
+        purpose = purposes[i_key];
+        if (esp_efuse_get_key_purpose(block) == purpose) {
+            ESP_LOGI(TAG, "Writing EFUSE_BLK_KEY%d with purpose %d", block - EFUSE_BLK_KEY0, purpose);
+            ESP_EFUSE_CHK(esp_efuse_write_key(block, purpose, keys[i_key], key_size));
+            i_key++;
+        }
+    }
+    return esp_efuse_batch_write_commit();
+err_exit:
+    ESP_LOGE(TAG, "Failed to write EFUSE_BLK_KEY%d with purpose %d. Can't continue.", block - EFUSE_BLK_KEY0, purpose);
+    esp_efuse_batch_write_cancel();
+    return err;
+}
+
+#if CONFIG_ESP32_REV_MIN_3
+esp_err_t esp_secure_boot_read_key_digests(ets_secure_boot_key_digests_t *trusted_keys)
+{
+    if (trusted_keys == NULL) {
+        return ESP_FAIL;
+    }
+    trusted_keys->key_digests[0] = (const void *)esp_efuse_utility_get_read_register_address(EFUSE_BLK_SECURE_BOOT);
+    return ESP_OK;
+}
+#endif // CONFIG_ESP32_REV_MIN_3

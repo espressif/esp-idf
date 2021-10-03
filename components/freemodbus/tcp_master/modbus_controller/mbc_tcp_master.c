@@ -33,10 +33,13 @@
 #include "mbc_tcp_master.h"         // for tcp master create function and types
 #include "port_tcp_master.h"        // for tcp master port defines and types
 
+#if MB_MASTER_TCP_ENABLED
+
 /*-----------------------Master mode use these variables----------------------*/
 
 // The response time is average processing time + data transmission
 #define MB_RESPONSE_TIMEOUT pdMS_TO_TICKS(CONFIG_FMB_MASTER_TIMEOUT_MS_RESPOND)
+#define MB_TCP_CONNECTION_TOUT pdMS_TO_TICKS(CONFIG_FMB_TCP_CONNECTION_TOUT_SEC * 1000)
 
 static mb_master_interface_t* mbm_interface_ptr = NULL;
 
@@ -116,15 +119,23 @@ static esp_err_t mbc_tcp_master_start(void)
         result = (BOOL)xMBTCPPortMasterAddSlaveIp(*comm_ip_table);
         MB_MASTER_CHECK(result, ESP_ERR_INVALID_STATE, "mb stack add slave IP failed: %s.", *comm_ip_table);
     }
-    // Add end of list condition
-    (void)xMBTCPPortMasterAddSlaveIp(NULL);
+    // Init polling event handlers and wait before start polling
+    xMBTCPPortMasterWaitEvent(mbm_opts->mbm_event_group, (EventBits_t)MB_EVENT_STACK_STARTED, 1);
 
     status = eMBMasterEnable();
     MB_MASTER_CHECK((status == MB_ENOERR), ESP_ERR_INVALID_STATE,
             "mb stack set slave ID failure, eMBMasterEnable() returned (0x%x).", (uint32_t)status);
 
-    bool start = (bool)xMBTCPPortMasterWaitEvent(mbm_opts->mbm_event_group, (EventBits_t)MB_EVENT_STACK_STARTED);
-    MB_MASTER_CHECK((start), ESP_ERR_INVALID_STATE, "mb stack start failed.");
+    // Send end of list condition to start connection phase
+    (void)xMBTCPPortMasterAddSlaveIp(NULL);
+
+    // Wait for connection done event
+    bool start = (bool)xMBTCPPortMasterWaitEvent(mbm_opts->mbm_event_group,
+                                                    (EventBits_t)MB_EVENT_STACK_STARTED, MB_TCP_CONNECTION_TOUT);
+    MB_MASTER_CHECK((start), ESP_ERR_INVALID_STATE,
+                            "mb stack could not connect to slaves for %d seconds.",
+                            CONFIG_FMB_TCP_CONNECTION_TOUT_SEC);
+
     return ESP_OK;
 }
 
@@ -136,17 +147,19 @@ static esp_err_t mbc_tcp_master_destroy(void)
     MB_MASTER_CHECK((mbm_opts != NULL), ESP_ERR_INVALID_ARG, "mb incorrect options pointer.");
     eMBErrorCode mb_error = MB_ENOERR;
 
-    // Stop polling by clearing correspondent bit in the event group
-    xEventGroupClearBits(mbm_opts->mbm_event_group,
-                                    (EventBits_t)MB_EVENT_STACK_STARTED);
     // Disable and then destroy the Modbus stack
     mb_error = eMBMasterDisable();
     MB_MASTER_CHECK((mb_error == MB_ENOERR), ESP_ERR_INVALID_STATE, "mb stack disable failure.");
-    (void)vTaskDelete(mbm_opts->mbm_task_handle);
-    (void)vEventGroupDelete(mbm_opts->mbm_event_group);
     mb_error = eMBMasterClose();
     MB_MASTER_CHECK((mb_error == MB_ENOERR), ESP_ERR_INVALID_STATE,
             "mb stack close failure returned (0x%x).", (uint32_t)mb_error);
+    // Stop polling by clearing correspondent bit in the event group
+    xEventGroupClearBits(mbm_opts->mbm_event_group,
+                                    (EventBits_t)MB_EVENT_STACK_STARTED);
+    (void)vTaskDelete(mbm_opts->mbm_task_handle);
+    mbm_opts->mbm_task_handle = NULL;
+    (void)vEventGroupDelete(mbm_opts->mbm_event_group);
+    mbm_opts->mbm_event_group = NULL;
     free(mbm_interface_ptr); // free the memory allocated for options
     vMBPortSetMode((UCHAR)MB_PORT_INACTIVE);
     mbm_interface_ptr = NULL;
@@ -384,7 +397,7 @@ static esp_err_t mbc_tcp_master_set_request(char* name, mb_param_mode_t mode, mb
             continue; // The length of strings is different then check next record in the table
         }
         // Compare the name of parameter with parameter key from table
-        uint8_t comp_result = memcmp((const char*)name, (const char*)reg_ptr->param_key, (size_t)param_key_len);
+        int comp_result = memcmp((const void*)name, (const void*)reg_ptr->param_key, (size_t)param_key_len);
         if (comp_result == 0) {
             // The correct line is found in the table and reg_ptr points to the found parameter description
             request->slave_addr = reg_ptr->mb_slave_addr;
@@ -431,8 +444,9 @@ static esp_err_t mbc_tcp_master_get_parameter(uint16_t cid, char* name, uint8_t*
         // Set the type of parameter found in the table
         *type = reg_info.param_type;
     } else {
-        ESP_LOGD(MB_MASTER_TAG, "%s: The cid(%u) not found in the data dictionary.",
+        ESP_LOGE(MB_MASTER_TAG, "%s: The cid(%u) not found in the data dictionary.",
                                                     __FUNCTION__, reg_info.cid);
+        error = ESP_ERR_INVALID_ARG;
     }
     return error;
 }
@@ -469,6 +483,7 @@ static esp_err_t mbc_tcp_master_set_parameter(uint16_t cid, char* name, uint8_t*
     } else {
         ESP_LOGE(MB_MASTER_TAG, "%s: The requested cid(%u) not found in the data dictionary.",
                                     __FUNCTION__, reg_info.cid);
+        error = ESP_ERR_INVALID_ARG;
     }
     return error;
 }
@@ -714,3 +729,5 @@ esp_err_t mbc_tcp_master_create(void** handler)
 
     return ESP_OK;
 }
+
+#endif //#if MB_MASTER_TCP_ENABLED

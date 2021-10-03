@@ -18,7 +18,6 @@
 #include "hal/adc_hal.h"
 #include "hal/adc_types.h"
 #include "hal/adc_hal_conf.h"
-#include "esp_log.h"
 
 /*---------------------------------------------------------------
                     Digital controller setting
@@ -121,25 +120,4 @@ void adc_hal_digi_monitor_config(adc_ll_num_t adc_n, adc_digi_monitor_t *config)
 {
     adc_ll_digi_monitor_set_mode(adc_n, config->mode);
     adc_ll_digi_monitor_set_thres(adc_n, config->threshold);
-}
-
-/*---------------------------------------------------------------
-                    Common setting
----------------------------------------------------------------*/
-
-/**
- * Config ADC2 module arbiter.
- * The arbiter is to improve the use efficiency of ADC2. After the control right is robbed by the high priority,
- * the low priority controller will read the invalid ADC2 data, and the validity of the data can be judged by the flag bit in the data.
- *
- * @note Only ADC2 support arbiter.
- * @note The arbiter's working clock is APB_CLK. When the APB_CLK clock drops below 8 MHz, the arbiter must be in shield mode.
- * @note Default priority: Wi-Fi > RTC > Digital;
- *
- * @param config Refer to ``adc_arbiter_t``.
- */
-void adc_hal_arbiter_config(adc_arbiter_t *config)
-{
-    adc_ll_set_arbiter_work_mode(config->mode);
-    adc_ll_set_arbiter_priority(config->rtc_pri, config->dig_pri, config->pwdet_pri);
 }

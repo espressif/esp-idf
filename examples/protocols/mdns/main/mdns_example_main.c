@@ -9,6 +9,7 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_netif_ip_addr.h"
 #include "esp_system.h"
 #include "esp_event.h"
 #include "esp_log.h"
@@ -23,8 +24,8 @@
 #define EXAMPLE_MDNS_INSTANCE CONFIG_MDNS_INSTANCE
 #define EXAMPLE_BUTTON_GPIO     0
 
-static const char *TAG = "mdns-test";
-static char* generate_hostname(void);
+static const char * TAG = "mdns-test";
+static char * generate_hostname(void);
 
 #if CONFIG_MDNS_RESOLVE_TEST_SERVICES == 1
 static void  query_mdns_host_with_gethostbyname(char * host);
@@ -33,7 +34,8 @@ static void  query_mdns_host_with_getaddrinfo(char * host);
 
 static void initialise_mdns(void)
 {
-    char* hostname = generate_hostname();
+    char * hostname = generate_hostname();
+
     //initialize mDNS
     ESP_ERROR_CHECK( mdns_init() );
     //set mDNS hostname (required if you want to advertise services)
@@ -44,17 +46,36 @@ static void initialise_mdns(void)
 
     //structure with TXT records
     mdns_txt_item_t serviceTxtData[3] = {
-        {"board","esp32"},
-        {"u","user"},
-        {"p","password"}
+        {"board", "esp32"},
+        {"u", "user"},
+        {"p", "password"}
     };
 
     //initialize service
     ESP_ERROR_CHECK( mdns_service_add("ESP32-WebServer", "_http", "_tcp", 80, serviceTxtData, 3) );
+
+#if CONFIG_MDNS_PUBLISH_DELEGATE_HOST
+    char *delegated_hostname;
+    if (-1 == asprintf(&delegated_hostname, "%s-delegated", hostname)) {
+        abort();
+    }
+
+    mdns_ip_addr_t addr4, addr6;
+    esp_netif_str_to_ip4("10.0.0.1", &addr4.addr.u_addr.ip4);
+    addr4.addr.type = ESP_IPADDR_TYPE_V4;
+    esp_netif_str_to_ip6("fd11:22::1", &addr6.addr.u_addr.ip6);
+    addr6.addr.type = ESP_IPADDR_TYPE_V6;
+    addr4.next = &addr6;
+    addr6.next = NULL;
+    ESP_ERROR_CHECK( mdns_delegate_hostname_add(delegated_hostname, &addr4) );
+    ESP_ERROR_CHECK( mdns_service_add_for_host("test0", "_http", "_tcp", delegated_hostname, 1234, serviceTxtData, 3) );
+    free(delegated_hostname);
+#endif // CONFIG_MDNS_PUBLISH_DELEGATE_HOST
+
     //add another TXT item
     ESP_ERROR_CHECK( mdns_service_txt_item_set("_http", "_tcp", "path", "/foobar") );
     //change TXT item value
-    ESP_ERROR_CHECK( mdns_service_txt_item_set("_http", "_tcp", "u", "admin") );
+    ESP_ERROR_CHECK( mdns_service_txt_item_set_with_explicit_value_len("_http", "_tcp", "u", "admin", strlen("admin")) );
     free(hostname);
 }
 
@@ -64,28 +85,30 @@ static const char * if_str[] = {"STA", "AP", "ETH", "MAX"};
 /* these strings match mdns_ip_protocol_t enumeration */
 static const char * ip_protocol_str[] = {"V4", "V6", "MAX"};
 
-static void mdns_print_results(mdns_result_t * results){
-    mdns_result_t * r = results;
-    mdns_ip_addr_t * a = NULL;
+static void mdns_print_results(mdns_result_t *results)
+{
+    mdns_result_t *r = results;
+    mdns_ip_addr_t *a = NULL;
     int i = 1, t;
-    while(r){
-        printf("%d: Interface: %s, Type: %s\n", i++, if_str[r->tcpip_if], ip_protocol_str[r->ip_protocol]);
-        if(r->instance_name){
-            printf("  PTR : %s\n", r->instance_name);
+    while (r) {
+        printf("%d: Interface: %s, Type: %s, TTL: %u\n", i++, if_str[r->tcpip_if], ip_protocol_str[r->ip_protocol],
+               r->ttl);
+        if (r->instance_name) {
+            printf("  PTR : %s.%s.%s\n", r->instance_name, r->service_type, r->proto);
         }
-        if(r->hostname){
+        if (r->hostname) {
             printf("  SRV : %s.local:%u\n", r->hostname, r->port);
         }
-        if(r->txt_count){
-            printf("  TXT : [%u] ", r->txt_count);
-            for(t=0; t<r->txt_count; t++){
-                printf("%s=%s; ", r->txt[t].key, r->txt[t].value?r->txt[t].value:"NULL");
+        if (r->txt_count) {
+            printf("  TXT : [%zu] ", r->txt_count);
+            for (t = 0; t < r->txt_count; t++) {
+                printf("%s=%s(%d); ", r->txt[t].key, r->txt[t].value ? r->txt[t].value : "NULL", r->txt_value_len[t]);
             }
             printf("\n");
         }
         a = r->addr;
-        while(a){
-            if(a->addr.type == ESP_IPADDR_TYPE_V6){
+        while (a) {
+            if (a->addr.type == ESP_IPADDR_TYPE_V6) {
                 printf("  AAAA: " IPV6STR "\n", IPV62STR(a->addr.u_addr.ip6));
             } else {
                 printf("  A   : " IPSTR "\n", IP2STR(&(a->addr.u_addr.ip4)));
@@ -94,7 +117,6 @@ static void mdns_print_results(mdns_result_t * results){
         }
         r = r->next;
     }
-
 }
 
 static void query_mdns_service(const char * service_name, const char * proto)
@@ -114,6 +136,54 @@ static void query_mdns_service(const char * service_name, const char * proto)
 
     mdns_print_results(results);
     mdns_query_results_free(results);
+}
+
+static bool check_and_print_result(mdns_search_once_t *search)
+{
+    // Check if any result is available
+    mdns_result_t * result = NULL;
+    if (!mdns_query_async_get_results(search, 0, &result)) {
+        return false;
+    }
+
+    if (!result) {   // search timeout, but no result
+        return true;
+    }
+
+    // If yes, print the result
+    mdns_ip_addr_t * a = result->addr;
+    while (a) {
+        if(a->addr.type == ESP_IPADDR_TYPE_V6){
+            printf("  AAAA: " IPV6STR "\n", IPV62STR(a->addr.u_addr.ip6));
+        } else {
+            printf("  A   : " IPSTR "\n", IP2STR(&(a->addr.u_addr.ip4)));
+        }
+        a = a->next;
+    }
+    // and free the result
+    mdns_query_results_free(result);
+    return true;
+}
+
+static void query_mdns_hosts_async(const char * host_name)
+{
+    ESP_LOGI(TAG, "Query both A and AAA: %s.local", host_name);
+
+    mdns_search_once_t *s_a = mdns_query_async_new(host_name, NULL, NULL, MDNS_TYPE_A, 1000, 1, NULL);
+    mdns_query_async_delete(s_a);
+    mdns_search_once_t *s_aaaa = mdns_query_async_new(host_name, NULL, NULL, MDNS_TYPE_AAAA, 1000, 1, NULL);
+    while (s_a || s_aaaa) {
+        if (s_a && check_and_print_result(s_a)) {
+            ESP_LOGI(TAG, "Query A %s.local finished", host_name);
+            mdns_query_async_delete(s_a);
+            s_a = NULL;
+        }
+        if (s_aaaa && check_and_print_result(s_aaaa)) {
+            ESP_LOGI(TAG, "Query AAAA %s.local finished", host_name);
+            mdns_query_async_delete(s_aaaa);
+            s_aaaa = NULL;
+        }
+    }
 }
 
 static void query_mdns_host(const char * host_name)
@@ -152,6 +222,7 @@ static void check_button(void)
     static bool old_level = true;
     bool new_level = gpio_get_level(EXAMPLE_BUTTON_GPIO);
     if (!new_level && old_level) {
+        query_mdns_hosts_async("esp32-mdns");
         query_mdns_host("esp32");
         query_mdns_service("_arduino", "_tcp");
         query_mdns_service("_http", "_tcp");
@@ -174,7 +245,7 @@ static void mdns_example_task(void *pvParameters)
     query_mdns_host_with_getaddrinfo("tinytester-lwip.local");
 #endif
 
-    while(1) {
+    while (1) {
         check_button();
         vTaskDelay(50 / portTICK_PERIOD_MS);
     }

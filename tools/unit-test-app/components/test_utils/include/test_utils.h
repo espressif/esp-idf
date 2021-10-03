@@ -47,38 +47,38 @@ extern "C" {
 #define _TEST_PERFORMANCE_ASSERT(ARG) printf("Ignoring performance test [%s]\n", PERFORMANCE_STR(ARG))
 #endif
 
-#define TEST_PERFORMANCE_LESS_THAN(name, value_fmt, value)  do { \
-    printf("[Performance][" PERFORMANCE_STR(name) "]: "value_fmt"\n", value); \
+#define TEST_PERFORMANCE_LESS_THAN(name, value_fmt, value, ...)  do { \
+    IDF_LOG_PERFORMANCE(#name, value_fmt, value, ##__VA_ARGS__); \
     _TEST_PERFORMANCE_ASSERT(value < PERFORMANCE_CON(IDF_PERFORMANCE_MAX_, name)); \
 } while(0)
 
-#define TEST_PERFORMANCE_GREATER_THAN(name, value_fmt, value)  do { \
-    printf("[Performance][" PERFORMANCE_STR(name) "]: "value_fmt"\n", value); \
+#define TEST_PERFORMANCE_GREATER_THAN(name, value_fmt, value, ...)  do { \
+    IDF_LOG_PERFORMANCE(#name, value_fmt, value, ##__VA_ARGS__); \
     _TEST_PERFORMANCE_ASSERT(value > PERFORMANCE_CON(IDF_PERFORMANCE_MIN_, name)); \
 } while(0)
 
 /* Macros to be used when performance is calculated using the cache compensated timer
    will not assert if ccomp not supported */
 #if SOC_CCOMP_TIMER_SUPPORTED
-#define TEST_PERFORMANCE_CCOMP_GREATER_THAN(name, value_fmt, value) \
-    TEST_PERFORMANCE_GREATER_THAN(name, value_fmt, value)
-#define TEST_PERFORMANCE_CCOMP_LESS_THAN(name, value_fmt, value) \
-    TEST_PERFORMANCE_LESS_THAN(name, value_fmt, value)
+#define TEST_PERFORMANCE_CCOMP_GREATER_THAN(name, value_fmt, value, ...) \
+    TEST_PERFORMANCE_GREATER_THAN(name, value_fmt, value, ##__VA_ARGS__)
+#define TEST_PERFORMANCE_CCOMP_LESS_THAN(name, value_fmt, value, ...) \
+    TEST_PERFORMANCE_LESS_THAN(name, value_fmt, value, ##__VA_ARGS__)
 #else
-#define TEST_PERFORMANCE_CCOMP_GREATER_THAN(name, value_fmt, value) \
-    printf("[Performance][" PERFORMANCE_STR(name) "]: "value_fmt"\n", value);
-#define TEST_PERFORMANCE_CCOMP_LESS_THAN(name, value_fmt, value) \
-    printf("[Performance][" PERFORMANCE_STR(name) "]: "value_fmt"\n", value);
+#define TEST_PERFORMANCE_CCOMP_GREATER_THAN(name, value_fmt, value, ...) \
+    IDF_LOG_PERFORMANCE(#name, value_fmt, value, ##__VA_ARGS__)
+#define TEST_PERFORMANCE_CCOMP_LESS_THAN(name, value_fmt, value, ...) \
+    IDF_LOG_PERFORMANCE(#name, value_fmt, value, ##__VA_ARGS__)
 #endif //SOC_CCOMP_TIMER_SUPPORTED
 
 
 /* @brief macro to print IDF performance
- * @param mode :        performance item name. a string pointer.
+ * @param item :        performance item name. a string pointer.
  * @param value_fmt:    print format and unit of the value, for example: "%02fms", "%dKB"
  * @param value :       the performance value.
 */
-#define IDF_LOG_PERFORMANCE(item, value_fmt, value) \
-    printf("[Performance][%s]: "value_fmt"\n", item, value)
+#define IDF_LOG_PERFORMANCE(item, value_fmt, value, ...) \
+    printf("[Performance][%s]: " value_fmt "\n", item, value, ##__VA_ARGS__)
 
 
 /* Some definitions applicable to Unity running in FreeRTOS */

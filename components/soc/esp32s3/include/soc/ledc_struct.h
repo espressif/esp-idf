@@ -13,13 +13,14 @@
 // limitations under the License.
 #pragma once
 
+#include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include <stdint.h>
 
-typedef volatile struct {
+typedef volatile struct ledc_dev_s {
     struct {
         struct {
             union {

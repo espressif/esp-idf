@@ -1,0 +1,42 @@
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "regi2c_ctrl.h"
+#include <stdint.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
+
+static portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+
+uint8_t IRAM_ATTR regi2c_ctrl_read_reg(uint8_t block, uint8_t host_id, uint8_t reg_add)
+{
+    portENTER_CRITICAL_ISR(&mux);
+    uint8_t value = i2c_read_reg_raw(block, host_id, reg_add);
+    portEXIT_CRITICAL_ISR(&mux);
+    return value;
+}
+
+uint8_t IRAM_ATTR regi2c_ctrl_read_reg_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb)
+{
+    portENTER_CRITICAL_ISR(&mux);
+    uint8_t value = i2c_read_reg_mask_raw(block, host_id, reg_add, msb, lsb);
+    portEXIT_CRITICAL_ISR(&mux);
+    return value;
+}
+
+void IRAM_ATTR regi2c_ctrl_write_reg(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t data)
+{
+    portENTER_CRITICAL_ISR(&mux);
+    i2c_write_reg_raw(block, host_id, reg_add, data);
+    portEXIT_CRITICAL_ISR(&mux);
+}
+
+void IRAM_ATTR regi2c_ctrl_write_reg_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb, uint8_t data)
+{
+    portENTER_CRITICAL_ISR(&mux);
+    i2c_write_reg_mask_raw(block, host_id, reg_add, msb, lsb, data);
+    portEXIT_CRITICAL_ISR(&mux);
+}

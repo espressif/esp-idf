@@ -28,8 +28,10 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "hal/misc.h"
 #include "hal/twai_types.h"
 #include "soc/twai_periph.h"
+#include "soc/twai_struct.h"
 
 /* ------------------------- Defines and Typedefs --------------------------- */
 
@@ -398,7 +400,7 @@ static inline void twai_ll_clear_err_code_cap(twai_dev_t *hw)
  */
 static inline void twai_ll_set_err_warn_lim(twai_dev_t *hw, uint32_t ewl)
 {
-    hw->error_warning_limit_reg.ewl = ewl;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->error_warning_limit_reg, ewl, ewl);
 }
 
 /**
@@ -438,7 +440,7 @@ static inline uint32_t twai_ll_get_rec(twai_dev_t *hw)
  */
 static inline void twai_ll_set_rec(twai_dev_t *hw, uint32_t rec)
 {
-    hw->rx_error_counter_reg.rxerr = rec;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->rx_error_counter_reg, rxerr, rec);
 }
 
 /* ------------------------ TX Error Count Register ------------------------- */
@@ -466,7 +468,7 @@ static inline uint32_t twai_ll_get_tec(twai_dev_t *hw)
  */
 static inline void twai_ll_set_tec(twai_dev_t *hw, uint32_t tec)
 {
-    hw->tx_error_counter_reg.txerr = tec;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->tx_error_counter_reg, txerr, tec);
 }
 
 /* ---------------------- Acceptance Filter Registers ----------------------- */
@@ -482,11 +484,11 @@ static inline void twai_ll_set_tec(twai_dev_t *hw, uint32_t tec)
  */
 static inline void twai_ll_set_acc_filter(twai_dev_t* hw, uint32_t code, uint32_t mask, bool single_filter)
 {
-    uint32_t code_swapped = __builtin_bswap32(code);
-    uint32_t mask_swapped = __builtin_bswap32(mask);
+    uint32_t code_swapped = HAL_SWAP32(code);
+    uint32_t mask_swapped = HAL_SWAP32(mask);
     for (int i = 0; i < 4; i++) {
-        hw->acceptance_filter.acr[i].byte = ((code_swapped >> (i * 8)) & 0xFF);
-        hw->acceptance_filter.amr[i].byte = ((mask_swapped >> (i * 8)) & 0xFF);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->acceptance_filter.acr[i], byte, ((code_swapped >> (i * 8)) & 0xFF));
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->acceptance_filter.amr[i], byte, ((mask_swapped >> (i * 8)) & 0xFF));
     }
     hw->mode_reg.afm = single_filter;
 }
@@ -521,7 +523,7 @@ static inline void twai_ll_get_rx_buffer(twai_dev_t *hw, twai_ll_frame_buffer_t 
 {
     //Copy RX buffer registers into frame
     for (int i = 0; i < 13; i++) {
-        rx_frame->bytes[i] =  hw->tx_rx_buffer[i].byte;
+        rx_frame->bytes[i] =  HAL_FORCE_READ_U32_REG_FIELD(hw->tx_rx_buffer[i], byte);
     }
 }
 
@@ -555,12 +557,12 @@ static inline void twai_ll_format_frame_buffer(uint32_t id, uint8_t dlc, const u
 
     //Set ID. The ID registers are big endian and left aligned, therefore a bswap will be required
     if (is_extd) {
-        uint32_t id_temp = __builtin_bswap32((id & TWAI_EXTD_ID_MASK) << 3); //((id << 3) >> 8*(3-i))
+        uint32_t id_temp = HAL_SWAP32((id & TWAI_EXTD_ID_MASK) << 3); //((id << 3) >> 8*(3-i))
         for (int i = 0; i < 4; i++) {
             tx_frame->extended.id[i] = (id_temp >> (8 * i)) & 0xFF;
         }
     } else {
-        uint32_t id_temp =  __builtin_bswap16((id & TWAI_STD_ID_MASK) << 5); //((id << 5) >> 8*(1-i))
+        uint32_t id_temp =  HAL_SWAP16((id & TWAI_STD_ID_MASK) << 5); //((id << 5) >> 8*(1-i))
         for (int i = 0; i < 2; i++) {
             tx_frame->standard.id[i] = (id_temp >> (8 * i)) & 0xFF;
         }
@@ -600,14 +602,14 @@ static inline void twai_ll_prase_frame_buffer(twai_ll_frame_buffer_t *rx_frame, 
         for (int i = 0; i < 4; i++) {
             id_temp |= rx_frame->extended.id[i] << (8 * i);
         }
-        id_temp = __builtin_bswap32(id_temp) >> 3;  //((byte[i] << 8*(3-i)) >> 3)
+        id_temp = HAL_SWAP32(id_temp) >> 3;  //((byte[i] << 8*(3-i)) >> 3)
         *id = id_temp & TWAI_EXTD_ID_MASK;
     } else {
         uint32_t id_temp = 0;
         for (int i = 0; i < 2; i++) {
             id_temp |= rx_frame->standard.id[i] << (8 * i);
         }
-        id_temp = __builtin_bswap16(id_temp) >> 5;  //((byte[i] << 8*(1-i)) >> 5)
+        id_temp = HAL_SWAP16(id_temp) >> 5;  //((byte[i] << 8*(1-i)) >> 5)
         *id = id_temp & TWAI_STD_ID_MASK;
     }
 
@@ -651,14 +653,14 @@ static inline void twai_ll_set_clkout(twai_dev_t *hw, uint32_t divider)
 {
     if (divider >= 2 && divider <= 490) {
         hw->clock_divider_reg.co = 0;
-        hw->clock_divider_reg.cd = (divider / 2) - 1;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clock_divider_reg, cd, (divider / 2) - 1);
     } else if (divider == 1) {
         //Setting the divider reg to max value (255) means a divider of 1
         hw->clock_divider_reg.co = 0;
-        hw->clock_divider_reg.cd = 255;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clock_divider_reg, cd, 255);
     } else {
         hw->clock_divider_reg.co = 1;
-        hw->clock_divider_reg.cd = 0;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clock_divider_reg, cd, 0);
     }
 }
 

@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "freertos/FreeRTOS.h"
 #include "soc/periph_defs.h"
@@ -61,9 +53,21 @@ esp_err_t async_memcpy_impl_init(async_memcpy_impl_t *impl)
 
     gdma_strategy_config_t strategy_config = {
         .auto_update_desc = true,
-        .owner_check = true
+        .owner_check = true,
     };
 
+    gdma_transfer_ability_t transfer_ability = {
+        .sram_trans_align = impl->sram_trans_align,
+        .psram_trans_align = impl->psram_trans_align,
+    };
+    ret = gdma_set_transfer_ability(impl->tx_channel, &transfer_ability);
+    if (ret != ESP_OK) {
+        goto err;
+    }
+    ret = gdma_set_transfer_ability(impl->rx_channel, &transfer_ability);
+    if (ret != ESP_OK) {
+        goto err;
+    }
     gdma_apply_strategy(impl->tx_channel, &strategy_config);
     gdma_apply_strategy(impl->rx_channel, &strategy_config);
 
@@ -108,5 +112,15 @@ esp_err_t async_memcpy_impl_restart(async_memcpy_impl_t *impl)
 
 bool async_memcpy_impl_is_buffer_address_valid(async_memcpy_impl_t *impl, void *src, void *dst)
 {
-    return true;
+    bool valid = true;
+    if (esp_ptr_external_ram(dst)) {
+        if (impl->psram_trans_align) {
+            valid = valid && (((intptr_t)dst & (impl->psram_trans_align - 1)) == 0);
+        }
+    } else {
+        if (impl->sram_trans_align) {
+            valid = valid && (((intptr_t)dst & (impl->sram_trans_align - 1)) == 0);
+        }
+    }
+    return valid;
 }

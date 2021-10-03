@@ -108,7 +108,8 @@ menu "ESP32S3-Specific"
 
         config ESP32S3_DATA_CACHE_SIZE
             hex
-            default 0x4000 if ESP32S3_DATA_CACHE_16KB
+            # For 16KB the actual configuration is 32kb cache, but 16kb will be reserved for heap at startup
+            default 0x8000 if ESP32S3_DATA_CACHE_16KB
             default 0x8000 if ESP32S3_DATA_CACHE_32KB
             default 0x10000 if ESP32S3_DATA_CACHE_64KB
 
@@ -140,12 +141,15 @@ menu "ESP32S3-Specific"
                 depends on ESP32S3_DATA_CACHE_16KB || ESP32S3_DATA_CACHE_32KB
             config ESP32S3_DATA_CACHE_LINE_32B
                 bool "32 Bytes"
+            config ESP32S3_DATA_CACHE_LINE_64B
+                bool "64 Bytes"
         endchoice
 
         config ESP32S3_DATA_CACHE_LINE_SIZE
             int
             default 16 if ESP32S3_DATA_CACHE_LINE_16B
             default 32 if ESP32S3_DATA_CACHE_LINE_32B
+            default 64 if ESP32S3_DATA_CACHE_LINE_64B
 
         config ESP32S3_DATA_CACHE_WRAP
             bool "Enable data cache wrap mode"
@@ -169,8 +173,19 @@ menu "ESP32S3-Specific"
     menu "SPI RAM config"
         depends on ESP32S3_SPIRAM_SUPPORT
 
+        choice SPIRAM_MODE
+            prompt "Mode (QUAD/OCT) of SPI RAM chip in use"
+            default SPIRAM_MODE_QUAD
+
+            config SPIRAM_MODE_QUAD
+                bool "Quad Mode PSRAM"
+
+            config SPIRAM_MODE_OCT
+                bool "Octal Mode PSRAM"
+        endchoice
+
         choice SPIRAM_TYPE
-            prompt "Type of SPI RAM chip in use"
+            prompt "Type of SPIRAM chip in use"
             default SPIRAM_TYPE_AUTO
 
             config SPIRAM_TYPE_AUTO
@@ -178,12 +193,14 @@ menu "ESP32S3-Specific"
 
             config SPIRAM_TYPE_ESPPSRAM16
                 bool "ESP-PSRAM16 or APS1604"
+                depends on SPIRAM_MODE_QUAD
 
             config SPIRAM_TYPE_ESPPSRAM32
                 bool "ESP-PSRAM32 or IS25WP032"
+                depends on SPIRAM_MODE_QUAD
 
             config SPIRAM_TYPE_ESPPSRAM64
-                bool "ESP-PSRAM64 or LY68L6400"
+                bool "ESP-PSRAM64 , LY68L6400 or APS6408"
         endchoice
 
         config SPIRAM_SIZE
@@ -192,6 +209,8 @@ menu "ESP32S3-Specific"
             default 2097152 if SPIRAM_TYPE_ESPPSRAM16
             default 4194304 if SPIRAM_TYPE_ESPPSRAM32
             default 8388608 if SPIRAM_TYPE_ESPPSRAM64
+            default 16777216 if SPIRAM_TYPE_ESPPSRAM128
+            default 33554432 if SPIRAM_TYPE_ESPPSRAM256
             default 0
 
         menu "PSRAM Clock and CS IO for ESP32S3"
@@ -231,14 +250,13 @@ menu "ESP32S3-Specific"
             help
                 Select the speed for the SPI RAM chip.
 
+            config SPIRAM_SPEED_120M
+                depends on SPIRAM_MODE_QUAD
+                bool "120MHz clock speed"
             config SPIRAM_SPEED_80M
                 bool "80MHz clock speed"
             config SPIRAM_SPEED_40M
                 bool "40Mhz clock speed"
-            config SPIRAM_SPEED_26M
-                bool "26Mhz clock speed"
-            config SPIRAM_SPEED_20M
-                bool "20Mhz clock speed"
         endchoice
 
         # insert non-chip-specific items here
@@ -294,7 +312,7 @@ menu "ESP32S3-Specific"
         int
         prompt "RTC slow memory reserved for coprocessor" if ESP32S3_ULP_COPROC_ENABLED
         default 512 if ESP32S3_ULP_COPROC_ENABLED
-        range 32 8192 if ESP32S3_ULP_COPROC_ENABLED
+        range 32 8176 if ESP32S3_ULP_COPROC_ENABLED
         default 0 if !ESP32S3_ULP_COPROC_ENABLED
         range 0 0 if !ESP32S3_ULP_COPROC_ENABLED
         help
@@ -320,6 +338,7 @@ menu "ESP32S3-Specific"
 
     config ESP32S3_BROWNOUT_DET
         bool "Hardware brownout detect & reset"
+        depends on !IDF_ENV_FPGA
         default y
         help
             The ESP32-S3 has a built-in brownout detector which can detect if the voltage is lower than
@@ -418,6 +437,7 @@ menu "ESP32S3-Specific"
             select ESP_SYSTEM_RTC_EXT_XTAL
         config ESP32S3_RTC_CLK_SRC_EXT_OSC
             bool "External 32kHz oscillator at 32K_XP pin"
+            select ESP_SYSTEM_RTC_EXT_OSC
         config ESP32S3_RTC_CLK_SRC_INT_8MD256
             bool "Internal 8MHz oscillator, divided by 256 (~32kHz)"
     endchoice
@@ -443,6 +463,24 @@ menu "ESP32S3-Specific"
             - 32768 Hz if the 32k crystal oscillator is used. For this use value 3000 or more.
               In case more value will help improve the definition of the launch of the crystal.
               If the crystal could not start, it will be switched to internal RC.
+
+    config ESP32S3_DEEP_SLEEP_WAKEUP_DELAY
+        int "Extra delay in deep sleep wake stub (in us)"
+        default 2000
+        range 0 5000
+        help
+            When ESP32S3 exits deep sleep, the CPU and the flash chip are powered on
+            at the same time. CPU will run deep sleep stub first, and then
+            proceed to load code from flash. Some flash chips need sufficient
+            time to pass between power on and first read operation. By default,
+            without any extra delay, this time is approximately 900us, although
+            some flash chip types need more than that.
+
+            By default extra delay is set to 2000us. When optimizing startup time
+            for applications which require it, this value may be reduced.
+
+            If you are seeing "flash read err, 1000" message printed to the
+            console after deep sleep reset, try increasing this value.
 
     config ESP32S3_NO_BLOBS
         bool "No Binary Blobs"

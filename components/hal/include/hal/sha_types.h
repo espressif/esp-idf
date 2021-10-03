@@ -19,22 +19,26 @@
 /* Use enum from rom for backwards compatibility */
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/sha.h"
-typedef enum SHA_TYPE esp_sha_type;
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/sha.h"
-typedef SHA_TYPE esp_sha_type;
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/sha.h"
-typedef SHA_TYPE esp_sha_type;
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/sha.h"
-typedef SHA_TYPE esp_sha_type;
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/sha.h"
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/* Use enum from rom for backwards compatibility */
+#if CONFIG_IDF_TARGET_ESP32
+typedef enum SHA_TYPE esp_sha_type;
+#else
+typedef SHA_TYPE esp_sha_type;
+#endif
 
 #ifdef __cplusplus
 }

@@ -13,67 +13,61 @@
 // limitations under the License.
 
 #include "esp_system.h"
-#include "esp32/rom/rtc.h"
+#include "esp_rom_sys.h"
 #include "esp_private/system_internal.h"
 #include "soc/rtc_periph.h"
+#include "esp32/rom/rtc.h"
 
 static void esp_reset_reason_clear_hint(void);
 
 static esp_reset_reason_t s_reset_reason;
 
-static esp_reset_reason_t get_reset_reason(RESET_REASON rtc_reset_reason, esp_reset_reason_t reset_reason_hint)
+static esp_reset_reason_t get_reset_reason(uint32_t rtc_reset_reason, esp_reset_reason_t reset_reason_hint)
 {
     switch (rtc_reset_reason) {
-        case POWERON_RESET:
-            return ESP_RST_POWERON;
+    case RESET_REASON_CHIP_POWER_ON:
+        return ESP_RST_POWERON;
 
-        /* For ESP32, ESP_RST_EXT is never returned */
-
-
-        case SW_CPU_RESET:
-        case SW_RESET:
-        case EXT_CPU_RESET: /* unused */
-            if (reset_reason_hint == ESP_RST_PANIC ||
+    case RESET_REASON_CPU0_SW:
+    case RESET_REASON_CORE_SW:
+        if (reset_reason_hint == ESP_RST_PANIC ||
                 reset_reason_hint == ESP_RST_BROWNOUT ||
                 reset_reason_hint == ESP_RST_TASK_WDT ||
                 reset_reason_hint == ESP_RST_INT_WDT) {
-                return reset_reason_hint;
-            }
-            return ESP_RST_SW;
+            return reset_reason_hint;
+        }
+        return ESP_RST_SW;
 
-        case DEEPSLEEP_RESET:
-            return ESP_RST_DEEPSLEEP;
+    case RESET_REASON_CORE_DEEP_SLEEP:
+        return ESP_RST_DEEPSLEEP;
 
-        case TG0WDT_SYS_RESET:
-            return ESP_RST_TASK_WDT;
+    case RESET_REASON_CORE_MWDT0:
+        return ESP_RST_TASK_WDT;
 
-        case TG1WDT_SYS_RESET:
-            return ESP_RST_INT_WDT;
+    case RESET_REASON_CORE_MWDT1:
+        return ESP_RST_INT_WDT;
 
-        case OWDT_RESET:
-        case RTCWDT_SYS_RESET:
-        case RTCWDT_RTC_RESET:
-        case RTCWDT_CPU_RESET:  /* unused */
-        case TGWDT_CPU_RESET:   /* unused */
-            return ESP_RST_WDT;
+    case RESET_REASON_CORE_RTC_WDT:
+    case RESET_REASON_SYS_RTC_WDT:
+    case RESET_REASON_CPU0_RTC_WDT:
+    case RESET_REASON_CPU0_MWDT0:
+        return ESP_RST_WDT;
 
-        case RTCWDT_BROWN_OUT_RESET:    /* unused */
-            return ESP_RST_BROWNOUT;
+    case RESET_REASON_SYS_BROWN_OUT:
+        return ESP_RST_BROWNOUT;
 
-        case SDIO_RESET:
-            return ESP_RST_SDIO;
+    case RESET_REASON_CORE_SDIO:
+        return ESP_RST_SDIO;
 
-        case INTRUSION_RESET: /* unused */
-        default:
-            return ESP_RST_UNKNOWN;
+    default:
+        return ESP_RST_UNKNOWN;
     }
 }
 
 static void __attribute__((constructor)) esp_reset_reason_init(void)
 {
     esp_reset_reason_t hint = esp_reset_reason_get_hint();
-    s_reset_reason = get_reset_reason(rtc_get_reset_reason(PRO_CPU_NUM),
-                                      hint);
+    s_reset_reason = get_reset_reason(esp_rom_get_reset_reason(PRO_CPU_NUM), hint);
     if (hint != ESP_RST_UNKNOWN) {
         esp_reset_reason_clear_hint();
     }
@@ -88,7 +82,7 @@ esp_reset_reason_t esp_reset_reason(void)
  * a.k.a. RTC_ENTRY_ADDR_REG. It is safe to use this register both for the
  * deep sleep wake stub entry address and for reset reason hint, since wake stub
  * is only used for deep sleep reset, and in this case the reason provided by
- * rtc_get_reset_reason is unambiguous.
+ * esp_rom_get_reset_reason is unambiguous.
  *
  * Same layout is used as for RTC_APB_FREQ_REG (a.k.a. RTC_CNTL_STORE5_REG):
  * the value is replicated in low and high half-words. In addition to that,

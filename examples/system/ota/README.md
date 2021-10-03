@@ -1,23 +1,29 @@
 # OTA Example
 
-**Notes:** *This guide is common for all ota examples*
+---
+**NOTES**
+
+- This guide applies to all OTA update examples
+- "ESP-Dev-Board" refers to any Espressif chipset development board (e.g., ESP32/ESP32-S2/ESP32-C3 etc.)
+---
+
 
 ## Overview
 
-ESP32 application can do upgrading at runtime by downloading new image from specific server through Wi-Fi or Ethernet and then flash it into some partitions. There’re two ways in ESP-IDF to perform Over The Air (OTA) upgrading:
+An application on "ESP-Dev-Board" may be upgraded at runtime by downloading a new image via Wi-Fi or Ethernet and flashing it to an OTA partition. The ESP-IDF offers two methods to perform Over The Air (OTA) upgrades:
 
-- Using the native APIs provided by `app_update` component.
-- Using simplified APIs provided by  `esp_https_ota` component, which adds an abstraction layer over the native OTA APIs in order to upgrading with HTTPS protocol.
+- Using the native APIs provided by the [`app_update`](../../../components/app_update) component.
+- Using simplified APIs provided by the [`esp_https_ota`](../../../components/esp_https_ota) component, which provides functionality to upgrade over HTTPS.
 
-Use of native APIs is demonstrated under `native_ota_example` while use of APIs provided by `esp_https_ota` component is demonstrated under `simple_ota_example` and `advanced_https_ota`.
+Use of the native API is demonstrated in the `native_ota_example` directory while the API provided by the `esp_https_ota` component is demonstrated under `simple_ota_example` and `advanced_https_ota`.
 
-For information regarding APIs provided by `esp_https_ota` component, please refer to [ESP HTTPS OTA](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/esp_https_ota.html).
+For information regarding the `esp_https_ota` component, please refer to [ESP HTTPS OTA](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/esp_https_ota.html).
 
-For simplicity, the OTA examples choose the pre-defined partition table by enabling `CONFIG_PARTITION_TABLE_TWO_OTA` option in menuconfig, which supports three app partitions: factory, OTA_0 and OTA_1. For more information about partition table, please refer to [Partition Tables](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/partition-tables.html).
+For simplicity, the OTA examples use a pre-defined partition table created by enabling the `CONFIG_PARTITION_TABLE_TWO_OTA` option in menuconfig, which supports three app partitions: `factory`, `OTA_0` and `OTA_1`. Please refer to [Partition Tables](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/partition-tables.html) for more information.
 
-On first boot, the bootloader will load the factory app image (i.e. the example image) and then triggers an OTA upgrading. It will download a new image from HTTPS server and save it into the OTA_0 partition. It will update the ota_data partition automatically as well to indicate which app should boot from in the next reset. The bootloader will read the content in ota_data partition and run the selected application.
+On first boot, the bootloader will load the image contained on the `factory` partition (i.e. the example image). This firmware triggers an OTA upgrade. It will download a new image from an HTTPS server and save it into the `OTA_0` partition. Next, it updates the `ota_data` partition to indicate which app should boot after the next reset. Upon reset, the bootloader  reads the contents of the `ota_data` partition to determine which application is selected to run.
 
-The OTA workflow can be demonstrated as in the following diagram:
+The OTA workflow is illustrated in the following diagram:
 
 ![OTA Workflow](ota_workflow.png)
 
@@ -25,32 +31,30 @@ The OTA workflow can be demonstrated as in the following diagram:
 
 ### Hardware Required
 
-To run the OTA examples, you need an ESP32 dev board (e.g. ESP32-WROVER Kit) or ESP32 core board (e.g. ESP32-DevKitC). If you want to test the OTA with Ethernet, make sure your board has set up the Ethernet correctly. For extra information about setting up Ethernet, please refer to Ethernet examples.
+"ESP-Dev-Board" is necessary to run the OTA examples. Make sure Ethernet is configured correctly if testing OTA with Ethernet. For further information about setting up Ethernet, please refer to the Ethernet [examples](../../ethernet).
 
 ### Configure the project
 
-Open the project configuration menu (`idf.py menuconfig`). 
+Open the project configuration menu (`idf.py menuconfig`).
 
 In the `Example Connection Configuration` menu:
 
-* Choose the network interface in `Connect using`  option based on your board. Currently we support both Wi-Fi and Ethernet.
-* If you have selected the Wi-Fi interface, you also have to set:
-  * Wi-Fi SSID and Wi-Fi password that your ESP32 will connect to
-* If you have selected the Ethernet interface, you also have to:
-  * Set PHY model under `Ethernet PHY Device` option, e.g. IP101.
+* Choose the network interface in the `Connect using`  option based on your board. Currently  both Wi-Fi and Ethernet are supported
+* If the Wi-Fi interface is used, provide the Wi-Fi SSID and password of the AP you wish to connect to
+* If using the Ethernet interface, set the PHY model under `Ethernet PHY Device` option, e.g. `IP101`
 
 In the `Example Configuration` menu:
 
-* Set the URL of the new firmware that you will download from in the `Firmware Upgrade URL` option, whose format should be `https://<host-ip-address>:<host-port>/<firmware-image-filename>`, e.g. `https://192.168.2.106:8070/hello-world.bin`
-  * **Notes:** The server part of this URL (e.g. `192.168.2.106`) must match the **CN** field used when [generating the certificate and key](#run-https-server).
+* Set the URL of the firmware to download in the `Firmware Upgrade URL` option. The format should be `https://<host-ip-address>:<host-port>/<firmware-image-filename>`, e.g. `https://192.168.2.106:8070/hello-world.bin`
+  * **Note:** The server part of this URL (e.g. `192.168.2.106`) must match the **CN** field used when [generating the certificate and key](#run-https-server)
 
 ### Build and Flash
 
-Run `idf.py -p PORT flash monitor` to build and flash the project.. This command will find if partition table has ota_data partition (as in our case) then ota_data will erase to initial. It allows to run the newly loaded app from a factory partition.
+Run `idf.py -p PORT flash monitor` to build and flash the project. This command  checks if the partition table contains the `ota_data` partition and restores it to an initial state. This allows the newly loaded app to run from the `factory` partition.
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 
-See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html) for full steps to configure and use ESP-IDF to build projects.
+See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html) for all steps required to configure and use the ESP-IDF to build projects.
 
 ## Example Output
 
@@ -60,21 +64,21 @@ After a successful build, we need to create a self-signed certificate and run a 
 
 ![create_self_signed_certificate](https://dl.espressif.com/dl/esp-idf/docs/_static/ota_self_signature.gif)
 
-* Enter a directory where holds the root of the HTTPS server, e.g. `cd build`.
-* To create a new self-signed certificate and key, you can simply run command `openssl req -x509 -newkey rsa:2048 -keyout ca_key.pem -out ca_cert.pem -days 365 -nodes`.
-  * When prompted for the `Common Name (CN)`, enter the name of the server that the ESP32 will connect to. Regarding this example, it is probably the IP address. The HTTPS client will make sure that the `CN` matches the address given in the HTTPS URL.
-* To start the HTTPS server, you can simply run command `openssl s_server -WWW -key ca_key.pem -cert ca_cert.pem -port 8070`.
-* In the same directory, there should be the firmware (e.g. hello-world.bin) that ESP32 will download later. It can be any other ESP-IDF application as well, as long as you also update the `Firmware Upgrade URL` in the menuconfig. The only difference is that when flashed via serial the binary is flashed to the "factory" app partition, and an OTA update flashes to an OTA app partition.
-* **Notes:** If you have any firewall software running that will block incoming access to port *8070*, configure it to allow access while running the example.
-* **Notes:** Windows users may encounter certain issues while running `openssl s_server -WWW`, due to CR/LF translation and/or closing the connection prematurely
-  (Some windows builds of openssl translate CR/LF sequences to LF in the served files, leading to corrupted image received by the OTA client; Others might interpret `0x1a`/`SUB` character in the binary as an escape sequence, i.e. end of file, thus closing the connection, failing the OTA client to receive the entire image).
-  * It's recommended to use `openssl` bundled in `Git For Windows` from the [ESP-IDF Tool installer](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/windows-setup.html):
-  Open the ESP-IDF command prompt and add the internal openssl binary to your path: `set PATH=%LocalAppData%\Git\usr\bin;%PATH%` and run the openssl's http server command as above.
-  * Alternatively, you can use any windows based openssl of version at least `v1.1.1i` build on `Msys-x86_64` platform, or a simple python https server -- see start_https_server in the [example_test](simple_ota_example/example_test.py) script.
+* Enter the directory containing build artifact/s of project, that will be hosted by HTTPS server, e.g. `cd build`.
+* To create a new self-signed certificate and key, run the command `openssl req -x509 -newkey rsa:2048 -keyout ca_key.pem -out ca_cert.pem -days 365 -nodes`.
+  * When prompted for the `Common Name (CN)`, enter the name of the server that the "ESP-Dev-Board" will connect to. When running this example from a development machine, this is probably the IP address. The HTTPS client will check that the `CN` matches the address given in the HTTPS URL.
+* To start the HTTPS server, run the command `openssl s_server -WWW -key ca_key.pem -cert ca_cert.pem -port 8070`.
+* This directory should contain the firmware (e.g. `hello-world.bin`) to be used in the update process. This can be any valid ESP-IDF application, as long as its filename corresponds to the name configured using `Firmware Upgrade URL` in menuconfig. The only difference to flashing a firmware via the serial interface is that the binary is flashed to the `factory` partition, while OTA update use one of the OTA partitions.
+* **Note:** Make sure incoming access to port *8070* is not prevented by firewall rules.
+* **Note:** Windows users may encounter issues while running `openssl s_server -WWW`, due to CR/LF translation and/or closing the connection prematurely
+  (Some windows builds of openssl translate CR/LF sequences to LF in the served files, leading to corrupted images received by the OTA client; others interpret the `0x1a`/`SUB` character in a binary as an escape sequence, i.e. end of file, and close the connection prematurely thus preventing the OTA client from receiving a complete image).
+  * We recommend  using the `openssl` binary bundled in `Git For Windows` from the [ESP-IDF Tool installer](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/windows-setup.html):
+  Open the ESP-IDF command prompt and add the internal openssl binary to your path: `set PATH=%LocalAppData%\Git\usr\bin;%PATH%` and run openssl's http server command as above.
+  * Alternatively, use any windows based openssl with version `v1.1.1i` or greater built on the `Msys-x86_64` platform, or a simple python https server -- see `start_https_server` in the [example_test](simple_ota_example/example_test.py) script.
 
-### Flash Certificate to ESP32
+### Flash Certificate to "ESP-Dev-Board"
 
-Before you flash the example, make sure to copy the generated certificate to `server_certs` directory inside OTA example directory so that it can be flashed into ESP32 together with the firmware, e.g. `cp ca_cert.pem ../server_certs/`.
+Finally, copy the generated certificate to the `server_certs` directory contained in the example directory so it can be flashed onto your device along with the firmware, e.g. `cp ca_cert.pem ../server_certs/`.
 
 ```
 cp ca_cert.pem /path/to/ota/example/server_certs/
@@ -82,18 +86,18 @@ cp ca_cert.pem /path/to/ota/example/server_certs/
 
 ### Internal workflow of the OTA Example
 
-When the example starts up, it will print "Starting OTA example" to the console and then:
+After booting, the firmware prints "Starting OTA example" to the console and:
 
-1. Connect to the AP with configured SSID and Password (Wi-Fi case) or just by Ethernet.
-2. Connect to the HTTPS server and download the new image.
-3. Write the image to flash, and configure the next boot from this image.
-4. Reboot
+1. Connects via Ethernet or to the AP using the provided SSID and password (Wi-Fi case)
+2. Connects to the HTTPS server and downloads the new image
+3. Writes the image to flash, and instructs the bootloader to boot from this image after the next reset
+4. Reboots
 
-If you want to rollback to factory app (or the first OTA partition when the factory partition do not exist) after the upgrade, then run the command `idf.py erase_otadata`. It can erase the ota_data partition to initial state.
+If you want to rollback to the `factory` app after the upgrade (or to the first OTA partition in case the `factory` partition does not exist), run the command `idf.py erase_otadata`. This restores the `ota_data` partition to its initial state.
 
-**Notes:** This assumes that the partition table of this project is the one that is on the device.
+**Note:** This assumes that the partition table of this project is the one present on the device.
 
-### Output from HTTPS server
+### Output from the HTTPS server
 
 ```bash
 FILE:hello-world.bin
@@ -101,48 +105,50 @@ ACCEPT
 ```
 
 
-## Support rollback
+## Supporting Rollback
 
-This feature allows you to roll back to the previous firmware if the app is not operable. Option `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` allows you to track the first boot of the application (see the ``Over The Air Updates (OTA)`` article). 
-For ``native_ota_example``, added a bit of code to demonstrate how a rollback works. To use it, you need enable the `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option in menuconfig and under the "Example Configuration" submenu to set "Number of the GPIO input for diagnostic" to manage the rollback process.
+This feature allows you to roll back to a previous firmware if new image is not useable. The menuconfig option `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` allows you to track the first boot of the application (see the ``Over The Air Updates (OTA)`` article).
 
-To trigger a rollback, this GPIO must be pulled low while the message `Diagnostics (5 sec)...` which will be on first boot.
-If GPIO is not pulled low then the operable of the app will be confirmed.
+The ``native_ota_example`` contains code to demonstrate how a rollback works. To use it, enable the `CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option in the `Example Configuration` submenu of menuconfig to set `Number of the GPIO input for diagnostic` to manipulate the rollback process.
 
-## Support the version of application
+To trigger a rollback, this GPIO must be pulled low while the message `Diagnostics (5 sec)...` is displayed during the first boot.
 
-For ``native_ota_example``, code has been added to demonstrate how to check the version of the application and prevent infinite firmware updates. Only the application with the new version can be downloaded. Version checking is performed after the very first firmware image package has been received, which contains data about the firmware version. The application version can be taken from three places:
+If GPIO is not pulled low, the app is confirmed as operable.
 
-1. If `CONFIG_APP_PROJECT_VER_FROM_CONFIG` option is set, the value of `CONFIG_APP_PROJECT_VER` will be used.
-2. Else, if ``PROJECT_VER`` variable set in project Cmake/Makefile file, its value will be used.
-3. Else, if the ``$PROJECT_PATH/version.txt`` exists, its contents will be used as ``PROJECT_VER``.
-4. Else, if the project is located inside a Git repository, the output of ``git describe`` will be used.
-5. Otherwise, ``PROJECT_VER`` will be "1".
+## Support for Versioning of Applications
 
-In ``native_ota_example``, ``$PROJECT_PATH/version.txt`` is used to define the version of app. Change the version in the file to compile the new firmware.
+The ``native_ota_example`` contains code to demonstrate how to check the version of the application and prevent infinite firmware update loops. Only newer applications are downloaded. Version checking is performed after the first firmware image package containing version data is received. The application version is obtained from one of three places:
+
+1. If the `CONFIG_APP_PROJECT_VER_FROM_CONFIG` option is set, the value of `CONFIG_APP_PROJECT_VER` is used
+2. Else, if the ``PROJECT_VER`` variable is set in the project `CMakeLists.txt` file, this value is used
+3. Else, if the file ``$PROJECT_PATH/version.txt`` exists, its contents are used as ``PROJECT_VER``
+4. Else, if the project is located in a Git repository, the output of ``git describe`` is used
+5. Otherwise, ``PROJECT_VER`` will be "1"
+
+In ``native_ota_example``, ``$PROJECT_PATH/version.txt`` is used to define the app version. Change the version in the file to compile the new firmware.
 
 ## Troubleshooting
 
-* Check your PC can ping the ESP32 at its IP, and that the IP, AP and other configuration settings are correct in menuconfig.
-* Check if any firewall software is preventing incoming connections on the PC.
-* Check whether you can see the configured file (default hello-world.bin), by checking the output of the command `curl -v https://<host-ip-address>:<host-port>/<firmware-image-filename>`
-* If you have another PC or a phone, try viewing the file listing from the separate host.
+* Check that your PC can ping the "ESP-Dev-Board" using its IP, and that the IP, AP and other configuration settings are correctly configured in menuconfig
+* Check if any firewall software is preventing incoming connections on the PC
+* Check whether you can see the configured file (default `hello-world.bin`), by running the command `curl -v https://<host-ip-address>:<host-port>/<firmware-image-filename>`
+* Try viewing the file listing from a separate host or phone
 
 ### Error "ota_begin error err=0x104"
 
-If you see this error then check that the configured (and actual) flash size is large enough for the partitions in the partition table. The default "two OTA slots" partition table only works with 4MB flash size. To use OTA with smaller flash sizes, create a custom partition table CSV (look in components/partition_table) and configure it in menuconfig.
+If you see this error, check that the configured (and actual) flash size is large enough for the partitions in the partition table. The default "two OTA slots" partition table requires at least 4MB flash size. To use OTA with smaller flash sizes, create a custom partition table CSV (for details see [Partition Tables](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/partition-tables.html)) and configure it in menuconfig.
 
-If changing partition layout, it is usually wise to run "idf.py erase_flash" between steps.
+Make sure to run "idf.py erase_flash" after making changes to the partition table.
 
 ### Local https server
 
-Running a local https server might be tricky in some cases (due to self signed certificates, or potential issues with `openssl s_server` on Windows). Here are some tips of using other means of running http(s) server:
-* Run a non secure HTTP server to test the connection. (Note that using a plain http is **not secure** and should be used for testing purpose only)
-    - Execute `python -m http.server 8070` in the directory with the firmware image.
-    - Use http://<host-ip>:8070/<firmware-name> as firmware upgrade URL.
-    - Enable *Allow HTTP for OTA* (`CONFIG_OTA_ALLOW_HTTP`) in `Component config -> ESP HTTPS OTA` so the URI with no certificate is accepted.
-* Start the https server using [example_test](simple_ota_example/example_test.py) with two or more parameters: `example_test.py <BIN_DIR> <PORT> [CERT_DIR]`, where
-    - `<BIN_DIR>` is a directory containing the image and by default also the certificate and key files:`ca_cert.pem` and `ca_key.pem`.
+Running a local https server might be tricky in some cases (due to self signed certificates, or potential issues with `openssl s_server` on Windows). Here are some suggestions for alternatives:
+* Run a plain HTTP server to test the connection. (Note that using a plain http is **not secure** and should only be used for testing)
+    - Execute `python -m http.server 8070` in the directory with the firmware image
+    - Use http://<host-ip>:8070/<firmware-name> as the firmware upgrade URL
+    - Enable *Allow HTTP for OTA* (`CONFIG_OTA_ALLOW_HTTP`) in `Component config -> ESP HTTPS OTA` so the URI without TLS is accepted
+* Start the https server using [example_test](simple_ota_example/example_test.py) with two or more parameters: `example_test.py <BIN_DIR> <PORT> [CERT_DIR]`, where:
+    - `<BIN_DIR>` is a directory containing the image and by default also the certificate and key files:`ca_cert.pem` and `ca_key.pem`
     - `<PORT>` is the server's port, here `8070`
     - `[CERT_DIR]` is an optional argument pointing to a specific directory with the certificate and key file.
     - example of the script output:
@@ -152,4 +158,4 @@ $ python example_test.py build 8070
 Starting HTTPS server at "https://:8070"
 192.168.10.106 - - [02/Mar/2021 14:32:26] "GET /simple_ota.bin HTTP/1.1" 200 -
 ```
-* Post the firmware image to some public server (e.g. github.com) and copy it's root certificate to the `server_certs` dir as `ca_cert.pem`. (The certificate could be downloaded using the `s_client` openssl command, if the host includes the root certificate in the chain, for example `openssl s_client -showcerts -connect github.com:443 </dev/null`)
+* Publish the firmware image on a public server (e.g. github.com) and copy its root certificate to the `server_certs` directory as `ca_cert.pem`. (The certificate can be downloaded using the `s_client` openssl command if the host includes the root certificate in the chain, e.g. `openssl s_client -showcerts -connect github.com:443 </dev/null`)

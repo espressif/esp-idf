@@ -373,10 +373,11 @@ menu "MODEM SLEEP Options"
                 modem sleep to be used with both DFS and light sleep.
 
         config BT_CTRL_LPCLK_SEL_RTC_SLOW
-            bool "Internal 90kHz RC oscillator"
+            bool "Internal 150kHz RC oscillator"
             depends on ESP32S3_RTC_CLK_SRC_INT_RC
             help
-                Internal 90kHz RC oscillator.
+                Internal 150kHz RC oscillator. The accuracy of this clock is a lot larger than 500ppm which is required
+                in Bluetooth communication, so don't select this option in scenarios such as BLE connection state.
 
 
     endchoice
@@ -400,3 +401,16 @@ config BT_CTRL_HCI_TL_EFF
     default 0 if BT_CTRL_HCI_MODE_UART_H4
     default 1 if BT_CTRL_HCI_M0DE_VHCI
     default 1
+
+config BT_CTRL_AGC_RECORRECT_EN
+    bool "Enable HW AGC recorrect"
+    default n
+    help
+        Enable uncoded phy AGC recorrect
+
+config BT_CTRL_CODED_AGC_RECORRECT_EN
+    bool "Enable coded phy AGC recorrect"
+    depends on BT_CTRL_AGC_RECORRECT_EN
+    default n
+    help
+        Enable coded phy AGC recorrect

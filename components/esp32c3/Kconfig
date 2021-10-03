@@ -66,6 +66,7 @@ menu "ESP32C3-Specific"
 
     config ESP32C3_BROWNOUT_DET
         bool "Hardware brownout detect & reset"
+        depends on !IDF_ENV_FPGA
         default y
         help
             The ESP32-C3 has a built-in brownout detector which can detect if the voltage is lower than
@@ -156,6 +157,7 @@ menu "ESP32C3-Specific"
             select ESP_SYSTEM_RTC_EXT_XTAL
         config ESP32C3_RTC_CLK_SRC_EXT_OSC
             bool "External 32kHz oscillator at 32K_XP pin"
+            select ESP_SYSTEM_RTC_EXT_OSC
         config ESP32C3_RTC_CLK_SRC_INT_8MD256
             bool "Internal 8MHz oscillator, divided by 256 (~32kHz)"
     endchoice

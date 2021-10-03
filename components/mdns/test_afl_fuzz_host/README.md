@@ -1,7 +1,25 @@
 ## Introduction
 This test uses [american fuzzy lop](http://lcamtuf.coredump.cx/afl/) to mangle real mdns packets and look for exceptions caused by the parser.
 
-A few actuall packets are collected and exported as bins in the ```in``` folder, which is then passed as input to AFL when testing. The setup procedure for the test includes all possible services and scenarios that could be used with the given input packets. Output of the parser before fuzzing can be found in [input_packets.txt](input_packets.txt)
+A few actual packets are collected and exported as bins in the ```in``` folder, which is then passed as input to AFL when testing. The setup procedure for the test includes all possible services and scenarios that could be used with the given input packets.The output of the parser before fuzzing can be found in [input_packets.txt](input_packets.txt)
+
+## Building and running the tests using AFL
+To build and run the tests using AFL(afl-clang-fast) instrumentation
+
+```bash
+cd $IDF_PATH/components/mdns/test_afl_host
+make fuzz
+```
+
+(Please note you have to install AFL instrumentation first, check `Installing AFL` section)
+
+## Building the tests using GCC INSTR(off)
+To build the tests without AFL instrumentations and instead of that use GCC compiler(In this case it will only check for compilation issues and will not run AFL tests).
+
+```bash
+cd $IDF_PATH/components/mdns/test_afl_host
+make INSTR=off
+```
 
 ## Installing AFL
 To run the test yourself, you need to dounload the [latest afl archive](http://lcamtuf.coredump.cx/afl/releases/afl-latest.tgz) and extract it to a folder on your computer.
@@ -9,7 +27,7 @@ To run the test yourself, you need to dounload the [latest afl archive](http://l
 The rest of the document will refer to that folder as ```PATH_TO_AFL```.
 
 ### Preparation
-- On Mac, you will need to insall the latest Xcode and llvm support from [Homebrew](https://brew.sh)
+- On Mac, you will need to install the latest Xcode and llvm support from [Homebrew](https://brew.sh)
 
     ```bash
     /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
@@ -20,8 +38,10 @@ The rest of the document will refer to that folder as ```PATH_TO_AFL```.
 - On Ubuntu you need the following packages:
     
     ```bash
-    sudo apt-get install make clang llvm libbsd-dev
+    sudo apt-get install make clang-4.0(or <=4.0) llvm-4.0(or <=4.0) libbsd-dev
     ```
+
+Please note that if specified package version can't be installed(due to system is the latest), you can download, build and install it manually.
 
 ### Compile AFL
 Compiling AFL is as easy as running make:
@@ -33,14 +53,16 @@ cd llvm_mode/
 make
 ```
 
-After successful compilation, you can export the following variables to your shell (you can also add them to your profile if you want to use afl in other projects)
+After successful compilation, you can export the following variables to your shell (you can also add them to your profile if you want to use AFL in other projects).
 
 ```bash
 export AFL_PATH=[PATH_TO_AFL]
 export PATH="$AFL_PATH:$PATH"
 ```
 
-## Running the test
+Please note LLVM must be <=4.0.0, otherwise afl does not compile, as there are some limitations with building AFL on MacOS/Linux with the latest LLVM. Also, Windows build on cygwin is not fully supported.
+
+## Additional info
 Apple has a crash reporting service that could interfere with AFLs normal operation. To turn that off, run the following command:
 
 ```bash
@@ -53,6 +75,3 @@ Ubuntu has a similar service. To turn that off, run as root:
 ```bash
 echo core >/proc/sys/kernel/core_pattern
 ```
-
-After going through all of the requirements above, you can ```cd``` into this test's folder and simply run ```make fuzz```.
-

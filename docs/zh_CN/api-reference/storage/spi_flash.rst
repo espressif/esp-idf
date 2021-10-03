@@ -41,6 +41,7 @@ Flash 特性支持情况
 当前驱动支持以下厂家/型号的 Flash 的 32 位地址范围的访问：
 
 1. W25Q256
+2. GD25Q256
 
 如果有需要，也可以自定义 Flash 芯片驱动，参见 :doc:`spi_flash_override_driver` 。但此功能仅供专业用户使用。
 

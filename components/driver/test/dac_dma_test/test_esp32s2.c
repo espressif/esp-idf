@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*
  Tests for the dac device driver on ESP32-S2 only
@@ -48,8 +40,8 @@ static const char *TAG = "test_adc";
 
 #define PLATFORM_SELECT            (1)  //0: pxp; 1: chip
 #if (PLATFORM_SELECT == 0)              //PXP platform
-#include "soc/apb_ctrl_reg.h"
-#define SET_BREAK_POINT(flag) REG_WRITE(APB_CTRL_DATE_REG, flag)
+#include "soc/syscon_reg.h"
+#define SET_BREAK_POINT(flag) REG_WRITE(SYSCON_DATE_REG, flag)
 //PXP clk is slower.
 #define SYS_DELAY_TIME_MOM    (1/40)
 #define RTC_SLOW_CLK_FLAG     1     // Slow clock is 32KHz.
