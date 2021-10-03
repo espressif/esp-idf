@@ -600,7 +600,7 @@ eap_mschapv2_process(struct eap_sm *sm, void *priv,
 	case MSCHAPV2_OP_FAILURE:
 		return eap_mschapv2_failure(sm, data, ret, ms, len, id);
 	default:
-		wpa_printf(MSG_ERROR, "EAP-MSCHAPV2: Unknow op code %d -ignored\n",
+		wpa_printf(MSG_ERROR, "EAP-MSCHAPV2: Unknown op code %d - ignored\n",
 			  ms->op_code);
 		return NULL;
 	}
