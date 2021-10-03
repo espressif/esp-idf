@@ -77,4 +77,8 @@ period_ms_t osi_alarm_get_remaining_ms(const osi_alarm_t *alarm);
 
 uint32_t osi_time_get_os_boottime_ms(void);
 
+// This function returns whether the given |alarm| is active or not.
+// Return true if active, false otherwise.
+bool osi_alarm_is_active(osi_alarm_t *alarm);
+
 #endif /*_ALARM_H_*/

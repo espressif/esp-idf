@@ -1,17 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /* INTERNAL API
  * generic interface to MMU memory protection features
@@ -21,6 +12,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "esp_attr.h"
+#include "esp_err.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,6 +43,8 @@ extern "C" {
 #define MEMPROT_UNLOCK          false
 #define DEF_SPLIT_LINE          NULL
 
+#define MEMPROT_INVALID_ADDRESS -1
+
 //memory range types
 typedef enum {
     MEMPROT_NONE =              0x00000000,
@@ -77,23 +71,27 @@ typedef enum {
 uint32_t *IRAM_ATTR esp_memprot_get_split_addr(mem_type_prot_t mem_type);
 
 /**
- * @brief Initializes illegal memory access control (MMU) for required memory section.
+ * @brief Initializes illegal memory access control for required memory section.
  *
  * All memory access interrupts share ETS_MEMACCESS_ERR_INUM input channel, it is caller's
  * responsibility to properly detect actual intr. source as well as possible prioritization in case
  * of multiple source reported during one intr.handling routine run
  *
- *  @param mem_type Memory protection area type (see mem_type_prot_t enum)
+ * @param mem_type Memory protection area type (see mem_type_prot_t enum)\
+ *
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG on failure
  */
-void esp_memprot_intr_init(mem_type_prot_t mem_type);
+esp_err_t esp_memprot_intr_init(mem_type_prot_t mem_type);
 
 /**
  * @brief Enable/disable the memory protection interrupt
  *
  * @param mem_type Memory protection area type (see mem_type_prot_t enum)
  * @param enable enable/disable
+ *
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG on failure
  */
-void esp_memprot_intr_ena(mem_type_prot_t mem_type, bool enable);
+esp_err_t esp_memprot_intr_ena(mem_type_prot_t mem_type, bool enable);
 
 /**
  * @brief Sets a request for clearing interrupt-on flag for specified memory region (register write)
@@ -102,8 +100,10 @@ void esp_memprot_intr_ena(mem_type_prot_t mem_type, bool enable);
  * Should be used only after the real interrupt appears, typically as the last step in interrupt handler's routine.
  *
  * @param mem_type Memory protection area type (see mem_type_prot_t enum)
+ *
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG on failure
  */
-void esp_memprot_clear_intr(mem_type_prot_t mem_type);
+esp_err_t esp_memprot_clear_intr(mem_type_prot_t mem_type);
 
 /**
  * @brief Detects which memory protection interrupt is active
@@ -122,10 +122,11 @@ mem_type_prot_t IRAM_ATTR esp_memprot_get_active_intr_memtype(void);
  * @brief Gets interrupt status register contents for specified memory region
  *
  * @param mem_type Memory protection area type (see mem_type_prot_t enum)
+ * @param fault_reg_val Contents of status register
  *
- * @return Contents of status register
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG on failure
  */
-uint32_t esp_memprot_get_fault_reg(mem_type_prot_t mem_type);
+esp_err_t esp_memprot_get_fault_reg(mem_type_prot_t mem_type, uint32_t *fault_reg_val);
 
 /**
  * @brief Get details of given interrupt status
@@ -138,8 +139,9 @@ uint32_t esp_memprot_get_fault_reg(mem_type_prot_t mem_type);
  * @param op_subtype Additional info for op_type [out]
  *               IRAM0: 0 - instruction segment access, 1 - data segment access
  *               DRAM0: 0 - non-atomic operation, 1 - atomic operation
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG on failure
  */
-void IRAM_ATTR esp_memprot_get_fault_status(mem_type_prot_t mem_type, uint32_t **faulting_address, uint32_t *op_type, uint32_t *op_subtype);
+esp_err_t IRAM_ATTR esp_memprot_get_fault_status(mem_type_prot_t mem_type, uint32_t **faulting_address, uint32_t *op_type, uint32_t *op_subtype);
 
 /**
  * @brief Gets string representation of required memory region identifier
@@ -163,26 +165,30 @@ bool esp_memprot_is_locked_any(void);
  * Locks can be unlocked only by digital system reset
  *
  * @param mem_type Memory protection area type (see mem_type_prot_t enum)
+ *
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG on failure
  */
-void esp_memprot_set_lock(mem_type_prot_t mem_type);
+esp_err_t esp_memprot_set_lock(mem_type_prot_t mem_type);
 
 /**
  * @brief Gets lock status for required memory region
  *
  * @param mem_type Memory protection area type (see mem_type_prot_t enum)
+ * @param locked Settings locked: true/false (locked/unlocked)
  *
- * @return true/false (locked/unlocked)
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG on failure
  */
-bool esp_memprot_get_lock(mem_type_prot_t mem_type);
+esp_err_t esp_memprot_get_lock(mem_type_prot_t mem_type, bool *locked);
 
 /**
  * @brief Gets permission control configuration register contents for required memory region
  *
  * @param mem_type Memory protection area type (see mem_type_prot_t enum)
+ * @param conf_reg_val Permission control register contents
  *
- * @return Permission control register contents
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG on failure
  */
-uint32_t esp_memprot_get_conf_reg(mem_type_prot_t mem_type);
+esp_err_t esp_memprot_get_conf_reg(mem_type_prot_t mem_type, uint32_t *conf_reg_val);
 
 /**
  * @brief Gets interrupt permission settings for unified management block
@@ -190,21 +196,23 @@ uint32_t esp_memprot_get_conf_reg(mem_type_prot_t mem_type);
  * Gets interrupt permission settings register contents for required memory region, returns settings for unified management blocks
  *
  * @param mem_type Memory protection area type (see mem_type_prot_t enum)
+ * @param perm_reg Permission settings register contents
  *
- * @return Permission settings register contents
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG on failure
  */
-uint32_t esp_memprot_get_perm_uni_reg(mem_type_prot_t mem_type);
+esp_err_t esp_memprot_get_perm_uni_reg(mem_type_prot_t mem_type, uint32_t *perm_reg);
 
 /**
  * @brief Gets interrupt permission settings for split management block
  *
- * Gets interrupt permission settings register contents for required memory region, returns settings for split management blocks
+ * Gets interrupt permission settings register contents for required memory region (unified management blocks)
  *
  * @param mem_type Memory protection area type (see mem_type_prot_t enum)
+ * @return split_reg Unified management settings register contents
  *
- * @return Permission settings register contents
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG on failure
  */
-uint32_t esp_memprot_get_perm_split_reg(mem_type_prot_t mem_type);
+esp_err_t esp_memprot_get_perm_split_reg(mem_type_prot_t mem_type, uint32_t *split_reg);
 
 /**
  * @brief Detects whether any of the memory protection interrupts is enabled
@@ -217,28 +225,30 @@ bool esp_memprot_is_intr_ena_any(void);
  * @brief Gets interrupt-enabled flag for given memory region
  *
  * @param mem_type Memory protection area type (see mem_type_prot_t enum)
+ * @param enable_bit Interrupt-enabled flag
  *
- * @return Interrupt-enabled value
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG on failure
  */
-uint32_t esp_memprot_get_intr_ena_bit(mem_type_prot_t mem_type);
+esp_err_t esp_memprot_get_intr_ena_bit(mem_type_prot_t mem_type, uint32_t *enable_bit);
 
 /**
  * @brief Gets interrupt-active flag for given memory region
  *
  * @param mem_type Memory protection area type (see mem_type_prot_t enum)
+ * @param intr_on_bit Interrupt-active flag
  *
- * @return Interrupt-active value
- */
-uint32_t esp_memprot_get_intr_on_bit(mem_type_prot_t mem_type);
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG on failure */
+esp_err_t esp_memprot_get_intr_on_bit(mem_type_prot_t mem_type, uint32_t *intr_on_bit);
 
 /**
  * @brief Gets interrupt-clear request flag for given memory region
  *
  * @param mem_type Memory protection area type (see mem_type_prot_t enum)
+ * @param clear_bit Interrupt-clear request flag
  *
- * @return Interrupt-clear request value
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG on failure
  */
-uint32_t esp_memprot_get_intr_clr_bit(mem_type_prot_t mem_type);
+esp_err_t esp_memprot_get_intr_clr_bit(mem_type_prot_t mem_type, uint32_t *clear_bit);
 
 /**
  * @brief Gets read permission value for specified block and memory region
@@ -248,10 +258,11 @@ uint32_t esp_memprot_get_intr_clr_bit(mem_type_prot_t mem_type);
  *
  * @param mem_type Memory protection area type (see mem_type_prot_t enum)
  * @param block Memory block identifier (0-3)
+ * @param read_bit Read permission value for required block
  *
- * @return Read permission value for required block
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG on failure
  */
-uint32_t esp_memprot_get_uni_block_read_bit(mem_type_prot_t mem_type, uint32_t block);
+esp_err_t esp_memprot_get_uni_block_read_bit(mem_type_prot_t mem_type, uint32_t block, uint32_t *read_bit);
 
 /**
  * @brief Gets write permission value for specified block and memory region
@@ -261,10 +272,11 @@ uint32_t esp_memprot_get_uni_block_read_bit(mem_type_prot_t mem_type, uint32_t b
  *
  * @param mem_type Memory protection area type (see mem_type_prot_t enum)
  * @param block Memory block identifier (0-3)
+ * @param write_bit Write permission value for required block
  *
- * @return Write permission value for required block
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG on failure
  */
-uint32_t esp_memprot_get_uni_block_write_bit(mem_type_prot_t mem_type, uint32_t block);
+esp_err_t esp_memprot_get_uni_block_write_bit(mem_type_prot_t mem_type, uint32_t block, uint32_t *write_bit);
 
 /**
  * @brief Gets execute permission value for specified block and memory region
@@ -274,10 +286,11 @@ uint32_t esp_memprot_get_uni_block_write_bit(mem_type_prot_t mem_type, uint32_t 
  *
  * @param mem_type Memory protection area type (see mem_type_prot_t enum)
  * @param block Memory block identifier (0-3)
+ * @param exec_bit Execute permission value for required block
  *
- * @return Execute permission value for required block
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG on failure
  */
-uint32_t esp_memprot_get_uni_block_exec_bit(mem_type_prot_t mem_type, uint32_t block);
+esp_err_t esp_memprot_get_uni_block_exec_bit(mem_type_prot_t mem_type, uint32_t block, uint32_t *exec_bit);
 
 /**
  * @brief Sets permissions for specified block in DRAM region
@@ -289,8 +302,10 @@ uint32_t esp_memprot_get_uni_block_exec_bit(mem_type_prot_t mem_type, uint32_t b
  * @param block Memory block identifier (0-3)
  * @param write_perm Write permission flag
  * @param read_perm Read permission flag
+ *
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG on failure
  */
-void esp_memprot_set_uni_block_perm_dram(mem_type_prot_t mem_type, uint32_t block, bool write_perm, bool read_perm);
+esp_err_t esp_memprot_set_uni_block_perm_dram(mem_type_prot_t mem_type, uint32_t block, bool write_perm, bool read_perm);
 
 /**
  * @brief Sets permissions for high and low memory segment in DRAM region
@@ -305,8 +320,10 @@ void esp_memprot_set_uni_block_perm_dram(mem_type_prot_t mem_type, uint32_t bloc
  * @param lr Low segment Read permission flag
  * @param hw High segment Write permission flag
  * @param hr High segment Read permission flag
+ *
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG on failure
  */
-void esp_memprot_set_prot_dram(mem_type_prot_t mem_type, uint32_t *split_addr, bool lw, bool lr, bool hw, bool hr);
+esp_err_t esp_memprot_set_prot_dram(mem_type_prot_t mem_type, uint32_t *split_addr, bool lw, bool lr, bool hw, bool hr);
 
 /**
  * @brief Sets permissions for specified block in IRAM region
@@ -314,12 +331,17 @@ void esp_memprot_set_prot_dram(mem_type_prot_t mem_type, uint32_t *split_addr, b
  * Sets Read, Write and Execute permission for specified unified-management block (0-3) in given memory region.
  * Applicable only to IRAM memory types
  *
- * @param mem_type Memory protection area type (see mem_type_prot_t enum)
+ * @param mem_type Memory protection area type (MEMPROT_IRAM0_SRAM)
  * @param block Memory block identifier (0-3)
  * @param write_perm Write permission flag
+ * @param read_perm Read permission flag
  * @param exec_perm Execute permission flag
+ *
+ * @return ESP_OK on success
+ *         ESP_ERR_NOT_SUPPORTED on invalid mem_type
+ *         ESP_ERR_INVALID_ARG on incorrect block number
  */
-void esp_memprot_set_uni_block_perm_iram(mem_type_prot_t mem_type, uint32_t block, bool write_perm, bool read_perm, bool exec_perm);
+esp_err_t esp_memprot_set_uni_block_perm_iram(mem_type_prot_t mem_type, uint32_t block, bool write_perm, bool read_perm, bool exec_perm);
 
 /**
  * @brief Sets permissions for high and low memory segment in IRAM region
@@ -336,8 +358,10 @@ void esp_memprot_set_uni_block_perm_iram(mem_type_prot_t mem_type, uint32_t bloc
  * @param hw High segment Write permission flag
  * @param hr High segment Read permission flag
  * @param hx High segment Execute permission flag
+ *
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG on failure
  */
-void esp_memprot_set_prot_iram(mem_type_prot_t mem_type, uint32_t *split_addr, bool lw, bool lr, bool lx, bool hw, bool hr, bool hx);
+esp_err_t esp_memprot_set_prot_iram(mem_type_prot_t mem_type, uint32_t *split_addr, bool lw, bool lr, bool lx, bool hw, bool hr, bool hx);
 
 /**
  * @brief Activates memory protection for all supported memory region types
@@ -347,8 +371,10 @@ void esp_memprot_set_prot_iram(mem_type_prot_t mem_type, uint32_t *split_addr, b
  * @param invoke_panic_handler map mem.prot interrupt to ETS_MEMACCESS_ERR_INUM and thus invokes panic handler when fired ('true' not suitable for testing)
  * @param lock_feature sets LOCK bit, see esp_memprot_set_lock() ('true' not suitable for testing)
  * @param mem_type_mask holds a set of required memory protection types (bitmask built of mem_type_prot_t). NULL means default (MEMPROT_ALL in this version)
+ *
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG on failure
  */
-void esp_memprot_set_prot(bool invoke_panic_handler, bool lock_feature, uint32_t *mem_type_mask);
+esp_err_t esp_memprot_set_prot(bool invoke_panic_handler, bool lock_feature, uint32_t *mem_type_mask);
 
 /**
  * @brief Get permission settings bits for IRAM0 split mgmt. Only IRAM0 memory types allowed
@@ -360,8 +386,10 @@ void esp_memprot_set_prot(bool invoke_panic_handler, bool lock_feature, uint32_t
  * @param hw High segment Write permission flag
  * @param hr High segment Read permission flag
  * @param hx High segment Execute permission flag
+ *
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG on failure
  */
-void esp_memprot_get_perm_split_bits_iram(mem_type_prot_t mem_type, bool *lw, bool *lr, bool *lx, bool *hw, bool *hr, bool *hx);
+esp_err_t esp_memprot_get_perm_split_bits_iram(mem_type_prot_t mem_type, bool *lw, bool *lr, bool *lx, bool *hw, bool *hr, bool *hx);
 
 /**
  * @brief Get permission settings bits for DRAM0 split mgmt. Only DRAM0 memory types allowed
@@ -371,8 +399,10 @@ void esp_memprot_get_perm_split_bits_iram(mem_type_prot_t mem_type, bool *lw, bo
  * @param lr Low segment Read permission flag
  * @param hw High segment Write permission flag
  * @param hr High segment Read permission flag
+ *
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG on failure
  */
-void esp_memprot_get_perm_split_bits_dram(mem_type_prot_t mem_type, bool *lw, bool *lr, bool *hw, bool *hr);
+esp_err_t esp_memprot_get_perm_split_bits_dram(mem_type_prot_t mem_type, bool *lw, bool *lr, bool *hw, bool *hr);
 
 /**
  * @brief Sets permissions for high and low memory segment in PERIBUS1 region
@@ -386,8 +416,10 @@ void esp_memprot_get_perm_split_bits_dram(mem_type_prot_t mem_type, bool *lw, bo
  * @param lr Low segment Read permission flag
  * @param hw High segment Write permission flag
  * @param hr High segment Read permission flag
+ *
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG on failure
  */
-void esp_memprot_set_prot_peri1(mem_type_prot_t mem_type, uint32_t *split_addr, bool lw, bool lr, bool hw, bool hr);
+esp_err_t esp_memprot_set_prot_peri1(mem_type_prot_t mem_type, uint32_t *split_addr, bool lw, bool lr, bool hw, bool hr);
 
 /**
  * @brief Get permission settings bits for PERIBUS1 split mgmt. Only PERIBUS1 memory types allowed
@@ -397,8 +429,10 @@ void esp_memprot_set_prot_peri1(mem_type_prot_t mem_type, uint32_t *split_addr, 
  * @param lr Low segment Read permission flag
  * @param hw High segment Write permission flag
  * @param hr High segment Read permission flag
+ *
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG on failure
  */
-void esp_memprot_get_perm_split_bits_peri1(mem_type_prot_t mem_type, bool *lw, bool *lr, bool *hw, bool *hr);
+esp_err_t esp_memprot_get_perm_split_bits_peri1(mem_type_prot_t mem_type, bool *lw, bool *lr, bool *hw, bool *hr);
 
 /**
  * @brief Get permission settings bits for PERIBUS2 split mgmt. Only PERIBUS2 memory types allowed
@@ -410,25 +444,32 @@ void esp_memprot_get_perm_split_bits_peri1(mem_type_prot_t mem_type, bool *lw, b
  * @param hw High segment Write permission flag
  * @param hr High segment Read permission flag
  * @param hx High segment Execute permission flag
+ *
+ * @return ESP_OK on success, ESP_ERR_INVALID_ARG on failure
  */
-void esp_memprot_get_perm_split_bits_peri2(mem_type_prot_t mem_type, bool *lw, bool *lr, bool *lx, bool *hw, bool *hr, bool *hx);
+esp_err_t esp_memprot_get_perm_split_bits_peri2(mem_type_prot_t mem_type, bool *lw, bool *lr, bool *lx, bool *hw, bool *hr, bool *hx);
 
 /**
- * @brief Sets permissions for high and low memory segment in PERIBUS2 region
+ * @brief Configures the memory protection for high and low segment in PERIBUS2 region
  *
  * Sets Read Write permission for both low and high memory segments given by splitting address.
  * Applicable only to PERIBUS2 memory types
  *
- * @param mem_type Memory protection area type (see mem_type_prot_t enum)
- * @param split_addr Address to split the memory region to lower and higher segment
+ * @param mem_type Memory protection area type (MEMPROT_PERI2_RTCSLOW_0, MEMPROT_PERI2_RTCSLOW_1)
+ * @param split_addr Address to split the memory region to lower and higher segment (32bit aligned)
  * @param lw Low segment Write permission flag
  * @param lr Low segment Read permission flag
  * @param lx Low segment Execute permission flag
  * @param hw High segment Write permission flag
  * @param hr High segment Read permission flag
  * @param hx High segment Execute permission flag
+ *
+ * @return ESP_OK on success
+ *         ESP_ERR_NOT_SUPPORTED on invalid mem_type
+ *         ESP_ERR_INVALID_STATE on splitting address out of PERIBUS2 range
+ *         ESP_ERR_INVALID_SIZE on splitting address not 32-bit aligned
  */
-void esp_memprot_set_prot_peri2(mem_type_prot_t mem_type, uint32_t *split_addr, bool lw, bool lr, bool lx, bool hw, bool hr, bool hx);
+esp_err_t esp_memprot_set_prot_peri2(mem_type_prot_t mem_type, uint32_t *split_addr, bool lw, bool lr, bool lx, bool hw, bool hr, bool hx);
 
 /**
  * @brief Get permissions for specified memory type. Irrelevant bits are ignored
@@ -440,8 +481,12 @@ void esp_memprot_set_prot_peri2(mem_type_prot_t mem_type, uint32_t *split_addr, 
  * @param hw High segment Write permission flag
  * @param hr High segment Read permission flag
  * @param hx High segment Execute permission flag
+ *
+ * @return ESP_OK on success
+ *         ESP_ERR_INVALID_ARG on NULL lw/lr/lx/hw/hr/hx args
+ *         ESP_ERR_NOT_SUPPORTED on invalid mem_type
  */
-void esp_memprot_get_permissions(mem_type_prot_t mem_type, bool *lw, bool *lr, bool *lx, bool *hw, bool *hr, bool *hx);
+esp_err_t esp_memprot_get_permissions(mem_type_prot_t mem_type, bool *lw, bool *lr, bool *lx, bool *hw, bool *hr, bool *hx);
 
 /**
  * @brief Get Read permission settings for low and high regions of given memory type
@@ -449,8 +494,12 @@ void esp_memprot_get_permissions(mem_type_prot_t mem_type, bool *lw, bool *lr, b
  * @param mem_type Memory protection area type (see mem_type_prot_t enum)
  * @param lr Low segment Read permission flag
  * @param hr High segment Read permission flag
+ *
+ * @return ESP_OK on success
+ *         ESP_ERR_INVALID_ARG on NULL lr/hr args
+ *         ESP_ERR_NOT_SUPPORTED on invalid mem_type
  */
-void esp_memprot_get_perm_read(mem_type_prot_t mem_type, bool *lr, bool *hr);
+esp_err_t esp_memprot_get_perm_read(mem_type_prot_t mem_type, bool *lr, bool *hr);
 
 /**
  * @brief Get Write permission settings for low and high regions of given memory type
@@ -458,23 +507,33 @@ void esp_memprot_get_perm_read(mem_type_prot_t mem_type, bool *lr, bool *hr);
  * @param mem_type Memory protection area type (see mem_type_prot_t enum)
  * @param lr Low segment Write permission flag
  * @param hr High segment Write permission flag
+ *
+ * @return ESP_OK on success
+ *         ESP_ERR_INVALID_ARG on NULL lw/hw args
+ *         ESP_ERR_NOT_SUPPORTED on invalid mem_type
  */
-void esp_memprot_get_perm_write(mem_type_prot_t mem_type, bool *lw, bool *hw);
+esp_err_t esp_memprot_get_perm_write(mem_type_prot_t mem_type, bool *lw, bool *hw);
 
 /**
  * @brief Get Execute permission settings for low and high regions of given memory type
  * Applicable only to IBUS-compatible memory types
  *
- * @param mem_type Memory protection area type (see mem_type_prot_t enum)
- * @param lr Low segment Exec permission flag
- * @param hr High segment Exec permission flag
+ * @param mem_type Memory protection area type (MEMPROT_IRAM0_SRAM, MEMPROT_IRAM0_RTCFAST, MEMPROT_PERI2_RTCSLOW_0, MEMPROT_PERI2_RTCSLOW_1)
+ * @param lx Low segment Exec permission flag
+ * @param hx High segment Exec permission flag
+ *
+ * @return ESP_OK on success
+ *         ESP_ERR_INVALID_ARG on NULL lx/hx args
+ *         ESP_ERR_NOT_SUPPORTED on invalid mem_type
  */
-void esp_memprot_get_perm_exec(mem_type_prot_t mem_type, bool *lx, bool *hx);
+esp_err_t esp_memprot_get_perm_exec(mem_type_prot_t mem_type, bool *lx, bool *hx);
 
 /**
  * @brief Returns the lowest address in required memory region
  *
  * @param mem_type Memory protection area type (see mem_type_prot_t enum)
+ *
+ * @return Required address or MEMPROT_INVALID_ADDRESS for invalid mem_type
  */
 uint32_t esp_memprot_get_low_limit(mem_type_prot_t mem_type);
 
@@ -482,6 +541,8 @@ uint32_t esp_memprot_get_low_limit(mem_type_prot_t mem_type);
  * @brief Returns the highest address in required memory region
  *
  * @param mem_type Memory protection area type (see mem_type_prot_t enum)
+ *
+ * @return Required address or MEMPROT_INVALID_ADDRESS for invalid mem_type
  */
 uint32_t esp_memprot_get_high_limit(mem_type_prot_t mem_type);
 
@@ -491,8 +552,11 @@ uint32_t esp_memprot_get_high_limit(mem_type_prot_t mem_type);
  * @param mem_type Memory protection area type (see mem_type_prot_t enum)
  * @param lr Low segment Read permission flag
  * @param hr High segment Read permission flag
+ *
+ * @return ESP_OK on success
+ *         ESP_ERR_NOT_SUPPORTED on invalid mem_type
  */
-void esp_memprot_set_read_perm(mem_type_prot_t mem_type, bool lr, bool hr);
+esp_err_t esp_memprot_set_read_perm(mem_type_prot_t mem_type, bool lr, bool hr);
 
 /**
  * @brief Sets WRITE permission bit for required memory region
@@ -500,17 +564,23 @@ void esp_memprot_set_read_perm(mem_type_prot_t mem_type, bool lr, bool hr);
  * @param mem_type Memory protection area type (see mem_type_prot_t enum)
  * @param lr Low segment Write permission flag
  * @param hr High segment Write permission flag
+ *
+ * @return ESP_OK on success
+ *         ESP_ERR_NOT_SUPPORTED on invalid mem_type
  */
-void esp_memprot_set_write_perm(mem_type_prot_t mem_type, bool lw, bool hw);
+esp_err_t esp_memprot_set_write_perm(mem_type_prot_t mem_type, bool lw, bool hw);
 
 /**
  * @brief Sets EXECUTE permission bit for required memory region
  *
- * @param mem_type Memory protection area type (see mem_type_prot_t enum)
+ * @param mem_type Memory protection area type (MEMPROT_IRAM0_SRAM, MEMPROT_IRAM0_RTCFAST, MEMPROT_PERI2_RTCSLOW_0, MEMPROT_PERI2_RTCSLOW_1)
  * @param lr Low segment Exec permission flag
  * @param hr High segment Exec permission flag
+ *
+ * @return ESP_OK on success
+ *         ESP_ERR_NOT_SUPPORTED on invalid mem_type
  */
-void esp_memprot_set_exec_perm(mem_type_prot_t mem_type, bool lx, bool hx);
+esp_err_t esp_memprot_set_exec_perm(mem_type_prot_t mem_type, bool lx, bool hx);
 
 
 #ifdef __cplusplus

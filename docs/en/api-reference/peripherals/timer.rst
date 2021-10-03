@@ -35,8 +35,8 @@ First of all, the timer should be initialized by calling the function :cpp:func:
 
 .. list::
 
-    :not esp32: - **Clock Source**: Select the clock source, which together with the **Divider** define the resolution of the working timer. By default the clock source is APB_CLK (typically 80 MHz).
-    - **Divider**: Sets how quickly the timer's counter is "ticking". The setting :cpp:member:`divider` is used as a divisor of the clock source.
+    :not esp32: - **Clock Source**: Select the clock source, which together with the **Divider** define the resolution of the working timer.
+    - **Divider**: Sets how quickly the timer's counter is "ticking". The setting :cpp:member:`divider` is used as a divisor of the clock source that by default is APB_CLK running at 80 MHz. For more information of APB_CLK frequency, please check *{IDF_TARGET_NAME} Technical Reference Manual* > *Reset and Clock* [`PDF <{IDF_TARGET_TRM_EN_URL}#resclk>`__] chapter for more details.
     - **Mode**: Sets if the counter should be incrementing or decrementing. It can be defined using :cpp:member:`counter_dir` by selecting one of the values from :cpp:type:`timer_count_dir_t`.
     - **Counter Enable**: If the counter is enabled, it will start incrementing / decrementing immediately after calling :cpp:func:`timer_init`. You can change the behavior with :cpp:member:`counter_en` by selecting one of the values from :cpp:type:`timer_start_t`.
     - **Alarm Enable**: Can be set using :cpp:member:`alarm_en`.

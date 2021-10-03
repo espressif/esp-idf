@@ -3,7 +3,10 @@
 ############
 .patterns-c-files: &patterns-c-files
   - ".gitlab/ci/static-code-analysis.yml"
+
   - "tools/ci/static-analysis-rules.yml"
+  - "tools/ci/clang_tidy_dirs.txt"
+
   - "**/*.{c,C}"
   - "**/*.{h,H}"
   - "components/**/Kconfig"
@@ -37,6 +40,7 @@
 
 .patterns-build_components: &patterns-build_components
   - "components/**/*"
+  - "examples/cxx/experimental/experimental_cpp_component/*"
 
 .patterns-build_system: &patterns-build_system
   - "tools/cmake/**/*"

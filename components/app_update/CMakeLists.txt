@@ -46,6 +46,7 @@ if(NOT BOOTLOADER_BUILD)
 
         add_custom_target(blank_ota_data ALL DEPENDS ${blank_otadata_file})
         add_dependencies(flash blank_ota_data)
+        add_dependencies(encrypted-flash blank_ota_data)
 
         set(otatool_py ${python} ${COMPONENT_DIR}/otatool.py)
 

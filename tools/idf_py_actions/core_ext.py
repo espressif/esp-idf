@@ -28,6 +28,21 @@ def action_extensions(base_actions, project_path):
         ensure_build_directory(args, ctx.info_name)
         run_target(target_name, args)
 
+    def size_target(target_name, ctx, args):
+        """
+        Builds the app and then executes a size-related target passed in 'target_name'.
+        `tool_error_handler` handler is used to suppress errors during the build,
+        so size action can run even in case of overflow.
+
+        """
+
+        def tool_error_handler(e):
+            pass
+
+        ensure_build_directory(args, ctx.info_name)
+        run_target('all', args, custom_error_handler=tool_error_handler)
+        run_target(target_name, args)
+
     def list_build_system_targets(target_name, ctx, args):
         """Shows list of targets known to build sytem (make/ninja)"""
         build_target('help', ctx, args)
@@ -359,22 +374,19 @@ def action_extensions(base_actions, project_path):
                 'options': global_options,
             },
             'size': {
-                'callback': build_target,
+                'callback': size_target,
                 'help': 'Print basic size information about the app.',
                 'options': global_options,
-                'dependencies': ['app'],
             },
             'size-components': {
-                'callback': build_target,
+                'callback': size_target,
                 'help': 'Print per-component size information.',
                 'options': global_options,
-                'dependencies': ['app'],
             },
             'size-files': {
-                'callback': build_target,
+                'callback': size_target,
                 'help': 'Print per-source-file size information.',
                 'options': global_options,
-                'dependencies': ['app'],
             },
             'bootloader': {
                 'callback': build_target,

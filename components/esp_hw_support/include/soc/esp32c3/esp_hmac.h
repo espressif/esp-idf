@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _ESP_HMAC_H_
 #define _ESP_HMAC_H_
@@ -59,6 +51,35 @@ esp_err_t esp_hmac_calculate(hmac_key_id_t key_id,
         const void *message,
         size_t message_len,
         uint8_t *hmac);
+
+/**
+ * @brief Use HMAC peripheral in Downstream mode to re-enable the JTAG, if it is not permanently disabled by HW.
+ *        In downstream mode, HMAC calculations performed by peripheral are used internally and not provided back to user.
+ *
+ * @param key_id Determines which of the 6 key blocks in the efuses should be used for the HMAC calculation.
+ *        The corresponding purpose field of the key block in the efuse must be set to HMAC downstream purpose.
+ *
+ * @param token Pre calculated HMAC value of the 32-byte 0x00 using SHA-256 and the known private HMAC key. The key is already
+ *        programmed to a eFuse key block. The key block number is provided as the first parameter to this function.
+ *
+ * @return
+ *      * ESP_OK, if the calculation was successful,
+ *                if the calculated HMAC value matches with provided token,
+ *                JTAG will be re-enable otherwise JTAG will remain disabled.
+ *                Return value does not indicate the JTAG status.
+ *      * ESP_FAIL, if the hmac calculation failed or JTAG is permanently disabled by EFUSE_HARD_DIS_JTAG eFuse parameter.
+ *      * ESP_ERR_INVALID_ARG, invalid input arguments
+ */
+esp_err_t esp_hmac_jtag_enable(hmac_key_id_t key_id, const uint8_t *token);
+
+/**
+ *  @brief Disable the JTAG which might be enabled using the HMAC downstream mode. This function just clears the result generated
+ *         by calling esp_hmac_jtag_enable() API.
+ *
+ *  @return
+ *       * ESP_OK return ESP_OK after writing the HMAC_SET_INVALIDATE_JTAG_REG with value 1.
+ */
+esp_err_t esp_hmac_jtag_disable(void);
 
 #ifdef __cplusplus
 }

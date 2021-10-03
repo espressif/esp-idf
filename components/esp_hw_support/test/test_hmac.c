@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "unity.h"
 #include "esp_efuse.h"
@@ -22,8 +14,6 @@
 
 #if CONFIG_IDF_ENV_FPGA
 
-#include "esp32s2/rom/efuse.h"
-
 /* Allow testing varying message lengths (truncating the same message)
    for various results */
 typedef struct {
@@ -31,22 +21,19 @@ typedef struct {
     uint8_t result[32];
 } hmac_result;
 
-static const ets_efuse_block_t key_block = ETS_EFUSE_BLOCK_KEY4;
-static const char *TAG = "test_hmac";
-
-static void setup_keyblock(void) {
+static void setup_keyblock(esp_efuse_block_t key_block, esp_efuse_purpose_t purpose) {
     const uint8_t key_data[32] = {
         1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,
         25,26,27,28,29,30,31,32
     };
-    int ets_status = ets_efuse_write_key(key_block,
-                        ETS_EFUSE_KEY_PURPOSE_HMAC_UP,
-                        key_data, sizeof(key_data));
+    esp_err_t status = esp_efuse_write_key(key_block, purpose, key_data, sizeof(key_data));
 
-    if (ets_status == ESP_OK) {
-        printf("written key!\n");
+    if (status == ESP_OK) {
+        printf("Written key!\n");
+    } else if (ESP_ERR_EFUSE_REPEATED_PROG) {
+        printf("Key written already.\n");
     } else {
-        printf("writing key failed, maybe written already\n");
+        printf("ERROR while writing key.\n");
     }
 }
 
@@ -54,10 +41,7 @@ TEST_CASE("HMAC 'downstream' JTAG Enable mode", "[hw_crypto]")
 {
     int ets_status;
 
-    const uint8_t key_data[32] = {
-        1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,
-        25,26,27,28,29,30,31,32
-    };
+    setup_keyblock(EFUSE_BLK_KEY3, ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG);
 
     // Results calculated with Python:
     //
@@ -69,31 +53,13 @@ TEST_CASE("HMAC 'downstream' JTAG Enable mode", "[hw_crypto]")
         0x8e, 0x6c, 0x3e, 0x8e, 0x6e, 0x17, 0x62, 0x5c, 0x50, 0xac, 0x66, 0xa9, 0xa8, 0x57, 0x94, 0x9b
     };
 
-    ets_status = ets_efuse_write_key(ETS_EFUSE_BLOCK_KEY3,
-                        ETS_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG,
-                        key_data, sizeof(key_data));
-
-    if (ets_status == ESP_OK) {
-        ESP_LOGI(TAG, "HMAC_DOWN_JTAG key programmed!");
-    } else {
-        ESP_LOGW(TAG, "HMAC_DOWN_JTAG key programming failed, \
-                       maybe written already. Continuing");
-    }
-
     TEST_ASSERT_MESSAGE(ESP_OK == esp_efuse_batch_write_begin(),
                     "Error programming security efuse.\n");
 
-    ets_status = esp_efuse_set_read_protect(ETS_EFUSE_BLOCK_KEY3);
-    if (ets_status != ESP_OK) {
-        ESP_LOGW(TAG, "EFUSE_BLOCK read protect setting failed. \
-                       Not a must prerequisite to run this test case. Continuing");
-    }
+    ets_status = esp_efuse_write_field_cnt(ESP_EFUSE_SOFT_DIS_JTAG, ESP_EFUSE_SOFT_DIS_JTAG[0]->bit_count);
 
-    ets_status = esp_efuse_write_field_bit(ESP_EFUSE_SOFT_DIS_JTAG);
-    if (ets_status != ESP_OK) {
-        ESP_LOGI(TAG, "JTAG Disable temporarily failed. \
-                       May be disabled already. Continuing the test.");
-    }
+    TEST_ASSERT_MESSAGE(ets_status == ESP_OK || ets_status == ESP_ERR_EFUSE_CNT_IS_FULL,
+            "JTAG Disable temporarily failed.\n");
 
     TEST_ASSERT_MESSAGE(ESP_OK == esp_efuse_batch_write_commit(),
                     "Error programming security efuse.\n");
@@ -112,7 +78,7 @@ TEST_CASE("HMAC 'upstream' MAC generation with zeroes", "[hw_crypto]")
 {
     uint8_t hmac[32];
 
-    setup_keyblock();
+    setup_keyblock(EFUSE_BLK_KEY4, ESP_EFUSE_KEY_PURPOSE_HMAC_UP);
 
     const uint8_t zeroes[128] = { };
     // Produce the HMAC of various numbers of zeroes
@@ -207,7 +173,7 @@ TEST_CASE("HMAC 'upstream' MAC generation from data", "[hw_crypto]")
 {
     uint8_t hmac[32];
 
-    setup_keyblock();
+    setup_keyblock(EFUSE_BLK_KEY4, ESP_EFUSE_KEY_PURPOSE_HMAC_UP);
 
     // 257 characters of pseudo-Latin from lipsum.com (not Copyright)
     const char *message = "Deleniti voluptas explicabo et assumenda. Sed et aliquid minus quis. Praesentium cupiditate quia nemo est. Laboriosam pariatur ut distinctio tenetur. Sunt architecto iure aspernatur soluta ut recusandae. Ut quibusdam occaecati ut qui sit dignissimos eaque..";
@@ -1007,7 +973,8 @@ TEST_CASE("HMAC 'upstream' wait lock", "[hw_crypto]")
     // 257 characters of pseudo-Latin from lipsum.com (not Copyright)
     const char *message = "Deleniti voluptas explicabo et assumenda. Sed et aliquid minus quis. Praesentium cupiditate quia nemo est. Laboriosam pariatur ut distinctio tenetur. Sunt architecto iure aspernatur soluta ut recusandae. Ut quibusdam occaecati ut qui sit dignissimos eaque..";
 
-    setup_keyblock();
+    setup_keyblock(EFUSE_BLK_KEY4, ESP_EFUSE_KEY_PURPOSE_HMAC_UP);
+
     static const  hmac_result results[] = {
         { .msglen = 255,
           .result = { 0x59, 0x52, 0x50, 0x4, 0xb6, 0x28, 0xf9, 0x28, 0x7f, 0x6c, 0x37, 0xba, 0xfb, 0xb2, 0x58, 0xe7, 0xa, 0xac, 0x6c, 0x4a, 0xef, 0x66, 0x6, 0x7b, 0x1, 0x1f, 0x4c, 0xa4, 0xe5, 0xe5, 0x29, 0x5d },
@@ -1023,6 +990,12 @@ TEST_CASE("HMAC 'upstream' wait lock", "[hw_crypto]")
     }
 }
 
+#endif // CONFIG_IDF_ENV_FPGA
+
+/**
+ * This test is just a parameter test and does not write any keys to efuse.
+ * It can be done safely on any chip which supports HMAC.
+ */
 TEST_CASE("HMAC key out of range", "[hw_crypto]")
 {
     uint8_t hmac[32];
@@ -1033,7 +1006,5 @@ TEST_CASE("HMAC key out of range", "[hw_crypto]")
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_hmac_calculate(HMAC_KEY0 - 1, message, 47, hmac));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_hmac_calculate(HMAC_KEY5 + 1, message, 47, hmac));
 }
-
-#endif // CONFIG_IDF_ENV_FPGA
 
 #endif // SOC_HMAC_SUPPORTED

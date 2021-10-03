@@ -3,19 +3,11 @@ Abstraction layer for spi-ram. For now, it's no more than a stub for the spiram_
 we add more types of external RAM memory, this can be made into a more intelligent dispatcher.
 */
 
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdint.h>
 #include <string.h>
@@ -44,10 +36,8 @@ static const char *TAG = "spiram";
 
 #if CONFIG_SPIRAM_SPEED_40M
 #define PSRAM_SPEED PSRAM_CACHE_S40M
-#elif CONFIG_SPIRAM_SPEED_80M
+#else  //#if CONFIG_SPIRAM_SPEED_80M
 #define PSRAM_SPEED PSRAM_CACHE_S80M
-#else
-#define PSRAM_SPEED PSRAM_CACHE_S20M
 #endif
 
 static bool s_spiram_inited = false;
@@ -112,7 +102,7 @@ void IRAM_ATTR esp_spiram_init_cache(void)
 }
 
 static uint32_t pages_for_flash = 0;
-static uint32_t instrcution_in_spiram = 0;
+static uint32_t instruction_in_spiram = 0;
 static uint32_t rodata_in_spiram = 0;
 
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
@@ -134,7 +124,7 @@ static uint32_t page0_page = INVALID_PHY_PAGE;
 
 uint32_t esp_spiram_instruction_access_enabled(void)
 {
-    return instrcution_in_spiram;
+    return instruction_in_spiram;
 }
 
 uint32_t esp_spiram_rodata_access_enabled(void)
@@ -157,7 +147,7 @@ esp_err_t esp_spiram_enable_instruction_access(void)
     instr_flash2spiram_offs = mmu_value - pages_for_flash;
     ESP_EARLY_LOGV(TAG, "Instructions from flash page%d copy to SPIRAM page%d, Offset: %d", mmu_value, pages_for_flash, instr_flash2spiram_offs);
     pages_for_flash = Cache_Flash_To_SPIRAM_Copy(CACHE_IBUS, IRAM0_CACHE_ADDRESS_LOW, pages_for_flash, &page0_page);
-    instrcution_in_spiram = 1;
+    instruction_in_spiram = 1;
     return ESP_OK;
 }
 #endif
@@ -255,8 +245,7 @@ esp_err_t esp_spiram_init(void)
 
     ESP_EARLY_LOGI(TAG, "Found %dMBit SPI RAM device",
                    (esp_spiram_get_size() * 8) / (1024 * 1024));
-    ESP_EARLY_LOGI(TAG, "SPI RAM mode: %s", PSRAM_SPEED == PSRAM_CACHE_S40M ? "sram 40m" : \
-                   PSRAM_SPEED == PSRAM_CACHE_S80M ? "sram 80m" : "sram 20m");
+    ESP_EARLY_LOGI(TAG, "SPI RAM mode: %s", PSRAM_SPEED == PSRAM_CACHE_S40M ? "sram 40m" : "sram 80m");
     ESP_EARLY_LOGI(TAG, "PSRAM initialized, cache is in %s mode.", \
                    (PSRAM_MODE == PSRAM_VADDR_MODE_EVENODD) ? "even/odd (2-core)" : \
                    (PSRAM_MODE == PSRAM_VADDR_MODE_LOWHIGH) ? "low/high (2-core)" : \
@@ -338,6 +327,11 @@ void IRAM_ATTR esp_spiram_writeback_cache(void)
 bool esp_spiram_is_initialized(void)
 {
     return s_spiram_inited;
+}
+
+uint8_t esp_spiram_get_cs_io(void)
+{
+    return psram_get_cs_io();
 }
 
 #endif

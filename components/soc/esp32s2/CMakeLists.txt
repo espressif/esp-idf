@@ -6,6 +6,7 @@ set(srcs
     "i2c_periph.c"
     "i2s_periph.c"
     "interrupts.c"
+    "lcd_periph.c"
     "ledc_periph.c"
     "pcnt_periph.c"
     "rmt_periph.c"
@@ -15,7 +16,8 @@ set(srcs
     "timer_periph.c"
     "touch_sensor_periph.c"
     "uart_periph.c"
-    "usb_periph.c")
+    "usb_periph.c"
+    "usb_phy_periph.c")
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")
 

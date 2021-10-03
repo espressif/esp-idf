@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 54e3ee07e1f682ea20e8af0561df669c
+// md5_digest_table a007943ae37fe41884a23d505a6e7dbb
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -153,10 +153,6 @@ static const esp_efuse_desc_t RD_DIS_KEY5[] = {
 
 static const esp_efuse_desc_t RD_DIS_SYS_DATA_PART2[] = {
     {EFUSE_BLK0, 38, 1}, 	 // Read protection for EFUSE_BLK10. SYS_DATA_PART2,
-};
-
-static const esp_efuse_desc_t DIS_RTC_RAM_BOOT[] = {
-    {EFUSE_BLK0, 39, 1}, 	 // Disable boot from RTC RAM,
 };
 
 static const esp_efuse_desc_t DIS_ICACHE[] = {
@@ -350,6 +346,9 @@ static const esp_efuse_desc_t MAC_FACTORY[] = {
     {EFUSE_BLK1, 16, 8}, 	 // Factory MAC addr [3],
     {EFUSE_BLK1, 8, 8}, 	 // Factory MAC addr [4],
     {EFUSE_BLK1, 0, 8}, 	 // Factory MAC addr [5],
+};
+
+static const esp_efuse_desc_t MAC_EXT[] = {
     {EFUSE_BLK1, 123, 8}, 	 // Factory MAC addr [6],
     {EFUSE_BLK1, 131, 8}, 	 // Factory MAC addr [7],
 };
@@ -460,6 +459,10 @@ static const esp_efuse_desc_t ADC1_CAL_VOL_ATTEN3[] = {
 
 static const esp_efuse_desc_t USER_DATA[] = {
     {EFUSE_BLK3, 0, 256}, 	 // User data,
+};
+
+static const esp_efuse_desc_t USER_DATA_MAC_CUSTOM[] = {
+    {EFUSE_BLK3, 200, 48}, 	 // Custom MAC,
 };
 
 static const esp_efuse_desc_t KEY0[] = {
@@ -666,11 +669,6 @@ const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_KEY5[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_SYS_DATA_PART2[] = {
     &RD_DIS_SYS_DATA_PART2[0],    		// Read protection for EFUSE_BLK10. SYS_DATA_PART2
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_DIS_RTC_RAM_BOOT[] = {
-    &DIS_RTC_RAM_BOOT[0],    		// Disable boot from RTC RAM
     NULL
 };
 
@@ -911,8 +909,12 @@ const esp_efuse_desc_t* ESP_EFUSE_MAC_FACTORY[] = {
     &MAC_FACTORY[3],    		// Factory MAC addr [3]
     &MAC_FACTORY[4],    		// Factory MAC addr [4]
     &MAC_FACTORY[5],    		// Factory MAC addr [5]
-    &MAC_FACTORY[6],    		// Factory MAC addr [6]
-    &MAC_FACTORY[7],    		// Factory MAC addr [7]
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_MAC_EXT[] = {
+    &MAC_EXT[6],    		// Factory MAC addr [6]
+    &MAC_EXT[7],    		// Factory MAC addr [7]
     NULL
 };
 
@@ -1048,6 +1050,11 @@ const esp_efuse_desc_t* ESP_EFUSE_ADC1_CAL_VOL_ATTEN3[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_USER_DATA[] = {
     &USER_DATA[0],    		// User data
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_USER_DATA_MAC_CUSTOM[] = {
+    &USER_DATA_MAC_CUSTOM[0],    		// Custom MAC
     NULL
 };
 

@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table bc8611ed5c3a91ac0a8ba29879968d70
+// md5_digest_table 614c862c2cfa8ccda3a79183ce767255
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -388,16 +388,20 @@ static const esp_efuse_desc_t WAFER_VERSION[] = {
     {EFUSE_BLK1, 114, 3}, 	 // WAFER version 0:A,
 };
 
-static const esp_efuse_desc_t PKG_VERSION[] = {
-    {EFUSE_BLK1, 117, 4}, 	 // Package version 0:ESP32-S2 1:ESP32-S2FH16 2:ESP32-S2FH32,
+static const esp_efuse_desc_t FLASH_VERSION[] = {
+    {EFUSE_BLK1, 117, 4}, 	 // Flash_version,
 };
 
 static const esp_efuse_desc_t BLOCK1_VERSION[] = {
-    {EFUSE_BLK1, 121, 3}, 	 // BLOCK1 efuse version 0:No calibration 1:With calibration,
+    {EFUSE_BLK1, 121, 3}, 	 // BLOCK1 efuse version,
 };
 
-static const esp_efuse_desc_t SYS_DATA_PART0[] = {
-    {EFUSE_BLK1, 126, 66}, 	 // System configuration,
+static const esp_efuse_desc_t PSRAM_VERSION[] = {
+    {EFUSE_BLK1, 124, 4}, 	 // PSRAM version,
+};
+
+static const esp_efuse_desc_t PKG_VERSION[] = {
+    {EFUSE_BLK1, 128, 4}, 	 // Package version,
 };
 
 static const esp_efuse_desc_t OPTIONAL_UNIQUE_ID[] = {
@@ -405,11 +409,15 @@ static const esp_efuse_desc_t OPTIONAL_UNIQUE_ID[] = {
 };
 
 static const esp_efuse_desc_t BLOCK2_VERSION[] = {
-    {EFUSE_BLK2, 132, 3}, 	 // Version of BLOCK2,
+    {EFUSE_BLK2, 132, 3}, 	 // Version of BLOCK2: 0-No ADC calib; 1-ADC calib V1; 2-ADC calib V2,
 };
 
 static const esp_efuse_desc_t USER_DATA[] = {
     {EFUSE_BLK3, 0, 256}, 	 // User data,
+};
+
+static const esp_efuse_desc_t USER_DATA_MAC_CUSTOM[] = {
+    {EFUSE_BLK3, 200, 48}, 	 // Custom MAC,
 };
 
 static const esp_efuse_desc_t KEY0[] = {
@@ -909,18 +917,23 @@ const esp_efuse_desc_t* ESP_EFUSE_WAFER_VERSION[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[] = {
-    &PKG_VERSION[0],    		// Package version 0:ESP32-S2 1:ESP32-S2FH16 2:ESP32-S2FH32
+const esp_efuse_desc_t* ESP_EFUSE_FLASH_VERSION[] = {
+    &FLASH_VERSION[0],    		// Flash_version
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_BLOCK1_VERSION[] = {
-    &BLOCK1_VERSION[0],    		// BLOCK1 efuse version 0:No calibration 1:With calibration
+    &BLOCK1_VERSION[0],    		// BLOCK1 efuse version
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_SYS_DATA_PART0[] = {
-    &SYS_DATA_PART0[0],    		// System configuration
+const esp_efuse_desc_t* ESP_EFUSE_PSRAM_VERSION[] = {
+    &PSRAM_VERSION[0],    		// PSRAM version
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[] = {
+    &PKG_VERSION[0],    		// Package version
     NULL
 };
 
@@ -930,12 +943,17 @@ const esp_efuse_desc_t* ESP_EFUSE_OPTIONAL_UNIQUE_ID[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_BLOCK2_VERSION[] = {
-    &BLOCK2_VERSION[0],    		// Version of BLOCK2
+    &BLOCK2_VERSION[0],    		// Version of BLOCK2: 0-No ADC calib; 1-ADC calib V1; 2-ADC calib V2
     NULL
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_USER_DATA[] = {
     &USER_DATA[0],    		// User data
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_USER_DATA_MAC_CUSTOM[] = {
+    &USER_DATA_MAC_CUSTOM[0],    		// Custom MAC
     NULL
 };
 

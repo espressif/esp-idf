@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <string.h>
 #include "sdkconfig.h"
 #include "esp_rom_efuse.h"
@@ -55,9 +47,10 @@ esp_err_t esp_base_mac_addr_set(const uint8_t *mac)
 
 esp_err_t esp_base_mac_addr_get(uint8_t *mac)
 {
-    uint8_t null_mac[ESP_MAC_ADDRESS_LEN] = {0};
-
-    if (memcmp(base_mac_addr, null_mac, ESP_MAC_ADDRESS_LEN) == 0) {
+    if (mac == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (base_mac_addr[0] == 0 && memcmp(base_mac_addr, &base_mac_addr[1], ESP_MAC_ADDRESS_LEN - 1) == 0) {
         ESP_LOGI(TAG, "Base MAC address is not set");
         return ESP_ERR_INVALID_MAC;
     }
@@ -70,7 +63,24 @@ esp_err_t esp_base_mac_addr_get(uint8_t *mac)
 esp_err_t esp_efuse_mac_get_custom(uint8_t *mac)
 {
 #if !CONFIG_IDF_TARGET_ESP32
-    return ESP_ERR_NOT_SUPPORTED; // TODO IDF-1326
+    size_t size_bits = esp_efuse_get_field_size(ESP_EFUSE_USER_DATA_MAC_CUSTOM);
+    assert((size_bits % 8) == 0);
+    esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_USER_DATA_MAC_CUSTOM, mac, size_bits);
+    if (err != ESP_OK) {
+        return err;
+    }
+    size_t size = size_bits / 8;
+    if (mac[0] == 0 && memcmp(mac, &mac[1], size - 1) == 0) {
+        ESP_LOGE(TAG, "eFuse MAC_CUSTOM is empty");
+        return ESP_ERR_INVALID_MAC;
+    }
+#if (ESP_MAC_ADDRESS_LEN == 8)
+    err = esp_efuse_read_field_blob(ESP_EFUSE_MAC_EXT, &mac[6], ESP_MAC_ADDRESS_LEN - size);
+    if (err != ESP_OK) {
+        return err;
+    }
+#endif
+    return ESP_OK;
 #else
     uint8_t version;
     esp_efuse_read_field_blob(ESP_EFUSE_MAC_CUSTOM_VER, &version, 8);
@@ -94,14 +104,18 @@ esp_err_t esp_efuse_mac_get_custom(uint8_t *mac)
 
 esp_err_t esp_efuse_mac_get_default(uint8_t *mac)
 {
-    if ( esp_efuse_get_field_size(ESP_EFUSE_MAC_FACTORY) != ESP_MAC_ADDRESS_LEN * 8) {
-        ESP_LOGE(TAG, "mac address length is incorrect, please check the mac address length which your type of the chip is supported");
-        abort();
-    }
-    esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_MAC_FACTORY, mac, ESP_MAC_ADDRESS_LEN * 8);
+    size_t size_bits = esp_efuse_get_field_size(ESP_EFUSE_MAC_FACTORY);
+    assert((size_bits % 8) == 0);
+    esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_MAC_FACTORY, mac, size_bits);
     if (err != ESP_OK) {
         return err;
     }
+#if (ESP_MAC_ADDRESS_LEN == 8)
+    err = esp_efuse_read_field_blob(ESP_EFUSE_MAC_EXT, &mac[6], ESP_MAC_ADDRESS_LEN - size_bits / 8);
+    if (err != ESP_OK) {
+        return err;
+    }
+#endif
 #ifdef CONFIG_IDF_TARGET_ESP32
 // Only ESP32 has MAC CRC in efuse
     uint8_t efuse_crc;

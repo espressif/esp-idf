@@ -727,6 +727,7 @@ static void write_large_buffer(const esp_partition_t *part, const uint8_t *sourc
 static void read_and_check(const esp_partition_t *part, const uint8_t *source, size_t length);
 
 // Internal functions for testing, from esp_flash_api.c
+#if !CONFIG_ESPTOOLPY_OCT_FLASH
 esp_err_t esp_flash_set_io_mode(esp_flash_t* chip, bool qe);
 esp_err_t esp_flash_get_io_mode(esp_flash_t* chip, bool* qe);
 esp_err_t esp_flash_read_chip_id(esp_flash_t* chip, uint32_t* flash_id);
@@ -801,16 +802,17 @@ IRAM_ATTR NOINLINE_ATTR static void test_toggle_qe(const esp_partition_t* part)
 // `spi_flash_common_set_io_mode` and then run this test.
 FLASH_TEST_CASE_IGNORE("Test esp_flash_write can toggle QE bit", test_toggle_qe);
 FLASH_TEST_CASE_3_IGNORE("Test esp_flash_write can toggle QE bit", test_toggle_qe);
+#endif //CONFIG_ESPTOOLPY_OCT_FLASH
 
 void test_permutations_part(const flashtest_config_t* config, esp_partition_t* part, void* source_buf, size_t length)
 {
     if (config->host_id != -1) {
         esp_flash_speed_t speed = ESP_FLASH_SPEED_MIN;
-        while (speed != ESP_FLASH_SPEED_MAX) {
+        while (speed != ESP_FLASH_120MHZ) {
             //test io_mode in the inner loop to test QE set/clear function, since
             //the io mode will switch frequently.
             esp_flash_io_mode_t io_mode = SPI_FLASH_READ_MODE_MIN;
-            while (io_mode != SPI_FLASH_READ_MODE_MAX) {
+            while (io_mode != SPI_FLASH_QIO + 1) {
                 if (io_mode > SPI_FLASH_FASTRD &&
                     !SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(config->host_id)) {
                     io_mode++;

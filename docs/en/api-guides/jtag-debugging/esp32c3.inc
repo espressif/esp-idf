@@ -125,6 +125,9 @@
     * - MTMS / GPIO4
       - TMS
 
+.. |jtag-sel-gpio| replace:: GPIO10
+.. |jtag-gpio-list| replace:: GPIO4-GPIO7
+
 ---
 
 .. run-openocd-d3

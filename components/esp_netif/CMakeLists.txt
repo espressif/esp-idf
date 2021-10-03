@@ -1,3 +1,11 @@
+idf_build_get_property(target IDF_TARGET)
+
+if(${target} STREQUAL "linux")
+    # Header only library for linux
+    idf_component_register(INCLUDE_DIRS include)
+    return()
+endif()
+
 set(srcs
     "esp_netif_handlers.c"
     "esp_netif_objects.c"

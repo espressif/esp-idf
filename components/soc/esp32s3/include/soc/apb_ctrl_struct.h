@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct apb_ctrl_dev_s {
     union {
         struct {
             uint32_t pre_div                       :    10;

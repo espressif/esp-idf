@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct apb_saradc_dev_s {
     union {
         struct {
             uint32_t start_force:             1;

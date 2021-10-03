@@ -347,8 +347,8 @@ static esp_err_t emac_dm9051_start(esp_eth_mac_t *mac)
 {
     esp_err_t ret = ESP_OK;
     emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
-    /* enable interrupt */
-    ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_IMR, IMR_ALL), err, TAG, "write IMR failed");
+    /* enable only Rx related interrupts as others are processed synchronously */
+    ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_IMR, IMR_PAR | IMR_PRI), err, TAG, "write IMR failed");
     /* enable rx */
     uint8_t rcr = 0;
     ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_RCR, &rcr), err, TAG, "read RCR failed");
@@ -396,8 +396,11 @@ static void emac_dm9051_task(void *arg)
     uint8_t *buffer = NULL;
     uint32_t length = 0;
     while (1) {
-        // block indefinitely until some task notifies me
-        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        // check if the task receives any notification
+        if (ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(1000)) == 0 &&    // if no notification ...
+            gpio_get_level(emac->int_gpio_num) == 0) {               // ...and no interrupt asserted
+            continue;                                                // -> just continue to check again
+        }
         /* clear interrupt status */
         dm9051_register_read(emac, DM9051_ISR, &status);
         dm9051_register_write(emac, DM9051_ISR, status);

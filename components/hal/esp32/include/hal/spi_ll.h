@@ -27,7 +27,10 @@
 #include "esp_types.h"
 #include "esp32/rom/lldesc.h"
 #include "soc/spi_periph.h"
+#include "soc/spi_struct.h"
 #include "hal/misc.h"
+#include "hal/spi_types.h"
+#include "hal/assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,6 +40,9 @@ extern "C" {
 #define SPI_LL_DMA_FIFO_RST_MASK (SPI_AHBM_RST | SPI_AHBM_FIFO_RST)
 /// Interrupt not used. Don't use in app.
 #define SPI_LL_UNUSED_INT_MASK  (SPI_INT_EN | SPI_SLV_WR_STA_DONE | SPI_SLV_RD_STA_DONE | SPI_SLV_WR_BUF_DONE | SPI_SLV_RD_BUF_DONE)
+/// These 2 masks together will set SPI transaction to one line mode
+#define SPI_LL_ONE_LINE_CTRL_MASK (SPI_FREAD_DUAL | SPI_FREAD_QUAD | SPI_FREAD_DIO | SPI_FREAD_QIO)
+#define SPI_LL_ONE_LINE_USER_MASK (SPI_FWRITE_DUAL | SPI_FWRITE_QUAD | SPI_FWRITE_DIO | SPI_FWRITE_QIO)
 /// Swap the bit order to its correct place to send
 #define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)(data) << (32 - len))
 /// This is the expected clock frequency
@@ -52,16 +58,6 @@ typedef uint32_t spi_ll_clock_val_t;
 
 //On ESP32-S2 and earlier chips, DMA registers are part of SPI registers. So set the registers of SPI peripheral to control DMA.
 typedef spi_dev_t spi_dma_dev_t;
-
-/** IO modes supported by the master. */
-typedef enum {
-    SPI_LL_IO_MODE_NORMAL = 0,  ///< 1-bit mode for all phases
-    SPI_LL_IO_MODE_DIO,         ///< 2-bit mode for address and data phases, 1-bit mode for command phase
-    SPI_LL_IO_MODE_DUAL,        ///< 2-bit mode for data phases only, 1-bit mode for command and address phases
-    SPI_LL_IO_MODE_QIO,         ///< 4-bit mode for address and data phases, 1-bit mode for command phase
-    SPI_LL_IO_MODE_QUAD,        ///< 4-bit mode for data phases only, 1-bit mode for command and address phases
-} spi_ll_io_mode_t;
-
 
 /*------------------------------------------------------------------------------
  * Control
@@ -449,37 +445,50 @@ static inline void spi_ll_set_sio_mode(spi_dev_t *hw, int sio_mode)
 }
 
 /**
- * Configure the io mode for the master to work at.
+ * Configure the SPI transaction line mode for the master to use.
  *
- * @param hw Beginning address of the peripheral registers.
- * @param io_mode IO mode to work at, see ``spi_ll_io_mode_t``.
+ * @param hw        Beginning address of the peripheral registers.
+ * @param line_mode SPI transaction line mode to use, see ``spi_line_mode_t``.
  */
-static inline void spi_ll_master_set_io_mode(spi_dev_t *hw, spi_ll_io_mode_t io_mode)
+static inline void spi_ll_master_set_line_mode(spi_dev_t *hw, spi_line_mode_t line_mode)
 {
-    hw->ctrl.val &= ~(SPI_FREAD_DUAL | SPI_FREAD_QUAD | SPI_FREAD_DIO | SPI_FREAD_QIO);
-    hw->user.val &= ~(SPI_FWRITE_DUAL | SPI_FWRITE_QUAD | SPI_FWRITE_DIO | SPI_FWRITE_QIO);
-    switch (io_mode) {
-    case SPI_LL_IO_MODE_DIO:
-        hw->ctrl.fread_dio = 1;
-        hw->user.fwrite_dio = 1;
+    hw->ctrl.val &= ~SPI_LL_ONE_LINE_CTRL_MASK;
+    hw->user.val &= ~SPI_LL_ONE_LINE_USER_MASK;
+    if (line_mode.cmd_lines > 1) {
+        HAL_ASSERT(false);
+    }
+    switch (line_mode.data_lines) {
+    case 2:
+        if (line_mode.addr_lines == 1) {
+            // 1-line-cmd + 1-line-addr + 2-line-data
+            hw->ctrl.fread_dual = 1;
+            hw->user.fwrite_dual = 1;
+        } else if (line_mode.addr_lines == 2) {
+            // 1-line-cmd + 2-line-addr + 2-line-data
+            hw->ctrl.fread_dio = 1;
+            hw->user.fwrite_dio = 1;
+        } else {
+            HAL_ASSERT(false);
+        }
+        hw->ctrl.fastrd_mode = 1;
         break;
-    case SPI_LL_IO_MODE_DUAL:
-        hw->ctrl.fread_dual = 1;
-        hw->user.fwrite_dual = 1;
-        break;
-    case SPI_LL_IO_MODE_QIO:
-        hw->ctrl.fread_qio = 1;
-        hw->user.fwrite_qio = 1;
-        break;
-    case SPI_LL_IO_MODE_QUAD:
-        hw->ctrl.fread_quad = 1;
-        hw->user.fwrite_quad = 1;
+    case 4:
+        if (line_mode.addr_lines == 1) {
+            // 1-line-cmd + 1-line-addr + 4-line-data
+            hw->ctrl.fread_quad = 1;
+            hw->user.fwrite_quad = 1;
+        } else if (line_mode.addr_lines == 4) {
+            // 1-line-cmd + 4-line-addr + 4-line-data
+            hw->ctrl.fread_qio = 1;
+            hw->user.fwrite_qio = 1;
+        } else {
+            HAL_ASSERT(false);
+        }
+        hw->ctrl.fastrd_mode = 1;
         break;
     default:
+        // 1-line-cmd + 1-line-addr + 1-line-data
         break;
-    };
-    if (io_mode != SPI_LL_IO_MODE_NORMAL) {
-        hw->ctrl.fastrd_mode = 1;
     }
 }
 
@@ -502,7 +511,8 @@ static inline void spi_ll_master_select_cs(spi_dev_t *hw, int cs_id)
  * @param hw Beginning address of the peripheral registers.
  * @param keep_active if 0 don't keep CS activated, else keep CS activated
  */
-static inline void spi_ll_master_keep_cs(spi_dev_t *hw, int keep_active) {
+static inline void spi_ll_master_keep_cs(spi_dev_t *hw, int keep_active)
+{
     hw->pin.cs_keep_active = (keep_active != 0) ? 1 : 0;
 }
 
@@ -691,7 +701,7 @@ static inline void spi_ll_set_miso_delay(spi_dev_t *hw, int delay_mode, int dela
 static inline void spi_ll_set_dummy(spi_dev_t *hw, int dummy_n)
 {
     hw->user.usr_dummy = dummy_n ? 1 : 0;
-    hw->user1.usr_dummy_cyclelen = dummy_n - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->user1, usr_dummy_cyclelen, dummy_n - 1);
 }
 
 /**
@@ -849,13 +859,13 @@ static inline void spi_ll_set_command(spi_dev_t *hw, uint16_t cmd, int cmdlen, b
 {
     if (lsbfirst) {
         // The output command start from bit0 to bit 15, kept as is.
-        hw->user2.usr_command_value = cmd;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->user2, usr_command_value, cmd);
     } else {
         /* Output command will be sent from bit 7 to 0 of command_value, and
          * then bit 15 to 8 of the same register field. Shift and swap to send
          * more straightly.
          */
-        hw->user2.usr_command_value = HAL_SPI_SWAP_DATA_TX(cmd, cmdlen);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->user2, usr_command_value, HAL_SPI_SWAP_DATA_TX(cmd, cmdlen));
 
     }
 }

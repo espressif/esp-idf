@@ -45,7 +45,7 @@
 #define LCD_CMD_VSCSAD       0x37 // Vertical scroll start address
 #define LCD_CMD_IDMOFF       0x38 // Recover from IDLE mode
 #define LCD_CMD_IDMON        0x39 // Fall into IDLE mode (8 color depth is displayed)
-#define LCD_CMD_COLMOD       0x3A // Defines the format of RGB picture data, which is to be transferred via the MCU interface
+#define LCD_CMD_COLMOD       0x3A // Defines the format of RGB picture data
 #define LCD_CMD_RAMWRC       0x3C // Memory write continue
 #define LCD_CMD_RAMRDC       0x3E // Memory read continue
 #define LCD_CMD_STE          0x44 // Set tear scanline, tearing effect output signal when display module reaches line N

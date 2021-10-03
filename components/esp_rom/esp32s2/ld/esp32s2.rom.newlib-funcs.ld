@@ -10,8 +10,8 @@
 abs = 0x40000618;
 __ascii_mbtowc = 0x40007a04;
 __ascii_wctomb = 0x400018d0;
-__assert = 0x4001a430;
-__assert_func = 0x4001a408;
+PROVIDE ( __assert = 0x4001a430 );
+PROVIDE ( __assert_func = 0x4001a408 );
 bzero = 0x400078c8;
 _cleanup_r = 0x4001a480;
 creat = 0x4000788c;

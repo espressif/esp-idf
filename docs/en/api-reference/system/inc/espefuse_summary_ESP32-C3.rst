@@ -8,7 +8,6 @@
     EFUSE_NAME (Block)                       Description  = [Meaningful Value] [Readable/Writeable] (Hex Value)
     ----------------------------------------------------------------------------------------
     Config fuses:
-    DIS_RTC_RAM_BOOT (BLOCK0)                Disables boot from RTC RAM                         = False R/W (0b0)
     DIS_ICACHE (BLOCK0)                      Disables ICache                                    = False R/W (0b0)
     DIS_DOWNLOAD_ICACHE (BLOCK0)             Disables Icache when SoC is in Download mode       = False R/W (0b0)
     DIS_FORCE_DOWNLOAD (BLOCK0)              Disables forcing chip into Download mode           = False R/W (0b0)
@@ -50,6 +49,8 @@
     OPTIONAL_UNIQUE_ID (BLOCK2)(0 errors):   Optional unique 128-bit ID                        
     = 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 R/W 
     BLOCK2_VERSION (BLOCK2)                  Version of BLOCK2                                  = No calibration R/W (0b000)
+    CUSTOM_MAC (BLOCK3)                      Custom MAC Address                                
+    = 00:00:00:00:00:00 (OK) R/W 
 
     Jtag Config fuses:
     JTAG_SEL_ENABLE (BLOCK0)                 Set this bit to enable selection between usb_to_jt = False R/W (0b0)

@@ -63,8 +63,8 @@ struct dedic_gpio_bundle_t {
     uint32_t in_mask;    // mask of input channels in the bank
     uint32_t out_offset; // offset in the bank (seen from output channel)
     uint32_t in_offset;  // offset in the bank (seen from input channel)
-    size_t nr_gpio;    // number of GPIOs in the gpio_array
-    int gpio_array[];   // array of GPIO numbers (configured by user)
+    size_t nr_gpio;      // number of GPIOs in the gpio_array
+    int gpio_array[];    // array of GPIO numbers (configured by user)
 };
 
 static esp_err_t dedic_gpio_build_platform(uint32_t core_id)
@@ -80,8 +80,10 @@ static esp_err_t dedic_gpio_build_platform(uint32_t core_id)
                 s_platform[core_id]->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
 #if SOC_DEDIC_GPIO_ALLOW_REG_ACCESS
                 s_platform[core_id]->dev = &DEDIC_GPIO;
-#endif
+#endif // SOC_DEDIC_GPIO_ALLOW_REG_ACCESS
+#if !SOC_DEDIC_PERIPH_AUTO_ENABLE
                 periph_module_enable(dedic_gpio_periph_signals.module); // enable APB clock to peripheral
+#endif // !SOC_DEDIC_PERIPH_AUTO_ENABLE
             }
         }
         _lock_release(&s_platform_mutexlock[core_id]);
@@ -102,7 +104,9 @@ static void dedic_gpio_break_platform(uint32_t core_id)
         if (s_platform[core_id]) {
             free(s_platform[core_id]);
             s_platform[core_id] = NULL;
+#if !SOC_DEDIC_PERIPH_AUTO_ENABLE
             periph_module_disable(dedic_gpio_periph_signals.module); // disable module if no GPIO channel is being used
+#endif // !SOC_DEDIC_PERIPH_AUTO_ENABLE
         }
         _lock_release(&s_platform_mutexlock[core_id]);
     }
@@ -263,6 +267,9 @@ esp_err_t dedic_gpio_new_bundle(const dedic_gpio_bundle_config_t *config, dedic_
             gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[config->gpio_array[i]], PIN_FUNC_GPIO);
             esp_rom_gpio_connect_out_signal(config->gpio_array[i], dedic_gpio_periph_signals.cores[core_id].out_sig_per_channel[out_offset + i], config->flags.out_invert, false);
         }
+#if !SOC_DEDIC_GPIO_OUT_AUTO_ENABLE
+        cpu_ll_enable_dedic_gpio_output(s_platform[core_id]->out_occupied_mask);
+#endif // !SOC_DEDIC_GPIO_OUT_AUTO_ENABLE
     }
 
     // it's safe to initialize bundle members without locks here
@@ -340,14 +347,14 @@ err:
 
 void dedic_gpio_bundle_write(dedic_gpio_bundle_handle_t bundle, uint32_t mask, uint32_t value)
 {
-    // For performace reasons, we don't want to check the validation of parameters here
+    // For performance reasons, we don't want to check the validation of parameters here
     // Even didn't check if we're working on the correct CPU core (i.e. bundle->core_id == current core_id)
     cpu_ll_write_dedic_gpio_mask(bundle->out_mask & (mask << bundle->out_offset), value << bundle->out_offset);
 }
 
 uint32_t dedic_gpio_bundle_read_out(dedic_gpio_bundle_handle_t bundle)
 {
-    // For performace reasons, we don't want to check the validation of parameters here
+    // For performance reasons, we don't want to check the validation of parameters here
     // Even didn't check if we're working on the correct CPU core (i.e. bundle->core_id == current core_id)
     uint32_t value =  cpu_ll_read_dedic_gpio_out();
     return (value & bundle->out_mask) >> (bundle->out_offset);
@@ -355,7 +362,7 @@ uint32_t dedic_gpio_bundle_read_out(dedic_gpio_bundle_handle_t bundle)
 
 uint32_t dedic_gpio_bundle_read_in(dedic_gpio_bundle_handle_t bundle)
 {
-    // For performace reasons, we don't want to check the validation of parameters here
+    // For performance reasons, we don't want to check the validation of parameters here
     // Even didn't check if we're working on the correct CPU core (i.e. bundle->core_id == current core_id)
     uint32_t value  = cpu_ll_read_dedic_gpio_in();
     return (value & bundle->in_mask) >> (bundle->in_offset);

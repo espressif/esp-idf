@@ -89,6 +89,7 @@ typedef enum {
     ETH_CMD_S_PROMISCUOUS, /*!< Set promiscuous mode */
     ETH_CMD_S_FLOW_CTRL,   /*!< Set flow control */
     ETH_CMD_G_DUPLEX_MODE, /*!< Get Duplex mode */
+    ETH_CMD_S_PHY_LOOPBACK,/*!< Set PHY loopback */
 } esp_eth_io_cmd_t;
 
 /**

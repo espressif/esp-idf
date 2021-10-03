@@ -26,7 +26,7 @@ Background
 ----------
 
 Secure Boot protects a device from running unsigned code (verification at time of load). A new RSA based secure boot
-verification scheme (Secure Boot V2) has been introduced for ESP32-S2, ESP32-C3 ECO3 onwards, and ESP32 ECO3 onwards.
+verification scheme (Secure Boot V2) has been introduced for ESP32-S2, ESP32-S3, ESP32-C3 ECO3 onwards, and ESP32 ECO3 onwards.
 
 - The software bootloader’s RSA-PSS signature is verified by the Mask ROM and it is executed post successful verification.
 - The verified software bootloader verifies the RSA-PSS signature of the application image before it is executed.
@@ -36,11 +36,11 @@ Advantages
 
 - The RSA public key is stored on the device. The corresponding RSA private key is kept secret on a server and is never accessed by the device.
 
-  .. only:: esp32
+.. only:: esp32
 
     - Only one public key can be generated and stored in ESP32 ECO3 during manufacturing.
 
-  .. only:: esp32s2 or esp32c3
+.. only:: esp32s2 or esp32c3 or esp32s3
 
     - Up to three public keys can be generated and stored in the chip during manufacturing.
 
@@ -117,7 +117,7 @@ A signature block is “valid” if the first byte is 0xe7 and a valid CRC32 is 
 
     Only one signature block can be appended to the bootloader or application image in ESP32 ECO3.
 
-  .. only:: esp32s2 or esp32c3
+  .. only:: esp32s2 or esp32c3 or esp32s3
 
     Upto 3 signature blocks can be appended to the bootloader or application image in {IDF_TARGET_NAME}.
 
@@ -152,21 +152,23 @@ eFuse usage
 
     - ABS_DONE_1 - Enables secure boot protection on boot.
 
-    - BLK2 - Stores the SHA-256 digest of the public key. SHA-256 hash of public key modulus, exponent, precalculated R & M’ values (represented as 776 bytes – offsets 36 to 812 - as per the :ref:`signature-block-format`) is written to an eFuse key block.
+    - BLK2 - Stores the SHA-256 digest of the public key. SHA-256 hash of public key modulus, exponent, precalculated R & M’ values (represented as 776 bytes – offsets 36 to 812 - as per the :ref:`signature-block-format`) is written to an eFuse key block. The write-protection bit must be set, but the read-protection bit must not.
 
-.. only:: esp32s2 or esp32c3
+.. only:: esp32s2 or esp32c3 or esp32s3
 
     - SECURE_BOOT_EN - Enables secure boot protection on boot.
 
-    - KEY_PURPOSE_X - Set the purpose of the key block on {IDF_TARGET_NAME} by programming SECURE_BOOT_DIGESTX (X = 0, 1, 2) into KEY_PURPOSE_X (X = 0, 1, 2, 3, 4, 5). Example: If KEY_PURPOSE_2 is set to SECURE_BOOT_DIGEST1, then BLOCK_KEY2 will have the Secure Boot V2 public key digest.
+    - KEY_PURPOSE_X - Set the purpose of the key block on {IDF_TARGET_NAME} by programming SECURE_BOOT_DIGESTX (X = 0, 1, 2) into KEY_PURPOSE_X (X = 0, 1, 2, 3, 4, 5). Example: If KEY_PURPOSE_2 is set to SECURE_BOOT_DIGEST1, then BLOCK_KEY2 will have the Secure Boot V2 public key digest. The write-protection bit must be set (this field does not have a read-protection bit).
 
-    - BLOCK_KEYX - The block contains the data corresponding to its purpose programmed in KEY_PURPOSE_X. Stores the SHA-256 digest of the public key. SHA-256 hash of public key modulus, exponent, precalculated R & M’ values (represented as 776 bytes – offsets 36 to 812 - as per the :ref:`signature-block-format`) is written to an eFuse key block.
+    - BLOCK_KEYX - The block contains the data corresponding to its purpose programmed in KEY_PURPOSE_X. Stores the SHA-256 digest of the public key. SHA-256 hash of public key modulus, exponent, precalculated R & M’ values (represented as 776 bytes – offsets 36 to 812 - as per the :ref:`signature-block-format`) is written to an eFuse key block. The write-protection bit must be set, but the read-protection bit must not.
 
     - KEY_REVOKEX - The revocation bits corresponding to each of the 3 key block. Ex. Setting KEY_REVOKE2 revokes the key block whose key purpose is SECURE_BOOT_DIGEST2.
 
     - SECURE_BOOT_AGGRESSIVE_REVOKE - Enables aggressive revocation of keys. The key is revoked as soon as verification with this key fails.
 
     To ensure no trusted keys can be added later by an attacker, each unused key digest slot should be revoked (KEY_REVOKEX). It will be checked during app startup in :cpp:func:`esp_secure_boot_init_checks` and fixed unless :ref:`CONFIG_SECURE_BOOT_ALLOW_UNUSED_DIGEST_SLOTS` is enabled.
+
+The key(s) must be readable in order to give software access to it. If the key(s) is read-protected then the software reads the key(s) as all zeros and the signature verification process occurs with error, bootloader and app can not be run.
 
 .. _secure-boot-v2-howto:
 
@@ -183,7 +185,7 @@ How To Enable Secure Boot V2
 
     4. Select the desired UART ROM download mode in "UART ROM download mode". By default the UART ROM download mode has been kept enabled in order to prevent permanently disabling it in the development phase, this option is a potentially insecure option. It is recommended to disable the UART download mode for better security.
 
-.. only:: esp32s2 or esp32c3
+.. only:: esp32s2 or esp32c3 or esp32s3
 
     2. The "Secure Boot V2" option will be selected and the "App Signing Scheme" would be set to RSA by default.
 
@@ -267,7 +269,7 @@ Secure Boot Best Practices
 * Enable all secure boot options in the Secure Boot Configuration. These include flash encryption, disabling of JTAG, disabling BASIC ROM interpeter, and disabling the UART bootloader encrypted flash access.
 * Use secure boot in combination with :doc:`flash encryption<flash-encryption>` to prevent local readout of the flash contents.
 
-.. only:: esp32s2 or esp32c3
+.. only:: esp32s2 or esp32c3 or esp32s3
 
     Key Management
     --------------

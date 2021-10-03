@@ -1,8 +1,8 @@
-| Supported Targets | ESP32-S2 | ESP32-C3 |
+| Supported Targets | ESP32-S2 | ESP32-C3 | ESP32-S3 |
 # ESP-MQTT SSL Mutual Authentication with Digital Signature
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-Espressif's ESP32-S2 and ESP32-C3 MCU have a built-in Digital Signature (DS) Peripheral, which provides hardware acceleration for RSA signature. More details can be found at [Digital Signature with ESP-TLS](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/api-reference/protocols/esp_tls.html#digital-signature-with-esp-tls).
+Espressif's ESP32-S2, ESP32-S3 and ESP32-C3 MCU have a built-in Digital Signature (DS) Peripheral, which provides hardware acceleration for RSA signature. More details can be found at [Digital Signature with ESP-TLS](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/api-reference/protocols/esp_tls.html#digital-signature-with-esp-tls).
 
 This example connects to the broker test.mosquitto.org using ssl transport with client certificate(RSA) and as a demonstration subscribes/unsubscribes and sends a message on certain topic.The RSA signature operation required in the ssl connection is performed with help of the Digital Signature (DS) peripheral.
 (Please note that the public broker is maintained by the community so may not be always available, for details please visit http://test.mosquitto.org)
@@ -12,12 +12,12 @@ It uses ESP-MQTT library which implements mqtt client to connect to mqtt broker.
 
 ### Hardware Required
 
-This example can be executed on any ESP32-S2, ESP32-C3 board (which has a built-in DS peripheral), the only required interface is WiFi and connection to internet.
+This example can be executed on any ESP32-S2, ESP32-S3, ESP32-C3 board (which has a built-in DS peripheral), the only required interface is WiFi and connection to internet.
 
 ### Configure the project
 
 #### 1) Selecting the target
-As the project is to be built for the target ESP32-S2, ESP32-C3 it should be selected with the following command
+As the project is to be built for the target ESP32-S2, ESP32-S3, ESP32-C3 it should be selected with the following command
 ```
 idf.py set-target /* target */
 ```
@@ -99,7 +99,7 @@ DATA=data
 
 
 ### configure_ds.py
-The script [configure_ds.py](./configure_ds.py) is used for configuring the DS peripheral on the ESP32-S2/ESP32-C3 SoC. The steps in the script are based on technical details of certain operations in the Digital Signature calculation, which can be found at Digital Signature Section of [ESP32-S2 TRM](https://www.espressif.com/sites/default/files/documentation/esp32-s2_technical_reference_manual_en.pdf)
+The script [configure_ds.py](./configure_ds.py) is used for configuring the DS peripheral on the ESP32-S2/ESP32-S3/ESP32-C3 SoC. The steps in the script are based on technical details of certain operations in the Digital Signature calculation, which can be found at Digital Signature Section of [ESP32-S2 TRM](https://www.espressif.com/sites/default/files/documentation/esp32-s2_technical_reference_manual_en.pdf)
 
 The configuration script performs the following steps -
 

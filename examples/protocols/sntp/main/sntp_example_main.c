@@ -122,6 +122,14 @@ static void obtain_time(void)
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK( esp_event_loop_create_default() );
 
+    /**
+     * NTP server address could be aquired via DHCP,
+     * see LWIP_DHCP_GET_NTP_SRV menuconfig option
+     */
+#ifdef LWIP_DHCP_GET_NTP_SRV
+    sntp_servermode_dhcp(1);
+#endif
+
     /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
      * Read "Establishing Wi-Fi or Ethernet Connection" section in
      * examples/protocols/README.md for more information about this function.

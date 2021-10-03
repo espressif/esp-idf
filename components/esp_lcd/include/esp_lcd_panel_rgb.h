@@ -9,6 +9,7 @@
 #include "esp_err.h"
 #include "esp_lcd_types.h"
 #include "soc/soc_caps.h"
+#include "hal/lcd_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,6 +42,7 @@ typedef struct {
  * @brief LCD RGB panel configuration structure
  */
 typedef struct {
+    lcd_clock_source_t clk_src;   /*!< Clock source for the RGB LCD peripheral */
     esp_lcd_rgb_timing_t timings; /*!< RGB timing parameters */
     size_t data_width;            /*!< Number of data lines */
     int hsync_gpio_num;           /*!< GPIO used for HSYNC signal */

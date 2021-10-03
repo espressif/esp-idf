@@ -41,6 +41,8 @@ typedef enum {
     ESP_IEEE802154_TX_ERR_NO_ACK,       /*!< No Ack frame received until timeout */
     ESP_IEEE802154_TX_ERR_INVALID_ACK,  /*!< Invalid Ack frame */
     ESP_IEEE802154_TX_ERR_COEXIST,      /*!< Rejected by coexist system */
+    ESP_IEEE802154_TX_ERR_COEXIST_REJ,  /*!< Rejected by coexist system before transmitting frame */
+    ESP_IEEE802154_TX_ERR_COEXIST_ACK,  /*!< Rejected by coexist system when receiving ack */
 } esp_ieee802154_tx_error_t;
 
 /**
@@ -60,6 +62,7 @@ typedef enum {
     ESP_IEEE802154_AUTO_PENDING_DISABLE,   /*!< Frame pending bit always set to 1 in the ack to Data Request */
     ESP_IEEE802154_AUTO_PENDING_ENABLE,    /*!< Frame pending bit set to 1 if src address matches, in the ack to Data Request */
     ESP_IEEE802154_AUTO_PENDING_ENHANCED,  /*!< Frame pending bit set to 1 if src address matches, in all ack frames */
+    ESP_IEEE802154_AUTO_PENDING_ZIGBEE,    /*!< Frame pending bit set to 0 only if src address is short address and matches in table, in the ack to Data Request */
 } esp_ieee802154_pending_mode_t;
 
 /**

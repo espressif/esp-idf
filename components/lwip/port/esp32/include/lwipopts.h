@@ -33,9 +33,7 @@
 #define __LWIPOPTS_H__
 
 #include <stdlib.h>
-#include <time.h>
 #include <unistd.h>
-#include <sys/time.h>
 #include <sys/fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
@@ -44,6 +42,7 @@
 #include "esp_system.h"
 #include "sdkconfig.h"
 #include "netif/dhcp_state.h"
+#include "sntp/sntp_get_set_time.h"
 
 /* Enable all Espressif-only options */
 
@@ -266,6 +265,12 @@
 #define LWIP_DHCP_IP_ADDR_ERASE(esp_netif)       dhcp_ip_addr_erase(esp_netif)
 
 #endif
+
+/**
+ * CONFIG_LWIP_DHCP_OPTIONS_LEN: The total length of outgoing DHCP option msg. If you have many options
+ * and options value is too long, you can configure the length according to your requirements
+ */
+#define DHCP_OPTIONS_LEN                CONFIG_LWIP_DHCP_OPTIONS_LEN
 
 /*
    ------------------------------------
@@ -595,7 +600,7 @@
  * LWIP_TCPIP_CORE_LOCKING: (EXPERIMENTAL!)
  * Don't use it if you're not an active lwIP project member
  */
-#define LWIP_TCPIP_CORE_LOCKING         0
+#define LWIP_TCPIP_CORE_LOCKING         CONFIG_LWIP_TCPIP_CORE_LOCKING
 
 /*
    ------------------------------------
@@ -911,6 +916,15 @@
 #endif
 
 /**
+ * SNTP_DEBUG: Enable debugging for SNTP.
+ */
+#ifdef CONFIG_LWIP_SNTP_DEBUG
+#define SNTP_DEBUG                       LWIP_DBG_ON
+#else
+#define SNTP_DEBUG                       LWIP_DBG_OFF
+#endif
+
+/**
  * MEMP_DEBUG: Enable debugging in memp.c.
  */
 #define MEMP_DEBUG                      LWIP_DBG_OFF
@@ -969,6 +983,8 @@
 #define LWIP_IPV6_NUM_ADDRESSES         CONFIG_LWIP_IPV6_NUM_ADDRESSES
 
 #define LWIP_ND6_RDNSS_MAX_DNS_SERVERS  CONFIG_LWIP_IPV6_RDNSS_MAX_DNS_SERVERS
+
+#define LWIP_IPV6_DHCP6                 CONFIG_LWIP_IPV6_DHCP6
 
 /* Enable all Espressif-only options */
 
@@ -1044,7 +1060,11 @@
 #define CHECKSUM_CHECK_ICMP             CONFIG_LWIP_CHECKSUM_CHECK_ICMP
 
 #define LWIP_NETCONN_FULLDUPLEX         1
+#if LWIP_TCPIP_CORE_LOCKING
+#define LWIP_NETCONN_SEM_PER_THREAD     0
+#else
 #define LWIP_NETCONN_SEM_PER_THREAD     1
+#endif /* LWIP_TCPIP_CORE_LOCKING */
 
 #define LWIP_DHCP_MAX_NTP_SERVERS       CONFIG_LWIP_DHCP_MAX_NTP_SERVERS
 #define LWIP_TIMEVAL_PRIVATE            0
@@ -1054,25 +1074,15 @@
    ------------ SNTP options ------------
    --------------------------------------
 */
-/*
- * SNTP update delay - in milliseconds
- */
 
-/*
- * Forward declarations of weak definitions from lwip's sntp.c which could
- * be redefined by user application. This is needed to provide custom definition
- * of the below macros in lwip's sntp.c.
- * Full declaration is provided in IDF's port layer in esp_sntp.h
- */
-#ifdef __cplusplus
-#define LWIP_FORWARD_DECLARE_C_CXX extern "C"
-#else
-#define LWIP_FORWARD_DECLARE_C_CXX
-#endif
+// Max number of SNTP servers handled (default equal to LWIP_DHCP_MAX_NTP_SERVERS)
+#if defined CONFIG_LWIP_SNTP_MAX_SERVERS
+#define SNTP_MAX_SERVERS                CONFIG_LWIP_SNTP_MAX_SERVERS
+#endif // CONFIG_LWIP_SNTP_MAX_SERVERS
 
-LWIP_FORWARD_DECLARE_C_CXX void sntp_sync_time(struct timeval *tv);
-
-LWIP_FORWARD_DECLARE_C_CXX uint32_t sntp_get_sync_interval(void);
+#ifdef CONFIG_LWIP_DHCP_GET_NTP_SRV
+#define LWIP_DHCP_GET_NTP_SRV           CONFIG_LWIP_DHCP_GET_NTP_SRV
+#endif // CONFIG_LWIP_DHCP_GET_NTP_SRV
 
 /** Set this to 1 to support DNS names (or IP address strings) to set sntp servers
  * One server address/name can be defined as default if SNTP_SERVER_DNS == 1:
@@ -1083,22 +1093,9 @@ LWIP_FORWARD_DECLARE_C_CXX uint32_t sntp_get_sync_interval(void);
 // It disables a check of SNTP_UPDATE_DELAY it is done in sntp_set_sync_interval
 #define SNTP_SUPPRESS_DELAY_CHECK
 
-#define SNTP_UPDATE_DELAY              (sntp_get_sync_interval())
-
-#define SNTP_SET_SYSTEM_TIME_US(sec, us)  \
-    do { \
-        struct timeval tv = { .tv_sec = sec, .tv_usec = us }; \
-        sntp_sync_time(&tv); \
-    } while (0);
-
-#define SNTP_GET_SYSTEM_TIME(sec, us) \
-    do { \
-        struct timeval tv = { .tv_sec = 0, .tv_usec = 0 }; \
-        gettimeofday(&tv, NULL); \
-        (sec) = tv.tv_sec;  \
-        (us) = tv.tv_usec; \
-        sntp_set_sync_status(SNTP_SYNC_STATUS_RESET); \
-    } while (0);
+#define SNTP_UPDATE_DELAY                 (sntp_get_sync_interval())
+#define SNTP_SET_SYSTEM_TIME_US(sec, us)  (sntp_set_system_time(sec, us))
+#define SNTP_GET_SYSTEM_TIME(sec, us)     (sntp_get_system_time(&(sec), &(us)))
 
 #define SOC_SEND_LOG //printf
 

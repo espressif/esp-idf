@@ -151,7 +151,7 @@ typedef struct {
     //Channel control, status, and information
     union {
         struct {
-            uint32_t active: 1;             /**< The channel is enabled */
+            uint32_t active: 1;             /**< Debugging bit to indicate whether channel is enabled */
             uint32_t halt_requested: 1;     /**< A halt has been requested */
             uint32_t error_pending: 1;      /**< The channel is waiting for the error to be handled */
             uint32_t reserved: 1;
@@ -811,6 +811,8 @@ usbh_hal_chan_t *usbh_hal_get_chan_pending_intr(usbh_hal_context_t *hal);
  * - Returns the corresponding event for that channel
  *
  * @param chan_obj Channel object
+ * @note If the host port has an error (e.g., a sudden disconnect or an port error), any active channels will not
+ *       receive an interrupt. Each active channel must be manually halted.
  * @return usbh_hal_chan_event_t Channel event
  */
 usbh_hal_chan_event_t usbh_hal_chan_decode_intr(usbh_hal_chan_t *chan_obj);

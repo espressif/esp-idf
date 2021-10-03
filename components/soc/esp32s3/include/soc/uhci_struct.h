@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct uhci_dev_s {
     union {
         struct {
             uint32_t tx_rst                        :    1;

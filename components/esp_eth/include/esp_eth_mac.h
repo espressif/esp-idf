@@ -391,7 +391,7 @@ typedef struct {
 #define ETH_MAC_DEFAULT_CONFIG()                          \
     {                                                     \
         .sw_reset_timeout_ms = 100,                       \
-        .rx_task_stack_size = 4096,                       \
+        .rx_task_stack_size = 2048,                       \
         .rx_task_prio = 15,                               \
         .smi_mdc_gpio_num = 23,                           \
         .smi_mdio_gpio_num = 18,                          \

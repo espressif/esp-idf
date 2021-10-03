@@ -104,8 +104,8 @@ typedef volatile struct i2c_dev_s {
     } fifo_conf;
     union {
         struct {
-            uint8_t data;                           /*The register represent the byte  data read from rx_fifo when use apb fifo access*/
-            uint8_t reserved[3];
+            uint32_t data:              8;          /*The register represent the byte  data read from rx_fifo when use apb fifo access*/
+            uint32_t reserved:          24;
         };
         uint32_t val;
     } fifo_data;

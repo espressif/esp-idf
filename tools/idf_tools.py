@@ -295,6 +295,8 @@ def unpack(filename, destination):  # type: (str, str) -> None
     info('Extracting {0} to {1}'.format(filename, destination))
     if filename.endswith(('.tar.gz', '.tgz')):
         archive_obj = tarfile.open(filename, 'r:gz')  # type: Union[TarFile, ZipFile]
+    elif filename.endswith(('.tar.xz')):
+        archive_obj = tarfile.open(filename, 'r:xz')
     elif filename.endswith('zip'):
         archive_obj = ZipFile(filename)
     else:
@@ -1514,7 +1516,7 @@ def action_install_python_env(args):  # type: ignore
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--user', 'virtualenv'],
                                   stdout=sys.stdout, stderr=sys.stderr)
 
-        subprocess.check_call([sys.executable, '-m', 'virtualenv', idf_python_env_path],
+        subprocess.check_call([sys.executable, '-m', 'virtualenv', '--seeder', 'pip', idf_python_env_path],
                               stdout=sys.stdout, stderr=sys.stderr)
     run_args = [virtualenv_python, '-m', 'pip', 'install', '--no-warn-script-location']
     requirements_txt = os.path.join(global_idf_path, 'requirements.txt')

@@ -57,6 +57,7 @@
 /export.*                             @esp-idf-codeowners/tools
 /install.*                            @esp-idf-codeowners/tools
 /sdkconfig.rename                     @esp-idf-codeowners/build-config
+/sonar-project.properties             @esp-idf-codeowners/ci
 
 # sort-order-reset
 
@@ -66,6 +67,7 @@
 /components/bootloader*/              @esp-idf-codeowners/system @esp-idf-codeowners/security
 /components/bt/                       @esp-idf-codeowners/bluetooth
 /components/cbor/                     @esp-idf-codeowners/app-utilities
+/components/cmock/                    @esp-idf-codeowners/system
 /components/coap/                     @esp-idf-codeowners/app-utilities
 /components/console/                  @esp-idf-codeowners/system @esp-idf-codeowners/app-utilities
 /components/cxx/                      @esp-idf-codeowners/system
@@ -159,6 +161,7 @@
 /examples/ethernet/           @esp-idf-codeowners/network
 /examples/get-started/        @esp-idf-codeowners/system
 /examples/mesh/               @esp-idf-codeowners/wifi
+/examples/network/            @esp-idf-codeowners/network @esp-idf-codeowners/wifi
 /examples/openthread/         @esp-idf-codeowners/ieee802154
 /examples/peripherals/        @esp-idf-codeowners/peripherals
 /examples/protocols/          @esp-idf-codeowners/network @esp-idf-codeowners/app-utilities
@@ -183,6 +186,7 @@
 /tools/kconfig*/              @esp-idf-codeowners/build-config
 /tools/ldgen/                 @esp-idf-codeowners/build-config
 /tools/mass_mfg/              @esp-idf-codeowners/app-utilities
+/tools/mocks/                 @esp-idf-codeowners/system
 
 ## Note: owners here should be the same as the owners for the same example subdir, above
 /tools/test_apps/build_system/       @esp-idf-codeowners/build-config

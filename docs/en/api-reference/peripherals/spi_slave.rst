@@ -7,7 +7,7 @@ SPI Slave driver is a program that controls {IDF_TARGET_NAME}'s SPI peripherals 
 Overview of {IDF_TARGET_NAME}'s SPI peripherals
 -----------------------------------------------
 
-.. only:: esp32 or esp32s2
+.. only:: esp32 or esp32s2 or esp32s3
 
     {IDF_TARGET_NAME} integrates two general purpose SPI controllers which can be used as slave nodes driven by an off-chip SPI master
 
@@ -158,7 +158,7 @@ You can also configure a GPIO pin through which the Device will signal to the Ho
 SCLK Frequency Requirements
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-{IDF_TARGET_MAX_FREQ:default="40", esp32="10", esp32s2="40", esp32c3="60"}
+{IDF_TARGET_MAX_FREQ:default="40", esp32="10", esp32s2="40", esp32c3="60", esp32s3="60}
 
 The SPI slaves are designed to operate at up to {IDF_TARGET_MAX_FREQ} MHz. The data cannot be recognized or received correctly if the clock is too fast or does not have a 50% duty cycle.
 
@@ -216,4 +216,3 @@ API Reference
 -------------
 
 .. include-build-file:: inc/spi_slave.inc
-

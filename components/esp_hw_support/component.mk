@@ -6,6 +6,9 @@ ifdef IS_BOOTLOADER_BUILD
 COMPONENT_OBJEXCLUDE += clk_ctrl_os.o \
 						intr_alloc.o \
 						sleep_modes.o \
+						sleep_gpio.o \
+						sleep_mac_bb.o \
+						sleep_retention.o \
 						esp_async_memcpy.o \
 						mac_addr.o \
 						regi2c_ctrl.o \
@@ -14,6 +17,13 @@ COMPONENT_OBJEXCLUDE += clk_ctrl_os.o \
 						port/$(IDF_TARGET)/esp_himem.o \
 						port/$(IDF_TARGET)/spiram.o \
 						port/$(IDF_TARGET)/spiram_psram.o
+endif
+
+ifdef CONFIG_IDF_TARGET_ESP32
+COMPONENT_OBJEXCLUDE += sleep_retention.o
+endif
+ifdef CONFIG_IDF_TARGET_ESP32S2
+COMPONENT_OBJEXCLUDE += sleep_retention.o
 endif
 
 COMPONENT_OBJEXCLUDE += esp_async_memcpy.o

@@ -46,26 +46,26 @@
 
 #if portNUM_PROCESSORS == 2
 
+// This runs on APP CPU:
+static void time_adc_test_task(void* arg)
+{
+    for (int i = 0; i < 200000; ++i) {
+        // wait for 20us, reading one of RTC registers
+        uint32_t ccount = xthal_get_ccount();
+        while (xthal_get_ccount() - ccount < 20 * TARGET_DEFAULT_CPU_FREQ_MHZ) {
+            volatile uint32_t val = REG_READ(RTC_CNTL_STATE0_REG);
+            (void) val;
+        }
+    }
+    SemaphoreHandle_t * p_done = (SemaphoreHandle_t *) arg;
+    xSemaphoreGive(*p_done);
+    vTaskDelay(1);
+    vTaskDelete(NULL);
+}
+
 // https://github.com/espressif/arduino-esp32/issues/120
 TEST_CASE("Reading RTC registers on APP CPU doesn't affect clock", "[newlib]")
 {
-    // This runs on APP CPU:
-    void time_adc_test_task(void* arg)
-    {
-        for (int i = 0; i < 200000; ++i) {
-            // wait for 20us, reading one of RTC registers
-            uint32_t ccount = xthal_get_ccount();
-            while (xthal_get_ccount() - ccount < 20 * TARGET_DEFAULT_CPU_FREQ_MHZ) {
-                volatile uint32_t val = REG_READ(RTC_CNTL_STATE0_REG);
-                (void) val;
-            }
-        }
-        SemaphoreHandle_t * p_done = (SemaphoreHandle_t *) arg;
-        xSemaphoreGive(*p_done);
-        vTaskDelay(1);
-        vTaskDelete(NULL);
-    }
-
     SemaphoreHandle_t done = xSemaphoreCreateBinary();
     xTaskCreatePinnedToCore(&time_adc_test_task, "time_adc", 4096, &done, 5, NULL, 1);
 
@@ -251,6 +251,7 @@ static void get_time_task(void *pvParameters)
     // although exit flag is set in another task, checking (exit_flag == false) is safe
     while (exit_flag == false) {
         gettimeofday(&tv_time, NULL);
+        vTaskDelay(1500 / portTICK_PERIOD_MS);
     }
     xSemaphoreGive(*sema);
     vTaskDelete(NULL);
@@ -259,13 +260,9 @@ static void get_time_task(void *pvParameters)
 static void start_measure(int64_t* sys_time, int64_t* real_time)
 {
     struct timeval tv_time;
-    int64_t t1, t2;
-    do {
-        t1 = esp_timer_get_time();
-        gettimeofday(&tv_time, NULL);
-        t2 = esp_timer_get_time();
-    } while (t2 - t1 > 40);
-    *real_time = t2;
+    // there shouldn't be much time between gettimeofday and esp_timer_get_time
+    gettimeofday(&tv_time, NULL);
+    *real_time = esp_timer_get_time();
     *sys_time = (int64_t)tv_time.tv_sec * 1000000L + tv_time.tv_usec;
 }
 
@@ -301,7 +298,7 @@ static void measure_time_task(void *pvParameters)
         int64_t sys_time_us[2] = { main_sys_time_us[0], 0};
         // although exit flag is set in another task, checking (exit_flag == false) is safe
         while (exit_flag == false) {
-            esp_rom_delay_us(2 * 1000000); // 2 sec
+            vTaskDelay(2000 / portTICK_PERIOD_MS);
 
             start_measure(&sys_time_us[1], &real_time_us[1]);
             result_adjtime_correction_us[1] += calc_correction("measure", sys_time_us, real_time_us);
@@ -322,7 +319,7 @@ static void measure_time_task(void *pvParameters)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("test time adjustment happens linearly", "[newlib][timeout=35]")
+TEST_CASE("test time adjustment happens linearly", "[newlib][timeout=15]")
 {
     exit_flag = false;
 
@@ -335,8 +332,8 @@ TEST_CASE("test time adjustment happens linearly", "[newlib][timeout=35]")
     xTaskCreatePinnedToCore(get_time_task, "get_time_task", 4096, &exit_sema[0], UNITY_FREERTOS_PRIORITY - 1, NULL, 0);
     xTaskCreatePinnedToCore(measure_time_task, "measure_time_task", 4096, &exit_sema[1], UNITY_FREERTOS_PRIORITY - 1, NULL, 1);
 
-    printf("start waiting for 30 seconds\n");
-    vTaskDelay(30000 / portTICK_PERIOD_MS);
+    printf("start waiting for 10 seconds\n");
+    vTaskDelay(10000 / portTICK_PERIOD_MS);
 
     // set exit flag to let thread exit
     exit_flag = true;

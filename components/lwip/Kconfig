@@ -15,6 +15,16 @@ menu "LWIP"
             could be used to convert network interface index to name
             instead of IDF specific esp-netif APIs (such as esp_netif_get_netif_impl_name())
 
+    config LWIP_TCPIP_CORE_LOCKING
+        bool "Enable tcpip　core locking"
+        default n
+        help
+            If Enable tcpip　core locking,Creates a global mutex that is held
+            during TCPIP thread operations.Can be locked by client code to perform
+            lwIP operations without changing into TCPIP thread using callbacks.
+            See LOCK_TCPIP_CORE() and UNLOCK_TCPIP_CORE().
+
+            If disable tcpip　core locking,TCP IP will perform tasks through context switching．
 
     config LWIP_DNS_SUPPORT_MDNS_QUERIES
         bool "Enable mDNS queries in resolving host name"
@@ -256,6 +266,15 @@ menu "LWIP"
             server. Last valid DHCP configuration is stored in nvs and restored after reset/power-up. If IP is still
             available, there is no need for sending discovery message to DHCP server and save some time.
 
+    config LWIP_DHCP_OPTIONS_LEN
+        int "DHCP total option length"
+        default 68
+        range 68 255
+        help
+            Set total length of outgoing DHCP option msg. Generally bigger value means it can carry more
+            options and values. If your code meets LWIP_ASSERT due to option value is too long.
+            Please increase the LWIP_DHCP_OPTIONS_LEN value.
+
     menu "DHCP server"
 
         config LWIP_DHCPS
@@ -363,13 +382,22 @@ menu "LWIP"
 
     config LWIP_IPV6_RDNSS_MAX_DNS_SERVERS
         int "Use IPv6 Router Advertisement Recursive DNS Server Option"
-        depends on LWIP_IPV6
+        depends on LWIP_IPV6_AUTOCONFIG
         default 0
         help
             Use IPv6 Router Advertisement Recursive DNS Server Option (as per RFC 6106) to
             copy a defined maximum number of DNS servers to the DNS module.
             Set this option to a number of desired DNS servers advertised in the RA protocol.
             This feature is disabled when set to 0.
+
+    config LWIP_IPV6_DHCP6
+        bool "Enable DHCPv6 stateless address autoconfiguration"
+        depends on LWIP_IPV6_AUTOCONFIG
+        default n
+        help
+            Enable DHCPv6 for IPv6 stateless address autoconfiguration.
+            Note that the dhcpv6 client has to be started using dhcp6_enable_stateless(netif);
+            Note that the stateful address autoconfiguration is not supported.
 
     config LWIP_NETIF_STATUS_CALLBACK
         bool "Enable status callback for network interfaces"
@@ -837,7 +865,7 @@ menu "LWIP"
 
     menu "SNTP"
 
-        config LWIP_DHCP_MAX_NTP_SERVERS
+        config LWIP_SNTP_MAX_SERVERS
             int "Maximum number of NTP servers"
             default 1
             range 1 16
@@ -845,6 +873,23 @@ menu "LWIP"
                 Set maximum number of NTP servers used by LwIP SNTP module.
                 First argument of sntp_setserver/sntp_setservername functions
                 is limited to this value.
+
+        config LWIP_DHCP_GET_NTP_SRV
+            bool "Request NTP servers from DHCP"
+            default n
+            help
+                If enabled, LWIP will add 'NTP' to Parameter-Request Option sent via DHCP-request.
+                DHCP server might reply with an NTP server address in option 42.
+                SNTP callback for such replies should be set accordingly (see sntp_servermode_dhcp() func.)
+
+        config LWIP_DHCP_MAX_NTP_SERVERS
+            int "Maximum number of NTP servers aquired via DHCP"
+            default 1
+            range 1 16
+            depends on LWIP_DHCP_GET_NTP_SRV
+            help
+                Set maximum number of NTP servers aquired via DHCP-offer.
+                Should be less or equal to "Maximum number of NTP servers", any extra servers would be just ignored.
 
         config LWIP_SNTP_UPDATE_DELAY
             int "Request interval to update time (ms)"
@@ -1022,6 +1067,11 @@ menu "LWIP"
 
     config LWIP_TCP_DEBUG
         bool "Enable TCP debug messages"
+        depends on LWIP_DEBUG
+        default n
+
+    config LWIP_SNTP_DEBUG
+        bool "Enable SNTP debug messages"
         depends on LWIP_DEBUG
         default n
 

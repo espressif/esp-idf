@@ -299,23 +299,23 @@
 
 //interrupt cpu using table, Please see the core-isa.h
 /*************************************************************************************************************
- *      Intr num                Level           Type                    PRO CPU usage           APP CPU uasge
- *      0                       1               extern level            WMAC                    Reserved
- *      1                       1               extern level            BT/BLE Host HCI DMA     BT/BLE Host HCI DMA
+ *      Intr num                Level           Type                    PRO CPU usage
+ *      0                       1               extern level            WMAC
+ *      1                       1               extern level            BT/BLE Host HCI DMA
  *      2                       1               extern level
  *      3                       1               extern level
  *      4                       1               extern level            WBB
- *      5                       1               extern level            BT/BLE Controller       BT/BLE Controller
- *      6                       1               timer                   FreeRTOS Tick(L1)       FreeRTOS Tick(L1)
- *      7                       1               software                BT/BLE VHCI             BT/BLE VHCI
- *      8                       1               extern level            BT/BLE BB(RX/TX)        BT/BLE BB(RX/TX)
+ *      5                       1               extern level            BT/BLE Controller
+ *      6                       1               timer                   FreeRTOS Tick(L1)
+ *      7                       1               software                BT/BLE VHCI
+ *      8                       1               extern level            BT/BLE BB(RX/TX)
  *      9                       1               extern level
  *      10                      1               extern edge
  *      11                      3               profiling
  *      12                      1               extern level
  *      13                      1               extern level
- *      14                      7               nmi                     Reserved                Reserved
- *      15                      3               timer                   FreeRTOS Tick(L3)       FreeRTOS Tick(L3)
+ *      14                      7               nmi                     Reserved
+ *      15                      3               timer                   FreeRTOS Tick(L3)
  *      16                      5               timer
  *      17                      1               extern level
  *      18                      1               extern level
@@ -327,10 +327,10 @@
  *      24                      4               extern level            TG1_WDT
  *      25                      4               extern level            CACHEERR
  *      26                      5               extern level
- *      27                      3               extern level            Reserved                Reserved
- *      28                      4               extern edge             DPORT ACCESS            DPORT ACCESS
- *      29                      3               software                Reserved                Reserved
- *      30                      4               extern edge             Reserved                Reserved
+ *      27                      3               extern level            Reserved
+ *      28                      4               extern edge             Reserved
+ *      29                      3               software                Reserved
+ *      30                      4               extern edge             Reserved
  *      31                      5               extern level
  *************************************************************************************************************
  */
@@ -343,7 +343,6 @@
 #define ETS_FRC1_INUM                           22
 #define ETS_T1_WDT_INUM                         24
 #define ETS_MEMACCESS_ERR_INUM                  25
-#define ETS_DPORT_INUM                          28
 
 //CPU0 Interrupt number used in ROM, should be cancelled in SDK
 #define ETS_SLC_INUM                            1

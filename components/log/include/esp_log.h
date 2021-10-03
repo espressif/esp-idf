@@ -10,9 +10,7 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include "sdkconfig.h"
-#if !defined(CONFIG_IDF_TARGET_LINUX)
 #include "esp_rom_sys.h"
-#endif // !CONFIG_IDF_TARGET_LINUX
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h" // will be removed in idf v5.0
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -89,6 +87,9 @@ esp_log_level_t esp_log_level_get(const char* tag);
  * By default, log output goes to UART0. This function can be used to redirect log
  * output to some other destination, such as file or network. Returns the original
  * log handler, which may be necessary to return output to the previous destination.
+ *
+ * @note Please note that function callback here must be re-entrant as it can be
+ * invoked in parallel from multiple thread context.
  *
  * @param func new Function used for output. Must have same signature as vprintf.
  *

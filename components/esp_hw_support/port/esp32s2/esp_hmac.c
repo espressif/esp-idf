@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 #include "esp32s2/rom/hmac.h"
@@ -55,7 +47,8 @@ esp_err_t esp_hmac_calculate(hmac_key_id_t key_id,
 
 esp_err_t esp_hmac_jtag_enable(hmac_key_id_t key_id, const uint8_t *token)
 {
-    esp_err_t err;
+    int ets_status;
+    esp_err_t err = ESP_OK;
 
     if ((!token) || (key_id >= HMAC_KEY_MAX))
         return ESP_ERR_INVALID_ARG;
@@ -77,10 +70,10 @@ esp_err_t esp_hmac_jtag_enable(hmac_key_id_t key_id, const uint8_t *token)
         REG_WRITE(DPORT_JTAG_CTRL_0_REG + i, __builtin_bswap32(key_word));
     }
 
-    err = ets_hmac_calculate_downstream(convert_key_type(key_id), ETS_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG);
-    if (err != ETS_OK) {
-        ESP_LOGE(TAG, "HMAC downstream JTAG enable mode setting failed.");
-        return ESP_FAIL;
+    ets_status = ets_hmac_calculate_downstream(convert_key_type(key_id), ETS_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG);
+    if (ets_status != ETS_OK) {
+        err = ESP_FAIL;
+        ESP_LOGE(TAG, "HMAC downstream JTAG enable mode setting failed. (%d)", err);
     }
 
     ESP_LOGD(TAG, "HMAC computation in downstream mode is completed.");
@@ -89,7 +82,7 @@ esp_err_t esp_hmac_jtag_enable(hmac_key_id_t key_id, const uint8_t *token)
 
     esp_crypto_dma_lock_release();
 
-    return ESP_OK;
+    return err;
 }
 
 esp_err_t esp_hmac_jtag_disable()

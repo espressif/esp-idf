@@ -10,4 +10,6 @@ idf_component_register(SRCS "esp_spiffs.c"
                     REQUIRES spi_flash
                     PRIV_REQUIRES bootloader_support esptool_py)
 
-set_source_files_properties(spiffs/src/spiffs_nucleus.c PROPERTIES COMPILE_FLAGS -Wno-stringop-truncation)
+if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+    set_source_files_properties(spiffs/src/spiffs_nucleus.c PROPERTIES COMPILE_FLAGS -Wno-stringop-truncation)
+endif()

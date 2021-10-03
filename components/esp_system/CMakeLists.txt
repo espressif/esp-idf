@@ -21,7 +21,8 @@ else()
             "system_time.c"
             "stack_check.c"
             "task_wdt.c"
-            "ubsan.c")
+            "ubsan.c"
+            "xt_wdt.c")
 
     if(NOT (${target} STREQUAL "esp32c3") AND NOT (${target} STREQUAL "esp32h2"))
         list(APPEND srcs  "dbg_stubs.c")
@@ -38,7 +39,7 @@ else()
                                     # should be removable once using component init functions
                                     # link-time registration is used.
                                     esp_pm app_update nvs_flash pthread app_trace esp_gdbstub
-                                    espcoredump esp_phy efuse
+                                    espcoredump esp_phy efuse esp_ipc
                         LDFRAGMENTS "linker.lf" "app.lf")
     add_subdirectory(port)
 

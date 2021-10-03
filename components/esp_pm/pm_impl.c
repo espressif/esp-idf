@@ -31,7 +31,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#if __XTENSA__
+#if CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
 #include "freertos/xtensa_timer.h"
 #include "xtensa/core-macros.h"
 #endif
@@ -68,7 +68,7 @@
 
 #define MHZ (1000000)
 
-#if __XTENSA__
+#ifdef CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
 /* CCOMPARE update timeout, in CPU cycles. Any value above ~600 cycles will work
  * for the purpose of detecting a deadlock.
  */
@@ -78,7 +78,7 @@
  * than this. This is to prevent setting CCOMPARE below CCOUNT.
  */
 #define CCOMPARE_MIN_CYCLES_IN_FUTURE 1000
-#endif
+#endif // CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
 
 /* When light sleep is used, wake this number of microseconds earlier than
  * the next tick.
@@ -115,8 +115,6 @@ static portMUX_TYPE s_switch_lock = portMUX_INITIALIZER_UNLOCKED;
 static pm_mode_t s_mode = PM_MODE_CPU_MAX;
 /* True when switch is in progress */
 static volatile bool s_is_switching;
-/* When switch is in progress, this is the mode we are switching into */
-static pm_mode_t s_new_mode = PM_MODE_CPU_MAX;
 /* Number of times each mode was locked */
 static size_t s_mode_lock_counts[PM_MODE_COUNT];
 /* Bit mask of locked modes. BIT(i) is set iff s_mode_lock_counts[i] > 0. */
@@ -184,7 +182,7 @@ static const char* s_mode_names[] = {
 };
 #endif // WITH_PROFILING
 
-#if __XTENSA__
+#ifdef CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
 /* Indicates to the ISR hook that CCOMPARE needs to be updated on the given CPU.
  * Used in conjunction with cross-core interrupt to update CCOMPARE on the other CPU.
  */
@@ -197,7 +195,7 @@ static uint32_t s_ccount_div;
 static uint32_t s_ccount_mul;
 
 static void update_ccompare(void);
-#endif // __XTENSA__
+#endif // CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
 
 static const char* TAG = "pm";
 
@@ -405,7 +403,7 @@ void IRAM_ATTR esp_pm_impl_switch_mode(pm_mode_t mode,
 #endif // WITH_PROFILING
     }
     portEXIT_CRITICAL_SAFE(&s_switch_lock);
-    if (need_switch && new_mode != s_mode) {
+    if (need_switch) {
         do_switch(new_mode);
     }
 }
@@ -425,7 +423,7 @@ static void IRAM_ATTR on_freq_update(uint32_t old_ticks_per_us, uint32_t ticks_p
         esp_timer_private_update_apb_freq(apb_ticks_per_us);
     }
 
-#if __XTENSA__
+#ifdef CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
 #ifdef XT_RTOS_TIMER_INT
     /* Calculate new tick divisor */
     _xt_tick_divisor = ticks_per_us * MHZ / XT_TICK_PER_SEC;
@@ -462,7 +460,7 @@ static void IRAM_ATTR on_freq_update(uint32_t old_ticks_per_us, uint32_t ticks_p
         s_ccount_div = 0;
         ESP_PM_TRACE_EXIT(CCOMPARE_UPDATE, core_id);
     }
-#endif // __XTENSA__
+#endif // CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
 }
 
 /**
@@ -480,18 +478,17 @@ static void IRAM_ATTR do_switch(pm_mode_t new_mode)
         if (!s_is_switching) {
             break;
         }
-        if (s_new_mode <= new_mode) {
-            portEXIT_CRITICAL_ISR(&s_switch_lock);
-            return;
-        }
-#if __XTENSA__
+#ifdef CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
         if (s_need_update_ccompare[core_id]) {
             s_need_update_ccompare[core_id] = false;
         }
 #endif
         portEXIT_CRITICAL_ISR(&s_switch_lock);
     } while (true);
-    s_new_mode = new_mode;
+    if (new_mode == s_mode) {
+        portEXIT_CRITICAL_ISR(&s_switch_lock);
+        return;
+    }
     s_is_switching = true;
     bool config_changed = s_config_changed;
     s_config_changed = false;
@@ -529,7 +526,7 @@ static void IRAM_ATTR do_switch(pm_mode_t new_mode)
     portEXIT_CRITICAL_ISR(&s_switch_lock);
 }
 
-#if __XTENSA__
+#ifdef CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
 /**
  * @brief Calculate new CCOMPARE value based on s_ccount_{mul,div}
  *
@@ -550,7 +547,7 @@ static void IRAM_ATTR update_ccompare(void)
         }
     }
 }
-#endif // __XTENSA__
+#endif // CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
 
 static void IRAM_ATTR leave_idle(void)
 {
@@ -656,7 +653,7 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
                 /* Adjust RTOS tick count based on the amount of time spent in sleep */
                 vTaskStepTick(slept_ticks);
 
-#if __XTENSA__
+#ifdef CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
                 /* Trigger tick interrupt, since sleep time was longer
                  * than portTICK_PERIOD_MS. Note that setting INTSET does not
                  * work for timer interrupt, and changing CCOMPARE would clear
@@ -666,7 +663,7 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
                 while (!(XTHAL_GET_INTERRUPT() & BIT(XT_TIMER_INTNUM))) {
                     ;
                 }
-#elif __riscv
+#else
                 portYIELD_WITHIN_API();
 #endif
             }
@@ -810,7 +807,7 @@ void IRAM_ATTR esp_pm_impl_isr_hook(void)
      * from happening in this section, since they will also call into esp_pm_impl_isr_hook.
      */
     uint32_t state = portENTER_CRITICAL_NESTED();
-#if __XTENSA__ && (portNUM_PROCESSORS == 2)
+#if defined(CONFIG_FREERTOS_SYSTICK_USES_CCOUNT) && (portNUM_PROCESSORS == 2)
     if (s_need_update_ccompare[core_id]) {
         update_ccompare();
         s_need_update_ccompare[core_id] = false;
@@ -819,7 +816,7 @@ void IRAM_ATTR esp_pm_impl_isr_hook(void)
     }
 #else
     leave_idle();
-#endif // portNUM_PROCESSORS == 2
+#endif // CONFIG_FREERTOS_SYSTICK_USES_CCOUNT && portNUM_PROCESSORS == 2
     portEXIT_CRITICAL_NESTED(state);
     ESP_PM_TRACE_EXIT(ISR_HOOK, core_id);
 }

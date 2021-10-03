@@ -27,6 +27,7 @@ API 指南
    JTAG 调试 <jtag-debugging/index>
    链接脚本生成机制 <linker-script-generation>
    lwIP TCP/IP 协议栈 <lwip>
+   OpenThread <openthread>
    Memory Types <memory-types>
    分区表 <partition-tables>
    Performance <performance/index>
@@ -44,3 +45,4 @@ API 指南
    :SOC_USB_OTG_SUPPORTED: USB 控制台 <usb-otg-console>
    :SOC_USB_SERIAL_JTAG_SUPPORTED: USB Serial/JTAG Controller Console <usb-serial-jtag-console>
    Wi-Fi 驱动 <wifi>
+   Wi-Fi Security <wifi-security>

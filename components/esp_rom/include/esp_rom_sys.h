@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #pragma once
-
+#include "sdkconfig.h"
 #include <stdint.h>
 #include "soc/reset_reasons.h"
 

@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 
 #ifndef __ESP_SPIRAM_H
@@ -86,6 +78,16 @@ void esp_spiram_writeback_cache(void);
  *          - false SPI RAM hasn't been initialized or initialized failed
  */
 bool esp_spiram_is_initialized(void);
+
+/**
+ * @brief get psram CS IO
+ *
+ * This interface should be called after PSRAM is enabled, otherwise it will
+ * return an invalid value -1/0xff.
+ *
+ * @return psram CS IO or -1/0xff if psram not enabled
+ */
+uint8_t esp_spiram_get_cs_io(void);
 
 /**
  * @brief Reserve a pool of internal memory for specific DMA/internal allocations

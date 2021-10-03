@@ -20,7 +20,7 @@ extern "C" {
 
 #include <stdint.h>
 
-typedef volatile struct {
+typedef volatile struct hinf_dev_s {
     union {
         struct {
             uint32_t user_id_fn1:  16;

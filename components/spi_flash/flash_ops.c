@@ -39,6 +39,7 @@
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "soc/spi_mem_reg.h"
 #include "esp32s3/rom/spi_flash.h"
+#include "esp32s3/rom/opi_flash.h"
 #include "esp32s3/rom/cache.h"
 #include "esp32s3/clk.h"
 #include "esp32s3/clk.h"
@@ -55,7 +56,6 @@
 #include "cache_utils.h"
 #include "esp_flash.h"
 #include "esp_attr.h"
-#include "spi_flash_private.h"
 #include "bootloader_flash.h"
 
 esp_rom_spiflash_result_t IRAM_ATTR spi_flash_write_encrypted_chip(size_t dest_addr, const void *src, size_t size);
@@ -163,6 +163,17 @@ void IRAM_ATTR *spi_flash_malloc_internal(size_t size)
     return heap_caps_malloc(size, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
 }
 #endif
+
+void IRAM_ATTR esp_mspi_pin_init(void)
+{
+#if CONFIG_ESPTOOLPY_OCT_FLASH || CONFIG_SPIRAM_MODE_OCT
+    esp_rom_opiflash_pin_config();
+    extern void spi_timing_set_pin_drive_strength(void);
+    spi_timing_set_pin_drive_strength();
+#else
+    //Set F4R4 board pin drive strength. TODO: IDF-3663
+#endif
+}
 
 void spi_flash_init(void)
 {
@@ -506,6 +517,7 @@ out:
 #endif // CONFIG_SPI_FLASH_USE_LEGACY_IMPL
 
 #if !CONFIG_SPI_FLASH_USE_LEGACY_IMPL
+#if !CONFIG_ESPTOOLPY_OCT_FLASH // Test for encryption on opi flash, IDF-3852.
 extern void spi_common_set_dummy_output(esp_rom_spiflash_read_mode_t mode);
 extern void spi_dummy_len_fix(uint8_t spi, uint8_t freqdiv);
 void IRAM_ATTR flash_rom_init(void)
@@ -559,6 +571,7 @@ void IRAM_ATTR flash_rom_init(void)
 #endif //!CONFIG_IDF_TARGET_ESP32S2
     esp_rom_spiflash_config_clk(freqdiv, 1);
 }
+#endif //CONFIG_ESPTOOLPY_OCT_FLASH
 #else
 void IRAM_ATTR flash_rom_init(void)
 {

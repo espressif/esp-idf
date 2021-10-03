@@ -24,8 +24,6 @@ components/wifi_provisioning/python/wifi_constants_pb2.py
 components/wifi_provisioning/python/wifi_scan_pb2.py
 components/xtensa/trax/traceparse.py
 docs/build_docs.py
-docs/conf_common.py
-docs/en/conf.py
 docs/extensions/google_analytics.py
 docs/extensions/html_redirects.py
 docs/extensions/list_filter.py
@@ -75,7 +73,7 @@ examples/protocols/cbor/example_test.py
 examples/protocols/esp_http_client/esp_http_client_test.py
 examples/protocols/esp_local_ctrl/example_test.py
 examples/protocols/esp_local_ctrl/scripts/esp_local_ctrl.py
-examples/protocols/esp_local_ctrl/scripts/proto.py
+examples/protocols/esp_local_ctrl/scripts/proto_lc.py
 examples/protocols/http_server/advanced_tests/http_server_advanced_test.py
 examples/protocols/http_server/advanced_tests/scripts/test.py
 examples/protocols/http_server/persistent_sockets/http_server_persistence_test.py
@@ -230,7 +228,6 @@ tools/idf_py_actions/global_options.py
 tools/idf_py_actions/serial_ext.py
 tools/idf_py_actions/tools.py
 tools/idf_py_actions/uf2_ext.py
-tools/idf_size.py
 tools/kconfig_new/confgen.py
 tools/kconfig_new/confserver.py
 tools/kconfig_new/esp-windows-curses/setup.py
@@ -271,7 +268,6 @@ tools/test_idf_py/extra_path/some_ext.py
 tools/test_idf_py/idf_ext.py
 tools/test_idf_py/test_idf_extensions/test_ext/test_extension.py
 tools/test_idf_py/test_idf_py.py
-tools/test_idf_size/test_idf_size.py
 tools/test_idf_tools/test_idf_tools.py
 tools/test_mkdfu/test_mkdfu.py
 tools/test_mkuf2/test_mkuf2.py

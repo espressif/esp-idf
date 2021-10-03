@@ -149,6 +149,12 @@ the adv packet will be discarded until the memory is restored. */
 #define BTDM_CTRL_AUTO_LATENCY_EFF false
 #endif
 
+#ifdef CONFIG_BTDM_CTRL_HLI
+#define BTDM_CTRL_HLI CONFIG_BTDM_CTRL_HLI
+#else
+#define BTDM_CTRL_HLI false
+#endif
+
 #ifdef CONFIG_BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF
 #define BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF CONFIG_BTDM_CTRL_LEGACY_AUTH_VENDOR_EVT_EFF
 #else
@@ -183,6 +189,7 @@ the adv packet will be discarded until the memory is restored. */
     .ble_sca = CONFIG_BTDM_BLE_SLEEP_CLOCK_ACCURACY_INDEX_EFF,             \
     .pcm_role = CONFIG_BTDM_CTRL_PCM_ROLE_EFF,                             \
     .pcm_polar = CONFIG_BTDM_CTRL_PCM_POLAR_EFF,                           \
+    .hli = BTDM_CTRL_HLI,                                                  \
     .magic = ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL,                           \
 };
 
@@ -224,6 +231,7 @@ typedef struct {
     uint8_t ble_sca;                        /*!< BLE low power crystal accuracy index */
     uint8_t pcm_role;                       /*!< PCM role (master & slave)*/
     uint8_t pcm_polar;                      /*!< PCM polar trig (falling clk edge & rising clk edge) */
+    bool hli;                               /*!< Using high level interrupt or not */
     uint32_t magic;                         /*!< Magic number */
 } esp_bt_controller_config_t;
 
@@ -382,12 +390,6 @@ esp_err_t esp_bt_controller_disable(void);
  * @return status value
  */
 esp_bt_controller_status_t esp_bt_controller_get_status(void);
-
-/**
- * @brief  Get BT MAC address.
- * @return Array pointer of length 6 storing MAC address value.
- */
-uint8_t* esp_bt_get_mac(void);
 
 /** @brief esp_vhci_host_callback
  *  used for vhci call host function to notify what host need to do

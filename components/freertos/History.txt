@@ -1,4 +1,4 @@
-Documentation and download available at http://www.FreeRTOS.org/
+Documentation and download available at https://www.FreeRTOS.org/
 
 Changes since the last release:
 	+ Added xTaskCatchUpTicks() which corrects the tick count value after the
@@ -17,6 +17,147 @@ Changes since the last release:
 	  the variable xPendingTicks.
 	+ Correct alignment of stack top in RISC-V port when
 	  configISR_STACK_SIZE_WORDS is defined to a non zero value.
+
+
+Changes between FreeRTOS V10.4.2 and FreeRTOS V10.4.3 released December 14 2020
+
+	V10.4.3 is included in the 202012.00 LTS release.  Learn more at https:/freertos.org/lts-libraries.html
+
+	See https://www.FreeRTOS.org/FreeRTOS-V10.4.x.html
+
+	+ Changes to improve robustness and consistency for buffer allocation in
+	  the heap, queue and stream buffer.
+	+ The following functions can no longer be called from unprivileged code.
+	  - xTaskCreateRestricted
+	  - xTaskCreateRestrictedStatic
+	  - vTaskAllocateMPURegions
+
+
+Changes between FreeRTOS V10.4.1 and FreeRTOS V10.4.2 released November 10 2020
+
+	See https://www.FreeRTOS.org/FreeRTOS-V10.4.x.html
+
+	+ Fix an issue in the ARMv8-M ports that caused BASEPRI to be masked
+	  between the first task starting to execute and that task making
+	  a FreeRTOS API call.
+	+ Introduced xTaskDelayUntil(), which is functionally equivalent to
+	  vTaskDelayUntil(), with the addition of returning a value to
+	  indicating whether or not the function placed the calling task into
+	  the Blocked state or not.
+	+ Update WolfSSL to 4.5.0 and add the FIPS ready demo.
+	+ Add support for ESP IDF 4.2 to ThirdParty Xtensa port.
+	+ Re-introduce uxTopUsedPriority to support OpenOCD debugging.
+	+ Convert most dependent libraries in FreeRTOS/FreeRTOS to submodules.
+	+ Various general maintenance and improvements to MISRA compliance.
+
+
+Changes between FreeRTOS V10.4.0 and FreeRTOS V10.4.1 released September 17 2020
+
+	See https://www.FreeRTOS.org/FreeRTOS-V10.4.x.html
+
+	+ Fixed an incorrectly named parameter that prevented the
+	  ulTaskNotifyTakeIndexed macro compiling, and the name space clash in the
+	  test code that prevented this error causing test failures.
+
+
+Changes between FreeRTOS V10.3.1 and FreeRTOS V10.4.0 released September 10 2020
+
+	See https://www.FreeRTOS.org/FreeRTOS-V10.4.x.html
+
+	Major enhancements:
+
+	+ Task notifications:  Prior to FreeRTOS V10.4.0 each created task had a
+	  single direct to task notification.  From FreeRTOS V10.4.0 each task has
+	  an array of notifications.  The direct to task notification API has been
+	  extended with API functions postfixed with "Indexed" to enable the API to
+	  operate on a task notification at any array index.  See
+	  https://www.freertos.org/RTOS-task-notifications.html for more information.
+	+ Kernel ports that support memory protection units (MPUs): The ARMv7-M and
+	  ARMv8-M MPU ports now support a privilege access only heap. The ARMv7-M
+	  MPU ports now support devices that have 16 MPU regions, have the ability
+	  to override default memory attributes for privileged code and data
+	  regions, and have the ability to place the FreeRTOS kernel code outside of
+	  the Flash memory. The ARMv8-M MPU ports now support tickless idle mode.
+	  See https://www.freertos.org/FreeRTOS-MPU-memory-protection-unit.html
+	  for more information.
+
+	Additional noteworthy updates:
+
+	+ Code formatting is now automated to facilitate the increase in
+	  collaborative development in Git.  The auto-formated code is not identical
+	  to the original formatting conventions.  Most notably spaces are now used
+	  in place of tabs.
+	+ The prototypes for callback functions (those that start with "Application",
+	  such as vApplicationStackOverflowHook()) are now in the FreeRTOS header
+	  files, removing the need for application writers to add prototypes into
+	  the C files in which they define the functions.
+	+ New Renesas RXv3 port layer.
+	+ Updates to the Synopsys ARC code, including support for EM and HS cores,
+	  and updated BSP.
+	+ Added new POSIX port layer that allows FreeRTOS to run on Linux hosts in
+	  the same way the Windows port layer enables FreeRTOS to run on Windows
+	  hosts.
+	+ Many other minor optimisations and enhancements. For full details
+	  see https://github.com/FreeRTOS/FreeRTOS-Kernel/commits/master
+
+
+Changes between FreeRTOS V10.3.0 and FreeRTOS V10.3.1 released February 18 2020
+
+	See https://www.FreeRTOS.org/FreeRTOS-V10.3.x.html
+
+	+ ./FreeRTOS-Labs directory was removed from this file. The libraries it
+	contained are now available as a separate download.
+
+Changes between FreeRTOS V10.2.1 and FreeRTOS V10.3.0 released February 7 2020
+
+	See https://www.FreeRTOS.org/FreeRTOS-V10.3.x.html
+
+	New and updated kernel ports:
+
+	+ Added RISC-V port for the IAR compiler.
+	+ Update the Windows simulator port to use a synchronous object to prevent
+	  a user reported error whereby a task continues to run for a short time
+	  after being moved to the Blocked state.  Note we were not able to
+	  replicate the reported issue and it likely depends on your CPU model.
+	+ Correct alignment of stack top in RISC-V port when
+	  configISR_STACK_SIZE_WORDS is defined to a non zero value, which causes
+	  the interrupt stack to be statically allocated.
+	+ The RISC-V machine timer compare register can now be for any HART, whereas
+	  previously it was always assumed FreeRTOS was running on HART 0.
+	+ Update the sequence used to update the 64-bit machine timer
+	  compare register on 32-bit cores to match that suggested in RISC-V
+	  documentation.
+	+ Added tickless low power modes into the ARM, IAR and GCC Cortex-M0 compiler
+	  ports.
+	+ Updated the behaviour of the ARMv7-M MPU (Memory Protection Unit) ports to
+	  match that of the ARMv8-M ports whereby privilege escalations can only
+	  originate from within the kernel's own memory segment.  Added
+	  configENFORCE_SYSTEM_CALLS_FROM_KERNEL_ONLY configuration constant.
+	+ Update existing MPU ports to correctly disable the MPU before it is
+	  updated.
+	+ Added contributed port and demo application for a T-Head (formally C-SKY)
+	  microcontroller.
+
+	New API functions:
+
+	+ Added the vPortGetHeapStats() API function which returns information on
+	  the heap_4 and heap_5 state.
+	+ Added xTaskCatchUpTicks(), which corrects the tick count value after the
+	  application code has held interrupts disabled for an extended period.
+	+ Added xTaskNotifyValueClear() API function.
+	+ Added uxTimerGetReloadMode() API function.
+
+	Other miscellaneous changes:
+	+ Change type of uxPendedTicks from UBaseType_t to TickType_t to ensure it
+	  has the same type as variables with which it is compared to, and therefore
+	  also renamed the variable xPendingTicks.
+	+ Update Keil projects that use the MPU so memory regions come from linker
+	  script (scatter file) variables instead of being hard coded.
+	+ Added LPC51U68 Cortex-M0+ demos for GCC (MCUXpresso), Keil and IAR
+	  compilers.
+	+ Added CORTEX_MPU_STM32L4_Discovery_Keil_STM32Cube demo.
+	+ Added LPC54018 MPU demo.
+	+ Rename xTaskGetIdleRunTimeCounter() to ulTaskGetIdleRunTimeCounter().
 
 
 Changes between FreeRTOS V10.2.1 and FreeRTOS V10.2.0 released May 13 2019:
@@ -163,8 +304,8 @@ Changes between FreeRTOS V9.0.1 and FreeRTOS V10.0.0:
 
 	New Features and components:
 
-	+ Stream Buffers - see http://www.FreeRTOS.org/RTOS-stream-buffer-example.html
-	+ Message Buffers - see http://www.FreeRTOS.org//RTOS-message-buffer-example.html
+	+ Stream Buffers - see https://www.FreeRTOS.org/RTOS-stream-buffer-example.html
+	+ Message Buffers - see https://www.FreeRTOS.org//RTOS-message-buffer-example.html
 	+ Move FreeRTOS+TCP into the main repository, along with the basic Win32
 	  TCP demo FreeRTOS_Plus_TCP_Minimal_Windows_Simulator.
 
@@ -266,7 +407,7 @@ Changes since FreeRTOS V9.0.0:
 
 Changes between FreeRTOS V9.0.0 and FreeRTOS V9.0.0rc2 released May 25 2016:
 
-	See http://www.FreeRTOS.org/FreeRTOS-V9.html
+	See https://www.FreeRTOS.org/FreeRTOS-V9.html
 
 	RTOS kernel updates:
 
@@ -275,7 +416,7 @@ Changes between FreeRTOS V9.0.0 and FreeRTOS V9.0.0rc2 released May 25 2016:
 	  "CreateStatic()" API functions.  The stack size parameter in
 	  xTaskCreateStatic() is now uint32_t, which changes the prototype of the
 	  callback functions.  See the following URL:
-	  http://www.freertos.org/xTaskCreateStatic.html
+	  https://www.FreeRTOS.org/xTaskCreateStatic.html
 	+ GCC ARM Cortex-A port:  Introduced the configUSE_TASK_FPU_SUPPORT
 	  constant.  When configUSE_TASK_FPU_SUPPORT is set to 2 every task is
 	  automatically given a floating point (FPU) context.
@@ -324,7 +465,7 @@ Changes between FreeRTOS V9.0.0 and FreeRTOS V9.0.0rc2 released May 25 2016:
 Changes between FreeRTOS V9.0.0rc1 and FreeRTOS V9.0.0rc2 (release candidate 2)
 released March 30 2016:
 
-	NOTE - See http://www.FreeRTOS.org/FreeRTOS-V9.html for details
+	NOTE - See https://www.FreeRTOS.org/FreeRTOS-V9.html for details
 
 	+ The functions that create RTOS objects using static memory allocation have
 	  been simplified and will not revert to using dynamic allocation if a
@@ -515,6 +656,8 @@ Changes between V8.2.0 and V8.2.1 released 24th March 2015.
 	  Windows port.
 	+ Update the PIC32 port to remove deprecation warnings output by the latest
 	  XC32 compilers.
+	+ Fix bug when xQueueOverwrite() and xQueueOverwrite() from ISR are used to
+	  overwrite items in two queues that are part of the same set.
 
 	Demo application updates:
 
@@ -535,7 +678,7 @@ Changes between V8.1.2 and V8.2.0 released 16th January 2015
 	Significant RTOS kernel updates:
 
 	+ MAJOR NEW FEATURE!  Task notifications.  Please see the following URL for
-	  details: http://www.FreeRTOS.org/RTOS-task-notifications.html
+	  details: https://www.FreeRTOS.org/RTOS-task-notifications.html
 	+ NEW HEADER FILE REQUIRED!  Obsolete definitions have been separated into
 	  a new header file called FreeRTOS/Source/include/deprecated_definitions.h.
 	  This header file must be present to build.  Note some of the obsolete
@@ -699,21 +842,21 @@ Changes between V8.0.0 and V8.0.1 released 2nd May 2014
 
 Changes between V7.6.0 and V8.0.0 released 19th Feb 2014
 
-	http://www.freertos.org/upgrading-to-FreeRTOS-V8.html
+	https://www.FreeRTOS.org/upgrading-to-FreeRTOS-V8.html
 
 	FreeRTOS V8.x.x is a drop-in compatible replacement for FreeRTOS V7.x.x,
 	although a change to the type used to reference character strings may result
 	in application code generating a few (easily clearable) compiler warnings
 	after the upgrade, and an updated typedef naming convention means use of the
 	old typedef names is now discouraged.
-	See http://www.freertos.org/upgrading-to-FreeRTOS-V8.html for full
+	See https://www.FreeRTOS.org/upgrading-to-FreeRTOS-V8.html for full
 	information.
 
 	New features and functionality:
 
-	+ Event groups - see http://www.freertos.org/FreeRTOS-Event-Groups.html
+	+ Event groups - see https://www.FreeRTOS.org/FreeRTOS-Event-Groups.html
 	+ Centralised deferred interrupt processing - see
-	  http://www.freertos.org/xTimerPendFunctionCallFromISR.html
+	  https://www.FreeRTOS.org/xTimerPendFunctionCallFromISR.html
 
 	Other updates:
 
@@ -724,7 +867,7 @@ Changes between V7.6.0 and V8.0.0 released 19th Feb 2014
 	  priority of the Running task.
 	+ New low power tickless demonstration project that targets the ST STM32L
 	  microcontroller - see
-	  http://www.freertos.org/STM32L-discovery-low-power-tickless-RTOS-demo.html
+	  https://www.FreeRTOS.org/STM32L-discovery-low-power-tickless-RTOS-demo.html
 	+ Add xPortGetMinimumEverFreeHeapSize() to heap_4.c.
 	+ Small change to the tickless low power implementation on the SAM4L to
 	  ensure the alarm value (compare match value) cannot be set to zero when a
@@ -874,8 +1017,8 @@ Changes between V7.4.2 and V7.5.0 released July 19 2013
 
 	New API functions:
 
-	+ uxTaskGetSystemState() http://www.freertos.org/uxTaskGetSystemState.html
-	+ xQueueOverwrite() http://www.freertos.org/xQueueOverwrite.html
+	+ uxTaskGetSystemState() https://www.FreeRTOS.org/uxTaskGetSystemState.html
+	+ xQueueOverwrite() https://www.FreeRTOS.org/xQueueOverwrite.html
 	+ xQueueOverwriteFromISR()
 	+ xQueuePeekFromISR()
 
@@ -888,7 +1031,7 @@ Changes between V7.4.2 and V7.5.0 released July 19 2013
 	+ Microsemi SmartFusion2
 
 	New FreeRTOSConfig.h settings
-	http://shop.freertos.org/FreeRTOS_API_and_Configuration_Reference_s/1822.htm
+	https://freertos.org/a00110.html
 
 	+ configUSE_TIME_SLICING
 	+ configUSE_NEWLIB_REENTRANT
@@ -925,7 +1068,7 @@ Changes between V7.4.1 and V7.4.2 released May 1 2013
 
 	+ Added FreeRTOS+FAT SL source code and demo project.  The demo project
 	  runs in the FreeRTOS Windows simulator for easy and hardware independent
-	  experimentation and evaluation.  See http://www.FreeRTOS.org/fat_sl
+	  experimentation and evaluation.  See https://www.FreeRTOS.org/fat_sl
 
 Changes between V7.4.0 and V7.4.1 released April 18 2013
 
@@ -954,7 +1097,7 @@ Changes between V7.4.0 and V7.4.1 released April 18 2013
 Changes between V7.3.0 and V7.4.0 released February 20 2013
 
 	+ New feature:  Queue sets.  See:
-	  http://www.FreeRTOS.org/Pend-on-multiple-rtos-objects.html
+	  https://www.FreeRTOS.org/Pend-on-multiple-rtos-objects.html
 	+ Overhauled the default tickless idle mode implementation provided with the
 	  ARM Cortex-M3 port layers.
 	+ Enhanced tickless support in the core kernel code with the introduction of
@@ -1101,7 +1244,7 @@ Changes between V7.1.0 and V7.1.1 released May 1 2012
 
 	+ Introduced the portSETUP_TCB() macro to remove the requirement for the
 	  Windows simulator to use the traceTASK_CREATE() macro, leaving the trace
-	  macro available for use by FreeRTOS+Trace (http://www.FreeRTOS.org/trace).
+	  macro available for use by FreeRTOS+Trace (https://www.FreeRTOS.org/trace).
 	+ Added a new trace macro, traceMOVE_TASK_TO_READY_STATE(), to allow future
 	  FreeRTOS+Trace versions to provide even more information to users.
 	+ Updated the FreeRTOS MPU port to be correct for changes that were
@@ -1129,7 +1272,7 @@ Changes between V7.1.0 and V7.1.1 released May 1 2012
 
 	+ The command interpreter has now been formally released as FreeRTOS+CLI,
 	  and been moved out of the main FreeRTOS download, to instead be available
-	  from the FreeRTOS+ Ecosystem site http://www.FreeRTOS.org/plus.
+	  from the FreeRTOS+ Ecosystem site https://www.FreeRTOS.org/plus.
 	+ flash_timer.c/h has been added to the list of standard demo tasks.  This
 	  performs the same functionality as the flash.c tasks, but using software
 	  timers in place of tasks.
@@ -1411,7 +1554,7 @@ Changes between V6.0.3 and V6.0.4 released March 14 2010
 	+ All the contributed files that were located in the Demo/Unsupported_Demos
 	  directory have been removed.  These files are instead now available in the
 	  new  Community Contributions section of the FreeRTOS website.  See
-	  http://www.freertos.org/RTOS-contributed-ports.html
+	  https://www.FreeRTOS.org/RTOS-contributed-ports.html
 	+ The project file located in the Demo/CORTEX_STM32F107_GCC_Rowley directory
 	  has been upgraded to use V2.x of the Rowley Crossworks STM32 support
 	  package.
@@ -1704,9 +1847,6 @@ Changes between V4.8.0 and V5.0.0 released April 15, 2008
 	compiler might not issue any type mismatch warnings!
 
 
-	See http://www.FreeRTOS.org/upgrading.html for full information.
-
-
 	Other changes:
 
 	+ Support added for the new Luminary Micro LM3S3768 and LM3S3748 Cortex-M3
@@ -1960,7 +2100,7 @@ Changes between V4.0.1 and V4.0.2 released May 28, 2006
 	  it was also called when the tick function was called during the scheduler
 	  unlocking process.
 	+ The EMAC driver in the SAM7X lwIP demo has been made more robust as per
-	  the thread: http://sourceforge.net/forum/message.php?msg_id=3714405
+	  the thread: https://sourceforge.net/forum/message.php?msg_id=3714405
 	+ In the PC ports:  Add function prvSetTickFrequencyDefault() to set the
 	  DOS tick back to its proper value when the scheduler exits.  Thanks
 	  Raynald!

@@ -153,6 +153,7 @@ typedef union {
          *  USB D- rx value in test.
          */
         uint32_t test_rx_dm:1;
+        uint32_t reserved:25;
     };
     uint32_t val;
 } usb_wrap_test_conf_reg_t;

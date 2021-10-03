@@ -18,6 +18,7 @@
 #include "esp_attr.h"
 #include "esp_efuse.h"
 #include "esp_log.h"
+#include "esp_ipc_isr.h"
 #include "sdkconfig.h"
 #include "esp_rom_uart.h"
 #include "soc/dport_reg.h"
@@ -67,7 +68,7 @@ void IRAM_ATTR esp_restart_noos(void)
     esp_cpu_stall(other_core_id);
 
     // Other core is now stalled, can access DPORT registers directly
-    esp_dport_access_int_abort();
+    esp_ipc_isr_stall_abort();
 
     //Todo: Refactor to use Interrupt or Task Watchdog API, and a system level WDT context
     // Disable TG0/TG1 watchdogs

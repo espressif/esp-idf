@@ -2,6 +2,8 @@
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
+**Note:** This example uses an internal implementation of the [modem component](components/modem) that will not be maintained in `v5.0` and this example will be migrated to [esp-modem component](https://components.espressif.com/component/espressif/esp_modem).
+
 ## Overview
 
 A general PPP application consists of two parts: PPP server which is provided by cellular modem module and PPP client which is provided by ESP32 in this example.

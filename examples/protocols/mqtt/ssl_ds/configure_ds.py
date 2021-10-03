@@ -46,8 +46,8 @@ csv_filename = esp_ds_data_dir + '/pre_prov.csv'
 bin_filename = esp_ds_data_dir + '/pre_prov.bin'
 expected_json_path = os.path.join('build', 'config', 'sdkconfig.json')
 # Targets supported by the script
-supported_targets = {'esp32s2', 'esp32c3'}
-supported_key_size = {'esp32s2':[1024, 2048, 3072, 4096], 'esp32c3':[1024, 2048, 3072]}
+supported_targets = {'esp32s2', 'esp32c3', 'esp32s3'}
+supported_key_size = {'esp32s2':[1024, 2048, 3072, 4096], 'esp32c3':[1024, 2048, 3072], 'esp32s3':[1024, 2048, 3072, 4096]}
 
 
 # @return
@@ -89,7 +89,7 @@ def number_as_bytes(number, pad_bits=None):
 #       privkey         : path to the RSA private key
 #       priv_key_pass   : path to the RSA privaete key password
 #       hmac_key        : HMAC key value ( to calculate DS params)
-#       idf_target      : The target chip for the script (e.g. esp32s2, esp32c3)
+#       idf_target      : The target chip for the script (e.g. esp32s2, esp32c3, esp32s3)
 # @info
 #       The function calculates the encrypted private key parameters.
 #       Consult the DS documentation (available for the ESP32-S2) in the esp-idf programming guide for more details about the variables and calculations.

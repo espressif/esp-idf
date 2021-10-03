@@ -12,6 +12,7 @@
 #include "esp32s3/rom/opi_flash.h"
 #include "spi_flash_private.h"
 #include "soc/spi_mem_reg.h"
+#include "soc/io_mux_reg.h"
 #if CONFIG_ESPTOOLPY_FLASH_VENDOR_MXIC
 #include "opi_flash_cmd_format_mxic.h"
 #endif
@@ -21,40 +22,11 @@
 #define SPI_FLASH_SPI_CMD_RDCR      0x15
 #define SPI_FLASH_SPI_CMD_WRSRCR    0x01
 
-#define SPI_FLASH_OCTCLK_IO         30
-#define SPI_FLASH_OCTDQS_IO         37
-#define SPI_FLASH_OCTD0_IO          32
-#define SPI_FLASH_OCTD1_IO          31
-#define SPI_FLASH_OCTD2_IO          28
-#define SPI_FLASH_OCTD3_IO          27
-#define SPI_FLASH_OCTD4_IO          33
-#define SPI_FLASH_OCTD5_IO          34
-#define SPI_FLASH_OCTD6_IO          35
-#define SPI_FLASH_OCTD7_IO          36
-#define SPI_FLASH_OCTCS_IO          29
-#define SPI_FLASH_OCTCS1_IO         26
-
-
 // default value is rom_default_spiflash_legacy_flash_func
 extern const spiflash_legacy_funcs_t *rom_spiflash_legacy_funcs;
 extern int SPI_write_enable(void *spi);
 DRAM_ATTR const esp_rom_opiflash_def_t opiflash_cmd_def = OPI_CMD_FORMAT();
 
-void s_set_flash_pin_drive_capability(uint8_t drv)
-{
-    esp_rom_gpio_pad_set_drv(SPI_FLASH_OCTCLK_IO, drv);
-    esp_rom_gpio_pad_set_drv(SPI_FLASH_OCTDQS_IO, drv);
-    esp_rom_gpio_pad_set_drv(SPI_FLASH_OCTD0_IO, drv);
-    esp_rom_gpio_pad_set_drv(SPI_FLASH_OCTD1_IO, drv);
-    esp_rom_gpio_pad_set_drv(SPI_FLASH_OCTD2_IO, drv);
-    esp_rom_gpio_pad_set_drv(SPI_FLASH_OCTD3_IO, drv);
-    esp_rom_gpio_pad_set_drv(SPI_FLASH_OCTD4_IO, drv);
-    esp_rom_gpio_pad_set_drv(SPI_FLASH_OCTD5_IO, drv);
-    esp_rom_gpio_pad_set_drv(SPI_FLASH_OCTD6_IO, drv);
-    esp_rom_gpio_pad_set_drv(SPI_FLASH_OCTD7_IO, drv);
-    esp_rom_gpio_pad_set_drv(SPI_FLASH_OCTCS_IO, drv);
-    esp_rom_gpio_pad_set_drv(SPI_FLASH_OCTCS1_IO, drv);
-}
 
 static void s_register_rom_function(void)
 {
@@ -145,6 +117,14 @@ static void s_set_flash_ouput_driver_strength(int spi_num, uint8_t strength)
                               false);
 }
 
+static void s_set_pin_drive_capability(uint8_t drv)
+{
+    //flash clock
+    REG_SET_FIELD(SPI_MEM_DATE_REG(0), SPI_MEM_SPI_FMEM_SPICLK_FUN_DRV, 3);
+    //cs0
+    PIN_SET_DRV(IO_MUX_GPIO29_REG, 3);
+}
+
 static void s_flash_init_mxic(esp_rom_spiflash_read_mode_t mode)
 {
     esp_rom_opiflash_legacy_driver_init(&opiflash_cmd_def);
@@ -156,13 +136,13 @@ static void s_flash_init_mxic(esp_rom_spiflash_read_mode_t mode)
     // STR/DTR specific setting
     esp_rom_spiflash_wait_idle(&g_rom_flashchip);
 #if CONFIG_ESPTOOLPY_FLASHMODE_OPI_STR
-    s_set_flash_pin_drive_capability(1);
+    s_set_pin_drive_capability(3);
     s_set_flash_dtr_str_opi_mode(1, 0x1);
     esp_rom_opiflash_cache_mode_config(mode, &rom_opiflash_cmd_def->cache_rd_cmd);
     esp_rom_spi_set_dtr_swap_mode(0, false, false);
     esp_rom_spi_set_dtr_swap_mode(1, false, false);
 #else //CONFIG_ESPTOOLPY_FLASHMODE_OPI_DTR
-    s_set_flash_pin_drive_capability(3);
+    s_set_pin_drive_capability(3);
     s_set_flash_dtr_str_opi_mode(1, 0x2);
     esp_rom_opiflash_cache_mode_config(mode, &rom_opiflash_cmd_def->cache_rd_cmd);
     esp_rom_spi_set_dtr_swap_mode(0, true, true);

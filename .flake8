@@ -164,3 +164,7 @@ exclude =
         components/wifi_provisioning/python/wifi_constants_pb2.py,
         components/esp_local_ctrl/python/esp_local_ctrl_pb2.py,
         examples/provisioning/legacy/custom_config/components/custom_provisioning/python/custom_config_pb2.py,
+
+per-file-ignores =
+    # Sphinx conf.py files use star imports to setup config variables
+        docs/conf_common.py: F405

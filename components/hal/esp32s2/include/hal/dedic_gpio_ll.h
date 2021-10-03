@@ -19,6 +19,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "hal/misc.h"
 #include "soc/dedic_gpio_struct.h"
 
 static inline void dedic_gpio_ll_enable_instruction_access_out(dedic_dev_t *dev, uint32_t channel_mask, bool enable)
@@ -61,12 +62,12 @@ static inline void dedic_gpio_ll_toggle_channel(dedic_dev_t *dev, uint32_t chann
 
 static inline uint32_t dedic_gpio_ll_read_out_all(dedic_dev_t *dev)
 {
-    return dev->gpio_out_scan.gpio_out_status;
+    return HAL_FORCE_READ_U32_REG_FIELD(dev->gpio_out_scan, gpio_out_status);
 }
 
 static inline uint32_t dedic_gpio_ll_read_in_all(dedic_dev_t *dev)
 {
-    return dev->gpio_in_scan.gpio_in_status;
+    return HAL_FORCE_READ_U32_REG_FIELD(dev->gpio_in_scan, gpio_in_status);
 }
 
 static inline void dedic_gpio_ll_set_input_delay(dedic_dev_t *dev, uint32_t channel, uint32_t delay_cpu_clks)

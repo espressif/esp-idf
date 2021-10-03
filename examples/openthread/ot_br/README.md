@@ -1,4 +1,4 @@
-# OpenThread command line example
+# OpenThread Border Router Example
 
 ## Overview
 
@@ -6,9 +6,20 @@ This example demonstrates an [OpenThread border router](https://openthread.io/gu
 
 ## How to use example
 
-### Hardware connection
+### Hardware Required
 
-To run this example, it's used to use an DevKit C board and connect PIN4 and PIN5 to the UART TX and RX port of another 15.4 capable radio co-processor ([RCP](https://openthread.io/platforms/co-processor?hl=en))
+Two SoCs are required to run this example:
+* An ESP32 series Wi-Fi SoC (ESP32, ESP32-C, ESP32-S, etc) loaded with this ot_br example.
+* An ESP32-H2 802.15.4 SoC loaded with [ot_rcp](../ot_rcp) example.
+
+Connect the two SoCs via UART, below is an example setup with ESP32 DevKitC and ESP32-H2 DevKitC:
+![thread_br](image/thread-border-router-esp32-esp32h2.jpg)
+
+ESP32 pin | ESP32-H2 pin
+----------|-------------
+   GND    |      G 
+   GPIO4  |      TX      
+   GPIO5  |      RX
 
 ### Configure the project
 

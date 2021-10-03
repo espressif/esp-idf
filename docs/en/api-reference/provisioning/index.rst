@@ -18,3 +18,10 @@ Code examples for above API are provided in the :example:`provisioning` director
     SmartConfig <../network/esp_smartconfig>
 
 Code example for above API is provided in :example:`wifi/smart_config`
+
+.. toctree::
+    :maxdepth: 1
+
+    EasyConnect <../network/esp_dpp>
+
+Code example for above API is provided in :example:`wifi/wifi_easy_connect/dpp-enrollee`

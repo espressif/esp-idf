@@ -14,8 +14,10 @@
 #ifndef MDNS_PRIVATE_H_
 #define MDNS_PRIVATE_H_
 
+#include "sdkconfig.h"
 #include "mdns.h"
 #include "esp_task.h"
+#include "esp_timer.h"
 
 //#define MDNS_ENABLE_DEBUG
 
@@ -248,7 +250,6 @@ typedef struct mdns_parsed_record_s {
 typedef struct {
     mdns_if_t tcpip_if;
     mdns_ip_protocol_t ip_protocol;
-    //struct udp_pcb *pcb;
     esp_ip_addr_t src;
     uint16_t src_port;
     uint8_t multicast;
@@ -364,6 +365,7 @@ typedef struct mdns_search_once_s {
     uint32_t started_at;
     uint32_t sent_at;
     uint32_t timeout;
+    mdns_query_notify_t notifier;
     SemaphoreHandle_t done_semaphore;
     uint16_t type;
     uint8_t max_results;

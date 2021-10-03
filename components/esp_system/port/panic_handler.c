@@ -14,7 +14,7 @@
 #include <stdlib.h>
 
 #include "esp_spi_flash.h"
-
+#include "esp_ipc_isr.h"
 #include "esp_private/system_internal.h"
 
 #include "soc/soc_memory_layout.h"
@@ -165,9 +165,7 @@ static void panic_handler(void *frame, bool pseudo_excause)
     SOC_HAL_STALL_OTHER_CORES();
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32
-    esp_dport_access_int_abort();
-#endif
+    esp_ipc_isr_stall_abort();
 
     if (esp_cpu_in_ocd_debug_mode()) {
 #if __XTENSA__
@@ -205,9 +203,7 @@ static void IRAM_ATTR panic_enable_cache(void) {
     int core_id = cpu_hal_get_core_id();
 
     if (!spi_flash_cache_enabled()) {
-#ifdef CONFIG_IDF_TARGET_ESP32
-        esp_dport_access_int_abort();
-#endif
+        esp_ipc_isr_stall_abort();
         spi_flash_enable_cache(core_id);
     }
 }

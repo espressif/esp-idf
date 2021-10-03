@@ -18,6 +18,7 @@
 
 #include <chrono>
 #include <functional>
+#include <string>
 #include "esp_exception.hpp"
 #include "esp_timer.h"
 

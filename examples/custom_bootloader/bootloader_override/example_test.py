@@ -10,7 +10,10 @@ def test_custom_bootloader_impl_example(env, _):  # type: ignore
     dut.start_app()
 
     # Expect to read a message from the custom bootloader
-    dut.expect('Custom bootloader has been initialized correctly.')
+    # This message is defined in the Kconfig file, retrieve it while deleting
+    # leading and trailing quotes (")
+    welcome_message = dut.app.get_sdkconfig()['CONFIG_EXAMPLE_BOOTLOADER_WELCOME_MESSAGE'].strip("\"")
+    dut.expect(welcome_message)
 
     # Expect to read a message from the user application
     dut.expect('Application started!')

@@ -28,7 +28,10 @@ extern "C" {
 #endif
 #define UART_NUM_MAX           (SOC_UART_NUM) /*!< UART port max */
 
-#define UART_PIN_NO_CHANGE      (-1)         /*!< Constant for uart_set_pin function which indicates that UART pin should not be changed */
+/* @brief When calling `uart_set_pin`, instead of GPIO number, `UART_PIN_NO_CHANGE`
+ *        can be provided to keep the currently allocated pin.
+ */
+#define UART_PIN_NO_CHANGE      (-1)
 
 #define UART_FIFO_LEN           SOC_UART_FIFO_LEN       ///< Length of the UART HW FIFO
 #define UART_BITRATE_MAX        SOC_UART_BITRATE_MAX    ///< Maximum configurable bitrate
@@ -380,13 +383,22 @@ esp_err_t uart_isr_register(uart_port_t uart_num, void (*fn)(void*), void * arg,
 esp_err_t uart_isr_free(uart_port_t uart_num);
 
 /**
- * @brief Set UART pin number
+ * @brief Assign signals of a UART peripheral to GPIO pins
+ *
+ * @note If the GPIO number configured for a UART signal matches one of the
+ *       IOMUX signals for that GPIO, the signal will be connected directly
+ *       via the IOMUX. Otherwise the GPIO and signal will be connected via
+ *       the GPIO Matrix. For example, if on an ESP32 the call
+ *       `uart_set_pin(0, 1, 3, -1, -1)` is performed, as GPIO1 is UART0's
+ *       default TX pin and GPIO3 is UART0's default RX pin, both will be
+ *       connected to respectively U0TXD and U0RXD through the IOMUX, totally
+ *       bypassing the GPIO matrix.
+ *       The check is performed on a per-pin basis. Thus, it is possible to have
+ *       RX pin binded to a GPIO through the GPIO matrix, whereas TX is binded
+ *       to its GPIO through the IOMUX.
  *
  * @note Internal signal can be output to multiple GPIO pads.
  *       Only one GPIO pad can connect with input signal.
- *
- * @note Instead of GPIO number a macro 'UART_PIN_NO_CHANGE' may be provided
-         to keep the currently allocated pin.
  *
  * @param uart_num   UART port number, the max port number is (UART_NUM_MAX -1).
  * @param tx_io_num  UART TX pin GPIO number.

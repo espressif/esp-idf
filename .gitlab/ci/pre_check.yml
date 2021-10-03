@@ -113,6 +113,15 @@ check_public_headers:
   script:
     - python tools/ci/check_public_headers.py --jobs 4 --prefix xtensa-esp32-elf-
 
+check_soc_struct_headers:
+  extends:
+    - .pre_check_base_template
+    - .rules:build
+  tags:
+    - build
+  script:
+    - find ${IDF_PATH}/components/soc/*/include/soc/ -name "*_struct.h" -print0 | xargs -0 -n1 ./tools/ci/check_soc_struct_headers.py
+
 check_esp_err_to_name:
   extends:
     - .pre_check_base_template

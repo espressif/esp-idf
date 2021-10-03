@@ -97,16 +97,11 @@ function(__component_dir_quick_check var component_dir)
     set(res 1)
     get_filename_component(abs_dir ${component_dir} ABSOLUTE)
 
-    # Check this is really a directory and that a CMakeLists.txt file for this component exists
-    # - warn and skip anything which isn't valid looking (probably cruft)
-    if(NOT IS_DIRECTORY "${abs_dir}")
-        message(STATUS "Unexpected file in components directory: ${abs_dir}")
-        set(res 0)
-    endif()
-
     get_filename_component(base_dir ${abs_dir} NAME)
     string(SUBSTRING "${base_dir}" 0 1 first_char)
 
+    # Check the component directory contains a CMakeLists.txt file
+    # - warn and skip anything which isn't valid looking (probably cruft)
     if(NOT first_char STREQUAL ".")
         if(NOT EXISTS "${abs_dir}/CMakeLists.txt")
             message(STATUS "Component directory ${abs_dir} does not contain a CMakeLists.txt file. "
@@ -434,9 +429,8 @@ function(idf_component_register)
     __component_check_target()
     __component_add_sources(sources)
 
-    # Add component manifest and lock files to list of dependencies
+    # Add component manifest to the list of dependencies
     set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${COMPONENT_DIR}/idf_component.yml")
-    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${COMPONENT_DIR}/dependencies.lock")
 
     # Create the final target for the component. This target is the target that is
     # visible outside the build system.
@@ -556,13 +550,25 @@ function(idf_component_mock)
                         INCLUDE_DIRS ${__INCLUDE_DIRS}
                         REQUIRES ${__REQUIRES})
 
-    execute_process(COMMAND ${CMAKE_COMMAND} -E env "UNITY_DIR=${IDF_PATH}/components/unity/unity"
+    add_custom_command(
+        OUTPUT ruby_found SYMBOLIC
+        COMMAND "ruby" "-v"
+        COMMENT "Try to find ruby. If this fails, you need to install ruby"
+    )
+
+    # This command builds the mocks.
+    # First, environment variable UNITY_DIR is set. This is necessary to prevent unity from looking in its own submodule
+    # which doesn't work in our CI yet...
+    # The rest is a straight forward call to cmock.rb, consult cmock's documentation for more information.
+    add_custom_command(
+        OUTPUT ${MOCK_GENERATED_SRCS} ${MOCK_GENERATED_HEADERS}
+        DEPENDS ruby_found
+        COMMAND ${CMAKE_COMMAND} -E env "UNITY_DIR=${IDF_PATH}/components/unity/unity"
             ruby
             ${CMOCK_DIR}/lib/cmock.rb
             -o${CMAKE_CURRENT_SOURCE_DIR}/mock/mock_config.yaml
             ${__MOCK_HEADER_FILES}
-            WORKING_DIRECTORY ${MOCK_GEN_DIR}
-            RESULT_VARIABLE cmock_result)
+      )
 endfunction()
 
 #

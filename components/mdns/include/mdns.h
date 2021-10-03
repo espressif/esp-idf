@@ -75,10 +75,13 @@ typedef struct mdns_result_s {
     struct mdns_result_s * next;            /*!< next result, or NULL for the last result in the list */
 
     mdns_if_t tcpip_if;                     /*!< interface index */
+    uint32_t ttl;                           /*!< time to live */
 
     mdns_ip_protocol_t ip_protocol;         /*!< ip_protocol type of the interface (v4/v6) */
     // PTR
     char * instance_name;                   /*!< instance name */
+    char * service_type;                    /*!< service type */
+    char * proto;                           /*!< srevice protocol */
     // SRV
     char * hostname;                        /*!< hostname */
     uint16_t port;                          /*!< service port */
@@ -89,6 +92,8 @@ typedef struct mdns_result_s {
     // A and AAAA
     mdns_ip_addr_t * addr;                  /*!< linked list of IP addresses found */
 } mdns_result_t;
+
+typedef void (*mdns_query_notify_t)(mdns_search_once_t *search);
 
 /**
  * @brief  Initialize mDNS on given interface
@@ -519,11 +524,13 @@ bool mdns_query_async_get_results(mdns_search_once_t* search, uint32_t timeout, 
  * @param  type         type of query (MDNS_TYPE_*)
  * @param  timeout      time in milliseconds during which mDNS query is active
  * @param  max_results  maximum results to be collected
+ * @param  notifier     Notification function to be called when the result is ready, can be NULL
  *
  * @return mdns_search_once_s pointer to new search object if query initiated successfully.
  *         NULL otherwise.
  */
-mdns_search_once_t* mdns_query_async_new(const char * name, const char * service_type, const char * proto, uint16_t type, uint32_t timeout, size_t max_results);
+mdns_search_once_t *mdns_query_async_new(const char *name, const char *service_type, const char *proto, uint16_t type,
+                                         uint32_t timeout, size_t max_results, mdns_query_notify_t notifier);
 
 /**
  * @brief  Query mDNS for host or service

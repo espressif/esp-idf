@@ -157,7 +157,7 @@ size_t tinyusb_cdcacm_write_queue_char(tinyusb_cdcacm_itf_t itf, char ch);
  * @param in_size - size to write from arr_src
  * @return size_t - amount of queued bytes
  */
-size_t tinyusb_cdcacm_write_queue(tinyusb_cdcacm_itf_t itf, uint8_t *in_buf, size_t in_size);
+size_t tinyusb_cdcacm_write_queue(tinyusb_cdcacm_itf_t itf, const uint8_t *in_buf, size_t in_size);
 
 /**
  * @brief Send all data from a write buffer. Use `tinyusb_cdcacm_write_queue` to add data to the buffer.

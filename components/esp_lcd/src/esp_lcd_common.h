@@ -5,21 +5,20 @@
  */
 #pragma once
 
+#include <stddef.h>
 #include "soc/soc_caps.h"
+#include "hal/dma_types.h"
 #if SOC_LCDCAM_SUPPORTED
 #include "hal/lcd_hal.h"
-#include "hal/dma_types.h"
-#else
-#error "lcd peripheral is not supported on this chip"
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#if SOC_LCDCAM_SUPPORTED
-
 #define LCD_PERIPH_CLOCK_PRE_SCALE (2) // This is the minimum divider that can be applied to LCD peripheral
+
+#if SOC_LCDCAM_SUPPORTED
 
 typedef enum {
     LCD_COM_DEVICE_TYPE_I80,
@@ -42,17 +41,7 @@ int lcd_com_register_device(lcd_com_device_type_t device_type, void *device_obj)
  * @param member_id member ID
  */
 void lcd_com_remove_device(lcd_com_device_type_t device_type, int member_id);
-
-/**
- * @brief Select clock source and return peripheral clock resolution (in Hz)
- *
- * @note The clock source selection is injected by the Kconfig system,
- *       dynamic switching peripheral clock source is not supported in driver.
- *
- * @param hal HAL object
- * @return Peripheral clock resolution, in Hz
- */
-unsigned long lcd_com_select_periph_clock(lcd_hal_context_t *hal);
+#endif // SOC_LCDCAM_SUPPORTED
 
 /**
  * @brief Mount data to DMA descriptors
@@ -63,7 +52,28 @@ unsigned long lcd_com_select_periph_clock(lcd_hal_context_t *hal);
  */
 void lcd_com_mount_dma_data(dma_descriptor_t *desc_head, const void *buffer, size_t len);
 
-#endif // SOC_LCDCAM_SUPPORTED
+/**
+ * @brief Reverse the bytes in the buffer
+ *
+ * @note  LCD is big-endian, e.g. to send command 0x1234, byte 0x12 should appear on the bus first
+ *        However, the low level peripheral (like i80, i2s) will send 0x34 first.
+ *        This helper function is used to reverse the bytes order
+ *
+ * @param buf buffer address
+ * @param start start index of the buffer
+ * @param end end index of the buffer
+ */
+static inline void lcd_com_reverse_buffer_bytes(uint8_t *buf, int start, int end)
+{
+    uint8_t temp = 0;
+    while (start < end) {
+        temp = buf[start];
+        buf[start] = buf[end];
+        buf[end] = temp;
+        start++;
+        end--;
+    }
+}
 
 #ifdef __cplusplus
 }

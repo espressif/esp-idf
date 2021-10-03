@@ -50,7 +50,7 @@ esp_err_t esp_netif_attach_wifi_ap(esp_netif_t *esp_netif);
 esp_err_t esp_wifi_set_default_wifi_sta_handlers(void);
 
 /**
- * @brief Sets default wifi event handlers for STA interface
+ * @brief Sets default wifi event handlers for AP interface
  *
  * @return
  *  - ESP_OK on success, error returned from esp_event_handler_register if failed

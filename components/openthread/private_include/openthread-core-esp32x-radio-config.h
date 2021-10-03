@@ -1,0 +1,318 @@
+// Copyright 2021 Espressif Systems (Shanghai) CO LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License
+
+#pragma once
+
+#include "sdkconfig.h"
+/**
+ * @def OPENTHREAD_CONFIG_PLATFORM_INFO
+ *
+ * The platform-specific string to insert into the OpenThread version string.
+ *
+ */
+#define OPENTHREAD_CONFIG_PLATFORM_INFO CONFIG_IDF_TARGET
+
+/**
+ * @def OPENTHREAD_CONFIG_PLATFORM_ASSERT_MANAGEMENT
+ *
+ * The assert is managed by platform defined logic when this flag is set.
+ *
+ */
+#define OPENTHREAD_CONFIG_PLATFORM_ASSERT_MANAGEMENT 1
+
+/**
+ * @def OPENTHREAD_CONFIG_PLATFORM_FLASH_API_ENABLE
+ *
+ * Define to 1 to enable otPlatFlash* APIs to support non-volatile storage.
+ *
+ * When defined to 1, the platform MUST implement the otPlatFlash* APIs instead of the otPlatSettings* APIs.
+ *
+ */
+#define OPENTHREAD_CONFIG_PLATFORM_FLASH_API_ENABLE 1
+
+/**
+ * @def OPENTHREAD_CONFIG_LOG_OUTPUT
+ *
+ * The ESP-IDF platform provides an otPlatLog() function.
+ */
+#define OPENTHREAD_CONFIG_LOG_OUTPUT OPENTHREAD_CONFIG_LOG_OUTPUT_PLATFORM_DEFINED
+
+/**
+ * @def OPENTHREAD_CONFIG_LOG_LEVEL
+ *
+ * The log level (used at compile time). If `OPENTHREAD_CONFIG_LOG_LEVEL_DYNAMIC_ENABLE` is set, this defines the most
+ * verbose log level possible. See `OPENTHREAD_CONFIG_LOG_LEVEL_INIT` to set the initial log level.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_LOG_LEVEL
+#if CONFIG_LOG_DEFAULT_LEVEL_NONE
+#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_NONE
+#elif CONFIG_LOG_DEFAULT_LEVEL_ERROR
+#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_CRIT
+#elif CONFIG_LOG_DEFAULT_LEVEL_WARN
+#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_WARN
+#elif CONFIG_LOG_DEFAULT_LEVEL_INFO
+#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_INFO
+#elif CONFIG_LOG_DEFAULT_LEVEL_DEBUG
+#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_DEBG
+#elif CONFIG_LOG_DEFAULT_LEVEL_VERBOSE
+#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_DEBG
+#endif
+#endif
+
+#define    OPENTHREAD_CONFIG_LOG_API 1
+#define    OPENTHREAD_CONFIG_LOG_ARP 1
+#define    OPENTHREAD_CONFIG_LOG_BBR 1
+#define    OPENTHREAD_CONFIG_LOG_CLI 1
+#define    OPENTHREAD_CONFIG_LOG_COAP 1
+#define    OPENTHREAD_CONFIG_LOG_DUA 1
+#define    OPENTHREAD_CONFIG_LOG_ICMP 1
+#define    OPENTHREAD_CONFIG_LOG_IP6 1
+#define    OPENTHREAD_CONFIG_LOG_MAC 1
+#define    OPENTHREAD_CONFIG_LOG_MEM 1
+#define    OPENTHREAD_CONFIG_LOG_MESHCOP 1
+#define    OPENTHREAD_CONFIG_LOG_MLE 1
+#define    OPENTHREAD_CONFIG_LOG_MLR 1
+#define    OPENTHREAD_CONFIG_LOG_NETDATA 1
+#define    OPENTHREAD_CONFIG_LOG_NETDIAG 1
+#define    OPENTHREAD_CONFIG_LOG_PKT_DUMP 1
+#define    OPENTHREAD_CONFIG_LOG_PLATFORM 1
+
+/**
+ * @def OPENTHREAD_CONFIG_NUM_MESSAGE_BUFFERS
+ *
+ * The number of message buffers in buffer pool
+ */
+#define OPENTHREAD_CONFIG_NUM_MESSAGE_BUFFERS 50
+
+/**
+ * @def OPENTHREAD_CONFIG_COAP_API_ENABLE
+ *
+ * Define to 1 to enable the CoAP API.
+ *
+ */
+#define OPENTHREAD_CONFIG_COAP_API_ENABLE 0
+
+/**
+ * @def OPENTHREAD_CONFIG_BORDER_ROUTER_ENABLE
+ *
+ * Define to 1 to enable Border Router support.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_BORDER_ROUTER_ENABLE
+#define OPENTHREAD_CONFIG_BORDER_ROUTER_ENABLE 0
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_REFERENCE_DEVICE_ENABLE
+ *
+ * Define to 1 to enable Thread Test Harness reference device support.
+ *
+ */
+#define OPENTHREAD_CONFIG_REFERENCE_DEVICE_ENABLE 0
+
+/**
+ * @def OPENTHREAD_CONFIG_CHILD_SUPERVISION_ENABLE
+ *
+ * Define to 1 to enable Child Supervision support.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_CHILD_SUPERVISION_ENABLE
+#define OPENTHREAD_CONFIG_CHILD_SUPERVISION_ENABLE 0
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_DHCP6_CLIENT_ENABLE
+ *
+ * Define to 1 to enable DHCPv6 Client support.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_DHCP6_CLIENT_ENABLE
+#define OPENTHREAD_CONFIG_DHCP6_CLIENT_ENABLE 0
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_DHCP6_SERVER_ENABLE
+ *
+ * Define to 1 to enable DHCPv6 Server support.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_DHCP6_SERVER_ENABLE
+#define OPENTHREAD_CONFIG_DHCP6_SERVER_ENABLE 0
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_DNS_CLIENT_ENABLE
+ *
+ * Define to 1 to enable DNS Client support.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_DNS_CLIENT_ENABLE
+#define OPENTHREAD_CONFIG_DNS_CLIENT_ENABLE 0
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_NCP_SPI_ENABLE
+ *
+ * Define to 1 to enable NCP SPI support.
+ *
+ */
+#define OPENTHREAD_CONFIG_NCP_SPI_ENABLE 0
+
+/**
+ * @def OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER
+ *
+ * Define to 1 to enable NCP Spinel Encrypter.
+ *
+ */
+#define OPENTHREAD_ENABLE_NCP_SPINEL_ENCRYPTER 0
+
+/**
+ * @def OPENTHREAD_CONFIG_NCP_HDLC_ENABLE
+ *
+ * Define to 1 to enable NCP HDLC support.
+ *
+ */
+#define OPENTHREAD_CONFIG_NCP_HDLC_ENABLE 1
+
+/**
+ * @def OPENTHREAD_SPINEL_CONFIG_OPENTHREAD_MESSAGE_ENABLE
+ *
+ * Define 1 to enable feeding an OpenThread message to encoder/decoder.
+ *
+ */
+#define OPENTHREAD_SPINEL_CONFIG_OPENTHREAD_MESSAGE_ENABLE 0
+
+/**
+ * @def OPENTHREAD_CONFIG_TMF_NETDATA_SERVICE_ENABLE
+ *
+ * Define to 1 to support injecting Service entries into the Thread Network Data.
+ *
+ */
+#define OPENTHREAD_CONFIG_TMF_NETDATA_SERVICE_ENABLE 0
+
+/**
+ * @def PACKAGE_NAME
+ *
+ * Define to the full name of this package.
+ *
+ */
+#define PACKAGE_NAME "openthread-esp32"
+
+/**
+ * @def PACKAGE_STRING
+ *
+ * Define to the full name and version of this package.
+ *
+ */
+#define PACKAGE_STRING (PACKAGE_NAME " - " PACKAGE_VERSION)
+
+/**
+ * @def OPENTHREAD_CONFIG_ENABLE_BUILTIN_MBEDTLS
+ *
+ * Define as 1 to enable bultin-mbedtls.
+ *
+ * Note that the OPENTHREAD_CONFIG_ENABLE_BUILTIN_MBEDTLS determines whether to use bultin-mbedtls as well as
+ * whether to manage mbedTLS internally, such as memory allocation and debug.
+ *
+ */
+#define OPENTHREAD_CONFIG_ENABLE_BUILTIN_MBEDTLS 0
+
+/**
+ * @def OPENTHREAD_CONFIG_IP6_SLAAC_ENABLE
+ *
+ * Define as 1 to enable support for adding of auto-configured SLAAC addresses by OpenThread.
+ *
+ */
+#define OPENTHREAD_CONFIG_IP6_SLAAC_ENABLE 0
+
+/**
+ * @def OPENTHREAD_CONFIG_MAX_STATECHANGE_HANDLERS
+ *
+ * The maximum number of state-changed callback handlers (set using `otSetStateChangedCallback()`).
+ *
+ */
+#define OPENTHREAD_CONFIG_MAX_STATECHANGE_HANDLERS 3
+
+/**
+ * @def OPENTHREAD_CONFIG_PLATFORM_RADIO_SPINEL_RX_FRAME_BUFFER_SIZE
+ *
+ * Specifies the rx frame buffer size used by `SpinelInterface` in RCP host code. This is applicable/used when
+ * `RadioSpinel` platform is used.
+ *
+ */
+#define OPENTHREAD_CONFIG_PLATFORM_RADIO_SPINEL_RX_FRAME_BUFFER_SIZE 1024
+
+/**
+ * @def OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE
+ *
+ * Define as 1 to enable microsecond timer.
+ *
+ */
+#define OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE 1
+
+/**
+ * @def OPENTHREAD_CONFIG_MAC_SOFTWARE_CSMA_BACKOFF_ENABLE
+ *
+ * Define to 1 to enable software CSMA-CA backoff logic.
+ *
+ */
+#define OPENTHREAD_CONFIG_MAC_SOFTWARE_CSMA_BACKOFF_ENABLE 1
+
+/**
+ * @def OPENTHREAD_CONFIG_MAC_SOFTWARE_RETRANSMIT_ENABLE
+ *
+ * Define to 1 to enable software retransmission logic.
+ *
+ */
+#define OPENTHREAD_CONFIG_MAC_SOFTWARE_RETRANSMIT_ENABLE 1
+
+/**
+ * @def OPENTHREAD_CONFIG_MAC_SOFTWARE_TX_SECURITY_ENABLE
+ *
+ * Define to 1 to enable software transmission security logic.
+ *
+ */
+#define OPENTHREAD_CONFIG_MAC_SOFTWARE_TX_SECURITY_ENABLE 1
+
+/**
+ * @def OPENTHREAD_CONFIG_MAC_SOFTWARE_TX_TIMING_ENABLE
+ *
+ * Define to 1 to enable software transmission target time logic.
+ *
+ */
+#define OPENTHREAD_CONFIG_MAC_SOFTWARE_TX_TIMING_ENABLE 1
+
+/**
+ * The configurable definitions via Kconfig
+ */
+#if CONFIG_OPENTHREAD_COMMISSIONER
+#error "Commissioner shouldn't be enabled for RCP"
+#endif
+
+#if CONFIG_OPENTHREAD_JOINER
+#error "Joiner shouldn't be enabled for RCP"
+#endif
+
+#if CONFIG_OPENTHREAD_DIAG
+#define OPENTHREAD_CONFIG_DIAG_ENABLE 1
+#endif
+
+#if CONFIG_OPENTHREAD_FTD
+#error "Only OPENTHREAD_RADIO is used for RCP"
+#elif CONFIG_OPENTHREAD_MTD
+#error "Only OPENTHREAD_RADIO is used for RCP"
+#elif CONFIG_OPENTHREAD_RADIO
+#define OPENTHREAD_RADIO 1
+#endif

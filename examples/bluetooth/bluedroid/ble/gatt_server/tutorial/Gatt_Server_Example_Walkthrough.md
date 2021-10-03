@@ -430,7 +430,7 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
 
 ## Creating Services
 
-The register event is also used to create a profile attributes table by using the `esp_ble_gatts_create_attr_tab()` function, which takes an `esp_gatts_attr_db_t` type structure that has all the information of the service table. The way to create this table is:
+The register event is also used to create a service by using the `esp_ble_gatts_create_service()`. When service creation is done, a callback event ESP_GATTS_CREATE_EVT is called to report status and service ID to the profile. The way to create service is:
 
 ```c
 …

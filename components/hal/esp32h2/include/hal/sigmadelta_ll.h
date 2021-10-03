@@ -22,7 +22,9 @@
 #pragma once
 
 #include <stdbool.h>
+#include "hal/misc.h"
 #include "soc/sigmadelta_periph.h"
+#include "soc/gpio_sd_struct.h"
 #include "hal/sigmadelta_types.h"
 
 #ifdef __cplusplus
@@ -53,7 +55,7 @@ static inline void sigmadelta_ll_set_en(gpio_sd_dev_t *hw, bool en)
  */
 static inline void sigmadelta_ll_set_duty(gpio_sd_dev_t *hw, sigmadelta_channel_t channel, int8_t duty)
 {
-    hw->channel[channel].duty = duty;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->channel[channel], duty, (uint32_t)duty);
 }
 
 /**
@@ -65,7 +67,7 @@ static inline void sigmadelta_ll_set_duty(gpio_sd_dev_t *hw, sigmadelta_channel_
  */
 static inline void sigmadelta_ll_set_prescale(gpio_sd_dev_t *hw, sigmadelta_channel_t channel, uint8_t prescale)
 {
-    hw->channel[channel].prescale = prescale;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->channel[channel], prescale, prescale);
 }
 
 #ifdef __cplusplus

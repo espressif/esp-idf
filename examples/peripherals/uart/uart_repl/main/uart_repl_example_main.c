@@ -43,11 +43,11 @@ const char test_message[] = "This is an example string, if you can read this, th
  */
 static void connect_uarts(void)
 {
-    esp_rom_gpio_connect_out_signal(DEFAULT_UART_RX_PIN, uart_periph_signal[1].tx_sig, false, false);
-    esp_rom_gpio_connect_in_signal(DEFAULT_UART_RX_PIN, uart_periph_signal[0].rx_sig, false);
+    esp_rom_gpio_connect_out_signal(DEFAULT_UART_RX_PIN, UART_PERIPH_SIGNAL(1, SOC_UART_TX_PIN_IDX), false, false);
+    esp_rom_gpio_connect_in_signal(DEFAULT_UART_RX_PIN, UART_PERIPH_SIGNAL(0, SOC_UART_RX_PIN_IDX), false);
 
-    esp_rom_gpio_connect_out_signal(DEFAULT_UART_TX_PIN, uart_periph_signal[0].tx_sig, false, false);
-    esp_rom_gpio_connect_in_signal(DEFAULT_UART_TX_PIN, uart_periph_signal[1].rx_sig, false);
+    esp_rom_gpio_connect_out_signal(DEFAULT_UART_TX_PIN, UART_PERIPH_SIGNAL(0, SOC_UART_TX_PIN_IDX), false, false);
+    esp_rom_gpio_connect_in_signal(DEFAULT_UART_TX_PIN, UART_PERIPH_SIGNAL(1, SOC_UART_RX_PIN_IDX), false);
 }
 
 /**
@@ -58,8 +58,8 @@ static void connect_uarts(void)
  */
 static void disconnect_uarts(void)
 {
-    esp_rom_gpio_connect_out_signal(CONSOLE_UART_TX_PIN, uart_periph_signal[1].tx_sig, false, false);
-    esp_rom_gpio_connect_in_signal(CONSOLE_UART_RX_PIN, uart_periph_signal[1].rx_sig, false);
+    esp_rom_gpio_connect_out_signal(CONSOLE_UART_TX_PIN, UART_PERIPH_SIGNAL(1, SOC_UART_TX_PIN_IDX), false, false);
+    esp_rom_gpio_connect_in_signal(CONSOLE_UART_RX_PIN, UART_PERIPH_SIGNAL(1, SOC_UART_RX_PIN_IDX), false);
 }
 
 /**

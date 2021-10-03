@@ -15,7 +15,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include "usb.h"
+#include "usb/usb_types_ch9.h"
 #include "test_usb_mock_classes.h"
 
 // ---------------------------------------------------- MSC SCSI -------------------------------------------------------

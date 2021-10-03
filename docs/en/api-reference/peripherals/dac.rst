@@ -1,5 +1,5 @@
-Digital To Analog Converter
-===========================
+Digital To Analog Converter (DAC)
+=================================
 
 {IDF_TARGET_DAC_CH_1: default = "GPIO25", esp32 = "GPIO25", esp32s2 = "GPIO17"}
 {IDF_TARGET_DAC_CH_2: default = "GPIO26", esp32 = "GPIO26", esp32s2 = "GPIO18"}

@@ -262,7 +262,7 @@ void esp_phy_disable(void)
         phy_digital_regs_store();
         // Disable PHY and RF.
         phy_close_rf();
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S2
+#if !CONFIG_IDF_TARGET_ESP32
         // Disable PHY temperature sensor
         phy_xpd_tsens();
 #endif

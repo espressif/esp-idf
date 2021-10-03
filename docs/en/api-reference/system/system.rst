@@ -102,13 +102,13 @@ The custom base MAC addresses should be allocated such that derived MAC addresse
 
    It is also possible to call the function :cpp:func:`esp_netif_set_mac` to set the specific MAC used by a network interface, after network initialization. It's recommended to use the Base MAC approach documented here instead, to avoid the possibility of the original MAC address briefly appearing on the network before it is changed.
 
-.. This API is ESP32-only, see IDF-1326
+
+Custom MAC address in eFuse
+@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+When reading custom MAC addresses from eFuse, ESP-IDF provides a helper function :cpp:func:`esp_efuse_mac_get_custom`. This loads the MAC address from eFuse BLK3. This function assumes that the custom base MAC address is stored in the following format:
+
 .. only:: esp32
-
-    Custom MAC address in eFuse
-    @@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-    When reading custom MAC addresses from eFuse, ESP-IDF provides a helper function :cpp:func:`esp_efuse_mac_get_custom`. This loads the MAC address from eFuse BLK3. This function assumes that the custom base MAC address is stored in the following format:
 
     +-----------------+-----------+---------------+------------------------------+
     | Field           | # of bits | Range of bits | Notes                        |
@@ -122,7 +122,25 @@ The custom base MAC addresses should be allocated such that derived MAC addresse
     | MAC address CRC | 8         | 7:0           | CRC-8-CCITT, polynomial 0x07 |
     +-----------------+-----------+---------------+------------------------------+
 
-    Once MAC address has been obtained using :cpp:func:`esp_efuse_mac_get_custom`, call :cpp:func:`esp_base_mac_addr_set` to set this MAC address as base MAC address.
+    .. note::
+
+        If the 3/4 coding scheme is enabled, all eFuse fields in this block must be burnt at the same time.
+
+.. only:: not esp32
+
+    +-----------------+-----------+---------------+
+    | Field           | # of bits | Range of bits |
+    +=================+===========+===============+
+    | MAC address     | 48        | 200:248       |
+    +-----------------+-----------+---------------+
+
+    .. note::
+
+        The eFuse BLK3 uses RS-coding during a burn operation it means that all eFuse fields in this block must be burnt at the same time.
+
+Once MAC address has been obtained using :cpp:func:`esp_efuse_mac_get_custom`, call :cpp:func:`esp_base_mac_addr_set` to set this MAC address as base MAC address.
+
+
 
 .. _local-mac-addresses:
 

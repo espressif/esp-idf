@@ -108,7 +108,8 @@ menu "ESP32S3-Specific"
 
         config ESP32S3_DATA_CACHE_SIZE
             hex
-            default 0x4000 if ESP32S3_DATA_CACHE_16KB
+            # For 16KB the actual configuration is 32kb cache, but 16kb will be reserved for heap at startup
+            default 0x8000 if ESP32S3_DATA_CACHE_16KB
             default 0x8000 if ESP32S3_DATA_CACHE_32KB
             default 0x10000 if ESP32S3_DATA_CACHE_64KB
 
@@ -140,12 +141,15 @@ menu "ESP32S3-Specific"
                 depends on ESP32S3_DATA_CACHE_16KB || ESP32S3_DATA_CACHE_32KB
             config ESP32S3_DATA_CACHE_LINE_32B
                 bool "32 Bytes"
+            config ESP32S3_DATA_CACHE_LINE_64B
+                bool "64 Bytes"
         endchoice
 
         config ESP32S3_DATA_CACHE_LINE_SIZE
             int
             default 16 if ESP32S3_DATA_CACHE_LINE_16B
             default 32 if ESP32S3_DATA_CACHE_LINE_32B
+            default 64 if ESP32S3_DATA_CACHE_LINE_64B
 
         config ESP32S3_DATA_CACHE_WRAP
             bool "Enable data cache wrap mode"
@@ -246,6 +250,9 @@ menu "ESP32S3-Specific"
             help
                 Select the speed for the SPI RAM chip.
 
+            config SPIRAM_SPEED_120M
+                depends on SPIRAM_MODE_QUAD
+                bool "120MHz clock speed"
             config SPIRAM_SPEED_80M
                 bool "80MHz clock speed"
             config SPIRAM_SPEED_40M
@@ -430,6 +437,7 @@ menu "ESP32S3-Specific"
             select ESP_SYSTEM_RTC_EXT_XTAL
         config ESP32S3_RTC_CLK_SRC_EXT_OSC
             bool "External 32kHz oscillator at 32K_XP pin"
+            select ESP_SYSTEM_RTC_EXT_OSC
         config ESP32S3_RTC_CLK_SRC_INT_8MD256
             bool "Internal 8MHz oscillator, divided by 256 (~32kHz)"
     endchoice

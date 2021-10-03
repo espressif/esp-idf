@@ -1,5 +1,5 @@
-I2C Driver
-==========
+Inter-Integrated Circuit (I2C)
+==============================
 
 :link_to_translation:`zh_CN:[中文]`
 

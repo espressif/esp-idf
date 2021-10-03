@@ -48,9 +48,13 @@ esp_err_t spi_flash_chip_winbond_read(esp_flash_t *chip, void *buffer, uint32_t 
     const uint32_t page_size = chip->chip_drv->page_size;
     uint32_t align_address;
     uint8_t temp_buffer[64]; //spiflash hal max length of read no longer than 64byte
+    uint32_t config_io_flags = 0;
 
     // Configure the host, and return
-    err = spi_flash_chip_generic_config_host_io_mode(chip, REGION_32BIT(address, length));
+    if (REGION_32BIT(address, length)) {
+        config_io_flags |= SPI_FLASH_CONFIG_IO_MODE_32B_ADDR;
+    }
+    err = chip->chip_drv->config_host_io_mode(chip, config_io_flags);
 
     if (err == ESP_ERR_NOT_SUPPORTED) {
         ESP_LOGE(TAG, "configure host io mode failed - unsupported");
@@ -192,6 +196,7 @@ const spi_flash_chip_t esp_flash_chip_winbond = {
     .sus_setup = spi_flash_chip_generic_suspend_cmd_conf,
     .read_unique_id = spi_flash_chip_generic_read_unique_id,
     .get_chip_caps = spi_flash_chip_winbond_get_caps,
+    .config_host_io_mode = spi_flash_chip_generic_config_host_io_mode,
 };
 
 

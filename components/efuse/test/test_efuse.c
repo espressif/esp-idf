@@ -854,7 +854,7 @@ static void reset_task(void* arg)
     ESP_LOGI(TAG, "Start reset task");
     while (!cmd_stop_reset_task) {
         esp_efuse_utility_reset();
-        vTaskDelay(1);
+        vTaskDelay(2);
     }
     vTaskDelete(NULL);
 }

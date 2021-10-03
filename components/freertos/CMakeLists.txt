@@ -6,8 +6,7 @@ endif()
 
 idf_build_get_property(target IDF_TARGET)
 
-# should test arch here not target, TODO ESP32-C3 IDF-1754
-if(NOT "${target}" STREQUAL "esp32c3" AND NOT "${target}" STREQUAL "esp32h2")
+if(CONFIG_IDF_TARGET_ARCH_XTENSA)
     set(srcs
         "port/xtensa/port.c"
         "port/xtensa/portasm.S"
@@ -19,35 +18,39 @@ if(NOT "${target}" STREQUAL "esp32c3" AND NOT "${target}" STREQUAL "esp32h2")
 
     set(include_dirs
         include
-        port/xtensa/include)
+        include/esp_additions/freertos  # For files with #include "FreeRTOSConfig.h"
+        port/xtensa/include             # For including arch-specific FreeRTOSConfig_arch.h in port/<arch>/include
+        include/esp_additions)          # For files with #include "freertos/FreeRTOSConfig.h"
 
     set(private_include_dirs
-        include/freertos
         port/xtensa/include/freertos
         port/xtensa
+        port/priv_include
         .)
 
-    set(required_components app_trace esp_timer)
-else()  # RISC-V
+elseif(CONFIG_IDF_TARGET_ARCH_RISCV)
     set(srcs
         "port/riscv/port.c"
         "port/riscv/portasm.S")
 
     set(include_dirs
         include
-        port/riscv/include)
+        include/esp_additions/freertos  # For files with #include "FreeRTOSConfig.h"
+        port/riscv/include              # For including arch-specific FreeRTOSConfig_arch.h in port/<arch>/include
+        include/esp_additions)          # For files with #include "freertos/FreeRTOSConfig.h"
 
     set(private_include_dirs
-        include/freertos
         port/riscv/include/freertos
         port/riscv
+        port/priv_include
         .)
 
-    set(required_components app_trace esp_timer)
 endif()
 
 list(APPEND srcs
+    "esp_additions/task_snapshot.c"
     "port/port_common.c"
+    "port/port_systick.c"
     "croutine.c"
     "event_groups.c"
     "list.c"
@@ -58,12 +61,18 @@ list(APPEND srcs
     "FreeRTOS-openocd.c"
     "freertos_v8_compat.c")
 
+list(APPEND private_include_dirs
+    "include/freertos")
+
 if(CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
     list(APPEND srcs "port/xtensa/xtensa_loadstore_handler.S")
 endif()
 
+# esp_timer is required by FreeRTOS because we use esp_tiemr_get_time() to do profiling
 # app_trace is required by FreeRTOS headers only when CONFIG_APPTRACE_SV_ENABLE=y,
-# but requirements can't depend on config options, so always require it.
+# REQUIRES can't depend on config options, so always require it.
+set(required_components app_trace esp_timer)
+
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS ${include_dirs}
                     PRIV_INCLUDE_DIRS  ${private_include_dirs}

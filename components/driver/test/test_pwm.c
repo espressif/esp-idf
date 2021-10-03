@@ -12,6 +12,7 @@
 #include "soc/soc_caps.h"
 #include "hal/gpio_hal.h"
 #include "esp_rom_gpio.h"
+#include "soc/rtc.h"
 #if SOC_MCPWM_SUPPORTED
 #include "soc/mcpwm_periph.h"
 #include "driver/pcnt.h"
@@ -23,19 +24,19 @@
 #define TEST_PWMA_GPIO (2)
 #define TEST_PWMB_GPIO (4)
 #define TEST_FAULT_GPIO (21)
-#define TEST_SYNC_GPIO (21)
+#define TEST_SYNC_GPIO_0 (21)
+#define TEST_SYNC_GPIO_1 (18)
+#define TEST_SYNC_GPIO_2 (19)
 #define TEST_CAP_GPIO (21)
 
 #define MCPWM_TEST_GROUP_CLK_HZ (SOC_MCPWM_BASE_CLK_HZ / 16)
 #define MCPWM_TEST_TIMER_CLK_HZ (MCPWM_TEST_GROUP_CLK_HZ / 10)
 
-
-static mcpwm_dev_t *MCPWM[2] = {&MCPWM0, &MCPWM1}; // interrupt handling still lacks API to get/clear pending event, currently we have to read/write interrupt register
 const static mcpwm_io_signals_t pwma[] = {MCPWM0A, MCPWM1A, MCPWM2A};
 const static mcpwm_io_signals_t pwmb[] = {MCPWM0B, MCPWM1B, MCPWM2B};
 const static mcpwm_fault_signal_t fault_sig_array[] = {MCPWM_SELECT_F0, MCPWM_SELECT_F1, MCPWM_SELECT_F2};
 const static mcpwm_io_signals_t fault_io_sig_array[] = {MCPWM_FAULT_0, MCPWM_FAULT_1, MCPWM_FAULT_2};
-const static mcpwm_sync_signal_t sync_sig_array[] = {MCPWM_SELECT_SYNC0, MCPWM_SELECT_SYNC1, MCPWM_SELECT_SYNC2};
+const static mcpwm_sync_signal_t sync_sig_array[] = {MCPWM_SELECT_GPIO_SYNC0, MCPWM_SELECT_GPIO_SYNC1, MCPWM_SELECT_GPIO_SYNC2};
 const static mcpwm_io_signals_t sync_io_sig_array[] = {MCPWM_SYNC_0, MCPWM_SYNC_1, MCPWM_SYNC_2};
 const static mcpwm_capture_signal_t cap_sig_array[] = {MCPWM_SELECT_CAP0, MCPWM_SELECT_CAP1, MCPWM_SELECT_CAP2};
 const static mcpwm_io_signals_t cap_io_sig_array[] = {MCPWM_CAP_0, MCPWM_CAP_1, MCPWM_CAP_2};
@@ -354,18 +355,25 @@ static void mcpwm_sync_test(mcpwm_unit_t unit, mcpwm_timer_t timer)
     mcpwm_io_signals_t sync_io_sig = sync_io_sig_array[timer];
 
     mcpwm_setup_testbench(unit, timer, 1000, 50.0, MCPWM_TEST_GROUP_CLK_HZ, MCPWM_TEST_TIMER_CLK_HZ);
-    TEST_ESP_OK(test_mcpwm_gpio_init(unit, sync_io_sig, TEST_SYNC_GPIO));
-    gpio_set_level(TEST_SYNC_GPIO, 0);
+    TEST_ESP_OK(test_mcpwm_gpio_init(unit, sync_io_sig, TEST_SYNC_GPIO_0));
+    gpio_set_level(TEST_SYNC_GPIO_0, 0);
 
-    TEST_ESP_OK(mcpwm_sync_enable(unit, timer, sync_sig, 200));
+    mcpwm_sync_config_t sync_conf = {
+        .sync_sig = sync_sig,
+        .timer_val = 200,
+        .count_direction = MCPWM_TIMER_DIRECTION_UP,
+    };
+    TEST_ESP_OK(mcpwm_sync_configure(unit, timer, &sync_conf));
     vTaskDelay(pdMS_TO_TICKS(50));
-    gpio_set_level(TEST_SYNC_GPIO, 1); // trigger an external sync event
+    gpio_set_level(TEST_SYNC_GPIO_0, 1); // trigger an external sync event
+    vTaskDelay(pdMS_TO_TICKS(50));
+    mcpwm_timer_trigger_soft_sync(unit, timer);  // trigger a software sync event
     vTaskDelay(pdMS_TO_TICKS(50));
     TEST_ESP_OK(mcpwm_sync_disable(unit, timer));
     TEST_ESP_OK(mcpwm_stop(unit, timer));
 }
 
-TEST_CASE("MCPWM timer sync test", "[mcpwm]")
+TEST_CASE("MCPWM timer GPIO sync test", "[mcpwm]")
 {
     for (int i = 0; i < SOC_MCPWM_GROUPS; i++) {
         for (int j = 0; j < SOC_MCPWM_TIMERS_PER_GROUP; j++) {
@@ -374,27 +382,110 @@ TEST_CASE("MCPWM timer sync test", "[mcpwm]")
     }
 }
 
+static void mcpwm_swsync_test(mcpwm_unit_t unit) {
+    const uint32_t test_sync_phase = 20;
+    // used only in this area but need to be reset every time. mutex is not needed
+    // store timestamps captured from ISR callback
+    static uint64_t cap_timestamp[3];
+    cap_timestamp[0] = 0;
+    cap_timestamp[1] = 0;
+    cap_timestamp[2] = 0;
+    // control the start of capture to avoid unstable data
+    static volatile bool log_cap;
+    log_cap = false;
+
+    // cb function, to update capture value
+    // only log when channel1 comes at first, then channel2, and do not log further more.
+    bool capture_callback(mcpwm_unit_t mcpwm, mcpwm_capture_channel_id_t cap_channel, const cap_event_data_t *edata,
+                          void *user_data) {
+        if (log_cap && (cap_timestamp[1] == 0 || cap_timestamp[2] == 0)) {
+            if (cap_channel == MCPWM_SELECT_CAP1 && cap_timestamp[1] == 0) {
+                cap_timestamp[1] = edata->cap_value;
+            }
+            if (cap_channel == MCPWM_SELECT_CAP2 && cap_timestamp[1] != 0) {
+                cap_timestamp[2] = edata->cap_value;
+            }
+        }
+        return false;
+    }
+
+    // configure all timer output 10% PWM
+    for (int i = 0; i < 3; ++i) {
+        mcpwm_setup_testbench(unit, i, 1000, 10.0, MCPWM_TEST_GROUP_CLK_HZ, MCPWM_TEST_TIMER_CLK_HZ);
+    }
+
+    vTaskDelay(pdMS_TO_TICKS(10));
+
+    // configure capture for verification
+    mcpwm_capture_config_t conf = {
+        .cap_edge = MCPWM_POS_EDGE,
+        .cap_prescale = 1,
+        .capture_cb = capture_callback,
+        .user_data = NULL,
+    };
+    TEST_ESP_OK(test_mcpwm_gpio_init(unit, MCPWM_CAP_0, TEST_SYNC_GPIO_0));
+    TEST_ESP_OK(test_mcpwm_gpio_init(unit, MCPWM_CAP_1, TEST_SYNC_GPIO_1));
+    TEST_ESP_OK(test_mcpwm_gpio_init(unit, MCPWM_CAP_2, TEST_SYNC_GPIO_2));
+    TEST_ESP_OK(mcpwm_capture_enable_channel(unit, MCPWM_SELECT_CAP0, &conf));
+    TEST_ESP_OK(mcpwm_capture_enable_channel(unit, MCPWM_SELECT_CAP1, &conf));
+    TEST_ESP_OK(mcpwm_capture_enable_channel(unit, MCPWM_SELECT_CAP2, &conf));
+    // timer0 produce sync sig at TEZ, timer1 and timer2 consume, to make sure last two can be synced precisely
+    // timer1 and timer2 will be synced with TEZ of timer0 at a known phase.
+    mcpwm_sync_config_t sync_conf = {
+        .sync_sig = MCPWM_SELECT_TIMER0_SYNC,
+        .timer_val = 0,
+        .count_direction = MCPWM_TIMER_DIRECTION_UP,
+    };
+    TEST_ESP_OK(mcpwm_sync_configure(unit, MCPWM_TIMER_1, &sync_conf));
+    sync_conf.timer_val = 1000 - test_sync_phase;
+    TEST_ESP_OK(mcpwm_sync_configure(unit, MCPWM_TIMER_2, &sync_conf));
+    TEST_ESP_OK(mcpwm_set_timer_sync_output(unit, MCPWM_TIMER_0, MCPWM_SWSYNC_SOURCE_TEZ));
+    // init gpio at the end
+    TEST_ESP_OK(test_mcpwm_gpio_init(unit, MCPWM0A, TEST_SYNC_GPIO_0));
+    TEST_ESP_OK(test_mcpwm_gpio_init(unit, MCPWM1A, TEST_SYNC_GPIO_1));
+    TEST_ESP_OK(test_mcpwm_gpio_init(unit, MCPWM2A, TEST_SYNC_GPIO_2));
+
+    vTaskDelay(pdMS_TO_TICKS(100));
+
+    log_cap = true;
+
+    vTaskDelay(pdMS_TO_TICKS(100));
+
+    uint32_t delta_timestamp_us = (cap_timestamp[2] - cap_timestamp[1]) * 1000000 / rtc_clk_apb_freq_get();
+    uint32_t expected_phase_us = 1000000 / mcpwm_get_frequency(unit, MCPWM_TIMER_0) * test_sync_phase / 1000;
+    // accept +-2 error
+    TEST_ASSERT_UINT32_WITHIN(2, expected_phase_us, delta_timestamp_us);
+
+    // tear down
+    for (int i = 0; i < 3; ++i) {
+        TEST_ESP_OK(mcpwm_capture_disable_channel(unit, i));
+        TEST_ESP_OK(mcpwm_sync_disable(unit, i));
+        TEST_ESP_OK(mcpwm_stop(unit, i));
+    }
+}
+
+TEST_CASE("MCPWM timer swsync test", "[mcpwm]")
+{
+    for (int i = 0; i < SOC_MCPWM_GROUPS; i++) {
+        mcpwm_swsync_test(i);
+    }
+}
+
 // -------------------------------------------------------------------------------------
+typedef struct {
+    mcpwm_unit_t unit;
+    TaskHandle_t task_hdl;
+} test_capture_callback_data_t;
+
+static bool test_mcpwm_intr_handler(mcpwm_unit_t mcpwm, mcpwm_capture_channel_id_t cap_sig, const cap_event_data_t *edata, void *arg) {
+    BaseType_t high_task_wakeup = pdFALSE;
+    test_capture_callback_data_t *cb_data = (test_capture_callback_data_t *)arg;
+    vTaskNotifyGiveFromISR(cb_data->task_hdl, &high_task_wakeup);
+    return high_task_wakeup == pdTRUE;
+}
 
 static void mcpwm_capture_test(mcpwm_unit_t unit, mcpwm_capture_signal_t cap_chan)
 {
-    typedef struct {
-        mcpwm_unit_t unit;
-        TaskHandle_t task_hdl;
-    } test_capture_callback_data_t;
-
-    void test_mcpwm_intr_handler(void *arg) {
-        BaseType_t high_task_wakeup = pdFALSE;
-        test_capture_callback_data_t *cb_data = (test_capture_callback_data_t *)arg;
-        uint32_t status = MCPWM[cb_data->unit]->int_st.val;
-        MCPWM[cb_data->unit]->int_clr.val = status;
-        vTaskNotifyGiveFromISR(cb_data->task_hdl, &high_task_wakeup);
-        if (high_task_wakeup == pdTRUE) {
-            portYIELD_FROM_ISR();
-        }
-    }
-
-    intr_handle_t mcpwm_intr = NULL;
     test_capture_callback_data_t callback_data = {
         .unit = unit,
         .task_hdl = xTaskGetCurrentTaskHandle(),
@@ -402,17 +493,23 @@ static void mcpwm_capture_test(mcpwm_unit_t unit, mcpwm_capture_signal_t cap_cha
 
     //each timer test the capture sig with the same id with it.
     mcpwm_io_signals_t cap_io = cap_io_sig_array[cap_chan];
-    mcpwm_capture_signal_t cap_sig = cap_sig_array[cap_chan];
+    mcpwm_capture_channel_id_t cap_channel = cap_sig_array[cap_chan];
 
     TEST_ESP_OK(test_mcpwm_gpio_init(unit, cap_io, TEST_CAP_GPIO));
-    TEST_ESP_OK(mcpwm_capture_enable(unit, cap_sig, MCPWM_POS_EDGE, 0));
-    TEST_ESP_OK(mcpwm_isr_register(unit, test_mcpwm_intr_handler, &callback_data, 0, &mcpwm_intr));
+    mcpwm_capture_config_t conf = {
+            .cap_edge = MCPWM_POS_EDGE,
+            .cap_prescale = 1,
+            .capture_cb = test_mcpwm_intr_handler,
+            .user_data = &callback_data
+    };
+    TEST_ESP_OK(mcpwm_capture_enable_channel(unit, cap_channel, &conf));
     // generate an posage
     gpio_set_level(TEST_CAP_GPIO, 0);
     gpio_set_level(TEST_CAP_GPIO, 1);
     vTaskDelay(pdMS_TO_TICKS(100));
     TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(40)));
     uint32_t cap_val0 = mcpwm_capture_signal_get_value(unit, cap_chan);
+
     // generate another posage
     gpio_set_level(TEST_CAP_GPIO, 0);
     gpio_set_level(TEST_CAP_GPIO, 1);
@@ -421,8 +518,7 @@ static void mcpwm_capture_test(mcpwm_unit_t unit, mcpwm_capture_signal_t cap_cha
     // capture clock source is APB (80MHz), 100ms means 8000000 ticks
     TEST_ASSERT_UINT_WITHIN(100000, 8000000, cap_val1 - cap_val0);
 
-    TEST_ESP_OK(mcpwm_capture_disable(unit, cap_sig));
-    TEST_ESP_OK(esp_intr_free(mcpwm_intr));
+    TEST_ESP_OK(mcpwm_capture_disable_channel(unit, cap_channel));
 }
 
 TEST_CASE("MCPWM capture test", "[mcpwm]")
