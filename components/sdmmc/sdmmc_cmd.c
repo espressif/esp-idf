@@ -363,6 +363,57 @@ esp_err_t sdmmc_send_cmd_send_status(sdmmc_card_t* card, uint32_t* out_status)
     return ESP_OK;
 }
 
+esp_err_t sdmmc_send_cmd_erase_group_start(sdmmc_card_t* card, uint32_t start_address) {
+    sdmmc_command_t cmd = {
+        .flags = SCF_CMD_AC | SCF_RSP_R1 | SCF_WAIT_BUSY,
+        .opcode = MMC_ERASE_GROUP_START,
+        .arg = start_address,
+    };
+    esp_err_t err = sdmmc_send_cmd(card, &cmd);
+    return err;
+}
+
+esp_err_t sdmmc_send_cmd_erase_group_end(sdmmc_card_t* card, uint32_t end_address) {
+    sdmmc_command_t cmd = {
+        .flags = SCF_CMD_AC | SCF_RSP_R1 | SCF_WAIT_BUSY,
+        .opcode = MMC_ERASE_GROUP_END,
+        .arg = end_address,
+    };
+    esp_err_t err = sdmmc_send_cmd(card, &cmd);
+    return err;
+}
+
+esp_err_t sdmmc_send_cmd_trim(sdmmc_card_t* card) {
+    sdmmc_command_t cmd = {
+        .flags = SCF_CMD_AC | SCF_RSP_R1B | SCF_WAIT_BUSY,
+        .opcode = MMC_ERASE,
+        .arg = 0x00000001,
+    };
+    esp_err_t err = sdmmc_send_cmd(card, &cmd);
+    return err;
+}
+
+esp_err_t sdmmc_send_cmd_sanitize(sdmmc_card_t* card, int timeout_ms) {
+    uint8_t index = EXT_CSD_SANITIZE_START;
+    uint8_t value = 0x01;
+    uint8_t set = EXT_CSD_CMD_SET_NORMAL;
+
+    sdmmc_command_t cmd = {
+            .opcode = MMC_SWITCH,
+            .arg = (MMC_SWITCH_MODE_WRITE_BYTE << 24) | (index << 16) | (value << 8) | set,
+            .flags = SCF_RSP_R1B | SCF_CMD_AC | SCF_WAIT_BUSY,
+            .timeout_ms = timeout_ms,
+    };
+    esp_err_t err = sdmmc_send_cmd(card, &cmd);
+    if (err == ESP_OK) {
+        //check response bit to see that switch was accepted
+        if (MMC_R1(cmd.response) & MMC_R1_SWITCH_ERROR)
+            err = ESP_ERR_INVALID_RESPONSE;
+    }
+
+    return err;
+}
+
 esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
         size_t start_block, size_t block_count)
 {
@@ -509,5 +560,55 @@ esp_err_t sdmmc_read_sectors_dma(sdmmc_card_t* card, void* dst,
             ESP_LOGV(TAG, "waiting for card to become ready (%d)", count);
         }
     }
+    return ESP_OK;
+}
+
+esp_err_t sdmmc_erase_sectors(sdmmc_card_t* card, size_t block_start,
+        size_t block_count, int sanitize)
+{
+    if (block_start + block_count > card->csd.capacity) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+    if (!card->ext_csd.sec_supports_trim) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    if (sanitize && !card->ext_csd.sec_supports_sanitize) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    size_t block_end = block_start + block_count - 1;
+
+    size_t block_size_mult = 1;
+    if ((card->ocr & SD_OCR_SDHC_CAP) == 0) {
+        block_size_mult = card->csd.sector_size;
+    }
+
+    esp_err_t err = ESP_OK;
+    err = sdmmc_send_cmd_erase_group_start(card, block_start * block_size_mult);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    err = sdmmc_send_cmd_erase_group_end(card, block_end * block_size_mult);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    err = sdmmc_send_cmd_trim(card);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    if (sanitize) {
+        // 10 second timeout to complete the SANITIZE operation
+        // The timeout may may need to be increased for large/slow devices.
+        // NOTE: A full disk TRIM and SANITIZE on a 16 GiB SAMSUNG
+        // KLMAG1JETD-B041 is ~2.5 s.
+        err = sdmmc_send_cmd_sanitize(card, 10*1000);
+        if (err != ESP_OK) {
+            return err;
+        }
+    }
+
     return ESP_OK;
 }

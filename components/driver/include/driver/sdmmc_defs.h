@@ -47,6 +47,9 @@
 #define MMC_SET_BLOCK_COUNT             23      /* R1 */
 #define MMC_WRITE_BLOCK_SINGLE          24      /* R1 */
 #define MMC_WRITE_BLOCK_MULTIPLE        25      /* R1 */
+#define MMC_ERASE_GROUP_START           35      /* R1 */
+#define MMC_ERASE_GROUP_END             36      /* R1 */
+#define MMC_ERASE                       38      /* R1B */
 #define MMC_APP_CMD                     55      /* R1 */
 
 /* SD commands */                               /* response type */
@@ -154,6 +157,9 @@
 #define EXT_CSD_POWER_CLASS             187     /* R/W */
 #define EXT_CSD_CMD_SET                 191     /* R/W */
 #define EXT_CSD_S_CMD_SET               504     /* RO */
+#define EXT_CSD_ERASED_MEM_CONT         181     /* RO */
+#define EXT_CSD_SEC_FEATURE_SUPPORT     231     /* RO */
+#define EXT_CSD_SANITIZE_START          165     /* WO */
 
 /* EXT_CSD field definitions */
 #define EXT_CSD_CMD_SET_NORMAL          (1U << 0)
@@ -185,6 +191,12 @@
 #define EXT_CSD_CARD_TYPE_52M_V18       0x07
 #define EXT_CSD_CARD_TYPE_52M_V12       0x0b
 #define EXT_CSD_CARD_TYPE_52M_V12_18    0x0f
+
+/* EXT_CSD_SEC_FEATURE_SUPPORT */
+#define EXT_CSD_SECURE_ER_EN            (1 << 0)
+#define EXT_CSD_SEC_BD_BLK_EN           (1 << 2)
+#define EXT_CSD_SEC_GB_CL_EN            (1 << 4)
+#define EXT_CSD_SEC_SANITIZE            (1 << 6)
 
 /* EXT_CSD MMC */
 #define EXT_CSD_MMC_SIZE 512

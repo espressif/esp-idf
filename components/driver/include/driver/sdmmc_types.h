@@ -66,7 +66,10 @@ typedef struct {
  * Decoded values of Extended Card Specific Data
  */
 typedef struct {
-    uint8_t power_class;    /*!< Power class used by the card */
+    uint8_t power_class;            /*!< Power class used by the card */
+    uint8_t erased_mem_cont;        /*!< Erased memory contents */
+    uint8_t sec_supports_sanitize;  /*!< Card supports SANITIZE */
+    uint8_t sec_supports_trim;      /*!< Card supports TRIM */
 } sdmmc_ext_csd_t;
 
 /**

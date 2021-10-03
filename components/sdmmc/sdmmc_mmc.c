@@ -91,6 +91,15 @@ esp_err_t sdmmc_init_mmc_read_ext_csd(sdmmc_card_t* card)
         card->csd.capacity = sectors;
     }
 
+    if(ext_csd[EXT_CSD_ERASED_MEM_CONT]) {
+        card->ext_csd.erased_mem_cont = 0xFF;
+    } else {
+        card->ext_csd.erased_mem_cont = 0x00;
+    }
+
+    card->ext_csd.sec_supports_sanitize = (ext_csd[EXT_CSD_SEC_FEATURE_SUPPORT] & EXT_CSD_SEC_SANITIZE) != 0;
+    card->ext_csd.sec_supports_trim     = (ext_csd[EXT_CSD_SEC_FEATURE_SUPPORT] & EXT_CSD_SEC_GB_CL_EN) != 0;
+
 out:
     free(ext_csd);
     return err;

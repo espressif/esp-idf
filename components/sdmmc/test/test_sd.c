@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,6 +24,8 @@
 #include "esp_heap_caps.h"
 #include "esp_rom_gpio.h"
 #include "test_utils.h"
+
+static const char* TAG = "test_sd";
 
 // Currently no runners for S3
 #define WITH_SD_TEST    (SOC_SDMMC_HOST_SUPPORTED && !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3))
@@ -446,6 +440,185 @@ TEST_CASE("SDMMC test read/write with offset (eMMC slot 0, 8 line)", "[sd][test_
 {
     sd_test_board_power_on();
     sd_test_rw_blocks(0, 8, test_read_write_with_offset);
+    sd_test_board_power_off();
+}
+#endif // WITH_EMMC_TEST
+
+#if WITH_EMMC_TEST
+TEST_CASE("SDMMC test TRIM blocks with SANITIZE", "[sd][test_env=UT_T1_SDMODE]")
+{
+    sd_test_board_power_on();
+    sdmmc_host_t config = SDMMC_HOST_DEFAULT();
+    config.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
+    sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
+    slot_config.width = 4;
+    TEST_ESP_OK(sdmmc_host_init());
+
+    TEST_ESP_OK(sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config));
+    sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
+    TEST_ASSERT_NOT_NULL(card);
+    TEST_ESP_OK(sdmmc_card_init(&config, card));
+
+    sdmmc_card_print_info(stdout, card);
+
+    const size_t block_start = 64;
+    const size_t buffer_size = 4096;
+    const size_t block_count = buffer_size / 512;
+    uint8_t* buffer = heap_caps_malloc(buffer_size, MALLOC_CAP_DMA);
+
+    // write random data
+    const uint32_t seed = 0x89abcdef;
+    fill_buffer(seed, buffer, buffer_size / sizeof(uint32_t));
+    TEST_ESP_OK(sdmmc_write_sectors(card, buffer, block_start, block_count));
+
+    // check data integrity
+    memset(buffer, 0xcc, buffer_size);
+    TEST_ESP_OK(sdmmc_read_sectors(card, buffer, block_start, block_count));
+    check_buffer(seed, buffer, buffer_size / sizeof(uint32_t));
+
+    // erase blocks
+    TEST_ESP_OK(sdmmc_erase_sectors(card, block_start, block_count, true));
+
+    // check to make sure data is erased
+    TEST_ESP_OK(sdmmc_read_sectors(card, buffer, block_start, block_count));
+    for (size_t i = 0; i < buffer_size; ++i) {
+        TEST_ASSERT_EQUAL_HEX32(card->ext_csd.erased_mem_cont, buffer[i]);
+    }
+
+    free(buffer);
+    free(card);
+    TEST_ESP_OK(sdmmc_host_deinit());
+    sd_test_board_power_off();
+}
+
+TEST_CASE("SDMMC test TRIM 1 GiB blocks with sanitize", "[sd][test_env=UT_T1_SDMODE]")
+{
+    sd_test_board_power_on();
+    sdmmc_host_t config = SDMMC_HOST_DEFAULT();
+    config.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
+    sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
+    slot_config.width = 4;
+    TEST_ESP_OK(sdmmc_host_init());
+
+    TEST_ESP_OK(sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config));
+    sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
+    TEST_ASSERT_NOT_NULL(card);
+    TEST_ESP_OK(sdmmc_card_init(&config, card));
+
+    sdmmc_card_print_info(stdout, card);
+
+    const size_t buffer_size = 64*1024;
+    const size_t block_count = buffer_size / 512;
+    uint8_t* buffer = heap_caps_malloc(buffer_size, MALLOC_CAP_DMA);
+
+    ESP_LOGI(TAG, "Beginning 1 GiB write...");
+    for (size_t i = 0; i < (1024*1024*1024) / 512; i += block_count) {
+        // write random data
+        fill_buffer(i, buffer, buffer_size / sizeof(uint32_t));
+        TEST_ESP_OK(sdmmc_write_sectors(card, buffer, i, block_count));
+
+        if(i % ((128*1024*1024) / 512) == 0) {
+            ESP_LOGI(TAG, "wrote %d MiB (%d blocks)...", i / ((1024*1024) / 512), i);
+        }
+    }
+
+    ESP_LOGI(TAG, "Beginning 1 GiB read...");
+    for (size_t i = 0; i < (1024*1024*1024) / 512; i += block_count) {
+        // check data integrity
+        TEST_ESP_OK(sdmmc_read_sectors(card, buffer, i, block_count));
+        check_buffer(i, buffer, buffer_size / sizeof(uint32_t));
+
+        if(i % ((128*1024*1024) / 512) == 0) {
+            ESP_LOGI(TAG, "read %d MiB (%d blocks)...", i / ((1024*1024) / 512), i);
+        }
+    }
+
+    // erase disk
+    ESP_LOGI(TAG, "Beginning 1 GiB TRIM...");
+    TEST_ESP_OK(sdmmc_erase_sectors(card, 0, (1024*1024*1024) / 512, true));
+
+    ESP_LOGI(TAG, "Beginning 1 GiB erase verification...");
+    for (size_t i = 0; i < (1024*1024*1024) / 512; i += block_count) {
+        // check to make sure data is erased
+        memset(buffer, 0xcc, buffer_size);
+        TEST_ESP_OK(sdmmc_read_sectors(card, buffer, i, block_count));
+        for (size_t j = 0; j < buffer_size; ++j) {
+            TEST_ASSERT_EQUAL_HEX32(card->ext_csd.erased_mem_cont, buffer[j]);
+        }
+
+        if(i % ((128*1024*1024) / 512) == 0) {
+            ESP_LOGI(TAG, "verified %d MiB (%d blocks)...", i / ((1024*1024) / 512), i);
+        }
+    }
+
+    free(buffer);
+    free(card);
+    TEST_ESP_OK(sdmmc_host_deinit());
+    sd_test_board_power_off();
+}
+
+TEST_CASE("SDMMC test full-disk TRIM with sanitize", "[sd][test_env=UT_T1_SDMODE]")
+{
+    sd_test_board_power_on();
+    sdmmc_host_t config = SDMMC_HOST_DEFAULT();
+    config.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
+    sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
+    slot_config.width = 4;
+    TEST_ESP_OK(sdmmc_host_init());
+
+    TEST_ESP_OK(sdmmc_host_init_slot(SDMMC_HOST_SLOT_1, &slot_config));
+    sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
+    TEST_ASSERT_NOT_NULL(card);
+    TEST_ESP_OK(sdmmc_card_init(&config, card));
+
+    sdmmc_card_print_info(stdout, card);
+
+    const size_t buffer_size = 64*1024;
+    const size_t block_count = buffer_size / 512;
+    uint8_t* buffer = heap_caps_malloc(buffer_size, MALLOC_CAP_DMA);
+
+    ESP_LOGI(TAG, "Beginning full disk write...");
+    for (size_t i = 0; i < card->csd.capacity; i += block_count) {
+        // write random data
+        fill_buffer(i, buffer, buffer_size / sizeof(uint32_t));
+        TEST_ESP_OK(sdmmc_write_sectors(card, buffer, i, block_count));
+
+        if(i % ((128*1024*1024) / 512) == 0) {
+            ESP_LOGI(TAG, "wrote %d MiB (%d blocks)...", i / ((1024*1024) / 512), i);
+        }
+    }
+
+    ESP_LOGI(TAG, "Beginning full disk read...");
+    for (size_t i = 0; i < card->csd.capacity; i += block_count) {
+        // check data integrity
+        TEST_ESP_OK(sdmmc_read_sectors(card, buffer, i, block_count));
+        check_buffer(i, buffer, buffer_size / sizeof(uint32_t));
+
+        if(i % ((128*1024*1024) / 512) == 0) {
+            ESP_LOGI(TAG, "read %d MiB (%d blocks)...", i / ((1024*1024) / 512), i);
+        }
+    }
+
+    ESP_LOGI(TAG, "Beginning full disk TRIM...");
+    TEST_ESP_OK(sdmmc_erase_sectors(card, 0, card->csd.capacity-1, true));
+
+    ESP_LOGI(TAG, "Beginning full disk erase verification...");
+    for (size_t i = 0; i < card->csd.capacity; i += block_count) {
+        // check to make sure data is erased
+        memset(buffer, 0xcc, buffer_size);
+        TEST_ESP_OK(sdmmc_read_sectors(card, buffer, i, block_count));
+        for (size_t j = 0; j < buffer_size; ++j) {
+            TEST_ASSERT_EQUAL_HEX32(card->ext_csd.erased_mem_cont, buffer[j]);
+        }
+
+        if(i % ((128*1024*1024) / 512) == 0) {
+            ESP_LOGI(TAG, "verified %d MiB (%d blocks)...", i / ((1024*1024) / 512), i);
+        }
+    }
+
+    free(buffer);
+    free(card);
+    TEST_ESP_OK(sdmmc_host_deinit());
     sd_test_board_power_off();
 }
 #endif // WITH_EMMC_TEST

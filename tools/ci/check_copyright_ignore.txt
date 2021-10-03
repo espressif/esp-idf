@@ -2213,7 +2213,6 @@ components/riscv/include/riscv/riscv_interrupts.h
 components/riscv/include/riscv/rvruntime-frames.h
 components/riscv/instruction_decode.c
 components/riscv/interrupt.c
-components/sdmmc/include/sdmmc_cmd.h
 components/sdmmc/sdmmc_cmd.c
 components/sdmmc/sdmmc_common.c
 components/sdmmc/sdmmc_common.h
@@ -2221,7 +2220,6 @@ components/sdmmc/sdmmc_init.c
 components/sdmmc/sdmmc_io.c
 components/sdmmc/sdmmc_mmc.c
 components/sdmmc/sdmmc_sd.c
-components/sdmmc/test/test_sd.c
 components/sdmmc/test/test_sdio.c
 components/soc/esp32/adc_periph.c
 components/soc/esp32/dac_periph.c

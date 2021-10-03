@@ -1,16 +1,8 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -76,6 +68,23 @@ esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
  */
 esp_err_t sdmmc_read_sectors(sdmmc_card_t* card, void* dst,
         size_t start_sector, size_t sector_count);
+
+/**
+ * Erase given sector range in SD/MMC card
+ *
+ * @param card  pointer to card information structure previously initialized
+ *              using sdmmc_card_init
+ * @param start_address  address where to mark start of erasing
+ * @param end_address    address where to mark end of erasing
+ * @param sanitize  flag to indicate that sectors should be erased
+ *                  immediately instead of the default background
+ *                  erase.
+ * @return
+ *      - ESP_OK on success
+ *      - One of the error codes from SDMMC host controller
+ */
+esp_err_t sdmmc_erase_sectors(sdmmc_card_t* card, size_t start_address,
+        size_t end_address, int sanitize);
 
 /**
  * Read one byte from an SDIO card using IO_RW_DIRECT (CMD52)
