@@ -636,7 +636,7 @@ static inline bool IRAM_ATTR xPortCanYield(void)
 
 static inline BaseType_t IRAM_ATTR xPortGetCoreID(void)
 {
-    return cpu_hal_get_core_id();
+    return (uint32_t) cpu_hal_get_core_id();
 }
 
 

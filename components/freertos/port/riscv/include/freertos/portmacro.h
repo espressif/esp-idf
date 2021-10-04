@@ -93,7 +93,6 @@ typedef uint32_t TickType_t;
 #define RVHAL_EXCM_LEVEL            4
 
 
-
 /* ----------------------------------------------- Port Configurations -------------------------------------------------
  * - Configurations values supplied by each port
  * - Required by FreeRTOS
@@ -377,7 +376,7 @@ void vPortSetStackWatchpoint(void *pxStackStart);
  */
 static inline BaseType_t IRAM_ATTR xPortGetCoreID(void)
 {
-    return cpu_hal_get_core_id();
+    return (uint32_t) cpu_hal_get_core_id();
 }
 
 
