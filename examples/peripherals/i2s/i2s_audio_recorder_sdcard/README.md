@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32S3 |
-| ----------------- | ----- | ------- |
+| Supported Targets | ESP32 | ESP32-S3 |
+| ----------------- | ----- | -------- |
 
 # I2S Digital Microphone Recording Example
 
