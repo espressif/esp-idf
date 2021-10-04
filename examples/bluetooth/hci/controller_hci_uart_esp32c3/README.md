@@ -1,11 +1,12 @@
-ESP-IDF UART HCI Controller
-=================================
 | Supported Targets | ESP32-C3 |
 | ----------------- | -------- |
 
+ESP-IDF UART HCI Controller
+=================================
+
 This example demonstrates how to configure the Bluetooth Low Energy Controller's HCI (Host Controller Interface) to communicate over UART.
 
-Using this example, BLE radio capabilities of ESP32-C3 chip, can be:
+Using this example, BLE radio capabilities of ESP32-C3/ESP32-S3 chip, can be:
 
 1. tested via standard HCI messages in Direct Test Mode
 
@@ -19,7 +20,7 @@ This example uses LL/register access directly, because the UHCI driver hasn't be
 
 ### Hardware Required
 
-This example should be able to run on any commonly available ESP32-C3 development board. To connect UART to PC, another board such as ESP_Test Board or FT232 USB UART board is usually needed.
+This example should be able to run on any commonly available ESP32-C3/ESP32-S3 development board. To connect UART to PC, another board such as ESP_Test Board or FT232 USB UART board is usually needed.
 
 In this example, two UARTs are used:
 
@@ -30,7 +31,7 @@ In this example, two UARTs are used:
 
 RTS and CTS lines of UART1 are required. GPIO4, GPIO5, GPIO6, GPIO7 are used as TxD, RxD, RTS, CTS PINs of UART1, respectively.
 
-In a frequently-used scenario, if ESP_Test Board is used, connect the TX0, RX0, RTS0, CTS0 and GND of ESP_Test Board to ESP32-C3 UART1 PINs, and Attach ESP_Test board to the host PC.
+In a frequently-used scenario, if ESP_Test Board is used, connect the TX0, RX0, RTS0, CTS0 and GND of ESP_Test Board to ESP32-C3/ESP32-S3 UART1 PINs, and Attach ESP_Test board to the host PC.
 
 ### Configure the project
 

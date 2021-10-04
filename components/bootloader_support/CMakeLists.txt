@@ -26,6 +26,7 @@ if(BOOTLOADER_BUILD)
     "src/bootloader_console_loader.c"
     "src/bootloader_panic.c"
     "src/${IDF_TARGET}/bootloader_sha.c"
+    "src/${IDF_TARGET}/bootloader_soc.c"
     "src/${IDF_TARGET}/bootloader_${IDF_TARGET}.c"
     )
     list(APPEND priv_requires hal)

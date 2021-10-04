@@ -114,11 +114,14 @@ extern "C" {
 set sleep_init default param
 */
 #define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_DEFAULT  3
+#define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_NODROP  0
 #define RTC_CNTL_DBG_ATTEN_DEEPSLEEP_DEFAULT  15
 #define RTC_CNTL_DBG_ATTEN_MONITOR_DEFAULT  0
 #define RTC_CNTL_BIASSLP_MONITOR_DEFAULT  0
+#define RTC_CNTL_BIASSLP_SLEEP_ON  0
 #define RTC_CNTL_BIASSLP_SLEEP_DEFAULT  1
 #define RTC_CNTL_PD_CUR_MONITOR_DEFAULT  0
+#define RTC_CNTL_PD_CUR_SLEEP_ON  0
 #define RTC_CNTL_PD_CUR_SLEEP_DEFAULT  1
 #define RTC_CNTL_DG_VDD_DRV_B_SLP_DEFAULT 254
 
@@ -206,7 +209,8 @@ typedef enum {
 typedef enum {
     RTC_CAL_RTC_MUX = 0,       //!< Currently selected RTC SLOW_CLK
     RTC_CAL_8MD256 = 1,        //!< Internal 8 MHz RC oscillator, divided by 256
-    RTC_CAL_32K_XTAL = 2       //!< External 32 kHz XTAL
+    RTC_CAL_32K_XTAL = 2,      //!< External 32 kHz XTAL
+    RTC_CAL_INTERNAL_OSC = 3   //!< Internal 150 kHz oscillator
 } rtc_cal_sel_t;
 
 /**
@@ -638,7 +642,8 @@ typedef struct {
     uint32_t rtc_peri_pd_en : 1;        //!< power down RTC peripherals
     uint32_t wifi_pd_en : 1;            //!< power down WiFi
     uint32_t bt_pd_en : 1;              //!< power down BT
-    uint32_t cpu_pd_en : 1;              //!< power down CPU, but not restart when lightsleep.
+    uint32_t cpu_pd_en : 1;             //!< power down CPU, but not restart when lightsleep.
+    uint32_t int_8m_pd_en : 1;          //!< Power down Internal 8M oscillator
     uint32_t dig_peri_pd_en : 1;        //!< power down digital peripherals
     uint32_t deep_slp : 1;              //!< power down digital domain
     uint32_t wdt_flashboot_mod_en : 1;  //!< enable WDT flashboot mode
@@ -647,6 +652,7 @@ typedef struct {
     uint32_t rtc_dbias_wak : 5;         //!< set bias for RTC domain, in active mode
     uint32_t rtc_dbias_slp : 5;         //!< set bias for RTC domain, in sleep mode
     uint32_t vddsdio_pd_en : 1;         //!< power down VDDSDIO regulator
+    uint32_t xtal_fpu : 1;              //!< keep main XTAL powered up in sleep
     uint32_t deep_slp_reject : 1;
     uint32_t light_slp_reject : 1;
 } rtc_sleep_config_t;
@@ -659,6 +665,7 @@ typedef struct {
  *
  * @param RTC_SLEEP_PD_x flags combined using bitwise OR
  */
+#define is_dslp(pd_flags)   ((pd_flags) & RTC_SLEEP_PD_DIG)
 #define RTC_SLEEP_CONFIG_DEFAULT(sleep_flags) { \
     .lslp_mem_inf_fpu = 0, \
     .rtc_mem_inf_follow_cpu = ((sleep_flags) & RTC_SLEEP_PD_RTC_MEM_FOLLOW_CPU) ? 1 : 0, \
@@ -668,14 +675,20 @@ typedef struct {
     .wifi_pd_en = ((sleep_flags) & RTC_SLEEP_PD_WIFI) ? 1 : 0, \
     .bt_pd_en = ((sleep_flags) & RTC_SLEEP_PD_BT) ? 1 : 0, \
     .cpu_pd_en = ((sleep_flags) & RTC_SLEEP_PD_CPU) ? 1 : 0, \
+    .int_8m_pd_en = is_dslp(sleep_flags) ? 1 : ((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? 1 : 0, \
     .dig_peri_pd_en = ((sleep_flags) & RTC_SLEEP_PD_DIG_PERIPH) ? 1 : 0, \
     .deep_slp = ((sleep_flags) & RTC_SLEEP_PD_DIG) ? 1 : 0, \
     .wdt_flashboot_mod_en = 0, \
     .dig_dbias_wak = RTC_CNTL_DBIAS_1V10, \
-    .dig_dbias_slp = RTC_CNTL_DBIAS_SLP, \
+    .dig_dbias_slp = is_dslp(sleep_flags)                   ? RTC_CNTL_DBIAS_SLP  \
+                   : !((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? RTC_CNTL_DBIAS_1V10 \
+                   : RTC_CNTL_DBIAS_SLP, \
     .rtc_dbias_wak = RTC_CNTL_DBIAS_1V10, \
-    .rtc_dbias_slp = RTC_CNTL_DBIAS_SLP, \
+    .rtc_dbias_slp = is_dslp(sleep_flags)                   ? RTC_CNTL_DBIAS_SLP  \
+                   : !((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? RTC_CNTL_DBIAS_1V10 \
+                   : RTC_CNTL_DBIAS_SLP, \
     .vddsdio_pd_en = ((sleep_flags) & RTC_SLEEP_PD_VDDSDIO) ? 1 : 0, \
+    .xtal_fpu = is_dslp(sleep_flags) ? 0 : ((sleep_flags) & RTC_SLEEP_PD_XTAL) ? 0 : 1, \
     .deep_slp_reject = 1, \
     .light_slp_reject = 1 \
 };
@@ -690,6 +703,8 @@ typedef struct {
 #define RTC_SLEEP_PD_BT                 BIT(7)  //!< Power down BT
 #define RTC_SLEEP_PD_CPU                BIT(8)  //!< Power down CPU when in lightsleep, but not restart
 #define RTC_SLEEP_PD_DIG_PERIPH         BIT(9)  //!< Power down DIG peripherals
+#define RTC_SLEEP_PD_INT_8M             BIT(10) //!< Power down Internal 8M oscillator
+#define RTC_SLEEP_PD_XTAL               BIT(11) //!< Power down main XTAL
 
 /**
  * @brief Prepare the chip to enter sleep mode

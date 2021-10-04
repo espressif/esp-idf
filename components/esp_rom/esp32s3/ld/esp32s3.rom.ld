@@ -91,8 +91,8 @@ tinfl_decompress_mem_to_mem = 0x4000084c;
  ***************************************/
 
 /* Functions */
-jd_prepare = 0x40000858;
-jd_decomp = 0x40000864;
+PROVIDE( jd_prepare = 0x40000858 );
+PROVIDE (jd_decomp = 0x40000864 );
 
 
 /***************************************

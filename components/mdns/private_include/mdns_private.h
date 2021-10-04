@@ -365,6 +365,7 @@ typedef struct mdns_search_once_s {
     uint32_t started_at;
     uint32_t sent_at;
     uint32_t timeout;
+    mdns_query_notify_t notifier;
     SemaphoreHandle_t done_semaphore;
     uint16_t type;
     uint8_t max_results;

@@ -83,14 +83,14 @@ TEST_CASE("Mount fails cleanly without card inserted", "[fatfs][sd][ignore]")
     HEAP_SIZE_CHECK(heap_size, 0);
 }
 
-TEST_CASE("(SD) can create and write file", "[fatfs][sd][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) can create and write file", "[fatfs][sd][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_create_file_with_text(test_filename, fatfs_test_hello_str);
     test_teardown();
 }
 
-TEST_CASE("(SD) can read file", "[fatfs][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) can read file", "[fatfs][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_create_file_with_text(test_filename, fatfs_test_hello_str);
@@ -98,7 +98,7 @@ TEST_CASE("(SD) can read file", "[fatfs][test_env=UT_T1_SDMODE]")
     test_teardown();
 }
 
-TEST_CASE("(SD) can read file with pread()", "[fatfs][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) can read file with pread()", "[fatfs][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_create_file_with_text(test_filename, fatfs_test_hello_str);
@@ -106,84 +106,84 @@ TEST_CASE("(SD) can read file with pread()", "[fatfs][test_env=UT_T1_SDMODE]")
     test_teardown();
 }
 
-TEST_CASE("(SD) pwrite() works well", "[fatfs][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) pwrite() works well", "[fatfs][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_pwrite_file(test_filename);
     test_teardown();
 }
 
-TEST_CASE("(SD) overwrite and append file", "[fatfs][sd][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) overwrite and append file", "[fatfs][sd][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_overwrite_append(test_filename);
     test_teardown();
 }
 
-TEST_CASE("(SD) can lseek", "[fatfs][sd][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) can lseek", "[fatfs][sd][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_lseek("/sdcard/seek.txt");
     test_teardown();
 }
 
-TEST_CASE("(SD) can truncate", "[fatfs][sd][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) can truncate", "[fatfs][sd][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_truncate_file("/sdcard/truncate.txt");
     test_teardown();
 }
 
-TEST_CASE("(SD) stat returns correct values", "[fatfs][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) stat returns correct values", "[fatfs][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_stat("/sdcard/stat.txt", "/sdcard");
     test_teardown();
 }
 
-TEST_CASE("(SD) utime sets modification time", "[fatfs][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) utime sets modification time", "[fatfs][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_utime("/sdcard/utime.txt", "/sdcard");
     test_teardown();
 }
 
-TEST_CASE("(SD) unlink removes a file", "[fatfs][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) unlink removes a file", "[fatfs][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_unlink("/sdcard/unlink.txt");
     test_teardown();
 }
 
-TEST_CASE("(SD) link copies a file, rename moves a file", "[fatfs][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) link copies a file, rename moves a file", "[fatfs][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_link_rename("/sdcard/link");
     test_teardown();
 }
 
-TEST_CASE("(SD) can create and remove directories", "[fatfs][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) can create and remove directories", "[fatfs][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_mkdir_rmdir("/sdcard/dir");
     test_teardown();
 }
 
-TEST_CASE("(SD) can opendir root directory of FS", "[fatfs][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) can opendir root directory of FS", "[fatfs][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_can_opendir("/sdcard");
     test_teardown();
 }
 
-TEST_CASE("(SD) opendir, readdir, rewinddir, seekdir work as expected", "[fatfs][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) opendir, readdir, rewinddir, seekdir work as expected", "[fatfs][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_opendir_readdir_rewinddir("/sdcard/dir");
     test_teardown();
 }
 
-TEST_CASE("(SD) multiple tasks can use same volume", "[fatfs][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) multiple tasks can use same volume", "[fatfs][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
     test_fatfs_concurrent("/sdcard/f");
@@ -232,7 +232,7 @@ static void sdmmc_speed_test(void *buf, size_t buf_size, size_t file_size, bool 
     TEST_ESP_OK(esp_vfs_fat_sdmmc_unmount());
 }
 
-TEST_CASE("(SD) mount two FAT partitions, SDMMC and WL, at the same time", "[fatfs][sd][test_env=UT_T1_SDMODE]")
+TEST_CASE("(SD) mount two FAT partitions, SDMMC and WL, at the same time", "[fatfs][sd][test_env=UT_T1_SDMODE][timeout=60]")
 {
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
         .format_if_mount_failed = true,

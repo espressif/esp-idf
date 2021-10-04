@@ -96,7 +96,7 @@ SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，esp
 * 当 Type 定义为 ``app`` 时，SubType 字段可以指定为 ``factory`` (0x00)、 ``ota_0`` (0x10) … ``ota_15`` (0x1F) 或者 ``test`` (0x20)。
 
    -  ``factory`` (0x00) 是默认的 app 分区。启动加载器将默认加载该应用程序。但如果存在类型为 data/ota 分区，则启动加载器将加载 data/ota 分区中的数据，进而判断启动哪个 OTA 镜像文件。
-      
+
       -  OTA 升级永远都不会更新 factory 分区中的内容。
       -  如果您希望在 OTA 项目中预留更多 flash，可以删除 factory 分区，转而使用 ota_0 分区。
 
@@ -169,12 +169,37 @@ Flags 字段
 
    python gen_esp32part.py binary_partitions.bin
 
+分区大小检查
+---------------------
+
+ESP-IDF 构建系统将自动检查生成的二进制文件大小与可用的分区大小是否匹配，如果二进制文件太大，则会构建失败并报错。
+
+目前会对以下二进制文件进行检查：
+
+* 引导加载程序的二进制文件的大小要适合分区表前的区域大小（分区表前的区域都分配给了引导加载程序），具体请参考 :ref:`bootloader-size`。
+* 应用程序二进制文件应至少适合一个 “app" 类型的分区。如果不适合任何应用程序分区，则会构建失败。如果只适合某些应用程序分区，则会打印相关警告。
+
+.. note::
+
+   即使分区大小检查返回错误并导致构建失败，仍然会生成可以烧录的二进制文件（它们对于可用空间来说过大，因此无法正常工作）。
+
+.. note::
+
+   只有在使用 CMake 构建系统时才会对构建系统二进制文件大小进行检查。如果使用传统的 GNU Make 构建系统时，则可以手动检查文件大小，或在启动时会产生错误记录。
+
 MD5 校验和
 ~~~~~~~~~~
 
 二进制格式的分区表中含有一个 MD5 校验和。这个 MD5 校验和是根据分区表内容计算的，可在设备启动阶段，用于验证分区表的完整性。
 
-注意，一些版本较老的启动加载器无法支持 MD5 校验，如果发现 MD5 校验和则将报错 ``invalid magic number 0xebeb``。此时，用户可通过 ``gen_esp32part.py`` 的 ``--disable-md5sum`` 选项或者 :ref:`CONFIG_PARTITION_TABLE_MD5` 选项关闭 MD5 校验。
+.. only:: esp32
+
+   用户可通过 ``gen_esp32part.py`` 的 ``--disable-md5sum`` 选项或者 :ref:`CONFIG_PARTITION_TABLE_MD5` 选项关闭 MD5 校验。对于 :ref:`ESP-IDF v3.1 版本前的引导加载程序 <CONFIG_ESP32_COMPATIBLE_PRE_V3_1_BOOTLOADERS>`，因为它不支持 MD5 校验，所以无法正常启动并报错 ``invalid magic number 0xebeb``，此时用户可以使用此选项关闭 MD5 校验。
+
+.. only:: not esp32
+
+    用户可通过 ``gen_esp32part.py`` 的 ``--disable-md5sum`` 选项或者 :ref:`CONFIG_PARTITION_TABLE_MD5` 选项关闭 MD5 校验。
+
 
 烧写分区表
 ----------

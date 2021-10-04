@@ -109,7 +109,7 @@ void tcpip_adapter_init(void)
 
 esp_err_t tcpip_adapter_clear_default_eth_handlers(void)
 {
-    return esp_eth_clear_default_handlers(netif_from_if(TCPIP_ADAPTER_IF_ETH));
+    return ESP_OK;
 }
 
 esp_err_t tcpip_adapter_set_default_eth_handlers(void)
@@ -119,8 +119,6 @@ esp_err_t tcpip_adapter_set_default_eth_handlers(void)
         esp_netif_t *eth_netif = esp_netif_new(&cfg);
 
         s_esp_netifs[TCPIP_ADAPTER_IF_ETH] = eth_netif;
-
-        return esp_eth_set_default_handlers(eth_netif);
     }
     return ESP_OK;
 

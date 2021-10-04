@@ -66,7 +66,7 @@ check_docs_lang_sync:
   parallel:
     matrix:
       - DOCLANG: ["en", "zh_CN"]
-        DOCTGT: ["esp32", "esp32s2", "esp32c3"]
+        DOCTGT: ["esp32", "esp32s2", "esp32s3", "esp32c3"]
 
 check_docs_gh_links:
   image: $ESP_IDF_DOC_ENV_IMAGE
@@ -128,13 +128,6 @@ build_docs_html_fast:
   variables:
     DOC_BUILDERS: "html"
     DOCS_FAST_BUILD: "yes"
-  # matrix is redefined to include esp32s3 here
-  # that we can build for S3 MRs during bringup phase without
-  # anything being built and published from master branch
-  parallel:
-    matrix:
-      - DOCLANG: ["en", "zh_CN"]
-        DOCTGT: ["esp32", "esp32s2", "esp32s3", "esp32c3"]
 
 build_docs_pdf:
   extends:

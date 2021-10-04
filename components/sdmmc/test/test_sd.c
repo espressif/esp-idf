@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,8 +27,8 @@
 
 // Currently no runners for S3
 #define WITH_SD_TEST    (SOC_SDMMC_HOST_SUPPORTED && !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3))
-//Currently no runners for S2, S3 and C3
-#define WITH_SDSPI_TEST (!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3))
+// Currently, no runners for S3
+#define WITH_SDSPI_TEST (!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3))
 // Can't test eMMC (slot 0) and PSRAM together
 #define WITH_EMMC_TEST  (SOC_SDMMC_HOST_SUPPORTED && !CONFIG_SPIRAM && !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3))
 
@@ -48,14 +40,30 @@
 #define SD_TEST_BOARD_VSEL_3V3      1
 #define SD_TEST_BOARD_VSEL_1V8      0
 
-#define TEST_SDSPI_DMACHAN 1
-
 /* time to wait for reset / power-on */
 #define SD_TEST_BOARD_PWR_RST_DELAY_MS  5
 #define SD_TEST_BOARD_PWR_ON_DELAY_MS   50
 
 /* gpio which is not connected to actual CD pin, used to simulate CD behavior */
 #define CD_WP_TEST_GPIO 18
+
+/* default GPIO selection */
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+#define SDSPI_TEST_MOSI_PIN GPIO_NUM_35
+#define SDSPI_TEST_MISO_PIN GPIO_NUM_37
+#define SDSPI_TEST_SCLK_PIN GPIO_NUM_36
+#define SDSPI_TEST_CS_PIN GPIO_NUM_34
+#elif defined(CONFIG_IDF_TARGET_ESP32C3)
+#define SDSPI_TEST_MOSI_PIN GPIO_NUM_4
+#define SDSPI_TEST_MISO_PIN GPIO_NUM_6
+#define SDSPI_TEST_SCLK_PIN GPIO_NUM_5
+#define SDSPI_TEST_CS_PIN GPIO_NUM_1
+#else
+#define SDSPI_TEST_MOSI_PIN GPIO_NUM_15
+#define SDSPI_TEST_MISO_PIN GPIO_NUM_2
+#define SDSPI_TEST_SCLK_PIN GPIO_NUM_14
+#define SDSPI_TEST_CS_PIN GPIO_NUM_13
+#endif
 
 
 TEST_CASE("MMC_RSP_BITS", "[sd]")
@@ -174,6 +182,19 @@ TEST_CASE("probe eMMC, slot 0, 8-bit", "[sd][test_env=EMMC]")
 #endif // WITH_EMMC_TEST
 
 #if WITH_SDSPI_TEST
+
+#if !WITH_SD_TEST && !WITH_EMMC_TEST
+static void sd_test_board_power_on(void)
+{
+    // do nothing
+}
+
+static void sd_test_board_power_off(void)
+{
+    // do nothing
+}
+#endif
+
 static void test_sdspi_init_bus(spi_host_device_t host, int mosi_pin, int miso_pin, int clk_pin, int dma_chan)
 {
     spi_bus_config_t bus_config = {
@@ -213,7 +234,7 @@ static void probe_spi(int freq_khz, int pin_miso, int pin_mosi, int pin_sck, int
     sdspi_dev_handle_t handle;
     sdspi_device_config_t dev_config = SDSPI_DEVICE_CONFIG_DEFAULT();
     dev_config.gpio_cs = pin_cs;
-    test_sdspi_init_bus(dev_config.host_id, pin_mosi, pin_miso, pin_sck, TEST_SDSPI_DMACHAN);
+    test_sdspi_init_bus(dev_config.host_id, pin_mosi, pin_miso, pin_sck, SPI_DMA_CH_AUTO);
     TEST_ESP_OK(sdspi_host_init());
     TEST_ESP_OK(sdspi_host_init_device(&dev_config, &handle));
 
@@ -233,6 +254,7 @@ static void probe_spi_legacy(int freq_khz, int pin_miso, int pin_mosi, int pin_s
     slot_config.gpio_mosi = pin_mosi;
     slot_config.gpio_sck = pin_sck;
     slot_config.gpio_cs = pin_cs;
+    slot_config.dma_channel = SPI_DMA_CH_AUTO;
 
     TEST_ESP_OK(sdspi_host_init());
     TEST_ESP_OK(sdspi_host_init_slot(config.slot, &slot_config));
@@ -240,13 +262,16 @@ static void probe_spi_legacy(int freq_khz, int pin_miso, int pin_mosi, int pin_s
     probe_core(config.slot);
 
     TEST_ESP_OK(sdspi_host_deinit());
+
+    TEST_ESP_OK(spi_bus_free(config.slot));
+
     sd_test_board_power_off();
 }
 
 TEST_CASE("probe SD in SPI mode", "[sd][test_env=UT_T1_SPIMODE]")
 {
-    probe_spi(SDMMC_FREQ_DEFAULT, 2, 15, 14, 13);
-    probe_spi_legacy(SDMMC_FREQ_DEFAULT, 2, 15, 14, 13);
+    probe_spi(SDMMC_FREQ_DEFAULT, SDSPI_TEST_MISO_PIN, SDSPI_TEST_MOSI_PIN, SDSPI_TEST_SCLK_PIN, SDSPI_TEST_CS_PIN);
+    probe_spi_legacy(SDMMC_FREQ_DEFAULT, SDSPI_TEST_MISO_PIN, SDSPI_TEST_MOSI_PIN, SDSPI_TEST_SCLK_PIN, SDSPI_TEST_CS_PIN);
 }
 
 // No runner for this
@@ -455,14 +480,15 @@ void sdspi_test_rw_blocks(sd_test_func_t test_func)
 {
     sd_test_board_power_on();
 
+    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
     sdspi_dev_handle_t handle;
     sdspi_device_config_t dev_config = SDSPI_DEVICE_CONFIG_DEFAULT();
-    test_sdspi_init_bus(dev_config.host_id, GPIO_NUM_15, GPIO_NUM_2, GPIO_NUM_14, TEST_SDSPI_DMACHAN);
+    dev_config.host_id = config.slot;
+    dev_config.gpio_cs = SDSPI_TEST_CS_PIN;
+    test_sdspi_init_bus(dev_config.host_id, SDSPI_TEST_MOSI_PIN, SDSPI_TEST_MISO_PIN, SDSPI_TEST_SCLK_PIN, SPI_DMA_CH_AUTO);
     TEST_ESP_OK(sdspi_host_init());
     TEST_ESP_OK(sdspi_host_init_device(&dev_config, &handle));
 
-    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
-    config.slot = handle;
     // This test can only run under 20MHz on ESP32, because the runner connects the card to
     // non-IOMUX pins of HSPI.
 
@@ -623,14 +649,16 @@ TEST_CASE("CD input works in SPI mode", "[sd][test_env=UT_T1_SPIMODE]")
 {
     sd_test_board_power_on();
 
+    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
     sdspi_dev_handle_t handle;
     sdspi_device_config_t dev_config = SDSPI_DEVICE_CONFIG_DEFAULT();
+    dev_config.host_id = config.slot;
+    dev_config.gpio_cs = SDSPI_TEST_CS_PIN;
     dev_config.gpio_cd = CD_WP_TEST_GPIO;
-    test_sdspi_init_bus(dev_config.host_id, GPIO_NUM_15, GPIO_NUM_2, GPIO_NUM_14, TEST_SDSPI_DMACHAN);
+    test_sdspi_init_bus(dev_config.host_id, SDSPI_TEST_MOSI_PIN, SDSPI_TEST_MISO_PIN, SDSPI_TEST_SCLK_PIN, SPI_DMA_CH_AUTO);
     TEST_ESP_OK(sdspi_host_init());
     TEST_ESP_OK(sdspi_host_init_device(&dev_config, &handle));
 
-    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
     config.slot = handle;
 
     test_cd_input(CD_WP_TEST_GPIO, &config);
@@ -644,15 +672,17 @@ TEST_CASE("WP input works in SPI mode", "[sd][test_env=UT_T1_SPIMODE]")
 {
     sd_test_board_power_on();
 
+    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
     sdspi_dev_handle_t handle;
     sdspi_device_config_t dev_config = SDSPI_DEVICE_CONFIG_DEFAULT();
+    dev_config.host_id = config.slot;
+    dev_config.gpio_cs = SDSPI_TEST_CS_PIN;
     dev_config.gpio_wp = CD_WP_TEST_GPIO;
-    test_sdspi_init_bus(dev_config.host_id, GPIO_NUM_15, GPIO_NUM_2, GPIO_NUM_14, TEST_SDSPI_DMACHAN);
+    test_sdspi_init_bus(dev_config.host_id, SDSPI_TEST_MOSI_PIN, SDSPI_TEST_MISO_PIN, SDSPI_TEST_SCLK_PIN, SPI_DMA_CH_AUTO);
 
     TEST_ESP_OK(sdspi_host_init());
     TEST_ESP_OK(sdspi_host_init_device(&dev_config, &handle));
 
-    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
     config.slot = handle;
 
     test_wp_input(CD_WP_TEST_GPIO, &config);

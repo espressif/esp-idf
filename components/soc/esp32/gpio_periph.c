@@ -35,7 +35,7 @@ const uint32_t GPIO_PIN_MUX_REG[SOC_GPIO_PIN_COUNT] = {
     IO_MUX_GPIO17_REG,
     IO_MUX_GPIO18_REG,
     IO_MUX_GPIO19_REG,
-    0,
+    IO_MUX_GPIO20_REG, // This corresponding pin is only available on ESP32-PICO-V3 chip package
     IO_MUX_GPIO21_REG,
     IO_MUX_GPIO22_REG,
     IO_MUX_GPIO23_REG,

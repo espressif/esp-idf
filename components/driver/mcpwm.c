@@ -36,6 +36,14 @@ static const char *TAG = "mcpwm";
 #define MCPWM_DT_ERROR          "MCPWM DEADTIME TYPE ERROR"
 #define MCPWM_CAP_EXIST_ERROR   "MCPWM USER CAP INT SERVICE ALREADY EXISTS"
 
+#ifdef CONFIG_MCPWM_ISR_IN_IRAM
+#define MCPWM_ISR_ATTR     IRAM_ATTR
+#define MCPWM_INTR_FLAG  (ESP_INTR_FLAG_IRAM)
+#else
+#define MCPWM_ISR_ATTR
+#define MCPWM_INTR_FLAG  0
+#endif
+
 #define MCPWM_GROUP_CLK_PRESCALE (16)
 #define MCPWM_GROUP_CLK_HZ (SOC_MCPWM_BASE_CLK_HZ / MCPWM_GROUP_CLK_PRESCALE)
 #define MCPWM_TIMER_CLK_HZ (MCPWM_GROUP_CLK_HZ / 10)
@@ -729,7 +737,7 @@ esp_err_t mcpwm_fault_set_oneshot_mode(mcpwm_unit_t mcpwm_num, mcpwm_timer_t tim
     return ESP_OK;
 }
 
-static void mcpwm_default_isr_handler(void *arg) {
+static void MCPWM_ISR_ATTR mcpwm_default_isr_handler(void *arg) {
     mcpwm_context_t *curr_context = (mcpwm_context_t *) arg;
     uint32_t intr_status = mcpwm_ll_intr_get_capture_status(curr_context->hal.dev);
     mcpwm_ll_intr_clear_capture_status(curr_context->hal.dev, intr_status);
@@ -826,7 +834,7 @@ esp_err_t mcpwm_capture_enable_channel(mcpwm_unit_t mcpwm_num, mcpwm_capture_cha
     context[mcpwm_num].cap_isr_func[cap_channel].args = cap_conf->user_data;
     esp_err_t ret = ESP_OK;
     if (context[mcpwm_num].mcpwm_intr_handle == NULL) {
-        ret = esp_intr_alloc(mcpwm_periph_signals.groups[mcpwm_num].irq_id, 0,
+        ret = esp_intr_alloc(mcpwm_periph_signals.groups[mcpwm_num].irq_id, MCPWM_INTR_FLAG,
                               mcpwm_default_isr_handler,
                               (void *) (context + mcpwm_num), &(context[mcpwm_num].mcpwm_intr_handle));
     }
@@ -873,7 +881,7 @@ esp_err_t mcpwm_capture_disable_channel(mcpwm_unit_t mcpwm_num, mcpwm_capture_ch
     return ret;
 }
 
-uint32_t mcpwm_capture_signal_get_value(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t cap_sig)
+uint32_t MCPWM_ISR_ATTR mcpwm_capture_signal_get_value(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t cap_sig)
 {
     ESP_RETURN_ON_FALSE(mcpwm_num < SOC_MCPWM_GROUPS, ESP_ERR_INVALID_ARG, TAG, MCPWM_GROUP_NUM_ERROR);
     ESP_RETURN_ON_FALSE(cap_sig < SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER, ESP_ERR_INVALID_ARG, TAG, MCPWM_CAPTURE_ERROR);
@@ -881,7 +889,7 @@ uint32_t mcpwm_capture_signal_get_value(mcpwm_unit_t mcpwm_num, mcpwm_capture_si
     return mcpwm_ll_capture_get_value(hal->dev, cap_sig);
 }
 
-uint32_t mcpwm_capture_signal_get_edge(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t cap_sig)
+uint32_t MCPWM_ISR_ATTR mcpwm_capture_signal_get_edge(mcpwm_unit_t mcpwm_num, mcpwm_capture_signal_t cap_sig)
 {
     ESP_RETURN_ON_FALSE(mcpwm_num < SOC_MCPWM_GROUPS, ESP_ERR_INVALID_ARG, TAG, MCPWM_GROUP_NUM_ERROR);
     ESP_RETURN_ON_FALSE(cap_sig < SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER, ESP_ERR_INVALID_ARG, TAG, MCPWM_CAPTURE_ERROR);
@@ -893,15 +901,44 @@ esp_err_t mcpwm_sync_enable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, mcp
                             uint32_t phase_val)
 {
     MCPWM_TIMER_CHECK(mcpwm_num, timer_num);
+    ESP_RETURN_ON_FALSE(sync_sig <= MCPWM_SELECT_GPIO_SYNC2, ESP_ERR_INVALID_ARG, TAG, "invalid sync_sig");
+    ESP_RETURN_ON_FALSE(phase_val < 1000, ESP_ERR_INVALID_ARG, TAG, "phase_val must within 0~999");
     mcpwm_hal_context_t *hal = &context[mcpwm_num].hal;
 
     mcpwm_critical_enter(mcpwm_num);
     uint32_t set_phase = mcpwm_ll_timer_get_peak(hal->dev, timer_num, false) * phase_val / 1000;
     mcpwm_ll_timer_set_sync_phase_value(hal->dev, timer_num, set_phase);
-    if (sync_sig >= MCPWM_SELECT_SYNC0) {
-        mcpwm_ll_timer_set_timer_synchro(hal->dev, timer_num, sync_sig - MCPWM_SELECT_SYNC0);
+    if (sync_sig == MCPWM_SELECT_NO_INPUT) {
+        mcpwm_ll_timer_set_soft_synchro(hal->dev, timer_num);
+    } else if (sync_sig <= MCPWM_SELECT_TIMER2_SYNC) {
+        mcpwm_ll_timer_set_timer_synchro(hal->dev, timer_num, sync_sig - MCPWM_SELECT_TIMER0_SYNC);
+    } else {
+        mcpwm_ll_timer_set_gpio_synchro(hal->dev, timer_num, sync_sig - MCPWM_SELECT_GPIO_SYNC0);
     }
-    mcpwm_ll_timer_sync_out_penetrate(hal->dev, timer_num);
+    mcpwm_ll_timer_enable_sync_input(hal->dev, timer_num, true);
+    mcpwm_critical_exit(mcpwm_num);
+    return ESP_OK;
+}
+
+esp_err_t mcpwm_sync_configure(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, const mcpwm_sync_config_t *sync_conf)
+{
+    MCPWM_TIMER_CHECK(mcpwm_num, timer_num);
+    ESP_RETURN_ON_FALSE(sync_conf->sync_sig <= MCPWM_SELECT_GPIO_SYNC2, ESP_ERR_INVALID_ARG, TAG, "invalid sync_sig");
+    mcpwm_hal_context_t *hal = &context[mcpwm_num].hal;
+
+    mcpwm_critical_enter(mcpwm_num);
+    mcpwm_ll_timer_set_sync_phase_direction(hal->dev, timer_num, sync_conf->count_direction);
+    // sync TEP with current setting
+    uint32_t set_phase = 0;
+    set_phase = mcpwm_ll_timer_get_peak(hal->dev, timer_num, false) * sync_conf->timer_val / 1000;
+    mcpwm_ll_timer_set_sync_phase_value(hal->dev, timer_num, set_phase);
+    if (sync_conf->sync_sig == MCPWM_SELECT_NO_INPUT){
+        mcpwm_ll_timer_set_soft_synchro(hal->dev, timer_num);
+    } else if (sync_conf->sync_sig <= MCPWM_SELECT_TIMER2_SYNC) {
+        mcpwm_ll_timer_set_timer_synchro(hal->dev, timer_num, sync_conf->sync_sig - MCPWM_SELECT_TIMER0_SYNC);
+    } else {
+        mcpwm_ll_timer_set_gpio_synchro(hal->dev, timer_num, sync_conf->sync_sig - MCPWM_SELECT_GPIO_SYNC0);
+    }
     mcpwm_ll_timer_enable_sync_input(hal->dev, timer_num, true);
     mcpwm_critical_exit(mcpwm_num);
     return ESP_OK;
@@ -914,6 +951,55 @@ esp_err_t mcpwm_sync_disable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num)
 
     mcpwm_critical_enter(mcpwm_num);
     mcpwm_ll_timer_enable_sync_input(hal->dev, timer_num, false);
+    mcpwm_critical_exit(mcpwm_num);
+    return ESP_OK;
+}
+
+esp_err_t mcpwm_timer_trigger_soft_sync(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num)
+{
+    MCPWM_TIMER_CHECK(mcpwm_num, timer_num);
+
+    mcpwm_hal_context_t *hal = &context[mcpwm_num].hal;
+    mcpwm_critical_enter(mcpwm_num);
+    mcpwm_ll_timer_trigger_soft_sync(hal->dev, timer_num);
+    mcpwm_critical_exit(mcpwm_num);
+
+    return ESP_OK;
+}
+
+esp_err_t mcpwm_sync_invert_gpio_synchro(mcpwm_unit_t mcpwm_num, mcpwm_sync_signal_t sync_sig, bool invert){
+    ESP_RETURN_ON_FALSE(sync_sig >= MCPWM_SELECT_GPIO_SYNC0 && sync_sig <= MCPWM_SELECT_GPIO_SYNC2,
+                        ESP_ERR_INVALID_ARG, TAG, "invalid sync sig");
+
+    mcpwm_hal_context_t *hal = &context[mcpwm_num].hal;
+    mcpwm_critical_enter(mcpwm_num);
+    mcpwm_ll_invert_gpio_synchro(hal->dev, sync_sig - MCPWM_SELECT_GPIO_SYNC0, invert);
+    mcpwm_critical_exit(mcpwm_num);
+
+    return ESP_OK;
+}
+
+esp_err_t mcpwm_set_timer_sync_output(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, mcpwm_timer_sync_trigger_t trigger)
+{
+    MCPWM_TIMER_CHECK(mcpwm_num, timer_num);
+
+    mcpwm_hal_context_t *hal = &context[mcpwm_num].hal;
+    mcpwm_critical_enter(mcpwm_num);
+    switch (trigger) {
+        case MCPWM_SWSYNC_SOURCE_SYNCIN:
+            mcpwm_ll_timer_sync_out_penetrate(hal->dev, timer_num);
+            break;
+        case MCPWM_SWSYNC_SOURCE_TEZ:
+            mcpwm_ll_timer_sync_out_on_timer_event(hal->dev, timer_num, MCPWM_TIMER_EVENT_ZERO);
+            break;
+        case MCPWM_SWSYNC_SOURCE_TEP:
+            mcpwm_ll_timer_sync_out_on_timer_event(hal->dev, timer_num, MCPWM_TIMER_EVENT_PEAK);
+            break;
+        case MCPWM_SWSYNC_SOURCE_DISABLED:
+        default:
+            mcpwm_ll_timer_disable_sync_out(hal->dev, timer_num);
+            break;
+    }
     mcpwm_critical_exit(mcpwm_num);
     return ESP_OK;
 }

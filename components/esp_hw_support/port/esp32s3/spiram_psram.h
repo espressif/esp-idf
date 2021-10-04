@@ -14,8 +14,6 @@
 typedef enum {
     PSRAM_CACHE_S80M = 1,
     PSRAM_CACHE_S40M,
-    PSRAM_CACHE_S26M,
-    PSRAM_CACHE_S20M,
     PSRAM_CACHE_MAX,
 } psram_cache_mode_t;
 
@@ -70,5 +68,11 @@ typedef enum {
 
 esp_err_t esp_spiram_wrap_set(spiram_wrap_mode_t mode);
 
+/**
+ * @brief get psram CS IO
+ *
+ * @return psram CS IO
+ */
+uint8_t psram_get_cs_io(void);
 
 #endif

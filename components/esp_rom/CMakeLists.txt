@@ -15,7 +15,8 @@ else()
     list(APPEND include_dirs "${target}")
     list(APPEND sources "patches/esp_rom_crc.c"
                         "patches/esp_rom_sys.c"
-                        "patches/esp_rom_uart.c")
+                        "patches/esp_rom_uart.c"
+                        "patches/esp_rom_tjpgd.c")
     list(APPEND private_required_comp soc hal)
 endif()
 
@@ -47,6 +48,9 @@ endif()
 if(BOOTLOADER_BUILD)
     if(target STREQUAL "esp32")
         rom_linker_script("newlib-funcs")
+        if(NOT CONFIG_SPI_FLASH_ROM_DRIVER_PATCH)
+            rom_linker_script("spiflash")
+        endif()
         if(CONFIG_ESP32_REV_MIN_3)
             rom_linker_script("eco3")
         endif()

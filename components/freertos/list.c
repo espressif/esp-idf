@@ -26,9 +26,20 @@
 
 
 #include <stdlib.h>
+
+/* Defining MPU_WRAPPERS_INCLUDED_FROM_API_FILE prevents task.h from redefining
+ * all the API functions to use the MPU wrappers.  That should only be done when
+ * task.h is included from an application file. */
+#define MPU_WRAPPERS_INCLUDED_FROM_API_FILE
+
 #include "FreeRTOS.h"
 #include "list.h"
 
+/* Lint e9021, e961 and e750 are suppressed as a MISRA exception justified
+ * because the MPU ports require MPU_WRAPPERS_INCLUDED_FROM_API_FILE to be
+ * defined for the header files above, but not in this file, in order to
+ * generate the correct privileged Vs unprivileged linkage and placement. */
+#undef MPU_WRAPPERS_INCLUDED_FROM_API_FILE /*lint !e961 !e750 !e9021. */
 
 /*-----------------------------------------------------------
 * PUBLIC LIST API documented in list.h
@@ -129,18 +140,18 @@ void vListInsert( List_t * const pxList,
     {
         /* *** NOTE ***********************************************************
         *  If you find your application is crashing here then likely causes are
-        *  listed below.  In addition see https://www.freertos.org/FAQHelp.html for
+        *  listed below.  In addition see https://www.FreeRTOS.org/FAQHelp.html for
         *  more tips, and ensure configASSERT() is defined!
-        *  https://www.freertos.org/a00110.html#configASSERT
+        *  https://www.FreeRTOS.org/a00110.html#configASSERT
         *
         *   1) Stack overflow -
-        *      see https://www.freertos.org/Stacks-and-stack-overflow-checking.html
+        *      see https://www.FreeRTOS.org/Stacks-and-stack-overflow-checking.html
         *   2) Incorrect interrupt priority assignment, especially on Cortex-M
         *      parts where numerically high priority values denote low actual
         *      interrupt priorities, which can seem counter intuitive.  See
-        *      https://www.freertos.org/RTOS-Cortex-M3-M4.html and the definition
+        *      https://www.FreeRTOS.org/RTOS-Cortex-M3-M4.html and the definition
         *      of configMAX_SYSCALL_INTERRUPT_PRIORITY on
-        *      https://www.freertos.org/a00110.html
+        *      https://www.FreeRTOS.org/a00110.html
         *   3) Calling an API function from within a critical section or when
         *      the scheduler is suspended, or calling an API function that does
         *      not end in "FromISR" from an interrupt.

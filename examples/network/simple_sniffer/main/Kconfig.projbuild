@@ -1,0 +1,286 @@
+menu "Example Configuration"
+
+    config SNIFFER_GPIO_RANGE_MIN
+        int
+        default 0
+
+    config SNIFFER_GPIO_RANGE_MAX
+        int
+        default 33 if IDF_TARGET_ESP32
+        default 46 if IDF_TARGET_ESP32S2
+        default 19 if IDF_TARGET_ESP32C3
+        default 48 if IDF_TARGET_ESP32S3
+
+    config SNIFFER_STORE_HISTORY
+        bool "Store command history into flash"
+        default y
+        help
+            Linenoise line editing library provides functions to save and load command history.
+            If this option is enabled, initalizes a FAT filesystem and uses it to store command history.
+
+    choice SNIFFER_PCAP_DESTINATION
+        prompt "Select destination to store pcap file"
+        default SNIFFER_PCAP_DESTINATION_SD
+        help
+            Select where to store the pcap file.
+            Currently support storing files to SD card or to host via JTAG interface with 'Trace memory' enabled.
+        config SNIFFER_PCAP_DESTINATION_SD
+            bool "SD Card"
+            help
+                Store pcap file to SD card.
+        config SNIFFER_PCAP_DESTINATION_JTAG
+            bool "JTAG (App Trace)"
+            depends on APPTRACE_DEST_TRAX
+            help
+                Store pcap file to host via JTAG interface.
+        config SNIFFER_PCAP_DESTINATION_MEMORY
+            bool "Memory"
+            help
+                Store pcap file to memory.
+    endchoice
+
+    if SNIFFER_PCAP_DESTINATION_SD
+        choice SNIFFER_SD_MODE
+            prompt "Select SD card work mode"
+            default SNIFFER_SD_SDMMC_MODE
+            help
+                Select whitch peripheral SD card should use.
+            config SNIFFER_SD_SDMMC_MODE
+                bool "SDMMC"
+                depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3
+                help
+                    Use SDMMC mode (Not support on esp32c3).
+            config SNIFFER_SD_SPI_MODE
+                bool "SPI"
+                help
+                    Use SPI mode.
+        endchoice
+        config SNIFFER_MOUNT_POINT
+            string "SD card mount point in the filesystem"
+            default "/sdcard"
+            help
+                Specify the mount point in the VFS (Virtual File System) for SD card.
+
+        config SNIFFER_PCAP_FILE_NAME_MAX_LEN
+            int "Max name length of pcap file"
+            default 32
+            help
+                Specify maximum name length of pcap file.
+    endif
+
+    if SNIFFER_PCAP_DESTINATION_MEMORY
+        config SNIFFER_PCAP_MEMORY_SIZE
+            int "Memory size of the '.pcap' file in memory"
+            default 4096
+            help
+                Max memory size to storage packet in memory.
+    endif
+
+    config SNIFFER_WORK_QUEUE_LEN
+        int "Length of sniffer work queue"
+        default 128
+        help
+            The sniffer callback function should not do heavy work, so we put all heavy IO operation to another task.
+            The task gets some basic info of sniffer packet via queue.
+            Here you should specify the length of queue.
+
+    config SNIFFER_TASK_STACK_SIZE
+        int "Stack size of sniffer task"
+        default 4096
+        help
+            Stack size of sniffer task.
+
+    config SNIFFER_TASK_PRIORITY
+        int "Priority of sniffer task"
+        default 2
+        help
+            Priority of sniffer task.
+
+    config SNIFFER_USE_SPI_ETHERNET
+        bool
+
+    choice SNIFFER_ETHERNET_TYPE
+        prompt "Ethernet Type"
+        default SNIFFER_NO_ETHERNET
+        help
+            Select which kind of Ethernet will be used in the example.
+
+        config SNIFFER_NO_ETHERNET
+            bool "No Ethernet"
+            help
+                No Ethernet.
+
+        config SNIFFER_USE_INTERNAL_ETHERNET
+            depends on IDF_TARGET_ESP32
+            select ETH_USE_ESP32_EMAC
+            bool "Internal EMAC"
+            help
+                Select internal Ethernet MAC controller.
+
+        config SNIFFER_USE_DM9051
+            bool "DM9051 Module"
+            select SNIFFER_USE_SPI_ETHERNET
+            select ETH_USE_SPI_ETHERNET
+            select ETH_SPI_ETHERNET_DM9051
+            help
+                Select external SPI-Ethernet module (DM9051).
+
+        config SNIFFER_USE_W5500
+            bool "W5500 Module"
+            select SNIFFER_USE_SPI_ETHERNET
+            select ETH_USE_SPI_ETHERNET
+            select ETH_SPI_ETHERNET_W5500
+            help
+                Select external SPI-Ethernet module (W5500).
+
+        config SNIFFER_USE_KSZ8851SNL
+            bool "KSZ8851SNL Module"
+            select SNIFFER_USE_SPI_ETHERNET
+            select ETH_USE_SPI_ETHERNET
+            select ETH_SPI_ETHERNET_KSZ8851SNL
+            help
+                Select external SPI-Ethernet module (KSZ8851SNL).
+    endchoice # SNIFFER_ETHERNET_TYPE
+
+    if SNIFFER_USE_INTERNAL_ETHERNET
+        choice SNIFFER_ETH_PHY_MODEL
+            prompt "Ethernet PHY Device"
+            default SNIFFER_ETH_PHY_IP101
+            help
+                Select the Ethernet PHY device to use in the example.
+
+            config SNIFFER_ETH_PHY_IP101
+                bool "IP101"
+                help
+                    IP101 is a single port 10/100 MII/RMII/TP/Fiber Fast Ethernet Transceiver.
+                    Goto http://www.icplus.com.tw/pp-IP101G.html for more information about it.
+
+            config SNIFFER_ETH_PHY_RTL8201
+                bool "RTL8201/SR8201"
+                help
+                    RTL8201F/SR8201F is a single port 10/100Mb Ethernet Transceiver with auto MDIX.
+                    Goto http://www.corechip-sz.com/productsview.asp?id=22 for more information about it.
+
+            config SNIFFER_ETH_PHY_LAN87XX
+                bool "LAN87xx"
+                help
+                    Below chips are supported:
+                    LAN8710A is a small footprint MII/RMII 10/100 Ethernet Transceiver with HP Auto-MDIX and
+                        flexPWR® Technology.
+                    LAN8720A is a small footprint RMII 10/100 Ethernet Transceiver with HP Auto-MDIX Support.
+                    LAN8740A/LAN8741A is a small footprint MII/RMII 10/100 Energy Efficient Ethernet Transceiver
+                        with HP Auto-MDIX and flexPWR® Technology.
+                    LAN8742A is a small footprint RMII 10/100 Ethernet Transceiver with HP Auto-MDIX and
+                        flexPWR® Technology.
+                    Goto https://www.microchip.com for more information about them.
+
+            config SNIFFER_ETH_PHY_DP83848
+                bool "DP83848"
+                help
+                    DP83848 is a single port 10/100Mb/s Ethernet Physical Layer Transceiver.
+                    Goto http://www.ti.com/product/DP83848J for more information about it.
+
+            config SNIFFER_ETH_PHY_KSZ8041
+                bool "KSZ8041"
+                help
+                    The KSZ8041 is a single supply 10Base-T/100Base-TX Physical Layer Transceiver.
+                    Goto https://www.microchip.com/wwwproducts/en/KSZ8041 for more information about it.
+
+            config SNIFFER_ETH_PHY_KSZ8081
+                bool "KSZ8081"
+                help
+                    The KSZ8081 is a single supply 10Base-T/100Base-TX Physical Layer Transceiver.
+                    Goto https://www.microchip.com/wwwproducts/en/KSZ8081 for more information about it.
+        endchoice # SNIFFER_ETH_PHY_MODEL
+
+        config SNIFFER_ETH_MDC_GPIO
+            int "SMI MDC GPIO number"
+            range SNIFFER_GPIO_RANGE_MIN SNIFFER_GPIO_RANGE_MAX
+            default 23
+            help
+                Set the GPIO number used by SMI MDC.
+
+        config SNIFFER_ETH_MDIO_GPIO
+            int "SMI MDIO GPIO number"
+            range SNIFFER_GPIO_RANGE_MIN SNIFFER_GPIO_RANGE_MAX
+            default 18
+            help
+                Set the GPIO number used by SMI MDIO.
+    endif # SNIFFER_USE_INTERNAL_ETHERNET
+
+    if SNIFFER_USE_SPI_ETHERNET
+        config SNIFFER_ETH_SPI_HOST
+            int "SPI Host Number"
+            range 0 2
+            default 1
+            help
+                Set the SPI host used to communicate with the SPI Ethernet Controller.
+
+        config SNIFFER_ETH_SPI_SCLK_GPIO
+            int "SPI SCLK GPIO number"
+            range SNIFFER_GPIO_RANGE_MIN SNIFFER_GPIO_RANGE_MAX
+            default 14 if IDF_TARGET_ESP32
+            default 12 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+            default 6 if IDF_TARGET_ESP32C3
+            help
+                Set the GPIO number used by SPI SCLK.
+
+        config SNIFFER_ETH_SPI_MOSI_GPIO
+            int "SPI MOSI GPIO number"
+            range SNIFFER_GPIO_RANGE_MIN SNIFFER_GPIO_RANGE_MAX
+            default 13 if IDF_TARGET_ESP32
+            default 11 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+            default 7 if IDF_TARGET_ESP32C3
+            help
+                Set the GPIO number used by SPI MOSI.
+
+        config SNIFFER_ETH_SPI_MISO_GPIO
+            int "SPI MISO GPIO number"
+            range SNIFFER_GPIO_RANGE_MIN SNIFFER_GPIO_RANGE_MAX
+            default 12 if IDF_TARGET_ESP32
+            default 13 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+            default 2 if IDF_TARGET_ESP32C3
+            help
+                Set the GPIO number used by SPI MISO.
+
+        config SNIFFER_ETH_SPI_CS_GPIO
+            int "SPI CS GPIO number"
+            range SNIFFER_GPIO_RANGE_MIN SNIFFER_GPIO_RANGE_MAX
+            default 15 if IDF_TARGET_ESP32
+            default 10 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+            help
+                Set the GPIO number used by SPI CS.
+
+        config SNIFFER_ETH_SPI_CLOCK_MHZ
+            int "SPI clock speed (MHz)"
+            range 5 80
+            default 12 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32C3
+            default 36 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+            help
+                Set the clock speed (MHz) of SPI interface.
+
+        config SNIFFER_ETH_SPI_INT_GPIO
+            int "Interrupt GPIO number"
+            range SNIFFER_GPIO_RANGE_MIN SNIFFER_GPIO_RANGE_MAX
+            default 4 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+            help
+                Set the GPIO number used by the SPI Ethernet module interrupt line.
+    endif # SNIFFER_USE_SPI_ETHERNET
+
+    if !SNIFFER_NO_ETHERNET
+        config SNIFFER_ETH_PHY_RST_GPIO
+            int "PHY Reset GPIO number"
+            range -1 SNIFFER_GPIO_RANGE_MAX
+            default 5
+            help
+                Set the GPIO number used to reset PHY chip.
+                Set to -1 to disable PHY chip hardware reset.
+
+        config SNIFFER_ETH_PHY_ADDR
+            int "PHY Address"
+            range 0 31
+            default 1
+            help
+                Set PHY address according your board schematic.
+    endif # !SNIFFER_NO_ETHERNET
+endmenu

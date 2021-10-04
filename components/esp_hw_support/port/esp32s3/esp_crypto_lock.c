@@ -26,6 +26,16 @@ static _lock_t s_crypto_sha_aes_hmac_ds_lock;
 /* Lock for the MPI/RSA peripheral, also used by the DS peripheral */
 static _lock_t s_crypto_mpi_lock;
 
+void esp_crypto_ds_lock_acquire(void)
+{
+    _lock_acquire_recursive(&s_crypto_sha_aes_hmac_ds_lock);
+}
+
+void esp_crypto_ds_lock_release(void)
+{
+    _lock_release_recursive(&s_crypto_sha_aes_hmac_ds_lock);
+}
+
 void esp_crypto_hmac_lock_acquire(void)
 {
     _lock_acquire_recursive(&s_crypto_sha_aes_hmac_ds_lock);

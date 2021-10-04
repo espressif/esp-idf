@@ -90,6 +90,7 @@ typedef union {
          *  update timer_unit0
          */
         uint32_t timer_unit_update: 1;
+        uint32_t reserved_32: 1;
     };
     uint32_t val;
 } systimer_unit_op_reg_t;
@@ -104,6 +105,7 @@ typedef struct {
              *  timer unit load high 32 bit
              */
             uint32_t timer_unit_load_hi: 20;
+            uint32_t reserved_20: 12;
         };
         uint32_t val;
     } hi;
@@ -129,6 +131,7 @@ typedef struct {
              *  timer target high 32 bit
              */
             uint32_t timer_target_hi: 20;
+            uint32_t reserved_20: 12;
         };
         uint32_t val;
     } hi;
@@ -177,6 +180,7 @@ typedef struct {
              *  timer read value high 20bit
              */
             uint32_t timer_unit_value_hi: 20;
+            uint32_t reserved_20: 12;
         };
         uint32_t val;
     } hi;
@@ -201,6 +205,7 @@ typedef union {
          *  timer comp load value
          */
         uint32_t timer_comp_load: 1;
+        uint32_t reserved_1: 31;
     };
     uint32_t val;
 } systimer_comp_load_reg_t;
@@ -215,6 +220,7 @@ typedef union {
          *  timer unit load value
          */
         uint32_t timer_unit_load: 1;
+        uint32_t reserved_1: 31;
     };
     uint32_t val;
 } systimer_unit_load_reg_t;
@@ -238,6 +244,7 @@ typedef union {
          *  interupt2 enable
          */
         uint32_t target2_int_ena: 1;
+        uint32_t reserved_3: 29;
     };
     uint32_t val;
 } systimer_int_ena_reg_t;
@@ -259,6 +266,7 @@ typedef union {
          *  interupt2 raw
          */
         uint32_t target2_int_raw: 1;
+        uint32_t reserved_3: 29;
     };
     uint32_t val;
 } systimer_int_raw_reg_t;
@@ -280,6 +288,7 @@ typedef union {
          *  interupt2 clear
          */
         uint32_t target2_int_clr: 1;
+        uint32_t reserved_3: 29;
     };
     uint32_t val;
 } systimer_int_clr_reg_t;
@@ -301,6 +310,7 @@ typedef union {
          *  interupt2 status
          */
         uint32_t target2_int_st: 1;
+        uint32_t reserved_3: 29;
     };
     uint32_t val;
 } systimer_int_st_reg_t;
@@ -325,6 +335,7 @@ typedef struct {
              *  actual target value value high 20bits
              */
             uint32_t target_hi_ro: 20;
+            uint32_t reserved_20: 12;
         };
         uint32_t val;
     } hi;

@@ -8,6 +8,7 @@
 #include <string.h>
 #include "esp_log.h"
 #include "esp_err.h"
+#include "esp_check.h"
 #include "esp_pm.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -17,14 +18,7 @@
 #include "soc/dac_periph.h"
 #include "hal/dac_hal.h"
 
-static const char *DAC_TAG = "DAC";
-
-#define DAC_CHECK(a, str, ret_val) ({                                               \
-    if (!(a)) {                                                                     \
-        ESP_LOGE(DAC_TAG,"%s(%d): %s", __FUNCTION__, __LINE__, str);                \
-        return (ret_val);                                                           \
-    }                                                                               \
-})
+static const char *TAG = "DAC";
 
 extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate position after the rtc module is finished.
 #define DAC_ENTER_CRITICAL()  portENTER_CRITICAL(&rtc_spinlock)
@@ -64,11 +58,11 @@ esp_err_t dac_digi_deinit(void)
 
 esp_err_t dac_digi_controller_config(const dac_digi_config_t *cfg)
 {
-    DAC_CHECK(cfg->mode < DAC_CONV_MAX, "DAC mode error", ESP_ERR_INVALID_ARG);
-    DAC_CHECK(cfg->interval > 0 && cfg->interval < 4096, "DAC interval error", ESP_ERR_INVALID_ARG);
-    DAC_CHECK(cfg->dig_clk.div_num < 256, "DAC clk div_num error", ESP_ERR_INVALID_ARG);
-    DAC_CHECK(cfg->dig_clk.div_b > 0 && cfg->dig_clk.div_b < 64, "DAC clk div_b error", ESP_ERR_INVALID_ARG);
-    DAC_CHECK(cfg->dig_clk.div_a < 64, "DAC clk div_a error", ESP_ERR_INVALID_ARG);
+    ESP_RETURN_ON_FALSE(cfg->mode < DAC_CONV_MAX, ESP_ERR_INVALID_ARG, TAG, "DAC mode error");
+    ESP_RETURN_ON_FALSE(cfg->interval > 0 && cfg->interval < 4096, ESP_ERR_INVALID_ARG, TAG, "DAC interval error");
+    ESP_RETURN_ON_FALSE(cfg->dig_clk.div_num < 256, ESP_ERR_INVALID_ARG, TAG, "DAC clk div_num error");
+    ESP_RETURN_ON_FALSE(cfg->dig_clk.div_b > 0 && cfg->dig_clk.div_b < 64, ESP_ERR_INVALID_ARG, TAG, "DAC clk div_b error");
+    ESP_RETURN_ON_FALSE(cfg->dig_clk.div_a < 64, ESP_ERR_INVALID_ARG, TAG, "DAC clk div_a error");
 #ifdef CONFIG_PM_ENABLE
     esp_err_t err;
     if (s_dac_digi_lock == NULL) {
@@ -79,7 +73,7 @@ esp_err_t dac_digi_controller_config(const dac_digi_config_t *cfg)
         }
         if (err != ESP_OK) {
             s_dac_digi_lock = NULL;
-            ESP_LOGE(DAC_TAG, "DAC-DMA pm lock error");
+            ESP_LOGE(TAG, "DAC-DMA pm lock error");
             return err;
         }
     }
@@ -95,7 +89,7 @@ esp_err_t dac_digi_controller_config(const dac_digi_config_t *cfg)
 esp_err_t dac_digi_start(void)
 {
 #ifdef CONFIG_PM_ENABLE
-    DAC_CHECK((s_dac_digi_lock), "Should start after call `dac_digi_controller_config`", ESP_FAIL);
+    ESP_RETURN_ON_FALSE(s_dac_digi_lock, ESP_FAIL, TAG, "Should start after call `dac_digi_controller_config`");
     esp_pm_lock_acquire(s_dac_digi_lock);
 #endif
     DAC_ENTER_CRITICAL();

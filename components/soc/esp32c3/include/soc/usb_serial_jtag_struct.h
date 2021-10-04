@@ -20,7 +20,7 @@ extern "C" {
 #endif
 #include "soc.h"
 
-typedef volatile struct {
+typedef volatile struct usb_serial_jtag_dev_s {
     union {
         struct {
             uint32_t rdwr_byte                     :    32;  /*Although only low 8-bits is valid, but change it to 32bits to avoid there's no read/modify/write behaviour*/ /*Write and read byte data to/from UART Tx/Rx FIFO through this field. When USB_SERIAL_JTAG_SERIAL_IN_EMPTY_INT is set  then user can write data (up to 64 bytes) into UART Tx FIFO. When USB_SERIAL_JTAG_SERIAL_OUT_RECV_PKT_INT is set, user can check USB_SERIAL_JTAG_OUT_EP1_WR_ADDR and USB_SERIAL_JTAG_OUT_EP0_RD_ADDR to know how many data is received, then read that amount of data from UART Rx FIFO. */

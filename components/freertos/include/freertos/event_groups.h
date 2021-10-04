@@ -1,5 +1,5 @@
 /*
- * FreeRTOS Kernel V10.2.1
+ * FreeRTOS Kernel V10.4.3
  * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -84,9 +84,11 @@
  * \ingroup EventGroup
  */
 struct EventGroupDef_t;
-//typedef struct EventGroupDef_t * EventGroupHandle_t;
+#ifdef ESP_PLATFORM // IDF-3770
 typedef void * EventGroupHandle_t;
-
+#else
+typedef struct EventGroupDef_t * EventGroupHandle_t;
+#endif // ESP_PLATFORM
 /*
  * The type that holds event bits always matches TickType_t - therefore the
  * number of bits it holds is set by configUSE_16_BIT_TICKS (16 bits if set to 1,
@@ -102,9 +104,9 @@ typedef TickType_t               EventBits_t;
 /**
  * @cond
  * event_groups.h
- * <pre>
+ * @code{c}
  * EventGroupHandle_t xEventGroupCreate( void );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Create a new event group.
@@ -162,9 +164,9 @@ typedef TickType_t               EventBits_t;
 /**
  * @cond
  * event_groups.h
- * <pre>
+ * @code{c}
  * EventGroupHandle_t xEventGroupCreateStatic( EventGroupHandle_t * pxEventGroupBuffer );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Create a new event group.
@@ -217,13 +219,13 @@ typedef TickType_t               EventBits_t;
 /**
  * @cond
  * event_groups.h
- * <pre>
+ * @code{c}
  *  EventBits_t xEventGroupWaitBits(    EventGroupHandle_t xEventGroup,
  *                                      const EventBits_t uxBitsToWaitFor,
  *                                      const BaseType_t xClearOnExit,
  *                                      const BaseType_t xWaitForAllBits,
  *                                      const TickType_t xTicksToWait );
- * </pre>
+ * @endcode
  * @endcond
  *
  * [Potentially] block to wait for one or more bits to be set within a
@@ -269,8 +271,8 @@ typedef TickType_t               EventBits_t;
  *
  * Example usage:
  * @code{c}
- * \#define BIT_0 ( 1 << 0 )
- * \#define BIT_4 ( 1 << 4 )
+ * #define BIT_0 ( 1 << 0 )
+ * #define BIT_4 ( 1 << 4 )
  *
  * void aFunction( EventGroupHandle_t xEventGroup )
  * {
@@ -319,9 +321,9 @@ EventBits_t xEventGroupWaitBits( EventGroupHandle_t xEventGroup,
 /**
  * @cond
  * event_groups.h
- * <pre>
+ * @code{c}
  *  EventBits_t xEventGroupClearBits( EventGroupHandle_t xEventGroup, const EventBits_t uxBitsToClear );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Clear bits within an event group.  This function cannot be called from an
@@ -337,8 +339,8 @@ EventBits_t xEventGroupWaitBits( EventGroupHandle_t xEventGroup,
  *
  * Example usage:
  * @code{c}
- * \#define BIT_0 ( 1 << 0 )
- * \#define BIT_4 ( 1 << 4 )
+ * #define BIT_0 ( 1 << 0 )
+ * #define BIT_4 ( 1 << 4 )
  *
  * void aFunction( EventGroupHandle_t xEventGroup )
  * {
@@ -381,9 +383,9 @@ EventBits_t xEventGroupClearBits( EventGroupHandle_t xEventGroup,
 /**
  * @cond
  * event_groups.h
- * <pre>
+ * @code{c}
  *  BaseType_t xEventGroupClearBitsFromISR( EventGroupHandle_t xEventGroup, const EventBits_t uxBitsToSet );
- * </pre>
+ * @endcode
  * @endcond
  *
  * A version of xEventGroupClearBits() that can be called from an interrupt.
@@ -410,8 +412,8 @@ EventBits_t xEventGroupClearBits( EventGroupHandle_t xEventGroup,
  *
  * Example usage:
  * @code{c}
- *    \#define BIT_0 ( 1 << 0 )
- *    \#define BIT_4 ( 1 << 4 )
+ * #define BIT_0 ( 1 << 0 )
+ * #define BIT_4 ( 1 << 4 )
  *
  * // An event group which it is assumed has already been created by a call to
  * // xEventGroupCreate().
@@ -446,9 +448,9 @@ EventBits_t xEventGroupClearBits( EventGroupHandle_t xEventGroup,
 /**
  * @cond
  * event_groups.h
- * <pre>
+ * @code{c}
  *  EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup, const EventBits_t uxBitsToSet );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Set bits within an event group.
@@ -476,8 +478,8 @@ EventBits_t xEventGroupClearBits( EventGroupHandle_t xEventGroup,
  *
  * Example usage:
  * @code{c}
- *    \#define BIT_0 ( 1 << 0 )
- *    \#define BIT_4 ( 1 << 4 )
+ * #define BIT_0 ( 1 << 0 )
+ * #define BIT_4 ( 1 << 4 )
  *
  * void aFunction( EventGroupHandle_t xEventGroup )
  * {
@@ -525,9 +527,9 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
 /**
  * @cond
  * event_groups.h
- * <pre>
+ * @code{c}
  *  BaseType_t xEventGroupSetBitsFromISR( EventGroupHandle_t xEventGroup, const EventBits_t uxBitsToSet, BaseType_t *pxHigherPriorityTaskWoken );
- * </pre>
+ * @endcode
  * @endcond
  *
  * A version of xEventGroupSetBits() that can be called from an interrupt.
@@ -562,8 +564,8 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
  *
  * Example usage:
  * @code{c}
- * \#define BIT_0 ( 1 << 0 )
- * \#define BIT_4 ( 1 << 4 )
+ * #define BIT_0 ( 1 << 0 )
+ * #define BIT_4 ( 1 << 4 )
  *
  * // An event group which it is assumed has already been created by a call to
  * // xEventGroupCreate().
@@ -610,12 +612,12 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
 /**
  * @cond
  * event_groups.h
- * <pre>
+ * @code{c}
  *  EventBits_t xEventGroupSync(    EventGroupHandle_t xEventGroup,
  *                                  const EventBits_t uxBitsToSet,
  *                                  const EventBits_t uxBitsToWaitFor,
  *                                  TickType_t xTicksToWait );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Atomically set bits within an event group, then wait for a combination of
@@ -657,11 +659,11 @@ EventBits_t xEventGroupSetBits( EventGroupHandle_t xEventGroup,
  * Example usage:
  * @code{c}
  * // Bits used by the three tasks.
- * \#define TASK_0_BIT      ( 1 << 0 )
- * \#define TASK_1_BIT      ( 1 << 1 )
- * \#define TASK_2_BIT      ( 1 << 2 )
+ * #define TASK_0_BIT      ( 1 << 0 )
+ * #define TASK_1_BIT      ( 1 << 1 )
+ * #define TASK_2_BIT      ( 1 << 2 )
  *
- * \#define ALL_SYNC_BITS ( TASK_0_BIT | TASK_1_BIT | TASK_2_BIT )
+ * #define ALL_SYNC_BITS ( TASK_0_BIT | TASK_1_BIT | TASK_2_BIT )
  *
  * // Use an event group to synchronise three tasks.  It is assumed this event
  * // group has already been created elsewhere.
@@ -744,9 +746,9 @@ EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup,
 /**
  * @cond
  * event_groups.h
- * <pre>
+ * @code{c}
  *  EventBits_t xEventGroupGetBits( EventGroupHandle_t xEventGroup );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Returns the current value of the bits in an event group.  This function
@@ -766,9 +768,9 @@ EventBits_t xEventGroupSync( EventGroupHandle_t xEventGroup,
 /**
  * @cond
  * event_groups.h
- * <pre>
+ * @code{c}
  *  EventBits_t xEventGroupGetBitsFromISR( EventGroupHandle_t xEventGroup );
- * </pre>
+ * @endcode
  * @endcond
  *
  * A version of xEventGroupGetBits() that can be called from an ISR.
@@ -787,9 +789,9 @@ EventBits_t xEventGroupGetBitsFromISR( EventGroupHandle_t xEventGroup ) PRIVILEG
 /**
  * @cond
  * event_groups.h
- * <pre>
+ * @code{c}
  *  void xEventGroupDelete( EventGroupHandle_t xEventGroup );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Delete an event group that was previously created by a call to

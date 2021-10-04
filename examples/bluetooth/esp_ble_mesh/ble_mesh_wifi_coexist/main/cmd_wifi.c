@@ -23,7 +23,9 @@ typedef struct {
     struct arg_str *ip;
     struct arg_lit *server;
     struct arg_lit *udp;
+    struct arg_lit *version;
     struct arg_int *port;
+    struct arg_int *length;
     struct arg_int *interval;
     struct arg_int *time;
     struct arg_lit *abort;
@@ -51,8 +53,8 @@ static const char *TAG = "iperf";
 static EventGroupHandle_t wifi_event_group;
 const int CONNECTED_BIT = BIT0;
 const int DISCONNECTED_BIT = BIT1;
-static esp_netif_t * sta_netif = NULL;
-static esp_netif_t * ap_netif = NULL;
+static esp_netif_t *sta_netif = NULL;
+static esp_netif_t *ap_netif = NULL;
 
 static void scan_done_handler(void)
 {
@@ -75,8 +77,8 @@ static void scan_done_handler(void)
     free(ap_list_buffer);
 }
 
-static void wifi_event_handler(void* arg, esp_event_base_t event_base,
-                                int32_t event_id, void* event_data)
+static void wifi_event_handler(void *arg, esp_event_base_t event_base,
+                               int32_t event_id, void *event_data)
 {
     switch (event_id) {
     case WIFI_EVENT_SCAN_DONE:
@@ -102,8 +104,8 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
     return;
 }
 
-static void ip_event_handler(void* arg, esp_event_base_t event_base,
-                                int32_t event_id, void* event_data)
+static void ip_event_handler(void *arg, esp_event_base_t event_base,
+                             int32_t event_id, void *event_data)
 {
     switch (event_id) {
     case IP_EVENT_STA_GOT_IP:
@@ -292,7 +294,7 @@ static int wifi_cmd_query(int argc, char **argv)
 static uint32_t wifi_get_local_ip(void)
 {
     int bits = xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, 0, 1, 0);
-    esp_netif_t * ifx = ap_netif;
+    esp_netif_t *ifx = ap_netif;
     esp_netif_ip_info_t ip_info;
     wifi_mode_t mode;
 
@@ -323,6 +325,9 @@ static int wifi_cmd_iperf(int argc, char **argv)
 
     memset(&cfg, 0, sizeof(cfg));
 
+    // wifi iperf only support IPV4 address
+    cfg.type = IPERF_IP_TYPE_IPV4;
+
     if ( iperf_args.abort->count != 0) {
         iperf_stop();
         return 0;
@@ -337,13 +342,19 @@ static int wifi_cmd_iperf(int argc, char **argv)
     if (iperf_args.ip->count == 0) {
         cfg.flag |= IPERF_FLAG_SERVER;
     } else {
-        cfg.dip = esp_ip4addr_aton(iperf_args.ip->sval[0]);
+        cfg.destination_ip4 = esp_ip4addr_aton(iperf_args.ip->sval[0]);
         cfg.flag |= IPERF_FLAG_CLIENT;
     }
 
-    cfg.sip = wifi_get_local_ip();
-    if (cfg.sip == 0) {
+    cfg.source_ip4 = wifi_get_local_ip();
+    if (cfg.source_ip4 == 0) {
         return 0;
+    }
+
+    if (iperf_args.length->count == 0) {
+        cfg.len_send_buf = 0;
+    } else {
+        cfg.len_send_buf = iperf_args.length->ival[0];
     }
 
     if (iperf_args.udp->count == 0) {
@@ -386,8 +397,10 @@ static int wifi_cmd_iperf(int argc, char **argv)
     ESP_LOGI(TAG, "mode=%s-%s sip=%d.%d.%d.%d:%d, dip=%d.%d.%d.%d:%d, interval=%d, time=%d",
              cfg.flag & IPERF_FLAG_TCP ? "tcp" : "udp",
              cfg.flag & IPERF_FLAG_SERVER ? "server" : "client",
-             cfg.sip & 0xFF, (cfg.sip >> 8) & 0xFF, (cfg.sip >> 16) & 0xFF, (cfg.sip >> 24) & 0xFF, cfg.sport,
-             cfg.dip & 0xFF, (cfg.dip >> 8) & 0xFF, (cfg.dip >> 16) & 0xFF, (cfg.dip >> 24) & 0xFF, cfg.dport,
+             cfg.source_ip4 & 0xFF, (cfg.source_ip4 >> 8) & 0xFF, (cfg.source_ip4 >> 16) & 0xFF,
+             (cfg.source_ip4 >> 24) & 0xFF, cfg.sport,
+             cfg.destination_ip4 & 0xFF, (cfg.destination_ip4 >> 8) & 0xFF, (cfg.destination_ip4 >> 16) & 0xFF,
+             (cfg.destination_ip4 >> 24) & 0xFF, cfg.dport,
              cfg.interval, cfg.time);
 
     iperf_start(&cfg);
@@ -471,7 +484,9 @@ void register_wifi(void)
     iperf_args.ip = arg_str0("c", "client", "<ip>", "run in client mode, connecting to <host>");
     iperf_args.server = arg_lit0("s", "server", "run in server mode");
     iperf_args.udp = arg_lit0("u", "udp", "use UDP rather than TCP");
+    iperf_args.version = arg_lit0("V", "ipv6_domain", "use IPV6 address rather than IPV4");
     iperf_args.port = arg_int0("p", "port", "<port>", "server port to listen on/connect to");
+    iperf_args.length = arg_int0("l", "len", "<length>", "set read/write buffer size");
     iperf_args.interval = arg_int0("i", "interval", "<interval>", "seconds between periodic bandwidth reports");
     iperf_args.time = arg_int0("t", "time", "<time>", "time in seconds to transmit for (default 10 secs)");
     iperf_args.abort = arg_lit0("a", "abort", "abort running iperf");

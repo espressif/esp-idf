@@ -38,6 +38,18 @@
 #include "task.h"
 #include "stream_buffer.h"
 
+#ifdef ESP_PLATFORM
+#define taskCRITICAL_MUX &pxStreamBuffer->xStreamBufferMux
+#undef taskENTER_CRITICAL
+#undef taskEXIT_CRITICAL
+#undef taskENTER_CRITICAL_ISR
+#undef taskEXIT_CRITICAL_ISR
+#define taskENTER_CRITICAL( )     portENTER_CRITICAL( taskCRITICAL_MUX )
+#define taskEXIT_CRITICAL( )            portEXIT_CRITICAL( taskCRITICAL_MUX )
+#define taskENTER_CRITICAL_ISR( )     portENTER_CRITICAL_ISR( taskCRITICAL_MUX )
+#define taskEXIT_CRITICAL_ISR( )        portEXIT_CRITICAL_ISR( taskCRITICAL_MUX )
+#endif
+
 #if ( configUSE_TASK_NOTIFICATIONS != 1 )
     #error configUSE_TASK_NOTIFICATIONS must be set to 1 to build stream_buffer.c
 #endif
@@ -52,9 +64,11 @@
  * or #defined the notification macros away, then provide default implementations
  * that uses task notifications. */
 /*lint -save -e9026 Function like macros allowed and needed here so they can be overridden. */
+
 #ifndef sbRECEIVE_COMPLETED
+#ifdef ESP_PLATFORM // IDF-3775
     #define sbRECEIVE_COMPLETED( pxStreamBuffer )                         \
-    taskENTER_CRITICAL( &pxStreamBuffer->xStreamBufferMux );              \
+    taskENTER_CRITICAL();                                                 \
     {                                                                     \
         if( ( pxStreamBuffer )->xTaskWaitingToSend != NULL )              \
         {                                                                 \
@@ -64,7 +78,21 @@
             ( pxStreamBuffer )->xTaskWaitingToSend = NULL;                \
         }                                                                 \
     }                                                                     \
-    taskEXIT_CRITICAL( &pxStreamBuffer->xStreamBufferMux );
+    taskEXIT_CRITICAL();
+#else
+    #define sbRECEIVE_COMPLETED( pxStreamBuffer )                         \
+    vTaskSuspendAll();                                                    \
+    {                                                                     \
+        if( ( pxStreamBuffer )->xTaskWaitingToSend != NULL )              \
+        {                                                                 \
+            ( void ) xTaskNotify( ( pxStreamBuffer )->xTaskWaitingToSend, \
+                                  ( uint32_t ) 0,                         \
+                                  eNoAction );                            \
+            ( pxStreamBuffer )->xTaskWaitingToSend = NULL;                \
+        }                                                                 \
+    }                                                                     \
+    ( void ) xTaskResumeAll();
+#endif // ESP_PLATFORM
 #endif /* sbRECEIVE_COMPLETED */
 
 #ifndef sbRECEIVE_COMPLETED_FROM_ISR
@@ -92,8 +120,9 @@
  * or #defined the notification macro away, them provide a default implementation
  * that uses task notifications. */
 #ifndef sbSEND_COMPLETED
+#ifdef ESP_PLATFORM // IDF-3755
     #define sbSEND_COMPLETED( pxStreamBuffer )                               \
-    taskENTER_CRITICAL( &pxStreamBuffer->xStreamBufferMux );                 \
+    taskENTER_CRITICAL();                                                    \
     {                                                                        \
         if( ( pxStreamBuffer )->xTaskWaitingToReceive != NULL )              \
         {                                                                    \
@@ -103,13 +132,27 @@
             ( pxStreamBuffer )->xTaskWaitingToReceive = NULL;                \
         }                                                                    \
     }                                                                        \
-    taskEXIT_CRITICAL( &pxStreamBuffer->xStreamBufferMux );
+    taskEXIT_CRITICAL();
+#else
+    #define sbSEND_COMPLETED( pxStreamBuffer )                               \
+    vTaskSuspendAll();                                                       \
+    {                                                                        \
+        if( ( pxStreamBuffer )->xTaskWaitingToReceive != NULL )              \
+        {                                                                    \
+            ( void ) xTaskNotify( ( pxStreamBuffer )->xTaskWaitingToReceive, \
+                                  ( uint32_t ) 0,                            \
+                                  eNoAction );                               \
+            ( pxStreamBuffer )->xTaskWaitingToReceive = NULL;                \
+        }                                                                    \
+    }                                                                        \
+    ( void ) xTaskResumeAll();
+#endif // ESP_PLATFORM
 #endif /* sbSEND_COMPLETED */
 
 #ifndef sbSEND_COMPLETE_FROM_ISR
     #define sbSEND_COMPLETE_FROM_ISR( pxStreamBuffer, pxHigherPriorityTaskWoken )       \
     {                                                                                   \
-    UBaseType_t uxSavedInterruptStatus;                                                 \
+        UBaseType_t uxSavedInterruptStatus;                                             \
                                                                                         \
         uxSavedInterruptStatus = ( UBaseType_t ) portSET_INTERRUPT_MASK_FROM_ISR();     \
         {                                                                               \
@@ -151,7 +194,9 @@ typedef struct StreamBufferDef_t                 /*lint !e9058 Style convention 
     #if ( configUSE_TRACE_FACILITY == 1 )
         UBaseType_t uxStreamBufferNumber; /* Used for tracing purposes. */
     #endif
+#ifdef ESP_PLATFORM
     portMUX_TYPE xStreamBufferMux;  //Mutex required due to SMP
+#endif // ESP_PLATFORM
 } StreamBuffer_t;
 
 /*
@@ -166,7 +211,7 @@ static size_t prvBytesInBuffer( const StreamBuffer_t * const pxStreamBuffer ) PR
  * no data is written into the buffer).
  */
 static size_t prvWriteBytesToBuffer( StreamBuffer_t * const pxStreamBuffer,
-                                     const uint8_t *pucData,
+                                     const uint8_t * pucData,
                                      size_t xCount ) PRIVILEGED_FUNCTION;
 
 /*
@@ -421,7 +466,7 @@ BaseType_t xStreamBufferReset( StreamBufferHandle_t xStreamBuffer )
     #endif
 
     /* Can only reset a message buffer if there are no tasks blocked on it. */
-    taskENTER_CRITICAL( &pxStreamBuffer->xStreamBufferMux );
+    taskENTER_CRITICAL();
     {
         if( pxStreamBuffer->xTaskWaitingToReceive == NULL )
         {
@@ -444,7 +489,7 @@ BaseType_t xStreamBufferReset( StreamBufferHandle_t xStreamBuffer )
             }
         }
     }
-    taskEXIT_CRITICAL( &pxStreamBuffer->xStreamBufferMux );
+    taskEXIT_CRITICAL();
 
     return xReturn;
 }
@@ -525,9 +570,14 @@ size_t xStreamBufferSend( StreamBufferHandle_t xStreamBuffer,
     size_t xReturn, xSpace = 0;
     size_t xRequiredSpace = xDataLengthBytes;
     TimeOut_t xTimeOut;
+    size_t xMaxReportedSpace = 0;
 
     configASSERT( pvTxData );
     configASSERT( pxStreamBuffer );
+
+    /* The maximum amount of space a stream buffer will ever report is its length
+     * minus 1. */
+    xMaxReportedSpace = pxStreamBuffer->xLength - ( size_t ) 1;
 
     /* This send function is used to write to both message buffers and stream
      * buffers.  If this is a message buffer then the space needed must be
@@ -539,10 +589,33 @@ size_t xStreamBufferSend( StreamBufferHandle_t xStreamBuffer,
 
         /* Overflow? */
         configASSERT( xRequiredSpace > xDataLengthBytes );
+
+        /* If this is a message buffer then it must be possible to write the
+         * whole message. */
+        if( xRequiredSpace > xMaxReportedSpace )
+        {
+            /* The message would not fit even if the entire buffer was empty,
+             * so don't wait for space. */
+            xTicksToWait = ( TickType_t ) 0;
+        }
+        else
+        {
+            mtCOVERAGE_TEST_MARKER();
+        }
     }
     else
     {
-        mtCOVERAGE_TEST_MARKER();
+        /* If this is a stream buffer then it is acceptable to write only part
+         * of the message to the buffer.  Cap the length to the total length of
+         * the buffer. */
+        if( xRequiredSpace > xMaxReportedSpace )
+        {
+            xRequiredSpace = xMaxReportedSpace;
+        }
+        else
+        {
+            mtCOVERAGE_TEST_MARKER();
+        }
     }
 
     if( xTicksToWait != ( TickType_t ) 0 )
@@ -553,7 +626,7 @@ size_t xStreamBufferSend( StreamBufferHandle_t xStreamBuffer,
         {
             /* Wait until the required number of bytes are free in the message
              * buffer. */
-            taskENTER_CRITICAL( &pxStreamBuffer->xStreamBufferMux );
+            taskENTER_CRITICAL();
             {
                 xSpace = xStreamBufferSpacesAvailable( pxStreamBuffer );
 
@@ -568,11 +641,11 @@ size_t xStreamBufferSend( StreamBufferHandle_t xStreamBuffer,
                 }
                 else
                 {
-                    taskEXIT_CRITICAL( &pxStreamBuffer->xStreamBufferMux );
+                    taskEXIT_CRITICAL();
                     break;
                 }
             }
-            taskEXIT_CRITICAL( &pxStreamBuffer->xStreamBufferMux );
+            taskEXIT_CRITICAL();
 
             traceBLOCKING_ON_STREAM_BUFFER_SEND( xStreamBuffer );
             ( void ) xTaskNotifyWait( ( uint32_t ) 0, ( uint32_t ) 0, NULL, xTicksToWait );
@@ -711,7 +784,7 @@ static size_t prvWriteMessageToBuffer( StreamBuffer_t * const pxStreamBuffer,
     if( xShouldWrite != pdFALSE )
     {
         /* Writes the data itself. */
-        xReturn = prvWriteBytesToBuffer( pxStreamBuffer, ( const uint8_t * ) pvTxData, xDataLengthBytes ); /*lint !e9079 Storage buffer is implemented as uint8_t for ease of sizing, alighment and access. */
+        xReturn = prvWriteBytesToBuffer( pxStreamBuffer, ( const uint8_t * ) pvTxData, xDataLengthBytes ); /*lint !e9079 Storage buffer is implemented as uint8_t for ease of sizing, alignment and access. */
     }
     else
     {
@@ -751,7 +824,7 @@ size_t xStreamBufferReceive( StreamBufferHandle_t xStreamBuffer,
     {
         /* Checking if there is data and clearing the notification state must be
          * performed atomically. */
-        taskENTER_CRITICAL( &pxStreamBuffer->xStreamBufferMux );
+        taskENTER_CRITICAL();
         {
             xBytesAvailable = prvBytesInBuffer( pxStreamBuffer );
 
@@ -774,7 +847,7 @@ size_t xStreamBufferReceive( StreamBufferHandle_t xStreamBuffer,
                 mtCOVERAGE_TEST_MARKER();
             }
         }
-        taskEXIT_CRITICAL( &pxStreamBuffer->xStreamBufferMux );
+        taskEXIT_CRITICAL();
 
         if( xBytesAvailable <= xBytesToStoreMessageLength )
         {
@@ -1118,7 +1191,7 @@ static size_t prvWriteBytesToBuffer( StreamBuffer_t * const pxStreamBuffer,
 
     /* Write as many bytes as can be written in the first write. */
     configASSERT( ( xNextHead + xFirstLength ) <= pxStreamBuffer->xLength );
-    ( void ) memcpy( ( void* ) ( &( pxStreamBuffer->pucBuffer[ xNextHead ] ) ), ( const void * ) pucData, xFirstLength ); /*lint !e9087 memcpy() requires void *. */
+    ( void ) memcpy( ( void * ) ( &( pxStreamBuffer->pucBuffer[ xNextHead ] ) ), ( const void * ) pucData, xFirstLength ); /*lint !e9087 memcpy() requires void *. */
 
     /* If the number of bytes written was less than the number that could be
      * written in the first write... */
@@ -1253,7 +1326,9 @@ static void prvInitialiseNewStreamBuffer( StreamBuffer_t * const pxStreamBuffer,
     pxStreamBuffer->xLength = xBufferSizeBytes;
     pxStreamBuffer->xTriggerLevelBytes = xTriggerLevelBytes;
     pxStreamBuffer->ucFlags = ucFlags;
+#ifdef ESP_PLATFORM
     vPortCPUInitializeMutex( &pxStreamBuffer->xStreamBufferMux );
+#endif // ESP_PLATFORM
 }
 
 #if ( configUSE_TRACE_FACILITY == 1 )

@@ -14,4 +14,8 @@ INPUT += \
          $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_element.h \
          $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_button.h \
          $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_slider.h \
-         $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_matrix.h
+         $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_matrix.h \
+         $(PROJECT_PATH)/components/usb/include/usb/usb_helpers.h \
+         $(PROJECT_PATH)/components/usb/include/usb/usb_host.h \
+         $(PROJECT_PATH)/components/usb/include/usb/usb_types_ch9.h \
+         $(PROJECT_PATH)/components/usb/include/usb/usb_types_stack.h

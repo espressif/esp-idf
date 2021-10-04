@@ -1,27 +1,23 @@
-// Copyright 2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
 #include <stddef.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <sys/queue.h>
-#include "usb.h"
+#include "usb/usb_types_ch9.h"
+#include "usb/usb_types_stack.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+// ------------------------------------------------------ Types --------------------------------------------------------
 
 typedef struct {
     uint8_t *data_buffer;
@@ -29,6 +25,8 @@ typedef struct {
     int num_bytes;
     int actual_num_bytes;
     uint32_t flags;
+    usb_device_handle_t device_handle;
+    uint8_t bEndpointAddress;
     usb_transfer_status_t status;
     uint32_t timeout;
     usb_transfer_cb_t callback;
@@ -38,17 +36,49 @@ typedef struct {
 } usb_transfer_dummy_t;
 _Static_assert(sizeof(usb_transfer_dummy_t) == sizeof(usb_transfer_t), "usb_transfer_dummy_t does not match usb_transfer_t");
 
-struct urb_obj{
-    TAILQ_ENTRY(urb_obj) tailq_entry;
-    //HCD context pointer and variables. Must be initialized to NULL and 0 respectively
+struct urb_s{
+    TAILQ_ENTRY(urb_s) tailq_entry;
+    //HCD handler pointer and variables. Must be initialized to NULL and 0 respectively
     void *hcd_ptr;
     uint32_t hcd_var;
-    //Host Driver layer will add its fields here.
+    //Host Driver layer handler
+    void *usb_host_client;  //Currently only used when submitted to shared pipes (i.e., Device default pipes)
+    size_t usb_host_header_size; //USB Host may need the data buffer to have a transparent header
     //Public transfer structure. Must be last due to variable length array
     usb_transfer_t transfer;
 };
+typedef struct urb_s urb_t;
 
-typedef struct urb_obj urb_t;
+typedef enum {
+    USB_NOTIF_SOURCE_USBH = 0x01,
+    USB_NOTIF_SOURCE_HUB = 0x02,
+} usb_notif_source_t;
+
+typedef bool (*usb_notif_cb_t)(usb_notif_source_t source, bool in_isr, void *context);
+
+// --------------------------------------------------- Allocation ------------------------------------------------------
+
+/**
+ * @brief Allocate a URB
+ *
+ * - Data buffer is allocated in DMA capable memory
+ * - The constant fields of the URB are also set
+ * - The data_buffer field of the URB is set to point to start of the allocated data buffer AFTER the header. To access
+ *   the header, users need a negative offset from data_buffer.
+ *
+ * @param data_buffer_size Size of the URB's data buffer
+ * @param header_size Size of header to put in front of URB's data buffer
+ * @param num_isoc_packets Number of isochronous packet descriptors
+ * @return urb_t* URB object
+ */
+urb_t *urb_alloc(size_t data_buffer_size, size_t header_size, int num_isoc_packets);
+
+/**
+ * @brief Free a URB
+ *
+ * @param urb URB object
+ */
+void urb_free(urb_t *urb);
 
 #ifdef __cplusplus
 }

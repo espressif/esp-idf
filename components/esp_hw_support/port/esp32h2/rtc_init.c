@@ -9,23 +9,26 @@
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
+#include "soc/io_mux_reg.h"
 #include "soc/efuse_periph.h"
 #include "soc/gpio_reg.h"
 #include "soc/spi_mem_reg.h"
 #include "soc/extmem_reg.h"
 #include "soc/system_reg.h"
+#include "soc/syscon_reg.h"
 #include "regi2c_ctrl.h"
 #include "soc_log.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
+#include "i2c_pmu.h"
+#include "soc/clkrst_reg.h"
 
-// ESP32H2-TODO: IDF-3396
+void pmu_ctl(void);
+void dcdc_ctl(uint32_t mode);
+void regulator_slt(regulator_config_t regula_cfg);
 
 void rtc_init(rtc_config_t cfg)
 {
-    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_XPD_DIG_REG, 0);
-    REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_XPD_RTC_REG, 0);
-
     CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_PVTMON_PU);
     REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_PLL_BUF_WAIT, cfg.pll_wait);
     REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_CK8M_WAIT, cfg.ck8m_wait);
@@ -43,8 +46,6 @@ void rtc_init(rtc_config_t cfg)
     REG_SET_FIELD(RTC_CNTL_TIMER4_REG, RTC_CNTL_DG_WRAP_WAIT_TIMER, rtc_init_cfg.dg_wrap_wait_cycles);
     REG_SET_FIELD(RTC_CNTL_TIMER6_REG, RTC_CNTL_DG_PERI_POWERUP_TIMER, rtc_init_cfg.dg_peri_powerup_cycles);
     REG_SET_FIELD(RTC_CNTL_TIMER6_REG, RTC_CNTL_DG_PERI_WAIT_TIMER, rtc_init_cfg.dg_peri_wait_cycles);
-
-    // set_rtc_dig_dbias(); // ESP32H2-TODO: IDF-3396
 
     if (cfg.clkctl_init) {
         //clear CMMU clock force on
@@ -69,10 +70,6 @@ void rtc_init(rtc_config_t cfg)
         CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_PLLA_FORCE_PU);
         SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_PLLA_FORCE_PD);
 
-        //open sar_i2c protect function to avoid sar_i2c reset when rtc_ldo is low.
-        CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_I2C_RESET_POR_FORCE_PD);
-
-        //cancel bbpll force pu if setting no force power up
         if (!cfg.bbpll_fpu) {
             CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BBPLL_FORCE_PU);
             CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BBPLL_I2C_FORCE_PU);
@@ -86,14 +83,8 @@ void rtc_init(rtc_config_t cfg)
         CLEAR_PERI_REG_MASK(RTC_CNTL_REG, RTC_CNTL_REGULATOR_FORCE_PU);
         CLEAR_PERI_REG_MASK(RTC_CNTL_REG, RTC_CNTL_DBOOST_FORCE_PU);
 
-        if (cfg.rtc_dboost_fpd) {
-            SET_PERI_REG_MASK(RTC_CNTL_REG, RTC_CNTL_DBOOST_FORCE_PD);
-        } else {
-            CLEAR_PERI_REG_MASK(RTC_CNTL_REG, RTC_CNTL_DBOOST_FORCE_PD);
-        }
-
-        //clear i2c_reset_protect pd force, need tested in low temperature.
-        //CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG,RTC_CNTL_I2C_RESET_POR_FORCE_PD);
+        // clear i2c_reset_protect pd force, need tested in low temperature.
+        CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG,RTC_CNTL_I2C_RESET_POR_FORCE_PD);
 
         /* If this mask is enabled, all soc memories cannot enter power down mode */
         /* We should control soc memory power down mode from RTC, so we will not touch this register any more */
@@ -104,18 +95,25 @@ void rtc_init(rtc_config_t cfg)
         rtc_sleep_pu_config_t pu_cfg = RTC_SLEEP_PU_CONFIG_ALL(0);
         rtc_sleep_pu(pu_cfg);
 
-        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_DG_WRAP_FORCE_PU);
-        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PU);
-        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PU);
+        //cancel digital PADS force pu
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_CPU_TOP_FORCE_PU);
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_FORCE_PU);
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_FASTMEM_FORCE_LPU); //
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_DG_PERI_FORCE_PU);
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_BT_FORCE_PU);
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_DG_WRAP_FORCE_PU);
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_DG_MEM_FORCE_PU); //
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_LSLP_MEM_FORCE_PU); //
 
+        //cancel digital PADS force no iso
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_WRAP_FORCE_NOISO);
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_WIFI_FORCE_NOISO);
-        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_NOISO);
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_CPU_TOP_FORCE_NOISO);
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PERI_FORCE_NOISO);
-        //cancel digital PADS force no iso
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_BT_FORCE_NOISO);
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_NOISO); //
+        CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_MEM_FORCE_NOISO); //
+
         if (cfg.cpu_waiti_clk_gate) {
             CLEAR_PERI_REG_MASK(SYSTEM_CPU_PER_CONF_REG, SYSTEM_CPU_WAIT_MODE_FORCE_ON);
         } else {
@@ -125,10 +123,49 @@ void rtc_init(rtc_config_t cfg)
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_UNHOLD);
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_NOISO);
     }
+
     REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
     REG_WRITE(RTC_CNTL_INT_CLR_REG, UINT32_MAX);
+    if (cfg.pmu_ctl) {
+        /* pmu init*/
+        pmu_ctl();
+    }
+    /* config dcdc frequency */
+    REG_SET_FIELD(RTC_CNTL_DCDC_CTRL0_REG, RTC_CNTL_FSW_DCDC, RTC_CNTL_DCDC_FREQ_DEFAULT);
 }
 
+void pmu_ctl(void)
+{
+    pmu_config_t pmu_cfg = PMU_CONFIG_DEFAULT();
+    REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_OR_EN_CONT_CAL, pmu_cfg.or_en_cont_cal);
+    REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_ENX_RTC_DREG, pmu_cfg.enx_rtc_dreg);
+    REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_ENX_DIG_DREG, pmu_cfg.enx_dig_dreg);
+    REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_EN_I2C_RTC_DREG, pmu_cfg.en_i2c_rtc_dreg);
+    REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_EN_I2C_DIG_DREG, pmu_cfg.en_i2c_dig_dreg);
+    REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_EN_I2C_RTC_DREG_SLP, pmu_cfg.en_i2c_rtc_dreg_slp);
+    REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_EN_I2C_DIG_DREG_SLP, pmu_cfg.en_i2c_dig_dreg_slp);
+    REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_OR_XPD_RTC_SLAVE_3P3, pmu_cfg.or_xpd_rtc_slave_3p3);
+    REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_OR_XPD_RTC_REG, pmu_cfg.or_xpd_rtc_reg);
+    REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_OR_XPD_DIG_REG, pmu_cfg.or_xpd_dig_reg);
+    REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_OR_PD_RTC_REG_SLP, pmu_cfg.or_pd_rtc_reg_slp);
+    REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_OR_PD_DIG_REG_SLP, pmu_cfg.or_pd_dig_reg_slp);
+    REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_OR_XPD_DCDC, pmu_cfg.or_xpd_dcdc);
+    REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_OR_DISALBE_DEEP_SLEEP_DCDC, pmu_cfg.or_disalbe_deep_sleep_dcdc);
+    REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_OR_DISALBE_LIGHT_SLEEP_DCDC, pmu_cfg.or_disalbe_light_sleep_dcdc);
+    REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_OR_ENALBE_TRX_MODE_DCDC, pmu_cfg.or_enalbe_trx_mode_dcdc);
+    REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_OR_ENX_REG_DCDC, pmu_cfg.or_enx_reg_dcdc);
+    REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_OR_UNLOCK_DCDC, pmu_cfg.or_unlock_dcdc);
+    REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_OR_FORCE_LOCK_DCDC, pmu_cfg.or_force_lock_dcdc);
+    // REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_OR_ENB_SLOW_CLK, pmu_cfg.or_enb_slow_clk);
+    REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_OR_XPD_TRX, pmu_cfg.or_xpd_trx);
+    REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_OR_EN_RESET_CHIP, pmu_cfg.or_en_reset_chip);
+    REGI2C_WRITE_MASK(I2C_PMU, I2C_PMU_OR_FORCE_XPD_REG_SLAVE, pmu_cfg.or_force_xpd_reg_slave);
+}
+
+void dslp_osc_pd(void){
+     REG_SET_FIELD(RTC_CNTL_RC32K_CTRL_REG,RTC_CNTL_RC32K_XPD, 0);
+     REG_SET_FIELD(RTC_CNTL_PLL8M_REG, RTC_CNTL_XPD_PLL8M, 0);
+}
 rtc_vddsdio_config_t rtc_vddsdio_get_config(void)
 {
     rtc_vddsdio_config_t result;
@@ -165,4 +202,42 @@ void rtc_vddsdio_set_config(rtc_vddsdio_config_t config)
     val |= (config.tieh << RTC_CNTL_SDIO_TIEH_S);
     val |= RTC_CNTL_SDIO_PD_EN;
     REG_WRITE(RTC_CNTL_SDIO_CONF_REG, val);
+}
+
+void dig_gpio_setpd(uint32_t gpio_no, bool pd)
+{
+    SET_PERI_REG_BITS(PERIPHS_IO_MUX_XTAL_32K_P_U + 4 * gpio_no, 0x1, pd, FUN_PD_S);
+}
+
+void dig_gpio_setpu(uint32_t gpio_no, bool pu)
+{
+    SET_PERI_REG_BITS(PERIPHS_IO_MUX_XTAL_32K_P_U + 4 * gpio_no, 0x1, pu, FUN_PU_S);
+}
+
+void dig_gpio_in_en(uint32_t gpio_no, bool enable)
+{
+    SET_PERI_REG_BITS(PERIPHS_IO_MUX_XTAL_32K_P_U + 4 * gpio_no, 0x1, enable, FUN_IE_S);
+}
+
+void dig_gpio_out_en(uint32_t gpio_no, bool enable)
+{
+    if (enable)
+        SET_PERI_REG_MASK(GPIO_ENABLE_W1TS_REG, 1 << gpio_no);
+    else
+        SET_PERI_REG_MASK(GPIO_ENABLE_W1TC_REG, 1 << gpio_no);
+}
+
+void dig_gpio_mcusel(uint32_t gpio_no, uint32_t mcu_sel)
+{
+    SET_PERI_REG_BITS(PERIPHS_IO_MUX_XTAL_32K_P_U + 4 * gpio_no, MCU_SEL, mcu_sel, MCU_SEL_S);
+}
+
+
+void rtc_gpio_hangup(uint32_t gpio_no)
+{
+    dig_gpio_setpd(gpio_no, 0);
+    dig_gpio_setpu(gpio_no, 0);
+    dig_gpio_out_en(gpio_no, 0);
+    dig_gpio_in_en(gpio_no, 0);
+    dig_gpio_mcusel(gpio_no, 1);
 }

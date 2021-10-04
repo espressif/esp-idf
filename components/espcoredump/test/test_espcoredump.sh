@@ -11,7 +11,7 @@ else
   elf_dir=$1
 fi
 
-SUPPORTED_TARGETS=("esp32" "esp32s2" "esp32c3")
+SUPPORTED_TARGETS=("esp32" "esp32s2" "esp32c3" "esp32s3" )
 res=0
 coverage erase
 for chip in "${SUPPORTED_TARGETS[@]}"; do

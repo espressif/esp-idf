@@ -1,5 +1,5 @@
 /*
- * FreeRTOS Kernel V10.2.1
+ * FreeRTOS Kernel V10.4.3
  * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -61,13 +61,13 @@ typedef struct corCoRoutineControlBlock
 /**
  * @cond
  * croutine. h
- * <pre>
+ * @code{c}
  * BaseType_t xCoRoutineCreate(
  *                               crCOROUTINE_CODE pxCoRoutineCode,
  *                               UBaseType_t uxPriority,
  *                               UBaseType_t uxIndex
  *                             );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Create a new co-routine and add it to the list of co-routines that are
@@ -143,9 +143,9 @@ BaseType_t xCoRoutineCreate( crCOROUTINE_CODE pxCoRoutineCode,
 /**
  * @cond
  * croutine. h
- * <pre>
+ * @code{c}
  * void vCoRoutineSchedule( void );
- * </pre>
+ * @endcode
  * @endcond
  * Run a co-routine.
  *
@@ -177,7 +177,7 @@ BaseType_t xCoRoutineCreate( crCOROUTINE_CODE pxCoRoutineCode,
  *      vCoRoutineSchedule();
  *  }
  * }
- * </pre>
+ * @endcode
  * @endcode
  * @cond
  * \defgroup vCoRoutineSchedule vCoRoutineSchedule
@@ -189,9 +189,9 @@ void vCoRoutineSchedule( void );
 /**
  * @cond
  * croutine. h
- * <pre>
+ * @code{c}
  * crSTART( CoRoutineHandle_t xHandle );
- * </pre>
+ * @endcode
  * @endcond
  *
  * This macro MUST always be called at the start of a co-routine function.
@@ -228,9 +228,9 @@ void vCoRoutineSchedule( void );
 /**
  * @cond
  * croutine. h
- * <pre>
+ * @code{c}
  * crEND();
- * </pre>
+ * @endcode
  * @endcond
  *
  * This macro MUST always be called at the end of a co-routine function.
@@ -276,9 +276,9 @@ void vCoRoutineSchedule( void );
 /**
  * @cond
  * croutine. h
- * <pre>
+ * @code{c}
  * crDELAY( CoRoutineHandle_t xHandle, TickType_t xTicksToDelay );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Delay a co-routine for a fixed period of time.
@@ -334,7 +334,7 @@ void vCoRoutineSchedule( void );
 
 /**
  * @cond
- * <pre>
+ * @code{c}
  * crQUEUE_SEND(
  *                CoRoutineHandle_t xHandle,
  *                QueueHandle_t pxQueue,
@@ -342,7 +342,7 @@ void vCoRoutineSchedule( void );
  *                TickType_t xTicksToWait,
  *                BaseType_t *pxResult
  *           )
- * </pre>
+ * @endcode
  * @endcond
  *
  * The macro's crQUEUE_SEND() and crQUEUE_RECEIVE() are the co-routine
@@ -439,7 +439,7 @@ void vCoRoutineSchedule( void );
 /**
  * @cond
  * croutine. h
- * <pre>
+ * @code{c}
  * crQUEUE_RECEIVE(
  *                   CoRoutineHandle_t xHandle,
  *                   QueueHandle_t pxQueue,
@@ -447,7 +447,7 @@ void vCoRoutineSchedule( void );
  *                   TickType_t xTicksToWait,
  *                   BaseType_t *pxResult
  *               )
- * </pre>
+ * @endcode
  * @endcond
  *
  * The macro's crQUEUE_SEND() and crQUEUE_RECEIVE() are the co-routine
@@ -513,7 +513,6 @@ void vCoRoutineSchedule( void );
  *
  *  crEND();
  * }
- * </pre>
  * @endcode
  * @cond
  * \defgroup crQUEUE_RECEIVE crQUEUE_RECEIVE
@@ -538,13 +537,13 @@ void vCoRoutineSchedule( void );
 /**
  * @cond
  * croutine. h
- * <pre>
+ * @code{c}
  * crQUEUE_SEND_FROM_ISR(
  *                          QueueHandle_t pxQueue,
  *                          void *pvItemToQueue,
  *                          BaseType_t xCoRoutinePreviouslyWoken
  *                     )
- * </pre>
+ * @endcode
  * @endcond
  *
  * The macro's crQUEUE_SEND_FROM_ISR() and crQUEUE_RECEIVE_FROM_ISR() are the
@@ -642,13 +641,13 @@ void vCoRoutineSchedule( void );
 /**
  * @cond
  * croutine. h
- * <pre>
+ * @code{c}
  * crQUEUE_SEND_FROM_ISR(
  *                          QueueHandle_t pxQueue,
  *                          void *pvBuffer,
  *                          BaseType_t * pxCoRoutineWoken
  *                     )
- * </pre>
+ * @endcode
  * @endcond
  *
  * The macro's crQUEUE_SEND_FROM_ISR() and crQUEUE_RECEIVE_FROM_ISR() are the

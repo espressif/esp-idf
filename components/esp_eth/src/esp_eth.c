@@ -20,6 +20,7 @@
 #include "esp_event.h"
 #include "esp_heap_caps.h"
 #include "esp_timer.h"
+#include "soc/soc.h" // TODO: for esp_eth_ioctl API compatibility reasons, will be removed with next major release
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -360,8 +361,11 @@ esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data)
         ESP_GOTO_ON_ERROR(mac->get_addr(mac, (uint8_t *)data), err, TAG, "get mac address failed");
         break;
     case ETH_CMD_S_PHY_ADDR:
-        ESP_GOTO_ON_FALSE(data, ESP_ERR_INVALID_ARG, err, TAG, "can't set phy addr to null");
-        ESP_GOTO_ON_ERROR(phy->set_addr(phy, (uint32_t)data), err, TAG, "set phy address failed");
+        if ((uint32_t)data >= SOC_DRAM_LOW) {
+            ESP_GOTO_ON_ERROR(phy->set_addr(phy, *(uint32_t *)data), err, TAG, "set phy address failed");
+        } else { // TODO: for API compatibility reasons, will be removed with next major release
+            ESP_GOTO_ON_ERROR(phy->set_addr(phy, (uint32_t)data), err, TAG, "set phy address failed");
+        }
         break;
     case ETH_CMD_G_PHY_ADDR:
         ESP_GOTO_ON_FALSE(data, ESP_ERR_INVALID_ARG, err, TAG, "no mem to store phy addr");
@@ -372,15 +376,31 @@ esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data)
         *(eth_speed_t *)data = eth_driver->speed;
         break;
     case ETH_CMD_S_PROMISCUOUS:
-        ESP_GOTO_ON_ERROR(mac->set_promiscuous(mac, (bool)data), err, TAG, "set promiscuous mode failed");
+        if ((uint32_t)data >= SOC_DRAM_LOW) {
+            ESP_GOTO_ON_ERROR(mac->set_promiscuous(mac, *(bool *)data), err, TAG, "set promiscuous mode failed");
+        } else { // TODO: for API compatibility reasons, will be removed with next major release
+            ESP_GOTO_ON_ERROR(mac->set_promiscuous(mac, (bool)data), err, TAG, "set promiscuous mode failed");
+        }
         break;
     case ETH_CMD_S_FLOW_CTRL:
-        ESP_GOTO_ON_ERROR(mac->enable_flow_ctrl(mac, (bool)data), err, TAG, "enable mac flow control failed");
-        ESP_GOTO_ON_ERROR(phy->advertise_pause_ability(phy, (uint32_t)data), err, TAG, "phy advertise pause ability failed");
+        if ((uint32_t)data >= SOC_DRAM_LOW) {
+            ESP_GOTO_ON_ERROR(mac->enable_flow_ctrl(mac, *(bool *)data), err, TAG, "enable mac flow control failed");
+            ESP_GOTO_ON_ERROR(phy->advertise_pause_ability(phy, *(uint32_t *)data), err, TAG, "phy advertise pause ability failed");
+        } else { // TODO: for API compatibility reasons, will be removed with next major release
+            ESP_GOTO_ON_ERROR(mac->enable_flow_ctrl(mac, (bool)data), err, TAG, "enable mac flow control failed");
+            ESP_GOTO_ON_ERROR(phy->advertise_pause_ability(phy, (uint32_t)data), err, TAG, "phy advertise pause ability failed");
+        }
         break;
     case ETH_CMD_G_DUPLEX_MODE:
         ESP_GOTO_ON_FALSE(data, ESP_ERR_INVALID_ARG, err, TAG, "no mem to store duplex value");
         *(eth_duplex_t *)data = eth_driver->duplex;
+        break;
+    case ETH_CMD_S_PHY_LOOPBACK:
+        if ((uint32_t)data >= SOC_DRAM_LOW) {
+            ESP_GOTO_ON_ERROR(phy->loopback(phy, *(bool *)data), err, TAG, "configuration of phy loopback mode failed");
+        } else { // TODO: for API compatibility reasons, will be removed with next major release
+            ESP_GOTO_ON_ERROR(phy->loopback(phy, (bool)data), err, TAG, "configuration of phy loopback mode failed");
+        }
         break;
     default:
         ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "unknown io command: %d", cmd);

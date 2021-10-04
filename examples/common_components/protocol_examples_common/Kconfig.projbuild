@@ -1,5 +1,16 @@
 menu "Example Connection Configuration"
 
+    config EXAMPLE_GPIO_RANGE_MIN
+        int
+        default 0
+
+    config EXAMPLE_GPIO_RANGE_MAX
+        int
+        default 33 if IDF_TARGET_ESP32
+        default 46 if IDF_TARGET_ESP32S2
+        default 19 if IDF_TARGET_ESP32C3
+        default 48 if IDF_TARGET_ESP32S3
+
     config EXAMPLE_CONNECT_WIFI
         bool "connect using WiFi interface"
         default y
@@ -184,12 +195,14 @@ menu "Example Connection Configuration"
 
             config EXAMPLE_ETH_MDC_GPIO
                 int "SMI MDC GPIO number"
+                range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
                 default 23
                 help
                     Set the GPIO number used by SMI MDC.
 
             config EXAMPLE_ETH_MDIO_GPIO
                 int "SMI MDIO GPIO number"
+                range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
                 default 18
                 help
                     Set the GPIO number used by SMI MDIO.
@@ -205,41 +218,42 @@ menu "Example Connection Configuration"
 
             config EXAMPLE_ETH_SPI_SCLK_GPIO
                 int "SPI SCLK GPIO number"
-                range 0 33
-                default 20
+                range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+                default 14
                 help
                     Set the GPIO number used by SPI SCLK.
 
             config EXAMPLE_ETH_SPI_MOSI_GPIO
                 int "SPI MOSI GPIO number"
-                range 0 33
-                default 19
+                range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+                default 13
                 help
                     Set the GPIO number used by SPI MOSI.
 
             config EXAMPLE_ETH_SPI_MISO_GPIO
                 int "SPI MISO GPIO number"
-                range 0 33
-                default 18
+                range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+                default 12
                 help
                     Set the GPIO number used by SPI MISO.
 
             config EXAMPLE_ETH_SPI_CS_GPIO
                 int "SPI CS GPIO number"
-                range 0 33
-                default 21
+                range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
+                default 15
                 help
                     Set the GPIO number used by SPI CS.
 
             config EXAMPLE_ETH_SPI_CLOCK_MHZ
                 int "SPI clock speed (MHz)"
-                range 20 80
+                range 5 80
                 default 36
                 help
                     Set the clock speed (MHz) of SPI interface.
 
             config EXAMPLE_ETH_SPI_INT_GPIO
                 int "Interrupt GPIO number"
+                range EXAMPLE_GPIO_RANGE_MIN EXAMPLE_GPIO_RANGE_MAX
                 default 4
                 help
                     Set the GPIO number used by the SPI Ethernet module interrupt line.
@@ -247,6 +261,7 @@ menu "Example Connection Configuration"
 
         config EXAMPLE_ETH_PHY_RST_GPIO
             int "PHY Reset GPIO number"
+            range -1 EXAMPLE_GPIO_RANGE_MAX
             default 5
             help
                 Set the GPIO number used to reset PHY chip.

@@ -27,7 +27,6 @@
     ADC2_MODE3_D1 (BLOCK2)                   ADC2 calibration 16                                = -4 R/W (0b100001)
 
     Config fuses:
-    DIS_RTC_RAM_BOOT (BLOCK0)                Disables boot from RTC RAM                         = False R/W (0b0)
     DIS_ICACHE (BLOCK0)                      Disables ICache                                    = False R/W (0b0)
     DIS_DCACHE (BLOCK0)                      Disables DCache                                    = False R/W (0b0)
     DIS_DOWNLOAD_ICACHE (BLOCK0)             Disables Icache when SoC is in Download mode       = False R/W (0b0)

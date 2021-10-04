@@ -1,5 +1,5 @@
 /*
- * FreeRTOS Kernel V10.2.1
+ * FreeRTOS Kernel V10.4.3
  * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -74,9 +74,9 @@ typedef struct StreamBufferDef_t * StreamBufferHandle_t;
  * @cond
  * message_buffer.h
  *
- * <pre>
+ * @code{c}
  * StreamBufferHandle_t xStreamBufferCreate( size_t xBufferSizeBytes, size_t xTriggerLevelBytes );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Creates a new stream buffer using dynamically allocated memory.  See
@@ -145,12 +145,12 @@ typedef struct StreamBufferDef_t * StreamBufferHandle_t;
  * @cond
  * stream_buffer.h
  *
- * <pre>
+ * @code{c}
  * StreamBufferHandle_t xStreamBufferCreateStatic( size_t xBufferSizeBytes,
  *                                              size_t xTriggerLevelBytes,
  *                                              uint8_t *pucStreamBufferStorageArea,
  *                                              StaticStreamBuffer_t *pxStaticStreamBuffer );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Creates a new stream buffer using statically allocated memory.  See
@@ -193,7 +193,7 @@ typedef struct StreamBufferDef_t * StreamBufferHandle_t;
  *
  * // Used to dimension the array used to hold the streams.  The available space
  * // will actually be one less than this, so 999.
- * \#define STORAGE_SIZE_BYTES 1000
+ * #define STORAGE_SIZE_BYTES 1000
  *
  * // Defines the memory that will actually hold the streams within the stream
  * // buffer.
@@ -232,12 +232,12 @@ typedef struct StreamBufferDef_t * StreamBufferHandle_t;
  * @cond
  * stream_buffer.h
  *
- * <pre>
+ * @code{c}
  * size_t xStreamBufferSend( StreamBufferHandle_t xStreamBuffer,
  *                        const void *pvTxData,
  *                        size_t xDataLengthBytes,
  *                        TickType_t xTicksToWait );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Sends bytes to a stream buffer.  The bytes are copied into the stream buffer.
@@ -333,12 +333,12 @@ size_t xStreamBufferSend( StreamBufferHandle_t xStreamBuffer,
  * @cond
  * stream_buffer.h
  *
- * <pre>
+ * @code{c}
  * size_t xStreamBufferSendFromISR( StreamBufferHandle_t xStreamBuffer,
  *                               const void *pvTxData,
  *                               size_t xDataLengthBytes,
  *                               BaseType_t *pxHigherPriorityTaskWoken );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Interrupt safe version of the API function that sends a stream of bytes to
@@ -438,12 +438,12 @@ size_t xStreamBufferSendFromISR( StreamBufferHandle_t xStreamBuffer,
  * @cond
  * stream_buffer.h
  *
- * <pre>
+ * @code{c}
  * size_t xStreamBufferReceive( StreamBufferHandle_t xStreamBuffer,
  *                           void *pvRxData,
  *                           size_t xBufferLengthBytes,
  *                           TickType_t xTicksToWait );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Receives bytes from a stream buffer.
@@ -531,12 +531,12 @@ size_t xStreamBufferReceive( StreamBufferHandle_t xStreamBuffer,
  * @cond
  * stream_buffer.h
  *
- * <pre>
+ * @code{c}
  * size_t xStreamBufferReceiveFromISR( StreamBufferHandle_t xStreamBuffer,
  *                                  void *pvRxData,
  *                                  size_t xBufferLengthBytes,
  *                                  BaseType_t *pxHigherPriorityTaskWoken );
- * </pre>
+ * @endcode
  * @endcond
  *
  * An interrupt safe version of the API function that receives bytes from a
@@ -621,9 +621,9 @@ size_t xStreamBufferReceiveFromISR( StreamBufferHandle_t xStreamBuffer,
  * @cond
  * stream_buffer.h
  *
- * <pre>
+ * @code{c}
  * void vStreamBufferDelete( StreamBufferHandle_t xStreamBuffer );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Deletes a stream buffer that was previously created using a call to
@@ -647,9 +647,9 @@ void vStreamBufferDelete( StreamBufferHandle_t xStreamBuffer ) PRIVILEGED_FUNCTI
  * @cond
  * stream_buffer.h
  *
- * <pre>
+ * @code{c}
  * BaseType_t xStreamBufferIsFull( StreamBufferHandle_t xStreamBuffer );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Queries a stream buffer to see if it is full.  A stream buffer is full if it
@@ -671,9 +671,9 @@ BaseType_t xStreamBufferIsFull( StreamBufferHandle_t xStreamBuffer ) PRIVILEGED_
  * @cond
  * stream_buffer.h
  *
- * <pre>
+ * @code{c}
  * BaseType_t xStreamBufferIsEmpty( StreamBufferHandle_t xStreamBuffer );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Queries a stream buffer to see if it is empty.  A stream buffer is empty if
@@ -695,9 +695,9 @@ BaseType_t xStreamBufferIsEmpty( StreamBufferHandle_t xStreamBuffer ) PRIVILEGED
  * @cond
  * stream_buffer.h
  *
- * <pre>
+ * @code{c}
  * BaseType_t xStreamBufferReset( StreamBufferHandle_t xStreamBuffer );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Resets a stream buffer to its initial, empty, state.  Any data that was in
@@ -722,9 +722,9 @@ BaseType_t xStreamBufferReset( StreamBufferHandle_t xStreamBuffer ) PRIVILEGED_F
  * @cond
  * stream_buffer.h
  *
- * <pre>
+ * @code{c}
  * size_t xStreamBufferSpacesAvailable( StreamBufferHandle_t xStreamBuffer );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Queries a stream buffer to see how much free space it contains, which is
@@ -747,9 +747,9 @@ size_t xStreamBufferSpacesAvailable( StreamBufferHandle_t xStreamBuffer ) PRIVIL
  * @cond
  * stream_buffer.h
  *
- * <pre>
+ * @code{c}
  * size_t xStreamBufferBytesAvailable( StreamBufferHandle_t xStreamBuffer );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Queries a stream buffer to see how much data it contains, which is equal to
@@ -772,9 +772,9 @@ size_t xStreamBufferBytesAvailable( StreamBufferHandle_t xStreamBuffer ) PRIVILE
  * @cond
  * stream_buffer.h
  *
- * <pre>
+ * @code{c}
  * BaseType_t xStreamBufferSetTriggerLevel( StreamBufferHandle_t xStreamBuffer, size_t xTriggerLevel );
- * </pre>
+ * @endcode
  * @endcond
  *
  * A stream buffer's trigger level is the number of bytes that must be in the
@@ -814,9 +814,9 @@ BaseType_t xStreamBufferSetTriggerLevel( StreamBufferHandle_t xStreamBuffer,
  * @cond
  * stream_buffer.h
  *
- * <pre>
+ * @code{c}
  * BaseType_t xStreamBufferSendCompletedFromISR( StreamBufferHandle_t xStreamBuffer, BaseType_t *pxHigherPriorityTaskWoken );
- * </pre>
+ * @endcode
  * @endcond
  *
  * For advanced users only.
@@ -858,9 +858,9 @@ BaseType_t xStreamBufferSendCompletedFromISR( StreamBufferHandle_t xStreamBuffer
  * @cond
  * stream_buffer.h
  *
- * <pre>
+ * @code{c}
  * BaseType_t xStreamBufferReceiveCompletedFromISR( StreamBufferHandle_t xStreamBuffer, BaseType_t *pxHigherPriorityTaskWoken );
- * </pre>
+ * @endcode
  * @endcond
  *
  * For advanced users only.

@@ -57,7 +57,7 @@ OPENTHREAD_VERSION := $(shell git -C $(COMPONENT_PATH)/openthread rev-parse --sh
 OPENTHREAD_PACKAGE_VERSION := $(IDF_VERSION_FOR_OPENTHREAD_PACKAGE)-$(OPENTHREAD_VERSION)
 
 COMMON_FLAGS :=                                                              \
-    -DOPENTHREAD_CONFIG_FILE=\<openthread-core-esp32x-config.h\>             \
+    -DOPENTHREAD_CONFIG_FILE=\<openthread-core-esp32x-ftd-config.h\>             \
     -DPACKAGE_VERSION=\"OPENTHREAD_PACKAGE_VERSION\"                         \
     -Wno-maybe-uninitialized
 

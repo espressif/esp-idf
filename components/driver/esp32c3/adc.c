@@ -448,11 +448,11 @@ esp_err_t adc_vref_to_gpio(adc_unit_t adc_unit, gpio_num_t gpio)
     if (adc_unit & ADC_UNIT_1) {
         ADC_ENTER_CRITICAL();
         adc_hal_vref_output(ADC_NUM_1, channel, true);
-        ADC_EXIT_CRITICAL()
+        ADC_EXIT_CRITICAL();
     } else if (adc_unit & ADC_UNIT_2) {
         ADC_ENTER_CRITICAL();
         adc_hal_vref_output(ADC_NUM_2, channel, true);
-        ADC_EXIT_CRITICAL()
+        ADC_EXIT_CRITICAL();
     }
 
     ret = adc_digi_gpio_init(ADC_NUM_2, BIT(channel));

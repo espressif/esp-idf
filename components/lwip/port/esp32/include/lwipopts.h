@@ -266,6 +266,12 @@
 
 #endif
 
+/**
+ * CONFIG_LWIP_DHCP_OPTIONS_LEN: The total length of outgoing DHCP option msg. If you have many options
+ * and options value is too long, you can configure the length according to your requirements
+ */
+#define DHCP_OPTIONS_LEN                CONFIG_LWIP_DHCP_OPTIONS_LEN
+
 /*
    ------------------------------------
    ---------- AUTOIP options ----------
@@ -594,7 +600,7 @@
  * LWIP_TCPIP_CORE_LOCKING: (EXPERIMENTAL!)
  * Don't use it if you're not an active lwIP project member
  */
-#define LWIP_TCPIP_CORE_LOCKING         0
+#define LWIP_TCPIP_CORE_LOCKING         CONFIG_LWIP_TCPIP_CORE_LOCKING
 
 /*
    ------------------------------------
@@ -910,6 +916,15 @@
 #endif
 
 /**
+ * SNTP_DEBUG: Enable debugging for SNTP.
+ */
+#ifdef CONFIG_LWIP_SNTP_DEBUG
+#define SNTP_DEBUG                       LWIP_DBG_ON
+#else
+#define SNTP_DEBUG                       LWIP_DBG_OFF
+#endif
+
+/**
  * MEMP_DEBUG: Enable debugging in memp.c.
  */
 #define MEMP_DEBUG                      LWIP_DBG_OFF
@@ -968,6 +983,8 @@
 #define LWIP_IPV6_NUM_ADDRESSES         CONFIG_LWIP_IPV6_NUM_ADDRESSES
 
 #define LWIP_ND6_RDNSS_MAX_DNS_SERVERS  CONFIG_LWIP_IPV6_RDNSS_MAX_DNS_SERVERS
+
+#define LWIP_IPV6_DHCP6                 CONFIG_LWIP_IPV6_DHCP6
 
 /* Enable all Espressif-only options */
 
@@ -1043,7 +1060,11 @@
 #define CHECKSUM_CHECK_ICMP             CONFIG_LWIP_CHECKSUM_CHECK_ICMP
 
 #define LWIP_NETCONN_FULLDUPLEX         1
+#if LWIP_TCPIP_CORE_LOCKING
+#define LWIP_NETCONN_SEM_PER_THREAD     0
+#else
 #define LWIP_NETCONN_SEM_PER_THREAD     1
+#endif /* LWIP_TCPIP_CORE_LOCKING */
 
 #define LWIP_DHCP_MAX_NTP_SERVERS       CONFIG_LWIP_DHCP_MAX_NTP_SERVERS
 #define LWIP_TIMEVAL_PRIVATE            0
@@ -1053,9 +1074,15 @@
    ------------ SNTP options ------------
    --------------------------------------
 */
-/*
- * SNTP update delay - in milliseconds
- */
+
+// Max number of SNTP servers handled (default equal to LWIP_DHCP_MAX_NTP_SERVERS)
+#if defined CONFIG_LWIP_SNTP_MAX_SERVERS
+#define SNTP_MAX_SERVERS                CONFIG_LWIP_SNTP_MAX_SERVERS
+#endif // CONFIG_LWIP_SNTP_MAX_SERVERS
+
+#ifdef CONFIG_LWIP_DHCP_GET_NTP_SRV
+#define LWIP_DHCP_GET_NTP_SRV           CONFIG_LWIP_DHCP_GET_NTP_SRV
+#endif // CONFIG_LWIP_DHCP_GET_NTP_SRV
 
 /** Set this to 1 to support DNS names (or IP address strings) to set sntp servers
  * One server address/name can be defined as default if SNTP_SERVER_DNS == 1:

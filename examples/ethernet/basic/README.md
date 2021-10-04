@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- |
+
 # Ethernet Example
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
@@ -17,11 +20,18 @@ If you have a new Ethernet application to go (for example, connect to IoT cloud 
 
 To run this example, it's recommended that you have an official ESP32 Ethernet development board - [ESP32-Ethernet-Kit](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/get-started-ethernet-kit.html). This example should also work for 3rd party ESP32 board as long as it's integrated with a supported Ethernet PHY chip. Up until now, ESP-IDF supports up to four Ethernet PHY: `LAN8720`, `IP101`, `DP83848` and `RTL8201`, additional PHY drivers should be implemented by users themselves.
 
-Besides that, `esp_eth` component can drive third-party Ethernet module which integrates MAC and PHY and provides common communication interface (e.g. SPI, USB, etc). This example will take the **DM9051** as an example, illustrating how to install the Ethernet driver in the same manner.
+Besides that, `esp_eth` component can drive third-party Ethernet module which integrates MAC and PHY and provides common communication interface (e.g. SPI, USB, etc). This example will take the `DM9051`, `W5500` or `KSZ8851SNL` SPI modules as an example, illustrating how to install the Ethernet driver in the same manner.
+
+The ESP-IDF supports the usage of multiple Ethernet interfaces at a time when external modules are utilized which is also demonstrated by this example. There are several options you can combine:
+   * Internal EMAC and one SPI Ethernet module.
+   * Two SPI Ethernet modules of the same type connected to single SPI interface and accessed by switching appropriate CS.
+   * Internal EMAC and two SPI Ethernet modules of the same type. 
 
 #### Pin Assignment
 
 See common pin assignments for Ethernet examples from [upper level](../README.md#common-pin-assignments).
+
+When using two Ethernet SPI modules at a time, they are to be connected to single SPI interface. Both modules then share data (MOSI/MISO) and CLK signals. However, the CS, interrupt and reset pins need to be connected to separate GPIO for each Ethernet SPI module.
 
 ### Configure the project
 

@@ -24,6 +24,7 @@
 
 #include "soc/soc.h"
 #include "soc/gpio_periph.h"
+#include "soc/gpio_struct.h"
 #include "soc/rtc_cntl_reg.h"
 #include "hal/gpio_types.h"
 #include "stdlib.h"
@@ -334,6 +335,7 @@ static inline void gpio_ll_get_drive_capability(gpio_dev_t *hw, gpio_num_t gpio_
   */
 static inline void gpio_ll_deep_sleep_hold_en(gpio_dev_t *hw)
 {
+    CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_UNHOLD);
     SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_AUTOHOLD_EN_M);
 }
 

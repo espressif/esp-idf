@@ -75,20 +75,33 @@
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 1
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
-#define SOC_ADC_PERIPH_NUM              (2)
-#define SOC_ADC_PATT_LEN_MAX            (16)
-#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM) ((PERIPH_NUM==0)? 8: 10)
-#define SOC_ADC_MAX_CHANNEL_NUM         (10)
-#define SOC_ADC_MAX_BITWIDTH            (12)
-
 /**
+ * TO BE REMOVED in !14278
  * Check if adc support digital controller (DMA) mode.
  * @value
  *      - 1 : support;
  *      - 0 : not support;
  */
 #define SOC_ADC_SUPPORT_DMA_MODE(PERIPH_NUM) ((PERIPH_NUM==0)? 1: 0)
-#define SOC_ADC_SUPPORT_RTC_CTRL        1
+
+/*!< SAR ADC Module*/
+#define SOC_ADC_RTC_CTRL_SUPPORTED              1
+#define SOC_ADC_PERIPH_NUM                      (2)
+#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         ((PERIPH_NUM==0)? 8: 10)
+#define SOC_ADC_MAX_CHANNEL_NUM                 (10)
+
+/*!< Digital */
+#define SOC_ADC_DIGI_CONTROLLER_NUM             (2)
+#define SOC_ADC_PATT_LEN_MAX                    (16) //Two pattern table, each contains 16 items. Each item takes 1 byte. But only support ADC1 using DMA mode
+#define SOC_ADC_DIGI_MIN_BITWIDTH               (9)
+#define SOC_ADC_DIGI_MAX_BITWIDTH               (12)
+/*!< F_sample = F_digi_con / 2 / interval. F_digi_con = 5M for now. 30 <= interva <= 4095 */
+#define SOC_ADC_SAMPLE_FREQ_THRES_HIGH          83333
+#define SOC_ADC_SAMPLE_FREQ_THRES_LOW           611
+
+/*!< RTC */
+#define SOC_ADC_MAX_BITWIDTH                    (12)
+
 
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #if SOC_CAPS_ECO_VER >= 1
@@ -116,8 +129,8 @@
 // set pullup/down/capability via RTC register. On ESP32-S2, Digital IOs have their own registers to
 // control pullup/down/capability, independent with RTC registers.
 
-// 0~39 except from 20, 24, 28~31 are valid
-#define SOC_GPIO_VALID_GPIO_MASK        (0xFFFFFFFFFFULL & ~(0ULL | BIT20 | BIT24 | BIT28 | BIT29 | BIT30 | BIT31))
+// 0~39 except from 24, 28~31 are valid
+#define SOC_GPIO_VALID_GPIO_MASK        (0xFFFFFFFFFFULL & ~(0ULL | BIT24 | BIT28 | BIT29 | BIT30 | BIT31))
 // GPIO >= 34 are input only
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK (SOC_GPIO_VALID_GPIO_MASK & ~(0ULL | BIT34 | BIT35 | BIT36 | BIT37 | BIT38 | BIT39))
 
@@ -137,7 +150,8 @@
 #define SOC_I2S_NUM                 (2)
 #define SOC_I2S_SUPPORTS_PDM_TX     (1)
 #define SOC_I2S_SUPPORTS_PDM_RX     (1)
-#define SOC_I2S_SUPPORTS_ADC_DAC    (1) // ESP32 support ADC and DAC
+#define SOC_I2S_SUPPORTS_ADC        (1) // ESP32 support ADC and DAC
+#define SOC_I2S_SUPPORTS_DAC        (1)
 
 #define SOC_I2S_SUPPORTS_APLL       (1)// ESP32 support APLL
 #define SOC_I2S_APLL_MIN_FREQ       (250000000)

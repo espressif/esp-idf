@@ -3601,7 +3601,8 @@ static void _mdns_search_free(mdns_search_once_t * search)
 /**
  * @brief  Allocate new search structure
  */
-static mdns_search_once_t * _mdns_search_init(const char * name, const char * service, const char * proto, uint16_t type, uint32_t timeout, uint8_t max_results)
+static mdns_search_once_t *_mdns_search_init(const char *name, const char *service, const char *proto, uint16_t type,
+                                             uint32_t timeout, uint8_t max_results, mdns_query_notify_t notifier)
 {
     mdns_search_once_t * search = (mdns_search_once_t *)malloc(sizeof(mdns_search_once_t));
     if (!search) {
@@ -3648,6 +3649,7 @@ static mdns_search_once_t * _mdns_search_init(const char * name, const char * se
     search->state = SEARCH_INIT;
     search->sent_at = 0;
     search->started_at = xTaskGetTickCount() * portTICK_PERIOD_MS;
+    search->notifier = notifier;
     search->next = NULL;
 
     return search;
@@ -3660,6 +3662,9 @@ static void _mdns_search_finish(mdns_search_once_t * search)
 {
     search->state = SEARCH_OFF;
     queueDetach(mdns_search_once_t, _mdns_server->search_once, search);
+    if (search->notifier) {
+        search->notifier(search);
+    }
     xSemaphoreGive(search->done_semaphore);
 }
 
@@ -5349,7 +5354,8 @@ bool mdns_query_async_get_results(mdns_search_once_t* search, uint32_t timeout, 
     return false;
 }
 
-mdns_search_once_t* mdns_query_async_new(const char * name, const char * service, const char * proto, uint16_t type, uint32_t timeout, size_t max_results)
+mdns_search_once_t *mdns_query_async_new(const char *name, const char *service, const char *proto, uint16_t type,
+                                         uint32_t timeout, size_t max_results, mdns_query_notify_t notifier)
 {
     mdns_search_once_t *search = NULL;
 
@@ -5357,7 +5363,7 @@ mdns_search_once_t* mdns_query_async_new(const char * name, const char * service
         return NULL;
     }
 
-    search = _mdns_search_init(name, service, proto, type, timeout, max_results);
+    search = _mdns_search_init(name, service, proto, type, timeout, max_results, notifier);
     if (!search) {
         return NULL;
     }
@@ -5384,7 +5390,7 @@ esp_err_t mdns_query(const char * name, const char * service, const char * proto
         return ESP_ERR_INVALID_ARG;
     }
 
-    search = _mdns_search_init(name, service, proto, type, timeout, max_results);
+    search = _mdns_search_init(name, service, proto, type, timeout, max_results, NULL);
     if (!search) {
         return ESP_ERR_NO_MEM;
     }

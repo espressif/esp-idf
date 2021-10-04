@@ -42,7 +42,10 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
         } else if (slow_freq == RTC_SLOW_FREQ_8MD256) {
             cal_clk = RTC_CAL_8MD256;
         }
+    } else if (cal_clk == RTC_CAL_INTERNAL_OSC) {
+        cal_clk = RTC_CAL_RTC_MUX;
     }
+
     /* Enable requested clock (150k clock is always on) */
     int dig_32k_xtal_state = REG_GET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN);
     if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_state) {

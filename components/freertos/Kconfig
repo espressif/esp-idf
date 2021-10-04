@@ -465,4 +465,18 @@ menu "FreeRTOS"
             When enabled, the usage of float type is allowed inside Level 1
             ISRs.
 
+    config FREERTOS_ENABLE_TASK_SNAPSHOT
+        bool "Enable task snapshot functions"
+        default y
+        help
+            When enabled, the functions related to snapshots, such as vTaskGetSnapshot or uxTaskGetSnapshotAll,
+            are compiled and linked.
+
+    config FREERTOS_PLACE_SNAPSHOT_FUNS_INTO_FLASH
+        bool "Place task snapshot functions into flash"
+        default n
+        depends on FREERTOS_ENABLE_TASK_SNAPSHOT && !ESP_PANIC_HANDLER_IRAM
+        help
+            When enabled, the functions related to snapshots, such as vTaskGetSnapshot or uxTaskGetSnapshotAll,
+            will be placed in flash. Note that if enabled, these functions cannot be called when cache is disabled.
 endmenu

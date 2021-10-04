@@ -76,6 +76,12 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk);
  __attribute__((weak)) void esp_clk_init(void)
 {
     rtc_config_t cfg = RTC_CONFIG_DEFAULT();
+    soc_reset_reason_t rst_reas;
+    rst_reas = esp_rom_get_reset_reason(0);
+    //When power on, we need to set `cali_ocode` to 1, to do a OCode calibration, which will calibrate the rtc reference voltage to a tested value
+    if (rst_reas == RESET_REASON_CHIP_POWER_ON) {
+        cfg.cali_ocode = 1;
+    }
     rtc_init(cfg);
 
     assert(rtc_clk_xtal_freq_get() == RTC_XTAL_FREQ_40M);

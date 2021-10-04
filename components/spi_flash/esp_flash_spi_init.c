@@ -27,6 +27,7 @@
 #include "hal/gpio_hal.h"
 #include "esp_flash_internal.h"
 #include "esp_rom_gpio.h"
+#include "spi_flash_private.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/spi_flash.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -56,6 +57,8 @@ esp_flash_t *esp_flash_default_chip = NULL;
 #define DEFAULT_FLASH_SPEED ESP_FLASH_26MHZ
 #elif defined CONFIG_ESPTOOLPY_FLASHFREQ_20M
 #define DEFAULT_FLASH_SPEED ESP_FLASH_20MHZ
+#elif defined CONFIG_ESPTOOLPY_FLASHFREQ_120M
+#define DEFAULT_FLASH_SPEED ESP_FLASH_120MHZ
 #else
 #error Flash frequency not defined! Check the ``CONFIG_ESPTOOLPY_FLASHFREQ_*`` options.
 #endif
@@ -68,6 +71,10 @@ esp_flash_t *esp_flash_default_chip = NULL;
 #define DEFAULT_FLASH_MODE  SPI_FLASH_DIO
 #elif defined(CONFIG_ESPTOOLPY_FLASHMODE_DOUT)
 #define DEFAULT_FLASH_MODE  SPI_FLASH_DOUT
+#elif defined(CONFIG_ESPTOOLPY_FLASHMODE_OPI_STR)
+#define DEFAULT_FLASH_MODE SPI_FLASH_OPI_STR
+#elif defined(CONFIG_ESPTOOLPY_FLASHMODE_OPI_DTR)
+#define DEFAULT_FLASH_MODE SPI_FLASH_OPI_DTR
 #else
 #define DEFAULT_FLASH_MODE SPI_FLASH_FASTRD
 #endif
@@ -290,6 +297,19 @@ esp_err_t esp_flash_init_default_chip(void)
     cfg.iomux = esp_rom_efuse_get_flash_gpio_info() == 0 ?  true : false;
     #endif
 
+    #if CONFIG_ESPTOOLPY_OCT_FLASH
+    cfg.octal_mode_en = 1;
+    cfg.default_io_mode = DEFAULT_FLASH_MODE;
+    #endif
+
+    // For chips need time tuning, get value directely from system here.
+    #if SOC_SPI_MEM_SUPPORT_TIME_TUNING
+    if (spi_timine_config_flash_is_tuned()) {
+        cfg.using_timing_tuning = 1;
+        spi_timing_get_flash_timing_param(&cfg.timing_reg);
+    }
+    #endif // SOC_SPI_MEM_SUPPORT_TIME_TUNING
+
     //the host is already initialized, only do init for the data and load it to the host
     esp_err_t err = memspi_host_init_pointers(&esp_flash_default_host, &cfg);
     if (err != ESP_OK) {
@@ -298,7 +318,7 @@ esp_err_t esp_flash_init_default_chip(void)
 
     // ROM TODO: account for non-standard default pins in efuse
     // ROM TODO: to account for chips which are slow to power on, maybe keep probing in a loop here
-    err = esp_flash_init(&default_chip);
+    err = esp_flash_init_main(&default_chip);
     if (err != ESP_OK) {
         return err;
     }

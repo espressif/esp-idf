@@ -21,3 +21,9 @@
 #define HAL_LOGI(...)    ESP_LOGI(__VA_ARGS__)
 #define HAL_LOGD(...)    ESP_LOGD(__VA_ARGS__)
 #define HAL_LOGV(...)    ESP_LOGV(__VA_ARGS__)
+
+#define HAL_EARLY_LOGE(...)    ESP_EARLY_LOGE(__VA_ARGS__)
+#define HAL_EARLY_LOGW(...)    ESP_EARLY_LOGW(__VA_ARGS__)
+#define HAL_EARLY_LOGI(...)    ESP_EARLY_LOGI(__VA_ARGS__)
+#define HAL_EARLY_LOGD(...)    ESP_EARLY_LOGD(__VA_ARGS__)
+#define HAL_EARLY_LOGV(...)    ESP_EARLY_LOGV(__VA_ARGS__)

@@ -9,6 +9,7 @@
 #include "esp_err.h"
 #include "esp_lcd_types.h"
 #include "soc/soc_caps.h"
+#include "hal/lcd_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -130,6 +131,7 @@ esp_err_t esp_lcd_new_panel_io_i2c(esp_lcd_i2c_bus_handle_t bus, const esp_lcd_p
 typedef struct {
     int dc_gpio_num; /*!< GPIO used for D/C line */
     int wr_gpio_num; /*!< GPIO used for WR line */
+    lcd_clock_source_t clk_src; /*!< Clock source for the I80 LCD peripheral */
     int data_gpio_nums[SOC_LCD_I80_BUS_WIDTH]; /*!< GPIOs used for data lines */
     size_t bus_width;          /*!< Number of data lines, 8 or 16 */
     size_t max_transfer_bytes; /*!< Maximum transfer size, this determines the length of internal DMA link */
@@ -163,7 +165,7 @@ esp_err_t esp_lcd_del_i80_bus(esp_lcd_i80_bus_handle_t bus);
  * @brief Panel IO configuration structure, for intel 8080 interface
  */
 typedef struct {
-    int cs_gpio_num;         /*!< GPIO used for CS line */
+    int cs_gpio_num;         /*!< GPIO used for CS line, set to -1 will declaim exclusively use of I80 bus */
     unsigned int pclk_hz;    /*!< Frequency of pixel clock */
     size_t trans_queue_depth; /*!< Transaction queue size, larger queue, higher throughput */
     bool (*on_color_trans_done)(esp_lcd_panel_io_handle_t panel_io, void *user_data, void *event_data); /*!< Callback, invoked when color data was tranferred done */

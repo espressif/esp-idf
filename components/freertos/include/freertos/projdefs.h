@@ -1,5 +1,5 @@
 /*
- * FreeRTOS Kernel V10.2.1
+ * FreeRTOS Kernel V10.4.3
  * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -37,13 +37,13 @@ typedef void (* TaskFunction_t)( void * );
  * overridden by a macro of the same name defined in FreeRTOSConfig.h in case the
  * definition here is not suitable for your application. */
 #ifndef pdMS_TO_TICKS
-    #define pdMS_TO_TICKS( xTimeInMs )    ( ( TickType_t ) ( ( ( TickType_t ) ( xTimeInMs ) * ( TickType_t ) configTICK_RATE_HZ ) / ( TickType_t ) 1000 ) )
+    #define pdMS_TO_TICKS( xTimeInMs )    ( ( TickType_t ) ( ( ( TickType_t ) ( xTimeInMs ) * ( TickType_t ) configTICK_RATE_HZ ) / ( TickType_t ) 1000U ) )
 #endif
-
+#ifdef ESP_PLATFORM
 #ifndef pdTICKS_TO_MS
     #define pdTICKS_TO_MS( xTicks )   ( ( uint32_t ) ( xTicks ) * 1000 / configTICK_RATE_HZ )
 #endif
-
+#endif // ESP_PLATFORM
 
 #define pdFALSE                                  ( ( BaseType_t ) 0 )
 #define pdTRUE                                   ( ( BaseType_t ) 1 )

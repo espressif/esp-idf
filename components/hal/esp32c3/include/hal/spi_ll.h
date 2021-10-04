@@ -27,6 +27,7 @@
 #include "esp_attr.h"
 #include "esp_types.h"
 #include "soc/spi_periph.h"
+#include "soc/spi_struct.h"
 #include "soc/lldesc.h"
 #include "hal/assert.h"
 #include "hal/misc.h"
@@ -901,13 +902,13 @@ static inline void spi_ll_set_command(spi_dev_t *hw, uint16_t cmd, int cmdlen, b
 {
     if (lsbfirst) {
         // The output command start from bit0 to bit 15, kept as is.
-        hw->user2.usr_command_value = cmd;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->user2, usr_command_value, cmd);
     } else {
         /* Output command will be sent from bit 7 to 0 of command_value, and
          * then bit 15 to 8 of the same register field. Shift and swap to send
          * more straightly.
          */
-        hw->user2.usr_command_value = HAL_SPI_SWAP_DATA_TX(cmd, cmdlen);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->user2, usr_command_value, HAL_SPI_SWAP_DATA_TX(cmd, cmdlen));
     }
 }
 
@@ -923,7 +924,7 @@ static inline void spi_ll_set_command(spi_dev_t *hw, uint16_t cmd, int cmdlen, b
 static inline void spi_ll_set_dummy(spi_dev_t *hw, int dummy_n)
 {
     hw->user.usr_dummy = dummy_n ? 1 : 0;
-    hw->user1.usr_dummy_cyclelen = dummy_n - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->user1, usr_dummy_cyclelen, dummy_n - 1);
 }
 
 /**

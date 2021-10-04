@@ -16,6 +16,7 @@
 #include "spi_flash_chip_generic.h"
 #include "spi_flash_defs.h"
 #include "esp_log.h"
+#include "hal/spi_flash_hal.h"
 
 /* Driver for MXIC flash chip */
 
@@ -24,6 +25,10 @@ esp_err_t spi_flash_chip_mxic_probe(esp_flash_t *chip, uint32_t flash_id)
     /* Check manufacturer and product IDs match our desired masks */
     const uint8_t MFG_ID = 0xC2;
     if (flash_id >> 16 != MFG_ID) {
+        return ESP_ERR_NOT_FOUND;
+    }
+    if (chip->read_mode >= SPI_FLASH_OPI_FLAG) {
+        // The code here serve for ordinary mxic chip. If opi mode has been selected, go `spi_flash_chip_mxic_opi.c`
         return ESP_ERR_NOT_FOUND;
     }
 
@@ -39,13 +44,6 @@ esp_err_t spi_flash_chip_issi_get_io_mode(esp_flash_t *chip, esp_flash_io_mode_t
 #define spi_flash_chip_mxic_read_reg        spi_flash_chip_generic_read_reg
 
 static const char chip_name[] = "mxic";
-
-esp_err_t spi_flash_chip_mxic_read_unique_id(esp_flash_t *chip, uint64_t* flash_unique_id)
-{
-    //MXIC not support read unique id.
-    ESP_LOGE(chip_name, "chip %s doesn't support reading unique id", chip->chip_drv->name);
-    return ESP_ERR_NOT_SUPPORTED;
-}
 
 spi_flash_caps_t spi_flash_chip_mxic_get_caps(esp_flash_t *chip)
 {
@@ -91,6 +89,7 @@ const spi_flash_chip_t esp_flash_chip_mxic = {
     .read_reg = spi_flash_chip_mxic_read_reg,
     .yield = spi_flash_chip_generic_yield,
     .sus_setup = spi_flash_chip_generic_suspend_cmd_conf,
-    .read_unique_id = spi_flash_chip_mxic_read_unique_id,
+    .read_unique_id = spi_flash_chip_generic_read_unique_id_none,
     .get_chip_caps = spi_flash_chip_mxic_get_caps,
+    .config_host_io_mode = spi_flash_chip_generic_config_host_io_mode,
 };

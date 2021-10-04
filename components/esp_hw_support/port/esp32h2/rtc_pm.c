@@ -8,7 +8,7 @@
 #include <assert.h>
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
-#include "soc/apb_ctrl_reg.h"
+#include "soc/syscon_reg.h"
 
 typedef enum {
     PM_LIGHT_SLEEP = BIT(2),        /*!< WiFi PD, memory in light sleep */
@@ -44,7 +44,7 @@ pm_sw_reject_t pm_set_sleep_mode(pm_sleep_mode_t sleep_mode, void(*pmac_save_par
 
     switch (sleep_mode) {
     case PM_LIGHT_SLEEP:
-        cfg.wifi_pd_en = 1;
+        // cfg.wifi_pd_en = 1; // ESP32-H2 TO-DO: IDF-3693
         cfg.dig_dbias_wak = 4;
         cfg.dig_dbias_slp = 0;
         cfg.rtc_dbias_wak = 0;

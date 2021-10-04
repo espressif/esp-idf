@@ -121,13 +121,6 @@ menu "Example Configuration"
             help
                 Length of UART event queue.
 
-        config EXAMPLE_MODEM_UART_PATTERN_QUEUE_SIZE
-            int "UART Pattern Queue Size"
-            range 10 40
-            default 20
-            help
-                Length of UART pattern queue.
-
         config EXAMPLE_MODEM_UART_TX_BUFFER_SIZE
             int "UART TX Buffer Size"
             range 256 2048

@@ -15,7 +15,7 @@
 #include "esp_log.h"
 #include "soc/efuse_periph.h"
 #include "bootloader_random.h"
-#include "soc/apb_ctrl_reg.h"
+#include "soc/syscon_reg.h"
 #include "sys/param.h"
 
 static __attribute__((unused)) const char *TAG = "efuse";

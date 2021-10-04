@@ -288,7 +288,7 @@ uint32_t get_rtc_dbias_by_efuse(uint8_t chip_version, uint32_t dig_dbias)
     signed int k_dig_ldo_real_mul10000 = K_DIG_MID_MUL10000 + k_dig_ldo;
     uint32_t v_dig_nearest_1v15_mul10000 = v_dig_dbias20_real_mul10000 + k_dig_ldo_real_mul10000 * (dig_dbias - 20);
     uint32_t v_rtc_nearest_1v15_mul10000 = 0;
-    for (rtc_dbias = 15; rtc_dbias < 32; rtc_dbias++) {
+    for (rtc_dbias = 15; rtc_dbias < 31; rtc_dbias++) {
         v_rtc_nearest_1v15_mul10000 = v_rtc_dbias20_real_mul10000 + k_rtc_ldo_real_mul10000 * (rtc_dbias - 20);
         if (v_rtc_nearest_1v15_mul10000 >= v_dig_nearest_1v15_mul10000 - 250)
             break;

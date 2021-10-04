@@ -19,6 +19,11 @@ entries:
         esp_clk:esp_clk_slowclk_cal_set (noflash)
         esp_clk:esp_clk_slowclk_cal_get (noflash)
         esp_clk:esp_rtc_get_time_us (noflash)
+        if GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL = y:
+            sleep_gpio:gpio_sleep_mode_config_apply (noflash)
+        if IDF_TARGET_ESP32 = n && IDF_TARGET_ESP32S2 = n:
+            sleep_retention:sleep_enable_memory_retention (noflash)
+            sleep_retention:cpu_domain_pd_allowed (noflash)
 
 [mapping:esp_system_pm]
 archive: libesp_system.a
@@ -72,3 +77,5 @@ entries:
             gpio_hal_workaround:gpio_hal_fun_pupd_restore           (noflash)
     if PM_SLP_IRAM_OPT = y && PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP = y:
         rtc_cntl_hal:rtc_cntl_hal_enable_cpu_retention (noflash)
+    if PM_SLP_IRAM_OPT = y && PM_POWER_DOWN_TAGMEM_IN_LIGHT_SLEEP = y:
+        rtc_cntl_hal:rtc_cntl_hal_enable_tagmem_retention (noflash)

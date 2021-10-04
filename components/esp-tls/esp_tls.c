@@ -38,9 +38,12 @@ static const char *TAG = "esp-tls";
 #define _esp_tls_write                      esp_mbedtls_write
 #define _esp_tls_conn_delete                esp_mbedtls_conn_delete
 #define _esp_tls_net_init                   esp_mbedtls_net_init
+#define _esp_tls_get_client_session         esp_mbedtls_get_client_session
 #ifdef CONFIG_ESP_TLS_SERVER
 #define _esp_tls_server_session_create      esp_mbedtls_server_session_create
 #define _esp_tls_server_session_delete      esp_mbedtls_server_session_delete
+#define _esp_tls_server_session_ticket_ctx_init    esp_mbedtls_server_session_ticket_ctx_init
+#define _esp_tls_server_session_ticket_ctx_free    esp_mbedtls_server_session_ticket_ctx_free
 #endif  /* CONFIG_ESP_TLS_SERVER */
 #define _esp_tls_get_bytes_avail            esp_mbedtls_get_bytes_avail
 #define _esp_tls_init_global_ca_store       esp_mbedtls_init_global_ca_store
@@ -568,7 +571,45 @@ mbedtls_x509_crt *esp_tls_get_global_ca_store(void)
 }
 
 #endif /* CONFIG_ESP_TLS_USING_MBEDTLS */
+
+#ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+esp_tls_client_session_t *esp_tls_get_client_session(esp_tls_t *tls)
+{
+    return _esp_tls_get_client_session(tls);
+}
+#endif /* CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS */
+
+
 #ifdef CONFIG_ESP_TLS_SERVER
+esp_err_t esp_tls_cfg_server_session_tickets_init(esp_tls_cfg_server_t *cfg)
+{
+#if defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
+    if (!cfg || cfg->ticket_ctx) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    cfg->ticket_ctx = calloc(1, sizeof(esp_tls_server_session_ticket_ctx_t));
+    if (!cfg->ticket_ctx) {
+        return ESP_ERR_NO_MEM;
+    }
+    esp_err_t ret =  _esp_tls_server_session_ticket_ctx_init(cfg->ticket_ctx);
+    if (ret != ESP_OK) {
+        free(cfg->ticket_ctx);
+    }
+    return ret;
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+}
+
+void esp_tls_cfg_server_session_tickets_free(esp_tls_cfg_server_t *cfg)
+{
+#if defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
+    if (cfg && cfg->ticket_ctx) {
+        _esp_tls_server_session_ticket_ctx_free(cfg->ticket_ctx);
+    }
+#endif
+}
+
 /**
  * @brief      Create a server side TLS/SSL connection
  */

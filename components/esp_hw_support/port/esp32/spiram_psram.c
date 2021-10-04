@@ -195,6 +195,13 @@ typedef struct {
 
 static void IRAM_ATTR psram_cache_init(psram_cache_mode_t psram_cache_mode, psram_vaddr_mode_t vaddrmode);
 
+static uint8_t s_psram_cs_io = (uint8_t)-1;
+
+uint8_t psram_get_cs_io(void)
+{
+    return s_psram_cs_io;
+}
+
 static void psram_clear_spi_fifo(psram_spi_num_t spi_num)
 {
     int i;
@@ -839,6 +846,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
         ESP_EARLY_LOGE(TAG, "Not a valid or known package id: %d", pkg_ver);
         abort();
     }
+    s_psram_cs_io = psram_io.psram_cs_io;
 
     const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
     if (spiconfig == ESP_ROM_EFUSE_FLASH_DEFAULT_SPI) {

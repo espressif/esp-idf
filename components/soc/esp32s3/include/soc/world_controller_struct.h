@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct world_controller_dev_s {
     uint32_t wcl_core_0_entry_1_addr;
     uint32_t wcl_core_0_entry_2_addr;
     uint32_t wcl_core_0_entry_3_addr;

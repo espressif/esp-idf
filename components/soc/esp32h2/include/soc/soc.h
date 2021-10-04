@@ -79,7 +79,6 @@
 #define DR_REG_SPI2_BASE                        0x60024000
 #define DR_REG_SPI3_BASE                        0x60025000
 #define DR_REG_SYSCON_BASE                      0x60026000
-#define DR_REG_APB_CTRL_BASE                    0x60026000    /* Old name for SYSCON, to be removed */
 #define DR_REG_I2C1_EXT_BASE                    0x60027000
 #define DR_REG_SDMMC_BASE                       0x60028000
 #define DR_REG_CAN_BASE                         0x6002B000
@@ -228,10 +227,10 @@
 #if CONFIG_IDF_ENV_FPGA
 #define  APB_CLK_FREQ                                ( 32*1000000 )
 #else
-#define  APB_CLK_FREQ                                ( 80*1000000 )
+#define  APB_CLK_FREQ                                ( 48*1000000 )         //ESP32H2-TODO: IDF-3786
 #endif
 #define  REF_CLK_FREQ                                ( 1000000 )
-#define  RTC_CLK_FREQ                                (20*1000000)
+#define  RTC_CLK_FREQ                                (17.5*1000000)
 #define  XTAL_CLK_FREQ                               (32*1000000)
 #define  UART_CLK_FREQ                               APB_CLK_FREQ
 #define  WDT_CLK_FREQ                                APB_CLK_FREQ
@@ -297,56 +296,13 @@
 // Start (highest address) of ROM boot stack, only relevant during early boot
 #define SOC_ROM_STACK_START         0x3fcebf10
 
-//interrupt cpu using table, Please see the core-isa.h
-/*************************************************************************************************************
- *      Intr num                Level           Type                    PRO CPU usage
- *      0                       1               extern level            Panic
- *      1                       1               extern level            WMAC
- *      2                       1               extern level
- *      3                       1               extern level
- *      4                       1               extern level            WBB
- *      5                       1               extern level            BT/BLE Controller
- *      6                       1               timer                   FreeRTOS Tick(L1)
- *      7                       1               software
- *      8                       1               extern level            BT/BLE BB(RX/TX)
- *      9                       1               extern level
- *      10                      1               extern edge
- *      11                      3               profiling
- *      12                      1               extern level
- *      13                      1               extern level
- *      14                      7               nmi                     Reserved
- *      15                      3               timer                   FreeRTOS Tick(L3)
- *      16                      5               timer
- *      17                      1               extern level
- *      18                      1               extern level
- *      19                      2               extern level
- *      20                      2               extern level
- *      21                      2               extern level
- *      22                      3               extern edge
- *      23                      3               extern level
- *      24                      4               extern level            TG1_WDT
- *      25                      4               extern level            CACHEERR
- *      26                      5               extern level
- *      27                      3               extern level            Reserved
- *      28                      4               extern edge             Reserved
- *      29                      3               software                Reserved
- *      30                      4               extern edge             Reserved
- *      31                      5               extern level
- *************************************************************************************************************
- */
+//On RISC-V CPUs, the interrupt sources are all external interrupts, whose type, source and priority are configured by SW.
+//There is no HW NMI conception. SW should controlled the masked levels through INT_THRESH_REG.
 
-//CPU0 Interrupt number reserved, not touch this.
-#define ETS_WMAC_INUM                           1
-//#define ETS_BT_HOST_INUM                      1
-#define ETS_WBB_INUM                            4
-#define ETS_SYSTICK_INUM                        9
-#define ETS_TG0_T1_INUM                         10 /* use edge interrupt */
-#define ETS_CPU_INTR0_INUM                      12 /* used as freertos soft intr */
-#define ETS_FRC1_INUM                           22
+//CPU0 Interrupt number reserved in riscv/vector.S, not touch this.
 #define ETS_T1_WDT_INUM                         24
 #define ETS_CACHEERR_INUM                       25
 #define ETS_MEMPROT_ERR_INUM                    26
-
 //CPU0 Max valid interrupt number
 #define ETS_MAX_INUM                            31
 

@@ -35,7 +35,7 @@ extern "C" {
 /** TIMG_T0CONFIG_REG register
  *  Timer 0 configuration register
  */
-#define TIMG_T0CONFIG_REG (DR_REG_TIMG_BASE + 0x0)
+#define TIMG_T0CONFIG_REG(i) (DR_REG_TIMG_BASE(i) + 0x0)
 /** TIMG_T0_USE_XTAL : R/W; bitpos: [9]; default: 0;
  *  1: Use XTAL_CLK as the source clock of timer group. 0: Use APB_CLK as the source
  *  clock of timer group.
@@ -101,7 +101,7 @@ extern "C" {
 /** TIMG_T0LO_REG register
  *  Timer 0 current value, low 32 bits
  */
-#define TIMG_T0LO_REG (DR_REG_TIMG_BASE + 0x4)
+#define TIMG_T0LO_REG(i) (DR_REG_TIMG_BASE(i) + 0x4)
 /** TIMG_T0_LO : RO; bitpos: [31:0]; default: 0;
  *  After writing to TIMG_T0UPDATE_REG, the low 32 bits of the time-base counter
  *
@@ -115,7 +115,7 @@ extern "C" {
 /** TIMG_T0HI_REG register
  *  Timer 0 current value, high 32 bits
  */
-#define TIMG_T0HI_REG (DR_REG_TIMG_BASE + 0x8)
+#define TIMG_T0HI_REG(i) (DR_REG_TIMG_BASE(i) + 0x8)
 /** TIMG_T0_HI : RO; bitpos: [31:0]; default: 0;
  *  After writing to TIMG_T0UPDATE_REG, the high 32 bits of the time-base counter
  *
@@ -129,7 +129,7 @@ extern "C" {
 /** TIMG_T0UPDATE_REG register
  *  Write to copy current timer value to TIMGn_T0_(LO/HI)_REG
  */
-#define TIMG_T0UPDATE_REG (DR_REG_TIMG_BASE + 0xc)
+#define TIMG_T0UPDATE_REG(i) (DR_REG_TIMG_BASE(i) + 0xc)
 /** TIMG_T0_UPDATE : R/W; bitpos: [31]; default: 0;
  *  After writing 0 or 1 to TIMG_T0UPDATE_REG, the counter value is latched.
  */
@@ -141,7 +141,7 @@ extern "C" {
 /** TIMG_T0ALARMLO_REG register
  *  Timer 0 alarm value, low 32 bits
  */
-#define TIMG_T0ALARMLO_REG (DR_REG_TIMG_BASE + 0x10)
+#define TIMG_T0ALARMLO_REG(i) (DR_REG_TIMG_BASE(i) + 0x10)
 /** TIMG_T0_ALARM_LO : R/W; bitpos: [31:0]; default: 0;
  *  Timer 0 alarm trigger time-base counter value, low 32 bits.
  */
@@ -153,7 +153,7 @@ extern "C" {
 /** TIMG_T0ALARMHI_REG register
  *  Timer 0 alarm value, high bits
  */
-#define TIMG_T0ALARMHI_REG (DR_REG_TIMG_BASE + 0x14)
+#define TIMG_T0ALARMHI_REG(i) (DR_REG_TIMG_BASE(i) + 0x14)
 /** TIMG_T0_ALARM_HI : R/W; bitpos: [31:0]; default: 0;
  *
  *
@@ -167,7 +167,7 @@ extern "C" {
 /** TIMG_T0LOADLO_REG register
  *  Timer 0 reload value, low 32 bits
  */
-#define TIMG_T0LOADLO_REG (DR_REG_TIMG_BASE + 0x18)
+#define TIMG_T0LOADLO_REG(i) (DR_REG_TIMG_BASE(i) + 0x18)
 /** TIMG_T0_LOAD_LO : R/W; bitpos: [31:0]; default: 0;
  *
  *
@@ -183,7 +183,7 @@ extern "C" {
 /** TIMG_T0LOADHI_REG register
  *  Timer 0 reload value, high 32 bits
  */
-#define TIMG_T0LOADHI_REG (DR_REG_TIMG_BASE + 0x1c)
+#define TIMG_T0LOADHI_REG(i) (DR_REG_TIMG_BASE(i) + 0x1c)
 /** TIMG_T0_LOAD_HI : R/W; bitpos: [31:0]; default: 0;
  *
  *
@@ -199,7 +199,7 @@ extern "C" {
 /** TIMG_T0LOAD_REG register
  *  Write to reload timer from TIMG_T0_(LOADLOLOADHI)_REG
  */
-#define TIMG_T0LOAD_REG (DR_REG_TIMG_BASE + 0x20)
+#define TIMG_T0LOAD_REG(i) (DR_REG_TIMG_BASE(i) + 0x20)
 /** TIMG_T0_LOAD : WO; bitpos: [31:0]; default: 0;
  *
  *
@@ -213,7 +213,7 @@ extern "C" {
 /** TIMG_T1CONFIG_REG register
  *  Timer 1 configuration register
  */
-#define TIMG_T1CONFIG_REG (DR_REG_TIMG_BASE + 0x24)
+#define TIMG_T1CONFIG_REG(i) (DR_REG_TIMG_BASE(i) + 0x24)
 /** TIMG_T0_USE_XTAL : R/W; bitpos: [9]; default: 0;
  *  1: Use XTAL_CLK as the source clock of timer group. 0: Use APB_CLK as the source
  *  clock of timer group.
@@ -279,7 +279,7 @@ extern "C" {
 /** TIMG_T1LO_REG register
  *  Timer 1 current value, low 32 bits
  */
-#define TIMG_T1LO_REG (DR_REG_TIMG_BASE + 0x28)
+#define TIMG_T1LO_REG(i) (DR_REG_TIMG_BASE(i) + 0x28)
 /** TIMG_T0_LO : RO; bitpos: [31:0]; default: 0;
  *  After writing to TIMG_T1UPDATE_REG, the low 32 bits of the time-base counter
  *
@@ -293,7 +293,7 @@ extern "C" {
 /** TIMG_T1HI_REG register
  *  Timer 1 current value, high 32 bits
  */
-#define TIMG_T1HI_REG (DR_REG_TIMG_BASE + 0x2c)
+#define TIMG_T1HI_REG(i) (DR_REG_TIMG_BASE(i) + 0x2c)
 /** TIMG_T0_HI : RO; bitpos: [31:0]; default: 0;
  *  After writing to TIMG_T1UPDATE_REG, the high 32 bits of the time-base counter
  *
@@ -307,7 +307,7 @@ extern "C" {
 /** TIMG_T1UPDATE_REG register
  *  Write to copy current timer value to TIMGn_T1_(LO/HI)_REG
  */
-#define TIMG_T1UPDATE_REG (DR_REG_TIMG_BASE + 0x30)
+#define TIMG_T1UPDATE_REG(i) (DR_REG_TIMG_BASE(i) + 0x30)
 /** TIMG_T0_UPDATE : R/W; bitpos: [31]; default: 0;
  *  After writing 0 or 1 to TIMG_T1UPDATE_REG, the counter value is latched.
  */
@@ -319,7 +319,7 @@ extern "C" {
 /** TIMG_T1ALARMLO_REG register
  *  Timer 1 alarm value, low 32 bits
  */
-#define TIMG_T1ALARMLO_REG (DR_REG_TIMG_BASE + 0x34)
+#define TIMG_T1ALARMLO_REG(i) (DR_REG_TIMG_BASE(i) + 0x34)
 /** TIMG_T0_ALARM_LO : R/W; bitpos: [31:0]; default: 0;
  *  Timer 1 alarm trigger time-base counter value, low 32 bits.
  */
@@ -331,7 +331,7 @@ extern "C" {
 /** TIMG_T1ALARMHI_REG register
  *  Timer 1 alarm value, high bits
  */
-#define TIMG_T1ALARMHI_REG (DR_REG_TIMG_BASE + 0x38)
+#define TIMG_T1ALARMHI_REG(i) (DR_REG_TIMG_BASE(i) + 0x38)
 /** TIMG_T0_ALARM_HI : R/W; bitpos: [31:0]; default: 0;
  *
  *
@@ -345,7 +345,7 @@ extern "C" {
 /** TIMG_T1LOADLO_REG register
  *  Timer 1 reload value, low 32 bits
  */
-#define TIMG_T1LOADLO_REG (DR_REG_TIMG_BASE + 0x3c)
+#define TIMG_T1LOADLO_REG(i) (DR_REG_TIMG_BASE(i) + 0x3c)
 /** TIMG_T0_LOAD_LO : R/W; bitpos: [31:0]; default: 0;
  *
  *
@@ -361,7 +361,7 @@ extern "C" {
 /** TIMG_T1LOADHI_REG register
  *  Timer 1 reload value, high 32 bits
  */
-#define TIMG_T1LOADHI_REG (DR_REG_TIMG_BASE + 0x40)
+#define TIMG_T1LOADHI_REG(i) (DR_REG_TIMG_BASE(i) + 0x40)
 /** TIMG_T0_LOAD_HI : R/W; bitpos: [31:0]; default: 0;
  *
  *
@@ -377,7 +377,7 @@ extern "C" {
 /** TIMG_T1LOAD_REG register
  *  Write to reload timer from TIMG_T0_(LOADLOLOADHI)_REG
  */
-#define TIMG_T1LOAD_REG (DR_REG_TIMG_BASE + 0x44)
+#define TIMG_T1LOAD_REG(i) (DR_REG_TIMG_BASE(i) + 0x44)
 /** TIMG_T0_LOAD : WO; bitpos: [31:0]; default: 0;
  *
  *
@@ -391,7 +391,7 @@ extern "C" {
 /** TIMG_WDTCONFIG0_REG register
  *  Watchdog timer configuration register
  */
-#define TIMG_WDTCONFIG0_REG (DR_REG_TIMG_BASE + 0x48)
+#define TIMG_WDTCONFIG0_REG(i) (DR_REG_TIMG_BASE(i) + 0x48)
 /** TIMG_WDT_APPCPU_RESET_EN : R/W; bitpos: [12]; default: 0;
  *  Reserved
  */
@@ -492,7 +492,7 @@ extern "C" {
 /** TIMG_WDTCONFIG1_REG register
  *  Watchdog timer prescaler register
  */
-#define TIMG_WDTCONFIG1_REG (DR_REG_TIMG_BASE + 0x4c)
+#define TIMG_WDTCONFIG1_REG(i) (DR_REG_TIMG_BASE(i) + 0x4c)
 /** TIMG_WDT_CLK_PRESCALER : R/W; bitpos: [31:16]; default: 1;
  *  MWDT clock prescaler value. MWDT clock period = 12.5 ns *
  *
@@ -506,7 +506,7 @@ extern "C" {
 /** TIMG_WDTCONFIG2_REG register
  *  Watchdog timer stage 0 timeout value
  */
-#define TIMG_WDTCONFIG2_REG (DR_REG_TIMG_BASE + 0x50)
+#define TIMG_WDTCONFIG2_REG(i) (DR_REG_TIMG_BASE(i) + 0x50)
 /** TIMG_WDT_STG0_HOLD : R/W; bitpos: [31:0]; default: 26000000;
  *  Stage 0 timeout value, in MWDT clock cycles.
  */
@@ -518,7 +518,7 @@ extern "C" {
 /** TIMG_WDTCONFIG3_REG register
  *  Watchdog timer stage 1 timeout value
  */
-#define TIMG_WDTCONFIG3_REG (DR_REG_TIMG_BASE + 0x54)
+#define TIMG_WDTCONFIG3_REG(i) (DR_REG_TIMG_BASE(i) + 0x54)
 /** TIMG_WDT_STG1_HOLD : R/W; bitpos: [31:0]; default: 134217727;
  *  Stage 1 timeout value, in MWDT clock cycles.
  */
@@ -530,7 +530,7 @@ extern "C" {
 /** TIMG_WDTCONFIG4_REG register
  *  Watchdog timer stage 2 timeout value
  */
-#define TIMG_WDTCONFIG4_REG (DR_REG_TIMG_BASE + 0x58)
+#define TIMG_WDTCONFIG4_REG(i) (DR_REG_TIMG_BASE(i) + 0x58)
 /** TIMG_WDT_STG2_HOLD : R/W; bitpos: [31:0]; default: 1048575;
  *  Stage 2 timeout value, in MWDT clock cycles.
  */
@@ -542,7 +542,7 @@ extern "C" {
 /** TIMG_WDTCONFIG5_REG register
  *  Watchdog timer stage 3 timeout value
  */
-#define TIMG_WDTCONFIG5_REG (DR_REG_TIMG_BASE + 0x5c)
+#define TIMG_WDTCONFIG5_REG(i) (DR_REG_TIMG_BASE(i) + 0x5c)
 /** TIMG_WDT_STG3_HOLD : R/W; bitpos: [31:0]; default: 1048575;
  *  Stage 3 timeout value, in MWDT clock cycles.
  */
@@ -554,7 +554,7 @@ extern "C" {
 /** TIMG_WDTFEED_REG register
  *  Write to feed the watchdog timer
  */
-#define TIMG_WDTFEED_REG (DR_REG_TIMG_BASE + 0x60)
+#define TIMG_WDTFEED_REG(i) (DR_REG_TIMG_BASE(i) + 0x60)
 /** TIMG_WDT_FEED : WO; bitpos: [31:0]; default: 0;
  *  Write any value to feed the MWDT. (WO)
  */
@@ -566,7 +566,7 @@ extern "C" {
 /** TIMG_WDTWPROTECT_REG register
  *  Watchdog write protect register
  */
-#define TIMG_WDTWPROTECT_REG (DR_REG_TIMG_BASE + 0x64)
+#define TIMG_WDTWPROTECT_REG(i) (DR_REG_TIMG_BASE(i) + 0x64)
 /** TIMG_WDT_WKEY : R/W; bitpos: [31:0]; default: 1356348065;
  *  If the register contains a different value than its reset value, write
  *
@@ -639,7 +639,7 @@ extern "C" {
 /** TIMG_LACTCONFIG_REG register
  *  LACT configuration register
  */
-#define TIMG_LACTCONFIG_REG (DR_REG_TIMG_BASE + 0x70)
+#define TIMG_LACTCONFIG_REG(i) (DR_REG_TIMG_BASE(i) + 0x70)
 /** TIMG_LACT_USE_REFTICK : R/W; bitpos: [6]; default: 0;
  *  Reserved
  */
@@ -721,7 +721,7 @@ extern "C" {
 /** TIMG_LACTRTC_REG register
  *  LACT RTC register
  */
-#define TIMG_LACTRTC_REG (DR_REG_TIMG_BASE + 0x74)
+#define TIMG_LACTRTC_REG(i) (DR_REG_TIMG_BASE(i) + 0x74)
 /** TIMG_LACT_RTC_STEP_LEN : R/W; bitpos: [31:6]; default: 0;
  *  Reserved
  */
@@ -733,7 +733,7 @@ extern "C" {
 /** TIMG_LACTLO_REG register
  *  LACT low register
  */
-#define TIMG_LACTLO_REG (DR_REG_TIMG_BASE + 0x78)
+#define TIMG_LACTLO_REG(i) (DR_REG_TIMG_BASE(i) + 0x78)
 /** TIMG_LACT_LO : RO; bitpos: [31:0]; default: 0;
  *  Reserved
  */
@@ -745,7 +745,7 @@ extern "C" {
 /** TIMG_LACTHI_REG register
  *  LACT high register
  */
-#define TIMG_LACTHI_REG (DR_REG_TIMG_BASE + 0x7c)
+#define TIMG_LACTHI_REG(i) (DR_REG_TIMG_BASE(i) + 0x7c)
 /** TIMG_LACT_HI : RO; bitpos: [31:0]; default: 0;
  *  Reserved
  */
@@ -757,7 +757,7 @@ extern "C" {
 /** TIMG_LACTUPDATE_REG register
  *  LACT update register
  */
-#define TIMG_LACTUPDATE_REG (DR_REG_TIMG_BASE + 0x80)
+#define TIMG_LACTUPDATE_REG(i) (DR_REG_TIMG_BASE(i) + 0x80)
 /** TIMG_LACT_UPDATE : WO; bitpos: [31:0]; default: 0;
  *  Reserved
  */
@@ -769,7 +769,7 @@ extern "C" {
 /** TIMG_LACTALARMLO_REG register
  *  LACT alarm low register
  */
-#define TIMG_LACTALARMLO_REG (DR_REG_TIMG_BASE + 0x84)
+#define TIMG_LACTALARMLO_REG(i) (DR_REG_TIMG_BASE(i) + 0x84)
 /** TIMG_LACT_ALARM_LO : R/W; bitpos: [31:0]; default: 0;
  *  Reserved
  */
@@ -781,7 +781,7 @@ extern "C" {
 /** TIMG_LACTALARMHI_REG register
  *  LACT alarm high register
  */
-#define TIMG_LACTALARMHI_REG (DR_REG_TIMG_BASE + 0x88)
+#define TIMG_LACTALARMHI_REG(i) (DR_REG_TIMG_BASE(i) + 0x88)
 /** TIMG_LACT_ALARM_HI : R/W; bitpos: [31:0]; default: 0;
  *  Reserved
  */
@@ -793,7 +793,7 @@ extern "C" {
 /** TIMG_LACTLOADLO_REG register
  *  LACT load low register
  */
-#define TIMG_LACTLOADLO_REG (DR_REG_TIMG_BASE + 0x8c)
+#define TIMG_LACTLOADLO_REG(i) (DR_REG_TIMG_BASE(i) + 0x8c)
 /** TIMG_LACT_LOAD_LO : R/W; bitpos: [31:0]; default: 0;
  *  Reserved
  */
@@ -805,7 +805,7 @@ extern "C" {
 /** TIMG_LACTLOADHI_REG register
  *  Timer LACT load high register
  */
-#define TIMG_LACTLOADHI_REG (DR_REG_TIMG_BASE + 0x90)
+#define TIMG_LACTLOADHI_REG(i) (DR_REG_TIMG_BASE(i) + 0x90)
 /** TIMG_LACT_LOAD_HI : R/W; bitpos: [31:0]; default: 0;
  *  Reserved
  */
@@ -817,7 +817,7 @@ extern "C" {
 /** TIMG_LACTLOAD_REG register
  *  Timer LACT load register
  */
-#define TIMG_LACTLOAD_REG (DR_REG_TIMG_BASE + 0x94)
+#define TIMG_LACTLOAD_REG(i) (DR_REG_TIMG_BASE(i) + 0x94)
 /** TIMG_LACT_LOAD : WO; bitpos: [31:0]; default: 0;
  *  Reserved
  */
@@ -829,7 +829,7 @@ extern "C" {
 /** TIMG_INT_ENA_TIMERS_REG register
  *  Interrupt enable bits
  */
-#define TIMG_INT_ENA_TIMERS_REG (DR_REG_TIMG_BASE + 0x98)
+#define TIMG_INT_ENA_TIMERS_REG(i) (DR_REG_TIMG_BASE(i) + 0x98)
 /** TIMG_T0_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  The interrupt enable bit for the TIMG_T0_INT interrupt.
  */
@@ -862,7 +862,7 @@ extern "C" {
 /** TIMG_INT_RAW_TIMERS_REG register
  *  Raw interrupt status
  */
-#define TIMG_INT_RAW_TIMERS_REG (DR_REG_TIMG_BASE + 0x9c)
+#define TIMG_INT_RAW_TIMERS_REG(i) (DR_REG_TIMG_BASE(i) + 0x9c)
 /** TIMG_T0_INT_RAW : RO; bitpos: [0]; default: 0;
  *  The raw interrupt status bit for the TIMG_T0_INT interrupt.
  */
@@ -895,7 +895,7 @@ extern "C" {
 /** TIMG_INT_ST_TIMERS_REG register
  *  Masked interrupt status
  */
-#define TIMG_INT_ST_TIMERS_REG (DR_REG_TIMG_BASE + 0xa0)
+#define TIMG_INT_ST_TIMERS_REG(i) (DR_REG_TIMG_BASE(i) + 0xa0)
 /** TIMG_T0_INT_ST : RO; bitpos: [0]; default: 0;
  *  The masked interrupt status bit for the TIMG_T0_INT interrupt.
  */
@@ -928,7 +928,7 @@ extern "C" {
 /** TIMG_INT_CLR_TIMERS_REG register
  *  Interrupt clear bits
  */
-#define TIMG_INT_CLR_TIMERS_REG (DR_REG_TIMG_BASE + 0xa4)
+#define TIMG_INT_CLR_TIMERS_REG(i) (DR_REG_TIMG_BASE(i) + 0xa4)
 /** TIMG_T0_INT_CLR : WO; bitpos: [0]; default: 0;
  *  Set this bit to clear the TIMG_T0_INT interrupt.
  */
@@ -988,7 +988,7 @@ extern "C" {
 /** TIMG_TIMERS_DATE_REG register
  *  Version control register
  */
-#define TIMG_TIMERS_DATE_REG (DR_REG_TIMG_BASE + 0xf8)
+#define TIMG_TIMERS_DATE_REG(i) (DR_REG_TIMG_BASE(i) + 0xf8)
 /** TIMG_TIMERS_DATE : R/W; bitpos: [27:0]; default: 26243681;
  *  Version control register.
  */
@@ -1000,7 +1000,7 @@ extern "C" {
 /** TIMG_REGCLK_REG register
  *  Timer group clock gate register
  */
-#define TIMG_REGCLK_REG (DR_REG_TIMG_BASE + 0xfc)
+#define TIMG_REGCLK_REG(i) (DR_REG_TIMG_BASE(i) + 0xfc)
 /** TIMG_CLK_EN : R/W; bitpos: [31]; default: 0;
  *  Register clock gate signal. 1: Registers can be read and written to by software. 0:
  *  Registers can not be read or written to by software.

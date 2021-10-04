@@ -43,7 +43,7 @@ Each line of a .csv file should contain 4 parameters, separated by a comma. The 
 |     |           |                                                                      | Any values in these cells are ignored.              |
 +-----+-----------+----------------------------------------------------------------------+-----------------------------------------------------+
 
-.. note:: The first line of the CSV file should always be the column header and it is not configurable.
+.. note:: The first line of the CSV file should be the column header and it is not configurable. Comments (if provided) are allowed only as the first line of the CSV file, the following line then should always be the column header. Comments should always start with the `#` symbol.
 
 Below is an example dump of such a CSV file::
 
@@ -308,5 +308,5 @@ Caveats
 -------
 -  Utility does not check for duplicate keys and will write data pertaining to both keys. You need to make sure that the keys are distinct.
 -  Once a new page is created, no data will be written in the space left on the previous page. Fields in the CSV file need to be ordered in such a way as to optimize memory.
+-  Utility supports using multiline strings with ``file`` type and singleline strings with ``data`` type in the CSV file.
 -  64-bit datatype is not yet supported.
-

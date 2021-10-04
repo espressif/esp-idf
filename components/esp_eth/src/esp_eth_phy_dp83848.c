@@ -189,6 +189,11 @@ static esp_err_t dp83848_reset_hw(esp_eth_phy_t *phy)
     return ESP_OK;
 }
 
+/**
+ * @note This function is responsible for restarting a new auto-negotiation,
+ *       the result of negotiation won't be relected to uppler layers.
+ *       Instead, the negotiation result is fetched by linker timer, see `dp83848_get_link()`
+ */
 static esp_err_t dp83848_negotiate(esp_eth_phy_t *phy)
 {
     esp_err_t ret = ESP_OK;
@@ -216,8 +221,7 @@ static esp_err_t dp83848_negotiate(esp_eth_phy_t *phy)
             break;
         }
     }
-    /* Auto negotiation failed, maybe no network cable plugged in, so output a warning */
-    if (to >= dp83848->autonego_timeout_ms / 100) {
+    if ((to >= dp83848->autonego_timeout_ms / 100) && (dp83848->link_status == ETH_LINK_UP)) {
         ESP_LOGW(TAG, "auto negotiation timeout");
     }
     return ESP_OK;
@@ -306,6 +310,25 @@ err:
     return ret;
 }
 
+static esp_err_t dp83848_loopback(esp_eth_phy_t *phy, bool enable)
+{
+    esp_err_t ret = ESP_OK;
+    phy_dp83848_t *dp83848 = __containerof(phy, phy_dp83848_t, parent);
+    esp_eth_mediator_t *eth = dp83848->eth;
+    /* Set Loopback function */
+    bmcr_reg_t bmcr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+    if (enable) {
+        bmcr.en_loopback = 1;
+    } else {
+        bmcr.en_loopback = 0;
+    }
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, dp83848->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+    return ESP_OK;
+err:
+    return ret;
+}
+
 static esp_err_t dp83848_init(esp_eth_phy_t *phy)
 {
     esp_err_t ret = ESP_OK;
@@ -362,6 +385,7 @@ esp_eth_phy_t *esp_eth_phy_new_dp83848(const eth_phy_config_t *config)
     dp83848->parent.get_addr = dp83848_get_addr;
     dp83848->parent.set_addr = dp83848_set_addr;
     dp83848->parent.advertise_pause_ability = dp83848_advertise_pause_ability;
+    dp83848->parent.loopback = dp83848_loopback;
     dp83848->parent.del = dp83848_del;
     return &(dp83848->parent);
 err:

@@ -22,7 +22,8 @@ idf_build_get_property(config_dir CONFIG_DIR)
 # Preprocess memory.ld.in linker script to include configuration, becomes memory.ld
 add_custom_command(
     OUTPUT ${ld_output}
-    COMMAND "${CMAKE_C_COMPILER}" -C -P -x c -E -o ${ld_output} -I ${config_dir} ${ld_input}
+    COMMAND "${CMAKE_C_COMPILER}" -C -P -x c -E -o ${ld_output} -I ${config_dir}
+            -I "${CMAKE_CURRENT_LIST_DIR}" ${ld_input}
     MAIN_DEPENDENCY ${ld_input}
     DEPENDS ${sdkconfig_header}
     COMMENT "Generating memory.ld linker script..."

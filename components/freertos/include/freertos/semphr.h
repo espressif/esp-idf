@@ -1,5 +1,5 @@
 /*
- * FreeRTOS Kernel V10.2.1
+ * FreeRTOS Kernel V10.4.3
  * Copyright (C) 2020 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -42,9 +42,9 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /** @cond */
 /**
  * semphr. h
- * <pre>
+ * @code{c}
  * vSemaphoreCreateBinary( SemaphoreHandle_t xSemaphore );
- * </pre>
+ * @endcode
  *
  * In many usage scenarios it is faster and more memory efficient to use a
  * direct to task notification in place of a binary semaphore!
@@ -72,7 +72,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  * @param xSemaphore Handle to the created semaphore.  Should be of type SemaphoreHandle_t.
  *
  * Example usage:
- * <pre>
+ * @code{c}
  * SemaphoreHandle_t xSemaphore = NULL;
  *
  * void vATask( void * pvParameters )
@@ -87,7 +87,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  *      // The semaphore can now be used.
  *  }
  * }
- * </pre>
+ * @endcode
  * @cond
  * \defgroup vSemaphoreCreateBinary vSemaphoreCreateBinary
  * @endcond
@@ -108,9 +108,9 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /**
  * @cond
  * semphr. h
- * <pre>
+ * @code{c}
  * SemaphoreHandle_t xSemaphoreCreateBinary( void );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Creates a new binary semaphore instance, and returns a handle by which the
@@ -175,9 +175,9 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /**
  * @cond
  * semphr. h
- * <pre>
+ * @code{c}
  * SemaphoreHandle_t xSemaphoreCreateBinaryStatic( StaticSemaphore_t *pxSemaphoreBuffer );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Creates a new binary semaphore instance, and returns a handle by which the
@@ -241,12 +241,12 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /**
  * @cond
  * semphr. h
- * <pre>
+ * @code{c}
  * xSemaphoreTake(
  *                   SemaphoreHandle_t xSemaphore,
  *                   TickType_t xBlockTime
  *               );
- * </pre>
+ * @endcode
  * @endcond
  *
  * <i>Macro</i> to obtain a semaphore.  The semaphore must have previously been
@@ -312,6 +312,16 @@ typedef QueueHandle_t SemaphoreHandle_t;
 #define xSemaphoreTake( xSemaphore, xBlockTime )    xQueueSemaphoreTake( ( xSemaphore ), ( xBlockTime ) )
 
 /**
+ * @cond
+ * semphr. h
+ * @code{c}
+ * xSemaphoreTakeRecursive(
+ *                          SemaphoreHandle_t xMutex,
+ *                          TickType_t xBlockTime
+ *                        );
+ * @endcode
+ * @endcond
+ *
  * <i>Macro</i> to recursively obtain, or 'take', a mutex type semaphore.
  * The mutex must have previously been created using a call to
  * xSemaphoreCreateRecursiveMutex();
@@ -400,22 +410,6 @@ typedef QueueHandle_t SemaphoreHandle_t;
  */
 #define xSemaphoreTakeRecursive( xMutex, xBlockTime )   xQueueTakeMutexRecursive( ( xMutex ), ( xBlockTime ) )
 
-/** @cond */
-/*
- * xSemaphoreAltTake() is an alternative version of xSemaphoreTake().
- *
- * The source code that implements the alternative (Alt) API is much
- * simpler  because it executes everything from within a critical section.
- * This is  the approach taken by many other RTOSes, but FreeRTOS.org has the
- * preferred fully featured API too.  The fully featured API has more
- * complex  code that takes longer to execute, but makes much less use of
- * critical sections.  Therefore the alternative API sacrifices interrupt
- * responsiveness to gain execution speed, whereas the fully featured API
- * sacrifices execution speed to ensure better interrupt responsiveness.
- */
-#define xSemaphoreAltTake( xSemaphore, xBlockTime )     xQueueAltGenericReceive( ( QueueHandle_t ) ( xSemaphore ), NULL, ( xBlockTime ), pdFALSE )
-/** @endcond */
-
 /**
  * <i>Macro</i> to release a semaphore.  The semaphore must have previously been
  * created with a call to xSemaphoreCreateBinary(), xSemaphoreCreateMutex() or
@@ -481,9 +475,9 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /**
  * @cond
  * semphr. h
- * <pre>
+ * @code{c}
  * xSemaphoreGiveRecursive( SemaphoreHandle_t xMutex );
- * </pre>
+ * @endcode
  * @endcond
  *
  * <i>Macro</i> to recursively release, or 'give', a mutex type semaphore.
@@ -568,23 +562,6 @@ typedef QueueHandle_t SemaphoreHandle_t;
  */
 #define xSemaphoreGiveRecursive( xMutex )   xQueueGiveMutexRecursive( ( xMutex ) )
 
-/** @cond */
-/*
- * xSemaphoreAltGive() is an alternative version of xSemaphoreGive().
- *
- * The source code that implements the alternative (Alt) API is much
- * simpler  because it executes everything from within a critical section.
- * This is  the approach taken by many other RTOSes, but FreeRTOS.org has the
- * preferred fully featured API too.  The fully featured API has more
- * complex  code that takes longer to execute, but makes much less use of
- * critical sections.  Therefore the alternative API sacrifices interrupt
- * responsiveness to gain execution speed, whereas the fully featured API
- * sacrifices execution speed to ensure better interrupt responsiveness.
- */
-#define xSemaphoreAltGive( xSemaphore )     xQueueAltGenericSend( ( QueueHandle_t ) ( xSemaphore ), NULL, semGIVE_BLOCK_TIME, queueSEND_TO_BACK )
-
-/** @endcond */
-
 /**
  * <i>Macro</i> to  release a semaphore.  The semaphore must have previously been
  * created with a call to xSemaphoreCreateBinary() or xSemaphoreCreateCounting().
@@ -607,8 +584,8 @@ typedef QueueHandle_t SemaphoreHandle_t;
  *
  * Example usage:
  * @code{c}
- *  \#define LONG_TIME 0xffff
- *  \#define TICKS_TO_WAIT  10
+ * #define LONG_TIME 0xffff
+ * #define TICKS_TO_WAIT  10
  * SemaphoreHandle_t xSemaphore = NULL;
  *
  * // Repetitive task.
@@ -674,12 +651,12 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /**
  * @cond
  * semphr. h
- * <pre>
+ * @code{c}
  * xSemaphoreTakeFromISR(
  *                        SemaphoreHandle_t xSemaphore,
  *                        BaseType_t *pxHigherPriorityTaskWoken
  *                    );
- * </pre>
+ * @endcode
  * @endcond
  *
  * <i>Macro</i> to  take a semaphore from an ISR.  The semaphore must have
@@ -711,9 +688,9 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /**
  * @cond
  * semphr. h
- * <pre>
+ * @code{c}
  * SemaphoreHandle_t xSemaphoreCreateMutex( void );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Creates a new mutex type semaphore instance, and returns a handle by which
@@ -776,9 +753,9 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /**
  * @cond
  * semphr. h
- * <pre>
+ * @code{c}
  * SemaphoreHandle_t xSemaphoreCreateMutexStatic( StaticSemaphore_t *pxMutexBuffer );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Creates a new mutex type semaphore instance, and returns a handle by which
@@ -950,7 +927,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  * returned.
  *
  * Example usage:
- * @code
+ * @code{c}
  *  SemaphoreHandle_t xSemaphore;
  *  StaticSemaphore_t xMutexBuffer;
  *
@@ -976,9 +953,9 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /**
  * @cond
  * semphr. h
- * <pre>
+ * @code{c}
  * SemaphoreHandle_t xSemaphoreCreateCounting( UBaseType_t uxMaxCount, UBaseType_t uxInitialCount );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Creates a new counting semaphore instance, and returns a handle by which the
@@ -1062,9 +1039,9 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /**
  * @cond
  * semphr. h
- * <pre>
+ * @code{c}
  * SemaphoreHandle_t xSemaphoreCreateCountingStatic( UBaseType_t uxMaxCount, UBaseType_t uxInitialCount, StaticSemaphore_t *pxSemaphoreBuffer );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Creates a new counting semaphore instance, and returns a handle by which the
@@ -1153,9 +1130,9 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /**
  * @cond
  * semphr. h
- * <pre>
+ * @code{c}
  * void vSemaphoreDelete( SemaphoreHandle_t xSemaphore );
- * </pre>
+ * @endcode
  * @endcond
  *
  * Delete a semaphore.  This function must be used with care.  For example,
@@ -1173,9 +1150,9 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /**
  * @cond
  * semphr.h
- * <pre>
+ * @code{c}
  * TaskHandle_t xSemaphoreGetMutexHolder( SemaphoreHandle_t xMutex );
- * </pre>
+ * @endcode
  * @endcond
  *
  * If xMutex is indeed a mutex type semaphore, return the current mutex holder.
@@ -1192,9 +1169,9 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /**
  * @cond
  * semphr.h
- * <pre>
+ * @code{c}
  * TaskHandle_t xSemaphoreGetMutexHolderFromISR( SemaphoreHandle_t xMutex );
- * </pre>
+ * @endcode
  * @endcond
  *
  * If xMutex is indeed a mutex type semaphore, return the current mutex holder.
@@ -1207,9 +1184,9 @@ typedef QueueHandle_t SemaphoreHandle_t;
 /**
  * @cond
  * semphr.h
- * <pre>
+ * @code{c}
  * UBaseType_t uxSemaphoreGetCount( SemaphoreHandle_t xSemaphore );
- * </pre>
+ * @endcode
  * @endcond
  *
  * If the semaphore is a counting semaphore then uxSemaphoreGetCount() returns

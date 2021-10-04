@@ -51,20 +51,41 @@ typedef struct {
     uint32_t flags;             ///< Flags for configurations with one set of driver code. (e.g. QPI mode, auto-suspend mode, 64-bit address mode, etc.)
 #define SPI_FLASH_HOST_CONTEXT_FLAG_AUTO_SUSPEND         BIT(0)  ///< When the auto-suspend is setup in configuration.
 #define SPI_FLASH_HOST_CONTEXT_FLAG_AUTO_RESUME          BIT(1)  ///< Setup auto-resume feature.
+#define SPI_FLASH_HOST_CONTEXT_FLAG_OCTAL_MODE           BIT(2)  ///< Flash works under octal spi mode.
     spi_flash_sus_cmd_conf sus_cfg;        ///< To store suspend command/mask information.
+    uint32_t slicer_flags;      /// Slicer flags for configuring how to slice data correctly while reading or writing.
+#define SPI_FLASH_HOST_CONTEXT_SLICER_FLAG_DTR           BIT(0)  ///< Slice data according to DTR mode, the address and length must be even (A0=0).
 } spi_flash_hal_context_t;
-_Static_assert(sizeof(spi_flash_hal_context_t) == 36, "size of spi_flash_hal_context_t incorrect. Please check data compatibility with the ROM");
+_Static_assert(sizeof(spi_flash_hal_context_t) == 40, "size of spi_flash_hal_context_t incorrect. Please check data compatibility with the ROM");
+
+/// This struct provide MSPI Flash necessary timing related config, should be consistent with that in union in `spi_flash_hal_config_t`.
+typedef struct {
+    uint32_t extra_dummy;
+    uint32_t cs_hold;
+    uint8_t cs_setup;
+    spi_flash_ll_clock_reg_t clock_config;
+} spi_flash_hal_timing_config_t;
 
 /// Configuration structure for the SPI driver.
 typedef struct {
-    spi_host_device_t host_id;            ///< SPI peripheral ID.
-    int cs_num;             ///< Which cs pin is used, 0-(SOC_SPI_PERIPH_CS_NUM-1).
+    union {
+        struct {
+            uint32_t extra_dummy;   ///< extra dummy for timing compensation.
+            uint32_t cs_hold;       ///< CS hold time config used by the host
+            uint8_t cs_setup;       ///< (cycles-1) of prepare phase by spi clock
+            spi_flash_ll_clock_reg_t clock_config;  ///< (optional) Clock configuration for Octal flash.
+        };
+        spi_flash_hal_timing_config_t timing_reg;  ///< Reconfigure timing tuning regs.
+    };
     bool iomux;             ///< Whether the IOMUX is used, used for timing compensation.
     int input_delay_ns;     ///< Input delay on the MISO pin after the launch clock, used for timing compensation.
     esp_flash_speed_t speed;///< SPI flash clock speed to work at.
-    uint32_t cs_hold;       ///< CS hold time config used by the host
-    uint8_t cs_setup;       ///< (cycles-1) of prepare phase by spi clock
+    spi_host_device_t host_id;            ///< SPI peripheral ID.
+    int cs_num;             ///< Which cs pin is used, 0-(SOC_SPI_PERIPH_CS_NUM-1).
     bool auto_sus_en;       ///< Auto suspend feature enable bit 1: enable, 0: disable.
+    bool octal_mode_en;     ///< Octal spi flash mode enable bit 1: enable, 0: disable.
+    bool using_timing_tuning;               ///< System exist SPI0/1 timing tuning, using value from system directely if set to 1.
+    esp_flash_io_mode_t default_io_mode;        ///< Default flash io mode.
 } spi_flash_hal_config_t;
 
 /**

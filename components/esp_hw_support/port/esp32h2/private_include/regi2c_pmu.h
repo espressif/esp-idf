@@ -1,0 +1,280 @@
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define I2C_PMU           0x6d
+#define I2C_PMU_HOSTID    0
+
+#define I2C_PMU_THRES_HIGH_7_0        0
+#define I2C_PMU_THRES_HIGH_7_0_MSB    7
+#define I2C_PMU_THRES_HIGH_7_0_LSB    0
+
+#define I2C_PMU_THRES_LOW_7_0        1
+#define I2C_PMU_THRES_LOW_7_0_MSB    7
+#define I2C_PMU_THRES_LOW_7_0_LSB    0
+
+#define I2C_PMU_THRES_HIGH_11_8        2
+#define I2C_PMU_THRES_HIGH_11_8_MSB    3
+#define I2C_PMU_THRES_HIGH_11_8_LSB    0
+
+#define I2C_PMU_THRES_LOW_11_8        2
+#define I2C_PMU_THRES_LOW_11_8_MSB    7
+#define I2C_PMU_THRES_LOW_11_8_LSB    4
+
+#define I2C_PMU_PVT_DELAY_INIT        3
+#define I2C_PMU_PVT_DELAY_INIT_MSB    7
+#define I2C_PMU_PVT_DELAY_INIT_LSB    0
+
+#define I2C_PMU_PVT_DELAY_COUNT        4
+#define I2C_PMU_PVT_DELAY_COUNT_MSB    5
+#define I2C_PMU_PVT_DELAY_COUNT_LSB    0
+
+#define I2C_PMU_OR_EN_CONT_CAL        4
+#define I2C_PMU_OR_EN_CONT_CAL_MSB    7
+#define I2C_PMU_OR_EN_CONT_CAL_LSB    7
+
+#define I2C_PMU_I2C_RTC_DREG        5
+#define I2C_PMU_I2C_RTC_DREG_MSB    4
+#define I2C_PMU_I2C_RTC_DREG_LSB    0
+
+#define I2C_PMU_I2C_DIG_DREG        6
+#define I2C_PMU_I2C_DIG_DREG_MSB    4
+#define I2C_PMU_I2C_DIG_DREG_LSB    0
+
+#define I2C_PMU_I2C_RTC_DREG_SLP        7
+#define I2C_PMU_I2C_RTC_DREG_SLP_MSB    3
+#define I2C_PMU_I2C_RTC_DREG_SLP_LSB    0
+
+#define I2C_PMU_I2C_DIG_DREG_SLP        7
+#define I2C_PMU_I2C_DIG_DREG_SLP_MSB    7
+#define I2C_PMU_I2C_DIG_DREG_SLP_LSB    4
+
+#define I2C_PMU_EN_I2C_RTC_DREG        10
+#define I2C_PMU_EN_I2C_RTC_DREG_MSB    0
+#define I2C_PMU_EN_I2C_RTC_DREG_LSB    0
+
+#define I2C_PMU_EN_I2C_DIG_DREG        10
+#define I2C_PMU_EN_I2C_DIG_DREG_MSB    1
+#define I2C_PMU_EN_I2C_DIG_DREG_LSB    1
+
+#define I2C_PMU_EN_I2C_RTC_DREG_SLP        10
+#define I2C_PMU_EN_I2C_RTC_DREG_SLP_MSB    2
+#define I2C_PMU_EN_I2C_RTC_DREG_SLP_LSB    2
+
+#define I2C_PMU_EN_I2C_DIG_DREG_SLP        10
+#define I2C_PMU_EN_I2C_DIG_DREG_SLP_MSB    3
+#define I2C_PMU_EN_I2C_DIG_DREG_SLP_LSB    3
+
+#define I2C_PMU_ENX_RTC_DREG        11
+#define I2C_PMU_ENX_RTC_DREG_MSB    0
+#define I2C_PMU_ENX_RTC_DREG_LSB    0
+
+#define I2C_PMU_ENX_DIG_DREG        11
+#define I2C_PMU_ENX_DIG_DREG_MSB    1
+#define I2C_PMU_ENX_DIG_DREG_LSB    1
+
+#define I2C_PMU_OR_XPD_RTC_SLAVE_3P3        11
+#define I2C_PMU_OR_XPD_RTC_SLAVE_3P3_MSB    2
+#define I2C_PMU_OR_XPD_RTC_SLAVE_3P3_LSB    2
+
+#define I2C_PMU_OR_XPD_RTC_REG        11
+#define I2C_PMU_OR_XPD_RTC_REG_MSB    4
+#define I2C_PMU_OR_XPD_RTC_REG_LSB    4
+
+#define I2C_PMU_OR_XPD_DIG_REG        11
+#define I2C_PMU_OR_XPD_DIG_REG_MSB    5
+#define I2C_PMU_OR_XPD_DIG_REG_LSB    5
+
+#define I2C_PMU_OR_PD_RTC_REG_SLP        11
+#define I2C_PMU_OR_PD_RTC_REG_SLP_MSB    6
+#define I2C_PMU_OR_PD_RTC_REG_SLP_LSB    6
+
+#define I2C_PMU_OR_PD_DIG_REG_SLP        11
+#define I2C_PMU_OR_PD_DIG_REG_SLP_MSB    7
+#define I2C_PMU_OR_PD_DIG_REG_SLP_LSB    7
+
+#define I2C_PMU_INT_DREG        12
+#define I2C_PMU_INT_DREG_MSB    4
+#define I2C_PMU_INT_DREG_LSB    0
+
+#define I2C_PMU_O_UDF        12
+#define I2C_PMU_O_UDF_MSB    5
+#define I2C_PMU_O_UDF_LSB    5
+
+#define I2C_PMU_O_OVF        12
+#define I2C_PMU_O_OVF_MSB    6
+#define I2C_PMU_O_OVF_LSB    6
+
+#define I2C_PMU_O_UPDATE        12
+#define I2C_PMU_O_UPDATE_MSB    7
+#define I2C_PMU_O_UPDATE_LSB    7
+
+#define I2C_PMU_PVT_COUNT        13
+#define I2C_PMU_PVT_COUNT_MSB    7
+#define I2C_PMU_PVT_COUNT_LSB    0
+
+#define I2C_PMU_PVT_COUNT        14
+#define I2C_PMU_PVT_COUNT_MSB    3
+#define I2C_PMU_PVT_COUNT_LSB    0
+
+#define I2C_PMU_IC_VGOOD_LVDET        14
+#define I2C_PMU_IC_VGOOD_LVDET_MSB    4
+#define I2C_PMU_IC_VGOOD_LVDET_LSB    4
+
+#define I2C_PMU_IC_POWER_GOOD_DCDC        14
+#define I2C_PMU_IC_POWER_GOOD_DCDC_MSB    5
+#define I2C_PMU_IC_POWER_GOOD_DCDC_LSB    5
+
+#define I2C_PMU_IC_VGOOD_DIGDET        14
+#define I2C_PMU_IC_VGOOD_DIGDET_MSB    6
+#define I2C_PMU_IC_VGOOD_DIGDET_LSB    6
+
+#define I2C_PMU_OR_XPD_DCDC        15
+#define I2C_PMU_OR_XPD_DCDC_MSB    0
+#define I2C_PMU_OR_XPD_DCDC_LSB    0
+
+#define I2C_PMU_OR_DISALBE_DEEP_SLEEP_DCDC        15
+#define I2C_PMU_OR_DISALBE_DEEP_SLEEP_DCDC_MSB    1
+#define I2C_PMU_OR_DISALBE_DEEP_SLEEP_DCDC_LSB    1
+
+#define I2C_PMU_OR_DISALBE_LIGHT_SLEEP_DCDC        15
+#define I2C_PMU_OR_DISALBE_LIGHT_SLEEP_DCDC_MSB    2
+#define I2C_PMU_OR_DISALBE_LIGHT_SLEEP_DCDC_LSB    2
+
+#define I2C_PMU_OR_ENALBE_TRX_MODE_DCDC        15
+#define I2C_PMU_OR_ENALBE_TRX_MODE_DCDC_MSB    3
+#define I2C_PMU_OR_ENALBE_TRX_MODE_DCDC_LSB    3
+
+#define I2C_PMU_OR_ENX_REG_DCDC        15
+#define I2C_PMU_OR_ENX_REG_DCDC_MSB    4
+#define I2C_PMU_OR_ENX_REG_DCDC_LSB    4
+
+#define I2C_PMU_OR_UNLOCK_DCDC        15
+#define I2C_PMU_OR_UNLOCK_DCDC_MSB    5
+#define I2C_PMU_OR_UNLOCK_DCDC_LSB    5
+
+#define I2C_PMU_OR_FORCE_LOCK_DCDC        15
+#define I2C_PMU_OR_FORCE_LOCK_DCDC_MSB    6
+#define I2C_PMU_OR_FORCE_LOCK_DCDC_LSB    6
+
+#define I2C_PMU_OR_ENB_SLOW_CLK        15
+#define I2C_PMU_OR_ENB_SLOW_CLK_MSB    7
+#define I2C_PMU_OR_ENB_SLOW_CLK_LSB    7
+
+#define I2C_PMU_OC_SCK_DCAP        16
+#define I2C_PMU_OC_SCK_DCAP_MSB    7
+#define I2C_PMU_OC_SCK_DCAP_LSB    0
+
+#define I2C_PMU_OC_XPD_LVDET        17
+#define I2C_PMU_OC_XPD_LVDET_MSB    0
+#define I2C_PMU_OC_XPD_LVDET_LSB    0
+
+#define I2C_PMU_OC_MODE_LVDET        17
+#define I2C_PMU_OC_MODE_LVDET_MSB    1
+#define I2C_PMU_OC_MODE_LVDET_LSB    1
+
+#define I2C_PMU_OR_XPD_TRX        17
+#define I2C_PMU_OR_XPD_TRX_MSB    2
+#define I2C_PMU_OR_XPD_TRX_LSB    2
+
+#define I2C_PMU_OR_EN_RESET_CHIP        17
+#define I2C_PMU_OR_EN_RESET_CHIP_MSB    3
+#define I2C_PMU_OR_EN_RESET_CHIP_LSB    3
+
+#define I2C_PMU_OC_DREF_LVDET        17
+#define I2C_PMU_OC_DREF_LVDET_MSB    6
+#define I2C_PMU_OC_DREF_LVDET_LSB    4
+
+#define I2C_PMU_OR_FORCE_XPD_REG_SLAVE        17
+#define I2C_PMU_OR_FORCE_XPD_REG_SLAVE_MSB    7
+#define I2C_PMU_OR_FORCE_XPD_REG_SLAVE_LSB    7
+
+#define I2C_PMU_DTEST        18
+#define I2C_PMU_DTEST_MSB    1
+#define I2C_PMU_DTEST_LSB    0
+
+#define I2C_PMU_ENT_BIAS        18
+#define I2C_PMU_ENT_BIAS_MSB    2
+#define I2C_PMU_ENT_BIAS_LSB    2
+
+#define I2C_PMU_ENT_VDD        18
+#define I2C_PMU_ENT_VDD_MSB    5
+#define I2C_PMU_ENT_VDD_LSB    3
+
+#define I2C_PMU_EN_DMUX        18
+#define I2C_PMU_EN_DMUX_MSB    6
+#define I2C_PMU_EN_DMUX_LSB    6
+
+#define I2C_PMU_WD_DISABLE        18
+#define I2C_PMU_WD_DISABLE_MSB    7
+#define I2C_PMU_WD_DISABLE_LSB    7
+
+#define I2C_PMU_DTEST_DCDC        19
+#define I2C_PMU_DTEST_DCDC_MSB    0
+#define I2C_PMU_DTEST_DCDC_LSB    0
+
+#define I2C_PMU_TESTEN_DCDC        19
+#define I2C_PMU_TESTEN_DCDC_MSB    1
+#define I2C_PMU_TESTEN_DCDC_LSB    1
+
+#define I2C_PMU_ADD_DCDC        19
+#define I2C_PMU_ADD_DCDC_MSB    6
+#define I2C_PMU_ADD_DCDC_LSB    4
+
+#define I2C_PMU_OR_POCPENB_DCDC        20
+#define I2C_PMU_OR_POCPENB_DCDC_MSB    0
+#define I2C_PMU_OR_POCPENB_DCDC_LSB    0
+
+#define I2C_PMU_OR_SSTIME_DCDC        20
+#define I2C_PMU_OR_SSTIME_DCDC_MSB    1
+#define I2C_PMU_OR_SSTIME_DCDC_LSB    1
+
+#define I2C_PMU_OR_CCM_DCDC        20
+#define I2C_PMU_OR_CCM_DCDC_MSB    2
+#define I2C_PMU_OR_CCM_DCDC_LSB    2
+
+#define I2C_PMU_OR_VSET_LOW_DCDC        20
+#define I2C_PMU_OR_VSET_LOW_DCDC_MSB    7
+#define I2C_PMU_OR_VSET_LOW_DCDC_LSB    3
+
+#define I2C_PMU_OR_FSW_DCDC        21
+#define I2C_PMU_OR_FSW_DCDC_MSB    2
+#define I2C_PMU_OR_FSW_DCDC_LSB    0
+
+#define I2C_PMU_OR_DCMLEVEL_DCDC        21
+#define I2C_PMU_OR_DCMLEVEL_DCDC_MSB    4
+#define I2C_PMU_OR_DCMLEVEL_DCDC_LSB    3
+
+#define I2C_PMU_OR_DCM2ENB_DCDC        21
+#define I2C_PMU_OR_DCM2ENB_DCDC_MSB    5
+#define I2C_PMU_OR_DCM2ENB_DCDC_LSB    5
+
+#define I2C_PMU_OR_RAMP_DCDC        21
+#define I2C_PMU_OR_RAMP_DCDC_MSB    6
+#define I2C_PMU_OR_RAMP_DCDC_LSB    6
+
+#define I2C_PMU_OR_RAMPLEVEL_DCDC        21
+#define I2C_PMU_OR_RAMPLEVEL_DCDC_MSB    7
+#define I2C_PMU_OR_RAMPLEVEL_DCDC_LSB    7
+
+#define I2C_PMU_OR_VSET_HIGH_DCDC        22
+#define I2C_PMU_OR_VSET_HIGH_DCDC_MSB    4
+#define I2C_PMU_OR_VSET_HIGH_DCDC_LSB    0
+
+#define I2C_PMU_OC_DEL_SSEND        22
+#define I2C_PMU_OC_DEL_SSEND_MSB    7
+#define I2C_PMU_OC_DEL_SSEND_LSB    5
+
+#define I2C_PMU_OC_XPD_DIGDET        23
+#define I2C_PMU_OC_XPD_DIGDET_MSB    0
+#define I2C_PMU_OC_XPD_DIGDET_LSB    0
+
+#define I2C_PMU_OC_MODE_DIGDET        23
+#define I2C_PMU_OC_MODE_DIGDET_MSB    1
+#define I2C_PMU_OC_MODE_DIGDET_LSB    1
+
+#define I2C_PMU_OC_DREF_DIGDET        23
+#define I2C_PMU_OC_DREF_DIGDET_MSB    6
+#define I2C_PMU_OC_DREF_DIGDET_LSB    4

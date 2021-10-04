@@ -1604,6 +1604,11 @@ typedef struct httpd_ws_frame {
 } httpd_ws_frame_t;
 
 /**
+ * @brief Transfer complete callback
+ */
+typedef void (*transfer_complete_cb)(esp_err_t err, int socket, void *arg);
+
+/**
  * @brief Receive and parse a WebSocket frame
  *
  * @note    Calling httpd_ws_recv_frame() with max_len as 0 will give actual frame size in pkt->len.
@@ -1662,6 +1667,35 @@ esp_err_t httpd_ws_send_frame_async(httpd_handle_t hd, int fd, httpd_ws_frame_t 
  *  - HTTPD_WS_CLIENT_WEBSOCKET : This fd is an active client, protocol is WS
  */
 httpd_ws_client_info_t httpd_ws_get_fd_info(httpd_handle_t hd, int fd);
+
+/**
+ * @brief Sends data to to specified websocket synchronously
+ *
+ * @param[in] handle  Server instance data
+ * @param[in] socket  Socket descriptor
+ * @param[in] frame   Websocket frame
+ * @return
+ *  - ESP_OK                    : On successful
+ *  - ESP_FAIL                  : When socket errors occurs
+ *  - ESP_ERR_NO_MEM            : Unable to allocate memory
+ */
+esp_err_t httpd_ws_send_data(httpd_handle_t handle, int socket, httpd_ws_frame_t *frame);
+
+/**
+ * @brief Sends data to to specified websocket asynchronously
+ *
+ * @param[in] handle    Server instance data
+ * @param[in] socket    Socket descriptor
+ * @param[in] frame     Websocket frame
+ * @param[in] callback  Callback invoked after sending data
+ * @param[in] arg       User data passed to provided callback
+ * @return
+ *  - ESP_OK                    : On successful
+ *  - ESP_FAIL                  : When socket errors occurs
+ *  - ESP_ERR_NO_MEM            : Unable to allocate memory
+ */
+esp_err_t httpd_ws_send_data_async(httpd_handle_t handle, int socket, httpd_ws_frame_t *frame,
+                                   transfer_complete_cb callback, void *arg);
 
 #endif /* CONFIG_HTTPD_WS_SUPPORT */
 /** End of WebSocket related stuff

@@ -15,6 +15,9 @@ import os.path
 
 from esp_docs.conf_docs import *  # noqa: F403,F401
 
+if os.environ.get('IDF_PATH') is None:
+    raise RuntimeError('IDF_PATH should be set, run export.sh before building docs')
+
 BT_DOCS = ['api-guides/blufi.rst',
            'api-guides/esp-ble-mesh/**',
            'api-reference/bluetooth/**']
@@ -46,6 +49,7 @@ LEGACY_DOCS = ['api-guides/build-system-legacy.rst',
                'get-started-legacy/**']
 
 USB_DOCS = ['api-reference/peripherals/usb_device.rst',
+            'api-reference/peripherals/usb_host.rst',
             'api-guides/usb-otg-console.rst',
             'api-guides/dfu.rst']
 
@@ -131,13 +135,13 @@ github_repo = 'espressif/esp-idf'
 
 # context used by sphinx_idf_theme
 html_context['github_user'] = 'espressif'
-html_context['github_repo'] = 'esp-docs'
+html_context['github_repo'] = 'esp-idf'
 
 # Extra options required by sphinx_idf_theme
 project_slug = 'esp-idf'
 versions_url = 'https://dl.espressif.com/dl/esp-idf/idf_versions.js'
 
-idf_targets = ['esp32', 'esp32s2', 'esp32c3']
+idf_targets = ['esp32', 'esp32s2', 'esp32s3', 'esp32c3']
 languages = ['en', 'zh_CN']
 
 google_analytics_id = os.environ.get('CI_GOOGLE_ANALYTICS_ID', None)

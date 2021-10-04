@@ -10,15 +10,16 @@ set(srcs
     "rtc_time.c"
     "rtc_wdt.c"
     "chip_info.c"
-    )
+   )
 
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "../async_memcpy_impl_gdma.c"
-                     "dport_access.c"
-                     "esp_hmac.c"
-                     "esp_crypto_lock.c"
-                     "memprot.c"
-                     "spiram.c")
+        "dport_access.c"
+        "esp_hmac.c"
+        "esp_ds.c"
+        "esp_crypto_lock.c"
+        "memprot.c"
+        "spiram.c")
 
     if(CONFIG_SPIRAM_MODE_QUAD)
         list(APPEND srcs "spiram_psram.c")

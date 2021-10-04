@@ -17,7 +17,7 @@
 #include "driver/periph_ctrl.h"
 #include "esp_intr_alloc.h"
 
-#if SOC_I2S_SUPPORTS_ADC_DAC
+#if SOC_I2S_SUPPORTS_ADC
 #include "driver/adc.h"
 #endif
 
@@ -221,7 +221,7 @@ esp_err_t i2s_set_pdm_tx_up_sample(i2s_port_t i2s_num, const i2s_pdm_tx_upsample
  *     - ESP_OK              Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  *     - ESP_ERR_NO_MEM      Out of memory
- *     - ESP_ERR_NOT_FOUND   I2S port is not found or has been installed by others (e.g. LCD i80)
+ *     - ESP_ERR_INVALID_STATE  Current I2S port is in use
  */
 esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config, int queue_size, void *i2s_queue);
 
@@ -355,7 +355,7 @@ esp_err_t i2s_stop(i2s_port_t i2s_num);
  *
  * @param i2s_num  I2S port number
  *
-* @return
+ * @return
  *     - ESP_OK              Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
@@ -430,7 +430,7 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
  */
 float i2s_get_clk(i2s_port_t i2s_num);
 
-#if SOC_I2S_SUPPORTS_ADC_DAC
+#if SOC_I2S_SUPPORTS_ADC
 /**
  * @brief Set built-in ADC mode for I2S DMA, this function will initialize ADC pad,
  *        and set ADC parameters.
@@ -466,7 +466,9 @@ esp_err_t i2s_adc_enable(i2s_port_t i2s_num);
  *     - ESP_ERR_INVALID_STATE  Driver state error
  */
 esp_err_t i2s_adc_disable(i2s_port_t i2s_num);
+#endif // SOC_I2S_SUPPORTS_ADC
 
+#if SOC_I2S_SUPPORTS_DAC
 /**
  * @brief Set I2S dac mode, I2S built-in DAC is disabled by default
  *
@@ -481,7 +483,7 @@ esp_err_t i2s_adc_disable(i2s_port_t i2s_num);
  *     - ESP_ERR_INVALID_ARG  Parameter error
  */
 esp_err_t i2s_set_dac_mode(i2s_dac_mode_t dac_mode);
-#endif //SOC_I2S_SUPPORTS_ADC_DAC
+#endif //SOC_I2S_SUPPORTS_DAC
 
 
 #ifdef __cplusplus
