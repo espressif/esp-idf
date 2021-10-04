@@ -89,10 +89,8 @@ typedef uint32_t TickType_t;
 #define portTASK_FUNCTION_PROTO(vFunction, pvParameters) void vFunction(void *pvParameters)
 #define portTASK_FUNCTION(vFunction, pvParameters) void vFunction(void *pvParameters)
 
-static inline BaseType_t IRAM_ATTR xPortGetCoreID(void) {
-    return (uint32_t) cpu_hal_get_core_id();
-}
-
+// interrupt module will mask interrupt with priority less than threshold
+#define RVHAL_EXCM_LEVEL            4
 
 
 /* ----------------------------------------------- Port Configurations -------------------------------------------------
@@ -378,7 +376,7 @@ void vPortSetStackWatchpoint(void *pxStackStart);
  */
 static inline BaseType_t IRAM_ATTR xPortGetCoreID(void)
 {
-    return cpu_hal_get_core_id();
+    return (uint32_t) cpu_hal_get_core_id();
 }
 
 
