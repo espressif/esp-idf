@@ -802,11 +802,10 @@ esp_err_t esp_memprot_set_prot(bool invoke_panic_handler, bool lock_feature, uin
         return ret;
     }
 
-    //connect to intr. matrix if not being debugged
-    if (!esp_cpu_in_ocd_debug_mode()) {
-
-        ESP_FAULT_ASSERT(!esp_cpu_in_ocd_debug_mode());
-
+    //if being debugged check we are not glitched and dont enable Memprot
+    if (esp_cpu_in_ocd_debug_mode()) {
+        ESP_FAULT_ASSERT(esp_cpu_in_ocd_debug_mode());
+    } else {
         //initialize for specific buses (any memory type does the job)
         if (invoke_panic_handler) {
             if (use_iram0 && (ret = esp_memprot_intr_init(MEMPROT_IRAM0_SRAM)) != ESP_OK) {
