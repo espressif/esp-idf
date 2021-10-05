@@ -1,22 +1,7 @@
 /*
- * Copyright 2020 Espressif Systems (Shanghai) PTE LTD
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
  *
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "esp_log.h"
@@ -117,26 +102,8 @@ err:
     return ble_gap_terminate(peer->conn_handle, BLE_ERR_REM_USER_CONN_TERM);
 }
 
-static int
-blecent_repeat_write(uint16_t conn_handle,
-                     const struct ble_gatt_error *error,
-                     struct ble_gatt_attr *attr,
-                     void *arg)
-{
-    if (error->status == 0) {
-        xSemaphoreGive(xSemaphore);
-        ESP_LOGD(tag, " attr_handle=%d value=", attr->handle);
-        MODLOG_DFLT(INFO, "\n");
-    } else {
-        failure_count++;
-        xSemaphoreGive(xSemaphore);
-        ESP_LOGE(tag, " Error writing error code = %d", error->status);
-    }
-    return error->status;
-}
-
 static int blecent_write(uint16_t conn_handle, uint16_t val_handle,
-                         ble_gatt_attr_fn *cb, struct peer *peer, int test_time)
+                         struct peer *peer, int test_time)
 {
     int64_t start_time, end_time, write_time = 0;
     int write_count = 0;
@@ -150,13 +117,16 @@ static int blecent_write(uint16_t conn_handle, uint16_t val_handle,
     while (write_time < test_time * 1000) {
         /* Wait till the previous write is complete. For first time Semaphore
          * is already available */
-        xSemaphoreTake(xSemaphore, portMAX_DELAY);
-        rc = ble_gattc_write_flat(conn_handle, val_handle,
-                                  &value, sizeof value, blecent_repeat_write, NULL);
-        if (rc != 0) {
-            ESP_LOGE(tag, "Error: Failed to write characteristic; rc=%d\n",
-                     rc);
-            goto err;
+	label:
+	    rc = ble_gattc_write_no_rsp_flat(conn_handle, val_handle, &value, sizeof value);
+
+	    if(rc == BLE_HS_ENOMEM) {
+		vTaskDelay(2); /* Wait for buffers to free up and try again */
+		goto label;
+	    }
+	    else if (rc != 0) {
+		ESP_LOGE(tag, "Error: Failed to write characteristic; rc=%d\n",rc);
+		goto err;
         }
 
         end_time = esp_timer_get_time();
@@ -311,8 +281,7 @@ static void throughput_task(void *arg)
             }
 
             if (test_data[1] > 0) {
-                rc = blecent_write(peer->conn_handle, chr->chr.val_handle,
-                                   blecent_repeat_write, (void *) peer, test_data[1]);
+                rc = blecent_write(peer->conn_handle, chr->chr.val_handle, (void *) peer, test_data[1]);
                 if (rc != 0) {
                     ESP_LOGE(tag, "Error while writing data; rc = %d", rc);
                 }

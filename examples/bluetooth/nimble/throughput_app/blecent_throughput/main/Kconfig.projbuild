@@ -37,7 +37,7 @@ menu "Example Configuration"
             Set the minimum connection event length in 0.625msec units.
 
     config EXAMPLE_CONN_CE_LEN_MAX
-        int "Minimum connection itvl"
+        int "Maximum connection event length"
         default 12
         help
             Set the maximum connection event length in 0.625msec units.

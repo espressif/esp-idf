@@ -9,8 +9,8 @@ sample numbers of different throughput test runs for 60 seconds (MTU = 512, conn
 
 |GATT method | Measurement time | Application Throughput|
 |--- | --- | ---|
-|NOTIFY	| 60 seconds | ~530Kbps|
-|READ	| 60 seconds | ~180kbps|
-|WRITE	| 60 seconds | ~180kbps|
+|NOTIFY	| 60 seconds | ~340Kbps|
+|READ	| 60 seconds | ~200kbps|
+|WRITE	| 60 seconds | ~500kbps|
 
 The notify output is seen on `bleprph_throughput` console and read/write throughput are seen on `blecent_throughput` console.
