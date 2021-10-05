@@ -242,7 +242,7 @@ static esp_err_t esp_modem_dte_send_cmd(modem_dte_t *dte, const char *command, u
     esp_err_t ret = ESP_FAIL;
     modem_dce_t *dce = dte->dce;
     ESP_LOGD(MODEM_TAG, "Sending command:%s", command);
-    MODEM_CHECK(dce, "DTE has not yet bind with DCE", err);
+    MODEM_CHECK(dce, "DTE has not yet bind with DCE", errdce);
     MODEM_CHECK(command, "command is NULL", err);
     esp_modem_dte_t *esp_dte = __containerof(dte, esp_modem_dte_t, parent);
     esp_dte->consumed = 0;
@@ -256,6 +256,7 @@ static esp_err_t esp_modem_dte_send_cmd(modem_dte_t *dte, const char *command, u
     ret = ESP_OK;
 err:
     dce->handle_line = NULL;
+errdce:
     return ret;
 }
 
