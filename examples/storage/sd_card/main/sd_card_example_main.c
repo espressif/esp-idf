@@ -33,12 +33,18 @@ static const char *TAG = "example";
 // #define USE_SPI_MODE
 
 // ESP32-S2 and ESP32-C3 doesn't have an SD Host peripheral, always use SPI:
-#if CONFIG_IDF_TARGET_ESP32S2 ||CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3
+
 #ifndef USE_SPI_MODE
 #define USE_SPI_MODE
 #endif // USE_SPI_MODE
 // on ESP32-S2, DMA channel must be the same as host id
+#if CONFIG_IDF_TARGET_ESP32S2
 #define SPI_DMA_CHAN    host.slot
+#elif CONFIG_IDF_TARGET_ESP32C3
+#define SPI_DMA_CHAN    SPI_DMA_CH_AUTO
+#endif //CONFIG_IDF_TARGET_ESP32S2
+
 #endif //CONFIG_IDF_TARGET_ESP32S2
 
 // DMA channel to be used by the SPI peripheral
