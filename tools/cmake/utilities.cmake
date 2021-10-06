@@ -22,8 +22,8 @@ endfunction()
 # Take a variable whose value was space-delimited values, convert to a cmake
 # list (semicolon-delimited)
 #
-# Note: if using this for directories, keeps the issue in place that
-# directories can't contain spaces...
+# Note: do not use this for directories or full paths, as they may contain
+# spaces.
 #
 # TODO: look at cmake separate_arguments, which is quote-aware
 function(spaces2list variable_name)
