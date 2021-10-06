@@ -19,6 +19,7 @@ import re
 import sys
 from typing import Any, Callable, Collection, Dict, Iterable, List, Optional, TextIO, Tuple, Union
 
+import yaml
 from future.utils import iteritems
 
 Section = Dict[str, Union[str, int]]
@@ -36,7 +37,10 @@ GLOBAL_JSON_SEPARATORS = (',', ': ')
 
 
 class MemRegions(object):
-    # Regions determined by the chip target.
+    """
+    Regions determined by the chip target.
+    """
+
     # DIRAM is not added here. The DIRAM is indicated by the `secondary_addr` of each MemRegDef
     (DRAM_ID, IRAM_ID, CACHE_D_ID, CACHE_I_ID, RTC_FAST_D_ID, RTC_FAST_I_ID, RTC_SLOW_D_ID) = range(7)
 
@@ -53,61 +57,34 @@ class MemRegions(object):
 
     @staticmethod
     def get_mem_regions(target: str) -> List:
+        """
+        Get memory regions for specific target
+        """
         # The target specific memory structure is deduced from soc_memory_types defined in
         # $IDF_PATH/components/soc/**/soc_memory_layout.c files.
 
         MemRegDef = MemRegions.MemRegDef
 
-        # Consecutive MemRegDefs of the same type are joined into one MemRegDef
-        if target == 'esp32':
-            return sorted([
-                MemRegDef(0x3FFAE000, 17 * 0x2000 + 4 * 0x8000 + 4 * 0x4000, MemRegions.DRAM_ID, 0),
-                MemRegDef(0x40070000, 2 * 0x8000 + 16 * 0x2000, MemRegions.IRAM_ID, 0),
-                MemRegDef(0x400C2000, 0xB3E000, MemRegions.CACHE_I_ID, 0),
-                MemRegDef(0x3F400000, 0x400000, MemRegions.CACHE_D_ID, 0),
-                MemRegDef(0x3F800000, 0x400000, MemRegions.CACHE_D_ID, 0),
-                MemRegDef(0x3FF80000, 0x2000, MemRegions.RTC_FAST_D_ID, 0x400C0000),
-                MemRegDef(0x50000000, 0x2000, MemRegions.RTC_SLOW_D_ID, 0),
-            ])
-        elif target == 'esp32s2':
-            return sorted([
-                MemRegDef(0x3FFB2000, 3 * 0x2000 + 18 * 0x4000, MemRegions.DRAM_ID, 0x40022000),
-                MemRegDef(0x3F000000, 0x400000, MemRegions.CACHE_I_ID, 0),
-                MemRegDef(0x3F500000, 0xA80000, MemRegions.CACHE_D_ID, 0),
-                MemRegDef(0x40080000, 0x780000, MemRegions.CACHE_I_ID, 0),
-                MemRegDef(0x40070000, 0x2000, MemRegions.RTC_FAST_D_ID, 0x3FF9E000),
-                MemRegDef(0x50000000, 0x2000, MemRegions.RTC_SLOW_D_ID, 0),
-            ])
-        elif target == 'esp32s3':
-            return sorted([
-                # IRAM, usually used by Icache.
-                #
-                # The segment from the ld file lies across the boundary of the line below: it is
-                # partly IRAM and partly D/IRAM. Here's a workaround for this kind of segment: we
-                # only list the DIRAM part. If a segment from the ld file falls in any part of a
-                # DIRAM def region, we treat the whole segment D/IRAM.
-                #
-                # Uncomment the following line if sections of the same segment can be
-                # distinguished, or the ld file can give separated segment for the region.
-                #
-                MemRegDef(0x40370000, 0x8000, MemRegions.IRAM_ID, 0),
-                MemRegDef(0x3FC88000, 0x8000 + 6 * 0x10000, MemRegions.DRAM_ID, 0x40378000),
-                MemRegDef(0x3FCF0000, 0x10000, MemRegions.DRAM_ID, 0),
-                MemRegDef(0x42000000, 0x2000000, MemRegions.CACHE_I_ID, 0),
-                MemRegDef(0x3C000000, 0x2000000, MemRegions.CACHE_D_ID, 0),
-                MemRegDef(0x3ff80000, 0x2000, MemRegions.RTC_FAST_D_ID, 0x600FE000),
-                MemRegDef(0x50000000, 0x2000, MemRegions.RTC_SLOW_D_ID, 0),
-            ])
-        elif target in ['esp32c3', 'esp32h2']:
-            return sorted([
-                MemRegDef(0x3FC80000, 0x60000, MemRegions.DRAM_ID, 0x40380000),
-                MemRegDef(0x4037C000, 0x4000, MemRegions.IRAM_ID, 0),
-                MemRegDef(0x42000000, 0x800000, MemRegions.CACHE_I_ID, 0),
-                MemRegDef(0x3C000000, 0x800000, MemRegions.CACHE_D_ID, 0),
-                MemRegDef(0x50000000, 0x2000, MemRegions.RTC_SLOW_D_ID, 0),
-            ])
-        else:
+        def change_to_proper_format(length: Union[str, bytes]) -> Any:
+            '''
+            Change `length` if it is string like `'0x8000 + 6 * 0x10000'` to resolve of this math equation
+            or if `length` is number function return it without changing.
+            '''
+            try:
+                return eval(length)
+            except TypeError:
+                return length
+
+        def get_mem_reg_def(chip_info: Dict, memory_reg: str) -> Tuple:
+            chip_info[memory_reg]['secondary_address'] = chip_info[memory_reg].get('secondary_address') or 0
+            return MemRegDef(chip_info[memory_reg]['primary_address'], change_to_proper_format(chip_info[memory_reg]['length']),
+                             getattr(MemRegions, memory_reg.strip('_12') + '_ID'), chip_info[memory_reg]['secondary_address'])
+        try:
+            with open(os.path.join(os.path.dirname(__file__), 'idf_size_yaml', target + '_data_info.yaml'), 'r') as stream:
+                chip_info = (yaml.safe_load(stream))
+        except FileNotFoundError:
             raise RuntimeError('Target not detected.')
+        return sorted([get_mem_reg_def(chip_info, item) for item in chip_info])
 
     def __init__(self, target: str) -> None:
         self.chip_mem_regions = self.get_mem_regions(target)
@@ -160,7 +137,7 @@ class MemRegions(object):
 
 class LinkingSections(object):
 
-    _section_type_dict = {k: re.compile(v) for k, v in {
+    _section_type_dict = {key: re.compile(value) for key, value in {
         'text': r'.*\.text',
         'data': r'.*\.data',
         'bss': r'.*\.bss',
@@ -172,6 +149,9 @@ class LinkingSections(object):
 
     @staticmethod
     def in_section(section: str, section_name_or_list: Union[str, Iterable]) -> bool:
+        """
+        Check if section in section_name_or_list
+        """
         if isinstance(section_name_or_list, basestring):
             section_name_or_list = [section_name_or_list]
 
@@ -182,8 +162,8 @@ class LinkingSections(object):
 
     @staticmethod
     def filter_sections(sections: Dict) -> Dict:
-        return {k: v for k, v in sections.items()
-                if LinkingSections.in_section(k, LinkingSections._section_type_dict.keys())}
+        return {key: v for key, v in sections.items()
+                if LinkingSections.in_section(key, LinkingSections._section_type_dict.keys())}
 
     @staticmethod
     def get_display_name_order(section_name_list: List[str]) -> Tuple[List[str], List[str]]:
@@ -192,32 +172,21 @@ class LinkingSections(object):
         First list is the reordered section_name_list, second list is the suggested display name, corresponding to the first list
         '''
 
-        def get_name_score(name: str) -> int:
-            score_dict = {
-                '.dram': 30,
-                '.iram': 20,
-                '.flash': 10,
-                'ram_st_total': -10,
-                'flash_total': -20,
-                '.data': 6,
-                '.bss': 5,
-                '.text': 4,
-                '.rodata': 3,
-                '.vectors': 2,
-                '.noinit': 1,
-                '.other': -1,
-            }
-            return sum([score if section in name else 0
-                        for section, score in score_dict.items()])
+        def get_memory_name(split_name: List) -> Tuple[str, str]:
+            memory_name = f'.{split_name[1]}'
+            display_name = section
+            for seg_name in ['iram','dram','flash']:
+                if seg_name in split_name[1]:
+                    memory_name = f'.{seg_name}'
+                    seg_name = seg_name.upper() if seg_name != 'flash' else seg_name.capitalize()
+                    display_name = seg_name + ('' if seg_name != 'IRAM' else split_name[1].replace('iram', '')) + f' .{split_name[2]}'
+            return memory_name, display_name
 
-        score_list = [get_name_score(section) for section in section_name_list]
-        ordered_name_list = sorted(section_name_list, key=lambda x: score_list[section_name_list.index(x)], reverse=True)
+        ordered_name_list = sorted(section_name_list)
         display_name_list = ordered_name_list.copy()
 
         memory_name = ''
-        display_name_list = sorted(display_name_list)
-        ordered_name_list = sorted(ordered_name_list)
-        ordered_name_list = check_is_dict_sort(ordered_name_list)
+        ordered_name_list = sort_dict(ordered_name_list)
         for i, section in enumerate(ordered_name_list):
             if memory_name and section.startswith(memory_name):
                 # If the section has same memory type with the previous one, use shorter name
@@ -230,14 +199,7 @@ class LinkingSections(object):
             if len(split_name) > 1:
                 # If the section has a memory type, update the type and try to display the type properly
                 assert len(split_name) == 3 and split_name[0] == '', 'Unexpected section name'
-                memory_name = '.iram' if 'iram' in split_name[1] else\
-                              '.dram' if 'dram' in split_name[1] else\
-                              '.flash' if 'flash' in split_name[1] else\
-                              '.' + split_name[1]
-                display_name_list[i] = 'DRAM .' + split_name[2] if 'dram' in split_name[1] else\
-                                       'IRAM' + split_name[1].replace('iram', '') + ' .' + split_name[2] if 'iram' in split_name[1] else\
-                                       'Flash .' + split_name[2] if 'flash' in split_name[1] else\
-                                       section
+                memory_name, display_name_list[i] = get_memory_name(split_name)
                 continue
 
             # Otherwise use its original name
@@ -246,9 +208,9 @@ class LinkingSections(object):
         return ordered_name_list, display_name_list
 
 
-def scan_to_header(f: Iterable, header_line: str) -> None:
+def scan_to_header(file: Iterable, header_line: str) -> None:
     """ Scan forward in a file until you reach 'header_line', then return """
-    for line in f:
+    for line in file:
         if line.strip() == header_line:
             return
     raise RuntimeError("Didn't find line '%s' in file" % header_line)
@@ -281,16 +243,16 @@ def load_segments(map_file: TextIO) -> Dict:
     RE_MEMORY_SECTION = re.compile(r'(?P<name>[^ ]+) +0x(?P<origin>[\da-f]+) +0x(?P<length>[\da-f]+)')
 
     for line in map_file:
-        m = RE_MEMORY_SECTION.match(line)
-        if m is None:
+        match_section = RE_MEMORY_SECTION.match(line)
+        if match_section is None:
             if len(result) == 0:
                 continue  # whitespace or a header, before the content we want
             else:
                 return result  # we're at the end of the Memory Configuration
         segment = {
-            'name': m.group('name'),
-            'origin': int(m.group('origin'), 16),
-            'length': int(m.group('length'), 16),
+            'name': match_section.group('name'),
+            'origin': int(match_section.group('origin'), 16),
+            'length': int(match_section.group('length'), 16),
         }
         if segment['name'] != '*default*':
             result[segment['name']] = segment
@@ -306,13 +268,13 @@ def detect_target_chip(map_file: Iterable) -> str:
     RE_TARGET_MAKE = re.compile(r'^LOAD .*?/xtensa-([^-]+)-elf/')
 
     for line in map_file:
-        m = RE_TARGET.search(line)
-        if m:
-            return m.group(1)
+        match_target = RE_TARGET.search(line)
+        if match_target:
+            return match_target.group(1)
 
-        m = RE_TARGET_MAKE.search(line)
-        if m:
-            return m.group(1)
+        match_target = RE_TARGET_MAKE.search(line)
+        if match_target:
+            return match_target.group(1)
 
         line = line.strip()
         # There could be empty line(s) between the "Linker script and memory map" header and "LOAD lines". Therefore,
@@ -365,35 +327,35 @@ def load_sections(map_file: TextIO) -> Dict:
     sym_backup = ''
     for line in map_file:
         if line.strip() == 'Cross Reference Table':
-            # stop processing lines because we are at the next section in the map file
+            # Stop processing lines because we are at the next section in the map file
             break
 
-        m = RE_SYMBOL_ONLY_LINE.match(line)
-        if m:
+        match_line = RE_SYMBOL_ONLY_LINE.match(line)
+        if match_line:
             # In some cases the section name appears on the previous line, back it up in here
-            sym_backup = m.group('sym_name')
+            sym_backup = match_line.group('sym_name')
             continue
 
         if not RE_PRE_FILTER.match(line):
-            # line does not match our quick check, so skip to next line
+            # Line does not match our quick check, so skip to next line
             continue
 
-        m = RE_FULL_LINE.match(line)
-        if not m:
+        match_line = RE_FULL_LINE.match(line)
+        if not match_line:
             assert not sym_backup, 'Symbol only line must be followed by a line with address and size'
             continue
 
-        name = m.group('sym_name') if m.group('sym_name') else sym_backup
+        name = match_line.group('sym_name') if match_line.group('sym_name') else sym_backup
         sym_backup = ''
 
-        is_section = not m.group('file') and name != '*fill*'
+        is_section = not match_line.group('file') and name != '*fill*'
         if is_section:
             # section
 
             section = {
                 'name': name,
-                'address': int(m.group('address'), 16),
-                'size': int(m.group('size'), 16),
+                'address': int(match_line.group('address'), 16),
+                'size': int(match_line.group('size'), 16),
                 'sources': [],
             }
             sections[name] = section
@@ -408,7 +370,7 @@ def load_sections(map_file: TextIO) -> Dict:
             srcs = section['sources']  # type: List[Dict]
             if srcs:
                 last_src = srcs[-1]
-                if last_src['size'] > 0 and last_src['address'] == int(m.group('address'), 16):
+                if last_src['size'] > 0 and last_src['address'] == int(match_line.group('address'), 16):
                     if '.comment' != section['name'] and '.debug_str' != section['name'] and\
                             'rodata' not in last_src['sym_name']:
 
@@ -420,25 +382,25 @@ def load_sections(map_file: TextIO) -> Dict:
             if name == '*fill*':
                 for src in reversed(srcs):
                     if src['size'] > 0:
-                        src['fill'] += int(m.group('size'), 16)
+                        src['fill'] += int(match_line.group('size'), 16)
                         break
                 continue
 
             # Extract archive and file information
-            n = RE_FILE.match(m.group('file'))
-            assert n
+            match_arch_and_file = RE_FILE.match(match_line.group('file'))
+            assert match_arch_and_file
 
-            archive = n.group('archive')
+            archive = match_arch_and_file.group('archive')
             if archive is None:
                 # optional named group "archive" was not matched, so assign a value to it
                 archive = '(exe)'
 
-            file = n.group('object_file')
+            file = match_arch_and_file.group('object_file')
 
             assert name
             source = {
-                'size': int(m.group('size'), 16),
-                'address': int(m.group('address'), 16),
+                'size': int(match_line.group('size'), 16),
+                'address': int(match_line.group('address'), 16),
                 'archive': os.path.basename(archive),
                 'object_file': os.path.basename(file),
                 'sym_name': name,
@@ -728,7 +690,7 @@ class StructureForSummary(object):
 
 def get_structure_for_target(segments: Dict, sections: Dict, target: str) -> StructureForSummary:
     """
-    Return StructureForSummary for spasific target
+    Return StructureForSummary for specific target
     """
     mem_regions = MemRegions(target)
     segment_layout = mem_regions.fit_segments_into_regions(segments)
@@ -741,10 +703,8 @@ def get_summary(path: str, segments: Dict, sections: Dict, target: str,
                 as_json: bool=False,
                 path_diff: str='', segments_diff: Optional[Dict]=None, sections_diff: Optional[Dict]=None,
                 target_diff: str='', print_suggestions: bool=True) -> str:
-    if segments_diff is None:
-        segments_diff = {}
-    if sections_diff is None:
-        sections_diff = {}
+    segments_diff = segments_diff or {}
+    sections_diff = sections_diff or {}
 
     current = get_structure_for_target(segments, sections, target)
 
@@ -867,24 +827,24 @@ def get_summary(path: str, segments: Dict, sections: Dict, target: str,
 
             for line in format_list:
                 if getattr(current, line.name) > 0 or getattr(reference, line.name) > 0 or line.name == 'total_size':
-                    a, b, c, d = line.format_line()
+                    main_string_format, reference_format, sign_format, main_diff_format = line.format_line()
                     output += print_in_columns(
-                        a.format(**f_dic1),
-                        b.format(**f_dic2),
-                        c.format(**f_dic_diff) if not c.format(**f_dic_diff).startswith('+0') else '',
-                        d.format(**f_dic_diff))
+                        main_string_format.format(**f_dic1),
+                        reference_format.format(**f_dic2),
+                        sign_format.format(**f_dic_diff) if not sign_format.format(**f_dic_diff).startswith('+0') else '',
+                        main_diff_format.format(**f_dic_diff))
         else:
             output += print_in_columns('Total sizes:')
 
             for line in format_list:
                 if getattr(current, line.name) > 0 or line.name == 'total_size':
-                    a, b, c, d = line.format_line()
-                    output += print_in_columns(a.format(**f_dic1))
+                    main_string_format, reference_format, sign_format, main_diff_format = line.format_line()
+                    output += print_in_columns(main_string_format.format(**f_dic1))
 
     return output
 
 
-def check_is_dict_sort(non_sort_list: List) -> List:
+def sort_dict(non_sort_list: List) -> List:
     '''
     sort with keeping the order data, bss, other, iram, diram, ram_st_total, flash_text, flash_rodata, flash_total
     '''
@@ -929,8 +889,10 @@ class StructureForDetailedSizes(object):
 
     @staticmethod
     def get(sections: SectionDict, by_key: str) -> collections.OrderedDict:
-        # Get the detailed structure before using the filter to remove undesired sections,
-        # to show entries without desired sections
+        """
+        Get the detailed structure before using the filter to remove undesired sections,
+        to show entries without desired sections
+        """
         sizes = StructureForDetailedSizes.sizes_by_key(sections, by_key)
         for key_name in sizes:
             sizes[key_name] = LinkingSections.filter_sections(sizes[key_name])
@@ -997,12 +959,12 @@ def get_detailed_sizes(sections: Dict, key: str, header: str, as_json: bool=Fals
             header_format = _get_header_format(disp_list)
             output = header_format.format(header, *disp_list)
 
-            for k, v in iteritems(data):
-                if k not in selection:
+            for key, data_info in iteritems(data):
+                if key not in selection:
                     continue
 
                 try:
-                    _, k = k.split(':', 1)
+                    _, key = key.split(':', 1)
                     # print subheadings for key of format archive:file
                 except ValueError:
                     # k remains the same
@@ -1011,8 +973,8 @@ def get_detailed_sizes(sections: Dict, key: str, header: str, as_json: bool=Fals
                 def get_section_size(section_dict: Dict) -> Callable[[str], int]:
                     return lambda x: section_dict.get(x, 0)
 
-                section_size_list = map(get_section_size(section_dict=v), key_list)
-                output += header_format.format(k[:24], *(section_size_list))
+                section_size_list = map(get_section_size(section_dict=data_info), key_list)
+                output += header_format.format(key[:24], *(section_size_list))
             return output
 
         def _get_header_format_diff(disp_list: List=display_name_list, columns: bool=False) -> str:
@@ -1038,20 +1000,20 @@ def get_detailed_sizes(sections: Dict, key: str, header: str, as_json: bool=Fals
             output += header_format.format('', *f_print)
             output += header_line
 
-            for k, v in iteritems(curr):
+            for key, data_info in iteritems(curr):
                 try:
-                    v2 = ref[k]
+                    v2 = ref[key]
                 except KeyError:
                     continue
 
                 try:
-                    _, k = k.split(':', 1)
+                    _, key = key.split(':', 1)
                     # print subheadings for key of format archive:file
                 except ValueError:
                     # k remains the same
                     pass
 
-                def _get_items(name: str, section_dict: Dict=v, section_dict_ref: Dict=v2) -> Tuple[str, str, str]:
+                def _get_items(name: str, section_dict: Dict=data_info, section_dict_ref: Dict=v2) -> Tuple[str, str, str]:
                     a = section_dict.get(name, 0)
                     b = section_dict_ref.get(name, 0)
                     diff = a - b
@@ -1062,7 +1024,7 @@ def get_detailed_sizes(sections: Dict, key: str, header: str, as_json: bool=Fals
                 for section in key_list:
                     x.extend(_get_items(section))
 
-                output += header_format.format(k[:24], *(x))
+                output += header_format.format(key[:24], *(x))
 
             return output
 
