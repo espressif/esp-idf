@@ -1,16 +1,8 @@
-// Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 //replacement for gcc built-in functions
 
@@ -208,6 +200,24 @@ CLANG_DECLARE_ALIAS( __sync_bool_compare_and_swap_ ## n )
 }                                                                                \
 CLANG_DECLARE_ALIAS( __sync_val_compare_and_swap_ ## n )
 
+#define SYNC_LOCK_TEST_AND_SET(n, type) type  CLANG_ATOMIC_SUFFIX(__sync_lock_test_and_set_ ## n)  (type *ptr, type val, ...) \
+{                                                                                \
+    unsigned state = _ATOMIC_ENTER_CRITICAL();                                   \
+    type ret = *ptr;                                                             \
+    *ptr = val;                                                                  \
+    _ATOMIC_EXIT_CRITICAL(state);                                                \
+    return ret;                                                                  \
+}
+CLANG_DECLARE_ALIAS( __sync_lock_test_and_set_ ## n )
+
+#define SYNC_LOCK_RELEASE(n, type) void  CLANG_ATOMIC_SUFFIX(__sync_lock_release_ ## n)  (type *ptr, ...) \
+{                                                                                \
+    unsigned state = _ATOMIC_ENTER_CRITICAL();                                   \
+    *ptr = 0;                                                                    \
+    _ATOMIC_EXIT_CRITICAL(state);                                                \
+}
+CLANG_DECLARE_ALIAS( __sync_lock_release_ ## n )
+
 
 #if !HAS_ATOMICS_32
 
@@ -267,6 +277,27 @@ SYNC_VAL_CMP_EXCHANGE(1, uint8_t)
 SYNC_VAL_CMP_EXCHANGE(2, uint16_t)
 SYNC_VAL_CMP_EXCHANGE(4, uint32_t)
 
+#ifdef __clang__
+
+// LLVM has not implemented native atomic load/stores for riscv targets without the Atomic extension
+// therfore we provide libcalls here when building with the clang toolchain. LLVM thread: https://reviews.llvm.org/D47553.
+ATOMIC_LOAD(1, uint8_t)
+ATOMIC_LOAD(2, uint16_t)
+ATOMIC_LOAD(4, uint32_t)
+ATOMIC_STORE(1, uint8_t)
+ATOMIC_STORE(2, uint16_t)
+ATOMIC_STORE(4, uint32_t)
+
+SYNC_LOCK_TEST_AND_SET(1, uint8_t)
+SYNC_LOCK_TEST_AND_SET(2, uint16_t)
+SYNC_LOCK_TEST_AND_SET(4, uint32_t)
+
+SYNC_LOCK_RELEASE(1, uint8_t)
+SYNC_LOCK_RELEASE(2, uint16_t)
+SYNC_LOCK_RELEASE(4, uint32_t)
+
+#endif
+
 #endif // !HAS_ATOMICS_32
 
 #if !HAS_ATOMICS_64
@@ -302,5 +333,12 @@ SYNC_FETCH_OP(xor, 8, uint64_t)
 SYNC_BOOL_CMP_EXCHANGE(8, uint64_t)
 
 SYNC_VAL_CMP_EXCHANGE(8, uint64_t)
+
+#ifdef __clang__
+
+SYNC_LOCK_TEST_AND_SET(8, uint64_t)
+SYNC_LOCK_RELEASE(8, uint64_t)
+
+#endif
 
 #endif // !HAS_ATOMICS_64
