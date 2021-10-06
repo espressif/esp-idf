@@ -13,7 +13,7 @@ __realpath() {
 
 
 __verbose() {
-    [[ -n ${IDF_QUIET} ]] && return
+    [ -n "${IDF_EXPORT_QUIET}" ] && return
     echo "$@"
 }
 
@@ -145,7 +145,7 @@ __main() {
     __verbose ""
 }
 
-enable_autocomplete() {
+__enable_autocomplete() {
     click_version="$(python -c 'import click; print(click.__version__.split(".")[0])')"
     if [[ click_version -lt 8 ]]
     then
@@ -170,9 +170,9 @@ enable_autocomplete() {
 }
 
 __main
-enable_autocomplete
+__enable_autocomplete
 
 unset __realpath
 unset __main
 unset __verbose
-unset enable_autocomplete
+unset __enable_autocomplete

@@ -12,7 +12,7 @@ if %errorlevel% neq 0 set "MISSING_REQUIREMENTS=  python &echo\"
 git.exe --version >NUL 2>NUL
 if %errorlevel% neq 0 set "MISSING_REQUIREMENTS=%MISSING_REQUIREMENTS%  git"
 
-if not "%MISSING_REQUIREMENTS%" == "" goto :error_missing_requirements
+if not "%MISSING_REQUIREMENTS%" == "" goto :__error_missing_requirements
 
 set PREFIX=python.exe %IDF_PATH%
 DOSKEY idf.py=%PREFIX%\tools\idf.py $*
@@ -39,7 +39,7 @@ echo Adding ESP-IDF tools to PATH...
 :: but that way it is impossible to get the exit code of idf_tools.py.
 set "IDF_TOOLS_EXPORTS_FILE=%TEMP%\idf_export_vars.tmp"
 python.exe %IDF_PATH%\tools\idf_tools.py export --format key-value >"%IDF_TOOLS_EXPORTS_FILE%"
-if %errorlevel% neq 0 goto :end
+if %errorlevel% neq 0 goto :__end
 
 for /f "usebackq tokens=1,2 eol=# delims==" %%a in ("%IDF_TOOLS_EXPORTS_FILE%") do (
       call set "%%a=%%b"
@@ -48,12 +48,12 @@ for /f "usebackq tokens=1,2 eol=# delims==" %%a in ("%IDF_TOOLS_EXPORTS_FILE%") 
 :: This removes OLD_PATH substring from PATH, leaving only the paths which have been added,
 :: and prints semicolon-delimited components of the path on separate lines
 call set PATH_ADDITIONS=%%PATH:%OLD_PATH%=%%
-if "%PATH_ADDITIONS%"=="" call :print_nothing_added
+if "%PATH_ADDITIONS%"=="" call :__print_nothing_added
 if not "%PATH_ADDITIONS%"=="" echo     %PATH_ADDITIONS:;=&echo.    %
 
 echo Checking if Python packages are up to date...
 python.exe %IDF_PATH%\tools\check_python_dependencies.py
-if %errorlevel% neq 0 goto :end
+if %errorlevel% neq 0 goto :__end
 
 echo.
 echo Done! You can now compile ESP-IDF projects.
@@ -62,16 +62,16 @@ echo.
 echo   idf.py build
 echo.
 
-goto :end
+goto :__end
 
-:print_nothing_added
+:__print_nothing_added
     echo No directories added to PATH:
     echo.
     echo %PATH%
     echo.
     goto :eof
 
-:error_missing_requirements
+:__error_missing_requirements
     echo.
     echo Error^: The following tools are not installed in your environment.
     echo.
@@ -80,10 +80,9 @@ goto :end
     echo Please use the Windows Tool installer for setting up your environment.
     echo Download link: https://dl.espressif.com/dl/esp-idf/
     echo For more details please visit our website: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/windows-setup.html
-    goto :end
+    goto :__end
 
-:end
-
+:__end
 :: Clean up
 if not "%IDF_TOOLS_EXPORTS_FILE%"=="" (
     del "%IDF_TOOLS_EXPORTS_FILE%" 1>nul 2>nul
