@@ -2029,7 +2029,6 @@ components/newlib/priv_include/esp_time_impl.h
 components/newlib/pthread.c
 components/newlib/random.c
 components/newlib/reent_init.c
-components/newlib/stdatomic.c
 components/newlib/syscalls.c
 components/newlib/termios.c
 components/newlib/test/test_atomic.c
