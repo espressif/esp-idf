@@ -3935,8 +3935,6 @@ tools/ci/python_packages/ttfw_idf/CIScanTests.py
 tools/ci/python_packages/ttfw_idf/DebugUtils.py
 tools/ci/python_packages/ttfw_idf/IDFApp.py
 tools/ci/python_packages/ttfw_idf/IDFAssignTest.py
-tools/ci/python_packages/ttfw_idf/IDFDUT.py
-tools/ci/python_packages/ttfw_idf/__init__.py
 tools/ci/python_packages/ttfw_idf/unity_test_parser.py
 tools/ci/python_packages/wifi_tools.py
 tools/ci/test_autocomplete.py
