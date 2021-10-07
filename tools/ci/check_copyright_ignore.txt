@@ -1983,7 +1983,6 @@ components/mdns/host_test/components/freertos_linux/queue_unique_ptr.hpp
 components/mdns/host_test/main/main.c
 components/mdns/include/mdns.h
 components/mdns/include/mdns_console.h
-components/mdns/mdns.c
 components/mdns/mdns_console.c
 components/mdns/mdns_networking_lwip.c
 components/mdns/mdns_networking_socket.c
