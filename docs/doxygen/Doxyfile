@@ -267,3 +267,9 @@ GENERATE_RTF    = NO
 ## Skip distracting progress messages
 ##
 QUIET = YES
+
+## Enable Section Tags for conditional documentation
+##
+ENABLED_SECTIONS += \
+    DOC_EXCLUDE_HEADER_SECTION \   ## To conditionally remove doc sections from IDF source files without affecting documentation in upstream files.
+    DOC_SINGLE_GROUP        ## To conditionally remove groups from the documentation and create a 'flat' document without affecting documentation in upstream files.
