@@ -15,7 +15,7 @@ Notes
  - It is not a real-time stack. One write operation might take much longer than another.
  - For now, it does not detect or handle bad blocks.
  - SPIFFS is able to reliably utilize only around 75% of assigned partition space.
- - When the filesystem is running out of space, the garbage collector is trying to find a free space by scanning the filesystem multiple times, which can take up to several seconds per write function call, depending on required space.
+ - When the filesystem is running out of space, the garbage collector is trying to find free space by scanning the filesystem multiple times, which can take up to several seconds per write function call, depending on required space.
  - Deleting a file does not always remove the whole file, which leaves unusable sections throughout the filesystem.
 
 Tools
