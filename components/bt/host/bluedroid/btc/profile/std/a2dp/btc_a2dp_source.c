@@ -397,7 +397,7 @@ static UINT64 time_now_us(void)
 {
 #if _POSIX_TIMERS
     struct timespec ts_now;
-    clock_gettime(CLOCK_BOOTTIME, &ts_now);
+    clock_gettime(CLOCK_MONOTONIC, &ts_now);
     return ((UINT64)ts_now.tv_sec * 1000000L) + ((UINT64)ts_now.tv_nsec / 1000);
 #else
     struct timeval ts_now;
