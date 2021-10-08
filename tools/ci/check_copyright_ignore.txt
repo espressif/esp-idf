@@ -860,7 +860,6 @@ components/esp_netif/include/esp_netif_ppp.h
 components/esp_netif/include/esp_netif_slip.h
 components/esp_netif/include/esp_netif_sta_list.h
 components/esp_netif/loopback/esp_netif_loopback.c
-components/esp_netif/lwip/esp_netif_lwip.c
 components/esp_netif/lwip/esp_netif_lwip_defaults.c
 components/esp_netif/lwip/esp_netif_lwip_internal.h
 components/esp_netif/lwip/esp_netif_lwip_ppp.c
@@ -1776,7 +1775,6 @@ components/lwip/port/esp32/include/arch/vfs_lwip.h
 components/lwip/port/esp32/include/arpa/inet.h
 components/lwip/port/esp32/include/debug/lwip_debug.h
 components/lwip/port/esp32/include/lwip_default_hooks.h
-components/lwip/port/esp32/include/lwipopts.h
 components/lwip/port/esp32/include/netdb.h
 components/lwip/port/esp32/include/netif/dhcp_state.h
 components/lwip/port/esp32/include/netif/ethernetif.h
