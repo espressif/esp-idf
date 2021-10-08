@@ -1550,10 +1550,10 @@ static esp_err_t i2s_check_cfg_validity(i2s_port_t i2s_num, i2s_hal_config_t *cf
     if (cfg->mode & I2S_MODE_PDM) {
         ESP_RETURN_ON_FALSE(i2s_num == I2S_NUM_0, ESP_ERR_INVALID_ARG, TAG, "I2S PDM mode only support on I2S0");
 #if !SOC_I2S_SUPPORTS_PDM_TX
-        ESP_RETURN_ON_FALSE(cfg->mode & I2S_MODE_TX, ESP_ERR_INVALID_ARG, TAG, "PDM does not support TX on this chip");
+        ESP_RETURN_ON_FALSE(!(cfg->mode & I2S_MODE_TX), ESP_ERR_INVALID_ARG, TAG, "PDM does not support TX on this chip");
 #endif // SOC_I2S_SUPPORTS_PDM_TX
 #if !SOC_I2S_SUPPORTS_PDM_RX
-        ESP_RETURN_ON_FALSE(cfg->mode & I2S_MODE_RX, ESP_ERR_INVALID_ARG, TAG, "PDM does not support RX on this chip");
+        ESP_RETURN_ON_FALSE(!(cfg->mode & I2S_MODE_RX), ESP_ERR_INVALID_ARG, TAG, "PDM does not support RX on this chip");
 #endif // SOC_I2S_SUPPORTS_PDM_RX
     }
 #else

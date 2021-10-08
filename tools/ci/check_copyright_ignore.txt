@@ -1517,7 +1517,6 @@ components/hal/esp32c3/include/hal/gpspi_flash_ll.h
 components/hal/esp32c3/include/hal/hmac_hal.h
 components/hal/esp32c3/include/hal/hmac_ll.h
 components/hal/esp32c3/include/hal/i2c_ll.h
-components/hal/esp32c3/include/hal/i2s_ll.h
 components/hal/esp32c3/include/hal/interrupt_controller_ll.h
 components/hal/esp32c3/include/hal/ledc_ll.h
 components/hal/esp32c3/include/hal/memprot_ll.h
@@ -1555,7 +1554,6 @@ components/hal/esp32h2/include/hal/gpspi_flash_ll.h
 components/hal/esp32h2/include/hal/hmac_hal.h
 components/hal/esp32h2/include/hal/hmac_ll.h
 components/hal/esp32h2/include/hal/i2c_ll.h
-components/hal/esp32h2/include/hal/i2s_ll.h
 components/hal/esp32h2/include/hal/interrupt_controller_ll.h
 components/hal/esp32h2/include/hal/ledc_ll.h
 components/hal/esp32h2/include/hal/memprot_ll.h
@@ -1634,7 +1632,6 @@ components/hal/esp32s3/include/hal/gdma_ll.h
 components/hal/esp32s3/include/hal/gpio_ll.h
 components/hal/esp32s3/include/hal/gpspi_flash_ll.h
 components/hal/esp32s3/include/hal/i2c_ll.h
-components/hal/esp32s3/include/hal/i2s_ll.h
 components/hal/esp32s3/include/hal/interrupt_controller_ll.h
 components/hal/esp32s3/include/hal/lcd_ll.h
 components/hal/esp32s3/include/hal/ledc_ll.h
@@ -1669,7 +1666,6 @@ components/hal/gdma_hal.c
 components/hal/gpio_hal.c
 components/hal/i2c_hal.c
 components/hal/i2c_hal_iram.c
-components/hal/i2s_hal.c
 components/hal/include/hal/adc_hal.h
 components/hal/include/hal/adc_types.h
 components/hal/include/hal/aes_hal.h
@@ -1689,7 +1685,6 @@ components/hal/include/hal/gpio_hal.h
 components/hal/include/hal/gpio_types.h
 components/hal/include/hal/i2c_hal.h
 components/hal/include/hal/i2c_types.h
-components/hal/include/hal/i2s_hal.h
 components/hal/include/hal/i2s_types.h
 components/hal/include/hal/interrupt_controller_hal.h
 components/hal/include/hal/interrupt_controller_types.h
