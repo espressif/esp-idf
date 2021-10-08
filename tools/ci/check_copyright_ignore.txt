@@ -70,7 +70,6 @@ components/bt/common/osi/mutex.c
 components/bt/common/osi/osi.c
 components/bt/common/osi/semaphore.c
 components/bt/common/osi/thread.c
-components/bt/controller/esp32/bt.c
 components/bt/controller/esp32/hli_api.c
 components/bt/controller/esp32/hli_api.h
 components/bt/controller/esp32c3/bt.c
