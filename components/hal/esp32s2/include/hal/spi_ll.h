@@ -27,6 +27,7 @@
 #include "hal/hal_defs.h"
 #include "esp_types.h"
 #include "soc/spi_periph.h"
+#include "soc/spi_struct.h"
 #include "esp32s2/rom/lldesc.h"
 #include "esp_attr.h"
 
@@ -512,10 +513,10 @@ static inline void spi_ll_set_sio_mode(spi_dev_t *hw, int sio_mode)
 static inline void spi_ll_master_set_io_mode(spi_dev_t *hw, spi_ll_io_mode_t io_mode)
 {
     if (io_mode == SPI_LL_IO_MODE_DIO || io_mode == SPI_LL_IO_MODE_DUAL) {
-        hw->ctrl.fcmd_dual= (io_mode == SPI_LL_IO_MODE_DIO) ? 1 : 0;
-        hw->ctrl.faddr_dual= (io_mode == SPI_LL_IO_MODE_DIO) ? 1 : 0;
-        hw->ctrl.fread_dual=1;
-        hw->user.fwrite_dual=1;
+        hw->ctrl.fcmd_dual = (io_mode == SPI_LL_IO_MODE_DIO) ? 1 : 0;
+        hw->ctrl.faddr_dual = (io_mode == SPI_LL_IO_MODE_DIO) ? 1 : 0;
+        hw->ctrl.fread_dual = 1;
+        hw->user.fwrite_dual = 1;
         hw->ctrl.fcmd_quad = 0;
         hw->ctrl.faddr_quad = 0;
         hw->ctrl.fread_quad = 0;
@@ -523,8 +524,8 @@ static inline void spi_ll_master_set_io_mode(spi_dev_t *hw, spi_ll_io_mode_t io_
     } else if (io_mode == SPI_LL_IO_MODE_QIO || io_mode == SPI_LL_IO_MODE_QUAD) {
         hw->ctrl.fcmd_quad = (io_mode == SPI_LL_IO_MODE_QIO) ? 1 : 0;
         hw->ctrl.faddr_quad = (io_mode == SPI_LL_IO_MODE_QIO) ? 1 : 0;
-        hw->ctrl.fread_quad=1;
-        hw->user.fwrite_quad=1;
+        hw->ctrl.fread_quad = 1;
+        hw->user.fwrite_quad = 1;
         hw->ctrl.fcmd_dual = 0;
         hw->ctrl.faddr_dual = 0;
         hw->ctrl.fread_dual = 0;
@@ -732,7 +733,7 @@ static inline void spi_ll_set_miso_delay(spi_dev_t *hw, int delay_mode, int dela
 static inline void spi_ll_set_dummy(spi_dev_t *hw, int dummy_n)
 {
     hw->user.usr_dummy = dummy_n ? 1 : 0;
-    hw->user1.usr_dummy_cyclelen = dummy_n - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->user1, usr_dummy_cyclelen, dummy_n - 1);
 }
 
 /**
@@ -893,13 +894,13 @@ static inline void spi_ll_set_command(spi_dev_t *hw, uint16_t cmd, int cmdlen, b
 {
     if (lsbfirst) {
         // The output command start from bit0 to bit 15, kept as is.
-        hw->user2.usr_command_value = cmd;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->user2, usr_command_value, cmd);
     } else {
         /* Output command will be sent from bit 7 to 0 of command_value, and
          * then bit 15 to 8 of the same register field. Shift and swap to send
          * more straightly.
          */
-        hw->user2.usr_command_value = HAL_SPI_SWAP_DATA_TX(cmd, cmdlen);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->user2, usr_command_value, HAL_SPI_SWAP_DATA_TX(cmd, cmdlen));
 
     }
 }
@@ -1069,7 +1070,7 @@ static inline int spi_ll_slave_get_rx_byte_len(spi_dev_t* hw)
 
 static inline uint32_t spi_ll_slave_hd_get_last_addr(spi_dev_t* hw)
 {
-    return hw->slave1.last_addr;
+    return HAL_FORCE_READ_U32_REG_FIELD(hw->slave1, last_addr);
 }
 
 /*------------------------------------------------------------------------------

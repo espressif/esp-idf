@@ -24,6 +24,7 @@ extern "C" {
 #include <stdlib.h>
 #include "hal/timer_types.h"
 #include "soc/timer_periph.h"
+#include "soc/timer_group_struct.h"
 
 _Static_assert(TIMER_INTR_T0 == TIMG_T0_INT_CLR, "Add mapping to LL interrupt handling, since it's no longer naturally compatible with the timer_intr_t");
 _Static_assert(TIMER_INTR_WDT == TIMG_WDT_INT_CLR, "Add mapping to LL interrupt handling, since it's no longer naturally compatible with the timer_intr_t");

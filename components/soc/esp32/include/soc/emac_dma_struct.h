@@ -20,7 +20,7 @@ extern "C"
 
 #include <stdint.h>
 
-typedef volatile struct {
+typedef volatile struct emac_dma_dev_s {
     union {
         struct {
             uint32_t sw_rst : 1;         /*When this bit is set  the MAC DMA Controller resets the logic and all internal registers of the MAC. It is cleared automatically after the reset operation is complete in all of the ETH_MAC clock domains. Before reprogramming any register of the ETH_MAC  you should read a zero (0) value in this bit.*/

@@ -31,6 +31,8 @@ extern "C" {
 #include "sdkconfig.h"
 #include "hal/twai_types.h"
 #include "soc/twai_periph.h"
+#include "soc/twai_struct.h"
+#include "hal/hal_defs.h"
 
 /* ------------------------- Defines and Typedefs --------------------------- */
 
@@ -490,7 +492,7 @@ static inline void twai_ll_parse_err_code_cap(twai_dev_t *hw,
  */
 static inline void twai_ll_set_err_warn_lim(twai_dev_t *hw, uint32_t ewl)
 {
-    hw->error_warning_limit_reg.ewl = ewl;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->error_warning_limit_reg, ewl, ewl);
 }
 
 /**
@@ -530,7 +532,7 @@ static inline uint32_t twai_ll_get_rec(twai_dev_t *hw)
  */
 static inline void twai_ll_set_rec(twai_dev_t *hw, uint32_t rec)
 {
-    hw->rx_error_counter_reg.rxerr = rec;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->rx_error_counter_reg, rxerr, rec);
 }
 
 /* ------------------------ TX Error Count Register ------------------------- */
@@ -558,7 +560,7 @@ static inline uint32_t twai_ll_get_tec(twai_dev_t *hw)
  */
 static inline void twai_ll_set_tec(twai_dev_t *hw, uint32_t tec)
 {
-    hw->tx_error_counter_reg.txerr = tec;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->tx_error_counter_reg, txerr, tec);
 }
 
 /* ---------------------- Acceptance Filter Registers ----------------------- */

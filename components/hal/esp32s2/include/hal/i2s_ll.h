@@ -24,7 +24,9 @@
 
 #include <stdbool.h>
 #include "soc/i2s_periph.h"
+#include "soc/i2s_struct.h"
 #include "hal/i2s_types.h"
+#include "hal/hal_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -416,7 +418,7 @@ static inline void i2s_ll_set_rx_eof_num(i2s_dev_t *hw, uint32_t val)
  */
 static inline void i2s_ll_set_clkm_div_num(i2s_dev_t *hw, uint32_t val)
 {
-    hw->clkm_conf.clkm_div_num = val;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clkm_conf, clkm_div_num, val);
 }
 
 /**

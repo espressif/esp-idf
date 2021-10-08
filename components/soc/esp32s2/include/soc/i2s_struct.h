@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct i2s_dev_s {
     uint32_t reserved_0;
     uint32_t reserved_4;
     union {
