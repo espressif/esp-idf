@@ -186,6 +186,7 @@ void init_microphone(void)
     };
 
     i2s_pin_config_t pin_config;
+    pin_config.mck_io_num = I2S_PIN_NO_CHANGE;
     pin_config.bck_io_num = I2S_PIN_NO_CHANGE;
     pin_config.ws_io_num = CONFIG_EXAMPLE_I2S_CLK_GPIO;
     pin_config.data_out_num = I2S_PIN_NO_CHANGE;
