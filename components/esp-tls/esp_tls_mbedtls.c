@@ -500,7 +500,7 @@ esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
             return esp_ret;
         }
     } else {
-        mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_NONE);
+        mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_OPTIONAL);
     }
 
     if (cfg->servercert_buf != NULL && cfg->serverkey_buf != NULL) {
