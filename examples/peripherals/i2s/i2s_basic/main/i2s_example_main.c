@@ -102,6 +102,7 @@ void app_main(void)
         .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1                                //Interrupt level 1
     };
     i2s_pin_config_t pin_config = {
+        .mck_io_num = I2S_PIN_NO_CHANGE,
         .bck_io_num = I2S_BCK_IO,
         .ws_io_num = I2S_WS_IO,
         .data_out_num = I2S_DO_IO,
