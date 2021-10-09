@@ -10,6 +10,7 @@
 #include "soc/dport_reg.h"
 
 #ifndef CONFIG_FREERTOS_UNICORE
+#ifndef CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_5
 
 #define L5_INTR_STACK_SIZE  12
 #define L5_INTR_A2_OFFSET   0
@@ -77,6 +78,8 @@ xt_highint5:
 
     .global ld_include_test_dport_xt_highint5
 ld_include_test_dport_xt_highint5:
+
+#endif // CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL_5
 #endif // CONFIG_FREERTOS_UNICORE
 
 #endif // CONFIG_IDF_TARGET_ESP32

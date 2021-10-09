@@ -50,7 +50,7 @@ typedef struct {
     uint16_t mclk_div; // I2S module clock devider, Fmclk = Fsclk /(mclk_div+b/a)
     uint16_t a;
     uint16_t b;        // The decimal part of module clock devider, the decimal is: b/a
-} i2s_ll_clk_cal_t;
+} i2s_ll_mclk_div_t;
 
 /**
  * @brief Enable DMA descriptor owner check
@@ -95,6 +95,18 @@ static inline void i2s_ll_enable_clock(i2s_dev_t *hw)
     if (hw->clkm_conf.clk_en == 0) {
         hw->clkm_conf.clk_en = 1;
         hw->conf2.val = 0;
+    }
+}
+
+/**
+ * @brief I2S module disable clock.
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ */
+static inline void i2s_ll_disable_clock(i2s_dev_t *hw)
+{
+    if (hw->clkm_conf.clk_en == 1) {
+        hw->clkm_conf.clk_en = 0;
     }
 }
 
@@ -272,7 +284,7 @@ static inline void i2s_ll_tx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
  * @param hw Peripheral I2S hardware instance address.
  * @param set Pointer to I2S clock devider configuration paramater
  */
-static inline void i2s_ll_tx_set_clk(i2s_dev_t *hw, i2s_ll_clk_cal_t *set)
+static inline void i2s_ll_tx_set_clk(i2s_dev_t *hw, i2s_ll_mclk_div_t *set)
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clkm_conf, clkm_div_num, set->mclk_div);
     hw->clkm_conf.clkm_div_b = set->b;
@@ -296,7 +308,7 @@ static inline void i2s_ll_rx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
  * @param hw Peripheral I2S hardware instance address.
  * @param set Pointer to I2S clock devider configuration paramater
  */
-static inline void i2s_ll_rx_set_clk(i2s_dev_t *hw, i2s_ll_clk_cal_t *set)
+static inline void i2s_ll_rx_set_clk(i2s_dev_t *hw, i2s_ll_mclk_div_t *set)
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clkm_conf, clkm_div_num, set->mclk_div);
     hw->clkm_conf.clkm_div_b = set->b;
@@ -713,9 +725,9 @@ static inline void i2s_ll_rx_enable_mono_mode(i2s_dev_t *hw, bool mono_ena)
  * @brief Enable I2S loopback mode
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param loopback_en Set true to enable loopback mode.
+ * @param loopback_en Set true to share BCK and WS signal for tx module and rx module.
  */
-static inline void i2s_ll_enable_loop_back(i2s_dev_t *hw, bool loopback_en)
+static inline void i2s_ll_share_bck_ws(i2s_dev_t *hw, bool loopback_en)
 {
     hw->conf.sig_loopback = loopback_en;
 }

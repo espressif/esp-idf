@@ -46,26 +46,26 @@
 
 #if portNUM_PROCESSORS == 2
 
+// This runs on APP CPU:
+static void time_adc_test_task(void* arg)
+{
+    for (int i = 0; i < 200000; ++i) {
+        // wait for 20us, reading one of RTC registers
+        uint32_t ccount = xthal_get_ccount();
+        while (xthal_get_ccount() - ccount < 20 * TARGET_DEFAULT_CPU_FREQ_MHZ) {
+            volatile uint32_t val = REG_READ(RTC_CNTL_STATE0_REG);
+            (void) val;
+        }
+    }
+    SemaphoreHandle_t * p_done = (SemaphoreHandle_t *) arg;
+    xSemaphoreGive(*p_done);
+    vTaskDelay(1);
+    vTaskDelete(NULL);
+}
+
 // https://github.com/espressif/arduino-esp32/issues/120
 TEST_CASE("Reading RTC registers on APP CPU doesn't affect clock", "[newlib]")
 {
-    // This runs on APP CPU:
-    void time_adc_test_task(void* arg)
-    {
-        for (int i = 0; i < 200000; ++i) {
-            // wait for 20us, reading one of RTC registers
-            uint32_t ccount = xthal_get_ccount();
-            while (xthal_get_ccount() - ccount < 20 * TARGET_DEFAULT_CPU_FREQ_MHZ) {
-                volatile uint32_t val = REG_READ(RTC_CNTL_STATE0_REG);
-                (void) val;
-            }
-        }
-        SemaphoreHandle_t * p_done = (SemaphoreHandle_t *) arg;
-        xSemaphoreGive(*p_done);
-        vTaskDelay(1);
-        vTaskDelete(NULL);
-    }
-
     SemaphoreHandle_t done = xSemaphoreCreateBinary();
     xTaskCreatePinnedToCore(&time_adc_test_task, "time_adc", 4096, &done, 5, NULL, 1);
 

@@ -96,10 +96,21 @@ menu "Power Management"
 
     config PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
         bool "Power down CPU in light sleep"
-        depends on IDF_TARGET_ESP32C3
+        depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+        select PM_POWER_DOWN_TAGMEM_IN_LIGHT_SLEEP if ESP32S3_DATA_CACHE_16KB
         default y
         help
-            If enabled, the CPU will be powered down in light sleep. Enabling this option will consume
-            1.68 KB of internal RAM and will reduce sleep current consumption by about 100 uA.
+            If enabled, the CPU will be powered down in light sleep. On esp32c3 soc, enabling this
+            option will consume 1.68 KB of internal RAM and will reduce sleep current consumption
+            by about 100 uA. On esp32s3 soc, enabling this option will consume 8.58 KB of internal
+            RAM and will reduce sleep current consumption by about 650 uA.
+
+    config PM_POWER_DOWN_TAGMEM_IN_LIGHT_SLEEP
+        bool "Power down I/D-cache tag memory in light sleep"
+        depends on IDF_TARGET_ESP32S3 && PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
+        default y
+        help
+            If enabled, the I/D-cache tag memory will be retained in light sleep. Depending on the the
+            cache configuration, if this option is enabled, it will consume up to 9 KB of internal RAM.
 
 endmenu # "Power Management"

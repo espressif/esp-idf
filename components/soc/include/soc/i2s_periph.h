@@ -28,12 +28,20 @@ extern "C" {
 */
 typedef struct {
     const uint8_t mck_out_sig;
-    const uint8_t tx_bck_sig;
-    const uint8_t rx_bck_sig;
-    const uint8_t tx_ws_sig;
-    const uint8_t rx_ws_sig;
+
+    const uint8_t m_tx_bck_sig;
+    const uint8_t m_rx_bck_sig;
+    const uint8_t m_tx_ws_sig;
+    const uint8_t m_rx_ws_sig;
+
+    const uint8_t s_tx_bck_sig;
+    const uint8_t s_rx_bck_sig;
+    const uint8_t s_tx_ws_sig;
+    const uint8_t s_rx_ws_sig;
+
     const uint8_t data_out_sig;
     const uint8_t data_in_sig;
+
     const uint8_t irq;
     const periph_module_t module;
 } i2s_signal_conn_t;

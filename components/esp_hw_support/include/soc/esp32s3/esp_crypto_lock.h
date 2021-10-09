@@ -19,6 +19,20 @@ extern "C" {
  */
 
 /**
+ * @brief Acquire lock for Digital Signature(DS) cryptography peripheral
+ *
+ * Internally also takes the HMAC lock, as the DS depends on the HMAC peripheral
+ */
+void esp_crypto_ds_lock_acquire(void);
+
+/**
+ * @brief Release lock for Digital Signature(DS) cryptography peripheral
+ *
+ * Internally also releases the HMAC lock, as the DS depends on the HMAC peripheral
+ */
+void esp_crypto_ds_lock_release(void);
+
+/**
  * @brief Acquire lock for HMAC cryptography peripheral
  *
  * Internally also takes the SHA & AES lock, as the HMAC depends on the SHA peripheral

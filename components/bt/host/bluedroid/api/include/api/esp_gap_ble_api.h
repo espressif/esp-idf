@@ -467,7 +467,7 @@ typedef struct
 {
     uint16_t rx_len;                   /*!< pkt rx data length value */
     uint16_t tx_len;                   /*!< pkt tx data length value */
-}esp_ble_pkt_data_length_params_t;
+} esp_ble_pkt_data_length_params_t;
 
 /**
 * @brief BLE encryption keys
@@ -648,7 +648,7 @@ typedef enum {
 typedef enum{
     ESP_BLE_WHITELIST_REMOVE     = 0X00,    /*!< remove mac from whitelist */
     ESP_BLE_WHITELIST_ADD        = 0X01,    /*!< add address to whitelist */
-}esp_ble_wl_opration_t;
+} esp_ble_wl_opration_t;
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
 typedef enum {
     ESP_BLE_DUPLICATE_EXCEPTIONAL_LIST_ADD      = 0,  /*!< Add device info into duplicate scan exceptional list */
@@ -998,7 +998,7 @@ typedef union {
         uint16_t conn_int;                         /*!< Current connection interval */
         uint16_t timeout;                          /*!< Supervision timeout for the LE Link. Range: 0x000A to 0x0C80.
                                                      Mandatory Range: 0x000A to 0x0C80 Time = N * 10 msec */
-    }update_conn_params;                           /*!< Event parameter of ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT */
+    } update_conn_params;                          /*!< Event parameter of ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT */
     /**
      * @brief ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT
      */
@@ -1018,13 +1018,13 @@ typedef union {
     struct ble_remove_bond_dev_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate the remove bond device operation success status */
         esp_bd_addr_t bd_addr;                      /*!< The device address which has been remove from the bond list */
-    }remove_bond_dev_cmpl;                          /*!< Event parameter of ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT */
+    } remove_bond_dev_cmpl;                         /*!< Event parameter of ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT
      */
     struct ble_clear_bond_dev_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate the clear bond device operation success status */
-    }clear_bond_dev_cmpl;                           /*!< Event parameter of ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT */
+    } clear_bond_dev_cmpl;                          /*!< Event parameter of ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT
      */
@@ -1032,7 +1032,7 @@ typedef union {
         esp_bt_status_t status;                     /*!< Indicate the get bond device operation success status */
         uint8_t dev_num;                            /*!< Indicate the get number device in the bond list */
         esp_ble_bond_dev_t *bond_dev;               /*!< the pointer to the bond device Structure */
-    }get_bond_dev_cmpl;                             /*!< Event parameter of ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT */
+    } get_bond_dev_cmpl;                            /*!< Event parameter of ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT */
     /**
      * @brief ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT
      */

@@ -676,7 +676,7 @@ typedef void * MessageBufferHandle_t;
 /**
  * @cond
  * message_buffer.h
- * @code{c}{c}
+ * @code{c}
  * BaseType_t xMessageBufferIsEmpty( MessageBufferHandle_t xMessageBuffer ) );
  * @endcode
  * @endcond

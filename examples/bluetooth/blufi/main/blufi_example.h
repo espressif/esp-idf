@@ -13,3 +13,4 @@ int blufi_security_init(void);
 void blufi_security_deinit(void);
 int esp_blufi_gap_register_callback(void);
 esp_err_t esp_blufi_host_init(void);
+esp_err_t esp_blufi_host_and_cb_init(esp_blufi_callbacks_t *callbacks);

@@ -312,6 +312,16 @@ typedef QueueHandle_t SemaphoreHandle_t;
 #define xSemaphoreTake( xSemaphore, xBlockTime )    xQueueSemaphoreTake( ( xSemaphore ), ( xBlockTime ) )
 
 /**
+ * @cond
+ * semphr. h
+ * @code{c}
+ * xSemaphoreTakeRecursive(
+ *                          SemaphoreHandle_t xMutex,
+ *                          TickType_t xBlockTime
+ *                        );
+ * @endcode
+ * @endcond
+ *
  * <i>Macro</i> to recursively obtain, or 'take', a mutex type semaphore.
  * The mutex must have previously been created using a call to
  * xSemaphoreCreateRecursiveMutex();
@@ -399,22 +409,6 @@ typedef QueueHandle_t SemaphoreHandle_t;
  * \ingroup Semaphores
  */
 #define xSemaphoreTakeRecursive( xMutex, xBlockTime )   xQueueTakeMutexRecursive( ( xMutex ), ( xBlockTime ) )
-
-/** @cond */
-/*
- * xSemaphoreAltTake() is an alternative version of xSemaphoreTake().
- *
- * The source code that implements the alternative (Alt) API is much
- * simpler  because it executes everything from within a critical section.
- * This is  the approach taken by many other RTOSes, but FreeRTOS.org has the
- * preferred fully featured API too.  The fully featured API has more
- * complex  code that takes longer to execute, but makes much less use of
- * critical sections.  Therefore the alternative API sacrifices interrupt
- * responsiveness to gain execution speed, whereas the fully featured API
- * sacrifices execution speed to ensure better interrupt responsiveness.
- */
-#define xSemaphoreAltTake( xSemaphore, xBlockTime )     xQueueAltGenericReceive( ( QueueHandle_t ) ( xSemaphore ), NULL, ( xBlockTime ), pdFALSE )
-/** @endcond */
 
 /**
  * <i>Macro</i> to release a semaphore.  The semaphore must have previously been
@@ -567,23 +561,6 @@ typedef QueueHandle_t SemaphoreHandle_t;
  * \ingroup Semaphores
  */
 #define xSemaphoreGiveRecursive( xMutex )   xQueueGiveMutexRecursive( ( xMutex ) )
-
-/** @cond */
-/*
- * xSemaphoreAltGive() is an alternative version of xSemaphoreGive().
- *
- * The source code that implements the alternative (Alt) API is much
- * simpler  because it executes everything from within a critical section.
- * This is  the approach taken by many other RTOSes, but FreeRTOS.org has the
- * preferred fully featured API too.  The fully featured API has more
- * complex  code that takes longer to execute, but makes much less use of
- * critical sections.  Therefore the alternative API sacrifices interrupt
- * responsiveness to gain execution speed, whereas the fully featured API
- * sacrifices execution speed to ensure better interrupt responsiveness.
- */
-#define xSemaphoreAltGive( xSemaphore )     xQueueAltGenericSend( ( QueueHandle_t ) ( xSemaphore ), NULL, semGIVE_BLOCK_TIME, queueSEND_TO_BACK )
-
-/** @endcond */
 
 /**
  * <i>Macro</i> to  release a semaphore.  The semaphore must have previously been
@@ -950,7 +927,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  * returned.
  *
  * Example usage:
- * @code
+ * @code{c}
  *  SemaphoreHandle_t xSemaphore;
  *  StaticSemaphore_t xMutexBuffer;
  *

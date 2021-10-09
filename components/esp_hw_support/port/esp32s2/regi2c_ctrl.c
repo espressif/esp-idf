@@ -5,11 +5,11 @@
  */
 
 #include "soc/soc.h"
-#include "soc/apb_ctrl_reg.h"
+#include "soc/syscon_reg.h"
 #include "regi2c_ctrl.h"
 #include "regi2c_brownout.h"
 
-#define I2C_RTC_WIFI_CLK_EN (APB_CTRL_WIFI_CLK_EN_REG)
+#define I2C_RTC_WIFI_CLK_EN (SYSCON_WIFI_CLK_EN_REG)
 
 #define I2C_RTC_CLK_GATE_EN    (BIT(18))
 #define I2C_RTC_CLK_GATE_EN_M  (BIT(18))

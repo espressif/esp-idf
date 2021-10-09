@@ -64,7 +64,9 @@
  * or #defined the notification macros away, then provide default implementations
  * that uses task notifications. */
 /*lint -save -e9026 Function like macros allowed and needed here so they can be overridden. */
+
 #ifndef sbRECEIVE_COMPLETED
+#ifdef ESP_PLATFORM // IDF-3775
     #define sbRECEIVE_COMPLETED( pxStreamBuffer )                         \
     taskENTER_CRITICAL();                                                 \
     {                                                                     \
@@ -77,6 +79,20 @@
         }                                                                 \
     }                                                                     \
     taskEXIT_CRITICAL();
+#else
+    #define sbRECEIVE_COMPLETED( pxStreamBuffer )                         \
+    vTaskSuspendAll();                                                    \
+    {                                                                     \
+        if( ( pxStreamBuffer )->xTaskWaitingToSend != NULL )              \
+        {                                                                 \
+            ( void ) xTaskNotify( ( pxStreamBuffer )->xTaskWaitingToSend, \
+                                  ( uint32_t ) 0,                         \
+                                  eNoAction );                            \
+            ( pxStreamBuffer )->xTaskWaitingToSend = NULL;                \
+        }                                                                 \
+    }                                                                     \
+    ( void ) xTaskResumeAll();
+#endif // ESP_PLATFORM
 #endif /* sbRECEIVE_COMPLETED */
 
 #ifndef sbRECEIVE_COMPLETED_FROM_ISR
@@ -104,6 +120,7 @@
  * or #defined the notification macro away, them provide a default implementation
  * that uses task notifications. */
 #ifndef sbSEND_COMPLETED
+#ifdef ESP_PLATFORM // IDF-3755
     #define sbSEND_COMPLETED( pxStreamBuffer )                               \
     taskENTER_CRITICAL();                                                    \
     {                                                                        \
@@ -116,6 +133,20 @@
         }                                                                    \
     }                                                                        \
     taskEXIT_CRITICAL();
+#else
+    #define sbSEND_COMPLETED( pxStreamBuffer )                               \
+    vTaskSuspendAll();                                                       \
+    {                                                                        \
+        if( ( pxStreamBuffer )->xTaskWaitingToReceive != NULL )              \
+        {                                                                    \
+            ( void ) xTaskNotify( ( pxStreamBuffer )->xTaskWaitingToReceive, \
+                                  ( uint32_t ) 0,                            \
+                                  eNoAction );                               \
+            ( pxStreamBuffer )->xTaskWaitingToReceive = NULL;                \
+        }                                                                    \
+    }                                                                        \
+    ( void ) xTaskResumeAll();
+#endif // ESP_PLATFORM
 #endif /* sbSEND_COMPLETED */
 
 #ifndef sbSEND_COMPLETE_FROM_ISR
@@ -163,7 +194,9 @@ typedef struct StreamBufferDef_t                 /*lint !e9058 Style convention 
     #if ( configUSE_TRACE_FACILITY == 1 )
         UBaseType_t uxStreamBufferNumber; /* Used for tracing purposes. */
     #endif
+#ifdef ESP_PLATFORM
     portMUX_TYPE xStreamBufferMux;  //Mutex required due to SMP
+#endif // ESP_PLATFORM
 } StreamBuffer_t;
 
 /*
@@ -280,7 +313,6 @@ static void prvInitialiseNewStreamBuffer( StreamBuffer_t * const pxStreamBuffer,
         {
             pucAllocatedMemory = NULL;
         }
-
 
         if( pucAllocatedMemory != NULL )
         {
@@ -538,9 +570,14 @@ size_t xStreamBufferSend( StreamBufferHandle_t xStreamBuffer,
     size_t xReturn, xSpace = 0;
     size_t xRequiredSpace = xDataLengthBytes;
     TimeOut_t xTimeOut;
+    size_t xMaxReportedSpace = 0;
 
     configASSERT( pvTxData );
     configASSERT( pxStreamBuffer );
+
+    /* The maximum amount of space a stream buffer will ever report is its length
+     * minus 1. */
+    xMaxReportedSpace = pxStreamBuffer->xLength - ( size_t ) 1;
 
     /* This send function is used to write to both message buffers and stream
      * buffers.  If this is a message buffer then the space needed must be
@@ -552,10 +589,33 @@ size_t xStreamBufferSend( StreamBufferHandle_t xStreamBuffer,
 
         /* Overflow? */
         configASSERT( xRequiredSpace > xDataLengthBytes );
+
+        /* If this is a message buffer then it must be possible to write the
+         * whole message. */
+        if( xRequiredSpace > xMaxReportedSpace )
+        {
+            /* The message would not fit even if the entire buffer was empty,
+             * so don't wait for space. */
+            xTicksToWait = ( TickType_t ) 0;
+        }
+        else
+        {
+            mtCOVERAGE_TEST_MARKER();
+        }
     }
     else
     {
-        mtCOVERAGE_TEST_MARKER();
+        /* If this is a stream buffer then it is acceptable to write only part
+         * of the message to the buffer.  Cap the length to the total length of
+         * the buffer. */
+        if( xRequiredSpace > xMaxReportedSpace )
+        {
+            xRequiredSpace = xMaxReportedSpace;
+        }
+        else
+        {
+            mtCOVERAGE_TEST_MARKER();
+        }
     }
 
     if( xTicksToWait != ( TickType_t ) 0 )
@@ -1266,7 +1326,9 @@ static void prvInitialiseNewStreamBuffer( StreamBuffer_t * const pxStreamBuffer,
     pxStreamBuffer->xLength = xBufferSizeBytes;
     pxStreamBuffer->xTriggerLevelBytes = xTriggerLevelBytes;
     pxStreamBuffer->ucFlags = ucFlags;
+#ifdef ESP_PLATFORM
     vPortCPUInitializeMutex( &pxStreamBuffer->xStreamBufferMux );
+#endif // ESP_PLATFORM
 }
 
 #if ( configUSE_TRACE_FACILITY == 1 )

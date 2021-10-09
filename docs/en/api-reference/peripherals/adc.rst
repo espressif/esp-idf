@@ -1,5 +1,5 @@
-Analog to Digital Converter
-===========================
+Analog to Digital Converter (ADC)
+=================================
 
 {IDF_TARGET_ADC1_CH0: default="GPIO 0", esp32="GPIO 36"}
 {IDF_TARGET_ADC2_CH7: default="GPIO 0", esp32="GPIO 27"}

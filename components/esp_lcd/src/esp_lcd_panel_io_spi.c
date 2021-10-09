@@ -15,6 +15,7 @@
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "esp_check.h"
+#include "esp_lcd_common.h"
 
 static const char *TAG = "lcd_panel.io.spi";
 
@@ -36,8 +37,8 @@ typedef struct {
     esp_lcd_panel_io_t base;     // Base class of generic lcd panel io
     spi_device_handle_t spi_dev; // SPI device handle
     int dc_gpio_num;             // D/C line GPIO number
-    bool (*on_color_trans_done)(esp_lcd_panel_io_handle_t panel_io, void *user_data, void *event_data); // User register's callback, invoked when color data trans done
-    void *user_data;           // User's private data, passed directly to callback on_color_trans_done
+    esp_lcd_panel_io_color_trans_done_cb_t on_color_trans_done; // User register's callback, invoked when color data trans done
+    void *user_ctx;           // User's private data, passed directly to callback on_color_trans_done
     size_t queue_size;         // Size of transaction queue
     size_t num_trans_inflight;  // Number of transactions that are undergoing (the descriptor not recycled yet)
     int lcd_cmd_bits;          // Bit width of LCD command
@@ -61,7 +62,7 @@ esp_err_t esp_lcd_new_panel_io_spi(esp_lcd_spi_bus_handle_t bus, const esp_lcd_p
     ESP_GOTO_ON_FALSE(spi_panel_io, ESP_ERR_NO_MEM, err, TAG, "no mem for spi panel io");
 
     spi_device_interface_config_t devcfg = {
-        .flags = io_config->flags.octal_mode ? SPI_DEVICE_HALFDUPLEX : 0,
+        .flags = SPI_DEVICE_HALFDUPLEX, // only use TX path, so half duplex is enough
         .clock_speed_hz = io_config->pclk_hz,
         .mode = io_config->spi_mode,
         .spics_io_num = io_config->cs_gpio_num,
@@ -86,9 +87,9 @@ esp_err_t esp_lcd_new_panel_io_spi(esp_lcd_spi_bus_handle_t bus, const esp_lcd_p
     spi_panel_io->flags.dc_data_level = !io_config->flags.dc_low_on_data;
     spi_panel_io->flags.octal_mode = io_config->flags.octal_mode;
     spi_panel_io->on_color_trans_done = io_config->on_color_trans_done;
+    spi_panel_io->user_ctx = io_config->user_ctx;
     spi_panel_io->lcd_cmd_bits = io_config->lcd_cmd_bits;
     spi_panel_io->lcd_param_bits = io_config->lcd_param_bits;
-    spi_panel_io->user_data = io_config->user_data;
     spi_panel_io->dc_gpio_num = io_config->dc_gpio_num;
     spi_panel_io->queue_size = io_config->trans_queue_depth;
     spi_panel_io->base.tx_param = panel_io_spi_tx_param;
@@ -131,6 +132,34 @@ err:
     return ret;
 }
 
+static void spi_lcd_prepare_cmd_buffer(esp_lcd_panel_io_spi_t *panel_io, const void *cmd)
+{
+    uint8_t *from = (uint8_t *)cmd;
+    // LCD is big-endian, e.g. to send command 0x1234, byte 0x12 should appear on the bus first
+    // However, the SPI peripheral will send 0x34 first, so we reversed the order below
+    if (panel_io->lcd_cmd_bits > 8) {
+        int start = 0;
+        int end = panel_io->lcd_cmd_bits / 8 - 1;
+        lcd_com_reverse_buffer_bytes(from, start, end);
+    }
+}
+
+static void spi_lcd_prepare_param_buffer(esp_lcd_panel_io_spi_t *panel_io, const void *param, size_t param_size)
+{
+    uint8_t *from = (uint8_t *)param;
+    int param_width = panel_io->lcd_param_bits / 8;
+    size_t param_num = param_size / param_width;
+    // LCD is big-endian, e.g. to send command 0x1234, byte 0x12 should appear on the bus first
+    // However, the SPI peripheral will send 0x34 first, so we reversed the order below
+    if (panel_io->lcd_param_bits > 8) {
+        for (size_t i = 0; i < param_num; i++) {
+            int start = i * param_width;
+            int end = start + param_width - 1;
+            lcd_com_reverse_buffer_bytes(from, start, end);
+        }
+    }
+}
+
 static esp_err_t panel_io_spi_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, const void *param, size_t param_size)
 {
     esp_err_t ret = ESP_OK;
@@ -146,6 +175,7 @@ static esp_err_t panel_io_spi_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     spi_panel_io->num_trans_inflight = 0;
     lcd_trans = &spi_panel_io->trans_pool[0];
     memset(lcd_trans, 0, sizeof(lcd_spi_trans_descriptor_t));
+    spi_lcd_prepare_cmd_buffer(spi_panel_io, &lcd_cmd);
     lcd_trans->base.user = spi_panel_io;
     lcd_trans->flags.dc_gpio_level = !spi_panel_io->flags.dc_data_level; // set D/C line to command mode
     lcd_trans->base.length = spi_panel_io->lcd_cmd_bits;
@@ -162,6 +192,7 @@ static esp_err_t panel_io_spi_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     ESP_GOTO_ON_ERROR(ret, err, TAG, "spi transmit (polling) command failed");
 
     if (param && param_size) {
+        spi_lcd_prepare_param_buffer(spi_panel_io, param, param_size);
         lcd_trans->flags.dc_gpio_level = spi_panel_io->flags.dc_data_level; // set D/C line to data mode
         lcd_trans->base.length = param_size * 8; // transaction length is in bits
         lcd_trans->base.tx_buffer = param;
@@ -192,6 +223,7 @@ static esp_err_t panel_io_spi_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     spi_panel_io->num_trans_inflight = 0;
     lcd_trans = &spi_panel_io->trans_pool[0];
     memset(lcd_trans, 0, sizeof(lcd_spi_trans_descriptor_t));
+    spi_lcd_prepare_cmd_buffer(spi_panel_io, &lcd_cmd);
     lcd_trans->base.user = spi_panel_io;
     lcd_trans->flags.dc_gpio_level = !spi_panel_io->flags.dc_data_level; // set D/C line to command mode
     lcd_trans->base.length = spi_panel_io->lcd_cmd_bits;
@@ -239,7 +271,7 @@ static void lcd_spi_post_trans_color_cb(spi_transaction_t *trans)
     lcd_spi_trans_descriptor_t *lcd_trans = __containerof(trans, lcd_spi_trans_descriptor_t, base);
     if (lcd_trans->flags.trans_is_color) {
         if (spi_panel_io->on_color_trans_done) {
-            spi_panel_io->on_color_trans_done(&spi_panel_io->base, spi_panel_io->user_data, NULL);
+            spi_panel_io->on_color_trans_done(&spi_panel_io->base, NULL, spi_panel_io->user_ctx);
         }
     }
 }

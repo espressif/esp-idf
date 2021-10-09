@@ -52,6 +52,8 @@ typedef enum {
     RESET_REASON_SYS_SUPER_WDT   = 0x12, // Super watch dog resets the digital core and rtc module
     RESET_REASON_SYS_CLK_GLITCH  = 0x13, // Glitch on clock resets the digital core and rtc module
     RESET_REASON_CORE_EFUSE_CRC  = 0x14, // eFuse CRC error resets the digital core
+    RESET_REASON_CORE_USB_UART   = 0x15, // USB UART resets the digital core
+    RESET_REASON_CORE_USB_JTAG   = 0x16, // USB JTAG resets the digital core
     RESET_REASON_CORE_PWR_GLITCH = 0x17, // Glitch on power resets the digital core
 } soc_reset_reason_t;
 

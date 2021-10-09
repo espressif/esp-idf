@@ -7,42 +7,16 @@ menu "Bluetooth"
         help
             Select this option to enable Bluetooth and show the submenu with Bluetooth configuration choices.
 
-    config BT_CTRL_ESP32
-        bool
-        depends on BT_ENABLED && IDF_TARGET_ESP32
-        default y
-
-    config BT_CTRL_ESP32C3
-        bool
-        depends on BT_ENABLED && IDF_TARGET_ESP32C3
-        default y
-    config BT_CTRL_ESP32S3
-        bool
-        depends on BT_ENABLED && IDF_TARGET_ESP32S3
-        default y
-
     config BT_SOC_SUPPORT_5_0
         bool
         depends on BT_ENABLED && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
         default y if BT_ENABLED && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
         default n
 
-    menu "Bluetooth controller(ESP32 Dual Mode Bluetooth)"
-        visible if BT_CTRL_ESP32
+    menu "Bluetooth controller"
+        depends on BT_ENABLED
 
-        source "$IDF_PATH/components/bt/controller/esp32/Kconfig.in"
-    endmenu
-
-    menu "Bluetooth controller(ESP32C3 Bluetooth Low Energy)"
-        visible if BT_CTRL_ESP32C3
-
-        source "$IDF_PATH/components/bt/controller/esp32c3/Kconfig.in"
-    endmenu
-
-    menu "Bluetooth controller(ESP32S3 Bluetooth Low Energy)"
-        visible if BT_CTRL_ESP32S3
-
-        source "$IDF_PATH/components/bt/controller/esp32s3/Kconfig.in"
+        source "$IDF_PATH/components/bt/controller/$IDF_TARGET/Kconfig.in"
     endmenu
 
     choice BT_HOST
@@ -73,12 +47,12 @@ menu "Bluetooth"
     endchoice
 
     menu "Bluedroid Options"
-        visible if BT_BLUEDROID_ENABLED
+        depends on BT_BLUEDROID_ENABLED
 
         source "$IDF_PATH/components/bt/host/bluedroid/Kconfig.in"
     endmenu
     menu "NimBLE Options"
-        visible if BT_NIMBLE_ENABLED
+        depends on BT_NIMBLE_ENABLED
 
         source "$IDF_PATH/components/bt/host/nimble/Kconfig.in"
     endmenu

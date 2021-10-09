@@ -296,8 +296,9 @@ netif_related_data_t * esp_netif_new_ppp(esp_netif_t *esp_netif, const esp_netif
     return (netif_related_data_t *)ppp_obj;
 }
 
-esp_err_t esp_netif_start_ppp(netif_related_data_t *netif_related)
+esp_err_t esp_netif_start_ppp(esp_netif_t *esp_netif)
 {
+    netif_related_data_t *netif_related = esp_netif->related_data;
     lwip_peer2peer_ctx_t *ppp_ctx = (lwip_peer2peer_ctx_t *)netif_related;
     assert(ppp_ctx->base.netif_type == PPP_LWIP_NETIF);
 
@@ -305,6 +306,9 @@ esp_err_t esp_netif_start_ppp(netif_related_data_t *netif_related)
     esp_err_t err = pppapi_connect(ppp_ctx->ppp, 0);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: PPP connection cannot be started", __func__);
+        if (ppp_ctx->ppp_error_event_enabled) {
+            esp_event_post(NETIF_PPP_STATUS, NETIF_PPP_CONNECT_FAILED, esp_netif, sizeof(esp_netif), 0);
+        }
         return ESP_FAIL;
     }
     return ESP_OK;
@@ -343,9 +347,25 @@ void esp_netif_destroy_ppp(netif_related_data_t *netif_related)
 
 esp_err_t esp_netif_ppp_set_params(esp_netif_t *netif, const esp_netif_ppp_config_t *config)
 {
+    if (netif == NULL || netif->related_data == NULL || config == NULL ||
+        ((struct lwip_peer2peer_ctx *)netif->related_data)->base.netif_type != PPP_LWIP_NETIF) {
+        return ESP_ERR_INVALID_ARG;
+    }
     struct lwip_peer2peer_ctx *obj =  (struct lwip_peer2peer_ctx *)netif->related_data;
     obj->ppp_phase_event_enabled = config->ppp_phase_event_enabled;
     obj->ppp_error_event_enabled = config->ppp_error_event_enabled;
+    return ESP_OK;
+}
+
+esp_err_t esp_netif_ppp_get_params(esp_netif_t *netif, esp_netif_ppp_config_t *config)
+{
+    if (netif == NULL || netif->related_data == NULL || config == NULL ||
+        ((struct lwip_peer2peer_ctx *)netif->related_data)->base.netif_type != PPP_LWIP_NETIF) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    struct lwip_peer2peer_ctx *obj =  (struct lwip_peer2peer_ctx *)netif->related_data;
+    config->ppp_phase_event_enabled = obj->ppp_phase_event_enabled;
+    config->ppp_error_event_enabled = obj->ppp_error_event_enabled;
     return ESP_OK;
 }
 

@@ -1,16 +1,9 @@
-// Copyright 2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #pragma once
 
 #include <stddef.h>
@@ -22,6 +15,7 @@
 extern "C" {
 #endif
 
+#define RMT_LL_MAX_LOOP_COUNT           (1023)/*!< Max loop count that hardware is supported */
 #define RMT_LL_HW_BASE  (&RMT)
 #define RMT_LL_MEM_BASE (&RMTMEM)
 
@@ -191,6 +185,11 @@ static inline void rmt_ll_tx_enable_loop(rmt_dev_t *dev, uint32_t channel, bool 
 static inline bool rmt_ll_is_tx_loop_enabled(rmt_dev_t *dev, uint32_t channel)
 {
     return dev->chnconf0[channel].tx_conti_mode_n;
+}
+
+static inline void rmt_ll_tx_enable_loop_autostop(rmt_dev_t *dev, uint32_t channel, bool enable)
+{
+    dev->chn_tx_lim[channel].loop_stop_en_chn = enable;
 }
 
 static inline void rmt_ll_tx_set_loop_count(rmt_dev_t *dev, uint32_t channel, uint32_t count)

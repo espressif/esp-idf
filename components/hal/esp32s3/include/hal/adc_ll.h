@@ -15,6 +15,8 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include "regi2c_ctrl.h"
+
 #include "soc/adc_periph.h"
 #include "hal/adc_types.h"
 #include "soc/apb_saradc_struct.h"
@@ -127,8 +129,12 @@ static inline void adc_ll_digi_set_fsm_time(uint32_t rst_wait, uint32_t start_wa
  */
 static inline void adc_ll_set_sample_cycle(uint32_t sample_cycle)
 {
-    //To be added including RTC_CNTR reg and functions
-    abort();
+    /* Should be called before writing I2C registers. */
+    SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_PU_M);
+    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_SAR_M);
+    SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_SAR_CFG2_M);
+
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_SAMPLE_CYCLE_ADDR, sample_cycle);
 }
 
 /**
@@ -704,18 +710,46 @@ static inline void adc_ll_disable_sleep_controller(void)
 }
 
 /**
+ * @brief Set common calibration configuration. Should be shared with other parts (PWDET).
+ */
+static inline void adc_ll_calibration_init(adc_ll_num_t adc_n)
+{
+    if (adc_n == ADC_NUM_1) {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_DREF_ADDR, 4);
+    } else {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_DREF_ADDR, 4);
+    }
+}
+
+/**
  * Configure the registers for ADC calibration. You need to call the ``adc_ll_calibration_finish`` interface to resume after calibration.
  *
- * @note  Different ADC units and different attenuation options use different calibration data (initial data).
- *
  * @param adc_n ADC index number.
- * @param channel adc channel number.
+ * @param channel Not used
  * @param internal_gnd true:  Disconnect from the IO port and use the internal GND as the calibration voltage.
  *                     false: Use IO external voltage as calibration voltage.
  */
 static inline void adc_ll_calibration_prepare(adc_ll_num_t adc_n, adc_channel_t channel, bool internal_gnd)
 {
-    abort();
+    /* Should be called before writing I2C registers. */
+    SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_PU_M);
+    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_SAR_M);
+    SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_SAR_CFG2_M);
+
+    /* Enable/disable internal connect GND (for calibration). */
+    if (adc_n == ADC_NUM_1) {
+        if (internal_gnd) {
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 1);
+        } else {
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 0);
+        }
+    } else {    //adc_n == ADC_NUM_2
+        if (internal_gnd) {
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_ENCAL_GND_ADDR, 1);
+        } else {
+            REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_ENCAL_GND_ADDR, 0);
+        }
+    }
 }
 
 /**
@@ -725,7 +759,11 @@ static inline void adc_ll_calibration_prepare(adc_ll_num_t adc_n, adc_channel_t 
  */
 static inline void adc_ll_calibration_finish(adc_ll_num_t adc_n)
 {
-    abort();
+    if (adc_n == ADC_NUM_1) {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 0);
+    } else {    //adc_n == ADC_NUM_2
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_ENCAL_GND_ADDR, 0);
+    }
 }
 
 /**
@@ -737,7 +775,15 @@ static inline void adc_ll_calibration_finish(adc_ll_num_t adc_n)
  */
 static inline void adc_ll_set_calibration_param(adc_ll_num_t adc_n, uint32_t param)
 {
-    abort();
+    uint8_t msb = param >> 8;
+    uint8_t lsb = param & 0xFF;
+    if (adc_n == ADC_NUM_1) {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_HIGH_ADDR, msb);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_LOW_ADDR, lsb);
+    } else {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_HIGH_ADDR, msb);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_LOW_ADDR, lsb);
+    }
 }
 
 /**
@@ -1012,6 +1058,22 @@ static inline void adc_ll_set_atten(adc_ll_num_t adc_n, adc_channel_t channel, a
         SENS.sar_atten1 = ( SENS.sar_atten1 & ~(0x3 << (channel * 2)) ) | ((atten & 0x3) << (channel * 2));
     } else { // adc_n == ADC_NUM_2
         SENS.sar_atten2 = ( SENS.sar_atten2 & ~(0x3 << (channel * 2)) ) | ((atten & 0x3) << (channel * 2));
+    }
+}
+
+/**
+ * Get the attenuation of a particular channel on ADCn.
+ *
+ * @param adc_n ADC unit.
+ * @param channel ADCn channel number.
+ * @return atten The attenuation option.
+ */
+static inline adc_atten_t adc_ll_get_atten(adc_ll_num_t adc_n, adc_channel_t channel)
+{
+    if (adc_n == ADC_NUM_1) {
+        return (adc_atten_t)((SENS.sar_atten1 >> (channel * 2)) & 0x3);
+    } else {
+        return (adc_atten_t)((SENS.sar_atten2 >> (channel * 2)) & 0x3);
     }
 }
 

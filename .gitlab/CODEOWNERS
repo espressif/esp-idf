@@ -161,6 +161,7 @@
 /examples/ethernet/           @esp-idf-codeowners/network
 /examples/get-started/        @esp-idf-codeowners/system
 /examples/mesh/               @esp-idf-codeowners/wifi
+/examples/network/            @esp-idf-codeowners/network @esp-idf-codeowners/wifi
 /examples/openthread/         @esp-idf-codeowners/ieee802154
 /examples/peripherals/        @esp-idf-codeowners/peripherals
 /examples/protocols/          @esp-idf-codeowners/network @esp-idf-codeowners/app-utilities
@@ -182,6 +183,7 @@
 /tools/cmake/                 @esp-idf-codeowners/build-config
 /tools/esp_prov/              @esp-idf-codeowners/app-utilities
 /tools/find_build_apps/       @esp-idf-codeowners/ci
+/tools/idf_size_yaml/         @esp-idf-codeowners/peripherals
 /tools/kconfig*/              @esp-idf-codeowners/build-config
 /tools/ldgen/                 @esp-idf-codeowners/build-config
 /tools/mass_mfg/              @esp-idf-codeowners/app-utilities

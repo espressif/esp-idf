@@ -292,6 +292,8 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB *p_cb, UINT16 event, tBTA_HH_DATA *p_data)
                 bdcpy(cback_data.conn.bda, ((tBTA_HH_API_CONN *)p_data)->bd_addr);
                 cback_data.conn.status  = BTA_HH_ERR_DB_FULL;
                 cback_data.conn.handle  = BTA_HH_INVALID_HANDLE;
+                /* check if host initiate the connection*/
+                cback_data.conn.is_orig = !p_cb->incoming_conn;
                 break;
             /* DB full, BTA_HhAddDev */
             case BTA_HH_API_MAINT_DEV_EVT:
@@ -340,7 +342,7 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB *p_cb, UINT16 event, tBTA_HH_DATA *p_data)
 
             default:
                 /* invalid handle, call bad API event */
-                APPL_TRACE_ERROR("wrong device handle: [%d]", p_data->hdr.layer_specific);
+                APPL_TRACE_ERROR("wrong device handle: [%d], event:%d", p_data->hdr.layer_specific, event - BTA_HH_API_OPEN_EVT);
                 /* Free the callback buffer now */
                 if (p_data != NULL && p_data->hid_cback.p_data != NULL) {
                     osi_free(p_data->hid_cback.p_data);
@@ -443,6 +445,10 @@ BOOLEAN bta_hh_hdl_event(BT_HDR *p_msg)
             }
         } else if (p_msg->event == BTA_HH_INT_OPEN_EVT) {
             index = bta_hh_find_cb(((tBTA_HH_CBACK_DATA *)p_msg)->addr);
+            uint8_t hdl = BTA_HH_IDX_INVALID;
+            if (HID_HostGetDev(((tBTA_HH_CBACK_DATA *)p_msg)->addr, &hdl) == HID_SUCCESS && hdl != BTA_HH_IDX_INVALID) {
+                bta_hh_cb.cb_index[hdl] = bta_hh_cb.kdev[index].index;
+            }
         } else {
             index = bta_hh_dev_handle_to_cb_idx((UINT8)p_msg->layer_specific);
         }

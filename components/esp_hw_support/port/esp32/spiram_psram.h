@@ -63,6 +63,13 @@ psram_size_t psram_get_size(void);
  */
 esp_err_t psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vaddrmode);
 
+/**
+ * @brief get psram CS IO
+ *
+ * @return psram CS IO
+ */
+uint8_t psram_get_cs_io(void);
+
 #ifdef __cplusplus
 }
 #endif

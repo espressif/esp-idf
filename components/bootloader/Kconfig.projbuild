@@ -502,6 +502,7 @@ menu "Security features"
         bool "Enable hardware Secure Boot in bootloader (READ DOCS FIRST)"
         default n
         depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || ESP32C3_REV_MIN_3 || IDF_TARGET_ESP32S3
+        select ESPTOOLPY_NO_STUB if !IDF_TARGET_ESP32 && !IDF_TARGET_ESP32S2
         help
             Build a bootloader which enables Secure Boot on first boot.
 
@@ -891,6 +892,8 @@ menu "Security features"
 
                 It is also possible to enable secure download mode at runtime by calling
                 esp_efuse_enable_rom_secure_download_mode()
+
+                Note: Secure Download mode is not available for ESP32 (includes revisions till ECO3).
 
         config SECURE_INSECURE_ALLOW_DL_MODE
             bool "UART ROM download mode (Enabled (not recommended))"

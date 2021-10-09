@@ -176,6 +176,41 @@ TEST_CASE("lcd i80 bus and device allocation", "[lcd]")
     }
 }
 
+TEST_CASE("lcd i80 bus exclusively owned by one device", "[lcd]")
+{
+    esp_lcd_i80_bus_handle_t i80_bus_handle = NULL;
+    esp_lcd_i80_bus_config_t bus_config = {
+        .dc_gpio_num = TEST_LCD_DC_GPIO,
+        .wr_gpio_num = TEST_LCD_PCLK_GPIO,
+        .data_gpio_nums = {
+            TEST_LCD_DATA0_GPIO,
+            TEST_LCD_DATA1_GPIO,
+            TEST_LCD_DATA2_GPIO,
+            TEST_LCD_DATA3_GPIO,
+            TEST_LCD_DATA4_GPIO,
+            TEST_LCD_DATA5_GPIO,
+            TEST_LCD_DATA6_GPIO,
+            TEST_LCD_DATA7_GPIO,
+        },
+        .bus_width = 8,
+        .max_transfer_bytes = TEST_LCD_H_RES * 40 * sizeof(uint16_t)
+    };
+    TEST_ESP_OK(esp_lcd_new_i80_bus(&bus_config, &i80_bus_handle));
+    esp_lcd_panel_io_handle_t io_handle = NULL;
+    esp_lcd_panel_io_i80_config_t io_config = {
+        .cs_gpio_num = -1, // own the bus exclusively
+        .pclk_hz = 5000000,
+        .trans_queue_depth = 4,
+        .lcd_cmd_bits = 8,
+        .lcd_param_bits = 8,
+    };
+    TEST_ESP_OK(esp_lcd_new_panel_io_i80(i80_bus_handle, &io_config, &io_handle));
+    io_config.cs_gpio_num = 0;
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, esp_lcd_new_panel_io_i80(i80_bus_handle, &io_config, &io_handle));
+    TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
+    TEST_ESP_OK(esp_lcd_del_i80_bus(i80_bus_handle));
+}
+
 TEST_CASE("lcd panel i80 io test", "[lcd]")
 {
     esp_lcd_i80_bus_handle_t i80_bus = NULL;
@@ -378,9 +413,9 @@ TEST_CASE("lcd panel with i80 interface (st7789, 8bits)", "[lcd]")
 #if CONFIG_LV_USE_USER_DATA
 #include "test_lvgl_port.h"
 
-static bool notify_lvgl_ready_to_flush(esp_lcd_panel_io_handle_t panel_io, void *user_data, void *event_data)
+static bool notify_lvgl_ready_to_flush(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx)
 {
-    lv_disp_t *disp = *(lv_disp_t **)user_data;
+    lv_disp_t *disp = *(lv_disp_t **)user_ctx;
     lv_disp_flush_ready(&disp->driver);
     return false;
 }
@@ -430,7 +465,7 @@ TEST_CASE("lvgl gui with i80 interface (st7789, 8bits)", "[lcd][lvgl][ignore]")
             .swap_color_bytes = 1,
         },
         .on_color_trans_done = notify_lvgl_ready_to_flush,
-        .user_data = &disp,
+        .user_ctx = &disp,
         .lcd_cmd_bits = 8,
         .lcd_param_bits = 8,
     };
@@ -502,7 +537,7 @@ TEST_CASE("lvgl gui with i80 interface (nt35510, 8/16bits)", "[lcd][lvgl][ignore
             .dc_data_level = 1,
         },
         .on_color_trans_done = notify_lvgl_ready_to_flush,
-        .user_data = &disp,
+        .user_ctx = &disp,
         .lcd_cmd_bits = 16,
         .lcd_param_bits = 16,
     };
@@ -560,7 +595,7 @@ TEST_CASE("i80 and i2s driver coexistance", "[lcd][i2s]")
         .dma_buf_len = 60,
     };
     // I2S driver won't be installed as the same I2S port has been used by LCD
-    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, i2s_driver_install(0, &i2s_config, 0, NULL));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, i2s_driver_install(0, &i2s_config, 0, NULL));
     TEST_ESP_OK(esp_lcd_del_i80_bus(i80_bus));
 }
 #endif // SOC_I2S_LCD_I80_VARIANT

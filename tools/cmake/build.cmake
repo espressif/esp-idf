@@ -107,8 +107,7 @@ function(__build_set_default_build_specifications)
                                     # go into the final binary so have no impact on size
                                     "-ggdb")
 
-    list(APPEND c_compile_options   "-std=gnu99"
-                                    "-Wno-old-style-declaration")
+    list(APPEND c_compile_options   "-std=gnu99")
 
     list(APPEND cxx_compile_options "-std=gnu++11")
 
@@ -151,10 +150,12 @@ function(__build_init idf_path)
     file(GLOB component_dirs ${idf_path}/components/*)
     list(SORT component_dirs)
     foreach(component_dir ${component_dirs})
-        get_filename_component(component_dir ${component_dir} ABSOLUTE)
-        __component_dir_quick_check(is_component ${component_dir})
-        if(is_component)
-            __component_add(${component_dir} ${prefix})
+        # A potential component must be a directory
+        if(IS_DIRECTORY ${component_dir})
+            __component_dir_quick_check(is_component ${component_dir})
+            if(is_component)
+                __component_add(${component_dir} ${prefix})
+            endif()
         endif()
     endforeach()
 
@@ -264,7 +265,7 @@ function(__build_write_properties output_file)
     idf_build_get_property(build_properties __BUILD_PROPERTIES)
     foreach(property ${build_properties})
         idf_build_get_property(val ${property})
-        set(build_properties_text "${build_properties_text}\nset(${property} ${val})")
+        set(build_properties_text "${build_properties_text}\nset(${property} \"${val}\")")
     endforeach()
     file(WRITE ${output_file} "${build_properties_text}")
 endfunction()

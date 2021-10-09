@@ -230,12 +230,12 @@ AG can be enabled in HMAC module..*/
 #define EFUSE_DIS_ICACHE_M  (BIT(8))
 #define EFUSE_DIS_ICACHE_V  0x1
 #define EFUSE_DIS_ICACHE_S  8
-/* EFUSE_DIS_RTC_RAM_BOOT : RO ;bitpos:[7] ;default: 1'b0 ; */
-/*description: Set this bit to disable boot from RTC RAM..*/
-#define EFUSE_DIS_RTC_RAM_BOOT    (BIT(7))
-#define EFUSE_DIS_RTC_RAM_BOOT_M  (BIT(7))
-#define EFUSE_DIS_RTC_RAM_BOOT_V  0x1
-#define EFUSE_DIS_RTC_RAM_BOOT_S  7
+/* EFUSE_RPT4_RESERVED5 : RO ;bitpos:[7] ;default: 1'b0 ; */
+/*description: Reserved */
+#define EFUSE_RPT4_RESERVED5    (BIT(7))
+#define EFUSE_RPT4_RESERVED5_M  (BIT(7))
+#define EFUSE_RPT4_RESERVED5_V  0x1
+#define EFUSE_RPT4_RESERVED5_S  7
 /* EFUSE_RD_DIS : RO ;bitpos:[6:0] ;default: 7'h0 ; */
 /*description: Set this bit to disable reading from BlOCK4-10..*/
 #define EFUSE_RD_DIS    0x0000007F
@@ -1283,12 +1283,12 @@ apping gpio10 when both reg_dis_usb_jtag and reg_dis_pad_jtag are equal to 0..*/
 #define EFUSE_DIS_ICACHE_ERR_M  (BIT(8))
 #define EFUSE_DIS_ICACHE_ERR_V  0x1
 #define EFUSE_DIS_ICACHE_ERR_S  8
-/* EFUSE_DIS_RTC_RAM_BOOT_ERR : RO ;bitpos:[7] ;default: 1'b0 ; */
-/*description: If any bits in this filed are 1, then it indicates a programming error..*/
-#define EFUSE_DIS_RTC_RAM_BOOT_ERR    (BIT(7))
-#define EFUSE_DIS_RTC_RAM_BOOT_ERR_M  (BIT(7))
-#define EFUSE_DIS_RTC_RAM_BOOT_ERR_V  0x1
-#define EFUSE_DIS_RTC_RAM_BOOT_ERR_S  7
+/* EFUSE_RPT4_RESERVED5_ERR : RO ;bitpos:[7] ;default: 1'b0 ; */
+/*description: Reserved*/
+#define EFUSE_RPT4_RESERVED5_ERR  (BIT(7))
+#define EFUSE_RPT4_RESERVED5_ERR_M  (BIT(7))
+#define EFUSE_RPT4_RESERVED5_ERR_V  0x1
+#define EFUSE_RPT4_RESERVED5_ERR_S  7
 /* EFUSE_RD_DIS_ERR : RO ;bitpos:[6:0] ;default: 7'h0 ; */
 /*description: If any bits in this filed are 1, then it indicates a programming error..*/
 #define EFUSE_RD_DIS_ERR    0x0000007F
@@ -1572,7 +1572,7 @@ apping gpio10 when both reg_dis_usb_jtag and reg_dis_pad_jtag are equal to 0..*/
 #define EFUSE_DIS_DOWNLOAD_MODE_ERR_V  0x1
 #define EFUSE_DIS_DOWNLOAD_MODE_ERR_S  0
 
-#define EFUSE_RD_REPEAT_ERR4_REG          (DR_REG_EFUSE_BASE + 0x190)
+#define EFUSE_RD_REPEAT_ERR4_REG          (DR_REG_EFUSE_BASE + 0x18C)
 /* EFUSE_RPT4_RESERVED2_ERR : RO ;bitpos:[23:0] ;default: 24'h0 ; */
 /*description: If any bits in this filed are 1, then it indicates a programming error..*/
 #define EFUSE_RPT4_RESERVED2_ERR    0x00FFFFFF

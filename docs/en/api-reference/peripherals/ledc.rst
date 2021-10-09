@@ -1,5 +1,5 @@
-LED Control
-===========
+LED Control (LEDC)
+==================
 {IDF_TARGET_LEDC_CHAN_NUM:default="8", esp32="16", esp32s2="8", esp32c3="6"}
 
 :link_to_translation:`zh_CN:[中文]`
@@ -201,4 +201,3 @@ API Reference
 
 .. include-build-file:: inc/ledc.inc
 .. include-build-file:: inc/ledc_types.inc
-

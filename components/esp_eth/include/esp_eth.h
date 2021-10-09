@@ -265,12 +265,24 @@ esp_err_t esp_eth_receive(esp_eth_handle_t hdl, uint8_t *buf, uint32_t *length) 
 *
 * @param[in] hdl: handle of Ethernet driver
 * @param[in] cmd: IO control command
-* @param[in] data: specificed data for command
+* @param[in, out] data: address of data for `set` command or address where to store the data when used with `get` command
 *
 * @return
 *       - ESP_OK: process io command successfully
 *       - ESP_ERR_INVALID_ARG: process io command failed because of some invalid argument
 *       - ESP_FAIL: process io command failed because some other error occurred
+*
+* The following IO control commands are supported:
+* @li @c ETH_CMD_S_MAC_ADDR sets Ethernet interface MAC address. @c data argument is pointer to MAC address buffer with expected size of 6 bytes.
+* @li @c ETH_CMD_G_MAC_ADDR gets Ethernet interface MAC address. @c data argument is pointer to a buffer to which MAC address is to be copied. The buffer size must be at least 6 bytes.
+* @li @c ETH_CMD_S_PHY_ADDR sets PHY address in range of <0-31>. @c data argument is pointer to memory of uint32_t datatype from where the configuration option is read.
+* @li @c ETH_CMD_G_PHY_ADDR gets PHY address. @c data argument is pointer to memory of uint32_t datatype to which the PHY address is to be stored.
+* @li @c ETH_CMD_G_SPEED gets current Ethernet link speed. @c data argument is pointer to memory of eth_speed_t datatype to which the speed is to be stored.
+* @li @c ETH_CMD_S_PROMISCUOUS sets/resets Ethernet interface promiscuous mode. @c data argument is pointer to memory of bool datatype from which the configuration option is read.
+* @li @c ETH_CMD_S_FLOW_CTRL sets/resets Ethernet interface flow control. @c data argument is pointer to memory of bool datatype from which the configuration option is read.
+* @li @c ETH_CMD_G_DUPLEX_MODE gets current Ethernet link duplex mode.  @c data argument is pointer to memory of eth_duplex_t datatype to which the duplex mode is to be stored.
+* @li @c ETH_CMD_S_PHY_LOOPBACK sets/resets PHY to/from loopback mode. @c data argument is pointer to memory of bool datatype from which the configuration option is read.
+*
 */
 esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data);
 

@@ -380,7 +380,7 @@ esp_err_t esp_ble_gattc_search_service(esp_gatt_if_t gattc_if, uint16_t conn_id,
 /**
  * @brief           Find all the service with the given service uuid in the gattc cache, if the svc_uuid is NULL, find all the service.
  *                  Note: It just get service from local cache, won't get from remote devices. If want to get it from remote device, need
- *                  to used the esp_ble_gattc_search_service.
+ *                  to used the esp_ble_gattc_cache_refresh, then call esp_ble_gattc_get_service again.
  *
  * @param[in]       gattc_if: Gatt client access interface.
  * @param[in]       conn_id: connection ID which identify the server.

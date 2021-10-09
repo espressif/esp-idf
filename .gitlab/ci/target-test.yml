@@ -46,7 +46,7 @@
   extends:
     - .example_test_template
     - .rules:test:example_test-esp32
-variables:
+  variables:
     SUBMODULES_TO_FETCH: "all"
 
 test_weekend_mqtt:
@@ -270,20 +270,17 @@ example_test_ESP32_SDSPI:
     - ESP32
     - UT_T1_SPIMODE
 
-# uncomment when ESP32S2 & ESP32C3 runners with external SD connected over SPI are available
-# ensure the runners have required tags created
-#
-#example_test_ESP32S2_SDSPI:
-#  extends: .example_test_esp32s2_template
-#  tags:
-#    - ESP32S2
-#    - UT_T1_SPIMODE
-#
-#example_test_ESP32C3_SDSPI:
-#  extends: .example_test_esp32c3_template
-#  tags:
-#    - ESP32C3
-#    - UT_T1_SPIMODE
+example_test_ESP32S2_SDSPI:
+  extends: .example_test_esp32s2_template
+  tags:
+    - ESP32S2
+    - UT_T1_SPIMODE
+
+example_test_ESP32C3_SDSPI:
+  extends: .example_test_esp32c3_template
+  tags:
+    - ESP32C3
+    - UT_T1_SPIMODE
 
 .test_app_template:
   extends: .target_test_job_template
@@ -633,7 +630,7 @@ UT_046:
 
 UT_047:
   extends: .unit_test_esp32s2_template
-  parallel: 4
+  parallel: 5
   tags:
     - ESP32S2_IDF
     - UT_T1_1
@@ -643,6 +640,12 @@ UT_S2_SPI_DUAL:
   tags:
     - ESP32S2_IDF
     - Example_SPI_Multi_device
+
+UT_S2_SDSPI:
+  extends: .unit_test_esp32s2_template
+  tags:
+    - ESP32S2_IDF
+    - UT_T1_SPIMODE
 
 UT_C3:
   extends: .unit_test_esp32c3_template
@@ -682,9 +685,15 @@ UT_C3_FLASH_SUSPEND:
     - ESP32C3_IDF
     - UT_T1_Flash_Suspend
 
+UT_C3_SDSPI:
+  extends: .unit_test_esp32c3_template
+  tags:
+    - ESP32C3_IDF
+    - UT_T1_SPIMODE
+
 UT_S3:
   extends: .unit_test_esp32s3_template
-  parallel: 27
+  parallel: 29
   tags:
     - ESP32S3_IDF
     - UT_T1_1
@@ -701,6 +710,18 @@ UT_S3_FLASH:
   tags:
     - ESP32S3_IDF
     - UT_T1_ESP_FLASH
+
+component_ut_test_ip101:
+  extends: .component_ut_esp32_template
+  tags:
+    - ESP32
+    - COMPONENT_UT_IP101
+
+component_ut_test_lan8720:
+  extends: .component_ut_esp32_template
+  tags:
+    - ESP32
+    - COMPONENT_UT_LAN8720
 
 .integration_test_template:
   extends:

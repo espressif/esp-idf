@@ -1,16 +1,8 @@
-// Copyright 2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // The LL layer for I2S register operations
 /*******************************************************************************
@@ -44,7 +36,7 @@ typedef struct {
     uint16_t mclk_div; // I2S module clock devider, Fmclk = Fsclk /(mclk_div+b/a)
     uint16_t a;
     uint16_t b;        // The decimal part of module clock devider, the decimal is: b/a
-} i2s_ll_clk_cal_t;
+} i2s_ll_mclk_div_t;
 
 /**
  * @brief I2S module general init, enable I2S clock.
@@ -54,6 +46,16 @@ typedef struct {
 static inline void i2s_ll_enable_clock(i2s_dev_t *hw)
 {
     hw->tx_clkm_conf.clk_en = 1;
+}
+
+/**
+ * @brief I2S module disable I2S clock.
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ */
+static inline void i2s_ll_disable_clock(i2s_dev_t *hw)
+{
+    hw->tx_clkm_conf.clk_en = 0;
 }
 
 /**
@@ -74,6 +76,26 @@ static inline void i2s_ll_tx_enable_clock(i2s_dev_t *hw)
 static inline void i2s_ll_rx_enable_clock(i2s_dev_t *hw)
 {
     hw->rx_clkm_conf.rx_clk_active = 1;
+}
+
+/**
+ * @brief Disable I2S tx module clock
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ */
+static inline void i2s_ll_tx_disable_clock(i2s_dev_t *hw)
+{
+    hw->tx_clkm_conf.tx_clk_active = 0;
+}
+
+/**
+ * @brief Disable I2S rx module clock
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ */
+static inline void i2s_ll_rx_disable_clock(i2s_dev_t *hw)
+{
+    hw->rx_clkm_conf.rx_clk_active = 0;
 }
 
 /**
@@ -201,7 +223,7 @@ static inline void i2s_ll_tx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
  * @param hw Peripheral I2S hardware instance address.
  * @param set Pointer to I2S clock devider configuration paramater
  */
-static inline void i2s_ll_tx_set_clk(i2s_dev_t *hw, i2s_ll_clk_cal_t *set)
+static inline void i2s_ll_tx_set_clk(i2s_dev_t *hw, i2s_ll_mclk_div_t *set)
 {
     if (set->a == 0 || set->b == 0) {
         hw->tx_clkm_div_conf.tx_clkm_div_x = 0;
@@ -240,7 +262,7 @@ static inline void i2s_ll_rx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
  * @param hw Peripheral I2S hardware instance address.
  * @param set Pointer to I2S clock devider configuration paramater
  */
-static inline void i2s_ll_rx_set_clk(i2s_dev_t *hw, i2s_ll_clk_cal_t *set)
+static inline void i2s_ll_rx_set_clk(i2s_dev_t *hw, i2s_ll_mclk_div_t *set)
 {
     if (set->a == 0 || set->b == 0) {
         hw->rx_clkm_div_conf.rx_clkm_div_x = 0;
@@ -782,12 +804,40 @@ static inline void i2s_ll_set_single_data(i2s_dev_t *hw, uint32_t data)
 }
 
 /**
+ * @brief Enable TX mono mode
+ * @note MONO in hardware means only one channel got data, but another doesn't
+ *       MONO in software means two channel share same data
+ *       This function aims to use MONO in software meaning
+ *       so 'tx_mono' and 'tx_chan_equal' should be enabled at the same time
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param mono_ena Set true to enable mono mde.
+ */
+static inline void i2s_ll_tx_enable_mono_mode(i2s_dev_t *hw, bool mono_ena)
+{
+    hw->tx_conf.tx_mono = mono_ena;
+    hw->tx_conf.tx_chan_equal = mono_ena;
+}
+
+/**
+ * @brief Enable RX mono mode
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param mono_ena Set true to enable mono mde.
+ */
+static inline void i2s_ll_rx_enable_mono_mode(i2s_dev_t *hw, bool mono_ena)
+{
+    hw->rx_conf.rx_mono = mono_ena;
+    hw->rx_conf.rx_mono_fst_vld = mono_ena;
+}
+
+/**
  * @brief Enable loopback mode
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param ena Set true to enable loopback mode.
+ * @param ena Set true to share BCK and WS signal for tx module and rx module.
  */
-static inline void i2s_ll_enable_loop_back(i2s_dev_t *hw, bool ena)
+static inline void i2s_ll_share_bck_ws(i2s_dev_t *hw, bool ena)
 {
     hw->tx_conf.sig_loopback = ena;
 }

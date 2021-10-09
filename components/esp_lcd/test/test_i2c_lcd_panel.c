@@ -77,9 +77,9 @@ TEST_CASE("lcd panel with i2c interface (ssd1306)", "[lcd]")
 #if CONFIG_LV_USE_USER_DATA
 #include "test_lvgl_port.h"
 #if CONFIG_LV_COLOR_DEPTH_1
-static bool notify_lvgl_ready_to_flush(esp_lcd_panel_io_handle_t panel_io, void *user_data, void *event_data)
+static bool notify_lvgl_ready_to_flush(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx)
 {
-    lv_disp_t *disp = *(lv_disp_t **)user_data;
+    lv_disp_t *disp = *(lv_disp_t **)user_ctx;
     lv_disp_flush_ready(&disp->driver);
     return false;
 }
@@ -109,7 +109,7 @@ TEST_CASE("lvgl gui with i2c interface (ssd1306)", "[lcd][lvgl][ignore]")
         .lcd_cmd_bits = 8,        // According to SSD1306 datasheet
         .lcd_param_bits = 8,      // According to SSD1306 datasheet
         .on_color_trans_done = notify_lvgl_ready_to_flush,
-        .user_data = &disp,
+        .user_ctx = &disp,
     };
     TEST_ESP_OK(esp_lcd_new_panel_io_i2c((esp_lcd_i2c_bus_handle_t)TEST_I2C_HOST_ID, &io_config, &io_handle));
 

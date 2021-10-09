@@ -6,7 +6,7 @@ Required Dependency
 
 Python 3.6.1 or above. This is our recommendation python version for IDF developers.
 
-If you still have versions not compatible, please do not install pre-commit hook and update your python versions.
+If you still have python versions not compatible, please do not install pre-commit hook and update your python versions.
 
 Install pre-commit
 ------------------
@@ -30,17 +30,29 @@ Run ``pre-commit uninstall``
 What's More?
 ------------
 
-For detailed usage, Please refer to the documentation of pre-commit_.
+For detailed usage, please refer to the documentation of pre-commit_.
 
-.. _pre-commit: http://www.pre-commit.com/
+.. _pre-commit: https://www.pre-commit.com/
 
 Common Problems For Windows Users
 ---------------------------------
 
-1. ``/usr/bin/env: python: Permission denied.``
+``/usr/bin/env: python: Permission denied.``
 
    If you're in Git Bash or MSYS terminal, please check the python executable location by run ``which python``.
 
    If the executable is under ``~/AppData/Local/Microsoft/WindowsApps/``, then it's a link to Windows AppStore, not a real one.
 
    Please install python manually and update this in your ``PATH`` environment variable.
+
+
+Your %USERPROFILE% contains non-ASCII characters
+
+   ``pre-commit`` may fail when initializing an environment for a particular hook when the path of ``pre-commit``'s cache contains non-ASCII characters. The solution is to set ``PRE_COMMIT_HOME`` to a path containing only standard characters before running pre-commit.
+
+   - CMD: ``set PRE_COMMIT_HOME=C:\somepath\pre-commit``
+   - PowerShell: ``$Env:PRE_COMMIT_HOME = "C:\somepath\pre-commit"``
+   - git bash: ``export PRE_COMMIT_HOME="/c/somepath/pre-commit"``
+
+
+ 

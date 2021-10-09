@@ -30,8 +30,6 @@
 
 #include "argtable3.h"
 
-#pragma GCC diagnostic ignored "-Wclobbered"
-
 /*******************************************************************************
  * This file is part of the argtable3 library.
  *

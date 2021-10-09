@@ -63,6 +63,19 @@ def test_examples_protocol_https_request(env, extra_data):
         raise
     Utility.console_log("Passed the test for \"https_request using global ca_store\"")
 
+    # Check for connection using already saved client session
+    Utility.console_log("Testing for \"https_request using saved client session\"")
+    try:
+        dut1.expect(re.compile('https_request using saved client session'), timeout=20)
+        dut1.expect_all('Connection established...',
+                        'Reading HTTP response...',
+                        'HTTP/1.1 200 OK',
+                        re.compile('connection closed'))
+    except Exception:
+        Utility.console_log("Failed the test for \"https_request using saved client session\"")
+        raise
+    Utility.console_log("Passed the test for \"https_request using saved client session\"")
+
     # Check for connection using crt bundle with mbedtls dynamic resource enabled
     dut1 = env.get_dut('https_request', 'examples/protocols/https_request', dut_class=ttfw_idf.ESP32DUT, app_config_name='ssldyn')
     # check and log bin size

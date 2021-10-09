@@ -206,6 +206,11 @@ struct spi_flash_chip_t {
      * Get the capabilities of the flash chip. See SPI_FLASH_CHIP_CAP_* macros as reference.
      */
     spi_flash_caps_t (*get_chip_caps)(esp_flash_t *chip);
+
+    /**
+     *  Configure the host registers to use the specified read mode set in the ``chip->read_mode``.
+     */
+    esp_err_t (*config_host_io_mode)(esp_flash_t *chip, uint32_t flags);
 };
 
 /* Pointer to an array of pointers to all known drivers for flash chips. This array is used

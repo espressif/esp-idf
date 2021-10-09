@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "mdns.h"
 #include "mdns_private.h"
@@ -2775,7 +2767,8 @@ static bool _mdns_question_matches(mdns_parsed_question_t * question, uint16_t t
         }
     } else if (service && (type == MDNS_TYPE_SRV || type == MDNS_TYPE_TXT)) {
         const char * name = _mdns_get_service_instance_name(service->service);
-        if (name && question->host && !strcasecmp(name, question->host)
+        if (name && question->host && question->service && question->proto && question->domain
+            && !strcasecmp(name, question->host)
             && !strcasecmp(service->service->service, question->service)
             && !strcasecmp(service->service->proto, question->proto)
             && !strcasecmp(MDNS_DEFAULT_DOMAIN, question->domain)) {
@@ -3237,7 +3230,7 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
                     } else if (service) { // only detect srv collision if service existed
                         col = _mdns_check_srv_collision(service->service, priority, weight, port, name->host, name->domain);
                     }
-                    if (col && (parsed_packet->probe || parsed_packet->authoritative)) {
+                    if (service && col && (parsed_packet->probe || parsed_packet->authoritative)) {
                         if (col > 0 || !port) {
                             do_not_reply = true;
                             if (_mdns_server->interfaces[packet->tcpip_if].pcbs[packet->ip_protocol].probe_running) {

@@ -47,7 +47,8 @@ esp_err_t esp_hmac_calculate(hmac_key_id_t key_id,
 
 esp_err_t esp_hmac_jtag_enable(hmac_key_id_t key_id, const uint8_t *token)
 {
-    esp_err_t err;
+    int ets_status;
+    esp_err_t err = ESP_OK;
 
     if ((!token) || (key_id >= HMAC_KEY_MAX))
         return ESP_ERR_INVALID_ARG;
@@ -69,10 +70,10 @@ esp_err_t esp_hmac_jtag_enable(hmac_key_id_t key_id, const uint8_t *token)
         REG_WRITE(DPORT_JTAG_CTRL_0_REG + i, __builtin_bswap32(key_word));
     }
 
-    err = ets_hmac_calculate_downstream(convert_key_type(key_id), ETS_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG);
-    if (err != ETS_OK) {
-        ESP_LOGE(TAG, "HMAC downstream JTAG enable mode setting failed.");
-        return ESP_FAIL;
+    ets_status = ets_hmac_calculate_downstream(convert_key_type(key_id), ETS_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG);
+    if (ets_status != ETS_OK) {
+        err = ESP_FAIL;
+        ESP_LOGE(TAG, "HMAC downstream JTAG enable mode setting failed. (%d)", err);
     }
 
     ESP_LOGD(TAG, "HMAC computation in downstream mode is completed.");
@@ -81,7 +82,7 @@ esp_err_t esp_hmac_jtag_enable(hmac_key_id_t key_id, const uint8_t *token)
 
     esp_crypto_dma_lock_release();
 
-    return ESP_OK;
+    return err;
 }
 
 esp_err_t esp_hmac_jtag_disable()

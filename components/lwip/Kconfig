@@ -266,6 +266,15 @@ menu "LWIP"
             server. Last valid DHCP configuration is stored in nvs and restored after reset/power-up. If IP is still
             available, there is no need for sending discovery message to DHCP server and save some time.
 
+    config LWIP_DHCP_OPTIONS_LEN
+        int "DHCP total option length"
+        default 68
+        range 68 255
+        help
+            Set total length of outgoing DHCP option msg. Generally bigger value means it can carry more
+            options and values. If your code meets LWIP_ASSERT due to option value is too long.
+            Please increase the LWIP_DHCP_OPTIONS_LEN value.
+
     menu "DHCP server"
 
         config LWIP_DHCPS
@@ -373,13 +382,22 @@ menu "LWIP"
 
     config LWIP_IPV6_RDNSS_MAX_DNS_SERVERS
         int "Use IPv6 Router Advertisement Recursive DNS Server Option"
-        depends on LWIP_IPV6
+        depends on LWIP_IPV6_AUTOCONFIG
         default 0
         help
             Use IPv6 Router Advertisement Recursive DNS Server Option (as per RFC 6106) to
             copy a defined maximum number of DNS servers to the DNS module.
             Set this option to a number of desired DNS servers advertised in the RA protocol.
             This feature is disabled when set to 0.
+
+    config LWIP_IPV6_DHCP6
+        bool "Enable DHCPv6 stateless address autoconfiguration"
+        depends on LWIP_IPV6_AUTOCONFIG
+        default n
+        help
+            Enable DHCPv6 for IPv6 stateless address autoconfiguration.
+            Note that the dhcpv6 client has to be started using dhcp6_enable_stateless(netif);
+            Note that the stateful address autoconfiguration is not supported.
 
     config LWIP_NETIF_STATUS_CALLBACK
         bool "Enable status callback for network interfaces"

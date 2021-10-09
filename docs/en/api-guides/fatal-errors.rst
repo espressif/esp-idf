@@ -12,14 +12,17 @@ In certain situations, execution of the program can not be continued in a well d
 - CPU Exceptions: |CPU_EXCEPTIONS_LIST|
 - System level checks and safeguards:
 
-  - :doc:`Interrupt watchdog <../api-reference/system/wdts>` timeout
-  - :doc:`Task watchdog <../api-reference/system/wdts>` timeout (only fatal if :ref:`CONFIG_ESP_TASK_WDT_PANIC` is set)
-  - Cache access error
-  - Brownout detection event
-  - Stack overflow
-  - Stack smashing protection check
-  - Heap integrity check
-  - Undefined behavior sanitizer (UBSAN) checks
+  .. list::
+
+     - :doc:`Interrupt watchdog <../api-reference/system/wdts>` timeout
+     - :doc:`Task watchdog <../api-reference/system/wdts>` timeout (only fatal if :ref:`CONFIG_ESP_TASK_WDT_PANIC` is set)
+     - Cache access error
+     :CONFIG_ESP_SYSTEM_MEMPROT_FEATURE: - Memory protection fault
+     - Brownout detection event
+     - Stack overflow
+     - Stack smashing protection check
+     - Heap integrity check
+     - Undefined behavior sanitizer (UBSAN) checks
 
 - Failed assertions, via ``assert``, ``configASSERT`` and similar macros.
 
@@ -372,6 +375,20 @@ Indicates that interrupt watchdog timeout has occured. See :doc:`Watchdogs <../a
 ^^^^^^^^^^^^^^^
 
 In some situations ESP-IDF will temporarily disable access to external SPI Flash and SPI RAM via caches. For example, this happens with spi_flash APIs are used to read/write/erase/mmap regions of SPI Flash. In these situations, tasks are suspended, and interrupt handlers not registered with ``ESP_INTR_FLAG_IRAM`` are disabled. Make sure that any interrupt handlers registered with this flag have all the code and data in IRAM/DRAM. Refer to the :ref:`SPI flash API documentation <iram-safe-interrupt-handlers>` for more details.
+
+.. only:: CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+
+    Memory protection fault
+    ^^^^^^^^^^^^^^^^^^^^^^^
+
+    {IDF_TARGET_NAME} Permission Control feature is used in ESP-IDF to prevent the following types of memory access:
+
+    * writing to instruction RAM after the program is loaded
+    * executing code from data RAM (areas used for heap and static .data and .bss)
+
+    Such operations are not necessary for most programs. Prohibiting such operations typically makes software vulnerabilities harder to exploit. Applications which rely on dynamic loading or self-modifying code may disable this protection using :ref:`CONFIG_ESP_SYSTEM_MEMPROT_FEATURE` Kconfig option.
+
+    When the fault occurs, the panic handler reports the address of the fault and the type of memory access that caused it.
 
 Other Fatal Errors
 ------------------

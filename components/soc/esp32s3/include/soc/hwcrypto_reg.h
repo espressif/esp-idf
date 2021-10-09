@@ -1,16 +1,9 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #pragma once
 
 #include "soc.h"
@@ -106,6 +99,7 @@
 #define HMAC_SET_MESSAGE_END_REG       ((DR_REG_HMAC_BASE) + 0x58)
 #define HMAC_SET_RESULT_FINISH_REG     ((DR_REG_HMAC_BASE) + 0x5c)
 #define HMAC_SET_INVALIDATE_JTAG_REG   ((DR_REG_HMAC_BASE) + 0x60)
+#define HMAC_INVALIDATE_JTAG           BIT(0)
 #define HMAC_SET_INVALIDATE_DS_REG     ((DR_REG_HMAC_BASE) + 0x64)
 #define HMAC_QUERY_ERROR_REG           ((DR_REG_HMAC_BASE) + 0x68)
 #define HMAC_QUERY_BUSY_REG            ((DR_REG_HMAC_BASE) + 0x6c)
@@ -114,6 +108,9 @@
 #define HMAC_RDATA_BASE                ((DR_REG_HMAC_BASE) + 0xC0)
 #define HMAC_SET_MESSAGE_PAD_REG       ((DR_REG_HMAC_BASE) + 0xF0)
 #define HMAC_ONE_BLOCK_REG             ((DR_REG_HMAC_BASE) + 0xF4)
+#define HMAC_SOFT_JTAG_CTRL_REG        ((DR_REG_HMAC_BASE) + 0xF8)
+#define HMAC_SOFT_JTAG_CTRL            BIT((0)
+#define HMAC_WR_JTAG_REG               ((DR_REG_HMAC_BASE) + 0xFC)
 
 /* AES-XTS registers */
 #define AES_XTS_PLAIN_BASE        ((DR_REG_EXT_MEM_ENC) + 0x00)
@@ -129,6 +126,10 @@
 
 /* Digital Signature registers*/
 #define DS_C_BASE                 ((DR_REG_DIGITAL_SIGNATURE_BASE) + 0x000 )
+#define DS_C_Y_BASE               ((DR_REG_DIGITAL_SIGNATURE_BASE) + 0x000 )
+#define DS_C_M_BASE               ((DR_REG_DIGITAL_SIGNATURE_BASE) + 0x200 )
+#define DS_C_RB_BASE              ((DR_REG_DIGITAL_SIGNATURE_BASE) + 0x400 )
+#define DS_C_BOX_BASE             ((DR_REG_DIGITAL_SIGNATURE_BASE) + 0x600 )
 #define DS_IV_BASE                ((DR_REG_DIGITAL_SIGNATURE_BASE) + 0x630 )
 #define DS_X_BASE                 ((DR_REG_DIGITAL_SIGNATURE_BASE) + 0x800 )
 #define DS_Z_BASE                 ((DR_REG_DIGITAL_SIGNATURE_BASE) + 0xA00 )

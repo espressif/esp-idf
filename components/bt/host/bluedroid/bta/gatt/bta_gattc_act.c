@@ -35,6 +35,7 @@
 #include "gatt_int.h"
 #include "osi/allocator.h"
 #include "osi/mutex.h"
+#include "bta_hh_int.h"
 
 #if (defined BTA_HH_LE_INCLUDED && BTA_HH_LE_INCLUDED == TRUE)
 #include "bta_hh_int.h"
@@ -304,7 +305,10 @@ void bta_gattc_deregister(tBTA_GATTC_CB *p_cb, tBTA_GATTC_RCB  *p_clreg)
             bta_gattc_deregister_cmpl(p_clreg);
         }
     } else {
-        APPL_TRACE_ERROR("bta_gattc_deregister Deregister Failedm unknown client cif");
+        APPL_TRACE_ERROR("Deregister Failed unknown client cif");
+#if defined(BTA_HH_INCLUDED) && (BTA_HH_INCLUDED == TRUE)
+        bta_hh_cleanup_disable(BTA_HH_OK);
+#endif
     }
 }
 /*******************************************************************************

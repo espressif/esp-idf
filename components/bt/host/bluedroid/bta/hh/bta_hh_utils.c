@@ -237,7 +237,7 @@ BOOLEAN bta_hh_tod_spt(tBTA_HH_DEV_CB *p_cb, UINT8 sub_class)
         }
     }
 #if BTA_HH_DEBUG
-    APPL_TRACE_EVENT("bta_hh_tod_spt sub_class:0x%x NOT supported", sub_class);
+    APPL_TRACE_ERROR("bta_hh_tod_spt sub_class:0x%x NOT supported", sub_class);
 #endif
     return FALSE;
 }
@@ -460,9 +460,11 @@ void bta_hh_cleanup_disable(tBTA_HH_STATUS status)
     }
     utl_freebuf((void **)&bta_hh_cb.p_disc_db);
 
-    (* bta_hh_cb.p_cback)(BTA_HH_DISABLE_EVT, (tBTA_HH *)&status);
-    /* all connections are down, no waiting for diconnect */
-    memset(&bta_hh_cb, 0, sizeof(tBTA_HH_CB));
+    if (bta_hh_cb.p_cback) {
+        (*bta_hh_cb.p_cback)(BTA_HH_DISABLE_EVT, (tBTA_HH*)&status);
+        /* all connections are down, no waiting for diconnect */
+        memset(&bta_hh_cb, 0, sizeof(tBTA_HH_CB));
+    }
 }
 
 /*******************************************************************************

@@ -8,13 +8,19 @@
 #include "driver/periph_ctrl.h"
 #include "esp32c3/rom/hmac.h"
 #include "esp32c3/rom/ets_sys.h"
+#include "esp_efuse.h"
+#include "esp_efuse_table.h"
 #include "esp_hmac.h"
+#include "esp_log.h"
 #include "esp_crypto_lock.h"
+#include "soc/hwcrypto_reg.h"
 
 #include "hal/hmac_hal.h"
 
 #define SHA256_BLOCK_SZ 64
 #define SHA256_PAD_SZ 8
+
+static const char *TAG = "esp_hmac";
 
 /**
  * @brief Apply the HMAC padding without the embedded length.
@@ -119,6 +125,56 @@ esp_err_t esp_hmac_calculate(hmac_key_id_t key_id,
     periph_module_disable(PERIPH_HMAC_MODULE);
 
     esp_crypto_hmac_lock_release();
+
+    return ESP_OK;
+}
+
+static ets_efuse_block_t convert_key_type(hmac_key_id_t key_id) {
+    return ETS_EFUSE_BLOCK_KEY0 + (ets_efuse_block_t) key_id;
+}
+
+esp_err_t esp_hmac_jtag_enable(hmac_key_id_t key_id, const uint8_t *token)
+{
+    int ets_status;
+    esp_err_t err = ESP_OK;
+
+    if ((!token) || (key_id >= HMAC_KEY_MAX))
+        return ESP_ERR_INVALID_ARG;
+
+    /* Check if JTAG is permanently disabled by HW Disable eFuse */
+    if (esp_efuse_read_field_bit(ESP_EFUSE_DIS_PAD_JTAG)) {
+        ESP_LOGE(TAG, "JTAG disabled permanently.");
+        return ESP_FAIL;
+    }
+
+    esp_crypto_hmac_lock_acquire();
+
+    ets_status = ets_jtag_enable_temporarily(token, convert_key_type(key_id));
+
+    if (ets_status != ETS_OK) {
+        // ets_jtag_enable_temporarily returns either ETS_OK or ETS_FAIL
+        err = ESP_FAIL;
+        ESP_LOGE(TAG, "JTAG re-enabling failed (%d)", err);
+    }
+
+    ESP_LOGD(TAG, "HMAC computation in downstream mode is completed.");
+
+    ets_hmac_disable();
+
+    esp_crypto_hmac_lock_release();
+
+    return err;
+}
+
+esp_err_t esp_hmac_jtag_disable()
+{
+    esp_crypto_hmac_lock_acquire();
+
+    REG_SET_BIT(HMAC_SET_INVALIDATE_JTAG_REG, HMAC_INVALIDATE_JTAG);
+
+    esp_crypto_hmac_lock_release();
+
+    ESP_LOGD(TAG, "Invalidate JTAG result register. JTAG disabled.");
 
     return ESP_OK;
 }

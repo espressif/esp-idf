@@ -266,6 +266,12 @@
 
 #endif
 
+/**
+ * CONFIG_LWIP_DHCP_OPTIONS_LEN: The total length of outgoing DHCP option msg. If you have many options
+ * and options value is too long, you can configure the length according to your requirements
+ */
+#define DHCP_OPTIONS_LEN                CONFIG_LWIP_DHCP_OPTIONS_LEN
+
 /*
    ------------------------------------
    ---------- AUTOIP options ----------
@@ -977,6 +983,8 @@
 #define LWIP_IPV6_NUM_ADDRESSES         CONFIG_LWIP_IPV6_NUM_ADDRESSES
 
 #define LWIP_ND6_RDNSS_MAX_DNS_SERVERS  CONFIG_LWIP_IPV6_RDNSS_MAX_DNS_SERVERS
+
+#define LWIP_IPV6_DHCP6                 CONFIG_LWIP_IPV6_DHCP6
 
 /* Enable all Espressif-only options */
 

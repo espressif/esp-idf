@@ -4,12 +4,35 @@ The Example consists of HTTPD server demo with demostration of URI handling :
     1. URI \hello for GET command returns "Hello World!" message
     2. URI \echo for POST command echoes back the POSTed message
 
+## How to use example
+
+### Hardware Required
+
+* A development board with ESP32/ESP32-S2/ESP32-C3 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
+* A USB cable for power supply and programming
+
+### Configure the project
+
+```
+idf.py menuconfig
+```
 * Open the project configuration menu (`idf.py menuconfig`) to configure Wi-Fi or Ethernet. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../../README.md) for more details.
 
-* In order to test the HTTPD server persistent sockets demo :
-    1. compile and burn the firmware `idf.py -p PORT flash`
-    2. run `idf.py -p PORT monitor` and note down the IP assigned to your ESP module. The default port is 80
-    3. test the example :
+### Build and Flash
+
+Build the project and flash it to the board, then run monitor tool to view serial output:
+
+```
+idf.py -p PORT flash monitor
+```
+
+(Replace PORT with the name of the serial port to use.)
+
+(To exit the serial monitor, type ``Ctrl-]``.)
+
+See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
+
+### Test the example :
         * run the test script : "python scripts/client.py \<IP\> \<port\> \<MSG\>"
             * the provided test script first does a GET \hello and displays the response
             * the script does a POST to \echo with the user input \<MSG\> and displays the response
@@ -20,7 +43,16 @@ The Example consists of HTTPD server demo with demostration of URI handling :
                 * since the server echoes back the request body, the two files should be same, as can be confirmed using : "cmp anyfile tmpfile"
             3. "curl -X PUT -d "0" 192.168.43.130:80/ctrl" - disable /hello and /echo handlers
             4. "curl -X PUT -d "1" 192.168.43.130:80/ctrl" -  enable /hello and /echo handlers
-            
-* If the server log shows "httpd_parse: parse_block: request URI/header too long", especially when handling POST requests, then you probably need to increase HTTPD_MAX_REQ_HDR_LEN, which you can find in the project configuration menu (`idf.py menuconfig`): Component config -> HTTP Server -> Max HTTP Request Header Length
 
-See the README.md file in the upper level 'examples' directory for more information about examples.
+## Example Output
+```
+I (9580) example_connect: - IPv4 address: 192.168.194.219
+I (9580) example_connect: - IPv6 address: fe80:0000:0000:0000:266f:28ff:fe80:2c74, type: ESP_IP6_ADDR_IS_LINK_LOCAL
+I (9590) example: Starting server on port: '80'
+I (9600) example: Registering URI handlers
+I (66450) example: Found header => Host: 192.168.194.219
+I (66460) example: Request headers lost
+```
+
+## Troubleshooting
+* If the server log shows "httpd_parse: parse_block: request URI/header too long", especially when handling POST requests, then you probably need to increase HTTPD_MAX_REQ_HDR_LEN, which you can find in the project configuration menu (`idf.py menuconfig`): Component config -> HTTP Server -> Max HTTP Request Header Length

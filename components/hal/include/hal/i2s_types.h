@@ -107,8 +107,8 @@ typedef enum {
     I2S_CHANNEL_FMT_RIGHT_LEFT,         /*!< Separated left and right channel */
     I2S_CHANNEL_FMT_ALL_RIGHT,          /*!< Load right channel data in both two channels */
     I2S_CHANNEL_FMT_ALL_LEFT,           /*!< Load left channel data in both two channels */
-    I2S_CHANNEL_FMT_ONLY_RIGHT,         /*!< Only load data in right channel */
-    I2S_CHANNEL_FMT_ONLY_LEFT,          /*!< Only load data in left channel */
+    I2S_CHANNEL_FMT_ONLY_RIGHT,         /*!< Only load data in right channel (mono mode) */
+    I2S_CHANNEL_FMT_ONLY_LEFT,          /*!< Only load data in left channel (mono mode) */
 #if SOC_I2S_SUPPORTS_TDM
     // Multiple channels are available with TDM feature
     I2S_CHANNEL_FMT_MULTIPLE,           /*!< More than two channels are used */
@@ -123,11 +123,13 @@ typedef enum {
     I2S_MODE_SLAVE        = (0x1 << 1),       /*!< Slave mode*/
     I2S_MODE_TX           = (0x1 << 2),       /*!< TX mode*/
     I2S_MODE_RX           = (0x1 << 3),       /*!< RX mode*/
-#if SOC_I2S_SUPPORTS_ADC_DAC
+#if SOC_I2S_SUPPORTS_DAC
     //built-in DAC functions are only supported on I2S0 for ESP32 chip.
     I2S_MODE_DAC_BUILT_IN = (0x1 << 4),       /*!< Output I2S data to built-in DAC, no matter the data format is 16bit or 32 bit, the DAC module will only take the 8bits from MSB*/
+#endif // SOC_I2S_SUPPORTS_DAC
+#if SOC_I2S_SUPPORTS_ADC
     I2S_MODE_ADC_BUILT_IN = (0x1 << 5),       /*!< Input I2S data from built-in ADC, each data can be 12-bit width at most*/
-#endif
+#endif // SOC_I2S_SUPPORTS_ADC
     // PDM functions are only supported on I2S0 (all chips).
     I2S_MODE_PDM          = (0x1 << 6),       /*!< I2S PDM mode*/
 } i2s_mode_t;
@@ -152,7 +154,7 @@ typedef enum {
     I2S_MCLK_MULTIPLE_384       = 384,     /*!< mclk = sample_rate * 384 */
 } i2s_mclk_multiple_t;
 
-#if SOC_I2S_SUPPORTS_ADC_DAC
+#if SOC_I2S_SUPPORTS_DAC
 /**
  * @brief I2S DAC mode for i2s_set_dac_mode.
  *
@@ -165,7 +167,7 @@ typedef enum {
     I2S_DAC_CHANNEL_BOTH_EN  = 0x3,  /*!< Enable both of the I2S built-in DAC channels.*/
     I2S_DAC_CHANNEL_MAX      = 0x4,  /*!< I2S built-in DAC mode max index*/
 } i2s_dac_mode_t;
-#endif //SOC_I2S_SUPPORTS_ADC_DAC
+#endif //SOC_I2S_SUPPORTS_DAC
 
 #if SOC_I2S_SUPPORTS_PCM
 /**

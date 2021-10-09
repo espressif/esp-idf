@@ -48,6 +48,9 @@ static const spi_flash_chip_t *default_registered_chips[] = {
 #ifdef CONFIG_SPI_FLASH_SUPPORT_BOYA_CHIP
     &esp_flash_chip_boya,
 #endif
+#ifdef CONFIG_SPI_FLASH_SUPPORT_MXIC_OPI_CHIP
+    &esp_flash_chip_mxic_opi,
+#endif
     // Default chip drivers that will accept all chip ID.
     // FM, Winbond and XMC chips are supposed to be supported by this chip driver.
     &esp_flash_chip_generic,

@@ -29,7 +29,7 @@ typedef volatile struct syscon_dev_s {
             uint32_t reserved16:  16;
         };
         uint32_t val;
-    } apb_ctrl_sysclk_conf;
+    } sysclk_conf;
     union {
         struct {
             uint32_t xtal_tick:     8;
@@ -38,7 +38,7 @@ typedef volatile struct syscon_dev_s {
             uint32_t reserved17:   15;
         };
         uint32_t val;
-    } apb_ctrl_tick_conf;
+    } tick_conf;
     union {
         struct {
             uint32_t clk20_oen:       1;
@@ -55,7 +55,7 @@ typedef volatile struct syscon_dev_s {
             uint32_t reserved11:     21;
         };
         uint32_t val;
-    } apb_ctrl_clk_out_en;
+    } clk_out_en;
     union {
         struct {
             uint32_t peri_io_swap: 8;

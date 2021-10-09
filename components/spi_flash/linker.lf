@@ -18,3 +18,6 @@ entries:
 
     if IDF_TARGET_ESP32S3 = y && ESPTOOLPY_OCT_FLASH = y:
         spi_flash_oct_flash_init (noflash)
+
+    if IDF_TARGET_ESP32S3 = y :
+        spi_flash_chip_mxic_opi (noflash)

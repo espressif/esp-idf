@@ -97,16 +97,11 @@ function(__component_dir_quick_check var component_dir)
     set(res 1)
     get_filename_component(abs_dir ${component_dir} ABSOLUTE)
 
-    # Check this is really a directory and that a CMakeLists.txt file for this component exists
-    # - warn and skip anything which isn't valid looking (probably cruft)
-    if(NOT IS_DIRECTORY "${abs_dir}")
-        message(STATUS "Unexpected file in components directory: ${abs_dir}")
-        set(res 0)
-    endif()
-
     get_filename_component(base_dir ${abs_dir} NAME)
     string(SUBSTRING "${base_dir}" 0 1 first_char)
 
+    # Check the component directory contains a CMakeLists.txt file
+    # - warn and skip anything which isn't valid looking (probably cruft)
     if(NOT first_char STREQUAL ".")
         if(NOT EXISTS "${abs_dir}/CMakeLists.txt")
             message(STATUS "Component directory ${abs_dir} does not contain a CMakeLists.txt file. "
@@ -131,7 +126,7 @@ function(__component_write_properties output_file)
         foreach(property ${component_properties})
             __component_get_property(val ${component_target} ${property})
             set(component_properties_text
-                "${component_properties_text}\nset(__component_${component_target}_${property} ${val})")
+                "${component_properties_text}\nset(__component_${component_target}_${property} \"${val}\")")
         endforeach()
         file(WRITE ${output_file} "${component_properties_text}")
     endforeach()

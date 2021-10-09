@@ -28,6 +28,11 @@
 #define CSR_PCMR_MACHINE    0x7e1
 #define CSR_PCCR_MACHINE    0x7e2
 
+/*fast gpio*/
+#define CSR_GPIO_OEN_USER   0x803
+#define CSR_GPIO_IN_USER    0x804
+#define CSR_GPIO_OUT_USER   0x805
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -137,7 +142,7 @@ static inline void cpu_ll_clear_watchpoint(int id)
 
 FORCE_INLINE_ATTR bool cpu_ll_is_debugger_attached(void)
 {
-    return REG_GET_BIT(ASSIST_DEBUG_C0RE_0_DEBUG_MODE_REG, ASSIST_DEBUG_CORE_0_DEBUG_MODULE_ACTIVE);
+    return REG_GET_BIT(ASSIST_DEBUG_CORE_0_DEBUG_MODE_REG, ASSIST_DEBUG_CORE_0_DEBUG_MODULE_ACTIVE);
 }
 
 static inline void cpu_ll_break(void)
@@ -161,6 +166,34 @@ static inline void cpu_ll_waiti(void)
         return;
     }
     asm volatile ("wfi\n");
+}
+
+static inline void cpu_ll_enable_dedic_gpio_output(uint32_t mask)
+{
+    RV_WRITE_CSR(CSR_GPIO_OEN_USER, mask);
+}
+
+static inline void cpu_ll_write_dedic_gpio_all(uint32_t value)
+{
+    RV_WRITE_CSR(CSR_GPIO_OUT_USER, value);
+}
+
+static inline uint32_t cpu_ll_read_dedic_gpio_in(void)
+{
+    uint32_t value = RV_READ_CSR(CSR_GPIO_IN_USER);
+    return value;
+}
+
+static inline uint32_t cpu_ll_read_dedic_gpio_out(void)
+{
+    uint32_t value = RV_READ_CSR(CSR_GPIO_OUT_USER);
+    return value;
+}
+
+static inline void cpu_ll_write_dedic_gpio_mask(uint32_t mask, uint32_t value)
+{
+    RV_SET_CSR(CSR_GPIO_OUT_USER, mask & value);
+    RV_CLEAR_CSR(CSR_GPIO_OUT_USER, mask & ~(value));
 }
 
 #ifdef __cplusplus
