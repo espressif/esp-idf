@@ -178,7 +178,7 @@ typedef volatile struct twai_dev_s {
             };
             uint32_t val;
         } tx_rx_buffer[13];
-    };                                          /* Address 16-28 TX/RX Buffer and Acc Filter*/;
+    };                                          /* Address 16-28 TX/RX Buffer and Acc Filter*/
 
     //Misc Registers
     union {

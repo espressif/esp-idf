@@ -23,18 +23,22 @@ extern "C" {
 #endif
 
 typedef struct sdmmc_desc_s {
-    uint32_t reserved1: 1;
-    uint32_t disable_int_on_completion: 1;
-    uint32_t last_descriptor: 1;
-    uint32_t first_descriptor: 1;
-    uint32_t second_address_chained: 1;
-    uint32_t end_of_ring: 1;
-    uint32_t reserved2: 24;
-    uint32_t card_error_summary: 1;
-    uint32_t owned_by_idmac: 1;
-    uint32_t buffer1_size: 13;
-    uint32_t buffer2_size: 13;
-    uint32_t reserved3: 6;
+    struct {
+        uint32_t reserved1: 1;
+        uint32_t disable_int_on_completion: 1;
+        uint32_t last_descriptor: 1;
+        uint32_t first_descriptor: 1;
+        uint32_t second_address_chained: 1;
+        uint32_t end_of_ring: 1;
+        uint32_t reserved2: 24;
+        uint32_t card_error_summary: 1;
+        uint32_t owned_by_idmac: 1;
+    };
+    struct {
+        uint32_t buffer1_size: 13;
+        uint32_t buffer2_size: 13;
+        uint32_t reserved3: 6;
+    };
     void* buffer1_ptr;
     union {
         void* buffer2_ptr;
@@ -146,8 +150,10 @@ typedef volatile struct sdmmc_dev_s {
         uint32_t val;
     } ctype;
 
-    uint32_t blksiz: 16;        ///< block size, default 0x200
-    uint32_t : 16;
+    struct {
+        uint32_t blksiz: 16;        ///< block size, default 0x200
+        uint32_t reserved: 16;
+    };
 
     uint32_t bytcnt;            ///< number of bytes to be transferred
 
@@ -326,6 +332,7 @@ typedef volatile struct sdmmc_dev_s {
             uint32_t ces: 1;        ///< card error summary
             uint32_t reserved2: 2;
             uint32_t nis: 1;        ///< normal interrupt summary
+            uint32_t ais: 1;        ///< abnormal interrupt summary
             uint32_t fbe_code: 3;   ///< code of fatal bus error
             uint32_t fsm: 4;        ///< DMAC FSM state
             uint32_t reserved3: 15;
@@ -362,6 +369,7 @@ typedef volatile struct sdmmc_dev_s {
             uint32_t write_thr_en : 1;      ///< equivalent of read_thr_en for writes
             uint32_t reserved1 : 13;
             uint32_t card_threshold : 12;   ///< threshold value for reads/writes, in bytes
+            uint32_t reserved2 : 4;
         };
         uint32_t val;
     } cardthrctl;
@@ -378,6 +386,7 @@ typedef volatile struct sdmmc_dev_s {
             uint32_t div_factor_p: 4;       ///< controls clock period; it will be (div_factor_p + 1) / 160MHz
             uint32_t div_factor_h: 4;       ///< controls length of high pulse; it will be (div_factor_h + 1) / 160MHz
             uint32_t div_factor_m: 4;       ///< should be equal to div_factor_p
+            uint32_t reserved1 : 11;
         };
         uint32_t val;
     } clock;

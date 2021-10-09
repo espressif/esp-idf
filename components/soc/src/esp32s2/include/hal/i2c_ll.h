@@ -16,7 +16,9 @@
 
 #pragma once
 #include "soc/i2c_periph.h"
+#include "soc/i2c_struct.h"
 #include "hal/i2c_types.h"
+#include "hal/hal_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -493,7 +495,7 @@ static inline void i2c_ll_trans_start(i2c_dev_t *hw)
 static inline void i2c_ll_get_start_timing(i2c_dev_t *hw, int *setup_time, int *hold_time)
 {
     *setup_time = hw->scl_rstart_setup.time;
-    *hold_time = hw->scl_start_hold.time+1;
+    *hold_time = hw->scl_start_hold.time + 1;
 }
 
 /**

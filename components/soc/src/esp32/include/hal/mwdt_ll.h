@@ -23,7 +23,9 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "hal/hal_defs.h"
 #include "soc/timer_periph.h"
+#include "soc/timer_group_struct.h"
 #include "hal/wdt_types.h"
 #include "esp_attr.h"
 
@@ -201,7 +203,7 @@ FORCE_INLINE_ATTR void mwdt_ll_set_flashboot_en(timg_dev_t* hw, bool enable)
  */
 FORCE_INLINE_ATTR void mwdt_ll_set_prescaler(timg_dev_t *hw, uint32_t prescaler)
 {
-    hw->wdt_config1.clk_prescale = prescaler;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->wdt_config1, clk_prescale, prescaler);
 }
 
 /**

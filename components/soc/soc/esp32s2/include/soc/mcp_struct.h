@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct mcp_dev_s {
     union {
         struct {
             uint32_t in_done:                  1;

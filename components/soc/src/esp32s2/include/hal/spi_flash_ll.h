@@ -23,7 +23,9 @@
 #pragma once
 
 #include "gpspi_flash_ll.h"
+#include "soc/spi_struct.h"
 #include "spimem_flash_ll.h"
+#include "hal/hal_defs.h"
 
 #ifdef __cplusplus
 extern "C" {

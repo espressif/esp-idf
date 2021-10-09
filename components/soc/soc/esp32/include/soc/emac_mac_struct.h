@@ -19,7 +19,7 @@ extern "C" {
 
 #include <stdint.h>
 
-typedef volatile struct {
+typedef volatile struct emac_mac_dev_s {
     union {
         struct {
             uint32_t pltf : 2;          /*These bits control the number of preamble bytes that are added to the beginning of every Transmit frame. The preamble reduction occurs only when the MAC is operating in the full-duplex mode.2'b00: 7 bytes of preamble. 2'b01: 5 bytes of preamble. 2'b10: 3 bytes of preamble.*/

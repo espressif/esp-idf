@@ -2,7 +2,12 @@
 
 #include "soc/adc_periph.h"
 #include "hal/adc_types.h"
+#include "soc/syscon_struct.h"
+#include "soc/sens_struct.h"
+#include "soc/rtc_io_struct.h"
+#include "soc/rtc_cntl_struct.h"
 #include <stdbool.h>
+#include "hal/hal_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,11 +56,11 @@ typedef enum {
 static inline void adc_ll_digi_set_fsm_time(uint32_t rst_wait, uint32_t start_wait, uint32_t standby_wait)
 {
     // Internal FSM reset wait time
-    SYSCON.saradc_fsm.rstb_wait = rst_wait;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(SYSCON.saradc_fsm, rstb_wait, rst_wait);
     // Internal FSM start wait time
-    SYSCON.saradc_fsm.start_wait = start_wait;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(SYSCON.saradc_fsm, start_wait, start_wait);
     // Internal FSM standby wait time
-    SYSCON.saradc_fsm.standby_wait = standby_wait;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(SYSCON.saradc_fsm, standby_wait, standby_wait);
 }
 
 /**
@@ -66,7 +71,7 @@ static inline void adc_ll_digi_set_fsm_time(uint32_t rst_wait, uint32_t start_wa
  */
 static inline void adc_ll_set_sample_cycle(uint32_t sample_cycle)
 {
-    SYSCON.saradc_fsm.sample_cycle = sample_cycle;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(SYSCON.saradc_fsm, sample_cycle, sample_cycle);
 }
 
 /**
@@ -77,7 +82,7 @@ static inline void adc_ll_set_sample_cycle(uint32_t sample_cycle)
 static inline void adc_ll_digi_set_clk_div(uint32_t div)
 {
     /* ADC clock divided from APB clk, e.g. 80 / 2 = 40Mhz, */
-    SYSCON.saradc_ctrl.sar_clk_div = div;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(SYSCON.saradc_ctrl, sar_clk_div, div);
 }
 
 /**
@@ -98,7 +103,7 @@ static inline void adc_ll_digi_set_output_format(adc_digi_output_format_t format
  */
 static inline void adc_ll_digi_set_convert_limit_num(uint32_t meas_num)
 {
-    SYSCON.saradc_ctrl2.max_meas_num = meas_num;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(SYSCON.saradc_ctrl2, max_meas_num, meas_num);
 }
 
 /**
@@ -320,7 +325,7 @@ static inline void adc_ll_rtc_disable_channel(adc_ll_num_t adc_n, int channel)
 static inline void adc_ll_rtc_start_convert(adc_ll_num_t adc_n, int channel)
 {
     if (adc_n == ADC_NUM_1) {
-        while (SENS.sar_slave_addr1.meas_status != 0);
+        while (HAL_FORCE_READ_U32_REG_FIELD(SENS.sar_slave_addr1, meas_status) != 0);
         SENS.sar_meas_start1.meas1_start_sar = 0;
         SENS.sar_meas_start1.meas1_start_sar = 1;
     } else { // adc_n == ADC_NUM_2
@@ -359,9 +364,9 @@ static inline int adc_ll_rtc_get_convert_value(adc_ll_num_t adc_n)
 {
     int ret_val = 0;
     if (adc_n == ADC_NUM_1) {
-        ret_val = SENS.sar_meas_start1.meas1_data_sar;
+        ret_val = HAL_FORCE_READ_U32_REG_FIELD(SENS.sar_meas_start1, meas1_data_sar);
     } else { // adc_n == ADC_NUM_2
-        ret_val = SENS.sar_meas_start2.meas2_data_sar;
+        ret_val = HAL_FORCE_READ_U32_REG_FIELD(SENS.sar_meas_start2, meas2_data_sar);
     }
     return ret_val;
 }
@@ -444,9 +449,9 @@ static inline adc_ll_power_t adc_ll_get_power_manage(void)
 static inline void adc_ll_set_sar_clk_div(adc_ll_num_t adc_n, uint32_t div)
 {
     if (adc_n == ADC_NUM_1) {
-        SENS.sar_read_ctrl.sar1_clk_div = div;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_read_ctrl, sar1_clk_div, div);
     } else { // adc_n == ADC_NUM_2
-        SENS.sar_read_ctrl2.sar2_clk_div = div;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_read_ctrl2, sar2_clk_div, div);
     }
 }
 
@@ -563,9 +568,9 @@ static inline void adc_ll_amp_disable(void)
     SENS.sar_meas_ctrl.amp_rst_fb_fsm = 0;
     SENS.sar_meas_ctrl.amp_short_ref_fsm = 0;
     SENS.sar_meas_ctrl.amp_short_ref_gnd_fsm = 0;
-    SENS.sar_meas_wait1.sar_amp_wait1 = 1;
-    SENS.sar_meas_wait1.sar_amp_wait2 = 1;
-    SENS.sar_meas_wait2.sar_amp_wait3 = 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_meas_wait1, sar_amp_wait1, 1);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_meas_wait1, sar_amp_wait2, 1);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_meas_wait2, sar_amp_wait3, 1);
 }
 
 /*---------------------------------------------------------------
