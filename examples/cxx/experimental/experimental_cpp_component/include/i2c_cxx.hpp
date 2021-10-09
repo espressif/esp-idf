@@ -419,6 +419,7 @@ protected:
 private:
     class CompTransferNode {
     public:
+        virtual ~CompTransferNode() = default;
         virtual void queue_cmd(i2c_cmd_handle_t handle, uint8_t i2c_addr) = 0;
         virtual void process_result(std::vector<std::vector<uint8_t> > &read_results) { }
     };
