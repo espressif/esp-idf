@@ -3559,7 +3559,6 @@ examples/cxx/experimental/experimental_cpp_component/include/esp_event_api.hpp
 examples/cxx/experimental/experimental_cpp_component/include/esp_event_cxx.hpp
 examples/cxx/experimental/experimental_cpp_component/include/esp_exception.hpp
 examples/cxx/experimental/experimental_cpp_component/include/esp_timer_cxx.hpp
-examples/cxx/experimental/experimental_cpp_component/include/i2c_cxx.hpp
 examples/cxx/experimental/experimental_cpp_component/test/test_cxx_exceptions.cpp
 examples/cxx/experimental/experimental_cpp_component/test/test_esp_event_cxx.cpp
 examples/cxx/experimental/experimental_cpp_component/test/test_esp_timer.cpp
