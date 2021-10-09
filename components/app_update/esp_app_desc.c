@@ -32,7 +32,7 @@ const __attribute__((section(".rodata_desc"))) esp_app_desc_t esp_app_desc = {
     .secure_version = 0,
 #endif
 
-#ifdef CONFIG_APP_COMPILE_TIME_DATE
+#if defined(CONFIG_APP_COMPILE_TIME_DATE) && !defined(CONFIG_APP_REPRODUCIBLE_BUILD)
     .time = __TIME__,
     .date = __DATE__,
 #else

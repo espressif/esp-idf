@@ -131,6 +131,8 @@
   - "tools/detect_python.sh"
   - "tools/detect_python.fish"
 
+  - "tools/ci/test_reproducible_build.sh"
+
 .patterns-windows: &patterns-windows
   - "tools/windows/**/*"
 

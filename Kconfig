@@ -201,6 +201,13 @@ mainmenu "Espressif IoT Development Framework Configuration"
         config APP_BUILD_USE_FLASH_SECTIONS
             bool # Whether to place code/data into memory-mapped flash sections
 
+        config APP_REPRODUCIBLE_BUILD
+            bool "Enable reproducible build"
+            default n
+            select COMPILER_HIDE_PATHS_MACROS
+            help
+                If enabled, all date, time, and path information would be eliminated.
+
     endmenu # Build type
 
     source "$COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE"
