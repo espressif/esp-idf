@@ -2204,14 +2204,24 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
 #ifdef CONFIG_IEEE80211W
     if (esp_wifi_sta_pmf_enabled()) {
         wifi_config_t wifi_cfg;
+        wifi_cipher_type_t mgmt_cipher = esp_wifi_sta_get_mgmt_group_cipher();
 
         esp_wifi_get_config(WIFI_IF_STA, &wifi_cfg);
         sm->pmf_cfg = wifi_cfg.sta.pmf_cfg;
-        sm->mgmt_group_cipher = cipher_type_map_public_to_supp(esp_wifi_sta_get_mgmt_group_cipher());
+        sm->mgmt_group_cipher = cipher_type_map_public_to_supp(mgmt_cipher);
         if (sm->mgmt_group_cipher == WPA_CIPHER_NONE) {
                 wpa_printf(MSG_ERROR, "mgmt_cipher %d not supported", mgmt_cipher);
                 return -1;
 	}
+#ifdef CONFIG_SUITEB192
+        extern bool g_wpa_suiteb_certification;
+        if (g_wpa_suiteb_certification) {
+            if (mgmt_cipher != WIFI_CIPHER_TYPE_AES_GMAC256) {
+                wpa_printf(MSG_ERROR, "suite-b 192bit certification, only GMAC256 is supported");
+                return -1;
+            }
+        }
+#endif
     } else {
         memset(&sm->pmf_cfg, 0, sizeof(sm->pmf_cfg));
         sm->mgmt_group_cipher = WPA_CIPHER_NONE;
