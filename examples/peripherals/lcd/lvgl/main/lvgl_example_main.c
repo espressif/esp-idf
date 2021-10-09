@@ -1,11 +1,8 @@
-/* LCD LVGL porting example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: CC0-1.0
+ */
 
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
@@ -52,9 +49,9 @@ static const char *TAG = "example";
 
 extern void example_lvgl_demo_ui(lv_obj_t *scr);
 
-static bool example_notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, void *user_data, void *event_data)
+static bool example_notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx)
 {
-    lv_disp_drv_t *disp_driver = (lv_disp_drv_t *)user_data;
+    lv_disp_drv_t *disp_driver = (lv_disp_drv_t *)user_ctx;
     lv_disp_flush_ready(disp_driver);
     return false;
 }
@@ -120,7 +117,7 @@ void app_main(void)
             .dc_data_level = 1,
         },
         .on_color_trans_done = example_notify_lvgl_flush_ready,
-        .user_data = &disp_drv,
+        .user_ctx = &disp_drv,
         .lcd_cmd_bits = EXAMPLE_LCD_CMD_BITS,
         .lcd_param_bits = EXAMPLE_LCD_PARAM_BITS,
     };

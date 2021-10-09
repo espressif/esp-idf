@@ -66,6 +66,22 @@ esp_err_t esp_lcd_panel_io_tx_color(esp_lcd_panel_io_handle_t io, int lcd_cmd, c
 esp_err_t esp_lcd_panel_io_del(esp_lcd_panel_io_handle_t io);
 
 /**
+ * @brief Type of LCD panel IO event data
+ */
+typedef struct {
+} esp_lcd_panel_io_event_data_t;
+
+/**
+ * @brief Declare the prototype of the function that will be invoked when panel IO finishes transferring color data
+ *
+ * @param[in] panel_io LCD panel IO handle, which is created by factory API like `esp_lcd_new_panel_io_spi()`
+ * @param[in] edata Panel IO event data, fed by driver
+ * @param[in] user_ctx User data, passed from `esp_lcd_panel_io_xxx_config_t`
+ * @return Whether a high priority task has been waken up by this function
+ */
+typedef bool (*esp_lcd_panel_io_color_trans_done_cb_t)(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx);
+
+/**
  * @brief Panel IO configuration structure, for SPI interface
  */
 typedef struct {
@@ -74,8 +90,8 @@ typedef struct {
     int spi_mode;    /*!< Traditional SPI mode (0~3) */
     unsigned int pclk_hz;    /*!< Frequency of pixel clock */
     size_t trans_queue_depth; /*!< Size of internal transaction queue */
-    bool (*on_color_trans_done)(esp_lcd_panel_io_handle_t panel_io, void *user_data, void *event_data); /*!< Callback, invoked when color data transfer has finished */
-    void *user_data;    /*!< User private data, passed directly to on_trans_frame_done's user_data */
+    esp_lcd_panel_io_color_trans_done_cb_t on_color_trans_done; /*!< Callback invoked when color data transfer has finished */
+    void *user_ctx;    /*!< User private data, passed directly to on_color_trans_done's user_ctx */
     int lcd_cmd_bits;   /*!< Bit-width of LCD command */
     int lcd_param_bits; /*!< Bit-width of LCD parameter */
     struct {
@@ -100,8 +116,8 @@ esp_err_t esp_lcd_new_panel_io_spi(esp_lcd_spi_bus_handle_t bus, const esp_lcd_p
 
 typedef struct {
     uint32_t dev_addr; /*!< I2C device address */
-    bool (*on_color_trans_done)(esp_lcd_panel_io_handle_t panel_io, void *user_data, void *event_data); /*!< Callback, invoked when color data transfer has finished */
-    void *user_data; /*!< User private data, passed directly to on_trans_frame_done's user_data */
+    esp_lcd_panel_io_color_trans_done_cb_t on_color_trans_done; /*!< Callback invoked when color data transfer has finished */
+    void *user_ctx; /*!< User private data, passed directly to on_color_trans_done's user_ctx */
     size_t control_phase_bytes; /*!< I2C LCD panel will encode control information (e.g. D/C seclection) into control phase, in several bytes */
     unsigned int dc_bit_offset; /*!< Offset of the D/C selection bit in control phase */
     int lcd_cmd_bits;           /*!< Bit-width of LCD command */
@@ -168,8 +184,8 @@ typedef struct {
     int cs_gpio_num;         /*!< GPIO used for CS line, set to -1 will declaim exclusively use of I80 bus */
     unsigned int pclk_hz;    /*!< Frequency of pixel clock */
     size_t trans_queue_depth; /*!< Transaction queue size, larger queue, higher throughput */
-    bool (*on_color_trans_done)(esp_lcd_panel_io_handle_t panel_io, void *user_data, void *event_data); /*!< Callback, invoked when color data was tranferred done */
-    void *user_data;    /*!< User private data, passed directly to on_trans_done's user_data */
+    esp_lcd_panel_io_color_trans_done_cb_t on_color_trans_done; /*!< Callback invoked when color data was tranferred done */
+    void *user_ctx;    /*!< User private data, passed directly to on_color_trans_done's user_ctx */
     int lcd_cmd_bits;   /*!< Bit-width of LCD command */
     int lcd_param_bits; /*!< Bit-width of LCD parameter */
     struct {

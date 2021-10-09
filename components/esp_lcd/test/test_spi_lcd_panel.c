@@ -15,9 +15,7 @@
 #define TEST_SPI_HOST_ID        (1)
 #define TEST_LCD_PIXEL_CLOCK_HZ (20 * 1000 * 1000) // 20MHz
 
-typedef bool (*trans_done_callback_t)(esp_lcd_panel_io_handle_t, void *, void *);
-
-static void lcd_initialize_spi(esp_lcd_panel_io_handle_t *io_handle, trans_done_callback_t on_color_trans_done, void *user_data, int cmd_bits, int param_bits, bool oct_mode)
+static void lcd_initialize_spi(esp_lcd_panel_io_handle_t *io_handle, esp_lcd_panel_io_color_trans_done_cb_t on_color_trans_done, void *user_ctx, int cmd_bits, int param_bits, bool oct_mode)
 {
     gpio_config_t bk_gpio_config = {
         .mode = GPIO_MODE_OUTPUT,
@@ -54,7 +52,7 @@ static void lcd_initialize_spi(esp_lcd_panel_io_handle_t *io_handle, trans_done_
         .lcd_cmd_bits = cmd_bits,
         .lcd_param_bits = param_bits,
         .on_color_trans_done = on_color_trans_done,
-        .user_data = user_data
+        .user_ctx = user_ctx
     };
     if (oct_mode) {
         io_config.flags.octal_mode = 1;
@@ -187,9 +185,9 @@ TEST_CASE("lcd panel with 1-line spi interface (st7789)", "[lcd]")
 #if CONFIG_LV_USE_USER_DATA
 #include "test_lvgl_port.h"
 
-static bool notify_lvgl_ready_to_flush(esp_lcd_panel_io_handle_t panel_io, void *user_data, void *event_data)
+static bool notify_lvgl_ready_to_flush(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx)
 {
-    lv_disp_t *disp = *(lv_disp_t **)user_data;
+    lv_disp_t *disp = *(lv_disp_t **)user_ctx;
     lv_disp_flush_ready(&disp->driver);
     return false;
 }
