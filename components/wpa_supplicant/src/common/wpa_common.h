@@ -324,6 +324,8 @@ const char * wpa_cipher_txt(int cipher);
 
 int wpa_parse_wpa_ie_rsn(const u8 *rsn_ie, size_t rsn_ie_len,
 			 struct wpa_ie_data *data);
+int wpa_parse_wpa_ie(const u8 *wpa_ie, size_t wpa_ie_len,
+		     struct wpa_ie_data *data);
 
 int wpa_eapol_key_mic(const u8 *key, int ver, const u8 *buf, size_t len,
 		      u8 *mic);

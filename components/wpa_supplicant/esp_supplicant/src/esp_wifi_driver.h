@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _ESP_WIFI_DRIVER_H_
 #define _ESP_WIFI_DRIVER_H_
@@ -57,8 +49,7 @@ typedef enum {
 
 /* wifi_appie_t is in rom code and can't be changed anymore, use wifi_appie_ram_t for new app IEs */
 typedef enum {
-    WIFI_APPIE_RM_ENABLED_CAPS = WIFI_APPIE_MAX,
-    WIFI_APPIE_RAM_MAX,
+    WIFI_APPIE_RAM_MAX = WIFI_APPIE_MAX,
 } wifi_appie_ram_t;
 
 enum {
@@ -137,6 +128,7 @@ struct wpa_funcs {
     int (*wpa3_parse_sae_msg)(uint8_t *buf, size_t len, uint32_t type, uint16_t status);
     int (*wpa_sta_rx_mgmt)(u8 type, u8 *frame, size_t len, u8 *sender, u32 rssi, u8 channel, u64 current_tsf);
     void (*wpa_config_done)(void);
+    bool (*wpa_sta_profile_match)(u8 *bssid);
 };
 
 struct wpa2_funcs {
@@ -266,5 +258,6 @@ esp_err_t esp_wifi_action_tx_req(uint8_t type, uint8_t channel,
                                  uint32_t wait_time_ms, const wifi_action_tx_req_t *req);
 esp_err_t esp_wifi_remain_on_channel(uint8_t ifx, uint8_t type, uint8_t channel,
                                      uint32_t wait_time_ms, wifi_action_rx_cb_t rx_cb);
+bool esp_wifi_is_mbo_enabled_internal(uint8_t if_index);
 
 #endif /* _ESP_WIFI_DRIVER_H_ */
