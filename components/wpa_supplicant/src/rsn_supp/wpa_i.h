@@ -30,7 +30,7 @@ struct install_key {
  * struct wpa_sm - Internal WPA state machine data
  */
 struct wpa_sm {
-    u8 pmk[PMK_LEN];
+    u8 pmk[PMK_LEN_MAX];
     size_t pmk_len;
 
     struct wpa_ptk ptk, tptk;

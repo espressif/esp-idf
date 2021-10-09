@@ -52,10 +52,6 @@ static const struct dpp_curve_params dpp_curves[] = {
 	{ NULL, 0, 0, 0, 0, NULL, 0, NULL }
 };
 
-void wpa_msg(void *ctx, int level, const char *fmt, ...)
-{
-}
-
 static struct wpabuf *
 gas_build_req(u8 action, u8 dialog_token, size_t size)
 {

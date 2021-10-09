@@ -1218,7 +1218,6 @@ components/esp_wifi/include/esp_private/wifi_os_adapter.h
 components/esp_wifi/include/esp_private/wifi_types.h
 components/esp_wifi/include/esp_smartconfig.h
 components/esp_wifi/include/esp_wifi.h
-components/esp_wifi/include/esp_wifi_crypto_types.h
 components/esp_wifi/include/esp_wifi_default.h
 components/esp_wifi/include/esp_wifi_netif.h
 components/esp_wifi/include/smartconfig_ack.h
@@ -3002,6 +3001,7 @@ components/wpa_supplicant/src/common/wpa_supplicant_i.h
 components/wpa_supplicant/src/crypto/aes-cbc.c
 components/wpa_supplicant/src/crypto/aes-ccm.c
 components/wpa_supplicant/src/crypto/aes-ctr.c
+components/wpa_supplicant/src/crypto/aes-gcm.c
 components/wpa_supplicant/src/crypto/aes-internal-dec.c
 components/wpa_supplicant/src/crypto/aes-internal-enc.c
 components/wpa_supplicant/src/crypto/aes-internal.c
@@ -3024,7 +3024,6 @@ components/wpa_supplicant/src/crypto/crypto_mbedtls-bignum.c
 components/wpa_supplicant/src/crypto/crypto_mbedtls-ec.c
 components/wpa_supplicant/src/crypto/crypto_mbedtls-rsa.c
 components/wpa_supplicant/src/crypto/crypto_mbedtls.c
-components/wpa_supplicant/src/crypto/crypto_ops.c
 components/wpa_supplicant/src/crypto/des-internal.c
 components/wpa_supplicant/src/crypto/des_i.h
 components/wpa_supplicant/src/crypto/dh_group5.c
@@ -3056,6 +3055,7 @@ components/wpa_supplicant/src/crypto/sha256.c
 components/wpa_supplicant/src/crypto/sha256.h
 components/wpa_supplicant/src/crypto/sha256_i.h
 components/wpa_supplicant/src/crypto/sha384-internal.c
+components/wpa_supplicant/src/crypto/sha384-prf.c
 components/wpa_supplicant/src/crypto/sha384-tlsprf.c
 components/wpa_supplicant/src/crypto/sha384.h
 components/wpa_supplicant/src/crypto/sha384_i.h

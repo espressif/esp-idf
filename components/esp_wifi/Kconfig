@@ -312,4 +312,17 @@ menu "Wi-Fi"
             This function depends on BT-off
             because currently we don't support external coex and internal coex simultaneously.
 
+    config ESP_WIFI_GCMP_SUPPORT
+        bool "WiFi GCMP Support(GCMP128 and GCMP256)"
+        default n
+        depends on (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
+        help
+            Select this option to enable GCMP support. GCMP support is compulsory for WiFi Suite-B support.
+
+    config ESP_WIFI_GMAC_SUPPORT
+        bool "WiFi GMAC Support(GMAC128 and GMAC256)"
+        default n
+        help
+            Select this option to enable GMAC support. GMAC support is compulsory for WiFi 192 bit certification.
+
 endmenu  # Wi-Fi

@@ -1,16 +1,8 @@
-// Hardware crypto support Copyright 2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 
 #ifndef __ESP_WIFI_CRYPTO_TYPES_H__
@@ -359,6 +351,21 @@ typedef uint8_t * (*esp_ccmp_encrypt_t)(const uint8_t *tk, uint8_t *frame, size_
                                         uint8_t *pn, int keyid, size_t *encrypted_len);
 
 /**
+ * @brief One-Key GMAC hash with AES for MIC computation
+ *
+ * @key: key for the hash operation
+ * @keylen: key length
+ * @iv: initialization vector
+ * @iv_len: initialization vector length
+ * @aad: aad
+ * @aad_len: aad length
+ * @mic: Buffer for MIC (128 bits, i.e., 16 bytes)
+ * Returns: 0 on success, -1 on failure
+ */
+typedef int (*esp_aes_gmac_t)(const uint8_t *key, size_t keylen, const uint8_t *iv, size_t iv_len,
+                              const uint8_t *aad, size_t aad_len, uint8_t *mic);
+
+/**
   * @brief The crypto callback function structure used when do station security connect.
   *        The structure can be set as software crypto or the crypto optimized by ESP32
   *        hardware.
@@ -390,6 +397,7 @@ typedef struct {
     esp_omac1_aes_128_t omac1_aes_128;
     esp_ccmp_decrypt_t ccmp_decrypt;
     esp_ccmp_encrypt_t ccmp_encrypt;
+    esp_aes_gmac_t aes_gmac;
 }wpa_crypto_funcs_t;
 
 /**

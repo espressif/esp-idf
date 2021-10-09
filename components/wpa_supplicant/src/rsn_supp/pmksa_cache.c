@@ -109,7 +109,7 @@ pmksa_cache_add(struct rsn_pmksa_cache *pmksa, const u8 *pmk, size_t pmk_len,
     struct rsn_pmksa_cache_entry *entry, *pos, *prev;
     int64_t now_sec = esp_timer_get_time() / 1e6;
 
-    if (pmk_len > PMK_LEN)
+    if (pmk_len > PMK_LEN_MAX)
         return NULL;
 
     if (wpa_key_mgmt_suite_b(akmp) && !kck)
@@ -122,6 +122,10 @@ pmksa_cache_add(struct rsn_pmksa_cache *pmksa, const u8 *pmk, size_t pmk_len,
     entry->pmk_len = pmk_len;
     if (pmkid)
         os_memcpy(entry->pmkid, pmkid, PMKID_LEN);
+    else if (akmp == WPA_KEY_MGMT_IEEE8021X_SUITE_B_192)
+        rsn_pmkid_suite_b_192(kck, kck_len, aa, spa, entry->pmkid);
+    else if (wpa_key_mgmt_suite_b(akmp))
+        rsn_pmkid_suite_b(kck, kck_len, aa, spa, entry->pmkid);
     else
         rsn_pmkid(pmk, pmk_len, aa, spa, entry->pmkid,
                   wpa_key_mgmt_sha256(akmp));
