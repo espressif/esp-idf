@@ -228,7 +228,7 @@ void __attribute__((noreturn)) panic_restart(void)
         digital_reset_needed = true;
     }
 #endif
-#if CONFIG_ESP_SYSTEM_CONFIG_MEMPROT_FEATURE
+#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
     if (esp_memprot_is_intr_ena_any() || esp_memprot_is_locked_any()) {
         digital_reset_needed = true;
     }

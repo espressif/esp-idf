@@ -76,7 +76,7 @@ void IRAM_ATTR esp_restart(void)
     vTaskSuspendAll();
 
     bool digital_reset_needed = false;
-#if CONFIG_ESP_SYSTEM_CONFIG_MEMPROT_FEATURE
+#if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
     if (esp_memprot_is_intr_ena_any() || esp_memprot_is_locked_any()) {
         digital_reset_needed = true;
     }
