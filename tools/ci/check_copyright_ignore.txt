@@ -1154,7 +1154,6 @@ components/esp_system/port/soc/esp32s2/clk.c
 components/esp_system/port/soc/esp32s2/reset_reason.c
 components/esp_system/port/soc/esp32s2/system_internal.c
 components/esp_system/port/soc/esp32s2/usb_console.c
-components/esp_system/port/soc/esp32s3/cache_err_int.c
 components/esp_system/port/soc/esp32s3/cache_err_int.h
 components/esp_system/port/soc/esp32s3/clk.c
 components/esp_system/port/soc/esp32s3/reset_reason.c
