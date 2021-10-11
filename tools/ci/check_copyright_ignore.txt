@@ -1136,10 +1136,8 @@ components/esp_system/include/esp_task_wdt.h
 components/esp_system/int_wdt.c
 components/esp_system/panic.c
 components/esp_system/port/arch/riscv/expression_with_stack.c
-components/esp_system/port/arch/riscv/panic_arch.c
 components/esp_system/port/arch/xtensa/debug_helpers.c
 components/esp_system/port/arch/xtensa/expression_with_stack.c
-components/esp_system/port/arch/xtensa/panic_arch.c
 components/esp_system/port/arch/xtensa/trax.c
 components/esp_system/port/brownout.c
 components/esp_system/port/cpu_start.c
