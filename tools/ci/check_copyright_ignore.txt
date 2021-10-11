@@ -3992,7 +3992,6 @@ tools/ble/lib_gap.py
 tools/ble/lib_gatt.py
 tools/build_apps.py
 tools/catch/catch.hpp
-tools/check_python_dependencies.py
 tools/check_term.py
 tools/ci/check_artifacts_expire_time.py
 tools/ci/check_build_warnings.py

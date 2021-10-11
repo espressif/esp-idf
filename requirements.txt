@@ -8,7 +8,13 @@ setuptools>=21
 click>=7.0
 pyserial>=3.3
 future>=0.15.2
+
 cryptography>=2.1.4
+--only-binary cryptography
+# Only binary for cryptography is here to make it work on ARMv7 architecture
+# We do have cryptography binary on https://dl.espressif.com/pypi for ARM
+# On https://pypi.org/ are no ARM binaries as standard now
+
 pyparsing>=2.0.3,<2.4.0
 pyelftools>=0.22
 idf-component-manager>=0.2.99-beta
