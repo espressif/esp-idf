@@ -91,8 +91,9 @@ if(ULP_COCPU_IS_RISCV)
     add_executable(${ULP_APP_NAME} ${ULP_S_SOURCES})
     set(DUMP_SYMBOL_ARGS -g)
     set(MAP_GEN_EXTRA_ARGS --riscv)
-    set(EXTRA_LINKER_ARGS "-nostartfiles -Wl,--gc-sections -Xlinker \
--Map=${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}.map")
+    set(EXTRA_LINKER_ARGS "-nostartfiles")
+    list(APPEND EXTRA_LINKER_ARGS "-Wl,--gc-sections")
+    list(APPEND EXTRA_LINKER_ARGS "-Wl,-Map=\"${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}.map\"")
     #Makes the csr utillies for riscv visible:
     target_include_directories(${ULP_APP_NAME} PRIVATE "${IDF_PATH}/components/ulp/ulp_riscv/include")
 
@@ -119,7 +120,7 @@ else()
     add_executable(${ULP_APP_NAME} ${ULP_PS_SOURCES})
     set(DUMP_SYMBOL_ARGS -g -f posix)
     set(MAP_GEN_EXTRA_ARGS .)
-    set(EXTRA_LINKER_ARGS "-Map=${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}.map")
+    set(EXTRA_LINKER_ARGS "-Map=\"${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}.map\"")
 
 endif()
 
@@ -148,5 +149,6 @@ add_custom_target(build
                         ${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}.h
                 WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
-target_link_libraries(${ULP_APP_NAME} -T${CMAKE_CURRENT_BINARY_DIR}/${ULP_LD_SCRIPT} ${EXTRA_LINKER_ARGS})
+target_link_libraries(${ULP_APP_NAME} "-T\"${CMAKE_CURRENT_BINARY_DIR}/${ULP_LD_SCRIPT}\"")
+target_link_libraries(${ULP_APP_NAME} ${EXTRA_LINKER_ARGS})
 set_target_properties(${ULP_APP_NAME} PROPERTIES LINK_DEPENDS ${ULP_LD_SCRIPT})

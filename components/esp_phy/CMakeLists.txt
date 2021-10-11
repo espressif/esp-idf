@@ -22,7 +22,7 @@ idf_component_register(SRCS "${srcs}"
 idf_build_get_property(build_dir BUILD_DIR)
 
 set(target_name "${idf_target}")
-target_link_libraries(${COMPONENT_LIB} PUBLIC "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}")
+target_link_libraries(${COMPONENT_LIB} PUBLIC "-L \"${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}\"")
 
 if(link_binary_libs)
     target_link_libraries(${COMPONENT_LIB} PUBLIC phy)
