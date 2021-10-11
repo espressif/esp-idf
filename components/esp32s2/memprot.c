@@ -30,7 +30,6 @@ static const char *TAG = "memprot";
 #include "hal/memprot_ll.h"
 #include "hal/memprot_peri_ll.h"
 #include "esp_fault.h"
-
 #include "soc/cpu.h"
 
 extern int _iram_text_end;
@@ -650,33 +649,32 @@ void esp_memprot_set_prot_peri2(mem_type_prot_t mem_type, uint32_t *split_addr, 
 
 void esp_memprot_set_prot(bool invoke_panic_handler, bool lock_feature, uint32_t *mem_type_mask)
 {
-    //any IRAM0/DRAM0 enable/disable call applies to all memory modules connected
-    uint32_t required_mem_prot = mem_type_mask == NULL ? (uint32_t)MEMPROT_ALL : *mem_type_mask;
-    bool use_iram0 = required_mem_prot & MEMPROT_IRAM0_SRAM || required_mem_prot & MEMPROT_IRAM0_RTCFAST;
-    bool use_dram0 = required_mem_prot & MEMPROT_DRAM0_SRAM || required_mem_prot & MEMPROT_DRAM0_RTCFAST;
-    bool use_peri1 = required_mem_prot & MEMPROT_PERI1_RTCSLOW;
-    bool use_peri2 = required_mem_prot & MEMPROT_PERI2_RTCSLOW_0 || required_mem_prot & MEMPROT_PERI2_RTCSLOW_1;
+    //if being debugged check we are not glitched and dont enable Memprot
+    if (esp_cpu_in_ocd_debug_mode()) {
+        ESP_FAULT_ASSERT(esp_cpu_in_ocd_debug_mode());
+    } else {
 
-    //disable protection
-    if (use_iram0) {
-        esp_memprot_intr_ena(MEMPROT_IRAM0_SRAM, false);
-    }
-    if (use_dram0) {
-        esp_memprot_intr_ena(MEMPROT_DRAM0_SRAM, false);
-    }
-    if (use_peri1) {
-        esp_memprot_intr_ena(MEMPROT_PERI1_RTCSLOW, false);
-    }
-    if (use_peri2) {
-        esp_memprot_intr_ena(MEMPROT_PERI2_RTCSLOW_0, false);
-    }
+        //any IRAM0/DRAM0 enable/disable call applies to all memory modules connected
+        uint32_t required_mem_prot = mem_type_mask == NULL ? (uint32_t)MEMPROT_ALL : *mem_type_mask;
+        bool use_iram0 = required_mem_prot & MEMPROT_IRAM0_SRAM || required_mem_prot & MEMPROT_IRAM0_RTCFAST;
+        bool use_dram0 = required_mem_prot & MEMPROT_DRAM0_SRAM || required_mem_prot & MEMPROT_DRAM0_RTCFAST;
+        bool use_peri1 = required_mem_prot & MEMPROT_PERI1_RTCSLOW;
+        bool use_peri2 = required_mem_prot & MEMPROT_PERI2_RTCSLOW_0 || required_mem_prot & MEMPROT_PERI2_RTCSLOW_1;
 
-    //connect to intr. matrix if not being debugged
-    if (!esp_cpu_in_ocd_debug_mode()) {
+        //disable protection
+        if (use_iram0) {
+            esp_memprot_intr_ena(MEMPROT_IRAM0_SRAM, false);
+        }
+        if (use_dram0) {
+            esp_memprot_intr_ena(MEMPROT_DRAM0_SRAM, false);
+        }
+        if (use_peri1) {
+            esp_memprot_intr_ena(MEMPROT_PERI1_RTCSLOW, false);
+        }
+        if (use_peri2) {
+            esp_memprot_intr_ena(MEMPROT_PERI2_RTCSLOW_0, false);
+        }
 
-        ESP_FAULT_ASSERT(!esp_cpu_in_ocd_debug_mode());
-
-        //initialize for specific buses (any memory type does the job)
         if (invoke_panic_handler) {
             if (use_iram0) {
                 esp_memprot_intr_init(MEMPROT_IRAM0_SRAM);
