@@ -12,7 +12,7 @@
 
 ::
 
-    openocd -f board/esp32s3.cfg
+    openocd -f board/esp32s3-builtin.cfg
 
 .. |run-openocd-device-name| replace:: ESP32-S3
 
@@ -22,21 +22,28 @@
 
 ::
 
-    user-name@computer-name:~/esp/esp-idf$ openocd -f board/esp32s3.cfg
-    Open On-Chip Debugger  v0.10.0-esp32-20200420 (2020-04-20-16:15)
+    user-name@computer-name:~/esp/esp-idf$ openocd -f board/esp32s3-builtin.cfg
+    Open On-Chip Debugger  v0.10.0-esp32-20210902 (2021-10-05-23:44)
     Licensed under GNU GPL v2
     For bug reports, read
-            http://openocd.org/doc/doxygen/bugs.html
-    none separate
-    adapter speed: 20000 kHz
-    force hard breakpoints
-    Info : ftdi: if you experience problems at higher adapter clocks, try the command "ftdi_tdo_sample_edge falling"
-    Info : clock speed 20000 kHz
-    Info : JTAG tap: esp32s3.cpu0 tap/device found: 0x120034e5 (mfg: 0x272 (Tensilica), part: 0x2003, ver: 0x1)
-    Info : esp32s3: Debug controller was reset (pwrstat=0x5F, after clear 0x0F).
-    Info : esp32s3: Core was reset (pwrstat=0x5F, after clear 0x0F).
+      http://openocd.org/doc/doxygen/bugs.html
+    debug_level: 2
 
-.. |run-openocd-cfg-file-err| replace:: ``Can't find board/esp32s3.cfg``
+    Info : only one transport option; autoselect 'jtag'
+    Warn : Transport "jtag" was already selected
+    Info : Listening on port 6666 for tcl connections
+    Info : Listening on port 4444 for telnet connections
+    Info : esp_usb_jtag: Device found. Base speed 40000KHz, div range 1 to 255
+    Info : clock speed 40000 kHz
+    Info : JTAG tap: esp32s3.cpu0 tap/device found: 0x120034e5 (mfg: 0x272 (Tensilica), part: 0x2003, ver: 0x1)
+    Info : JTAG tap: esp32s3.cpu1 tap/device found: 0x120034e5 (mfg: 0x272 (Tensilica), part: 0x2003, ver: 0x1)
+    Info : esp32s3.cpu0: Debug controller was reset.
+    Info : esp32s3.cpu0: Core was reset.
+    Info : esp32s3.cpu1: Debug controller was reset.
+    Info : esp32s3.cpu1: Core was reset.
+    Info : Listening on port 3333 for gdb connections
+
+.. |run-openocd-cfg-file-err| replace:: ``Can't find board/esp32s3-builtin.cfg``
 
 ---
 
@@ -44,7 +51,7 @@
 
 ::
 
-    openocd -f board/esp32s3.cfg -c "program_esp filename.bin 0x10000 verify exit"
+    openocd -f board/esp32s3-builtin.cfg -c "program_esp filename.bin 0x10000 verify exit"
 
 ---
 
@@ -52,7 +59,7 @@
 
 .. code-block:: bash
 
-    src/openocd -f board/esp32s3.cfg
+    src/openocd -f board/esp32s3-builtin.cfg
 
 ---
 
@@ -60,13 +67,13 @@
 
 .. code-block:: batch
 
-    src\openocd -f board/esp32s3.cfg
+    src\openocd -f board/esp32s3-builtin.cfg
 
 ---
 
 .. idf-py-openocd-default-cfg
 
-.. |idf-py-def-cfg| replace:: ``-f board/esp32s3.cfg``
+.. |idf-py-def-cfg| replace:: ``-f board/esp32s3-builtin.cfg``
 
 ---
 
@@ -74,7 +81,7 @@
 
 ::
 
-    openocd -f board/esp32s3.cfg -c "init; halt; esp appimage_offset 0x210000"
+    openocd -f board/esp32s3-builtin.cfg -c "init; halt; esp appimage_offset 0x210000"
 
 ---
 
@@ -86,14 +93,16 @@
 
     * - Name
       - Description
-    * - ``board/esp32s3.cfg``
-      - Board configuration file for ESP32-S3, includes target and adapter configuration.
+    * - ``board/esp32s3-builtin.cfg``
+      - Board configuration file for ESP32-S3 for debugging via builtin USB JTAG, includes target and adapter configuration.
+    * - ``board/esp32s3-ftdi.cfg``
+      - Board configuration file for ESP32-S3 for via externally connected FTDI-based probe like ESP-Prog, includes target and adapter configuration.
     * - ``target/esp32s3.cfg``
       - ESP32-S3 target configuration file. Can be used together with one of the ``interface/`` configuration files.
-    * - ``interface/ftdi/esp32s3.cfg``
-      - JTAG adapter configuration file for ESP32-S3 board.
+    * - ``interface/ftdi/esp_usb_jtag.cfg``
+      - JTAG adapter configuration file for ESP32-S3 builtin USB JTAG.
     * - ``interface/ftdi/esp32_devkitj_v1.cfg``
-      - JTAG adapter configuration file for ESP-Prog boards.
+      - JTAG adapter configuration file for ESP-Prog debug adapter board.
 
 ---
 
@@ -126,7 +135,7 @@
 
 ::
 
-    openocd -l openocd_log.txt -d3 -f board/esp32s3.cfg
+    openocd -l openocd_log.txt -d3 -f board/esp32s3-builtin.cfg
 
 ---
 
@@ -134,7 +143,7 @@
 
 ::
 
-    openocd -d3 -f board/esp32s3.cfg 2>&1 | tee openocd.log
+    openocd -d3 -f board/esp32s3-builtin.cfg 2>&1 | tee openocd.log
 
 ---
 
