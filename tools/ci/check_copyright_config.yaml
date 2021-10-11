@@ -79,3 +79,4 @@ ignore:
     - '!components/bt/host/bluedroid/api/'
     - '!components/bt/host/bluedroid/btc/'
     - examples/zigbee/
+    - components/lwip/port/esp32/include/lwipopts.h

@@ -540,6 +540,7 @@ menu "LWIP"
         config LWIP_TCP_SACK_OUT
             bool "Support sending selective acknowledgements"
             default n
+            depends on LWIP_TCP_QUEUE_OOSEQ
             help
                 TCP will support sending selective acknowledgements (SACKs).
 
