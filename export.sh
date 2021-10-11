@@ -142,6 +142,8 @@ __cleanup() {
     unset IDF_ADD_PATHS_EXTRAS
     unset idf_exports
     unset ESP_PYTHON
+    unset SOURCE_ZSH
+    unset SOURCE_BASH
 
     unset __realpath
     unset __main
@@ -174,12 +176,7 @@ __enable_autocomplete() {
     then
         eval "$(env LANG=en _IDF.PY_COMPLETE=$SOURCE_BASH idf.py)"  || echo "WARNING: Failed to load shell autocompletion for bash version: $BASH_VERSION!"
     fi
-
-    unset SOURCE_ZSH
-    unset SOURCE_BASH
-
 }
 
-__main
-__enable_autocomplete
+__main && __enable_autocomplete
 __cleanup $?
