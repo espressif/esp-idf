@@ -4,7 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
+/**
+ * System level MSPI APIs (private)
+ */
 /**
  * Currently the MSPI timing tuning related APIs are designed to be private.
  * Because:
@@ -17,6 +19,10 @@
  */
 #pragma once
 
+#include <stdint.h>
+#include <stdbool.h>
+#include "sdkconfig.h"
+#include "esp_err.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/spi_flash.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -34,9 +40,9 @@ extern "C" {
 #endif
 
 /**
- * @brief Register ROM functions and init flash device registers to make use of octal flash
+ * @brief To setup Flash chip
  */
-esp_err_t esp_opiflash_init(void);
+esp_err_t spi_flash_init_chip_state(void);
 
 /**
  * @brief Make MSPI work under 20Mhz
@@ -87,6 +93,12 @@ void spi_timing_get_flash_timing_param(spi_flash_hal_timing_config_t *out_timing
  * @brief Judge if the flash in tuned
  */
 bool spi_timine_config_flash_is_tuned(void);
+
+/**
+ * @brief Set Flash chip specifically required MSPI register settings here
+ */
+void spi_flash_set_vendor_required_regs(void);
+
 
 #ifdef __cplusplus
 }

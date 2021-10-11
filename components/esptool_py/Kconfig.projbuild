@@ -66,15 +66,6 @@ menu "Serial flasher config"
         bool "Enable Octal Flash"
         default n
 
-    choice ESPTOOLPY_FLASH_VENDOR
-        depends on ESPTOOLPY_OCT_FLASH
-        prompt "Select OPI Flash Vendor"
-        default ESPTOOLPY_FLASH_VENDOR_MXIC
-
-        config ESPTOOLPY_FLASH_VENDOR_MXIC
-            bool "MXIC OPI FLASH(MX25UM25645G)"
-    endchoice
-
     choice ESPTOOLPY_FLASHMODE
         prompt "Flash SPI mode"
         default ESPTOOLPY_FLASHMODE_DIO
@@ -100,17 +91,16 @@ menu "Serial flasher config"
             bool "OPI"
     endchoice
 
-    choice ESPTOOLPY_FLASHMODE_OCT
-        depends on ESPTOOLPY_FLASHMODE_OPI
-        prompt "Flash OPI mode"
-        default ESPTOOLPY_FLASHMODE_OPI_DTR
+    choice ESPTOOLPY_FLASH_SAMPLE_MODE
+        prompt "Flash Sampling Mode"
+        default ESPTOOLPY_FLASH_SAMPLE_MODE_DTR if ESPTOOLPY_OCT_FLASH
+        default ESPTOOLPY_FLASH_SAMPLE_MODE_STR if !ESPTOOLPY_OCT_FLASH
 
-        config ESPTOOLPY_FLASHMODE_OPI_STR
-            depends on ESPTOOLPY_FLASH_VENDOR_MXIC
-            bool "OPI_STR"
-        config ESPTOOLPY_FLASHMODE_OPI_DTR
-            depends on ESPTOOLPY_FLASH_VENDOR_MXIC
-            bool "OPI_DTR"
+        config ESPTOOLPY_FLASH_SAMPLE_MODE_STR
+            bool "STR Mode"
+        config ESPTOOLPY_FLASH_SAMPLE_MODE_DTR
+            depends on ESPTOOLPY_OCT_FLASH
+            bool "DTR Mode"
     endchoice
 
     # Note: we use esptool.py to flash bootloader in
@@ -136,7 +126,7 @@ menu "Serial flasher config"
             The SPI flash frequency to be used.
 
         config ESPTOOLPY_FLASHFREQ_120M
-            depends on ESPTOOLPY_FLASHMODE_OPI_STR || !ESPTOOLPY_OCT_FLASH
+            depends on ESPTOOLPY_FLASH_SAMPLE_MODE_STR
             bool "120 MHz"
         config ESPTOOLPY_FLASHFREQ_80M
             bool "80 MHz"

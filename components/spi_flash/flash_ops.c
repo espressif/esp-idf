@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdlib.h>
 #include <assert.h>
@@ -28,6 +20,7 @@
 #include "esp_spi_flash.h"
 #include "esp_log.h"
 #include "esp_private/system_internal.h"
+#include "esp_private/spi_flash_os.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/cache.h"
 #include "esp32/rom/spi_flash.h"
@@ -43,6 +36,7 @@
 #include "esp32s3/rom/cache.h"
 #include "esp32s3/clk.h"
 #include "esp32s3/clk.h"
+#include "esp32s3/opi_flash_private.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/cache.h"
 #include "esp32c3/rom/spi_flash.h"
@@ -172,6 +166,16 @@ void IRAM_ATTR esp_mspi_pin_init(void)
     spi_timing_set_pin_drive_strength();
 #else
     //Set F4R4 board pin drive strength. TODO: IDF-3663
+#endif
+}
+
+esp_err_t IRAM_ATTR spi_flash_init_chip_state(void)
+{
+#if CONFIG_ESPTOOLPY_OCT_FLASH
+    return esp_opiflash_init(rom_spiflash_legacy_data->chip.device_id);
+#else
+    //currently we don't need other setup for initialising Quad Flash
+    return ESP_OK;
 #endif
 }
 
@@ -904,5 +908,15 @@ void IRAM_ATTR spi_flash_set_rom_required_regs(void)
      *
      * Add any registers that are not set in ROM SPI flash functions here in the future
      */
+#endif
+}
+
+void IRAM_ATTR spi_flash_set_vendor_required_regs(void)
+{
+#if CONFIG_ESPTOOLPY_OCT_FLASH
+    //Flash chip requires MSPI specifically, call this function to set them
+    esp_opiflash_set_required_regs();
+#else
+    //currently we don't need to set other MSPI registers for Quad Flash
 #endif
 }

@@ -18,8 +18,22 @@
 #include "regi2c_ulp.h"
 #include "soc_log.h"
 #include "esp_err.h"
+#include "esp_attr.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
+
+#ifndef BOOTLOADER_BUILD
+/**
+ * TODO: IDF-3204
+ * Temporarily solution. Depends on MSPI
+ * Final solution: the rtc should not depend on MSPI. We should do rtc related before Flash init
+ */
+#include "esp_private/spi_flash_os.h"
+#include "esp32s3/rom/cache.h"
+#include "freertos/portmacro.h"
+portMUX_TYPE rtc_init_spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
+#endif
+
 
 #define RTC_CNTL_MEM_FORCE_NOISO (RTC_CNTL_SLOWMEM_FORCE_NOISO | RTC_CNTL_FASTMEM_FORCE_NOISO)
 
@@ -231,8 +245,40 @@ static void set_ocode_by_efuse(int calib_version)
     REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_FORCE_CODE, 1);
 }
 
-static void calibrate_ocode(void)
+#ifndef BOOTLOADER_BUILD
+//TODO: IDF-3204
+//Temporary solution, these 2 functions should be defined elsewhere, because similar operations are also needed elsewhere
+//Final solution: the rtc should not depend on MSPI. We should do rtc related before Flash init
+static void IRAM_ATTR enter_mspi_low_speed_mode_safe(void)
 {
+    portENTER_CRITICAL(&rtc_init_spinlock);
+    Cache_Freeze_ICache_Enable(1);
+    Cache_Freeze_DCache_Enable(1);
+    spi_timing_enter_mspi_low_speed_mode(false);
+    Cache_Freeze_DCache_Disable();
+    Cache_Freeze_ICache_Disable();
+    portEXIT_CRITICAL(&rtc_init_spinlock);
+}
+
+static void IRAM_ATTR enter_mspi_high_speed_mode_safe(void)
+{
+    portENTER_CRITICAL(&rtc_init_spinlock);
+    Cache_Freeze_ICache_Enable(1);
+    Cache_Freeze_DCache_Enable(1);
+    spi_timing_enter_mspi_high_speed_mode(false);
+    Cache_Freeze_DCache_Disable();
+    Cache_Freeze_ICache_Disable();
+    portEXIT_CRITICAL(&rtc_init_spinlock);
+}
+#endif
+
+//TODO: IDF-3204
+//This function will change the system clock source to XTAL. Under lower frequency (e.g. XTAL), MSPI timing tuning configures should be modified accordingly.
+static void IRAM_ATTR calibrate_ocode(void)
+{
+#ifndef BOOTLOADER_BUILD
+    enter_mspi_low_speed_mode_safe();
+#endif
     /*
     Bandgap output voltage is not precise when calibrate o-code by hardware sometimes, so need software o-code calibration (must turn off PLL).
     Method:
@@ -280,4 +326,7 @@ static void calibrate_ocode(void)
         }
     }
     rtc_clk_cpu_freq_set_config(&old_config);
+#ifndef BOOTLOADER_BUILD
+    enter_mspi_high_speed_mode_safe();
+#endif
 }

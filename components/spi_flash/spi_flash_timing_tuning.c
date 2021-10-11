@@ -13,7 +13,7 @@
 #include "esp_log.h"
 #include "soc/spi_mem_reg.h"
 #include "soc/io_mux_reg.h"
-#include "spi_flash_private.h"
+#include "esp_private/spi_flash_os.h"
 #include "soc/soc.h"
 #if CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/spi_timing_config.h"
@@ -235,14 +235,14 @@ static void select_best_tuning_config(spi_timing_config_t *config, uint32_t cons
     if (is_flash) {
 #if SPI_TIMING_FLASH_DTR_MODE
         best_point = select_best_tuning_config_dtr(config, consecutive_length, end);
-#else   //#if SPI_TIMING_FLASH_STR_MODE
+#elif SPI_TIMING_FLASH_STR_MODE
         best_point = select_best_tuning_config_str(config, consecutive_length, end);
 #endif
         s_flash_best_timing_tuning_config = config->tuning_config_table[best_point];
     } else {
 #if SPI_TIMING_PSRAM_DTR_MODE
         best_point = select_best_tuning_config_dtr(config, consecutive_length, end);
-#else   //#if SPI_TIMING_PSRAM_STR_MODE
+#elif SPI_TIMING_PSRAM_STR_MODE
         best_point = select_best_tuning_config_str(config, consecutive_length, end);
 #endif
         s_psram_best_timing_tuning_config = config->tuning_config_table[best_point];

@@ -1142,7 +1142,6 @@ components/esp_system/port/arch/xtensa/expression_with_stack.c
 components/esp_system/port/arch/xtensa/panic_arch.c
 components/esp_system/port/arch/xtensa/trax.c
 components/esp_system/port/brownout.c
-components/esp_system/port/cpu_start.c
 components/esp_system/port/include/esp_clk_internal.h
 components/esp_system/port/include/port/panic_funcs.h
 components/esp_system/port/include/riscv/eh_frame_parser_impl.h
@@ -2774,9 +2773,7 @@ components/spi_flash/esp32s2/flash_ops_esp32s2.c
 components/spi_flash/esp32s2/spi_flash_rom_patch.c
 components/spi_flash/esp32s3/flash_ops_esp32s3.c
 components/spi_flash/esp_flash_api.c
-components/spi_flash/esp_flash_spi_init.c
 components/spi_flash/flash_mmap.c
-components/spi_flash/flash_ops.c
 components/spi_flash/include/esp_flash.h
 components/spi_flash/include/esp_flash_internal.h
 components/spi_flash/include/esp_flash_spi_init.h
@@ -2817,7 +2814,6 @@ components/spi_flash/test/test_mmap.c
 components/spi_flash/test/test_out_of_bounds_write.c
 components/spi_flash/test/test_partition_ext.c
 components/spi_flash/test/test_partitions.c
-components/spi_flash/test/test_read_write.c
 components/spi_flash/test/test_spi_flash.c
 components/spiffs/esp_spiffs.c
 components/spiffs/include/esp_spiffs.h

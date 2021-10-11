@@ -1,43 +1,45 @@
 SOURCE_FILES := \
-	SpiFlash.cpp \
-	flash_mock.cpp \
-	flash_mock_util.c \
-	$(addprefix ../, \
-	partition.c \
-	flash_ops.c \
-	esp32/flash_ops_esp32.c \
-	) \
+    SpiFlash.cpp \
+    flash_mock.cpp \
+    flash_mock_util.c \
+    $(addprefix ../, \
+    partition.c \
+    flash_ops.c \
+    esp32/flash_ops_esp32.c \
+    ) \
 
 INCLUDE_DIRS := \
-	. \
-	../ \
-	../include \
-	../private_include \
-	$(addprefix stubs/, \
-	app_update/include \
-	driver/include \
-	esp_timer/include \
-	freertos/include \
-	log/include \
-	newlib/include \
-	sdmmc/include \
-	vfs/include \
-	) \
-	$(addprefix ../../../components/, \
-	esp_rom/include \
-	esp_common/include \
-	esp_hw_support/include \
-	esp_hw_support/include/soc \
-	esp_system/include \
-	xtensa/include \
-	xtensa/esp32/include \
-	soc/esp32/include \
-       	heap/include \
-	soc/include \
-	esp32/include \
-	esp_timer/include \
-	bootloader_support/include \
-	app_update/include \
-	hal/include \
-	spi_flash/include \
-	)
+    . \
+    ../ \
+    ../include \
+    ../private_include \
+    $(addprefix stubs/, \
+    app_update/include \
+    driver/include \
+    esp_timer/include \
+    freertos/include \
+    log/include \
+    newlib/include \
+    sdmmc/include \
+    vfs/include \
+    ) \
+    $(addprefix ../../../components/, \
+    esp_rom/include \
+    esp_common/include \
+    esp_hw_support/include \
+    esp_hw_support/include/soc \
+    esp_system/include \
+    xtensa/include \
+    xtensa/esp32/include \
+    soc/esp32/include \
+        heap/include \
+    soc/include \
+    esp32/include \
+    esp_timer/include \
+    bootloader_support/include \
+    app_update/include \
+    hal/include \
+    hal/esp32/include \
+    hal/platform_port/include \
+    spi_flash/include \
+    )
