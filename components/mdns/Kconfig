@@ -84,4 +84,10 @@ menu "mDNS"
             This option creates a new thread to serve receiving packets (TODO).
             This option uses additional N sockets, where N is number of interfaces.
 
+    config MDNS_MULTIPLE_INSTANCE
+        bool "Multiple instances under the same service type"
+        default y
+        help
+            Enables adding multiple service instances under the same service type.
+
 endmenu
