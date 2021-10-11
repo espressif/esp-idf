@@ -3,6 +3,6 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := nvs-rw-blob
+PROJECT_NAME := nvs_rw_blob
 
 include $(IDF_PATH)/make/project.mk

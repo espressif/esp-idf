@@ -2,7 +2,7 @@ menu "Example Configuration"
 
     config EXAMPLE_FIRMWARE_UPG_URL
         string "Firmware Upgrade URL"
-        default "https://192.168.2.106:8070/hello-world.bin"
+        default "https://192.168.2.106:8070/hello_world.bin"
         help
             URL of server which hosts the firmware image.
 

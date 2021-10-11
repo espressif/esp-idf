@@ -3,6 +3,6 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := spi-slave-receiver
+PROJECT_NAME := spi_slave_receiver
 
 include $(IDF_PATH)/make/project.mk

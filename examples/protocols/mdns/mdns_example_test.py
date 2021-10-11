@@ -115,7 +115,7 @@ def test_examples_protocol_mdns(env, extra_data):
     """
     dut1 = env.get_dut('mdns-test', 'examples/protocols/mdns', dut_class=ttfw_idf.ESP32DUT)
     # check and log bin size
-    binary_file = os.path.join(dut1.app.binary_path, 'mdns-test.bin')
+    binary_file = os.path.join(dut1.app.binary_path, 'mdns_test.bin')
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance('mdns-test_bin_size', '{}KB'.format(bin_size // 1024))
     # 1. start mdns application

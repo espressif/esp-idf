@@ -3,6 +3,6 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := custom-flash-driver
+PROJECT_NAME := custom_flash_driver
 
 include $(IDF_PATH)/make/project.mk
