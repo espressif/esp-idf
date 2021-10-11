@@ -23,7 +23,7 @@
 
 // Warn about using deprecated option
 #ifdef CONFIG_LWIP_USE_ONLY_LWIP_SELECT
-#warning LWIP_USE_ONLY_LWIP_SELECT is deprecated: Please use VFS_SUPPORT_SELECT instead
+#warning CONFIG_LWIP_USE_ONLY_LWIP_SELECT is deprecated: Please use CONFIG_VFS_SUPPORT_SELECT instead
 #endif
 
 #ifdef CONFIG_VFS_SUPPRESS_SELECT_DEBUG_OUTPUT
