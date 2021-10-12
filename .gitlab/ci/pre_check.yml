@@ -193,12 +193,3 @@ check_commit_msg:
     - git log -n10 --oneline
     # commit start with "WIP: " need to be squashed before merge
     - 'git log --pretty=%s master.. -- | grep "^WIP: " && exit 1 || exit 0'
-
-check_tools_file_patterns:
-  extends: .pre_check_job_template
-  image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
-  variables:
-    PYTHON_VER: 3.7.7
-  script:
-    - python tools/ci/check_tools_files_patterns.py
-  allow_failure: true

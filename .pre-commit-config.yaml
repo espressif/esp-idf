@@ -108,6 +108,14 @@ repos:
         language: python
         files: \.(py|c|h|cpp|hpp|ld)$
         require_serial: true
+      - id: check-tools-files-patterns
+        name: Check tools dir files patterns
+        entry: tools/ci/check_tools_files_patterns.py
+        language: python
+        files: '^tools/.+'
+        additional_dependencies:
+          - PyYAML == 5.3.1
+        pass_filenames: false
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.0.1
     hooks:
