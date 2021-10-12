@@ -3967,7 +3967,6 @@ tools/check_term.py
 tools/ci/check_artifacts_expire_time.py
 tools/ci/check_build_warnings.py
 tools/ci/check_callgraph.py
-tools/ci/check_codeowners.py
 tools/ci/check_deprecated_kconfigs.py
 tools/ci/check_examples_cmake_make.py
 tools/ci/check_executables.py
