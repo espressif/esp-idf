@@ -332,5 +332,7 @@
 
 #define SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP        (1)     /*!<Supports waking up from touch pad trigger */
 
+/*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
+#define SOC_COEX_HW_PTI                 (1)
 /* ---------------------------- Compatibility ------------------------------- */
 // No contents
