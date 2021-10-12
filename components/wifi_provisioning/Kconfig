@@ -15,4 +15,11 @@ menu "Wi-Fi Provisioning Manager"
             Time (in seconds) after which the Wi-Fi provisioning manager will auto-stop after connecting to
             a Wi-Fi network successfully.
 
+    config WIFI_PROV_BLE_BONDING
+        bool
+        default n
+        prompt "Enable BLE bonding"
+        depends on BT_ENABLED
+        help
+            This option is applicable only when provisioning transport is BLE.
 endmenu

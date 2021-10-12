@@ -2144,7 +2144,6 @@ components/protocomm/include/common/protocomm.h
 components/protocomm/include/security/protocomm_security.h
 components/protocomm/include/security/protocomm_security0.h
 components/protocomm/include/security/protocomm_security1.h
-components/protocomm/include/transports/protocomm_ble.h
 components/protocomm/include/transports/protocomm_console.h
 components/protocomm/include/transports/protocomm_httpd.h
 components/protocomm/proto-c/constants.pb-c.c
@@ -2163,12 +2162,8 @@ components/protocomm/src/common/protocomm.c
 components/protocomm/src/common/protocomm_priv.h
 components/protocomm/src/security/security0.c
 components/protocomm/src/security/security1.c
-components/protocomm/src/simple_ble/simple_ble.c
-components/protocomm/src/simple_ble/simple_ble.h
-components/protocomm/src/transports/protocomm_ble.c
 components/protocomm/src/transports/protocomm_console.c
 components/protocomm/src/transports/protocomm_httpd.c
-components/protocomm/src/transports/protocomm_nimble.c
 components/protocomm/test/test_protocomm.c
 components/pthread/include/esp_pthread.h
 components/pthread/pthread.c
@@ -2963,7 +2958,6 @@ components/wifi_provisioning/python/wifi_constants_pb2.py
 components/wifi_provisioning/python/wifi_scan_pb2.py
 components/wifi_provisioning/src/handlers.c
 components/wifi_provisioning/src/manager.c
-components/wifi_provisioning/src/scheme_ble.c
 components/wifi_provisioning/src/scheme_console.c
 components/wifi_provisioning/src/scheme_softap.c
 components/wifi_provisioning/src/wifi_config.c
