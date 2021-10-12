@@ -31,6 +31,11 @@ void bootloader_flash_update_id()
     chip->device_id = bootloader_read_flash_id();
 }
 
+void bootloader_flash_update_size(uint32_t size)
+{
+    g_rom_flashchip.chip_size = size;
+}
+
 void IRAM_ATTR bootloader_flash_cs_timing_config()
 {
     //SPI0/1 share the cs_hold / cs_setup, cd_hold_time / cd_setup_time, cs_hold_delay registers for FLASH, so we only need to set SPI0 related registers here
