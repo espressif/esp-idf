@@ -18,13 +18,13 @@
 #include "protocol_examples_common.h"
 
 #include <esp_https_server.h>
+#include "esp_tls.h"
 
 /* A simple example that demonstrates how to create GET and POST
  * handlers and start an HTTPS server.
 */
 
 static const char *TAG = "example";
-
 
 /* An HTTP GET handler */
 static esp_err_t root_get_handler(httpd_req_t *req)
@@ -35,12 +35,42 @@ static esp_err_t root_get_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
+#if CONFIG_EXAMPLE_ENABLE_HTTPS_USER_CALLBACK
+/**
+ * Example callback function to get the certificate of connected clients,
+ * whenever a new SSL connection is created
+ *
+ * Can also be used to other information like Socket FD, Connection state, etc.
+ */
+void https_server_user_callback(esp_https_server_user_cb_arg_t *user_cb)
+{
+    ESP_LOGI(TAG, "Session Created!");
+    const mbedtls_x509_crt *cert;
+
+    const size_t buf_size = 1024;
+    char *buf = calloc(buf_size, sizeof(char));
+    if (buf == NULL) {
+        ESP_LOGE(TAG, "Out of memory - Callback execution failed!");
+        return;
+    }
+
+    cert = mbedtls_ssl_get_peer_cert(&user_cb->tls->ssl);
+    if (cert != NULL) {
+        mbedtls_x509_crt_info((char *) buf, buf_size - 1, "      ", cert);
+        ESP_LOGI(TAG, "Peer certificate info:\n%s", buf);
+    } else {
+        ESP_LOGW(TAG, "Could not obtain the peer certificate!");
+    }
+
+    free(buf);
+}
+#endif
+
 static const httpd_uri_t root = {
     .uri       = "/",
     .method    = HTTP_GET,
     .handler   = root_get_handler
 };
-
 
 static httpd_handle_t start_webserver(void)
 {
@@ -61,6 +91,9 @@ static httpd_handle_t start_webserver(void)
     conf.prvtkey_pem = prvtkey_pem_start;
     conf.prvtkey_len = prvtkey_pem_end - prvtkey_pem_start;
 
+    #if CONFIG_EXAMPLE_ENABLE_HTTPS_USER_CALLBACK
+    conf.user_cb = https_server_user_callback;
+    #endif
     esp_err_t ret = httpd_ssl_start(&server, &conf);
     if (ESP_OK != ret) {
         ESP_LOGI(TAG, "Error starting server!");
