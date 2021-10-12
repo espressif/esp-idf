@@ -1,16 +1,8 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -44,6 +36,17 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* host,
  * @param card  card information structure initialized using sdmmc_card_init
  */
 void sdmmc_card_print_info(FILE* stream, const sdmmc_card_t* card);
+
+/**
+ * Get status of SD/MMC card
+ *
+ * @param card  pointer to card information structure previously initialized
+ *              using sdmmc_card_init
+ * @return
+ *      - ESP_OK on success
+ *      - One of the error codes from SDMMC host controller
+ */
+esp_err_t sdmmc_get_status(sdmmc_card_t* card);
 
 /**
  * Write given number of sectors to SD/MMC card

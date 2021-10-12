@@ -1068,7 +1068,6 @@ components/fatfs/diskio/diskio.c
 components/fatfs/diskio/diskio_impl.h
 components/fatfs/diskio/diskio_rawflash.c
 components/fatfs/diskio/diskio_rawflash.h
-components/fatfs/diskio/diskio_sdmmc.c
 components/fatfs/diskio/diskio_sdmmc.h
 components/fatfs/diskio/diskio_wl.h
 components/fatfs/port/freertos/ffsystem.c
@@ -1863,8 +1862,6 @@ components/riscv/include/riscv/riscv_interrupts.h
 components/riscv/include/riscv/rvruntime-frames.h
 components/riscv/instruction_decode.c
 components/riscv/interrupt.c
-components/sdmmc/include/sdmmc_cmd.h
-components/sdmmc/sdmmc_cmd.c
 components/sdmmc/sdmmc_common.c
 components/sdmmc/sdmmc_common.h
 components/sdmmc/sdmmc_init.c
