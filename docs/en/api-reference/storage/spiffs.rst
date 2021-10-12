@@ -14,6 +14,9 @@ Notes
  - Currently, SPIFFS does not support directories, it produces a flat structure. If SPIFFS is mounted under ``/spiffs``, then creating a file with the path ``/spiffs/tmp/myfile.txt`` will create a file called ``/tmp/myfile.txt`` in SPIFFS, instead of ``myfile.txt`` in the directory ``/spiffs/tmp``.
  - It is not a real-time stack. One write operation might take much longer than another.
  - For now, it does not detect or handle bad blocks.
+ - SPIFFS is able to reliably utilize only around 75% of assigned partition space.
+ - When the filesystem is running out of space, the garbage collector is trying to find free space by scanning the filesystem multiple times, which can take up to several seconds per write function call, depending on required space. This is caused by the SPIFFS design and the issue has been reported multiple times (e.g. `here <https://github.com/espressif/esp-idf/issues/1737>`_) and in the official `SPIFFS github repository <https://github.com/pellepl/spiffs/issues/>`_. The issue can be partially mitigated by the `SPIFFS configuration <https://github.com/pellepl/spiffs/wiki/Configure-spiffs>`_.
+ - Deleting a file does not always remove the whole file, which leaves unusable sections throughout the filesystem.
 
 Tools
 -----
