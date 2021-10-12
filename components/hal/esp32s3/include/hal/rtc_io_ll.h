@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*******************************************************************************
  * NOTICE
@@ -56,14 +48,14 @@ typedef enum {
 static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
 {
     if (func == RTCIO_FUNC_RTC) {
-        // SENS.sar_io_mux_conf.iomux_clk_gate_en = 1;
+        SENS.sar_peri_clk_gate_conf.iomux_clk_en = 1;
         // 0: GPIO connected to digital GPIO module. 1: GPIO connected to analog RTC module.
         SET_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, (rtc_io_desc[rtcio_num].mux));
         //0:RTC FUNCTION 1,2,3:Reserved
         SET_PERI_REG_BITS(rtc_io_desc[rtcio_num].reg, RTC_IO_TOUCH_PAD1_FUN_SEL_V, RTCIO_LL_PIN_FUNC, rtc_io_desc[rtcio_num].func);
     } else if (func == RTCIO_FUNC_DIGITAL) {
         CLEAR_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, (rtc_io_desc[rtcio_num].mux));
-        // SENS.sar_io_mux_conf.iomux_clk_gate_en = 0;
+        SENS.sar_peri_clk_gate_conf.iomux_clk_en = 0;
     }
 }
 
@@ -276,6 +268,7 @@ static inline void rtcio_ll_force_unhold_all(void)
  */
 static inline void rtcio_ll_wakeup_enable(int rtcio_num, rtcio_ll_wake_type_t type)
 {
+    SENS.sar_peri_clk_gate_conf.iomux_clk_en = 1;
     RTCIO.pin[rtcio_num].wakeup_enable = 0x1;
     RTCIO.pin[rtcio_num].int_type = type;
 }

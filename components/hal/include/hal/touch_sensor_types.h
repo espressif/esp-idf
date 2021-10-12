@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -155,12 +147,23 @@ typedef enum {
     TOUCH_PAD_INTR_MASK_INACTIVE = BIT(2),  /*!<Inactive for one of the enabled channels. */
     TOUCH_PAD_INTR_MASK_SCAN_DONE = BIT(3), /*!<Measurement done for all the enabled channels. */
     TOUCH_PAD_INTR_MASK_TIMEOUT = BIT(4),   /*!<Timeout for one of the enabled channels. */
+#if SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED
+    TOUCH_PAD_INTR_MASK_PROXI_MEAS_DONE = BIT(5),   /*!<For proximity sensor, when the number of measurements reaches the set count of measurements, an interrupt will be generated. */
+    TOUCH_PAD_INTR_MASK_MAX
+#define TOUCH_PAD_INTR_MASK_ALL (TOUCH_PAD_INTR_MASK_TIMEOUT    \
+                                | TOUCH_PAD_INTR_MASK_SCAN_DONE \
+                                | TOUCH_PAD_INTR_MASK_INACTIVE  \
+                                | TOUCH_PAD_INTR_MASK_ACTIVE    \
+                                | TOUCH_PAD_INTR_MASK_DONE      \
+                                | TOUCH_PAD_INTR_MASK_PROXI_MEAS_DONE) /*!<All touch interrupt type enable. */
+#else
     TOUCH_PAD_INTR_MASK_MAX
 #define TOUCH_PAD_INTR_MASK_ALL (TOUCH_PAD_INTR_MASK_TIMEOUT    \
                                 | TOUCH_PAD_INTR_MASK_SCAN_DONE \
                                 | TOUCH_PAD_INTR_MASK_INACTIVE  \
                                 | TOUCH_PAD_INTR_MASK_ACTIVE    \
                                 | TOUCH_PAD_INTR_MASK_DONE) /*!<All touch interrupt type enable. */
+#endif
 } touch_pad_intr_mask_t;
 FLAG_ATTR(touch_pad_intr_mask_t)
 

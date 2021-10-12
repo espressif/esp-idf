@@ -1635,7 +1635,6 @@ components/hal/esp32s3/include/hal/mpu_ll.h
 components/hal/esp32s3/include/hal/mwdt_ll.h
 components/hal/esp32s3/include/hal/pcnt_ll.h
 components/hal/esp32s3/include/hal/rtc_cntl_ll.h
-components/hal/esp32s3/include/hal/rtc_io_ll.h
 components/hal/esp32s3/include/hal/rwdt_ll.h
 components/hal/esp32s3/include/hal/sha_ll.h
 components/hal/esp32s3/include/hal/sigmadelta_ll.h
@@ -1646,8 +1645,6 @@ components/hal/esp32s3/include/hal/spi_ll.h
 components/hal/esp32s3/include/hal/spimem_flash_ll.h
 components/hal/esp32s3/include/hal/systimer_ll.h
 components/hal/esp32s3/include/hal/timer_ll.h
-components/hal/esp32s3/include/hal/touch_sensor_hal.h
-components/hal/esp32s3/include/hal/touch_sensor_ll.h
 components/hal/esp32s3/include/hal/trace_ll.h
 components/hal/esp32s3/include/hal/twai_ll.h
 components/hal/esp32s3/include/hal/uart_ll.h
@@ -1655,7 +1652,6 @@ components/hal/esp32s3/include/hal/uhci_ll.h
 components/hal/esp32s3/include/hal/usb_ll.h
 components/hal/esp32s3/include/hal/usb_serial_jtag_ll.h
 components/hal/esp32s3/interrupt_descriptor_table.c
-components/hal/esp32s3/touch_sensor_hal.c
 components/hal/gdma_hal.c
 components/hal/gpio_hal.c
 components/hal/i2c_hal.c
@@ -1716,7 +1712,6 @@ components/hal/include/hal/systimer_types.h
 components/hal/include/hal/timer_hal.h
 components/hal/include/hal/timer_types.h
 components/hal/include/hal/touch_sensor_hal.h
-components/hal/include/hal/touch_sensor_types.h
 components/hal/include/hal/twai_hal.h
 components/hal/include/hal/twai_types.h
 components/hal/include/hal/uart_hal.h
@@ -2261,7 +2256,6 @@ components/soc/esp32/include/soc/sens_struct.h
 components/soc/esp32/include/soc/slc_reg.h
 components/soc/esp32/include/soc/slc_struct.h
 components/soc/esp32/include/soc/soc.h
-components/soc/esp32/include/soc/soc_caps.h
 components/soc/esp32/include/soc/soc_pins.h
 components/soc/esp32/include/soc/soc_ulp.h
 components/soc/esp32/include/soc/spi_pins.h
@@ -2642,9 +2636,6 @@ components/soc/esp32s3/include/soc/periph_defs.h
 components/soc/esp32s3/include/soc/reset_reasons.h
 components/soc/esp32s3/include/soc/rmt_reg.h
 components/soc/esp32s3/include/soc/rmt_struct.h
-components/soc/esp32s3/include/soc/rtc.h
-components/soc/esp32s3/include/soc/rtc_cntl_reg.h
-components/soc/esp32s3/include/soc/rtc_cntl_struct.h
 components/soc/esp32s3/include/soc/rtc_gpio_channel.h
 components/soc/esp32s3/include/soc/rtc_i2c_reg.h
 components/soc/esp32s3/include/soc/rtc_i2c_struct.h
@@ -2657,13 +2648,11 @@ components/soc/esp32s3/include/soc/sdmmc_pins.h
 components/soc/esp32s3/include/soc/sdmmc_reg.h
 components/soc/esp32s3/include/soc/sdmmc_struct.h
 components/soc/esp32s3/include/soc/sens_reg.h
-components/soc/esp32s3/include/soc/sens_struct.h
 components/soc/esp32s3/include/soc/sensitive_reg.h
 components/soc/esp32s3/include/soc/sensitive_struct.h
 components/soc/esp32s3/include/soc/sigmadelta_caps.h
 components/soc/esp32s3/include/soc/soc.h
 components/soc/esp32s3/include/soc/soc_caps.h
-components/soc/esp32s3/include/soc/soc_pins.h
 components/soc/esp32s3/include/soc/soc_ulp.h
 components/soc/esp32s3/include/soc/spi_mem_reg.h
 components/soc/esp32s3/include/soc/spi_mem_struct.h
@@ -2680,7 +2669,6 @@ components/soc/esp32s3/include/soc/timer_group_reg.h
 components/soc/esp32s3/include/soc/timer_group_struct.h
 components/soc/esp32s3/include/soc/touch_channel.h
 components/soc/esp32s3/include/soc/touch_sensor_caps.h
-components/soc/esp32s3/include/soc/touch_sensor_channel.h
 components/soc/esp32s3/include/soc/twai_caps.h
 components/soc/esp32s3/include/soc/twai_struct.h
 components/soc/esp32s3/include/soc/uart_caps.h
@@ -2715,7 +2703,6 @@ components/soc/esp32s3/sdmmc_periph.c
 components/soc/esp32s3/sigmadelta_periph.c
 components/soc/esp32s3/spi_periph.c
 components/soc/esp32s3/timer_periph.c
-components/soc/esp32s3/touch_sensor_periph.c
 components/soc/esp32s3/uart_periph.c
 components/soc/esp32s3/usb_periph.c
 components/soc/esp32s3/usb_periph.h
