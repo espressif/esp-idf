@@ -221,9 +221,11 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     /* For reason that only reset CPU, do not disable the clocks
      * that have been enabled before reset.
      */
-    if ((rst_reas[0] >= TG0WDT_CPU_RESET && rst_reas[0] <= TG0WDT_CPU_RESET && rst_reas[0] != RTCWDT_BROWN_OUT_RESET)
+    if ((rst_reas[0] == TG0WDT_CPU_RESET || rst_reas[0] == RTC_SW_CPU_RESET ||
+            rst_reas[0] == RTCWDT_CPU_RESET || rst_reas[0] == TG1WDT_CPU_RESET)
 #if !CONFIG_FREERTOS_UNICORE
-            || (rst_reas[1] >= TG0WDT_CPU_RESET && rst_reas[1] <= RTCWDT_CPU_RESET)
+        || (rst_reas[1] == TG0WDT_CPU_RESET || rst_reas[1] == RTC_SW_CPU_RESET ||
+            rst_reas[1] == RTCWDT_CPU_RESET || rst_reas[1] == TG1WDT_CPU_RESET)
 #endif
        ) {
         common_perip_clk = ~READ_PERI_REG(SYSTEM_PERIP_CLK_EN0_REG);
