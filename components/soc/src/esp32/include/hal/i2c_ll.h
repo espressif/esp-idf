@@ -15,7 +15,9 @@
 // The LL layer for I2C register operations
 
 #pragma once
+#include "hal/hal_defs.h"
 #include "soc/i2c_periph.h"
+#include "soc/i2c_struct.h"
 #include "hal/i2c_types.h"
 
 #ifdef __cplusplus

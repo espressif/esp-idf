@@ -21,7 +21,9 @@
 #pragma once
 
 #include <stdlib.h>
+#include "hal/hal_defs.h"
 #include "soc/rtc_io_periph.h"
+#include "soc/rtc_io_struct.h"
 #include "hal/rtc_io_types.h"
 #include "hal/gpio_types.h"
 

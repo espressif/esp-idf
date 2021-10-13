@@ -22,8 +22,10 @@
 
 #pragma once
 
+#include "hal/hal_defs.h"
 #include "soc/soc.h"
 #include "soc/gpio_periph.h"
+#include "soc/gpio_struct.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc_io_reg.h"
 #include "hal/gpio_types.h"
@@ -112,7 +114,7 @@ static inline void gpio_ll_get_intr_status(gpio_dev_t *hw, uint32_t core_id, uin
   */
 static inline void gpio_ll_get_intr_status_high(gpio_dev_t *hw, uint32_t core_id, uint32_t *status)
 {
-    *status = (core_id == 0) ? hw->pcpu_int1.intr : hw->acpu_int1.intr;
+    *status = (core_id == 0) ? HAL_FORCE_READ_U32_REG_FIELD(hw->pcpu_int1, intr) : HAL_FORCE_READ_U32_REG_FIELD(hw->acpu_int1, intr);
 }
 
 /**
@@ -134,7 +136,7 @@ static inline void gpio_ll_clear_intr_status(gpio_dev_t *hw, uint32_t mask)
   */
 static inline void gpio_ll_clear_intr_status_high(gpio_dev_t *hw, uint32_t mask)
 {
-    hw->status1_w1tc.intr_st = mask;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->status1_w1tc, intr_st, mask);
 }
 
 /**
@@ -197,7 +199,7 @@ static inline void gpio_ll_output_disable(gpio_dev_t *hw, gpio_num_t gpio_num)
     if (gpio_num < 32) {
         hw->enable_w1tc = (0x1 << gpio_num);
     } else {
-        hw->enable1_w1tc.data = (0x1 << (gpio_num - 32));
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->enable1_w1tc, data, (0x1 << (gpio_num - 32)));
     }
 
     // Ensure no other output signal is routed via GPIO matrix to this pin
@@ -216,7 +218,7 @@ static inline void gpio_ll_output_enable(gpio_dev_t *hw, gpio_num_t gpio_num)
     if (gpio_num < 32) {
         hw->enable_w1ts = (0x1 << gpio_num);
     } else {
-        hw->enable1_w1ts.data = (0x1 << (gpio_num - 32));
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->enable1_w1ts, data, (0x1 << (gpio_num - 32)));
     }
 }
 
@@ -255,13 +257,13 @@ static inline void gpio_ll_set_level(gpio_dev_t *hw, gpio_num_t gpio_num, uint32
         if (gpio_num < 32) {
             hw->out_w1ts = (1 << gpio_num);
         } else {
-            hw->out1_w1ts.data = (1 << (gpio_num - 32));
+            HAL_FORCE_MODIFY_U32_REG_FIELD(hw->out1_w1ts, data, (1 << (gpio_num - 32)));
         }
     } else {
         if (gpio_num < 32) {
             hw->out_w1tc = (1 << gpio_num);
         } else {
-            hw->out1_w1tc.data = (1 << (gpio_num - 32));
+            HAL_FORCE_MODIFY_U32_REG_FIELD(hw->out1_w1tc, data, (1 << (gpio_num - 32)));
         }
     }
 }
@@ -283,7 +285,7 @@ static inline int gpio_ll_get_level(gpio_dev_t *hw, gpio_num_t gpio_num)
     if (gpio_num < 32) {
         return (hw->in >> gpio_num) & 0x1;
     } else {
-        return (hw->in1.data >> (gpio_num - 32)) & 0x1;
+        return (HAL_FORCE_READ_U32_REG_FIELD(hw->in1, data) >> (gpio_num - 32)) & 0x1;
     }
 }
 

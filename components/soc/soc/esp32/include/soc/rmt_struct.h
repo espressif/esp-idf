@@ -24,7 +24,7 @@ typedef volatile struct rmt_dev_s {
     uint32_t data_ch[8];                                /*The R/W ram address for channel0-7 by apb fifo access.
                                                         Note that in some circumstances, data read from the FIFO may get lost. As RMT memory area accesses using the RMTMEM method do not have this issue
                                                         and provide all the functionality that the FIFO register has, it is encouraged to use that instead.*/
-    struct{
+    struct {
         union {
             struct {
                 uint32_t div_cnt:        8;             /*This register is used to configure the  frequency divider's factor in channel0-7.*/

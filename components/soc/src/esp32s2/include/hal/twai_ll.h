@@ -30,6 +30,8 @@ extern "C" {
 #include <stdbool.h>
 #include "hal/twai_types.h"
 #include "soc/twai_periph.h"
+#include "soc/twai_struct.h"
+#include "hal/hal_defs.h"
 
 /* ------------------------- Defines and Typedefs --------------------------- */
 
@@ -406,7 +408,7 @@ static inline void twai_ll_clear_err_code_cap(twai_dev_t *hw)
  */
 static inline void twai_ll_set_err_warn_lim(twai_dev_t *hw, uint32_t ewl)
 {
-    hw->error_warning_limit_reg.ewl = ewl;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->error_warning_limit_reg, ewl, ewl);
 }
 
 /**
@@ -446,7 +448,7 @@ static inline uint32_t twai_ll_get_rec(twai_dev_t *hw)
  */
 static inline void twai_ll_set_rec(twai_dev_t *hw, uint32_t rec)
 {
-    hw->rx_error_counter_reg.rxerr = rec;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->rx_error_counter_reg, rxerr, rec);
 }
 
 /* ------------------------ TX Error Count Register ------------------------- */
@@ -474,7 +476,7 @@ static inline uint32_t twai_ll_get_tec(twai_dev_t *hw)
  */
 static inline void twai_ll_set_tec(twai_dev_t *hw, uint32_t tec)
 {
-    hw->tx_error_counter_reg.txerr = tec;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->tx_error_counter_reg, txerr, tec);
 }
 
 /* ---------------------- Acceptance Filter Registers ----------------------- */
@@ -659,14 +661,14 @@ static inline void twai_ll_set_clkout(twai_dev_t *hw, uint32_t divider)
 {
     if (divider >= 2 && divider <= 490) {
         hw->clock_divider_reg.co = 0;
-        hw->clock_divider_reg.cd = (divider / 2) - 1;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clock_divider_reg, cd, (divider / 2) - 1);
     } else if (divider == 1) {
         //Setting the divider reg to max value (255) means a divider of 1
         hw->clock_divider_reg.co = 0;
-        hw->clock_divider_reg.cd = 255;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clock_divider_reg, cd, 255);
     } else {
         hw->clock_divider_reg.co = 1;
-        hw->clock_divider_reg.cd = 0;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clock_divider_reg, cd, 0);
     }
 }
 

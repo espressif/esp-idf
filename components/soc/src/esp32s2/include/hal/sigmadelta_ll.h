@@ -23,7 +23,9 @@
 
 #include <stdbool.h>
 #include "soc/sigmadelta_periph.h"
+#include "soc/gpio_sd_struct.h"
 #include "hal/sigmadelta_types.h"
+#include "hal/hal_defs.h"
 
 #ifdef __cplusplus
 extern "C" {

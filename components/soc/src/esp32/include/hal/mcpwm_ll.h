@@ -22,8 +22,9 @@
 
 #pragma once
 
-#include <soc/mcpwm_periph.h>
+#include "hal/hal_defs.h"
 #include "soc/mcpwm_periph.h"
+#include "soc/mcpwm_struct.h"
 #include "hal/mcpwm_types.h"
 #include "soc/mcpwm_caps.h"
 #include "hal/hal_defs.h"
@@ -61,7 +62,7 @@ static inline void mcpwm_ll_init(mcpwm_dev_t *mcpwm)
  */
 static inline void mcpwm_ll_set_clock_prescale(mcpwm_dev_t *mcpwm, int prescale)
 {
-    mcpwm->clk_cfg.prescale = prescale;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->clk_cfg, prescale, prescale);
 }
 
 STATIC_HAL_REG_CHECK(MCPWM, MCPWM_LL_INTR_CAP0, MCPWM_CAP0_INT_RAW);

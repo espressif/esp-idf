@@ -20,8 +20,11 @@
 
 #pragma once
 
+#include "hal/hal_defs.h"
 #include <stdlib.h>
 #include "soc/dac_periph.h"
+#include "soc/sens_struct.h"
+#include "soc/rtc_io_struct.h"
 #include "hal/dac_types.h"
 
 #ifdef __cplusplus
@@ -124,7 +127,7 @@ static inline void dac_ll_cw_set_channel(dac_channel_t channel, bool enable)
 static inline void dac_ll_cw_set_freq(uint32_t freq)
 {
     uint32_t sw_freq = freq * 0xFFFF / RTC_FAST_CLK_FREQ_APPROX;
-    SENS.sar_dac_ctrl1.sw_fstep = (sw_freq > 0xFFFF) ? 0xFFFF : sw_freq;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_dac_ctrl1, sw_fstep, (sw_freq > 0xFFFF) ? 0xFFFF : sw_freq);
 }
 
 /**
@@ -171,12 +174,12 @@ static inline void dac_ll_cw_set_dc_offset(dac_channel_t channel, int8_t offset)
         if (SENS.sar_dac_ctrl2.dac_inv1 == DAC_CW_PHASE_180) {
             offset = 0 - offset;
         }
-        SENS.sar_dac_ctrl2.dac_dc1 = offset ? offset : (-128 - offset);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_dac_ctrl2, dac_dc1, offset ? offset : (-128 - offset));
     } else if (channel == DAC_CHANNEL_2) {
         if (SENS.sar_dac_ctrl2.dac_inv2 == DAC_CW_PHASE_180) {
             offset = 0 - offset;
         }
-        SENS.sar_dac_ctrl2.dac_dc2 = offset ? offset : (-128 - offset);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.sar_dac_ctrl2, dac_dc2, offset ? offset : (-128 - offset));
     }
 }
 

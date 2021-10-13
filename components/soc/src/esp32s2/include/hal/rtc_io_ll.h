@@ -23,7 +23,10 @@
 #include <stdlib.h>
 #include "soc/rtc_io_periph.h"
 #include "hal/rtc_io_types.h"
+#include "soc/rtc_io_struct.h"
+#include "soc/sens_struct.h"
 #include "hal/gpio_types.h"
+#include "hal/hal_defs.h"
 
 #ifdef __cplusplus
 extern "C" {

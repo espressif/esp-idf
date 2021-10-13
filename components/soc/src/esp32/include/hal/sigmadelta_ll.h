@@ -22,7 +22,9 @@
 #pragma once
 
 #include <stdbool.h>
+#include "hal/hal_defs.h"
 #include "soc/sigmadelta_periph.h"
+#include "soc/gpio_sd_struct.h"
 #include "hal/sigmadelta_types.h"
 
 #ifdef __cplusplus

@@ -23,8 +23,10 @@ extern "C" {
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include "hal/hal_defs.h"
 #include "hal/wdt_types.h"
 #include "soc/rtc_cntl_periph.h"
+#include "soc/rtc_cntl_struct.h"
 #include "esp_attr.h"
 
 //Type check wdt_stage_action_t

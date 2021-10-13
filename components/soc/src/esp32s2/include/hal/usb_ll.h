@@ -17,6 +17,7 @@
 #include "soc/system_reg.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/usb_periph.h"
+#include "soc/usb_wrap_struct.h"
 
 static inline void usb_ll_int_phy_enable(void)
 {
