@@ -884,17 +884,9 @@ components/esp_netif/private_include/esp_netif_private.h
 components/esp_netif/test/test_esp_netif.c
 components/esp_netif/test_apps/component_ut_test.py
 components/esp_netif/test_apps/main/esp_netif_test.c
-components/esp_phy/esp32/include/phy_init_data.h
-components/esp_phy/esp32c3/include/phy_init_data.h
 components/esp_phy/esp32h2/include/phy_init_data.h
-components/esp_phy/esp32s2/include/phy_init_data.h
-components/esp_phy/esp32s3/include/phy_init_data.h
-components/esp_phy/include/esp_phy_init.h
-components/esp_phy/include/phy.h
-components/esp_phy/src/phy_init.c
 components/esp_phy/src/phy_init_esp32hxx.c
 components/esp_phy/test/test_phy_rtc.c
-components/esp_pm/include/esp32/pm.h
 components/esp_pm/include/esp32c3/pm.h
 components/esp_pm/include/esp32h2/pm.h
 components/esp_pm/include/esp32s2/pm.h
