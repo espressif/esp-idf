@@ -70,11 +70,8 @@ components/bt/common/osi/mutex.c
 components/bt/common/osi/osi.c
 components/bt/common/osi/semaphore.c
 components/bt/common/osi/thread.c
-components/bt/controller/esp32/bt.c
 components/bt/controller/esp32/hli_api.c
 components/bt/controller/esp32/hli_api.h
-components/bt/controller/esp32c3/bt.c
-components/bt/controller/esp32s3/bt.c
 components/bt/esp_ble_mesh/api/core/esp_ble_mesh_ble_api.c
 components/bt/esp_ble_mesh/api/core/esp_ble_mesh_common_api.c
 components/bt/esp_ble_mesh/api/core/esp_ble_mesh_local_data_operation_api.c
@@ -702,9 +699,6 @@ components/bt/host/nimble/port/include/console/console.h
 components/bt/host/nimble/port/include/esp_nimble_cfg.h
 components/bt/host/nimble/port/include/esp_nimble_mem.h
 components/bt/host/nimble/port/src/esp_nimble_mem.c
-components/bt/include/esp32/include/esp_bt.h
-components/bt/include/esp32c3/include/esp_bt.h
-components/bt/include/esp32s3/include/esp_bt.h
 components/bt/test/test_bt_common.c
 components/bt/test/test_smp.c
 components/cbor/port/include/cbor.h
@@ -1205,7 +1199,6 @@ components/esp_wifi/include/esp_mesh_internal.h
 components/esp_wifi/include/esp_now.h
 components/esp_wifi/include/esp_private/esp_wifi_private.h
 components/esp_wifi/include/esp_private/esp_wifi_types_private.h
-components/esp_wifi/include/esp_private/wifi.h
 components/esp_wifi/include/esp_private/wifi_os_adapter.h
 components/esp_wifi/include/esp_private/wifi_types.h
 components/esp_wifi/include/esp_smartconfig.h
