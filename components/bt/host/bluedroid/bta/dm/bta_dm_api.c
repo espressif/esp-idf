@@ -240,6 +240,17 @@ void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr, tBLE_ADDR_T
     }
 }
 
+void BTA_DmClearWhiteList(void)
+{
+    tBTA_DM_API_ENABLE *p_msg;
+    if ((p_msg = (tBTA_DM_API_ENABLE *)osi_malloc(sizeof(tBTA_DM_API_ENABLE))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_CLEAR_WHITE_LIST_EVT;
+        p_msg->p_sec_cback = NULL;
+
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
 void BTA_DmBleReadAdvTxPower(tBTA_CMPL_CB *cmpl_cb)
 {
     tBTA_DM_API_READ_ADV_TX_POWER *p_msg;

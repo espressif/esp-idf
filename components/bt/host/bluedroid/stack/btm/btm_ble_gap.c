@@ -312,6 +312,20 @@ BOOLEAN BTM_BleUpdateAdvWhitelist(BOOLEAN add_remove, BD_ADDR remote_bda, tBLE_A
 
 /*******************************************************************************
 **
+** Function         BTM_BleUpdateAdvWhitelist
+**
+** Description      Add or remove device from advertising white list
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTM_BleClearWhitelist(void)
+{
+   btm_ble_clear_white_list(); 
+}
+
+/*******************************************************************************
+**
 ** Function         BTM_BleUpdateAdvFilterPolicy
 **
 ** Description      This function update the filter policy of advertiser.

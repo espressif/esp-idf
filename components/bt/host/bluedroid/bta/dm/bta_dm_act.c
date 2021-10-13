@@ -715,6 +715,13 @@ void bta_dm_update_white_list(tBTA_DM_MSG *p_data)
 #endif  ///BLE_INCLUDED == TRUE
 }
 
+void bta_dm_clear_white_list(tBTA_DM_MSG *p_data)
+{
+#if (BLE_INCLUDED == TRUE)
+    BTM_BleClearWhitelist();
+#endif
+}
+
 void bta_dm_ble_read_adv_tx_power(tBTA_DM_MSG *p_data)
 {
 #if (BLE_INCLUDED == TRUE)
