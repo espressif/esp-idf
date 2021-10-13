@@ -178,6 +178,51 @@
       ]
     },
     {
+      "description": "LLVM for Xtensa (ESP32, ESP32-S2) based on clang",
+      "export_paths": [
+        [
+          "xtensa-clang",
+          "bin"
+        ]
+      ],
+      "export_vars": {},
+      "info_url": "https://github.com/espressif/llvm-project",
+      "install": "on_request",
+      "license": "Apache-2.0",
+      "name": "xtensa-clang",
+      "supported_targets": [
+        "esp32",
+        "esp32s2"
+      ],
+      "version_cmd": [
+        "clang",
+        "--version"
+      ],
+      "version_regex": "version\\s*([0-9\\.]+)\\s*\\([^\\s]+\\s*(\\w+)\\)",
+      "version_regex_replace": "\\1-\\2",
+      "versions": [
+        {
+          "linux-amd64": {
+            "sha256": "d62d9234c702a86ed510777125ee97458204e28877806a73f9de5e41d7b65716",
+            "size": 102954848,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-12.0.1-20210914/xtensa-esp32-elf-llvm12_0_1-esp-12.0.1-20210914-linux-amd64.tar.xz"
+          },
+          "macos": {
+            "sha256": "6e7413e5fa515e403859ecf5301bdcdc3f8bf12c5de9aecaa11e9f17f32b05db",
+            "size": 89888488,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-12.0.1-20210914/xtensa-esp32-elf-llvm12_0_1-esp-12.0.1-20210914-macos.tar.xz"
+          },
+          "name": "12.0.1-d9341b81fc",
+          "status": "recommended",
+          "win64": {
+            "sha256": "e056366959c722367e4144076c5383bd417ea199db5658bb7bb6c95b9aca014b",
+            "size": 177903504,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-12.0.1-20210914/xtensa-esp32-elf-llvm12_0_1-esp-12.0.1-20210914-win64.zip"
+          }
+        }
+      ]
+    },
+    {
       "description": "Toolchain for 32-bit RISC-V based on GCC",
       "export_paths": [
         [
