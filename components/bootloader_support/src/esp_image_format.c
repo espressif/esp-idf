@@ -53,6 +53,17 @@ static const char *TAG = "esp_image";
 
 #define HASH_LEN ESP_IMAGE_HASH_LEN
 
+/* rudi 
+ to do :
+ #define THIRTYTWO_MB 0x2000000               // 32
+ #define SIXTYFOUR_MB 0x4000000               // 64
+ #define ONEHUNDREDTWENTYEIGHT_MB 0x8000000   // 128
+ .... 1024 ?
+ meanwhile possible dirty hack for testing the 128MB ( 1G-BIT Version )
+ and passing the 16MB border ..if (part->size > SIXTEEN_MB) {err = ESP_ERR_INVALID_ARG; ...
+ #define SIXTEEN_MB 0x8000000
+*/
+
 #define SIXTEEN_MB 0x1000000
 #define ESP_ROM_CHECKSUM_INITIAL 0xEF
 
@@ -901,6 +912,18 @@ int esp_image_get_flash_size(esp_image_flash_size_t app_flash_size)
         return 8 * 1024 * 1024;
     case ESP_IMAGE_FLASH_SIZE_16MB:
         return 16 * 1024 * 1024;
+    case ESP_IMAGE_FLASH_SIZE_32MB:
+        return 32 * 1024 * 1024;
+    case ESP_IMAGE_FLASH_SIZE_64MB:
+        return 64 * 1024 * 1024;
+    case ESP_IMAGE_FLASH_SIZE_128MB:
+        return 128 * 1024 * 1024;
+    case ESP_IMAGE_FLASH_SIZE_256MB:
+        return 256 * 1024 * 1024;
+    case ESP_IMAGE_FLASH_SIZE_512MB:
+        return 512 * 1024 * 1024;
+    case ESP_IMAGE_FLASH_SIZE_1024MB:
+        return 1024 * 1024 * 1024;
     default:
         return 0;
     }
