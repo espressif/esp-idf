@@ -103,6 +103,24 @@ static void update_flash_config(const esp_image_header_t *bootloader_hdr)
     case ESP_IMAGE_FLASH_SIZE_16MB:
         size = 16;
         break;
+    case ESP_IMAGE_FLASH_SIZE_32MB:
+        size = 32;
+        break;          
+    case ESP_IMAGE_FLASH_SIZE_64MB:
+        size = 64;
+        break;          
+    case ESP_IMAGE_FLASH_SIZE_128MB:
+        size = 128;
+        break;          
+    case ESP_IMAGE_FLASH_SIZE_256MB:
+        size = 256;
+        break;          
+    case ESP_IMAGE_FLASH_SIZE_512MB:
+        size = 512;
+        break;          
+    case ESP_IMAGE_FLASH_SIZE_1024MB:
+        size = 1024;
+        break;          
     default:
         size = 2;
     }
@@ -175,6 +193,24 @@ static void print_flash_info(const esp_image_header_t *bootloader_hdr)
         break;
     case ESP_IMAGE_FLASH_SIZE_16MB:
         str = "16MB";
+        break;
+    case ESP_IMAGE_FLASH_SIZE_32MB:
+        str = "32MB";
+        break;
+    case ESP_IMAGE_FLASH_SIZE_64MB:
+        str = "64MB";
+        break;
+    case ESP_IMAGE_FLASH_SIZE_128MB:
+        str = "128MB";
+        break;
+    case ESP_IMAGE_FLASH_SIZE_256MB:
+        str = "256MB";
+        break;
+    case ESP_IMAGE_FLASH_SIZE_512MB:
+        str = "512MB";
+        break;
+    case ESP_IMAGE_FLASH_SIZE_1024MB:
+        str = "1024MB";
         break;
     default:
         str = "2MB";
