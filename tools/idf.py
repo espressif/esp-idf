@@ -519,8 +519,8 @@ def init_cli(verbose_output=None):
             else:
                 if 'app' in actions:
                     print_flashing_message('App', 'app')
-                if 'partition_table' in actions:
-                    print_flashing_message('Partition Table', 'partition_table')
+                if 'partition-table' in actions:
+                    print_flashing_message('Partition Table', 'partition-table')
                 if 'bootloader' in actions:
                     print_flashing_message('Bootloader', 'bootloader')
 

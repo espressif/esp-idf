@@ -11,11 +11,11 @@
 底层存储
 ^^^^^^^^^^^^^^^^^^
 
-NVS 通过调用 ``spi_flash_{read|write|erase}`` API 对主 flash 的部分空间进行读、写、擦除操作，包括 ``data`` 类型和 ``nvs`` 子类型的所有分区。应用程序可调用 ``nvs_open`` API 选择使用带有 ``nvs`` 标签的分区，也可以通过调用 ``nvs_open_from_part`` API 选择使用指定名称的任意分区。 
+NVS 通过调用 ``spi_flash_{read|write|erase}`` API 对主 flash 的部分空间进行读、写、擦除操作，包括 ``data`` 类型和 ``nvs`` 子类型的所有分区。应用程序可调用 ``nvs_open`` API 选择使用带有 ``nvs`` 标签的分区，也可以通过调用 ``nvs_open_from_part`` API 选择使用指定名称的任意分区。
 
 NVS 库后续版本可能会增加其他存储器后端，实现将数据保存至其他 flash 芯片（SPI 或 I2C 接口）、RTC 或 FRAM 中。
 
-.. note:: 如果 NVS 分区被截断（例如，更改分区表布局时），则应擦除分区内容。可以使用 ESP-IDF 构建系统中的 ``idf.py erase_flash`` 命令擦除 flash 上的所有内容。
+.. note:: 如果 NVS 分区被截断（例如，更改分区表布局时），则应擦除分区内容。可以使用 ESP-IDF 构建系统中的 ``idf.py erase-flash`` 命令擦除 flash 上的所有内容。
 
 .. note:: NVS 最适合存储一些较小的数据，而非字符串或二进制大对象 (BLOB) 等较大的数据。如需存储较大的 BLOB 或者字符串，请考虑使用基于磨损均衡库的 FAT 文件系统。
 

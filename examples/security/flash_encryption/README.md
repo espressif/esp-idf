@@ -37,7 +37,7 @@ The configuration for NVS encryption involves generating the XTS encryption keys
 
     i) Build and flash the partition table:
     ```
-    idf.py partition_table partition_table-flash
+    idf.py partition-table partition-table-flash
     ```
     ii) Store the `sample_encryption_keys.bin` in the `nvs_key`partition (on the flash) with the help of [parttool.py](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/partition-tables.html#partition-tool-parttool-py):
     ```

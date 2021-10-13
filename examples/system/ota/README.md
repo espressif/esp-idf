@@ -138,7 +138,7 @@ In ``native_ota_example``, ``$PROJECT_PATH/version.txt`` is used to define the a
 
 If you see this error, check that the configured (and actual) flash size is large enough for the partitions in the partition table. The default "two OTA slots" partition table requires at least 4MB flash size. To use OTA with smaller flash sizes, create a custom partition table CSV (for details see [Partition Tables](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/partition-tables.html)) and configure it in menuconfig.
 
-Make sure to run "idf.py erase_flash" after making changes to the partition table.
+Make sure to run "idf.py erase-flash" after making changes to the partition table.
 
 ### Local https server
 

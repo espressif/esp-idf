@@ -16,7 +16,7 @@ Currently, NVS uses a portion of main flash memory through the :ref:`esp_partiti
 
 Future versions of this library may have other storage backends to keep data in another flash chip (SPI or I2C), RTC, FRAM, etc.
 
-.. note:: if an NVS partition is truncated (for example, when the partition table layout is changed), its contents should be erased. ESP-IDF build system provides a ``idf.py erase_flash`` target to erase all contents of the flash chip.
+.. note:: if an NVS partition is truncated (for example, when the partition table layout is changed), its contents should be erased. ESP-IDF build system provides a ``idf.py erase-flash`` target to erase all contents of the flash chip.
 
 .. note:: NVS works best for storing many small values, rather than a few large values of the type 'string' and 'blob'. If you need to store large blobs or strings, consider using the facilities provided by the FAT filesystem on top of the wear levelling library.
 
@@ -118,7 +118,7 @@ The XTS encryption keys in the :ref:`nvs_key_partition` can be generated in one 
     i) Build and flash the partition table
     ::
 
-        idf.py partition_table partition_table-flash
+        idf.py partition-table partition-table-flash
 
     ii) Store the keys in the :ref:`nvs_key_partition` (on the flash) with the help of :component_file:`parttool.py<partition_table/parttool.py>` (see Partition Tool section in :doc:`partition-tables </api-guides/partition-tables>` for more details)
     ::
