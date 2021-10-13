@@ -505,7 +505,7 @@ def main():
     parser = argparse.ArgumentParser(description='ESP32 partition table utility')
 
     parser.add_argument('--flash-size', help='Optional flash size limit, checks partition table fits in flash',
-                        nargs='?', choices=['1MB', '2MB', '4MB', '8MB', '16MB'])
+                        nargs='?', choices=['1MB', '2MB', '4MB', '8MB', '16MB', '32MB', '64MB', '128MB'])
     parser.add_argument('--disable-md5sum', help='Disable md5 checksum for the partition table', default=False, action='store_true')
     parser.add_argument('--no-verify', help="Don't verify partition table fields", action='store_true')
     parser.add_argument('--verify', '-v', help='Verify partition table fields (deprecated, this behaviour is '
