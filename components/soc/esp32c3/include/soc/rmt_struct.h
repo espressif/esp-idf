@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct rmt_dev_s {
     uint32_t data_ch[4];                                   /**/
     union {
         struct {
@@ -291,11 +291,9 @@ typedef struct {
 } rmt_item32_t;
 
 //Allow access to RMT memory using RMTMEM.chan[0].data32[8]
-typedef volatile struct {
+typedef volatile struct rmt_mem_s {
     struct {
-        union {
-            rmt_item32_t data32[48];
-        };
+        rmt_item32_t data32[48];
     } chan[4];
 } rmt_mem_t;
 

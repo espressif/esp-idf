@@ -21,6 +21,7 @@ extern "C" {
 #include <stdbool.h>
 #include "soc/rmt_struct.h"
 #include "soc/soc_caps.h"
+#include "hal/hal_defs.h"
 
 #define RMT_LL_HW_BASE  (&RMT)
 #define RMT_LL_MEM_BASE (&RMTMEM)
@@ -58,7 +59,7 @@ static inline void rmt_ll_set_counter_clock_src(rmt_dev_t *dev, uint32_t channel
     // Formula: rmt_sclk = module_clock_src / (1 + div_num + div_a / div_b)
     dev->sys_conf.sclk_active = 0;
     dev->sys_conf.sclk_sel = src;
-    dev->sys_conf.sclk_div_num = div_num;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->sys_conf, sclk_div_num, div_num);
     dev->sys_conf.sclk_div_a = div_a;
     dev->sys_conf.sclk_div_b = div_b;
     dev->sys_conf.sclk_active = 1;

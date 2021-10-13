@@ -24,7 +24,9 @@
 
 #include "soc/soc.h"
 #include "soc/gpio_periph.h"
+#include "soc/gpio_struct.h"
 #include "soc/rtc_cntl_reg.h"
+#include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_io_reg.h"
 #include "hal/gpio_types.h"
 

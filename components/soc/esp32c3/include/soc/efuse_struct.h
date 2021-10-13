@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct efuse_dev_s {
     uint32_t pgm_data0;                                          /*Register 0 that stores data to be programmed.*/
     union {
         struct {

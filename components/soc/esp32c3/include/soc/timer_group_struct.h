@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct timg_dev_s {
     struct {
         union {
             struct {

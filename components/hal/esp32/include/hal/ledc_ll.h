@@ -19,6 +19,8 @@
 
 #include "hal/ledc_types.h"
 #include "soc/ledc_periph.h"
+#include "soc/ledc_struct.h"
+#include "hal/hal_defs.h"
 
 #define LEDC_LL_GET_HW() &LEDC
 

@@ -23,6 +23,7 @@ extern "C" {
 #include "soc/usbh_struct.h"
 #include "soc/usb_wrap_struct.h"
 #include "hal/usb_types.h"
+#include "hal/hal_defs.h"
 
 /* -----------------------------------------------------------------------------
 ------------------------------- Global Registers -------------------------------
@@ -311,7 +312,7 @@ static inline void usb_ll_dis_intrs(usbh_dev_t *hw, uint32_t intr_mask)
 static inline void usb_ll_set_rx_fifo_size(usbh_dev_t *hw, uint32_t size)
 {
     //Set size in words
-    hw->grxfsiz_reg.rxfdep = size;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->grxfsiz_reg, rxfdep, size);
 }
 
 // -------------------------- GNPTXFSIZ Register -------------------------------
@@ -430,7 +431,7 @@ static inline void usbh_ll_hfir_set_defaults(usbh_dev_t *hw)
 
 static inline uint32_t usbh_ll_get_frm_time_rem(usbh_dev_t *hw)
 {
-    return hw->hfnum_reg.frrem;
+    return HAL_FORCE_READ_U32_REG_FIELD(hw->hfnum_reg, frrem);
 }
 
 static inline uint32_t usbh_ll_get_frm_num(usbh_dev_t *hw)
@@ -442,7 +443,7 @@ static inline uint32_t usbh_ll_get_frm_num(usbh_dev_t *hw)
 
 static inline uint32_t usbh_ll_get_p_tx_queue_top(usbh_dev_t *hw)
 {
-    return hw->hptxsts_reg.ptxqtop;
+    return HAL_FORCE_READ_U32_REG_FIELD(hw->hptxsts_reg, ptxqtop);
 }
 
 static inline uint32_t usbh_ll_get_p_tx_queue_space_avail(usbh_dev_t *hw)
@@ -452,14 +453,14 @@ static inline uint32_t usbh_ll_get_p_tx_queue_space_avail(usbh_dev_t *hw)
 
 static inline uint32_t usbh_ll_get_p_tx_fifo_space_avail(usbh_dev_t *hw)
 {
-    return hw->hptxsts_reg.ptxfspcavail;
+    return HAL_FORCE_READ_U32_REG_FIELD(hw->hptxsts_reg, ptxfspcavail);
 }
 
 // ----------------------------- HAINT Register --------------------------------
 
 static inline uint32_t usbh_ll_get_chan_intrs_msk(usbh_dev_t *hw)
 {
-    return hw->haint_reg.haint;
+    return HAL_FORCE_READ_U32_REG_FIELD(hw->haint_reg, haint);
 }
 
 // --------------------------- HAINTMSK Register -------------------------------
