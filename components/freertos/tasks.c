@@ -131,22 +131,10 @@ configIDLE_TASK_NAME in FreeRTOSConfig.h. */
 
 	/*-----------------------------------------------------------*/
 
-	#define taskSELECT_HIGHEST_PRIORITY_TASK()															\
-	{																									\
-	UBaseType_t uxTopPriority = uxTopReadyPriority;														\
-																										\
-		/* Find the highest priority queue that contains ready tasks. */								\
-		while( listLIST_IS_EMPTY( &( pxReadyTasksLists[ uxTopPriority ] ) ) )							\
-		{																								\
-			configASSERT( uxTopPriority );																\
-			--uxTopPriority;																			\
-		}																								\
-																										\
-		/* listGET_OWNER_OF_NEXT_ENTRY indexes through the list, so the tasks of						\
-		the	same priority get an equal share of the processor time. */									\
-		listGET_OWNER_OF_NEXT_ENTRY( pxCurrentTCB[xPortGetCoreID()], &( pxReadyTasksLists[ uxTopPriority ] ) );			\
-		uxTopReadyPriority = uxTopPriority;																\
-	} /* taskSELECT_HIGHEST_PRIORITY_TASK */
+	/* SMP does not support optimized selection while single-core configuration
+	can choose whether or not optimized selection is used. Therefore, this SMP
+	selection function must work for single-core and SMP */
+	#define taskSELECT_HIGHEST_PRIORITY_TASK()  taskSelectHighestPriorityTaskSMP()
 
 	/*-----------------------------------------------------------*/
 
@@ -3245,11 +3233,98 @@ BaseType_t xSwitchRequired = pdFALSE;
 #endif /* configUSE_APPLICATION_TASK_TAG */
 /*-----------------------------------------------------------*/
 
+#if ( configUSE_PORT_OPTIMISED_TASK_SELECTION == 0 )
+static void taskSelectHighestPriorityTaskSMP( void )
+{
+	/* This function is called from a critical section. So some optimizations are made */
+	BaseType_t uxCurPriority;
+	BaseType_t xTaskScheduled = pdFALSE;
+	BaseType_t xNewTopPrioritySet = pdFALSE;
+	BaseType_t xCoreID = xPortGetCoreID();  /* Optimization: Read once */
+
+	/* Search for tasks, starting form the highest ready priority. If nothing is
+	 * found, we eventually default to the IDLE tasks at priority 0 */
+	for ( uxCurPriority = uxTopReadyPriority; uxCurPriority >= 0 && xTaskScheduled == pdFALSE; uxCurPriority-- )
+	{
+		/* Check if current priority has one or more ready tasks. Skip if none */
+		if( listLIST_IS_EMPTY( &( pxReadyTasksLists[ uxCurPriority ] ) ) )
+		{
+			continue;
+		}
+
+		/* Save a copy of highest priority that has a ready state task */
+		if( xNewTopPrioritySet == pdFALSE )
+		{
+			xNewTopPrioritySet = pdTRUE;
+			uxTopReadyPriority = uxCurPriority;
+		}
+
+		/* We now search this priority's ready task list for a runnable task.
+		 * We always start searching from the head of the list, so we reset
+		 * pxIndex to point to the tail so that we start walking the list from
+		 * the first item */
+		pxReadyTasksLists[ uxCurPriority ].pxIndex = ( ListItem_t * ) &( pxReadyTasksLists[ uxCurPriority ].xListEnd );
+
+		/* Get the first item on the list */
+		TCB_t * pxTCBCur;
+		TCB_t * pxTCBFirst;
+		listGET_OWNER_OF_NEXT_ENTRY( pxTCBCur, &( pxReadyTasksLists[ uxCurPriority ] ) );
+		pxTCBFirst = pxTCBCur;
+		do
+		{
+			/* Check if the current task is currently being executed. However, if
+			 * it's being executed by the current core, we can still schedule it.
+			 * Todo: Each task can store a xTaskRunState, instead of needing to
+			 *	   check each core */
+			UBaseType_t ux;
+			for( ux = 0; ux < ( UBaseType_t )portNUM_PROCESSORS; ux++ )
+			{
+				if ( ux == xCoreID )
+				{
+					continue;
+				}
+				else if ( pxCurrentTCB[ux] == pxTCBCur )
+				{
+					/* Current task is already being executed. Get the next task */
+					goto get_next_task;
+				}
+			}
+
+			/* Check if the current task has a compatible affinity */
+			if ( ( pxTCBCur->xCoreID != xCoreID ) && ( pxTCBCur->xCoreID != tskNO_AFFINITY ) )
+			{
+				goto get_next_task;
+			}
+
+			/* The current task is runnable. Schedule it */
+			pxCurrentTCB[ xCoreID ] = pxTCBCur;
+			xTaskScheduled = pdTRUE;
+
+			/* Move the current tasks list item to the back of the list in order
+			 * to implement best effort round robin. To do this, we need to reset
+			 * the pxIndex to point to the tail again. */
+			pxReadyTasksLists[ uxCurPriority ].pxIndex = ( ListItem_t * ) &( pxReadyTasksLists[ uxCurPriority ].xListEnd );
+			uxListRemove( &( pxTCBCur->xStateListItem ) );
+			vListInsertEnd( &( pxReadyTasksLists[ uxCurPriority ] ), &( pxTCBCur->xStateListItem ) );
+			break;
+
+get_next_task:
+			/* The current task cannot be scheduled. Get the next task in the list */
+			listGET_OWNER_OF_NEXT_ENTRY( pxTCBCur, &( pxReadyTasksLists[ uxCurPriority ] ) );
+		} while( pxTCBCur != pxTCBFirst);  /* Check to see if we've walked the entire list */
+	}
+
+	assert( xTaskScheduled == pdTRUE ); /* At this point, a task MUST have been scheduled */
+}
+#endif /* configUSE_PORT_OPTIMISED_TASK_SELECTION */
+
 void vTaskSwitchContext( void )
 {
-	//Theoretically, this is only called from either the tick interrupt or the crosscore interrupt, so disabling
-	//interrupts shouldn't be necessary anymore. Still, for safety we'll leave it in for now.
-	int irqstate=portENTER_CRITICAL_NESTED();
+    /* vTaskSwitchContext is called either from:
+     * - ISR dispatcher when return from an ISR (interrupts will already be disabled)
+     * - vTaskSuspend() which is not in a critical section
+     * Therefore, we enter a critical section ISR version to ensure safety */
+	taskENTER_CRITICAL_ISR( &xTaskQueueMutex );
 
 	if( uxSchedulerSuspended[ xPortGetCoreID() ] != ( UBaseType_t ) pdFALSE )
 	{
@@ -3278,7 +3353,6 @@ void vTaskSwitchContext( void )
 				overflows.  The guard against negative values is to protect
 				against suspect run time stat counter implementations - which
 				are provided by the application, not the kernel. */
-				taskENTER_CRITICAL_ISR(&xTaskQueueMutex);
 				if( ulTotalRunTime > ulTaskSwitchedInTime[ xPortGetCoreID() ] )
 				{
 					pxCurrentTCB[ xPortGetCoreID() ]->ulRunTimeCounter += ( ulTotalRunTime - ulTaskSwitchedInTime[ xPortGetCoreID() ] );
@@ -3287,7 +3361,6 @@ void vTaskSwitchContext( void )
 				{
 					mtCOVERAGE_TEST_MARKER();
 				}
-				taskEXIT_CRITICAL_ISR(&xTaskQueueMutex);
 				ulTaskSwitchedInTime[ xPortGetCoreID() ] = ulTotalRunTime;
 		}
 		#endif /* configGENERATE_RUN_TIME_STATS */
@@ -3296,123 +3369,17 @@ void vTaskSwitchContext( void )
 		taskFIRST_CHECK_FOR_STACK_OVERFLOW();
 		taskSECOND_CHECK_FOR_STACK_OVERFLOW();
 
-		/* Select a new task to run */
-
-		/*
-		 We cannot do taskENTER_CRITICAL_ISR(&xTaskQueueMutex); here because it saves the interrupt context to the task tcb, and we're
-		 swapping that out here. Instead, we're going to do the work here ourselves. Because interrupts are already disabled, we only
-		 need to acquire the mutex.
-		*/
-		vPortCPUAcquireMutex( &xTaskQueueMutex );
-
-		#if !configUSE_PORT_OPTIMISED_TASK_SELECTION
-		unsigned portBASE_TYPE foundNonExecutingWaiter = pdFALSE, ableToSchedule = pdFALSE, resetListHead;
-		unsigned portBASE_TYPE holdTop=pdFALSE;
-		tskTCB * pxTCB;
-
-		portBASE_TYPE uxDynamicTopReady = uxTopReadyPriority;
-		/*
-		 *  ToDo: This scheduler doesn't correctly implement the round-robin scheduling as done in the single-core
-		 *  FreeRTOS stack when multiple tasks have the same priority and are all ready; it just keeps grabbing the
-		 *  first one. ToDo: fix this.
-		 *  (Is this still true? if any, there's the issue with one core skipping over the processes for the other
-		 *  core, potentially not giving the skipped-over processes any time.)
-		 */
-
-		while ( ableToSchedule == pdFALSE && uxDynamicTopReady >= 0 )
-		{
-			resetListHead = pdFALSE;
-			// Nothing to do for empty lists
-			if (!listLIST_IS_EMPTY( &( pxReadyTasksLists[ uxDynamicTopReady ] ) )) {
-
-				ableToSchedule = pdFALSE;
-				tskTCB * pxRefTCB;
-
-				/* Remember the current list item so that we
-				can detect if all items have been inspected.
-				Once this happens, we move on to a lower
-				priority list (assuming nothing is suitable
-				for scheduling). Note: This can return NULL if
-				the list index is at the listItem */
-				pxRefTCB = pxReadyTasksLists[ uxDynamicTopReady ].pxIndex->pvOwner;
-
-				if ((void*)pxReadyTasksLists[ uxDynamicTopReady ].pxIndex==(void*)&pxReadyTasksLists[ uxDynamicTopReady ].xListEnd) {
-					//pxIndex points to the list end marker. Skip that and just get the next item.
-					listGET_OWNER_OF_NEXT_ENTRY( pxRefTCB, &( pxReadyTasksLists[ uxDynamicTopReady ] ) );
-				}
-
-				do {
-					listGET_OWNER_OF_NEXT_ENTRY( pxTCB, &( pxReadyTasksLists[ uxDynamicTopReady ] ) );
-					/* Find out if the next task in the list is
-					already being executed by another core */
-					foundNonExecutingWaiter = pdTRUE;
-					portBASE_TYPE i = 0;
-					for ( i=0; i<portNUM_PROCESSORS; i++ ) {
-						if (i == xPortGetCoreID()) {
-							continue;
-						} else if (pxCurrentTCB[i] == pxTCB) {
-							holdTop=pdTRUE; //keep this as the top prio, for the other CPU
-							foundNonExecutingWaiter = pdFALSE;
-							break;
-						}
-					}
-
-					if (foundNonExecutingWaiter == pdTRUE) {
-						/* If the task is not being executed
-						by another core and its affinity is
-						compatible with the current one,
-						prepare it to be swapped in */
-						if (pxTCB->xCoreID == tskNO_AFFINITY) {
-							pxCurrentTCB[xPortGetCoreID()] = pxTCB;
-							ableToSchedule = pdTRUE;
-						} else if (pxTCB->xCoreID == xPortGetCoreID()) {
-							pxCurrentTCB[xPortGetCoreID()] = pxTCB;
-							ableToSchedule = pdTRUE;
-						} else {
-							ableToSchedule = pdFALSE;
-							holdTop=pdTRUE; //keep this as the top prio, for the other CPU
-						}
-					} else {
-						ableToSchedule = pdFALSE;
-					}
-
-					if (ableToSchedule == pdFALSE) {
-						resetListHead = pdTRUE;
-					} else if ((ableToSchedule == pdTRUE) && (resetListHead == pdTRUE)) {
-						tskTCB * pxResetTCB;
-						do {
-							listGET_OWNER_OF_NEXT_ENTRY( pxResetTCB, &( pxReadyTasksLists[ uxDynamicTopReady ] ) );
-						} while(pxResetTCB != pxRefTCB);
-					}
-				} while ((ableToSchedule == pdFALSE) && (pxTCB != pxRefTCB));
-			} else {
-				if (!holdTop) --uxTopReadyPriority;
-			}
-			--uxDynamicTopReady;
-		}
-
-		#else
-		//For Unicore targets we can keep the current FreeRTOS O(1)
-		//Scheduler. I hope to optimize better the scheduler for
-		//Multicore settings -- This will involve to create a per
-		//affinity ready task list which will impact hugely on
-		//tasks module
-		taskSELECT_HIGHEST_PRIORITY_TASK();
-		#endif
-
+		/* Select a new task to run using either the generic C or port
+		optimised asm code. */
+		taskSELECT_HIGHEST_PRIORITY_TASK(); /*lint !e9079 void * is used as this macro is used with timers and co-routines too.  Alignment is known to be fine as the type of the pointer stored and retrieved is the same. */
 		traceTASK_SWITCHED_IN();
-        xSwitchingContext[ xPortGetCoreID() ] = pdFALSE;
 
-		//Exit critical region manually as well: release the mux now, interrupts will be re-enabled when we
-		//exit the function.
-		vPortCPUReleaseMutex( &xTaskQueueMutex );
-
+		xSwitchingContext[ xPortGetCoreID() ] = pdFALSE;
 		#if CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK
 		vPortSetStackWatchpoint(pxCurrentTCB[xPortGetCoreID()]->pxStack);
 		#endif
-
 	}
-	portEXIT_CRITICAL_NESTED(irqstate);
+	taskEXIT_CRITICAL_ISR( &xTaskQueueMutex );
 }
 /*-----------------------------------------------------------*/
 
