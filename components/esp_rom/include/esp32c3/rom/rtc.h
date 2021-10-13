@@ -93,8 +93,8 @@ typedef enum {
     RTCWDT_CPU_RESET       = 13,    /**<13, RTC Watch dog Reset CPU*/
     RTCWDT_BROWN_OUT_RESET = 15,    /**<15, Reset when the vdd voltage is not stable*/
     RTCWDT_RTC_RESET       = 16,    /**<16, RTC Watch dog reset digital core and rtc module*/
-    TG1WDT_CPU_RESET       = 17,    /**<11, Time Group1 reset CPU*/
-    SUPER_WDT_RESET        = 18,    /**<11, super watchdog reset digital core and rtc module*/
+    TG1WDT_CPU_RESET       = 17,    /**<17, Time Group1 reset CPU*/
+    SUPER_WDT_RESET        = 18,    /**<18, super watchdog reset digital core and rtc module*/
 } RESET_REASON;
 
 typedef enum {
