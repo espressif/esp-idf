@@ -8,6 +8,9 @@
   - "tools/kconfig_new/**/*"
   - "CONTRIBUTING.rst"
 
+.patterns-docs-preview: &patterns-docs-preview
+  - "docs/**/*"
+
 .if-protected: &if-protected
   if: '($CI_COMMIT_REF_NAME == "master" || $CI_COMMIT_BRANCH =~ /^release\/v/ || $CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/)'
 
@@ -170,6 +173,8 @@ deploy_docs_preview:
   rules:
     - <<: *if-label-build_docs
     - <<: *if-label-docs
+    - <<: *if-dev-push
+      changes: *patterns-docs-preview
   dependencies:
     - build_docs_html_fast
     - build_docs_html_full
