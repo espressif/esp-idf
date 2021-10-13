@@ -457,7 +457,7 @@ IT_002:
 
 IT_003:
   extends: .test_template
-  parallel: 14
+  parallel: 16
   tags:
     - ESP32_IDF
     - SSC_T2_5
