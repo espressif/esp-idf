@@ -62,7 +62,7 @@ Functional Overview
 Installing the Driver
 ^^^^^^^^^^^^^^^^^^^^^
 
-Install the I2S driver by calling the function :cpp:func`i2s_driver_install` and passing the following arguments:
+Install the I2S driver by calling the function :cpp:func:`i2s_driver_install` and passing the following arguments:
 
 - Port number
 - The structure :cpp:type:`i2s_config_t` with defined communication parameters
@@ -77,7 +77,7 @@ Configuration example:
     static const i2s_config_t i2s_config = {
         .mode = I2S_MODE_MASTER | I2S_MODE_TX,
         .sample_rate = 44100,
-        .bits_per_sample = 16,
+        .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
         .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
         .communication_format = I2S_COMM_FORMAT_STAND_I2S,
         .intr_alloc_flags = 0, // default interrupt priority
@@ -92,7 +92,7 @@ Configuration example:
 Setting Communication Pins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Once the driver is installed, configure physical GPIO pins to which signals will be routed. For this, call the function :cpp:func`i2s_set_pin` and pass the following arguments to it:
+Once the driver is installed, configure physical GPIO pins to which signals will be routed. For this, call the function :cpp:func:`i2s_set_pin` and pass the following arguments to it:
 
 - Port number
 - The structure :cpp:type:`i2s_pin_config_t` defining the GPIO pin numbers to which the driver should route the BCK, WS, DATA out, and DATA in signals. If you want to keep a currently allocated pin number for a specific signal, or if this signal is unused, then pass the macro :c:macro:`I2S_PIN_NO_CHANGE`. See the example below.
@@ -126,7 +126,7 @@ The function will write the data to the I2S DMA Tx buffer, and then the data wil
 
 To retrieve received data, use the function :cpp:func:`i2s_read`. It will retrieve the data from the I2S DMA Rx buffer, once the data is received by the I2S controller.
 
-You can temporarily stop the I2S driver by calling the function :cpp:func:`i2s_stop`, which will disable the I2S Tx/Rx units until the function :cpp:func:`i2s_start` is called. If the function :cpp:func`i2s_driver_install` is used, the driver will start up automatically eliminating the need to call :cpp:func:`i2s_start`.
+You can temporarily stop the I2S driver by calling the function :cpp:func:`i2s_stop`, which will disable the I2S Tx/Rx units until the function :cpp:func:`i2s_start` is called. If the function :cpp:func:`i2s_driver_install` is used, the driver will start up automatically eliminating the need to call :cpp:func:`i2s_start`.
 
 
 Deleting the Driver
@@ -156,7 +156,7 @@ I2S configuration
     static const i2s_config_t i2s_config = {
         .mode = I2S_MODE_MASTER | I2S_MODE_TX,
         .sample_rate = 44100,
-        .bits_per_sample = 16,
+        .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
         .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
         .communication_format = I2S_COMM_FORMAT_STAND_I2S,
         .intr_alloc_flags = 0, // default interrupt priority
@@ -196,7 +196,7 @@ Configuring I2S to use internal DAC for analog output
     static const i2s_config_t i2s_config = {
         .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
         .sample_rate = 44100,
-        .bits_per_sample = 16, /* the DAC module will only take the 8bits from MSB */
+        .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT, /* the DAC module will only take the 8bits from MSB */
         .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
         .intr_alloc_flags = 0, // default interrupt priority
         .dma_buf_count = 8,
