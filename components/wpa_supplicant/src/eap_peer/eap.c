@@ -483,6 +483,10 @@ int eap_peer_config_init(
 		sm->config.phase2 = "auth=MSCHAPV2";
 	}
 
+	if (g_wpa_suiteb_certification) {
+		sm->config.flags = TLS_CONN_SUITEB;
+	}
+
 	return 0;
 
 }

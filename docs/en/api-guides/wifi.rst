@@ -1428,7 +1428,7 @@ For establishing a secure connection, AP and Station negotiate and agree on the 
      - MSCHAP and MSCHAP-V2.
 
 
-Detailed information on creating certificates and how to run wpa2_enterprise example on {IDF_TARGET_NAME} can be found in :example:`wifi/wpa2_enterprise`.
+Detailed information on creating certificates and how to run wpa2_enterprise example on {IDF_TARGET_NAME} can be found in :example:`wifi/wifi_enterprise`.
 
 .. only:: esp32s2 or esp32c3
 

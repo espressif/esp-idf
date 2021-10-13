@@ -1,17 +1,7 @@
-/**
- * Copyright 2020 Espressif Systems (Shanghai) PTE LTD
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "utils/includes.h"
@@ -195,6 +185,35 @@ static int set_ca_cert(tls_context_t *tls, const unsigned char *cacert, size_t c
 
 	return 0;
 }
+
+#ifdef CONFIG_SUITEB192
+static int tls_sig_hashes_for_suiteb[] = {
+#if defined(MBEDTLS_SHA512_C)
+	MBEDTLS_MD_SHA512,
+	MBEDTLS_MD_SHA384,
+#endif
+	MBEDTLS_MD_NONE
+};
+
+const mbedtls_x509_crt_profile suiteb_mbedtls_x509_crt_profile =
+{
+#if defined(MBEDTLS_SHA512_C)
+	MBEDTLS_X509_ID_FLAG( MBEDTLS_MD_SHA384 ) |
+	MBEDTLS_X509_ID_FLAG( MBEDTLS_MD_SHA512 ) |
+#endif
+	0,
+	0xFFFFFFF, /* Any PK alg    */
+	MBEDTLS_X509_ID_FLAG(MBEDTLS_ECP_DP_SECP384R1),
+	1024,
+};
+
+static void tls_set_suiteb_config(tls_context_t *tls)
+{
+	const mbedtls_x509_crt_profile *crt_profile = &suiteb_mbedtls_x509_crt_profile;
+	mbedtls_ssl_conf_cert_profile(&tls->conf, crt_profile);
+	mbedtls_ssl_conf_sig_hashes(&tls->conf, tls_sig_hashes_for_suiteb);
+}
+#endif
 
 static int tls_sig_hashes_for_eap[] = {
 #if defined(MBEDTLS_SHA512_C)
@@ -380,11 +399,64 @@ static const int eap_ciphersuite_preference[] =
 	MBEDTLS_TLS_RSA_PSK_WITH_RC4_128_SHA,
 	MBEDTLS_TLS_PSK_WITH_RC4_128_SHA,
 #endif
+	0
 };
 
-static void tls_set_ciphersuite(tls_context_t *tls)
+#ifdef CONFIG_SUITEB192
+static const int suiteb_rsa_ciphersuite_preference[] =
+{
+#if defined(MBEDTLS_GCM_C)
+#if defined(MBEDTLS_SHA512_C)
+	MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+	MBEDTLS_TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,
+#endif
+#endif
+	0
+};
+
+static const int suiteb_ecc_ciphersuite_preference[] =
+{
+#if defined(MBEDTLS_GCM_C)
+#if defined(MBEDTLS_SHA512_C)
+	MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+#endif
+#endif
+	0
+};
+static const int suiteb_ciphersuite_preference[] =
+{
+#if defined(MBEDTLS_GCM_C)
+#if defined(MBEDTLS_SHA512_C)
+	MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+	MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+	MBEDTLS_TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,
+#endif
+#endif
+	0
+};
+#endif
+
+static void tls_set_ciphersuite(const struct tls_connection_params *cfg, tls_context_t *tls)
 {
 	/* Only set ciphersuite if cert's key length is high or ciphersuites are set by user */
+#ifdef CONFIG_SUITEB192
+	if (cfg->flags & TLS_CONN_SUITEB) {
+		/* cipher suites will be set based on certificate */
+		mbedtls_pk_type_t pk_alg = mbedtls_pk_get_type(&tls->clientkey);
+		if (pk_alg == MBEDTLS_PK_RSA || pk_alg == MBEDTLS_PK_RSASSA_PSS) {
+			mbedtls_ssl_conf_ciphersuites(&tls->conf,
+						      suiteb_rsa_ciphersuite_preference);
+		} else if (pk_alg == MBEDTLS_PK_ECDSA ||
+			   pk_alg == MBEDTLS_PK_ECKEY ||
+			   pk_alg == MBEDTLS_PK_ECKEY_DH) {
+			mbedtls_ssl_conf_ciphersuites(&tls->conf,
+						      suiteb_ecc_ciphersuite_preference);
+		} else {
+			mbedtls_ssl_conf_ciphersuites(&tls->conf,
+						      suiteb_ciphersuite_preference);
+		}
+	} else
+#endif
 	if (tls->ciphersuite[0]) {
 		mbedtls_ssl_conf_ciphersuites(&tls->conf, tls->ciphersuite);
 	} else if (mbedtls_pk_get_bitlen(&tls->clientkey) > 2048 ||
@@ -396,20 +468,31 @@ static void tls_set_ciphersuite(tls_context_t *tls)
 static int set_client_config(const struct tls_connection_params *cfg, tls_context_t *tls)
 {
 	int ret;
+	int preset = MBEDTLS_SSL_PRESET_DEFAULT;
 	assert(cfg != NULL);
 	assert(tls != NULL);
 
+#ifdef CONFIG_SUITEB192
+	if (cfg->flags & TLS_CONN_SUITEB)
+		preset = MBEDTLS_SSL_PRESET_SUITEB;
+#endif
 	ret = mbedtls_ssl_config_defaults(&tls->conf,
 					MBEDTLS_SSL_IS_CLIENT,
 					MBEDTLS_SSL_TRANSPORT_STREAM,
-					MBEDTLS_SSL_PRESET_DEFAULT);
+					preset);
 	if (ret != 0) {
 		wpa_printf(MSG_ERROR, "mbedtls_ssl_config_defaults returned -0x%x", -ret);
 		return ret;
 	}
 
-	/* Enable SHA1 support since it's not enabled by default in mbedtls */
-	tls_enable_sha1_config(tls);
+	if (preset != MBEDTLS_SSL_PRESET_SUITEB) {
+		/* Enable SHA1 support since it's not enabled by default in mbedtls */
+		tls_enable_sha1_config(tls);
+#ifdef CONFIG_SUITEB192
+	} else {
+		tls_set_suiteb_config(tls);
+#endif
+	}
 
 	if (cfg->ca_cert_blob != NULL) {
 		ret = set_ca_cert(tls, cfg->ca_cert_blob, cfg->ca_cert_blob_len);
@@ -432,7 +515,7 @@ static int set_client_config(const struct tls_connection_params *cfg, tls_contex
 	/* Usages of default ciphersuites can take a lot of time on low end device
 	 * and can cause watchdog. Enabling the ciphers which are secured enough
 	 * but doesn't take that much processing power */
-	tls_set_ciphersuite(tls);
+	tls_set_ciphersuite(cfg, tls);
 
 	return 0;
 }

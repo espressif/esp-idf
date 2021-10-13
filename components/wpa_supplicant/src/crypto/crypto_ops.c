@@ -1,16 +1,8 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "utils/common.h"
 #include "aes_wrap.h"
@@ -42,6 +34,16 @@ static void esp_aes_encrypt(void *ctx, const u8 *plain, u8 *crypt)
 static void esp_aes_decrypt(void *ctx, const u8 *crypt, u8 *plain)
 {
 	aes_decrypt(ctx, crypt, plain);
+}
+
+static int esp_aes_gmac(const u8 *key, size_t key_len, const u8 *iv, size_t iv_len,
+			const u8 *aad, size_t aad_len, u8 *tag)
+{
+#if CONFIG_GMAC
+	return aes_gmac(key, key_len, iv, iv_len, aad, aad_len, tag);
+#else
+	return 0;
+#endif
 }
 
 /*
@@ -76,7 +78,8 @@ const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs = {
     .aes_128_decrypt = (esp_aes_128_decrypt_t)aes_128_cbc_decrypt,
     .omac1_aes_128 = (esp_omac1_aes_128_t)omac1_aes_128,
     .ccmp_decrypt = (esp_ccmp_decrypt_t)ccmp_decrypt,
-    .ccmp_encrypt = (esp_ccmp_encrypt_t)ccmp_encrypt
+    .ccmp_encrypt = (esp_ccmp_encrypt_t)ccmp_encrypt,
+    .aes_gmac = (esp_aes_gmac_t)esp_aes_gmac,
 };
 
 const mesh_crypto_funcs_t g_wifi_default_mesh_crypto_funcs = {

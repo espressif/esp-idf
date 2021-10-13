@@ -165,15 +165,20 @@ bool  wpa_deattach(void)
     return true;
 }
 
-void  wpa_sta_connect(uint8_t *bssid)
+int wpa_sta_connect(uint8_t *bssid)
 {
     /* use this API to set AP specific IEs during connection */
     int ret = 0;
     ret = wpa_config_profile();
     if (ret == 0) {
         ret = wpa_config_bss(bssid);
-        WPA_ASSERT(ret == 0);
+        if (ret) {
+            wpa_printf(MSG_DEBUG, "Rejecting bss, validation failed");
+            return ret;
+        }
     }
+
+    return 0;
 }
 
 void wpa_config_done(void)
