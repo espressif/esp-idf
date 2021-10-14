@@ -52,7 +52,7 @@ __main() {
         # shellcheck disable=SC2169,SC2169,SC2039  # unreachable with 'dash'
         if [[ "$OSTYPE" == "darwin"* ]]; then
             # convert possibly relative path to absolute
-            script_dir="$(realpath_int "${self_path}")"
+            script_dir="$(__realpath "${self_path}")"
             # resolve any ../ references to make the path shorter
             script_dir="$(cd "${script_dir}" || exit 1; pwd)"
         else
