@@ -2091,8 +2091,6 @@ components/openthread/include/esp_openthread_border_router.h
 components/openthread/include/esp_openthread_lock.h
 components/openthread/include/esp_openthread_netif_glue.h
 components/openthread/include/esp_openthread_types.h
-components/openthread/private_include/openthread-core-esp32x-ftd-config.h
-components/openthread/private_include/openthread-core-esp32x-radio-config.h
 components/partition_table/check_sizes.py
 components/partition_table/gen_empty_partition.py
 components/partition_table/gen_esp32part.py
