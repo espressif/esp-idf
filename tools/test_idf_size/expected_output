@@ -12582,6 +12582,4275 @@ Producing JSON output...
 }
 
 ***
+Producing JSON output for esp32s2...
+{
+    "dram_data": 0,
+    "dram_bss": 0,
+    "dram_rodata": 0,
+    "dram_other": 0,
+    "used_dram": 0,
+    "dram_total": 0,
+    "used_dram_ratio": 0,
+    "dram_remain": 0,
+    "iram_vectors": 0,
+    "iram_text": 0,
+    "iram_other": 0,
+    "used_iram": 0,
+    "iram_total": 0,
+    "used_iram_ratio": 0,
+    "iram_remain": 0,
+    "diram_data": 7152,
+    "diram_bss": 1936,
+    "diram_text": 32908,
+    "diram_vectors": 1027,
+    "diram_rodata": 0,
+    "diram_other": 0,
+    "diram_total": 196608,
+    "used_diram": 43023,
+    "used_diram_ratio": 0.2188262939453125,
+    "diram_remain": 153585,
+    "flash_code": 74439,
+    "flash_rodata": 18580,
+    "flash_other": 0,
+    "used_flash_non_ram": 93019,
+    "total_size": 134106
+}
+{
+    "libc.a": {
+        ".dram0.bss": 4,
+        ".dram0.data": 364,
+        ".flash.rodata": 3645,
+        ".flash.text": 54964,
+        "flash_total": 58973,
+        "ram_st_total": 368
+    },
+    "libfreertos.a": {
+        ".dram0.bss": 736,
+        ".dram0.data": 2080,
+        ".flash.rodata": 1175,
+        ".iram0.text": 10555,
+        ".iram0.vectors": 425,
+        "flash_total": 14235,
+        "ram_st_total": 13796
+    },
+    "libesp32s2.a": {
+        ".dram0.bss": 22,
+        ".dram0.data": 2621,
+        ".flash.rodata": 2209,
+        ".flash.text": 4169,
+        ".iram0.text": 4210,
+        "flash_total": 13209,
+        "ram_st_total": 6853
+    },
+    "libsoc.a": {
+        ".dram0.bss": 8,
+        ".dram0.data": 405,
+        ".flash.rodata": 878,
+        ".flash.text": 1574,
+        ".iram0.text": 7075,
+        "flash_total": 9932,
+        "ram_st_total": 7488
+    },
+    "libspi_flash.a": {
+        ".dram0.bss": 416,
+        ".dram0.data": 775,
+        ".flash.rodata": 1130,
+        ".flash.text": 1109,
+        ".iram0.text": 4114,
+        "flash_total": 7128,
+        "ram_st_total": 5305
+    },
+    "libvfs.a": {
+        ".dram0.bss": 48,
+        ".dram0.data": 272,
+        ".flash.rodata": 555,
+        ".flash.text": 5581,
+        "flash_total": 6408,
+        "ram_st_total": 320
+    },
+    "libesp_common.a": {
+        ".dram0.bss": 72,
+        ".dram0.data": 8,
+        ".flash.rodata": 5304,
+        ".flash.text": 416,
+        ".iram0.text": 87,
+        "flash_total": 5815,
+        "ram_st_total": 167
+    },
+    "libheap.a": {
+        ".dram0.bss": 4,
+        ".dram0.data": 304,
+        ".flash.rodata": 741,
+        ".flash.text": 888,
+        ".iram0.text": 3171,
+        "flash_total": 5104,
+        "ram_st_total": 3479
+    },
+    "libdriver.a": {
+        ".dram0.bss": 32,
+        ".dram0.data": 80,
+        ".flash.rodata": 894,
+        ".flash.text": 3216,
+        "flash_total": 4190,
+        "ram_st_total": 112
+    },
+    "libnewlib.a": {
+        ".dram0.bss": 272,
+        ".dram0.data": 152,
+        ".flash.rodata": 84,
+        ".flash.text": 856,
+        ".iram0.text": 812,
+        "flash_total": 1904,
+        "ram_st_total": 1236
+    },
+    "libesp_timer.a": {
+        ".dram0.bss": 20,
+        ".dram0.data": 16,
+        ".flash.rodata": 546,
+        ".flash.text": 657,
+        ".iram0.text": 668,
+        "flash_total": 1887,
+        "ram_st_total": 704
+    },
+    "libesp_ringbuf.a": {
+        ".flash.rodata": 150,
+        ".iram0.text": 858,
+        "flash_total": 1008,
+        "ram_st_total": 858
+    },
+    "liblog.a": {
+        ".dram0.bss": 272,
+        ".dram0.data": 8,
+        ".flash.rodata": 147,
+        ".flash.text": 94,
+        ".iram0.text": 594,
+        "flash_total": 843,
+        "ram_st_total": 874
+    },
+    "libapp_update.a": {
+        ".dram0.bss": 4,
+        ".flash.rodata": 470,
+        ".flash.text": 151,
+        "flash_total": 621,
+        "ram_st_total": 4
+    },
+    "libmain.a": {
+        ".flash.rodata": 196,
+        ".flash.text": 192,
+        "flash_total": 388,
+        "ram_st_total": 0
+    },
+    "libhal.a": {
+        ".flash.rodata": 32,
+        ".iram0.text": 337,
+        "flash_total": 369,
+        "ram_st_total": 337
+    },
+    "libpthread.a": {
+        ".dram0.bss": 12,
+        ".dram0.data": 8,
+        ".flash.text": 264,
+        "flash_total": 272,
+        "ram_st_total": 20
+    },
+    "libgcc.a": {
+        ".flash.rodata": 160,
+        "flash_total": 160,
+        "ram_st_total": 0
+    },
+    "(exe)": {
+        ".flash.rodata": 12,
+        ".flash.text": 3,
+        ".iram0.vectors": 3,
+        "flash_total": 18,
+        "ram_st_total": 3
+    },
+    "libcxx.a": {
+        ".flash.text": 11,
+        "flash_total": 11,
+        "ram_st_total": 0
+    },
+    "libbootloader_support.a": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libmbedcrypto.a": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libsoc_esp32s2.a": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libwpa_supplicant.a": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libxtensa.a": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    }
+}
+{
+    "libc.a:lib_a-vfprintf.o": {
+        ".flash.rodata": 700,
+        ".flash.text": 13681,
+        "flash_total": 14381,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-svfprintf.o": {
+        ".flash.rodata": 752,
+        ".flash.text": 13294,
+        "flash_total": 14046,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-svfiprintf.o": {
+        ".flash.rodata": 1172,
+        ".flash.text": 9623,
+        "flash_total": 10795,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-vfiprintf.o": {
+        ".flash.rodata": 700,
+        ".flash.text": 9933,
+        "flash_total": 10633,
+        "ram_st_total": 0
+    },
+    "libfreertos.a:tasks.c.o": {
+        ".dram0.bss": 660,
+        ".dram0.data": 12,
+        ".flash.rodata": 406,
+        ".iram0.text": 4954,
+        "flash_total": 5372,
+        "ram_st_total": 5626
+    },
+    "libesp_common.a:esp_err_to_name.c.o": {
+        ".flash.rodata": 5101,
+        ".flash.text": 53,
+        "flash_total": 5154,
+        "ram_st_total": 0
+    },
+    "libesp32s2.a:panic.c.o": {
+        ".dram0.bss": 1,
+        ".dram0.data": 2552,
+        ".iram0.text": 2321,
+        "flash_total": 4873,
+        "ram_st_total": 4874
+    },
+    "libvfs.a:vfs_uart.c.o": {
+        ".dram0.bss": 8,
+        ".dram0.data": 80,
+        ".flash.rodata": 423,
+        ".flash.text": 3689,
+        "flash_total": 4192,
+        "ram_st_total": 88
+    },
+    "libc.a:lib_a-dtoa.o": {
+        ".flash.rodata": 13,
+        ".flash.text": 3524,
+        "flash_total": 3537,
+        "ram_st_total": 0
+    },
+    "libesp32s2.a:intr_alloc.c.o": {
+        ".dram0.bss": 13,
+        ".dram0.data": 8,
+        ".flash.rodata": 706,
+        ".flash.text": 1682,
+        ".iram0.text": 660,
+        "flash_total": 3056,
+        "ram_st_total": 681
+    },
+    "libfreertos.a:queue.c.o": {
+        ".flash.rodata": 424,
+        ".iram0.text": 2397,
+        "flash_total": 2821,
+        "ram_st_total": 2397
+    },
+    "libdriver.a:uart.c.o": {
+        ".dram0.bss": 8,
+        ".dram0.data": 40,
+        ".flash.rodata": 452,
+        ".flash.text": 2087,
+        "flash_total": 2579,
+        "ram_st_total": 48
+    },
+    "libheap.a:multi_heap.c.o": {
+        ".dram0.data": 300,
+        ".iram0.text": 2273,
+        "flash_total": 2573,
+        "ram_st_total": 2573
+    },
+    "libc.a:lib_a-mprec.o": {
+        ".flash.rodata": 296,
+        ".flash.text": 2144,
+        "flash_total": 2440,
+        "ram_st_total": 0
+    },
+    "libsoc.a:rtc_clk.c.o": {
+        ".dram0.bss": 8,
+        ".dram0.data": 381,
+        ".iram0.text": 1867,
+        "flash_total": 2248,
+        "ram_st_total": 2256
+    },
+    "libvfs.a:vfs.c.o": {
+        ".dram0.bss": 40,
+        ".dram0.data": 192,
+        ".flash.rodata": 132,
+        ".flash.text": 1892,
+        "flash_total": 2216,
+        "ram_st_total": 232
+    },
+    "libfreertos.a:portasm.S.o": {
+        ".dram0.data": 1544,
+        ".iram0.text": 365,
+        "flash_total": 1909,
+        "ram_st_total": 1909
+    },
+    "libsoc.a:spi_flash_hal_iram.c.o": {
+        ".dram0.data": 24,
+        ".iram0.text": 1804,
+        "flash_total": 1828,
+        "ram_st_total": 1828
+    },
+    "libspi_flash.a:spi_flash_chip_generic.c.o": {
+        ".dram0.data": 340,
+        ".iram0.text": 1417,
+        "flash_total": 1757,
+        "ram_st_total": 1757
+    },
+    "libesp32s2.a:task_wdt.c.o": {
+        ".dram0.bss": 4,
+        ".dram0.data": 53,
+        ".flash.rodata": 496,
+        ".flash.text": 1190,
+        "flash_total": 1739,
+        "ram_st_total": 57
+    },
+    "libspi_flash.a:flash_mmap.c.o": {
+        ".dram0.bss": 392,
+        ".flash.rodata": 252,
+        ".flash.text": 124,
+        ".iram0.text": 1200,
+        "flash_total": 1576,
+        "ram_st_total": 1592
+    },
+    "libheap.a:heap_caps.c.o": {
+        ".dram0.data": 4,
+        ".flash.rodata": 362,
+        ".flash.text": 50,
+        ".iram0.text": 898,
+        "flash_total": 1314,
+        "ram_st_total": 902
+    },
+    "libfreertos.a:xtensa_vectors.S.o": {
+        ".iram0.text": 864,
+        ".iram0.vectors": 425,
+        "flash_total": 1289,
+        "ram_st_total": 1289
+    },
+    "libsoc.a:rtc_init.c.o": {
+        ".flash.rodata": 8,
+        ".iram0.text": 1255,
+        "flash_total": 1263,
+        "ram_st_total": 1255
+    },
+    "libfreertos.a:timers.c.o": {
+        ".dram0.bss": 56,
+        ".dram0.data": 8,
+        ".flash.rodata": 223,
+        ".iram0.text": 987,
+        "flash_total": 1218,
+        "ram_st_total": 1051
+    },
+    "libheap.a:heap_caps_init.c.o": {
+        ".dram0.bss": 4,
+        ".flash.rodata": 379,
+        ".flash.text": 838,
+        "flash_total": 1217,
+        "ram_st_total": 4
+    },
+    "libesp32s2.a:cpu_start.c.o": {
+        ".flash.rodata": 489,
+        ".flash.text": 152,
+        ".iram0.text": 536,
+        "flash_total": 1177,
+        "ram_st_total": 536
+    },
+    "libesp_timer.a:esp_timer_impl_systimer.c.o": {
+        ".dram0.bss": 8,
+        ".dram0.data": 8,
+        ".flash.rodata": 442,
+        ".flash.text": 252,
+        ".iram0.text": 388,
+        "flash_total": 1090,
+        "ram_st_total": 404
+    },
+    "libesp_ringbuf.a:ringbuf.c.o": {
+        ".flash.rodata": 150,
+        ".iram0.text": 858,
+        "flash_total": 1008,
+        "ram_st_total": 858
+    },
+    "libdriver.a:periph_ctrl.c.o": {
+        ".dram0.data": 8,
+        ".flash.rodata": 272,
+        ".flash.text": 661,
+        "flash_total": 941,
+        "ram_st_total": 8
+    },
+    "libesp32s2.a:clk.c.o": {
+        ".flash.rodata": 281,
+        ".flash.text": 626,
+        ".iram0.text": 34,
+        "flash_total": 941,
+        "ram_st_total": 34
+    },
+    "libc.a:lib_a-fseeko.o": {
+        ".flash.text": 910,
+        "flash_total": 910,
+        "ram_st_total": 0
+    },
+    "libspi_flash.a:partition.c.o": {
+        ".dram0.bss": 8,
+        ".flash.rodata": 181,
+        ".flash.text": 679,
+        "flash_total": 860,
+        "ram_st_total": 8
+    },
+    "libspi_flash.a:esp_flash_api.c.o": {
+        ".flash.rodata": 240,
+        ".flash.text": 16,
+        ".iram0.text": 600,
+        "flash_total": 856,
+        "ram_st_total": 600
+    },
+    "libnewlib.a:time.c.o": {
+        ".dram0.bss": 32,
+        ".flash.text": 719,
+        ".iram0.text": 115,
+        "flash_total": 834,
+        "ram_st_total": 147
+    },
+    "libsoc.a:memory_layout_utils.c.o": {
+        ".flash.rodata": 295,
+        ".flash.text": 509,
+        "flash_total": 804,
+        "ram_st_total": 0
+    },
+    "libsoc.a:rtc_wdt.c.o": {
+        ".iram0.text": 800,
+        "flash_total": 800,
+        "ram_st_total": 800
+    },
+    "libesp_timer.a:esp_timer.c.o": {
+        ".dram0.bss": 12,
+        ".dram0.data": 8,
+        ".flash.rodata": 104,
+        ".flash.text": 405,
+        ".iram0.text": 280,
+        "flash_total": 797,
+        "ram_st_total": 300
+    },
+    "liblog.a:log.c.o": {
+        ".dram0.bss": 264,
+        ".dram0.data": 8,
+        ".flash.rodata": 147,
+        ".flash.text": 94,
+        ".iram0.text": 406,
+        "flash_total": 655,
+        "ram_st_total": 678
+    },
+    "libsoc.a:rtc_time.c.o": {
+        ".iram0.text": 626,
+        "flash_total": 626,
+        "ram_st_total": 626
+    },
+    "libspi_flash.a:esp_flash_spi_init.c.o": {
+        ".dram0.bss": 4,
+        ".dram0.data": 120,
+        ".flash.rodata": 281,
+        ".flash.text": 215,
+        "flash_total": 616,
+        "ram_st_total": 124
+    },
+    "libnewlib.a:locks.c.o": {
+        ".dram0.data": 8,
+        ".flash.rodata": 84,
+        ".flash.text": 5,
+        ".iram0.text": 487,
+        "flash_total": 584,
+        "ram_st_total": 495
+    },
+    "libfreertos.a:xtensa_intr_asm.S.o": {
+        ".dram0.data": 512,
+        ".iram0.text": 51,
+        "flash_total": 563,
+        "ram_st_total": 563
+    },
+    "libfreertos.a:port.c.o": {
+        ".dram0.bss": 16,
+        ".flash.rodata": 87,
+        ".iram0.text": 408,
+        "flash_total": 495,
+        "ram_st_total": 424
+    },
+    "libesp32s2.a:crosscore_int.c.o": {
+        ".dram0.bss": 4,
+        ".dram0.data": 8,
+        ".flash.rodata": 237,
+        ".flash.text": 86,
+        ".iram0.text": 154,
+        "flash_total": 485,
+        "ram_st_total": 166
+    },
+    "libsoc.a:soc_memory_layout.c.o": {
+        ".flash.rodata": 479,
+        "flash_total": 479,
+        "ram_st_total": 0
+    },
+    "libsoc.a:rtc_sleep.c.o": {
+        ".iram0.text": 414,
+        "flash_total": 414,
+        "ram_st_total": 414
+    },
+    "libsoc.a:uart_hal.c.o": {
+        ".flash.text": 409,
+        "flash_total": 409,
+        "ram_st_total": 0
+    },
+    "libsoc.a:spi_flash_hal.c.o": {
+        ".flash.rodata": 96,
+        ".flash.text": 309,
+        "flash_total": 405,
+        "ram_st_total": 0
+    },
+    "libspi_flash.a:cache_utils.c.o": {
+        ".dram0.bss": 8,
+        ".flash.rodata": 176,
+        ".flash.text": 21,
+        ".iram0.text": 197,
+        "flash_total": 394,
+        "ram_st_total": 205
+    },
+    "libmain.a:hello_world_main.c.o": {
+        ".flash.rodata": 196,
+        ".flash.text": 192,
+        "flash_total": 388,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-locale.o": {
+        ".dram0.data": 364,
+        ".flash.rodata": 10,
+        "flash_total": 374,
+        "ram_st_total": 364
+    },
+    "libdriver.a:timer.c.o": {
+        ".dram0.bss": 16,
+        ".dram0.data": 16,
+        ".flash.rodata": 170,
+        ".flash.text": 184,
+        "flash_total": 370,
+        "ram_st_total": 32
+    },
+    "libc.a:lib_a-refill.o": {
+        ".flash.text": 368,
+        "flash_total": 368,
+        "ram_st_total": 0
+    },
+    "libapp_update.a:esp_ota_ops.c.o": {
+        ".dram0.bss": 4,
+        ".flash.rodata": 214,
+        ".flash.text": 151,
+        "flash_total": 365,
+        "ram_st_total": 4
+    },
+    "libesp32s2.a:int_wdt.c.o": {
+        ".flash.text": 302,
+        ".iram0.text": 59,
+        "flash_total": 361,
+        "ram_st_total": 59
+    },
+    "libesp32s2.a:system_api_esp32s2.c.o": {
+        ".flash.text": 27,
+        ".iram0.text": 323,
+        "flash_total": 350,
+        "ram_st_total": 323
+    },
+    "libesp_common.a:brownout.c.o": {
+        ".flash.rodata": 203,
+        ".flash.text": 120,
+        "flash_total": 323,
+        "ram_st_total": 0
+    },
+    "libhal.a:windowspill_asm.o": {
+        ".iram0.text": 315,
+        "flash_total": 315,
+        "ram_st_total": 315
+    },
+    "libsoc.a:cpu_util.c.o": {
+        ".iram0.text": 309,
+        "flash_total": 309,
+        "ram_st_total": 309
+    },
+    "libsoc.a:brownout_hal.c.o": {
+        ".flash.text": 304,
+        "flash_total": 304,
+        "ram_st_total": 0
+    },
+    "libesp_common.a:freertos_hooks.c.o": {
+        ".dram0.bss": 64,
+        ".dram0.data": 8,
+        ".flash.text": 243,
+        ".iram0.text": 47,
+        "flash_total": 298,
+        "ram_st_total": 119
+    },
+    "libspi_flash.a:spi_flash_chip_gd.c.o": {
+        ".dram0.data": 95,
+        ".iram0.text": 181,
+        "flash_total": 276,
+        "ram_st_total": 276
+    },
+    "libapp_update.a:esp_app_desc.c.o": {
+        ".flash.rodata": 256,
+        "flash_total": 256,
+        "ram_st_total": 0
+    },
+    "libspi_flash.a:memspi_host_driver.c.o": {
+        ".dram0.data": 43,
+        ".iram0.text": 206,
+        "flash_total": 249,
+        "ram_st_total": 249
+    },
+    "libdriver.a:rtc_module.c.o": {
+        ".dram0.bss": 8,
+        ".dram0.data": 16,
+        ".flash.text": 231,
+        "flash_total": 247,
+        "ram_st_total": 24
+    },
+    "libc.a:lib_a-fopen.o": {
+        ".flash.text": 244,
+        "flash_total": 244,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-puts.o": {
+        ".flash.rodata": 2,
+        ".flash.text": 234,
+        "flash_total": 236,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-reent.o": {
+        ".flash.text": 236,
+        "flash_total": 236,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-snprintf.o": {
+        ".flash.text": 217,
+        "flash_total": 217,
+        "ram_st_total": 0
+    },
+    "libnewlib.a:syscall_table.c.o": {
+        ".dram0.bss": 240,
+        ".dram0.data": 144,
+        ".flash.text": 70,
+        "flash_total": 214,
+        "ram_st_total": 384
+    },
+    "libfreertos.a:xtensa_context.S.o": {
+        ".iram0.text": 201,
+        "flash_total": 201,
+        "ram_st_total": 201
+    },
+    "libspi_flash.a:spi_flash_chip_issi.c.o": {
+        ".dram0.data": 97,
+        ".iram0.text": 101,
+        "flash_total": 198,
+        "ram_st_total": 198
+    },
+    "libpthread.a:pthread_local_storage.c.o": {
+        ".dram0.bss": 4,
+        ".dram0.data": 8,
+        ".flash.text": 183,
+        "flash_total": 191,
+        "ram_st_total": 12
+    },
+    "liblog.a:log_freertos.c.o": {
+        ".dram0.bss": 8,
+        ".iram0.text": 188,
+        "flash_total": 188,
+        "ram_st_total": 196
+    },
+    "libnewlib.a:heap.c.o": {
+        ".iram0.text": 151,
+        "flash_total": 151,
+        "ram_st_total": 151
+    },
+    "libfreertos.a:xtensa_intr.c.o": {
+        ".flash.rodata": 35,
+        ".iram0.text": 112,
+        "flash_total": 147,
+        "ram_st_total": 112
+    },
+    "libspi_flash.a:spi_flash_os_func_app.c.o": {
+        ".dram0.data": 24,
+        ".flash.text": 25,
+        ".iram0.text": 95,
+        "flash_total": 144,
+        "ram_st_total": 119
+    },
+    "libfreertos.a:list.c.o": {
+        ".iram0.text": 138,
+        "flash_total": 138,
+        "ram_st_total": 138
+    },
+    "libc.a:lib_a-flags.o": {
+        ".flash.text": 128,
+        "flash_total": 128,
+        "ram_st_total": 0
+    },
+    "libesp32s2.a:dport_panic_highint_hdl.S.o": {
+        ".iram0.text": 123,
+        "flash_total": 123,
+        "ram_st_total": 123
+    },
+    "libc.a:lib_a-printf.o": {
+        ".flash.text": 116,
+        "flash_total": 116,
+        "ram_st_total": 0
+    },
+    "libspi_flash.a:spi_flash_os_func_noos.c.o": {
+        ".dram0.data": 16,
+        ".iram0.text": 89,
+        "flash_total": 105,
+        "ram_st_total": 105
+    },
+    "libc.a:lib_a-s_frexp.o": {
+        ".flash.text": 100,
+        "flash_total": 100,
+        "ram_st_total": 0
+    },
+    "libesp32s2.a:cache_err_int.c.o": {
+        ".flash.text": 96,
+        "flash_total": 96,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-vprintf.o": {
+        ".flash.text": 94,
+        "flash_total": 94,
+        "ram_st_total": 0
+    },
+    "libpthread.a:pthread.c.o": {
+        ".dram0.bss": 8,
+        ".flash.text": 81,
+        "flash_total": 81,
+        "ram_st_total": 8
+    },
+    "libspi_flash.a:flash_ops.c.o": {
+        ".dram0.bss": 4,
+        ".dram0.data": 20,
+        ".flash.text": 29,
+        ".iram0.text": 28,
+        "flash_total": 77,
+        "ram_st_total": 52
+    },
+    "libc.a:lib_a-localeconv.o": {
+        ".flash.text": 63,
+        "flash_total": 63,
+        "ram_st_total": 0
+    },
+    "libnewlib.a:reent_init.c.o": {
+        ".iram0.text": 59,
+        "flash_total": 59,
+        "ram_st_total": 59
+    },
+    "libdriver.a:rtc_io.c.o": {
+        ".flash.text": 53,
+        "flash_total": 53,
+        "ram_st_total": 0
+    },
+    "libnewlib.a:syscalls.c.o": {
+        ".flash.text": 50,
+        "flash_total": 50,
+        "ram_st_total": 0
+    },
+    "libfreertos.a:xtensa_vector_defaults.S.o": {
+        ".iram0.text": 46,
+        "flash_total": 46,
+        "ram_st_total": 46
+    },
+    "libc.a:lib_a-fseek.o": {
+        ".flash.text": 45,
+        "flash_total": 45,
+        "ram_st_total": 0
+    },
+    "libsoc.a:uart_hal_iram.c.o": {
+        ".flash.text": 43,
+        "flash_total": 43,
+        "ram_st_total": 0
+    },
+    "libesp_common.a:system_api.c.o": {
+        ".dram0.bss": 8,
+        ".iram0.text": 40,
+        "flash_total": 40,
+        "ram_st_total": 48
+    },
+    "libgcc.a:_divdi3.o": {
+        ".flash.rodata": 40,
+        "flash_total": 40,
+        "ram_st_total": 0
+    },
+    "libgcc.a:_moddi3.o": {
+        ".flash.rodata": 40,
+        "flash_total": 40,
+        "ram_st_total": 0
+    },
+    "libgcc.a:_udivdi3.o": {
+        ".flash.rodata": 40,
+        "flash_total": 40,
+        "ram_st_total": 0
+    },
+    "libgcc.a:_umoddi3.o": {
+        ".flash.rodata": 40,
+        "flash_total": 40,
+        "ram_st_total": 0
+    },
+    "libfreertos.a:xtensa_init.c.o": {
+        ".dram0.bss": 4,
+        ".iram0.text": 32,
+        "flash_total": 32,
+        "ram_st_total": 36
+    },
+    "libhal.a:interrupts--intlevel.o": {
+        ".flash.rodata": 32,
+        "flash_total": 32,
+        "ram_st_total": 0
+    },
+    "libspi_flash.a:spi_flash_chip_drivers.c.o": {
+        ".dram0.data": 20,
+        "flash_total": 20,
+        "ram_st_total": 20
+    },
+    "libnewlib.a:pthread.c.o": {
+        ".flash.text": 12,
+        "flash_total": 12,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-errno.o": {
+        ".flash.text": 10,
+        "flash_total": 10,
+        "ram_st_total": 0
+    },
+    "(exe):crtend.o": {
+        ".flash.rodata": 8,
+        "flash_total": 8,
+        "ram_st_total": 0
+    },
+    "libesp32s2.a:pm_esp32s2.c.o": {
+        ".flash.text": 8,
+        "flash_total": 8,
+        "ram_st_total": 0
+    },
+    "libhal.a:int_asm--set_intclear.o": {
+        ".iram0.text": 8,
+        "flash_total": 8,
+        "ram_st_total": 8
+    },
+    "libhal.a:state_asm--restore_extra_nw.o": {
+        ".iram0.text": 7,
+        "flash_total": 7,
+        "ram_st_total": 7
+    },
+    "libhal.a:state_asm--save_extra_nw.o": {
+        ".iram0.text": 7,
+        "flash_total": 7,
+        "ram_st_total": 7
+    },
+    "(exe):crti.o": {
+        ".flash.text": 3,
+        ".iram0.vectors": 3,
+        "flash_total": 6,
+        "ram_st_total": 3
+    },
+    "libcxx.a:cxx_exception_stubs.cpp.o": {
+        ".flash.text": 6,
+        "flash_total": 6,
+        "ram_st_total": 0
+    },
+    "libcxx.a:cxx_guards.cpp.o": {
+        ".flash.text": 5,
+        "flash_total": 5,
+        "ram_st_total": 0
+    },
+    "(exe):crtbegin.o": {
+        ".flash.rodata": 4,
+        "flash_total": 4,
+        "ram_st_total": 0
+    },
+    "libfreertos.a:FreeRTOS-openocd.c.o": {
+        ".dram0.data": 4,
+        "flash_total": 4,
+        "ram_st_total": 4
+    },
+    "(exe):crt0.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "(exe):crtn.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "(exe):project_elf_src.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libbootloader_support.a:bootloader_common.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libbootloader_support.a:bootloader_efuse_esp32s2.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libbootloader_support.a:bootloader_flash.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libbootloader_support.a:bootloader_random.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libbootloader_support.a:bootloader_sha.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libbootloader_support.a:bootloader_utility.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libbootloader_support.a:esp_image_format.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libbootloader_support.a:flash_partitions.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:isatty.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-assert.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-bzero.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-ctype_.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-environ.o": {
+        ".dram0.bss": 4,
+        "flash_total": 0,
+        "ram_st_total": 4
+    },
+    "libc.a:lib_a-envlock.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-fclose.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-fflush.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-findfp.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-fiprintf.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-fputs.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-fputwc.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-fvwrite.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-fwalk.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-getenv_r.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-gettzinfo.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-gmtime_r.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-impure.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-iswspace.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-lcltime_r.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-makebuf.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-mbrtowc.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-mbtowc_r.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-memchr.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-memcmp.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-memcpy.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-memmove.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-memset.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-month_lengths.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-putc.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-putchar.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-qsort.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-sccl.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-siscanf.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-stdio.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-strcmp.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-strcpy.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-strcspn.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-strerror.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-strerror_r.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-strlcpy.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-strlen.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-strncmp.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-strncpy.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-strstr.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-strtol.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-strtoll.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-strtoul.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-strtoull.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-svfiscanf.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-sysgettod.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-tzcalc_limits.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-tzlock.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-tzset.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-tzset_r.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-tzvars.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-u_strerr.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-ungetc.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-wbuf.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-wcrtomb.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-wctomb_r.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libc.a:lib_a-wsetup.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libdriver.a:gpio.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libdriver.a:spi_common.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libesp32s2.a:hw_random.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libesp_common.a:pm_locks.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libgcc.a:_addsubdf3.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libgcc.a:_cmpdf2.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libgcc.a:_divdf3.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libgcc.a:_fixdfsi.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libgcc.a:_floatdidf.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libgcc.a:_floatsidf.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libgcc.a:_muldf3.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libmbedcrypto.a:esp_mem.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libmbedcrypto.a:platform.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libmbedcrypto.a:platform_util.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libmbedcrypto.a:sha256.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libsoc.a:gpio_hal.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libsoc.a:rtc_io_hal.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libsoc.a:spi_flash_hal_gpspi.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libsoc.a:timer_hal.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libsoc_esp32s2.a:gpio_periph.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libsoc_esp32s2.a:rtc_io_periph.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libsoc_esp32s2.a:spi_periph.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libsoc_esp32s2.a:uart_periph.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libwpa_supplicant.a:md5-internal.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libxtensa.a:stdatomic.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    }
+}
+{
+    ".dram0.bss": {
+        "p_timer_obj": 16,
+        "p_uart_obj": 8,
+        "s_rtc_isr_handle": 4,
+        "s_rtc_isr_handler_list": 4
+    },
+    ".dram0.data": {
+        "uart_context": 32,
+        "timer_spinlock": 16,
+        "periph_spinlock": 8,
+        "rtc_spinlock": 8,
+        "s_rtc_isr_handler_list_lock": 8,
+        "uart_selectlock": 8
+    },
+    ".flash.rodata": {
+        "timer_get_counter_value.str1.4": 146,
+        "get_clk_en_mask": 136,
+        "get_rst_en_mask": 136,
+        "uart_pattern_enqueue.str1.4": 88,
+        "uart_flush_input.str1.4": 45,
+        "uart_set_word_length.str1.4": 31,
+        "__FUNCTION__$7196": 27,
+        "__FUNCTION__$5699": 24,
+        "__FUNCTION__$6971": 23,
+        "__FUNCTION__$6966": 22,
+        "__FUNCTION__$6896": 21,
+        "__FUNCTION__$6901": 21,
+        "__FUNCTION__$6906": 19,
+        "__FUNCTION__$6911": 19,
+        "__FUNCTION__$6926": 18,
+        "__FUNCTION__$6932": 18,
+        "__FUNCTION__$7131": 18,
+        "uart_pattern_pop_pos.str1.4": 18,
+        "__FUNCTION__$7202": 17,
+        "__FUNCTION__$6916": 16,
+        "__FUNCTION__$6921": 16,
+        "uart_set_stop_bits.str1.4": 15
+    },
+    ".flash.text": {
+        "uart_flush_input": 453,
+        "uart_wait_tx_done": 417,
+        "get_clk_en_mask": 267,
+        "get_rst_en_mask": 198,
+        "timer_group_intr_enable": 184,
+        "uart_set_word_length": 144,
+        "uart_set_stop_bits": 128,
+        "periph_module_enable": 112,
+        "uart_get_bufferedlen": 109,
+        "uart_enable_intr_mask": 98,
+        "uart_disable_intr_mask": 96,
+        "uart_set_baudrate": 96,
+        "rtc_isr": 90,
+        "uart_get_baudrate": 82,
+        "uart_set_parity": 82,
+        "rtc_isr_ensure_installed": 79,
+        "uart_pattern_queue_update": 74,
+        "uart_get_parity": 69,
+        "uart_get_stop_bits": 69,
+        "uart_get_word_length": 69,
+        "rtc_isr_register": 62,
+        "rtc_gpio_force_hold_dis_all": 53,
+        "is_wifi_clk_peripheral": 38,
+        "uart_is_driver_installed": 30,
+        "get_rst_en_reg": 25,
+        "uart_set_select_notif_callback": 23,
+        "get_clk_en_reg": 21,
+        "uart_disable_rx_intr": 18,
+        "uart_enable_rx_intr": 18,
+        "uart_get_selectlock": 12
+    },
+    ".iram0.text": {},
+    ".iram0.text_end": {},
+    ".iram0.vectors": {},
+    ".noinit": {},
+    ".rtc.bss": {},
+    ".rtc.data": {},
+    ".rtc.text": {},
+    ".rtc_noinit": {}
+}
+
+***
+Producing JSON output for esp32c3...
+{
+    "dram_data": 0,
+    "dram_bss": 0,
+    "dram_rodata": 0,
+    "dram_other": 0,
+    "used_dram": 0,
+    "dram_total": 0,
+    "used_dram_ratio": 0,
+    "dram_remain": 0,
+    "iram_vectors": 0,
+    "iram_text": 0,
+    "iram_other": 0,
+    "used_iram": 0,
+    "iram_total": 0,
+    "used_iram_ratio": 0,
+    "iram_remain": 0,
+    "diram_data": 5048,
+    "diram_bss": 3664,
+    "diram_text": 39936,
+    "diram_vectors": 0,
+    "diram_rodata": 0,
+    "diram_other": 0,
+    "diram_total": 327680,
+    "used_diram": 48648,
+    "used_diram_ratio": 0.1484619140625,
+    "diram_remain": 279032,
+    "flash_code": 90400,
+    "flash_rodata": 26352,
+    "flash_other": 131328,
+    "used_flash_non_ram": 248080,
+    "total_size": 293064
+}
+{
+    "ilp32\\libc.a": {
+        ".dram0.bss": 4,
+        ".dram0.data": 4,
+        ".flash.rodata": 4098,
+        ".flash.text": 53504,
+        "flash_total": 57606,
+        "ram_st_total": 8
+    },
+    "libesp_hw_support.a": {
+        ".dram0.bss": 21,
+        ".dram0.data": 171,
+        ".flash.rodata": 1669,
+        ".flash.text": 7722,
+        ".iram0.text": 4356,
+        ".rtc.data": 16,
+        "flash_total": 13934,
+        "ram_st_total": 4564
+    },
+    "libfreertos.a": {
+        ".dram0.bss": 2228,
+        ".dram0.data": 16,
+        ".flash.rodata": 3143,
+        ".flash.text": 194,
+        ".iram0.text": 10094,
+        "flash_total": 13447,
+        "ram_st_total": 12338
+    },
+    "libspi_flash.a": {
+        ".dram0.bss": 160,
+        ".dram0.data": 1949,
+        ".flash.rodata": 1626,
+        ".flash.text": 1716,
+        ".iram0.text": 7674,
+        "flash_total": 12965,
+        "ram_st_total": 9783
+    },
+    "libesp_system.a": {
+        ".dram0.bss": 125,
+        ".dram0.data": 185,
+        ".flash.rodata": 3302,
+        ".flash.text": 6314,
+        ".iram0.text": 1480,
+        "flash_total": 11281,
+        "ram_st_total": 1790
+    },
+    "libheap.a": {
+        ".dram0.bss": 8,
+        ".dram0.data": 1961,
+        ".flash.rodata": 1207,
+        ".flash.text": 1988,
+        ".iram0.text": 5836,
+        "flash_total": 10992,
+        "ram_st_total": 7805
+    },
+    "libvfs.a": {
+        ".dram0.bss": 48,
+        ".dram0.data": 272,
+        ".flash.rodata": 378,
+        ".flash.text": 6762,
+        "flash_total": 7412,
+        "ram_st_total": 320
+    },
+    "libesp_common.a": {
+        ".dram0.data": 6,
+        ".flash.rodata": 7065,
+        ".flash.text": 56,
+        "flash_total": 7127,
+        "ram_st_total": 6
+    },
+    "libhal.a": {
+        ".dram0.data": 85,
+        ".flash.rodata": 96,
+        ".flash.text": 1036,
+        ".iram0.text": 5788,
+        "flash_total": 7005,
+        "ram_st_total": 5873
+    },
+    "libdriver.a": {
+        ".dram0.bss": 35,
+        ".dram0.data": 44,
+        ".flash.rodata": 1055,
+        ".flash.text": 5280,
+        "flash_total": 6379,
+        "ram_st_total": 79
+    },
+    "libnewlib.a": {
+        ".dram0.bss": 440,
+        ".dram0.data": 194,
+        ".flash.rodata": 344,
+        ".flash.text": 1252,
+        ".iram0.text": 1498,
+        "flash_total": 3288,
+        "ram_st_total": 2132
+    },
+    "libesp_timer.a": {
+        ".dram0.bss": 28,
+        ".dram0.data": 16,
+        ".flash.rodata": 277,
+        ".flash.text": 952,
+        ".iram0.text": 544,
+        "flash_total": 1789,
+        "ram_st_total": 588
+    },
+    "libefuse.a": {
+        ".dram0.bss": 4,
+        ".dram0.data": 96,
+        ".flash.rodata": 475,
+        ".flash.text": 1188,
+        "flash_total": 1759,
+        "ram_st_total": 100
+    },
+    "libesp_ringbuf.a": {
+        ".flash.rodata": 512,
+        ".iram0.text": 1004,
+        "flash_total": 1516,
+        "ram_st_total": 1004
+    },
+    "liblog.a": {
+        ".dram0.bss": 272,
+        ".dram0.data": 8,
+        ".flash.rodata": 122,
+        ".flash.text": 562,
+        ".iram0.text": 264,
+        "flash_total": 956,
+        "ram_st_total": 544
+    },
+    "libriscv.a": {
+        ".dram0.bss": 256,
+        ".flash.rodata": 137,
+        ".flash.text": 74,
+        ".iram0.text": 652,
+        "flash_total": 863,
+        "ram_st_total": 908
+    },
+    "ilp32\\libgcc.a": {
+        ".flash.text": 848,
+        "flash_total": 848,
+        "ram_st_total": 0
+    },
+    "libapp_update.a": {
+        ".dram0.bss": 12,
+        ".dram0.data": 1,
+        ".flash.appdesc": 256,
+        ".flash.rodata": 125,
+        ".flash.text": 218,
+        ".iram0.text": 198,
+        "flash_total": 798,
+        "ram_st_total": 211
+    },
+    "libmain.a": {
+        ".flash.rodata": 232,
+        ".flash.text": 248,
+        "flash_total": 480,
+        "ram_st_total": 0
+    },
+    "libbootloader_support.a": {
+        ".flash.text": 98,
+        ".iram0.text": 340,
+        "flash_total": 438,
+        "ram_st_total": 340
+    },
+    "libpthread.a": {
+        ".dram0.bss": 12,
+        ".flash.text": 342,
+        "flash_total": 342,
+        "ram_st_total": 12
+    },
+    "libsoc.a": {
+        ".flash.rodata": 88,
+        "flash_total": 88,
+        "ram_st_total": 0
+    },
+    "libesp_pm.a": {
+        ".flash.text": 28,
+        "flash_total": 28,
+        "ram_st_total": 0
+    },
+    "libesp_rom.a": {
+        ".iram0.text": 24,
+        "flash_total": 24,
+        "ram_st_total": 24
+    },
+    "libcxx.a": {
+        ".flash.text": 2,
+        "flash_total": 2,
+        "ram_st_total": 0
+    }
+}
+{
+    "ilp32\\libc.a:lib_a-vfprintf.o": {
+        ".flash.rodata": 748,
+        ".flash.text": 14720,
+        "flash_total": 15468,
+        "ram_st_total": 0
+    },
+    "ilp32\\libc.a:lib_a-svfiprintf.o": {
+        ".flash.rodata": 1172,
+        ".flash.text": 9544,
+        "flash_total": 10716,
+        "ram_st_total": 0
+    },
+    "ilp32\\libc.a:lib_a-vfiprintf.o": {
+        ".flash.rodata": 737,
+        ".flash.text": 9756,
+        "flash_total": 10493,
+        "ram_st_total": 0
+    },
+    "libesp_common.a:esp_err_to_name.c.o": {
+        ".dram0.data": 6,
+        ".flash.rodata": 7065,
+        ".flash.text": 56,
+        "flash_total": 7127,
+        "ram_st_total": 6
+    },
+    "libfreertos.a:tasks.c.o": {
+        ".dram0.bss": 664,
+        ".dram0.data": 8,
+        ".flash.rodata": 1080,
+        ".iram0.text": 5552,
+        "flash_total": 6640,
+        "ram_st_total": 6224
+    },
+    "libheap.a:heap_tlsf.c.o": {
+        ".dram0.data": 1796,
+        ".iram0.text": 4036,
+        "flash_total": 5832,
+        "ram_st_total": 5832
+    },
+    "ilp32\\libc.a:lib_a-dtoa.o": {
+        ".flash.rodata": 233,
+        ".flash.text": 5312,
+        "flash_total": 5545,
+        "ram_st_total": 0
+    },
+    "libvfs.a:vfs_uart.c.o": {
+        ".dram0.bss": 8,
+        ".dram0.data": 80,
+        ".flash.rodata": 270,
+        ".flash.text": 4402,
+        "flash_total": 4752,
+        "ram_st_total": 88
+    },
+    "libfreertos.a:queue.c.o": {
+        ".flash.rodata": 1495,
+        ".iram0.text": 3192,
+        "flash_total": 4687,
+        "ram_st_total": 3192
+    },
+    "ilp32\\libc.a:lib_a-mprec.o": {
+        ".flash.rodata": 406,
+        ".flash.text": 4252,
+        "flash_total": 4658,
+        "ram_st_total": 0
+    },
+    "libesp_hw_support.a:memprot.c.o": {
+        ".flash.rodata": 800,
+        ".flash.text": 2762,
+        ".iram0.text": 772,
+        "flash_total": 4334,
+        "ram_st_total": 772
+    },
+    "libspi_flash.a:spi_flash_chip_generic.c.o": {
+        ".dram0.data": 554,
+        ".iram0.text": 2684,
+        "flash_total": 3238,
+        "ram_st_total": 3238
+    },
+    "libdriver.a:uart.c.o": {
+        ".dram0.bss": 8,
+        ".dram0.data": 40,
+        ".flash.rodata": 511,
+        ".flash.text": 2588,
+        "flash_total": 3139,
+        "ram_st_total": 48
+    },
+    "libesp_hw_support.a:intr_alloc.c.o": {
+        ".dram0.bss": 13,
+        ".flash.rodata": 198,
+        ".flash.text": 2128,
+        ".iram0.text": 688,
+        "flash_total": 3014,
+        "ram_st_total": 701
+    },
+    "libesp_system.a:panic_arch.c.o": {
+        ".flash.rodata": 1693,
+        ".flash.text": 1060,
+        "flash_total": 2753,
+        "ram_st_total": 0
+    },
+    "libvfs.a:vfs.c.o": {
+        ".dram0.bss": 40,
+        ".dram0.data": 192,
+        ".flash.rodata": 108,
+        ".flash.text": 2360,
+        "flash_total": 2660,
+        "ram_st_total": 232
+    },
+    "libesp_hw_support.a:rtc_init.c.o": {
+        ".flash.rodata": 500,
+        ".flash.text": 2068,
+        "flash_total": 2568,
+        "ram_st_total": 0
+    },
+    "libdriver.a:gpio.c.o": {
+        ".flash.rodata": 459,
+        ".flash.text": 1856,
+        "flash_total": 2315,
+        "ram_st_total": 0
+    },
+    "libhal.a:spi_flash_hal_iram.c.o": {
+        ".iram0.text": 2220,
+        "flash_total": 2220,
+        "ram_st_total": 2220
+    },
+    "libesp_system.a:task_wdt.c.o": {
+        ".dram0.bss": 12,
+        ".dram0.data": 45,
+        ".flash.rodata": 478,
+        ".flash.text": 1438,
+        "flash_total": 1961,
+        "ram_st_total": 57
+    },
+    "libspi_flash.a:flash_mmap.c.o": {
+        ".dram0.bss": 136,
+        ".flash.rodata": 240,
+        ".flash.text": 182,
+        ".iram0.text": 1530,
+        "flash_total": 1952,
+        "ram_st_total": 1666
+    },
+    "libesp_hw_support.a:rtc_clk.c.o": {
+        ".dram0.bss": 4,
+        ".dram0.data": 171,
+        ".iram0.text": 1738,
+        "flash_total": 1909,
+        "ram_st_total": 1913
+    },
+    "libspi_flash.a:esp_flash_api.c.o": {
+        ".dram0.data": 20,
+        ".flash.rodata": 762,
+        ".flash.text": 82,
+        ".iram0.text": 968,
+        "flash_total": 1832,
+        "ram_st_total": 988
+    },
+    "libheap.a:heap_caps.c.o": {
+        ".dram0.bss": 4,
+        ".dram0.data": 4,
+        ".flash.rodata": 355,
+        ".flash.text": 286,
+        ".iram0.text": 1122,
+        "flash_total": 1767,
+        "ram_st_total": 1130
+    },
+    "libesp_ringbuf.a:ringbuf.c.o": {
+        ".flash.rodata": 512,
+        ".iram0.text": 1004,
+        "flash_total": 1516,
+        "ram_st_total": 1004
+    },
+    "libhal.a:spi_flash_hal_gpspi.c.o": {
+        ".iram0.text": 1484,
+        "flash_total": 1484,
+        "ram_st_total": 1484
+    },
+    "libefuse.a:esp_efuse_utility.c.o": {
+        ".dram0.bss": 4,
+        ".flash.rodata": 475,
+        ".flash.text": 998,
+        "flash_total": 1473,
+        "ram_st_total": 4
+    },
+    "libnewlib.a:locks.c.o": {
+        ".dram0.bss": 168,
+        ".flash.rodata": 344,
+        ".flash.text": 152,
+        ".iram0.text": 924,
+        "flash_total": 1420,
+        "ram_st_total": 1092
+    },
+    "libheap.a:heap_caps_init.c.o": {
+        ".dram0.bss": 4,
+        ".flash.rodata": 338,
+        ".flash.text": 1052,
+        "flash_total": 1390,
+        "ram_st_total": 4
+    },
+    "libesp_system.a:startup.c.o": {
+        ".dram0.bss": 8,
+        ".dram0.data": 12,
+        ".flash.rodata": 497,
+        ".flash.text": 834,
+        ".iram0.text": 44,
+        "flash_total": 1387,
+        "ram_st_total": 64
+    },
+    "libspi_flash.a:partition.c.o": {
+        ".dram0.bss": 8,
+        ".flash.rodata": 268,
+        ".flash.text": 1070,
+        "flash_total": 1338,
+        "ram_st_total": 8
+    },
+    "ilp32\\libc.a:lib_a-fseeko.o": {
+        ".flash.text": 1264,
+        "flash_total": 1264,
+        "ram_st_total": 0
+    },
+    "libhal.a:wdt_hal_iram.c.o": {
+        ".iram0.text": 1160,
+        "flash_total": 1160,
+        "ram_st_total": 1160
+    },
+    "ilp32\\libc.a:lib_a-fvwrite.o": {
+        ".flash.text": 1156,
+        "flash_total": 1156,
+        "ram_st_total": 0
+    },
+    "ilp32\\libc.a:lib_a-findfp.o": {
+        ".flash.rodata": 96,
+        ".flash.text": 1040,
+        "flash_total": 1136,
+        "ram_st_total": 0
+    },
+    "libesp_system.a:panic.c.o": {
+        ".dram0.bss": 5,
+        ".dram0.data": 12,
+        ".flash.rodata": 131,
+        ".flash.text": 958,
+        ".iram0.text": 6,
+        "flash_total": 1107,
+        "ram_st_total": 23
+    },
+    "libesp_system.a:clk.c.o": {
+        ".flash.rodata": 212,
+        ".flash.text": 838,
+        "flash_total": 1050,
+        "ram_st_total": 0
+    },
+    "libspi_flash.a:memspi_host_driver.c.o": {
+        ".dram0.data": 397,
+        ".iram0.text": 636,
+        "flash_total": 1033,
+        "ram_st_total": 1033
+    },
+    "libspi_flash.a:spi_flash_chip_winbond.c.o": {
+        ".dram0.data": 203,
+        ".iram0.text": 748,
+        "flash_total": 951,
+        "ram_st_total": 951
+    },
+    "libheap.a:memory_layout_utils.c.o": {
+        ".flash.rodata": 283,
+        ".flash.text": 650,
+        "flash_total": 933,
+        "ram_st_total": 0
+    },
+    "libdriver.a:periph_ctrl.c.o": {
+        ".dram0.bss": 27,
+        ".flash.rodata": 85,
+        ".flash.text": 836,
+        "flash_total": 921,
+        "ram_st_total": 27
+    },
+    "libesp_timer.a:esp_timer.c.o": {
+        ".dram0.bss": 8,
+        ".flash.rodata": 72,
+        ".flash.text": 514,
+        ".iram0.text": 296,
+        "flash_total": 882,
+        "ram_st_total": 304
+    },
+    "ilp32\\libc.a:lib_a-fflush.o": {
+        ".flash.text": 856,
+        "flash_total": 856,
+        "ram_st_total": 0
+    },
+    "ilp32\\libgcc.a:trunctfdf2.o": {
+        ".flash.text": 848,
+        "flash_total": 848,
+        "ram_st_total": 0
+    },
+    "libfreertos.a:port.c.o": {
+        ".dram0.bss": 1556,
+        ".dram0.data": 4,
+        ".flash.rodata": 190,
+        ".flash.text": 66,
+        ".iram0.text": 588,
+        "flash_total": 848,
+        "ram_st_total": 2148
+    },
+    "libhal.a:systimer_hal.c.o": {
+        ".dram0.data": 85,
+        ".iram0.text": 760,
+        "flash_total": 845,
+        "ram_st_total": 845
+    },
+    "libheap.a:multi_heap.c.o": {
+        ".dram0.data": 157,
+        ".iram0.text": 678,
+        "flash_total": 835,
+        "ram_st_total": 835
+    },
+    "libnewlib.a:time.c.o": {
+        ".dram0.bss": 20,
+        ".flash.text": 620,
+        ".iram0.text": 180,
+        "flash_total": 800,
+        "ram_st_total": 200
+    },
+    "liblog.a:log.c.o": {
+        ".dram0.bss": 264,
+        ".dram0.data": 8,
+        ".flash.rodata": 122,
+        ".flash.text": 562,
+        ".iram0.text": 32,
+        "flash_total": 724,
+        "ram_st_total": 304
+    },
+    "libesp_system.a:cpu_start.c.o": {
+        ".flash.rodata": 158,
+        ".flash.text": 42,
+        ".iram0.text": 464,
+        "flash_total": 664,
+        "ram_st_total": 464
+    },
+    "libesp_timer.a:esp_timer_impl_systimer.c.o": {
+        ".dram0.bss": 12,
+        ".dram0.data": 16,
+        ".flash.rodata": 125,
+        ".flash.text": 296,
+        ".iram0.text": 210,
+        "flash_total": 647,
+        "ram_st_total": 238
+    },
+    "libspi_flash.a:esp_flash_spi_init.c.o": {
+        ".dram0.bss": 4,
+        ".dram0.data": 68,
+        ".flash.rodata": 261,
+        ".flash.text": 272,
+        "flash_total": 601,
+        "ram_st_total": 72
+    },
+    "libspi_flash.a:spi_flash_os_func_app.c.o": {
+        ".dram0.data": 52,
+        ".flash.rodata": 95,
+        ".flash.text": 34,
+        ".iram0.text": 414,
+        "flash_total": 595,
+        "ram_st_total": 466
+    },
+    "libesp_hw_support.a:rtc_time.c.o": {
+        ".iram0.text": 590,
+        "flash_total": 590,
+        "ram_st_total": 590
+    },
+    "libfreertos.a:port_systick.c.o": {
+        ".dram0.bss": 8,
+        ".flash.rodata": 192,
+        ".iram0.text": 370,
+        "flash_total": 562,
+        "ram_st_total": 378
+    },
+    "libriscv.a:vectors.S.o": {
+        ".iram0.text": 522,
+        "flash_total": 522,
+        "ram_st_total": 522
+    },
+    "ilp32\\libc.a:lib_a-refill.o": {
+        ".flash.text": 512,
+        "flash_total": 512,
+        "ram_st_total": 0
+    },
+    "ilp32\\libc.a:lib_a-reent.o": {
+        ".flash.text": 500,
+        "flash_total": 500,
+        "ram_st_total": 0
+    },
+    "libapp_update.a:esp_app_desc.c.o": {
+        ".dram0.bss": 8,
+        ".dram0.data": 1,
+        ".flash.appdesc": 256,
+        ".flash.rodata": 4,
+        ".flash.text": 32,
+        ".iram0.text": 198,
+        "flash_total": 491,
+        "ram_st_total": 207
+    },
+    "ilp32\\libc.a:lib_a-ftello.o": {
+        ".flash.text": 488,
+        "flash_total": 488,
+        "ram_st_total": 0
+    },
+    "libmain.a:hello_world_main.c.o": {
+        ".flash.rodata": 232,
+        ".flash.text": 248,
+        "flash_total": 480,
+        "ram_st_total": 0
+    },
+    "ilp32\\libc.a:lib_a-fclose.o": {
+        ".flash.text": 456,
+        "flash_total": 456,
+        "ram_st_total": 0
+    },
+    "libhal.a:spi_flash_hal.c.o": {
+        ".flash.rodata": 96,
+        ".flash.text": 342,
+        "flash_total": 438,
+        "ram_st_total": 0
+    },
+    "ilp32\\libc.a:lib_a-makebuf.o": {
+        ".flash.text": 436,
+        "flash_total": 436,
+        "ram_st_total": 0
+    },
+    "libfreertos.a:port_common.c.o": {
+        ".flash.rodata": 186,
+        ".flash.text": 128,
+        ".iram0.text": 104,
+        "flash_total": 418,
+        "ram_st_total": 104
+    },
+    "ilp32\\libc.a:lib_a-fopen.o": {
+        ".flash.text": 416,
+        "flash_total": 416,
+        "ram_st_total": 0
+    },
+    "libesp_hw_support.a:sleep_modes.c.o": {
+        ".flash.rodata": 171,
+        ".flash.text": 244,
+        "flash_total": 415,
+        "ram_st_total": 0
+    },
+    "libesp_system.a:crosscore_int.c.o": {
+        ".dram0.bss": 4,
+        ".flash.rodata": 120,
+        ".flash.text": 106,
+        ".iram0.text": 162,
+        "flash_total": 388,
+        "ram_st_total": 166
+    },
+    "ilp32\\libc.a:lib_a-wsetup.o": {
+        ".flash.text": 384,
+        "flash_total": 384,
+        "ram_st_total": 0
+    },
+    "ilp32\\libc.a:lib_a-locale.o": {
+        ".dram0.data": 4,
+        ".flash.rodata": 378,
+        "flash_total": 382,
+        "ram_st_total": 4
+    },
+    "ilp32\\libc.a:lib_a-puts.o": {
+        ".flash.rodata": 0,
+        ".flash.text": 372,
+        "flash_total": 372,
+        "ram_st_total": 0
+    },
+    "libhal.a:uart_hal.c.o": {
+        ".flash.text": 366,
+        "flash_total": 366,
+        "ram_st_total": 0
+    },
+    "libesp_system.a:panic_handler.c.o": {
+        ".dram0.bss": 4,
+        ".dram0.data": 8,
+        ".flash.rodata": 8,
+        ".flash.text": 266,
+        ".iram0.text": 82,
+        "flash_total": 364,
+        "ram_st_total": 94
+    },
+    "libnewlib.a:esp_time_impl.c.o": {
+        ".dram0.bss": 12,
+        ".flash.text": 362,
+        "flash_total": 362,
+        "ram_st_total": 12
+    },
+    "ilp32\\libc.a:lib_a-fwalk.o": {
+        ".flash.text": 340,
+        "flash_total": 340,
+        "ram_st_total": 0
+    },
+    "libbootloader_support.a:bootloader_flash.c.o": {
+        ".iram0.text": 340,
+        "flash_total": 340,
+        "ram_st_total": 340
+    },
+    "libesp_system.a:freertos_hooks.c.o": {
+        ".dram0.bss": 64,
+        ".flash.text": 290,
+        ".iram0.text": 48,
+        "flash_total": 338,
+        "ram_st_total": 112
+    },
+    "ilp32\\libc.a:lib_a-stdio.o": {
+        ".flash.text": 316,
+        "flash_total": 316,
+        "ram_st_total": 0
+    },
+    "libspi_flash.a:spi_flash_chip_gd.c.o": {
+        ".dram0.data": 123,
+        ".iram0.text": 190,
+        "flash_total": 313,
+        "ram_st_total": 313
+    },
+    "libesp_hw_support.a:rtc_sleep.c.o": {
+        ".iram0.text": 308,
+        "flash_total": 308,
+        "ram_st_total": 308
+    },
+    "libapp_update.a:esp_ota_ops.c.o": {
+        ".dram0.bss": 4,
+        ".flash.rodata": 121,
+        ".flash.text": 186,
+        "flash_total": 307,
+        "ram_st_total": 4
+    },
+    "libesp_system.a:system_internal.c.o": {
+        ".iram0.text": 298,
+        "flash_total": 298,
+        "ram_st_total": 298
+    },
+    "libesp_system.a:int_wdt.c.o": {
+        ".dram0.bss": 8,
+        ".flash.text": 206,
+        ".iram0.text": 74,
+        "flash_total": 280,
+        "ram_st_total": 82
+    },
+    "libriscv.a:interrupt.c.o": {
+        ".dram0.bss": 256,
+        ".flash.rodata": 137,
+        ".iram0.text": 130,
+        "flash_total": 267,
+        "ram_st_total": 386
+    },
+    "libspi_flash.a:spi_flash_chip_mxic.c.o": {
+        ".dram0.data": 190,
+        ".iram0.text": 76,
+        "flash_total": 266,
+        "ram_st_total": 266
+    },
+    "libesp_system.a:esp_err.c.o": {
+        ".dram0.data": 108,
+        ".iram0.text": 154,
+        "flash_total": 262,
+        "ram_st_total": 262
+    },
+    "libesp_timer.a:system_time.c.o": {
+        ".dram0.bss": 8,
+        ".flash.rodata": 80,
+        ".flash.text": 142,
+        ".iram0.text": 38,
+        "flash_total": 260,
+        "ram_st_total": 46
+    },
+    "ilp32\\libc.a:lib_a-ctype_.o": {
+        ".flash.rodata": 257,
+        "flash_total": 257,
+        "ram_st_total": 0
+    },
+    "libesp_hw_support.a:cpu_util_esp32c3.c.o": {
+        ".flash.text": 250,
+        "flash_total": 250,
+        "ram_st_total": 0
+    },
+    "libesp_hw_support.a:esp_clk.c.o": {
+        ".dram0.bss": 4,
+        ".flash.text": 200,
+        ".iram0.text": 30,
+        ".rtc.data": 16,
+        "flash_total": 246,
+        "ram_st_total": 50
+    },
+    "libpthread.a:pthread_local_storage.c.o": {
+        ".dram0.bss": 4,
+        ".flash.text": 242,
+        "flash_total": 242,
+        "ram_st_total": 4
+    },
+    "libspi_flash.a:spi_flash_chip_issi.c.o": {
+        ".dram0.data": 125,
+        ".iram0.text": 112,
+        "flash_total": 237,
+        "ram_st_total": 237
+    },
+    "libheap.a:memory_layout.c.o": {
+        ".dram0.data": 4,
+        ".flash.rodata": 231,
+        "flash_total": 235,
+        "ram_st_total": 4
+    },
+    "liblog.a:log_freertos.c.o": {
+        ".dram0.bss": 8,
+        ".iram0.text": 232,
+        "flash_total": 232,
+        "ram_st_total": 240
+    },
+    "libnewlib.a:newlib_init.c.o": {
+        ".dram0.bss": 240,
+        ".dram0.data": 156,
+        ".flash.text": 76,
+        "flash_total": 232,
+        "ram_st_total": 396
+    },
+    "ilp32\\libc.a:lib_a-printf.o": {
+        ".flash.text": 224,
+        "flash_total": 224,
+        "ram_st_total": 0
+    },
+    "libesp_hw_support.a:regi2c_ctrl.c.o": {
+        ".iram0.text": 202,
+        "flash_total": 202,
+        "ram_st_total": 202
+    },
+    "libnewlib.a:heap.c.o": {
+        ".iram0.text": 190,
+        "flash_total": 190,
+        "ram_st_total": 190
+    },
+    "ilp32\\libc.a:lib_a-s_frexp.o": {
+        ".flash.rodata": 8,
+        ".flash.text": 180,
+        "flash_total": 188,
+        "ram_st_total": 0
+    },
+    "ilp32\\libc.a:lib_a-assert.o": {
+        ".flash.rodata": 63,
+        ".flash.text": 124,
+        "flash_total": 187,
+        "ram_st_total": 0
+    },
+    "libspi_flash.a:cache_utils.c.o": {
+        ".dram0.bss": 8,
+        ".flash.text": 38,
+        ".iram0.text": 144,
+        "flash_total": 182,
+        "ram_st_total": 152
+    },
+    "ilp32\\libc.a:lib_a-vprintf.o": {
+        ".flash.text": 176,
+        "flash_total": 176,
+        "ram_st_total": 0
+    },
+    "libspi_flash.a:spi_flash_chip_boya.c.o": {
+        ".dram0.data": 125,
+        ".iram0.text": 46,
+        "flash_total": 171,
+        "ram_st_total": 171
+    },
+    "libesp_system.a:esp_system.c.o": {
+        ".dram0.bss": 20,
+        ".flash.text": 80,
+        ".iram0.text": 90,
+        "flash_total": 170,
+        "ram_st_total": 110
+    },
+    "ilp32\\libc.a:lib_a-flags.o": {
+        ".flash.text": 168,
+        "flash_total": 168,
+        "ram_st_total": 0
+    },
+    "libnewlib.a:abort.c.o": {
+        ".dram0.data": 38,
+        ".iram0.text": 128,
+        "flash_total": 166,
+        "ram_st_total": 166
+    },
+    "libhal.a:brownout_hal.c.o": {
+        ".flash.text": 160,
+        "flash_total": 160,
+        "ram_st_total": 0
+    },
+    "libefuse.a:esp_efuse_api.c.o": {
+        ".flash.text": 158,
+        "flash_total": 158,
+        "ram_st_total": 0
+    },
+    "libfreertos.a:portasm.S.o": {
+        ".iram0.text": 154,
+        "flash_total": 154,
+        "ram_st_total": 154
+    },
+    "ilp32\\libc.a:lib_a-fiprintf.o": {
+        ".flash.text": 148,
+        "flash_total": 148,
+        "ram_st_total": 0
+    },
+    "libfreertos.a:list.c.o": {
+        ".iram0.text": 134,
+        "flash_total": 134,
+        "ram_st_total": 134
+    },
+    "libhal.a:spi_flash_encrypt_hal_iram.c.o": {
+        ".iram0.text": 132,
+        "flash_total": 132,
+        "ram_st_total": 132
+    },
+    "libesp_system.a:cache_err_int.c.o": {
+        ".flash.text": 124,
+        ".iram0.text": 4,
+        "flash_total": 128,
+        "ram_st_total": 4
+    },
+    "libspi_flash.a:spi_flash_os_func_noos.c.o": {
+        ".dram0.data": 36,
+        ".iram0.text": 86,
+        "flash_total": 122,
+        "ram_st_total": 122
+    },
+    "ilp32\\libc.a:lib_a-mbtowc_r.o": {
+        ".flash.text": 108,
+        "flash_total": 108,
+        "ram_st_total": 0
+    },
+    "libspi_flash.a:flash_ops.c.o": {
+        ".dram0.bss": 4,
+        ".dram0.data": 24,
+        ".flash.text": 38,
+        ".iram0.text": 40,
+        "flash_total": 102,
+        "ram_st_total": 68
+    },
+    "libpthread.a:pthread.c.o": {
+        ".dram0.bss": 8,
+        ".flash.text": 100,
+        "flash_total": 100,
+        "ram_st_total": 8
+    },
+    "libefuse.a:esp_efuse_table.c.o": {
+        ".dram0.data": 96,
+        "flash_total": 96,
+        "ram_st_total": 96
+    },
+    "libhal.a:uart_hal_iram.c.o": {
+        ".flash.text": 88,
+        "flash_total": 88,
+        "ram_st_total": 0
+    },
+    "libsoc.a:gpio_periph.c.o": {
+        ".flash.rodata": 88,
+        "flash_total": 88,
+        "ram_st_total": 0
+    },
+    "libesp_system.a:apb_backup_dma.c.o": {
+        ".flash.text": 34,
+        ".iram0.text": 52,
+        "flash_total": 86,
+        "ram_st_total": 52
+    },
+    "libhal.a:interrupt_controller_hal.c.o": {
+        ".flash.text": 80,
+        "flash_total": 80,
+        "ram_st_total": 0
+    },
+    "libnewlib.a:reent_init.c.o": {
+        ".iram0.text": 76,
+        "flash_total": 76,
+        "ram_st_total": 76
+    },
+    "libriscv.a:instruction_decode.c.o": {
+        ".flash.text": 74,
+        "flash_total": 74,
+        "ram_st_total": 0
+    },
+    "libesp_hw_support.a:chip_info.c.o": {
+        ".flash.text": 70,
+        "flash_total": 70,
+        "ram_st_total": 0
+    },
+    "ilp32\\libc.a:lib_a-fseek.o": {
+        ".flash.text": 68,
+        "flash_total": 68,
+        "ram_st_total": 0
+    },
+    "ilp32\\libc.a:lib_a-wctomb_r.o": {
+        ".flash.text": 64,
+        "flash_total": 64,
+        "ram_st_total": 0
+    },
+    "libbootloader_support.a:flash_qio_mode.c.o": {
+        ".flash.text": 58,
+        "flash_total": 58,
+        "ram_st_total": 0
+    },
+    "ilp32\\libc.a:lib_a-sysgettod.o": {
+        ".flash.text": 56,
+        "flash_total": 56,
+        "ram_st_total": 0
+    },
+    "libesp_system.a:brownout.c.o": {
+        ".flash.rodata": 5,
+        ".flash.text": 38,
+        "flash_total": 43,
+        "ram_st_total": 0
+    },
+    "ilp32\\libc.a:lib_a-localeconv.o": {
+        ".flash.text": 40,
+        "flash_total": 40,
+        "ram_st_total": 0
+    },
+    "libnewlib.a:syscalls.c.o": {
+        ".flash.text": 36,
+        "flash_total": 36,
+        "ram_st_total": 0
+    },
+    "libefuse.a:esp_efuse_fields.c.o": {
+        ".flash.text": 32,
+        "flash_total": 32,
+        "ram_st_total": 0
+    },
+    "libhal.a:cpu_hal.c.o": {
+        ".iram0.text": 32,
+        "flash_total": 32,
+        "ram_st_total": 32
+    },
+    "libspi_flash.a:spi_flash_chip_drivers.c.o": {
+        ".dram0.data": 32,
+        "flash_total": 32,
+        "ram_st_total": 32
+    },
+    "ilp32\\libc.a:lib_a-errno.o": {
+        ".flash.text": 28,
+        "flash_total": 28,
+        "ram_st_total": 0
+    },
+    "libesp_hw_support.a:cpu_util.c.o": {
+        ".iram0.text": 28,
+        "flash_total": 28,
+        "ram_st_total": 28
+    },
+    "libesp_pm.a:pm_impl.c.o": {
+        ".flash.text": 28,
+        "flash_total": 28,
+        "ram_st_total": 0
+    },
+    "libbootloader_support.a:bootloader_flash_config_esp32c3.c.o": {
+        ".flash.text": 26,
+        "flash_total": 26,
+        "ram_st_total": 0
+    },
+    "libesp_rom.a:esp_rom_uart.c.o": {
+        ".iram0.text": 24,
+        "flash_total": 24,
+        "ram_st_total": 24
+    },
+    "libbootloader_support.a:bootloader_mem.c.o": {
+        ".flash.text": 14,
+        "flash_total": 14,
+        "ram_st_total": 0
+    },
+    "libnewlib.a:pthread.c.o": {
+        ".flash.text": 6,
+        "flash_total": 6,
+        "ram_st_total": 0
+    },
+    "libdriver.a:spi_bus_lock.c.o": {
+        ".dram0.data": 4,
+        "flash_total": 4,
+        "ram_st_total": 4
+    },
+    "libfreertos.a:FreeRTOS-openocd.c.o": {
+        ".dram0.data": 4,
+        "flash_total": 4,
+        "ram_st_total": 4
+    },
+    "libcxx.a:cxx_guards.cpp.o": {
+        ".flash.text": 2,
+        "flash_total": 2,
+        "ram_st_total": 0
+    },
+    "libesp_system.a:ubsan.c.o": {
+        ".iram0.text": 2,
+        "flash_total": 2,
+        "ram_st_total": 2
+    },
+    "ilp32\\libc.a:lib_a-environ.o": {
+        ".dram0.bss": 4,
+        "flash_total": 0,
+        "ram_st_total": 4
+    },
+    "ilp32\\libgcc.a:_divdi3.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "ilp32\\libgcc.a:_moddi3.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "ilp32\\libgcc.a:_udivdi3.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "ilp32\\libgcc.a:_umoddi3.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    }
+}
+{
+    ".dram0.bss": {
+        "ref_counts": 27,
+        ".p_uart_obj": 8
+    },
+    ".dram0.data": {
+        "uart_context": 32,
+        ".uart_selectlock": 8,
+        "..g_spi_lock_main_flash_dev": 4
+    },
+    ".flash.appdesc": {},
+    ".flash.rodata": {
+        "gpio_set_pull_mode.str1.4": 93,
+        "periph_module_enable.str1.4": 64,
+        "gpio_input_enable.str1.4": 62,
+        "uart_disable_intr_mask_and_return_prev.str1.4": 54,
+        "uart_pattern_pop_pos.str1.4": 49,
+        "uart_set_stop_bits.str1.4": 46,
+        "uart_set_word_length.str1.4": 46,
+        "uart_flush_input.str1.4": 45,
+        "__FUNCTION__.7467": 39,
+        "__FUNCTION__.7459": 27,
+        "gpio_sleep_output_enable.str1.4": 27,
+        "__FUNCTION__.6231": 26,
+        "__FUNCTION__.6223": 25,
+        "__FUNCTION__.6235": 25,
+        "__FUNCTION__.6240": 25,
+        "__FUNCTION__.6246": 25,
+        "__FUNCTION__.6219": 24,
+        "__FUNCTION__.6227": 24,
+        "__FUNCTION__.6215": 23,
+        "__FUNCTION__.6211": 22,
+        "__FUNCTION__.7222": 22,
+        "__FUNCTION__.6207": 21,
+        "__FUNCTION__.7153": 21,
+        "__FUNCTION__.7158": 21,
+        "__func__.4238": 21,
+        "__FUNCTION__.6261": 19,
+        "__FUNCTION__.7163": 19,
+        "__FUNCTION__.7168": 19,
+        "__FUNCTION__.6257": 18,
+        "__FUNCTION__.7183": 18,
+        "__FUNCTION__.7188": 18,
+        "__FUNCTION__.7394": 18,
+        "__FUNCTION__.7471": 17,
+        "__FUNCTION__.7173": 16,
+        "__FUNCTION__.7178": 16
+    },
+    ".flash.rodata_noload": {},
+    ".flash.text": {
+        "periph_module_enable": 736,
+        "uart_flush_input": 580,
+        "uart_wait_tx_done": 484,
+        "gpio_sleep_set_pull_mode": 318,
+        "uart_set_stop_bits": 178,
+        "uart_set_word_length": 178,
+        "gpio_sleep_set_direction": 156,
+        "uart_get_bufferedlen": 152,
+        "gpio_sleep_pulldown_en": 148,
+        "gpio_sleep_pullup_en": 148,
+        "gpio_sleep_sel_en": 148,
+        "gpio_sleep_pulldown_dis": 146,
+        "gpio_sleep_pullup_dis": 146,
+        "gpio_sleep_sel_dis": 146,
+        "uart_disable_intr_mask_and_return_prev": 138,
+        "gpio_sleep_input_enable": 126,
+        "gpio_sleep_output_enable": 126,
+        "gpio_sleep_input_disable": 124,
+        "gpio_sleep_output_disable": 124,
+        "uart_enable_intr_mask": 122,
+        "uart_get_baudrate": 116,
+        "uart_set_baudrate": 116,
+        "uart_set_parity": 116,
+        "uart_get_parity": 86,
+        "uart_get_stop_bits": 86,
+        "uart_get_word_length": 86,
+        "uart_pattern_queue_update": 80,
+        "periph_ll_get_clk_en_reg": 50,
+        "periph_ll_get_rst_en_reg": 50,
+        "uart_is_driver_installed": 34,
+        "uart_set_select_notif_callback": 30,
+        "uart_get_selectlock": 6
+    },
+    ".flash_rodata_dummy": {},
+    ".iram0.bss": {},
+    ".iram0.data": {},
+    ".iram0.text": {},
+    ".iram0.text_end": {},
+    ".noinit": {},
+    ".rtc.bss": {},
+    ".rtc.data": {},
+    ".rtc.text": {},
+    ".rtc_noinit": {}
+}
+
+***
+Producing JSON output for esp32s3...
+{
+    "dram_data": 0,
+    "dram_bss": 0,
+    "dram_rodata": 0,
+    "dram_other": 0,
+    "used_dram": 0,
+    "dram_total": 0,
+    "used_dram_ratio": 0,
+    "dram_remain": 0,
+    "iram_vectors": 1027,
+    "iram_text": 45759,
+    "iram_other": 0,
+    "used_iram": 46786,
+    "iram_total": 286720,
+    "used_iram_ratio": 0.16317661830357144,
+    "iram_remain": 239934,
+    "diram_data": 9252,
+    "diram_bss": 2520,
+    "diram_text": 1,
+    "diram_vectors": 0,
+    "diram_rodata": 0,
+    "diram_other": 0,
+    "diram_total": 135168,
+    "used_diram": 11773,
+    "used_diram_ratio": 0.08709901751893939,
+    "diram_remain": 123395,
+    "flash_code": 87463,
+    "flash_rodata": 27132,
+    "flash_other": 131328,
+    "used_flash_non_ram": 245923,
+    "total_size": 301962
+}
+{
+    "no-rtti\\libc.a": {
+        ".dram0.bss": 4,
+        ".dram0.data": 4,
+        ".flash.rodata": 4685,
+        ".flash.text": 58528,
+        "flash_total": 63217,
+        "ram_st_total": 8
+    },
+    "libfreertos.a": {
+        ".dram0.bss": 748,
+        ".dram0.data": 3128,
+        ".flash.rodata": 3668,
+        ".flash.text": 293,
+        ".iram0.text": 13747,
+        ".iram0.vectors": 425,
+        "flash_total": 21261,
+        "ram_st_total": 18048
+    },
+    "libspi_flash.a": {
+        ".dram0.bss": 550,
+        ".dram0.data": 1886,
+        ".flash.rodata": 2196,
+        ".flash.text": 1605,
+        ".iram0.text": 7539,
+        "flash_total": 13226,
+        "ram_st_total": 9975
+    },
+    "libesp_system.a": {
+        ".dram0.bss": 206,
+        ".dram0.data": 205,
+        ".flash.rodata": 3549,
+        ".flash.text": 6183,
+        ".iram0.text": 2914,
+        "flash_total": 12851,
+        "ram_st_total": 3325
+    },
+    "libheap.a": {
+        ".dram0.bss": 8,
+        ".dram0.data": 1957,
+        ".flash.rodata": 1383,
+        ".flash.text": 1741,
+        ".iram0.text": 5195,
+        "flash_total": 10276,
+        "ram_st_total": 7160
+    },
+    "libhal.a": {
+        ".dram0.data": 109,
+        ".flash.rodata": 608,
+        ".flash.text": 1275,
+        ".iram0.text": 7126,
+        "flash_total": 9118,
+        "ram_st_total": 7235
+    },
+    "libesp_hw_support.a": {
+        ".dram0.bss": 34,
+        ".dram0.data": 187,
+        ".flash.rodata": 288,
+        ".flash.text": 3884,
+        ".iram0.text": 4260,
+        ".rtc.data": 16,
+        "flash_total": 8635,
+        "ram_st_total": 4497
+    },
+    "libesp_common.a": {
+        ".flash.rodata": 7287,
+        ".flash.text": 53,
+        "flash_total": 7340,
+        "ram_st_total": 0
+    },
+    "libvfs.a": {
+        ".dram0.bss": 48,
+        ".dram0.data": 308,
+        ".flash.rodata": 393,
+        ".flash.text": 5986,
+        "flash_total": 6687,
+        "ram_st_total": 356
+    },
+    "libdriver.a": {
+        ".dram0.bss": 49,
+        ".dram0.data": 64,
+        ".flash.rodata": 600,
+        ".flash.text": 3468,
+        "flash_total": 4132,
+        "ram_st_total": 113
+    },
+    "libnewlib.a": {
+        ".dram0.bss": 440,
+        ".dram0.data": 202,
+        ".flash.rodata": 344,
+        ".flash.text": 1028,
+        ".iram0.text": 1280,
+        "flash_total": 2854,
+        "ram_st_total": 1922
+    },
+    "libesp_timer.a": {
+        ".dram0.bss": 28,
+        ".dram0.data": 32,
+        ".flash.rodata": 277,
+        ".flash.text": 917,
+        ".iram0.text": 515,
+        "flash_total": 1741,
+        "ram_st_total": 575
+    },
+    "libesp_ringbuf.a": {
+        ".flash.rodata": 512,
+        ".iram0.text": 873,
+        "flash_total": 1385,
+        "ram_st_total": 873
+    },
+    "libxtensa.a": {
+        ".dram0.data": 1024,
+        ".flash.rodata": 35,
+        ".flash.text": 126,
+        ".iram0.text": 77,
+        "flash_total": 1262,
+        "ram_st_total": 1101
+    },
+    "libesp_ipc.a": {
+        ".dram0.bss": 72,
+        ".dram0.data": 20,
+        ".flash.rodata": 241,
+        ".flash.text": 643,
+        ".iram0.text": 332,
+        "flash_total": 1236,
+        "ram_st_total": 424
+    },
+    "liblog.a": {
+        ".dram0.bss": 272,
+        ".dram0.data": 8,
+        ".flash.rodata": 122,
+        ".flash.text": 499,
+        ".iram0.text": 247,
+        "flash_total": 876,
+        "ram_st_total": 527
+    },
+    "libapp_update.a": {
+        ".dram0.bss": 12,
+        ".dram0.data": 1,
+        ".flash.appdesc": 256,
+        ".flash.rodata": 125,
+        ".flash.text": 179,
+        ".iram0.text": 194,
+        "flash_total": 755,
+        "ram_st_total": 207
+    },
+    "libbootloader_support.a": {
+        ".flash.text": 95,
+        ".iram0.text": 444,
+        "flash_total": 539,
+        "ram_st_total": 444
+    },
+    "libmain.a": {
+        ".flash.rodata": 232,
+        ".flash.text": 228,
+        "flash_total": 460,
+        "ram_st_total": 0
+    },
+    "libxt_hal.a": {
+        ".flash.rodata": 32,
+        ".iram0.text": 405,
+        "flash_total": 437,
+        "ram_st_total": 405
+    },
+    "libpthread.a": {
+        ".dram0.bss": 12,
+        ".dram0.data": 8,
+        ".flash.text": 310,
+        "flash_total": 318,
+        "ram_st_total": 20
+    },
+    "no-rtti\\libgcc.a": {
+        ".flash.rodata": 160,
+        "flash_total": 160,
+        "ram_st_total": 0
+    },
+    "libesp_rom.a": {
+        ".iram0.text": 24,
+        "flash_total": 24,
+        "ram_st_total": 24
+    },
+    "(exe)": {
+        ".flash.rodata": 12,
+        ".flash.text": 3,
+        ".iram0.vectors": 3,
+        "flash_total": 18,
+        "ram_st_total": 3
+    },
+    "libesp_pm.a": {
+        ".flash.text": 8,
+        "flash_total": 8,
+        "ram_st_total": 0
+    },
+    "libcxx.a": {
+        ".flash.text": 5,
+        "flash_total": 5,
+        "ram_st_total": 0
+    },
+    "libmbedcrypto.a": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libsoc.a": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    }
+}
+{
+    "no-rtti\\libc.a:lib_a-vfprintf.o": {
+        ".flash.rodata": 700,
+        ".flash.text": 13707,
+        "flash_total": 14407,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-svfprintf.o": {
+        ".flash.rodata": 752,
+        ".flash.text": 13331,
+        "flash_total": 14083,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-svfiprintf.o": {
+        ".flash.rodata": 1172,
+        ".flash.text": 9650,
+        "flash_total": 10822,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-vfiprintf.o": {
+        ".flash.rodata": 700,
+        ".flash.text": 9827,
+        "flash_total": 10527,
+        "ram_st_total": 0
+    },
+    "libfreertos.a:tasks.c.o": {
+        ".dram0.bss": 704,
+        ".dram0.data": 8,
+        ".flash.rodata": 1158,
+        ".iram0.text": 6792,
+        "flash_total": 7958,
+        "ram_st_total": 7504
+    },
+    "libesp_common.a:esp_err_to_name.c.o": {
+        ".flash.rodata": 7287,
+        ".flash.text": 53,
+        "flash_total": 7340,
+        "ram_st_total": 0
+    },
+    "libheap.a:heap_tlsf.c.o": {
+        ".dram0.data": 1796,
+        ".iram0.text": 3591,
+        "flash_total": 5387,
+        "ram_st_total": 5387
+    },
+    "libfreertos.a:queue.c.o": {
+        ".flash.rodata": 1515,
+        ".iram0.text": 3038,
+        "flash_total": 4553,
+        "ram_st_total": 3038
+    },
+    "libvfs.a:vfs_uart.c.o": {
+        ".dram0.bss": 8,
+        ".dram0.data": 116,
+        ".flash.rodata": 282,
+        ".flash.text": 4051,
+        "flash_total": 4449,
+        "ram_st_total": 124
+    },
+    "no-rtti\\libc.a:lib_a-dtoa.o": {
+        ".flash.rodata": 165,
+        ".flash.text": 3592,
+        "flash_total": 3757,
+        "ram_st_total": 0
+    },
+    "libfreertos.a:portasm.S.o": {
+        ".dram0.data": 3084,
+        ".iram0.text": 416,
+        "flash_total": 3500,
+        "ram_st_total": 3500
+    },
+    "libspi_flash.a:spi_flash_chip_generic.c.o": {
+        ".dram0.data": 554,
+        ".iram0.text": 2529,
+        "flash_total": 3083,
+        "ram_st_total": 3083
+    },
+    "libesp_hw_support.a:intr_alloc.c.o": {
+        ".dram0.bss": 22,
+        ".dram0.data": 8,
+        ".flash.rodata": 198,
+        ".flash.text": 1958,
+        ".iram0.text": 717,
+        "flash_total": 2881,
+        "ram_st_total": 747
+    },
+    "no-rtti\\libc.a:lib_a-mprec.o": {
+        ".flash.rodata": 409,
+        ".flash.text": 2340,
+        "flash_total": 2749,
+        "ram_st_total": 0
+    },
+    "libdriver.a:uart.c.o": {
+        ".dram0.bss": 12,
+        ".dram0.data": 56,
+        ".flash.rodata": 511,
+        ".flash.text": 2091,
+        "flash_total": 2658,
+        "ram_st_total": 68
+    },
+    "libesp_system.a:panic_arch.c.o": {
+        ".flash.rodata": 1538,
+        ".flash.text": 715,
+        "flash_total": 2253,
+        "ram_st_total": 0
+    },
+    "libhal.a:spi_flash_hal_iram.c.o": {
+        ".iram0.text": 2250,
+        "flash_total": 2250,
+        "ram_st_total": 2250
+    },
+    "libvfs.a:vfs.c.o": {
+        ".dram0.bss": 40,
+        ".dram0.data": 192,
+        ".flash.rodata": 111,
+        ".flash.text": 1935,
+        "flash_total": 2238,
+        "ram_st_total": 232
+    },
+    "libesp_hw_support.a:rtc_clk.c.o": {
+        ".dram0.bss": 8,
+        ".dram0.data": 171,
+        ".iram0.text": 2059,
+        "flash_total": 2230,
+        "ram_st_total": 2238
+    },
+    "libfreertos.a:xtensa_vectors.S.o": {
+        ".dram0.data": 32,
+        ".flash.rodata": 48,
+        ".iram0.text": 1464,
+        ".iram0.vectors": 425,
+        "flash_total": 1969,
+        "ram_st_total": 1921
+    },
+    "libesp_system.a:task_wdt.c.o": {
+        ".dram0.bss": 12,
+        ".dram0.data": 53,
+        ".flash.rodata": 591,
+        ".flash.text": 1319,
+        "flash_total": 1963,
+        "ram_st_total": 65
+    },
+    "libhal.a:spi_flash_hal_gpspi.c.o": {
+        ".iram0.text": 1842,
+        "flash_total": 1842,
+        "ram_st_total": 1842
+    },
+    "libesp_hw_support.a:rtc_init.c.o": {
+        ".flash.rodata": 70,
+        ".flash.text": 1703,
+        "flash_total": 1773,
+        "ram_st_total": 0
+    },
+    "libspi_flash.a:esp_flash_api.c.o": {
+        ".dram0.data": 20,
+        ".flash.rodata": 762,
+        ".flash.text": 89,
+        ".iram0.text": 862,
+        "flash_total": 1733,
+        "ram_st_total": 882
+    },
+    "libspi_flash.a:flash_mmap.c.o": {
+        ".dram0.bss": 520,
+        ".flash.rodata": 240,
+        ".flash.text": 166,
+        ".iram0.text": 1298,
+        "flash_total": 1704,
+        "ram_st_total": 1818
+    },
+    "libfreertos.a:port.c.o": {
+        ".dram0.bss": 24,
+        ".flash.rodata": 541,
+        ".flash.text": 147,
+        ".iram0.text": 945,
+        "flash_total": 1633,
+        "ram_st_total": 969
+    },
+    "libheap.a:heap_caps.c.o": {
+        ".dram0.bss": 4,
+        ".dram0.data": 4,
+        ".flash.rodata": 355,
+        ".flash.text": 261,
+        ".iram0.text": 1003,
+        "flash_total": 1623,
+        "ram_st_total": 1011
+    },
+    "libhal.a:wdt_hal_iram.c.o": {
+        ".iram0.text": 1493,
+        "flash_total": 1493,
+        "ram_st_total": 1493
+    },
+    "libdriver.a:periph_ctrl.c.o": {
+        ".dram0.bss": 37,
+        ".dram0.data": 8,
+        ".flash.rodata": 85,
+        ".flash.text": 1377,
+        "flash_total": 1470,
+        "ram_st_total": 45
+    },
+    "libesp_system.a:cpu_start.c.o": {
+        ".dram0.bss": 5,
+        ".flash.rodata": 334,
+        ".flash.text": 371,
+        ".iram0.text": 732,
+        "flash_total": 1437,
+        "ram_st_total": 737
+    },
+    "libesp_ringbuf.a:ringbuf.c.o": {
+        ".flash.rodata": 512,
+        ".iram0.text": 873,
+        "flash_total": 1385,
+        "ram_st_total": 873
+    },
+    "libspi_flash.a:cache_utils.c.o": {
+        ".dram0.bss": 14,
+        ".dram0.data": 4,
+        ".flash.rodata": 570,
+        ".flash.text": 92,
+        ".iram0.text": 685,
+        "flash_total": 1351,
+        "ram_st_total": 703
+    },
+    "libheap.a:heap_caps_init.c.o": {
+        ".dram0.bss": 4,
+        ".flash.rodata": 430,
+        ".flash.text": 905,
+        "flash_total": 1335,
+        "ram_st_total": 4
+    },
+    "libesp_system.a:startup.c.o": {
+        ".dram0.bss": 11,
+        ".dram0.data": 8,
+        ".flash.rodata": 505,
+        ".flash.text": 748,
+        ".iram0.text": 69,
+        "flash_total": 1330,
+        "ram_st_total": 88
+    },
+    "libnewlib.a:locks.c.o": {
+        ".dram0.bss": 168,
+        ".dram0.data": 8,
+        ".flash.rodata": 344,
+        ".flash.text": 122,
+        ".iram0.text": 782,
+        "flash_total": 1256,
+        "ram_st_total": 958
+    },
+    "libspi_flash.a:partition.c.o": {
+        ".dram0.bss": 8,
+        ".flash.rodata": 268,
+        ".flash.text": 938,
+        "flash_total": 1206,
+        "ram_st_total": 8
+    },
+    "libhal.a:systimer_hal.c.o": {
+        ".dram0.data": 85,
+        ".iram0.text": 1052,
+        "flash_total": 1137,
+        "ram_st_total": 1137
+    },
+    "libxtensa.a:xtensa_intr_asm.S.o": {
+        ".dram0.data": 1024,
+        ".iram0.text": 51,
+        "flash_total": 1075,
+        "ram_st_total": 1075
+    },
+    "libesp_system.a:panic.c.o": {
+        ".dram0.bss": 5,
+        ".dram0.data": 12,
+        ".flash.rodata": 147,
+        ".flash.text": 875,
+        ".iram0.text": 12,
+        "flash_total": 1046,
+        "ram_st_total": 29
+    },
+    "libspi_flash.a:memspi_host_driver.c.o": {
+        ".dram0.data": 397,
+        ".iram0.text": 637,
+        "flash_total": 1034,
+        "ram_st_total": 1034
+    },
+    "libesp_system.a:clk.c.o": {
+        ".flash.rodata": 212,
+        ".flash.text": 802,
+        "flash_total": 1014,
+        "ram_st_total": 0
+    },
+    "libesp_timer.a:esp_timer.c.o": {
+        ".dram0.bss": 8,
+        ".dram0.data": 8,
+        ".flash.rodata": 72,
+        ".flash.text": 505,
+        ".iram0.text": 282,
+        "flash_total": 867,
+        "ram_st_total": 298
+    },
+    "libheap.a:memory_layout_utils.c.o": {
+        ".flash.rodata": 283,
+        ".flash.text": 575,
+        "flash_total": 858,
+        "ram_st_total": 0
+    },
+    "libesp_system.a:debug_helpers.c.o": {
+        ".flash.rodata": 73,
+        ".iram0.text": 747,
+        "flash_total": 820,
+        "ram_st_total": 747
+    },
+    "no-rtti\\libc.a:lib_a-fseeko.o": {
+        ".flash.text": 818,
+        "flash_total": 818,
+        "ram_st_total": 0
+    },
+    "libspi_flash.a:spi_flash_chip_winbond.c.o": {
+        ".dram0.data": 136,
+        ".iram0.text": 659,
+        "flash_total": 795,
+        "ram_st_total": 795
+    },
+    "libheap.a:multi_heap.c.o": {
+        ".dram0.data": 157,
+        ".iram0.text": 601,
+        "flash_total": 758,
+        "ram_st_total": 758
+    },
+    "libesp_ipc.a:esp_ipc.c.o": {
+        ".dram0.bss": 56,
+        ".flash.rodata": 97,
+        ".flash.text": 456,
+        ".iram0.text": 188,
+        "flash_total": 741,
+        "ram_st_total": 244
+    },
+    "no-rtti\\libc.a:lib_a-fvwrite.o": {
+        ".flash.text": 721,
+        "flash_total": 721,
+        "ram_st_total": 0
+    },
+    "libesp_system.a:panic_handler.c.o": {
+        ".dram0.bss": 8,
+        ".dram0.data": 8,
+        ".flash.rodata": 8,
+        ".flash.text": 634,
+        ".iram0.text": 66,
+        "flash_total": 716,
+        "ram_st_total": 82
+    },
+    "no-rtti\\libc.a:lib_a-findfp.o": {
+        ".flash.rodata": 96,
+        ".flash.text": 612,
+        "flash_total": 708,
+        "ram_st_total": 0
+    },
+    "libesp_hw_support.a:rtc_time.c.o": {
+        ".iram0.text": 675,
+        "flash_total": 675,
+        "ram_st_total": 675
+    },
+    "liblog.a:log.c.o": {
+        ".dram0.bss": 264,
+        ".dram0.data": 8,
+        ".flash.rodata": 122,
+        ".flash.text": 499,
+        ".iram0.text": 42,
+        "flash_total": 671,
+        "ram_st_total": 314
+    },
+    "libnewlib.a:time.c.o": {
+        ".dram0.bss": 20,
+        ".flash.text": 509,
+        ".iram0.text": 127,
+        "flash_total": 636,
+        "ram_st_total": 147
+    },
+    "libesp_timer.a:esp_timer_impl_systimer.c.o": {
+        ".dram0.bss": 12,
+        ".dram0.data": 24,
+        ".flash.rodata": 125,
+        ".flash.text": 286,
+        ".iram0.text": 198,
+        "flash_total": 633,
+        "ram_st_total": 234
+    },
+    "libfreertos.a:port_systick.c.o": {
+        ".dram0.bss": 12,
+        ".flash.rodata": 192,
+        ".iram0.text": 394,
+        "flash_total": 586,
+        "ram_st_total": 406
+    },
+    "libspi_flash.a:esp_flash_spi_init.c.o": {
+        ".dram0.bss": 4,
+        ".dram0.data": 68,
+        ".flash.rodata": 261,
+        ".flash.text": 243,
+        "flash_total": 572,
+        "ram_st_total": 72
+    },
+    "no-rtti\\libc.a:lib_a-fflush.o": {
+        ".flash.text": 552,
+        "flash_total": 552,
+        "ram_st_total": 0
+    },
+    "libhal.a:interrupt_descriptor_table.c.o": {
+        ".flash.rodata": 512,
+        ".flash.text": 12,
+        "flash_total": 524,
+        "ram_st_total": 0
+    },
+    "libspi_flash.a:spi_flash_os_func_app.c.o": {
+        ".dram0.data": 52,
+        ".flash.rodata": 95,
+        ".flash.text": 44,
+        ".iram0.text": 324,
+        "flash_total": 515,
+        "ram_st_total": 376
+    },
+    "libesp_system.a:crosscore_int.c.o": {
+        ".dram0.bss": 8,
+        ".dram0.data": 8,
+        ".flash.rodata": 120,
+        ".flash.text": 142,
+        ".iram0.text": 229,
+        "flash_total": 499,
+        "ram_st_total": 245
+    },
+    "libesp_system.a:system_internal.c.o": {
+        ".flash.rodata": 16,
+        ".iram0.text": 475,
+        "flash_total": 491,
+        "ram_st_total": 475
+    },
+    "libapp_update.a:esp_app_desc.c.o": {
+        ".dram0.bss": 8,
+        ".dram0.data": 1,
+        ".flash.appdesc": 256,
+        ".flash.rodata": 4,
+        ".flash.text": 31,
+        ".iram0.text": 194,
+        "flash_total": 486,
+        "ram_st_total": 203
+    },
+    "libesp_hw_support.a:rtc_sleep.c.o": {
+        ".iram0.text": 476,
+        "flash_total": 476,
+        "ram_st_total": 476
+    },
+    "libmain.a:hello_world_main.c.o": {
+        ".flash.rodata": 232,
+        ".flash.text": 228,
+        "flash_total": 460,
+        "ram_st_total": 0
+    },
+    "libfreertos.a:port_common.c.o": {
+        ".dram0.bss": 8,
+        ".flash.rodata": 214,
+        ".flash.text": 146,
+        ".iram0.text": 98,
+        "flash_total": 458,
+        "ram_st_total": 106
+    },
+    "libhal.a:spi_flash_hal.c.o": {
+        ".flash.rodata": 96,
+        ".flash.text": 351,
+        "flash_total": 447,
+        "ram_st_total": 0
+    },
+    "libbootloader_support.a:bootloader_flash.c.o": {
+        ".iram0.text": 444,
+        "flash_total": 444,
+        "ram_st_total": 444
+    },
+    "libhal.a:uart_hal.c.o": {
+        ".flash.text": 432,
+        "flash_total": 432,
+        "ram_st_total": 0
+    },
+    "libfreertos.a:xtensa_context.S.o": {
+        ".iram0.text": 390,
+        "flash_total": 390,
+        "ram_st_total": 390
+    },
+    "no-rtti\\libc.a:lib_a-locale.o": {
+        ".dram0.data": 4,
+        ".flash.rodata": 374,
+        "flash_total": 378,
+        "ram_st_total": 4
+    },
+    "libesp_ipc.a:esp_ipc_isr.c.o": {
+        ".dram0.bss": 16,
+        ".dram0.data": 4,
+        ".flash.rodata": 144,
+        ".flash.text": 187,
+        ".iram0.text": 19,
+        "flash_total": 354,
+        "ram_st_total": 39
+    },
+    "libspi_flash.a:spi_flash_chip_gd.c.o": {
+        ".dram0.data": 123,
+        ".iram0.text": 202,
+        "flash_total": 325,
+        "ram_st_total": 325
+    },
+    "libheap.a:memory_layout.c.o": {
+        ".flash.rodata": 315,
+        "flash_total": 315,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-refill.o": {
+        ".flash.text": 312,
+        "flash_total": 312,
+        "ram_st_total": 0
+    },
+    "libxt_hal.a:windowspill_asm.o": {
+        ".iram0.text": 311,
+        "flash_total": 311,
+        "ram_st_total": 311
+    },
+    "libesp_system.a:freertos_hooks.c.o": {
+        ".dram0.bss": 128,
+        ".dram0.data": 8,
+        ".flash.text": 247,
+        ".iram0.text": 47,
+        "flash_total": 302,
+        "ram_st_total": 183
+    },
+    "libnewlib.a:esp_time_impl.c.o": {
+        ".dram0.bss": 12,
+        ".flash.text": 281,
+        "flash_total": 281,
+        "ram_st_total": 12
+    },
+    "no-rtti\\libc.a:lib_a-ftello.o": {
+        ".flash.text": 278,
+        "flash_total": 278,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-fclose.o": {
+        ".flash.text": 270,
+        "flash_total": 270,
+        "ram_st_total": 0
+    },
+    "libapp_update.a:esp_ota_ops.c.o": {
+        ".dram0.bss": 4,
+        ".flash.rodata": 121,
+        ".flash.text": 148,
+        "flash_total": 269,
+        "ram_st_total": 4
+    },
+    "no-rtti\\libc.a:lib_a-makebuf.o": {
+        ".flash.text": 263,
+        "flash_total": 263,
+        "ram_st_total": 0
+    },
+    "libspi_flash.a:spi_flash_chip_mxic.c.o": {
+        ".dram0.data": 190,
+        ".iram0.text": 70,
+        "flash_total": 260,
+        "ram_st_total": 260
+    },
+    "libhal.a:soc_hal.c.o": {
+        ".dram0.data": 24,
+        ".iram0.text": 234,
+        "flash_total": 258,
+        "ram_st_total": 258
+    },
+    "no-rtti\\libc.a:lib_a-ctype_.o": {
+        ".flash.rodata": 257,
+        "flash_total": 257,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-reent.o": {
+        ".flash.text": 252,
+        "flash_total": 252,
+        "ram_st_total": 0
+    },
+    "libesp_system.a:esp_err.c.o": {
+        ".dram0.data": 108,
+        ".iram0.text": 140,
+        "flash_total": 248,
+        "ram_st_total": 248
+    },
+    "libhal.a:brownout_hal.c.o": {
+        ".flash.text": 244,
+        "flash_total": 244,
+        "ram_st_total": 0
+    },
+    "libesp_system.a:int_wdt.c.o": {
+        ".dram0.bss": 9,
+        ".flash.text": 152,
+        ".iram0.text": 90,
+        "flash_total": 242,
+        "ram_st_total": 99
+    },
+    "libesp_timer.a:system_time.c.o": {
+        ".dram0.bss": 8,
+        ".flash.rodata": 80,
+        ".flash.text": 126,
+        ".iram0.text": 35,
+        "flash_total": 241,
+        "ram_st_total": 43
+    },
+    "libesp_hw_support.a:esp_clk.c.o": {
+        ".dram0.bss": 4,
+        ".flash.text": 194,
+        ".iram0.text": 25,
+        ".rtc.data": 16,
+        "flash_total": 235,
+        "ram_st_total": 45
+    },
+    "libspi_flash.a:spi_flash_chip_issi.c.o": {
+        ".dram0.data": 125,
+        ".iram0.text": 108,
+        "flash_total": 233,
+        "ram_st_total": 233
+    },
+    "libnewlib.a:newlib_init.c.o": {
+        ".dram0.bss": 240,
+        ".dram0.data": 156,
+        ".flash.text": 73,
+        "flash_total": 229,
+        "ram_st_total": 396
+    },
+    "no-rtti\\libc.a:lib_a-wsetup.o": {
+        ".flash.text": 223,
+        "flash_total": 223,
+        "ram_st_total": 0
+    },
+    "libpthread.a:pthread_local_storage.c.o": {
+        ".dram0.bss": 4,
+        ".dram0.data": 8,
+        ".flash.text": 213,
+        "flash_total": 221,
+        "ram_st_total": 12
+    },
+    "no-rtti\\libc.a:lib_a-snprintf.o": {
+        ".flash.text": 217,
+        "flash_total": 217,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-fopen.o": {
+        ".flash.text": 216,
+        "flash_total": 216,
+        "ram_st_total": 0
+    },
+    "libhal.a:spi_flash_encrypt_hal_iram.c.o": {
+        ".iram0.text": 213,
+        "flash_total": 213,
+        "ram_st_total": 213
+    },
+    "liblog.a:log_freertos.c.o": {
+        ".dram0.bss": 8,
+        ".iram0.text": 205,
+        "flash_total": 205,
+        "ram_st_total": 213
+    },
+    "libnewlib.a:abort.c.o": {
+        ".dram0.data": 38,
+        ".iram0.text": 157,
+        "flash_total": 195,
+        "ram_st_total": 195
+    },
+    "no-rtti\\libc.a:lib_a-puts.o": {
+        ".flash.rodata": 0,
+        ".flash.text": 190,
+        "flash_total": 190,
+        "ram_st_total": 0
+    },
+    "libxtensa.a:xtensa_intr.c.o": {
+        ".flash.rodata": 35,
+        ".flash.text": 126,
+        ".iram0.text": 26,
+        "flash_total": 187,
+        "ram_st_total": 26
+    },
+    "no-rtti\\libc.a:lib_a-stdio.o": {
+        ".flash.text": 182,
+        "flash_total": 182,
+        "ram_st_total": 0
+    },
+    "libesp_hw_support.a:regi2c_ctrl.c.o": {
+        ".dram0.data": 8,
+        ".iram0.text": 171,
+        "flash_total": 179,
+        "ram_st_total": 179
+    },
+    "libspi_flash.a:spi_flash_chip_boya.c.o": {
+        ".dram0.data": 125,
+        ".iram0.text": 52,
+        "flash_total": 177,
+        "ram_st_total": 177
+    },
+    "libfreertos.a:list.c.o": {
+        ".iram0.text": 164,
+        "flash_total": 164,
+        "ram_st_total": 164
+    },
+    "libesp_hw_support.a:cpu_util.c.o": {
+        ".flash.rodata": 20,
+        ".iram0.text": 137,
+        "flash_total": 157,
+        "ram_st_total": 137
+    },
+    "libnewlib.a:heap.c.o": {
+        ".iram0.text": 151,
+        "flash_total": 151,
+        "ram_st_total": 151
+    },
+    "libesp_system.a:highint_hdl.S.o": {
+        ".iram0.text": 147,
+        "flash_total": 147,
+        "ram_st_total": 147
+    },
+    "libesp_ipc.a:esp_ipc_isr_handler.S.o": {
+        ".dram0.data": 16,
+        ".iram0.text": 125,
+        "flash_total": 141,
+        "ram_st_total": 141
+    },
+    "no-rtti\\libc.a:lib_a-assert.o": {
+        ".flash.rodata": 60,
+        ".flash.text": 72,
+        "flash_total": 132,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-flags.o": {
+        ".flash.text": 128,
+        "flash_total": 128,
+        "ram_st_total": 0
+    },
+    "libesp_system.a:esp_system.c.o": {
+        ".dram0.bss": 20,
+        ".flash.text": 70,
+        ".iram0.text": 56,
+        "flash_total": 126,
+        "ram_st_total": 76
+    },
+    "no-rtti\\libc.a:lib_a-fwalk.o": {
+        ".flash.text": 119,
+        "flash_total": 119,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-printf.o": {
+        ".flash.text": 112,
+        "flash_total": 112,
+        "ram_st_total": 0
+    },
+    "libspi_flash.a:spi_flash_os_func_noos.c.o": {
+        ".dram0.data": 36,
+        ".iram0.text": 72,
+        "flash_total": 108,
+        "ram_st_total": 108
+    },
+    "libhal.a:uart_hal_iram.c.o": {
+        ".flash.text": 105,
+        "flash_total": 105,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-s_frexp.o": {
+        ".flash.text": 100,
+        "flash_total": 100,
+        "ram_st_total": 0
+    },
+    "libspi_flash.a:flash_ops.c.o": {
+        ".dram0.bss": 4,
+        ".dram0.data": 24,
+        ".flash.text": 33,
+        ".iram0.text": 41,
+        "flash_total": 98,
+        "ram_st_total": 69
+    },
+    "libpthread.a:pthread.c.o": {
+        ".dram0.bss": 8,
+        ".flash.text": 97,
+        "flash_total": 97,
+        "ram_st_total": 8
+    },
+    "no-rtti\\libc.a:lib_a-vprintf.o": {
+        ".flash.text": 94,
+        "flash_total": 94,
+        "ram_st_total": 0
+    },
+    "libesp_system.a:cache_err_int.c.o": {
+        ".flash.text": 78,
+        ".iram0.text": 7,
+        "flash_total": 85,
+        "ram_st_total": 7
+    },
+    "no-rtti\\libc.a:lib_a-fiprintf.o": {
+        ".flash.text": 84,
+        "flash_total": 84,
+        "ram_st_total": 0
+    },
+    "libhal.a:mpu_hal.c.o": {
+        ".flash.text": 72,
+        "flash_total": 72,
+        "ram_st_total": 0
+    },
+    "libesp_system.a:panic_handler_asm.S.o": {
+        ".iram0.text": 66,
+        "flash_total": 66,
+        "ram_st_total": 66
+    },
+    "no-rtti\\libc.a:lib_a-wctomb_r.o": {
+        ".flash.text": 65,
+        "flash_total": 65,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-mbtowc_r.o": {
+        ".flash.text": 64,
+        "flash_total": 64,
+        "ram_st_total": 0
+    },
+    "libnewlib.a:reent_init.c.o": {
+        ".iram0.text": 63,
+        "flash_total": 63,
+        "ram_st_total": 63
+    },
+    "libhal.a:interrupt_controller_hal.c.o": {
+        ".flash.text": 59,
+        "flash_total": 59,
+        "ram_st_total": 0
+    },
+    "libbootloader_support.a:flash_qio_mode.c.o": {
+        ".flash.text": 58,
+        "flash_total": 58,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-fseek.o": {
+        ".flash.text": 49,
+        "flash_total": 49,
+        "ram_st_total": 0
+    },
+    "libxt_hal.a:state_asm--restore_extra_nw.o": {
+        ".iram0.text": 47,
+        "flash_total": 47,
+        "ram_st_total": 47
+    },
+    "libxt_hal.a:state_asm--save_extra_nw.o": {
+        ".iram0.text": 47,
+        "flash_total": 47,
+        "ram_st_total": 47
+    },
+    "no-rtti\\libc.a:lib_a-localeconv.o": {
+        ".flash.text": 47,
+        "flash_total": 47,
+        "ram_st_total": 0
+    },
+    "libfreertos.a:xtensa_vector_defaults.S.o": {
+        ".iram0.text": 46,
+        "flash_total": 46,
+        "ram_st_total": 46
+    },
+    "libhal.a:cpu_hal.c.o": {
+        ".iram0.text": 42,
+        "flash_total": 42,
+        "ram_st_total": 42
+    },
+    "no-rtti\\libgcc.a:_divdi3.o": {
+        ".flash.rodata": 40,
+        "flash_total": 40,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libgcc.a:_moddi3.o": {
+        ".flash.rodata": 40,
+        "flash_total": 40,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libgcc.a:_udivdi3.o": {
+        ".flash.rodata": 40,
+        "flash_total": 40,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libgcc.a:_umoddi3.o": {
+        ".flash.rodata": 40,
+        "flash_total": 40,
+        "ram_st_total": 0
+    },
+    "libesp_system.a:brownout.c.o": {
+        ".flash.rodata": 5,
+        ".flash.text": 30,
+        "flash_total": 35,
+        "ram_st_total": 0
+    },
+    "libspi_flash.a:spi_flash_chip_drivers.c.o": {
+        ".dram0.data": 32,
+        "flash_total": 32,
+        "ram_st_total": 32
+    },
+    "libxt_hal.a:interrupts--intlevel.o": {
+        ".flash.rodata": 32,
+        "flash_total": 32,
+        "ram_st_total": 0
+    },
+    "libnewlib.a:syscalls.c.o": {
+        ".flash.text": 31,
+        "flash_total": 31,
+        "ram_st_total": 0
+    },
+    "libesp_hw_support.a:chip_info.c.o": {
+        ".flash.text": 29,
+        "flash_total": 29,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-sysgettod.o": {
+        ".flash.text": 28,
+        "flash_total": 28,
+        "ram_st_total": 0
+    },
+    "libesp_system.a:debug_helpers_asm.S.o": {
+        ".iram0.text": 26,
+        "flash_total": 26,
+        "ram_st_total": 26
+    },
+    "libesp_rom.a:esp_rom_uart.c.o": {
+        ".iram0.text": 24,
+        "flash_total": 24,
+        "ram_st_total": 24
+    },
+    "libbootloader_support.a:bootloader_flash_config_esp32s3.c.o": {
+        ".flash.text": 22,
+        "flash_total": 22,
+        "ram_st_total": 0
+    },
+    "libbootloader_support.a:bootloader_mem.c.o": {
+        ".flash.text": 15,
+        "flash_total": 15,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-errno.o": {
+        ".flash.text": 13,
+        "flash_total": 13,
+        "ram_st_total": 0
+    },
+    "libnewlib.a:pthread.c.o": {
+        ".flash.text": 12,
+        "flash_total": 12,
+        "ram_st_total": 0
+    },
+    "(exe):crtend.o": {
+        ".flash.rodata": 8,
+        "flash_total": 8,
+        "ram_st_total": 0
+    },
+    "libesp_pm.a:pm_impl.c.o": {
+        ".flash.text": 8,
+        "flash_total": 8,
+        "ram_st_total": 0
+    },
+    "(exe):crti.o": {
+        ".flash.text": 3,
+        ".iram0.vectors": 3,
+        "flash_total": 6,
+        "ram_st_total": 3
+    },
+    "libcxx.a:cxx_guards.cpp.o": {
+        ".flash.text": 5,
+        "flash_total": 5,
+        "ram_st_total": 0
+    },
+    "libesp_system.a:ubsan.c.o": {
+        ".iram0.text": 5,
+        "flash_total": 5,
+        "ram_st_total": 5
+    },
+    "(exe):crtbegin.o": {
+        ".flash.rodata": 4,
+        "flash_total": 4,
+        "ram_st_total": 0
+    },
+    "libdriver.a:spi_bus_lock.c.o": {
+        ".flash.rodata": 4,
+        "flash_total": 4,
+        "ram_st_total": 0
+    },
+    "libfreertos.a:FreeRTOS-openocd.c.o": {
+        ".dram0.data": 4,
+        "flash_total": 4,
+        "ram_st_total": 4
+    },
+    "(exe):crt0.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "(exe):crtn.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "(exe):project_elf_src_esp32s3.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libbootloader_support.a:bootloader_common.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libbootloader_support.a:bootloader_common_loader.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libbootloader_support.a:bootloader_efuse_esp32s3.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libbootloader_support.a:bootloader_random_esp32s3.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libbootloader_support.a:bootloader_sha.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libbootloader_support.a:bootloader_utility.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libbootloader_support.a:esp_image_format.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libbootloader_support.a:flash_partitions.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libdriver.a:gdma.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libdriver.a:gpio.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libdriver.a:rtc_io.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libdriver.a:rtc_module.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libdriver.a:spi_common.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libesp_hw_support.a:dport_access.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libesp_hw_support.a:esp_crypto_lock.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libesp_ipc.a:esp_ipc_isr_routines.S.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libesp_pm.a:pm_locks.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libhal.a:gdma_hal.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libhal.a:gpio_hal.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libhal.a:rtc_io_hal.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libhal.a:sha_hal.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libmbedcrypto.a:esp_crypto_shared_gdma.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libmbedcrypto.a:esp_sha256.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libmbedcrypto.a:esp_sha_gdma_impl.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libmbedcrypto.a:sha.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libsoc.a:gdma_periph.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libsoc.a:gpio_periph.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libsoc.a:rtc_io_periph.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libsoc.a:spi_periph.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libsoc.a:uart_periph.c.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "libxt_hal.a:int_asm--set_intclear.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-bzero.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-environ.o": {
+        ".dram0.bss": 4,
+        "flash_total": 0,
+        "ram_st_total": 4
+    },
+    "no-rtti\\libc.a:lib_a-envlock.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-fprintf.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-fputs.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-fwrite.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-getenv_r.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-gettzinfo.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-gmtime_r.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-impure.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-iswspace.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-iswspace_l.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-itoa.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-lcltime_r.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-mbrtowc.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-memchr.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-memcmp.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-memcpy.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-memmove.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-memset.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-month_lengths.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-qsort.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-sccl.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-siscanf.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-strcat.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-strcmp.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-strcpy.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-strcspn.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-strerror.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-strerror_r.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-strlcat.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-strlcpy.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-strlen.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-strncmp.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-strncpy.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-strstr.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-strtol.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-strtoll.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-strtoul.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-strtoull.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-svfiscanf.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-tzcalc_limits.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-tzlock.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-tzset.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-tzset_r.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-tzvars.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-u_strerr.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-ungetc.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libc.a:lib_a-utoa.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libgcc.a:_addsubdf3.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libgcc.a:_bswapdi2.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libgcc.a:_cmpdf2.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libgcc.a:_divdf3.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libgcc.a:_fixdfsi.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libgcc.a:_floatsidf.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    },
+    "no-rtti\\libgcc.a:_muldf3.o": {
+        "flash_total": 0,
+        "ram_st_total": 0
+    }
+}
+{
+    ".dram0.bss": {
+        "ref_counts": 37,
+        "p_uart_obj": 12
+    },
+    ".dram0.data": {
+        "uart_context": 48,
+        "periph_spinlock": 8,
+        "uart_selectlock": 8
+    },
+    ".flash.appdesc": {},
+    ".flash.rodata": {
+        "periph_module_enable.str1.4": 64,
+        "uart_disable_intr_mask_and_return_prev.str1.4": 54,
+        "uart_pattern_pop_pos.str1.4": 49,
+        "uart_set_stop_bits.str1.4": 46,
+        "uart_set_word_length.str1.4": 46,
+        "uart_flush_input.str1.4": 45,
+        "__FUNCTION__$8051": 39,
+        "__FUNCTION__$8043": 27,
+        "__FUNCTION__$7806": 22,
+        "__FUNCTION__$7737": 21,
+        "__FUNCTION__$7742": 21,
+        "__func__$4997": 21,
+        "__FUNCTION__$7747": 19,
+        "__FUNCTION__$7752": 19,
+        "__FUNCTION__$7767": 18,
+        "__FUNCTION__$7772": 18,
+        "__FUNCTION__$7978": 18,
+        "__FUNCTION__$8055": 17,
+        "__FUNCTION__$7757": 16,
+        "__FUNCTION__$7762": 16,
+        "g_spi_lock_main_flash_dev": 4
+    },
+    ".flash.rodata_noload": {},
+    ".flash.text": {
+        "periph_module_enable": 1131,
+        "uart_flush_input": 509,
+        "uart_wait_tx_done": 393,
+        "uart_set_stop_bits": 130,
+        "uart_set_word_length": 130,
+        "periph_ll_get_rst_en_reg": 125,
+        "uart_disable_intr_mask_and_return_prev": 122,
+        "periph_ll_get_clk_en_reg": 121,
+        "uart_get_bufferedlen": 108,
+        "uart_enable_intr_mask": 100,
+        "uart_get_baudrate": 88,
+        "uart_set_parity": 88,
+        "uart_set_baudrate": 84,
+        "uart_pattern_queue_update": 74,
+        "uart_get_parity": 68,
+        "uart_get_stop_bits": 68,
+        "uart_get_word_length": 64,
+        "uart_is_driver_installed": 30,
+        "uart_set_select_notif_callback": 23,
+        "uart_get_selectlock": 12
+    },
+    ".flash_rodata_dummy": {},
+    ".iram0.bss": {},
+    ".iram0.data": {},
+    ".iram0.text": {},
+    ".iram0.text_end": {},
+    ".iram0.vectors": {},
+    ".noinit": {},
+    ".rtc.bss": {},
+    ".rtc.data": {},
+    ".rtc.text": {},
+    ".rtc_noinit": {}
+}
+
+***
 Producing JSON file output...
 
 ***
