@@ -19,11 +19,6 @@
 # endif   // CONFIG_COMPILER_RTTI
 
 //
-// Supress OpenSSL deprecation warning, when building ASIO
-//
-#define ESP_OPENSSL_SUPPRESS_LEGACY_WARNING
-
-//
 // LWIP compatibility inet and address macros/functions
 //
 # define LWIP_COMPAT_SOCKET_INET 1
@@ -40,6 +35,9 @@
 # ifdef CONFIG_ASIO_USE_ESP_OPENSSL
 #  define ASIO_USE_ESP_OPENSSL
 #  define OPENSSL_NO_ENGINE
+#  define ASIO_SSL_DETAIL_OPENSSL_TYPES_HPP
+#  include "openssl_stub.hpp"
+
 # elif CONFIG_ASIO_USE_ESP_WOLFSSL
 #  define ASIO_USE_WOLFSSL
 # endif   // CONFIG_ASIO_USE_ESP_OPENSSL
