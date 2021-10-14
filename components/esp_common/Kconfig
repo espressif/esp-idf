@@ -73,9 +73,12 @@ menu "Common ESP-related"
             - If "None" is selected, there will be no console output on any UART, except
               for initial output from ROM bootloader. This ROM output can be suppressed by
               GPIO strapping or EFUSE, refer to chip datasheet for details.
-            - On chips with USB peripheral, "USB CDC" option redirects output to the
+            - On chips with USB OTG peripheral, "USB CDC" option redirects output to the
               CDC port. This option uses the CDC driver in the chip ROM.
               This option is incompatible with TinyUSB stack.
+            - On chips with an USB serial/JTAG debug controller, selecting the option
+              for that redirects output to the CDC/ACM (serial port emulation) component
+              of that device.
         config ESP_CONSOLE_UART_DEFAULT
             bool "Default: UART0"
         config ESP_CONSOLE_USB_CDC
@@ -83,6 +86,9 @@ menu "Common ESP-related"
             # The naming is confusing: USB_ENABLED means that TinyUSB driver is enabled, not USB in general.
             # && !USB_ENABLED is because the ROM CDC driver is currently incompatible with TinyUSB.
             depends on IDF_TARGET_ESP32S2 && !USB_ENABLED
+        config ESP_CONSOLE_USB_SERIAL_JTAG
+            bool "USB Serial/JTAG Controller"
+            depends on IDF_TARGET_ESP32C3
         config ESP_CONSOLE_UART_CUSTOM
             bool "Custom UART"
         config ESP_CONSOLE_NONE

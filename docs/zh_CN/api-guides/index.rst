@@ -40,5 +40,6 @@ API 指南
    :esp32s2: ULP-RISC-V 协处理器 <ulp-risc-v>
    单元测试 <unit-tests>
    :esp32: 单元测试 (传统 GNU Make) <unit-tests-legacy>
-   :esp32s2: USB 控制台 <usb-console>
+   :SOC_USB_SUPPORTED: USB 控制台 <usb-otg-console>
+   :SOC_USB_SERIAL_JTAG_SUPPORTED: USB Serial/JTAG Controller Console <usb-serial-jtag-console>
    Wi-Fi 驱动 <wifi>

@@ -15,6 +15,8 @@
 #include "soc/uart_periph.h"
 #include "soc/gpio_periph.h"
 #include "soc/soc.h"
+#include "soc/usb_serial_jtag_struct.h"
+#include "hal/usb_serial_jtag_ll.h"
 #include "esp_gdbstub_common.h"
 #include "sdkconfig.h"
 
@@ -60,6 +62,33 @@ void esp_gdbstub_target_init()
 {
 }
 
+#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
+
+int esp_gdbstub_getchar()
+{
+    uint8_t c;
+    //retry the read until we succeed
+    while (usb_serial_jtag_ll_read_rxfifo(&c, 1)==0) ;
+    return c;
+}
+
+void esp_gdbstub_putchar(int c)
+{
+    uint8_t cc=c;
+    //retry the write until we succeed
+    while (usb_serial_jtag_ll_write_txfifo(&cc, 1)<1) ;
+}
+
+void esp_gdbstub_flush()
+{
+    usb_serial_jtag_ll_txfifo_flush();
+}
+
+
+#else
+
+//assume UART gdbstub channel
+
 int esp_gdbstub_getchar()
 {
     while (REG_GET_FIELD(UART_STATUS_REG(UART_NUM), UART_RXFIFO_CNT) == 0) {
@@ -75,6 +104,13 @@ void esp_gdbstub_putchar(int c)
     }
     REG_WRITE(UART_FIFO_AHB_REG(UART_NUM), c);
 }
+
+void esp_gdbstub_flush()
+{
+    //not needed for uart
+}
+
+#endif
 
 int esp_gdbstub_readmem(intptr_t addr)
 {

@@ -64,6 +64,7 @@ void esp_gdbstub_send_end(void)
 {
     esp_gdbstub_putchar('#');
     esp_gdbstub_send_hex(s_chsum, 8);
+    esp_gdbstub_flush();
 }
 
 // Send a packet with a string as content

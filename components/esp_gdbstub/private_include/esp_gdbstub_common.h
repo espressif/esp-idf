@@ -119,6 +119,11 @@ void esp_gdbstub_putchar(int c);
  */
 int esp_gdbstub_readmem(intptr_t addr);
 
+/**
+ * Make sure all bytes sent using putchar() end up at the host.
+ * (Usually stubbed for UART, but can be useful for other channels)
+ */
+void esp_gdbstub_flush(void);
 
 /**** GDB packet related functions ****/
 

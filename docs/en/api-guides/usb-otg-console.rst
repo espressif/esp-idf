@@ -1,6 +1,6 @@
-***********
-USB Console
-***********
+***************
+USB OTG Console
+***************
 
 On chips with an integrated USB peripheral, it is possible to use USB Communication Device Class (CDC) to implement the serial console, instead of using UART with an external USB-UART bridge chip. {IDF_TARGET_NAME} ROM code contains a USB CDC implementation, which supports for some basic functionality without requiring the application to include the USB stack:
 
@@ -15,7 +15,7 @@ On chips with an integrated USB peripheral, it is possible to use USB Communicat
 Hardware Requirements
 =====================
 
-Connect ESP32-S2 to the USB port as follows
+Connect {IDF_TARGET_NAME} to the USB port as follows
 
 +------+-------------+
 | GPIO | USB         |

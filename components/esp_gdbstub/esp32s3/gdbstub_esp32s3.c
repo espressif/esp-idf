@@ -39,6 +39,11 @@ void esp_gdbstub_putchar(int c)
     REG_WRITE(UART_FIFO_AHB_REG(UART_NUM), c);
 }
 
+void esp_gdbstub_flush()
+{
+    //not needed for uart
+}
+
 int esp_gdbstub_readmem(intptr_t addr)
 {
     if (addr < 0x20000000 || addr >= 0x80000000) {
