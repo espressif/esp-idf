@@ -1470,7 +1470,6 @@ components/heap/include/esp_heap_trace.h
 components/heap/include/heap_memory_layout.h
 components/heap/include/multi_heap.h
 components/heap/include/soc/soc_memory_layout.h
-components/heap/multi_heap.c
 components/heap/multi_heap_config.h
 components/heap/multi_heap_internal.h
 components/heap/multi_heap_platform.h
