@@ -131,7 +131,7 @@ static volatile bool s_resume_cores;
 // If CONFIG_SPIRAM_IGNORE_NOTFOUND is set and external RAM is not found or errors out on testing, this is set to false.
 bool g_spiram_ok = true;
 
-static void intr_matrix_clear(void)
+static void core_intr_matrix_clear(void)
 {
     uint32_t core_id = cpu_hal_get_core_id();
 
@@ -174,7 +174,7 @@ void IRAM_ATTR call_start_cpu1(void)
     ESP_EARLY_LOGI(TAG, "App cpu up.");
 
     // Clear interrupt matrix for APP CPU core
-    intr_matrix_clear();
+    core_intr_matrix_clear();
 
     //Take care putting stuff here: if asked, FreeRTOS will happily tell you the scheduler
     //has started, but it isn't active *on this CPU* yet.
@@ -450,7 +450,7 @@ void IRAM_ATTR call_start_cpu0(void)
     g_startup_time = esp_rtc_get_time_us();
 
     // Clear interrupt matrix for PRO CPU core
-    intr_matrix_clear();
+    core_intr_matrix_clear();
 
 #ifdef CONFIG_ESP_CONSOLE_UART
     uint32_t clock_hz = rtc_clk_apb_freq_get();
