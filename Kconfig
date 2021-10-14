@@ -206,7 +206,8 @@ mainmenu "Espressif IoT Development Framework Configuration"
             default n
             select COMPILER_HIDE_PATHS_MACROS
             help
-                If enabled, all date, time, and path information would be eliminated.
+                If enabled, all date, time, and path information would be eliminated. A .gdbinit file would be create
+                automatically. (or will be append if you have one already)
 
     endmenu # Build type
 
