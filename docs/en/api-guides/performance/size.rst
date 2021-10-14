@@ -298,6 +298,7 @@ The following configuration options will reduce the final binary size of almost 
     - Don't enable :ref:`CONFIG_COMPILER_CXX_EXCEPTIONS`, :ref:`CONFIG_COMPILER_CXX_RTTI`, or set the :ref:`CONFIG_COMPILER_STACK_CHECK_MODE` to Overall. All of these options are already disabled by default, but they have a large impact on binary size.
     - Disabling :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP` will remove the lookup table to translate user-friendly names for error values (see :doc:`/api-guides/error-handling`) in error logs, etc. This saves some binary size, but error values will be printed as integers only.
     - Setting :ref:`CONFIG_ESP_SYSTEM_PANIC` to "Silent reboot" will save a small amount of binary size, however this is *only* recommended if no one will use UART output to debug the device.
+    :CONFIG_IDF_TARGET_ARCH_RISCV: - Set :ref:`CONFIG_COMPILER_SAVE_RESTORE_LIBCALLS` to reduce binary size by replacing inlined prologues/epilogues with library calls.
 
 .. note::
 
