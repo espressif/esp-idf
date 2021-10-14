@@ -15,6 +15,9 @@
 #ifndef _ESP_NETIF_TYPES_H_
 #define _ESP_NETIF_TYPES_H_
 
+#include "esp_event_base.h"
+#include "esp_err.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
