@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -487,6 +479,18 @@ static DRAM_ATTR esp_pm_lock_handle_t s_light_sleep_pm_lock;
 static void btdm_slp_tmr_callback(void *arg);
 #endif /* #ifdef CONFIG_PM_ENABLE */
 
+
+static inline void esp_bt_power_domain_on(void)
+{
+    // Bluetooth module power up
+    esp_wifi_bt_power_domain_on();
+}
+
+static inline void esp_bt_power_domain_off(void)
+{
+    // Bluetooth module power down
+    esp_wifi_bt_power_domain_off();
+}
 
 static inline void btdm_check_and_init_bb(void)
 {
@@ -1621,6 +1625,8 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         goto error;
     }
 
+    esp_bt_power_domain_on();
+
     btdm_controller_mem_init();
 
     periph_module_enable(PERIPH_BT_MODULE);
@@ -1773,6 +1779,8 @@ esp_err_t esp_bt_controller_deinit(void)
 
     btdm_lpcycle_us = 0;
     btdm_controller_set_sleep_mode(BTDM_MODEM_SLEEP_MODE_NONE);
+
+    esp_bt_power_domain_off();
 
     return ESP_OK;
 }
