@@ -1967,7 +1967,6 @@ components/newlib/heap.c
 components/newlib/locks.c
 components/newlib/newlib_init.c
 components/newlib/platform_include/assert.h
-components/newlib/platform_include/endian.h
 components/newlib/platform_include/errno.h
 components/newlib/platform_include/esp_newlib.h
 components/newlib/platform_include/net/if.h
@@ -1981,7 +1980,6 @@ components/newlib/platform_include/sys/reent.h
 components/newlib/platform_include/sys/select.h
 components/newlib/platform_include/sys/termios.h
 components/newlib/platform_include/sys/time.h
-components/newlib/platform_include/sys/uio.h
 components/newlib/platform_include/sys/un.h
 components/newlib/platform_include/sys/unistd.h
 components/newlib/platform_include/sys/utime.h
