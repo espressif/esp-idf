@@ -299,6 +299,7 @@ typedef struct mdns_out_question_s {
     const char * service;
     const char * proto;
     const char * domain;
+    bool own_dynamic_memory;
 } mdns_out_question_t;
 
 typedef struct mdns_out_answer_s {
