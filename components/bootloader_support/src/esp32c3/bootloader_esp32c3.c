@@ -329,6 +329,11 @@ esp_err_t bootloader_init(void)
     bootloader_print_banner();
     // update flash ID
     bootloader_flash_update_id();
+    // Check and run XMC startup flow
+    if ((ret = bootloader_flash_xmc_startup()) != ESP_OK) {
+        ESP_LOGE(TAG, "failed when running XMC startup flow, reboot!");
+        goto err;
+    }
     // read bootloader header
     if ((ret = bootloader_read_bootloader_header()) != ESP_OK) {
         goto err;

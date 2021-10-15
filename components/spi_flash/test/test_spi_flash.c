@@ -15,6 +15,8 @@
 #include "esp_rom_sys.h"
 #include "esp_timer.h"
 
+#include "bootloader_flash.h"   //for bootloader_flash_xmc_startup
+
 #include "sdkconfig.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/spi_flash.h"
@@ -419,3 +421,21 @@ TEST_CASE("rom unlock will not erase QE bit", "[spi_flash]")
     TEST_ASSERT(status & 0x40);
 }
 #endif
+
+static IRAM_ATTR NOINLINE_ATTR void test_xmc_startup(void)
+{
+    extern void spi_flash_disable_interrupts_caches_and_other_cpu(void);
+    extern void spi_flash_enable_interrupts_caches_and_other_cpu(void);
+    esp_err_t ret = ESP_OK;
+
+    spi_flash_disable_interrupts_caches_and_other_cpu();
+    ret = bootloader_flash_xmc_startup();
+    spi_flash_enable_interrupts_caches_and_other_cpu();
+
+    TEST_ASSERT_EQUAL(ESP_OK, ret);
+}
+
+TEST_CASE("bootloader_flash_xmc_startup can be called when cache disabled", "[spi_flash]")
+{
+    test_xmc_startup();
+}
