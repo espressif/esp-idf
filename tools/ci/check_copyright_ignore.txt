@@ -882,7 +882,6 @@ components/esp_pm/include/esp32s3/pm.h
 components/esp_pm/include/esp_pm.h
 components/esp_pm/include/esp_private/pm_impl.h
 components/esp_pm/include/esp_private/pm_trace.h
-components/esp_pm/pm_impl.c
 components/esp_pm/pm_locks.c
 components/esp_pm/pm_trace.c
 components/esp_pm/test/test_pm.c

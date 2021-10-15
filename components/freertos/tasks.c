@@ -2430,10 +2430,9 @@ void vTaskSuspendAll( void )
      * post in the FreeRTOS support forum before reporting this as a bug! -
      * https://goo.gl/wu4acr */
     unsigned state;
-
-    state = portENTER_CRITICAL_NESTED();
+    state = portSET_INTERRUPT_MASK_FROM_ISR();
     ++uxSchedulerSuspended[ xPortGetCoreID() ];
-    portEXIT_CRITICAL_NESTED(state);
+    portCLEAR_INTERRUPT_MASK_FROM_ISR(state);
 }
 /*----------------------------------------------------------*/
 
@@ -3364,7 +3363,7 @@ void vTaskSwitchContext( void )
 {
     //Theoretically, this is only called from either the tick interrupt or the crosscore interrupt, so disabling
     //interrupts shouldn't be necessary anymore. Still, for safety we'll leave it in for now.
-    int irqstate=portENTER_CRITICAL_NESTED();
+    int irqstate = portSET_INTERRUPT_MASK_FROM_ISR();
 
     if( uxSchedulerSuspended[ xPortGetCoreID() ] != ( UBaseType_t ) pdFALSE )
     {
@@ -3529,7 +3528,7 @@ void vTaskSwitchContext( void )
         #endif
 
     }
-    portEXIT_CRITICAL_NESTED(irqstate);
+    portCLEAR_INTERRUPT_MASK_FROM_ISR(irqstate);
 }
 /*-----------------------------------------------------------*/
 
@@ -4620,9 +4619,9 @@ static void prvResetNextTaskUnblockTime( void )
         TaskHandle_t xReturn;
         unsigned state;
 
-        state = portENTER_CRITICAL_NESTED();
+        state = portSET_INTERRUPT_MASK_FROM_ISR();
         xReturn = pxCurrentTCB[ xPortGetCoreID() ];
-        portEXIT_CRITICAL_NESTED(state);
+        portCLEAR_INTERRUPT_MASK_FROM_ISR(state);
 
         return xReturn;
     }

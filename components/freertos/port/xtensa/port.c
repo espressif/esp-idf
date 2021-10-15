@@ -255,9 +255,9 @@ BaseType_t xPortInIsrContext(void)
 {
     unsigned int irqStatus;
     BaseType_t ret;
-    irqStatus = portENTER_CRITICAL_NESTED();
+    irqStatus = portSET_INTERRUPT_MASK_FROM_ISR();
     ret = (port_interruptNesting[xPortGetCoreID()] != 0);
-    portEXIT_CRITICAL_NESTED(irqStatus);
+    portCLEAR_INTERRUPT_MASK_FROM_ISR(irqStatus);
     return ret;
 }
 
@@ -275,7 +275,7 @@ BaseType_t IRAM_ATTR xPortInterruptedFromISRContext(void)
 
 void __attribute__((optimize("-O3"))) vPortEnterCritical(portMUX_TYPE *mux)
 {
-    BaseType_t oldInterruptLevel = portENTER_CRITICAL_NESTED();
+    BaseType_t oldInterruptLevel = portSET_INTERRUPT_MASK_FROM_ISR();
     /* Interrupts may already be disabled (because we're doing this recursively)
     * but we can't get the interrupt level after
     * vPortCPUAquireMutex, because it also may mess with interrupts.
@@ -304,7 +304,7 @@ void __attribute__((optimize("-O3"))) vPortExitCritical(portMUX_TYPE *mux)
         port_uxCriticalNesting[coreID] = nesting;
 
         if ( nesting == 0 ) {
-            portEXIT_CRITICAL_NESTED(port_uxOldInterruptState[coreID]);
+            portCLEAR_INTERRUPT_MASK_FROM_ISR(port_uxOldInterruptState[coreID]);
         }
     }
 }
