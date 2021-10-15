@@ -58,6 +58,14 @@ esp_err_t spi_flash_chip_issi_get_io_mode(esp_flash_t *chip, esp_flash_io_mode_t
     return ret;
 }
 
+spi_flash_caps_t spi_flash_chip_issi_get_caps(esp_flash_t *chip)
+{
+    spi_flash_caps_t caps_flags = 0;
+    // 32-bit-address flash is not supported
+    // flash-suspend is not supported
+    return caps_flags;
+}
+
 static const char chip_name[] = "issi";
 
 // The issi chip can use the functions for generic chips except from set read mode and probe,
@@ -95,4 +103,5 @@ const spi_flash_chip_t esp_flash_chip_issi = {
     .read_reg = spi_flash_chip_generic_read_reg,
     .yield = spi_flash_chip_generic_yield,
     .sus_setup = spi_flash_chip_generic_suspend_cmd_conf,
+    .get_chip_caps = spi_flash_chip_issi_get_caps,
 };

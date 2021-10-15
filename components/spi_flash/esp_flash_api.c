@@ -215,6 +215,16 @@ esp_err_t IRAM_ATTR esp_flash_init(esp_flash_t *chip)
         return err;
     }
 
+    if (chip->chip_drv->get_chip_caps == NULL) {
+        // chip caps get failed, pass the flash capability check.
+        ESP_EARLY_LOGW(TAG, "get_chip_caps function pointer hasn't been initialized");
+    } else {
+        if (((chip->chip_drv->get_chip_caps(chip) & SPI_FLASH_CHIP_CAP_32MB_SUPPORT) == 0) && (size > (16 *1024 * 1024))) {
+            ESP_EARLY_LOGW(TAG, "Detected flash size > 16 MB, but access beyond 16 MB is not supported for this flash model yet.");
+            size = (16 * 1024 * 1024);
+        }
+    }
+
     ESP_LOGI(TAG, "flash io: %s", io_mode_str[chip->read_mode]);
     err = rom_spiflash_api_funcs->start(chip);
     if (err != ESP_OK) {
@@ -358,6 +368,7 @@ esp_err_t IRAM_ATTR esp_flash_get_size(esp_flash_t *chip, uint32_t *out_size)
     err = chip->chip_drv->detect_size(chip, &detect_size);
     if (err == ESP_OK) {
         chip->size = detect_size;
+        *out_size = chip->size;
     }
     return rom_spiflash_api_funcs->end(chip, err);
 }
@@ -837,6 +848,14 @@ IRAM_ATTR esp_err_t esp_flash_set_io_mode(esp_flash_t* chip, bool qe)
 esp_err_t esp_flash_suspend_cmd_init(esp_flash_t* chip)
 {
     ESP_EARLY_LOGW(TAG, "Flash suspend feature is enabled");
+    if (chip->chip_drv->get_chip_caps == NULL) {
+        // chip caps get failed, pass the flash capability check.
+        ESP_EARLY_LOGW(TAG, "get_chip_caps function pointer hasn't been initialized");
+    } else {
+        if ((chip->chip_drv->get_chip_caps(chip) & SPI_FLASH_CHIP_CAP_SUSPEND) == 0) {
+            ESP_EARLY_LOGW(TAG, "Suspend and resume may not supported for this flash model yet.");
+        }
+    }
     return chip->chip_drv->sus_setup(chip);
 }
 

@@ -42,6 +42,7 @@ The Quad mode (QIO/QOUT) the following chip types are supported:
 The 32-bit address range of following chip type is supported:
 
 1. W25Q256
+2. GD25Q256
 
 Initializing a flash device
 ---------------------------

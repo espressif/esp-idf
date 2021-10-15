@@ -76,18 +76,22 @@ esp_err_t spi_flash_chip_winbond_read(esp_flash_t *chip, void *buffer, uint32_t 
 
 esp_err_t spi_flash_chip_winbond_page_program(esp_flash_t *chip, const void *buffer, uint32_t address, uint32_t length)
 {
-    esp_err_t err;
+    esp_err_t err = ESP_OK;
+    bool addr_4b = ADDR_32BIT(address);
+    // Separate the behaviour of 4B address and not 4B address to decline the influnece for performance.
+    if (addr_4b) {
+        err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->idle_timeout);
+        if (err == ESP_OK) {
+            // Perform the actual Page Program command
+            err = spi_flash_command_winbond_program_4B(chip, buffer, address, length);
+            if (err != ESP_OK) {
+                return err;
+            }
 
-    err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->idle_timeout);
-
-    if (err == ESP_OK) {
-        // Perform the actual Page Program command
-        err = spi_flash_command_winbond_program_4B(chip, buffer, address, length);
-        if (err != ESP_OK) {
-            return err;
+            err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->page_program_timeout);
         }
-
-        err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->page_program_timeout);
+    } else {
+        spi_flash_chip_generic_page_program(chip, buffer, address, length);
     }
     return err;
 }
@@ -140,6 +144,17 @@ esp_err_t spi_flash_chip_winbond_erase_block(esp_flash_t *chip, uint32_t start_a
     return err;
 }
 
+spi_flash_caps_t spi_flash_chip_winbond_get_caps(esp_flash_t *chip)
+{
+    spi_flash_caps_t caps_flags = 0;
+    // 32M-bits address support
+    if ((chip->chip_id & 0xFF) >= 0x19) {
+        caps_flags |= SPI_FLASH_CHIP_CAP_32MB_SUPPORT;
+    }
+    // flash-suspend is not supported
+    return caps_flags;
+}
+
 static const char chip_name[] = "winbond";
 
 // The issi chip can use the functions for generic chips except from set read mode and probe,
@@ -177,15 +192,15 @@ const spi_flash_chip_t esp_flash_chip_winbond = {
     .read_reg = spi_flash_chip_generic_read_reg,
     .yield = spi_flash_chip_generic_yield,
     .sus_setup = spi_flash_chip_generic_suspend_cmd_conf,
+    .get_chip_caps = spi_flash_chip_winbond_get_caps,
 };
 
 
 static esp_err_t spi_flash_command_winbond_program_4B(esp_flash_t *chip, const void *buffer, uint32_t address, uint32_t length)
 {
-    bool addr_4b = ADDR_32BIT(address);
     spi_flash_trans_t t = {
-        .command = (addr_4b? CMD_PROGRAM_PAGE_4B: CMD_PROGRAM_PAGE),
-        .address_bitlen = (addr_4b? 32: 24),
+        .command = (CMD_PROGRAM_PAGE_4B),
+        .address_bitlen = 32,
         .address = address,
         .mosi_len = length,
         .mosi_data = buffer,
