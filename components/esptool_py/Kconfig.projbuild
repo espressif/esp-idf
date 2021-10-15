@@ -172,12 +172,6 @@ menu "Serial flasher config"
             bool "64 MB"
         config ESPTOOLPY_FLASHSIZE_128MB
             bool "128 MB"
-        config ESPTOOLPY_FLASHSIZE_256MB
-            bool "256 MB"
-        config ESPTOOLPY_FLASHSIZE_512MB
-            bool "512 MB"
-        config ESPTOOLPY_FLASHSIZE_1024MB
-            bool "1024 MB"
     endchoice
 
     config ESPTOOLPY_FLASHSIZE
@@ -190,9 +184,6 @@ menu "Serial flasher config"
         default "32MB" if ESPTOOLPY_FLASHSIZE_32MB
         default "64MB" if ESPTOOLPY_FLASHSIZE_64MB
         default "128MB" if ESPTOOLPY_FLASHSIZE_128MB
-        default "256MB" if ESPTOOLPY_FLASHSIZE_256MB
-        default "512MB" if ESPTOOLPY_FLASHSIZE_512MB
-        default "1024MB" if ESPTOOLPY_FLASHSIZE_1024MB
 
     config ESPTOOLPY_FLASHSIZE_DETECT
         bool "Detect flash size when flashing bootloader"
