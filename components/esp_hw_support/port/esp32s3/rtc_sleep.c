@@ -140,6 +140,8 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
 
     REG_SET_FIELD(RTC_CNTL_SLP_REJECT_CONF_REG, RTC_CNTL_DEEP_SLP_REJECT_EN, cfg.deep_slp_reject);
     REG_SET_FIELD(RTC_CNTL_SLP_REJECT_CONF_REG, RTC_CNTL_LIGHT_SLP_REJECT_EN, cfg.light_slp_reject);
+    /* Set wait cycle for touch or COCPU after deep sleep and light sleep. */
+    REG_SET_FIELD(RTC_CNTL_TIMER2_REG, RTC_CNTL_ULPCP_TOUCH_START_WAIT, RTC_CNTL_ULPCP_TOUCH_START_WAIT_IN_SLEEP);
 
     REG_SET_FIELD(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_XTL_FORCE_PU, cfg.xtal_fpu);
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_XTAL_GLOBAL_FORCE_NOGATING, cfg.xtal_fpu);
@@ -191,5 +193,9 @@ static uint32_t rtc_sleep_finish(uint32_t lslp_mem_inf_fpu)
         rtc_sleep_pu_config_t pu_cfg = RTC_SLEEP_PU_CONFIG_ALL(1);
         rtc_sleep_pu(pu_cfg);
     }
+
+    /* Recover default wait cycle for touch or COCPU after wakeup. */
+    REG_SET_FIELD(RTC_CNTL_TIMER2_REG, RTC_CNTL_ULPCP_TOUCH_START_WAIT, RTC_CNTL_ULPCP_TOUCH_START_WAIT_DEFAULT);
+
     return reject;
 }
