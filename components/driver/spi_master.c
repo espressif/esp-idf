@@ -921,13 +921,14 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_start(spi_device_handle_t handl
 {
     esp_err_t ret;
     SPI_CHECK(ticks_to_wait == portMAX_DELAY, "currently timeout is not available for polling transactions", ESP_ERR_INVALID_ARG);
-
-    spi_host_t *host = handle->host;
     ret = check_trans_valid(handle, trans_desc);
     if (ret!=ESP_OK) return ret;
-
     SPI_CHECK(!spi_bus_device_is_polling(handle), "Cannot send polling transaction while the previous polling transaction is not terminated.", ESP_ERR_INVALID_STATE );
 
+    /* If device_acquiring_lock is set to handle, it means that the user has already
+     * acquired the bus thanks to the function `spi_device_acquire_bus()`.
+     * In that case, we don't need to take the lock again. */
+    spi_host_t *host = handle->host;
     if (host->device_acquiring_lock != handle) {
         ret = spi_bus_lock_acquire_start(handle->dev_lock, ticks_to_wait);
     } else {
