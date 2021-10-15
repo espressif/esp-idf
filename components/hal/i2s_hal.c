@@ -168,6 +168,10 @@ void i2s_hal_tx_set_common_mode(i2s_hal_context_t *hal, const i2s_hal_config_t *
     i2s_ll_mclk_use_tx_clk(hal->dev);
 
     i2s_ll_tx_set_active_chan_mask(hal->dev, hal_cfg->chan_mask);
+    // In TDM mode(more than 2 channels), the ws polarity should be high first.
+    if (hal_cfg->total_chan > 2) {
+        i2s_ll_tx_set_ws_idle_pol(hal->dev, true);
+    }
     i2s_ll_tx_enable_left_align(hal->dev, hal_cfg->left_align);
     i2s_ll_tx_enable_big_endian(hal->dev, hal_cfg->big_edin);
     i2s_ll_tx_set_bit_order(hal->dev, hal_cfg->bit_order_msb);
@@ -190,6 +194,10 @@ void i2s_hal_rx_set_common_mode(i2s_hal_context_t *hal, const i2s_hal_config_t *
     i2s_ll_mclk_use_rx_clk(hal->dev);
 
     i2s_ll_rx_set_active_chan_mask(hal->dev, hal_cfg->chan_mask);
+    // In TDM mode(more than 2 channels), the ws polarity should be high first.
+    if (hal_cfg->total_chan > 2) {
+        i2s_ll_rx_set_ws_idle_pol(hal->dev, true);
+    }
     i2s_ll_rx_enable_left_align(hal->dev, hal_cfg->left_align);
     i2s_ll_rx_enable_big_endian(hal->dev, hal_cfg->big_edin);
     i2s_ll_rx_set_bit_order(hal->dev, hal_cfg->bit_order_msb);
