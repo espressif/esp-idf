@@ -58,9 +58,6 @@ typedef enum {
     ESP_IMAGE_FLASH_SIZE_32MB,      /*!< SPI flash size 32 MB */
     ESP_IMAGE_FLASH_SIZE_64MB,      /*!< SPI flash size 64 MB */
     ESP_IMAGE_FLASH_SIZE_128MB,     /*!< SPI flash size 128 MB */
-    ESP_IMAGE_FLASH_SIZE_256MB,     /*!< SPI flash size 256 MB */
-    ESP_IMAGE_FLASH_SIZE_512MB,     /*!< SPI flash size 512 MB */
-    ESP_IMAGE_FLASH_SIZE_1024MB,    /*!< SPI flash size 1024 MB */
     ESP_IMAGE_FLASH_SIZE_MAX        /*!< SPI flash size MAX */
 } esp_image_flash_size_t;
 
