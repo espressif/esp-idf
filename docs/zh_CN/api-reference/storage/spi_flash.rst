@@ -5,19 +5,20 @@ SPI Flash API
 
 概述
 --------
+Spi_flash 组件提供外部 flash 数据读取、写入、擦除和内存映射相关的 API 函数，同时也提供了更高层级的，面向分区的 API 函数（定义在 :doc:`分区表 </api-guides/partition-tables>` 中）。
 
-SPI Flash 组件提供外部 flash 数据读取、写入、擦除和内存映射相关的 API 函数，同时也提供了更高层级的，面向分区的 API 函数（定义在 :doc:`分区表 </api-guides/partition-tables>` 中）。
-
-与 ESP-IDF V4.0 之前的 API 不同，这一版 `esp_flash_*` API 功能并不局限于主 SPI Flash 芯片（即运行程序的 SPI Flash 芯片）。使用不同的芯片指针，您可以通过 SPI0/1 或 SPI2/SPI3 总线访问外部 flash。
+与 ESP-IDF V4.0 之前的 API 不同，这一版 `esp_flash_*` API 功能并不局限于主 SPI Flash 芯片（即运行程序的 SPI Flash 芯片）。使用不同的芯片指针，您可以访问连接到 SPI0/1 或 SPI2 总线的外部 flash 芯片。
 
 .. note::
 
     大多数 `esp_flash_*` API 使用 SPI1，SPI2 等外设而非通过 SPI0 上的 cache。这使得它们不仅能访问主 flash，也能访问外部 flash 。
-    而由于 cache 的限制，所有经过 cache 的操作都只能对 flash 进行。这些操作的地址同样受到 cache 能力的限制。 Cache 无法访问外部 flash 或者高于它能力的地址段。这些 cache 操作包括：mmap ，加密读写，执行代码或者访问在 flash 中的变量。
+    
+    而由于 cache 的限制，所有经过 cache 的操作都只能对主 flash 进行。这些操作的地址同样受到 cache 能力的限制。Cache 无法访问外部 flash 或者高于它能力的地址段。这些 cache 操作包括：mmap ，加密读写，执行代码或者访问在 flash 中的变量。
 
 .. note::
 
-    ESP-IDF V4.0 之后的 flash API 不再是原子的。因此，如果 flash 操作地址有重叠，且写操作与读操作同时执行，读操作可能会返回一部分写入之前的数据，返回一部分写入之后的数据。
+    ESP-IDF V4.0 之后的 flash API 不再是原子的。因此，如果 flash 操作地址有重叠，且写操作与读操作同时执行，读操作可能会返回一部分写入之前的数据和一部分写入之后的数据。
+
 
 Kconfig 选项 :ref:`CONFIG_SPI_FLASH_USE_LEGACY_IMPL` 可将 ``spi_flash_*`` 函数切换至 ESP-IDF V4.0 之前的实现。但是，如果同时使用新旧 API，代码量可能会增多。
 
@@ -26,9 +27,9 @@ Kconfig 选项 :ref:`CONFIG_SPI_FLASH_USE_LEGACY_IMPL` 可将 ``spi_flash_*`` �
 Flash 特性支持情况
 -----------------------------------
 
-不同厂家的 Flash 特性通过不同的方式来操作，因此需要特殊的驱动支持。当前驱动支持大多数厂家 Flash 24 位地址范围内的快速/慢速读，以及二线模式（ DIO / DOUT ），因为他们不需要任何厂家自定义的命令。
+不同厂家的 flash 特性有不同的操作方式，因此需要特殊的驱动支持。当前驱动支持大多数厂家 Flash 24 位地址范围内的快速/慢速读，以及二线模式 (DIO / DOUT)，因为他们不需要任何厂家的自定义命令。
 
-当前驱动支持以下厂家/型号的 Flash 的四线模式（ QIO / QOUT ）：
+当前驱动支持以下厂家/型号的 flash 的四线模式 (QIO/QOUT)：
 
 1. ISSI
 2. GD
@@ -38,17 +39,17 @@ Flash 特性支持情况
 6. XMC
 7. BOYA
 
-当前驱动支持以下厂家/型号的 Flash 的 32 位地址范围的访问：
+当前驱动支持以下厂家/型号的 flash 的 32 位地址范围的访问：
 
 1. W25Q256
 2. GD25Q256
 
-如果有需要，也可以自定义 Flash 芯片驱动，参见 :doc:`spi_flash_override_driver` 。但此功能仅供专业用户使用。
+如果有需要，也可以自定义 flash 芯片驱动，参见 :doc:`spi_flash_override_driver` 。
 
 .. toctree::
    :hidden:
 
-   自定义 Flash 芯片驱动 <spi_flash_override_driver>
+   自定义 flash 芯片驱动 <spi_flash_override_driver>
 
 初始化 Flash 设备
 ---------------------------
@@ -61,7 +62,7 @@ Flash 特性支持情况
 
 3. 调用 :cpp:func:`esp_flash_init` 与芯片进行通信。后续操作会依据芯片类型不同而有差异。
 
-.. note:: 目前，多个 flash 芯片可连接到同一总线。但尚不支持在同一个 SPI 总线上使用 ``esp_flash_*`` 和 ``spi_device_*`` 设备。
+.. note:: 当前，多个 flash 芯片可连接到同一总线。但尚不支持在同一个 SPI 总线上使用 ``esp_flash_*`` 和 ``spi_device_*`` 设备。
 
 SPI Flash 访问 API
 --------------------
@@ -95,14 +96,14 @@ SPI1 Flash 并发约束
 
 .. attention::
 
-    指令/数据 cache（用以执行固件）与 SPI1 外设（由像 SPI Flash 驱动一样的驱动程序控制）共享 SPI0/1 总线。因此，在 SPI1 总线上调用 SPI Flash API （包括访问主 flash ）会对整个系统造成显著的影响。更多细节，参见 :doc:`spi_flash_concurrency` 。
+    指令/数据 cache（用以执行固件）与 SPI1 外设（由像 SPI flash 驱动一样的驱动程序控制）共享 SPI0/1 总线。因此，在 SPI1 总线上调用 SPI Flash API（包括访问主 flash）会对整个系统造成显著的影响。更多细节，参见 :doc:`spi_flash_concurrency`。
 
 .. _flash-partition-apis:
 
 分区表 API
 -------------------
 
-ESP-IDF 工程使用分区表保存 SPI flash 各区信息，包括引导程序、各种应用程序二进制文件、数据及文件系统等。请参考 :doc:`分区表 </api-guides/partition-tables>`，查看详细信息。
+ESP-IDF 工程使用分区表保存 SPI flash 各区信息，包括引导程序、各种应用程序二进制文件、数据及文件系统等。请参考 :doc:`here </api-guides/partition-tables>`，查看详细信息。
 
 该组件在 ``esp_partition.h`` 中声明了一些 API 函数，用以枚举在分区表中找到的分区，并对这些分区执行操作：
 
@@ -110,31 +111,32 @@ ESP-IDF 工程使用分区表保存 SPI flash 各区信息，包括引导程序�
 - :cpp:func:`esp_partition_get`：返回一个结构，描述给定迭代器的分区；
 - :cpp:func:`esp_partition_next`：将迭代器移至下一个找到的分区；
 - :cpp:func:`esp_partition_iterator_release`：释放 ``esp_partition_find`` 中返回的迭代器；
-- :cpp:func:`esp_partition_find_first`：返回一个结构，描述 ``esp_partition_find`` 中找到的第一个分区；
-- :cpp:func:`esp_partition_read`、:cpp:func:`esp_partition_write` 和 :cpp:func:`esp_partition_erase_range` 在分区边界内执行，等同于 :cpp:func:`spi_flash_read`、:cpp:func:`spi_flash_write` 和 :cpp:func:`spi_flash_erase_range`。
+- :cpp:func:`esp_partition_find_first`：返回描述 ``esp_partition_find`` 中找到的第一个分区的结构；
+- :cpp:func:`esp_partition_read`、:cpp:func:`esp_partition_write` 和 :cpp:func:`esp_partition_erase_range` 等同于 :cpp:func:`spi_flash_read`、:cpp:func:`spi_flash_write` 和 :cpp:func:`spi_flash_erase_range`，但在分区边界内执行。
 
 .. note::
     请在应用程序代码中使用上述 ``esp_partition_*`` API 函数，而非低层级的 ``esp_flash_*`` API 函数。分区表 API 函数根据存储在分区表中的数据，进行边界检查并计算在 flash 中的正确偏移量。
+
 
 SPI Flash 加密
 --------------------
 
 您可以对 SPI flash 内容进行加密，并在硬件层对其进行透明解密。
 
-请参阅 :doc:`Flash 加密 </security/flash-encryption>`，查看详细信息。
+请参阅 :doc:`Flash 加密文档 </security/flash-encryption>`，查看详细信息。
 
 内存映射 API
 ------------------
 
 {IDF_TARGET_CACHE_SIZE:default="64 KB"}
 
-{IDF_TARGET_NAME} 内存硬件可以将 flash 部分区域映射到指令地址空间和数据地址空间，此映射仅用于读操作。不能通过写入 flash 映射的存储区域来改变 flash 中内容。
+{IDF_TARGET_NAME} 内存硬件可以将 flash 部分区域映射到指令地址空间和数据地址空间，此映射仅用于读操作。不能通过写入 flash 映射的存储区域来改变 flash 中的内容。
 
-Flash 以 {IDF_TARGET_CACHE_SIZE} 页为单位进行地址映射。内存映射硬件既可将 flash 映射到数据地址空间，也能映射到指令地址空间。请参考《 {IDF_TARGET_NAME} 技术参考手册》查看内存映射硬件的详细信息及有关限制。
+Flash 在 {IDF_TARGET_CACHE_SIZE} 页进行映射。内存映射硬件既可将 flash 映射到数据地址空间，也能映射到指令地址空间。请查看技术参考手册，了解内存映射硬件的详细信息及有关限制。
 
 请注意，有些页被用于将应用程序映射到内存中，因此实际可用的页会少于硬件提供的总数。
 
-:doc:`Flash 加密 </security/flash-encryption>` 启用时，使用内存映射区域从 flash 读取数据是解密 flash 的唯一方法，解密需在硬件层进行。
+启用 :doc:`Flash 加密 </security/flash-encryption>` 时，使用内存映射区域从 flash 读取数据是解密 flash 的唯一方法，解密需在硬件层进行。
 
 内存映射 API 在 ``esp_spi_flash.h`` 和 ``esp_partition.h`` 中声明：
 
@@ -152,23 +154,23 @@ Flash 以 {IDF_TARGET_CACHE_SIZE} 页为单位进行地址映射。内存映射�
 .. note::
     由于 mmap 是由 cache 支持的，因此，mmap 也仅能用在主 flash 上。
 
-实现
+SPI Flash 实现
 --------------
 
 ``esp_flash_t`` 结构包含芯片数据和该 API 的三个重要部分：
 
 1. 主机驱动，为访问芯片提供硬件支持；
 2. 芯片驱动，为不同芯片提供兼容性服务；
-3. OS 函数，在不同阶段（一级或二级 Boot 或者应用程序阶段）为部分 OS 函数提供支持（如一些锁、延迟）。
+3. OS 函数，在不同阶段（一级或二级 Boot 或者应用程序阶段）为部分 OS 函数（如锁、延迟）提供支持。
 
 主机驱动
 ^^^^^^^^^^^^^^^
 
-主机驱动依赖 ``hal/include/hal`` 文件夹下 ``spi_flash_types.h`` 定义的 ``spi_flash_host_driver_t`` 接口。该接口提供了一些与芯片通信常用的函数。
+主机驱动依赖 ``hal/include/hal`` 文件夹下 ``spi_flash_types.h`` 定义的 ``spi_flash_host_driver_t`` 接口。该接口提供了一些常用的函数，用于与芯片通信。
 
-在 SPI HAL 文件中，有些函数是基于现有的 {IDF_TARGET_NAME} memory-spi 来实现的。但是，由于 {IDF_TARGET_NAME} 速度限制，HAL 层无法提供某些读命令的高速实现（所以这些命令根本没有在 HAL 的文件中被实现）。``memspi_host_driver.h`` 和 ``.c`` 文件使用 HAL 提供的 ``common_command`` 函数实现上述读命令的高速版本，并将所有它实现的及 HAL 函数封装为 ``spi_flash_host_driver_t`` 供更上层调用。
+在 SPI HAL 文件中，有些函数是基于现有的 {IDF_TARGET_NAME} memory-spi 来实现的。但是，由于 {IDF_TARGET_NAME} 的速度限制，HAL 层无法提供某些读命令的高速实现（所以这些命令根本没有在 HAL 的文件中被实现）。``memspi_host_driver.h`` 和 ``.c`` 文件使用 HAL 提供的 ``common_command`` 函数实现上述读命令的高速版本，并将所有它实现的以及 HAL 函数封装为 ``spi_flash_host_driver_t`` 供更上层调用。
 
-您也可以实现自己的主机驱动，甚至只通过简单的 GPIO。只要实现了 ``spi_flash_host_driver_t`` 中所有函数，不管底层硬件是什么，esp_flash API 都可以访问 flash。
+您甚至可以仅通过 GPIO 来实现自己的主机驱动。只要实现了 ``spi_flash_host_driver_t`` 中所有函数，不管底层硬件是什么，esp_flash API 都可以访问 flash。
 
 芯片驱动
 ^^^^^^^^^^^
@@ -177,7 +179,7 @@ Flash 以 {IDF_TARGET_CACHE_SIZE} 页为单位进行地址映射。内存映射�
 
 有些操作需在执行前先发送命令，或在执行后读取状态，因此有些芯片需要不同的命令或值以及通信方式。
 
-``generic chip`` 芯片代表了常见的 flash 芯片，其他芯片驱动可以在通用芯片的基础上进行开发。
+``generic chip`` 芯片代表了常见的 flash 芯片，其他芯片驱动可以在这种通用芯片的基础上进行开发。
 
 芯片驱动依赖主机驱动。
 
@@ -186,9 +188,15 @@ Flash 以 {IDF_TARGET_CACHE_SIZE} 页为单位进行地址映射。内存映射�
 OS 函数
 ^^^^^^^^^^^^
 
-OS 函数层提供访问锁和延迟的方法。
+OS 函数层目前提供访问锁和延迟的方法。
 
-该锁定用于解决 SPI Flash 芯片访问和其他函数之间的冲突。例如，经 SPI0/1 访问 flash 芯片时，应当禁用 cache（平时用于取代码和 PSRAM 数据）。另一种情况是，一些没有 CS 线或者 CS 线受软件控制的设备（如通过 SPI 接口的 SD 卡控制）需要在一段时间内独占总线。
+锁（见 :ref:`spi_bus_lock`）用于解决同一 SPI 总线上的设备访问和 SPI Flash 芯片访问之间的冲突。例如：
+
+1. 经 SPI1 总线访问 flash 芯片时，应当禁用 cache（平时用于取代码和 PSRAM 数据）。
+
+2. 经其他总线访问 flash 芯片时，应当禁用 flash 上 SPI 主驱动器注册的 ISR 以避免冲突。
+
+3. SPI 主驱动器上某些没有 CS 线或者 CS 线受软件（如 SDSPI）控制的设备需要在一段时间内独占总线。
 
 延时则用于某些长时操作，需要主机处于等待状态或执行轮询。
 
@@ -202,17 +210,17 @@ OS 函数层提供访问锁和延迟的方法。
 - :doc:`OTA API <../system/ota>` 提供了高层 API 用于更新存储在 flash 中的 app 固件。
 - :doc:`NVS API <nvs_flash>` 提供了结构化 API 用于存储 SPI flash 中的碎片数据。
 
+
 .. _spi-flash-implementation-details:
 
 实现细节
 ------------
 
 必须确保操作期间，两个 CPU 均未从 flash 运行代码，实现细节如下：
-
 - 单核模式下，SDK 在执行 flash 操作前将禁用中断或调度算法。
-- 双核模式下，实现细节更为复杂，SDK 需确保两个 CPU 均未运行 flash 代码。
+- 双核模式下，实现细节较为复杂，SDK 需确保两个 CPU 均未运行 flash 代码。
 
-如果有 SPI flash API 在 CPU A（PRO 或 APP）上调用，它使用 ``esp_ipc_call`` API 在 CPU B 上运行 ``spi_flash_op_block_func`` 函数。``esp_ipc_call`` API 在 CPU B 上唤醒一个高优先级任务，即运行 ``spi_flash_op_block_func`` 函数。运行该函数将禁用 CPU B 上的 cache，并使用 ``s_flash_op_can_start`` 旗帜来标志 cache 已禁用。然后，CPU A 上的任务也会禁用 cache 并继续执行 flash 操作。
+如果有 SPI flash API 在 CPU A（PRO 或 APP）上调用，它使用 ``esp_ipc_call`` API 在 CPU B 上运行 ``spi_flash_op_block_func`` 函数。``esp_ipc_call`` API 会在 CPU B 上唤醒一个高优先级任务，即运行 ``spi_flash_op_block_func`` 函数。运行该函数将禁用 CPU B 上的 cache，并使用 ``s_flash_op_can_start`` 旗帜来标志 cache 已禁用。然后，CPU A 上的任务也会禁用 cache 并继续执行 flash 操作。
 
 执行 flash 操作时，CPU A 和 CPU B 仍然可以执行中断操作。默认中断代码均存储于 RAM 中，如果新添加了中断分配 API，则应添加一个标志位以请求在 flash 操作期间禁用该新分配的中断。
 
@@ -228,7 +236,6 @@ SPI Flash API 参考
 .. include-build-file:: inc/esp_flash_spi_init.inc
 .. include-build-file:: inc/esp_flash.inc
 .. include-build-file:: inc/spi_flash_types.inc
-
 
 .. _api-reference-partition-table:
 

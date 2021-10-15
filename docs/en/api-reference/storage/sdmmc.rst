@@ -74,13 +74,22 @@ An example which combines the SDMMC driver with the FATFS library is provided in
 
     For card configuration and data transfer, choose the pair of functions relevant to your case from the table below.
 
-    =========================================================================  =================================  =================================
-    Action                                                                     Read Function                      Write Function
-    =========================================================================  =================================  =================================
-    Read and write a single byte using IO_RW_DIRECT (CMD52)                    :cpp:func:`sdmmc_io_read_byte`     :cpp:func:`sdmmc_io_write_byte`
-    Read and write multiple bytes using IO_RW_EXTENDED (CMD53) in byte mode    :cpp:func:`sdmmc_io_read_bytes`    :cpp:func:`sdmmc_io_write_bytes`
-    Read and write blocks of data using IO_RW_EXTENDED (CMD53) in block mode   :cpp:func:`sdmmc_io_read_blocks`   :cpp:func:`sdmmc_io_write_blocks`
-    =========================================================================  =================================  =================================
+    .. list-table::
+       :widths: 55 25 20
+       :header-rows: 1
+
+       * - Action
+         - Read Function
+         - Write Function
+       * - Read and write a single byte using IO_RW_DIRECT (CMD52)
+         - :cpp:func:`sdmmc_io_read_byte`
+         - :cpp:func:`sdmmc_io_write_byte`
+       * - Read and write multiple bytes using IO_RW_EXTENDED (CMD53) in byte mode
+         - :cpp:func:`sdmmc_io_read_bytes`
+         - :cpp:func:`sdmmc_io_write_bytes`
+       * - Read and write blocks of data using IO_RW_EXTENDED (CMD53) in block mode
+         - :cpp:func:`sdmmc_io_read_blocks`
+         - :cpp:func:`sdmmc_io_write_blocks`
 
     SDIO interrupts can be enabled by the application using the function :cpp:func:`sdmmc_io_enable_int`. When using SDIO in 1-line mode, the D1 line also needs to be connected to use SDIO interrupts.
 
@@ -88,8 +97,7 @@ An example which combines the SDMMC driver with the FATFS library is provided in
 
     .. only:: esp32
 
-        There is a component ESSL (ESP Serial Slave Link) to use if you are communicating with an ESP32
-        SDIO slave. See :doc:`/api-reference/protocols/esp_serial_slave_link` and example :example:`peripherals/sdio/host`.
+        There is a component ESSL (ESP Serial Slave Link) to use if you are communicating with an ESP32 SDIO slave. See :doc:`/api-reference/protocols/esp_serial_slave_link` and example :example:`peripherals/sdio/host`.
 
 Combo (memory + IO) cards
 ^^^^^^^^^^^^^^^^^^^^^^^^^

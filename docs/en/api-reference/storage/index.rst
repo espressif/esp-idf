@@ -14,7 +14,8 @@ Storage API
     SPI Flash and Partition APIs <spi_flash>
     SPIFFS Filesystem <spiffs>
     Virtual Filesystem <vfs>
-    Wear Levelling <wear-levelling>
+    Wear Levelling API <wear-levelling>
+
 
 
 Code examples for this API section are provided in the :example:`storage` directory of ESP-IDF examples.
