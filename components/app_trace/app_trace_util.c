@@ -61,7 +61,7 @@ esp_err_t esp_apptrace_lock_take(esp_apptrace_lock_t *lock, esp_apptrace_tmo_t *
 
     while (1) {
         // do not overwrite lock->int_state before we actually acquired the mux
-        unsigned int_state = portENTER_CRITICAL_NESTED();
+        unsigned int_state = portSET_INTERRUPT_MASK_FROM_ISR();
         // FIXME: if mux is busy it is not good idea to loop during the whole tmo with disabled IRQs.
         // So we check mux state using zero tmo, restore IRQs and let others tasks/IRQs to run on this CPU
         // while we are doing our own tmo check.
@@ -74,8 +74,8 @@ esp_err_t esp_apptrace_lock_take(esp_apptrace_lock_t *lock, esp_apptrace_tmo_t *
             lock->int_state = int_state;
             return ESP_OK;
         }
-        portEXIT_CRITICAL_NESTED(int_state);
-        // we can be preempted from this place till the next call (above) to portENTER_CRITICAL_NESTED()
+        portCLEAR_INTERRUPT_MASK_FROM_ISR(int_state);
+        // we can be preempted from this place till the next call (above) to portSET_INTERRUPT_MASK_FROM_ISR()
         res = esp_apptrace_tmo_check(tmo);
         if (res != ESP_OK) {
             break;
@@ -95,7 +95,7 @@ esp_err_t esp_apptrace_lock_give(esp_apptrace_lock_t *lock)
 #else
     vPortCPUReleaseMutex(&lock->mux);
 #endif
-    portEXIT_CRITICAL_NESTED(int_state);
+    portCLEAR_INTERRUPT_MASK_FROM_ISR(int_state);
     return ESP_OK;
 }
 

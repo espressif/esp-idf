@@ -181,7 +181,8 @@ TEST_CASE_MULTIPLE_STAGES("reset reason ESP_RST_SW after restart from APP CPU", 
 static void do_int_wdt(void)
 {
     setup_values();
-    portENTER_CRITICAL_NESTED();
+    BaseType_t prev_level = portSET_INTERRUPT_MASK_FROM_ISR();
+    (void) prev_level;
     while(1);
 }
 
