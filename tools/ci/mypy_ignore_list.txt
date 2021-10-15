@@ -167,7 +167,6 @@ tools/ci/ci_fetch_submodule.py
 tools/ci/deploy_docs.py
 tools/ci/envsubst.py
 tools/ci/normalize_clangtidy_path.py
-tools/ci/python_packages/gitlab_api.py
 tools/ci/python_packages/idf_http_server_test/adder.py
 tools/ci/python_packages/idf_http_server_test/client.py
 tools/ci/python_packages/idf_http_server_test/test.py
