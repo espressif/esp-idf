@@ -1,16 +1,9 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 
 #include "soc/uart_periph.h"
 #include "soc/gpio_periph.h"
@@ -121,4 +114,27 @@ int esp_gdbstub_readmem(intptr_t addr)
     uint32_t val_aligned = *(uint32_t *)(addr & (~3));
     uint32_t shift = (addr & 3) * 8;
     return (val_aligned >> shift) & 0xff;
+}
+
+int esp_gdbstub_writemem(unsigned int addr, unsigned char data)
+{
+    if (!check_inside_valid_region(addr)) {
+        /* see esp_cpu_configure_region_protection */
+        return -1;
+    }
+
+    int *i = (int *)(addr & (~3));
+    if ((addr & 3) == 0) {
+        *i = (*i & 0xffffff00) | (data << 0);
+    }
+    if ((addr & 3) == 1) {
+        *i = (*i & 0xffff00ff) | (data << 8);
+    }
+    if ((addr & 3) == 2) {
+        *i = (*i & 0xff00ffff) | (data << 16);
+    }
+    if ((addr & 3) == 3) {
+        *i = (*i & 0x00ffffff) | (data << 24);
+    }
+    return 0;
 }
