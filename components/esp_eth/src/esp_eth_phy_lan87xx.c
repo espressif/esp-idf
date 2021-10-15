@@ -337,7 +337,7 @@ static esp_err_t lan87xx_reset_hw(esp_eth_phy_t *phy)
         esp_rom_gpio_pad_select_gpio(lan87xx->reset_gpio_num);
         gpio_set_direction(lan87xx->reset_gpio_num, GPIO_MODE_OUTPUT);
         gpio_set_level(lan87xx->reset_gpio_num, 0);
-        esp_rom_delay_us(100); // insert min input assert time
+        esp_rom_delay_us(150); // insert min input assert time
         gpio_set_level(lan87xx->reset_gpio_num, 1);
     }
     return ESP_OK;
