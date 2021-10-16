@@ -139,7 +139,7 @@ static inline void spi_ll_slave_init(spi_dev_t *hw)
     hw->dma_conf.dma_seg_trans_en = 0;
 
     //Disable unneeded ints
-    hw->slave.val &= ~SPI_LL_UNUSED_INT_MASK;
+    hw->dma_int_ena.val &= ~SPI_LL_UNUSED_INT_MASK;
 }
 
 /**
