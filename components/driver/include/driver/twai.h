@@ -116,6 +116,20 @@ typedef struct {
     uint32_t bus_error_count;       /**< Number of instances a bus error has occurred */
 } twai_status_info_t;
 
+
+
+/**
+ * @brief   Structure to store bitrate matches from the twai_get_bitrate_timings function
+ */typedef struct _twai_bitrate_t {
+    uint32_t bitrate;  /**< Matched bitrate */
+    uint16_t brp;      /**< Bitrate prescalar. */
+    uint8_t tseg1;     /**< Time segment 1 */
+    uint8_t tseg2;     /**< Time segment 2 */
+    uint8_t sjw;       /**< Synchronization jump width */
+    float br_err;      /**< Percentage of deviation from the target bitrate */
+    float sp_err;      /**< Percentage of deviation from the target sample point */
+} twai_bitrate_t;
+
 /* ------------------------------ Public API -------------------------------- */
 
 /**
@@ -337,6 +351,42 @@ esp_err_t twai_clear_transmit_queue(void);
  *      - ESP_ERR_INVALID_STATE: TWAI driver is not installed
  */
 esp_err_t twai_clear_receive_queue(void);
+
+/**
+ * @brief   Get timing matches for a bitrate
+ *
+ * This function will provide the brp, tseg1, tseg2 and sjw needed to initilize a can interface.
+ * It will return an exact match, the closest match or an array of matches
+ *
+ * @param[in]  nominal_bitrate     Target bitrate.
+ * @param[in]  bitrate_tolerance     Percentage of deviation from the target bitrate. (can be 0.0)
+ * @param[in]  nominal_sample_point     Target sample point. If this is set to 0.0 then a CIA standard bitrate will be used.
+ * @param[in]  sample_point_tolerance     Percentage of deviation from the target sample point. (can be 0.0)
+ * @param[in]  bus_length     Length of the CAN bus in meters (round up to the closest whole meter) (must be >= 1)
+ * @param[in]  transceiver_delay     Processing delay of the transceiver in nanoseconds (must be >= 1) (see transceiver documentation)
+ * @param[out]  matches     Array of twai_bitrate_t structures or NULL (See Return)
+ * @param[in]  num_matches     Number of twai_bitrate_t structures in the matches parameter. (See Return)
+ *
+ * @return
+ *      - Number of matches or -1 if there was a buffer overrun. This function will need to be called 2 times
+ *        if you want to match more then one bitrate. The first call you set the matches parameter to NULL and the
+ *        num_matches to 0. The returned value is what is used to create the array and it is also passed in the second
+ *        call to num_matches.
+ *
+ *        If you want to only have an exact match or the closeest match returned you only need to call this function
+ *        a single time. You create the array with 1 structure in it and pass a 1 to the num_matches parameter.
+ *
+ */
+int twai_get_bitrate_timings(
+    uint32_t nominal_bitrate, // target bitrate
+    float bitrate_tolerance, // allowed percentage of drift from the target bitrate
+    float nominal_sample_point, // target sample point, if 0.0 is given then a CIA standard sample point will get used
+    float sample_point_tolerance, // allowed percentage of drift from the target sample point
+    uint16_t bus_length, // bus length in meters, round up or down if bus length if fractional
+    uint16_t transceiver_delay, // processing time of the transceiver being used (nanoseconds)
+    twai_bitrate_t *matches, // NULL or array of machine_can_bitrate_t structures
+    int num_matches // 0 or the length of matches
+);
 
 #ifdef __cplusplus
 }

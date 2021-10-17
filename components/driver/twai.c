@@ -710,3 +710,236 @@ esp_err_t twai_clear_receive_queue(void)
 
     return ESP_OK;
 }
+
+
+
+
+// Internal function used in twai_get_bitrate_timings
+float _fround(float val) {
+    return (float) ((uint16_t) (val * 10000.0 + 0.5)) / 100.0;
+}
+
+
+// This function needs to be called 2 times, the first time passing NULL to matches and 0 to num_matches.
+// The function will return the number of matches found and that number is used to create the proper sized array
+// that gets passed to the matches parameter and you must also pass that value to the num_matches parameter.
+// see code examples below for usage.
+int16_t twai_get_bitrate_timings(
+    uint32_t nominal_bitrate, // target bitrate
+    float bitrate_tolerance, // allowed percentage of drift from the target bitrate
+    float nominal_sample_point, // target sample point, if 0.0 is given then a CIA standard sample point will get used
+    float sample_point_tolerance, // allowed percentage of drift from the target sample point
+    uint16_t bus_length, // bus length in meters, round up or down if bus length if fractional
+    uint16_t transceiver_delay, // processing time of the transceiver being used (nanoseconds)
+    twai_bitrate_t *matches, // NULL or array of machine_can_bitrate_t structures
+    int16_t num_matches // 0 or the length of matches
+) {
+
+    // check to see if a sample point was supplied.
+    // If one was not then we use the CIA standard to assign a sample point
+    if (nominal_sample_point == 0) {
+        if (nominal_bitrate > 800000) {
+            nominal_sample_point = 75.0F;
+        } else if (nominal_bitrate > 500000) {
+            nominal_sample_point = 80.0F;
+        } else {
+            nominal_bitrate = 87.5F;
+        }
+    }
+
+    float tq;
+    float btq;
+    float bt = 1.0F / (float) nominal_bitrate;
+    float sample_point;
+
+    int16_t match_count = 0;
+    uint8_t t_prop_seg;
+    uint32_t bitrate;
+    uint16_t brp;
+    uint8_t btq_rounded;
+    uint8_t tseg1;
+    uint8_t tseg2;
+    uint8_t sjw;
+    float br_err;
+    float sp_err;
+
+    for (brp = TWAI_BRP_MIN;brp <= TWAI_BRP_MAX;brp += TWAI_BRP_INC) {
+        // the macro used here is to validate the brp. This is done because
+        // a V2 or greater revision ESP32 has 2 ranges of brps.
+        // The first range is any even number from 2 to 128, ad the second range is every 4th number from 132 to 256.
+        // the brp increment starts the same at 2 for both ranges so we need to verify a correct brp when
+        // running through the second range
+        if (!TWAI_BRP_IS_VALID(brp)) {
+            continue;
+        }
+        // calculate the time quanta
+        tq = 1.0F / ((float) TWAI_FSYS / (float) brp);
+        // calculate the number of time quanta needed for the given bitrate
+        btq = bt / tq;
+        // we need to use the quanta as a whole and not fractions.
+        btq_rounded = (uint8_t) roundf(btq);
+
+        // if time quanta < 1.0 then the brp is unsupported for the wanted bitrate
+        if (btq_rounded < (TWAI_TSEG1_MIN + TWAI_TSEG2_MIN + 1)) {
+            continue;
+        }
+
+        // calculate the actual bitrate for the brp being used.
+        bitrate = (uint32_t) roundf(
+            (float) nominal_bitrate * (1.0F - (roundf(-(btq / (float) btq_rounded - 1.0F) * 10000.0F) / 10000.0F))
+        );
+
+        // Calculate the amount of drift from the target bitrate
+        br_err = _fround((float) abs(bitrate - nominal_bitrate) / (float) nominal_bitrate);
+
+        // if the amount of drift exceeds the allowed amount then the brp cannot be used
+        if (br_err > bitrate_tolerance) {
+            continue;
+        }
+
+        // because we know the target sample point we are able to calculate a starting tseg1 and tseg2
+        // using that sample point
+        tseg1 = (uint8_t) ((float) btq_rounded * (nominal_sample_point / 100.0F));
+        tseg2 = (uint8_t) (btq_rounded - tseg1);
+
+        if (tseg2 < TWAI_TSEG2_MIN) {
+            tseg1 += TWAI_TSEG2_MIN - tseg2;
+            tseg2 = TWAI_TSEG2_MIN;
+        }
+
+        // just because we have a gien sample point doesn't mean it will align on a whole tq.
+        // so once we get the tseg1 and tseg2 we need to calculate what the "real" sample point is
+        sample_point = _fround((float) tseg1 / (float) btq_rounded);
+
+        // once we have the sample point we need to calculate how much it drifts from the target sample point
+        sp_err = _fround((float) fabs((double) (sample_point - nominal_sample_point)) / nominal_sample_point);
+
+        // I could have iterated over all of the available tseg1 values and calculated the tseg2 from that
+        // then checked to see if the sample point was within the alloted error for each iteration.
+        // This is actually a waste to do do that. The minimum allowed sample point is 50% and if the btq is 10
+        // that means the minimum the tseg1 value could be is 5 and that would make the tseg2 have a value of 4.
+        // There is a syncronization bit that gets added to make the total of 10 needed.
+        // it would be pointless to do iterations for tseg1 values of 1-4. wasted time.
+        // you also have to consider the allowed sample point shift that is given. This is what I am focusing on
+        // due to it creating the smallest number of iterations.
+        // so say we have a supplied 80% sample point with a 5% allowed drift. that would make tseg1 = 7, tseg2 = 2
+        //  if we change the tseg1 to 6 and the tseg2 to 3 we now have a 70% sample point which is outside of the
+        // allowed 5% deviation.
+
+        // so what I have done is the first while loop decreases the tseg1 by 1 and increases the tseg2 by one until
+        // the drive is outside of the allowed amount. The second while loop then increases the tseg1 and decreases
+        // the tseg2 and ading each iteration to the matches until it is outside of the allowed amount. Best case
+        // scenario is no iteration gets performed if the initial tseg1 and tseg2 is not within the sample point
+        // tolerance. This saves quite a bit of time. If using an ESP32S2 the total number of brps are 16384 and
+        // say we use a target bitrate of 500000bps and a bitrate tolerance of 0.0 there are a total of 23 brps that
+        // matched. then having to do 50 iterations for each of the brps brings the total up to 345 iterations for
+        // the tseg1. By using the code below it lowers that iteration count to 35 between both while loops.
+        // That is a HUGE difference. Running the same code in Python iterateing over all of the tseg1 values
+        // has a calculation time of 130ms. and using the code below the calculation time is 16ms.
+        // That's an 87.69% reduction in the time it takes to run the calculations.
+
+        // I also threw in another niceity and that is if there is an exact match it will return immediatly with
+        // only the one match.
+        while (
+            sp_err <= sample_point_tolerance &&
+            tseg1 >= tseg2 &&
+            tseg1 <= TWAI_TSEG1_MAX &&
+            tseg1 >= TWAI_TSEG1_MIN &&
+            tseg2 <= TWAI_TSEG2_MAX &&
+            tseg2 >= TWAI_TSEG2_MIN
+        ) {
+            tseg1--;
+            tseg2++;
+
+            sample_point = _fround((float) tseg1 / (float) btq_rounded);
+            sp_err = _fround((float) fabs((double) (sample_point - nominal_sample_point)) / nominal_sample_point);
+        }
+
+        tseg1++;
+        tseg2--;
+
+        sample_point = _fround((float) tseg1 / (float) btq_rounded);
+        sp_err = _fround((float) fabs((double) (sample_point - nominal_sample_point)) / nominal_sample_point);
+
+        while (
+            sp_err <= sample_point_tolerance &&
+            tseg1 >= tseg2 &&
+            tseg1 <= TWAI_TSEG1_MAX &&
+            tseg1 >= TWAI_TSEG1_MIN &&
+            tseg2 <= TWAI_TSEG2_MAX &&
+            tseg2 >= TWAI_TSEG2_MIN
+        ) {
+
+            if (num_matches > 0) {
+                t_prop_seg = (uint8_t) (
+                    2.0F * (((float) transceiver_delay * 0.000000001F) + ((float) (bus_length * 5) * 0.000000001F))
+                );
+                sjw = (uint8_t) (btq_rounded - ((uint8_t) -((float) -t_prop_seg / tq)) - 1);
+
+                if (sjw < 3) {
+                    sjw = 0;
+                } else if (sjw == 3) {
+                    sjw = 1;
+                } else {
+                    sjw = sjw / 2;
+                }
+
+                if (sjw > SJW_MAX) {
+                    sjw = SJW_MAX;
+                }
+
+                if (sp_err == 0.0F && br_err == 0.0F) {
+                    matches[0].bitrate = bitrate;
+                    matches[0].brp = brp;
+                    matches[0].tseg1 = tseg1 - 1;
+                    matches[0].tseg2 = tseg2;
+                    matches[0].sjw = sjw;
+                    matches[0].br_err = br_err;
+                    matches[0].sp_err = sp_err;
+                    return 1;
+                }
+
+                if (match_count == num_matches) {
+                    if (num_matches == 1) {
+                        if (
+                            br_err <= matches[0].br_err &&
+                            sp_err <= matches[0].sp_err
+                        ) {
+                            matches[0].bitrate = bitrate;
+                            matches[0].brp = brp;
+                            matches[0].tseg1 = tseg1 - 1;
+                            matches[0].tseg2 = tseg2;
+                            matches[0].sjw = sjw;
+                            matches[0].br_err = br_err;
+                            matches[0].sp_err = sp_err;
+                        }
+                    } else {
+                        return -1;
+                    }
+                } else {
+                    matches[match_count].bitrate = bitrate;
+                    matches[match_count].brp = brp;
+                    matches[match_count].tseg1 = tseg1 - 1;
+                    matches[match_count].tseg2 = tseg2;
+                    matches[match_count].sjw = sjw;
+                    matches[match_count].br_err = br_err;
+                    matches[match_count].sp_err = sp_err;
+                    match_count++;
+                }
+
+            } else if (sp_err == 0.0F && br_err == 0.0F) {
+                return 1;
+            } else {
+                match_count ++;
+            }
+
+            tseg1++;
+            tseg2--;
+
+            sample_point = _fround((float) tseg1 / (float) btq_rounded);
+            sp_err = _fround((float) fabs((double) (sample_point - nominal_sample_point)) / nominal_sample_point);
+
+        }
+    }
+    return match_count;
+}
