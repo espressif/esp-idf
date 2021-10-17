@@ -1446,7 +1446,6 @@ components/hal/esp32/include/hal/clk_gate_ll.h
 components/hal/esp32/include/hal/cpu_ll.h
 components/hal/esp32/include/hal/dac_ll.h
 components/hal/esp32/include/hal/emac_ll.h
-components/hal/esp32/include/hal/gpio_ll.h
 components/hal/esp32/include/hal/i2c_ll.h
 components/hal/esp32/include/hal/i2s_ll.h
 components/hal/esp32/include/hal/interrupt_controller_ll.h
@@ -1484,7 +1483,6 @@ components/hal/esp32c3/include/hal/clk_gate_ll.h
 components/hal/esp32c3/include/hal/cpu_ll.h
 components/hal/esp32c3/include/hal/ds_ll.h
 components/hal/esp32c3/include/hal/gdma_ll.h
-components/hal/esp32c3/include/hal/gpio_ll.h
 components/hal/esp32c3/include/hal/gpspi_flash_ll.h
 components/hal/esp32c3/include/hal/hmac_hal.h
 components/hal/esp32c3/include/hal/hmac_ll.h
@@ -1521,7 +1519,6 @@ components/hal/esp32h2/include/hal/clk_gate_ll.h
 components/hal/esp32h2/include/hal/cpu_ll.h
 components/hal/esp32h2/include/hal/ds_ll.h
 components/hal/esp32h2/include/hal/gdma_ll.h
-components/hal/esp32h2/include/hal/gpio_ll.h
 components/hal/esp32h2/include/hal/gpspi_flash_ll.h
 components/hal/esp32h2/include/hal/hmac_hal.h
 components/hal/esp32h2/include/hal/hmac_ll.h
@@ -1564,7 +1561,6 @@ components/hal/esp32s2/include/hal/crypto_dma_ll.h
 components/hal/esp32s2/include/hal/dac_hal.h
 components/hal/esp32s2/include/hal/dac_ll.h
 components/hal/esp32s2/include/hal/dedic_gpio_ll.h
-components/hal/esp32s2/include/hal/gpio_ll.h
 components/hal/esp32s2/include/hal/gpspi_flash_ll.h
 components/hal/esp32s2/include/hal/i2c_ll.h
 components/hal/esp32s2/include/hal/i2s_ll.h
@@ -1601,7 +1597,6 @@ components/hal/esp32s3/include/hal/adc_ll.h
 components/hal/esp32s3/include/hal/aes_ll.h
 components/hal/esp32s3/include/hal/cpu_ll.h
 components/hal/esp32s3/include/hal/gdma_ll.h
-components/hal/esp32s3/include/hal/gpio_ll.h
 components/hal/esp32s3/include/hal/gpspi_flash_ll.h
 components/hal/esp32s3/include/hal/i2c_ll.h
 components/hal/esp32s3/include/hal/interrupt_controller_ll.h
