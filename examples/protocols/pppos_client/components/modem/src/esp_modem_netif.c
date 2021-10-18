@@ -153,6 +153,10 @@ esp_err_t esp_modem_netif_clear_default_handlers(void *h)
         goto clear_event_failed;
     }
 
+    // this event is registered while modem gets attached to netif.
+    // we don't have any detach functionality, so we unregister here and ignore potential error
+    esp_event_handler_unregister(NETIF_PPP_STATUS, ESP_EVENT_ANY_ID, on_ppp_changed);
+
     return ESP_OK;
 
 clear_event_failed:
