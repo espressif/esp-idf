@@ -1,6 +1,3 @@
-| Supported Targets | ESP32 | ESP32-S2 |
-| ----------------- | ----- | -------- |
-
 # High Resolution Timer Example (`esp_timer`)
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)

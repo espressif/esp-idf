@@ -77,6 +77,11 @@ test_weekend_mqtt:
     - .example_test_template
     - .rules:labels:example_test-esp32c3
 
+.example_test_esp32s3_template:
+  extends:
+    - .example_test_template
+    - .rules:test:example_test-esp32s3
+
 example_test_001A:
   extends: .example_test_esp32_template
   tags:
@@ -269,6 +274,12 @@ example_test_ESP32_SDSPI:
   tags:
     - ESP32
     - UT_T1_SPIMODE
+
+example_test_S3_GENERIC:
+  extends: .example_test_esp32s3_template
+  tags:
+    - ESP32S3
+    - Example_GENERIC
 
 example_test_ESP32S2_SDSPI:
   extends: .example_test_esp32s2_template
