@@ -83,8 +83,8 @@ menu "ESP System Settings"
         default y if IDF_TARGET_ESP32S2
         default y if IDF_TARGET_ESP32C3
         default y if IDF_TARGET_ESP32S3
-        default y if IDF_TARGET_ESP32H2
-        depends on !IDF_TARGET_ESP8684
+        default y if IDF_TARGET_ESP32H2_BETA_VERSION_1
+        depends on !IDF_TARGET_ESP8684 && !IDF_TARGET_ESP32H2_BETA_VERSION_2
 
     config ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
         bool "Enable RTC fast memory for dynamic allocations"

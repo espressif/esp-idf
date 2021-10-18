@@ -6,11 +6,11 @@
 #ifndef _SOC_ASSIST_DEBUG_REG_H_
 #define _SOC_ASSIST_DEBUG_REG_H_
 
+#include "soc/soc.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc.h"
 #define ASSIST_DEBUG_CORE_0_INTR_ENA_REG          (DR_REG_ASSIST_DEBUG_BASE + 0x000)
 /* ASSIST_DEBUG_CORE_0_DRAM0_EXCEPTION_MONITOR_ENA : R/W ;bitpos:[11] ;default: 1'b0 ; */
 /*description: */

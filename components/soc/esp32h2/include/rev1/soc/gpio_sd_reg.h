@@ -6,11 +6,11 @@
 #ifndef _SOC_GPIO_SD_REG_H_
 #define _SOC_GPIO_SD_REG_H_
 
+#include "soc/soc.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc.h"
 #define GPIO_SIGMADELTA0_REG          (DR_REG_GPIO_SD_BASE + 0x0000)
 /* GPIO_SD0_PRESCALE : R/W ;bitpos:[15:8] ;default: 8'hff ; */
 /*description: */

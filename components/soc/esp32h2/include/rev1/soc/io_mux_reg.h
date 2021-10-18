@@ -6,7 +6,7 @@
 #ifndef _SOC_IO_MUX_REG_H_
 #define _SOC_IO_MUX_REG_H_
 
-#include "soc.h"
+#include "soc/soc.h"
 
 /* The following are the bit fields for PERIPHS_IO_MUX_x_U registers */
 /* Output enable in sleep mode */

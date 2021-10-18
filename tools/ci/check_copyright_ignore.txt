@@ -934,7 +934,6 @@ components/esp_system/port/soc/esp32h2/apb_backup_dma.c
 components/esp_system/port/soc/esp32h2/cache_err_int.c
 components/esp_system/port/soc/esp32h2/cache_err_int.h
 components/esp_system/port/soc/esp32h2/reset_reason.c
-components/esp_system/port/soc/esp32h2/system_internal.c
 components/esp_system/port/soc/esp32s2/cache_err_int.c
 components/esp_system/port/soc/esp32s2/cache_err_int.h
 components/esp_system/port/soc/esp32s2/reset_reason.c
@@ -1948,7 +1947,6 @@ components/soc/esp32c3/sigmadelta_periph.c
 components/soc/esp32c3/spi_periph.c
 components/soc/esp32c3/uart_periph.c
 components/soc/esp32h2/adc_periph.c
-components/soc/esp32h2/gpio_periph.c
 components/soc/esp32h2/gdma_periph.c
 components/soc/esp32h2/i2c_periph.c
 components/soc/esp32h2/i2s_periph.c
@@ -1967,10 +1965,8 @@ components/soc/esp32h2/include/soc/efuse_struct.h
 components/soc/esp32h2/include/soc/extmem_reg.h
 components/soc/esp32h2/include/soc/fe_reg.h
 components/soc/esp32h2/include/soc/gpio_pins.h
-components/soc/esp32h2/include/soc/gpio_reg.h
 components/soc/esp32h2/include/soc/gpio_sd_reg.h
 components/soc/esp32h2/include/soc/gpio_sd_struct.h
-components/soc/esp32h2/include/soc/gpio_sig_map.h
 components/soc/esp32h2/include/soc/gpio_struct.h
 components/soc/esp32h2/include/soc/hwcrypto_reg.h
 components/soc/esp32h2/include/soc/i2c_reg.h

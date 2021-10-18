@@ -146,19 +146,6 @@ typedef enum {
     RTC_XTAL_FREQ_40M = 40,     //!< 40 MHz XTAL
 } rtc_xtal_freq_t;
 
-#if CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2
-/**
- * @brief CPU frequency values
- */
-typedef enum {
-    RTC_CPU_FREQ_XTAL = 0,      //!< Main XTAL frequency
-    RTC_CPU_FREQ_80M = 1,       //!< 80 MHz
-    RTC_CPU_FREQ_160M = 2,      //!< 160 MHz
-    RTC_CPU_FREQ_240M = 3,      //!< 240 MHz
-    RTC_CPU_FREQ_2M = 4,        //!< 2 MHz
-} rtc_cpu_freq_t;
-#endif
-
 /**
  * @brief CPU clock source
  */

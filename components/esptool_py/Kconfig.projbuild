@@ -2,7 +2,7 @@ menu "Serial flasher config"
 
     config ESPTOOLPY_NO_STUB
         bool "Disable download stub"
-        default "y" if IDF_TARGET="esp32h2"
+        default "y" if IDF_TARGET_ESP32H2 && IDF_ENV_FPGA # TODO: IDF-4288
         default "n"
 
         help
