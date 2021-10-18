@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at",
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <windows.h>
 #include <shlwapi.h>
@@ -19,7 +11,11 @@
 
 #define LINESIZE 1024
 
+#ifdef __GNUC__
 static void fail(LPCSTR message, ...) __attribute__((noreturn));
+#else
+__declspec(noreturn) static void fail(LPCSTR message, ...);
+#endif
 
 static void fail(LPCSTR message, ...)
 {
@@ -66,7 +62,7 @@ int main(int argc, LPTSTR argv[])
     LPCTSTR idfpy_script_name = TEXT("idf.py");
 
     /* Get IDF_PATH */
-    TCHAR idf_path[LINESIZE] = {};
+    TCHAR idf_path[LINESIZE] = { 0 };
     if (GetEnvironmentVariable(TEXT("IDF_PATH"), idf_path, sizeof(idf_path)) == 0) {
         DWORD err = GetLastError();
         if (err == ERROR_ENVVAR_NOT_FOUND) {
@@ -76,13 +72,13 @@ int main(int argc, LPTSTR argv[])
         }
     }
 
-    /* Prepare the command line: python.exe %IDF_PATH%\\tools\idf.py <rest of the args> */
-    TCHAR cmdline[LINESIZE] = {};
-    StringCchCat(cmdline, sizeof(cmdline), TEXT("python.exe "));
+    /* Prepare the command line: python.exe "%IDF_PATH%\\tools\idf.py" <rest of the args> */
+    TCHAR cmdline[LINESIZE] = { 0 };
+    StringCchCat(cmdline, sizeof(cmdline), TEXT("python.exe \""));
     StringCchCat(cmdline, sizeof(cmdline), idf_path);
     StringCchCat(cmdline, sizeof(cmdline), TEXT("\\tools\\"));
     StringCchCat(cmdline, sizeof(cmdline), idfpy_script_name);
-    StringCchCat(cmdline, sizeof(cmdline), TEXT(" "));
+    StringCchCat(cmdline, sizeof(cmdline), TEXT("\" "));
     for (int i = 1; i < argc; ++i) {
         StringCchCat(cmdline, sizeof(cmdline), argv[i]);
         StringCchCat(cmdline, sizeof(cmdline), TEXT(" "));

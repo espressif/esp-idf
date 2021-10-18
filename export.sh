@@ -52,7 +52,7 @@ __main() {
         # shellcheck disable=SC2169,SC2169,SC2039  # unreachable with 'dash'
         if [[ "$OSTYPE" == "darwin"* ]]; then
             # convert possibly relative path to absolute
-            script_dir="$(realpath_int "${self_path}")"
+            script_dir="$(__realpath "${self_path}")"
             # resolve any ../ references to make the path shorter
             script_dir="$(cd "${script_dir}" || exit 1; pwd)"
         else
@@ -111,16 +111,19 @@ __main() {
     then
         path_prefix=${PATH%%${old_path}}
         # shellcheck disable=SC2169,SC2039  # unreachable with 'dash'
-        paths="${path_prefix//:/ }"
-        if [ -n "${paths}" ]; then
+        if [ -n "${path_prefix}" ]; then
             __verbose "Added the following directories to PATH:"
         else
             __verbose "All paths are already set."
         fi
-        for path_entry in ${paths}
+        old_ifs="$IFS"
+        IFS=":"
+        for path_entry in ${path_prefix}
         do
             __verbose "  ${path_entry}"
         done
+        IFS="$old_ifs"
+        unset old_ifs
     else
         __verbose "Updated PATH variable:"
         __verbose "  ${PATH}"

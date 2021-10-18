@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.5)
 project(idfexe)
 
-set(VERSION 1.0.1)
+set(VERSION 1.0.2)
 set(ARCHIVE_NAME idf-exe-v${VERSION}.zip)
 
 add_executable(idf idf_main.c)
 target_compile_definitions(idf PRIVATE -DVERSION=\"${VERSION}\")
 set_target_properties(idf PROPERTIES C_STANDARD 99)
-target_link_libraries(idf "-lshlwapi")
+target_link_libraries(idf "shlwapi")
 
 if(CMAKE_BUILD_TYPE STREQUAL Release)
     add_custom_command(TARGET idf

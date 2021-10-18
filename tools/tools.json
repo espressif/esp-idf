@@ -625,17 +625,17 @@
       "version_regex": "([0-9.]+)",
       "versions": [
         {
-          "name": "1.0.1",
+          "name": "1.0.2",
           "status": "recommended",
           "win32": {
-            "sha256": "53eb6aaaf034cc7ed1a97d5c577afa0f99815b7793905e9408e74012d357d04a",
-            "size": 11297,
-            "url": "https://dl.espressif.com/dl/idf-exe-v1.0.1.zip"
+            "sha256": "93d45466cd2c86231f0693a60f68833db7bc63da17e876b2a64298a8869b916f",
+            "size": 7223,
+            "url": "https://dl.espressif.com/dl/idf-exe-v1.0.2.zip"
           },
           "win64": {
-            "sha256": "53eb6aaaf034cc7ed1a97d5c577afa0f99815b7793905e9408e74012d357d04a",
-            "size": 11297,
-            "url": "https://dl.espressif.com/dl/idf-exe-v1.0.1.zip"
+            "sha256": "93d45466cd2c86231f0693a60f68833db7bc63da17e876b2a64298a8869b916f",
+            "size": 7223,
+            "url": "https://dl.espressif.com/dl/idf-exe-v1.0.2.zip"
           }
         }
       ]
