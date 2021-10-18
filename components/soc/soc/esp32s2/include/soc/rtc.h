@@ -107,6 +107,9 @@ extern "C" {
 #define RTC_CNTL_CK8M_DFREQ_DEFAULT 172
 #define RTC_CNTL_SCK_DCAP_DEFAULT   255
 
+#define RTC_CNTL_ULPCP_TOUCH_START_WAIT_IN_SLEEP    (0xFF)
+#define RTC_CNTL_ULPCP_TOUCH_START_WAIT_DEFAULT     (0x10)
+
 /*
 set sleep_init default param
 */
