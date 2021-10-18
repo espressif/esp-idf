@@ -879,7 +879,6 @@ components/esp_pm/pm_locks.c
 components/esp_pm/pm_trace.c
 components/esp_pm/test/test_pm.c
 components/esp_ringbuf/include/freertos/ringbuf.h
-components/esp_ringbuf/ringbuf.c
 components/esp_ringbuf/test/test_ringbuf.c
 components/esp_rom/esp32/esp_rom_caps.h
 components/esp_rom/esp32/ld/esp32.rom.api.ld
