@@ -75,11 +75,11 @@ static inline bool is_only_cr_lf(const char *str, uint32_t len)
     return true;
 }
 
-static inline void report_unknown_line(esp_modem_dte_t *esp_dte, char *line)
+static inline void report_unknown_line(esp_modem_dte_t *esp_dte, char *line, int line_len)
 {
     /* Send ESP_MODEM_EVENT_UNKNOWN signal to event loop */
     esp_event_post_to(esp_dte->event_loop_hdl, ESP_MODEM_EVENT, ESP_MODEM_EVENT_UNKNOWN,
-                      (void *)line, strlen(line) + 1, pdMS_TO_TICKS(100));
+                      (void *)line, line_len + 1, pdMS_TO_TICKS(100));
 }
 
 esp_err_t esp_modem_set_rx_cb(modem_dte_t *dte, esp_modem_on_receive receive_cb, void *receive_cb_ctx)
@@ -112,24 +112,25 @@ static esp_err_t esp_dte_handle_line(esp_modem_dte_t *esp_dte, char * line, size
     char *str_ptr = NULL;
     char *p = strtok_r(line, "\n", &str_ptr);
     while (p) {
-        if (len > 2 && !is_only_cr_lf(p, strlen(p))) {
+        int plen = strlen(p);
+        if (plen > 2 && !is_only_cr_lf(p, plen)) {
             ESP_LOGD(MODEM_TAG, "Handling line: >>%s\n<<", p);
             if (dce->handle_line == NULL) {
                 /* Received an asynchronous line, but no handler waiting this this */
                 ESP_LOGD(MODEM_TAG, "No handler for line: %s", p);
-                report_unknown_line(esp_dte, line);
+                report_unknown_line(esp_dte, p, plen);
                 return ESP_OK; /* Not an error, just propagate the line to user handler */
             }
             if (dce->handle_line(dce, p) != ESP_OK) {
                 ESP_LOGE(MODEM_TAG, "handle line failed");
-                report_unknown_line(esp_dte, line);
+                report_unknown_line(esp_dte, p, plen);
             }
         }
         p = strtok_r(NULL, "\n", &str_ptr);
     }
     return ESP_OK;
 post_event_unknown:
-    report_unknown_line(esp_dte, line);
+    report_unknown_line(esp_dte, line, strlen(line));
 err:
     return err;
 }
