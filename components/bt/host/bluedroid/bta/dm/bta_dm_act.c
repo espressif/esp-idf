@@ -5351,6 +5351,16 @@ void bta_dm_ble_set_data_length(tBTA_DM_MSG *p_data)
         APPL_TRACE_ERROR("%s error: Invalid connection remote_bda.", __func__);
         return;
     }
+
+    p_acl_cb->p_set_pkt_data_cback = p_data->ble_set_data_length.p_set_pkt_data_cback;
+    // if the value of the data length is same, triger callback directly
+    if(p_data->ble_set_data_length.tx_data_length == p_acl_cb->data_length_params.tx_len) {
+        if(p_data->ble_set_data_length.p_set_pkt_data_cback) {
+            (*p_data->ble_set_data_length.p_set_pkt_data_cback)(status, &p_acl_cb->data_length_params);
+        }
+        return;
+    }
+
     if(p_acl_cb->data_len_updating) {
         // aleady have one cmd
         if(p_acl_cb->data_len_waiting) {
@@ -5363,14 +5373,6 @@ void bta_dm_ble_set_data_length(tBTA_DM_MSG *p_data)
             return;
         }
     } else {
-        p_acl_cb->p_set_pkt_data_cback = p_data->ble_set_data_length.p_set_pkt_data_cback;
-        // if the value of the data length is same, triger callback directly
-        if(p_data->ble_set_data_length.tx_data_length == p_acl_cb->data_length_params.tx_len) {
-            if(p_data->ble_set_data_length.p_set_pkt_data_cback) {
-                (*p_data->ble_set_data_length.p_set_pkt_data_cback)(status, &p_acl_cb->data_length_params);
-            }
-            return;
-        }
         status = BTM_SetBleDataLength(p_data->ble_set_data_length.remote_bda,
                                         p_data->ble_set_data_length.tx_data_length);
     }
