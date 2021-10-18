@@ -369,4 +369,5 @@ test_linux_example:
   script:
     - cd ${IDF_PATH}/examples/build_system/cmake/linux_host_app
     - idf.py build
-    - build/linux_host_app.elf
+    - timeout 5 ./build/linux_host_app.elf >test.log || true
+    - grep "Restarting" test.log

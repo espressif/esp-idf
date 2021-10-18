@@ -4019,11 +4019,9 @@ tools/find_build_apps/common.py
 tools/find_build_apps/make.py
 tools/gdb_panic_server.py
 tools/gen_esp_err_to_name.py
-tools/idf_monitor.py
 tools/idf_monitor_base/ansi_color_converter.py
 tools/idf_monitor_base/argument_parser.py
 tools/idf_monitor_base/chip_specific_config.py
-tools/idf_monitor_base/console_parser.py
 tools/idf_monitor_base/console_reader.py
 tools/idf_monitor_base/constants.py
 tools/idf_monitor_base/coredump.py
@@ -4032,8 +4030,6 @@ tools/idf_monitor_base/gdbhelper.py
 tools/idf_monitor_base/line_matcher.py
 tools/idf_monitor_base/logger.py
 tools/idf_monitor_base/output_helpers.py
-tools/idf_monitor_base/serial_handler.py
-tools/idf_monitor_base/serial_reader.py
 tools/idf_monitor_base/stoppable_thread.py
 tools/idf_monitor_base/web_socket_client.py
 tools/idf_py_actions/constants.py
@@ -4043,7 +4039,6 @@ tools/idf_py_actions/debug_ext.py
 tools/idf_py_actions/dfu_ext.py
 tools/idf_py_actions/errors.py
 tools/idf_py_actions/global_options.py
-tools/idf_py_actions/serial_ext.py
 tools/idf_py_actions/tools.py
 tools/idf_py_actions/uf2_ext.py
 tools/kconfig/conf.c
@@ -4155,7 +4150,6 @@ tools/test_apps/system/startup/app_test.py
 tools/test_apps/system/startup/main/chip_info_patch.c
 tools/test_apps/system/startup/main/test_startup_main.c
 tools/test_idf_monitor/dummy.c
-tools/test_idf_monitor/idf_monitor_wrapper.py
 tools/test_idf_monitor/run_test_idf_monitor.py
 tools/test_idf_py/extra_path/some_ext.py
 tools/test_idf_py/idf_ext.py
