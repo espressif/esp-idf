@@ -859,12 +859,10 @@ components/esp_netif/esp_netif_handlers.c
 components/esp_netif/esp_netif_objects.c
 components/esp_netif/include/esp_netif.h
 components/esp_netif/include/esp_netif_defaults.h
-components/esp_netif/include/esp_netif_ip_addr.h
 components/esp_netif/include/esp_netif_net_stack.h
 components/esp_netif/include/esp_netif_ppp.h
 components/esp_netif/include/esp_netif_slip.h
 components/esp_netif/include/esp_netif_sta_list.h
-components/esp_netif/include/esp_netif_types.h
 components/esp_netif/loopback/esp_netif_loopback.c
 components/esp_netif/lwip/esp_netif_lwip.c
 components/esp_netif/lwip/esp_netif_lwip_defaults.c
