@@ -1041,12 +1041,12 @@ BaseType_t xRingbufferSend(RingbufHandle_t xRingbuffer,
          */
     }
 
+    if (xReturnSemaphore == pdTRUE) {
+        xSemaphoreGive(rbGET_TX_SEM_HANDLE(pxRingbuffer));  //Give back semaphore so other tasks can send
+    }
     if (xReturn == pdTRUE) {
         //Indicate item was successfully sent
         xSemaphoreGive(rbGET_RX_SEM_HANDLE(pxRingbuffer));
-    }
-    if (xReturnSemaphore == pdTRUE) {
-        xSemaphoreGive(rbGET_TX_SEM_HANDLE(pxRingbuffer));  //Give back semaphore so other tasks can send
     }
     return xReturn;
 }
@@ -1083,12 +1083,12 @@ BaseType_t xRingbufferSendFromISR(RingbufHandle_t xRingbuffer,
     }
     portEXIT_CRITICAL_ISR(&pxRingbuffer->mux);
 
+    if (xReturnSemaphore == pdTRUE) {
+        xSemaphoreGiveFromISR(rbGET_TX_SEM_HANDLE(pxRingbuffer), pxHigherPriorityTaskWoken);  //Give back semaphore so other tasks can send
+    }
     if (xReturn == pdTRUE) {
         //Indicate item was successfully sent
         xSemaphoreGiveFromISR(rbGET_RX_SEM_HANDLE(pxRingbuffer), pxHigherPriorityTaskWoken);
-    }
-    if (xReturnSemaphore == pdTRUE) {
-        xSemaphoreGiveFromISR(rbGET_TX_SEM_HANDLE(pxRingbuffer), pxHigherPriorityTaskWoken);  //Give back semaphore so other tasks can send
     }
     return xReturn;
 }
