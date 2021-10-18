@@ -92,6 +92,7 @@ static esp_err_t sim800_set_working_mode(modem_dce_t *dce, modem_mode_t mode)
             DCE_CHECK(dce->state == MODEM_STATE_SUCCESS, "sync failed", err);
         } else {
             DCE_CHECK(dce->state == MODEM_STATE_SUCCESS, "enter command mode failed", err);
+            vTaskDelay(pdMS_TO_TICKS(1000)); // spec: 1s delay after `+++` command
         }
         ESP_LOGD(DCE_TAG, "enter command mode ok");
         dce->mode = MODEM_COMMAND_MODE;
