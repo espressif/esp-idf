@@ -665,7 +665,7 @@ deploy_docs_preview:
     DOCS_DEPLOY_SERVER: "$DOCS_SERVER"
     DOCS_DEPLOY_SERVER_USER: "$DOCS_SERVER_USER"
     DOCS_DEPLOY_PATH: "$DOCS_PATH"
-    DOCS_DEPLOY_URL_BASE: "https://$CI_DOCKER_REGISTRY/docs/esp-idf"
+    DOCS_DEPLOY_URL_BASE: "https://$DOCS_PREVIEW_SERVER_URL/docs/esp-idf"
 
 # deploy docs to production webserver
 deploy_docs_production:
