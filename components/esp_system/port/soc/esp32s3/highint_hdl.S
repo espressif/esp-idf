@@ -49,7 +49,7 @@ xt_highint4:
     /* See if we're here for the IPC_ISR interrupt */
     rsr     a0, INTERRUPT
     extui   a0, a0, ETS_IPC_ISR_INUM, 1
-    bnez    a0, esp_ipc_isr_handler
+    bnez    a0, jump_to_esp_ipc_isr_handler
 #endif // not CONFIG_FREERTOS_UNICORE
 
     /* Allocate exception frame and save minimal context. */
@@ -129,6 +129,14 @@ xt_highint4:
 
     rsr     a0, EXCSAVE_4                   /* restore a0 */
     rfi     4
+
+#ifdef CONFIG_ESP_IPC_ISR_ENABLE
+jump_to_esp_ipc_isr_handler:
+    /* Address of `esp_ipc_isr_handler_address` will always be in `movi` range
+     * as it is defined right above. */
+    movi    a0, esp_ipc_isr_handler
+    jx      a0
+#endif
 
 /* The linker has no reason to link in this file; all symbols it exports are already defined
    (weakly!) in the default int handler. Define a symbol here so we can use it to have the
