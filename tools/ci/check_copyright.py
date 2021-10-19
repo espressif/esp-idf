@@ -16,6 +16,7 @@ Check files for copyright headers:
 """
 import argparse
 import datetime
+import fnmatch
 import os
 import re
 import sys
@@ -28,6 +29,7 @@ from thefuzz import fuzz
 
 IDF_PATH = os.getenv('IDF_PATH', os.getcwd())
 IGNORE_LIST_FN = os.path.join(IDF_PATH, 'tools/ci/check_copyright_ignore.txt')
+PERMANENT_IGNORE_LIST_FN = os.path.join(IDF_PATH, 'tools/ci/check_copyright_permanent_ignore.txt')
 
 CHECK_FAIL_MESSAGE = textwrap.dedent('''\
     To make a file, not on the ignore list to pass the test it needs to contain both:
@@ -361,11 +363,18 @@ def check_copyrights(args: argparse.Namespace) -> Tuple[List, List]:
         ignore_list = [item.strip() for item in f.readlines()]
         updated_ignore_list = ignore_list.copy()
 
+    with open(PERMANENT_IGNORE_LIST_FN) as f:
+        permanent_ignore_list = [item.strip() for item in f.readlines()]
+
     for file_name in args.filenames:
         try:
             mime = get_file_mime(file_name)
         except UnsupportedFileType:
             print(f'{TERMINAL_GRAY}"{file_name}" is not of a supported type! Skipping.{TERMINAL_RESET}')
+            continue
+
+        if any(fnmatch.fnmatch(file_name, pattern) for pattern in permanent_ignore_list):
+            print(f'{TERMINAL_YELLOW}"{file_name}" is ignored by a permanent pattern!{TERMINAL_RESET}')
             continue
 
         if file_name in ignore_list:
@@ -425,6 +434,7 @@ def main() -> None:
 
     if args.debug:
         print(f'{TERMINAL_GRAY}Running with args: {args}')
+        print(f'Permanent ignore list: {PERMANENT_IGNORE_LIST_FN}')
         print(f'Ignore list: {IGNORE_LIST_FN}{TERMINAL_RESET}')
 
     wrong_header_files, modified_files = check_copyrights(args)

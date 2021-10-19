@@ -1,0 +1,9 @@
+components/bt/common/osi/*
+components/bt/host/bluedroid/bta/*
+components/bt/host/bluedroid/common/*
+components/bt/host/bluedroid/device/*
+components/bt/host/bluedroid/external/*
+components/bt/host/bluedroid/hci/*
+components/bt/host/bluedroid/main/*
+components/bt/host/bluedroid/stack/*
+components/bt/host/nimble/nimble/*

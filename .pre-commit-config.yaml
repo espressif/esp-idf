@@ -120,4 +120,4 @@ repos:
     rev: v4.0.1
     hooks:
       - id: file-contents-sorter
-        files: 'tools\/ci\/(executable-list\.txt|mypy_ignore_list\.txt|check_copyright_ignore\.txt)'
+        files: 'tools\/ci\/(executable-list\.txt|mypy_ignore_list\.txt|check_copyright_ignore\.txt|check_copyright_permanent_ignore\.txt)'
