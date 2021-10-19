@@ -50,6 +50,9 @@
 #define MB_TCP_STACK_SIZE               (CONFIG_FMB_PORT_TASK_STACK_SIZE)
 #define MB_TCP_TASK_PRIO                (CONFIG_FMB_PORT_TASK_PRIO)
 
+// The task affinity for Modbus stack tasks
+#define MB_PORT_TASK_AFFINITY           (CONFIG_FMB_PORT_TASK_AFFINITY)
+
 #define MB_TCP_READ_TIMEOUT_MS          (100) // read timeout in mS
 #define MB_TCP_READ_TIMEOUT             (pdMS_TO_TICKS(MB_TCP_READ_TIMEOUT_MS))
 #define MB_TCP_SEND_TIMEOUT_MS          (500) // send event timeout in mS

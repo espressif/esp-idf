@@ -123,12 +123,13 @@ xMBMasterTCPPortInit( USHORT usTCPPort )
     }
 
     // Create task for packet processing
-    BaseType_t xErr = xTaskCreate(vMBTCPPortMasterTask,
+    BaseType_t xErr = xTaskCreatePinnedToCore(vMBTCPPortMasterTask,
                                     "tcp_master_task",
                                     MB_TCP_STACK_SIZE,
                                     NULL,
                                     MB_TCP_TASK_PRIO,
-                                    &xMbPortConfig.xMbTcpTaskHandle);
+                                    &xMbPortConfig.xMbTcpTaskHandle,
+                                    MB_PORT_TASK_AFFINITY);
     if (xErr != pdTRUE)
     {
         ESP_LOGE(MB_TCP_MASTER_PORT_TAG, "TCP master task creation failure.");
