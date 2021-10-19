@@ -3946,7 +3946,6 @@ tools/ci/check_public_headers.py
 tools/ci/check_readme_links.py
 tools/ci/check_rules_yml.py
 tools/ci/check_soc_struct_headers.py
-tools/ci/check_tools_files_patterns.py
 tools/ci/check_type_comments.py
 tools/ci/checkout_project_ref.py
 tools/ci/ci_fetch_submodule.py

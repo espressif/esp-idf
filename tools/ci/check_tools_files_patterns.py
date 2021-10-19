@@ -1,18 +1,7 @@
 #!/usr/bin/env python
 #
-# Copyright 2021 Espressif Systems (Shanghai) CO LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 
 import argparse
 import fnmatch
@@ -35,9 +24,9 @@ def _ishidden(path):  # pylint: disable=W0613
 
 fnmatch.translate = translate
 
-glob.magic_check = magic_check
-glob.magic_check_bytes = magic_check_bytes
-glob._ishidden = _ishidden  # pylint: disable=W0212
+glob.magic_check = magic_check  # type: ignore
+glob.magic_check_bytes = magic_check_bytes  # type: ignore
+glob._ishidden = _ishidden  # type: ignore # pylint: disable=W0212
 # ends here
 
 
@@ -80,15 +69,22 @@ if __name__ == '__main__':
 
     res = 0
     not_included_files, dup_patterns = check(args.pattern_yml, args.exclude_list)
-    if not_included_files:
-        print('Missing Files: (please add to tools/ci/exclude_check_tools_files.txt')
-        for file in not_included_files:
-            print(file)
+    if not_included_files or dup_patterns:
         res = 1
-    if dup_patterns:
-        print('Duplicated Patterns: (please check .gitlab/ci/rules.yml and tools/ci/exclude_check_tools_files.txt')
-        for pattern in dup_patterns:
-            print(pattern)
-        res = 1
+        print('This test is used for making sure of all the tools dir files are recorded in .gitlab/ci/rules.yml to '
+              'trigger the related tests, except those files should be excluded.')
+        if not_included_files:
+            print('Missing Files:')
+            for file in not_included_files:
+                print('\t' + file)
+            print('Please add these files or glob patterns to ".gitlab/ci/rules.yml" and put related files under '
+                  '".patterns-<test_group>" block to trigger related tests.\n'
+                  'Or add them to "tools/ci/exclude_check_tools_files.txt" to exclude them.')
+
+        if dup_patterns:
+            print('Duplicated Patterns:')
+            for pattern in dup_patterns:
+                print('\t' + pattern)
+            print('Please remove them from tools/ci/exclude_check_tools_files.txt')
 
     sys.exit(res)
