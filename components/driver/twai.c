@@ -712,12 +712,17 @@ esp_err_t twai_clear_receive_queue(void)
 }
 
 
-
-
 // Internal function used in twai_get_bitrate_timings
 float _fround(float val) {
     return (float) ((uint16_t) (val * 10000.0 + 0.5)) / 100.0;
 }
+
+
+#if (TWAI_BRP_MAX == 256)
+#define TWAI_BRP_IS_VALID(brp) (((brp) >= 2 && (brp) <= 128 && ((brp) & 0x1) == 0) || ((brp) >= 132 && (brp) <= 256 && ((brp) & 0x3) == 0))
+#else
+#define TWAI_BRP_IS_VALID(brp) ((brp) >= 2 && (brp) <= TWAI_BRP_MAX && ((brp) & 0x1) == 0)
+#endif
 
 
 // This function needs to be called 2 times, the first time passing NULL to matches and 0 to num_matches.
@@ -743,7 +748,7 @@ int16_t twai_get_bitrate_timings(
         } else if (nominal_bitrate > 500000) {
             nominal_sample_point = 80.0F;
         } else {
-            nominal_bitrate = 87.5F;
+            nominal_sample_point = 87.5F;
         }
     }
 

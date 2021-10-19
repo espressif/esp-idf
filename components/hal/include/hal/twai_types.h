@@ -49,16 +49,13 @@ extern "C" {
 
 #define TWAI_BRP_MAX    SOC_TWAI_BRP_MAX    /**< Maximum configurable BRP value */
 #define TWAI_BRP_MIN    SOC_TWAI_BRP_MIN    /**< Minimum configurable BRP value */
+#define TWAI_BRP_INC  (2)
 
 #define TWAI_TSEG1_MIN  (2)
 #define TWAI_TSEG1_MAX  (16)
 
 #define TWAI_TSEG2_MIN  (1)
 #define TWAI_TSEG2_MAX  (8)
-
-#define TWAI_BRP_MIN  (2)
-#define BRP_MAX  TWAI_BRP_MAX
-#define TWAI_BRP_INC  (2)
 
 #define TWAI_SJW_MAX  (4)
 #define TWAI_FSYS  (APB_CLK_FREQ)
