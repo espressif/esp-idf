@@ -310,6 +310,7 @@ static const uint8_t * _mdns_read_fqdn(const uint8_t * packet, const uint8_t * s
             buf[len] = '\0';
             if (name->parts == 1 && buf[0] != '_'
                     && (strcasecmp(buf, MDNS_DEFAULT_DOMAIN) != 0)
+                    && (strcasecmp(buf, "arpa") != 0)
                     && (strcasecmp(buf, "ip6") != 0)
                     && (strcasecmp(buf, "in-addr") != 0)) {
                 strlcat(name->host, ".", sizeof(name->host));
@@ -2793,7 +2794,8 @@ static const uint8_t * _mdns_parse_fqdn(const uint8_t * packet, const uint8_t * 
     if (strcasecmp(name->domain, MDNS_DEFAULT_DOMAIN) == 0 || strcasecmp(name->domain, "arpa") == 0) {
         return next_data;
     }
-    return 0;
+    name->invalid = true; // mark the current name invalid, but continue with other question
+    return next_data;
 }
 
 /**
