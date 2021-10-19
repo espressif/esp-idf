@@ -17,6 +17,7 @@
 #include "soc/soc.h"
 #if CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/spi_timing_config.h"
+#include "esp32s3/rom/cache.h"
 #endif
 
 #define ARRAY_SIZE(arr) (sizeof(arr)/sizeof(*(arr)))
@@ -377,6 +378,7 @@ void spi_timing_psram_tuning(void)
 }
 #endif  //SPI_TIMING_PSRAM_NEEDS_TUNING
 
+
 /*------------------------------------------------------------------------------
  * APIs to make SPI0 (and SPI1) FLASH work for high/low freq
  *----------------------------------------------------------------------------*/
@@ -460,9 +462,33 @@ void spi_timing_enter_mspi_high_speed_mode(bool control_spi1)
 #endif
 }
 
-/**
- * Should be only used by SPI1 Flash driver to know the necessary timing registers
- */
+void spi_timing_change_speed_mode_cache_safe(bool switch_down)
+{
+    Cache_Freeze_ICache_Enable(1);
+    Cache_Freeze_DCache_Enable(1);
+    if (switch_down) {
+        //enter MSPI low speed mode, extra delays should be removed
+        spi_timing_enter_mspi_low_speed_mode(false);
+    } else {
+        //enter MSPI high speed mode, extra delays should be considered
+        spi_timing_enter_mspi_high_speed_mode(false);
+    }
+    Cache_Freeze_DCache_Disable();
+    Cache_Freeze_ICache_Disable();
+}
+
+/*------------------------------------------------------------------------------
+ * APIs to inform SPI1 Flash driver of necessary timing configurations
+ *----------------------------------------------------------------------------*/
+bool spi_timing_is_tuned(void)
+{
+#if SPI_TIMING_FLASH_NEEDS_TUNING || SPI_TIMING_PSRAM_NEEDS_TUNING
+    return true;
+#else
+    return false;
+#endif
+}
+
 #if SPI_TIMING_FLASH_NEEDS_TUNING || SPI_TIMING_PSRAM_NEEDS_TUNING
 void spi_timing_get_flash_timing_param(spi_flash_hal_timing_config_t *out_timing_config)
 {
