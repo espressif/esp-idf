@@ -286,6 +286,8 @@
  */
 #define OPENTHREAD_CONFIG_MAC_SOFTWARE_TX_TIMING_ENABLE 1
 
+#define OPENTHREAD_ENABLE_NCP_VENDOR_HOOK 1
+
 /**
  * The configurable definitions via Kconfig
  */
