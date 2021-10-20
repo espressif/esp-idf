@@ -1079,7 +1079,7 @@ class StructureForArchiveSymbols(object):
 
 
 def get_archive_symbols(sections: Dict, archive: str, as_json: bool=False, sections_diff: Dict=None) -> str:
-    diff_en = sections_diff is not None
+    diff_en = bool(sections_diff)
     current = StructureForArchiveSymbols.get(archive, sections)
     reference = StructureForArchiveSymbols.get(archive, sections_diff) if sections_diff else {}
 
