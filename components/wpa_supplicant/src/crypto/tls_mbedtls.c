@@ -470,6 +470,10 @@ static int tls_create_mbedtls_handle(const struct tls_connection_params *params,
 		wpa_printf(MSG_ERROR, "mbedtls_ssl_setup returned -0x%x", -ret);
 		goto exit;
 	}
+#if defined(MBEDTLS_SSL_CBC_RECORD_SPLITTING)
+	/* Disable BEAST attack countermeasures for Windows 2008 interoperability */
+	mbedtls_ssl_conf_cbc_record_splitting(&tls->conf, MBEDTLS_SSL_CBC_RECORD_SPLITTING_DISABLED);
+#endif
 
 	/* Enable debug prints in case supplicant's prints are enabled */
 #if defined(DEBUG_PRINT) && defined(CONFIG_MBEDTLS_DEBUG) && defined(ESPRESSIF_USE)
