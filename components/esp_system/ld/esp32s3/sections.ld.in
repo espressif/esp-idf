@@ -18,6 +18,8 @@ SECTIONS
   .rtc.text :
   {
     . = ALIGN(4);
+    _rtc_text_start = ABSOLUTE(.);
+    *(.rtc.entry.text)
 
     mapping[rtc_text]
 

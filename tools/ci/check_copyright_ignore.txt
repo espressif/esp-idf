@@ -1050,7 +1050,6 @@ components/esp_rom/include/esp32s3/rom/miniz.h
 components/esp_rom/include/esp32s3/rom/opi_flash.h
 components/esp_rom/include/esp32s3/rom/rom_layout.h
 components/esp_rom/include/esp32s3/rom/rsa_pss.h
-components/esp_rom/include/esp32s3/rom/rtc.h
 components/esp_rom/include/esp32s3/rom/secure_boot.h
 components/esp_rom/include/esp32s3/rom/sha.h
 components/esp_rom/include/esp32s3/rom/spi_flash.h
@@ -1165,7 +1164,6 @@ components/esp_system/stack_check.c
 components/esp_system/system_time.c
 components/esp_system/test/test_delay.c
 components/esp_system/test/test_reset_reason.c
-components/esp_system/test/test_sleep.c
 components/esp_system/test/test_stack_check.c
 components/esp_system/test/test_system_time.c
 components/esp_system/test_eh_frame_parser/eh_frame_parser_impl.h
@@ -1737,7 +1735,6 @@ components/heap/heap_tlsf.h
 components/heap/heap_tlsf_block_functions.h
 components/heap/heap_tlsf_config.h
 components/heap/heap_trace_standalone.c
-components/heap/include/esp_heap_caps.h
 components/heap/include/esp_heap_caps_init.h
 components/heap/include/esp_heap_task_info.h
 components/heap/include/esp_heap_trace.h
@@ -1753,7 +1750,6 @@ components/heap/port/esp32/memory_layout.c
 components/heap/port/esp32c3/memory_layout.c
 components/heap/port/esp32h2/memory_layout.c
 components/heap/port/esp32s2/memory_layout.c
-components/heap/port/esp32s3/memory_layout.c
 components/heap/port/memory_layout_utils.c
 components/heap/test/test_aligned_alloc_caps.c
 components/heap/test/test_allocator_timings.c
@@ -2616,7 +2612,6 @@ components/soc/esp32s3/include/soc/sensitive_reg.h
 components/soc/esp32s3/include/soc/sensitive_struct.h
 components/soc/esp32s3/include/soc/sigmadelta_caps.h
 components/soc/esp32s3/include/soc/soc.h
-components/soc/esp32s3/include/soc/soc_caps.h
 components/soc/esp32s3/include/soc/soc_ulp.h
 components/soc/esp32s3/include/soc/spi_mem_reg.h
 components/soc/esp32s3/include/soc/spi_mem_struct.h

@@ -34,6 +34,25 @@ menu "Hardware Settings"
             bool
             default y if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
 
+        config ESP_SLEEP_GPIO_RESET_WORKAROUND
+            bool "light sleep GPIO reset workaround"
+            default y if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+            select PM_SLP_DISABLE_GPIO if FREERTOS_USE_TICKLESS_IDLE
+            help
+                esp32c3 and esp32s3 will reset at wake-up if GPIO is received a small electrostatic
+                pulse during light sleep, with specific condition
+
+                - GPIO needs to be configured as input-mode only
+                - The pin receives a small electrostatic pulse, and reset occurs when the pulse
+                  voltage is higher than 6 V
+
+                For GPIO set to input mode only, it is not a good practice to leave it open/floating,
+                The hardware design needs to controlled it with determined supply or ground voltage
+                is necessary.
+
+                This option provides a software workaround for this issue. Configure to isolate all
+                GPIO pins in sleep state.
+
         config ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND
             bool "PSRAM leakage current workaround in light sleep"
             depends on SPIRAM
