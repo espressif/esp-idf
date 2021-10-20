@@ -1154,7 +1154,6 @@ components/esp_system/port/soc/esp32s2/clk.c
 components/esp_system/port/soc/esp32s2/reset_reason.c
 components/esp_system/port/soc/esp32s2/system_internal.c
 components/esp_system/port/soc/esp32s2/usb_console.c
-components/esp_system/port/soc/esp32s3/cache_err_int.c
 components/esp_system/port/soc/esp32s3/cache_err_int.h
 components/esp_system/port/soc/esp32s3/clk.c
 components/esp_system/port/soc/esp32s3/reset_reason.c
@@ -2744,7 +2743,6 @@ components/spi_flash/spi_flash_chip_mxic_opi.c
 components/spi_flash/spi_flash_chip_winbond.c
 components/spi_flash/spi_flash_os_func_app.c
 components/spi_flash/spi_flash_os_func_noos.c
-components/spi_flash/test/test_cache_disabled.c
 components/spi_flash/test/test_esp_flash.c
 components/spi_flash/test/test_flash_encryption.c
 components/spi_flash/test/test_large_flash_writes.c

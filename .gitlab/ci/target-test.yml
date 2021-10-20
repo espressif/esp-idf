@@ -478,7 +478,7 @@ UT_001:
 
 UT_002:
   extends: .unit_test_esp32_template
-  parallel: 14
+  parallel: 15
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -683,7 +683,7 @@ UT_S2_SDSPI:
 
 UT_C3:
   extends: .unit_test_esp32c3_template
-  parallel: 32
+  parallel: 33
   tags:
     - ESP32C3_IDF
     - UT_T1_1
@@ -727,7 +727,7 @@ UT_C3_SDSPI:
 
 UT_S3:
   extends: .unit_test_esp32s3_template
-  parallel: 30
+  parallel: 31
   tags:
     - ESP32S3_IDF
     - UT_T1_1

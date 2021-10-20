@@ -422,11 +422,7 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
         "Coprocessor exception",
         "Interrupt wdt timeout on CPU0",
         "Interrupt wdt timeout on CPU1",
-#if CONFIG_IDF_TARGET_ESP32
         "Cache disabled but cached memory region accessed",
-#elif CONFIG_IDF_TARGET_ESP32S2
-        "Cache error",
-#endif
     };
 
     info->reason = pseudo_reason[0];
@@ -441,7 +437,7 @@ void panic_soc_fill_info(void *f, panic_info_t *info)
         info->exception = PANIC_EXCEPTION_DEBUG;
     }
 
-#if CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     if (frame->exccause == PANIC_RSN_CACHEERR) {
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
         if ( esp_memprot_is_intr_ena_any() ) {
