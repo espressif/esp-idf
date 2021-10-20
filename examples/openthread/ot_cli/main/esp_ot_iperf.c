@@ -1,10 +1,15 @@
-/* OpenThread Command Line Example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: CC0
+ *
+ * OpenThread Command Line Example
+ *
+ * This example code is in the Public Domain (or CC0 licensed, at your option.)
+ *
+ * Unless required by applicable law or agreed to in writing, this
+ * software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied.
 */
 
 #include "esp_check.h"
@@ -17,6 +22,7 @@
 #include <string.h>
 
 #define TAG "ot-iperf"
+static char s_dest_ip6_addr[50];
 
 void esp_ot_process_iperf(void *aContext, uint8_t aArgsLength, char *aArgs[])
 {
@@ -48,7 +54,8 @@ void esp_ot_process_iperf(void *aContext, uint8_t aArgsLength, char *aArgs[])
                 IPERF_FLAG_SET(cfg.flag, IPERF_FLAG_CLIENT);
                 IPERF_FLAG_CLR(cfg.flag, IPERF_FLAG_SERVER);
                 i++;
-                cfg.destination_ip6 = aArgs[i];
+                strcpy(s_dest_ip6_addr, aArgs[i]);
+                cfg.destination_ip6 = s_dest_ip6_addr;
                 otCliOutputFormat("ip:%s\n", cfg.destination_ip6);
             } else if (strcmp(aArgs[i], "-s") == 0) {
                 IPERF_FLAG_SET(cfg.flag, IPERF_FLAG_SERVER);
