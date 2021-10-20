@@ -2565,7 +2565,6 @@ components/wear_levelling/private_include/WL_Ext_Perf.h
 components/wear_levelling/private_include/WL_Ext_Safe.h
 components/wear_levelling/private_include/WL_Flash.h
 components/wear_levelling/private_include/WL_State.h
-components/wear_levelling/test/test_wl.c
 components/wear_levelling/test_wl_host/esp_error_check_stub.cpp
 components/wear_levelling/test_wl_host/main.cpp
 components/wear_levelling/test_wl_host/sdkconfig/sdkconfig.h
