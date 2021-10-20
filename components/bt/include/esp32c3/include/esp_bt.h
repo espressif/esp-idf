@@ -92,6 +92,11 @@ enum {
  */
 typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
 
+/**
+ * @brief callback function for Wi-Fi low power clock operations
+ */
+typedef void (* esp_set_lpclk_source_callback_t)(void);
+
 #ifdef CONFIG_BT_ENABLED
 
 #define BT_CTRL_BLE_MAX_ACT_LIMIT           10  //Maximum BLE activity limitation
@@ -534,6 +539,13 @@ void esp_wifi_bt_power_domain_on(void);
  * @brief bt Wi-Fi power domain power off
  */
 void esp_wifi_bt_power_domain_off(void);
+
+/**
+ * @brief Register application callback function to Wi-Fi low power clock module.
+ *
+ * @param callback : Wi-Fi set low power clock callback function
+ */
+void esp_wifi_set_lpclk_register_callback(esp_set_lpclk_source_callback_t callback);
 
 #ifdef __cplusplus
 }
