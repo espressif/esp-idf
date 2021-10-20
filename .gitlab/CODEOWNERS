@@ -85,7 +85,6 @@
 /components/esp_https_ota/            @esp-idf-codeowners/app-utilities
 /components/esp_https_server/         @esp-idf-codeowners/app-utilities
 /components/esp_hw_support/           @esp-idf-codeowners/system
-/components/esp_ipc/                  @esp-idf-codeowners/system
 /components/esp_lcd/                  @esp-idf-codeowners/peripherals
 /components/esp_local_ctrl/           @esp-idf-codeowners/app-utilities
 /components/esp_netif/                @esp-idf-codeowners/network
@@ -171,10 +170,9 @@
 /examples/storage/            @esp-idf-codeowners/storage
 /examples/system/             @esp-idf-codeowners/system
 /examples/wifi/               @esp-idf-codeowners/wifi
+/examples/zigbee/             @esp-idf-codeowners/ieee802154
 
 /examples/**/*.py             @esp-idf-codeowners/ci @esp-idf-codeowners/tools
-
-/make/    @esp-idf-codeowners/build-config
 
 /tools/                       @esp-idf-codeowners/tools
 /tools/*_apps.py              @esp-idf-codeowners/ci
