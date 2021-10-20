@@ -399,6 +399,8 @@ static DRAM_ATTR uint8_t btdm_lpcycle_us_frac = 0;
 static DRAM_ATTR QueueHandle_t s_wakeup_req_sem = NULL;
 // wakeup timer
 static DRAM_ATTR esp_timer_handle_t s_btdm_slp_tmr;
+// set low power clock source callback
+static esp_set_lpclk_source_callback_t s_set_lpclk_source_cb = NULL;
 
 #ifdef CONFIG_PM_ENABLE
 static DRAM_ATTR esp_pm_lock_handle_t s_pm_lock;
@@ -957,6 +959,11 @@ static void IRAM_ATTR btdm_mac_bb_power_up_cb(void)
 }
 #endif
 
+void esp_wifi_set_lpclk_register_callback(esp_set_lpclk_source_callback_t callback)
+{
+    s_set_lpclk_source_cb = callback;
+}
+
 esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 {
     esp_err_t err = ESP_FAIL;
@@ -1139,6 +1146,10 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
             goto error;
         }
 
+        if (s_set_lpclk_source_cb) {
+            s_set_lpclk_source_cb();
+        }
+
 #ifdef CONFIG_PM_ENABLE
         if (s_lp_cntl.no_light_sleep) {
             if ((err = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "btLS", &s_light_sleep_pm_lock)) != ESP_OK) {
@@ -1215,6 +1226,7 @@ error:
                 semphr_delete_wrapper(s_wakeup_req_sem);
                 s_wakeup_req_sem = NULL;
             }
+        }
 
         if (s_lp_cntl.lpclk_sel == BTDM_LPCLK_SEL_XTAL) {
 #ifdef CONFIG_BT_CTRL_MAIN_XTAL_PU_DURING_LIGHT_SLEEP
@@ -1223,7 +1235,15 @@ error:
                 s_lp_cntl.main_xtal_pu = 0;
             }
 #endif
+            btdm_lpclk_select_src(BTDM_LPCLK_SEL_RTC_SLOW);
+            btdm_lpclk_set_div(0);
+            if (s_set_lpclk_source_cb) {
+                s_set_lpclk_source_cb();
+            }
         }
+
+        btdm_lpcycle_us = 0;
+        s_set_lpclk_source_cb = NULL;
     } while (0);
 
 #if CONFIG_MAC_BB_PD
@@ -1294,7 +1314,15 @@ esp_err_t esp_bt_controller_deinit(void)
                 s_lp_cntl.main_xtal_pu = 0;
             }
 #endif
+            btdm_lpclk_select_src(BTDM_LPCLK_SEL_RTC_SLOW);
+            btdm_lpclk_set_div(0);
+            if (s_set_lpclk_source_cb) {
+                s_set_lpclk_source_cb();
+            }
         }
+
+        btdm_lpcycle_us = 0;
+        s_set_lpclk_source_cb = NULL;
     } while (0);
 
 #if CONFIG_MAC_BB_PD
@@ -1312,7 +1340,6 @@ esp_err_t esp_bt_controller_deinit(void)
     osi_funcs_p = NULL;
 
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
-    btdm_lpcycle_us = 0;
     return ESP_OK;
 }
 
