@@ -1,16 +1,7 @@
-/* Copyright 2018 Espressif Systems (Shanghai) PTE LTD
+/*
+ * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 /*
  * FreeModbus Libary: ESP32 Port Demo Application
@@ -57,7 +48,7 @@
 #define MB_US50_FREQ            (20000) // 20kHz 1/20000 = 50mks
 #define MB_DISCR_TIME_US        (50)    // 50uS = one discreet for timer
 
-#define MB_TIMER_PRESCALLER     ((TIMER_BASE_CLK / MB_US50_FREQ) - 1);
+#define MB_TIMER_PRESCALLER     ((TIMER_BASE_CLK / MB_US50_FREQ) - 1)
 #define MB_TIMER_SCALE          (TIMER_BASE_CLK / TIMER_DIVIDER)  // convert counter value to seconds
 #define MB_TIMER_DIVIDER        ((TIMER_BASE_CLK / 1000000UL) * MB_DISCR_TIME_US - 1) // divider for 50uS
 #define MB_TIMER_WITH_RELOAD    (1)
@@ -84,13 +75,14 @@ BOOL xMBPortTimersInit(USHORT usTim1Timerout50us)
     MB_PORT_CHECK((usTim1Timerout50us > 0), FALSE,
             "Modbus timeout discreet is incorrect.");
     esp_err_t xErr;
-    timer_config_t config;
-    config.alarm_en = TIMER_ALARM_EN;
-    config.auto_reload = MB_TIMER_WITH_RELOAD;
-    config.counter_dir = TIMER_COUNT_UP;
-    config.divider = MB_TIMER_PRESCALLER;
-    config.intr_type = TIMER_INTR_LEVEL;
-    config.counter_en = TIMER_PAUSE;
+    timer_config_t config = {
+        .alarm_en = TIMER_ALARM_EN,
+        .auto_reload = MB_TIMER_WITH_RELOAD,
+        .counter_dir = TIMER_COUNT_UP,
+        .divider = MB_TIMER_PRESCALLER,
+        .intr_type = TIMER_INTR_LEVEL,
+        .counter_en = TIMER_PAUSE,
+    };
     // Configure timer
     xErr = timer_init(usTimerGroupIndex, usTimerIndex, &config);
     MB_PORT_CHECK((xErr == ESP_OK), FALSE,

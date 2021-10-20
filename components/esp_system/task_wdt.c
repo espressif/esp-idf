@@ -22,7 +22,6 @@
 #include "esp_freertos_hooks.h"
 #include "soc/timer_periph.h"
 #include "esp_log.h"
-#include "driver/timer.h"
 #include "driver/periph_ctrl.h"
 #include "esp_task_wdt.h"
 #include "esp_private/system_internal.h"

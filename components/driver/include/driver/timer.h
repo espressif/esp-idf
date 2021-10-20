@@ -9,6 +9,7 @@
 #include "esp_err.h"
 #include "esp_attr.h"
 #include "soc/soc.h"
+#include "soc/soc_caps.h"
 #include "soc/timer_periph.h"
 #include "esp_intr_alloc.h"
 #include "hal/timer_types.h"
@@ -17,7 +18,115 @@
 extern "C" {
 #endif
 
-#define TIMER_BASE_CLK   (APB_CLK_FREQ)  /*!< Frequency of the clock on the input of the timer groups */
+/**
+ * @brief Frequency of the clock on the input of the timer groups
+ * @note  This macro is not correct for Timer Groups with multiple clock sources (e.g. APB, XTAL)
+ *        So please don't use it in your application, we keep it here only for backward compatible
+ */
+#define TIMER_BASE_CLK   (APB_CLK_FREQ)
+
+/**
+ * @brief Selects a Timer-Group out of 2 available groups
+ */
+typedef enum {
+    TIMER_GROUP_0 = 0, /*!< Hw timer group 0 */
+#if SOC_TIMER_GROUPS > 1
+    TIMER_GROUP_1 = 1, /*!< Hw timer group 1 */
+#endif
+    TIMER_GROUP_MAX    /*!< Maximum number of Hw timer groups */
+} timer_group_t;
+
+/**
+ * @brief Select a hardware timer from timer groups
+ */
+typedef enum {
+    TIMER_0 = 0, /*!<Select timer0 of GROUPx*/
+#if SOC_TIMER_GROUP_TIMERS_PER_GROUP > 1
+    TIMER_1 = 1, /*!<Select timer1 of GROUPx*/
+#endif
+    TIMER_MAX,
+} timer_idx_t;
+
+/**
+ * @brief Interrupt types of the timer.
+ */
+typedef enum {
+    TIMER_INTR_T0 = 1 << 0,  /*!< interrupt of timer 0 */
+#if SOC_TIMER_GROUP_TIMERS_PER_GROUP > 1
+    TIMER_INTR_T1 = 1 << 1,  /*!< interrupt of timer 1 */
+    TIMER_INTR_WDT = 1 << 2, /*!< interrupt of watchdog */
+#else
+    TIMER_INTR_WDT = 1 << 1, /*!< interrupt of watchdog */
+#endif
+    TIMER_INTR_NONE = 0
+} timer_intr_t;
+FLAG_ATTR(timer_intr_t)
+
+/**
+ * @brief Decides the direction of counter
+ */
+typedef enum {
+    TIMER_COUNT_DOWN = GPTIMER_COUNT_DOWN, /*!< Descending Count from cnt.high|cnt.low*/
+    TIMER_COUNT_UP = GPTIMER_COUNT_UP,     /*!< Ascending Count from Zero*/
+    TIMER_COUNT_MAX                        /*!< Maximum number of timer count directions */
+} timer_count_dir_t;
+
+/**
+ * @brief Decides whether timer is on or paused
+ */
+typedef enum {
+    TIMER_PAUSE, /*!<Pause timer counter*/
+    TIMER_START, /*!<Start timer counter*/
+} timer_start_t;
+
+/**
+ * @brief Decides whether to enable alarm mode
+ */
+typedef enum {
+    TIMER_ALARM_DIS = 0,  /*!< Disable timer alarm*/
+    TIMER_ALARM_EN = 1,   /*!< Enable timer alarm*/
+    TIMER_ALARM_MAX
+} timer_alarm_t;
+
+/**
+ * @brief Select interrupt type if running in alarm mode.
+ */
+typedef enum {
+    TIMER_INTR_LEVEL = 0,  /*!< Interrupt mode: level mode*/
+    TIMER_INTR_MAX
+} timer_intr_mode_t;
+
+/**
+ * @brief Select if Alarm needs to be loaded by software or automatically reload by hardware.
+ */
+typedef enum {
+    TIMER_AUTORELOAD_DIS = 0,  /*!< Disable auto-reload: hardware will not load counter value after an alarm event*/
+    TIMER_AUTORELOAD_EN = 1,   /*!< Enable auto-reload: hardware will load counter value after an alarm event*/
+    TIMER_AUTORELOAD_MAX,
+} timer_autoreload_t;
+
+/**
+ * @brief Select timer source clock.
+ */
+typedef enum {
+    TIMER_SRC_CLK_APB = GPTIMER_CLK_SRC_APB,   /*!< Select APB as the source clock*/
+#if SOC_TIMER_GROUP_SUPPORT_XTAL
+    TIMER_SRC_CLK_XTAL = GPTIMER_CLK_SRC_XTAL, /*!< Select XTAL as the source clock*/
+#endif
+} timer_src_clk_t;
+
+/**
+ * @brief Data structure with timer's configuration settings
+ */
+typedef struct {
+    timer_alarm_t alarm_en;         /*!< Timer alarm enable */
+    timer_start_t counter_en;       /*!< Counter enable */
+    timer_intr_mode_t intr_type;    /*!< Interrupt mode */
+    timer_count_dir_t counter_dir;  /*!< Counter direction  */
+    timer_autoreload_t auto_reload; /*!< Timer auto-reload */
+    timer_src_clk_t clk_src;        /*!< Selects source clock. */
+    uint32_t divider;               /*!< Counter clock divider */
+} timer_config_t;
 
 /**
  * @brief Interrupt handle callback function. User need to retrun a bool value

@@ -1,3 +1,10 @@
+#!/usr/bin/env python
+#
+# SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+#
+# SPDX-License-Identifier: CC0-1.0
+#
+
 from __future__ import unicode_literals
 
 import re
@@ -6,7 +13,7 @@ from typing import Any
 import ttfw_idf
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32', 'esp32c3'])
+@ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32', 'esp32s2', 'esp32c3'])
 def test_examples_timergroup(env, extra_data):  # type: (Any, Any) -> None
     dut = env.get_dut('timer_group', 'examples/peripherals/timer_group')
     dut.start_app()

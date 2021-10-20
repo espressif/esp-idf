@@ -2000,13 +2000,14 @@ TEST_CASE("can post events from interrupt handler", "[event]")
     SemaphoreHandle_t sem = xSemaphoreCreateBinary();
 
     /* Select and initialize basic parameters of the timer */
-    timer_config_t config;
-    config.divider = TIMER_DIVIDER;
-    config.counter_dir = TIMER_COUNT_UP;
-    config.counter_en = TIMER_PAUSE;
-    config.alarm_en = TIMER_ALARM_EN;
-    config.intr_type = TIMER_INTR_LEVEL;
-    config.auto_reload = false;
+    timer_config_t config = {
+        .divider = TIMER_DIVIDER,
+        .counter_dir = TIMER_COUNT_UP,
+        .counter_en = TIMER_PAUSE,
+        .alarm_en = TIMER_ALARM_EN,
+        .intr_type = TIMER_INTR_LEVEL,
+        .auto_reload = false,
+    };
     timer_init(TIMER_GROUP_0, TIMER_0, &config);
 
     /* Timer's counter will initially start from value below.

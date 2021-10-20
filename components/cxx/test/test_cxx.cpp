@@ -324,5 +324,5 @@ template<typename T> __attribute__((unused)) static void test_binary_operators()
 }
 
 //Add more types here. If any flags cannot pass the build, use FLAG_ATTR in esp_attr.h
-#include "hal/timer_types.h"
+#include "driver/timer.h"
 template void test_binary_operators<timer_intr_t>();
