@@ -255,7 +255,6 @@ components/bt/esp_ble_mesh/mesh_models/server/state_transition.c
 components/bt/esp_ble_mesh/mesh_models/server/time_scene_server.c
 components/bt/host/bluedroid/api/esp_a2dp_api.c
 components/bt/host/bluedroid/api/esp_avrc_api.c
-components/bt/host/bluedroid/api/esp_bt_device.c
 components/bt/host/bluedroid/api/esp_bt_main.c
 components/bt/host/bluedroid/api/esp_gap_ble_api.c
 components/bt/host/bluedroid/api/esp_gap_bt_api.c
@@ -395,7 +394,6 @@ components/bt/host/bluedroid/bta/sys/include/bta_sys_int.h
 components/bt/host/bluedroid/bta/sys/utl.c
 components/bt/host/bluedroid/btc/core/btc_ble_storage.c
 components/bt/host/bluedroid/btc/core/btc_config.c
-components/bt/host/bluedroid/btc/core/btc_dev.c
 components/bt/host/bluedroid/btc/core/btc_dm.c
 components/bt/host/bluedroid/btc/core/btc_main.c
 components/bt/host/bluedroid/btc/core/btc_profile_queue.c
@@ -405,7 +403,6 @@ components/bt/host/bluedroid/btc/core/btc_util.c
 components/bt/host/bluedroid/btc/include/btc/btc_ble_storage.h
 components/bt/host/bluedroid/btc/include/btc/btc_common.h
 components/bt/host/bluedroid/btc/include/btc/btc_config.h
-components/bt/host/bluedroid/btc/include/btc/btc_dev.h
 components/bt/host/bluedroid/btc/include/btc/btc_dm.h
 components/bt/host/bluedroid/btc/include/btc/btc_main.h
 components/bt/host/bluedroid/btc/include/btc/btc_profile_queue.h
