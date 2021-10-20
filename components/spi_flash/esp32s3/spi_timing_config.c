@@ -359,23 +359,18 @@ void spi_timing_config_psram_tune_dummy(uint8_t extra_dummy)
 
 #endif //#if SPI_TIMING_FLASH_NEEDS_TUNING || SPI_TIMING_PSRAM_NEEDS_TUNING
 
-static bool spi_timing_config_cs_setup_enable(void)
+
+/*-------------------------------------------------------------------------------------------------
+ * To let upper lay (spi_flash_timing_tuning.c) to know the necessary timing registers
+ *-------------------------------------------------------------------------------------------------*/
+static bool s_get_cs_setup_enable(void)
 {
     return REG_GET_BIT(SPI_MEM_USER_REG(0), SPI_MEM_CS_SETUP);
 }
 
-static bool spi_timing_config_cs_hold_enable(void)
+static bool s_get_cs_hold_enable(void)
 {
     return REG_GET_BIT(SPI_MEM_USER_REG(0), SPI_MEM_CS_HOLD);
-}
-
-bool spi_timine_config_flash_is_tuned(void)
-{
-#if SPI_TIMING_FLASH_NEEDS_TUNING || SPI_TIMING_PSRAM_NEEDS_TUNING
-    return true;
-#else
-    return false;
-#endif
 }
 
 /**
@@ -392,12 +387,12 @@ void spi_timing_config_get_cs_timing(uint8_t *setup_time, uint32_t *hold_time)
      * The logic here is, if setup_en / hold_en is false, then we return the realistic cycle number,
      * which is 0. If true, then the realistic cycle number is (reg_value + 1)
      */
-    if (spi_timing_config_cs_setup_enable()) {
+    if (s_get_cs_setup_enable()) {
         *setup_time += 1;
     } else {
         *setup_time = 0;
     }
-    if (spi_timing_config_cs_hold_enable()) {
+    if (s_get_cs_hold_enable()) {
         *hold_time += 1;
     } else {
         *hold_time = 0;
