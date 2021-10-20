@@ -207,7 +207,7 @@ CLANG_DECLARE_ALIAS( __sync_val_compare_and_swap_ ## n )
     *ptr = val;                                                                  \
     _ATOMIC_EXIT_CRITICAL(state);                                                \
     return ret;                                                                  \
-}
+}                                                                                \
 CLANG_DECLARE_ALIAS( __sync_lock_test_and_set_ ## n )
 
 #define SYNC_LOCK_RELEASE(n, type) void  CLANG_ATOMIC_SUFFIX(__sync_lock_release_ ## n)  (type *ptr) \
@@ -215,7 +215,7 @@ CLANG_DECLARE_ALIAS( __sync_lock_test_and_set_ ## n )
     unsigned state = _ATOMIC_ENTER_CRITICAL();                                   \
     *ptr = 0;                                                                    \
     _ATOMIC_EXIT_CRITICAL(state);                                                \
-}
+}                                                                                \
 CLANG_DECLARE_ALIAS( __sync_lock_release_ ## n )
 
 
