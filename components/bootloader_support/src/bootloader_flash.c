@@ -198,18 +198,12 @@ const void *bootloader_mmap(uint32_t src_addr, uint32_t size)
 #if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Disable(0);
     Cache_Flush(0);
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif SOC_ICACHE_ACCESS_RODATA_SUPPORTED
     uint32_t autoload = Cache_Suspend_ICache();
     Cache_Invalidate_ICache_All();
-#elif CONFIG_IDF_TARGET_ESP32S3
+#else // access rodata with DCache
     uint32_t autoload = Cache_Suspend_DCache();
     Cache_Invalidate_DCache_All();
-#elif CONFIG_IDF_TARGET_ESP32C3
-    uint32_t autoload = Cache_Suspend_ICache();
-    Cache_Invalidate_ICache_All();
-#elif CONFIG_IDF_TARGET_ESP32H2
-    uint32_t autoload = Cache_Suspend_ICache();
-    Cache_Invalidate_ICache_All();
 #endif
     ESP_LOGD(TAG, "mmu set paddr=%08x count=%d size=%x src_addr=%x src_addr_aligned=%x",
              src_addr & MMU_FLASH_MASK, count, size, src_addr, src_addr_aligned );
@@ -217,34 +211,26 @@ const void *bootloader_mmap(uint32_t src_addr, uint32_t size)
     int e = cache_flash_mmu_set(0, 0, MMU_BLOCK0_VADDR, src_addr_aligned, 64, count);
 #elif CONFIG_IDF_TARGET_ESP32S2
     int e = Cache_Ibus_MMU_Set(MMU_ACCESS_FLASH, MMU_BLOCK0_VADDR, src_addr_aligned, 64, count, 0);
-#else // S3, C3, H2
+#else
     int e = Cache_Dbus_MMU_Set(MMU_ACCESS_FLASH, MMU_BLOCK0_VADDR, src_addr_aligned, 64, count, 0);
 #endif
     if (e != 0) {
         ESP_LOGE(TAG, "cache_flash_mmu_set failed: %d\n", e);
 #if CONFIG_IDF_TARGET_ESP32
         Cache_Read_Enable(0);
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif SOC_ICACHE_ACCESS_RODATA_SUPPORTED
         Cache_Resume_ICache(autoload);
-#elif CONFIG_IDF_TARGET_ESP32S3
+#else // access rodata with DCache
         Cache_Resume_DCache(autoload);
-#elif CONFIG_IDF_TARGET_ESP32C3
-        Cache_Resume_ICache(autoload);
-#elif CONFIG_IDF_TARGET_ESP32H2
-        Cache_Resume_ICache(autoload);
 #endif
         return NULL;
     }
 #if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Enable(0);
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif SOC_ICACHE_ACCESS_RODATA_SUPPORTED
     Cache_Resume_ICache(autoload);
-#elif CONFIG_IDF_TARGET_ESP32S3
+#else // access rodata with DCache
     Cache_Resume_DCache(autoload);
-#elif CONFIG_IDF_TARGET_ESP32C3
-    Cache_Resume_ICache(autoload);
-#elif CONFIG_IDF_TARGET_ESP32H2
-    Cache_Resume_ICache(autoload);
 #endif
 
     mapped = true;
@@ -260,23 +246,14 @@ void bootloader_munmap(const void *mapping)
         Cache_Read_Disable(0);
         Cache_Flush(0);
         mmu_init(0);
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif SOC_ICACHE_ACCESS_RODATA_SUPPORTED
         //TODO, save the autoload value.
         Cache_Suspend_ICache();
         Cache_Invalidate_ICache_All();
         Cache_MMU_Init();
-#elif CONFIG_IDF_TARGET_ESP32S3
+#else // access rodata with DCache
         Cache_Suspend_DCache();
         Cache_Invalidate_DCache_All();
-        Cache_MMU_Init();
-#elif CONFIG_IDF_TARGET_ESP32C3
-        //TODO, save the autoload value.
-        Cache_Suspend_ICache();
-        Cache_Invalidate_ICache_All();
-        Cache_MMU_Init();
-#elif CONFIG_IDF_TARGET_ESP32H2
-        Cache_Suspend_ICache();
-        Cache_Invalidate_ICache_All();
         Cache_MMU_Init();
 #endif
         mapped = false;
@@ -303,26 +280,18 @@ static esp_err_t bootloader_flash_read_no_decrypt(size_t src_addr, void *dest, s
 #if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Disable(0);
     Cache_Flush(0);
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif SOC_ICACHE_ACCESS_RODATA_SUPPORTED
     uint32_t autoload = Cache_Suspend_ICache();
-#elif CONFIG_IDF_TARGET_ESP32S3
+#else // access rodata with DCache
     uint32_t autoload = Cache_Suspend_DCache();
-#elif CONFIG_IDF_TARGET_ESP32C3
-    uint32_t autoload = Cache_Suspend_ICache();
-#elif CONFIG_IDF_TARGET_ESP32H2
-    uint32_t autoload = Cache_Suspend_ICache();
 #endif
     esp_rom_spiflash_result_t r = esp_rom_spiflash_read(src_addr, dest, size);
 #if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Enable(0);
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif SOC_ICACHE_ACCESS_RODATA_SUPPORTED
     Cache_Resume_ICache(autoload);
-#elif CONFIG_IDF_TARGET_ESP32S3
+#else // access rodata with DCache
     Cache_Resume_DCache(autoload);
-#elif CONFIG_IDF_TARGET_ESP32C3
-    Cache_Resume_ICache(autoload);
-#elif CONFIG_IDF_TARGET_ESP32H2
-    Cache_Resume_ICache(autoload);
 #endif
 
     return spi_to_esp_err(r);
@@ -341,57 +310,39 @@ static esp_err_t bootloader_flash_read_allow_decrypt(size_t src_addr, void *dest
 #if CONFIG_IDF_TARGET_ESP32
             Cache_Read_Disable(0);
             Cache_Flush(0);
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif SOC_ICACHE_ACCESS_RODATA_SUPPORTED
             uint32_t autoload = Cache_Suspend_ICache();
             Cache_Invalidate_ICache_All();
-#elif CONFIG_IDF_TARGET_ESP32S3
+#else // access rodata with DCache
             uint32_t autoload = Cache_Suspend_DCache();
             Cache_Invalidate_DCache_All();
-#elif CONFIG_IDF_TARGET_ESP32C3
-            uint32_t autoload = Cache_Suspend_ICache();
-            Cache_Invalidate_ICache_All();
-#elif CONFIG_IDF_TARGET_ESP32H2
-            uint32_t autoload = Cache_Suspend_ICache();
-            Cache_Invalidate_ICache_All();
 #endif
             ESP_LOGD(TAG, "mmu set block paddr=0x%08x (was 0x%08x)", map_at, current_read_mapping);
 #if CONFIG_IDF_TARGET_ESP32
             int e = cache_flash_mmu_set(0, 0, FLASH_READ_VADDR, map_at, 64, 1);
 #elif CONFIG_IDF_TARGET_ESP32S2
             int e = Cache_Ibus_MMU_Set(MMU_ACCESS_FLASH, MMU_BLOCK63_VADDR, map_at, 64, 1, 0);
-#elif CONFIG_IDF_TARGET_ESP32S3
-            int e = Cache_Dbus_MMU_Set(MMU_ACCESS_FLASH, MMU_BLOCK63_VADDR, map_at, 64, 1, 0);
-#elif CONFIG_IDF_TARGET_ESP32C3
-            int e = Cache_Dbus_MMU_Set(MMU_ACCESS_FLASH, MMU_BLOCK63_VADDR, map_at, 64, 1, 0);
-#elif CONFIG_IDF_TARGET_ESP32H2
+#else // map rodata with DBus
             int e = Cache_Dbus_MMU_Set(MMU_ACCESS_FLASH, MMU_BLOCK63_VADDR, map_at, 64, 1, 0);
 #endif
             if (e != 0) {
                 ESP_LOGE(TAG, "cache_flash_mmu_set failed: %d\n", e);
 #if CONFIG_IDF_TARGET_ESP32
                 Cache_Read_Enable(0);
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif SOC_ICACHE_ACCESS_RODATA_SUPPORTED
                 Cache_Resume_ICache(autoload);
-#elif CONFIG_IDF_TARGET_ESP32S3
+#else // access rodata with DCache
                 Cache_Resume_DCache(autoload);
-#elif CONFIG_IDF_TARGET_ESP32C3
-                Cache_Resume_ICache(autoload);
-#elif CONFIG_IDF_TARGET_ESP32H2
-                Cache_Resume_ICache(autoload);
 #endif
                 return ESP_FAIL;
             }
             current_read_mapping = map_at;
 #if CONFIG_IDF_TARGET_ESP32
             Cache_Read_Enable(0);
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif SOC_ICACHE_ACCESS_RODATA_SUPPORTED
             Cache_Resume_ICache(autoload);
-#elif CONFIG_IDF_TARGET_ESP32S3
+#else // access rodata with DCache
             Cache_Resume_DCache(autoload);
-#elif CONFIG_IDF_TARGET_ESP32C3
-            Cache_Resume_ICache(autoload);
-#elif CONFIG_IDF_TARGET_ESP32H2
-            Cache_Resume_ICache(autoload);
 #endif
         }
         map_ptr = (uint32_t *)(FLASH_READ_VADDR + (word_src - map_at));
