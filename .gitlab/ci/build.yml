@@ -82,6 +82,12 @@ build_ssc_esp32c3:
   variables:
     TARGET_NAME: "ESP32C3"
 
+build_ssc_esp32s3:
+  extends: .build_ssc_template
+  parallel: 3
+  variables:
+    TARGET_NAME: "ESP32S3"
+
 .build_esp_idf_tests_cmake_template:
   extends: .build_template
   dependencies:  # set dependencies to null to avoid missing artifacts issue
