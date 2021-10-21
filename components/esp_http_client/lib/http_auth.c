@@ -16,6 +16,7 @@
 
 #include "esp_system.h"
 #include "esp_log.h"
+#include "esp_check.h"
 
 #include "http_utils.h"
 #include "http_auth.h"
@@ -66,6 +67,7 @@ char *http_auth_digest(const char *username, const char *password, esp_http_auth
     char *digest = NULL;
     char *auth_str = NULL;
     char *temp_auth_str = NULL;
+    esp_err_t ret = ESP_OK;
 
     if (username == NULL ||
         password == NULL ||
@@ -76,13 +78,13 @@ char *http_auth_digest(const char *username, const char *password, esp_http_auth
     }
 
     ha1 = calloc(1, MD5_MAX_LEN);
-    HTTP_MEM_CHECK(TAG, ha1, goto _digest_exit);
+    ESP_GOTO_ON_FALSE(ha1, ESP_FAIL, _digest_exit, TAG, "Memory exhausted");
 
     ha2 = calloc(1, MD5_MAX_LEN);
-    HTTP_MEM_CHECK(TAG, ha2, goto _digest_exit);
+    ESP_GOTO_ON_FALSE(ha2, ESP_FAIL, _digest_exit, TAG, "Memory exhausted");
 
     digest = calloc(1, MD5_MAX_LEN);
-    HTTP_MEM_CHECK(TAG, digest, goto _digest_exit);
+    ESP_GOTO_ON_FALSE(digest, ESP_FAIL, _digest_exit, TAG, "Memory exhausted");
 
     if (md5_printf(ha1, "%s:%s:%s", username, auth_data->realm, password) <= 0) {
         goto _digest_exit;
@@ -128,7 +130,7 @@ _digest_exit:
     free(ha1);
     free(ha2);
     free(digest);
-    return auth_str;
+    return (ret == ESP_OK) ? auth_str : NULL;
 }
 
 char *http_auth_basic(const char *username, const char *password)
@@ -136,15 +138,16 @@ char *http_auth_basic(const char *username, const char *password)
     int out;
     char *user_info = NULL;
     char *digest = NULL;
+    esp_err_t ret = ESP_OK;
     size_t n = 0;
     asprintf(&user_info, "%s:%s", username, password);
-    HTTP_MEM_CHECK(TAG, user_info, return NULL);
+    ESP_RETURN_ON_FALSE(user_info, NULL, TAG, "Memory exhausted");
     esp_crypto_base64_encode(NULL, 0, &n, (const unsigned char *)user_info, strlen(user_info));
     digest = calloc(1, 6 + n + 1);
-    HTTP_MEM_CHECK(TAG, digest, goto _basic_exit);
+    ESP_GOTO_ON_FALSE(digest, ESP_FAIL, _basic_exit, TAG, "Memory exhausted");
     strcpy(digest, "Basic ");
     esp_crypto_base64_encode((unsigned char *)digest + 6, n, (size_t *)&out, (const unsigned char *)user_info, strlen(user_info));
 _basic_exit:
     free(user_info);
-    return digest;
+    return (ret == ESP_OK) ? digest : NULL;
 }
