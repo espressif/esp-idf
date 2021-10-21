@@ -27,8 +27,7 @@ typedef enum {
 typedef union {
     // BTC_BT_GAP_ACT_SET_DEV_NAME
     struct set_bt_dev_name_args {
-#define ESP_DEV_DEVICE_NAME_MAX (32)
-        char device_name[ESP_DEV_DEVICE_NAME_MAX + 1];
+        char *device_name;
     } set_dev_name;
 } btc_dev_args_t;
 

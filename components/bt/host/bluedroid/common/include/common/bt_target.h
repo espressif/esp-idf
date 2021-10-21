@@ -827,8 +827,12 @@
 
 /* Maximum local device name length stored btm database.
   '0' disables storage of the local name in BTM */
-#ifndef BTM_MAX_LOC_BD_NAME_LEN
+#if UC_MAX_LOC_BD_NAME_LEN
+#define BTM_MAX_LOC_BD_NAME_LEN     UC_MAX_LOC_BD_NAME_LEN
+#define BTC_MAX_LOC_BD_NAME_LEN     BTM_MAX_LOC_BD_NAME_LEN
+#else
 #define BTM_MAX_LOC_BD_NAME_LEN     64
+#define BTC_MAX_LOC_BD_NAME_LEN     BTM_MAX_LOC_BD_NAME_LEN
 #endif
 
 /* Fixed Default String. When this is defined as null string, the device's
