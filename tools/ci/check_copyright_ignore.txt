@@ -2552,12 +2552,9 @@ components/unity/unity_runner.c
 components/usb/test/common/test_usb_mock_classes.c
 components/usb/test/common/test_usb_mock_classes.h
 components/usb/test/hcd/test_hcd_ctrl.c
-components/vfs/include/esp_vfs_cdcacm.h
 components/vfs/include/esp_vfs_common.h
-components/vfs/include/esp_vfs_dev.h
 components/vfs/include/esp_vfs_eventfd.h
 components/vfs/include/esp_vfs_semihost.h
-components/vfs/include/esp_vfs_usb_serial_jtag.h
 components/vfs/test/test_vfs_access.c
 components/vfs/test/test_vfs_append.c
 components/vfs/test/test_vfs_eventfd.c
@@ -2566,11 +2563,8 @@ components/vfs/test/test_vfs_lwip.c
 components/vfs/test/test_vfs_paths.c
 components/vfs/test/test_vfs_select.c
 components/vfs/test/test_vfs_uart.c
-components/vfs/vfs_cdcacm.c
 components/vfs/vfs_eventfd.c
 components/vfs/vfs_semihost.c
-components/vfs/vfs_uart.c
-components/vfs/vfs_usb_serial_jtag.c
 components/wear_levelling/Partition.cpp
 components/wear_levelling/SPI_Flash.cpp
 components/wear_levelling/WL_Ext_Perf.cpp
