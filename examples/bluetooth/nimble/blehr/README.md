@@ -1,7 +1,7 @@
 | Supported Targets | ESP32 |
 | ----------------- | ----- |
 
-# BLE Heart Rate Measurement example
+# BLE Heart Rate Measurement Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
@@ -20,26 +20,28 @@ Note :
 * Make sure to run `python -m pip install --user -r $IDF_PATH/requirements.txt -r $IDF_PATH/tools/ble/requirements.txt` to install the dependency packages needed.
 * Currently this Python utility is only supported on Linux (BLE communication is via BLuez + DBus).
 
+## How to Use Example
 
-## How to use example
+Before project configuration and build, be sure to set the correct chip target using:
 
-### Configure the project
-
+```bash
+idf.py set-target <chip_name>
 ```
-idf.py menuconfig
-```
+
+### Hardware Required
+
+* A development board with ESP32/ESP32-C3 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
+* A USB cable for Power supply and programming
+
+See [Development Boards](https://www.espressif.com/en/products/devkits) for more information about it.
 
 ### Build and Flash
 
-Build the project and flash it to the board, then run monitor tool to view serial output:
-
-```
-idf.py -p PORT flash monitor
-```
+Run `idf.py -p PORT flash monitor` to build, flash and monitor the project.
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 
-See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
+See the [Getting Started Guide](https://idf.espressif.com/) for full steps to configure and use ESP-IDF to build projects.
 
 ## Example Output
 
@@ -114,3 +116,7 @@ device disconnected
 powering off adapter...
 bluetooth adapter powered off
 ```
+
+## Troubleshooting
+
+For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
