@@ -1,5 +1,12 @@
 menu "FAT Filesystem support"
 
+    config FATFS_VOLUME_COUNT
+        int "Number of volumes"
+        default 2
+        range 1 10
+        help
+            Number of volumes (logical drives) to use.
+
     choice FATFS_CHOOSE_CODEPAGE
         prompt "OEM Code Page"
         default FATFS_CODEPAGE_437

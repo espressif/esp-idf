@@ -1244,7 +1244,6 @@ components/fatfs/diskio/diskio_rawflash.c
 components/fatfs/diskio/diskio_rawflash.h
 components/fatfs/diskio/diskio_sdmmc.c
 components/fatfs/diskio/diskio_sdmmc.h
-components/fatfs/diskio/diskio_wl.c
 components/fatfs/diskio/diskio_wl.h
 components/fatfs/port/freertos/ffsystem.c
 components/fatfs/port/linux/ffsystem.c
@@ -1264,7 +1263,6 @@ components/fatfs/test_fatfs_host/main.cpp
 components/fatfs/test_fatfs_host/sdkconfig/sdkconfig.h
 components/fatfs/test_fatfs_host/test_fatfs.cpp
 components/fatfs/vfs/esp_vfs_fat.h
-components/fatfs/vfs/vfs_fat.c
 components/fatfs/vfs/vfs_fat_internal.h
 components/fatfs/vfs/vfs_fat_sdmmc.c
 components/fatfs/vfs/vfs_fat_spiflash.c
