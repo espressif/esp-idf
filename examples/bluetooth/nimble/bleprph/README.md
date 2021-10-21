@@ -1,7 +1,7 @@
 | Supported Targets | ESP32 |
 | ----------------- | ----- |
 
-# BLE peripheral example
+# BLE Peripheral Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
@@ -24,36 +24,40 @@ Note :
 * Make sure to run `python -m pip install --user -r $IDF_PATH/requirements.txt -r $IDF_PATH/tools/ble/requirements.txt` to install the dependency packages needed.
 * Currently this Python utility is only supported on Linux (BLE communication is via BLuez + DBus).
 
-## How to use example
+## How to Use Example
+
+Before project configuration and build, be sure to set the correct chip target using:
+
+```bash
+idf.py set-target <chip_name>
+```
 
 ### Configure the project
 
-```
+Open the project configuration menu: 
+
+```bash
 idf.py menuconfig
 ```
 
-* Select I/O capabilities of device from 'Example Configuration > I/O Capability', default is 'Just_works'.
+In the `Example Configuration` menu:
 
-* Enable/Disable other security related parameters 'Bonding, MITM option, secure connection(SM SC)' from 'Example Configuration'.
+* Select I/O capabilities of device from `Example Configuration --> I/O Capability`, default is `Just_works`.
+* Enable/Disable other security related parameters `Bonding, MITM option, secure connection(SM SC)`.
 
 ### Build and Flash
 
-Build the project and flash it to the board, then run monitor tool to view serial output:
-
-```
-idf.py -p PORT flash monitor
-```
+Run `idf.py -p PORT flash monitor` to build, flash and monitor the project.
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 
-See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
+See the [Getting Started Guide](https://idf.espressif.com/) for full steps to configure and use ESP-IDF to build projects.
 
 ## Example Output
 
 There is this console output when bleprph is connected and characteristic is read:
 
 ```
-
 I (118) BTDM_INIT: BT controller compile version [fe7ced0]
 I (118) system_api: Base MAC address is not set, read default base MAC address from BLK0 of EFUSE
 W (128) phy_init: failed to load RF calibration data (0xffffffff), falling back to full calibration
@@ -79,12 +83,11 @@ peer_id_addr=xx:xx:xx:xx:xx:xx conn_itvl=6 conn_latency=0 supervision_timeout=50
 
 connection updated; status=0 handle=0 our_ota_addr_type=0 our_ota_addr=xx:xx:xx:xx:xx:xx our_id_addr_type=0 our_id_addr=xx:xx:xx:xx:xx:xx
 peer_ota_addr_type=1 peer_ota_addr=xx:xx:xx:xx:xx:xx peer_id_addr_type=1 peer_id_addr=xx:xx:xx:xx:xx:xx conn_itvl=39 conn_latency=0 supervision_timeout=500 encrypted=1 authenticated=1 bonded=1
-
 ```
 
 ## Running Python Utility
 
-```
+```bash
 python bleprph_test.py
 ```
 
@@ -151,3 +154,7 @@ bluetooth adapter powered off
 
 ## Note
 * NVS support is not yet integrated to bonding. So, for now, bonding is not persistent across reboot.
+
+## Troubleshooting
+
+For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
