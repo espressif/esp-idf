@@ -3,6 +3,6 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := wpa2_enterprise
+PROJECT_NAME := wifi_enterprise
 
 include $(IDF_PATH)/make/project.mk

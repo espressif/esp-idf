@@ -10,6 +10,9 @@ menu "Example Configuration"
         config EXAMPLE_WPA3_192BIT_ENTERPRISE
             bool "WPA3_192BIT_ENT"
             depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+            select ESP_WIFI_GCMP_SUPPORT
+            select ESP_WIFI_GMAC_SUPPORT
+            select WPA_SUITE_B_192
     endchoice
 
     config EXAMPLE_WIFI_SSID
