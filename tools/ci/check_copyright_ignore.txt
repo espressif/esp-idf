@@ -738,7 +738,6 @@ components/esp_common/include/esp_bit_defs.h
 components/esp_common/include/esp_check.h
 components/esp_common/include/esp_compiler.h
 components/esp_common/include/esp_err.h
-components/esp_common/include/esp_idf_version.h
 components/esp_common/include/esp_types.h
 components/esp_common/src/esp_err_to_name.c
 components/esp_common/test/test_attr.c
