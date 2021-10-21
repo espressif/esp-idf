@@ -35,6 +35,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -154,6 +155,20 @@ public class BLETransport implements Transport {
         }
     }
 
+    public void refreshServices() {
+        Log.e(TAG, "Refresh services...");
+        try {
+            // BluetoothGatt gatt
+            final Method refresh = bluetoothGatt.getClass().getMethod("refresh");
+            if (refresh != null) {
+                refresh.invoke(bluetoothGatt);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        bluetoothGatt.discoverServices();
+    }
+
     private BluetoothGattCallback gattCallback = new BluetoothGattCallback() {
 
         @Override
@@ -186,6 +201,7 @@ public class BLETransport implements Transport {
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
 
             super.onServicesDiscovered(gatt, status);
+            Log.d(TAG, "On services discovered");
 
             if (status != BluetoothGatt.GATT_SUCCESS) {
                 Log.d(TAG, "Status not success");
@@ -233,19 +249,25 @@ public class BLETransport implements Transport {
         @Override
         public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
 
-            Log.d(TAG, "DescriptorRead, : Status " + status + " Data : " + new String(descriptor.getValue(), StandardCharsets.UTF_8));
+            Log.d(TAG, "DescriptorRead, : Status " + status);
+            byte[] data = descriptor.getValue();
+            String charUuid = descriptor.getCharacteristic().getUuid().toString();
 
             if (status != BluetoothGatt.GATT_SUCCESS) {
                 Log.e(TAG, "Failed to read descriptor");
-                EventBus.getDefault().post(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
-                return;
+                charUuidList.remove(charUuid);
+//                EventBus.getDefault().post(new DeviceConnectionEvent(ESPConstants.EVENT_DEVICE_CONNECTION_FAILED));
+//                return;
             }
 
-            byte[] data = descriptor.getValue();
-
-            String value = new String(data, StandardCharsets.UTF_8);
-            uuidMap.put(value, descriptor.getCharacteristic().getUuid().toString());
-            Log.d(TAG, "Value : " + value + " for UUID : " + descriptor.getCharacteristic().getUuid().toString());
+            if (data == null) {
+                Log.e(TAG, "Descriptor value is null");
+                charUuidList.remove(charUuid);
+            } else {
+                String value = new String(data, StandardCharsets.UTF_8);
+                uuidMap.put(value, charUuid);
+                Log.d(TAG, "DescriptorRead, Value : " + value + " for UUID : " + charUuid);
+            }
 
             if (isReadingDescriptors) {
 

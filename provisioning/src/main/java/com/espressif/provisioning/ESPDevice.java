@@ -318,6 +318,13 @@ public class ESPDevice {
         disableOnlyWifiNetwork();
     }
 
+    public void refreshServicesOfBleDevice() {
+
+        if (transport instanceof BLETransport) {
+            ((BLETransport) transport).refreshServices();
+        }
+    }
+
     /**
      * This method is used to set Proof Of Possession.
      *
