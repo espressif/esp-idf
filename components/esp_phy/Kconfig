@@ -104,4 +104,12 @@ menu "PHY"
         help
             When brownout reset occurs, reduce PHY TX power to keep the code running.
 
+    config ESP_PHY_ENABLE_USB
+        bool "Enable USB when phy init"
+        depends on ESP_CONSOLE_USB_SERIAL_JTAG
+        default y
+        help
+            When using USB Serial/JTAG controller, PHY should enable USB, otherwise log will
+            not be displayed. But working with USB, the RF performance may be affected.
+
 endmenu  # PHY

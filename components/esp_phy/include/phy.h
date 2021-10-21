@@ -85,6 +85,13 @@ uint8_t phy_dig_reg_backup(bool backup_en, uint32_t *mem_addr);
 void phy_freq_mem_backup(bool backup_en, uint32_t *mem);
 #endif
 
+#if CONFIG_ESP_PHY_ENABLE_USB
+/**
+ * @brief Enable or disable USB when phy init.
+ */
+void phy_bbpll_en_usb(bool en);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
