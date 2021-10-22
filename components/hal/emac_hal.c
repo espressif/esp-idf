@@ -184,6 +184,7 @@ void emac_hal_reset_desc_chain(emac_hal_context_t *hal)
     for (int i = 0; i < CONFIG_ETH_DMA_TX_BUFFER_NUM; i++) {
         /* Set Own bit of the Tx descriptor Status: CPU */
         hal->tx_desc[i].TDES0.Own = EMAC_LL_DMADESC_OWNER_CPU;
+        hal->tx_desc[i].TDES0.SecondAddressChained = 1;
         hal->tx_desc[i].TDES1.TransmitBuffer1Size = CONFIG_ETH_DMA_BUFFER_SIZE;
         /* Enable Ethernet DMA Tx Descriptor interrupt */
         hal->tx_desc[1].TDES0.InterruptOnComplete = 1;
