@@ -1,8 +1,6 @@
 .gitlab/ci/dependencies/generate_rules.py
-components/app_trace/app_trace_membufs_proto.c
 components/app_trace/port/include/esp_app_trace_port.h
 components/app_trace/port/riscv/port.c
-components/app_trace/port/xtensa/port.c
 components/app_trace/private_include/esp_app_trace_membufs_proto.h
 components/app_trace/sys_view/Config/Global.h
 components/app_trace/sys_view/Config/SEGGER_RTT_Conf.h
