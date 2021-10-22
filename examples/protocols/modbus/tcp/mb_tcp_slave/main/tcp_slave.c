@@ -1,9 +1,11 @@
-/* FreeModbus Slave Example ESP32
+/*
+ * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
+// FreeModbus Slave Example ESP32
+
 #include <stdio.h>
 #include "esp_err.h"
 #include "sdkconfig.h"
