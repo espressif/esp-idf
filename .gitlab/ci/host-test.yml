@@ -364,6 +364,13 @@ test_cxx_gpio:
     - idf.py build
     - build/test_gpio_cxx_host.elf
 
+test_i2c_cxx:
+  extends: .host_test_template
+  script:
+    - cd ${IDF_PATH}/examples/cxx/experimental/experimental_cpp_component/host_test/i2c
+    - idf.py build
+    - build/test_i2c_cxx_host.elf
+
 test_spi_cxx:
   extends: .host_test_template
   script:

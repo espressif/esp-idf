@@ -18,7 +18,6 @@ extern "C" {
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
-#include "freertos/ringbuf.h"
 #include "driver/gpio.h"
 #include "soc/soc_caps.h"
 #include "hal/i2c_types.h"
