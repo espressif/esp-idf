@@ -614,6 +614,22 @@ menu "Security features"
 
             Refer to the Secure Boot section of the ESP-IDF Programmer's Guide for this version before enabling.
 
+    config SECURE_BOOT_ENABLE_AGGRESSIVE_KEY_REVOKE
+        bool "Enable Aggressive key revoke strategy"
+        depends on SECURE_BOOT && (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
+        default N
+        help
+            If this option is set, ROM bootloader will revoke the public key digest burned in efuse block
+            if it fails to verify the signature of software bootloader with it.
+            Revocation of keys does not happen when enabling secure boot. Once secure boot is enabled,
+            key revocation checks will be done on subsequent boot-up, while verifying the software bootloader
+
+            This feature provides a strong resistance against physical attacks on the device.
+
+            NOTE: Once a digest slot is revoked, it can never be used again to verify an image
+            This can lead to permanent bricking of the device, in case all keys are revoked
+            because of signature verification failure.
+
     choice SECURE_BOOTLOADER_KEY_ENCODING
         bool "Hardware Key Encoding"
         depends on SECURE_BOOTLOADER_REFLASHABLE
