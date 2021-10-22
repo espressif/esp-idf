@@ -4113,7 +4113,6 @@ tools/test_idf_py/test_idf_extensions/test_ext/__init__.py
 tools/test_idf_py/test_idf_extensions/test_ext/test_extension.py
 tools/test_idf_py/test_idf_py.py
 tools/test_idf_size/test_idf_size.py
-tools/test_idf_tools/test_idf_tools.py
 tools/test_mkdfu/test_mkdfu.py
 tools/test_mkuf2/test_mkuf2.py
 tools/unit-test-app/components/test_utils/ccomp_timer.c

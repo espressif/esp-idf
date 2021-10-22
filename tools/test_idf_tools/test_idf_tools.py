@@ -1,18 +1,7 @@
 #!/usr/bin/env python
 #
-# Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 
 import os
 import shutil
@@ -59,10 +48,10 @@ XTENSA_ESP32S3_ELF = 'xtensa-esp32s3-elf'
 ESP32ULP_VERSION = '2.28.51-esp-20191205'
 ESP32S2ULP_VERSION = '2.28.51-esp-20191205'
 OPENOCD_VERSION = 'v0.10.0-esp32-20210902'
-RISCV_ELF_VERSION = 'esp-2021r1-8.4.0'
-XTENSA_ESP32_ELF_VERSION = 'esp-2021r1-8.4.0'
-XTENSA_ESP32S2_ELF_VERSION = 'esp-2021r1-8.4.0'
-XTENSA_ESP32S3_ELF_VERSION = 'esp-2021r1-8.4.0'
+RISCV_ELF_VERSION = 'esp-2021r2-8.4.0'
+XTENSA_ESP32_ELF_VERSION = 'esp-2021r2-8.4.0'
+XTENSA_ESP32S2_ELF_VERSION = 'esp-2021r2-8.4.0'
+XTENSA_ESP32S3_ELF_VERSION = 'esp-2021r2-8.4.0'
 
 
 class TestUsage(unittest.TestCase):
