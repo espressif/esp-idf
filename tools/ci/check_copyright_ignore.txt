@@ -206,7 +206,6 @@ components/bt/esp_ble_mesh/mesh_core/net.h
 components/bt/esp_ble_mesh/mesh_core/nimble_host/mesh_bearer_adapt.c
 components/bt/esp_ble_mesh/mesh_core/prov.c
 components/bt/esp_ble_mesh/mesh_core/prov.h
-components/bt/esp_ble_mesh/mesh_core/provisioner_main.c
 components/bt/esp_ble_mesh/mesh_core/provisioner_main.h
 components/bt/esp_ble_mesh/mesh_core/provisioner_prov.c
 components/bt/esp_ble_mesh/mesh_core/provisioner_prov.h
