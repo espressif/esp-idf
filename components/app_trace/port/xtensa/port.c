@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 //
 // How It Works
 // ************
@@ -145,7 +151,7 @@
 #include "soc/dport_access.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 #include "soc/sensitive_reg.h"
 #endif
 #include "eri.h"
@@ -160,10 +166,42 @@
 #define TRACEMEM_MUX_BLK0_ONLY                  1
 #define TRACEMEM_MUX_BLK1_ONLY                  2
 #define TRACEMEM_MUX_PROBLK1_APPBLK0            3
+#define TRACEMEM_BLK0_ADDR                      0x3FFFC000UL
+#define TRACEMEM_BLK1_ADDR                      0x3FFF8000UL
 #elif CONFIG_IDF_TARGET_ESP32S2
 #define TRACEMEM_MUX_BLK0_NUM                   19
 #define TRACEMEM_MUX_BLK1_NUM                   20
 #define TRACEMEM_BLK_NUM2ADDR(_n_)              (0x3FFB8000UL + 0x4000UL*((_n_)-4))
+#define TRACEMEM_BLK0_ADDR                      TRACEMEM_BLK_NUM2ADDR(TRACEMEM_MUX_BLK0_NUM)
+#define TRACEMEM_BLK1_ADDR                      TRACEMEM_BLK_NUM2ADDR(TRACEMEM_MUX_BLK1_NUM)
+#elif CONFIG_IDF_TARGET_ESP32S3
+#define TRACEMEM_MUX_BLK0_NUM                   22
+#define TRACEMEM_MUX_BLK0_ALLOC                 0x0
+#define TRACEMEM_MUX_BLK1_NUM                   23
+#define TRACEMEM_MUX_BLK1_ALLOC                 0x1
+
+#define TRACEMEM_CORE0_MUX_BLK_BIT(_n_, _a_)         (BIT(((_n_)-2UL)/4UL) | ((_a_) << 14))
+#define TRACEMEM_CORE1_MUX_BLK_BIT(_n_, _a_)         (BIT(7UL+(((_n_)-2UL)/4UL)) | ((_a_) << 16))
+
+#if TRACEMEM_MUX_BLK0_NUM < 2
+#error Invalid block num!
+#elif TRACEMEM_MUX_BLK0_NUM < 6
+#define TRACEMEM_BLK0_ADDR                      (0x3FC88000UL + 0x2000UL*(TRACEMEM_MUX_BLK0_NUM-2))
+#elif TRACEMEM_MUX_BLK0_NUM < 30
+#define TRACEMEM_BLK0_ADDR                      (0x3FC90000UL + 0x4000UL*(TRACEMEM_MUX_BLK0_NUM-6))
+#else
+#error Invalid block num!
+#endif
+
+#if TRACEMEM_MUX_BLK1_NUM < 2
+#error Invalid block num!
+#elif TRACEMEM_MUX_BLK1_NUM < 6
+#define TRACEMEM_BLK1_ADDR                      (0x3FC88000UL + 0x2000UL*(TRACEMEM_MUX_BLK1_NUM-2))
+#elif TRACEMEM_MUX_BLK1_NUM < 30
+#define TRACEMEM_BLK1_ADDR                      (0x3FC90000UL + 0x4000UL*(TRACEMEM_MUX_BLK1_NUM-6))
+#else
+#error Invalid block num!
+#endif
 #endif
 
 // TRAX is disabled, so we use its registers for our own purposes
@@ -181,18 +219,6 @@
 #define ESP_APPTRACE_TRAX_HOST_CONNECT          (1 << 23)
 
 #define ESP_APPTRACE_TRAX_INITED(_hw_)          ((_hw_)->inited & (1 << cpu_hal_get_core_id()))
-
-#if CONFIG_IDF_TARGET_ESP32
-static uint8_t * const s_trax_blocks[] = {
-    (uint8_t *) 0x3FFFC000,
-    (uint8_t *) 0x3FFF8000
-};
-#elif CONFIG_IDF_TARGET_ESP32S2
-static uint8_t * const s_trax_blocks[] = {
-    (uint8_t *)TRACEMEM_BLK_NUM2ADDR(TRACEMEM_MUX_BLK0_NUM),
-    (uint8_t *)TRACEMEM_BLK_NUM2ADDR(TRACEMEM_MUX_BLK1_NUM)
-};
-#endif
 
 #define ESP_APPTRACE_TRAX_BLOCK_SIZE            (0x4000UL)
 
@@ -222,6 +248,12 @@ static bool esp_apptrace_trax_host_data_pending(void);
 
 
 const static char *TAG = "esp_apptrace";
+
+static uint8_t * const s_trax_blocks[] = {
+    (uint8_t *)TRACEMEM_BLK0_ADDR,
+    (uint8_t *)TRACEMEM_BLK1_ADDR
+};
+
 
 esp_apptrace_hw_t *esp_apptrace_uart_hw_get(int num, void **data)
 {
@@ -300,6 +332,14 @@ static inline void esp_apptrace_trax_select_memory_block(int block_num)
     DPORT_WRITE_PERI_REG(DPORT_TRACEMEM_MUX_MODE_REG, block_num ? TRACEMEM_MUX_BLK0_ONLY : TRACEMEM_MUX_BLK1_ONLY);
 #elif CONFIG_IDF_TARGET_ESP32S2
     WRITE_PERI_REG(DPORT_PMS_OCCUPY_3_REG, block_num ? BIT(TRACEMEM_MUX_BLK0_NUM-4) : BIT(TRACEMEM_MUX_BLK1_NUM-4));
+#elif CONFIG_IDF_TARGET_ESP32S3
+    // select memory block to be exposed to the TRAX module (accessed by host)
+    uint32_t block_bits = block_num ? TRACEMEM_CORE0_MUX_BLK_BIT(TRACEMEM_MUX_BLK0_NUM, TRACEMEM_MUX_BLK0_ALLOC)
+                        : TRACEMEM_CORE0_MUX_BLK_BIT(TRACEMEM_MUX_BLK1_NUM, TRACEMEM_MUX_BLK1_ALLOC);
+    block_bits |= block_num ? TRACEMEM_CORE1_MUX_BLK_BIT(TRACEMEM_MUX_BLK0_NUM, TRACEMEM_MUX_BLK0_ALLOC)
+                        : TRACEMEM_CORE1_MUX_BLK_BIT(TRACEMEM_MUX_BLK1_NUM, TRACEMEM_MUX_BLK1_ALLOC);
+    ESP_EARLY_LOGV(TAG, "Select block %d @ %p (bits 0x%x)", block_num, s_trax_blocks[block_num], block_bits);
+    DPORT_WRITE_PERI_REG(SENSITIVE_INTERNAL_SRAM_USAGE_2_REG, block_bits);
 #endif
 }
 
