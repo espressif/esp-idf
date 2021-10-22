@@ -161,13 +161,14 @@ static void ot_task_worker(void *aContext)
     assert(openthread_netif != NULL);
 
     // Initialize the OpenThread stack
+    esp_openthread_set_backbone_netif(get_example_netif());
     ESP_ERROR_CHECK(esp_openthread_init(&config));
 
     // Initialize border routing features
-    ESP_ERROR_CHECK(esp_netif_attach(openthread_netif, esp_openthread_netif_glue_init(&config)));
-    ESP_ERROR_CHECK(esp_openthread_border_router_init(get_example_netif()));
-
     esp_openthread_lock_acquire(portMAX_DELAY);
+    ESP_ERROR_CHECK(esp_netif_attach(openthread_netif, esp_openthread_netif_glue_init(&config)));
+    ESP_ERROR_CHECK(esp_openthread_border_router_init());
+
     (void)otLoggingSetLevel(CONFIG_LOG_DEFAULT_LEVEL);
     esp_openthread_cli_init();
     create_config_network(esp_openthread_get_instance());

@@ -2052,10 +2052,8 @@ components/openssl/platform/ssl_pm.c
 components/openssl/platform/ssl_port.c
 components/openssl/test/test_openssl.c
 components/openthread/include/esp_openthread.h
-components/openthread/include/esp_openthread_border_router.h
 components/openthread/include/esp_openthread_lock.h
 components/openthread/include/esp_openthread_netif_glue.h
-components/openthread/include/esp_openthread_types.h
 components/partition_table/check_sizes.py
 components/partition_table/gen_empty_partition.py
 components/partition_table/gen_esp32part.py
