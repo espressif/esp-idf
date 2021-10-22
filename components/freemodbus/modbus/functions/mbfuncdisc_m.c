@@ -1,4 +1,11 @@
 /*
+ * SPDX-FileCopyrightText: 2013 Armink
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * SPDX-FileContributor: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ */
+/*
  * FreeModbus Libary: A portable Modbus implementation for Modbus ASCII/RTU.
  * Copyright (C) 2013 Armink <armink.ztl@gmail.com>
  * All rights reserved.
@@ -27,8 +34,6 @@
  *
  * File: $Id: mbfuncdisc_m.c,v 1.60 2013/10/15 8:48:20 Armink Add Master Functions  Exp $
  */
-
-
 
 /* ----------------------- System includes ----------------------------------*/
 #include "stdlib.h"

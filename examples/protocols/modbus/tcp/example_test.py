@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
 import logging
 import os
 import re

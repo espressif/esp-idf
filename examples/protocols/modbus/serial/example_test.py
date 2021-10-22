@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
 # Need Python 3 string formatting functions
 from __future__ import print_function
 
@@ -283,6 +286,5 @@ if __name__ == '__main__':
     logger.addHandler(fh)
     logger.addHandler(ch)
     logger.info('Start script %s.' % os.path.basename(__file__))
-    print('Logging file name: %s' % logger.handlers[0].baseFilename)
     test_modbus_communication()
     logging.shutdown()

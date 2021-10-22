@@ -1,7 +1,9 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2013 Armink
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: LGPL-2.0-only
+ *
+ * SPDX-FileContributor: 2016-2021 Espressif Systems (Shanghai) CO LTD
  */
 /*
  * FreeModbus Libary: ESP32 Port Demo Application
