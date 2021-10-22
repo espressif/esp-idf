@@ -149,9 +149,9 @@
 #include "sdkconfig.h"
 #include "soc/soc.h"
 #include "soc/dport_access.h"
-#if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
-#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
+#include "soc/tracemem_config.h"
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 #include "soc/sensitive_reg.h"
 #endif
 #include "eri.h"
@@ -159,50 +159,6 @@
 #include "esp_log.h"
 #include "esp_app_trace_membufs_proto.h"
 #include "esp_app_trace_port.h"
-
-// TODO: move these (and same definitions in trax.c to dport_reg.h)
-#if CONFIG_IDF_TARGET_ESP32
-#define TRACEMEM_MUX_PROBLK0_APPBLK1            0
-#define TRACEMEM_MUX_BLK0_ONLY                  1
-#define TRACEMEM_MUX_BLK1_ONLY                  2
-#define TRACEMEM_MUX_PROBLK1_APPBLK0            3
-#define TRACEMEM_BLK0_ADDR                      0x3FFFC000UL
-#define TRACEMEM_BLK1_ADDR                      0x3FFF8000UL
-#elif CONFIG_IDF_TARGET_ESP32S2
-#define TRACEMEM_MUX_BLK0_NUM                   19
-#define TRACEMEM_MUX_BLK1_NUM                   20
-#define TRACEMEM_BLK_NUM2ADDR(_n_)              (0x3FFB8000UL + 0x4000UL*((_n_)-4))
-#define TRACEMEM_BLK0_ADDR                      TRACEMEM_BLK_NUM2ADDR(TRACEMEM_MUX_BLK0_NUM)
-#define TRACEMEM_BLK1_ADDR                      TRACEMEM_BLK_NUM2ADDR(TRACEMEM_MUX_BLK1_NUM)
-#elif CONFIG_IDF_TARGET_ESP32S3
-#define TRACEMEM_MUX_BLK0_NUM                   22
-#define TRACEMEM_MUX_BLK0_ALLOC                 0x0
-#define TRACEMEM_MUX_BLK1_NUM                   23
-#define TRACEMEM_MUX_BLK1_ALLOC                 0x1
-
-#define TRACEMEM_CORE0_MUX_BLK_BIT(_n_, _a_)         (BIT(((_n_)-2UL)/4UL) | ((_a_) << 14))
-#define TRACEMEM_CORE1_MUX_BLK_BIT(_n_, _a_)         (BIT(7UL+(((_n_)-2UL)/4UL)) | ((_a_) << 16))
-
-#if TRACEMEM_MUX_BLK0_NUM < 2
-#error Invalid block num!
-#elif TRACEMEM_MUX_BLK0_NUM < 6
-#define TRACEMEM_BLK0_ADDR                      (0x3FC88000UL + 0x2000UL*(TRACEMEM_MUX_BLK0_NUM-2))
-#elif TRACEMEM_MUX_BLK0_NUM < 30
-#define TRACEMEM_BLK0_ADDR                      (0x3FC90000UL + 0x4000UL*(TRACEMEM_MUX_BLK0_NUM-6))
-#else
-#error Invalid block num!
-#endif
-
-#if TRACEMEM_MUX_BLK1_NUM < 2
-#error Invalid block num!
-#elif TRACEMEM_MUX_BLK1_NUM < 6
-#define TRACEMEM_BLK1_ADDR                      (0x3FC88000UL + 0x2000UL*(TRACEMEM_MUX_BLK1_NUM-2))
-#elif TRACEMEM_MUX_BLK1_NUM < 30
-#define TRACEMEM_BLK1_ADDR                      (0x3FC90000UL + 0x4000UL*(TRACEMEM_MUX_BLK1_NUM-6))
-#else
-#error Invalid block num!
-#endif
-#endif
 
 // TRAX is disabled, so we use its registers for our own purposes
 // | 31..XXXXXX..24 | 23 .(host_connect). 23 | 22 .(host_data). 22| 21..(block_id)..15 | 14..(block_len)..0 |
@@ -334,10 +290,10 @@ static inline void esp_apptrace_trax_select_memory_block(int block_num)
     WRITE_PERI_REG(DPORT_PMS_OCCUPY_3_REG, block_num ? BIT(TRACEMEM_MUX_BLK0_NUM-4) : BIT(TRACEMEM_MUX_BLK1_NUM-4));
 #elif CONFIG_IDF_TARGET_ESP32S3
     // select memory block to be exposed to the TRAX module (accessed by host)
-    uint32_t block_bits = block_num ? TRACEMEM_CORE0_MUX_BLK_BIT(TRACEMEM_MUX_BLK0_NUM, TRACEMEM_MUX_BLK0_ALLOC)
-                        : TRACEMEM_CORE0_MUX_BLK_BIT(TRACEMEM_MUX_BLK1_NUM, TRACEMEM_MUX_BLK1_ALLOC);
-    block_bits |= block_num ? TRACEMEM_CORE1_MUX_BLK_BIT(TRACEMEM_MUX_BLK0_NUM, TRACEMEM_MUX_BLK0_ALLOC)
-                        : TRACEMEM_CORE1_MUX_BLK_BIT(TRACEMEM_MUX_BLK1_NUM, TRACEMEM_MUX_BLK1_ALLOC);
+    uint32_t block_bits = block_num ? TRACEMEM_CORE0_MUX_BLK_BITS(TRACEMEM_MUX_BLK0_NUM)
+                        : TRACEMEM_CORE0_MUX_BLK_BITS(TRACEMEM_MUX_BLK1_NUM);
+    block_bits |= block_num ? TRACEMEM_CORE1_MUX_BLK_BITS(TRACEMEM_MUX_BLK0_NUM)
+                        : TRACEMEM_CORE1_MUX_BLK_BITS(TRACEMEM_MUX_BLK1_NUM);
     ESP_EARLY_LOGV(TAG, "Select block %d @ %p (bits 0x%x)", block_num, s_trax_blocks[block_num], block_bits);
     DPORT_WRITE_PERI_REG(SENSITIVE_INTERNAL_SRAM_USAGE_2_REG, block_bits);
 #endif
