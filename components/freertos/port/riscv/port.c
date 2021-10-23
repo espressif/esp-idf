@@ -286,7 +286,7 @@ void vPortCPUReleaseMutex(portMUX_TYPE *mux)
 
 void vPortEnterCritical(void)
 {
-    BaseType_t state = portENTER_CRITICAL_NESTED();
+    BaseType_t state = portSET_INTERRUPT_MASK_FROM_ISR();
     uxCriticalNesting++;
 
     if (uxCriticalNesting == 1) {
@@ -299,7 +299,7 @@ void vPortExitCritical(void)
     if (uxCriticalNesting > 0) {
         uxCriticalNesting--;
         if (uxCriticalNesting == 0) {
-            portEXIT_CRITICAL_NESTED(uxSavedInterruptState);
+            portCLEAR_INTERRUPT_MASK_FROM_ISR(uxSavedInterruptState);
         }
     }
 }

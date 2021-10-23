@@ -139,18 +139,6 @@ BaseType_t xPortInIsrContext(void);
  */
 BaseType_t xPortInterruptedFromISRContext(void);
 
-/**
- * @brief Disable interrupts in a nested manner
- *
- * - Cleaner solution allows nested interrupts disabling and restoring via local registers or stack.
- * - They can be called from interrupts too.
- * - WARNING Only applies to current CPU.
- *
- * @note [refactor-todo] Define this as portSET_INTERRUPT_MASK_FROM_ISR() instead
- * @return unsigned Previous interrupt state
- */
-static inline unsigned portENTER_CRITICAL_NESTED(void);
-
 /* ---------------------- Spinlocks ------------------------
  - Spinlocks added to match API with SMP FreeRTOS. Single core RISC-V does not need spin locks
  - Because single core does not have a primitive spinlock data type, we have to implement one here
@@ -403,11 +391,10 @@ static inline BaseType_t IRAM_ATTR xPortGetCoreID(void)
 
 // --------------------- Interrupts ------------------------
 
-#define portEXIT_CRITICAL_NESTED(state)     do { portCLEAR_INTERRUPT_MASK_FROM_ISR(state);} while(0);
 #define portDISABLE_INTERRUPTS()            portSET_INTERRUPT_MASK_FROM_ISR()
 #define portENABLE_INTERRUPTS()             portCLEAR_INTERRUPT_MASK_FROM_ISR(1)
 #define portSET_INTERRUPT_MASK_FROM_ISR()                       vPortSetInterruptMask()
-#define portCLEAR_INTERRUPT_MASK_FROM_ISR(uxSavedStatusValue) vPortClearInterruptMask(uxSavedStatusValue)
+#define portCLEAR_INTERRUPT_MASK_FROM_ISR(uxSavedStatusValue)   vPortClearInterruptMask(uxSavedStatusValue)
 
 // ------------------ Critical Sections --------------------
 
@@ -472,11 +459,7 @@ static inline BaseType_t IRAM_ATTR xPortGetCoreID(void)
 
 // --------------------- Interrupts ------------------------
 
-static inline unsigned portENTER_CRITICAL_NESTED(void)
-{
-    unsigned state = portSET_INTERRUPT_MASK_FROM_ISR();
-    return state;
-}
+
 
 // ---------------------- Spinlocks ------------------------
 
@@ -537,6 +520,14 @@ bool xPortcheckValidStackMem(const void *ptr);
 
 #define portVALID_TCB_MEM(ptr) xPortCheckValidTCBMem(ptr)
 #define portVALID_STACK_MEM(ptr) xPortcheckValidStackMem(ptr)
+
+
+
+/* ---------------------------------------------------- Deprecate ------------------------------------------------------
+ * - Pull in header containing deprecated macros here
+ * ------------------------------------------------------------------------------------------------------------------ */
+
+#include "portmacro_deprecated.h"
 
 #ifdef __cplusplus
 }
