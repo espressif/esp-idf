@@ -247,7 +247,7 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
 
         if( xTimerQueue != NULL )
         {
-            #if ( configSUPPORT_STATIC_ALLOCATION == 1 && configSUPPORT_STATIC_ALLOCATION == 0 )
+            #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
                 {
                     StaticTask_t * pxTimerTaskTCBBuffer = NULL;
                     StackType_t * pxTimerTaskStackBuffer = NULL;
