@@ -77,10 +77,10 @@ static inline void dac_ll_update_output_value(dac_channel_t channel, uint8_t val
 {
     if (channel == DAC_CHANNEL_1) {
         SENS.sar_dac_ctrl2.dac_cw_en1 = 0;
-        RTCIO.pad_dac[channel].dac = value;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(RTCIO.pad_dac[channel], dac, value);
     } else if (channel == DAC_CHANNEL_2) {
         SENS.sar_dac_ctrl2.dac_cw_en2 = 0;
-        RTCIO.pad_dac[channel].dac = value;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(RTCIO.pad_dac[channel], dac, value);
     }
 }
 

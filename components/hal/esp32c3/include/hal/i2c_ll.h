@@ -576,7 +576,7 @@ static inline void i2c_ll_get_scl_timing(i2c_dev_t *hw, int *high_period, int *l
 static inline void i2c_ll_write_txfifo(i2c_dev_t *hw, uint8_t *ptr, uint8_t len)
 {
     for (int i = 0; i< len; i++) {
-        hw->fifo_data.data = ptr[i];
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->fifo_data, data, ptr[i]);
     }
 }
 
