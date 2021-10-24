@@ -1127,6 +1127,11 @@ int esp_http_client_fetch_headers(esp_http_client_handle_t client)
     if (client->state < HTTP_STATE_REQ_COMPLETE_HEADER) {
         return ESP_FAIL;
     }
+    
+    if( client->location ){
+        free( client->location );
+        client->location = NULL;
+    }
 
     client->state = HTTP_STATE_REQ_COMPLETE_DATA;
     esp_http_buffer_t *buffer = client->response->buffer;
