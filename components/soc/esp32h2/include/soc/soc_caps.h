@@ -264,3 +264,6 @@
 #define SOC_PM_SUPPORT_CPU_PD           (1)
 
 #define SOC_PM_SUPPORT_BT_PD            (1)
+
+/*------------------------------ Classic BT --------------------------------------------*/
+#define SOC_CLASSIC_BT_SUPPORTED        (0)    /* ESP32-H2 doesn't support Classic BT */

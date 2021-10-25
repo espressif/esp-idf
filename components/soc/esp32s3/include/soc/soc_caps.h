@@ -21,6 +21,7 @@
 #define SOC_CPU_CORES_NUM               2
 #define SOC_CACHE_SUPPORT_WRAP          1
 #define SOC_ULP_SUPPORTED               1
+#define SOC_BT_SUPPORTED                1
 #define SOC_USB_OTG_SUPPORTED           1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
 #define SOC_RTC_SLOW_MEM_SUPPORTED      1
@@ -36,7 +37,6 @@
 #define SOC_FLASH_ENCRYPTION_XTS_AES_256  1
 #define SOC_PSRAM_DMA_CAPABLE             1
 #define SOC_XT_WDT_SUPPORTED              1
-
 
 /*-------------------------- SOC CAPS ----------------------------------------*/
 #define SOC_APPCPU_HAS_CLOCK_GATING_BUG (1)
@@ -330,3 +330,6 @@
 #define SOC_SDMMC_NUM_SLOTS        2
 /* Indicates that there is an option to use XTAL clock instead of PLL for SDMMC */
 #define SOC_SDMMC_SUPPORT_XTAL_CLOCK    1
+
+/*------------------------------ Classic BT --------------------------------------------*/
+#define SOC_CLASSIC_BT_SUPPORTED        (0)    /* ESP32-S3 doesn't support Classic BT */

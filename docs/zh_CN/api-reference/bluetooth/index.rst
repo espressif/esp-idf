@@ -9,7 +9,7 @@
    Bluetooth Controller && VHCI <controller_vhci>
    Bluetooth Common <bt_common>
    Bluetooth LE <bt_le>
-   Bluetooth Classic <classic_bt>
+   :SOC_CLASSIC_BT_SUPPORTED: Bluetooth Classic <classic_bt>
    NimBLE <nimble/index>
    ESP-BLE-MESH <esp-ble-mesh>
 

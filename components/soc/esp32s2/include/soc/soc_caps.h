@@ -335,5 +335,10 @@
 
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)
+
+/* ---------------------------- Bluetooth ------------------------------- */
+#define SOC_BT_SUPPORTED                (0)    /* ESP32-S2 is Wi-Fi only */
+#define SOC_CLASSIC_BT_SUPPORTED        (0)    /* ESP32-S2 is Wi-Fi only */
+
 /* ---------------------------- Compatibility ------------------------------- */
 // No contents
