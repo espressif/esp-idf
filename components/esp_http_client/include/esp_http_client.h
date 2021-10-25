@@ -415,7 +415,7 @@ int esp_http_client_write(esp_http_client_handle_t client, const char *buffer, i
  *     - (-1: ESP_FAIL) if any errors
  *     - Download data length defined by content-length header
  */
-int esp_http_client_fetch_headers(esp_http_client_handle_t client);
+int64_t esp_http_client_fetch_headers(esp_http_client_handle_t client);
 
 
 /**
@@ -460,7 +460,7 @@ int esp_http_client_get_status_code(esp_http_client_handle_t client);
  *     - (-1) Chunked transfer
  *     - Content-Length value as bytes
  */
-int esp_http_client_get_content_length(esp_http_client_handle_t client);
+int64_t esp_http_client_get_content_length(esp_http_client_handle_t client);
 
 /**
  * @brief      Close http connection, still kept all http request resources
