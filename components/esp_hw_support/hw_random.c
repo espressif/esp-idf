@@ -25,6 +25,13 @@
 #include "esp32h2/clk.h"
 #endif
 
+#if defined CONFIG_IDF_TARGET_ESP32S3
+#define APB_CYCLE_WAIT_NUM (1778) /* If APB clock is 80 MHz, maximum sampling frequency is around 45 KHz*/
+                                  /* 45 KHz reading frequency is the maximum we have tested so far on S3 */
+#else
+#define APB_CYCLE_WAIT_NUM (16)
+#endif
+
 uint32_t IRAM_ATTR esp_random(void)
 {
     /* The PRNG which implements WDEV_RANDOM register gets 2 bits
@@ -53,7 +60,7 @@ uint32_t IRAM_ATTR esp_random(void)
     do {
         ccount = cpu_hal_get_cycle_count();
         result ^= REG_READ(WDEV_RND_REG);
-    } while (ccount - last_ccount < cpu_to_apb_freq_ratio * 16);
+    } while (ccount - last_ccount < cpu_to_apb_freq_ratio * APB_CYCLE_WAIT_NUM);
     last_ccount = ccount;
     return result ^ REG_READ(WDEV_RND_REG);
 }
