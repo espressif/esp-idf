@@ -8,3 +8,4 @@ components/bt/host/bluedroid/main/*
 components/bt/host/bluedroid/stack/*
 components/bt/host/nimble/nimble/*
 components/wpa_supplicant/src/*
+components/esp_rom/esp32h2/ld/*
