@@ -1415,7 +1415,6 @@ components/hal/include/hal/uhci_types.h
 components/hal/include/hal/usb_hal.h
 components/hal/include/hal/usb_types_private.h
 components/hal/include/hal/usbh_hal.h
-components/hal/include/hal/usbh_ll.h
 components/hal/include/hal/wdt_hal.h
 components/hal/include/hal/wdt_types.h
 components/hal/interrupt_controller_hal.c
