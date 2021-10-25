@@ -129,13 +129,13 @@
     SPI_PAD_CONFIG_D7,                    EFUSE_BLK1,  108,    6,     SPI_PAD_configure D7
     WAFER_VERSION,                        EFUSE_BLK1,  114,    3,     WAFER version 0:A
     PKG_VERSION,                          EFUSE_BLK1,  117,    3,     Package version
-    BLOCK1_VERSION,                       EFUSE_BLK1,  120,    3,     BLOCK1 efuse version 0:No calibration 1:With calibration
+    BLK_VER_MINOR,                        EFUSE_BLK1,  120,    3,     BLK_VERSION_MINOR, won't influence users
     ADC2_CAL_VOL_ATTEN3,                  EFUSE_BLK1,  186,    6,     ADC2 calibration voltage at atten3
 
 # SYS_DATA_PART1 BLOCK# - System configuration
 #######################
     OPTIONAL_UNIQUE_ID,                   EFUSE_BLK2,    0,  128,     Optional unique 128-bit ID
-    BLOCK2_VERSION,                       EFUSE_BLK2,  128,    4,     Version of BLOCK2
+    BLK_VER_MAJOR,                        EFUSE_BLK2,  128,    2,     BLK_VERSION_MAJOR, change of this bit means users need to update firmware
     TEMP_CALIB,                           EFUSE_BLK2,  132,    9,     Temperature calibration data
     OCODE,                                EFUSE_BLK2,  141,    8,     ADC OCode
     ADC1_INIT_CODE_ATTEN0,                EFUSE_BLK2,  149,    8,     ADC1 init code at atten0
