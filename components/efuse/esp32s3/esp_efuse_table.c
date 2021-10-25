@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table ee5142bc489eee22230a49b5c7cafe00
+// md5_digest_table 9444b887379d924049af42806ca71d45
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -412,8 +412,8 @@ static const esp_efuse_desc_t PKG_VERSION[] = {
     {EFUSE_BLK1, 117, 3}, 	 // Package version,
 };
 
-static const esp_efuse_desc_t BLOCK1_VERSION[] = {
-    {EFUSE_BLK1, 120, 3}, 	 // BLOCK1 efuse version 0:No calibration 1:With calibration,
+static const esp_efuse_desc_t BLK_VER_MINOR[] = {
+    {EFUSE_BLK1, 120, 3}, 	 // BLK_VERSION_MINOR,
 };
 
 static const esp_efuse_desc_t ADC2_CAL_VOL_ATTEN3[] = {
@@ -424,8 +424,8 @@ static const esp_efuse_desc_t OPTIONAL_UNIQUE_ID[] = {
     {EFUSE_BLK2, 0, 128}, 	 // Optional unique 128-bit ID,
 };
 
-static const esp_efuse_desc_t BLOCK2_VERSION[] = {
-    {EFUSE_BLK2, 128, 4}, 	 // Version of BLOCK2,
+static const esp_efuse_desc_t BLK_VER_MAJOR[] = {
+    {EFUSE_BLK2, 128, 2}, 	 // BLK_VERSION_MAJOR,
 };
 
 static const esp_efuse_desc_t TEMP_CALIB[] = {
@@ -1031,8 +1031,8 @@ const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_BLOCK1_VERSION[] = {
-    &BLOCK1_VERSION[0],    		// BLOCK1 efuse version 0:No calibration 1:With calibration
+const esp_efuse_desc_t* ESP_EFUSE_BLK_VER_MINOR[] = {
+    &BLK_VER_MINOR[0],    		// BLK_VERSION_MINOR
     NULL
 };
 
@@ -1046,8 +1046,8 @@ const esp_efuse_desc_t* ESP_EFUSE_OPTIONAL_UNIQUE_ID[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_BLOCK2_VERSION[] = {
-    &BLOCK2_VERSION[0],    		// Version of BLOCK2
+const esp_efuse_desc_t* ESP_EFUSE_BLK_VER_MAJOR[] = {
+    &BLK_VER_MAJOR[0],    		// BLK_VERSION_MAJOR
     NULL
 };
 

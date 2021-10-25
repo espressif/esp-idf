@@ -69,25 +69,17 @@ void rtc_init(rtc_config_t cfg)
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_RTC_DREG, RTC_CNTL_DBIAS_1V10);
 
     if (cfg.cali_ocode) {
-        uint32_t blk1_version = 0;
-        uint32_t blk2_version = 0;
-        esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_BLOCK1_VERSION, &blk1_version, 3);
+        uint32_t blk_ver_major = 0;
+        esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_BLK_VER_MAJOR, &blk_ver_major, ESP_EFUSE_BLK_VER_MAJOR[0]->bit_count);
         if (err != ESP_OK) {
-            blk1_version = 0;
-            SOC_LOGW(TAG, "efuse read fail, set default blk1_version: %d\n", blk1_version);
+            blk_ver_major = 0;
+            SOC_LOGW(TAG, "efuse read fail, set default blk_ver_major: %d\n", blk_ver_major);
         }
-        err = esp_efuse_read_field_blob(ESP_EFUSE_BLOCK2_VERSION, &blk2_version, 4);
-        if (err != ESP_OK) {
-            blk2_version = 0;
-            SOC_LOGW(TAG, "efuse read fail, set default blk2_version: %d\n", blk2_version);
-        }
-        if (blk1_version != blk2_version) {
-            blk1_version = 0;
-            blk2_version = 0;
-            SOC_LOGW(TAG, "calibration efuse version does not match, set default version: %d\n", 0);
-        }
-        if (blk2_version == 1) {
-            set_ocode_by_efuse(blk2_version);
+
+        //default blk_ver_major will fallback to using the self-calibration way for OCode
+        bool ocode_efuse_cali = (blk_ver_major == 1);
+        if (ocode_efuse_cali) {
+            set_ocode_by_efuse(blk_ver_major);
         } else {
             calibrate_ocode();
         }
