@@ -476,7 +476,7 @@ static int wifi_cmd_ftm(int argc, char **argv)
     }
 
     bits = xEventGroupWaitBits(ftm_event_group, FTM_REPORT_BIT | FTM_FAILURE_BIT,
-                                           pdFALSE, pdFALSE, portMAX_DELAY);
+                                           pdTRUE, pdFALSE, portMAX_DELAY);
     /* Processing data from FTM session */
     if (bits & FTM_REPORT_BIT) {
         ftm_process_report();
@@ -485,7 +485,6 @@ static int wifi_cmd_ftm(int argc, char **argv)
         g_ftm_report_num_entries = 0;
         ESP_LOGI(TAG_STA, "Estimated RTT - %d nSec, Estimated Distance - %d.%02d meters",
                           g_rtt_est, g_dist_est / 100, g_dist_est % 100);
-        xEventGroupClearBits(ftm_event_group, FTM_REPORT_BIT);
     } else {
         /* Failure case */
     }
