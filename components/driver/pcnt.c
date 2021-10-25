@@ -8,7 +8,7 @@
 #include "esp_check.h"
 #include "soc/soc_caps.h"
 #if SOC_PCNT_SUPPORTED
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "driver/pcnt.h"
 #include "hal/pcnt_hal.h"
 #include "hal/pcnt_ll.h"

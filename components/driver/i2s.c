@@ -41,6 +41,7 @@
 #include "esp_efuse.h"
 #include "esp_rom_gpio.h"
 #include "esp_private/i2s_platform.h"
+#include "esp_private/periph_ctrl.h"
 
 #include "sdkconfig.h"
 

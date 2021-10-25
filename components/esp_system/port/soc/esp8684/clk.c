@@ -23,7 +23,7 @@
 #include "soc/rtc_periph.h"
 #include "hal/cpu_hal.h"
 #include "hal/wdt_hal.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "bootloader_clock.h"
 #include "soc/syscon_reg.h"
 #include "esp_rom_uart.h"

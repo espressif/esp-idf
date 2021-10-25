@@ -12,7 +12,7 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "driver/gpio.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "driver/rmt.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

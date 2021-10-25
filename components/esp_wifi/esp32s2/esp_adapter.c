@@ -36,7 +36,7 @@
 #include "soc/syscon_reg.h"
 #include "hal/interrupt_controller_hal.h"
 #include "phy_init_data.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "nvs.h"
 #include "os.h"
 #include "esp_smartconfig.h"

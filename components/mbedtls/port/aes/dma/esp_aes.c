@@ -29,7 +29,7 @@
 #include <string.h>
 #include "mbedtls/aes.h"
 #include "esp_intr_alloc.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "esp_log.h"
 #include "soc/lldesc.h"
 #include "esp_heap_caps.h"

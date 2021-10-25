@@ -18,7 +18,7 @@
 #include "esp_log.h"
 #include "esp_freertos_hooks.h"
 #include "soc/timer_periph.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "esp_int_wdt.h"
 #include "esp_private/system_internal.h"
 #include "hal/cpu_hal.h"

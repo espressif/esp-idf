@@ -21,7 +21,6 @@
 #include "freertos/queue.h"
 #include "soc/soc_caps.h"
 #if SOC_PCNT_SUPPORTED
-#include "driver/periph_ctrl.h"
 #include "driver/gpio.h"
 #include "driver/pcnt.h"
 #include "driver/ledc.h"

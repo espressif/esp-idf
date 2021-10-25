@@ -29,7 +29,7 @@
 #include "hal/gpio_hal.h"
 #include "esp_private/gdma.h"
 #include "driver/gpio.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #if CONFIG_SPIRAM
 #include "spiram.h"
 #endif

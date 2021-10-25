@@ -21,7 +21,7 @@
 #include "hal/cpu_hal.h"
 #include "hal/cpu_ll.h"
 #include "hal/gpio_hal.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "esp_rom_gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "driver/dedic_gpio.h"

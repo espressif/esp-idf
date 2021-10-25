@@ -18,7 +18,7 @@ set(srcs
     "timer.c"
     "uart.c")
 
-set(includes "include" "${target}/include")
+set(includes "include" "${target}/include" "deprecated")
 
 if(${target} STREQUAL "esp32")
     # SDMMC and MCPWM are in ESP32 only.

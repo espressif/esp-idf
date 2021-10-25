@@ -17,7 +17,7 @@
 #include "hal/adc_ll.h"
 
 #ifndef BOOTLOADER_BUILD
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #endif
 
 void bootloader_random_enable(void)
