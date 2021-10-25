@@ -234,6 +234,9 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
         return ret;
     }
     esp_sleep_enable_wifi_wakeup();
+#if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
+    coex_wifi_register_update_lpclk_callback(esp_wifi_update_tsf_tick_interval);
+#endif
 #endif
 #endif
 
