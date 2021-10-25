@@ -9,13 +9,11 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "test_utils.h"
-#include "soc/gpio_pins.h"
-#include "soc/gpio_sig_map.h"
+#include "soc/usb_wrap_struct.h"
 #include "esp_intr_alloc.h"
 #include "esp_err.h"
 #include "esp_attr.h"
 #include "esp_rom_gpio.h"
-#include "soc/usb_wrap_struct.h"
 #include "hcd.h"
 #include "usb_private.h"
 #include "usb/usb_types_ch9.h"
@@ -139,18 +137,23 @@ int test_hcd_get_num_pipe_events(hcd_pipe_handle_t pipe_hdl)
 
 void test_hcd_force_conn_state(bool connected, TickType_t delay_ticks)
 {
-    vTaskDelay(delay_ticks);
+    if (delay_ticks > 0) {
+        //Delay of 0 ticks causes a yield. So skip if delay_ticks is 0.
+        vTaskDelay(delay_ticks);
+    }
     usb_wrap_dev_t *wrap = &USB_WRAP;
     if (connected) {
-        //Swap back to internal PHY that is connected to a device
-        wrap->otg_conf.phy_sel = 0;
+        //Disable test mode to return to previous internal PHY configuration
+        wrap->test_conf.test_enable = 0;
     } else {
-        //Set external PHY input signals to fixed voltage levels mimicking a disconnected state
-        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, USB_EXTPHY_VP_IDX, false);
-        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, USB_EXTPHY_VM_IDX, false);
-        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, USB_EXTPHY_RCV_IDX, false);
-        //Swap to the external PHY
-        wrap->otg_conf.phy_sel = 1;
+        /*
+        Mimic a disconnection by using the internal PHY's test mode.
+        Force Output Enable to 1 (even if the controller isn't outputting). With test_tx_dp and test_tx_dm set to 0,
+        this will look like a disconnection.
+        */
+        wrap->test_conf.val = 0;
+        wrap->test_conf.test_usb_wrap_oe = 1;
+        wrap->test_conf.test_enable = 1;
     }
 }
 

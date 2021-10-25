@@ -32,7 +32,7 @@ Procedure:
     - Start transfers but trigger a disconnect after a short delay
     - Check that HCD_PORT_EVENT_SUDDEN_DISCONN event is generated. Handle that port event.
     - Check that the default pipe remains in the HCD_PIPE_STATE_ACTIVE after the port error.
-    - Check that the default pipe can be halted, a HCD_PIPE_EVENT_URB_DONE event should be generated
+    - Check that the default pipe can be halted.
     - Check that the default pipe can be flushed, a HCD_PIPE_EVENT_URB_DONE event should be generated
     - Check that all URBs can be dequeued.
     - Free default pipe
@@ -66,7 +66,7 @@ TEST_CASE("Test HCD port sudden disconnect", "[hcd][ignore]")
     //Add a short delay to let the transfers run for a bit
     esp_rom_delay_us(POST_ENQUEUE_DELAY_US);
     test_hcd_force_conn_state(false, 0);
-    //Disconnect event should have occurred. Handle the event
+    //Disconnect event should have occurred. Handle the port event
     test_hcd_expect_port_event(port_hdl, HCD_PORT_EVENT_DISCONNECTION);
     TEST_ASSERT_EQUAL(HCD_PORT_EVENT_DISCONNECTION, hcd_port_handle_event(port_hdl));
     TEST_ASSERT_EQUAL(HCD_PORT_STATE_RECOVERY, hcd_port_get_state(port_hdl));
@@ -75,17 +75,17 @@ TEST_CASE("Test HCD port sudden disconnect", "[hcd][ignore]")
     //We should be able to halt then flush the pipe
     TEST_ASSERT_EQUAL(HCD_PIPE_STATE_ACTIVE, hcd_pipe_get_state(default_pipe));
     TEST_ASSERT_EQUAL(ESP_OK, hcd_pipe_command(default_pipe, HCD_PIPE_CMD_HALT));
-    test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_URB_DONE);
+    printf("Pipe halted\n");
     TEST_ASSERT_EQUAL(HCD_PIPE_STATE_HALTED, hcd_pipe_get_state(default_pipe));
     TEST_ASSERT_EQUAL(ESP_OK, hcd_pipe_command(default_pipe, HCD_PIPE_CMD_FLUSH));
     test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_URB_DONE);
-    printf("Pipe halted and flushed\n");
+    printf("Pipe flushed\n");
 
     //Dequeue URBs
     for (int i = 0; i < NUM_URBS; i++) {
         urb_t *urb = hcd_urb_dequeue(default_pipe);
         TEST_ASSERT_EQUAL(urb_list[i], urb);
-        TEST_ASSERT(urb->transfer.status == USB_TRANSFER_STATUS_COMPLETED || urb->transfer.status == USB_TRANSFER_STATUS_CANCELED);
+        TEST_ASSERT(urb->transfer.status == USB_TRANSFER_STATUS_COMPLETED || urb->transfer.status == USB_TRANSFER_STATUS_NO_DEVICE);
         if (urb->transfer.status == USB_TRANSFER_STATUS_COMPLETED) {
             //We must have transmitted at least the setup packet, but device may return less than bytes requested
             TEST_ASSERT_GREATER_OR_EQUAL(sizeof(usb_setup_packet_t), urb->transfer.actual_num_bytes);
@@ -259,7 +259,9 @@ TEST_CASE("Test HCD port disable", "[hcd][ignore]")
     for (int i = 0; i < NUM_URBS; i++) {
         urb_t *urb = hcd_urb_dequeue(default_pipe);
         TEST_ASSERT_EQUAL(urb_list[i], urb);
-        TEST_ASSERT(urb->transfer.status == USB_TRANSFER_STATUS_COMPLETED || urb->transfer.status == USB_TRANSFER_STATUS_CANCELED);
+        TEST_ASSERT(urb->transfer.status == USB_TRANSFER_STATUS_COMPLETED ||    //The transfer completed before the pipe halted
+                    urb->transfer.status == USB_TRANSFER_STATUS_CANCELED ||     //The transfer was stopped mid-way by the halt
+                    urb->transfer.status == USB_TRANSFER_STATUS_NO_DEVICE);     //The transfer was never started
         if (urb->transfer.status == USB_TRANSFER_STATUS_COMPLETED) {
             //We must have transmitted at least the setup packet, but device may return less than bytes requested
             TEST_ASSERT_GREATER_OR_EQUAL(sizeof(usb_setup_packet_t), urb->transfer.actual_num_bytes);

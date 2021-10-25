@@ -1414,7 +1414,6 @@ components/hal/include/hal/uart_types.h
 components/hal/include/hal/uhci_types.h
 components/hal/include/hal/usb_hal.h
 components/hal/include/hal/usb_types_private.h
-components/hal/include/hal/usbh_hal.h
 components/hal/include/hal/wdt_hal.h
 components/hal/include/hal/wdt_types.h
 components/hal/interrupt_controller_hal.c
@@ -1450,7 +1449,6 @@ components/hal/twai_hal_iram.c
 components/hal/uart_hal.c
 components/hal/uart_hal_iram.c
 components/hal/usb_hal.c
-components/hal/usbh_hal.c
 components/hal/wdt_hal_iram.c
 components/heap/heap_caps_init.c
 components/heap/heap_private.h
