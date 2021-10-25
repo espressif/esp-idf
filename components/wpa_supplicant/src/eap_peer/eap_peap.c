@@ -159,6 +159,12 @@ eap_peap_init(struct eap_sm *sm)
 		return NULL;
 	}
 
+	if (!sm->config.identity || !sm->config.password) {
+		wpa_printf(MSG_ERROR, "EAP-PEAP: failed to init with user name, password");
+		eap_peap_deinit(sm, data);
+		return NULL;
+	}
+
 	data->phase2_type.vendor = EAP_VENDOR_IETF;
 	data->phase2_type.method = EAP_TYPE_NONE;
 
