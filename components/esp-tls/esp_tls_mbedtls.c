@@ -706,7 +706,7 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
             ESP_LOGE(TAG, "Failed to set client pki context");
             return esp_ret;
         }
-    } else if (cfg->clientcert_buf != NULL || cfg->clientkey_buf != NULL) {
+    } else if (cfg->clientcert_buf == NULL || cfg->clientkey_buf == NULL) {
         ESP_LOGE(TAG, "You have to provide both clientcert_buf and clientkey_buf for mutual authentication");
         return ESP_ERR_INVALID_STATE;
     }
