@@ -268,3 +268,6 @@
 #define SOC_PM_SUPPORT_WIFI_PD          (1)
 
 #define SOC_PM_SUPPORT_BT_PD            (1)
+
+/*------------------------------ Classic BT --------------------------------------------*/
+#define SOC_CLASSIC_BT_SUPPORTED        (0)    /* ESP32-C3 doesn't support Classic BT */

@@ -278,3 +278,6 @@
 
 /*------------------------------ BLE --------------------------------------------*/
 #define SOC_BLE_DONT_UPDATE_OWN_RPA  (1)
+
+/*------------------------------ Classic BT --------------------------------------------*/
+#define SOC_CLASSIC_BT_SUPPORTED     (1)    /* ESP32 Support Classic BT */
