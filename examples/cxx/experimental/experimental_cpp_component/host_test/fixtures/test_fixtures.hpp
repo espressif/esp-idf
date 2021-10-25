@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: CC0
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
  *
  * This example code is in the Public Domain (or CC0 licensed, at your option.)
  *
@@ -14,10 +14,12 @@
 #include "gpio_cxx.hpp"
 #include "driver/spi_master.h"
 #include "spi_cxx.hpp"
+#include "i2c_cxx.hpp"
 extern "C" {
 #include "Mockgpio.h"
 #include "Mockspi_master.h"
 #include "Mockspi_common.h"
+#include "Mocki2c.h"
 }
 
 static const idf::GPIONum VALID_GPIO(18);
@@ -295,4 +297,63 @@ struct SPITransactionDescriptorFix {
     spi_device_handle_t handle;
     std::vector<uint8_t> tx_data;
     std::vector<uint8_t> rx_data;
+};
+
+struct I2CMasterFix {
+    I2CMasterFix(i2c_port_t port_arg = 0) : i2c_conf(), port(port_arg)
+    {
+        i2c_conf.mode = i2c_mode_t::I2C_MODE_MASTER;
+        i2c_conf.sda_io_num = 2;
+        i2c_conf.scl_io_num = 1;
+        i2c_conf.sda_pullup_en = true;
+        i2c_conf.scl_pullup_en = true;
+        i2c_conf.master.clk_speed = 400000;
+        i2c_conf.clk_flags = 0;
+        i2c_param_config_ExpectWithArrayAndReturn(i2c_port_t(0), &i2c_conf, 1, ESP_OK);
+        i2c_driver_install_ExpectAndReturn(i2c_port_t(0), i2c_mode_t::I2C_MODE_MASTER, 0, 0, 0, ESP_OK);
+        i2c_driver_delete_ExpectAndReturn(i2c_port_t(0), ESP_OK);
+    }
+
+    i2c_config_t i2c_conf;
+    i2c_port_t port;
+};
+
+struct I2CSlaveFix {
+    I2CSlaveFix(CreateAnd flags, i2c_port_t port_arg = 0, size_t buffer_size = 64) : i2c_conf(), port(port_arg)
+    {
+        if (flags == CreateAnd::SUCCEED) {
+            i2c_conf.mode = i2c_mode_t::I2C_MODE_SLAVE;
+            i2c_conf.sda_io_num = 2;
+            i2c_conf.scl_io_num = 1;
+            i2c_conf.sda_pullup_en = true;
+            i2c_conf.scl_pullup_en = true;
+            i2c_conf.slave.addr_10bit_en = 0;
+            i2c_conf.slave.slave_addr = 0x47;
+            i2c_param_config_ExpectWithArrayAndReturn(port, &i2c_conf, 1, ESP_OK);
+            i2c_driver_install_ExpectAndReturn(port, i2c_mode_t::I2C_MODE_SLAVE, buffer_size, buffer_size, 0, ESP_OK);
+            i2c_driver_delete_ExpectAndReturn(port, ESP_OK);
+        } else if (flags == CreateAnd::IGNORE) {
+            i2c_param_config_IgnoreAndReturn(ESP_OK);
+            i2c_driver_install_IgnoreAndReturn(ESP_OK);
+            i2c_driver_delete_IgnoreAndReturn(ESP_OK);
+        } else {
+            throw idf::I2CException(ESP_ERR_INVALID_ARG);
+        }
+    }
+
+    i2c_config_t i2c_conf;
+    i2c_port_t port;
+};
+
+struct I2CCmdLinkFix
+{
+    I2CCmdLinkFix(uint8_t expected_addr, i2c_rw_t type = I2C_MASTER_WRITE) : dummy_handle(reinterpret_cast<i2c_cmd_handle_t>(0xbeef))
+    {
+        i2c_cmd_link_create_ExpectAndReturn(&dummy_handle);
+        i2c_master_start_ExpectAndReturn(&dummy_handle, ESP_OK);
+        i2c_master_write_byte_ExpectAndReturn(&dummy_handle, expected_addr << 1 | type, true, ESP_OK);
+        i2c_cmd_link_delete_Expect(&dummy_handle);
+    }
+
+    i2c_cmd_handle_t dummy_handle;
 };

@@ -28,7 +28,7 @@
 template<typename ValueT>
 class StrongValue {
 protected:
-    StrongValue(ValueT value_arg) : value(value_arg) { }
+    constexpr StrongValue(ValueT value_arg) : value(value_arg) { }
 
     ValueT get_value() const {
         return value;
@@ -44,7 +44,7 @@ private:
 template<typename ValueT>
 class StrongValueComparable : public StrongValue<ValueT> {
 protected:
-    StrongValueComparable(ValueT value_arg) : StrongValue<ValueT>(value_arg) { }
+    constexpr StrongValueComparable(ValueT value_arg) : StrongValue<ValueT>(value_arg) { }
 
 public:
     using StrongValue<ValueT>::get_value;
