@@ -15,6 +15,10 @@
 void mdns_debug_packet(const uint8_t * data, size_t len);
 #endif
 
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
+#endif
+
 // Internal size of IPv6 address is defined here as size of AAAA record in mdns packet
 // since the ip6_addr_t is defined in lwip and depends on using IPv6 zones
 #define _MDNS_SIZEOF_IP6_ADDR (MDNS_ANSWER_AAAA_SIZE)
@@ -168,6 +172,24 @@ static mdns_srv_item_t * _mdns_get_service_item(const char * service, const char
     while (s) {
         if (_mdns_service_match(s->service, service, proto, hostname)) {
             return s;
+        }
+        s = s->next;
+    }
+    return NULL;
+}
+
+static mdns_srv_item_t * _mdns_get_service_item_subtype(const char *subtype, const char * service, const char * proto)
+{
+    mdns_srv_item_t * s = _mdns_server->services;
+    while (s) {
+        if (_mdns_service_match(s->service, service, proto, NULL)) {
+            mdns_subtype_t *subtype_item = s->service->subtype;
+            while(subtype_item) {
+                if (!strcasecmp(subtype_item->subtype, subtype)) {
+                    return s;
+                }
+                subtype_item = subtype_item->next;
+            }
         }
         s = s->next;
     }
@@ -606,6 +628,54 @@ static uint16_t _mdns_append_ptr_record(uint8_t * packet, uint16_t * index, cons
 }
 
 /**
+ * @brief  appends PTR record for a subtype to a packet, incrementing the index
+ *
+ * @param  packet       MDNS packet
+ * @param  index        offset in the packet
+ * @param  instance     the service instance name
+ * @param  subtype      the service subtype
+ * @param  proto        the service protocol
+ * @param  flush        whether to set the flush flag
+ * @param  bye          whether to set the bye flag
+ *
+ * @return length of added data: 0 on error or length on success
+ */
+static uint16_t _mdns_append_subtype_ptr_record(uint8_t *packet, uint16_t *index, const char *instance,
+                                                const char *subtype, const char *service, const char *proto, bool flush,
+                                                bool bye)
+{
+    const char *subtype_str[5] = {subtype, MDNS_SUB_STR, service, proto, MDNS_DEFAULT_DOMAIN};
+    const char *instance_str[4] = {instance, service, proto, MDNS_DEFAULT_DOMAIN};
+    uint16_t record_length = 0;
+    uint8_t part_length;
+
+    if (service == NULL) {
+        return 0;
+    }
+
+    part_length = _mdns_append_fqdn(packet, index, subtype_str, ARRAY_SIZE(subtype_str));
+    if (!part_length) {
+        return 0;
+    }
+    record_length += part_length;
+
+    part_length = _mdns_append_type(packet, index, MDNS_ANSWER_PTR, false, bye ? 0 : MDNS_ANSWER_PTR_TTL);
+    if (!part_length) {
+        return 0;
+    }
+    record_length += part_length;
+
+    uint16_t data_len_location = *index - 2;
+    part_length = _mdns_append_fqdn(packet, index, instance_str, ARRAY_SIZE(instance_str));
+    if (!part_length) {
+        return 0;
+    }
+    _mdns_set_u16(packet, data_len_location, part_length);
+    record_length += part_length;
+    return record_length;
+}
+
+/**
  * @brief  appends DNS-SD PTR record for service to a packet, incrementing the index
  *
  * @param  packet       MDNS packet
@@ -1011,6 +1081,33 @@ static uint8_t _mdns_append_host_answer(uint8_t * packet, uint16_t * index, mdns
 }
 
 /**
+ * @brief  Append PTR answers to packet
+ *
+ *  @return number of answers added to the packet
+ */
+static uint8_t _mdns_append_service_ptr_answers(uint8_t *packet, uint16_t *index, mdns_service_t *service, bool flush,
+                                                bool bye)
+{
+    uint8_t appended_answers = 0;
+
+    if (_mdns_append_ptr_record(packet, index, _mdns_get_service_instance_name(service), service->service,
+                                service->proto, flush, bye) <= 0) {
+        return appended_answers;
+    }
+
+    mdns_subtype_t *subtype = service->subtype;
+    while (subtype) {
+        appended_answers +=
+            (_mdns_append_subtype_ptr_record(packet, index, _mdns_get_service_instance_name(service), subtype->subtype,
+                                             service->service, service->proto, flush, bye) > 0);
+        subtype = subtype->next;
+    }
+
+    return appended_answers;
+}
+
+
+/**
  * @brief  Append answer to packet
  *
  *  @return number of answers added to the packet
@@ -1018,12 +1115,8 @@ static uint8_t _mdns_append_host_answer(uint8_t * packet, uint16_t * index, mdns
 static uint8_t _mdns_append_answer(uint8_t * packet, uint16_t * index, mdns_out_answer_t * answer, mdns_if_t tcpip_if)
 {
     if (answer->type == MDNS_TYPE_PTR) {
-
         if (answer->service) {
-            return _mdns_append_ptr_record(packet, index,
-                _mdns_get_service_instance_name(answer->service),
-                answer->service->service, answer->service->proto,
-                answer->flush, answer->bye) > 0;
+            return _mdns_append_service_ptr_answers(packet, index, answer->service, answer->flush, answer->bye);
         } else {
             return _mdns_append_ptr_record(packet, index,
                 answer->custom_instance, answer->custom_service, answer->custom_proto,
@@ -1435,6 +1528,24 @@ static bool _mdns_create_answer_from_hostname(mdns_tx_packet_t * packet, const c
     return true;
 }
 
+static bool _mdns_service_match_ptr_question(const mdns_service_t *service, const mdns_parsed_question_t *question)
+{
+    if (!_mdns_service_match(service, question->service, question->proto, NULL)) {
+        return false;
+    }
+    if (question->sub) {
+        mdns_subtype_t *subtype = service->subtype;
+        while (subtype) {
+            if (!strcasecmp(subtype->subtype, question->host)) {
+                return true;
+            }
+            subtype = subtype->next;
+        }
+        return false;
+    }
+    return true;
+}
+
 /**
  * @brief  Create answer packet to questions from parsed packet
  */
@@ -1466,7 +1577,7 @@ static void _mdns_create_answer_from_parsed_packet(mdns_parsed_packet_t *parsed_
         } else if (q->service && q->proto) {
             mdns_srv_item_t *service = _mdns_server->services;
             while (service) {
-                if (_mdns_service_match(service->service, q->service, q->proto, NULL)) {
+                if (_mdns_service_match_ptr_question(service->service, q)) {
                     if (!_mdns_create_answer_from_service(packet, service->service, q, shared, send_flush)) {
                         _mdns_free_tx_packet(packet);
                         return;
@@ -2179,6 +2290,7 @@ static mdns_service_t * _mdns_create_service(const char * service, const char * 
     s->instance = instance?strndup(instance, MDNS_NAME_BUF_LEN - 1):NULL;
     s->txt = new_txt;
     s->port = port;
+    s->subtype = NULL;
 
     if (hostname) {
         s->hostname = strndup(hostname, MDNS_NAME_BUF_LEN - 1);
@@ -2338,7 +2450,12 @@ static void _mdns_free_service(mdns_service_t * service)
         free((char *)s->value);
         free(s);
     }
-    free(service->txt);
+    while (service->subtype) {
+        mdns_subtype_t * next = service->subtype->next;
+        free((char *)service->subtype->subtype);
+        free(service->subtype);
+        service->subtype = next;
+    }
     free(service);
 }
 
@@ -2701,9 +2818,12 @@ static bool _mdns_name_is_ours(mdns_name_t * name)
         return false;
     }
 
+
     //find the service
     mdns_srv_item_t * service;
-    if (_str_null_or_empty(name->host)) {
+    if (name->sub) {
+        service = _mdns_get_service_item_subtype(name->host, name->service, name->proto);
+    } else if (_str_null_or_empty(name->host)) {
         service = _mdns_get_service_item(name->service, name->proto, NULL);
     } else {
         service = _mdns_get_service_item_instance(name->host, name->service, name->proto, NULL);
@@ -2712,8 +2832,8 @@ static bool _mdns_name_is_ours(mdns_name_t * name)
         return false;
     }
 
-    //if host is empty and we have service, we have success
-    if (_str_null_or_empty(name->host)) {
+    //if query is PTR query and we have service, we have success
+    if (name->sub || _str_null_or_empty(name->host)) {
         return true;
     }
 
@@ -3122,7 +3242,8 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
                     a = a->next;
                 }
                 continue;
-            } else if (name->sub || !_mdns_name_is_ours(name)) {
+            }
+            if (!_mdns_name_is_ours(name)) {
                 continue;
             }
 
@@ -3140,6 +3261,7 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
 
             question->unicast = unicast;
             question->type = type;
+            question->sub = name->sub;
             if (_mdns_strdup_check(&(question->host), name->host)
               || _mdns_strdup_check(&(question->service), name->service)
               || _mdns_strdup_check(&(question->proto), name->proto)
@@ -4247,6 +4369,9 @@ static void _mdns_free_action(mdns_action_t * action)
     case ACTION_SERVICE_TXT_DEL:
         free(action->data.srv_txt_del.key);
         break;
+    case ACTION_SERVICE_SUBTYPE_ADD:
+        free(action->data.srv_subtype_add.subtype);
+        break;
     case ACTION_SEARCH_ADD:
         //fallthrough
     case ACTION_SEARCH_SEND:
@@ -4282,6 +4407,8 @@ static void _mdns_execute_action(mdns_action_t * action)
     mdns_service_t * service;
     char * key;
     char * value;
+    char *subtype;
+    mdns_subtype_t *subtype_item;
     mdns_txt_linked_item_t * txt, * t;
 
     switch(action->type) {
@@ -4395,6 +4522,19 @@ static void _mdns_execute_action(mdns_action_t * action)
 
         _mdns_announce_all_pcbs(&action->data.srv_txt_set.service, 1, false);
 
+        break;
+    case ACTION_SERVICE_SUBTYPE_ADD:
+        service = action->data.srv_subtype_add.service->service;
+        subtype = action->data.srv_subtype_add.subtype;
+        subtype_item = (mdns_subtype_t *)malloc(sizeof(mdns_subtype_t));
+        if (!subtype_item) {
+            HOOK_MALLOC_FAILED;
+            _mdns_free_action(action);
+            return;
+        }
+        subtype_item->subtype = subtype;
+        subtype_item->next = service->subtype;
+        service->subtype = subtype_item;
         break;
     case ACTION_SERVICE_DEL:
         a = _mdns_server->services;
@@ -5247,6 +5387,40 @@ esp_err_t mdns_service_txt_item_remove(const char * service, const char * proto,
         return ESP_ERR_INVALID_STATE;
     }
     return mdns_service_txt_item_remove_for_host(service, proto, _mdns_server->hostname, key);
+}
+
+esp_err_t mdns_service_subtype_add_for_host(const char *instance_name, const char *service, const char *proto,
+                                            const char *hostname, const char *subtype)
+{
+    if (!_mdns_server || !_mdns_server->services || _str_null_or_empty(service) || _str_null_or_empty(proto) ||
+        _str_null_or_empty(subtype)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    mdns_srv_item_t * s = _mdns_get_service_item_instance(instance_name, service, proto, hostname);
+
+    if (!s) {
+        return ESP_ERR_NOT_FOUND;
+    }
+    mdns_action_t * action = (mdns_action_t *)malloc(sizeof(mdns_action_t));
+    if (!action) {
+        HOOK_MALLOC_FAILED;
+        return ESP_ERR_NO_MEM;
+    }
+
+    action->type = ACTION_SERVICE_SUBTYPE_ADD;
+    action->data.srv_subtype_add.service = s;
+    action->data.srv_subtype_add.subtype = strdup(subtype);
+
+    if (!action->data.srv_subtype_add.subtype) {
+        free(action);
+        return ESP_ERR_NO_MEM;
+    }
+    if (xQueueSend(_mdns_server->action_queue, &action, (portTickType)0) != pdPASS) {
+        free(action->data.srv_subtype_add.subtype);
+        free(action);
+        return ESP_ERR_NO_MEM;
+    }
+    return ESP_OK;
 }
 
 esp_err_t mdns_service_instance_name_set_for_host(const char * service, const char * proto, const char * hostname,

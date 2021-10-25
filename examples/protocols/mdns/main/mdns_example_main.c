@@ -53,6 +53,7 @@ static void initialise_mdns(void)
 
     //initialize service
     ESP_ERROR_CHECK( mdns_service_add("ESP32-WebServer", "_http", "_tcp", 80, serviceTxtData, 3) );
+    ESP_ERROR_CHECK( mdns_service_subtype_add_for_host("ESP32-WebServer", "_http", "_tcp", NULL, "_server") );
 #if CONFIG_MDNS_MULTIPLE_INSTANCE
     ESP_ERROR_CHECK( mdns_service_add("ESP32-WebServer1", "_http", "_tcp", 80, NULL, 0) );
 #endif
