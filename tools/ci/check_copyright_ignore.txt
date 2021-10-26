@@ -1,4 +1,3 @@
-.gitlab/ci/dependencies/generate_rules.py
 components/app_trace/port/include/esp_app_trace_port.h
 components/app_trace/port/riscv/port.c
 components/app_trace/private_include/esp_app_trace_membufs_proto.h
