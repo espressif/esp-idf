@@ -62,7 +62,6 @@ void wpa_debug_print_timestamp(void);
  */
 #define wpa_printf(level,fmt, args...) ESP_LOG_LEVEL_LOCAL(level, TAG, fmt, ##args)
 #define wpa_dbg(ctx, level, fmt, args...) wpa_printf(level, fmt, ##args)
-static inline void wpa_msg(void *ctx, int level, const char *fmt, ...) { }
 
 void wpa_dump_mem(char* desc, uint8_t *addr, uint16_t len);
 static inline void wpa_hexdump_ascii(int level, const char *title, const u8 *buf, size_t len)
@@ -176,7 +175,7 @@ void wpa_hexdump_ascii_key(int level, const char *title, const u8 *buf,
  *
  * Note: New line '\n' is added to the end of the text when printing to stdout.
  */
-void wpa_msg(void *ctx, int level, const char *fmt, ...) PRINTF_FORMAT(3, 4);
+static inline void wpa_msg(void *ctx, int level, const char *fmt, ...) { }
 
 /**
  * wpa_msg_ctrl - Conditional printf for ctrl_iface monitors
