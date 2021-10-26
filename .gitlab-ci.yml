@@ -7,6 +7,12 @@ stages:
   - deploy
   - post_check
 
+default:
+  retry:
+    max: 2
+    # In case of a runner failure we could hop to another one, or a network error could go away.
+    when: runner_system_failure
+
 variables:
 # System environment
 
