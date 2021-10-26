@@ -1,14 +1,18 @@
 | Supported Targets | ESP32 | ESP32-S3 |
 | ----------------- | ----- | -------- |
 
-# Hi-priority IPC example
+# IPC ISR Example
 
-This example demonstrates how to use Hi-priority IPC, it is based on Hi-priority interrupt (level 4). This feature can be useful in case when need quickly to get the state of the other CPU (consult the [Hi-priority IPC](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/ipc.html#hi-priority-ipc)).
-In the `asm_funcs.S` file are functions that will be run on the other core. The function should be fairly simple that can be written in assembler.
+This example demonstrates how to use the IPC ISR feature (which allows an IPC to run in the context of a High Priority Interrupt). The level of the IPC ISR interrupt depends on the `CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL` option. The IPC ISR feature can be useful in cases where users need to quickly get the state of the other CPU (consult the [IPC documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/ipc.html)). The `asm_funcs.S` file contains the callback that will be run on the other core. The callback should be fairly simple and must be entirely in assembly.
 
-The first asm function `get_ps_other_cpu()` demonstrates a simple way of usage, it returns the PS register of other core.
+The first assembly callback `get_ps_other_cpu()` demonstrates a callback that simply returns the `PS` register of other core.
 
-The second asm function `extended_ipc_isr_asm()` demonstrates way when need to do some complex operations on other core, for this, save registers to the buffer (regs[]) making them available for use. Then using passed arguments (in[]) do some work and write the result to out[]. At the end recover saved registers.
+The second assembly callback `extended_ipc_isr_asm()` demonstrates a more complex callback that uses a buffer (provided as the callback's argument) to save some registers and return multiple values from the callback. The callback's `void *arg` points to a buffer containing the following:
+  - `uint32_t regs[];` that gives the callback an area to save some of the CPUs registers. Saving the registers gives the callback more scratch registers to use.
+  - `uint32_t in[];` that gives the callback multiple input arguments
+  - `uint32_t out[];` that gives the callback multiple output arguments
+
+The `extended_ipc_isr_asm()` callback will simply save/restore registers to/from `regs[]`, then use the arguments passed by `in[]` to do some work, then write the results to `out[]`.
 
 ## How to use example
 

@@ -512,33 +512,27 @@ menu "IPC (Inter-Processor Call)"
         default 2048 if APPTRACE_ENABLE
         default 1024
         help
-            Configure the IPC tasks stack size. One IPC task runs on each core
-            (in dual core mode), and allows for cross-core function calls.
-
-            See IPC documentation for more details.
-
-            The default stack size should be enough for most common use cases.
-            It can be shrunk if you are sure that you do not use any custom
-            IPC functionality.
+            Configure the IPC tasks stack size. An IPC task runs on each core (in dual core mode), and allows for
+            cross-core function calls. See IPC documentation for more details. The default IPC stack size should be
+            enough for most common simple use cases. However, users can increase/decrease the stack size to their
+            needs.
 
     config ESP_IPC_USES_CALLERS_PRIORITY
         bool "IPC runs at caller's priority"
         default y
         depends on !FREERTOS_UNICORE
         help
-            If this option is not enabled then the IPC task will keep behavior
-            same as prior to that of ESP-IDF v4.0, and hence IPC task will run
-            at (configMAX_PRIORITIES - 1) priority.
+            If this option is not enabled then the IPC task will keep behavior same as prior to that of ESP-IDF v4.0,
+            hence IPC task will run at (configMAX_PRIORITIES - 1) priority.
 
     config ESP_IPC_ISR_ENABLE
         bool
         default y if !FREERTOS_UNICORE
         help
-            This feature serves a similar purpose to the IPC except that the callback function is run
-            in the context of a level 4 interrupt (i.e., high priority/level interrupt). The IPC ISR
-            feature is intended for low latency execution of simple functions written in assembly on
-            another CPU. Due to being run in higher level interrupt context, the assembly functions
-            should be written in a particular way (see esp_test_ipc_isr_asm() and the "High-Level Interrupts"
-            chapter in hlinterrupts.rst for more details).
+            The IPC ISR feature is similar to the IPC feature except that the callback function is executed in the
+            context of a High Priority Interrupt. The IPC ISR feature is itended for low latency execution of simple
+            callbacks written in assembly on another CPU. Due to being run in a High Priority Interrupt, the assembly
+            callbacks must be written with particular restrictions (see "IPC" and "High-Level Interrupt" docs for more
+            details).
 
 endmenu # "IPC (Inter-Processor Call)
