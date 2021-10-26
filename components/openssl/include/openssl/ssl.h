@@ -4,8 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Allow for this warning suppression only in IDF_CI_BUILD
-#if !defined(ESP_OPENSSL_SUPPRESS_LEGACY_WARNING) || !defined(IDF_CI_BUILD)
+#if !defined(ESP_OPENSSL_SUPPRESS_LEGACY_WARNING)
 #warning "OpenSSL component will be removed from ESP-IDF in v5.0, please use esp_tls instead"
 #endif
 
