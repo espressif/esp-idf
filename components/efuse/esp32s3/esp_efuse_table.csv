@@ -14,7 +14,6 @@
     # EFUSE_RD_WR_DIS_REG #
         # EFUSE_WR_DIS [WR_DIS 0 32] #
             WR_DIS_RD_DIS,                EFUSE_BLK0,   0,    1,      Write protection for RD_DIS_KEY0 RD_DIS_KEY1 RD_DIS_KEY2 RD_DIS_KEY3 RD_DIS_KEY4 RD_DIS_KEY5 RD_DIS_SYS_DATA_PART2
-            WR_DIS_DIS_RTC_RAM_BOOT,      EFUSE_BLK0,   1,    1,      Write protection for DIS_RTC_RAM_BOOT
             WR_DIS_GROUP_1,               EFUSE_BLK0,   2,    1,      Write protection for DIS_ICACHE DIS_DCACHE DIS_DOWNLOAD_ICACHE DIS_DOWNLOAD_DCACHE DIS_FORCE_DOWNLOAD DIS_USB DIS_CAN SOFT_DIS_JTAG HARD_DIS_JTAG DIS_DOWNLOAD_MANUAL_ENCRYPT
             WR_DIS_GROUP_2,               EFUSE_BLK0,   3,    1,      Write protection for VDD_SPI_XPD VDD_SPI_TIEH VDD_SPI_FORCE VDD_SPI_INIT VDD_SPI_DCAP WDT_DELAY_SEL
             WR_DIS_SPI_BOOT_CRYPT_CNT,    EFUSE_BLK0,   4,    1,      Write protection for SPI_BOOT_CRYPT_CNT
@@ -51,7 +50,6 @@
             RD_DIS_KEY4,                  EFUSE_BLK0,   36,    1,     Read protection for EFUSE_BLK8.  KEY4
             RD_DIS_KEY5,                  EFUSE_BLK0,   37,    1,     Read protection for EFUSE_BLK9.  KEY5
             RD_DIS_SYS_DATA_PART2,        EFUSE_BLK0,   38,    1,     Read protection for EFUSE_BLK10. SYS_DATA_PART2
-        DIS_RTC_RAM_BOOT,                 EFUSE_BLK0,   39,    1,     Disable boot from RTC RAM
         DIS_ICACHE,                       EFUSE_BLK0,   40,    1,     Disable Icache
         DIS_DCACHE,                       EFUSE_BLK0,   41,    1,     Disable Dcace
         DIS_DOWNLOAD_ICACHE,              EFUSE_BLK0,   42,    1,     Disable Icache in download mode include boot_mode 0 1 2 3 6 7

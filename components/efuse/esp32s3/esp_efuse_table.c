@@ -1,4 +1,4 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 6a29c09c943d9cb07bd874af57b5870e
+// md5_digest_table 32d4e5502110edd26bdad463b5ac1d2d
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -25,10 +25,6 @@
 
 static const esp_efuse_desc_t WR_DIS_RD_DIS[] = {
     {EFUSE_BLK0, 0, 1}, 	 // Write protection for RD_DIS_KEY0 RD_DIS_KEY1 RD_DIS_KEY2 RD_DIS_KEY3 RD_DIS_KEY4 RD_DIS_KEY5 RD_DIS_SYS_DATA_PART2,
-};
-
-static const esp_efuse_desc_t WR_DIS_DIS_RTC_RAM_BOOT[] = {
-    {EFUSE_BLK0, 1, 1}, 	 // Write protection for DIS_RTC_RAM_BOOT,
 };
 
 static const esp_efuse_desc_t WR_DIS_GROUP_1[] = {
@@ -161,10 +157,6 @@ static const esp_efuse_desc_t RD_DIS_KEY5[] = {
 
 static const esp_efuse_desc_t RD_DIS_SYS_DATA_PART2[] = {
     {EFUSE_BLK0, 38, 1}, 	 // Read protection for EFUSE_BLK10. SYS_DATA_PART2,
-};
-
-static const esp_efuse_desc_t DIS_RTC_RAM_BOOT[] = {
-    {EFUSE_BLK0, 39, 1}, 	 // Disable boot from RTC RAM,
 };
 
 static const esp_efuse_desc_t DIS_ICACHE[] = {
@@ -461,11 +453,6 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RD_DIS[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DIS_RTC_RAM_BOOT[] = {
-    &WR_DIS_DIS_RTC_RAM_BOOT[0],    		// Write protection for DIS_RTC_RAM_BOOT
-    NULL
-};
-
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_GROUP_1[] = {
     &WR_DIS_GROUP_1[0],    		// Write protection for DIS_ICACHE DIS_DCACHE DIS_DOWNLOAD_ICACHE DIS_DOWNLOAD_DCACHE DIS_FORCE_DOWNLOAD DIS_USB DIS_CAN SOFT_DIS_JTAG HARD_DIS_JTAG DIS_DOWNLOAD_MANUAL_ENCRYPT
     NULL
@@ -628,11 +615,6 @@ const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_KEY5[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_SYS_DATA_PART2[] = {
     &RD_DIS_SYS_DATA_PART2[0],    		// Read protection for EFUSE_BLK10. SYS_DATA_PART2
-    NULL
-};
-
-const esp_efuse_desc_t* ESP_EFUSE_DIS_RTC_RAM_BOOT[] = {
-    &DIS_RTC_RAM_BOOT[0],    		// Disable boot from RTC RAM
     NULL
 };
 
