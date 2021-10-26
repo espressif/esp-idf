@@ -1,18 +1,7 @@
 #!/usr/bin/env python
 #
-# Copyright 2021 Espressif Systems (Shanghai) CO LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 
 import argparse
 import inspect
@@ -88,6 +77,8 @@ class RulesWriter:
     RULE_PROTECTED_NO_LABEL = '    - <<: *if-protected-no_label'
     RULE_BUILD_ONLY = '    - <<: *if-label-build-only\n' \
                       '      when: never'
+    RULE_REVERT_BRANCH = '    - <<: *if-revert-branch\n' \
+                         '      when: never'
     RULE_LABEL_TEMPLATE = '    - <<: *if-label-{0}'
     RULE_PATTERN_TEMPLATE = '    - <<: *if-dev-push\n' \
                             '      changes: *patterns-{0}'
@@ -211,7 +202,7 @@ class RulesWriter:
         return '\n\n'.join(res)
 
     def _format_rule(self, name, cfg):  # type: (str, dict) -> str
-        _rules = []
+        _rules = [self.RULE_REVERT_BRANCH]
         if name.endswith('-production'):
             _rules.append(self.RULE_PROTECTED_NO_LABEL)
         else:
