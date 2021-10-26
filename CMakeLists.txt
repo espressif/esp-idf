@@ -151,6 +151,8 @@ if(NOT ${CMAKE_C_COMPILER_VERSION} VERSION_LESS 8.0.0)
     endif()
 
     if(CONFIG_APP_REPRODUCIBLE_BUILD)
+        idf_build_set_property(DEBUG_PREFIX_MAP_GDBINIT "${BUILD_DIR}/prefix_map_gdbinit")
+
         list(APPEND compile_options "-fdebug-prefix-map=${IDF_PATH}=/IDF")
         list(APPEND compile_options "-fdebug-prefix-map=${PROJECT_DIR}=/IDF_PROJECT")
         list(APPEND compile_options "-fdebug-prefix-map=${BUILD_DIR}=/IDF_BUILD")

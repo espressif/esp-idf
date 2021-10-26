@@ -18,5 +18,5 @@
     },
     "build_components" : ${build_components_json},
     "build_component_paths" : ${build_component_paths_json},
-    "debug_prefix_map_gdbinit": "${BUILD_DIR}/prefix_map_gdbinit"
+    "debug_prefix_map_gdbinit": "${debug_prefix_map_gdbinit}"
 }
