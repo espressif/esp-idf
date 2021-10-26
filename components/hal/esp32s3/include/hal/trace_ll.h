@@ -1,24 +1,23 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 #include <stdlib.h>
 
 #include "soc/dport_reg.h"
+#include "soc/tracemem_config.h"
 
-static inline void trace_ll_set_mem_block(int block)
+static inline void trace_ll_set_mem_block(int cpu, int block)
 {
-    // IDF-1785
-    abort();
+    uint32_t block_bits = 0;
+
+    if (cpu == 0) {
+        block_bits = TRACEMEM_CORE0_MUX_BLK_BITS(block);
+    } else {
+        block_bits = TRACEMEM_CORE1_MUX_BLK_BITS(block);
+    }
+    DPORT_SET_PERI_REG_MASK(SENSITIVE_INTERNAL_SRAM_USAGE_2_REG, block_bits);
 }

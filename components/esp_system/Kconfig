@@ -453,7 +453,7 @@ menu "ESP System Settings"
     config ESP_DEBUG_STUBS_ENABLE
         bool
         default COMPILER_OPTIMIZATION_LEVEL_DEBUG
-        depends on !ESP32_TRAX && !ESP32S2_TRAX
+        depends on !ESP32_TRAX && !ESP32S2_TRAX && !ESP32S3_TRAX
         help
             Debug stubs are used by OpenOCD to execute pre-compiled onboard code
             which does some useful debugging stuff, e.g. GCOV data dump.

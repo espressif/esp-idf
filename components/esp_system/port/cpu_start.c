@@ -72,7 +72,7 @@
 #include "soc/rtc.h"
 #include "soc/spinlock.h"
 
-#if CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX
+#if CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX || CONFIG_ESP32S3_TRAX
 #include "trax.h"
 #endif
 
@@ -186,10 +186,9 @@ void IRAM_ATTR call_start_cpu1(void)
     //has started, but it isn't active *on this CPU* yet.
     esp_cache_err_int_init();
 
-#if CONFIG_IDF_TARGET_ESP32
-#if CONFIG_ESP32_TRAX_TWOBANKS
+#if (CONFIG_IDF_TARGET_ESP32 && CONFIG_ESP32_TRAX_TWOBANKS) || \
+    (CONFIG_IDF_TARGET_ESP32S3 && CONFIG_ESP32S3_TRAX_TWOBANKS)
     trax_start_trace(TRAX_DOWNCOUNT_WORDS);
-#endif
 #endif
 
     s_cpu_inited[1] = true;
@@ -507,9 +506,9 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 
 //Enable trace memory and immediately start trace.
-#if CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX
-#if CONFIG_IDF_TARGET_ESP32
-#if CONFIG_ESP32_TRAX_TWOBANKS
+#if CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX || CONFIG_ESP32S3_TRAX
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3
+#if CONFIG_ESP32_TRAX_TWOBANKS || CONFIG_ESP32S3_TRAX_TWOBANKS
     trax_enable(TRAX_ENA_PRO_APP);
 #else
     trax_enable(TRAX_ENA_PRO);
@@ -518,7 +517,7 @@ void IRAM_ATTR call_start_cpu0(void)
     trax_enable(TRAX_ENA_PRO);
 #endif
     trax_start_trace(TRAX_DOWNCOUNT_WORDS);
-#endif // CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX
+#endif // CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX || CONFIG_ESP32S3_TRAX
 
     esp_clk_init();
     esp_perip_clk_init();
