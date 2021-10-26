@@ -1561,7 +1561,6 @@ components/mbedtls/port/aes/esp_aes_common.c
 components/mbedtls/port/aes/esp_aes_gcm.c
 components/mbedtls/port/aes/esp_aes_xts.c
 components/mbedtls/port/crypto_shared_gdma/esp_crypto_shared_gdma.c
-components/mbedtls/port/dynamic/esp_mbedtls_dynamic_impl.c
 components/mbedtls/port/dynamic/esp_mbedtls_dynamic_impl.h
 components/mbedtls/port/dynamic/esp_ssl_cli.c
 components/mbedtls/port/dynamic/esp_ssl_srv.c
