@@ -3725,9 +3725,7 @@ examples/protocols/pppos_client/components/modem/include/sim800.h
 examples/protocols/pppos_client/components/modem/src/bg96.c
 examples/protocols/pppos_client/components/modem/src/esp_modem_compat.c
 examples/protocols/pppos_client/components/modem/src/esp_modem_dce_service.c
-examples/protocols/pppos_client/components/modem/src/esp_modem_netif.c
 examples/protocols/pppos_client/components/modem/src/sim7600.c
-examples/protocols/pppos_client/components/modem/src/sim800.c
 examples/protocols/pppos_client/example_test.py
 examples/protocols/pppos_client/main/pppos_client_main.c
 examples/protocols/slip/slip_udp/components/slip_modem/include/slip_modem.h
