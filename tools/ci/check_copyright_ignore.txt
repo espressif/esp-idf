@@ -784,9 +784,7 @@ components/esp_event/private_include/esp_event_private.h
 components/esp_event/test/test_default_loop.c
 components/esp_event/test/test_event.c
 components/esp_gdbstub/esp32/gdbstub_target_config.h
-components/esp_gdbstub/esp32c3/gdbstub_esp32c3.c
 components/esp_gdbstub/esp32c3/gdbstub_target_config.h
-components/esp_gdbstub/esp32h2/gdbstub_esp32h2.c
 components/esp_gdbstub/esp32h2/gdbstub_target_config.h
 components/esp_gdbstub/esp32s2/gdbstub_target_config.h
 components/esp_gdbstub/esp32s3/gdbstub_target_config.h
