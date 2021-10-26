@@ -1677,7 +1677,6 @@ components/log/log_linux.c
 components/lwip/apps/dhcpserver/dhcpserver.c
 components/lwip/apps/ping/esp_ping.c
 components/lwip/apps/ping/ping.c
-components/lwip/apps/ping/ping_sock.c
 components/lwip/apps/sntp/sntp.c
 components/lwip/include/apps/dhcpserver/dhcpserver.h
 components/lwip/include/apps/dhcpserver/dhcpserver_options.h

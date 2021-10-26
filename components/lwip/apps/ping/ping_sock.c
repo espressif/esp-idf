@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdlib.h>
 #include <stdbool.h>
@@ -267,7 +259,7 @@ esp_err_t esp_ping_new_session(const esp_ping_config_t *config, const esp_ping_c
         ep->sock = socket(AF_INET6, SOCK_RAW, IP6_NEXTH_ICMP6);
     }
 #endif
-    PING_CHECK(ep->sock > 0, "create socket failed: %d", err, ESP_FAIL, ep->sock);
+    PING_CHECK(ep->sock >= 0, "create socket failed: %d", err, ESP_FAIL, ep->sock);
     /* set if index */
     if(config->interface) {
         struct ifreq iface;
