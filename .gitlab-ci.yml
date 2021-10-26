@@ -152,6 +152,12 @@ before_script:
     - export PYTHONPATH="$IDF_PATH/tools:$IDF_PATH/tools/ci/python_packages:$PYTHONPATH"
     - *fetch_submodules
 
+default:
+  retry:
+    max: 2
+    # In case of a runner failure we could hop to another one, or a network error could go away.
+    when: runner_system_failure
+
 include:
   - '/tools/ci/config/pre_check.yml'
   - '/tools/ci/config/build.yml'
