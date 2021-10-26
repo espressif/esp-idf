@@ -1,16 +1,6 @@
-# Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http:#www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
 import functools
 import json
 import logging
@@ -24,8 +14,8 @@ from tiny_test_fw import TinyFW, Utility
 
 from .DebugUtils import CustomProcess, GDBBackend, OCDBackend  # noqa: export DebugUtils for users
 from .IDFApp import UT, ComponentUTApp, Example, IDFApp, LoadableElfTestApp, TestApp  # noqa: export all Apps for users
-from .IDFDUT import (ESP32C3DUT, ESP32C3FPGADUT, ESP32DUT, ESP32QEMUDUT, ESP32S2DUT,  # noqa: export DUTs for users
-                     ESP32S3DUT, ESP32S3FPGADUT, ESP8266DUT, IDFDUT)
+from .IDFDUT import (ESP32C3DUT, ESP32C3FPGADUT, ESP32C6DUT, ESP32DUT, ESP32H2DUT,  # noqa: export DUTs for users
+                     ESP32QEMUDUT, ESP32S2DUT, ESP32S3DUT, ESP32S3FPGADUT, ESP8266DUT, IDFDUT)
 from .unity_test_parser import TestFormat, TestResults
 
 # pass TARGET_DUT_CLS_DICT to Env.py to avoid circular dependency issue.
@@ -36,6 +26,8 @@ TARGET_DUT_CLS_DICT = {
     'ESP32C3': ESP32C3DUT,
     'ESP32C3FPGA': ESP32C3FPGADUT,
     'ESP32S3FPGA': ESP32S3FPGADUT,
+    'ESP32C6': ESP32C6DUT,
+    'ESP32H2': ESP32H2DUT,
 }
 
 
