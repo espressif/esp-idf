@@ -8,6 +8,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "esp_err.h"
 #include "esp_intr_alloc.h"
 #include "test_usb_mock_classes.h"
 #include "msc_client.h"
