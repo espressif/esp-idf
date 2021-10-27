@@ -498,6 +498,19 @@ httpd_ws_client_info_t httpd_ws_get_fd_info(httpd_handle_t hd, int fd)
     return is_active_ws ? HTTPD_WS_CLIENT_WEBSOCKET : HTTPD_WS_CLIENT_HTTP;
 }
 
+void * httpd_ws_get_fd_user_ctx(httpd_handle_t hd, int fd)
+{
+    struct sock_db *sess = httpd_sess_get(hd, fd);
+
+    if (sess != NULL) {
+        bool is_active_ws = sess->ws_handshake_done && (!sess->ws_close);
+        if (is_active_ws){
+            return sess->ws_user_ctx;
+        }
+    }
+    return NULL;
+}
+
 static void httpd_ws_send_cb(void *arg)
 {
     async_transfer_t *trans = arg;

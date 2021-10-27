@@ -1697,6 +1697,7 @@ esp_err_t httpd_ws_send_data(httpd_handle_t handle, int socket, httpd_ws_frame_t
 esp_err_t httpd_ws_send_data_async(httpd_handle_t handle, int socket, httpd_ws_frame_t *frame,
                                    transfer_complete_cb callback, void *arg);
 
+void * httpd_ws_get_fd_user_ctx(httpd_handle_t hd, int fd);
 #endif /* CONFIG_HTTPD_WS_SUPPORT */
 /** End of WebSocket related stuff
  * @}
