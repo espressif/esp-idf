@@ -19,23 +19,26 @@
  * This test code shows how to configure gpio and how to use gpio interrupt.
  *
  * GPIO status:
- * GPIO18: output
- * GPIO19: output
+ * GPIO18: output (ESP8684/ESP32H2 uses GPIO8 as the second output pin)
+ * GPIO19: output (ESP8684/ESP32H2 uses GPIO9 as the second output pin)
  * GPIO4:  input, pulled up, interrupt from rising edge and falling edge
  * GPIO5:  input, pulled up, interrupt from rising edge.
  *
+ * Note. These are the default GPIO pins to be used in the example. You can
+ * change IO pins in menuconfig.
+ *
  * Test:
- * Connect GPIO18 with GPIO4
- * Connect GPIO19 with GPIO5
- * Generate pulses on GPIO18/19, that triggers interrupt on GPIO4/5
+ * Connect GPIO18(8) with GPIO4
+ * Connect GPIO19(9) with GPIO5
+ * Generate pulses on GPIO18(8)/19(9), that triggers interrupt on GPIO4/5
  *
  */
 
-#define GPIO_OUTPUT_IO_0    18
-#define GPIO_OUTPUT_IO_1    19
+#define GPIO_OUTPUT_IO_0    CONFIG_GPIO_OUTPUT_0
+#define GPIO_OUTPUT_IO_1    CONFIG_GPIO_OUTPUT_1
 #define GPIO_OUTPUT_PIN_SEL  ((1ULL<<GPIO_OUTPUT_IO_0) | (1ULL<<GPIO_OUTPUT_IO_1))
-#define GPIO_INPUT_IO_0     4
-#define GPIO_INPUT_IO_1     5
+#define GPIO_INPUT_IO_0     CONFIG_GPIO_INPUT_0
+#define GPIO_INPUT_IO_1     CONFIG_GPIO_INPUT_1
 #define GPIO_INPUT_PIN_SEL  ((1ULL<<GPIO_INPUT_IO_0) | (1ULL<<GPIO_INPUT_IO_1))
 #define ESP_INTR_FLAG_DEFAULT 0
 

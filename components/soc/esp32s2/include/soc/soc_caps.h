@@ -116,18 +116,18 @@
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-S2 has 1 GPIO peripheral
 #define SOC_GPIO_PORT           (1U)
-#define SOC_GPIO_PIN_COUNT      (48)
+#define SOC_GPIO_PIN_COUNT      (47)
 
-// On ESP32 those PADs which have RTC functions must set pullup/down/capability via RTC register.
+// On ESP32-S2 those PADs which have RTC functions must set pullup/down/capability via RTC register.
 // On ESP32-S2, Digital IOs have their own registers to control pullup/down/capability, independent with RTC registers.
 #define SOC_GPIO_SUPPORT_RTC_INDEPENDENT (1)
 // Force hold is a new function of ESP32-S2
 #define SOC_GPIO_SUPPORT_FORCE_HOLD      (1)
 
-// 0~47 except from 22~25, 47 are valid
-#define SOC_GPIO_VALID_GPIO_MASK             (0xFFFFFFFFFFFFULL & ~(0ULL | BIT22 | BIT23 | BIT24 | BIT25 | BIT47))
-// GPIO 46, 47 are input only
-#define SOC_GPIO_VALID_OUTPUT_GPIO_MASK     (SOC_GPIO_VALID_GPIO_MASK & ~(0ULL | BIT46 | BIT47))
+// 0~46 except from 22~25 are valid
+#define SOC_GPIO_VALID_GPIO_MASK             (0x7FFFFFFFFFFFULL & ~(0ULL | BIT22 | BIT23 | BIT24 | BIT25))
+// GPIO 46 is input only
+#define SOC_GPIO_VALID_OUTPUT_GPIO_MASK     (SOC_GPIO_VALID_GPIO_MASK & ~(0ULL | BIT46))
 
 // Support to configure slept status
 #define SOC_GPIO_SUPPORT_SLP_SWITCH  (1)

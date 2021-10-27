@@ -20,6 +20,7 @@
 #include "soc/rtc_io_reg.h"
 #include "soc/gpio_struct.h"
 #include "hal/gpio_types.h"
+#include "hal/assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -142,9 +143,8 @@ static inline void gpio_ll_clear_intr_status_high(gpio_dev_t *hw, uint32_t mask)
  */
 static inline void gpio_ll_intr_enable_on_core(gpio_dev_t *hw, uint32_t core_id, gpio_num_t gpio_num)
 {
-    if (core_id == 0) {
-        GPIO.pin[gpio_num].int_ena = GPIO_LL_PRO_CPU_INTR_ENA;     //enable pro cpu intr
-    }
+    HAL_ASSERT(core_id == 0 && "target SoC only has a single core");
+    GPIO.pin[gpio_num].int_ena = GPIO_LL_PRO_CPU_INTR_ENA;     //enable pro cpu intr
 }
 
 /**
