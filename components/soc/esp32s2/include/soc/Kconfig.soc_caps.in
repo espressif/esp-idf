@@ -217,7 +217,7 @@ config SOC_GPIO_PORT
 
 config SOC_GPIO_PIN_COUNT
     int
-    default 48
+    default 47
 
 config SOC_GPIO_SUPPORT_RTC_INDEPENDENT
     bool
@@ -229,7 +229,7 @@ config SOC_GPIO_SUPPORT_FORCE_HOLD
 
 config SOC_GPIO_VALID_GPIO_MASK
     hex
-    default 0xFFFFFFFFFFFF
+    default 0x7FFFFFFFFFFF
 
 config SOC_GPIO_SUPPORT_SLP_SWITCH
     bool
