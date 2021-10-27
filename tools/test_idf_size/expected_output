@@ -434,22 +434,44 @@ Used Flash size :  186524 bytes
       .text     :  146944 bytes
       .rodata   :   39580 bytes
 Total image size:  283036 bytes (.bin may be padded larger)
+
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
 
 Symbols from section: .dram0.bss
-p_uart_obj(12) s_rtc_isr_handle(4) s_rtc_isr_handler_list(4)
+	p_uart_obj                     :  12
+	s_rtc_isr_handle               :   4
+	s_rtc_isr_handler_list         :   4
 Section total: 20
 
 Symbols from section: .dram0.data
-timer_spinlock(16) periph_spinlock(8) s_rtc_isr_handler_list_lock(8) uart_selectlock(8)
+	timer_spinlock                 :  16
+	periph_spinlock                :   8
+	s_rtc_isr_handler_list_lock    :   8
+	uart_selectlock                :   8
 Section total: 40
 
 Symbols from section: .flash.rodata
-str1.4(249) get_clk_en_mask(128) get_rst_en_mask(128) __FUNCTION__$5441(24) TG(8)
+	str1.4                         : 249
+	get_clk_en_mask                : 128
+	get_rst_en_mask                : 128
+	__FUNCTION__$5441              :  24
+	TG                             :   8
 Section total: 537
 
 Symbols from section: .flash.text
-get_clk_en_mask(211) get_rst_en_mask(157) timer_group_intr_enable(112) rtc_isr(86) periph_module_enable(78) rtc_isr_ensure_installed(75) rtc_gpio_force_hold_dis_all(65) rtc_isr_register(65) is_wifi_clk_peripheral(28) uart_set_select_notif_callback(26) get_rst_en_reg(25) get_clk_en_reg(21) uart_get_selectlock(12)
+	get_clk_en_mask                : 211
+	get_rst_en_mask                : 157
+	timer_group_intr_enable        : 112
+	rtc_isr                        :  86
+	periph_module_enable           :  78
+	rtc_isr_ensure_installed       :  75
+	rtc_gpio_force_hold_dis_all    :  65
+	rtc_isr_register               :  65
+	is_wifi_clk_peripheral         :  28
+	uart_set_select_notif_callback :  26
+	get_rst_en_reg                 :  25
+	get_clk_en_reg                 :  21
+	uart_get_selectlock            :  12
 Section total: 961
 
 Symbols from section: .iram0.text
@@ -2520,6 +2542,7 @@ Used Flash size :  186524 bytes                                           0     
       .text     :  146944 bytes                                           0        +146944
       .rodata   :   39580 bytes                                           0         +39580
 Total image size:  283036 bytes (.bin may be padded larger)           51920        +231116
+
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
 
 .dram0.bss                                  <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
@@ -2612,6 +2635,7 @@ Used Flash size :  186524 bytes                                           0     
       .text     :  146944 bytes                                           0        +146944
       .rodata   :   39580 bytes                                           0         +39580
 Total image size:  283036 bytes (.bin may be padded larger)           51920        +231116
+
 Symbols within the archive: libc.a (Not all symbols may be reported)
 
 .dram0.bss                                  <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
@@ -2681,6 +2705,7 @@ Used Flash size :  186524 bytes                                      186524
       .text     :  146944 bytes                                      146944
       .rodata   :   39580 bytes                                       39580
 Total image size:  283036 bytes (.bin may be padded larger)          283036
+
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
 
 .dram0.bss                                  <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
@@ -2762,6 +2787,7 @@ Used Flash size :  186524 bytes                                       99551     
       .text     :  146944 bytes                                       77191         +69753
       .rodata   :   39580 bytes                                       22360         +17220
 Total image size:  283036 bytes (.bin may be padded larger)          194629         +88407
+
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
 
 .dram0.bss                                  <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
@@ -2911,6 +2937,7 @@ Used Flash size :   99551 bytes                                      186524     
       .text     :   77191 bytes                                      146944         -69753
       .rodata   :   22360 bytes                                       39580         -17220
 Total image size:  194629 bytes (.bin may be padded larger)          283036         -88407
+
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
 
 .dram0.bss                                  <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
@@ -3060,6 +3087,7 @@ Used Flash size :  186524 bytes                                       99551     
       .text     :  146944 bytes                                       77191         +69753
       .rodata   :   39580 bytes                                       22360         +17220
 Total image size:  283036 bytes (.bin may be padded larger)          194629         +88407
+
 Symbols within the archive: libfreertos.a (Not all symbols may be reported)
 
 .dram0.bss                                  <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
@@ -3686,22 +3714,81 @@ Used Flash size :   93019 bytes
       .text     :   74439 bytes
       .rodata   :   18580 bytes
 Total image size:  134106 bytes (.bin may be padded larger)
+
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
 
 Symbols from section: .dram0.bss
-p_timer_obj(16) p_uart_obj(8) s_rtc_isr_handle(4) s_rtc_isr_handler_list(4)
+	p_timer_obj                    :  16
+	p_uart_obj                     :   8
+	s_rtc_isr_handle               :   4
+	s_rtc_isr_handler_list         :   4
 Section total: 32
 
 Symbols from section: .dram0.data
-uart_context(32) timer_spinlock(16) periph_spinlock(8) rtc_spinlock(8) s_rtc_isr_handler_list_lock(8) uart_selectlock(8)
+	uart_context                   :  32
+	timer_spinlock                 :  16
+	periph_spinlock                :   8
+	rtc_spinlock                   :   8
+	s_rtc_isr_handler_list_lock    :   8
+	uart_selectlock                :   8
 Section total: 80
 
 Symbols from section: .flash.rodata
-timer_get_counter_value.str1.4(146) get_clk_en_mask(136) get_rst_en_mask(136) uart_pattern_enqueue.str1.4(88) uart_flush_input.str1.4(45) uart_set_word_length.str1.4(31) __FUNCTION__$7196(27) __FUNCTION__$5699(24) __FUNCTION__$6971(23) __FUNCTION__$6966(22) __FUNCTION__$6896(21) __FUNCTION__$6901(21) __FUNCTION__$6906(19) __FUNCTION__$6911(19) __FUNCTION__$6926(18) __FUNCTION__$6932(18) __FUNCTION__$7131(18) uart_pattern_pop_pos.str1.4(18) __FUNCTION__$7202(17) __FUNCTION__$6916(16) __FUNCTION__$6921(16) uart_set_stop_bits.str1.4(15)
+	timer_get_counter_value.str1.4 : 146
+	get_clk_en_mask                : 136
+	get_rst_en_mask                : 136
+	uart_pattern_enqueue.str1.4    :  88
+	uart_flush_input.str1.4        :  45
+	uart_set_word_length.str1.4    :  31
+	__FUNCTION__$7196              :  27
+	__FUNCTION__$5699              :  24
+	__FUNCTION__$6971              :  23
+	__FUNCTION__$6966              :  22
+	__FUNCTION__$6896              :  21
+	__FUNCTION__$6901              :  21
+	__FUNCTION__$6906              :  19
+	__FUNCTION__$6911              :  19
+	__FUNCTION__$6926              :  18
+	__FUNCTION__$6932              :  18
+	__FUNCTION__$7131              :  18
+	uart_pattern_pop_pos.str1.4    :  18
+	__FUNCTION__$7202              :  17
+	__FUNCTION__$6916              :  16
+	__FUNCTION__$6921              :  16
+	uart_set_stop_bits.str1.4      :  15
 Section total: 894
 
 Symbols from section: .flash.text
-uart_flush_input(453) uart_wait_tx_done(417) get_clk_en_mask(267) get_rst_en_mask(198) timer_group_intr_enable(184) uart_set_word_length(144) uart_set_stop_bits(128) periph_module_enable(112) uart_get_bufferedlen(109) uart_enable_intr_mask(98) uart_disable_intr_mask(96) uart_set_baudrate(96) rtc_isr(90) uart_get_baudrate(82) uart_set_parity(82) rtc_isr_ensure_installed(79) uart_pattern_queue_update(74) uart_get_parity(69) uart_get_stop_bits(69) uart_get_word_length(69) rtc_isr_register(62) rtc_gpio_force_hold_dis_all(53) is_wifi_clk_peripheral(38) uart_is_driver_installed(30) get_rst_en_reg(25) uart_set_select_notif_callback(23) get_clk_en_reg(21) uart_disable_rx_intr(18) uart_enable_rx_intr(18) uart_get_selectlock(12)
+	uart_flush_input               : 453
+	uart_wait_tx_done              : 417
+	get_clk_en_mask                : 267
+	get_rst_en_mask                : 198
+	timer_group_intr_enable        : 184
+	uart_set_word_length           : 144
+	uart_set_stop_bits             : 128
+	periph_module_enable           : 112
+	uart_get_bufferedlen           : 109
+	uart_enable_intr_mask          :  98
+	uart_disable_intr_mask         :  96
+	uart_set_baudrate              :  96
+	rtc_isr                        :  90
+	uart_get_baudrate              :  82
+	uart_set_parity                :  82
+	rtc_isr_ensure_installed       :  79
+	uart_pattern_queue_update      :  74
+	uart_get_parity                :  69
+	uart_get_stop_bits             :  69
+	uart_get_word_length           :  69
+	rtc_isr_register               :  62
+	rtc_gpio_force_hold_dis_all    :  53
+	is_wifi_clk_peripheral         :  38
+	uart_is_driver_installed       :  30
+	get_rst_en_reg                 :  25
+	uart_set_select_notif_callback :  23
+	get_clk_en_reg                 :  21
+	uart_disable_rx_intr           :  18
+	uart_enable_rx_intr            :  18
+	uart_get_selectlock            :  12
 Section total: 3216
 
 Symbols from section: .iram0.text
@@ -3982,25 +4069,67 @@ Used Flash size :  241564 bytes
       .text     :   85252 bytes
       .rodata   :   24984 bytes
 Total image size:  283804 bytes (.bin may be padded larger)
+
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
 
 Symbols from section: .dram0.bss
-ref_counts(27) .p_uart_obj(8)
+	ref_counts                                    :  27
+	.p_uart_obj                                   :   8
 Section total: 35
 
 Symbols from section: .dram0.data
-uart_context(32) .uart_selectlock(8) ..g_spi_lock_main_flash_dev(4)
+	uart_context                                  :  32
+	.uart_selectlock                              :   8
+	..g_spi_lock_main_flash_dev                   :   4
 Section total: 44
 
 Symbols from section: .flash.appdesc
 Section total: 0
 
 Symbols from section: .flash.rodata
-periph_module_enable.str1.4(64) uart_disable_intr_mask_and_return_prev.str1.4(54) uart_pattern_pop_pos.str1.4(49) uart_set_stop_bits.str1.4(46) uart_set_word_length.str1.4(46) uart_flush_input.str1.4(45) __FUNCTION__.7485(39) __FUNCTION__.7477(27) __FUNCTION__.7240(22) __FUNCTION__.7171(21) __FUNCTION__.7176(21) __func__.4215(21) __FUNCTION__.7181(19) __FUNCTION__.7186(19) __FUNCTION__.7201(18) __FUNCTION__.7206(18) __FUNCTION__.7412(18) __FUNCTION__.7489(17) __FUNCTION__.7191(16) __FUNCTION__.7196(16)
+	periph_module_enable.str1.4                   :  64
+	uart_disable_intr_mask_and_return_prev.str1.4 :  54
+	uart_pattern_pop_pos.str1.4                   :  49
+	uart_set_stop_bits.str1.4                     :  46
+	uart_set_word_length.str1.4                   :  46
+	uart_flush_input.str1.4                       :  45
+	__FUNCTION__.7485                             :  39
+	__FUNCTION__.7477                             :  27
+	__FUNCTION__.7240                             :  22
+	__FUNCTION__.7171                             :  21
+	__FUNCTION__.7176                             :  21
+	__func__.4215                                 :  21
+	__FUNCTION__.7181                             :  19
+	__FUNCTION__.7186                             :  19
+	__FUNCTION__.7201                             :  18
+	__FUNCTION__.7206                             :  18
+	__FUNCTION__.7412                             :  18
+	__FUNCTION__.7489                             :  17
+	__FUNCTION__.7191                             :  16
+	__FUNCTION__.7196                             :  16
 Section total: 596
 
 Symbols from section: .flash.text
-periph_module_enable(682) uart_flush_input(580) uart_wait_tx_done(484) uart_set_stop_bits(178) uart_set_word_length(178) uart_get_bufferedlen(152) uart_disable_intr_mask_and_return_prev(138) uart_enable_intr_mask(122) uart_get_baudrate(116) uart_set_baudrate(116) uart_set_parity(116) uart_get_parity(86) uart_get_stop_bits(86) uart_get_word_length(86) uart_pattern_queue_update(80) uart_is_driver_installed(34) uart_set_select_notif_callback(30) periph_ll_get_clk_en_reg(28) periph_ll_get_rst_en_reg(28) uart_get_selectlock(6)
+	periph_module_enable                          : 682
+	uart_flush_input                              : 580
+	uart_wait_tx_done                             : 484
+	uart_set_stop_bits                            : 178
+	uart_set_word_length                          : 178
+	uart_get_bufferedlen                          : 152
+	uart_disable_intr_mask_and_return_prev        : 138
+	uart_enable_intr_mask                         : 122
+	uart_get_baudrate                             : 116
+	uart_set_baudrate                             : 116
+	uart_set_parity                               : 116
+	uart_get_parity                               :  86
+	uart_get_stop_bits                            :  86
+	uart_get_word_length                          :  86
+	uart_pattern_queue_update                     :  80
+	uart_is_driver_installed                      :  34
+	uart_set_select_notif_callback                :  30
+	periph_ll_get_clk_en_reg                      :  28
+	periph_ll_get_rst_en_reg                      :  28
+	uart_get_selectlock                           :   6
 Section total: 3326
 
 Symbols from section: .flash_rodata_dummy
@@ -4288,28 +4417,97 @@ Used Flash size :  248080 bytes
       .text     :   90400 bytes
       .rodata   :   26352 bytes
 Total image size:  293064 bytes (.bin may be padded larger)
+
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
 
 Symbols from section: .dram0.bss
-ref_counts(27) .p_uart_obj(8)
+	ref_counts                                    :  27
+	.p_uart_obj                                   :   8
 Section total: 35
 
 Symbols from section: .dram0.data
-uart_context(32) .uart_selectlock(8) ..g_spi_lock_main_flash_dev(4)
+	uart_context                                  :  32
+	.uart_selectlock                              :   8
+	..g_spi_lock_main_flash_dev                   :   4
 Section total: 44
 
 Symbols from section: .flash.appdesc
 Section total: 0
 
 Symbols from section: .flash.rodata
-gpio_set_pull_mode.str1.4(93) periph_module_enable.str1.4(64) gpio_input_enable.str1.4(62) uart_disable_intr_mask_and_return_prev.str1.4(54) uart_pattern_pop_pos.str1.4(49) uart_set_stop_bits.str1.4(46) uart_set_word_length.str1.4(46) uart_flush_input.str1.4(45) __FUNCTION__.7467(39) __FUNCTION__.7459(27) gpio_sleep_output_enable.str1.4(27) __FUNCTION__.6231(26) __FUNCTION__.6223(25) __FUNCTION__.6235(25) __FUNCTION__.6240(25) __FUNCTION__.6246(25) __FUNCTION__.6219(24) __FUNCTION__.6227(24) __FUNCTION__.6215(23) __FUNCTION__.6211(22) __FUNCTION__.7222(22) __FUNCTION__.6207(21) __FUNCTION__.7153(21) __FUNCTION__.7158(21) __func__.4238(21) __FUNCTION__.6261(19) __FUNCTION__.7163(19) __FUNCTION__.7168(19) __FUNCTION__.6257(18) __FUNCTION__.7183(18) __FUNCTION__.7188(18) __FUNCTION__.7394(18) __FUNCTION__.7471(17) __FUNCTION__.7173(16) __FUNCTION__.7178(16)
+	gpio_set_pull_mode.str1.4                     :  93
+	periph_module_enable.str1.4                   :  64
+	gpio_input_enable.str1.4                      :  62
+	uart_disable_intr_mask_and_return_prev.str1.4 :  54
+	uart_pattern_pop_pos.str1.4                   :  49
+	uart_set_stop_bits.str1.4                     :  46
+	uart_set_word_length.str1.4                   :  46
+	uart_flush_input.str1.4                       :  45
+	__FUNCTION__.7467                             :  39
+	__FUNCTION__.7459                             :  27
+	gpio_sleep_output_enable.str1.4               :  27
+	__FUNCTION__.6231                             :  26
+	__FUNCTION__.6223                             :  25
+	__FUNCTION__.6235                             :  25
+	__FUNCTION__.6240                             :  25
+	__FUNCTION__.6246                             :  25
+	__FUNCTION__.6219                             :  24
+	__FUNCTION__.6227                             :  24
+	__FUNCTION__.6215                             :  23
+	__FUNCTION__.6211                             :  22
+	__FUNCTION__.7222                             :  22
+	__FUNCTION__.6207                             :  21
+	__FUNCTION__.7153                             :  21
+	__FUNCTION__.7158                             :  21
+	__func__.4238                                 :  21
+	__FUNCTION__.6261                             :  19
+	__FUNCTION__.7163                             :  19
+	__FUNCTION__.7168                             :  19
+	__FUNCTION__.6257                             :  18
+	__FUNCTION__.7183                             :  18
+	__FUNCTION__.7188                             :  18
+	__FUNCTION__.7394                             :  18
+	__FUNCTION__.7471                             :  17
+	__FUNCTION__.7173                             :  16
+	__FUNCTION__.7178                             :  16
 Section total: 1055
 
 Symbols from section: .flash.rodata_noload
 Section total: 0
 
 Symbols from section: .flash.text
-periph_module_enable(736) uart_flush_input(580) uart_wait_tx_done(484) gpio_sleep_set_pull_mode(318) uart_set_stop_bits(178) uart_set_word_length(178) gpio_sleep_set_direction(156) uart_get_bufferedlen(152) gpio_sleep_pulldown_en(148) gpio_sleep_pullup_en(148) gpio_sleep_sel_en(148) gpio_sleep_pulldown_dis(146) gpio_sleep_pullup_dis(146) gpio_sleep_sel_dis(146) uart_disable_intr_mask_and_return_prev(138) gpio_sleep_input_enable(126) gpio_sleep_output_enable(126) gpio_sleep_input_disable(124) gpio_sleep_output_disable(124) uart_enable_intr_mask(122) uart_get_baudrate(116) uart_set_baudrate(116) uart_set_parity(116) uart_get_parity(86) uart_get_stop_bits(86) uart_get_word_length(86) uart_pattern_queue_update(80) periph_ll_get_clk_en_reg(50) periph_ll_get_rst_en_reg(50) uart_is_driver_installed(34) uart_set_select_notif_callback(30) uart_get_selectlock(6)
+	periph_module_enable                          : 736
+	uart_flush_input                              : 580
+	uart_wait_tx_done                             : 484
+	gpio_sleep_set_pull_mode                      : 318
+	uart_set_stop_bits                            : 178
+	uart_set_word_length                          : 178
+	gpio_sleep_set_direction                      : 156
+	uart_get_bufferedlen                          : 152
+	gpio_sleep_pulldown_en                        : 148
+	gpio_sleep_pullup_en                          : 148
+	gpio_sleep_sel_en                             : 148
+	gpio_sleep_pulldown_dis                       : 146
+	gpio_sleep_pullup_dis                         : 146
+	gpio_sleep_sel_dis                            : 146
+	uart_disable_intr_mask_and_return_prev        : 138
+	gpio_sleep_input_enable                       : 126
+	gpio_sleep_output_enable                      : 126
+	gpio_sleep_input_disable                      : 124
+	gpio_sleep_output_disable                     : 124
+	uart_enable_intr_mask                         : 122
+	uart_get_baudrate                             : 116
+	uart_set_baudrate                             : 116
+	uart_set_parity                               : 116
+	uart_get_parity                               :  86
+	uart_get_stop_bits                            :  86
+	uart_get_word_length                          :  86
+	uart_pattern_queue_update                     :  80
+	periph_ll_get_clk_en_reg                      :  50
+	periph_ll_get_rst_en_reg                      :  50
+	uart_is_driver_installed                      :  34
+	uart_set_select_notif_callback                :  30
+	uart_get_selectlock                           :   6
 Section total: 5280
 
 Symbols from section: .flash_rodata_dummy
@@ -4712,28 +4910,71 @@ Used Flash size :  245923 bytes
       .text     :   87463 bytes
       .rodata   :   27132 bytes
 Total image size:  301962 bytes (.bin may be padded larger)
+
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
 
 Symbols from section: .dram0.bss
-ref_counts(37) p_uart_obj(12)
+	ref_counts                                    :   37
+	p_uart_obj                                    :   12
 Section total: 49
 
 Symbols from section: .dram0.data
-uart_context(48) periph_spinlock(8) uart_selectlock(8)
+	uart_context                                  :   48
+	periph_spinlock                               :    8
+	uart_selectlock                               :    8
 Section total: 64
 
 Symbols from section: .flash.appdesc
 Section total: 0
 
 Symbols from section: .flash.rodata
-periph_module_enable.str1.4(64) uart_disable_intr_mask_and_return_prev.str1.4(54) uart_pattern_pop_pos.str1.4(49) uart_set_stop_bits.str1.4(46) uart_set_word_length.str1.4(46) uart_flush_input.str1.4(45) __FUNCTION__$8051(39) __FUNCTION__$8043(27) __FUNCTION__$7806(22) __FUNCTION__$7737(21) __FUNCTION__$7742(21) __func__$4997(21) __FUNCTION__$7747(19) __FUNCTION__$7752(19) __FUNCTION__$7767(18) __FUNCTION__$7772(18) __FUNCTION__$7978(18) __FUNCTION__$8055(17) __FUNCTION__$7757(16) __FUNCTION__$7762(16) g_spi_lock_main_flash_dev(4)
+	periph_module_enable.str1.4                   :   64
+	uart_disable_intr_mask_and_return_prev.str1.4 :   54
+	uart_pattern_pop_pos.str1.4                   :   49
+	uart_set_stop_bits.str1.4                     :   46
+	uart_set_word_length.str1.4                   :   46
+	uart_flush_input.str1.4                       :   45
+	__FUNCTION__$8051                             :   39
+	__FUNCTION__$8043                             :   27
+	__FUNCTION__$7806                             :   22
+	__FUNCTION__$7737                             :   21
+	__FUNCTION__$7742                             :   21
+	__func__$4997                                 :   21
+	__FUNCTION__$7747                             :   19
+	__FUNCTION__$7752                             :   19
+	__FUNCTION__$7767                             :   18
+	__FUNCTION__$7772                             :   18
+	__FUNCTION__$7978                             :   18
+	__FUNCTION__$8055                             :   17
+	__FUNCTION__$7757                             :   16
+	__FUNCTION__$7762                             :   16
+	g_spi_lock_main_flash_dev                     :    4
 Section total: 600
 
 Symbols from section: .flash.rodata_noload
 Section total: 0
 
 Symbols from section: .flash.text
-periph_module_enable(1131) uart_flush_input(509) uart_wait_tx_done(393) uart_set_stop_bits(130) uart_set_word_length(130) periph_ll_get_rst_en_reg(125) uart_disable_intr_mask_and_return_prev(122) periph_ll_get_clk_en_reg(121) uart_get_bufferedlen(108) uart_enable_intr_mask(100) uart_get_baudrate(88) uart_set_parity(88) uart_set_baudrate(84) uart_pattern_queue_update(74) uart_get_parity(68) uart_get_stop_bits(68) uart_get_word_length(64) uart_is_driver_installed(30) uart_set_select_notif_callback(23) uart_get_selectlock(12)
+	periph_module_enable                          : 1131
+	uart_flush_input                              :  509
+	uart_wait_tx_done                             :  393
+	uart_set_stop_bits                            :  130
+	uart_set_word_length                          :  130
+	periph_ll_get_rst_en_reg                      :  125
+	uart_disable_intr_mask_and_return_prev        :  122
+	periph_ll_get_clk_en_reg                      :  121
+	uart_get_bufferedlen                          :  108
+	uart_enable_intr_mask                         :  100
+	uart_get_baudrate                             :   88
+	uart_set_parity                               :   88
+	uart_set_baudrate                             :   84
+	uart_pattern_queue_update                     :   74
+	uart_get_parity                               :   68
+	uart_get_stop_bits                            :   68
+	uart_get_word_length                          :   64
+	uart_is_driver_installed                      :   30
+	uart_set_select_notif_callback                :   23
+	uart_get_selectlock                           :   12
 Section total: 3468
 
 Symbols from section: .flash_rodata_dummy
