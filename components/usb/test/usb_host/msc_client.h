@@ -15,3 +15,5 @@ typedef struct {
 } msc_client_test_param_t;
 
 void msc_client_async_seq_task(void *arg);
+
+void msc_client_async_dconn_task(void *arg);

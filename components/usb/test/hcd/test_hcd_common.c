@@ -18,6 +18,7 @@
 #include "usb_private.h"
 #include "usb/usb_types_ch9.h"
 #include "test_hcd_common.h"
+#include "test_usb_common.h"
 
 #define PORT_NUM                1
 #define EVENT_QUEUE_LEN         5
@@ -135,28 +136,6 @@ int test_hcd_get_num_pipe_events(hcd_pipe_handle_t pipe_hdl)
 
 // ----------------------------------------------- Driver/Port Related -------------------------------------------------
 
-void test_hcd_force_conn_state(bool connected, TickType_t delay_ticks)
-{
-    if (delay_ticks > 0) {
-        //Delay of 0 ticks causes a yield. So skip if delay_ticks is 0.
-        vTaskDelay(delay_ticks);
-    }
-    usb_wrap_dev_t *wrap = &USB_WRAP;
-    if (connected) {
-        //Disable test mode to return to previous internal PHY configuration
-        wrap->test_conf.test_enable = 0;
-    } else {
-        /*
-        Mimic a disconnection by using the internal PHY's test mode.
-        Force Output Enable to 1 (even if the controller isn't outputting). With test_tx_dp and test_tx_dm set to 0,
-        this will look like a disconnection.
-        */
-        wrap->test_conf.val = 0;
-        wrap->test_conf.test_usb_wrap_oe = 1;
-        wrap->test_conf.test_enable = 1;
-    }
-}
-
 hcd_port_handle_t test_hcd_setup(void)
 {
     //Create a queue for port callback to queue up port events
@@ -178,7 +157,7 @@ hcd_port_handle_t test_hcd_setup(void)
     TEST_ASSERT_EQUAL(ESP_OK, hcd_port_init(PORT_NUM, &port_config, &port_hdl));
     TEST_ASSERT_NOT_EQUAL(NULL, port_hdl);
     TEST_ASSERT_EQUAL(HCD_PORT_STATE_NOT_POWERED, hcd_port_get_state(port_hdl));
-    test_hcd_force_conn_state(false, 0);    //Force disconnected state on PHY
+    test_usb_force_conn_state(false, 0);    //Force disconnected state on PHY
     return port_hdl;
 }
 
@@ -201,7 +180,7 @@ usb_speed_t test_hcd_wait_for_conn(hcd_port_handle_t port_hdl)
     TEST_ASSERT_EQUAL(HCD_PORT_STATE_DISCONNECTED, hcd_port_get_state(port_hdl));
     //Wait for connection event
     printf("Waiting for connection\n");
-    test_hcd_force_conn_state(true, pdMS_TO_TICKS(100));     //Allow for connected state on PHY
+    test_usb_force_conn_state(true, pdMS_TO_TICKS(100));     //Allow for connected state on PHY
     test_hcd_expect_port_event(port_hdl, HCD_PORT_EVENT_CONNECTION);
     TEST_ASSERT_EQUAL(HCD_PORT_EVENT_CONNECTION, hcd_port_handle_event(port_hdl));
     TEST_ASSERT_EQUAL(HCD_PORT_STATE_DISABLED, hcd_port_get_state(port_hdl));
@@ -230,7 +209,7 @@ void test_hcd_wait_for_disconn(hcd_port_handle_t port_hdl, bool already_disabled
     }
     //Wait for a safe disconnect
     printf("Waiting for disconnection\n");
-    test_hcd_force_conn_state(false, pdMS_TO_TICKS(100));    //Force disconnected state on PHY
+    test_usb_force_conn_state(false, pdMS_TO_TICKS(100));    //Force disconnected state on PHY
     test_hcd_expect_port_event(port_hdl, HCD_PORT_EVENT_DISCONNECTION);
     TEST_ASSERT_EQUAL(HCD_PORT_EVENT_DISCONNECTION, hcd_port_handle_event(port_hdl));
     TEST_ASSERT_EQUAL(HCD_PORT_STATE_RECOVERY, hcd_port_get_state(port_hdl));
