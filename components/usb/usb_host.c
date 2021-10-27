@@ -508,6 +508,16 @@ exit:
     return ret;
 }
 
+esp_err_t usb_host_lib_unblock(void)
+{
+    //All devices must have been freed at this point
+    HOST_ENTER_CRITICAL();
+    HOST_CHECK_FROM_CRIT(p_host_lib_obj != NULL, ESP_ERR_INVALID_STATE);
+    _unblock_lib(false);
+    HOST_EXIT_CRITICAL();
+    return ESP_OK;
+}
+
 // ------------------------------------------------ Client Functions ---------------------------------------------------
 
 // ----------------------- Private -------------------------
@@ -562,7 +572,11 @@ static void _handle_pending_ep(client_t *client_obj)
 esp_err_t usb_host_client_register(const usb_host_client_config_t *client_config, usb_host_client_handle_t *client_hdl_ret)
 {
     HOST_CHECK(client_config != NULL && client_hdl_ret != NULL, ESP_ERR_INVALID_ARG);
-    HOST_CHECK(client_config->client_event_callback != NULL && client_config->max_num_event_msg > 0, ESP_ERR_INVALID_ARG);
+    HOST_CHECK(client_config->max_num_event_msg > 0, ESP_ERR_INVALID_ARG);
+    if (!client_config->is_synchronous) {
+        //Asynchronous clients must provide a
+        HOST_CHECK(client_config->async.client_event_callback != NULL, ESP_ERR_INVALID_ARG);
+    }
 
     esp_err_t ret;
     //Create client object
@@ -579,8 +593,8 @@ esp_err_t usb_host_client_register(const usb_host_client_config_t *client_config
     TAILQ_INIT(&client_obj->mux_protected.interface_tailq);
     TAILQ_INIT(&client_obj->dynamic.done_ctrl_xfer_tailq);
     client_obj->constant.event_sem = event_sem;
-    client_obj->constant.event_callback = client_config->client_event_callback;
-    client_obj->constant.callback_arg = client_config->callback_arg;
+    client_obj->constant.event_callback = client_config->async.client_event_callback;
+    client_obj->constant.callback_arg = client_config->async.callback_arg;
     client_obj->constant.event_msg_queue = event_msg_queue;
 
     //Add client to the host library's list of clients
@@ -819,8 +833,14 @@ esp_err_t usb_host_device_free_all(void)
     HOST_EXIT_CRITICAL();
     esp_err_t ret;
     ret = usbh_dev_mark_all_free();
-    //Wait for USB_HOST_LIB_EVENT_FLAGS_ALL_FREE to confirm all devices free
+    //If ESP_ERR_NOT_FINISHED is returned, caller must wait for USB_HOST_LIB_EVENT_FLAGS_ALL_FREE to confirm all devices are free
     return ret;
+}
+
+esp_err_t usb_host_device_addr_list_fill(int list_len, uint8_t *dev_addr_list, int *num_dev_ret)
+{
+    HOST_CHECK(dev_addr_list != NULL && num_dev_ret != NULL, ESP_ERR_INVALID_ARG);
+    return usbh_dev_addr_list_fill(list_len, dev_addr_list, num_dev_ret);
 }
 
 // ------------------------------------------------- Device Requests ---------------------------------------------------
@@ -1266,7 +1286,8 @@ esp_err_t usb_host_transfer_submit_control(usb_host_client_handle_t client_hdl, 
     usb_device_info_t dev_info;
     ESP_ERROR_CHECK(usbh_dev_get_info(dev_hdl, &dev_info));
     HOST_CHECK(transfer_check(transfer, USB_TRANSFER_TYPE_CTRL, dev_info.bMaxPacketSize0, xfer_is_in), ESP_ERR_INVALID_ARG);
-    HOST_CHECK(transfer->bEndpointAddress == 0, ESP_ERR_INVALID_ARG);
+    //Control transfers must be targeted at EP 0
+    HOST_CHECK((transfer->bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_NUM_MASK) == 0, ESP_ERR_INVALID_ARG);
     //Save client handle into URB
     urb_t *urb_obj = __containerof(transfer, urb_t, transfer);
     urb_obj->usb_host_client = (void *)client_hdl;

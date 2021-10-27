@@ -43,7 +43,7 @@ typedef enum {
 /**
  * @brief Handle of a USB Device connected to a USB Host
  */
-typedef void * usb_device_handle_t;
+typedef struct usb_device_handle_s * usb_device_handle_t;
 
 /**
  * @brief Basic information of an enumerated device

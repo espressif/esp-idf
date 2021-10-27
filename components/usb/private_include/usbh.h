@@ -120,6 +120,21 @@ esp_err_t usbh_process(void);
 // --------------------- Device Pool -----------------------
 
 /**
+ * @brief Fill list with address of currently connected devices
+ *
+ * - This function fills the provided list with the address of current connected devices
+ * - Device address can then be used in usbh_dev_open()
+ * - If there are more devices than the list_len, this function will only fill
+ *   up to list_len number of devices.
+ *
+ * @param[in] list_len Length of empty list
+ * @param[inout] dev_addr_list Empty list to be filled
+ * @param[out] num_dev_ret Number of devices filled into list
+ * @return esp_err_t
+ */
+esp_err_t usbh_dev_addr_list_fill(int list_len, uint8_t *dev_addr_list, int *num_dev_ret);
+
+/**
  * @brief Open a device by address
  *
  * A device must be opened before it can be used
@@ -145,7 +160,9 @@ esp_err_t usbh_dev_close(usb_device_handle_t dev_hdl);
  *
  * A device marked as free will not be freed until the last client using the device has called usbh_dev_close()
  *
- * @return esp_err_t
+ * @return
+ *  - ESP_OK: There were no devices to free to begin with. Current state is all free
+ *  - ESP_ERR_NOT_FINISHED: One or more devices still need to be freed (but have been marked "to be freed")
  */
 esp_err_t usbh_dev_mark_all_free(void);
 

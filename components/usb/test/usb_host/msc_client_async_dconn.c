@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/param.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_err.h"
@@ -34,9 +35,6 @@ Implementation of an asynchronous MSC client used for USB Host disconnection tes
     - Close device
     - Deregister MSC client
 */
-
-#define MAX(x,y)                        (((x) >= (y)) ? (x) : (y))
-#define MSC_CLIENT_MAX_EVENT_MSGS       5
 
 typedef enum {
     TEST_STAGE_WAIT_CONN,
@@ -130,9 +128,12 @@ void msc_client_async_dconn_task(void *arg)
 
     //Register client
     usb_host_client_config_t client_config = {
-        .client_event_callback = msc_client_event_cb,
-        .callback_arg = (void *)&msc_obj,
-        .max_num_event_msg = MSC_CLIENT_MAX_EVENT_MSGS,
+        .is_synchronous = false,
+        .max_num_event_msg = MSC_ASYNC_CLIENT_MAX_EVENT_MSGS,
+        .async = {
+            .client_event_callback = msc_client_event_cb,
+            .callback_arg = (void *)&msc_obj,
+        },
     };
     TEST_ASSERT_EQUAL(ESP_OK, usb_host_client_register(&client_config, &msc_obj.client_hdl));
 

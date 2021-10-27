@@ -468,6 +468,36 @@ esp_err_t usbh_process(void)
 
 // --------------------- Device Pool -----------------------
 
+esp_err_t usbh_dev_addr_list_fill(int list_len, uint8_t *dev_addr_list, int *num_dev_ret)
+{
+    USBH_CHECK(dev_addr_list != NULL && num_dev_ret != NULL, ESP_ERR_INVALID_ARG);
+    USBH_ENTER_CRITICAL();
+    int num_filled = 0;
+    device_t *dev_obj;
+    //Fill list with devices from idle tailq
+    TAILQ_FOREACH(dev_obj, &p_usbh_obj->dynamic.devs_idle_tailq, dynamic.tailq_entry) {
+        if (num_filled < list_len) {
+            dev_addr_list[num_filled] = dev_obj->constant.address;
+            num_filled++;
+        } else {
+            break;
+        }
+    }
+    //Fill list with devices from pending tailq
+    TAILQ_FOREACH(dev_obj, &p_usbh_obj->dynamic.devs_pending_tailq, dynamic.tailq_entry) {
+        if (num_filled < list_len) {
+            dev_addr_list[num_filled] = dev_obj->constant.address;
+            num_filled++;
+        } else {
+            break;
+        }
+    }
+    USBH_EXIT_CRITICAL();
+    //Write back number of devices filled
+    *num_dev_ret = num_filled;
+    return ESP_OK;
+}
+
 esp_err_t usbh_dev_open(uint8_t dev_addr, usb_device_handle_t *dev_hdl)
 {
     USBH_CHECK(dev_hdl != NULL, ESP_ERR_INVALID_ARG);
@@ -547,6 +577,7 @@ esp_err_t usbh_dev_mark_all_free(void)
     Note: We manually traverse the list because we need to add/remove items while traversing
     */
     bool call_notif_cb = false;
+    bool wait_for_free = false;
     for (int i = 0; i < 2; i++) {
         device_t *dev_obj_cur;
         device_t *dev_obj_next;
@@ -568,6 +599,7 @@ esp_err_t usbh_dev_mark_all_free(void)
                 //Device is still opened. Just mark it as waiting to be closed
                 dev_obj_cur->dynamic.flags.waiting_close = 1;
             }
+            wait_for_free = true;   //As long as there is still a device, we need to wait for an event indicating it is freed
             dev_obj_cur = dev_obj_next;
         }
     }
@@ -576,7 +608,7 @@ esp_err_t usbh_dev_mark_all_free(void)
     if (call_notif_cb) {
         p_usbh_obj->constant.notif_cb(USB_NOTIF_SOURCE_USBH, false, p_usbh_obj->constant.notif_cb_arg);
     }
-    return ESP_OK;
+    return (wait_for_free) ? ESP_ERR_NOT_FINISHED : ESP_OK;
 }
 
 // ------------------- Single Device  ----------------------
