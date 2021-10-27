@@ -1157,12 +1157,7 @@ components/esp_system/test_eh_frame_parser/linker.ld
 components/esp_system/test_eh_frame_parser/main.c
 components/esp_system/ubsan.c
 components/esp_timer/include/esp_private/esp_timer_private.h
-components/esp_timer/include/esp_timer.h
-components/esp_timer/private_include/esp_timer_impl.h
-components/esp_timer/src/esp_timer.c
 components/esp_timer/src/esp_timer_impl_frc_legacy.c
-components/esp_timer/src/esp_timer_impl_lac.c
-components/esp_timer/src/esp_timer_impl_systimer.c
 components/esp_timer/src/ets_timer_legacy.c
 components/esp_timer/src/system_time.c
 components/esp_timer/test/test_esp_timer.c
