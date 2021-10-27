@@ -12,6 +12,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_heap_caps.h"
@@ -20,14 +21,15 @@
 #include "usb/usb_helpers.h"
 #include "usb/usb_types_ch9.h"
 
-//Device action flags. Listed in the order they should handled in. Some actions are mutually exclusive
-#define DEV_FLAG_ACTION_SEND_GONE_EVENT             0x01    //Send a USB_HOST_CLIENT_EVENT_DEV_GONE event
+//Device action flags. LISTED IN THE ORDER THEY SHOULD BE HANDLED IN within usbh_process(). Some actions are mutually exclusive
+#define DEV_FLAG_ACTION_PIPE_HALT_AND_FLUSH         0x01    //Halt all non-default pipes then flush them (called after a device gone is gone)
 #define DEV_FLAG_ACTION_DEFAULT_PIPE_FLUSH          0x02    //Retire all URBS in the default pipe
 #define DEV_FLAG_ACTION_DEFAULT_PIPE_DEQUEUE        0x04    //Dequeue all URBs from default pipe
 #define DEV_FLAG_ACTION_DEFAULT_PIPE_CLEAR          0x08    //Move the default pipe to the active state
-#define DEV_FLAG_ACTION_FREE                        0x10    //Free the device object
-#define DEV_FLAG_ACTION_PORT_DISABLE                0x20
-#define DEV_FLAG_ACTION_SEND_NEW                    0x40    //Send a new device event
+#define DEV_FLAG_ACTION_SEND_GONE_EVENT             0x10    //Send a USB_HOST_CLIENT_EVENT_DEV_GONE event
+#define DEV_FLAG_ACTION_FREE                        0x20    //Free the device object
+#define DEV_FLAG_ACTION_PORT_DISABLE                0x40    //Request the hub driver to disable the port of the device
+#define DEV_FLAG_ACTION_SEND_NEW                    0x80    //Send a new device event
 
 #define DEV_ENUM_TODO_FLAG_DEV_ADDR                 0x01
 #define DEV_ENUM_TODO_FLAG_DEV_DESC                 0x02
@@ -56,10 +58,13 @@ struct device_s {
         int num_ctrl_xfers_inflight;
         usb_device_state_t state;
         uint32_t ref_count;
+    } dynamic;
+    //Mux protected members must be protected by the USBH mux_lock when accessed
+    struct {
         usb_config_desc_t *config_desc;
         hcd_pipe_handle_t ep_in[EP_NUM_MAX - 1];    //IN EP owner contexts. -1 to exclude the default endpoint
         hcd_pipe_handle_t ep_out[EP_NUM_MAX - 1];   //OUT EP owner contexts. -1 to exclude the default endpoint
-    } dynamic;
+    } mux_protected;
     //Constant members do no change after device allocation and enumeration thus do not require a critical section
     struct {
         hcd_pipe_handle_t default_pipe;
@@ -76,8 +81,11 @@ typedef struct {
     struct {
         TAILQ_HEAD(tailhead_devs, device_s) devs_idle_tailq;        //Tailq of all enum and configured devices
         TAILQ_HEAD(tailhead_devs_cb, device_s) devs_pending_tailq;  //Tailq of devices that need to have their cb called
-        uint8_t num_device;     //Number of enumerated devices
     } dynamic;
+    //Mux protected members must be protected by the USBH mux_lock when accessed
+    struct {
+        uint8_t num_device;     //Number of enumerated devices
+    } mux_protected;
     //Constant members do no change after installation thus do not require a critical section
     struct {
         usb_notif_cb_t notif_cb;
@@ -88,6 +96,7 @@ typedef struct {
         void *event_cb_arg;
         usbh_ctrl_xfer_cb_t ctrl_xfer_cb;
         void *ctrl_xfer_cb_arg;
+        SemaphoreHandle_t mux_lock;
     } constant;
 } usbh_t;
 
@@ -165,7 +174,7 @@ static void device_free(device_t *dev_obj)
         return;
     }
     //Configuration must be freed
-    assert(dev_obj->dynamic.config_desc == NULL);
+    assert(dev_obj->mux_protected.config_desc == NULL); //Sanity check. No need for mux
     ESP_ERROR_CHECK(hcd_pipe_free(dev_obj->constant.default_pipe));
     heap_caps_free((usb_device_desc_t *)dev_obj->constant.desc);
     heap_caps_free(dev_obj);
@@ -240,8 +249,28 @@ static bool default_pipe_callback(hcd_pipe_handle_t pipe_hdl, hcd_pipe_event_t p
     return yield;
 }
 
+static void handle_pipe_halt_and_flush(device_t *dev_obj)
+{
+    //We need to take the mux_lock to access mux_protected members
+    xSemaphoreTake(p_usbh_obj->constant.mux_lock, portMAX_DELAY);
+    //Halt then flush all non-default IN pipes
+    for (int i = 0; i < (EP_NUM_MAX - 1); i++) {
+        if (dev_obj->mux_protected.ep_in[i] != NULL) {
+            ESP_ERROR_CHECK(hcd_pipe_command(dev_obj->mux_protected.ep_in[i], HCD_PIPE_CMD_HALT));
+            ESP_ERROR_CHECK(hcd_pipe_command(dev_obj->mux_protected.ep_in[i], HCD_PIPE_CMD_FLUSH));
+        }
+        if (dev_obj->mux_protected.ep_out[i] != NULL) {
+            ESP_ERROR_CHECK(hcd_pipe_command(dev_obj->mux_protected.ep_out[i], HCD_PIPE_CMD_HALT));
+            ESP_ERROR_CHECK(hcd_pipe_command(dev_obj->mux_protected.ep_out[i], HCD_PIPE_CMD_FLUSH));
+        }
+    }
+    xSemaphoreGive(p_usbh_obj->constant.mux_lock);
+}
+
 static bool handle_dev_free(device_t *dev_obj)
 {
+    //We need to take the mux_lock to access mux_protected members
+    xSemaphoreTake(p_usbh_obj->constant.mux_lock, portMAX_DELAY);
     USBH_ENTER_CRITICAL();
     //Remove the device object for it's containing list
     if (dev_obj->dynamic.flags.in_pending_list) {
@@ -250,13 +279,13 @@ static bool handle_dev_free(device_t *dev_obj)
     } else {
         TAILQ_REMOVE(&p_usbh_obj->dynamic.devs_idle_tailq, dev_obj, dynamic.tailq_entry);
     }
-    p_usbh_obj->dynamic.num_device--;
-    bool all_free = (p_usbh_obj->dynamic.num_device == 0);
     USBH_EXIT_CRITICAL();
-
-    heap_caps_free(dev_obj->dynamic.config_desc);
-    dev_obj->dynamic.config_desc = NULL;
+    p_usbh_obj->mux_protected.num_device--;
+    bool all_free = (p_usbh_obj->mux_protected.num_device == 0);
+    heap_caps_free(dev_obj->mux_protected.config_desc);
+    dev_obj->mux_protected.config_desc = NULL;
     device_free(dev_obj);
+    xSemaphoreGive(p_usbh_obj->constant.mux_lock);
     return all_free;
 }
 
@@ -269,11 +298,13 @@ esp_err_t usbh_install(const usbh_config_t *usbh_config)
     USBH_CHECK_FROM_CRIT(p_usbh_obj == NULL, ESP_ERR_INVALID_STATE);
     USBH_EXIT_CRITICAL();
 
-    usbh_t *usbh_obj = heap_caps_calloc(1, sizeof(usbh_t), MALLOC_CAP_DEFAULT);
-    if (usbh_obj == NULL) {
-        return ESP_ERR_NO_MEM;
-    }
     esp_err_t ret;
+    usbh_t *usbh_obj = heap_caps_calloc(1, sizeof(usbh_t), MALLOC_CAP_DEFAULT);
+    SemaphoreHandle_t mux_lock = xSemaphoreCreateMutex();
+    if (usbh_obj == NULL || mux_lock == NULL) {
+        ret = ESP_ERR_NO_MEM;
+        goto alloc_err;
+    }
     //Install HCD
     ret = hcd_install(&usbh_config->hcd_config);
     if (ret != ESP_OK) {
@@ -288,6 +319,7 @@ esp_err_t usbh_install(const usbh_config_t *usbh_config)
     usbh_obj->constant.event_cb_arg = usbh_config->event_cb_arg;
     usbh_obj->constant.ctrl_xfer_cb = usbh_config->ctrl_xfer_cb;
     usbh_obj->constant.ctrl_xfer_cb_arg = usbh_config->ctrl_xfer_cb_arg;
+    usbh_obj->constant.mux_lock = mux_lock;
 
     //Assign usbh object pointer
     USBH_ENTER_CRITICAL();
@@ -305,24 +337,47 @@ esp_err_t usbh_install(const usbh_config_t *usbh_config)
 assign_err:
     ESP_ERROR_CHECK(hcd_uninstall());
 hcd_install_err:
+alloc_err:
+    if (mux_lock != NULL) {
+        vSemaphoreDelete(mux_lock);
+    }
     heap_caps_free(usbh_obj);
     return ret;
 }
 
 esp_err_t usbh_uninstall(void)
 {
+    //Check that USBH is in a state to be uninstalled
     USBH_ENTER_CRITICAL();
     USBH_CHECK_FROM_CRIT(p_usbh_obj != NULL, ESP_ERR_INVALID_STATE);
-    //Check that USBH is in a state to be uninstalled
-    USBH_CHECK_FROM_CRIT(p_usbh_obj->dynamic.num_device == 0, ESP_ERR_INVALID_STATE);
     usbh_t *usbh_obj = p_usbh_obj;
-    p_usbh_obj = NULL;
     USBH_EXIT_CRITICAL();
 
-    //Uninstall HCD
+    esp_err_t ret;
+    //We need to take the mux_lock to access mux_protected members
+    xSemaphoreTake(usbh_obj->constant.mux_lock, portMAX_DELAY);
+    if (p_usbh_obj->mux_protected.num_device > 0) {
+        //There are still devices allocated. Can't uninstall right now.
+        ret = ESP_ERR_INVALID_STATE;
+        goto exit;
+    }
+    //Check again if we can uninstall
+    USBH_ENTER_CRITICAL();
+    assert(p_usbh_obj == usbh_obj);
+    p_usbh_obj = NULL;
+    USBH_EXIT_CRITICAL();
+    xSemaphoreGive(usbh_obj->constant.mux_lock);
+
+    //Uninstall HCD, free resources
     ESP_ERROR_CHECK(hcd_uninstall());
+    vSemaphoreDelete(usbh_obj->constant.mux_lock);
     heap_caps_free(usbh_obj);
-    return ESP_OK;
+    ret = ESP_OK;
+    return ret;
+
+exit:
+    xSemaphoreGive(p_usbh_obj->constant.mux_lock);
+    return ret;
 }
 
 esp_err_t usbh_process(void)
@@ -340,14 +395,16 @@ esp_err_t usbh_process(void)
         dev_obj->dynamic.flags.actions = 0;
         dev_obj->dynamic.flags.in_pending_list = 0;
 
+        /* ---------------------------------------------------------------------
+        Exit critical section to handle device action flags in their listed order
+        --------------------------------------------------------------------- */
         USBH_EXIT_CRITICAL();
         ESP_LOGD(USBH_TAG, "Processing actions 0x%x", action_flags);
         //Sanity check. If the device is being freed, there must not be any other action flags set
         assert(!(action_flags & DEV_FLAG_ACTION_FREE) || action_flags == DEV_FLAG_ACTION_FREE);
-        if (action_flags & DEV_FLAG_ACTION_SEND_GONE_EVENT) {
-            //Flush the default pipe. Then do an event gone
-            ESP_LOGE(USBH_TAG, "Device %d gone", dev_obj->constant.address);
-            p_usbh_obj->constant.event_cb((usb_device_handle_t)dev_obj, USBH_EVENT_DEV_GONE, p_usbh_obj->constant.event_cb_arg);
+
+        if (action_flags & DEV_FLAG_ACTION_PIPE_HALT_AND_FLUSH) {
+            handle_pipe_halt_and_flush(dev_obj);
         }
         if (action_flags & DEV_FLAG_ACTION_DEFAULT_PIPE_FLUSH) {
             ESP_ERROR_CHECK(hcd_pipe_command(dev_obj->constant.default_pipe, HCD_PIPE_CMD_HALT));
@@ -371,6 +428,11 @@ esp_err_t usbh_process(void)
             //We allow the pipe command to fail just in case the pipe becomes invalid mid command
             hcd_pipe_command(dev_obj->constant.default_pipe, HCD_PIPE_CMD_CLEAR);
         }
+        if (action_flags & DEV_FLAG_ACTION_SEND_GONE_EVENT) {
+            //Flush the default pipe. Then do an event gone
+            ESP_LOGE(USBH_TAG, "Device %d gone", dev_obj->constant.address);
+            p_usbh_obj->constant.event_cb((usb_device_handle_t)dev_obj, USBH_EVENT_DEV_GONE, p_usbh_obj->constant.event_cb_arg);
+        }
         /*
         Note: We make these action flags mutually exclusive in case they happen in rapid succession. They are handled
         in the order of precedence
@@ -393,6 +455,9 @@ esp_err_t usbh_process(void)
             p_usbh_obj->constant.event_cb((usb_device_handle_t)dev_obj, USBH_EVENT_DEV_NEW, p_usbh_obj->constant.event_cb_arg);
         }
         USBH_ENTER_CRITICAL();
+        /* ---------------------------------------------------------------------
+        Re-enter critical sections. All device action flags should have been handled.
+        --------------------------------------------------------------------- */
 
     }
     USBH_EXIT_CRITICAL();
@@ -534,19 +599,30 @@ esp_err_t usbh_dev_get_info(usb_device_handle_t dev_hdl, usb_device_info_t *dev_
     USBH_CHECK(dev_hdl != NULL && dev_info != NULL, ESP_ERR_INVALID_ARG);
     device_t *dev_obj = (device_t *)dev_hdl;
 
+    esp_err_t ret;
+    //We need to take the mux_lock to access mux_protected members
+    xSemaphoreTake(p_usbh_obj->constant.mux_lock, portMAX_DELAY);
+    //Device must be configured, or not attached (if it suddenly disconnected)
     USBH_ENTER_CRITICAL();
-    USBH_CHECK_FROM_CRIT(dev_obj->dynamic.state == USB_DEVICE_STATE_CONFIGURED || dev_obj->dynamic.state == USB_DEVICE_STATE_NOT_ATTACHED, ESP_ERR_INVALID_STATE);
+    if (!(dev_obj->dynamic.state == USB_DEVICE_STATE_CONFIGURED || dev_obj->dynamic.state == USB_DEVICE_STATE_NOT_ATTACHED)) {
+        USBH_EXIT_CRITICAL();
+        ret = ESP_ERR_INVALID_STATE;
+        goto exit;
+    }
+    //Critical section for the dynamic members
     dev_info->speed = dev_obj->constant.speed;
     dev_info->dev_addr = dev_obj->constant.address;
     dev_info->bMaxPacketSize0 = dev_obj->constant.desc->bMaxPacketSize0;
-    if (dev_obj->dynamic.config_desc == NULL) {
+    USBH_EXIT_CRITICAL();
+    if (dev_obj->mux_protected.config_desc == NULL) {
         dev_info->bConfigurationValue = 0;
     } else {
-        dev_info->bConfigurationValue = dev_obj->dynamic.config_desc->bConfigurationValue;
+        dev_info->bConfigurationValue = dev_obj->mux_protected.config_desc->bConfigurationValue;
     }
-    USBH_EXIT_CRITICAL();
-
-    return ESP_OK;
+    ret = ESP_OK;
+exit:
+    xSemaphoreGive(p_usbh_obj->constant.mux_lock);
+    return ret;
 }
 
 esp_err_t usbh_dev_get_desc(usb_device_handle_t dev_hdl, const usb_device_desc_t **dev_desc_ret)
@@ -567,12 +643,22 @@ esp_err_t usbh_dev_get_config_desc(usb_device_handle_t dev_hdl, const usb_config
     USBH_CHECK(dev_hdl != NULL && config_desc_ret != NULL, ESP_ERR_INVALID_ARG);
     device_t *dev_obj = (device_t *)dev_hdl;
 
+    esp_err_t ret;
+    //We need to take the mux_lock to access mux_protected members
+    xSemaphoreTake(p_usbh_obj->constant.mux_lock, portMAX_DELAY);
+    //Device must be in the configured state
     USBH_ENTER_CRITICAL();
-    USBH_CHECK_FROM_CRIT(dev_obj->dynamic.state == USB_DEVICE_STATE_CONFIGURED, ESP_ERR_INVALID_STATE);
-    *config_desc_ret = dev_obj->dynamic.config_desc;
+    if (dev_obj->dynamic.state != USB_DEVICE_STATE_CONFIGURED) {
+        USBH_EXIT_CRITICAL();
+        ret = ESP_ERR_INVALID_STATE;
+        goto exit;
+    }
     USBH_EXIT_CRITICAL();
-
-    return ESP_OK;
+    *config_desc_ret = dev_obj->mux_protected.config_desc;
+    ret = ESP_OK;
+exit:
+    xSemaphoreGive(p_usbh_obj->constant.mux_lock);
+    return ret;
 }
 
 esp_err_t usbh_dev_submit_ctrl_urb(usb_device_handle_t dev_hdl, urb_t *urb)
@@ -633,21 +719,24 @@ esp_err_t usbh_ep_alloc(usb_device_handle_t dev_hdl, usbh_ep_config_t *ep_config
         goto pipe_alloc_err;
     }
 
-    USBH_ENTER_CRITICAL();
-    //Check that endpoint has not be allocated yet
     bool is_in = ep_config->ep_desc->bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_DIR_MASK;
     uint8_t addr = ep_config->ep_desc->bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_NUM_MASK;
-    //Assign the pipe handle
     bool assigned = false;
-    if (is_in && dev_obj->dynamic.ep_in[addr - 1] == NULL) {    //Is an IN EP
-        dev_obj->dynamic.ep_in[addr - 1] = pipe_hdl;
+
+    //We need to take the mux_lock to access mux_protected members
+    xSemaphoreTake(p_usbh_obj->constant.mux_lock, portMAX_DELAY);
+    if (is_in && dev_obj->mux_protected.ep_in[addr - 1] == NULL) {    //Is an IN EP
+        dev_obj->mux_protected.ep_in[addr - 1] = pipe_hdl;
         assigned = true;
     } else {
-        dev_obj->dynamic.ep_out[addr - 1] = pipe_hdl;
+        dev_obj->mux_protected.ep_out[addr - 1] = pipe_hdl;
         assigned = true;
     }
-    dev_obj->dynamic.ref_count--;   //Restore ref_count
+    //Restore ref_count
+    USBH_ENTER_CRITICAL();
+    dev_obj->dynamic.ref_count--;
     USBH_EXIT_CRITICAL();
+    xSemaphoreGive(p_usbh_obj->constant.mux_lock);
 
     if (!assigned) {
         ret = ESP_ERR_INVALID_STATE;
@@ -669,24 +758,38 @@ esp_err_t usbh_ep_free(usb_device_handle_t dev_hdl, uint8_t bEndpointAddress)
     USBH_CHECK(dev_hdl != NULL, ESP_ERR_INVALID_ARG);
     device_t *dev_obj = (device_t *)dev_hdl;
 
-    USBH_ENTER_CRITICAL();
-    //Un-assign the pipe handle from the endpoint
+    esp_err_t ret;
     bool is_in = bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_DIR_MASK;
     uint8_t addr = bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_NUM_MASK;
     hcd_pipe_handle_t pipe_hdl;
-    if (is_in) {
-        USBH_CHECK_FROM_CRIT(dev_obj->dynamic.ep_in[addr - 1] != NULL, ESP_ERR_INVALID_STATE);
-        pipe_hdl = dev_obj->dynamic.ep_in[addr - 1];
-        dev_obj->dynamic.ep_in[addr - 1] = NULL;
-    } else {
-        USBH_CHECK_FROM_CRIT(dev_obj->dynamic.ep_out[addr - 1] != NULL, ESP_ERR_INVALID_STATE);
-        pipe_hdl = dev_obj->dynamic.ep_out[addr - 1];
-        dev_obj->dynamic.ep_out[addr - 1] = NULL;
-    }
-    USBH_EXIT_CRITICAL();
 
-    ESP_ERROR_CHECK(hcd_pipe_free(pipe_hdl));
-    return ESP_OK;
+    //We need to take the mux_lock to access mux_protected members
+    xSemaphoreTake(p_usbh_obj->constant.mux_lock, portMAX_DELAY);
+    //Check if the EP was previously allocated. If so, set it to NULL
+    if (is_in) {
+        if (dev_obj->mux_protected.ep_in[addr - 1] != NULL) {
+            pipe_hdl = dev_obj->mux_protected.ep_in[addr - 1];
+            dev_obj->mux_protected.ep_in[addr - 1] = NULL;
+            ret = ESP_OK;
+        } else {
+            ret = ESP_ERR_INVALID_STATE;
+        }
+    } else {
+        //EP must have been previously allocated
+        if (dev_obj->mux_protected.ep_out[addr - 1] != NULL) {
+            pipe_hdl = dev_obj->mux_protected.ep_out[addr - 1];
+            dev_obj->mux_protected.ep_out[addr - 1] = NULL;
+            ret = ESP_OK;
+        } else {
+            ret = ESP_ERR_INVALID_STATE;
+        }
+    }
+    xSemaphoreGive(p_usbh_obj->constant.mux_lock);
+
+    if (ret == ESP_OK) {
+        ESP_ERROR_CHECK(hcd_pipe_free(pipe_hdl));
+    }
+    return ret;
 }
 
 esp_err_t usbh_ep_get_context(usb_device_handle_t dev_hdl, uint8_t bEndpointAddress, void **context_ret)
@@ -698,29 +801,30 @@ esp_err_t usbh_ep_get_context(usb_device_handle_t dev_hdl, uint8_t bEndpointAddr
                addr <= EP_NUM_MAX &&
                context_ret != NULL,
                ESP_ERR_INVALID_ARG);
-    device_t *dev_obj = (device_t *)dev_hdl;
 
-    USBH_ENTER_CRITICAL();
-    //Get the endpoint's corresponding pipe
-    hcd_pipe_handle_t pipe_hdl;
-    if (is_in) {
-        pipe_hdl = dev_obj->dynamic.ep_in[addr - 1];
-    } else {
-        pipe_hdl = dev_obj->dynamic.ep_out[addr - 1];
-    }
     esp_err_t ret;
+    device_t *dev_obj = (device_t *)dev_hdl;
+    hcd_pipe_handle_t pipe_hdl;
+
+    //We need to take the mux_lock to access mux_protected members
+    xSemaphoreTake(p_usbh_obj->constant.mux_lock, portMAX_DELAY);
+    //Get the endpoint's corresponding pipe
+    if (is_in) {
+        pipe_hdl = dev_obj->mux_protected.ep_in[addr - 1];
+    } else {
+        pipe_hdl = dev_obj->mux_protected.ep_out[addr - 1];
+    }
+    //Check if the EP was allocated to begin with
     if (pipe_hdl == NULL) {
-        USBH_EXIT_CRITICAL();
         ret = ESP_ERR_NOT_FOUND;
         goto exit;
     }
     //Return the context of the pipe
     void *context = hcd_pipe_get_context(pipe_hdl);
     *context_ret = context;
-    USBH_EXIT_CRITICAL();
-
     ret = ESP_OK;
 exit:
+    xSemaphoreGive(p_usbh_obj->constant.mux_lock);
     return ret;
 }
 
@@ -772,11 +876,13 @@ esp_err_t usbh_hub_mark_dev_gone(usb_device_handle_t dev_hdl)
     //Check if the device can be freed now
     if (dev_obj->dynamic.ref_count == 0) {
         dev_obj->dynamic.flags.waiting_free = 1;
+        //Device is already waiting free so none of it's pipes will be in use. Can free immediately.
         call_notif_cb = _dev_set_actions(dev_obj, DEV_FLAG_ACTION_FREE);
     } else {
-        call_notif_cb = _dev_set_actions(dev_obj, DEV_FLAG_ACTION_SEND_GONE_EVENT |
+        call_notif_cb = _dev_set_actions(dev_obj, DEV_FLAG_ACTION_PIPE_HALT_AND_FLUSH |
                                                   DEV_FLAG_ACTION_DEFAULT_PIPE_FLUSH |
-                                                  DEV_FLAG_ACTION_DEFAULT_PIPE_DEQUEUE);
+                                                  DEV_FLAG_ACTION_DEFAULT_PIPE_DEQUEUE |
+                                                  DEV_FLAG_ACTION_SEND_GONE_EVENT);
     }
     USBH_EXIT_CRITICAL();
 
@@ -852,10 +958,11 @@ esp_err_t usbh_hub_enum_fill_config_desc(usb_device_handle_t dev_hdl, const usb_
         goto assign_err;
     }
 
-    USBH_ENTER_CRITICAL();
-    assert(dev_obj->dynamic.config_desc == NULL);
-    dev_obj->dynamic.config_desc = config_desc;
-    USBH_EXIT_CRITICAL();
+    //We need to take the mux_lock to access mux_protected members
+    xSemaphoreTake(p_usbh_obj->constant.mux_lock, portMAX_DELAY);
+    assert(dev_obj->mux_protected.config_desc == NULL);
+    dev_obj->mux_protected.config_desc = config_desc;
+    xSemaphoreGive(p_usbh_obj->constant.mux_lock);
 
     //We can modify the info members outside the critical section
     dev_obj->constant.enum_todo_flags &= ~DEV_ENUM_TODO_FLAG_CONFIG_DESC;
@@ -874,13 +981,16 @@ esp_err_t usbh_hub_enum_done(usb_device_handle_t dev_hdl)
     device_t *dev_obj = (device_t *)dev_hdl;
     USBH_CHECK(dev_obj->constant.enum_todo_flags == 0, ESP_ERR_INVALID_STATE);  //All enumeration stages to be done
 
+    //We need to take the mux_lock to access mux_protected members
+    xSemaphoreTake(p_usbh_obj->constant.mux_lock, portMAX_DELAY);
     USBH_ENTER_CRITICAL();
     dev_obj->dynamic.state = USB_DEVICE_STATE_CONFIGURED;
     //Add the device to list of devices, then trigger a device event
     TAILQ_INSERT_TAIL(&p_usbh_obj->dynamic.devs_idle_tailq, dev_obj, dynamic.tailq_entry);   //Add it to the idle device list first
-    p_usbh_obj->dynamic.num_device++;
     bool call_notif_cb = _dev_set_actions(dev_obj, DEV_FLAG_ACTION_SEND_NEW);
     USBH_EXIT_CRITICAL();
+    p_usbh_obj->mux_protected.num_device++;
+    xSemaphoreGive(p_usbh_obj->constant.mux_lock);
 
     //Update the default pipe callback
     ESP_ERROR_CHECK(hcd_pipe_update_callback(dev_obj->constant.default_pipe, default_pipe_callback, (void *)dev_obj));
@@ -896,10 +1006,11 @@ esp_err_t usbh_hub_enum_failed(usb_device_handle_t dev_hdl)
     USBH_CHECK(dev_hdl != NULL, ESP_ERR_INVALID_ARG);
     device_t *dev_obj = (device_t *)dev_hdl;
 
-    USBH_ENTER_CRITICAL();
-    usb_config_desc_t *config_desc = dev_obj->dynamic.config_desc;
-    dev_obj->dynamic.config_desc = NULL;
-    USBH_EXIT_CRITICAL();
+    //We need to take the mux_lock to access mux_protected members
+    xSemaphoreTake(p_usbh_obj->constant.mux_lock, portMAX_DELAY);
+    usb_config_desc_t *config_desc = dev_obj->mux_protected.config_desc;
+    dev_obj->mux_protected.config_desc = NULL;
+    xSemaphoreGive(p_usbh_obj->constant.mux_lock);
 
     if (config_desc) {
         heap_caps_free(config_desc);
