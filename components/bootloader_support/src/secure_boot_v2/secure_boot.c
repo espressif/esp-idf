@@ -156,11 +156,11 @@ static esp_err_t check_and_generate_secure_boot_keys(const esp_image_metadata_t 
         return ret;
     }
 
+    /* Initialize all efuse block entries to invalid (max) value */
+    esp_efuse_block_t blocks[SECURE_BOOT_NUM_BLOCKS] = {[0 ... SECURE_BOOT_NUM_BLOCKS-1] = EFUSE_BLK_KEY_MAX};
     /* Check if secure boot digests are present */
-    esp_efuse_block_t blocks[SECURE_BOOT_NUM_BLOCKS];
     bool has_secure_boot_digest = false;
     for (unsigned i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
-        blocks[i] = EFUSE_BLK_KEY_MAX;
         bool tmp_has_key = esp_efuse_find_purpose(secure_boot_key_purpose[i], &blocks[i]);
         if (tmp_has_key) { // For ESP32: esp_efuse_find_purpose() always returns True, need to check whether the key block is used or not.
             tmp_has_key &= !esp_efuse_key_block_unused(blocks[i]);
@@ -198,6 +198,12 @@ static esp_err_t check_and_generate_secure_boot_keys(const esp_image_metadata_t 
         }
     } else {
         for (unsigned i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
+            /* Check if corresponding digest slot is used or not */
+            if (blocks[i] == EFUSE_BLK_KEY_MAX) {
+                ESP_LOGD(TAG, "SECURE_BOOT_DIGEST%d slot is not used", i);
+                continue;
+            }
+
 #if SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
             if (esp_efuse_get_digest_revoke(i)) {
                 continue;
