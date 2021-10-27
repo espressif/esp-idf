@@ -3805,7 +3805,6 @@ tools/ci/ci_fetch_submodule.py
 tools/ci/ci_get_mr_info.py
 tools/ci/deploy_docs.py
 tools/ci/envsubst.py
-tools/ci/idf_ci_utils.py
 tools/ci/python_packages/gitlab_api.py
 tools/ci/python_packages/idf_http_server_test/adder.py
 tools/ci/python_packages/idf_http_server_test/client.py
