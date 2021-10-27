@@ -27,7 +27,14 @@ extern "C" {
 
 // ----------------------- Handles -------------------------
 
-typedef void * usb_host_client_handle_t;           /**< Handle to a client using the USB Host Library */
+/**
+ * @brief Handle to a USB Host Library asynchronous client
+ *
+ * An asynchronous client can be registered using usb_host_client_register()
+ *
+ * @note Asynchronous API
+ */
+typedef struct usb_host_client_handle_s * usb_host_client_handle_t;
 
 // ----------------------- Events --------------------------
 
@@ -93,9 +100,14 @@ typedef struct {
  * Configuration structure for a USB Host Library client. Provided in usb_host_client_register()
  */
 typedef struct {
-    usb_host_client_event_cb_t client_event_callback;   /**< Client's event callback function */
-    void *callback_arg;                                 /**< Event callback function argument */
-    int max_num_event_msg;                              /**< Maximum number of event messages that can be stored (e.g., 3) */
+    bool is_synchronous;        /**< Whether the client is asynchronous or synchronous or not. Set to false for now. */
+    int max_num_event_msg;      /**< Maximum number of event messages that can be stored (e.g., 3) */
+    union {     //Note: Made into union or future expansion
+        struct {
+            usb_host_client_event_cb_t client_event_callback;   /**< Client's event callback function */
+            void *callback_arg;                                 /**< Event callback function argument */
+        } async;
+    };
 } usb_host_client_config_t;
 
 // ------------------------------------------------ Library Functions --------------------------------------------------
@@ -129,11 +141,21 @@ esp_err_t usb_host_uninstall(void);
  * - This function handles all of the USB Host Library's processing and should be called repeatedly in a loop
  * - Check event_flags_ret to see if an flags are set indicating particular USB Host Library events
  *
+ * @note This function can block
  * @param[in] timeout_ticks Timeout in ticks to wait for an event to occur
  * @param[out] event_flags_ret Event flags that indicate what USB Host Library event occurred
  * @return esp_err_t
  */
 esp_err_t usb_host_lib_handle_events(TickType_t timeout_ticks, uint32_t *event_flags_ret);
+
+/**
+ * @brief Unblock the USB Host Library handler
+ *
+ * - This function simply unblocks the USB Host Library event handling function (usb_host_lib_handle_events())
+ *
+ * @return esp_err_t
+ */
+esp_err_t usb_host_lib_unblock(void);
 
 // ------------------------------------------------ Client Functions ---------------------------------------------------
 
@@ -165,6 +187,7 @@ esp_err_t usb_host_client_deregister(usb_host_client_handle_t client_hdl);
  *
  * - This function handles all of a client's processing and should be called repeatedly in a loop
  *
+ * @note This function can block
  * @param[in] client_hdl Client handle
  * @param[in] timeout_ticks Timeout in ticks to wait for an event to occur
  * @return esp_err_t
@@ -204,6 +227,7 @@ esp_err_t usb_host_device_open(usb_host_client_handle_t client_hdl, uint8_t dev_
  * - A client must close a device after it has finished using the device (claimed interfaces must also be released)
  * - A client must close all devices it has opened before deregistering
  *
+ * @note This function can block
  * @param[in] client_hdl Client handle
  * @param[in] dev_hdl Device handle
  * @return esp_err_t
@@ -220,9 +244,27 @@ esp_err_t usb_host_device_close(usb_host_client_handle_t client_hdl, usb_device_
  *   when all devices have been freed
  * - This function is useful when cleaning up devices before uninstalling the USB Host Library
  *
- * @return esp_err_t
+ * @return
+ *  - ESP_ERR_NOT_FINISHED: There are one or more devices that still need to be freed. Wait for USB_HOST_LIB_EVENT_FLAGS_ALL_FREE event
+ *  - ESP_OK: All devices already freed (i.e., there were no devices)
+ *  - Other: Error
  */
 esp_err_t usb_host_device_free_all(void);
+
+/**
+ * @brief Fill a list of device address
+ *
+ * - This function fills an empty list with the address of connected devices
+ * - The Device addresses can then used in usb_host_device_open()
+ * - If there are more devices than the list_len, this function will only fill
+ *   up to list_len number of devices.
+ *
+ * @param[in] list_len Length of the empty list
+ * @param[inout] dev_addr_list Empty list to be filled
+ * @param[out] num_dev_ret Number of devices
+ * @return esp_err_t
+ */
+esp_err_t usb_host_device_addr_list_fill(int list_len, uint8_t *dev_addr_list, int *num_dev_ret);
 
 // ------------------------------------------------- Device Requests ---------------------------------------------------
 
@@ -234,6 +276,7 @@ esp_err_t usb_host_device_free_all(void);
  * - This function gets some basic information of a device
  * - The device must be opened first before attempting to get its information
  *
+ * @note This function can block
  * @param[in] dev_hdl Device handle
  * @param[out] dev_info Device information
  * @return esp_err_t
@@ -265,6 +308,7 @@ esp_err_t usb_host_get_device_descriptor(usb_device_handle_t dev_hdl, const usb_
  * - No control transfer is sent. The device's active configuration descriptor is cached on enumeration
  * - This function simple returns a pointer to the cached descriptor
  *
+ * @note This function can block
  * @note No control transfer is sent. A device's active configuration descriptor is cached on enumeration
  * @param[in] dev_hdl Device handle
  * @param[out] config_desc Configuration descriptor
@@ -280,6 +324,7 @@ esp_err_t usb_host_get_active_config_descriptor(usb_device_handle_t dev_hdl, con
  * - A client must claim a device's interface before attempting to communicate with any of its endpoints
  * - Once an interface is claimed by a client, it cannot be claimed by any other client.
  *
+ * @note This function can block
  * @param[in] client_hdl Client handle
  * @param[in] dev_hdl Device handle
  * @param[in] bInterfaceNumber Interface number
@@ -294,6 +339,7 @@ esp_err_t usb_host_interface_claim(usb_host_client_handle_t client_hdl, usb_devi
  * - A client should release a device's interface after it no longer needs to communicate with the interface
  * - A client must release all of its interfaces of a device it has claimed before being able to close the device
  *
+ * @note This function can block
  * @param[in] client_hdl Client handle
  * @param[in] dev_hdl Device handle
  * @param[in] bInterfaceNumber Interface number
@@ -308,6 +354,7 @@ esp_err_t usb_host_interface_release(usb_host_client_handle_t client_hdl, usb_de
  * - The endpoint must be part of an interface claimed by a client
  * - Once halted, the endpoint must be cleared using usb_host_endpoint_clear() before it can communicate again
  *
+ * @note This function can block
  * @param dev_hdl Device handle
  * @param bEndpointAddress Endpoint address
  * @return esp_err_t
@@ -322,6 +369,7 @@ esp_err_t usb_host_endpoint_halt(usb_device_handle_t dev_hdl, uint8_t bEndpointA
  * - The endpoint must have been halted (either through a transfer error, or usb_host_endpoint_halt())
  * - Flushing an endpoint will caused an queued up transfers to be canceled
  *
+ * @note This function can block
  * @param dev_hdl Device handle
  * @param bEndpointAddress Endpoint address
  * @return esp_err_t
@@ -336,6 +384,7 @@ esp_err_t usb_host_endpoint_flush(usb_device_handle_t dev_hdl, uint8_t bEndpoint
  * - The endpoint must have been halted (either through a transfer error, or usb_host_endpoint_halt())
  * - If the endpoint has any queued up transfers, clearing a halt will resume their execution
  *
+ * @note This function can block
  * @param dev_hdl Device handle
  * @param bEndpointAddress Endpoint address
  * @return esp_err_t
@@ -395,17 +444,6 @@ esp_err_t usb_host_transfer_submit(usb_transfer_t *transfer);
  * @return esp_err_t
  */
 esp_err_t usb_host_transfer_submit_control(usb_host_client_handle_t client_hdl, usb_transfer_t *transfer);
-
-/**
- * @brief Cancel a submitted transfer
- *
- * - Cancel a previously submitted transfer
- * - In its current implementation, any transfer that is already in-flight will not be canceled
- *
- * @param transfer Transfer object
- * @return esp_err_t
- */
-esp_err_t usb_host_transfer_cancel(usb_transfer_t *transfer);
 
 #ifdef __cplusplus
 }

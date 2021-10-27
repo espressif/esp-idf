@@ -6,6 +6,8 @@
 
 #include <stdint.h>
 
+#define MSC_ASYNC_CLIENT_MAX_EVENT_MSGS       5
+
 typedef struct {
     int num_sectors_to_read;
     int num_sectors_per_xfer;
