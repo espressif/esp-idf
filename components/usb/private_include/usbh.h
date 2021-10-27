@@ -110,6 +110,7 @@ esp_err_t usbh_uninstall(void);
  * - If blocking, the caller can block until a USB_NOTIF_SOURCE_USBH notification is received before running this
  *   function
  *
+ * @note This function can block
  * @return esp_err_t
  */
 esp_err_t usbh_process(void);
@@ -164,6 +165,7 @@ esp_err_t usbh_dev_get_addr(usb_device_handle_t dev_hdl, uint8_t *dev_addr);
 /**
  * @brief Get a device's information
  *
+ * @note This function can block
  * @param[in] dev_hdl Device handle
  * @param[out] dev_info Device information
  * @return esp_err_t
@@ -186,6 +188,7 @@ esp_err_t usbh_dev_get_desc(usb_device_handle_t dev_hdl, const usb_device_desc_t
  *
  * Simply returns a reference to the internally cached configuration descriptor
  *
+ * @note This function can block
  * @param[in] dev_hdl Device handle
  * @param config_desc_ret
  * @return esp_err_t
@@ -209,6 +212,7 @@ esp_err_t usbh_dev_submit_ctrl_urb(usb_device_handle_t dev_hdl, urb_t *urb);
  * Clients that have opened a device must call this function to allocate all endpoints in an interface that is claimed.
  * The pipe handle of the endpoint is returned so that clients can use and control the pipe directly.
  *
+ * @note This function can block
  * @note Default pipes are owned by the USBH. For control transfers, use usbh_dev_submit_ctrl_urb() instead
  * @note Device must be opened by the client first
  *
@@ -224,6 +228,7 @@ esp_err_t usbh_ep_alloc(usb_device_handle_t dev_hdl, usbh_ep_config_t *ep_config
  *
  * Free an endpoint previously opened by usbh_ep_alloc()
  *
+ * @note This function can block
  * @param[in] dev_hdl Device handle
  * @param[in] bEndpointAddress Endpoint's address
  * @return esp_err_t
@@ -235,6 +240,7 @@ esp_err_t usbh_ep_free(usb_device_handle_t dev_hdl, uint8_t bEndpointAddress);
  *
  * Get the context variable assigned to and endpoint on allocation.
  *
+ * @note This function can block
  * @param[in] dev_hdl Device handle
  * @param[in] bEndpointAddress Endpoint's address
  * @param[out] context_ret Context variable
@@ -336,6 +342,7 @@ esp_err_t usbh_hub_enum_fill_dev_addr(usb_device_handle_t dev_hdl, uint8_t dev_a
  *
  * @note Hub Driver only
  * @note Must call in sequence
+ * @note This function can block
  * @param[in] dev_hdl Device handle
  * @param config_desc_full
  * @return esp_err_t
@@ -360,6 +367,7 @@ esp_err_t usbh_hub_enum_fill_config_num(usb_device_handle_t dev_hdl, uint8_t bCo
  *
  * @note Hub Driver only
  * @note Must call in sequence
+ * @note This function can block
  * @param[in] dev_hdl Device handle
  * @return esp_err_t
  */
@@ -373,6 +381,7 @@ esp_err_t usbh_hub_enum_done(usb_device_handle_t dev_hdl);
  *
  * @note Hub Driver only
  * @note Must call in sequence
+ * @note This function can block
  * @param[in] dev_hdl Device handle
  * @return esp_err_t
  */
