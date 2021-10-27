@@ -60,15 +60,15 @@ typedef struct {
 } esp_modem_dte_t;
 
 /**
- * @brief Returns true if the supplied string contains only CR or LF
+ * @brief Returns true if the supplied string contains only <CR> characters
  *
  * @param str string to check
  * @param len length of string
  */
-static inline bool is_only_cr_lf(const char *str, uint32_t len)
+static inline bool is_only_cr(const char *str, uint32_t len)
 {
     for (int i=0; i<len; ++i) {
-        if (str[i] != '\r' && str[i] != '\n') {
+        if (str[i] != '\r') {
             return false;
         }
     }
@@ -113,7 +113,7 @@ static esp_err_t esp_dte_handle_line(esp_modem_dte_t *esp_dte, char * line, size
     char *p = strtok_r(line, "\n", &str_ptr);
     while (p) {
         int plen = strlen(p);
-        if (plen > 2 && !is_only_cr_lf(p, plen)) {
+        if (plen > 1 && !is_only_cr(p, plen)) {
             ESP_LOGD(MODEM_TAG, "Handling line: >>%s\n<<", p);
             if (dce->handle_line == NULL) {
                 /* Received an asynchronous line, but no handler waiting this this */
