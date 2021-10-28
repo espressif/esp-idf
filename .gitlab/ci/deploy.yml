@@ -39,8 +39,8 @@ deploy_test_result:
     AUTO_TEST_SCRIPT_PATH: "${CI_PROJECT_DIR}/auto_test_script"
   script:
     - add_gitlab_ssh_keys
-    - export GIT_SHA=$(echo ${CI_COMMIT_SHA} | cut -c 1-8)
-    - export REV_COUNT=$(git rev-list --count HEAD)
+    - export GIT_SHA=$(echo ${PIPELINE_COMMIT_SHA} | cut -c 1-8)
+    - export REV_COUNT=$(git rev-list --count ${PIPELINE_COMMIT_SHA} --)
     - export SUMMARY="IDF CI test result for $GIT_SHA (r${REV_COUNT})"
     # artifacts of job update_test_cases creates test-management folder
     # we need to remove it so we can clone test-management folder again
