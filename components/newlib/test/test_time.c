@@ -16,20 +16,27 @@
 #include "esp_rom_sys.h"
 #include "esp_system.h"
 #include "esp_timer.h"
+#include "esp_private/system_internal.h"
+#include "esp_private/esp_timer_private.h"
+#include "../priv_include/esp_time_impl.h"
 
 #include "esp_private/system_internal.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/clk.h"
+#include "esp32/rtc.h"
 #define TARGET_DEFAULT_CPU_FREQ_MHZ CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/clk.h"
+#include "esp32s2/rtc.h"
 #define TARGET_DEFAULT_CPU_FREQ_MHZ CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/clk.h"
+#include "esp32s3/rtc.h"
 #define TARGET_DEFAULT_CPU_FREQ_MHZ CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/clk.h"
+#include "esp32c3/rtc.h"
 #define TARGET_DEFAULT_CPU_FREQ_MHZ CONFIG_ESP32C3_DEFAULT_CPU_FREQ_MHZ
 #endif
 
@@ -528,3 +535,101 @@ TEST_CASE("test time functions wide 64 bits", "[newlib]")
 }
 
 #endif // CONFIG_SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS
+
+#if defined( CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER ) && defined( CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER )
+
+extern int64_t s_microseconds_offset;
+static const uint64_t s_start_timestamp  = 1606838354;
+static RTC_NOINIT_ATTR uint64_t s_saved_time;
+static RTC_NOINIT_ATTR uint64_t s_time_in_reboot;
+
+typedef enum {
+    TYPE_REBOOT_ABORT = 0,
+    TYPE_REBOOT_RESTART,
+} type_reboot_t;
+
+static void print_counters(void)
+{
+    int64_t frc = esp_system_get_time();
+    int64_t rtc = esp_rtc_get_time_us();
+    uint64_t boot_time = esp_time_impl_get_boot_time();
+    printf("\tFRC %lld (us)\n", frc);
+    printf("\tRTC %lld (us)\n", rtc);
+    printf("\tBOOT %lld (us)\n", boot_time);
+    printf("\ts_microseconds_offset %lld (us)\n", s_microseconds_offset);
+    printf("delta RTC - FRC counters %lld (us)\n", rtc - frc);
+}
+
+static void set_initial_condition(type_reboot_t type_reboot, int error_time)
+{
+    print_counters();
+
+    struct timeval tv = { .tv_sec = s_start_timestamp, .tv_usec = 0, };
+    settimeofday(&tv, NULL);
+    printf("set timestamp %lld (s)\n", s_start_timestamp);
+
+    print_counters();
+
+    int delay_s = abs(error_time) * 2;
+    printf("Waiting for %d (s) ...\n", delay_s);
+    vTaskDelay(delay_s * 1000 / portTICK_RATE_MS);
+
+    print_counters();
+
+    printf("FRC counter increased to %d (s)\n", error_time);
+    esp_timer_private_advance(error_time * 1000000ULL);
+
+    print_counters();
+
+    gettimeofday(&tv, NULL);
+    s_saved_time = tv.tv_sec;
+    printf("s_saved_time %lld (s)\n", s_saved_time);
+    int dt = s_saved_time - s_start_timestamp;
+    printf("delta timestamp = %d (s)\n", dt);
+    TEST_ASSERT_GREATER_OR_EQUAL(error_time, dt);
+    s_time_in_reboot = esp_rtc_get_time_us();
+
+    if (type_reboot == TYPE_REBOOT_ABORT) {
+        printf("Update boot time based on diff\n");
+        esp_sync_counters_rtc_and_frc();
+        print_counters();
+        printf("reboot as abort\n");
+        abort();
+    } else if (type_reboot == TYPE_REBOOT_RESTART) {
+        printf("reboot as restart\n");
+        esp_restart();
+    }
+}
+
+static void set_timestamp1(void)
+{
+    set_initial_condition(TYPE_REBOOT_ABORT, 5);
+}
+
+static void set_timestamp2(void)
+{
+    set_initial_condition(TYPE_REBOOT_RESTART, 5);
+}
+
+static void set_timestamp3(void)
+{
+    set_initial_condition(TYPE_REBOOT_RESTART, -5);
+}
+
+static void check_time(void)
+{
+    print_counters();
+    int latency_before_run_ut = 1 + (esp_rtc_get_time_us() - s_time_in_reboot) / 1000000;
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    printf("timestamp %ld (s)\n", tv.tv_sec);
+    int dt = tv.tv_sec - s_saved_time;
+    printf("delta timestamp = %d (s)\n", dt);
+    TEST_ASSERT_GREATER_OR_EQUAL(0, dt);
+    TEST_ASSERT_LESS_OR_EQUAL(latency_before_run_ut, dt);
+}
+
+TEST_CASE_MULTIPLE_STAGES("Timestamp after abort is correct in case RTC & FRC have + big error", "[newlib][reset=abort,SW_CPU_RESET]", set_timestamp1, check_time);
+TEST_CASE_MULTIPLE_STAGES("Timestamp after restart is correct in case RTC & FRC have + big error", "[newlib][reset=SW_CPU_RESET]", set_timestamp2, check_time);
+TEST_CASE_MULTIPLE_STAGES("Timestamp after restart is correct in case RTC & FRC have - big error", "[newlib][reset=SW_CPU_RESET]", set_timestamp3, check_time);
+#endif // CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER && CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER
