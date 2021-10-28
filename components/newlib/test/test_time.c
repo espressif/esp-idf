@@ -17,6 +17,8 @@
 #include "esp_system.h"
 #include "esp_timer.h"
 
+#include "esp_private/system_internal.h"
+
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/clk.h"
 #define TARGET_DEFAULT_CPU_FREQ_MHZ CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ
@@ -403,7 +405,7 @@ void test_posix_timers_clock (void)
     TEST_ASSERT_EQUAL_INT(1000, ts.tv_nsec);
 
     TEST_ASSERT(clock_gettime(CLOCK_MONOTONIC, &ts) == 0);
-    delta_monotonic_us = esp_timer_get_time() - (ts.tv_sec * 1000000L + ts.tv_nsec / 1000L);
+    delta_monotonic_us = esp_system_get_time() - (ts.tv_sec * 1000000L + ts.tv_nsec / 1000L);
     TEST_ASSERT(delta_monotonic_us > 0 || delta_monotonic_us == 0);
     TEST_ASSERT_INT_WITHIN(5000L, 0, delta_monotonic_us);
 

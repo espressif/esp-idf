@@ -117,3 +117,10 @@ uint64_t esp_timer_impl_get_counter_reg(void);
  * @return the value of the alarm register
  */
 uint64_t esp_timer_impl_get_alarm_reg(void);
+
+#if CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER
+/**
+ * @brief Initialize esp_timer as system time provider.
+ */
+void esp_timer_impl_init_system_time(void);
+#endif

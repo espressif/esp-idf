@@ -186,8 +186,7 @@ esp_err_t esp_timer_delete(esp_timer_handle_t timer);
 
 /**
  * @brief Get time in microseconds since boot
- * @return number of microseconds since esp_timer_init was called (this normally
- *          happens early during application startup).
+ * @return number of microseconds since underlying timer has been started
  */
 int64_t esp_timer_get_time(void);
 

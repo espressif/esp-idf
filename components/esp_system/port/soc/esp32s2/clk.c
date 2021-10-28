@@ -315,7 +315,6 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     DPORT_CLEAR_PERI_REG_MASK(DPORT_BT_LPCK_DIV_FRAC_REG, DPORT_LPCLK_SEL_8M);
     DPORT_SET_PERI_REG_MASK(DPORT_BT_LPCK_DIV_FRAC_REG, DPORT_LPCLK_SEL_RTC_SLOW);
 
-    periph_ll_reset(PERIPH_SYSTIMER_MODULE);
 
     /* Enable RNG clock. */
     periph_module_enable(PERIPH_RNG_MODULE);
