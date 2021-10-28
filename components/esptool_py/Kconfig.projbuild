@@ -126,7 +126,7 @@ menu "Serial flasher config"
             The SPI flash frequency to be used.
 
         config ESPTOOLPY_FLASHFREQ_120M
-            depends on ESPTOOLPY_FLASH_SAMPLE_MODE_STR
+            depends on IDF_TARGET_ESP32S3 && ESPTOOLPY_FLASH_SAMPLE_MODE_STR
             bool "120 MHz"
         config ESPTOOLPY_FLASHFREQ_80M
             bool "80 MHz"
