@@ -13,31 +13,13 @@
 #define SOC_CPU_CORES_NUM               2
 #define SOC_CACHE_SUPPORT_WRAP          1
 #define SOC_ULP_SUPPORTED               1
-<<<<<<< HEAD
-=======
 #define SOC_BT_SUPPORTED                1
-#define SOC_USB_OTG_SUPPORTED           1
-#define SOC_USB_SERIAL_JTAG_SUPPORTED   1
->>>>>>> f4aad85f8b... Make Classic BT related document links only visible for ESP32
 #define SOC_RTC_SLOW_MEM_SUPPORTED      1
 #define SOC_CCOMP_TIMER_SUPPORTED       1
 #define SOC_DIG_SIGN_SUPPORTED          1
 #define SOC_HMAC_SUPPORTED              1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 3
-<<<<<<< HEAD
-
-=======
-#define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS 1
-#define SOC_SDMMC_HOST_SUPPORTED        1
-#define SOC_FLASH_ENCRYPTION_XTS_AES      1
-#define SOC_FLASH_ENCRYPTION_XTS_AES_256 1
-#define SOC_PSRAM_DMA_CAPABLE           1
-#define SOC_XT_WDT_SUPPORTED            1
-
-/*-------------------------- SOC CAPS ----------------------------------------*/
-#define SOC_APPCPU_HAS_CLOCK_GATING_BUG (1)
->>>>>>> f4aad85f8b... Make Classic BT related document links only visible for ESP32
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
 #include "adc_caps.h"

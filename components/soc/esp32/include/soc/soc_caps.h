@@ -63,6 +63,7 @@
 #define SOC_MCPWM_SUPPORTED         1
 #define SOC_SDMMC_HOST_SUPPORTED    1
 #define SOC_BT_SUPPORTED            1
+#define SOC_CLASSIC_BT_SUPPORTED    1
 #define SOC_PCNT_SUPPORTED          1
 #define SOC_SDIO_SLAVE_SUPPORTED    1
 #define SOC_TWAI_SUPPORTED          1
@@ -278,6 +279,3 @@
 
 /*------------------------------ BLE --------------------------------------------*/
 #define SOC_BLE_DONT_UPDATE_OWN_RPA  (1)
-
-/*------------------------------ Classic BT --------------------------------------------*/
-#define SOC_CLASSIC_BT_SUPPORTED     (1)    /* ESP32 Support Classic BT */
