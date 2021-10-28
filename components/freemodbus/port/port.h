@@ -61,6 +61,8 @@
 
 #define MB_TCP_FRAME_LOG_BUFSIZE        (256)
 
+#define MB_PORT_HAS_CLOSE               (1) // Define to explicitly close port on destroy
+
 // Define number of timer reloads per 1 mS
 #define MB_TIMER_TICS_PER_MS            (20UL)
 

@@ -147,8 +147,7 @@ vMBPortTimersDisable(void)
 void vMBPortTimerClose(void)
 {
 #ifdef CONFIG_FMB_TIMER_PORT_ENABLED
-    ESP_ERROR_CHECK(timer_pause(usTimerGroupIndex, usTimerIndex));
-    ESP_ERROR_CHECK(timer_disable_intr(usTimerGroupIndex, usTimerIndex));
+    ESP_ERROR_CHECK(timer_deinit(usTimerGroupIndex, usTimerIndex));
     ESP_ERROR_CHECK(esp_intr_free(xTimerIntHandle));
 #endif
 }
