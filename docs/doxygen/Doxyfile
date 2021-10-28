@@ -241,6 +241,7 @@ MACRO_EXPANSION        = YES
 EXPAND_ONLY_PREDEF     = YES
 PREDEFINED             = \
     $(ENV_DOXYGEN_DEFINES) \
+    __DOXYGEN__=1 \
     __attribute__(x)= \
 	_Static_assert()= \
     IDF_DEPRECATED(X)= \
