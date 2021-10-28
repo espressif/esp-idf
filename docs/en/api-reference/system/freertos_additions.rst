@@ -498,26 +498,33 @@ Vanilla FreeRTOS hooks are referred to as **Legacy Hooks** in ESP-IDF FreeRTOS.
 To enable legacy hooks, :ref:`CONFIG_FREERTOS_LEGACY_HOOKS` should be enabled
 in :doc:`project configuration menu </api-reference/kconfig>`.
 
-Due to vanilla FreeRTOS being designed for single core, ``vApplicationIdleHook()``
-and ``vApplicationTickHook()`` can only be defined once. However, the ESP32 is dual core
-in nature, therefore same Idle Hook and Tick Hook are used for both cores (in other words,
-the hooks are symmetrical for both cores).
+.. only:: not CONFIG_FREERTOS_UNICORE
 
-In a dual core system, ``vApplicationTickHook()`` must be located in IRAM (for example
-by adding the IRAM_ATTR attribute).
+    Due to vanilla FreeRTOS being designed for single core, ``vApplicationIdleHook()``
+    and ``vApplicationTickHook()`` can only be defined once. However, the {IDF_TARGET_NAME} is dual core
+    in nature, therefore same Idle Hook and Tick Hook are used for both cores (in other words,
+    the hooks are symmetrical for both cores).
 
 ESP-IDF Idle and Tick Hooks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Due to the the dual core nature of the ESP32, it may be necessary for some
-applications to have separate hooks for each core. Furthermore, it may
-be necessary for the Idle Tasks or Tick Interrupts to execute multiple hooks
-that are configurable at run time. Therefore the ESP-IDF provides it's own hooks
-API in addition to the legacy hooks provided by Vanilla FreeRTOS.
+
+For some use-cases it may be necessary for the Idle Tasks or Tick Interrupts to execute multiple hooks
+that are configurable at run time.
+
+.. only:: not CONFIG_FREERTOS_UNICORE
+
+    Furthermore, due to the the dual core nature of the {IDF_TARGET_NAME}, it may be necessary for some
+    applications to have separate hooks for each core.
+
+Therefore the ESP-IDF provides it's own hooks API in addition to the legacy hooks provided
+by Vanilla FreeRTOS.
 
 The ESP-IDF tick/idle hooks are registered at run time, and each tick/idle hook
 must be registered to a specific CPU. When the idle task runs/tick Interrupt
 occurs on a particular CPU, the CPU will run each of its registered idle/tick hooks
 in turn.
+
+.. note:: Tick interrupt stays active whilst cache is disabled and hence ``vApplicationTickHook()`` (legacy case) or ESP-IDF tick hooks must be placed in internal RAM. Please refer to the :ref:`SPI flash API documentation <iram-safe-interrupt-handlers>` for more details.
 
 
 Hooks API Reference

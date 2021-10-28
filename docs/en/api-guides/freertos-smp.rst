@@ -6,7 +6,7 @@ Overview
 
 .. only:: not CONFIG_FREERTOS_UNICORE
 
-  The vanilla FreeRTOS is designed to run on a single core. However the ESP32 is
+  The vanilla FreeRTOS is designed to run on a single core. However the {IDF_TARGET_NAME} is
   dual core containing a Protocol CPU (known as **CPU 0** or **PRO_CPU**) and an
   Application CPU (known as **CPU 1** or **APP_CPU**). The two cores are
   identical in practice and share the same memory. This allows the two cores to
