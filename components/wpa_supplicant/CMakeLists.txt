@@ -135,6 +135,8 @@ else()
     "src/crypto/sha1-pbkdf2.c"
     "src/crypto/sha1.c"
     "src/crypto/sha256-internal.c"
+    "src/crypto/sha384-internal.c"
+    "src/crypto/sha512-internal.c"
     "src/crypto/sha256.c")
 endif()
 
