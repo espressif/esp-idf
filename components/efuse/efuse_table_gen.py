@@ -111,9 +111,11 @@ class FuseTable(list):
         # fill group
         names = [p.field_name for p in res]
         duplicates = set(n for n in names if names.count(n) > 1)
-        if len(duplicates) != 0:
+        for dname in duplicates:
             i_count = 0
             for p in res:
+                if p.field_name != dname:
+                    continue
                 if len(duplicates.intersection([p.field_name])) != 0:
                     p.group = str(i_count)
                     i_count += 1
