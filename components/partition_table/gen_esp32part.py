@@ -55,15 +55,16 @@ SUBTYPES = {
         "test": 0x20,
     },
     DATA_TYPE: {
-        "ota": 0x00,
-        "phy": 0x01,
-        "nvs": 0x02,
-        "coredump": 0x03,
-        "nvs_keys": 0x04,
-        "efuse": 0x05,
-        "esphttpd": 0x80,
-        "fat": 0x81,
-        "spiffs": 0x82,
+        'ota': 0x00,
+        'phy': 0x01,
+        'nvs': 0x02,
+        'coredump': 0x03,
+        'nvs_keys': 0x04,
+        'efuse': 0x05,
+        'undefined': 0x06,
+        'esphttpd': 0x80,
+        'fat': 0x81,
+        'spiffs': 0x82,
     },
 }
 
@@ -107,8 +108,8 @@ class PartitionTable(list):
                 continue
             try:
                 res.append(PartitionDefinition.from_csv(line, line_no + 1))
-            except InputError as e:
-                raise InputError("Error at line %d: %s" % (line_no + 1, e))
+            except InputError as err:
+                raise InputError('Error at line %d: %s' % (line_no + 1, err))
             except Exception:
                 critical("Unexpected error parsing CSV line %d: %s" % (line_no + 1, line))
                 raise
@@ -200,6 +201,18 @@ class PartitionTable(list):
             if last is not None and p.offset < last.offset + last.size:
                 raise InputError("Partition at 0x%x overlaps 0x%x-0x%x" % (p.offset, last.offset, last.offset + last.size - 1))
             last = p
+
+        # check that otadata should be unique
+        otadata_duplicates = [p for p in self if p.type == TYPES['data'] and p.subtype == SUBTYPES[DATA_TYPE]['ota']]
+        if len(otadata_duplicates) > 1:
+            for p in otadata_duplicates:
+                print(p.name, p.type, p.subtype)
+            raise InputError('Found multiple otadata partitions. Only one partition can be defined with type="data"(1) and subtype="ota"(0).')
+
+        if len(otadata_duplicates) == 1 and otadata_duplicates[0].size != 0x2000:
+            p = otadata_duplicates[0]
+            print(p.name, p.type, p.subtype, p.offset, p.size)
+            raise InputError('otadata partition must have size = 0x2000')
 
     def flash_size(self):
         """ Return the size that partitions will occupy in flash
@@ -333,8 +346,10 @@ class PartitionDefinition(object):
         return parse_int(strval, TYPES)
 
     def parse_subtype(self, strval):
-        if strval == "":
-            return 0  # default
+        if strval == '':
+            if self.type == TYPES['app']:
+                raise InputError('App partition cannot have an empty subtype')
+            return SUBTYPES[DATA_TYPE]['undefined']
         return parse_int(strval, SUBTYPES.get(self.type, {}))
 
     def parse_address(self, strval):
