@@ -1,19 +1,8 @@
 # internal use only for CI
 # some CI related util functions
 #
-# Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 #
 import functools
 import logging
@@ -79,7 +68,15 @@ def get_git_files(path=IDF_PATH, full_path=False):  # type: (str, bool) -> list[
     :return: list of file paths
     """
     try:
-        files = subprocess.check_output(['git', 'ls-files'], cwd=path).decode('utf8').strip().split('\n')
+        # this is a workaround when using under worktree
+        # if you're using worktree, when running git commit a new environment variable GIT_DIR would be declared,
+        # the value should be <origin_repo_path>/.git/worktrees/<worktree name>
+        # This would effect the return value of `git ls-files`, unset this would use the `cwd`value or its parent
+        # folder if no `.git` folder found in `cwd`.
+        workaround_env = os.environ.copy()
+        workaround_env.pop('GIT_DIR', None)
+        files = subprocess.check_output(['git', 'ls-files'], cwd=path, env=workaround_env) \
+            .decode('utf8').strip().split('\n')
     except Exception as e:  # pylint: disable=W0703
         logging.warning(str(e))
         files = []
