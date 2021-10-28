@@ -54,7 +54,7 @@
 #endif
 
 #ifndef MB_PORT_HAS_CLOSE
-#define MB_PORT_HAS_CLOSE 0
+#define MB_PORT_HAS_CLOSE 1
 #endif
 
 /* ----------------------- Static variables ---------------------------------*/
