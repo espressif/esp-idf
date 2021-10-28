@@ -330,6 +330,3 @@
 #define SOC_SDMMC_NUM_SLOTS        2
 /* Indicates that there is an option to use XTAL clock instead of PLL for SDMMC */
 #define SOC_SDMMC_SUPPORT_XTAL_CLOCK    1
-
-/*------------------------------ Classic BT --------------------------------------------*/
-#define SOC_CLASSIC_BT_SUPPORTED        (0)    /* ESP32-S3 doesn't support Classic BT */
