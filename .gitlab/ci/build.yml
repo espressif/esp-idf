@@ -362,7 +362,9 @@ build_docker:
     - export LOCAL_CI_REPOSITORY_URL=$CI_REPOSITORY_URL
     - if [ -n "$LOCAL_GITLAB_HTTPS_HOST" ]; then export LOCAL_CI_REPOSITORY_URL="https://gitlab-ci-token:${CI_JOB_TOKEN}@${LOCAL_GITLAB_HTTPS_HOST}/${CI_PROJECT_PATH}"; fi
     - echo "Using repository at $LOCAL_CI_REPOSITORY_URL"
-    - export DOCKER_BUILD_ARGS="--build-arg IDF_CLONE_URL=${LOCAL_CI_REPOSITORY_URL} --build-arg IDF_CLONE_BRANCH_OR_TAG=${CI_COMMIT_REF_NAME} --build-arg IDF_CHECKOUT_REF=${CI_COMMIT_TAG:-$CI_COMMIT_SHA}"
+    # for merge request pipelines, use $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME. for other types (like master pipelines or scheduled ones), use $CI_COMMIT_REF_NAME
+    - if [ -n "${CI_OPEN_MERGE_REQUESTS}" ]; then REF_NAME=${CI_COMMIT_REF_NAME}; else REF_NAME=${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}; fi
+    - export DOCKER_BUILD_ARGS="--build-arg IDF_CLONE_URL=${LOCAL_CI_REPOSITORY_URL} --build-arg IDF_CLONE_BRANCH_OR_TAG=${REF_NAME} --build-arg IDF_CHECKOUT_REF=${CI_COMMIT_TAG:-$CI_COMMIT_SHA}"
     # Build
     - docker build --tag ${DOCKER_TMP_IMAGE_NAME} ${DOCKER_BUILD_ARGS} tools/docker/
     # We can't mount $PWD/examples/get-started/blink into the container, see https://gitlab.com/gitlab-org/gitlab-ce/issues/41227.
