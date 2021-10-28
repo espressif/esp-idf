@@ -303,3 +303,9 @@ void ieee80211_ftm_attach(void)
     /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
 }
 #endif
+
+#ifndef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
+void net80211_softap_funcs_init(void)
+{
+}
+#endif
