@@ -2566,7 +2566,6 @@ components/soc/include/soc/uhci_periph.h
 components/soc/include/soc/usb_periph.h
 components/soc/lldesc.c
 components/soc/soc_include_legacy_warn.c
-components/spi_flash/cache_utils.c
 components/spi_flash/cache_utils.h
 components/spi_flash/esp32/flash_ops_esp32.c
 components/spi_flash/esp32/spi_flash_rom_patch.c
