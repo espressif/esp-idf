@@ -162,9 +162,9 @@ No.  Name  Type   Function
 
 Pin Layout
 ^^^^^^^^^^^
-.. figure:: ../../../_static/esp32-devkitC-v4-pinout.jpg
+.. figure:: ../../../_static/esp32-devkitC-v4-pinout.png
     :align: center
-    :scale: 45%
+    :scale: 100%
     :alt: ESP32-DevKitC  (click to enlarge)
     :figclass: align-center
 
