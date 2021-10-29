@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2016 Intel Corporation
- * Copyright (c) 2016 Wind River Systems, Inc.
- * Additional Copyright (c) 2018 Espressif Systems (Shanghai) PTE LTD
+ * SPDX-FileCopyrightText: 2016 Intel Corporation
+ * SPDX-FileCopyrightText: 2016 Wind River Systems, Inc.
+ * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
