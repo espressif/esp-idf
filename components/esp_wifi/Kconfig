@@ -413,4 +413,12 @@ menu "PHY"
             by a small amount but increases RAM use by approximately 4 KB(Wi-Fi only),
             2 KB(Bluetooth only) or 5.3 KB(Wi-Fi + Bluetooth).
 
+    config ESP_PHY_ENABLE_USB
+        bool "Enable USB when phy init"
+        depends on ESP_CONSOLE_USB_SERIAL_JTAG
+        default y
+        help
+            When using USB Serial/JTAG controller, PHY should enable USB, otherwise log will
+            not be displayed. But working with USB, the RF performance may be affected.
+
 endmenu  # PHY

@@ -612,6 +612,10 @@ void esp_phy_load_cal_and_init(void)
     }
 #endif
 
+#if CONFIG_ESP_PHY_ENABLE_USB
+    phy_bbpll_en_usb(true);
+#endif
+
 #ifdef CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
     esp_phy_calibration_mode_t calibration_mode = PHY_RF_CAL_PARTIAL;
     uint8_t sta_mac[6];
