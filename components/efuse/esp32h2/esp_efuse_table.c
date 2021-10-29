@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table a007943ae37fe41884a23d505a6e7dbb
+// md5_digest_table 6aaac59bd3f6d31bea4aef43b1f0d78a
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -349,8 +349,8 @@ static const esp_efuse_desc_t MAC_FACTORY[] = {
 };
 
 static const esp_efuse_desc_t MAC_EXT[] = {
-    {EFUSE_BLK1, 123, 8}, 	 // Factory MAC addr [6],
-    {EFUSE_BLK1, 131, 8}, 	 // Factory MAC addr [7],
+    {EFUSE_BLK1, 123, 8}, 	 // Extend MAC addr [0],
+    {EFUSE_BLK1, 131, 8}, 	 // Extend MAC addr [1],
 };
 
 static const esp_efuse_desc_t SPI_PAD_CONFIG_CLK[] = {
@@ -913,8 +913,8 @@ const esp_efuse_desc_t* ESP_EFUSE_MAC_FACTORY[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_MAC_EXT[] = {
-    &MAC_EXT[6],    		// Factory MAC addr [6]
-    &MAC_EXT[7],    		// Factory MAC addr [7]
+    &MAC_EXT[0],    		// Extend MAC addr [0]
+    &MAC_EXT[1],    		// Extend MAC addr [1]
     NULL
 };
 

@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 
-// md5_digest_table a007943ae37fe41884a23d505a6e7dbb
+// md5_digest_table 6aaac59bd3f6d31bea4aef43b1f0d78a
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
