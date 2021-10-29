@@ -1,16 +1,8 @@
-// Copyright 2021 Espressif Systems (Shanghai) CO LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -28,14 +20,17 @@ extern "C" {
 *
 */
 typedef enum {
-    OPENTHREAD_EVENT_START,                 /*!< OpenThread stack start */
-    OPENTHREAD_EVENT_STOP,                  /*!< OpenThread stack stop */
-    OPENTHREAD_EVENT_IF_UP,                 /*!< OpenThread network interface up */
-    OPENTHREAD_EVENT_IF_DOWN,               /*!< OpenThread network interface down */
-    OPENTHREAD_EVENT_GOT_IP6,               /*!< OpenThread stack added IPv6 address */
-    OPENTHREAD_EVENT_LOST_IP6,              /*!< OpenThread stack removed IPv6 address */
-    OPENTHREAD_EVENT_MULTICAST_GROUP_JOIN,  /*!< OpenThread stack joined IPv6 multicast group */
-    OPENTHREAD_EVENT_MULTICAST_GROUP_LEAVE, /*!< OpenThread stack left IPv6 multicast group */
+    OPENTHREAD_EVENT_START,                         /*!< OpenThread stack start */
+    OPENTHREAD_EVENT_STOP,                          /*!< OpenThread stack stop */
+    OPENTHREAD_EVENT_IF_UP,                         /*!< OpenThread network interface up */
+    OPENTHREAD_EVENT_IF_DOWN,                       /*!< OpenThread network interface down */
+    OPENTHREAD_EVENT_GOT_IP6,                       /*!< OpenThread stack added IPv6 address */
+    OPENTHREAD_EVENT_LOST_IP6,                      /*!< OpenThread stack removed IPv6 address */
+    OPENTHREAD_EVENT_MULTICAST_GROUP_JOIN,          /*!< OpenThread stack joined IPv6 multicast group */
+    OPENTHREAD_EVENT_MULTICAST_GROUP_LEAVE,         /*!< OpenThread stack left IPv6 multicast group */
+    OPENTHREAD_EVENT_TREL_ADD_IP6,                  /*!< OpenThread stack added TREL IPv6 address */
+    OPENTHREAD_EVENT_TREL_REMOVE_IP6,               /*!< OpenThread stack removed TREL IPv6 address */
+    OPENTHREAD_EVENT_TREL_MULTICAST_GROUP_JOIN,     /*!< OpenThread stack joined TREL IPv6 multicast group */
 } esp_openthread_event_t;
 
 /**

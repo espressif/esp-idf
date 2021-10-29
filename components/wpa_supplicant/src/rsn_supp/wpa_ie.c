@@ -115,16 +115,16 @@ static int  wpa_gen_wpa_ie_wpa(u8 *wpa_ie, size_t wpa_ie_len,
 }
 
 
-static int  wpa_gen_wpa_ie_rsn(u8 *rsn_ie, size_t rsn_ie_len,
+static int wpa_gen_wpa_ie_rsn(u8 *rsn_ie, size_t rsn_ie_len,
                   int pairwise_cipher, int group_cipher,
                   int key_mgmt, int mgmt_group_cipher,
                   struct wpa_sm *sm)
 {
-#ifndef CONFIG_NO_WPA2
     u8 *pos;
     struct rsn_ie_hdr *hdr;
     u16 capab;
     u8 min_len = 0;
+    u32 suite;
 
     if (rsn_ie_len < sizeof(*hdr) + RSN_SELECTOR_LEN +
             2 + RSN_SELECTOR_LEN + 2 + RSN_SELECTOR_LEN + 2 +
@@ -134,11 +134,6 @@ static int  wpa_gen_wpa_ie_rsn(u8 *rsn_ie, size_t rsn_ie_len,
         return -1;
     }
 
-    /* For WPA2-PSK, if the RSNE in AP beacon/probe response doesn't specify the
-     * pairwise cipher or AKM suite, the RSNE IE in association request
-     * should only contain group cihpher suite, otherwise the WPA2 improvements
-     * certification will fail.
-     */
     if ( (sm->ap_notify_completed_rsne == true) || (key_mgmt == WPA_KEY_MGMT_IEEE8021X) ) {
         min_len = sizeof(*hdr) + RSN_SELECTOR_LEN + 2 + RSN_SELECTOR_LEN + 2 + RSN_SELECTOR_LEN + 2;
     } else {
@@ -154,19 +149,13 @@ static int  wpa_gen_wpa_ie_rsn(u8 *rsn_ie, size_t rsn_ie_len,
     WPA_PUT_LE16(hdr->version, RSN_VERSION);
     pos = (u8 *) (hdr + 1);
 
-    if (group_cipher == WPA_CIPHER_CCMP) {
-        RSN_SELECTOR_PUT(pos, RSN_CIPHER_SUITE_CCMP);
-    } else if (group_cipher == WPA_CIPHER_TKIP) {
-        RSN_SELECTOR_PUT(pos, RSN_CIPHER_SUITE_TKIP);
-    } else if (group_cipher == WPA_CIPHER_WEP104) {
-        RSN_SELECTOR_PUT(pos, RSN_CIPHER_SUITE_WEP104);
-    } else if (group_cipher == WPA_CIPHER_WEP40) {
-        RSN_SELECTOR_PUT(pos, RSN_CIPHER_SUITE_WEP40);
-    } else {
-        wpa_printf(MSG_DEBUG, "Invalid group cipher (%d).",
-               group_cipher);
-        return -1;
+    suite = wpa_cipher_to_suite(WPA_PROTO_RSN, group_cipher);
+    if (suite == 0) {
+            wpa_printf(MSG_WARNING, "Invalid group cipher (%d).",
+                       group_cipher);
+            return -1;
     }
+    RSN_SELECTOR_PUT(pos, suite);
     pos += RSN_SELECTOR_LEN;
 
     if ( (sm->ap_notify_completed_rsne == false) && (key_mgmt != WPA_KEY_MGMT_IEEE8021X) ) {
@@ -176,21 +165,19 @@ static int  wpa_gen_wpa_ie_rsn(u8 *rsn_ie, size_t rsn_ie_len,
 
     *pos++ = 1;
     *pos++ = 0;
-    if (pairwise_cipher == WPA_CIPHER_CCMP) {
-        RSN_SELECTOR_PUT(pos, RSN_CIPHER_SUITE_CCMP);
-    } else if (pairwise_cipher == WPA_CIPHER_TKIP) {
-        RSN_SELECTOR_PUT(pos, RSN_CIPHER_SUITE_TKIP);
-    } else if (pairwise_cipher == WPA_CIPHER_NONE) {
-        RSN_SELECTOR_PUT(pos, RSN_CIPHER_SUITE_NONE);
-    } else {
-        wpa_printf(MSG_DEBUG, "Invalid pairwise cipher (%d).",
-               pairwise_cipher);
-        return -1;
+    suite = wpa_cipher_to_suite(WPA_PROTO_RSN, pairwise_cipher);
+    if (suite == 0 ||
+         (pairwise_cipher == WPA_CIPHER_NONE)) {
+            wpa_printf(MSG_WARNING, "Invalid pairwise cipher (%d).",
+                       pairwise_cipher);
+            return -1;
     }
+    RSN_SELECTOR_PUT(pos, suite);
     pos += RSN_SELECTOR_LEN;
 
     *pos++ = 1;
     *pos++ = 0;
+
     if (key_mgmt == WPA_KEY_MGMT_IEEE8021X) {
         RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_UNSPEC_802_1X);
     } else if (key_mgmt == WPA_KEY_MGMT_PSK) {
@@ -211,6 +198,10 @@ static int  wpa_gen_wpa_ie_rsn(u8 *rsn_ie, size_t rsn_ie_len,
         RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_SAE);
 #endif /* CONFIG_WPA3_SAE */
 #endif /* CONFIG_IEEE80211W */
+    } else if (key_mgmt == WPA_KEY_MGMT_IEEE8021X_SUITE_B_192) {
+        RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_802_1X_SUITE_B_192);
+    } else if (key_mgmt == WPA_KEY_MGMT_IEEE8021X_SUITE_B) {
+        RSN_SELECTOR_PUT(pos, RSN_AUTH_KEY_MGMT_802_1X_SUITE_B);
     } else {
         wpa_printf(MSG_DEBUG, "Invalid key management type (%d).",
                key_mgmt);
@@ -250,7 +241,7 @@ static int  wpa_gen_wpa_ie_rsn(u8 *rsn_ie, size_t rsn_ie_len,
     }
 
 #ifdef CONFIG_IEEE80211W
-    if (mgmt_group_cipher == WPA_CIPHER_AES_128_CMAC) {
+    if (wpa_cipher_valid_mgmt_group(mgmt_group_cipher)) {
         if (!sm->cur_pmksa) {
             /* 0 PMKID Count */
             WPA_PUT_LE16(pos, 0);
@@ -258,7 +249,8 @@ static int  wpa_gen_wpa_ie_rsn(u8 *rsn_ie, size_t rsn_ie_len,
         }
 
         /* Management Group Cipher Suite */
-        RSN_SELECTOR_PUT(pos, RSN_CIPHER_SUITE_AES_128_CMAC);
+        RSN_SELECTOR_PUT(pos, wpa_cipher_to_suite(WPA_PROTO_RSN,
+                                                  mgmt_group_cipher));;
         pos += RSN_SELECTOR_LEN;
     }
 #endif /* CONFIG_IEEE80211W */
@@ -268,9 +260,6 @@ static int  wpa_gen_wpa_ie_rsn(u8 *rsn_ie, size_t rsn_ie_len,
     WPA_ASSERT((size_t) (pos - rsn_ie) <= rsn_ie_len);
 
     return pos - rsn_ie;
-#else /* CONFIG_NO_WPA2 */
-    return -1;
-#endif /* CONFIG_NO_WPA2 */
 }
 
 

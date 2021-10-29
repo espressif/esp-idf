@@ -1,4 +1,11 @@
 /*
+ * SPDX-FileCopyrightText: 2013 Armink
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ *
+ * SPDX-FileContributor: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ */
+/*
  * FreeModbus Libary: A portable Modbus implementation for Modbus ASCII/RTU.
  * Copyright (c) 2013 China Beijing Armink <armink.ztl@gmail.com>
  * All rights reserved.

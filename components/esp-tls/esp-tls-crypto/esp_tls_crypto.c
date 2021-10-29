@@ -56,7 +56,7 @@ static int esp_crypto_base64_encode_woflSSL(unsigned char *dst, size_t dlen, siz
         const unsigned char *src, size_t slen)
 {
     *olen = dlen;
-    return Base64_Encode((const byte *) src, (word32) slen, (byte *) dst, (word32 *) olen);
+    return Base64_Encode_NoNl((const byte *) src, (word32) slen, (byte *) dst, (word32 *) olen);
 }
 
 #else

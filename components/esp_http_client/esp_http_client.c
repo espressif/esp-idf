@@ -9,6 +9,7 @@
 
 #include "esp_system.h"
 #include "esp_log.h"
+#include "esp_check.h"
 
 #include "http_header.h"
 #include "esp_transport.h"
@@ -366,6 +367,7 @@ esp_err_t esp_http_client_set_authtype(esp_http_client_handle_t client, esp_http
 
 static esp_err_t _set_config(esp_http_client_handle_t client, const esp_http_client_config_t *config)
 {
+    esp_err_t ret = ESP_OK;
     client->connection_info.method = config->method;
     client->connection_info.port = config->port;
     client->connection_info.auth_type = config->auth_type;
@@ -401,41 +403,27 @@ static esp_err_t _set_config(esp_http_client_handle_t client, const esp_http_cli
     } else {
         client->connection_info.path = strdup(DEFAULT_HTTP_PATH);
     }
-    HTTP_MEM_CHECK(TAG, client->connection_info.path, {
-        return ESP_ERR_NO_MEM;
-    });
+    ESP_RETURN_ON_FALSE(client->connection_info.path, ESP_ERR_NO_MEM, TAG, "Memory exhausted");
 
     if (config->host) {
         client->connection_info.host = strdup(config->host);
 
-        HTTP_MEM_CHECK(TAG, client->connection_info.host, {
-            _clear_connection_info(client);
-            return ESP_ERR_NO_MEM;
-        });
+        ESP_GOTO_ON_FALSE(client->connection_info.host, ESP_ERR_NO_MEM, error, TAG, "Memory exhausted");
     }
 
     if (config->query) {
         client->connection_info.query = strdup(config->query);
-        HTTP_MEM_CHECK(TAG, client->connection_info.query, {
-            _clear_connection_info(client);
-            return ESP_ERR_NO_MEM;
-        });
+        ESP_GOTO_ON_FALSE(client->connection_info.query, ESP_ERR_NO_MEM, error, TAG, "Memory exhausted");
     }
 
     if (config->username) {
         client->connection_info.username = strdup(config->username);
-        HTTP_MEM_CHECK(TAG, client->connection_info.username, {
-            _clear_connection_info(client);
-            return ESP_ERR_NO_MEM;
-        });
+        ESP_GOTO_ON_FALSE(client->connection_info.username, ESP_ERR_NO_MEM, error, TAG, "Memory exhausted");
     }
 
     if (config->password) {
         client->connection_info.password = strdup(config->password);
-        HTTP_MEM_CHECK(TAG, client->connection_info.password, {
-            _clear_connection_info(client);
-            return ESP_ERR_NO_MEM;
-        });
+        ESP_GOTO_ON_FALSE(client->connection_info.password, ESP_ERR_NO_MEM, error, TAG, "Memory exhausted");
     }
 
     if (config->transport_type == HTTP_TRANSPORT_OVER_SSL) {
@@ -456,7 +444,11 @@ static esp_err_t _set_config(esp_http_client_handle_t client, const esp_http_cli
         client->is_async = true;
     }
 
-    return ESP_OK;
+    return ret;
+
+error:
+    _clear_connection_info(client);
+    return ret;
 }
 
 static esp_err_t _clear_connection_info(esp_http_client_handle_t client)
@@ -539,6 +531,7 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
 {
 
     esp_http_client_handle_t client;
+    esp_err_t ret = ESP_OK;
     esp_transport_handle_t tcp = NULL;
     char *host_name;
     bool _success;
@@ -582,7 +575,7 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
 
     if (config->if_name) {
         client->if_name = calloc(1, sizeof(struct ifreq) + 1);
-        HTTP_MEM_CHECK(TAG, client->if_name, goto error);
+        ESP_GOTO_ON_FALSE(client->if_name, ESP_FAIL, error, TAG, "Memory exhausted");
         memcpy(client->if_name, config->if_name, sizeof(struct ifreq));
         esp_transport_tcp_set_interface_name(tcp, client->if_name);
     }
@@ -712,7 +705,11 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
     client->event.client = client;
 
     client->state = HTTP_STATE_INIT;
-    return client;
+
+    if (ret == ESP_OK) {
+        return client;
+    }
+
 error:
     esp_http_client_cleanup(client);
     return NULL;
@@ -724,7 +721,9 @@ esp_err_t esp_http_client_cleanup(esp_http_client_handle_t client)
         return ESP_FAIL;
     }
     esp_http_client_close(client);
-    esp_transport_list_destroy(client->transport_list);
+    if (client->transport_list) {
+        esp_transport_list_destroy(client->transport_list);
+    }
     if (client->request) {
         http_header_destroy(client->request->headers);
         if (client->request->buffer) {
@@ -793,6 +792,7 @@ static esp_err_t esp_http_check_response(esp_http_client_handle_t client)
 
 esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *url)
 {
+    esp_err_t ret = ESP_OK;
     char *old_host = NULL;
     struct http_parser_url purl;
     int old_port;
@@ -817,10 +817,7 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
 
     if (purl.field_data[UF_HOST].len) {
         http_utils_assign_string(&client->connection_info.host, url + purl.field_data[UF_HOST].off, purl.field_data[UF_HOST].len);
-        HTTP_MEM_CHECK(TAG, client->connection_info.host, {
-            free(old_host);
-            return ESP_ERR_NO_MEM;
-        });
+        ESP_GOTO_ON_FALSE(client->connection_info.host, ESP_ERR_NO_MEM, error, TAG, "Memory exhausted");
     }
     // Close the connection if host was changed
     if (old_host && client->connection_info.host
@@ -840,7 +837,7 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
 
     if (purl.field_data[UF_SCHEMA].len) {
         http_utils_assign_string(&client->connection_info.scheme, url + purl.field_data[UF_SCHEMA].off, purl.field_data[UF_SCHEMA].len);
-        HTTP_MEM_CHECK(TAG, client->connection_info.scheme, return ESP_ERR_NO_MEM);
+        ESP_RETURN_ON_FALSE(client->connection_info.scheme, ESP_ERR_NO_MEM, TAG, "Memory exhausted");
 
         if (strcasecmp(client->connection_info.scheme, "http") == 0) {
             client->connection_info.port = DEFAULT_HTTP_PORT;
@@ -867,10 +864,10 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
                 *password = 0;
                 password ++;
                 http_utils_assign_string(&client->connection_info.password, password, -1);
-                HTTP_MEM_CHECK(TAG, client->connection_info.password, return ESP_ERR_NO_MEM);
+                ESP_RETURN_ON_FALSE(client->connection_info.password, ESP_ERR_NO_MEM, TAG, "Memory exhausted");
             }
             http_utils_assign_string(&client->connection_info.username, username, -1);
-            HTTP_MEM_CHECK(TAG, client->connection_info.username, return ESP_ERR_NO_MEM);
+            ESP_RETURN_ON_FALSE(client->connection_info.username, ESP_ERR_NO_MEM, TAG, "Memory exhausted");
             free(user_info);
         } else {
             return ESP_ERR_NO_MEM;
@@ -883,17 +880,21 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
     } else {
         http_utils_assign_string(&client->connection_info.path, "/", -1);
     }
-    HTTP_MEM_CHECK(TAG, client->connection_info.path, return ESP_ERR_NO_MEM);
+    ESP_RETURN_ON_FALSE(client->connection_info.path, ESP_ERR_NO_MEM, TAG, "Memory exhausted");
 
     if (purl.field_data[UF_QUERY].len) {
         http_utils_assign_string(&client->connection_info.query, url + purl.field_data[UF_QUERY].off, purl.field_data[UF_QUERY].len);
-        HTTP_MEM_CHECK(TAG, client->connection_info.query, return ESP_ERR_NO_MEM);
+        ESP_RETURN_ON_FALSE(client->connection_info.query, ESP_ERR_NO_MEM, TAG, "Memory exhausted");
     } else if (client->connection_info.query) {
         free(client->connection_info.query);
         client->connection_info.query = NULL;
     }
 
-    return ESP_OK;
+    return ret;
+
+error:
+    free(old_host);
+    return ret;
 }
 
 esp_err_t esp_http_client_set_method(esp_http_client_handle_t client, esp_http_client_method_t method)

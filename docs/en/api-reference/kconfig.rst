@@ -56,6 +56,8 @@ indentations will be corrected if there isn't some misleading previous
 formatting but it cannot come up with a common prefix for options inside a
 menu.
 
+.. _configuration-options-compatibility:
+
 Backward Compatibility of Kconfig Options
 =========================================
 

@@ -1,6 +1,6 @@
 # This script should be sourced, not executed.
 
-realpath_int() {
+__realpath() {
     wdir="$PWD"; [ "$PWD" = "/" ] && wdir=""
     arg=$1
     case "$arg" in
@@ -12,7 +12,12 @@ realpath_int() {
 }
 
 
-idf_export_main() {
+__verbose() {
+    [ -n "${IDF_EXPORT_QUIET}" ] && return
+    echo "$@"
+}
+
+__main() {
     # The file doesn't have executable permissions, so this shouldn't really happen.
     # Doing this in case someone tries to chmod +x it and execute...
 
@@ -47,7 +52,7 @@ idf_export_main() {
         # shellcheck disable=SC2169,SC2169,SC2039  # unreachable with 'dash'
         if [[ "$OSTYPE" == "darwin"* ]]; then
             # convert possibly relative path to absolute
-            script_dir="$(realpath_int "${self_path}")"
+            script_dir="$(__realpath "${self_path}")"
             # resolve any ../ references to make the path shorter
             script_dir="$(cd "${script_dir}" || exit 1; pwd)"
         else
@@ -82,15 +87,15 @@ idf_export_main() {
     echo "Detecting the Python interpreter"
     . "${IDF_PATH}/tools/detect_python.sh"
 
-    echo "Adding ESP-IDF tools to PATH..."
+    __verbose "Adding ESP-IDF tools to PATH..."
     # Call idf_tools.py to export tool paths
     export IDF_TOOLS_EXPORT_CMD=${IDF_PATH}/export.sh
     export IDF_TOOLS_INSTALL_CMD=${IDF_PATH}/install.sh
     idf_exports=$("$ESP_PYTHON" "${IDF_PATH}/tools/idf_tools.py" export) || return 1
     eval "${idf_exports}"
 
-    echo "Using Python interpreter in $(which python)"
-    echo "Checking if Python packages are up to date..."
+    __verbose "Using Python interpreter in $(which python)"
+    __verbose "Checking if Python packages are up to date..."
     python "${IDF_PATH}/tools/check_python_dependencies.py" || return 1
 
 
@@ -106,22 +111,33 @@ idf_export_main() {
     then
         path_prefix=${PATH%%${old_path}}
         # shellcheck disable=SC2169,SC2039  # unreachable with 'dash'
-        paths="${path_prefix//:/ }"
-        if [ -n "${paths}" ]; then
-            echo "Added the following directories to PATH:"
+        if [ -n "${path_prefix}" ]; then
+            __verbose "Added the following directories to PATH:"
         else
-            echo "All paths are already set."
+            __verbose "All paths are already set."
         fi
-        for path_entry in ${paths}
+        old_ifs="$IFS"
+        IFS=":"
+        for path_entry in ${path_prefix}
         do
-            echo "  ${path_entry}"
+            __verbose "  ${path_entry}"
         done
+        IFS="$old_ifs"
+        unset old_ifs
     else
-        echo "Updated PATH variable:"
-        echo "  ${PATH}"
+        __verbose "Updated PATH variable:"
+        __verbose "  ${PATH}"
     fi
 
-    # Clean up
+
+    __verbose "Done! You can now compile ESP-IDF projects."
+    __verbose "Go to the project directory and run:"
+    __verbose ""
+    __verbose "  idf.py build"
+    __verbose ""
+}
+
+__cleanup() {
     unset old_path
     unset paths
     unset path_prefix
@@ -129,18 +145,23 @@ idf_export_main() {
     unset IDF_ADD_PATHS_EXTRAS
     unset idf_exports
     unset ESP_PYTHON
+    unset SOURCE_ZSH
+    unset SOURCE_BASH
+
+    unset __realpath
+    unset __main
+    unset __verbose
+    unset __enable_autocomplete
+    unset __cleanup
 
     # Not unsetting IDF_PYTHON_ENV_PATH, it can be used by IDF build system
     # to check whether we are using a private Python environment
 
-    echo "Done! You can now compile ESP-IDF projects."
-    echo "Go to the project directory and run:"
-    echo ""
-    echo "  idf.py build"
-    echo ""
+    return $1
 }
 
-enable_autocomplete() {
+
+__enable_autocomplete() {
     click_version="$(python -c 'import click; print(click.__version__.split(".")[0])')"
     if [[ click_version -lt 8 ]]
     then
@@ -158,15 +179,7 @@ enable_autocomplete() {
     then
         eval "$(env LANG=en _IDF.PY_COMPLETE=$SOURCE_BASH idf.py)"  || echo "WARNING: Failed to load shell autocompletion for bash version: $BASH_VERSION!"
     fi
-
-    unset SOURCE_ZSH
-    unset SOURCE_BASH
-
 }
 
-idf_export_main
-enable_autocomplete
-
-unset realpath_int
-unset idf_export_main
-unset enable_autocomplete
+__main && __enable_autocomplete
+__cleanup $?

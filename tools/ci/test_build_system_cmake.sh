@@ -526,7 +526,7 @@ function run_tests()
     fi
 
     print_status "Displays partition table when executing target partition_table"
-    idf.py partition_table | grep -E "# ESP-IDF .+ Partition Table"
+    idf.py partition-table | grep -E "# ESP-IDF .+ Partition Table"
     rm -r build
 
     print_status "Make sure a full build never runs '/usr/bin/env python' or similar"
@@ -862,6 +862,16 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     idf.py docs --no-browser --language en --version v4.2.1 | grep "https://docs.espressif.com/projects/esp-idf/en/v4.2.1" || failure "'idf.py docs --no-browser --language en --version v4.2.1' failed"
     idf.py docs --no-browser --language en --version v4.2.1 --target esp32 | grep "https://docs.espressif.com/projects/esp-idf/en/v4.2.1/esp32" || failure "'idf.py docs --no-browser --language en --version v4.2.1 --target esp32' failed"
     idf.py docs --no-browser --language en --version v4.2.1 --target esp32 --starting-page get-started | grep "https://docs.espressif.com/projects/esp-idf/en/v4.2.1/esp32/get-started" || failure "'idf.py docs --no-browser --language en --version v4.2.1 --target esp32 --starting-page get-started' failed"
+
+    print_status "Deprecation warning check"
+    # click warning
+    idf.py post_debug &> tmp.log
+    grep "Warning: Command \"post_debug\" is deprecated and will be removed in v5.0." tmp.log || (failure "Missing deprecation warning with command \"post_debug\"")
+    rm tmp.log
+    # cmake warning
+    idf.py efuse_common_table &> tmp.log
+    grep "Warning: Command efuse_common_table is deprecated and will be removed in the next major release." tmp.log || (failure "Missing deprecation warning with command \"efuse_common_table\"")
+    rm tmp.log
 
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then

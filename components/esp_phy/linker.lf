@@ -25,3 +25,4 @@ entries:
     if ESP_WIFI_SLP_IRAM_OPT =y:
         phy_init:esp_phy_enable (noflash)
         phy_init:esp_phy_disable (noflash)
+        phy_init:esp_wifi_bt_power_domain_off (noflash)

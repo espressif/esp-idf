@@ -86,15 +86,16 @@ static void example_sysview_event_send(uint32_t id, uint32_t val)
 
 static void example_timer_init(int timer_group, int timer_idx, uint32_t period)
 {
-    timer_config_t config;
     uint64_t alarm_val = (period * (TIMER_BASE_CLK / 1000000UL)) / 2;
 
-    config.alarm_en = 1;
-    config.auto_reload = 1;
-    config.counter_dir = TIMER_COUNT_UP;
-    config.divider = 2;     //Range is 2 to 65536
-    config.intr_type = TIMER_INTR_LEVEL;
-    config.counter_en = TIMER_PAUSE;
+    timer_config_t config = {
+        .alarm_en = 1,
+        .auto_reload = 1,
+        .counter_dir = TIMER_COUNT_UP,
+        .divider = 2,     //Range is 2 to 65536
+        .intr_type = TIMER_INTR_LEVEL,
+        .counter_en = TIMER_PAUSE,
+    };
     /*Configure timer*/
     timer_init(timer_group, timer_idx, &config);
     /*Stop timer counter*/

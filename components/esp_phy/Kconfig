@@ -1,6 +1,6 @@
 menu "PHY"
 
-    config ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
+    config ESP_PHY_CALIBRATION_AND_DATA_STORAGE
         bool "Store phy calibration data in NVS"
         default y
         help
@@ -15,7 +15,7 @@ menu "PHY"
             2.Because of your board design, each time when you do calibration, the result are too unstable.
             If unsure, choose 'y'.
 
-    menuconfig ESP32_PHY_INIT_DATA_IN_PARTITION
+    menuconfig ESP_PHY_INIT_DATA_IN_PARTITION
         bool "Use a partition to store PHY init data"
         default n
         help
@@ -31,20 +31,20 @@ menu "PHY"
 
             If unsure, choose 'n'.
 
-    config ESP32_PHY_DEFAULT_INIT_IF_INVALID
+    config ESP_PHY_DEFAULT_INIT_IF_INVALID
         bool "Reset default PHY init data if invalid"
         default n
-        depends on ESP32_PHY_INIT_DATA_IN_PARTITION
+        depends on ESP_PHY_INIT_DATA_IN_PARTITION
         help
             If enabled, PHY init data will be restored to default if
             it cannot be verified successfully to avoid endless bootloops.
 
             If unsure, choose 'n'.
 
-    if ESP32_PHY_INIT_DATA_IN_PARTITION
-        config ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN
+    if ESP_PHY_INIT_DATA_IN_PARTITION
+        config ESP_PHY_MULTIPLE_INIT_DATA_BIN
             bool "Support multiple PHY init data bin"
-            depends on ESP32_PHY_INIT_DATA_IN_PARTITION
+            depends on ESP_PHY_INIT_DATA_IN_PARTITION
             default n
             help
                 If enabled, the corresponding PHY init data type can be automatically switched
@@ -57,9 +57,17 @@ menu "PHY"
                 3. Country configured by API esp_wifi_set_country()
                 and the parameter policy is WIFI_COUNTRY_POLICY_AUTO.
 
-        config ESP32_PHY_INIT_DATA_ERROR
+        config ESP_PHY_MULTIPLE_INIT_DATA_BIN_EMBED
+            bool "Support embedded multiple phy init data bin to app bin"
+            depends on ESP_PHY_MULTIPLE_INIT_DATA_BIN
+            default n
+            help
+                If enabled, multiple phy init data bin will embedded into app bin
+                If not enabled, multiple phy init data bin will still leave alone, and need to be flashed by users.
+
+        config ESP_PHY_INIT_DATA_ERROR
             bool "Terminate operation when PHY init data error"
-            depends on ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN
+            depends on ESP_PHY_MULTIPLE_INIT_DATA_BIN
             default n
             help
                 If enabled, when an error occurs while the PHY init data is updated,
@@ -67,7 +75,7 @@ menu "PHY"
                 If not enabled, the PHY init data will not be updated when an error occurs.
     endif
 
-    config ESP32_PHY_MAX_WIFI_TX_POWER
+    config ESP_PHY_MAX_WIFI_TX_POWER
         int "Max WiFi TX power (dBm)"
         range 10 20
         default 20
@@ -75,11 +83,11 @@ menu "PHY"
             Set maximum transmit power for WiFi radio. Actual transmit power for high
             data rates may be lower than this setting.
 
-    config ESP32_PHY_MAX_TX_POWER
+    config ESP_PHY_MAX_TX_POWER
         int
-        default ESP32_PHY_MAX_WIFI_TX_POWER
+        default ESP_PHY_MAX_WIFI_TX_POWER
 
-    config ESP32_PHY_MAC_BB_PD
+    config ESP_PHY_MAC_BB_PD
         bool "Power down MAC and baseband of Wi-Fi and Bluetooth when PHY is disabled"
         depends on ((IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3) && FREERTOS_USE_TICKLESS_IDLE)
         default n
@@ -89,7 +97,7 @@ menu "PHY"
             by a small amount but increases RAM use by approximately 4 KB(Wi-Fi only),
             2 KB(Bluetooth only) or 5.3 KB(Wi-Fi + Bluetooth).
 
-    config ESP32_REDUCE_PHY_TX_POWER
+    config ESP_PHY_REDUCE_TX_POWER
         bool "Reduce PHY TX power when brownout reset"
         depends on ESP32_BROWNOUT_DET
         default y

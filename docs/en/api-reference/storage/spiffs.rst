@@ -112,7 +112,6 @@ To flash the image onto {IDF_TARGET_NAME} at offset 0x110000, run::
 
     python esptool.py --chip {IDF_TARGET_PATH_NAME} --port [port] --baud [baud] write_flash -z 0x110000 spiffs.bin
 
-
 Notes on which SPIFFS tool to use
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

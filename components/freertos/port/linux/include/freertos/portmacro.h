@@ -27,6 +27,8 @@ typedef uint32_t TickType_t;
 
 typedef int portMUX_TYPE;
 
+#define portTICK_PERIOD_MS			( ( TickType_t ) 1 )
+
 #ifdef __cplusplus
 }
 #endif

@@ -48,4 +48,4 @@ I (19584) example: Read from file: 'Hello World!'
 I (19584) example: SPIFFS unmounted
 ```
 
-To erase the contents of SPIFFS partition, run `idf.py erase_flash` command. Then upload the example again as described above.
+To erase the contents of SPIFFS partition, run `idf.py erase-flash` command. Then upload the example again as described above.

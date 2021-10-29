@@ -258,6 +258,13 @@ menu "LWIP"
             in the DHCP packets as an option 61)
             Set this option to "y" in order to exclude option 61 from DHCP packets.
 
+    config LWIP_DHCP_DISABLE_VENDOR_CLASS_ID
+        bool "DHCP: Disable Use of vendor class identification"
+        default y
+        help
+            This option could be used to disable DHCP client vendor class identification.
+            Set this option to "y" in order to exclude option 60 from DHCP packets.
+
     config LWIP_DHCP_RESTORE_LAST_IP
         bool "DHCP: Restore last IP obtained from DHCP server"
         default n

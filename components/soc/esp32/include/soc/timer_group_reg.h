@@ -1,19 +1,16 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+/**
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ *  SPDX-License-Identifier: Apache-2.0
+ */
 
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-#ifndef __TIMG_REG_H__
-#define __TIMG_REG_H__
+#pragma once
+
 #include "soc.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* The value that needs to be written to TIMG_WDT_WKEY to write-enable the wdt registers */
 #define TIMG_WDT_WKEY_VALUE 0x50D83AA1
@@ -669,7 +666,6 @@
 #define TIMG_CLK_EN_V  0x1
 #define TIMG_CLK_EN_S  31
 
-
-
-
-#endif /*__TIMG_REG_H__ */
+#ifdef __cplusplus
+}
+#endif

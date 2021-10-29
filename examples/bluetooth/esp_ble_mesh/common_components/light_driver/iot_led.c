@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <string.h>
@@ -59,25 +51,19 @@ static const char *TAG = "iot_light";
 static DRAM_ATTR iot_light_t *g_light_config = NULL;
 static DRAM_ATTR uint16_t *g_gamma_table = NULL;
 static DRAM_ATTR bool g_hw_timer_started = false;
-static DRAM_ATTR timg_dev_t *TG[2] = {&TIMERG0, &TIMERG1};
-
-static IRAM_ATTR esp_err_t _timer_pause(timer_group_t group_num, timer_idx_t timer_num)
-{
-    TG[group_num]->hw_timer[timer_num].config.enable = 0;
-    return ESP_OK;
-}
 
 static void iot_timer_create(hw_timer_idx_t *timer_id, bool auto_reload,
                              uint32_t timer_interval_ms, void *isr_handle)
 {
     /* Select and initialize basic parameters of the timer */
-    timer_config_t config;
-    config.divider     = HW_TIMER_DIVIDER;
-    config.counter_dir = TIMER_COUNT_UP;
-    config.counter_en  = TIMER_PAUSE;
-    config.alarm_en    = TIMER_ALARM_EN;
-    config.intr_type   = TIMER_INTR_LEVEL;
-    config.auto_reload = auto_reload;
+    timer_config_t config = {
+        .divider     = HW_TIMER_DIVIDER,
+        .counter_dir = TIMER_COUNT_UP,
+        .counter_en  = TIMER_PAUSE,
+        .alarm_en    = TIMER_ALARM_EN,
+        .intr_type   = TIMER_INTR_LEVEL,
+        .auto_reload = auto_reload,
+    };
     timer_init(timer_id->timer_group, timer_id->timer_id, &config);
 
     /* Timer's counter will initially start from value below.
@@ -99,7 +85,7 @@ static void iot_timer_start(hw_timer_idx_t *timer_id)
 
 static IRAM_ATTR void iot_timer_stop(hw_timer_idx_t *timer_id)
 {
-    _timer_pause(timer_id->timer_group, timer_id->timer_id);
+    timer_group_set_counter_enable_in_isr(timer_id->timer_group, timer_id->timer_id, TIMER_PAUSE);
     g_hw_timer_started = false;
 }
 
@@ -284,51 +270,12 @@ static IRAM_ATTR void fade_timercb(void *para)
     int timer_idx = (int) para;
     int idle_channel_num = 0;
 
-    if (HW_TIMER_GROUP == TIMER_GROUP_0) {
-        /* Retrieve the interrupt status */
-#if CONFIG_IDF_TARGET_ESP32C3
-        uint32_t intr_status = TIMERG0.int_st.val;
-        TIMERG0.hw_timer[timer_idx].update.val = 1;
-#elif CONFIG_IDF_TARGET_ESP32
-        uint32_t intr_status = TIMERG0.int_st_timers.val;
-        TIMERG0.hw_timer[timer_idx].update = 1;
-#endif
-
-        /* Clear the interrupt */
-        if ((intr_status & BIT(timer_idx)) && timer_idx == TIMER_0) {
-#if CONFIG_IDF_TARGET_ESP32C3
-            TIMERG0.int_clr.t0 = 1;
-#elif CONFIG_IDF_TARGET_ESP32
-            TIMERG0.int_clr_timers.t0 = 1;
-        } else if ((intr_status & BIT(timer_idx)) && timer_idx == TIMER_1) {
-            TIMERG0.int_clr_timers.t1 = 1;
-#endif
-        }
-
-        /* After the alarm has been triggered
-          we need enable it again, so it is triggered the next time */
-        TIMERG0.hw_timer[timer_idx].config.alarm_en = TIMER_ALARM_EN;
-    } else if (HW_TIMER_GROUP == TIMER_GROUP_1) {
-#if CONFIG_IDF_TARGET_ESP32C3
-        uint32_t intr_status = TIMERG1.int_st.val;
-        TIMERG1.hw_timer[timer_idx].update.val = 1;
-#elif CONFIG_IDF_TARGET_ESP32
-        uint32_t intr_status = TIMERG1.int_st_timers.val;
-        TIMERG1.hw_timer[timer_idx].update = 1;
-#endif
-
-        if ((intr_status & BIT(timer_idx)) && timer_idx == TIMER_0) {
-#if CONFIG_IDF_TARGET_ESP32C3
-            TIMERG1.int_clr.t0 = 1;
-#elif CONFIG_IDF_TARGET_ESP32
-            TIMERG1.int_clr_timers.t0 = 1;
-        } else if ((intr_status & BIT(timer_idx)) && timer_idx == TIMER_1) {
-            TIMERG1.int_clr_timers.t1 = 1;
-#endif
-        }
-
-        TIMERG1.hw_timer[timer_idx].config.alarm_en = TIMER_ALARM_EN;
-    }
+    /* Retrieve the interrupt status */
+    timer_group_get_intr_status_in_isr(HW_TIMER_GROUP);
+    timer_group_clr_intr_status_in_isr(HW_TIMER_GROUP, timer_idx);
+    /* After the alarm has been triggered
+      we need enable it again, so it is triggered the next time */
+    timer_group_enable_alarm_in_isr(HW_TIMER_GROUP, timer_idx);
 
     for (int channel = 0; channel < LEDC_CHANNEL_MAX; channel++) {
         ledc_fade_data_t *fade_data = g_light_config->fade_data + channel;
@@ -349,7 +296,7 @@ static IRAM_ATTR void fade_timercb(void *para)
 
                 _iot_update_duty(g_light_config->speed_mode, channel);
             } else {
-                iot_ledc_set_duty(g_light_config->speed_mode,channel,gamma_value_to_duty(fade_data->cur));
+                iot_ledc_set_duty(g_light_config->speed_mode, channel, gamma_value_to_duty(fade_data->cur));
                 _iot_update_duty(g_light_config->speed_mode, channel);
             }
         } else if (fade_data->cycle) {
@@ -497,7 +444,7 @@ esp_err_t iot_led_set_channel(ledc_channel_t channel, uint8_t value, uint32_t fa
         fade_data->step *= -1;
     }
 
-    if (fade_data->cycle != 0){
+    if (fade_data->cycle != 0) {
         fade_data->cycle = 0;
     }
 

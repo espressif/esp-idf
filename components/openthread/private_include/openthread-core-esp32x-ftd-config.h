@@ -1,16 +1,8 @@
-// Copyright 2021 Espressif Systems (Shanghai) CO LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -56,21 +48,15 @@
  * verbose log level possible. See `OPENTHREAD_CONFIG_LOG_LEVEL_INIT` to set the initial log level.
  *
  */
-#ifndef OPENTHREAD_CONFIG_LOG_LEVEL
-#if CONFIG_LOG_DEFAULT_LEVEL_NONE
-#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_NONE
-#elif CONFIG_LOG_DEFAULT_LEVEL_ERROR
-#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_CRIT
-#elif CONFIG_LOG_DEFAULT_LEVEL_WARN
-#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_WARN
-#elif CONFIG_LOG_DEFAULT_LEVEL_INFO
-#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_INFO
-#elif CONFIG_LOG_DEFAULT_LEVEL_DEBUG
 #define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_DEBG
-#elif CONFIG_LOG_DEFAULT_LEVEL_VERBOSE
-#define OPENTHREAD_CONFIG_LOG_LEVEL OT_LOG_LEVEL_DEBG
-#endif
-#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_LOG_LEVEL_DYNAMIC_ENABLE
+ *
+ * Define as 1 to enable dynamic log level control.
+ *
+ */
+#define OPENTHREAD_CONFIG_LOG_LEVEL_DYNAMIC_ENABLE 1
 
 #define OPENTHREAD_CONFIG_LOG_API 1
 #define OPENTHREAD_CONFIG_LOG_ARP 1
@@ -206,6 +192,16 @@
  */
 #ifndef OPENTHREAD_CONFIG_DNSSD_SERVER_ENABLE
 #define OPENTHREAD_CONFIG_DNSSD_SERVER_ENABLE 1
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE
+ *
+ * Set to 1 to enable support for Thread Radio Encapsulation Link (TREL).
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE
+#define OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE CONFIG_OPENTHREAD_TREL
 #endif
 
 #endif // CONFIG_OPENTHREAD_BORDER_ROUTER

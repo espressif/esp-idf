@@ -1,16 +1,8 @@
-// Copyright 2016-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdlib.h>
 #include <stdbool.h>
@@ -786,7 +778,7 @@ void esp_pm_impl_init(void)
 void esp_pm_impl_idle_hook(void)
 {
     int core_id = xPortGetCoreID();
-    uint32_t state = portENTER_CRITICAL_NESTED();
+    uint32_t state = portSET_INTERRUPT_MASK_FROM_ISR();
     if (!s_core_idle[core_id]
 #ifdef CONFIG_FREERTOS_USE_TICKLESS_IDLE
     && !periph_should_skip_light_sleep()
@@ -795,7 +787,7 @@ void esp_pm_impl_idle_hook(void)
         esp_pm_lock_release(s_rtos_lock_handle[core_id]);
         s_core_idle[core_id] = true;
     }
-    portEXIT_CRITICAL_NESTED(state);
+    portCLEAR_INTERRUPT_MASK_FROM_ISR(state);
     ESP_PM_TRACE_ENTER(IDLE, core_id);
 }
 
@@ -806,7 +798,7 @@ void IRAM_ATTR esp_pm_impl_isr_hook(void)
     /* Prevent higher level interrupts (than the one this function was called from)
      * from happening in this section, since they will also call into esp_pm_impl_isr_hook.
      */
-    uint32_t state = portENTER_CRITICAL_NESTED();
+    uint32_t state = portSET_INTERRUPT_MASK_FROM_ISR();
 #if defined(CONFIG_FREERTOS_SYSTICK_USES_CCOUNT) && (portNUM_PROCESSORS == 2)
     if (s_need_update_ccompare[core_id]) {
         update_ccompare();
@@ -817,7 +809,7 @@ void IRAM_ATTR esp_pm_impl_isr_hook(void)
 #else
     leave_idle();
 #endif // CONFIG_FREERTOS_SYSTICK_USES_CCOUNT && portNUM_PROCESSORS == 2
-    portEXIT_CRITICAL_NESTED(state);
+    portCLEAR_INTERRUPT_MASK_FROM_ISR(state);
     ESP_PM_TRACE_EXIT(ISR_HOOK, core_id);
 }
 

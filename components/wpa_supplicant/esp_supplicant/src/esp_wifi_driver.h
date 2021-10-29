@@ -65,7 +65,8 @@ enum {
     WPA2_AUTH_ENT_SHA256= 0x0a,
     WAPI_AUTH_PSK       = 0x0b,
     WAPI_AUTH_CERT      = 0x0c,
-    WPA2_AUTH_INVALID   = 0x0d,
+    WPA2_AUTH_ENT_SHA384_SUITE_B = 0x0d,
+    WPA2_AUTH_INVALID   = 0x0e,
 };
 
 typedef enum {
@@ -109,7 +110,7 @@ typedef struct {
 struct wpa_funcs {
     bool (*wpa_sta_init)(void);
     bool (*wpa_sta_deinit)(void);
-    void (*wpa_sta_connect)(uint8_t *bssid);
+    int (*wpa_sta_connect)(uint8_t *bssid);
     void (*wpa_sta_disconnected_cb)(uint8_t reason_code);
     int (*wpa_sta_rx_eapol)(u8 *src_addr, u8 *buf, u32 len);
     bool (*wpa_sta_in_4way_handshake)(void);
@@ -172,11 +173,11 @@ typedef struct {
     uint32_t arg_size;
 } wifi_ipc_config_t;
 
-#define WPA_IGTK_LEN 16
+#define WPA_IGTK_MAX_LEN 32
 typedef struct {
     uint8_t keyid[2];
     uint8_t pn[6];
-    uint8_t igtk[WPA_IGTK_LEN];
+    uint8_t igtk[WPA_IGTK_MAX_LEN];
 } wifi_wpa_igtk_t;
 
 typedef struct {

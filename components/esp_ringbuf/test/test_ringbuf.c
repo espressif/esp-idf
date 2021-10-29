@@ -401,13 +401,14 @@ static void setup_timer(void)
     //Setup timer for ISR
     int timer_group = TIMER_GROUP;
     int timer_idx = TIMER_NUMBER;
-    timer_config_t config;
-    config.alarm_en = 1;
-    config.auto_reload = 1;
-    config.counter_dir = TIMER_COUNT_UP;
-    config.divider = 10000;
-    config.intr_type = TIMER_INTR_LEVEL;
-    config.counter_en = TIMER_PAUSE;
+    timer_config_t config = {
+        .alarm_en = 1,
+        .auto_reload = 1,
+        .counter_dir = TIMER_COUNT_UP,
+        .divider = 10000,
+        .intr_type = TIMER_INTR_LEVEL,
+        .counter_en = TIMER_PAUSE,
+    };
     timer_init(timer_group, timer_idx, &config);    //Configure timer
     timer_pause(timer_group, timer_idx);    //Stop timer counter
     timer_set_counter_value(timer_group, timer_idx, 0x00000000ULL); //Load counter value

@@ -1873,7 +1873,6 @@ ppEnqueueTxDone = 0x400055a4;
 ppGetTxQFirstAvail_Locked = 0x400055b0;
 ppGetTxframe = 0x400055bc;
 ppMapTxQueue = 0x400055c8;
-ppProcTxSecFrame = 0x400055d4;
 ppProcessRxPktHdr = 0x400055e0;
 ppProcessTxQ = 0x400055ec;
 ppRecordBarRRC = 0x400055f8;

@@ -72,7 +72,7 @@
 #include "soc/rtc.h"
 #include "soc/spinlock.h"
 
-#if CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX
+#if CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX || CONFIG_ESP32S3_TRAX
 #include "trax.h"
 #endif
 
@@ -137,6 +137,15 @@ static volatile bool s_resume_cores;
 // If CONFIG_SPIRAM_IGNORE_NOTFOUND is set and external RAM is not found or errors out on testing, this is set to false.
 bool g_spiram_ok = true;
 
+static void core_intr_matrix_clear(void)
+{
+    uint32_t core_id = cpu_hal_get_core_id();
+
+    for (int i = 0; i < ETS_MAX_INTR_SOURCE; i++) {
+        intr_matrix_set(core_id, i, ETS_INVALID_INUM);
+    }
+}
+
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 void startup_resume_other_cores(void)
 {
@@ -170,14 +179,16 @@ void IRAM_ATTR call_start_cpu1(void)
     s_cpu_up[1] = true;
     ESP_EARLY_LOGI(TAG, "App cpu up.");
 
+    // Clear interrupt matrix for APP CPU core
+    core_intr_matrix_clear();
+
     //Take care putting stuff here: if asked, FreeRTOS will happily tell you the scheduler
     //has started, but it isn't active *on this CPU* yet.
     esp_cache_err_int_init();
 
-#if CONFIG_IDF_TARGET_ESP32
-#if CONFIG_ESP32_TRAX_TWOBANKS
+#if (CONFIG_IDF_TARGET_ESP32 && CONFIG_ESP32_TRAX_TWOBANKS) || \
+    (CONFIG_IDF_TARGET_ESP32S3 && CONFIG_ESP32S3_TRAX_TWOBANKS)
     trax_start_trace(TRAX_DOWNCOUNT_WORDS);
-#endif
 #endif
 
     s_cpu_inited[1] = true;
@@ -243,16 +254,6 @@ static void start_other_core(void)
     }
 }
 #endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-
-static void intr_matrix_clear(void)
-{
-    for (int i = 0; i < ETS_MAX_INTR_SOURCE; i++) {
-        intr_matrix_set(0, i, ETS_INVALID_INUM);
-#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-        intr_matrix_set(1, i, ETS_INVALID_INUM);
-#endif
-    }
-}
 
 /*
  * We arrive here after the bootloader finished loading the program from flash. The hardware is mostly uninitialized,
@@ -505,9 +506,9 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 
 //Enable trace memory and immediately start trace.
-#if CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX
-#if CONFIG_IDF_TARGET_ESP32
-#if CONFIG_ESP32_TRAX_TWOBANKS
+#if CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX || CONFIG_ESP32S3_TRAX
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3
+#if CONFIG_ESP32_TRAX_TWOBANKS || CONFIG_ESP32S3_TRAX_TWOBANKS
     trax_enable(TRAX_ENA_PRO_APP);
 #else
     trax_enable(TRAX_ENA_PRO);
@@ -516,7 +517,7 @@ void IRAM_ATTR call_start_cpu0(void)
     trax_enable(TRAX_ENA_PRO);
 #endif
     trax_start_trace(TRAX_DOWNCOUNT_WORDS);
-#endif // CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX
+#endif // CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX || CONFIG_ESP32S3_TRAX
 
     esp_clk_init();
     esp_perip_clk_init();
@@ -525,7 +526,8 @@ void IRAM_ATTR call_start_cpu0(void)
     // and default RTC-backed system time provider.
     g_startup_time = esp_rtc_get_time_us();
 
-    intr_matrix_clear();
+    // Clear interrupt matrix for PRO CPU core
+    core_intr_matrix_clear();
 
 #ifndef CONFIG_IDF_ENV_FPGA // TODO: on FPGA it should be possible to configure this, not currently working with APB_CLK_FREQ changed
 #ifdef CONFIG_ESP_CONSOLE_UART

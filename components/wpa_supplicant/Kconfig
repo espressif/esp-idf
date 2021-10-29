@@ -18,6 +18,15 @@ menu "Supplicant"
             Select this option to enable WAPI-PSK
             which is a Chinese National Standard Encryption for Wireless LANs (GB 15629.11-2003).
 
+    config WPA_SUITE_B_192
+        bool "Enable NSA suite B support with 192 bit key"
+        default n
+        select ESP_WIFI_GCMP_SUPPORT
+        select ESP_WIFI_GMAC_SUPPORT
+        help
+            Select this option to enable 192 bit NSA suite-B.
+            This is necessary to support WPA3 192 bit security.
+
     config WPA_DEBUG_PRINT
         bool "Print debug messages from WPA Supplicant"
         default n

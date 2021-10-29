@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // The LL layer for Timer Group register operations.
 // Note that most of the register operations in this layer are non-atomic operations.
@@ -26,6 +18,7 @@ extern "C" {
 #include "soc/timer_periph.h"
 #include "soc/timer_group_struct.h"
 #include "hal/wdt_types.h"
+#include "hal/assert.h"
 #include "esp_attr.h"
 
 //Type check wdt_stage_action_t
@@ -112,6 +105,7 @@ FORCE_INLINE_ATTR void mwdt_ll_config_stage(timg_dev_t *hw, wdt_stage_t stage, u
         hw->wdtconfig5.wdt_stg3_hold = timeout;
         break;
     default:
+        HAL_ASSERT(false && "unsupported WDT stage");
         break;
     }
     //Config registers are updated asynchronously
@@ -140,6 +134,7 @@ FORCE_INLINE_ATTR void mwdt_ll_disable_stage(timg_dev_t *hw, uint32_t stage)
         hw->wdtconfig0.wdt_stg3 = WDT_STAGE_ACTION_OFF;
         break;
     default:
+        HAL_ASSERT(false && "unsupported WDT stage");
         break;
     }
     //Config registers are updated asynchronously

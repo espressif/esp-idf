@@ -127,13 +127,14 @@ static void timerg0_init(void *isr_handle)
     int timer_group = TIMER_GROUP_0;
     int timer_idx = xPortGetCoreID();
 
-    timer_config_t config;
-    config.alarm_en = 1;
-    config.auto_reload = 1;
-    config.counter_dir = TIMER_COUNT_UP;
-    config.divider = TIMER_DIVIDER;
-    config.intr_type = TIMER_INTR_LEVEL;
-    config.counter_en = TIMER_PAUSE;
+    timer_config_t config = {
+        .alarm_en = 1,
+        .auto_reload = 1,
+        .counter_dir = TIMER_COUNT_UP,
+        .divider = TIMER_DIVIDER,
+        .intr_type = TIMER_INTR_LEVEL,
+        .counter_en = TIMER_PAUSE,
+    };
 
     /*Configure timer*/
     timer_init(timer_group, timer_idx, &config);

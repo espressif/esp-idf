@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /*=====================================================================================
  * Description:
  *   C file to define parameter storage instances

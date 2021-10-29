@@ -17,7 +17,6 @@
 #include "esp32s3/rom/opi_flash.h"
 #endif
 
-const static char *TAG = "SPI0";
 
 //-----------------------------------------SPI0 PSRAM TEST-----------------------------------------------//
 #if CONFIG_SPIRAM
@@ -80,8 +79,7 @@ extern void spi_flash_enable_interrupts_caches_and_other_cpu(void);
 static DRAM_ATTR uint8_t rd_buf[SPI1_FLASH_TEST_LEN];
 static DRAM_ATTR uint8_t wr_buf[SPI1_FLASH_TEST_LEN];
 
-
-static IRAM_ATTR esp_err_t spi1_flash_test(void)
+static NOINLINE_ATTR IRAM_ATTR esp_err_t spi1_flash_test(void)
 {
     printf(DRAM_STR("----------SPI1 Flash Test----------\n"));
 
@@ -124,7 +122,7 @@ static IRAM_ATTR esp_err_t spi1_flash_test(void)
 #define SPI0_FLASH_TEST_BUF    {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, \
                                 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F}
 
-uint8_t flash_rd_buf[SPI0_FLASH_TEST_LEN] __attribute__((section (".flash.rodata"))) = SPI0_FLASH_TEST_BUF;
+static const uint8_t flash_rd_buf[SPI0_FLASH_TEST_LEN] = SPI0_FLASH_TEST_BUF;
 extern int _flash_rodata_start;
 extern int _rodata_reserved_end;
 
@@ -133,7 +131,7 @@ static IRAM_ATTR esp_err_t spi0_flash_test(void)
 {
     printf("----------SPI0 Flash Test----------\n");
     //Check if the flash_rd_buf is in .rodata
-    ESP_RETURN_ON_ERROR(((intptr_t)flash_rd_buf >= (intptr_t)_flash_rodata_start) && ((intptr_t)flash_rd_buf < (intptr_t)_rodata_reserved_end), TAG, "psram_rd_buf not in rodata");
+    assert(((intptr_t)flash_rd_buf >= (intptr_t)&_flash_rodata_start) && ((intptr_t)flash_rd_buf < (intptr_t)&_rodata_reserved_end));
 
     uint8_t cmp_buf[SPI0_FLASH_TEST_LEN] = SPI0_FLASH_TEST_BUF;
 

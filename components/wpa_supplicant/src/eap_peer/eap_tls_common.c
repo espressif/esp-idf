@@ -79,6 +79,11 @@ static void eap_tls_params_from_conf1(struct tls_connection_params *params,
 		params->flags |= TLS_CONN_DISABLE_TIME_CHECKS;
 	else
 		params->flags &= (~TLS_CONN_DISABLE_TIME_CHECKS);
+
+	if (config->flags & TLS_CONN_SUITEB)
+		params->flags |= TLS_CONN_SUITEB;
+	else
+		params->flags &= (~TLS_CONN_SUITEB);
 }
 
 static int eap_tls_params_from_conf(struct eap_sm *sm,

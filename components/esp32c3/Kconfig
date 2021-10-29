@@ -192,23 +192,4 @@ menu "ESP32C3-Specific"
             If enabled, this disables the linking of binary libraries in the application build. Note
             that after enabling this Wi-Fi/Bluetooth will not work.
 
-    config ESP32C3_LIGHTSLEEP_GPIO_RESET_WORKAROUND
-        bool "light sleep GPIO reset workaround"
-        default y
-        select PM_SLP_DISABLE_GPIO if FREERTOS_USE_TICKLESS_IDLE
-        help
-            ESP32C3 will reset at wake-up if GPIO is received a small electrostatic pulse during
-            light sleep, with specific condition
-
-            - GPIO needs to be configured as input-mode only
-            - The pin receives a small electrostatic pulse, and reset occurs when the pulse
-              voltage is higher than 6 V
-
-            For GPIO set to input mode only, it is not a good practice to leave it open/floating,
-            The hardware design needs to controlled it with determined supply or ground voltage
-            is necessary.
-
-            This option provides a software workaround for this issue. Configure to isolate all
-            GPIO pins in sleep state.
-
 endmenu  # ESP32C3-Specific

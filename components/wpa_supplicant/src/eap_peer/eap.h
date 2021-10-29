@@ -41,6 +41,8 @@ int g_wpa_new_password_len;
 
 char *g_wpa_ttls_phase2_type;
 
+bool g_wpa_suiteb_certification;
+
 const u8 * eap_get_eapKeyData(struct eap_sm *sm, size_t *len);
 void eap_deinit_prev_method(struct eap_sm *sm, const char *txt);
 struct wpabuf * eap_sm_build_nak(struct eap_sm *sm, EapType type, u8 id);

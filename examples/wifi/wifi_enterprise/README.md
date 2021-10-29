@@ -1,6 +1,6 @@
 # WPA2 Enterprise Example
 
-This example shows how ESP32 connects to AP with wpa2 enterprise encryption. Example does the following steps:
+This example shows how ESP32 connects to AP with Wi-Fi enterprise encryption. The example does the following steps:
 
 1. Install CA certificate which is optional.
 2. Install client certificate and client key which is required in TLS method and optional in PEAP and TTLS methods.
@@ -9,12 +9,13 @@ This example shows how ESP32 connects to AP with wpa2 enterprise encryption. Exa
 5. Enable wpa2 enterprise.
 6. Connect to AP.
 
-*Note:* 1. The certificates currently are generated and are present in examples.wifi/wpa2_enterprise/main folder.
+*Note:* 1. The certificates currently are generated and are present in examples/wifi/wifi_enterprise/main folder.
         2. The expiration date of the certificates is 2027/06/05.
+        3. In case using suite-b, please use appropriate certificates such as RSA-3072 or p384 EC certificates.
 
 The steps to create new certificates are given below.
 
-## The file wpa2_ca.pem, wpa2_ca.key, wpa2_server.pem, wpa2_server.crt and wpa2_server.key can be used to configure AP with wpa2 enterprise encryption. 
+## The file ca.pem, ca.key, server.pem, server.crt and server.key can be used to configure AP with enterprise encryption.
 
 ## How to use Example
 
@@ -36,7 +37,7 @@ idf.py menuconfig
 idf.py -p PORT flash monitor
 ```
 
-## Steps to create wpa2_ent openssl certs
+## Steps to create enterprise openssl certs
 
 1. make directry tree
 
@@ -56,27 +57,27 @@ idf.py -p PORT flash monitor
       extendedKeyUsage = 1.3.6.1.5.5.7.3.1
 
 2. ca.pem: root certificate, foundation of certificate verigy
-  openssl req -new -x509 -keyout wpa2_ca.key -out wpa2_ca.pem
+  openssl req -new -x509 -keyout ca.key -out ca.pem
 
 3. generate rsa keys for client and server
-  openssl genrsa -out wpa2_client.key 2048
-  openssl genrsa -out wpa2_server.key 2048
+  openssl genrsa -out client.key 2048
+  openssl genrsa -out server.key 2048
 
 4. generate certificate signing req for both client and server
-  openssl req -new -key wpa2_client.key -out wpa2_client.csr
-  openssl req -new -key wpa2_server.key -out wpa2_server.csr
+  openssl req -new -key client.key -out client.csr
+  openssl req -new -key server.key -out server.csr
 
 5. create certs (.crt) for client nd server
-  openssl ca -batch -keyfile wpa2_ca.key -cert wpa2_ca.pem -in wpa2_client.csr -key (password) -out wpa2_client.crt -extensions xpserver_ext -extfile xpextensions
-  openssl ca -batch -keyfile wpa2_ca.key -cert wpa2_ca.pem -in wpa2_server.csr -key (password) -out wpa2_server.crt -extensions xpserver_ext -extfile xpextensions
+  openssl ca -batch -keyfile ca.key -cert ca.pem -in client.csr -key (password) -out client.crt -extensions xpserver_ext -extfile xpextensions
+  openssl ca -batch -keyfile ca.key -cert ca.pem -in server.csr -key (password) -out server.crt -extensions xpserver_ext -extfile xpextensions
 
 6. export .p12 files
-  openssl pkcs12 -export -out wpa2_client.p12 -inkey wpa2_client.key -in wpa2_client.crt
-  openssl pkcs12 -export -out wpa2_server.p12 -inkey wpa2_server.key -in wpa2_server.crt
+  openssl pkcs12 -export -out client.p12 -inkey client.key -in client.crt
+  openssl pkcs12 -export -out server.p12 -inkey server.key -in server.crt
 
 7. create .pem files
-  openssl pkcs12 -in wpa2_client.p12 -out wpa2_client.pem
-  openssl pkcs12 -in wpa2_server.p12 -out wpa2_server.pem
+  openssl pkcs12 -in client.p12 -out client.pem
+  openssl pkcs12 -in server.p12 -out server.pem
 
    
 

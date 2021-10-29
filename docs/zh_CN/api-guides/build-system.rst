@@ -96,9 +96,9 @@ idf.py
 高级命令
 ^^^^^^^^
 
-- ``idf.py app``，``idf.py bootloader``，``idf.py partition_table`` 仅可用于从适用的项目中构建应用程序、引导程序或分区表。
+- ``idf.py app``，``idf.py bootloader``，``idf.py partition-table`` 仅可用于从适用的项目中构建应用程序、引导程序或分区表。
 - ``idf.py app-flash`` 等匹配命令，仅将项目的特定部分烧录至 {IDF_TARGET_NAME}。
-- ``idf.py -p PORT erase_flash`` 会使用 esptool.py 擦除 {IDF_TARGET_NAME} 的整个 Flash。
+- ``idf.py -p PORT erase-flash`` 会使用 esptool.py 擦除 {IDF_TARGET_NAME} 的整个 Flash。
 - ``idf.py size`` 会打印应用程序相关的大小信息，``size-components`` 和 ``size-files`` 这两个命令相似，分别用于打印每个组件或源文件的详细信息。如果您在运行 CMake（或 ``idf.py``）时定义了变量 ``-DOUTPUT_JSON=1``，那么输出的格式会变成 JSON 而不是可读文本。详情请查看 ``idf.py-size``。
 - ``idf.py reconfigure`` 命令会重新运行 CMake_ （即便无需重新运行）。正常使用时，并不需要运行此命令，但当源码树中添加/删除文件后或更改 CMake cache 变量时，此命令会非常有用，例如，``idf.py -DNAME='VALUE' reconfigure`` 会将 CMake cache 中的变量 ``NAME`` 的值设置为 ``VALUE``。
 - ``idf.py python-clean`` 会从 IDF 目录中删除生成的 Python 字节码，Python 字节码可能会在切换 IDF 和 Python 版本时引发问题，因此建议在切换 Python 后运行该命令。

@@ -75,5 +75,3 @@ ESP32 的一块 flash 可以包含多个应用程序，以及多种数据（校�
 上述两种情况中，factory app 在 flash 中的烧录偏移地址均为 0x10000。运行 ``make partition_table`` 命令可以打印分区表摘要。
 
 更多有关 :doc:`分区表 <../api-guides/partition-tables>` 及自定义分区表的内容，请见 :doc:`相关文档 <../api-guides/partition-tables>`。
-
-

@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // The LL layer for Timer Group register operations.
 // Note that most of the register operations in this layer are non-atomic operations.
@@ -26,6 +18,7 @@ extern "C" {
 #include "soc/timer_periph.h"
 #include "soc/timer_group_struct.h"
 #include "hal/wdt_types.h"
+#include "hal/assert.h"
 #include "esp_attr.h"
 
 //Type check wdt_stage_action_t
@@ -95,24 +88,25 @@ FORCE_INLINE_ATTR bool mwdt_ll_check_if_enabled(timg_dev_t *hw)
 FORCE_INLINE_ATTR void mwdt_ll_config_stage(timg_dev_t *hw, wdt_stage_t stage, uint32_t timeout, wdt_stage_action_t behavior)
 {
     switch (stage) {
-        case WDT_STAGE0:
-            hw->wdtconfig0.wdt_stg0 = behavior;
-            hw->wdtconfig2.wdt_stg0_hold = timeout;
-            break;
-        case WDT_STAGE1:
-            hw->wdtconfig0.wdt_stg1 = behavior;
-            hw->wdtconfig3.wdt_stg1_hold = timeout;
-            break;
-        case WDT_STAGE2:
-            hw->wdtconfig0.wdt_stg2 = behavior;
-            hw->wdtconfig4.wdt_stg2_hold = timeout;
-            break;
-        case WDT_STAGE3:
-            hw->wdtconfig0.wdt_stg3 = behavior;
-            hw->wdtconfig5.wdt_stg3_hold = timeout;
-            break;
-        default:
-            break;
+    case WDT_STAGE0:
+        hw->wdtconfig0.wdt_stg0 = behavior;
+        hw->wdtconfig2.wdt_stg0_hold = timeout;
+        break;
+    case WDT_STAGE1:
+        hw->wdtconfig0.wdt_stg1 = behavior;
+        hw->wdtconfig3.wdt_stg1_hold = timeout;
+        break;
+    case WDT_STAGE2:
+        hw->wdtconfig0.wdt_stg2 = behavior;
+        hw->wdtconfig4.wdt_stg2_hold = timeout;
+        break;
+    case WDT_STAGE3:
+        hw->wdtconfig0.wdt_stg3 = behavior;
+        hw->wdtconfig5.wdt_stg3_hold = timeout;
+        break;
+    default:
+        HAL_ASSERT(false && "unsupported WDT stage");
+        break;
     }
 }
 
@@ -125,20 +119,21 @@ FORCE_INLINE_ATTR void mwdt_ll_config_stage(timg_dev_t *hw, wdt_stage_t stage, u
 FORCE_INLINE_ATTR void mwdt_ll_disable_stage(timg_dev_t *hw, uint32_t stage)
 {
     switch (stage) {
-        case WDT_STAGE0:
-            hw->wdtconfig0.wdt_stg0 = WDT_STAGE_ACTION_OFF;
-            break;
-        case WDT_STAGE1:
-            hw->wdtconfig0.wdt_stg1 = WDT_STAGE_ACTION_OFF;
-            break;
-        case WDT_STAGE2:
-            hw->wdtconfig0.wdt_stg2 = WDT_STAGE_ACTION_OFF;
-            break;
-        case WDT_STAGE3:
-            hw->wdtconfig0.wdt_stg3 = WDT_STAGE_ACTION_OFF;
-            break;
-        default:
-            break;
+    case WDT_STAGE0:
+        hw->wdtconfig0.wdt_stg0 = WDT_STAGE_ACTION_OFF;
+        break;
+    case WDT_STAGE1:
+        hw->wdtconfig0.wdt_stg1 = WDT_STAGE_ACTION_OFF;
+        break;
+    case WDT_STAGE2:
+        hw->wdtconfig0.wdt_stg2 = WDT_STAGE_ACTION_OFF;
+        break;
+    case WDT_STAGE3:
+        hw->wdtconfig0.wdt_stg3 = WDT_STAGE_ACTION_OFF;
+        break;
+    default:
+        HAL_ASSERT(false && "unsupported WDT stage");
+        break;
     }
 }
 
@@ -196,7 +191,7 @@ FORCE_INLINE_ATTR void mwdt_ll_set_sys_reset_length(timg_dev_t *hw, wdt_reset_si
  *       WDT's enable bit is set to 0. Flashboot mode for TG0 is automatically enabled
  *       on flashboot, and should be disabled by software when flashbooting completes.
  */
-FORCE_INLINE_ATTR void mwdt_ll_set_flashboot_en(timg_dev_t* hw, bool enable)
+FORCE_INLINE_ATTR void mwdt_ll_set_flashboot_en(timg_dev_t *hw, bool enable)
 {
     hw->wdtconfig0.wdt_flashboot_mod_en = (enable) ? 1 : 0;
 }
@@ -253,7 +248,7 @@ FORCE_INLINE_ATTR void mwdt_ll_write_protect_disable(timg_dev_t *hw)
  *
  * @param hw Start address of the peripheral registers.
  */
-FORCE_INLINE_ATTR void mwdt_ll_clear_intr_status(timg_dev_t* hw)
+FORCE_INLINE_ATTR void mwdt_ll_clear_intr_status(timg_dev_t *hw)
 {
     hw->int_clr_timers.wdt_int_clr = 1;
 }
@@ -264,7 +259,7 @@ FORCE_INLINE_ATTR void mwdt_ll_clear_intr_status(timg_dev_t* hw)
  * @param hw Beginning address of the peripheral registers.
  * @param enable Whether to enable the MWDT interrupt
  */
-FORCE_INLINE_ATTR void mwdt_ll_set_intr_enable(timg_dev_t* hw, bool enable)
+FORCE_INLINE_ATTR void mwdt_ll_set_intr_enable(timg_dev_t *hw, bool enable)
 {
     hw->int_ena_timers.wdt_int_ena = (enable) ? 1 : 0;
 }

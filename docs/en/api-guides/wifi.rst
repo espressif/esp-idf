@@ -1428,7 +1428,24 @@ For establishing a secure connection, AP and Station negotiate and agree on the 
      - MSCHAP and MSCHAP-V2.
 
 
-Detailed information on creating certificates and how to run wpa2_enterprise example on {IDF_TARGET_NAME} can be found in :example:`wifi/wpa2_enterprise`.
+Detailed information on creating certificates and how to run wpa2_enterprise example on {IDF_TARGET_NAME} can be found in :example:`wifi/wifi_enterprise`.
+
+Wireless Network Management
+----------------------------
+
+Wireless Network Management allows client devices to exchange information about the network topology, including information related to RF environment. This makes each client network-aware, facilitating overall improvement in the performace of the wireless network. It is part of 802.11v specification. It also enables client to support Network assisted Roaming.
+- Network assisted Roaming: Enables WLAN to send messages to associated clients, resulting clients to associate with APs with better link metrics. This is useful for both load balancing and in directing poorly connected clients.
+
+Current implementation of 802.11v includes support for BSS transition management frames.
+
+Radio Resource Measurement
+---------------------------
+
+Radio Resource Measurement (802.11k) is intended to improve the way traffic is distributed within a network. In a wireless LAN, each device normally connects to the access point (AP) that provides the strongest signal. Depending on the number and geographic locations of the subscribers, this arrangement can sometimes lead to excessive demand on one AP and underutilization of others, resulting in degradation of overall network performance. In a network conforming to 802.11k, if the AP having the strongest signal is loaded to its full capacity, a wireless device can be moved to one of the underutilized APs. Even though the signal may be weaker, the overall throughput is greater because more efficient use is made of the network resources.
+
+Current implementation of 802.11k includes support for beacon measurement report, link measurement report and neighbor request.
+
+Refer IDF example :idf_file:`examples/wifi/roaming/README.md` to set up and use these APIs. Example code only demonstrates how these APIs can be used, the application should define its own algorithm and cases as required.
 
 .. only:: esp32s2 or esp32c3
 

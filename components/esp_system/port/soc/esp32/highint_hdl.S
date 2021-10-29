@@ -173,7 +173,13 @@ xt_highintx:
     rsr     a0, INTERRUPT
     extui   a0, a0, ETS_IPC_ISR_INUM, 1
     beqz    a0, 1f
-    j       esp_ipc_isr_handler
+    /* Jump to `esp_ipc_isr_handler` which is non-returning. We need to use `jx`
+     * because on Xtensa, `j` instruction can only refer to a label which
+     * is in the range [-131068;+131075]. If the destination is out of scope,
+     * linking will fail. So, to make sure we will always be able to jump to
+     * that subroutine, retrieve its address and store it in a register. */
+    movi    a0, esp_ipc_isr_handler
+    jx      a0
 1:
 #endif /* not CONFIG_FREERTOS_UNICORE */
 

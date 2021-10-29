@@ -2093,7 +2093,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
         if( listIS_CONTAINED_WITHIN( &xSuspendedTaskList, &( pxTCB->xStateListItem ) ) != pdFALSE )
         {
             /* Has the task already been resumed from within an ISR? */
-            if( listIS_CONTAINED_WITHIN( &xPendingReadyList[xPortGetCoreID()], &( pxTCB->xEventListItem )) ||
+            if( listIS_CONTAINED_WITHIN( &xPendingReadyList[xPortGetCoreID()], &( pxTCB->xEventListItem )) == pdFALSE &&
                 listIS_CONTAINED_WITHIN( &xPendingReadyList[!xPortGetCoreID()], &( pxTCB->xEventListItem ))  == pdFALSE )
             {
                 /* Is it in the suspended list because it is in the Suspended
@@ -2260,30 +2260,30 @@ void vTaskStartScheduler( void )
 {
     BaseType_t xReturn;
 
-    #if ( configSUPPORT_STATIC_ALLOCATION == 1 && configSUPPORT_STATIC_ALLOCATION == 0 )
-    StaticTask_t *pxIdleTaskTCBBuffer[configNUM_CORES] = {NULL};
-    StackType_t *pxIdleTaskStackBuffer[configNUM_CORES]  = {NULL};
-    uint32_t ulIdleTaskStackSize;
-    #endif
-
-    for(BaseType_t i = 0; i < configNUM_CORES; i++)
-    {
-        /* Add the idle task at the lowest priority. */
-        #if( 0 ) /* configSUPPORT_STATIC_ALLOCATION == 1 ) Temporarily unsupported IDF-2243 */
+#ifdef ESP_PLATFORM
+    /* Create an IDLE task for each core */
+    for(BaseType_t xCoreID = 0; xCoreID < configNUM_CORES; xCoreID++)
+#endif //ESP_PLATFORM
+    /* Add the idle task at the lowest priority. */
+    #if ( configSUPPORT_STATIC_ALLOCATION == 1 )
         {
+            StaticTask_t * pxIdleTaskTCBBuffer = NULL;
+            StackType_t * pxIdleTaskStackBuffer = NULL;
+            uint32_t ulIdleTaskStackSize;
+
             /* The Idle task is created using user provided RAM - obtain the
             address of the RAM then create the idle task. */
-            vApplicationGetIdleTaskMemory( &pxIdleTaskTCBBuffer[i], &pxIdleTaskStackBuffer[i], &ulIdleTaskStackSize );
-            xIdleTaskHandle[i] = xTaskCreateStaticPinnedToCore( prvIdleTask,
+            vApplicationGetIdleTaskMemory( &pxIdleTaskTCBBuffer, &pxIdleTaskStackBuffer, &ulIdleTaskStackSize );
+            xIdleTaskHandle[ xCoreID ] = xTaskCreateStaticPinnedToCore( prvIdleTask,
                                                     configIDLE_TASK_NAME,
                                                     ulIdleTaskStackSize,
-                                                    ( void * ) NULL, /*lint !e961.  The cast is not redundant for all compilers. */
-                                                    portPRIVILEGE_BIT, /* In effect ( tskIDLE_PRIORITY | portPRIVILEGE_BIT ), but tskIDLE_PRIORITY is zero. */
-                                                    pxIdleTaskStackBuffer[i],
-                                                    pxIdleTaskTCBBuffer[i],
-                                                    i ); /*lint !e961 MISRA exception, justified as it is not a redundant explicit cast to all supported compilers. */
+                                                    ( void * ) NULL,       /*lint !e961.  The cast is not redundant for all compilers. */
+                                                    portPRIVILEGE_BIT,     /* In effect ( tskIDLE_PRIORITY | portPRIVILEGE_BIT ), but tskIDLE_PRIORITY is zero. */
+                                                    pxIdleTaskStackBuffer,
+                                                    pxIdleTaskTCBBuffer,
+                                                    xCoreID ); /*lint !e961 MISRA exception, justified as it is not a redundant explicit cast to all supported compilers. */
 
-            if( xIdleTaskHandle[i] != NULL )
+            if( xIdleTaskHandle[ xCoreID ] != NULL )
             {
                 xReturn = pdPASS;
             }
@@ -2300,10 +2300,10 @@ void vTaskStartScheduler( void )
                                     configIDLE_TASK_STACK_SIZE,
                                     ( void * ) NULL,
                                     portPRIVILEGE_BIT, /* In effect ( tskIDLE_PRIORITY | portPRIVILEGE_BIT ), but tskIDLE_PRIORITY is zero. */
-                                    &xIdleTaskHandle[i],
-                                    i ); /*lint !e961 MISRA exception, justified as it is not a redundant explicit cast to all supported compilers. */
+                                    &xIdleTaskHandle[ xCoreID ],
+                                    xCoreID ); /*lint !e961 MISRA exception, justified as it is not a redundant explicit cast to all supported compilers. */
 
-            if( xIdleTaskHandle[i] != NULL )
+            if( xIdleTaskHandle[ xCoreID ] != NULL )
             {
                 xReturn = pdPASS;
             }
@@ -2313,7 +2313,6 @@ void vTaskStartScheduler( void )
             }
         }
     #endif /* configSUPPORT_STATIC_ALLOCATION */
-    }
 
     #if ( configUSE_TIMERS == 1 )
         {
@@ -2430,10 +2429,9 @@ void vTaskSuspendAll( void )
      * post in the FreeRTOS support forum before reporting this as a bug! -
      * https://goo.gl/wu4acr */
     unsigned state;
-
-    state = portENTER_CRITICAL_NESTED();
+    state = portSET_INTERRUPT_MASK_FROM_ISR();
     ++uxSchedulerSuspended[ xPortGetCoreID() ];
-    portEXIT_CRITICAL_NESTED(state);
+    portCLEAR_INTERRUPT_MASK_FROM_ISR(state);
 }
 /*----------------------------------------------------------*/
 
@@ -3364,7 +3362,7 @@ void vTaskSwitchContext( void )
 {
     //Theoretically, this is only called from either the tick interrupt or the crosscore interrupt, so disabling
     //interrupts shouldn't be necessary anymore. Still, for safety we'll leave it in for now.
-    int irqstate=portENTER_CRITICAL_NESTED();
+    int irqstate = portSET_INTERRUPT_MASK_FROM_ISR();
 
     if( uxSchedulerSuspended[ xPortGetCoreID() ] != ( UBaseType_t ) pdFALSE )
     {
@@ -3529,7 +3527,7 @@ void vTaskSwitchContext( void )
         #endif
 
     }
-    portEXIT_CRITICAL_NESTED(irqstate);
+    portCLEAR_INTERRUPT_MASK_FROM_ISR(irqstate);
 }
 /*-----------------------------------------------------------*/
 
@@ -4620,9 +4618,9 @@ static void prvResetNextTaskUnblockTime( void )
         TaskHandle_t xReturn;
         unsigned state;
 
-        state = portENTER_CRITICAL_NESTED();
+        state = portSET_INTERRUPT_MASK_FROM_ISR();
         xReturn = pxCurrentTCB[ xPortGetCoreID() ];
-        portEXIT_CRITICAL_NESTED(state);
+        portCLEAR_INTERRUPT_MASK_FROM_ISR(state);
 
         return xReturn;
     }

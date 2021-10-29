@@ -55,7 +55,7 @@ if(NOT BOOTLOADER_BUILD)
                          "--partition-table-offset;${PARTITION_TABLE_OFFSET}")
         idf_component_get_property(esptool_py_dir esptool_py COMPONENT_DIR)
 
-        add_custom_target(read_otadata DEPENDS "${PARTITION_CSV_PATH}"
+        add_custom_target(read-otadata DEPENDS "${PARTITION_CSV_PATH}"
             COMMAND ${CMAKE_COMMAND}
             -D IDF_PATH="${idf_path}"
             -D SERIAL_TOOL="${otatool_py}"
@@ -65,8 +65,9 @@ if(NOT BOOTLOADER_BUILD)
             WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
             USES_TERMINAL
             )
+        add_deprecated_target_alias(read_otadata read-otadata)
 
-        add_custom_target(erase_otadata DEPENDS "${PARTITION_CSV_PATH}"
+        add_custom_target(erase-otadata DEPENDS "${PARTITION_CSV_PATH}"
             COMMAND ${CMAKE_COMMAND}
             -D IDF_PATH="${idf_path}"
             -D SERIAL_TOOL="${otatool_py}"
@@ -76,6 +77,7 @@ if(NOT BOOTLOADER_BUILD)
             WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
             USES_TERMINAL
             )
+        add_deprecated_target_alias(erase_otadata erase-otadata)
 
         idf_component_get_property(main_args esptool_py FLASH_ARGS)
         idf_component_get_property(sub_args esptool_py FLASH_SUB_ARGS)

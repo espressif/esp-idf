@@ -1,3 +1,10 @@
+/*
+ * SPDX-FileCopyrightText: 2006 Christian Walter
+ *
+ * SPDX-License-Identifier: LGPL-2.0-only
+ *
+ * SPDX-FileContributor: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ */
  /*
   * FreeRTOS Modbus Libary: A Modbus serial implementation for FreeRTOS
   * Copyright (C) 2006 Christian Walter <wolti@sil.at>

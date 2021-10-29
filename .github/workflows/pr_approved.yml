@@ -1,0 +1,21 @@
+name: GitHub PR to Internal Codebase Sync
+on:
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  sync_prs_to_internal_codebase:
+    name: GitHub PR to Internal Codebase Sync
+    runs-on: ubuntu-latest
+    if: github.event.review.state == 'approved' && (contains(github.event.review.body, '/rebase') || contains(github.event.review.body, '/merge'))
+    steps:
+      - uses: actions/checkout@master
+      - name: GitHub PR to Internal Codebase Sync
+        uses: espressif/github-actions/github_pr_to_internal_pr@master
+        env:
+          GITLAB_URL: ${{ secrets.GITLAB_URL }}
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GIT_CONFIG_NAME: ${{ secrets.GIT_CONFIG_NAME }}
+          GIT_CONFIG_EMAIL: ${{ secrets.GIT_CONFIG_EMAIL }}
+          JIRA_PROJECT: IDFGH

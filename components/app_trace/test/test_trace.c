@@ -67,15 +67,15 @@ const static char *TAG = "esp_apptrace_test";
 
 static void esp_apptrace_test_timer_init(int timer_group, int timer_idx, uint32_t period)
 {
-    timer_config_t config;
     uint64_t alarm_val = (period * (TIMER_BASE_CLK / 1000000UL)) / 2;
-
-    config.alarm_en = 1;
-    config.auto_reload = 1;
-    config.counter_dir = TIMER_COUNT_UP;
-    config.divider = 2;     //Range is 2 to 65536
-    config.intr_type = TIMER_INTR_LEVEL;
-    config.counter_en = TIMER_PAUSE;
+    timer_config_t config = {
+        .alarm_en = 1,
+        .auto_reload = 1,
+        .counter_dir = TIMER_COUNT_UP,
+        .divider = 2,     //Range is 2 to 65536
+        .intr_type = TIMER_INTR_LEVEL,
+        .counter_en = TIMER_PAUSE,
+    };
     /*Configure timer*/
     timer_init(timer_group, timer_idx, &config);
     /*Stop timer counter*/
@@ -358,7 +358,6 @@ static uint64_t esp_apptrace_test_ts_get(void)
 
 static void esp_apptrace_test_ts_init(int timer_group, int timer_idx)
 {
-    timer_config_t config;
     //uint64_t alarm_val = period * (TIMER_BASE_CLK / 1000000UL);
 
     ESP_APPTRACE_TEST_LOGI("Use timer%d.%d for TS", timer_group, timer_idx);
@@ -366,11 +365,13 @@ static void esp_apptrace_test_ts_init(int timer_group, int timer_idx)
     s_ts_timer_group = timer_group;
     s_ts_timer_idx = timer_idx;
 
-    config.alarm_en = 0;
-    config.auto_reload = 0;
-    config.counter_dir = TIMER_COUNT_UP;
-    config.divider = 2;     //Range is 2 to 65536
-    config.counter_en = 0;
+    timer_config_t config = {
+        .alarm_en = 0,
+        .auto_reload = 0,
+        .counter_dir = TIMER_COUNT_UP,
+        .divider = 2,     //Range is 2 to 65536
+        .counter_en = 0,
+    };
     /*Configure timer*/
     timer_init(timer_group, timer_idx, &config);
     /*Load counter value */
@@ -381,13 +382,13 @@ static void esp_apptrace_test_ts_init(int timer_group, int timer_idx)
 
 static void esp_apptrace_test_ts_cleanup(void)
 {
-    timer_config_t config;
-
-    config.alarm_en = 0;
-    config.auto_reload = 0;
-    config.counter_dir = TIMER_COUNT_UP;
-    config.divider = 2;     //Range is 2 to 65536
-    config.counter_en = 0;
+    timer_config_t config = {
+        .alarm_en = 0,
+        .auto_reload = 0,
+        .counter_dir = TIMER_COUNT_UP,
+        .divider = 2,     //Range is 2 to 65536
+        .counter_en = 0,
+    };
     /*Configure timer*/
     timer_init(s_ts_timer_group, s_ts_timer_idx, &config);
 }

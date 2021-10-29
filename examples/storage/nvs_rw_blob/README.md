@@ -63,5 +63,4 @@ Run time:
 2: 5860
 ```
 
-To reset the counter and run time array, erase the contents of flash memory using `idf.py erase_flash`, then upload the program again as described above.
-
+To reset the counter and run time array, erase the contents of flash memory using `idf.py erase-flash`, then upload the program again as described above.

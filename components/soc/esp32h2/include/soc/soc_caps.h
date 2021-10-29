@@ -5,6 +5,7 @@
 
 #pragma once
 
+/*-------------------------- COMMON CAPS ---------------------------------------*/
 #define SOC_CPU_CORES_NUM               1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_GDMA_SUPPORTED              1
@@ -14,10 +15,9 @@
 #define SOC_HMAC_SUPPORTED              1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
-
-/*-------------------------- COMMON CAPS ---------------------------------------*/
 #define SOC_SUPPORTS_SECURE_DL_MODE         1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   3
+#define SOC_ICACHE_ACCESS_RODATA_SUPPORTED  1
 #define SOC_TEMP_SENSOR_SUPPORTED           1
 
 

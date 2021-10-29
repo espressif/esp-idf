@@ -8,7 +8,6 @@ Introduction
 
 Non-volatile storage (NVS) library is designed to store key-value pairs in flash. This section introduces some concepts used by NVS.
 
-
 Underlying storage
 ^^^^^^^^^^^^^^^^^^
 
@@ -16,7 +15,7 @@ Currently, NVS uses a portion of main flash memory through the :ref:`esp_partiti
 
 Future versions of this library may have other storage backends to keep data in another flash chip (SPI or I2C), RTC, FRAM, etc.
 
-.. note:: if an NVS partition is truncated (for example, when the partition table layout is changed), its contents should be erased. ESP-IDF build system provides a ``idf.py erase_flash`` target to erase all contents of the flash chip.
+.. note:: if an NVS partition is truncated (for example, when the partition table layout is changed), its contents should be erased. ESP-IDF build system provides a ``idf.py erase-flash`` target to erase all contents of the flash chip.
 
 .. note:: NVS works best for storing many small values, rather than a few large values of the type 'string' and 'blob'. If you need to store large blobs or strings, consider using the facilities provided by the FAT filesystem on top of the wear levelling library.
 
@@ -32,14 +31,14 @@ NVS operates on key-value pairs. Keys are ASCII strings; the maximum key length 
 
 .. note::
 
-    String values are currently limited to 4000 bytes. This includes the null terminator. Blob values are limited to 508000 bytes or 97.6% of the partition size - 4000 bytes, whichever is lower.
+    String values are currently limited to 4000 bytes. This includes the null terminator. Blob values are limited to 508,000 bytes or 97.6% of the partition size - 4000 bytes, whichever is lower.
 
 Additional types, such as ``float`` and ``double`` might be added later.
 
 Keys are required to be unique. Assigning a new value to an existing key works as follows:
 
--  if the new value is of the same type as the old one, value is updated
--  if the new value has a different data type, an error is returned
+-  If the new value is of the same type as the old one, value is updated.
+-  If the new value has a different data type, an error is returned.
 
 Data type check is also performed when reading a value. An error is returned if the data type of the read operation does not match the data type of the value.
 
@@ -80,7 +79,7 @@ NVS Encryption
 
 Data stored in NVS partitions can be encrypted using AES-XTS in the manner similar to the one mentioned in disk encryption standard IEEE P1619. For the purpose of encryption, each entry is treated as one `sector` and relative address of the entry (w.r.t. partition-start) is fed to the encryption algorithm as `sector-number`. The NVS Encryption can be enabled by enabling :ref:`CONFIG_NVS_ENCRYPTION`. The keys required for NVS encryption are stored in yet another partition, which is protected using :doc:`Flash Encryption <../../security/flash-encryption>`. Therefore, enabling :doc:`Flash Encryption <../../security/flash-encryption>` is a prerequisite for NVS encryption.
 	
-The NVS Encryption is enabled by default when :doc:`Flash Encryption <../../security/flash-encryption>` is enabled. This is done because WiFi driver stores credentials (like SSID and passphrase) in the default NVS partition. It is important to encrypt them as default choice if platform level encryption is already enabled.
+The NVS Encryption is enabled by default when :doc:`Flash Encryption <../../security/flash-encryption>` is enabled. This is done because Wi-Fi driver stores credentials (like SSID and passphrase) in the default NVS partition. It is important to encrypt them as default choice if platform level encryption is already enabled.
 	
 For using NVS encryption, the partition table must contain the :ref:`nvs_key_partition`. Two partition tables containing the :ref:`nvs_key_partition` are provided for NVS encryption under the partition table option (menuconfig->Partition Table). They can be selected with the project configuration menu (``idf.py menuconfig``). Please refer to the example :example:`security/flash_encryption` for how to configure and use NVS encryption feature.
 
@@ -96,18 +95,18 @@ NVS key partition
 ::
 
     +-----------+--------------+-------------+----+
-    |              XTS encryption key(32)         |
+    |              XTS encryption key (32)        |
     +---------------------------------------------+
     |              XTS tweak key (32)             |
     +---------------------------------------------+
-    |                  CRC32(4)                   |
+    |                  CRC32 (4)                  |
     +---------------------------------------------+
 
 The XTS encryption keys in the :ref:`nvs_key_partition` can be generated in one of the following two ways.
 
 1. Generate the keys on the ESP chip:
 
-    When NVS encryption is enabled the :cpp:func:`nvs_flash_init` API function can be used to initialize the encrypted default NVS partition. The API function internally generates the XTS encryption keys on the ESP chip. The API function finds the first :ref:`nvs_key_partition`. Then the API function automatically generates and stores the nvs keys in that partition by making use of the :cpp:func:`nvs_flash_generate_keys` API function provided by :component_file:`nvs_flash/include/nvs_flash.h`. New keys are generated and stored only when the respective key partiton is empty. The same key partition can then be used to read the security configurations for initializing a custom encrypted NVS partition with help of :cpp:func:`nvs_flash_secure_init_partition`.
+    When NVS encryption is enabled the :cpp:func:`nvs_flash_init` API function can be used to initialize the encrypted default NVS partition. The API function internally generates the XTS encryption keys on the ESP chip. The API function finds the first :ref:`nvs_key_partition`. Then the API function automatically generates and stores the NVS keys in that partition by making use of the :cpp:func:`nvs_flash_generate_keys` API function provided by :component_file:`nvs_flash/include/nvs_flash.h`. New keys are generated and stored only when the respective key partiton is empty. The same key partition can then be used to read the security configurations for initializing a custom encrypted NVS partition with help of :cpp:func:`nvs_flash_secure_init_partition`.
 
     The API functions :cpp:func:`nvs_flash_secure_init` and :cpp:func:`nvs_flash_secure_init_partition` do not generate the keys internally. When these API functions are used for initializing encrypted NVS partitions, the keys can be generated after startup using the :cpp:func:`nvs_flash_generate_keys` API function provided by ``nvs_flash.h``. The API function will then write those keys onto the key-partition in encrypted form.
 
@@ -118,7 +117,7 @@ The XTS encryption keys in the :ref:`nvs_key_partition` can be generated in one 
     i) Build and flash the partition table
     ::
 
-        idf.py partition_table partition_table-flash
+        idf.py partition-table partition-table-flash
 
     ii) Store the keys in the :ref:`nvs_key_partition` (on the flash) with the help of :component_file:`parttool.py<partition_table/parttool.py>` (see Partition Tool section in :doc:`partition-tables </api-guides/partition-tables>` for more details)
     ::
@@ -178,7 +177,7 @@ You can find code examples in the :example:`storage` directory of ESP-IDF exampl
 
 :example:`storage/nvs_rw_value_cxx`
 
-  This example does exactly the same as :example:`storage/nvs_rw_value`, except that it uses the C++ nvs handle class.
+  This example does exactly the same as :example:`storage/nvs_rw_value`, except that it uses the C++ NVS handle class.
 
 Internals
 ---------
@@ -378,5 +377,3 @@ API Reference
 .. include-build-file:: inc/nvs_flash.inc
 
 .. include-build-file:: inc/nvs.inc
-
-

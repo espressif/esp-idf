@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 // The long term plan is to have a single soc_caps.h for all peripherals.
 // During the refactoring and multichip support development process, we
 // separate these information into periph_caps.h for each peripheral and
@@ -25,11 +31,11 @@
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 3
 #define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS 1
-#define SOC_SDMMC_HOST_SUPPORTED        1
+#define SOC_SDMMC_HOST_SUPPORTED          1
 #define SOC_FLASH_ENCRYPTION_XTS_AES      1
-#define SOC_FLASH_ENCRYPTION_XTS_AES_256 1
-#define SOC_PSRAM_DMA_CAPABLE           1
-#define SOC_XT_WDT_SUPPORTED            1
+#define SOC_FLASH_ENCRYPTION_XTS_AES_256  1
+#define SOC_PSRAM_DMA_CAPABLE             1
+#define SOC_XT_WDT_SUPPORTED              1
 
 
 /*-------------------------- SOC CAPS ----------------------------------------*/
@@ -286,6 +292,9 @@
 #define SOC_PM_SUPPORT_TAGMEM_PD        (1)
 
 #define SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP    (1)     /*!<Supports waking up from touch pad trigger */
+
+#define SOC_PM_SUPPORT_DEEPSLEEP_VERIFY_STUB_ONLY   (1)
+
 
 /*-------------------------- Flash Encryption CAPS----------------------------*/
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (64)

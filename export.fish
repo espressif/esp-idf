@@ -1,6 +1,6 @@
 # This script should be sourced, not executed.
 
-function idf_export_main
+function __main
     if not set -q IDF_PATH
         echo "IDF_PATH must be set before sourcing this script"
         return 1
@@ -65,7 +65,7 @@ function idf_export_main
     echo ""
 end
 
-idf_export_main
+__main
 
 set click_version (python -c 'import click; print(click.__version__.split(".")[0])')
 if test $click_version -lt 8
@@ -75,4 +75,4 @@ else
 end
 
 
-set -e idf_export_main
+set -e __main

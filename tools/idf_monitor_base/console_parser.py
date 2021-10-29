@@ -1,16 +1,5 @@
-# Copyright 2015-2021 Espressif Systems (Shanghai) CO LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 
 import queue
 import textwrap
@@ -21,7 +10,7 @@ from serial.tools import miniterm
 from .constants import (CMD_APP_FLASH, CMD_ENTER_BOOT, CMD_MAKE, CMD_OUTPUT_TOGGLE, CMD_RESET, CMD_STOP,
                         CMD_TOGGLE_LOGGING, CMD_TOGGLE_TIMESTAMPS, CTRL_A, CTRL_F, CTRL_H, CTRL_I, CTRL_L, CTRL_P,
                         CTRL_R, CTRL_RBRACKET, CTRL_T, CTRL_X, CTRL_Y, TAG_CMD, TAG_KEY, __version__)
-from .output_helpers import red_print, yellow_print
+from .output_helpers import red_print
 
 key_description = miniterm.key_description
 
@@ -94,7 +83,6 @@ class ConsoleParser(object):
         elif c in [CTRL_I, 'i', 'I']:  # Toggle printing timestamps
             ret = (TAG_CMD, CMD_TOGGLE_TIMESTAMPS)
         elif c == CTRL_P:
-            yellow_print('Pause app (enter bootloader mode), press Ctrl-T Ctrl-R to restart')
             # to fast trigger pause without press menu key
             ret = (TAG_CMD, CMD_ENTER_BOOT)
         elif c in [CTRL_X, 'x', 'X']:  # Exiting from within the menu

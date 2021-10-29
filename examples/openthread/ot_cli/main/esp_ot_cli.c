@@ -16,6 +16,7 @@
 #include "esp_netif.h"
 #include "esp_netif_types.h"
 #include "esp_openthread.h"
+#include "esp_openthread_cli.h"
 #include "esp_openthread_lock.h"
 #include "esp_openthread_netif_glue.h"
 #include "esp_openthread_types.h"
@@ -28,6 +29,7 @@
 #include "hal/uart_types.h"
 #include "openthread/cli.h"
 #include "openthread/instance.h"
+#include "openthread/logging.h"
 #include "openthread/tasklet.h"
 
 #if CONFIG_OPENTHREAD_CLI_ESP_EXTENSION
@@ -35,8 +37,6 @@
 #endif // CONFIG_OPENTHREAD_CLI_ESP_EXTENSION
 
 #define TAG "ot_esp_cli"
-
-extern void otAppCliInit(otInstance *aInstance);
 
 #if CONFIG_OPENTHREAD_CLI_ESP_EXTENSION
 static esp_netif_t *init_openthread_netif(const esp_openthread_platform_config_t *config)
@@ -61,8 +61,10 @@ static void ot_task_worker(void *aContext)
     // Initialize the OpenThread stack
     ESP_ERROR_CHECK(esp_openthread_init(&config));
 
+    // The OpenThread log level directly matches ESP log level
+    (void)otLoggingSetLevel(CONFIG_LOG_DEFAULT_LEVEL);
     // Initialize the OpenThread cli
-    otAppCliInit(esp_openthread_get_instance());
+    esp_openthread_cli_init();
 
 #if CONFIG_OPENTHREAD_CLI_ESP_EXTENSION
     esp_netif_t *openthread_netif;
@@ -73,6 +75,7 @@ static void ot_task_worker(void *aContext)
 #endif // CONFIG_OPENTHREAD_CLI_ESP_EXTENSION
 
     // Run the main loop
+    esp_openthread_cli_create_task();
     esp_openthread_launch_mainloop();
 
     // Clean up

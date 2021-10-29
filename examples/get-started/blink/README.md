@@ -23,7 +23,7 @@ Some development boards use an addressable LED instead of a regular one. These d
 | ESP32-C3-DevKitM-1   | Addressable          | GPIO8                |
 | ESP32-S2-DevKitM-1   | Addressable          | GPIO18               |
 | ESP32-S2-Saola-1     | Addressable          | GPIO18               |
-| ESP32-S3-Addax-1     | Addressable          | GPIO48               |
+| ESP32-S3-DevKitC-1   | Addressable          | GPIO48               |
 
 See [Development Boards](https://www.espressif.com/en/products/devkits) for more information about it.
 

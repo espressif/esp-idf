@@ -1,16 +1,9 @@
-// Copyright 2010-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #ifndef BOOTLOADER_BUILD
 
 #include <stdint.h>
@@ -18,6 +11,8 @@
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "soc/soc.h"
+#include "soc/dport_reg.h"
+#include "soc/tracemem_config.h"
 #include "heap_memory_layout.h"
 #include "esp_heap_caps.h"
 
@@ -46,6 +41,8 @@ const soc_memory_type_desc_t soc_memory_types[] = {
     { "SPIRAM", { MALLOC_CAP_SPIRAM | MALLOC_CAP_DEFAULT, 0, MALLOC_CAP_8BIT | MALLOC_CAP_32BIT}, false, false},
     // Type 5: DRAM which is not DMA accesible
     { "NON_DMA_DRAM", { MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT, 0 }, false, false},
+    // Type 6: RTC Fast RAM
+    { "RTCRAM", { MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT, MALLOC_CAP_RTCRAM }, false, false},
 };
 
 const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memory_type_desc_t);
@@ -78,13 +75,13 @@ const soc_memory_region_t soc_memory_regions[] = {
     { 0x3C000000, 0x4000,  5, 0}
 #endif
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-    { 0x50000000, 0x2000,  4, 0}, //Fast RTC memory
+    { 0x600fe000, 0x2000,  6, 0}, //Fast RTC memory
 #endif
 };
 
 const size_t soc_memory_region_count = sizeof(soc_memory_regions) / sizeof(soc_memory_region_t);
 
-extern int _data_start, _heap_start, _iram_start, _iram_end; // defined in sections.ld.in
+extern int _data_start, _heap_start, _iram_start, _iram_end, _rtc_force_fast_end, _rtc_noinit_end; // defined in sections.ld.in
 
 /**
  * Reserved memory regions.
@@ -112,7 +109,17 @@ SOC_RESERVE_MEMORY_REGION( SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_HIGH, extram_dat
 #endif
 
 #if CONFIG_ESP32S3_TRACEMEM_RESERVE_DRAM > 0
-SOC_RESERVE_MEMORY_REGION(0x3fffc000 - CONFIG_ESP32S3_TRACEMEM_RESERVE_DRAM, 0x3fffc000, trace_mem);
+SOC_RESERVE_MEMORY_REGION(TRACEMEM_BLK0_ADDR, TRACEMEM_BLK0_ADDR + CONFIG_ESP32S3_TRACEMEM_RESERVE_DRAM / 2, trace_mem0);
+SOC_RESERVE_MEMORY_REGION(TRACEMEM_BLK1_ADDR, TRACEMEM_BLK1_ADDR + CONFIG_ESP32S3_TRACEMEM_RESERVE_DRAM / 2, trace_mem1);
+#endif
+
+// RTC Fast RAM region
+#ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
+#ifdef CONFIG_ESP32S3_RTCDATA_IN_FAST_MEM
+SOC_RESERVE_MEMORY_REGION(SOC_RTC_DRAM_LOW, (intptr_t)&_rtc_noinit_end, rtcram_data);
+#else
+SOC_RESERVE_MEMORY_REGION(SOC_RTC_DRAM_LOW, (intptr_t)&_rtc_force_fast_end, rtcram_data);
+#endif
 #endif
 
 #endif // BOOTLOADER_BUILD

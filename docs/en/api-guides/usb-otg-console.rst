@@ -31,6 +31,15 @@ Connect {IDF_TARGET_NAME} to the USB port as follows
 
 Some development boards may offer a USB connector for the internal USB peripheral — in that case, no extra connections are required.
 
+.. only:: esp32s3
+
+    By default, :doc:`USB_SERIAL_JTAG<usb-serial-jtag-console>` module is connected to the internal PHY of the ESP32-S3, while USB_OTG peripheral can be used only if the external USB PHY is connected. Since CDC console is provided via USB_OTG peripheral, it cannot be used through the internal PHY in this configuration.
+
+    You can permanently switch the internal USB PHY to work with USB_OTG peripheral instead of USB_SERIAL_JTAG by burning ``USB_PHY_SEL`` eFuse. See ESP32-S3 Technical Reference Manual for more details about USB_SERIAL_JTAG and USB_OTG.
+
+    Note however that USB_SERIAL_JTAG also provides a CDC console, so enabling the CDC console shouldn't be the primary reason for switching from USB_SERIAL_JTAG to USB_CDC.
+
+
 Software Configuration
 ======================
 

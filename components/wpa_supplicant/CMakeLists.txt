@@ -10,6 +10,7 @@ set(srcs "port/os_xtensa.c"
     "src/crypto/aes-siv.c"
     "src/crypto/sha256-kdf.c"
     "src/crypto/ccmp.c"
+    "src/crypto/aes-gcm.c"
     "src/crypto/crypto_ops.c"
     "src/crypto/dh_group5.c"
     "src/crypto/dh_groups.c"
@@ -19,6 +20,7 @@ set(srcs "port/os_xtensa.c"
     "src/crypto/sha384-tlsprf.c"
     "src/crypto/sha256-prf.c"
     "src/crypto/sha1-prf.c"
+    "src/crypto/sha384-prf.c"
     "src/crypto/md4-internal.c"
     "src/eap_peer/chap.c"
     "src/eap_peer/eap.c"
@@ -193,6 +195,18 @@ if(CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE)
 endif()
 if(CONFIG_WPA_WPS_STRICT)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_WPS_STRICT)
+endif()
+if(CONFIG_WPA_SUITE_B_192)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_SUITEB192)
+endif()
+if(CONFIG_WPA_SUITE_B)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_SUITEB)
+endif()
+if(CONFIG_ESP_WIFI_GCMP_SUPPORT)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_GCMP)
+endif()
+if(CONFIG_ESP_WIFI_GMAC_SUPPORT)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_GMAC)
 endif()
 
 if(CONFIG_WPA_MBO_SUPPORT)

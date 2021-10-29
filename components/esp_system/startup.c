@@ -434,7 +434,7 @@ IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components0, BIT(0))
 {
     esp_timer_init();
 
-#if CONFIG_ESP32C3_LIGHTSLEEP_GPIO_RESET_WORKAROUND && !CONFIG_PM_SLP_DISABLE_GPIO
+#if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND && !CONFIG_PM_SLP_DISABLE_GPIO
     // Configure to isolate (disable the Input/Output/Pullup/Pulldown
     // function of the pin) all GPIO pins in sleep state
     esp_sleep_config_gpio_isolate();

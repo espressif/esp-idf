@@ -92,6 +92,13 @@ menu "OpenThread"
         help
             Select this option to enable border router features in OpenThread.
 
+    config OPENTHREAD_TREL
+        bool "Enable Thread Radio Encapsulation Link"
+        depends on OPENTHREAD_BORDER_ROUTER
+        default n
+        help
+            Select this option to enable sending 15.4 frames through the backbone interface.
+
     config OPENTHREAD_ESP_LIB_FROM_INTERNAL_SRC
         bool "Build esp_openthread libraries from source"
         depends on OPENTHREAD_ENABLED
