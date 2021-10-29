@@ -251,7 +251,7 @@ J3
 ========
 
 - `ESP32-S3 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s3_datasheet_cn.pdf>`_ (PDF)
-- `ESP32-S3-WROOM-1 & ESP32-S3-WROOM-1U 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-1_datasheet_cn.pdf>`_ (PDF)
+- `ESP32-S3-WROOM-1 & ESP32-S3-WROOM-1U 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-1_wroom-1u_datasheet_cn.pdf>`_ (PDF)
 - `ESP32-S3-DevKitC-1 原理图 <https://dl.espressif.com/dl/SCH_ESP32-S3-DEVKITC-1_V1_20210312C.pdf>`_ (PDF)
 - `ESP32-S3-DevKitC-1 PCB 布局图 <https://dl.espressif.com/dl/PCB_ESP32-S3-DevKitC-1_V1_20210312CB.pdf>`_ (PDF)
 - `ESP32-S3-DevKitC-1 尺寸图 <https://dl.espressif.com/dl/DXF_ESP32-S3-DevKitC-1_V1_20210312CB.pdf>`_ (PDF)
