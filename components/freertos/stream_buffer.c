@@ -1327,7 +1327,7 @@ static void prvInitialiseNewStreamBuffer( StreamBuffer_t * const pxStreamBuffer,
     pxStreamBuffer->xTriggerLevelBytes = xTriggerLevelBytes;
     pxStreamBuffer->ucFlags = ucFlags;
 #ifdef ESP_PLATFORM
-    vPortCPUInitializeMutex( &pxStreamBuffer->xStreamBufferMux );
+    portMUX_INITIALIZE( &pxStreamBuffer->xStreamBufferMux );
 #endif // ESP_PLATFORM
 }
 

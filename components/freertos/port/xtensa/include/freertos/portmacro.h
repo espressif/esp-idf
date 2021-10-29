@@ -179,128 +179,112 @@ static inline void vPortClearInterruptMaskFromISR(UBaseType_t prev_level);
  * @note [refactor-todo] Check if these comments are still true
  * ------------------------------------------------------ */
 
-typedef spinlock_t                      portMUX_TYPE;           /**< Spinlock type used by FreeRTOS critical sections */
-#define portMUX_INITIALIZER_UNLOCKED    SPINLOCK_INITIALIZER    /**< Spinlock initializer */
-#define portMUX_FREE_VAL                SPINLOCK_FREE           /**< Spinlock is free. [refactor-todo] check if this is still required */
-#define portMUX_NO_TIMEOUT              SPINLOCK_WAIT_FOREVER   /**< When passed for 'timeout_cycles', spin forever if necessary. [refactor-todo] check if this is still required */
-#define portMUX_TRY_LOCK                SPINLOCK_NO_WAIT        /**< Try to acquire the spinlock a single time only. [refactor-todo] check if this is still required */
-
-/**
- * @brief Initialize a spinlock
- *
- * - Initializes a spinlock that is used by FreeRTOS SMP critical sections
- *
- * @param[in] mux Spinlock
- */
-static inline void __attribute__((always_inline)) vPortCPUInitializeMutex(portMUX_TYPE *mux);
-
-/**
- * @brief Acquire a spinlock
- *
- * @note [refactor-todo] check if we still need this
- *
- * @param[in] mux Spinlock
- */
-static inline void __attribute__((always_inline)) vPortCPUAcquireMutex(portMUX_TYPE *mux);
-
-/**
- * @brief Acquire a spinlock but with a specified timeout
- *
- * @note [refactor-todo] check if we still need this
- * @note [refactor-todo] Check if this function should be renamed (due to bool return type)
- *
- * @param[in] mux Spinlock
- * @param timeout
- * @return true Spinlock acquired
- * @return false Timed out
- */
-static inline bool __attribute__((always_inline)) vPortCPUAcquireMutexTimeout(portMUX_TYPE *mux, int timeout);
-
-/**
- * @brief Release a spinlock
- *
- * @note [refactor-todo] check if we still need this
- *
- * @param[in] mux Spinlock
- */
-static inline void __attribute__((always_inline)) vPortCPUReleaseMutex(portMUX_TYPE *mux);
-
-/**
- * @brief Wrapper for atomic compare-and-set instruction
- *
- * This subroutine will atomically compare *addr to 'compare'. If *addr == compare, *addr is set to *set. *set is
- * updated with the previous value of *addr (either 'compare' or some other value.)
- *
- * @warning From the ISA docs: in some (unspecified) cases, the s32c1i instruction may return the "bitwise inverse" of
- *          the old mem if the mem wasn't written. This doesn't seem to happen on the ESP32 (portMUX assertions would
- *          fail).
- *
- * @note [refactor-todo] check if we still need this
- * @note [refactor-todo] Check if this function should be renamed (due to void return type)
- *
- * @param[inout] addr Pointer to target address
- * @param[in] compare Compare value
- * @param[inout] set Pointer to set value
- */
-static inline void __attribute__((always_inline)) uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, uint32_t *set);
-
-/**
- * @brief Wrapper for atomic compare-and-set instruction in external RAM
- *
- * Atomic compare-and-set but the target address is placed in external RAM
- *
- * @note [refactor-todo] check if we still need this
- *
- * @param[inout] addr Pointer to target address
- * @param[in] compare Compare value
- * @param[inout] set Pointer to set value
- */
-static inline void uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set);
+typedef spinlock_t                          portMUX_TYPE;               /**< Spinlock type used by FreeRTOS critical sections */
+#define portMUX_INITIALIZER_UNLOCKED        SPINLOCK_INITIALIZER        /**< Spinlock initializer */
+#define portMUX_FREE_VAL                    SPINLOCK_FREE               /**< Spinlock is free. [refactor-todo] check if this is still required */
+#define portMUX_NO_TIMEOUT                  SPINLOCK_WAIT_FOREVER       /**< When passed for 'timeout_cycles', spin forever if necessary. [refactor-todo] check if this is still required */
+#define portMUX_TRY_LOCK                    SPINLOCK_NO_WAIT            /**< Try to acquire the spinlock a single time only. [refactor-todo] check if this is still required */
+#define portMUX_INITIALIZE(mux)             spinlock_initialize(mux)    /*< Initialize a spinlock to its unlocked state */
 
 // ------------------ Critical Sections --------------------
 
 /**
+ * @brief Enter a SMP critical section with a timeout
+ *
+ * This function enters an SMP critical section by disabling interrupts then
+ * taking a spinlock with a specified timeout.
+ *
+ * This function can be called in a nested manner.
+ *
+ * @note This function is made non-inline on purpose to reduce code size
+ * @param mux Spinlock
+ * @param timeout Timeout to wait for spinlock in number of CPU cycles.
+ *                Use portMUX_NO_TIMEOUT to wait indefinitely
+ *                Use portMUX_TRY_LOCK to only getting the spinlock a single time
+ * @retval pdPASS Critical section entered (spinlock taken)
+ * @retval pdFAIL If timed out waiting for spinlock (will not occur if using portMUX_NO_TIMEOUT)
+ */
+BaseType_t xPortEnterCriticalTimeout(portMUX_TYPE *mux, BaseType_t timeout);
+
+/**
  * @brief Enter a SMP critical section
  *
- * - Disable interrupts
- * - Takes spinlock
- * - Can be nested
+ * This function enters an SMP critical section by disabling interrupts then
+ * taking a spinlock with an unlimited timeout.
+ *
+ * This function can be called in a nested manner
  *
  * @param[in] mux Spinlock
  */
-void vPortEnterCritical(portMUX_TYPE *mux);
+static inline void __attribute__((always_inline)) vPortEnterCritical(portMUX_TYPE *mux);
 
 /**
  * @brief Exit a SMP critical section
  *
- * - Releases spinlock
- * - Reenables interrupts
- * - Can be nested
+ * This function can be called in a nested manner. On the outer most level of nesting, this function will:
  *
+ * - Release the spinlock
+ * - Restore the previous interrupt level before the critical section was entered
+ *
+ * If still nesting, this function simply decrements a critical nesting count
+ *
+ * @note This function is made non-inline on purpose to reduce code size
  * @param[in] mux Spinlock
  */
 void vPortExitCritical(portMUX_TYPE *mux);
 
 /**
- * @brief FreeRTOS compliant version of enter critical
+ * @brief FreeRTOS Compliant version of xPortEnterCriticalTimeout()
  *
- * - Ensures that critical section is only entered from task context
+ * Compliant version of xPortEnterCriticalTimeout() will ensure that this is
+ * called from a task context only. An abort is called otherwise.
+ *
+ * @note This function is made non-inline on purpose to reduce code size
+ *
+ * @param mux Spinlock
+ * @param timeout Timeout
+ * @return BaseType_t
+ */
+BaseType_t xPortEnterCriticalTimeoutCompliance(portMUX_TYPE *mux, BaseType_t timeout);
+
+/**
+ * @brief FreeRTOS compliant version of vPortEnterCritical()
+ *
+ * Compliant version of vPortEnterCritical() will ensure that this is
+ * called from a task context only. An abort is called otherwise.
  *
  * @param[in] mux Spinlock
  */
 static inline void __attribute__((always_inline)) vPortEnterCriticalCompliance(portMUX_TYPE *mux);
 
 /**
- * @brief FreeRTOS compliant version of exit critical
+ * @brief FreeRTOS compliant version of vPortExitCritical()
  *
+ * Compliant version of vPortExitCritical() will ensure that this is
+ * called from a task context only. An abort is called otherwise.
+ *
+ * @note This function is made non-inline on purpose to reduce code size
  * @param[in] mux Spinlock
  */
-static inline void __attribute__((always_inline)) vPortExitCriticalCompliance(portMUX_TYPE *mux);
+void vPortExitCriticalCompliance(portMUX_TYPE *mux);
+
+/**
+ * @brief Safe version of enter critical timeout
+ *
+ * Safe version of enter critical will automatically select between
+ * portTRY_ENTER_CRITICAL() and portTRY_ENTER_CRITICAL_ISR()
+ *
+ * @param mux Spinlock
+ * @param timeout Timeout
+ * @return BaseType_t
+ */
+static inline BaseType_t __attribute__((always_inline)) xPortEnterCriticalTimeoutSafe(portMUX_TYPE *mux, BaseType_t timeout);
 
 /**
  * @brief Safe version of enter critical
  *
- * - This function can be used to enter a critical section from both task and ISR contexts
+ * Safe version of enter critical will automatically select between
+ * portENTER_CRITICAL() and portENTER_CRITICAL_ISR()
  *
  * @param[in] mux Spinlock
  */
@@ -308,6 +292,9 @@ static inline void __attribute__((always_inline)) vPortEnterCriticalSafe(portMUX
 
 /**
  * @brief Safe version of exit critical
+ *
+ * Safe version of enter critical will automatically select between
+ * portEXIT_CRITICAL() and portEXIT_CRITICAL_ISR()
  *
  * @param[in] mux Spinlock
  */
@@ -397,6 +384,38 @@ void vPortSetStackWatchpoint( void *pxStackStart );
  */
 static inline BaseType_t IRAM_ATTR xPortGetCoreID(void);
 
+/**
+ * @brief Wrapper for atomic compare-and-set instruction
+ *
+ * This subroutine will atomically compare *addr to 'compare'. If *addr == compare, *addr is set to *set. *set is
+ * updated with the previous value of *addr (either 'compare' or some other value.)
+ *
+ * @warning From the ISA docs: in some (unspecified) cases, the s32c1i instruction may return the "bitwise inverse" of
+ *          the old mem if the mem wasn't written. This doesn't seem to happen on the ESP32 (portMUX assertions would
+ *          fail).
+ *
+ * @note [refactor-todo] Check if this can be deprecated
+ * @note [refactor-todo] Check if this function should be renamed (due to void return type)
+ *
+ * @param[inout] addr Pointer to target address
+ * @param[in] compare Compare value
+ * @param[inout] set Pointer to set value
+ */
+static inline void __attribute__((always_inline)) uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, uint32_t *set);
+
+/**
+ * @brief Wrapper for atomic compare-and-set instruction in external RAM
+ *
+ * Atomic compare-and-set but the target address is placed in external RAM
+ *
+ * @note [refactor-todo] Check if this can be deprecated
+ *
+ * @param[inout] addr Pointer to target address
+ * @param[in] compare Compare value
+ * @param[inout] set Pointer to set value
+ */
+static inline void __attribute__((always_inline)) uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set);
+
 
 
 /* ------------------------------------------- FreeRTOS Porting Interface ----------------------------------------------
@@ -449,16 +468,22 @@ static inline BaseType_t IRAM_ATTR xPortGetCoreID(void);
  * - Safe versions can be called from either contexts
  */
 #ifdef CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
-#define portENTER_CRITICAL(mux)         vPortEnterCriticalCompliance(mux)
-#define portEXIT_CRITICAL(mux)          vPortExitCriticalCompliance(mux)
+#define portTRY_ENTER_CRITICAL(mux, timeout)        xPortEnterCriticalTimeoutCompliance(mux, timeout)
+#define portENTER_CRITICAL(mux)                     vPortEnterCriticalCompliance(mux)
+#define portEXIT_CRITICAL(mux)                      vPortExitCriticalCompliance(mux)
 #else
-#define portENTER_CRITICAL(mux)         vPortEnterCritical(mux)
-#define portEXIT_CRITICAL(mux)          vPortExitCritical(mux)
+#define portTRY_ENTER_CRITICAL(mux, timeout)        xPortEnterCriticalTimeout(mux, timeout)
+#define portENTER_CRITICAL(mux)                     vPortEnterCritical(mux)
+#define portEXIT_CRITICAL(mux)                      vPortExitCritical(mux)
 #endif /* CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE */
-#define portENTER_CRITICAL_ISR(mux)     vPortEnterCritical(mux)
-#define portEXIT_CRITICAL_ISR(mux)      vPortExitCritical(mux)
-#define portENTER_CRITICAL_SAFE(mux)    vPortEnterCriticalSafe(mux)
-#define portEXIT_CRITICAL_SAFE(mux)     vPortExitCriticalSafe(mux)
+
+#define portTRY_ENTER_CRITICAL_ISR(mux, timeout)    xPortEnterCriticalTimeout(mux, timeout)
+#define portENTER_CRITICAL_ISR(mux)                 vPortEnterCritical(mux)
+#define portEXIT_CRITICAL_ISR(mux)                  vPortExitCritical(mux)
+
+#define portTRY_ENTER_CRITICAL_SAFE(mux, timeout)   xPortEnterCriticalTimeoutSafe(mux)
+#define portENTER_CRITICAL_SAFE(mux)                vPortEnterCriticalSafe(mux)
+#define portEXIT_CRITICAL_SAFE(mux)                 vPortExitCriticalSafe(mux)
 
 // ---------------------- Yielding -------------------------
 
@@ -546,71 +571,32 @@ static inline void vPortClearInterruptMaskFromISR(UBaseType_t prev_level)
     XTOS_RESTORE_JUST_INTLEVEL(prev_level);
 }
 
-// ---------------------- Spinlocks ------------------------
-
-static inline void __attribute__((always_inline)) vPortCPUInitializeMutex(portMUX_TYPE *mux)
-{
-    spinlock_initialize(mux);
-}
-
-static inline void __attribute__((always_inline)) vPortCPUAcquireMutex(portMUX_TYPE *mux)
-{
-    spinlock_acquire(mux, portMUX_NO_TIMEOUT);
-}
-
-static inline bool __attribute__((always_inline)) vPortCPUAcquireMutexTimeout(portMUX_TYPE *mux, int timeout)
-{
-    return (spinlock_acquire(mux, timeout));
-}
-
-static inline void __attribute__((always_inline)) vPortCPUReleaseMutex(portMUX_TYPE *mux)
-{
-    spinlock_release(mux);
-}
-
-static inline void __attribute__((always_inline)) uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
-{
-    compare_and_set_native(addr, compare, set);
-}
-
-static inline void uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
-{
-#ifdef CONFIG_SPIRAM
-    compare_and_set_extram(addr, compare, set);
-#endif
-}
-
 // ------------------ Critical Sections --------------------
+
+static inline void __attribute__((always_inline)) vPortEnterCritical(portMUX_TYPE *mux)
+{
+    xPortEnterCriticalTimeout(mux, portMUX_NO_TIMEOUT);
+}
 
 static inline void __attribute__((always_inline)) vPortEnterCriticalCompliance(portMUX_TYPE *mux)
 {
-    if (!xPortInIsrContext()) {
-        vPortEnterCritical(mux);
-    } else {
-        esp_rom_printf("%s:%d (%s)- port*_CRITICAL called from ISR context!\n",
-                       __FILE__, __LINE__, __FUNCTION__);
-        abort();
-    }
+    xPortEnterCriticalTimeoutCompliance(mux, portMUX_NO_TIMEOUT);
 }
 
-static inline void __attribute__((always_inline)) vPortExitCriticalCompliance(portMUX_TYPE *mux)
+static inline BaseType_t __attribute__((always_inline)) xPortEnterCriticalTimeoutSafe(portMUX_TYPE *mux, BaseType_t timeout)
 {
-    if (!xPortInIsrContext()) {
-        vPortExitCritical(mux);
+    BaseType_t ret;
+    if (xPortInIsrContext()) {
+        ret = portTRY_ENTER_CRITICAL_ISR(mux, timeout);
     } else {
-        esp_rom_printf("%s:%d (%s)- port*_CRITICAL called from ISR context!\n",
-                       __FILE__, __LINE__, __FUNCTION__);
-        abort();
+        ret = portTRY_ENTER_CRITICAL(mux, timeout);
     }
+    return ret;
 }
 
 static inline void __attribute__((always_inline)) vPortEnterCriticalSafe(portMUX_TYPE *mux)
 {
-    if (xPortInIsrContext()) {
-        portENTER_CRITICAL_ISR(mux);
-    } else {
-        portENTER_CRITICAL(mux);
-    }
+    xPortEnterCriticalTimeoutSafe(mux, portMUX_NO_TIMEOUT);
 }
 
 static inline void __attribute__((always_inline)) vPortExitCriticalSafe(portMUX_TYPE *mux)
@@ -646,6 +632,18 @@ static inline bool IRAM_ATTR xPortCanYield(void)
 static inline BaseType_t IRAM_ATTR xPortGetCoreID(void)
 {
     return (uint32_t) cpu_hal_get_core_id();
+}
+
+static inline void __attribute__((always_inline)) uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
+{
+    compare_and_set_native(addr, compare, set);
+}
+
+static inline void __attribute__((always_inline)) uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
+{
+#ifdef CONFIG_SPIRAM
+    compare_and_set_extram(addr, compare, set);
+#endif
 }
 
 
