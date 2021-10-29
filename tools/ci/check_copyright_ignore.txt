@@ -1,4 +1,3 @@
-components/asio/port/mbedtls/include/mbedtls_engine.hpp
 components/bootloader/subproject/main/bootloader_hooks.h
 components/bootloader/subproject/main/bootloader_start.c
 components/bt/common/osi/alarm.c
@@ -1120,10 +1119,6 @@ components/mbedtls/port/include/esp32/sha.h
 components/mbedtls/port/include/esp32s2/aes.h
 components/mbedtls/port/include/esp32s2/gcm.h
 components/mbedtls/port/include/esp32s2/sha.h
-components/mbedtls/port/include/esp_crypto_shared_gdma.h
-components/mbedtls/port/include/esp_mem.h
-components/mbedtls/port/include/gcm_alt.h
-components/mbedtls/port/include/mbedtls/esp_config.h
 components/mbedtls/port/include/mbedtls/esp_debug.h
 components/mbedtls/port/include/md/esp_md.h
 components/mbedtls/port/include/md5_alt.h

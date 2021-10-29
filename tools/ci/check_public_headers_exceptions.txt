@@ -45,9 +45,10 @@ components/wpa_supplicant/include/
 components/wpa_supplicant/port/
 components/wpa_supplicant/esp_supplicant/include/
 
+components/mbedtls/mbedtls/
 components/mbedtls/port/include/
-components/mbedtls/mbedtls/include/mbedtls/
-components/mbedtls/mbedtls/include/psa/
+components/mbedtls/port/dynamic/esp_mbedtls_dynamic_impl.h
+components/mbedtls/test/
 
 components/esp-tls/private_include/
 

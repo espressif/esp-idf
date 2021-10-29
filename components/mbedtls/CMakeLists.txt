@@ -89,7 +89,8 @@ endif()
 set(mbedtls_targets mbedtls mbedcrypto mbedx509)
 
 set(mbedtls_target_sources "${COMPONENT_DIR}/port/mbedtls_debug.c"
-                           "${COMPONENT_DIR}/port/net_sockets.c")
+                           "${COMPONENT_DIR}/port/net_sockets.c"
+                           "${COMPONENT_DIR}/port/certs.c")
 
 if(CONFIG_MBEDTLS_DYNAMIC_BUFFER)
 set(mbedtls_target_sources ${mbedtls_target_sources}

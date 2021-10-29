@@ -111,9 +111,7 @@ check_public_headers:
   tags:
     - build
   script:
-      # - python tools/ci/check_public_headers.py --jobs 4 --prefix xtensa-esp32-elf-
-      # skip the public headers check for now
-      - echo "This has been skipped for passing mbedtls check"
+    - python tools/ci/check_public_headers.py --jobs 4 --prefix xtensa-esp32-elf-
 
 check_soc_component:
   extends:

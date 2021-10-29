@@ -10,11 +10,11 @@
  *  Copyright The Mbed TLS Contributors
  *  SPDX-License-Identifier: Apache-2.0
  *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * This set of compile-time options may be used to enable
+ * or disable features selectively, and reduce the global
+ * memory footprint.
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
+ * SPDX-FileCopyrightText: The Mbed TLS Contributors
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
@@ -22,7 +22,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 #ifndef ESP_CONFIG_H
 #define ESP_CONFIG_H
 
