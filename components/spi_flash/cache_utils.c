@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdlib.h>
 #include <assert.h>
@@ -83,6 +75,17 @@ static volatile bool s_flash_op_complete = false;
 static volatile int s_flash_op_cpu = -1;
 #endif
 
+static inline bool esp_task_stack_is_sane_cache_disabled(void)
+{
+    const void *sp = (const void *)esp_cpu_get_sp();
+
+    return esp_ptr_in_dram(sp)
+#if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
+        || esp_ptr_in_rtc_dram_fast(sp)
+#endif
+    ;
+}
+
 void spi_flash_init_lock(void)
 {
     s_flash_op_mutex = xSemaphoreCreateRecursiveMutex();
@@ -130,7 +133,7 @@ void IRAM_ATTR spi_flash_op_block_func(void *arg)
 
 void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu(void)
 {
-    assert(esp_ptr_in_dram((const void *)esp_cpu_get_sp()));
+    assert(esp_task_stack_is_sane_cache_disabled());
 
     spi_flash_op_lock();
 
