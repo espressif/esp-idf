@@ -88,7 +88,7 @@ and :cpp:func:`xTaskCreateStatic` have led to the addition of
 :cpp:func:`xTaskCreatePinnedToCore` and :cpp:func:`xTaskCreateStaticPinnedToCore` in 
 ESP-IDF FreeRTOS 
 
-For more details see :component_file:`freertos/tasks.c`
+For more details see :component_file:`freertos/FreeRTOS-Kernel/tasks.c`
 
 The ESP-IDF FreeRTOS task creation functions are nearly identical to their
 vanilla counterparts with the exception of the extra parameter known as
@@ -333,8 +333,8 @@ The ESP-IDF FreeRTOS critical section functions have been modified as follows…
    in order to be in compliance with Vanilla FreeRTOS.
 
 For more details see :component_file:`esp_hw_support/include/soc/spinlock.h`,
-:component_file:`freertos/include/freertos/task.h`,
-and :component_file:`freertos/tasks.c`
+:component_file:`freertos/FreeRTOS-Kernel/include/freertos/task.h`,
+and :component_file:`freertos/FreeRTOS-Kernel/tasks.c`
 
 It should be noted that when modifying vanilla FreeRTOS code to be ESP-IDF
 FreeRTOS compatible, it is trivial to modify the type of critical section called

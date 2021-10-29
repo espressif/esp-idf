@@ -19,7 +19,7 @@ These third party libraries can be included into the application (firmware) prod
 
 * :component:`Xtensa header files<xtensa/include/xtensa>` are Copyright (C) 2013 Tensilica Inc and are licensed under the MIT License as reproduced in the individual header files.
 
-* Original parts of FreeRTOS_ (components/freertos) are Copyright (C) 2017 Amazon.com, Inc. or its affiliates are licensed under the MIT License, as described in :component_file:`license.txt<freertos/LICENSE.md>`.
+* Original parts of FreeRTOS_ (components/freertos) are Copyright (C) 2017 Amazon.com, Inc. or its affiliates are licensed under the MIT License, as described in :component_file:`license.txt<freertos/FreeRTOS-Kernel/LICENSE.md>`.
 
 * Original parts of LWIP_ (components/lwip) are Copyright (C) 2001, 2002 Swedish Institute of Computer Science and are licensed under the BSD License as described in :component_file:`COPYING file<lwip/lwip/COPYING>`.
 

@@ -206,13 +206,13 @@ INPUT = \
     $(PROJECT_PATH)/components/efuse/include/esp_efuse.h \
     $(PROJECT_PATH)/components/bootloader_support/include/esp_app_format.h \
     $(PROJECT_PATH)/components/pthread/include/esp_pthread.h \
-    $(PROJECT_PATH)/components/freertos/include/freertos/task.h \
-    $(PROJECT_PATH)/components/freertos/include/freertos/queue.h \
-    $(PROJECT_PATH)/components/freertos/include/freertos/semphr.h \
-    $(PROJECT_PATH)/components/freertos/include/freertos/timers.h \
-    $(PROJECT_PATH)/components/freertos/include/freertos/event_groups.h \
-    $(PROJECT_PATH)/components/freertos/include/freertos/stream_buffer.h \
-    $(PROJECT_PATH)/components/freertos/include/freertos/message_buffer.h \
+    $(PROJECT_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos/task.h \
+    $(PROJECT_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos/queue.h \
+    $(PROJECT_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos/semphr.h \
+    $(PROJECT_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos/timers.h \
+    $(PROJECT_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos/event_groups.h \
+    $(PROJECT_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos/stream_buffer.h \
+    $(PROJECT_PATH)/components/freertos/FreeRTOS-Kernel/include/freertos/message_buffer.h \
     $(PROJECT_PATH)/components/esp_ringbuf/include/freertos/ringbuf.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_err.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_check.h \
