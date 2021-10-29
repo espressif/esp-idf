@@ -91,17 +91,11 @@ void esp_timer_impl_advance(int64_t time_us)
 
 esp_err_t esp_timer_impl_early_init(void)
 {
-    systimer_hal_init(&systimer_hal);
+    systimer_hal_init();
 
-#if !SOC_SYSTIMER_FIXED_TICKS_US
-    assert(rtc_clk_xtal_freq_get() == 40 && "update the step for xtal to support other XTAL:APB frequency ratios");
-    systimer_hal_set_steps_per_tick(&systimer_hal, 0, 2); // for xtal
-    systimer_hal_set_steps_per_tick(&systimer_hal, 1, 1); // for pll
-#endif
-
-    systimer_hal_enable_counter(&systimer_hal, SYSTIMER_LL_COUNTER_CLOCK);
-    systimer_hal_select_alarm_mode(&systimer_hal, SYSTIMER_LL_ALARM_CLOCK, SYSTIMER_ALARM_MODE_ONESHOT);
-    systimer_hal_connect_alarm_counter(&systimer_hal, SYSTIMER_LL_ALARM_CLOCK, SYSTIMER_LL_COUNTER_CLOCK);
+    systimer_hal_enable_counter(SYSTIMER_COUNTER_0);
+    systimer_hal_select_alarm_mode(SYSTIMER_ALARM_2, SYSTIMER_ALARM_MODE_ONESHOT);
+    systimer_hal_connect_alarm_counter(SYSTIMER_ALARM_2, SYSTIMER_COUNTER_0);
 
     return ESP_OK;
 }
