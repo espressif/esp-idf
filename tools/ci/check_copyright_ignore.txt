@@ -2450,7 +2450,6 @@ components/spi_flash/spi_flash_chip_issi.c
 components/spi_flash/spi_flash_chip_mxic.c
 components/spi_flash/spi_flash_chip_mxic_opi.c
 components/spi_flash/spi_flash_chip_winbond.c
-components/spi_flash/spi_flash_os_func_app.c
 components/spi_flash/spi_flash_os_func_noos.c
 components/spi_flash/test/test_esp_flash.c
 components/spi_flash/test/test_flash_encryption.c
