@@ -266,7 +266,8 @@ static esp_err_t lan8720_reset_hw(esp_eth_phy_t *phy)
         gpio_pad_select_gpio(lan8720->reset_gpio_num);
         gpio_set_direction(lan8720->reset_gpio_num, GPIO_MODE_OUTPUT);
         gpio_set_level(lan8720->reset_gpio_num, 0);
-        ets_delay_us(100); // insert min input assert time
+        /* assert nRST signal on LAN8720 a little longer than the minimum specified in datasheet */
+        ets_delay_us(150);
         gpio_set_level(lan8720->reset_gpio_num, 1);
     }
     return ESP_OK;
