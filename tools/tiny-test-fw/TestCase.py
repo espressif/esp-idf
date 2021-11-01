@@ -45,7 +45,7 @@ class TestCase(object):
         """
         doc_string = self.test_method.__doc__
         try:
-            doc = yaml.load(doc_string)
+            doc = yaml.load(doc_string, Loader=yaml.Loader)
         except (AttributeError, OSError, UnicodeDecodeError):
             doc = self.DEFAULT_CASE_DOC
         doc.update(self.test_method.env_args)

@@ -150,7 +150,7 @@ class AssignTest(object):
     def _parse_gitlab_ci_config(self, ci_config_file):
 
         with open(ci_config_file, "r") as f:
-            ci_config = yaml.load(f)
+            ci_config = yaml.load(f, Loader=yaml.Loader)
 
         job_list = list()
         for job_name in ci_config:

@@ -52,7 +52,7 @@ class Config(object):
         """
         try:
             with open(config_file) as f:
-                configs = yaml.load(f)[env_name]
+                configs = yaml.load(f, Loader=yaml.Loader)[env_name]
         except (OSError, TypeError, IOError):
             configs = dict()
         return configs
