@@ -17,7 +17,7 @@ GITLAB_CONFIG_FILE = os.path.join(os.getenv("IDF_PATH"), ".gitlab-ci.yml")
 
 def check_artifacts_expire_time():
     with open(GITLAB_CONFIG_FILE, "r") as f:
-        config = yaml.load(f)
+        config = yaml.load(f, Loader=yaml.Loader)
 
     errors = []
 

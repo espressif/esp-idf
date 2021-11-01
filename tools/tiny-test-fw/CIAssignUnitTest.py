@@ -110,7 +110,7 @@ class UnitTestAssignTest(CIAssignTest.AssignTest):
 
         try:
             with open(test_case_path, "r") as f:
-                raw_data = yaml.load(f)
+                raw_data = yaml.load(f, Loader=yaml.Loader)
             test_cases = raw_data["test cases"]
         except IOError:
             print("Test case path is invalid. Should only happen when use @bot to skip unit test.")
