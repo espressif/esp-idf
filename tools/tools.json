@@ -196,7 +196,7 @@
       "description": "LLVM for Xtensa (ESP32, ESP32-S2) based on clang",
       "export_paths": [
         [
-          "xtensa-clang",
+          "xtensa-esp32-elf-clang",
           "bin"
         ]
       ],
@@ -213,7 +213,7 @@
         "clang",
         "--version"
       ],
-      "version_regex": "version\\s*([0-9\\.]+)\\s*\\([^\\s]+\\s*(\\w+)\\)",
+      "version_regex": "version\\s*([0-9\\.]+)\\s*\\([^\\s]+\\s*(\\w{10}).+\\)",
       "version_regex_replace": "\\1-\\2",
       "versions": [
         {
