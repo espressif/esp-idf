@@ -41,3 +41,9 @@ As a result, the specific "chip number" functions calls were replaced by generic
 
 * :cpp:func:`esp_eth_phy_new_ksz8041` and :cpp:func:`esp_eth_phy_new_ksz8081` were removed, use :cpp:func:`esp_eth_phy_new_ksz80xx` instead
 * :cpp:func:`esp_eth_phy_new_lan8720` was removed, use :cpp:func:`esp_eth_phy_new_lan87xx` instead
+
+
+ESP NETIF Glue Event Handlers
+-----------------------------
+``esp_eth_set_default_handlers()`` and ``esp_eth_clear_default_handlers()`` functions were removed. Registration of the default IP layer handlers for Ethernet is now handled automatically. If users have already followed the recommendation to fully initialize the Ethernet driver and network interface prior to registering their Ethernet/IP event handlers, then no action is required (except for deleting the affected functions). Otherwise, users should ensure that they register the user event handlers as the last thing prior to starting the Ethernet driver.
+

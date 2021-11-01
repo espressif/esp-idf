@@ -571,12 +571,10 @@ components/esp_common/include/esp_types.h
 components/esp_common/src/esp_err_to_name.c
 components/esp_common/test/test_attr.c
 components/esp_eth/include/esp_eth_mac.h
-components/esp_eth/include/esp_eth_netif_glue.h
 components/esp_eth/include/eth_phy_regs_struct.h
 components/esp_eth/src/dm9051.h
 components/esp_eth/src/esp_eth_mac_openeth.c
 components/esp_eth/src/esp_eth_mac_w5500.c
-components/esp_eth/src/esp_eth_netif_glue.c
 components/esp_eth/src/esp_eth_phy.c
 components/esp_eth/src/ksz8851.h
 components/esp_eth/src/openeth.h
