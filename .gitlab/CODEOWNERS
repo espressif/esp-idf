@@ -204,8 +204,6 @@ requirements.txt              @esp-idf-codeowners/tools
 # sort-order-reset
 
 # ignore lists
-/tools/ci/check_copyright_ignore.txt                    @esp-idf-codeowners/tools
-/tools/ci/check_copyright_permanent_ignore.txt          @esp-idf-codeowners/all-maintainers
 /tools/ci/check_examples_cmake_make-cmake_ignore.txt    @esp-idf-codeowners/tools
 /tools/ci/check_examples_cmake_make-make_ignore.txt     @esp-idf-codeowners/tools
 /tools/ci/mypy_ignore_list.txt                          @esp-idf-codeowners/tools
