@@ -1097,7 +1097,6 @@ components/esp_system/crosscore_int.c
 components/esp_system/dbg_stubs.c
 components/esp_system/eh_frame_parser.c
 components/esp_system/esp_err.c
-components/esp_system/esp_system.c
 components/esp_system/fpga_overrides.c
 components/esp_system/freertos_hooks.c
 components/esp_system/include/eh_frame_parser.h
@@ -1124,7 +1123,6 @@ components/esp_system/port/brownout.c
 components/esp_system/port/include/esp_clk_internal.h
 components/esp_system/port/include/port/panic_funcs.h
 components/esp_system/port/include/riscv/eh_frame_parser_impl.h
-components/esp_system/port/panic_handler.c
 components/esp_system/port/public_compat/brownout.h
 components/esp_system/port/public_compat/cache_err_int.h
 components/esp_system/port/public_compat/trax.h
