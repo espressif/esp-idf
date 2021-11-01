@@ -41,7 +41,6 @@ tools/ci/check_callgraph.py
 tools/ci/check_codeowners.py
 tools/ci/check_copyright.py
 tools/ci/check_deprecated_kconfigs.py
-tools/ci/check_examples_cmake_make.py
 tools/ci/check_examples_rom_header.sh
 tools/ci/check_executables.py
 tools/ci/check_idf_version.sh
@@ -51,7 +50,6 @@ tools/ci/check_rules_yml.py
 tools/ci/check_soc_struct_headers.py
 tools/ci/check_tools_files_patterns.py
 tools/ci/check_type_comments.py
-tools/ci/check_ut_cmake_make.sh
 tools/ci/checkout_project_ref.py
 tools/ci/deploy_docs.py
 tools/ci/envsubst.py
@@ -63,7 +61,6 @@ tools/ci/mirror-submodule-update.sh
 tools/ci/multirun_with_pyenv.sh
 tools/ci/push_to_github.sh
 tools/ci/test_autocomplete.py
-tools/ci/test_build_system.sh
 tools/ci/test_build_system_cmake.sh
 tools/ci/test_check_kconfigs.py
 tools/ci/test_configure_ci_environment.sh
