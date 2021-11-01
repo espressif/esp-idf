@@ -50,9 +50,7 @@
 #include "esp_pm.h"
 #include "esp_private/pm_impl.h"
 #include "esp_pthread.h"
-#include "esp_private/usb_console.h"
-#include "esp_vfs_cdcacm.h"
-#include "esp_vfs_usb_serial_jtag.h"
+#include "esp_vfs_console.h"
 
 #include "brownout.h"
 
@@ -82,9 +80,6 @@
 #if !(SOC_CPU_CORES_NUM > 1) && !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     #error "System has been configured to run on multiple cores, but target SoC only has a single core."
 #endif
-
-#define STRINGIFY(s) STRINGIFY2(s)
-#define STRINGIFY2(s) #s
 
 uint64_t g_startup_time = 0;
 
@@ -271,23 +266,14 @@ static void do_core_init(void)
     esp_timer_early_init();
     esp_newlib_time_init();
 
-#ifdef CONFIG_VFS_SUPPORT_IO
-#ifdef CONFIG_ESP_CONSOLE_UART
-    esp_vfs_dev_uart_register();
-    const char *default_stdio_dev = "/dev/uart/" STRINGIFY(CONFIG_ESP_CONSOLE_UART_NUM);
-#endif // CONFIG_ESP_CONSOLE_UART
-#ifdef CONFIG_ESP_CONSOLE_USB_CDC
-    ESP_ERROR_CHECK(esp_usb_console_init());
-    ESP_ERROR_CHECK(esp_vfs_dev_cdcacm_register());
-    const char *default_stdio_dev = "/dev/cdcacm";
-#endif // CONFIG_ESP_CONSOLE_USB_CDC
-#ifdef CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
-    ESP_ERROR_CHECK(esp_vfs_dev_usb_serial_jtag_register());
-    const char *default_stdio_dev = "/dev/usbserjtag";
-#endif // CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
-#endif // CONFIG_VFS_SUPPORT_IO
+#if CONFIG_VFS_SUPPORT_IO
+    // VFS console register.
+    esp_err_t vfs_err = esp_vfs_console_register();
+    assert(vfs_err == ESP_OK && "Failed to register vfs console");
+#endif
 
 #if defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_NONE)
+    const static char *default_stdio_dev = "/dev/console/";
     esp_reent_init(_GLOBAL_REENT);
     _GLOBAL_REENT->_stdin  = fopen(default_stdio_dev, "r");
     _GLOBAL_REENT->_stdout = fopen(default_stdio_dev, "w");
