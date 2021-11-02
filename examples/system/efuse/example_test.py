@@ -6,17 +6,21 @@ import re
 import ttfw_idf
 
 
-def erase_field_on_emul_efuse(dut, bit_pos):  # type: (ttfw_idf.TinyFW.Env, int) -> None
+def erase_field_on_emul_efuse(dut, pos_of_bits):  # type: (ttfw_idf.TinyFW.Env, list) -> None
     emul_efuse_bin_path = os.path.join(dut.app.binary_path, 'emul_efuse.bin')
     dut.dump_flash(emul_efuse_bin_path, partition='emul_efuse')
 
-    nbytes, nbits = divmod(bit_pos, 8)
-    with open(emul_efuse_bin_path, 'r+b') as f:
-        f.seek(nbytes, 0)
-        c = f.read(1)
-        toggled = bytes([ord(c) ^ (1 << nbits)])
-        f.seek(-1, 1)  # or absolute: f.seek(nbytes, 0)
-        f.write(toggled)
+    def erase_bit(pos_of_bit):  # type: (int) -> None
+        nbytes, nbits = divmod(pos_of_bit, 8)
+        with open(emul_efuse_bin_path, 'r+b') as f:
+            f.seek(nbytes)
+            data = ord(f.read(1))
+            data &= ~(1 << nbits)
+            f.seek(-1, os.SEEK_CUR)
+            f.write(bytes([data]))
+
+    for pos_of_bit in sorted(pos_of_bits):
+        erase_bit(pos_of_bit)
 
     offs = dut.app.partition_table['emul_efuse']['offset']
     flash_files = [(offs, emul_efuse_bin_path)]
@@ -153,10 +157,16 @@ def test_examples_efuse_with_virt_flash_enc_pre_loaded(env, _):  # type: (ttfw_i
 
     if dut.TARGET == 'esp32':
         print(' - Flash emul_efuse with pre-loaded efuses (FLASH_CRYPT_CNT 1 -> 0)')
-        erase_field_on_emul_efuse(dut, 0 * 32 + 20)
+        # offset of this eFuse is taken from components/efuse/esp32/esp_efuse_table.csv
+        FLASH_CRYPT_CNT = 20
+        # Resets eFuse, which enables Flash encryption feature
+        erase_field_on_emul_efuse(dut, [FLASH_CRYPT_CNT])
     else:
+        # offset of this eFuse is taken from components/efuse/{target}/esp_efuse_table.csv
         print(' - Flash emul_efuse with pre-loaded efuses (SPI_BOOT_CRYPT_CNT 1 -> 0)')
-        erase_field_on_emul_efuse(dut, 2 * 32 + 18)
+        SPI_BOOT_CRYPT_CNT = 82
+        # Resets eFuse, which enables Flash encryption feature
+        erase_field_on_emul_efuse(dut, [SPI_BOOT_CRYPT_CNT])
 
     print(' - Start app (flash partition_table and app)')
     dut.start_app_no_enc()
@@ -298,7 +308,10 @@ def test_examples_efuse_with_virt_secure_boot_v1_pre_loaded(env, _):  # type: (t
     dut.expect('example: Done')
 
     print(' - Flash emul_efuse with pre-loaded efuses (ABS_DONE_0 1 -> 0)')
-    erase_field_on_emul_efuse(dut, 6 * 32 + 4)
+    # offset of this eFuse is taken from components/efuse/esp32/esp_efuse_table.csv
+    ABS_DONE_0 = 196
+    # Resets eFuse, which enables Secure boot (V1) feature
+    erase_field_on_emul_efuse(dut, [ABS_DONE_0])
 
     print(' - Start app (flash partition_table and app)')
     dut.start_app()
@@ -410,7 +423,10 @@ def test_examples_efuse_with_virt_secure_boot_v2_pre_loaded(env, _):  # type: (t
     dut.expect('example: Done')
 
     print(' - Flash emul_efuse with pre-loaded efuses (ABS_DONE_1 1 -> 0)')
-    erase_field_on_emul_efuse(dut, 6 * 32 + 5)
+    # offset of this eFuse is taken from components/efuse/esp32/esp_efuse_table.csv
+    ABS_DONE_1 = 197
+    # Resets eFuse, which enables Secure boot (V2) feature
+    erase_field_on_emul_efuse(dut, [ABS_DONE_1])
 
     print(' - Start app (flash partition_table and app)')
     dut.start_app()
@@ -453,7 +469,7 @@ def test_examples_efuse_with_virt_secure_boot_v2_pre_loaded(env, _):  # type: (t
     dut.expect('example: Done')
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32s2'])
+@ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32s2', 'esp32c3'])
 def test_examples_efuse_with_virt_secure_boot_v2_esp32xx(env, _):  # type: (ttfw_idf.TinyFW.Env, None) -> None
     dut = env.get_dut('efuse', 'examples/system/efuse', app_config_name='virt_secure_boot_v2')
     # check and log bin size
@@ -512,7 +528,7 @@ def test_examples_efuse_with_virt_secure_boot_v2_esp32xx(env, _):  # type: (ttfw
     dut.expect('example: Done')
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32s2'])
+@ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32s2', 'esp32c3'])
 def test_examples_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(env, _):  # type: (ttfw_idf.TinyFW.Env, None) -> None
     dut = env.get_dut('efuse', 'examples/system/efuse', app_config_name='virt_secure_boot_v2')
 
@@ -528,8 +544,15 @@ def test_examples_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(env, _):  # 
     dut.expect('Start eFuse example')
     dut.expect('example: Done')
 
-    print(' - Flash emul_efuse with pre-loaded efuses (SECURE_BOOT_EN 1 -> 0)')
-    erase_field_on_emul_efuse(dut, 3 * 32 + 20)
+    print(' - Flash emul_efuse with pre-loaded efuses (SECURE_BOOT_EN 1 -> 0, SECURE_BOOT_KEY_REVOKE[0..2] -> 0)')
+    # offsets of eFuses are taken from components/efuse/{target}/esp_efuse_table.csv
+    SECURE_BOOT_EN = 116
+    SECURE_BOOT_KEY_REVOKE0 = 85
+    SECURE_BOOT_KEY_REVOKE1 = 86
+    SECURE_BOOT_KEY_REVOKE2 = 87
+    # Resets eFuse, which enables Secure boot feature
+    # Resets eFuses, which control digest slots
+    erase_field_on_emul_efuse(dut, [SECURE_BOOT_EN, SECURE_BOOT_KEY_REVOKE0, SECURE_BOOT_KEY_REVOKE1, SECURE_BOOT_KEY_REVOKE2])
 
     print(' - Start app (flash partition_table and app)')
     dut.start_app()
@@ -707,7 +730,7 @@ def test_examples_efuse_with_virt_sb_v2_and_fe(env, _):  # type: (ttfw_idf.TinyF
     dut.expect('example: Done')
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32s2'])
+@ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32s2', 'esp32c3'])
 def test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(env, _):  # type: (ttfw_idf.TinyFW.Env, None) -> None
     dut = env.get_dut('efuse', 'examples/system/efuse', app_config_name='virt_sb_v2_and_fe')
     # check and log bin size
