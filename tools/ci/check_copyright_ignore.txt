@@ -1453,7 +1453,6 @@ components/hal/uart_hal_iram.c
 components/hal/usb_hal.c
 components/hal/usbh_hal.c
 components/hal/wdt_hal_iram.c
-components/heap/heap_caps.c
 components/heap/heap_caps_init.c
 components/heap/heap_private.h
 components/heap/heap_task_info.c
