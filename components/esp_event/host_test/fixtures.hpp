@@ -123,7 +123,7 @@ struct MockMutex : public CMockFix {
 };
 
 struct MockTask : public CMockFix {
-    MockTask (CreateAnd flags) : task((void*) 1)
+    MockTask (CreateAnd flags) : task((TaskHandle_t) 1)
     {
         if (flags == CreateAnd::FAIL) {
             xTaskCreatePinnedToCore_ExpectAnyArgsAndReturn(pdFALSE);

@@ -82,12 +82,9 @@
  * \ingroup Tasks
  */
 struct tskTaskControlBlock;     /* The old naming convention is used to prevent breaking kernel aware debuggers. */
-#ifdef ESP_PLATFORM // IDF-3769
-typedef void* TaskHandle_t;
-#else
-typedef struct tskTaskControlBlock* TaskHandle_t;
-#endif // ESP_PLATFORM
-/**
+typedef struct tskTaskControlBlock * TaskHandle_t;
+
+/*
  * Defines the prototype to which the application task hook function must
  * conform.
  */
