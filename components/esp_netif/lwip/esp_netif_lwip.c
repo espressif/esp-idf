@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 #include <lwip/ip_addr.h>
@@ -1889,9 +1881,12 @@ esp_err_t esp_netif_dhcpc_option(esp_netif_t *esp_netif, esp_netif_dhcp_option_m
                     *(uint8_t *)opt_val = dhcp->tries;
                 }
                 break;
+#if ESP_DHCP && !ESP_DHCP_DISABLE_VENDOR_CLASS_IDENTIFIER
+            case ESP_NETIF_VENDOR_SPECIFIC_INFO:
+                return dhcp_get_vendor_specific_information(opt_len, opt_val);
+#endif
             default:
                 return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
-                break;
         }
     } else if (opt_op == ESP_NETIF_OP_SET) {
         if (esp_netif->dhcpc_status == ESP_NETIF_DHCP_STARTED) {
@@ -1903,9 +1898,12 @@ esp_err_t esp_netif_dhcpc_option(esp_netif_t *esp_netif, esp_netif_dhcp_option_m
                     dhcp->tries = *(uint8_t *)opt_val;
                 }
                 break;
+#if ESP_DHCP && !ESP_DHCP_DISABLE_VENDOR_CLASS_IDENTIFIER
+            case ESP_NETIF_VENDOR_CLASS_IDENTIFIER:
+                return dhcp_set_vendor_class_identifier(opt_len, opt_val);
+#endif
             default:
                 return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
-                break;
         }
     } else {
         return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
