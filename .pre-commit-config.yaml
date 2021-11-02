@@ -97,17 +97,6 @@ repos:
           - 'mypy-extensions==0.4.3'
         language: python
         types: [python]
-      - id: check-copyright
-        name: Check copyright notices
-        entry: tools/ci/check_copyright.py --verbose --replace
-        additional_dependencies:
-          - 'comment_parser == 1.2.3'
-          - 'thefuzz == 0.19.0'
-          - 'thefuzz[speedup] == 0.19.0; sys_platform != "win32"'
-          # don't depend on python-Levenshtein on Windows, as it requires Microsoft C++ Build Tools to install
-        language: python
-        files: \.(py|c|h|cpp|hpp|ld)$
-        require_serial: true
       - id: check-tools-files-patterns
         name: Check tools dir files patterns
         entry: tools/ci/check_tools_files_patterns.py
@@ -120,4 +109,4 @@ repos:
     rev: v4.0.1
     hooks:
       - id: file-contents-sorter
-        files: 'tools\/ci\/(executable-list\.txt|mypy_ignore_list\.txt|check_copyright_ignore\.txt|check_copyright_permanent_ignore\.txt)'
+        files: 'tools\/ci\/(executable-list\.txt|mypy_ignore_list\.txt)'
