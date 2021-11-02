@@ -49,14 +49,6 @@ int test_hcd_get_num_pipe_events(hcd_pipe_handle_t pipe_hdl);
 // ----------------------------------------------- Driver/Port Related -------------------------------------------------
 
 /**
- * @brief For the USB PHY into the connected or disconnected state
- *
- * @param connected For into connected state if true, disconnected if false
- * @param delay_ticks Delay in ticks before forcing state
- */
-void test_hcd_force_conn_state(bool connected, TickType_t delay_ticks);
-
-/**
  * @brief Sets up the HCD and initializes an HCD port.
  *
  * @return hcd_port_handle_t Port handle
@@ -73,7 +65,7 @@ void test_hcd_teardown(hcd_port_handle_t port_hdl);
 /**
  * @brief Wait for a connection on an HCD port
  *
- * @note This function will internally call test_hcd_force_conn_state() to allow for a connection
+ * @note This function will internally call test_usb_force_conn_state() to allow for a connection
  *
  * @param port_hdl Port handle
  * @return usb_speed_t Speed of the connected device
@@ -83,7 +75,7 @@ usb_speed_t test_hcd_wait_for_conn(hcd_port_handle_t port_hdl);
 /**
  * @brief Wait for a disconnection on an HCD port
  *
- * @note This fucntion will internally call test_hcd_force_conn_state() to force a disconnection
+ * @note This fucntion will internally call test_usb_force_conn_state() to force a disconnection
  *
  * @param port_hdl Port handle
  * @param already_disabled Whether the HCD port is already in the disabled state

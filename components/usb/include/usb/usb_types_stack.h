@@ -43,7 +43,7 @@ typedef enum {
 /**
  * @brief Handle of a USB Device connected to a USB Host
  */
-typedef void * usb_device_handle_t;
+typedef struct usb_device_handle_s * usb_device_handle_t;
 
 /**
  * @brief Basic information of an enumerated device
@@ -68,6 +68,7 @@ typedef enum {
     USB_TRANSFER_STATUS_STALL,          /**< The transfer was stalled */
     USB_TRANSFER_STATUS_OVERFLOW,       /**< The transfer as more data was sent than was requested */
     USB_TRANSFER_STATUS_SKIPPED,        /**< ISOC packets only. The packet was skipped due to system latency or bus overload */
+    USB_TRANSFER_STATUS_NO_DEVICE,      /**< The transfer failed because the target device is gone */
 } usb_transfer_status_t;
 
 /**
@@ -102,7 +103,10 @@ typedef struct {
  *              split into multiple packets, and each packet is transferred at the endpoint's specified interval.
  * - Isochronous: Represents a stream of bytes that should be transferred to an endpoint at a fixed rate. The transfer
  *                is split into packets according to the each isoc_packet_desc. A packet is transferred at each interval
- *                of the endpoint.
+ *                of the endpoint. If an entire ISOC URB was transferred without error (skipped packets do not count as
+ *                errors), the URB's overall status and the status of each packet descriptor will be updated, and the
+ *                actual_num_bytes reflects the total bytes transferred over all packets. If the ISOC URB encounters an
+ *                error, the entire URB is considered erroneous so only the overall status will updated.
  *
  * @note For Bulk/Control/Interrupt IN transfers, the num_bytes must be a integer multiple of the endpoint's MPS
  * @note This structure should be allocated via usb_host_transfer_alloc()
