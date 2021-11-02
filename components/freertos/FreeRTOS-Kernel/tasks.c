@@ -5315,7 +5315,7 @@ TickType_t uxTaskResetEventItemValue( void )
 
 #if ( configUSE_MUTEXES == 1 )
 
-    void *pvTaskIncrementMutexHeldCount( void )
+    TaskHandle_t pvTaskIncrementMutexHeldCount( void )
     {
         TCB_t * curTCB;
 

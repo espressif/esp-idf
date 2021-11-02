@@ -24,7 +24,7 @@
 #include "osi/thread.h"
 
 struct osi_thread {
-  void *thread_handle;                  /*!< Store the thread object */
+  TaskHandle_t thread_handle;           /*!< Store the thread object */
   int  thread_id;                       /*!< May for some OS, such as Linux */
   bool stop;
   uint8_t work_queue_num;               /*!< Work queue number */

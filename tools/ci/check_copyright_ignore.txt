@@ -2869,7 +2869,6 @@ examples/bluetooth/esp_ble_mesh/common_components/fast_provisioning/ble_mesh_fas
 examples/bluetooth/esp_ble_mesh/common_components/light_driver/include/iot_led.h
 examples/bluetooth/esp_ble_mesh/common_components/light_driver/include/iot_light.h
 examples/bluetooth/esp_ble_mesh/common_components/light_driver/include/light_driver.h
-examples/bluetooth/esp_ble_mesh/common_components/light_driver/light_driver.c
 examples/bluetooth/esp_hid_device/main/esp_hid_device_main.c
 examples/bluetooth/esp_hid_device/main/esp_hid_gap.c
 examples/bluetooth/esp_hid_device/main/esp_hid_gap.h

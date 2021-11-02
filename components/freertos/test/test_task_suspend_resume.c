@@ -361,7 +361,7 @@ TEST_CASE("Test suspend-resume CPU. The number of tick_hook should be the same f
 
 static int duration_timer_ms;
 
-static void timer_callback(void *arg)
+static void timer_callback(TimerHandle_t arg)
 {
     duration_timer_ms += portTICK_PERIOD_MS;
 }
