@@ -1153,7 +1153,6 @@ components/hal/esp32/include/hal/emac_ll.h
 components/hal/esp32/include/hal/i2c_ll.h
 components/hal/esp32/include/hal/i2s_ll.h
 components/hal/esp32/include/hal/interrupt_controller_ll.h
-components/hal/esp32/include/hal/ledc_ll.h
 components/hal/esp32/include/hal/mcpwm_ll.h
 components/hal/esp32/include/hal/mpu_ll.h
 components/hal/esp32/include/hal/pcnt_ll.h
@@ -1188,7 +1187,6 @@ components/hal/esp32c3/include/hal/hmac_hal.h
 components/hal/esp32c3/include/hal/hmac_ll.h
 components/hal/esp32c3/include/hal/i2c_ll.h
 components/hal/esp32c3/include/hal/interrupt_controller_ll.h
-components/hal/esp32c3/include/hal/ledc_ll.h
 components/hal/esp32c3/include/hal/memprot_ll.h
 components/hal/esp32c3/include/hal/mpu_ll.h
 components/hal/esp32c3/include/hal/rtc_cntl_ll.h
@@ -1220,7 +1218,6 @@ components/hal/esp32h2/include/hal/hmac_hal.h
 components/hal/esp32h2/include/hal/hmac_ll.h
 components/hal/esp32h2/include/hal/i2c_ll.h
 components/hal/esp32h2/include/hal/interrupt_controller_ll.h
-components/hal/esp32h2/include/hal/ledc_ll.h
 components/hal/esp32h2/include/hal/memprot_ll.h
 components/hal/esp32h2/include/hal/mpu_ll.h
 components/hal/esp32h2/include/hal/rtc_cntl_ll.h
@@ -1259,7 +1256,6 @@ components/hal/esp32s2/include/hal/gpspi_flash_ll.h
 components/hal/esp32s2/include/hal/i2c_ll.h
 components/hal/esp32s2/include/hal/i2s_ll.h
 components/hal/esp32s2/include/hal/interrupt_controller_ll.h
-components/hal/esp32s2/include/hal/ledc_ll.h
 components/hal/esp32s2/include/hal/memprot_ll.h
 components/hal/esp32s2/include/hal/memprot_peri_ll.h
 components/hal/esp32s2/include/hal/mpu_ll.h
@@ -1291,7 +1287,6 @@ components/hal/esp32s3/include/hal/cpu_ll.h
 components/hal/esp32s3/include/hal/gpspi_flash_ll.h
 components/hal/esp32s3/include/hal/i2c_ll.h
 components/hal/esp32s3/include/hal/interrupt_controller_ll.h
-components/hal/esp32s3/include/hal/ledc_ll.h
 components/hal/esp32s3/include/hal/mcpwm_ll.h
 components/hal/esp32s3/include/hal/memprot_ll.h
 components/hal/esp32s3/include/hal/mpu_ll.h
