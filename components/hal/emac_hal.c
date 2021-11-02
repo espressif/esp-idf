@@ -1,16 +1,8 @@
-// Copyright 2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <string.h>
 #include "sdkconfig.h"
 #include "esp_attr.h"
@@ -166,7 +158,7 @@ void emac_hal_reset_desc_chain(emac_hal_context_t *hal)
     /* init rx chain */
     for (int i = 0; i < CONFIG_ETH_DMA_RX_BUFFER_NUM; i++) {
         /* Set Own bit of the Rx descriptor Status: DMA */
-        hal->rx_desc[i].RDES0.Own = 1;
+        hal->rx_desc[i].RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
         /* Set Buffer1 size and Second Address Chained bit */
         hal->rx_desc[i].RDES1.SecondAddressChained = 1;
         hal->rx_desc[i].RDES1.ReceiveBuffer1Size = CONFIG_ETH_DMA_BUFFER_SIZE;
@@ -182,7 +174,8 @@ void emac_hal_reset_desc_chain(emac_hal_context_t *hal)
 
     /* init tx chain */
     for (int i = 0; i < CONFIG_ETH_DMA_TX_BUFFER_NUM; i++) {
-        /* Set Second Address Chained bit */
+        /* Set Own bit of the Tx descriptor Status: CPU */
+        hal->tx_desc[i].TDES0.Own = EMAC_LL_DMADESC_OWNER_CPU;
         hal->tx_desc[i].TDES0.SecondAddressChained = 1;
         hal->tx_desc[i].TDES1.TransmitBuffer1Size = CONFIG_ETH_DMA_BUFFER_SIZE;
         /* Enable Ethernet DMA Tx Descriptor interrupt */

@@ -1168,7 +1168,6 @@ components/hal/aes_hal.c
 components/hal/cpu_hal.c
 components/hal/dac_hal.c
 components/hal/ds_hal.c
-components/hal/emac_hal.c
 components/hal/esp32/adc_hal.c
 components/hal/esp32/brownout_hal.c
 components/hal/esp32/gpio_hal_workaround.c
