@@ -591,7 +591,6 @@ components/esp_eth/include/esp_eth.h
 components/esp_eth/include/esp_eth_com.h
 components/esp_eth/include/esp_eth_mac.h
 components/esp_eth/include/esp_eth_netif_glue.h
-components/esp_eth/include/esp_eth_phy.h
 components/esp_eth/include/eth_phy_regs_struct.h
 components/esp_eth/src/dm9051.h
 components/esp_eth/src/esp_eth.c
@@ -605,7 +604,6 @@ components/esp_eth/src/esp_eth_phy.c
 components/esp_eth/src/esp_eth_phy_dm9051.c
 components/esp_eth/src/esp_eth_phy_dp83848.c
 components/esp_eth/src/esp_eth_phy_ip101.c
-components/esp_eth/src/esp_eth_phy_ksz80xx.c
 components/esp_eth/src/esp_eth_phy_ksz8851snl.c
 components/esp_eth/src/esp_eth_phy_lan87xx.c
 components/esp_eth/src/esp_eth_phy_rtl8201.c
