@@ -1421,7 +1421,6 @@ components/mqtt/host_test/mocks/include/machine/endian.h
 components/mqtt/host_test/mocks/include/sys/queue.h
 components/newlib/abort.c
 components/newlib/assert.c
-components/newlib/heap.c
 components/newlib/platform_include/assert.h
 components/newlib/platform_include/errno.h
 components/newlib/platform_include/esp_newlib.h
