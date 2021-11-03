@@ -1488,8 +1488,6 @@ components/idf_test/include/esp32h2/idf_performance_target.h
 components/idf_test/include/esp32s2/idf_performance_target.h
 components/idf_test/include/esp32s3/idf_performance_target.h
 components/idf_test/include/idf_performance.h
-components/ieee802154/include/esp_ieee802154.h
-components/ieee802154/include/esp_ieee802154_types.h
 components/jsmn/include/jsmn.h
 components/jsmn/src/jsmn.c
 components/linux/include/sys/queue.h
