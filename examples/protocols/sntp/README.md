@@ -20,6 +20,16 @@ Open the project configuration menu (`idf.py menuconfig`):
 When this example boots first time after ESP32 is reset, it connects to WiFi and obtains time using SNTP.
 See `initialize_sntp` function for details.
 
+## Obtaining time using LwIP SNTP-over-DHCP module
+
+NTP server addresses could be automatically aquired via DHCP server option 42. This could be usefull on closed environments where public NTPs are not accessible
+or to prefer local servers and reduce traffic to the outer world.
+See following menuconfig options:
+ * `Component config-->LWIP-->SNTP-->Maximum number of NTP servers`
+ * `Component config-->LWIP-->SNTP-->Request NTP servers from DHCP`
+ * `Component config-->LWIP-->SNTP-->Maximum number of NTP servers aquired via DHCP`
+ * `Component config-->LWIP-->Enable LWIP Debug-->Enable SNTP debug messages`
+
 ## Timekeeping
 
 Once time is synchronized, ESP32 will perform timekeeping using built-in timers.
