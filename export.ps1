@@ -12,7 +12,7 @@ $OLD_PATH = $env:PATH.split($S) | Select-Object -Unique # array without duplicat
 $envars_raw = python $IDF_PATH/tools/idf_tools.py export --format key-value
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } # if error
 
-$envars_array # will be filled like:
+$envars_array = @() # will be filled like:
 #               [
 #                    [vname1, vval1], [vname2, vval2], ...
 #               ]
