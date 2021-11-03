@@ -1467,9 +1467,6 @@ components/heap/multi_heap_config.h
 components/heap/multi_heap_internal.h
 components/heap/multi_heap_platform.h
 components/heap/multi_heap_poisoning.c
-components/heap/port/esp32/memory_layout.c
-components/heap/port/esp32c3/memory_layout.c
-components/heap/port/esp32h2/memory_layout.c
 components/heap/port/memory_layout_utils.c
 components/heap/test/test_aligned_alloc_caps.c
 components/heap/test/test_allocator_timings.c
