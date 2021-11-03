@@ -115,6 +115,12 @@ test_spiffs_on_host:
     - cd ../test_spiffsgen
     - ./test_spiffsgen.py
 
+test_fatfsgen_on_host:
+  extends: .host_test_template
+  script:
+    - cd components/fatfs/test_fatfsgen/
+    - ./test_fatfsgen.py
+
 test_multi_heap_on_host:
   extends: .host_test_template
   script:
