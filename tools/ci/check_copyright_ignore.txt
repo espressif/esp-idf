@@ -3153,7 +3153,6 @@ examples/cxx/experimental/experimental_cpp_component/include/esp_timer_cxx.hpp
 examples/cxx/experimental/experimental_cpp_component/test/test_cxx_exceptions.cpp
 examples/cxx/experimental/experimental_cpp_component/test/test_esp_event_cxx.cpp
 examples/cxx/experimental/experimental_cpp_component/test/test_esp_timer.cpp
-examples/cxx/experimental/experimental_cpp_component/test/test_i2c.cpp
 examples/cxx/experimental/sensor_mcp9808/main/sensor_mcp9808.cpp
 examples/cxx/pthread/example_test.py
 examples/cxx/pthread/main/cpp_pthread.cpp
