@@ -1832,7 +1832,6 @@ components/protocomm/src/transports/protocomm_console.c
 components/protocomm/src/transports/protocomm_httpd.c
 components/protocomm/test/test_protocomm.c
 components/pthread/include/esp_pthread.h
-components/pthread/pthread.c
 components/pthread/pthread_cond_var.c
 components/pthread/pthread_internal.h
 components/pthread/pthread_local_storage.c

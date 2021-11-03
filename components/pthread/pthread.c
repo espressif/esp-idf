@@ -1,20 +1,8 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
-// This module implements pthread API on top of FreeRTOS. API is implemented to the level allowing
-// libstdcxx threading framework to operate correctly. So not all original pthread routines are supported.
-//
+/*
+ * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <time.h>
 #include <errno.h>
@@ -64,9 +52,8 @@ typedef struct {
     int                 type;       ///< Mutex type. Currently supported PTHREAD_MUTEX_NORMAL and PTHREAD_MUTEX_RECURSIVE
 } esp_pthread_mutex_t;
 
-
 static SemaphoreHandle_t s_threads_mux  = NULL;
-portMUX_TYPE pthread_lazy_init_lock  = portMUX_INITIALIZER_UNLOCKED; // Used for mutexes and cond vars
+portMUX_TYPE pthread_lazy_init_lock  = portMUX_INITIALIZER_UNLOCKED; // Used for mutexes and cond vars and rwlocks
 static SLIST_HEAD(esp_thread_list_head, esp_pthread_entry) s_threads_list
                                         = SLIST_HEAD_INITIALIZER(s_threads_list);
 static pthread_key_t s_pthread_cfg_key;
