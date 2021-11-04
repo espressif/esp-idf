@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2015 Wind River Systems, Inc.
+ * SPDX-FileCopyrightText: 2013-2015 Wind River Systems, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
