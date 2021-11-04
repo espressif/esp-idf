@@ -1,5 +1,5 @@
-idf_component_register(SRC_DIRS .
+idf_component_register(SRCS test_wl.c
                        PRIV_INCLUDE_DIRS .
-                       PRIV_REQUIRES cmock test_utils wear_levelling
+                       PRIV_REQUIRES wear_levelling unity
                        EMBED_FILES test_partition_v1.bin
                       )
