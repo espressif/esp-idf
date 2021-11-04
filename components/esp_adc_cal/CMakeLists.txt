@@ -1,17 +1,7 @@
 idf_build_get_property(target IDF_TARGET)
 
-if(${target} STREQUAL "esp32")
-    idf_component_register(SRCS "esp_adc_cal_esp32.c"
-                    INCLUDE_DIRS "include"
-                    REQUIRES driver efuse)
+set(srcs "esp_adc_cal_${target}.c")
 
-elseif(${target} STREQUAL "esp32s2")
-    idf_component_register(SRCS "esp_adc_cal_esp32s2.c"
-                    INCLUDE_DIRS "include"
-                    REQUIRES driver efuse)
-
-elseif(${target} STREQUAL "esp32c3")
-    idf_component_register(SRCS "esp_adc_cal_esp32c3.c"
-                    INCLUDE_DIRS "include"
-                    REQUIRES driver efuse)
-endif()
+idf_component_register(SRCS ${srcs}
+                       INCLUDE_DIRS include
+                       REQUIRES driver efuse)
