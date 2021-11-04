@@ -593,6 +593,12 @@ static SPI_MASTER_ISR_ATTR void device_release_bus_internal(spi_host_t *host)
     atomic_store(&host->acquire_cs, NO_CS);
     //first try to restore the acquiring device
     for (int i = 0; i < NO_CS; i++) {
+
+        //don't try to atomic-load a device below if its a null pointer in the host array
+        spi_host_t* h = atomic_load(&host);
+        spi_device_t* devt = h->device[i];
+        if ( (int)devt < NO_CS+5 ) return; // disallow null pointer, but also pointer/s to memory 0x01 ,0x02, 0x03 etc
+
         //search for all registered devices
         spi_device_t* dev = atomic_load(&host->device[i]);
         if (dev && dev->waiting) {
