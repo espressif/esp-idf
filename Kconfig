@@ -201,6 +201,26 @@ mainmenu "Espressif IoT Development Framework Configuration"
         config APP_BUILD_USE_FLASH_SECTIONS
             bool # Whether to place code/data into memory-mapped flash sections
 
+
+        choice APP_FLASH_PARTITION_SELECTION
+            bool "Which partition to flash the main app to"
+            default APP_FLASH_PARTITION_SELECTION_BOOT_DEFAULT
+            depends on APP_BUILD_GENERATE_BINARIES
+            help
+                Specify which partition should be flashed for the main app.
+                Use Boot-Default to use the same partition as the bootloader selects
+                by default.
+
+            config APP_FLASH_PARTITION_SELECTION_BOOT_DEFAULT
+                bool "Boot-Default (--partition-boot-default)"
+            config APP_FLASH_PARTITION_SELECTION_OTA_0
+                bool "OTA 0 (--partition-type app --partition-subtype app_0)"
+            config APP_FLASH_PARTITION_SELECTION_OTA_1
+                bool "OTA 1 (--partition-type app --partition-subtype app_1)"
+            config APP_FLASH_PARTITION_SELECTION_FACTORY
+                bool "Factory (--partition-type app --partition-subtype factory)"
+        endchoice
+
     endmenu # Build type
 
     source "$COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE"
