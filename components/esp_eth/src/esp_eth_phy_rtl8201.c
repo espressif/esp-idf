@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 #include <stdlib.h>
@@ -188,34 +180,64 @@ static esp_err_t rtl8201_reset_hw(esp_eth_phy_t *phy)
  *       the result of negotiation won't be relected to uppler layers.
  *       Instead, the negotiation result is fetched by linker timer, see `rtl8201_get_link()`
  */
-static esp_err_t rtl8201_negotiate(esp_eth_phy_t *phy)
+static esp_err_t rtl8201_autonego_ctrl(esp_eth_phy_t *phy, eth_phy_autoneg_cmd_t cmd, bool *autonego_en_stat)
 {
     esp_err_t ret = ESP_OK;
     phy_rtl8201_t *rtl8201 = __containerof(phy, phy_rtl8201_t, parent);
     esp_eth_mediator_t *eth = rtl8201->eth;
-    /* in case any link status has changed, let's assume we're in link down status */
-    rtl8201->link_status = ETH_LINK_DOWN;
-    /* Restart auto negotiation */
-    bmcr_reg_t bmcr = {
-        .speed_select = 1,     /* 100Mbps */
-        .duplex_mode = 1,      /* Full Duplex */
-        .en_auto_nego = 1,     /* Auto Negotiation */
-        .restart_auto_nego = 1 /* Restart Auto Negotiation */
-    };
-    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
-    /* Wait for auto negotiation complete */
-    bmsr_reg_t bmsr;
-    uint32_t to = 0;
-    for (to = 0; to < rtl8201->autonego_timeout_ms / 100; to++) {
-        vTaskDelay(pdMS_TO_TICKS(100));
-        ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)), err, TAG, "read BMSR failed");
-        if (bmsr.auto_nego_complete) {
-            break;
+
+    bmcr_reg_t bmcr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+
+    switch (cmd) {
+    case ESP_ETH_PHY_AUTONEGO_RESTART:
+        ESP_GOTO_ON_FALSE(bmcr.en_auto_nego, ESP_ERR_INVALID_STATE, err, TAG, "auto negotiation is disabled");
+        /* in case any link status has changed, let's assume we're in link down status */
+        rtl8201->link_status = ETH_LINK_DOWN;
+
+        bmcr.restart_auto_nego = 1; /* Restart Auto Negotiation */
+
+        ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+        /* Wait for auto negotiation complete */
+        bmsr_reg_t bmsr;
+        uint32_t to = 0;
+        for (to = 0; to < rtl8201->autonego_timeout_ms / 100; to++) {
+            vTaskDelay(pdMS_TO_TICKS(100));
+            ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)), err, TAG, "read BMSR failed");
+            if (bmsr.auto_nego_complete) {
+                break;
+            }
         }
+        if ((to >= rtl8201->autonego_timeout_ms / 100) && (rtl8201->link_status == ETH_LINK_UP)) {
+            ESP_LOGW(TAG, "auto negotiation timeout");
+        }
+        break;
+    case ESP_ETH_PHY_AUTONEGO_DIS:
+        if (bmcr.en_auto_nego == 1) {
+            bmcr.en_auto_nego = 0;     /* Disable Auto Negotiation */
+            ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+            /* read configuration back */
+            ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+            ESP_GOTO_ON_FALSE(bmcr.en_auto_nego == 0, ESP_FAIL, err, TAG, "disable auto-negotiation failed");
+        }
+        break;
+    case ESP_ETH_PHY_AUTONEGO_EN:
+        if (bmcr.en_auto_nego == 0) {
+            bmcr.en_auto_nego = 1;     /* Enable Auto Negotiation */
+            ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+            /* read configuration back */
+            ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+            ESP_GOTO_ON_FALSE(bmcr.en_auto_nego == 1, ESP_FAIL, err, TAG, "enable auto-negotiation failed");
+        }
+        break;
+    case ESP_ETH_PHY_AUTONEGO_G_STAT:
+        /* do nothing autonego_en_stat is set at the function end */
+        break;
+    default:
+        return ESP_ERR_INVALID_ARG;
     }
-    if ((to >= rtl8201->autonego_timeout_ms / 100) && (rtl8201->link_status == ETH_LINK_UP)) {
-        ESP_LOGW(TAG, "auto negotiation timeout");
-    }
+
+    *autonego_en_stat = bmcr.en_auto_nego;
     return ESP_OK;
 err:
     return ret;
@@ -321,6 +343,51 @@ err:
     return ret;
 }
 
+static esp_err_t rtl8201_set_speed(esp_eth_phy_t *phy, eth_speed_t speed)
+{
+    esp_err_t ret = ESP_OK;
+    phy_rtl8201_t *rtl8201 = __containerof(phy, phy_rtl8201_t, parent);
+    esp_eth_mediator_t *eth = rtl8201->eth;
+    if (rtl8201->link_status == ETH_LINK_UP) {
+        /* Since the link is going to be reconfigured, consider it down for a while */
+        rtl8201->link_status = ETH_LINK_DOWN;
+        /* Indicate to upper stream apps the link is cosidered down */
+        ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)rtl8201->link_status), err, TAG, "change link failed");
+    }
+    /* Set speed */
+    bmcr_reg_t bmcr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+    bmcr.speed_select = speed;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+
+    return ESP_OK;
+err:
+    return ret;
+}
+
+static esp_err_t rtl8201_set_duplex(esp_eth_phy_t *phy, eth_duplex_t duplex)
+{
+    esp_err_t ret = ESP_OK;
+    phy_rtl8201_t *rtl8201 = __containerof(phy, phy_rtl8201_t, parent);
+    esp_eth_mediator_t *eth = rtl8201->eth;
+
+    if (rtl8201->link_status == ETH_LINK_UP) {
+        /* Since the link is going to be reconfigured, consider it down for a while */
+        rtl8201->link_status = ETH_LINK_DOWN;
+        /* Indicate to upper stream apps the link is cosidered down */
+        ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)rtl8201->link_status), err, TAG, "change link failed");
+    }
+    /* Set duplex mode */
+    bmcr_reg_t bmcr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+    bmcr.duplex_mode = duplex;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+
+    return ESP_OK;
+err:
+    return ret;
+}
+
 static esp_err_t rtl8201_init(esp_eth_phy_t *phy)
 {
     esp_err_t ret = ESP_OK;
@@ -371,13 +438,15 @@ esp_eth_phy_t *esp_eth_phy_new_rtl8201(const eth_phy_config_t *config)
     rtl8201->parent.init = rtl8201_init;
     rtl8201->parent.deinit = rtl8201_deinit;
     rtl8201->parent.set_mediator = rtl8201_set_mediator;
-    rtl8201->parent.negotiate = rtl8201_negotiate;
+    rtl8201->parent.autonego_ctrl = rtl8201_autonego_ctrl;
     rtl8201->parent.get_link = rtl8201_get_link;
     rtl8201->parent.pwrctl = rtl8201_pwrctl;
     rtl8201->parent.get_addr = rtl8201_get_addr;
     rtl8201->parent.set_addr = rtl8201_set_addr;
     rtl8201->parent.advertise_pause_ability = rtl8201_advertise_pause_ability;
     rtl8201->parent.loopback = rtl8201_loopback;
+    rtl8201->parent.set_speed = rtl8201_set_speed;
+    rtl8201->parent.set_duplex = rtl8201_set_duplex;
     rtl8201->parent.del = rtl8201_del;
 
     return &(rtl8201->parent);

@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
 #include "esp_err.h"
@@ -85,10 +77,14 @@ typedef enum {
     ETH_CMD_S_MAC_ADDR,    /*!< Set MAC address */
     ETH_CMD_G_PHY_ADDR,    /*!< Get PHY address */
     ETH_CMD_S_PHY_ADDR,    /*!< Set PHY address */
+    ETH_CMD_G_AUTONEGO,    /*!< Get PHY Auto Negotiation */
+    ETH_CMD_S_AUTONEGO,    /*!< Set PHY Auto Negotiation */
     ETH_CMD_G_SPEED,       /*!< Get Speed */
+    ETH_CMD_S_SPEED,       /*!< Set Speed */
     ETH_CMD_S_PROMISCUOUS, /*!< Set promiscuous mode */
     ETH_CMD_S_FLOW_CTRL,   /*!< Set flow control */
     ETH_CMD_G_DUPLEX_MODE, /*!< Get Duplex mode */
+    ETH_CMD_S_DUPLEX_MODE, /*!< Set Duplex mode */
     ETH_CMD_S_PHY_LOOPBACK,/*!< Set PHY loopback */
 } esp_eth_io_cmd_t;
 
