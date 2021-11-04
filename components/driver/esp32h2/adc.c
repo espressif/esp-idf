@@ -663,7 +663,7 @@ esp_err_t adc_digi_monitor_enable(adc_digi_monitor_idx_t idx, bool enable)
                     RTC controller setting
 ---------------------------------------------------------------*/
 
-static uint16_t s_adc_cali_param[ADC_UNIT_MAX][ADC_ATTEN_MAX] = {};
+static uint16_t s_adc_cali_param[SOC_ADC_PERIPH_NUM][ADC_ATTEN_MAX] = {};
 
 //NOTE: according to calibration version, different types of lock may be taken during the process:
 //  1. Semaphore when reading efuse
