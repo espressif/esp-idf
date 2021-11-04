@@ -16,13 +16,16 @@ TEST_SERVER = 'http2.golang.org'
 
 def is_test_server_available():  # type: () -> bool
     # 443 - default https port
-    conn = http.client.HTTPSConnection(TEST_SERVER, 443, timeout=10)
-    conn.request('GET', '/')
-    resp = conn.getresponse()
-    conn.close()
-    if resp.status == HTTP_OK:
-        return True
-    return False
+    try:
+        conn = http.client.HTTPSConnection(TEST_SERVER, 443, timeout=10)
+        conn.request('GET', '/')
+        resp = conn.getresponse()
+        return True if resp.status == HTTP_OK else False
+    except Exception as msg:
+        Utility.console_log('Exception occurred when connecting to {}: {}'.format(TEST_SERVER, msg))
+        return False
+    finally:
+        conn.close()
 
 
 @ttfw_idf.idf_example_test(env_tag='Example_EthKitV1')
