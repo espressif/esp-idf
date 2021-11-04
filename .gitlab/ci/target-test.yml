@@ -75,7 +75,7 @@ test_weekend_mqtt:
 .example_test_esp32c3_template:
   extends:
     - .example_test_template
-    - .rules:labels:example_test-esp32c3
+    - .rules:test:example_test-esp32c3
 
 .example_test_esp32s3_template:
   extends:

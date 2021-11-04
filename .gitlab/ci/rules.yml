@@ -675,12 +675,6 @@
     - <<: *if-dev-push
       changes: *patterns-windows
 
-.rules:labels:example_test-esp32c3:
-  rules:
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-example_test_esp32c3
-
 .rules:labels:fuzzer_test-weekend_test:
   rules:
     - <<: *if-label-fuzzer_test
@@ -715,6 +709,7 @@
     - <<: *if-label-custom_test_esp32s3
     - <<: *if-label-example_test
     - <<: *if-label-example_test_esp32
+    - <<: *if-label-example_test_esp32c3
     - <<: *if-label-example_test_esp32s2
     - <<: *if-label-example_test_esp32s3
     - <<: *if-label-host_test
@@ -841,6 +836,18 @@
     - <<: *if-dev-push
       changes: *patterns-example_test
 
+.rules:test:example_test-esp32c3:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32c3
+    - <<: *if-dev-push
+      changes: *patterns-build-example_test
+    - <<: *if-dev-push
+      changes: *patterns-example_test
+
 .rules:test:example_test-esp32s2:
   rules:
     - <<: *if-protected
@@ -909,6 +916,7 @@
     - <<: *if-label-custom_test_esp32s3
     - <<: *if-label-example_test
     - <<: *if-label-example_test_esp32
+    - <<: *if-label-example_test_esp32c3
     - <<: *if-label-example_test_esp32s2
     - <<: *if-label-example_test_esp32s3
     - <<: *if-label-integration_test
