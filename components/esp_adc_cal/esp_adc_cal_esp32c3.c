@@ -1,16 +1,8 @@
-// Copyright 2019-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -143,28 +135,4 @@ uint32_t esp_adc_cal_raw_to_voltage(uint32_t adc_reading, const esp_adc_cal_char
     ADC_CALIB_CHECK(chars != NULL, "No characteristic input.", ESP_ERR_INVALID_ARG);
 
     return adc_reading * chars->coeff_a / coeff_a_scaling + chars->coeff_b / coeff_b_scaling;
-}
-
-esp_err_t esp_adc_cal_get_voltage(adc_channel_t channel,
-                                  const esp_adc_cal_characteristics_t *chars,
-                                  uint32_t *voltage)
-{
-    // Check parameters
-    ADC_CALIB_CHECK(chars != NULL, "No characteristic input.", ESP_ERR_INVALID_ARG);
-    ADC_CALIB_CHECK(voltage != NULL, "No output buffer.", ESP_ERR_INVALID_ARG);
-
-    int adc_reading;
-    if (chars->adc_num == ADC_UNIT_1) {
-        //Check if channel is valid on ADC1
-        ADC_CALIB_CHECK((adc1_channel_t)channel < ADC1_CHANNEL_MAX, "Invalid channel", ESP_ERR_INVALID_ARG);
-        adc_reading = adc1_get_raw(channel);
-    } else {
-        //Check if channel is valid on ADC2
-        ADC_CALIB_CHECK((adc2_channel_t)channel < ADC2_CHANNEL_MAX, "Invalid channel", ESP_ERR_INVALID_ARG);
-        if (adc2_get_raw(channel, chars->bit_width, &adc_reading) != ESP_OK) {
-            return ESP_ERR_TIMEOUT;     //Timed out waiting for ADC2
-        }
-    }
-    *voltage = esp_adc_cal_raw_to_voltage((uint32_t)adc_reading, chars);
-    return ESP_OK;
 }
