@@ -189,6 +189,9 @@ function(__component_add component_dir prefix)
 
     # Set Kconfig related properties on the component
     __kconfig_component_init(${component_target})
+
+    # set BUILD_COMPONENT_DIRS build property
+    idf_build_set_property(BUILD_COMPONENT_DIRS ${component_dir} APPEND)
 endfunction()
 
 #
