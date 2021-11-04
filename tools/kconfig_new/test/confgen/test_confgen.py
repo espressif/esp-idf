@@ -170,31 +170,6 @@ class ConfigTestCase(ConfgenBaseTestCase):
         self.invoke_and_test(self.input, 'CONFIG_UNKNOWN', 'not in')
 
 
-class MakefileTestCase(ConfgenBaseTestCase):
-    @classmethod
-    def setUpClass(self):
-        super(MakefileTestCase, self).setUpClass()
-        self.args.update({'output': 'makefile'})
-
-    def setUp(self):
-        super(MakefileTestCase, self).setUp()
-        with tempfile.NamedTemporaryFile(mode='w+', prefix='test_confgen_', delete=False) as f1:
-            self.addCleanup(os.remove, f1.name)
-        with tempfile.NamedTemporaryFile(mode='w+', prefix='test_confgen_', delete=False) as f2:
-            self.addCleanup(os.remove, f2.name)
-        self.args.update({'env': ['COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE={}'.format(f1.name),
-                                  'COMPONENT_KCONFIGS_SOURCE_FILE={}'.format(f2.name),
-                                  'IDF_TARGET=esp32']})
-
-    def testTarget(self):
-        with open(os.path.join(os.environ['IDF_PATH'], 'Kconfig')) as f:
-            self.invoke_and_test(f.read(), 'CONFIG_IDF_TARGET="esp32"')
-
-    def testHexPrefix(self):
-        self.invoke_and_test(HEXPREFIX_KCONFIG, 'CONFIG_HEX_NOPREFIX=0x33')
-        self.invoke_and_test(HEXPREFIX_KCONFIG, 'CONFIG_HEX_PREFIX=0x77')
-
-
 class HeaderTestCase(ConfgenBaseTestCase):
     @classmethod
     def setUpClass(self):

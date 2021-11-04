@@ -57,7 +57,6 @@ RSA private key is nothing but the client private key ( RSA ) generated in Step 
 #### 4) Connection cofiguration
 * Open the project configuration menu (`idf.py menuconfig`)
 * Configure Wi-Fi or Ethernet under "Example Connection Configuration" menu. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../../README.md) for more details.
-* When using Make build system, set `Default serial port` under `Serial flasher config`.
 
 ### Build and Flash
 

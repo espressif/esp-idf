@@ -6,10 +6,7 @@ IDF 监视器
 
 IDF 监视器是一个串行终端程序，用于收发目标设备串口的串行数据，IDF 监视器同时还兼具 IDF 的其他特性。
 
-在 IDF 中调用以下目标函数可以启用此监视器：
-
-- **若使用 CMake 编译系统，则请调用**：``idf.py monitor``
-- **若使用传统 GNU Make 编译系统，请调用**：``make monitor``
+在 IDF 中调用 idf.py monitor 可以启用此监视器
 
 操作快捷键
 ==================
@@ -271,7 +268,7 @@ Windows 环境下已知问题
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - 由于 Windows 控制台限制，有些箭头键及其他一些特殊键无法在 GDB 中使用。
-- 偶然情况下，``idf.py`` 或 ``make`` 退出时，可能会在 IDF 监视器恢复之前暂停 30 秒。
+- 偶然情况下，``idf.py`` 退出时，可能会在 IDF 监视器恢复之前暂停 30 秒。
 - GDB 运行时，可能会暂停一段时间，然后才开始与 GDBStub 进行通信。
 
 .. _addr2line: https://sourceware.org/binutils/docs/binutils/addr2line.html

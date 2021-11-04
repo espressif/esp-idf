@@ -6,3 +6,4 @@ ESP-IDF 5.0 Migration Guides
     :maxdepth: 1
 
     Peripherals <peripherals>
+    Build System <build-system>

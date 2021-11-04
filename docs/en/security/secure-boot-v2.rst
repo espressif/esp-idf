@@ -225,7 +225,7 @@ How To Enable Secure Boot V2
 
 5. Set other menuconfig options (as desired). Pay particular attention to the "Bootloader Config" options, as you can only flash the bootloader once. Then exit menuconfig and save your configuration.
 
-6. The first time you run ``make`` or ``idf.py build``, if the signing key is not found then an error message will be printed with a command to generate a signing key via ``espsecure.py generate_signing_key``.
+6. The first time you run ``idf.py build``, if the signing key is not found then an error message will be printed with a command to generate a signing key via ``espsecure.py generate_signing_key``.
 
 .. important::
    A signing key generated this way will use the best random number source available to the OS and its Python installation (`/dev/urandom` on OSX/Linux and `CryptGenRandom()` on Windows). If this random number source is weak, then the private key will be weak.
@@ -366,7 +366,7 @@ The following sections contain low-level reference descriptions of various Secur
 Manual Commands
 ~~~~~~~~~~~~~~~
 
-Secure boot is integrated into the esp-idf build system, so ``make`` or ``idf.py build`` will sign an app image and ``idf.py bootloader`` will produce a signed bootloader if secure signed binaries on build is enabled.
+Secure boot is integrated into the esp-idf build system, so ``idf.py build`` will sign an app image and ``idf.py bootloader`` will produce a signed bootloader if secure signed binaries on build is enabled.
 
 However, it is possible to use the ``espsecure.py`` tool to make standalone signatures and digests.
 

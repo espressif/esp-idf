@@ -3547,7 +3547,6 @@ tools/ci/python_packages/ttfw_idf/unity_test_parser.py
 tools/ci/python_packages/wifi_tools.py
 tools/ci/test_autocomplete.py
 tools/ci/test_check_kconfigs.py
-tools/cmake/convert_to_cmake.py
 tools/esp_app_trace/espytrace/apptrace.py
 tools/esp_app_trace/espytrace/sysview.py
 tools/esp_app_trace/logtrace_proc.py
@@ -3576,7 +3575,6 @@ tools/find_apps.py
 tools/find_build_apps/__init__.py
 tools/find_build_apps/cmake.py
 tools/find_build_apps/common.py
-tools/find_build_apps/make.py
 tools/gdb_panic_server.py
 tools/gen_esp_err_to_name.py
 tools/idf_monitor_base/ansi_color_converter.py
@@ -3628,7 +3626,6 @@ tools/kconfig/nconf.h
 tools/kconfig/qconf.h
 tools/kconfig/symbol.c
 tools/kconfig/util.c
-tools/kconfig_new/confgen.py
 tools/kconfig_new/confserver.py
 tools/kconfig_new/esp-windows-curses/setup.py
 tools/kconfig_new/gen_kconfig_doc.py
@@ -3732,4 +3729,3 @@ tools/unit-test-app/main/app_main.c
 tools/unit-test-app/tools/CreateSectionTable.py
 tools/unit-test-app/tools/UnitTestParser.py
 tools/unit-test-app/unit_test.py
-tools/windows/eclipse_make.py

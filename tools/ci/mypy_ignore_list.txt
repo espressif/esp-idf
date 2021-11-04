@@ -194,7 +194,6 @@ tools/ci/python_packages/ttfw_idf/unity_test_parser.py
 tools/ci/python_packages/wifi_tools.py
 tools/ci/test_autocomplete.py
 tools/ci/test_check_kconfigs.py
-tools/cmake/convert_to_cmake.py
 tools/esp_app_trace/espytrace/apptrace.py
 tools/esp_app_trace/espytrace/sysview.py
 tools/esp_app_trace/logtrace_proc.py
@@ -214,7 +213,6 @@ tools/esp_prov/transport/transport_http.py
 tools/esp_prov/utils/convenience.py
 tools/find_apps.py
 tools/find_build_apps/common.py
-tools/find_build_apps/make.py
 tools/gen_esp_err_to_name.py
 tools/idf.py
 tools/idf_py_actions/core_ext.py
@@ -273,4 +271,3 @@ tools/unit-test-app/idf_ext.py
 tools/unit-test-app/tools/CreateSectionTable.py
 tools/unit-test-app/tools/UnitTestParser.py
 tools/unit-test-app/unit_test.py
-tools/windows/eclipse_make.py

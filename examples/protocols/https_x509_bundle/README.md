@@ -13,7 +13,6 @@ See the README.md file in the upper level 'examples' directory for more informat
 
 * Open the project configuration menu (`idf.py menuconfig`)
 * Configure Wi-Fi or Ethernet under "Example Connection Configuration" menu. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../README.md) for more details.
-* When using Make build system, set `Default serial port` under `Serial flasher config`.
 * If using a different folder than `certs` for storing certificates then update `Custom Certificate Bundle Path` under `Component config` - `mbedTLS` - `Certificate Bundle`
 
 ### Build and Flash

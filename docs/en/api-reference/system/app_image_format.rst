@@ -101,14 +101,9 @@ The following pattern can be used to add a custom structure to your image:
 
 Offset for custom structure is sizeof(:cpp:type:`esp_image_header_t`) + sizeof(:cpp:type:`esp_image_segment_header_t`) + sizeof(:cpp:type:`esp_app_desc_t`).
 
-To guarantee that the custom structure is located in the image even if it is not used, you need to add:
-
- * For Make: add ``COMPONENT_ADD_LDFLAGS += -u custom_app_desc`` into ``component.mk``
- * For Cmake: add ``target_link_libraries(${COMPONENT_TARGET} "-u custom_app_desc")`` into ``CMakeLists.txt``
+To guarantee that the custom structure is located in the image even if it is not used, you need to add ``target_link_libraries(${COMPONENT_TARGET} "-u custom_app_desc")`` into ``CMakeLists.txt``.
 
 API Reference
 -------------
 
 .. include-build-file:: inc/esp_app_format.inc
-
-

@@ -7,19 +7,8 @@
 # Used internally by the ESP-IDF build system. But designed to be
 # non-IDF-specific.
 #
-# Copyright 2018-2020 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http:#www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 from __future__ import print_function
 
 import argparse
@@ -35,9 +24,6 @@ import kconfiglib
 from future.utils import iteritems
 
 __version__ = '0.1'
-
-if 'IDF_CMAKE' not in os.environ:
-    os.environ['IDF_CMAKE'] = ''
 
 
 class DeprecatedOptions(object):
@@ -342,56 +328,6 @@ def write_config(deprecated_options, config, filename):
     deprecated_options.append_config(config, filename)
 
 
-def write_makefile(deprecated_options, config, filename):
-    CONFIG_HEADING = """#
-# Automatically generated file. DO NOT EDIT.
-# Espressif IoT Development Framework (ESP-IDF) Project Makefile Configuration
-#
-"""
-    with open(filename, 'w') as f:
-        tmp_dep_lines = []
-        f.write(CONFIG_HEADING)
-
-        def get_makefile_config_string(name, value, orig_type):
-            if orig_type in (kconfiglib.BOOL, kconfiglib.TRISTATE):
-                value = '' if value == 'n' else value
-            elif orig_type == kconfiglib.INT:
-                try:
-                    value = int(value)
-                except ValueError:
-                    value = ''
-            elif orig_type == kconfiglib.HEX:
-                try:
-                    value = hex(int(value, 16))  # ensure 0x prefix
-                except ValueError:
-                    value = ''
-            elif orig_type == kconfiglib.STRING:
-                value = '"{}"'.format(kconfiglib.escape(value))
-            else:
-                raise RuntimeError('{}{}: unknown type {}'.format(config.config_prefix, name, orig_type))
-
-            return '{}{}={}\n'.format(config.config_prefix, name, value)
-
-        def write_makefile_node(node):
-            item = node.item
-            if isinstance(item, kconfiglib.Symbol) and item.env_var is None:
-                # item.config_string cannot be used because it ignores hidden config items
-                val = item.str_value
-                f.write(get_makefile_config_string(item.name, val, item.orig_type))
-
-                dep_opt = deprecated_options.get_deprecated_option(item.name)
-                if dep_opt:
-                    # the same string but with the deprecated name
-                    tmp_dep_lines.append(get_makefile_config_string(dep_opt, val, item.orig_type))
-
-        for n in config.node_iter(True):
-            write_makefile_node(n)
-
-        if len(tmp_dep_lines) > 0:
-            f.write('\n# List of deprecated options\n')
-            f.writelines(tmp_dep_lines)
-
-
 def write_header(deprecated_options, config, filename):
     CONFIG_HEADING = """/*
  * Automatically generated file. DO NOT EDIT.
@@ -619,7 +555,6 @@ def update_if_changed(source, destination):
 
 
 OUTPUT_FORMATS = {'config': write_config,
-                  'makefile': write_makefile,  # only used with make in order to generate auto.conf
                   'header': write_header,
                   'cmake': write_cmake,
                   'docs': write_docs,

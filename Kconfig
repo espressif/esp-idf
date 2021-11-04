@@ -6,7 +6,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
     config IDF_CMAKE
         bool
-        option env="IDF_CMAKE"
+        default "y"
 
     config IDF_ENV_FPGA
         # This option is for internal use only
@@ -92,29 +92,6 @@ mainmenu "Espressif IoT Development Framework Configuration"
             help
                 The prefix/path that is used to call the toolchain. The default setting assumes
                 a crosstool-ng gcc setup that is in your PATH.
-
-        config SDK_PYTHON
-            string "Python interpreter"
-            depends on !IDF_CMAKE
-            default "python"
-            help
-                The executable name/path that is used to run python.
-
-                (Note: This option is used with the legacy GNU Make build system only.)
-
-        config SDK_MAKE_WARN_UNDEFINED_VARIABLES
-            bool "'make' warns on undefined variables"
-            depends on !IDF_CMAKE
-            default "y"
-            help
-                Adds --warn-undefined-variables to MAKEFLAGS. This causes make to
-                print a warning any time an undefined variable is referenced.
-
-                This option helps find places where a variable reference is misspelled
-                or otherwise missing, but it can be unwanted if you have Makefiles which
-                depend on undefined variables expanding to an empty string.
-
-                (Note: this option is used with the legacy GNU Make build system only.)
 
         config SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS
             bool "Toolchain supports time_t wide 64-bits"
@@ -315,7 +292,6 @@ mainmenu "Espressif IoT Development Framework Configuration"
         menuconfig COMPILER_HIDE_PATHS_MACROS
             bool "Replace ESP-IDF and project paths in binaries"
             default y
-            depends on IDF_CMAKE
             help
                 When expanding the __FILE__ and __BASE_FILE__ macros, replace paths inside ESP-IDF
                 with paths relative to the placeholder string "IDF", and convert paths inside the

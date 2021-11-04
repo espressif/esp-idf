@@ -20,12 +20,6 @@ file. An erased partition's contents is compared to a generated blank file.
 
 Before running either of the example scripts, it is necessary to build and flash the firmware using the usual means:
 
-Make:
-```bash
-make build flash
-```
-
-CMake:
 ```bash
 idf.py build flash
 ```

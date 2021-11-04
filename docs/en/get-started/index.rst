@@ -818,7 +818,6 @@ Related Documents
     vscode-setup
     ../api-guides/tools/idf-monitor
     toolchain-setup-scratch
-    :esp32: ../get-started-legacy/index
 
 .. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/
 .. _Releases page: https://github.com/espressif/esp-idf/releases

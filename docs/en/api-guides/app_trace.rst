@@ -481,20 +481,15 @@ Compiler Option
 
 In order to obtain code coverage data in a project, one or more source files within the project must be compiled with the ``--coverage`` option. In ESP-IDF, this can be achieved at the component level or the individual source file level:
 
-To cause all source files in a component to be compiled with the ``--coverage`` option.
-    - Add ``target_compile_options(${COMPONENT_LIB} PRIVATE --coverage)`` to the ``CMakeLists.txt`` file of the component if using CMake.
-    - Add ``CFLAGS += --coverage`` to the ``component.mk`` file of the component if using Make.
-
-To cause a select number of source files (e.g. ``sourec1.c`` and ``source2.c``) in the same component to be compiled with the ``--coverage`` option.
-    - Add ``set_source_files_properties(source1.c source2.c PROPERTIES COMPILE_FLAGS --coverage)`` to the ``CMakeLists.txt`` file of the component if using CMake.
-    - Add ``source1.o: CFLAGS += --coverage`` and ``source2.o: CFLAGS += --coverage`` to the ``component.mk`` file of the component if using Make.
+- To cause all source files in a component to be compiled with the ``--coverage`` option, you can add ``target_compile_options(${COMPONENT_LIB} PRIVATE --coverage)`` to the ``CMakeLists.txt`` file of the component.
+- To cause a select number of source files (e.g. ``sourec1.c`` and ``source2.c``) in the same component to be compiled with the ``--coverage`` option, you can add ``set_source_files_properties(source1.c source2.c PROPERTIES COMPILE_FLAGS --coverage)`` to the ``CMakeLists.txt`` file of the component.
 
 When a source file is compiled with the ``--coverage`` option (e.g. ``gcov_example.c``), the compiler will generate the ``gcov_example.gcno`` file in the project's build directory.
 
 Project Configuration
 ~~~~~~~~~~~~~~~~~~~~~
 
-Before building a project with source code coverage, ensure that the following project configuration options are enabled by running ``idf.py menuconfig`` (or ``make menuconfig`` if using the legacy Make build system).
+Before building a project with source code coverage, ensure that the following project configuration options are enabled by running ``idf.py menuconfig``.
 
 - Enable the application tracing module by choosing *Trace Memory* for the  :ref:`CONFIG_APPTRACE_DESTINATION` option.
 - Enable Gcov to host via the :ref:`CONFIG_APPTRACE_GCOV_ENABLE`
@@ -508,7 +503,7 @@ Once a project has been complied with the ``--coverage`` option and flashed onto
 
 The dumping of coverage data is done via OpenOCD (see :doc:`JTAG Debugging <../api-guides/jtag-debugging/index>` on how to setup and run OpenOCD). A dump is triggered by issuing commands to OpenOCD, therefore a telnet session to OpenOCD must be opened to issue such commands (run ``telnet localhost 4444``). Note that GDB could be used instead of telnet to issue commands to OpenOCD, however all commands issued from GDB will need to be prefixed as ``mon <oocd_command>``.
 
-When the target dumps code coverage data, the ``.gcda`` files are stored in the project's build directory. For example, if ``gcov_example_main.c`` of the ``main`` component was compiled with the ``--coverage`` option, then dumping the code coverage data would generate a ``gcov_example_main.gcda`` in ``build/esp-idf/main/CMakeFiles/__idf_main.dir/gcov_example_main.c.gcda`` (or ``build/main/gcov_example_main.gcda`` if using the legacy Make build system). Note that the ``.gcno`` files produced during compilation are also placed in the same directory.
+When the target dumps code coverage data, the ``.gcda`` files are stored in the project's build directory. For example, if ``gcov_example_main.c`` of the ``main`` component was compiled with the ``--coverage`` option, then dumping the code coverage data would generate a ``gcov_example_main.gcda`` in ``build/esp-idf/main/CMakeFiles/__idf_main.dir/gcov_example_main.c.gcda``. Note that the ``.gcno`` files produced during compilation are also placed in the same directory.
 
 The dumping of code coverage data can be done multiple times throughout an application's life time. Each dump will simply update the ``.gcda`` file with the newest code coverage information. Code coverage data is accumulative, thus the newest data will contain the total execution count of each code path over the application's entire lifetime.
 
@@ -558,10 +553,7 @@ Adding Gcovr Build Target to Project
 
 To make report generation more convenient, users can define additional build targets in their projects such report generation can be done with a single build command.
 
-CMake Build System
-******************
-
-For the CMake build systems, add the following lines to the ``CMakeLists.txt`` file of your project.
+Add the following lines to the ``CMakeLists.txt`` file of your project.
 
 .. code-block:: none
 
@@ -573,32 +565,3 @@ The following commands can now be used:
 
     * ``cmake --build build/ --target gcovr-report`` will generate an HTML coverage report in ``$(BUILD_DIR_BASE)/coverage_report/html`` directory.
     * ``cmake --build build/ --target cov-data-clean`` will remove all coverage data files.
-
-Make Build System
-*****************
-
-For the Make build systems, add the following lines to the ``Makefile`` of your project.
-
-.. code-block:: none
-
-    GCOV := $(call dequote,$(CONFIG_SDK_TOOLPREFIX))gcov
-    REPORT_DIR := $(BUILD_DIR_BASE)/coverage_report
-
-    gcovr-report:
-        echo "Generating coverage report in: $(REPORT_DIR)"
-        echo "Using gcov: $(GCOV)"
-        mkdir -p $(REPORT_DIR)/html
-        cd $(BUILD_DIR_BASE)
-        gcovr -r $(PROJECT_PATH) --gcov-executable $(GCOV) -s --html-details $(REPORT_DIR)/html/index.html
-
-    cov-data-clean:
-        echo "Remove coverage data files..."
-        find $(BUILD_DIR_BASE) -name "*.gcda" -exec rm {} +
-        rm -rf $(REPORT_DIR)
-
-    .PHONY: gcovr-report cov-data-clean
-
-The following commands can now be used:
-
-    * ``make gcovr-report`` will generate an HTML coverage report in ``$(BUILD_DIR_BASE)/coverage_report/html`` directory.
-    * ``make cov-data-clean`` will remove all coverage data files.
