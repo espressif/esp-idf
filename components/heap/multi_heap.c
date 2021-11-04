@@ -114,7 +114,7 @@ size_t multi_heap_get_allocated_size_impl(multi_heap_handle_t heap, void *p)
 multi_heap_handle_t multi_heap_register_impl(void *start_ptr, size_t size)
 {
     assert(start_ptr);
-    if(size < (tlsf_size() + tlsf_block_size_min() + sizeof(heap_t))) {
+    if(size < (tlsf_size(NULL) + tlsf_block_size_min() + sizeof(heap_t))) {
         //Region too small to be a heap.
         return NULL;
     }
@@ -122,13 +122,13 @@ multi_heap_handle_t multi_heap_register_impl(void *start_ptr, size_t size)
     heap_t *result = (heap_t *)start_ptr;
     size -= sizeof(heap_t);
 
-    result->heap_data = tlsf_create_with_pool(start_ptr + sizeof(heap_t), size);
+    result->heap_data = tlsf_create_with_pool(start_ptr + sizeof(heap_t), size, 0);
     if(!result->heap_data) {
         return NULL;
     }
 
     result->lock = NULL;
-    result->free_bytes = size - tlsf_size();
+    result->free_bytes = size - tlsf_size(result->heap_data);
     result->pool_size = size;
     result->minimum_free_bytes = result->free_bytes;
     return result;
@@ -352,8 +352,6 @@ static void multi_heap_get_info_tlsf(void* ptr, size_t size, int used, void* use
 
 void multi_heap_get_info_impl(multi_heap_handle_t heap, multi_heap_info_t *info)
 {
-    uint32_t sl_interval;
-
     memset(info, 0, sizeof(multi_heap_info_t));
 
     if (heap == NULL) {
@@ -362,12 +360,9 @@ void multi_heap_get_info_impl(multi_heap_handle_t heap, multi_heap_info_t *info)
 
     multi_heap_internal_lock(heap);
     tlsf_walk_pool(tlsf_get_pool(heap->heap_data), multi_heap_get_info_tlsf, info);
-    info->total_allocated_bytes = (heap->pool_size - tlsf_size()) - heap->free_bytes;
+    info->total_allocated_bytes = (heap->pool_size - tlsf_size(heap->heap_data)) - heap->free_bytes;
     info->minimum_free_bytes = heap->minimum_free_bytes;
     info->total_free_bytes = heap->free_bytes;
-    if (info->largest_free_block) {
-        sl_interval = (1 << (31 - __builtin_clz(info->largest_free_block))) / SL_INDEX_COUNT;
-        info->largest_free_block = info->largest_free_block & ~(sl_interval - 1);
-    }
+	info->largest_free_block = tlsf_fit_size(heap->heap_data, info->largest_free_block);
     multi_heap_internal_unlock(heap);
 }

@@ -63,9 +63,11 @@
 ** A free block must be large enough to store its header minus the size of
 ** the prev_phys_block field, and no larger than the number of addressable
 ** bits for FL_INDEX.
+** The block_size_max macro returns the maximum block for the minimum pool
+** use tlsf_block_size_max for a value specific to the pool
 */
 #define block_size_min  (sizeof(block_header_t) - sizeof(block_header_t*))
-#define block_size_max  (tlsf_cast(size_t, 1) << FL_INDEX_MAX)
+#define block_size_max  (tlsf_cast(size_t, 1) << FL_INDEX_MAX_MIN)
 
 /*
 ** block_header_t member functions.

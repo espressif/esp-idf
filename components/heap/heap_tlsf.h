@@ -77,13 +77,22 @@ typedef struct control_t
 {
 	/* Empty lists point at this block to indicate they are free. */
 	block_header_t block_null;
+	
+	/* Local parameter for the pool */
+	unsigned int fl_index_count;
+	unsigned int fl_index_shift;
+	unsigned int fl_index_max;	
+	unsigned int sl_index_count;
+	unsigned int sl_index_count_log2;
+	unsigned int small_block_size;
+	size_t size;
 
 	/* Bitmaps for free lists. */
 	unsigned int fl_bitmap;
-	unsigned int sl_bitmap[FL_INDEX_COUNT];
+	unsigned int *sl_bitmap;	
 
 	/* Head of free lists. */
-	block_header_t* blocks[FL_INDEX_COUNT][SL_INDEX_COUNT];
+	block_header_t** blocks;
 } control_t;
 
 #include "heap_tlsf_block_functions.h"
@@ -94,8 +103,8 @@ typedef void* tlsf_t;
 typedef void* pool_t;
 
 /* Create/destroy a memory pool. */
-tlsf_t tlsf_create(void* mem);
-tlsf_t tlsf_create_with_pool(void* mem, size_t bytes);
+tlsf_t tlsf_create(void* mem, size_t bytes);
+tlsf_t tlsf_create_with_pool(void* mem, size_t pool_bytes, size_t max_bytes);
 pool_t tlsf_get_pool(tlsf_t tlsf);
 
 /* Add/remove memory pools. */
@@ -113,12 +122,13 @@ void tlsf_free(tlsf_t tlsf, void* ptr);
 size_t tlsf_block_size(void* ptr);
 
 /* Overheads/limits of internal structures. */
-size_t tlsf_size(void);
+size_t tlsf_size(tlsf_t tlsf);
 size_t tlsf_align_size(void);
 size_t tlsf_block_size_min(void);
-size_t tlsf_block_size_max(void);
+size_t tlsf_block_size_max(tlsf_t tlsf);
 size_t tlsf_pool_overhead(void);
 size_t tlsf_alloc_overhead(void);
+size_t tlsf_fit_size(tlsf_t tlsf, size_t size);
 
 /* Debugging. */
 typedef void (*tlsf_walker)(void* ptr, size_t size, int used, void* user);
