@@ -1,27 +1,16 @@
-// Copyright 2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // This module implements debug/trace stubs. The stub is a piece of special code which can invoked by OpenOCD
 // Currently one stub is used for GCOV functionality
 //
 
-#include "eri.h"
-#include "xtensa-debug-module.h"
 #include "esp_private/dbg_stubs.h"
 #include "esp_attr.h"
 
-#if CONFIG_ESP_DEBUG_STUBS_ENABLE
 /*
     Debug stubs is actually a table of 4-byte entries. Every entry is equal to zero or must contain meaningfull data.
     The first entry is a service one and has the followinf format:
@@ -35,7 +24,6 @@
 #include "esp_log.h"
 const static char *TAG = "esp_dbg_stubs";
 
-#define ESP_DBG_STUBS_TRAX_REG              ERI_TRAX_TRIGGERPC
 #define ESP_DBG_STUBS_CODE_BUF_SIZE         32
 #define ESP_DBG_STUBS_STACK_MIN_SIZE        2048
 
@@ -51,6 +39,8 @@ static struct {
 static uint32_t s_stub_entry[ESP_DBG_STUB_ENTRY_MAX];
 static uint8_t s_stub_min_stack[ESP_DBG_STUBS_STACK_MIN_SIZE];
 static DBG_STUB_TRAMP_ATTR uint8_t s_stub_code_buf[ESP_DBG_STUBS_CODE_BUF_SIZE];
+
+extern void esp_dbg_stubs_ll_init(void *stub_table_addr);
 
 // TODO: all called funcs should be in IRAM to work with disabled flash cache
 static void * esp_dbg_stubs_data_alloc(uint32_t size)
@@ -78,8 +68,7 @@ void esp_dbg_stubs_init(void)
     s_stub_entry[ESP_DBG_STUB_MAGIC_NUM] = ESP_DBG_STUB_MAGIC_NUM_VAL;
     s_stub_entry[ESP_DBG_STUB_TABLE_SIZE] = ESP_DBG_STUB_ENTRY_MAX;
     s_stub_entry[ESP_DBG_STUB_CONTROL_DATA] = (uint32_t)&s_dbg_stubs_ctl_data;
-    eri_write(ESP_DBG_STUBS_TRAX_REG, (uint32_t)s_stub_entry);
-    ESP_LOGV(TAG, "%s stubs %x", __func__, eri_read(ESP_DBG_STUBS_TRAX_REG));
+    esp_dbg_stubs_ll_init(s_stub_entry);
 }
 
 // TODO: add lock mechanism. Not now but in the future ESP_DBG_STUB_ENTRY_CAPABILITIES can be set from different places.
@@ -104,5 +93,3 @@ esp_err_t esp_dbg_stub_entry_get(esp_dbg_stub_id_t id, uint32_t *entry)
 
     return ESP_OK;
 }
-
-#endif
