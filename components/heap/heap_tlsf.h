@@ -72,29 +72,6 @@ typedef struct block_header_t
 	struct block_header_t* prev_free;
 } block_header_t;
 
-/* The TLSF control structure. */
-typedef struct control_t
-{
-	/* Empty lists point at this block to indicate they are free. */
-	block_header_t block_null;
-	
-	/* Local parameter for the pool */
-	unsigned int fl_index_count;
-	unsigned int fl_index_shift;
-	unsigned int fl_index_max;	
-	unsigned int sl_index_count;
-	unsigned int sl_index_count_log2;
-	unsigned int small_block_size;
-	size_t size;
-
-	/* Bitmaps for free lists. */
-	unsigned int fl_bitmap;
-	unsigned int *sl_bitmap;	
-
-	/* Head of free lists. */
-	block_header_t** blocks;
-} control_t;
-
 #include "heap_tlsf_block_functions.h"
 
 /* tlsf_t: a TLSF structure. Can contain 1 to N pools. */

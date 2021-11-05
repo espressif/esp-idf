@@ -57,6 +57,30 @@
 ** NOTE: TLSF spec relies on ffs/fls returning value 0..31.
 ** ffs/fls return 1-32 by default, returning 0 for error.
 */
+
+/* The TLSF control structure. */
+typedef struct control_t
+{
+	/* Empty lists point at this block to indicate they are free. */
+	block_header_t block_null;
+	
+	/* Local parameter for the pool */
+	unsigned int fl_index_count;
+	unsigned int fl_index_shift;
+	unsigned int fl_index_max;	
+	unsigned int sl_index_count;
+	unsigned int sl_index_count_log2;
+	unsigned int small_block_size;
+	size_t size;
+
+	/* Bitmaps for free lists. */
+	unsigned int fl_bitmap;
+	unsigned int *sl_bitmap;	
+
+	/* Head of free lists. */
+	block_header_t** blocks;
+} control_t;
+
 static inline __attribute__((__always_inline__)) int tlsf_ffs(unsigned int word)
 {
 	const unsigned int reverse = word & (~word + 1);
