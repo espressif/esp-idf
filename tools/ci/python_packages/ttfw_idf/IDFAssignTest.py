@@ -6,6 +6,7 @@ import errno
 import json
 import os
 import re
+from copy import deepcopy
 
 import yaml
 
@@ -23,7 +24,7 @@ except ImportError:
     SUPPORTED_TARGETS = []
     PREVIEW_TARGETS = []
 
-IDF_PATH_FROM_ENV = os.getenv('IDF_PATH')
+IDF_PATH_FROM_ENV = os.getenv('IDF_PATH', '')
 
 
 class IDFCaseGroup(CIAssignTest.Group):
@@ -41,6 +42,13 @@ class IDFCaseGroup(CIAssignTest.Group):
 
 
 class IDFAssignTest(CIAssignTest.AssignTest):
+    DEFAULT_FILTER = {
+        'category': 'function',
+        'ignore': False,
+        'supported_in_ci': True,
+        'nightly_run': False,
+    }
+
     def __init__(self, test_case_path, ci_config_file, case_group=IDFCaseGroup):
         super(IDFAssignTest, self).__init__(test_case_path, ci_config_file, case_group)
 
@@ -74,6 +82,12 @@ class IDFAssignTest(CIAssignTest.AssignTest):
 
         with open(artifact_index_file, 'w') as f:
             json.dump(artifact_index_list, f)
+
+    def search_cases(self, case_filter=None):
+        _filter = deepcopy(case_filter) if case_filter else {}
+        if 'NIGHTLY_RUN' in os.environ:
+            _filter.update({'nightly_run': True})
+        return super().search_cases(_filter)
 
 
 class ExampleGroup(IDFCaseGroup):
@@ -315,7 +329,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('case_group', choices=['example_test', 'custom_test', 'unit_test', 'component_ut'])
     parser.add_argument('test_case_paths', nargs='+', help='test case folder or file')
-    parser.add_argument('-c', '--config', help='gitlab ci config file')
+    parser.add_argument('-c', '--config', default=os.path.join(IDF_PATH_FROM_ENV, '.gitlab', 'ci', 'target-test.yml'),
+                        help='gitlab ci config file')
     parser.add_argument('-o', '--output', help='output path of config files')
     parser.add_argument('--pipeline_id', '-p', type=int, default=None, help='pipeline_id')
     parser.add_argument('--test-case-file-pattern', help='file name pattern used to find Python test case files')
@@ -323,7 +338,8 @@ if __name__ == '__main__':
 
     SUPPORTED_TARGETS.extend(PREVIEW_TARGETS)
 
-    test_case_paths = [os.path.join(IDF_PATH_FROM_ENV, path) if not os.path.isabs(path) else path for path in args.test_case_paths]  # type: ignore
+    test_case_paths = [os.path.join(IDF_PATH_FROM_ENV, path) if not os.path.isabs(path) else path for path in
+                       args.test_case_paths]  # type: ignore
     args_list = [test_case_paths, args.config]
     if args.case_group == 'example_test':
         assigner = ExampleAssignTest(*args_list)
