@@ -35,6 +35,9 @@
 
 export PATH="$IDF_PATH/tools:$PATH"  # for idf.py
 
+# Some tests assume that ccache is not enabled
+unset IDF_CCACHE_ENABLE
+
 function run_tests()
 {
     FAILURES=
