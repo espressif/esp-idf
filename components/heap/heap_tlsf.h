@@ -80,7 +80,7 @@ typedef void* tlsf_t;
 typedef void* pool_t;
 
 /* Create/destroy a memory pool. */
-tlsf_t tlsf_create(void* mem, size_t bytes);
+tlsf_t tlsf_create(void* mem, size_t max_bytes);
 tlsf_t tlsf_create_with_pool(void* mem, size_t pool_bytes, size_t max_bytes);
 pool_t tlsf_get_pool(tlsf_t tlsf);
 
