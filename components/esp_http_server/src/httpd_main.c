@@ -450,7 +450,9 @@ esp_err_t httpd_stop(httpd_handle_t handle)
     struct httpd_ctrl_data msg;
     memset(&msg, 0, sizeof(msg));
     msg.hc_msg = HTTPD_CTRL_SHUTDOWN;
-    cs_send_to_ctrl_sock(hd->msg_fd, hd->config.ctrl_port, &msg, sizeof(msg));
+    if (cs_send_to_ctrl_sock(hd->msg_fd, hd->config.ctrl_port, &msg, sizeof(msg)) < 0)
+        return ESP_FAIL;
+    }
 
     ESP_LOGD(TAG, LOG_FMT("sent control msg to stop server"));
     while (hd->hd_td.status != THREAD_STOPPED) {
