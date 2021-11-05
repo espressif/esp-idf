@@ -1,3 +1,5 @@
+orsource "./$IDF_TARGET//Kconfig.soc_caps.in"
+
 menu "Boot ROM Behavior"
     visible if !IDF_TARGET_ESP32  # no options ere currently supported on ESP32
 

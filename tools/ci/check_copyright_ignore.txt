@@ -1817,11 +1817,9 @@ components/soc/esp32h2/include/soc/reset_reasons.h
 components/soc/esp32h2/include/soc/rtc_caps.h
 components/soc/esp32h2/include/soc/rtc_i2c_reg.h
 components/soc/esp32h2/include/soc/rtc_i2c_struct.h
-components/soc/esp32h2/include/soc/rtc_io_caps.h
 components/soc/esp32h2/include/soc/sensitive_struct.h
 components/soc/esp32h2/include/soc/soc_caps.h
 components/soc/esp32h2/include/soc/soc_pins.h
-components/soc/esp32h2/include/soc/spi_caps.h
 components/soc/esp32h2/include/soc/spi_mem_reg.h
 components/soc/esp32h2/include/soc/spi_mem_struct.h
 components/soc/esp32h2/include/soc/spi_pins.h
@@ -1971,7 +1969,6 @@ components/soc/esp32s3/include/soc/efuse_struct.h
 components/soc/esp32s3/include/soc/extmem_reg.h
 components/soc/esp32s3/include/soc/extmem_struct.h
 components/soc/esp32s3/include/soc/fe_reg.h
-components/soc/esp32s3/include/soc/gpio_caps.h
 components/soc/esp32s3/include/soc/gpio_pins.h
 components/soc/esp32s3/include/soc/gpio_reg.h
 components/soc/esp32s3/include/soc/gpio_sd_reg.h
@@ -2010,7 +2007,6 @@ components/soc/esp32s3/include/soc/rmt_struct.h
 components/soc/esp32s3/include/soc/rtc_gpio_channel.h
 components/soc/esp32s3/include/soc/rtc_i2c_reg.h
 components/soc/esp32s3/include/soc/rtc_i2c_struct.h
-components/soc/esp32s3/include/soc/rtc_io_caps.h
 components/soc/esp32s3/include/soc/rtc_io_channel.h
 components/soc/esp32s3/include/soc/rtc_io_reg.h
 components/soc/esp32s3/include/soc/rtc_io_struct.h
@@ -2021,7 +2017,6 @@ components/soc/esp32s3/include/soc/sdmmc_struct.h
 components/soc/esp32s3/include/soc/sens_reg.h
 components/soc/esp32s3/include/soc/sensitive_reg.h
 components/soc/esp32s3/include/soc/sensitive_struct.h
-components/soc/esp32s3/include/soc/sigmadelta_caps.h
 components/soc/esp32s3/include/soc/soc.h
 components/soc/esp32s3/include/soc/soc_ulp.h
 components/soc/esp32s3/include/soc/spi_mem_reg.h
@@ -2046,7 +2041,6 @@ components/soc/esp32s3/include/soc/uart_reg.h
 components/soc/esp32s3/include/soc/uart_struct.h
 components/soc/esp32s3/include/soc/uhci_reg.h
 components/soc/esp32s3/include/soc/uhci_struct.h
-components/soc/esp32s3/include/soc/usb_caps.h
 components/soc/esp32s3/include/soc/usb_device_reg.h
 components/soc/esp32s3/include/soc/usb_pins.h
 components/soc/esp32s3/include/soc/usb_reg.h

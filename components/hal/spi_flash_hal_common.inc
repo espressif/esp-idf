@@ -101,7 +101,7 @@ esp_err_t spi_flash_hal_configure_host_io_mode(
         return ESP_ERR_NOT_SUPPORTED;
     }
 
-#if SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT
+#if SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUT
     // The CONTROL_DUMMY_OUTPUT feature is used to control M7-M0 bits.
     spi_flash_ll_set_dummy_out(dev, (conf_required? 1: 0), 1);
 #else

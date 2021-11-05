@@ -1,3 +1,4 @@
+
 /*
  * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
  *
@@ -24,6 +25,16 @@
  * ECO & exceptions:
  * For ECO-ed booleans, `#define x "Not determined"` for them. This will cause error when used by
  * `#if x` and `#if !x`, making these missing definitions more obvious.
+ *
+ * These defines are parsed and imported as kconfig variables via the script
+ * `tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py`
+ *
+ * If this file is changed the script will automatically run the script
+ * and generate the kconfig variables as part of the pre-commit hooks.
+ *
+ * It can also be ran manually with `./tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py 'components/soc/esp32/include/soc/'`
+ *
+ * For more information see `tools/gen_soc_caps_kconfig/README.md`
  */
 
 #pragma once
@@ -117,7 +128,7 @@
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32 has 1 GPIO peripheral
-#define SOC_GPIO_PORT                   (1)
+#define SOC_GPIO_PORT                   (1U)
 #define SOC_GPIO_PIN_COUNT              40
 
 // SOC_GPIO_SUPPORT_RTC_INDEPENDENT not defined. On ESP32 those PADs which have RTC functions must
@@ -190,13 +201,13 @@
 #define SOC_MPU_REGION_WO_SUPPORTED               0
 
 /*-------------------------- PCNT CAPS ---------------------------------------*/
-#define SOC_PCNT_GROUPS                  (1)
+#define SOC_PCNT_GROUPS                  (1U)
 #define SOC_PCNT_UNITS_PER_GROUP         (8)
 #define SOC_PCNT_CHANNELS_PER_UNIT       (2)
 #define SOC_PCNT_THRES_POINT_PER_UNIT    (2)
 
 /*-------------------------- RMT CAPS ----------------------------------------*/
-#define SOC_RMT_GROUPS                  (1)  /*!< One RMT group */
+#define SOC_RMT_GROUPS                  (1U)  /*!< One RMT group */
 #define SOC_RMT_TX_CANDIDATES_PER_GROUP (8)  /*!< Number of channels that capable of Transmit in each group */
 #define SOC_RMT_RX_CANDIDATES_PER_GROUP (8)  /*!< Number of channels that capable of Receive in each group */
 #define SOC_RMT_CHANNELS_PER_GROUP      (8)  /*!< Total 8 channels */
@@ -211,7 +222,7 @@
 #define SOC_RTCIO_WAKE_SUPPORTED 1
 
 /*-------------------------- SIGMA DELTA CAPS --------------------------------*/
-#define SOC_SIGMADELTA_NUM            1
+#define SOC_SIGMADELTA_NUM            1U
 #define SOC_SIGMADELTA_CHANNEL_NUM (8) // 8 channels
 
 /*-------------------------- SPI CAPS ----------------------------------------*/

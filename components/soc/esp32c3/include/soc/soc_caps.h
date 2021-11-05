@@ -3,6 +3,19 @@
 // seperate these information into periph_caps.h for each peripheral and
 // include them here.
 
+/*
+ * These defines are parsed and imported as kconfig variables via the script
+ * `tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py`
+ *
+ * If this file is changed the script will automatically run the script
+ * and generate the kconfig variables as part of the pre-commit hooks.
+ *
+ * It can also be ran manually with `./tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py 'components/soc/esp32c3/include/soc/'`
+ *
+ * For more information see `tools/gen_soc_caps_kconfig/README.md`
+ *
+*/
+
 #pragma once
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
@@ -86,18 +99,18 @@
 #define SOC_DS_KEY_CHECK_MAX_WAIT_US (1100)
 
 /*-------------------------- GDMA CAPS -------------------------------------*/
-#define SOC_GDMA_GROUPS                 (1) // Number of GDMA groups
-#define SOC_GDMA_PAIRS_PER_GROUP        (3) // Number of GDMA pairs in each group
-#define SOC_GDMA_TX_RX_SHARE_INTERRUPT  (1) // TX and RX channel in the same pair will share the same interrupt source number
+#define SOC_GDMA_GROUPS                 (1U) // Number of GDMA groups
+#define SOC_GDMA_PAIRS_PER_GROUP        (3)  // Number of GDMA pairs in each group
+#define SOC_GDMA_TX_RX_SHARE_INTERRUPT  (1)  // TX and RX channel in the same pair will share the same interrupt source number
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-C3 has 1 GPIO peripheral
-#define SOC_GPIO_PORT               (1)
+#define SOC_GPIO_PORT               (1U)
 #define SOC_GPIO_PIN_COUNT          (22)
 
 // Target has no full RTC IO subsystem, so GPIO is 100% "independent" of RTC
 // On ESP32-C3, Digital IOs have their own registers to control pullup/down capability, independent of RTC registers.
-#define GPIO_SUPPORTS_RTC_INDEPENDENT       (1)
+#define SOC_GPIO_SUPPORTS_RTC_INDEPENDENT       (1)
 // Force hold is a new function of ESP32-C3
 #define SOC_GPIO_SUPPORT_FORCE_HOLD         (1)
 // GPIO0~5 on ESP32C3 can support chip deep sleep wakeup
@@ -105,7 +118,7 @@
 
 #define SOC_GPIO_VALID_GPIO_MASK        ((1U<<SOC_GPIO_PIN_COUNT) - 1)
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK SOC_GPIO_VALID_GPIO_MASK
-#define SOC_GPIO_DEEP_SLEEP_WAKEUP_VALID_GPIO_MASK        (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5)
+#define SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK        (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5)
 
 // Support to configure sleep status
 #define SOC_GPIO_SUPPORT_SLP_SWITCH  (1)
@@ -117,7 +130,7 @@
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
 // ESP32-C3 have 2 I2C.
-#define SOC_I2C_NUM                 (1)
+#define SOC_I2C_NUM                 (1U)
 
 #define SOC_I2C_FIFO_LEN            (32) /*!< I2C hardware FIFO depth */
 
@@ -128,7 +141,7 @@
 #define SOC_I2C_SUPPORT_RTC         (1)
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
-#define SOC_I2S_NUM                 (1)
+#define SOC_I2S_NUM                 (1U)
 #define SOC_I2S_SUPPORTS_PCM        (1)
 #define SOC_I2S_SUPPORTS_PDM_TX     (1)
 #define SOC_I2S_SUPPORTS_PDM_CODEC  (1)
@@ -147,7 +160,7 @@
 #define SOC_MPU_REGION_WO_SUPPORTED               0
 
 /*--------------------------- RMT CAPS ---------------------------------------*/
-#define SOC_RMT_GROUPS                  (1)  /*!< One RMT group */
+#define SOC_RMT_GROUPS                  (1U) /*!< One RMT group */
 #define SOC_RMT_TX_CANDIDATES_PER_GROUP (2)  /*!< Number of channels that capable of Transmit */
 #define SOC_RMT_RX_CANDIDATES_PER_GROUP (2)  /*!< Number of channels that capable of Receive */
 #define SOC_RMT_CHANNELS_PER_GROUP      (4)  /*!< Total 4 channels */
@@ -195,8 +208,8 @@
 #define SOC_SHA_SUPPORT_SHA256          (1)
 
 /*-------------------------- SIGMA DELTA CAPS --------------------------------*/
-#define SOC_SIGMADELTA_NUM         (1) // 1 sigma-delta peripheral
-#define SOC_SIGMADELTA_CHANNEL_NUM (4) // 4 channels
+#define SOC_SIGMADELTA_NUM         (1U) // 1 sigma-delta peripheral
+#define SOC_SIGMADELTA_CHANNEL_NUM (4)  // 4 channels
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_PERIPH_NUM          2
@@ -215,7 +228,7 @@
 #define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id)  ({(void)host_id; 1;})
 
 // Peripheral supports output given level during its "dummy phase"
-#define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT 1
+#define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUT 1
 
 #define SOC_MEMSPI_IS_INDEPENDENT 1
 #define SOC_SPI_MAX_PRE_DIVIDER 16

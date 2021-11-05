@@ -67,23 +67,24 @@
 /** Initialization vector (IV) length for the RSA key parameter message digest (MD) in bytes. */
 #define SOC_DS_KEY_PARAM_MD_IV_LENGTH (16)
 
+
 /** Maximum wait time for DS parameter decryption key. If overdue, then key error.
     See TRM DS chapter for more details */
 #define SOC_DS_KEY_CHECK_MAX_WAIT_US (1100)
 
 /*-------------------------- GDMA CAPS -------------------------------------*/
-#define SOC_GDMA_GROUPS                 (1) // Number of GDMA groups
-#define SOC_GDMA_PAIRS_PER_GROUP        (3) // Number of GDMA pairs in each group
-#define SOC_GDMA_TX_RX_SHARE_INTERRUPT  (1) // TX and RX channel in the same pair will share the same interrupt source number
+#define SOC_GDMA_GROUPS                 (1U) // Number of GDMA groups
+#define SOC_GDMA_PAIRS_PER_GROUP        (3)  // Number of GDMA pairs in each group
+#define SOC_GDMA_TX_RX_SHARE_INTERRUPT  (1)  // TX and RX channel in the same pair will share the same interrupt source number
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP8684 has 1 GPIO peripheral
-#define SOC_GPIO_PORT               (1)
+#define SOC_GPIO_PORT               (1U)
 #define SOC_GPIO_PIN_COUNT          (21)
 
 // Target has no full RTC IO subsystem, so GPIO is 100% "independent" of RTC
 // On ESP8684, Digital IOs have their own registers to control pullup/down capability, independent of RTC registers.
-#define GPIO_SUPPORTS_RTC_INDEPENDENT       (1)
+#define SOC_GPIO_SUPPORTS_RTC_INDEPENDENT   (1)
 // Force hold is a new function of ESP8684
 #define SOC_GPIO_SUPPORT_FORCE_HOLD         (1)
 // GPIO0~5 on ESP8684 can support chip deep sleep wakeup
@@ -92,14 +93,14 @@
 // GPIO19 on ESP8684 is invalid.
 #define SOC_GPIO_VALID_GPIO_MASK        (((1U<<SOC_GPIO_PIN_COUNT) - 1) & (~(BIT19)))
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK SOC_GPIO_VALID_GPIO_MASK
-#define SOC_GPIO_DEEP_SLEEP_WAKEUP_VALID_GPIO_MASK        (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5)
+#define SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK        (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5)
 
 // Support to configure sleep status
 #define SOC_GPIO_SUPPORT_SLP_SWITCH  (1)
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
 // TODO IDF-3918
-#define SOC_I2C_NUM                 (1)
+#define SOC_I2C_NUM                 (1U)
 
 #define SOC_I2C_FIFO_LEN            (32) /*!< I2C hardware FIFO depth */
 
@@ -125,7 +126,7 @@
 #define SOC_MPU_REGION_WO_SUPPORTED               0
 
 /*--------------------------- RMT CAPS ---------------------------------------*/
-#define SOC_RMT_GROUPS                  (1)  /*!< One RMT group */
+#define SOC_RMT_GROUPS                  (1U) /*!< One RMT group */
 #define SOC_RMT_TX_CANDIDATES_PER_GROUP (2)  /*!< Number of channels that capable of Transmit */
 #define SOC_RMT_RX_CANDIDATES_PER_GROUP (2)  /*!< Number of channels that capable of Receive */
 #define SOC_RMT_CHANNELS_PER_GROUP      (4)  /*!< Total 4 channels */
@@ -143,11 +144,6 @@
 #define SOC_RTC_CNTL_CPU_PD_DMA_BLOCK_SIZE      (SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH >> 3)
 
 #define SOC_RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE  (SOC_RTC_CNTL_CPU_PD_REG_FILE_NUM * (SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH >> 3))
-
-/*-------------------------- RTCIO CAPS --------------------------------------*/
-/* No dedicated RTCIO subsystem on ESP8684. RTC functions are still supported
- * for hold, wake & 32kHz crystal functions - via rtc_cntl_reg */
-#define SOC_RTCIO_PIN_COUNT    0
 
 /*--------------------------- RSA CAPS ---------------------------------------*/
 #define SOC_RSA_MAX_BIT_LEN    (3072)
@@ -173,8 +169,8 @@
 #define SOC_SHA_SUPPORT_SHA256          (1)
 
 /*-------------------------- SIGMA DELTA CAPS --------------------------------*/
-#define SOC_SIGMADELTA_NUM         (1) // 1 sigma-delta peripheral
-#define SOC_SIGMADELTA_CHANNEL_NUM (4) // 4 channels
+#define SOC_SIGMADELTA_NUM         (1U) // 1 sigma-delta peripheral
+#define SOC_SIGMADELTA_CHANNEL_NUM (4)  // 4 channels
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_PERIPH_NUM          2
@@ -193,7 +189,7 @@
 #define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id)  ({(void)host_id; 1;})
 
 // Peripheral supports output given level during its "dummy phase"
-#define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT 1
+#define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUT 1
 
 #define SOC_MEMSPI_IS_INDEPENDENT 1
 #define SOC_SPI_MAX_PRE_DIVIDER 16
@@ -217,14 +213,14 @@
 #define SOC_SYSTIMER_ALARM_MISS_COMPENSATE (1)  // Systimer peripheral can generate interrupt immediately if t(target) > t(current)
 
 /*--------------------------- TIMER GROUP CAPS ---------------------------------------*/
-#define SOC_TIMER_GROUPS                  (1)
-#define SOC_TIMER_GROUP_TIMERS_PER_GROUP  (1)
+#define SOC_TIMER_GROUPS                  (1U)
+#define SOC_TIMER_GROUP_TIMERS_PER_GROUP  (1U)
 #define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH (54)
 #define SOC_TIMER_GROUP_SUPPORT_XTAL      (1)
 #define SOC_TIMER_GROUP_TOTAL_TIMERS (SOC_TIMER_GROUPS * SOC_TIMER_GROUP_TIMERS_PER_GROUP)
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
-#define SOC_TOUCH_SENSOR_NUM            (0)    /*! No touch sensors on ESP8684 */
+#define SOC_TOUCH_SENSOR_NUM            (0U)    /*! No touch sensors on ESP8684 */
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 // TODO IDF-3897
