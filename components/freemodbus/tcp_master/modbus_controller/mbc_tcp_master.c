@@ -1,16 +1,7 @@
-/* Copyright 2018 Espressif Systems (Shanghai) PTE LTD
+/*
+ * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 // mbc_tcp_master.c
@@ -135,7 +126,6 @@ static esp_err_t mbc_tcp_master_start(void)
     MB_MASTER_CHECK((start), ESP_ERR_INVALID_STATE,
                             "mb stack could not connect to slaves for %d seconds.",
                             CONFIG_FMB_TCP_CONNECTION_TOUT_SEC);
-
     return ESP_OK;
 }
 
@@ -153,7 +143,7 @@ static esp_err_t mbc_tcp_master_destroy(void)
     mb_error = eMBMasterClose();
     MB_MASTER_CHECK((mb_error == MB_ENOERR), ESP_ERR_INVALID_STATE,
             "mb stack close failure returned (0x%x).", (uint32_t)mb_error);
-    // Stop polling by clearing correspondent bit in the event group
+// Stop polling by clearing correspondent bit in the event group
     xEventGroupClearBits(mbm_opts->mbm_event_group,
                                     (EventBits_t)MB_EVENT_STACK_STARTED);
     (void)vTaskDelete(mbm_opts->mbm_task_handle);
@@ -184,9 +174,10 @@ static esp_err_t mbc_tcp_master_set_descriptor(const mb_parameter_descriptor_t* 
     {
         MB_MASTER_CHECK((comm_ip_table[reg_ptr->mb_slave_addr - 1] != NULL), ESP_ERR_INVALID_ARG, "mb ip table address is incorrect.");
         // Below is the code to check consistency of the table format and required fields.
-        MB_MASTER_CHECK((reg_ptr->cid == counter), ESP_ERR_INVALID_ARG, "mb descriptor cid field is incorrect.");
-        MB_MASTER_CHECK((reg_ptr->param_key != NULL), ESP_ERR_INVALID_ARG, "mb descriptor param key is incorrect.");
-        MB_MASTER_CHECK((reg_ptr->mb_size > 0), ESP_ERR_INVALID_ARG, "mb descriptor param size is incorrect.");
+        MB_MASTER_CHECK((reg_ptr->cid == counter), ESP_ERR_INVALID_ARG, "cid: %d, mb descriptor cid field is incorrect.", reg_ptr->cid);
+        MB_MASTER_CHECK((reg_ptr->param_key != NULL), ESP_ERR_INVALID_ARG, "cid: %d, mb descriptor param key is incorrect.", reg_ptr->cid);
+        MB_MASTER_CHECK((reg_ptr->mb_size > 0), ESP_ERR_INVALID_ARG, "cid: %d, mb descriptor param size is incorrect.", reg_ptr->cid);
+        MB_MASTER_CHECK(((reg_ptr->mb_size << 1) >= reg_ptr->param_size), ESP_ERR_INVALID_ARG, "cid: %d, mb descriptor param size is incorrect.", reg_ptr->cid);
     }
     mbm_opts->mbm_param_descriptor_table = descriptor;
     mbm_opts->mbm_param_descriptor_size = num_elements;
@@ -420,27 +411,39 @@ static esp_err_t mbc_tcp_master_get_parameter(uint16_t cid, char* name, uint8_t*
 {
     MB_MASTER_CHECK((name != NULL), ESP_ERR_INVALID_ARG, "mb incorrect descriptor.");
     MB_MASTER_CHECK((type != NULL), ESP_ERR_INVALID_ARG, "type pointer is incorrect.");
+    MB_MASTER_CHECK((value != NULL), ESP_ERR_INVALID_ARG, "value pointer is incorrect.");
     esp_err_t error = ESP_ERR_INVALID_RESPONSE;
     mb_param_request_t request ;
     mb_parameter_descriptor_t reg_info = { 0 };
-    uint8_t param_buffer[PARAM_MAX_SIZE] = { 0 };
+    uint8_t* pdata = NULL;
 
     error = mbc_tcp_master_set_request(name, MB_PARAM_READ, &request, &reg_info);
     if ((error == ESP_OK) && (cid == reg_info.cid)) {
-        error = mbc_tcp_master_send_request(&request, &param_buffer[0]);
+        // alloc buffer to store parameter data
+        pdata = calloc(1, (reg_info.mb_size << 1));
+        if (!pdata) {
+            return ESP_ERR_INVALID_STATE;
+        }
+        error = mbc_tcp_master_send_request(&request, pdata);
         if (error == ESP_OK) {
             // If data pointer is NULL then we don't need to set value (it is still in the cache of cid)
             if (value != NULL) {
-                error = mbc_tcp_master_set_param_data((void*)value, (void*)&param_buffer[0],
+                error = mbc_tcp_master_set_param_data((void*)value, (void*)pdata,
                                                     reg_info.param_type, reg_info.param_size);
-                MB_MASTER_CHECK((error == ESP_OK), ESP_ERR_INVALID_STATE, "fail to set parameter data.");
+                if (error != ESP_OK) {
+                    ESP_LOGE(MB_MASTER_TAG, "fail to set parameter data.");
+                    error = ESP_ERR_INVALID_STATE;
+                } else {
+                    ESP_LOGD(MB_MASTER_TAG, "%s: Good response for get cid(%u) = %s",
+                                                        __FUNCTION__, (unsigned)reg_info.cid, (char*)esp_err_to_name(error));
+                }
             }
-            ESP_LOGD(MB_MASTER_TAG, "%s: Good response for get cid(%u) = %s",
-                                    __FUNCTION__, (int)reg_info.cid, (char*)esp_err_to_name(error));
         } else {
             ESP_LOGD(MB_MASTER_TAG, "%s: Bad response to get cid(%u) = %s",
                                             __FUNCTION__, reg_info.cid, (char*)esp_err_to_name(error));
+            error = ESP_ERR_INVALID_RESPONSE;
         }
+        free(pdata);
         // Set the type of parameter found in the table
         *type = reg_info.param_type;
     } else {
@@ -461,23 +464,32 @@ static esp_err_t mbc_tcp_master_set_parameter(uint16_t cid, char* name, uint8_t*
     esp_err_t error = ESP_ERR_INVALID_RESPONSE;
     mb_param_request_t request ;
     mb_parameter_descriptor_t reg_info = { 0 };
-    uint8_t param_buffer[PARAM_MAX_SIZE] = { 0 };
+    uint8_t* pdata = NULL;
 
     error = mbc_tcp_master_set_request(name, MB_PARAM_WRITE, &request, &reg_info);
     if ((error == ESP_OK) && (cid == reg_info.cid)) {
+        pdata = calloc(1, (reg_info.mb_size << 1)); // alloc parameter buffer
+        if (!pdata) {
+            return ESP_ERR_INVALID_STATE;
+        }
         // Transfer value of characteristic into parameter buffer
-        error = mbc_tcp_master_set_param_data((void*)&param_buffer[0], (void*)value,
+        error = mbc_tcp_master_set_param_data((void*)pdata, (void*)value,
                                                 reg_info.param_type, reg_info.param_size);
-        MB_MASTER_CHECK((error == ESP_OK), ESP_ERR_INVALID_STATE, "failure to set parameter data.");
+        if (error != ESP_OK) {
+            ESP_LOGE(MB_MASTER_TAG, "fail to set parameter data.");
+            free(pdata);
+            return ESP_ERR_INVALID_STATE;
+        }
         // Send request to write characteristic data
-        error = mbc_tcp_master_send_request(&request, &param_buffer[0]);
+        error = mbc_tcp_master_send_request(&request, pdata);
         if (error == ESP_OK) {
             ESP_LOGD(MB_MASTER_TAG, "%s: Good response for set cid(%u) = %s",
-                                    __FUNCTION__, (int)reg_info.cid, (char*)esp_err_to_name(error));
+                                    __FUNCTION__, (unsigned)reg_info.cid, (char*)esp_err_to_name(error));
         } else {
             ESP_LOGD(MB_MASTER_TAG, "%s: Bad response to set cid(%u) = %s",
                                     __FUNCTION__, reg_info.cid, (char*)esp_err_to_name(error));
         }
+        free(pdata);
         // Set the type of parameter found in the table
         *type = reg_info.param_type;
     } else {
