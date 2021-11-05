@@ -801,30 +801,30 @@ static void vMBTCPPortMasterTask(void *pvParameters)
             } else {
                 // Check to make sure that active slave data is ready
                 if (FD_ISSET(pxCurrInfo->xSockId, &xReadSet)) {
-                    xErr = ERR_BUF;
-                    for (int retry = 0; (xErr == ERR_BUF) && (retry < MB_TCP_READ_BUF_RETRY_CNT); retry++) {
-                        xErr = vMBTCPPortMasterReadPacket(pxCurrInfo);
+                    int xRet = ERR_BUF;
+                    for (int retry = 0; (xRet == ERR_BUF) && (retry < MB_TCP_READ_BUF_RETRY_CNT); retry++) {
+                        xRet = vMBTCPPortMasterReadPacket(pxCurrInfo);
                         // The error ERR_BUF means received response to previous request
                         // (due to timeout) with the same socket ID and incorrect TID,
                         // then ignore it and try to get next response buffer.
                     }
-                    if (xErr > 0) {
+                    if (xRet > 0) {
                         // Response received correctly, send an event to stack
                         xMBTCPPortMasterFsmSetError(EV_ERROR_INIT, EV_MASTER_FRAME_RECEIVED);
                         ESP_LOGD(MB_TCP_MASTER_PORT_TAG, MB_SLAVE_FMT(", frame received."),
                                     pxCurrInfo->xIndex, pxCurrInfo->xSockId, pxCurrInfo->pcIpAddr);
-                    } else if ((xErr == ERR_TIMEOUT) || (xMBTCPPortMasterGetRespTimeLeft(pxCurrInfo) == 0)) {
+                    } else if ((xRet == ERR_TIMEOUT) || (xMBTCPPortMasterGetRespTimeLeft(pxCurrInfo) == 0)) {
                         // Timeout occurred when receiving frame, process respond timeout
                         ESP_LOGD(MB_TCP_MASTER_PORT_TAG, MB_SLAVE_FMT(", frame read timeout."),
                                     pxCurrInfo->xIndex, pxCurrInfo->xSockId, pxCurrInfo->pcIpAddr);
-                    } else if (xErr == ERR_BUF) {
+                    } else if (xRet == ERR_BUF) {
                         // After retries a response with incorrect TID received, process failure.
                         xMBTCPPortMasterFsmSetError(EV_ERROR_RECEIVE_DATA, EV_MASTER_ERROR_PROCESS);
                         ESP_LOGD(MB_TCP_MASTER_PORT_TAG, MB_SLAVE_FMT(", frame error."),
                                     pxCurrInfo->xIndex, pxCurrInfo->xSockId, pxCurrInfo->pcIpAddr);
                     } else {
                         ESP_LOGE(MB_TCP_MASTER_PORT_TAG, MB_SLAVE_FMT(", critical error=%d."),
-                                    pxCurrInfo->xIndex, pxCurrInfo->xSockId, pxCurrInfo->pcIpAddr, xErr);
+                                    pxCurrInfo->xIndex, pxCurrInfo->xSockId, pxCurrInfo->pcIpAddr, xRet);
                         // Stop polling process
                         vMBTCPPortMasterStopPoll();
                         xMBTCPPortMasterCheckShutdown();
