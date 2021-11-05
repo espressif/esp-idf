@@ -119,6 +119,14 @@ repos:
         additional_dependencies:
           - PyYAML == 5.3.1
         pass_filenames: false
+      - id: check-generated-soc-caps-kconfig
+        name: Check soc caps kconfig files are generated (based on components/soc/IDF_TARGET/include/soc/soc_caps.h)
+        entry: tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py -d 'components/soc/*/include/soc/' 'components/esp_rom/*/'
+        language: python
+        files: 'components/soc/.+/include/soc/.+_caps\.h|components/esp_rom/.+/.+_caps\.h|kconfig\.soc_caps.in'
+        pass_filenames: false
+        additional_dependencies:
+          - pyparsing
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.0.1
     hooks:

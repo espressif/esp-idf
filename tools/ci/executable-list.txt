@@ -78,6 +78,8 @@ tools/esp_app_trace/test/sysview/test.sh
 tools/find_apps.py
 tools/format.sh
 tools/gen_esp_err_to_name.py
+tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py
+tools/gen_soc_caps_kconfig/test/test_gen_soc_caps_kconfig.py
 tools/idf.py
 tools/idf_monitor.py
 tools/idf_size.py

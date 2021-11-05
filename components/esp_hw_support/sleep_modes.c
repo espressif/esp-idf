@@ -192,7 +192,7 @@ static void touch_wakeup_prepare(void);
 static void esp_deep_sleep_wakeup_prepare(void);
 #endif
 
-#if SOC_PM_SUPPORT_DEEPSLEEP_VERIFY_STUB_ONLY
+#if SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
 static RTC_FAST_ATTR esp_deep_sleep_wake_stub_fn_t wake_stub_fn_handler = NULL;
 
 static void RTC_IRAM_ATTR __attribute__((used, noinline)) esp_wake_stub_start(void)
@@ -215,14 +215,14 @@ static void __attribute__((section(".rtc.entry.text"))) esp_wake_stub_entry(void
     // which is sufficient for instruction addressing in RTC fast memory.
     __asm__ __volatile__ ("call4 " SYM2STR(esp_wake_stub_start) "\n");
 }
-#endif // SOC_PM_SUPPORT_DEEPSLEEP_VERIFY_STUB_ONLY
+#endif // SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
 
 /* Wake from deep sleep stub
    See esp_deepsleep.h esp_wake_deep_sleep() comments for details.
 */
 esp_deep_sleep_wake_stub_fn_t esp_get_deep_sleep_wake_stub(void)
 {
-#if SOC_PM_SUPPORT_DEEPSLEEP_VERIFY_STUB_ONLY
+#if SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
     esp_deep_sleep_wake_stub_fn_t stub_ptr = wake_stub_fn_handler;
 #else
     esp_deep_sleep_wake_stub_fn_t stub_ptr = (esp_deep_sleep_wake_stub_fn_t) REG_READ(RTC_ENTRY_ADDR_REG);
@@ -235,7 +235,7 @@ esp_deep_sleep_wake_stub_fn_t esp_get_deep_sleep_wake_stub(void)
 
 void esp_set_deep_sleep_wake_stub(esp_deep_sleep_wake_stub_fn_t new_stub)
 {
-#if SOC_PM_SUPPORT_DEEPSLEEP_VERIFY_STUB_ONLY
+#if SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
     wake_stub_fn_handler = new_stub;
 #else
     REG_WRITE(RTC_ENTRY_ADDR_REG, (uint32_t)new_stub);
@@ -446,7 +446,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
          */
         portENTER_CRITICAL(&spinlock_rtc_deep_sleep);
 
-#if SOC_PM_SUPPORT_DEEPSLEEP_VERIFY_STUB_ONLY
+#if SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
         extern char _rtc_text_start[];
 #if CONFIG_ESP32S3_RTCDATA_IN_FAST_MEM
         extern char _rtc_noinit_end[];
@@ -469,7 +469,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
         /* Otherwise, need to call the dedicated soc function for this */
         result = rtc_deep_sleep_start(s_config.wakeup_triggers, reject_triggers);
 #endif
-#endif // SOC_PM_SUPPORT_DEEPSLEEP_VERIFY_STUB_ONLY
+#endif // SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
 
         portEXIT_CRITICAL(&spinlock_rtc_deep_sleep);
     } else {

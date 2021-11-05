@@ -214,6 +214,7 @@ tools/esp_prov/utils/convenience.py
 tools/find_apps.py
 tools/find_build_apps/common.py
 tools/gen_esp_err_to_name.py
+tools/gen_soc_caps_kconfig/test/test_gen_soc_caps_kconfig.py
 tools/idf.py
 tools/idf_py_actions/core_ext.py
 tools/idf_py_actions/create_ext.py

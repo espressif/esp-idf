@@ -4,6 +4,8 @@
 #
 mainmenu "Espressif IoT Development Framework Configuration"
 
+    orsource "./components/soc/$IDF_TARGET/include/soc/Kconfig.soc_caps.in"
+
     config IDF_CMAKE
         bool
         default "y"
@@ -129,6 +131,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 but currently 64-bit time_t requires a custom built toolchain.
 
     endmenu  # SDK tool configuration
+
 
     menu "Build type"
 

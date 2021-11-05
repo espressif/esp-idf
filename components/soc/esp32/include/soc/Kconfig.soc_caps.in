@@ -1,0 +1,516 @@
+#####################################################
+# This file is auto-generated from SoC caps
+# using gen_soc_caps_kconfig.py, do not edit manually
+#####################################################
+
+config SOC_BROWNOUT_RESET_SUPPORTED
+    string
+    default "Not determined"
+
+config SOC_TWAI_BRP_DIV_SUPPORTED
+    string
+    default "Not determined"
+
+config SOC_CAPS_ECO_VER_MAX
+    int
+    default 3
+
+config SOC_DAC_SUPPORTED
+    bool
+    default y
+
+config SOC_MCPWM_SUPPORTED
+    bool
+    default y
+
+config SOC_SDMMC_HOST_SUPPORTED
+    bool
+    default y
+
+config SOC_BT_SUPPORTED
+    bool
+    default y
+
+config SOC_CLASSIC_BT_SUPPORTED
+    bool
+    default y
+
+config SOC_PCNT_SUPPORTED
+    bool
+    default y
+
+config SOC_SDIO_SLAVE_SUPPORTED
+    bool
+    default y
+
+config SOC_TWAI_SUPPORTED
+    bool
+    default y
+
+config SOC_EMAC_SUPPORTED
+    bool
+    default y
+
+config SOC_CPU_CORES_NUM
+    int
+    default 2
+
+config SOC_ULP_SUPPORTED
+    bool
+    default y
+
+config SOC_CCOMP_TIMER_SUPPORTED
+    bool
+    default y
+
+config SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS
+    bool
+    default y
+
+config SOC_RTC_FAST_MEM_SUPPORTED
+    bool
+    default y
+
+config SOC_RTC_SLOW_MEM_SUPPORTED
+    bool
+    default y
+
+config SOC_ADC_RTC_CTRL_SUPPORTED
+    bool
+    default y
+
+config SOC_ADC_PERIPH_NUM
+    int
+    default 2
+
+config SOC_ADC_MAX_CHANNEL_NUM
+    int
+    default 10
+
+config SOC_ADC_DIGI_CONTROLLER_NUM
+    int
+    default 2
+
+config SOC_ADC_PATT_LEN_MAX
+    int
+    default 16
+
+config SOC_ADC_DIGI_MIN_BITWIDTH
+    int
+    default 9
+
+config SOC_ADC_DIGI_MAX_BITWIDTH
+    int
+    default 12
+
+config SOC_ADC_SAMPLE_FREQ_THRES_HIGH
+    int
+    default 83333
+
+config SOC_ADC_SAMPLE_FREQ_THRES_LOW
+    int
+    default 611
+
+config SOC_ADC_MAX_BITWIDTH
+    int
+    default 12
+
+config SOC_CPU_BREAKPOINTS_NUM
+    int
+    default 2
+
+config SOC_CPU_WATCHPOINTS_NUM
+    int
+    default 2
+
+config SOC_CPU_WATCHPOINT_SIZE
+    int
+    default 64
+
+config SOC_CPU_HAS_FPU
+    bool
+    default y
+
+config SOC_DAC_PERIPH_NUM
+    int
+    default 2
+
+config SOC_DAC_RESOLUTION
+    int
+    default 8
+
+config SOC_GPIO_PORT
+    int
+    default 1
+
+config SOC_GPIO_PIN_COUNT
+    int
+    default 40
+
+config SOC_GPIO_VALID_GPIO_MASK
+    hex
+    default 0xFFFFFFFFFF
+
+config SOC_GPIO_SUPPORT_SLP_SWITCH
+    bool
+    default y
+
+config SOC_I2C_NUM
+    int
+    default 2
+
+config SOC_I2C_FIFO_LEN
+    int
+    default 32
+
+config SOC_I2C_SUPPORT_APB
+    bool
+    default y
+
+config SOC_I2S_NUM
+    int
+    default 2
+
+config SOC_I2S_SUPPORTS_PDM_TX
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PDM_RX
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_ADC
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_DAC
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_APLL
+    bool
+    default y
+
+config SOC_I2S_APLL_MIN_FREQ
+    int
+    default 250000000
+
+config SOC_I2S_APLL_MAX_FREQ
+    int
+    default 500000000
+
+config SOC_I2S_APLL_MIN_RATE
+    int
+    default 10675
+
+config SOC_I2S_TRANS_SIZE_ALIGN_WORD
+    bool
+    default y
+
+config SOC_I2S_LCD_I80_VARIANT
+    bool
+    default y
+
+config SOC_LCD_I80_SUPPORTED
+    bool
+    default y
+
+config SOC_LCD_I80_BUSES
+    bool
+    default y
+
+config SOC_LCD_I80_BUS_WIDTH
+    int
+    default 24
+
+config SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
+    bool
+    default y
+
+config SOC_LEDC_SUPPORT_REF_TICK
+    bool
+    default y
+
+config SOC_LEDC_SUPPORT_HS_MODE
+    bool
+    default y
+
+config SOC_LEDC_CHANNEL_NUM
+    int
+    default 8
+
+config SOC_LEDC_TIMER_BIT_WIDE_NUM
+    int
+    default 20
+
+config SOC_MCPWM_GROUPS
+    int
+    default 2
+
+config SOC_MCPWM_TIMERS_PER_GROUP
+    int
+    default 3
+
+config SOC_MCPWM_OPERATORS_PER_GROUP
+    int
+    default 3
+
+config SOC_MCPWM_COMPARATORS_PER_OPERATOR
+    int
+    default 2
+
+config SOC_MCPWM_GENERATORS_PER_OPERATOR
+    int
+    default 2
+
+config SOC_MCPWM_TRIGGERS_PER_OPERATOR
+    int
+    default 2
+
+config SOC_MCPWM_GPIO_FAULTS_PER_GROUP
+    int
+    default 3
+
+config SOC_MCPWM_CAPTURE_TIMERS_PER_GROUP
+    bool
+    default y
+
+config SOC_MCPWM_CAPTURE_CHANNELS_PER_TIMER
+    int
+    default 3
+
+config SOC_MCPWM_GPIO_SYNCHROS_PER_GROUP
+    int
+    default 3
+
+config SOC_MCPWM_BASE_CLK_HZ
+    int
+    default 160000000
+
+config SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED
+    bool
+    default n
+
+config SOC_MPU_MIN_REGION_SIZE
+    hex
+    default 0x20000000
+
+config SOC_MPU_REGIONS_MAX_NUM
+    int
+    default 8
+
+config SOC_MPU_REGION_RO_SUPPORTED
+    bool
+    default n
+
+config SOC_MPU_REGION_WO_SUPPORTED
+    bool
+    default n
+
+config SOC_PCNT_GROUPS
+    int
+    default 1
+
+config SOC_PCNT_UNITS_PER_GROUP
+    int
+    default 8
+
+config SOC_PCNT_CHANNELS_PER_UNIT
+    int
+    default 2
+
+config SOC_PCNT_THRES_POINT_PER_UNIT
+    int
+    default 2
+
+config SOC_RMT_GROUPS
+    int
+    default 1
+
+config SOC_RMT_TX_CANDIDATES_PER_GROUP
+    int
+    default 8
+
+config SOC_RMT_RX_CANDIDATES_PER_GROUP
+    int
+    default 8
+
+config SOC_RMT_CHANNELS_PER_GROUP
+    int
+    default 8
+
+config SOC_RMT_MEM_WORDS_PER_CHANNEL
+    int
+    default 64
+
+config SOC_RMT_SUPPORT_REF_TICK
+    bool
+    default y
+
+config SOC_RMT_CHANNEL_CLK_INDEPENDENT
+    bool
+    default y
+
+config SOC_RTCIO_PIN_COUNT
+    int
+    default 18
+
+config SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+    bool
+    default y
+
+config SOC_RTCIO_HOLD_SUPPORTED
+    bool
+    default y
+
+config SOC_RTCIO_WAKE_SUPPORTED
+    bool
+    default y
+
+config SOC_SIGMADELTA_NUM
+    int
+    default 1
+
+config SOC_SIGMADELTA_CHANNEL_NUM
+    int
+    default 8
+
+config SOC_SPI_PERIPH_NUM
+    int
+    default 3
+
+config SOC_SPI_DMA_CHAN_NUM
+    int
+    default 2
+
+config SOC_SPI_MAXIMUM_BUFFER_SIZE
+    int
+    default 64
+
+config SOC_SPI_MAX_PRE_DIVIDER
+    int
+    default 8192
+
+config SOC_SPI_SUPPORT_AS_CS
+    bool
+    default y
+
+config SOC_TIMER_GROUPS
+    int
+    default 2
+
+config SOC_TIMER_GROUP_TIMERS_PER_GROUP
+    int
+    default 2
+
+config SOC_TIMER_GROUP_COUNTER_BIT_WIDTH
+    int
+    default 64
+
+config SOC_TOUCH_VERSION_1
+    bool
+    default y
+
+config SOC_TOUCH_SENSOR_NUM
+    int
+    default 10
+
+config SOC_TOUCH_PAD_MEASURE_WAIT_MAX
+    hex
+    default 0xFF
+
+config SOC_TOUCH_PAD_THRESHOLD_MAX
+    bool
+    default n
+
+config SOC_TWAI_BRP_MIN
+    int
+    default 2
+
+config SOC_TWAI_SUPPORT_MULTI_ADDRESS_LAYOUT
+    bool
+    default y
+
+config SOC_UART_NUM
+    int
+    default 3
+
+config SOC_UART_SUPPORT_REF_TICK
+    bool
+    default y
+
+config SOC_UART_FIFO_LEN
+    int
+    default 128
+
+config SOC_UART_BITRATE_MAX
+    int
+    default 5000000
+
+config SOC_SPIRAM_SUPPORTED
+    bool
+    default y
+
+config SOC_SHA_SUPPORT_PARALLEL_ENG
+    bool
+    default y
+
+config SOC_SHA_SUPPORT_SHA1
+    bool
+    default y
+
+config SOC_SHA_SUPPORT_SHA256
+    bool
+    default y
+
+config SOC_SHA_SUPPORT_SHA384
+    bool
+    default y
+
+config SOC_SHA_SUPPORT_SHA512
+    bool
+    default y
+
+config SOC_RSA_MAX_BIT_LEN
+    int
+    default 4096
+
+config SOC_AES_SUPPORT_AES_128
+    bool
+    default y
+
+config SOC_AES_SUPPORT_AES_192
+    bool
+    default y
+
+config SOC_AES_SUPPORT_AES_256
+    bool
+    default y
+
+config SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX
+    int
+    default 32
+
+config SOC_PHY_DIG_REGS_MEM_SIZE
+    int
+    default 21
+
+config SOC_PM_SUPPORT_EXT_WAKEUP
+    bool
+    default y
+
+config SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP
+    bool
+    default y
+
+config SOC_SDMMC_USE_IOMUX
+    bool
+    default y
+
+config SOC_SDMMC_NUM_SLOTS
+    int
+    default 2
+
+config SOC_BLE_DONT_UPDATE_OWN_RPA
+    bool
+    default y
