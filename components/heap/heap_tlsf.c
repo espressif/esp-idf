@@ -784,7 +784,7 @@ void tlsf_remove_pool(tlsf_t tlsf, pool_t pool)
 */
 
 
-tlsf_t tlsf_create(void* mem, size_t bytes)
+tlsf_t tlsf_create(void* mem, size_t max_bytes)
 {
 #if _DEBUG
 	if (test_ffs_fls())
@@ -800,7 +800,7 @@ tlsf_t tlsf_create(void* mem, size_t bytes)
 		return 0;
 	}
 
-	control_construct(tlsf_cast(control_t*, mem), bytes);
+	control_construct(tlsf_cast(control_t*, mem), max_bytes);
 
 	return tlsf_cast(tlsf_t, mem);
 }
