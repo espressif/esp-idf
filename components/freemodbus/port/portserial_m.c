@@ -85,9 +85,14 @@ static USHORT usMBMasterPortSerialRxPoll(size_t xEventSize)
             // Call the Modbus stack callback function and let it fill the stack buffers.
             xReadStatus = pxMBMasterFrameCBByteReceived(); // callback to receive FSM
         }
+
         // The buffer is transferred into Modbus stack and is not needed here any more
         uart_flush_input(ucUartNumber);
         ESP_LOGD(TAG, "Received data: %d(bytes in buffer)\n", (uint32_t)usCnt);
+#if !CONFIG_FMB_TIMER_PORT_ENABLED
+        vMBMasterSetCurTimerMode(MB_TMODE_T35);
+        pxMBMasterPortCBTimerExpired();
+#endif
     } else {
         ESP_LOGE(TAG, "%s: bRxState disabled but junk data (%d bytes) received. ", __func__, xEventSize);
     }
