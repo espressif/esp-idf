@@ -453,7 +453,14 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
     //ToDo: if we are to allow placing interrupt handlers into the 0x400c0000—0x400c2000 region,
     //we need to make sure the interrupt is connected to the CPU0.
     //CPU1 does not have access to the RTC fast memory through this region.
-    if ((flags & ESP_INTR_FLAG_IRAM) && handler && !esp_ptr_in_iram(handler) && !esp_ptr_in_rtc_iram_fast(handler)) {
+    if ((flags & ESP_INTR_FLAG_IRAM)
+         && handler
+         && !esp_ptr_in_iram(handler)
+#if SOC_RTC_FAST_MEM_SUPPORTED
+        // IDF-3901.
+         && !esp_ptr_in_rtc_iram_fast(handler)
+#endif
+         ) {
         return ESP_ERR_INVALID_ARG;
     }
 

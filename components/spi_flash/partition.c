@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdlib.h>
 #include <assert.h>
@@ -181,13 +173,15 @@ static esp_err_t load_partitions(void)
 #endif
 
     // map 64kB block where partition table is located
-    esp_err_t err = spi_flash_mmap(ESP_PARTITION_TABLE_OFFSET & 0xffff0000,
+    uint32_t partition_align_pg_size = (ESP_PARTITION_TABLE_OFFSET) & ~(0x10000 - 1);
+    uint32_t partition_pad = ESP_PARTITION_TABLE_OFFSET - partition_align_pg_size;
+    esp_err_t err = spi_flash_mmap(partition_align_pg_size,
                                    SPI_FLASH_SEC_SIZE, SPI_FLASH_MMAP_DATA, (const void **)&p_start, &handle);
     if (err != ESP_OK) {
         return err;
     }
     // calculate partition address within mmap-ed region
-    p_start += (ESP_PARTITION_TABLE_OFFSET & 0xffff);
+    p_start += partition_pad;
     p_end = p_start + SPI_FLASH_SEC_SIZE;
 
     for(const uint8_t *p_entry = p_start; p_entry < p_end; p_entry += sizeof(esp_partition_info_t)) {
@@ -255,6 +249,7 @@ static esp_err_t load_partitions(void)
         stored_md5 = md5_part + ESP_PARTITION_MD5_OFFSET;
 
         esp_rom_md5_final(calc_md5, &context);
+
 
         ESP_LOG_BUFFER_HEXDUMP("calculated md5", calc_md5, ESP_ROM_MD5_DIGEST_LEN, ESP_LOG_VERBOSE);
         ESP_LOG_BUFFER_HEXDUMP("stored md5", stored_md5, ESP_ROM_MD5_DIGEST_LEN, ESP_LOG_VERBOSE);
