@@ -1,10 +1,11 @@
 
 menu "Wi-Fi"
-    visible if !IDF_TARGET_ESP32H2
+    visible if !IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP8684 # TODO: remove 8684 after supported. IDF-3905
 
     config ESP32_WIFI_ENABLED
         bool
-        default "y" if !IDF_TARGET_ESP32H2 # TODO: replace with SOC_CAPS_SUPPORT_WIFI after IDF-2223 is done
+        default "n" if IDF_TARGET_ESP8684 # TODO: replace with SOC_CAPS_SUPPORT_WIFI after IDF-2223 is done
+        default "y" if !IDF_TARGET_ESP32H2
 
     config ESP32_WIFI_SW_COEXIST_ENABLE
         bool "Software controls WiFi/Bluetooth coexistence"
