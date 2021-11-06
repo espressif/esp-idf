@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,9 +63,11 @@
 #define SOC_EMAC_SUPPORTED          1
 #define SOC_CPU_CORES_NUM           2
 #define SOC_ULP_SUPPORTED           1
-#define SOC_RTC_SLOW_MEM_SUPPORTED  1
 #define SOC_CCOMP_TIMER_SUPPORTED   1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 1
+#define SOC_RTC_FAST_MEM_SUPPORTED        1
+#define SOC_RTC_SLOW_MEM_SUPPORTED        1
+
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
 /**
