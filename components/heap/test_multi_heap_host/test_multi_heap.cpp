@@ -6,6 +6,16 @@
 #include <string.h>
 #include <assert.h>
 
+static void *__malloc__(size_t bytes) 
+{
+    return malloc(bytes);
+}
+
+static void __free__(void *ptr) 
+{
+    free(ptr);
+}
+
 /* Insurance against accidentally using libc heap functions in tests */
 #undef free
 #define free #error
@@ -202,16 +212,18 @@ TEST_CASE("multi_heap defrag realloc", "[multi_heap]")
 #endif
 
 
-TEST_CASE("multi_heap many random allocations", "[multi_heap]")
+void multi_heap_allocation_impl(int heap_size)
 {
-    uint8_t big_heap[8 * 1024];
+    uint8_t *big_heap = (uint8_t *) __malloc__(2*heap_size);
     const int NUM_POINTERS = 64;
 
-    printf("Running multi-allocation test...\n");
+    printf("Running multi-allocation test with heap_size %d...\n", heap_size);
+
+    REQUIRE( big_heap );
+    multi_heap_handle_t heap = multi_heap_register(big_heap, heap_size);
 
     void *p[NUM_POINTERS] = { 0 };
     size_t s[NUM_POINTERS] = { 0 };
-    multi_heap_handle_t heap = multi_heap_register(big_heap, sizeof(big_heap));
 
     const size_t initial_free = multi_heap_free_size(heap);
 
@@ -239,13 +251,12 @@ TEST_CASE("multi_heap many random allocations", "[multi_heap]")
                 s[n] = new_size;
                 if (new_size > 0) {
                     REQUIRE( p[n] >= big_heap );
-                    REQUIRE( p[n] < big_heap + sizeof(big_heap) );
+                    REQUIRE( p[n] < big_heap + heap_size );
                     memset(p[n], n, new_size);
                 }
             }
             continue;
         }
-
         if (p[n] != NULL) {
             if (s[n] > 0) {
                 /* Verify pre-existing contents of p[n] */
@@ -269,14 +280,13 @@ TEST_CASE("multi_heap many random allocations", "[multi_heap]")
         printf("malloc %p (%zu)\n", p[n], s[n]);
         if (p[n] != NULL) {
             REQUIRE( p[n] >= big_heap );
-            REQUIRE( p[n] < big_heap + sizeof(big_heap) );
+            REQUIRE( p[n] < big_heap + heap_size );
         }
         if (!multi_heap_check(heap, true)) {
             printf("FAILED iteration %d after mallocing %p (%zu bytes)\n", i, p[n], s[n]);
             multi_heap_dump(heap);
             REQUIRE(0);
         }
-
         if (p[n] != NULL) {
             memset(p[n], n, s[n]);
         }
@@ -292,6 +302,15 @@ TEST_CASE("multi_heap many random allocations", "[multi_heap]")
     }
 
     REQUIRE( initial_free == multi_heap_free_size(heap) );
+    __free__(big_heap);
+}
+
+TEST_CASE("multi_heap many random allocations", "[multi_heap]")
+{
+    size_t poolsize[] = { 15, 255, 4095, 8191 };
+    for (size_t i = 0; i < sizeof(poolsize)/sizeof(size_t); i++) {
+        multi_heap_allocation_impl(poolsize[i] * 1024);
+    }	
 }
 
 TEST_CASE("multi_heap_get_info() function", "[multi_heap]")
