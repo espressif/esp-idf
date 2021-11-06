@@ -3,23 +3,19 @@ idf_build_get_property(target IDF_TARGET)
 set(srcs
     "gpio.c"
     "i2c.c"
-    "i2s.c"
     "ledc.c"
     "pcnt.c"
     "periph_ctrl.c"
-    "rmt.c"
     "rtc_io.c"
     "rtc_module.c"
     "sdspi_crc.c"
     "sdspi_host.c"
     "sdspi_transaction.c"
-    "sigmadelta.c"
     "spi_common.c"
     "spi_master.c"
     "spi_slave.c"
     "spi_bus_lock.c"
     "timer.c"
-    "twai.c"
     "uart.c")
 
 set(includes "include" "${target}/include")
@@ -31,11 +27,15 @@ if(${target} STREQUAL "esp32")
                      "mcpwm.c"
                      "sdio_slave.c"
                      "sdmmc_host.c"
+                     "i2s.c"
+                     "rmt.c"
+                     "sigmadelta.c"
                      "sdmmc_transaction.c"
                      "touch_sensor_common.c"
                      "esp32/touch_sensor.c"
                      "esp32/adc.c"
-                     "esp32/dac.c")
+                     "esp32/dac.c"
+                     "twai.c")
 endif()
 
 if(IDF_TARGET STREQUAL "esp32s2")
@@ -44,6 +44,10 @@ if(IDF_TARGET STREQUAL "esp32s2")
                      "dedic_gpio.c"
                      "spi_slave_hd.c"
                      "touch_sensor_common.c"
+                     "sigmadelta.c"
+                     "i2s.c"
+                     "rmt.c"
+                     "twai.c"
                      "esp32s2/rtc_tempsensor.c"
                      "esp32s2/touch_sensor.c"
                      "esp32s2/adc.c"
@@ -58,11 +62,14 @@ if(${target} STREQUAL "esp32s3")
                      "sdmmc_host.c"
                      "sdmmc_transaction.c"
                      "mcpwm.c"
+                     "rmt.c"
+                     "sigmadelta.c"
                      "usb_serial_jtag.c"
                      "spi_slave_hd.c"
                      "touch_sensor_common.c"
                      "esp32s3/touch_sensor.c"
-                    )
+                     "i2s.c"
+                     "twai.c")
 endif()
 
 if(IDF_TARGET STREQUAL "esp32c3")
@@ -71,9 +78,13 @@ if(IDF_TARGET STREQUAL "esp32c3")
                      "adc_common.c"
                      "dedic_gpio.c"
                      "usb_serial_jtag.c"
+                     "i2s.c"
+                     "rmt.c"
+                     "sigmadelta.c"
                      "esp32c3/adc.c"
                      "esp32c3/adc2_init_cal.c"
-                     "esp32c3/rtc_tempsensor.c")
+                     "esp32c3/rtc_tempsensor.c"
+                     "twai.c")
 endif()
 
 if(IDF_TARGET STREQUAL "esp32h2")
@@ -81,9 +92,16 @@ if(IDF_TARGET STREQUAL "esp32h2")
                      "spi_slave_hd.c"
                      "adc_common.c"
                      "dedic_gpio.c"
+                     "i2s.c"
+                     "rmt.c"
+                     "sigmadelta.c"
                      "esp32h2/adc.c"
-                     "esp32h2/adc2_init_cal.c"
-                     "esp32h2/rtc_tempsensor.c")
+                     "esp32h2/rtc_tempsensor.c"
+                     "twai.c")
+endif()
+
+if(IDF_TARGET STREQUAL "esp8684")
+    list(APPEND srcs "spi_slave_hd.c")
 endif()
 
 idf_component_register(SRCS "${srcs}"

@@ -3,13 +3,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#ifndef BOOTLOADER_BUILD
 
 #include <stdint.h>
 #include <stdlib.h>
 #include "esp_attr.h"
 #include "sdkconfig.h"
 #include "soc/soc.h"
-#include "heap_memory_layout.h"
+#include "soc/soc_memory_layout.h"
 #include "esp_heap_caps.h"
 
 /**
@@ -24,6 +25,7 @@
  * - Most other malloc caps only fit in one region anyway.
  *
  */
+// IDF-4299
 const soc_memory_type_desc_t soc_memory_types[] = {
     // Type 0: DRAM
     { "DRAM", { MALLOC_CAP_8BIT | MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_32BIT, 0 }, false, false},
@@ -33,8 +35,6 @@ const soc_memory_type_desc_t soc_memory_types[] = {
     { "D/IRAM", { 0, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_DEFAULT, MALLOC_CAP_32BIT | MALLOC_CAP_EXEC }, true, false},
     // Type 3: IRAM
     { "IRAM", { MALLOC_CAP_EXEC | MALLOC_CAP_32BIT | MALLOC_CAP_INTERNAL, 0, 0 }, false, false},
-    // Type 4: RTCRAM
-    { "RTCRAM", { MALLOC_CAP_8BIT|MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL|MALLOC_CAP_32BIT, MALLOC_CAP_RTCRAM }, false, false},
 };
 
 #ifdef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
@@ -53,18 +53,15 @@ const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memor
  *
  */
 const soc_memory_region_t soc_memory_regions[] = {
-    { 0x3FC80000, 0x20000, SOC_MEMORY_TYPE_DEFAULT, 0x40380000}, //Block 4,  can be remapped to ROM, can be used as trace memory
-    { 0x3FCA0000, 0x20000, SOC_MEMORY_TYPE_DEFAULT, 0x403A0000}, //Block 5,  can be remapped to ROM, can be used as trace memory
-    { 0x3FCC0000, 0x20000, 1, 0x403C0000}, //Block 9,  can be used as trace memory
-#ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-    { 0x50000000, 0x2000,  4, 0}, //Fast RTC memory
-#endif
+    { 0x3FCA0000, 0x10000, SOC_MEMORY_TYPE_DEFAULT, 0x40380000}, //Block 4,  can be remapped to ROM, can be used as trace memory
+    { 0x3FCB0000, 0x10000, SOC_MEMORY_TYPE_DEFAULT, 0x40390000}, //Block 5,  can be remapped to ROM, can be used as trace memory
+    { 0x3FCC0000, 0x20000, 1, 0x403A0000}, //Block 9,  can be used as trace memory
 };
 
 const size_t soc_memory_region_count = sizeof(soc_memory_regions) / sizeof(soc_memory_region_t);
 
 
-extern int _data_start, _heap_start, _iram_start, _iram_end, _rtc_force_slow_end;
+extern int _data_start, _heap_start, _iram_start, _iram_end;
 
 /**
  * Reserved memory regions.
@@ -80,9 +77,4 @@ SOC_RESERVE_MEMORY_REGION((intptr_t)&_data_start, (intptr_t)&_heap_start, dram_d
 #define I_D_OFFSET (SOC_DIRAM_IRAM_LOW - SOC_DIRAM_DRAM_LOW)
 SOC_RESERVE_MEMORY_REGION((intptr_t)&_iram_start - I_D_OFFSET, (intptr_t)&_iram_end - I_D_OFFSET, iram_code);
 
-#ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-/* We use _rtc_force_slow_end not _rtc_noinit_end here, as rtc "fast" memory ends up in RTC SLOW
-   region on C3, no differentiation. And _rtc_force_slow_end is the end of all the static RTC sections.
-*/
-SOC_RESERVE_MEMORY_REGION(SOC_RTC_DRAM_LOW, (intptr_t)&_rtc_force_slow_end, rtcram_data);
-#endif
+#endif // BOOTLOADER_BUILD

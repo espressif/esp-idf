@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef BOOTLOADER_BUILD
-
 #include <stdint.h>
 #include <stdlib.h>
 #include "sdkconfig.h"
@@ -121,5 +119,3 @@ SOC_RESERVE_MEMORY_REGION(SOC_RTC_DRAM_LOW, (intptr_t)&_rtc_noinit_end, rtcram_d
 SOC_RESERVE_MEMORY_REGION(SOC_RTC_DRAM_LOW, (intptr_t)&_rtc_force_fast_end, rtcram_data);
 #endif
 #endif
-
-#endif // BOOTLOADER_BUILD
