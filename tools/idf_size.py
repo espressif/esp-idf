@@ -83,7 +83,6 @@ class MemRegions(object):
             with open(os.path.join(os.path.dirname(__file__), 'idf_size_yaml', target + '_data_info.yaml'), 'r') as stream:
                 chip_info = (yaml.safe_load(stream))
         except FileNotFoundError:
-        elif target in ['esp32c3', 'esp32h2', 'esp8684']:
             raise RuntimeError('Target not detected.')
         return sorted([get_mem_reg_def(chip_info, item) for item in chip_info])
 
