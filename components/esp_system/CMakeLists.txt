@@ -25,6 +25,10 @@ else()
             "xt_wdt.c"
             "debug_stubs.c")
 
+    if(NOT (${target} STREQUAL "esp8684"))
+        list(APPEND srcs "debug_stubs.c")
+    endif()
+
     if(CONFIG_ESP_SYSTEM_USE_EH_FRAME)
         list(APPEND srcs "eh_frame_parser.c")
     endif()

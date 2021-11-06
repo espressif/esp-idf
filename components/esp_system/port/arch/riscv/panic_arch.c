@@ -19,6 +19,8 @@
 #include "esp32c3/memprot.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/memprot.h"
+#elif CONFIG_IDF_TARGET_ESP8684
+#include "esp8684/memprot.h"
 #endif
 #endif
 
