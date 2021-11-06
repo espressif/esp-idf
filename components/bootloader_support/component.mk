@@ -32,14 +32,17 @@ COMPONENT_OBJEXCLUDE += src/bootloader_flash_config_esp32s2.o \
 			src/bootloader_flash_config_esp32s3.o \
 			src/bootloader_flash_config_esp32c3.o \
 			src/bootloader_flash_config_esp32h2.o \
+			src/bootloader_flash_config_esp8684.o \
 			src/bootloader_efuse_esp32s2.o \
 			src/bootloader_efuse_esp32s3.o \
 			src/bootloader_efuse_esp32c3.o \
 			src/bootloader_efuse_esp32h2.o \
+			src/bootloader_efuse_esp8684.o \
 			src/bootloader_random_esp32s2.o \
 			src/bootloader_random_esp32s3.o \
 			src/bootloader_random_esp32c3.o \
-			src/bootloader_random_esp32h2.o
+			src/bootloader_random_esp32h2.o \
+			src/bootloader_random_esp8684.o
 
 ifdef IS_BOOTLOADER_BUILD
 	ifndef CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME

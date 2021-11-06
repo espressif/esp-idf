@@ -681,7 +681,7 @@ menu "Security features"
     choice SECURE_FLASH_ENCRYPTION_KEYSIZE
         bool "Size of generated AES-XTS key"
         default SECURE_FLASH_ENCRYPTION_AES128
-        depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3) && SECURE_FLASH_ENC_ENABLED
+        depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP8684) && SECURE_FLASH_ENC_ENABLED
         help
             Size of generated AES-XTS key.
 
@@ -693,9 +693,11 @@ menu "Security features"
 
         config SECURE_FLASH_ENCRYPTION_AES128
             bool "AES-128 (256-bit key)"
+            depends on !IDF_TARGET_ESP8684 # TODO: IDF-3899
 
         config SECURE_FLASH_ENCRYPTION_AES256
             bool "AES-256 (512-bit key)"
+            depends on !IDF_TARGET_ESP8684 # TODO: IDF-3899
     endchoice
 
     choice SECURE_FLASH_ENCRYPTION_MODE
@@ -862,9 +864,13 @@ menu "Security features"
 
             If not set, the app does not care if the flash encryption eFuse bit is set or not.
 
+    config SECURE_ROM_DL_MODE_ENABLED
+        bool
+        default y if SECURE_TARGET_HAS_SECURE_ROM_DL_MODE && !SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
+
     choice SECURE_UART_ROM_DL_MODE
         bool "UART ROM download mode"
-        default SECURE_ENABLE_SECURE_ROM_DL_MODE if SECURE_TARGET_HAS_SECURE_ROM_DL_MODE && !SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT # NOERROR
+        default SECURE_ENABLE_SECURE_ROM_DL_MODE if SECURE_ROM_DL_MODE_ENABLED # NOERROR
         default SECURE_INSECURE_ALLOW_DL_MODE
         depends on SECURE_BOOT_V2_ENABLED || SECURE_FLASH_ENC_ENABLED
         depends on !IDF_TARGET_ESP32 || ESP32_REV_MIN_3

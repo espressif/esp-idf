@@ -53,6 +53,18 @@
 #include "esp32h2/rom/secure_boot.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
+#elif CONFIG_IDF_TARGET_ESP8684
+#include "esp8684/rom/cache.h"
+#include "esp8684/rom/efuse.h"
+#include "esp8684/rom/ets_sys.h"
+#include "esp8684/rom/spi_flash.h"
+#include "esp8684/rom/crc.h"
+#include "esp8684/rom/rtc.h"
+#include "esp8684/rom/uart.h"
+#include "esp8684/rom/gpio.h"
+#include "esp8684/rom/secure_boot.h"
+#include "soc/extmem_reg.h"
+#include "soc/cache_memory.h"
 #else // CONFIG_IDF_TARGET_*
 #error "Unsupported IDF_TARGET"
 #endif
