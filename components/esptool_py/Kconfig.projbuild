@@ -120,7 +120,7 @@ menu "Serial flasher config"
 
     choice ESPTOOLPY_FLASHFREQ
         prompt "Flash SPI speed"
-        default ESPTOOLPY_FLASHFREQ_40M if IDF_TARGET_ESP32 || IDF_TARGET_ESP32H2
+        default ESPTOOLPY_FLASHFREQ_40M if IDF_TARGET_ESP32 || IDF_TARGET_ESP32H2 || IDF_TARGET_ESP8684
         default ESPTOOLPY_FLASHFREQ_80M
         help
             The SPI flash frequency to be used.
