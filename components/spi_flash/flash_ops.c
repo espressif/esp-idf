@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,6 +45,10 @@
 #include "esp32h2/rom/cache.h"
 #include "esp32h2/rom/spi_flash.h"
 #include "esp32h2/clk.h"
+#elif CONFIG_IDF_TARGET_ESP8684
+#include "esp8684/rom/cache.h"
+#include "esp8684/rom/spi_flash.h"
+#include "esp_private/esp_clk.h"
 #endif
 #include "esp_flash_partitions.h"
 #include "cache_utils.h"

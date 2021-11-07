@@ -74,7 +74,8 @@ bool IRAM_ATTR esp_cpu_in_ocd_debug_mode(void)
     CONFIG_ESP32S2_DEBUG_OCDAWARE || \
     CONFIG_ESP32S3_DEBUG_OCDAWARE || \
     CONFIG_ESP32C3_DEBUG_OCDAWARE || \
-    CONFIG_ESP32H2_DEBUG_OCDAWARE
+    CONFIG_ESP32H2_DEBUG_OCDAWARE || \
+    CONFIG_ESP8684_DEBUG_OCDAWARE
     return cpu_ll_is_debugger_attached();
 #else
     return false; // Always return false if "OCD aware" is disabled

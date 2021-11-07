@@ -67,6 +67,10 @@ if(BOOTLOADER_BUILD)
 
     elseif(target STREQUAL "esp32h2")
         rom_linker_script("newlib")
+
+    elseif(target STREQUAL "esp8684")
+        rom_linker_script("newlib")
+        rom_linker_script("mbedtls")
     endif()
 
 else() # Regular app build
@@ -133,6 +137,15 @@ else() # Regular app build
     elseif(target STREQUAL "esp32h2")
         rom_linker_script("newlib")
         rom_linker_script("version")
+
+        if(CONFIG_NEWLIB_NANO_FORMAT)
+            rom_linker_script("newlib-nano")
+        endif()
+
+    elseif(target STREQUAL "esp8684")
+        rom_linker_script("newlib")
+        rom_linker_script("version")
+        rom_linker_script("mbedtls")
 
         if(CONFIG_NEWLIB_NANO_FORMAT)
             rom_linker_script("newlib-nano")

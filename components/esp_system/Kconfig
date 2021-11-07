@@ -84,6 +84,7 @@ menu "ESP System Settings"
         default y if IDF_TARGET_ESP32C3
         default y if IDF_TARGET_ESP32S3
         default y if IDF_TARGET_ESP32H2
+        depends on !IDF_TARGET_ESP8684
 
     config ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
         bool "Enable RTC fast memory for dynamic allocations"
@@ -266,7 +267,7 @@ menu "ESP System Settings"
 
     config ESP_CONSOLE_MULTIPLE_UART
         bool
-        default y if !IDF_TARGET_ESP32C3 && !IDF_TARGET_ESP32H2
+        default y if !IDF_TARGET_ESP32C3 && !IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP8684
 
     choice ESP_CONSOLE_UART_NUM
         prompt "UART peripheral to use for console output (0-1)"

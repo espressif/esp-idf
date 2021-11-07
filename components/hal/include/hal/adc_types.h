@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
 #include <stdbool.h>
@@ -136,7 +128,7 @@ typedef struct {
 #elif CONFIG_IDF_TARGET_ESP32S2
             uint8_t reserved:  2;   /*!< reserved0 */
             uint8_t channel:   4;   /*!< ADC channel index. */
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP8684
             uint8_t channel:   3;   /*!< ADC channel index. */
             uint8_t unit:      1;   /*!< ADC unit index. */
             uint8_t reserved:  2;   /*!< reserved0 */
@@ -184,7 +176,7 @@ typedef struct {
     };
 } adc_digi_output_data_t;
 #endif
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP8684
 /**
  * @brief ADC digital controller (DMA mode) output data format.
  *        Used to analyze the acquired ADC (DMA) data.
@@ -269,7 +261,7 @@ typedef struct {
     adc_digi_pattern_table_t *adc2_pattern;  /*!<Refer to `adc1_pattern` */
     adc_digi_convert_mode_t conv_mode;       /*!<ADC conversion mode for digital controller. See ``adc_digi_convert_mode_t``. */
     adc_digi_output_format_t format;         /*!<ADC output data format for digital controller. See ``adc_digi_output_format_t``. */
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP8684
     uint32_t adc_pattern_len;                /*!<Pattern table length for digital controller. Range: 0 ~ 7 (0: Don't change the pattern table setting).
                                                  The pattern table that defines the conversion rules for each SAR ADC. Each table has 7 items, in which channel selection,
                                                  resolution and attenuation are stored. When the conversion is started, the controller reads conversion rules from the
@@ -286,7 +278,7 @@ typedef struct {
     uint32_t dma_eof_num;                    /*!<DMA eof num of adc digital controller.
                                                  If the number of measurements reaches `dma_eof_num`, then `dma_in_suc_eof` signal is generated in DMA.
                                                  Note: The converted data in the DMA in link buffer will be multiple of two bytes. */
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP8684
     uint32_t sample_freq_hz;  /*!< The expected ADC sampling frequency in Hz. Range: 611Hz ~ 83333Hz
                                    Fs = Fd / interval / 2
                                    Fs: sampling frequency;
@@ -363,7 +355,7 @@ typedef enum {
  *        Expression: filter_data = (k-1)/k * last_data + new_data / k.
  */
 typedef enum {
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP8684
     ADC_DIGI_FILTER_DIS = -1,  /*!< Disable filter */
 #endif
     ADC_DIGI_FILTER_IIR_2 = 0, /*!<The filter mode is first-order IIR filter. The coefficient is 2. */
@@ -407,7 +399,7 @@ typedef enum {
  *        MONITOR_LOW: If ADC_OUT <  threshold, Generates monitor interrupt.
  */
 typedef enum {
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP8684
     ADC_DIGI_MONITOR_DIS = 0,  /*!<Disable monitor. */
     ADC_DIGI_MONITOR_EN,       /*!<If ADC_OUT <  threshold, Generates monitor interrupt. */
                                /*!<If ADC_OUT >  threshold, Generates monitor interrupt. */
@@ -430,7 +422,7 @@ typedef struct {
     adc_channel_t channel;          /*!<Set adc channel number for monitor.
                                         For ESP32-S2, it's always `ADC_CHANNEL_MAX` */
     adc_digi_monitor_mode_t mode;   /*!<Set adc monitor mode. See ``adc_digi_monitor_mode_t``. */
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP8684
     uint32_t h_threshold;             /*!<Set monitor threshold of adc digital controller. */
     uint32_t l_threshold;             /*!<Set monitor threshold of adc digital controller. */
 #else

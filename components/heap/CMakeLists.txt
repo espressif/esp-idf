@@ -20,8 +20,11 @@ if(CONFIG_HEAP_TRACING_STANDALONE)
 endif()
 
 # Add SoC memory layout to the sources
-list(APPEND srcs "port/memory_layout_utils.c")
-list(APPEND srcs "port/${target}/memory_layout.c")
+
+if(NOT BOOTLOADER_BUILD)
+    list(APPEND srcs "port/memory_layout_utils.c")
+    list(APPEND srcs "port/${target}/memory_layout.c")
+endif()
 
 
 idf_component_register(SRCS "${srcs}"

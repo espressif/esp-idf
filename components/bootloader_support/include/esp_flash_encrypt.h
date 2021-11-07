@@ -55,7 +55,11 @@ static inline /** @cond */ IRAM_ATTR /** @endcond */ bool esp_flash_encryption_e
     #endif
 #else
     #ifndef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
-        flash_crypt_cnt = REG_GET_FIELD(EFUSE_RD_REPEAT_DATA1_REG, EFUSE_SPI_BOOT_CRYPT_CNT);
+        #if CONFIG_IDF_TARGET_ESP8684
+            // 	IDF-3899
+        #else
+            flash_crypt_cnt = REG_GET_FIELD(EFUSE_RD_REPEAT_DATA1_REG, EFUSE_SPI_BOOT_CRYPT_CNT);
+        #endif
     #else
         esp_efuse_read_field_blob(ESP_EFUSE_SPI_BOOT_CRYPT_CNT, &flash_crypt_cnt, ESP_EFUSE_SPI_BOOT_CRYPT_CNT[0]->bit_count);
     #endif

@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 #include <stdbool.h>
@@ -25,9 +17,13 @@ void wdt_hal_init(wdt_hal_context_t *hal, wdt_inst_t wdt_inst, uint32_t prescale
     memset(hal, 0, sizeof(wdt_hal_context_t));
     if (wdt_inst == WDT_MWDT0) {
         hal->mwdt_dev = &TIMERG0;
-    } else if (wdt_inst == WDT_MWDT1) {
+    }
+#if SOC_TIMER_GROUPS >= 2
+    else if (wdt_inst == WDT_MWDT1) {
         hal->mwdt_dev = &TIMERG1;
-    } else {
+    }
+#endif
+    else {
         hal->rwdt_dev = &RTCCNTL;
     }
     hal->inst = wdt_inst;
@@ -53,7 +49,9 @@ void wdt_hal_init(wdt_hal_context_t *hal, wdt_inst_t wdt_inst, uint32_t prescale
         rwdt_ll_clear_intr_status(hal->rwdt_dev);
         rwdt_ll_set_intr_enable(hal->rwdt_dev, enable_intr);
         //Set default values
+#if SOC_CPU_CORES_NUM > 1
         rwdt_ll_set_appcpu_reset_en(hal->rwdt_dev, true);
+#endif
         rwdt_ll_set_procpu_reset_en(hal->rwdt_dev, true);
         rwdt_ll_set_pause_in_sleep_en(hal->rwdt_dev, true);
         rwdt_ll_set_cpu_reset_length(hal->rwdt_dev, WDT_RESET_SIG_LENGTH_3_2us);
@@ -69,7 +67,7 @@ void wdt_hal_init(wdt_hal_context_t *hal, wdt_inst_t wdt_inst, uint32_t prescale
         mwdt_ll_disable_stage(hal->mwdt_dev, 1);
         mwdt_ll_disable_stage(hal->mwdt_dev, 2);
         mwdt_ll_disable_stage(hal->mwdt_dev, 3);
-#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2
+#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP8684
         //Enable or disable level interrupt. Edge interrupt is always disabled.
         mwdt_ll_set_edge_intr(hal->mwdt_dev, false);
         mwdt_ll_set_level_intr(hal->mwdt_dev, enable_intr);

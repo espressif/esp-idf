@@ -74,6 +74,11 @@
 #include "esp32h2/rom/cache.h"
 #include "esp32h2/rom/rtc.h"
 #include "soc/extmem_reg.h"
+#elif CONFIG_IDF_TARGET_ESP8684
+#include "esp_private/esp_clk.h"
+#include "esp8684/rom/cache.h"
+#include "esp8684/rom/rtc.h"
+#include "soc/extmem_reg.h"
 #endif
 
 // If light sleep time is less than that, don't power down flash
@@ -103,6 +108,10 @@
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (37)
 #elif CONFIG_IDF_TARGET_ESP32H2
 #define DEFAULT_CPU_FREQ_MHZ                CONFIG_ESP32H2_DEFAULT_CPU_FREQ_MHZ
+#define DEFAULT_SLEEP_OUT_OVERHEAD_US       (105)
+#define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (37)
+#elif CONFIG_IDF_TARGET_ESP8684
+#define DEFAULT_CPU_FREQ_MHZ                CONFIG_ESP8684_DEFAULT_CPU_FREQ_MHZ
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (105)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (37)
 #endif
@@ -454,7 +463,10 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 #else
 #if !CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
         /* If not possible stack is in RTC FAST memory, use the ROM function to calculate the CRC and save ~140 bytes IRAM */
+#if !CONFIG_IDF_TARGET_ESP8684
+        // RTC has no rtc memory, IDF-3901
         set_rtc_memory_crc();
+#endif
         result = call_rtc_sleep_start(reject_triggers, config.lslp_mem_inf_fpu);
 #else
         /* Otherwise, need to call the dedicated soc function for this */

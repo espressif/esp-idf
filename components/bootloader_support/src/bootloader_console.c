@@ -25,6 +25,9 @@
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/ets_sys.h"
 #include "esp32h2/rom/uart.h"
+#elif CONFIG_IDF_TARGET_ESP8684
+#include "esp8684/rom/ets_sys.h"
+#include "esp8684/rom/uart.h"
 #endif
 #include "esp_rom_gpio.h"
 #include "esp_rom_uart.h"

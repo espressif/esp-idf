@@ -8,14 +8,11 @@ set(includes "${target}/include" "include" "platform_port/include")
 
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs
-        "rmt_hal.c"
         "rtc_io_hal.c"
         "spi_hal.c"
         "spi_hal_iram.c"
         "spi_slave_hal.c"
         "spi_slave_hal_iram.c"
-        "i2s_hal.c"
-        "sigmadelta_hal.c"
         "timer_hal.c"
         "ledc_hal.c"
         "ledc_hal_iram.c"
@@ -30,18 +27,21 @@ if(NOT BOOTLOADER_BUILD)
         "soc_hal.c"
         "interrupt_controller_hal.c"
         "sha_hal.c"
-        "aes_hal.c"
-        "twai_hal.c"
-        "twai_hal_iram.c"
         "adc_hal.c")
 
     if(${target} STREQUAL "esp32")
         list(APPEND srcs
             "dac_hal.c"
+            "rmt_hal.c"
+            "sigmadelta_hal.c"
             "mcpwm_hal.c"
             "pcnt_hal.c"
             "sdio_slave_hal.c"
             "touch_sensor_hal.c"
+            "i2s_hal.c"
+            "twai_hal.c"
+            "twai_hal_iram.c"
+            "aes_hal.c"
             "esp32/adc_hal.c"
             "esp32/brownout_hal.c"
             "esp32/interrupt_descriptor_table.c"
@@ -55,6 +55,8 @@ if(NOT BOOTLOADER_BUILD)
     if(${target} STREQUAL "esp32s2")
         list(APPEND srcs
                     "dac_hal.c"
+                    "rmt_hal.c"
+                    "sigmadelta_hal.c"
                     "pcnt_hal.c"
                     "spi_flash_hal_gpspi.c"
                     "spi_slave_hd_hal.c"
@@ -63,6 +65,10 @@ if(NOT BOOTLOADER_BUILD)
                     "usb_hal.c"
                     "usb_phy_hal.c"
                     "xt_wdt_hal.c"
+                    "i2s_hal.c"
+                    "twai_hal.c"
+                    "twai_hal_iram.c"
+                    "aes_hal.c"
                     "esp32s2/adc_hal.c"
                     "esp32s2/brownout_hal.c"
                     "esp32s2/cp_dma_hal.c"
@@ -75,6 +81,8 @@ if(NOT BOOTLOADER_BUILD)
     if(${target} STREQUAL "esp32s3")
         list(APPEND srcs
             "ds_hal.c"
+            "rmt_hal.c"
+            "sigmadelta_hal.c"
             "gdma_hal.c"
             "lcd_hal.c"
             "mcpwm_hal.c"
@@ -86,6 +94,10 @@ if(NOT BOOTLOADER_BUILD)
             "usb_hal.c"
             "usb_phy_hal.c"
             "xt_wdt_hal.c"
+            "i2s_hal.c"
+            "twai_hal.c"
+            "twai_hal_iram.c"
+            "aes_hal.c"
             "esp32s3/brownout_hal.c"
             "esp32s3/hmac_hal.c"
             "esp32s3/interrupt_descriptor_table.c"
@@ -98,10 +110,16 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs
               "ds_hal.c"
               "gdma_hal.c"
+              "rmt_hal.c"
+              "sigmadelta_hal.c"
               "spi_flash_hal_gpspi.c"
               "spi_slave_hd_hal.c"
               "systimer_hal.c"
               "xt_wdt_hal.c"
+              "i2s_hal.c"
+              "twai_hal.c"
+              "twai_hal_iram.c"
+              "aes_hal.c"
               "esp32c3/adc_hal.c"
               "esp32c3/brownout_hal.c"
               "esp32c3/hmac_hal.c"
@@ -112,13 +130,30 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs
             "ds_hal.c"
             "gdma_hal.c"
+            "rmt_hal.c"
+            "sigmadelta_hal.c"
             "spi_flash_hal_gpspi.c"
             "spi_slave_hd_hal.c"
             "systimer_hal.c"
+            "i2s_hal.c"
+            "twai_hal.c"
+            "twai_hal_iram.c"
+            "aes_hal.c"
             "esp32h2/adc_hal.c"
             "esp32h2/brownout_hal.c"
             "esp32h2/hmac_hal.c"
             "esp32h2/rtc_cntl_hal.c")
+    endif()
+
+    if(${target} STREQUAL "esp8684")
+        list(APPEND srcs
+              "gdma_hal.c"
+              "spi_flash_hal_gpspi.c"
+              "spi_slave_hd_hal.c"
+              "systimer_hal.c"
+              "esp8684/adc_hal.c"
+              "esp8684/brownout_hal.c"
+              "esp8684/rtc_cntl_hal.c")
     endif()
 endif()
 

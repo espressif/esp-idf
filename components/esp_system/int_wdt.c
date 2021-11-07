@@ -15,6 +15,7 @@
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
 #include "esp_attr.h"
+#include "esp_log.h"
 #include "esp_freertos_hooks.h"
 #include "soc/timer_periph.h"
 #include "driver/periph_ctrl.h"
@@ -146,7 +147,13 @@ void esp_int_wdt_cpu_init(void)
     assert((CONFIG_ESP_INT_WDT_TIMEOUT_MS >= (portTICK_PERIOD_MS << 1)) && "Interrupt watchdog timeout needs to meet twice the RTOS tick period!");
     esp_register_freertos_tick_hook_for_cpu(tick_hook, cpu_hal_get_core_id());
     ESP_INTR_DISABLE(WDT_INT_NUM);
+
+#if SOC_TIMER_GROUPS > 1
     intr_matrix_set(cpu_hal_get_core_id(), ETS_TG1_WDT_LEVEL_INTR_SOURCE, WDT_INT_NUM);
+#else
+    // TODO: Clean up code for ESP8684, IDF-4114
+    ESP_EARLY_LOGW("INT_WDT", "ESP8684 only has one timer group");
+#endif
 
     /* Set the type and priority to watch dog interrupts */
 #if SOC_CPU_HAS_FLEXIBLE_INTC

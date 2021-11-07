@@ -23,6 +23,8 @@
 #include "esp32c3/rom/spi_flash.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP8684
+#include "esp8684/rom/spi_flash.h"
 #endif
 #include "soc/efuse_periph.h"
 #include "soc/io_mux_reg.h"
@@ -146,7 +148,6 @@ static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
                                  uint8_t status_qio_bit)
 {
     uint32_t status;
-    const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
 
     esp_rom_spiflash_wait_idle(&g_rom_flashchip);
 
@@ -181,9 +182,17 @@ static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
 
     esp_rom_spiflash_config_readmode(mode);
 
+#if !CONFIG_IDF_TARGET_ESP8684
+    //IDF-3914
+    const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
+#endif
+
 #if CONFIG_IDF_TARGET_ESP32
     int wp_pin = bootloader_flash_get_wp_pin();
     esp_rom_spiflash_select_qio_pins(wp_pin, spiconfig);
+#elif CONFIG_IDF_TARGET_ESP8684
+    //IDF-3914
+    esp_rom_spiflash_select_qio_pins(0, 0);
 #else
     esp_rom_spiflash_select_qio_pins(esp_rom_efuse_get_flash_wp_gpio(), spiconfig);
 #endif

@@ -33,6 +33,8 @@
 #include "esp32c3/rom/spi_flash.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP8684
+#include "esp8684/rom/spi_flash.h"
 #endif
 
 #ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
@@ -142,6 +144,10 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/spi_flash.h"
 #include "esp32h2/rom/cache.h"
+#include "soc/cache_memory.h"
+#elif CONFIG_IDF_TARGET_ESP8684
+#include "esp8684/rom/spi_flash.h"
+#include "esp8684/rom/cache.h"
 #include "soc/cache_memory.h"
 #endif
 static const char *TAG = "bootloader_flash";

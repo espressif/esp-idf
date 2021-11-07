@@ -170,10 +170,11 @@ lwip_hook_tcp_isn(const ip_addr_t *local_ip, u16_t local_port,
   assert(!esp_ptr_external_ram(esp_cpu_get_sp()));
 #endif
 
-  struct MD5Context ctx;
+  md5_context_t ctx;
   esp_rom_md5_init(&ctx);
   esp_rom_md5_update(&ctx, input, sizeof(input));
   esp_rom_md5_final(output, &ctx);
+
 
   /* Arbitrarily take the first 32 bits from the generated hash. */
   MEMCPY(&isn, output, sizeof(isn));

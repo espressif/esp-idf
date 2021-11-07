@@ -1,5 +1,10 @@
 idf_build_get_property(idf_target IDF_TARGET)
 
+if(IDF_TARGET STREQUAL "esp8684")
+    # TODO : IDF-3906
+    return()
+endif()
+
 if(CONFIG_ESP32_NO_BLOBS OR CONFIG_ESP32S2_NO_BLOBS)
     set(link_binary_libs 0)
     set(ldfragments)

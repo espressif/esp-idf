@@ -12,6 +12,8 @@ function(__add_uf2_targets)
         set(uf2_family_id "0xc47e5767")
     elseif("${target}" STREQUAL "esp32h2")
         set(uf2_family_id "0xd42ba06c") # ESP32H2-TODO: IDF-3487
+    elseif("${target}" STREQUAL "esp8684")
+        set(uf2_family_id "0xd42ba06c") # TODO: IDF-4257
     elseif("${target}" STREQUAL "linux")
         return()
     else()
