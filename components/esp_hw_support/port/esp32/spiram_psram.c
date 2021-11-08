@@ -17,6 +17,7 @@
 #include "esp_log.h"
 #include "esp_efuse.h"
 #include "spiram_psram.h"
+#include "esp32/rom/spi_flash.h"
 #include "esp32/rom/cache.h"
 #include "esp32/rom/efuse.h"
 #include "esp_rom_efuse.h"
@@ -30,7 +31,6 @@
 #include "bootloader_common.h"
 #include "esp_rom_gpio.h"
 #include "bootloader_flash_config.h"
-#include "esp_rom_spiflash.h"
 
 #if CONFIG_SPIRAM
 #include "soc/rtc.h"

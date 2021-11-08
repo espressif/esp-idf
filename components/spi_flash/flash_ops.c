@@ -24,6 +24,7 @@
 #include "esp_private/esp_clk.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/cache.h"
+#include "esp32/rom/spi_flash.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/cache.h"
 #elif CONFIG_IDF_TARGET_ESP32S3

@@ -509,10 +509,6 @@ esp_err_t IRAM_ATTR __attribute__((weak)) bootloader_flash_unlock(void)
     return err;
 }
 
-/* dummy_len_plus values defined in ROM for SPI flash configuration */
-#ifndef g_rom_spiflash_dummy_len_plus // ESP32-C3 uses a macro to access ROM data here
-extern uint8_t g_rom_spiflash_dummy_len_plus[];
-#endif
 IRAM_ATTR static uint32_t bootloader_flash_execute_command_common(
     uint8_t command,
     uint32_t addr_len, uint32_t address,

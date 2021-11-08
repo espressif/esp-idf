@@ -11,6 +11,7 @@
 #include "esp_log.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_efuse.h"
+#include "esp32/rom/spi_flash.h"
 #include "soc/gpio_periph.h"
 #include "soc/efuse_reg.h"
 #include "soc/spi_reg.h"
@@ -20,7 +21,7 @@
 #include "flash_qio_mode.h"
 #include "bootloader_common.h"
 #include "bootloader_flash_config.h"
-#include "esp_rom_spiflash.h"
+
 
 void bootloader_flash_update_id(void)
 {
@@ -134,7 +135,6 @@ void IRAM_ATTR bootloader_flash_dummy_config(const esp_image_header_t* pfhdr)
         }
     }
 
-    extern uint8_t g_rom_spiflash_dummy_len_plus[];
     switch (pfhdr->spi_speed) {
         case ESP_IMAGE_SPI_SPEED_80M:
             g_rom_spiflash_dummy_len_plus[0] = ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_80M;

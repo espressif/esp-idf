@@ -10,6 +10,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp32c3/rom/gpio.h"
+#include "esp32c3/rom/spi_flash.h"
 #include "esp32c3/rom/efuse.h"
 #include "soc/gpio_periph.h"
 #include "soc/efuse_reg.h"
@@ -19,7 +20,6 @@
 #include "flash_qio_mode.h"
 #include "bootloader_flash_config.h"
 #include "bootloader_common.h"
-#include "esp_rom_spiflash.h"
 
 #define FLASH_IO_MATRIX_DUMMY_40M   0
 #define FLASH_IO_MATRIX_DUMMY_80M   0

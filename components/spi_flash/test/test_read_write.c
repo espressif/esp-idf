@@ -18,7 +18,19 @@
 #include "../cache_utils.h"
 #include "soc/timer_periph.h"
 #include "esp_heap_caps.h"
-#include "esp_rom_spiflash.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32C3
+#include "esp32c3/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32H2
+#include "esp32h2/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP8684
+#include "esp8684/rom/spi_flash.h"
+#endif
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)
 // TODO: SPI_FLASH IDF-4025

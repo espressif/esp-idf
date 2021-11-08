@@ -9,7 +9,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "esp_rom_spiflash.h"
+#include "spi_flash.h"
 
 #ifdef __cplusplus
 extern "C" {

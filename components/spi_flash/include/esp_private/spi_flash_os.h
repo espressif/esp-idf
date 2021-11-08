@@ -19,10 +19,10 @@
  */
 #pragma once
 
-#include "esp_rom_spiflash.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include "sdkconfig.h"
+#include "esp_rom_spiflash.h"
 #include "esp_err.h"
 #include "esp_flash.h"
 #include "hal/spi_flash_hal.h"

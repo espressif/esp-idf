@@ -9,6 +9,7 @@
 #include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#include "esp32s2/rom/spi_flash.h"
 #include "soc/efuse_reg.h"
 #include "soc/spi_reg.h"
 #include "soc/spi_mem_reg.h"
@@ -16,7 +17,6 @@
 #include "flash_qio_mode.h"
 #include "bootloader_flash_config.h"
 #include "bootloader_common.h"
-#include "esp_rom_spiflash.h"
 
 #define FLASH_IO_MATRIX_DUMMY_40M   0
 #define FLASH_IO_MATRIX_DUMMY_80M   0
