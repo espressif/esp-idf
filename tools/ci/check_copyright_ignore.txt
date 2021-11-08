@@ -1184,7 +1184,6 @@ components/hal/esp32c3/include/hal/adc_ll.h
 components/hal/esp32c3/include/hal/aes_ll.h
 components/hal/esp32c3/include/hal/clk_gate_ll.h
 components/hal/esp32c3/include/hal/ds_ll.h
-components/hal/esp32c3/include/hal/gdma_ll.h
 components/hal/esp32c3/include/hal/gpspi_flash_ll.h
 components/hal/esp32c3/include/hal/hmac_hal.h
 components/hal/esp32c3/include/hal/hmac_ll.h
@@ -1217,7 +1216,6 @@ components/hal/esp32h2/include/hal/adc_ll.h
 components/hal/esp32h2/include/hal/aes_ll.h
 components/hal/esp32h2/include/hal/clk_gate_ll.h
 components/hal/esp32h2/include/hal/ds_ll.h
-components/hal/esp32h2/include/hal/gdma_ll.h
 components/hal/esp32h2/include/hal/gpspi_flash_ll.h
 components/hal/esp32h2/include/hal/hmac_hal.h
 components/hal/esp32h2/include/hal/hmac_ll.h
@@ -1291,7 +1289,6 @@ components/hal/esp32s3/include/hal/adc_hal_conf.h
 components/hal/esp32s3/include/hal/adc_ll.h
 components/hal/esp32s3/include/hal/aes_ll.h
 components/hal/esp32s3/include/hal/cpu_ll.h
-components/hal/esp32s3/include/hal/gdma_ll.h
 components/hal/esp32s3/include/hal/gpspi_flash_ll.h
 components/hal/esp32s3/include/hal/i2c_ll.h
 components/hal/esp32s3/include/hal/interrupt_controller_ll.h
@@ -1316,7 +1313,6 @@ components/hal/esp32s3/include/hal/uhci_ll.h
 components/hal/esp32s3/include/hal/usb_ll.h
 components/hal/esp32s3/include/hal/usb_serial_jtag_ll.h
 components/hal/esp32s3/interrupt_descriptor_table.c
-components/hal/gdma_hal.c
 components/hal/gpio_hal.c
 components/hal/i2c_hal.c
 components/hal/i2c_hal_iram.c
@@ -1327,12 +1323,10 @@ components/hal/include/hal/brownout_hal.h
 components/hal/include/hal/cpu_types.h
 components/hal/include/hal/dac_hal.h
 components/hal/include/hal/dac_types.h
-components/hal/include/hal/dma_types.h
 components/hal/include/hal/ds_hal.h
 components/hal/include/hal/emac_hal.h
 components/hal/include/hal/esp_flash_err.h
 components/hal/include/hal/eth_types.h
-components/hal/include/hal/gdma_hal.h
 components/hal/include/hal/gpio_hal.h
 components/hal/include/hal/i2c_hal.h
 components/hal/include/hal/i2c_types.h
@@ -1830,7 +1824,6 @@ components/soc/esp32/include/soc/emac_mac_struct.h
 components/soc/esp32/include/soc/fe_reg.h
 components/soc/esp32/include/soc/flash_encryption_reg.h
 components/soc/esp32/include/soc/frc_timer_reg.h
-components/soc/esp32/include/soc/gdma_channel.h
 components/soc/esp32/include/soc/gpio_pins.h
 components/soc/esp32/include/soc/gpio_reg.h
 components/soc/esp32/include/soc/gpio_sd_reg.h
@@ -1903,7 +1896,6 @@ components/soc/esp32/spi_periph.c
 components/soc/esp32/touch_sensor_periph.c
 components/soc/esp32/uart_periph.c
 components/soc/esp32c3/adc_periph.c
-components/soc/esp32c3/gdma_periph.c
 components/soc/esp32c3/gpio_periph.c
 components/soc/esp32c3/i2c_bbpll.h
 components/soc/esp32c3/i2c_periph.c
@@ -1922,9 +1914,6 @@ components/soc/esp32c3/include/soc/efuse_reg.h
 components/soc/esp32c3/include/soc/efuse_struct.h
 components/soc/esp32c3/include/soc/extmem_reg.h
 components/soc/esp32c3/include/soc/fe_reg.h
-components/soc/esp32c3/include/soc/gdma_channel.h
-components/soc/esp32c3/include/soc/gdma_reg.h
-components/soc/esp32c3/include/soc/gdma_struct.h
 components/soc/esp32c3/include/soc/gpio_pins.h
 components/soc/esp32c3/include/soc/gpio_reg.h
 components/soc/esp32c3/include/soc/gpio_sd_reg.h
@@ -1986,7 +1975,6 @@ components/soc/esp32c3/sigmadelta_periph.c
 components/soc/esp32c3/spi_periph.c
 components/soc/esp32c3/uart_periph.c
 components/soc/esp32h2/adc_periph.c
-components/soc/esp32h2/gdma_periph.c
 components/soc/esp32h2/gpio_periph.c
 components/soc/esp32h2/i2c_periph.c
 components/soc/esp32h2/i2s_periph.c
@@ -2005,9 +1993,6 @@ components/soc/esp32h2/include/soc/efuse_reg.h
 components/soc/esp32h2/include/soc/efuse_struct.h
 components/soc/esp32h2/include/soc/extmem_reg.h
 components/soc/esp32h2/include/soc/fe_reg.h
-components/soc/esp32h2/include/soc/gdma_channel.h
-components/soc/esp32h2/include/soc/gdma_reg.h
-components/soc/esp32h2/include/soc/gdma_struct.h
 components/soc/esp32h2/include/soc/gpio_pins.h
 components/soc/esp32h2/include/soc/gpio_reg.h
 components/soc/esp32h2/include/soc/gpio_sd_reg.h
@@ -2098,7 +2083,6 @@ components/soc/esp32s2/include/soc/efuse_struct.h
 components/soc/esp32s2/include/soc/extmem_reg.h
 components/soc/esp32s2/include/soc/fe_reg.h
 components/soc/esp32s2/include/soc/frc_timer_reg.h
-components/soc/esp32s2/include/soc/gdma_channel.h
 components/soc/esp32s2/include/soc/gpio_pins.h
 components/soc/esp32s2/include/soc/gpio_reg.h
 components/soc/esp32s2/include/soc/gpio_sd_reg.h
@@ -2178,7 +2162,6 @@ components/soc/esp32s2/uart_periph.c
 components/soc/esp32s2/usb_periph.c
 components/soc/esp32s3/adc_periph.c
 components/soc/esp32s3/dedic_gpio_periph.c
-components/soc/esp32s3/gdma_periph.c
 components/soc/esp32s3/gpio_periph.c
 components/soc/esp32s3/i2c_periph.c
 components/soc/esp32s3/i2s_periph.c
@@ -2201,9 +2184,6 @@ components/soc/esp32s3/include/soc/efuse_struct.h
 components/soc/esp32s3/include/soc/extmem_reg.h
 components/soc/esp32s3/include/soc/extmem_struct.h
 components/soc/esp32s3/include/soc/fe_reg.h
-components/soc/esp32s3/include/soc/gdma_channel.h
-components/soc/esp32s3/include/soc/gdma_reg.h
-components/soc/esp32s3/include/soc/gdma_struct.h
 components/soc/esp32s3/include/soc/gpio_caps.h
 components/soc/esp32s3/include/soc/gpio_pins.h
 components/soc/esp32s3/include/soc/gpio_reg.h
@@ -2313,7 +2293,6 @@ components/soc/include/soc/dac_periph.h
 components/soc/include/soc/dedic_gpio_periph.h
 components/soc/include/soc/efuse_periph.h
 components/soc/include/soc/emac_periph.h
-components/soc/include/soc/gdma_periph.h
 components/soc/include/soc/gpio_periph.h
 components/soc/include/soc/hwcrypto_periph.h
 components/soc/include/soc/i2c_periph.h
