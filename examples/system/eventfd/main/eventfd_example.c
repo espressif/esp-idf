@@ -28,11 +28,15 @@
 #define PROGRESS_INTERVAL_MS  3500
 #define TIMER_SIGNAL          1
 #define PROGRESS_SIGNAL       2
+/* Print the signals value a bit before 5 seconds, else, `select` would run again
+ * and the following print may happen 2 seconds (timeout value) later. */
+#define PRINT_INTERVAL_MSEC    4990
 
 static const char *TAG = "eventfd_example";
 
-int s_timer_fd;
-int s_progress_fd;
+static int s_timer_fd;
+static int s_progress_fd;
+static TaskHandle_t s_worker_handle;
 
 static bool eventfd_timer_isr_callback(void *arg)
 {
@@ -78,6 +82,9 @@ static void eventfd_timer_init(int timer_idx, double timer_interval_sec)
 
 static void worker_task(void *arg)
 {
+    /* Wait for the collector to be ready. */
+    ulTaskNotifyTake(true, portMAX_DELAY);
+
     while (true) {
         vTaskDelay(pdMS_TO_TICKS(PROGRESS_INTERVAL_MS));
         uint64_t signal = PROGRESS_SIGNAL;
@@ -102,7 +109,12 @@ static void collector_task(void *arg)
     int timer_trigger_count = 0;
     int progress_trigger_count = 0;
 
-    for (size_t i = 0; ; i++) {
+    /* Notify the worker we are ready to catch the signals */
+    assert( xTaskNotifyGive(s_worker_handle) == pdPASS );
+    uint64_t start = esp_timer_get_time();
+    uint64_t previous = start;
+
+    while (1) {
         struct timeval timeout;
         uint64_t signal;
 
@@ -117,9 +129,7 @@ static void collector_task(void *arg)
         int num_triggered = select(maxFd + 1, &readfds, NULL, NULL, &timeout);
         assert(num_triggered >= 0);
 
-        uint64_t task_counter_value;
-        timer_get_counter_value(TIMER_GROUP_0, TIMER_0, &task_counter_value);
-        ESP_LOGI(TAG, "Time: %.2fs", (double)task_counter_value / TIMER_SCALE);
+        ESP_LOGI(TAG, "Elapsed since test start: %lld ms", (esp_timer_get_time() - start) / 1000);
 
         if (FD_ISSET(s_progress_fd, &readfds)) {
             ssize_t ret = read(s_progress_fd, &signal, sizeof(signal));
@@ -140,13 +150,16 @@ static void collector_task(void *arg)
             ESP_LOGI(TAG, "Select timeout");
         }
 
-        if (i % 10 == 0) {
+        /* Print information about received events every PRINT_INTERVAL_MSEC milliseconds. */
+        const uint64_t current = esp_timer_get_time();
+        const uint64_t elapsed = current - previous;
+        if (elapsed >= PRINT_INTERVAL_MSEC * 1000) {
             ESP_LOGI(TAG, "=================================");
             ESP_LOGI(TAG, "Select timeouted for %d times", select_timeout_count);
             ESP_LOGI(TAG, "Timer triggerred for %d times", timer_trigger_count);
             ESP_LOGI(TAG, "Progress triggerred for %d times", progress_trigger_count);
             ESP_LOGI(TAG, "=================================");
-
+            previous = current;
         }
     }
 
@@ -160,6 +173,7 @@ static void collector_task(void *arg)
 void app_main(void)
 {
     eventfd_timer_init(TIMER_0, TIMER_INTERVAL_SEC);
-    xTaskCreate(worker_task, "worker_task", 4 * 1024, NULL, 5, NULL);
+    /* Save the handle for this task as we will need to notify it */
+    xTaskCreate(worker_task, "worker_task", 4 * 1024, NULL, 5, &s_worker_handle);
     xTaskCreate(collector_task, "collector_task", 4 * 1024, NULL, 5, NULL);
 }
