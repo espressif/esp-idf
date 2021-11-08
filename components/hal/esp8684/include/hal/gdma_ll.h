@@ -39,7 +39,12 @@ extern "C" {
  */
 static inline void gdma_ll_enable_m2m_mode(gdma_dev_t *dev, uint32_t channel, bool enable)
 {
-    abort(); //TODO IDF-3817
+    dev->channel[channel].in.in_conf0.mem_trans_en = enable;
+    if (enable) {
+        // to enable m2m mode, the tx chan has to be the same to rx chan, and set to a valid value
+        dev->channel[channel].in.in_peri_sel.sel = 0;
+        dev->channel[channel].out.out_peri_sel.sel = 0;
+    }
 }
 
 /**
@@ -47,16 +52,17 @@ static inline void gdma_ll_enable_m2m_mode(gdma_dev_t *dev, uint32_t channel, bo
  */
 static inline void gdma_ll_enable_clock(gdma_dev_t *dev, bool enable)
 {
-    abort(); //TODO IDF-3817
+    dev->misc_conf.clk_en = enable;
 }
 
 ///////////////////////////////////// RX /////////////////////////////////////////
 /**
  * @brief Get DMA RX channel interrupt status word
  */
+__attribute__((always_inline))
 static inline uint32_t gdma_ll_rx_get_interrupt_status(gdma_dev_t *dev, uint32_t channel)
 {
-    abort(); //TODO IDF-3817
+    return dev->intr[channel].st.val & GDMA_LL_RX_EVENT_MASK;
 }
 
 /**
@@ -64,15 +70,20 @@ static inline uint32_t gdma_ll_rx_get_interrupt_status(gdma_dev_t *dev, uint32_t
  */
 static inline void gdma_ll_rx_enable_interrupt(gdma_dev_t *dev, uint32_t channel, uint32_t mask, bool enable)
 {
-    abort(); //TODO IDF-3817
+    if (enable) {
+        dev->intr[channel].ena.val |= (mask & GDMA_LL_RX_EVENT_MASK);
+    } else {
+        dev->intr[channel].ena.val &= ~(mask & GDMA_LL_RX_EVENT_MASK);
+    }
 }
 
 /**
  * @brief Clear DMA RX channel interrupt
  */
+__attribute__((always_inline))
 static inline void gdma_ll_rx_clear_interrupt_status(gdma_dev_t *dev, uint32_t channel, uint32_t mask)
 {
-    abort(); //TODO IDF-3817
+    dev->intr[channel].clr.val = (mask & GDMA_LL_RX_EVENT_MASK);
 }
 
 /**
@@ -80,7 +91,7 @@ static inline void gdma_ll_rx_clear_interrupt_status(gdma_dev_t *dev, uint32_t c
  */
 static inline volatile void *gdma_ll_rx_get_interrupt_status_reg(gdma_dev_t *dev, uint32_t channel)
 {
-    abort(); //TODO IDF-3817
+    return (volatile void *)(&dev->intr[channel].st);
 }
 
 /**
@@ -88,7 +99,7 @@ static inline volatile void *gdma_ll_rx_get_interrupt_status_reg(gdma_dev_t *dev
  */
 static inline void gdma_ll_rx_enable_owner_check(gdma_dev_t *dev, uint32_t channel, bool enable)
 {
-    abort(); //TODO IDF-3817
+    dev->channel[channel].in.in_conf1.in_check_owner = enable;
 }
 
 /**
@@ -96,7 +107,7 @@ static inline void gdma_ll_rx_enable_owner_check(gdma_dev_t *dev, uint32_t chann
  */
 static inline void gdma_ll_rx_enable_data_burst(gdma_dev_t *dev, uint32_t channel, bool enable)
 {
-    abort(); //TODO IDF-3817
+    dev->channel[channel].in.in_conf0.in_data_burst_en = enable;
 }
 
 /**
@@ -104,15 +115,17 @@ static inline void gdma_ll_rx_enable_data_burst(gdma_dev_t *dev, uint32_t channe
  */
 static inline void gdma_ll_rx_enable_descriptor_burst(gdma_dev_t *dev, uint32_t channel, bool enable)
 {
-    abort(); //TODO IDF-3817
+    dev->channel[channel].in.in_conf0.indscr_burst_en = enable;
 }
 
 /**
  * @brief Reset DMA RX channel FSM and FIFO pointer
  */
+__attribute__((always_inline))
 static inline void gdma_ll_rx_reset_channel(gdma_dev_t *dev, uint32_t channel)
 {
-    abort(); //TODO IDF-3817
+    dev->channel[channel].in.in_conf0.in_rst = 1;
+    dev->channel[channel].in.in_conf0.in_rst = 0;
 }
 
 /**
@@ -121,7 +134,7 @@ static inline void gdma_ll_rx_reset_channel(gdma_dev_t *dev, uint32_t channel)
  */
 static inline bool gdma_ll_rx_is_fifo_full(gdma_dev_t *dev, uint32_t channel, uint32_t fifo_level)
 {
-    abort(); //TODO IDF-3817
+    return dev->channel[channel].in.infifo_status.val & 0x01;
 }
 
 /**
@@ -130,7 +143,7 @@ static inline bool gdma_ll_rx_is_fifo_full(gdma_dev_t *dev, uint32_t channel, ui
  */
 static inline bool gdma_ll_rx_is_fifo_empty(gdma_dev_t *dev, uint32_t channel, uint32_t fifo_level)
 {
-    abort(); //TODO IDF-3817
+    return dev->channel[channel].in.infifo_status.val & 0x02;
 }
 
 /**
@@ -139,7 +152,7 @@ static inline bool gdma_ll_rx_is_fifo_empty(gdma_dev_t *dev, uint32_t channel, u
  */
 static inline uint32_t gdma_ll_rx_get_fifo_bytes(gdma_dev_t *dev, uint32_t channel, uint32_t fifo_level)
 {
-    abort(); //TODO IDF-3817
+    return dev->channel[channel].in.infifo_status.infifo_cnt;
 }
 
 /**
@@ -147,39 +160,44 @@ static inline uint32_t gdma_ll_rx_get_fifo_bytes(gdma_dev_t *dev, uint32_t chann
  */
 static inline uint32_t gdma_ll_rx_pop_data(gdma_dev_t *dev, uint32_t channel)
 {
-    abort(); //TODO IDF-3817
+    dev->channel[channel].in.in_pop.infifo_pop = 1;
+    return dev->channel[channel].in.in_pop.infifo_rdata;
 }
 
 /**
  * @brief Set the descriptor link base address for RX channel
  */
+__attribute__((always_inline))
 static inline void gdma_ll_rx_set_desc_addr(gdma_dev_t *dev, uint32_t channel, uint32_t addr)
 {
-    abort(); //TODO IDF-3817
+    dev->channel[channel].in.in_link.addr = addr;
 }
 
 /**
  * @brief Start dealing with RX descriptors
  */
+__attribute__((always_inline))
 static inline void gdma_ll_rx_start(gdma_dev_t *dev, uint32_t channel)
 {
-    abort(); //TODO IDF-3817
+    dev->channel[channel].in.in_link.start = 1;
 }
 
 /**
  * @brief Stop dealing with RX descriptors
  */
+__attribute__((always_inline))
 static inline void gdma_ll_rx_stop(gdma_dev_t *dev, uint32_t channel)
 {
-    abort(); //TODO IDF-3817
+    dev->channel[channel].in.in_link.stop = 1;
 }
 
 /**
  * @brief Restart a new inlink right after the last descriptor
  */
+__attribute__((always_inline))
 static inline void gdma_ll_rx_restart(gdma_dev_t *dev, uint32_t channel)
 {
-    abort(); //TODO IDF-3817
+    dev->channel[channel].in.in_link.restart = 1;
 }
 
 /**
@@ -187,7 +205,7 @@ static inline void gdma_ll_rx_restart(gdma_dev_t *dev, uint32_t channel)
  */
 static inline void gdma_ll_rx_enable_auto_return(gdma_dev_t *dev, uint32_t channel, bool enable)
 {
-    abort(); //TODO IDF-3817
+    dev->channel[channel].in.in_link.auto_ret = enable;
 }
 
 /**
@@ -195,31 +213,34 @@ static inline void gdma_ll_rx_enable_auto_return(gdma_dev_t *dev, uint32_t chann
  */
 static inline bool gdma_ll_rx_is_fsm_idle(gdma_dev_t *dev, uint32_t channel)
 {
-    abort(); //TODO IDF-3817
+    return dev->channel[channel].in.in_link.park;
 }
 
 /**
  * @brief Get RX success EOF descriptor's address
  */
+__attribute__((always_inline))
 static inline uint32_t gdma_ll_rx_get_success_eof_desc_addr(gdma_dev_t *dev, uint32_t channel)
 {
-    abort(); //TODO IDF-3817
+    return dev->channel[channel].in.in_suc_eof_des_addr;
 }
 
 /**
  * @brief Get RX error EOF descriptor's address
  */
+__attribute__((always_inline))
 static inline uint32_t gdma_ll_rx_get_error_eof_desc_addr(gdma_dev_t *dev, uint32_t channel)
 {
-    abort(); //TODO IDF-3817
+    return dev->channel[channel].in.in_err_eof_des_addr;
 }
 
 /**
  * @brief Get current RX descriptor's address
  */
+__attribute__((always_inline))
 static inline uint32_t gdma_ll_rx_get_current_desc_addr(gdma_dev_t *dev, uint32_t channel)
 {
-    abort(); //TODO IDF-3817
+    return dev->channel[channel].in.in_dscr;
 }
 
 /**
@@ -227,7 +248,7 @@ static inline uint32_t gdma_ll_rx_get_current_desc_addr(gdma_dev_t *dev, uint32_
  */
 static inline void gdma_ll_rx_set_priority(gdma_dev_t *dev, uint32_t channel, uint32_t prio)
 {
-    abort(); //TODO IDF-3817
+    dev->channel[channel].in.in_pri.rx_pri = prio;
 }
 
 /**
@@ -235,16 +256,17 @@ static inline void gdma_ll_rx_set_priority(gdma_dev_t *dev, uint32_t channel, ui
  */
 static inline void gdma_ll_rx_connect_to_periph(gdma_dev_t *dev, uint32_t channel, int periph_id)
 {
-    abort(); //TODO IDF-3817
+    dev->channel[channel].in.in_peri_sel.sel = periph_id;
 }
 
 ///////////////////////////////////// TX /////////////////////////////////////////
 /**
  * @brief Get DMA TX channel interrupt status word
  */
+__attribute__((always_inline))
 static inline uint32_t gdma_ll_tx_get_interrupt_status(gdma_dev_t *dev, uint32_t channel)
 {
-    abort(); //TODO IDF-3817
+    return dev->intr[channel].st.val & GDMA_LL_TX_EVENT_MASK;
 }
 
 /**
@@ -252,15 +274,20 @@ static inline uint32_t gdma_ll_tx_get_interrupt_status(gdma_dev_t *dev, uint32_t
  */
 static inline void gdma_ll_tx_enable_interrupt(gdma_dev_t *dev, uint32_t channel, uint32_t mask, bool enable)
 {
-    abort(); //TODO IDF-3817
+    if (enable) {
+        dev->intr[channel].ena.val |= (mask & GDMA_LL_TX_EVENT_MASK);
+    } else {
+        dev->intr[channel].ena.val &= ~(mask & GDMA_LL_TX_EVENT_MASK);
+    }
 }
 
 /**
  * @brief Clear DMA TX channel interrupt
  */
+__attribute__((always_inline))
 static inline void gdma_ll_tx_clear_interrupt_status(gdma_dev_t *dev, uint32_t channel, uint32_t mask)
 {
-    abort(); //TODO IDF-3817
+    dev->intr[channel].clr.val = (mask & GDMA_LL_TX_EVENT_MASK);
 }
 
 /**
@@ -268,7 +295,7 @@ static inline void gdma_ll_tx_clear_interrupt_status(gdma_dev_t *dev, uint32_t c
  */
 static inline volatile void *gdma_ll_tx_get_interrupt_status_reg(gdma_dev_t *dev, uint32_t channel)
 {
-    abort(); //TODO IDF-3817
+    return (volatile void *)(&dev->intr[channel].st);
 }
 
 /**
@@ -276,7 +303,7 @@ static inline volatile void *gdma_ll_tx_get_interrupt_status_reg(gdma_dev_t *dev
  */
 static inline void gdma_ll_tx_enable_owner_check(gdma_dev_t *dev, uint32_t channel, bool enable)
 {
-    abort(); //TODO IDF-3817
+    dev->channel[channel].out.out_conf1.out_check_owner = enable;
 }
 
 /**
@@ -284,7 +311,7 @@ static inline void gdma_ll_tx_enable_owner_check(gdma_dev_t *dev, uint32_t chann
  */
 static inline void gdma_ll_tx_enable_data_burst(gdma_dev_t *dev, uint32_t channel, bool enable)
 {
-    abort(); //TODO IDF-3817
+    dev->channel[channel].out.out_conf0.out_data_burst_en = enable;
 }
 
 /**
@@ -292,7 +319,7 @@ static inline void gdma_ll_tx_enable_data_burst(gdma_dev_t *dev, uint32_t channe
  */
 static inline void gdma_ll_tx_enable_descriptor_burst(gdma_dev_t *dev, uint32_t channel, bool enable)
 {
-    abort(); //TODO IDF-3817
+    dev->channel[channel].out.out_conf0.outdscr_burst_en = enable;
 }
 
 /**
@@ -300,7 +327,7 @@ static inline void gdma_ll_tx_enable_descriptor_burst(gdma_dev_t *dev, uint32_t 
  */
 static inline void gdma_ll_tx_set_eof_mode(gdma_dev_t *dev, uint32_t channel, uint32_t mode)
 {
-    abort(); //TODO IDF-3817
+    dev->channel[channel].out.out_conf0.out_eof_mode = mode;
 }
 
 /**
@@ -308,15 +335,17 @@ static inline void gdma_ll_tx_set_eof_mode(gdma_dev_t *dev, uint32_t channel, ui
  */
 static inline void gdma_ll_tx_enable_auto_write_back(gdma_dev_t *dev, uint32_t channel, bool enable)
 {
-    abort(); //TODO IDF-3817
+    dev->channel[channel].out.out_conf0.out_auto_wrback = enable;
 }
 
 /**
  * @brief Reset DMA TX channel FSM and FIFO pointer
  */
+__attribute__((always_inline))
 static inline void gdma_ll_tx_reset_channel(gdma_dev_t *dev, uint32_t channel)
 {
-    abort(); //TODO IDF-3817
+    dev->channel[channel].out.out_conf0.out_rst = 1;
+    dev->channel[channel].out.out_conf0.out_rst = 0;
 }
 
 /**
@@ -325,7 +354,7 @@ static inline void gdma_ll_tx_reset_channel(gdma_dev_t *dev, uint32_t channel)
  */
 static inline bool gdma_ll_tx_is_fifo_full(gdma_dev_t *dev, uint32_t channel, uint32_t fifo_level)
 {
-    abort(); //TODO IDF-3817
+    return dev->channel[channel].out.outfifo_status.val & 0x01;
 }
 
 /**
@@ -334,7 +363,7 @@ static inline bool gdma_ll_tx_is_fifo_full(gdma_dev_t *dev, uint32_t channel, ui
  */
 static inline bool gdma_ll_tx_is_fifo_empty(gdma_dev_t *dev, uint32_t channel, uint32_t fifo_level)
 {
-    abort(); //TODO IDF-3817
+    return dev->channel[channel].out.outfifo_status.val & 0x02;
 }
 
 /**
@@ -343,7 +372,7 @@ static inline bool gdma_ll_tx_is_fifo_empty(gdma_dev_t *dev, uint32_t channel, u
  */
 static inline uint32_t gdma_ll_tx_get_fifo_bytes(gdma_dev_t *dev, uint32_t channel, uint32_t fifo_level)
 {
-    abort(); //TODO IDF-3817
+    return dev->channel[channel].out.outfifo_status.outfifo_cnt;
 }
 
 /**
@@ -351,39 +380,44 @@ static inline uint32_t gdma_ll_tx_get_fifo_bytes(gdma_dev_t *dev, uint32_t chann
  */
 static inline void gdma_ll_tx_push_data(gdma_dev_t *dev, uint32_t channel, uint32_t data)
 {
-    abort(); //TODO IDF-3817
+    dev->channel[channel].out.out_push.outfifo_wdata = data;
+    dev->channel[channel].out.out_push.outfifo_push = 1;
 }
 
 /**
  * @brief Set the descriptor link base address for TX channel
  */
+__attribute__((always_inline))
 static inline void gdma_ll_tx_set_desc_addr(gdma_dev_t *dev, uint32_t channel, uint32_t addr)
 {
-    abort(); //TODO IDF-3817
+    dev->channel[channel].out.out_link.addr = addr;
 }
 
 /**
  * @brief Start dealing with TX descriptors
  */
+__attribute__((always_inline))
 static inline void gdma_ll_tx_start(gdma_dev_t *dev, uint32_t channel)
 {
-    abort(); //TODO IDF-3817
+    dev->channel[channel].out.out_link.start = 1;
 }
 
 /**
  * @brief Stop dealing with TX descriptors
  */
+__attribute__((always_inline))
 static inline void gdma_ll_tx_stop(gdma_dev_t *dev, uint32_t channel)
 {
-    abort(); //TODO IDF-3817
+    dev->channel[channel].out.out_link.stop = 1;
 }
 
 /**
  * @brief Restart a new outlink right after the last descriptor
  */
+__attribute__((always_inline))
 static inline void gdma_ll_tx_restart(gdma_dev_t *dev, uint32_t channel)
 {
-    abort(); //TODO IDF-3817
+    dev->channel[channel].out.out_link.restart = 1;
 }
 
 /**
@@ -391,23 +425,25 @@ static inline void gdma_ll_tx_restart(gdma_dev_t *dev, uint32_t channel)
  */
 static inline bool gdma_ll_tx_is_fsm_idle(gdma_dev_t *dev, uint32_t channel)
 {
-    abort(); //TODO IDF-3817
+    return dev->channel[channel].out.out_link.park;
 }
 
 /**
  * @brief Get TX EOF descriptor's address
  */
+__attribute__((always_inline))
 static inline uint32_t gdma_ll_tx_get_eof_desc_addr(gdma_dev_t *dev, uint32_t channel)
 {
-    abort(); //TODO IDF-3817
+    return dev->channel[channel].out.out_eof_des_addr;
 }
 
 /**
  * @brief Get current TX descriptor's address
  */
+__attribute__((always_inline))
 static inline uint32_t gdma_ll_tx_get_current_desc_addr(gdma_dev_t *dev, uint32_t channel)
 {
-    abort(); //TODO IDF-3817
+    return dev->channel[channel].out.out_dscr;
 }
 
 /**
@@ -415,7 +451,7 @@ static inline uint32_t gdma_ll_tx_get_current_desc_addr(gdma_dev_t *dev, uint32_
  */
 static inline void gdma_ll_tx_set_priority(gdma_dev_t *dev, uint32_t channel, uint32_t prio)
 {
-    abort(); //TODO IDF-3817
+    dev->channel[channel].out.out_pri.tx_pri = prio;
 }
 
 /**
@@ -423,7 +459,7 @@ static inline void gdma_ll_tx_set_priority(gdma_dev_t *dev, uint32_t channel, ui
  */
 static inline void gdma_ll_tx_connect_to_periph(gdma_dev_t *dev, uint32_t channel, int periph_id)
 {
-    abort(); //TODO IDF-3817
+    dev->channel[channel].out.out_peri_sel.sel = periph_id;
 }
 
 #ifdef __cplusplus
