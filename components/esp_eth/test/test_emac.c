@@ -87,7 +87,7 @@ static esp_err_t test_uninstall_driver(esp_eth_handle_t eth_hdl, uint32_t ms_to_
             break;
         }
     }
-    if (i < ms_to_wait / 10) {
+    if (i < ms_to_wait / 100) {
         return ESP_OK;
     } else {
         return ESP_FAIL;
