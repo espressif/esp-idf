@@ -242,6 +242,8 @@ extern uint8_t coex_schm_curr_period_get(void);
 extern void * coex_schm_curr_phase_get(void);
 extern int coex_wifi_channel_get(uint8_t *primary, uint8_t *secondary);
 extern int coex_register_wifi_channel_change_callback(void *cb);
+/* Shutdown */
+extern void esp_bt_controller_shutdown(void);
 
 extern char _bss_start_btdm;
 extern char _bss_end_btdm;
@@ -1544,13 +1546,13 @@ esp_err_t esp_bt_controller_deinit(void)
 
 static void bt_shutdown(void)
 {
-    esp_err_t ret = ESP_OK;
-    ESP_LOGD(BTDM_LOG_TAG, "stop Bluetooth");
-
-    ret = esp_bt_controller_disable();
-    if (ESP_OK != ret) {
-        ESP_LOGW(BTDM_LOG_TAG, "controller disable ret=%d", ret);
+    if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_ENABLED) {
+        return;
     }
+
+    esp_bt_controller_shutdown();
+    esp_phy_rf_deinit(PHY_BT_MODULE);
+
     return;
 }
 
