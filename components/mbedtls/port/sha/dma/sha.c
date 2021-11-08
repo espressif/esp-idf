@@ -38,7 +38,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "sys/param.h"
 
 #include "sha/sha_dma.h"

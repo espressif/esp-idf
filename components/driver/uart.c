@@ -21,7 +21,7 @@
 #include "driver/uart.h"
 #include "driver/gpio.h"
 #include "driver/uart_select.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "sdkconfig.h"
 #include "esp_rom_gpio.h"
 

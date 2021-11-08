@@ -14,7 +14,6 @@
 #include "soc/ledc_reg.h"
 #include "soc/timer_group_struct.h"
 #include "soc/ledc_struct.h"
-#include "driver/periph_ctrl.h"
 #include "driver/timer.h"
 #include "driver/ledc.h"
 #include "iot_light.h"

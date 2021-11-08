@@ -11,7 +11,7 @@
 #include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
 #include "driver/timer.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "hal/timer_hal.h"
 #include "hal/timer_ll.h"
 #include "hal/check.h"

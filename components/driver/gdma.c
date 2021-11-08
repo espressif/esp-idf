@@ -15,7 +15,7 @@
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "esp_check.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "esp_private/gdma.h"
 #include "hal/gdma_hal.h"
 #include "hal/gdma_ll.h"

@@ -29,7 +29,7 @@
 #include "esp_log.h"
 #include "esp_pm.h"
 #include "esp_ipc.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/soc_memory_layout.h"

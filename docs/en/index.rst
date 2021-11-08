@@ -62,6 +62,7 @@ This is the documentation for Espressif IoT Development Framework (`esp-idf <htt
    API Reference <api-reference/index>
    H/W Reference <hw-reference/index>
    API Guides <api-guides/index>
+   ESP-IDF 5.0 Migration Guides <migration-guides/index>
    Libraries and Frameworks <libraries-and-frameworks/index>
    Contribute <contribute/index>
    Versions <versions>

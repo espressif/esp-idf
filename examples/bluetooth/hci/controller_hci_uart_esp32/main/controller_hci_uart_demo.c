@@ -10,7 +10,7 @@
 #include "esp_bt.h"
 #include "soc/uhci_periph.h"
 #include "driver/uart.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h" // for enabling UHCI module, remove it after UHCI driver is released
 #include "esp_log.h"
 
 static const char *tag = "CONTROLLER_UART_HCI";

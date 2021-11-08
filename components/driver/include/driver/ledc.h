@@ -11,7 +11,6 @@
 #include "soc/soc.h"
 #include "hal/ledc_types.h"
 #include "driver/gpio.h"
-#include "driver/periph_ctrl.h"
 
 #ifdef __cplusplus
 extern "C" {

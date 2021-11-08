@@ -7,7 +7,7 @@
 */
 
 #include <string.h>
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h" // for enabling UHCI module, remove it after UHCI driver is released
 #include "driver/gpio.h"
 #include "driver/uart.h"
 #include "soc/lldesc.h"

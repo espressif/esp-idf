@@ -14,7 +14,6 @@
 #include "soc/rtc_periph.h"
 #include "soc/soc_caps.h"
 #include "hal/i2s_types.h"
-#include "driver/periph_ctrl.h"
 #include "esp_intr_alloc.h"
 
 #if SOC_I2S_SUPPORTS_ADC
