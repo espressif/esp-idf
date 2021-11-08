@@ -5,17 +5,20 @@
  */
 
 #include "sdkconfig.h"
-#include "esp_rom_spiflash.h"
 #include "soc/spi_periph.h"
-#include "esp_rom_spiflash.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/spi_flash.h"
+#endif
 
 #define SPI_IDX   1
-
-extern esp_rom_spiflash_chip_t g_rom_spiflash_chip;
 
 #if CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
 
 #if CONFIG_IDF_TARGET_ESP32
+
+extern esp_rom_spiflash_chip_t g_rom_spiflash_chip;
 
 static inline bool is_issi_chip(const esp_rom_spiflash_chip_t* chip)
 {

@@ -16,6 +16,7 @@
 #include "esp_types.h"
 #include "esp_log.h"
 #include "spiram_psram.h"
+#include "esp32s3/rom/spi_flash.h"
 #include "esp32s3/rom/opi_flash.h"
 #include "esp32s3/rom/cache.h"
 #include "esp32s3/rom/efuse.h"
@@ -34,7 +35,6 @@
 #include "driver/spi_common.h"
 #include "esp_private/periph_ctrl.h"
 #include "bootloader_common.h"
-#include "esp_rom_spiflash.h"
 
 #if CONFIG_SPIRAM_MODE_QUAD
 #include "soc/rtc.h"

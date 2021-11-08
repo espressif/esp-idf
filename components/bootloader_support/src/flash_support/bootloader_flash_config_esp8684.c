@@ -9,8 +9,9 @@
 #include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_log.h"
-#include "esp32h2/rom/gpio.h"
-#include "esp32h2/rom/efuse.h"
+#include "esp8684/rom/gpio.h"
+#include "esp8684/rom/spi_flash.h"
+#include "esp8684/rom/efuse.h"
 #include "soc/gpio_periph.h"
 #include "soc/efuse_reg.h"
 #include "soc/spi_reg.h"
@@ -19,7 +20,6 @@
 #include "flash_qio_mode.h"
 #include "bootloader_flash_config.h"
 #include "bootloader_common.h"
-#include "esp_rom_spiflash.h"
 
 #define FLASH_IO_MATRIX_DUMMY_40M   0
 #define FLASH_IO_MATRIX_DUMMY_80M   0
@@ -35,15 +35,13 @@ void IRAM_ATTR bootloader_flash_cs_timing_config()
     SET_PERI_REG_MASK(SPI_MEM_USER_REG(0), SPI_MEM_CS_HOLD_M | SPI_MEM_CS_SETUP_M);
     SET_PERI_REG_BITS(SPI_MEM_CTRL2_REG(0), SPI_MEM_CS_HOLD_TIME_V, 0, SPI_MEM_CS_HOLD_TIME_S);
     SET_PERI_REG_BITS(SPI_MEM_CTRL2_REG(0), SPI_MEM_CS_SETUP_TIME_V, 0, SPI_MEM_CS_SETUP_TIME_S);
-    SET_PERI_REG_MASK(SPI_MEM_USER_REG(1), SPI_MEM_CS_HOLD_M | SPI_MEM_CS_SETUP_M);
-    SET_PERI_REG_BITS(SPI_MEM_CTRL2_REG(1), SPI_MEM_CS_HOLD_TIME_V, 1, SPI_MEM_CS_HOLD_TIME_S);
-    SET_PERI_REG_BITS(SPI_MEM_CTRL2_REG(1), SPI_MEM_CS_SETUP_TIME_V, 0, SPI_MEM_CS_SETUP_TIME_S);
 }
 
 void IRAM_ATTR bootloader_flash_clock_config(const esp_image_header_t *pfhdr)
 {
     uint32_t spi_clk_div = 0;
     switch (pfhdr->spi_speed) {
+    // TODO: change MSPI freq, IDF-3831
     case ESP_IMAGE_SPI_SPEED_80M:
         spi_clk_div = 1;
         break;
