@@ -487,7 +487,7 @@ static inline void i2s_ll_rx_set_active_chan_mask(i2s_dev_t *hw, uint32_t chan_m
  * @param hw Peripheral I2S hardware instance address.
  * @param ws_pol_level pin level of WS(output) when receiving left channel data
  */
-static inline void i2s_tx_set_ws_idle_pol(i2s_dev_t *hw, int ws_pol_level)
+static inline void i2s_ll_tx_set_ws_idle_pol(i2s_dev_t *hw, bool ws_pol_level)
 {
     hw->tx_conf.tx_ws_idle_pol = ws_pol_level;
 }
@@ -498,7 +498,7 @@ static inline void i2s_tx_set_ws_idle_pol(i2s_dev_t *hw, int ws_pol_level)
  * @param hw Peripheral I2S hardware instance address.
  * @param ws_pol_level pin level of WS(input) when receiving left channel data
  */
-static inline void i2s_rx_set_ws_idle_pol(i2s_dev_t *hw, int ws_pol_level)
+static inline void i2s_ll_rx_set_ws_idle_pol(i2s_dev_t *hw, bool ws_pol_level)
 {
     hw->rx_conf.rx_ws_idle_pol = ws_pol_level;
 }
