@@ -83,7 +83,7 @@ menu "ESP32S3-Specific"
             default 32 if ESP32S3_INSTRUCTION_CACHE_LINE_32B
 
         config ESP32S3_INSTRUCTION_CACHE_WRAP
-            bool "Enable instruction cache wrap mode"
+            bool       ## TODO IDF-4307
             default "n"
             help
                 If enabled, instruction cache will use wrap mode to read spi flash or spi ram.
@@ -152,7 +152,7 @@ menu "ESP32S3-Specific"
             default 64 if ESP32S3_DATA_CACHE_LINE_64B
 
         config ESP32S3_DATA_CACHE_WRAP
-            bool "Enable data cache wrap mode"
+            bool        ## TODO IDF-4307
             default "n"
             help
                 If enabled, data cache will use wrap mode to read spi flash or spi ram.

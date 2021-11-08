@@ -195,6 +195,7 @@ static void psram_disable_qio_mode(int spi_num)
     false);                           /* whether is program/erase operation */
 }
 
+//TODO IDF-4307
 //switch psram burst length(32 bytes or 1024 bytes)
 //datasheet says it should be 1024 bytes by default
 static void psram_set_wrap_burst_length(int spi_num, psram_cmd_mode_t mode)
@@ -233,6 +234,7 @@ static void psram_reset_mode(int spi_num)
 
 esp_err_t psram_enable_wrap(uint32_t wrap_size)
 {
+    //TODO: IDF-4307
     static uint32_t current_wrap_size = 0;
     if (current_wrap_size == wrap_size) {
         return ESP_OK;
