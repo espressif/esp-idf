@@ -2,9 +2,9 @@ menu "Echo Example Configuration"
 
     config EXAMPLE_UART_PORT_NUM
         int "UART port number"
-        range 0 2 if IDF_TARGET_ESP32   || IDF_TARGET_ESP32S3
+        range 0 2 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3
+        default 2 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3
         range 0 1 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3
-        default 2 if IDF_TARGET_ESP32   || IDF_TARGET_ESP32S3
         default 1 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3
         help
             UART communication port number for the example.
@@ -22,6 +22,7 @@ menu "Echo Example Configuration"
         range 0 34 if IDF_TARGET_ESP32
         range 0 46 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
         range 0 19 if IDF_TARGET_ESP32C3
+        range 0 47 if IDF_TARGET_ESP32S3
         default 5
         help
             GPIO number for UART RX pin. See UART documentation for more information
@@ -32,6 +33,7 @@ menu "Echo Example Configuration"
         range 0 34 if IDF_TARGET_ESP32
         range 0 46 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
         range 0 19 if IDF_TARGET_ESP32C3
+        range 0 47 if IDF_TARGET_ESP32S3
         default 4
         help
             GPIO number for UART TX pin. See UART documentation for more information
