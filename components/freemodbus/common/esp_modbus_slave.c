@@ -5,6 +5,7 @@
  */
 
 #include "esp_err.h"                // for esp_err_t
+#include "esp_timer.h"              // for esp_timer_get_time()
 #include "sdkconfig.h"              // for KConfig defines
 
 #include "mbc_slave.h"              // for slave private type definitions

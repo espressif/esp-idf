@@ -1,21 +1,21 @@
-| Supported Targets | ESP32 |
-| ----------------- | ----- |
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- | -------- |
 
 # Modbus Slave Example
 
-This example demonstrates using of FreeModbus stack port implementation for ESP32. The external Modbus host is able to read/write device parameters using Modbus protocol transport. The parameters accessible thorough Modbus are located in `mb_example_common/modbus_params.h\c` files and can be updated by user. 
-These are represented in structures holding_reg_params, input_reg_params, coil_reg_params, discrete_reg_params for holding registers, input parameters, coils and discrete inputs accordingly. The app_main application demonstrates how to setup Modbus stack and use notifications about parameters change from host system. 
-The FreeModbus stack located in `components/freemodbus` folder and contains the `/port` folder inside with FreeModbus stack port for ESP32. There are some parameters that can be configured in KConfig file to start stack correctly (See description below for more information).
+This example demonstrates using the port of the FreeModbus stack on an ESP32 target where the ESP32 target is operating as a network slave. The example allows an external Modbus host to read/write device parameters on the ESP32 target using the Modbus protocol. The parameters accessible through Modbus are located in `mb_example_common/modbus_params.h\c` source/header files that users can update to add/remove their own custom parameters.
+These are represented in structures `holding_reg_params`, `input_reg_params`, `coil_reg_params`, `discrete_reg_params` for holding registers, input parameters, coils and discrete inputs accordingly. The app_main application demonstrates how to setup Modbus stack and use notifications about parameters change from host system.
+The FreeModbus stack located in `components/freemodbus` folder and contains the `/port` folder where the stack's port to the ESP32 is situated. There are some parameters of the port that can be configured in KConfig file to start stack correctly (See description below for more information).
 
 The slave example uses shared parameter structures defined in `examples/protocols/modbus/mb_example_common` folder.
 
 ## Hardware required :
 Option 1:
-PC + USB Serial adapter connected to USB port + RS485 line drivers + ESP32 WROVER-KIT board. 
+PC + USB Serial adapter connected to USB port + RS485 line drivers + ESP32 based board.
 The MAX485 line driver is used as an example below but other similar chips can be used as well.
 
 Option 2:
-The modbus_master example application configured as described in its README.md file and flashed into ESP32 WROVER-KIT board.
+The modbus_master example application configured as described in its README.md file and flashed into ESP32 based board.
 Note: The ```Example Data (Object) Dictionary``` in the modbus_master example can be edited to address parameters from other slaves connected into Modbus segment.
 
 RS485 example circuit schematic:
@@ -26,13 +26,13 @@ RS485 example circuit schematic:
          RXD <------| RO            | DIFFERENTIAL  |             RO|-----> RXD
                     |              B|---------------|B              |
          TXD ------>| DI   MAX485   |    \  /       |    MAX485   DI|<----- TXD
-ESP32 WROVER KIT 1  |               |   RS-485 side |               |    Modbus master
-         RTS --+--->| DE            |    /  \       |             DE|---+       
+ESP32 board         |               |   RS-485 side |               |    Modbus master
+         RTS --+--->| DE            |    /  \       |             DE|---+
                |    |              A|---------------|A              |   |
                +----| /RE           |    PAIR       |            /RE|---+-- RTS
                     +-------x--------+              +-------x-------+
                             |                               |
-                           ---                             --- 
+                           ---                             ---
 ```
 
 ## How to setup and use an example:
@@ -43,18 +43,19 @@ Start the command below to show the configuration menu:
 idf.py menuconfig
 ```
 Select Modbus Example Configuration menu item.
-Configure the UART pins used for modbus communication using command and table below.
+Configure the UART pins used for modbus communication using the command and table below.
 ```
   --------------------------------------------------------------------------------------------------------------------------
-  | ESP32 Interface       | #define            | Default ESP32 Pin     | Default ESP32-S2 Pins | External RS485 Driver Pin |
+  |  UART Interface       | #define            | Default ESP32 Pin     | Default pins for      | External RS485 Driver Pin |
+  |                       |                    |                       | ESP32-S2(S3, C3)      |                           |
   | ----------------------|--------------------|-----------------------|-----------------------|---------------------------|
-  | Transmit Data (TxD)   | CONFIG_MB_UART_TXD | GPIO23                | GPIO20                | DI                        |
-  | Receive Data (RxD)    | CONFIG_MB_UART_RXD | GPIO22                | GPIO19                | RO                        |
-  | Request To Send (RTS) | CONFIG_MB_UART_RTS | GPIO18                | GPIO18                | ~RE/DE                    |
+  | Transmit Data (TxD)   | CONFIG_MB_UART_TXD | GPIO23                | GPIO9                 | DI                        |
+  | Receive Data (RxD)    | CONFIG_MB_UART_RXD | GPIO22                | GPIO8                 | RO                        |
+  | Request To Send (RTS) | CONFIG_MB_UART_RTS | GPIO18                | GPIO10                | ~RE/DE                    |
   | Ground                | n/a                | GND                   | GND                   | GND                       |
   --------------------------------------------------------------------------------------------------------------------------
 ```
-Note: The GPIO22 - GPIO25 can not be used with ESP32-S2 chip because they are used for flash chip connection. Please refer to UART documentation for selected target.
+Note: Each target chip has different GPIO pins available for UART connection. Please refer to UART documentation for selected target for more information.
 
 Define the ```Modbus communiction mode``` for slave in Kconfig - CONFIG_MB_COMM_MODE (must be the same for master and slave application).
 Set ```Modbus slave address``` for the example application (by default for example script is set to 1).
@@ -66,8 +67,8 @@ Option 1:
 Configure the external Modbus master software according to port configuration parameters used in application.
 As an example the Modbus Poll application can be used with this example.
 Option 2:
-Setup ESP32 WROVER-KIT board and set modbus_master example configuration as described in its README.md file.
-Setup one or more slave boards with different slave addresses and connect them into the same Modbus segment (See configuration above). 
+Setup ESP32 based board and set modbus_master example configuration as described in its README.md file.
+Setup one or more slave boards with different slave addresses and connect them into the same Modbus segment (See configuration above).
 Note: The ```Modbus communiction mode``` parameter must be the same for master and slave example application to be able to communicate with each other.
 
 ### Build and flash software
