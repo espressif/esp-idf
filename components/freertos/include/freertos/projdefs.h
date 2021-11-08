@@ -42,7 +42,7 @@ definition here is not suitable for your application. */
 #endif
 
 #ifndef pdTICKS_TO_MS
-	#define pdTICKS_TO_MS( xTicks )   ( ( uint32_t ) ( xTicks ) * 1000 / configTICK_RATE_HZ )
+	#define pdTICKS_TO_MS( xTicks )   ( ( TickType_t ) ( ( uint64_t ) ( xTicks ) * 1000 / configTICK_RATE_HZ ) )
 #endif
 
 
