@@ -106,10 +106,11 @@ menu "PHY"
 
     config ESP_PHY_ENABLE_USB
         bool "Enable USB when phy init"
-        depends on ESP_CONSOLE_USB_SERIAL_JTAG
-        default y
+        depends on USB_OTG_SUPPORTED || ESP_CONSOLE_USB_SERIAL_JTAG
+        default y if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+        default n
         help
-            When using USB Serial/JTAG controller, PHY should enable USB, otherwise log will
-            not be displayed. But working with USB, the RF performance may be affected.
+            When using USB Serial/JTAG/OTG/CDC, PHY should enable USB, otherwise USB module
+            can not work properly.
 
 endmenu  # PHY
