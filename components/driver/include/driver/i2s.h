@@ -78,7 +78,7 @@ typedef struct  {
  *
  */
 typedef struct {
-    int mck_io_num;     /*!< MCK in out pin*/
+    int mck_io_num;     /*!< MCK in out pin. Note that ESP32 supports setting MCK on GPIO0/GPIO1/GPIO3 only*/
     int bck_io_num;     /*!< BCK in out pin*/
     int ws_io_num;      /*!< WS in out pin*/
     int data_out_num;   /*!< DATA out pin*/
