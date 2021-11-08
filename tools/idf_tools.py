@@ -1048,6 +1048,9 @@ def export_targets_to_idf_env_json(targets):  # type: (list[str]) -> None
             break
 
     try:
+        if global_idf_tools_path:  # mypy fix for Optional[str] in the next call
+            # the directory doesn't exist if this is run on a clean system the first time
+            mkdir_p(global_idf_tools_path)
         with open(os.path.join(global_idf_tools_path, IDF_ENV_FILE), 'w') as w:  # type: ignore
             json.dump(idf_env_json, w, indent=4)
     except (IOError, OSError):
