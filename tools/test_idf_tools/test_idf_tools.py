@@ -332,6 +332,17 @@ class TestUsage(unittest.TestCase):
         output = self.run_idf_tools_with_action(['uninstall', '--dry-run'])
         self.assertEqual(output, '')
 
+    def test_unset(self):
+        self.run_idf_tools_with_action(['install'])
+        self.run_idf_tools_with_action(['export'])
+        self.assertTrue(os.path.isfile(self.idf_env_json), 'File {} was not found. '.format(self.idf_env_json))
+        self.assertNotEqual(os.stat(self.idf_env_json).st_size, 0, 'File {} is empty. '.format(self.idf_env_json))
+        with open(self.idf_env_json, 'r') as idf_env_file:
+            idf_env_json = json.load(idf_env_file)
+            selected_idf = idf_env_json['idfSelectedId']
+            self.assertIn('unset', idf_env_json['idfInstalled'][selected_idf],
+                          'Unset was not created for active environment in {}.'.format(self.idf_env_json))
+
 
 class TestMaintainer(unittest.TestCase):
 

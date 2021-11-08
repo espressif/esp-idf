@@ -1,9 +1,23 @@
 # This script should be sourced, not executed.
 
+# `idf_tools.py export --unset` create statement, with keyword unset, but fish shell support only `set --erase variable`
+function unset
+    set --erase $argv
+end
+
 function __main
     if not set -q IDF_PATH
         echo "IDF_PATH must be set before sourcing this script"
         return 1
+    end
+
+    set script_dir (cd (dirname (status -f)); and pwd)
+    if test "$script_dir" = "."
+        set script_dir $pwd
+    end
+    if test "$IDF_PATH" != "$script_dir"
+        echo "Resetting IDF_PATH from '$IDF_PATH' to '$script_dir'"
+        set IDF_PATH "$script_dir"
     end
 
     set oldpath = $PATH
@@ -14,23 +28,27 @@ function __main
     echo "Checking Python compatibility"
     "$ESP_PYTHON" "$IDF_PATH"/tools/python_version_checker.py
 
+    echo "Checking other ESP-IDF version."
+    set idf_unset ("$ESP_PYTHON" "$IDF_PATH"/tools/idf_tools.py export --unset) || return 1
+    eval "$idf_unset"
+
     echo "Adding ESP-IDF tools to PATH..."
     # Call idf_tools.py to export tool paths
     set -x IDF_TOOLS_EXPORT_CMD "$IDF_PATH"/export.fish
     set -x IDF_TOOLS_INSTALL_CMD "$IDF_PATH"/install.fish
-    set idf_exports ("$ESP_PYTHON" "$IDF_PATH"/tools/idf_tools.py export) || return 1
-    eval "$idf_exports"
-
-    echo "Checking if Python packages are up to date..."
-    python "$IDF_PATH"/tools/idf_tools.py check-python-dependencies || return 1
-
     # Allow calling some IDF python tools without specifying the full path
     # "$IDF_PATH"/tools is already added by 'idf_tools.py export'
     set IDF_ADD_PATHS_EXTRAS "$IDF_PATH"/components/esptool_py/esptool
     set IDF_ADD_PATHS_EXTRAS "$IDF_ADD_PATHS_EXTRAS":"$IDF_PATH"/components/espcoredump
     set IDF_ADD_PATHS_EXTRAS "$IDF_ADD_PATHS_EXTRAS":"$IDF_PATH"/components/partition_table
     set IDF_ADD_PATHS_EXTRAS "$IDF_ADD_PATHS_EXTRAS":"$IDF_PATH"/components/app_update
+
+    set idf_exports ("$ESP_PYTHON" "$IDF_PATH"/tools/idf_tools.py export --add_paths_extras="$IDF_ADD_PATHS_EXTRAS") || return 1
+    eval "$idf_exports"
     set -x PATH "$IDF_ADD_PATHS_EXTRAS":"$PATH"
+
+    echo "Checking if Python packages are up to date..."
+    python "$IDF_PATH"/tools/idf_tools.py check-python-dependencies || return 1
 
     set added_path_variables
     for entry in $PATH;
@@ -67,6 +85,9 @@ function __main
     set -e idf_exports
     set -e ESP_PYTHON
     set -e uninstall
+    set -e script_dir
+    set -e idf_unset
+
 
     # Not unsetting IDF_PYTHON_ENV_PATH, it can be used by IDF build system
     # to check whether we are using a private Python environment

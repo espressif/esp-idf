@@ -72,6 +72,11 @@ Any mirror server can be used provided the URL matches the ``github.com`` downlo
 
   The environment variables can be listed in either of ``shell`` or ``key-value`` formats, set by ``--format`` parameter:
 
+  - ``export`` optional parameters:
+    
+    - ``--unset`` Creates statement that unset some global variables, so the environment gets to the state it was before calling ``export.{sh/fish}``.
+    - ``--add_paths_extras`` Adds extra ESP-IDF-related paths of ``$PATH`` to ``${IDF_TOOLS_PATH}/esp-idf.json``, which is used to remove global variables when the active ESP-IDF environment is deactivated. Example: While processing ``export.{sh/fish}`` script, new paths are added to global variable ``$PATH``. This option is used to save these new paths to the ``${IDF_TOOLS_PATH}/esp-idf.json``.
+
   - ``shell`` produces output suitable for evaluation in the shell. For example,
 
     ::
