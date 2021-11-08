@@ -883,9 +883,8 @@ static void ieee802_11_rx_bss_trans_mgmt_req(struct wpa_supplicant *wpa_s,
 	}
 	if (scan_required) {
 		wpa_printf(MSG_DEBUG, "Trying to find another BSS");
-#else
-		wpa_supplicant_req_scan(wpa_s, 0, 0);
 #endif
+		wpa_supplicant_req_scan(wpa_s, 0, 0);
 	} else if (reply) {
 		enum bss_trans_mgmt_status_code status;
 		if (wpa_s->wnm_mode & WNM_BSS_TM_REQ_ESS_DISASSOC_IMMINENT)
@@ -975,7 +974,7 @@ void ieee802_11_rx_wnm_action(struct wpa_supplicant *wpa_s,
 	switch (act) {
 	case WNM_BSS_TRANS_MGMT_REQ:
 		ieee802_11_rx_bss_trans_mgmt_req(wpa_s, pos, end,
-						 !(sender[0] & 0x01));
+						 0x01);
 		break;
 	default:
 		wpa_printf(MSG_ERROR, "WNM: Unknown request");
