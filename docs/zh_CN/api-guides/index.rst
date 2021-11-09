@@ -31,7 +31,7 @@ API 指南
    Memory Types <memory-types>
    分区表 <partition-tables>
    Performance <performance/index>
-   射频校准 <RF_calibration>
+   :not esp8684: 射频校准 <RF_calibration>
    :esp32: 安全启动 <../security/secure-boot-v1>
    安全启动 V2 <../security/secure-boot-v2>
    线程本地存储 <thread-local-storage>
@@ -42,5 +42,5 @@ API 指南
    单元测试 (Linux Host) <linux-host-testing>
    :SOC_USB_OTG_SUPPORTED: USB 控制台 <usb-otg-console>
    :SOC_USB_SERIAL_JTAG_SUPPORTED: USB Serial/JTAG Controller Console <usb-serial-jtag-console>
-   Wi-Fi 驱动 <wifi>
-   Wi-Fi Security <wifi-security>
+   :SOC_WIFI_SUPPORTED: Wi-Fi 驱动 <wifi>
+   :SOC_WIFI_SUPPORTED: Wi-Fi Security <wifi-security>
