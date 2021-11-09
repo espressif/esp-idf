@@ -24,7 +24,8 @@ foreach ($line  in $envars_raw) {
 }
 
 if ($IsWindows -eq $null) {
-    # $IsWindows was added in PowerShell Core 6 and PowerShell 7.
+    # $IsWindows was added in PowerShell Core 6 and PowerShell 7 together with multi-platform support. # I.E. if this
+    # internal variable is not set then PowerShell 5 is used and # the platform cannot be # anything else than Windows.
     $IsWindows = $true
 }
 
