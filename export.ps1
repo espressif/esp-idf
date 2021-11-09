@@ -23,6 +23,11 @@ foreach ($line  in $envars_raw) {
     $envars_array += (, ($var_name, $var_val))
 }
 
+if ($IsWindows -eq $null) {
+    # $IsWindows was added in PowerShell Core 6 and PowerShell 7.
+    $IsWindows = $true
+}
+
 foreach ($pair  in $envars_array) {
     # setting the values
     $var_name = $pair[0].Trim() # trim spaces on the ends of the name
