@@ -687,6 +687,14 @@ def init_cli(verbose_output=None):
         except ImportError:
             pass
 
+    # Optional load `pyclang` for additional clang-tidy related functionalities
+    try:
+        from pyclang import idf_extension
+
+        extensions.append(('idf_clang_tidy_ext', idf_extension))
+    except ImportError:
+        pass
+
     for name, extension in extensions:
         try:
             all_actions = merge_action_lists(all_actions, extension.action_extensions(all_actions, project_dir))
