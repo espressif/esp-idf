@@ -61,7 +61,7 @@ There are a number of core dump related configuration options which user can cho
    The value is in ms.
 
 **Handling of UART core dumps in IDF Monitor (Components -> Core dump -> Delay before print to UART)**
-   
+
    The value is base64 encoded.
 
    * Decode and show summary (info_corefile)
@@ -211,3 +211,11 @@ Generic command syntax: ``espcoredump.py [options] command [args]``
    --print-mem, -m       Print memory dump. Only valid when info_corefile.
 
    **<prog>**            Path to program ELF file.
+
+Related Documents
+^^^^^^^^^^^^^^^^^
+
+.. toctree::
+    :maxdepth: 1
+
+    core_dump_internals

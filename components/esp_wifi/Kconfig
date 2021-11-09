@@ -1,6 +1,6 @@
 
 menu "Wi-Fi"
-    visible if !IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP8684 # TODO: remove 8684 after supported. IDF-3905
+    visible if !IDF_TARGET_ESP32H2
 
     config ESP32_WIFI_ENABLED
         bool

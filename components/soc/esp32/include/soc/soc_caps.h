@@ -70,6 +70,7 @@
 #define SOC_BT_SUPPORTED            1
 #define SOC_CLASSIC_BT_SUPPORTED    1
 #define SOC_PCNT_SUPPORTED          1
+#define SOC_WIFI_SUPPORTED          1
 #define SOC_SDIO_SLAVE_SUPPORTED    1
 #define SOC_TWAI_SUPPORTED          1
 #define SOC_EMAC_SUPPORTED          1

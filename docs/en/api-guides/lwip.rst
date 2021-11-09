@@ -395,7 +395,7 @@ Calling ``send()`` or ``sendto()`` repeatedly on a UDP socket may eventually fai
 
     Increasing the number of TX buffers in the :ref:`Wi-Fi <CONFIG_ESP32_WIFI_TX_BUFFER>` or :ref:`Ethernet <CONFIG_ETH_DMA_TX_BUFFER_NUM>` project configuration (as applicable) may also help.
 
-.. only:: not esp32
+.. only:: not esp32 and SOC_WIFI_SUPPORTED
 
     Increasing the number of TX buffers in the :ref:`Wi-Fi <CONFIG_ESP32_WIFI_TX_BUFFER>` project configuration may also help.
 
@@ -421,7 +421,9 @@ The :example_file:`wifi/iperf/sdkconfig.defaults` file for the iperf example con
 
 - If there is enough free IRAM, select :ref:`CONFIG_LWIP_IRAM_OPTIMIZATION` to improve TX/RX throughput
 
-If using a Wi-Fi network interface, please also refer to :ref:`wifi-buffer-usage`.
+.. only:: SOC_WIFI_SUPPORTED
+
+    If using a Wi-Fi network interface, please also refer to :ref:`wifi-buffer-usage`.
 
 Minimum latency
 ^^^^^^^^^^^^^^^
@@ -441,7 +443,10 @@ Most lwIP RAM usage is on-demand, as RAM is allocated from the heap as needed. T
 - Reducing :ref:`CONFIG_LWIP_TCPIP_RECVMBOX_SIZE`, :ref:`CONFIG_LWIP_TCP_RECVMBOX_SIZE` and :ref:`CONFIG_LWIP_UDP_RECVMBOX_SIZE` reduce memory usage at the expense of throughput, depending on usage.
 - Disable  :ref:`CONFIG_LWIP_IPV6` can save about 39 KB for firmware size and 2KB RAM when system power up and 7KB RAM when TCPIP stack running. If there is no requirement for supporting IPV6 then it can be disabled to save flash and RAM footprint.
 
-If using Wi-Fi, please also refer to :ref:`wifi-buffer-usage`.
+.. only:: SOC_WIFI_SUPPORTED
+
+    If using Wi-Fi, please also refer to :ref:`wifi-buffer-usage`.
+
 
 Peak Buffer Usage
 +++++++++++++++++
