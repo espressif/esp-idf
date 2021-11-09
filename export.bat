@@ -1,7 +1,6 @@
 @echo off
 if defined MSYSTEM (
-    echo This .bat file is for Windows CMD.EXE shell only. When using MSYS, run:
-    echo   . ./export.sh.
+    echo This .bat file is for Windows CMD.EXE shell only.
     goto :eof
 )
 

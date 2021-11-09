@@ -63,31 +63,11 @@ if __name__ == '__main__':
         elif os.environ.get('IDF_PYTHON_ENV_PATH'):
             # We are running inside a private virtual environment under IDF_TOOLS_PATH,
             # ask the user to run install.bat again.
-            if sys.platform == 'win32' and not os.environ.get('MSYSTEM'):
+            if sys.platform == 'win32':
                 install_script = 'install.bat'
             else:
                 install_script = 'install.sh'
             print('To install the missing packages, please run "%s"' % os.path.join(idf_path, install_script))  # type: ignore
-        elif sys.platform == 'win32' and os.environ.get('MSYSTEM', None) == 'MINGW32' and '/mingw32/bin/python' in sys.executable:
-            print("The recommended way to install a packages is via \"pacman\". Please run \"pacman -Ss <package_name>\" for"
-                  ' searching the package database and if found then '
-                  "\"pacman -S mingw-w64-i686-python-<package_name>\" for installing it.")
-            print("NOTE: You may need to run \"pacman -Syu\" if your package database is older and run twice if the "
-                  "previous run updated \"pacman\" itself.")
-            print('Please read https://github.com/msys2/msys2/wiki/Using-packages for further information about using '
-                  "\"pacman\"")
-            # Special case for MINGW32 Python, needs some packages
-            # via MSYS2 not via pip or system breaks...
-            for requirement in not_satisfied:
-                if requirement.startswith('cryptography'):
-                    print('WARNING: The cryptography package have dependencies on system packages so please make sure '
-                          "you run \"pacman -Syu\" followed by \"pacman -S mingw-w64-i686-python{}-cryptography\"."
-                          ''.format(sys.version_info[0],))
-                    continue
-                elif requirement.startswith('setuptools'):
-                    print("Please run the following command to install MSYS2's MINGW Python setuptools package:")
-                    print('pacman -S mingw-w64-i686-python-setuptools')
-                    continue
         else:
             print('Please follow the instructions found in the "Set up the tools" section of '
                   'ESP-IDF Getting Started Guide')
