@@ -1,8 +1,11 @@
+import http.server
+import multiprocessing
+import os
 import re
 import os
 import socket
-from threading import Thread
 import ssl
+import sys
 
 from tiny_test_fw import DUT
 import ttfw_idf
@@ -73,11 +76,16 @@ def get_my_ip():
     return my_ip
 
 
-def start_https_server(ota_image_dir, server_ip, server_port):
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument('-p', '--port', dest='port', type= int,
-    #     help= "Server Port", default= 8000)
-    # args = parser.parse_args()
+def get_server_status(host_ip, server_port):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_status = sock.connect_ex((host_ip, server_port))
+    sock.close()
+    if server_status == 0:
+        return True
+    return False
+
+
+def start_https_server(ota_image_dir, server_ip, server_port, server_file=None, key_file=None):
     os.chdir(ota_image_dir)
 
     server_file = os.path.join(ota_image_dir, "server_cert.pem")
@@ -115,9 +123,10 @@ def test_examples_protocol_simple_ota_example(env, extra_data):
     ttfw_idf.check_performance("simple_ota_bin_size", bin_size // 1024)
     # start test
     host_ip = get_my_ip()
-    thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, 8000))
-    thread1.daemon = True
-    thread1.start()
+    if (get_server_status(host_ip, 8000) is False):
+        thread1 = multiprocessing.Process(target=start_https_server, args=(dut1.app.binary_path, host_ip, 8000))
+        thread1.daemon = True
+        thread1.start()
     dut1.start_app()
     dut1.expect("Loaded app from partition at offset 0x10000", timeout=30)
     try:
@@ -125,13 +134,14 @@ def test_examples_protocol_simple_ota_example(env, extra_data):
         print("Connected to AP with IP: {}".format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
-        thread1.close()
+        thread1.terminate()
     dut1.expect("Starting OTA example", timeout=30)
 
     print("writing to device: {}".format("https://" + host_ip + ":8000/simple_ota.bin"))
     dut1.write("https://" + host_ip + ":8000/simple_ota.bin")
     dut1.expect("Loaded app from partition at offset 0x110000", timeout=60)
     dut1.expect("Starting OTA example", timeout=30)
+    thread1.terminate()
 
 
 if __name__ == '__main__':
