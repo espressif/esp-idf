@@ -904,6 +904,15 @@ error:
     return ret;
 }
 
+int esp_http_client_get_errno(esp_http_client_handle_t client)
+{
+    if (!client) {
+        ESP_LOGE(TAG, "Invalid client handle");
+        return -1;
+    }
+    return esp_transport_get_errno(client->transport);
+}
+
 esp_err_t esp_http_client_set_method(esp_http_client_handle_t client, esp_http_client_method_t method)
 {
     client->connection_info.method = method;
