@@ -1508,16 +1508,27 @@ def action_install_python_env(args):  # type: ignore
 
     if not os.path.exists(virtualenv_python):
         info('Creating a new Python environment in {}'.format(idf_python_env_path))
-
+      
         try:
-            import virtualenv  # noqa: F401
+            import virtualenv # noqa: F401
+            info('Using virtualenv to create virtual environment')
+            subprocess.check_call([sys.executable, '-m', 'virtualenv', '--seeder', 'pip',
+                                  idf_python_env_path], stdout=sys.stdout, stderr=sys.stderr)
         except ImportError:
-            info('Installing virtualenv')
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--user', 'virtualenv'],
-                                  stdout=sys.stdout, stderr=sys.stderr)
-
-        subprocess.check_call([sys.executable, '-m', 'virtualenv', '--seeder', 'pip', idf_python_env_path],
-                              stdout=sys.stdout, stderr=sys.stderr)
+            try:
+                import venv # noqa: F401
+                warn('Using venv to create virtual environment, you may prefer to install virtualenv')
+                subprocess.check_call([sys.executable, '-m', 'venv', idf_python_env_path],
+                                      stdout=sys.stdout, stderr=sys.stderr)
+            except ImportError:
+                info('Installing virtualenv locally')
+                subprocess.check_call([sys.executable, '-m', 'ensurepip'],
+                                      stdout=sys.stdout, stderr=sys.stderr)
+                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--user', 'virtualenv'],
+                                      stdout=sys.stdout, stderr=sys.stderr)
+                subprocess.check_call([sys.executable, '-m', 'virtualenv', '--seeder', 'pip',
+                                      idf_python_env_path], stdout=sys.stdout, stderr=sys.stderr)
+        
     run_args = [virtualenv_python, '-m', 'pip', 'install', '--no-warn-script-location']
     requirements_txt = os.path.join(global_idf_path, 'requirements.txt')
     run_args += ['-r', requirements_txt]
