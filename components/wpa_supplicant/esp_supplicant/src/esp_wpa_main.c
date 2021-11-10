@@ -226,10 +226,12 @@ static void wpa_sta_disconnected_cb(uint8_t reason_code)
 }
 
 #ifndef ROAMING_SUPPORT
-static inline void esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
+static inline int esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
 {
 	wpa_cb->wpa_sta_rx_mgmt = NULL;
 	wpa_cb->wpa_sta_profile_match = NULL;
+
+	return 0;
 }
 static inline void esp_supplicant_common_deinit(void)
 {
@@ -268,7 +270,11 @@ int esp_supplicant_init(void)
     wpa_cb->wpa_config_done = wpa_config_done;
 
     esp_wifi_register_wpa3_cb(wpa_cb);
-    esp_supplicant_common_init(wpa_cb);
+    ret = esp_supplicant_common_init(wpa_cb);
+
+    if (ret != 0) {
+        return ret;
+    }
 
     esp_wifi_register_wpa_cb_internal(wpa_cb);
 

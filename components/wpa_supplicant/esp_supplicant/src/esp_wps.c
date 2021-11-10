@@ -524,15 +524,17 @@ wps_build_ic_appie_wps_pr(void)
                  0, NULL);
     }
 
-    if (wps_ie) {
-        if (wpabuf_resize(&extra_ie, wpabuf_len(wps_ie)) == 0) {
-            wpabuf_put_buf(extra_ie, wps_ie);
-        } else {
-            wpabuf_free(wps_ie);
-            return;
-        }
-        wpabuf_free(wps_ie);
+    if (!wps_ie) {
+        return;
     }
+
+    if (wpabuf_resize(&extra_ie, wpabuf_len(wps_ie)) == 0) {
+        wpabuf_put_buf(extra_ie, wps_ie);
+    } else {
+        wpabuf_free(wps_ie);
+        return;
+    }
+    wpabuf_free(wps_ie);
 
     esp_wifi_set_appie_internal(WIFI_APPIE_WPS_PR, (uint8_t *)wpabuf_head(extra_ie), extra_ie->used, 0);
     wpabuf_free(extra_ie);
@@ -633,7 +635,8 @@ int wps_send_eap_identity_rsp(u8 id)
     ret = esp_wifi_get_assoc_bssid_internal(bssid);
     if (ret != 0) {
         wpa_printf(MSG_ERROR, "bssid is empty!");
-        return ESP_FAIL;
+        ret = ESP_FAIL;
+        goto _err;
     }
 
     wpabuf_put_data(eap_buf, sm->identity, sm->identity_len);
@@ -968,13 +971,6 @@ int wps_finish(void)
     }
 
     if (sm->wps->state == WPS_FINISHED) {
-        wifi_config_t *config = (wifi_config_t *)os_zalloc(sizeof(wifi_config_t));
-
-        if (config == NULL) {
-            wifi_event_sta_wps_fail_reason_t reason_code = WPS_FAIL_REASON_NORMAL;
-            esp_event_send_internal(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_FAILED, &reason_code, sizeof(reason_code), portMAX_DELAY);
-            return ESP_FAIL;
-        }
 
         wpa_printf(MSG_DEBUG, "wps finished------>");
         wps_set_status(WPS_STATUS_SUCCESS);
@@ -983,6 +979,14 @@ int wps_finish(void)
         ets_timer_disarm(&sm->wps_msg_timeout_timer);
 
         if (sm->ap_cred_cnt == 1) {
+            wifi_config_t *config = (wifi_config_t *)os_zalloc(sizeof(wifi_config_t));
+
+            if (config == NULL) {
+                wifi_event_sta_wps_fail_reason_t reason_code = WPS_FAIL_REASON_NORMAL;
+                esp_event_send_internal(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_FAILED, &reason_code, sizeof(reason_code), portMAX_DELAY);
+                return ESP_FAIL;
+            }
+
             memset(config, 0x00, sizeof(wifi_sta_config_t));
             memcpy(config->sta.ssid, sm->ssid[0], sm->ssid_len[0]);
             memcpy(config->sta.password, sm->key[0], sm->key_len[0]);
@@ -1381,6 +1385,9 @@ int wps_dev_init(void)
     return ESP_OK;
 
 _out:
+    if (!dev) {
+        return ret;
+    }
     if (dev->manufacturer) {
         os_free(dev->manufacturer);
     }
@@ -1559,7 +1566,7 @@ wifi_station_wps_init(void)
 
     gWpsSm = (struct wps_sm *)os_zalloc(sizeof(struct wps_sm));   /* alloc Wps_sm */
     if (!gWpsSm) {
-        goto _err;
+        goto _out;
     }
 
     sm = gWpsSm;
@@ -1644,10 +1651,8 @@ _err:
         wps_deinit();
         sm->wps = NULL;
     }
-    if (sm) {
-        os_free(gWpsSm);
-        gWpsSm = NULL;
-    }
+    os_free(gWpsSm);
+    gWpsSm = NULL;
     return ESP_FAIL;
 _out:
     return ESP_FAIL;
@@ -1700,10 +1705,8 @@ wifi_station_wps_deinit(void)
         wps_deinit();
         sm->wps = NULL;
     }
-    if (sm) {
-        os_free(gWpsSm);
-        gWpsSm = NULL;
-    }
+    os_free(gWpsSm);
+    gWpsSm = NULL;
 
     return ESP_OK;
 }
@@ -1941,7 +1944,7 @@ int wps_task_init(void)
     }
 
     os_bzero(s_wps_sig_cnt, SIG_WPS_NUM);
-    s_wps_queue = xQueueCreate(SIG_WPS_NUM, sizeof( void * ) );
+    s_wps_queue = xQueueCreate(SIG_WPS_NUM, sizeof(s_wps_queue));
     if (!s_wps_queue) {
         wpa_printf(MSG_ERROR, "wps task init: failed to alloc queue");
         goto _wps_no_mem;

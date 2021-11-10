@@ -38,7 +38,7 @@ enum SIG_SUPPLICANT {
 
 int esp_supplicant_post_evt(uint32_t evt_id, uint32_t data);
 void esp_get_tx_power(uint8_t *tx_power);
-void esp_supplicant_common_init(struct wpa_funcs *wpa_cb);
+int esp_supplicant_common_init(struct wpa_funcs *wpa_cb);
 void esp_supplicant_common_deinit(void);
 void esp_set_scan_ie(void);
 void esp_set_assoc_ie(void);
