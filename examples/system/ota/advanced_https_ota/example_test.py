@@ -1,4 +1,5 @@
 import http.server
+import multiprocessing
 import os
 import random
 import re
@@ -6,7 +7,6 @@ import socket
 import ssl
 import struct
 import subprocess
-from threading import Thread
 
 import ttfw_idf
 from tiny_test_fw import DUT
@@ -190,7 +190,7 @@ def test_examples_protocol_advanced_https_ota_example(env, extra_data):
     # start test
     host_ip = get_my_ip()
     if (get_server_status(host_ip, server_port) is False):
-        thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, server_port))
+        thread1 = multiprocessing.Process(target=start_https_server, args=(dut1.app.binary_path, host_ip, server_port))
         thread1.daemon = True
         thread1.start()
     dut1.start_app()
@@ -201,7 +201,7 @@ def test_examples_protocol_advanced_https_ota_example(env, extra_data):
             print('Connected to AP with IP: {}'.format(ip_address))
         except DUT.ExpectTimeout:
             raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
-            thread1.close()
+            thread1.terminate()
         dut1.expect('Starting Advanced OTA example', timeout=30)
 
         print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + bin_name))
@@ -209,6 +209,7 @@ def test_examples_protocol_advanced_https_ota_example(env, extra_data):
         dut1.expect('Loaded app from partition at offset', timeout=60)
         dut1.expect('Starting Advanced OTA example', timeout=30)
         dut1.reset()
+    thread1.terminate()
 
 
 @ttfw_idf.idf_example_test(env_tag='Example_WIFI')
@@ -244,7 +245,7 @@ def test_examples_protocol_advanced_https_ota_example_truncated_bin(env, extra_d
     # start test
     host_ip = get_my_ip()
     if (get_server_status(host_ip, server_port) is False):
-        thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, server_port))
+        thread1 = multiprocessing.Process(target=start_https_server, args=(dut1.app.binary_path, host_ip, server_port))
         thread1.daemon = True
         thread1.start()
     dut1.start_app()
@@ -254,12 +255,14 @@ def test_examples_protocol_advanced_https_ota_example_truncated_bin(env, extra_d
         print('Connected to AP with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+        thread1.terminate()
     dut1.expect('Starting Advanced OTA example', timeout=30)
 
     print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + truncated_bin_name))
     dut1.write('https://' + host_ip + ':' + str(server_port) + '/' + truncated_bin_name)
     dut1.expect('Image validation failed, image is corrupted', timeout=30)
     os.remove(binary_file)
+    thread1.terminate()
 
 
 @ttfw_idf.idf_example_test(env_tag='Example_WIFI')
@@ -294,7 +297,7 @@ def test_examples_protocol_advanced_https_ota_example_truncated_header(env, extr
     # start test
     host_ip = get_my_ip()
     if (get_server_status(host_ip, server_port) is False):
-        thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, server_port))
+        thread1 = multiprocessing.Process(target=start_https_server, args=(dut1.app.binary_path, host_ip, server_port))
         thread1.daemon = True
         thread1.start()
     dut1.start_app()
@@ -304,12 +307,14 @@ def test_examples_protocol_advanced_https_ota_example_truncated_header(env, extr
         print('Connected to AP with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+        thread1.terminate()
     dut1.expect('Starting Advanced OTA example', timeout=30)
 
     print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + truncated_bin_name))
     dut1.write('https://' + host_ip + ':' + str(server_port) + '/' + truncated_bin_name)
     dut1.expect('advanced_https_ota_example: esp_https_ota_read_img_desc failed', timeout=30)
     os.remove(binary_file)
+    thread1.terminate()
 
 
 @ttfw_idf.idf_example_test(env_tag='Example_WIFI')
@@ -343,7 +348,7 @@ def test_examples_protocol_advanced_https_ota_example_random(env, extra_data):
     # start test
     host_ip = get_my_ip()
     if (get_server_status(host_ip, server_port) is False):
-        thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, server_port))
+        thread1 = multiprocessing.Process(target=start_https_server, args=(dut1.app.binary_path, host_ip, server_port))
         thread1.daemon = True
         thread1.start()
     dut1.start_app()
@@ -353,12 +358,14 @@ def test_examples_protocol_advanced_https_ota_example_random(env, extra_data):
         print('Connected to AP with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+        thread1.terminate()
     dut1.expect('Starting Advanced OTA example', timeout=30)
 
     print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + random_bin_name))
     dut1.write('https://' + host_ip + ':' + str(server_port) + '/' + random_bin_name)
     dut1.expect('esp_ota_ops: OTA image has invalid magic byte', timeout=10)
     os.remove(binary_file)
+    thread1.terminate()
 
 
 @ttfw_idf.idf_example_test(env_tag='Example_WIFI')
@@ -423,10 +430,10 @@ def test_examples_protocol_advanced_https_ota_example_redirect_url(env, extra_da
     # start test
     host_ip = get_my_ip()
     if (get_server_status(host_ip, server_port) is False):
-        thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, server_port))
+        thread1 = multiprocessing.Process(target=start_https_server, args=(dut1.app.binary_path, host_ip, server_port))
         thread1.daemon = True
         thread1.start()
-    thread2 = Thread(target=start_redirect_server, args=(dut1.app.binary_path, host_ip, redirection_server_port, server_port))
+    thread2 = multiprocessing.Process(target=start_redirect_server, args=(dut1.app.binary_path, host_ip, redirection_server_port, server_port))
     thread2.daemon = True
     thread2.start()
     dut1.start_app()
@@ -436,8 +443,8 @@ def test_examples_protocol_advanced_https_ota_example_redirect_url(env, extra_da
         print('Connected to AP with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
-        thread1.close()
-        thread2.close()
+        thread1.terminate()
+        thread2.terminate()
     dut1.expect('Starting Advanced OTA example', timeout=30)
 
     print('writing to device: {}'.format('https://' + host_ip + ':' + str(redirection_server_port) + '/' + bin_name))
@@ -445,6 +452,8 @@ def test_examples_protocol_advanced_https_ota_example_redirect_url(env, extra_da
     dut1.expect('Loaded app from partition at offset', timeout=60)
     dut1.expect('Starting Advanced OTA example', timeout=30)
     dut1.reset()
+    thread1.terminate()
+    thread2.terminate()
 
 
 @ttfw_idf.idf_example_test(env_tag='Example_8Mflash_Ethernet')
@@ -481,7 +490,7 @@ def test_examples_protocol_advanced_https_ota_example_anti_rollback(env, extra_d
     # start test
     host_ip = get_my_ip()
     if (get_server_status(host_ip, server_port) is False):
-        thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, server_port))
+        thread1 = multiprocessing.Process(target=start_https_server, args=(dut1.app.binary_path, host_ip, server_port))
         thread1.daemon = True
         thread1.start()
     dut1.start_app()
@@ -492,6 +501,7 @@ def test_examples_protocol_advanced_https_ota_example_anti_rollback(env, extra_d
         print('Connected to AP with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+        thread1.terminate()
     dut1.expect('Starting Advanced OTA example', timeout=30)
 
     # Use originally generated image with secure_version=1
@@ -507,7 +517,8 @@ def test_examples_protocol_advanced_https_ota_example_anti_rollback(env, extra_d
     print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + anti_rollback_bin_name))
     dut1.write('https://' + host_ip + ':' + str(server_port) + '/' + anti_rollback_bin_name)
     dut1.expect('New firmware security version is less than eFuse programmed, 0 < 1', timeout=30)
-    os.remove(anti_rollback_bin_name)
+    os.remove(binary_file)
+    thread1.terminate()
 
 
 if __name__ == '__main__':
