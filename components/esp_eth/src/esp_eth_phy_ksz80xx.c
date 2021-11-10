@@ -27,6 +27,7 @@
 static const char *TAG = "ksz80xx";
 
 #define KSZ8041_MODEL_ID (0x11)
+#define KSZ8061_MODEL_ID (0x17)
 #define KSZ8081_MODEL_ID (0x16)
 
 /***************Vendor Specific Register***************/
@@ -54,6 +55,26 @@ typedef union {
     uint32_t val;
 } ksz8041_pc2r_reg_t;
 #define KSZ8041_PC2R_ERG_ADDR (0x1F)
+
+/**
+ * @brief PC1R(PHY Control 1 Register) for KSZ8061
+ *
+ */
+typedef union {
+    struct {
+        uint32_t op_mode : 3;         /* Operation Mode Indication */
+        uint32_t phy_iso : 1;         /* PHY in Isolate Mode*/
+        uint32_t energy_det : 1;      /* Presence of Signal on RX+/- Wire Pair */
+        uint32_t mdix_state : 1;      /* MDI/MDI-X State */
+        uint32_t reserved_6 : 1;      /* Reserved */
+        uint32_t polarity_status : 1; /* Polarity Status */
+        uint32_t lnk_status : 1;      /* Link Status */
+        uint32_t flow_ctl_cap : 1;    /* Flow Control Capable */
+        uint32_t reserved_15_10: 6;   /* Reserved */
+    };
+    uint32_t val;
+} ksz8061_pc1r_reg_t;
+#define KSZ8061_PC1R_REG_ADDR (0x1E)
 
 /**
  * @brief PC1R(PHY Control 1 Register) for KSZ8081
@@ -107,6 +128,10 @@ static esp_err_t ksz80xx_update_link_duplex_speed(phy_ksz80xx_t *ksz80xx)
                 ksz8041_pc2r_reg_t pc2r;
                 ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, KSZ8041_PC2R_ERG_ADDR, &(pc2r.val)), err, TAG, "read PC2R failed");
                 op_mode = pc2r.op_mode;
+            } else if (ksz80xx->vendor_model == KSZ8061_MODEL_ID) {
+                ksz8061_pc1r_reg_t pc1r;
+                ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, KSZ8061_PC1R_REG_ADDR, &(pc1r.val)), err, TAG, "read PC1R failed");
+                op_mode = pc1r.op_mode;
             } else if (ksz80xx->vendor_model == KSZ8081_MODEL_ID) {
                 ksz8081_pc1r_reg_t pc1r;
                 ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, KSZ8081_PC1R_REG_ADDR, &(pc1r.val)), err, TAG, "read PC1R failed");
@@ -402,6 +427,36 @@ esp_eth_phy_t *esp_eth_phy_new_ksz8041(const eth_phy_config_t *config)
     ksz8041->parent.loopback = ksz80xx_loopback;
     ksz8041->parent.del = ksz80xx_del;
     return &(ksz8041->parent);
+err:
+    return ret;
+}
+
+esp_eth_phy_t *esp_eth_phy_new_ksz8061(const eth_phy_config_t *config)
+{
+    esp_eth_phy_t *ret = NULL;
+    ESP_GOTO_ON_FALSE(config, NULL, err, TAG, "can't set phy config to null");
+    phy_ksz80xx_t *ksz8061 = calloc(1, sizeof(phy_ksz80xx_t));
+    ESP_GOTO_ON_FALSE(ksz8061, NULL, err, TAG, "calloc ksz80xx failed");
+    ksz8061->vendor_model = KSZ8061_MODEL_ID;
+    ksz8061->addr = config->phy_addr;
+    ksz8061->reset_gpio_num = config->reset_gpio_num;
+    ksz8061->reset_timeout_ms = config->reset_timeout_ms;
+    ksz8061->link_status = ETH_LINK_DOWN;
+    ksz8061->autonego_timeout_ms = config->autonego_timeout_ms;
+    ksz8061->parent.reset = ksz80xx_reset;
+    ksz8061->parent.reset_hw = ksz80xx_reset_hw;
+    ksz8061->parent.init = ksz80xx_init;
+    ksz8061->parent.deinit = ksz80xx_deinit;
+    ksz8061->parent.set_mediator = ksz80xx_set_mediator;
+    ksz8061->parent.negotiate = ksz80xx_negotiate;
+    ksz8061->parent.get_link = ksz80xx_get_link;
+    ksz8061->parent.pwrctl = ksz80xx_pwrctl;
+    ksz8061->parent.get_addr = ksz80xx_get_addr;
+    ksz8061->parent.set_addr = ksz80xx_set_addr;
+    ksz8061->parent.advertise_pause_ability = ksz80xx_advertise_pause_ability;
+    ksz8061->parent.loopback = ksz80xx_loopback;
+    ksz8061->parent.del = ksz80xx_del;
+    return &(ksz8061->parent);
 err:
     return ret;
 }
