@@ -429,6 +429,7 @@ esp_eth_phy_t *esp_eth_phy_new_ksz8081(const eth_phy_config_t *config)
     ksz8081->parent.get_addr = ksz80xx_get_addr;
     ksz8081->parent.set_addr = ksz80xx_set_addr;
     ksz8081->parent.advertise_pause_ability = ksz80xx_advertise_pause_ability;
+    ksz8081->parent.loopback = ksz80xx_loopback;
     ksz8081->parent.del = ksz80xx_del;
     return &(ksz8081->parent);
 err:
