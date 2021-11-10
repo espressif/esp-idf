@@ -45,10 +45,12 @@
 #undef taskEXIT_CRITICAL
 #undef taskENTER_CRITICAL_ISR
 #undef taskEXIT_CRITICAL_ISR
-#define taskENTER_CRITICAL( )     portENTER_CRITICAL( taskCRITICAL_MUX )
+#define taskENTER_CRITICAL( )           portENTER_CRITICAL( taskCRITICAL_MUX )
 #define taskEXIT_CRITICAL( )            portEXIT_CRITICAL( taskCRITICAL_MUX )
-#define taskENTER_CRITICAL_ISR( )     portENTER_CRITICAL_ISR( taskCRITICAL_MUX )
+#define taskENTER_CRITICAL_ISR( )       portENTER_CRITICAL_ISR( taskCRITICAL_MUX )
 #define taskEXIT_CRITICAL_ISR( )        portEXIT_CRITICAL_ISR( taskCRITICAL_MUX )
+#undef _REENT_INIT_PTR
+#define _REENT_INIT_PTR                 esp_reent_init
 #endif
 
 /* Lint e9021, e961 and e750 are suppressed as a MISRA exception justified
@@ -1102,11 +1104,8 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
 
     #if ( configUSE_NEWLIB_REENTRANT == 1 )
         {
-            // /* Initialise this task's Newlib reent structure. */
-            // _REENT_INIT_PTR( ( &( pxNewTCB->xNewLib_reent ) ) );
-
             /* Initialise this task's Newlib reent structure. */
-            esp_reent_init(&pxNewTCB->xNewLib_reent);
+            _REENT_INIT_PTR( ( &( pxNewTCB->xNewLib_reent ) ) );
         }
     #endif
 
