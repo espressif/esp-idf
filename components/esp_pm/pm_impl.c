@@ -536,6 +536,10 @@ static void IRAM_ATTR do_switch(pm_mode_t new_mode)
  */
 static void IRAM_ATTR update_ccompare(void)
 {
+#if CONFIG_PM_UPDATE_CCOMPARE_HLI_WORKAROUND
+    /* disable level 4 and below */
+    uint32_t irq_status = XTOS_SET_INTLEVEL(XCHAL_DEBUGLEVEL - 2);
+#endif
     uint32_t ccount = cpu_hal_get_cycle_count();
     uint32_t ccompare = XTHAL_GET_CCOMPARE(XT_TIMER_INDEX);
     if ((ccompare - CCOMPARE_MIN_CYCLES_IN_FUTURE) - ccount < UINT32_MAX / 2) {
@@ -546,6 +550,9 @@ static void IRAM_ATTR update_ccompare(void)
             XTHAL_SET_CCOMPARE(XT_TIMER_INDEX, new_ccompare);
         }
     }
+#if CONFIG_PM_UPDATE_CCOMPARE_HLI_WORKAROUND
+    XTOS_RESTORE_INTLEVEL(irq_status);
+#endif
 }
 #endif // CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
 
