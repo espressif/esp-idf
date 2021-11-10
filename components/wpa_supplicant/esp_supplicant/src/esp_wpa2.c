@@ -482,30 +482,24 @@ build_nak:
     if (resp == NULL) {
         return ESP_FAIL;
     }
-    ret = ESP_FAIL;
-
 send_resp:
     if (resp == NULL) {
         wpa_printf(MSG_ERROR, "Response build fail, return.");
         return ESP_FAIL;
     }
     ret = eap_sm_send_eapol(sm, resp);
-    if (ret == ESP_OK) {
-        if (resp != sm->lastRespData) {
-            wpabuf_free(sm->lastRespData);
-            sm->lastRespData = resp;
-        }
-    } else {
+    if (resp != sm->lastRespData) {
         wpabuf_free(sm->lastRespData);
-        sm->lastRespData = NULL;
+    }
+    if (ret != ESP_OK) {
         wpabuf_free(resp);
         resp = NULL;
-
         if (ret == WPA_ERR_INVALID_BSSID) {
             ret = WPA2_ENT_EAP_STATE_FAIL;
             wpa2_set_eap_state(WPA2_ENT_EAP_STATE_FAIL);
         }
     }
+    sm->lastRespData = resp;
 out:
     return ret;
 }
@@ -745,14 +739,16 @@ static int eap_peer_sm_init(void)
 
     sm = (struct eap_sm *)os_zalloc(sizeof(*sm));
     if (sm == NULL) {
-        return ESP_ERR_NO_MEM;
+        ret = ESP_ERR_NO_MEM;
+        return ret;
     }
 
+    gEapSm = sm;
     s_wpa2_data_lock = xSemaphoreCreateRecursiveMutex();
     if (!s_wpa2_data_lock) {
-        free(sm);
         wpa_printf(MSG_ERROR, "wpa2 eap_peer_sm_init: failed to alloc data lock");
-        return ESP_ERR_NO_MEM;
+        ret = ESP_ERR_NO_MEM;
+        goto _err;
     }
 
     wpa2_set_eap_state(WPA2_ENT_EAP_STATE_NOT_START);
@@ -761,53 +757,49 @@ static int eap_peer_sm_init(void)
     ret = eap_peer_blob_init(sm);
     if (ret) {
         wpa_printf(MSG_ERROR, "eap_peer_blob_init failed\n");
-        os_free(sm);
-        vSemaphoreDelete(s_wpa2_data_lock);
-        return ESP_FAIL;
+        ret = ESP_FAIL;
+        goto _err;
     }
 
     ret = eap_peer_config_init(sm, g_wpa_private_key_passwd, g_wpa_private_key_passwd_len);
     if (ret) {
         wpa_printf(MSG_ERROR, "eap_peer_config_init failed\n");
-        eap_peer_blob_deinit(sm);
-        os_free(sm);
-        vSemaphoreDelete(s_wpa2_data_lock);
-        return ESP_FAIL;
+        ret = ESP_FAIL;
+        goto _err;
     }
 
     sm->ssl_ctx = tls_init();
     if (sm->ssl_ctx == NULL) {
-        wpa_printf(MSG_WARNING, "SSL: Failed to initialize TLS "
-                   "context.");
-        eap_peer_blob_deinit(sm);
-        eap_peer_config_deinit(sm);
-        os_free(sm);
-        vSemaphoreDelete(s_wpa2_data_lock);
-        return ESP_FAIL;
+        wpa_printf(MSG_WARNING, "SSL: Failed to initialize TLS context.");
+        ret = ESP_FAIL;
+        goto _err;
     }
 
     wpa2_rxq_init();
 
     gEapSm = sm;
 #ifdef USE_WPA2_TASK
-    s_wpa2_queue = xQueueCreate(SIG_WPA2_MAX, sizeof( void * ) );
-    xTaskCreate(wpa2_task, "wpa2T", WPA2_TASK_STACK_SIZE, NULL, 2, s_wpa2_task_hdl);
+    s_wpa2_queue = xQueueCreate(SIG_WPA2_MAX, sizeof(s_wpa2_queue));
+    ret = xTaskCreate(wpa2_task, "wpa2T", WPA2_TASK_STACK_SIZE, NULL, 2, s_wpa2_task_hdl);
+    if (ret != pdPASS) {
+        wpa_printf(MSG_ERROR, "wps enable: failed to create task");
+        ret = ESP_FAIL;
+        goto _err;
+    }
     s_wifi_wpa2_sync_sem = xSemaphoreCreateCounting(1, 0);
     if (!s_wifi_wpa2_sync_sem) {
-        vQueueDelete(s_wpa2_queue);
-        s_wpa2_queue = NULL;
-        eap_peer_blob_deinit(sm);
-        eap_peer_config_deinit(sm);
-        os_free(sm);
-        vSemaphoreDelete(s_wpa2_data_lock);
         wpa_printf(MSG_ERROR, "WPA2: failed create wifi wpa2 task sync sem");
-        return ESP_FAIL;
+        ret = ESP_FAIL;
+        goto _err;
     }
 
     wpa_printf(MSG_INFO, "wpa2_task prio:%d, stack:%d\n", 2, WPA2_TASK_STACK_SIZE);
-
 #endif
     return ESP_OK;
+
+_err:
+    eap_peer_sm_deinit();
+    return ret;
 }
 
 /**
@@ -840,8 +832,8 @@ static void eap_peer_sm_deinit(void)
 
     if (s_wifi_wpa2_sync_sem) {
         vSemaphoreDelete(s_wifi_wpa2_sync_sem);
+        s_wifi_wpa2_sync_sem = NULL;
     }
-    s_wifi_wpa2_sync_sem = NULL;
 
     if (s_wpa2_data_lock) {
         vSemaphoreDelete(s_wpa2_data_lock);
@@ -849,6 +841,10 @@ static void eap_peer_sm_deinit(void)
         wpa_printf(MSG_DEBUG, "wpa2 eap_peer_sm_deinit: free data lock");
     }
 
+    if (s_wpa2_queue) {
+        vQueueDelete(s_wpa2_queue);
+        s_wpa2_queue = NULL;
+    }
     os_free(sm);
     gEapSm = NULL;
 }

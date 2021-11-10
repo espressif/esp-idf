@@ -833,7 +833,6 @@ components/esp_wifi/include/smartconfig_ack.h
 components/esp_wifi/src/lib_printf.c
 components/esp_wifi/src/mesh_event.c
 components/esp_wifi/src/smartconfig.c
-components/esp_wifi/src/smartconfig_ack.c
 components/esp_wifi/test/test_wifi_init.c
 components/espcoredump/corefile/__init__.py
 components/espcoredump/corefile/_parse_soc_header.py
@@ -2272,7 +2271,6 @@ components/wpa_supplicant/esp_supplicant/include/esp_dpp.h
 components/wpa_supplicant/esp_supplicant/include/esp_rrm.h
 components/wpa_supplicant/esp_supplicant/include/esp_wpa.h
 components/wpa_supplicant/esp_supplicant/include/esp_wps.h
-components/wpa_supplicant/esp_supplicant/src/esp_dpp.c
 components/wpa_supplicant/esp_supplicant/src/esp_dpp_i.h
 components/wpa_supplicant/esp_supplicant/src/esp_scan_i.h
 components/wpa_supplicant/esp_supplicant/src/esp_wpa3.c
@@ -2342,10 +2340,7 @@ components/wpa_supplicant/src/crypto/crypto_internal-cipher.c
 components/wpa_supplicant/src/crypto/crypto_internal-modexp.c
 components/wpa_supplicant/src/crypto/crypto_internal-rsa.c
 components/wpa_supplicant/src/crypto/crypto_internal.c
-components/wpa_supplicant/src/crypto/crypto_mbedtls-bignum.c
-components/wpa_supplicant/src/crypto/crypto_mbedtls-ec.c
 components/wpa_supplicant/src/crypto/crypto_mbedtls-rsa.c
-components/wpa_supplicant/src/crypto/crypto_mbedtls.c
 components/wpa_supplicant/src/crypto/des-internal.c
 components/wpa_supplicant/src/crypto/des_i.h
 components/wpa_supplicant/src/crypto/dh_group5.c
@@ -2481,7 +2476,6 @@ components/wpa_supplicant/src/wps/wps_registrar.c
 components/wpa_supplicant/src/wps/wps_validate.c
 components/wpa_supplicant/test/test_crypto.c
 components/wpa_supplicant/test/test_dpp.c
-components/wpa_supplicant/test/test_sae.c
 components/xtensa/eri.c
 components/xtensa/esp32/include/xtensa/config/core-isa.h
 components/xtensa/esp32/include/xtensa/config/core-matmap.h
