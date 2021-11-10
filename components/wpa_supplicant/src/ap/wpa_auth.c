@@ -1585,7 +1585,7 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
     sm->pending_1_of_4_timeout = 0;
     eloop_cancel_timeout(wpa_send_eapol_timeout, sm->wpa_auth, sm);
 
-    if (wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt)) {
+    if (wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt) && sm->PMK != pmk) {
         /* PSK may have changed from the previous choice, so update
          * state machine data based on whatever PSK was selected here.
          */
