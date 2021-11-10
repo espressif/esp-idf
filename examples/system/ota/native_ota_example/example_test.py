@@ -1,8 +1,10 @@
-import re
+import http.server
+import multiprocessing
 import os
+import random
+import re
 import struct
 import socket
-from threading import Thread
 import ssl
 
 from tiny_test_fw import DUT
@@ -164,7 +166,7 @@ def test_examples_protocol_native_ota_example(env, extra_data):
     # start test
     host_ip = get_my_ip()
     if (get_server_status(host_ip, server_port) is False):
-        thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, server_port))
+        thread1 = multiprocessing.Process(target=start_https_server, args=(dut1.app.binary_path, host_ip, server_port))
         thread1.daemon = True
         thread1.start()
     dut1.start_app()
@@ -175,14 +177,15 @@ def test_examples_protocol_native_ota_example(env, extra_data):
             print("Connected to AP with IP: {}".format(ip_address))
         except DUT.ExpectTimeout:
             raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
-            thread1.close()
-        dut1.expect("Starting OTA example", timeout=30)
+            thread1.terminate()
+        dut1.expect('Starting OTA example', timeout=30)
 
         print("writing to device: {}".format("https://" + host_ip + ":" + str(server_port) + "/" + bin_name))
         dut1.write("https://" + host_ip + ":" + str(server_port) + "/" + bin_name)
         dut1.expect("Loaded app from partition at offset", timeout=60)
         dut1.expect("Starting OTA example", timeout=30)
         dut1.reset()
+    thread1.terminate()
 
 
 @ttfw_idf.idf_example_test(env_tag="Example_WIFI")
@@ -219,7 +222,7 @@ def test_examples_protocol_native_ota_example_truncated_bin(env, extra_data):
     # start test
     host_ip = get_my_ip()
     if (get_server_status(host_ip, server_port) is False):
-        thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, server_port))
+        thread1 = multiprocessing.Process(target=start_https_server, args=(dut1.app.binary_path, host_ip, server_port))
         thread1.daemon = True
         thread1.start()
     dut1.start_app()
@@ -229,12 +232,14 @@ def test_examples_protocol_native_ota_example_truncated_bin(env, extra_data):
         print("Connected to AP with IP: {}".format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
-    dut1.expect("Starting OTA example", timeout=30)
+        thread1.terminate()
+    dut1.expect('Starting OTA example', timeout=30)
 
     print("writing to device: {}".format("https://" + host_ip + ":" + str(server_port) + "/" + truncated_bin_name))
     dut1.write("https://" + host_ip + ":" + str(server_port) + "/" + truncated_bin_name)
     dut1.expect("native_ota_example: Image validation failed, image is corrupted", timeout=20)
     os.remove(binary_file)
+    thread1.terminate()
 
 
 @ttfw_idf.idf_example_test(env_tag="Example_WIFI")
@@ -270,7 +275,7 @@ def test_examples_protocol_native_ota_example_truncated_header(env, extra_data):
     # start test
     host_ip = get_my_ip()
     if (get_server_status(host_ip, server_port) is False):
-        thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, server_port))
+        thread1 = multiprocessing.Process(target=start_https_server, args=(dut1.app.binary_path, host_ip, server_port))
         thread1.daemon = True
         thread1.start()
     dut1.start_app()
@@ -280,12 +285,14 @@ def test_examples_protocol_native_ota_example_truncated_header(env, extra_data):
         print("Connected to AP with IP: {}".format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
-    dut1.expect("Starting OTA example", timeout=30)
+        thread1.terminate()
+    dut1.expect('Starting OTA example', timeout=30)
 
     print("writing to device: {}".format("https://" + host_ip + ":" + str(server_port) + "/" + truncated_bin_name))
     dut1.write("https://" + host_ip + ":" + str(server_port) + "/" + truncated_bin_name)
     dut1.expect("native_ota_example: received package is not fit len", timeout=20)
     os.remove(binary_file)
+    thread1.terminate()
 
 
 @ttfw_idf.idf_example_test(env_tag="Example_WIFI")
@@ -320,7 +327,7 @@ def test_examples_protocol_native_ota_example_random(env, extra_data):
     # start test
     host_ip = get_my_ip()
     if (get_server_status(host_ip, server_port) is False):
-        thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, server_port))
+        thread1 = multiprocessing.Process(target=start_https_server, args=(dut1.app.binary_path, host_ip, server_port))
         thread1.daemon = True
         thread1.start()
     dut1.start_app()
@@ -330,12 +337,14 @@ def test_examples_protocol_native_ota_example_random(env, extra_data):
         print("Connected to AP with IP: {}".format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
-    dut1.expect("Starting OTA example", timeout=30)
+        thread1.terminate()
+    dut1.expect('Starting OTA example', timeout=30)
 
     print("writing to device: {}".format("https://" + host_ip + ":" + str(server_port) + "/" + random_bin_name))
     dut1.write("https://" + host_ip + ":" + str(server_port) + "/" + random_bin_name)
     dut1.expect("esp_ota_ops: OTA image has invalid magic byte", timeout=20)
     os.remove(binary_file)
+    thread1.terminate()
 
 
 @ttfw_idf.idf_example_test(env_tag="Example_WIFI")
