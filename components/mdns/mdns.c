@@ -1094,6 +1094,7 @@ static uint8_t _mdns_append_service_ptr_answers(uint8_t *packet, uint16_t *index
                                 service->proto, flush, bye) <= 0) {
         return appended_answers;
     }
+    appended_answers++;
 
     mdns_subtype_t *subtype = service->subtype;
     while (subtype) {
