@@ -111,6 +111,11 @@ typedef enum {
 #define D2WD_PSRAM_CLK_IO          CONFIG_D2WD_PSRAM_CLK_IO  // Default value is 9
 #define D2WD_PSRAM_CS_IO           CONFIG_D2WD_PSRAM_CS_IO   // Default value is 10
 
+// There is no reason to change the pin of an embedded psram.
+// So define the number of pin directly, instead of configurable.
+#define D0WDR2_V3_PSRAM_CLK_IO    6
+#define D0WDR2_V3_PSRAM_CS_IO     16
+
 // For ESP32-PICO chip, the psram share clock with flash. The flash clock pin is fixed, which is IO6.
 #define PICO_PSRAM_CLK_IO          6
 #define PICO_PSRAM_CS_IO           CONFIG_PICO_PSRAM_CS_IO   // Default value is 10
@@ -842,6 +847,16 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
         ESP_EARLY_LOGI(TAG, "This chip is ESP32-D0WD");
         psram_io.psram_clk_io = D0WD_PSRAM_CLK_IO;
         psram_io.psram_cs_io  = D0WD_PSRAM_CS_IO;
+    } else if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32D0WDR2V3){
+        ESP_EARLY_LOGI(TAG, "This chip is ESP32-D0WDR2-V3");
+        rtc_vddsdio_config_t cfg = rtc_vddsdio_get_config();
+        if (cfg.tieh != RTC_VDDSDIO_TIEH_3_3V) {
+            ESP_EARLY_LOGE(TAG, "VDDSDIO is not 3.3V");
+            return ESP_FAIL;
+        }
+        s_clk_mode = PSRAM_CLK_MODE_NORM;
+        psram_io.psram_clk_io = D0WDR2_V3_PSRAM_CLK_IO;
+        psram_io.psram_cs_io  = D0WDR2_V3_PSRAM_CS_IO;
     } else {
         ESP_EARLY_LOGE(TAG, "Not a valid or known package id: %d", pkg_ver);
         abort();

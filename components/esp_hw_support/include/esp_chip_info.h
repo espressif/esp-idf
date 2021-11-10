@@ -33,6 +33,7 @@ typedef enum {
 #define CHIP_FEATURE_BLE            BIT(4)      //!< Chip has Bluetooth LE
 #define CHIP_FEATURE_BT             BIT(5)      //!< Chip has Bluetooth Classic
 #define CHIP_FEATURE_IEEE802154     BIT(6)      //!< Chip has IEEE 802.15.4
+#define CHIP_FEATURE_EMB_PSRAM      BIT(7)      //!< Chip has embedded psram
 
 /**
  * @brief The structure represents information about the chip
