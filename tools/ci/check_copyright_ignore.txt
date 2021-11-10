@@ -3072,7 +3072,6 @@ examples/cxx/rtti/main/rtti_example_main.cpp
 examples/ethernet/basic/main/ethernet_example_main.c
 examples/ethernet/enc28j60/components/eth_enc28j60/enc28j60.h
 examples/ethernet/enc28j60/components/eth_enc28j60/esp_eth_enc28j60.h
-examples/ethernet/enc28j60/components/eth_enc28j60/esp_eth_mac_enc28j60.c
 examples/ethernet/enc28j60/components/eth_enc28j60/esp_eth_phy_enc28j60.c
 examples/ethernet/enc28j60/main/enc28j60_example_main.c
 examples/ethernet/eth2ap/main/ethernet_example_main.c

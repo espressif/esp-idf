@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <string.h>
 #include <stdlib.h>
 #include <sys/cdefs.h>
@@ -613,8 +605,8 @@ static esp_err_t enc28j60_setup_default(emac_enc28j60_t *emac)
     MAC_CHECK(enc28j60_register_write(emac, ENC28J60_ETXSTH, (ENC28J60_BUF_TX_START & 0xFF00) >> 8) == ESP_OK,
               "write ETXSTH failed", out, ESP_FAIL);
 
-    // set up default filter mode: (unicast OR broadcast) AND crc valid
-    MAC_CHECK(enc28j60_register_write(emac, ENC28J60_ERXFCON, ERXFCON_UCEN | ERXFCON_CRCEN | ERXFCON_BCEN) == ESP_OK,
+    // set up default filter mode: (unicast OR broadcast OR multicast) AND crc valid
+    MAC_CHECK(enc28j60_register_write(emac, ENC28J60_ERXFCON, ERXFCON_UCEN | ERXFCON_CRCEN | ERXFCON_BCEN | ERXFCON_MCEN) == ESP_OK,
               "write ERXFCON failed", out, ESP_FAIL);
 
     // enable MAC receive, enable pause control frame on Tx and Rx path
