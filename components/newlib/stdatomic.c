@@ -36,15 +36,15 @@
 
 #if SOC_CPU_CORES_NUM == 1
 
-// Single core SoC: atomics can be implemented using portENTER_CRITICAL_NESTED
-// and portEXIT_CRITICAL_NESTED, which disable and enable interrupts.
+// Single core SoC: atomics can be implemented using portSET_INTERRUPT_MASK_FROM_ISR
+// and portCLEAR_INTERRUPT_MASK_FROM_ISR, which disables and enables interrupts.
 #define _ATOMIC_ENTER_CRITICAL() ({ \
-    unsigned state = portENTER_CRITICAL_NESTED(); \
+    unsigned state = portSET_INTERRUPT_MASK_FROM_ISR(); \
     state; \
 })
 
 #define _ATOMIC_EXIT_CRITICAL(state)   do { \
-    portEXIT_CRITICAL_NESTED(state); \
+    portCLEAR_INTERRUPT_MASK_FROM_ISR(state); \
     } while (0)
 
 #else // SOC_CPU_CORES_NUM

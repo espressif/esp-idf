@@ -155,15 +155,20 @@ void vPortAssertIfInISR(void);
 BaseType_t xPortInterruptedFromISRContext(void);
 
 /**
- * @brief Disable interrupts in a nested manner
+ * @brief Disable interrupts in a nested manner (meant to be called from ISRs)
  *
- * - Cleaner solution allows nested interrupts disabling and restoring via local registers or stack.
- * - They can be called from interrupts too.
- * - WARNING Only applies to current CPU.
- * @note [refactor-todo] Define this as portSET_INTERRUPT_MASK_FROM_ISR() instead
- * @return unsigned Previous interrupt state
+ * @warning Only applies to current CPU.
+ * @return UBaseType_t Previous interrupt level
  */
-static inline unsigned __attribute__((always_inline)) portENTER_CRITICAL_NESTED(void);
+static inline UBaseType_t xPortSetInterruptMaskFromISR(void);
+
+/**
+ * @brief Reenable interrupts in a nested manner (meant to be called from ISRs)
+ *
+ * @warning Only applies to current CPU.
+ * @param prev_level Previous interrupt level
+ */
+static inline void vPortClearInterruptMaskFromISR(UBaseType_t prev_level);
 
 /* ---------------------- Spinlocks ------------------------
  * - Modifications made to critical sections to support SMP
@@ -416,8 +421,6 @@ static inline BaseType_t IRAM_ATTR xPortGetCoreID(void);
 
 // --------------------- Interrupts ------------------------
 
-#define portEXIT_CRITICAL_NESTED(state)     do { portbenchmarkINTERRUPT_RESTORE(state); XTOS_RESTORE_JUST_INTLEVEL(state); } while (0)
-
 /**
  * - Only applies to current core
  * - These cannot be nested. They should be used with a lot of care and cannot be called from interrupt level.
@@ -430,8 +433,8 @@ static inline BaseType_t IRAM_ATTR xPortGetCoreID(void);
 /**
  * ISR versions to enable/disable interrupts
  */
-#define portSET_INTERRUPT_MASK_FROM_ISR()            portENTER_CRITICAL_NESTED()
-#define portCLEAR_INTERRUPT_MASK_FROM_ISR(state)     portEXIT_CRITICAL_NESTED(state)
+#define portSET_INTERRUPT_MASK_FROM_ISR()                   xPortSetInterruptMaskFromISR()
+#define portCLEAR_INTERRUPT_MASK_FROM_ISR(prev_level)       vPortClearInterruptMaskFromISR(prev_level)
 
 #define portASSERT_IF_IN_ISR() vPortAssertIfInISR()
 
@@ -530,11 +533,17 @@ static inline BaseType_t IRAM_ATTR xPortGetCoreID(void);
 
 // --------------------- Interrupts ------------------------
 
-static inline unsigned portENTER_CRITICAL_NESTED(void)
+static inline UBaseType_t xPortSetInterruptMaskFromISR(void)
 {
-    unsigned state = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL);
+    UBaseType_t prev_int_level = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL);
     portbenchmarkINTERRUPT_DISABLE();
-    return state;
+    return prev_int_level;
+}
+
+static inline void vPortClearInterruptMaskFromISR(UBaseType_t prev_level)
+{
+    portbenchmarkINTERRUPT_RESTORE(prev_level);
+    XTOS_RESTORE_JUST_INTLEVEL(prev_level);
 }
 
 // ---------------------- Spinlocks ------------------------
@@ -736,6 +745,14 @@ bool xPortcheckValidStackMem(const void *ptr);
 
 #define portVALID_TCB_MEM(ptr) xPortCheckValidTCBMem(ptr)
 #define portVALID_STACK_MEM(ptr) xPortcheckValidStackMem(ptr)
+
+
+
+/* ---------------------------------------------------- Deprecate ------------------------------------------------------
+ * - Pull in header containing deprecated macros here
+ * ------------------------------------------------------------------------------------------------------------------ */
+
+#include "portmacro_deprecated.h"
 
 #ifdef __cplusplus
 }
