@@ -67,7 +67,6 @@ tools/ci/test_build_system_cmake.sh
 tools/ci/test_check_kconfigs.py
 tools/ci/test_configure_ci_environment.sh
 tools/ci/test_reproducible_build.sh
-tools/cmake/convert_to_cmake.py
 tools/docker/entrypoint.sh
 tools/docker/hooks/build
 tools/esp_app_trace/logtrace_proc.py
@@ -109,4 +108,3 @@ tools/test_mkdfu/test_mkdfu.py
 tools/test_mkuf2/test_mkuf2.py
 tools/unit-test-app/tools/get_available_configs.sh
 tools/unit-test-app/unit_test.py
-tools/windows/eclipse_make.sh

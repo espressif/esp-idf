@@ -10,10 +10,6 @@ function get_ver_from_header() {
     grep -E "^#define ${1}" components/esp_common/include/esp_idf_version.h | awk '{print $3;}'
 }
 
-function get_ver_from_make() {
-    grep -E "^${1} :=" make/version.mk | awk '{print $3;}'
-}
-
 function get_ver_from_cmake() {
     grep -E "^set\(${1}" tools/cmake/version.cmake | sed -En "s/set\(${1} ([0-9])\)/\1/p"
 }
@@ -22,11 +18,6 @@ header_ver_major=$(get_ver_from_header ESP_IDF_VERSION_MAJOR)
 header_ver_minor=$(get_ver_from_header ESP_IDF_VERSION_MINOR)
 header_ver_patch=$(get_ver_from_header ESP_IDF_VERSION_PATCH)
 version_from_header="${header_ver_major}.${header_ver_minor}.${header_ver_patch}"
-
-make_ver_major=$(get_ver_from_make IDF_VERSION_MAJOR)
-make_ver_minor=$(get_ver_from_make IDF_VERSION_MINOR)
-make_ver_patch=$(get_ver_from_make IDF_VERSION_PATCH)
-version_from_make="${make_ver_major}.${make_ver_minor}.${make_ver_patch}"
 
 cmake_ver_major=$(get_ver_from_cmake IDF_VERSION_MAJOR)
 cmake_ver_minor=$(get_ver_from_cmake IDF_VERSION_MINOR)
@@ -42,17 +33,11 @@ fi
 version_from_git="${BASH_REMATCH[1]}.${BASH_REMATCH[2]}.${BASH_REMATCH[4]:-0}"
 
 echo "From esp_idf_version.h: ${version_from_header}"
-echo "From version.mk: ${version_from_make}"
 echo "From version.cmake: ${version_from_cmake}"
 echo "From git describe: ${version_from_git}"
 
 if [[ "${version_from_header}" != "${version_from_git}" ]]; then
     echo "esp_idf_version.h does not match 'git describe' output"
-    exit 1
-fi
-
-if [[ "${version_from_make}" != "${version_from_git}" ]]; then
-    echo "version.mk does not match 'git describe' output"
     exit 1
 fi
 

@@ -42,49 +42,21 @@ spiffsgen.py
 
 镜像生成后，用户可以使用 ``esptool.py`` 或 ``parttool.py`` 烧录镜像。
 
-用户可以在命令行或脚本中手动单独调用 ``spiffsgen.py``，也可以直接从构建系统调用 ``spiffs_create_partition_image`` 来使用 ``spiffsgen.py``。
-
-在 Make 构建系统中运行::
-
-    SPIFFS_IMAGE_FLASH_IN_PROJECT := ...
-    SPIFFS_IMAGE_DEPENDS := ...
-    $(eval $(call spiffs_create_partition_image,<partition>,<base_dir>))
-
-在 CMake 构建系统中运行::
+用户可以在命令行或脚本中手动单独调用 ``spiffsgen.py``，也可以直接从构建系统调用 ``spiffs_create_partition_image`` 来使用 ``spiffsgen.py``::
 
     spiffs_create_partition_image(<partition> <base_dir> [FLASH_IN_PROJECT] [DEPENDS dep dep dep...])
 
 在构建系统中使用 ``spiffsgen.py`` 更为方便，构建配置会自动传递给 ``spiffsgen.py`` 工具，确保生成的镜像可用于构建。比如，单独调用 ``spiffsgen.py`` 时需要用到 *image_size* 参数，但在构建系统中调用 ``spiffs_create_partition_image`` 时，仅需要 *partition* 参数，镜像大小将直接从工程分区表中获取。
 
-Make 构建系统和 CMake 构建系统结构有所不同，请注意以下几点：
+使用 ``spiffs_create_partition_image``，必须从组件 CMakeLists.txt 文件调用。
 
-- 在 Make 构建系统中使用 ``spiffs_create_partition_image``，需从工程 Makefile 中调用；
-- 在 CMake 构建系统中使用 ``spiffs_create_partition_image``，需从组件 CMakeLists.txt 文件调用。
-
-用户也可以指定 ``FLASH_IN_PROJECT``，然后使用 ``idf.py flash`` 或 ``make flash`` 将镜像与应用程序二进制文件、分区表等一起自动烧录至设备，例如：
-
-在 Make 构建系统中运行::
-
-    SPIFFS_IMAGE_FLASH_IN_PROJECT := 1
-    $(eval $(call spiffs_create_partition_image,<partition>,<base_dir>))
-
-在 CMake 构建系统中运行::
+用户也可以指定 ``FLASH_IN_PROJECT``，然后使用 ``idf.py flash`` 将镜像与应用程序二进制文件、分区表等一起自动烧录至设备，例如::
 
     spiffs_create_partition_image(my_spiffs_partition my_folder FLASH_IN_PROJECT)
 
 不指定 FLASH_IN_PROJECT/SPIFFS_IMAGE_FLASH_IN_PROJECT 也可以生成镜像，但须使用 ``esptool.py``、``parttool.py`` 或自定义构建系统目标手动烧录。
 
-有时基本目录中的内容是在构建时生成的，用户可以使用 DEPENDS/SPIFFS_IMAGE_DEPENDS 指定目标，因此可以在生成镜像之前执行此目标。
-
-在 Make 构建系统中运行::
-
-    dep:
-        ...
-
-    SPIFFS_IMAGE_DEPENDS := dep
-    $(eval $(call spiffs_create_partition_image,<partition>,<base_dir>))
-
-在 CMake 构建系统中运行::
+有时基本目录中的内容是在构建时生成的，用户可以使用 DEPENDS/SPIFFS_IMAGE_DEPENDS 指定目标，因此可以在生成镜像之前执行此目标::
 
     add_custom_target(dep COMMAND ...)
 
@@ -137,7 +109,6 @@ mkspiffs
 -------------------
 
 :example:`storage/spiffs` 目录下提供了 SPIFFS 应用示例。该示例初始化并挂载了一个 SPIFFS 分区，然后使用 POSIX 和 C 库 API 写入和读取数据。请参考 ``example`` 目录下的 README.md 文件，获取详细信息。
-
 
 高级 API 参考
 ------------------------

@@ -481,20 +481,16 @@ ESP-IDF 中 Gcov 和 Gcovr 应用
 
 为了获得项目中的代码覆盖率数据，项目中的一个或多个源文件必须用 ``--coverage`` 选项进行编译。在 ESP-IDF 中，这可以在组件级或单个源文件级实现：
 
-使组件中的所有源文件用 ``--coverage`` 选项进行编译：
-    - 如果使用 CMake，则在组件的 ``CMakeLists.txt`` 文件中添加 ``target_compile_options(${COMPONENT_LIB} PRIVATE --coverage)``。
-    - 如果使用 Make，则在组件的 ``component.mk`` 文件中添加 ``CFLAGS += --coverage``。
+在组件的 CMakeLists.txt 文件中添加 target_compile_options(${COMPONENT_LIB} PRIVATE --coverage) 可将组件中的所有源文件用 --coverage 选项进行编译。
 
-使同一组件中选定的一些源文件（如 ``sourec1.c`` 和 ``source2.c``）通过 ``--coverage`` 选项编译：
-    - 如果使用 CMake，则在组件的 ``CMakeLists.txt`` 文件中添加 ``set_source_files_properties(source1.c source2.c PROPERTIES COMPILE_FLAGS --coverage)``。
-    - 如果使用 Make，则在组件的 ``component.mk`` 文件中添加 ``source1.o: CFLAGS += --coverage`` 和 ``source2.o: CFLAGS += --coverage``。
+在组件的 CMakeLists.txt 文件中添加 set_source_files_properties(source1.c source2.c PROPERTIES COMPILE_FLAGS --coverage) 可将同一组件中选定的一些源文件（如 sourec1.c 和 source2.c）通过 --coverage 选项编译。
 
 当一个源文件用 ``--coverage`` 选项编译时（例如 ``gcov_example.c``），编译器会在项目的构建目录下生成 ``gcov_example.gcno`` 文件。
 
 项目配置
 ~~~~~~~~~~~~~~~~~
 
-在构建一个有源代码覆盖的项目之前，请通过运行 ``idf.py menuconfig``（如使用传统的 Make 构建系统，则启用 ``make menuconfig``）启用以下项目配置选项。
+在构建一个有源代码覆盖的项目之前，请通过运行 ``idf.py menuconfig`` 启用以下项目配置选项。
 
 - 通过 :ref:`CONFIG_APPTRACE_DESTINATION` 选项选择 *Trace Memory* 来启用应用程序跟踪模块。
 - 通过 :ref:`CONFIG_APPTRACE_GCOV_ENABLE` 选项启用 Gcov 主机。
@@ -508,7 +504,7 @@ ESP-IDF 中 Gcov 和 Gcovr 应用
 
 覆盖率数据的转储通过 OpenOCD 进行（关于如何设置和运行 OpenOCD，请参考 :doc:`JTAG调试 <../api-guides/jtag-debugging/index>`）。由于是通过向 OpenOCD 发出命令来触发转储，因此必须打开 telnet 会话来向 OpenOCD 发出这些命令（运行 ``telnet localhost 4444``）。GDB 也可以代替 telnet 来向 OpenOCD 发出命令，但是所有从 GDB 发出的命令都需要以 ``mon <oocd_command>`` 为前缀。
 
-当目标机转储代码覆盖数据时，``.gcda`` 文件存储在项目的构建目录中。例如，如果 ``main`` 组件的 ``gcov_example_main.c`` 在编译时使用了 ``--coverage`` 选项，那么转储代码覆盖数据将在 ``build/esp-idf/main/CMakeFiles/__idf_main.dir/gcov_example_main.c.gcda`` 中（如果使用传统 Make 构建系统，则是在 ``build/main/gcov_example_main.gcda`` 中）生成一个 ``gcov_example_main.gcda`` 文件。注意，编译过程中产生的 ``.gcno`` 文件也放在同一个目录下。
+当目标机转储代码覆盖数据时，``.gcda`` 文件存储在项目的构建目录中。例如，如果 ``main`` 组件的 ``gcov_example_main.c`` 在编译时使用了 ``--coverage`` 选项，那么转储代码覆盖数据将在 ``build/esp-idf/main/CMakeFiles/__idf_main.dir/gcov_example_main.c.gcda`` 中生成一个 ``gcov_example_main.gcda`` 文件。注意，编译过程中产生的 ``.gcno`` 文件也放在同一个目录下。
 
 代码覆盖数据的转储可以在应用程序的整个生命周期内多次进行。每次转储都会用最新的代码覆盖信息更新 ``.gcda`` 文件。代码覆盖数据是累积的，因此最新的数据将包含应用程序整个生命周期中每个代码路径的总执行次数。
 
@@ -558,10 +554,7 @@ Gcov 和 Gcovr 都可以用来生成代码覆盖报告。安装 Xtensa 工具链
 
 用户可以在自己的工程中定义额外的构建目标从而更方便地生成报告。可以通过一个简单的构建命令生成这样的报告。
 
-CMake 构建系统
-************************
-
-对于 CMake 构建系统，请在您工程的 ``CMakeLists.txt`` 文件中添加以下内容：
+请在您工程的 ``CMakeLists.txt`` 文件中添加以下内容：
 
 .. code-block:: none
 
@@ -573,32 +566,3 @@ CMake 构建系统
 
     * ``cmake --build build/ --target gcovr-report``：在 ``$(BUILD_DIR_BASE)/coverage_report/html`` 目录下生成 HTML 格式代码覆盖报告。
     * ``cmake --build build/ --target cov-data-clean``：删除所有代码覆盖数据文件。
-
-Make 构建系统
-************************
-
-对于 Make 构建系统，请在您工程的 ``Makefile`` 文件中添加以下内容：
-
-.. code-block:: none
-
-    GCOV := $(call dequote,$(CONFIG_SDK_TOOLPREFIX))gcov
-    REPORT_DIR := $(BUILD_DIR_BASE)/coverage_report
-
-    gcovr-report:
-        echo "Generating coverage report in: $(REPORT_DIR)"
-        echo "Using gcov: $(GCOV)"
-        mkdir -p $(REPORT_DIR)/html
-        cd $(BUILD_DIR_BASE)
-        gcovr -r $(PROJECT_PATH) --gcov-executable $(GCOV) -s --html-details $(REPORT_DIR)/html/index.html
-
-    cov-data-clean:
-        echo "Remove coverage data files..."
-        find $(BUILD_DIR_BASE) -name "*.gcda" -exec rm {} +
-        rm -rf $(REPORT_DIR)
-
-    .PHONY: gcovr-report cov-data-clean
-
-可使用以下命令:
-
-    * ``make gcovr-report``：在 ``$(BUILD_DIR_BASE)/coverage_report/html`` 目录下生成 HTML 格式代码覆盖报告。
-    * ``make cov-data-clean``：删除所有代码覆盖数据文件。

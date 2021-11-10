@@ -45,18 +45,6 @@ Creating and Specifying a Linker Fragment File
 
 Before anything else, a linker fragment file needs to be created. A linker fragment file is simply a text file with a ``.lf`` extension upon which the desired placements will be written. After creating the file, it is then necessary to present it to the build system. The instructions for the build systems supported by ESP-IDF are as follows:
 
-Make
-""""
-
-In the component's ``component.mk`` file, set the variable ``COMPONENT_ADD_LDFRAGMENTS`` to the path of the created linker fragment file. The path can either be an absolute path or a relative path from the component directory.
-
-.. code-block:: make
-
-    COMPONENT_ADD_LDFRAGMENTS += my_linker_fragment_file.lf
-
-CMake
-"""""
-
 In the component's ``CMakeLists.txt`` file, specify argument ``LDFRAGMENTS`` in the ``idf_component_register`` call. The value of ``LDFRAGMENTS`` can either be an absolute path or a relative path from the component directory to the created linker fragment file.
 
 .. code-block:: cmake

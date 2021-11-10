@@ -16,7 +16,6 @@ Shows how to use mDNS to advertise lookup services and hosts
 * Open the project configuration menu (`idf.py menuconfig`)
 
 * Configure Wi-Fi or Ethernet under "Example Connection Configuration" menu. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../README.md) for more details.
-* When using Make build system, set `Default serial port` under `Serial flasher config`.
 * Set `mDNS Hostname` as host name prefix for the device and its instance name in `mDNS Instance Name`
 * Disable `Resolve test services` to prevent the example from querying defined names/services on startup (cause warnings in example logs, as illustrated below)
 

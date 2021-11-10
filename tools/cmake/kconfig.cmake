@@ -313,7 +313,6 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         COMMAND ${CMAKE_COMMAND} -E env
         "COMPONENT_KCONFIGS_SOURCE_FILE=${kconfigs_path}"
         "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE=${kconfigs_projbuild_path}"
-        "IDF_CMAKE=y"
         "KCONFIG_CONFIG=${sdkconfig}"
         "IDF_TARGET=${idf_target}"
         "IDF_ENV_FPGA=${idf_env_fpga}"

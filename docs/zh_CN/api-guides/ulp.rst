@@ -20,10 +20,6 @@ ULP 协处理器代码是用汇编语言编写的，并使用 `binutils-esp32ulp
 
 如果你已经按照 :doc:`快速入门指南 <../../get-started/index>` 中的介绍安装好了 ESP-IDF 及其 CMake 构建系统，那么 ULP 工具链已经被默认安装到了你的开发环境中。
 
-.. only:: esp32
-
-    如果你的 ESP-IDF 仍在使用传统的基于 GNU Make 的构建系统，请参考 :doc:`ulp-legacy` 一文中的说明，完成工具链的安装。
-
 编译 ULP 代码
 -------------
 
