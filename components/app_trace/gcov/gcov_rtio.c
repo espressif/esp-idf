@@ -25,7 +25,6 @@
 #include "esp_freertos_hooks.h"
 #include "esp_private/dbg_stubs.h"
 #include "esp_ipc.h"
-#include "hal/wdt_hal.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/libc_stubs.h"
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
@@ -61,18 +60,11 @@ void gcov_dump_task(void *pvParameter)
     }
     ESP_EARLY_LOGV(TAG, "Config apptrace down buf");
     esp_apptrace_down_buffer_config(down_buf, ESP_GCOV_DOWN_BUF_SIZE);
-    /* we are directing the std outputs to the fake ones in order to reduce stack usage */
-    FILE *old_stderr = stderr;
-    FILE *old_stdout = stdout;
-    stderr = (FILE *) &__sf_fake_stderr;
-    stdout = (FILE *) &__sf_fake_stdout;
     ESP_EARLY_LOGV(TAG, "Dump data...");
     __gcov_dump();
     // reset dump status to allow incremental data accumulation
     __gcov_reset();
     free(down_buf);
-    stderr = old_stderr;
-    stdout = old_stdout;
     ESP_EARLY_LOGV(TAG, "Finish file transfer session");
     dump_result = esp_apptrace_fstop(ESP_APPTRACE_DEST_TRAX);
     if (dump_result != ESP_OK) {
