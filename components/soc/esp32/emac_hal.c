@@ -286,7 +286,7 @@ void emac_hal_init_dma_default(emac_hal_context_t *hal)
     /* Use Separate PBL */
     dmabmr.use_sep_pbl = EMAC_USE_SEPARATE_PBL;
     /* Set Rx/Tx DMA Burst Length */
-    dmabmr.rx_dma_pbl = EMAC_DMA_BURST_LENGTH_32BEAT;
+    dmabmr.rx_dma_pbl = EMAC_DMA_BURST_LENGTH_8BEAT;
     dmabmr.prog_burst_len = EMAC_DMA_BURST_LENGTH_32BEAT;
     /* Enable Enhanced Descriptor,8 Words(32 Bytes) */
     dmabmr.alt_desc_size = EMAC_ENHANCED_DESCRIPTOR_ENABLE;
