@@ -21,7 +21,6 @@ if(NOT BOOTLOADER_BUILD)
     if(NOT CONFIG_IDF_TARGET_ESP32 AND NOT CONFIG_IDF_TARGET_ESP32S2)
         list(APPEND srcs "sleep_retention.c")
     endif()
-    list(APPEND requires esp_ipc)
 else()
     # Requires "_esp_error_check_failed()" function
     list(APPEND priv_requires "esp_system")

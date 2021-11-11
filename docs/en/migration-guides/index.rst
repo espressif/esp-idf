@@ -7,3 +7,4 @@ ESP-IDF 5.0 Migration Guides
 
     Peripherals <peripherals>
     Build System <build-system>
+    System <system>

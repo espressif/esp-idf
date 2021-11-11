@@ -50,7 +50,7 @@ The `esp_ipc_isr_asm...(asm_func, arg)` functions trigger the High-priority inte
 
 :cpp:func:`esp_ipc_isr_stall_other_cpu` stalls the other CPU and the calling CPU disables interrupts with level 3 and lower. To finish stalling the other CPU call :cpp:func:`esp_ipc_isr_release_other_cpu`. The stalled CPU disables interrupts with level 5 and lower.
 
-Functions executed by Hi-priority IPC must be functions of type `void func(void *arg)`. Examples of a assembler function see in :idf_file:`components/esp_ipc/src/esp_ipc_isr/esp_ipc_isr_routines.S`, :idf_file:`components/esp_ipc/test/test_ipc_isr.S` and below. In the asm function, you can use only a few registers as they were saved in the interrupt handler before calling this function, their use is safe. The registers:`a2` as `void *arg`, a3 and a4 are free for use.
+Functions executed by Hi-priority IPC must be functions of type `void func(void *arg)`. Examples of a assembler function see in :idf_file:`components/esp_system/port/arch/xtensa/esp_ipc_isr_routines.S`, :idf_file:`components/esp_system/test/test_ipc_isr.S` and below. In the asm function, you can use only a few registers as they were saved in the interrupt handler before calling this function, their use is safe. The registers:`a2` as `void *arg`, a3 and a4 are free for use.
 
 Some feature:
 
