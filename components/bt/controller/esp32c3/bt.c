@@ -37,6 +37,7 @@
 #include "esp32c3/rom/rom_layout.h"
 #include "esp_timer.h"
 #include "esp_sleep.h"
+#include "phy.h"
 
 #if CONFIG_BT_ENABLED
 
@@ -1236,6 +1237,11 @@ esp_err_t esp_bt_controller_deinit(void)
     esp_unregister_mac_bb_pd_callback(btdm_mac_bb_power_down_cb);
     esp_unregister_mac_bb_pu_callback(btdm_mac_bb_power_up_cb);
 #endif
+
+    /* Fix the issue caused by the power off the bt power domain.
+     * This issue is only on ESP32C3.
+     */
+    phy_init_flag();
 
     esp_bt_power_domain_off();
 
