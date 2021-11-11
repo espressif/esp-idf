@@ -221,9 +221,9 @@ static esp_err_t load_partitions(void)
         if (!esp_flash_encryption_enabled()) {
             /* If flash encryption is not turned on, no partitions should be treated as encrypted */
             item->info.encrypted = false;
-        } else if (entry.type == PART_TYPE_APP
-                || (entry.type == PART_TYPE_DATA && entry.subtype == PART_SUBTYPE_DATA_OTA)
-                || (entry.type == PART_TYPE_DATA && entry.subtype == PART_SUBTYPE_DATA_NVS_KEYS)) {
+        } else if (entry.type == ESP_PARTITION_TYPE_APP
+                || (entry.type == ESP_PARTITION_TYPE_DATA && entry.subtype == ESP_PARTITION_SUBTYPE_DATA_OTA)
+                || (entry.type == ESP_PARTITION_TYPE_DATA && entry.subtype == ESP_PARTITION_SUBTYPE_DATA_NVS_KEYS)) {
             /* If encryption is turned on, all app partitions and OTA data
                are always encrypted */
             item->info.encrypted = true;
