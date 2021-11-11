@@ -413,65 +413,66 @@ Used Flash size :  186524 bytes
       .text     :  146944 bytes
       .rodata   :   39580 bytes
 Total image size:  283036 bytes (.bin may be padded larger)
+
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
 
-.dram0.bss                                  <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
-    p_uart_obj                                     12            0                       +12
-    s_rtc_isr_handle                                4            0                        +4
-    s_rtc_isr_handler_list                          4            0                        +4
-Section total:                                     20            0                       +20
+Symbols from section: .dram0.bss
+	p_uart_obj                     :  12
+	s_rtc_isr_handle               :   4
+	s_rtc_isr_handler_list         :   4
+Section total: 20
 
-.dram0.data                                 <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
-    periph_spinlock                                 8            0                        +8
-    s_rtc_isr_handler_list_lock                     8            0                        +8
-    timer_spinlock                                 16            0                       +16
-    uart_selectlock                                 8            0                        +8
-Section total:                                     40            0                       +40
+Symbols from section: .dram0.data
+	timer_spinlock                 :  16
+	periph_spinlock                :   8
+	s_rtc_isr_handler_list_lock    :   8
+	uart_selectlock                :   8
+Section total: 40
 
-.flash.rodata                               <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
-    TG                                              8            0                        +8
-    __FUNCTION__$5441                              24            0                       +24
-    get_clk_en_mask                               128            0                      +128
-    get_rst_en_mask                               128            0                      +128
-    str1.4                                        249            0                      +249
-Section total:                                    537            0                      +537
+Symbols from section: .flash.rodata
+	str1.4                         : 249
+	get_clk_en_mask                : 128
+	get_rst_en_mask                : 128
+	__FUNCTION__$5441              :  24
+	TG                             :   8
+Section total: 537
 
-.flash.text                                 <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
-    get_clk_en_mask                               211            0                      +211
-    get_clk_en_reg                                 21            0                       +21
-    get_rst_en_mask                               157            0                      +157
-    get_rst_en_reg                                 25            0                       +25
-    is_wifi_clk_peripheral                         28            0                       +28
-    periph_module_enable                           78            0                       +78
-    rtc_gpio_force_hold_dis_all                    65            0                       +65
-    rtc_isr                                        86            0                       +86
-    rtc_isr_ensure_installed                       75            0                       +75
-    rtc_isr_register                               65            0                       +65
-    timer_group_intr_enable                       112            0                      +112
-    uart_get_selectlock                            12            0                       +12
-    uart_set_select_notif_callback                 26            0                       +26
-Section total:                                    961            0                      +961
+Symbols from section: .flash.text
+	get_clk_en_mask                : 211
+	get_rst_en_mask                : 157
+	timer_group_intr_enable        : 112
+	rtc_isr                        :  86
+	periph_module_enable           :  78
+	rtc_isr_ensure_installed       :  75
+	rtc_gpio_force_hold_dis_all    :  65
+	rtc_isr_register               :  65
+	is_wifi_clk_peripheral         :  28
+	uart_set_select_notif_callback :  26
+	get_rst_en_reg                 :  25
+	get_clk_en_reg                 :  21
+	uart_get_selectlock            :  12
+Section total: 961
 
-.iram0.text                                 <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
-Section total:                                      0            0
+Symbols from section: .iram0.text
+Section total: 0
 
-.iram0.vectors                              <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
-Section total:                                      0            0
+Symbols from section: .iram0.vectors
+Section total: 0
 
-.noinit                                     <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
-Section total:                                      0            0
+Symbols from section: .noinit
+Section total: 0
 
-.rtc.bss                                    <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
-Section total:                                      0            0
+Symbols from section: .rtc.bss
+Section total: 0
 
-.rtc.data                                   <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
-Section total:                                      0            0
+Symbols from section: .rtc.data
+Section total: 0
 
-.rtc.text                                   <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
-Section total:                                      0            0
+Symbols from section: .rtc.text
+Section total: 0
 
-.rtc_noinit                                 <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
-Section total:                                      0            0
+Symbols from section: .rtc_noinit
+Section total: 0
 
 ***
 Running idf_size.py diff with bootloader...
@@ -659,45 +660,45 @@ Total image size:  283036 bytes (.bin may be padded larger)          283036
 Per-archive contributions to ELF file:
             Archive File              DRAM .data                 & 0.bss             IRAM0 .text             & 0.vectors            ram_st_total             Flash .text               & .rodata             flash_total
                         |    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>
-                         -----------------------                         -----------------------                         -----------------------                         -----------------------                        
-               liblwip.a|     14|     14|       |   3751|   3751|       |       |       |       |       |       |       |   3765|   3765|       |  66978|  66978|       |  13936|  13936|       |  80928|  80928|       
-                  libc.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |  55583|  55583|       |   3709|   3709|       |  59292|  59292|       
-              libesp32.a|   2635|   2635|       |   2375|   2375|       |   7758|   7758|       |       |       |       |  12768|  12768|       |   4814|   4814|       |   8133|   8133|       |  23340|  23340|       
-           libfreertos.a|   4156|   4156|       |    832|    832|       |  12428|  12428|       |    425|    425|       |  17841|  17841|       |       |       |       |   1545|   1545|       |  18554|  18554|       
-          libspi_flash.a|     36|     36|       |    359|    359|       |   7004|   7004|       |       |       |       |   7399|   7399|       |    886|    886|       |   1624|   1624|       |   9550|   9550|       
-                libsoc.a|    660|    660|       |      8|      8|       |   3887|   3887|       |       |       |       |   4555|   4555|       |       |       |       |   3456|   3456|       |   8003|   8003|       
-               libheap.a|   1331|   1331|       |      4|      4|       |   4376|   4376|       |       |       |       |   5711|   5711|       |   1218|   1218|       |    980|    980|       |   7905|   7905|       
-                libgcc.a|      4|      4|       |     20|     20|       |    104|    104|       |       |       |       |    128|    128|       |   5488|   5488|       |    888|    888|       |   6484|   6484|       
-                libvfs.a|    232|    232|       |    103|    103|       |       |       |       |       |       |       |    335|    335|       |   3770|   3770|       |    403|    403|       |   4405|   4405|       
-              libunity.a|       |       |       |    121|    121|       |       |       |       |       |       |       |    121|    121|       |   2316|   2316|       |    830|    830|       |   3146|   3146|       
-             libstdc++.a|      8|      8|       |     16|     16|       |       |       |       |       |       |       |     24|     24|       |   1827|   1827|       |   1062|   1062|       |   2897|   2897|       
-             libnewlib.a|    152|    152|       |    272|    272|       |    853|    853|       |       |       |       |   1277|   1277|       |    803|    803|       |     86|     86|       |   1894|   1894|       
-            libpthread.a|     16|     16|       |     12|     12|       |    174|    174|       |       |       |       |    202|    202|       |    774|    774|       |    638|    638|       |   1602|   1602|       
-             libdriver.a|     40|     40|       |     20|     20|       |       |       |       |       |       |       |     60|     60|       |    961|    961|       |    537|    537|       |   1538|   1538|       
-                liblog.a|      8|      8|       |    268|    268|       |    456|    456|       |       |       |       |    732|    732|       |    396|    396|       |    166|    166|       |   1026|   1026|       
-         libapp_update.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    123|    123|       |    717|    717|       |    840|    840|       
-                libhal.a|       |       |       |       |       |       |    515|    515|       |       |       |       |    515|    515|       |       |       |       |     32|     32|       |    547|    547|       
-      libtcpip_adapter.a|       |       |       |     81|     81|       |       |       |       |       |       |       |     81|     81|       |    180|    180|       |    359|    359|       |    539|    539|       
-                  libm.a|       |       |       |       |       |       |     92|     92|       |       |       |       |     92|     92|       |       |       |       |       |       |       |     92|     92|       
-               libmain.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     53|     53|       |     10|     10|       |     63|     63|       
-                libcxx.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     11|     11|       |       |       |       |     11|     11|       
-libxtensa-debug-module.a|       |       |       |       |       |       |      8|      8|       |       |       |       |      8|      8|       |       |       |       |       |       |       |      8|      8|       
- libbootloader_support.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-            libcoexist.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-               libcore.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-           libethernet.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-            libmbedtls.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-               libmesh.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-           libnet80211.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-          libnvs_flash.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                libphy.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                 libpp.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                librtc.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-    libsmartconfig_ack.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                libwpa.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-               libwpa2.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-     libwpa_supplicant.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                libwps.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
+                         -----------------------                         -----------------------                         -----------------------                         -----------------------
+               liblwip.a|     14|     14|       |   3751|   3751|       |       |       |       |       |       |       |   3765|   3765|       |  66978|  66978|       |  13936|  13936|       |  80928|  80928|
+                  libc.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |  55583|  55583|       |   3709|   3709|       |  59292|  59292|
+              libesp32.a|   2635|   2635|       |   2375|   2375|       |   7758|   7758|       |       |       |       |  12768|  12768|       |   4814|   4814|       |   8133|   8133|       |  23340|  23340|
+           libfreertos.a|   4156|   4156|       |    832|    832|       |  12428|  12428|       |    425|    425|       |  17841|  17841|       |       |       |       |   1545|   1545|       |  18554|  18554|
+          libspi_flash.a|     36|     36|       |    359|    359|       |   7004|   7004|       |       |       |       |   7399|   7399|       |    886|    886|       |   1624|   1624|       |   9550|   9550|
+                libsoc.a|    660|    660|       |      8|      8|       |   3887|   3887|       |       |       |       |   4555|   4555|       |       |       |       |   3456|   3456|       |   8003|   8003|
+               libheap.a|   1331|   1331|       |      4|      4|       |   4376|   4376|       |       |       |       |   5711|   5711|       |   1218|   1218|       |    980|    980|       |   7905|   7905|
+                libgcc.a|      4|      4|       |     20|     20|       |    104|    104|       |       |       |       |    128|    128|       |   5488|   5488|       |    888|    888|       |   6484|   6484|
+                libvfs.a|    232|    232|       |    103|    103|       |       |       |       |       |       |       |    335|    335|       |   3770|   3770|       |    403|    403|       |   4405|   4405|
+              libunity.a|       |       |       |    121|    121|       |       |       |       |       |       |       |    121|    121|       |   2316|   2316|       |    830|    830|       |   3146|   3146|
+             libstdc++.a|      8|      8|       |     16|     16|       |       |       |       |       |       |       |     24|     24|       |   1827|   1827|       |   1062|   1062|       |   2897|   2897|
+             libnewlib.a|    152|    152|       |    272|    272|       |    853|    853|       |       |       |       |   1277|   1277|       |    803|    803|       |     86|     86|       |   1894|   1894|
+            libpthread.a|     16|     16|       |     12|     12|       |    174|    174|       |       |       |       |    202|    202|       |    774|    774|       |    638|    638|       |   1602|   1602|
+             libdriver.a|     40|     40|       |     20|     20|       |       |       |       |       |       |       |     60|     60|       |    961|    961|       |    537|    537|       |   1538|   1538|
+                liblog.a|      8|      8|       |    268|    268|       |    456|    456|       |       |       |       |    732|    732|       |    396|    396|       |    166|    166|       |   1026|   1026|
+         libapp_update.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    123|    123|       |    717|    717|       |    840|    840|
+                libhal.a|       |       |       |       |       |       |    515|    515|       |       |       |       |    515|    515|       |       |       |       |     32|     32|       |    547|    547|
+      libtcpip_adapter.a|       |       |       |     81|     81|       |       |       |       |       |       |       |     81|     81|       |    180|    180|       |    359|    359|       |    539|    539|
+                  libm.a|       |       |       |       |       |       |     92|     92|       |       |       |       |     92|     92|       |       |       |       |       |       |       |     92|     92|
+               libmain.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     53|     53|       |     10|     10|       |     63|     63|
+                libcxx.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     11|     11|       |       |       |       |     11|     11|
+libxtensa-debug-module.a|       |       |       |       |       |       |      8|      8|       |       |       |       |      8|      8|       |       |       |       |       |       |       |      8|      8|
+ libbootloader_support.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+            libcoexist.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+               libcore.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+           libethernet.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+            libmbedtls.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+               libmesh.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+           libnet80211.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+          libnvs_flash.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                libphy.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                 libpp.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                librtc.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+    libsmartconfig_ack.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                libwpa.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+               libwpa2.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+     libwpa_supplicant.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                libwps.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
 
 ***
 Running idf_size.py diff --archives with another app...
@@ -723,7 +724,7 @@ Total image size:  283036 bytes (.bin may be padded larger)          194629     
 Per-archive contributions to ELF file:
             Archive File              DRAM .data                 & 0.bss             IRAM0 .text             & 0.vectors            ram_st_total             Flash .text               & .rodata             flash_total
                         |    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>
-                         -----------------------                         -----------------------                         -----------------------                         -----------------------                        
+                         -----------------------                         -----------------------                         -----------------------                         -----------------------
                   libc.a|       |    364|   -364|       |       |       |       |       |       |       |       |       |       |    364|   -364|  55583|  54704|   +879|   3709|   3703|     +6|  59292|  58771|   +521
               libesp32.a|   2635|   2118|   +517|   2375|     81|  +2294|   7758|   5462|  +2296|       |       |       |  12768|   7661|  +5107|   4814|   4511|   +303|   8133|   2751|  +5382|  23340|  14842|  +8498
            libfreertos.a|   4156|   4140|    +16|    832|    792|    +40|  12428|  12459|    -31|    425|    425|       |  17841|  17816|    +25|       |       |       |   1545|   1451|    +94|  18554|  18475|    +79
@@ -739,9 +740,9 @@ Per-archive contributions to ELF file:
          libapp_update.a|       |       |       |       |      4|     -4|       |    109|   -109|       |       |       |       |    113|   -113|    123|    159|    -36|    717|    470|   +247|    840|    738|   +102
                 libhal.a|       |       |       |       |       |       |    515|    447|    +68|       |       |       |    515|    447|    +68|       |       |       |     32|     32|       |    547|    479|    +68
                libmain.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     53|     72|    -19|     10|     39|    -29|     63|    111|    -48
-                libcxx.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     11|     11|       |       |       |       |     11|     11|       
+                libcxx.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     11|     11|       |       |       |       |     11|     11|
  libbootloader_support.a|       |       |       |       |       |       |       |   1028|  -1028|       |       |       |       |   1028|  -1028|       |    565|   -565|       |     20|    -20|       |   1613|  -1613
-     libwpa_supplicant.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
+     libwpa_supplicant.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
 The following entries are present in <CURRENT> only:
             Archive File DRAM .data & 0.bss IRAM0 .text & 0.vectors ram_st_total Flash .text & .rodata flash_total
                liblwip.a         14    3751           0           0         3765       66978     13936       80928
@@ -799,7 +800,7 @@ Total image size:  194629 bytes (.bin may be padded larger)          283036     
 Per-archive contributions to ELF file:
             Archive File              DRAM .data                 & 0.bss             IRAM0 .text             & 0.vectors            ram_st_total             Flash .text               & .rodata             flash_total
                         |    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>
-                         -----------------------                         -----------------------                         -----------------------                         -----------------------                        
+                         -----------------------                         -----------------------                         -----------------------                         -----------------------
                   libc.a|    364|       |   +364|       |       |       |       |       |       |       |       |       |    364|       |   +364|  54704|  55583|   -879|   3703|   3709|     -6|  58771|  59292|   -521
            libfreertos.a|   4140|   4156|    -16|    792|    832|    -40|  12459|  12428|    +31|    425|    425|       |  17816|  17841|    -25|       |       |       |   1451|   1545|    -94|  18475|  18554|    -79
               libesp32.a|   2118|   2635|   -517|     81|   2375|  -2294|   5462|   7758|  -2296|       |       |       |   7661|  12768|  -5107|   4511|   4814|   -303|   2751|   8133|  -5382|  14842|  23340|  -8498
@@ -816,8 +817,8 @@ Per-archive contributions to ELF file:
             libpthread.a|      8|     16|     -8|     12|     12|       |       |    174|   -174|       |       |       |     20|    202|   -182|    264|    774|   -510|       |    638|   -638|    272|   1602|  -1330
                 libgcc.a|       |      4|     -4|       |     20|    -20|       |    104|   -104|       |       |       |       |    128|   -128|       |   5488|  -5488|    160|    888|   -728|    160|   6484|  -6324
                libmain.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     72|     53|    +19|     39|     10|    +29|    111|     63|    +48
-                libcxx.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     11|     11|       |       |       |       |     11|     11|       
-     libwpa_supplicant.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
+                libcxx.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     11|     11|       |       |       |       |     11|     11|
+     libwpa_supplicant.a|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
 The following entries are present in <CURRENT> only:
             Archive File DRAM .data & 0.bss IRAM0 .text & 0.vectors ram_st_total Flash .text & .rodata flash_total
          libesp_common.a          8     184         239           0          431         783      5421        6451
@@ -1226,288 +1227,288 @@ Total image size:  283036 bytes (.bin may be padded larger)          283036
 Per-file contributions to ELF file:
              Object File              DRAM .data                 & 0.bss             IRAM0 .text             & 0.vectors            ram_st_total             Flash .text               & .rodata             flash_total
                         |    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>
-                         -----------------------                         -----------------------                         -----------------------                         -----------------------                        
-        lib_a-vfprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |  14193|  14193|       |    704|    704|       |  14897|  14897|       
-       lib_a-svfprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |  13834|  13834|       |    756|    756|       |  14590|  14590|       
-      lib_a-svfiprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |   9642|   9642|       |   1176|   1176|       |  10818|  10818|       
-       lib_a-vfiprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |   9933|   9933|       |    704|    704|       |  10637|  10637|       
-                tcp_in.o|       |       |       |     54|     54|       |       |       |       |       |       |       |     54|     54|       |   8127|   8127|       |    916|    916|       |   9043|   9043|       
-                   nd6.o|      8|      8|       |   1027|   1027|       |       |       |       |       |       |       |   1035|   1035|       |   8427|   8427|       |    136|    136|       |   8571|   8571|       
-                 tasks.o|     20|     20|       |    700|    700|       |   5667|   5667|       |       |       |       |   6387|   6387|       |       |       |       |    503|    503|       |   6190|   6190|       
-               tcp_out.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |   5060|   5060|       |   1124|   1124|       |   6184|   6184|       
-                   tcp.o|      4|      4|       |     23|     23|       |       |       |       |       |       |       |     27|     27|       |   4290|   4290|       |   1384|   1384|       |   5678|   5678|       
-               sockets.o|       |       |       |    728|    728|       |       |       |       |       |       |       |    728|    728|       |   4627|   4627|       |    824|    824|       |   5451|   5451|       
-               api_msg.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |   3763|   3763|       |   1366|   1366|       |   5129|   5129|       
-                  dhcp.o|       |       |       |      8|      8|       |       |       |       |       |       |       |      8|      8|       |   3456|   3456|       |   1401|   1401|       |   4857|   4857|       
-                 panic.o|   2579|   2579|       |      5|      5|       |   2145|   2145|       |       |       |       |   4729|   4729|       |       |       |       |       |       |       |   4724|   4724|       
-       esp_err_to_name.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     50|     50|       |   4091|   4091|       |   4141|   4141|       
-        unwind-dw2-fde.o|      4|      4|       |     20|     20|       |       |       |       |       |       |       |     24|     24|       |   3316|   3316|       |    404|    404|       |   3724|   3724|       
-                  pbuf.o|       |       |       |      1|      1|       |       |       |       |       |       |       |      1|      1|       |   2453|   2453|       |   1161|   1161|       |   3614|   3614|       
-               portasm.o|   3084|   3084|       |       |       |       |    480|    480|       |       |       |       |   3564|   3564|       |       |       |       |       |       |       |   3564|   3564|       
-            lib_a-dtoa.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |   3522|   3522|       |     13|     13|       |   3535|   3535|       
-                   ip6.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |   3212|   3212|       |    124|    124|       |   3336|   3336|       
-   spi_flash_rom_patch.o|       |       |       |       |       |       |   2518|   2518|       |       |       |       |   2518|   2518|       |       |       |       |    766|    766|       |   3284|   3284|       
-                etharp.o|       |       |       |    241|    241|       |       |       |       |       |       |       |    241|    241|       |   2618|   2618|       |    658|    658|       |   3276|   3276|       
-                   udp.o|      2|      2|       |      4|      4|       |       |       |       |       |       |       |      6|      6|       |   3020|   3020|       |    216|    216|       |   3238|   3238|       
-            intr_alloc.o|      8|      8|       |     22|     22|       |    726|    726|       |       |       |       |    756|    756|       |   1749|   1749|       |    710|    710|       |   3193|   3193|       
-            multi_heap.o|    857|    857|       |       |       |       |   2217|   2217|       |       |       |       |   3074|   3074|       |       |       |       |       |       |       |   3074|   3074|       
-                 queue.o|      8|      8|       |     56|     56|       |   2569|   2569|       |       |       |       |   2633|   2633|       |       |       |       |    369|    369|       |   2946|   2946|       
-     unwind-dw2-xtensa.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |   2172|   2172|       |    324|    324|       |   2496|   2496|       
-             flash_ops.o|     32|     32|       |     41|     41|       |   2352|   2352|       |       |       |       |   2425|   2425|       |     99|     99|       |       |       |       |   2483|   2483|       
-               rtc_clk.o|    660|    660|       |      8|      8|       |   1794|   1794|       |       |       |       |   2462|   2462|       |       |       |       |       |       |       |   2454|   2454|       
-           lib_a-mprec.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |   2134|   2134|       |    296|    296|       |   2430|   2430|       
-              ip6_frag.o|       |       |       |      6|      6|       |       |       |       |       |       |       |      6|      6|       |   1905|   1905|       |    442|    442|       |   2347|   2347|       
-               api_lib.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |   1425|   1425|       |    919|    919|       |   2344|   2344|       
-                   vfs.o|    192|    192|       |     40|     40|       |       |       |       |       |       |       |    232|    232|       |   1995|   1995|       |    132|    132|       |   2319|   2319|       
-                  igmp.o|       |       |       |     12|     12|       |       |       |       |       |       |       |     12|     12|       |   1604|   1604|       |    707|    707|       |   2311|   2311|       
-        unity_platform.o|       |       |       |     13|     13|       |       |       |       |       |       |       |     13|     13|       |   1511|   1511|       |    600|    600|       |   2111|   2111|       
-              vfs_uart.o|     40|     40|       |     63|     63|       |       |       |       |       |       |       |    103|    103|       |   1775|   1775|       |    271|    271|       |   2086|   2086|       
-       esp_timer_esp32.o|      8|      8|       |     26|     26|       |   1295|   1295|       |       |       |       |   1329|   1329|       |    254|    254|       |    526|    526|       |   2083|   2083|       
-            rtc_periph.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |   2080|   2080|       |   2080|   2080|       
-                   dns.o|       |       |       |   1292|   1292|       |       |       |       |       |       |       |   1292|   1292|       |   1809|   1809|       |    206|    206|       |   2015|   2015|       
-             heap_caps.o|      4|      4|       |       |       |       |   1195|   1195|       |       |       |       |   1199|   1199|       |    188|    188|       |    593|    593|       |   1980|   1980|       
-        eh_personality.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |   1561|   1561|       |    384|    384|       |   1945|   1945|       
-                   ip4.o|       |       |       |      6|      6|       |       |       |       |       |       |       |      6|      6|       |   1664|   1664|       |    139|    139|       |   1803|   1803|       
-            flash_mmap.o|       |       |       |    296|    296|       |   1298|   1298|       |       |       |       |   1594|   1594|       |    124|    124|       |    327|    327|       |   1749|   1749|       
-        xtensa_vectors.o|      8|      8|       |       |       |       |   1272|   1272|       |    425|    425|       |   1705|   1705|       |       |       |       |     36|     36|       |   1741|   1741|       
-             cpu_start.o|       |       |       |      1|      1|       |    806|    806|       |       |       |       |    807|    807|       |    277|    277|       |    486|    486|       |   1569|   1569|       
-                   clk.o|       |       |       |       |       |       |     67|     67|       |       |       |       |     67|     67|       |    581|    581|       |    893|    893|       |   1541|   1541|       
-                 netif.o|       |       |       |    241|    241|       |       |       |       |       |       |       |    241|    241|       |   1239|   1239|       |    287|    287|       |   1526|   1526|       
-              sys_arch.o|       |       |       |      8|      8|       |       |       |       |       |       |       |      8|      8|       |   1216|   1216|       |    222|    222|       |   1438|   1438|       
-  multi_heap_poisoning.o|    470|    470|       |       |       |       |    964|    964|       |       |       |       |   1434|   1434|       |       |       |       |       |       |       |   1434|   1434|       
-        heap_caps_init.o|       |       |       |      4|      4|       |       |       |       |       |       |       |      4|      4|       |   1030|   1030|       |    387|    387|       |   1417|   1417|       
-                timers.o|      8|      8|       |     56|     56|       |   1149|   1149|       |       |       |       |   1213|   1213|       |       |       |       |    233|    233|       |   1390|   1390|       
-                  mld6.o|       |       |       |      4|      4|       |       |       |       |       |       |       |      4|      4|       |   1334|   1334|       |       |       |       |   1334|   1334|       
-           cache_utils.o|      4|      4|       |     14|     14|       |    836|    836|       |       |       |       |    854|    854|       |     81|     81|       |    390|    390|       |   1311|   1311|       
-                   raw.o|       |       |       |      4|      4|       |       |       |       |       |       |       |      4|      4|       |   1087|   1087|       |    223|    223|       |   1310|   1310|       
-             esp_timer.o|      8|      8|       |     20|     20|       |    702|    702|       |       |       |       |    730|    730|       |    429|    429|       |    142|    142|       |   1281|   1281|       
-            system_api.o|       |       |       |      8|      8|       |    589|    589|       |       |       |       |    597|    597|       |       |       |       |    662|    662|       |   1251|   1251|       
-     soc_memory_layout.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |   1239|   1239|       |   1239|   1239|       
-                  icmp.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    769|    769|       |    371|    371|       |   1140|   1140|       
-       xtensa_intr_asm.o|   1024|   1024|       |       |       |       |     51|     51|       |       |       |       |   1075|   1075|       |       |       |       |       |       |       |   1075|   1075|       
-                   log.o|      8|      8|       |    268|    268|       |    456|    456|       |       |       |       |    732|    732|       |    396|    396|       |    166|    166|       |   1026|   1026|       
-               pthread.o|      8|      8|       |      8|      8|       |    174|    174|       |       |       |       |    190|    190|       |    298|    298|       |    512|    512|       |    992|    992|       
-                 icmp6.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    863|    863|       |    127|    127|       |    990|    990|       
-                  port.o|       |       |       |     16|     16|       |    617|    617|       |       |       |       |    633|    633|       |       |       |       |    369|    369|       |    986|    986|       
-              rtc_init.o|       |       |       |       |       |       |    980|    980|       |       |       |       |    980|    980|       |       |       |       |       |       |       |    980|    980|       
-              rtc_time.o|       |       |       |       |       |       |    803|    803|       |       |       |       |    803|    803|       |       |       |       |    137|    137|       |    940|    940|       
-          dport_access.o|      8|      8|       |     40|     40|       |    539|    539|       |       |       |       |    587|    587|       |    189|    189|       |    129|    129|       |    865|    865|       
-          lib_a-fseeko.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    862|    862|       |       |       |       |    862|    862|       
-                 unity.o|       |       |       |    108|    108|       |       |       |       |       |       |       |    108|    108|       |    767|    767|       |     90|     90|       |    857|    857|       
-           esp_ota_ops.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    123|    123|       |    717|    717|       |    840|    840|       
-                 tcpip.o|       |       |       |     16|     16|       |       |       |       |       |       |       |     16|     16|       |    644|    644|       |    191|    191|       |    835|    835|       
-                  time.o|       |       |       |     32|     32|       |    139|    139|       |       |       |       |    171|    171|       |    691|    691|       |       |       |       |    830|    830|       
-           periph_ctrl.o|      8|      8|       |       |       |       |       |       |       |       |       |       |      8|      8|       |    520|    520|       |    256|    256|       |    784|    784|       
-                timers.o|       |       |       |     12|     12|       |       |       |       |       |       |       |     12|     12|       |    638|    638|       |    131|    131|       |    769|    769|       
-             partition.o|       |       |       |      8|      8|       |       |       |       |       |       |       |      8|      8|       |    582|    582|       |    141|    141|       |    723|    723|       
-                 locks.o|      8|      8|       |       |       |       |    552|    552|       |       |       |       |    560|    560|       |       |       |       |     84|     84|       |    644|    644|       
- pthread_local_storage.o|      8|      8|       |      4|      4|       |       |       |       |       |       |       |     12|     12|       |    476|    476|       |    126|    126|       |    610|    610|       
-                   ipc.o|       |       |       |     36|     36|       |    159|    159|       |       |       |       |    195|    195|       |    329|    329|       |    104|    104|       |    592|    592|       
-           inet_chksum.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    580|    580|       |       |       |       |    580|    580|       
-    tcpip_adapter_lwip.o|       |       |       |     81|     81|       |       |       |       |       |       |       |     81|     81|       |    180|    180|       |    359|    359|       |    539|    539|       
-         crosscore_int.o|      8|      8|       |      8|      8|       |    204|    204|       |       |       |       |    220|    220|       |    126|    126|       |    148|    148|       |    486|    486|       
-                netbuf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    154|    154|       |    326|    326|       |    480|    480|       
-              vfs_lwip.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    307|    307|       |    155|    155|       |    462|    462|       
-                 timer.o|     16|     16|       |       |       |       |       |       |       |       |       |       |     16|     16|       |    112|    112|       |    281|    281|       |    409|    409|       
-               int_wdt.o|       |       |       |      1|      1|       |     87|     87|       |       |       |       |     88|     88|       |    301|    301|       |       |       |       |    388|    388|       
-            eh_globals.o|       |       |       |     16|     16|       |       |       |       |       |       |       |     16|     16|       |    149|    149|       |    193|    193|       |    342|    342|       
-              brownout.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    145|    145|       |    191|    191|       |    336|    336|       
-       windowspill_asm.o|       |       |       |       |       |       |    311|    311|       |       |       |       |    311|    311|       |       |       |       |       |       |       |    311|    311|       
-              cpu_util.o|       |       |       |       |       |       |    310|    310|       |       |       |       |    310|    310|       |       |       |       |       |       |       |    310|    310|       
-            rtc_module.o|      8|      8|       |      8|      8|       |       |       |       |       |       |       |     16|     16|       |    291|    291|       |       |       |       |    299|    299|       
-        xtensa_context.o|       |       |       |       |       |       |    299|    299|       |       |       |       |    299|    299|       |       |       |       |       |       |       |    299|    299|       
-          eh_terminate.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    117|    117|       |    141|    141|       |    258|    258|       
-              ethernet.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    244|    244|       |     12|     12|       |    256|    256|       
-dport_panic_highint_hdl.|      8|      8|       |       |       |       |    234|    234|       |       |       |       |    242|    242|       |       |       |       |       |       |       |    242|    242|       
-           lib_a-reent.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    232|    232|       |       |       |       |    232|    232|       
-           lib_a-fopen.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    228|    228|       |       |       |       |    228|    228|       
-         syscall_table.o|    144|    144|       |    240|    240|       |       |       |       |       |       |       |    384|    384|       |     67|     67|       |       |       |       |    211|    211|       
-            dhcpserver.o|       |       |       |      4|      4|       |       |       |       |       |       |       |      4|      4|       |    203|    203|       |       |       |       |    203|    203|       
-        freertos_hooks.o|      8|      8|       |    128|    128|       |     43|     43|       |       |       |       |    179|    179|       |    137|    137|       |       |       |       |    188|    188|       
-            lib_a-puts.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    182|    182|       |       |       |       |    182|    182|       
-            test_utils.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     38|     38|       |    140|    140|       |    178|    178|       
-         lib_a-sprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    167|    167|       |       |       |       |    167|    167|       
-         cache_err_int.o|       |       |       |       |       |       |     56|     56|       |       |       |       |     56|     56|       |     98|     98|       |       |       |       |    154|    154|       
-                  list.o|       |       |       |       |       |       |    142|    142|       |       |       |       |    142|    142|       |       |       |       |       |       |       |    142|    142|       
-           xtensa_intr.o|       |       |       |       |       |       |    104|    104|       |       |       |       |    104|    104|       |       |       |       |     35|     35|       |    139|    139|       
-              syscalls.o|       |       |       |       |       |       |     94|     94|       |       |       |       |     94|     94|       |     45|     45|       |       |       |       |    139|    139|       
-    si_class_type_info.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    136|    136|       |    136|    136|       
-             dbg_stubs.o|       |       |       |   2072|   2072|       |     32|     32|       |       |       |       |   2104|   2104|       |    100|    100|       |       |       |       |    132|    132|       
-          lib_a-assert.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     68|     68|       |     60|     60|       |    128|    128|       
-           lib_a-flags.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    127|    127|       |       |       |       |    127|    127|       
-          lib_a-printf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    116|    116|       |       |       |       |    116|    116|       
-              ip4_addr.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     72|     72|       |     40|     40|       |    112|    112|       
-       class_type_info.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    112|    112|       |    112|    112|       
-         lib_a-s_frexp.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    110|    110|       |       |       |       |    110|    110|       
-                  memp.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    108|    108|       |    108|    108|       
-             lib2funcs.o|       |       |       |       |       |       |    104|    104|       |       |       |       |    104|    104|       |       |       |       |       |       |       |    104|    104|       
-         lib_a-vprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     94|     94|       |       |       |       |     94|     94|       
-    lib_a-s_fpclassify.o|       |       |       |       |       |       |     92|     92|       |       |       |       |     92|     92|       |       |       |       |       |       |       |     92|     92|       
-                   def.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     91|     91|       |       |       |       |     91|     91|       
-        lib_a-fiprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     84|     84|       |       |       |       |     84|     84|       
-             hw_random.o|       |       |       |      4|      4|       |     74|     74|       |       |       |       |     78|     78|       |       |       |       |       |       |       |     74|     74|       
-           stack_check.o|       |       |       |      4|      4|       |       |       |       |       |       |       |      4|      4|       |     32|     32|       |     42|     42|       |     74|     74|       
-                 clock.o|       |       |       |       |       |       |     72|     72|       |       |       |       |     72|     72|       |       |       |       |       |       |       |     72|     72|       
-            reent_init.o|       |       |       |       |       |       |     68|     68|       |       |       |       |     68|     68|       |       |       |       |      2|      2|       |     70|     70|       
-              app_main.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     53|     53|       |     10|     10|       |     63|     63|       
-state_asm--restore_extra|       |       |       |       |       |       |     62|     62|       |       |       |       |     62|     62|       |       |       |       |       |       |       |     62|     62|       
-state_asm--save_extra_nw|       |       |       |       |       |       |     62|     62|       |       |       |       |     62|     62|       |       |       |       |       |       |       |     62|     62|       
-               new_opv.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     56|     56|       |     56|     56|       
-                    ip.o|       |       |       |     60|     60|       |       |       |       |       |       |       |     60|     60|       |     50|     50|       |       |       |       |     50|     50|       
-                  uart.o|      8|      8|       |     12|     12|       |       |       |       |       |       |       |     20|     20|       |     38|     38|       |       |       |       |     46|     46|       
-xtensa_vector_defaults.o|       |       |       |       |       |       |     46|     46|       |       |       |       |     46|     46|       |       |       |       |       |       |       |     46|     46|       
-           lib_a-fseek.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     45|     45|       |       |       |       |     45|     45|       
-               _divdi3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     40|     40|       |     40|     40|       
-               _moddi3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     40|     40|       |     40|     40|       
-              _udivdi3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     40|     40|       |     40|     40|       
-              _umoddi3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     40|     40|       |     40|     40|       
-                new_op.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     40|     40|       |     40|     40|       
-           xtensa_init.o|       |       |       |      4|      4|       |     32|     32|       |       |       |       |     36|     36|       |       |       |       |       |       |       |     32|     32|       
-  interrupts--intlevel.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     32|     32|       |     32|     32|       
-                  init.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     27|     27|       |       |       |       |     27|     27|       
-             wifi_init.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     17|     17|       |      9|      9|       |     26|     26|       
-              ip6_addr.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     20|     20|       |     20|     20|       
-           lib_a-errno.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     10|     10|       |       |       |       |     10|     10|       
- int_asm--set_intclear.o|       |       |       |       |       |       |      8|      8|       |       |       |       |      8|      8|       |       |       |       |       |       |       |      8|      8|       
-                   eri.o|       |       |       |       |       |       |      8|      8|       |       |       |       |      8|      8|       |       |       |       |       |       |       |      8|      8|       
-   cxx_exception_stubs.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |      6|      6|       |       |       |       |      6|      6|       
-            cxx_guards.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |      5|      5|       |       |       |       |      5|      5|       
-      FreeRTOS-openocd.o|      4|      4|       |       |       |       |       |       |       |       |       |       |      4|      4|       |       |       |       |       |       |       |      4|      4|       
-       eh_term_handler.o|      4|      4|       |       |       |       |       |       |       |       |       |       |      4|      4|       |       |       |       |       |       |       |      4|      4|       
-       eh_unex_handler.o|      4|      4|       |       |       |       |       |       |       |       |       |       |      4|      4|       |       |       |       |       |       |       |      4|      4|       
-      bootloader_flash.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-        bootloader_sha.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-      esp_image_format.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-           lib_a-fputs.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-        lib_a-snprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-        lib_a-strerror.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-       lib_a-sysgettod.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-        lib_a-u_strerr.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-       lib_a-vsnprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-  lib_a-xpg_strerror_r.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-           coexist_api.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-         coexist_arbit.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-          coexist_core.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-           coexist_dbg.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-            coexist_hw.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-         coexist_param.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-         coexist_timer.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-              misc_nvs.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                  gpio.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-      ets_timer_legacy.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-event_default_handlers.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-            event_loop.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-            lib_printf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-              phy_init.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                   sha.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-       wifi_os_adapter.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-              emac_dev.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-             emac_main.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-          event_groups.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-               ringbuf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-            _addsubdf3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-               _cmpdf2.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-               _divdf3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-               _divsf3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-          _extendsfdf2.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-              _fixdfsi.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-            _floatdidf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-            _floatdisf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-            _floatsidf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-               _muldf3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-          _popcountsi2.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-            ethernetif.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                ethip6.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                wlanif.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-            esp_sha256.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                  mesh.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-           mesh_common.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-           mesh_config.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-             mesh_main.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-           mesh_parent.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-            mesh_route.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-         mesh_schedule.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-            mesh_timer.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-        mesh_utilities.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-             mesh_wifi.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-             ieee80211.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-      ieee80211_action.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-ieee80211_action_vendor.|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-         ieee80211_api.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-      ieee80211_crypto.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
- ieee80211_crypto_ccmp.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
- ieee80211_crypto_tkip.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-  ieee80211_crypto_wep.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-       ieee80211_debug.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-         ieee80211_ets.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-      ieee80211_hostap.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-          ieee80211_ht.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-   ieee80211_ie_vendor.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-       ieee80211_input.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-       ieee80211_ioctl.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-  ieee80211_mesh_quick.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-        ieee80211_misc.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-         ieee80211_nvs.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-      ieee80211_output.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-         ieee80211_phy.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-       ieee80211_power.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-       ieee80211_proto.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-   ieee80211_regdomain.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-        ieee80211_rfid.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-        ieee80211_scan.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-         ieee80211_sta.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-       ieee80211_timer.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                wl_chm.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                wl_cnx.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-               nvs_api.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-    nvs_item_hash_list.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-              nvs_page.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-       nvs_pagemanager.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-           nvs_storage.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-             nvs_types.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                   phy.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-           phy_chip_v7.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-       phy_chip_v7_ana.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-       phy_chip_v7_cal.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-               esf_buf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-             if_hwctrl.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                  lmac.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                    pm.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-  pm_for_bcn_only_mode.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                    pp.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-              pp_debug.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-              pp_timer.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-          rate_control.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                   trc.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                  wdev.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                 bt_bb.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                    pm.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                   rtc.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-            rtc_analog.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-       smartconfig_ack.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-           gpio_periph.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-             rtc_sleep.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-             bad_alloc.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                del_op.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-               del_opv.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-          eh_exception.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-           new_handler.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                  pure.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                 tinfo.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-             ap_config.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                common.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                   wpa.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-              wpa_auth.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-           wpa_auth_ie.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-            wpa_common.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-             wpa_debug.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                wpa_ie.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-              wpa_main.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-                wpabuf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-             wpas_glue.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-         wpa2_internal.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-             os_xtensa.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-          wps_internal.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
+                         -----------------------                         -----------------------                         -----------------------                         -----------------------
+        lib_a-vfprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |  14193|  14193|       |    704|    704|       |  14897|  14897|
+       lib_a-svfprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |  13834|  13834|       |    756|    756|       |  14590|  14590|
+      lib_a-svfiprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |   9642|   9642|       |   1176|   1176|       |  10818|  10818|
+       lib_a-vfiprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |   9933|   9933|       |    704|    704|       |  10637|  10637|
+                tcp_in.o|       |       |       |     54|     54|       |       |       |       |       |       |       |     54|     54|       |   8127|   8127|       |    916|    916|       |   9043|   9043|
+                   nd6.o|      8|      8|       |   1027|   1027|       |       |       |       |       |       |       |   1035|   1035|       |   8427|   8427|       |    136|    136|       |   8571|   8571|
+                 tasks.o|     20|     20|       |    700|    700|       |   5667|   5667|       |       |       |       |   6387|   6387|       |       |       |       |    503|    503|       |   6190|   6190|
+               tcp_out.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |   5060|   5060|       |   1124|   1124|       |   6184|   6184|
+                   tcp.o|      4|      4|       |     23|     23|       |       |       |       |       |       |       |     27|     27|       |   4290|   4290|       |   1384|   1384|       |   5678|   5678|
+               sockets.o|       |       |       |    728|    728|       |       |       |       |       |       |       |    728|    728|       |   4627|   4627|       |    824|    824|       |   5451|   5451|
+               api_msg.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |   3763|   3763|       |   1366|   1366|       |   5129|   5129|
+                  dhcp.o|       |       |       |      8|      8|       |       |       |       |       |       |       |      8|      8|       |   3456|   3456|       |   1401|   1401|       |   4857|   4857|
+                 panic.o|   2579|   2579|       |      5|      5|       |   2145|   2145|       |       |       |       |   4729|   4729|       |       |       |       |       |       |       |   4724|   4724|
+       esp_err_to_name.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     50|     50|       |   4091|   4091|       |   4141|   4141|
+        unwind-dw2-fde.o|      4|      4|       |     20|     20|       |       |       |       |       |       |       |     24|     24|       |   3316|   3316|       |    404|    404|       |   3724|   3724|
+                  pbuf.o|       |       |       |      1|      1|       |       |       |       |       |       |       |      1|      1|       |   2453|   2453|       |   1161|   1161|       |   3614|   3614|
+               portasm.o|   3084|   3084|       |       |       |       |    480|    480|       |       |       |       |   3564|   3564|       |       |       |       |       |       |       |   3564|   3564|
+            lib_a-dtoa.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |   3522|   3522|       |     13|     13|       |   3535|   3535|
+                   ip6.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |   3212|   3212|       |    124|    124|       |   3336|   3336|
+   spi_flash_rom_patch.o|       |       |       |       |       |       |   2518|   2518|       |       |       |       |   2518|   2518|       |       |       |       |    766|    766|       |   3284|   3284|
+                etharp.o|       |       |       |    241|    241|       |       |       |       |       |       |       |    241|    241|       |   2618|   2618|       |    658|    658|       |   3276|   3276|
+                   udp.o|      2|      2|       |      4|      4|       |       |       |       |       |       |       |      6|      6|       |   3020|   3020|       |    216|    216|       |   3238|   3238|
+            intr_alloc.o|      8|      8|       |     22|     22|       |    726|    726|       |       |       |       |    756|    756|       |   1749|   1749|       |    710|    710|       |   3193|   3193|
+            multi_heap.o|    857|    857|       |       |       |       |   2217|   2217|       |       |       |       |   3074|   3074|       |       |       |       |       |       |       |   3074|   3074|
+                 queue.o|      8|      8|       |     56|     56|       |   2569|   2569|       |       |       |       |   2633|   2633|       |       |       |       |    369|    369|       |   2946|   2946|
+     unwind-dw2-xtensa.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |   2172|   2172|       |    324|    324|       |   2496|   2496|
+             flash_ops.o|     32|     32|       |     41|     41|       |   2352|   2352|       |       |       |       |   2425|   2425|       |     99|     99|       |       |       |       |   2483|   2483|
+               rtc_clk.o|    660|    660|       |      8|      8|       |   1794|   1794|       |       |       |       |   2462|   2462|       |       |       |       |       |       |       |   2454|   2454|
+           lib_a-mprec.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |   2134|   2134|       |    296|    296|       |   2430|   2430|
+              ip6_frag.o|       |       |       |      6|      6|       |       |       |       |       |       |       |      6|      6|       |   1905|   1905|       |    442|    442|       |   2347|   2347|
+               api_lib.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |   1425|   1425|       |    919|    919|       |   2344|   2344|
+                   vfs.o|    192|    192|       |     40|     40|       |       |       |       |       |       |       |    232|    232|       |   1995|   1995|       |    132|    132|       |   2319|   2319|
+                  igmp.o|       |       |       |     12|     12|       |       |       |       |       |       |       |     12|     12|       |   1604|   1604|       |    707|    707|       |   2311|   2311|
+        unity_platform.o|       |       |       |     13|     13|       |       |       |       |       |       |       |     13|     13|       |   1511|   1511|       |    600|    600|       |   2111|   2111|
+              vfs_uart.o|     40|     40|       |     63|     63|       |       |       |       |       |       |       |    103|    103|       |   1775|   1775|       |    271|    271|       |   2086|   2086|
+       esp_timer_esp32.o|      8|      8|       |     26|     26|       |   1295|   1295|       |       |       |       |   1329|   1329|       |    254|    254|       |    526|    526|       |   2083|   2083|
+            rtc_periph.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |   2080|   2080|       |   2080|   2080|
+                   dns.o|       |       |       |   1292|   1292|       |       |       |       |       |       |       |   1292|   1292|       |   1809|   1809|       |    206|    206|       |   2015|   2015|
+             heap_caps.o|      4|      4|       |       |       |       |   1195|   1195|       |       |       |       |   1199|   1199|       |    188|    188|       |    593|    593|       |   1980|   1980|
+        eh_personality.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |   1561|   1561|       |    384|    384|       |   1945|   1945|
+                   ip4.o|       |       |       |      6|      6|       |       |       |       |       |       |       |      6|      6|       |   1664|   1664|       |    139|    139|       |   1803|   1803|
+            flash_mmap.o|       |       |       |    296|    296|       |   1298|   1298|       |       |       |       |   1594|   1594|       |    124|    124|       |    327|    327|       |   1749|   1749|
+        xtensa_vectors.o|      8|      8|       |       |       |       |   1272|   1272|       |    425|    425|       |   1705|   1705|       |       |       |       |     36|     36|       |   1741|   1741|
+             cpu_start.o|       |       |       |      1|      1|       |    806|    806|       |       |       |       |    807|    807|       |    277|    277|       |    486|    486|       |   1569|   1569|
+                   clk.o|       |       |       |       |       |       |     67|     67|       |       |       |       |     67|     67|       |    581|    581|       |    893|    893|       |   1541|   1541|
+                 netif.o|       |       |       |    241|    241|       |       |       |       |       |       |       |    241|    241|       |   1239|   1239|       |    287|    287|       |   1526|   1526|
+              sys_arch.o|       |       |       |      8|      8|       |       |       |       |       |       |       |      8|      8|       |   1216|   1216|       |    222|    222|       |   1438|   1438|
+  multi_heap_poisoning.o|    470|    470|       |       |       |       |    964|    964|       |       |       |       |   1434|   1434|       |       |       |       |       |       |       |   1434|   1434|
+        heap_caps_init.o|       |       |       |      4|      4|       |       |       |       |       |       |       |      4|      4|       |   1030|   1030|       |    387|    387|       |   1417|   1417|
+                timers.o|      8|      8|       |     56|     56|       |   1149|   1149|       |       |       |       |   1213|   1213|       |       |       |       |    233|    233|       |   1390|   1390|
+                  mld6.o|       |       |       |      4|      4|       |       |       |       |       |       |       |      4|      4|       |   1334|   1334|       |       |       |       |   1334|   1334|
+           cache_utils.o|      4|      4|       |     14|     14|       |    836|    836|       |       |       |       |    854|    854|       |     81|     81|       |    390|    390|       |   1311|   1311|
+                   raw.o|       |       |       |      4|      4|       |       |       |       |       |       |       |      4|      4|       |   1087|   1087|       |    223|    223|       |   1310|   1310|
+             esp_timer.o|      8|      8|       |     20|     20|       |    702|    702|       |       |       |       |    730|    730|       |    429|    429|       |    142|    142|       |   1281|   1281|
+            system_api.o|       |       |       |      8|      8|       |    589|    589|       |       |       |       |    597|    597|       |       |       |       |    662|    662|       |   1251|   1251|
+     soc_memory_layout.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |   1239|   1239|       |   1239|   1239|
+                  icmp.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    769|    769|       |    371|    371|       |   1140|   1140|
+       xtensa_intr_asm.o|   1024|   1024|       |       |       |       |     51|     51|       |       |       |       |   1075|   1075|       |       |       |       |       |       |       |   1075|   1075|
+                   log.o|      8|      8|       |    268|    268|       |    456|    456|       |       |       |       |    732|    732|       |    396|    396|       |    166|    166|       |   1026|   1026|
+               pthread.o|      8|      8|       |      8|      8|       |    174|    174|       |       |       |       |    190|    190|       |    298|    298|       |    512|    512|       |    992|    992|
+                 icmp6.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    863|    863|       |    127|    127|       |    990|    990|
+                  port.o|       |       |       |     16|     16|       |    617|    617|       |       |       |       |    633|    633|       |       |       |       |    369|    369|       |    986|    986|
+              rtc_init.o|       |       |       |       |       |       |    980|    980|       |       |       |       |    980|    980|       |       |       |       |       |       |       |    980|    980|
+              rtc_time.o|       |       |       |       |       |       |    803|    803|       |       |       |       |    803|    803|       |       |       |       |    137|    137|       |    940|    940|
+          dport_access.o|      8|      8|       |     40|     40|       |    539|    539|       |       |       |       |    587|    587|       |    189|    189|       |    129|    129|       |    865|    865|
+          lib_a-fseeko.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    862|    862|       |       |       |       |    862|    862|
+                 unity.o|       |       |       |    108|    108|       |       |       |       |       |       |       |    108|    108|       |    767|    767|       |     90|     90|       |    857|    857|
+           esp_ota_ops.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    123|    123|       |    717|    717|       |    840|    840|
+                 tcpip.o|       |       |       |     16|     16|       |       |       |       |       |       |       |     16|     16|       |    644|    644|       |    191|    191|       |    835|    835|
+                  time.o|       |       |       |     32|     32|       |    139|    139|       |       |       |       |    171|    171|       |    691|    691|       |       |       |       |    830|    830|
+           periph_ctrl.o|      8|      8|       |       |       |       |       |       |       |       |       |       |      8|      8|       |    520|    520|       |    256|    256|       |    784|    784|
+                timers.o|       |       |       |     12|     12|       |       |       |       |       |       |       |     12|     12|       |    638|    638|       |    131|    131|       |    769|    769|
+             partition.o|       |       |       |      8|      8|       |       |       |       |       |       |       |      8|      8|       |    582|    582|       |    141|    141|       |    723|    723|
+                 locks.o|      8|      8|       |       |       |       |    552|    552|       |       |       |       |    560|    560|       |       |       |       |     84|     84|       |    644|    644|
+ pthread_local_storage.o|      8|      8|       |      4|      4|       |       |       |       |       |       |       |     12|     12|       |    476|    476|       |    126|    126|       |    610|    610|
+                   ipc.o|       |       |       |     36|     36|       |    159|    159|       |       |       |       |    195|    195|       |    329|    329|       |    104|    104|       |    592|    592|
+           inet_chksum.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    580|    580|       |       |       |       |    580|    580|
+    tcpip_adapter_lwip.o|       |       |       |     81|     81|       |       |       |       |       |       |       |     81|     81|       |    180|    180|       |    359|    359|       |    539|    539|
+         crosscore_int.o|      8|      8|       |      8|      8|       |    204|    204|       |       |       |       |    220|    220|       |    126|    126|       |    148|    148|       |    486|    486|
+                netbuf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    154|    154|       |    326|    326|       |    480|    480|
+              vfs_lwip.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    307|    307|       |    155|    155|       |    462|    462|
+                 timer.o|     16|     16|       |       |       |       |       |       |       |       |       |       |     16|     16|       |    112|    112|       |    281|    281|       |    409|    409|
+               int_wdt.o|       |       |       |      1|      1|       |     87|     87|       |       |       |       |     88|     88|       |    301|    301|       |       |       |       |    388|    388|
+            eh_globals.o|       |       |       |     16|     16|       |       |       |       |       |       |       |     16|     16|       |    149|    149|       |    193|    193|       |    342|    342|
+              brownout.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    145|    145|       |    191|    191|       |    336|    336|
+       windowspill_asm.o|       |       |       |       |       |       |    311|    311|       |       |       |       |    311|    311|       |       |       |       |       |       |       |    311|    311|
+              cpu_util.o|       |       |       |       |       |       |    310|    310|       |       |       |       |    310|    310|       |       |       |       |       |       |       |    310|    310|
+            rtc_module.o|      8|      8|       |      8|      8|       |       |       |       |       |       |       |     16|     16|       |    291|    291|       |       |       |       |    299|    299|
+        xtensa_context.o|       |       |       |       |       |       |    299|    299|       |       |       |       |    299|    299|       |       |       |       |       |       |       |    299|    299|
+          eh_terminate.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    117|    117|       |    141|    141|       |    258|    258|
+              ethernet.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    244|    244|       |     12|     12|       |    256|    256|
+dport_panic_highint_hdl.|      8|      8|       |       |       |       |    234|    234|       |       |       |       |    242|    242|       |       |       |       |       |       |       |    242|    242|
+           lib_a-reent.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    232|    232|       |       |       |       |    232|    232|
+           lib_a-fopen.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    228|    228|       |       |       |       |    228|    228|
+         syscall_table.o|    144|    144|       |    240|    240|       |       |       |       |       |       |       |    384|    384|       |     67|     67|       |       |       |       |    211|    211|
+            dhcpserver.o|       |       |       |      4|      4|       |       |       |       |       |       |       |      4|      4|       |    203|    203|       |       |       |       |    203|    203|
+        freertos_hooks.o|      8|      8|       |    128|    128|       |     43|     43|       |       |       |       |    179|    179|       |    137|    137|       |       |       |       |    188|    188|
+            lib_a-puts.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    182|    182|       |       |       |       |    182|    182|
+            test_utils.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     38|     38|       |    140|    140|       |    178|    178|
+         lib_a-sprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    167|    167|       |       |       |       |    167|    167|
+         cache_err_int.o|       |       |       |       |       |       |     56|     56|       |       |       |       |     56|     56|       |     98|     98|       |       |       |       |    154|    154|
+                  list.o|       |       |       |       |       |       |    142|    142|       |       |       |       |    142|    142|       |       |       |       |       |       |       |    142|    142|
+           xtensa_intr.o|       |       |       |       |       |       |    104|    104|       |       |       |       |    104|    104|       |       |       |       |     35|     35|       |    139|    139|
+              syscalls.o|       |       |       |       |       |       |     94|     94|       |       |       |       |     94|     94|       |     45|     45|       |       |       |       |    139|    139|
+    si_class_type_info.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    136|    136|       |    136|    136|
+             dbg_stubs.o|       |       |       |   2072|   2072|       |     32|     32|       |       |       |       |   2104|   2104|       |    100|    100|       |       |       |       |    132|    132|
+          lib_a-assert.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     68|     68|       |     60|     60|       |    128|    128|
+           lib_a-flags.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    127|    127|       |       |       |       |    127|    127|
+          lib_a-printf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    116|    116|       |       |       |       |    116|    116|
+              ip4_addr.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     72|     72|       |     40|     40|       |    112|    112|
+       class_type_info.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    112|    112|       |    112|    112|
+         lib_a-s_frexp.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    110|    110|       |       |       |       |    110|    110|
+                  memp.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    108|    108|       |    108|    108|
+             lib2funcs.o|       |       |       |       |       |       |    104|    104|       |       |       |       |    104|    104|       |       |       |       |       |       |       |    104|    104|
+         lib_a-vprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     94|     94|       |       |       |       |     94|     94|
+    lib_a-s_fpclassify.o|       |       |       |       |       |       |     92|     92|       |       |       |       |     92|     92|       |       |       |       |       |       |       |     92|     92|
+                   def.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     91|     91|       |       |       |       |     91|     91|
+        lib_a-fiprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     84|     84|       |       |       |       |     84|     84|
+             hw_random.o|       |       |       |      4|      4|       |     74|     74|       |       |       |       |     78|     78|       |       |       |       |       |       |       |     74|     74|
+           stack_check.o|       |       |       |      4|      4|       |       |       |       |       |       |       |      4|      4|       |     32|     32|       |     42|     42|       |     74|     74|
+                 clock.o|       |       |       |       |       |       |     72|     72|       |       |       |       |     72|     72|       |       |       |       |       |       |       |     72|     72|
+            reent_init.o|       |       |       |       |       |       |     68|     68|       |       |       |       |     68|     68|       |       |       |       |      2|      2|       |     70|     70|
+              app_main.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     53|     53|       |     10|     10|       |     63|     63|
+state_asm--restore_extra|       |       |       |       |       |       |     62|     62|       |       |       |       |     62|     62|       |       |       |       |       |       |       |     62|     62|
+state_asm--save_extra_nw|       |       |       |       |       |       |     62|     62|       |       |       |       |     62|     62|       |       |       |       |       |       |       |     62|     62|
+               new_opv.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     56|     56|       |     56|     56|
+                    ip.o|       |       |       |     60|     60|       |       |       |       |       |       |       |     60|     60|       |     50|     50|       |       |       |       |     50|     50|
+                  uart.o|      8|      8|       |     12|     12|       |       |       |       |       |       |       |     20|     20|       |     38|     38|       |       |       |       |     46|     46|
+xtensa_vector_defaults.o|       |       |       |       |       |       |     46|     46|       |       |       |       |     46|     46|       |       |       |       |       |       |       |     46|     46|
+           lib_a-fseek.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     45|     45|       |       |       |       |     45|     45|
+               _divdi3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     40|     40|       |     40|     40|
+               _moddi3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     40|     40|       |     40|     40|
+              _udivdi3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     40|     40|       |     40|     40|
+              _umoddi3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     40|     40|       |     40|     40|
+                new_op.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     40|     40|       |     40|     40|
+           xtensa_init.o|       |       |       |      4|      4|       |     32|     32|       |       |       |       |     36|     36|       |       |       |       |       |       |       |     32|     32|
+  interrupts--intlevel.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     32|     32|       |     32|     32|
+                  init.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     27|     27|       |       |       |       |     27|     27|
+             wifi_init.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     17|     17|       |      9|      9|       |     26|     26|
+              ip6_addr.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     20|     20|       |     20|     20|
+           lib_a-errno.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     10|     10|       |       |       |       |     10|     10|
+ int_asm--set_intclear.o|       |       |       |       |       |       |      8|      8|       |       |       |       |      8|      8|       |       |       |       |       |       |       |      8|      8|
+                   eri.o|       |       |       |       |       |       |      8|      8|       |       |       |       |      8|      8|       |       |       |       |       |       |       |      8|      8|
+   cxx_exception_stubs.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |      6|      6|       |       |       |       |      6|      6|
+            cxx_guards.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |      5|      5|       |       |       |       |      5|      5|
+      FreeRTOS-openocd.o|      4|      4|       |       |       |       |       |       |       |       |       |       |      4|      4|       |       |       |       |       |       |       |      4|      4|
+       eh_term_handler.o|      4|      4|       |       |       |       |       |       |       |       |       |       |      4|      4|       |       |       |       |       |       |       |      4|      4|
+       eh_unex_handler.o|      4|      4|       |       |       |       |       |       |       |       |       |       |      4|      4|       |       |       |       |       |       |       |      4|      4|
+      bootloader_flash.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+        bootloader_sha.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+      esp_image_format.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+           lib_a-fputs.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+        lib_a-snprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+        lib_a-strerror.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+       lib_a-sysgettod.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+        lib_a-u_strerr.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+       lib_a-vsnprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+  lib_a-xpg_strerror_r.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+           coexist_api.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+         coexist_arbit.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+          coexist_core.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+           coexist_dbg.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+            coexist_hw.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+         coexist_param.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+         coexist_timer.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+              misc_nvs.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                  gpio.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+      ets_timer_legacy.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+event_default_handlers.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+            event_loop.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+            lib_printf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+              phy_init.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                   sha.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+       wifi_os_adapter.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+              emac_dev.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+             emac_main.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+          event_groups.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+               ringbuf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+            _addsubdf3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+               _cmpdf2.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+               _divdf3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+               _divsf3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+          _extendsfdf2.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+              _fixdfsi.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+            _floatdidf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+            _floatdisf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+            _floatsidf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+               _muldf3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+          _popcountsi2.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+            ethernetif.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                ethip6.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                wlanif.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+            esp_sha256.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                  mesh.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+           mesh_common.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+           mesh_config.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+             mesh_main.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+           mesh_parent.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+            mesh_route.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+         mesh_schedule.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+            mesh_timer.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+        mesh_utilities.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+             mesh_wifi.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+             ieee80211.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+      ieee80211_action.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+ieee80211_action_vendor.|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+         ieee80211_api.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+      ieee80211_crypto.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+ ieee80211_crypto_ccmp.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+ ieee80211_crypto_tkip.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+  ieee80211_crypto_wep.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+       ieee80211_debug.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+         ieee80211_ets.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+      ieee80211_hostap.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+          ieee80211_ht.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+   ieee80211_ie_vendor.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+       ieee80211_input.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+       ieee80211_ioctl.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+  ieee80211_mesh_quick.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+        ieee80211_misc.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+         ieee80211_nvs.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+      ieee80211_output.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+         ieee80211_phy.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+       ieee80211_power.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+       ieee80211_proto.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+   ieee80211_regdomain.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+        ieee80211_rfid.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+        ieee80211_scan.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+         ieee80211_sta.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+       ieee80211_timer.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                wl_chm.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                wl_cnx.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+               nvs_api.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+    nvs_item_hash_list.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+              nvs_page.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+       nvs_pagemanager.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+           nvs_storage.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+             nvs_types.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                   phy.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+           phy_chip_v7.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+       phy_chip_v7_ana.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+       phy_chip_v7_cal.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+               esf_buf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+             if_hwctrl.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                  lmac.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                    pm.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+  pm_for_bcn_only_mode.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                    pp.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+              pp_debug.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+              pp_timer.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+          rate_control.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                   trc.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                  wdev.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                 bt_bb.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                    pm.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                   rtc.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+            rtc_analog.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+       smartconfig_ack.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+           gpio_periph.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+             rtc_sleep.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+             bad_alloc.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                del_op.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+               del_opv.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+          eh_exception.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+           new_handler.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                  pure.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                 tinfo.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+             ap_config.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                common.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                   wpa.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+              wpa_auth.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+           wpa_auth_ie.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+            wpa_common.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+             wpa_debug.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                wpa_ie.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+              wpa_main.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+                wpabuf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+             wpas_glue.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+         wpa2_internal.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+             os_xtensa.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+          wps_internal.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
 
 ***
 Running idf_size.py diff --files with another app...
@@ -1533,7 +1534,7 @@ Total image size:  283036 bytes (.bin may be padded larger)          194629     
 Per-file contributions to ELF file:
              Object File              DRAM .data                 & 0.bss             IRAM0 .text             & 0.vectors            ram_st_total             Flash .text               & .rodata             flash_total
                         |    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>
-                         -----------------------                         -----------------------                         -----------------------                         -----------------------                        
+                         -----------------------                         -----------------------                         -----------------------                         -----------------------
         lib_a-vfprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |  14193|  13681|   +512|    704|    700|     +4|  14897|  14381|   +516
        lib_a-svfprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |  13834|  13290|   +544|    756|    752|     +4|  14590|  14042|   +548
       lib_a-svfiprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |   9642|   9623|    +19|   1176|   1172|     +4|  10818|  10795|    +23
@@ -1545,34 +1546,34 @@ Per-file contributions to ELF file:
            lib_a-reent.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    232|    236|     -4|       |       |       |    232|    236|     -4
            lib_a-fopen.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    228|    244|    -16|       |       |       |    228|    244|    -16
             lib_a-puts.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    182|    234|    -52|       |       |       |    182|    234|    -52
-          lib_a-assert.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     68|     68|       |     60|     60|       |    128|    128|       
+          lib_a-assert.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     68|     68|       |     60|     60|       |    128|    128|
            lib_a-flags.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    127|    128|     -1|       |       |       |    127|    128|     -1
           lib_a-printf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    116|       |   +116|       |       |       |    116|       |   +116
          lib_a-s_frexp.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    110|    100|    +10|       |       |       |    110|    100|    +10
-         lib_a-vprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     94|     94|       |       |       |       |     94|     94|       
-        lib_a-fiprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     84|     84|       |       |       |       |     84|     84|       
-state_asm--restore_extra|       |       |       |       |       |       |     62|     62|       |       |       |       |     62|     62|       |       |       |       |       |       |       |     62|     62|       
-state_asm--save_extra_nw|       |       |       |       |       |       |     62|     62|       |       |       |       |     62|     62|       |       |       |       |       |       |       |     62|     62|       
-           lib_a-fseek.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     45|     45|       |       |       |       |     45|     45|       
-               _divdi3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     40|     40|       |     40|     40|       
-               _moddi3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     40|     40|       |     40|     40|       
-              _udivdi3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     40|     40|       |     40|     40|       
-              _umoddi3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     40|     40|       |     40|     40|       
-  interrupts--intlevel.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     32|     32|       |     32|     32|       
-           lib_a-errno.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     10|     10|       |       |       |       |     10|     10|       
- int_asm--set_intclear.o|       |       |       |       |       |       |      8|      8|       |       |       |       |      8|      8|       |       |       |       |       |       |       |      8|      8|       
-           lib_a-fputs.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
+         lib_a-vprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     94|     94|       |       |       |       |     94|     94|
+        lib_a-fiprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     84|     84|       |       |       |       |     84|     84|
+state_asm--restore_extra|       |       |       |       |       |       |     62|     62|       |       |       |       |     62|     62|       |       |       |       |       |       |       |     62|     62|
+state_asm--save_extra_nw|       |       |       |       |       |       |     62|     62|       |       |       |       |     62|     62|       |       |       |       |       |       |       |     62|     62|
+           lib_a-fseek.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     45|     45|       |       |       |       |     45|     45|
+               _divdi3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     40|     40|       |     40|     40|
+               _moddi3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     40|     40|       |     40|     40|
+              _udivdi3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     40|     40|       |     40|     40|
+              _umoddi3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     40|     40|       |     40|     40|
+  interrupts--intlevel.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     32|     32|       |     32|     32|
+           lib_a-errno.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     10|     10|       |       |       |       |     10|     10|
+ int_asm--set_intclear.o|       |       |       |       |       |       |      8|      8|       |       |       |       |      8|      8|       |       |       |       |       |       |       |      8|      8|
+           lib_a-fputs.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
         lib_a-snprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    217|   -217|       |       |       |       |    217|   -217
-        lib_a-strerror.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-       lib_a-sysgettod.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-        lib_a-u_strerr.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-            _addsubdf3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-               _cmpdf2.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-               _divdf3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-              _fixdfsi.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-            _floatsidf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-               _muldf3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-          _popcountsi2.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
+        lib_a-strerror.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+       lib_a-sysgettod.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+        lib_a-u_strerr.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+            _addsubdf3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+               _cmpdf2.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+               _divdf3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+              _fixdfsi.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+            _floatsidf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+               _muldf3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+          _popcountsi2.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
 The following entries are present in <CURRENT> only:
              Object File DRAM .data & 0.bss IRAM0 .text & 0.vectors ram_st_total Flash .text & .rodata flash_total
                 tcp_in.o          0      54           0           0           54        8127       916        9043
@@ -2027,7 +2028,7 @@ Total image size:  194629 bytes (.bin may be padded larger)          283036     
 Per-file contributions to ELF file:
              Object File              DRAM .data                 & 0.bss             IRAM0 .text             & 0.vectors            ram_st_total             Flash .text               & .rodata             flash_total
                         |    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>|    <C>|    <R>|<C>-<R>
-                         -----------------------                         -----------------------                         -----------------------                         -----------------------                        
+                         -----------------------                         -----------------------                         -----------------------                         -----------------------
         lib_a-vfprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |  13681|  14193|   -512|    700|    704|     -4|  14381|  14897|   -516
        lib_a-svfprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |  13290|  13834|   -544|    752|    756|     -4|  14042|  14590|   -548
       lib_a-svfiprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |   9623|   9642|    -19|   1172|   1176|     -4|  10795|  10818|    -23
@@ -2040,33 +2041,33 @@ Per-file contributions to ELF file:
            lib_a-reent.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    236|    232|     +4|       |       |       |    236|    232|     +4
             lib_a-puts.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    234|    182|    +52|       |       |       |    234|    182|    +52
         lib_a-snprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    217|       |   +217|       |       |       |    217|       |   +217
-          lib_a-assert.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     68|     68|       |     60|     60|       |    128|    128|       
+          lib_a-assert.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     68|     68|       |     60|     60|       |    128|    128|
            lib_a-flags.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    128|    127|     +1|       |       |       |    128|    127|     +1
          lib_a-s_frexp.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    100|    110|    -10|       |       |       |    100|    110|    -10
-         lib_a-vprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     94|     94|       |       |       |       |     94|     94|       
-        lib_a-fiprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     84|     84|       |       |       |       |     84|     84|       
-state_asm--restore_extra|       |       |       |       |       |       |     62|     62|       |       |       |       |     62|     62|       |       |       |       |       |       |       |     62|     62|       
-state_asm--save_extra_nw|       |       |       |       |       |       |     62|     62|       |       |       |       |     62|     62|       |       |       |       |       |       |       |     62|     62|       
-           lib_a-fseek.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     45|     45|       |       |       |       |     45|     45|       
-               _divdi3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     40|     40|       |     40|     40|       
-               _moddi3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     40|     40|       |     40|     40|       
-              _udivdi3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     40|     40|       |     40|     40|       
-              _umoddi3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     40|     40|       |     40|     40|       
-  interrupts--intlevel.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     32|     32|       |     32|     32|       
-           lib_a-errno.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     10|     10|       |       |       |       |     10|     10|       
- int_asm--set_intclear.o|       |       |       |       |       |       |      8|      8|       |       |       |       |      8|      8|       |       |       |       |       |       |       |      8|      8|       
-           lib_a-fputs.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
+         lib_a-vprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     94|     94|       |       |       |       |     94|     94|
+        lib_a-fiprintf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     84|     84|       |       |       |       |     84|     84|
+state_asm--restore_extra|       |       |       |       |       |       |     62|     62|       |       |       |       |     62|     62|       |       |       |       |       |       |       |     62|     62|
+state_asm--save_extra_nw|       |       |       |       |       |       |     62|     62|       |       |       |       |     62|     62|       |       |       |       |       |       |       |     62|     62|
+           lib_a-fseek.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     45|     45|       |       |       |       |     45|     45|
+               _divdi3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     40|     40|       |     40|     40|
+               _moddi3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     40|     40|       |     40|     40|
+              _udivdi3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     40|     40|       |     40|     40|
+              _umoddi3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     40|     40|       |     40|     40|
+  interrupts--intlevel.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     32|     32|       |     32|     32|
+           lib_a-errno.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |     10|     10|       |       |       |       |     10|     10|
+ int_asm--set_intclear.o|       |       |       |       |       |       |      8|      8|       |       |       |       |      8|      8|       |       |       |       |       |       |       |      8|      8|
+           lib_a-fputs.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
           lib_a-printf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |    116|   -116|       |       |       |       |    116|   -116
-        lib_a-strerror.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-       lib_a-sysgettod.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-        lib_a-u_strerr.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-            _addsubdf3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-               _cmpdf2.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-               _divdf3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-              _fixdfsi.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-            _floatsidf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-               _muldf3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
-          _popcountsi2.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       
+        lib_a-strerror.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+       lib_a-sysgettod.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+        lib_a-u_strerr.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+            _addsubdf3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+               _cmpdf2.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+               _divdf3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+              _fixdfsi.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+            _floatsidf.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+               _muldf3.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
+          _popcountsi2.o|       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |       |
 The following entries are present in <CURRENT> only:
              Object File DRAM .data & 0.bss IRAM0 .text & 0.vectors ram_st_total Flash .text & .rodata flash_total
                tasks.c.o         12     700        5737           0         6449           0       451        6200
@@ -2520,6 +2521,7 @@ Used Flash size :  186524 bytes                                           0     
       .text     :  146944 bytes                                           0        +146944
       .rodata   :   39580 bytes                                           0         +39580
 Total image size:  283036 bytes (.bin may be padded larger)           51920        +231116
+
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
 
 .dram0.bss                                  <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
@@ -2612,6 +2614,7 @@ Used Flash size :  186524 bytes                                           0     
       .text     :  146944 bytes                                           0        +146944
       .rodata   :   39580 bytes                                           0         +39580
 Total image size:  283036 bytes (.bin may be padded larger)           51920        +231116
+
 Symbols within the archive: libc.a (Not all symbols may be reported)
 
 .dram0.bss                                  <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
@@ -2681,6 +2684,7 @@ Used Flash size :  186524 bytes                                      186524
       .text     :  146944 bytes                                      146944
       .rodata   :   39580 bytes                                       39580
 Total image size:  283036 bytes (.bin may be padded larger)          283036
+
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
 
 .dram0.bss                                  <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
@@ -2762,6 +2766,7 @@ Used Flash size :  186524 bytes                                       99551     
       .text     :  146944 bytes                                       77191         +69753
       .rodata   :   39580 bytes                                       22360         +17220
 Total image size:  283036 bytes (.bin may be padded larger)          194629         +88407
+
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
 
 .dram0.bss                                  <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
@@ -2911,6 +2916,7 @@ Used Flash size :   99551 bytes                                      186524     
       .text     :   77191 bytes                                      146944         -69753
       .rodata   :   22360 bytes                                       39580         -17220
 Total image size:  194629 bytes (.bin may be padded larger)          283036         -88407
+
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
 
 .dram0.bss                                  <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
@@ -3060,6 +3066,7 @@ Used Flash size :  186524 bytes                                       99551     
       .text     :  146944 bytes                                       77191         +69753
       .rodata   :   39580 bytes                                       22360         +17220
 Total image size:  283036 bytes (.bin may be padded larger)          194629         +88407
+
 Symbols within the archive: libfreertos.a (Not all symbols may be reported)
 
 .dram0.bss                                  <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
@@ -3673,105 +3680,106 @@ Used Flash size :   93019 bytes
       .text     :   74439 bytes
       .rodata   :   18580 bytes
 Total image size:  134106 bytes (.bin may be padded larger)
+
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
 
-.dram0.bss                                  <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
-    p_timer_obj                                    16            0                       +16
-    p_uart_obj                                      8            0                        +8
-    s_rtc_isr_handle                                4            0                        +4
-    s_rtc_isr_handler_list                          4            0                        +4
-Section total:                                     32            0                       +32
+Symbols from section: .dram0.bss
+	p_timer_obj                    :  16
+	p_uart_obj                     :   8
+	s_rtc_isr_handle               :   4
+	s_rtc_isr_handler_list         :   4
+Section total: 32
 
-.dram0.data                                 <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
-    periph_spinlock                                 8            0                        +8
-    rtc_spinlock                                    8            0                        +8
-    s_rtc_isr_handler_list_lock                     8            0                        +8
-    timer_spinlock                                 16            0                       +16
-    uart_context                                   32            0                       +32
-    uart_selectlock                                 8            0                        +8
-Section total:                                     80            0                       +80
+Symbols from section: .dram0.data
+	uart_context                   :  32
+	timer_spinlock                 :  16
+	periph_spinlock                :   8
+	rtc_spinlock                   :   8
+	s_rtc_isr_handler_list_lock    :   8
+	uart_selectlock                :   8
+Section total: 80
 
-.flash.rodata                               <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
-    __FUNCTION__$5699                              24            0                       +24
-    __FUNCTION__$6896                              21            0                       +21
-    __FUNCTION__$6901                              21            0                       +21
-    __FUNCTION__$6906                              19            0                       +19
-    __FUNCTION__$6911                              19            0                       +19
-    __FUNCTION__$6916                              16            0                       +16
-    __FUNCTION__$6921                              16            0                       +16
-    __FUNCTION__$6926                              18            0                       +18
-    __FUNCTION__$6932                              18            0                       +18
-    __FUNCTION__$6966                              22            0                       +22
-    __FUNCTION__$6971                              23            0                       +23
-    __FUNCTION__$7131                              18            0                       +18
-    __FUNCTION__$7196                              27            0                       +27
-    __FUNCTION__$7202                              17            0                       +17
-    get_clk_en_mask                               136            0                      +136
-    get_rst_en_mask                               136            0                      +136
-    timer_get_counter_value.str1.4                146            0                      +146
-    uart_flush_input.str1.4                        45            0                       +45
-    uart_pattern_enqueue.str1.4                    88            0                       +88
-    uart_pattern_pop_pos.str1.4                    18            0                       +18
-    uart_set_stop_bits.str1.4                      15            0                       +15
-    uart_set_word_length.str1.4                    31            0                       +31
-Section total:                                    894            0                      +894
+Symbols from section: .flash.rodata
+	timer_get_counter_value.str1.4 : 146
+	get_clk_en_mask                : 136
+	get_rst_en_mask                : 136
+	uart_pattern_enqueue.str1.4    :  88
+	uart_flush_input.str1.4        :  45
+	uart_set_word_length.str1.4    :  31
+	__FUNCTION__$7196              :  27
+	__FUNCTION__$5699              :  24
+	__FUNCTION__$6971              :  23
+	__FUNCTION__$6966              :  22
+	__FUNCTION__$6896              :  21
+	__FUNCTION__$6901              :  21
+	__FUNCTION__$6906              :  19
+	__FUNCTION__$6911              :  19
+	__FUNCTION__$6926              :  18
+	__FUNCTION__$6932              :  18
+	__FUNCTION__$7131              :  18
+	uart_pattern_pop_pos.str1.4    :  18
+	__FUNCTION__$7202              :  17
+	__FUNCTION__$6916              :  16
+	__FUNCTION__$6921              :  16
+	uart_set_stop_bits.str1.4      :  15
+Section total: 894
 
-.flash.text                                 <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
-    get_clk_en_mask                               267            0                      +267
-    get_clk_en_reg                                 21            0                       +21
-    get_rst_en_mask                               198            0                      +198
-    get_rst_en_reg                                 25            0                       +25
-    is_wifi_clk_peripheral                         38            0                       +38
-    periph_module_enable                          112            0                      +112
-    rtc_gpio_force_hold_dis_all                    53            0                       +53
-    rtc_isr                                        90            0                       +90
-    rtc_isr_ensure_installed                       79            0                       +79
-    rtc_isr_register                               62            0                       +62
-    timer_group_intr_enable                       184            0                      +184
-    uart_disable_intr_mask                         96            0                       +96
-    uart_disable_rx_intr                           18            0                       +18
-    uart_enable_intr_mask                          98            0                       +98
-    uart_enable_rx_intr                            18            0                       +18
-    uart_flush_input                              453            0                      +453
-    uart_get_baudrate                              82            0                       +82
-    uart_get_bufferedlen                          109            0                      +109
-    uart_get_parity                                69            0                       +69
-    uart_get_selectlock                            12            0                       +12
-    uart_get_stop_bits                             69            0                       +69
-    uart_get_word_length                           69            0                       +69
-    uart_is_driver_installed                       30            0                       +30
-    uart_pattern_queue_update                      74            0                       +74
-    uart_set_baudrate                              96            0                       +96
-    uart_set_parity                                82            0                       +82
-    uart_set_select_notif_callback                 23            0                       +23
-    uart_set_stop_bits                            128            0                      +128
-    uart_set_word_length                          144            0                      +144
-    uart_wait_tx_done                             417            0                      +417
-Section total:                                   3216            0                     +3216
+Symbols from section: .flash.text
+	uart_flush_input               : 453
+	uart_wait_tx_done              : 417
+	get_clk_en_mask                : 267
+	get_rst_en_mask                : 198
+	timer_group_intr_enable        : 184
+	uart_set_word_length           : 144
+	uart_set_stop_bits             : 128
+	periph_module_enable           : 112
+	uart_get_bufferedlen           : 109
+	uart_enable_intr_mask          :  98
+	uart_disable_intr_mask         :  96
+	uart_set_baudrate              :  96
+	rtc_isr                        :  90
+	uart_get_baudrate              :  82
+	uart_set_parity                :  82
+	rtc_isr_ensure_installed       :  79
+	uart_pattern_queue_update      :  74
+	uart_get_parity                :  69
+	uart_get_stop_bits             :  69
+	uart_get_word_length           :  69
+	rtc_isr_register               :  62
+	rtc_gpio_force_hold_dis_all    :  53
+	is_wifi_clk_peripheral         :  38
+	uart_is_driver_installed       :  30
+	get_rst_en_reg                 :  25
+	uart_set_select_notif_callback :  23
+	get_clk_en_reg                 :  21
+	uart_disable_rx_intr           :  18
+	uart_enable_rx_intr            :  18
+	uart_get_selectlock            :  12
+Section total: 3216
 
-.iram0.text                                 <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
-Section total:                                      0            0
+Symbols from section: .iram0.text
+Section total: 0
 
-.iram0.text_end                             <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
-Section total:                                      0            0
+Symbols from section: .iram0.text_end
+Section total: 0
 
-.iram0.vectors                              <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
-Section total:                                      0            0
+Symbols from section: .iram0.vectors
+Section total: 0
 
-.noinit                                     <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
-Section total:                                      0            0
+Symbols from section: .noinit
+Section total: 0
 
-.rtc.bss                                    <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
-Section total:                                      0            0
+Symbols from section: .rtc.bss
+Section total: 0
 
-.rtc.data                                   <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
-Section total:                                      0            0
+Symbols from section: .rtc.data
+Section total: 0
 
-.rtc.text                                   <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
-Section total:                                      0            0
+Symbols from section: .rtc.text
+Section total: 0
 
-.rtc_noinit                                 <CURRENT>  <REFERENCE>   <CURRENT> - <REFERENCE>
-Section total:                                      0            0
+Symbols from section: .rtc_noinit
+Section total: 0
 
 ***
 Running idf_size.py diff with another app (different target)...
@@ -5532,91 +5540,46 @@ Producing JSON output...
     }
 }
 {
-    "current": {
-        ".dram0.bss": {
-            "p_uart_obj": 12,
-            "s_rtc_isr_handle": 4,
-            "s_rtc_isr_handler_list": 4
-        },
-        ".dram0.data": {
-            "timer_spinlock": 16,
-            "periph_spinlock": 8,
-            "s_rtc_isr_handler_list_lock": 8,
-            "uart_selectlock": 8
-        },
-        ".flash.rodata": {
-            "str1.4": 249,
-            "get_clk_en_mask": 128,
-            "get_rst_en_mask": 128,
-            "__FUNCTION__$5441": 24,
-            "TG": 8
-        },
-        ".flash.text": {
-            "get_clk_en_mask": 211,
-            "get_rst_en_mask": 157,
-            "timer_group_intr_enable": 112,
-            "rtc_isr": 86,
-            "periph_module_enable": 78,
-            "rtc_isr_ensure_installed": 75,
-            "rtc_gpio_force_hold_dis_all": 65,
-            "rtc_isr_register": 65,
-            "is_wifi_clk_peripheral": 28,
-            "uart_set_select_notif_callback": 26,
-            "get_rst_en_reg": 25,
-            "get_clk_en_reg": 21,
-            "uart_get_selectlock": 12
-        },
-        ".iram0.text": {},
-        ".iram0.vectors": {},
-        ".noinit": {},
-        ".rtc.bss": {},
-        ".rtc.data": {},
-        ".rtc.text": {},
-        ".rtc_noinit": {}
+    ".dram0.bss": {
+        "p_uart_obj": 12,
+        "s_rtc_isr_handle": 4,
+        "s_rtc_isr_handler_list": 4
     },
-    "reference": {},
-    "diff": {
-        ".dram0.bss": {
-            "p_uart_obj": 12,
-            "s_rtc_isr_handle": 4,
-            "s_rtc_isr_handler_list": 4
-        },
-        ".dram0.data": {
-            "periph_spinlock": 8,
-            "s_rtc_isr_handler_list_lock": 8,
-            "timer_spinlock": 16,
-            "uart_selectlock": 8
-        },
-        ".flash.rodata": {
-            "TG": 8,
-            "__FUNCTION__$5441": 24,
-            "get_clk_en_mask": 128,
-            "get_rst_en_mask": 128,
-            "str1.4": 249
-        },
-        ".flash.text": {
-            "get_clk_en_mask": 211,
-            "get_clk_en_reg": 21,
-            "get_rst_en_mask": 157,
-            "get_rst_en_reg": 25,
-            "is_wifi_clk_peripheral": 28,
-            "periph_module_enable": 78,
-            "rtc_gpio_force_hold_dis_all": 65,
-            "rtc_isr": 86,
-            "rtc_isr_ensure_installed": 75,
-            "rtc_isr_register": 65,
-            "timer_group_intr_enable": 112,
-            "uart_get_selectlock": 12,
-            "uart_set_select_notif_callback": 26
-        },
-        ".iram0.text": {},
-        ".iram0.vectors": {},
-        ".noinit": {},
-        ".rtc.bss": {},
-        ".rtc.data": {},
-        ".rtc.text": {},
-        ".rtc_noinit": {}
-    }
+    ".dram0.data": {
+        "timer_spinlock": 16,
+        "periph_spinlock": 8,
+        "s_rtc_isr_handler_list_lock": 8,
+        "uart_selectlock": 8
+    },
+    ".flash.rodata": {
+        "str1.4": 249,
+        "get_clk_en_mask": 128,
+        "get_rst_en_mask": 128,
+        "__FUNCTION__$5441": 24,
+        "TG": 8
+    },
+    ".flash.text": {
+        "get_clk_en_mask": 211,
+        "get_rst_en_mask": 157,
+        "timer_group_intr_enable": 112,
+        "rtc_isr": 86,
+        "periph_module_enable": 78,
+        "rtc_isr_ensure_installed": 75,
+        "rtc_gpio_force_hold_dis_all": 65,
+        "rtc_isr_register": 65,
+        "is_wifi_clk_peripheral": 28,
+        "uart_set_select_notif_callback": 26,
+        "get_rst_en_reg": 25,
+        "get_clk_en_reg": 21,
+        "uart_get_selectlock": 12
+    },
+    ".iram0.text": {},
+    ".iram0.vectors": {},
+    ".noinit": {},
+    ".rtc.bss": {},
+    ".rtc.data": {},
+    ".rtc.text": {},
+    ".rtc_noinit": {}
 }
 {
     "current": {

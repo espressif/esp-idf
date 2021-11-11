@@ -1079,7 +1079,7 @@ class StructureForArchiveSymbols(object):
 
 
 def get_archive_symbols(sections, archive, as_json=False, sections_diff=None):  # type: (Dict, str, bool, Dict) -> str
-    diff_en = sections_diff is not None
+    diff_en = bool(sections_diff)
     current = StructureForArchiveSymbols.get(archive, sections)
     reference = StructureForArchiveSymbols.get(archive, sections_diff) if sections_diff else {}
 
@@ -1103,19 +1103,28 @@ def get_archive_symbols(sections, archive, as_json=False, sections_diff=None):  
         def _get_item_pairs(name, section):  # type: (str, collections.OrderedDict) -> collections.OrderedDict
             return collections.OrderedDict([(key.replace(name + '.', ''), val) for key, val in iteritems(section)])
 
+        def _get_max_len(symbols_dict):  # type: (Dict) -> Tuple[int, int]
+            names_max_len = 0
+            numbers_max_len = 0
+            for t, s in iteritems(symbols_dict):
+                numbers_max_len = max([numbers_max_len] + [len(str(x)) for _, x in iteritems(s)])
+                names_max_len = max([names_max_len] + [len(x) for x in _get_item_pairs(t, s)])
+
+            return names_max_len, numbers_max_len
+
         def _get_output(section_symbols):  # type: (Dict) -> str
             output = ''
+            names_max_len, numbers_max_len  = _get_max_len(section_symbols)
             for t, s in iteritems(section_symbols):
                 output += '{}Symbols from section: {}{}'.format(os.linesep, t, os.linesep)
                 item_pairs = _get_item_pairs(t, s)
-                output += ' '.join(['{}({})'.format(key, val) for key, val in iteritems(item_pairs)])
+                for key, val in iteritems(item_pairs):
+                    output += ' '.join([('\t{:<%d} : {:>%d}\n' % (names_max_len,numbers_max_len)).format(key, val)])
                 section_total = sum([val for _, val in iteritems(item_pairs)])
-                output += '{}Section total: {}{}'.format(os.linesep if section_total > 0 else '',
-                                                         section_total,
-                                                         os.linesep)
+                output += 'Section total: {}{}'.format(section_total, os.linesep)
             return output
 
-        output = 'Symbols within the archive: {} (Not all symbols may be reported){}'.format(archive, os.linesep)
+        output = '{}Symbols within the archive: {} (Not all symbols may be reported){}'.format(os.linesep, archive, os.linesep)
         if diff_en:
 
             def _generate_line_tuple(curr, ref, name):
