@@ -174,8 +174,6 @@
 
 /examples/**/*.py             @esp-idf-codeowners/ci @esp-idf-codeowners/tools
 
-/make/    @esp-idf-codeowners/build-config
-
 /tools/                       @esp-idf-codeowners/tools
 /tools/*_apps.py              @esp-idf-codeowners/ci
 /tools/ble/                   @esp-idf-codeowners/app-utilities
