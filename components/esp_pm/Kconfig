@@ -113,4 +113,8 @@ menu "Power Management"
             If enabled, the I/D-cache tag memory will be retained in light sleep. Depending on the the
             cache configuration, if this option is enabled, it will consume up to 9 KB of internal RAM.
 
+    config PM_UPDATE_CCOMPARE_HLI_WORKAROUND
+        bool
+        default y if PM_ENABLE && BTDM_CTRL_HLI
+
 endmenu # "Power Management"
