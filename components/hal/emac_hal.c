@@ -297,7 +297,7 @@ void emac_hal_init_dma_default(emac_hal_context_t *hal)
     /* Use Separate PBL */
     emac_ll_use_separate_pbl_enable(hal->dma_regs, true);
     /* Set Rx/Tx DMA Burst Length */
-    emac_ll_set_rx_dma_pbl(hal->dma_regs, EMAC_LL_DMA_BURST_LENGTH_32BEAT);
+    emac_ll_set_rx_dma_pbl(hal->dma_regs, EMAC_LL_DMA_BURST_LENGTH_8BEAT);
     emac_ll_set_prog_burst_len(hal->dma_regs, EMAC_LL_DMA_BURST_LENGTH_32BEAT);
     /* Enable Enhanced Descriptor,8 Words(32 Bytes) */
     emac_ll_enhance_desc_enable(hal->dma_regs, true);
