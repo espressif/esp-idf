@@ -12,7 +12,7 @@ $OLD_PATH = $env:PATH.split($S) | Select-Object -Unique # array without duplicat
 $envars_raw = python $IDF_PATH/tools/idf_tools.py export --format key-value
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } # if error
 
-$envars_array # will be filled like:
+$envars_array = @() # will be filled like:
 #               [
 #                    [vname1, vval1], [vname2, vval2], ...
 #               ]
@@ -21,6 +21,12 @@ foreach ($line  in $envars_raw) {
     $var_name = $pair[0].Trim() # trim spaces on the ends of the name
     $var_val = $pair[1].Trim() # trim spaces on the ends of the val
     $envars_array += (, ($var_name, $var_val))
+}
+
+if ($IsWindows -eq $null) {
+    # $IsWindows was added in PowerShell Core 6 and PowerShell 7 together with multi-platform support. # I.E. if this
+    # internal variable is not set then PowerShell 5 is used and # the platform cannot be # anything else than Windows.
+    $IsWindows = $true
 }
 
 foreach ($pair  in $envars_array) {
