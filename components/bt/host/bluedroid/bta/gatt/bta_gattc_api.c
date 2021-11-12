@@ -757,7 +757,7 @@ void BTA_GATTC_PrepareWriteCharDescr  (UINT16 conn_id, UINT16 handle,
                                        tBTA_GATT_AUTH_REQ auth_req)
 {
     tBTA_GATTC_API_WRITE  *p_buf;
-    UINT16  len = sizeof(tBTA_GATTC_API_WRITE) + p_data->len;
+    UINT16  len = sizeof(tBTA_GATTC_API_WRITE);
 
     if (p_data != NULL) {
         len += p_data->len;
