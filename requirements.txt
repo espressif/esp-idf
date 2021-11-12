@@ -35,4 +35,4 @@ construct==2.10.54
 # "windows-curses; sys_platform == 'win32'" would want to install the package on both of them. There is no environment
 # marker for detecting MSYS2. So instead, a dummy custom package is used with "windows-curses" dependency for Windows
 # command line.
-file://${IDF_PATH}/tools/kconfig_new/esp-windows-curses; sys_platform == 'win32'
+#file://${IDF_PATH}/tools/kconfig_new/esp-windows-curses; sys_platform == 'win32'

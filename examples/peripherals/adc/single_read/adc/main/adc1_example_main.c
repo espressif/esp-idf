@@ -73,6 +73,13 @@ void app_main(void)
     //Check if Two Point or Vref are burned into eFuse
     check_efuse();
 
+    //Check GPIO
+    gpio_num_t adc_gpio_num,;
+
+    r = adc2_pad_get_io_num( channel, &adc_gpio_num );
+    assert( r == ESP_OK );
+    printf("ADC2 channel %d @ GPIO %d\n", channel, adc_gpio_num);
+
     //Configure ADC
     if (unit == ADC_UNIT_1) {
         adc1_config_width(width);
