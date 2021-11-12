@@ -212,6 +212,39 @@ int64_t esp_timer_get_next_alarm(void);
 int64_t esp_timer_get_next_alarm_for_wake_up(void);
 
 /**
+ * @brief Get the period of a timer
+ *
+ * This function fetches the timeout period of a timer.
+ *
+ * @note The timeout period is the time interval with which a timer restarts after expiry. For one-shot timers, the
+ * period is 0 as there is no periodicity associated with such timers.
+ *
+ * @param timer timer handle allocated using esp_timer_create
+ * @param period memory to store the timer period value in microseconds
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if the arguments are invalid
+ */
+esp_err_t esp_timer_get_period(esp_timer_handle_t timer, uint64_t *period);
+
+/**
+ * @brief Get the expiry time of a one-shot timer
+ *
+ * This function fetches the expiry time of a one-shot timer.
+ *
+ * @note This API returns a valid expiry time only for a one-shot timer. It returns an error if the timer handle passed
+ * to the function is for a periodic timer.
+ *
+ * @param timer timer handle allocated using esp_timer_create
+ * @param expiry memory to store the timeout value in microseconds
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if the arguments are invalid
+ *      - ESP_ERR_NOT_SUPPORTED if the timer type is periodic
+ */
+esp_err_t esp_timer_get_expiry_time(esp_timer_handle_t timer, uint64_t *expiry);
+
+/**
  * @brief Dump the list of timers to a stream
  *
  * If CONFIG_ESP_TIMER_PROFILING option is enabled, this prints the list of all
