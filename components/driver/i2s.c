@@ -348,22 +348,23 @@ static bool IRAM_ATTR i2s_dma_rx_callback(gdma_channel_handle_t dma_chan, gdma_e
 {
     i2s_obj_t *p_i2s = (i2s_obj_t *) user_data;
     portBASE_TYPE high_priority_task_awoken = 0;
-    BaseType_t ret = 0;
     int dummy;
     i2s_event_t i2s_event;
     uint32_t finish_desc;
 
     if (p_i2s->rx) {
         finish_desc = event_data->rx_eof_desc_addr;
+        i2s_event.size = ((lldesc_t *)finish_desc)->size;
         if (xQueueIsQueueFullFromISR(p_i2s->rx->queue)) {
             xQueueReceiveFromISR(p_i2s->rx->queue, &dummy, &high_priority_task_awoken);
-        }
-        ret = xQueueSendFromISR(p_i2s->rx->queue, &(((lldesc_t *)finish_desc)->buf), &high_priority_task_awoken);
-        if (p_i2s->i2s_queue) {
-            i2s_event.type = (ret == pdPASS) ? I2S_EVENT_RX_DONE : I2S_EVENT_RX_Q_OVF;
-            if (p_i2s->i2s_queue && xQueueIsQueueFullFromISR(p_i2s->i2s_queue)) {
-                xQueueReceiveFromISR(p_i2s->i2s_queue, &dummy, &high_priority_task_awoken);
+            if (p_i2s->i2s_queue) {
+                i2s_event.type = I2S_EVENT_RX_Q_OVF;
+                xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &high_priority_task_awoken);
             }
+        }
+        xQueueSendFromISR(p_i2s->rx->queue, &(((lldesc_t *)finish_desc)->buf), &high_priority_task_awoken);
+        if (p_i2s->i2s_queue) {
+            i2s_event.type = I2S_EVENT_RX_DONE;
             xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &high_priority_task_awoken);
         }
     }
@@ -384,24 +385,26 @@ static bool IRAM_ATTR i2s_dma_tx_callback(gdma_channel_handle_t dma_chan, gdma_e
 {
     i2s_obj_t *p_i2s = (i2s_obj_t *) user_data;
     portBASE_TYPE high_priority_task_awoken = 0;
-    BaseType_t ret;
     int dummy;
     i2s_event_t i2s_event;
     uint32_t finish_desc;
     if (p_i2s->tx) {
         finish_desc = event_data->tx_eof_desc_addr;
+        i2s_event.size = ((lldesc_t *)finish_desc)->size;
         if (xQueueIsQueueFullFromISR(p_i2s->tx->queue)) {
             xQueueReceiveFromISR(p_i2s->tx->queue, &dummy, &high_priority_task_awoken);
             if (p_i2s->tx_desc_auto_clear) {
                 memset((void *) dummy, 0, p_i2s->tx->buf_size);
             }
-        }
-        ret = xQueueSendFromISR(p_i2s->tx->queue, &(((lldesc_t *)finish_desc)->buf), &high_priority_task_awoken);
-        if (p_i2s->i2s_queue) {
-            i2s_event.type = (ret == pdPASS) ? I2S_EVENT_TX_DONE : I2S_EVENT_TX_Q_OVF;
-            if (xQueueIsQueueFullFromISR(p_i2s->i2s_queue)) {
-                xQueueReceiveFromISR(p_i2s->i2s_queue, &dummy, &high_priority_task_awoken);
+            if (p_i2s->i2s_queue) {
+                i2s_event.type = I2S_EVENT_TX_Q_OVF;
+                i2s_event.size = p_i2s->tx->buf_size;
+                xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &high_priority_task_awoken);
             }
+        }
+        xQueueSendFromISR(p_i2s->tx->queue, &(((lldesc_t *)finish_desc)->buf), &high_priority_task_awoken);
+        if (p_i2s->i2s_queue) {
+            i2s_event.type = I2S_EVENT_TX_DONE;
             xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &high_priority_task_awoken);
         }
     }
@@ -442,6 +445,7 @@ static void IRAM_ATTR i2s_intr_handler_default(void *arg)
 
     if ((status & I2S_INTR_OUT_EOF) && p_i2s->tx) {
         i2s_hal_get_out_eof_des_addr(&(p_i2s->hal), &finish_desc);
+        i2s_event.size = ((lldesc_t *)finish_desc)->size;
         // All buffers are empty. This means we have an underflow on our hands.
         if (xQueueIsQueueFullFromISR(p_i2s->tx->queue)) {
             xQueueReceiveFromISR(p_i2s->tx->queue, &dummy, &high_priority_task_awoken);
@@ -451,13 +455,14 @@ static void IRAM_ATTR i2s_intr_handler_default(void *arg)
             if (p_i2s->tx_desc_auto_clear == true) {
                 memset((void *) dummy, 0, p_i2s->tx->buf_size);
             }
+            if (p_i2s->i2s_queue) {
+                i2s_event.type = I2S_EVENT_TX_Q_OVF;
+                xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &high_priority_task_awoken);
+            }
         }
         xQueueSendFromISR(p_i2s->tx->queue, &(((lldesc_t *)finish_desc)->buf), &high_priority_task_awoken);
         if (p_i2s->i2s_queue) {
             i2s_event.type = I2S_EVENT_TX_DONE;
-            if (xQueueIsQueueFullFromISR(p_i2s->i2s_queue)) {
-                xQueueReceiveFromISR(p_i2s->i2s_queue, &dummy, &high_priority_task_awoken);
-            }
             xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &high_priority_task_awoken);
         }
     }
@@ -465,15 +470,17 @@ static void IRAM_ATTR i2s_intr_handler_default(void *arg)
     if ((status & I2S_INTR_IN_SUC_EOF) && p_i2s->rx) {
         // All buffers are full. This means we have an overflow.
         i2s_hal_get_in_eof_des_addr(&(p_i2s->hal), &finish_desc);
+        i2s_event.size = ((lldesc_t *)finish_desc)->size;
         if (xQueueIsQueueFullFromISR(p_i2s->rx->queue)) {
             xQueueReceiveFromISR(p_i2s->rx->queue, &dummy, &high_priority_task_awoken);
+            if (p_i2s->i2s_queue) {
+                i2s_event.type = I2S_EVENT_RX_Q_OVF;
+                xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &high_priority_task_awoken);
+            }
         }
         xQueueSendFromISR(p_i2s->rx->queue, &(((lldesc_t *)finish_desc)->buf), &high_priority_task_awoken);
         if (p_i2s->i2s_queue) {
             i2s_event.type = I2S_EVENT_RX_DONE;
-            if (p_i2s->i2s_queue && xQueueIsQueueFullFromISR(p_i2s->i2s_queue)) {
-                xQueueReceiveFromISR(p_i2s->i2s_queue, &dummy, &high_priority_task_awoken);
-            }
             xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &high_priority_task_awoken);
         }
     }
