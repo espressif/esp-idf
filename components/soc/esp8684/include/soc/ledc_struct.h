@@ -76,7 +76,7 @@ typedef volatile struct ledc_dev_s {
                     uint32_t clock_divider                 :    18;  /*This register is used to configure the divisor for the divider in timer $x.; ; The least significant eight bits represent the fractional part.*/
                     uint32_t pause                         :    1;  /*This bit is used to suspend the counter in timer $x.*/
                     uint32_t rst                           :    1;  /*This bit is used to reset timer $x. The counter will show 0 after reset.*/
-                    uint32_t tick_sel                      :    1;  /*This bit is used to select clock for timer $x. When this bit is set to 1 LEDC_APB_CLK_SEL[1:0] should be 1, otherwise the timer clock may be not accurate.; ; 1'h0: SLOW_CLK 1'h1: REF_TICK*/
+                    uint32_t reserved24                    :    1;  /*Reserved*/
                     uint32_t low_speed_update              :    1;  /*Set this bit to update LEDC_CLK_DIV_TIMER$x and LEDC_TIMER$x_DUTY_RES.*/
                     uint32_t reserved26                    :    6;  /*Reserved*/
                 };
