@@ -172,6 +172,9 @@ In a typical application, you only need to call :cpp:func:`esp_console_new_repl_
 
 After that, you can register your own commands with :cpp:func:`esp_console_cmd_register`. The REPL environment keeps in init state until you call :cpp:func:`esp_console_start_repl`.
 
+.. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
+
+    Likewise, if your REPL environment is based on USB_SERIAL_JTAG device, you only need to call :cpp:func:`esp_console_new_repl_usb_serial_jtag` at first step. And call other functions as usual.
 
 Application Example
 -------------------
