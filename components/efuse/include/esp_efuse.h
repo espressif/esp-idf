@@ -14,12 +14,9 @@
 
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdbool.h>
 #include <stdint.h>
+
 #include "esp_err.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
@@ -27,6 +24,10 @@ extern "C" {
 #include "esp32/esp_efuse.h"
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
 #include "esp32s2beta/esp_efuse.h"
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 #define ESP_ERR_EFUSE                              0x1600                     /*!< Base error code for efuse api. */
