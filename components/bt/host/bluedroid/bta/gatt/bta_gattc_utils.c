@@ -794,7 +794,7 @@ void bta_gattc_send_connect_cback( tBTA_GATTC_RCB *p_clreg, BD_ADDR remote_bda, 
 **
 *******************************************************************************/
 void bta_gattc_send_disconnect_cback( tBTA_GATTC_RCB *p_clreg, tGATT_DISCONN_REASON reason,
-                                BD_ADDR remote_bda, UINT16 conn_id)
+                                BD_ADDR remote_bda, UINT16 conn_id, UINT8 link_role)
 {
     tBTA_GATTC      cb_data;
 
@@ -804,6 +804,7 @@ void bta_gattc_send_disconnect_cback( tBTA_GATTC_RCB *p_clreg, tGATT_DISCONN_REA
         cb_data.disconnect.reason = reason;
         cb_data.disconnect.client_if = p_clreg->client_if;
         cb_data.disconnect.conn_id = conn_id;
+        cb_data.disconnect.link_role = link_role;
         bdcpy(cb_data.disconnect.remote_bda, remote_bda);
 
         (*p_clreg->p_cback)(BTA_GATTC_DISCONNECT_EVT, &cb_data);

@@ -288,6 +288,37 @@ void l2cu_release_lcb (tL2C_LCB *p_lcb)
 #endif  ///BLE_INCLUDED == TRUE
 }
 
+/*******************************************************************************
+**
+** Function         l2cu_find_link_role_by_bd_addr
+**
+** Description      Look through all active Link Role for a match based on the
+**                  remote BD address.
+**
+** Returns          Link Role, or HCI_ROLE_UNKNOWN if no match
+**
+*******************************************************************************/
+UINT8  l2cu_find_link_role_by_bd_addr (BD_ADDR p_bd_addr, tBT_TRANSPORT transport)
+{
+    list_node_t *p_node = NULL;
+    tL2C_LCB    *p_lcb  = NULL;
+    UINT8        link_role = HCI_ROLE_UNKNOWN;
+
+    for (p_node = list_begin(l2cb.p_lcb_pool); p_node; p_node = list_next(p_node)) {
+        p_lcb = list_node(p_node);
+        if ((p_lcb) &&
+#if BLE_INCLUDED == TRUE
+                p_lcb->transport == transport &&
+#endif
+                (!memcmp (p_lcb->remote_bd_addr, p_bd_addr, BD_ADDR_LEN))) {
+            link_role = p_lcb->link_role;
+        }
+    }
+
+    /* If here, no match found */
+    return link_role;
+}
+
 
 /*******************************************************************************
 **
