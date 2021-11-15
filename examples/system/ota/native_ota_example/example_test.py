@@ -134,7 +134,7 @@ def start_chunked_server(ota_image_dir, server_port):
     return chunked_server
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
+@ttfw_idf.idf_example_test(env_tag='EXAMPLE_ETH_OTA')
 def test_examples_protocol_native_ota_example(env, extra_data):
     """
     This is a positive test case, which downloads complete binary file multiple number of times.
@@ -164,7 +164,7 @@ def test_examples_protocol_native_ota_example(env, extra_data):
     for i in range(iterations):
         dut1.expect('Loaded app from partition at offset', timeout=30)
         try:
-            ip_address = dut1.expect(re.compile(r' sta ip: ([^,]+),'), timeout=30)
+            ip_address = dut1.expect(re.compile(r' (sta|eth) ip: ([^,]+),'), timeout=30)
             print('Connected to AP with IP: {}'.format(ip_address))
         except DUT.ExpectTimeout:
             raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
@@ -179,7 +179,7 @@ def test_examples_protocol_native_ota_example(env, extra_data):
     thread1.terminate()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
+@ttfw_idf.idf_example_test(env_tag='EXAMPLE_ETH_OTA')
 def test_examples_protocol_native_ota_example_truncated_bin(env, extra_data):
     """
     Working of OTA if binary file is truncated is validated in this test case.
@@ -218,7 +218,7 @@ def test_examples_protocol_native_ota_example_truncated_bin(env, extra_data):
     dut1.start_app()
     dut1.expect('Loaded app from partition at offset', timeout=30)
     try:
-        ip_address = dut1.expect(re.compile(r' sta ip: ([^,]+),'), timeout=60)
+        ip_address = dut1.expect(re.compile(r' (sta|eth) ip: ([^,]+),'), timeout=60)
         print('Connected to AP with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
@@ -232,7 +232,7 @@ def test_examples_protocol_native_ota_example_truncated_bin(env, extra_data):
     thread1.terminate()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
+@ttfw_idf.idf_example_test(env_tag='EXAMPLE_ETH_OTA')
 def test_examples_protocol_native_ota_example_truncated_header(env, extra_data):
     """
     Working of OTA if headers of binary file are truncated is vaildated in this test case.
@@ -270,7 +270,7 @@ def test_examples_protocol_native_ota_example_truncated_header(env, extra_data):
     dut1.start_app()
     dut1.expect('Loaded app from partition at offset', timeout=30)
     try:
-        ip_address = dut1.expect(re.compile(r' sta ip: ([^,]+),'), timeout=60)
+        ip_address = dut1.expect(re.compile(r' (sta|eth) ip: ([^,]+),'), timeout=60)
         print('Connected to AP with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
@@ -284,7 +284,7 @@ def test_examples_protocol_native_ota_example_truncated_header(env, extra_data):
     thread1.terminate()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
+@ttfw_idf.idf_example_test(env_tag='EXAMPLE_ETH_OTA')
 def test_examples_protocol_native_ota_example_random(env, extra_data):
     """
     Working of OTA if random data is added in binary file are validated in this test case.
@@ -321,7 +321,7 @@ def test_examples_protocol_native_ota_example_random(env, extra_data):
     dut1.start_app()
     dut1.expect('Loaded app from partition at offset', timeout=30)
     try:
-        ip_address = dut1.expect(re.compile(r' sta ip: ([^,]+),'), timeout=60)
+        ip_address = dut1.expect(re.compile(r' (sta|eth) ip: ([^,]+),'), timeout=60)
         print('Connected to AP with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
@@ -335,7 +335,7 @@ def test_examples_protocol_native_ota_example_random(env, extra_data):
     thread1.terminate()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
+@ttfw_idf.idf_example_test(env_tag='EXAMPLE_ETH_OTA')
 def test_examples_protocol_native_ota_example_chunked(env, extra_data):
     """
     This is a positive test case, which downloads complete binary file multiple number of times.
@@ -358,7 +358,7 @@ def test_examples_protocol_native_ota_example_chunked(env, extra_data):
     dut1.start_app()
     dut1.expect('Loaded app from partition at offset', timeout=30)
     try:
-        ip_address = dut1.expect(re.compile(r' sta ip: ([^,]+),'), timeout=30)
+        ip_address = dut1.expect(re.compile(r' (sta|eth) ip: ([^,]+),'), timeout=30)
         print('Connected to AP with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
