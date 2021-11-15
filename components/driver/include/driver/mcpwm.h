@@ -174,7 +174,6 @@ typedef enum {
 /**
  * @brief Interrupt masks for MCPWM capture
  */
-__attribute__ ((deprecated("please use callback function to avoid directly accessing registers")))
 typedef enum {
     MCPWM_LL_INTR_CAP0 = BIT(27), ///< Capture 0 happened
     MCPWM_LL_INTR_CAP1 = BIT(28), ///< Capture 1 happened
@@ -922,7 +921,6 @@ esp_err_t mcpwm_sync_invert_gpio_synchro(mcpwm_unit_t mcpwm_num, mcpwm_sync_sign
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Function pointer error.
  */
-__attribute__((deprecated("interrupt events are handled by driver, please use callback")))
 esp_err_t mcpwm_isr_register(mcpwm_unit_t mcpwm_num, void (*fn)(void *), void *arg, int intr_alloc_flags,
                              intr_handle_t *handle);
 
