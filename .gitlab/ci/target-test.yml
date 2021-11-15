@@ -117,10 +117,9 @@ example_test_001D:
 
 example_test_OTA:
   extends: .example_test_esp32_template
-  parallel: 2
   tags:
     - ESP32
-    - Example_WIFI_OTA
+    - EXAMPLE_ETH_OTA
 
 example_test_protocols:
   extends: .example_test_esp32_template
@@ -128,6 +127,13 @@ example_test_protocols:
   tags:
     - ESP32
     - Example_WIFI_Protocols
+
+# This job is only triggered by env var `NIGHTLY_RUN`, please do NOT remove
+example_test_esp32_WIFI_OTA:
+  extends: .example_test_esp32_template
+  tags:
+    - ESP32
+    - Example_WIFI_OTA
 
 example_test_002:
   extends: .example_test_esp32_template
