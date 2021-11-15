@@ -1,16 +1,9 @@
-// Copyright 2019-2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <string.h>
 #include <stdlib.h>
 #include <sys/cdefs.h>
@@ -337,7 +330,8 @@ static esp_err_t lan87xx_reset_hw(esp_eth_phy_t *phy)
         esp_rom_gpio_pad_select_gpio(lan87xx->reset_gpio_num);
         gpio_set_direction(lan87xx->reset_gpio_num, GPIO_MODE_OUTPUT);
         gpio_set_level(lan87xx->reset_gpio_num, 0);
-        esp_rom_delay_us(100); // insert min input assert time
+        /* assert nRST signal on LAN87xx a little longer than the minimum specified in datasheet */
+        esp_rom_delay_us(150);
         gpio_set_level(lan87xx->reset_gpio_num, 1);
     }
     return ESP_OK;

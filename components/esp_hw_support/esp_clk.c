@@ -10,6 +10,8 @@
 
 #include "esp_attr.h"
 #include "soc/rtc.h"
+#include "soc/soc_caps.h"
+#include "esp_rom_caps.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/rtc.h"
@@ -32,6 +34,10 @@
 #include "esp32h2/rom/rtc.h"
 #include "esp32h2/clk.h"
 #include "esp32h2/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP8684
+#include "esp8684/rom/rtc.h"
+#include "esp_private/esp_clk.h"
+#include "esp8684/rtc.h"
 #endif
 
 #define MHZ (1000000)
@@ -45,11 +51,13 @@ extern uint32_t g_ticks_per_us_app;
 #endif
 
 static _lock_t s_esp_rtc_time_lock;
+
+// TODO: IDF-4239
 static RTC_DATA_ATTR uint64_t s_esp_rtc_time_us = 0, s_rtc_last_ticks = 0;
 
 inline static int IRAM_ATTR s_get_cpu_freq_mhz(void)
 {
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32H2
+#if ESP_ROM_GET_CLK_FREQ
     return ets_get_cpu_frequency();
 #else
     return g_ticks_per_us_pro;
@@ -71,7 +79,7 @@ int IRAM_ATTR esp_clk_xtal_freq(void)
     return rtc_clk_xtal_freq_get() * MHZ;
 }
 
-#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2
+#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP8684
 void IRAM_ATTR ets_update_cpu_frequency(uint32_t ticks_per_us)
 {
     /* Update scale factors used by esp_rom_delay_us */
@@ -86,6 +94,10 @@ void IRAM_ATTR ets_update_cpu_frequency(uint32_t ticks_per_us)
 
 uint64_t esp_rtc_get_time_us(void)
 {
+#if !SOC_RTC_FAST_MEM_SUPPORTED
+    //IDF-3901
+    return 0;
+#endif
     _lock_acquire(&s_esp_rtc_time_lock);
     const uint32_t cal = esp_clk_slowclk_cal_get();
     const uint64_t rtc_this_ticks = rtc_time_get();

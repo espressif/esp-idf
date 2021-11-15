@@ -969,6 +969,7 @@ The following sections provide some reference information about the operation of
 
 .. only:: SOC_FLASH_ENCRYPTION_XTS_AES and not SOC_FLASH_ENCRYPTION_XTS_AES_256
 
+
   .. _flash-encryption-algorithm:
 
   Flash Encryption Algorithm

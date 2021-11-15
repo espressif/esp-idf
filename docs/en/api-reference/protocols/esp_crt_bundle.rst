@@ -22,7 +22,7 @@ In addition it is possible to specify a path to a certificate file or a director
 Configuration
 -------------
 
-Most configuration is done through menuconfig. Make and CMake will generate the bundle according to the configuration and embed it.
+Most configuration is done through menuconfig. CMake will generate the bundle according to the configuration and embed it.
 
  * :ref:`CONFIG_MBEDTLS_CERTIFICATE_BUNDLE`: automatically build and attach the bundle.
  * :ref:`CONFIG_MBEDTLS_DEFAULT_CERTIFICATE_BUNDLE`: decide which certificates to include from the complete root list.

@@ -15,8 +15,8 @@
 #include "bootloader_flash.h"
 
 #define FLASH_SECTOR_SIZE 0x1000
-#define FLASH_BLOCK_SIZE 0x10000
-#define MMAP_ALIGNED_MASK 0x0000FFFF
+#define FLASH_BLOCK_SIZE 	0x10000
+#define MMAP_ALIGNED_MASK 	0x0000FFFF
 
 /* SPI commands (actual on-wire commands not SPI controller bitmasks)
    Suitable for use with the bootloader_execute_flash_command static function.
@@ -130,7 +130,7 @@ esp_err_t bootloader_flash_erase_sector(size_t sector);
 esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size);
 
 /* Cache MMU block size */
-#define MMU_BLOCK_SIZE    0x00010000
+#define MMU_BLOCK_SIZE    0x10000
 
 /* Cache MMU address mask (MMU tables ignore bits which are zero) */
 #define MMU_FLASH_MASK    (~(MMU_BLOCK_SIZE - 1))

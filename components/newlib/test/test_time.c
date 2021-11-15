@@ -42,6 +42,9 @@
 #include "esp32h2/clk.h"
 #include "esp32h2/rtc.h"
 #define TARGET_DEFAULT_CPU_FREQ_MHZ CONFIG_ESP32H2_DEFAULT_CPU_FREQ_MHZ
+#elif CONFIG_IDF_TARGET_ESP8684
+#include "esp_private/esp_clk.h"
+#define TARGET_DEFAULT_CPU_FREQ_MHZ CONFIG_ESP8684_DEFAULT_CPU_FREQ_MHZ
 #endif
 
 #if portNUM_PROCESSORS == 2

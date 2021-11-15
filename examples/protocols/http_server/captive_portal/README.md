@@ -25,8 +25,6 @@ In the `Example Configuration` menu:
     * Set `SoftAP Password`
     * Set `Maximal STA connections`
 
-When using the legacy GNU Make build system, set `Default serial port` under `Serial flasher config`.
-
 ### Build and Flash
 
 Build the project and flash it to the board, then run monitor tool to view serial output:

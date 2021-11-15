@@ -18,7 +18,7 @@
 #include "freertos/timers.h"
 #include "freertos/ringbuf.h"
 #include "esp32c3/rom/ets_sys.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "driver/gpio.h"
 #include "driver/adc.h"
 #include "hal/adc_types.h"

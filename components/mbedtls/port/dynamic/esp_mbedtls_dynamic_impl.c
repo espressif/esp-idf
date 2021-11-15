@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 #include "esp_mbedtls_dynamic_impl.h"
@@ -471,8 +463,10 @@ size_t esp_mbedtls_get_crt_size(mbedtls_x509_crt *cert, size_t *num)
 #ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_CONFIG_DATA
 void esp_mbedtls_free_dhm(mbedtls_ssl_context *ssl)
 {
+#ifdef CONFIG_MBEDTLS_DHM_C
     mbedtls_mpi_free((mbedtls_mpi *)&ssl->conf->dhm_P);
     mbedtls_mpi_free((mbedtls_mpi *)&ssl->conf->dhm_G);
+#endif /* CONFIG_MBEDTLS_DHM_C */
 }
 
 void esp_mbedtls_free_keycert(mbedtls_ssl_context *ssl)

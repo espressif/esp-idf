@@ -85,7 +85,6 @@
 /components/esp_https_ota/            @esp-idf-codeowners/app-utilities
 /components/esp_https_server/         @esp-idf-codeowners/app-utilities
 /components/esp_hw_support/           @esp-idf-codeowners/system
-/components/esp_ipc/                  @esp-idf-codeowners/system
 /components/esp_lcd/                  @esp-idf-codeowners/peripherals
 /components/esp_local_ctrl/           @esp-idf-codeowners/app-utilities
 /components/esp_netif/                @esp-idf-codeowners/network
@@ -103,6 +102,7 @@
 /components/esptool_py/               @esp-idf-codeowners/tools
 /components/expat/                    @esp-idf-codeowners/app-utilities
 /components/fatfs/                    @esp-idf-codeowners/storage
+/components/fatfs/**/*.py             @esp-idf-codeowners/tools
 /components/freemodbus/               @esp-idf-codeowners/peripherals
 /components/freertos/                 @esp-idf-codeowners/system
 /components/hal/                      @esp-idf-codeowners/peripherals
@@ -173,8 +173,6 @@
 
 /examples/**/*.py             @esp-idf-codeowners/ci @esp-idf-codeowners/tools
 
-/make/    @esp-idf-codeowners/build-config
-
 /tools/                       @esp-idf-codeowners/tools
 /tools/*_apps.py              @esp-idf-codeowners/ci
 /tools/ble/                   @esp-idf-codeowners/app-utilities
@@ -206,6 +204,4 @@ requirements.txt              @esp-idf-codeowners/tools
 # ignore lists
 /tools/ci/check_copyright_ignore.txt                    @esp-idf-codeowners/all-maintainers
 /tools/ci/check_copyright_permanent_ignore.txt          @esp-idf-codeowners/all-maintainers
-/tools/ci/check_examples_cmake_make-cmake_ignore.txt    @esp-idf-codeowners/tools
-/tools/ci/check_examples_cmake_make-make_ignore.txt     @esp-idf-codeowners/tools
 /tools/ci/mypy_ignore_list.txt                          @esp-idf-codeowners/tools

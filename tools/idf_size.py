@@ -263,12 +263,18 @@ def detect_target_chip(map_file: Iterable) -> str:
     ''' Detect target chip based on the target archive name in the linker script part of the MAP file '''
     scan_to_header(map_file, 'Linker script and memory map')
 
-    RE_TARGET = re.compile(r'project_elf_src_(.*)\.c.obj')
+    RE_TARGET = re.compile(r'IDF_TARGET_(\S*) =')
+    # For back-compatible with cmake in idf version before 5.0
+    RE_TARGET_CMAKEv4x = re.compile(r'project_elf_src_(\S*)\.c.obj')
     # For back-compatible with make
     RE_TARGET_MAKE = re.compile(r'^LOAD .*?/xtensa-([^-]+)-elf/')
 
     for line in map_file:
         match_target = RE_TARGET.search(line)
+        if match_target:
+            return match_target.group(1).lower()
+
+        match_target = RE_TARGET_CMAKEv4x.search(line)
         if match_target:
             return match_target.group(1)
 

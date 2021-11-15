@@ -35,6 +35,8 @@
 #include "esp32s3/rom/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/gpio.h"
+#elif CONFIG_IDF_TARGET_ESP8684
+#include "esp8684/rom/gpio.h"
 #endif
 
 #ifdef CONFIG_LEGACY_INCLUDE_COMMON_HEADERS

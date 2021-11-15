@@ -147,7 +147,41 @@ endif()
 if(NOT ${CMAKE_C_COMPILER_VERSION} VERSION_LESS 8.0.0)
     if(CONFIG_COMPILER_HIDE_PATHS_MACROS)
         list(APPEND compile_options "-fmacro-prefix-map=${CMAKE_SOURCE_DIR}=.")
-        list(APPEND compile_options "-fmacro-prefix-map=${IDF_PATH}=IDF")
+        list(APPEND compile_options "-fmacro-prefix-map=${IDF_PATH}=/IDF")
+    endif()
+
+    if(CONFIG_APP_REPRODUCIBLE_BUILD)
+        idf_build_set_property(DEBUG_PREFIX_MAP_GDBINIT "${BUILD_DIR}/prefix_map_gdbinit")
+
+        list(APPEND compile_options "-fdebug-prefix-map=${IDF_PATH}=/IDF")
+        list(APPEND compile_options "-fdebug-prefix-map=${PROJECT_DIR}=/IDF_PROJECT")
+        list(APPEND compile_options "-fdebug-prefix-map=${BUILD_DIR}=/IDF_BUILD")
+
+        # component dirs
+        idf_build_get_property(python PYTHON)
+        idf_build_get_property(idf_path IDF_PATH)
+        idf_build_get_property(component_dirs BUILD_COMPONENT_DIRS)
+
+        execute_process(
+            COMMAND ${python}
+                "${idf_path}/tools/generate_debug_prefix_map.py"
+                "${BUILD_DIR}"
+                "${component_dirs}"
+            OUTPUT_VARIABLE result
+            RESULT_VARIABLE ret
+        )
+        if(NOT ret EQUAL 0)
+            message(FATAL_ERROR "This is a bug. Please report to https://github.com/espressif/esp-idf/issues")
+        endif()
+
+        spaces2list(result)
+        list(LENGTH component_dirs length)
+        math(EXPR max_index "${length} - 1")
+        foreach(index RANGE ${max_index})
+            list(GET component_dirs ${index} folder)
+            list(GET result ${index} after)
+            list(APPEND compile_options "-fdebug-prefix-map=${folder}=${after}")
+        endforeach()
     endif()
 endif()
 

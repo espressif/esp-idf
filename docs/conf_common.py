@@ -64,12 +64,6 @@ TOUCH_SENSOR_DOCS = ['api-reference/peripherals/touch_pad.rst']
 
 SPIRAM_DOCS = ['api-guides/external-ram.rst']
 
-LEGACY_DOCS = ['api-guides/build-system-legacy.rst',
-               'gnu-make-legacy.rst',
-               'api-guides/ulp-legacy.rst',
-               'api-guides/unit-tests-legacy.rst',
-               'get-started-legacy/**']
-
 USB_DOCS = ['api-reference/peripherals/usb_device.rst',
             'api-reference/peripherals/usb_host.rst',
             'api-guides/usb-otg-console.rst',
@@ -96,7 +90,7 @@ ESP32_DOCS = ['api-guides/ulp_instruction_set.rst',
               'security/secure-boot-v1.rst',
               'api-reference/peripherals/secure_element.rst',
               'api-reference/peripherals/dac.rst',
-              'hw-reference/esp32/**'] + LEGACY_DOCS + FTDI_JTAG_DOCS
+              'hw-reference/esp32/**'] + FTDI_JTAG_DOCS
 
 ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-guides/ulps2_instruction_set.rst',

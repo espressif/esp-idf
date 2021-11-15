@@ -438,14 +438,6 @@ function run_tests()
     clean_build_dir
     rm sdkconfig
 
-    print_status "Can build with auto generated CMakeLists.txt"
-    clean_build_dir
-    mv CMakeLists.txt CMakeLists.bak
-    ${IDF_PATH}/tools/cmake/convert_to_cmake.py .
-    idf.py build || failure "Auto generated CMakeLists.txt build failed"
-    mv CMakeLists.bak CMakeLists.txt
-    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
-
     print_status "Setting EXTRA_COMPONENT_DIRS works"
     clean_build_dir
     (idf.py reconfigure | grep "$PWD/main") || failure  "Failed to verify original `main` directory"

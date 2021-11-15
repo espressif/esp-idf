@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
 #include <stdint.h>
@@ -149,6 +141,34 @@ static inline void cpu_ll_break(void)
 {
     asm volatile("ebreak\n");
     return;
+}
+
+static inline int cpu_ll_syscall(int sys_nr, int arg1, int arg2, int arg3, int arg4, int* ret_errno)
+{
+    int host_ret, host_errno;
+
+    asm volatile ( \
+        ".option push\n" \
+        ".option norvc\n" \
+        "mv a0, %[sys_nr]\n" \
+        "mv a1, %[arg1]\n" \
+        "mv a2, %[arg2]\n" \
+        "mv a3, %[arg3]\n" \
+        "mv a4, %[arg4]\n" \
+        "slli    zero,zero,0x1f\n" \
+        "ebreak\n" \
+        "srai    zero,zero,0x7\n" \
+        "mv %[host_ret], a0\n" \
+        "mv %[host_errno], a1\n" \
+        ".option pop\n" \
+        :[host_ret]"=r"(host_ret),[host_errno]"=r"(host_errno)
+        :[sys_nr]"r"(sys_nr),[arg1]"r"(arg1),[arg2]"r"(arg2),[arg3]"r"(arg3),[arg4]"r"(arg4)
+        :"a0","a1","a2","a3","a4");
+
+    if (ret_errno) {
+        *ret_errno = host_errno;
+    }
+    return host_ret;
 }
 
 static inline void cpu_ll_set_vecbase(const void* vecbase)

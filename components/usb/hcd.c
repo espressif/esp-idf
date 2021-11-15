@@ -19,7 +19,7 @@
 #include "hal/usb_types_private.h"
 #include "soc/gpio_pins.h"
 #include "soc/gpio_sig_map.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "hcd.h"
 #include "usb_private.h"
 #include "usb/usb_types_ch9.h"

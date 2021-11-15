@@ -15,6 +15,8 @@
 #include "esp32s3/rom/spi_flash.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP8684
+#include "esp8684/rom/spi_flash.h"
 #else
 #include "esp32/rom/spi_flash.h"
 #endif
@@ -48,7 +50,7 @@ esp_err_t esp_partition_table_verify(const esp_partition_info_t *partition_table
                 return ESP_ERR_INVALID_STATE;
             }
 
-            struct MD5Context context;
+            md5_context_t context;
             unsigned char digest[16];
             esp_rom_md5_init(&context);
             esp_rom_md5_update(&context, (unsigned char *) partition_table, num_parts * sizeof(esp_partition_info_t));

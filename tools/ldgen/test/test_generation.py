@@ -1,18 +1,7 @@
 #!/usr/bin/env python
 #
-# Copyright 2021 Espressif Systems (Shanghai) CO LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 #
 
 import collections
@@ -102,32 +91,22 @@ class GenerationTest(unittest.TestCase):
     def generate_default_rules(self):
         rules = collections.defaultdict(list)
 
-        rules['flash_text'].append(InputSectionDesc(ROOT, ['.literal', '.literal.*', '.text', '.text.*'], []))
-        rules['flash_rodata'].append(InputSectionDesc(ROOT, ['.rodata', '.rodata.*'], []))
-        rules['dram0_data'].append(InputSectionDesc(ROOT, ['.data', '.data.*'], []))
-        rules['dram0_data'].append(InputSectionDesc(ROOT, ['.dram', '.dram.*'], []))
         rules['dram0_bss'].append(InputSectionDesc(ROOT, ['.bss', '.bss.*'], []))
         rules['dram0_bss'].append(InputSectionDesc(ROOT, ['COMMON'], []))
+        rules['dram0_data'].append(InputSectionDesc(ROOT, ['.data', '.data.*'], []))
+        rules['dram0_data'].append(InputSectionDesc(ROOT, ['.dram', '.dram.*'], []))
+        rules['flash_text'].append(InputSectionDesc(ROOT, ['.literal', '.literal.*', '.text', '.text.*'], []))
+        rules['flash_rodata'].append(InputSectionDesc(ROOT, ['.rodata', '.rodata.*'], []))
         rules['iram0_text'].append(InputSectionDesc(ROOT, ['.iram', '.iram.*'], []))
-        rules['rtc_text'].append(InputSectionDesc(ROOT, ['.rtc.text', '.rtc.literal'], []))
+        rules['rtc_bss'].append(InputSectionDesc(ROOT, ['.rtc.bss'], []))
         rules['rtc_data'].append(InputSectionDesc(ROOT, ['.rtc.data'], []))
         rules['rtc_data'].append(InputSectionDesc(ROOT, ['.rtc.rodata'], []))
-        rules['rtc_bss'].append(InputSectionDesc(ROOT, ['.rtc.bss'], []))
+        rules['rtc_text'].append(InputSectionDesc(ROOT, ['.rtc.text', '.rtc.literal'], []))
 
         return rules
 
     def compare_rules(self, expected, actual):
-        self.assertEqual(set(expected.keys()), set(actual.keys()))
-
-        for target in sorted(actual.keys()):
-            message = 'failed target %s' % target
-            a_cmds = actual[target]
-            e_cmds = expected[target]
-
-            self.assertEqual(len(a_cmds), len(e_cmds), message)
-
-            for a, e in zip(a_cmds, e_cmds):
-                self.assertEqual(a, e, message)
+        self.assertEqual(expected, actual)
 
     def get_default(self, target, rules):
         return rules[target][0]

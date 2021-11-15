@@ -15,14 +15,23 @@ def test_examples_eventfd(env, extra_data):
 
     dut.expect('cpu_start: Starting scheduler', timeout=30)
 
-    exp_list = [
-        'eventfd_example: Select timeouted for 4 times',
-        'eventfd_example: Timer triggerred for 4 times',
-        'eventfd_example: Progress triggerred for 3 times',
+    exp_list_5seconds = [
+        'eventfd_example: Select timeouted for 1 times',
+        'eventfd_example: Timer triggerred for 2 times',
+        'eventfd_example: Progress triggerred for 1 times',
     ]
 
-    Utility.console_log('Expecting:{}{}'.format(os.linesep, os.linesep.join(exp_list)))
-    dut.expect_all(*exp_list, timeout=60)
+    exp_list_10seconds = [
+        'eventfd_example: Select timeouted for 2 times',
+        'eventfd_example: Timer triggerred for 4 times',
+        'eventfd_example: Progress triggerred for 2 times',
+    ]
+
+    Utility.console_log('Expecting:{}{}'.format(os.linesep, os.linesep.join(exp_list_5seconds)))
+    dut.expect_all(*exp_list_5seconds, timeout=60)
+
+    Utility.console_log('Expecting:{}{}'.format(os.linesep, os.linesep.join(exp_list_10seconds)))
+    dut.expect_all(*exp_list_10seconds, timeout=60)
 
 
 if __name__ == '__main__':

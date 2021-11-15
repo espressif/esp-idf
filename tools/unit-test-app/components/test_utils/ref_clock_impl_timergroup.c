@@ -5,7 +5,7 @@
  */
 
 #include "test_utils.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "soc/periph_defs.h"
 #include "hal/timer_hal.h"
 #include "hal/timer_ll.h"

@@ -9,13 +9,13 @@
 简介
 ============
 
-{IDF_TARGET_NAME} 提供了好几百 KB 的片上 RAM，可以满足大部分需求。但有些场景可能需要更多 RAM，因此 {IDF_TARGET_NAME} 另外提供了高达 4 MB 的片外 SPI RAM 存储器以供用户使用。片外 RAM 被添加到内存映射中，在某些范围内与片上 RAM 使用方式相同。
+{IDF_TARGET_NAME} 提供了好几百 KB 的片上 RAM，可以满足大部分需求。但有些场景可能需要更多 RAM，因此 {IDF_TARGET_NAME} 另外提供了高达 4 MB 的片外 SPI RAM 存储器供用户使用。片外 RAM 已经集成到内存映射中，在某些范围内与片上 RAM 使用方式相同。
 
 
 硬件
 ========
 
-{IDF_TARGET_NAME} 支持与 SPI Flash 芯片并联的 SPI PSRAM。虽然 {IDF_TARGET_NAME} 支持多种类型的 RAM 芯片，但 ESP-IDF 当前仅支持乐鑫品牌的 PSRAM 芯片，如 ESP-PSRAM32、ESP-PSRAM64 等。
+{IDF_TARGET_NAME} 支持与 SPI Flash 芯片并联的 SPI PSRAM（伪静态随机存储器）。虽然 {IDF_TARGET_NAME} 支持多种类型的 RAM 芯片，但 ESP-IDF 当前仅支持乐鑫品牌的 PSRAM 芯片，如 ESP-PSRAM32、ESP-PSRAM64 等。
 
 .. note:: PSRAM 芯片的工作电压分为 1.8 V 和 3.3 V。其工作电压必须与 flash 的工作电压匹配。请查询您 PSRAM 芯片以及 {IDF_TARGET_NAME} 的技术规格书获取准确的工作电压。对于 1.8 V 的 PSRAM 芯片，请确保在启动时将 MTDI 管脚设置为高电平，或者将 {IDF_TARGET_NAME} 中的 eFuses 设置为始终使用 1.8 V 的 VDD_SIO 电平，否则有可能会损坏 PSRAM 和/或 flash 芯片。
 
@@ -29,7 +29,7 @@
 配置片外 RAM
 ========================
 
-ESP-IDF 完全支持将外部存储器集成到您的应用程序中。在启动并完成片外 RAM 初始化后，可以将 ESP-IDF 配置为以多种方式处理片外 RAM：
+ESP-IDF 完全支持将片外 RAM 集成到您的应用程序中。在启动并完成片外 RAM 初始化后，可以将 ESP-IDF 配置为用多种方式处理片外 RAM：
 
 .. list::
 
@@ -37,9 +37,9 @@ ESP-IDF 完全支持将外部存储器集成到您的应用程序中。在启动
     * :ref:`external_ram_config_capability_allocator`
     * :ref:`external_ram_config_malloc` (default)
     :esp32: * :ref:`external_ram_config_bss`
+    :esp32: * :ref:`external_ram_config_noinit`
 
 .. _external_ram_config_memory_map:
-
 
 集成片外 RAM 到 {IDF_TARGET_NAME} 内存映射
 -------------------------------------------
@@ -60,7 +60,7 @@ ESP-IDF 启动过程中，片外 RAM 被映射到以 0x3F800000 起始的数据�
 
 在 :ref:`CONFIG_SPIRAM_USE` 中选择 "Make RAM allocatable using heap_caps_malloc(..., MALLOC_CAP_SPIRAM)" 选项。
 
-启用上述选项后，片外 RAM 被映射到地址 0x3F800000，并将这个区域添加到 :doc:`堆内存分配器 </api-reference/system/mem_alloc>` 里携带 ``MALLOC_CAP_SPIRAM`` 的标志
+启用上述选项后，片外 RAM 被映射到地址 0x3F800000，并将这个区域添加到携带 ``MALLOC_CAP_SPIRAM`` 标志的 :doc:`堆内存分配器 </api-reference/system/mem_alloc>` 。
 
 程序如果想从片外存储器分配存储空间，则需要调用 ``heap_caps_malloc(size, MALLOC_CAP_SPIRAM)``，之后可以调用 ``free()`` 函数释放这部分存储空间。
 
@@ -74,7 +74,7 @@ ESP-IDF 启动过程中，片外 RAM 被映射到以 0x3F800000 起始的数据�
 
 启用此选项后，片外存储器将被添加到内存分配程序（与上一选项相同），同时也将被添加到由标准 ``malloc()`` 函数返回的 RAM 中。
 
-这允许应用程序使用片外 RAM，无需重写代码就能使用 ``heap_caps_malloc(..., MALLOC_CAP_SPIRAM)``。
+应用程序因此可以使用片外 RAM，无需重写代码就能使用 ``heap_caps_malloc(..., MALLOC_CAP_SPIRAM)``。
 
 如果某次内存分配偏向于片外存储器，您也可以使用 :ref:`CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL` 设置分配空间的大小阈值，控制分配结果：
 
@@ -83,27 +83,35 @@ ESP-IDF 启动过程中，片外 RAM 被映射到以 0x3F800000 起始的数据�
 
 如果优先考虑的内部或外部存储器中没有可用的存储块，分配程序则会选择其他类型存储。
 
-由于有些 Buffer 仅可在内部存储器中分配，因此需要使用第二个配置项 :ref:`CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL` 定义一个内部存储池，仅限显式的内部存储器分配使用（例如用于 DMA 的存储器）。常规 ``malloc()`` 将不会从该池中分配，但可以使用 :ref:`MALLOC_CAP_DMA <dma-capable-memory>` 和 ``MALLOC_CAP_INTERNAL`` 旗标从该池中分配存储器。
+由于有些内存缓冲器仅可在内部存储器中分配，因此需要使用第二个配置项 :ref:`CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL` 定义一个内部内存池，仅限显式的内部存储器分配使用（例如用于 DMA 的存储器）。常规 ``malloc()`` 将不会从该池中分配，但可以使用 :ref:`MALLOC_CAP_DMA <dma-capable-memory>` 和 ``MALLOC_CAP_INTERNAL`` 标志从该池中分配存储器。
 
 .. only:: esp32
 
-   .. _external_ram_config_bss:
+    .. _external_ram_config_bss:
 
-   允许 .bss 段放入片外存储器
-   -----------------------------
+    允许 .bss 段放入片外存储器
+    -----------------------------------
 
-   通过检查 :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` 启用该选项，此选项配置与上面三个选项互不影响。
+    通过勾选 :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` 启用该选项，此选项配置与其它三个选项互不影响。
 
-   启用该选项后，从 0x3F800000 起始的地址空间将用于存储来自 lwip、net80211、libpp 和 bluedroid ESP-IDF 库中零初始化的数据（BSS 段）。
+    启用该选项后，从 0x3F800000 起始的地址空间将用于存储来自 lwip、net80211、libpp 和 bluedroid ESP-IDF 库中零初始化的数据（BSS 段）。
 
-   ``EXT_RAM_ATTR`` 宏应用于任何静态声明（未初始化为非零值）之后，可以将附加数据从内部 BSS 段移到片外 RAM。
+    ``EXT_RAM_ATTR`` 宏应用于任何静态声明（未初始化为非零值）之后，可以将附加数据从内部 BSS 段移到片外 RAM。
 
-   也可以使用链接器片段方案 ``extram_bss`` 将组件或库的 BSS 段放到片外 RAM 中。
+    也可以使用链接器片段方案 ``extram_bss`` 将组件或库的 BSS 段放到片外 RAM 中。
 
-   启用此选项可以减少 BSS 段占用的内部静态存储。
+    启用此选项可以减少 BSS 段占用的内部静态存储。
 
-   剩余的片外 RAM 也可以通过上述方法添加到堆分配器中。
+    剩余的片外 RAM 也可以通过上述方法添加到堆分配器中。
 
+    .. _external_ram_config_noinit:
+
+    允许 .noinit 段放入片外存储器
+    -------------------------------------
+
+    通过勾选 :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY` 启用该选项。启用该选项后，外部 RAM 中提供的地址空间区域将用于存储未初始化的数据。即使在启动或重新启动期间，放置在该段中的值也不会被初始化或修改。
+
+    通过应用 ``EXT_RAM_NOINIT_ATTR`` 宏，可以将数据从内部 NOINIT 段移到片外 RAM。剩余的片外 RAM 也可以通过上述方法添加到堆分配器中，具体请参考 :ref:`external_ram_config_capability_allocator`。
 
 片外 RAM 使用限制
 ===================
@@ -112,9 +120,9 @@ ESP-IDF 启动过程中，片外 RAM 被映射到以 0x3F800000 起始的数据�
 
  * Flash cache 禁用时（比如，正在写入 flash），片外 RAM 将无法访问；同样，对片外 RAM 的读写操作也将导致 cache 访问异常。出于这个原因，ESP-IDF 不会在片外 RAM 中分配任务堆栈（详见下文）。
 
- * 片外 RAM 不能用于储存 DMA 事物描述符，也不能用作 DMA 读写操作的缓冲区 (Buffer)。与 DMA 搭配使用的 Buffer 必须先使用 ``heap_caps_malloc(size, MALLOC_CAP_DMA)`` 进行分配，之后可以调用标准 ``free()`` 回调释放 Buffer。
+ * 片外 RAM 不能用于储存 DMA 事务描述符，也不能用作 DMA 读写操作的缓冲区 (Buffer)。与 DMA 搭配使用的 Buffer 必须先使用 ``heap_caps_malloc(size, MALLOC_CAP_DMA)`` 进行分配，之后可以调用标准 ``free()`` 回调释放 Buffer。
 
- * 片外 RAM 与片外 flash 使用相同的 cache 区域，这意味着频繁在片外 RAM 访问的变量可以像在片上 RAM 中一样快速读取和修改。但访问大块数据时（大于 32 KB），cache 空间可能会不足，访问速度将回落到片外 RAM 访问速度。此外，访问大块数据可以挤出 flash cache，可能会降低代码执行速度。
+ * 片外 RAM 与片外 flash 使用相同的 cache 区域，这意味着频繁在片外 RAM 访问的变量可以像在片上 RAM 中一样快速读取和修改。但访问大块数据时（大于 32 KB），cache 空间可能会不足，访问速度将回落到片外 RAM 访问速度。此外，访问大块数据会挤出 flash cache，可能降低代码执行速度。
 
  * 一般来说，片外 RAM 不可用作任务堆栈存储器。因此 :cpp:func:`xTaskCreate` 及类似函数将始终为堆栈和任务 TCB 分配片上储存器，而 :cpp:func:`xTaskCreateStatic` 类型的函数将检查传递的 Buffer 是否属于片上存储器。
 
@@ -129,7 +137,17 @@ ESP-IDF 启动过程中，片外 RAM 被映射到以 0x3F800000 起始的数据�
 
  .. only:: esp32
 
-    如果启用 :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`，忽略失败的选项将无法使用，这是因为在链接时，链接器已经向片外存储器分配符号。
+    如果启用 :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`，忽略失败的选项将无法使用，这是因为在链接时，链接器已经向片外存储器分配标志符。
+
+
+.. only:: not esp32
+
+    加密
+    ==========
+
+    可以为存储在外部 RAM 中的数据启用自动加密功能。启用该功能后，通过缓存读写的任何数据将被外部存储器加密硬件自动加密/解密。
+
+    只要启用了 flash 加密功能，就会启用这个功能。关于如何启用 flash 加密以及其工作原理，请参考 :doc:`Flash 加密 </security/flash-encryption>`。
 
 
 .. only:: esp32

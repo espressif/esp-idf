@@ -39,7 +39,7 @@ static int md5_printf(char *md, const char *fmt, ...)
     unsigned char *buf;
     unsigned char digest[MD5_MAX_LEN];
     int len, i;
-    struct MD5Context md5_ctx;
+    md5_context_t md5_ctx;
     va_list ap;
     va_start(ap, fmt);
     len = vasprintf((char **)&buf, fmt, ap);

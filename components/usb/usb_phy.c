@@ -9,7 +9,7 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_log.h"
 #include "esp_check.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "esp_private/usb_phy.h"
 #include "soc/usb_phy_periph.h"
 #include "hal/usb_phy_hal.h"

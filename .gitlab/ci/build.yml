@@ -13,7 +13,6 @@
     LOG_PATH: "${CI_PROJECT_DIR}/log_template_app"
     BUILD_PATH: "${CI_PROJECT_DIR}/build_template_app"
     BUILD_DIR: "@t/@w"
-    BUILD_LOG_MAKE: "${LOG_PATH}/make_@t_@w.txt"
     BUILD_LOG_CMAKE: "${LOG_PATH}/cmake_@t_@w.txt"
     BUILD_COMMAND_ARGS: ""
   artifacts:
@@ -169,27 +168,6 @@ build_esp_idf_tests_cmake_esp32c3:
     # mechanism work, but this is the next best thing
     - ${IDF_PATH}/tools/ci/find_apps_build_apps.sh
 
-build_examples_make:
-  extends:
-    - .build_examples_template
-    - .rules:build:example_test-esp32
-  stage: host_test
-  # This is a workaround for a rarely encountered issue with building examples in CI.
-  # Probably related to building of Kconfig in 'make clean' stage
-  retry: 1
-  parallel: 8
-  artifacts:
-    paths:
-      - $LOG_PATH
-      - build_${TEST_PREFIX}/*/*/*/build/size.json
-      - $SIZE_INFO_LOCATION
-    when: always
-    expire_in: 4 days
-  variables:
-    BUILD_SYSTEM: make
-    IDF_TARGET: esp32  # currently we only support esp32
-
-# same as above, but for CMake
 .build_examples_cmake_template:
   extends: .build_examples_template
   artifacts:
@@ -332,11 +310,6 @@ build_component_ut_esp32c3:
     - mkdir test_build_system
     - cd test_build_system
     - ${IDF_PATH}/tools/ci/${SHELL_TEST_SCRIPT}
-
-test_build_system:
-  extends: .test_build_system_template
-  variables:
-    SHELL_TEST_SCRIPT: test_build_system.sh
 
 test_build_system_cmake:
   extends: .test_build_system_template

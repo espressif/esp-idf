@@ -82,11 +82,6 @@ Then, in the component CMakeLists.txt, add this file as an unresolved symbol to 
 
    target_link_libraries(${COMPONENT_TARGET} "-u ld_include_my_isr_file")
 
-If using the legacy Make build system, add the following to component.mk, instead::
-
-   COMPONENT_ADD_LDFLAGS := -u ld_include_my_isr_file
-
-
 This should cause the linker to always include a file defining ``ld_include_my_isr_file``, causing the ISR to always be linked in.
 
  - High-level interrupts can be routed and handled using esp_intr_alloc and associated functions. The handler and handler arguments

@@ -19,6 +19,8 @@
 #include "esp32c3/rom/spi_flash.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP8684
+#include "esp8684/rom/spi_flash.h"
 #endif
 #include "esp_rom_crc.h"
 #include "esp_rom_gpio.h"

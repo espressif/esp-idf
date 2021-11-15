@@ -1,16 +1,8 @@
-// Copyright 2019-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <sys/param.h>
 #include "soc/soc_caps.h"
@@ -20,7 +12,7 @@
 #include "sdkconfig.h"
 
 
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP8684
 #include "soc/gdma_channel.h"
 #include "soc/soc.h"
 #include "esp_rom_sys.h"
@@ -97,7 +89,7 @@ static uint32_t read_cal_channel(adc_ll_num_t adc_n, int channel)
     return (uint32_t)adc_ll_rtc_get_convert_value(adc_n);
 }
 
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP8684
 static void cal_setup(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten, bool internal_gnd)
 {
     adc_ll_onetime_sample_enable(ADC_NUM_1, false);
@@ -198,7 +190,7 @@ uint32_t adc_hal_self_calibration(adc_ll_num_t adc_n, adc_channel_t channel, adc
 }
 #endif //SOC_ADC_CALIBRATION_V1_SUPPORTED
 
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP8684
 //This feature is currently supported on ESP32C3, will be supported on other chips soon
 /*---------------------------------------------------------------
                     DMA setting
@@ -395,7 +387,7 @@ esp_err_t adc_hal_convert(adc_ll_num_t adc_n, int channel, int *out_raw)
 
     return ret;
 }
-#else // !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2
+#else // !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP8684
 esp_err_t adc_hal_convert(adc_ll_num_t adc_n, int channel, int *out_raw)
 {
     adc_ll_rtc_enable_channel(adc_n, channel);
@@ -409,4 +401,4 @@ esp_err_t adc_hal_convert(adc_ll_num_t adc_n, int channel, int *out_raw)
 
     return ESP_OK;
 }
-#endif  //#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C3
+#endif  //#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP8684

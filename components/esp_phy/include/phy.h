@@ -68,6 +68,13 @@ void phy_close_rf(void);
 void phy_xpd_tsens(void);
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32C3
+/**
+ * @brief Update internal state of PHY when wifi deinit powers off the wifi power domain.
+ */
+void phy_init_flag(void);
+#endif
+
 /**
  * @brief Store and load PHY digital registers.
  *

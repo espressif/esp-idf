@@ -14,7 +14,7 @@
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "esp32/clk.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "soc/soc.h"
 #include "soc/timer_group_reg.h"
 #include "soc/rtc.h"

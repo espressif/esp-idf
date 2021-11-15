@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,9 +63,11 @@
 #define SOC_EMAC_SUPPORTED          1
 #define SOC_CPU_CORES_NUM           2
 #define SOC_ULP_SUPPORTED           1
-#define SOC_RTC_SLOW_MEM_SUPPORTED  1
 #define SOC_CCOMP_TIMER_SUPPORTED   1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 1
+#define SOC_RTC_FAST_MEM_SUPPORTED        1
+#define SOC_RTC_SLOW_MEM_SUPPORTED        1
+
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
 /**
@@ -160,7 +162,8 @@
 #define SOC_LCD_I80_BUS_WIDTH      (24) /*!< Intel 8080 bus width */
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
-#define SOC_LEDC_SUPPORT_HS_MODE  (1)
+#define SOC_LEDC_HAS_TIMER_SPECIFIC_MUX  (1)
+#define SOC_LEDC_SUPPORT_REF_TICK    (1)
 #define SOC_LEDC_SUPPORT_HS_MODE     (1)
 #define SOC_LEDC_CHANNEL_NUM         (8)
 #define SOC_LEDC_TIMER_BIT_WIDE_NUM  (20)

@@ -1601,7 +1601,11 @@
  * This module is used by the following key exchanges:
  *      DHE-RSA, DHE-PSK
  */
+#ifdef CONFIG_MBEDTLS_DHM_C
 #define MBEDTLS_DHM_C
+#else
+#undef MBEDTLS_DHM_C
+#endif
 
 /**
  * \def MBEDTLS_ECDH_C

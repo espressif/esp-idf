@@ -1,7 +1,7 @@
 idf_build_get_property(target IDF_TARGET)
 
 # should test arch here not target: IDF-1754
-if("${target}" STREQUAL "esp32c3" OR "${target}" STREQUAL "esp32h2")
+if("${target}" STREQUAL "esp32c3" OR "${target}" STREQUAL "esp32h2" OR "${target}" STREQUAL "esp8684")
     return()
 endif()
 

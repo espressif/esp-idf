@@ -7,7 +7,7 @@ entries:
     if FREERTOS_PLACE_FUNCTIONS_INTO_FLASH = y:
         port: pxPortInitialiseStack (default)
         port: xPortStartScheduler (default)
-        if IDF_TARGET_ESP32S2 = n && IDF_TARGET_ESP32C3 = n && IDF_TARGET_ESP32H2 = n :
+        if IDF_TARGET_ESP32 = y || IDF_TARGET_ESP32S3 = y :
             port: vPortReleaseTaskMPUSettings (default)
             tasks: xTaskCreateRestricted (default)
             port: vPortStoreTaskMPUSettings (default)
