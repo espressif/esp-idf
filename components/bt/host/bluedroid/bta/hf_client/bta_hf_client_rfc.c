@@ -70,7 +70,7 @@ static void bta_hf_client_port_cback(UINT32 code, UINT16 port_handle)
 ** Returns          void
 **
 *******************************************************************************/
-static void bta_hf_client_mgmt_cback(UINT32 code, UINT16 port_handle)
+static void bta_hf_client_mgmt_cback(UINT32 code, UINT16 port_handle, void* data)
 {
     tBTA_HF_CLIENT_RFC     *p_buf;
     UINT16                  event;
