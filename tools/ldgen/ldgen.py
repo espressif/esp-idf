@@ -1,18 +1,7 @@
 #!/usr/bin/env python
 #
-# Copyright 2021 Espressif Systems (Shanghai) CO LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 #
 
 import argparse
@@ -132,7 +121,7 @@ def main():
             library = library.strip()
             if library:
                 new_env = os.environ.copy()
-                new_env['LC_ALL']='C'
+                new_env['LC_ALL'] = 'C'
                 dump = StringIO(subprocess.check_output([objdump, '-h', library], env=new_env).decode())
                 dump.name = library
                 sections_infos.add_sections_info(dump)
