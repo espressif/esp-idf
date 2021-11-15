@@ -196,6 +196,12 @@ endif()
 
 list(APPEND link_options "-fno-lto")
 
+if(CONFIG_IDF_TARGET_LINUX AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+    list(APPEND link_options "-Wl,-dead_strip")
+else()
+    list(APPEND link_options "-Wl,--gc-sections")
+endif()
+
 # Placing jump tables in flash would cause issues with code that required
 # to be placed in IRAM
 list(APPEND compile_options "-fno-jump-tables")
