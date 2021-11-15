@@ -71,7 +71,7 @@ int IRAM_ATTR esp_clk_cpu_freq(void)
 
 int IRAM_ATTR esp_clk_apb_freq(void)
 {
-    return MIN(s_get_cpu_freq_mhz(), 80) * MHZ;
+    return MIN(s_get_cpu_freq_mhz() * MHZ, APB_CLK_FREQ);
 }
 
 int IRAM_ATTR esp_clk_xtal_freq(void)
@@ -116,7 +116,7 @@ uint64_t esp_rtc_get_time_us(void)
     const uint64_t ticks_low = ticks & UINT32_MAX;
     const uint64_t ticks_high = ticks >> 32;
     const uint64_t delta_time_us = ((ticks_low * cal) >> RTC_CLK_CAL_FRACT) +
-           ((ticks_high * cal) << (32 - RTC_CLK_CAL_FRACT));
+                                   ((ticks_high * cal) << (32 - RTC_CLK_CAL_FRACT));
     s_esp_rtc_time_us += delta_time_us;
     s_rtc_last_ticks = rtc_this_ticks;
     _lock_release(&s_esp_rtc_time_lock);

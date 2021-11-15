@@ -374,7 +374,7 @@ static void start_cpu0_default(void)
 
     ESP_EARLY_LOGI(TAG, "Pro cpu start user code");
     int cpu_freq = esp_clk_cpu_freq();
-    ESP_EARLY_LOGI(TAG, "cpu freq: %d", cpu_freq);
+    ESP_EARLY_LOGI(TAG, "cpu freq: %d Hz", cpu_freq);
 
     // Display information about the current running image.
     if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO) {
