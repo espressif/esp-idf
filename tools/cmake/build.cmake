@@ -111,13 +111,10 @@ function(__build_set_default_build_specifications)
 
     list(APPEND cxx_compile_options "-std=gnu++11")
 
-    list(APPEND link_options "-Wl,--gc-sections")
-
     idf_build_set_property(COMPILE_DEFINITIONS "${compile_definitions}" APPEND)
     idf_build_set_property(COMPILE_OPTIONS "${compile_options}" APPEND)
     idf_build_set_property(C_COMPILE_OPTIONS "${c_compile_options}" APPEND)
     idf_build_set_property(CXX_COMPILE_OPTIONS "${cxx_compile_options}" APPEND)
-    idf_build_set_property(LINK_OPTIONS "${link_options}" APPEND)
 endfunction()
 
 #
