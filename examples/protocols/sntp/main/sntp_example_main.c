@@ -172,13 +172,15 @@ static void initialize_sntp(void)
  * as a 'secondary' server. It will act as a fallback server in case that address
  * provided via NTP over DHCP is not accessible
  */
-#if defined LWIP_DHCP_GET_NTP_SRV && (SNTP_MAX_SERVERS > 1)
+#if  (LWIP_DHCP_GET_NTP_SRV == 1) && (SNTP_MAX_SERVERS > 1)
     sntp_setservername(1, "pool.ntp.org");
 
 #if LWIP_IPV6                   // statically assigned IPv6 address is also possible
     ip_addr_t ip6;
-    if (ipaddr_aton("2a01:3f7::1", &ip6))       // ipv6 ntp source "ntp.netnod.se"
+    if (ipaddr_aton("2a01:3f7::1", &ip6)) {
+         // ipv6 ntp source "ntp.netnod.se"
         sntp_setserver(2, &ip6);
+    }
 #endif  /* LWIP_IPV6 */
 
 #else   /* LWIP_DHCP_GET_NTP_SRV && (SNTP_MAX_SERVERS > 1) */
