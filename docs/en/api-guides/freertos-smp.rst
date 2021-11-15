@@ -19,7 +19,7 @@ FreeRTOS and ESP-IDF FreeRTOS. The API reference for vanilla FreeRTOS can be
 found via https://www.freertos.org/a00106.html
 
 For information regarding features that are exclusive to ESP-IDF FreeRTOS,
-see :doc:`ESP-IDF FreeRTOS Additions<../api-reference/system/freertos_additions>`.
+see :doc:`ESP-IDF FreeRTOS Additions</api-reference/system/freertos_additions>`.
 
 .. only:: not CONFIG_FREERTOS_UNICORE
 
@@ -30,10 +30,7 @@ see :doc:`ESP-IDF FreeRTOS Additions<../api-reference/system/freertos_additions>
   ``1`` for **APP_CPU**, or ``tskNO_AFFINITY`` which allows the task to run on
   both.
 
-  :ref:`round-robin-scheduling`: The ESP-IDF FreeRTOS scheduler will skip tasks when 
-  implementing Round-Robin scheduling between multiple tasks in the Ready state 
-  that are of the same priority. To avoid this behavior, ensure that those tasks either 
-  enter a blocked state, or are distributed across a wider range of priorities.
+  :ref:`round-robin-scheduling`: The ESP-IDF FreeRTOS scheduler implements a "Best Effort Round-Robin Scheduling" instead of the ideal Round-Robin scheduling in vanilla FreeRTOS.
 
   :ref:`scheduler-suspension`: Suspending the scheduler in ESP-IDF FreeRTOS will only 
   affect the scheduler on the the calling core. In other words, calling 
@@ -133,91 +130,88 @@ synchronicity.
 Round Robin Scheduling
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Given multiple tasks in the Ready state and of the same priority, vanilla
-FreeRTOS implements Round Robin scheduling between each task. This will result
-in running those tasks in turn each time the scheduler is called
-(e.g. every tick interrupt). On the other hand, the ESP-IDF FreeRTOS scheduler
-may skip tasks when Round Robin scheduling multiple Ready state tasks of the
-same priority.
+Given multiple tasks in the Ready state and of the same priority, vanilla FreeRTOS implements Round Robin scheduling between multiple ready state tasks of the same priority. This will result in running those tasks in turn each time the scheduler is called (e.g. when the tick interrupt occurs or when a task blocks/yields).
 
-The issue of skipping tasks during Round Robin scheduling arises from the way
-the Ready Tasks List is implemented in FreeRTOS. In vanilla FreeRTOS,
-``pxReadyTasksList`` is used to store a list of tasks that are in the Ready
-state. The list is implemented as an array of length ``configMAX_PRIORITIES``
-where each element of the array is a linked list. Each linked list is of type
-``List_t`` and contains TCBs of tasks of the same priority that are in the
-Ready state. The following diagram illustrates the ``pxReadyTasksList``
-structure.
+On the other hand, it is not possible for the ESP-IDF FreeRTOS scheduler to implement perfect Round Robin due to the fact that a particular task may not be able to run on a particular core due to the following reasons:
 
-.. figure:: ../../_static/freertos-ready-task-list.png
-    :align: center
-    :alt: Vanilla FreeRTOS Ready Task List Structure
+- The task is pinned to the another core.
+- For unpinned tasks, the task is already being run by another core.
 
-    Illustration of FreeRTOS Ready Task List Data Structure
+Therefore, when a core searches the ready state task list for a task to run, the core may need to skip over a few tasks in the same priority list or drop to a lower priority in order to find a ready state task that the core can run.
+
+The ESP-IDF FreeRTOS scheduler implements a Best Effort Round Robin scheduling for ready state tasks of the same priority by ensuring that tasks that have been selected to run will be placed at the back of the list, thus giving unselected tasks a higher priority on the next scheduling iteration (i.e., the next tick interrupt or yield)
+
+The following example demonstrates the Best Effort Round Robin Scheduling in action. Assume that:
+
+- There are four ready state tasks of the same priority ``AX, B0, C1, D1`` where:
+  - The priority is the current highest priority with ready state tasks
+  - The first character represents the task's names (i.e., ``A, B, C, D``)
+  - And the second character represents the tasks core pinning (and ``X`` means unpinned)
+- The task list is always searched from the head
+
+.. code-block:: none
+
+    --------------------------------------------------------------------------------
+
+    1. Starting state. None of the ready state tasks have been selected to run
+
+    Head [ AX , B0 , C1 , D0 ] Tail
+
+    --------------------------------------------------------------------------------
+
+    2. Core 0 has tick interrupt and searches for a task to run.
+      Task A is selected and is moved to the back of the list
+
+    Core0--|
+    Head [ AX , B0 , C1 , D0 ] Tail
+
+                          0
+    Head [ B0 , C1 , D0 , AX ] Tail
+
+    --------------------------------------------------------------------------------
+
+    3. Core 1 has a tick interrupt and searches for a task to run.
+      Task B cannot be run due to incompatible affinity, so core 1 skips to Task C.
+      Task C is selected and is moved to the back of the list
+
+    Core1-------|         0
+    Head [ B0 , C1 , D0 , AX ] Tail
+
+                     0    1
+    Head [ B0 , D0 , AX , C1 ] Tail
+
+    --------------------------------------------------------------------------------
+
+    4. Core 0 has another tick interrupt and searches for a task to run.
+      Task B is selected and moved to the back of the list
 
 
-Each linked list also contains a ``pxIndex`` which points to the last TCB
-returned when the list was queried. This index allows the ``vTaskSwitchContext()``
-to start traversing the list at the TCB immediately after ``pxIndex`` hence
-implementing Round Robin Scheduling between tasks of the same priority.
+    Core0--|              1
+    Head [ B0 , D0 , AX , C1 ] Tail
 
-In ESP-IDF FreeRTOS, the Ready Tasks List is shared between cores hence
-``pxReadyTasksList`` will contain tasks pinned to different cores. When a core
-calls the scheduler, it is able to look at the ``xCoreID`` member of each TCB
-in the list to determine if a task is allowed to run on calling the core. The
-ESP-IDF FreeRTOS ``pxReadyTasksList`` is illustrated below.
+                     1    0
+    Head [ D0 , AX , C1 , B0 ] Tail
 
-.. figure:: ../../_static/freertos-ready-task-list-smp.png
-    :align: center
-    :alt: ESP-IDF FreeRTOS Ready Task List Structure
+    --------------------------------------------------------------------------------
 
-    Illustration of FreeRTOS Ready Task List Data Structure in ESP-IDF
+    5. Core 1 has another tick and searches for a task to run.
+      Task D cannot be run due to incompatible affinity, so core 1 skips to Task A
+      Task A is selected and moved to the back of the list
 
-Therefore when **PRO_CPU** calls the scheduler, it will only consider the tasks
-in blue or purple. Whereas when **APP_CPU** calls the scheduler, it will only
-consider the tasks in orange or purple.
+    Core1-------|         0
+    Head [ D0 , AX , C1 , B0 ] Tail
 
-Although each TCB has an ``xCoreID`` in ESP-IDF FreeRTOS, the linked list of
-each priority only has a single ``pxIndex``. Therefore when the scheduler is
-called from a particular core and traverses the linked list, it will skip all
-TCBs pinned to the other core and point the pxIndex at the selected task. If
-the other core then calls the scheduler, it will traverse the linked list
-starting at the TCB immediately after ``pxIndex``. Therefore, TCBs skipped on
-the previous scheduler call from the other core would not be considered on the
-current scheduler call. This issue is demonstrated in the following
-illustration.
+                     0    1
+    Head [ D0 , C1 , B0 , AX ] Tail
 
-.. figure:: ../../_static/freertos-ready-task-list-smp-pxIndex.png
-    :align: center
-    :alt: ESP-IDF pxIndex Behavior
 
-    Illustration of pxIndex behavior in ESP-IDF FreeRTOS
+The implications to users regarding the Best Effort Round Robin Scheduling:
 
-Referring to the illustration above, assume that priority 9 is the highest
-priority, and none of the tasks in priority 9 will block hence will always be
-either in the running or Ready state.
+- Users cannot expect multiple ready state tasks of the same priority to run sequentially (as is the case in Vanilla FreeRTOS). As demonstrated in the example above, a core may need to skip over tasks.
+- However, given enough ticks, a task will eventually be given some processing time.
+- If a core cannot find a task runnable task at the highest ready state priority, it will drop to a lower priority to search for tasks.
+- To achieve ideal round robin scheduling, users should ensure that all tasks of a particular priority are pinned to the same core.
 
-1)	**PRO_CPU** calls the scheduler and selects Task A to run, hence moves
-``pxIndex`` to point to Task A
-
-2)	**APP_CPU** calls the scheduler and starts traversing from the task after
-``pxIndex`` which is Task B. However Task B is not selected to run as it is not
-pinned to **APP_CPU** hence it is skipped and Task C is selected instead.
-``pxIndex`` now points to Task C
-
-3)	**PRO_CPU** calls the scheduler and starts traversing from Task D. It skips
-Task D and selects Task E to run and points ``pxIndex`` to Task E. Notice that
-Task B isn’t traversed because it was skipped the last time **APP_CPU** called
-the scheduler to traverse the list.
-
-4)	The same situation with Task D will occur if **APP_CPU** calls the
-scheduler again as ``pxIndex`` now points to Task E
-
-One solution to the issue of task skipping is to ensure that every task will
-enter a blocked state so that they are removed from the Ready Task List.
-Another solution is to distribute tasks across multiple priorities such that
-a given priority will not be assigned multiple tasks that are pinned to
-different cores.
 
 .. _scheduler-suspension:
 
