@@ -391,7 +391,9 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     }
 #endif
 
-    misc_modules_sleep_prepare();
+    if (!deep_sleep) {
+        misc_modules_sleep_prepare();
+    }
 
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     if (deep_sleep) {
@@ -484,9 +486,8 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 
     if (!deep_sleep) {
         s_config.ccount_ticks_record = cpu_ll_get_cycle_count();
+        misc_modules_wake_prepare();
     }
-
-    misc_modules_wake_prepare();
 
     // re-enable UART output
     resume_uarts();
