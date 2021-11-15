@@ -131,7 +131,9 @@ def main():
         for library in libraries_file:
             library = library.strip()
             if library:
-                dump = StringIO(subprocess.check_output([objdump, '-h', library]).decode())
+                new_env = os.environ.copy()
+                new_env['LC_ALL']='C'
+                dump = StringIO(subprocess.check_output([objdump, '-h', library], env=new_env).decode())
                 dump.name = library
                 sections_infos.add_sections_info(dump)
 
