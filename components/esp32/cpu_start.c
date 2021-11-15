@@ -159,7 +159,6 @@ void IRAM_ATTR call_start_cpu0()
     }
 
 #if CONFIG_SPIRAM_BOOT_INIT
-    esp_spiram_init_cache();
     if (esp_spiram_init() != ESP_OK) {
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
         ESP_EARLY_LOGE(TAG, "Failed to init external RAM, needed for external .bss segment");
@@ -174,6 +173,7 @@ void IRAM_ATTR call_start_cpu0()
         abort();
 #endif
     }
+    esp_spiram_init_cache();
 #endif
 
 #ifdef CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ

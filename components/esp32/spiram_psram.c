@@ -37,6 +37,7 @@
 #include "driver/spi_common.h"
 #include "driver/periph_ctrl.h"
 #include "bootloader_common.h"
+#include "bootloader_flash_config.h"
 
 #if CONFIG_SPIRAM_SUPPORT
 #include "soc/rtc.h"
@@ -120,6 +121,9 @@ typedef enum {
 // For ESP32-PICO chip, the psram share clock with flash. The flash clock pin is fixed, which is IO6.
 #define PICO_PSRAM_CLK_IO          6
 #define PICO_PSRAM_CS_IO           CONFIG_PICO_PSRAM_CS_IO   // Default value is 10
+
+#define PICO_V3_02_PSRAM_CLK_IO    10
+#define PICO_V3_02_PSRAM_CS_IO     9
 
 typedef struct {
     uint8_t flash_clk_io;
@@ -822,6 +826,16 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
         s_clk_mode = PSRAM_CLK_MODE_NORM;
         psram_io.psram_clk_io = PICO_PSRAM_CLK_IO;
         psram_io.psram_cs_io  = PICO_PSRAM_CS_IO;
+    } else if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOV302) {
+        ESP_EARLY_LOGI(TAG, "This chip is ESP32-PICO-V3-02");
+        rtc_vddsdio_config_t cfg = rtc_vddsdio_get_config();
+        if (cfg.tieh != RTC_VDDSDIO_TIEH_3_3V) {
+            ESP_EARLY_LOGE(TAG, "VDDSDIO is not 3.3V");
+            return ESP_FAIL;
+        }
+        s_clk_mode = PSRAM_CLK_MODE_NORM;
+        psram_io.psram_clk_io = PICO_V3_02_PSRAM_CLK_IO;
+        psram_io.psram_cs_io  = PICO_V3_02_PSRAM_CS_IO;
     } else if ((pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32D0WDQ6) || (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32D0WDQ5)){
         ESP_EARLY_LOGI(TAG, "This chip is ESP32-D0WD");
         psram_io.psram_clk_io = D0WD_PSRAM_CLK_IO;
@@ -852,14 +866,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
         psram_io.psram_spiq_sd0_io  = EFUSE_SPICONFIG_RET_SPIQ(spiconfig);
         psram_io.psram_spid_sd1_io  = EFUSE_SPICONFIG_RET_SPID(spiconfig);
         psram_io.psram_spihd_sd2_io = EFUSE_SPICONFIG_RET_SPIHD(spiconfig);
-
-        // If flash mode is set to QIO or QOUT, the WP pin is equal the value configured in bootloader.
-        // If flash mode is set to DIO or DOUT, the WP pin should config it via menuconfig.
-        #if CONFIG_FLASHMODE_QIO || CONFIG_FLASHMODE_QOUT
-        psram_io.psram_spiwp_sd3_io = CONFIG_BOOTLOADER_SPI_WP_PIN;
-        #else
-        psram_io.psram_spiwp_sd3_io = CONFIG_SPIRAM_SPIWP_SD3_PIN;
-        #endif
+        psram_io.psram_spiwp_sd3_io = bootloader_flash_get_wp_pin();
     }
 
     assert(mode < PSRAM_CACHE_MAX && "we don't support any other mode for now.");

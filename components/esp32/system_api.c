@@ -380,7 +380,8 @@ void esp_chip_info(esp_chip_info_t* out_info)
     int package = (efuse_rd3 & EFUSE_RD_CHIP_VER_PKG_M) >> EFUSE_RD_CHIP_VER_PKG_S;
     if (package == EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5 ||
         package == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2 ||
-        package == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4) {
+        package == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4 ||
+        package == EFUSE_RD_CHIP_VER_PKG_ESP32PICOV302) {
         out_info->features |= CHIP_FEATURE_EMB_FLASH;
     }
 }
