@@ -314,7 +314,7 @@ void vPortSetStackWatchpoint(void *pxStackStart);
  */
 static inline BaseType_t IRAM_ATTR xPortGetCoreID(void)
 {
-    return (uint32_t) cpu_hal_get_core_id();
+    return (BaseType_t) cpu_hal_get_core_id();
 }
 
 

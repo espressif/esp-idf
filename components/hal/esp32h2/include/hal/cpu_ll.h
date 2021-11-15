@@ -106,7 +106,7 @@ static inline void cpu_ll_set_watchpoint(int id,
     RV_WRITE_CSR(tselect,id);
     RV_SET_CSR(CSR_TCONTROL, TCONTROL_MPTE | TCONTROL_MTE);
     RV_SET_CSR(CSR_TDATA1, TDATA1_USER|TDATA1_MACHINE);
-    RV_SET_CSR_FIELD(CSR_TDATA1, TDATA1_MATCH, 1);
+    RV_SET_CSR_FIELD(CSR_TDATA1, (long unsigned int) TDATA1_MATCH, 1);
     // add 0 in napot encoding
     addr_napot = ((uint32_t) addr) | ((size >> 1) - 1);
     if (on_read) {
@@ -124,7 +124,7 @@ static inline void cpu_ll_clear_watchpoint(int id)
     RV_WRITE_CSR(tselect,id);
     RV_CLEAR_CSR(CSR_TCONTROL,TCONTROL_MTE);
     RV_CLEAR_CSR(CSR_TDATA1, TDATA1_USER|TDATA1_MACHINE);
-    RV_CLEAR_CSR_FIELD(CSR_TDATA1,TDATA1_MATCH);
+    RV_CLEAR_CSR_FIELD(CSR_TDATA1, (long unsigned int) TDATA1_MATCH);
     RV_CLEAR_CSR(CSR_TDATA1, TDATA1_MACHINE);
     RV_CLEAR_CSR(CSR_TDATA1, TDATA1_LOAD|TDATA1_STORE|TDATA1_EXECUTE);
     return;
