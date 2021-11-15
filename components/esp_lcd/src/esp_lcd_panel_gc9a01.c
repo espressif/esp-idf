@@ -19,7 +19,7 @@
 #include "esp_log.h"
 #include "esp_check.h"
 
-static const char *TAG = "lcd_panel.gc9a01";
+static const char *TAG = "gc9a01";
 
 static esp_err_t panel_gc9a01_del(esp_lcd_panel_t *panel);
 static esp_err_t panel_gc9a01_reset(esp_lcd_panel_t *panel);
