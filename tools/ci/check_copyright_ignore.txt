@@ -1806,7 +1806,6 @@ components/soc/esp32/include/soc/clkout_channel.h
 components/soc/esp32/include/soc/dac_channel.h
 components/soc/esp32/include/soc/dport_access.h
 components/soc/esp32/include/soc/dport_reg.h
-components/soc/esp32/include/soc/efuse_reg.h
 components/soc/esp32/include/soc/emac_dma_struct.h
 components/soc/esp32/include/soc/emac_ext_struct.h
 components/soc/esp32/include/soc/emac_mac_struct.h
