@@ -1,1 +1,0 @@
-COMPONENT_OBJEXCLUDE := ulp_riscv.o
