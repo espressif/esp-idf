@@ -428,7 +428,16 @@ Ethernet on MCU usually has a limitation in the number of frames it can handle d
 
 Pause frame is a special Ethernet frame used to carry the pause command, whose EtherType field is 0x8808, with the Control opcode set to 0x0001. Only stations configured for full-duplex operation may send pause frames. When a station wishes to pause the other end of a link, it sends a pause frame to the 48-bit reserved multicast address of 01-80-C2-00-00-01. The pause frame also includes the period of pause time being requested, in the form of a two-byte integer, ranging from 0 to 65535.
 
-After Ethernet driver installation, the flow control feature is disabled by default. You can enable it by invoking `esp_eth_ioctl(eth_handle, ETH_CMD_S_FLOW_CTRL, true);`. One thing should be kept in mind, is that the pause frame ability will be advertised to peer end by PHY during auto negotiation. Ethernet driver sends pause frame only when both sides of the link support it.
+After Ethernet driver installation, the flow control feature is disabled by default. You can enable it by:
+
+.. highlight:: c
+
+::
+
+    bool flow_ctrl_enable = true;
+    esp_eth_ioctl(eth_handle, ETH_CMD_S_FLOW_CTRL, &flow_ctrl_enable);
+
+One thing should be kept in mind, is that the pause frame ability will be advertised to peer end by PHY during auto negotiation. Ethernet driver sends pause frame only when both sides of the link support it.
 
 .. -------------------------------- Examples -----------------------------------
 

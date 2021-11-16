@@ -1,23 +1,10 @@
-// Copyright (c) 2021 Vladimir Chistyakov
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
-
+/*
+ * SPDX-FileCopyrightText: 2021 Vladimir Chistyakov
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ * SPDX-FileContributor: 2021 Espressif Systems (Shanghai) CO LTD
+ */
 #include <stdlib.h>
 #include "esp_check.h"
 #include "esp_heap_caps.h"
@@ -165,37 +152,68 @@ err:
  *       the result of negotiation won't be relected to uppler layers.
  *       Instead, the negotiation result is fetched by linker timer, see `phy_ksz8851_get_link()`
  */
-static esp_err_t phy_ksz8851_negotiate(esp_eth_phy_t *phy)
+static esp_err_t phy_ksz8851_autonego_ctrl(esp_eth_phy_t *phy, eth_phy_autoneg_cmd_t cmd, bool *autonego_en_stat)
 {
     esp_err_t ret = ESP_OK;
     phy_ksz8851snl_t *ksz8851 = __containerof(phy, phy_ksz8851snl_t, parent);
     esp_eth_mediator_t *eth   = ksz8851->eth;
-    ESP_LOGD(TAG, "restart negotiation");
-    /* in case any link status has changed, let's assume we're in link down status */
-    ksz8851->link_status = ETH_LINK_DOWN;
+
     uint32_t control;
     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz8851->addr, KSZ8851_P1CR, &control), err, TAG, "P1CR read failed");
-    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz8851->addr, KSZ8851_P1CR, control | P1CR_RESTART_AN), err, TAG, "P1CR write failed");
 
-    uint32_t status;
-    unsigned to;
-    for (to = 0; to < ksz8851->autonego_timeout_ms / 100; to++) {
-        vTaskDelay(pdMS_TO_TICKS(100));
-        ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz8851->addr, KSZ8851_P1SR, &status), err, TAG, "P1SR read failed");
-        if (status & P1SR_AN_DONE) {
-            break;
+    switch (cmd) {
+    case ESP_ETH_PHY_AUTONEGO_RESTART:
+        ESP_GOTO_ON_FALSE(control & P1CR_AUTO_NEGOTIATION_ENABLE, ESP_ERR_INVALID_STATE, err, TAG, "auto negotiation is disabled");
+        ESP_LOGD(TAG, "restart negotiation");
+        /* in case any link status has changed, let's assume we're in link down status */
+        ksz8851->link_status = ETH_LINK_DOWN;
+        ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz8851->addr, KSZ8851_P1CR, control | P1CR_RESTART_AN), err, TAG, "P1CR write failed");
+
+        uint32_t status;
+        unsigned to;
+        for (to = 0; to < ksz8851->autonego_timeout_ms / 100; to++) {
+            vTaskDelay(pdMS_TO_TICKS(100));
+            ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz8851->addr, KSZ8851_P1SR, &status), err, TAG, "P1SR read failed");
+            if (status & P1SR_AN_DONE) {
+                break;
+            }
         }
-    }
-    if ((to >= ksz8851->autonego_timeout_ms / 100) && (ksz8851->link_status == ETH_LINK_UP)) {
-        ESP_LOGW(TAG, "auto negotiation timeout");
+        if ((to >= ksz8851->autonego_timeout_ms / 100) && (ksz8851->link_status == ETH_LINK_UP)) {
+            ESP_LOGW(TAG, "auto negotiation timeout");
+        }
+
+        ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz8851->addr, KSZ8851_P1CR, control), err, TAG, "P1CR write failed");
+
+        ESP_LOGD(TAG, "negotiation succeeded");
+        break;
+    case ESP_ETH_PHY_AUTONEGO_DIS:
+        if (control & P1CR_AUTO_NEGOTIATION_ENABLE) {
+            control &= ~P1CR_AUTO_NEGOTIATION_ENABLE;     /* Disable Auto Negotiation */
+            ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz8851->addr, KSZ8851_P1CR, control), err, TAG, "P1CR write failed");
+            /* read configuration back */
+            ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz8851->addr, KSZ8851_P1CR, &control), err, TAG, "P1CR read failed");
+            ESP_GOTO_ON_FALSE((control & P1CR_AUTO_NEGOTIATION_ENABLE) == 0, ESP_FAIL, err, TAG, "disable auto-negotiation failed");
+        }
+        break;
+    case ESP_ETH_PHY_AUTONEGO_EN:
+        if (!(control & P1CR_AUTO_NEGOTIATION_ENABLE)) {
+            control |= P1CR_AUTO_NEGOTIATION_ENABLE;     /* Enable Auto Negotiation */
+            ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz8851->addr, KSZ8851_P1CR, control), err, TAG, "P1CR write failed");
+            /* read configuration back */
+            ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz8851->addr, KSZ8851_P1CR, &control), err, TAG, "P1CR read failed");
+            ESP_GOTO_ON_FALSE(control & P1CR_AUTO_NEGOTIATION_ENABLE, ESP_FAIL, err, TAG, "disable auto-negotiation failed");
+        }
+        break;
+    case ESP_ETH_PHY_AUTONEGO_G_STAT:
+        /* do nothing autonego_en_stat is set at the function end */
+        break;
+    default:
+        return ESP_ERR_INVALID_ARG;
     }
 
-    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz8851->addr, KSZ8851_P1CR, control), err, TAG, "P1CR write failed");
-
-    ESP_LOGD(TAG, "negotiation succeeded");
+    *autonego_en_stat = (control & P1CR_AUTO_NEGOTIATION_ENABLE) != 0;
     return ESP_OK;
 err:
-    ESP_LOGD(TAG, "negotiation failed");
     return ret;
 }
 
@@ -264,6 +282,60 @@ err:
     return ret;
 }
 
+static esp_err_t phy_ksz8851_set_speed(esp_eth_phy_t *phy, eth_speed_t speed)
+{
+    esp_err_t ret = ESP_OK;
+    phy_ksz8851snl_t *ksz8851 = __containerof(phy, phy_ksz8851snl_t, parent);
+    esp_eth_mediator_t *eth   = ksz8851->eth;
+
+    if (ksz8851->link_status == ETH_LINK_UP) {
+        /* Since the link is going to be reconfigured, consider it down for a while */
+        ksz8851->link_status = ETH_LINK_DOWN;
+        /* Indicate to upper stream apps the link is cosidered down */
+        ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)ksz8851->link_status), err, TAG, "change link failed");
+    }
+    /* Set speed */
+    uint32_t control;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz8851->addr, KSZ8851_P1CR, &control), err, TAG, "P1CR read failed");
+    if (speed == ETH_SPEED_100M) {
+        control |= P1CR_FORCE_SPEED;
+    } else {
+        control &= ~P1CR_FORCE_SPEED;
+    }
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz8851->addr, KSZ8851_P1CR, control), err, TAG, "P1CR write failed");
+
+    return ESP_OK;
+err:
+    return ret;
+}
+
+static esp_err_t phy_ksz8851_set_duplex(esp_eth_phy_t *phy, eth_duplex_t duplex)
+{
+    esp_err_t ret = ESP_OK;
+    phy_ksz8851snl_t *ksz8851 = __containerof(phy, phy_ksz8851snl_t, parent);
+    esp_eth_mediator_t *eth   = ksz8851->eth;
+
+    if (ksz8851->link_status == ETH_LINK_UP) {
+        /* Since the link is going to be reconfigured, consider it down for a while */
+        ksz8851->link_status = ETH_LINK_DOWN;
+        /* Indicate to upper stream apps the link is cosidered down */
+        ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)ksz8851->link_status), err, TAG, "change link failed");
+    }
+    /* Set duplex mode */
+    uint32_t control;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz8851->addr, KSZ8851_P1CR, &control), err, TAG, "P1CR read failed");
+    if (duplex == ETH_DUPLEX_FULL) {
+        control |= P1CR_FORCE_DUPLEX;
+    } else {
+        control &= ~P1CR_FORCE_DUPLEX;
+    }
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz8851->addr, KSZ8851_P1CR, control), err, TAG, "P1CR write failed");
+
+    return ESP_OK;
+err:
+    return ret;
+}
+
 static esp_err_t phy_ksz8851_del(esp_eth_phy_t *phy)
 {
     ESP_LOGD(TAG, "deleting PHY");
@@ -288,13 +360,15 @@ esp_eth_phy_t *esp_eth_phy_new_ksz8851snl(const eth_phy_config_t *config)
     ksz8851->parent.reset_hw                = phy_ksz8851_reset_hw;
     ksz8851->parent.init                    = phy_ksz8851_init;
     ksz8851->parent.deinit                  = phy_ksz8851_deinit;
-    ksz8851->parent.negotiate               = phy_ksz8851_negotiate;
+    ksz8851->parent.autonego_ctrl           = phy_ksz8851_autonego_ctrl;
     ksz8851->parent.get_link                = phy_ksz8851_get_link;
     ksz8851->parent.pwrctl                  = phy_ksz8851_pwrctl;
     ksz8851->parent.set_addr                = phy_ksz8851_set_addr;
     ksz8851->parent.get_addr                = phy_ksz8851_get_addr;
     ksz8851->parent.advertise_pause_ability = phy_ksz8851_advertise_pause_ability;
     ksz8851->parent.loopback                = phy_ksz8851_loopback;
+    ksz8851->parent.set_speed               = phy_ksz8851_set_speed;
+    ksz8851->parent.set_duplex              = phy_ksz8851_set_duplex;
     ksz8851->parent.del                     = phy_ksz8851_del;
     return &(ksz8851->parent);
 err:

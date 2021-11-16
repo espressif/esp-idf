@@ -3,7 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 #include <string.h>
 #include <stdlib.h>
 #include <sys/cdefs.h>
@@ -234,34 +233,64 @@ static esp_err_t ksz80xx_reset_hw(esp_eth_phy_t *phy)
  *       the result of negotiation won't be relected to uppler layers.
  *       Instead, the negotiation result is fetched by linker timer, see `ksz80xx_get_link()`
  */
-static esp_err_t ksz80xx_negotiate(esp_eth_phy_t *phy)
+static esp_err_t ksz80xx_autonego_ctrl(esp_eth_phy_t *phy, eth_phy_autoneg_cmd_t cmd, bool *autonego_en_stat)
 {
     esp_err_t ret = ESP_OK;
     phy_ksz80xx_t *ksz80xx = __containerof(phy, phy_ksz80xx_t, parent);
     esp_eth_mediator_t *eth = ksz80xx->eth;
-    /* in case any link status has changed, let's assume we're in link down status */
-    ksz80xx->link_status = ETH_LINK_DOWN;
-    /* Restart auto negotiation */
-    bmcr_reg_t bmcr = {
-        .speed_select = 1,     /* 100Mbps */
-        .duplex_mode = 1,      /* Full Duplex */
-        .en_auto_nego = 1,     /* Auto Negotiation */
-        .restart_auto_nego = 1 /* Restart Auto Negotiation */
-    };
-    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz80xx->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
-    /* Wait for auto negotiation complete */
-    bmsr_reg_t bmsr;
-    uint32_t to = 0;
-    for (to = 0; to < ksz80xx->autonego_timeout_ms / 100; to++) {
-        vTaskDelay(pdMS_TO_TICKS(100));
-        ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)), err, TAG, "read BMSR failed");
-        if (bmsr.auto_nego_complete) {
-            break;
+
+    bmcr_reg_t bmcr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+
+    switch (cmd) {
+    case ESP_ETH_PHY_AUTONEGO_RESTART:
+        ESP_GOTO_ON_FALSE(bmcr.en_auto_nego, ESP_ERR_INVALID_STATE, err, TAG, "auto negotiation is disabled");
+        /* in case any link status has changed, let's assume we're in link down status */
+        ksz80xx->link_status = ETH_LINK_DOWN;
+
+        bmcr.restart_auto_nego = 1; /* Restart Auto Negotiation */
+
+        ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz80xx->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+        /* Wait for auto negotiation complete */
+        bmsr_reg_t bmsr;
+        uint32_t to = 0;
+        for (to = 0; to < ksz80xx->autonego_timeout_ms / 100; to++) {
+            vTaskDelay(pdMS_TO_TICKS(100));
+            ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)), err, TAG, "read BMSR failed");
+            if (bmsr.auto_nego_complete) {
+                break;
+            }
         }
+        if ((to >= ksz80xx->autonego_timeout_ms / 100) && (ksz80xx->link_status == ETH_LINK_UP)) {
+            ESP_LOGW(TAG, "auto negotiation timeout");
+        }
+        break;
+    case ESP_ETH_PHY_AUTONEGO_DIS:
+        if (bmcr.en_auto_nego == 1) {
+            bmcr.en_auto_nego = 0;     /* Disable Auto Negotiation */
+            ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz80xx->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+            /* read configuration back */
+            ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+            ESP_GOTO_ON_FALSE(bmcr.en_auto_nego == 0, ESP_FAIL, err, TAG, "disable auto-negotiation failed");
+        }
+        break;
+    case ESP_ETH_PHY_AUTONEGO_EN:
+        if (bmcr.en_auto_nego == 0) {
+            bmcr.en_auto_nego = 1;     /* Enable Auto Negotiation */
+            ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz80xx->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+            /* read configuration back */
+            ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+            ESP_GOTO_ON_FALSE(bmcr.en_auto_nego == 1, ESP_FAIL, err, TAG, "enable auto-negotiation failed");
+        }
+        break;
+    case ESP_ETH_PHY_AUTONEGO_G_STAT:
+        /* do nothing autonego_en_stat is set at the function end */
+        break;
+    default:
+        return ESP_ERR_INVALID_ARG;
     }
-    if ((to >= ksz80xx->autonego_timeout_ms / 100) && (ksz80xx->link_status == ETH_LINK_UP)) {
-        ESP_LOGW(TAG, "auto negotiation timeout");
-    }
+
+    *autonego_en_stat = bmcr.en_auto_nego;
     return ESP_OK;
 err:
     return ret;
@@ -367,6 +396,51 @@ err:
     return ret;
 }
 
+static esp_err_t ksz80xx_set_speed(esp_eth_phy_t *phy, eth_speed_t speed)
+{
+    esp_err_t ret = ESP_OK;
+    phy_ksz80xx_t *ksz80xx = __containerof(phy, phy_ksz80xx_t, parent);
+    esp_eth_mediator_t *eth = ksz80xx->eth;
+    if (ksz80xx->link_status == ETH_LINK_UP) {
+        /* Since the link is going to be reconfigured, consider it down for a while */
+        ksz80xx->link_status = ETH_LINK_DOWN;
+        /* Indicate to upper stream apps the link is cosidered down */
+        ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)ksz80xx->link_status), err, TAG, "change link failed");
+    }
+    /* Set speed */
+    bmcr_reg_t bmcr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+    bmcr.speed_select = speed;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz80xx->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+
+    return ESP_OK;
+err:
+    return ret;
+}
+
+static esp_err_t ksz80xx_set_duplex(esp_eth_phy_t *phy, eth_duplex_t duplex)
+{
+    esp_err_t ret = ESP_OK;
+    phy_ksz80xx_t *ksz80xx = __containerof(phy, phy_ksz80xx_t, parent);
+    esp_eth_mediator_t *eth = ksz80xx->eth;
+
+    if (ksz80xx->link_status == ETH_LINK_UP) {
+        /* Since the link is going to be reconfigured, consider it down for a while */
+        ksz80xx->link_status = ETH_LINK_DOWN;
+        /* Indicate to upper stream apps the link is cosidered down */
+        ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)ksz80xx->link_status), err, TAG, "change link failed");
+    }
+    /* Set duplex mode */
+    bmcr_reg_t bmcr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+    bmcr.duplex_mode = duplex;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz80xx->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+
+    return ESP_OK;
+err:
+    return ret;
+}
+
 static esp_err_t ksz80xx_init(esp_eth_phy_t *phy)
 {
     esp_err_t ret = ESP_OK;
@@ -414,13 +488,15 @@ esp_eth_phy_t *esp_eth_phy_new_ksz8041(const eth_phy_config_t *config)
     ksz8041->parent.init = ksz80xx_init;
     ksz8041->parent.deinit = ksz80xx_deinit;
     ksz8041->parent.set_mediator = ksz80xx_set_mediator;
-    ksz8041->parent.negotiate = ksz80xx_negotiate;
+    ksz8041->parent.autonego_ctrl = ksz80xx_autonego_ctrl;
     ksz8041->parent.get_link = ksz80xx_get_link;
     ksz8041->parent.pwrctl = ksz80xx_pwrctl;
     ksz8041->parent.get_addr = ksz80xx_get_addr;
     ksz8041->parent.set_addr = ksz80xx_set_addr;
     ksz8041->parent.advertise_pause_ability = ksz80xx_advertise_pause_ability;
     ksz8041->parent.loopback = ksz80xx_loopback;
+    ksz8041->parent.set_speed = ksz80xx_set_speed;
+    ksz8041->parent.set_duplex = ksz80xx_set_duplex;
     ksz8041->parent.del = ksz80xx_del;
     return &(ksz8041->parent);
 err:
@@ -444,12 +520,15 @@ esp_eth_phy_t *esp_eth_phy_new_ksz8081(const eth_phy_config_t *config)
     ksz8081->parent.init = ksz80xx_init;
     ksz8081->parent.deinit = ksz80xx_deinit;
     ksz8081->parent.set_mediator = ksz80xx_set_mediator;
-    ksz8081->parent.negotiate = ksz80xx_negotiate;
+    ksz8081->parent.autonego_ctrl = ksz80xx_autonego_ctrl;
     ksz8081->parent.get_link = ksz80xx_get_link;
     ksz8081->parent.pwrctl = ksz80xx_pwrctl;
     ksz8081->parent.get_addr = ksz80xx_get_addr;
     ksz8081->parent.set_addr = ksz80xx_set_addr;
     ksz8081->parent.advertise_pause_ability = ksz80xx_advertise_pause_ability;
+    ksz8081->parent.loopback = ksz80xx_loopback;
+    ksz8081->parent.set_speed = ksz80xx_set_speed;
+    ksz8081->parent.set_duplex = ksz80xx_set_duplex;
     ksz8081->parent.del = ksz80xx_del;
     return &(ksz8081->parent);
 err:
