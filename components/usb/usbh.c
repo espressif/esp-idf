@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,10 +31,6 @@
 #define DEV_FLAG_ACTION_PORT_DISABLE                0x40    //Request the hub driver to disable the port of the device
 #define DEV_FLAG_ACTION_SEND_NEW                    0x80    //Send a new device event
 
-#define DEV_ENUM_TODO_FLAG_DEV_ADDR                 0x01
-#define DEV_ENUM_TODO_FLAG_DEV_DESC                 0x02
-#define DEV_ENUM_TODO_FLAG_CONFIG_DESC              0x04
-
 #define EP_NUM_MIN                                  1
 #define EP_NUM_MAX                                  16
 
@@ -61,7 +57,6 @@ struct device_s {
     } dynamic;
     //Mux protected members must be protected by the USBH mux_lock when accessed
     struct {
-        usb_config_desc_t *config_desc;
         hcd_pipe_handle_t ep_in[EP_NUM_MAX - 1];    //IN EP owner contexts. -1 to exclude the default endpoint
         hcd_pipe_handle_t ep_out[EP_NUM_MAX - 1];   //OUT EP owner contexts. -1 to exclude the default endpoint
     } mux_protected;
@@ -72,7 +67,7 @@ struct device_s {
         uint8_t address;
         usb_speed_t speed;
         const usb_device_desc_t *desc;
-        uint32_t enum_todo_flags;
+        const usb_config_desc_t *config_desc;
     } constant;
 };
 
@@ -157,7 +152,6 @@ static esp_err_t device_alloc(hcd_port_handle_t port_hdl, usb_speed_t speed, dev
     //Note: dev_obj->constant.address is assigned later during enumeration
     dev_obj->constant.speed = speed;
     dev_obj->constant.desc = dev_desc;
-    dev_obj->constant.enum_todo_flags = (DEV_ENUM_TODO_FLAG_DEV_ADDR | DEV_ENUM_TODO_FLAG_DEV_DESC | DEV_ENUM_TODO_FLAG_CONFIG_DESC);
     *dev_obj_ret = dev_obj;
     ret = ESP_OK;
     return ret;
@@ -173,10 +167,12 @@ static void device_free(device_t *dev_obj)
     if (dev_obj == NULL) {
         return;
     }
-    //Configuration must be freed
-    assert(dev_obj->mux_protected.config_desc == NULL); //Sanity check. No need for mux
-    ESP_ERROR_CHECK(hcd_pipe_free(dev_obj->constant.default_pipe));
+    //Configuration might not have been allocated (in case of early enumeration failure)
+    if (dev_obj->constant.config_desc) {
+        heap_caps_free((usb_config_desc_t *)dev_obj->constant.config_desc);
+    }
     heap_caps_free((usb_device_desc_t *)dev_obj->constant.desc);
+    ESP_ERROR_CHECK(hcd_pipe_free(dev_obj->constant.default_pipe));
     heap_caps_free(dev_obj);
 }
 
@@ -282,10 +278,8 @@ static bool handle_dev_free(device_t *dev_obj)
     USBH_EXIT_CRITICAL();
     p_usbh_obj->mux_protected.num_device--;
     bool all_free = (p_usbh_obj->mux_protected.num_device == 0);
-    heap_caps_free(dev_obj->mux_protected.config_desc);
-    dev_obj->mux_protected.config_desc = NULL;
-    device_free(dev_obj);
     xSemaphoreGive(p_usbh_obj->constant.mux_lock);
+    device_free(dev_obj);
     return all_free;
 }
 
@@ -632,8 +626,6 @@ esp_err_t usbh_dev_get_info(usb_device_handle_t dev_hdl, usb_device_info_t *dev_
     device_t *dev_obj = (device_t *)dev_hdl;
 
     esp_err_t ret;
-    //We need to take the mux_lock to access mux_protected members
-    xSemaphoreTake(p_usbh_obj->constant.mux_lock, portMAX_DELAY);
     //Device must be configured, or not attached (if it suddenly disconnected)
     USBH_ENTER_CRITICAL();
     if (!(dev_obj->dynamic.state == USB_DEVICE_STATE_CONFIGURED || dev_obj->dynamic.state == USB_DEVICE_STATE_NOT_ATTACHED)) {
@@ -646,14 +638,10 @@ esp_err_t usbh_dev_get_info(usb_device_handle_t dev_hdl, usb_device_info_t *dev_
     dev_info->dev_addr = dev_obj->constant.address;
     dev_info->bMaxPacketSize0 = dev_obj->constant.desc->bMaxPacketSize0;
     USBH_EXIT_CRITICAL();
-    if (dev_obj->mux_protected.config_desc == NULL) {
-        dev_info->bConfigurationValue = 0;
-    } else {
-        dev_info->bConfigurationValue = dev_obj->mux_protected.config_desc->bConfigurationValue;
-    }
+    assert(dev_obj->constant.config_desc);
+    dev_info->bConfigurationValue = dev_obj->constant.config_desc->bConfigurationValue;
     ret = ESP_OK;
 exit:
-    xSemaphoreGive(p_usbh_obj->constant.mux_lock);
     return ret;
 }
 
@@ -676,8 +664,6 @@ esp_err_t usbh_dev_get_config_desc(usb_device_handle_t dev_hdl, const usb_config
     device_t *dev_obj = (device_t *)dev_hdl;
 
     esp_err_t ret;
-    //We need to take the mux_lock to access mux_protected members
-    xSemaphoreTake(p_usbh_obj->constant.mux_lock, portMAX_DELAY);
     //Device must be in the configured state
     USBH_ENTER_CRITICAL();
     if (dev_obj->dynamic.state != USB_DEVICE_STATE_CONFIGURED) {
@@ -686,10 +672,10 @@ esp_err_t usbh_dev_get_config_desc(usb_device_handle_t dev_hdl, const usb_config
         goto exit;
     }
     USBH_EXIT_CRITICAL();
-    *config_desc_ret = dev_obj->mux_protected.config_desc;
+    assert(dev_obj->constant.config_desc);
+    *config_desc_ret = dev_obj->constant.config_desc;
     ret = ESP_OK;
 exit:
-    xSemaphoreGive(p_usbh_obj->constant.mux_lock);
     return ret;
 }
 
@@ -950,12 +936,10 @@ esp_err_t usbh_hub_enum_fill_dev_addr(usb_device_handle_t dev_hdl, uint8_t dev_a
     device_t *dev_obj = (device_t *)dev_hdl;
 
     USBH_ENTER_CRITICAL();
-    USBH_CHECK_FROM_CRIT(dev_obj->constant.enum_todo_flags & DEV_ENUM_TODO_FLAG_DEV_ADDR, ESP_ERR_INVALID_STATE);
     dev_obj->dynamic.state = USB_DEVICE_STATE_ADDRESS;
     USBH_EXIT_CRITICAL();
 
     //We can modify the info members outside the critical section
-    dev_obj->constant.enum_todo_flags &= ~DEV_ENUM_TODO_FLAG_DEV_ADDR;
     dev_obj->constant.address = dev_addr;
     return ESP_OK;
 }
@@ -965,8 +949,6 @@ esp_err_t usbh_hub_enum_fill_dev_desc(usb_device_handle_t dev_hdl, const usb_dev
     USBH_CHECK(dev_hdl != NULL && device_desc != NULL, ESP_ERR_INVALID_ARG);
     device_t *dev_obj = (device_t *)dev_hdl;
     //We can modify the info members outside the critical section
-    USBH_CHECK(dev_obj->constant.enum_todo_flags & DEV_ENUM_TODO_FLAG_DEV_DESC, ESP_ERR_INVALID_STATE);
-    dev_obj->constant.enum_todo_flags &= ~DEV_ENUM_TODO_FLAG_DEV_DESC;
     memcpy((usb_device_desc_t *)dev_obj->constant.desc, device_desc, sizeof(usb_device_desc_t));
     return ESP_OK;
 }
@@ -975,43 +957,23 @@ esp_err_t usbh_hub_enum_fill_config_desc(usb_device_handle_t dev_hdl, const usb_
 {
     USBH_CHECK(dev_hdl != NULL && config_desc_full != NULL, ESP_ERR_INVALID_ARG);
     device_t *dev_obj = (device_t *)dev_hdl;
-    esp_err_t ret;
     //Allocate memory to store the configuration descriptor
     usb_config_desc_t *config_desc = heap_caps_malloc(config_desc_full->wTotalLength, MALLOC_CAP_DEFAULT);  //Buffer to copy over full configuration descriptor (wTotalLength)
     if (config_desc == NULL) {
-        ret = ESP_ERR_NO_MEM;
-        goto err;
+        return ESP_ERR_NO_MEM;
     }
     //Copy the configuration descriptor
     memcpy(config_desc, config_desc_full, config_desc_full->wTotalLength);
     //Assign the config object to the device object
-    if (!(dev_obj->constant.enum_todo_flags & DEV_ENUM_TODO_FLAG_CONFIG_DESC)) {
-        ret = ESP_ERR_INVALID_STATE;
-        goto assign_err;
-    }
-
-    //We need to take the mux_lock to access mux_protected members
-    xSemaphoreTake(p_usbh_obj->constant.mux_lock, portMAX_DELAY);
-    assert(dev_obj->mux_protected.config_desc == NULL);
-    dev_obj->mux_protected.config_desc = config_desc;
-    xSemaphoreGive(p_usbh_obj->constant.mux_lock);
-
-    //We can modify the info members outside the critical section
-    dev_obj->constant.enum_todo_flags &= ~DEV_ENUM_TODO_FLAG_CONFIG_DESC;
-    ret = ESP_OK;
-    return ret;
-
-assign_err:
-    heap_caps_free(config_desc);
-err:
-    return ret;
+    assert(dev_obj->constant.config_desc == NULL);
+    dev_obj->constant.config_desc = config_desc;
+    return ESP_OK;
 }
 
 esp_err_t usbh_hub_enum_done(usb_device_handle_t dev_hdl)
 {
     USBH_CHECK(dev_hdl != NULL, ESP_ERR_INVALID_ARG);
     device_t *dev_obj = (device_t *)dev_hdl;
-    USBH_CHECK(dev_obj->constant.enum_todo_flags == 0, ESP_ERR_INVALID_STATE);  //All enumeration stages to be done
 
     //We need to take the mux_lock to access mux_protected members
     xSemaphoreTake(p_usbh_obj->constant.mux_lock, portMAX_DELAY);
@@ -1037,16 +999,6 @@ esp_err_t usbh_hub_enum_failed(usb_device_handle_t dev_hdl)
 {
     USBH_CHECK(dev_hdl != NULL, ESP_ERR_INVALID_ARG);
     device_t *dev_obj = (device_t *)dev_hdl;
-
-    //We need to take the mux_lock to access mux_protected members
-    xSemaphoreTake(p_usbh_obj->constant.mux_lock, portMAX_DELAY);
-    usb_config_desc_t *config_desc = dev_obj->mux_protected.config_desc;
-    dev_obj->mux_protected.config_desc = NULL;
-    xSemaphoreGive(p_usbh_obj->constant.mux_lock);
-
-    if (config_desc) {
-        heap_caps_free(config_desc);
-    }
     device_free(dev_obj);
     return ESP_OK;
 }
