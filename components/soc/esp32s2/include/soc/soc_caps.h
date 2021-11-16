@@ -39,7 +39,6 @@
 #define SOC_USB_OTG_SUPPORTED           1
 #define SOC_PCNT_SUPPORTED              1
 #define SOC_ULP_SUPPORTED               1
-#define SOC_RTC_SLOW_MEM_SUPPORTED      1
 #define SOC_CCOMP_TIMER_SUPPORTED       1
 #define SOC_DIG_SIGN_SUPPORTED          1
 #define SOC_HMAC_SUPPORTED              1
@@ -51,8 +50,12 @@
 #define SOC_CACHE_SUPPORT_WRAP              1
 #define SOC_FLASH_ENCRYPTION_XTS_AES        1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_256    1
+#define SOC_RTC_FAST_MEM_SUPPORTED      1
+#define SOC_RTC_SLOW_MEM_SUPPORTED      1
 #define SOC_PSRAM_DMA_CAPABLE               1
 #define SOC_XT_WDT_SUPPORTED                1
+#define SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY             1
+
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
 /*!< SAR ADC Module*/
@@ -152,6 +155,8 @@
 #define SOC_LCD_I80_BUS_WIDTH      (24) /*!< Intel 8080 bus width */
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
+#define SOC_LEDC_HAS_TIMER_SPECIFIC_MUX  (1)
+#define SOC_LEDC_SUPPORT_REF_TICK    (1)
 #define SOC_LEDC_SUPPORT_XTAL_CLOCK  (1)
 #define SOC_LEDC_CHANNEL_NUM         (8)
 #define SOC_LEDC_TIMER_BIT_WIDE_NUM  (14)

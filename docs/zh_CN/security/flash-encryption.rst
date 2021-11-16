@@ -52,7 +52,7 @@ Flash 加密操作由 {IDF_TARGET_NAME} 上的多个 eFuse 控制。以下是这
 .. only:: not SOC_FLASH_ENCRYPTION_XTS_AES
 
     .. list-table:: Flash 加密过程中使用的 eFuses
-       :widths: 25 40 10 
+       :widths: 25 40 10
        :header-rows: 0
 
        * - **eFuse**
@@ -103,7 +103,7 @@ Flash 加密操作由 {IDF_TARGET_NAME} 上的多个 eFuse 控制。以下是这
 .. only:: SOC_FLASH_ENCRYPTION_XTS_AES and not SOC_FLASH_ENCRYPTION_XTS_AES_256
 
     .. list-table:: Flash 加密过程中使用的 eFuses
-       :widths: 25 40 10 
+       :widths: 25 40 10
        :header-rows: 0
 
        * - **eFuse**
@@ -283,63 +283,65 @@ Flash 加密设置
 
 2. 通过运行以下命令生成一个随机密钥：
 
-.. only:: esp32s2
+  .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
 
-    如果 :ref:`生成的 AES-XTS 密钥大小 <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` 是 AES-256（512 位密钥），则需要使用 `XTS_AES_256_KEY_1` 和 `XTS_AES_256_KEY_2`。espsecure 不支持 512 位密钥，但可以变通一下。
+    如果 :ref:`生成的 AES-XTS 密钥大小 <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` 是 AES-128（256 位密钥）：
 
-    .. code-block:: bash
+      .. code-block:: bash
 
-        espsecure.py generate_flash_encryption_key my_flash_encryption_key1.bin
+          espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
 
-        espsecure.py generate_flash_encryption_key my_flash_encryption_key2.bin
+    如果 :ref:`生成的 AES-XTS 密钥大小 <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` 是 AES-256（512 位密钥）：
 
-        # To use encrypt_flash_data with XTS_AES_256 requires combining the two binary files to one 64 byte file
-        cat my_flash_encryption_key1.bin my_flash_encryption_key2.bin > my_flash_encryption_key.bin
+      .. code-block:: bash
 
-    如果 :ref:`生成的 AES-XTS 密钥大小 <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>` 是 AES-128（256 位密钥），则需要使用 `XTS_AES_128_KEY`。
-
-    .. code-block:: bash
-
-        espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin   
+          espsecure.py generate_flash_encryption_key --keylen 512 my_flash_encryption_key.bin
 
 
-.. only:: not SOC_FLASH_ENCRYPTION_XTS_AES_256
+  .. only:: not SOC_FLASH_ENCRYPTION_XTS_AES_256
 
-    .. code-block:: bash
+      .. code-block:: bash
 
-        espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
+          espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
 
 3. **在第一次加密启动前**，使用以下命令将该密钥烧录到设备上，这个操作只能执行 **一次**。
 
-.. only:: not SOC_FLASH_ENCRYPTION_XTS_AES
+  .. only:: not SOC_FLASH_ENCRYPTION_XTS_AES
 
-  .. code-block:: bash
+    .. code-block:: bash
 
-      espefuse.py --port PORT burn_key flash_encryption my_flash_encryption_key.bin
+        espefuse.py --port PORT burn_key flash_encryption my_flash_encryption_key.bin
 
-.. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
+  .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
 
-  .. code-block:: bash
+    .. code-block:: bash
 
-      espefuse.py --port PORT burn_key BLOCK my_flash_encryption_key.bin KEYPURPOSE
-  
-  其中 ``BLOCK`` 是 ``BLOCK_KEY0`` 和 ``BLOCK_KEY5`` 之间的空闲密钥区。而 ``KEYPURPOSE`` 是 ``AES_256_KEY_1``、``XTS_AES_256_KEY_2`` 或 ``XTS_AES_128_KEY``。关于密钥目的的描述清参考 `{IDF_TARGET_NAME} 技术参考手册 <{IDF_TARGET_TRM_CN_URL}>`_。
+        espefuse.py --port PORT burn_key BLOCK my_flash_encryption_key.bin KEYPURPOSE
 
-  AES-128（256 位密钥）- ``XTS_AES_128_KEY``:
+    其中 ``BLOCK`` 是 ``BLOCK_KEY0`` 和 ``BLOCK_KEY5`` 之间的空闲密钥区。而 ``KEYPURPOSE`` 是 ``AES_256_KEY_1``、``XTS_AES_256_KEY_2`` 或 ``XTS_AES_128_KEY``。关于密钥用途，请参考 `{IDF_TARGET_NAME} 技术参考手册 <{IDF_TARGET_TRM_CN_URL}>`_。
+
+    对于 AES-128（256 位密钥）- ``XTS_AES_128_KEY``:
 
     .. code-block:: bash
 
         espefuse.py --port PORT burn_key BLOCK my_flash_encryption_key.bin XTS_AES_128_KEY
 
-  AES-256（512 位密钥）- ``XTS_AES_256_KEY_1`` 和 ``XTS_AES_256_KEY_2``。espefuse.py 和 espsecure.py 中还没有完全支持。需要进行如下操作：
+    对于 AES-256（512 位密钥）- ``XTS_AES_256_KEY_1`` 和 ``XTS_AES_256_KEY_2``。espefuse.py 支持通过虚拟密钥用途 ``XTS_AES_256_KEY`` 将这两个密钥用途和一个 512 位密钥一起烧录到两个独立的密钥块。使用此功能时，``espefuse.py`` 将把密钥的前 256 位烧录到指定的 ``BLOCK``，并把相应的区块密钥用途烧录到 ``XTS_AES_256_KEY_1``。密钥的后 256 位将被烧录到 ``BLOCK`` 后的第一个空闲密钥块，并把相应的密钥用途烧录到 ``XTS_AES_256_KEY_2``。
 
     .. code-block:: bash
 
-        espefuse.py  --port PORT  burn_key BLOCK   my_flash_encryption_key1.bin XTS_AES_256_KEY_1
+        espefuse.py  --port PORT  burn_key BLOCK my_flash_encryption_key.bin XTS_AES_256_KEY
 
-        espefuse.py  --port PORT  burn_key BLOCK+1 my_flash_encryption_key2.bin XTS_AES_256_KEY_2
+    如果您想指定使用哪两个区块，则可以将密钥分成两个 256 位密钥，并分别使用 ``XTS_AES_256_KEY_1`` 和 ``XTS_AES_256_KEY_2`` 为密钥用途进行手动烧录：
 
-.. only:: SOC_FLASH_ENCRYPTION_XTS_AES and not SOC_FLASH_ENCRYPTION_XTS_AES_256
+    .. code-block:: bash
+
+      split -b 32 my_flash_encryption_key.bin my_flash_encryption_key.bin.
+      espefuse.py  --port PORT  burn_key BLOCK my_flash_encryption_key.bin.aa XTS_AES_256_KEY_1
+      espefuse.py  --port PORT  burn_key BLOCK+1 my_flash_encryption_key.bin.ab XTS_AES_256_KEY_2
+
+
+  .. only:: SOC_FLASH_ENCRYPTION_XTS_AES and not SOC_FLASH_ENCRYPTION_XTS_AES_256
 
     .. code-block:: bash
 
@@ -347,7 +349,7 @@ Flash 加密设置
 
     其中 ``BLOCK`` 是 ``BLOCK_KEY0`` 和 ``BLOCK_KEY5`` 之间的一个空闲密钥区。
 
-如果未烧录密钥并在启用 flash 加密后启动设备，{IDF_TARGET_NAME} 将生成随机密钥，该密钥软件无法访问或修改。
+  如果未烧录密钥并在启用 flash 加密后启动设备，{IDF_TARGET_NAME} 将生成一个软件无法访问或修改的随机密钥。
 
 4. 在 :ref:`项目配置菜单 <project-configuration-menu>` 中进行如下设置：
 
@@ -367,7 +369,7 @@ Flash 加密设置
   .. note::
 
       这个命令不包括任何应该被写入 flash 分区的用户文件。请在运行此命令前手动写入这些文件，否则在写入前应单独对这些文件进行加密。
-      
+
   该命令将向 flash 写入未加密的镜像：固件引导加载程序、分区表和应用程序。烧录完成后，{IDF_TARGET_NAME} 将重置。在下一次启动时，固件引导加载程序会加密：固件引导加载程序、应用程序分区和标记为 ``加密`` 的分区，然后复位。就地加密可能需要时间，对于大的分区来说可能耗时一分钟。之后，应用程序在运行时被解密并执行。
 
 如果使用开发模式，那么更新和重新烧录二进制文件最简单的方法是 :ref:`encrypt-partitions`。
@@ -412,7 +414,7 @@ Flash 加密设置
 
     - :ref:`启动时使能 flash 加密 <CONFIG_SECURE_FLASH_ENC_ENABLED>`
     :esp32: - :ref:`选择发布模式 <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` （注意一旦选择了发布模式，``DISABLE_DL_ENCRYPT`` 和 ``DISABLE_DL_DECRYPT`` eFuse 位将被编程为在 ROM 下载模式下禁用 flash 加密硬件）
-    :esp32: - :ref:`选择 UART ROM 下载模式（推荐永久性禁用）<CONFIG_SECURE_UART_ROM_DL_MODE>` （注意该选项仅在 :ref:`CONFIG_ESP32_REV_MIN` 级别设置为 3 时 (ESP32 V3) 可用。）默认选项是保持启用 UART ROM 下载模式，然而建议永久禁用该模式，以减少攻击者可用的选项。  
+    :esp32: - :ref:`选择 UART ROM 下载模式（推荐永久性禁用）<CONFIG_SECURE_UART_ROM_DL_MODE>` （注意该选项仅在 :ref:`CONFIG_ESP32_REV_MIN` 级别设置为 3 时 (ESP32 V3) 可用。）默认选项是保持启用 UART ROM 下载模式，然而建议永久禁用该模式，以减少攻击者可用的选项。
     :not esp32: - :ref:`选择发布模式 <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` （注意一旦选择了发布模式，``EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT`` eFuse 位将被编程为在 ROM 下载模式下禁用 flash 加密硬件。）
     :not esp32: - :ref:`选择 UART ROM 下载（推荐永久性的切换到安全模式）<CONFIG_SECURE_UART_ROM_DL_MODE>`。这是默认且推荐使用的选项。如果不需要该模式，也可以改变此配置设置永久地禁用 UART ROM 下载模式。
     - :ref:`选择适当详细程度的引导加载程序日志 <CONFIG_BOOTLOADER_LOG_LEVEL>`
@@ -430,10 +432,10 @@ Flash 加密设置
   .. note::
 
       这个命令不包括任何应该被写入 flash 分区的用户文件。请在运行此命令前手动写入这些文件，否则在写入前应单独对这些文件进行加密。
-      
+
   该命令将向 flash 写入未加密的镜像：固件引导加载程序、分区表和应用程序。烧录完成后，{IDF_TARGET_NAME} 将重置。在下一次启动时，固件引导加载程序会加密：固件引导加载程序、应用程序分区和标记为 ``加密`` 的分区，然后复位。就地加密可能需要时间，对于大的分区来说可能耗时一分钟。之后，应用程序在运行时被解密并执行。
 
-一旦在发布模式下启用 flash 加密，引导加载程序将写保护 ``{IDF_TARGET_CRYPT_CNT}`` eFuse。  
+一旦在发布模式下启用 flash 加密，引导加载程序将写保护 ``{IDF_TARGET_CRYPT_CNT}`` eFuse。
 
 请使用 :ref:`OTA 方案 <updating-encrypted-flash-ota>` 对字段中的明文进行后续更新。
 
@@ -570,7 +572,7 @@ Flash 加密设置
 
 .. _flash-encryption-status:
 
-{IDF_TARGET_NAME} flash 加密状态 
+{IDF_TARGET_NAME} flash 加密状态
 -----------------------------------------
 
 1. 确保您的 {IDF_TARGET_NAME} 设备有 :ref:`flash-encryption-efuse` 中所示的 flash 加密 eFuse 的默认设置。
@@ -660,7 +662,7 @@ OTA 更新
 
 .. _updating-encrypted-flash-serial:
 
-通过串口更新加密 flash 
+通过串口更新加密 flash
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 通过串行引导加载程序烧录加密设备，需要串行引导加载程序下载接口没有通过 eFuse 被永久禁用。
@@ -700,17 +702,17 @@ Flash 加密的要点
 .. list::
 
   :esp32: - 使用 AES-256 加密 flash。Flash 加密密钥存储于芯片内部的 ``flash_encryption`` eFuse 中，并（默认）受保护，防止软件访问。
-  
+
   :esp32: - Flash 加密算法采用的是 AES-256，其中密钥随着 flash 的每个 32 字节块的偏移地址“调整”。这意味着，每个 32 字节块（2 个连续的 16 字节 AES 块）使用从 flash 加密密钥中产生的一个特殊密钥进行加密。
 
   :esp32s2 or esp32s3: - 使用 XTS-AES-128 或 XTS-AES-256 加密 flash。Flash 加密密钥分别为 256 位和 512 位，存储于芯片内部一个或两个 ``BLOCK_KEYN`` eFuse 中，并（默认）受保护，防止软件访问。
 
   :esp32c3: - 使用 XTS-AES-128 加密 flash。 Flash 加密密钥为 256 位，存储于芯片内部的 ``BLOCK_KEYN`` eFuse 中，并（默认）受保护，防止软件访问。
-  
+
   - 通过 {IDF_TARGET_NAME} 的 flash 缓存映射功能，flash 可支持透明访问——任何映射到地址空间的 flash 区域在读取时都将被透明地解密。
 
- 	  为便于访问，某些数据分区最好保持未加密状态，或者也可使用对已加密数据无效的 flash 友好型更新算法。由于 NVS 库无法与 flash 加密直接兼容，因此无法加密非易失性存储器的 NVS 分区。详情可参见 :ref:`NVS 加密 <nvs_encryption>`。 
-  
+ 	  为便于访问，某些数据分区最好保持未加密状态，或者也可使用对已加密数据无效的 flash 友好型更新算法。由于 NVS 库无法与 flash 加密直接兼容，因此无法加密非易失性存储器的 NVS 分区。详情可参见 :ref:`NVS 加密 <nvs_encryption>`。
+
   - 如果以后可能需要启用 flash 加密，则编程人员在编写 :ref:`使用加密 flash <reading-writing-content>` 代码时需小心谨慎。
 
   - 如果已启用安全启动，重新烧录加密设备的引导加载程序则需要“可重新烧录”的安全启动摘要（可参考 :ref:`flash-encryption-and-secure-boot`）。
@@ -723,7 +725,7 @@ Flash 加密的要点
 
 
 .. _flash-encryption-limitations:
-   
+
 Flash 加密的局限性
 --------------------
 
@@ -810,7 +812,7 @@ Flash 加密的高级功能
     :esp32s3: - ``HARD_DIS_JTAG`` 和 ``DIS_USB_JTAG`` 禁用 JTAG。
     - ``DIS_LEGACY_SPI_BOOT``  禁用传统的 SPI 启动模式。
 
-为了能启用这些功能，可在首次启动前仅烧录部分 eFuse，并用未设置值 0 写保护其他部分。例如:   
+为了能启用这些功能，可在首次启动前仅烧录部分 eFuse，并用未设置值 0 写保护其他部分。例如:
 
 .. only:: esp32
 
@@ -830,7 +832,7 @@ Flash 加密的高级功能
 
       请注意在写保护前设置所有适当的位！
 
-      一个位可以控制三个 eFuse 的写保护，这意味着写保护一个 eFuse 位将写保护所有未设置的 eFuse 位。 
+      一个位可以控制三个 eFuse 的写保护，这意味着写保护一个 eFuse 位将写保护所有未设置的 eFuse 位。
 
   由于 ``esptool.py`` 目前不支持读取加密 flash，所以对这些 eFuse 进行写保护从而使其保持未设置目前来说并不是很有用。
 
@@ -874,12 +876,6 @@ JTAG 调试
 手动加密或解密文件需要在 eFuse 中预烧录 flash 加密密钥（请参阅 :ref:`pregenerated-flash-encryption-key`）并在主机上保留一份副本。 如果 flash 加密配置在开发模式下，那么则不需要保留密钥的副本或遵循这些步骤，可以使用更简单的 :ref:`encrypt-partitions` 步骤。
 
 密钥文件应该是单个原始二进制文件（例如：``key.bin``）。
-
-.. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
-
-    .. note::
-
-        如果使用 AES-XTS-256，那么密钥文件将被生成两部分（``XTS_AES_256_KEY_1`` 和 ``XTS_AES_256_KEY_2``），可通过 ``espefuse.py`` 进行编程。 ``espsecure.py`` 目前仅支持用于加密/解密的单个密钥文件，因此用于 ``XTS_AES_256_KEY_1`` 和 ``XTS_AES_256_KEY_2`` 的各个文件应手动合并以创建一个 64 字节长的单个文件。
 
 例如，以下是将文件 ``build/my-app.bin`` 进行加密、烧录到偏移量 0x10000 的步骤。运行 ``espsecure.py``，如下所示:
 
@@ -965,13 +961,14 @@ JTAG 调试
 
   - {IDF_TARGET_NAME} 使用 XTS-AES 块密码模式进行 flash 加密，密钥大小为 256 位或 512 位。
 
-  - XTS-AES 是一种专门为光盘加密设计的块密码模式，它解决了其它潜在模式如 AES-CTR 在此使用情景下的不足。有关 XTS-AES 算法的详细描述，请参考 `IEEE Std 1619-2007 <https://ieeexplore.ieee.org/document/4493450>`_。 
+  - XTS-AES 是一种专门为光盘加密设计的块密码模式，它解决了其它潜在模式如 AES-CTR 在此使用情景下的不足。有关 XTS-AES 算法的详细描述，请参考 `IEEE Std 1619-2007 <https://ieeexplore.ieee.org/document/4493450>`_。
 
   - Flash 加密的密钥存储于一个或两个 ``BLOCK_KEYN`` eFuse 中，默认受保护防止进一步写入或软件读取。
 
   - 有关在 Python 中实现的完整 flash 加密算法，可参见 ``espsecure.py`` 源代码中的函数 ``_flash_encryption_operation()``。
 
 .. only:: SOC_FLASH_ENCRYPTION_XTS_AES and not SOC_FLASH_ENCRYPTION_XTS_AES_256
+
 
   .. _flash-encryption-algorithm:
 
@@ -980,7 +977,7 @@ JTAG 调试
 
   - {IDF_TARGET_NAME} 使用 XTS-AES 块密码模式进行 flash 加密，密钥大小为 256 位。
 
-  - XTS-AES 是一种专门为光盘加密设计的块密码模式，它解决了其它潜在模式如 AES-CTR 在此使用情景下的不足。有关 XTS-AES 算法的详细描述，请参考 `IEEE Std 1619-2007 <https://ieeexplore.ieee.org/document/4493450>`_。 
+  - XTS-AES 是一种专门为光盘加密设计的块密码模式，它解决了其它潜在模式如 AES-CTR 在此使用情景下的不足。有关 XTS-AES 算法的详细描述，请参考 `IEEE Std 1619-2007 <https://ieeexplore.ieee.org/document/4493450>`_。
 
   - Flash 加密的密钥存储于一个 ``BLOCK_KEYN`` eFuse 中，默认受保护防止进一步写入或软件读取。
 

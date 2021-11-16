@@ -22,7 +22,7 @@
 #include "hal/gpio_hal.h"
 #include "soc/i2c_periph.h"
 #include "driver/i2c.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
 #include <sys/param.h>

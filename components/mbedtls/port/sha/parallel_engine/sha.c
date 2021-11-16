@@ -37,7 +37,7 @@
 #include "hal/sha_types.h"
 #include "sha/sha_parallel_engine.h"
 #include "soc/hwcrypto_periph.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 
 /*
      Single spinlock for SHA engine memory block

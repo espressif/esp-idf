@@ -52,13 +52,15 @@ set(srcs "port/os_xtensa.c"
     "src/wps/wps_registrar.c"
     "src/wps/wps_validate.c")
 
-set(esp_srcs "esp_supplicant/src/esp_hostap.c"
-    "esp_supplicant/src/esp_wpa2.c"
+set(esp_srcs "esp_supplicant/src/esp_wpa2.c"
     "esp_supplicant/src/esp_wpa_main.c"
     "esp_supplicant/src/esp_wpas_glue.c"
     "esp_supplicant/src/esp_wps.c"
     "esp_supplicant/src/esp_wpa3.c"
     "esp_supplicant/src/esp_dpp.c")
+if(CONFIG_ESP_WIFI_SOFTAP_SUPPORT)
+    set(esp_srcs ${esp_srcs} "esp_supplicant/src/esp_hostap.c")
+endif()
 
 if(CONFIG_WPA_MBEDTLS_CRYPTO)
     set(tls_src "src/crypto/tls_mbedtls.c")

@@ -23,7 +23,7 @@
 #include "soc/efuse_reg.h"
 #include "driver/gpio.h"
 #include "driver/spi_common.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 
 #if CONFIG_SPIRAM_MODE_OCT
 #include "soc/rtc.h"

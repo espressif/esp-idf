@@ -10,7 +10,7 @@
 
 #ifndef BOOTLOADER_BUILD
 #include "esp_system.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 
  __attribute__((weak)) void bootloader_fill_random(void *buffer, size_t length)
 {

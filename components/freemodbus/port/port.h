@@ -40,6 +40,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "esp_log.h"                // for ESP_LOGE macro
+#include "esp_timer.h"
 #include "mbconfig.h"
 
 #define INLINE                      inline
@@ -87,6 +88,7 @@
 
 // Define number of timer reloads per 1 mS
 #define MB_TIMER_TICS_PER_MS            (20UL)
+#define MB_TIMER_TICK_TIME_US           (1000 / MB_TIMER_TICS_PER_MS) // 50uS = one discreet for timer
 
 #define MB_TCP_DEBUG                    (LOG_LOCAL_LEVEL >= ESP_LOG_DEBUG) // Enable legacy debug output in TCP module.
 
@@ -141,6 +143,12 @@ typedef enum {
     MB_PORT_IPV4 = 0,                     /*!< TCP IPV4 addressing */
     MB_PORT_IPV6 = 1                      /*!< TCP IPV6 addressing */
 } eMBPortIpVer;
+
+typedef struct {
+    esp_timer_handle_t xTimerIntHandle;
+    USHORT usT35Ticks;
+    BOOL xTimerState;
+} xTimerContext_t;
 
 void vMBPortEnterCritical(void);
 void vMBPortExitCritical(void);

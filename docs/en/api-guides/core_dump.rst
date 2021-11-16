@@ -200,7 +200,7 @@ Generic command syntax: ``espcoredump.py [options] command [args]``
    --core-format {b64,elf,raw}, -t {b64,elf,raw}
                      File specified with "-c" is an ELF ("elf"), raw (raw) or base64-encoded (b64) binary
 
-   --off OFF, -o OFF     Offset of coredump partition in flash (type "make partition_table" to see).
+   --off OFF, -o OFF     Offset of coredump partition in flash (type "idf.py partition-table" to see).
 
    --save-core SAVE_CORE, -s SAVE_CORE
                      Save core to file. Otherwise temporary core file will be deleted. Does not work with "-c"

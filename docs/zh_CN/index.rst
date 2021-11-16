@@ -62,6 +62,7 @@ ESP-IDF 编程指南
    API 参考 <api-reference/index>
    H/W 参考 <hw-reference/index>
    API 指南 <api-guides/index>
+   ESP-IDF 5.0 迁移指南 <migration-guides/index>
    Libraries and Frameworks <libraries-and-frameworks/index>
    贡献代码 <contribute/index>
    版本 <versions>

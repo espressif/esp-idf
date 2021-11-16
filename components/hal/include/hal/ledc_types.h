@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -50,11 +42,19 @@ typedef enum {
 #endif
 } ledc_slow_clk_sel_t;
 
+/**
+ * In theory, the following enumeration shall be placed in LEDC driver's header.
+ * However, as the next enumeration, `ledc_clk_src_t`, makes the use of some of
+ * these values and to avoid mutual inclusion of the headers, we must define it
+ * here.
+ */
 typedef enum {
     LEDC_AUTO_CLK = 0,    /*!< The driver will automatically select the source clock(REF_TICK or APB) based on the giving resolution and duty parameter when init the timer*/
-    LEDC_USE_REF_TICK,    /*!< LEDC timer select REF_TICK clock as source clock*/
     LEDC_USE_APB_CLK,     /*!< LEDC timer select APB clock as source clock*/
     LEDC_USE_RTC8M_CLK,   /*!< LEDC timer select RTC8M_CLK as source clock. Only for low speed channels and this parameter must be the same for all low speed channels*/
+#if SOC_LEDC_SUPPORT_REF_TICK
+    LEDC_USE_REF_TICK,    /*!< LEDC timer select REF_TICK clock as source clock*/
+#endif
 #if SOC_LEDC_SUPPORT_XTAL_CLOCK
     LEDC_USE_XTAL_CLK,    /*!< LEDC timer select XTAL clock as source clock*/
 #endif
@@ -64,10 +64,12 @@ typedef enum {
    LEDC_AUTO_CLK in the driver, as these enums have very similar names and user may pass
    one of these by mistake. */
 typedef enum  {
+#if SOC_LEDC_SUPPORT_REF_TICK
     LEDC_REF_TICK = LEDC_USE_REF_TICK, /*!< LEDC timer clock divided from reference tick (1Mhz) */
+#endif
     LEDC_APB_CLK = LEDC_USE_APB_CLK,  /*!< LEDC timer clock divided from APB clock (80Mhz) */
+    LEDC_SCLK = LEDC_USE_APB_CLK      /*!< Selecting this value for LEDC_TICK_SEL_TIMER let the hardware take its source clock from LEDC_APB_CLK_SEL */
 } ledc_clk_src_t;
-
 
 typedef enum {
     LEDC_TIMER_0 = 0, /*!< LEDC timer 0 */
@@ -122,39 +124,6 @@ typedef enum {
     LEDC_FADE_WAIT_DONE,    /*!< LEDC fade function will block until fading to the target duty */
     LEDC_FADE_MAX,
 } ledc_fade_mode_t;
-
-/**
- * @brief Configuration parameters of LEDC channel for ledc_channel_config function
- */
-typedef struct {
-    int gpio_num;                   /*!< the LEDC output gpio_num, if you want to use gpio16, gpio_num = 16 */
-    ledc_mode_t speed_mode;         /*!< LEDC speed speed_mode, high-speed mode or low-speed mode */
-    ledc_channel_t channel;         /*!< LEDC channel (0 - 7) */
-    ledc_intr_type_t intr_type;     /*!< configure interrupt, Fade interrupt enable  or Fade interrupt disable */
-    ledc_timer_t timer_sel;         /*!< Select the timer source of channel (0 - 3) */
-    uint32_t duty;                  /*!< LEDC channel duty, the range of duty setting is [0, (2**duty_resolution)] */
-    int hpoint;                     /*!< LEDC channel hpoint value, the max value is 0xfffff */
-    struct {
-        unsigned int output_invert: 1;/*!< Enable (1) or disable (0) gpio output invert */
-    } flags;                        /*!< LEDC flags */
-
-} ledc_channel_config_t;
-
-/**
- * @brief Configuration parameters of LEDC Timer timer for ledc_timer_config function
- */
-typedef struct {
-    ledc_mode_t speed_mode;                /*!< LEDC speed speed_mode, high-speed mode or low-speed mode */
-    union {
-        ledc_timer_bit_t duty_resolution;  /*!< LEDC channel duty resolution */
-        ledc_timer_bit_t bit_num __attribute__((deprecated)); /*!< Deprecated in ESP-IDF 3.0. This is an alias to 'duty_resolution' for backward compatibility with ESP-IDF 2.1 */
-    };
-    ledc_timer_t  timer_num;               /*!< The timer source of channel (0 - 3) */
-    uint32_t freq_hz;                      /*!< LEDC timer frequency (Hz) */
-    ledc_clk_cfg_t clk_cfg;                /*!< Configure LEDC source clock.
-                                                For low speed channels and high speed channels, you can specify the source clock using LEDC_USE_REF_TICK, LEDC_USE_APB_CLK or LEDC_AUTO_CLK.
-                                                For low speed channels, you can also specify the source clock using LEDC_USE_RTC8M_CLK, in this case, all low speed channel's source clock must be RTC8M_CLK*/
-} ledc_timer_config_t;
 
 #ifdef __cplusplus
 }

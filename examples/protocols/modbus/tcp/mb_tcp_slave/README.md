@@ -1,17 +1,20 @@
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # Modbus Slave Example
 
-This example demonstrates using of FreeModbus TCP slave stack port implementation for ESP32(-S2). The external Modbus host is able to read/write device parameters using Modbus protocol transport. The parameters accessible thorough Modbus are located in `mb_example_common/modbus_params.h\c` files and can be updated by user. 
-These are represented in structures holding_reg_params, input_reg_params, coil_reg_params, discrete_reg_params for holding registers, input parameters, coils and discrete inputs accordingly. The app_main application demonstrates how to setup Modbus stack and use notifications about parameters change from host system. 
-The FreeModbus stack located in `components/freemodbus` folder and contain `/port` folder inside which contains FreeModbus stack port for ESP32. There are some parameters that can be configured in KConfig file to start stack correctly (See description below for more information).
+This example demonstrates using of FreeModbus TCP slave stack port implementation for supported ESP32 target chips. The external Modbus host is able to read/write device parameters using Modbus protocol transport. The parameters accessible thorough Modbus are located in `mb_example_common/modbus_params.h\c` files and can be updated by user.
+These are represented in structures holding_reg_params, input_reg_params, coil_reg_params, discrete_reg_params for holding registers, input parameters, coils and discrete inputs accordingly. The app_main application demonstrates how to setup Modbus stack and use notifications about parameters change from host system.
+The FreeModbus stack located in `components/freemodbus` folder and contain `/port` folder inside which contains FreeModbus stack port for ESP32 target chips. There are some parameters that can be configured in KConfig file to start stack correctly (See description below for more information).
 
 The slave example uses shared parameter structures defined in ```examples/protocols/modbus/mb_example_common``` folder.
 
 ## Hardware required :
 Option 1:
-The ESP32(-S2) development board flashed with modbus_tcp_slave example + external Modbus master host software.
+The ESP32 based development board flashed with modbus_tcp_slave example + external Modbus master host software.
 
 Option 2:
-The modbus_tcp_master example application configured as described in its README.md file and flashed into ESP32(-S2) board.
+The modbus_tcp_master example application configured as described in its README.md file and flashed into ESP32 based board.
 Note: The ```Example Data (Object) Dictionary``` in the modbus_tcp_master example can be edited to address parameters from other slaves connected into Modbus segment.
 
 ## How to setup and use an example:
@@ -33,8 +36,8 @@ Option 1:
 Configure the external Modbus master software according to port configuration parameters used in application.
 As an example the Modbus Poll application can be used with this example.
 Option 2:
-Setup ESP32(-S2) development board and set modbus_tcp_master example configuration as described in its README.md file.
-Setup one or more slave boards and connect them into the same Modbus segment (See configuration above). 
+Setup ESP32 based development board and set modbus_tcp_master example configuration as described in its README.md file.
+Setup one or more slave boards and connect them into the same Modbus segment (See configuration above).
 
 ### Build and flash software
 Build the project and flash it to the board, then run monitor tool to view serial output:

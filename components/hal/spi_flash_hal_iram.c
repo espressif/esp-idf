@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "sdkconfig.h"
 
 #include "hal/spi_flash_hal.h"
@@ -27,7 +19,7 @@ void spi_flash_hal_setup_auto_resume_mode(spi_flash_host_inst_t *host);
 
 // HAL for
 //  - MEMSPI
-//  - SPI1~3 on ESP32/S2/S3/C3/H2
+//  - SPI1~3 on ESP32/S2/S3/C3/H2/8684
 // The common part is in spi_flash_hal_common.inc
 
 void spi_flash_hal_erase_chip(spi_flash_host_inst_t *host)

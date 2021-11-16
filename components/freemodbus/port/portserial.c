@@ -220,7 +220,7 @@ BOOL xMBPortSerialInit(UCHAR ucPORT, ULONG ulBaudRate,
         .stop_bits = UART_STOP_BITS_1,
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
         .rx_flow_ctrl_thresh = 2,
-        .use_ref_tick = UART_SCLK_APB,
+        .source_clk = UART_SCLK_APB,
     };
     // Set UART config
     xErr = uart_param_config(ucUartNumber, &xUartConfig);

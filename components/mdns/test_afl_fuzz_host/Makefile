@@ -18,9 +18,9 @@ CFLAGS=-g -Wno-unused-value -Wno-missing-declarations -Wno-pointer-bool-conversi
                  -I$(COMPONENTS_DIR)/esp_system/include \
                  -I$(COMPONENTS_DIR)/esp_timer/include \
                  -I$(COMPONENTS_DIR)/esp_wifi/include \
-                 -I$(COMPONENTS_DIR)/freertos \
-                 -I$(COMPONENTS_DIR)/freertos/include \
-                 -I$(COMPONENTS_DIR)/freertos/port/xtensa/include \
+                 -I$(COMPONENTS_DIR)/freertos/FreeRTOS-Kernel \
+                 -I$(COMPONENTS_DIR)/freertos/FreeRTOS-Kernel/include \
+                 -I$(COMPONENTS_DIR)/freertos/FreeRTOS-Kernel/portable/xtensa/include \
                  -I$(COMPONENTS_DIR)/hal/include \
                  -I$(COMPONENTS_DIR)/hal/esp32/include \
                  -I$(COMPONENTS_DIR)/heap/include \

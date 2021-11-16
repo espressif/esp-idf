@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stddef.h>
 #include <stdint.h>
@@ -238,7 +230,7 @@ void usbh_hal_chan_free(usbh_hal_context_t *hal, usbh_hal_chan_t *chan_obj)
         }
     }
     //Can only free a channel when in the disabled state and descriptor list released
-    HAL_ASSERT(!chan_obj->flags.active && !chan_obj->flags.error_pending);
+    HAL_ASSERT(!chan_obj->flags.active);
     //Disable channel's interrupt
     usbh_ll_haintmsk_dis_chan_intr(hal->dev, 1 << chan_obj->flags.chan_idx);
     //Deallocate channel
@@ -252,7 +244,7 @@ void usbh_hal_chan_free(usbh_hal_context_t *hal, usbh_hal_chan_t *chan_obj)
 void usbh_hal_chan_set_ep_char(usbh_hal_context_t *hal, usbh_hal_chan_t *chan_obj, usbh_hal_ep_char_t *ep_char)
 {
     //Cannot change ep_char whilst channel is still active or in error
-    HAL_ASSERT(!chan_obj->flags.active && !chan_obj->flags.error_pending);
+    HAL_ASSERT(!chan_obj->flags.active);
     //Set the endpoint characteristics of the pipe
     usbh_ll_chan_hcchar_init(chan_obj->regs,
                              ep_char->dev_addr,
@@ -280,7 +272,7 @@ void usbh_hal_chan_set_ep_char(usbh_hal_context_t *hal, usbh_hal_chan_t *chan_ob
 void usbh_hal_chan_activate(usbh_hal_chan_t *chan_obj, void *xfer_desc_list, int desc_list_len, int start_idx)
 {
     //Cannot activate a channel that has already been enabled or is pending error handling
-    HAL_ASSERT(!chan_obj->flags.active && !chan_obj->flags.error_pending);
+    HAL_ASSERT(!chan_obj->flags.active);
     //Set start address of the QTD list and starting QTD index
     usbh_ll_chan_set_dma_addr_non_iso(chan_obj->regs, xfer_desc_list, start_idx);
     usbh_ll_chan_set_qtd_list_len(chan_obj->regs, desc_list_len);
@@ -291,12 +283,14 @@ void usbh_hal_chan_activate(usbh_hal_chan_t *chan_obj, void *xfer_desc_list, int
 bool usbh_hal_chan_request_halt(usbh_hal_chan_t *chan_obj)
 {
     //Cannot request halt on a channel that is pending error handling
-    HAL_ASSERT(chan_obj->flags.active && !chan_obj->flags.error_pending);
     if (usbh_ll_chan_is_active(chan_obj->regs)) {
+        //If the register indicates that the channel is still active, the active flag must have been previously set
+        HAL_ASSERT(chan_obj->flags.active);
         usbh_ll_chan_halt(chan_obj->regs);
         chan_obj->flags.halt_requested = 1;
         return false;
     } else {
+        //We just clear the active flag here as it could still be set (if we have a pending channel interrupt)
         chan_obj->flags.active = 0;
         return true;
     }
@@ -366,6 +360,7 @@ usbh_hal_chan_event_t usbh_hal_chan_decode_intr(usbh_hal_chan_t *chan_obj)
 {
     uint32_t chan_intrs = usbh_ll_chan_intr_read_and_clear(chan_obj->regs);
     usbh_hal_chan_event_t chan_event;
+    //Note: We don't assert on (chan_obj->flags.active) here as it could have been already cleared by usbh_hal_chan_request_halt()
 
     if (chan_intrs & CHAN_INTRS_ERROR_MSK) {    //Note: Errors are uncommon, so we check against the entire interrupt mask to reduce frequency of entering this call path
         HAL_ASSERT(chan_intrs & USBH_LL_INTR_CHAN_CHHLTD);  //An error should have halted the channel
@@ -383,7 +378,6 @@ usbh_hal_chan_event_t usbh_hal_chan_decode_intr(usbh_hal_chan_t *chan_obj)
         //Update flags
         chan_obj->error = error;
         chan_obj->flags.active = 0;
-        chan_obj->flags.error_pending = 1;
         //Save the error to be handled later
         chan_event = USBH_HAL_CHAN_EVENT_ERROR;
     } else if (chan_intrs & USBH_LL_INTR_CHAN_CHHLTD) {

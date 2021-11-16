@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _ESP_NETIF_DEFAULTS_H
 #define _ESP_NETIF_DEFAULTS_H
@@ -37,6 +29,7 @@ extern "C" {
         .route_prio = 100 \
      }  \
 
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 #define ESP_NETIF_INHERENT_DEFAULT_WIFI_AP() \
     {   \
         .flags = (esp_netif_flags_t)(ESP_NETIF_DHCP_SERVER | ESP_NETIF_FLAG_AUTOUP), \
@@ -48,6 +41,7 @@ extern "C" {
         .if_desc = "ap", \
         .route_prio = 10 \
     };
+#endif
 
 #define ESP_NETIF_INHERENT_DEFAULT_ETH() \
     {   \
@@ -108,6 +102,7 @@ extern "C" {
         .stack = ESP_NETIF_NETSTACK_DEFAULT_ETH, \
     }
 
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 /**
  * @brief  Default configuration reference of WIFI AP
  */
@@ -117,6 +112,7 @@ extern "C" {
         .driver = NULL,                              \
         .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_AP, \
     }
+#endif
 
 /**
 * @brief  Default configuration reference of WIFI STA
@@ -154,10 +150,12 @@ extern "C" {
  */
 #define ESP_NETIF_BASE_DEFAULT_WIFI_STA        &_g_esp_netif_inherent_sta_config
 
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 /**
  * @brief  Default base config (esp-netif inherent) of WIFI AP
  */
 #define ESP_NETIF_BASE_DEFAULT_WIFI_AP         &_g_esp_netif_inherent_ap_config
+#endif
 
 /**
  * @brief  Default base config (esp-netif inherent) of ethernet interface
@@ -177,7 +175,9 @@ extern "C" {
 
 #define ESP_NETIF_NETSTACK_DEFAULT_ETH          _g_esp_netif_netstack_default_eth
 #define ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA     _g_esp_netif_netstack_default_wifi_sta
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 #define ESP_NETIF_NETSTACK_DEFAULT_WIFI_AP      _g_esp_netif_netstack_default_wifi_ap
+#endif
 #define ESP_NETIF_NETSTACK_DEFAULT_PPP          _g_esp_netif_netstack_default_ppp
 #define ESP_NETIF_NETSTACK_DEFAULT_SLIP         _g_esp_netif_netstack_default_slip
 #define ESP_NETIF_NETSTACK_DEFAULT_OPENTHREAD   _g_esp_netif_netstack_default_openthread
@@ -190,7 +190,9 @@ extern "C" {
 //
 extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_eth;
 extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_wifi_sta;
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_wifi_ap;
+#endif
 extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_ppp;
 extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_slip;
 
@@ -200,12 +202,16 @@ extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_slip;
 //    common behavioural patterns for common interfaces such as STA, AP, ETH, PPP
 //
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_sta_config;
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_ap_config;
+#endif
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_eth_config;
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_ppp_config;
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_slip_config;
 
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 extern const esp_netif_ip_info_t _g_esp_netif_soft_ap_ip;
+#endif
 
 #if CONFIG_OPENTHREAD_ENABLED
 /**

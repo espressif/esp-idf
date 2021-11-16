@@ -1,16 +1,9 @@
-// Copyright 2019-2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <string.h>
 #include <stdlib.h>
 #include <sys/cdefs.h>
@@ -28,6 +21,7 @@ static const char *TAG = "ksz80xx";
 
 #define KSZ8041_MODEL_ID (0x11)
 #define KSZ8081_MODEL_ID (0x16)
+#define KSZ8091_MODEL_ID KSZ8081_MODEL_ID
 
 /***************Vendor Specific Register***************/
 /**
@@ -47,13 +41,13 @@ typedef union {
         uint32_t power_saving : 1;   /* Enable Powering Saving */
         uint32_t force_link : 1;     /* Force Link Pass */
         uint32_t energy_det : 1;     /* Presence of Signal on RX+/- Wire Pair */
-        uint32_t pairswap_dis : 1;   /* Disable Auto MDI/MDI-X */
+        uint32_t pair_swap_dis : 1;  /* Disable Auto MDI/MDI-X */
         uint32_t mdix_select : 1;    /* MDI/MDI-X Select */
         uint32_t hp_mdix : 1;        /* HP Auto MDI/MDI-X Mode */
     };
     uint32_t val;
 } ksz8041_pc2r_reg_t;
-#define KSZ8041_PC2R_ERG_ADDR (0x1F)
+#define KSZ8041_PC2R_REG_ADDR (0x1F)
 
 /**
  * @brief PC1R(PHY Control 1 Register) for KSZ8081
@@ -74,6 +68,33 @@ typedef union {
     uint32_t val;
 } ksz8081_pc1r_reg_t;
 #define KSZ8081_PC1R_REG_ADDR (0x1E)
+
+/**
+ * @brief PC2R(PHY Control 2 Register)
+ *
+ */
+typedef union {
+    struct {
+        uint32_t dis_data_scr: 1;       /* Disable Scrambler */
+        uint32_t enable_sqe_test : 1;   /* Enable SQE test. MLX/MNX/RNB only. */
+        uint32_t rem_loopb : 1;         /* Enable remote loopback */
+        uint32_t dis_trx : 1;           /* Disable Transmitter */
+        uint32_t led_mode : 2;          /* LED mode link-activity / link */
+        uint32_t reserved_6 : 1;
+        uint32_t rmii_ref_sel : 1;      /* RMII Reference Clock Select */
+        uint32_t en_jabber : 1;         /* Enable Jabber Counter */
+        uint32_t irq_level : 1;         /* Interrupt Pin Active Level */
+        uint32_t power_saving : 1;      /* Enable Powering Saving */
+        uint32_t force_link : 1;        /* Force Link Pass */
+        uint32_t reserved_12 : 1;
+        uint32_t pair_swap_dis : 1;     /* Disable Auto MDI/MDI-X */
+        uint32_t mdix_select : 1;       /* MDI/MDI-X Select */
+        uint32_t hp_mdix : 1;           /* HP Auto MDI/MDI-X Mode */
+    };
+    uint32_t val;
+} ksz8081_pc2r_reg_t;
+#define KSZ8081_PC2R_REG_ADDR (0x1F)
+
 
 typedef struct {
     esp_eth_phy_t parent;
@@ -105,7 +126,7 @@ static esp_err_t ksz80xx_update_link_duplex_speed(phy_ksz80xx_t *ksz80xx)
             int op_mode = 0;
             if (ksz80xx->vendor_model == KSZ8041_MODEL_ID) {
                 ksz8041_pc2r_reg_t pc2r;
-                ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, KSZ8041_PC2R_ERG_ADDR, &(pc2r.val)), err, TAG, "read PC2R failed");
+                ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, KSZ8041_PC2R_REG_ADDR, &(pc2r.val)), err, TAG, "read PC2R failed");
                 op_mode = pc2r.op_mode;
             } else if (ksz80xx->vendor_model == KSZ8081_MODEL_ID) {
                 ksz8081_pc1r_reg_t pc1r;
@@ -381,7 +402,7 @@ esp_eth_phy_t *esp_eth_phy_new_ksz8041(const eth_phy_config_t *config)
     esp_eth_phy_t *ret = NULL;
     ESP_GOTO_ON_FALSE(config, NULL, err, TAG, "can't set phy config to null");
     phy_ksz80xx_t *ksz8041 = calloc(1, sizeof(phy_ksz80xx_t));
-    ESP_GOTO_ON_FALSE(ksz8041, NULL, err, TAG, "calloc ksz80xx failed");
+    ESP_GOTO_ON_FALSE(ksz8041, NULL, err, TAG, "calloc ksz8041 failed");
     ksz8041->vendor_model = KSZ8041_MODEL_ID;
     ksz8041->addr = config->phy_addr;
     ksz8041->reset_gpio_num = config->reset_gpio_num;

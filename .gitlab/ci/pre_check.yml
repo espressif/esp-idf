@@ -22,7 +22,7 @@ check_pre_commit_master_release:
     - .check_pre_commit_template
     - .rules:protected
   script:
-    - git diff-tree --no-commit-id --name-only -r $CI_COMMIT_SHA | xargs pre-commit run --files
+    - git diff-tree --no-commit-id --name-only -r $PIPELINE_COMMIT_SHA | xargs pre-commit run --files
 
 check_pre_commit_MR:
   extends:
@@ -40,11 +40,6 @@ check_version:
   script:
     - export IDF_PATH=$PWD
     - tools/ci/check_idf_version.sh
-
-check_examples_cmake_make:
-  extends: .pre_check_job_template
-  script:
-  - python ${IDF_PATH}/tools/ci/check_examples_cmake_make.py
 
 check_rom_api_header:
   extends: .pre_check_job_template
@@ -159,7 +154,6 @@ scan_tests:
     CI_SCAN_TESTS_PY: ${CI_PROJECT_DIR}/tools/ci/python_packages/ttfw_idf/CIScanTests.py
   script:
     - set_component_ut_vars
-    - run_cmd python $CI_SCAN_TESTS_PY example_test $EXAMPLE_TEST_DIR -b make --exclude examples/build_system/idf_as_lib -c $CI_TARGET_TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
     - run_cmd python $CI_SCAN_TESTS_PY example_test $EXAMPLE_TEST_DIR -b cmake --exclude examples/build_system/idf_as_lib -c $CI_TARGET_TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR
     - run_cmd python $CI_SCAN_TESTS_PY test_apps $TEST_APPS_TEST_DIR -c $CI_TARGET_TEST_CONFIG_FILE -o $TEST_APPS_OUTPUT_DIR
     - run_cmd python $CI_SCAN_TESTS_PY component_ut $COMPONENT_UT_DIRS --exclude $COMPONENT_UT_EXCLUDES -c $CI_TARGET_TEST_CONFIG_FILE -o $COMPONENT_UT_OUTPUT_DIR
@@ -173,13 +167,6 @@ check_version_tag:
   script:
     - (git cat-file -t $CI_COMMIT_REF_NAME | grep tag) || (echo "ESP-IDF versions must be annotated tags." && exit 1)
 
-check_ut_cmake_make:
-  extends: .pre_check_job_template
-  tags:
-    - build
-  script:
-    - tools/ci/check_ut_cmake_make.sh
-
 check_artifacts_expire_time:
   extends: .pre_check_job_template
   script:
@@ -190,6 +177,6 @@ check_commit_msg:
   extends: .pre_check_job_template
   script:
     - git status
-    - git log -n10 --oneline
+    - git log -n10 --oneline ${PIPELINE_COMMIT_SHA}
     # commit start with "WIP: " need to be squashed before merge
-    - 'git log --pretty=%s master.. -- | grep "^WIP: " && exit 1 || exit 0'
+    - 'git log --pretty=%s origin/master..${PIPELINE_COMMIT_SHA} -- | grep -i "^WIP:" && exit 1 || exit 0'

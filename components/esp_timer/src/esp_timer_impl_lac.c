@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "sys/param.h"
 #include "esp_timer_impl.h"
@@ -22,7 +14,7 @@
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "esp32/clk.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "soc/soc.h"
 #include "soc/timer_group_reg.h"
 #include "soc/rtc.h"
@@ -146,9 +138,6 @@ uint64_t IRAM_ATTR esp_timer_impl_get_counter_reg(void)
 
 int64_t IRAM_ATTR esp_timer_impl_get_time(void)
 {
-    if (s_alarm_handler == NULL) {
-        return 0;
-    }
     return esp_timer_impl_get_counter_reg() / TICKS_PER_US;
 }
 
@@ -217,13 +206,10 @@ void esp_timer_impl_advance(int64_t time_diff_us)
     portEXIT_CRITICAL(&s_time_update_lock);
 }
 
-esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
+esp_err_t esp_timer_impl_early_init(void)
 {
-    s_alarm_handler = alarm_handler;
-
     periph_module_enable(PERIPH_LACT);
 
-    /* Reset the state */
     REG_WRITE(CONFIG_REG, 0);
     REG_WRITE(LOAD_LO_REG, 0);
     REG_WRITE(LOAD_HI_REG, 0);
@@ -231,6 +217,17 @@ esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
     REG_WRITE(ALARM_HI_REG, UINT32_MAX);
     REG_WRITE(LOAD_REG, 1);
     REG_SET_BIT(INT_CLR_REG, TIMG_LACT_INT_CLR);
+    REG_SET_FIELD(CONFIG_REG, TIMG_LACT_DIVIDER, APB_CLK_FREQ / 1000000 / TICKS_PER_US);
+    REG_SET_BIT(CONFIG_REG, TIMG_LACT_INCREASE |
+        TIMG_LACT_LEVEL_INT_EN |
+        TIMG_LACT_EN);
+
+    return ESP_OK;
+}
+
+esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
+{
+    s_alarm_handler = alarm_handler;
 
     const int interrupt_lvl = (1 << CONFIG_ESP_TIMER_INTERRUPT_LEVEL) & ESP_INTR_FLAG_LEVELMASK;
     esp_err_t err = esp_intr_alloc(INTR_SOURCE_LACT,
@@ -249,10 +246,6 @@ esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
     REG_SET_BIT(INT_ENA_REG, TIMG_LACT_INT_ENA);
 
     esp_timer_impl_update_apb_freq(esp_clk_apb_freq() / 1000000);
-
-    REG_SET_BIT(CONFIG_REG, TIMG_LACT_INCREASE |
-        TIMG_LACT_LEVEL_INT_EN |
-        TIMG_LACT_EN);
 
     // Set the step for the sleep mode when the timer will work
     // from a slow_clk frequency instead of the APB frequency.

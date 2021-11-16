@@ -5,11 +5,6 @@ Build System
 
 This document explains the implementation of the ESP-IDF build system and the concept of "components". Read this document if you want to know how to organize and build a new ESP-IDF project or component.
 
-.. only:: esp32
-
-   .. note:: This document describes the CMake-based build system, which is the default since ESP-IDF V4.0. ESP-IDF also supports a :doc:`legacy build system based on GNU Make <build-system-legacy>`, which was the default before ESP-IDF V4.0.
-
-
 Overview
 ========
 
@@ -1546,6 +1541,9 @@ Finalization
 
 Browse :idf_file:`/tools/cmake/project.cmake` for more details.
 
+
+.. _migrating_from_make:
+
 Migrating from ESP-IDF GNU Make System
 ======================================
 
@@ -1554,21 +1552,7 @@ Some aspects of the CMake-based ESP-IDF build system are very similar to the old
 Automatic Conversion Tool
 -------------------------
 
-.. highlight:: bash
-
-An automatic project conversion tool is available in :idf_file:`/tools/cmake/convert_to_cmake.py`. Run this command line tool with the path to a project like this::
-
-    $IDF_PATH/tools/cmake/convert_to_cmake.py /path/to/project_dir
-
-The project directory must contain a Makefile, and GNU Make (``make``) must be installed and available on the PATH.
-
-The tool will convert the project Makefile and any component ``component.mk`` files to their equivalent ``CMakeLists.txt`` files.
-
-It does so by running ``make`` to expand the ESP-IDF build system variables which are set by the build, and then producing equivalent CMakelists files to set the same variables.
-
-.. important:: When the conversion tool converts a ``component.mk`` file, it doesn't determine what other components that component depends on. This information needs to be added manually by editing the new component ``CMakeLists.txt`` file and adding ``REQUIRES`` and/or ``PRIV_REQUIRES`` clauses. Otherwise, source files in the component will fail to compile as headers from other components are not found. See :ref:`component requirements`.
-
-The conversion tool is not capable of dealing with complex Makefile logic or unusual targets. These will need to be converted by hand.
+An automatic project conversion tool is available in `tools/cmake/convert_to_cmake.py` in ESP-IDF v4.x releases. The script was removed in v5.0 because of its `make` build system dependency.
 
 No Longer Available in CMake
 ----------------------------

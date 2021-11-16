@@ -20,10 +20,6 @@ The ULP coprocessor code is written in assembly and compiled using the `binutils
 
 If you have already set up ESP-IDF with CMake build system according to the :doc:`Getting Started Guide <../../get-started/index>`, then the ULP toolchain will already be installed.
 
-.. only:: esp32
-
-    If you are using ESP-IDF with the legacy GNU Make based build system, refer to the instructions on this page: :doc:`ulp-legacy`.
-
 Compiling the ULP Code
 -----------------------
 

@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "esp32/rom/lldesc.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "hal/gpio_hal.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
-#include <esp_types.h>
+#include "esp_types.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "esp_log.h"
@@ -19,8 +19,9 @@
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
 #include "soc/clk_ctrl_os.h"
+#include "esp_private/periph_ctrl.h"
 
-static const char* LEDC_TAG = "ledc";
+static const char *LEDC_TAG = "ledc";
 
 #define LEDC_CHECK(a, str, ret_val) ESP_RETURN_ON_FALSE(a, ret_val, LEDC_TAG, "%s", str)
 #define LEDC_ARG_CHECK(a, param) ESP_RETURN_ON_FALSE(a, ESP_ERR_INVALID_ARG, LEDC_TAG, param " argument is invalid")
@@ -62,6 +63,8 @@ static portMUX_TYPE ledc_spinlock = portMUX_INITIALIZER_UNLOCKED;
 #define SLOW_CLK_CYC_CALIBRATE    (13)
 #define LEDC_FADE_TOO_SLOW_STR    "LEDC FADE TOO SLOW"
 #define LEDC_FADE_TOO_FAST_STR    "LEDC FADE TOO FAST"
+#define DIM(array)                (sizeof(array)/sizeof(*array))
+#define LEDC_IS_DIV_INVALID(div)  ((div) <= LEDC_LL_FRACTIONAL_MAX || (div) > LEDC_TIMER_DIV_NUM_MAX)
 
 static const char *LEDC_NOT_INIT = "LEDC is not initialized";
 static const char *LEDC_FADE_SERVICE_ERR_STR = "LEDC fade service not installed";
@@ -101,10 +104,12 @@ static uint32_t ledc_get_src_clk_freq(ledc_clk_cfg_t clk_cfg)
     uint32_t src_clk_freq = 0;
     if (clk_cfg == LEDC_USE_APB_CLK) {
         src_clk_freq = LEDC_APB_CLK_HZ;
-    } else if (clk_cfg == LEDC_USE_REF_TICK) {
-        src_clk_freq = LEDC_REF_CLK_HZ;
     } else if (clk_cfg == LEDC_USE_RTC8M_CLK) {
         src_clk_freq = s_ledc_slow_clk_8M;
+#if SOC_LEDC_SUPPORT_REF_TICK
+    } else if (clk_cfg == LEDC_USE_REF_TICK) {
+        src_clk_freq = LEDC_REF_CLK_HZ;
+#endif
 #if SOC_LEDC_SUPPORT_XTAL_CLOCK
     } else if (clk_cfg == LEDC_USE_XTAL_CLK) {
         src_clk_freq = rtc_clk_xtal_freq_get() * 1000000;
@@ -112,6 +117,29 @@ static uint32_t ledc_get_src_clk_freq(ledc_clk_cfg_t clk_cfg)
     }
     return src_clk_freq;
 }
+
+/* Retrieve the clock frequency for global clocks only */
+static uint32_t ledc_get_glb_clk_freq(ledc_slow_clk_sel_t clk_cfg)
+{
+    uint32_t src_clk_freq = 0;
+
+    switch (clk_cfg) {
+        case LEDC_SLOW_CLK_APB:
+            src_clk_freq = LEDC_APB_CLK_HZ;
+            break;
+        case LEDC_SLOW_CLK_RTC8M:
+            src_clk_freq = s_ledc_slow_clk_8M;
+            break;
+#if SOC_LEDC_SUPPORT_XTAL_CLOCK
+        case LEDC_SLOW_CLK_XTAL:
+            src_clk_freq = rtc_clk_xtal_freq_get() * 1000000;
+            break;
+#endif
+    }
+
+    return src_clk_freq;
+}
+
 
 static esp_err_t ledc_enable_intr_type(ledc_mode_t speed_mode, ledc_channel_t channel, ledc_intr_type_t type)
 {
@@ -127,7 +155,7 @@ static esp_err_t ledc_enable_intr_type(ledc_mode_t speed_mode, ledc_channel_t ch
 
 static void _ledc_fade_hw_acquire(ledc_mode_t mode, ledc_channel_t channel)
 {
-    ledc_fade_t* fade = s_ledc_fade_rec[mode][channel];
+    ledc_fade_t *fade = s_ledc_fade_rec[mode][channel];
     if (fade) {
         xSemaphoreTake(fade->ledc_fade_sem, portMAX_DELAY);
         ledc_enable_intr_type(mode, channel, LEDC_INTR_DISABLE);
@@ -136,7 +164,7 @@ static void _ledc_fade_hw_acquire(ledc_mode_t mode, ledc_channel_t channel)
 
 static void _ledc_fade_hw_release(ledc_mode_t mode, ledc_channel_t channel)
 {
-    ledc_fade_t* fade = s_ledc_fade_rec[mode][channel];
+    ledc_fade_t *fade = s_ledc_fade_rec[mode][channel];
     if (fade) {
         xSemaphoreGive(fade->ledc_fade_sem);
     }
@@ -144,7 +172,7 @@ static void _ledc_fade_hw_release(ledc_mode_t mode, ledc_channel_t channel)
 
 static void _ledc_op_lock_acquire(ledc_mode_t mode, ledc_channel_t channel)
 {
-    ledc_fade_t* fade = s_ledc_fade_rec[mode][channel];
+    ledc_fade_t *fade = s_ledc_fade_rec[mode][channel];
     if (fade) {
         xSemaphoreTake(fade->ledc_fade_mux, portMAX_DELAY);
     }
@@ -152,7 +180,7 @@ static void _ledc_op_lock_acquire(ledc_mode_t mode, ledc_channel_t channel)
 
 static void _ledc_op_lock_release(ledc_mode_t mode, ledc_channel_t channel)
 {
-    ledc_fade_t* fade = s_ledc_fade_rec[mode][channel];
+    ledc_fade_t *fade = s_ledc_fade_rec[mode][channel];
     if (fade) {
         xSemaphoreGive(fade->ledc_fade_mux);
     }
@@ -167,14 +195,18 @@ static uint32_t ledc_get_max_duty(ledc_mode_t speed_mode, ledc_channel_t channel
 }
 
 esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t clock_divider, uint32_t duty_resolution,
-        ledc_clk_src_t clk_src)
+                         ledc_clk_src_t clk_src)
 {
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
     LEDC_ARG_CHECK(timer_sel < LEDC_TIMER_MAX, "timer_select");
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
     portENTER_CRITICAL(&ledc_spinlock);
     ledc_hal_set_clock_divider(&(p_ledc_obj[speed_mode]->ledc_hal), timer_sel, clock_divider);
+#if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
+    /* Clock source can only be configured on boards which support timer-specific
+     * source clock. */
     ledc_hal_set_clock_source(&(p_ledc_obj[speed_mode]->ledc_hal), timer_sel, clk_src);
+#endif
     ledc_hal_set_duty_resolution(&(p_ledc_obj[speed_mode]->ledc_hal), timer_sel, duty_resolution);
     ledc_ls_timer_update(speed_mode, timer_sel);
     portEXIT_CRITICAL(&ledc_spinlock);
@@ -182,7 +214,7 @@ esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_
 }
 
 static IRAM_ATTR esp_err_t ledc_duty_config(ledc_mode_t speed_mode, ledc_channel_t channel, int hpoint_val, int duty_val,
-    ledc_duty_direction_t duty_direction, uint32_t duty_num, uint32_t duty_cycle, uint32_t duty_scale)
+        ledc_duty_direction_t duty_direction, uint32_t duty_num, uint32_t duty_cycle, uint32_t duty_scale)
 {
     portENTER_CRITICAL(&ledc_spinlock);
     if (hpoint_val >= 0) {
@@ -248,7 +280,7 @@ esp_err_t ledc_timer_resume(ledc_mode_t speed_mode, ledc_timer_t timer_sel)
     return ESP_OK;
 }
 
-esp_err_t ledc_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags, ledc_isr_handle_t *handle)
+esp_err_t ledc_isr_register(void (*fn)(void *), void *arg, int intr_alloc_flags, ledc_isr_handle_t *handle)
 {
     esp_err_t ret;
     LEDC_ARG_CHECK(fn, "fn");
@@ -258,61 +290,263 @@ esp_err_t ledc_isr_register(void (*fn)(void*), void * arg, int intr_alloc_flags,
     return ret;
 }
 
-// Setting the LEDC timer divisor with the given source clock, frequency and resolution.
+static inline uint32_t ledc_calculate_divisor(uint32_t src_clk_freq, int freq_hz, uint32_t precision)
+{
+    /**
+     * In order to find the right divisor, we need to divide the source clock
+     * frequency by the desired frequency. However, two things to note here:
+     * - The lowest LEDC_LL_FRACTIONAL_BITS bits of the result are the FRACTIONAL
+     *   part. The higher bits represent the integer part, this is why we need
+     *   to right shift the source frequency.
+     * - The `precision` parameter represents the granularity of the clock. It
+     *   **must** be a power of 2. It means that the resulted divisor is
+     *   a multiplier of `precision`.
+     *
+     * Let's take a concrete example, we need to generate a 5KHz clock out of
+     * a 80MHz clock (APB).
+     * If the precision is 1024 (10 bits), the resulted multiplier is:
+     * (80000000 << 8) / (5000 * 1024) = 4000 (0xfa0)
+     * Let's ignore the fractional part to simplify the explanation, so we get
+     * a result of 15 (0xf).
+     * This can be interpreted as: every 15 "precision" ticks, the resulted
+     * clock will go high, where one precision tick is made out of 1024 source
+     * clock ticks.
+     * Thus, every `15 * 1024` source clock ticks, the resulted clock will go
+     * high.
+     *
+     * NOTE: We are also going to round up the value when necessary, thanks to:
+     * (freq_hz * precision) / 2
+     */
+    return ( ( (uint64_t) src_clk_freq << LEDC_LL_FRACTIONAL_BITS ) + ((freq_hz * precision) / 2 ) )
+           / (freq_hz * precision);
+}
+
+static inline uint32_t ledc_auto_global_clk_divisor(int freq_hz, uint32_t precision, ledc_slow_clk_sel_t* clk_target)
+{
+    uint32_t div_param = 0;
+    uint32_t i = 0;
+    uint32_t clk_freq = 0;
+    /* This function will go through all the following clock sources to look
+     * for a valid divisor which generates the requested frequency. */
+    const ledc_slow_clk_sel_t glb_clks[] = LEDC_LL_GLOBAL_CLOCKS;
+
+    for (i = 0; i < DIM(glb_clks); i++) {
+        /* Before calculating the divisor, we need to have the RTC frequency.
+         * If it hasn't been mesured yet, try calibrating it now. */
+        if (glb_clks[i] == LEDC_SLOW_CLK_RTC8M && s_ledc_slow_clk_8M == 0 && !ledc_slow_clk_calibrate()) {
+            ESP_LOGD(LEDC_TAG, "Unable to retrieve RTC clock frequency, skipping it\n");
+            continue;
+        }
+
+        clk_freq = ledc_get_glb_clk_freq(glb_clks[i]);
+        div_param = ledc_calculate_divisor(clk_freq, freq_hz, precision);
+
+        /* If the divisor is valid, we can return this value. */
+        if (!LEDC_IS_DIV_INVALID(div_param)) {
+            *clk_target = glb_clks[i];
+            break;
+        }
+    }
+
+    return div_param;
+
+}
+
+#if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
+static inline uint32_t ledc_auto_timer_specific_clk_divisor(ledc_mode_t speed_mode, int freq_hz, uint32_t precision,
+                                                            ledc_clk_src_t* clk_source)
+{
+    uint32_t div_param = 0;
+    uint32_t i = 0;
+
+    /* Use an anonymous structure, only this function requires it.
+     * Get the list of the timer-specific clocks, try to find one for the reuested frequency.  */
+    const struct { ledc_clk_src_t clk; uint32_t freq; } specific_clks[] = LEDC_LL_TIMER_SPECIFIC_CLOCKS;
+
+    for (i = 0; i < DIM(specific_clks); i++) {
+        div_param = ledc_calculate_divisor(specific_clks[i].freq, freq_hz, precision);
+
+        /* If the divisor is valid, we can return this value. */
+        if (!LEDC_IS_DIV_INVALID(div_param)) {
+            *clk_source = specific_clks[i].clk;
+            break;
+        }
+    }
+
+#if SOC_LEDC_SUPPORT_HS_MODE
+    /* On board that support LEDC high-speed mode, APB clock becomes a timer-
+     * specific clock when in high speed mode. Check if it is necessary here
+     * to test APB. */
+    if (speed_mode == LEDC_HIGH_SPEED_MODE && i == DIM(specific_clks)) {
+        /* No divider was found yet, try with APB! */
+        div_param = ledc_calculate_divisor(LEDC_APB_CLK_HZ, freq_hz, precision);
+
+        if (!LEDC_IS_DIV_INVALID(div_param)) {
+            *clk_source = LEDC_APB_CLK;
+        }
+    }
+#endif
+
+    return div_param;
+}
+#endif
+
+/**
+ * @brief Try to find the clock with its divisor giving the frequency requested
+ * by the caller.
+ */
+static uint32_t ledc_auto_clk_divisor(ledc_mode_t speed_mode, int freq_hz, uint32_t precision,
+                                      ledc_clk_src_t* clk_source, ledc_slow_clk_sel_t* clk_target)
+{
+    uint32_t div_param = 0;
+
+#if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
+    /* If the SoC presents timer-specific clock(s), try to achieve the given frequency
+     * thanks to it/them.
+     * clk_source parameter will returned by this function. */
+    div_param = ledc_auto_timer_specific_clk_divisor(speed_mode, freq_hz, precision, clk_source);
+
+    if (!LEDC_IS_DIV_INVALID(div_param)) {
+        /* The dividor is valid, no need try any other clock, return directly. */
+        return div_param;
+    }
+#endif
+
+    /* On ESP32, only low speed channel can use the global clocks. For other
+     * chips, there are no high speed channels. */
+    if (speed_mode == LEDC_LOW_SPEED_MODE) {
+        div_param = ledc_auto_global_clk_divisor(freq_hz, precision, clk_target);
+    }
+
+    return div_param;
+}
+
+static ledc_slow_clk_sel_t ledc_clk_cfg_to_global_clk(const ledc_clk_cfg_t clk_cfg)
+{
+    /* Initialization required for preventing a compiler warning */
+    ledc_slow_clk_sel_t glb_clk = LEDC_SLOW_CLK_APB;
+
+    switch (clk_cfg) {
+        case LEDC_USE_APB_CLK:
+            glb_clk = LEDC_SLOW_CLK_APB;
+            break;
+        case LEDC_USE_RTC8M_CLK:
+            glb_clk = LEDC_SLOW_CLK_RTC8M;
+            break;
+#if SOC_LEDC_SUPPORT_XTAL_CLOCK
+        case LEDC_USE_XTAL_CLK:
+            glb_clk = LEDC_SLOW_CLK_XTAL;
+            break;
+#endif
+#if SOC_LEDC_SUPPORT_REF_TICK
+        case LEDC_USE_REF_TICK:
+#endif
+        default:
+            /* We should not get here, REF_TICK is NOT a global clock,
+             * it is a timer-specific clock. */
+            assert(false);
+    }
+
+    return glb_clk;
+}
+
+/**
+ * @brief Function setting the LEDC timer divisor with the given source clock,
+ * frequency and resolution. If the clock configuration passed is
+ * LEDC_AUTO_CLK, the clock will be determined automatically (if possible).
+ */
 static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_num, ledc_clk_cfg_t clk_cfg, int freq_hz, int duty_resolution)
 {
     uint32_t div_param = 0;
-    uint32_t precision = ( 0x1 << duty_resolution );
-    ledc_clk_src_t timer_clk_src = LEDC_APB_CLK;
-    // Calculate the divisor
-    // User specified source clock(RTC8M_CLK) for low speed channel
-    if ((speed_mode == LEDC_LOW_SPEED_MODE) && (clk_cfg == LEDC_USE_RTC8M_CLK)) {
-        if(s_ledc_slow_clk_8M == 0) {
-            if (ledc_slow_clk_calibrate() == false) {
-                goto error;
-            }
+    const uint32_t precision = ( 0x1 << duty_resolution );
+    /* This variable represents the timer's mux value. It will be overwritten
+     * if a timer-specific clock is used. */
+    ledc_clk_src_t timer_clk_src = LEDC_SCLK;
+    /* Store the global clock. */
+    ledc_slow_clk_sel_t glb_clk = LEDC_SLOW_CLK_APB;
+    uint32_t src_clk_freq = 0;
+
+    if (clk_cfg == LEDC_AUTO_CLK) {
+        /* User hasn't specified the speed, we should try to guess it. */
+        div_param = ledc_auto_clk_divisor(speed_mode, freq_hz, precision, &timer_clk_src, &glb_clk);
+
+    } else if (clk_cfg == LEDC_USE_RTC8M_CLK) {
+        /* User specified source clock(RTC8M_CLK) for low speed channel.
+         * Make sure the speed mode is correct. */
+        ESP_RETURN_ON_FALSE((speed_mode == LEDC_LOW_SPEED_MODE), ESP_ERR_INVALID_ARG, LEDC_TAG, "RTC clock can only be used in low speed mode");
+
+        /* Before calculating the divisor, we need to have the RTC frequency.
+         * If it hasn't been mesured yet, try calibrating it now. */
+        if(s_ledc_slow_clk_8M == 0 && ledc_slow_clk_calibrate() == false) {
+            goto error;
         }
-        div_param = ( (uint64_t) s_ledc_slow_clk_8M << 8 ) / freq_hz / precision;
+
+        /* We have the RTC clock frequency now. */
+        div_param = ledc_calculate_divisor(s_ledc_slow_clk_8M, freq_hz, precision);
+
+        /* Set the global clock source */
+        glb_clk =  LEDC_SLOW_CLK_RTC8M;
+
     } else {
-        // Automatically select APB or REF_TICK as the source clock.
-        if (clk_cfg == LEDC_AUTO_CLK) {
-            // Try calculating divisor based on LEDC_APB_CLK
-            div_param = ( (uint64_t) LEDC_APB_CLK_HZ << 8 ) / freq_hz / precision;
-            if (div_param > LEDC_TIMER_DIV_NUM_MAX) {
-                // APB_CLK results in divisor which too high. Try using REF_TICK as clock source.
-                timer_clk_src = LEDC_REF_TICK;
-                div_param = ((uint64_t) LEDC_REF_CLK_HZ << 8) / freq_hz / precision;
-            } else if (div_param < 256) {
-                // divisor is too low
-                goto error;
-            }
-        // User specified source clock(LEDC_APB_CLK_HZ or LEDC_REF_TICK)
-        } else {
-            timer_clk_src = (clk_cfg == LEDC_USE_REF_TICK) ? LEDC_REF_TICK : LEDC_APB_CLK;
-            uint32_t src_clk_freq = ledc_get_src_clk_freq(clk_cfg);
-            div_param = ( (uint64_t) src_clk_freq << 8 ) / freq_hz / precision;
+
+#if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
+        if (LEDC_LL_IS_TIMER_SPECIFIC_CLOCK(speed_mode, clk_cfg)) {
+            /* Currently we can convert a timer-specific clock to a source clock that
+             * easily because their values are identical in the enumerations (on purpose)
+             * If we decide to change the values in the future, we should consider defining
+             * a macro/function to convert timer-specific clock to clock source .*/
+            timer_clk_src = (ledc_clk_src_t) clk_cfg;
+        } else
+#endif
+        {
+            glb_clk = ledc_clk_cfg_to_global_clk(clk_cfg);
         }
+
+        src_clk_freq = ledc_get_src_clk_freq(clk_cfg);
+        div_param = ledc_calculate_divisor(src_clk_freq, freq_hz, precision);
     }
-    if (div_param < 256 || div_param > LEDC_TIMER_DIV_NUM_MAX) {
+
+    if (LEDC_IS_DIV_INVALID(div_param)) {
         goto error;
     }
+
+    /* The following debug message makes more sense for AUTO mode. */
+    ESP_LOGD(LEDC_TAG, "Using clock source %d (in %s mode), divisor: 0x%x\n",
+             timer_clk_src, (speed_mode == LEDC_LOW_SPEED_MODE ? "slow" : "fast"), div_param);
+
+    /* The following block configures the global clock.
+     * Thus, in theory, this only makes sense when the source clock is LEDC_SCLK
+     * and in LOW_SPEED_MODE (as FAST_SPEED_MODE doesn't present any global clock)
+     *
+     * However, in practice, on modules that support high-speed mode, no matter
+     * whether the source clock is a timer-specific one (e.g. REF_TICK) or not,
+     * the global clock MUST be configured when in low speed mode.
+     * When using high-speed mode, this is not necessary.
+     */
+#if SOC_LEDC_SUPPORT_HS_MODE
     if (speed_mode == LEDC_LOW_SPEED_MODE) {
+#else
+    if (timer_clk_src == LEDC_SCLK) {
+#endif
+        ESP_LOGD(LEDC_TAG, "In slow speed mode, using clock %d", glb_clk);
         portENTER_CRITICAL(&ledc_spinlock);
-        ledc_hal_set_slow_clk(&(p_ledc_obj[speed_mode]->ledc_hal), clk_cfg);
+        ledc_hal_set_slow_clk_sel(&(p_ledc_obj[speed_mode]->ledc_hal), glb_clk);
         portEXIT_CRITICAL(&ledc_spinlock);
     }
-    //Set the divisor
+
+    /* The divisor is correct, we can write in the hardware. */
     ledc_timer_set(speed_mode, timer_num, div_param, duty_resolution, timer_clk_src);
-    // reset the timer
+
+    /* Reset the timer. */
     ledc_timer_rst(speed_mode, timer_num);
     return ESP_OK;
 error:
     ESP_LOGE(LEDC_TAG, "requested frequency and duty resolution can not be achieved, try reducing freq_hz or duty_resolution. div_param=%d",
-        (uint32_t ) div_param);
+             (uint32_t ) div_param);
     return ESP_FAIL;
 }
 
-esp_err_t ledc_timer_config(const ledc_timer_config_t* timer_conf)
+esp_err_t ledc_timer_config(const ledc_timer_config_t *timer_conf)
 {
     LEDC_ARG_CHECK(timer_conf != NULL, "timer_conf");
     uint32_t freq_hz = timer_conf->freq_hz;
@@ -331,7 +565,7 @@ esp_err_t ledc_timer_config(const ledc_timer_config_t* timer_conf)
         return ESP_ERR_INVALID_ARG;
     }
 
-    if(p_ledc_obj[speed_mode] == NULL) {
+    if (p_ledc_obj[speed_mode] == NULL) {
         p_ledc_obj[speed_mode] = (ledc_obj_t *) heap_caps_calloc(1, sizeof(ledc_obj_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
         if (p_ledc_obj[speed_mode] == NULL) {
             return ESP_ERR_NO_MEM;
@@ -353,7 +587,7 @@ esp_err_t ledc_set_pin(int gpio_num, ledc_mode_t speed_mode, ledc_channel_t ledc
     return ESP_OK;
 }
 
-esp_err_t ledc_channel_config(const ledc_channel_config_t* ledc_conf)
+esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
 {
     LEDC_ARG_CHECK(ledc_conf, "ledc_conf");
     uint32_t speed_mode = ledc_conf->speed_mode;
@@ -373,7 +607,7 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t* ledc_conf)
     periph_module_enable(PERIPH_LEDC_MODULE);
     esp_err_t ret = ESP_OK;
 
-    if(p_ledc_obj[speed_mode] == NULL) {
+    if (p_ledc_obj[speed_mode] == NULL) {
         p_ledc_obj[speed_mode] = (ledc_obj_t *) heap_caps_calloc(1, sizeof(ledc_obj_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
         if (p_ledc_obj[speed_mode] == NULL) {
             return ESP_ERR_NO_MEM;
@@ -392,8 +626,8 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t* ledc_conf)
     /*set interrupt type*/
     ledc_enable_intr_type(speed_mode, ledc_channel, intr_type);
     ESP_LOGD(LEDC_TAG, "LEDC_PWM CHANNEL %1u|GPIO %02u|Duty %04u|Time %01u",
-        ledc_channel, gpio_num, duty, timer_select
-    );
+             ledc_channel, gpio_num, duty, timer_select
+            );
     /*set LEDC signal in gpio matrix*/
     gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
     gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
@@ -430,7 +664,7 @@ esp_err_t ledc_stop(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t idl
 }
 
 esp_err_t ledc_set_fade(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t duty, ledc_duty_direction_t fade_direction,
-    uint32_t step_num, uint32_t duty_cyle_num, uint32_t duty_scale)
+                        uint32_t step_num, uint32_t duty_cyle_num, uint32_t duty_scale)
 {
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
     LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
@@ -448,7 +682,7 @@ esp_err_t ledc_set_fade(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t
                      step_num,       //uint32_t duty_num,
                      duty_cyle_num,  //uint32_t duty_cycle,
                      duty_scale      //uint32_t duty_scale
-                     );
+                    );
     _ledc_fade_hw_release(speed_mode, channel);
     return ESP_OK;
 }
@@ -469,7 +703,7 @@ esp_err_t ledc_set_duty_with_hpoint(ledc_mode_t speed_mode, ledc_channel_t chann
                      1,               //uint32_t duty_num,
                      1,               //uint32_t duty_cycle,
                      0                //uint32_t duty_scale
-                     );
+                    );
     _ledc_fade_hw_release(speed_mode, channel);
     return ESP_OK;
 }
@@ -489,7 +723,7 @@ esp_err_t ledc_set_duty(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t
                      1,               //uint32_t duty_num,
                      1,               //uint32_t duty_cycle,
                      0                //uint32_t duty_scale
-                     );
+                    );
     _ledc_fade_hw_release(speed_mode, channel);
     return ESP_OK;
 }
@@ -551,7 +785,7 @@ static inline void ledc_calc_fade_end_channel(uint32_t *fade_end_status, uint32_
     *channel = i;
 }
 
-void IRAM_ATTR ledc_fade_isr(void* arg)
+void IRAM_ATTR ledc_fade_isr(void *arg)
 {
     bool cb_yield = false;
     portBASE_TYPE HPTaskAwoken = pdFALSE;
@@ -564,7 +798,7 @@ void IRAM_ATTR ledc_fade_isr(void* arg)
             continue;
         }
         ledc_hal_get_fade_end_intr_status(&(p_ledc_obj[speed_mode]->ledc_hal), &intr_status);
-        while(intr_status) {
+        while (intr_status) {
             ledc_calc_fade_end_channel(&intr_status, &channel);
 
             // clear interrupt
@@ -671,8 +905,8 @@ static esp_err_t ledc_fade_channel_init_check(ledc_mode_t speed_mode, ledc_chann
         xSemaphoreGive(s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem);
     }
     if (s_ledc_fade_rec[speed_mode][channel]
-        && s_ledc_fade_rec[speed_mode][channel]->ledc_fade_mux
-        && s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem) {
+            && s_ledc_fade_rec[speed_mode][channel]->ledc_fade_mux
+            && s_ledc_fade_rec[speed_mode][channel]->ledc_fade_sem) {
         return ESP_OK;
     } else {
         ledc_fade_channel_deinit(speed_mode, channel);
@@ -712,7 +946,7 @@ static esp_err_t _ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t
     if (scale > 0 && step_num > 0) {
         ledc_duty_config(speed_mode, channel, LEDC_VAL_NO_CHANGE, duty_cur, dir, step_num, cycle_num, scale);
         ESP_LOGD(LEDC_TAG, "cur duty: %d; target: %d, step: %d, cycle: %d; scale: %d; dir: %d\n",
-                duty_cur, target_duty, step_num, cycle_num, scale, dir);
+                 duty_cur, target_duty, step_num, cycle_num, scale, dir);
     } else {
         ledc_duty_config(speed_mode, channel, LEDC_VAL_NO_CHANGE, target_duty, dir, 0, 1, 0);
         ESP_LOGD(LEDC_TAG, "Set to target duty: %d", target_duty);
@@ -775,7 +1009,7 @@ esp_err_t ledc_set_fade_with_time(ledc_mode_t speed_mode, ledc_channel_t channel
     LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
     LEDC_ARG_CHECK(target_duty <= ledc_get_max_duty(speed_mode, channel), "target_duty");
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
-    LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK , LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
+    LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK, LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
 
     _ledc_fade_hw_acquire(speed_mode, channel);
     _ledc_set_fade_with_time(speed_mode, channel, target_duty, max_fade_time_ms);
@@ -791,7 +1025,7 @@ esp_err_t ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t channel
     LEDC_ARG_CHECK((cycle_num > 0) && (cycle_num <= LEDC_DUTY_CYCLE_MAX), "cycle_num");
     LEDC_ARG_CHECK(target_duty <= ledc_get_max_duty(speed_mode, channel), "target_duty");
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
-    LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK , LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
+    LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK, LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
 
     _ledc_fade_hw_acquire(speed_mode, channel);
     _ledc_set_fade_with_step(speed_mode, channel, target_duty, scale, cycle_num);
@@ -840,7 +1074,7 @@ esp_err_t ledc_cb_register(ledc_mode_t speed_mode, ledc_channel_t channel, ledc_
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
     LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
-    LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK , LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
+    LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK, LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
     s_ledc_fade_rec[speed_mode][channel]->ledc_fade_callback = cbs->fade_cb;
     s_ledc_fade_rec[speed_mode][channel]->cb_user_arg = user_arg;
     return ESP_OK;
@@ -856,7 +1090,7 @@ esp_err_t ledc_set_duty_and_update(ledc_mode_t speed_mode, ledc_channel_t channe
     LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
     LEDC_ARG_CHECK(duty <= ledc_get_max_duty(speed_mode, channel), "target_duty");
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
-    LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK , LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
+    LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK, LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
     _ledc_op_lock_acquire(speed_mode, channel);
     _ledc_fade_hw_acquire(speed_mode, channel);
     _ledc_set_fade_with_step(speed_mode, channel, duty, 0, 1);
@@ -872,7 +1106,7 @@ esp_err_t ledc_set_fade_time_and_start(ledc_mode_t speed_mode, ledc_channel_t ch
     LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
     LEDC_ARG_CHECK(fade_mode < LEDC_FADE_MAX, "fade_mode");
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
-    LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK , LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
+    LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK, LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
     LEDC_ARG_CHECK(target_duty <= ledc_get_max_duty(speed_mode, channel), "target_duty");
     _ledc_op_lock_acquire(speed_mode, channel);
     _ledc_fade_hw_acquire(speed_mode, channel);
@@ -891,7 +1125,7 @@ esp_err_t ledc_set_fade_step_and_start(ledc_mode_t speed_mode, ledc_channel_t ch
     LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
     LEDC_ARG_CHECK(fade_mode < LEDC_FADE_MAX, "fade_mode");
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
-    LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK , LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
+    LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK, LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
     LEDC_ARG_CHECK((scale > 0) && (scale <= LEDC_DUTY_SCALE_MAX), "fade scale");
     LEDC_ARG_CHECK((cycle_num > 0) && (cycle_num <= LEDC_DUTY_CYCLE_MAX), "cycle_num");
     LEDC_ARG_CHECK(target_duty <= ledc_get_max_duty(speed_mode, channel), "target_duty");

@@ -20,7 +20,7 @@
 #include "soc/i2c_periph.h"
 #include "esp_system.h"
 #include "soc/uart_struct.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "esp_rom_gpio.h"
 #include "hal/gpio_hal.h"
 #include "hal/uart_ll.h"

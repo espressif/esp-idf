@@ -251,7 +251,7 @@ function run_tests()
     # and therefore should rebuild
     assert_rebuilt esp-idf/newlib/CMakeFiles/${IDF_COMPONENT_PREFIX}_newlib.dir/newlib_init.c.obj
     assert_rebuilt esp-idf/nvs_flash/CMakeFiles/${IDF_COMPONENT_PREFIX}_nvs_flash.dir/src/nvs_api.cpp.obj
-    assert_rebuilt esp-idf/freertos/CMakeFiles/${IDF_COMPONENT_PREFIX}_freertos.dir/port/xtensa/xtensa_vectors.S.obj
+    assert_rebuilt esp-idf/freertos/CMakeFiles/${IDF_COMPONENT_PREFIX}_freertos.dir/FreeRTOS-Kernel/portable/xtensa/xtensa_vectors.S.obj
     mv sdkconfig.bak sdkconfig
 
     print_status "Updating project CMakeLists.txt triggers full recompile"
@@ -266,7 +266,7 @@ function run_tests()
     # similar to previous test
     assert_rebuilt esp-idf/newlib/CMakeFiles/${IDF_COMPONENT_PREFIX}_newlib.dir/newlib_init.c.obj
     assert_rebuilt esp-idf/nvs_flash/CMakeFiles/${IDF_COMPONENT_PREFIX}_nvs_flash.dir/src/nvs_api.cpp.obj
-    assert_rebuilt esp-idf/freertos/CMakeFiles/${IDF_COMPONENT_PREFIX}_freertos.dir/port/xtensa/xtensa_vectors.S.obj
+    assert_rebuilt esp-idf/freertos/CMakeFiles/${IDF_COMPONENT_PREFIX}_freertos.dir/FreeRTOS-Kernel/portable/xtensa/xtensa_vectors.S.obj
     mv sdkconfig.bak sdkconfig
 
     print_status "Can build with Ninja (no idf.py)"
@@ -437,14 +437,6 @@ function run_tests()
     unset other_target  # done changing target from the default
     clean_build_dir
     rm sdkconfig
-
-    print_status "Can build with auto generated CMakeLists.txt"
-    clean_build_dir
-    mv CMakeLists.txt CMakeLists.bak
-    ${IDF_PATH}/tools/cmake/convert_to_cmake.py .
-    idf.py build || failure "Auto generated CMakeLists.txt build failed"
-    mv CMakeLists.bak CMakeLists.txt
-    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
 
     print_status "Setting EXTRA_COMPONENT_DIRS works"
     clean_build_dir

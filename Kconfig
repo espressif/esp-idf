@@ -6,7 +6,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
     config IDF_CMAKE
         bool
-        option env="IDF_CMAKE"
+        default "y"
 
     config IDF_ENV_FPGA
         # This option is for internal use only
@@ -57,6 +57,14 @@ mainmenu "Espressif IoT Development Framework Configuration"
         select FREERTOS_UNICORE
         select IDF_TARGET_ARCH_RISCV
 
+    config IDF_TARGET_ESP8684
+        bool
+        default "y" if IDF_TARGET="esp8684"
+        select FREERTOS_UNICORE
+        select IDF_TARGET_ARCH_RISCV
+        select ESPTOOLPY_NO_STUB  # remove if ESPTOOL-303
+        select IDF_ENV_FPGA
+
     config IDF_TARGET_LINUX
         bool
         default "y" if IDF_TARGET="linux"
@@ -68,6 +76,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
         default 0x0005 if IDF_TARGET_ESP32C3
         default 0x0009 if IDF_TARGET_ESP32S3
         default 0x000A if IDF_TARGET_ESP32H2 # ESP32H2-TODO: IDF-3475
+        default 0x000C if IDF_TARGET_ESP8684
         default 0xFFFF
 
     menu "SDK tool configuration"
@@ -78,33 +87,11 @@ mainmenu "Espressif IoT Development Framework Configuration"
             default "xtensa-esp32s3-elf-" if IDF_TARGET_ESP32S3
             default "riscv32-esp-elf-" if IDF_TARGET_ESP32C3
             default "riscv32-esp-elf-" if IDF_TARGET_ESP32H2
+            default "riscv32-esp-elf-" if IDF_TARGET_ESP8684
 
             help
                 The prefix/path that is used to call the toolchain. The default setting assumes
                 a crosstool-ng gcc setup that is in your PATH.
-
-        config SDK_PYTHON
-            string "Python interpreter"
-            depends on !IDF_CMAKE
-            default "python"
-            help
-                The executable name/path that is used to run python.
-
-                (Note: This option is used with the legacy GNU Make build system only.)
-
-        config SDK_MAKE_WARN_UNDEFINED_VARIABLES
-            bool "'make' warns on undefined variables"
-            depends on !IDF_CMAKE
-            default "y"
-            help
-                Adds --warn-undefined-variables to MAKEFLAGS. This causes make to
-                print a warning any time an undefined variable is referenced.
-
-                This option helps find places where a variable reference is misspelled
-                or otherwise missing, but it can be unwanted if you have Makefiles which
-                depend on undefined variables expanding to an empty string.
-
-                (Note: this option is used with the legacy GNU Make build system only.)
 
         config SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS
             bool "Toolchain supports time_t wide 64-bits"
@@ -200,6 +187,14 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
         config APP_BUILD_USE_FLASH_SECTIONS
             bool # Whether to place code/data into memory-mapped flash sections
+
+        config APP_REPRODUCIBLE_BUILD
+            bool "Enable reproducible build"
+            default n
+            select COMPILER_HIDE_PATHS_MACROS
+            help
+                If enabled, all date, time, and path information would be eliminated. A .gdbinit file would be create
+                automatically. (or will be append if you have one already)
 
     endmenu # Build type
 
@@ -297,7 +292,6 @@ mainmenu "Espressif IoT Development Framework Configuration"
         menuconfig COMPILER_HIDE_PATHS_MACROS
             bool "Replace ESP-IDF and project paths in binaries"
             default y
-            depends on IDF_CMAKE
             help
                 When expanding the __FILE__ and __BASE_FILE__ macros, replace paths inside ESP-IDF
                 with paths relative to the placeholder string "IDF", and convert paths inside the

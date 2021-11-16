@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // The LL layer for LEDC register operations.
 // Note that most of the register operations in this layer are non-atomic operations.
@@ -26,6 +18,13 @@ extern "C" {
 #endif
 
 #define LEDC_LL_GET_HW() &LEDC
+#define LEDC_LL_FRACTIONAL_BITS    (8)
+#define LEDC_LL_FRACTIONAL_MAX     ((1 << LEDC_LL_FRACTIONAL_BITS) - 1)
+#define LEDC_LL_GLOBAL_CLOCKS { \
+                                LEDC_SLOW_CLK_APB, \
+                                LEDC_SLOW_CLK_XTAL, \
+                                LEDC_SLOW_CLK_RTC8M, \
+                              }
 
 /**
  * @brief Set LEDC low speed timer clock
@@ -156,27 +155,6 @@ static inline void ledc_ll_get_clock_divider(ledc_dev_t *hw, ledc_mode_t speed_m
 }
 
 /**
- * @brief Set LEDC timer clock source
- *
- * @param hw Beginning address of the peripheral registers
- * @param speed_mode LEDC speed_mode, high-speed mode or low-speed mode
- * @param timer_sel LEDC timer index (0-3), select from ledc_timer_t
- * @param clk_src Timer clock source
- *
- * @return None
- */
-static inline void ledc_ll_set_clock_source(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_timer_t timer_sel, ledc_clk_src_t clk_src)
-{
-    if (clk_src == LEDC_REF_TICK) {
-        //REF_TICK can only be used when APB is selected.
-        hw->timer_group[speed_mode].timer[timer_sel].conf.tick_sel = 1;
-        hw->conf.apb_clk_sel = 1;
-    } else {
-        hw->timer_group[speed_mode].timer[timer_sel].conf.tick_sel = 0;
-    }
-}
-
-/**
  * @brief Get LEDC timer clock source
  *
  * @param hw Beginning address of the peripheral registers
@@ -188,11 +166,7 @@ static inline void ledc_ll_set_clock_source(ledc_dev_t *hw, ledc_mode_t speed_mo
  */
 static inline void ledc_ll_get_clock_source(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_timer_t timer_sel, ledc_clk_src_t *clk_src)
 {
-    if (hw->timer_group[speed_mode].timer[timer_sel].conf.tick_sel == 1) {
-        *clk_src = LEDC_REF_TICK;
-    } else {
-        *clk_src = LEDC_APB_CLK;
-    }
+    *clk_src = LEDC_APB_CLK;
 }
 
 /**

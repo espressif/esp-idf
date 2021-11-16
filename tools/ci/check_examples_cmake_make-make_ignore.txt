@@ -1,6 +1,0 @@
-build_system/cmake
-temp_
-examples/bluetooth/bluedroid/ble_50/
-examples/cxx/experimental/blink_cxx
-examples/cxx/experimental/esp_modem_cxx/
-examples/cxx/experimental/simple_spi_rw_example

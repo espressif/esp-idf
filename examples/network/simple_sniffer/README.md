@@ -29,7 +29,7 @@ Open the project configuration menu (`idf.py menuconfig`). Then go into `Example
 - Select where to save the pcap file in `Select destination to store pcap file` menu item.
   - `SD Card` means saving packets (pcap format) into the SD card you plug in. The default SD card work mode is set to SDMMC for target ESP32 and ESP32S3, but SPI is the only choice for other targets.
   - `Memory` means saving packets in memory and can parse packets in place.
-  - `JTAG (App Trace)` means sending packets (pcap format) to host via JTAG interface. This feature depends on [app trace component](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html), Component config -> Application Lelvel Tracing -> Data Destination -> Trace memory should be enabled to choose `JTAG (App Trace)` as destination.
+  - `JTAG (App Trace)` means sending packets (pcap format) to host via JTAG interface. This feature depends on [app trace component](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html), Component config -> Application Level Tracing -> Data Destination -> JTAG should be enabled to choose `JTAG (App Trace)` as destination.
 - Set the mount point in your filesystem in `SD card mount point in the filesystem` menu item. This configuration only takes effect when you choose to save packets into SD card.
 - Set max name length of pcap file in `Max name length of pcap file` menu item.
 - Set the length of sniffer work queue in `Length of sniffer work queue` menu item.
@@ -135,7 +135,7 @@ Press TAB when typing command name to auto-complete.
 sniffer> mount sd
 I (12653) example: Initializing SD card
 I (12653) example: Using SDMMC peripheral
-I (12663) gpio: GPIO[13]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 
+I (12663) gpio: GPIO[13]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
 Name: SC64G
 Type: SDHC/SDXC
 Speed: 20 MHz

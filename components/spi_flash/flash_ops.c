@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,12 +45,17 @@
 #include "esp32h2/rom/cache.h"
 #include "esp32h2/rom/spi_flash.h"
 #include "esp32h2/clk.h"
+#elif CONFIG_IDF_TARGET_ESP8684
+#include "esp8684/rom/cache.h"
+#include "esp8684/rom/spi_flash.h"
+#include "esp_private/esp_clk.h"
 #endif
 #include "esp_flash_partitions.h"
 #include "cache_utils.h"
 #include "esp_flash.h"
 #include "esp_attr.h"
 #include "bootloader_flash.h"
+#include "esp_compiler.h"
 
 esp_rom_spiflash_result_t IRAM_ATTR spi_flash_write_encrypted_chip(size_t dest_addr, const void *src, size_t size);
 
@@ -254,7 +259,9 @@ static inline void IRAM_ATTR spi_flash_guard_op_unlock(void)
 static void IRAM_ATTR spi_flash_os_yield(void)
 {
 #ifdef CONFIG_SPI_FLASH_YIELD_DURING_ERASE
-    vTaskDelay(CONFIG_SPI_FLASH_ERASE_YIELD_TICKS);
+    if (likely(xTaskGetSchedulerState() == taskSCHEDULER_RUNNING)) {
+        vTaskDelay(CONFIG_SPI_FLASH_ERASE_YIELD_TICKS);
+    }
 #endif
 }
 

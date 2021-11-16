@@ -1,3 +1,6 @@
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
 # UART RS485 Echo Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
@@ -9,7 +12,7 @@ The approach demonstrated in this example can be used in user application to tra
 ## How to use example
 
 ### Hardware Required
-PC + USB Serial adapter connected to USB port + RS485 line drivers + ESP32, ESP32-S or ESP32-C series based board.
+PC + USB Serial adapter connected to USB port + RS485 line drivers + Espressif development board.
 The MAX485 line driver is used for example below but other similar chips can be used as well.
 
 #### RS485 example connection circuit schematic:
@@ -20,7 +23,7 @@ The MAX485 line driver is used for example below but other similar chips can be 
          RXD <------| RO            |               |             RO|-----> RXD
                     |              B|---------------|B              |
          TXD ------>| DI  MAX485    |    \  /       |    MAX485   DI|<----- TXD
-ESP dev kit         |               |   RS-485 side |               |  SERIAL ADAPTER SIDE
+ESP32 BOARD         |               |   RS-485 side |               |  SERIAL ADAPTER SIDE
          RTS --+--->| DE            |    /  \       |             DE|---+
                |    |              A|---------------|A              |   |
                +----| /RE           |               |            /RE|---+-- RTS
@@ -29,19 +32,20 @@ ESP dev kit         |               |   RS-485 side |               |  SERIAL AD
                            ---                             ---
 ```
 
-#### Connect an external RS485 serial interface to an ESP board
-Connect USB to RS485 adapter to computer and connect its D+, D- output lines with the D+, D- lines of RS485 line driver connected to the ESP board (See picture above). To view or adjust default pins please see the `Echo RS485 Example Configuration` submenu in `idf.py menuconfig`.
+#### Connect an external RS485 serial interface to an ESP32 board
+Connect a USB-to-RS485 adapter to a computer, then connect the adapter's A/B output lines with the corresponding A/B output lines of the RS485 line driver connected to the ESP32 chip (see figure above).
 ```
-  --------------------------------------------------------------------------------------------------
-  | ESP Interface         | #define            | Default ESP Pin       | External RS485 Driver Pin |
-  | ----------------------|--------------------|-----------------------|---------------------------|
-  | Transmit Data (TxD)   | CONFIG_MB_UART_TXD | CONFIG_ECHO_UART_TXD  | DI                        |
-  | Receive Data (RxD)    | CONFIG_MB_UART_RXD | CONFIG_ECHO_UART_RXD  | RO                        |
-  | Request To Send (RTS) | CONFIG_MB_UART_RTS | CONFIG_ECHO_UART_RTS  | ~RE/DE                    |
-  | Ground                | n/a                | GND                   | GND                       |
-  --------------------------------------------------------------------------------------------------
+  --------------------------------------------------------------------------------------------------------------------------
+  |  UART Interface       | #define            | Default ESP32 Pin     | Default pins for      | External RS485 Driver Pin |
+  |                       |                    |                       | ESP32-S2(S3, C3)      |                           |
+  | ----------------------|--------------------|-----------------------|-----------------------|---------------------------|
+  | Transmit Data (TxD)   | CONFIG_MB_UART_TXD | GPIO23                | GPIO9                 | DI                        |
+  | Receive Data (RxD)    | CONFIG_MB_UART_RXD | GPIO22                | GPIO8                 | RO                        |
+  | Request To Send (RTS) | CONFIG_MB_UART_RTS | GPIO18                | GPIO10                | ~RE/DE                    |
+  | Ground                | n/a                | GND                   | GND                   | GND                       |
+  --------------------------------------------------------------------------------------------------------------------------
 ```
-Note: Some GPIOs can not be used with some chip because they are used for flash chip connection. Please refer to UART documentation for selected target.
+Note: Each target chip has different GPIO pins available for UART connection. Please refer to UART documentation for selected target for more information.
 
 ### Configure the project
 ```

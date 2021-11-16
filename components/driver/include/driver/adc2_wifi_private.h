@@ -11,6 +11,7 @@ extern "C" {
 #endif
 
 #include "esp_err.h"
+#include "soc/soc_caps.h"
 
 /**
  * @brief For WIFI module to claim the usage of ADC2.
@@ -35,7 +36,7 @@ esp_err_t adc2_wifi_acquire(void);
  */
 esp_err_t adc2_wifi_release(void);
 
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3
 /**
  * @brief This API help ADC2 calibration constructor be linked.
  *

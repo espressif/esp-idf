@@ -8,6 +8,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "esp_err.h"
 #include "esp_intr_alloc.h"
 #include "test_usb_mock_classes.h"
 #include "msc_client.h"
@@ -71,7 +72,7 @@ TEST_CASE("Test USB Host async (single client)", "[usb_host][ignore]")
         usb_host_lib_handle_events(portMAX_DELAY, &event_flags);
         if (event_flags & USB_HOST_LIB_EVENT_FLAGS_NO_CLIENTS) {
             printf("No more clients\n");
-            TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_free_all());
+            TEST_ASSERT_EQUAL(ESP_ERR_NOT_FINISHED, usb_host_device_free_all());
         }
         if (event_flags & USB_HOST_LIB_EVENT_FLAGS_ALL_FREE) {
             break;
@@ -143,7 +144,7 @@ TEST_CASE("Test USB Host async (multi client)", "[usb_host][ignore]")
         usb_host_lib_handle_events(portMAX_DELAY, &event_flags);
         if (event_flags & USB_HOST_LIB_EVENT_FLAGS_NO_CLIENTS) {
             printf("No more clients\n");
-            TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_free_all());
+            TEST_ASSERT_EQUAL(ESP_ERR_NOT_FINISHED, usb_host_device_free_all());
         }
         if (event_flags & USB_HOST_LIB_EVENT_FLAGS_ALL_FREE) {
             break;

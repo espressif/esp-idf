@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 |
-| ----------------- | ----- |
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- | -------- |
 
 # Modbus Master Example
 
@@ -58,11 +58,11 @@ Modbus multi slave segment connection schematic:
 
 ## Hardware required :
 Option 1:
-PC (Modbus Slave app) + USB Serial adapter connected to USB port + RS485 line drivers + ESP32 WROVER-KIT board. 
+PC (Modbus Slave app) + USB Serial adapter connected to USB port + RS485 line drivers + ESP32 based board  
 
 Option 2:
-Several ESP32 WROVER-KIT board flashed with modbus_slave example software to represent slave device with specific slave address (See CONFIG_MB_SLAVE_ADDR). The slave addresses for each board have to be configured as defined in "connection schematic" above.
-One ESP32 WROVER-KIT board flashed with modbus_master example. All the boards require connection of RS485 line drivers (see below).
+Several ESP32 boards flashed with modbus_slave example software to represent slave device with specific slave address (See CONFIG_MB_SLAVE_ADDR). The slave addresses for each board have to be configured as defined in "connection schematic" above.
+One ESP32 board flashed with modbus_master example. All the boards require connection of RS485 line drivers (see below).
 
 The MAX485 line driver is used as an example below but other similar chips can be used as well.
 RS485 example circuit schematic for connection of master and slave devices into segment:
@@ -73,8 +73,8 @@ RS485 example circuit schematic for connection of master and slave devices into 
          RXD <------| RO            | DIFFERENTIAL  |             RO|-----> RXD
                     |              B|---------------|B              |
          TXD ------>| DI   MAX485   |    \  /       |    MAX485   DI|<----- TXD
-ESP32 WROVER KIT 1  |               |   RS-485 side |               |      External PC (emulator) with USB to serial or
-         RTS --+--->| DE            |    /  \       |             DE|---+  ESP32 WROVER KIT 2 (slave)     
+ESP32 BOARD         |               |   RS-485 side |               |      External PC (emulator) with USB to serial or
+         RTS --+--->| DE            |    /  \       |             DE|---+  ESP32 BOARD (slave)
                |    |              A|---------------|A              |   |
                +----| /RE           |    PAIR       |            /RE|---+-- RTS
                     +-------x-------+               +-------x-------+
@@ -96,17 +96,18 @@ Define the communication mode parameter for master and slave in Kconfig - CONFIG
 Configure the slave address for each slave in the Modbus segment (the CONFIG_MB_SLAVE_ADDR in Kconfig).
 ```
   --------------------------------------------------------------------------------------------------------------------------
-  | ESP32 Interface       | #define            | Default ESP32 Pin     | Default ESP32-S2 Pins | External RS485 Driver Pin |
+  |  UART Interface       | #define            | Default ESP32 Pin     | Default pins for      | External RS485 Driver Pin |
+  |                       |                    |                       | ESP32-S2(S3, C3)      |                           |
   | ----------------------|--------------------|-----------------------|-----------------------|---------------------------|
-  | Transmit Data (TxD)   | CONFIG_MB_UART_TXD | GPIO23                | GPIO20                | DI                        |
-  | Receive Data (RxD)    | CONFIG_MB_UART_RXD | GPIO22                | GPIO19                | RO                        |
-  | Request To Send (RTS) | CONFIG_MB_UART_RTS | GPIO18                | GPIO18                | ~RE/DE                    |
+  | Transmit Data (TxD)   | CONFIG_MB_UART_TXD | GPIO23                | GPIO9                 | DI                        |
+  | Receive Data (RxD)    | CONFIG_MB_UART_RXD | GPIO22                | GPIO8                 | RO                        |
+  | Request To Send (RTS) | CONFIG_MB_UART_RTS | GPIO18                | GPIO10                | ~RE/DE                    |
   | Ground                | n/a                | GND                   | GND                   | GND                       |
   --------------------------------------------------------------------------------------------------------------------------
 ```
-Note: The GPIO22 - GPIO25 can not be used with ESP32-S2 chip because they are used for flash chip connection. Please refer to UART documentation for selected target.
+Note: Each target chip has different GPIO pins available for UART connection. Please refer to UART documentation for selected target for more information.
 
-Connect USB to RS485 adapter to computer and connect its D+, D- output lines with the D+, D- lines of RS485 line driver connected to ESP32 (See picture above).
+Connect a USB-to-RS485 adapter to a computer, then connect the adapter's A/B output lines with the corresponding A/B output lines of the RS485 line driver connected to the ESP32 chip (see figure above).
 
 The communication parameters of Modbus stack allow to configure it appropriately but usually it is enough to use default settings.
 See the help string of parameters for more information.
@@ -116,7 +117,7 @@ Option 1:
 Configure the external Modbus master software according to port configuration parameters used in the example. The Modbus Slave application can be used with this example to emulate slave devices with its parameters. Use official documentation for software to setup emulation of slave devices.
 
 Option 2:
-Other option is to have the modbus_slave example application flashed into ESP32 WROVER KIT board and connect boards together as showed on the Modbus connection schematic above. See the Modbus slave API documentation to configure communication parameters and slave addresses as defined in "Example parameters definition" table above.
+Other option is to have the modbus_slave example application flashed into ESP32 based board and connect boards together as showed on the Modbus connection schematic above. See the Modbus slave API documentation to configure communication parameters and slave addresses as defined in "Example parameters definition" table above.
 
 ### Build and flash software of master device
 Build the project and flash it to the board, then run monitor tool to view serial output:

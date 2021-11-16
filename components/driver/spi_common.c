@@ -18,7 +18,7 @@
 #include "soc/soc_pins.h"
 #include "soc/lldesc.h"
 #include "driver/gpio.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "esp_heap_caps.h"
 #include "driver/spi_common_internal.h"
 #include "stdatomic.h"

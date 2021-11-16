@@ -56,6 +56,10 @@
 #include "esp32h2/clk.h"
 #include "esp32h2/pm.h"
 #include "driver/gpio.h"
+#elif CONFIG_IDF_TARGET_ESP8684
+#include "esp_private/esp_clk.h"
+#include "esp8684/pm.h"
+#include "driver/gpio.h"
 #endif
 
 #define MHZ (1000000)
@@ -95,6 +99,9 @@
 #elif CONFIG_IDF_TARGET_ESP32H2
 #define REF_CLK_DIV_MIN 2
 #define DEFAULT_CPU_FREQ CONFIG_ESP32H2_DEFAULT_CPU_FREQ_MHZ
+#elif CONFIG_IDF_TARGET_ESP8684
+#define REF_CLK_DIV_MIN 2
+#define DEFAULT_CPU_FREQ CONFIG_ESP8684_DEFAULT_CPU_FREQ_MHZ
 #endif
 
 #ifdef CONFIG_PM_PROFILING
@@ -229,6 +236,8 @@ esp_err_t esp_pm_configure(const void* vconfig)
     const esp_pm_config_esp32c3_t* config = (const esp_pm_config_esp32c3_t*) vconfig;
 #elif CONFIG_IDF_TARGET_ESP32H2
     const esp_pm_config_esp32h2_t* config = (const esp_pm_config_esp32h2_t*) vconfig;
+#elif CONFIG_IDF_TARGET_ESP8684
+    const esp_pm_config_esp8684_t* config = (const esp_pm_config_esp8684_t*) vconfig;
 #endif
 
 #ifndef CONFIG_FREERTOS_USE_TICKLESS_IDLE
@@ -337,6 +346,8 @@ esp_err_t esp_pm_get_configuration(void* vconfig)
     esp_pm_config_esp32c3_t* config = (esp_pm_config_esp32c3_t*) vconfig;
 #elif CONFIG_IDF_TARGET_ESP32H2
     esp_pm_config_esp32h2_t* config = (esp_pm_config_esp32h2_t*) vconfig;
+#elif CONFIG_IDF_TARGET_ESP8684
+    esp_pm_config_esp8684_t* config = (esp_pm_config_esp8684_t*) vconfig;
 #endif
 
     portENTER_CRITICAL(&s_switch_lock);
@@ -528,6 +539,10 @@ static void IRAM_ATTR do_switch(pm_mode_t new_mode)
  */
 static void IRAM_ATTR update_ccompare(void)
 {
+#if CONFIG_PM_UPDATE_CCOMPARE_HLI_WORKAROUND
+    /* disable level 4 and below */
+    uint32_t irq_status = XTOS_SET_INTLEVEL(XCHAL_DEBUGLEVEL - 2);
+#endif
     uint32_t ccount = cpu_hal_get_cycle_count();
     uint32_t ccompare = XTHAL_GET_CCOMPARE(XT_TIMER_INDEX);
     if ((ccompare - CCOMPARE_MIN_CYCLES_IN_FUTURE) - ccount < UINT32_MAX / 2) {
@@ -538,6 +553,9 @@ static void IRAM_ATTR update_ccompare(void)
             XTHAL_SET_CCOMPARE(XT_TIMER_INDEX, new_ccompare);
         }
     }
+#if CONFIG_PM_UPDATE_CCOMPARE_HLI_WORKAROUND
+    XTOS_RESTORE_INTLEVEL(irq_status);
+#endif
 }
 #endif // CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
 
@@ -766,6 +784,8 @@ void esp_pm_impl_init(void)
     esp_pm_config_esp32c3_t cfg = {
 #elif CONFIG_IDF_TARGET_ESP32H2
     esp_pm_config_esp32h2_t cfg = {
+#elif CONFIG_IDF_TARGET_ESP8684
+    esp_pm_config_esp8684_t cfg = {
 #endif
         .max_freq_mhz = DEFAULT_CPU_FREQ,
         .min_freq_mhz = xtal_freq,

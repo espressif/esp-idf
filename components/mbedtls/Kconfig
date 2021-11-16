@@ -239,7 +239,7 @@ menu "mbedTLS"
     config MBEDTLS_HARDWARE_AES
         bool "Enable hardware AES acceleration"
         default y
-        depends on !SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST
+        depends on !SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST && !IDF_TARGET_ESP8684
         help
             Enable hardware accelerated AES encryption & decryption.
 
@@ -271,7 +271,7 @@ menu "mbedTLS"
     config MBEDTLS_HARDWARE_MPI
         bool "Enable hardware MPI (bignum) acceleration"
         default y
-        depends on !SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST
+        depends on !SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST && !IDF_TARGET_ESP8684
         help
             Enable hardware accelerated multiple precision integer operations.
 
@@ -426,7 +426,7 @@ menu "mbedTLS"
 
         config MBEDTLS_KEY_EXCHANGE_DHE_PSK
             bool "Enable DHE-PSK based ciphersuite modes"
-            depends on MBEDTLS_PSK_MODES
+            depends on MBEDTLS_PSK_MODES && MBEDTLS_DHM_C
             default y
             help
                 Enable to support Diffie-Hellman PSK (pre-shared-key) TLS authentication modes.
@@ -454,6 +454,7 @@ menu "mbedTLS"
         config MBEDTLS_KEY_EXCHANGE_DHE_RSA
             bool "Enable DHE-RSA based ciphersuite modes"
             default y
+            depends on MBEDTLS_DHM_C
             help
                 Enable to support ciphersuites with prefix TLS-DHE-RSA-WITH-
 
@@ -716,6 +717,16 @@ menu "mbedTLS"
         bool  "Elliptic Curve Ciphers"
         default y
 
+    config MBEDTLS_DHM_C
+        bool "Diffie-Hellman-Merkle key exchange (DHM)"
+        default n
+        help
+            Enable DHM. Needed to use DHE-xxx TLS ciphersuites.
+
+            Note that the security of Diffie-Hellman key exchanges depends on
+            a suitable prime being used for the exchange. Please see detailed
+            warning text about this in file `mbedtls/dhm.h` file.
+
     config MBEDTLS_ECDH_C
         bool "Elliptic Curve Diffie-Hellman (ECDH)"
         depends on MBEDTLS_ECP_C
@@ -882,7 +893,7 @@ menu "mbedTLS"
     config MBEDTLS_LARGE_KEY_SOFTWARE_MPI
         bool "Fallback to software implementation for larger MPI values"
         depends on MBEDTLS_HARDWARE_MPI
-        default y if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32H2  # HW max 3072 bits
+        default y if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32H2 || IDF_TARGET_ESP8684  # HW max 3072 bits
         default n
         help
             Fallback to software implementation for RSA key lengths

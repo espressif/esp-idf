@@ -8,64 +8,64 @@ idf_build_get_property(target IDF_TARGET)
 
 if(CONFIG_IDF_TARGET_ARCH_XTENSA)
     set(srcs
-        "port/xtensa/port.c"
-        "port/xtensa/portasm.S"
-        "port/xtensa/xtensa_context.S"
-        "port/xtensa/xtensa_init.c"
-        "port/xtensa/xtensa_overlay_os_hook.c"
-        "port/xtensa/xtensa_vector_defaults.S"
-        "port/xtensa/xtensa_vectors.S")
+        "FreeRTOS-Kernel/portable/xtensa/port.c"
+        "FreeRTOS-Kernel/portable/xtensa/portasm.S"
+        "FreeRTOS-Kernel/portable/xtensa/xtensa_context.S"
+        "FreeRTOS-Kernel/portable/xtensa/xtensa_init.c"
+        "FreeRTOS-Kernel/portable/xtensa/xtensa_overlay_os_hook.c"
+        "FreeRTOS-Kernel/portable/xtensa/xtensa_vector_defaults.S"
+        "FreeRTOS-Kernel/portable/xtensa/xtensa_vectors.S")
 
     set(include_dirs
-        include
-        include/esp_additions/freertos  # For files with #include "FreeRTOSConfig.h"
-        port/xtensa/include             # For including arch-specific FreeRTOSConfig_arch.h in port/<arch>/include
-        include/esp_additions)          # For files with #include "freertos/FreeRTOSConfig.h"
+        FreeRTOS-Kernel/include
+        esp_additions/include/freertos              # For files with #include "FreeRTOSConfig.h"
+        FreeRTOS-Kernel/portable/xtensa/include     # For arch-specific FreeRTOSConfig_arch.h in portable/<arch>/include
+        esp_additions/include)                      # For files with #include "freertos/FreeRTOSConfig.h"
 
     set(private_include_dirs
-        port/xtensa/include/freertos
-        port/xtensa
-        port/priv_include
+        FreeRTOS-Kernel/portable/xtensa/include/freertos
+        FreeRTOS-Kernel/portable/xtensa
+        FreeRTOS-Kernel/portable/priv_include
         .)
 
 elseif(CONFIG_IDF_TARGET_ARCH_RISCV)
     set(srcs
-        "port/riscv/port.c"
-        "port/riscv/portasm.S")
+        "FreeRTOS-Kernel/portable/riscv/port.c"
+        "FreeRTOS-Kernel/portable/riscv/portasm.S")
 
     set(include_dirs
-        include
-        include/esp_additions/freertos  # For files with #include "FreeRTOSConfig.h"
-        port/riscv/include              # For including arch-specific FreeRTOSConfig_arch.h in port/<arch>/include
-        include/esp_additions)          # For files with #include "freertos/FreeRTOSConfig.h"
+        FreeRTOS-Kernel/include
+        esp_additions/include/freertos              # For files with #include "FreeRTOSConfig.h"
+        FreeRTOS-Kernel/portable/riscv/include      # For arch-specific FreeRTOSConfig_arch.h in portable/<arch>/include
+        esp_additions/include)                      # For files with #include "freertos/FreeRTOSConfig.h"
 
     set(private_include_dirs
-        port/riscv/include/freertos
-        port/riscv
-        port/priv_include
+        FreeRTOS-Kernel/portable/riscv/include/freertos
+        FreeRTOS-Kernel/portable/riscv
+        FreeRTOS-Kernel/portable/priv_include
         .)
 
 endif()
 
 list(APPEND srcs
     "esp_additions/task_snapshot.c"
-    "port/port_common.c"
-    "port/port_systick.c"
-    "croutine.c"
-    "event_groups.c"
-    "list.c"
-    "queue.c"
-    "tasks.c"
-    "timers.c"
-    "stream_buffer.c"
+    "FreeRTOS-Kernel/portable/port_common.c"
+    "FreeRTOS-Kernel/portable/port_systick.c"
+    "FreeRTOS-Kernel/croutine.c"
+    "FreeRTOS-Kernel/event_groups.c"
+    "FreeRTOS-Kernel/list.c"
+    "FreeRTOS-Kernel/queue.c"
+    "FreeRTOS-Kernel/tasks.c"
+    "FreeRTOS-Kernel/timers.c"
+    "FreeRTOS-Kernel/stream_buffer.c"
     "FreeRTOS-openocd.c"
-    "freertos_v8_compat.c")
+    "esp_additions/freertos_v8_compat.c")
 
 list(APPEND private_include_dirs
-    "include/freertos")
+    "FreeRTOS-Kernel/include/freertos")
 
 if(CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
-    list(APPEND srcs "port/xtensa/xtensa_loadstore_handler.S")
+    list(APPEND srcs "FreeRTOS-Kernel/portable/xtensa/xtensa_loadstore_handler.S")
 endif()
 
 # esp_timer is required by FreeRTOS because we use esp_tiemr_get_time() to do profiling

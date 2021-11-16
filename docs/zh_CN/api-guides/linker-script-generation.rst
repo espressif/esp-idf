@@ -45,18 +45,6 @@
 
 首先，用户需要创建链接器片段文件。链接器片段文件是一个扩展名为 ``.lf`` 的文本文件，想要存放的位置信息会写入该文件内。文件创建成功后，需要将其呈现在构建系统中。ESP-IDF 支持的构建系统指南如下：
 
-Make
-""""
-
-在组件目录的 ``component.mk`` 文件中设置 ``COMPONENT_ADD_LDFRAGMENTS`` 变量的值，使其指向已创建的链接器片段文件。路径可以为绝对路径，也可以为组件目录的相对路径。
-
-.. code-block:: make
-
-    COMPONENT_ADD_LDFRAGMENTS += my_linker_fragment_file.lf
-
-CMake
-"""""
-
 在组件目录的 ``CMakeLists.txt`` 文件中，指定 ``idf_component_register`` 调用引数 ``LDFRAGMENTS`` 的值。``LDFRAGMENTS`` 可以为绝对路径，也可为组件目录的相对路径，指向已创建的链接器片段文件。
 
 .. code-block:: cmake

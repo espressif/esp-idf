@@ -19,7 +19,11 @@
 extern "C" {
 #endif
 
+#if CONFIG_IDF_TARGET_ESP8684
+typedef struct mbedtls_md5_context mbedtls_md5_context;
+#else
 typedef struct MD5Context mbedtls_md5_context;
+#endif
 
 /**
  * \brief          Initialize MD5 context

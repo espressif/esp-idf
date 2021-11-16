@@ -68,6 +68,13 @@ void phy_close_rf(void);
 void phy_xpd_tsens(void);
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32C3
+/**
+ * @brief Update internal state of PHY when wifi deinit powers off the wifi power domain.
+ */
+void phy_init_flag(void);
+#endif
+
 /**
  * @brief Store and load PHY digital registers.
  *
@@ -83,6 +90,13 @@ uint8_t phy_dig_reg_backup(bool backup_en, uint32_t *mem_addr);
  * @brief Store and load baseband registers.
  */
 void phy_freq_mem_backup(bool backup_en, uint32_t *mem);
+#endif
+
+#if CONFIG_ESP_PHY_ENABLE_USB
+/**
+ * @brief Enable or disable USB when phy init.
+ */
+void phy_bbpll_en_usb(bool en);
 #endif
 
 #ifdef __cplusplus

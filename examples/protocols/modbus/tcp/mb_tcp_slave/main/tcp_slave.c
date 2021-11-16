@@ -329,7 +329,7 @@ static esp_err_t slave_init(mb_communication_info_t* comm_info)
     reg_area.type = MB_PARAM_HOLDING; // Set type of register area
     reg_area.start_offset = MB_REG_HOLDING_START_AREA0; // Offset of register area in Modbus protocol
     reg_area.address = (void*)&holding_reg_params.holding_data0; // Set pointer to storage instance
-    reg_area.size = sizeof(float) << 2; // Set the size of register storage instance
+    reg_area.size = (MB_REG_HOLDING_START_AREA1 - MB_REG_HOLDING_START_AREA0) << 1; // Set the size of register storage instance
     err = mbc_slave_set_descriptor(reg_area);
     ESP_RETURN_ON_FALSE((err == ESP_OK), ESP_ERR_INVALID_STATE,
                                     SLAVE_TAG,

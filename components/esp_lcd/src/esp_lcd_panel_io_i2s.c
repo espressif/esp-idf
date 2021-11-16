@@ -32,7 +32,7 @@
 #include "hal/dma_types.h"
 #include "hal/gpio_hal.h"
 #include "driver/gpio.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #if SOC_I2S_LCD_I80_VARIANT
 #include "esp_private/i2s_platform.h"
 #include "soc/lcd_periph.h"

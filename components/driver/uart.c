@@ -21,7 +21,7 @@
 #include "driver/uart.h"
 #include "driver/gpio.h"
 #include "driver/uart_select.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "sdkconfig.h"
 #include "esp_rom_gpio.h"
 
@@ -35,6 +35,8 @@
 #include "esp32c3/clk.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/clk.h"
+#elif CONFIG_IDF_TARGET_ESP8684
+#include "esp_private/esp_clk.h"
 #endif
 
 #ifdef CONFIG_UART_ISR_IN_IRAM

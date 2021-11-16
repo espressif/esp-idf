@@ -22,6 +22,9 @@
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   3
 #define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS   1
 #define SOC_ICACHE_ACCESS_RODATA_SUPPORTED  1
+#define SOC_RTC_FAST_MEM_SUPPORTED        1
+#define SOC_RTC_SLOW_MEM_SUPPORTED        0
+#define SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY               1
 
 /*-------------------------- AES CAPS -----------------------------------------*/
 #define SOC_AES_SUPPORT_DMA     (1)

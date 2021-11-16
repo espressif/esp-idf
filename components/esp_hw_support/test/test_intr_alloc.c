@@ -16,7 +16,7 @@
 #include "freertos/queue.h"
 #include "unity.h"
 #include "esp_intr_alloc.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "driver/timer.h"
 #include "soc/soc_caps.h"
 #include "soc/spi_periph.h"

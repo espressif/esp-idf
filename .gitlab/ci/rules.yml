@@ -75,6 +75,8 @@
 
   - "tools/unit-test-app/**/*"
 
+  - "components/**/*"
+
 .patterns-component_ut: &patterns-component_ut
   - "tools/ci/python_packages/gitlab_api.py"
   - "tools/ci/python_packages/tiny_test_fw/**/*"
@@ -85,7 +87,7 @@
   - "tools/find_apps.py"
   - "tools/find_build_apps/**/*"
 
-  - "components/**/test_apps/**/*"
+  - "components/**/*"
 
 .patterns-integration_test: &patterns-integration_test
   - "tools/ci/python_packages/tiny_test_fw/**/*"
@@ -96,7 +98,6 @@
   - "components/**/*"
 
   - "tools/ci/test_autocomplete.py"
-  - "tools/ci/test_build_system.sh"
   - "tools/ci/test_build_system_cmake.sh"
   - "tools/ci/test_check_kconfigs.py"
   - "tools/ci/test_configure_ci_environment.sh"
@@ -130,6 +131,8 @@
 
   - "tools/detect_python.sh"
   - "tools/detect_python.fish"
+
+  - "tools/ci/test_reproducible_build.sh"
 
 .patterns-windows: &patterns-windows
   - "tools/windows/**/*"

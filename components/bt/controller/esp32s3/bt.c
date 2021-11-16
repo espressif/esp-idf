@@ -29,7 +29,7 @@
 #include "esp_log.h"
 #include "esp_pm.h"
 #include "esp_ipc.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/soc_memory_layout.h"
@@ -1144,8 +1144,6 @@ error:
     esp_unregister_mac_bb_pu_callback(btdm_mac_bb_power_up_cb);
 #endif
 
-    esp_bt_power_domain_off();
-
     if (osi_funcs_p != NULL) {
         free(osi_funcs_p);
         osi_funcs_p = NULL;
@@ -1206,6 +1204,9 @@ esp_err_t esp_bt_controller_deinit(void)
     esp_unregister_mac_bb_pd_callback(btdm_mac_bb_power_down_cb);
     esp_unregister_mac_bb_pu_callback(btdm_mac_bb_power_up_cb);
 #endif
+
+    esp_bt_power_domain_off();
+
     free(osi_funcs_p);
     osi_funcs_p = NULL;
 

@@ -1,16 +1,8 @@
-// Copyright 2010-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2010-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 #include <stdlib.h>
@@ -54,7 +46,10 @@ inline static bool IRAM_ATTR esp_ptr_executable(const void *p)
 #if defined(SOC_CACHE_APP_LOW) && defined(CONFIG_FREERTOS_UNICORE)
         || (ip >= SOC_CACHE_APP_LOW && ip < SOC_CACHE_APP_HIGH)
 #endif
-        || (ip >= SOC_RTC_IRAM_LOW && ip < SOC_RTC_IRAM_HIGH);
+#if SOC_RTC_FAST_MEM_SUPPORTED
+        || (ip >= SOC_RTC_IRAM_LOW && ip < SOC_RTC_IRAM_HIGH)
+#endif
+    ;
 }
 
 inline static bool IRAM_ATTR esp_ptr_byte_accessible(const void *p)
@@ -81,7 +76,11 @@ inline static bool IRAM_ATTR esp_ptr_byte_accessible(const void *p)
 inline static bool IRAM_ATTR esp_ptr_internal(const void *p) {
     bool r;
     r = ((intptr_t)p >= SOC_MEM_INTERNAL_LOW && (intptr_t)p < SOC_MEM_INTERNAL_HIGH);
+
+#if SOC_RTC_SLOW_MEM_SUPPORTED
     r |= ((intptr_t)p >= SOC_RTC_DATA_LOW && (intptr_t)p < SOC_RTC_DATA_HIGH);
+#endif
+
 #if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
     /* For ESP32 case, RTC fast memory is accessible to PRO cpu only and hence
      * for single core configuration (where it gets added to system heap) following
@@ -124,6 +123,7 @@ inline static bool IRAM_ATTR esp_ptr_in_diram_iram(const void *p) {
     return ((intptr_t)p >= SOC_DIRAM_IRAM_LOW && (intptr_t)p < SOC_DIRAM_IRAM_HIGH);
 }
 
+#if SOC_RTC_FAST_MEM_SUPPORTED
 inline static bool IRAM_ATTR esp_ptr_in_rtc_iram_fast(const void *p) {
     return ((intptr_t)p >= SOC_RTC_IRAM_LOW && (intptr_t)p < SOC_RTC_IRAM_HIGH);
 }
@@ -131,10 +131,14 @@ inline static bool IRAM_ATTR esp_ptr_in_rtc_iram_fast(const void *p) {
 inline static bool IRAM_ATTR esp_ptr_in_rtc_dram_fast(const void *p) {
     return ((intptr_t)p >= SOC_RTC_DRAM_LOW && (intptr_t)p < SOC_RTC_DRAM_HIGH);
 }
+#endif
 
+#if !CONFIG_IDF_TARGET_ESP8684
+// 	IDF-3901
 inline static bool IRAM_ATTR esp_ptr_in_rtc_slow(const void *p) {
     return ((intptr_t)p >= SOC_RTC_DATA_LOW && (intptr_t)p < SOC_RTC_DATA_HIGH);
 }
+#endif
 
 /* Convert a D/IRAM DRAM pointer to equivalent word address in IRAM
 

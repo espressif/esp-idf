@@ -7,8 +7,8 @@
 # lines start with # will be ignored
 
 # FreeRTOS upstream code (don't include our port files here)
-components/freertos/*.c
-components/freertos/include/freertos/*.h
+components/freertos/FreeRTOS-Kernel/*.c
+components/freertos/FreeRTOS-Kernel/include/freertos/*.h
 
 # wpa_supplicant upstream code
 components/wpa_supplicant/src/**

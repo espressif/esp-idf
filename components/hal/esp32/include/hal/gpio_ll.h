@@ -239,7 +239,7 @@ static inline void gpio_ll_get_intr_status(gpio_dev_t *hw, uint32_t core_id, uin
   */
 static inline void gpio_ll_get_intr_status_high(gpio_dev_t *hw, uint32_t core_id, uint32_t *status)
 {
-    *status = (core_id == 0) ? HAL_FORCE_READ_U32_REG_FIELD(hw->pcpu_int1, intr) : HAL_FORCE_READ_U32_REG_FIELD(hw->pcpu_int1, intr);
+    *status = (core_id == 0) ? HAL_FORCE_READ_U32_REG_FIELD(hw->pcpu_int1, intr) : HAL_FORCE_READ_U32_REG_FIELD(hw->acpu_int1, intr);
 }
 
 /**

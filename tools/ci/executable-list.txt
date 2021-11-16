@@ -7,6 +7,8 @@ components/espcoredump/espcoredump.py
 components/espcoredump/test/test_espcoredump.py
 components/espcoredump/test/test_espcoredump.sh
 components/espcoredump/test_apps/build_espcoredump.sh
+components/fatfs/fatfsgen.py
+components/fatfs/test_fatfsgen/test_fatfsgen.py
 components/heap/test_multi_heap_host/test_all_configs.sh
 components/mbedtls/esp_crt_bundle/gen_crt_bundle.py
 components/mbedtls/esp_crt_bundle/test_gen_crt_bundle/test_gen_crt_bundle.py
@@ -41,7 +43,6 @@ tools/ci/check_callgraph.py
 tools/ci/check_codeowners.py
 tools/ci/check_copyright.py
 tools/ci/check_deprecated_kconfigs.py
-tools/ci/check_examples_cmake_make.py
 tools/ci/check_examples_rom_header.sh
 tools/ci/check_executables.py
 tools/ci/check_idf_version.sh
@@ -51,7 +52,6 @@ tools/ci/check_rules_yml.py
 tools/ci/check_soc_struct_headers.py
 tools/ci/check_tools_files_patterns.py
 tools/ci/check_type_comments.py
-tools/ci/check_ut_cmake_make.sh
 tools/ci/checkout_project_ref.py
 tools/ci/deploy_docs.py
 tools/ci/envsubst.py
@@ -63,11 +63,10 @@ tools/ci/mirror-submodule-update.sh
 tools/ci/multirun_with_pyenv.sh
 tools/ci/push_to_github.sh
 tools/ci/test_autocomplete.py
-tools/ci/test_build_system.sh
 tools/ci/test_build_system_cmake.sh
 tools/ci/test_check_kconfigs.py
 tools/ci/test_configure_ci_environment.sh
-tools/cmake/convert_to_cmake.py
+tools/ci/test_reproducible_build.sh
 tools/docker/entrypoint.sh
 tools/docker/hooks/build
 tools/esp_app_trace/logtrace_proc.py
@@ -109,4 +108,3 @@ tools/test_mkdfu/test_mkdfu.py
 tools/test_mkuf2/test_mkuf2.py
 tools/unit-test-app/tools/get_available_configs.sh
 tools/unit-test-app/unit_test.py
-tools/windows/eclipse_make.sh

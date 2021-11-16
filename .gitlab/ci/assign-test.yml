@@ -73,7 +73,7 @@ update_test_cases:
     AUTO_TEST_SCRIPT_PATH: "${CI_PROJECT_DIR}/auto_test_script"
     PYTHON_VER: 3.7.7
   script:
-    - export GIT_SHA=$(echo ${CI_COMMIT_SHA} | cut -c 1-8)
+    - export GIT_SHA=$(echo ${PIPELINE_COMMIT_SHA} | cut -c 1-8)
     - retry_failed git clone $TEST_MANAGEMENT_REPO
     - python $CHECKOUT_REF_SCRIPT test-management test-management
     - cd test-management

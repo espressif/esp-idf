@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdlib.h>
 #include <assert.h>
@@ -42,6 +34,11 @@
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/spi_flash.h"
 #include "esp32h2/rom/cache.h"
+#include "soc/extmem_reg.h"
+#include "soc/cache_memory.h"
+#elif CONFIG_IDF_TARGET_ESP8684
+#include "esp8684/rom/spi_flash.h"
+#include "esp8684/rom/cache.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
 #endif
@@ -82,6 +79,17 @@ static volatile bool s_flash_op_complete = false;
 #ifndef NDEBUG
 static volatile int s_flash_op_cpu = -1;
 #endif
+
+static inline bool esp_task_stack_is_sane_cache_disabled(void)
+{
+    const void *sp = (const void *)esp_cpu_get_sp();
+
+    return esp_ptr_in_dram(sp)
+#if CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
+        || esp_ptr_in_rtc_dram_fast(sp)
+#endif
+    ;
+}
 
 void spi_flash_init_lock(void)
 {
@@ -130,7 +138,7 @@ void IRAM_ATTR spi_flash_op_block_func(void *arg)
 
 void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu(void)
 {
-    assert(esp_ptr_in_dram((const void *)esp_cpu_get_sp()));
+    assert(esp_task_stack_is_sane_cache_disabled());
 
     spi_flash_op_lock();
 
@@ -324,7 +332,7 @@ static void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_st
     icache_state = Cache_Suspend_ICache() << 16;
     dcache_state = Cache_Suspend_DCache();
     *saved_state = icache_state | dcache_state;
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP8684
     uint32_t icache_state;
     icache_state = Cache_Suspend_ICache() << 16;
     *saved_state = icache_state;
@@ -350,7 +358,7 @@ static void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_sta
 #elif CONFIG_IDF_TARGET_ESP32S3
     Cache_Resume_DCache(saved_state & 0xffff);
     Cache_Resume_ICache(saved_state >> 16);
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP8684
     Cache_Resume_ICache(saved_state >> 16);
 #endif
 }
@@ -364,7 +372,7 @@ IRAM_ATTR bool spi_flash_cache_enabled(void)
 #endif
 #elif CONFIG_IDF_TARGET_ESP32S2
     bool result = (REG_GET_BIT(EXTMEM_PRO_ICACHE_CTRL_REG, EXTMEM_PRO_ICACHE_ENABLE) != 0);
-#elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP8684
     bool result = (REG_GET_BIT(EXTMEM_ICACHE_CTRL_REG, EXTMEM_ICACHE_ENABLE) != 0);
 #endif
     return result;
@@ -479,19 +487,19 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
     int i;
     bool flash_spiram_wrap_together, flash_support_wrap = true, spiram_support_wrap = true;
     uint32_t drom0_in_icache = 1;//always 1 in esp32s2
-#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP8684
     drom0_in_icache = 0;
 #endif
 
     if (icache_wrap_enable) {
-#if CONFIG_ESP32S2_INSTRUCTION_CACHE_LINE_16B || CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_16B || CONFIG_ESP32C3_INSTRUCTION_CACHE_LINE_16B || CONFIG_ESP32H2_INSTRUCTION_CACHE_LINE_16B
+#if CONFIG_ESP32S2_INSTRUCTION_CACHE_LINE_16B || CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_16B || CONFIG_ESP32C3_INSTRUCTION_CACHE_LINE_16B || CONFIG_ESP32H2_INSTRUCTION_CACHE_LINE_16B || CONFIG_ESP8684_INSTRUCTION_CACHE_LINE_16B
         icache_wrap_size = 16;
 #else
         icache_wrap_size = 32;
 #endif
     }
     if (dcache_wrap_enable) {
-#if CONFIG_ESP32S2_DATA_CACHE_LINE_16B || CONFIG_ESP32S3_DATA_CACHE_LINE_16B || CONFIG_ESP32C3_INSTRUCTION_CACHE_LINE_16B || CONFIG_ESP32H2_INSTRUCTION_CACHE_LINE_16B
+#if CONFIG_ESP32S2_DATA_CACHE_LINE_16B || CONFIG_ESP32S3_DATA_CACHE_LINE_16B || CONFIG_ESP32C3_INSTRUCTION_CACHE_LINE_16B || CONFIG_ESP32H2_INSTRUCTION_CACHE_LINE_16B || CONFIG_ESP8684_INSTRUCTION_CACHE_LINE_16B
         dcache_wrap_size = 16;
 #else
         dcache_wrap_size = 32;
@@ -880,7 +888,7 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
 }
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP8684
 
 static IRAM_ATTR void esp_enable_cache_flash_wrap(bool icache)
 {
@@ -922,7 +930,7 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable)
     }
     return ESP_OK;
 }
-#endif // CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#endif // CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP8684
 
 void IRAM_ATTR spi_flash_enable_cache(uint32_t cpuid)
 {

@@ -84,3 +84,37 @@ They provide implementation of disk I/O functions for SD/MMC cards and can be re
 .. doxygenfunction:: ff_diskio_register_wl_partition
 .. doxygenfunction:: ff_diskio_register_raw_partition
 
+
+FATFS partition generator
+-------------------------
+
+We provide partition generator for FATFS (:component_file:`fatfsgen.py<fatfs/fatfsgen.py>`)
+which is integrated into the build system and could be easily used in the user project.
+The tool is used to create filesystem images on a host and populate it with content of the specified host folder.
+Current implementation supports short file names, FAT12 and read-only mode
+(because the wear levelling is not implemented yet). The WL, long file names, and FAT16 are subjects of future work.
+
+Build system integration with FATFS partition generator
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+It is possible to invoke FATFS generator directly from the CMake build system by calling ``fatfs_create_partition_image``::
+
+    fatfs_create_partition_image(<partition> <base_dir> [FLASH_IN_PROJECT])
+
+``fatfs_create_partition_image`` must be called from project's CMakeLists.txt.
+
+The arguments of the function are as follows:
+
+1. partition - the name of the partition, you can define in partition table (e.g. :example_file:`storage/fatfsgen/partitions_example.csv`)
+
+2. base_dir - the directory that will be encoded to FATFS partition and optionally flashed into the device. Beware that you have to specified suitable size of the partition in the partition table.
+
+3. flag ``FLASH_IN_PROJECT`` - optionally, user can opt to have the image automatically flashed together with the app binaries, partition tables, etc. on ``idf.py flash -p <PORT>`` by specifying ``FLASH_IN_PROJECT``.
+
+For example::
+
+    fatfs_create_partition_image(my_fatfs_partition my_folder FLASH_IN_PROJECT)
+
+If FLASH_IN_PROJECT is not specified, the image will still be generated, but you will have to flash it manually using ``esptool.py`` or a custom build system target.
+
+For an example, see :example:`storage/fatfsgen`.
