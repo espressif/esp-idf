@@ -390,6 +390,8 @@ static esp_netif_t *eth_start(void)
     s_phy = esp_eth_phy_new_lan87xx(&phy_config);
 #elif CONFIG_EXAMPLE_ETH_PHY_DP83848
     s_phy = esp_eth_phy_new_dp83848(&phy_config);
+#elif CONFIG_EXAMPLE_ETH_PHY_KSZ80XX
+    s_phy = esp_eth_phy_new_ksz80xx(&phy_config);
 #endif
 #elif CONFIG_EXAMPLE_USE_SPI_ETHERNET
     gpio_install_isr_service(0);
