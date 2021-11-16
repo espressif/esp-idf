@@ -112,10 +112,8 @@ void app_main(void)
     esp_eth_phy_t *phy = esp_eth_phy_new_lan87xx(&phy_config);
 #elif CONFIG_EXAMPLE_ETH_PHY_DP83848
     esp_eth_phy_t *phy = esp_eth_phy_new_dp83848(&phy_config);
-#elif CONFIG_EXAMPLE_ETH_PHY_KSZ8041
-    esp_eth_phy_t *phy = esp_eth_phy_new_ksz8041(&phy_config);
-#elif CONFIG_EXAMPLE_ETH_PHY_KSZ8081
-    esp_eth_phy_t *phy = esp_eth_phy_new_ksz8081(&phy_config);
+#elif CONFIG_EXAMPLE_ETH_PHY_KSZ80XX
+    esp_eth_phy_t *phy = esp_eth_phy_new_ksz80xx(&phy_config);
 #endif
     esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy);
     esp_eth_handle_t eth_handle = NULL;

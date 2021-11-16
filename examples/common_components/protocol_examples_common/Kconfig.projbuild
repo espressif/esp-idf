@@ -191,6 +191,15 @@ menu "Example Connection Configuration"
                     help
                         DP83848 is a single port 10/100Mb/s Ethernet Physical Layer Transceiver.
                         Goto http://www.ti.com/product/DP83848J for more information about it.
+
+                config EXAMPLE_ETH_PHY_KSZ80XX
+                    bool "KSZ80xx"
+                    help
+                        With the KSZ80xx series, Microchip offers single-chip 10BASE-T/100BASE-TX
+                        Ethernet Physical Layer Tranceivers (PHY).
+                        The following chips are supported: KSZ8001, KSZ8021, KSZ8031, KSZ8041,
+                            KSZ8051, KSZ8061, KSZ8081, KSZ8091
+                        Goto https://www.microchip.com for more information about them.
             endchoice
 
             config EXAMPLE_ETH_MDC_GPIO
