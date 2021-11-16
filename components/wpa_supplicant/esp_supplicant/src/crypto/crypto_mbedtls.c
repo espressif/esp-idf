@@ -894,6 +894,7 @@ int rc4_skip(const u8 *key, size_t keylen, size_t skip,
 		if ((ret = mbedtls_arc4_crypt(&ctx, len, skip_buf_in,
 					      skip_buf_out)) != 0) {
 			wpa_printf(MSG_ERROR, "rc4 encryption failed");
+			os_free(obuf);
 			return -1;
 		}
 		os_memcpy(skip_buf_in, skip_buf_out, 16);
