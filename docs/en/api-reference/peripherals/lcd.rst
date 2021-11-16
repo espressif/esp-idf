@@ -24,6 +24,7 @@ LCD examples are located under: :example:`peripherals/lcd`:
 
 * Jpeg decoding and LCD display - :example:`peripherals/lcd/tjpgd`
 * LVGL porting and animation UI - :example:`peripherals/lcd/lvgl`
+* GC9A01 user customized driver and dash board UI - :example:`peripherals/lcd/gc9a01`
 
 API Reference
 -------------

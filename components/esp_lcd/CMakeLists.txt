@@ -7,7 +7,6 @@ set(srcs "src/esp_lcd_common.c"
          "src/esp_lcd_panel_nt35510.c"
          "src/esp_lcd_panel_ssd1306.c"
          "src/esp_lcd_panel_st7789.c"
-         "src/esp_lcd_panel_gc9a01.c"
          "src/esp_lcd_panel_ops.c"
          "src/esp_lcd_rgb_panel.c")
 set(includes "include" "interface")
