@@ -266,3 +266,16 @@
 #define PERIPHS_IO_MUX_GPIO25_U              (REG_IO_MUX_BASE + 0x68)
 #define FUNC_GPIO25_GPIO25                                          1
 #define FUNC_GPIO25_GPIO25_0                                        0
+
+/** IO_MUX_DATE_REG register
+ *  IO MUX Version Control Register
+ */
+#define IO_MUX_DATE_REG (REG_IO_MUX_BASE + 0xfc)
+/** IO_MUX_DATE : R/W; bitpos: [27:0]; default: 0x2109090;
+ *  Version control register
+ */
+#define IO_MUX_DATE 0x0FFFFFFF
+#define IO_MUX_DATE_M  (IO_MUX_DATE_V << IO_MUX_DATE_S)
+#define IO_MUX_DATE_V  0x0FFFFFFFU
+#define IO_MUX_DATE_S  0
+#define IO_MUX_DATE_VERSION 0x2109090

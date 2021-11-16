@@ -1,24 +1,16 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef _SOC_SENSITIVE_STRUCT_H_
 #define _SOC_SENSITIVE_STRUCT_H_
 
+#include "soc/soc.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc.h"
 
 typedef volatile struct sensitive_dev_s {
     union {
@@ -659,7 +651,7 @@ typedef volatile struct sensitive_dev_s {
             uint32_t reserved2                     :    2;
             uint32_t reg_core_0_pif_pms_constrain_world_0_apb_ctrl:    2;  /*core_0_pif_pms_constrain_world_0_apb_ctrl*/
             uint32_t reserved6                     :    4;
-            uint32_t reg_core_0_pif_pms_constrain_world_0_can:    2;  /*core_0_pif_pms_constrain_world_0_can*/
+            uint32_t reg_core_0_pif_pms_constrain_world_0_twai:    2;  /*core_0_pif_pms_constrain_world_0_twai*/
             uint32_t reserved12                    :    2;
             uint32_t reg_core_0_pif_pms_constrain_world_0_i2s1:    2;  /*core_0_pif_pms_constrain_world_0_i2s1*/
             uint32_t reserved16                    :    6;
@@ -753,7 +745,7 @@ typedef volatile struct sensitive_dev_s {
             uint32_t reserved2:                                 2;
             uint32_t reg_core_0_pif_pms_constrain_world_1_apb_ctrl: 2;
             uint32_t reserved6:                                 4;
-            uint32_t reg_core_0_pif_pms_constrain_world_1_can:      2;
+            uint32_t reg_core_0_pif_pms_constrain_world_1_twai:      2;
             uint32_t reserved12:                                2;
             uint32_t reg_core_0_pif_pms_constrain_world_1_i2s1:     2;
             uint32_t reserved16:                                6;
@@ -1006,7 +998,7 @@ typedef volatile struct sensitive_dev_s {
             uint32_t reserved2                     :    2;
             uint32_t reg_backup_bus_pms_constrain_apb_ctrl:    2;  /*backup_bus_pms_constrain_apb_ctrl*/
             uint32_t reserved6                     :    4;
-            uint32_t reg_backup_bus_pms_constrain_can:    2;  /*backup_bus_pms_constrain_can*/
+            uint32_t reg_backup_bus_pms_constrain_twai:    2;  /*backup_bus_pms_constrain_twai*/
             uint32_t reserved12                    :    2;
             uint32_t reg_backup_bus_pms_constrain_i2s1:    2;  /*backup_bus_pms_constrain_i2s1*/
             uint32_t reserved16                    :    6;

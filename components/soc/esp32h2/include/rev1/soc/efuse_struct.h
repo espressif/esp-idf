@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef _SOC_EFUSE_STRUCT_H_
 #define _SOC_EFUSE_STRUCT_H_
 #ifdef __cplusplus
@@ -29,7 +21,7 @@ typedef volatile struct efuse_dev_s {
             uint32_t dis_usb_device:              1;             /*Set this bit to disable usb device.*/
             uint32_t dis_force_download:          1;             /*Set this bit to disable the function that forces chip into download mode.*/
             uint32_t dis_usb:                     1;             /*Set this bit to disable USB function.*/
-            uint32_t dis_can:                     1;             /*Set this bit to disable CAN function.*/
+            uint32_t dis_twai:                     1;             /*Set this bit to disable TWAI function.*/
             uint32_t jtag_sel_enable:             1;             /*Set this bit to enable selection between usb_to_jtag and pad_to_jtag through strapping gpio10 when both reg_dis_usb_jtag and reg_dis_pad_jtag are equal to 0.*/
             uint32_t soft_dis_jtag:               3;             /*Set these bits to disable JTAG in the soft way (odd number 1 means disable ). JTAG can be enabled in HMAC module.*/
             uint32_t dis_pad_jtag:                1;             /*Set this bit to disable JTAG in the hard way. JTAG is disabled permanently.*/
@@ -113,7 +105,7 @@ typedef volatile struct efuse_dev_s {
             uint32_t dis_usb_device:              1;             /*The value of DIS_USB_DEVICE.*/
             uint32_t dis_force_download:          1;             /*The value of DIS_FORCE_DOWNLOAD.*/
             uint32_t dis_usb:                     1;             /*The value of DIS_USB.*/
-            uint32_t dis_can:                     1;             /*The value of DIS_CAN.*/
+            uint32_t dis_twai:                     1;             /*The value of DIS_TWAI.*/
             uint32_t jtag_sel_enable:             1;             /*The value of JTAG_SEL_ENABLE.*/
             uint32_t soft_dis_jtag:               3;             /*The value of SOFT_DIS_JTAG.*/
             uint32_t dis_pad_jtag:                1;             /*The value of DIS_PAD_JTAG.*/
@@ -281,7 +273,7 @@ typedef volatile struct efuse_dev_s {
             uint32_t dis_usb_device_err:              1;         /*If DIS_USB_DEVICE is 1  then it indicates a programming error.*/
             uint32_t dis_force_download_err:          1;         /*If DIS_FORCE_DOWNLOAD is 1  then it indicates a programming error.*/
             uint32_t dis_usb_err:                     1;         /*If DIS_USB is 1  then it indicates a programming error.*/
-            uint32_t dis_can_err:                     1;         /*If DIS_CAN is 1  then it indicates a programming error.*/
+            uint32_t dis_twai_err:                     1;         /*If DIS_TWAI is 1  then it indicates a programming error.*/
             uint32_t jtag_sel_enable_err:             1;         /*If JTAG_SEL_ENABLE is 1  then it indicates a programming error.*/
             uint32_t soft_dis_jtag_err:               3;         /*If SOFT_DIS_JTAG is 1  then it indicates a programming error.*/
             uint32_t dis_pad_jtag_err:                1;         /*If DIS_PAD_JTAG is 1  then it indicates a programming error.*/
