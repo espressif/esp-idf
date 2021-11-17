@@ -137,6 +137,7 @@ If you have one of {IDF_TARGET_NAME} development boards listed below, you can cl
         :maxdepth: 1
 
         ESP32-S3-DevKitC-1 <../hw-reference/esp32s3/user-guide-devkitc-1>
+        ESP32-S3-DevKitM-1 <../hw-reference/esp32s3/user-guide-devkitm-1>
 
 
 .. _get-started-step-by-step:
