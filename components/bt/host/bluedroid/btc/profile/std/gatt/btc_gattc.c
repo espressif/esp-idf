@@ -1,5 +1,6 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -178,7 +179,7 @@ static void btc_gattc_free_req_data(btc_msg_t *msg)
 static void btc_gattc_cback(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
 {
     bt_status_t ret;
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
 
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_GATTC;
