@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -194,12 +194,13 @@ typedef struct {
             uint32_t reserved28: 28;
         } ctrl;                             //Control transfer related
         struct {
-            uint32_t zero_len_packet: 1;    //Bulk transfer should add a zero length packet at the end regardless
+            uint32_t zero_len_packet: 1;    //Added a zero length packet, so transfer consists of 2 QTDs
             uint32_t reserved31: 31;
         } bulk;                             //Bulk transfer related
         struct {
-            uint32_t num_qtds: 8;           //Number of transfer descriptors filled
-            uint32_t reserved24: 24;
+            uint32_t num_qtds: 8;           //Number of transfer descriptors filled (excluding zero length packet)
+            uint32_t zero_len_packet: 1;    //Added a zero length packet, so true number descriptors is num_qtds + 1
+            uint32_t reserved23: 23;
         } intr;                             //Interrupt transfer related
         struct {
             uint32_t num_qtds: 8;           //Number of transfer descriptors filled (including NULL descriptors)
@@ -2082,8 +2083,8 @@ static inline void _buffer_fill_ctrl(dma_buffer_block_t *buffer, usb_transfer_t 
         //Not data stage. Fill with an empty descriptor
         usbh_hal_xfer_desc_clear(buffer->xfer_desc_list, 1);
     } else {
-        //Fill data stage
-        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 1, transfer->data_buffer + sizeof(usb_setup_packet_t), setup_pkt->wLength,
+        //Fill data stage. Note that we still fill with transfer->num_bytes instead of setup_pkt->wLength as it's possible to require more bytes than wLength
+        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 1, transfer->data_buffer + sizeof(usb_setup_packet_t), transfer->num_bytes - sizeof(usb_setup_packet_t),
                                 ((data_stg_in) ? USBH_HAL_XFER_DESC_FLAG_IN : 0) | USBH_HAL_XFER_DESC_FLAG_HOC);
     }
     //Fill status stage (i.e., a zero length packet). If data stage is skipped, the status stage is always IN.
@@ -2095,46 +2096,68 @@ static inline void _buffer_fill_ctrl(dma_buffer_block_t *buffer, usb_transfer_t 
     buffer->flags.ctrl.cur_stg = 0;
 }
 
-static inline void _buffer_fill_bulk(dma_buffer_block_t *buffer, usb_transfer_t *transfer, bool is_in)
+static inline void _buffer_fill_bulk(dma_buffer_block_t *buffer, usb_transfer_t *transfer, bool is_in, int mps)
 {
+    //Only add a zero length packet if OUT, flag is set, and transfer length is multiple of EP's MPS
+    //Minor optimization: Do the mod operation last
+    bool zero_len_packet = !is_in && (transfer->flags & USB_TRANSFER_FLAG_ZERO_PACK) && (transfer->num_bytes % mps == 0);
     if (is_in) {
         usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 0, transfer->data_buffer, transfer->num_bytes,
                                 USBH_HAL_XFER_DESC_FLAG_IN | USBH_HAL_XFER_DESC_FLAG_HOC);
-    } else if (transfer->flags & USB_TRANSFER_FLAG_ZERO_PACK) {
-        //We need to add an extra zero length packet, so two descriptors are used
-        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 0, transfer->data_buffer, transfer->num_bytes, 0);
-        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 1, NULL, 0, USBH_HAL_XFER_DESC_FLAG_HOC);
-    } else {
-        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 0, transfer->data_buffer, transfer->num_bytes, USBH_HAL_XFER_DESC_FLAG_HOC);
+    } else { //OUT
+        if (zero_len_packet) {
+            //Adding a zero length packet, so two descriptors are used.
+            usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 0, transfer->data_buffer, transfer->num_bytes, 0);
+            usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 1, NULL, 0, USBH_HAL_XFER_DESC_FLAG_HOC);
+        } else {
+            //Zero length packet not required. One descriptor is enough
+            usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, 0, transfer->data_buffer, transfer->num_bytes, USBH_HAL_XFER_DESC_FLAG_HOC);
+        }
     }
     //Update buffer flags
-    buffer->flags.bulk.zero_len_packet = (is_in && (transfer->flags & USB_TRANSFER_FLAG_ZERO_PACK)) ? 1 : 0;
+    buffer->flags.bulk.zero_len_packet = zero_len_packet;
 }
 
 static inline void _buffer_fill_intr(dma_buffer_block_t *buffer, usb_transfer_t *transfer, bool is_in, int mps)
 {
     int num_qtds;
+    int mod_mps = transfer->num_bytes % mps;
+    //Only add a zero length packet if OUT, flag is set, and transfer length is multiple of EP's MPS
+    bool zero_len_packet = !is_in && (transfer->flags & USB_TRANSFER_FLAG_ZERO_PACK) && (mod_mps == 0);
     if (is_in) {
-        assert(transfer->num_bytes % mps == 0);  //IN transfers MUST be integer multiple of MPS
-        num_qtds = transfer->num_bytes / mps;
+        assert(mod_mps == 0);  //IN transfers MUST be integer multiple of MPS
+        num_qtds = transfer->num_bytes / mps;   //Can just floor divide as it's already multiple of MPS
     } else {
-        num_qtds = transfer->num_bytes / mps;    //Floor division for number of MPS packets
-        if (transfer->num_bytes % transfer->num_bytes > 0) {
-            num_qtds++; //For the last shot packet
+        num_qtds = transfer->num_bytes / mps;   //Floor division to get the number of MPS sized packets
+        if (mod_mps > 0) {
+            num_qtds++; //Add a short packet for the remainder
         }
     }
-    assert(num_qtds <= XFER_LIST_LEN_INTR);
-    //Fill all but last descriptor
+    assert((zero_len_packet) ? num_qtds + 1 : num_qtds <= XFER_LIST_LEN_INTR); //Check that the number of QTDs doesn't exceed the QTD list's length
+
+    uint32_t xfer_desc_flags = (is_in) ? USBH_HAL_XFER_DESC_FLAG_IN : 0;
     int bytes_filled = 0;
+    //Fill all but last QTD
     for (int i = 0; i < num_qtds - 1; i++) {
-        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, i, &transfer->data_buffer[bytes_filled], mps, (is_in) ? USBH_HAL_XFER_DESC_FLAG_IN : 0);
+        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, i, &transfer->data_buffer[bytes_filled], mps, xfer_desc_flags);
         bytes_filled += mps;
     }
-    //Fill in the last descriptor with HOC flag
-    usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, num_qtds - 1, &transfer->data_buffer[bytes_filled], transfer->num_bytes - bytes_filled,
-                            ((is_in) ? USBH_HAL_XFER_DESC_FLAG_IN : 0) | USBH_HAL_XFER_DESC_FLAG_HOC);
+    //Fill last QTD and zero length packet
+    if (zero_len_packet) {
+        //Fill in last data packet without HOC flag
+        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, num_qtds - 1, &transfer->data_buffer[bytes_filled], transfer->num_bytes - bytes_filled,
+                                xfer_desc_flags);
+        //HOC flag goes to zero length packet instead
+        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, num_qtds, NULL, 0, USBH_HAL_XFER_DESC_FLAG_HOC);
+    } else {
+        //Zero length packet not required. Fill in last QTD with HOC flag
+        usbh_hal_xfer_desc_fill(buffer->xfer_desc_list, num_qtds - 1, &transfer->data_buffer[bytes_filled], transfer->num_bytes - bytes_filled,
+                                xfer_desc_flags | USBH_HAL_XFER_DESC_FLAG_HOC);
+    }
+
     //Update buffer members and flags
     buffer->flags.intr.num_qtds = num_qtds;
+    buffer->flags.intr.zero_len_packet = zero_len_packet;
 }
 
 static inline void _buffer_fill_isoc(dma_buffer_block_t *buffer, usb_transfer_t *transfer, bool is_in, int mps, int interval, int start_idx)
@@ -2220,7 +2243,7 @@ static void _buffer_fill(pipe_t *pipe)
             break;
         }
         case USB_PRIV_XFER_TYPE_BULK: {
-            _buffer_fill_bulk(buffer_to_fill, transfer, is_in);
+            _buffer_fill_bulk(buffer_to_fill, transfer, is_in, mps);
             break;
         }
         case USB_PRIV_XFER_TYPE_INTR: {
@@ -2269,7 +2292,7 @@ static void _buffer_exec(pipe_t *pipe)
         }
         case USB_PRIV_XFER_TYPE_INTR: {
             start_idx = 0;
-            desc_list_len = buffer_to_exec->flags.intr.num_qtds;
+            desc_list_len = (buffer_to_exec->flags.intr.zero_len_packet) ? buffer_to_exec->flags.intr.num_qtds + 1 : buffer_to_exec->flags.intr.num_qtds;
             break;
         }
         default: {
@@ -2389,7 +2412,7 @@ static inline void _buffer_parse_intr(dma_buffer_block_t *buffer, bool is_in, in
             transfer->actual_num_bytes = transfer->num_bytes - last_packet_rem_len;
         }
     } else {
-        //OUT INTR transfers can only complete successfully if all MPS packets have been transmitted. Double check
+        //OUT INTR transfers can only complete successfully if all packets have been transmitted. Double check
         for (int i = 0 ; i < buffer->flags.intr.num_qtds; i++) {
             int rem_len;
             int desc_status;
