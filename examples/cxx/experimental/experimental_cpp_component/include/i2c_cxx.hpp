@@ -229,7 +229,7 @@ public:
     std::vector<uint8_t> sync_read(uint8_t i2c_addr, size_t n_bytes);
 
     /**
-     * Do a simple asynchronous write-read transfer.
+     * Do a simple synchronous write-read transfer.
      *
      * First, \c write_data will be written to the bus, then a number of \c read_n_bytes will be read from the bus
      * with a repeated start condition. The slave device is determined by \c i2c_addr.
