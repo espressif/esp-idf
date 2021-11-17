@@ -233,8 +233,8 @@ void bta_dm_co_loc_oob(BOOLEAN valid, BT_OCTET16 c, BT_OCTET16 r)
 *******************************************************************************/
 void bta_dm_co_rmt_oob(BD_ADDR bd_addr)
 {
-    BT_OCTET16 p_c;
-    BT_OCTET16 p_r;
+    BT_OCTET16 p_c = {0};
+    BT_OCTET16 p_r = {0};
     BOOLEAN result = FALSE;
 
 #ifdef BTIF_DM_OOB_TEST
