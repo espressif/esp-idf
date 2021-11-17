@@ -238,7 +238,6 @@ components/bt/host/bluedroid/bta/sys/include/bta_sys_int.h
 components/bt/host/bluedroid/bta/sys/utl.c
 components/bt/host/bluedroid/btc/core/btc_ble_storage.c
 components/bt/host/bluedroid/btc/core/btc_config.c
-components/bt/host/bluedroid/btc/core/btc_dm.c
 components/bt/host/bluedroid/btc/core/btc_main.c
 components/bt/host/bluedroid/btc/core/btc_profile_queue.c
 components/bt/host/bluedroid/btc/core/btc_sm.c
