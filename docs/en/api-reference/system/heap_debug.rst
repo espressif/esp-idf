@@ -18,7 +18,7 @@ To obtain information about the state of the heap:
 - :cpp:func:`xPortGetFreeHeapSize` is a FreeRTOS function which returns the number of free bytes in the (data memory) heap. This is equivalent to calling ``heap_caps_get_free_size(MALLOC_CAP_8BIT)``.
 - :cpp:func:`heap_caps_get_free_size` can also be used to return the current free memory for different memory capabilities.
 - :cpp:func:`heap_caps_get_largest_free_block` can be used to return the largest free block in the heap. This is the largest single allocation which is currently possible. Tracking this value and comparing to total free heap allows you to detect heap fragmentation.
-- :cpp:func:`xPortGetMinimumEverFreeHeapSize` and the related :cpp:func:`heap_caps_get_minimum_free_size` can be used to track the heap "low water mark" since boot.
+- :cpp:func:`xPortGetMinimumEverFreeHeapSize` and the related :cpp:func:`heap_caps_get_minimum_free_size` can be used to track the heap "low watermark" since boot.
 - :cpp:func:`heap_caps_get_info` returns a :cpp:class:`multi_heap_info_t` structure which contains the information from the above functions, plus some additional heap-specific data (number of allocations, etc.).
 - :cpp:func:`heap_caps_print_heap_info` prints a summary to stdout of the information returned by :cpp:func:`heap_caps_get_info`.
 - :cpp:func:`heap_caps_dump` and :cpp:func:`heap_caps_dump_all` will output detailed information about the structure of each block in the heap. Note that this can be large amount of output.
@@ -47,13 +47,13 @@ It's also possible to manually check heap integrity by calling :cpp:func:`heap_c
 Memory Allocation Failed Hook
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Users can use :cpp:func:`heap_caps_register_failed_alloc_callback` to register a callback that will be invoked every time a allocation
+Users can use :cpp:func:`heap_caps_register_failed_alloc_callback` to register a callback that will be invoked every time an allocation
 operation fails.
 
-Additionaly user can enable a generation of a system abort if allocation operation fails by following the steps below:
+Additionally, users can enable the generation of a system abort if an allocation operation fails by following the steps below:
 - In the project configuration menu, navigate to ``Component config`` -> ``Heap Memory Debugging`` and select ``Abort if memory allocation fails`` option (see :ref:`CONFIG_HEAP_ABORT_WHEN_ALLOCATION_FAILS`).
 
-The example below show how to register a allocation failure callback::
+The example below shows how to register an allocation failure callback::
 
   #include "esp_heap_caps.h"
 
@@ -80,7 +80,7 @@ Memory corruption can be one of the hardest classes of bugs to find and fix, as 
 - Increasing the Heap memory debugging `Configuration`_ level to "Light impact" or "Comprehensive" can give you a more accurate message with the first corrupt memory address.
 - Adding regular calls to :cpp:func:`heap_caps_check_integrity_all` or :cpp:func:`heap_caps_check_integrity_addr` in your code will help you pin down the exact time that the corruption happened. You can move these checks around to "close in on" the section of code that corrupted the heap.
 - Based on the memory address which is being corrupted, you can use :ref:`JTAG debugging <jtag-debugging-introduction>` to set a watchpoint on this address and have the CPU halt when it is written to.
-- If you don't have JTAG, but you do know roughly when the corruption happens, then you can set a watchpoint in software just beforehand via :cpp:func:`esp_cpu_set_watchpoint`. A fatal exception will occur when the watchpoint triggers. For example ``esp_cpu_set_watchpoint(0, (void *)addr, 4, ESP_WATCHPOINT_STORE``. Note that watchpoints are per-CPU and are set on the current running CPU only, so if you don't know which CPU is corrupting memory then you will need to call this function on both CPUs.
+- If you don't have JTAG, but you do know roughly when the corruption happens, then you can set a watchpoint in software just beforehand via :cpp:func:`esp_cpu_set_watchpoint`. A fatal exception will occur when the watchpoint triggers. The following is an example of how to use the function - ``esp_cpu_set_watchpoint(0, (void *)addr, 4, ESP_WATCHPOINT_STORE)``. Note that watchpoints are per-CPU and are set on the current running CPU only, so if you don't know which CPU is corrupting memory then you will need to call this function on both CPUs.
 - For buffer overflows, `heap tracing`_ in ``HEAP_TRACE_ALL`` mode lets you see which callers are allocating which addresses from the heap. See `Heap Tracing To Find Heap Corruption`_ for more details. If you can find the function which allocates memory with an address immediately before the address which is corrupted, this will probably be the function which overflows the buffer.
 - Calling :cpp:func:`heap_caps_dump` or :cpp:func:`heap_caps_dump_all` can give an indication of what heap blocks are surrounding the corrupted region and may have overflowed/underflowed/etc.
 
@@ -125,7 +125,7 @@ Comprehensive
 
 This level incorporates the "light impact" detection features plus additional checks for uninitialised-access and use-after-free bugs. In this mode, all freshly allocated memory is filled with the pattern 0xCE, and all freed memory is filled with the pattern 0xFE.
 
-Enabling "Comprehensive" detection has a substantial runtime performance impact (as all memory needs to be set to the allocation patterns each time a malloc/free completes, and the memory also needs to be checked each time.) However it allows easier detection of memory corruption bugs which are much more subtle to find otherwise. It is recommended to only enable this mode when debugging, not in production.
+Enabling "Comprehensive" detection has a substantial runtime performance impact (as all memory needs to be set to the allocation patterns each time a malloc/free completes, and the memory also needs to be checked each time.) However, it allows easier detection of memory corruption bugs which are much more subtle to find otherwise. It is recommended to only enable this mode when debugging, not in production.
 
 Crashes in Comprehensive Mode
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -251,7 +251,7 @@ In ``HEAP_TRACE_LEAKS`` mode, for each traced memory allocation which has not al
 
 .. list::
 
-    - ``XX bytes`` is number of bytes allocated
+    - ``XX bytes`` is the number of bytes allocated
     - ``@ 0x...`` is the heap address returned from malloc/calloc.
     - ``CPU x`` is the CPU (0 or 1) running when the allocation was made.
     - ``ccount 0x...`` is the CCOUNT (CPU cycle count) register value when the allocation was mode. Is different for CPU 0 vs CPU 1.
@@ -276,7 +276,7 @@ Once you've identified the code which you think is leaking:
 - In the project configuration menu, navigate to ``Component settings`` -> ``Application Level Tracing`` -> ``FreeRTOS SystemView Tracing`` and enable :ref:`CONFIG_APPTRACE_SV_ENABLE`.
 - Call the function :cpp:func:`heap_trace_init_tohost` early in the program, to initialize JTAG heap tracing module.
 - Call the function :cpp:func:`heap_trace_start` to begin recording all mallocs/frees in the system. Call this immediately before the piece of code which you suspect is leaking memory.
-  In host-based mode argument to this function is ignored and heap tracing module behaves like ``HEAP_TRACE_ALL`` was passed: all allocations and deallocations are sent to the host.
+  In host-based mode, the argument to this function is ignored, and the heap tracing module behaves like ``HEAP_TRACE_ALL`` was passed: all allocations and deallocations are sent to the host.
 - Call the function :cpp:func:`heap_trace_stop` to stop the trace once the suspect piece of code has finished executing.
 
 An example::
@@ -428,7 +428,7 @@ Heap Tracing To Find Heap Corruption
 
 Heap tracing can also be used to help track down heap corruption. When a region in heap is corrupted, it may be from some other part of the program which allocated memory at a nearby address.
 
-If you have some idea at what time the corruption occurred, enabling heap tracing in ``HEAP_TRACE_ALL`` mode allows you to record all of the functions which allocated memory, and the addresses of the allocations.
+If you have some idea at what time the corruption occurred, enabling heap tracing in ``HEAP_TRACE_ALL`` mode allows you to record all the functions which allocated memory, and the addresses of the allocations.
 
 Using heap tracing in this way is very similar to memory leak detection as described above. For memory which is allocated and not freed, the output is the same. However, records will also be shown for memory which has been freed.
 
@@ -448,7 +448,7 @@ Not everything printed by :cpp:func:`heap_trace_dump` is necessarily a memory le
 - Allocations may be made by other tasks in the system. Depending on the timing of these tasks, it's quite possible this memory is freed after :cpp:func:`heap_trace_stop` is called.
 - The first time a task uses stdio - for example, when it calls ``printf()`` - a lock (RTOS mutex semaphore) is allocated by the libc. This allocation lasts until the task is deleted.
 - Certain uses of ``printf()``, such as printing floating point numbers, will allocate some memory from the heap on demand. These allocations last until the task is deleted.
-- The Bluetooth, WiFi, and TCP/IP libraries will allocate heap memory buffers to handle incoming or outgoing data. These memory buffers are usually short lived, but some may be shown in the heap leak trace if the data was received/transmitted by the lower levels of the network while the leak trace was running.
+- The Bluetooth, Wi-Fi, and TCP/IP libraries will allocate heap memory buffers to handle incoming or outgoing data. These memory buffers are usually short-lived, but some may be shown in the heap leak trace if the data was received/transmitted by the lower levels of the network while the leak trace was running.
 - TCP connections will continue to use some memory after they are closed, because of the ``TIME_WAIT`` state. After the ``TIME_WAIT`` period has completed, this memory will be freed.
 
 One way to differentiate between "real" and "false positive" memory leaks is to call the suspect code multiple times while tracing is running, and look for patterns (multiple matching allocations) in the heap trace output.

@@ -7,7 +7,7 @@ Overview
 This section contains documentation of FreeRTOS types, functions, and macros. It is automatically generated from FreeRTOS header files.
 
 .. note::
-    ESP-IDF FreeRTOS is based on the Xtensa port of FreeRTOS v10.2.0,
+    ESP-IDF FreeRTOS is based on the Xtensa port of FreeRTOS v10.4.3
 
 For more information about FreeRTOS features specific to ESP-IDF, see :doc:`ESP-IDF FreeRTOS SMP Changes<../../api-guides/freertos-smp>`
 and :doc:`ESP-IDF FreeRTOS Additions<freertos_additions>`.
