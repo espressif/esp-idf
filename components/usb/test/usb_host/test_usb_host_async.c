@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include "freertos/semphr.h"
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
+#include "test_usb_common.h"
 #include "test_usb_mock_classes.h"
 #include "msc_client.h"
 #include "ctrl_client.h"
@@ -46,8 +47,10 @@ Procedure:
 
 TEST_CASE("Test USB Host async (single client)", "[usb_host][ignore]")
 {
+    test_usb_init_phy();    //Initialize the internal USB PHY and USB Controller for testing
     //Install USB Host
     usb_host_config_t host_config = {
+        .skip_phy_setup = true,     //test_usb_init_phy() will already have setup the internal USB PHY for us
         .intr_flags = ESP_INTR_FLAG_LEVEL1,
     };
     ESP_ERROR_CHECK(usb_host_install(&host_config));
@@ -83,6 +86,7 @@ TEST_CASE("Test USB Host async (single client)", "[usb_host][ignore]")
     vTaskDelay(10);
     //Clean up USB Host
     ESP_ERROR_CHECK(usb_host_uninstall());
+    test_usb_deinit_phy();  //Deinitialize the internal USB PHY after testing
 }
 
 /*
@@ -107,8 +111,10 @@ Procedure:
 */
 TEST_CASE("Test USB Host async (multi client)", "[usb_host][ignore]")
 {
+    test_usb_init_phy();    //Initialize the internal USB PHY and USB Controller for testing
     //Install USB Host
     usb_host_config_t host_config = {
+        .skip_phy_setup = true,     //test_usb_init_phy() will already have setup the internal USB PHY for us
         .intr_flags = ESP_INTR_FLAG_LEVEL1,
     };
     ESP_ERROR_CHECK(usb_host_install(&host_config));
@@ -155,4 +161,5 @@ TEST_CASE("Test USB Host async (multi client)", "[usb_host][ignore]")
     vTaskDelay(10);
     //Clean up USB Host
     ESP_ERROR_CHECK(usb_host_uninstall());
+    test_usb_deinit_phy();  //Deinitialize the internal USB PHY after testing
 }

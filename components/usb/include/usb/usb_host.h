@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -91,7 +91,11 @@ typedef void (*usb_host_client_event_cb_t)(const usb_host_client_event_msg_t *ev
  * Configuration structure of the USB Host Library. Provided in the usb_host_install() function
  */
 typedef struct {
-    int intr_flags;                     /**< Interrupt flags for the underlying ISR used by the USB Host stack */
+    bool skip_phy_setup;        /**< If set, the USB Host Library will not configure the USB PHY thus allowing the user
+                                     to manually configure the USB PHY before calling usb_host_install(). Users should
+                                     set this if they want to use an external USB PHY. Otherwise, the USB Host Library
+                                     will automatically configure the internal USB PHY */
+    int intr_flags;             /**< Interrupt flags for the underlying ISR used by the USB Host stack */
 } usb_host_config_t;
 
 /**
@@ -118,6 +122,9 @@ typedef struct {
  * - This function should only once to install the USB Host Library
  * - This function should be called before any other USB Host Library functions are called
  *
+ * @note If skip_phy_setup is set in the install configuration, the user is responsible for ensuring that the underlying
+ *       Host Controller is enabled and the USB PHY (internal or external) is already setup before this function is
+ *       called.
  * @param[in] config USB Host Library configuration
  * @return esp_err_t
  */
@@ -131,6 +138,8 @@ esp_err_t usb_host_install(const usb_host_config_t *config);
  * - All devices must have been freed by calling usb_host_device_free_all() and receiving the
  *   USB_HOST_LIB_EVENT_FLAGS_ALL_FREE event flag
  *
+ * @note If skip_phy_setup was set when the Host Library was installed, the user is responsible for diasbling the
+ *       underlying Host Controller and USB PHY (internal or external).
  * @return esp_err_t
  */
 esp_err_t usb_host_uninstall(void);

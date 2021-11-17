@@ -1026,20 +1026,6 @@ esp_err_t hcd_install(const hcd_config_t *config)
         goto err;
     }
     s_hcd_obj = p_hcd_obj_dmy;
-    //Set HW prerequisites for each port (there's only one)
-    periph_module_enable(PERIPH_USB_MODULE);
-    periph_module_reset(PERIPH_USB_MODULE);
-    /*
-    Configure GPIOS for Host mode operation using internal PHY
-        - Forces ID to GND for A side
-        - Forces B Valid to GND as we are A side host
-        - Forces VBUS Valid to HIGH
-        - Forces A Valid to HIGH
-    */
-    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, USB_OTG_IDDIG_IN_IDX, false);
-    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, USB_SRP_BVALID_IN_IDX, false);
-    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, USB_OTG_VBUSVALID_IN_IDX, false);
-    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, USB_OTG_AVALID_IN_IDX, false);
     HCD_EXIT_CRITICAL();
     return ESP_OK;
 
@@ -1060,7 +1046,6 @@ esp_err_t hcd_uninstall(void)
         HCD_EXIT_CRITICAL();
         return ESP_ERR_INVALID_STATE;
     }
-    periph_module_disable(PERIPH_USB_MODULE);
     hcd_obj_t *p_hcd_obj_dmy = s_hcd_obj;
     s_hcd_obj = NULL;
     HCD_EXIT_CRITICAL();
