@@ -1,6 +1,6 @@
 
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,7 @@
 #include "freertos/semphr.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#include "esp_private/usb_phy.h"
 #include "usb/usb_host.h"
 #include "msc_host.h"
 #include "msc_host_vfs.h"
@@ -45,27 +46,16 @@ static SemaphoreHandle_t ready_to_deinit_usb;
 static msc_host_device_handle_t device;
 static msc_host_vfs_handle_t vfs_handle;
 static volatile bool waiting_for_sudden_disconnect;
+static usb_phy_handle_t phy_hdl = NULL;
 
-static void test_usb_force_conn_state(bool connected, TickType_t delay_ticks)
+static void force_conn_state(bool connected, TickType_t delay_ticks)
 {
+    TEST_ASSERT_NOT_EQUAL(NULL, phy_hdl);
     if (delay_ticks > 0) {
         //Delay of 0 ticks causes a yield. So skip if delay_ticks is 0.
         vTaskDelay(delay_ticks);
     }
-    usb_wrap_dev_t *wrap = &USB_WRAP;
-    if (connected) {
-        //Disable test mode to return to previous internal PHY configuration
-        wrap->test_conf.test_enable = 0;
-    } else {
-        /*
-        Mimic a disconnection by using the internal PHY's test mode.
-        Force Output Enable to 1 (even if the controller isn't outputting). With test_tx_dp and test_tx_dm set to 0,
-        this will look like a disconnection.
-        */
-        wrap->test_conf.val = 0;
-        wrap->test_conf.test_usb_wrap_oe = 1;
-        wrap->test_conf.test_enable = 1;
-    }
+    ESP_ERROR_CHECK(usb_phy_action(phy_hdl, (connected) ? USB_PHY_ACTION_HOST_ALLOW_CONN : USB_PHY_ACTION_HOST_FORCE_DISCONN));
 }
 
 static void msc_event_cb(const msc_host_event_t *event, void *arg)
@@ -173,7 +163,7 @@ static void check_sudden_disconnect(void)
     ESP_LOGI(TAG, "Trigger a disconnect");
     //Trigger a disconnect
     waiting_for_sudden_disconnect = true;
-    test_usb_force_conn_state(false, 0);
+    force_conn_state(false, 0);
 
     // Make sure flag was leared in callback
     vTaskDelay( pdMS_TO_TICKS(100) );
@@ -193,7 +183,19 @@ static void msc_setup(void)
 
     TEST_ASSERT( app_queue = xQueueCreate(5, sizeof(msc_host_event_t)) );
 
-    const usb_host_config_t host_config = { .intr_flags = ESP_INTR_FLAG_LEVEL1 };
+    //Initialize the internal USB PHY to connect to the USB OTG peripheral. We manually install the USB PHY for testing
+    usb_phy_config_t phy_config = {
+        .controller = USB_PHY_CTRL_OTG,
+        .target = USB_PHY_TARGET_INT,
+        .otg_mode = USB_OTG_MODE_HOST,
+        .otg_speed = USB_PHY_SPEED_UNDEFINED,   //In Host mode, the speed is determined by the connected device
+        .gpio_conf = NULL,
+    };
+    TEST_ASSERT_EQUAL(ESP_OK, usb_new_phy(&phy_config, &phy_hdl));
+    const usb_host_config_t host_config = {
+        .skip_phy_setup = true,
+        .intr_flags = ESP_INTR_FLAG_LEVEL1,
+    };
     ESP_OK_ASSERT( usb_host_install(&host_config) );
 
     task_created = xTaskCreate(handle_usb_events, "usb_events", 2048, NULL, 2, NULL);
@@ -229,6 +231,9 @@ static void msc_teardown(void)
     xSemaphoreTake(ready_to_deinit_usb, portMAX_DELAY);
     vSemaphoreDelete(ready_to_deinit_usb);
     ESP_OK_ASSERT( usb_host_uninstall() );
+    //Tear down USB PHY
+    TEST_ASSERT_EQUAL(ESP_OK, usb_del_phy(phy_hdl));
+    phy_hdl = NULL;
 
     vQueueDelete(app_queue);
 }

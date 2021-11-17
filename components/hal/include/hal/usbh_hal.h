@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +18,6 @@ NOTE: Thread safety is the responsibility fo the HAL user. All USB Host HAL
 #include <stdlib.h>
 #include <stddef.h>
 #include "soc/usbh_struct.h"
-#include "soc/usb_wrap_struct.h"
 #include "hal/usbh_ll.h"
 #include "hal/usb_types_private.h"
 #include "hal/assert.h"
@@ -152,7 +151,6 @@ typedef struct {
 typedef struct {
     //Context
     usbh_dev_t *dev;                            /**< Pointer to base address of DWC_OTG registers */
-    usb_wrap_dev_t *wrap_dev;                   /**< Pointer to base address of USB Wrapper registers */
     //Host Port related
     uint32_t *periodic_frame_list;              /**< Pointer to scheduling frame list */
     usb_hal_frame_list_len_t frame_list_len;    /**< Length of the periodic scheduling frame list */
@@ -181,6 +179,7 @@ typedef struct {
  *
  * Entry:
  * - The peripheral must have been reset and clock un-gated
+ * - The USB PHY (internal or external) and associated GPIOs must already be configured
  * - GPIO pins configured
  * - Interrupt allocated but DISABLED (in case of an unknown interupt state)
  * Exit:

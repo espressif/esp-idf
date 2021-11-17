@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -138,6 +138,7 @@ int test_hcd_get_num_pipe_events(hcd_pipe_handle_t pipe_hdl)
 
 hcd_port_handle_t test_hcd_setup(void)
 {
+    test_usb_init_phy();    //Initialize the internal USB PHY and USB Controller for testing
     //Create a queue for port callback to queue up port events
     QueueHandle_t port_evt_queue = xQueueCreate(EVENT_QUEUE_LEN, sizeof(port_event_msg_t));
     TEST_ASSERT_NOT_EQUAL(NULL, port_evt_queue);
@@ -157,7 +158,7 @@ hcd_port_handle_t test_hcd_setup(void)
     TEST_ASSERT_EQUAL(ESP_OK, hcd_port_init(PORT_NUM, &port_config, &port_hdl));
     TEST_ASSERT_NOT_EQUAL(NULL, port_hdl);
     TEST_ASSERT_EQUAL(HCD_PORT_STATE_NOT_POWERED, hcd_port_get_state(port_hdl));
-    test_usb_force_conn_state(false, 0);    //Force disconnected state on PHY
+    test_usb_set_phy_state(false, 0);    //Force disconnected state on PHY
     return port_hdl;
 }
 
@@ -171,6 +172,7 @@ void test_hcd_teardown(hcd_port_handle_t port_hdl)
     //Uninstall the HCD
     TEST_ASSERT_EQUAL(ESP_OK, hcd_uninstall());
     vQueueDelete(port_evt_queue);
+    test_usb_deinit_phy();  //Deinitialize the internal USB PHY after testing
 }
 
 usb_speed_t test_hcd_wait_for_conn(hcd_port_handle_t port_hdl)
@@ -180,7 +182,7 @@ usb_speed_t test_hcd_wait_for_conn(hcd_port_handle_t port_hdl)
     TEST_ASSERT_EQUAL(HCD_PORT_STATE_DISCONNECTED, hcd_port_get_state(port_hdl));
     //Wait for connection event
     printf("Waiting for connection\n");
-    test_usb_force_conn_state(true, pdMS_TO_TICKS(100));     //Allow for connected state on PHY
+    test_usb_set_phy_state(true, pdMS_TO_TICKS(100));     //Allow for connected state on PHY
     test_hcd_expect_port_event(port_hdl, HCD_PORT_EVENT_CONNECTION);
     TEST_ASSERT_EQUAL(HCD_PORT_EVENT_CONNECTION, hcd_port_handle_event(port_hdl));
     TEST_ASSERT_EQUAL(HCD_PORT_STATE_DISABLED, hcd_port_get_state(port_hdl));
@@ -209,7 +211,7 @@ void test_hcd_wait_for_disconn(hcd_port_handle_t port_hdl, bool already_disabled
     }
     //Wait for a safe disconnect
     printf("Waiting for disconnection\n");
-    test_usb_force_conn_state(false, pdMS_TO_TICKS(100));    //Force disconnected state on PHY
+    test_usb_set_phy_state(false, pdMS_TO_TICKS(100));    //Force disconnected state on PHY
     test_hcd_expect_port_event(port_hdl, HCD_PORT_EVENT_DISCONNECTION);
     TEST_ASSERT_EQUAL(HCD_PORT_EVENT_DISCONNECTION, hcd_port_handle_event(port_hdl));
     TEST_ASSERT_EQUAL(HCD_PORT_STATE_RECOVERY, hcd_port_get_state(port_hdl));

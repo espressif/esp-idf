@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -88,6 +88,8 @@ typedef struct {
  * - This function will internally install the HCD
  * - This must be called before calling any Hub driver functions
  *
+ * @note Before calling this function, the Host Controller must already be un-clock gated and reset. The USB PHY
+ *       (internal or external, and associated GPIOs) must already be configured.
  * @param usbh_config USBH driver configuration
  * @return esp_err_t
  */
@@ -99,6 +101,8 @@ esp_err_t usbh_install(const usbh_config_t *usbh_config);
  * - This function will uninstall the HCD
  * - The Hub driver must be uninstalled before calling this function
  *
+ * @note This function will simply free the resources used by the USBH. The underlying Host Controller and USB PHY will
+ *       not be disabled.
  * @return esp_err_t
  */
 esp_err_t usbh_uninstall(void);
