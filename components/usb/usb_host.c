@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,7 @@ Warning: The USB Host Library API is still a beta version and may be subject to 
 #include "esp_heap_caps.h"
 #include "hub.h"
 #include "usbh.h"
+#include "esp_private/usb_phy.h"
 #include "usb/usb_host.h"
 
 static portMUX_TYPE host_lock = portMUX_INITIALIZER_UNLOCKED;
@@ -146,6 +147,7 @@ typedef struct {
     struct {
         SemaphoreHandle_t event_sem;
         SemaphoreHandle_t mux_lock;
+        usb_phy_handle_t phy_handle;    //Will be NULL if host library is installed with skip_phy_setup
     } constant;
 } host_lib_t;
 
@@ -374,6 +376,21 @@ esp_err_t usb_host_install(const usb_host_config_t *config)
     TAILQ_INIT(&host_lib_obj->mux_protected.client_tailq);
     host_lib_obj->constant.event_sem = event_sem;
     host_lib_obj->constant.mux_lock = mux_lock;
+    //Setup the USB PHY if necessary (USB PHY driver will also enable the underlying Host Controller)
+    if (!config->skip_phy_setup) {
+        //Host Library defaults to internal PHY
+        usb_phy_config_t phy_config = {
+            .controller = USB_PHY_CTRL_OTG,
+            .target = USB_PHY_TARGET_INT,
+            .otg_mode = USB_OTG_MODE_HOST,
+            .otg_speed = USB_PHY_SPEED_UNDEFINED,   //In Host mode, the speed is determined by the connected device
+            .gpio_conf = NULL,
+        };
+        ret = usb_new_phy(&phy_config, &host_lib_obj->constant.phy_handle);
+         if (ret != ESP_OK) {
+             goto phy_err;
+         }
+    }
     //Install USBH
     usbh_config_t usbh_config = {
         .notif_cb = notif_callback,
@@ -420,6 +437,10 @@ assign_err:
 hub_err:
     ESP_ERROR_CHECK(usbh_uninstall());
 usbh_err:
+    if (p_host_lib_obj->constant.phy_handle) {
+        ESP_ERROR_CHECK(usb_del_phy(p_host_lib_obj->constant.phy_handle));
+    }
+phy_err:
 alloc_err:
     if (mux_lock) {
         vSemaphoreDelete(mux_lock);
@@ -444,7 +465,6 @@ esp_err_t usb_host_uninstall(void)
 
     //Stop the root hub
     ESP_ERROR_CHECK(hub_root_stop());
-
     //Uninstall Hub and USBH
     ESP_ERROR_CHECK(hub_uninstall());
     ESP_ERROR_CHECK(usbh_uninstall());
@@ -454,6 +474,10 @@ esp_err_t usb_host_uninstall(void)
     p_host_lib_obj = NULL;
     HOST_EXIT_CRITICAL();
 
+    //If the USB PHY was setup, then delete it
+    if (host_lib_obj->constant.phy_handle) {
+        ESP_ERROR_CHECK(usb_del_phy(host_lib_obj->constant.phy_handle));
+    }
     //Free memory objects
     vSemaphoreDelete(host_lib_obj->constant.mux_lock);
     vSemaphoreDelete(host_lib_obj->constant.event_sem);

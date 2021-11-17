@@ -66,7 +66,7 @@ TEST_CASE("Test HCD port sudden disconnect", "[hcd][ignore]")
     }
     //Add a short delay to let the transfers run for a bit
     esp_rom_delay_us(POST_ENQUEUE_DELAY_US);
-    test_usb_force_conn_state(false, 0);
+    test_usb_set_phy_state(false, 0);
     //Disconnect event should have occurred. Handle the port event
     test_hcd_expect_port_event(port_hdl, HCD_PORT_EVENT_DISCONNECTION);
     TEST_ASSERT_EQUAL(HCD_PORT_EVENT_DISCONNECTION, hcd_port_handle_event(port_hdl));
@@ -275,7 +275,7 @@ static void concurrent_task(void *arg)
     xSemaphoreTake(sync_sem, portMAX_DELAY);
     vTaskDelay(pdMS_TO_TICKS(10));  //Give a short delay let reset command start in main thread
     //Force a disconnection
-    test_usb_force_conn_state(false, 0);
+    test_usb_set_phy_state(false, 0);
     vTaskDelay(portMAX_DELAY);  //Block forever and wait to be deleted
 }
 

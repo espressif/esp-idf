@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,13 +26,15 @@
 static void trigger_dconn_timer_cb(TimerHandle_t xTimer)
 {
     printf("Forcing Sudden Disconnect\n");
-    test_usb_force_conn_state(false, 0);
+    test_usb_set_phy_state(false, 0);
 }
 
 TEST_CASE("Test USB Host sudden disconnection (no client)", "[usb_host][ignore]")
 {
+    test_usb_init_phy();    //Initialize the internal USB PHY and USB Controller for testing
     //Install USB Host Library
     usb_host_config_t host_config = {
+        .skip_phy_setup = true,     //test_usb_init_phy() will already have setup the internal USB PHY for us
         .intr_flags = ESP_INTR_FLAG_LEVEL1,
     };
     ESP_ERROR_CHECK(usb_host_install(&host_config));
@@ -61,6 +63,7 @@ TEST_CASE("Test USB Host sudden disconnection (no client)", "[usb_host][ignore]"
     TEST_ASSERT_EQUAL(pdPASS, xTimerDelete(timer_hdl, portMAX_DELAY));
     //Clean up USB Host
     ESP_ERROR_CHECK(usb_host_uninstall());
+    test_usb_deinit_phy();  //Deinitialize the internal USB PHY after testing
 }
 
 #define TEST_FORCE_DCONN_NUM_TRANSFERS      3
@@ -68,8 +71,10 @@ TEST_CASE("Test USB Host sudden disconnection (no client)", "[usb_host][ignore]"
 
 TEST_CASE("Test USB Host sudden disconnection (single client)", "[usb_host][ignore]")
 {
+    test_usb_init_phy();    //Initialize the internal USB PHY and USB Controller for testing
     //Install USB Host
     usb_host_config_t host_config = {
+        .skip_phy_setup = true,     //test_usb_init_phy() will already have setup the internal USB PHY for us
         .intr_flags = ESP_INTR_FLAG_LEVEL1,
     };
     ESP_ERROR_CHECK(usb_host_install(&host_config));
@@ -108,4 +113,5 @@ TEST_CASE("Test USB Host sudden disconnection (single client)", "[usb_host][igno
     vTaskDelay(10);
     //Clean up USB Host
     ESP_ERROR_CHECK(usb_host_uninstall());
+    test_usb_deinit_phy();  //Deinitialize the internal USB PHY after testing
 }

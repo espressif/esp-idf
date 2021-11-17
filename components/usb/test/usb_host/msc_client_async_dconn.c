@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -219,7 +219,7 @@ void msc_client_async_dconn_task(void *arg)
                     TEST_ASSERT_EQUAL(ESP_OK, usb_host_transfer_submit(xfer_in[i]));
                 }
                 //Trigger a disconnect
-                test_usb_force_conn_state(false, 0);
+                test_usb_set_phy_state(false, 0);
                 //Next stage set from transfer callback
                 break;
             }
