@@ -1810,8 +1810,6 @@ components/heap/test_multi_heap_host/test_multi_heap.cpp
 components/idf_test/include/esp32/idf_performance_target.h
 components/idf_test/include/esp32c3/idf_performance_target.h
 components/idf_test/include/esp32h2/idf_performance_target.h
-components/idf_test/include/esp32s2/idf_performance_target.h
-components/idf_test/include/esp32s3/idf_performance_target.h
 components/idf_test/include/idf_performance.h
 components/ieee802154/include/esp_ieee802154.h
 components/ieee802154/include/esp_ieee802154_types.h

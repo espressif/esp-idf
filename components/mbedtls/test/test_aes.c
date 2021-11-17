@@ -12,6 +12,9 @@
 #include "esp_timer.h"
 #include "esp_heap_caps.h"
 #include "test_utils.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/semphr.h"
 
 static const uint8_t key_256[] = {
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
@@ -296,7 +299,7 @@ TEST_CASE("mbedtls CFB-128 AES-256 test", "[aes]")
     free(decryptedtext);
 }
 
-TEST_CASE("mbedtls CTR stream test", "[aes]")
+static void aes_ctr_stream_test(void)
 {
     const unsigned SZ = 100;
     mbedtls_aes_context ctx;
@@ -394,6 +397,11 @@ TEST_CASE("mbedtls CTR stream test", "[aes]")
     free(plaintext);
     free(chipertext);
     free(decryptedtext);
+}
+
+TEST_CASE("mbedtls CTR stream test", "[aes]")
+{
+    aes_ctr_stream_test();
 }
 
 
@@ -1457,3 +1465,32 @@ TEST_CASE("mbedtls AES external flash tests", "[aes]")
     aes_ext_flash_ctr_test(MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
 }
 #endif // CONFIG_SPIRAM_USE_MALLOC
+
+
+#if CONFIG_ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK
+
+RTC_FAST_ATTR uint8_t rtc_stack[4096];
+static xSemaphoreHandle done_sem;
+
+static void aes_ctr_stream_test_task(void *pv)
+{
+    aes_ctr_stream_test();
+    xSemaphoreGive(done_sem);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("mbedtls AES stack in RTC RAM", "[mbedtls]")
+{
+    done_sem = xSemaphoreCreateBinary();
+    static StaticTask_t rtc_task;
+    memset(rtc_stack, 0, sizeof(rtc_stack));
+
+    TEST_ASSERT(esp_ptr_in_rtc_dram_fast(rtc_stack));
+
+    TEST_ASSERT_NOT_NULL(xTaskCreateStatic(aes_ctr_stream_test_task, "aes_ctr_task", sizeof(rtc_stack), NULL,
+                                            3, rtc_stack, &rtc_task));
+    TEST_ASSERT_TRUE(xSemaphoreTake(done_sem, 10000 / portTICK_PERIOD_MS));
+    vSemaphoreDelete(done_sem);
+}
+
+#endif //CONFIG_ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK
