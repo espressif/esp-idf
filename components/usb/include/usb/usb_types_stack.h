@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -138,6 +138,29 @@ struct usb_transfer_s{
     usb_isoc_packet_desc_t isoc_packet_desc[0];     /**< Descriptors for each Isochronous packet */
 };
 
+/**
+ * @brief Terminate Bulk/Interrupt OUT transfer with a zero length packet
+ *
+ * OUT transfers normally terminate when the Host has transferred the exact amount of data it needs to the device.
+ * However, for bulk and interrupt OUT transfers, if the transfer size just happened to be a multiple of MPS, it will be
+ * impossible to know the boundary between two consecutive transfers to the same endpoint.
+ *
+ * Therefore, this flag will cause the transfer to automatically add a zero length packet (ZLP) at the end of the
+ * transfer if the following conditions are met:
+ * - The target endpoint is a Bulk/Interrupt OUT endpoint (Host to device)
+ * - The transfer's length (i.e., transfer.num_bytes) is a multiple of the endpoint's MPS
+ *
+ * Otherwise, this flag has no effect.
+ *
+ * Users should check whether their target device's class requires a ZLP, as not all Bulk/Interrupt OUT endpoints
+ * require them. For example:
+ * - For MSC Bulk Only Transport class, the Host MUST NEVER send a ZLP. Bulk transfer boundaries are determined by the CBW and CSW instead
+ * - For CDC Ethernet, the Host MUST ALWAYS send a ZLP if a segment (i.e., a transfer) is a multiple of MPS (See 3.3.1 Segment Delineation)
+ *
+ * @note See USB2.0 specification 5.7.3 and 5.8.3 for more details
+ * @note IN transfers normally terminate when the Host as receive the exact amount of data it needs (must be multiple of MPS)
+ *       or the endpoint sends a short packet to the Host
+ */
 #define USB_TRANSFER_FLAG_ZERO_PACK  0x01           /**< (For bulk OUT only). Indicates that a bulk OUT transfers should always terminate with a short packet, even if it means adding an extra zero length packet */
 
 #ifdef __cplusplus
