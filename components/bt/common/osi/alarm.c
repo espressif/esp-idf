@@ -143,7 +143,7 @@ static void alarm_cb_handler(struct alarm_t *alarm)
         OSI_TRACE_WARNING("%s, invalid state %d\n", __func__, alarm_state);
         return;
     }
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_alarm_args_t arg;
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_ALARM;
@@ -173,7 +173,7 @@ osi_alarm_t *osi_alarm_new(const char *alarm_name, osi_alarm_callback_t callback
         goto end;
     }
 
-    esp_timer_create_args_t tca;
+    esp_timer_create_args_t tca = {0};
     tca.callback = (esp_timer_cb_t)alarm_cb_handler;
     tca.arg = timer_id;
     tca.dispatch_method = ESP_TIMER_TASK;

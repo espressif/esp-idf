@@ -799,7 +799,7 @@ BOOLEAN BTM_UseLeLink (BD_ADDR bd_addr)
 {
     tACL_CONN         *p;
     tBT_DEVICE_TYPE     dev_type;
-    tBLE_ADDR_TYPE      addr_type;
+    tBLE_ADDR_TYPE      addr_type = 0;
     BOOLEAN             use_le = FALSE;
 
     if ((p = btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR)) != NULL) {

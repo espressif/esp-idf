@@ -751,7 +751,7 @@ void smp_sm_event(tSMP_CB *p_cb, tSMP_EVENT event, void *p_data)
             entry &= ~SMP_ALL_TBL_MASK;
             state_table = smp_all_table;
         } else {
-            state_table = smp_state_table[curr_state][p_cb->role];
+            state_table = smp_state_table[curr_state][p_cb->role ? 1 : 0];
         }
     } else {
         SMP_TRACE_DEBUG( "Ignore event [%s (%d)] in state [%s (%d)]\n",
