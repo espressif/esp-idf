@@ -31,6 +31,7 @@
 
 #include "esp_log.h"
 #include "esp_crypto_lock.h"
+#include "esp_attr.h"
 #include "soc/lldesc.h"
 #include "soc/cache_memory.h"
 #include "soc/periph_defs.h"
@@ -68,6 +69,12 @@
 
 const static char *TAG = "esp-sha";
 
+/* These are static due to:
+ *  * Must be in DMA capable memory, so stack is not a safe place to put them
+ *  * To avoid having to malloc/free them for every DMA operation
+ */
+static DRAM_ATTR lldesc_t s_dma_descr_input;
+static DRAM_ATTR lldesc_t s_dma_descr_buf;
 
 void esp_sha_write_digest_state(esp_sha_type sha_type, void *digest_state)
 {
@@ -277,34 +284,35 @@ static esp_err_t esp_sha_dma_process(esp_sha_type sha_type, const void *input, u
                                      const void *buf, uint32_t buf_len, bool is_first_block)
 {
     int ret = 0;
-    lldesc_t dma_descr_input = {};
-    lldesc_t dma_descr_buf = {};
     lldesc_t *dma_descr_head;
     size_t num_blks = (ilen + buf_len) / block_length(sha_type);
 
+    memset(&s_dma_descr_input, 0, sizeof(lldesc_t));
+    memset(&s_dma_descr_buf, 0, sizeof(lldesc_t));
+
     /* DMA descriptor for Memory to DMA-SHA transfer */
     if (ilen) {
-        dma_descr_input.length = ilen;
-        dma_descr_input.size = ilen;
-        dma_descr_input.owner = 1;
-        dma_descr_input.eof = 1;
-        dma_descr_input.buf = (uint8_t *)input;
-        dma_descr_head = &dma_descr_input;
+        s_dma_descr_input.length = ilen;
+        s_dma_descr_input.size = ilen;
+        s_dma_descr_input.owner = 1;
+        s_dma_descr_input.eof = 1;
+        s_dma_descr_input.buf = (uint8_t *)input;
+        dma_descr_head = &s_dma_descr_input;
     }
     /* Check after input to overide head if there is any buf*/
     if (buf_len) {
-        dma_descr_buf.length = buf_len;
-        dma_descr_buf.size = buf_len;
-        dma_descr_buf.owner = 1;
-        dma_descr_buf.eof = 1;
-        dma_descr_buf.buf = (uint8_t *)buf;
-        dma_descr_head = &dma_descr_buf;
+        s_dma_descr_buf.length = buf_len;
+        s_dma_descr_buf.size = buf_len;
+        s_dma_descr_buf.owner = 1;
+        s_dma_descr_buf.eof = 1;
+        s_dma_descr_buf.buf = (uint8_t *)buf;
+        dma_descr_head = &s_dma_descr_buf;
     }
 
     /* Link DMA lists */
     if (buf_len && ilen) {
-        dma_descr_buf.eof = 0;
-        dma_descr_buf.empty = (uint32_t)(&dma_descr_input);
+        s_dma_descr_buf.eof = 0;
+        s_dma_descr_buf.empty = (uint32_t)(&s_dma_descr_input);
     }
 
     if (esp_sha_dma_start(dma_descr_head) != ESP_OK) {
