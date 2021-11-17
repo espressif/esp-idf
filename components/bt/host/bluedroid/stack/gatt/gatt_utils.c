@@ -1399,7 +1399,7 @@ UINT8 gatt_sr_find_i_rcb_by_handle(UINT16 handle)
 **
 ** Description      The function searches for a service that owns a specific handle.
 **
-** Returns          0 if not found. Otherwise index of th eservice.
+** Returns          GATT_MAX_SR_PROFILES if not found. Otherwise index of th eservice.
 **
 *******************************************************************************/
 #if (GATTS_INCLUDED == TRUE)
