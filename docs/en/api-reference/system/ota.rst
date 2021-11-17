@@ -43,15 +43,15 @@ App OTA State
 States control the process of selecting a boot app:
 
 ============================= ======================================================================
-            States            Restriction of selecting a boot app in bootloader                    
+            States            Restriction of selecting a boot app in bootloader
 ============================= ======================================================================
- ESP_OTA_IMG_VALID            None restriction. Will be selected.                                  
- ESP_OTA_IMG_UNDEFINED        None restriction. Will be selected.                                  
- ESP_OTA_IMG_INVALID          Will not be selected.                                                
- ESP_OTA_IMG_ABORTED          Will not be selected.                                                
+ ESP_OTA_IMG_VALID            None restriction. Will be selected.
+ ESP_OTA_IMG_UNDEFINED        None restriction. Will be selected.
+ ESP_OTA_IMG_INVALID          Will not be selected.
+ ESP_OTA_IMG_ABORTED          Will not be selected.
  ESP_OTA_IMG_NEW              If :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is set it will
                               be selected only once. In bootloader the state immediately changes to
-                              ``ESP_OTA_IMG_PENDING_VERIFY``.                                      
+                              ``ESP_OTA_IMG_PENDING_VERIFY``.
  ESP_OTA_IMG_PENDING_VERIFY   If :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is set it will
                               not be selected and the state will change to ``ESP_OTA_IMG_ABORTED``.
 ============================= ======================================================================
@@ -133,7 +133,7 @@ A typical anti-rollback scheme is
 
 Recommendation:
 
-If you want to avoid the download/erase overhead in case of the app from the server has security version lower then running app you have to get ``new_app_info.secure_version`` from the first package of an image and compare it with the secure version of efuse. Use ``esp_efuse_check_secure_version(new_app_info.secure_version)`` function if it is true then continue downloading otherwise abort.
+If you want to avoid the download/erase overhead in case of the app from the server has security version lower then running app, you have to get ``new_app_info.secure_version`` from the first package of an image and compare it with the secure version of efuse. Use ``esp_efuse_check_secure_version(new_app_info.secure_version)`` function if it is true then continue downloading otherwise abort.
 
 .. code-block:: c
 
