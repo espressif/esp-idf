@@ -17,7 +17,7 @@ Get ESP-IDF
 
         Previous versions of ESP-IDF used the **MSYS2 bash terminal** command line. The current cmake-based build system can run in the regular **Windows Command Prompt** which is used here.
 
-        If you use a bash-based terminal or PowerShell, please note that some command syntax will be different to what is shown below.
+        If you use PowerShell, please note that some command syntax will be different to what is shown below.
 
 Open Command Prompt and run the following commands:
 

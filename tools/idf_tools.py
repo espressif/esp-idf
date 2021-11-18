@@ -246,11 +246,6 @@ def to_shell_specific_paths(paths_list):  # type: (list[str]) -> list[str]
     if sys.platform == 'win32':
         paths_list = [p.replace('/', os.path.sep) if os.path.sep in p else p for p in paths_list]
 
-        if 'MSYSTEM' in os.environ:
-            paths_msys = run_cmd_check_output(['cygpath', '-u', '-f', '-'],
-                                              input_text='\n'.join(paths_list))
-            paths_list = paths_msys.decode().strip().split('\n')
-
     return paths_list
 
 
@@ -1259,17 +1254,15 @@ def action_export(args):  # type: ignore
     if idf_tools_dir not in current_path:
         paths_to_export.append(idf_tools_dir)
 
-    if sys.platform == 'win32' and 'MSYSTEM' not in os.environ:
+    if sys.platform == 'win32':
         old_path = '%PATH%'
         path_sep = ';'
     else:
         old_path = '$PATH'
-        # can't trust os.pathsep here, since for Windows Python started from MSYS shell,
-        # os.pathsep will be ';'
         path_sep = ':'
 
     if args.format == EXPORT_SHELL:
-        if sys.platform == 'win32' and 'MSYSTEM' not in os.environ:
+        if sys.platform == 'win32':
             export_format = 'SET "{}={}"'
             export_sep = '\n'
         else:
@@ -1821,4 +1814,8 @@ def main(argv):  # type: (list[str]) -> None
 
 
 if __name__ == '__main__':
+    if 'MSYSTEM' in os.environ:
+        fatal('MSys/Mingw is not supported. Please follow the getting started guide of the documentation to set up '
+              'a supported environment')
+        raise SystemExit(1)
     main(sys.argv[1:])

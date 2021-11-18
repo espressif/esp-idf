@@ -3603,7 +3603,6 @@ tools/kconfig/qconf.h
 tools/kconfig/symbol.c
 tools/kconfig/util.c
 tools/kconfig_new/confserver.py
-tools/kconfig_new/esp-windows-curses/setup.py
 tools/kconfig_new/gen_kconfig_doc.py
 tools/kconfig_new/prepare_kconfig_files.py
 tools/kconfig_new/test/confgen/test_confgen.py

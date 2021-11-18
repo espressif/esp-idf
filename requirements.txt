@@ -27,8 +27,6 @@ pygdbmi<=0.9.0.2
 # A compatible Socket.IO should be used. See https://github.com/miguelgrinberg/python-socketio/issues/578
 python-socketio<5
 
-kconfiglib==13.7.1
-
 # esptool requirements (see components/esptool_py/esptool/setup.py)
 reedsolo>=1.5.3,<=1.5.4
 bitstring>=3.1.6
@@ -38,8 +36,6 @@ ecdsa>=0.16.0
 # This is the last version supports both 2.7 and 3.4
 construct==2.10.54
 
-# windows-curses are required in Windows command line but cannot be installed in MSYS2. A requirement like
-# "windows-curses; sys_platform == 'win32'" would want to install the package on both of them. There is no environment
-# marker for detecting MSYS2. So instead, a dummy custom package is used with "windows-curses" dependency for Windows
-# command line.
-file://${IDF_PATH}/tools/kconfig_new/esp-windows-curses; sys_platform == 'win32'
+# kconfig & menuconfig support
+kconfiglib==13.7.1
+windows-curses; sys_platform == 'win32'
