@@ -317,7 +317,7 @@ static bool wifi_cmd_ap_set(const char* ssid, const char* pass)
     if (pass) {
         if (strlen(pass) != 0 && strlen(pass) < 8) {
             s_reconnect = true;
-            ESP_LOGE(TAG_AP, "password less than 8");
+            ESP_LOGE(TAG_AP, "password cannot be less than 8 characters long");
             return false;
         }
         strlcpy((char*) g_ap_config.ap.password, pass, MAX_PASSPHRASE_LEN);
@@ -341,8 +341,11 @@ static int wifi_cmd_ap(int argc, char** argv)
         return 1;
     }
 
-    wifi_cmd_ap_set(ap_args.ssid->sval[0], ap_args.password->sval[0]);
-    ESP_LOGI(TAG_AP, "Starting SoftAP with FTM Responder support, SSID - %s, Password - %s", ap_args.ssid->sval[0], ap_args.password->sval[0]);
+    if (true == wifi_cmd_ap_set(ap_args.ssid->sval[0], ap_args.password->sval[0]))
+        ESP_LOGI(TAG_AP, "Starting SoftAP with FTM Responder support, SSID - %s, Password - %s", ap_args.ssid->sval[0], ap_args.password->sval[0]);
+    else
+        ESP_LOGE(TAG_AP, "Failed to start SoftAP!");
+
     return 0;
 }
 
