@@ -12,7 +12,7 @@ If you have a new I2C application to go (for example, read the temperature data 
 
 ### Hardware Required
 
-To run this example, you should have one ESP32, ESP32-S or ESP32-C based development board as well as a MPU9250. MPU9250 is a inertial measurement unit, which contains a accelerometer, gyroscope as well as a magnetometer, for more information about it, you can read the [PDF](https://invensense.tdk.com/wp-content/uploads/2015/02/PS-MPU-9250A-01-v1.1.pdf) of this sensor.
+To run this example, you should have one ESP32, ESP32-S or ESP32-C based development board as well as a MPU9250. MPU9250 is a inertial measurement unit, which contains a accelerometer, gyroscope as well as a magnetometer, for more information about it, you can read the [datasheet of the MPU9250 sensor](https://invensense.tdk.com/wp-content/uploads/2015/02/PS-MPU-9250A-01-v1.1.pdf).
 
 #### Pin Assignment:
 
@@ -26,7 +26,7 @@ To run this example, you should have one ESP32, ESP32-S or ESP32-C based develop
 
 For the actual default value of `I2C_MASTER_SDA` and `I2C_MASTER_SCL` see `Example Configuration` in `menuconfig`.
 
-**Note: ** There’s no need to add an external pull-up resistors for SDA/SCL pin, because the driver will enable the internal pull-up resistors.
+**Note:** There's no need to add an external pull-up resistors for SDA/SCL pin, because the driver will enable the internal pull-up resistors.
 
 ### Build and Flash
 
@@ -41,7 +41,7 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 ```bash
 I (328) i2c-simple-example: I2C initialized successfully
 I (338) i2c-simple-example: WHO_AM_I = 71
-I (338) i2c-simple-example: I2C unitialized successfully
+I (338) i2c-simple-example: I2C de-initialized successfully
 ```
 
 ## Troubleshooting
