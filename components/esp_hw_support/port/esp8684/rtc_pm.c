@@ -8,7 +8,6 @@
 #include <assert.h>
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
-#include "soc/apb_ctrl_reg.h"
 
 typedef enum {
     PM_LIGHT_SLEEP = BIT(2),        /*!< WiFi PD, memory in light sleep */

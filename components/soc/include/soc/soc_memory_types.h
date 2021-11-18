@@ -123,22 +123,29 @@ inline static bool IRAM_ATTR esp_ptr_in_diram_iram(const void *p) {
     return ((intptr_t)p >= SOC_DIRAM_IRAM_LOW && (intptr_t)p < SOC_DIRAM_IRAM_HIGH);
 }
 
-#if SOC_RTC_FAST_MEM_SUPPORTED
 inline static bool IRAM_ATTR esp_ptr_in_rtc_iram_fast(const void *p) {
+#if SOC_RTC_FAST_MEM_SUPPORTED
     return ((intptr_t)p >= SOC_RTC_IRAM_LOW && (intptr_t)p < SOC_RTC_IRAM_HIGH);
+#else
+    return false;
+#endif
 }
-
 inline static bool IRAM_ATTR esp_ptr_in_rtc_dram_fast(const void *p) {
+#if SOC_RTC_FAST_MEM_SUPPORTED
     return ((intptr_t)p >= SOC_RTC_DRAM_LOW && (intptr_t)p < SOC_RTC_DRAM_HIGH);
-}
+#else
+    return false;
 #endif
+}
 
-#if !CONFIG_IDF_TARGET_ESP8684
-// 	IDF-3901
 inline static bool IRAM_ATTR esp_ptr_in_rtc_slow(const void *p) {
+#if SOC_RTC_SLOW_MEM_SUPPORTED
     return ((intptr_t)p >= SOC_RTC_DATA_LOW && (intptr_t)p < SOC_RTC_DATA_HIGH);
-}
+#else
+    return false;
 #endif
+}
+
 
 /* Convert a D/IRAM DRAM pointer to equivalent word address in IRAM
 
