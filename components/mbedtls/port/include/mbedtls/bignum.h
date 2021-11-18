@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
 #include_next "mbedtls/bignum.h"
@@ -76,5 +68,32 @@ void esp_mpi_release_hardware(void);
  * @return 0 on success, mbedTLS MPI error codes on failure.
  */
 int esp_mpi_mul_mpi_mod(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, const mbedtls_mpi *M);
+
+#if CONFIG_MBEDTLS_LARGE_KEY_SOFTWARE_MPI
+
+/**
+ * @brief          Perform a sliding-window exponentiation: X = A^E mod N
+ *
+ * @param X        The destination MPI. This must point to an initialized MPI.
+ * @param A        The base of the exponentiation.
+ *                 This must point to an initialized MPI.
+ * @param E        The exponent MPI. This must point to an initialized MPI.
+ * @param N        The base for the modular reduction. This must point to an
+ *                 initialized MPI.
+ * @param _RR      A helper MPI depending solely on \p N which can be used to
+ *                 speed-up multiple modular exponentiations for the same value
+ *                 of \p N. This may be \c NULL. If it is not \c NULL, it must
+ *                 point to an initialized MPI.
+ *
+ * @return         \c 0 if successful.
+ * @return         #MBEDTLS_ERR_MPI_ALLOC_FAILED if a memory allocation failed.
+ * @return         #MBEDTLS_ERR_MPI_BAD_INPUT_DATA if \c N is negative or
+ *                 even, or if \c E is negative.
+ * @return         Another negative error code on different kinds of failures.
+ *
+ */
+int mbedtls_mpi_exp_mod_soft(mbedtls_mpi *X, const mbedtls_mpi *A, const mbedtls_mpi *E, const mbedtls_mpi *N, mbedtls_mpi *_RR);
+
+#endif // CONFIG_MBEDTLS_LARGE_KEY_SOFTWARE_MPI
 
 #endif // CONFIG_MBEDTLS_HARDWARE_MPI
