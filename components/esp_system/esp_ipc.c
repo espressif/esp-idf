@@ -195,6 +195,6 @@ esp_err_t esp_ipc_start_gcov_from_isr(uint32_t cpu_id, esp_ipc_func_t func, void
 
     return ret == pdTRUE ? ESP_OK : ESP_FAIL;
 }
-#endif
+#endif // CONFIG_APPTRACE_GCOV_ENABLE
 
-#endif // not CONFIG_FREERTOS_UNICORE or CONFIG_APPTRACE_GCOV_ENABLE
+#endif // !defined(CONFIG_FREERTOS_UNICORE) || defined(CONFIG_APPTRACE_GCOV_ENABLE)

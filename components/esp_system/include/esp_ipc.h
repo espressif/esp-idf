@@ -4,8 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __ESP_IPC_H__
-#define __ESP_IPC_H__
+#pragma once
 
 #include <esp_err.h>
 
@@ -15,30 +14,30 @@ extern "C" {
 
 #if !defined(CONFIG_FREERTOS_UNICORE) || defined(CONFIG_APPTRACE_GCOV_ENABLE)
 
-/** @cond */
-typedef void (*esp_ipc_func_t)(void* arg);
-/** @endcond */
 /*
  * Inter-processor call APIs
  *
- * FreeRTOS provides several APIs which can be used to communicate between
- * different tasks, including tasks running on different CPUs.
- * This module provides additional APIs to run some code on the other CPU.
- *
- * These APIs can only be used when FreeRTOS scheduler is running.
+ * FreeRTOS provides several APIs which can be used to communicate between different tasks, including tasks running on
+ * different CPUs. This module provides additional APIs to run some code on the other CPU. These APIs can only be used
+ * when FreeRTOS scheduler is running.
  */
 
 /**
- * @brief Execute a function on the given CPU
+ * @brief IPC Callback
  *
- * Run a given function on a particular CPU. The given function must accept a
- * void* argument and return void. The given function is run in the context of
- * the IPC task of the CPU specified by the cpu_id parameter. The calling task
- * will be blocked until the IPC task begins executing the given function. If
- * another IPC call is ongoing, the calling task will block until the other IPC
- * call completes. The stack size allocated for the IPC task can be configured
- * in the "Inter-Processor Call (IPC) task stack size" setting in menuconfig.
- * Increase this setting if the given function requires more stack than default.
+ * A callback of this type should be provided as an argument when calling esp_ipc_call() or esp_ipc_call_blocking().
+ */
+typedef void (*esp_ipc_func_t)(void* arg);
+
+/**
+ * @brief Execute a callback on a given CPU
+ *
+ * Execute a given callback on a particular CPU. The callback must be of type "esp_ipc_func_t" and will be invoked in
+ * the context of the target CPU's IPC task.
+ *
+ * - This function will block the target CPU's IPC task has begun execution of the callback
+ * - If another IPC call is ongoing, this function will block until the ongoing IPC call completes
+ * - The stack size of the IPC task can be configured via the CONFIG_ESP_IPC_TASK_STACK_SIZE option
  *
  * @note In single-core mode, returns ESP_ERR_INVALID_ARG for cpu_id 1.
  *
@@ -55,17 +54,10 @@ esp_err_t esp_ipc_call(uint32_t cpu_id, esp_ipc_func_t func, void* arg);
 
 
 /**
- * @brief Execute a function on the given CPU and blocks until it completes
+ * @brief Execute a callback on a given CPU until and block until it completes
  *
- * Run a given function on a particular CPU. The given function must accept a
- * void* argument and return void. The given function is run in the context of
- * the IPC task of the CPU specified by the cpu_id parameter. The calling task
- * will be blocked until the IPC task completes execution of the given function.
- * If another IPC call is ongoing, the calling task will block until the other
- * IPC call completes. The stack size allocated for the IPC task can be
- * configured in the "Inter-Processor Call (IPC) task stack size" setting in
- * menuconfig. Increase this setting if the given function requires more stack
- * than default.
+ * This function is identical to esp_ipc_call() except that this function will block until the execution of the callback
+ * completes.
  *
  * @note    In single-core mode, returns ESP_ERR_INVALID_ARG for cpu_id 1.
  *
@@ -80,10 +72,8 @@ esp_err_t esp_ipc_call(uint32_t cpu_id, esp_ipc_func_t func, void* arg);
  */
 esp_err_t esp_ipc_call_blocking(uint32_t cpu_id, esp_ipc_func_t func, void* arg);
 
-#endif // not CONFIG_FREERTOS_UNICORE or CONFIG_APPTRACE_GCOV_ENABLE
+#endif // !defined(CONFIG_FREERTOS_UNICORE) || defined(CONFIG_APPTRACE_GCOV_ENABLE)
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* __ESP_IPC_H__ */
