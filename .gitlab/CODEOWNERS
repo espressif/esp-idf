@@ -200,6 +200,6 @@ requirements.txt              @esp-idf-codeowners/tools
 # sort-order-reset
 
 # ignore lists
+/tools/ci/check_copyright_config.yaml                   @esp-idf-codeowners/all-maintainers
 /tools/ci/check_copyright_ignore.txt                    @esp-idf-codeowners/all-maintainers
-/tools/ci/check_copyright_permanent_ignore.txt          @esp-idf-codeowners/all-maintainers
 /tools/ci/mypy_ignore_list.txt                          @esp-idf-codeowners/tools
