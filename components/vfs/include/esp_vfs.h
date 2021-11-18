@@ -254,7 +254,6 @@ typedef struct
 #endif // CONFIG_VFS_SUPPORT_SELECT
 } esp_vfs_t;
 
-
 /**
  * Register a virtual filesystem for given path prefix.
  *

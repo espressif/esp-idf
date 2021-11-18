@@ -26,6 +26,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "esp_vfs.h"
+#include "esp_vfs_private.h"
 #include "sdkconfig.h"
 
 #ifdef CONFIG_VFS_SUPPRESS_SELECT_DEBUG_OUTPUT
@@ -55,14 +56,6 @@ typedef struct {
     local_fd_t local_fd;
 } fd_table_t;
 
-typedef struct vfs_entry_ {
-    esp_vfs_t vfs;          // contains pointers to VFS functions
-    char path_prefix[ESP_VFS_PATH_MAX]; // path prefix mapped to this VFS
-    size_t path_prefix_len; // micro-optimization to avoid doing extra strlen
-    void* ctx;              // optional pointer which can be passed to VFS
-    int offset;             // index of this structure in s_vfs array
-} vfs_entry_t;
-
 typedef struct {
     bool isset; // none or at least one bit is set in the following 3 fd sets
     fd_set readfds;
@@ -76,7 +69,7 @@ static size_t s_vfs_count = 0;
 static fd_table_t s_fd_table[MAX_FDS] = { [0 ... MAX_FDS-1] = FD_TABLE_ENTRY_UNUSED };
 static _lock_t s_fd_table_lock;
 
-static esp_err_t esp_vfs_register_common(const char* base_path, size_t len, const esp_vfs_t* vfs, void* ctx, int *vfs_index)
+esp_err_t esp_vfs_register_common(const char* base_path, size_t len, const esp_vfs_t* vfs, void* ctx, int *vfs_index)
 {
     if (len != LEN_PATH_PREFIX_IGNORED) {
         /* empty prefix is allowed, "/" is not allowed */
@@ -271,7 +264,7 @@ esp_err_t esp_vfs_unregister_fd(esp_vfs_id_t vfs_id, int fd)
     return ret;
 }
 
-static inline const vfs_entry_t *get_vfs_for_index(int index)
+const vfs_entry_t *get_vfs_for_index(int index)
 {
     if (index < 0 || index >= s_vfs_count) {
         return NULL;
@@ -316,7 +309,7 @@ static const char* translate_path(const vfs_entry_t* vfs, const char* src_path)
     return src_path + vfs->path_prefix_len;
 }
 
-static const vfs_entry_t* get_vfs_for_path(const char* path)
+const vfs_entry_t* get_vfs_for_path(const char* path)
 {
     const vfs_entry_t* best_match = NULL;
     ssize_t best_match_prefix_len = -1;
