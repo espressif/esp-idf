@@ -111,3 +111,12 @@ config SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
 
         Note the values placed into this section will not be initialized at startup and should keep its value
         after software restart.
+
+config SPIRAM_ECC_ENABLE
+    bool "Enable SPI RAM ECC"
+    default n
+    depends on SPIRAM_MODE_OCT && IDF_TARGET_ESP32S3
+    help
+        Enable MSPI Error-Correcting Code function when accessing SPIRAM.
+
+        If enabled, 1/16 of the SPI RAM total size will be reserved for error-correcting code.

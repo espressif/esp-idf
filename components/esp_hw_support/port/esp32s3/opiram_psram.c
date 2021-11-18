@@ -42,7 +42,12 @@
 
 #define OCT_PSRAM_CS_SETUP_TIME         3
 #define OCT_PSRAM_CS_HOLD_TIME          3
+#define OCT_PSRAM_CS_ECC_HOLD_TIME      3
 #define OCT_PSRAM_CS_HOLD_DELAY         2
+
+#define OCT_PSRAM_PAGE_SIZE             2       //2 for 1024B
+#define OCT_PSRAM_ECC_ENABLE_MASK       BIT(8)
+
 
 typedef struct {
     union {
@@ -99,7 +104,7 @@ typedef struct {
 } opi_psram_mode_reg_t;
 
 static const char* TAG = "opi psram";
-static psram_size_t s_psram_size;
+static uint32_t s_psram_size;   //this stands for physical psram size in bytes
 static void s_config_psram_spi_phases(void);
 
 uint8_t psram_get_cs_io(void)
@@ -114,7 +119,7 @@ static void s_init_psram_mode_reg(int spi_num, opi_psram_mode_reg_t *mode_reg_co
 {
     esp_rom_spiflash_read_mode_t mode = ESP_ROM_SPIFLASH_OPI_DTR_MODE;
     int cmd_len = 16;
-    uint32_t addr = 0x0;
+    uint32_t addr = 0x0;    //0x0 is the MR0 register
     int addr_bit_len = 32;
     int dummy = OCT_PSRAM_RD_DUMMY_BITLEN;
     opi_psram_mode_reg_t mode_reg = {0};
@@ -129,6 +134,7 @@ static void s_init_psram_mode_reg(int spi_num, opi_psram_mode_reg_t *mode_reg_co
                              &mode_reg.mr0.val, data_bit_len,
                              BIT(1),
                              false);
+
     //modify
     mode_reg.mr0.lt = mode_reg_config->mr0.lt;
     mode_reg.mr0.read_latency = mode_reg_config->mr0.read_latency;
@@ -143,6 +149,34 @@ static void s_init_psram_mode_reg(int spi_num, opi_psram_mode_reg_t *mode_reg_co
                              NULL, 0,
                              BIT(1),
                              false);
+
+#if CONFIG_SPIRAM_ECC_ENABLE
+    addr = 0x8;     //0x8 is the MR8 register
+    data_bit_len = 8;
+    //read
+    esp_rom_opiflash_exec_cmd(spi_num, mode,
+                             OPI_PSRAM_REG_READ, cmd_len,
+                             addr, addr_bit_len,
+                             dummy,
+                             NULL, 0,
+                             &mode_reg.mr8.val, data_bit_len,
+                             BIT(1),
+                             false);
+
+    //modify
+    mode_reg.mr8.bt = mode_reg_config->mr8.bt;
+    mode_reg.mr8.bl = mode_reg_config->mr8.bl;
+
+    //write
+    esp_rom_opiflash_exec_cmd(spi_num, mode,
+                             OPI_PSRAM_REG_WRITE, cmd_len,
+                             addr, addr_bit_len,
+                             0,
+                             &mode_reg.mr8.val, 16,
+                             NULL, 0,
+                             BIT(1),
+                             false);
+#endif
 }
 
 static void s_get_psram_mode_reg(int spi_num, opi_psram_mode_reg_t *out_reg)
@@ -194,18 +228,18 @@ static void s_get_psram_mode_reg(int spi_num, opi_psram_mode_reg_t *out_reg)
 
 static void s_print_psram_info(opi_psram_mode_reg_t *reg_val)
 {
-    ESP_EARLY_LOGI(TAG, "vendor id : 0x%02x (%s)", reg_val->mr1.vendor_id, reg_val->mr1.vendor_id == 0x0d ? "AP" : "UNKNOWN");
-    ESP_EARLY_LOGI(TAG, "dev id    : 0x%02x (generation %d)", reg_val->mr2.dev_id, reg_val->mr2.dev_id + 1);
-    ESP_EARLY_LOGI(TAG, "density   : 0x%02x (%d Mbit)", reg_val->mr2.density, reg_val->mr2.density == 0x1 ? 32 :
-                                                                              reg_val->mr2.density == 0X3 ? 64 :
-                                                                              reg_val->mr2.density == 0x5 ? 128 :
-                                                                              reg_val->mr2.density == 0x7 ? 256 : 0);
-    ESP_EARLY_LOGI(TAG, "good-die  : 0x%02x (%s)", reg_val->mr2.gb, reg_val->mr2.gb == 1 ? "Pass" : "Fail");
-    ESP_EARLY_LOGI(TAG, "Latency   : 0x%02x (%s)", reg_val->mr0.lt, reg_val->mr0.lt == 1 ? "Fixed" : "Variable");
-    ESP_EARLY_LOGI(TAG, "VCC       : 0x%02x (%s)", reg_val->mr3.vcc, reg_val->mr3.vcc == 1 ? "3V" : "1.8V");
-    ESP_EARLY_LOGI(TAG, "SRF       : 0x%02x (%s Refresh)", reg_val->mr3.srf, reg_val->mr3.srf == 0x1 ? "Fast" : "Slow");
-    ESP_EARLY_LOGI(TAG, "BurstType : 0x%02x (%s Wrap)", reg_val->mr8.bt, reg_val->mr8.bt == 1 && reg_val->mr8.bl != 3 ? "Hybrid" : "");
-    ESP_EARLY_LOGI(TAG, "BurstLen  : 0x%02x (%d Byte)", reg_val->mr8.bl, reg_val->mr8.bl == 0x00 ? 16 :
+    ESP_EARLY_LOGI(TAG, "vendor id    : 0x%02x (%s)", reg_val->mr1.vendor_id, reg_val->mr1.vendor_id == 0x0d ? "AP" : "UNKNOWN");
+    ESP_EARLY_LOGI(TAG, "dev id       : 0x%02x (generation %d)", reg_val->mr2.dev_id, reg_val->mr2.dev_id + 1);
+    ESP_EARLY_LOGI(TAG, "density      : 0x%02x (%d Mbit)", reg_val->mr2.density, reg_val->mr2.density == 0x1 ? 32 :
+                                                                                 reg_val->mr2.density == 0X3 ? 64 :
+                                                                                 reg_val->mr2.density == 0x5 ? 128 :
+                                                                                 reg_val->mr2.density == 0x7 ? 256 : 0);
+    ESP_EARLY_LOGI(TAG, "good-die     : 0x%02x (%s)", reg_val->mr2.gb, reg_val->mr2.gb == 1 ? "Pass" : "Fail");
+    ESP_EARLY_LOGI(TAG, "Latency      : 0x%02x (%s)", reg_val->mr0.lt, reg_val->mr0.lt == 1 ? "Fixed" : "Variable");
+    ESP_EARLY_LOGI(TAG, "VCC          : 0x%02x (%s)", reg_val->mr3.vcc, reg_val->mr3.vcc == 1 ? "3V" : "1.8V");
+    ESP_EARLY_LOGI(TAG, "SRF          : 0x%02x (%s Refresh)", reg_val->mr3.srf, reg_val->mr3.srf == 0x1 ? "Fast" : "Slow");
+    ESP_EARLY_LOGI(TAG, "BurstType    : 0x%02x (%s Wrap)", reg_val->mr8.bt, reg_val->mr8.bt == 1 && reg_val->mr8.bl != 3 ? "Hybrid" : "");
+    ESP_EARLY_LOGI(TAG, "BurstLen     : 0x%02x (%d Byte)", reg_val->mr8.bl, reg_val->mr8.bl == 0x00 ? 16 :
                                                                          reg_val->mr8.bl == 0x01 ? 32 :
                                                                          reg_val->mr8.bl == 0x10 ? 64 : 1024);
     ESP_EARLY_LOGI(TAG, "Readlatency  : 0x%02x (%d cycles@%s)", reg_val->mr0.read_latency,  reg_val->mr0.read_latency * 2 + 6,
@@ -215,12 +249,15 @@ static void s_print_psram_info(opi_psram_mode_reg_t *reg_val)
                                                                                 reg_val->mr0.drive_str == 0x02 ? 4 : 8);
 }
 
-static void psram_set_cs_timing(void)
+static void s_set_psram_cs_timing(void)
 {
     //SPI0/1 share the cs_hold / cs_setup, cd_hold_time / cd_setup_time, cs_hold_delay registers for PSRAM, so we only need to set SPI0 related registers here
     SET_PERI_REG_MASK(SPI_MEM_SPI_SMEM_AC_REG(0), SPI_MEM_SPI_SMEM_CS_HOLD_M | SPI_MEM_SPI_SMEM_CS_SETUP_M);
     SET_PERI_REG_BITS(SPI_MEM_SPI_SMEM_AC_REG(0), SPI_MEM_SPI_SMEM_CS_HOLD_TIME_V, OCT_PSRAM_CS_HOLD_TIME, SPI_MEM_SPI_SMEM_CS_HOLD_TIME_S);
     SET_PERI_REG_BITS(SPI_MEM_SPI_SMEM_AC_REG(0), SPI_MEM_SPI_SMEM_CS_SETUP_TIME_V, OCT_PSRAM_CS_SETUP_TIME, SPI_MEM_SPI_SMEM_CS_SETUP_TIME_S);
+#if CONFIG_SPIRAM_ECC_ENABLE
+    SET_PERI_REG_BITS(SPI_MEM_SPI_SMEM_AC_REG(0), SPI_MEM_SPI_SMEM_ECC_CS_HOLD_TIME_V, OCT_PSRAM_CS_ECC_HOLD_TIME, SPI_MEM_SPI_SMEM_ECC_CS_HOLD_TIME_S);
+#endif
     //CS1 high time
     SET_PERI_REG_BITS(SPI_MEM_SPI_SMEM_AC_REG(0), SPI_MEM_SPI_SMEM_CS_HOLD_DELAY_V, OCT_PSRAM_CS_HOLD_DELAY, SPI_MEM_SPI_SMEM_CS_HOLD_DELAY_S);
 }
@@ -235,10 +272,35 @@ static void s_init_psram_pins(void)
     REG_SET_FIELD(SPI_MEM_DATE_REG(0), SPI_MEM_SPI_SMEM_SPICLK_FUN_DRV, 3);
 }
 
+/**
+ * Enable error correcting code feature
+ *
+ * Can add an input parameter for selecting ECC mode if needed
+ */
+static void s_configure_psram_ecc(void)
+{
+#if CONFIG_SPIRAM_ECC_ENABLE
+    //Clear this bit to use ECC 16to17 mode
+    CLEAR_PERI_REG_MASK(SPI_MEM_SPI_SMEM_AC_REG(0), SPI_MEM_SPI_SMEM_ECC_16TO18_BYTE_EN_M);
+    SET_PERI_REG_BITS(SYSCON_SPI_MEM_ECC_CTRL_REG, SYSCON_SRAM_PAGE_SIZE_V, OCT_PSRAM_PAGE_SIZE, SYSCON_SRAM_PAGE_SIZE_S);
+    SET_PERI_REG_MASK(SPI_MEM_SPI_SMEM_AC_REG(0), SPI_MEM_SPI_SMEM_ECC_SKIP_PAGE_CORNER_M);
+    /**
+     * Enable ECC region 0 (ACE0)
+     * Default: ACE0 range: 0 ~ 256MB
+     * Current Octal PSRAM is 8MB, ACE0 is enough
+     */
+    SET_PERI_REG_MASK(SYSCON_SRAM_ACE0_ATTR_REG, OCT_PSRAM_ECC_ENABLE_MASK);
+    ESP_EARLY_LOGI(TAG, "ECC is enabled");
+#else
+    CLEAR_PERI_REG_MASK(SYSCON_SRAM_ACE0_ATTR_REG, OCT_PSRAM_ECC_ENABLE_MASK);
+#endif
+}
+
 esp_err_t psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vaddrmode)
 {
     s_init_psram_pins();
-    psram_set_cs_timing();
+    s_set_psram_cs_timing();
+    s_configure_psram_ecc();
 
     //enter MSPI slow mode to init PSRAM device registers
     spi_timing_enter_mspi_low_speed_mode(true);
@@ -252,14 +314,16 @@ esp_err_t psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vaddrmode)
     mode_reg.mr0.lt = 1;
     mode_reg.mr0.read_latency = 2;
     mode_reg.mr0.drive_str = 0;
+    mode_reg.mr8.bl = 3;
+    mode_reg.mr8.bt = 0;
     s_init_psram_mode_reg(1, &mode_reg);
     //Print PSRAM info
     s_get_psram_mode_reg(1, &mode_reg);
     s_print_psram_info(&mode_reg);
-    s_psram_size = mode_reg.mr2.density == 0x1 ? PSRAM_SIZE_32MBITS  :
-                   mode_reg.mr2.density == 0X3 ? PSRAM_SIZE_64MBITS  :
-                   mode_reg.mr2.density == 0x5 ? PSRAM_SIZE_128MBITS :
-                   mode_reg.mr2.density == 0x7 ? PSRAM_SIZE_256MBITS : 0;
+    s_psram_size = mode_reg.mr2.density == 0x1 ? PSRAM_SIZE_4MB  :
+                   mode_reg.mr2.density == 0X3 ? PSRAM_SIZE_8MB  :
+                   mode_reg.mr2.density == 0x5 ? PSRAM_SIZE_16MB :
+                   mode_reg.mr2.density == 0x7 ? PSRAM_SIZE_32MB : 0;
 
     //Do PSRAM timing tuning, we use SPI1 to do the tuning, and set the SPI0 PSRAM timing related registers accordingly
     spi_timing_psram_tuning();
@@ -310,9 +374,30 @@ static void s_config_psram_spi_phases(void)
     Cache_Resume_DCache(0);
 }
 
-psram_size_t psram_get_size()
+
+/*---------------------------------------------------------------------------------
+ * Following APIs are not required to be IRAM-Safe
+ *
+ * Consider moving these to another file if this kind of APIs grows dramatically
+ *-------------------------------------------------------------------------------*/
+esp_err_t psram_get_physical_size(uint32_t *out_size_bytes)
 {
-    return s_psram_size;
+    *out_size_bytes = s_psram_size;
+    return (s_psram_size ? ESP_OK : ESP_ERR_INVALID_STATE);
+}
+
+/**
+ * This function is to get the available physical psram size in bytes.
+ * If ECC is enabled, available PSRAM size will be 15/16 times its physical size.
+ */
+esp_err_t psram_get_available_size(uint32_t *out_size_bytes)
+{
+#if CONFIG_SPIRAM_ECC_ENABLE
+    *out_size_bytes = s_psram_size * 15 / 16;
+#else
+    *out_size_bytes = s_psram_size;
+#endif
+    return (s_psram_size ? ESP_OK : ESP_ERR_INVALID_STATE);
 }
 
 #endif  //#if CONFIG_SPIRAM_MODE_OCT
