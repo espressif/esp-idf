@@ -99,9 +99,10 @@ __attribute__((noreturn)) void bootloader_reset(void);
 esp_err_t bootloader_sha256_hex_to_str(char *out_str, const uint8_t *in_array_hex, size_t len);
 
 /**
- * @brief Debug log contents of a buffer as hexadecimal
+ * @brief Debug log contents of a buffer as hexadecimal.
  *
- * @note Only works if component log level is DEBUG or higher.
+ * @note - Only works if component log level is DEBUG or higher.
+ *       - It will print at most 128 bytes from @c buffer.
  *
  * @param buffer Buffer to log
  * @param length Length of buffer in bytes. Maximum length 128 bytes.
