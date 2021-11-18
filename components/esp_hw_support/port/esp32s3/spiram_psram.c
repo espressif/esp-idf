@@ -26,7 +26,6 @@
 #include "soc/efuse_periph.h"
 #include "soc/soc_caps.h"
 #include "soc/io_mux_reg.h"
-#include "soc/syscon_reg.h"
 #include "soc/efuse_reg.h"
 #include "soc/soc.h"
 #include "soc/io_mux_reg.h"
@@ -104,11 +103,6 @@ static const char* TAG = "psram";
 #define SPI0_NUM    0
 
 
-typedef enum {
-    PSRAM_EID_SIZE_16MBITS = 0,
-    PSRAM_EID_SIZE_32MBITS = 1,
-    PSRAM_EID_SIZE_64MBITS = 2,
-} psram_eid_size_t;
 
 typedef enum {
     PSRAM_CMD_QPI,
@@ -118,6 +112,7 @@ typedef enum {
 typedef esp_rom_spi_cmd_t psram_cmd_t;
 
 static uint32_t s_psram_id = 0;
+static uint32_t s_psram_size = 0;   //this stands for physical psram size in bytes
 static void config_psram_spi_phases(void);
 extern void esp_rom_spi_set_op_mode(int spi_num, esp_rom_spiflash_read_mode_t mode);
 
@@ -325,20 +320,6 @@ static void psram_gpio_config(void)
     esp_rom_spiflash_select_qio_pins(wp_io, spiconfig);
 }
 
-psram_size_t psram_get_size(void)
-{
-    if ((PSRAM_SIZE_ID(s_psram_id) == PSRAM_EID_SIZE_64MBITS) || PSRAM_IS_64MBIT_TRIAL(s_psram_id)) {
-        return PSRAM_SIZE_64MBITS;
-    } else if (PSRAM_SIZE_ID(s_psram_id) == PSRAM_EID_SIZE_32MBITS) {
-        return PSRAM_SIZE_32MBITS;
-    } else if (PSRAM_SIZE_ID(s_psram_id) == PSRAM_EID_SIZE_16MBITS) {
-        return PSRAM_SIZE_16MBITS;
-    } else {
-        return PSRAM_SIZE_MAX;
-    }
-    return PSRAM_SIZE_MAX;
-}
-
 /*
  * Psram mode init will overwrite original flash speed mode, so that it is possible to change psram and flash speed after OTA.
  * Flash read mode(QIO/QOUT/DIO/DOUT) will not be changed in app bin. It is decided by bootloader, OTA can not change this mode.
@@ -366,6 +347,15 @@ esp_err_t psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vaddrmode)   
             ESP_EARLY_LOGE(TAG, "PSRAM ID read error: 0x%08x", s_psram_id);
             return ESP_FAIL;
         }
+    }
+
+    if (PSRAM_IS_64MBIT_TRIAL(s_psram_id)) {
+        s_psram_size = PSRAM_SIZE_8MB;
+    } else {
+        uint8_t density = PSRAM_SIZE_ID(s_psram_id);
+        s_psram_size = density == 0x0 ? PSRAM_SIZE_2MB :
+                       density == 0x1 ? PSRAM_SIZE_4MB :
+                       density == 0x2 ? PSRAM_SIZE_8MB : 0;
     }
 
     //SPI1: send psram reset command
@@ -409,5 +399,29 @@ static void config_psram_spi_phases(void)
     SET_PERI_REG_BITS(SPI_MEM_CACHE_SCTRL_REG(0), SPI_MEM_SRAM_RDUMMY_CYCLELEN_V, (PSRAM_FAST_READ_QUAD_DUMMY - 1), SPI_MEM_SRAM_RDUMMY_CYCLELEN_S); //dummy
 
     CLEAR_PERI_REG_MASK(SPI_MEM_MISC_REG(0), SPI_MEM_CS1_DIS_M); //ENABLE SPI0 CS1 TO PSRAM(CS0--FLASH; CS1--SRAM)
+}
+
+
+/*---------------------------------------------------------------------------------
+ * Following APIs are not required to be IRAM-Safe
+ *
+ * Consider moving these to another file if this kind of APIs grows dramatically
+ *-------------------------------------------------------------------------------*/
+esp_err_t psram_get_physical_size(uint32_t *out_size_bytes)
+{
+    *out_size_bytes = s_psram_size;
+    return (s_psram_size ? ESP_OK : ESP_ERR_INVALID_STATE);
+}
+
+/**
+ * This function is to get the available physical psram size in bytes.
+ *
+ * When ECC is enabled, the available size will be reduced.
+ * On S3 Quad PSRAM, ECC is not enabled for now.
+ */
+esp_err_t psram_get_available_size(uint32_t *out_size_bytes)
+{
+    *out_size_bytes = s_psram_size;
+    return (s_psram_size ? ESP_OK : ESP_ERR_INVALID_STATE);
 }
 #endif // CONFIG_SPIRAM

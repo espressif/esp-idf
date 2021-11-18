@@ -85,6 +85,7 @@ menu "ESP32S3-Specific"
         config ESP32S3_INSTRUCTION_CACHE_WRAP
             bool       ## TODO IDF-4307
             default "n"
+            depends on !SPIRAM_ECC_ENABLE
             help
                 If enabled, instruction cache will use wrap mode to read spi flash or spi ram.
                 The wrap length equals to ESP32S3_INSTRUCTION_CACHE_LINE_SIZE.
@@ -154,6 +155,7 @@ menu "ESP32S3-Specific"
         config ESP32S3_DATA_CACHE_WRAP
             bool        ## TODO IDF-4307
             default "n"
+            depends on !SPIRAM_ECC_ENABLE
             help
                 If enabled, data cache will use wrap mode to read spi flash or spi ram.
                 The wrap length equals to ESP32S3_DATA_CACHE_LINE_SIZE.
@@ -259,8 +261,13 @@ menu "ESP32S3-Specific"
                 bool "40Mhz clock speed"
         endchoice
 
-        # insert non-chip-specific items here
-        source "$IDF_PATH/components/esp_hw_support/Kconfig.spiram.common"
+        config SPIRAM_SPEED
+            int
+            default 120 if SPIRAM_SPEED_120M
+            default 80 if SPIRAM_SPEED_80M
+            default 40 if SPIRAM_SPEED_40M
+
+        source "$IDF_PATH/components/esp_hw_support/Kconfig.spiram.common"      # insert non-chip-specific items here
 
     endmenu
 
