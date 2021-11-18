@@ -1,4 +1,5 @@
 set(srcs "ccomp_timer.c"
+         "memory_checks.c"
          "test_runner.c"
          "test_utils.c")
 
