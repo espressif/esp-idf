@@ -1,8 +1,16 @@
 /*
- Tests for the Wi-Fi
-*/
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ *
+ * This test code is in the Public Domain (or CC0 licensed, at your option.)
+ *
+ * Unless required by applicable law or agreed to in writing, this
+ * software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied.
+ */
+
 #include "string.h"
-#include "esp_system.h"
 #include "unity.h"
 #include "esp_system.h"
 #include "esp_event.h"
@@ -11,6 +19,7 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "test_utils.h"
+#include "memory_checks.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 
@@ -190,7 +199,7 @@ static void start_wifi_as_softap(void)
     event_init();
 
     // can't deinit event loop, need to reset leak check
-    unity_reset_leak_checks();
+    test_utils_record_free_mem();
 
     if (wifi_events == NULL) {
         wifi_events = xEventGroupCreate();
@@ -212,7 +221,7 @@ static void start_wifi_as_sta(void)
     event_init();
 
     // can't deinit event loop, need to reset leak check
-    unity_reset_leak_checks();
+    test_utils_record_free_mem();
 
     if (wifi_events == NULL) {
         wifi_events = xEventGroupCreate();

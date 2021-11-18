@@ -1,28 +1,26 @@
-// Copyright 2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ *
+ * This test code is in the Public Domain (or CC0 licensed, at your option.)
+ *
+ * Unless required by applicable law or agreed to in writing, this
+ * software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied.
+ */
 
 #include <stdlib.h>
 #include <stdbool.h>
 #include <esp_websocket_client.h>
 
 #include "unity.h"
-#include "test_utils.h"
+#include "memory_checks.h"
 
 static void test_leak_setup(const char * file, long line)
 {
     printf("%s:%ld\n", file, line);
-    unity_reset_leak_checks();
+    test_utils_record_free_mem();
 }
 
 TEST_CASE("websocket init and deinit", "[websocket][leaks=0]")

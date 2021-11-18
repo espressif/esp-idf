@@ -1,8 +1,21 @@
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ *
+ * This test code is in the Public Domain (or CC0 licensed, at your option.)
+ *
+ * Unless required by applicable law or agreed to in writing, this
+ * software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied.
+ */
+
 #include <sys/time.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "unity.h"
 #include "test_utils.h"
+#include "memory_checks.h"
 #include "mqtt_client.h"
 #include "nvs_flash.h"
 #include "esp_ota_ops.h"
@@ -17,7 +30,7 @@ static void test_leak_setup(const char * file, long line)
     gettimeofday(&te, NULL); // get current time
     esp_read_mac(mac, ESP_MAC_WIFI_STA);
     printf("%s:%ld: time=%ld.%lds, mac:" MACSTR "\n", file, line, te.tv_sec, te.tv_usec, MAC2STR(mac));
-    unity_reset_leak_checks();
+    test_utils_record_free_mem();
 }
 
 TEST_CASE("mqtt init with invalid url", "[mqtt][leaks=0]")
