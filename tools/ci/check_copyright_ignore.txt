@@ -1490,7 +1490,6 @@ components/mbedtls/port/include/esp_crypto_shared_gdma.h
 components/mbedtls/port/include/esp_ds/esp_rsa_sign_alt.h
 components/mbedtls/port/include/esp_mem.h
 components/mbedtls/port/include/gcm_alt.h
-components/mbedtls/port/include/mbedtls/bignum.h
 components/mbedtls/port/include/mbedtls/esp_config.h
 components/mbedtls/port/include/mbedtls/esp_debug.h
 components/mbedtls/port/include/md/esp_md.h
