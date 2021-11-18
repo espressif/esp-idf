@@ -588,7 +588,6 @@ typedef struct {
     uint32_t dig_fpu : 1;    //!< Set to 1 to power UP digital part in sleep
     uint32_t rtc_fpu : 1;    //!< Set to 1 to power UP RTC memories in sleep
     uint32_t cpu_fpu : 1;    //!< Set to 1 to power UP digital memories and CPU in sleep
-    uint32_t i2s_fpu : 1;    //!< Set to 1 to power UP I2S in sleep
     uint32_t bb_fpu : 1;     //!< Set to 1 to power UP WiFi in sleep
     uint32_t nrx_fpu : 1;    //!< Set to 1 to power UP WiFi in sleep
     uint32_t fe_fpu : 1;     //!< Set to 1 to power UP WiFi in sleep
@@ -603,7 +602,6 @@ typedef struct {
     .dig_fpu = (val), \
     .rtc_fpu = (val), \
     .cpu_fpu = (val), \
-    .i2s_fpu = (val), \
     .bb_fpu = (val), \
     .nrx_fpu = (val), \
     .fe_fpu = (val), \
