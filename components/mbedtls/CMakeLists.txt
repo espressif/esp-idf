@@ -178,10 +178,6 @@ if(CONFIG_MBEDTLS_DYNAMIC_BUFFER)
     endforeach()
 endif()
 
-if(CONFIG_MBEDTLS_HARDWARE_MPI)
-    target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=mbedtls_mpi_exp_mod")
-endif()
-
 set_property(TARGET mbedcrypto APPEND PROPERTY LINK_INTERFACE_LIBRARIES mbedtls)
 
 # Link mbedtls libraries to component library

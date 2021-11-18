@@ -153,15 +153,22 @@
 #undef MBEDTLS_MD5_ALT
 #endif
 
-/* The following MPI (bignum) functions have ESP32 hardware support.
-   For exponential mod, both software and hardware implementation
-   will be compiled. If CONFIG_MBEDTLS_HARDWARE_MPI is enabled, mod APIs
-   will be wrapped to use hardware implementation.
-*/
-#undef MBEDTLS_MPI_EXP_MOD_ALT
+/* The following MPI (bignum) functions have hardware support.
+ * Uncommenting these macros will use the hardware-accelerated
+ * implementations.
+ */
 #ifdef CONFIG_MBEDTLS_HARDWARE_MPI
+#ifdef CONFIG_MBEDTLS_LARGE_KEY_SOFTWARE_MPI
+    /* Prefer hardware and fallback to software */
+    #define MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK
+#else
+    /* Hardware only mode */
+    #define MBEDTLS_MPI_EXP_MOD_ALT
+#endif
 #define MBEDTLS_MPI_MUL_MPI_ALT
 #else
+#undef MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK
+#undef MBEDTLS_MPI_EXP_MOD_ALT
 #undef MBEDTLS_MPI_MUL_MPI_ALT
 #endif
 
