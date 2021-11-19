@@ -22,7 +22,7 @@ check_pre_commit_master_release:
     - .check_pre_commit_template
     - .rules:protected
   script:
-    - git diff-tree --no-commit-id --name-only -r $CI_COMMIT_SHA | xargs pre-commit run --files
+    - git diff-tree --no-commit-id --name-only -r $PIPELINE_COMMIT_SHA | xargs pre-commit run --files
 
 check_pre_commit_MR:
   extends:
@@ -190,6 +190,6 @@ check_commit_msg:
   extends: .pre_check_job_template
   script:
     - git status
-    - git log -n10 --oneline
+    - git log -n10 --oneline ${PIPELINE_COMMIT_SHA}
     # commit start with "WIP: " need to be squashed before merge
-    - 'git log --pretty=%s master.. -- | grep "^WIP: " && exit 1 || exit 0'
+    - 'git log --pretty=%s origin/master..${PIPELINE_COMMIT_SHA} -- | grep -i "^WIP:" && exit 1 || exit 0'
