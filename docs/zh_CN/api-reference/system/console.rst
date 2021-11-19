@@ -6,7 +6,7 @@ ESP-IDF 提供了 ``console`` 组件，它包含了开发基于串口的交互�
 
 -  行编辑，由 `linenoise <https://github.com/antirez/linenoise>`_ 库具体实现，它支持处理退格键和方向键，支持回看命令的历史记录，支持命令的自动补全和参数提示。
 -  将命令行拆分为参数列表。
--  参数解析，由 `argtable3 <http://www.argtable.org/>`_ 库具体实现，它支持解析 GNU 样式的命令行参数。
+-  参数解析，由 `argtable3 <http://www.argtable.org/>`_ 库具体实现，该库提供解析 GNU 样式的命令行参数的 API。
 -  用于注册和调度命令的函数。
 -  帮助创建 REPL (Read-Evaluate-Print-Loop) 环境的函数。
 
@@ -14,18 +14,16 @@ ESP-IDF 提供了 ``console`` 组件，它包含了开发基于串口的交互�
 
   这些功能模块可以一起使用也可以独立使用，例如仅使用行编辑和命令注册的功能，然后使用 ``getopt`` 函数或者自定义的函数来实现参数解析，而不是直接使用 `argtable3 <http://www.argtable.org/>`_ 库。同样地，还可以使用更简单的命令输入方法（比如 ``fgets`` 函数）和其他用于命令分割和参数解析的方法。
 
-
 行编辑
 ------
 
 行编辑功能允许用户通过按键输入来编辑命令，使用退格键删除符号，使用左/右键在命令中移动光标，使用上/下键导航到之前输入的命令，使用制表键（“Tab”）来自动补全命令。
 
-.. note:: 
+.. note::
 
-  此功能依赖于终端应用程序对 ANSI 转移符的支持，显示原始 UART 数据的串口监视器不能与行编辑库一同使用。如果运行 :example:`system/console` 示例程序的时候观察到的输出结果是 ``[6n`` 或者类似的转义字符而不是命令行提示符 ``esp> `` 时，就表明当前的串口监视器不支持 ANSI 转移字符。已知可用的串口监视程序有 GNU screen，minicom 和 idf_monitor.py（可以通过在项目目录下执行 ``idf.py monitor`` 来调用）。
+  此功能依赖于终端应用程序对 ANSI 转义符的支持。因此，显示原始 UART 数据的串口监视器不能与行编辑库一同使用。如果运行 :example:`system/console` 示例程序的时候看到的输出结果是 ``[6n`` 或者类似的转义字符而不是命令行提示符 ``esp> `` 时，就表明当前的串口监视器不支持 ANSI 转义字符。已知可用的串口监视程序有 GNU screen、minicom 和 idf_monitor.py（可以通过在项目目录下执行 ``idf.py monitor`` 来调用）。
 
 前往这里可以查看 `linenoise <https://github.com/antirez/linenoise>`_ 库提供的所有函数的描述。
-
 
 配置
 ^^^^
@@ -34,11 +32,15 @@ Linenoise 库不需要显式地初始化，但是在调用行编辑函数之前�
 
 :cpp:func:`linenoiseClearScreen`
 
-  使用转移字符清除终端屏幕，并将光标定位在左上角。
+  使用转义字符清除终端屏幕，并将光标定位在左上角。
 
 :cpp:func:`linenoiseSetMultiLine`
 
   在单行和多行编辑模式之间进行切换。单行模式下，如果命令的长度超过终端的宽度，会在行内滚动命令文本以显示文本的结尾，在这种情况下，文本的开头部分会被隐藏。单行模式在每次按下按键时发送给屏幕刷新的数据比较少，与多行模式相比更不容易发生故障。另一方面，在单行模式下编辑命令和复制命令将变得更加困难。默认情况下开启的是单行模式。
+
+:cpp:func:`linenoiseAllowEmpty`
+
+    设置 linenoise 库收到空行的解析行为，设置为 ``true`` 时返回长度为零的字符串 (``""``) ，设置为 ``false`` 时返回 ``NULL``。默认情况下，将返回长度为零的字符串。
 
 
 主循环
@@ -50,7 +52,7 @@ Linenoise 库不需要显式地初始化，但是在调用行编辑函数之前�
 
 :cpp:func:`linenoiseFree`
 
-  必须调用此函数才能释放从 :cpp:func:`linenoise` 函数获取的命令行缓冲。
+  必须调用此函数才能释放从 :cpp:func:`linenoise` 函数获取的命令行缓冲区。
 
 
 提示和补全
@@ -109,7 +111,7 @@ Linenoise 库不需要显式地初始化，但是在调用行编辑函数之前�
 -  参数由空格分隔
 -  如果参数本身需要使用空格，可以使用 ``\`` （反斜杠）对它们进行转义
 -  其它能被识别的转义字符有 ``\\`` （显示反斜杠本身）和 ``\"`` （显示双引号）
--  可以使用双引号来引用参数，引号只可能出现在参数的开头和结尾。参数中的引号必须如上所述进行转移。参数周围的引号会被 :cpp:func:`esp_console_split_argv` 函数删除
+-  可以使用双引号来引用参数，引号只可能出现在参数的开头和结尾。参数中的引号必须如上所述进行转义。参数周围的引号会被 :cpp:func:`esp_console_split_argv` 函数删除
 
 示例：
 
@@ -160,11 +162,11 @@ Linenoise 库不需要显式地初始化，但是在调用行编辑函数之前�
 初始化 REPL 环境
 ----------------
 
-``console`` 组建还提供了一些 API 来帮助创建一个基本的 REPL 环境。
+除了上述的各种函数，``console`` 组件还提供了一些 API 来帮助创建一个基本的 REPL 环境。
 
-在一个典型的 console 应用中，你只需要调用 :cpp:func:`esp_console_new_repl_uart`，它会为你初始化好构建在 UART 基础上的 REPL 环境，其中包括安装 UART 驱动，基本的 console 配置，创建一个新的线程来执行 REPL 任务，注册一些基本的命令（比如 `help` 命令）。 
+在一个典型的 console 应用中，你只需要调用 :cpp:func:`esp_console_new_repl_uart`，它会为你初始化好构建在 UART 基础上的 REPL 环境，其中包括安装 UART 驱动，基本的 console 配置，创建一个新的线程来执行 REPL 任务，注册一些基本的命令（比如 `help` 命令）。
 
-完了之后你可以使用 :cpp:func:`esp_console_cmd_register` 来注册其它命令。REPL 环境在初始化后需要再调用 :cpp:func:`esp_console_start_repl` 函数才能开始运行。
+之后你可以使用 :cpp:func:`esp_console_cmd_register` 来注册其它命令。REPL 环境在初始化后需要再调用 :cpp:func:`esp_console_start_repl` 函数才能开始运行。
 
 
 应用程序示例
