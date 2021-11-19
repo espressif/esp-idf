@@ -295,22 +295,6 @@ esp_eth_phy_t *esp_eth_phy_new_rtl8201(const eth_phy_config_t *config);
 esp_eth_phy_t *esp_eth_phy_new_lan87xx(const eth_phy_config_t *config);
 
 /**
-* @brief Create a PHY instance of LAN8720
-*
-* @note For ESP-IDF backwards compatibility reasons. In all other cases, use esp_eth_phy_new_lan87xx instead.
-*
-* @param[in] config: configuration of PHY
-*
-* @return
-*      - instance: create PHY instance successfully
-*      - NULL: create PHY instance failed because some error occurred
-*/
-static inline esp_eth_phy_t *esp_eth_phy_new_lan8720(const eth_phy_config_t *config)
-{
-    return esp_eth_phy_new_lan87xx(config);
-}
-
-/**
 * @brief Create a PHY instance of DP83848
 *
 * @param[in] config: configuration of PHY

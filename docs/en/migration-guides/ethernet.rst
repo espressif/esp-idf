@@ -31,3 +31,13 @@ Usage example to get Ethernet configuration:
 
     eth_duplex_t duplex_mode;
     esp_eth_ioctl(eth_handle, ETH_CMD_G_DUPLEX_MODE, &duplex_mode);
+
+
+KSZ8041/81 and LAN8720 Driver Update
+------------------------------------
+KSZ8041/81 and LAN8720 Drivers were updated to support more devices (generations) from associated product family. The drivers are able to recognize particular chip number and its potential support by the driver.
+
+As a result, the specific "chip number" functions calls were replaced by generic ones as follows:
+
+* :cpp:func:`esp_eth_phy_new_ksz8041` and :cpp:func:`esp_eth_phy_new_ksz8081` were removed, use :cpp:func:`esp_eth_phy_new_ksz80xx` instead
+* :cpp:func:`esp_eth_phy_new_lan8720` was removed, use :cpp:func:`esp_eth_phy_new_lan87xx` instead
