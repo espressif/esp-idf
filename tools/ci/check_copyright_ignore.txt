@@ -238,7 +238,6 @@ components/bt/host/bluedroid/bta/sys/include/bta_sys_int.h
 components/bt/host/bluedroid/bta/sys/utl.c
 components/bt/host/bluedroid/btc/core/btc_ble_storage.c
 components/bt/host/bluedroid/btc/core/btc_config.c
-components/bt/host/bluedroid/btc/core/btc_dm.c
 components/bt/host/bluedroid/btc/core/btc_main.c
 components/bt/host/bluedroid/btc/core/btc_profile_queue.c
 components/bt/host/bluedroid/btc/core/btc_sm.c
@@ -275,7 +274,6 @@ components/bt/host/bluedroid/btc/profile/std/gap/btc_gap_ble.c
 components/bt/host/bluedroid/btc/profile/std/gap/btc_gap_bt.c
 components/bt/host/bluedroid/btc/profile/std/gatt/btc_gatt_common.c
 components/bt/host/bluedroid/btc/profile/std/gatt/btc_gatt_util.c
-components/bt/host/bluedroid/btc/profile/std/gatt/btc_gattc.c
 components/bt/host/bluedroid/btc/profile/std/gatt/btc_gatts.c
 components/bt/host/bluedroid/btc/profile/std/hf_ag/bta_ag_co.c
 components/bt/host/bluedroid/btc/profile/std/hf_ag/btc_hf_ag.c

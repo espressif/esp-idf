@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 
@@ -121,7 +113,7 @@ static void btc_gattc_copy_req_data(btc_msg_t *msg, void *p_dest, void *p_src)
     tBTA_GATTC *p_dest_data = (tBTA_GATTC *) p_dest;
     tBTA_GATTC *p_src_data = (tBTA_GATTC *) p_src;
 
-    if (!p_src_data || !p_dest_data) {
+    if (!p_src_data || !p_dest_data || !msg) {
         return;
     }
 
