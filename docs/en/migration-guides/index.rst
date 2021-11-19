@@ -5,6 +5,7 @@ ESP-IDF 5.0 Migration Guides
 .. toctree::
     :maxdepth: 1
 
+    Environment Setup on Windows <windows-env>
     Peripherals <peripherals>
     Build System <build-system>
     System <system>
