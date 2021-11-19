@@ -7,17 +7,7 @@
 #include "ccomp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-
-
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/clk.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/clk.h"
-#elif CONFIG_IDF_TARTGET_ESP32S3
-#include "esp32s3/clk.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/clk.h"
-#endif
+#include "esp_private/esp_clk.h"
 
 #include "unity.h"
 

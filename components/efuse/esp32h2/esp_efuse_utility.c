@@ -10,7 +10,7 @@
 #include "assert.h"
 #include "esp_efuse_utility.h"
 #include "soc/efuse_periph.h"
-#include "esp32h2/clk.h"
+#include "esp_private/esp_clk.h"
 #include "esp32h2/rom/efuse.h"
 
 static const char *TAG = "efuse";

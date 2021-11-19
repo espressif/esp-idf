@@ -9,19 +9,7 @@
 #include "soc/cpu.h"
 #include "hal/cpu_hal.h"
 #include "esp_rom_uart.h"
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/clk.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/clk.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/clk.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/clk.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/clk.h"
-#elif CONFIG_IDF_TARGET_ESP8684
 #include "esp_private/esp_clk.h"
-#endif
 
 static uint32_t s_test_start, s_test_stop;
 

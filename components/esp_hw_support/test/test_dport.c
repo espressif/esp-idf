@@ -11,7 +11,7 @@
 #include "xtensa/core-macros.h"
 #include "xtensa/hal.h"
 #include "esp_types.h"
-#include "esp32/clk.h"
+#include "esp_private/esp_clk.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

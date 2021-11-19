@@ -51,6 +51,7 @@
 #include "esp_private/pm_impl.h"
 #include "esp_pthread.h"
 #include "esp_vfs_console.h"
+#include "esp_private/esp_clk.h"
 
 #include "brownout.h"
 
@@ -58,20 +59,11 @@
 
 // [refactor-todo] make this file completely target-independent
 #if CONFIG_IDF_TARGET_ESP32
-#include "esp32/clk.h"
 #include "esp32/spiram.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/clk.h"
 #include "esp32s2/spiram.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/clk.h"
 #include "esp32s3/spiram.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/clk.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/clk.h"
-#elif CONFIG_IDF_TARGET_ESP8684
-#include "esp_private/esp_clk.h"
 #endif
 /***********************************************/
 

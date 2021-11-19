@@ -948,7 +948,6 @@ components/esp_system/test_eh_frame_parser/linker.ld
 components/esp_system/test_eh_frame_parser/main.c
 components/esp_system/ubsan.c
 components/esp_timer/include/esp_private/esp_timer_private.h
-components/esp_timer/src/esp_timer_impl_frc_legacy.c
 components/esp_timer/src/ets_timer_legacy.c
 components/esp_timer/test/test_esp_timer.c
 components/esp_timer/test/test_esp_timer_light_sleep.c
@@ -2365,10 +2364,8 @@ components/ulp/test/esp32/test_ulp.c
 components/ulp/test/esp32/test_ulp_as.c
 components/ulp/test/esp32s2/test_ulp_riscv.c
 components/ulp/test/ulp_riscv/test_main.c
-components/ulp/ulp.c
 components/ulp/ulp_macro.c
 components/ulp/ulp_private.h
-components/ulp/ulp_riscv.c
 components/ulp/ulp_riscv/include/ulp_riscv/ulp_riscv.h
 components/ulp/ulp_riscv/include/ulp_riscv/ulp_riscv_gpio.h
 components/ulp/ulp_riscv/include/ulp_riscv/ulp_riscv_register_ops.h
@@ -3649,8 +3646,6 @@ tools/test_idf_size/test_idf_size.py
 tools/test_mkdfu/test_mkdfu.py
 tools/test_mkuf2/test_mkuf2.py
 tools/unit-test-app/components/test_utils/ccomp_timer.c
-tools/unit-test-app/components/test_utils/ccomp_timer_impl_riscv.c
-tools/unit-test-app/components/test_utils/ccomp_timer_impl_xtensa.c
 tools/unit-test-app/components/test_utils/include/ccomp_timer.h
 tools/unit-test-app/components/test_utils/include/test_utils.h
 tools/unit-test-app/components/test_utils/private_include/ccomp_timer_impl.h
