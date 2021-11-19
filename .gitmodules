@@ -23,10 +23,6 @@
 	path = components/nghttp/nghttp2
 	url = ../../nghttp2/nghttp2.git
 
-[submodule "components/libsodium/libsodium"]
-	path = components/libsodium/libsodium
-	url = ../../jedisct1/libsodium.git
-
 [submodule "components/spiffs/spiffs"]
 	path = components/spiffs/spiffs
 	url = ../../pellepl/spiffs.git
@@ -70,10 +66,6 @@
 [submodule "components/bt/host/nimble/nimble"]
 	path = components/bt/host/nimble/nimble
 	url = ../../espressif/esp-nimble.git
-
-[submodule "components/cbor/tinycbor"]
-	path = components/cbor/tinycbor
-	url = ../../intel/tinycbor.git
 
 [submodule "components/esp_wifi/lib"]
 	path = components/esp_wifi/lib

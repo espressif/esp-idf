@@ -146,7 +146,6 @@ exclude =
         components/esptool_py/esptool,
         components/expat/expat,
         components/json/cJSON,
-        components/libsodium/libsodium,
         components/mbedtls/mbedtls,
         components/nghttp/nghttp2,
         components/openthread/openthread,
