@@ -102,7 +102,7 @@ def find_builds_for_app(app_path, work_dir, build_dir, build_log, target_arg,
                 ))
 
     if not build_items:
-        logging.debug('Adding build: app {}, default sdkconfig, config name "{}"'.format(app_path, default_config_name))
+        logging.debug('\tAdding build: app {}, default sdkconfig, config name "{}"'.format(app_path, default_config_name))
         return [
             BuildItem(
                 app_path,
