@@ -250,7 +250,8 @@ static int http_on_header_value(http_parser *parser, const char *at, size_t leng
     } else if (strcasecmp(client->current_header_key, "Transfer-Encoding") == 0
                && memcmp(at, "chunked", length) == 0) {
         client->response->is_chunked = true;
-    } else if (strcasecmp(client->current_header_key, "WWW-Authenticate") == 0) {
+    } else if (strcasecmp(client->current_header_key, "WWW-Authenticate") == 0 ||
+               strcasecmp(client->current_header_key, "X-WWW-Authenticate") == 0) {
         http_utils_append_string(&client->auth_header, at, length);
     }
     http_utils_append_string(&client->current_header_value, at, length);
