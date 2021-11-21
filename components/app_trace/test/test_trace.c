@@ -54,7 +54,7 @@ const static char *TAG = "esp_apptrace_test";
 #define ESP_APPTRACE_TEST_LOG_LEVEL( _L_, level, format, ... )   \
     do { \
         if (LOG_LOCAL_LEVEL >= level) { \
-            ESP_APPTRACE_TEST_LOG(LOG_FORMAT(_L_, format), esp_log_early_timestamp(), TAG, ##__VA_ARGS__); \
+            ESP_APPTRACE_TEST_LOG(LOG_EARLY_FORMAT(_L_, format, TAG), ##__VA_ARGS__); \
         } \
     } while(0)
 
