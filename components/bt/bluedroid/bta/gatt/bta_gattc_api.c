@@ -298,7 +298,7 @@ void BTA_GATTC_ServiceSearchRequest (UINT16 conn_id, tBT_UUID *p_srvc_uuid)
 ** Returns          returns list_t of tBTA_GATTC_SERVICE or NULL.
 **
 *******************************************************************************/
-const list_t* BTA_GATTC_GetServices(UINT16 conn_id) 
+const list_t* BTA_GATTC_GetServices(UINT16 conn_id)
 {
     return bta_gattc_get_services(conn_id);
 }
@@ -315,7 +315,7 @@ const list_t* BTA_GATTC_GetServices(UINT16 conn_id)
 ** Returns          returns pointer to tBTA_GATTC_CHARACTERISTIC or NULL.
 **
 *******************************************************************************/
-const tBTA_GATTC_CHARACTERISTIC* BTA_GATTC_GetCharacteristic(UINT16 conn_id, UINT16 handle) 
+const tBTA_GATTC_CHARACTERISTIC* BTA_GATTC_GetCharacteristic(UINT16 conn_id, UINT16 handle)
 {
     return bta_gattc_get_characteristic(conn_id, handle);
 }
@@ -759,7 +759,7 @@ void BTA_GATTC_PrepareWriteCharDescr  (UINT16 conn_id, UINT16 handle,
                                        tBTA_GATT_AUTH_REQ auth_req)
 {
     tBTA_GATTC_API_WRITE  *p_buf;
-    UINT16  len = sizeof(tBTA_GATTC_API_WRITE) + p_data->len;
+    UINT16  len = sizeof(tBTA_GATTC_API_WRITE);
 
     if (p_data != NULL) {
         len += p_data->len;
@@ -998,7 +998,7 @@ void BTA_GATTC_CacheAssoc(tBTA_GATTC_IF client_if, BD_ADDR src_addr, BD_ADDR ass
         memcpy(p_buf->assoc_addr, assoc_addr, sizeof(BD_ADDR));
 
         bta_sys_sendmsg(p_buf);
-        
+
     }
     return;
 }
