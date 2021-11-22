@@ -1398,7 +1398,6 @@ components/heap/include/multi_heap.h
 components/heap/include/soc/soc_memory_layout.h
 components/heap/multi_heap_config.h
 components/heap/multi_heap_internal.h
-components/heap/multi_heap_platform.h
 components/heap/multi_heap_poisoning.c
 components/heap/test/test_aligned_alloc_caps.c
 components/heap/test/test_allocator_timings.c
