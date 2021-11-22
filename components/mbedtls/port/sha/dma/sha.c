@@ -228,7 +228,7 @@ int esp_sha_dma(esp_sha_type sha_type, const void *input, uint32_t ilen,
         return 0;
     }
 
-#if (CONFIG_SPIRAM_USE_CAPS_ALLOC || CONFIG_SPIRAM_USE_MALLOC)
+#if (CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE)
     if (esp_ptr_external_ram(input)) {
         Cache_WriteBack_Addr((uint32_t)input, ilen);
     }
