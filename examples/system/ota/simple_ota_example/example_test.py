@@ -114,7 +114,7 @@ def calc_all_sha256(dut):
     return sha256_bootloader, sha256_app
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA', nightly_run=True)
 def test_examples_protocol_simple_ota_example(env, extra_data):
     """
     steps: |
@@ -221,7 +221,7 @@ def test_examples_protocol_simple_ota_example_with_flash_encryption(env, extra_d
     dut1.expect('Starting OTA example', timeout=30)
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_Flash_Encryption_OTA_WiFi', target=['esp32c3'])
+@ttfw_idf.idf_example_test(env_tag='Example_Flash_Encryption_OTA_WiFi', target=['esp32c3'], nightly_run=True)
 def test_examples_protocol_simple_ota_example_with_flash_encryption_wifi(env, extra_data):
     """
     steps: |

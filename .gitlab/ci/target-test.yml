@@ -115,10 +115,9 @@ example_test_001D:
 
 example_test_OTA:
   extends: .example_test_esp32_template
-  parallel: 2
   tags:
     - ESP32
-    - Example_WIFI_OTA
+    - EXAMPLE_ETH_OTA
 
 example_test_protocols:
   extends: .example_test_esp32_template
