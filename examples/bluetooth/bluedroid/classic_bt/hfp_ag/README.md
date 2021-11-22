@@ -13,7 +13,9 @@ This example is designed to run on commonly available ESP32 development board, e
 
 ### Configure the project
 
-```
+Open the project configuration menu: 
+
+```bash
 idf.py menuconfig
 ```
 
