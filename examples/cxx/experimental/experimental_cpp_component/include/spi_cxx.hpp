@@ -57,7 +57,7 @@ public:
      *
      * @throw SPIException if the passed SPI host number is incorrect.
      */
-    SPINum(uint32_t host_id_raw) : StrongValueComparable<uint32_t>(host_id_raw)
+    explicit SPINum(uint32_t host_id_raw) : StrongValueComparable<uint32_t>(host_id_raw)
     {
         esp_err_t spi_num_check_result = check_spi_num(host_id_raw);
         if (spi_num_check_result != ESP_OK) {
