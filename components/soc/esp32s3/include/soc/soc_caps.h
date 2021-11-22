@@ -19,6 +19,7 @@
 #define SOC_DIG_SIGN_SUPPORTED          1
 #define SOC_HMAC_SUPPORTED              1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
+#define SOC_PSRAM_DMA_CAPABLE           1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 3
 
 /*-------------------------- ADC CAPS ----------------------------------------*/

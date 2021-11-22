@@ -781,24 +781,22 @@ TEST_CASE("mbedtls OFB, chained DMA descriptors", "[aes]")
 
 
 
-#ifdef CONFIG_SPIRAM_USE_MALLOC
-
-const uint8_t expected_cipher_psram_end[] = {
-    0x7e, 0xdf, 0x13, 0xf3, 0x56, 0xef, 0x67, 0x01,
-    0xfc, 0x08, 0x49, 0x62, 0xfa, 0xfe, 0x0c, 0x8b,
-    0x99, 0x39, 0x09, 0x51, 0x2c, 0x9a, 0xd5, 0x48,
-    0x4f, 0x76, 0xa2, 0x19, 0x2c, 0x08, 0x9d, 0x6a,
+const uint8_t expected_cipher_ctr_end[] = {
+    0x93, 0xca, 0xe0, 0x44, 0x96, 0x6d, 0xcb, 0xb2,
+    0xcf, 0x8a, 0x8d, 0x73, 0x8c, 0x6b, 0xfa, 0x4d,
+    0xd6, 0xc4, 0x18, 0x49, 0xdd, 0xc6, 0xbf, 0xc2,
+    0xb9, 0xf0, 0x09, 0x69, 0x45, 0x42, 0xc6, 0x05,
 };
 
 
-void aes_psram_ctr_test(uint32_t input_buf_caps, uint32_t output_buf_caps)
+void aes_ctr_alignment_test(uint32_t input_buf_caps, uint32_t output_buf_caps)
 {
     mbedtls_aes_context ctx;
     uint8_t nonce[16];
     uint8_t key[16];
     uint8_t stream_block[16];
-    size_t SZ = 6000;
-    size_t ALIGNMENT_SIZE_BYTES = 16;
+    size_t SZ = 32*200;
+    size_t ALIGNMENT_SIZE_BYTES = 64;
     memset(nonce, 0x2F, 16);
     memset(key, 0x1E, 16);
 
@@ -823,7 +821,7 @@ void aes_psram_ctr_test(uint32_t input_buf_caps, uint32_t output_buf_caps)
         offset = 0;
         memset(nonce, 0x2F, 16);
         mbedtls_aes_crypt_ctr(&ctx, SZ, &offset, nonce, stream_block, plaintext + i, chipertext + i);
-        TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_psram_end, chipertext + i + SZ - 32, 32);
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_ctr_end, chipertext + i + SZ - 32, 32);
 
         // Decrypt
         offset = 0;
@@ -841,14 +839,23 @@ void aes_psram_ctr_test(uint32_t input_buf_caps, uint32_t output_buf_caps)
     free(decryptedtext);
 }
 
+TEST_CASE("mbedtls AES internal mem alignment tests", "[aes]")
+{
+    uint32_t internal_dma_caps = MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL;
+    aes_ctr_alignment_test(internal_dma_caps, internal_dma_caps);
+}
+
+
+#ifdef CONFIG_SPIRAM_USE_MALLOC
+
 void aes_psram_one_buf_ctr_test(void)
 {
     mbedtls_aes_context ctx;
     uint8_t nonce[16];
     uint8_t key[16];
     uint8_t stream_block[16];
-    size_t SZ = 6000;
-    size_t ALIGNMENT_SIZE_BYTES = 16;
+    size_t SZ = 32*200;
+    size_t ALIGNMENT_SIZE_BYTES = 32;
     memset(nonce, 0x2F, 16);
     memset(key, 0x1E, 16);
 
@@ -870,7 +877,7 @@ void aes_psram_one_buf_ctr_test(void)
         memset(buf, 0x26, SZ + ALIGNMENT_SIZE_BYTES);
         memset(nonce, 0x2F, 16);
         mbedtls_aes_crypt_ctr(&ctx, SZ, &offset, nonce, stream_block, buf + i, buf + i);
-        TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_psram_end, buf + i + SZ - 32, 32);
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher_ctr_end, buf + i + SZ - 32, 32);
 
         // Decrypt
         offset = 0;
@@ -1452,9 +1459,9 @@ void aes_ext_flash_ctr_test(uint32_t output_buf_caps)
 /* Tests how crypto DMA handles data in external memory */
 TEST_CASE("mbedtls AES PSRAM tests", "[aes]")
 {
-    aes_psram_ctr_test(MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
-    aes_psram_ctr_test(MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
-    aes_psram_ctr_test(MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    aes_ctr_alignment_test(MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    aes_ctr_alignment_test(MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    aes_ctr_alignment_test(MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
     aes_psram_one_buf_ctr_test();
 }
 
