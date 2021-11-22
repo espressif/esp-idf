@@ -80,6 +80,18 @@ static esp_pm_lock_handle_t s_pm_sleep_lock;
 #endif
 #endif
 
+#if SOC_PSRAM_DMA_CAPABLE
+
+#if (CONFIG_ESP32S2_DATA_CACHE_LINE_16B || CONFIG_ESP32S3_DATA_CACHE_LINE_16B)
+#define DCACHE_LINE_SIZE 16
+#elif (CONFIG_ESP32S2_DATA_CACHE_LINE_32B || CONFIG_ESP32S3_DATA_CACHE_LINE_32B)
+#define DCACHE_LINE_SIZE 32
+#elif CONFIG_ESP32S3_DATA_CACHE_LINE_64B
+#define DCACHE_LINE_SIZE 64
+#endif //(CONFIG_ESP32S2_DATA_CACHE_LINE_16B || CONFIG_ESP32S3_DATA_CACHE_LINE_16B)
+
+#endif //SOC_PSRAM_DMA_CAPABLE
+
 static const char *TAG = "esp-aes";
 
 /* These are static due to:
@@ -325,12 +337,12 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
 
     if (block_bytes > 0) {
         /* Flush cache if input in external ram */
-#if (CONFIG_SPIRAM_USE_CAPS_ALLOC || CONFIG_SPIRAM_USE_MALLOC)
+#if (CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE)
         if (esp_ptr_external_ram(input)) {
             Cache_WriteBack_Addr((uint32_t)input, len);
         }
         if (esp_ptr_external_ram(output)) {
-            if (((intptr_t)(output) & 0xF) != 0) {
+            if ((((intptr_t)(output) & (DCACHE_LINE_SIZE - 1)) != 0) || (block_bytes % DCACHE_LINE_SIZE != 0)) {
                 // Non aligned ext-mem buffer
                 output_needs_realloc = true;
             }
@@ -422,7 +434,7 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
     aes_hal_transform_dma_start(blocks);
     esp_aes_dma_wait_complete(use_intr, out_desc_tail);
 
-#if (CONFIG_SPIRAM_USE_CAPS_ALLOC || CONFIG_SPIRAM_USE_MALLOC)
+#if (CONFIG_SPIRAM && SOC_PSRAM_DMA_CAPABLE)
     if (block_bytes > 0) {
         if (esp_ptr_external_ram(output)) {
             Cache_Invalidate_Addr((uint32_t)output, block_bytes);
