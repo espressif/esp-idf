@@ -13,6 +13,7 @@ Wi-Fi
    Smart Config <esp_smartconfig>
    ESP-NOW <esp_now>
    ESP Mesh <esp_mesh>
+   EasyConnect <esp_dpp>
 
 本部分的 Wi-Fi API 示例代码存放在 ESP-IDF 示例项目的 :example:`wifi` 目录下。
 

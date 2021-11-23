@@ -34,6 +34,7 @@ INPUT = \
     $(IDF_PATH)/components/esp_wifi/include/esp_now.h \
     $(IDF_PATH)/components/esp_wifi/include/esp_wifi_default.h \
     $(IDF_PATH)/components/esp_wifi/include/esp_mesh.h \
+    $(IDF_PATH)/components/wpa_supplicant/include/esp_supplicant/esp_dpp.h \
     $(IDF_PATH)/components/esp_event/include/esp_event.h \
     $(IDF_PATH)/components/esp_event/include/esp_event_base.h \
     $(IDF_PATH)/components/esp_event/include/esp_event_legacy.h \
