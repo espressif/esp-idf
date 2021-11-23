@@ -1113,6 +1113,8 @@ void l2cble_update_data_length(tL2C_LCB *p_lcb)
 void l2cble_process_data_length_change_event(UINT16 handle, UINT16 tx_data_len, UINT16 rx_data_len)
 {
     tL2C_LCB *p_lcb = l2cu_find_lcb_by_handle(handle);
+    tACL_CONN *p_acl = btm_handle_to_acl(handle);
+    tBTM_LE_SET_PKT_DATA_LENGTH_PARAMS data_length_params;
 
     L2CAP_TRACE_DEBUG("%s TX data len = %d", __FUNCTION__, tx_data_len);
     if (p_lcb == NULL) {
@@ -1123,16 +1125,15 @@ void l2cble_process_data_length_change_event(UINT16 handle, UINT16 tx_data_len, 
         p_lcb->tx_data_len = tx_data_len;
     }
 
-    tACL_CONN *p_acl = btm_handle_to_acl(handle);
-    tBTM_LE_SET_PKT_DATA_LENGTH_PARAMS data_length_params;
     data_length_params.rx_len = rx_data_len;
     data_length_params.tx_len = tx_data_len;
-    p_acl->data_length_params = data_length_params;
-    if (p_acl != NULL && p_acl->p_set_pkt_data_cback){
-       (*p_acl->p_set_pkt_data_cback)(BTM_SUCCESS, &data_length_params);
-    }
 
     if(p_acl) {
+        p_acl->data_length_params = data_length_params;
+        if (p_acl->p_set_pkt_data_cback) {
+            (*p_acl->p_set_pkt_data_cback)(BTM_SUCCESS, &data_length_params);
+        }
+
         p_acl->data_len_updating = false;
         if(p_acl->data_len_waiting) {
             p_acl->data_len_waiting = false;

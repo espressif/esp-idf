@@ -940,8 +940,8 @@ void l2c_process_timeout (TIMER_LIST_ENT *p_tle)
         if (p_lcb){
             p_lcb->conn_update_mask &= ~L2C_BLE_UPDATE_PENDING;
             p_lcb->conn_update_mask &= ~L2C_BLE_UPDATE_PARAM_FULL;
+            l2c_send_update_conn_params_cb(p_lcb, status);
         }
-        l2c_send_update_conn_params_cb(p_lcb, status);
 #endif  ///BLE_INCLUDED == TRUE
         break;
     }
