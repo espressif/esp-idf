@@ -76,11 +76,14 @@ void esp_dbg_stubs_init(void)
     s_dbg_stubs_ctl_data.data_alloc     = (uint32_t)esp_dbg_stubs_data_alloc;
     s_dbg_stubs_ctl_data.data_free      = (uint32_t)esp_dbg_stubs_data_free;
 
+    s_stub_entry[ESP_DBG_STUB_MAGIC_NUM] = ESP_DBG_STUB_MAGIC_NUM_VAL;
+    s_stub_entry[ESP_DBG_STUB_TABLE_SIZE] = ESP_DBG_STUB_ENTRY_MAX;
     s_stub_entry[ESP_DBG_STUB_CONTROL_DATA] = (uint32_t)&s_dbg_stubs_ctl_data;
     eri_write(ESP_DBG_STUBS_TRAX_REG, (uint32_t)s_stub_entry);
     ESP_LOGV(TAG, "%s stubs %x", __func__, eri_read(ESP_DBG_STUBS_TRAX_REG));
 }
 
+// TODO: add lock mechanism. Not now but in the future ESP_DBG_STUB_ENTRY_CAPABILITIES can be set from different places.
 esp_err_t esp_dbg_stub_entry_set(esp_dbg_stub_id_t id, uint32_t entry)
 {
     if (id < ESP_DBG_STUB_ENTRY_FIRST || id >= ESP_DBG_STUB_ENTRY_MAX) {
@@ -88,6 +91,17 @@ esp_err_t esp_dbg_stub_entry_set(esp_dbg_stub_id_t id, uint32_t entry)
         return ESP_ERR_INVALID_ARG;
     }
     s_stub_entry[id] = entry;
+
+    return ESP_OK;
+}
+
+esp_err_t esp_dbg_stub_entry_get(esp_dbg_stub_id_t id, uint32_t *entry)
+{
+    if (id < ESP_DBG_STUB_ENTRY_FIRST || id >= ESP_DBG_STUB_ENTRY_MAX) {
+        ESP_LOGE(TAG, "Invalid stub id %d!", id);
+        return ESP_ERR_INVALID_ARG;
+    }
+    *entry = s_stub_entry[id];
 
     return ESP_OK;
 }

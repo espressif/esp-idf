@@ -7,7 +7,9 @@ COMPONENT_SRCDIRS := src
 
 # IPC framework is not applicable if freertos unicore config is selected
 ifdef CONFIG_FREERTOS_UNICORE
-COMPONENT_OBJEXCLUDE := src/ipc.o
+    ifndef CONFIG_APPTRACE_GCOV_ENABLE
+        COMPONENT_OBJEXCLUDE := src/ipc.o
+    endif
 endif
 
 # disable stack protection in files which are involved in initialization of that feature

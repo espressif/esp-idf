@@ -17,7 +17,7 @@ else()
              "src/system_api.c")
 
     # IPC framework is not applicable if freertos unicore config is selected
-    if(NOT CONFIG_FREERTOS_UNICORE)
+    if(NOT CONFIG_FREERTOS_UNICORE OR CONFIG_APPTRACE_GCOV_ENABLE)
         list(APPEND srcs "src/ipc.c")
     endif()
 
