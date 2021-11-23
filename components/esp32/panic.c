@@ -222,6 +222,13 @@ static void setFirstBreakpoint(uint32_t pc)
 static volatile XtExcFrame * other_core_frame = NULL;
 #endif //!CONFIG_FREERTOS_UNICORE
 
+// panicHandler() gets called for when the double exception vector,
+// kernel exception vector gets used; as well as handling interrupt-based
+// faults cache error, wdt expiry. EXCAUSE register gets written with
+// one of PANIC_RSN_* values.
+// This flag indicate condition described above. Used by coredump to handle pseuso excauses properly.
+bool g_panic_pseudo_excause;
+
 void panicHandler(XtExcFrame *frame)
 {
     int core_id = xPortGetCoreID();
@@ -241,6 +248,7 @@ void panicHandler(XtExcFrame *frame)
     if (frame->exccause <= PANIC_RSN_MAX) {
         reason = reasons[frame->exccause];
     }
+    g_panic_pseudo_excause = true;
 
 #if !CONFIG_FREERTOS_UNICORE
     //Save frame for other core.
