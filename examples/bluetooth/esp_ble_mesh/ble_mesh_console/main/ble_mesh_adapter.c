@@ -104,7 +104,7 @@ void ble_mesh_set_node_prestore_params(uint16_t netkey_index, uint16_t unicast_a
 void ble_mesh_node_statistics_get(void)
 {
     xSemaphoreTake(ble_mesh_node_sema, portMAX_DELAY);
-    ESP_LOGI(TAG, "statistics:%d,%d\n", ble_mesh_node_statistics.statistics, ble_mesh_node_statistics.package_num);
+    ESP_LOGI(TAG, "Statistics:%d\n", ble_mesh_node_statistics.package_num);
     xSemaphoreGive(ble_mesh_node_sema);
 }
 
@@ -114,6 +114,7 @@ int ble_mesh_node_statistics_accumulate(uint8_t *data, uint32_t value, uint16_t 
     uint16_t sequence_num = (data[0] << 8) | data[1];
 
     xSemaphoreTake(ble_mesh_node_sema, portMAX_DELAY);
+
     for (i = 0; i < ble_mesh_node_statistics.total_package_num; i++) {
         if (ble_mesh_node_statistics.package_index[i] == sequence_num) {
             xSemaphoreGive(ble_mesh_node_sema);
@@ -136,6 +137,7 @@ int ble_mesh_node_statistics_accumulate(uint8_t *data, uint32_t value, uint16_t 
         }
     }
     xSemaphoreGive(ble_mesh_node_sema);
+
     return 0;
 }
 
@@ -190,24 +192,26 @@ void ble_mesh_create_send_data(char *data, uint16_t byte_num, uint16_t sequence_
 
 void ble_mesh_test_performance_client_model_get(void)
 {
-    uint32_t i, j;
+    uint32_t i;
+    uint32_t succeed_packet_count;
     uint32_t sum_time = 0;
+    uint32_t failed_packet_num = 0;
+    uint32_t rtt = 0;
 
-    for (i = 0, j = 0; i < test_perf_statistics.test_num; i++) {
+    for (i = 0, succeed_packet_count = 0; i < test_perf_statistics.test_num; i++) {
         if (test_perf_statistics.time[i] != 0) {
             sum_time += test_perf_statistics.time[i];
-            j += 1;
+            succeed_packet_count += 1;
         } else {
-            continue;
-        }
-
-        if (j == test_perf_statistics.test_num - 1) {
-            break;
+            failed_packet_num += 1;
         }
     }
 
-    ESP_LOGI(TAG, "VendorModel:Statistics,%d,%d\n",
-             test_perf_statistics.statistics, (sum_time / (j + 1)));
+    if(succeed_packet_count != 0){
+        rtt = (int)(sum_time / succeed_packet_count);
+    }
+
+    ESP_LOGI(TAG, "VendorModel:Statistics,%d,%d\n", failed_packet_num, rtt);
 }
 
 void ble_mesh_test_performance_client_model_get_received_percent(void)
@@ -250,6 +254,9 @@ void ble_mesh_test_performance_client_model_get_received_percent(void)
 
     // for script match
     ESP_LOGI(TAG, "VendorModel:Statistics");
+    for (j = 0; j < time_level_num; j++) {
+        ESP_LOGI("", "%d:%d", statistics_time_percent[j].time_level, statistics_time_percent[j].time_num);
+    }
     free(statistics_time_percent);
 }
 
@@ -264,18 +271,12 @@ int ble_mesh_test_performance_client_model_accumulate_time(uint16_t time, uint8_
     uint16_t sequence_num = 0;
     uint16_t node_received_ttl = 0;
 
-    // receive failed
-    if (length != test_perf_statistics.test_length) {
-        return 1;
-    }
-
     if (data != NULL) {
         sequence_num = (data[0] << 8) | data[1];
         if (data[2] == VENDOR_MODEL_PERF_OPERATION_TYPE_SET) {
             node_received_ttl = data[3];
         }
     }
-
     for (i = 0; i < test_perf_statistics.test_num; i++) {
         if (test_perf_statistics.package_index[i] == sequence_num) {
             return 1;
@@ -286,7 +287,7 @@ int ble_mesh_test_performance_client_model_accumulate_time(uint16_t time, uint8_
         if (test_perf_statistics.package_index[i] == 0) {
             test_perf_statistics.package_index[i] = sequence_num;
             if (data[2] == VENDOR_MODEL_PERF_OPERATION_TYPE_SET) {
-                if (node_received_ttl == test_perf_statistics.ttl && ack_ttl == test_perf_statistics.ttl) {
+                if (node_received_ttl == test_perf_statistics.ttl) {
                     test_perf_statistics.time[i] = time;
                 } else {
                     test_perf_statistics.time[i] = 0;
