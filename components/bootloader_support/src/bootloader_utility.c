@@ -700,7 +700,8 @@ static void set_cache_and_start_app(
     uint32_t irom_size,
     uint32_t entry_addr)
 {
-    int rc;
+    int rc __attribute__((unused));
+
     ESP_LOGD(TAG, "configure drom and irom and start");
 #if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Disable(0);
