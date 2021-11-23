@@ -1868,7 +1868,6 @@ components/soc/esp32c3/include/soc/periph_defs.h
 components/soc/esp32c3/include/soc/reset_reasons.h
 components/soc/esp32c3/include/soc/rmt_reg.h
 components/soc/esp32c3/include/soc/rmt_struct.h
-components/soc/esp32c3/include/soc/rtc.h
 components/soc/esp32c3/include/soc/rtc_cntl_reg.h
 components/soc/esp32c3/include/soc/rtc_cntl_struct.h
 components/soc/esp32c3/include/soc/rtc_i2c_reg.h
