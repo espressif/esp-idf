@@ -23,6 +23,8 @@
  */
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
+#include <sys/time.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
@@ -31,7 +33,9 @@
 #include "esp_log.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
+#include "nvs.h"
 #include "protocol_examples_common.h"
+#include "esp_sntp.h"
 #include "esp_netif.h"
 
 #include "lwip/err.h"
@@ -42,6 +46,7 @@
 
 #include "esp_tls.h"
 #include "esp_crt_bundle.h"
+#include "time_sync.h"
 
 /* Constants that aren't configurable in menuconfig */
 #define WEB_SERVER "www.howsmyssl.com"
@@ -49,6 +54,9 @@
 #define WEB_URL "https://www.howsmyssl.com/a/check"
 
 static const char *TAG = "example";
+
+/* Timer interval once every day (24 Hours) */
+#define TIME_PERIOD (86400000000ULL)
 
 static const char REQUEST[] = "GET " WEB_URL " HTTP/1.1\r\n"
                              "Host: "WEB_SERVER"\r\n"
@@ -217,6 +225,19 @@ void app_main(void)
      * examples/protocols/README.md for more information about this function.
      */
     ESP_ERROR_CHECK(example_connect());
+
+    if (esp_reset_reason() == ESP_RST_POWERON) {
+        ESP_LOGI(TAG, "Updating time from NVS");
+        ESP_ERROR_CHECK(update_time_from_nvs());
+    }
+
+    const esp_timer_create_args_t nvs_update_timer_args = {
+            .callback = &fetch_and_store_time_in_nvs,
+    };
+
+    esp_timer_handle_t nvs_update_timer;
+    ESP_ERROR_CHECK(esp_timer_create(&nvs_update_timer_args, &nvs_update_timer));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(nvs_update_timer, TIME_PERIOD));
 
     xTaskCreate(&https_request_task, "https_get_task", 8192, NULL, 5, NULL);
 }
