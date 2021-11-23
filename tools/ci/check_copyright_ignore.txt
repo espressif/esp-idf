@@ -262,9 +262,6 @@ components/bt/host/bluedroid/api/esp_bt_device.c
 components/bt/host/bluedroid/api/esp_bt_main.c
 components/bt/host/bluedroid/api/esp_gap_ble_api.c
 components/bt/host/bluedroid/api/esp_gap_bt_api.c
-components/bt/host/bluedroid/api/esp_gatt_common_api.c
-components/bt/host/bluedroid/api/esp_gattc_api.c
-components/bt/host/bluedroid/api/esp_gatts_api.c
 components/bt/host/bluedroid/api/esp_hf_ag_api.c
 components/bt/host/bluedroid/api/esp_hf_client_api.c
 components/bt/host/bluedroid/api/esp_hidd_api.c
@@ -433,12 +430,9 @@ components/bt/host/bluedroid/btc/profile/std/battery/include/srvc_battery_int.h
 components/bt/host/bluedroid/btc/profile/std/dis/dis_profile.c
 components/bt/host/bluedroid/btc/profile/std/dis/include/srvc_dis_int.h
 components/bt/host/bluedroid/btc/profile/std/gap/bta_gap_bt_co.c
-components/bt/host/bluedroid/btc/profile/std/gap/btc_gap_ble.c
 components/bt/host/bluedroid/btc/profile/std/gap/btc_gap_bt.c
 components/bt/host/bluedroid/btc/profile/std/gatt/btc_gatt_common.c
 components/bt/host/bluedroid/btc/profile/std/gatt/btc_gatt_util.c
-components/bt/host/bluedroid/btc/profile/std/gatt/btc_gattc.c
-components/bt/host/bluedroid/btc/profile/std/gatt/btc_gatts.c
 components/bt/host/bluedroid/btc/profile/std/hf_ag/bta_ag_co.c
 components/bt/host/bluedroid/btc/profile/std/hf_ag/btc_hf_ag.c
 components/bt/host/bluedroid/btc/profile/std/hf_client/bta_hf_client_co.c
