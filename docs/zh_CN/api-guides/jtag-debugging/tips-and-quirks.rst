@@ -279,13 +279,13 @@ To disable software breakpoints while using JTAG, add an extra argument ``-c 'se
 
         ::
 
-            bin/openocd -l openocd_log.txt -d 3 -s share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+            openocd -l openocd_log.txt -d3 -f board/esp32-wrover-kit-3.3v.cfg
 
-        这种方式会将日志输出到文件，但是它会阻止调试信息打印在终端上。当有大量信息需要输出的时候（比如调试等级提高到 ``-d 3``）这是个不错的选择。如果你仍然希望在屏幕上看到调试日志，请改用以下命令：
+        这种方式会将日志输出到文件，但是它会阻止调试信息打印在终端上。当有大量信息需要输出的时候（比如调试等级提高到 ``-d3``）这是个不错的选择。如果你仍然希望在屏幕上看到调试日志，请改用以下命令：
 
         ::
 
-            bin/openocd -d 3 -s share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg 2>&1 | tee openocd.log
+            openocd -d3 -f board/esp32-wrover-kit-3.3v.cfg 2>&1 | tee openocd.log
 
         .. note::
 
