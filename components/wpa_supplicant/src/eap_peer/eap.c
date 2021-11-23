@@ -213,6 +213,13 @@ int eap_peer_register_methods(void)
 		ret = eap_peer_mschapv2_register();
 #endif
 
+#ifndef USE_MBEDTLS_CRYPTO
+#ifdef EAP_FAST
+	if (ret == 0)
+		ret = eap_peer_fast_register();
+#endif
+#endif
+
 #ifdef EAP_PEAP
 	if (ret == 0)
 		ret = eap_peer_peap_register();
@@ -435,10 +442,11 @@ int eap_peer_config_init(
 	sm->config.client_cert = (u8 *)sm->blob[0].name;
 	sm->config.private_key = (u8 *)sm->blob[1].name;
 	sm->config.ca_cert = (u8 *)sm->blob[2].name;
-
 	sm->config.ca_path = NULL;
 
 	sm->config.fragment_size = 1400; /* fragment size */
+
+	sm->config.pac_file = (char *) "blob://";
 
 	/* anonymous identity */
 	if (g_wpa_anonymous_identity && g_wpa_anonymous_identity_len > 0) {
@@ -485,6 +493,11 @@ int eap_peer_config_init(
 
 	if (g_wpa_suiteb_certification) {
 		sm->config.flags = TLS_CONN_SUITEB;
+	}
+
+	/* To be used only for EAP-FAST */
+	if (g_wpa_phase1_options) {
+		sm->config.phase1 = g_wpa_phase1_options;
 	}
 
 	return 0;
@@ -541,6 +554,17 @@ int eap_peer_blob_init(struct eap_sm *sm)
 		os_strncpy(sm->blob[2].name, CA_CERT_NAME, BLOB_NAME_LEN+1);
 		sm->blob[2].len = g_wpa_ca_cert_len;
 		sm->blob[2].data = g_wpa_ca_cert;
+	}
+
+	if (g_wpa_pac_file && g_wpa_pac_file_len) {
+		sm->blob[3].name = (char *)os_zalloc(sizeof(char) * 8);
+		if (sm->blob[3].name == NULL) {
+			ret = -2;
+			goto _out;
+		}
+		os_strncpy(sm->blob[3].name, "blob://", 8);
+		sm->blob[3].len = g_wpa_pac_file_len;
+		sm->blob[3].data = g_wpa_pac_file;
 	}
 
 	return 0;
@@ -615,6 +639,37 @@ void eap_sm_request_identity(struct eap_sm *sm)
 	eap_sm_request(sm, WPA_CTRL_REQ_EAP_IDENTITY, NULL, 0);
 }
 
+
+/**
+ * eap_sm_request_password - Request password from user (ctrl_iface)
+ * @sm: Pointer to EAP state machine allocated with eap_peer_sm_init()
+ *
+ * EAP methods can call this function to request password information for the
+ * current network. This is normally called when the password is not included
+ * in the network configuration. The request will be sent to monitor programs
+ * through the control interface.
+ */
+void eap_sm_request_password(struct eap_sm *sm)
+{
+	eap_sm_request(sm, WPA_CTRL_REQ_EAP_PASSWORD, NULL, 0);
+}
+
+
+/**
+ * eap_sm_request_new_password - Request new password from user (ctrl_iface)
+ * @sm: Pointer to EAP state machine allocated with eap_peer_sm_init()
+ *
+ * EAP methods can call this function to request new password information for
+ * the current network. This is normally called when the EAP method indicates
+ * that the current password has expired and password change is required. The
+ * request will be sent to monitor programs through the control interface.
+ */
+void eap_sm_request_new_password(struct eap_sm *sm)
+{
+	eap_sm_request(sm, WPA_CTRL_REQ_EAP_NEW_PASSWORD, NULL, 0);
+}
+
+
 void eap_peer_blob_deinit(struct eap_sm *sm)
 {
 	int i;
@@ -629,6 +684,7 @@ void eap_peer_blob_deinit(struct eap_sm *sm)
 	sm->config.client_cert = NULL;
 	sm->config.private_key = NULL;
 	sm->config.ca_cert = NULL;
+	sm->config.pac_file = NULL;
 }
 
 void eap_sm_abort(struct eap_sm *sm)
@@ -721,6 +777,40 @@ const u8 * eap_get_config_new_password(struct eap_sm *sm, size_t *len)
 	*len = config->new_password_len;
 	return config->new_password;
 }
+
+
+static int eap_copy_buf(u8 **dst, size_t *dst_len,
+			     const u8 *src, size_t src_len)
+{
+	if (src) {
+		*dst = os_memdup(src, src_len);
+		if (*dst == NULL)
+			return -1;
+		*dst_len = src_len;
+	}
+	return 0;
+}
+
+
+/**
+ * eap_set_config_blob - Set or add a named configuration blob
+ * @sm: Pointer to EAP state machine allocated with eap_peer_sm_init()
+ * @blob: New value for the blob
+ *
+ * Adds a new configuration blob or replaces the current value of an existing
+ * blob.
+ */
+void eap_set_config_blob(struct eap_sm *sm, struct wpa_config_blob *blob)
+{
+    if (!sm)
+        return;
+
+    if (eap_copy_buf((u8 **)&sm->blob[3].data, (size_t *)&sm->blob[3].len, blob->data, blob->len) < 0) {
+		wpa_printf(MSG_ERROR, "EAP: Set config blob: Unable to modify the configuration blob");
+    }
+}
+
+
 /**
  * eap_get_config_blob - Get a named configuration blob
  * @sm: Pointer to EAP state machine allocated with eap_peer_sm_init()

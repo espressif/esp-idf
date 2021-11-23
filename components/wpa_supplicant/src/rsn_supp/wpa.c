@@ -1,4 +1,3 @@
-
 /*
  * WPA Supplicant - WPA state machine and EAPOL-Key processing
  * Copyright (c) 2003-2010, Jouni Malinen <j@w1.fi>
@@ -12,6 +11,7 @@
  *
  * See README and COPYING for more details.
  */
+
 #include "utils/includes.h"
 
 #include "utils/common.h"
@@ -1948,7 +1948,7 @@ int wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len)
     if (key_data_len > plen - keyhdrlen) {
 #ifdef DEBUG_PRINT
         wpa_printf(MSG_DEBUG, "WPA: Invalid EAPOL-Key "
-                              "frame - key_data overflow (%u > %u)",
+                              "frame - key_data overflow (%d > %u)",
                               (unsigned int) key_data_len,
                               (unsigned int) (plen - keyhdrlen));
 #endif
