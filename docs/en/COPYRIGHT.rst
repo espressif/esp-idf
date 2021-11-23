@@ -80,8 +80,6 @@ This is the list of licenses for tools included in this repository, which are us
 
 * :component:`esptool.py <esptool_py/esptool>` is Copyright (C) 2014-2016 Fredrik Ahlberg, Angus Gratton and is licensed under the GNU General Public License v2, as described in :component_file:`LICENSE file<esptool_py/LICENSE>`.
 
-* :idf:`KConfig <tools/kconfig>` is Copyright (C) 2002 Roman Zippel and others, and is licensed under the GNU General Public License V2.
-
 Documentation
 -------------
 

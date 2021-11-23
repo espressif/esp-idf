@@ -1,94 +1,8 @@
 include(ExternalProject)
 
 function(__kconfig_init)
-    if(${CMAKE_HOST_SYSTEM_NAME} MATCHES "FreeBSD")
-        set(MAKE_COMMMAND "gmake")
-    else()
-        set(MAKE_COMMMAND "make")
-    endif()
-
     idf_build_get_property(idf_path IDF_PATH)
-    if(CMAKE_HOST_WIN32 AND DEFINED ENV{MSYSTEM})
-        # Prefer a prebuilt mconf-idf on Windows
-        find_program(WINPTY winpty)
-        unset(MCONF CACHE)  # needed when MSYS and CMD is intermixed (cache could contain an incompatible path)
-        find_program(MCONF mconf-idf)
 
-        # Fall back to the old binary which was called 'mconf' not 'mconf-idf'
-        if(NOT MCONF)
-            find_program(MCONF mconf)
-            if(MCONF)
-                message(WARNING "Falling back to mconf binary '${MCONF}' not mconf-idf. "
-                    "This is probably because an old version of IDF mconf is installed and this is fine. "
-                    "However if there are config problems please check the Getting Started guide for your platform.")
-            endif()
-        endif()
-
-        if(NOT MCONF)
-            find_program(NATIVE_GCC gcc)
-            if(NOT NATIVE_GCC)
-                message(FATAL_ERROR
-                    "Windows requires an MSYS2 version of gcc on the PATH to build mconf-idf. "
-                    "Consult the setup docs for ESP-IDF on Windows.")
-            else()
-                # Use the existing Makefile to build mconf (out of tree) when needed
-                #
-                set(MCONF ${CMAKE_BINARY_DIR}/kconfig_bin/mconf-idf)
-                set(src_path ${idf_path}/tools/kconfig)
-
-                # note: we preemptively remove any build files from the src dir
-                # as we're building out of tree, but don't want build system to
-                # #include any from there that were previously build with/for make
-                externalproject_add(mconf-idf
-                    SOURCE_DIR ${src_path}
-                    CONFIGURE_COMMAND ""
-                    BINARY_DIR "${CMAKE_BINARY_DIR}/kconfig_bin"
-                    BUILD_COMMAND rm -f ${src_path}/zconf.lex.c ${src_path}/zconf.hash.c
-                    COMMAND ${MAKE_COMMMAND} -f ${src_path}/Makefile mconf-idf
-                    BUILD_BYPRODUCTS ${MCONF}
-                    INSTALL_COMMAND ""
-                    EXCLUDE_FROM_ALL 1
-                    )
-
-                file(GLOB mconf_srcfiles ${src_path}/*.c)
-                list(REMOVE_ITEM mconf_srcfiles "${src_path}/zconf.lex.c" "${src_path}/zconf.hash.c")
-                externalproject_add_stepdependencies(mconf-idf build
-                    ${mconf_srcfiles}
-                    ${src_path}/Makefile
-                    ${CMAKE_CURRENT_LIST_FILE})
-                unset(mconf_srcfiles)
-                unset(src_path)
-
-                set(menuconfig_depends DEPENDS mconf-idf)
-            endif()
-        else()
-            execute_process(COMMAND "${MCONF}" -v
-                RESULT_VARIABLE mconf_res
-                OUTPUT_VARIABLE mconf_out
-                ERROR_VARIABLE mconf_err)
-            if(${mconf_res})
-                message(WARNING "Failed to detect version of mconf-idf. Return code was ${mconf_res}.")
-            else()
-                string(STRIP "${mconf_out}" mconf_out)
-                set(mconf_expected_ver "mconf-v4.6.0.0-idf-20190628-win32")
-                if(NOT ${mconf_out} STREQUAL "mconf-idf version ${mconf_expected_ver}")
-                    message(WARNING "Unexpected ${mconf_out}. Expected ${mconf_expected_ver}. "
-                                    "Please check the ESP-IDF Getting Started guide for version "
-                                    "${IDF_VERSION_MAJOR}.${IDF_VERSION_MINOR}.${IDF_VERSION_PATCH} "
-                                    "to correct this issue")
-                else()
-                    message(STATUS "${mconf_out}")   # prints: mconf-idf version ....
-                endif()
-            endif()
-            if(WINPTY)
-                set(MCONF "\"${WINPTY}\" \"${MCONF}\"")
-            endif()
-        endif()
-        idf_build_set_property(__MCONF ${MCONF})
-        idf_build_set_property(__MENUCONFIG_DEPENDS "${menuconfig_depends}")
-    endif()
-
-    idf_build_get_property(idf_path IDF_PATH)
     idf_build_set_property(__ROOT_KCONFIG ${idf_path}/Kconfig)
     idf_build_set_property(__ROOT_SDKCONFIG_RENAME ${idf_path}/sdkconfig.rename)
     idf_build_set_property(__OUTPUT_SDKCONFIG 1)
@@ -289,15 +203,8 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     idf_build_set_property(SDKCONFIG_JSON_MENUS ${sdkconfig_json_menus})
     idf_build_set_property(CONFIG_DIR ${config_dir})
 
-    if(CMAKE_HOST_WIN32 AND DEFINED ENV{MSYSTEM})
-        idf_build_get_property(menuconfig_depends __MENUCONFIG_DEPENDS)
-        idf_build_get_property(mconf __MCONF)
-
-        set(MENUCONFIG_CMD ${mconf})
-    else()
-        set(MENUCONFIG_CMD ${python} -m menuconfig)
-        set(TERM_CHECK_CMD ${python} ${idf_path}/tools/check_term.py)
-    endif()
+    set(MENUCONFIG_CMD ${python} -m menuconfig)
+    set(TERM_CHECK_CMD ${python} ${idf_path}/tools/check_term.py)
 
     # Generate the menuconfig target
     add_custom_target(menuconfig
@@ -317,8 +224,6 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         "IDF_TARGET=${idf_target}"
         "IDF_ENV_FPGA=${idf_env_fpga}"
         ${MENUCONFIG_CMD} ${root_kconfig}
-        # VERBATIM cannot be used here because it cannot handle ${mconf}="winpty mconf-idf" and the escaping must be
-        # done manually
         USES_TERMINAL
         # additional run of confgen esures that the deprecated options will be inserted into sdkconfig (for backward
         # compatibility)
