@@ -86,7 +86,7 @@ static inline mcpwm_intr_t mcpwm_ll_get_intr(mcpwm_dev_t *mcpwm)
  * @param mcpwm Address of the MCPWM peripheral registers.
  * @param intr Bitwise ORed interrupts to clear.
  */
-static inline void mcpwm_ll_clear_intr(mcpwm_dev_t* mcpwm, mcpwm_intr_t intr)
+static inline void mcpwm_ll_clear_intr(mcpwm_dev_t *mcpwm, mcpwm_intr_t intr)
 {
     mcpwm->int_clr.val = intr;
 }
@@ -101,9 +101,9 @@ static inline void mcpwm_ll_clear_intr(mcpwm_dev_t* mcpwm, mcpwm_intr_t intr)
  * @param timer The timer to set the prescale, 0-2.
  * @param prescale Prescale factor, 0-255.
  */
-static inline void mcpwm_ll_timer_set_prescale(mcpwm_dev_t* mcpwm, int timer, uint32_t prescale)
+static inline void mcpwm_ll_timer_set_prescale(mcpwm_dev_t *mcpwm, int timer, uint32_t prescale)
 {
-    mcpwm->timer[timer].period.prescale = prescale;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->timer[timer].period, prescale, prescale);
 }
 
 
@@ -156,8 +156,7 @@ static inline void mcpwm_ll_timer_stop(mcpwm_dev_t *mcpwm, int timer)
  */
 static inline void mcpwm_ll_timer_set_period(mcpwm_dev_t *mcpwm, int timer, uint32_t period)
 {
-
-    mcpwm->timer[timer].period.period = period - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->timer[timer].period, period, period - 1);
     mcpwm->timer[timer].period.upmethod = 0;
 }
 
@@ -170,7 +169,7 @@ static inline void mcpwm_ll_timer_set_period(mcpwm_dev_t *mcpwm, int timer, uint
  */
 static inline uint32_t mcpwm_ll_timer_get_period(mcpwm_dev_t *mcpwm, int timer)
 {
-    return mcpwm->timer[timer].period.period + 1;
+    return HAL_FORCE_READ_U32_REG_FIELD(mcpwm->timer[timer].period, period) + 1;
 }
 
 /********************* Sync *******************/
@@ -265,7 +264,7 @@ static inline void mcpwm_ll_operator_set_compare_upmethod(mcpwm_dev_t *mcpwm, in
  */
 static inline uint32_t mcpwm_ll_operator_get_compare(mcpwm_dev_t *mcpwm, int op, int cmp_n)
 {
-    return (mcpwm->channel[op].cmpr_value[cmp_n].cmpr_val);
+    return HAL_FORCE_READ_U32_REG_FIELD(mcpwm->channel[op].cmpr_value[cmp_n], cmpr_val);
 }
 
 /**
@@ -278,7 +277,7 @@ static inline uint32_t mcpwm_ll_operator_get_compare(mcpwm_dev_t *mcpwm, int op,
  */
 static inline void mcpwm_ll_operator_set_compare(mcpwm_dev_t *mcpwm, int op, int cmp_n, uint32_t compare)
 {
-    mcpwm->channel[op].cmpr_value[cmp_n].cmpr_val = compare;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->channel[op].cmpr_value[cmp_n], cmpr_val, compare);
 }
 
 /********************* Generator *******************/
@@ -326,7 +325,7 @@ static inline void mcpwm_ll_gen_set_period_action(mcpwm_dev_t *mcpwm, int op, in
  * @param down_action The action to take when the counter is counting down.
  */
 static inline void mcpwm_ll_gen_set_cmp_action(mcpwm_dev_t *mcpwm, int op, int gen,
-               int cmp_n, mcpwm_output_action_t up_action, mcpwm_output_action_t down_action)
+        int cmp_n, mcpwm_output_action_t up_action, mcpwm_output_action_t down_action)
 {
     if (cmp_n == 0) {
         mcpwm->channel[op].generator[gen].utea = up_action;
@@ -474,7 +473,7 @@ static inline void mcpwm_ll_fault_set_oneshot_action(mcpwm_dev_t *mcpwm, int op,
  * @param down_action   Action to take when fault happens when counting down.
  */
 static inline void mcpwm_ll_fault_set_cyc_action(mcpwm_dev_t *mcpwm, int op, int gen,
-                  mcpwm_output_action_t up_action, mcpwm_output_action_t down_action)
+        mcpwm_output_action_t up_action, mcpwm_output_action_t down_action)
 {
     mcpwm->channel[op].tz_cfg1.cbcpulse = BIT(0);    //immediately
     if (gen == 0) {
@@ -510,7 +509,7 @@ static inline void mcpwm_ll_deadtime_init(mcpwm_dev_t *mcpwm, int op)
  * @param mode  Dead zone mode to use.
  */
 static inline void mcpwm_ll_set_deadtime_mode(mcpwm_dev_t *mcpwm,
-    int op, mcpwm_deadtime_type_t mode)
+        int op, mcpwm_deadtime_type_t mode)
 {
 #define MCPWM_LL_DEADTIME_REG_MASK (MCPWM_DT0_DEB_MODE_M | MCPWM_DT0_A_OUTSWAP_M | MCPWM_DT0_B_OUTSWAP_M | \
     MCPWM_DT0_RED_INSEL_M | MCPWM_DT0_FED_INSEL_M | MCPWM_DT0_RED_OUTINVERT_M | MCPWM_DT0_FED_OUTINVERT_M | \
@@ -542,7 +541,7 @@ static inline void mcpwm_ll_set_deadtime_mode(mcpwm_dev_t *mcpwm,
  */
 static inline void mcpwm_ll_deadtime_set_falling_delay(mcpwm_dev_t *mcpwm, int op, uint32_t fed)
 {
-    mcpwm->channel[op].db_fed_cfg.fed = fed;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->channel[op].db_fed_cfg, fed, fed);
 }
 
 /**
@@ -554,7 +553,7 @@ static inline void mcpwm_ll_deadtime_set_falling_delay(mcpwm_dev_t *mcpwm, int o
  */
 static inline void mcpwm_ll_deadtime_set_rising_delay(mcpwm_dev_t *mcpwm, int op, uint32_t red)
 {
-    mcpwm->channel[op].db_red_cfg.red = red;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->channel[op].db_red_cfg, red, red);
 }
 
 /**
@@ -689,7 +688,7 @@ static inline mcpwm_capture_on_edge_t mcpwm_ll_get_captured_edge(mcpwm_dev_t *mc
     } else {   //2
         edge = mcpwm->cap_status.cap2_edge;
     }
-    return (edge? MCPWM_NEG_EDGE: MCPWM_POS_EDGE);
+    return (edge ? MCPWM_NEG_EDGE : MCPWM_POS_EDGE);
 }
 
 STATIC_HAL_REG_CHECK(MCPWM, MCPWM_NEG_EDGE, BIT(0));
@@ -703,7 +702,7 @@ STATIC_HAL_REG_CHECK(MCPWM, MCPWM_POS_EDGE, BIT(1));
  * @param cap_edge  The edge to capture, bitwise.
  */
 static inline void mcpwm_ll_capture_select_edge(mcpwm_dev_t *mcpwm, int cap_sig,
-                                  mcpwm_capture_on_edge_t cap_edge)
+        mcpwm_capture_on_edge_t cap_edge)
 {
     mcpwm->cap_cfg_ch[cap_sig].mode = cap_edge;
 }
@@ -717,7 +716,7 @@ static inline void mcpwm_ll_capture_select_edge(mcpwm_dev_t *mcpwm, int cap_sig,
  */
 static inline void mcpwm_ll_capture_set_prescale(mcpwm_dev_t *mcpwm, int cap_sig, uint32_t prescale)
 {
-    mcpwm->cap_cfg_ch[cap_sig].prescale = prescale;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(mcpwm->cap_cfg_ch[cap_sig], prescale, prescale);
 }
 
 /**
@@ -728,7 +727,7 @@ static inline void mcpwm_ll_capture_set_prescale(mcpwm_dev_t *mcpwm, int cap_sig
  */
 static inline mcpwm_intr_t mcpwm_ll_get_cap_intr_def(int bit)
 {
-    return BIT(bit+MCPWM_CAP0_INT_RAW_S);
+    return BIT(bit + MCPWM_CAP0_INT_RAW_S);
 }
 
 #ifdef __cplusplus

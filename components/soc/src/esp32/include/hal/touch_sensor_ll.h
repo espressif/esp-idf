@@ -294,9 +294,9 @@ static inline void touch_ll_set_threshold(touch_pad_t touch_num, uint16_t thresh
 {
     touch_pad_t tp_wrap = touch_ll_num_wrap(touch_num);
     if (tp_wrap & 0x1) {
-        SENS.touch_thresh[tp_wrap / 2].l_thresh = threshold;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.touch_thresh[tp_wrap / 2], l_thresh, threshold);
     } else {
-        SENS.touch_thresh[tp_wrap / 2].h_thresh = threshold;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(SENS.touch_thresh[tp_wrap / 2], h_thresh, threshold);
     }
 }
 
@@ -311,8 +311,8 @@ static inline void touch_ll_get_threshold(touch_pad_t touch_num, uint16_t *thres
     touch_pad_t tp_wrap = touch_ll_num_wrap(touch_num);
     if (threshold) {
         *threshold = (tp_wrap & 0x1 ) ?
-                     SENS.touch_thresh[tp_wrap / 2].l_thresh :
-                     SENS.touch_thresh[tp_wrap / 2].h_thresh;
+                     HAL_FORCE_READ_U32_REG_FIELD(SENS.touch_thresh[tp_wrap / 2], l_thresh) :
+                     HAL_FORCE_READ_U32_REG_FIELD(SENS.touch_thresh[tp_wrap / 2], h_thresh) ;
     }
 }
 
@@ -492,7 +492,8 @@ static inline void touch_ll_intr_clear(void)
 static inline uint32_t touch_ll_read_raw_data(touch_pad_t touch_num)
 {
     touch_pad_t tp_wrap = touch_ll_num_wrap(touch_num);
-    return ((tp_wrap & 0x1) ? SENS.touch_meas[tp_wrap / 2].l_val : SENS.touch_meas[tp_wrap / 2].h_val);
+    return ((tp_wrap & 0x1) ? HAL_FORCE_READ_U32_REG_FIELD(SENS.touch_meas[tp_wrap / 2], l_val) :
+                              HAL_FORCE_READ_U32_REG_FIELD(SENS.touch_meas[tp_wrap / 2], h_val));
 }
 
 /**

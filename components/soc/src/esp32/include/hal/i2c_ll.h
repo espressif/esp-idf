@@ -44,7 +44,7 @@ typedef union {
  * @brief I2C interrupt event
  */
 typedef enum {
-    I2C_INTR_EVENT_ERR,        
+    I2C_INTR_EVENT_ERR,
     I2C_INTR_EVENT_ARBIT_LOST,   /*!< I2C arbition lost event */
     I2C_INTR_EVENT_NACK,         /*!< I2C NACK event */
     I2C_INTR_EVENT_TOUT,         /*!< I2C time out event */
@@ -331,7 +331,7 @@ static inline void i2c_ll_set_sda_timing(i2c_dev_t *hw, int sda_sample, int sda_
  */
 static inline void i2c_ll_set_txfifo_empty_thr(i2c_dev_t *hw, uint8_t empty_thr)
 {
-    hw->fifo_conf.tx_fifo_empty_thrhd = empty_thr;    
+    hw->fifo_conf.tx_fifo_empty_thrhd = empty_thr;
 }
 
 /**
@@ -344,7 +344,7 @@ static inline void i2c_ll_set_txfifo_empty_thr(i2c_dev_t *hw, uint8_t empty_thr)
  */
 static inline void i2c_ll_set_rxfifo_full_thr(i2c_dev_t *hw, uint8_t full_thr)
 {
-    hw->fifo_conf.rx_fifo_full_thrhd = full_thr;    
+    hw->fifo_conf.rx_fifo_full_thrhd = full_thr;
 }
 
 /**
@@ -535,7 +535,7 @@ static inline void i2c_ll_write_txfifo(i2c_dev_t *hw, uint8_t *ptr, uint8_t len)
     uint32_t fifo_addr = (hw == &I2C0) ? 0x6001301c : 0x6002701c;
     for(int i = 0; i < len; i++) {
         WRITE_PERI_REG(fifo_addr, ptr[i]);
-    }   
+    }
 }
 
 /**
@@ -550,8 +550,8 @@ static inline void i2c_ll_write_txfifo(i2c_dev_t *hw, uint8_t *ptr, uint8_t len)
 static inline void i2c_ll_read_rxfifo(i2c_dev_t *hw, uint8_t *ptr, uint8_t len)
 {
     for(int i = 0; i < len; i++) {
-        ptr[i] = hw->fifo_data.data;
-    }   
+        ptr[i] = HAL_FORCE_READ_U32_REG_FIELD(hw->fifo_data, data);
+    }
 }
 
 /**

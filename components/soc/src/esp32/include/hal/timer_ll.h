@@ -23,6 +23,7 @@ extern "C" {
 
 #include <stdlib.h>
 #include "hal/timer_types.h"
+#include "hal/hal_defs.h"
 #include "soc/timer_periph.h"
 #include "soc/timer_group_struct.h"
 #include "hal/hal_defs.h"
@@ -53,7 +54,7 @@ static inline void timer_ll_set_divider(timg_dev_t *hw, timer_idx_t timer_num, u
     }
     int timer_en = hw->hw_timer[timer_num].config.enable;
     hw->hw_timer[timer_num].config.enable = 0;
-    hw->hw_timer[timer_num].config.divider = divider;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hw_timer[timer_num].config, divider, divider);
     hw->hw_timer[timer_num].config.enable = timer_en;
 }
 
@@ -68,7 +69,7 @@ static inline void timer_ll_set_divider(timg_dev_t *hw, timer_idx_t timer_num, u
  */
 static inline void timer_ll_get_divider(timg_dev_t *hw, timer_idx_t timer_num, uint32_t *divider)
 {
-    uint32_t d = hw->hw_timer[timer_num].config.divider;
+    uint32_t d = HAL_FORCE_READ_U32_REG_FIELD(hw->hw_timer[timer_num].config, divider);
     if (d == 0) {
         d = 65536;
     } else if (d == 1) {

@@ -495,8 +495,8 @@ static inline void twai_ll_set_acc_filter(twai_dev_t* hw, uint32_t code, uint32_
     uint32_t code_swapped = __builtin_bswap32(code);
     uint32_t mask_swapped = __builtin_bswap32(mask);
     for (int i = 0; i < 4; i++) {
-        hw->acceptance_filter.acr[i].byte = ((code_swapped >> (i * 8)) & 0xFF);
-        hw->acceptance_filter.amr[i].byte = ((mask_swapped >> (i * 8)) & 0xFF);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->acceptance_filter.acr[i], byte, ((code_swapped >> (i * 8)) & 0xFF));
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->acceptance_filter.amr[i], byte, ((mask_swapped >> (i * 8)) & 0xFF));
     }
     hw->mode_reg.afm = single_filter;
 }
@@ -531,7 +531,7 @@ static inline void twai_ll_get_rx_buffer(twai_dev_t *hw, twai_ll_frame_buffer_t 
 {
     //Copy RX buffer registers into frame
     for (int i = 0; i < 13; i++) {
-        rx_frame->bytes[i] =  hw->tx_rx_buffer[i].byte;
+        rx_frame->bytes[i] =  HAL_FORCE_READ_U32_REG_FIELD(hw->tx_rx_buffer[i], byte);
     }
 }
 
