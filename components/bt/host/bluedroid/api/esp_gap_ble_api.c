@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 #include "esp_bt_device.h"
@@ -1240,24 +1232,72 @@ esp_err_t esp_ble_gap_prefer_ext_connect_params_set(esp_bd_addr_t addr,
         if (!phy_1m_conn_params) {
             return BT_STATUS_PARM_INVALID;
         }
-        memcpy(&arg.set_ext_conn_params.phy_1m_conn_params,
-               phy_1m_conn_params, sizeof(esp_ble_gap_conn_params_t));
+
+        if (ESP_BLE_IS_VALID_PARAM(phy_1m_conn_params->interval_min, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
+            ESP_BLE_IS_VALID_PARAM(phy_1m_conn_params->interval_max, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
+            ESP_BLE_IS_VALID_PARAM(phy_1m_conn_params->supervision_timeout, ESP_BLE_CONN_SUP_TOUT_MIN, ESP_BLE_CONN_SUP_TOUT_MAX) &&
+            (phy_1m_conn_params->latency <= ESP_BLE_CONN_LATENCY_MAX || phy_1m_conn_params->latency == ESP_BLE_CONN_PARAM_UNDEF) &&
+            ((phy_1m_conn_params->supervision_timeout * 10) >= ((1 + phy_1m_conn_params->latency) * ((phy_1m_conn_params->interval_max * 5) >> 1))) &&
+            (phy_1m_conn_params->interval_min <= phy_1m_conn_params->interval_max)) {
+
+            memcpy(&arg.set_ext_conn_params.phy_1m_conn_params, phy_1m_conn_params, sizeof(esp_ble_gap_conn_params_t));
+        } else {
+            LOG_ERROR("%s,invalid connection params:min_int = %d, max_int = %d, latency = %d, timeout = %d", __func__,
+                                    phy_1m_conn_params->interval_min,
+                                    phy_1m_conn_params->interval_max,
+                                    phy_1m_conn_params->latency,
+                                    phy_1m_conn_params->supervision_timeout);
+
+            return ESP_ERR_INVALID_ARG;
+        }
     }
 
     if (phy_mask & ESP_BLE_GAP_PHY_2M_PREF_MASK) {
         if (!phy_2m_conn_params) {
             return BT_STATUS_PARM_INVALID;
         }
-        memcpy(&arg.set_ext_conn_params.phy_2m_conn_params,
-               phy_2m_conn_params, sizeof(esp_ble_gap_conn_params_t));
+
+        if (ESP_BLE_IS_VALID_PARAM(phy_2m_conn_params->interval_min, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
+            ESP_BLE_IS_VALID_PARAM(phy_2m_conn_params->interval_max, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
+            ESP_BLE_IS_VALID_PARAM(phy_2m_conn_params->supervision_timeout, ESP_BLE_CONN_SUP_TOUT_MIN, ESP_BLE_CONN_SUP_TOUT_MAX) &&
+            (phy_2m_conn_params->latency <= ESP_BLE_CONN_LATENCY_MAX || phy_2m_conn_params->latency == ESP_BLE_CONN_PARAM_UNDEF) &&
+            ((phy_2m_conn_params->supervision_timeout * 10) >= ((1 + phy_2m_conn_params->latency) * ((phy_2m_conn_params->interval_max * 5) >> 1))) &&
+            (phy_2m_conn_params->interval_min <= phy_2m_conn_params->interval_max)) {
+
+            memcpy(&arg.set_ext_conn_params.phy_2m_conn_params, phy_2m_conn_params, sizeof(esp_ble_gap_conn_params_t));
+        } else {
+            LOG_ERROR("%s,invalid connection params:min_int = %d, max_int = %d, latency = %d, timeout = %d", __func__,
+                                    phy_2m_conn_params->interval_min,
+                                    phy_2m_conn_params->interval_max,
+                                    phy_2m_conn_params->latency,
+                                    phy_2m_conn_params->supervision_timeout);
+
+            return ESP_ERR_INVALID_ARG;
+        }
     }
 
     if (phy_mask & ESP_BLE_GAP_PHY_CODED_PREF_MASK) {
         if (!phy_coded_conn_params) {
             return BT_STATUS_PARM_INVALID;
         }
-        memcpy(&arg.set_ext_conn_params.phy_coded_conn_params,
-               phy_coded_conn_params, sizeof(esp_ble_gap_conn_params_t));
+
+        if (ESP_BLE_IS_VALID_PARAM(phy_coded_conn_params->interval_min, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
+            ESP_BLE_IS_VALID_PARAM(phy_coded_conn_params->interval_max, ESP_BLE_CONN_INT_MIN, ESP_BLE_CONN_INT_MAX) &&
+            ESP_BLE_IS_VALID_PARAM(phy_coded_conn_params->supervision_timeout, ESP_BLE_CONN_SUP_TOUT_MIN, ESP_BLE_CONN_SUP_TOUT_MAX) &&
+            (phy_coded_conn_params->latency <= ESP_BLE_CONN_LATENCY_MAX || phy_coded_conn_params->latency == ESP_BLE_CONN_PARAM_UNDEF) &&
+            ((phy_coded_conn_params->supervision_timeout * 10) >= ((1 + phy_coded_conn_params->latency) * ((phy_coded_conn_params->interval_max * 5) >> 1))) &&
+            (phy_coded_conn_params->interval_min <= phy_coded_conn_params->interval_max)) {
+
+            memcpy(&arg.set_ext_conn_params.phy_coded_conn_params, phy_coded_conn_params, sizeof(esp_ble_gap_conn_params_t));
+        } else {
+            LOG_ERROR("%s,invalid connection params:min_int = %d, max_int = %d, latency = %d, timeout = %d", __func__,
+                                    phy_coded_conn_params->interval_min,
+                                    phy_coded_conn_params->interval_max,
+                                    phy_coded_conn_params->latency,
+                                    phy_coded_conn_params->supervision_timeout);
+
+            return ESP_ERR_INVALID_ARG;
+        }
     }
 
     memcpy(arg.set_ext_conn_params.addr, addr, sizeof(esp_bd_addr_t));
