@@ -253,7 +253,7 @@ ADC Calibration
 
             .. highlight:: none
 
-            If you are unable to check the date code (i.e. the chip may be enclosed inside a canned module, etc.), you can still verify if **eFuse Vref** is present by running the `espefuse.py <https://github.com/espressif/esptool/wiki/espefuse>`_  tool with ``adc_info`` parameter ::
+            If you are unable to check the date code (i.e. the chip may be enclosed inside a canned module, etc.), you can still verify if **eFuse Vref** is present by running the `espefuse.py <https://docs.espressif.com/projects/esptool/en/latest/{IDF_TARGET_PATH_NAME}/espefuse/index.html>`_  tool with ``adc_info`` parameter ::
 
                 $IDF_PATH/components/esptool_py/esptool/espefuse.py --port /dev/ttyUSB0 adc_info
 
@@ -282,7 +282,7 @@ ADC Calibration
 
         .. highlight:: none
 
-        You can verify if **eFuse Two Point** is present by running the `espefuse.py <https://github.com/espressif/esptool/wiki/espefuse>`_  tool with ``adc_info`` parameter ::
+        You can verify if **eFuse Two Point** is present by running the `espefuse.py <https://docs.espressif.com/projects/esptool/en/latest/{IDF_TARGET_PATH_NAME}/espefuse/index.html>`_  tool with ``adc_info`` parameter ::
 
             $IDF_PATH/components/esptool_py/esptool/espefuse.py --port /dev/ttyUSB0 adc_info
 

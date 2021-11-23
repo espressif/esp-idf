@@ -77,7 +77,7 @@ Make sure you re-login to enable read and write permissions for the serial port.
 Verify serial connection
 ------------------------
 
-Now verify that the serial connection is operational. You can do this using a serial terminal program by checking if you get any output on the terminal after reseting {IDF_TARGET_NAME}. 
+Now verify that the serial connection is operational. You can do this using a serial terminal program by checking if you get any output on the terminal after reseting {IDF_TARGET_NAME}.
 
 Windows and Linux
 ^^^^^^^^^^^^^^^^^
@@ -124,7 +124,7 @@ To spare you the trouble of installing a serial terminal program, macOS offers t
 
     screen /dev/cu.device_name 115200
 
-  Replace ``device_name`` with the name found running ``ls /dev/cu.*``. 
+  Replace ``device_name`` with the name found running ``ls /dev/cu.*``.
 
 - What you are looking for is some log displayed by the **screen**. The log contents will depend on application loaded to {IDF_TARGET_NAME}, see `Example Output`_. To exit the **screen** session type Ctrl-A + \\ .
 
@@ -169,4 +169,4 @@ If you can see readable log output, it means serial connection is working and yo
 
 If you got here from :ref:`get-started-connect` when installing s/w for {IDF_TARGET_NAME} development, then you can continue with :ref:`get-started-configure`.
 
-.. _esptool documentation: https://github.com/espressif/esptool/wiki/ESP32-Boot-Mode-Selection#automatic-bootloader
+.. _esptool documentation: https://docs.espressif.com/projects/esptool/en/latest/advanced-topics/boot-mode-selection.html#automatic-bootloader
