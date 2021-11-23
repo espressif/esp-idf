@@ -20,6 +20,7 @@
 #include "esp_types.h"
 #include "assert.h"
 #include "esp_err.h"
+#include "esp_fault.h"
 #include "esp_log.h"
 #include "soc/efuse_periph.h"
 #include "bootloader_random.h"
@@ -123,7 +124,16 @@ static void write_anti_rollback(uint32_t new_bits)
 bool esp_efuse_check_secure_version(uint32_t secure_version)
 {
     uint32_t sec_ver_hw = esp_efuse_read_secure_version();
-    return secure_version >= sec_ver_hw;
+    /* Additional copies for Anti FI check */
+    uint32_t sec_ver_hw_c1 = esp_efuse_read_secure_version();
+    uint32_t sec_ver_hw_c2 = esp_efuse_read_secure_version();
+    ESP_FAULT_ASSERT(sec_ver_hw == sec_ver_hw_c1);
+    ESP_FAULT_ASSERT(sec_ver_hw == sec_ver_hw_c2);
+
+    bool ret_status = (secure_version >= sec_ver_hw);
+    /* Anti FI check */
+    ESP_FAULT_ASSERT(ret_status == (secure_version >= sec_ver_hw));
+    return ret_status;
 }
 
 esp_err_t esp_efuse_update_secure_version(uint32_t secure_version)
