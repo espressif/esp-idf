@@ -934,7 +934,7 @@ tBTM_STATUS BTM_EnableTestMode(void)
 *******************************************************************************/
 tBTM_STATUS BTM_DeleteStoredLinkKey(BD_ADDR bd_addr, tBTM_CMPL_CB *p_cb)
 {
-    BD_ADDR local_bd_addr;
+    BD_ADDR local_bd_addr = {0};
     BOOLEAN delete_all_flag = FALSE;
 
     /* Check if the previous command is completed */
