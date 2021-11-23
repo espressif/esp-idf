@@ -709,6 +709,9 @@ void btm_pm_proc_cmd_status(UINT8 status)
 
 
     p_acl_cb = btm_handle_to_acl(btm_cb.pm_pend_link_hdl);
+    if (p_acl_cb == NULL) {
+        return;
+    }
     p_cb = p_acl_cb->p_pm_mode_db;
 
     if (status == HCI_SUCCESS) {
