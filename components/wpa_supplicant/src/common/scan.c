@@ -38,6 +38,10 @@ void wpa_supplicant_req_scan(struct wpa_supplicant *wpa_s, int sec, int usec)
 	}
 	params = os_zalloc(sizeof(*params));
 
+	if (!params) {
+		wpa_printf(MSG_ERROR, "Memory allocation failed");
+		return;
+	}
 	if (wpa_s->wnm_mode) {
 		/* Use the same memory */
 		params->ssids[0].ssid = wpa_s->current_bss->ssid;

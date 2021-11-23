@@ -1948,7 +1948,7 @@ int wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len)
     if (key_data_len > plen - keyhdrlen) {
 #ifdef DEBUG_PRINT
         wpa_printf(MSG_DEBUG, "WPA: Invalid EAPOL-Key "
-                              "frame - key_data overflow (%d > %lu)",
+                              "frame - key_data overflow (%u > %u)",
                               (unsigned int) key_data_len,
                               (unsigned int) (plen - keyhdrlen));
 #endif
