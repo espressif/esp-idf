@@ -64,6 +64,7 @@
 #include "bootloader_utility.h"
 #include "bootloader_sha.h"
 #include "esp_efuse.h"
+#include "esp_fault.h"
 
 static const char *TAG = "boot";
 
@@ -255,9 +256,16 @@ static esp_err_t write_otadata(esp_ota_select_entry_t *otadata, uint32_t offset,
 static bool check_anti_rollback(const esp_partition_pos_t *partition)
 {
 #ifdef CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
-    esp_app_desc_t app_desc;
+    esp_app_desc_t app_desc = {};
     esp_err_t err = bootloader_common_get_partition_description(partition, &app_desc);
-    return err == ESP_OK && esp_efuse_check_secure_version(app_desc.secure_version) == true;
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to get partition description %d", err);
+        return false;
+    }
+    bool sec_ver = esp_efuse_check_secure_version(app_desc.secure_version);
+    /* Anti FI check */
+    ESP_FAULT_ASSERT(sec_ver == esp_efuse_check_secure_version(app_desc.secure_version));
+    return sec_ver;
 #else
     return true;
 #endif
@@ -270,6 +278,8 @@ static void update_anti_rollback(const esp_partition_pos_t *partition)
     esp_err_t err = bootloader_common_get_partition_description(partition, &app_desc);
     if (err == ESP_OK) {
         esp_efuse_update_secure_version(app_desc.secure_version);
+    } else {
+        ESP_LOGE(TAG, "Failed to get partition description %d", err);
     }
 }
 
