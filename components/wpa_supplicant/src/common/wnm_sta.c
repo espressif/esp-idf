@@ -470,15 +470,15 @@ static void wnm_send_bss_transition_mgmt_resp(
 	struct wpabuf *buf;
 	int res;
 
-	wpa_printf(MSG_DEBUG,
-		   "WNM: Send BSS Transition Management Response to " MACSTR
-		   " dialog_token=%u status=%u reason=%u delay=%d",
-		   MAC2STR(wpa_s->current_bss->bssid), dialog_token, status, reason, delay);
 	if (!wpa_s->current_bss) {
 		wpa_printf(MSG_DEBUG,
 			   "WNM: Current BSS not known - drop response");
 		return;
 	}
+	wpa_printf(MSG_DEBUG,
+		   "WNM: Send BSS Transition Management Response to " MACSTR
+		   " dialog_token=%u status=%u reason=%u delay=%d",
+		   MAC2STR(wpa_s->current_bss->bssid), dialog_token, status, reason, delay);
 
 	buf = wpabuf_alloc(BTM_RESP_MIN_SIZE);
 	if (!buf) {
@@ -653,7 +653,7 @@ static void wnm_dump_cand_list(struct wpa_supplicant *wpa_s)
 static void wnm_set_scan_freqs(struct wpa_supplicant *wpa_s)
 {
 	unsigned int i;
-	int num_chan;
+	int num_chan = 0;
 	u8 chan = 0;
 
 	wpa_s->next_scan_chan = 0;
@@ -671,8 +671,10 @@ static void wnm_set_scan_freqs(struct wpa_supplicant *wpa_s)
 				   MAC2STR(nei->bssid));
 			return;
 		}
-		if (nei->channel_number != chan)
+		if (nei->channel_number != chan) {
+			chan = nei->channel_number;
 			num_chan++;
+		}
 	}
 
 	if (num_chan == 1) {
@@ -692,6 +694,9 @@ static void ieee802_11_rx_bss_trans_mgmt_req(struct wpa_supplicant *wpa_s,
 {
 	unsigned int beacon_int;
 	u8 valid_int;
+#ifdef ESP_SUPPLICANT
+	bool scan_required = false;
+#endif
 
 	if (wpa_s->disable_btm)
 		return;
@@ -757,9 +762,11 @@ static void ieee802_11_rx_bss_trans_mgmt_req(struct wpa_supplicant *wpa_s,
 #ifdef ESP_SUPPLICANT
 			os_memset(wpa_s->next_scan_bssid, 0, ETH_ALEN);
 			wpa_s->next_scan_chan = 0;
-#endif
+			scan_required = true;
+#else
 			wpa_printf(MSG_DEBUG, "Trying to find another BSS");
 			wpa_supplicant_req_scan(wpa_s, 0, 0);
+#endif
 		}
 	}
 
@@ -871,6 +878,12 @@ static void ieee802_11_rx_bss_trans_mgmt_req(struct wpa_supplicant *wpa_s,
 				   "WNM: Scan only for a specific BSSID since there is only a single candidate "
 				   MACSTR, MAC2STR(wpa_s->next_scan_bssid));
 		}
+#ifdef ESP_SUPPLICANT
+		scan_required = true;
+	}
+	if (scan_required) {
+		wpa_printf(MSG_DEBUG, "Trying to find another BSS");
+#endif
 		wpa_supplicant_req_scan(wpa_s, 0, 0);
 	} else if (reply) {
 		enum bss_trans_mgmt_status_code status;
@@ -961,7 +974,7 @@ void ieee802_11_rx_wnm_action(struct wpa_supplicant *wpa_s,
 	switch (act) {
 	case WNM_BSS_TRANS_MGMT_REQ:
 		ieee802_11_rx_bss_trans_mgmt_req(wpa_s, pos, end,
-						 !(sender[0] & 0x01));
+						 0x01);
 		break;
 	default:
 		wpa_printf(MSG_ERROR, "WNM: Unknown request");
