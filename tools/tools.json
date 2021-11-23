@@ -52,14 +52,14 @@
           "name": "esp-2021r2-8.4.0",
           "status": "recommended",
           "win32": {
-            "sha256": "076a4171bdc33e5ced3952efffb233d70263dfa760e636704050597a9edf61db",
-            "size": 112578260,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2/xtensa-esp32-elf-gcc8_4_0-esp-2021r2-win32.zip"
+            "sha256": "eba06307022cc659e3c5345ecb3c620c99ec5d0d2a5cb59ac21c831edcbafc45",
+            "size": 116460829,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2/xtensa-esp32-elf-gcc8_4_0-esp-2021r2-patch1-win32.zip"
           },
           "win64": {
-            "sha256": "c35b7998f7f503e0cb22055d1e279ae14b6b0e09bb3ff3846b17d552ece9c247",
-            "size": 115278695,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2/xtensa-esp32-elf-gcc8_4_0-esp-2021r2-win64.zip"
+            "sha256": "36a47c80fa79a867244f39794565c391cf4646d221c8f3e228bef45a5de1d32a",
+            "size": 119506634,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2/xtensa-esp32-elf-gcc8_4_0-esp-2021r2-patch1-win64.zip"
           }
         }
       ]
@@ -116,14 +116,14 @@
           "name": "esp-2021r2-8.4.0",
           "status": "recommended",
           "win32": {
-            "sha256": "41b917b35f6fbe7d30b7de91c32cf348c406acfa729a1eabc450d040dc46fbe2",
-            "size": 113022469,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2/xtensa-esp32s2-elf-gcc8_4_0-esp-2021r2-win32.zip"
+            "sha256": "083458aed4e0e1efad3779098b5626dbb41cfe00892daf1ae1fde07f59ac40b9",
+            "size": 116905046,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2/xtensa-esp32s2-elf-gcc8_4_0-esp-2021r2-patch1-win32.zip"
           },
           "win64": {
-            "sha256": "a764c1a0ee743d69f8cbfadbe4426a2c15c0e233b0894244c7cadf3b4d7dd32a",
-            "size": 115696999,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2/xtensa-esp32s2-elf-gcc8_4_0-esp-2021r2-win64.zip"
+            "sha256": "e535084882355d5f7587d79d4c0b6d135a318288acf50a5a2fe1b90dbc934b61",
+            "size": 119924946,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2/xtensa-esp32s2-elf-gcc8_4_0-esp-2021r2-patch1-win64.zip"
           }
         }
       ]
@@ -180,14 +180,14 @@
           "name": "esp-2021r2-8.4.0",
           "status": "recommended",
           "win32": {
-            "sha256": "d2d76c69b267767d7caf01f152cf0d1dbb9facba0e9bd2cbcad5130253a14e5f",
-            "size": 112979829,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2/xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-win32.zip"
+            "sha256": "0985f5292370daad2bf228d80bcd51aacb060288a24c7d1965fddfb16e4e2613",
+            "size": 116862406,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2/xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch1-win32.zip"
           },
           "win64": {
-            "sha256": "9c04d1da09c600b380f323b01c15e3ec511053db7d0c161085081a3fa812dc1e",
-            "size": 115825020,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2/xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-win64.zip"
+            "sha256": "cb98c854017ffa3222ef1db9e76151364d6f22841b11b07e857363065be91d1f",
+            "size": 120052967,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2/xtensa-esp32s3-elf-gcc8_4_0-esp-2021r2-patch1-win64.zip"
           }
         }
       ]
@@ -244,14 +244,14 @@
           "name": "esp-2021r2-8.4.0",
           "status": "recommended",
           "win32": {
-            "sha256": "c8ff08883c1456c278fad85e1c43b7c6e251d525683214168655550e85c5b82e",
-            "size": 140809778,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2/riscv32-esp-elf-gcc8_4_0-esp-2021r2-win32.zip"
+            "sha256": "f1ff7d2a87e1f1515371c1e4868b982e6a0958df144e2f1b2bd7e684ec1f9c93",
+            "size": 144692343,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2/riscv32-esp-elf-gcc8_4_0-esp-2021r2-patch1-win32.zip"
           },
           "win64": {
-            "sha256": "6c04cb4728db928ec6473e63146b695b6dec686a0d40dd73dd3353f05247b19e",
-            "size": 142365782,
-            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2/riscv32-esp-elf-gcc8_4_0-esp-2021r2-win64.zip"
+            "sha256": "791b8c8ed99934a2ec7f42100f2c71fb1ef7042efa7c6267c0d59394175c827a",
+            "size": 146593717,
+            "url": "https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2/riscv32-esp-elf-gcc8_4_0-esp-2021r2-patch1-win64.zip"
           }
         }
       ]
