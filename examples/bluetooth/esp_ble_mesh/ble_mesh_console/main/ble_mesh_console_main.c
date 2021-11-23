@@ -22,12 +22,10 @@
 
 #include "esp_vfs_fat.h"
 
-#include "esp_bt.h"
-#include "esp_bt_main.h"
-
 #include "esp_console.h"
 
 #include "ble_mesh_console_decl.h"
+#include "ble_mesh_example_init.h"
 
 #define TAG "ble_mesh_test"
 
@@ -50,34 +48,6 @@ static void initialize_filesystem(void)
 }
 #endif // CONFIG_STORE_HISTORY
 
-esp_err_t bluetooth_init(void)
-{
-    esp_err_t ret;
-
-    esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-    ret = esp_bt_controller_init(&bt_cfg);
-    if (ret) {
-        return ret;
-    }
-
-    ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
-    if (ret) {
-        return ret;
-    }
-    ret = esp_bluedroid_init();
-    if (ret) {
-        return ret;
-    }
-    ret = esp_bluedroid_enable();
-    if (ret) {
-        return ret;
-    }
-
-    esp_log_level_set("*", ESP_LOG_ERROR);
-    esp_log_level_set("ble_mesh_console", ESP_LOG_INFO);
-    return ret;
-}
-
 void app_main(void)
 {
     esp_err_t res;
@@ -89,6 +59,9 @@ void app_main(void)
     if (res) {
         printf("esp32_bluetooth_init failed (ret %d)", res);
     }
+
+    esp_log_level_set("*", ESP_LOG_INFO);
+    esp_log_level_set("ble_mesh_console", ESP_LOG_INFO);
 
     esp_console_repl_t *repl = NULL;
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
