@@ -4,7 +4,7 @@ Hardware assisted breakpoint 1 at 0x4008043d: file test.c, line 22.
 Temporary breakpoint 1, entry () at test.c:22
 22	    for (int i = 0; i < 10; ++ i) {
 
-Program stopped.
+Program received signal SIGINT, Interrupt.
 entry () at test.c:26
 26	}
 0001: Indirect branch message, 2 packets, PC range 0x40080400 - 0x4008040a, target PC 0x40080411, icnt=9, uaddr=0x11, exc=0
@@ -38227,3 +38227,4 @@ Dump of assembler code from 0x4008042c to 0x40080430:
    0x4008042c <done+0>:	entry	a1, 32
    0x4008042f <done+3>:	mov.n	a7, a1
 End of assembler dump.
+[Inferior 1 (Remote target) detached]
