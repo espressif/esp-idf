@@ -4,8 +4,7 @@ if(CONFIG_IDF_TARGET_ARCH_RISCV)
     list(APPEND INCLUDE_FILES "include/riscv")
 endif()
 
-target_include_directories(${COMPONENT_LIB} PRIVATE ${INCLUDE_FILES})
-target_include_directories(${COMPONENT_LIB} PUBLIC public_compat)
+target_include_directories(${COMPONENT_LIB} PRIVATE ${INCLUDE_FILES} include/private)
 
 set(srcs "cpu_start.c" "panic_handler.c" "brownout.c")
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" ${srcs})

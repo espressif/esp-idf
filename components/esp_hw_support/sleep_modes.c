@@ -42,7 +42,7 @@
 #include "sdkconfig.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
-#include "brownout.h"
+#include "esp_private/brownout.h"
 #include "esp_private/sleep_retention.h"
 #include "esp_private/esp_clk.h"
 

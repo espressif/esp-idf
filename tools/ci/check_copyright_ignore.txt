@@ -908,9 +908,6 @@ components/esp_system/include/esp_task_wdt.h
 components/esp_system/port/arch/riscv/expression_with_stack.c
 components/esp_system/port/arch/xtensa/debug_helpers.c
 components/esp_system/port/arch/xtensa/expression_with_stack.c
-components/esp_system/port/include/esp_clk_internal.h
-components/esp_system/port/include/port/panic_funcs.h
-components/esp_system/port/include/riscv/eh_frame_parser_impl.h
 components/esp_system/port/public_compat/brownout.h
 components/esp_system/port/public_compat/cache_err_int.h
 components/esp_system/port/public_compat/trax.h
@@ -918,12 +915,10 @@ components/esp_system/port/soc/esp32/cache_err_int.c
 components/esp_system/port/soc/esp32/cache_err_int.h
 components/esp_system/port/soc/esp32/intr.c
 components/esp_system/port/soc/esp32/reset_reason.c
-components/esp_system/port/soc/esp32/system_internal.c
 components/esp_system/port/soc/esp32c3/apb_backup_dma.c
 components/esp_system/port/soc/esp32c3/cache_err_int.c
 components/esp_system/port/soc/esp32c3/cache_err_int.h
 components/esp_system/port/soc/esp32c3/reset_reason.c
-components/esp_system/port/soc/esp32c3/system_internal.c
 components/esp_system/port/soc/esp32h2/apb_backup_dma.c
 components/esp_system/port/soc/esp32h2/cache_err_int.c
 components/esp_system/port/soc/esp32h2/cache_err_int.h

@@ -11,11 +11,21 @@ Thus, any project presenting a ``CMakeLists.txt`` file with the parameters ``PRI
 ESP Clock
 ---------
 
-The old headers ``target/clk.h``, ``esp_clk.h`` have been removed.
+The old headers ``{IDF_TARGET_NAME}/clk.h``, ``esp_clk.h`` have been removed.
 
 Therefore, If you want to use the function with the prefix ``esp_clk`` please include ``esp_private/esp_clk.h`` instead.
 
 Cache Error Interrupt
 ---------------------
 
-The old headers ``target/cache_err_int.h`` have been removed. Please include ``cache_err_int.h`` directly.
+The old headers ``{IDF_TARGET_NAME}/cache_err_int.h`` have been removed. Please include ``esp_private/cache_err_int.h`` instead.
+
+Brownout
+--------
+
+The header ``brownout.h`` has been made private. ESP-IDF developers should include ``esp_private/brownout.h`` instead.
+
+Trax
+----
+
+The header ``trax.h`` has been made private. ESP-IDF developers should include ``esp_private/trax.h`` instead.

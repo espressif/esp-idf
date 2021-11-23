@@ -53,7 +53,7 @@
 #include "esp_vfs_console.h"
 #include "esp_private/esp_clk.h"
 
-#include "brownout.h"
+#include "esp_private/brownout.h"
 
 #include "esp_rom_sys.h"
 
