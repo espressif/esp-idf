@@ -165,9 +165,12 @@ Kconfig 中的 :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` 可以帮助用户�
 
 限制：
 
-- ``secure_version`` 字段最多有 32 位。也就是说，防回滚最多可以做 32 次。用户可以使用 :ref:`CONFIG_BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD` 减少该 eFuse 字段的长度。
-- 防回滚仅在 eFuse 编码机制设置为 ``NONE`` 时生效。
-- 分区表不应有工厂分区，应仅有两个应用程序分区。
+.. list::
+
+    :esp32: - ``secure_version`` 字段最多有 32 位。也就是说，防回滚最多可以做 32 次。用户可以使用 :ref:`CONFIG_BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD` 减少该 eFuse 字段的长度。
+    :not esp32: - ``secure_version`` 字段最多有 16 位。也就是说，防回滚最多可以做 16 次。用户可以使用 :ref:`CONFIG_BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD` 减少该 eFuse 字段的长度。
+    :esp32: - 防回滚仅在 eFuse 编码机制设置为 ``NONE`` 时生效。
+    - 防回滚不支持工厂和测试分区，因此分区表中不应有设置为 ``工厂`` 或 ``测试`` 的分区。
 
 ``security_version``:
 
