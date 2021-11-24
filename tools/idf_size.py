@@ -576,7 +576,6 @@ class StructureForSummary(object):
         r = StructureForSummary()
 
         diram_filter = filter(in_diram, segments)
-        # TODO: We assume all DIRAM region are covered by both I/D segments. If not, the total size cannot be calculated accurately. Add check for this.
         r.diram_total = int(get_size(diram_filter) / 2)
 
         dram_filter = filter(in_dram, segments)
