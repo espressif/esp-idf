@@ -279,6 +279,7 @@ build_docker:
   script:
     - export LOCAL_CI_REPOSITORY_URL=$CI_REPOSITORY_URL
     - if [ -n "$LOCAL_GITLAB_HTTPS_HOST" ]; then export LOCAL_CI_REPOSITORY_URL="https://gitlab-ci-token:${CI_JOB_TOKEN}@${LOCAL_GITLAB_HTTPS_HOST}/${CI_PROJECT_PATH}"; fi
+    - if [ -n "$LOCAL_GIT_MIRROR" ]; then export LOCAL_CI_REPOSITORY_URL="${LOCAL_GIT_MIRROR}/${CI_PROJECT_PATH}"; fi
     - echo "Using repository at $LOCAL_CI_REPOSITORY_URL"
     - export DOCKER_BUILD_ARGS="--build-arg IDF_CLONE_URL=${LOCAL_CI_REPOSITORY_URL} --build-arg IDF_CLONE_BRANCH_OR_TAG=${CI_COMMIT_REF_NAME} --build-arg IDF_CHECKOUT_REF=${CI_COMMIT_TAG:-$CI_COMMIT_SHA}"
     # Build
