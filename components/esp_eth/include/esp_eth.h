@@ -43,12 +43,6 @@ typedef struct {
     uint32_t check_link_period_ms;
 
     /**
-     * @brief Configuration status of PHY autonegotiation feature
-     *
-     */
-    bool auto_nego_en;
-
-    /**
     * @brief Input frame buffer to user's stack
     *
     * @param[in] eth_handle: handle of Ethernet driver
