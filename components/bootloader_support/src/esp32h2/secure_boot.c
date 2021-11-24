@@ -266,7 +266,7 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
         return err;
     }
 #else
-    ESP_LOGW(TAG, "UART download mode kept enabled - SECURITY COMPROMISED");
+    ESP_LOGW(TAG, "UART ROM Download mode kept enabled - SECURITY COMPROMISED");
 #endif
 
 #ifndef CONFIG_SECURE_BOOT_ALLOW_JTAG
