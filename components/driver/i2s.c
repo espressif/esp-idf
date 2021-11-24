@@ -916,124 +916,6 @@ esp_err_t i2s_zero_dma_buffer(i2s_port_t i2s_num)
 /*-------------------------------------------------------------
                    I2S clock operation
   -------------------------------------------------------------*/
-#if SOC_I2S_SUPPORTS_APLL
-/**
- * @brief Get APLL frequency
- */
-static float i2s_apll_get_freq(int bits_per_sample, int sdm0, int sdm1, int sdm2, int odir)
-{
-    int f_xtal = (int)rtc_clk_xtal_freq_get() * 1000000;
-
-#if CONFIG_IDF_TARGET_ESP32
-    /* ESP32 rev0 silicon issue for APLL range/accuracy, please see ESP32 ECO document for more information on this */
-    if (esp_efuse_get_chip_ver() == 0) {
-        sdm0 = 0;
-        sdm1 = 0;
-    }
-#endif
-    float fout = f_xtal * (sdm2 + sdm1 / 256.0f + sdm0 / 65536.0f + 4);
-    if (fout < SOC_I2S_APLL_MIN_FREQ || fout > SOC_I2S_APLL_MAX_FREQ) {
-        return SOC_I2S_APLL_MAX_FREQ;
-    }
-    float fpll = fout / (2 * (odir + 2)); //== fi2s (N=1, b=0, a=1)
-    return fpll / 2;
-}
-
-/**
- * @brief     APLL calculate function, was described by following:
- *            APLL Output frequency is given by the formula:
- *
- *            apll_freq = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536)/((o_div + 2) * 2)
- *            apll_freq = fout / ((o_div + 2) * 2)
- *
- *            The dividend in this expression should be in the range of 240 - 600 MHz.
- *            In rev. 0 of ESP32, sdm0 and sdm1 are unused and always set to 0.
- *            * sdm0  frequency adjustment parameter, 0..255
- *            * sdm1  frequency adjustment parameter, 0..255
- *            * sdm2  frequency adjustment parameter, 0..63
- *            * o_div  frequency divider, 0..31
- *
- *            The most accurate way to find the sdm0..2 and odir parameters is to loop through them all,
- *            then apply the above formula, finding the closest frequency to the desired one.
- *            But 256*256*64*32 = 134,217,728 loops are too slow with ESP32
- *            1. We will choose the parameters with the highest level of change,
- *               With 350MHz<fout<500MHz, we limit the sdm2 from 4 to 9,
- *               Take average frequency close to the desired frequency, and select sdm2
- *            2. Next, we look for sequences of less influential and more detailed parameters,
- *               also by taking the average of the largest and smallest frequencies closer to the desired frequency.
- *            3. And finally, loop through all the most detailed of the parameters, finding the best desired frequency
- *
- * @param[in]       rate             The I2S Frequency (MCLK)
- * @param[in]       bits_per_sample  The bits per sample
- * @param[out]      sdm0             The sdm 0
- * @param[out]      sdm1             The sdm 1
- * @param[out]      sdm2             The sdm 2
- * @param[out]      odir             The odir
- */
-static void i2s_apll_calculate_fi2s(int rate, int bits_per_sample, int *sdm0, int *sdm1, int *sdm2, int *odir)
-{
-    int _odir, _sdm0, _sdm1, _sdm2;
-    float avg;
-    float min_rate, max_rate, min_diff;
-
-    *sdm0 = 0;
-    *sdm1 = 0;
-    *sdm2 = 0;
-    *odir = 0;
-    min_diff = SOC_I2S_APLL_MAX_FREQ;
-
-    for (_sdm2 = 4; _sdm2 < 9; _sdm2 ++) {
-        max_rate = i2s_apll_get_freq(bits_per_sample, 255, 255, _sdm2, 0);
-        min_rate = i2s_apll_get_freq(bits_per_sample, 0, 0, _sdm2, 31);
-        avg = (max_rate + min_rate) / 2;
-        if (abs(avg - rate) < min_diff) {
-            min_diff = abs(avg - rate);
-            *sdm2 = _sdm2;
-        }
-    }
-    min_diff = SOC_I2S_APLL_MAX_FREQ;
-    for (_odir = 0; _odir < 32; _odir ++) {
-        max_rate = i2s_apll_get_freq(bits_per_sample, 255, 255, *sdm2, _odir);
-        min_rate = i2s_apll_get_freq(bits_per_sample, 0, 0, *sdm2, _odir);
-        avg = (max_rate + min_rate) / 2;
-        if (abs(avg - rate) < min_diff) {
-            min_diff = abs(avg - rate);
-            *odir = _odir;
-        }
-    }
-    min_diff = SOC_I2S_APLL_MAX_FREQ;
-    for (_sdm2 = 4; _sdm2 < 9; _sdm2 ++) {
-        max_rate = i2s_apll_get_freq(bits_per_sample, 255, 255, _sdm2, *odir);
-        min_rate = i2s_apll_get_freq(bits_per_sample, 0, 0, _sdm2, *odir);
-        avg = (max_rate + min_rate) / 2;
-        if (abs(avg - rate) < min_diff) {
-            min_diff = abs(avg - rate);
-            *sdm2 = _sdm2;
-        }
-    }
-
-    min_diff = SOC_I2S_APLL_MAX_FREQ;
-    for (_sdm1 = 0; _sdm1 < 256; _sdm1 ++) {
-        max_rate = i2s_apll_get_freq(bits_per_sample, 255, _sdm1, *sdm2, *odir);
-        min_rate = i2s_apll_get_freq(bits_per_sample, 0, _sdm1, *sdm2, *odir);
-        avg = (max_rate + min_rate) / 2;
-        if (abs(avg - rate) < min_diff) {
-            min_diff = abs(avg - rate);
-            *sdm1 = _sdm1;
-        }
-    }
-
-    min_diff = SOC_I2S_APLL_MAX_FREQ;
-    for (_sdm0 = 0; _sdm0 < 256; _sdm0 ++) {
-        avg = i2s_apll_get_freq(bits_per_sample, _sdm0, *sdm1, *sdm2, *odir);
-        if (abs(avg - rate) < min_diff) {
-            min_diff = abs(avg - rate);
-            *sdm0 = _sdm0;
-        }
-    }
-}
-#endif
-
 /**
  * @brief   Config I2S source clock and get its frequency
  *
@@ -1049,21 +931,19 @@ static uint32_t i2s_config_source_clock(i2s_port_t i2s_num, bool use_apll, uint3
 {
 #if SOC_I2S_SUPPORTS_APLL
     if (use_apll) {
-        int sdm0 = 0;
-        int sdm1 = 0;
-        int sdm2 = 0;
-        int odir = 0;
-        if ((mclk / p_i2s[i2s_num]->hal_cfg.chan_bits / p_i2s[i2s_num]->hal_cfg.total_chan) < SOC_I2S_APLL_MIN_RATE) {
-            ESP_LOGE(TAG, "mclk is too small");
+        int div_min = (int)(RTC_APLL_FREQ_MIN / (float)mclk + 1);
+        int div_max = (int)(RTC_APLL_FREQ_MAX / (float)mclk);
+        div_min = div_min < 2 ? 2 : div_min;  // APLL / mclk >= 2
+        if (div_min > div_max) {
+            ESP_LOGE(TAG, "mclk frequency is too big for APLL colck source");
             return 0;
         }
-        i2s_apll_calculate_fi2s(mclk, p_i2s[i2s_num]->hal_cfg.sample_bits, &sdm0, &sdm1, &sdm2, &odir);
-        ESP_LOGI(TAG, "APLL Enabled, coefficient: sdm0=%d, sdm1=%d, sdm2=%d, odir=%d", sdm0, sdm1, sdm2, odir);
-        rtc_clk_apll_enable(true, sdm0, sdm1, sdm2, odir);
+        uint32_t expt_freq = div_min * mclk;
+        rtc_clk_apll_freq_set(expt_freq);
         /* Set I2S_APLL as I2S module clock source */
         i2s_hal_set_clock_src(&(p_i2s[i2s_num]->hal), I2S_CLK_APLL);
         /* In APLL mode, there is no sclk but only mclk, so return 0 here to indicate APLL mode */
-        return 0;
+        return expt_freq;
     }
     /* Set I2S_D2CLK (160M) as default I2S module clock source */
     i2s_hal_set_clock_src(&(p_i2s[i2s_num]->hal), I2S_CLK_D2CLK);
@@ -1108,7 +988,7 @@ static esp_err_t i2s_calculate_adc_dac_clock(int i2s_num, i2s_hal_clock_cfg_t *c
     clk_cfg->mclk_div = clk_cfg->sclk / clk_cfg->mclk;
 
     /* Check if the configuration is correct */
-    ESP_RETURN_ON_FALSE(!clk_cfg->sclk || clk_cfg->mclk <= clk_cfg->sclk, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large");
+    ESP_RETURN_ON_FALSE(clk_cfg->mclk <= clk_cfg->sclk, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large");
 
     return ESP_OK;
 }
@@ -1146,7 +1026,7 @@ static esp_err_t i2s_calculate_pdm_tx_clock(int i2s_num, i2s_hal_clock_cfg_t *cl
     clk_cfg->mclk_div = clk_cfg->sclk / clk_cfg->mclk;
 
     /* Check if the configuration is correct */
-    ESP_RETURN_ON_FALSE(!clk_cfg->sclk || clk_cfg->mclk <= clk_cfg->sclk, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large");
+    ESP_RETURN_ON_FALSE(clk_cfg->mclk <= clk_cfg->sclk, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large");
 
     return ESP_OK;
 }
@@ -1184,7 +1064,7 @@ static esp_err_t i2s_calculate_pdm_rx_clock(int i2s_num, i2s_hal_clock_cfg_t *cl
     clk_cfg->mclk_div = clk_cfg->sclk / clk_cfg->mclk;
 
     /* Check if the configuration is correct */
-    ESP_RETURN_ON_FALSE(!clk_cfg->sclk || clk_cfg->mclk <= clk_cfg->sclk, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large");
+    ESP_RETURN_ON_FALSE(clk_cfg->mclk <= clk_cfg->sclk, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large");
 
     return ESP_OK;
 }
@@ -1240,7 +1120,7 @@ static esp_err_t i2s_calculate_common_clock(int i2s_num, i2s_hal_clock_cfg_t *cl
     clk_cfg->mclk_div = clk_cfg->sclk / clk_cfg->mclk;
 
     /* Check if the configuration is correct */
-    ESP_RETURN_ON_FALSE(!clk_cfg->sclk || clk_cfg->mclk <= clk_cfg->sclk, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large");
+    ESP_RETURN_ON_FALSE(clk_cfg->mclk <= clk_cfg->sclk, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large");
 
     return ESP_OK;
 }
