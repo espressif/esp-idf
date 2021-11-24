@@ -347,6 +347,61 @@ Example for general usage.
             i2s_driver_uninstall(i2s_num); //stop & destroy i2s driver
 
 
+Application Notes
+-----------------
+
+How to Prevent Data Lost
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+For the applications that need a high frequency sample rate, sometimes the massive throughput of receiving data may cause data lost. Users can receive data lost event by registering an event queue handler to the driver during installation:
+
+.. code-block:: c
+
+        QueueHandle_t evt_que;
+        i2s_driver_install(i2s_num, &i2s_config, 10, &evt_que);
+
+You will receive ``I2S_EVENT_RX_Q_OVF`` event when there are data lost.
+
+Please follow these steps to prevent data lost:
+
+1. Determine the interrupt interval. Generally, when data lost happened, the interval should be the bigger the better, it can help to reduce the interrupt times, i.e., ``dma_buf_len`` should be as big as possible while the DMA buffer size won't exceed its maximum value 4092. The relationships are::
+
+    interrupt_interval(unit: sec) = dma_buf_len / sample_rate
+    dma_buffer_size = dma_buf_len * slot_num * data_bit_width / 8 <= 4092
+
+2. Determine the ``dma_buf_count``. The ``dma_buf_count`` is decided by the max time of ``i2s_read`` polling cycle, all the received data are supposed to be stored between two ``i2s_read``. This cycle can be measured by a timer or an outputting gpio signal. The relationship is::
+
+    dma_buf_count > polling_cycle / interrupt_interval
+
+3. Determine the receiving buffer size. The receiving buffer that offered by user in ``i2s_read`` should be able to take all the data in all dma buffers, that means it should be bigger than the total size of all the dma buffers::
+
+    recv_buffer_size > dma_buf_count * dma_buffer_size
+
+For example, if there is an I2S application, and the known values are::
+
+    sample_rate = 144000 Hz
+    data_bit_width = 32 bits
+    slot_num = 2
+    polling_cycle = 10ms
+
+Then the parameters ``dma_buf_len``, ``dma_buf_count`` and ``recv_buf_size`` can be calculated according to the given known values::
+
+    dma_buf_len * slot_num * data_bit_width / 8 = dma_buffer_size <= 4092
+    dma_buf_len <= 511
+    interrupt_interval = dma_buf_len / sample_rate = 511 / 144000 = 0.003549 s = 3.549 ms
+    dma_buf_count > polling_cycle / interrupt_interval = cell(10 / 3.549) = cell(2.818) = 3
+    recv_buffer_size > dma_buf_count * dma_buffer_size = 3 * 4092 = 12276 bytes
+
+To check whether there are data lost, you can offer an event queue handler to the driver during installation:
+
+    .. code-block:: c
+
+        QueueHandle_t evt_que;
+        i2s_driver_install(i2s_num, &i2s_config, 10, &evt_que);
+
+You will receive ``I2S_EVENT_RX_Q_OVF`` event when there are data lost.
+
+
 API Reference
 -------------
 
