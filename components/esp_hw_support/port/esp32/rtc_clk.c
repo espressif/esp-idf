@@ -33,6 +33,10 @@
 #define RTC_SLOW_CLK_FREQ_8MD256    (RTC_FAST_CLK_FREQ_8M / 256)
 #define RTC_SLOW_CLK_FREQ_32K       32768
 
+/* APLL numerator frequency range */
+#define RTC_APLL_NUMERATOR_FREQ_MAX     500000000   // 500MHz
+#define RTC_APLL_NUMERATOR_FREQ_MIN     350000000   // 350MHz
+
 /* BBPLL configuration values */
 #define BBPLL_ENDIV5_VAL_320M       0x43
 #define BBPLL_BBADC_DSMP_VAL_320M   0x84
@@ -306,6 +310,49 @@ void rtc_clk_apll_enable(bool enable, uint32_t sdm0, uint32_t sdm1, uint32_t sdm
             esp_rom_delay_us(1);
         }
     }
+}
+
+uint32_t rtc_clk_apll_freq_set(uint32_t freq)
+{
+    if (freq < RTC_APLL_FREQ_MIN || freq > RTC_APLL_FREQ_MAX) {
+        return 0;
+    }
+    /* apll_freq = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536)/((o_div + 2) * 2) */
+    uint32_t rtc_xtal_freq = (uint32_t)rtc_clk_xtal_freq_get();
+    if (rtc_xtal_freq == 0) {
+        // xtal_freq has not set yet
+        abort();
+    }
+    uint32_t o_div = 0;
+    uint32_t sdm0 = 0;
+    uint32_t sdm1 = 0;
+    uint32_t sdm2 = 0;
+    /**
+     * This formula is to satisfy the condition xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536) >= 350 MHz
+     * '+ 1' in this formular is to get the ceil value
+     * We can also choose the condition xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536) <= 500 MHz
+     * Then the formula should be o_div = (uint32_t)(RTC_APLL_NUMERATOR_FREQ_MAX / (float)(freq * 2)) - 2; */
+    o_div = (uint32_t)(RTC_APLL_NUMERATOR_FREQ_MIN / (float)(freq * 2) + 1) - 2;
+    // sdm2 = (uint32_t)(((o_div + 2) * 2) * apll_freq / xtal_freq) - 4
+    sdm2 = (uint32_t)(((o_div + 2) * 2 * freq) / (rtc_xtal_freq * 1000000)) - 4;
+    // numrator = (((o_div + 2) * 2) * apll_freq / xtal_freq) - 4 - sdm2
+    float numrator = (((o_div + 2) * 2 * freq) / ((float)rtc_xtal_freq * 1000000)) - 4 - sdm2;
+    // If numrator is bigger than 255/256 + 255/65536 + (1/65536)/2 =  1 - (1 / 65536)/2, carry bit to sdm2
+    if (numrator > 1.0 - (1.0 / 65536.0) / 2.0) {
+        sdm2++;
+    }
+    // If numrator is smaller than (1/65536)/2, keep sdm0 = sdm1 = 0, otherwise calculate sdm0 and sdm1
+    else if (numrator > (1.0 / 65536.0) / 2.0) {
+        // Get the closest sdm1
+        sdm1 = (uint32_t)(numrator * 65536.0 + 0.5) / 256;
+        // Get the closest sdm0
+        sdm0 = (uint32_t)(numrator * 65536.0 + 0.5) % 256;
+    }
+    rtc_clk_apll_enable(true, sdm0, sdm1, sdm2, o_div);
+    float real_freq = (float)rtc_xtal_freq * (4 + sdm2 + (float)sdm1/256.0 + (float)sdm0/65536.0) / (((float)o_div + 2) * 2);
+    SOC_LOGD(TAG, "APLL is working at %d Hz with coefficient [sdm0] %d [sdm1] %d [sdm2] %d [o_div] %d",
+             (uint32_t)(real_freq * 1000000), sdm0, sdm1, sdm2, o_div);
+    return (uint32_t)(real_freq * 1000000);
 }
 
 void rtc_clk_slow_freq_set(rtc_slow_freq_t slow_freq)

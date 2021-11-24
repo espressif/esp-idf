@@ -1632,7 +1632,6 @@ components/soc/esp32/include/soc/pid.h
 components/soc/esp32/include/soc/reset_reasons.h
 components/soc/esp32/include/soc/rmt_reg.h
 components/soc/esp32/include/soc/rmt_struct.h
-components/soc/esp32/include/soc/rtc.h
 components/soc/esp32/include/soc/rtc_cntl_reg.h
 components/soc/esp32/include/soc/rtc_cntl_struct.h
 components/soc/esp32/include/soc/rtc_i2c_reg.h
@@ -1855,7 +1854,6 @@ components/soc/esp32s2/include/soc/pcnt_struct.h
 components/soc/esp32s2/include/soc/reset_reasons.h
 components/soc/esp32s2/include/soc/rmt_reg.h
 components/soc/esp32s2/include/soc/rmt_struct.h
-components/soc/esp32s2/include/soc/rtc.h
 components/soc/esp32s2/include/soc/rtc_cntl_reg.h
 components/soc/esp32s2/include/soc/rtc_cntl_struct.h
 components/soc/esp32s2/include/soc/rtc_i2c_reg.h

@@ -1,16 +1,8 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
 #include <stdbool.h>
@@ -54,6 +46,9 @@ extern "C" {
  * - rtc_init: initialization
  */
 
+/* APLL frequency range */
+#define RTC_APLL_FREQ_MAX               128000000   // 128MHz
+#define RTC_APLL_FREQ_MIN               16000000    // 16MHz
 
 /**
  * @brief Possible main XTAL frequency values.
@@ -267,6 +262,15 @@ bool rtc_clk_8md256_enabled(void);
  */
 void rtc_clk_apll_enable(bool enable, uint32_t sdm0, uint32_t sdm1,
         uint32_t sdm2, uint32_t o_div);
+
+/**
+ * @brief Set APLL clock freqency
+ * @param freq Expected APLL freqency (unit: Hz)
+ * @return
+ *      - 0: Failed, the expected APLL frequency is out of range
+ *      - else:  The true APLL clock (unit: Hz)
+ */
+uint32_t rtc_clk_apll_freq_set(uint32_t freq);
 
 /**
  * @brief Select source for RTC_SLOW_CLK
