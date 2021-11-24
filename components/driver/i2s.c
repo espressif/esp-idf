@@ -347,7 +347,8 @@ esp_err_t i2s_set_pin(i2s_port_t i2s_num, const i2s_pin_config_t *pin)
 static bool IRAM_ATTR i2s_dma_rx_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
     i2s_obj_t *p_i2s = (i2s_obj_t *) user_data;
-    portBASE_TYPE high_priority_task_awoken = 0;
+    portBASE_TYPE need_awoke = 0;
+    portBASE_TYPE tmp = 0;
     int dummy;
     i2s_event_t i2s_event;
     uint32_t finish_desc;
@@ -356,19 +357,23 @@ static bool IRAM_ATTR i2s_dma_rx_callback(gdma_channel_handle_t dma_chan, gdma_e
         finish_desc = event_data->rx_eof_desc_addr;
         i2s_event.size = ((lldesc_t *)finish_desc)->size;
         if (xQueueIsQueueFullFromISR(p_i2s->rx->queue)) {
-            xQueueReceiveFromISR(p_i2s->rx->queue, &dummy, &high_priority_task_awoken);
+            xQueueReceiveFromISR(p_i2s->rx->queue, &dummy, &tmp);
+            need_awoke |= tmp;
             if (p_i2s->i2s_queue) {
                 i2s_event.type = I2S_EVENT_RX_Q_OVF;
-                xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &high_priority_task_awoken);
+                xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &tmp);
+                need_awoke |= tmp;
             }
         }
-        xQueueSendFromISR(p_i2s->rx->queue, &(((lldesc_t *)finish_desc)->buf), &high_priority_task_awoken);
+        xQueueSendFromISR(p_i2s->rx->queue, &(((lldesc_t *)finish_desc)->buf), &tmp);
+        need_awoke |= tmp;
         if (p_i2s->i2s_queue) {
             i2s_event.type = I2S_EVENT_RX_DONE;
-            xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &high_priority_task_awoken);
+            xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &tmp);
+            need_awoke |= tmp;
         }
     }
-    return high_priority_task_awoken;
+    return need_awoke;
 }
 
 /**
@@ -384,7 +389,8 @@ static bool IRAM_ATTR i2s_dma_rx_callback(gdma_channel_handle_t dma_chan, gdma_e
 static bool IRAM_ATTR i2s_dma_tx_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
     i2s_obj_t *p_i2s = (i2s_obj_t *) user_data;
-    portBASE_TYPE high_priority_task_awoken = 0;
+    portBASE_TYPE need_awoke = 0;
+    portBASE_TYPE tmp = 0;
     int dummy;
     i2s_event_t i2s_event;
     uint32_t finish_desc;
@@ -392,23 +398,27 @@ static bool IRAM_ATTR i2s_dma_tx_callback(gdma_channel_handle_t dma_chan, gdma_e
         finish_desc = event_data->tx_eof_desc_addr;
         i2s_event.size = ((lldesc_t *)finish_desc)->size;
         if (xQueueIsQueueFullFromISR(p_i2s->tx->queue)) {
-            xQueueReceiveFromISR(p_i2s->tx->queue, &dummy, &high_priority_task_awoken);
+            xQueueReceiveFromISR(p_i2s->tx->queue, &dummy, &tmp);
+            need_awoke |= tmp;
             if (p_i2s->tx_desc_auto_clear) {
                 memset((void *) dummy, 0, p_i2s->tx->buf_size);
             }
             if (p_i2s->i2s_queue) {
                 i2s_event.type = I2S_EVENT_TX_Q_OVF;
                 i2s_event.size = p_i2s->tx->buf_size;
-                xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &high_priority_task_awoken);
+                xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &tmp);
+                need_awoke |= tmp;
             }
         }
-        xQueueSendFromISR(p_i2s->tx->queue, &(((lldesc_t *)finish_desc)->buf), &high_priority_task_awoken);
+        xQueueSendFromISR(p_i2s->tx->queue, &(((lldesc_t *)finish_desc)->buf), &tmp);
+        need_awoke |= tmp;
         if (p_i2s->i2s_queue) {
             i2s_event.type = I2S_EVENT_TX_DONE;
-            xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &high_priority_task_awoken);
+            xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &tmp);
+            need_awoke |= tmp;
         }
     }
-    return high_priority_task_awoken;
+    return need_awoke;
 }
 
 #else
@@ -430,16 +440,19 @@ static void IRAM_ATTR i2s_intr_handler_default(void *arg)
 
     i2s_event_t i2s_event;
     int dummy;
-    portBASE_TYPE high_priority_task_awoken = 0;
+    portBASE_TYPE need_awoke = 0;
+    portBASE_TYPE tmp = 0;
     uint32_t  finish_desc = 0;
     if ((status & I2S_INTR_OUT_DSCR_ERR) || (status & I2S_INTR_IN_DSCR_ERR)) {
         ESP_EARLY_LOGE(TAG, "dma error, interrupt status: 0x%08x", status);
         if (p_i2s->i2s_queue) {
             i2s_event.type = I2S_EVENT_DMA_ERROR;
             if (xQueueIsQueueFullFromISR(p_i2s->i2s_queue)) {
-                xQueueReceiveFromISR(p_i2s->i2s_queue, &dummy, &high_priority_task_awoken);
+                xQueueReceiveFromISR(p_i2s->i2s_queue, &dummy, &tmp);
+                need_awoke |= tmp;
             }
-            xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &high_priority_task_awoken);
+            xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &tmp);
+            need_awoke |= tmp;
         }
     }
 
@@ -448,7 +461,8 @@ static void IRAM_ATTR i2s_intr_handler_default(void *arg)
         i2s_event.size = ((lldesc_t *)finish_desc)->size;
         // All buffers are empty. This means we have an underflow on our hands.
         if (xQueueIsQueueFullFromISR(p_i2s->tx->queue)) {
-            xQueueReceiveFromISR(p_i2s->tx->queue, &dummy, &high_priority_task_awoken);
+            xQueueReceiveFromISR(p_i2s->tx->queue, &dummy, &tmp);
+            need_awoke |= tmp;
             // See if tx descriptor needs to be auto cleared:
             // This will avoid any kind of noise that may get introduced due to transmission
             // of previous data from tx descriptor on I2S line.
@@ -457,13 +471,16 @@ static void IRAM_ATTR i2s_intr_handler_default(void *arg)
             }
             if (p_i2s->i2s_queue) {
                 i2s_event.type = I2S_EVENT_TX_Q_OVF;
-                xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &high_priority_task_awoken);
+                xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &tmp);
+                need_awoke |= tmp;
             }
         }
-        xQueueSendFromISR(p_i2s->tx->queue, &(((lldesc_t *)finish_desc)->buf), &high_priority_task_awoken);
+        xQueueSendFromISR(p_i2s->tx->queue, &(((lldesc_t *)finish_desc)->buf), &tmp);
+        need_awoke |= tmp;
         if (p_i2s->i2s_queue) {
             i2s_event.type = I2S_EVENT_TX_DONE;
-            xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &high_priority_task_awoken);
+            xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &tmp);
+            need_awoke |= tmp;
         }
     }
 
@@ -472,21 +489,25 @@ static void IRAM_ATTR i2s_intr_handler_default(void *arg)
         i2s_hal_get_in_eof_des_addr(&(p_i2s->hal), &finish_desc);
         i2s_event.size = ((lldesc_t *)finish_desc)->size;
         if (xQueueIsQueueFullFromISR(p_i2s->rx->queue)) {
-            xQueueReceiveFromISR(p_i2s->rx->queue, &dummy, &high_priority_task_awoken);
+            xQueueReceiveFromISR(p_i2s->rx->queue, &dummy, &tmp);
+            need_awoke |= tmp;
             if (p_i2s->i2s_queue) {
                 i2s_event.type = I2S_EVENT_RX_Q_OVF;
-                xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &high_priority_task_awoken);
+                xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &tmp);
+                need_awoke |= tmp;
             }
         }
-        xQueueSendFromISR(p_i2s->rx->queue, &(((lldesc_t *)finish_desc)->buf), &high_priority_task_awoken);
+        xQueueSendFromISR(p_i2s->rx->queue, &(((lldesc_t *)finish_desc)->buf), &tmp);
+        need_awoke |= tmp;
         if (p_i2s->i2s_queue) {
             i2s_event.type = I2S_EVENT_RX_DONE;
-            xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &high_priority_task_awoken);
+            xQueueSendFromISR(p_i2s->i2s_queue, (void * )&i2s_event, &tmp);
+            need_awoke |= tmp;
         }
     }
     i2s_hal_clear_intr_status(&(p_i2s->hal), status);
 
-    if (high_priority_task_awoken == pdTRUE) {
+    if (need_awoke == pdTRUE) {
         portYIELD_FROM_ISR();
     }
 }
