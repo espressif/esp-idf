@@ -701,14 +701,6 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     git checkout CMakeLists.txt
     rm -f log.txt
 
-    print_status "Compiles with dependencies delivered by component manager"
-    clean_build_dir
-    printf "\n#include \"test_component.h\"\n" >> main/main.c
-    printf "dependencies:\n  test_component:\n    path: test_component\n    git: ${COMPONENT_MANAGER_TEST_REPO}\n" >> main/idf_component.yml
-    idf.py reconfigure build || failure "Build didn't succeed with required components installed by package manager"
-    rm main/idf_component.yml
-    git checkout main/main.c
-
     print_status "Build fails if partitions don't fit in flash"
     sed -i.bak "s/CONFIG_ESPTOOLPY_FLASHSIZE.\+//" sdkconfig  # remove all flashsize config
     echo "CONFIG_ESPTOOLPY_FLASHSIZE_1MB=y" >> sdkconfig     # introduce undersize flash
