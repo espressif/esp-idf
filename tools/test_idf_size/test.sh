@@ -93,14 +93,29 @@
     && echo -e "\n***\nRunning idf_size.py --archive_details for esp32s3..." &>> output \
     && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32s3 --archive_details libdriver.a app_esp32s3.map &>> output \
     && echo -e "\n***\nProducing JSON output..." &>> output \
-    && coverage run -a $IDF_PATH/tools/idf_size.py --json app.map &>> output \
-    && coverage run -a $IDF_PATH/tools/idf_size.py --json --archives app.map &>> output \
-    && coverage run -a $IDF_PATH/tools/idf_size.py --json --files app.map &>> output \
-    && coverage run -a $IDF_PATH/tools/idf_size.py --json --archive_details libdriver.a app.map &>> output \
-    && coverage run -a $IDF_PATH/tools/idf_size.py --json app.map --diff app2.map &>> output \
-    && coverage run -a $IDF_PATH/tools/idf_size.py --json --archives app.map --diff app2.map &>> output \
-    && coverage run -a $IDF_PATH/tools/idf_size.py --json --files app.map --diff app2.map &>> output \
-    && coverage run -a $IDF_PATH/tools/idf_size.py --json --archive_details libdriver.a app.map --diff app2.map &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --json app.map | python $IDF_PATH/tools/test_idf_size/json_validate_test.py &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --json --archives app.map | python $IDF_PATH/tools/test_idf_size/json_validate_test.py &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --json --files app.map | python $IDF_PATH/tools/test_idf_size/json_validate_test.py &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --json --archive_details libdriver.a app.map | python $IDF_PATH/tools/test_idf_size/json_validate_test.py &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --json app.map --diff app2.map | python $IDF_PATH/tools/test_idf_size/json_validate_test.py &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --json --archives app.map --diff app2.map | python $IDF_PATH/tools/test_idf_size/json_validate_test.py &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --json --files app.map --diff app2.map | python $IDF_PATH/tools/test_idf_size/json_validate_test.py &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --json --archive_details libdriver.a app.map --diff app2.map | python $IDF_PATH/tools/test_idf_size/json_validate_test.py &>> output \
+    && echo -e "\n***\nProducing JSON output for esp32s2..." &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --json app_esp32s2.map | python $IDF_PATH/tools/test_idf_size/json_validate_test.py &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --json --archives app_esp32s2.map | python $IDF_PATH/tools/test_idf_size/json_validate_test.py &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --json --files app_esp32s2.map | python $IDF_PATH/tools/test_idf_size/json_validate_test.py &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --json --archive_details libdriver.a app_esp32s2.map | python $IDF_PATH/tools/test_idf_size/json_validate_test.py &>> output \
+    && echo -e "\n***\nProducing JSON output for esp32c3..." &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --json app_esp32c3.map | python $IDF_PATH/tools/test_idf_size/json_validate_test.py &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --json --archives app_esp32c3.map | python $IDF_PATH/tools/test_idf_size/json_validate_test.py &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --json --files app_esp32c3.map | python $IDF_PATH/tools/test_idf_size/json_validate_test.py &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --json --archive_details libdriver.a app_esp32c3.map | python $IDF_PATH/tools/test_idf_size/json_validate_test.py &>> output \
+    && echo -e "\n***\nProducing JSON output for esp32s3..." &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --json app_esp32s3.map | python $IDF_PATH/tools/test_idf_size/json_validate_test.py &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --json --archives app_esp32s3.map | python $IDF_PATH/tools/test_idf_size/json_validate_test.py &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --json --files app_esp32s3.map | python $IDF_PATH/tools/test_idf_size/json_validate_test.py &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --json --archive_details libdriver.a app_esp32s3.map | python $IDF_PATH/tools/test_idf_size/json_validate_test.py &>> output \
     && echo -e "\n***\nProducing JSON file output..." &>> output \
     && coverage run -a $IDF_PATH/tools/idf_size.py --json --output-file output.json app.map &>> output \
     && echo -e "\n***\nProducing text file output..." &>> output \
