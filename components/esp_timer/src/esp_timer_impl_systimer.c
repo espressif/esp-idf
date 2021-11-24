@@ -1,16 +1,8 @@
-// Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "esp_timer_impl.h"
 #include "esp_err.h"
@@ -65,9 +57,6 @@ uint64_t IRAM_ATTR esp_timer_impl_get_counter_reg(void)
 
 int64_t IRAM_ATTR esp_timer_impl_get_time(void)
 {
-    if (s_alarm_handler == NULL) {
-        return 0;
-    }
     return systimer_hal_get_time(SYSTIMER_COUNTER_0);
 }
 
@@ -100,6 +89,17 @@ void esp_timer_impl_advance(int64_t time_us)
     portEXIT_CRITICAL_SAFE(&s_time_update_lock);
 }
 
+esp_err_t esp_timer_impl_early_init(void)
+{
+    systimer_hal_init();
+
+    systimer_hal_enable_counter(SYSTIMER_COUNTER_0);
+    systimer_hal_select_alarm_mode(SYSTIMER_ALARM_2, SYSTIMER_ALARM_MODE_ONESHOT);
+    systimer_hal_connect_alarm_counter(SYSTIMER_ALARM_2, SYSTIMER_COUNTER_0);
+
+    return ESP_OK;
+}
+
 esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
 {
     s_alarm_handler = alarm_handler;
@@ -116,11 +116,6 @@ esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
         ESP_EARLY_LOGE(TAG, "esp_intr_alloc failed (%#x)", err);
         goto err_intr_alloc;
     }
-
-    systimer_hal_init();
-    systimer_hal_enable_counter(SYSTIMER_COUNTER_0);
-    systimer_hal_select_alarm_mode(SYSTIMER_ALARM_2, SYSTIMER_ALARM_MODE_ONESHOT);
-    systimer_hal_connect_alarm_counter(SYSTIMER_ALARM_2, SYSTIMER_COUNTER_0);
 
     /* TODO: if SYSTIMER is used for anything else, access to SYSTIMER_INT_ENA_REG has to be
     * protected by a shared spinlock. Since this code runs as part of early startup, this

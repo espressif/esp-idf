@@ -1,16 +1,8 @@
-// Copyright 2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -29,8 +21,19 @@
 #include "esp_intr_alloc.h"
 
 /**
+ * @brief Minimal initialization of platform specific layer of esp_timer
+ * This function can be called very early in startup process, after this call
+ * only esp_timer_get_time function can be used.
+ * esp_timer_impl_init has to be called after this function to initialize the
+ * rest of esp_timer implementation.
+ * @return ESP_OK
+ */
+esp_err_t esp_timer_impl_early_init(void);
+
+/**
  * @brief Initialize platform specific layer of esp_timer
  * @param alarm_handler function to call on timer interrupt
+ * Before calling this function, esp_timer_impl_early_init must be called.
  * @return ESP_OK, ESP_ERR_NO_MEM, or one of the errors from interrupt allocator
  */
 esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler);
