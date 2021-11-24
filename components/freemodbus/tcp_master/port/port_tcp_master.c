@@ -52,6 +52,8 @@
 #include "mbframe.h"
 #include "port_tcp_master.h"
 
+#if MB_MASTER_TCP_ENABLED
+
 /* ----------------------- Defines  -----------------------------------------*/
 #define MB_TCP_CONNECTION_TIMEOUT_MS    ( 20 )      // Connection timeout in mS
 #define MB_TCP_RECONNECT_TIMEOUT        ( 5000000 ) // Connection timeout in uS
@@ -987,3 +989,5 @@ xMBMasterTCPTimerExpired(void)
 
     return xNeedPoll;
 }
+
+#endif //#if MB_MASTER_TCP_ENABLED
