@@ -55,6 +55,8 @@
 #include "port_tcp_slave.h"
 #include "esp_modbus_common.h"      // for common types for network options
 
+#if MB_TCP_ENABLED
+
 /* ----------------------- Defines  -----------------------------------------*/
 #define MB_TCP_DISCONNECT_TIMEOUT       ( CONFIG_FMB_TCP_CONNECTION_TOUT_SEC * 1000000 ) // disconnect timeout in uS
 #define MB_TCP_RESP_TIMEOUT_MS          ( MB_MASTER_TIMEOUT_MS_RESPOND - 2 ) // slave response time limit
@@ -708,3 +710,5 @@ xMBTCPPortSendResponse( UCHAR * pucMBTCPFrame, USHORT usTCPLength )
     }
     return bFrameSent;
 }
+
+#endif //#if MB_TCP_ENABLED

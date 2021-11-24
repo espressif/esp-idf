@@ -33,6 +33,8 @@
 #include "mbc_tcp_master.h"         // for tcp master create function and types
 #include "port_tcp_master.h"        // for tcp master port defines and types
 
+#if MB_MASTER_TCP_ENABLED
+
 /*-----------------------Master mode use these variables----------------------*/
 
 // The response time is average processing time + data transmission
@@ -714,3 +716,5 @@ esp_err_t mbc_tcp_master_create(void** handler)
 
     return ESP_OK;
 }
+
+#endif //#if MB_MASTER_TCP_ENABLED
