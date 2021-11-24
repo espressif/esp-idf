@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 #include <stdint.h>
 #include <stdlib.h>
@@ -55,7 +47,7 @@ void *multi_heap_malloc(multi_heap_handle_t heap, size_t size);
  *
  * @param heap Handle to a registered heap.
  * @param p NULL, or a pointer previously returned from multi_heap_aligned_alloc() for the same heap.
- * @note This function is deprecated, consider using  multi_heap_free() instead
+ * @note This function is deprecated, consider using multi_heap_free() instead
  */
 void __attribute__((deprecated)) multi_heap_aligned_free(multi_heap_handle_t heap, void *p);
 
@@ -130,7 +122,7 @@ void multi_heap_dump(multi_heap_handle_t heap);
 /** @brief Check heap integrity
  *
  * Walks the heap and checks all heap data structures are valid. If any errors are detected, an error-specific message
- * can be optionally printed to stderr. Print behaviour can be overriden at compile time by defining
+ * can be optionally printed to stderr. Print behaviour can be overridden at compile time by defining
  * MULTI_CHECK_FAIL_PRINTF in multi_heap_platform.h.
  *
  * @param heap Handle to a registered heap.
@@ -157,7 +149,7 @@ size_t multi_heap_free_size(multi_heap_handle_t heap);
  *
  * Equivalent to the minimum_free_bytes member returned by multi_heap_get_info().
  *
- * Returns the lifetime "low water mark" of possible values returned from multi_free_heap_size(), for the specified
+ * Returns the lifetime "low watermark" of possible values returned from multi_free_heap_size(), for the specified
  * heap.
  *
  * @param heap Handle to a registered heap.
@@ -169,7 +161,7 @@ size_t multi_heap_minimum_free_size(multi_heap_handle_t heap);
 typedef struct {
     size_t total_free_bytes;      ///<  Total free bytes in the heap. Equivalent to multi_free_heap_size().
     size_t total_allocated_bytes; ///<  Total bytes allocated to data in the heap.
-    size_t largest_free_block;    ///<  Size of largest free block in the heap. This is the largest malloc-able size.
+    size_t largest_free_block;    ///<  Size of the largest free block in the heap. This is the largest malloc-able size.
     size_t minimum_free_bytes;    ///<  Lifetime minimum free heap size. Equivalent to multi_minimum_free_heap_size().
     size_t allocated_blocks;      ///<  Number of (variable size) blocks allocated in the heap.
     size_t free_blocks;           ///<  Number of (variable size) free blocks in the heap.

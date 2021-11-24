@@ -311,7 +311,7 @@ struct esp_console_repl_s {
  * @param[in] repl_config REPL configuration
  * @param[out] ret_repl return REPL handle after initialization succeed, return NULL otherwise
  *
- * @note This is a all-in-one function to establish the environment needed for REPL, includes:
+ * @note This is an all-in-one function to establish the environment needed for REPL, includes:
  *       - Install the UART driver on the console UART (8n1, 115200, REF_TICK clock source)
  *       - Configures the stdin/stdout to go through the UART driver
  *       - Initializes linenoise
@@ -356,7 +356,7 @@ esp_err_t esp_console_new_repl_usb_cdc(const esp_console_dev_usb_cdc_config_t *d
  * @param[in] repl_config REPL configuration
  * @param[out] ret_repl return REPL handle after initialization succeed, return NULL otherwise
  *
- * @note This is a all-in-one function to establish the environment needed for REPL, includes:
+ * @note This is an all-in-one function to establish the environment needed for REPL, includes:
  *       - Initializes linenoise
  *       - Spawn new thread to run REPL in the background
  *
@@ -374,7 +374,7 @@ esp_err_t esp_console_new_repl_usb_serial_jtag(const esp_console_dev_usb_serial_
 /**
  * @brief Start REPL environment
  * @param[in] repl REPL handle returned from esp_console_new_repl_xxx
- * @note Once the REPL got started, it won't be stopped until user call repl->del(repl) to destory the REPL environment.
+ * @note Once the REPL gets started, it won't be stopped until the user calls repl->del(repl) to destroy the REPL environment.
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_STATE, if repl has started already

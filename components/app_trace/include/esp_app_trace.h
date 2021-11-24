@@ -46,7 +46,7 @@ void esp_apptrace_down_buffer_config(uint8_t *buf, uint32_t size);
 
 /**
  * @brief Allocates buffer for trace data.
- *        After data in buffer are ready to be sent off esp_apptrace_buffer_put must be called to indicate it.
+ *        Once the data in the buffer is ready to be sent, esp_apptrace_buffer_put must be called to indicate it.
  *
  * @param dest Indicates HW interface to send data.
  * @param size Size of data to write to trace buffer.
@@ -57,8 +57,8 @@ void esp_apptrace_down_buffer_config(uint8_t *buf, uint32_t size);
 uint8_t *esp_apptrace_buffer_get(esp_apptrace_dest_t dest, uint32_t size, uint32_t tmo);
 
 /**
- * @brief Indicates that the data in buffer are ready to be sent off.
- *        This function is a counterpart of and must be preceeded by esp_apptrace_buffer_get.
+ * @brief Indicates that the data in the buffer is ready to be sent.
+ *        This function is a counterpart of and must be preceded by esp_apptrace_buffer_get.
  *
  * @param dest Indicates HW interface to send data. Should be identical to the same parameter in call to esp_apptrace_buffer_get.
  * @param ptr  Address of trace buffer to release. Should be the value returned by call to esp_apptrace_buffer_get.
@@ -81,7 +81,7 @@ esp_err_t esp_apptrace_buffer_put(esp_apptrace_dest_t dest, uint8_t *ptr, uint32
 esp_err_t esp_apptrace_write(esp_apptrace_dest_t dest, const void *data, uint32_t size, uint32_t tmo);
 
 /**
- * @brief vprintf-like function to sent log messages to host via specified HW interface.
+ * @brief vprintf-like function to send log messages to host via specified HW interface.
  *
  * @param dest Indicates HW interface to send data.
  * @param tmo  Timeout for operation (in us). Use ESP_APPTRACE_TMO_INFINITE to wait indefinitely.
@@ -93,7 +93,7 @@ esp_err_t esp_apptrace_write(esp_apptrace_dest_t dest, const void *data, uint32_
 int esp_apptrace_vprintf_to(esp_apptrace_dest_t dest, uint32_t tmo, const char *fmt, va_list ap);
 
 /**
- * @brief vprintf-like function to sent log messages to host.
+ * @brief vprintf-like function to send log messages to host.
  *
  * @param fmt  Address of format string.
  * @param ap   List of arguments.
@@ -114,7 +114,7 @@ esp_err_t esp_apptrace_flush(esp_apptrace_dest_t dest, uint32_t tmo);
 
 /**
  * @brief Flushes remaining data in trace buffer to host without locking internal data.
- *        This is special version of esp_apptrace_flush which should be called from panic handler.
+ *        This is a special version of esp_apptrace_flush which should be called from panic handler.
  *
  * @param dest   Indicates HW interface to flush data on.
  * @param min_sz Threshold for flushing data. If current filling level is above this value, data will be flushed. TRAX destinations only.
@@ -138,7 +138,7 @@ esp_err_t esp_apptrace_read(esp_apptrace_dest_t dest, void *data, uint32_t *size
 
 /**
  * @brief Retrieves incoming data buffer if any.
- *        After data in buffer are processed esp_apptrace_down_buffer_put must be called to indicate it.
+ *        Once data in the buffer is processed, esp_apptrace_down_buffer_put must be called to indicate it.
  *
  * @param dest Indicates HW interface to receive data.
  * @param size Address to store size of available data in down buffer. Must be initialized with requested value.
@@ -149,8 +149,8 @@ esp_err_t esp_apptrace_read(esp_apptrace_dest_t dest, void *data, uint32_t *size
 uint8_t *esp_apptrace_down_buffer_get(esp_apptrace_dest_t dest, uint32_t *size, uint32_t tmo);
 
 /**
- * @brief Indicates that the data in down buffer are processed.
- *        This function is a counterpart of and must be preceeded by esp_apptrace_down_buffer_get.
+ * @brief Indicates that the data in the down buffer is processed.
+ *        This function is a counterpart of and must be preceded by esp_apptrace_down_buffer_get.
  *
  * @param dest Indicates HW interface to receive data. Should be identical to the same parameter in call to esp_apptrace_down_buffer_get.
  * @param ptr  Address of trace buffer to release. Should be the value returned by call to esp_apptrace_down_buffer_get.
@@ -245,7 +245,7 @@ int esp_apptrace_fseek(esp_apptrace_dest_t dest, void *stream, long offset, int 
 int esp_apptrace_ftell(esp_apptrace_dest_t dest, void *stream);
 
 /**
- * @brief Indicates to the host that all file operations are completed.
+ * @brief Indicates to the host that all file operations are complete.
  *		  This function should be called after all file operations are finished and
  *		  indicate to the host that it can perform cleanup operations (close open files etc.).
  *
