@@ -693,8 +693,8 @@ void app_main(void)
         .sample_rate = 44100,
         .bits_per_sample = 16,
         .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,                           //2-channels
-        .dma_buf_count = 6,
-        .dma_buf_len = 60,
+        .dma_desc_num = 6,
+        .dma_frame_num = 60,
         .intr_alloc_flags = 0,                                                  //Default interrupt priority
         .tx_desc_auto_clear = true                                              //Auto clear tx descriptor on underflow
     };

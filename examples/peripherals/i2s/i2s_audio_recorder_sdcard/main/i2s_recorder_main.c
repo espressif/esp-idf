@@ -173,8 +173,8 @@ void init_microphone(void)
         .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
         .communication_format = I2S_COMM_FORMAT_STAND_I2S,
         .intr_alloc_flags = ESP_INTR_FLAG_LEVEL2,
-        .dma_buf_count = 8,
-        .dma_buf_len = 200,
+        .dma_desc_num = 8,
+        .dma_frame_num = 200,
         .use_apll = 0,
     };
 
