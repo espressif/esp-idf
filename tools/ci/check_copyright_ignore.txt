@@ -1029,7 +1029,6 @@ components/fatfs/src/ffunicode.c
 components/fatfs/test/test_fatfs_common.c
 components/fatfs/test/test_fatfs_common.h
 components/fatfs/test/test_fatfs_rawflash.c
-components/fatfs/test/test_fatfs_sdmmc.c
 components/fatfs/test/test_fatfs_spiflash.c
 components/fatfs/test_fatfs_host/main.cpp
 components/fatfs/test_fatfs_host/sdkconfig/sdkconfig.h
