@@ -598,9 +598,7 @@ components/esp_event/event_loop_legacy.c
 components/esp_event/event_send.c
 components/esp_event/host_test/esp_event_unit_test/main/esp_event_test.cpp
 components/esp_event/host_test/fixtures.hpp
-components/esp_event/include/esp_event.h
 components/esp_event/include/esp_event_base.h
-components/esp_event/include/esp_event_legacy.h
 components/esp_event/include/esp_event_loop.h
 components/esp_event/private_include/esp_event_internal.h
 components/esp_event/private_include/esp_event_private.h
@@ -697,7 +695,6 @@ components/esp_pm/include/esp_private/pm_impl.h
 components/esp_pm/include/esp_private/pm_trace.h
 components/esp_pm/pm_locks.c
 components/esp_pm/test/test_pm.c
-components/esp_ringbuf/include/freertos/ringbuf.h
 components/esp_rom/esp32/esp_rom_caps.h
 components/esp_rom/esp32/ld/esp32.rom.api.ld
 components/esp_rom/esp32/ld/esp32.rom.eco3.ld
@@ -908,7 +905,6 @@ components/esp_system/include/esp_private/panic_internal.h
 components/esp_system/include/esp_private/startup_internal.h
 components/esp_system/include/esp_private/system_internal.h
 components/esp_system/include/esp_private/usb_console.h
-components/esp_system/include/esp_system.h
 components/esp_system/include/esp_task.h
 components/esp_system/include/esp_task_wdt.h
 components/esp_system/port/arch/riscv/expression_with_stack.c
@@ -1389,7 +1385,6 @@ components/heap/include/esp_heap_caps_init.h
 components/heap/include/esp_heap_task_info.h
 components/heap/include/esp_heap_trace.h
 components/heap/include/heap_memory_layout.h
-components/heap/include/multi_heap.h
 components/heap/include/soc/soc_memory_layout.h
 components/heap/multi_heap_config.h
 components/heap/multi_heap_internal.h
@@ -1424,7 +1419,6 @@ components/lwip/apps/sntp/sntp.c
 components/lwip/include/apps/dhcpserver/dhcpserver.h
 components/lwip/include/apps/dhcpserver/dhcpserver_options.h
 components/lwip/include/apps/esp_ping.h
-components/lwip/include/apps/esp_sntp.h
 components/lwip/include/apps/ping/ping.h
 components/lwip/include/apps/ping/ping_sock.h
 components/lwip/include/apps/sntp/sntp.h
@@ -2794,7 +2788,6 @@ examples/bluetooth/bluedroid/classic_bt/a2dp_sink/main/bt_app_av.c
 examples/bluetooth/bluedroid/classic_bt/a2dp_sink/main/bt_app_av.h
 examples/bluetooth/bluedroid/classic_bt/a2dp_sink/main/bt_app_core.c
 examples/bluetooth/bluedroid/classic_bt/a2dp_sink/main/bt_app_core.h
-examples/bluetooth/bluedroid/classic_bt/a2dp_sink/main/main.c
 examples/bluetooth/bluedroid/classic_bt/a2dp_source/main/bt_app_core.c
 examples/bluetooth/bluedroid/classic_bt/a2dp_source/main/bt_app_core.h
 examples/bluetooth/bluedroid/classic_bt/a2dp_source/main/main.c

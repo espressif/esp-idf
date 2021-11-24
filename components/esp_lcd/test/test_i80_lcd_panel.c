@@ -591,8 +591,8 @@ TEST_CASE("i80 and i2s driver coexistance", "[lcd][i2s]")
         .bits_per_sample = 16,
         .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
         .communication_format = I2S_COMM_FORMAT_STAND_I2S,
-        .dma_buf_count = 6,
-        .dma_buf_len = 60,
+        .dma_desc_num = 6,
+        .dma_frame_num = 60,
     };
     // I2S driver won't be installed as the same I2S port has been used by LCD
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, i2s_driver_install(0, &i2s_config, 0, NULL));

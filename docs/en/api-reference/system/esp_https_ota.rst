@@ -40,7 +40,7 @@ This option is useful while fetching image from a service like AWS S3, where mbe
 can be set to lower value which is not possible without enabling this configuration.
 
 Default value of mbedTLS Rx buffer size is set to 16K. By using partial_http_download with max_http_request_size of 4K,
-size of mbedTLS Rx buffer can be reduced to 4K. With this confiuration, memory saving of around 12K is expected.
+size of mbedTLS Rx buffer can be reduced to 4K. With this configuration, memory saving of around 12K is expected.
 
 Signature Verification
 ----------------------

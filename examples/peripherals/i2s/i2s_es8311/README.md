@@ -94,8 +94,8 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 Running this example in music mode, you can hear a piece of music (canon), the log is shown as follow:
 
 ```
-I (348) I2S: DMA Malloc info, datalen=blocksize=1200, dma_buf_count=6
-I (348) I2S: DMA Malloc info, datalen=blocksize=1200, dma_buf_count=6
+I (348) I2S: DMA Malloc info, datalen=blocksize=1200, dma_desc_num=6
+I (348) I2S: DMA Malloc info, datalen=blocksize=1200, dma_desc_num=6
 I (358) I2S: I2S0, MCLK output by GPIO0
 I (368) DRV8311: ES8311 in Slave mode
 I (378) gpio: GPIO[10]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
@@ -106,8 +106,8 @@ I (7948) i2s_es8311: I2S music played, 213996 bytes are written.
 
 Running this example in echo mode, you can hear the sound in earphone that collected by mic.
 ```
-I (312) I2S: DMA Malloc info, datalen=blocksize=1200, dma_buf_count=6
-I (312) I2S: DMA Malloc info, datalen=blocksize=1200, dma_buf_count=6
+I (312) I2S: DMA Malloc info, datalen=blocksize=1200, dma_desc_num=6
+I (312) I2S: DMA Malloc info, datalen=blocksize=1200, dma_desc_num=6
 I (322) I2S: I2S0, MCLK output by GPIO0
 I (332) DRV8311: ES8311 in Slave mode
 I (342) gpio: GPIO[10]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0

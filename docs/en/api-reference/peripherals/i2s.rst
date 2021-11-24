@@ -80,8 +80,8 @@ Configuration example:
             .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
             .communication_format = I2S_COMM_FORMAT_STAND_I2S
             .tx_desc_auto_clear = false,
-            .dma_buf_count = 8,
-            .dma_buf_len = 64,
+            .dma_desc_num = 8,
+            .dma_frame_num = 64,
             .use_apll = false,
             .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1  // Interrupt level 1, default 0
         };
@@ -101,8 +101,8 @@ Configuration example:
             .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
             .communication_format = I2S_COMM_FORMAT_STAND_I2S,
             .tx_desc_auto_clear = false,
-            .dma_buf_count = 8,
-            .dma_buf_len = 64,
+            .dma_desc_num = 8,
+            .dma_frame_num = 64,
             .bits_per_chan = I2S_BITS_PER_SAMPLE_16BIT
         };
 
@@ -194,8 +194,8 @@ Example for general usage.
             .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
             .communication_format = I2S_COMM_FORMAT_STAND_I2S
             .tx_desc_auto_clear = false,
-            .dma_buf_count = 8,
-            .dma_buf_len = 64,
+            .dma_desc_num = 8,
+            .dma_frame_num = 64,
             .use_apll = false,
             .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1  // Interrupt level 1, default 0
         };
@@ -238,8 +238,8 @@ Example for general usage.
             .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
             .communication_format = I2S_COMM_FORMAT_STAND_I2S
             .tx_desc_auto_clear = false,
-            .dma_buf_count = 8,
-            .dma_buf_len = 64
+            .dma_desc_num = 8,
+            .dma_frame_num = 64
         };
 
         static const i2s_pin_config_t pin_config = {
@@ -282,8 +282,8 @@ Example for general usage.
             .channel_format = I2S_CHANNEL_FMT_MULTIPLE,
             .communication_format = I2S_COMM_FORMAT_STAND_I2S
             .tx_desc_auto_clear = false,
-            .dma_buf_count = 8,
-            .dma_buf_len = 64,
+            .dma_desc_num = 8,
+            .dma_frame_num = 64,
             .chan_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH2
         };
 
@@ -328,8 +328,8 @@ Example for general usage.
             .bits_per_sample = 16, /* the DAC module will only take the 8bits from MSB */
             .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
             .intr_alloc_flags = 0, // default interrupt priority
-            .dma_buf_count = 8,
-            .dma_buf_len = 64,
+            .dma_desc_num = 8,
+            .dma_frame_num = 64,
             .use_apll = false
         };
 

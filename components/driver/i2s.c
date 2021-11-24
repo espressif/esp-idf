@@ -84,8 +84,8 @@ typedef struct {
     i2s_port_t i2s_num;         /*!< I2S port number*/
     int queue_size;             /*!< I2S event queue size*/
     QueueHandle_t i2s_queue;    /*!< I2S queue handler*/
-    int dma_buf_count;          /*!< DMA buffer count, number of buffer*/
-    int dma_buf_len;            /*!< DMA buffer length, length of each buffer*/
+    int dma_desc_num;          /*!< DMA buffer count, number of buffer*/
+    int dma_frame_num;            /*!< DMA buffer length, length of each buffer*/
     uint32_t last_buf_size;     /*!< DMA last buffer size */
     i2s_dma_t *tx;              /*!< DMA Tx buffer*/
     i2s_dma_t *rx;              /*!< DMA Rx buffer*/
@@ -662,9 +662,9 @@ static inline uint32_t i2s_get_buf_size(i2s_port_t i2s_num)
     uint32_t bytes_per_sample = ((p_i2s[i2s_num]->hal_cfg.sample_bits + 15) / 16) * 2;
     /* The DMA buffer limitation is 4092 bytes */
     uint32_t bytes_per_frame = bytes_per_sample * p_i2s[i2s_num]->hal_cfg.active_chan;
-    p_i2s[i2s_num]->dma_buf_len = (p_i2s[i2s_num]->dma_buf_len * bytes_per_frame > I2S_DMA_BUFFER_MAX_SIZE) ?
-                                  I2S_DMA_BUFFER_MAX_SIZE / bytes_per_frame : p_i2s[i2s_num]->dma_buf_len;
-    return p_i2s[i2s_num]->dma_buf_len * bytes_per_frame;
+    p_i2s[i2s_num]->dma_frame_num = (p_i2s[i2s_num]->dma_frame_num * bytes_per_frame > I2S_DMA_BUFFER_MAX_SIZE) ?
+                                  I2S_DMA_BUFFER_MAX_SIZE / bytes_per_frame : p_i2s[i2s_num]->dma_frame_num;
+    return p_i2s[i2s_num]->dma_frame_num * bytes_per_frame;
 }
 
 /**
@@ -680,7 +680,7 @@ static esp_err_t i2s_delete_dma_buffer(i2s_port_t i2s_num, i2s_dma_t *dma_obj)
 {
     ESP_RETURN_ON_FALSE(dma_obj, ESP_ERR_INVALID_ARG, TAG, "I2S DMA object can't be NULL");
     /* Loop to destroy every descriptor and buffer */
-    for (int cnt = 0; cnt < p_i2s[i2s_num]->dma_buf_count; cnt++) {
+    for (int cnt = 0; cnt < p_i2s[i2s_num]->dma_desc_num; cnt++) {
         if (dma_obj->desc && dma_obj->desc[cnt]) {
             free(dma_obj->desc[cnt]);
             dma_obj->desc[cnt] = NULL;
@@ -707,7 +707,7 @@ static esp_err_t i2s_alloc_dma_buffer(i2s_port_t i2s_num, i2s_dma_t *dma_obj)
     esp_err_t ret = ESP_OK;
     ESP_GOTO_ON_FALSE(dma_obj, ESP_ERR_INVALID_ARG, err, TAG, "I2S DMA object can't be NULL");
 
-    uint32_t buf_cnt = p_i2s[i2s_num]->dma_buf_count;
+    uint32_t buf_cnt = p_i2s[i2s_num]->dma_desc_num;
     for (int cnt = 0; cnt < buf_cnt; cnt++) {
         /* Allocate DMA buffer */
         dma_obj->buf[cnt] = (char *) heap_caps_calloc(dma_obj->buf_size, sizeof(char), MALLOC_CAP_DMA);
@@ -733,7 +733,7 @@ static esp_err_t i2s_alloc_dma_buffer(i2s_port_t i2s_num, i2s_dma_t *dma_obj)
         /* Link to the next descriptor */
         dma_obj->desc[cnt]->empty = (uint32_t)((cnt < (buf_cnt - 1)) ? (dma_obj->desc[cnt + 1]) : dma_obj->desc[0]);
     }
-    ESP_LOGI(TAG, "DMA Malloc info, datalen=blocksize=%d, dma_buf_count=%d", dma_obj->buf_size, buf_cnt);
+    ESP_LOGI(TAG, "DMA Malloc info, datalen=blocksize=%d, dma_desc_num=%d", dma_obj->buf_size, buf_cnt);
     return ESP_OK;
 err:
     /* Delete DMA buffer if failed to allocate memory */
@@ -819,7 +819,7 @@ static esp_err_t i2s_create_dma_object(i2s_port_t i2s_num, i2s_dma_t **dma)
 {
     ESP_RETURN_ON_FALSE(dma, ESP_ERR_INVALID_ARG, TAG, "DMA object secondary pointer is NULL");
     ESP_RETURN_ON_FALSE((*dma == NULL), ESP_ERR_INVALID_ARG, TAG, "DMA object has been created");
-    uint32_t buf_cnt = p_i2s[i2s_num]->dma_buf_count;
+    uint32_t buf_cnt = p_i2s[i2s_num]->dma_desc_num;
     /* Allocate new DMA structure */
     *dma = (i2s_dma_t *) malloc(sizeof(i2s_dma_t));
     ESP_RETURN_ON_FALSE(*dma, ESP_ERR_NO_MEM, TAG, "DMA object allocate failed");
@@ -866,7 +866,7 @@ esp_err_t i2s_zero_dma_buffer(i2s_port_t i2s_num)
 
     /* Clear I2S RX DMA buffer */
     if (p_i2s[i2s_num]->rx && p_i2s[i2s_num]->rx->buf != NULL && p_i2s[i2s_num]->rx->buf_size != 0) {
-        for (int i = 0; i < p_i2s[i2s_num]->dma_buf_count; i++) {
+        for (int i = 0; i < p_i2s[i2s_num]->dma_desc_num; i++) {
             memset(p_i2s[i2s_num]->rx->buf[i], 0, p_i2s[i2s_num]->rx->buf_size);
         }
     }
@@ -879,7 +879,7 @@ esp_err_t i2s_zero_dma_buffer(i2s_port_t i2s_num)
             size_t zero_bytes = 0, bytes_written;
             i2s_write(i2s_num, (void *)&zero_bytes, bytes_left, &bytes_written, portMAX_DELAY);
         }
-        for (int i = 0; i < p_i2s[i2s_num]->dma_buf_count; i++) {
+        for (int i = 0; i < p_i2s[i2s_num]->dma_desc_num; i++) {
             memset(p_i2s[i2s_num]->tx->buf[i], 0, p_i2s[i2s_num]->tx->buf_size);
         }
     }
@@ -1808,8 +1808,8 @@ static esp_err_t i2s_driver_init(i2s_port_t i2s_num, const i2s_config_t *i2s_con
 
     /* I2S driver configuration assignment */
     p_i2s[i2s_num]->i2s_num = i2s_num;
-    p_i2s[i2s_num]->dma_buf_count = i2s_config->dma_buf_count;
-    p_i2s[i2s_num]->dma_buf_len = i2s_config->dma_buf_len;
+    p_i2s[i2s_num]->dma_desc_num = i2s_config->dma_desc_num;
+    p_i2s[i2s_num]->dma_frame_num = i2s_config->dma_frame_num;
     p_i2s[i2s_num]->last_buf_size = 0;
     p_i2s[i2s_num]->use_apll = i2s_config->use_apll;
     p_i2s[i2s_num]->fixed_mclk = i2s_config->fixed_mclk;
@@ -1918,8 +1918,8 @@ esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config,
     ESP_RETURN_ON_FALSE((i2s_num < I2S_NUM_MAX), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
     ESP_RETURN_ON_FALSE(i2s_config, ESP_ERR_INVALID_ARG, TAG, "I2S configuration must not be NULL");
     /* Check the size of DMA buffer */
-    ESP_RETURN_ON_FALSE((i2s_config->dma_buf_count >= 2 && i2s_config->dma_buf_count <= 128), ESP_ERR_INVALID_ARG, TAG, "I2S buffer count less than 128 and more than 2");
-    ESP_RETURN_ON_FALSE((i2s_config->dma_buf_len >= 8 && i2s_config->dma_buf_len <= 1024), ESP_ERR_INVALID_ARG, TAG, "I2S buffer length at most 1024 and more than 8");
+    ESP_RETURN_ON_FALSE((i2s_config->dma_desc_num >= 2 && i2s_config->dma_desc_num <= 128), ESP_ERR_INVALID_ARG, TAG, "I2S buffer count less than 128 and more than 2");
+    ESP_RETURN_ON_FALSE((i2s_config->dma_frame_num >= 8 && i2s_config->dma_frame_num <= 1024), ESP_ERR_INVALID_ARG, TAG, "I2S buffer length at most 1024 and more than 8");
 
     /* Step 2: Allocate driver object and register to platform */
     i2s_obj_t *pre_alloc_i2s_obj = calloc(1, sizeof(i2s_obj_t));
