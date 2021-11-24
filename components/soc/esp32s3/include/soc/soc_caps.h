@@ -13,13 +13,13 @@
 #define SOC_CPU_CORES_NUM               2
 #define SOC_CACHE_SUPPORT_WRAP          1
 #define SOC_ULP_SUPPORTED               1
+#define SOC_BT_SUPPORTED                1
 #define SOC_RTC_SLOW_MEM_SUPPORTED      1
 #define SOC_CCOMP_TIMER_SUPPORTED       1
 #define SOC_DIG_SIGN_SUPPORTED          1
 #define SOC_HMAC_SUPPORTED              1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 3
-
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
 #include "adc_caps.h"
