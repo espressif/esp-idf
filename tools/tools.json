@@ -194,31 +194,41 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "bd7364b8bf4fa03eebbac7f8aba8632029c34946ee67d451c02182aae8bc38e0",
-            "size": 1802447,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20210902/openocd-esp32-linux64-0.10.0-esp32-20210902.tar.gz"
+            "sha256": "eed0030e49206175fb564756c9210a6389347867b3528b16f50d725d47b45bf0",
+            "size": 1808044,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20211111/openocd-esp32-linux-amd64-0.10.0-esp32-20211111.tar.gz"
+          },
+          "linux-arm64": {
+            "sha256": "b4927173aa4230157d2f5019b3c51e94c880a0320c3ab7349cdc20c6b1c1eb14",
+            "size": 1702956,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20211111/openocd-esp32-linux-arm64-0.10.0-esp32-20211111.tar.gz"
           },
           "linux-armel": {
-            "sha256": "32aa83aa815666bdd442751c75d3826132ecd1bf1ac56f8b2a195e28f0ee2128",
-            "size": 1801394,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20210902/openocd-esp32-armel-0.10.0-esp32-20210902.tar.gz"
+            "sha256": "590fe5427496ca94616796235803145aef74db2aad19bf25ee19e8c6ab7b94d4",
+            "size": 1841453,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20211111/openocd-esp32-linux-armel-0.10.0-esp32-20211111.tar.gz"
+          },
+          "linux-armhf": {
+            "sha256": "27d754dbc3fb02cd3e78503a4f348288dc473e0fadbe87ac83090bdb0de51b00",
+            "size": 1713102,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20211111/openocd-esp32-linux-armhf-0.10.0-esp32-20211111.tar.gz"
           },
           "macos": {
-            "sha256": "0c32e4400edf6c725eb24af8d9ea9395f799c06333db2b87bbd22831467aba54",
-            "size": 1909909,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20210902/openocd-esp32-macos-0.10.0-esp32-20210902.tar.gz"
+            "sha256": "bc194319a39f8bb03ce75dab39feb51a36fa528bdee8bb594ccdd30730990c2f",
+            "size": 1873988,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20211111/openocd-esp32-macos-0.10.0-esp32-20211111.tar.gz"
           },
-          "name": "v0.10.0-esp32-20210902",
+          "name": "v0.10.0-esp32-20211111",
           "status": "recommended",
           "win32": {
-            "sha256": "9ad2a5031f498bae20291f3a81f2eb2371b79a1e5b81a2119d911b27a8a7a2e5",
-            "size": 2281243,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20210902/openocd-esp32-win32-0.10.0-esp32-20210902.zip"
+            "sha256": "590ece2f7c1bf20a3bfadb8b82255d4735a8f4666c9cb897cc4584f72f3040fb",
+            "size": 2288659,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20211111/openocd-esp32-win32-0.10.0-esp32-20211111.zip"
           },
           "win64": {
-            "sha256": "9ad2a5031f498bae20291f3a81f2eb2371b79a1e5b81a2119d911b27a8a7a2e5",
-            "size": 2281243,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20210902/openocd-esp32-win32-0.10.0-esp32-20210902.zip"
+            "sha256": "590ece2f7c1bf20a3bfadb8b82255d4735a8f4666c9cb897cc4584f72f3040fb",
+            "size": 2288659,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20211111/openocd-esp32-win32-0.10.0-esp32-20211111.zip"
           }
         }
       ]
