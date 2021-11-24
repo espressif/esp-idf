@@ -364,7 +364,7 @@ During startup, the eFuses are copied from flash or, in case if flash is empty, 
 espefuse.py
 ^^^^^^^^^^^
 
-esptool includes a useful tool for reading/writing {IDF_TARGET_NAME} eFuse bits - `espefuse.py <https://github.com/espressif/esptool/wiki/espefuse>`_.
+esptool includes a useful tool for reading/writing {IDF_TARGET_NAME} eFuse bits - `espefuse.py <https://docs.espressif.com/projects/esptool/en/latest/{IDF_TARGET_PATH_NAME}/espefuse/index.html>`_.
 
    .. include:: inc/espefuse_summary_{IDF_TARGET_NAME}.rst
 

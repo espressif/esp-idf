@@ -169,4 +169,4 @@ macOS 提供了 **屏幕** 命令，因此您不用安装串口终端程序。
 
 如您在安装 {IDF_TARGET_NAME} 硬件开发的软件环境时，从 :ref:`get-started-connect` 跳转到了这里，请从 :ref:`get-started-configure` 继续阅读。
 
-.. _esptool 文档: https://github.com/espressif/esptool/wiki/ESP32-Boot-Mode-Selection#automatic-bootloader
+.. _esptool 文档: https://docs.espressif.com/projects/esptool/en/latest/advanced-topics/boot-mode-selection.html#automatic-bootloader
