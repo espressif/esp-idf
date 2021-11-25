@@ -170,6 +170,7 @@
 /examples/storage/            @esp-idf-codeowners/storage
 /examples/system/             @esp-idf-codeowners/system
 /examples/wifi/               @esp-idf-codeowners/wifi
+/examples/zigbee/             @esp-idf-codeowners/ieee802154
 
 /examples/**/*.py             @esp-idf-codeowners/ci @esp-idf-codeowners/tools
 

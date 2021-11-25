@@ -10,6 +10,8 @@ Additional third party copyrighted code is included under the following licenses
 
 Where source code headers specify Copyright & License information, this information takes precedence over the summaries made here.
 
+Some examples use external components which are not Apache licensed, please check the copyright description in each example source code.
+
 Firmware Components
 -------------------
 
@@ -69,7 +71,7 @@ These third party libraries can be included into the application (firmware) prod
 
 * `qrcode`_ QR Code generator library Copyright (c) Project Nayuki, is licensed under MIT license.
 
-* :component:`openthread`, Copyright (c) The OpenThread Authors, is licensed under  Apache License 2.0 as described in :component_file:`LICENSE file<openthread/openthread/LICENSE>`.
+* :component:`openthread`, Copyright (c) The OpenThread Authors, is licensed under BSD License as described in :component_file:`LICENSE file<openthread/openthread/LICENSE>`.
 
 * :component_file:`UBSAN runtime <esp_system/ubsan.c>` — Copyright (c) 2016, Linaro Limited and Jiří Zárevúcky, licensed under the BSD 2-clause license.
 
