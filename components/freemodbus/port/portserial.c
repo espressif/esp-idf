@@ -13,9 +13,8 @@
  * limitations under the License.
  */
 /*
- * FreeModbus Libary: ESP32 Port Demo Application
+ * FreeModbus Libary: ESP32 Port
  * Copyright (C) 2010 Christian Walter <cwalter@embedded-solutions.at>
- *
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions

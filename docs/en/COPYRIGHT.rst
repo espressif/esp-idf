@@ -69,6 +69,8 @@ These third party libraries can be included into the application (firmware) prod
 
 * `qrcode`_ QR Code generator library Copyright (c) Project Nayuki, is licensed under MIT license.
 
+* `freemodbus`_ Copyright (c) 2006-2013 Christian Walter, Armink and licensed under the BSD license.
+
 Build Tools
 -----------
 
@@ -182,3 +184,4 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _sphinx_rtd_theme: https://github.com/readthedocs/sphinx_rtd_theme
 .. _cryptoauthlib: https://github.com/MicrochipTech/cryptoauthlib
 .. _qrcode: https://github.com/nayuki/QR-Code-generator
+.. _freemodbus: https://github.com/armink/FreeModbus_Slave-Master-RTT-STM32
