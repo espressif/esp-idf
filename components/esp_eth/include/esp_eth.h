@@ -128,6 +128,26 @@ typedef struct {
 } esp_eth_config_t;
 
 /**
+* @brief Command list for ioctl API
+*
+*/
+typedef enum {
+    ETH_CMD_G_MAC_ADDR,    /*!< Get MAC address */
+    ETH_CMD_S_MAC_ADDR,    /*!< Set MAC address */
+    ETH_CMD_G_PHY_ADDR,    /*!< Get PHY address */
+    ETH_CMD_S_PHY_ADDR,    /*!< Set PHY address */
+    ETH_CMD_G_AUTONEGO,    /*!< Get PHY Auto Negotiation */
+    ETH_CMD_S_AUTONEGO,    /*!< Set PHY Auto Negotiation */
+    ETH_CMD_G_SPEED,       /*!< Get Speed */
+    ETH_CMD_S_SPEED,       /*!< Set Speed */
+    ETH_CMD_S_PROMISCUOUS, /*!< Set promiscuous mode */
+    ETH_CMD_S_FLOW_CTRL,   /*!< Set flow control */
+    ETH_CMD_G_DUPLEX_MODE, /*!< Get Duplex mode */
+    ETH_CMD_S_DUPLEX_MODE, /*!< Set Duplex mode */
+    ETH_CMD_S_PHY_LOOPBACK,/*!< Set PHY loopback */
+} esp_eth_io_cmd_t;
+
+/**
  * @brief Default configuration for Ethernet driver
  *
  */

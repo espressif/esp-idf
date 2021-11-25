@@ -667,14 +667,12 @@ components/esp_local_ctrl/src/esp_local_ctrl_transport_ble.c
 components/esp_local_ctrl/src/esp_local_ctrl_transport_httpd.c
 components/esp_netif/esp_netif_handlers.c
 components/esp_netif/esp_netif_objects.c
-components/esp_netif/include/esp_netif.h
 components/esp_netif/include/esp_netif_net_stack.h
 components/esp_netif/include/esp_netif_ppp.h
 components/esp_netif/include/esp_netif_slip.h
 components/esp_netif/include/esp_netif_sta_list.h
 components/esp_netif/loopback/esp_netif_loopback.c
 components/esp_netif/lwip/esp_netif_lwip_defaults.c
-components/esp_netif/lwip/esp_netif_lwip_internal.h
 components/esp_netif/lwip/esp_netif_lwip_ppp.c
 components/esp_netif/lwip/esp_netif_lwip_ppp.h
 components/esp_netif/lwip/esp_netif_lwip_slip.c
@@ -1299,7 +1297,6 @@ components/hal/include/hal/dac_types.h
 components/hal/include/hal/ds_hal.h
 components/hal/include/hal/emac_hal.h
 components/hal/include/hal/esp_flash_err.h
-components/hal/include/hal/eth_types.h
 components/hal/include/hal/gpio_hal.h
 components/hal/include/hal/i2c_hal.h
 components/hal/include/hal/i2c_types.h

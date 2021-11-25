@@ -37,4 +37,29 @@ menu "ESP NETIF Adapter"
             Backward compatible interface to tcpip_adapter is enabled by default to support
             legacy TCP/IP stack initialisation code. Disable this option to use only esp-netif
             interface.
+
+    config ESP_NETIF_L2_TAP
+        bool "Enable netif L2 TAP support"
+        help
+            A user program can read/write link layer (L2) frames from/to ESP TAP device.
+            The ESP TAP device can be currently associated only with Ethernet physical interfaces.
+
+    config ESP_NETIF_L2_TAP_MAX_FDS
+        depends on ESP_NETIF_L2_TAP
+        int "Maximum number of opened L2 TAP File descriptors"
+        range 1 10
+        default 5
+        help
+            Maximum number of opened File descriptors (FD's) associated with ESP TAP device. ESP TAP FD's take up
+            a certain amount of memory, and allowing fewer FD's to be opened at the same time conserves memory.
+
+    config ESP_NETIF_L2_TAP_RX_QUEUE_SIZE
+        depends on ESP_NETIF_L2_TAP
+        int "Size of L2 TAP Rx queue"
+        range 1 100
+        default 20
+        help
+            Maximum number of frames queued in opened File descriptor. Once the queue is full, the newly arriving
+            frames are dropped until the queue has enough room to accept incoming traffic (Tail Drop queue
+            management).
 endmenu
