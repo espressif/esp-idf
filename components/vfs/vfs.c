@@ -1045,13 +1045,13 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
         vSemaphoreDelete(sel_sem.sem);
         sel_sem.sem = NULL;
     }
+    _lock_acquire(&s_fd_table_lock);
     for (int fd = 0; fd < nfds; ++fd) {
-        _lock_acquire(&s_fd_table_lock);
         if (s_fd_table[fd].has_pending_close) {
             s_fd_table[fd] = FD_TABLE_ENTRY_UNUSED;
         }
-        _lock_release(&s_fd_table_lock);
     }
+    _lock_release(&s_fd_table_lock);
     free(vfs_fds_triple);
     free(driver_args);
 
