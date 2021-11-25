@@ -237,6 +237,12 @@ static void do_core_init(void)
        app CPU, and when that is not up yet, the memory will be inaccessible and heap_caps_init may
        fail initializing it properly. */
     heap_caps_init();
+
+    // When apptrace module is enabled, there will be SEGGER_SYSVIEW calls in the newlib init.
+    // SEGGER_SYSVIEW relies on apptrace module
+    // apptrace module uses esp_timer_get_time to determine timeout conditions.
+    // esp_timer early initialization is required for esp_timer_get_time to work.
+    esp_timer_early_init();
     esp_newlib_init();
 
     if (g_spiram_ok) {
@@ -263,10 +269,6 @@ static void do_core_init(void)
     esp_brownout_init();
 #endif
 
-    // esp_timer early initialization is required for esp_timer_get_time to work.
-    // This needs to happen before VFS initialization, since some USB_SERIAL_JTAG VFS driver uses
-    // esp_timer_get_time to determine timeout conditions.
-    esp_timer_early_init();
     esp_newlib_time_init();
 
 #if CONFIG_VFS_SUPPORT_IO
