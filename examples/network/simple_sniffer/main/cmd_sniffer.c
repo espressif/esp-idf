@@ -143,7 +143,7 @@ static void wifi_sniffer_cb(void *recv_buf, wifi_promiscuous_pkt_type_t type)
     /* For now, the sniffer only dumps the length of the MISC type frame */
     if (type != WIFI_PKT_MISC && !sniffer->rx_ctrl.rx_state) {
         packet_info.length -= SNIFFER_PAYLOAD_FCS_LEN;
-        queue_packet(recv_buf, &packet_info);
+        queue_packet(sniffer->payload, &packet_info);
     }
 }
 
