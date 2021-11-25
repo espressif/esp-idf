@@ -6,6 +6,7 @@ Following components are removed from ESP-IDF and moved to `IDF Component Regist
 * `libsodium <https://components.espressif.com/component/espressif/libsodium>`_
 * `cbor <https://components.espressif.com/component/espressif/cbor>`_
 * `jsmn <https://components.espressif.com/component/espressif/jsmn>`_
+* `esp_modem <https://components.espressif.com/component/espressif/esp_modem>`_
 
 These components can be installed using ``idf.py add-dependency`` command.
 
