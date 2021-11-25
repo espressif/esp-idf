@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "catch.hpp"
 #include <algorithm>
 #include <cstring>
@@ -68,6 +60,21 @@ TEST_CASE("Partition manager initializes multiple partitions", "[partition_mgr]"
     CHECK(storage1 != storage2);
     REQUIRE(NVSPartitionManager::get_instance()->deinit_partition(part_0.get_partition_name()) == ESP_OK);
     REQUIRE(NVSPartitionManager::get_instance()->deinit_partition(part_1.get_partition_name()) == ESP_OK);
+}
+
+TEST_CASE("Partition manager open fails on null handle", "[partition_mgr]")
+{
+    const uint32_t NVS_FLASH_SECTOR = 6;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
+    PartitionEmulationFixture f(0, 10, "test");
+
+    REQUIRE(NVSPartitionManager::get_instance()->init_custom(&f.part, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
+            == ESP_OK);
+
+    CHECK(NVSPartitionManager::get_instance()->open_handle("test", "ns_1", NVS_READWRITE, nullptr)
+            == ESP_ERR_INVALID_ARG);
+
+    NVSPartitionManager::get_instance()->deinit_partition("test");
 }
 
 TEST_CASE("Partition manager invalidates handle on partition de-init", "[partition_mgr]")
