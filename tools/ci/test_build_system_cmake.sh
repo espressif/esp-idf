@@ -663,17 +663,6 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     git checkout CMakeLists.txt
     rm -f log.txt
 
-    print_status "Compiles with dependencies delivered by component manager"
-    clean_build_dir
-    printf "\n#include \"test_component.h\"\n" >> main/main.c
-    printf "dependencies:\n  test_component:\n    path: test_component\n    git: ${COMPONENT_MANAGER_TEST_REPO}\n" >> idf_project.yml
-    ! idf.py build || failure "Build should fail if dependencies are not installed"
-    pip install ${COMPONENT_MANAGER_REPO}
-    idf.py reconfigure build || failure "Build succeeds once requirements are installed"
-    pip uninstall -y idf_component_manager
-    rm idf_project.yml
-    git checkout main/main.c
-
     print_status "Defaults set properly for unspecified idf_build_process args"
     pushd $IDF_PATH/examples/build_system/cmake/idf_as_lib
     cp CMakeLists.txt CMakeLists.txt.bak
