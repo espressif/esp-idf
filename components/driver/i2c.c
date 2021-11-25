@@ -930,26 +930,16 @@ err:
 esp_err_t i2c_master_start(i2c_cmd_handle_t cmd_handle)
 {
     I2C_CHECK(cmd_handle != NULL, I2C_CMD_LINK_INIT_ERR_STR, ESP_ERR_INVALID_ARG);
-    i2c_cmd_t cmd;
-    cmd.hw_cmd.ack_en = 0;
-    cmd.hw_cmd.ack_exp = 0;
-    cmd.hw_cmd.ack_val = 0;
+    i2c_cmd_t cmd = { 0 };
     cmd.hw_cmd.op_code = I2C_LL_CMD_RESTART;
-    cmd.hw_cmd.byte_num = 0;
-    cmd.data = NULL;
     return i2c_cmd_link_append(cmd_handle, &cmd);
 }
 
 esp_err_t i2c_master_stop(i2c_cmd_handle_t cmd_handle)
 {
     I2C_CHECK(cmd_handle != NULL, I2C_CMD_LINK_INIT_ERR_STR, ESP_ERR_INVALID_ARG);
-    i2c_cmd_t cmd;
-    cmd.hw_cmd.ack_en = 0;
-    cmd.hw_cmd.ack_exp = 0;
-    cmd.hw_cmd.ack_val = 0;
+    i2c_cmd_t cmd = { 0 };
     cmd.hw_cmd.op_code = I2C_LL_CMD_STOP;
-    cmd.hw_cmd.byte_num = 0;
-    cmd.data = NULL;
     return i2c_cmd_link_append(cmd_handle, &cmd);
 }
 
@@ -964,10 +954,8 @@ esp_err_t i2c_master_write(i2c_cmd_handle_t cmd_handle, const uint8_t *data, siz
     while (data_len > 0) {
         len_tmp = data_len > 0xff ? 0xff : data_len;
         data_len -= len_tmp;
-        i2c_cmd_t cmd;
+        i2c_cmd_t cmd = { 0 };
         cmd.hw_cmd.ack_en = ack_en;
-        cmd.hw_cmd.ack_exp = 0;
-        cmd.hw_cmd.ack_val = 0;
         cmd.hw_cmd.op_code = I2C_LL_CMD_WRITE;
         cmd.hw_cmd.byte_num = len_tmp;
         cmd.data = (uint8_t*) data + data_offset;
@@ -983,13 +971,10 @@ esp_err_t i2c_master_write(i2c_cmd_handle_t cmd_handle, const uint8_t *data, siz
 esp_err_t i2c_master_write_byte(i2c_cmd_handle_t cmd_handle, uint8_t data, bool ack_en)
 {
     I2C_CHECK(cmd_handle != NULL, I2C_CMD_LINK_INIT_ERR_STR, ESP_ERR_INVALID_ARG);
-    i2c_cmd_t cmd;
+    i2c_cmd_t cmd = { 0 };
     cmd.hw_cmd.ack_en = ack_en;
-    cmd.hw_cmd.ack_exp = 0;
-    cmd.hw_cmd.ack_val = 0;
     cmd.hw_cmd.op_code = I2C_LL_CMD_WRITE;
     cmd.hw_cmd.byte_num = 1;
-    cmd.data = NULL;
     cmd.byte_cmd = data;
     return i2c_cmd_link_append(cmd_handle, &cmd);
 }
@@ -1002,9 +987,7 @@ static esp_err_t i2c_master_read_static(i2c_cmd_handle_t cmd_handle, uint8_t *da
     while (data_len > 0) {
         len_tmp = data_len > 0xff ? 0xff : data_len;
         data_len -= len_tmp;
-        i2c_cmd_t cmd;
-        cmd.hw_cmd.ack_en = 0;
-        cmd.hw_cmd.ack_exp = 0;
+        i2c_cmd_t cmd = { 0 };
         cmd.hw_cmd.ack_val = ack & 0x1;
         cmd.hw_cmd.byte_num = len_tmp;
         cmd.hw_cmd.op_code = I2C_LL_CMD_READ;
@@ -1024,9 +1007,7 @@ esp_err_t i2c_master_read_byte(i2c_cmd_handle_t cmd_handle, uint8_t *data, i2c_a
     I2C_CHECK(cmd_handle != NULL, I2C_CMD_LINK_INIT_ERR_STR, ESP_ERR_INVALID_ARG);
     I2C_CHECK(ack < I2C_MASTER_ACK_MAX, I2C_ACK_TYPE_ERR_STR, ESP_ERR_INVALID_ARG);
 
-    i2c_cmd_t cmd;
-    cmd.hw_cmd.ack_en = 0;
-    cmd.hw_cmd.ack_exp = 0;
+    i2c_cmd_t cmd = { 0 };
     cmd.hw_cmd.ack_val = ((ack == I2C_MASTER_LAST_NACK) ? I2C_MASTER_NACK : (ack & 0x1));
     cmd.hw_cmd.byte_num = 1;
     cmd.hw_cmd.op_code = I2C_LL_CMD_READ;
