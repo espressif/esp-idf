@@ -149,7 +149,6 @@ void spi_slave_hd_hal_rxdma(spi_slave_hd_hal_context_t *hal, uint8_t *out_buf, s
     spi_ll_infifo_full_clr(hal->dev);
     spi_ll_clear_intr(hal->dev, SPI_LL_INTR_CMD7);
 
-    spi_ll_slave_set_rx_bitlen(hal->dev, len * 8);
     spi_ll_dma_rx_enable(hal->dev, 1);
     spi_dma_ll_rx_start(hal->dma_in, hal->rx_dma_chan, &hal->dmadesc_rx->desc);
 }
