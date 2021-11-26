@@ -702,6 +702,7 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     rm -f log.txt
 
     print_status "Build fails if partitions don't fit in flash"
+    clean_build_dir
     sed -i.bak "s/CONFIG_ESPTOOLPY_FLASHSIZE.\+//" sdkconfig  # remove all flashsize config
     echo "CONFIG_ESPTOOLPY_FLASHSIZE_1MB=y" >> sdkconfig     # introduce undersize flash
     ( idf.py build 2>&1 | grep "does not fit in configured flash size 1MB" ) || failure "Build didn't fail with expected flash size failure message"
@@ -822,7 +823,6 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     EXPECTED_EXIT_VALUE=4
     expected_failure $EXPECTED_EXIT_VALUE idf.py create-project --path "$IDF_PATH/example_proj" temp_test_project || failure "Command exit value is wrong."
     rm -rf "$IDF_PATH/example_proj"
-
 
 
     print_status "All tests completed"
