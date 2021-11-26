@@ -417,7 +417,7 @@ TEST_CASE("rom unlock will not erase QE bit", "[spi_flash]")
     if (((legacy_chip->device_id >> 16) & 0xff) != 0x9D) {
         TEST_IGNORE_MESSAGE("This test is only for ISSI chips. Ignore.");
     }
-    esp_rom_spiflash_unlock();
+    bootloader_flash_unlock();
     esp_rom_spiflash_read_status(legacy_chip, &status);
     printf("status: %08x\n", status);
 

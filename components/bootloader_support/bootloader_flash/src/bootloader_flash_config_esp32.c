@@ -22,7 +22,6 @@
 #include "bootloader_common.h"
 #include "bootloader_flash_config.h"
 
-
 void bootloader_flash_update_id(void)
 {
     g_rom_flashchip.device_id = bootloader_read_flash_id();

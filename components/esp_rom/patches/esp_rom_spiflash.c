@@ -6,6 +6,7 @@
 
 #include "sdkconfig.h"
 #include "soc/spi_periph.h"
+#include "esp_rom_spiflash.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/spi_flash.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -40,9 +41,9 @@ esp_rom_spiflash_result_t esp_rom_spiflash_wait_idle(esp_rom_spiflash_chip_t *sp
     return  ESP_ROM_SPIFLASH_RESULT_OK;
 }
 
-/* Modified version of esp_rom_spiflash_unlock() that replaces version in ROM.
+/* Modified version of esp_rom_spiflash_clear_bp() that replaces version in ROM.
 
-   This works around a bug where esp_rom_spiflash_unlock sometimes reads the wrong
+   This works around a bug where esp_rom_spiflash_clear_bp sometimes reads the wrong
    high status byte (RDSR2 result) and then copies it back to the
    flash status, which can cause the CMP bit or Status Register
    Protect bit to become set.
@@ -52,7 +53,7 @@ esp_rom_spiflash_result_t esp_rom_spiflash_wait_idle(esp_rom_spiflash_chip_t *sp
    about interrupts, CPU coordination, flash mapping. However some of
    the functions in esp_spi_flash.c call it.
  */
-__attribute__((__unused__)) esp_rom_spiflash_result_t esp_rom_spiflash_unlock(void)
+__attribute__((__unused__)) esp_rom_spiflash_result_t esp_rom_spiflash_clear_bp(void)
 {
     uint32_t status;
     uint32_t new_status;
@@ -67,7 +68,7 @@ __attribute__((__unused__)) esp_rom_spiflash_result_t esp_rom_spiflash_unlock(vo
         }
 
         /* Clear all bits in the mask.
-        (This is different from ROM esp_rom_spiflash_unlock, which keeps all bits as-is.)
+        (This is different from ROM esp_rom_spiflash_clear_bp, which keeps all bits as-is.)
         */
         new_status = status & (~ESP_ROM_SPIFLASH_BP_MASK_ISSI);
         // Skip if nothing needs to be cleared. Otherwise will waste time waiting for the flash to clear nothing.
@@ -80,7 +81,7 @@ __attribute__((__unused__)) esp_rom_spiflash_result_t esp_rom_spiflash_unlock(vo
         }
 
         /* Clear all bits except QE, if it is set.
-        (This is different from ROM esp_rom_spiflash_unlock, which keeps all bits as-is.)
+        (This is different from ROM esp_rom_spiflash_clear_bp, which keeps all bits as-is.)
         */
         new_status = status & ESP_ROM_SPIFLASH_QE;
         SET_PERI_REG_MASK(SPI_CTRL_REG(SPI_IDX), SPI_WRSR_2B);
@@ -99,7 +100,7 @@ __attribute__((__unused__)) esp_rom_spiflash_result_t esp_rom_spiflash_unlock(vo
     }
     return ret;
 }
-
+esp_rom_spiflash_result_t esp_rom_spiflash_unlock(void) __attribute__((alias("esp_rom_spiflash_clear_bp")));
 
 static esp_rom_spiflash_result_t esp_rom_spiflash_enable_write(esp_rom_spiflash_chip_t *spi);
 
@@ -369,7 +370,7 @@ static void spi_cache_mode_switch(uint32_t  modebit)
     }
 }
 
-esp_rom_spiflash_result_t esp_rom_spiflash_lock(void)
+esp_rom_spiflash_result_t esp_rom_spiflash_set_bp(void)
 {
     uint32_t status;
 
@@ -390,7 +391,7 @@ esp_rom_spiflash_result_t esp_rom_spiflash_lock(void)
 
     return ESP_ROM_SPIFLASH_RESULT_OK;
 }
-
+esp_rom_spiflash_result_t esp_rom_spiflash_lock(void) __attribute__((alias("esp_rom_spiflash_set_bp")));
 
 esp_rom_spiflash_result_t esp_rom_spiflash_config_readmode(esp_rom_spiflash_read_mode_t mode)
 {
@@ -474,7 +475,7 @@ esp_rom_spiflash_result_t esp_rom_spiflash_erase_sector(uint32_t sector_num)
     return ESP_ROM_SPIFLASH_RESULT_OK;
 }
 
-esp_rom_spiflash_result_t esp_rom_spiflash_write(uint32_t target, const uint32_t *src_addr, int32_t len)
+esp_rom_spiflash_result_t esp_rom_spiflash_write(uint32_t dest_addr, const uint32_t *src, int32_t len)
 {
     uint32_t  page_size;
     uint32_t  pgm_len;
@@ -485,20 +486,20 @@ esp_rom_spiflash_result_t esp_rom_spiflash_write(uint32_t target, const uint32_t
     REG_CLR_BIT(PERIPHS_SPI_FLASH_USRREG, SPI_USR_DUMMY);
     REG_SET_FIELD(PERIPHS_SPI_FLASH_USRREG1, SPI_USR_ADDR_BITLEN, ESP_ROM_SPIFLASH_W_SIO_ADDR_BITSLEN);
     //check program size
-    if ( (target + len) > (g_rom_spiflash_chip.chip_size)) {
+    if ( (dest_addr + len) > (g_rom_spiflash_chip.chip_size)) {
         return ESP_ROM_SPIFLASH_RESULT_ERR;
     }
 
     page_size = g_rom_spiflash_chip.page_size;
-    pgm_len = page_size - (target % page_size);
+    pgm_len = page_size - (dest_addr % page_size);
     if (len < pgm_len) {
         if (ESP_ROM_SPIFLASH_RESULT_OK != esp_rom_spiflash_program_page_internal(&g_rom_spiflash_chip,
-                target, (uint32_t *)src_addr, len)) {
+                dest_addr, (uint32_t *)src, len)) {
             return ESP_ROM_SPIFLASH_RESULT_ERR;
         }
     } else {
         if (ESP_ROM_SPIFLASH_RESULT_OK != esp_rom_spiflash_program_page_internal(&g_rom_spiflash_chip,
-                target, (uint32_t *)src_addr, pgm_len)) {
+                dest_addr, (uint32_t *)src, pgm_len)) {
             return ESP_ROM_SPIFLASH_RESULT_ERR;
         }
 
@@ -506,7 +507,7 @@ esp_rom_spiflash_result_t esp_rom_spiflash_write(uint32_t target, const uint32_t
         pgm_num = (len - pgm_len) / page_size;
         for (i = 0; i < pgm_num; i++) {
             if (ESP_ROM_SPIFLASH_RESULT_OK != esp_rom_spiflash_program_page_internal(&g_rom_spiflash_chip,
-                    target + pgm_len, (uint32_t *)src_addr + (pgm_len >> 2), page_size)) {
+                    dest_addr + pgm_len, (uint32_t *)src + (pgm_len >> 2), page_size)) {
                 return ESP_ROM_SPIFLASH_RESULT_ERR;
             }
             pgm_len += page_size;
@@ -514,7 +515,7 @@ esp_rom_spiflash_result_t esp_rom_spiflash_write(uint32_t target, const uint32_t
 
         //remain parts to program
         if (ESP_ROM_SPIFLASH_RESULT_OK != esp_rom_spiflash_program_page_internal(&g_rom_spiflash_chip,
-                target + pgm_len, (uint32_t *)src_addr + (pgm_len >> 2), len - pgm_len)) {
+                dest_addr + pgm_len, (uint32_t *)src + (pgm_len >> 2), len - pgm_len)) {
             return ESP_ROM_SPIFLASH_RESULT_ERR;
         }
     }
@@ -547,7 +548,7 @@ esp_rom_spiflash_result_t esp_rom_spiflash_write_encrypted(uint32_t flash_addr, 
     return ret;
 }
 
-esp_rom_spiflash_result_t esp_rom_spiflash_read(uint32_t target, uint32_t *dest_addr, int32_t len)
+esp_rom_spiflash_result_t esp_rom_spiflash_read(uint32_t src_addr, uint32_t *dest, int32_t len)
 {
     // QIO or SIO, non-QIO regard as SIO
     uint32_t modebit;
@@ -602,7 +603,7 @@ esp_rom_spiflash_result_t esp_rom_spiflash_read(uint32_t target, uint32_t *dest_
         REG_WRITE(PERIPHS_SPI_FLASH_USRREG2, (0x7 << SPI_USR_COMMAND_BITLEN_S) | 0x03);
     }
 
-    if ( ESP_ROM_SPIFLASH_RESULT_OK != esp_rom_spiflash_read_data(&g_rom_spiflash_chip, target, dest_addr, len)) {
+    if ( ESP_ROM_SPIFLASH_RESULT_OK != esp_rom_spiflash_read_data(&g_rom_spiflash_chip, src_addr, dest, len)) {
         return ESP_ROM_SPIFLASH_RESULT_ERR;
     }
     return ESP_ROM_SPIFLASH_RESULT_OK;
@@ -632,7 +633,7 @@ esp_rom_spiflash_result_t esp_rom_spiflash_erase_area(uint32_t start_addr, uint3
     }
 
     //Unlock flash to enable erase
-    if (ESP_ROM_SPIFLASH_RESULT_OK != esp_rom_spiflash_unlock(/*&g_rom_spiflash_chip*/)) {
+    if (ESP_ROM_SPIFLASH_RESULT_OK != esp_rom_spiflash_clear_bp(/*&g_rom_spiflash_chip*/)) {
         return ESP_ROM_SPIFLASH_RESULT_ERR;
     }
 

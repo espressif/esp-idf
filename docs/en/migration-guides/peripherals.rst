@@ -11,4 +11,8 @@ However, for advanced users who implement their own drivers based on ``hal`` and
 SPI Flash Interface
 -------------------
 
-Version before v5.0, spi flash functions in rom can be included by ``esp32**/rom/spi_flash.h``. However, it duplicates so much and not clean. Therefore, it has been moved to ``esp_rom_spiflash.h``. If you want to use the functions with prefix ``esp_rom_spiflash`` , please include ``esp_rom_spiflash.h``
+Version before v5.0, spi flash functions in rom can be included by ``esp32**/rom/spi_flash.h``. However, your code written for different chips may be filled with ROM headers of different versions. At the meantime not all the APIs can be used on all chips.
+
+Therefore, the common APIs are extracted to ``esp_rom_spiflash.h``. Although it's not a breaking change, it is strongly recommended to only use the functions with prefix ``esp_rom_spiflash`` included by ``esp_rom_spiflash.h`` for better cross-compatibility.
+
+To make the API clearer, we renamed the function ``esp_rom_spiflash_lock`` to ``esp_rom_spiflash_set_bp``. We renamed ``esp_rom_spiflash_unlock`` to ``esp_rom_spiflash_clear_bp``.
