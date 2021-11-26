@@ -37,10 +37,10 @@ JTAG 调试
 .. only:: esp32
 
     ESP32 具有两个强大的 Xtensa 内核，支持多种程序架构。ESP-IDF 自带的 FreeRTOS 操作系统支持多核抢占式调度，允许用户以更加直观的方式编写软件。
-    
+
     与此相对地，由于缺乏合适的工具，简便的编程方式也会给程序的调试带来困难，比如找出由两个线程引起的错误，并且这两个线程在单独的 CPU 核上同时运行，那么仅凭 ``printf`` 语句会花费很长时间来定位该错误。调试此类问题更好(往往也更快)的方法是使用调试器，将其连接到处理器的调试端口。
 
-乐鑫已完成 OpenOCD 移植，以支持 {IDF_TARGET_NAME} 处理器和多核 FreeRTOS 架构（此作为大多数 {IDF_TARGET_NAME} 应用程序的基础）。此外，乐鑫还提供了一些 OpenOCD 本身并不支持的工具，以进一步丰富调试功能。
+乐鑫已完成 OpenOCD 移植，以支持 {IDF_TARGET_NAME} 处理器和多核 FreeRTOS 架构（大多数 {IDF_TARGET_NAME} 应用程序的基础）。此外，乐鑫还提供了一些 OpenOCD 本身并不支持的工具，以进一步丰富调试功能。
 
 本文将介绍如何在 Linux、Windows 和 macOS 环境下为 {IDF_TARGET_NAME} 安装 OpenOCD，并使用 GDB 进行软件调试。除部分安装流程有所不同外，所有操作系统的软件用户界面和使用流程都是相同的。
 
@@ -64,23 +64,21 @@ JTAG 调试
 
 “Application Loading and Monitoring” 标志显示一组关键的软件和硬件组件，可用于编译、构建和烧写应用程序到 {IDF_TARGET_NAME} 上，以及监视来自 {IDF_TARGET_NAME} 的运行诊断信息。
 
-`Eclipse <https://www.eclipse.org/>`__ 环境集成了 JTAG 调试和应用程序加载、监视的功能，使得软件从编写、编译、加载到调试的迭代过程变得更加快速简单。Eclipse IDE 及其集成的调试软件均适用于 Windows、Linux 和 macOS 平台。
+`Eclipse <https://www.eclipse.org/>`__ 环境集成了 JTAG 调试和应用程序加载、监视的功能，使得软件从编写、编译、加载到调试的迭代过程变得更加快速简单。Eclipse IDE 及其集成的调试软件均适用于 Windows、Linux 和 macOS 平台。根据用户喜好，除了使用 Eclipse 集成开发环境，还可以直接在命令行终端运行 `debugger` 和 `idf.py build`。
 
 .. only:: not SOC_USB_SERIAL_JTAG_SUPPORTED
-    
+
     若使用 |devkit-name-with-link|，由于其板载 FT232H 芯片，仅需一根 USB 线即可连接 PC 与 {IDF_TARGET_NAME}。FT232H 提供了两路 USB 通道，一路连接到 JTAG，另一路连接到 UART。
 
 .. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
 
     仅需一根 USB 线即可高效连接 PC 与 {IDF_TARGET_NAME}，因为 {IDF_TARGET_NAME} 芯片本身提供了两路 USB 通道，一路连接到 JTAG，另一路连接到 USB 终端。应将 USB 线连接到 {IDF_TARGET_NAME} 的 D+/D- USB 管脚，而非通过 USB-UART 芯片连接到串行 RxD/TxD。后文中 :ref:`jtag-debugging-configuring-target` 小节将对此进行解释。
 
-.. only:: esp32c3 
+.. only:: esp32c3
 
     .. note::
 
-        {IDF_TARGET_NAME} 中的 USB 接口只能用于调试版本 3 或更新版本的芯片，对于版本 1 或 2 的芯片，请使用其他调试板（例如 ESP-Prog）。确定芯片版本最简单的方法是通过 `idf.py flash` 完成芯片烧写，并在底部寻找 `芯片为 ESP32-C3 (版本 3)` 信息。
-
-根据用户喜好，除了使用 Eclipse 集成开发环境，还可以直接在命令行终端运行 `debugger` 和 `idf.py build`。
+        {IDF_TARGET_NAME} 中的 USB 接口只能用于调试版本 3 或更新版本的芯片，对于版本 1 或 2 的芯片，请使用其他调试板（例如 ESP-Prog）。确定芯片版本最简单的方法是通过 `idf.py flash` 完成芯片烧写，并在底部寻找类似 `芯片为 ESP32-C3 (版本 3)` 信息。
 
 .. _jtag-debugging-selecting-jtag-adapter:
 
@@ -91,15 +89,15 @@ JTAG 调试
 
     上手 JTAG 最快速便捷的方式是使用 |devkit-name-with-link|，因为它板载了 JTAG 调试接口，无需使用外部 JTAG 硬件适配器和额外线缆来连接 JTAG 与 {IDF_TARGET_NAME}。|devkit-name| 采用 FT2232H 提供的 JTAG 接口，可以稳定运行在 20 MHz 的时钟频率，外接的适配器很难达到这个速度。
 
-.. only:: not SOC_USB_SERIAL_JTAG_SUPPORTED
+.. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
 
     上手 JTAG 最快速便捷的方式是将一根 USB 线连接到 {IDF_TARGET_NAME} 的 D+/D- USB 管脚，无需使用外部 JTAG 适配器和额外线缆。
 
 如果您想使用单独的 JTAG 适配器，请确保其与 {IDF_TARGET_NAME} 的电平电压和 OpenOCD 软件都兼容。{IDF_TARGET_NAME} 使用的是业界标准的 JTAG 接口，它未使用（实际上也并不需要）TRST 信号脚。JTAG 使用的 IO 管脚由 VDD_3P3_RTC 电源管脚供电（通常连接到外部 3.3 V 的电源轨），因此 JTAG 硬件适配器的管脚需要能够在该电压范围内正常工作。
 
-在软件方面，OpenOCD 支持相当多数量的 JTAG 适配器，请参阅 `OpenOCD 支持的适配器列表 <http://openocd.org/doc/html/Debug-Adapter-Hardware.html>`_ （请注意这一列表并不完整），其中还列出了兼容 SWD 接口的适配器，但请注意，{IDF_TARGET_NAME} 目前并不支持 SWD。此外，被硬编码为只支持特定产品线的 JTAG 适配器也无法在 {IDF_TARGET_NAME} 上工作，例如仅针对 STM32 系列产品的 ST-LINK 适配器。
+在软件方面，OpenOCD 支持相当多数量的 JTAG 适配器，请参阅 `OpenOCD 支持的适配器列表 <http://openocd.org/doc/html/Debug-Adapter-Hardware.html>`_ （请注意这一列表并不完整），其中还列出了兼容 SWD 接口的适配器，但请注意，{IDF_TARGET_NAME} 目前并不支持 SWD。此外，硬编码为只支持特定产品线的 JTAG 适配器也无法在 {IDF_TARGET_NAME} 上工作，例如仅针对 STM32 系列产品的 ST-LINK 适配器。
 
-JTAG 正常工作至少需要连接的信号线有：TDI、TDO、TCK、TMS 和 GND。一些 JTAG 适配器还需要 {IDF_TARGET_NAME} 提供一路电源到适配器的某个管脚上（比如 Vtar），用于设置适配器的工作电压。您也可以选择将 SRST 信号线连接到 {IDF_TARGET_NAME} 的 CH_PD 管脚上，但请注意，目前 OpenOCD 对该信号线提供的支持相当有限。
+保证 JTAG 正常工作需要连接的信号线包括：TDI、TDO、TCK、TMS 和 GND。一些 JTAG 适配器还需要 {IDF_TARGET_NAME} 提供一路电源到适配器的某个管脚上（比如 Vtar），用于设置适配器的工作电压。您也可以选择将 SRST 信号线连接到 {IDF_TARGET_NAME} 的 CH_PD 管脚上，但请注意，目前 OpenOCD 对该信号线提供的支持相当有限。
 
 `ESP-Prog <https://docs.espressif.com/projects/espressif-esp-iot-solution/en/latest/hw-reference/ESP-Prog_guide.html>`_ 中展示了使用外部电路板进行调试的实例，方法是将其连接到 {IDF_TARGET_NAME} 的 JTAG 管脚上。
 
@@ -138,10 +136,11 @@ JTAG 正常工作至少需要连接的信号线有：TDI、TDO、TCK、TMS 和 G
 
 OpenOCD 安装完成后就可以配置 {IDF_TARGET_NAME} 目标（即带 JTAG 接口的 {IDF_TARGET_NAME} 板），具体分为以下三个步骤：
 
--  配置并连接 JTAG 接口
--  运行 OpenOCD
--  上传待调试的应用程序
+* :ref:`jtag-debugging-configure-and-connect-JTAG-interface`
+* :ref:`jtag-debugging-run-openocd`
+* :ref:`jtag-upload-app-debug`
 
+.. _jtag-debugging-configure-and-connect-JTAG-interface:
 
 配置并连接 JTAG 接口
 ~~~~~~~~~~~~~~~~~~~~
@@ -199,7 +198,7 @@ OpenOCD 安装完成后就可以配置 {IDF_TARGET_NAME} 目标（即带 JTAG �
 
 按照正常步骤构建并上传 {IDF_TARGET_NAME} 应用程序，具体请参阅 :ref:`get-started-build` 章节。
 
-除此以外，您还可以使用 OpenOCD 通过 JTAG 接口将应用程序镜像烧写到闪存中，命令如下:
+除此以外，您还可以使用 OpenOCD 通过 JTAG 接口将应用程序镜像烧写到 flash 中，命令如下:
 
 .. include:: {IDF_TARGET_PATH_NAME}.inc
    :start-after: run-openocd-upload
@@ -210,8 +209,8 @@ OpenOCD 安装完成后就可以配置 {IDF_TARGET_NAME} 目标（即带 JTAG �
 ``program_esp <image_file> <offset> [verify] [reset] [exit]``
 
 -  ``image_file`` - 程序镜像文件存放的路径
--  ``offset`` - 镜像烧写到闪存中的偏移地址
--  ``verify`` - 烧写完成后校验闪存中的内容（可选）
+-  ``offset`` - 镜像烧写到 flash 中的偏移地址
+-  ``verify`` - 烧写完成后校验 flash 中的内容（可选）
 -  ``reset`` - 烧写完成后重启目标（可选）
 -  ``exit`` - 烧写完成后退出 OpenOCD（可选）
 
@@ -313,7 +312,7 @@ Windows 用户的示例如下:
 
 .. toctree::
     :hidden:
-    
+
     :maxdepth: 1
 
     using-debugger
@@ -325,4 +324,4 @@ Windows 用户的示例如下:
 - :doc:`debugging-examples`
 - :doc:`tips-and-quirks`
 - :doc:`../app_trace`
-- `ESP-Prog 调试板介绍 <https://docs.espressif.com/projects/espressif-esp-iot-solution/zh_CN/latest/hw-reference/ESP-Prog_guide.html>`__ 
+- `ESP-Prog 调试板介绍 <https://docs.espressif.com/projects/espressif-esp-iot-solution/zh_CN/latest/hw-reference/ESP-Prog_guide.html>`__
