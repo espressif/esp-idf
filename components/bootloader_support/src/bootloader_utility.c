@@ -806,22 +806,19 @@ esp_err_t bootloader_sha256_hex_to_str(char *out_str, const uint8_t *in_array_he
 
 void bootloader_debug_buffer(const void *buffer, size_t length, const char *label)
 {
-#if BOOT_LOG_LEVEL >= LOG_LEVEL_DEBUG
-    assert(length <= 128); // Avoid unbounded VLA size
+#if CONFIG_BOOTLOADER_LOG_LEVEL >= 4
     const uint8_t *bytes = (const uint8_t *)buffer;
-    char hexbuf[length * 2 + 1];
-    hexbuf[length * 2] = 0;
-    for (int i = 0; i < length; i++) {
-        for (int shift = 0; shift < 2; shift++) {
-            uint8_t nibble = (bytes[i] >> (shift ? 0 : 4)) & 0x0F;
-            if (nibble < 10) {
-                hexbuf[i * 2 + shift] = '0' + nibble;
-            } else {
-                hexbuf[i * 2 + shift] = 'a' + nibble - 10;
-            }
-        }
-    }
+    const size_t output_len = MIN(length, 128);
+    char hexbuf[128 * 2 + 1];
+
+    bootloader_sha256_hex_to_str(hexbuf, bytes, output_len);
+
+    hexbuf[output_len * 2] = '\0';
     ESP_LOGD(TAG, "%s: %s", label, hexbuf);
+#else
+    (void) buffer;
+    (void) length;
+    (void) label;
 #endif
 }
 
