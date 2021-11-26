@@ -422,6 +422,12 @@ USB 供电                   使能 UART 通信
 
 现在，请前往 :doc:`../../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
 
+以下链接提供了与 ESP-WROVER-KIT 开发板硬件相关的示例：
+
+* 板上 LCD 示例：:example:`peripherals/spi_master/lcd`
+* SD 卡槽示例： :example:`storage/sd_card`
+* 摄像头示例：https://github.com/espressif/esp32-camera
+
 
 相关文档
 -----------------
