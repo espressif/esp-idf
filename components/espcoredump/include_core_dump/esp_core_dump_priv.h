@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef ESP_CORE_DUMP_H_
-#define ESP_CORE_DUMP_H_
+#ifndef ESP_CORE_DUMP_PRIV_H_
+#define ESP_CORE_DUMP_PRIV_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,6 +22,7 @@ extern "C" {
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
+#include "esp_private/panic_internal.h"
 #if CONFIG_ESP32_COREDUMP_CHECKSUM_SHA256
 // TODO: move this to portable part of the code
 #include "mbedtls/sha256.h"
@@ -137,7 +138,7 @@ typedef struct _core_dump_mem_seg_header_t
 void esp_core_dump_flash_init(void);
 
 // Common core dump write function
-void esp_core_dump_write(void *frame, core_dump_write_config_t *write_cfg);
+void esp_core_dump_write(panic_info_t *info, core_dump_write_config_t *write_cfg);
 
 #include "esp_core_dump_port.h"
 

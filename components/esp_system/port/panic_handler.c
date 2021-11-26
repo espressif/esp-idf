@@ -49,7 +49,7 @@
 #include "soc/rtc_cntl_reg.h"
 #endif
 
-#include "panic_internal.h"
+#include "esp_private/panic_internal.h"
 
 extern int _invalid_pc_placeholder;
 
@@ -390,6 +390,7 @@ static void frame_to_panic_info(XtExcFrame *frame, panic_info_t *info, bool pseu
     info->exception = PANIC_EXCEPTION_FAULT;
     info->details = NULL;
 
+    info->pseudo_excause = pseudo_excause;
     if (pseudo_excause) {
         if (frame->exccause == PANIC_RSN_INTWDT_CPU0) {
             info->core = 0;

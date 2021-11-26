@@ -323,7 +323,7 @@ static int elf_get_current_task_index(core_dump_task_header_t** tasks,
     return curr_task_index;
 }
 
-static int elf_process_task_regdump(core_dump_elf_t *self, void *frame, core_dump_task_header_t *task)
+static int elf_process_task_regdump(core_dump_elf_t *self, panic_info_t *info, core_dump_task_header_t *task)
 {
     bool task_is_valid = false;
     bool task_is_current = false;
@@ -332,7 +332,7 @@ static int elf_process_task_regdump(core_dump_elf_t *self, void *frame, core_dum
 
     if (self->elf_stage == ELF_STAGE_CALC_SPACE) {
         // Check if task tcb is corrupted (do not update the header, save as is)
-        task_is_valid = esp_core_dump_check_task(frame, task, &task_is_current, NULL);
+        task_is_valid = esp_core_dump_check_task(info, task, &task_is_current, NULL);
         if (!task_is_valid) {
             if (task_is_current) {
                 ESP_COREDUMP_LOG_PROCESS("Task has incorrect (TCB:%x)!",
@@ -415,7 +415,7 @@ static int elf_process_note_segment(core_dump_elf_t *self, int notes_size)
     return (int)notes_size;
 }
 
-static int elf_process_tasks_regs(core_dump_elf_t *self, void* frame,
+static int elf_process_tasks_regs(core_dump_elf_t *self, panic_info_t *info,
                                     core_dump_task_header_t** tasks,
                                     uint32_t task_num)
 {
@@ -428,7 +428,7 @@ static int elf_process_tasks_regs(core_dump_elf_t *self, void* frame,
     }
 
     // place current task dump first
-    int ret = elf_process_task_regdump(self, frame, tasks[curr_task_index]);
+    int ret = elf_process_task_regdump(self, info, tasks[curr_task_index]);
     if (self->elf_stage == ELF_STAGE_PLACE_HEADERS) {
         // when writing segments headers this function writes nothing
         ELF_CHECK_ERR((ret >= 0), ret, "Task #%d, PR_STATUS write failed, return (%d).", curr_task_index, ret);
@@ -444,7 +444,7 @@ static int elf_process_tasks_regs(core_dump_elf_t *self, void* frame,
         if (task_id == curr_task_index) {
             continue; // skip current task (already processed)
         }
-        ret = elf_process_task_regdump(self, frame, tasks[task_id]);
+        ret = elf_process_task_regdump(self, info, tasks[task_id]);
         if (self->elf_stage == ELF_STAGE_PLACE_HEADERS) {
             // when writing segments headers this function writes nothing
             ELF_CHECK_ERR((ret >= 0), ret, "Task #%d, PR_STATUS write failed, return (%d).", task_id, ret);
@@ -465,8 +465,8 @@ static int elf_process_tasks_regs(core_dump_elf_t *self, void* frame,
             self->interrupted_task.stack_start = tasks[curr_task_index]->stack_start;
             self->interrupted_task.stack_end = tasks[curr_task_index]->stack_end;
             uint32_t isr_stk_end = esp_core_dump_get_isr_stack_end();
-            ESP_COREDUMP_LOG_PROCESS("Add ISR stack %lu (%x - %x)", isr_stk_end - (uint32_t)frame, (uint32_t)frame, isr_stk_end);
-            tasks[curr_task_index]->stack_start = (uint32_t)frame;
+            ESP_COREDUMP_LOG_PROCESS("Add ISR stack %lu (%x - %x)", isr_stk_end - (uint32_t)info->frame, (uint32_t)info->frame, isr_stk_end);
+            tasks[curr_task_index]->stack_start = (uint32_t)info->frame;
             tasks[curr_task_index]->stack_end = isr_stk_end;
         }
 
@@ -478,7 +478,7 @@ static int elf_process_tasks_regs(core_dump_elf_t *self, void* frame,
     return ret;
 }
 
-static int elf_write_tasks_data(core_dump_elf_t *self, void* frame,
+static int elf_write_tasks_data(core_dump_elf_t *self, panic_info_t *info,
                                 core_dump_task_header_t** tasks,
                                 uint32_t task_num)
 {
@@ -486,9 +486,9 @@ static int elf_write_tasks_data(core_dump_elf_t *self, void* frame,
     int task_id;
     int ret = ELF_PROC_ERR_OTHER;
 
-    ELF_CHECK_ERR((frame && tasks), ELF_PROC_ERR_OTHER, "Invalid input data.");
+    ELF_CHECK_ERR((info && tasks), ELF_PROC_ERR_OTHER, "Invalid input data.");
 
-    ret = elf_process_tasks_regs(self, frame, tasks, task_num);
+    ret = elf_process_tasks_regs(self, info, tasks, task_num);
     ELF_CHECK_ERR((ret > 0), ret, "Tasks regs addition failed, return (%d).", ret);
     elf_len += ret;
     self->bad_tasks_num = 0; // reset bad task counter
@@ -545,7 +545,7 @@ static int elf_write_core_dump_info(core_dump_elf_t *self)
     return ret;
 }
 
-static int esp_core_dump_do_write_elf_pass(core_dump_elf_t *self, void* frame,
+static int esp_core_dump_do_write_elf_pass(core_dump_elf_t *self, panic_info_t *info,
                                             core_dump_task_header_t** tasks,
                                             uint32_t task_num)
 {
@@ -559,7 +559,7 @@ static int esp_core_dump_do_write_elf_pass(core_dump_elf_t *self, void* frame,
     }
     tot_len += data_sz;
     // Calculate whole size include headers for all tasks and main elf header
-    data_sz = elf_write_tasks_data(self, frame, tasks, task_num);
+    data_sz = elf_write_tasks_data(self, info, tasks, task_num);
     ELF_CHECK_ERR((data_sz > 0), data_sz, "ELF Size writing error, returned (%d).", data_sz);
     tot_len += data_sz;
     // write data with version control information and some extra info
@@ -571,7 +571,7 @@ static int esp_core_dump_do_write_elf_pass(core_dump_elf_t *self, void* frame,
     return tot_len;
 }
 
-esp_err_t esp_core_dump_write_elf(void *frame, core_dump_write_config_t *write_cfg)
+esp_err_t esp_core_dump_write_elf(panic_info_t *info, core_dump_write_config_t *write_cfg)
 {
     esp_err_t err = ESP_OK;
     static core_dump_task_header_t *tasks[CONFIG_ESP32_CORE_DUMP_MAX_TASKS_NUM];
@@ -581,7 +581,7 @@ esp_err_t esp_core_dump_write_elf(void *frame, core_dump_write_config_t *write_c
     int tot_len = sizeof(dump_hdr);
     int write_len = sizeof(dump_hdr);
 
-    ELF_CHECK_ERR((frame && write_cfg), ESP_ERR_INVALID_ARG, "Invalid input data.");
+    ELF_CHECK_ERR((info && write_cfg), ESP_ERR_INVALID_ARG, "Invalid input data.");
 
     task_num = esp_core_dump_get_tasks_snapshot(tasks, CONFIG_ESP32_CORE_DUMP_MAX_TASKS_NUM);
     ESP_COREDUMP_LOGI("Found tasks: %d", task_num);
@@ -592,7 +592,7 @@ esp_err_t esp_core_dump_write_elf(void *frame, core_dump_write_config_t *write_c
     // On first pass (do not write actual data), but calculate data length needed to allocate memory
     self.elf_stage = ELF_STAGE_CALC_SPACE;
     ESP_COREDUMP_LOG_PROCESS("================= Calc data size ===============");
-    int ret = esp_core_dump_do_write_elf_pass(&self, frame, tasks, task_num);
+    int ret = esp_core_dump_do_write_elf_pass(&self, info, tasks, task_num);
     if (ret < 0) return ret;
     tot_len += ret;
     ESP_COREDUMP_LOG_PROCESS("Core dump tot_len=%lu, tasks processed: %d, broken tasks: %d",
@@ -638,7 +638,7 @@ esp_err_t esp_core_dump_write_elf(void *frame, core_dump_write_config_t *write_c
     self.elf_stage = ELF_STAGE_PLACE_HEADERS;
     // set initial offset to elf segments data area
     self.elf_next_data_offset = sizeof(elfhdr) + ELF_SEG_HEADERS_COUNT(&self, task_num) * sizeof(elf_phdr);
-    ret = esp_core_dump_do_write_elf_pass(&self, frame, tasks, task_num);
+    ret = esp_core_dump_do_write_elf_pass(&self, info, tasks, task_num);
     if (ret < 0) return ret;
     write_len += ret;
     ESP_COREDUMP_LOG_PROCESS("============== Headers size = %d bytes ============", write_len);
@@ -646,7 +646,7 @@ esp_err_t esp_core_dump_write_elf(void *frame, core_dump_write_config_t *write_c
     self.elf_stage = ELF_STAGE_PLACE_DATA;
     // set initial offset to elf segments data area, this is not necessary in this stage, just for pretty debug output
     self.elf_next_data_offset = sizeof(elfhdr) + ELF_SEG_HEADERS_COUNT(&self, task_num) * sizeof(elf_phdr);
-    ret = esp_core_dump_do_write_elf_pass(&self, frame, tasks, task_num);
+    ret = esp_core_dump_do_write_elf_pass(&self, info, tasks, task_num);
     if (ret < 0) return ret;
     write_len += ret;
     ESP_COREDUMP_LOG_PROCESS("=========== Data written size = %d bytes ==========", write_len);
