@@ -17,6 +17,9 @@
 #include "esp_log.h"
 #include "esp_rom_gpio.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)
+// TODO: SPI SUPPORT IDF-4024
+
 //There is only one GPSPI controller, so single-board test is disabled.
 #if !DISABLED_FOR_TARGETS(ESP32C3)
 
@@ -383,3 +386,5 @@ static void unaligned_test_slave(void)
 TEST_CASE_MULTIPLE_DEVICES("SPI_Slave_Unaligned_Test", "[spi_ms][test_env=Example_SPI_Multi_device][timeout=120]", unaligned_test_master, unaligned_test_slave);
 
 #endif  //#if !DISABLED_FOR_TARGETS(ESP32, ESP32S2, ESP32S3)
+
+#endif //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)

@@ -15,14 +15,12 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "test_utils.h"
-#include "driver/i2s.h"
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
 
-
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3, ESP32S3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3, ESP32S3, ESP8684)
 
 static const char* TAG = "test_adc2";
 
@@ -215,6 +213,8 @@ TEST_CASE("adc2 work with wifi","[adc]")
 
 
 #ifdef CONFIG_IDF_TARGET_ESP32
+
+#include "driver/i2s.h"
 
 #define ADC1_CHANNEL_4_IO      (32)
 #define SAMPLE_RATE            (36000)

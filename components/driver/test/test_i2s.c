@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: CC0-1.0
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
@@ -11,17 +11,19 @@
  * Please do not connect GPIO32(ESP32) any pull-up resistors externally, it will be used to test i2s adc function.
  */
 
+
 #include <stdio.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
-#include "driver/i2s.h"
 #include "driver/gpio.h"
 #include "hal/gpio_hal.h"
 #include "unity.h"
 #include "math.h"
 #include "esp_rom_gpio.h"
+#if SOC_I2S_SUPPORTED
+#include "driver/i2s.h"
 
 #define SAMPLE_RATE     (36000)
 #define SAMPLE_BITS     (16)
@@ -731,3 +733,5 @@ TEST_CASE("I2S dac test", "[i2s]")
     TEST_ESP_OK(i2s_driver_uninstall(I2S_NUM_0));
 }
 #endif
+
+#endif //SOC_I2S_SUPPORTED

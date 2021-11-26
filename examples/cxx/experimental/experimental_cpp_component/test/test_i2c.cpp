@@ -32,7 +32,7 @@ using namespace idf;
 #define I2C_SLAVE_SDA_IO     18    /*!<gpio number for i2c slave data */
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP8684
 #define I2C_MASTER_NUM I2C_NUM_0   /*!< I2C port number for master dev */
 #define I2C_MASTER_SCL_IO     5     /*!<gpio number for i2c master clock  */
 #define I2C_MASTER_SDA_IO     6     /*!<gpio number for i2c master data */

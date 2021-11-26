@@ -1,3 +1,8 @@
+if(IDF_TARGET STREQUAL "esp8684")
+    # ESP8684 does't support rmt
+    return()
+endif()
+
 set(component_srcs "src/ir_builder_rmt_nec.c"
                    "src/ir_builder_rmt_rc5.c"
                    "src/ir_parser_rmt_nec.c"

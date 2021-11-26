@@ -52,6 +52,9 @@
 #define SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY             1
 #define SOC_PSRAM_DMA_CAPABLE             1
 #define SOC_XT_WDT_SUPPORTED              1
+#define SOC_I2S_SUPPORTED               1
+#define SOC_RMT_SUPPORTED               1
+#define SOC_SIGMADELTA_SUPPORTED        1
 
 /*-------------------------- SOC CAPS ----------------------------------------*/
 #define SOC_APPCPU_HAS_CLOCK_GATING_BUG (1)

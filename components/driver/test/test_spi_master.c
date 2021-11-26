@@ -30,10 +30,13 @@
 #include "soc/soc_memory_layout.h"
 #include "driver/spi_common_internal.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)
+// TODO: SPI SUPPORT IDF-4024
+
 const static char TAG[] = "test_spi";
 
 // There is no input-only pin on esp32c3 and esp32s3
-#define TEST_SOC_HAS_INPUT_ONLY_PINS  (!DISABLED_FOR_TARGETS(ESP32C3, ESP32S3))
+#define TEST_SOC_HAS_INPUT_ONLY_PINS  (!DISABLED_FOR_TARGETS(ESP32C3, ESP32S3, ESP8684))
 
 static void check_spi_pre_n_for(int clk, int pre, int n)
 {
@@ -1442,3 +1445,5 @@ TEST_CASE("spi_speed", "[spi]")
     master_free_device_bus(spi);
 }
 #endif // CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
+
+#endif // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)

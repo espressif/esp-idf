@@ -28,6 +28,9 @@
 #include "esp32c3/rom/spi_flash.h"
 #endif
 
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)
+// TODO: SPI_FLASH IDF-4025
 struct flash_test_ctx {
     uint32_t offset;
     bool fail;
@@ -447,3 +450,5 @@ TEST_CASE("bootloader_flash_xmc_startup can be called when cache disabled", "[sp
 {
     test_xmc_startup();
 }
+
+#endif //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)

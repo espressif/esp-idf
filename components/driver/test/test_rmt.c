@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 // RMT driver unit test is based on extended NEC protocol
+
 #include <stdio.h>
 #include <string.h>
 #include "sdkconfig.h"
@@ -12,11 +13,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
-#include "driver/rmt.h"
-#include "ir_tools.h"
 #include "unity.h"
 #include "test_utils.h"
 #include "esp_rom_gpio.h"
+
+#if SOC_RMT_SUPPORTED
+#include "ir_tools.h"
+#include "driver/rmt.h"
 
 #define RMT_RX_CHANNEL_ENCODING_START (SOC_RMT_CHANNELS_PER_GROUP-SOC_RMT_TX_CANDIDATES_PER_GROUP)
 #define RMT_TX_CHANNEL_ENCODING_END   (SOC_RMT_TX_CANDIDATES_PER_GROUP-1)
@@ -595,3 +598,5 @@ TEST_CASE("RMT TX loop", "[rmt]")
     rmt_clean_testbench(tx_channel, rx_channel);
 }
 #endif
+
+#endif // SOC_RMT_SUPPORTED
