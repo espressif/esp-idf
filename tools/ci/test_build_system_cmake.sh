@@ -702,6 +702,7 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     rm -f log.txt
 
     print_status "Build fails if partitions don't fit in flash"
+    clean_build_dir
     sed -i.bak "s/CONFIG_ESPTOOLPY_FLASHSIZE.\+//" sdkconfig  # remove all flashsize config
     echo "CONFIG_ESPTOOLPY_FLASHSIZE_1MB=y" >> sdkconfig     # introduce undersize flash
     ( idf.py build 2>&1 | grep "does not fit in configured flash size 1MB" ) || failure "Build didn't fail with expected flash size failure message"
@@ -848,13 +849,14 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     idf.py docs --no-browser --language en --version v4.2.1 --target esp32 --starting-page get-started | grep "https://docs.espressif.com/projects/esp-idf/en/v4.2.1/esp32/get-started" || failure "'idf.py docs --no-browser --language en --version v4.2.1 --target esp32 --starting-page get-started' failed"
 
     print_status "Deprecation warning check"
+    cd ${TESTDIR}/template
     # click warning
     idf.py post_debug &> tmp.log
-    grep "Warning: Command \"post_debug\" is deprecated and will be removed in v5.0." tmp.log || (failure "Missing deprecation warning with command \"post_debug\"")
+    grep "Warning: Command \"post_debug\" is deprecated and will be removed in v5.0." tmp.log || failure "Missing deprecation warning with command \"post_debug\""
     rm tmp.log
     # cmake warning
     idf.py efuse_common_table &> tmp.log
-    grep "Warning: Command efuse_common_table is deprecated and will be removed in the next major release." tmp.log || (failure "Missing deprecation warning with command \"efuse_common_table\"")
+    grep "Warning: Command efuse_common_table is deprecated and will be removed in the next major release." tmp.log || failure "Missing deprecation warning with command \"efuse_common_table\""
     rm tmp.log
 
     print_status "All tests completed"
