@@ -21,7 +21,7 @@
 #include "unity.h"
 
 #include "bootloader_common.h"
-#include "../include_bootloader/bootloader_flash_private/bootloader_flash_priv.h"
+#include "../bootloader_flash/include/bootloader_flash_priv.h"
 
 #include "esp_log.h"
 #include "esp_ota_ops.h"

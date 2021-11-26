@@ -10,6 +10,7 @@
 #include "sdkconfig.h"
 #include <stdint.h>
 #include <stdbool.h>
+#include "esp_rom_spiflash_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,6 +28,7 @@ typedef enum {
     ESP_ROM_SPIFLASH_OOUT_MODE,
     ESP_ROM_SPIFLASH_OIO_STR_MODE,
     ESP_ROM_SPIFLASH_OIO_DTR_MODE,
+    ESP_ROM_SPIFLASH_QPI_MODE,
 } esp_rom_spiflash_read_mode_t;
 
 typedef struct {
@@ -37,15 +39,6 @@ typedef struct {
     uint32_t page_size;
     uint32_t status_mask;
 } esp_rom_spiflash_chip_t;
-
-typedef struct {
-    uint8_t  data_length;
-    uint8_t  read_cmd0;
-    uint8_t  read_cmd1;
-    uint8_t  write_cmd;
-    uint16_t data_mask;
-    uint16_t data;
-} esp_rom_spiflash_common_cmd_t;
 
 typedef enum {
     ESP_ROM_SPIFLASH_RESULT_OK,
@@ -149,30 +142,6 @@ esp_rom_spiflash_result_t esp_rom_spiflash_config_readmode(esp_rom_spiflash_read
   *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : config timeout.
   */
 esp_rom_spiflash_result_t esp_rom_spiflash_config_clk(uint8_t freqdiv, uint8_t spi);
-
-/**
-  * @brief Unlock SPI write protect.
-  *        Please do not call this function in SDK.
-  *
-  * @param  None.
-  *
-  * @return ESP_ROM_SPIFLASH_RESULT_OK : Unlock OK.
-  *         ESP_ROM_SPIFLASH_RESULT_ERR : Unlock error.
-  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : Unlock timeout.
-  */
-esp_rom_spiflash_result_t esp_rom_spiflash_unlock(void);
-
-/**
-  * @brief SPI write protect.
-  *        Please do not call this function in SDK.
-  *
-  * @param  None.
-  *
-  * @return ESP_ROM_SPIFLASH_RESULT_OK : Lock OK.
-  *         ESP_ROM_SPIFLASH_RESULT_ERR : Lock error.
-  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : Lock timeout.
-  */
-esp_rom_spiflash_result_t esp_rom_spiflash_lock(void);
 
 /**
   * @brief Update SPI Flash parameter.
@@ -374,18 +343,26 @@ void esp_rom_spiflash_select_qio_pins(uint8_t wp_gpio_num, uint32_t spiconfig);
  */
 esp_rom_spiflash_result_t esp_rom_spiflash_write_disable(void);
 
-typedef struct {
-    esp_rom_spiflash_chip_t chip;
-    uint8_t dummy_len_plus[3];
-    uint8_t sig_matrix;
-} esp_rom_spiflash_legacy_data_t;
-
+/**
+ * @brief Set WREN bit.
+ *
+ * @param  esp_rom_spiflash_chip_t *spi : The information for Flash, which is exported from ld file.
+ *
+ * @return always ESP_ROM_SPIFLASH_RESULT_OK
+ */
+esp_rom_spiflash_result_t esp_rom_spiflash_write_enable(esp_rom_spiflash_chip_t *spi);
 
 /* Flash data defined in ROM*/
 #if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
 extern esp_rom_spiflash_chip_t g_rom_flashchip;
 extern uint8_t g_rom_spiflash_dummy_len_plus[];
 #else
+typedef struct {
+    esp_rom_spiflash_chip_t chip;
+    uint8_t dummy_len_plus[3];
+    uint8_t sig_matrix;
+} esp_rom_spiflash_legacy_data_t;
+
 extern esp_rom_spiflash_legacy_data_t *rom_spiflash_legacy_data;
 #define g_rom_flashchip (rom_spiflash_legacy_data->chip)
 #define g_rom_spiflash_dummy_len_plus (rom_spiflash_legacy_data->dummy_len_plus)

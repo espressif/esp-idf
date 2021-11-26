@@ -45,3 +45,5 @@ PROVIDE ( esp_rom_install_uart_printf = ets_install_uart_printf );
 PROVIDE ( esp_rom_get_reset_reason = rtc_get_reset_reason );
 
 PROVIDE( esp_rom_spiflash_attach = spi_flash_attach );
+PROVIDE ( esp_rom_spiflash_clear_bp = esp_rom_spiflash_unlock );
+PROVIDE ( esp_rom_spiflash_write_enable = SPI_write_enable);

@@ -14,6 +14,10 @@
 #include "sdkconfig.h"
 #include "bootloader_flash.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define FLASH_SECTOR_SIZE 0x1000
 #define FLASH_BLOCK_SIZE 	0x10000
 #define MMAP_ALIGNED_MASK 	0x0000FFFF
@@ -170,5 +174,9 @@ uint32_t bootloader_flash_read_sfdp(uint32_t sfdp_addr, unsigned int miso_byte_n
  * @brief Enable the flash write protect (WEL bit).
  */
 void bootloader_enable_wp(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

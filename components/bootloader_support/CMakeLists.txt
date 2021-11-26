@@ -2,7 +2,7 @@ set(srcs
     "src/bootloader_common.c"
     "src/bootloader_common_loader.c"
     "src/bootloader_clock_init.c"
-    "src/flash_support/bootloader_flash.c"
+    "bootloader_flash/src/bootloader_flash.c"
     "src/bootloader_mem.c"
     "src/bootloader_random.c"
     "src/bootloader_random_${IDF_TARGET}.c"
@@ -11,14 +11,14 @@ set(srcs
     "src/flash_encrypt.c"
     "src/secure_boot.c"
     "src/flash_partitions.c"
-    "src/flash_support/flash_qio_mode.c"
-    "src/flash_support/bootloader_flash_config_${IDF_TARGET}.c"
+    "bootloader_flash/src/flash_qio_mode.c"
+    "bootloader_flash/src/bootloader_flash_config_${IDF_TARGET}.c"
     "src/bootloader_efuse_${IDF_TARGET}.c"
     )
 
 if(BOOTLOADER_BUILD)
     set(include_dirs "include" "bootloader_flash/include"
-        "include_bootloader" "include_bootloader/bootloader_flash_private")
+        "include_bootloader")
     set(priv_requires micro-ecc spi_flash efuse)
     list(APPEND srcs
     "src/bootloader_init.c"
@@ -35,7 +35,7 @@ else()
     list(APPEND srcs
         "src/idf/bootloader_sha.c")
     set(include_dirs "include" "bootloader_flash/include")
-    set(priv_include_dirs "include_bootloader" "include_bootloader/bootloader_flash_private")
+    set(priv_include_dirs "include_bootloader")
     # heap is required for `heap_memory_layout.h` header
     set(priv_requires spi_flash mbedtls efuse app_update heap)
 endif()
