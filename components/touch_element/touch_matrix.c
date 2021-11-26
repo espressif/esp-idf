@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,7 +43,6 @@ static bool matrix_object_check_channel(touch_pad_t channel_num);
 static esp_err_t matrix_object_set_threshold(void);
 static void matrix_object_process_state(void);
 static void matrix_object_update_state(touch_pad_t channel_num, te_state_t channel_state);
-static te_matrix_handle_t matrix_object_search_channel_handle(touch_pad_t channel_num);
 /* ------------------------------------------------------------------------------------------------------------------ */
 
 esp_err_t touch_matrix_install(const touch_matrix_global_config_t *global_config)
@@ -308,24 +307,6 @@ static void matrix_object_update_state(touch_pad_t channel_num, te_state_t chann
     }
 }
 
-static te_matrix_handle_t matrix_object_search_channel_handle(touch_pad_t channel_num)
-{
-    te_matrix_handle_list_t *item;
-    te_matrix_handle_t matrix_handle = NULL;
-    SLIST_FOREACH(item, &s_te_mat_obj->handle_list, next) {
-        for (int idx = 0; idx < item->matrix_handle->x_channel_num + item->matrix_handle->y_channel_num; idx++) {
-            touch_pad_t matrix_channel = item->matrix_handle->device[idx]->channel;
-            if (channel_num == matrix_channel) {
-                matrix_handle = item->matrix_handle;
-                goto found;
-            }
-        }
-    }
-
-found:
-    return matrix_handle;
-}
-
 static esp_err_t matrix_object_add_instance(te_matrix_handle_t matrix_handle)
 {
     te_matrix_handle_list_t *item = (te_matrix_handle_list_t *)calloc(1, sizeof(te_matrix_handle_list_t));
@@ -354,7 +335,7 @@ static esp_err_t matrix_object_remove_instance(te_matrix_handle_t matrix_handle)
     return ret;
 }
 
-bool matrix_object_handle_check(touch_elem_handle_t element_handle)
+bool is_matrix_object_handle(touch_elem_handle_t element_handle)
 {
     te_matrix_handle_list_t *item;
     xSemaphoreTake(s_te_mat_obj->mutex, portMAX_DELAY);
@@ -436,14 +417,12 @@ static inline void matrix_dispatch(te_matrix_handle_t matrix_handle, touch_elem_
     }
 }
 
-#ifdef CONFIG_TE_SKIP_DSLEEP_WAKEUP_CALIBRATION
-void matrix_config_wakeup_calibration(te_matrix_handle_t matrix_handle, bool en)
+void matrix_enable_wakeup_calibration(te_matrix_handle_t matrix_handle, bool en)
 {
     for (int idx = 0; idx < matrix_handle->x_channel_num + matrix_handle->y_channel_num; ++idx) {
-        matrix_handle->device[idx]->is_use_last_threshold = en;
+        matrix_handle->device[idx]->is_use_last_threshold = !en;
     }
 }
-#endif
 
 /**
  * @brief   Scan the matrix channel

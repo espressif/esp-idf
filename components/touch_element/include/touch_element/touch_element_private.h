@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,9 +56,7 @@ typedef struct {
     touch_pad_t channel;          //!< Touch channel number(index)
     te_dev_type_t type;           //!< Touch channel type  TODO: need to refactor as te_class_type_t
     te_dev_state_t state;         //!< Touch channel current state
-#ifdef  CONFIG_TE_SKIP_DSLEEP_WAKEUP_CALIBRATION
     bool is_use_last_threshold;
-#endif
 } te_dev_t;
 
 typedef enum {
@@ -74,7 +72,6 @@ typedef struct  {
     esp_err_t (*set_threshold) (void);
     void (*process_state) (void);
     void (*update_state) (touch_pad_t, te_state_t);
-    touch_elem_handle_t (*search_channel_handle) (touch_pad_t);
 } te_object_methods_t;
 
 /* -------------------------------------------- Waterproof basic type --------------------------------------------- */
@@ -88,10 +85,10 @@ typedef struct te_waterproof_s* te_waterproof_handle_t;
 /* -------------------------------------------- Sleep basic type --------------------------------------------- */
 struct te_sleep_s {
     touch_elem_handle_t wakeup_handle;
+#ifdef CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;
-#ifdef  CONFIG_TE_SKIP_DSLEEP_WAKEUP_CALIBRATION
-    uint32_t *non_volatile_threshold;
 #endif
+    uint32_t *non_volatile_threshold;
 };
 
 typedef struct te_sleep_s* te_sleep_handle_t;
@@ -187,17 +184,15 @@ void te_object_method_unregister(te_class_type_t object_type);
 bool te_object_check_channel(const touch_pad_t *channel_array, uint8_t channel_sum);
 bool waterproof_check_mask_handle(touch_elem_handle_t te_handle);
 bool te_is_touch_dsleep_wakeup(void);
-inline touch_pad_t te_get_sleep_channel(void);
+touch_pad_t te_get_sleep_channel(void);
 
-bool button_object_handle_check(touch_elem_handle_t element_handle);
-bool slider_object_handle_check(touch_elem_handle_t element_handle);
-bool matrix_object_handle_check(touch_elem_handle_t element_handle);
+bool is_button_object_handle(touch_elem_handle_t element_handle);
+bool is_slider_object_handle(touch_elem_handle_t element_handle);
+bool is_matrix_object_handle(touch_elem_handle_t element_handle);
 
-#ifdef CONFIG_TE_SKIP_DSLEEP_WAKEUP_CALIBRATION
-void button_config_wakeup_calibration(te_button_handle_t button_handle, bool en);
-void slider_config_wakeup_calibration(te_slider_handle_t slider_handle, bool en);
-void matrix_config_wakeup_calibration(te_matrix_handle_t matrix_handle, bool en);
-#endif
+void button_enable_wakeup_calibration(te_button_handle_t button_handle, bool en);
+void slider_enable_wakeup_calibration(te_slider_handle_t slider_handle, bool en);
+void matrix_enable_wakeup_calibration(te_matrix_handle_t matrix_handle, bool en);
 /* ------------------------------------------------------------------------------------------------------------------ */
 
 #ifdef __cplusplus

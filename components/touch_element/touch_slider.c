@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,7 +49,6 @@ static bool slider_object_check_channel(touch_pad_t channel_num);
 static esp_err_t slider_object_set_threshold(void);
 static void slider_object_process_state(void);
 static void slider_object_update_state(touch_pad_t channel_num, te_state_t channel_state);
-static te_slider_handle_t slider_object_search_channel_handle(touch_pad_t channel_num);
 /* ------------------------------------------------------------------------------------------------------------------ */
 
 esp_err_t touch_slider_install(const touch_slider_global_config_t *global_config)
@@ -301,24 +300,6 @@ static void slider_object_update_state(touch_pad_t channel_num, te_state_t chann
     }
 }
 
-static te_slider_handle_t slider_object_search_channel_handle(touch_pad_t channel_num)
-{
-    te_slider_handle_list_t *item;
-    te_slider_handle_t slider_handle = NULL;
-    SLIST_FOREACH(item, &s_te_sld_obj->handle_list, next) {
-        for (int idx = 0; idx < item->slider_handle->channel_sum; idx++) {
-            touch_pad_t slider_channel = item->slider_handle->device[idx]->channel;
-            if (channel_num == slider_channel) {
-                slider_handle = item->slider_handle;
-                goto found;
-            }
-        }
-    }
-
-found:
-    return slider_handle;
-}
-
 static esp_err_t slider_object_add_instance(te_slider_handle_t slider_handle)
 {
     te_slider_handle_list_t *item = (te_slider_handle_list_t *)calloc(1, sizeof(te_slider_handle_list_t));
@@ -347,7 +328,7 @@ static esp_err_t slider_object_remove_instance(te_slider_handle_t slider_handle)
     return ret;
 }
 
-bool slider_object_handle_check(touch_elem_handle_t element_handle)
+bool is_slider_object_handle(touch_elem_handle_t element_handle)
 {
     te_slider_handle_list_t *item;
     xSemaphoreTake(s_te_sld_obj->mutex, portMAX_DELAY);
@@ -439,14 +420,12 @@ static inline void slider_dispatch(te_slider_handle_t slider_handle, touch_elem_
     }
 }
 
-#ifdef CONFIG_TE_SKIP_DSLEEP_WAKEUP_CALIBRATION
-void slider_config_wakeup_calibration(te_slider_handle_t slider_handle, bool en)
+void slider_enable_wakeup_calibration(te_slider_handle_t slider_handle, bool en)
 {
     for (int idx = 0; idx < slider_handle->channel_sum; ++idx) {
-        slider_handle->device[idx]->is_use_last_threshold = en;
+        slider_handle->device[idx]->is_use_last_threshold = !en;
     }
 }
-#endif
 
 /**
  * @brief Slider process

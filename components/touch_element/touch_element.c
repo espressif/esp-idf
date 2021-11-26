@@ -11,11 +11,11 @@
 #include "freertos/queue.h"
 #include "esp_sleep.h"
 #include "esp_timer.h"
-#include "esp_log.h"
+#include "esp_check.h"
 #include "hal/touch_sensor_hal.h"  //TODO: remove hal
 #include "touch_element/touch_element_private.h"
 
-#include "esp32s2/rom/rtc.h"
+#include "esp_rom_sys.h"
 
 
 #define TE_CLASS_ITEM(cls, cls_type, cls_item)  ((&((cls)[cls_type]))->cls_item)
@@ -98,14 +98,10 @@ typedef struct {
     SemaphoreHandle_t mutex;                                //Global resource mutex
     bool is_set_threshold;                                  //Threshold configuration state bit
     uint32_t denoise_channel_raw;                           //De-noise channel(TO) raw signal
-//    touch_elem_sleep_config_t *sleep_config;
-//    esp_pm_lock_handle_t pm_lock_handle;
 } te_obj_t;
 
 static te_obj_t *s_te_obj = NULL;
-#ifdef  CONFIG_TE_SKIP_DSLEEP_WAKEUP_CALIBRATION
 RTC_FAST_ATTR uint32_t threshold_shadow[TOUCH_PAD_MAX - 1] = {0};
-#endif
 
 /**
  * Internal de-noise channel(Touch channel 0) equivalent capacitance table, depends on hardware design
@@ -338,15 +334,15 @@ uint32_t te_get_threshold(touch_pad_t channel_num)
 
 bool te_is_touch_dsleep_wakeup(void)
 {
-    RESET_REASON rtc_reset_reason = rtc_get_reset_reason(0);
-    if (rtc_reset_reason != DEEPSLEEP_RESET) {
+    soc_reset_reason_t reset_reason = esp_rom_get_reset_reason(0);
+    if (reset_reason != RESET_REASON_CORE_DEEP_SLEEP) {
         return false;
     }
     esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
     return wakeup_reason == ESP_SLEEP_WAKEUP_TOUCHPAD;
 }
 
-inline touch_pad_t te_get_sleep_channel(void)
+touch_pad_t te_get_sleep_channel(void)
 {
     touch_pad_sleep_channel_t sleep_channel_info;
     touch_pad_sleep_channel_get_info(&sleep_channel_info);
@@ -413,8 +409,6 @@ static void te_intr_cb(void *arg)
         }
         /*< De-noise channel signal must be read at the time between SCAN_DONE and next measurement beginning(sleep)!!! */
         touch_pad_denoise_read_data(&s_te_obj->denoise_channel_raw); //Update de-noise signal
-    } else {
-//        te_intr_msg.intr_type = TE_INTR_MAX;  // Unknown Exception
     }
     if (need_send_queue) {
         xQueueSendFromISR(s_te_obj->intr_msg_queue, &te_intr_msg, &task_awoken);
@@ -444,12 +438,10 @@ static void te_proc_timer_cb(void *arg)
     if (ret == pdPASS) {
         if (te_intr_msg.intr_type == TE_INTR_PRESS || te_intr_msg.intr_type == TE_INTR_RELEASE) {
             te_object_update_state(te_intr_msg);
-            if (te_intr_msg.intr_type == TE_INTR_RELEASE) {
-                if (s_te_obj->sleep_handle != NULL) {
+            if ((s_te_obj->sleep_handle != NULL) && (te_intr_msg.intr_type == TE_INTR_RELEASE)) {
 #ifdef CONFIG_PM_ENABLE
-                    esp_pm_lock_release(s_te_obj->sleep_handle->pm_lock);
+                esp_pm_lock_release(s_te_obj->sleep_handle->pm_lock);
 #endif
-                }
             }
         } else if (te_intr_msg.intr_type == TE_INTR_SCAN_DONE) {
             if (s_te_obj->is_set_threshold != true) {
@@ -571,9 +563,7 @@ esp_err_t te_dev_init(te_dev_t **device, uint8_t device_num, te_dev_type_t type,
         device[idx]->sens = sens[idx] * divider;
         device[idx]->type = type;
         device[idx]->state = TE_STATE_IDLE;
-#ifdef CONFIG_TE_SKIP_DSLEEP_WAKEUP_CALIBRATION
         device[idx]->is_use_last_threshold = false;
-#endif
         esp_err_t ret = touch_pad_config(device[idx]->channel);
         TE_CHECK(ret == ESP_OK, ret);
     }
@@ -587,7 +577,7 @@ void te_dev_deinit(te_dev_t **device, uint8_t device_num)
     }
 }
 
-esp_err_t te_config_thresh(touch_pad_t channel_num, uint32_t threshold)
+static esp_err_t te_config_thresh(touch_pad_t channel_num, uint32_t threshold)
 {
     esp_err_t ret;
     touch_pad_sleep_channel_t sleep_channel_info;
@@ -604,15 +594,9 @@ esp_err_t te_dev_set_threshold(te_dev_t *device)
 {
     esp_err_t ret = ESP_OK;
     uint32_t smo_val = 0;
-#ifdef CONFIG_TE_SKIP_DSLEEP_WAKEUP_CALIBRATION
-    if (s_te_obj->sleep_handle == NULL) {
-        ESP_LOGE(TE_TAG, "Touch Element sleep is not installed");
-        return ESP_ERR_INVALID_STATE;
-    }
-    if (device->is_use_last_threshold) {
+
+    if (s_te_obj->sleep_handle && device->is_use_last_threshold) {
         if (te_is_touch_dsleep_wakeup()) {  //Deep sleep wakeup reset
-            touch_pad_t sleep_channel = te_get_sleep_channel();
-            ets_printf("----config rtc %ld   %ld\n", s_te_obj->sleep_handle->non_volatile_threshold[device->channel - 1], sleep_channel);
             ret = te_config_thresh(device->channel, s_te_obj->sleep_handle->non_volatile_threshold[device->channel - 1]);
         } else {  //Other reset
             smo_val = te_read_smooth_signal(device->channel);
@@ -624,11 +608,6 @@ esp_err_t te_dev_set_threshold(te_dev_t *device)
         smo_val = te_read_smooth_signal(device->channel);
         ret = te_config_thresh(device->channel, device->sens * smo_val);
     }
-
-#else
-    smo_val = te_read_smooth_signal(device->channel);
-    ret = te_config_thresh(device->channel, device->sens * smo_val);
-#endif
     ESP_LOGD(TE_DEBUG_TAG, "channel: %"PRIu8", smo_val: %"PRIu32, device->channel, smo_val);
     return ret;
 }
@@ -993,148 +972,146 @@ static void waterproof_guard_update_state(touch_pad_t current_channel, te_state_
     ESP_LOGD(TE_DEBUG_TAG, "waterproof guard state update  %d", guard_device->state);
 }
 
-esp_err_t touch_element_sleep_install(touch_elem_sleep_config_t *sleep_config)
+esp_err_t touch_element_enable_light_sleep(const touch_elem_sleep_config_t *sleep_config)
 {
     TE_CHECK(s_te_obj != NULL, ESP_ERR_INVALID_STATE);
     TE_CHECK(s_te_obj->sleep_handle == NULL, ESP_ERR_INVALID_STATE);
-    TE_CHECK(sleep_config != NULL, ESP_ERR_INVALID_ARG);
-
-    s_te_obj->sleep_handle = calloc(1, sizeof(struct te_sleep_s));
-    if (s_te_obj->sleep_handle == NULL) {
-        return ESP_ERR_NO_MEM;
+    uint16_t sample_count = 500;
+    uint16_t sleep_cycle = 0x0f;
+    if (sleep_config) {
+        sample_count = sleep_config->sample_count;
+        sleep_cycle = sleep_config->sleep_cycle;
     }
 
-    esp_err_t ret;
-    touch_pad_sleep_channel_set_work_time(sleep_config->sleep_time, sleep_config->scan_time);
-    ret = esp_sleep_enable_touchpad_wakeup();
-    TE_CHECK_GOTO(ret == ESP_OK, cleanup);
+    s_te_obj->sleep_handle = calloc(1, sizeof(struct te_sleep_s));
+    TE_CHECK(s_te_obj->sleep_handle, ESP_ERR_NO_MEM);
 
-#ifdef CONFIG_TE_SKIP_DSLEEP_WAKEUP_CALIBRATION
-    ret = esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_FAST_MEM, ESP_PD_OPTION_ON);
-    TE_CHECK_GOTO(ret == ESP_OK, cleanup);
+    esp_err_t ret = ESP_OK;
+    touch_pad_sleep_channel_set_work_time(sleep_cycle, sample_count);
+    TE_CHECK_GOTO(esp_sleep_enable_touchpad_wakeup() == ESP_OK,  cleanup);
+
+    TE_CHECK_GOTO(esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON) == ESP_OK,  cleanup);
     s_te_obj->sleep_handle->non_volatile_threshold = threshold_shadow;
-#endif
 
 #ifdef CONFIG_PM_ENABLE
-    ret = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "touch_element", &s_te_obj->sleep_handle->pm_lock);
-    TE_CHECK_GOTO(ret == ESP_OK, cleanup);
-    ret = esp_pm_lock_acquire(s_te_obj->sleep_handle->pm_lock);
-    TE_CHECK_GOTO(ret == ESP_OK, cleanup);
+    TE_CHECK_GOTO(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "touch_element", &s_te_obj->sleep_handle->pm_lock) == ESP_OK,  cleanup);
+    TE_CHECK_GOTO(esp_pm_lock_acquire(s_te_obj->sleep_handle->pm_lock) == ESP_OK,  cleanup);
 #endif
+
     return ESP_OK;
 
 cleanup:
+#ifdef CONFIG_PM_ENABLE
     if (s_te_obj->sleep_handle->pm_lock != NULL) {
-        esp_err_t del_ret = esp_pm_lock_delete(s_te_obj->sleep_handle->pm_lock);
-        if (del_ret != ESP_OK) {
+        if (esp_pm_lock_delete(s_te_obj->sleep_handle->pm_lock) != ESP_OK) {
             abort();
         }
     }
+#endif
     TE_FREE_AND_NULL(s_te_obj->sleep_handle);
     return ret;
 }
 
-void touch_element_sleep_uninstall(void)
+esp_err_t touch_element_disable_light_sleep(void)
 {
-    esp_err_t ret;
-    if (s_te_obj->sleep_handle->pm_lock != NULL) {
+    TE_CHECK(s_te_obj->sleep_handle, ESP_ERR_INVALID_STATE);
 #ifdef CONFIG_PM_ENABLE
-        ret = esp_pm_lock_delete(s_te_obj->sleep_handle->pm_lock);
-        if (ret != ESP_OK) {
-            abort();
-        }
+    if (s_te_obj->sleep_handle->pm_lock != NULL) {
+        /* Sleep channel is going to uninstall, pm lock is not needed anymore,
+           but we need to make sure that pm lock has been released before delete it. */
+        while(esp_pm_lock_release(s_te_obj->sleep_handle->pm_lock) == ESP_OK);
+        esp_err_t ret = esp_pm_lock_delete(s_te_obj->sleep_handle->pm_lock);
+        TE_CHECK(ret == ESP_OK, ret);
+        s_te_obj->sleep_handle->pm_lock = NULL;
+    }
 #endif
+    esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TOUCHPAD);
+    TE_FREE_AND_NULL(s_te_obj->sleep_handle);
+    return ESP_OK;
+}
+
+esp_err_t touch_element_enable_deep_sleep(touch_elem_handle_t wakeup_elem_handle, const touch_elem_sleep_config_t *sleep_config)
+{
+    TE_CHECK(s_te_obj != NULL, ESP_ERR_INVALID_STATE);
+    TE_CHECK(s_te_obj->sleep_handle == NULL, ESP_ERR_INVALID_STATE);
+    TE_CHECK(wakeup_elem_handle != NULL, ESP_ERR_INVALID_ARG);
+    TE_CHECK(sleep_config != NULL, ESP_ERR_INVALID_ARG);
+    uint16_t sample_count = 500;
+    uint16_t sleep_cycle = 0x0f;
+    if (sleep_config) {
+        sample_count = sleep_config->sample_count;
+        sleep_cycle = sleep_config->sleep_cycle;
     }
-    if (s_te_obj->sleep_handle->wakeup_handle != NULL) {
-        te_button_handle_t button_handle = s_te_obj->sleep_handle->wakeup_handle;
-        ret = touch_pad_sleep_channel_enable(button_handle->device->channel, false);
-        if (ret != ESP_OK) {
+
+    s_te_obj->sleep_handle = calloc(1, sizeof(struct te_sleep_s));
+    TE_CHECK(s_te_obj->sleep_handle, ESP_ERR_NO_MEM);
+
+    esp_err_t ret = ESP_OK;
+    touch_pad_sleep_channel_set_work_time(sleep_cycle, sample_count);
+    TE_CHECK_GOTO(esp_sleep_enable_touchpad_wakeup() == ESP_OK,  cleanup);
+
+    TE_CHECK_GOTO(esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON) == ESP_OK, cleanup);
+    s_te_obj->sleep_handle->non_volatile_threshold = threshold_shadow;
+
+#ifdef CONFIG_PM_ENABLE
+    TE_CHECK_GOTO(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "touch_element", &s_te_obj->sleep_handle->pm_lock) == ESP_OK,  cleanup);
+    TE_CHECK_GOTO(esp_pm_lock_acquire(s_te_obj->sleep_handle->pm_lock) == ESP_OK,  cleanup);
+#endif
+    //Only support one channel/element as the deep sleep wakeup channel/element
+    TE_CHECK(is_button_object_handle(wakeup_elem_handle), ESP_ERR_NOT_SUPPORTED);
+    s_te_obj->sleep_handle->wakeup_handle = wakeup_elem_handle;
+    te_button_handle_t button_handle = wakeup_elem_handle;
+    ret = touch_pad_sleep_channel_enable(button_handle->device->channel, true);
+    TE_CHECK(ret == ESP_OK, ret);
+
+    return ESP_OK;
+
+cleanup:
+#ifdef CONFIG_PM_ENABLE
+    if (s_te_obj->sleep_handle->pm_lock != NULL) {
+        if (esp_pm_lock_delete(s_te_obj->sleep_handle->pm_lock) != ESP_OK) {
             abort();
         }
     }
-    s_te_obj->sleep_handle->pm_lock = NULL;
+#endif
+    TE_FREE_AND_NULL(s_te_obj->sleep_handle);
+    return ret;
+}
+
+esp_err_t touch_element_disable_deep_sleep(void)
+{
+    TE_CHECK(s_te_obj->sleep_handle, ESP_ERR_INVALID_STATE);
+    esp_err_t ret;
+#ifdef CONFIG_PM_ENABLE
+    if (s_te_obj->sleep_handle->pm_lock != NULL) {
+        /* Sleep channel is going to uninstall, pm lock is not needed anymore,
+           but we need to make sure that pm lock has been released before delete it. */
+        while(esp_pm_lock_release(s_te_obj->sleep_handle->pm_lock) == ESP_OK);
+        ret = esp_pm_lock_delete(s_te_obj->sleep_handle->pm_lock);
+        TE_CHECK(ret == ESP_OK, ret);
+        s_te_obj->sleep_handle->pm_lock = NULL;
+    }
+#endif
+    te_button_handle_t button_handle = s_te_obj->sleep_handle->wakeup_handle;
+    ret = touch_pad_sleep_channel_enable(button_handle->device->channel, false);
+    TE_CHECK(ret == ESP_OK, ret);
+    esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TOUCHPAD);
     s_te_obj->sleep_handle->wakeup_handle = NULL;
     TE_FREE_AND_NULL(s_te_obj->sleep_handle);
-}
-
-esp_err_t touch_element_sleep_add_wakeup(touch_elem_handle_t element_handle)
-{
-    TE_CHECK(s_te_obj->sleep_handle != NULL, ESP_ERR_INVALID_STATE);
-    TE_CHECK(element_handle != NULL, ESP_ERR_INVALID_ARG);
-    if (s_te_obj->sleep_handle->wakeup_handle != NULL) {
-        ESP_LOGE(TE_TAG, "sleep not null");
-        return ESP_ERR_NOT_SUPPORTED;   //Only support one channel/element as the deep sleep wakeup channel/element
-    }
-    if (!button_object_handle_check(element_handle)) {
-        ESP_LOGE(TE_TAG, "not button handle");
-        return ESP_ERR_NOT_SUPPORTED;  //Only support button element as the deep sleep wakeup channel
-    }
-    s_te_obj->sleep_handle->wakeup_handle = element_handle;
-    te_button_handle_t button_handle = element_handle;
-    esp_err_t ret = touch_pad_sleep_channel_enable(button_handle->device->channel, true);
-    if (ret != ESP_OK) {
-        return ret;
-    }
     return ESP_OK;
 }
 
-esp_err_t touch_element_sleep_remove_wakeup(touch_elem_handle_t element_handle)
-{
-    TE_CHECK(s_te_obj->sleep_handle != NULL, ESP_ERR_INVALID_STATE);
-    TE_CHECK(element_handle != NULL, ESP_ERR_INVALID_ARG);
-    TE_CHECK(s_te_obj->sleep_handle->wakeup_handle != NULL &&
-             s_te_obj->sleep_handle->wakeup_handle == element_handle,
-             ESP_ERR_NOT_FOUND);
-    s_te_obj->sleep_handle->wakeup_handle = NULL;
-
-    te_button_handle_t button_handle = element_handle;  //Now we are sure it's absolutely a button element
-    esp_err_t ret = touch_pad_sleep_channel_enable(button_handle->device->channel, false);
-    if (ret != ESP_OK) {
-        return ret;
-    }
-    return ESP_OK;
-}
-
-esp_err_t touch_element_sleep_add_wakeup_channel(touch_pad_t wakeup_channel)
-{
-    TE_CHECK(s_te_obj->sleep_handle != NULL, ESP_ERR_INVALID_STATE);
-    TE_CHECK(wakeup_channel > TOUCH_PAD_NUM0 && wakeup_channel < TOUCH_PAD_MAX, ESP_ERR_INVALID_ARG);
-    touch_pad_sleep_channel_t sleep_channel_info;
-    touch_pad_sleep_channel_get_info(&sleep_channel_info);
-    if (sleep_channel_info.touch_num == wakeup_channel) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    esp_err_t ret = touch_pad_sleep_channel_enable(wakeup_channel, true);
-    if (ret != ESP_OK) {
-        return ret;
-    }
-    return ESP_OK;
-}
-
-esp_err_t touch_element_sleep_remove_wakeup_channel(touch_pad_t wakeup_channel)
-{
-    TE_CHECK(s_te_obj->sleep_handle != NULL, ESP_ERR_INVALID_STATE);
-    TE_CHECK(wakeup_channel > TOUCH_PAD_NUM0 && wakeup_channel < TOUCH_PAD_MAX, ESP_ERR_INVALID_ARG);
-    esp_err_t ret = touch_pad_sleep_channel_enable(wakeup_channel, false);
-    if (ret != ESP_OK) {
-        return ret;
-    }
-    return ESP_OK;
-}
-
-#ifdef CONFIG_TE_SKIP_DSLEEP_WAKEUP_CALIBRATION
-esp_err_t touch_element_sleep_config_wakeup_calibration(touch_elem_handle_t element_handle, bool en)
+esp_err_t touch_element_sleep_enable_wakeup_calibration(touch_elem_handle_t element_handle, bool en)
 {
     TE_CHECK(element_handle != NULL, ESP_ERR_INVALID_ARG);
-    if (button_object_handle_check(element_handle)) {
-        button_config_wakeup_calibration(element_handle, en);
-    } else if (slider_object_handle_check(element_handle)) {
-        slider_config_wakeup_calibration(element_handle, en);
-    } else if (matrix_object_handle_check(element_handle)) {
-        matrix_config_wakeup_calibration(element_handle, en);
+    if (is_button_object_handle(element_handle)) {
+        button_enable_wakeup_calibration(element_handle, en);
+    } else if (is_slider_object_handle(element_handle)) {
+        slider_enable_wakeup_calibration(element_handle, en);
+    } else if (is_matrix_object_handle(element_handle)) {
+        matrix_enable_wakeup_calibration(element_handle, en);
     } else {
         return ESP_ERR_NOT_FOUND;
     }
     return ESP_OK;
 }
-#endif

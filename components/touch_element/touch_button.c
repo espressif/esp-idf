@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,7 +40,6 @@ static bool button_object_check_channel(touch_pad_t channel_num);
 static esp_err_t button_object_set_threshold(void);
 static void button_object_process_state(void);
 static void button_object_update_state(touch_pad_t channel_num, te_state_t channel_state);
-static te_button_handle_t button_object_search_channel_handle(touch_pad_t channel_num);
 /* ------------------------------------------------------------------------------------------------------------------ */
 
 esp_err_t touch_button_install(const touch_button_global_config_t *global_config)
@@ -269,21 +268,6 @@ static void button_object_update_state(touch_pad_t channel_num, te_state_t chann
     }
 }
 
-static te_button_handle_t button_object_search_channel_handle(touch_pad_t channel_num)
-{
-    te_button_handle_list_t *item;
-    te_button_handle_t button_handle = NULL;
-    SLIST_FOREACH(item, &s_te_btn_obj->handle_list, next) {
-        touch_pad_t button_channel = item->button_handle->device->channel;
-        if (channel_num == button_channel) {
-            button_handle = item->button_handle;
-            break;
-        }
-    }
-
-    return button_handle;
-}
-
 static esp_err_t button_object_add_instance(te_button_handle_t button_handle)
 {
     te_button_handle_list_t *item = (te_button_handle_list_t *)calloc(1, sizeof(te_button_handle_list_t));
@@ -312,7 +296,7 @@ static esp_err_t button_object_remove_instance(te_button_handle_t button_handle)
     return ret;
 }
 
-bool button_object_handle_check(touch_elem_handle_t element_handle)
+bool is_button_object_handle(touch_elem_handle_t element_handle)
 {
     te_button_handle_list_t *item;
     xSemaphoreTake(s_te_btn_obj->mutex, portMAX_DELAY);
@@ -376,12 +360,10 @@ static inline void button_dispatch(te_button_handle_t button_handle, touch_elem_
     }
 }
 
-#ifdef CONFIG_TE_SKIP_DSLEEP_WAKEUP_CALIBRATION
-void button_config_wakeup_calibration(te_button_handle_t button_handle, bool en)
+void button_enable_wakeup_calibration(te_button_handle_t button_handle, bool en)
 {
-    button_handle->device->is_use_last_threshold = en;
+    button_handle->device->is_use_last_threshold = !en;
 }
-#endif
 
 /**
  * @brief Button process
