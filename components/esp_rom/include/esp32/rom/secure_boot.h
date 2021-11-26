@@ -14,8 +14,7 @@
 
 #include "sdkconfig.h"
 
-#ifndef _ROM_SECURE_BOOT_H_
-#define _ROM_SECURE_BOOT_H_
+#pragma once
 
 #include <stdint.h>
 #include "ets_sys.h"
@@ -128,5 +127,3 @@ bool ets_use_secure_boot_v2(void);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* _ROM_SECURE_BOOT_H_ */

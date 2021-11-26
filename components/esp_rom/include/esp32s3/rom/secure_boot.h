@@ -23,9 +23,6 @@
 extern "C" {
 #endif
 
-struct ets_secure_boot_sig_block;
-struct ets_secure_boot_signature_t;
-
 typedef struct ets_secure_boot_sig_block ets_secure_boot_sig_block_t;
 typedef struct ets_secure_boot_signature ets_secure_boot_signature_t;
 typedef struct ets_secure_boot_key_digests ets_secure_boot_key_digests_t;
