@@ -1,1 +1,1 @@
-#include "interrupt_core0_reg.h"
+#include "soc/interrupt_core0_reg.h"

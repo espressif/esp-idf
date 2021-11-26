@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -81,7 +73,7 @@
 #define DR_REG_SYSCON_BASE                      0x60026000
 #define DR_REG_I2C1_EXT_BASE                    0x60027000
 #define DR_REG_SDMMC_BASE                       0x60028000
-#define DR_REG_CAN_BASE                         0x6002B000
+#define DR_REG_TWAI_BASE                         0x6002B000
 #define DR_REG_PWM1_BASE                        0x6002C000
 #define DR_REG_I2S1_BASE                        0x6002D000
 #define DR_REG_UART2_BASE                       0x6002E000

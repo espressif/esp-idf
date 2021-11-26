@@ -1,16 +1,8 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 #include "sdkconfig.h"
@@ -95,7 +87,15 @@ void IRAM_ATTR esp_restart_noos(void)
     // Reset timer/spi/uart
     SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG,
                       SYSTEM_TIMERS_RST | SYSTEM_SPI01_RST | SYSTEM_UART_RST | SYSTEM_SYSTIMER_RST);
+    SET_PERI_REG_MASK(SYSTEM_MODEM_RST_EN_REG,
+                      SYSTEM_IEEE802154BB_RST | SYSTEM_IEEE802154MAC_RST |
+                      SYSTEM_BT_RST | SYSTEM_BTMAC_RST |
+                      SYSTEM_EMAC_RST | SYSTEM_MACPWR_RST |
+                      SYSTEM_RW_BTMAC_RST | SYSTEM_RW_BTLP_RST
+                      );
     REG_WRITE(SYSTEM_PERIP_RST_EN0_REG, 0);
+    REG_WRITE(SYSTEM_MODEM_RST_EN_REG, 0);
+
     // Reset dma
     SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, SYSTEM_DMA_RST);
     REG_WRITE(SYSTEM_PERIP_RST_EN1_REG, 0);

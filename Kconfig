@@ -11,6 +11,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
     config IDF_ENV_FPGA
         # This option is for internal use only
         bool
+        default "y" if IDF_TARGET_ESP32H2_BETA_VERSION_2 # ESP32H2-TODO: IDF-3378
         option env="IDF_ENV_FPGA"
 
     config IDF_TARGET_ARCH_RISCV
@@ -57,6 +58,23 @@ mainmenu "Espressif IoT Development Framework Configuration"
         select FREERTOS_UNICORE
         select IDF_TARGET_ARCH_RISCV
 
+    choice IDF_TARGET_ESP32H2_BETA_VERSION
+        prompt "ESP32-H2 beta version"
+        depends on IDF_TARGET_ESP32H2
+        default IDF_TARGET_ESP32H2_BETA_VERSION_1
+        help
+            Currently ESP32-H2 has several beta versions for internal use only.
+            Select the one that matches your chip model.
+
+        config IDF_TARGET_ESP32H2_BETA_VERSION_1
+            bool
+            prompt "ESP32-H2 beta1"
+        config IDF_TARGET_ESP32H2_BETA_VERSION_2
+            bool
+            prompt "ESP32-H2 beta2"
+            select ESPTOOLPY_NO_STUB    # TODO: IDF-4288
+    endchoice
+
     config IDF_TARGET_ESP8684
         bool
         default "y" if IDF_TARGET="esp8684"
@@ -75,8 +93,9 @@ mainmenu "Espressif IoT Development Framework Configuration"
         default 0x0002 if IDF_TARGET_ESP32S2
         default 0x0005 if IDF_TARGET_ESP32C3
         default 0x0009 if IDF_TARGET_ESP32S3
-        default 0x000A if IDF_TARGET_ESP32H2 # ESP32H2-TODO: IDF-3475
         default 0x000C if IDF_TARGET_ESP8684
+        default 0x000A if IDF_TARGET_ESP32H2_BETA_VERSION_1
+        default 0x000E if IDF_TARGET_ESP32H2_BETA_VERSION_2 # ESP32H2-TODO: IDF-3475
         default 0xFFFF
 
     menu "SDK tool configuration"
