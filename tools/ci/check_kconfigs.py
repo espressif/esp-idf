@@ -1,18 +1,7 @@
 #!/usr/bin/env python
 #
-# Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 
 from __future__ import print_function, unicode_literals
 
@@ -56,10 +45,6 @@ LINE_ERROR_RULES = [
     (re.compile(r'\t'),                     'tabulators should be replaced by spaces',      r' ' * SPACES_PER_INDENT),
     (re.compile(r'\s+\n'),                  'trailing whitespaces should be removed',       r'\n'),
     (re.compile(r'.{120}'),                 'line should be shorter than 120 characters',   None),
-    # "\<CR><LF>" is not recognized due to a bug in tools/kconfig/zconf.l. The bug was fixed but the rebuild of
-    # mconf-idf is not enforced and an incorrect version is supplied with all previous IDF versions. Backslashes
-    # cannot be enabled unless everybody updates mconf-idf.
-    (re.compile(r'\\\n'),                   'line cannot be wrapped by backslash',          None),
 ]
 
 
