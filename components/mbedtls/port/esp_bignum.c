@@ -276,19 +276,23 @@ cleanup2:
 static int esp_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, const mbedtls_mpi *M, mbedtls_mpi *_Rinv )
 {
     int ret = 0;
+
+    mbedtls_mpi Rinv_new; /* used if _Rinv == NULL */
+    mbedtls_mpi *Rinv;    /* points to _Rinv (if not NULL) othwerwise &RR_new */
+    mbedtls_mpi_uint Mprime;
+
     size_t x_words = mpi_words(X);
     size_t y_words = mpi_words(Y);
     size_t m_words = mpi_words(M);
-
 
     /* "all numbers must be the same length", so choose longest number
        as cardinal length of operation...
     */
     size_t num_words = esp_mpi_hardware_words(MAX(m_words, MAX(x_words, y_words)));
 
-    mbedtls_mpi Rinv_new; /* used if _Rinv == NULL */
-    mbedtls_mpi *Rinv;    /* points to _Rinv (if not NULL) othwerwise &RR_new */
-    mbedtls_mpi_uint Mprime;
+    if (num_words * 32 > SOC_RSA_MAX_BIT_LEN) {
+        return MBEDTLS_ERR_MPI_NOT_ACCEPTABLE;
+    }
 
     if (mbedtls_mpi_cmp_int(M, 0) <= 0 || (M->p[0] & 1) == 0) {
         return MBEDTLS_ERR_MPI_BAD_INPUT_DATA;
@@ -300,10 +304,6 @@ static int esp_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_
 
     if (mbedtls_mpi_cmp_int(Y, 0) == 0) {
         return mbedtls_mpi_lset(Z, 1);
-    }
-
-    if (num_words * 32 > SOC_RSA_MAX_BIT_LEN) {
-        return MBEDTLS_ERR_MPI_NOT_ACCEPTABLE;
     }
 
     /* Determine RR pointer, either _RR for cached value
