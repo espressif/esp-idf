@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _ROM_SECURE_BOOT_H_
-#define _ROM_SECURE_BOOT_H_
+#pragma once
 
 #include <stdint.h>
 #include "ets_sys.h"
@@ -22,9 +21,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-struct ets_secure_boot_sig_block;
-struct ets_secure_boot_signature_t;
 
 typedef struct ets_secure_boot_sig_block ets_secure_boot_sig_block_t;
 typedef struct ets_secure_boot_signature ets_secure_boot_signature_t;
@@ -126,5 +122,3 @@ struct ets_secure_boot_key_digests {
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* _ROM_SECURE_BOOT_H_ */
