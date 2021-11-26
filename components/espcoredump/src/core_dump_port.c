@@ -461,6 +461,10 @@ bool esp_core_dump_check_task(void *frame,
             task->stack_start = (uint32_t)exc_frame;
         }
         exc_frame->exit = COREDUMP_CURR_TASK_MARKER;
+        extern bool g_panic_pseudo_excause;
+        if (g_panic_pseudo_excause) {
+            exc_frame->exccause += XCHAL_EXCCAUSE_NUM;
+        }
         s_extra_info.crashed_task_tcb = (uint32_t)task->tcb_addr;
     }
 

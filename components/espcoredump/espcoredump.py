@@ -47,6 +47,7 @@ else:
     CLOSE_FDS = True
 
 INVALID_CAUSE_VALUE = 0xFFFF
+XCHAL_EXCCAUSE_NUM = 64
 
 # Exception cause dictionary to get translation of exccause register
 # From 4.4.1.5 table 4-64 Exception Causes of Xtensa
@@ -82,7 +83,17 @@ xtensa_exception_cause_dict = {
     37: ("Coprocessor5Disabled", "Coprocessor 5 instruction when cp5 disabled"),
     38: ("Coprocessor6Disabled", "Coprocessor 6 instruction when cp6 disabled"),
     39: ("Coprocessor7Disabled", "Coprocessor 7 instruction when cp7 disabled"),
-    INVALID_CAUSE_VALUE: ("InvalidCauseRegister", "Invalid EXCCAUSE register value or current task is broken and was skipped")}
+    INVALID_CAUSE_VALUE: ("InvalidCauseRegister", "Invalid EXCCAUSE register value or current task is broken and was skipped"),
+    # ESP panic pseudo reasons
+    XCHAL_EXCCAUSE_NUM + 0: ("UnknownException", "Unknown exception"),
+    XCHAL_EXCCAUSE_NUM + 1: ("DebugException", "Unhandled debug exception"),
+    XCHAL_EXCCAUSE_NUM + 2: ("DoubleException", "Double exception"),
+    XCHAL_EXCCAUSE_NUM + 3: ("KernelException", "Unhandled kernel exception"),
+    XCHAL_EXCCAUSE_NUM + 4: ("CoprocessorException", "Coprocessor exception"),
+    XCHAL_EXCCAUSE_NUM + 5: ("InterruptWDTTimoutCPU0", "Interrupt wdt timeout on CPU0"),
+    XCHAL_EXCCAUSE_NUM + 6: ("InterruptWDTTimoutCPU1", "Interrupt wdt timeout on CPU1"),
+    XCHAL_EXCCAUSE_NUM + 7: ("CacheError", "Cache disabled but cached memory region accessed"),
+}
 
 
 class ESPCoreDumpError(RuntimeError):
