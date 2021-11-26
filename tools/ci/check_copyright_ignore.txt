@@ -3500,7 +3500,6 @@ tools/ci/python_packages/tiny_test_fw/TinyFW.py
 tools/ci/python_packages/tiny_test_fw/Utility/CIAssignTest.py
 tools/ci/python_packages/tiny_test_fw/Utility/CaseConfig.py
 tools/ci/python_packages/tiny_test_fw/Utility/GitlabCIJob.py
-tools/ci/python_packages/tiny_test_fw/Utility/SearchCases.py
 tools/ci/python_packages/tiny_test_fw/Utility/TestCase.py
 tools/ci/python_packages/tiny_test_fw/Utility/__init__.py
 tools/ci/python_packages/tiny_test_fw/bin/Runner.py
