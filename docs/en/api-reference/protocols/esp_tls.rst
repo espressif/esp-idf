@@ -60,7 +60,7 @@ used, wolfssl SSL/TLS library is available publicly at https://github.com/espres
 also provides few examples which are useful for understanding the API. Please refer the repository README.md for
 information on licensing and other options. Please see below option for using wolfssl in your project.
 
-.. note::   `As the library options are internal to ESP-TLS, switching the libries will not change ESP-TLS specific code for a project.`
+.. note::   `As the library options are internal to ESP-TLS, switching the libraries will not change ESP-TLS specific code for a project.`
 
 How to use wolfssl with ESP-IDF
 -------------------------------
