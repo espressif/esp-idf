@@ -10,7 +10,6 @@
 #include "lwip/sockets.h"
 #include "test_utils.h"
 
-
 TEST_GROUP(esp_netif);
 
 TEST_SETUP(esp_netif)

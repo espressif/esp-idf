@@ -601,7 +601,12 @@ void IRAM_ATTR call_start_cpu0(void)
     fhdr.spi_size = ESP_IMAGE_FLASH_SIZE_4MB;
 
     extern void esp_rom_spiflash_attach(uint32_t, bool);
+#if !CONFIG_IDF_TARGET_ESP8684
     esp_rom_spiflash_attach(esp_rom_efuse_get_flash_gpio_info(), false);
+#else
+    // ESP8684 cannot get flash_gpio_info from efuse
+    esp_rom_spiflash_attach(0, false);
+#endif // CONFIG_IDF_TARGET_ESP8684
     bootloader_flash_unlock();
 #else
     // This assumes that DROM is the first segment in the application binary, i.e. that we can read

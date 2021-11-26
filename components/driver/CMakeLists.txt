@@ -104,7 +104,8 @@ if(IDF_TARGET STREQUAL "esp32h2")
 endif()
 
 if(IDF_TARGET STREQUAL "esp8684")
-    list(APPEND srcs "spi_slave_hd.c")
+    list(APPEND srcs "gdma.c"
+                     "spi_slave_hd.c")
 endif()
 
 idf_component_register(SRCS "${srcs}"

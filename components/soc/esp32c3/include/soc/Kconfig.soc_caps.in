@@ -79,6 +79,18 @@ config SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY
     bool
     default y
 
+config SOC_I2S_SUPPORTED
+    bool
+    default y
+
+config SOC_RMT_SUPPORTED
+    bool
+    default y
+
+config SOC_SIGMADELTA_SUPPORTED
+    bool
+    default y
+
 config SOC_AES_SUPPORT_DMA
     bool
     default y

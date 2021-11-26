@@ -37,3 +37,5 @@ PROVIDE ( esp_rom_mbedtls_md5_finish_ret = 0x40002a3c );
 PROVIDE ( esp_rom_printf   = ets_printf );
 PROVIDE ( esp_rom_delay_us = ets_delay_us );
 PROVIDE ( esp_rom_get_reset_reason = rtc_get_reset_reason );
+
+PROVIDE( esp_rom_spiflash_attach = spi_flash_attach );

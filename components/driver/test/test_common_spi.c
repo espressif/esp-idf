@@ -9,6 +9,9 @@
 #include "driver/gpio.h"
 #include "hal/gpio_hal.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)
+// TODO: SPI support IDF-4024
+
 int test_freq_default[]=TEST_FREQ_DEFAULT();
 
 const char MASTER_TAG[] = "test_master";
@@ -247,3 +250,5 @@ void get_tx_buffer(uint32_t seed, uint8_t *master_send_buf, uint8_t *slave_send_
         master_send_buf[i] = rand();
     }
 }
+
+#endif // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)

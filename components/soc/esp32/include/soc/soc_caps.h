@@ -78,6 +78,9 @@
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 1
 #define SOC_RTC_FAST_MEM_SUPPORTED        1
 #define SOC_RTC_SLOW_MEM_SUPPORTED        1
+#define SOC_I2S_SUPPORTED           1
+#define SOC_RMT_SUPPORTED           1
+#define SOC_SIGMADELTA_SUPPORTED    1
 
 
 /*-------------------------- ADC CAPS ----------------------------------------*/

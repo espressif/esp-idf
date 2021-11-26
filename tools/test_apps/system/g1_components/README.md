@@ -1,3 +1,8 @@
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 | ESP32-C3 |
+| ----------------- | ----- | -------- | -------- | -------- |
+
+ESP8684 Not support this test currently, because some of components have not been supported. IDF-4135
+
 # "G1"-components-only app
 
 This test application checks the list of components included into the build when "G1" components are added to the build. If G1 components don't have any dependencies outside of G1, then only G1 components themselves should be built.

@@ -38,6 +38,9 @@
 #define SOC_RTC_FAST_MEM_SUPPORTED        1
 #define SOC_RTC_SLOW_MEM_SUPPORTED        0
 #define SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY               1
+#define SOC_I2S_SUPPORTED               1
+#define SOC_RMT_SUPPORTED               1
+#define SOC_SIGMADELTA_SUPPORTED        1
 
 /*-------------------------- AES CAPS -----------------------------------------*/
 #define SOC_AES_SUPPORT_DMA     (1)

@@ -12,7 +12,8 @@
 #include "test/test_common_spi.h"
 #include "unity.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C3, ESP8684)
+// No runners currently.
 
 #if CONFIG_IDF_TARGET_ESP32
 // The VSPI pins on UT_T1_ESP_FLASH are connected to a external flash

@@ -11,8 +11,8 @@
 #include "driver/spi_master.h"
 #include "driver/spi_slave.h"
 
-#if !DISABLED_FOR_TARGETS(ESP32C3)
-//There is only one GPSPI controller on ESP32C3, so single-board test is disabled.
+#if !DISABLED_FOR_TARGETS(ESP32C3, ESP8684)
+//There is only one GPSPI controller on ESP32C3 and ESP8684, so single-board test is disabled.
 
 #ifndef MIN
 #define MIN(a, b)((a) > (b)? (b): (a))
@@ -1177,4 +1177,4 @@ TEST_SPI_MASTER_SLAVE(MODE, mode_conf, "")
 
 #endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
 
-#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3)
+#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3, ESP8684)
