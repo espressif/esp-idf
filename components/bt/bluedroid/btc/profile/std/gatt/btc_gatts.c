@@ -277,7 +277,7 @@ static void btc_gatts_act_create_attr_tab(esp_gatts_attr_db_t *gatts_attr_db,
         switch(uuid)
         {
             case ESP_GATT_UUID_PRI_SERVICE:{
-                tBTA_GATT_SRVC_ID srvc_id;
+                tBTA_GATT_SRVC_ID srvc_id = {0};
                 esp_gatt_srvc_id_t        esp_srvc_id;
 
                 esp_srvc_id.id.inst_id = srvc_inst_id;
@@ -571,7 +571,7 @@ static void btc_gatts_cb_param_copy_free(btc_msg_t *msg, tBTA_GATTS *p_data)
 static void btc_gatts_inter_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 {
     bt_status_t status;
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_GATTS;
