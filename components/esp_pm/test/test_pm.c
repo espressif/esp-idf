@@ -14,22 +14,16 @@
 #include "driver/rtc_io.h"
 #include "soc/rtc_periph.h"
 #include "esp_rom_sys.h"
+#include "esp_private/esp_clk.h"
 
 #include "sdkconfig.h"
 
 #if CONFIG_IDF_TARGET_ESP32
-#include "esp32/clk.h"
 #include "esp32/ulp.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/clk.h"
 #include "esp32s2/ulp.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/clk.h"
 #include "esp32s3/ulp.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/clk.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/clk.h"
 #endif
 
 TEST_CASE("Can dump power management lock stats", "[pm]")

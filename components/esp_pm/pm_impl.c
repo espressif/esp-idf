@@ -31,6 +31,7 @@
 #include "esp_private/pm_impl.h"
 #include "esp_private/pm_trace.h"
 #include "esp_private/esp_timer_private.h"
+#include "esp_private/esp_clk.h"
 
 #include "esp_sleep.h"
 
@@ -38,26 +39,20 @@
 
 // [refactor-todo] opportunity for further refactor
 #if CONFIG_IDF_TARGET_ESP32
-#include "esp32/clk.h"
 #include "esp32/pm.h"
 #include "driver/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/clk.h"
 #include "esp32s2/pm.h"
 #include "driver/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/clk.h"
 #include "esp32s3/pm.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/clk.h"
 #include "esp32c3/pm.h"
 #include "driver/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/clk.h"
 #include "esp32h2/pm.h"
 #include "driver/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP8684
-#include "esp_private/esp_clk.h"
 #include "esp8684/pm.h"
 #include "driver/gpio.h"
 #endif

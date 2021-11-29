@@ -29,11 +29,11 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_pm.h"
+#include "esp_private/esp_clk.h"
 #include "esp_private/periph_ctrl.h"
 #include "soc/rtc.h"
 #include "soc/soc_memory_layout.h"
 #include "soc/dport_reg.h"
-#include "esp32/clk.h"
 #include "esp_coexist_internal.h"
 #if !CONFIG_FREERTOS_UNICORE
 #include "esp_ipc.h"

@@ -155,7 +155,7 @@
 #include "soc/sensitive_reg.h"
 #endif
 #include "eri.h"
-#include "trax.h"
+#include "esp_private/trax.h"
 #include "esp_log.h"
 #include "esp_app_trace_membufs_proto.h"
 #include "esp_app_trace_port.h"

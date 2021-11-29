@@ -9,7 +9,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "xt_trax.h"
-#include "trax.h"
+#include "esp_private/trax.h"
 #include "hal/trace_ll.h"
 #include "soc/dport_reg.h"
 #include "soc/tracemem_config.h"

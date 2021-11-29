@@ -12,7 +12,6 @@
 #include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_log.h"
-#include "esp32s3/clk.h"
 #include "esp_clk_internal.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
@@ -25,6 +24,7 @@
 #include "hal/cpu_hal.h"
 #include "hal/wdt_hal.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/esp_clk.h"
 #include "bootloader_clock.h"
 #include "soc/syscon_reg.h"
 

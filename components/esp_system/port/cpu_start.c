@@ -15,7 +15,7 @@
 #include "esp_system.h"
 
 #include "esp_efuse.h"
-#include "cache_err_int.h"
+#include "esp_private/cache_err_int.h"
 #include "esp_clk_internal.h"
 
 #include "esp_rom_efuse.h"
@@ -79,7 +79,7 @@
 #include "soc/spinlock.h"
 
 #if CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX || CONFIG_ESP32S3_TRAX
-#include "trax.h"
+#include "esp_private/trax.h"
 #endif
 
 #include "bootloader_mem.h"
