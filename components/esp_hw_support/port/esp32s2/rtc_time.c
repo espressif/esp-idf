@@ -42,6 +42,11 @@ static uint32_t rtc_clk_cal_internal_oneoff(rtc_cal_sel_t cal_clk, uint32_t slow
      * so we should wait the last process is done.
      */
     if (GET_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_START_CYCLING)) {
+        /**
+         * Set a small timeout threshold to accelerate the generation of timeout.
+         * The internal circuit will be reset when the timeout occurs and will not affect the next calibration.
+         */
+        REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, 1);
         while (!GET_PERI_REG_MASK(TIMG_RTCCALICFG_REG(0), TIMG_RTC_CALI_RDY)
                && !GET_PERI_REG_MASK(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT));
     }
