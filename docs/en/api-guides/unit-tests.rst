@@ -18,7 +18,7 @@ Tests are added in a function in the C file as follows:
 
 .. code-block:: c
 
-    TEST_CASE("test name", "[module name]"
+    TEST_CASE("test name", "[module name]")
     {
             // Add test here
     }
