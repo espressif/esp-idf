@@ -84,25 +84,6 @@
 #define OPENTHREAD_CONFIG_NUM_MESSAGE_BUFFERS CONFIG_OPENTHREAD_NUM_MESSAGE_BUFFERS
 
 /**
- * @def OPENTHREAD_CONFIG_COAP_API_ENABLE
- *
- * Define to 1 to enable the CoAP API.
- *
- */
-#define OPENTHREAD_CONFIG_COAP_API_ENABLE 1
-
-
-/**
- * @def OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE
- *
- * Define to 1 to enable platform NETIF support.
- *
- */
-#ifndef OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE
-#define OPENTHREAD_CONFIG_PLATFORM_NETIF_ENABLE 1
-#endif
-
-/**
  * @def OPENTHREAD_CONFIG_HEAP_EXTERNAL_ENABLE
  *
  * Enable the external heap.
@@ -122,90 +103,6 @@
 #define OPENTHREAD_CONFIG_TCP_ENABLE 0
 #endif
 
-#if CONFIG_OPENTHREAD_BORDER_ROUTER
-
-/**
- * @def OPENTHREAD_CONFIG_BORDER_AGENT_ENABLE
- *
- * Define to 1 to enable Border Agent support.
- *
- */
-#ifndef OPENTHREAD_CONFIG_BORDER_AGENT_ENABLE
-#define OPENTHREAD_CONFIG_BORDER_AGENT_ENABLE 1
-#endif
-
-/**
- * @def OPENTHREAD_CONFIG_BORDER_ROUTER_ENABLE
- *
- * Define to 1 to enable Border Router support.
- *
- */
-#ifndef OPENTHREAD_CONFIG_BORDER_ROUTER_ENABLE
-#define OPENTHREAD_CONFIG_BORDER_ROUTER_ENABLE 1
-#endif
-
-/**
- * @def OPENTHREAD_CONFIG_BORDER_ROUTING_ENABLE
- *
- * Define to 1 to enable Border Routing support.
- *
- */
-#ifndef OPENTHREAD_CONFIG_BORDER_ROUTING_ENABLE
-#define OPENTHREAD_CONFIG_BORDER_ROUTING_ENABLE 1
-#endif
-
-/**
- * @def OPENTHREAD_CONFIG_PLATFORM_UDP_ENABLE
- *
- * Define to 1 to enable platform UDP support.
- *
- */
-#ifndef OPENTHREAD_CONFIG_PLATFORM_UDP_ENABLE
-#define OPENTHREAD_CONFIG_PLATFORM_UDP_ENABLE 1
-#endif
-
-/**
- * @def OPENTHREAD_CONFIG_ECDSA_ENABLE
- *
- * Define to 1 to enable ECDSA support.
- *
- */
-#ifndef OPENTHREAD_CONFIG_ECDSA_ENABLE
-#define OPENTHREAD_CONFIG_ECDSA_ENABLE 1
-#endif
-
-/**
- * @def OPENTHREAD_CONFIG_SRP_SERVER_ENABLE
- *
- * Define to 1 to enable SRP Server support.
- *
- */
-#ifndef OPENTHREAD_CONFIG_SRP_SERVER_ENABLE
-#define OPENTHREAD_CONFIG_SRP_SERVER_ENABLE 1
-#endif
-
-/**
- * @def OPENTHREAD_CONFIG_DNSSD_SERVER_ENABLE
- *
- * Define to 1 to enable DNS-SD Server support.
- *
- */
-#ifndef OPENTHREAD_CONFIG_DNSSD_SERVER_ENABLE
-#define OPENTHREAD_CONFIG_DNSSD_SERVER_ENABLE 1
-#endif
-
-/**
- * @def OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE
- *
- * Set to 1 to enable support for Thread Radio Encapsulation Link (TREL).
- *
- */
-#ifndef OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE
-#define OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE CONFIG_OPENTHREAD_TREL
-#endif
-
-#endif // CONFIG_OPENTHREAD_BORDER_ROUTER
-
 /**
  * @def OPENTHREAD_CONFIG_REFERENCE_DEVICE_ENABLE
  *
@@ -213,46 +110,6 @@
  *
  */
 #define OPENTHREAD_CONFIG_REFERENCE_DEVICE_ENABLE 1
-
-/**
- * @def OPENTHREAD_CONFIG_CHILD_SUPERVISION_ENABLE
- *
- * Define to 1 to enable Child Supervision support.
- *
- */
-#ifndef OPENTHREAD_CONFIG_CHILD_SUPERVISION_ENABLE
-#define OPENTHREAD_CONFIG_CHILD_SUPERVISION_ENABLE 1
-#endif
-
-/**
- * @def OPENTHREAD_CONFIG_DHCP6_CLIENT_ENABLE
- *
- * Define to 1 to enable DHCPv6 Client support.
- *
- */
-#ifndef OPENTHREAD_CONFIG_DHCP6_CLIENT_ENABLE
-#define OPENTHREAD_CONFIG_DHCP6_CLIENT_ENABLE 1
-#endif
-
-/**
- * @def OPENTHREAD_CONFIG_DHCP6_SERVER_ENABLE
- *
- * Define to 1 to enable DHCPv6 Server support.
- *
- */
-#ifndef OPENTHREAD_CONFIG_DHCP6_SERVER_ENABLE
-#define OPENTHREAD_CONFIG_DHCP6_SERVER_ENABLE 1
-#endif
-
-/**
- * @def OPENTHREAD_CONFIG_DNS_CLIENT_ENABLE
- *
- * Define to 1 to enable DNS Client support.
- *
- */
-#ifndef OPENTHREAD_CONFIG_DNS_CLIENT_ENABLE
-#define OPENTHREAD_CONFIG_DNS_CLIENT_ENABLE 1
-#endif
 
 /**
  * @def OPENTHREAD_CONFIG_NCP_SPI_ENABLE
@@ -277,14 +134,6 @@
  *
  */
 #define OPENTHREAD_CONFIG_NCP_HDLC_ENABLE 1
-
-/**
- * @def OPENTHREAD_CONFIG_TMF_NETDATA_SERVICE_ENABLE
- *
- * Define to 1 to support injecting Service entries into the Thread Network Data.
- *
- */
-#define OPENTHREAD_CONFIG_TMF_NETDATA_SERVICE_ENABLE 1
 
 /**
  * @def PACKAGE_NAME
@@ -370,11 +219,11 @@
  * The configurable definitions via Kconfig
  */
 #if CONFIG_OPENTHREAD_COMMISSIONER
-#define OPENTHREAD_CONFIG_COMMISSIONER_ENABLE 1
+#define OPENTHREAD_CONFIG_COMMISSIONER_ENABLE 0
 #endif
 
 #if CONFIG_OPENTHREAD_JOINER
-#define OPENTHREAD_CONFIG_JOINER_ENABLE 1
+#define OPENTHREAD_CONFIG_JOINER_ENABLE 0
 #endif
 
 #if CONFIG_OPENTHREAD_DIAG
@@ -393,4 +242,4 @@
 
 #define OPENTHREAD_ENABLE_NCP_VENDOR_HOOK 1
 
-#define OPENTHREAD_FTD 1
+#define OPENTHREAD_MTD 1
