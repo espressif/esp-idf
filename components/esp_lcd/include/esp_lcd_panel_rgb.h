@@ -18,10 +18,10 @@ extern "C" {
 #if SOC_LCD_RGB_SUPPORTED
 /**
  * @brief LCD RGB timing structure
- *
+ * @verbatim
  *                                                 Total Width
  *                             <--------------------------------------------------->
- *                       Hsync width HBP             Active Width                HFP
+ *                       HSYNC width HBP             Active Width                HFP
  *                             <---><--><--------------------------------------><--->
  *                         ____    ____|_______________________________________|____|
  *                             |___|   |                                       |    |
@@ -36,7 +36,7 @@ extern "C" {
  *             |     /|\     |         | / / / / / / / / / / / / / / / / / / / |    |
  *             |      |      |         |/ / / / / / / / / / / / / / / / / / / /|    |
  *    Total    |      |      |         |/ / / / / / / / / / / / / / / / / / / /|    |
- *    Heigh    |      |      |         |/ / / / / / / / / / / / / / / / / / / /|    |
+ *    Height   |      |      |         |/ / / / / / / / / / / / / / / / / / / /|    |
  *             |Active|      |         |/ / / / / / / / / / / / / / / / / / / /|    |
  *             |Heigh |      |         |/ / / / / / Active Display Area / / / /|    |
  *             |      |      |         |/ / / / / / / / / / / / / / / / / / / /|    |
@@ -48,7 +48,7 @@ extern "C" {
  *             |     /|\     |                                                      |
  *             |  VFP |      |                                                      |
  *            \|/    \|/_____|______________________________________________________|
- *
+ * @endverbatim
  */
 typedef struct {
     unsigned int pclk_hz;           /*!< Frequency of pixel clock */
@@ -65,7 +65,7 @@ typedef struct {
         unsigned int vsync_idle_low: 1;  /*!< The vsync signal is low in IDLE state */
         unsigned int de_idle_high: 1;    /*!< The de signal is high in IDLE state */
         unsigned int pclk_active_neg: 1; /*!< The display will write data lines when there's a falling edge on PCLK */
-        unsigned int pclk_idle_low: 1;   /*!< The PCLK stays at low level in IDLE phase */
+        unsigned int pclk_idle_high: 1;  /*!< The PCLK stays at high level in IDLE phase */
     } flags;
 } esp_lcd_rgb_timing_t;
 
