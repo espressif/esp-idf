@@ -509,7 +509,7 @@ void btm_acl_device_down (void)
     BTM_TRACE_DEBUG ("btm_acl_device_down\n");
     for (list_node_t *p_node = list_begin(btm_cb.p_acl_db_list); p_node; p_node = list_next(p_node)) {
        p = list_node(p_node);
-       if (!p && p->in_use) {
+       if (p && p->in_use) {
            BTM_TRACE_DEBUG ("hci_handle=%d HCI_ERR_HW_FAILURE \n", p->hci_handle );
            l2c_link_hci_disc_comp (p->hci_handle, HCI_ERR_HW_FAILURE);
        }
