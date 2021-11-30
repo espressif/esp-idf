@@ -7,6 +7,45 @@
     SIZE_INFO_LOCATION: "$CI_PROJECT_DIR/size_info.txt"
   dependencies: []
 
+.build_pytest_template:
+  extends:
+    - .build_template
+    - .before_script_pytest
+  dependencies:  # set dependencies to null to avoid missing artifacts issue
+  needs:
+    - job: fast_template_app
+      artifacts: false
+  variables:
+    PYTHON_VER: 3.6.13
+  artifacts:
+    paths:
+      - "**/build*/size.json"
+      - "**/build*/build.log"
+      - "**/build*/*.bin"
+      - "**/build*/*.elf"
+      - "**/build*/*.map"
+      - "**/build*/flasher_args.json"
+      - "**/build*/config/sdkconfig.json"
+      - "**/build*/bootloader/*.bin"
+      - "**/build*/partition_table/*.bin"
+      - $SIZE_INFO_LOCATION
+    when: always
+    expire_in: 3 days
+
+build_examples_pytest_esp32:
+  extends:
+    - .build_pytest_template
+    - .rules:build:example_test-esp32
+  script:
+    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir examples --target esp32 --size-info $SIZE_INFO_LOCATION -vv
+
+build_examples_pytest_esp32c3:
+  extends:
+    - .build_pytest_template
+    - .rules:build:example_test-esp32c3
+  script:
+    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir examples --target esp32c3 --size-info $SIZE_INFO_LOCATION -vv
+
 .build_template_app_template:
   extends: .build_template
   variables:

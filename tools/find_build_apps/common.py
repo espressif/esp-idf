@@ -462,6 +462,6 @@ def setup_logging(args):
 
     logging.basicConfig(
         format='%(levelname)s: %(message)s',
-        stream=args.log_file or sys.stderr,
+        stream=getattr(args, 'log_file', None) or sys.stderr,
         level=log_level,
     )
