@@ -257,6 +257,12 @@ esp_err_t esp_spiram_init(void)
     spiram_inited = true;
 
     spiram_size = esp_spiram_get_size();
+    static const size_t max_spiram = 4 * 1024 * 1024;
+
+    if (spiram_size > max_spiram) {
+        ESP_EARLY_LOGE(TAG, "Detected %dKb PSRAM is not supported. Limit to %dKb", spiram_size / 1024, max_spiram / 1024);
+        spiram_size = max_spiram;
+    }
 
 #if (CONFIG_SPIRAM_SIZE != -1)
     if (spiram_size != CONFIG_SPIRAM_SIZE) {
