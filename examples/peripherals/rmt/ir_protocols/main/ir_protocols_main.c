@@ -17,8 +17,8 @@
 
 static const char *TAG = "example";
 
-static rmt_channel_t example_tx_channel = RMT_CHANNEL_0;
-static rmt_channel_t example_rx_channel = RMT_CHANNEL_2;
+static rmt_channel_t example_tx_channel = CONFIG_EXAMPLE_RMT_TX_CHANNEL;
+static rmt_channel_t example_rx_channel = CONFIG_EXAMPLE_RMT_RX_CHANNEL;
 
 /**
  * @brief RMT Receive Task
