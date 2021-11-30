@@ -30,4 +30,17 @@ menu "Example Configuration"
         default 19
         help
             Set the GPIO number used for receiving the RMT signal.
+
+    config EXAMPLE_RMT_TX_CHANNEL
+        int "RMT TX Channel Number"
+        default 0
+        help
+            Set the RMT TX channel number.
+
+    config EXAMPLE_RMT_RX_CHANNEL
+        int "RMT RX Channel Number"
+        default 4 if IDF_TARGET_ESP32S3
+        default 2
+        help
+            Set the RMT RX channel number.
 endmenu
