@@ -748,7 +748,6 @@ components/esp_rom/include/esp32/rom/md5_hash.h
 components/esp_rom/include/esp32/rom/miniz.h
 components/esp_rom/include/esp32/rom/rsa_pss.h
 components/esp_rom/include/esp32/rom/rtc.h
-components/esp_rom/include/esp32/rom/secure_boot.h
 components/esp_rom/include/esp32/rom/sha.h
 components/esp_rom/include/esp32/rom/spi_flash.h
 components/esp_rom/include/esp32/rom/tbconsole.h
@@ -772,7 +771,6 @@ components/esp_rom/include/esp32c3/rom/miniz.h
 components/esp_rom/include/esp32c3/rom/rom_layout.h
 components/esp_rom/include/esp32c3/rom/rsa_pss.h
 components/esp_rom/include/esp32c3/rom/rtc.h
-components/esp_rom/include/esp32c3/rom/secure_boot.h
 components/esp_rom/include/esp32c3/rom/sha.h
 components/esp_rom/include/esp32c3/rom/spi_flash.h
 components/esp_rom/include/esp32c3/rom/tjpgd.h
@@ -795,7 +793,6 @@ components/esp_rom/include/esp32h2/rom/miniz.h
 components/esp_rom/include/esp32h2/rom/rom_layout.h
 components/esp_rom/include/esp32h2/rom/rsa_pss.h
 components/esp_rom/include/esp32h2/rom/rtc.h
-components/esp_rom/include/esp32h2/rom/secure_boot.h
 components/esp_rom/include/esp32h2/rom/sha.h
 components/esp_rom/include/esp32h2/rom/spi_flash.h
 components/esp_rom/include/esp32h2/rom/tjpgd.h
@@ -816,7 +813,6 @@ components/esp_rom/include/esp32s2/rom/miniz.h
 components/esp_rom/include/esp32s2/rom/opi_flash.h
 components/esp_rom/include/esp32s2/rom/rsa_pss.h
 components/esp_rom/include/esp32s2/rom/rtc.h
-components/esp_rom/include/esp32s2/rom/secure_boot.h
 components/esp_rom/include/esp32s2/rom/sha.h
 components/esp_rom/include/esp32s2/rom/spi_flash.h
 components/esp_rom/include/esp32s2/rom/uart.h
@@ -847,7 +843,6 @@ components/esp_rom/include/esp32s3/rom/miniz.h
 components/esp_rom/include/esp32s3/rom/opi_flash.h
 components/esp_rom/include/esp32s3/rom/rom_layout.h
 components/esp_rom/include/esp32s3/rom/rsa_pss.h
-components/esp_rom/include/esp32s3/rom/secure_boot.h
 components/esp_rom/include/esp32s3/rom/sha.h
 components/esp_rom/include/esp32s3/rom/spi_flash.h
 components/esp_rom/include/esp32s3/rom/tjpgd.h
