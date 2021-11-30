@@ -55,7 +55,7 @@ If desired, the pulse input pin and the control input pin may be changed "on the
 
 .. note::
 
-    For the counter not to miss any pulses, the pulse duration should be longer than one APB_CLK cycle (12.5 ns). The pulses are sampled on the edges of the APB_CLK clock and may be missed, if fall between the edges. This applies to counter operation with or without a :ref:`filer <pcnt-api-filtering-pulses>`.
+    For the counter not to miss any pulses, the pulse duration should be longer than one APB_CLK cycle (12.5 ns). The pulses are sampled on the edges of the APB_CLK clock and may be missed, if fall between the edges. This applies to counter operation with or without a :ref:`filter <pcnt-api-filtering-pulses>`.
 
 
 .. _pcnt-api-filtering-pulses:
