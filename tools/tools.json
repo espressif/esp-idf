@@ -320,7 +320,8 @@
         {
           "install": "never",
           "platforms": [
-            "linux-i686"
+            "linux-i686",
+            "linux-arm64"
           ]
         }
       ],
@@ -381,7 +382,8 @@
         {
           "install": "never",
           "platforms": [
-            "linux-i686"
+            "linux-i686",
+            "linux-arm64"
           ]
         }
       ],
