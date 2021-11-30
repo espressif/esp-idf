@@ -5,14 +5,10 @@
 #include "freertos/event_groups.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-
 #include "esp_timer.h"
 #include "esp_log.h"
 #include "esp_err.h"
-
 #include "transaction.h"
-
-
 #define TAG    "TRANS"
 
 static transaction_t transactions[MAX_TRANSACTION_COUNT];
@@ -178,7 +174,6 @@ esp_err_t transaction_run(transaction_t *trans)
 
     if (trans) {
         start_time = utils_get_system_ts();
-
         // wait for wait events
         while (1) {
             //TODO: we didn't handle ts overflow
@@ -246,7 +241,6 @@ transaction_t *transaction_get(uint8_t type, uint32_t sub_type, transaction_t *s
         }
     }
     xSemaphoreGiveRecursive(trans_mutex);
-
     ESP_LOGV(TAG, "transaction get: %x, %x, %x, %x", type, sub_type, (uint32_t) start, (uint32_t) trans);
     return trans;
 }

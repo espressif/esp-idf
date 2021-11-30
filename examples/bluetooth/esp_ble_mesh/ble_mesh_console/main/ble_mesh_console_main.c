@@ -22,14 +22,12 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 
-#include "esp_bt.h"
-#include "esp_bt_main.h"
-
 #include "esp_console.h"
 #include "linenoise/linenoise.h"
 #include "argtable3/argtable3.h"
 
 #include "ble_mesh_console_decl.h"
+#include "ble_mesh_example_init.h"
 
 #if CONFIG_STORE_HISTORY
 
@@ -99,38 +97,6 @@ static void initialize_console(void)
 }
 
 
-esp_err_t bluetooth_init(void)
-{
-    esp_err_t ret;
-
-    esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-    ret = esp_bt_controller_init(&bt_cfg);
-    if (ret) {
-        printf("%s initialize controller failed\n", __func__);
-        return ret;
-    }
-
-    ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
-    if (ret) {
-        printf("%s enable controller failed\n", __func__);
-        return ret;
-    }
-    ret = esp_bluedroid_init();
-    if (ret) {
-        printf("%s init bluetooth failed\n", __func__);
-        return ret;
-    }
-    ret = esp_bluedroid_enable();
-    if (ret) {
-        printf("%s enable bluetooth failed\n", __func__);
-        return ret;
-    }
-
-    esp_log_level_set("*", ESP_LOG_ERROR);
-    esp_log_level_set("ble_mesh_console", ESP_LOG_INFO);
-    return ret;
-}
-
 void app_main(void)
 {
     esp_err_t res;
@@ -142,6 +108,9 @@ void app_main(void)
     if (res) {
         printf("esp32_bluetooth_init failed (ret %d)", res);
     }
+
+    esp_log_level_set("*", ESP_LOG_INFO);
+    esp_log_level_set("ble_mesh_console", ESP_LOG_INFO);
 
 #if CONFIG_STORE_HISTORY
     initialize_filesystem();
