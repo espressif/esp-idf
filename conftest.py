@@ -16,15 +16,19 @@
 import logging
 import os
 import sys
-from typing import List, Optional
+from typing import Callable, List, Optional
 
 import pytest
 from _pytest.config import Config
 from _pytest.fixtures import FixtureRequest
 from pytest_embedded.plugin import parse_configuration
+from pytest_embedded_idf.app import IdfApp
 
 
-def _is_target_marker(marker: str) -> bool:
+##################
+# Help Functions #
+##################
+def is_target_marker(marker: str) -> bool:
     if marker.startswith('esp32'):
         return True
 
@@ -34,12 +38,19 @@ def _is_target_marker(marker: str) -> bool:
     return False
 
 
+def format_case_id(target: str, config: str, case: str) -> str:
+    return f'{target}.{config}.{case}'
+
+
+############
+# Fixtures #
+############
 @pytest.fixture(scope='session')
 def target_markers(pytestconfig: Config) -> List[str]:
     res = []
     for item in pytestconfig.getini('markers'):
         marker = item.split(':')[0]
-        if _is_target_marker(marker):
+        if is_target_marker(marker):
             res.append(marker)
     return res
 
@@ -76,12 +87,12 @@ def target(request: FixtureRequest, target_markers: List[str], param_markers: Li
     else:
         target = param_target_markers[0]
 
-    return getattr(request, 'param', None) or target
+    return getattr(request, 'param', None) or request.config.option.__dict__.get('target') or target
 
 
 @pytest.fixture
-def config(request: FixtureRequest) -> Optional[str]:
-    return getattr(request, 'param', None) or request.config.option.__dict__.get('config') or None
+def config(request: FixtureRequest) -> str:
+    return getattr(request, 'param', None) or request.config.option.__dict__.get('config') or 'default'
 
 
 @pytest.fixture
@@ -129,3 +140,12 @@ def build_dir(request: FixtureRequest, app_path: str, target: Optional[str], con
     logging.error(
         f'no build dir valid. Please build the binary via "idf.py -B {recommend_place} build" and run pytest again')
     sys.exit(1)
+
+
+@pytest.fixture(autouse=True)
+def junit_properties(app: IdfApp, config: str, test_case_name: str,
+                     record_xml_attribute: Callable[[str, object], None]) -> None:
+    """
+    This fixture is autoused and will modify the junit report test case name to <target>.<config>.<case_name>
+    """
+    record_xml_attribute('name', format_case_id(app.target, config, test_case_name))
