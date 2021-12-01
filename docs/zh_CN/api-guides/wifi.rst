@@ -1295,7 +1295,7 @@ Wi-Fi 供应商 IE 配置
 Wi-Fi Easy Connect™ (DPP)
 --------------------------
 
-Wi-Fi Easy Connect\ :sup:`TM`（也称为设备配置协议）是一个安全且标准化的配置协议，用于配置 Wi-Fi 设备。更多信息请参考 :doc:`esp_dpp <../api-reference/network/esp_dpp>`。
+Wi-Fi Easy Connect\ :sup:`TM` （也称为设备配置协议）是一个安全且标准化的配置协议，用于配置 Wi-Fi 设备。更多信息请参考 :doc:`esp_dpp <../api-reference/network/esp_dpp>`。
 
 WPA2-Enterprise
 +++++++++++++++++++++++++++++++++
