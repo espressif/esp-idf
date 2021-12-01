@@ -252,6 +252,25 @@ int bt_mesh_update_binding_state(struct bt_mesh_model *model,
         light_ctl_publish(model, BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_STATUS);
         break;
     }
+    case LIGHT_HSL_STATE: {
+        if (model->id != BLE_MESH_MODEL_ID_LIGHT_HSL_SRV) {
+            BT_ERR("Invalid Light HSL Server, model id 0x%04x", model->id);
+            return -EINVAL;
+        }
+
+        struct bt_mesh_light_hsl_srv *srv = model->user_data;
+        if (srv->state == NULL) {
+            BT_ERR("Invalid Light HSL Server state");
+            return -EINVAL;
+        }
+
+        bt_mesh_server_stop_transition(&srv->transition);
+        srv->state->lightness = value->light_hsl.lightness;
+        srv->state->hue = value->light_hsl.hue;
+        srv->state->saturation = value->light_hsl.saturation;
+        light_hsl_publish(model, BLE_MESH_MODEL_OP_LIGHT_HSL_STATUS);
+        break;
+    }
     case LIGHT_HSL_LIGHTNESS_STATE: {
         if (model->id != BLE_MESH_MODEL_ID_LIGHT_HSL_SRV) {
             BT_ERR("Invalid Light HSL Server, model id 0x%04x", model->id);
