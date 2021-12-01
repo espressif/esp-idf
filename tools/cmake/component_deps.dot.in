@@ -1,0 +1,30 @@
+digraph G {
+
+${depgraph}
+
+subgraph cluster_g0 {
+    rank = same;
+    label = "G0";
+
+    soc;
+    hal;
+    esp_common;
+    esp_rom;
+    ${CONFIG_IDF_TARGET_ARCH};
+    ${CONFIG_IDF_TARGET};
+}
+
+subgraph cluster_g1 {
+    rank = same;
+    label = "G1";
+
+    spi_flash;
+    freertos;
+    log;
+    heap;
+    newlib;
+    esp_system;
+    esp_hw_support;
+}
+
+}
