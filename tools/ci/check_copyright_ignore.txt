@@ -1383,7 +1383,6 @@ components/newlib/test_apps/main/test_newlib_main.c
 components/newlib/test_apps/main/test_stdatomic.c
 components/nvs_flash/host_test/fixtures/test_fixtures.hpp
 components/nvs_flash/host_test/nvs_page_test/main/nvs_page_test.cpp
-components/nvs_flash/include/nvs.h
 components/nvs_flash/include/nvs_flash.h
 components/nvs_flash/include/nvs_handle.hpp
 components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py
@@ -1400,7 +1399,6 @@ components/nvs_flash/src/nvs_handle_simple.cpp
 components/nvs_flash/src/nvs_handle_simple.hpp
 components/nvs_flash/src/nvs_item_hash_list.cpp
 components/nvs_flash/src/nvs_item_hash_list.hpp
-components/nvs_flash/src/nvs_page.cpp
 components/nvs_flash/src/nvs_page.hpp
 components/nvs_flash/src/nvs_pagemanager.cpp
 components/nvs_flash/src/nvs_pagemanager.hpp
@@ -1410,7 +1408,6 @@ components/nvs_flash/src/nvs_partition_lookup.cpp
 components/nvs_flash/src/nvs_partition_lookup.hpp
 components/nvs_flash/src/nvs_partition_manager.hpp
 components/nvs_flash/src/nvs_platform.hpp
-components/nvs_flash/src/nvs_storage.cpp
 components/nvs_flash/src/nvs_storage.hpp
 components/nvs_flash/src/nvs_test_api.h
 components/nvs_flash/src/nvs_types.cpp
