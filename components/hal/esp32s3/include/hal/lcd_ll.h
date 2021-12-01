@@ -35,16 +35,12 @@ static inline void lcd_ll_set_group_clock_src(lcd_cam_dev_t *dev, lcd_clock_sour
 {
     // lcd_clk = module_clock_src / (div_num + div_b / div_a)
     HAL_ASSERT(div_num >= 2);
-    dev->lcd_clock.lcd_clk_sel = src;
     HAL_FORCE_MODIFY_U32_REG_FIELD(dev->lcd_clock, lcd_clkm_div_num, div_num);
     dev->lcd_clock.lcd_clkm_div_a = div_a;
     dev->lcd_clock.lcd_clkm_div_b = div_b;
     switch (src) {
     case LCD_CLK_SRC_PLL160M:
         dev->lcd_clock.lcd_clk_sel = 3;
-        break;
-    case LCD_CLK_SRC_APLL:
-        dev->lcd_clock.lcd_clk_sel = 2;
         break;
     case LCD_CLK_SRC_XTAL:
         dev->lcd_clock.lcd_clk_sel = 1;
