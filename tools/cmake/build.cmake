@@ -221,13 +221,16 @@ function(__build_expand_requirements component_target)
 
     get_property(reqs TARGET ${component_target} PROPERTY REQUIRES)
     get_property(priv_reqs TARGET ${component_target} PROPERTY PRIV_REQUIRES)
+    __component_get_property(component_name ${component_target} COMPONENT_NAME)
 
     foreach(req ${reqs})
+        depgraph_add_edge(${component_name} ${req} REQUIRES)
         __build_resolve_and_add_req(_component_target ${component_target} ${req} __REQUIRES)
         __build_expand_requirements(${_component_target})
     endforeach()
 
     foreach(req ${priv_reqs})
+        depgraph_add_edge(${component_name} ${req} PRIV_REQUIRES)
         __build_resolve_and_add_req(_component_target ${component_target} ${req} __PRIV_REQUIRES)
         __build_expand_requirements(${_component_target})
     endforeach()

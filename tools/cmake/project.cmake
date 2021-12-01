@@ -120,6 +120,9 @@ function(__project_info test_components)
     configure_file("${idf_path}/tools/cmake/project_description.json.in"
         "${build_dir}/project_description.json")
 
+    # Generate component dependency graph
+    depgraph_generate("${build_dir}/component_deps.dot")
+
     # We now have the following component-related variables:
     #
     # build_components is the list of components to include in the build.
