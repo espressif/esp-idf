@@ -159,6 +159,7 @@ scan_tests:
     CI_SCAN_TESTS_PY: ${CI_PROJECT_DIR}/tools/ci/python_packages/ttfw_idf/CIScanTests.py
     EXTRA_TEST_DIRS: >-
       examples/bluetooth/esp_ble_mesh/ble_mesh_console
+      examples/bluetooth/hci/controller_hci_uart_esp32
       examples/wifi/iperf
   script:
     - set_component_ut_vars
