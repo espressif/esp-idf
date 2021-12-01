@@ -103,7 +103,7 @@ void btc_dm_sec_arg_deep_copy(btc_msg_t *msg, void *dst, void *src)
 
 void btc_dm_sec_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC *data)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
 
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_DM_SEC;

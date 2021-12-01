@@ -1981,7 +1981,9 @@ BOOLEAN L2CA_SetFixedChannelTout (BD_ADDR rem_bda, UINT16 fixed_cid, UINT16 idle
         transport = BT_TRANSPORT_LE;
     }
 #endif
-
+    if (fixed_cid<L2CAP_FIRST_FIXED_CHNL) {
+        return (FALSE);
+    }
     /* Is a fixed channel connected to the remote BDA ?*/
     p_lcb = l2cu_find_lcb_by_bd_addr (rem_bda, transport);
     if ( ((p_lcb) == NULL) || (!p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL]) ) {

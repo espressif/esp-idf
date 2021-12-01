@@ -31,7 +31,7 @@
  */
 esp_err_t esp_ble_gatt_set_local_mtu (uint16_t mtu)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_gatt_com_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);

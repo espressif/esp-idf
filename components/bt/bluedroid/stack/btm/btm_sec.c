@@ -1134,7 +1134,7 @@ tBTM_STATUS BTM_SecBondByTransport (BD_ADDR bd_addr, tBT_TRANSPORT transport,
                                     UINT8 pin_len, UINT8 *p_pin, UINT32 trusted_mask[])
 {
     tBT_DEVICE_TYPE     dev_type;
-    tBLE_ADDR_TYPE      addr_type;
+    tBLE_ADDR_TYPE      addr_type = 0;
 
     BTM_ReadDevInfo(bd_addr, &dev_type, &addr_type);
     /* LE device, do SMP pairing */
