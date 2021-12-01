@@ -285,31 +285,21 @@ static int start_le_scan(uint8_t scan_type, uint16_t interval, uint16_t window,
 
 static void bt_mesh_scan_result_callback(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data)
 {
+    struct net_buf_simple buf = {0};
     bt_mesh_addr_t addr = {0};
-    uint8_t adv_type = 0U;
-    int8_t rssi = 0;
 
     BT_DBG("%s, event %d", __func__, event);
 
     if (event == BTA_DM_INQ_RES_EVT) {
-        /* TODO: How to process scan response here? */
+        /* TODO: How to process scan response here? PS: p_data->inq_res.scan_rsp_len */
         addr.type = p_data->inq_res.ble_addr_type;
         memcpy(addr.val, p_data->inq_res.bd_addr, BLE_MESH_ADDR_LEN);
-        rssi = p_data->inq_res.rssi;
-        adv_type = p_data->inq_res.ble_evt_type;
 
-        /* scan rsp len: p_data->inq_res.scan_rsp_len */
-        struct net_buf_simple *buf = bt_mesh_alloc_buf(p_data->inq_res.adv_data_len);
-        if (!buf) {
-            BT_ERR("%s, Out of memory", __func__);
-            return;
-        }
-        net_buf_simple_add_mem(buf, p_data->inq_res.p_eir, p_data->inq_res.adv_data_len);
+        net_buf_simple_init_with_data(&buf, p_data->inq_res.p_eir, p_data->inq_res.adv_data_len);
 
-        if (bt_mesh_scan_dev_found_cb != NULL) {
-            bt_mesh_scan_dev_found_cb(&addr, rssi, adv_type, buf);
+        if (bt_mesh_scan_dev_found_cb) {
+            bt_mesh_scan_dev_found_cb(&addr, p_data->inq_res.rssi, p_data->inq_res.ble_evt_type, &buf);
         }
-        bt_mesh_free(buf);
     } else if (event == BTA_DM_INQ_CMPL_EVT) {
         BT_INFO("Scan completed, number of scan response %d", p_data->inq_cmpl.num_resps);
     } else {

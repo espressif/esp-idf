@@ -11,6 +11,7 @@
 
 #include "crypto.h"
 #include "adv.h"
+#include "scan.h"
 #include "mesh.h"
 #include "transport.h"
 #include "access.h"

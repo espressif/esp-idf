@@ -29,17 +29,11 @@
 /* Convert from 0.625ms units to interval(ms) */
 #define ADV_SCAN_INT(val)   ((val) * 5 / 8)
 
-/* Window and Interval are equal for continuous scanning */
-#define MESH_SCAN_INTERVAL  0x20
-#define MESH_SCAN_WINDOW    0x20
-
 /* Pre-5.0 controllers enforce a minimum interval of 100ms
  * whereas 5.0+ controllers can go down to 20ms.
  */
 #define ADV_INT_DEFAULT_MS  100
 #define ADV_INT_FAST_MS     20
-
-static const bt_mesh_addr_t *dev_addr;
 
 static const uint8_t adv_type[] = {
     [BLE_MESH_ADV_PROV]   = BLE_MESH_DATA_MESH_PROV,
@@ -595,207 +589,6 @@ uint16_t bt_mesh_get_stored_relay_count(void)
 }
 #endif /* #if defined(CONFIG_BLE_MESH_RELAY_ADV_BUF) */
 
-const bt_mesh_addr_t *bt_mesh_get_unprov_dev_addr(void)
-{
-    return dev_addr;
-}
-
-#if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
-    CONFIG_BLE_MESH_GATT_PROXY_CLIENT
-static bool adv_flags_valid(struct net_buf_simple *buf)
-{
-    uint8_t flags = 0U;
-
-    if (buf->len != 1U) {
-        BT_DBG("Unexpected adv flags length %d", buf->len);
-        return false;
-    }
-
-    flags = net_buf_simple_pull_u8(buf);
-
-    BT_DBG("Received adv pkt with flags: 0x%02x", flags);
-
-    /* Flags context will not be checked currently */
-    ((void) flags);
-
-    return true;
-}
-
-static bool adv_service_uuid_valid(struct net_buf_simple *buf, uint16_t *uuid)
-{
-    if (buf->len != 2U) {
-        BT_DBG("Length not match mesh service uuid");
-        return false;
-    }
-
-    *uuid = net_buf_simple_pull_le16(buf);
-
-    BT_DBG("Received adv pkt with service UUID: %d", *uuid);
-
-    if (*uuid != BLE_MESH_UUID_MESH_PROV_VAL &&
-            *uuid != BLE_MESH_UUID_MESH_PROXY_VAL) {
-        return false;
-    }
-
-    if (*uuid == BLE_MESH_UUID_MESH_PROV_VAL &&
-            bt_mesh_is_provisioner_en() == false) {
-        return false;
-    }
-
-    if (*uuid == BLE_MESH_UUID_MESH_PROXY_VAL &&
-            !IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_CLIENT)) {
-        return false;
-    }
-
-    return true;
-}
-
-#define BLE_MESH_PROV_SRV_DATA_LEN      0x12
-#define BLE_MESH_PROXY_SRV_DATA_LEN1    0x09
-#define BLE_MESH_PROXY_SRV_DATA_LEN2    0x11
-
-static void handle_adv_service_data(struct net_buf_simple *buf,
-                                    const bt_mesh_addr_t *addr,
-                                    uint16_t uuid, int8_t rssi)
-{
-    uint16_t type = 0U;
-
-    if (!buf || !addr) {
-        BT_ERR("%s, Invalid parameter", __func__);
-        return;
-    }
-
-    type = net_buf_simple_pull_le16(buf);
-    if (type != uuid) {
-        BT_DBG("Invalid Mesh Service Data UUID 0x%04x", type);
-        return;
-    }
-
-    switch (type) {
-#if CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT
-    case BLE_MESH_UUID_MESH_PROV_VAL:
-        if (bt_mesh_is_provisioner_en()) {
-            if (buf->len != BLE_MESH_PROV_SRV_DATA_LEN) {
-                BT_WARN("Invalid Mesh Prov Service Data length %d", buf->len);
-                return;
-            }
-
-            BT_DBG("Start to handle Mesh Prov Service Data");
-            bt_mesh_provisioner_prov_adv_recv(buf, addr, rssi);
-        }
-        break;
-#endif
-#if CONFIG_BLE_MESH_GATT_PROXY_CLIENT
-    case BLE_MESH_UUID_MESH_PROXY_VAL:
-        if (buf->len != BLE_MESH_PROXY_SRV_DATA_LEN1 &&
-                buf->len != BLE_MESH_PROXY_SRV_DATA_LEN2) {
-            BT_WARN("Invalid Mesh Proxy Service Data length %d", buf->len);
-            return;
-        }
-
-        BT_DBG("Start to handle Mesh Proxy Service Data");
-        bt_mesh_proxy_client_gatt_adv_recv(buf, addr, rssi);
-        break;
-#endif
-    default:
-        break;
-    }
-}
-#endif
-
-static void bt_mesh_scan_cb(const bt_mesh_addr_t *addr, int8_t rssi,
-                            uint8_t adv_type, struct net_buf_simple *buf)
-{
-#if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
-    CONFIG_BLE_MESH_GATT_PROXY_CLIENT
-    uint16_t uuid = 0U;
-#endif
-
-    if (adv_type != BLE_MESH_ADV_NONCONN_IND && adv_type != BLE_MESH_ADV_IND) {
-        return;
-    }
-
-    BT_DBG("scan, len %u: %s", buf->len, bt_hex(buf->data, buf->len));
-
-    dev_addr = addr;
-
-    while (buf->len > 1) {
-        struct net_buf_simple_state state;
-        uint8_t len, type;
-
-        len = net_buf_simple_pull_u8(buf);
-        /* Check for early termination */
-        if (len == 0U) {
-            return;
-        }
-
-        if (len > buf->len) {
-            BT_WARN("AD malformed");
-            return;
-        }
-
-        net_buf_simple_save(buf, &state);
-
-        type = net_buf_simple_pull_u8(buf);
-
-        buf->len = len - 1;
-
-#if 0
-        /* TODO: Check with BLE Mesh BQB test cases */
-        if ((type == BLE_MESH_DATA_MESH_PROV || type == BLE_MESH_DATA_MESH_MESSAGE ||
-                type == BLE_MESH_DATA_MESH_BEACON) && (adv_type != BLE_MESH_ADV_NONCONN_IND)) {
-            BT_DBG("%s, ignore BLE Mesh packet (type 0x%02x) with adv_type 0x%02x",
-                   __func__, type, adv_type);
-            return;
-        }
-#endif
-
-        switch (type) {
-        case BLE_MESH_DATA_MESH_MESSAGE:
-            bt_mesh_net_recv(buf, rssi, BLE_MESH_NET_IF_ADV);
-            break;
-#if CONFIG_BLE_MESH_PB_ADV
-        case BLE_MESH_DATA_MESH_PROV:
-            if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_node()) {
-                bt_mesh_pb_adv_recv(buf);
-            }
-            if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) && bt_mesh_is_provisioner_en()) {
-                bt_mesh_provisioner_pb_adv_recv(buf);
-            }
-            break;
-#endif /* CONFIG_BLE_MESH_PB_ADV */
-        case BLE_MESH_DATA_MESH_BEACON:
-            bt_mesh_beacon_recv(buf, rssi);
-            break;
-#if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
-    CONFIG_BLE_MESH_GATT_PROXY_CLIENT
-        case BLE_MESH_DATA_FLAGS:
-            if (!adv_flags_valid(buf)) {
-                BT_DBG("Adv Flags mismatch, ignore this adv pkt");
-                return;
-            }
-            break;
-        case BLE_MESH_DATA_UUID16_ALL:
-            if (!adv_service_uuid_valid(buf, &uuid)) {
-                BT_DBG("Adv Service UUID mismatch, ignore this adv pkt");
-                return;
-            }
-            break;
-        case BLE_MESH_DATA_SVC_DATA16:
-            handle_adv_service_data(buf, addr, uuid, rssi);
-            break;
-#endif
-        default:
-            break;
-        }
-
-        net_buf_simple_restore(buf, &state);
-        net_buf_simple_pull(buf, len);
-    }
-
-    return;
-}
-
 void bt_mesh_adv_init(void)
 {
 #if !CONFIG_BLE_MESH_FREERTOS_STATIC_ALLOC
@@ -917,77 +710,6 @@ void bt_mesh_adv_deinit(void)
 #endif
 }
 #endif /* CONFIG_BLE_MESH_DEINIT */
-
-int bt_mesh_scan_enable(void)
-{
-    int err = 0;
-
-    struct bt_mesh_scan_param scan_param = {
-        .type       = BLE_MESH_SCAN_PASSIVE,
-#if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
-        .filter_dup = BLE_MESH_SCAN_FILTER_DUP_ENABLE,
-#else
-        .filter_dup = BLE_MESH_SCAN_FILTER_DUP_DISABLE,
-#endif
-        .interval   = MESH_SCAN_INTERVAL,
-        .window     = MESH_SCAN_WINDOW,
-        .scan_fil_policy = BLE_MESH_SP_ADV_ALL,
-    };
-
-    BT_DBG("%s", __func__);
-
-    err = bt_le_scan_start(&scan_param, bt_mesh_scan_cb);
-    if (err && err != -EALREADY) {
-        BT_ERR("starting scan failed (err %d)", err);
-        return err;
-    }
-
-    return 0;
-}
-
-int bt_mesh_scan_disable(void)
-{
-    int err = 0;
-
-    BT_DBG("%s", __func__);
-
-    err = bt_le_scan_stop();
-    if (err && err != -EALREADY) {
-        BT_ERR("stopping scan failed (err %d)", err);
-        return err;
-    }
-
-    return 0;
-}
-
-#if CONFIG_BLE_MESH_TEST_USE_WHITE_LIST
-int bt_mesh_scan_with_wl_enable(void)
-{
-    int err = 0;
-
-    struct bt_mesh_scan_param scan_param = {
-        .type       = BLE_MESH_SCAN_PASSIVE,
-#if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
-        .filter_dup = BLE_MESH_SCAN_FILTER_DUP_ENABLE,
-#else
-        .filter_dup = BLE_MESH_SCAN_FILTER_DUP_DISABLE,
-#endif
-        .interval   = MESH_SCAN_INTERVAL,
-        .window     = MESH_SCAN_WINDOW,
-        .scan_fil_policy = BLE_MESH_SP_ADV_WL,
-    };
-
-    BT_DBG("%s", __func__);
-
-    err = bt_le_scan_start(&scan_param, bt_mesh_scan_cb);
-    if (err && err != -EALREADY) {
-        BT_ERR("starting scan failed (err %d)", err);
-        return err;
-    }
-
-    return 0;
-}
-#endif /* CONFIG_BLE_MESH_TEST_USE_WHITE_LIST */
 
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
 static struct bt_mesh_adv *ble_adv_alloc(int id)
@@ -1159,7 +881,7 @@ int bt_mesh_start_ble_advertising(const struct bt_mesh_ble_adv_param *param,
 
     buf = bt_mesh_ble_adv_create(BLE_MESH_ADV_BLE, 0U, K_NO_WAIT);
     if (!buf) {
-        BT_ERR("Unable to allocate buffer");
+        BT_ERR("No empty ble adv buffer");
         return -ENOBUFS;
     }
 

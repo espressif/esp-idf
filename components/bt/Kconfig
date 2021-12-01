@@ -1797,6 +1797,35 @@ if BLE_MESH
             If enabled, users can use the function esp_ble_mesh_deinit() to de-initialize
             the whole BLE Mesh stack.
 
+    menu "BLE Mesh and BLE coexistence support"
+
+        config BLE_MESH_SUPPORT_BLE_ADV
+            bool "Support sending normal BLE advertising packets"
+            default n
+            help
+                When selected, users can send normal BLE advertising packets
+                with specific API.
+
+        if BLE_MESH_SUPPORT_BLE_ADV
+
+            config BLE_MESH_BLE_ADV_BUF_COUNT
+                int "Number of advertising buffers for BLE advertising packets"
+                default 3
+                range 1 255
+                help
+                    Number of advertising buffers for BLE packets available.
+
+        endif # BLE_MESH_SUPPORT_BLE_ADV
+
+        config BLE_MESH_SUPPORT_BLE_SCAN
+            bool "Support scanning normal BLE advertising packets"
+            default n
+            help
+                When selected, users can register a callback and receive normal BLE
+                advertising packets in the application layer.
+
+    endmenu # BLE Mesh and BLE coexistence support
+
     config BLE_MESH_FAST_PROV
         bool "Enable BLE Mesh Fast Provisioning"
         select BLE_MESH_NODE
@@ -2217,24 +2246,6 @@ if BLE_MESH
             for the Transport Layer MIC). For example, 5 segments means the maximum
             SDU size is 60 bytes, which leaves 56 bytes for application layer data
             using a 4-byte MIC, or 52 bytes using an 8-byte MIC.
-
-    config BLE_MESH_SUPPORT_BLE_ADV
-        bool "Support sending normal BLE advertising packets"
-        default n
-        help
-            When selected, users can send normal BLE advertising packets
-            with specific API.
-
-    if BLE_MESH_SUPPORT_BLE_ADV
-
-        config BLE_MESH_BLE_ADV_BUF_COUNT
-            int "Number of advertising buffers for BLE advertising packets"
-            default 3
-            range 1 255
-            help
-                Number of advertising buffers for BLE packets available.
-
-    endif # BLE_MESH_SUPPORT_BLE_ADV
 
     config BLE_MESH_IVU_DIVIDER
         int "Divider for IV Update state refresh timer"

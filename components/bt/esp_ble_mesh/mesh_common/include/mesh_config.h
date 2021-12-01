@@ -45,6 +45,9 @@ extern "C" {
                                       CONFIG_BLE_MESH_TIME_SCENE_SERVER | \
                                       CONFIG_BLE_MESH_LIGHTING_SERVER)
 
+#define CONFIG_BLE_MESH_BLE_COEX_SUPPORT (CONFIG_BLE_MESH_SUPPORT_BLE_ADV | \
+                                          CONFIG_BLE_MESH_SUPPORT_BLE_SCAN)
+
 #ifdef __cplusplus
 }
 #endif

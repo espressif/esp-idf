@@ -800,36 +800,6 @@ typedef enum {
     PROXY_FILTER_BLACKLIST,
 } esp_ble_mesh_proxy_filter_type_t;
 
-/** Count for sending BLE advertising packet infinitely */
-#define ESP_BLE_MESH_BLE_ADV_INFINITE   0xFFFF
-
-/*!< This enum value is the priority of BLE advertising packet */
-typedef enum {
-    ESP_BLE_MESH_BLE_ADV_PRIO_LOW,
-    ESP_BLE_MESH_BLE_ADV_PRIO_HIGH,
-} esp_ble_mesh_ble_adv_priority_t;
-
-/** Context of BLE advertising parameters. */
-typedef struct {
-    uint16_t interval;                  /*!< BLE advertising interval */
-    uint8_t  adv_type;                  /*!< BLE advertising type */
-    uint8_t  own_addr_type;             /*!< Own address type */
-    uint8_t  peer_addr_type;            /*!< Peer address type */
-    uint8_t  peer_addr[BD_ADDR_LEN];    /*!< Peer address */
-    uint16_t duration;                  /*!< Duration is milliseconds */
-    uint16_t period;                    /*!< Period in milliseconds */
-    uint16_t count;                     /*!< Number of advertising duration */
-    uint8_t  priority:2;                /*!< Priority of BLE advertising packet */
-} esp_ble_mesh_ble_adv_param_t;
-
-/** Context of BLE advertising data. */
-typedef struct {
-    uint8_t adv_data_len;       /*!< Advertising data length */
-    uint8_t adv_data[31];       /*!< Advertising data */
-    uint8_t scan_rsp_data_len;  /*!< Scan response data length */
-    uint8_t scan_rsp_data[31];  /*!< Scan response data */
-} esp_ble_mesh_ble_adv_data_t;
-
 /*!< Provisioner heartbeat filter type */
 #define ESP_BLE_MESH_HEARTBEAT_FILTER_ACCEPTLIST    0x00
 #define ESP_BLE_MESH_HEARTBEAT_FILTER_REJECTLIST    0x01
@@ -925,8 +895,6 @@ typedef enum {
     ESP_BLE_MESH_PROXY_CLIENT_SET_FILTER_TYPE_COMP_EVT,         /*!< Proxy Client set filter type completion event */
     ESP_BLE_MESH_PROXY_CLIENT_ADD_FILTER_ADDR_COMP_EVT,         /*!< Proxy Client add filter address completion event */
     ESP_BLE_MESH_PROXY_CLIENT_REMOVE_FILTER_ADDR_COMP_EVT,      /*!< Proxy Client remove filter address completion event */
-    ESP_BLE_MESH_START_BLE_ADVERTISING_COMP_EVT,                /*!< Start BLE advertising completion event */
-    ESP_BLE_MESH_STOP_BLE_ADVERTISING_COMP_EVT,                 /*!< Stop BLE advertising completion event */
     ESP_BLE_MESH_MODEL_SUBSCRIBE_GROUP_ADDR_COMP_EVT,           /*!< Local model subscribes group address completion event */
     ESP_BLE_MESH_MODEL_UNSUBSCRIBE_GROUP_ADDR_COMP_EVT,         /*!< Local model unsubscribes group address completion event */
     ESP_BLE_MESH_DEINIT_MESH_COMP_EVT,                          /*!< De-initialize BLE Mesh stack completion event */
@@ -1509,20 +1477,6 @@ typedef union {
         uint8_t conn_handle;                    /*!< Proxy connection handle */
         uint16_t net_idx;                       /*!< Corresponding NetKey Index */
     } proxy_client_remove_filter_addr_comp;     /*!< Event parameter of ESP_BLE_MESH_PROXY_CLIENT_REMOVE_FILTER_ADDR_COMP_EVT */
-    /**
-     * @brief ESP_BLE_MESH_START_BLE_ADVERTISING_COMP_EVT
-     */
-    struct ble_mesh_start_ble_advertising_comp_param {
-        int err_code;                           /*!< Indicate the result of starting BLE advertising */
-        uint8_t index;                          /*!< Index of the BLE advertising */
-    } start_ble_advertising_comp;               /*!< Event parameter of ESP_BLE_MESH_START_BLE_ADVERTISING_COMP_EVT */
-    /**
-     * @brief ESP_BLE_MESH_STOP_BLE_ADVERTISING_COMP_EVT
-     */
-    struct ble_mesh_stop_ble_advertising_comp_param {
-        int err_code;                           /*!< Indicate the result of stopping BLE advertising */
-        uint8_t index;                          /*!< Index of the BLE advertising */
-    } stop_ble_advertising_comp;                /*!< Event parameter of ESP_BLE_MESH_STOP_BLE_ADVERTISING_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_MODEL_SUBSCRIBE_GROUP_ADDR_COMP_EVT
      */
