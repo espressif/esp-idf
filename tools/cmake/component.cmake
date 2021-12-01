@@ -576,6 +576,28 @@ function(idf_component_mock)
       )
 endfunction()
 
+# idf_component_optional_requires
+#
+# @brief Add a dependency on a given component only if it is included in the build.
+#
+# Calling idf_component_optional_requires(PRIVATE dependency_name) has the similar effect to
+# target_link_libraries(${COMPONENT_LIB} PRIVATE idf::dependency_name), only if 'dependency_name'
+# component is part of the build. Otherwise, no dependency gets added. Multiple names may be given.
+#
+# @param[in]  type of the dependency, one of: PRIVATE, PUBLIC, INTERFACE
+# @param[in, multivalue] list of component names which should be added as dependencies
+#
+function(idf_component_optional_requires req_type)
+    set(optional_reqs ${ARGN})
+    idf_build_get_property(build_components BUILD_COMPONENTS)
+    foreach(req ${optional_reqs})
+        if(req IN_LIST build_components)
+            idf_component_get_property(req_lib ${req} COMPONENT_LIB)
+            target_link_libraries(${COMPONENT_LIB} ${req_type} ${req_lib})
+        endif()
+    endforeach()
+endfunction()
+
 #
 # Deprecated functions
 #
