@@ -38,12 +38,13 @@ TEST_CASE("create volume, open file, write and read back data", "[fatfs]")
     esp_result = ff_diskio_register_wl_partition(pdrv, wl_handle);
 
     // Create FAT volume on the entire disk
-    DWORD part_list[] = {100, 0, 0, 0};
+    LBA_t part_list[] = {100, 0, 0, 0};
     BYTE work_area[FF_MAX_SS];
 
     fr_result = f_fdisk(pdrv, part_list, work_area);
     REQUIRE(fr_result == FR_OK);
-    fr_result = f_mkfs("", FM_ANY, 0, work_area, sizeof(work_area)); // Use default volume
+    const MKFS_PARM opt = {(BYTE)FM_ANY, 0, 0, 0, 0};
+    fr_result = f_mkfs("", &opt, work_area, sizeof(work_area)); // Use default volume
 
     // Mount the volume
     fr_result = f_mount(&fs, "", 0);

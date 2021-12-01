@@ -835,8 +835,6 @@ components/fatfs/test_fatfs_host/sdkconfig/sdkconfig.h
 components/fatfs/test_fatfs_host/test_fatfs.cpp
 components/fatfs/vfs/esp_vfs_fat.h
 components/fatfs/vfs/vfs_fat_internal.h
-components/fatfs/vfs/vfs_fat_sdmmc.c
-components/fatfs/vfs/vfs_fat_spiflash.c
 components/hal/aes_hal.c
 components/hal/cpu_hal.c
 components/hal/dac_hal.c

@@ -11,5 +11,6 @@ ESP-IDF 5.0 迁移指南
     系统 <system>
     FreeRTOS <freertos>
     以太网 <ethernet>
+    Storage <storage>
     Removed or deprecated components <removed-components>
     Tools <tools>

@@ -1,0 +1,1 @@
+.. include:: ../../en/migration-guides/storage.rst
