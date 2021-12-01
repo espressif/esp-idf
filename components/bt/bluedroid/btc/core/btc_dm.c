@@ -391,6 +391,7 @@ static void btc_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
             break;
         default:
             status =  BT_STATUS_FAIL;
+            break;
         }
     }
 #if (BTC_GAP_BT_INCLUDED == TRUE)

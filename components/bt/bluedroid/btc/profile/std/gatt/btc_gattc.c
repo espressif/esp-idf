@@ -121,14 +121,14 @@ static void btc_gattc_copy_req_data(btc_msg_t *msg, void *p_dest, void *p_src)
     tBTA_GATTC *p_dest_data = (tBTA_GATTC *) p_dest;
     tBTA_GATTC *p_src_data = (tBTA_GATTC *) p_src;
 
-    if (!p_src_data || !p_dest_data) {
+    if (!p_src_data || !p_dest_data || !msg) {
         return;
     }
 
     // Allocate buffer for request data if necessary
     switch (msg->act) {
         case BTA_GATTC_READ_DESCR_EVT:
-        case BTA_GATTC_READ_CHAR_EVT: 
+        case BTA_GATTC_READ_CHAR_EVT:
         case BTA_GATTC_READ_MULTIPLE_EVT: {
             if (p_src_data->read.p_value && p_src_data->read.p_value->p_value) {
                 p_dest_data->read.p_value = (tBTA_GATT_UNFMT  *)osi_malloc(sizeof(tBTA_GATT_UNFMT) + p_src_data->read.p_value->len);
@@ -164,7 +164,7 @@ static void btc_gattc_free_req_data(btc_msg_t *msg)
     tBTA_GATTC *arg = (tBTA_GATTC *)(msg->arg);
     switch (msg->act) {
         case BTA_GATTC_READ_DESCR_EVT:
-        case BTA_GATTC_READ_CHAR_EVT: 
+        case BTA_GATTC_READ_CHAR_EVT:
         case BTA_GATTC_READ_MULTIPLE_EVT: {
             if (arg->read.p_value) {
                 osi_free(arg->read.p_value);
