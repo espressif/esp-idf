@@ -10,3 +10,4 @@ ESP-IDF 5.0 Migration Guides
     Build System <build-system>
     System <system>
     Ethernet <ethernet>
+    Removed or deprecated components <removed-components>

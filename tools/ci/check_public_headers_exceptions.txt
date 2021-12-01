@@ -49,7 +49,6 @@ components/mbedtls/mbedtls/include/mbedtls/
 
 components/coap/
 components/nghttp/
-components/cbor/
 
 components/esp-tls/private_include/
 
@@ -68,8 +67,6 @@ components/fatfs/src/ffconf.h
 components/idf_test/include/idf_performance.h
 
 components/json/cJSON/
-
-components/libsodium/
 
 components/spiffs/include/spiffs_config.h
 

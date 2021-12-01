@@ -535,7 +535,6 @@ components/bt/host/nimble/port/include/esp_nimble_mem.h
 components/bt/host/nimble/port/src/esp_nimble_mem.c
 components/bt/test/test_bt_common.c
 components/bt/test/test_smp.c
-components/cbor/port/include/cbor.h
 components/coap/port/include/coap3/coap.h
 components/coap/port/include/coap_config.h
 components/coap/port/include/coap_config_posix.h
@@ -1391,8 +1390,6 @@ components/idf_test/include/esp32h2/idf_performance_target.h
 components/idf_test/include/esp32s2/idf_performance_target.h
 components/idf_test/include/esp32s3/idf_performance_target.h
 components/idf_test/include/idf_performance.h
-components/jsmn/include/jsmn.h
-components/jsmn/src/jsmn.c
 components/linux/include/sys/queue.h
 components/log/esp_log_private.h
 components/log/host_test/log_test/main/log_test.cpp
@@ -1518,9 +1515,7 @@ components/mbedtls/test/test_ecp.c
 components/mbedtls/test/test_esp_crt_bundle.c
 components/mbedtls/test/test_mbedtls.c
 components/mbedtls/test/test_mbedtls_mpi.c
-components/mbedtls/test/test_mbedtls_sha.c
 components/mbedtls/test/test_rsa.c
-components/mbedtls/test/test_sha_perf.c
 components/mdns/host_test/components/esp_event_mock/esp_event_mock.c
 components/mdns/host_test/components/esp_event_mock/include/esp_event.h
 components/mdns/host_test/components/esp_event_mock/include/esp_event_base.h
@@ -3137,8 +3132,6 @@ examples/protocols/asio/tcp_echo_server/asio_tcp_server_test.py
 examples/protocols/asio/tcp_echo_server/main/echo_server.cpp
 examples/protocols/asio/udp_echo_server/asio_udp_server_test.py
 examples/protocols/asio/udp_echo_server/main/udp_echo_server.cpp
-examples/protocols/cbor/example_test.py
-examples/protocols/cbor/main/cbor_example_main.c
 examples/protocols/coap_client/main/coap_client_example_main.c
 examples/protocols/coap_server/main/coap_server_example_main.c
 examples/protocols/esp_http_client/esp_http_client_test.py
