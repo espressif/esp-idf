@@ -2885,7 +2885,6 @@ examples/bluetooth/esp_ble_mesh/ble_mesh_console/main/ble_mesh_console_main.c
 examples/bluetooth/esp_ble_mesh/ble_mesh_console/main/ble_mesh_console_system.c
 examples/bluetooth/esp_ble_mesh/ble_mesh_console/main/ble_mesh_reg_cfg_client_cmd.c
 examples/bluetooth/esp_ble_mesh/ble_mesh_console/main/ble_mesh_reg_gen_onoff_client_cmd.c
-examples/bluetooth/esp_ble_mesh/ble_mesh_console/main/ble_mesh_reg_test_perf_client_cmd.c
 examples/bluetooth/esp_ble_mesh/ble_mesh_console/main/ble_mesh_register_cmd.c
 examples/bluetooth/esp_ble_mesh/ble_mesh_console/main/ble_mesh_register_server_cmd.c
 examples/bluetooth/esp_ble_mesh/ble_mesh_console/main/register_bluetooth.c
