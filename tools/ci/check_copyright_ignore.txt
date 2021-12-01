@@ -2117,7 +2117,6 @@ components/spi_flash/sim/flash_mock.cpp
 components/spi_flash/sim/flash_mock_util.c
 components/spi_flash/sim/sdkconfig/sdkconfig.h
 components/spi_flash/spi_flash_chip_boya.c
-components/spi_flash/spi_flash_chip_drivers.c
 components/spi_flash/spi_flash_chip_gd.c
 components/spi_flash/spi_flash_chip_generic.c
 components/spi_flash/spi_flash_chip_issi.c
