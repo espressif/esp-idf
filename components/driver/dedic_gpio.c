@@ -78,12 +78,15 @@ static esp_err_t dedic_gpio_build_platform(uint32_t core_id)
             if (s_platform[core_id]) {
                 // initialize platfrom members
                 s_platform[core_id]->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
+                // initial occupy_mask: 1111...100...0
+                s_platform[core_id]->out_occupied_mask = UINT32_MAX & ~((1 << SOC_DEDIC_GPIO_OUT_CHANNELS_NUM) - 1);
+                s_platform[core_id]->in_occupied_mask = UINT32_MAX & ~((1 << SOC_DEDIC_GPIO_IN_CHANNELS_NUM) - 1);
 #if SOC_DEDIC_GPIO_ALLOW_REG_ACCESS
                 s_platform[core_id]->dev = &DEDIC_GPIO;
 #endif // SOC_DEDIC_GPIO_ALLOW_REG_ACCESS
-#if !SOC_DEDIC_PERIPH_AUTO_ENABLE
+#if !SOC_DEDIC_PERIPH_ALWAYS_ENABLE
                 periph_module_enable(dedic_gpio_periph_signals.module); // enable APB clock to peripheral
-#endif // !SOC_DEDIC_PERIPH_AUTO_ENABLE
+#endif // !SOC_DEDIC_PERIPH_ALWAYS_ENABLE
             }
         }
         _lock_release(&s_platform_mutexlock[core_id]);
@@ -104,9 +107,9 @@ static void dedic_gpio_break_platform(uint32_t core_id)
         if (s_platform[core_id]) {
             free(s_platform[core_id]);
             s_platform[core_id] = NULL;
-#if !SOC_DEDIC_PERIPH_AUTO_ENABLE
+#if !SOC_DEDIC_PERIPH_ALWAYS_ENABLE
             periph_module_disable(dedic_gpio_periph_signals.module); // disable module if no GPIO channel is being used
-#endif // !SOC_DEDIC_PERIPH_AUTO_ENABLE
+#endif // !SOC_DEDIC_PERIPH_ALWAYS_ENABLE
         }
         _lock_release(&s_platform_mutexlock[core_id]);
     }
@@ -309,7 +312,8 @@ esp_err_t dedic_gpio_del_bundle(dedic_gpio_bundle_handle_t bundle)
     portENTER_CRITICAL(&s_platform[core_id]->spinlock);
     s_platform[core_id]->out_occupied_mask &= ~(bundle->out_mask);
     s_platform[core_id]->in_occupied_mask &= ~(bundle->in_mask);
-    if (!s_platform[core_id]->in_occupied_mask && !s_platform[core_id]->out_occupied_mask) {
+    if (s_platform[core_id]->in_occupied_mask == (UINT32_MAX & ~((1 << SOC_DEDIC_GPIO_IN_CHANNELS_NUM) - 1)) &&
+        s_platform[core_id]->out_occupied_mask == (UINT32_MAX & ~((1 << SOC_DEDIC_GPIO_OUT_CHANNELS_NUM) - 1))) {
         recycle_all = true;
     }
     portEXIT_CRITICAL(&s_platform[core_id]->spinlock);

@@ -255,7 +255,7 @@ config SOC_DEDIC_GPIO_IN_CHANNELS_NUM
     int
     default 8
 
-config SOC_DEDIC_PERIPH_AUTO_ENABLE
+config SOC_DEDIC_PERIPH_ALWAYS_ENABLE
     bool
     default y
 
