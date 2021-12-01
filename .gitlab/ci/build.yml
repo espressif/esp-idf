@@ -39,6 +39,13 @@ build_examples_pytest_esp32:
   script:
     - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir examples --target esp32 --size-info $SIZE_INFO_LOCATION -vv
 
+build_examples_pytest_esp32s2:
+  extends:
+    - .build_pytest_template
+    - .rules:build:example_test-esp32s2
+  script:
+    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir examples --target esp32s2 --size-info $SIZE_INFO_LOCATION -vv
+
 build_examples_pytest_esp32c3:
   extends:
     - .build_pytest_template

@@ -28,6 +28,19 @@ example_test_pytest_esp32_generic:
     - ESP32
     - Example_GENERIC
 
+example_test_pytest_esp32s2_generic:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32s2
+  needs:
+    - build_examples_pytest_esp32s2
+  variables:
+    TARGET_MARKER: esp32s2
+    ENV_MARKER: generic
+  tags:
+    - ESP32S2
+    - Example_GENERIC
+
 example_test_pytest_esp32c3_generic:
   extends:
     - .pytest_examples_dir_template
