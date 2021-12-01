@@ -110,14 +110,6 @@ struct esp_netif_obj {
     esp_err_t (*driver_transmit)(void *h, void *buffer, size_t len);
     esp_err_t (*driver_transmit_wrap)(void *h, void *buffer, size_t len, void *pbuf);
     void (*driver_free_rx_buffer)(void *h, void* buffer);
-#if CONFIG_ESP_NETIF_L2_TAP
-    SemaphoreHandle_t transmit_mutex;
-
-    // L2 manipulation hooks
-    esp_err_t (*transmit_hook)(void *h, void **buffer, size_t *len);
-    void (*post_transmit_hook)(void *h, void *buffer, size_t len);
-    esp_err_t (*receive_hook)(void *h, void *buffer, size_t *len);
-#endif
 
     // dhcp related
     esp_netif_dhcp_status_t dhcpc_status;

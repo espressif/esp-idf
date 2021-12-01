@@ -10,6 +10,9 @@
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_check.h"
+#if CONFIG_ESP_NETIF_L2_TAP
+#include "esp_vfs_l2tap.h"
+#endif
 
 const static char *TAG = "esp_eth.netif.netif_glue";
 
@@ -27,6 +30,13 @@ struct esp_eth_netif_glue_t {
 
 static esp_err_t eth_input_to_netif(esp_eth_handle_t eth_handle, uint8_t *buffer, uint32_t length, void *priv)
 {
+#if CONFIG_ESP_NETIF_L2_TAP
+    esp_err_t ret = ESP_OK;
+    ret = esp_vfs_l2tap_eth_filter(eth_handle, buffer, (size_t *)&length);
+    if (length == 0) {
+        return ret;
+    }
+#endif
     return esp_netif_receive((esp_netif_t *)priv, buffer, length, NULL);
 }
 

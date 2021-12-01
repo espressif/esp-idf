@@ -293,16 +293,16 @@ static void open_read_task(void *task_param)
     task_control->eth_tap_fd = open("/dev/net/tap", 0);
     TEST_ASSERT_NOT_EQUAL(-1, task_control->eth_tap_fd);
 
-    // Set the Ethertype filter (frames with this type will be available through the eth_tap_fd)
-    uint16_t eth_type_filter = ETH_FILTER_LE;
-    TEST_ASSERT_NOT_EQUAL(-1, ioctl(task_control->eth_tap_fd, L2TAP_S_RCV_FILTER, &eth_type_filter));
     // Set Ethernet interface on which to get raw frames
     TEST_ASSERT_NOT_EQUAL(-1, ioctl(task_control->eth_tap_fd, L2TAP_S_INTF_DEVICE, "ETH_DEF"));
-
     // Check the Ethernet interface was assigned
     char *if_key_str;
     TEST_ASSERT_NOT_EQUAL(-1, ioctl(task_control->eth_tap_fd, L2TAP_G_INTF_DEVICE, &if_key_str));
     TEST_ASSERT_EQUAL_STRING("ETH_DEF", if_key_str);
+
+    // Set the Ethertype filter (frames with this type will be available through the eth_tap_fd)
+    uint16_t eth_type_filter = ETH_FILTER_LE;
+    TEST_ASSERT_NOT_EQUAL(-1, ioctl(task_control->eth_tap_fd, L2TAP_S_RCV_FILTER, &eth_type_filter));
 
     xSemaphoreGive(task_control->sem);
 
@@ -429,16 +429,16 @@ TEST_CASE("esp32 l2tap - non blocking read", "[ethernet][test_env=UT_T2_Ethernet
     eth_tap_fd = open("/dev/net/tap", O_NONBLOCK);
     TEST_ASSERT_NOT_EQUAL(-1, eth_tap_fd);
 
-    // Set the Ethertype filter (frames with this type will be available through the eth_tap_fd)
-    uint16_t eth_type_filter = ETH_FILTER_LE;
-    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_RCV_FILTER, &eth_type_filter));
     // Set Ethernet interface on which to get raw frames
     TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_INTF_DEVICE, "ETH_DEF"));
-
     // Check the Ethernet interface was assigned
     char *if_key_str;
     TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_G_INTF_DEVICE, &if_key_str));
     TEST_ASSERT_EQUAL_STRING("ETH_DEF", if_key_str);
+
+    // Set the Ethertype filter (frames with this type will be available through the eth_tap_fd)
+    uint16_t eth_type_filter = ETH_FILTER_LE;
+    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_RCV_FILTER, &eth_type_filter));
 
     // ==========================================================
     // Verify simple non-blocking read operations
@@ -550,16 +550,16 @@ TEST_CASE("esp32 l2tap - blocking read", "[ethernet][test_env=UT_T2_Ethernet]")
     eth_tap_fd = open("/dev/net/tap", 0);
     TEST_ASSERT_NOT_EQUAL(-1, eth_tap_fd);
 
-    // Set the Ethertype filter (frames with this type will be available through the eth_tap_fd)
-    uint16_t eth_type_filter = ETH_FILTER_LE;
-    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_RCV_FILTER, &eth_type_filter));
     // Set Ethernet interface on which to get raw frames
     TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_INTF_DEVICE, "ETH_DEF"));
-
     // Check the Ethernet interface was assigned
     char *if_key_str;
     TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_G_INTF_DEVICE, &if_key_str));
     TEST_ASSERT_EQUAL_STRING("ETH_DEF", if_key_str);
+
+    // Set the Ethertype filter (frames with this type will be available through the eth_tap_fd)
+    uint16_t eth_type_filter = ETH_FILTER_LE;
+    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_RCV_FILTER, &eth_type_filter));
 
     // ==========================================================
     // Verify simple blocking read operations
@@ -610,16 +610,16 @@ TEST_CASE("esp32 l2tap - write", "[ethernet][test_env=UT_T2_Ethernet]")
     eth_tap_fd = open("/dev/net/tap", 0);
     TEST_ASSERT_NOT_EQUAL(-1, eth_tap_fd);
 
-    // Set the Ethertype filter (frames with this type will be available through the eth_tap_fd)
-    uint16_t eth_type_filter = ETH_FILTER_LE;
-    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_RCV_FILTER, &eth_type_filter));
     // Set Ethernet interface on which to get raw frames
     TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_INTF_DEVICE, "ETH_DEF"));
-
     // Check the Ethernet interface was assigned
     char *if_key_str;
     TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_G_INTF_DEVICE, &if_key_str));
     TEST_ASSERT_EQUAL_STRING("ETH_DEF", if_key_str);
+
+    // Set the Ethertype filter (frames with this type will be available through the eth_tap_fd)
+    uint16_t eth_type_filter = ETH_FILTER_LE;
+    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_RCV_FILTER, &eth_type_filter));
 
 
     ESP_LOGI(TAG, "Verify the write is not successful when use different Ethernet type than the fd is configured to...");
@@ -674,15 +674,15 @@ static void multi_fds_task (void *task_param)
         eth_tap_fds[i] = open("/dev/net/tap", O_NONBLOCK);
         TEST_ASSERT_NOT_EQUAL(-1, eth_tap_fds[i]);
 
-        uint16_t eth_type_filter = eth_filter + i;
-        TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fds[i], L2TAP_S_RCV_FILTER, &eth_type_filter));
         // Set Ethernet interface on which to get raw frames
         TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fds[i], L2TAP_S_INTF_DEVICE, "ETH_DEF"));
-
         // Check the Ethernet interface was assigned
         char *if_key_str;
         TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fds[i], L2TAP_G_INTF_DEVICE, &if_key_str));
         TEST_ASSERT_EQUAL_STRING("ETH_DEF", if_key_str);
+
+        uint16_t eth_type_filter = eth_filter + i;
+        TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fds[i], L2TAP_S_RCV_FILTER, &eth_type_filter));
     }
 
     int msg_cnt;
@@ -763,20 +763,27 @@ TEST_CASE("esp32 l2tap - ioctl - RCV_FILTER", "[ethernet][test_env=UT_T2_Etherne
 
     eth_tap_fd = open("/dev/net/tap", 0);
     TEST_ASSERT_NOT_EQUAL(-1, eth_tap_fd);
-
-    // Set the Ethertype filter (frames with this type will be available through the eth_tap_fd)
+    ESP_LOGI(TAG, "Verify that RCV_FILTER is allowed to be configured only after interface is set...");
     uint16_t eth_type_filter = ETH_FILTER_LE;
-    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_RCV_FILTER, &eth_type_filter));
-    uint16_t eth_type_filter_get = 0;
-    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_G_RCV_FILTER, &eth_type_filter_get));
-    TEST_ASSERT_EQUAL(eth_type_filter, eth_type_filter_get);
+    TEST_ASSERT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_RCV_FILTER, &eth_type_filter));
+    TEST_ASSERT_EQUAL(EACCES, errno);
+    TEST_ASSERT_EQUAL(0, close(eth_tap_fd));
+
+    eth_tap_fd = open("/dev/net/tap", 0);
+    TEST_ASSERT_NOT_EQUAL(-1, eth_tap_fd);
+
     // Set Ethernet interface on which to get raw frames
     TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_INTF_DEVICE, "ETH_DEF"));
-
     // Check the Ethernet interface was assigned
     char *if_key_str;
     TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_G_INTF_DEVICE, &if_key_str));
     TEST_ASSERT_EQUAL_STRING("ETH_DEF", if_key_str);
+
+    // Set the Ethertype filter (frames with this type will be available through the eth_tap_fd)
+    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_RCV_FILTER, &eth_type_filter));
+    uint16_t eth_type_filter_get = 0;
+    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_G_RCV_FILTER, &eth_type_filter_get));
+    TEST_ASSERT_EQUAL(eth_type_filter, eth_type_filter_get);
 
     ESP_LOGI(TAG, "Confirm that we are able to receive message with default Ethertype...");
     send_task_control_t send_task_ctrl = {
@@ -814,10 +821,16 @@ TEST_CASE("esp32 l2tap - ioctl - RCV_FILTER", "[ethernet][test_env=UT_T2_Etherne
     TEST_ASSERT_GREATER_THAN(0, n);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(&s_test_msg, in_buffer, n);
 
-    // Open another raw ethernet fd and try to set the same filter as for the first one
+    // Open another raw ethernet fd at the same interface and try to set the same filter as for the first one
     int eth_tap_fd_2 = open("/dev/net/tap", 0);
     TEST_ASSERT_NOT_EQUAL(-1, eth_tap_fd_2);
-    ESP_LOGI(TAG, "Verify that the setting the same Ethernet type to other fd was unsuccessful...");
+    // Set Ethernet interface on which to get raw frames
+    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd_2, L2TAP_S_INTF_DEVICE, "ETH_DEF"));
+    // Check the Ethernet interface was assigned
+    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd_2, L2TAP_G_INTF_DEVICE, &if_key_str));
+    TEST_ASSERT_EQUAL_STRING("ETH_DEF", if_key_str);
+
+    ESP_LOGI(TAG, "Verify that the setting the same Ethernet type to other fd at the same interface was unsuccessful...");
     TEST_ASSERT_EQUAL(-1, ioctl(eth_tap_fd_2, L2TAP_S_RCV_FILTER, &eth_type_filter));
     TEST_ASSERT_EQUAL(EINVAL, errno);
     TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd_2, L2TAP_G_RCV_FILTER, &eth_type_filter_get));
@@ -836,12 +849,7 @@ TEST_CASE("esp32 l2tap - ioctl - RCV_FILTER", "[ethernet][test_env=UT_T2_Etherne
  * @brief Verifies proper functionality of ioctl INTF_DEVICE option
  *
  */
-static esp_err_t dummy_rx_hook(esp_netif_t *esp_netif, void *buff, size_t *size)
-{
-    return ESP_OK;
-}
-
-TEST_CASE("esp32 l2tap - ioctl - INTF_DEVICE", "[ethernet][test_env=UT_T2_Ethernet]")
+TEST_CASE("esp32 l2tap - ioctl - INTF_DEVICE/DEVICE_DRV_HNDL", "[ethernet][test_env=UT_T2_Ethernet]")
 {
     test_vfs_eth_network_t eth_network_hndls;
     int eth_tap_fd;
@@ -853,19 +861,24 @@ TEST_CASE("esp32 l2tap - ioctl - INTF_DEVICE", "[ethernet][test_env=UT_T2_Ethern
     eth_tap_fd = open("/dev/net/tap", 0);
     TEST_ASSERT_NOT_EQUAL(-1, eth_tap_fd);
 
+    // Set Ethernet interface on which to get raw frames
+    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_INTF_DEVICE, "ETH_DEF"));
+    // Check the Ethernet interface was assigned
+    char *if_key_str;
+    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_G_INTF_DEVICE, &if_key_str));
+    TEST_ASSERT_EQUAL_STRING("ETH_DEF", if_key_str);
+
+    // Check getter of direct Ethernet interface handle
+    esp_eth_handle_t l2tap_eth_handle;
+    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_G_DEVICE_DRV_HNDL, &l2tap_eth_handle));
+    TEST_ASSERT_EQUAL(eth_network_hndls.eth_handle, l2tap_eth_handle);
+
     // Set the Ethertype filter (frames with this type will be available through the eth_tap_fd)
     uint16_t eth_type_filter = ETH_FILTER_LE;
     TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_RCV_FILTER, &eth_type_filter));
     uint16_t eth_type_filter_get = 0;
     TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_G_RCV_FILTER, &eth_type_filter_get));
     TEST_ASSERT_EQUAL(eth_type_filter, eth_type_filter_get);
-    // Set Ethernet interface on which to get raw frames
-    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_INTF_DEVICE, "ETH_DEF"));
-
-    // Check the Ethernet interface was assigned
-    char *if_key_str;
-    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_G_INTF_DEVICE, &if_key_str));
-    TEST_ASSERT_EQUAL_STRING("ETH_DEF", if_key_str);
 
     ESP_LOGI(TAG, "Confirm that we are able to receive message at default netif...");
     send_task_control_t send_task_ctrl = {
@@ -890,16 +903,30 @@ TEST_CASE("esp32 l2tap - ioctl - INTF_DEVICE", "[ethernet][test_env=UT_T2_Ethern
     TEST_ASSERT_EQUAL_UINT8_ARRAY(&s_test_msg, in_buffer, n);
 
     TEST_ASSERT_EQUAL(0, close(eth_tap_fd));
+    vTaskDelay(pdMS_TO_TICKS(50)); // just for sure to give some time to send task close fd
 
-    ESP_LOGI(TAG, "Verify ioctl response when Ethernet interface has already attached recv hook...");
-    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_recv_hook_attach(eth_network_hndls.eth_netif, &dummy_rx_hook));
+    ESP_LOGI(TAG, "Verify that we are able to set Ethernet interface directly via esp_eth_handle..");
     eth_tap_fd = open("/dev/net/tap", 0);
     TEST_ASSERT_NOT_EQUAL(-1, eth_tap_fd);
-    // Try to set Ethernet interface with already attached recv hook
-    TEST_ASSERT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_INTF_DEVICE, "ETH_DEF"));
-    TEST_ASSERT_EQUAL(ENOSPC, errno);
-    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_G_INTF_DEVICE, &if_key_str));
-    TEST_ASSERT_EQUAL(NULL, if_key_str);
+
+    // Set Ethernet interface on which to get raw frames
+    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_DEVICE_DRV_HNDL, eth_network_hndls.eth_handle));
+    // Check getter of direct Ethernet interface handle
+    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_G_DEVICE_DRV_HNDL, &l2tap_eth_handle));
+    TEST_ASSERT_EQUAL(eth_network_hndls.eth_handle, l2tap_eth_handle);
+
+    // Set the Ethertype filter (frames with this type will be available through the eth_tap_fd)
+    eth_type_filter = ETH_FILTER_LE;
+    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_RCV_FILTER, &eth_type_filter));
+    eth_type_filter_get = 0;
+    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_G_RCV_FILTER, &eth_type_filter_get));
+    TEST_ASSERT_EQUAL(eth_type_filter, eth_type_filter_get);
+
+    xTaskCreate(send_task, "raw_eth_send_task", 1024, &send_task_ctrl, tskIDLE_PRIORITY + 2, NULL);
+    n = read(eth_tap_fd, in_buffer, sizeof(in_buffer));
+    TEST_ASSERT_GREATER_THAN(0, n);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(&s_test_msg, in_buffer, n);
+
     TEST_ASSERT_EQUAL(0, close(eth_tap_fd));
 
     vTaskDelay(pdMS_TO_TICKS(50)); // just for sure to give some time to send task close fd
@@ -949,19 +976,19 @@ TEST_CASE("esp32 l2tap - fcntl", "[ethernet][test_env=UT_T2_Ethernet]")
     eth_tap_fd = open("/dev/net/tap", 0);
     TEST_ASSERT_NOT_EQUAL(-1, eth_tap_fd);
 
+    // Set Ethernet interface on which to get raw frames
+    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_INTF_DEVICE, "ETH_DEF"));
+    // Check the Ethernet interface was assigned
+    char *if_key_str;
+    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_G_INTF_DEVICE, &if_key_str));
+    TEST_ASSERT_EQUAL_STRING("ETH_DEF", if_key_str);
+
     // Set the Ethertype filter (frames with this type will be available through the eth_tap_fd)
     uint16_t eth_type_filter = ETH_FILTER_LE;
     TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_RCV_FILTER, &eth_type_filter));
     uint16_t eth_type_filter_get = 0;
     TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_G_RCV_FILTER, &eth_type_filter_get));
     TEST_ASSERT_EQUAL(eth_type_filter, eth_type_filter_get);
-    // Set Ethernet interface on which to get raw frames
-    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_INTF_DEVICE, "ETH_DEF"));
-
-    // Check the Ethernet interface was assigned
-    char *if_key_str;
-    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_G_INTF_DEVICE, &if_key_str));
-    TEST_ASSERT_EQUAL_STRING("ETH_DEF", if_key_str);
 
     send_task_control_t send_task_ctrl = {
         .eth_network_hndls_p = &eth_network_hndls,
@@ -1031,91 +1058,6 @@ TEST_CASE("esp32 l2tap - fcntl", "[ethernet][test_env=UT_T2_Ethernet]")
     TEST_ASSERT_EQUAL(-1, new_fd);
     TEST_ASSERT_EQUAL(ENOSYS, errno);
 
-    TEST_ASSERT_EQUAL(0, close(eth_tap_fd));
-
-    vTaskDelay(pdMS_TO_TICKS(50)); // just for sure to give some time to send task close fd
-    TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_l2tap_intf_unregister(NULL));
-    ethernet_deinit(&eth_network_hndls);
-}
-
-/* ============================================================================= */
-/**
- * @brief Verifies option to modify outbound Ethernet frames
- *
- */
-static char append_msg[] = "!append msg!";
-static esp_err_t mod_eth_frame(esp_netif_t *esp_netif, void **buff, size_t *size)
-{
-    uint8_t *mod_buff;
-
-    mod_buff = malloc(*size + sizeof(append_msg));
-    memcpy(mod_buff, *buff, *size);
-    memcpy(&mod_buff[*size], &append_msg, sizeof(append_msg));
-    *buff = mod_buff;
-    *size += sizeof(append_msg);
-
-    return ESP_OK;
-}
-
-static void mod_eth_frame_clear(esp_netif_t *esp_netif, void *buff, size_t size)
-{
-    free(buff);
-}
-
-TEST_CASE("esp32 l2tap - netif tx hook", "[ethernet][test_env=UT_T2_Ethernet]")
-{
-    test_vfs_eth_network_t eth_network_hndls;
-    int eth_tap_fd;
-    char in_buffer[1500] = { 0 };
-
-    TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_l2tap_intf_register(NULL));
-    ethernet_init(&eth_network_hndls);
-
-    eth_tap_fd = open("/dev/net/tap", 0);
-    TEST_ASSERT_NOT_EQUAL(-1, eth_tap_fd);
-
-    // Set the Ethertype filter (frames with this type will be available through the eth_tap_fd)
-    uint16_t eth_type_filter = ETH_FILTER_LE;
-    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_RCV_FILTER, &eth_type_filter));
-    uint16_t eth_type_filter_get = 0;
-    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_G_RCV_FILTER, &eth_type_filter_get));
-    TEST_ASSERT_EQUAL(eth_type_filter, eth_type_filter_get);
-    // Set Ethernet interface on which to get raw frames
-    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_INTF_DEVICE, "ETH_DEF"));
-
-    // Check the Ethernet interface was assigned
-    char *if_key_str;
-    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_G_INTF_DEVICE, &if_key_str));
-    TEST_ASSERT_EQUAL_STRING("ETH_DEF", if_key_str);
-
-    send_task_control_t send_task_ctrl = {
-        .eth_network_hndls_p = &eth_network_hndls,
-        .eth_type = -1,
-        .send_delay_ms = 0,
-    };
-    // Send normal test message without any registered transmit hook at first
-    xTaskCreate(send_task, "raw_eth_send_task", 1024, &send_task_ctrl, tskIDLE_PRIORITY + 2, NULL);
-    int n = read(eth_tap_fd, in_buffer, sizeof(in_buffer));
-    TEST_ASSERT_GREATER_THAN(0, n);
-    TEST_ASSERT_EQUAL(sizeof(s_test_msg), n);
-    TEST_ASSERT_EQUAL_UINT8_ARRAY(&s_test_msg, in_buffer, n);
-
-    // Attach transmit hook function to modify outbound Ethernet frames
-    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_transmit_hook_attach(eth_network_hndls.eth_netif, &mod_eth_frame));
-
-    // Attach post transmit hook function to clear buffer created by mod_eth_frame
-    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_post_transmit_hook_attach(eth_network_hndls.eth_netif, &mod_eth_frame_clear));
-
-    // Verify the outbound traffic was modified as expected
-    xTaskCreate(send_task, "raw_eth_send_task", 1024, &send_task_ctrl, tskIDLE_PRIORITY + 2, NULL);
-    n = read(eth_tap_fd, in_buffer, sizeof(in_buffer));
-    TEST_ASSERT_GREATER_THAN(0, n);
-    TEST_ASSERT_EQUAL(sizeof(s_test_msg) + sizeof(append_msg), n);
-    TEST_ASSERT_EQUAL_UINT8_ARRAY(&s_test_msg, in_buffer, n - sizeof(append_msg));
-    TEST_ASSERT_EQUAL_UINT8_ARRAY(&append_msg, &in_buffer[sizeof(s_test_msg)], n - sizeof(s_test_msg));
-
-    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_transmit_hook_detach(eth_network_hndls.eth_netif));
-    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_post_transmit_hook_detach(eth_network_hndls.eth_netif));
     TEST_ASSERT_EQUAL(0, close(eth_tap_fd));
 
     vTaskDelay(pdMS_TO_TICKS(50)); // just for sure to give some time to send task close fd

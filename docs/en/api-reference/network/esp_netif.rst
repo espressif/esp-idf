@@ -18,44 +18,44 @@ ESP-NETIF architecture
 .. code-block:: text
 
 
-                     |          (A) USER CODE                 |
-                     |                                        |
-        .............| init          settings      events     |
-        .            +----------------------------------------+
-        .               .                |           *
-        .               .                |           *
-    --------+        +===========================+   *       +-----------------------+
-            |        | new/config     get/set    |   *       |                       |
-            |        |                           |...*.......| init                  |
-            |        |---------------------------|   *       |                       |
-      init  |        |                           |****       |                       |
-      start |********|  event handler            |***********|  DHCP                 |
-      stop  |        |                           |           |                       |
-            |        |---------------------------|           |                       |
-            |        |                           |           |    NETIF              |
-      +-----|        |                           |           +-----------------+     |
-      | glue|----<---|  esp_netif_transmit       |--<--------| netif_output    |     |
-      |     |        |                           |     |     |                 |     |
-      |     |---->---|  esp_netif_receive        |-->--|-----| netif_input     |     |
-      |     |        |                           |     |  |  + ----------------+     |
-      |     |....<...|  esp_netif_free_rx_buffer |...<.|..|..| packet buffer         |
-      +-----|        |                           |     |  |  |                       |
-            |        |                           |     |  |  |         (D)           |
-      (B)   |        |          (C)              |     |  |  +-----------------------+
-    --------+        +===========================+     |  |
-    communication                                      |  |        NETWORK STACK
-    DRIVER                   ESP-NETIF                 |  |
-                                                       |  |
-                       +-----------------------+       |  |
-                       |                       |       |  |
-                       |           l2tap_write |-------|  |
-                       |                       |          |
-                       |      l2tap_eth_filter |----------|
-                       |                       |
-                       |         (E)           |
-                       +-----------------------+
-
-                            ESP-NETIF L2 TAP
+                         |          (A) USER CODE                 |
+                         |                                        |
+        .................| init          settings      events     |
+        .                +----------------------------------------+
+        .                   .                |           *
+        .                   .                |           *
+    --------+            +===========================+   *     +-----------------------+
+            |            | new/config     get/set    |   *     |                       |
+            |            |                           |...*.....| init                  |
+            |            |---------------------------|   *     |                       |
+      init  |            |                           |****     |                       |
+      start |************|  event handler            |*********|  DHCP                 |
+      stop  |            |                           |         |                       |
+            |            |---------------------------|         |                       |
+            |            |                           |         |    NETIF              |
+      +-----|            |                           |         +-----------------+     |
+      | glue|---<----|---|  esp_netif_transmit       |--<------| netif_output    |     |
+      |     |        |   |                           |         |                 |     |
+      |     |--->----|---|  esp_netif_receive        |-->------| netif_input     |     |
+      |     |        |   |                           |         + ----------------+     |
+      |     |...<....|...|  esp_netif_free_rx_buffer |...<.....| packet buffer         |
+      +-----|     |  |   |                           |         |                       |
+            |     |  |   |                           |         |         (D)           |
+      (B)   |     |  |   |          (C)              |         +-----------------------+
+    --------+     |  |   +===========================+
+  communication   |  |                                               NETWORK STACK
+  DRIVER          |  |           ESP-NETIF
+                  |  |                                         +------------------+
+                  |  |   +---------------------------+.........| open/close       |
+                  |  |   |                           |         |                  |
+                  |  -<--|  l2tap_write              |-----<---|  write           |
+                  |      |                           |         |                  |
+                  ---->--|  esp_vfs_l2tap_eth_filter |----->---|  read            |
+                         |                           |         |                  |
+                         |            (E)            |         +------------------+
+                         +---------------------------+
+                                                                     USER CODE
+                               ESP-NETIF L2 TAP
 
 
 Data and event flow in the diagram
@@ -145,8 +145,8 @@ E) ESP-NETIF L2 TAP Interface
 The ESP-NETIF L2 TAP interface is ESP-IDF mechanism utilized to access Data Link Layer (L2 per OSI/ISO) for frame reception and transmission from user application. Its typical usage in embedded world might be implementation of non-IP related protocols such as PTP, Wake on LAN and others. Note that only Ethernet (IEEE 802.3) is currently supported.
 
 From user perspective, the ESP-NETIF L2 TAP interface is accessed using file descriptors of VFS which provides a file-like interfacing (using functions like ``open()``, ``read()``, ``write()``, etc). Refer to :doc:`/api-reference/storage/vfs` to learn more.
-
-There is only one ESP-NETIF L2 TAP interface device (path name) available. However multiple file descriptors with different configuration can be opened at a time since the ESP-NETIF L2 TAP interface can be understood as generic entry point to the NETIF internal structure. Important is then specific configuration of particular file descriptor. It can be configured to give an access to specific Network Interface identified by ``if_key`` (e.g. `ETH_DEF`) and to filter only specific frames based on their type (e.g. Ethernet type in case of IEEE 802.3). Filtering only specific frames is crucial since the ESP-NETIF L2 TAP needs to work along with IP stack and so the IP related traffic (IP, ARP, etc.) should not be passed directly to the user application. Even though such option is still configurable, it is not recommended in standard use cases. Filtering is also advantageous from a perspective the user’s application gets access only to frame types it is interested in and the remaining traffic is either passed to other L2 TAP file descriptors or to IP stack.
+ 
+There is only one ESP-NETIF L2 TAP interface device (path name) available. However multiple file descriptors with different configuration can be opened at a time since the ESP-NETIF L2 TAP interface can be understood as generic entry point to Layer 2 infrastructure. Important is then specific configuration of particular file descriptor. It can be configured to give an access to specific Network Interface identified by ``if_key`` (e.g. `ETH_DEF`) and to filter only specific frames based on their type (e.g. Ethernet type in case of IEEE 802.3). Filtering only specific frames is crucial since the ESP-NETIF L2 TAP needs to exist along with IP stack and so the IP related traffic (IP, ARP, etc.) should not be passed directly to the user application. Even though such option is still configurable, it is not recommended in standard use cases. Filtering is also advantageous from a perspective the user’s application gets access only to frame types it is interested in and the remaining traffic is either passed to other L2 TAP file descriptors or to IP stack.
 
 ESP-NETIF L2 TAP Interface Usage Manual
 ---------------------------------------
@@ -157,7 +157,7 @@ To be able to use the ESP-NETIF L2 TAP interface, it needs to be enabled in Kcon
 
 open()
 ^^^^^^
-Once the ESP-NETIF L2 TAP is registered, it can be opened at path name “/dev/net/tap”. The same path  path name can be opened multiple times up to :ref:`CONFIG_ESP_NETIF_L2_TAP_MAX_FDS` and multiple file descriptors with with different configuration may access the Data Link Layer in the NETIF.
+Once the ESP-NETIF L2 TAP is registered, it can be opened at path name “/dev/net/tap”. The same path name can be opened multiple times up to :ref:`CONFIG_ESP_NETIF_L2_TAP_MAX_FDS` and multiple file descriptors with with different configuration may access the Data Link Layer frames.
 
 The ESP-NETIF L2 TAP can be opened with ``O_NONBLOCK`` file status flag to the ``read()`` does not block. Note that the ``write()`` may block in current implementation when accessing a Network interface since it is a shared resource among multiple ESP-NETIF L2 TAP file descriptors and IP stack, and there is currently no queuing mechanism deployed. The file status flag can be retrieved and modified using ``fcntl()``.
 
@@ -167,19 +167,26 @@ ioctl()
 ^^^^^^^
 The newly opened ESP-NETIF L2 TAP file descriptor needs to be configured prior its usage since it is not bounded to any specific Network Interface and no frame type filter is configured. The following configuration options are available to do so:
 
-  * ``L2TAP_S_INTF_DEVICE`` - bounds the file descriptor to specific Network Interface which is identified by its ``if_key``. Network Interface ``if_key`` is passed to ``ioctl()`` as the third parameter. Note that default Network Interfaces ``if_key``'s used in ESP-IDF can be found in :component_file:`esp_netif/include/esp_netif_defaults.h`.
+  * ``L2TAP_S_INTF_DEVICE`` - bounds the file descriptor to specific Network Interface which is identified by its ``if_key``. ESP-NETIF Network Interface ``if_key`` is passed to ``ioctl()`` as the third parameter. Note that default Network Interfaces ``if_key``'s used in ESP-IDF can be found in :component_file:`esp_netif/include/esp_netif_defaults.h`.
+  * ``L2TAP_S_DEVICE_DRV_HNDL`` - is other way how to bound the file descriptor to specific Network Interface. In this case the Network interface is identified directly by IO Driver handle (e.g. :cpp:type:`esp_eth_handle_t` in case of Ethernet). The IO Driver handle is passed to ``ioctl()`` as the third parameter.
   * ``L2TAP_S_RCV_FILTER`` - sets the filter to frames with this type to be passed to the file descriptor. In case of Ethernet frames, the frames are to be filtered based on Length/Ethernet type field. In case the filter value is set less than or equal to 0x05DC, the Ethernet type field is considered to represent IEEE802.3 Length Field and all frames with values in interval <0, 0x05DC> at that field are to be passed to the file descriptor. The IEEE802.2 logical link control (LLC) resolution is then expected to be performed by user’s application. In case the filter value is set greater than 0x05DC, the Ethernet type field is considered to represent protocol identification and only frames which are equal to the set value are to be passed to the file descriptor.
 
-All set configuration options have getter counterpart option to read the current settings.
+All above set configuration options have getter counterpart option to read the current settings.
+
+.. warning::
+    The file descriptor needs to be firstly bounded to specific Network Interface by ``L2TAP_S_INTF_DEVICE`` or ``L2TAP_S_DEVICE_DRV_HNDL`` to be ``L2TAP_S_RCV_FILTER`` option available.
 
 .. note::
     VLAN tagged frames are currently not recognized. If user needs to process VLAN tagged frames, they need set filter to be equal to VLAN tag (i.e. 0x8100 or 0x88A8) and process the VLAN tagged frames in user application.
 
+.. note::
+    ``L2TAP_S_DEVICE_DRV_HNDL`` is particularly useful when user's application does not require usage of IP stack and so ESP-NETIF is not required to be initialized too. As a result, Network Interface cannot be identified by its ``if_key`` and hence it needs to be identified directly by its IO Driver handle.
+
 | On success, ``ioctl()`` returns 0. On error, -1 is returned, and ``errno`` is set to indicate the error.
 | **EBADF** - not a valid file descriptor.
-| **EINVAL** - invalid configuration argument. Ethernet type filter is already used by other file descriptor.
+| **EACCES** - option change is denied in this state (e.g. file descriptor has not be bounded to Network interface yet).
+| **EINVAL** - invalid configuration argument. Ethernet type filter is already used by other file descriptor on that same Network interface.
 | **ENODEV** - no such Network Interface which is tried to be assigned to the file descriptor exists.
-| **ENOSPC** - NETIF L2 receive hook is already taken by other function when trying to assign Network Interface to the file descriptor.
 | **ENOSYS** - unsupported operation, passed configuration option does not exists.
 
 read()
