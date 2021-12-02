@@ -734,7 +734,7 @@ void bta_gattc_conncback(tBTA_GATTC_RCB *p_rcb, tBTA_GATTC_DATA *p_data)
     if (p_rcb) {
         bta_gattc_send_connect_cback(p_rcb,
                                      p_data->int_conn.remote_bda,
-                                     p_data->int_conn.hdr.layer_specific);
+                                     p_data->int_conn.hdr.layer_specific, p_data->int_conn.conn_params);
 
     }
 }
@@ -1691,6 +1691,16 @@ static void bta_gattc_conn_cback(tGATT_IF gattc_if, BD_ADDR bda, UINT16 conn_id,
 
         p_buf->int_conn.hdr.event            = connected ? BTA_GATTC_INT_CONN_EVT :
                                                BTA_GATTC_INT_DISCONN_EVT;
+        if(p_buf->int_conn.hdr.event == BTA_GATTC_INT_CONN_EVT) {
+            tL2C_LCB *p_lcb = l2cu_find_lcb_by_bd_addr(bda, BT_TRANSPORT_LE);
+            if(p_lcb != NULL) {
+                p_buf->int_conn.conn_params.interval = p_lcb->current_used_conn_interval;
+                p_buf->int_conn.conn_params.latency = p_lcb->current_used_conn_latency;
+                p_buf->int_conn.conn_params.timeout = p_lcb->current_used_conn_timeout;
+            } else {
+                APPL_TRACE_WARNING("%s not found connection parameters of the device ", __func__);
+            }
+        } 
         p_buf->int_conn.hdr.layer_specific   = conn_id;
         p_buf->int_conn.client_if            = gattc_if;
         p_buf->int_conn.role                 = L2CA_GetBleConnRole(bda);

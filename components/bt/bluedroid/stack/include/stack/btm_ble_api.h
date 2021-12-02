@@ -2110,6 +2110,20 @@ tBTM_STATUS BTM_UpdateBleDuplicateExceptionalList(uint8_t subcode, uint32_t type
 **
 *******************************************************************************/
 BOOLEAN BTM_Ble_Authorization(BD_ADDR bd_addr, BOOLEAN authorize);
+
+/*******************************************************************************
+**
+** Function         BTM_GetCurrentConnParams
+**
+** Description      This function is called to read the current connection parameters 
+**                  of the device 
+**
+** Returns          TRUE or FALSE
+**
+*******************************************************************************/
+
+BOOLEAN BTM_GetCurrentConnParams(BD_ADDR bda, uint16_t *interval, uint16_t *latency, uint16_t *timeout);
+
 /*
 #ifdef __cplusplus
 }
