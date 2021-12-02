@@ -8,8 +8,9 @@
 
 简介
 ============
+{IDF_TARGET_PSRAM_SIZE:default="Value not updated", esp32="4 MB", esp32s2="10.5 MB", esp32s3="16 MB"}
 
-{IDF_TARGET_NAME} 提供了好几百 KB 的片上 RAM，可以满足大部分需求。但有些场景可能需要更多 RAM，因此 {IDF_TARGET_NAME} 另外提供了高达 4 MB 的片外 SPI RAM 存储器供用户使用。片外 RAM 已经集成到内存映射中，在某些范围内与片上 RAM 使用方式相同。
+{IDF_TARGET_NAME} 提供了好几百 KB 的片上 RAM，可以满足大部分需求。但有些场景可能需要更多 RAM，因此 {IDF_TARGET_NAME} 另外提供了高达 {IDF_TARGET_PSRAM_SIZE} 的片外 SPI RAM 存储器供用户使用。片外 RAM 已经集成到内存映射中，在某些范围内与片上 RAM 使用方式相同。
 
 
 硬件
@@ -17,9 +18,13 @@
 
 {IDF_TARGET_NAME} 支持与 SPI Flash 芯片并联的 SPI PSRAM（伪静态随机存储器）。虽然 {IDF_TARGET_NAME} 支持多种类型的 RAM 芯片，但 ESP-IDF 当前仅支持乐鑫品牌的 PSRAM 芯片，如 ESP-PSRAM32、ESP-PSRAM64 等。
 
-.. note:: PSRAM 芯片的工作电压分为 1.8 V 和 3.3 V。其工作电压必须与 flash 的工作电压匹配。请查询您 PSRAM 芯片以及 {IDF_TARGET_NAME} 的技术规格书获取准确的工作电压。对于 1.8 V 的 PSRAM 芯片，请确保在启动时将 MTDI 管脚设置为高电平，或者将 {IDF_TARGET_NAME} 中的 eFuses 设置为始终使用 1.8 V 的 VDD_SIO 电平，否则有可能会损坏 PSRAM 和/或 flash 芯片。
+.. note::
 
-.. note:: 乐鑫同时提供模组和系统级封装芯片，集成了兼容的 PSRAM 和 flash，可直接用于终端产品 PCB 中。如需了解更多信息，请前往乐鑫官网。
+    PSRAM 芯片的工作电压分为 1.8 V 和 3.3 V。其工作电压必须与 flash 的工作电压匹配。请查询您 PSRAM 芯片以及 {IDF_TARGET_NAME} 的技术规格书获取准确的工作电压。对于 1.8 V 的 PSRAM 芯片，请确保在启动时将 MTDI 管脚设置为高电平，或者将 {IDF_TARGET_NAME} 中的 eFuses 设置为始终使用 1.8 V 的 VDD_SIO 电平，否则有可能会损坏 PSRAM 和/或 flash 芯片。
+
+.. note::
+
+    乐鑫同时提供模组和系统级封装芯片，集成了兼容的 PSRAM 和 flash，可直接用于终端产品 PCB 中。如需了解更多信息，请前往乐鑫官网。
 
 有关将 SoC 或模组管脚连接到片外 PSRAM 芯片的具体细节，请查阅 SoC 或模组技术规格书。
 
@@ -36,19 +41,20 @@ ESP-IDF 完全支持将片外 RAM 集成到您的应用程序中。在启动并�
     * :ref:`external_ram_config_memory_map`
     * :ref:`external_ram_config_capability_allocator`
     * :ref:`external_ram_config_malloc` (default)
-    :esp32: * :ref:`external_ram_config_bss`
+    :esp32 or esp32s2: * :ref:`external_ram_config_bss`
     :esp32: * :ref:`external_ram_config_noinit`
 
 .. _external_ram_config_memory_map:
 
 集成片外 RAM 到 {IDF_TARGET_NAME} 内存映射
 -------------------------------------------
+{IDF_TARGET_PSRAM_ADDR_START:default="Value not updated", esp32="0x3F800000", esp32s2="0x3F500000", esp32s3="0x3D000000"}
 
 在 :ref:`CONFIG_SPIRAM_USE` 中选择 "Integrate RAM into memory map（集成片外 RAM 到 {IDF_TARGET_NAME} 内存映射）" 选项。
 
 这是集成片外 RAM 最基础的设置选项，大多数用户需要用到其他更高级的选项。
 
-ESP-IDF 启动过程中，片外 RAM 被映射到以 0x3F800000 起始的数据地址空间（字节可寻址），空间大小正好为 SPI RAM 的大小 (4 MB)。
+ESP-IDF 启动过程中，片外 RAM 被映射到以 {IDF_TARGET_PSRAM_ADDR_START} 起始的数据地址空间（字节可寻址），空间大小正好为 SPI RAM 的大小 ({IDF_TARGET_PSRAM_SIZE})。
 
 应用程序可以通过创建指向该区域的指针手动将数据放入片外存储器，同时应用程序全权负责管理片外 SPI RAM，包括协调 Buffer 的使用、防止发生损坏等。
 
@@ -60,7 +66,7 @@ ESP-IDF 启动过程中，片外 RAM 被映射到以 0x3F800000 起始的数据�
 
 在 :ref:`CONFIG_SPIRAM_USE` 中选择 "Make RAM allocatable using heap_caps_malloc(..., MALLOC_CAP_SPIRAM)" 选项。
 
-启用上述选项后，片外 RAM 被映射到地址 0x3F800000，并将这个区域添加到携带 ``MALLOC_CAP_SPIRAM`` 标志的 :doc:`堆内存分配器 </api-reference/system/mem_alloc>` 。
+启用上述选项后，片外 RAM 被映射到地址 {IDF_TARGET_PSRAM_ADDR_START}，并将这个区域添加到携带 ``MALLOC_CAP_SPIRAM`` 标志的 :doc:`堆内存分配器 </api-reference/system/mem_alloc>` 。
 
 程序如果想从片外存储器分配存储空间，则需要调用 ``heap_caps_malloc(size, MALLOC_CAP_SPIRAM)``，之后可以调用 ``free()`` 函数释放这部分存储空间。
 
@@ -85,7 +91,7 @@ ESP-IDF 启动过程中，片外 RAM 被映射到以 0x3F800000 起始的数据�
 
 由于有些内存缓冲器仅可在内部存储器中分配，因此需要使用第二个配置项 :ref:`CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL` 定义一个内部内存池，仅限显式的内部存储器分配使用（例如用于 DMA 的存储器）。常规 ``malloc()`` 将不会从该池中分配，但可以使用 :ref:`MALLOC_CAP_DMA <dma-capable-memory>` 和 ``MALLOC_CAP_INTERNAL`` 标志从该池中分配存储器。
 
-.. only:: esp32
+.. only:: esp32 or esp32s2
 
     .. _external_ram_config_bss:
 
@@ -94,7 +100,7 @@ ESP-IDF 启动过程中，片外 RAM 被映射到以 0x3F800000 起始的数据�
 
     通过勾选 :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` 启用该选项，此选项配置与其它三个选项互不影响。
 
-    启用该选项后，从 0x3F800000 起始的地址空间将用于存储来自 lwip、net80211、libpp 和 bluedroid ESP-IDF 库中零初始化的数据（BSS 段）。
+    启用该选项后，从 {IDF_TARGET_PSRAM_ADDR_START} 起始的地址空间将用于存储来自 lwip、net80211、libpp 和 bluedroid ESP-IDF 库中零初始化的数据（BSS 段）。
 
     ``EXT_RAM_ATTR`` 宏应用于任何静态声明（未初始化为非零值）之后，可以将附加数据从内部 BSS 段移到片外 RAM。
 
@@ -103,6 +109,9 @@ ESP-IDF 启动过程中，片外 RAM 被映射到以 0x3F800000 起始的数据�
     启用此选项可以减少 BSS 段占用的内部静态存储。
 
     剩余的片外 RAM 也可以通过上述方法添加到堆分配器中。
+
+
+.. only:: esp32
 
     .. _external_ram_config_noinit:
 
@@ -135,7 +144,7 @@ ESP-IDF 启动过程中，片外 RAM 被映射到以 0x3F800000 起始的数据�
 
 默认情况下，片外 RAM 初始化失败将终止 ESP-IDF 启动。如果想禁用此功能，可启用 :ref:`CONFIG_SPIRAM_IGNORE_NOTFOUND` 配置选项。
 
- .. only:: esp32
+ .. only:: esp32 or esp32s2
 
     如果启用 :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`，忽略失败的选项将无法使用，这是因为在链接时，链接器已经向片外存储器分配标志符。
 
