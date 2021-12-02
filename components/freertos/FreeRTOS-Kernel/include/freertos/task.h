@@ -3492,10 +3492,6 @@ TaskHandle_t pvTaskIncrementMutexHeldCount( void ) PRIVILEGED_FUNCTION;
  */
 void vTaskInternalSetTimeOutState( TimeOut_t * const pxTimeOut ) PRIVILEGED_FUNCTION;
 
-#ifdef ESP_PLATFORM
-/* TODO: IDF-3683 */
-#include "freertos/task_snapshot.h"
-#endif // ESP_PLATFORM
 
 /** @endcond */
 
