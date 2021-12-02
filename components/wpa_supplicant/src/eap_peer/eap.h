@@ -62,5 +62,6 @@ int eap_peer_register_methods(void);
 void eap_sm_request_identity(struct eap_sm *sm);
 void eap_sm_request_password(struct eap_sm *sm);
 void eap_sm_request_new_password(struct eap_sm *sm);
+bool eap_sm_allowMethod(struct eap_sm *sm, int vendor, EapType method);
 
 #endif /* EAP_H */
