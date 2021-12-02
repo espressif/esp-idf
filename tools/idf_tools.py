@@ -59,7 +59,7 @@ except RuntimeError as e:
     print(e)
     raise SystemExit(1)
 
-from typing import IO, Any, Callable, Optional, Tuple, Union  # noqa: F401
+from typing import IO, Any, Callable, Dict, List, Optional, Set, Tuple, Union  # noqa: F401
 from urllib.error import ContentTooShortError
 from urllib.request import urlopen
 # the following is only for typing annotation
@@ -206,7 +206,7 @@ def info(text, f=None, *args):  # type: (str, Optional[IO[str]], str) -> None
 
 
 def run_cmd_check_output(cmd, input_text=None, extra_paths=None):
-    # type: (list[str], Optional[str], Optional[list[str]]) -> bytes
+    # type: (List[str], Optional[str], Optional[List[str]]) -> bytes
     # If extra_paths is given, locate the executable in one of these directories.
     # Note: it would seem logical to add extra_paths to env[PATH], instead, and let OS do the job of finding the
     # executable for us. However this does not work on Windows: https://bugs.python.org/issue8557.
@@ -242,14 +242,14 @@ def run_cmd_check_output(cmd, input_text=None, extra_paths=None):
         return stdout + stderr
 
 
-def to_shell_specific_paths(paths_list):  # type: (list[str]) -> list[str]
+def to_shell_specific_paths(paths_list):  # type: (List[str]) -> List[str]
     if sys.platform == 'win32':
         paths_list = [p.replace('/', os.path.sep) if os.path.sep in p else p for p in paths_list]
 
     return paths_list
 
 
-def get_env_for_extra_paths(extra_paths):  # type: (list[str]) -> dict[str, str]
+def get_env_for_extra_paths(extra_paths):  # type: (List[str]) -> Dict[str, str]
     """
     Return a copy of environment variables dict, prepending paths listed in extra_paths
     to the PATH environment variable.
@@ -476,18 +476,17 @@ class IDFToolVersion(object):
         return set(self.downloads.keys())
 
 
-OPTIONS_LIST = ['version_cmd',
-                'version_regex',
-                'version_regex_replace',
-                'export_paths',
-                'export_vars',
-                'install',
-                'info_url',
-                'license',
-                'strip_container_dirs',
-                'supported_targets']
-
-IDFToolOptions = namedtuple('IDFToolOptions', OPTIONS_LIST)  # type: ignore
+IDFToolOptions = namedtuple('IDFToolOptions', [
+    'version_cmd',
+    'version_regex',
+    'version_regex_replace',
+    'export_paths',
+    'export_vars',
+    'install',
+    'info_url',
+    'license',
+    'strip_container_dirs',
+    'supported_targets'])
 
 
 class IDFTool(object):
@@ -498,17 +497,17 @@ class IDFTool(object):
 
     def __init__(self, name, description, install, info_url, license, version_cmd, version_regex, supported_targets, version_regex_replace=None,
                  strip_container_dirs=0):
-        # type: (str, str, str, str, str, list[str], str, list[str], Optional[str], int) -> None
+        # type: (str, str, str, str, str, List[str], str, List[str], Optional[str], int) -> None
         self.name = name
         self.description = description
-        self.versions = OrderedDict()  # type: dict[str, IDFToolVersion]
+        self.versions = OrderedDict()  # type: Dict[str, IDFToolVersion]
         self.version_in_path = None  # type: Optional[str]
-        self.versions_installed = []  # type: list[str]
+        self.versions_installed = []  # type: List[str]
         if version_regex_replace is None:
             version_regex_replace = VERSION_REGEX_REPLACE_DEFAULT
         self.options = IDFToolOptions(version_cmd, version_regex, version_regex_replace,
                                       [], OrderedDict(), install, info_url, license, strip_container_dirs, supported_targets)  # type: ignore
-        self.platform_overrides = []  # type: list[dict[str, str]]
+        self.platform_overrides = []  # type: List[Dict[str, str]]
         self._platform = CURRENT_PLATFORM
         self._update_current_options()
 
@@ -538,11 +537,11 @@ class IDFTool(object):
         assert(version in self.versions)
         return os.path.join(self.get_path(), version)
 
-    def get_export_paths(self, version):  # type: (str) -> list[str]
+    def get_export_paths(self, version):  # type: (str) -> List[str]
         tool_path = self.get_path_for_version(version)
         return [os.path.join(tool_path, *p) for p in self._current_options.export_paths]  # type: ignore
 
-    def get_export_vars(self, version):  # type: (str) -> dict[str, str]
+    def get_export_vars(self, version):  # type: (str) -> Dict[str, str]
         """
         Get the dictionary of environment variables to be exported, for the given version.
         Expands:
@@ -557,7 +556,7 @@ class IDFTool(object):
             result[k] = v_repl
         return result
 
-    def check_version(self, extra_paths=None):  # type: (Optional[list[str]]) -> str
+    def check_version(self, extra_paths=None):  # type: (Optional[List[str]]) -> str
         """
         Execute the tool, optionally prepending extra_paths to PATH,
         extract the version string and return it as a result.
@@ -593,7 +592,7 @@ class IDFTool(object):
     def compatible_with_platform(self):  # type: () -> bool
         return any([v.compatible_with_platform() for v in self.versions.values()])
 
-    def get_supported_platforms(self):  # type: () -> set[str]
+    def get_supported_platforms(self):  # type: () -> Set[str]
         result = set()
         for v in self.versions.values():
             result.update(v.get_supported_platforms())
@@ -746,7 +745,7 @@ class IDFTool(object):
         return True
 
     @classmethod
-    def from_json(cls, tool_dict):  # type: (dict[str, Union[str, list[str], dict[str, str]]]) -> IDFTool
+    def from_json(cls, tool_dict):  # type: (Dict[str, Union[str, List[str], Dict[str, str]]]) -> IDFTool
         # json.load will return 'str' types in Python 3 and 'unicode' in Python 2
         expected_str_type = type(u'')
 
@@ -1715,7 +1714,7 @@ def main(argv):  # type: (list[str]) -> None
                          ' It defaults to installing all supported targets.')
 
     download = subparsers.add_parser('download', help='Download the tools into the dist directory')
-    download.add_argument('--platform', help='Platform to download the tools for')
+    download.add_argument('--platform', default=CURRENT_PLATFORM, help='Platform to download the tools for')
     download.add_argument('tools', metavar='TOOL', nargs='*', default=['required'],
                           help='Tools to download. ' +
                           'To download a specific version use <tool_name>@<version> syntax. ' +
