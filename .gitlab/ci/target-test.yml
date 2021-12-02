@@ -8,7 +8,7 @@
     reports:
       junit: XUNIT_RESULT.xml
   script:
-    - pytest $TEST_DIR -m $TARGET_MARKER -m $ENV_MARKER --junitxml=XUNIT_RESULT.xml
+    - pytest $TEST_DIR --target $TARGET -m $ENV_MARKER --junitxml=XUNIT_RESULT.xml
 
 .pytest_examples_dir_template:
   extends: .pytest_template
@@ -22,10 +22,23 @@ example_test_pytest_esp32_generic:
   needs:
     - build_examples_pytest_esp32
   variables:
-    TARGET_MARKER: esp32
+    TARGET: esp32
     ENV_MARKER: generic
   tags: # in gitlab 14.1 or later, we can use `parallel: matrix` with the `tags` keyword. https://docs.gitlab.com/ee/ci/jobs/job_control.html#run-a-matrix-of-parallel-trigger-jobs
     - ESP32
+    - Example_GENERIC
+
+example_test_pytest_esp32s2_generic:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32s2
+  needs:
+    - build_examples_pytest_esp32s2
+  variables:
+    TARGET: esp32s2
+    ENV_MARKER: generic
+  tags:
+    - ESP32S2
     - Example_GENERIC
 
 example_test_pytest_esp32c3_generic:
@@ -35,7 +48,7 @@ example_test_pytest_esp32c3_generic:
   needs:
     - build_examples_pytest_esp32c3
   variables:
-    TARGET_MARKER: esp32c3
+    TARGET: esp32c3
     ENV_MARKER: generic
   tags:
     - ESP32C3
