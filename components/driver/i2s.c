@@ -29,8 +29,7 @@
 #include "esp_private/gdma.h"
 #endif
 
-#include "soc/rtc.h"
-
+#include "soc/clk_ctrl_os.h"
 #include "esp_intr_alloc.h"
 #include "esp_err.h"
 #include "esp_check.h"
@@ -931,19 +930,29 @@ static uint32_t i2s_config_source_clock(i2s_port_t i2s_num, bool use_apll, uint3
 {
 #if SOC_I2S_SUPPORTS_APLL
     if (use_apll) {
-        int div_min = (int)(RTC_APLL_FREQ_MIN / (float)mclk + 1);
-        int div_max = (int)(RTC_APLL_FREQ_MAX / (float)mclk);
-        div_min = div_min < 2 ? 2 : div_min;  // APLL / mclk >= 2
-        if (div_min > div_max) {
-            ESP_LOGE(TAG, "mclk frequency is too big for APLL colck source");
+        /* Calculate the expected APLL  */
+        int div = (int)((SOC_APLL_MIN_HZ / mclk) + 1);
+        /* apll_freq = mclk * div
+         * when div = 1, hardware will still divide 2
+         * when div = 0, the final mclk will be unpredictable
+         * So the div here should be at least 2 */
+        div = div < 2 ? 2 : div;
+        uint32_t expt_freq = mclk * div;
+        /* Set APLL coefficients to the given frequency */
+        uint32_t real_freq = 0;
+        esp_err_t ret = periph_rtc_apll_freq_set(expt_freq, &real_freq);
+        if (ret == ESP_ERR_INVALID_ARG) {
+            ESP_LOGE(TAG, "set APLL coefficients failed");
             return 0;
         }
-        uint32_t expt_freq = div_min * mclk;
-        rtc_clk_apll_freq_set(expt_freq);
+        if (ret == ESP_ERR_INVALID_STATE) {
+            ESP_LOGW(TAG, "APLL is occupied already, it is working at %d Hz", real_freq);
+        }
+        ESP_LOGI(TAG, "APLL expected frequency is %d Hz, real frequency is %d Hz", expt_freq, real_freq);
         /* Set I2S_APLL as I2S module clock source */
         i2s_hal_set_clock_src(&(p_i2s[i2s_num]->hal), I2S_CLK_APLL);
         /* In APLL mode, there is no sclk but only mclk, so return 0 here to indicate APLL mode */
-        return expt_freq;
+        return real_freq;
     }
     /* Set I2S_D2CLK (160M) as default I2S module clock source */
     i2s_hal_set_clock_src(&(p_i2s[i2s_num]->hal), I2S_CLK_D2CLK);
@@ -1883,6 +1892,13 @@ esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config,
         pre_alloc_i2s_obj->i2s_queue = NULL;
     }
 
+#if SOC_I2S_SUPPORTS_APLL
+    /* Power up APLL clock */
+    if (i2s_config->use_apll) {
+        periph_rtc_apll_acquire();
+    }
+#endif
+
     /* Step 7: Set I2S clocks and start. No need to give parameters since configurations has been set in 'i2s_driver_init' */
     ESP_GOTO_ON_ERROR(i2s_set_clk(i2s_num, 0, 0, 0), err, TAG, "I2S set clock failed");
     return ESP_OK;
@@ -1937,7 +1953,7 @@ esp_err_t i2s_driver_uninstall(i2s_port_t i2s_num)
     if (p_i2s[i2s_num]->use_apll) {
         // switch back to PLL clock source
         i2s_hal_set_clock_src(&(p_i2s[i2s_num]->hal), I2S_CLK_D2CLK);
-        rtc_clk_apll_enable(0, 0, 0, 0, 0);
+        periph_rtc_apll_release();
     }
 #endif
 

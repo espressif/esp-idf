@@ -27,8 +27,14 @@ static void i2s_hal_mclk_div_decimal_cal(i2s_hal_clock_cfg_t *clk_cfg, i2s_ll_mc
     cal->a = 1;
     cal->b = 0;
 
-    uint32_t freq_diff = clk_cfg->sclk - clk_cfg->mclk * cal->mclk_div;
+    uint32_t freq_diff = abs(clk_cfg->sclk - clk_cfg->mclk * cal->mclk_div);
     if (!freq_diff) {
+        return;
+    }
+    float decimal = freq_diff / (float)clk_cfg->mclk;
+    // Carry bit if the decimal is greater than 1.0 - 1.0 / (63.0 * 2) = 125.0 / 126.0
+    if (decimal > 125.0 / 126.0) {
+        cal->mclk_div++;
         return;
     }
     uint32_t min = ~0;

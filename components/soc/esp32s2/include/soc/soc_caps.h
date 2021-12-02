@@ -153,14 +153,19 @@
 #define SOC_I2C_SUPPORT_REF_TICK   (1)
 #define SOC_I2C_SUPPORT_APB        (1)
 
+/*-------------------------- APLL CAPS ----------------------------------------*/
+#define SOC_CLK_APLL_SUPPORTED       (1)
+// apll_multiplier_out = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536)
+#define SOC_APLL_MULTIPLIER_OUT_MIN_HZ (350000000) // 350 MHz
+#define SOC_APLL_MULTIPLIER_OUT_MAX_HZ (500000000) // 500 MHz
+#define SOC_APLL_MIN_HZ    (5303031)   // 5.303031 MHz, refer to 'periph_rtc_apll_freq_set' for the calculation
+#define SOC_APLL_MAX_HZ    (125000000) // 125MHz, refer to 'periph_rtc_apll_freq_set' for the calculation
+
 /*-------------------------- I2S CAPS ----------------------------------------*/
 // ESP32-S2 have 1 I2S
 #define SOC_I2S_NUM                (1U)
-#define SOC_I2S_SUPPORTS_APLL      (1)// ESP32-S2 support APLL
+#define SOC_I2S_SUPPORTS_APLL      (1) // ESP32-S2 support APLL
 #define SOC_I2S_SUPPORTS_DMA_EQUAL (1)
-#define SOC_I2S_APLL_MIN_FREQ      (250000000)
-#define SOC_I2S_APLL_MAX_FREQ      (500000000)
-#define SOC_I2S_APLL_MIN_RATE      (10675) //in Hz, I2S Clock rate limited by hardware
 #define SOC_I2S_LCD_I80_VARIANT    (1)
 
 /*-------------------------- LCD CAPS ----------------------------------------*/

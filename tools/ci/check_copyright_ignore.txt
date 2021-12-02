@@ -1135,7 +1135,6 @@ components/hal/include/hal/esp_flash_err.h
 components/hal/include/hal/gpio_hal.h
 components/hal/include/hal/i2c_hal.h
 components/hal/include/hal/i2c_types.h
-components/hal/include/hal/i2s_types.h
 components/hal/include/hal/interrupt_controller_hal.h
 components/hal/include/hal/interrupt_controller_types.h
 components/hal/include/hal/ledc_hal.h
