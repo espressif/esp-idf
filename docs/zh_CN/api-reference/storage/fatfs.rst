@@ -14,6 +14,7 @@ FatFs 与 VFS 配合使用
 头文件 :component_file:`fatfs/vfs/esp_vfs_fat.h` 定义了连接 FatFs 和 VFS 的函数。
 
 函数 :cpp:func:`esp_vfs_fat_register` 分配一个 ``FATFS`` 结构，并在 VFS 中注册特定路径前缀。如果文件路径以此前缀开头，则对此文件的后续操作将转至 FatFs API。
+
 函数 :cpp:func:`esp_vfs_fat_unregister_path` 删除在 VFS 中的注册，并释放 ``FATFS`` 结构。
 
 多数应用程序在使用 ``esp_vfs_fat_`` 函数时，采用如下步骤：
@@ -23,7 +24,7 @@ FatFs 与 VFS 配合使用
     - FatFs 驱动编号
     - 一个用于接收指向 ``FATFS`` 结构指针的变量
 
-2. 调用 :cpp:func:`ff_diskio_register` 为步骤 1 中的驱动编号注册磁盘 I/O 驱动；
+2. 调用 :cpp:func:`ff_diskio_register`，为步骤 1 中的驱动编号注册磁盘 I/O 驱动；
 
 3. 调用 FatFs 函数 ``f_mount``，随后调用 ``f_fdisk`` 或 ``f_mkfs``，并使用与传递到 :cpp:func:`esp_vfs_fat_register` 相同的驱动编号挂载文件系统。请参考 `FatFs 文档 <http://www.elm-chan.org/fsw/ff/doc/mount.html>`_，查看更多信息；
 
@@ -84,3 +85,46 @@ FatFs 磁盘 I/O 层
 .. doxygenfunction:: ff_diskio_register_wl_partition
 .. doxygenfunction:: ff_diskio_register_raw_partition
 
+
+FatFs 分区生成器
+-------------------------
+
+我们为 FatFs (:component_file:`wl_fatfsgen.py<fatfs/wl_fatfsgen.py>`) 提供了分区生成器，该生成器集成在构建系统中，方便用户在自己的项目中使用。
+
+该生成器可以在主机上创建文件系统镜像，并用指定的主机文件夹内容对其进行填充。
+
+该脚本是建立在分区生成器的基础上 (:component_file:`fatfsgen.py<fatfs/fatfsgen.py>`)，目前除了可以生成分区外，也可以初始化磨损均衡。
+
+当前支持短文件名和 FAT12。未来计划实现长文件名以及 FAT16。
+
+
+构建系统中使用 FatFs 分区生成器
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+通过调用 ``fatfs_create_partition_image`` 可以直接从 CMake 构建系统中调用 FatFs 分区生成器::
+
+    fatfs_create_spiflash_image(<partition> <base_dir> [FLASH_IN_PROJECT])
+
+如果不希望在生成分区时使用磨损均衡，可以使用 ``fatfs_create_rawflash_image``::
+
+    fatfs_create_rawflash_image(<partition> <base_dir> [FLASH_IN_PROJECT])
+
+``fatfs_create_spiflash_image`` 以及 ``fatfs_create_rawflash_image`` 必须从项目的 CMakeLists.txt 中调用。
+
+如果您决定使用 ``fatfs_create_rawflash_image`` （不支持磨损均衡），请注意它支持在设备中以只读模式安装。
+
+该函数的参数如下：
+
+1. partition - 分区的名称，需要在分区表中定义（如 :example_file:`storage/fatfsgen/partitions_example.csv`）。
+
+2. base_dir - 目录名称，该目录会被编码为 FatFs 分区，也可以选择将其被烧录进设备。但注意必须在分区表中指定合适的分区大小。
+
+3. ``FLASH_IN_PROJECT`` 标志 - 用户可以通过指定 ``FLASH_IN_PROJECT``，选择在执行 ``idf.py flash -p <PORT>`` 时让分区镜像自动与应用程序二进制文件、分区表等一同烧录进设备。
+
+例如::
+
+    fatfs_create_partition_image(my_fatfs_partition my_folder FLASH_IN_PROJECT)
+
+没有指定 FLASH_IN_PROJECT 时也可以生成分区镜像，但是用户需要使用 ``esptool.py`` 或自定义的构建系统目标对其手动烧录。
+
+相关示例请查看 :example:`storage/fatfsgen`。
