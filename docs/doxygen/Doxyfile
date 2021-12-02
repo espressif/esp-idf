@@ -37,7 +37,6 @@ INPUT = \
     $(PROJECT_PATH)/components/wpa_supplicant/esp_supplicant/include/esp_dpp.h \
     $(PROJECT_PATH)/components/esp_event/include/esp_event.h \
     $(PROJECT_PATH)/components/esp_event/include/esp_event_base.h \
-    $(PROJECT_PATH)/components/esp_event/include/esp_event_legacy.h \
     $(PROJECT_PATH)/components/bt/include/esp32/include/esp_bt.h \
     $(PROJECT_PATH)/components/bt/common/api/include/api/esp_blufi_api.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_bt_defs.h \

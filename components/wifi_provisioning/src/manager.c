@@ -788,14 +788,6 @@ static esp_err_t update_wifi_scan_results(void)
     return ret;
 }
 
-/* DEPRECATED : Event handler for starting/stopping provisioning.
- * To be called from within the context of the main
- * event handler */
-esp_err_t wifi_prov_mgr_event_handler(void *ctx, system_event_t *event)
-{
-    return ESP_OK;
-}
-
 static void wifi_prov_mgr_event_handler_internal(
     void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {

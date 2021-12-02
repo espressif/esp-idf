@@ -412,7 +412,7 @@ struct wps_data *wps_init(void)
             wpa_printf(MSG_DEBUG, "WPS PIN [%s]", tmpp);
             wifi_event_sta_wps_er_pin_t evt;
             os_memcpy(evt.pin_code, data->dev_password, 8);
-            esp_event_send_internal(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_PIN, &evt, sizeof(evt), portMAX_DELAY);
+            esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_PIN, &evt, sizeof(evt), portMAX_DELAY);
         } while (0);
     } else if (wps_get_type() == WPS_TYPE_PBC) {
         data->pbc = 1;
@@ -980,7 +980,7 @@ int wps_stop_process(wifi_event_sta_wps_fail_reason_t reason_code)
 
     wpa_printf(MSG_DEBUG, "Write wps_fail_information");
 
-    esp_event_send_internal(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_FAILED, &reason_code, sizeof(reason_code), portMAX_DELAY);
+    esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_FAILED, &reason_code, sizeof(reason_code), portMAX_DELAY);
 
     return ESP_OK;
 }
@@ -1007,7 +1007,7 @@ int wps_finish(void)
 
             if (config == NULL) {
                 wifi_event_sta_wps_fail_reason_t reason_code = WPS_FAIL_REASON_NORMAL;
-                esp_event_send_internal(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_FAILED, &reason_code, sizeof(reason_code), portMAX_DELAY);
+                esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_FAILED, &reason_code, sizeof(reason_code), portMAX_DELAY);
                 return ESP_FAIL;
             }
 
@@ -1287,7 +1287,7 @@ out:
         esp_wifi_disarm_sta_connection_timer_internal();
         ets_timer_disarm(&sm->wps_timeout_timer);
 
-        esp_event_send_internal(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_FAILED, &reason_code, sizeof(reason_code), portMAX_DELAY);
+        esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_FAILED, &reason_code, sizeof(reason_code), portMAX_DELAY);
 
         return ret;
     }
@@ -1493,7 +1493,7 @@ wifi_station_wps_timeout_internal(void)
 
     wps_set_status(WPS_STATUS_DISABLE);
 
-    esp_event_send_internal(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_TIMEOUT, 0, 0, portMAX_DELAY);
+    esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_TIMEOUT, 0, 0, portMAX_DELAY);
 }
 
 void wifi_station_wps_timeout(void)
@@ -1562,10 +1562,10 @@ void wifi_station_wps_success_internal(void)
             os_memcpy(evt.ap_cred[i].ssid, sm->ssid[i], sm->ssid_len[i]);
             os_memcpy(evt.ap_cred[i].passphrase, sm->key[i], sm->key_len[i]);
         }
-        esp_event_send_internal(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_SUCCESS, &evt,
+        esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_SUCCESS, &evt,
                                 sizeof(evt), portMAX_DELAY);
     } else {
-        esp_event_send_internal(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_SUCCESS,
+        esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_SUCCESS,
                                 0, 0, portMAX_DELAY);
     }
 }
@@ -1841,7 +1841,7 @@ wifi_wps_scan_done(void *arg, STATUS status)
     } else {
         wpa_printf(MSG_INFO, "PBC session overlap!");
         wps_set_status(WPS_STATUS_DISABLE);
-        esp_event_send_internal(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_PBC_OVERLAP, 0, 0, portMAX_DELAY);
+        esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_WPS_ER_PBC_OVERLAP, 0, 0, portMAX_DELAY);
     }
 
     wpa_printf(MSG_DEBUG, "wps scan_done discover_ssid_cnt = %d", sm->discover_ssid_cnt);
