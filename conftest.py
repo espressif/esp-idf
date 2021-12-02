@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
-# pylint: disable=W0621
+# pylint: disable=W0621  # redefined-outer-name
 
 # This file is a pytest root configuration file and provide the following functionalities:
 # 1. Defines a few fixtures that could be used under the whole project.
@@ -21,6 +21,7 @@ from typing import Callable, List, Optional
 import pytest
 from _pytest.config import Config
 from _pytest.fixtures import FixtureRequest
+from _pytest.nodes import Item
 from pytest_embedded.plugin import parse_configuration
 from pytest_embedded_idf.app import IdfApp
 
@@ -65,34 +66,9 @@ def env_markers(pytestconfig: Config) -> List[str]:
     return res
 
 
-@pytest.fixture(scope='session')
-def param_markers(pytestconfig: Config) -> List[str]:
-    res: List[str] = []
-    offset = -1
-    while True:
-        try:
-            offset = pytestconfig.invocation_params.args.index('-m', offset + 1)
-        except ValueError:
-            return res
-        res.append(pytestconfig.invocation_params.args[offset + 1])  # we want the marker after '-m'
-
-
-@pytest.fixture
-def target(request: FixtureRequest, target_markers: List[str], param_markers: List[str]) -> Optional[str]:
-    param_target_markers = [marker for marker in param_markers if marker in target_markers]
-    if len(param_target_markers) > 1:
-        raise ValueError('Please only specify one target marker at the same time')
-    elif len(param_target_markers) == 0:
-        target = None
-    else:
-        target = param_target_markers[0]
-
-    return getattr(request, 'param', None) or request.config.option.__dict__.get('target') or target
-
-
 @pytest.fixture
 def config(request: FixtureRequest) -> str:
-    return getattr(request, 'param', None) or request.config.option.__dict__.get('config') or 'default'
+    return getattr(request, 'param', None) or request.config.getoption('config', 'default')  # type: ignore
 
 
 @pytest.fixture
@@ -149,3 +125,16 @@ def junit_properties(app: IdfApp, config: str, test_case_name: str,
     This fixture is autoused and will modify the junit report test case name to <target>.<config>.<case_name>
     """
     record_xml_attribute('name', format_case_id(app.target, config, test_case_name))
+
+
+##################
+# Hook functions #
+##################
+@pytest.hookimpl(trylast=True)
+def pytest_collection_modifyitems(config: Config, items: List[Item]) -> None:
+    target = config.getoption('target', None)
+    if not target:
+        return
+
+    # filter all the test cases with "--target"
+    items[:] = [item for item in items if target in [marker.name for marker in item.iter_markers()]]
