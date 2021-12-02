@@ -1,16 +1,8 @@
-// Copyright 2019-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdint.h>
 #include "esp_types.h"
@@ -205,27 +197,4 @@ uint32_t esp_adc_cal_raw_to_voltage(uint32_t adc_reading, const esp_adc_cal_char
 {
     assert(chars != NULL);
     return adc_reading * chars->coeff_a / coeff_a_scaling + chars->coeff_b / coeff_b_scaling;
-}
-
-esp_err_t esp_adc_cal_get_voltage(adc_channel_t channel,
-                                  const esp_adc_cal_characteristics_t *chars,
-                                  uint32_t *voltage)
-{
-    // Check parameters
-    ESP_RETURN_ON_FALSE(chars != NULL, ESP_ERR_INVALID_ARG, LOG_TAG, "No characteristic input");
-    ESP_RETURN_ON_FALSE(voltage != NULL, ESP_ERR_INVALID_ARG, LOG_TAG, "No output buffer");
-
-    esp_err_t ret = ESP_OK;
-    int adc_reading;
-    if (chars->adc_num == ADC_UNIT_1) {
-        //Check if channel is valid on ADC1
-        ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(0), ESP_ERR_INVALID_ARG, LOG_TAG, "Invalid channel");
-        adc_reading = adc1_get_raw(channel);
-    } else {
-        //Check if channel is valid on ADC2
-        ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(1), ESP_ERR_INVALID_ARG, LOG_TAG, "Invalid channel");
-        ret = adc2_get_raw(channel, chars->bit_width, &adc_reading);
-    }
-    *voltage = esp_adc_cal_raw_to_voltage((uint32_t)adc_reading, chars);
-    return ret;
 }

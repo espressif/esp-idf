@@ -232,7 +232,7 @@ esp_err_t adc2_pad_get_io_num(adc2_channel_t channel, gpio_num_t *gpio_num)
  * adc_common.c is far too confusing. Before a refactor is applied to adc_common.c, will put definite code in driver/adc.c
  */
 
-static uint16_t s_adc_cali_param[ADC_UNIT_MAX][ADC_ATTEN_MAX] = {};
+static uint16_t s_adc_cali_param[SOC_ADC_PERIPH_NUM][ADC_ATTEN_MAX] = {};
 
 uint32_t adc_get_calibration_offset(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten)
 {
