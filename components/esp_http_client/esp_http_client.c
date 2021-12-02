@@ -658,6 +658,10 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
     const char *user_agent = config->user_agent == NULL ? DEFAULT_HTTP_USER_AGENT : config->user_agent;
 
     if (config->host != NULL && config->path != NULL) {
+        if (client->connection_info.host == NULL) {
+            ESP_LOGE(TAG, "invalid host");
+            goto error;
+        }
         host_name = _get_host_header(client->connection_info.host, client->connection_info.port);
         if (host_name == NULL) {
             ESP_LOGE(TAG, "Failed to allocate memory for host header");
@@ -675,6 +679,10 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
     } else if (config->url != NULL) {
         if (esp_http_client_set_url(client, config->url) != ESP_OK) {
             ESP_LOGE(TAG, "Failed to set URL");
+            goto error;
+        }
+        if (client->connection_info.host == NULL) {
+            ESP_LOGE(TAG, "invalid host");
             goto error;
         }
         host_name = _get_host_header(client->connection_info.host, client->connection_info.port);
