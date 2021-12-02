@@ -180,7 +180,7 @@ static void esp_core_dump_switch_task_stack_to_isr(core_dump_task_header_t *task
     }
     task->stack_start = (uint32_t) s_exc_frame;
     task->stack_end = esp_core_dump_get_isr_stack_end();
-    ESP_COREDUMP_LOG_PROCESS("Switched task %x to ISR stack [%x...%x]", task->tcb_addr,
+    ESP_COREDUMP_LOG_PROCESS("Switched task %p to ISR stack [%x...%x]", task->tcb_addr,
                                                                         task->stack_start,
                                                                         task->stack_end);
 }
@@ -215,11 +215,11 @@ bool esp_core_dump_get_task_snapshot(void *handle, core_dump_task_header_t *task
         task->stack_start = (uint32_t) s_exc_frame;
     }
     if (!esp_core_dump_check_task(task)) {
-        ESP_COREDUMP_LOG_PROCESS("Task %x is broken!", handle);
+        ESP_COREDUMP_LOG_PROCESS("Task %p is broken!", handle);
         return false;
     }
     if (handle == esp_core_dump_get_current_task_handle()) {
-        ESP_COREDUMP_LOG_PROCESS("Crashed task %x", handle);
+        ESP_COREDUMP_LOG_PROCESS("Crashed task %p", handle);
         esp_core_dump_port_set_crashed_tcb((uint32_t)handle);
         if (xPortInterruptedFromISRContext()) {
             esp_core_dump_switch_task_stack_to_isr(task, interrupted_stack);

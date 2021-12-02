@@ -369,20 +369,20 @@ bool esp_core_dump_check_task(core_dump_task_header_t *task)
     bool stack_is_valid = false;
 
     if (!esp_core_dump_tcb_addr_is_sane((uint32_t)task->tcb_addr)) {
-        ESP_COREDUMP_LOG_PROCESS("Bad TCB addr=%x!", task->tcb_addr);
+        ESP_COREDUMP_LOG_PROCESS("Bad TCB addr=%p!", task->tcb_addr);
         return false;
     }
 
     stack_is_valid = esp_core_dump_check_stack(task);
     if (!stack_is_valid) {
         // Skip saving of invalid task if stack corrupted
-        ESP_COREDUMP_LOG_PROCESS("Task (TCB:%x), stack is corrupted (%x, %x)",
+        ESP_COREDUMP_LOG_PROCESS("Task (TCB:%p), stack is corrupted (%x, %x)",
                                     task->tcb_addr,
                                     task->stack_start,
                                     task->stack_end);
         task->stack_start = (uint32_t)esp_core_dump_get_fake_stack(&stk_size);
         task->stack_end = (uint32_t)(task->stack_start + stk_size);
-        ESP_COREDUMP_LOG_PROCESS("Task (TCB:%x), use start, end (%x, %x)",
+        ESP_COREDUMP_LOG_PROCESS("Task (TCB:%p), use start, end (%x, %x)",
                                             task->tcb_addr,
                                             task->stack_start,
                                             task->stack_end);
@@ -391,7 +391,7 @@ bool esp_core_dump_check_task(core_dump_task_header_t *task)
          * would point to a fake address. */
         XtSolFrame *sol_frame = (XtSolFrame *)task->stack_start;
         if (sol_frame->exit == 0) {
-            ESP_COREDUMP_LOG_PROCESS("Task (TCB:%x), EXIT/PC/PS/A0/SP %x %x %x %x %x",
+            ESP_COREDUMP_LOG_PROCESS("Task (TCB:%p), EXIT/PC/PS/A0/SP %lx %lx %lx %lx %lx",
                                         task->tcb_addr,
                                         sol_frame->exit,
                                         sol_frame->pc,
@@ -402,7 +402,7 @@ bool esp_core_dump_check_task(core_dump_task_header_t *task)
     // to avoid warning that 'exc_frame' is unused when ESP_COREDUMP_LOG_PROCESS does nothing
     #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
             XtExcFrame *exc_frame = (XtExcFrame *)task->stack_start;
-            ESP_COREDUMP_LOG_PROCESS("Task (TCB:%x) EXIT/PC/PS/A0/SP %x %x %x %x %x",
+            ESP_COREDUMP_LOG_PROCESS("Task (TCB:%p) EXIT/PC/PS/A0/SP %lx %lx %lx %lx %lx",
                                         task->tcb_addr,
                                         exc_frame->exit,
                                         exc_frame->pc,
@@ -431,7 +431,7 @@ uint32_t esp_core_dump_get_task_regs_dump(core_dump_task_header_t *task, void **
 
     stack_len = esp_core_dump_get_stack(task, &stack_vaddr, &stack_paddr);
 
-    ESP_COREDUMP_LOG_PROCESS("Add regs for task 0x%x", task->tcb_addr);
+    ESP_COREDUMP_LOG_PROCESS("Add regs for task 0x%p", task->tcb_addr);
 
     // initialize program status for the task
     s_reg_dump.pr_status.pr_cursig = 0;

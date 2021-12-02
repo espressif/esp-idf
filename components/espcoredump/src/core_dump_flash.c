@@ -91,6 +91,9 @@ void esp_core_dump_flash_init(void)
         ESP_COREDUMP_LOGE("No core dump partition found!");
         return;
     }
+    ESP_COREDUMP_LOGI("Found partition '%s'", "test");
+    ESP_COREDUMP_LOGI("Found partition '%p'", core_part);
+    ESP_COREDUMP_LOGI("Found partition '%p'", core_part->label);
     ESP_COREDUMP_LOGI("Found partition '%s' @ %x %d bytes", core_part->label, core_part->address, core_part->size);
     s_core_flash_config.partition.start      = core_part->address;
     s_core_flash_config.partition.size       = core_part->size;
