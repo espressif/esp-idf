@@ -97,6 +97,7 @@ static esp_err_t http_header_new_item(http_header_handle_t header, const char *k
 _header_new_item_exit:
     free(item->key);
     free(item->value);
+    free(item);
     return ESP_ERR_NO_MEM;
 }
 

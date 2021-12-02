@@ -239,7 +239,10 @@ esp_transport_handle_t esp_transport_ssl_init()
 {
     esp_transport_handle_t t = esp_transport_init();
     transport_ssl_t *ssl = calloc(1, sizeof(transport_ssl_t));
-    ESP_TRANSPORT_MEM_CHECK(TAG, ssl, return NULL);
+    ESP_TRANSPORT_MEM_CHECK(TAG, ssl, {
+	esp_transport_destroy(t);
+        return NULL;
+    });
     esp_transport_set_context_data(t, ssl);
     esp_transport_set_func(t, ssl_connect, ssl_read, ssl_write, ssl_close, ssl_poll_read, ssl_poll_write, ssl_destroy);
     esp_transport_set_async_connect_func(t, ssl_connect_async);
