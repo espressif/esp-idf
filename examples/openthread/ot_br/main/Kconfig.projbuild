@@ -38,4 +38,12 @@ menu "OpenThread Border Router Example"
         help
             The OpenThread pre-shared commissioner key in hex string format
 
+    config OPENTHREAD_BR_AUTO_START
+        bool 'Enable the automatic start mode in Thread Border Router.'
+        default False
+        help
+            If enabled, The Thread Border Router will connect to Wi-Fi with pre-configured
+            SSID and PSK, and then form a Thread network automatically. Otherwise, user need
+            to configure Wi-Fi and Thread manually.
+
 endmenu

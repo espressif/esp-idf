@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: CC0
+ * SPDX-License-Identifier: CC0-1.0
  *
  * OpenThread Border Router Example
  *
@@ -52,9 +52,12 @@
 #include "openthread/tasklet.h"
 #include "openthread/thread.h"
 #include "openthread/thread_ftd.h"
+#include "esp_br_wifi_cmd.h"
+#include "esp_ot_cli_extension.h"
 
 #define TAG "esp_ot_br"
 
+#if CONFIG_OPENTHREAD_BR_AUTO_START
 static int hex_digit_to_int(char hex)
 {
     if ('A' <= hex && hex <= 'F') {
@@ -152,6 +155,7 @@ static void launch_openthread_network(otInstance *instance)
         abort();
     }
 }
+#endif // CONFIG_OPENTHREAD_BR_AUTO_START
 
 static void ot_task_worker(void *aContext)
 {
@@ -164,20 +168,23 @@ static void ot_task_worker(void *aContext)
     esp_netif_config_t cfg = ESP_NETIF_DEFAULT_OPENTHREAD();
     esp_netif_t *openthread_netif = esp_netif_new(&cfg);
     assert(openthread_netif != NULL);
-
     // Initialize the OpenThread stack
-    esp_openthread_set_backbone_netif(get_example_netif());
+
     ESP_ERROR_CHECK(esp_openthread_init(&config));
 
     // Initialize border routing features
     esp_openthread_lock_acquire(portMAX_DELAY);
     ESP_ERROR_CHECK(esp_netif_attach(openthread_netif, esp_openthread_netif_glue_init(&config)));
-    ESP_ERROR_CHECK(esp_openthread_border_router_init());
 
     (void)otLoggingSetLevel(CONFIG_LOG_DEFAULT_LEVEL);
     esp_openthread_cli_init();
+#if CONFIG_OPENTHREAD_BR_AUTO_START
+    ESP_ERROR_CHECK(esp_openthread_border_router_init());
     create_config_network(esp_openthread_get_instance());
     launch_openthread_network(esp_openthread_get_instance());
+#else
+    esp_cli_custom_command_init();
+#endif // CONFIG_OPENTHREAD_BR_AUTO_START
     esp_openthread_lock_release();
 
     // Run the main loop
@@ -205,8 +212,14 @@ void app_main(void)
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+#if CONFIG_OPENTHREAD_BR_AUTO_START
     ESP_ERROR_CHECK(example_connect());
     ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
+    esp_openthread_set_backbone_netif(get_example_netif());
+#else
+    esp_ot_wifi_netif_init();
+    esp_openthread_set_backbone_netif(esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"));
+#endif // CONFIG_OPENTHREAD_BR_AUTO_START
     ESP_ERROR_CHECK(mdns_init());
     ESP_ERROR_CHECK(mdns_hostname_set("esp-ot-br"));
     xTaskCreate(ot_task_worker, "ot_br_main", 20480, xTaskGetCurrentTaskHandle(), 5, NULL);
