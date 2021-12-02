@@ -73,10 +73,6 @@ extern "C" {
 #define DELAY_SLOW_CLK_SWITCH           300
 #define DELAY_8M_ENABLE                 50
 
-/* APLL frequency range */
-#define RTC_APLL_FREQ_MAX               128000000   // 128MHz
-#define RTC_APLL_FREQ_MIN               16000000    // 16MHz
-
 /* Number of 8M/256 clock cycles to use for XTAL frequency estimation.
  * 10 cycles will take approximately 300 microseconds.
  */
@@ -402,21 +398,33 @@ bool rtc_clk_8md256_enabled(void);
  * In rev. 0 of ESP32, sdm0 and sdm1 are unused and always set to 0.
  *
  * @param enable  true to enable, false to disable
+ */
+void rtc_clk_apll_enable(bool enable);
+
+/**
+ * @brief Calculate APLL clock coeffifcients
+ *
+ * @param freq  expected APLL frequency
+ * @param o_div  frequency divider, 0..31
  * @param sdm0  frequency adjustment parameter, 0..255
  * @param sdm1  frequency adjustment parameter, 0..255
  * @param sdm2  frequency adjustment parameter, 0..63
- * @param o_div  frequency divider, 0..31
+ *
+ * @return
+ *      - 0 Failed
+ *      - else Sucess
  */
-void rtc_clk_apll_enable(bool enable, uint32_t sdm0, uint32_t sdm1, uint32_t sdm2, uint32_t o_div);
+uint32_t rtc_clk_apll_coeff_calc(uint32_t freq, uint32_t *_o_div, uint32_t *_sdm0, uint32_t *_sdm1, uint32_t *_sdm2);
 
 /**
- * @brief Set APLL clock freqency
- * @param freq Expected APLL freqency (unit: Hz)
- * @return
- *      - 0: Failed, the expected APLL frequency is out of range
- *      - else:  The true APLL clock (unit: Hz)
+ * @brief Set APLL clock coeffifcients
+ *
+ * @param o_div  frequency divider, 0..31
+ * @param sdm0  frequency adjustment parameter, 0..255
+ * @param sdm1  frequency adjustment parameter, 0..255
+ * @param sdm2  frequency adjustment parameter, 0..63
  */
-uint32_t rtc_clk_apll_freq_set(uint32_t freq);
+void rtc_clk_apll_coeff_set(uint32_t o_div, uint32_t sdm0, uint32_t sdm1, uint32_t sdm2);
 
 /**
  * @brief Select source for RTC_SLOW_CLK

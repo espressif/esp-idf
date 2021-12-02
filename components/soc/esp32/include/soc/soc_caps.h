@@ -157,18 +157,23 @@
 
 #define SOC_I2C_SUPPORT_APB     (1)
 
+/*-------------------------- APLL CAPS ----------------------------------------*/
+#define SOC_CLK_APLL_SUPPORTED       (1)
+// apll_multiplier_out = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536)
+#define SOC_APLL_MULTIPLIER_OUT_MIN_HZ (350000000) // 350 MHz
+#define SOC_APLL_MULTIPLIER_OUT_MAX_HZ (500000000) // 500 MHz
+#define SOC_APLL_MIN_HZ    (5303031)   // 5.303031 MHz, refer to 'periph_rtc_apll_freq_set' for the calculation
+#define SOC_APLL_MAX_HZ    (125000000) // 125MHz, refer to 'periph_rtc_apll_freq_set' for the calculation
+
 /*-------------------------- I2S CAPS ----------------------------------------*/
 // ESP32 have 2 I2S
-#define SOC_I2S_NUM                 (2)
+#define SOC_I2S_NUM                 (2U)
+#define SOC_I2S_SUPPORTS_APLL       (1) // ESP32 support APLL
 #define SOC_I2S_SUPPORTS_PDM_TX     (1)
 #define SOC_I2S_SUPPORTS_PDM_RX     (1)
 #define SOC_I2S_SUPPORTS_ADC        (1) // ESP32 support ADC and DAC
 #define SOC_I2S_SUPPORTS_DAC        (1)
 
-#define SOC_I2S_SUPPORTS_APLL       (1)// ESP32 support APLL
-#define SOC_I2S_APLL_MIN_FREQ       (250000000)
-#define SOC_I2S_APLL_MAX_FREQ       (500000000)
-#define SOC_I2S_APLL_MIN_RATE       (10675) //in Hz, I2S Clock rate limited by hardware
 #define SOC_I2S_TRANS_SIZE_ALIGN_WORD (1) // I2S DMA transfer size must be aligned to word
 #define SOC_I2S_LCD_I80_VARIANT       (1) // I2S has a special LCD mode that can generate Intel 8080 TX timing
 
