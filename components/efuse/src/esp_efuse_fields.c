@@ -24,7 +24,7 @@ static __attribute__((unused)) const char *TAG = "efuse";
 #ifdef CONFIG_BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD
 #define APP_SEC_VER_SIZE_EFUSE_FIELD CONFIG_BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD
 #else
-#define APP_SEC_VER_SIZE_EFUSE_FIELD 16 // smallest possible size for all chips
+#define APP_SEC_VER_SIZE_EFUSE_FIELD 4 // smallest possible size for all chips
 #endif
 
 // Reset efuse write registers
@@ -33,8 +33,6 @@ void esp_efuse_reset(void)
     esp_efuse_utility_reset();
 }
 
-#if !CONFIG_IDF_TARGET_ESP32C2
-// IDF-3818
 uint32_t esp_efuse_read_secure_version(void)
 {
     uint32_t secure_version = 0;
@@ -85,4 +83,3 @@ esp_err_t esp_efuse_update_secure_version(uint32_t secure_version)
     }
     return ESP_OK;
 }
-#endif

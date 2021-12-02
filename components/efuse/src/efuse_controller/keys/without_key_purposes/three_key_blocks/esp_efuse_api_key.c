@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,13 @@
 #include "assert.h"
 #include "sdkconfig.h"
 #include "esp_efuse_table.h"
+
+/*
+ * FE uses eFuse block1.
+ * SB uses eFuse block2.
+ * Block3 can be used by customer.
+ * There are no eFuse key purpose fields (added only virtual key purposes to support key APIs).
+ */
 
 static __attribute__((unused)) const char *TAG = "efuse";
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,6 +42,7 @@
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   3
 #define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS   1
+#define SOC_EFUSE_KEY_PURPOSE_FIELD         1
 #define SOC_ICACHE_ACCESS_RODATA_SUPPORTED  1
 #define SOC_RTC_FAST_MEM_SUPPORTED        1
 #define SOC_RTC_SLOW_MEM_SUPPORTED        0

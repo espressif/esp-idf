@@ -215,6 +215,10 @@ config SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
     bool
     default y
 
+config SOC_EFUSE_KEY_PURPOSE_FIELD
+    bool
+    default y
+
 config SOC_SDMMC_HOST_SUPPORTED
     bool
     default y

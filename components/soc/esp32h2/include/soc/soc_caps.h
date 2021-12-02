@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,6 +36,7 @@
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
 #define SOC_SUPPORTS_SECURE_DL_MODE         1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   3
+#define SOC_EFUSE_KEY_PURPOSE_FIELD         1
 #define SOC_ICACHE_ACCESS_RODATA_SUPPORTED  1
 #define SOC_TEMP_SENSOR_SUPPORTED           1
 #define SOC_RTC_FAST_MEM_SUPPORTED          1

@@ -11,7 +11,7 @@ extern "C" {
 #endif
 
 /**
- * @brief Type of eFuse blocks ESP32C2
+ * @brief Type of eFuse blocks
  */
 typedef enum {
     EFUSE_BLK0                 = 0,   /**< Number of eFuse BLOCK0. REPEAT_DATA */
@@ -22,11 +22,11 @@ typedef enum {
     EFUSE_BLK2                 = 2,   /**< Number of eFuse BLOCK2. SYS_DATA_PART1 */
     EFUSE_BLK_SYS_DATA_PART1   = 2,   /**< Number of eFuse BLOCK2. SYS_DATA_PART1 */
 
-    EFUSE_BLK3                 = 3,   /**< Number of eFuse BLOCK3. KEY0*/
-    EFUSE_BLK_KEY0             = 3,   /**< Number of eFuse BLOCK3. KEY0*/
+    EFUSE_BLK3                 = 3,   /**< Number of eFuse BLOCK3. KEY0. whole block */
+    EFUSE_BLK_KEY0             = 3,   /**< Number of eFuse BLOCK3. KEY0. whole block */
     EFUSE_BLK_KEY_MAX          = 4,
 
-    EFUSE_BLK_MAX              = 4,
+    EFUSE_BLK_MAX              = 4,   /**< Number of eFuse blocks */
 } esp_efuse_block_t;
 
 /**
@@ -37,16 +37,15 @@ typedef enum {
     EFUSE_CODING_SCHEME_RS      = 3,    /**< Reed-Solomon coding */
 } esp_efuse_coding_scheme_t;
 
-/** For ESP32C2, there's no key purpose region for efuse keys, In order to maintain
-  * compatibility with the previous apis, we should set the parameter of 'ets_efuse_purpose_t'
-  * as default value ETS_EFUSE_KEY_PURPOSE_INVALID.
-  * (In fact, this parameter can be any value, the api in the rom will not process key_purpose region)
-  */
+/**
+ * @brief Type of key purposes (they are virtual because this chip has only fixed purposes for block)
+ */
 typedef enum {
-    ESP_EFUSE_KEY_PURPOSE_INVALID = -1,
-    ESP_EFUSE_KEY_PURPOSE_USER = 0,
-    ESP_EFUSE_KEY_PURPOSE_FLASH_ENCRYPTION = 1,
-    ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_V1 = 2,
+    ESP_EFUSE_KEY_PURPOSE_USER              = 0,    /**< whole BLOCK3 */
+    ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY   = 1,    /**< FE uses the whole BLOCK3 (key is 256-bits) */
+    ESP_EFUSE_KEY_PURPOSE_XTS_AES_64_KEY    = 2,    /**< FE uses lower 128-bits of BLOCK3 (key is 128-bits) */
+    ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_V2    = 3,    /**< SB uses higher 128-bits of BLOCK3 (key is 128-bits) */
+    ESP_EFUSE_KEY_PURPOSE_MAX,                      /**< MAX PURPOSE */
 } esp_efuse_purpose_t;
 
 #ifdef __cplusplus
