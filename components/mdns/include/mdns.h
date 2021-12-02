@@ -551,7 +551,7 @@ esp_err_t mdns_query_async_delete(mdns_search_once_t* search);
  *      True if search has finished before or at timeout
  *      False if search timeout is over
  */
-bool mdns_query_async_get_results(mdns_search_once_t* search, uint32_t timeout, mdns_result_t ** results);
+bool mdns_query_async_get_results(mdns_search_once_t* search, uint32_t timeout, mdns_result_t ** results, uint8_t * num_results);
 
 /**
  * @brief  Query mDNS for host or service asynchronousely.
