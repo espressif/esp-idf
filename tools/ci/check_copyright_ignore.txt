@@ -819,8 +819,6 @@ components/esp_timer/src/ets_timer_legacy.c
 components/esp_timer/test/test_esp_timer.c
 components/esp_timer/test/test_esp_timer_light_sleep.c
 components/esp_timer/test/test_ets_timer.c
-components/esp_websocket_client/esp_websocket_client.c
-components/esp_websocket_client/include/esp_websocket_client.h
 components/esp_wifi/include/esp_coexist_adapter.h
 components/esp_wifi/include/esp_mesh.h
 components/esp_wifi/include/esp_mesh_internal.h
