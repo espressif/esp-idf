@@ -226,7 +226,10 @@ esp_transport_handle_t esp_transport_tcp_init()
 {
     esp_transport_handle_t t = esp_transport_init();
     transport_tcp_t *tcp = calloc(1, sizeof(transport_tcp_t));
-    ESP_TRANSPORT_MEM_CHECK(TAG, tcp, return NULL);
+    ESP_TRANSPORT_MEM_CHECK(TAG, tcp, {
+	esp_transport_destroy(t);
+	return NULL;
+    });
     tcp->sock = -1;
     esp_transport_set_func(t, tcp_connect, tcp_read, tcp_write, tcp_close, tcp_poll_read, tcp_poll_write, tcp_destroy);
     esp_transport_set_context_data(t, tcp);
