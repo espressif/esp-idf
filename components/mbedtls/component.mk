@@ -75,10 +75,6 @@ WRAP_FUNCTIONS = mbedtls_ssl_handshake_client_step \
 COMPONENT_SRCDIRS += port/dynamic
 endif
 
-ifdef CONFIG_MBEDTLS_HARDWARE_MPI
-WRAP_FUNCTIONS += mbedtls_mpi_exp_mod
-endif
-
 ifneq ($(origin WRAP_FUNCTIONS),undefined)
 WRAP_ARGUMENT := -Wl,--wrap=
 COMPONENT_ADD_LDFLAGS = -l$(COMPONENT_NAME) $(addprefix $(WRAP_ARGUMENT),$(WRAP_FUNCTIONS))
