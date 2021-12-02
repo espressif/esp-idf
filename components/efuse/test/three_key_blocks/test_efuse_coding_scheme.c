@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +11,6 @@
 #include "unity.h"
 #include "bootloader_random.h"
 
-#ifdef CONFIG_IDF_TARGET_ESP32
 typedef struct {
     uint8_t unencoded[24];
     uint32_t encoded[8];
@@ -209,4 +208,3 @@ TEST_CASE("Test data does not match the coding scheme", "[efuse]")
 
     esp_efuse_utility_reset();
 }
-#endif // CONFIG_IDF_TARGET_ESP32

@@ -273,6 +273,8 @@ menu "Bootloader config"
         depends on BOOTLOADER_APP_ANTI_ROLLBACK
         range 1 32 if IDF_TARGET_ESP32
         default 32 if IDF_TARGET_ESP32
+        range 1 4 if IDF_TARGET_ESP32C2
+        default 4 if IDF_TARGET_ESP32C2
         range 1 16
         default 16
         help

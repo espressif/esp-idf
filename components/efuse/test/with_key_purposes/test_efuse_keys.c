@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,10 +17,10 @@
 #include "esp_efuse_utility.h"
 #include "sdkconfig.h"
 
-__attribute__((unused)) static const char* TAG = "efuse_test";
+__attribute__((unused)) static const char* TAG = "efuse_key_test";
 
 
-#ifndef CONFIG_IDF_TARGET_ESP32
+#ifdef CONFIG_EFUSE_VIRTUAL
 
 TEST_CASE("Test keys and purposes, rd, wr, wr_key_purposes are in the initial state", "[efuse]")
 {
@@ -47,6 +47,7 @@ TEST_CASE("Test keys and purposes, rd, wr, wr_key_purposes are in the initial st
         printf("EFUSE_BLK_KEY%d, RD, WR, PURPOSE_USER, PURPOSE_USER WR ... OK\n", num_key - EFUSE_BLK_KEY0);
     }
 }
+#endif // CONFIG_EFUSE_VIRTUAL
 
 // If using efuse is real, then turn off writing tests.
 #if CONFIG_EFUSE_VIRTUAL || CONFIG_IDF_ENV_FPGA
@@ -309,6 +310,8 @@ TEST_CASE("Test esp_efuse_write_keys for returned errors", "[efuse]")
     TEST_ESP_ERR(ESP_ERR_NOT_ENOUGH_UNUSED_KEY_BLOCKS, esp_efuse_write_keys(purpose, keys, unused_keys + 1));
 }
 
+#if SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY
+
 TEST_CASE("Test revocation APIs", "[efuse]")
 {
     esp_efuse_utility_reset();
@@ -381,7 +384,6 @@ TEST_CASE("Test set_write_protect_of_digest_revoke", "[efuse]")
     TEST_ASSERT_TRUE(esp_efuse_get_digest_revoke(2));
 #endif // CONFIG_IDF_ENV_FPGA && !CONFIG_EFUSE_VIRTUAL
 }
+#endif // SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY
 
 #endif // CONFIG_EFUSE_VIRTUAL || CONFIG_IDF_ENV_FPGA
-
-#endif // not CONFIG_IDF_TARGET_ESP32

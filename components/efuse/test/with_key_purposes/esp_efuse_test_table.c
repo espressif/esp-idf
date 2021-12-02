@@ -1,17 +1,30 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include "esp_efuse.h"
+#include <assert.h>
 #include "esp_efuse_test_table.h"
 
 // md5_digest_table 7d587827a6f6134241dce7d3713b3edc
-// This file was generated automatically from the file esp_efuse_test_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
-// If you want to change some fields, you need to change esp_efuse_test_table.csv file then build system will generate this header file
-// To show efuse_table run the command 'make show_efuse_table'.
+// This file was generated from the file esp_efuse_test_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
+// If you want to change some fields, you need to change esp_efuse_test_table.csv file
+// then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
+// To show efuse_table run the command 'show_efuse_table'.
 
+#define MAX_BLK_LEN CONFIG_EFUSE_MAX_BLK_LEN
+
+// The last free bit in the block is counted over the entire file.
+#define LAST_FREE_BIT_BLK1 128
+#define LAST_FREE_BIT_BLK2 128
+#define LAST_FREE_BIT_BLK3 88
+
+_Static_assert(LAST_FREE_BIT_BLK1 <= MAX_BLK_LEN, "The eFuse table does not match the coding scheme. Edit the table and restart the efuse_common_table or efuse_custom_table command to regenerate the new files.");
+_Static_assert(LAST_FREE_BIT_BLK2 <= MAX_BLK_LEN, "The eFuse table does not match the coding scheme. Edit the table and restart the efuse_common_table or efuse_custom_table command to regenerate the new files.");
+_Static_assert(LAST_FREE_BIT_BLK3 <= MAX_BLK_LEN, "The eFuse table does not match the coding scheme. Edit the table and restart the efuse_common_table or efuse_custom_table command to regenerate the new files.");
 
 static const esp_efuse_desc_t TEST1_LEN_8[] = {
     {EFUSE_BLK3, 0, 8}, 	 // TEST field,

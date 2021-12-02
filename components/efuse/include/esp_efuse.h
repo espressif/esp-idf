@@ -599,8 +599,7 @@ bool esp_efuse_get_keypurpose_dis_write(esp_efuse_block_t block);
  */
 esp_efuse_purpose_t esp_efuse_get_key_purpose(esp_efuse_block_t block);
 
-
-#ifndef CONFIG_IDF_TARGET_ESP32
+#if SOC_EFUSE_KEY_PURPOSE_FIELD
 /**
  * @brief Returns a pointer to a key purpose for an efuse key block.
  *
@@ -662,6 +661,9 @@ esp_efuse_block_t esp_efuse_find_unused_key_block(void);
  */
 unsigned esp_efuse_count_unused_key_blocks(void);
 
+#endif // SOC_EFUSE_KEY_PURPOSE_FIELD
+
+#if SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY
 /**
  * @brief Returns the status of the Secure Boot public key digest revocation bit.
  *
@@ -709,7 +711,7 @@ bool esp_efuse_get_write_protect_of_digest_revoke(unsigned num_digest);
  */
 esp_err_t esp_efuse_set_write_protect_of_digest_revoke(unsigned num_digest);
 
-#endif // not CONFIG_IDF_TARGET_ESP32
+#endif // SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY
 
 /**
  * @brief Program a block of key data to an efuse block

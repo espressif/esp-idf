@@ -40,15 +40,24 @@ uint32_t esp_efuse_get_pkg_ver(void)
 
 esp_err_t esp_efuse_set_rom_log_scheme(esp_efuse_rom_log_scheme_t log_scheme)
 {
-    abort();
+    int cur_log_scheme = 0;
+    esp_efuse_read_field_blob(ESP_EFUSE_UART_PRINT_CONTROL, &cur_log_scheme, ESP_EFUSE_UART_PRINT_CONTROL[0]->bit_count);
+    if (!cur_log_scheme) { // not burned yet
+        return esp_efuse_write_field_blob(ESP_EFUSE_UART_PRINT_CONTROL, &log_scheme, ESP_EFUSE_UART_PRINT_CONTROL[0]->bit_count);
+    } else {
+        return ESP_ERR_INVALID_STATE;
+    }
 }
 
 esp_err_t esp_efuse_disable_rom_download_mode(void)
 {
-    abort();
+    return esp_efuse_write_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MODE);
 }
 
 esp_err_t esp_efuse_enable_rom_secure_download_mode(void)
 {
-    abort();
+    if (esp_efuse_read_field_bit(ESP_EFUSE_DIS_DOWNLOAD_MODE)) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    return esp_efuse_write_field_bit(ESP_EFUSE_ENABLE_SECURITY_DOWNLOAD);
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -131,26 +131,23 @@ static esp_err_t s_calculate_image_public_key_digests(uint32_t flash_offset, uin
 static esp_err_t check_and_generate_secure_boot_keys(const esp_image_metadata_t *image_data)
 {
     esp_err_t ret;
-#ifdef CONFIG_IDF_TARGET_ESP8684
-    esp_efuse_purpose_t secure_boot_key_purpose[SECURE_BOOT_NUM_BLOCKS] = {
-        ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_V2,
-    };
-#elif CONFIG_IDF_TARGET_ESP32
-    esp_efuse_purpose_t secure_boot_key_purpose[SECURE_BOOT_NUM_BLOCKS] = {
-        ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_V2,
-    };
+#ifdef CONFIG_IDF_TARGET_ESP32
     esp_efuse_coding_scheme_t coding_scheme = esp_efuse_get_coding_scheme(EFUSE_BLK_SECURE_BOOT);
     if (coding_scheme != EFUSE_CODING_SCHEME_NONE) {
         ESP_LOGE(TAG, "No coding schemes are supported in secure boot v2.(Detected scheme: 0x%x)", coding_scheme);
         return ESP_ERR_NOT_SUPPORTED;
     }
-#else
+#endif // CONFIG_IDF_TARGET_ESP32
+
     esp_efuse_purpose_t secure_boot_key_purpose[SECURE_BOOT_NUM_BLOCKS] = {
+#if SECURE_BOOT_NUM_BLOCKS == 1
+        ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_V2,
+#else
         ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST0,
         ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST1,
         ESP_EFUSE_KEY_PURPOSE_SECURE_BOOT_DIGEST2,
+#endif
     };
-#endif // CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP8684
 
     /* Verify the bootloader */
     esp_image_metadata_t bootloader_data = { 0 };
