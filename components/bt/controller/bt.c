@@ -1519,9 +1519,18 @@ esp_err_t esp_bt_controller_deinit(void)
         esp_pm_lock_delete(s_light_sleep_pm_lock);
         s_light_sleep_pm_lock = NULL;
     }
-    esp_timer_stop(s_btdm_slp_tmr);
-    esp_timer_delete(s_btdm_slp_tmr);
-    s_btdm_slp_tmr = NULL;
+
+    if (s_pm_lock != NULL) {
+        esp_pm_lock_delete(s_pm_lock);
+        s_pm_lock = NULL;
+    }
+
+    if (s_btdm_slp_tmr != NULL) {
+        esp_timer_stop(s_btdm_slp_tmr);
+        esp_timer_delete(s_btdm_slp_tmr);
+        s_btdm_slp_tmr = NULL;
+    }
+
     s_pm_lock_acquired = false;
 #endif
     semphr_delete_wrapper(s_wakeup_req_sem);
