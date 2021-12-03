@@ -1070,8 +1070,9 @@ esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait)
         xSemaphoreGive(p_uart_obj[uart_num]->tx_mux);
         return ESP_OK;
     }
-    uart_enable_intr_mask(uart_num, UART_TX_DONE_INT_ENA_M);
-
+    UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
+    SET_PERI_REG_MASK(UART_INT_ENA_REG(uart_num), UART_TX_DONE_INT_ENA_M);
+    UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
     TickType_t ticks_end = xTaskGetTickCount();
     if (ticks_end - ticks_start > ticks_to_wait) {
         ticks_to_wait = 0;
@@ -1081,7 +1082,7 @@ esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait)
     //take 2nd tx_done_sem, wait given from ISR
     res = xSemaphoreTake(p_uart_obj[uart_num]->tx_done_sem, (portTickType)ticks_to_wait);
     if(res == pdFALSE) {
-        uart_disable_intr_mask(uart_num, UART_TX_DONE_INT_ENA_M);
+        // The TX_DONE interrupt will be disabled in ISR
         xSemaphoreGive(p_uart_obj[uart_num]->tx_mux);
         return ESP_ERR_TIMEOUT;
     }
