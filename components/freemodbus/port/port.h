@@ -66,6 +66,9 @@
 #define EXIT_CRITICAL_SECTION( )  { vMBPortExitCritical(); \
                                     ESP_LOGD(MB_PORT_TAG,"%s: Port exit critical", __func__); }
 
+// The task affinity for Modbus stack tasks
+#define MB_PORT_TASK_AFFINITY           (CONFIG_MB_PORT_TASK_AFFINITY)
+
 typedef char    BOOL;
 
 typedef unsigned char UCHAR;
