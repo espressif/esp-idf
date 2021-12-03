@@ -45,8 +45,16 @@ extern "C" {
 #   define CONFIG_TINYUSB_HID_ENABLED 0
 #endif
 
+#ifndef CONFIG_TINYUSB_VENDOR_ENABLED
+#   define CONFIG_TINYUSB_VENDOR_ENABLED 0
+#endif
+
 #ifndef CONFIG_TINYUSB_MIDI_ENABLED
 #   define CONFIG_TINYUSB_MIDI_ENABLED 0
+#endif
+
+#ifndef CONFIG_TINYUSB_DFU_RT_ENABLED
+#   define CONFIG_TINYUSB_DFU_RT_ENABLED 0
 #endif
 
 #ifndef CONFIG_TINYUSB_CUSTOM_CLASS_ENABLED
@@ -85,11 +93,22 @@ extern "C" {
 // HID buffer size Should be sufficient to hold ID (if any) + Data
 #define CFG_TUD_HID_BUFSIZE         CONFIG_TINYUSB_HID_BUFSIZE
 
+// Vendor FIFO size of TX and RX
+// If not configured vendor endpoints will not be buffered
+#define CFG_TUD_VENDOR_RX_BUFSIZE (TUD_OPT_HIGH_SPEED ? 512 : 64)
+#define CFG_TUD_VENDOR_TX_BUFSIZE (TUD_OPT_HIGH_SPEED ? 512 : 64)
+
+// MIDI FIFO size of TX and RX
+#define CFG_TUD_MIDI_RX_BUFSIZE   (TUD_OPT_HIGH_SPEED ? 512 : 64)
+#define CFG_TUD_MIDI_TX_BUFSIZE   (TUD_OPT_HIGH_SPEED ? 512 : 64)
+
 // Enabled device class driver
 #define CFG_TUD_CDC                 CONFIG_TINYUSB_CDC_ENABLED
 #define CFG_TUD_MSC                 CONFIG_TINYUSB_MSC_ENABLED
 #define CFG_TUD_HID                 CONFIG_TINYUSB_HID_ENABLED
+#define CFG_TUD_VENDOR              CONFIG_TINYUSB_VENDOR_ENABLED
 #define CFG_TUD_MIDI                CONFIG_TINYUSB_MIDI_ENABLED
+#define CFG_TUD_DFU_RUNTIME         CONFIG_TINYUSB_DFU_RT_ENABLED
 #define CFG_TUD_CUSTOM_CLASS        CONFIG_TINYUSB_CUSTOM_CLASS_ENABLED
 
 #ifdef __cplusplus

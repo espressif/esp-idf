@@ -2781,17 +2781,14 @@ components/tcpip_adapter/include/tcpip_adapter_compatible/tcpip_adapter_compat.h
 components/tcpip_adapter/include/tcpip_adapter_types.h
 components/tcpip_adapter/tcpip_adapter_compat.c
 components/tinyusb/additions/include/tinyusb.h
-components/tinyusb/additions/include/tinyusb_types.h
 components/tinyusb/additions/include/tusb_cdc_acm.h
 components/tinyusb/additions/include/tusb_config.h
 components/tinyusb/additions/include/tusb_console.h
 components/tinyusb/additions/include/tusb_tasks.h
 components/tinyusb/additions/include/vfs_tinyusb.h
 components/tinyusb/additions/include_private/cdc.h
-components/tinyusb/additions/include_private/descriptors_control.h
 components/tinyusb/additions/include_private/usb_descriptors.h
 components/tinyusb/additions/src/cdc.c
-components/tinyusb/additions/src/descriptors_control.c
 components/tinyusb/additions/src/tinyusb.c
 components/tinyusb/additions/src/tusb_cdc_acm.c
 components/tinyusb/additions/src/tusb_console.c

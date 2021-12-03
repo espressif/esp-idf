@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "esp_log.h"
 #include "descriptors_control.h"
@@ -41,7 +33,25 @@ uint8_t const desc_configuration[] = {
 #   endif
 #   if CFG_TUD_HID
     // Interface number, string index, protocol, report descriptor len, EP In address, size & polling interval
-    TUD_HID_DESCRIPTOR(ITF_NUM_HID, 6, HID_PROTOCOL_NONE, sizeof(desc_hid_report), 0x84, 16, 10)
+    TUD_HID_DESCRIPTOR(ITF_NUM_HID, 6, HID_PROTOCOL_NONE, sizeof(desc_hid_report), 0x84, 16, 10),
+#   endif
+#   if CFG_TUD_VENDOR
+    // Interface number, string index, EP Out & IN address, EP size
+    TUD_VENDOR_DESCRIPTOR(ITF_NUM_VENDOR, 7, EPNUM_VENDOR, 0x80 | EPNUM_VENDOR, TUD_OPT_HIGH_SPEED ? 512 : 64)
+#   endif
+#   if CFG_TUD_MIDI
+#       if TUD_OPT_HIGH_SPEED
+        // Although we are highspeed, host may be fullspeed.
+        // Interface number, string index, EP Out & EP In address, EP size
+        TUD_MIDI_DESCRIPTOR(ITF_NUM_MIDI, 8, EPNUM_MIDI, 0x80 | EPNUM_MIDI, (tud_speed_get() == TUSB_SPEED_HIGH) ? 512 : 64),
+#       else
+        // Interface number, string index, EP Out & EP In address, EP size
+        TUD_MIDI_DESCRIPTOR(ITF_NUM_MIDI, 8, EPNUM_MIDI, 0x80 | EPNUM_MIDI, 64),
+#       endif
+#   endif
+#   if CFG_TUD_DFU_RUNTIME
+    // Interface number, string index, attributes, detach timeout, transfer size */
+    TUD_DFU_RT_DESCRIPTOR(ITF_NUM_DFU_RT, 9, 0x0d, 1000, 4096)
 #   endif
 };
 

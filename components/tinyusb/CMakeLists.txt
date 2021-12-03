@@ -45,6 +45,7 @@ if(CONFIG_TINYUSB)
         "tinyusb/src/class/cdc/cdc_device.c"
         "tinyusb/src/class/hid/hid_device.c"
         "tinyusb/src/class/midi/midi_device.c"
+        "tinyusb/src/class/dfu/dfu_rt_device.c"
         "tinyusb/src/class/msc/msc_device.c"
         "tinyusb/src/class/vendor/vendor_device.c"
         "tinyusb/src/common/tusb_fifo.c"
