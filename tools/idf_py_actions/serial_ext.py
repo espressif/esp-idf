@@ -137,9 +137,6 @@ def action_extensions(base_actions, project_path):
         idf_py = [PYTHON] + _get_commandline_options(ctx)  # commands to re-run idf.py
         monitor_args += ['-m', ' '.join("'%s'" % a for a in idf_py)]
 
-        if 'MSYSTEM' in os.environ:
-            monitor_args = ['winpty'] + monitor_args
-
         run_tool('idf_monitor', monitor_args, args.project_dir)
 
     def flash(action, ctx, args):

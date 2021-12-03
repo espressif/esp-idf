@@ -6,8 +6,8 @@ components/xtensa/esp32/include/xtensa/config/
 
 components/newlib/platform_include/
 
-components/freertos/include/freertos/
-components/freertos/port/xtensa/include/freertos/
+components/freertos/FreeRTOS-Kernel/include/freertos/
+components/freertos/FreeRTOS-Kernel/portable/xtensa/include/freertos/
 
 
 components/log/include/esp_log_internal.h
@@ -49,7 +49,6 @@ components/mbedtls/mbedtls/include/mbedtls/
 
 components/coap/
 components/nghttp/
-components/cbor/
 
 components/esp-tls/private_include/
 
@@ -68,8 +67,6 @@ components/fatfs/src/ffconf.h
 components/idf_test/include/idf_performance.h
 
 components/json/cJSON/
-
-components/libsodium/
 
 components/spiffs/include/spiffs_config.h
 

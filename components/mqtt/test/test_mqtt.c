@@ -1,9 +1,14 @@
+#include <sys/time.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/event_groups.h"
+#include "unity.h"
 #include "test_utils.h"
 #include "mqtt_client.h"
-#include "unity.h"
-#include <sys/time.h>
 #include "nvs_flash.h"
 #include "esp_ota_ops.h"
+#include "sdkconfig.h"
+#include "test_mqtt_client_broker.h"
+#include "test_mqtt_connection.h"
 
 static void test_leak_setup(const char * file, long line)
 {
@@ -68,3 +73,21 @@ TEST_CASE("mqtt enqueue and destroy outbox", "[mqtt][leaks=0]")
 
     esp_mqtt_client_destroy(client);
 }
+
+#if SOC_EMAC_SUPPORTED
+/**
+ * This test cases uses ethernet kit, so build and use it only if EMAC supported
+ */
+TEST_CASE("mqtt broker tests", "[mqtt][test_env=UT_T2_Ethernet]")
+{
+    test_case_uses_tcpip();
+    connect_test_fixture_setup();
+
+    RUN_MQTT_BROKER_TEST(mqtt_connect_disconnect);
+    RUN_MQTT_BROKER_TEST(mqtt_subscribe_publish);
+    RUN_MQTT_BROKER_TEST(mqtt_lwt_clean_disconnect);
+    RUN_MQTT_BROKER_TEST(mqtt_subscribe_payload);
+
+    connect_test_fixture_teardown();
+}
+#endif // SOC_EMAC_SUPPORTED

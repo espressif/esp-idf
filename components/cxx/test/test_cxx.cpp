@@ -62,7 +62,7 @@ TEST_CASE("can use std::vector", "[cxx]")
 #elif CONFIG_IDF_TARGET_ESP32S2
 #define LEAKS "800"
 #elif CONFIG_IDF_TARGET_ESP32C3
-#define LEAKS "600"
+#define LEAKS "700"
 #else
 #error "unknown target in CXX tests, can't set leaks threshold"
 #endif
@@ -324,5 +324,5 @@ template<typename T> __attribute__((unused)) static void test_binary_operators()
 }
 
 //Add more types here. If any flags cannot pass the build, use FLAG_ATTR in esp_attr.h
-#include "hal/timer_types.h"
+#include "driver/timer.h"
 template void test_binary_operators<timer_intr_t>();

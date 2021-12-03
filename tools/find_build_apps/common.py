@@ -296,6 +296,7 @@ class BuildSystem:
         'ESP32-S3': 'esp32s3',
         'ESP32-C3': 'esp32c3',
         'ESP32-H2': 'esp32h2',
+        'ESP8684': 'esp8684',
         'Linux': 'linux',
     }
 
@@ -461,6 +462,6 @@ def setup_logging(args):
 
     logging.basicConfig(
         format='%(levelname)s: %(message)s',
-        stream=args.log_file or sys.stderr,
+        stream=getattr(args, 'log_file', None) or sys.stderr,
         level=log_level,
     )

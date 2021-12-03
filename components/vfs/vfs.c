@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -26,6 +18,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "esp_vfs.h"
+#include "esp_vfs_private.h"
 #include "sdkconfig.h"
 
 #ifdef CONFIG_VFS_SUPPRESS_SELECT_DEBUG_OUTPUT
@@ -55,14 +48,6 @@ typedef struct {
     local_fd_t local_fd;
 } fd_table_t;
 
-typedef struct vfs_entry_ {
-    esp_vfs_t vfs;          // contains pointers to VFS functions
-    char path_prefix[ESP_VFS_PATH_MAX]; // path prefix mapped to this VFS
-    size_t path_prefix_len; // micro-optimization to avoid doing extra strlen
-    void* ctx;              // optional pointer which can be passed to VFS
-    int offset;             // index of this structure in s_vfs array
-} vfs_entry_t;
-
 typedef struct {
     bool isset; // none or at least one bit is set in the following 3 fd sets
     fd_set readfds;
@@ -76,7 +61,7 @@ static size_t s_vfs_count = 0;
 static fd_table_t s_fd_table[MAX_FDS] = { [0 ... MAX_FDS-1] = FD_TABLE_ENTRY_UNUSED };
 static _lock_t s_fd_table_lock;
 
-static esp_err_t esp_vfs_register_common(const char* base_path, size_t len, const esp_vfs_t* vfs, void* ctx, int *vfs_index)
+esp_err_t esp_vfs_register_common(const char* base_path, size_t len, const esp_vfs_t* vfs, void* ctx, int *vfs_index)
 {
     if (len != LEN_PATH_PREFIX_IGNORED) {
         /* empty prefix is allowed, "/" is not allowed */
@@ -271,7 +256,7 @@ esp_err_t esp_vfs_unregister_fd(esp_vfs_id_t vfs_id, int fd)
     return ret;
 }
 
-static inline const vfs_entry_t *get_vfs_for_index(int index)
+const vfs_entry_t *get_vfs_for_index(int index)
 {
     if (index < 0 || index >= s_vfs_count) {
         return NULL;
@@ -316,7 +301,7 @@ static const char* translate_path(const vfs_entry_t* vfs, const char* src_path)
     return src_path + vfs->path_prefix_len;
 }
 
-static const vfs_entry_t* get_vfs_for_path(const char* path)
+const vfs_entry_t* get_vfs_for_path(const char* path)
 {
     const vfs_entry_t* best_match = NULL;
     ssize_t best_match_prefix_len = -1;
@@ -1035,8 +1020,14 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
 
         TickType_t ticks_to_wait = portMAX_DELAY;
         if (timeout) {
-            uint32_t timeout_ms = timeout->tv_sec * 1000 + timeout->tv_usec / 1000;
-            ticks_to_wait = timeout_ms / portTICK_PERIOD_MS;
+            uint32_t timeout_ms = (timeout->tv_sec * 1000) + (timeout->tv_usec / 1000);
+            /* Round up the number of ticks.
+             * Not only we need to round up the number of ticks, but we also need to add 1.
+             * Indeed, `select` function shall wait for AT LEAST timeout, but on FreeRTOS,
+             * if we specify a timeout of 1 tick to `xSemaphoreTake`, it will take AT MOST
+             * 1 tick before triggering a timeout. Thus, we need to pass 2 ticks as a timeout
+             * to `xSemaphoreTake`. */
+            ticks_to_wait = ((timeout_ms + portTICK_PERIOD_MS - 1) / portTICK_PERIOD_MS) + 1;
             ESP_LOGD(TAG, "timeout is %dms", timeout_ms);
         }
         ESP_LOGD(TAG, "waiting without calling socket_select");
@@ -1052,13 +1043,13 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
         vSemaphoreDelete(sel_sem.sem);
         sel_sem.sem = NULL;
     }
+    _lock_acquire(&s_fd_table_lock);
     for (int fd = 0; fd < nfds; ++fd) {
-        _lock_acquire(&s_fd_table_lock);
         if (s_fd_table[fd].has_pending_close) {
             s_fd_table[fd] = FD_TABLE_ENTRY_UNUSED;
         }
-        _lock_release(&s_fd_table_lock);
     }
+    _lock_release(&s_fd_table_lock);
     free(vfs_fds_triple);
     free(driver_args);
 

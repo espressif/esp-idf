@@ -15,6 +15,10 @@
 #include "esp_efuse_table.h"
 #include "esp_log.h"
 #include "hal/wdt_hal.h"
+#ifdef CONFIG_IDF_TARGET_ESP8684
+// IDF-3899
+#warning "Not support flash encryption on esp8684 yet."
+#endif
 
 #ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
 
@@ -104,7 +108,8 @@ static esp_err_t check_and_generate_encryption_keys(void)
 #endif // CONFIG_SECURE_FLASH_ENCRYPTION_AES256
 #endif // CONFIG_IDF_TARGET_ESP32
 
-    esp_efuse_block_t blocks[BLOCKS_NEEDED];
+    /* Initialize all efuse block entries to invalid (max) value */
+    esp_efuse_block_t blocks[BLOCKS_NEEDED] = {[0 ... BLOCKS_NEEDED-1] = EFUSE_BLK_KEY_MAX};
     bool has_key = true;
     for (unsigned i = 0; i < BLOCKS_NEEDED; i++) {
         bool tmp_has_key = esp_efuse_find_purpose(purposes[i], &blocks[i]);

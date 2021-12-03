@@ -108,12 +108,9 @@ static void increment32_j0(esp_gcm_context *ctx, uint8_t *j)
 /* Function to xor two data blocks */
 static void xor_data(uint8_t *d, const uint8_t *s)
 {
-    uint32_t *dst = (uint32_t *) d;
-    uint32_t *src = (uint32_t *) s;
-    *dst++ ^= *src++;
-    *dst++ ^= *src++;
-    *dst++ ^= *src++;
-    *dst++ ^= *src++;
+    for (int i = 0; i < AES_BLOCK_BYTES; i++) {
+        d[i] ^= s[i];
+    }
 }
 
 

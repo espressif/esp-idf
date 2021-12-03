@@ -31,7 +31,7 @@
 #include "driver/gpio.h"
 #include "driver/spi_common_internal.h"
 #include "driver/spi_common.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "bootloader_common.h"
 
 #if CONFIG_SPIRAM

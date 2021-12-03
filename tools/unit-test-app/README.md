@@ -14,21 +14,11 @@ ESP-IDF unit tests are run using Unit Test App. The app can be built with the un
 * Follow the printed instructions to flash, or run `idf.py -p PORT flash`.
 * Unit test have a few preset sdkconfigs. It provides command `idf.py ut-clean-config_name` and `idf.py ut-build-config_name` (where `config_name` is the file name under `unit-test-app/configs` folder) to build with preset configs. For example, you can use `idf.py -T all ut-build-default` to build with config file `unit-test-app/configs/default`. Built binary for this config will be copied to `unit-test-app/output/config_name` folder.
 
-## Legacy GNU Make
-
-* Follow the setup instructions in the top-level esp-idf README.
-* Set IDF_PATH environment variable to point to the path to the esp-idf top-level directory.
-* Change into `tools/unit-test-app` directory
-* `make menuconfig` to configure the Unit Test App.
-* `make TEST_COMPONENTS=` with `TEST_COMPONENTS` set to names of the components to be included in the test app. Or `make TESTS_ALL=1` to build the test app with all the tests for components having `test` subdirectory.
-* Follow the printed instructions to flash, or run `make flash`.
-* Unit test have a few preset sdkconfigs. It provides command `make ut-clean-config_name` and `make ut-build-config_name` (where `config_name` is the file name under `unit-test-app/configs` folder) to build with preset configs. For example, you can use `make ut-build-default TESTS_ALL=1` to build with config file `unit-test-app/configs/default`. Built binary for this config will be copied to `unit-test-app/output/config_name` folder.
-
 # Flash Size
 
-The unit test partition table assumes a 4MB flash size. When testing `-T all` or `TESTS_ALL=1` (Legacy GNU Make) or, this additional factory app partition size is required.
+The unit test partition table assumes a 4MB flash size. When testing `-T all`, this additional factory app partition size is required.
 
-If building unit tests to run on a smaller flash size, edit `partition_table_unit_tests_app.csv` and use `-T <component> <component> ...` or `TEST_COMPONENTS=` (Legacy GNU Make) or instead of `-T all` or `TESTS_ALL` if tests don't fit in a smaller factory app partition (exact size will depend on configured options).
+If building unit tests to run on a smaller flash size, edit `partition_table_unit_tests_app.csv` and use `-T <component> <component> ...` or instead of `-T all` tests don't fit in a smaller factory app partition (exact size will depend on configured options).
 
 # Running Unit Tests
 

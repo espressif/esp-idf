@@ -1,16 +1,8 @@
-// Copyright 2019-2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
 #include <stdbool.h>
@@ -22,6 +14,17 @@ extern "C" {
 #endif
 
 #define ESP_ETH_PHY_ADDR_AUTO (-1)
+
+/**
+ * @brief Auto-negotiation controll commands
+ *
+ */
+typedef enum {
+    ESP_ETH_PHY_AUTONEGO_RESTART,
+    ESP_ETH_PHY_AUTONEGO_EN,
+    ESP_ETH_PHY_AUTONEGO_DIS,
+    ESP_ETH_PHY_AUTONEGO_G_STAT,
+} eth_phy_autoneg_cmd_t;
 
 /**
 * @brief Ethernet PHY
@@ -88,7 +91,7 @@ struct esp_eth_phy_s {
     /**
     * @brief Deinitialize Ethernet PHY
     *
-    * @param[in] phyL Ethernet PHY instance
+    * @param[in] phy: Ethernet PHY instance
     *
     * @return
     *      - ESP_OK: deinitialize Ethernet PHY successfully
@@ -98,16 +101,20 @@ struct esp_eth_phy_s {
     esp_err_t (*deinit)(esp_eth_phy_t *phy);
 
     /**
-    * @brief Start auto negotiation
+    * @brief Configure auto negotiation
     *
     * @param[in] phy: Ethernet PHY instance
+    * @param[in] cmd: Configuration command, it is possible to Enable (restart), Disable or get current status
+    *                   of PHY auto negotiation
+    * @param[out] autonego_en_stat: Address where to store current status of auto negotiation configuration
     *
     * @return
     *      - ESP_OK: restart auto negotiation successfully
     *      - ESP_FAIL: restart auto negotiation failed because some error occurred
+    *      - ESP_ERR_INVALID_ARG: invalid command
     *
     */
-    esp_err_t (*negotiate)(esp_eth_phy_t *phy);
+    esp_err_t (*autonego_ctrl)(esp_eth_phy_t *phy, eth_phy_autoneg_cmd_t cmd, bool *autonego_en_stat);
 
     /**
     * @brief Get Ethernet PHY link status
@@ -174,17 +181,49 @@ struct esp_eth_phy_s {
     esp_err_t (*advertise_pause_ability)(esp_eth_phy_t *phy, uint32_t ability);
 
     /**
-    * @brief
+    * @brief Sets the PHY to loopback mode
     *
     * @param[in] phy: Ethernet PHY instance
     * @param[in] enable: enables or disables PHY loopback
     *
     * @return
-    *      - ESP_OK: configures PHY instance loopback function successfully
+    *      - ESP_OK: PHY instance loopback mode has been configured successfully
     *      - ESP_FAIL: PHY instance loopback configuration failed because some error occurred
     *
     */
     esp_err_t (*loopback)(esp_eth_phy_t *phy, bool enable);
+
+    /**
+    * @brief Sets PHY speed mode
+    *
+    * @note Autonegotiation feature needs to be disabled prior to calling this function for the new
+    *       setting to be applied
+    *
+    * @param[in] phy: Ethernet PHY instance
+    * @param[in] speed: Speed mode to be set
+    *
+    * @return
+    *      - ESP_OK: PHY instance speed mode has been configured successfully
+    *      - ESP_FAIL: PHY instance speed mode configuration failed because some error occurred
+    *
+    */
+    esp_err_t (*set_speed)(esp_eth_phy_t *phy, eth_speed_t speed);
+
+    /**
+    * @brief Sets PHY duplex mode
+    *
+    * @note Autonegotiation feature needs to be disabled prior to calling this function for the new
+    *       setting to be applied
+    *
+    * @param[in] phy: Ethernet PHY instance
+    * @param[in] duplex: Duplex mode to be set
+    *
+    * @return
+    *      - ESP_OK: PHY instance duplex mode has been configured successfully
+    *      - ESP_FAIL: PHY instance duplex mode configuration failed because some error occurred
+    *
+    */
+    esp_err_t (*set_duplex)(esp_eth_phy_t *phy, eth_duplex_t duplex);
 
     /**
     * @brief Free memory of Ethernet PHY instance
@@ -303,6 +342,20 @@ esp_eth_phy_t *esp_eth_phy_new_ksz8041(const eth_phy_config_t *config);
 *      - NULL: create PHY instance failed because some error occurred
 */
 esp_eth_phy_t *esp_eth_phy_new_ksz8081(const eth_phy_config_t *config);
+
+/**
+* @brief Create a PHY instance of KSZ8091
+*
+* @param[in] config: configuration of PHY
+*
+* @return
+*      - instance: create PHY instance successfully
+*      - NULL: create PHY instance failed because some error occurred
+*/
+static inline esp_eth_phy_t *esp_eth_phy_new_ksz8091(const eth_phy_config_t *config)
+{
+    return esp_eth_phy_new_ksz8081(config);
+}
 
 #if CONFIG_ETH_SPI_ETHERNET_DM9051
 /**

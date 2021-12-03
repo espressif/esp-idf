@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include "math.h"
@@ -22,7 +14,6 @@
 #include "soc/ledc_reg.h"
 #include "soc/timer_group_struct.h"
 #include "soc/ledc_struct.h"
-#include "driver/periph_ctrl.h"
 #include "driver/timer.h"
 #include "driver/ledc.h"
 #include "iot_light.h"
@@ -83,13 +74,14 @@ static esp_err_t iot_light_duty_set(light_handle_t light_handle, uint8_t channel
 static void iot_timer_create(hw_timer_idx_t *timer_id, bool auto_reload, double timer_interval_sec, timer_isr_handle_t *isr_handle)
 {
     /* Select and initialize basic parameters of the timer */
-    timer_config_t config;
-    config.divider     = HW_TIMER_DIVIDER;
-    config.counter_dir = TIMER_COUNT_UP;
-    config.counter_en  = TIMER_PAUSE;
-    config.alarm_en    = TIMER_ALARM_EN;
-    config.intr_type   = TIMER_INTR_LEVEL;
-    config.auto_reload = auto_reload;
+    timer_config_t config = {
+        .divider     = HW_TIMER_DIVIDER,
+        .counter_dir = TIMER_COUNT_UP,
+        .counter_en  = TIMER_PAUSE,
+        .alarm_en    = TIMER_ALARM_EN,
+        .intr_type   = TIMER_INTR_LEVEL,
+        .auto_reload = auto_reload,
+    };
     timer_init(timer_id->timer_group, timer_id->timer_id, &config);
 
     /* Timer's counter will initially start from value below.
@@ -167,33 +159,12 @@ static IRAM_ATTR void breath_timer_callback(void *para)
 {
     int timer_idx = (int) para;
 
-    if (HW_TIMER_GROUP == TIMER_GROUP_0) {
-        /* Retrieve the interrupt status */
-        uint32_t intr_status = TIMERG0.int_st_timers.val;
-        TIMERG0.hw_timer[timer_idx].update = 1;
-
-        /* Clear the interrupt */
-        if ((intr_status & BIT(timer_idx)) && timer_idx == TIMER_0) {
-            TIMERG0.int_clr_timers.t0 = 1;
-        } else if ((intr_status & BIT(timer_idx)) && timer_idx == TIMER_1) {
-            TIMERG0.int_clr_timers.t1 = 1;
-        }
-
-        /* After the alarm has been triggered
-          we need enable it again, so it is triggered the next time */
-        TIMERG0.hw_timer[timer_idx].config.alarm_en = TIMER_ALARM_EN;
-    } else if (HW_TIMER_GROUP == TIMER_GROUP_1) {
-        uint32_t intr_status = TIMERG1.int_st_timers.val;
-        TIMERG1.hw_timer[timer_idx].update = 1;
-
-        if ((intr_status & BIT(timer_idx)) && timer_idx == TIMER_0) {
-            TIMERG1.int_clr_timers.t0 = 1;
-        } else if ((intr_status & BIT(timer_idx)) && timer_idx == TIMER_1) {
-            TIMERG1.int_clr_timers.t1 = 1;
-        }
-
-        TIMERG1.hw_timer[timer_idx].config.alarm_en = TIMER_ALARM_EN;
-    }
+    /* Retrieve the interrupt status */
+    timer_group_get_intr_status_in_isr(HW_TIMER_GROUP);
+    timer_group_clr_intr_status_in_isr(HW_TIMER_GROUP, timer_idx);
+    /* After the alarm has been triggered
+      we need enable it again, so it is triggered the next time */
+    timer_group_enable_alarm_in_isr(HW_TIMER_GROUP, timer_idx);
 
     for (int i = 0; i < LIGHT_NUM_MAX; i++) {
         if (g_light_group[i] != NULL) {

@@ -137,6 +137,7 @@ If you have one of {IDF_TARGET_NAME} development boards listed below, you can cl
         :maxdepth: 1
 
         ESP32-S3-DevKitC-1 <../hw-reference/esp32s3/user-guide-devkitc-1>
+        ESP32-S3-DevKitM-1 <../hw-reference/esp32s3/user-guide-devkitm-1>
 
 
 .. _get-started-step-by-step:
@@ -525,7 +526,7 @@ Encountered Issues While Flashing?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 {IDF_TARGET_STRAP_GPIO:default="GPIO0", esp32="GPIO0", esp32s2="GPIO0", esp32s3="GPIO0", esp32c3="GPIO9"}
 
-If you run the given command and see errors such as "Failed to connect", there might be several reasons for this. One of the reasons might be issues encountered by ``esptool.py``, the utility that is called by the build system to reset the chip, interact with the ROM bootloader, and flash firmware. One simple solution to try is manual reset described below, and if it does not help you can find more details about possible issues in `Troubleshooting <https://github.com/espressif/esptool#bootloader-wont-respond>`_.
+If you run the given command and see errors such as "Failed to connect", there might be several reasons for this. One of the reasons might be issues encountered by ``esptool.py``, the utility that is called by the build system to reset the chip, interact with the ROM bootloader, and flash firmware. One simple solution to try is manual reset described below, and if it does not help you can find more details about possible issues in `Troubleshooting <https://docs.espressif.com/projects/esptool/en/latest/troubleshooting.html#bootloader-won-t-respond>`_.
 
 ``esptool.py`` resets {IDF_TARGET_NAME} automatically by asserting DTR and RTS control lines of the USB to serial converter chip, i.e., FTDI or CP210x (for more information, see :doc:`establish-serial-connection`). The DTR and RTS control lines are in turn connected to ``{IDF_TARGET_STRAP_GPIO}`` and ``CHIP_PU`` (EN) pins of {IDF_TARGET_NAME}, thus changes in the voltage levels of DTR and RTS will boot {IDF_TARGET_NAME} into Firmware Download mode. As an example, check the `schematic <https://dl.espressif.com/dl/schematics/esp32_devkitc_v4-sch-20180607a.pdf>`_ for the ESP32 DevKitC development board.
 
@@ -774,6 +775,12 @@ To exit IDF monitor use the shortcut ``Ctrl+]``.
 
        idf.py -p PORT flash monitor
 
+.. only:: esp32s3
+
+    .. note::
+
+        If a board with Octal Flash resets before the second-stage bootloader, please refer to :ref:`Octal Flash Error Handling <flash-psram-error>`
+
 See also:
 
 - :doc:`IDF Monitor <../api-guides/tools/idf-monitor>` for handy shortcuts and more details on using IDF monitor.
@@ -812,7 +819,6 @@ Related Documents
     vscode-setup
     ../api-guides/tools/idf-monitor
     toolchain-setup-scratch
-    :esp32: ../get-started-legacy/index
 
 .. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/
 .. _Releases page: https://github.com/espressif/esp-idf/releases

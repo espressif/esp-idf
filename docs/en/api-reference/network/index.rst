@@ -41,13 +41,16 @@ Thread
 Thread is an IPv6-based mesh networking technology for IoT.
 Code examples for the Thread API are provided in the :example:`openthread` directory of ESP-IDF examples.
 
-IP Network Layer
-================
+ESP-NETIF
+=========
 
 .. toctree::
    :maxdepth: 1
 
    ESP-NETIF <esp_netif.rst>
+
+IP Network Layer
+================
 
 .. toctree::
     :hidden:

@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdint.h>
 #include <stdio.h>
@@ -23,10 +15,10 @@
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
 #include "esp_attr.h"
+#include "esp_log.h"
 #include "esp_freertos_hooks.h"
 #include "soc/timer_periph.h"
-#include "driver/timer.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "esp_int_wdt.h"
 #include "esp_private/system_internal.h"
 #include "hal/cpu_hal.h"
@@ -155,7 +147,13 @@ void esp_int_wdt_cpu_init(void)
     assert((CONFIG_ESP_INT_WDT_TIMEOUT_MS >= (portTICK_PERIOD_MS << 1)) && "Interrupt watchdog timeout needs to meet twice the RTOS tick period!");
     esp_register_freertos_tick_hook_for_cpu(tick_hook, cpu_hal_get_core_id());
     ESP_INTR_DISABLE(WDT_INT_NUM);
+
+#if SOC_TIMER_GROUPS > 1
     intr_matrix_set(cpu_hal_get_core_id(), ETS_TG1_WDT_LEVEL_INTR_SOURCE, WDT_INT_NUM);
+#else
+    // TODO: Clean up code for ESP8684, IDF-4114
+    ESP_EARLY_LOGW("INT_WDT", "ESP8684 only has one timer group");
+#endif
 
     /* Set the type and priority to watch dog interrupts */
 #if SOC_CPU_HAS_FLEXIBLE_INTC

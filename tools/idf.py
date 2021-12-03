@@ -687,6 +687,14 @@ def init_cli(verbose_output=None):
         except ImportError:
             pass
 
+    # Optional load `pyclang` for additional clang-tidy related functionalities
+    try:
+        from pyclang import idf_extension
+
+        extensions.append(('idf_clang_tidy_ext', idf_extension))
+    except ImportError:
+        pass
+
     for name, extension in extensions:
         try:
             all_actions = merge_action_lists(all_actions, extension.action_extensions(all_actions, project_dir))
@@ -776,25 +784,9 @@ def _find_usable_locale():
 
 if __name__ == '__main__':
     try:
-        # On MSYS2 we need to run idf.py with "winpty" in order to be able to cancel the subprocesses properly on
-        # keyboard interrupt (CTRL+C).
-        # Using an own global variable for indicating that we are running with "winpty" seems to be the most suitable
-        # option as os.environment['_'] contains "winpty" only when it is run manually from console.
-        WINPTY_VAR = 'WINPTY'
-        WINPTY_EXE = 'winpty'
-        if ('MSYSTEM' in os.environ) and (not os.environ.get('_', '').endswith(WINPTY_EXE)
-                                          and WINPTY_VAR not in os.environ):
-
-            if 'menuconfig' in sys.argv:
-                # don't use winpty for menuconfig because it will print weird characters
-                main()
-            else:
-                os.environ[WINPTY_VAR] = '1'  # the value is of no interest to us
-                # idf.py calls itself with "winpty" and WINPTY global variable set
-                ret = subprocess.call([WINPTY_EXE, sys.executable] + sys.argv, env=os.environ)
-                if ret:
-                    raise SystemExit(ret)
-
+        if 'MSYSTEM' in os.environ:
+            print_warning('MSys/Mingw is no longer supported. Please follow the getting started guide of the '
+                          'documentation in order to set up a suitiable environment, or continue at your own risk.')
         elif os.name == 'posix' and not _valid_unicode_config():
             # Trying to find best utf-8 locale available on the system and restart python with it
             best_locale = _find_usable_locale()

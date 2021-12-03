@@ -11,7 +11,7 @@
 #include "xtensa/core-macros.h"
 #include "xtensa/hal.h"
 #include "esp_types.h"
-#include "esp32/clk.h"
+#include "esp_private/esp_clk.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -27,7 +27,6 @@
 #include "soc/rtc.h"
 #include "hal/cpu_hal.h"
 #include "esp_intr_alloc.h"
-#include "driver/timer.h"
 
 
 #define MHZ (1000000)
@@ -347,7 +346,7 @@ TEST_CASE("BENCHMARK for DPORT access performance", "[freertos]")
 uint32_t xt_highint5_read_apb;
 
 #ifndef CONFIG_FREERTOS_UNICORE
-timer_isr_handle_t inth;
+intr_handle_t inth;
 xSemaphoreHandle sync_sema;
 
 static void init_hi_interrupt(void *arg)

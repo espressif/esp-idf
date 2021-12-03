@@ -135,10 +135,6 @@ ROM 中的 :ref:`first-stage-bootloader` 从 flash 中读取 :ref:`second-stage-
 
 如果引导加载程序二进制文件过大，则引导加载程序会构建将失败并显示 "Bootloader binary size [..] is too large for partition table offset" 的错误。如果此二进制文件已经被烧录，那么 {IDF_TARGET_NAME} 将无法启动 - 日志中将记录无效分区表或无效引导加载程序校验和的错误。
 
-.. note::
-
-	对引导加载程序大小检查仅发生在 CMake 构建系统中，若使用的是旧版 GNU Make 构建系统，则不会检查大小，但如果引导加载程序太大，{IDF_TARGET_NAME} 将无法启动。
-
 可以使用如下方法解决此问题：
 
 - 将 :ref:`bootloader 编译器优化 <CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION>` 重新设置回默认值“Size”。
@@ -163,5 +159,3 @@ ROM 中的 :ref:`first-stage-bootloader` 从 flash 中读取 :ref:`second-stage-
 在引导加载程序的代码中，用户不能使用其他组件提供的驱动和函数，如果确实需要，请将该功能的实现部分放在项目的 `bootloader_components` 目录中（注意，这会增加引导加载程序的大小）。
 
 如果引导加载程序过大，则可能与内存中的分区表重叠，分区表默认烧录在偏移量 0x8000 处。增加 :ref:`分区表偏移量 <CONFIG_PARTITION_TABLE_OFFSET>` ，将分区表放在 flash 中靠后的区域，这样可以增加引导程序的可用空间。
-
-.. note:: 上述任意一种自定义引导程序的方法都需要使用 CMake 构建系统（即不支持传统的 Make 构建系统）。

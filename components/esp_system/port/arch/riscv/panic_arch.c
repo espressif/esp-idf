@@ -12,13 +12,15 @@
 #include "esp_private/panic_internal.h"
 #include "esp_private/panic_reason.h"
 #include "riscv/rvruntime-frames.h"
-#include "cache_err_int.h"
+#include "esp_private/cache_err_int.h"
 
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 #if CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/memprot.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/memprot.h"
+#elif CONFIG_IDF_TARGET_ESP8684
+#include "esp8684/memprot.h"
 #endif
 #endif
 

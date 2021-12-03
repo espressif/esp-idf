@@ -75,6 +75,8 @@
 
   - "tools/unit-test-app/**/*"
 
+  - "components/**/*"
+
 .patterns-component_ut: &patterns-component_ut
   - "tools/ci/python_packages/gitlab_api.py"
   - "tools/ci/python_packages/tiny_test_fw/**/*"
@@ -85,7 +87,7 @@
   - "tools/find_apps.py"
   - "tools/find_build_apps/**/*"
 
-  - "components/**/test_apps/**/*"
+  - "components/**/*"
 
 .patterns-integration_test: &patterns-integration_test
   - "tools/ci/python_packages/tiny_test_fw/**/*"
@@ -96,7 +98,6 @@
   - "components/**/*"
 
   - "tools/ci/test_autocomplete.py"
-  - "tools/ci/test_build_system.sh"
   - "tools/ci/test_build_system_cmake.sh"
   - "tools/ci/test_check_kconfigs.py"
   - "tools/ci/test_configure_ci_environment.sh"
@@ -131,6 +132,8 @@
   - "tools/detect_python.sh"
   - "tools/detect_python.fish"
 
+  - "tools/ci/test_reproducible_build.sh"
+
 .patterns-windows: &patterns-windows
   - "tools/windows/**/*"
 
@@ -143,7 +146,6 @@
   - "components/bt/controller/lib_esp32"
   - "components/bt/controller/lib_esp32c3_family"
   - "components/bt/host/nimble/nimble"
-  - "components/cbor/tinycbor"
   - "components/cmock/CMock"
   - "components/cmock/CMock/vendor/c_exception"
   - "components/cmock/CMock/vendor/unity"
@@ -154,7 +156,6 @@
   - "components/esptool_py/esptool"
   - "components/expat/expat"
   - "components/json/cJSON"
-  - "components/libsodium/libsodium"
   - "components/lwip/lwip"
   - "components/mbedtls/mbedtls"
   - "components/mqtt/esp-mqtt"
@@ -195,6 +196,9 @@
 
 .if-label-build-only: &if-label-build-only
   if: '$CI_JOB_STAGE == "target_test" && $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*For Maintainers: Only Build Tests(?:,[^,\n\r]+)*$/i'
+
+.if-revert-branch: &if-revert-branch
+  if: '$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^revert-/'
 
 #########
 # Rules #
@@ -359,6 +363,8 @@
 
 .rules:build:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build
     - <<: *if-dev-push
@@ -368,6 +374,8 @@
 
 .rules:build:component_ut-esp32:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build
     - <<: *if-label-component_ut
@@ -383,6 +391,8 @@
 
 .rules:build:component_ut-esp32c3:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build
     - <<: *if-label-component_ut
@@ -398,6 +408,8 @@
 
 .rules:build:component_ut-esp32s2:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build
     - <<: *if-label-component_ut
@@ -413,6 +425,8 @@
 
 .rules:build:component_ut-esp32s3:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build
     - <<: *if-label-component_ut
@@ -428,6 +442,8 @@
 
 .rules:build:custom_test-esp32:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build
     - <<: *if-label-custom_test
@@ -442,6 +458,8 @@
 
 .rules:build:custom_test-esp32c3:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build
     - <<: *if-label-custom_test
@@ -455,6 +473,8 @@
 
 .rules:build:custom_test-esp32s2:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build
     - <<: *if-label-custom_test
@@ -468,6 +488,8 @@
 
 .rules:build:custom_test-esp32s3:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build
     - <<: *if-label-custom_test
@@ -481,6 +503,8 @@
 
 .rules:build:docker:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build
     - <<: *if-label-docker
@@ -489,6 +513,8 @@
 
 .rules:build:example_test-esp32:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build
     - <<: *if-label-example_test
@@ -505,6 +531,8 @@
 
 .rules:build:example_test-esp32c3:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build
     - <<: *if-label-example_test
@@ -520,6 +548,8 @@
 
 .rules:build:example_test-esp32s2:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build
     - <<: *if-label-example_test
@@ -535,6 +565,8 @@
 
 .rules:build:example_test-esp32s3:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build
     - <<: *if-label-example_test
@@ -550,6 +582,8 @@
 
 .rules:build:integration_test:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build
     - <<: *if-label-integration_test
@@ -562,6 +596,8 @@
 
 .rules:build:macos:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build
     - <<: *if-label-macos
@@ -571,6 +607,8 @@
 
 .rules:build:target_test:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build
     - <<: *if-label-component_ut
@@ -615,6 +653,8 @@
 
 .rules:build:unit_test-esp32:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build
     - <<: *if-label-unit_test
@@ -628,6 +668,8 @@
 
 .rules:build:unit_test-esp32c3:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build
     - <<: *if-label-unit_test
@@ -641,6 +683,8 @@
 
 .rules:build:unit_test-esp32s2:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build
     - <<: *if-label-unit_test
@@ -654,6 +698,8 @@
 
 .rules:build:unit_test-esp32s3:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build
     - <<: *if-label-unit_test
@@ -667,6 +713,8 @@
 
 .rules:build:windows:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build
     - <<: *if-label-windows
@@ -675,31 +723,35 @@
     - <<: *if-dev-push
       changes: *patterns-windows
 
-.rules:labels:example_test-esp32c3:
-  rules:
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-example_test_esp32c3
-
 .rules:labels:fuzzer_test-weekend_test:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-label-fuzzer_test
     - <<: *if-label-weekend_test
 
 .rules:labels:iperf_stress_test:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-label-iperf_stress_test
 
 .rules:labels:nvs_coverage:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-label-nvs_coverage
 
 .rules:labels:weekend_test:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-label-weekend_test
 
 .rules:test:any_test:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
@@ -715,6 +767,7 @@
     - <<: *if-label-custom_test_esp32s3
     - <<: *if-label-example_test
     - <<: *if-label-example_test_esp32
+    - <<: *if-label-example_test_esp32c3
     - <<: *if-label-example_test_esp32s2
     - <<: *if-label-example_test_esp32s3
     - <<: *if-label-host_test
@@ -743,6 +796,8 @@
 
 .rules:test:component_ut-esp32:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
@@ -755,6 +810,8 @@
 
 .rules:test:component_ut-esp32c3:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
@@ -767,6 +824,8 @@
 
 .rules:test:component_ut-esp32s2:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
@@ -779,6 +838,8 @@
 
 .rules:test:component_ut-esp32s3:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
@@ -791,6 +852,8 @@
 
 .rules:test:custom_test-esp32:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
@@ -801,6 +864,8 @@
 
 .rules:test:custom_test-esp32c3:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
@@ -811,6 +876,8 @@
 
 .rules:test:custom_test-esp32s2:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
@@ -821,6 +888,8 @@
 
 .rules:test:custom_test-esp32s3:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
@@ -831,6 +900,8 @@
 
 .rules:test:example_test-esp32:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
@@ -841,8 +912,24 @@
     - <<: *if-dev-push
       changes: *patterns-example_test
 
+.rules:test:example_test-esp32c3:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32c3
+    - <<: *if-dev-push
+      changes: *patterns-build-example_test
+    - <<: *if-dev-push
+      changes: *patterns-example_test
+
 .rules:test:example_test-esp32s2:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
@@ -855,6 +942,8 @@
 
 .rules:test:example_test-esp32s3:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
@@ -867,6 +956,8 @@
 
 .rules:test:host_test:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
@@ -876,6 +967,8 @@
 
 .rules:test:integration_test:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
@@ -885,6 +978,8 @@
 
 .rules:test:submodule:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
@@ -894,6 +989,8 @@
 
 .rules:test:target_test:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
@@ -909,6 +1006,7 @@
     - <<: *if-label-custom_test_esp32s3
     - <<: *if-label-example_test
     - <<: *if-label-example_test_esp32
+    - <<: *if-label-example_test_esp32c3
     - <<: *if-label-example_test_esp32s2
     - <<: *if-label-example_test_esp32s3
     - <<: *if-label-integration_test
@@ -932,6 +1030,8 @@
 
 .rules:test:unit_test-esp32:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
@@ -942,6 +1042,8 @@
 
 .rules:test:unit_test-esp32c3:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
@@ -952,6 +1054,8 @@
 
 .rules:test:unit_test-esp32s2:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never
@@ -962,6 +1066,8 @@
 
 .rules:test:unit_test-esp32s3:
   rules:
+    - <<: *if-revert-branch
+      when: never
     - <<: *if-protected
     - <<: *if-label-build-only
       when: never

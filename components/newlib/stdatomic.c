@@ -36,15 +36,15 @@
 
 #if SOC_CPU_CORES_NUM == 1
 
-// Single core SoC: atomics can be implemented using portENTER_CRITICAL_NESTED
-// and portEXIT_CRITICAL_NESTED, which disable and enable interrupts.
+// Single core SoC: atomics can be implemented using portSET_INTERRUPT_MASK_FROM_ISR
+// and portCLEAR_INTERRUPT_MASK_FROM_ISR, which disables and enables interrupts.
 #define _ATOMIC_ENTER_CRITICAL() ({ \
-    unsigned state = portENTER_CRITICAL_NESTED(); \
+    unsigned state = portSET_INTERRUPT_MASK_FROM_ISR(); \
     state; \
 })
 
 #define _ATOMIC_EXIT_CRITICAL(state)   do { \
-    portEXIT_CRITICAL_NESTED(state); \
+    portCLEAR_INTERRUPT_MASK_FROM_ISR(state); \
     } while (0)
 
 #else // SOC_CPU_CORES_NUM
@@ -207,7 +207,7 @@ CLANG_DECLARE_ALIAS( __sync_val_compare_and_swap_ ## n )
     *ptr = val;                                                                  \
     _ATOMIC_EXIT_CRITICAL(state);                                                \
     return ret;                                                                  \
-}
+}                                                                                \
 CLANG_DECLARE_ALIAS( __sync_lock_test_and_set_ ## n )
 
 #define SYNC_LOCK_RELEASE(n, type) void  CLANG_ATOMIC_SUFFIX(__sync_lock_release_ ## n)  (type *ptr) \
@@ -215,7 +215,7 @@ CLANG_DECLARE_ALIAS( __sync_lock_test_and_set_ ## n )
     unsigned state = _ATOMIC_ENTER_CRITICAL();                                   \
     *ptr = 0;                                                                    \
     _ATOMIC_EXIT_CRITICAL(state);                                                \
-}
+}                                                                                \
 CLANG_DECLARE_ALIAS( __sync_lock_release_ ## n )
 
 

@@ -5,13 +5,13 @@ Analog to Digital Converter (ADC)
 {IDF_TARGET_ADC2_CH7: default="GPIO 0", esp32="GPIO 27"}
 
 
-Overview
---------
+ADC Channels
+------------
 
-{IDF_TARGET_ADC_DATA_WIDTH:default="12", esp32s2="13"}
 {IDF_TARGET_ADC_TOTAL_CHAN:default="20", esp32="18", esp32s2="20", esp32c3="6"}
+{IDF_TARGET_ADC_UNIT_NUM:default="2"}
 
-The {IDF_TARGET_NAME} integrates two {IDF_TARGET_ADC_DATA_WIDTH}-bit SAR (`Successive Approximation Register <https://en.wikipedia.org/wiki/Successive_approximation_ADC>`_) ADCs, supporting a total of {IDF_TARGET_ADC_TOTAL_CHAN} measurement channels (analog enabled pins).
+The {IDF_TARGET_NAME} integrates {IDF_TARGET_ADC_UNIT_NUM} SAR (`Successive Approximation Register <https://en.wikipedia.org/wiki/Successive_approximation_ADC>`_) ADCs, supporting a total of {IDF_TARGET_ADC_TOTAL_CHAN} measurement channels (analog enabled pins).
 
 These channels are supported:
 
@@ -22,7 +22,7 @@ These channels are supported:
     ADC2:
         - 10 channels: GPIO0, GPIO2, GPIO4, GPIO12 - GPIO15, GOIO25 - GPIO27
 
-.. only:: esp32s2
+.. only:: esp32s2 or esp32s3
 
     ADC1:
         - 10 channels: GPIO1 - GPIO10
@@ -35,6 +35,74 @@ These channels are supported:
         - 5 channels: GPIO0 - GPIO4
     ADC2:
         - 1 channels: GPIO5
+
+
+.. _adc_attenuation:
+
+ADC Attenuation
+---------------
+{IDF_TARGET_ADC_V_MIN_ATTEN0:default="0", esp32="100"}
+{IDF_TARGET_ADC_V_MAX_ATTEN0:default="950", esp32s2="750", esp32c3="750", esp32s3="950"}
+
+{IDF_TARGET_ADC_V_MIN_ATTEN1:default="0", esp32="100"}
+{IDF_TARGET_ADC_V_MAX_ATTEN1:default="1250", esp32s2="1050", esp32c3="1050", esp32s3="1250"}
+
+{IDF_TARGET_ADC_V_MIN_ATTEN2:default="0", esp32="150"}
+{IDF_TARGET_ADC_V_MAX_ATTEN2:default="1750", esp32s2="1300", esp32c3="1300", esp32s3="1750"}
+
+{IDF_TARGET_ADC_V_MIN_ATTEN3:default="0", esp32="150"}
+{IDF_TARGET_ADC_V_MAX_ATTEN3:default="2450", esp32s2="2500", esp32c3="2500", esp32s3="3100"}
+
+
+Vref is the reference voltage used internally by {IDF_TARGET_NAME} ADCs for measuring the input voltage. The {IDF_TARGET_NAME} ADCs can measure analog voltages from 0 V to Vref. Among different chips, the Vref varies, the median is 1.1 V. In order to convert voltages larger than Vref, input voltages can be attenuated before being input to the ADCs. There are 4 available attenuation options, the higher the attenuation is, the higher the measurable input voltage could be.
+
+=====================  =========================================================================================================
+Attenuation            Measurable input voltage range
+=====================  =========================================================================================================
+``ADC_ATTEN_DB_0``     {IDF_TARGET_ADC_V_MIN_ATTEN0} mV ~ {IDF_TARGET_ADC_V_MAX_ATTEN0} mV
+``ADC_ATTEN_DB_2_5``   {IDF_TARGET_ADC_V_MIN_ATTEN1} mV ~ {IDF_TARGET_ADC_V_MAX_ATTEN1} mV
+``ADC_ATTEN_DB_6``     {IDF_TARGET_ADC_V_MIN_ATTEN2} mV ~ {IDF_TARGET_ADC_V_MAX_ATTEN2} mV
+``ADC_ATTEN_DB_11``    {IDF_TARGET_ADC_V_MIN_ATTEN3} mV ~ {IDF_TARGET_ADC_V_MAX_ATTEN3} mV
+=====================  =========================================================================================================
+
+
+.. _adc_conversion:
+
+ADC Conversion
+--------------
+
+{IDF_TARGET_ADC_SINGLE_MAX_WIDTH:default="12", esp32s2="13}
+{IDF_TARGET_ADC_SINGLE_RAW_MAX:default="4095", esp32s2="8191"}
+{IDF_TARGET_ADC_CONTINUOUS_MAX_WIDTH:default="12", esp32s3="13}
+{IDF_TARGET_ADC_CONTINUOUS_RAW_MAX:default="4095", esp32s3="8191"}
+
+
+An ADC conversion is to convert the input analog voltage to a digital value. The ADC conversion results provided by the ADC driver APIs are raw data. Resolution of {IDF_TARGET_NAME} ADC raw results under Single Read mode is {IDF_TARGET_ADC_SINGLE_MAX_WIDTH}-bit.
+
+- :cpp:func:`adc1_get_raw`
+- :cpp:func:`adc2_get_raw`
+
+.. only:: esp32c3
+
+    - :cpp:func:`adc_digi_read_bytes`
+
+To calculate the voltage based on the ADC raw results, this formula can be used:
+
+.. parsed-literal::
+
+    Vout = Dout * Vmax / Dmax       (1)
+
+where:
+
+======  =============================================================
+Vout    Digital output result, standing for the voltage.
+Dout    ADC raw digital reading result.
+Vmax    Maximum measurable input analog voltage, see :ref:`adc_attenuation`.
+Dmax    Maximum of the output ADC raw digital reading result, which is {IDF_TARGET_ADC_SINGLE_RAW_MAX} under Single Read mode, {IDF_TARGET_ADC_CONTINUOUS_RAW_MAX} under Continuous Read mode.
+======  =============================================================
+
+For boards with eFuse ADC calibration bits, :cpp:func:`esp_adc_cal_raw_to_voltage` can be used to get the calibrated conversion results. These results stand for the actual voltage (in mV). No need to transform these data via the formula (1).
+If ADC calibration APIs are used on boards without eFuse ADC calibration bits, warnings will be generated. See :ref:`adc_calibration`.
 
 
 .. _adc_limitations:
@@ -64,7 +132,13 @@ ADC Limitations
 Driver Usage
 ------------
 
-Each ADC unit supports two work modes, ADC single read mode and ADC continuous (DMA) mode. ADC single read mode is suitable for low-frequency sampling operations. ADC continuous (DMA) read mode is suitable for high-frequency continuous sampling actions.
+.. only:: esp32c3
+
+    Each ADC unit supports two work modes, ADC single read mode and ADC continuous (DMA) mode. ADC single read mode is suitable for low-frequency sampling operations. ADC continuous (DMA) read mode is suitable for high-frequency continuous sampling actions.
+
+.. only:: not esp32c3
+
+    Both of the ADC units support single read mode, which is suitable for low-frequency sampling operations.
 
 .. note::
 
@@ -75,14 +149,19 @@ Each ADC unit supports two work modes, ADC single read mode and ADC continuous (
     ADC Continuous (DMA) Read mode
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    Please use the ADC continuous read mode driver as the following steps:
+    To use the ADC continuous read mode driver, execute the following steps:
 
-    - Initialize the ADC driver by calling the function :cpp:func:`adc_digi_initialize`.
-    - Initialize the ADC controller by calling the function :cpp:func:`adc_digi_controller_config`.
-    - Start the ADC continuous reading by calling the function :cpp:func:`adc_digi_start`.
-    - After starting the ADC, you can get the ADC reading result by calling the function :cpp:func:`adc_digi_read_bytes`. Before stopping the ADC (by calling :cpp:func:`adc_digi_stop`), the driver will keep converting the analog data to digital data.
-    - Stop the ADC reading by calling the function :cpp:func:`adc_digi_stop`.
-    - Deinitialize the ADC driver by calling the function :cpp:func:`adc_digi_deinitialize`.
+        1. Initialize the ADC driver by calling the function :cpp:func:`adc_digi_initialize`.
+        2. Initialize the ADC controller by calling the function :cpp:func:`adc_digi_controller_config`.
+        3. Start the ADC continuous reading by calling the function :cpp:func:`adc_digi_start`.
+        4. After starting the ADC, you can get the ADC reading result by calling the function :cpp:func:`adc_digi_read_bytes`. Before stopping the ADC (by calling :cpp:func:`adc_digi_stop`), the driver will keep converting the analog data to digital data.
+        5. Stop the ADC reading by calling the function :cpp:func:`adc_digi_stop`.
+        6. Deinitialize the ADC driver by calling the function :cpp:func:`adc_digi_deinitialize`.
+
+
+    .. only:: esp32c3
+
+    The code example for using ADC continuous (DMA) read mode can be found in the :example:`peripherals/adc/esp32c3/adc` directory of ESP-IDF examples.
 
     .. note:: See :ref:`adc_limitations` for the limitation of using ADC continuous (DMA) read mode.
 
@@ -98,6 +177,8 @@ Attenuation configuration is done per channel, see :cpp:type:`adc1_channel_t` an
 
 Then it is possible to read ADC conversion result with :cpp:func:`adc1_get_raw` and :cpp:func:`adc2_get_raw`. Reading width of ADC2 should be set as a parameter of :cpp:func:`adc2_get_raw` instead of in the configuration functions.
 
+Single Read mode ADC example can be found in :example:`peripherals/adc/single_read` directory of ESP-IDF examples.
+
 .. only:: esp32
 
     It is also possible to read the internal hall effect sensor via ADC1 by calling dedicated function :cpp:func:`hall_sensor_read`. Note that even the hall sensor is internal to ESP32, reading from it uses channels 0 and 3 of ADC1 (GPIO 36 and 39). Do not connect anything else to these pins and do not change their configuration. Otherwise it may affect the measurement of low value signal from the sensor.
@@ -108,87 +189,36 @@ Then it is possible to read ADC conversion result with :cpp:func:`adc1_get_raw` 
 
 .. only:: esp32 or esp32s2
 
-    There is another specific function :cpp:func:`adc_vref_to_gpio` used to route internal reference voltage to a GPIO pin. It comes handy to calibrate ADC reading and this is discussed in section :ref:`adc-api-adc-calibration`.
+    There is another specific function :cpp:func:`adc_vref_to_gpio` used to route internal reference voltage to a GPIO pin. It comes handy to calibrate ADC reading and this is discussed in section :ref:`adc_calibration`.
+
 
 .. note:: See :ref:`adc_limitations` for the limitation of using ADC single read mode.
 
 
-Application Example
--------------------
+Minimizing Noise
+----------------
 
-.. only:: esp32 or esp32s2
+The {IDF_TARGET_NAME} ADC can be sensitive to noise leading to large discrepancies in ADC readings. Depending on the usage scenario, users may connect a bypass capacitor (e.g. a 100 nF ceramic capacitor) to the ADC input pad in use, to minimize noise. Besides, multisampling may also be used to further mitigate the effects of noise.
 
-    Reading voltage on ADC1 channel 0 ({IDF_TARGET_ADC1_CH0})::
+.. only:: esp32
 
-        #include <driver/adc.h>
-
-        ...
-
-            adc1_config_width(ADC_WIDTH_BIT_12);
-            adc1_config_channel_atten(ADC1_CHANNEL_0,ADC_ATTEN_DB_0);
-            int val = adc1_get_raw(ADC1_CHANNEL_0);
-
-    The input voltage in the above example is from 0 to 1.1 V (0 dB attenuation). The input range can be extended by setting a higher attenuation, see :cpp:type:`adc_atten_t`.
-    An example of using the ADC driver including calibration (discussed below) is available at esp-idf: :example:`peripherals/adc/single_read/adc`
-
-    Reading voltage on ADC2 channel 7 ({IDF_TARGET_ADC2_CH7})::
-
-        #include <driver/adc.h>
-
-        ...
-
-            int read_raw;
-            adc2_config_channel_atten( ADC2_CHANNEL_7, ADC_ATTEN_0db );
-
-            esp_err_t r = adc2_get_raw( ADC2_CHANNEL_7, ADC_WIDTH_12Bit, &read_raw);
-            if ( r == ESP_OK ) {
-                printf("%d\n", read_raw );
-            } else if ( r == ESP_ERR_TIMEOUT ) {
-                printf("ADC2 used by Wi-Fi.\n");
-            }
-
-    The reading may fail due to collision with Wi-Fi, if the return value of this API is ``ESP_ERR_INVALID_STATE``, then the reading result is not valid.
-    An example using the ADC2 driver to read the output of DAC is available in esp-idf: :example:`peripherals/adc/single_read/adc2`
-
-    .. only:: esp32
-
-        Reading the internal hall effect sensor::
-
-            #include <driver/adc.h>
-
-            ...
-
-                adc1_config_width(ADC_WIDTH_BIT_12);
-                int val = hall_sensor_read();
-
-
-    .. only:: esp32
-
-        The value read in both these examples is 12 bits wide (range 0-4095).
-
-    .. only:: esp32s2
-
-        The value read in both these examples is 13 bits wide (range 0-8191).
-
-    .. _adc-api-adc-calibration:
-
-    Minimizing Noise
-    ----------------
-
-    The {IDF_TARGET_NAME} ADC can be sensitive to noise leading to large discrepancies in ADC readings. To minimize noise, users may connect a 0.1 µF capacitor to the ADC input pad in use. Multisampling may also be used to further mitigate the effects of noise.
-
-    .. figure:: ../../../_static/adc-noise-graph.jpg
+    .. figure:: ../../../_static/diagrams/adc/adc-noise-graph.jpg
         :align: center
         :alt: ADC noise mitigation
 
         Graph illustrating noise mitigation using capacitor and multisampling of 64 samples.
 
-    ADC Calibration
-    ---------------
+
+.. _adc_calibration:
+
+ADC Calibration
+---------------
+
+.. only:: esp32 or esp32s2
 
     The :component_file:`esp_adc_cal/include/esp_adc_cal.h` API provides functions to correct for differences in measured voltages caused by variation of ADC reference voltages (Vref) between chips. Per design the ADC reference voltage is 1100 mV, however the true reference voltage can range from 1000 mV to 1200 mV amongst different {IDF_TARGET_NAME}s.
 
-    .. figure:: ../../../_static/adc-vref-graph.jpg
+    .. figure:: ../../../_static/diagrams/adc/adc-vref-graph.jpg
         :align: center
         :alt: ADC reference voltage comparison
 
@@ -223,7 +253,7 @@ Application Example
 
             .. highlight:: none
 
-            If you are unable to check the date code (i.e. the chip may be enclosed inside a canned module, etc.), you can still verify if **eFuse Vref** is present by running the `espefuse.py <https://github.com/espressif/esptool/wiki/espefuse>`_  tool with ``adc_info`` parameter ::
+            If you are unable to check the date code (i.e. the chip may be enclosed inside a canned module, etc.), you can still verify if **eFuse Vref** is present by running the `espefuse.py <https://docs.espressif.com/projects/esptool/en/latest/{IDF_TARGET_PATH_NAME}/espefuse/index.html>`_  tool with ``adc_info`` parameter ::
 
                 $IDF_PATH/components/esptool_py/esptool/espefuse.py --port /dev/ttyUSB0 adc_info
 
@@ -252,15 +282,95 @@ Application Example
 
         .. highlight:: none
 
-        You can verify if **eFuse Two Point** is present by running the `espefuse.py <https://github.com/espressif/esptool/wiki/espefuse>`_  tool with ``adc_info`` parameter ::
+        You can verify if **eFuse Two Point** is present by running the `espefuse.py <https://docs.espressif.com/projects/esptool/en/latest/{IDF_TARGET_PATH_NAME}/espefuse/index.html>`_  tool with ``adc_info`` parameter ::
 
             $IDF_PATH/components/esptool_py/esptool/espefuse.py --port /dev/ttyUSB0 adc_info
 
         Replace ``/dev/ttyUSB0`` with {IDF_TARGET_NAME} board's port name.
 
-.. only:: esp32c3
 
-    The code example for using ADC single read mode and ADC continuous (DMA) read mode can be found in the :example:`peripherals/adc/esp32c3` directory of ESP-IDF examples.
+
+.. only:: esp32c3 or esp32s3
+
+    {IDF_TARGET_NAME} ADC Calibration contains 2 steps: Hardware Calibration and Software Calibration.
+
+
+    Hardware Calibration
+    ^^^^^^^^^^^^^^^^^^^^
+
+    Based on series of comparisons with the reference voltage, {IDF_TARGET_NAME} ADC determines each bit of the output digital result. Per design the {IDF_TARGET_NAME} ADC reference voltage is 1100 mV, however the true reference voltage can range from 1000 mV to 1200 mV among different chips. To minimize this difference, hardware calibration is introduced.
+
+    Hardware calibration contains 2 steps:
+
+        1. Set an auto-calibration parameter of bandgap voltage reference. In this way, the difference mentioned above can be minimized.
+        2. Correct the offset of the ADC Vin-Dout characteristics. ADC characteristics is generally a function: f(x) = A * x + B, where B is the offset.
+
+        .. only:: esp32c3
+
+            An uncalibrated ADC characteristics is as follows:
+
+            .. figure:: ../../../_static/diagrams/adc/adc-uncali-raw-c3.png
+                :align: center
+                :alt: ADC uncalibrated conversion result
+
+        .. only:: esp32s3
+
+            An uncalibrated ADC characteristics is as follows:
+
+            .. figure:: ../../../_static/diagrams/adc/adc-uncali-raw-s3.png
+                :align: center
+                :alt: ADC uncalibrated conversion result
+
+
+    The offset in the uncalibrated characteristics is significant. Step 2 is to correct the offset to 0.
+
+        .. only:: esp32c3
+
+            After hardware calibration, the ADC characteristics would be like:
+
+            .. figure:: ../../../_static/diagrams/adc/adc-hw-cali-c3.png
+                :align: center
+                :alt: ADC conversion results after hardware calibration
+
+        .. only:: esp32s3
+
+            After hardware calibration, the ADC characteristics would be like:
+
+            .. figure:: ../../../_static/diagrams/adc/adc-hw-cali-s3.png
+                :align: center
+                :alt: ADC conversion results after hardware calibration
+
+    Hardware calibration is done internally by the ADC driver. The consequent results are raw data. A transformation is needed to get the final result, see :ref:`adc_conversion`.
+
+
+    Software Calibration
+    ^^^^^^^^^^^^^^^^^^^^
+
+    To convert ADC raw data to calibrated digital data, following steps should be followed:
+
+        1. Check the eFuse to know if the software calibration is supported via :cpp:func:`esp_adc_cal_check_efuse`.
+        2. Calculate the ADC calibration characteristics via :cpp:func:`esp_adc_cal_characterize`. The ADC software calibration characteristics are per ADC module and per attenuation. For example, characteristics of ADC1 channel 0 under 11 dB attenuation are the same as characteristics of ADC1 channel 2 under 11 dB attenuation. But characteristics of ADC1 channel 0 under 11 dB attenuation are different with characteristics of ADC2 channel 0 under 11 dB attenuation. Also characteristics of ADC1 channel 0 under 11 dB attenuation are different with characteristics of ADC1 channel 0 under 6 dB attenuation.
+        3. Get the actual voltage value via :cpp:func:`esp_adc_cal_raw_to_voltage`.
+
+    .. only:: esp32c3
+
+        After software calibration, the ADC characteristics would be like:
+
+            .. figure:: ../../../_static/diagrams/adc/adc-all-cali-c3.png
+                :align: center
+                :alt: ADC conversion results after hardware calibration
+
+    .. only:: esp32s3
+
+        After software calibration, the ADC characteristics would be like:
+
+            .. figure:: ../../../_static/diagrams/adc/adc-all-cali-s3.png
+                :align: center
+                :alt: ADC conversion results after hardware calibration
+
+
+    The results provided by the ADC calibration APIs indicate the actual voltage values. ADC software calibration example can be found in :example:`peripherals/adc/single_read` directory of ESP-IDF examples.
+
 
 .. only:: esp32 or esp32s2
 

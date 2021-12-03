@@ -10,7 +10,7 @@
 #include "soc/soc_caps.h"
 #include "hal/gdma_ll.h"
 #include "hal/gdma_hal.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "esp_log.h"
 #include "esp_attr.h"
 #include "esp_err.h"

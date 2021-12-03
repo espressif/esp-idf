@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // The LL layer for LEDC register operations.
 // Note that most of the register operations in this layer are non-atomic operations.
@@ -26,6 +18,22 @@ extern "C" {
 #endif
 
 #define LEDC_LL_GET_HW() &LEDC
+#define LEDC_LL_FRACTIONAL_BITS    (8)
+#define LEDC_LL_FRACTIONAL_MAX     ((1 << LEDC_LL_FRACTIONAL_BITS) - 1)
+#define LEDC_LL_GLOBAL_CLOCKS { \
+                                LEDC_SLOW_CLK_APB, \
+                                LEDC_SLOW_CLK_XTAL, \
+                                LEDC_SLOW_CLK_RTC8M, \
+                              }
+#define LEDC_LL_TIMER_SPECIFIC_CLOCKS \
+                            {\
+                                { \
+                                    .clk = LEDC_REF_TICK, \
+                                    .freq = LEDC_REF_CLK_HZ, \
+                                } \
+                            }
+
+#define LEDC_LL_IS_TIMER_SPECIFIC_CLOCK(SPEED, CLK) ((CLK) == LEDC_USE_REF_TICK)
 
 /**
  * @brief Set LEDC low speed timer clock

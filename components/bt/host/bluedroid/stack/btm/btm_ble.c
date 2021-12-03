@@ -840,7 +840,7 @@ BOOLEAN BTM_UseLeLink (BD_ADDR bd_addr)
 {
     tACL_CONN         *p;
     tBT_DEVICE_TYPE     dev_type;
-    tBLE_ADDR_TYPE      addr_type;
+    tBLE_ADDR_TYPE      addr_type = 0;
     BOOLEAN             use_le = FALSE;
 
     if ((p = btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR)) != NULL) {
@@ -867,6 +867,7 @@ BOOLEAN BTM_UseLeLink (BD_ADDR bd_addr)
 tBTM_STATUS BTM_SetBleDataLength(BD_ADDR bd_addr, UINT16 tx_pdu_length)
 {
     tACL_CONN *p_acl = btm_bda_to_acl(bd_addr, BT_TRANSPORT_LE);
+
     BTM_TRACE_DEBUG("%s: tx_pdu_length =%d", __FUNCTION__, tx_pdu_length);
 
     if (!controller_get_interface()->supports_ble_packet_extension()) {
@@ -874,12 +875,12 @@ tBTM_STATUS BTM_SetBleDataLength(BD_ADDR bd_addr, UINT16 tx_pdu_length)
         return BTM_CONTROL_LE_DATA_LEN_UNSUPPORTED;
     }
 
-    if (!HCI_LE_DATA_LEN_EXT_SUPPORTED(p_acl->peer_le_features)) {
-        BTM_TRACE_ERROR("%s failed, peer does not support request", __FUNCTION__);
-        return BTM_PEER_LE_DATA_LEN_UNSUPPORTED;
-    }
-
     if (p_acl != NULL) {
+        if (!HCI_LE_DATA_LEN_EXT_SUPPORTED(p_acl->peer_le_features)) {
+            BTM_TRACE_ERROR("%s failed, peer does not support request", __FUNCTION__);
+            return BTM_PEER_LE_DATA_LEN_UNSUPPORTED;
+        }
+
         if (tx_pdu_length > BTM_BLE_DATA_SIZE_MAX) {
             tx_pdu_length =  BTM_BLE_DATA_SIZE_MAX;
         } else if (tx_pdu_length < BTM_BLE_DATA_SIZE_MIN) {

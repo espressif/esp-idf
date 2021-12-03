@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,7 @@
 #include "esp_system.h"
 
 #include "esp_efuse.h"
-#include "cache_err_int.h"
+#include "esp_private/cache_err_int.h"
 #include "esp_clk_internal.h"
 
 #include "esp_rom_efuse.h"
@@ -54,6 +54,12 @@
 #include "esp32h2/rom/cache.h"
 #include "soc/cache_memory.h"
 #include "esp32h2/memprot.h"
+#elif CONFIG_IDF_TARGET_ESP8684
+#include "esp8684/rtc.h"
+#include "esp8684/rom/cache.h"
+#include "esp8684/rom/rtc.h"
+#include "soc/cache_memory.h"
+#include "esp8684/memprot.h"
 #endif
 
 #include "esp_private/spi_flash_os.h"
@@ -72,8 +78,8 @@
 #include "soc/rtc.h"
 #include "soc/spinlock.h"
 
-#if CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX
-#include "trax.h"
+#if CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX || CONFIG_ESP32S3_TRAX
+#include "esp_private/trax.h"
 #endif
 
 #include "bootloader_mem.h"
@@ -89,6 +95,8 @@
 #include "esp32c3/rom/spi_flash.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP8684
+#include "esp8684/rom/spi_flash.h"
 #endif
 #endif // CONFIG_APP_BUILD_TYPE_ELF_RAM
 
@@ -186,10 +194,9 @@ void IRAM_ATTR call_start_cpu1(void)
     //has started, but it isn't active *on this CPU* yet.
     esp_cache_err_int_init();
 
-#if CONFIG_IDF_TARGET_ESP32
-#if CONFIG_ESP32_TRAX_TWOBANKS
+#if (CONFIG_IDF_TARGET_ESP32 && CONFIG_ESP32_TRAX_TWOBANKS) || \
+    (CONFIG_IDF_TARGET_ESP32S3 && CONFIG_ESP32S3_TRAX_TWOBANKS)
     trax_start_trace(TRAX_DOWNCOUNT_WORDS);
-#endif
 #endif
 
     s_cpu_inited[1] = true;
@@ -265,7 +272,7 @@ void IRAM_ATTR call_start_cpu0(void)
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     soc_reset_reason_t rst_reas[SOC_CPU_CORES_NUM];
 #else
-    soc_reset_reason_t rst_reas[1];
+    soc_reset_reason_t __attribute__((unused)) rst_reas[1];
 #endif
 
 #ifdef __riscv
@@ -317,10 +324,12 @@ void IRAM_ATTR call_start_cpu0(void)
     memset(&_iram_bss_start, 0, (&_iram_bss_end - &_iram_bss_start) * sizeof(_iram_bss_start));
 #endif
 
+#if SOC_RTC_FAST_MEM_SUPPORTED || SOC_RTC_SLOW_MEM_SUPPORTED
     /* Unless waking from deep sleep (implying RTC memory is intact), clear RTC bss */
     if (rst_reas[0] != RESET_REASON_CORE_DEEP_SLEEP) {
         memset(&_rtc_bss_start, 0, (&_rtc_bss_end - &_rtc_bss_start) * sizeof(_rtc_bss_start));
     }
+#endif
 
 #if CONFIG_IDF_TARGET_ESP32S2
     /* Configure the mode of instruction cache : cache size, cache associated ways, cache line size. */
@@ -350,7 +359,7 @@ void IRAM_ATTR call_start_cpu0(void)
     Cache_Resume_DCache(0);
 #endif // CONFIG_IDF_TARGET_ESP32S3
 
-#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP8684
     /* Configure the Cache MMU size for instruction and rodata in flash. */
     extern uint32_t Cache_Set_IDROM_MMU_Size(uint32_t irom_size, uint32_t drom_size);
     extern int _rodata_reserved_start;
@@ -363,7 +372,7 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 
     Cache_Set_IDROM_MMU_Size(cache_mmu_irom_size, CACHE_DROM_MMU_MAX_END - cache_mmu_irom_size);
-#endif // CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#endif // CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP8684
 
 #if CONFIG_ESPTOOLPY_OCT_FLASH
     bool efuse_opflash_en = REG_GET_FIELD(EFUSE_RD_REPEAT_DATA3_REG, EFUSE_FLASH_TYPE);
@@ -502,14 +511,22 @@ void IRAM_ATTR call_start_cpu0(void)
     Cache_Occupy_Addr(SOC_DROM_LOW, 0x4000);
 #endif
 
+#if CONFIG_IDF_TARGET_ESP8684
+// TODO : IDF-4194
+#if CONFIG_ESP8684_INSTRUCTION_CACHE_WRAP
+    extern void esp_enable_cache_wrap(uint32_t icache_wrap_enable);
+    esp_enable_cache_wrap(1);
+#endif
+#endif
+
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
     memset(&_ext_ram_bss_start, 0, (&_ext_ram_bss_end - &_ext_ram_bss_start) * sizeof(_ext_ram_bss_start));
 #endif
 
 //Enable trace memory and immediately start trace.
-#if CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX
-#if CONFIG_IDF_TARGET_ESP32
-#if CONFIG_ESP32_TRAX_TWOBANKS
+#if CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX || CONFIG_ESP32S3_TRAX
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3
+#if CONFIG_ESP32_TRAX_TWOBANKS || CONFIG_ESP32S3_TRAX_TWOBANKS
     trax_enable(TRAX_ENA_PRO_APP);
 #else
     trax_enable(TRAX_ENA_PRO);
@@ -518,7 +535,7 @@ void IRAM_ATTR call_start_cpu0(void)
     trax_enable(TRAX_ENA_PRO);
 #endif
     trax_start_trace(TRAX_DOWNCOUNT_WORDS);
-#endif // CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX
+#endif // CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX || CONFIG_ESP32S3_TRAX
 
     esp_clk_init();
     esp_perip_clk_init();
@@ -533,7 +550,7 @@ void IRAM_ATTR call_start_cpu0(void)
 #ifndef CONFIG_IDF_ENV_FPGA // TODO: on FPGA it should be possible to configure this, not currently working with APB_CLK_FREQ changed
 #ifdef CONFIG_ESP_CONSOLE_UART
     uint32_t clock_hz = rtc_clk_apb_freq_get();
-#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2
+#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP8684
     clock_hz = UART_CLK_FREQ_ROM; // From esp32-s3 on, UART clock source is selected to XTAL in ROM
 #endif
     esp_rom_uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);

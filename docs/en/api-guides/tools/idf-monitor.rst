@@ -6,10 +6,7 @@ IDF Monitor
 
 The IDF monitor tool is mainly a serial terminal program which relays serial data to and from the target device's serial port. It also provides some IDF-specific features.
 
-This tool can be launched from an IDF project by running ``idf.py monitor``. 
-
-For the legacy GNU Make system, run ``make monitor``.
-
+This tool can be launched from an IDF project by running ``idf.py monitor``.
 
 Keyboard Shortcuts
 ==================
@@ -271,7 +268,7 @@ Issues Observed on Windows
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 - Arrow keys, as well as some other keys, do not work in GDB due to Windows Console limitations.
-- Occasionally, when "idf.py" or "make" exits, it might stall for up to 30 seconds before IDF Monitor resumes.
+- Occasionally, when "idf.py" exits, it might stall for up to 30 seconds before IDF Monitor resumes.
 - When "gdb" is run, it might stall for a short time before it begins communicating with the GDBStub.
 
 .. _addr2line: https://sourceware.org/binutils/docs/binutils/addr2line.html

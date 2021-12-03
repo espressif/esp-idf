@@ -1,8 +1,8 @@
 /*  Bluetooth Mesh */
 
 /*
- * Copyright (c) 2017 Intel Corporation
- * Additional Copyright (c) 2018 Espressif Systems (Shanghai) PTE LTD
+ * SPDX-FileCopyrightText: 2017 Intel Corporation
+ * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -840,6 +840,7 @@ static void prov_start(const uint8_t *data)
 
 static void send_confirm(void)
 {
+    uint8_t *local_conf = NULL;
     PROV_BUF(cfm, 17);
 
     BT_DBG("ConfInputs[0]   %s", bt_hex(link.conf_inputs, 64));
@@ -872,10 +873,18 @@ static void send_confirm(void)
 
     prov_buf_init(&cfm, PROV_CONFIRM);
 
+    local_conf = net_buf_simple_add(&cfm, 16);
+
     if (bt_mesh_prov_conf(link.conf_key, link.rand, link.auth,
-                          net_buf_simple_add(&cfm, 16))) {
+                          local_conf)) {
         BT_ERR("Unable to generate confirmation value");
         prov_send_fail_msg(PROV_ERR_UNEXP_ERR);
+        return;
+    }
+
+    if (!memcmp(link.conf, local_conf, 16)) {
+        BT_ERR("Confirmation value is identical to ours, rejecting.");
+        prov_send_fail_msg(PROV_ERR_NVAL_FMT);
         return;
     }
 

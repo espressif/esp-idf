@@ -1,0 +1,220 @@
+menu "ESP8684-Specific"
+    visible if IDF_TARGET_ESP8684
+
+    choice ESP8684_DEFAULT_CPU_FREQ_MHZ
+        prompt "CPU frequency"
+        default ESP8684_DEFAULT_CPU_FREQ_40 if IDF_ENV_FPGA
+        default ESP8684_DEFAULT_CPU_FREQ_120 if !IDF_ENV_FPGA
+        help
+            CPU frequency to be set on application startup.
+
+        config ESP8684_DEFAULT_CPU_FREQ_40
+            bool "40 MHz"
+            depends on IDF_ENV_FPGA
+        config ESP8684_DEFAULT_CPU_FREQ_80
+            bool "80 MHz"
+        config ESP8684_DEFAULT_CPU_FREQ_120
+            bool "120 MHz"
+        config ESP8684_DEFAULT_CPU_FREQ_160
+            bool "160 MHz"
+    endchoice
+
+    config ESP8684_DEFAULT_CPU_FREQ_MHZ
+        int
+        default 40 if ESP8684_DEFAULT_CPU_FREQ_40
+        default 80 if ESP8684_DEFAULT_CPU_FREQ_80
+        default 120 if ESP8684_DEFAULT_CPU_FREQ_120
+        default 160 if ESP8684_DEFAULT_CPU_FREQ_160
+
+    menu "Cache config"
+
+        choice ESP8684_MMU_PAGE_SIZE
+            # TODO: IDF-3821
+            prompt "Cache page size"
+            default ESP8684_MMU_PAGE_SIZE_64KB
+            help
+                Cache page size to be set on application startup
+
+            config ESP8684_MMU_PAGE_SIZE_16KB
+                bool "16KB"
+            config ESP8684_MMU_PAGE_SIZE_32KB
+                bool "32KB"
+            config ESP8684_MMU_PAGE_SIZE_64KB
+                bool "64KB"
+        endchoice
+
+        config ESP8684_INSTRUCTION_CACHE_WRAP
+            bool
+            prompt "Instruction cache wrap"
+            help
+                If enabled, instruction cache will use wrap mode to read spi flash.
+                The wrap length is fixed to 32B
+
+
+        config ESP8684_MMU_PAGE_MODE
+            int
+            default 0 if ESP8684_MMU_PAGE_SIZE_16KB
+            default 1 if ESP8684_MMU_PAGE_SIZE_32KB
+            default 2 if ESP8684_MMU_PAGE_SIZE_64KB
+
+    endmenu
+
+    config ESP8684_DEBUG_OCDAWARE
+        bool "Make exception and panic handlers JTAG/OCD aware"
+        default y
+        select FREERTOS_DEBUG_OCDAWARE
+        help
+            The FreeRTOS panic and unhandled exception handers can detect a JTAG OCD debugger and
+            instead of panicking, have the debugger stop on the offending instruction.
+
+    config ESP8684_DEBUG_STUBS_ENABLE
+        bool "OpenOCD debug stubs"
+        default COMPILER_OPTIMIZATION_LEVEL_DEBUG
+        depends on !ESP8684_TRAX
+        help
+            Debug stubs are used by OpenOCD to execute pre-compiled onboard code which does some useful debugging,
+            e.g. GCOV data dump.
+
+    config ESP8684_BROWNOUT_DET
+        bool "Hardware brownout detect & reset"
+        default y
+        help
+            The ESP8684 has a built-in brownout detector which can detect if the voltage is lower than
+            a specific value. If this happens, it will reset the chip in order to prevent unintended
+            behaviour.
+
+    choice ESP8684_BROWNOUT_DET_LVL_SEL
+        prompt "Brownout voltage level"
+        depends on ESP8684_BROWNOUT_DET
+        default ESP8684_BROWNOUT_DET_LVL_SEL_7
+        help
+            The brownout detector will reset the chip when the supply voltage is approximately
+            below this level. Note that there may be some variation of brownout voltage level
+            between each chip.
+
+            #The voltage levels here are estimates, more work needs to be done to figure out the exact voltages
+            #of the brownout threshold levels.
+        config ESP8684_BROWNOUT_DET_LVL_SEL_7
+            bool "2.51V"
+        config ESP8684_BROWNOUT_DET_LVL_SEL_6
+            bool "2.64V"
+        config ESP8684_BROWNOUT_DET_LVL_SEL_5
+            bool "2.76V"
+        config ESP8684_BROWNOUT_DET_LVL_SEL_4
+            bool "2.92V"
+        config ESP8684_BROWNOUT_DET_LVL_SEL_3
+            bool "3.10V"
+        config ESP8684_BROWNOUT_DET_LVL_SEL_2
+            bool "3.27V"
+    endchoice
+
+    config ESP8684_BROWNOUT_DET_LVL
+        int
+        default 2 if ESP8684_BROWNOUT_DET_LVL_SEL_2
+        default 3 if ESP8684_BROWNOUT_DET_LVL_SEL_3
+        default 4 if ESP8684_BROWNOUT_DET_LVL_SEL_4
+        default 5 if ESP8684_BROWNOUT_DET_LVL_SEL_5
+        default 6 if ESP8684_BROWNOUT_DET_LVL_SEL_6
+        default 7 if ESP8684_BROWNOUT_DET_LVL_SEL_7
+
+    choice ESP8684_TIME_SYSCALL
+        prompt "Timers used for gettimeofday function"
+        default ESP8684_TIME_SYSCALL_USE_RTC_SYSTIMER
+        help
+            This setting defines which hardware timers are used to
+            implement 'gettimeofday' and 'time' functions in C library.
+
+            - If both high-resolution (systimer) and RTC timers are used, timekeeping will
+              continue in deep sleep. Time will be reported at 1 microsecond
+              resolution. This is the default, and the recommended option.
+            - If only high-resolution timer (systimer) is used, gettimeofday will
+              provide time at microsecond resolution.
+              Time will not be preserved when going into deep sleep mode.
+            - If only RTC timer is used, timekeeping will continue in
+              deep sleep, but time will be measured at 6.(6) microsecond
+              resolution. Also the gettimeofday function itself may take
+              longer to run.
+            - If no timers are used, gettimeofday and time functions
+              return -1 and set errno to ENOSYS.
+            - When RTC is used for timekeeping, two RTC_STORE registers are
+              used to keep time in deep sleep mode.
+
+        config ESP8684_TIME_SYSCALL_USE_RTC_SYSTIMER
+            bool "RTC and high-resolution timer"
+            select ESP_TIME_FUNCS_USE_RTC_TIMER
+            select ESP_TIME_FUNCS_USE_ESP_TIMER
+        config ESP8684_TIME_SYSCALL_USE_RTC
+            bool "RTC"
+            select ESP_TIME_FUNCS_USE_RTC_TIMER
+        config ESP8684_TIME_SYSCALL_USE_SYSTIMER
+            bool "High-resolution timer"
+            select ESP_TIME_FUNCS_USE_ESP_TIMER
+        config ESP8684_TIME_SYSCALL_USE_NONE
+            bool "None"
+            select ESP_TIME_FUNCS_USE_NONE
+    endchoice
+
+    choice ESP8684_RTC_CLK_SRC
+        prompt "RTC clock source"
+        default ESP8684_RTC_CLK_SRC_INT_RC
+        help
+            Choose which clock is used as RTC clock source.
+
+        config ESP8684_RTC_CLK_SRC_INT_RC
+            bool "Internal 150kHz RC oscillator"
+        config ESP8684_RTC_CLK_SRC_EXT_OSC
+            bool "External 32kHz oscillator at 32K_XP pin"
+        config ESP8684_RTC_CLK_SRC_INT_8MD256
+            bool "Internal 8MHz oscillator, divided by 256 (~32kHz)"
+    endchoice
+
+    config ESP8684_RTC_CLK_CAL_CYCLES
+        int "Number of cycles for RTC_SLOW_CLK calibration"
+        default 3000 if ESP8684_RTC_CLK_SRC_EXT_CRYS || ESP8684_RTC_CLK_SRC_EXT_OSC || ESP8684_RTC_CLK_SRC_INT_8MD256
+        default 1024 if ESP8684_RTC_CLK_SRC_INT_RC
+        range 0 27000 if ESP8684_RTC_CLK_SRC_EXT_CRYS || ESP8684_RTC_CLK_SRC_EXT_OSC || ESP8684_RTC_CLK_SRC_INT_8MD256
+        range 0 32766 if ESP8684_RTC_CLK_SRC_INT_RC
+        help
+            When the startup code initializes RTC_SLOW_CLK, it can perform
+            calibration by comparing the RTC_SLOW_CLK frequency with main XTAL
+            frequency. This option sets the number of RTC_SLOW_CLK cycles measured
+            by the calibration routine. Higher numbers increase calibration
+            precision, which may be important for applications which spend a lot of
+            time in deep sleep. Lower numbers reduce startup time.
+
+            When this option is set to 0, clock calibration will not be performed at
+            startup, and approximate clock frequencies will be assumed:
+
+            - 150000 Hz if internal RC oscillator is used as clock source. For this use value 1024.
+            - 32768 Hz if the 32k crystal oscillator is used. For this use value 3000 or more.
+              In case more value will help improve the definition of the launch of the crystal.
+              If the crystal could not start, it will be switched to internal RC.
+
+    config ESP8684_NO_BLOBS
+        bool "No Binary Blobs"
+        depends on !BT_ENABLED
+        default n
+        help
+            If enabled, this disables the linking of binary libraries in the application build. Note
+            that after enabling this Wi-Fi/Bluetooth will not work.
+
+    config ESP8684_LIGHTSLEEP_GPIO_RESET_WORKAROUND # IDF-3904
+        bool "light sleep GPIO reset workaround"
+        default y
+        select PM_SLP_DISABLE_GPIO if FREERTOS_USE_TICKLESS_IDLE
+        help
+            ESP8684 will reset at wake-up if GPIO is received a small electrostatic pulse during
+            light sleep, with specific condition
+
+            - GPIO needs to be configured as input-mode only
+            - The pin receives a small electrostatic pulse, and reset occurs when the pulse
+              voltage is higher than 6 V
+
+            For GPIO set to input mode only, it is not a good practice to leave it open/floating,
+            The hardware design needs to controlled it with determined supply or ground voltage
+            is necessary.
+
+            This option provides a software workaround for this issue. Configure to isolate all
+            GPIO pins in sleep state.
+
+endmenu  # ESP8684-Specific

@@ -46,7 +46,7 @@ public:
      *
      * @throw GPIOException if the number does not reflect a valid GPIO number on the current hardware.
      */
-    GPIONumBase(uint32_t pin) : StrongValueComparable<uint32_t>(pin)
+    explicit GPIONumBase(uint32_t pin) : StrongValueComparable<uint32_t>(pin)
     {
         esp_err_t pin_check_result = check_gpio_pin_num(pin);
         if (pin_check_result != ESP_OK) {
@@ -93,7 +93,7 @@ private:
      *
      * @param pull_mode A valid numerical respresentation of the pull up configuration. Must be valid!
      */
-    GPIOPullMode(uint32_t pull_mode) : StrongValueComparable<uint32_t>(pull_mode) { }
+    explicit GPIOPullMode(uint32_t pull_mode) : StrongValueComparable<uint32_t>(pull_mode) { }
 
 public:
     /**
@@ -137,7 +137,7 @@ private:
      *
      * @param pull_mode A valid numerical respresentation of a possible interrupt level to wake up. Must be valid!
      */
-    GPIOWakeupIntrType(uint32_t interrupt_level) : StrongValueComparable<uint32_t>(interrupt_level) { }
+    explicit GPIOWakeupIntrType(uint32_t interrupt_level) : StrongValueComparable<uint32_t>(interrupt_level) { }
 
 public:
     static GPIOWakeupIntrType LOW_LEVEL();
@@ -170,7 +170,7 @@ public:
      *                  static creation functions below.
      * @throws GPIOException if the supplied number is out of the hardware capable range.
      */
-    GPIODriveStrength(uint32_t strength) : StrongValueComparable<uint32_t>(strength)
+    explicit GPIODriveStrength(uint32_t strength) : StrongValueComparable<uint32_t>(strength)
     {
         esp_err_t strength_check_result = check_gpio_drive_strength(strength);
         if (strength_check_result != ESP_OK) {

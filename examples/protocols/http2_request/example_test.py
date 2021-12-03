@@ -16,19 +16,19 @@ TEST_SERVER = 'http2.golang.org'
 
 def is_test_server_available():  # type: () -> bool
     # 443 - default https port
-    conn = http.client.HTTPSConnection(TEST_SERVER, 443, timeout=10)
-    conn.request('GET', '/')
-    resp = conn.getresponse()
-    conn.close()
-    if resp.status == HTTP_OK:
-        return True
-    return False
+    try:
+        conn = http.client.HTTPSConnection(TEST_SERVER, 443, timeout=10)
+        conn.request('GET', '/')
+        resp = conn.getresponse()
+        return True if resp.status == HTTP_OK else False
+    except Exception as msg:
+        Utility.console_log('Exception occurred when connecting to {}: {}'.format(TEST_SERVER, msg))
+        return False
+    finally:
+        conn.close()
 
 
-# Disabling the Test in CI as the leaf certificate of http2.golang.org is expired from 8 July.
-# There is no timeline when the cert will be updated.
-# Disabling this test till an alternative is found for testing the http2 support.
-@ttfw_idf.idf_example_test(env_tag='Example_EthKitV1', ignore=True)
+@ttfw_idf.idf_example_test(env_tag='Example_EthKitV1')
 def test_examples_protocol_http2_request(env, extra_data):  # type: (tiny_test_fw.Env.Env, None) -> None # pylint: disable=unused-argument
     """
     steps: |

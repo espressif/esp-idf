@@ -17,7 +17,7 @@
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
 #include "driver/gpio.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "driver/twai.h"
 #include "soc/soc_caps.h"
 #include "soc/twai_periph.h"

@@ -1,7 +1,7 @@
 | Supported Targets | ESP32 |
 | ----------------- | ----- |
 
-# BLE peripheral with ICMP Echo-Reply.
+# BLE Peripheral with ICMP Echo-Reply
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
@@ -21,16 +21,25 @@ Ping operates by sending Internet Control Message Protocol (ICMP) echo request p
 
 **Notes:** Currently this example only supports IPv4.
 
+## How to Use Example
 
-## How to use example
+Before project configuration and build, be sure to set the correct chip target using:
+
+```bash
+idf.py set-target <chip_name>
+```
 
 ### Configure the project
 
-```
+Open the project configuration menu: 
+
+```bash
 idf.py menuconfig
 ```
-* Enter SSID and password of known WiFi AP with connectivity to internet.
 
+In the `Example Configuration` menu:
+
+* Enter SSID and password of known Wi-Fi AP with connectivity to internet.
 * Enter desired ping IP Address. Default is set to `93.184.216.34` ( This is the IP address of https://example.com ).
 
 * Enter other related parameters like count of ping and maximum numbers of retry.
@@ -41,12 +50,12 @@ To test this demo, any BLE scanner app and a WiFi access point with internet con
 
 ### Build and Flash
 
-Build the project and flash it to the board, then run monitor tool to view serial output:
-
-```
-idf.py -p PORT flash monitor
-```
+Run `idf.py -p PORT flash monitor` to build, flash and monitor the project.
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 
-See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
+See the [Getting Started Guide](https://idf.espressif.com/) for full steps to configure and use ESP-IDF to build projects.
+
+## Troubleshooting
+
+For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.

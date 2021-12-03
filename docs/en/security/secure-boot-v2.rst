@@ -225,7 +225,7 @@ How To Enable Secure Boot V2
 
 5. Set other menuconfig options (as desired). Pay particular attention to the "Bootloader Config" options, as you can only flash the bootloader once. Then exit menuconfig and save your configuration.
 
-6. The first time you run ``make`` or ``idf.py build``, if the signing key is not found then an error message will be printed with a command to generate a signing key via ``espsecure.py generate_signing_key``.
+6. The first time you run ``idf.py build``, if the signing key is not found then an error message will be printed with a command to generate a signing key via ``espsecure.py generate_signing_key``.
 
 .. important::
    A signing key generated this way will use the best random number source available to the OS and its Python installation (`/dev/urandom` on OSX/Linux and `CryptGenRandom()` on Windows). If this random number source is weak, then the private key will be weak.
@@ -330,6 +330,9 @@ Secure Boot Best Practices
     * Applications should be signed with only one key at a time, to minimize the exposure of unused private keys.
     * The bootloader can be signed with multiple keys from the factory.
 
+    Conservative approach:
+    ~~~~~~~~~~~~~~~~~~~~~~
+
     Assuming a trusted private key (N-1) has been compromised, to update to new key pair (N).
 
     1. Server sends an OTA update with an application signed with the new private key (#N).
@@ -342,6 +345,17 @@ Secure Boot Best Practices
 
     * A similar approach can also be used to physically re-flash with a new key. For physical re-flashing, the bootloader content can also be changed at the same time.
 
+    Aggressive approach:
+    ~~~~~~~~~~~~~~~~~~~~
+
+    ROM code has an additional feature of revoking a public key digest if the signature verification fails.
+
+    To enable this feature, you need to burn SECURE_BOOT_AGGRESSIVE_REVOKE efuse or enable :ref:`CONFIG_SECURE_BOOT_ENABLE_AGGRESSIVE_KEY_REVOKE`
+
+    Key revocation is not applicable unless secure boot is successfully enabled. Also, a key is not revoked in case of invalid signature block or invalid image digest, it is only revoked in case the signature verification fails, i.e. revoke key only if failure in step 3 of :ref:`verify_image`
+
+    Once a key is revoked, it can never be used for verfying a signature of an image. This feature provides strong resistance against physical attacks on the device. However, this could also brick the device permanently if all the keys are revoked because of signature verification failure.
+
 .. _secure-boot-v2-technical-details:
 
 Technical Details
@@ -352,7 +366,7 @@ The following sections contain low-level reference descriptions of various Secur
 Manual Commands
 ~~~~~~~~~~~~~~~
 
-Secure boot is integrated into the esp-idf build system, so ``make`` or ``idf.py build`` will sign an app image and ``idf.py bootloader`` will produce a signed bootloader if secure signed binaries on build is enabled.
+Secure boot is integrated into the esp-idf build system, so ``idf.py build`` will sign an app image and ``idf.py bootloader`` will produce a signed bootloader if secure signed binaries on build is enabled.
 
 However, it is possible to use the ``espsecure.py`` tool to make standalone signatures and digests.
 

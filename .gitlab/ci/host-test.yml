@@ -64,6 +64,23 @@ test_ldgen_on_host:
   variables:
     LC_ALL: C.UTF-8
 
+test_reproducible_build:
+  extends: .host_test_template
+  script:
+    - ./tools/ci/test_reproducible_build.sh
+  artifacts:
+    when: on_failure
+    paths:
+      - "**/sdkconfig"
+      - "**/build*/*.bin"
+      - "**/build*/*.elf"
+      - "**/build*/*.map"
+      - "**/build*/flasher_args.json"
+      - "**/build*/*.bin"
+      - "**/build*/bootloader/*.bin"
+      - "**/build*/partition_table/*.bin"
+    expire_in: 1 week
+
 .host_fuzzer_test_template:
   extends:
     - .host_test_template
@@ -114,6 +131,13 @@ test_spiffs_on_host:
     - make test
     - cd ../test_spiffsgen
     - ./test_spiffsgen.py
+
+test_fatfsgen_on_host:
+  extends: .host_test_template
+  script:
+    - cd components/fatfs/test_fatfsgen/
+    - ./test_fatfsgen.py
+    - ./test_wl_fatfsgen.py
 
 test_multi_heap_on_host:
   extends: .host_test_template
@@ -245,7 +269,7 @@ test_espcoredump:
     expire_in: 1 week
   variables:
     IDF_COREDUMP_ELF_REPO: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/idf/idf-coredump-elf.git"
-    IDF_COREDUMP_ELF_TAG: idf-20210910-00
+    IDF_COREDUMP_ELF_TAG: idf-20210915
     # install CMake version specified in tools.json
     SETUP_TOOLS_LIST: "all"
   script:
@@ -363,6 +387,27 @@ test_cxx_gpio:
     - cd ${IDF_PATH}/examples/cxx/experimental/experimental_cpp_component/host_test/gpio
     - idf.py build
     - build/test_gpio_cxx_host.elf
+
+test_i2c_cxx:
+  extends: .host_test_template
+  script:
+    - cd ${IDF_PATH}/examples/cxx/experimental/experimental_cpp_component/host_test/i2c
+    - idf.py build
+    - build/test_i2c_cxx_host.elf
+
+test_spi_cxx:
+  extends: .host_test_template
+  script:
+    - cd ${IDF_PATH}/examples/cxx/experimental/experimental_cpp_component/host_test/spi
+    - idf.py build
+    - build/test_spi_cxx_host.elf
+
+test_system_cxx:
+  extends: .host_test_template
+  script:
+    - cd ${IDF_PATH}/examples/cxx/experimental/experimental_cpp_component/host_test/system
+    - idf.py build
+    - build/test_system_cxx_host.elf
 
 test_linux_example:
   extends: .host_test_template

@@ -20,8 +20,6 @@ Application developers can open a terminal-based project configuration menu with
 
 After being updated, this configuration is saved inside ``sdkconfig`` file in the project root directory. Based on ``sdkconfig``, application build targets will generate ``sdkconfig.h`` file in the build directory, and will make sdkconfig options available to the project build system and source files.
 
-(For the legacy GNU Make build system, the project configuration menu is opened with ``make menuconfig``.)
-
 Using sdkconfig.defaults
 ========================
 
@@ -40,8 +38,6 @@ The following attributes of ``Kconfig`` files are standardized:
 - No trailing spaces are allowed at the end of the lines.
 - The maximum length of options is set to 40 characters.
 - The maximum length of lines is set to 120 characters.
-- Lines cannot be wrapped by backslash (because there is a bug in earlier versions of ``conf-idf`` which causes that
-  Windows line endings are not recognized after a backslash).
 
 Format checker
 --------------
@@ -88,15 +84,6 @@ By convention, all option names are upper case with underscores. When Kconfig ge
 
 
 .. include-build-file:: inc/kconfig.inc
-
-Customisations
-==============
-
-Because IDF builds by default with :ref:`warn-undefined-variables`, when the Kconfig tool generates Makefiles (the ``auto.conf`` file) its behaviour has been customised. In normal Kconfig, a variable which is set to "no" is undefined. In IDF's version of Kconfig, this variable is defined in the Makefile but has an empty value.
-
-(Note that ``ifdef`` and ``ifndef`` can still be used in Makefiles, because they test if a variable is defined *and has a non-empty value*.)
-
-When generating header files for C & C++, the behaviour is not customised - so ``#ifdef`` can be used to test if a boolean config item is set or not.
 
 .. _Kconfig: https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
 .. _kconfiglib: https://github.com/ulfalizer/Kconfiglib

@@ -7,13 +7,58 @@
     SIZE_INFO_LOCATION: "$CI_PROJECT_DIR/size_info.txt"
   dependencies: []
 
+.build_pytest_template:
+  extends:
+    - .build_template
+    - .before_script_pytest
+  dependencies:  # set dependencies to null to avoid missing artifacts issue
+  needs:
+    - job: fast_template_app
+      artifacts: false
+  variables:
+    PYTHON_VER: 3.6.13
+  artifacts:
+    paths:
+      - "**/build*/size.json"
+      - "**/build*/build.log"
+      - "**/build*/*.bin"
+      - "**/build*/*.elf"
+      - "**/build*/*.map"
+      - "**/build*/flasher_args.json"
+      - "**/build*/config/sdkconfig.json"
+      - "**/build*/bootloader/*.bin"
+      - "**/build*/partition_table/*.bin"
+      - $SIZE_INFO_LOCATION
+    when: always
+    expire_in: 3 days
+
+build_examples_pytest_esp32:
+  extends:
+    - .build_pytest_template
+    - .rules:build:example_test-esp32
+  script:
+    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir examples --target esp32 --size-info $SIZE_INFO_LOCATION -vv
+
+build_examples_pytest_esp32s2:
+  extends:
+    - .build_pytest_template
+    - .rules:build:example_test-esp32s2
+  script:
+    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir examples --target esp32s2 --size-info $SIZE_INFO_LOCATION -vv
+
+build_examples_pytest_esp32c3:
+  extends:
+    - .build_pytest_template
+    - .rules:build:example_test-esp32c3
+  script:
+    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir examples --target esp32c3 --size-info $SIZE_INFO_LOCATION -vv
+
 .build_template_app_template:
   extends: .build_template
   variables:
     LOG_PATH: "${CI_PROJECT_DIR}/log_template_app"
     BUILD_PATH: "${CI_PROJECT_DIR}/build_template_app"
     BUILD_DIR: "@t/@w"
-    BUILD_LOG_MAKE: "${LOG_PATH}/make_@t_@w.txt"
     BUILD_LOG_CMAKE: "${LOG_PATH}/cmake_@t_@w.txt"
     BUILD_COMMAND_ARGS: ""
   artifacts:
@@ -81,6 +126,12 @@ build_ssc_esp32c3:
   parallel: 3
   variables:
     TARGET_NAME: "ESP32C3"
+
+build_ssc_esp32s3:
+  extends: .build_ssc_template
+  parallel: 3
+  variables:
+    TARGET_NAME: "ESP32S3"
 
 .build_esp_idf_tests_cmake_template:
   extends: .build_template
@@ -163,27 +214,6 @@ build_esp_idf_tests_cmake_esp32c3:
     # mechanism work, but this is the next best thing
     - ${IDF_PATH}/tools/ci/find_apps_build_apps.sh
 
-build_examples_make:
-  extends:
-    - .build_examples_template
-    - .rules:build:example_test-esp32
-  stage: host_test
-  # This is a workaround for a rarely encountered issue with building examples in CI.
-  # Probably related to building of Kconfig in 'make clean' stage
-  retry: 1
-  parallel: 8
-  artifacts:
-    paths:
-      - $LOG_PATH
-      - build_${TEST_PREFIX}/*/*/*/build/size.json
-      - $SIZE_INFO_LOCATION
-    when: always
-    expire_in: 4 days
-  variables:
-    BUILD_SYSTEM: make
-    IDF_TARGET: esp32  # currently we only support esp32
-
-# same as above, but for CMake
 .build_examples_cmake_template:
   extends: .build_examples_template
   artifacts:
@@ -327,11 +357,6 @@ build_component_ut_esp32c3:
     - cd test_build_system
     - ${IDF_PATH}/tools/ci/${SHELL_TEST_SCRIPT}
 
-test_build_system:
-  extends: .test_build_system_template
-  variables:
-    SHELL_TEST_SCRIPT: test_build_system.sh
-
 test_build_system_cmake:
   extends: .test_build_system_template
   variables:
@@ -361,8 +386,9 @@ build_docker:
   script:
     - export LOCAL_CI_REPOSITORY_URL=$CI_REPOSITORY_URL
     - if [ -n "$LOCAL_GITLAB_HTTPS_HOST" ]; then export LOCAL_CI_REPOSITORY_URL="https://gitlab-ci-token:${CI_JOB_TOKEN}@${LOCAL_GITLAB_HTTPS_HOST}/${CI_PROJECT_PATH}"; fi
+    - if [ -n "$LOCAL_GIT_MIRROR" ]; then export LOCAL_CI_REPOSITORY_URL="${LOCAL_GIT_MIRROR}/${CI_PROJECT_PATH}"; fi
     - echo "Using repository at $LOCAL_CI_REPOSITORY_URL"
-    - export DOCKER_BUILD_ARGS="--build-arg IDF_CLONE_URL=${LOCAL_CI_REPOSITORY_URL} --build-arg IDF_CLONE_BRANCH_OR_TAG=${CI_COMMIT_REF_NAME} --build-arg IDF_CHECKOUT_REF=${CI_COMMIT_TAG:-$CI_COMMIT_SHA}"
+    - export DOCKER_BUILD_ARGS="--build-arg IDF_CLONE_URL=${LOCAL_CI_REPOSITORY_URL} --build-arg IDF_CLONE_BRANCH_OR_TAG=${CI_COMMIT_REF_NAME} --build-arg IDF_CHECKOUT_REF=${CI_COMMIT_TAG:-$PIPELINE_COMMIT_SHA}"
     # Build
     - docker build --tag ${DOCKER_TMP_IMAGE_NAME} ${DOCKER_BUILD_ARGS} tools/docker/
     # We can't mount $PWD/examples/get-started/blink into the container, see https://gitlab.com/gitlab-org/gitlab-ce/issues/41227.

@@ -14,7 +14,7 @@
 #include "esp_private/panic_reason.h"
 #include "soc/soc.h"
 
-#include "cache_err_int.h"
+#include "esp_private/cache_err_int.h"
 
 #include "sdkconfig.h"
 

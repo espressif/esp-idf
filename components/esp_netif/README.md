@@ -3,32 +3,52 @@
                      |          (A) USER CODE                 |
                      |                                        |
         .............| init          settings      events     |
-        .            +----------------------------------------+          
+        .            +----------------------------------------+
         .               .                |           *
-        .               .                V           *                                   
-    --------+        +===========================+   *     +-----------------------+
-            |        | new/config     get/set    |   *     |                       |
-            |        |                           |...*.....| init                  |
-            |        |---------------------------|   *     |                       |
-      init  |        |                           |****     |                       |
-      start |********|  event handler            |*********|  DHCP                 |
-      stop  |        |                           |         |                       |
-            |        |---------------------------|         |                       | 
-            |        |                           |         |    NETIF              |
-      +-----|        |                           |         +-----------------+     |   
-      | glue|----<---|  esp_netif_transmit       |--<------| netif_output    |     |
-      |     |        |                           |         |                 |     |
-      |     |---->---|  esp_netif_receive        |-->------| netif_input     |     |
-      |     |        |                           |         + ----------------+     |
-      |     |....<...|  esp_netif_free_rx_buffer |...<.....| packet buffer         |
-      +-----|        |                           |         |                       |  
-            |        |                           |         |                       |  
-      (B)   |        |                           |         +-----------------------+
-    --------+        +===========================+
-    communication                                                NETWORK STACK
-    DRIVER                   ESP-NETIF                          
-    
-    
+        .               .                |           *
+    --------+        +===========================+   *       +-----------------------+
+            |        | new/config     get/set    |   *       |                       |
+            |        |                           |...*.......| init                  |
+            |        |---------------------------|   *       |                       |
+      init  |        |                           |****       |                       |
+      start |********|  event handler            |***********|  DHCP                 |
+      stop  |        |                           |           |                       |
+            |        |---------------------------|           |                       |
+            |        |                           |           |    NETIF              |
+      +-----|        |                           |           +-----------------+     |
+      | glue|----<---|  esp_netif_transmit       |--<--------| netif_output    |     |
+      |     |        |                           |     |     |                 |     |
+      |     |---->---|  esp_netif_receive        |-->--|-----| netif_input     |     |
+      |     |        |                           |     |  |  + ----------------+     |
+      |     |....<...|  esp_netif_free_rx_buffer |...<.|..|..| packet buffer         |
+      +-----|        |                           |     |  |  |                       |
+            |        |                           |     |  |  |         (D)           |
+      (B)   |        |          (C)              |     |  |  +-----------------------+
+    --------+        +===========================+     |  |
+    communication                                      |  |        NETWORK STACK
+    DRIVER                   ESP-NETIF                 |  |
+                                                       |  |
+                       +-----------------------+       |  |
+                       |                       |       |  |
+                       |           l2tap_write |-------|  |
+                       |                       |          |
+                       |      l2tap_eth_filter |----------|
+                       |                       |
+                       |         (E)           |
+                       +-----------------------+
+
+                            ESP-NETIF L2 TAP
+
+##  Data/event flow:
+
+* `........`     Initialization line from user code to esp-netif and comm driver
+
+* `--<--->--`    Data packets going from communication media to TCP/IP stack and back
+
+* `********`     Events agregated in ESP-NETIP propagates to driver, user code and network stack
+
+*  `|`           User settings and runtime configuration
+
 ##  Components:
 
 ###  A) User code, boiler plate
@@ -68,14 +88,20 @@ Overall application interaction with communication media and network stack
 
 ###  D) Network stack: no public interaction with user code (wrtt interfaces)
 
+###  E) ESP-NETIF L2 TAP Interface
+The ESP-NETIF L2 TAP interface is ESP-IDF mechanism utilized to access Data Link Layer (L2 per OSI/ISO) for frame reception and
+transmission from user application. Its typical usage in embedded world might be implementation of non-IP related protocols
+such as PTP, Wake on LAN and others. Note that only Ethernet (IEEE 802.3)
+is currently supported. 
 
-##  Data/event flow:
-
-* `........`     Initialization line from user code to esp-netif and comm driver
-
-* `--<--->--`    Data packets going from communication media to TCP/IP stack and back
-
-* `********`     Events agregated in ESP-NETIP propagates to driver, user code and network stack
-
-*  `|`           User settings and runtime configuration
-
+From user perspective, the ESP-NETIF L2 TAP interface is accessed using file descriptors of VFS which provides a file-like interfacing
+(using functions like ``open()``, ``read()``, ``write()``, etc).
+ 
+There is only one ESP-NETIF L2 TAP interface device (path name) available. However multiple file descriptors with different configuration
+can be opened at a time since the ESP-NETIF L2 TAP interface can be understood as generic entry point to the NETIF internal structure.
+Important is then specific configuration of particular file descriptor. It can be configured to give an access to specific Network Interface
+identified by ``if_key`` (e.g. `ETH_DEF`) and to filter only specific frames based on their type (e.g. Ethernet type in case of IEEE 802.3).
+Filtering only specific frames is crucial since the ESP-NETIF L2 TAP needs to work along with IP stack and so the IP related traffic
+(IP, ARP, etc.) should not be passed directly to the user application. Even though such option is still configurable, it is not recommended in
+standard use cases. Filtering is also advantageous from a perspective the user’s application gets access only to frame types it is interested
+in and the remaining traffic is either passed to other L2 TAP file descriptors or to IP stack.

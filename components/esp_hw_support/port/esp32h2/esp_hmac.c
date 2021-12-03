@@ -5,7 +5,7 @@
  */
 
 #include <string.h>
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "esp32c3/rom/hmac.h"
 #include "esp32c3/rom/ets_sys.h"
 #include "esp_efuse.h"

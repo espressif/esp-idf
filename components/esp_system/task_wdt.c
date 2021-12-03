@@ -22,8 +22,7 @@
 #include "esp_freertos_hooks.h"
 #include "soc/timer_periph.h"
 #include "esp_log.h"
-#include "driver/timer.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "esp_task_wdt.h"
 #include "esp_private/system_internal.h"
 #include "esp_private/crosscore_int.h"
@@ -176,7 +175,7 @@ static void task_wdt_isr(void *arg)
         abort();
     } else {
 
-#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 // TODO: ESP32-C3 IDF-2986
+#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP8684 // TODO: ESP32-C3 IDF-2986
         int current_core = xPortGetCoreID();
         //Print backtrace of current core
         ESP_EARLY_LOGE(TAG, "Print CPU %d (current core) backtrace", current_core);

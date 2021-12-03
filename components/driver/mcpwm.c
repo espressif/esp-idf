@@ -20,7 +20,7 @@
 #include "hal/gpio_hal.h"
 #include "hal/mcpwm_ll.h"
 #include "driver/mcpwm.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 
 static const char *TAG = "mcpwm";
 

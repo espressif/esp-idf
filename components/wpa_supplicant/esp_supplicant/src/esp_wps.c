@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 
@@ -572,7 +564,11 @@ wps_parse_scan_result(struct wps_scan_ie *scan)
     }
 
     esp_wifi_get_mode(&op_mode);
-    if ((op_mode == WIFI_MODE_STA || op_mode == WIFI_MODE_APSTA) && scan->wps) {
+    if ((op_mode == WIFI_MODE_STA
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
+    || op_mode == WIFI_MODE_APSTA
+#endif
+    ) && scan->wps) {
         struct wpabuf *buf = wpabuf_alloc_copy(scan->wps + 6, scan->wps[1] - 4);
 
         if (wps_is_selected_pbc_registrar(buf, scan->bssid)
@@ -2003,7 +1999,11 @@ int wps_check_wifi_mode(void)
         return ESP_FAIL;
     }
 
-    if (mode == WIFI_MODE_AP || mode == WIFI_MODE_NULL || sniffer == true) {
+    if (
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
+        mode == WIFI_MODE_AP ||
+#endif
+        mode == WIFI_MODE_NULL || sniffer == true) {
         wpa_printf(MSG_ERROR, "wps check wifi mode: wrong wifi mode=%d sniffer=%d", mode, sniffer);
         return ESP_ERR_WIFI_MODE;
     }
@@ -2180,7 +2180,11 @@ wifi_set_wps_cb(wps_st_cb_t cb)
     wifi_mode_t mode;
 
     esp_wifi_get_mode(&mode);
-    if (mode == WIFI_MODE_AP || mode == WIFI_MODE_NULL) {
+    if (
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
+        mode == WIFI_MODE_AP ||
+#endif
+        mode == WIFI_MODE_NULL) {
         return false;
     }
 

@@ -1,10 +1,8 @@
 from .cmake import BUILD_SYSTEM_CMAKE, CMakeBuildSystem
 from .common import (DEFAULT_TARGET, BuildError, BuildItem, BuildSystem, ConfigRule, config_rules_from_str,
                      setup_logging)
-from .make import BUILD_SYSTEM_MAKE, MakeBuildSystem
 
 BUILD_SYSTEMS = {
-    BUILD_SYSTEM_MAKE: MakeBuildSystem,
     BUILD_SYSTEM_CMAKE: CMakeBuildSystem,
 }
 
@@ -18,7 +16,5 @@ __all__ = [
     'DEFAULT_TARGET',
     'CMakeBuildSystem',
     'BUILD_SYSTEM_CMAKE',
-    'MakeBuildSystem',
-    'BUILD_SYSTEM_MAKE',
     'BUILD_SYSTEMS',
 ]

@@ -16,7 +16,7 @@
     # EFUSE_RD_WR_DIS_REG #
         WR_DIS,                           EFUSE_BLK0,   0,    32,     Write protection
             WR_DIS.RD_DIS,                EFUSE_BLK0,   0,    1,      Write protection for RD_DIS_KEY0 RD_DIS_KEY1 RD_DIS_KEY2 RD_DIS_KEY3 RD_DIS_KEY4 RD_DIS_KEY5 RD_DIS_SYS_DATA_PART2
-            WR_DIS.GROUP_1,               EFUSE_BLK0,   2,    1,      Write protection for DIS_ICACHE DIS_DOWNLOAD_ICACHE DIS_FORCE_DOWNLOAD DIS_USB DIS_CAN SOFT_DIS_JTAG DIS_DOWNLOAD_MANUAL_ENCRYPT
+            WR_DIS.GROUP_1,               EFUSE_BLK0,   2,    1,      Write protection for DIS_ICACHE DIS_DOWNLOAD_ICACHE DIS_FORCE_DOWNLOAD DIS_USB DIS_TWAI SOFT_DIS_JTAG DIS_DOWNLOAD_MANUAL_ENCRYPT
             WR_DIS.GROUP_2,               EFUSE_BLK0,   3,    1,      Write protection for WDT_DELAY_SEL
             WR_DIS.SPI_BOOT_CRYPT_CNT,    EFUSE_BLK0,   4,    1,      Write protection for SPI_BOOT_CRYPT_CNT
             WR_DIS.SECURE_BOOT_KEY_REVOKE0,EFUSE_BLK0,  5,    1,      Write protection for SECURE_BOOT_KEY_REVOKE0
@@ -57,7 +57,7 @@
         DIS_USB_DEVICE,                   EFUSE_BLK0,   43,    1,     Disable USB_DEVICE
         DIS_FORCE_DOWNLOAD,               EFUSE_BLK0,   44,    1,     Disable force chip go to download mode function
         DIS_USB,                          EFUSE_BLK0,   45,    1,     Disable USB function
-        DIS_CAN,                          EFUSE_BLK0,   46,    1,     Disable CAN function
+        DIS_TWAI,                         EFUSE_BLK0,   46,    1,     Disable TWAI function
         JTAG_SEL_ENABLE,                  EFUSE_BLK0,   47,    1,     Set this bit to enable selection between usb_to_jtag and pad_to_jtag through strapping gpio10 when both reg_dis_usb_jtag and reg_dis_pad_jtag are equal to 0.
         SOFT_DIS_JTAG,                    EFUSE_BLK0,   48,    3,     Set these bits to disable JTAG in the soft way (odd number 1 means disable). JTAG can be enabled in HMAC module.
         DIS_PAD_JTAG,                     EFUSE_BLK0,   51,    1,     Disable JTAG in the hard way. JTAG is disabled permanently.
@@ -115,8 +115,8 @@
     ,                                     EFUSE_BLK1,   16,    8,     Factory MAC addr [3]
     ,                                     EFUSE_BLK1,    8,    8,     Factory MAC addr [4]
     ,                                     EFUSE_BLK1,    0,    8,     Factory MAC addr [5]
-    MAC_EXT,                              EFUSE_BLK1,  123,    8,     Factory MAC addr [6]
-    ,                                     EFUSE_BLK1,  131,    8,     Factory MAC addr [7]
+    MAC_EXT,                              EFUSE_BLK1,  123,    8,     Extend MAC addr [0]
+    ,                                     EFUSE_BLK1,  131,    8,     Extend MAC addr [1]
     SPI_PAD_CONFIG_CLK,                   EFUSE_BLK1,   48,    6,     SPI_PAD_configure CLK
     SPI_PAD_CONFIG_Q_D1,                  EFUSE_BLK1,   54,    6,     SPI_PAD_configure Q(D1)
     SPI_PAD_CONFIG_D_D0,                  EFUSE_BLK1,   60,    6,     SPI_PAD_configure D(D0)

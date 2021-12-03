@@ -39,7 +39,7 @@ Common Problems For Windows Users
 
 ``/usr/bin/env: python: Permission denied.``
 
-   If you're in Git Bash or MSYS terminal, please check the python executable location by run ``which python``.
+   If you're in Git Bash, please check the python executable location by run ``which python``.
 
    If the executable is under ``~/AppData/Local/Microsoft/WindowsApps/``, then it's a link to Windows AppStore, not a real one.
 
@@ -53,6 +53,3 @@ Your %USERPROFILE% contains non-ASCII characters
    - CMD: ``set PRE_COMMIT_HOME=C:\somepath\pre-commit``
    - PowerShell: ``$Env:PRE_COMMIT_HOME = "C:\somepath\pre-commit"``
    - git bash: ``export PRE_COMMIT_HOME="/c/somepath/pre-commit"``
-
-
- 

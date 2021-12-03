@@ -71,6 +71,7 @@ repos:
         name: Validate Codeowner File
         entry: tools/ci/check_codeowners.py ci-check
         language: python
+        always_run: true
         files: '\.gitlab/CODEOWNERS'
         pass_filenames: false
       - id: check-rules-yml

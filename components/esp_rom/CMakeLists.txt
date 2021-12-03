@@ -28,10 +28,20 @@ idf_component_register(SRCS ${sources}
                        INCLUDE_DIRS ${include_dirs}
                        PRIV_REQUIRES ${private_required_comp})
 
+if(target STREQUAL "esp32h2")
+    if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1)
+        set(ld_folder "ld/rev1")
+    elseif(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2)
+        set(ld_folder "ld/rev2")
+    endif()
+else()
+    set(ld_folder "ld")
+endif()
+
 # Append a target linker script at the target-specific path,
 # only the 'name' part is different for each script
 function(rom_linker_script name)
-    target_linker_script(${COMPONENT_LIB} INTERFACE "${target}/ld/${target}.rom.${name}.ld")
+    target_linker_script(${COMPONENT_LIB} INTERFACE "${target}/${ld_folder}/${target}.rom.${name}.ld")
 endfunction()
 
 if(target STREQUAL "linux")
@@ -40,7 +50,7 @@ if(target STREQUAL "linux")
         target_compile_options(${COMPONENT_LIB} PUBLIC -Wimplicit-fallthrough=0 -Wno-shift-count-overflow)
     endif()
 else()
-    target_linker_script(${COMPONENT_LIB} INTERFACE "${target}/ld/${target}.rom.ld")
+    target_linker_script(${COMPONENT_LIB} INTERFACE "${target}/${ld_folder}/${target}.rom.ld")
     rom_linker_script("api")
     rom_linker_script("libgcc")
 endif()
@@ -67,6 +77,10 @@ if(BOOTLOADER_BUILD)
 
     elseif(target STREQUAL "esp32h2")
         rom_linker_script("newlib")
+
+    elseif(target STREQUAL "esp8684")
+        rom_linker_script("newlib")
+        rom_linker_script("mbedtls")
     endif()
 
 else() # Regular app build
@@ -133,6 +147,15 @@ else() # Regular app build
     elseif(target STREQUAL "esp32h2")
         rom_linker_script("newlib")
         rom_linker_script("version")
+
+        if(CONFIG_NEWLIB_NANO_FORMAT)
+            rom_linker_script("newlib-nano")
+        endif()
+
+    elseif(target STREQUAL "esp8684")
+        rom_linker_script("newlib")
+        rom_linker_script("version")
+        rom_linker_script("mbedtls")
 
         if(CONFIG_NEWLIB_NANO_FORMAT)
             rom_linker_script("newlib-nano")

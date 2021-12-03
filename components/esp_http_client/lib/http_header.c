@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include "esp_log.h"
+#include "esp_check.h"
 #include "http_header.h"
 #include "http_utils.h"
 
@@ -32,7 +33,7 @@ STAILQ_HEAD(http_header, http_header_item);
 http_header_handle_t http_header_init(void)
 {
     http_header_handle_t header = calloc(1, sizeof(struct http_header));
-    HTTP_MEM_CHECK(TAG, header, return NULL);
+    ESP_RETURN_ON_FALSE(header, NULL, TAG, "Memory exhausted");
     STAILQ_INIT(header);
     return header;
 }
@@ -74,23 +75,24 @@ esp_err_t http_header_get(http_header_handle_t header, const char *key, char **v
 
 static esp_err_t http_header_new_item(http_header_handle_t header, const char *key, const char *value)
 {
+    esp_err_t ret = ESP_OK;
     http_header_item_handle_t item;
 
     item = calloc(1, sizeof(http_header_item_t));
-    HTTP_MEM_CHECK(TAG, item, return ESP_ERR_NO_MEM);
+    ESP_RETURN_ON_FALSE(item, ESP_ERR_NO_MEM, TAG, "Memory exhausted");
     http_utils_assign_string(&item->key, key, -1);
-    HTTP_MEM_CHECK(TAG, item->key, goto _header_new_item_exit);
+    ESP_GOTO_ON_FALSE(item->key, ESP_ERR_NO_MEM, _header_new_item_exit, TAG, "Memory exhausted");
     http_utils_trim_whitespace(&item->key);
     http_utils_assign_string(&item->value, value, -1);
-    HTTP_MEM_CHECK(TAG, item->value, goto _header_new_item_exit);
+    ESP_GOTO_ON_FALSE(item->value, ESP_ERR_NO_MEM, _header_new_item_exit, TAG, "Memory exhausted");
     http_utils_trim_whitespace(&item->value);
     STAILQ_INSERT_TAIL(header, item, next);
-    return ESP_OK;
+    return ret;
 _header_new_item_exit:
     free(item->key);
     free(item->value);
     free(item);
-    return ESP_ERR_NO_MEM;
+    return ret;
 }
 
 esp_err_t http_header_set(http_header_handle_t header, const char *key, const char *value)
@@ -118,7 +120,7 @@ esp_err_t http_header_set_from_string(http_header_handle_t header, const char *k
     char *p_str;
 
     p_str = strdup(key_value_data);
-    HTTP_MEM_CHECK(TAG, p_str, return ESP_ERR_NO_MEM);
+    ESP_RETURN_ON_FALSE(p_str, ESP_ERR_NO_MEM, TAG, "Memory exhausted");
     eq_ch = strchr(p_str, ':');
     if (eq_ch == NULL) {
         free(p_str);
@@ -155,7 +157,7 @@ int http_header_set_format(http_header_handle_t header, const char *key, const c
     va_start(argptr, format);
     len = vasprintf(&buf, format, argptr);
     va_end(argptr);
-    HTTP_MEM_CHECK(TAG, buf, return 0);
+    ESP_RETURN_ON_FALSE(buf, 0, TAG, "Memory exhausted");
     if (buf == NULL) {
         return 0;
     }

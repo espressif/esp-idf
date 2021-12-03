@@ -89,7 +89,7 @@ In ESP-IDF these addresses are calculated from a single *Base MAC address*. By d
 
 .. only:: not SOC_EMAC_SUPPORTED
 
-   .. note:: {IDF_TARGET_NAME} has no integrated Ethernet MAC, but it's still possible to calculate an Ethernet MAC address. This MAC address can only be used with an external interface such as a SPI-Ethernet device, see :doc:`/api-reference/network/esp_eth`.
+   .. note:: {IDF_TARGET_NAME} has no integrated Ethernet MAC, but it's still possible to calculate an Ethernet MAC address. This MAC address can only be used with an external interface such as an SPI-Ethernet device, see :doc:`/api-reference/network/esp_eth`.
 
 Custom Base MAC
 ^^^^^^^^^^^^^^^
@@ -147,7 +147,7 @@ Once MAC address has been obtained using :cpp:func:`esp_efuse_mac_get_custom`, c
 Local vs Universal MAC addresses
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-{IDF_TARGET_NAME} comes pre-programmed with enough valid Espressif universally administered MAC addresses for all internal interfaces. The specific calculations to derive an interface's MAC address from the base MAC address is shown in the table above..
+{IDF_TARGET_NAME} comes pre-programmed with enough valid Espressif universally administered MAC addresses for all internal interfaces. The specific calculations to derive an interface's MAC address from the base MAC address is shown in the table above.
 
 When using a custom MAC address scheme, it's possible that not all interfaces can be assigned a universally administered MAC address. In these cases, a locally administered MAC address is assigned. Note that these addresses are intended for use on a single local network, only.
 
@@ -196,9 +196,7 @@ To set version in your project manually you need to set ``PROJECT_VER`` variable
 
 * In application CMakeLists.txt put ``set(PROJECT_VER "0.1.0.1")`` before including ``project.cmake``.
 
-(For legacy GNU Make build system: in application Makefile put ``PROJECT_VER = "0.1.0.1"`` before including ``project.mk``.)
-
-If :ref:`CONFIG_APP_PROJECT_VER_FROM_CONFIG` option is set, the value of :ref:`CONFIG_APP_PROJECT_VER` will be used. Otherwise if ``PROJECT_VER`` variable is not set in the project then it will be retrieved from either ``$(PROJECT_PATH)/version.txt`` file (if present) else using git command ``git describe``. If neither is available then ``PROJECT_VER`` will be set to "1". Application can make use of this by calling :cpp:func:`esp_ota_get_app_description` or :cpp:func:`esp_ota_get_partition_description` functions.
+If :ref:`CONFIG_APP_PROJECT_VER_FROM_CONFIG` option is set, the value of :ref:`CONFIG_APP_PROJECT_VER` will be used. Otherwise, if ``PROJECT_VER`` variable is not set in the project then it will be retrieved from either ``$(PROJECT_PATH)/version.txt`` file (if present) else using git command ``git describe``. If neither is available then ``PROJECT_VER`` will be set to "1". Application can make use of this by calling :cpp:func:`esp_ota_get_app_description` or :cpp:func:`esp_ota_get_partition_description` functions.
 
 API Reference
 -------------

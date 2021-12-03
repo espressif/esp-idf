@@ -135,10 +135,6 @@ When using the default :ref:`CONFIG_PARTITION_TABLE_OFFSET` value 0x8000, the si
 
 If the bootloader binary is too large, then the bootloader build will fail with an error "Bootloader binary size [..] is too large for partition table offset". If the bootloader binary is flashed anyhow then the {IDF_TARGET_NAME} will fail to boot - errors will be logged about either invalid partition table or invalid bootloader checksum.
 
-.. note::
-
-   The bootloader size check only happens in the CMake Build System, when using the legacy GNU Make Build System the size is not checked but the {IDF_TARGET_NAME} will fail to boot if bootloader is too large.
-
 Options to work around this are:
 
 - Set :ref:`bootloader compiler optimization <CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION>` back to "Size" if it has been changed from this default value.
@@ -163,5 +159,3 @@ The current bootloader implementation allows a project to extend it or modify it
 In the bootloader space, you cannot use the drivers and functions from other components. If necessary, then the required functionality should be placed in the project's `bootloader_components` directory (note that this will increase its size).
 
 If the bootloader grows too large then it can collide with the partition table, which is flashed at offset 0x8000 by default. Increase the :ref:`partition table offset <CONFIG_PARTITION_TABLE_OFFSET>` value to place the partition table later in the flash. This increases the space available for the bootloader.
-
-.. note:: Customize the bootloader by using either method is only supported with CMake build system (i.e. not supported with legacy Make build system).

@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "esp_wifi.h"
 #include "esp_netif.h"
 #include "esp_log.h"
@@ -47,10 +39,12 @@ static esp_err_t wifi_sta_receive(void *buffer, uint16_t len, void *eb)
     return s_wifi_rxcbs[WIFI_IF_STA](s_wifi_netifs[WIFI_IF_STA], buffer, len, eb);
 }
 
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 static esp_err_t wifi_ap_receive(void *buffer, uint16_t len, void *eb)
 {
     return s_wifi_rxcbs[WIFI_IF_AP](s_wifi_netifs[WIFI_IF_AP], buffer, len, eb);
 }
+#endif
 
 static void wifi_free(void *h, void* buffer)
 {
@@ -89,6 +83,11 @@ static esp_err_t wifi_driver_start(esp_netif_t * esp_netif, void * args)
 
 void esp_wifi_destroy_if_driver(wifi_netif_driver_t h)
 {
+    if (h) {
+        esp_wifi_internal_reg_rxcb(h->wifi_if, NULL);  // ignore the potential error
+                                                       // as the wifi might have been already uninitialized
+        s_wifi_netifs[h->wifi_if] = NULL;
+    }
     free(h);
 }
 
@@ -113,8 +112,12 @@ esp_err_t esp_wifi_get_if_mac(wifi_netif_driver_t ifx, uint8_t mac[6])
 
 bool esp_wifi_is_if_ready_when_started(wifi_netif_driver_t ifx)
 {
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
     // WiFi rxcb to be register wifi rxcb on start for AP only, station gets it registered on connect event
     return (ifx->wifi_if == WIFI_IF_AP);
+#else
+    return false;
+#endif
 }
 
 esp_err_t esp_wifi_register_if_rxcb(wifi_netif_driver_t ifx, esp_netif_receive_t fn, void * arg)
@@ -130,13 +133,16 @@ esp_err_t esp_wifi_register_if_rxcb(wifi_netif_driver_t ifx, esp_netif_receive_t
 
     switch (wifi_interface)
     {
+
     case WIFI_IF_STA:
         rxcb = wifi_sta_receive;
         break;
 
+#ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
     case WIFI_IF_AP:
         rxcb = wifi_ap_receive;
         break;
+#endif
 
     default:
         break;

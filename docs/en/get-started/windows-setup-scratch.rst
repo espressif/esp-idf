@@ -8,9 +8,6 @@ This is a step-by-step alternative to running the :doc:`ESP-IDF Tools Installer 
 
 To quickly setup the toolchain and other tools in standard way, using the ESP-IDF Tools installer, proceed to section :doc:`windows-setup`.
 
-.. note::
-   The GNU Make based build system requires the MSYS2_ Unix compatibility environment on Windows. The CMake-based build system does not require this environment.
-
 .. _get-esp-idf-windows-command-line:
 
 Get ESP-IDF
@@ -20,7 +17,7 @@ Get ESP-IDF
 
         Previous versions of ESP-IDF used the **MSYS2 bash terminal** command line. The current cmake-based build system can run in the regular **Windows Command Prompt** which is used here.
 
-        If you use a bash-based terminal or PowerShell, please note that some command syntax will be different to what is shown below.
+        If you use PowerShell, please note that some command syntax will be different to what is shown below.
 
 Open Command Prompt and run the following commands:
 
@@ -54,7 +51,7 @@ Ninja build
 ^^^^^^^^^^^
 
 .. note::
-    Ninja currently only provides binaries for 64-bit Windows. It is possible to use CMake and ``idf.py`` with other build tools, such as mingw-make, on 32-bit windows. However this is currently undocumented.
+    Ninja currently only provides binaries for 64-bit Windows.
 
 Download the Ninja_ latest stable Windows release from the (`download page <ninja-dl_>`_).
 
@@ -85,10 +82,6 @@ Unzip the zip file to ``C:\Program Files`` (or some other location). The zip fil
 
 Next, the ``bin`` subdirectory of this directory must be :ref:`added to your Path <add-directory-windows-path>`. For example, the directory to add may be ``C:\Program Files\{IDF_TARGET_TOOLCHAIN_PREFIX}\bin``.
 
-.. note::
-   If you already have the MSYS2 environment (for use with the "GNU Make" build system) installed, you can skip the separate download and add the directory ``C:\msys32\opt\{IDF_TARGET_TOOLCHAIN_PREFIX}\bin`` to the Path instead, as the toolchain is included in the MSYS2 environment.
-
-
 .. _add-directory-windows-path:
 
 Adding Directory to Path
@@ -110,7 +103,6 @@ To carry on with development environment setup, proceed to :ref:`get-started-set
 .. _Ninja: https://ninja-build.org/
 .. _ninja-dl: https://github.com/ninja-build/ninja/releases
 .. _Python: https://www.python.org/downloads/windows/
-.. _MSYS2: https://www.msys2.org/
 .. _kconfig-frontends releases page: https://github.com/espressif/kconfig-frontends/releases
 .. Note: These two targets may be used from git-clone-notes.inc depending on version, don't remove
 .. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/

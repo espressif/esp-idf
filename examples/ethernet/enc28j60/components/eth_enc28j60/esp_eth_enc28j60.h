@@ -1,16 +1,8 @@
-// Copyright 2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -97,19 +89,6 @@ esp_eth_mac_t *esp_eth_mac_new_enc28j60(const eth_enc28j60_config_t *enc28j60_co
 *      - NULL: create PHY instance failed because some error occurred
 */
 esp_eth_phy_t *esp_eth_phy_new_enc28j60(const eth_phy_config_t *config);
-
-// todo: the below functions should be accessed through ioctl in the future
-/**
- * @brief Set ENC28J60 Duplex mode. It sets Duplex mode first to the PHY and then
- *        MAC is set based on what PHY indicates.
- *
- * @param phy ENC28J60 PHY Handle
- * @param duplex Duplex mode
- *
- * @return esp_err_t
- *          - ESP_OK when PHY registers were correctly written.
- */
-esp_err_t enc28j60_set_phy_duplex(esp_eth_phy_t *phy, eth_duplex_t duplex);
 
 /**
  * @brief Get ENC28J60 silicon revision ID

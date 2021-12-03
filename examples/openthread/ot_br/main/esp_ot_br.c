@@ -1,10 +1,15 @@
-/* OpenThread Border Router Example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: CC0
+ *
+ * OpenThread Border Router Example
+ *
+ * This example code is in the Public Domain (or CC0 licensed, at your option.)
+ *
+ * Unless required by applicable law or agreed to in writing, this
+ * software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+ * CONDITIONS OF ANY KIND, either express or implied.
 */
 
 #include <stdio.h>
@@ -161,13 +166,14 @@ static void ot_task_worker(void *aContext)
     assert(openthread_netif != NULL);
 
     // Initialize the OpenThread stack
+    esp_openthread_set_backbone_netif(get_example_netif());
     ESP_ERROR_CHECK(esp_openthread_init(&config));
 
     // Initialize border routing features
-    ESP_ERROR_CHECK(esp_netif_attach(openthread_netif, esp_openthread_netif_glue_init(&config)));
-    ESP_ERROR_CHECK(esp_openthread_border_router_init(get_example_netif()));
-
     esp_openthread_lock_acquire(portMAX_DELAY);
+    ESP_ERROR_CHECK(esp_netif_attach(openthread_netif, esp_openthread_netif_glue_init(&config)));
+    ESP_ERROR_CHECK(esp_openthread_border_router_init());
+
     (void)otLoggingSetLevel(CONFIG_LOG_DEFAULT_LEVEL);
     esp_openthread_cli_init();
     create_config_network(esp_openthread_get_instance());

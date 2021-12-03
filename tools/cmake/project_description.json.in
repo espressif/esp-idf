@@ -17,5 +17,6 @@
         "COMPONENT_KCONFIGS_PROJBUILD" : "${COMPONENT_KCONFIGS_PROJBUILD}"
     },
     "build_components" : ${build_components_json},
-    "build_component_paths" : ${build_component_paths_json}
+    "build_component_paths" : ${build_component_paths_json},
+    "debug_prefix_map_gdbinit": "${debug_prefix_map_gdbinit}"
 }

@@ -22,6 +22,7 @@ set(srcs "port/os_xtensa.c"
     "src/crypto/sha1-prf.c"
     "src/crypto/sha384-prf.c"
     "src/crypto/md4-internal.c"
+    "src/crypto/sha1-tprf.c"
     "src/eap_peer/chap.c"
     "src/eap_peer/eap.c"
     "src/eap_peer/eap_common.c"
@@ -32,6 +33,9 @@ set(srcs "port/os_xtensa.c"
     "src/eap_peer/eap_tls_common.c"
     "src/eap_peer/eap_ttls.c"
     "src/eap_peer/mschapv2.c"
+    "src/eap_peer/eap_fast.c"
+    "src/eap_peer/eap_fast_common.c"
+    "src/eap_peer/eap_fast_pac.c"
     "src/rsn_supp/pmksa_cache.c"
     "src/rsn_supp/wpa.c"
     "src/rsn_supp/wpa_ie.c"
@@ -52,13 +56,15 @@ set(srcs "port/os_xtensa.c"
     "src/wps/wps_registrar.c"
     "src/wps/wps_validate.c")
 
-set(esp_srcs "esp_supplicant/src/esp_hostap.c"
-    "esp_supplicant/src/esp_wpa2.c"
+set(esp_srcs "esp_supplicant/src/esp_wpa2.c"
     "esp_supplicant/src/esp_wpa_main.c"
     "esp_supplicant/src/esp_wpas_glue.c"
     "esp_supplicant/src/esp_wps.c"
     "esp_supplicant/src/esp_wpa3.c"
     "esp_supplicant/src/esp_dpp.c")
+if(CONFIG_ESP_WIFI_SOFTAP_SUPPORT)
+    set(esp_srcs ${esp_srcs} "esp_supplicant/src/esp_hostap.c")
+endif()
 
 if(CONFIG_WPA_MBEDTLS_CRYPTO)
     set(tls_src "src/crypto/tls_mbedtls.c")
@@ -177,6 +183,7 @@ target_compile_definitions(${COMPONENT_LIB} PRIVATE
     EAP_TTLS
     EAP_TLS
     EAP_PEAP
+    EAP_FAST
     USE_WPA2_TASK
     CONFIG_WPS2
     CONFIG_WPS_PIN

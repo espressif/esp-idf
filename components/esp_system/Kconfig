@@ -84,6 +84,7 @@ menu "ESP System Settings"
         default y if IDF_TARGET_ESP32C3
         default y if IDF_TARGET_ESP32S3
         default y if IDF_TARGET_ESP32H2
+        depends on !IDF_TARGET_ESP8684
 
     config ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
         bool "Enable RTC fast memory for dynamic allocations"
@@ -236,14 +237,37 @@ menu "ESP System Settings"
             bool "None"
     endchoice
 
-    # Internal option, indicates that console UART is used (and not USB, for example)
+    choice ESP_CONSOLE_SECONDARY
+        depends on IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C3
+        prompt "Channel for console secondary output"
+        default ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+        help
+            This secondary option supports output through other specific port like USB_SERIAL_JTAG
+            when UART0 port as a primary is selected but not connected. This secondary output currently only supports
+            non-blocking mode without using REPL. If you want to output in blocking mode with REPL or
+            input through this secondary port, please change the primary config to this port
+            in `Channel for console output` menu.
+        config ESP_CONSOLE_SECONDARY_NONE
+            bool "No secondary console"
+        config ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+            bool "USB_SERIAL_JTAG PORT"
+            depends on !ESP_CONSOLE_USB_SERIAL_JTAG
+            help
+                This option supports output through USB_SERIAL_JTAG port when the UART0 port is not connected.
+                The output currently only supports non-blocking mode without using the console.
+                If you want to output in blocking mode with REPL or input through USB_SERIAL_JTAG port,
+                please change the primary config to ESP_CONSOLE_USB_SERIAL_JTAG above.
+    endchoice
+
+
     config ESP_CONSOLE_UART
+        # Internal option, indicates that console UART is used (and not USB, for example)
         bool
         default y if ESP_CONSOLE_UART_DEFAULT || ESP_CONSOLE_UART_CUSTOM
 
     config ESP_CONSOLE_MULTIPLE_UART
         bool
-        default y if !IDF_TARGET_ESP32C3 && !IDF_TARGET_ESP32H2
+        default y if !IDF_TARGET_ESP32C3 && !IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP8684
 
     choice ESP_CONSOLE_UART_NUM
         prompt "UART peripheral to use for console output (0-1)"
@@ -451,9 +475,9 @@ menu "ESP System Settings"
             is triggered.
 
     config ESP_DEBUG_STUBS_ENABLE
-        bool
+        bool "OpenOCD debug stubs"
         default COMPILER_OPTIMIZATION_LEVEL_DEBUG
-        depends on !ESP32_TRAX && !ESP32S2_TRAX
+        depends on !ESP32_TRAX && !ESP32S2_TRAX && !ESP32S3_TRAX
         help
             Debug stubs are used by OpenOCD to execute pre-compiled onboard code
             which does some useful debugging stuff, e.g. GCOV data dump.
@@ -478,3 +502,37 @@ menu "ESP System Settings"
     endchoice
 
 endmenu  # ESP System Settings
+
+menu "IPC (Inter-Processor Call)"
+
+    config ESP_IPC_TASK_STACK_SIZE
+        int "Inter-Processor Call (IPC) task stack size"
+        range 512 65536 if !APPTRACE_ENABLE
+        range 2048 65536 if APPTRACE_ENABLE
+        default 2048 if APPTRACE_ENABLE
+        default 1024
+        help
+            Configure the IPC tasks stack size. An IPC task runs on each core (in dual core mode), and allows for
+            cross-core function calls. See IPC documentation for more details. The default IPC stack size should be
+            enough for most common simple use cases. However, users can increase/decrease the stack size to their
+            needs.
+
+    config ESP_IPC_USES_CALLERS_PRIORITY
+        bool "IPC runs at caller's priority"
+        default y
+        depends on !FREERTOS_UNICORE
+        help
+            If this option is not enabled then the IPC task will keep behavior same as prior to that of ESP-IDF v4.0,
+            hence IPC task will run at (configMAX_PRIORITIES - 1) priority.
+
+    config ESP_IPC_ISR_ENABLE
+        bool
+        default y if !FREERTOS_UNICORE
+        help
+            The IPC ISR feature is similar to the IPC feature except that the callback function is executed in the
+            context of a High Priority Interrupt. The IPC ISR feature is itended for low latency execution of simple
+            callbacks written in assembly on another CPU. Due to being run in a High Priority Interrupt, the assembly
+            callbacks must be written with particular restrictions (see "IPC" and "High-Level Interrupt" docs for more
+            details).
+
+endmenu # "IPC (Inter-Processor Call)

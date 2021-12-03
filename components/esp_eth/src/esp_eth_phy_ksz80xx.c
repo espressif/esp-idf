@@ -1,16 +1,8 @@
-// Copyright 2019-2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <string.h>
 #include <stdlib.h>
 #include <sys/cdefs.h>
@@ -28,6 +20,7 @@ static const char *TAG = "ksz80xx";
 
 #define KSZ8041_MODEL_ID (0x11)
 #define KSZ8081_MODEL_ID (0x16)
+#define KSZ8091_MODEL_ID KSZ8081_MODEL_ID
 
 /***************Vendor Specific Register***************/
 /**
@@ -47,13 +40,13 @@ typedef union {
         uint32_t power_saving : 1;   /* Enable Powering Saving */
         uint32_t force_link : 1;     /* Force Link Pass */
         uint32_t energy_det : 1;     /* Presence of Signal on RX+/- Wire Pair */
-        uint32_t pairswap_dis : 1;   /* Disable Auto MDI/MDI-X */
+        uint32_t pair_swap_dis : 1;  /* Disable Auto MDI/MDI-X */
         uint32_t mdix_select : 1;    /* MDI/MDI-X Select */
         uint32_t hp_mdix : 1;        /* HP Auto MDI/MDI-X Mode */
     };
     uint32_t val;
 } ksz8041_pc2r_reg_t;
-#define KSZ8041_PC2R_ERG_ADDR (0x1F)
+#define KSZ8041_PC2R_REG_ADDR (0x1F)
 
 /**
  * @brief PC1R(PHY Control 1 Register) for KSZ8081
@@ -74,6 +67,33 @@ typedef union {
     uint32_t val;
 } ksz8081_pc1r_reg_t;
 #define KSZ8081_PC1R_REG_ADDR (0x1E)
+
+/**
+ * @brief PC2R(PHY Control 2 Register)
+ *
+ */
+typedef union {
+    struct {
+        uint32_t dis_data_scr: 1;       /* Disable Scrambler */
+        uint32_t enable_sqe_test : 1;   /* Enable SQE test. MLX/MNX/RNB only. */
+        uint32_t rem_loopb : 1;         /* Enable remote loopback */
+        uint32_t dis_trx : 1;           /* Disable Transmitter */
+        uint32_t led_mode : 2;          /* LED mode link-activity / link */
+        uint32_t reserved_6 : 1;
+        uint32_t rmii_ref_sel : 1;      /* RMII Reference Clock Select */
+        uint32_t en_jabber : 1;         /* Enable Jabber Counter */
+        uint32_t irq_level : 1;         /* Interrupt Pin Active Level */
+        uint32_t power_saving : 1;      /* Enable Powering Saving */
+        uint32_t force_link : 1;        /* Force Link Pass */
+        uint32_t reserved_12 : 1;
+        uint32_t pair_swap_dis : 1;     /* Disable Auto MDI/MDI-X */
+        uint32_t mdix_select : 1;       /* MDI/MDI-X Select */
+        uint32_t hp_mdix : 1;           /* HP Auto MDI/MDI-X Mode */
+    };
+    uint32_t val;
+} ksz8081_pc2r_reg_t;
+#define KSZ8081_PC2R_REG_ADDR (0x1F)
+
 
 typedef struct {
     esp_eth_phy_t parent;
@@ -105,7 +125,7 @@ static esp_err_t ksz80xx_update_link_duplex_speed(phy_ksz80xx_t *ksz80xx)
             int op_mode = 0;
             if (ksz80xx->vendor_model == KSZ8041_MODEL_ID) {
                 ksz8041_pc2r_reg_t pc2r;
-                ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, KSZ8041_PC2R_ERG_ADDR, &(pc2r.val)), err, TAG, "read PC2R failed");
+                ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, KSZ8041_PC2R_REG_ADDR, &(pc2r.val)), err, TAG, "read PC2R failed");
                 op_mode = pc2r.op_mode;
             } else if (ksz80xx->vendor_model == KSZ8081_MODEL_ID) {
                 ksz8081_pc1r_reg_t pc1r;
@@ -213,34 +233,64 @@ static esp_err_t ksz80xx_reset_hw(esp_eth_phy_t *phy)
  *       the result of negotiation won't be relected to uppler layers.
  *       Instead, the negotiation result is fetched by linker timer, see `ksz80xx_get_link()`
  */
-static esp_err_t ksz80xx_negotiate(esp_eth_phy_t *phy)
+static esp_err_t ksz80xx_autonego_ctrl(esp_eth_phy_t *phy, eth_phy_autoneg_cmd_t cmd, bool *autonego_en_stat)
 {
     esp_err_t ret = ESP_OK;
     phy_ksz80xx_t *ksz80xx = __containerof(phy, phy_ksz80xx_t, parent);
     esp_eth_mediator_t *eth = ksz80xx->eth;
-    /* in case any link status has changed, let's assume we're in link down status */
-    ksz80xx->link_status = ETH_LINK_DOWN;
-    /* Restart auto negotiation */
-    bmcr_reg_t bmcr = {
-        .speed_select = 1,     /* 100Mbps */
-        .duplex_mode = 1,      /* Full Duplex */
-        .en_auto_nego = 1,     /* Auto Negotiation */
-        .restart_auto_nego = 1 /* Restart Auto Negotiation */
-    };
-    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz80xx->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
-    /* Wait for auto negotiation complete */
-    bmsr_reg_t bmsr;
-    uint32_t to = 0;
-    for (to = 0; to < ksz80xx->autonego_timeout_ms / 100; to++) {
-        vTaskDelay(pdMS_TO_TICKS(100));
-        ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)), err, TAG, "read BMSR failed");
-        if (bmsr.auto_nego_complete) {
-            break;
+
+    bmcr_reg_t bmcr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+
+    switch (cmd) {
+    case ESP_ETH_PHY_AUTONEGO_RESTART:
+        ESP_GOTO_ON_FALSE(bmcr.en_auto_nego, ESP_ERR_INVALID_STATE, err, TAG, "auto negotiation is disabled");
+        /* in case any link status has changed, let's assume we're in link down status */
+        ksz80xx->link_status = ETH_LINK_DOWN;
+
+        bmcr.restart_auto_nego = 1; /* Restart Auto Negotiation */
+
+        ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz80xx->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+        /* Wait for auto negotiation complete */
+        bmsr_reg_t bmsr;
+        uint32_t to = 0;
+        for (to = 0; to < ksz80xx->autonego_timeout_ms / 100; to++) {
+            vTaskDelay(pdMS_TO_TICKS(100));
+            ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)), err, TAG, "read BMSR failed");
+            if (bmsr.auto_nego_complete) {
+                break;
+            }
         }
+        if ((to >= ksz80xx->autonego_timeout_ms / 100) && (ksz80xx->link_status == ETH_LINK_UP)) {
+            ESP_LOGW(TAG, "auto negotiation timeout");
+        }
+        break;
+    case ESP_ETH_PHY_AUTONEGO_DIS:
+        if (bmcr.en_auto_nego == 1) {
+            bmcr.en_auto_nego = 0;     /* Disable Auto Negotiation */
+            ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz80xx->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+            /* read configuration back */
+            ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+            ESP_GOTO_ON_FALSE(bmcr.en_auto_nego == 0, ESP_FAIL, err, TAG, "disable auto-negotiation failed");
+        }
+        break;
+    case ESP_ETH_PHY_AUTONEGO_EN:
+        if (bmcr.en_auto_nego == 0) {
+            bmcr.en_auto_nego = 1;     /* Enable Auto Negotiation */
+            ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz80xx->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+            /* read configuration back */
+            ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+            ESP_GOTO_ON_FALSE(bmcr.en_auto_nego == 1, ESP_FAIL, err, TAG, "enable auto-negotiation failed");
+        }
+        break;
+    case ESP_ETH_PHY_AUTONEGO_G_STAT:
+        /* do nothing autonego_en_stat is set at the function end */
+        break;
+    default:
+        return ESP_ERR_INVALID_ARG;
     }
-    if ((to >= ksz80xx->autonego_timeout_ms / 100) && (ksz80xx->link_status == ETH_LINK_UP)) {
-        ESP_LOGW(TAG, "auto negotiation timeout");
-    }
+
+    *autonego_en_stat = bmcr.en_auto_nego;
     return ESP_OK;
 err:
     return ret;
@@ -346,6 +396,51 @@ err:
     return ret;
 }
 
+static esp_err_t ksz80xx_set_speed(esp_eth_phy_t *phy, eth_speed_t speed)
+{
+    esp_err_t ret = ESP_OK;
+    phy_ksz80xx_t *ksz80xx = __containerof(phy, phy_ksz80xx_t, parent);
+    esp_eth_mediator_t *eth = ksz80xx->eth;
+    if (ksz80xx->link_status == ETH_LINK_UP) {
+        /* Since the link is going to be reconfigured, consider it down for a while */
+        ksz80xx->link_status = ETH_LINK_DOWN;
+        /* Indicate to upper stream apps the link is cosidered down */
+        ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)ksz80xx->link_status), err, TAG, "change link failed");
+    }
+    /* Set speed */
+    bmcr_reg_t bmcr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+    bmcr.speed_select = speed;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz80xx->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+
+    return ESP_OK;
+err:
+    return ret;
+}
+
+static esp_err_t ksz80xx_set_duplex(esp_eth_phy_t *phy, eth_duplex_t duplex)
+{
+    esp_err_t ret = ESP_OK;
+    phy_ksz80xx_t *ksz80xx = __containerof(phy, phy_ksz80xx_t, parent);
+    esp_eth_mediator_t *eth = ksz80xx->eth;
+
+    if (ksz80xx->link_status == ETH_LINK_UP) {
+        /* Since the link is going to be reconfigured, consider it down for a while */
+        ksz80xx->link_status = ETH_LINK_DOWN;
+        /* Indicate to upper stream apps the link is cosidered down */
+        ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)ksz80xx->link_status), err, TAG, "change link failed");
+    }
+    /* Set duplex mode */
+    bmcr_reg_t bmcr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+    bmcr.duplex_mode = duplex;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, ksz80xx->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+
+    return ESP_OK;
+err:
+    return ret;
+}
+
 static esp_err_t ksz80xx_init(esp_eth_phy_t *phy)
 {
     esp_err_t ret = ESP_OK;
@@ -381,7 +476,7 @@ esp_eth_phy_t *esp_eth_phy_new_ksz8041(const eth_phy_config_t *config)
     esp_eth_phy_t *ret = NULL;
     ESP_GOTO_ON_FALSE(config, NULL, err, TAG, "can't set phy config to null");
     phy_ksz80xx_t *ksz8041 = calloc(1, sizeof(phy_ksz80xx_t));
-    ESP_GOTO_ON_FALSE(ksz8041, NULL, err, TAG, "calloc ksz80xx failed");
+    ESP_GOTO_ON_FALSE(ksz8041, NULL, err, TAG, "calloc ksz8041 failed");
     ksz8041->vendor_model = KSZ8041_MODEL_ID;
     ksz8041->addr = config->phy_addr;
     ksz8041->reset_gpio_num = config->reset_gpio_num;
@@ -393,13 +488,15 @@ esp_eth_phy_t *esp_eth_phy_new_ksz8041(const eth_phy_config_t *config)
     ksz8041->parent.init = ksz80xx_init;
     ksz8041->parent.deinit = ksz80xx_deinit;
     ksz8041->parent.set_mediator = ksz80xx_set_mediator;
-    ksz8041->parent.negotiate = ksz80xx_negotiate;
+    ksz8041->parent.autonego_ctrl = ksz80xx_autonego_ctrl;
     ksz8041->parent.get_link = ksz80xx_get_link;
     ksz8041->parent.pwrctl = ksz80xx_pwrctl;
     ksz8041->parent.get_addr = ksz80xx_get_addr;
     ksz8041->parent.set_addr = ksz80xx_set_addr;
     ksz8041->parent.advertise_pause_ability = ksz80xx_advertise_pause_ability;
     ksz8041->parent.loopback = ksz80xx_loopback;
+    ksz8041->parent.set_speed = ksz80xx_set_speed;
+    ksz8041->parent.set_duplex = ksz80xx_set_duplex;
     ksz8041->parent.del = ksz80xx_del;
     return &(ksz8041->parent);
 err:
@@ -423,12 +520,15 @@ esp_eth_phy_t *esp_eth_phy_new_ksz8081(const eth_phy_config_t *config)
     ksz8081->parent.init = ksz80xx_init;
     ksz8081->parent.deinit = ksz80xx_deinit;
     ksz8081->parent.set_mediator = ksz80xx_set_mediator;
-    ksz8081->parent.negotiate = ksz80xx_negotiate;
+    ksz8081->parent.autonego_ctrl = ksz80xx_autonego_ctrl;
     ksz8081->parent.get_link = ksz80xx_get_link;
     ksz8081->parent.pwrctl = ksz80xx_pwrctl;
     ksz8081->parent.get_addr = ksz80xx_get_addr;
     ksz8081->parent.set_addr = ksz80xx_set_addr;
     ksz8081->parent.advertise_pause_ability = ksz80xx_advertise_pause_ability;
+    ksz8081->parent.loopback = ksz80xx_loopback;
+    ksz8081->parent.set_speed = ksz80xx_set_speed;
+    ksz8081->parent.set_duplex = ksz80xx_set_duplex;
     ksz8081->parent.del = ksz80xx_del;
     return &(ksz8081->parent);
 err:

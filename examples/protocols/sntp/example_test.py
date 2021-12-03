@@ -15,7 +15,7 @@ def test_examples_sntp(env, extra_data):
 
     dut.expect_all('Time is not set yet. Connecting to WiFi and getting time over NTP.',
                    'Initializing SNTP',
-                   'Waiting for system time to be set... (1/10)',
+                   re.compile(r'Waiting for system time to be set... \(\d+/\d+\)'),
                    'Notification of a time synchronization event',
                    timeout=60)
 

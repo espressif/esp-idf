@@ -28,15 +28,16 @@
 #include "esp_log.h"
 #include "esp_pm.h"
 #include "esp_ipc.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
+#include "esp_private/esp_clk.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/soc_memory_layout.h"
-#include "esp32c3/clk.h"
 #include "esp_coexist_internal.h"
 #include "esp32c3/rom/rom_layout.h"
 #include "esp_timer.h"
 #include "esp_sleep.h"
+#include "phy.h"
 
 #if CONFIG_BT_ENABLED
 
@@ -1236,6 +1237,11 @@ esp_err_t esp_bt_controller_deinit(void)
     esp_unregister_mac_bb_pd_callback(btdm_mac_bb_power_down_cb);
     esp_unregister_mac_bb_pu_callback(btdm_mac_bb_power_up_cb);
 #endif
+
+    /* Fix the issue caused by the power off the bt power domain.
+     * This issue is only on ESP32C3.
+     */
+    phy_init_flag();
 
     esp_bt_power_domain_off();
 

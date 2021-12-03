@@ -1,3 +1,59 @@
+.pytest_template:
+  stage: target_test
+  extends: .before_script_pytest
+  artifacts:
+    when: always
+    paths:
+      - XUNIT_RESULT.xml
+    reports:
+      junit: XUNIT_RESULT.xml
+  script:
+    - pytest $TEST_DIR --target $TARGET -m $ENV_MARKER --junitxml=XUNIT_RESULT.xml
+
+.pytest_examples_dir_template:
+  extends: .pytest_template
+  variables:
+    TEST_DIR: examples
+
+example_test_pytest_esp32_generic:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_examples_pytest_esp32
+  variables:
+    TARGET: esp32
+    ENV_MARKER: generic
+  tags: # in gitlab 14.1 or later, we can use `parallel: matrix` with the `tags` keyword. https://docs.gitlab.com/ee/ci/jobs/job_control.html#run-a-matrix-of-parallel-trigger-jobs
+    - ESP32
+    - Example_GENERIC
+
+example_test_pytest_esp32s2_generic:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32s2
+  needs:
+    - build_examples_pytest_esp32s2
+  variables:
+    TARGET: esp32s2
+    ENV_MARKER: generic
+  tags:
+    - ESP32S2
+    - Example_GENERIC
+
+example_test_pytest_esp32c3_generic:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c3
+  needs:
+    - build_examples_pytest_esp32c3
+  variables:
+    TARGET: esp32c3
+    ENV_MARKER: generic
+  tags:
+    - ESP32C3
+    - Example_GENERIC
+
 # for parallel jobs, CI_JOB_NAME will be "job_name index/total" (for example, "IT_001 1/2")
 # we need to convert to pattern "job_name_index.yml"
 .define_config_file_name: &define_config_file_name |
@@ -75,7 +131,7 @@ test_weekend_mqtt:
 .example_test_esp32c3_template:
   extends:
     - .example_test_template
-    - .rules:labels:example_test-esp32c3
+    - .rules:test:example_test-esp32c3
 
 .example_test_esp32s3_template:
   extends:
@@ -115,10 +171,9 @@ example_test_001D:
 
 example_test_OTA:
   extends: .example_test_esp32_template
-  parallel: 2
   tags:
     - ESP32
-    - Example_WIFI_OTA
+    - EXAMPLE_ETH_OTA
 
 example_test_protocols:
   extends: .example_test_esp32_template
@@ -341,7 +396,6 @@ test_app_test_003:
 
 test_app_test_004:
   extends: .test_app_esp32s2_template
-  parallel: 2
   tags:
     - ESP32S2
     - Example_GENERIC

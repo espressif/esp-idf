@@ -5,6 +5,7 @@
 
 #pragma once
 
+/*-------------------------- COMMON CAPS ---------------------------------------*/
 #define SOC_CPU_CORES_NUM               1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_GDMA_SUPPORTED              1
@@ -17,13 +18,13 @@
 #define SOC_TEMP_SENSOR_SUPPORTED       1
 #define SOC_FLASH_ENCRYPTION_XTS_AES    1
 #define SOC_XT_WDT_SUPPORTED            1
-
-
-/*-------------------------- COMMON CAPS ---------------------------------------*/
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
-#define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 3
-#define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS 1
-
+#define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   3
+#define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS   1
+#define SOC_ICACHE_ACCESS_RODATA_SUPPORTED  1
+#define SOC_RTC_FAST_MEM_SUPPORTED        1
+#define SOC_RTC_SLOW_MEM_SUPPORTED        0
+#define SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY               1
 
 /*-------------------------- AES CAPS -----------------------------------------*/
 #define SOC_AES_SUPPORT_DMA     (1)

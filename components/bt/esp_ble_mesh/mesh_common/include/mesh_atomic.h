@@ -1,7 +1,7 @@
 /* atomic operations */
 
 /*
- * Copyright (c) 1997-2015, Wind River Systems, Inc.
+ * SPDX-FileCopyrightText: 1997-2015 Wind River Systems, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */

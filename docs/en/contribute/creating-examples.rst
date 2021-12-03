@@ -23,7 +23,7 @@ Checklist
 
 Checklist before submitting a new example:
 
-* Example project name (in ``Makefile`` and ``README.md``) uses the word "example". Use "example" instead of "demo", "test" or similar words.
+* Example project name (in ``README.md``) uses the word "example". Use "example" instead of "demo", "test" or similar words.
 * Example does one distinct thing. If the example does more than one thing at a time, split it into two or more examples.
 * Example has a ``README.md`` file which is similar to the :idf_file:`template example README <docs/TEMPLATE_EXAMPLE_README.md>`.
 * Functions and variables in the example are named according to :ref:`naming section of the style guide <style-guide-naming>`. (For non-static names which are only specific to the example's source files, you can use ``example`` or something similar as a prefix.)

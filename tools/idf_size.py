@@ -263,12 +263,18 @@ def detect_target_chip(map_file: Iterable) -> str:
     ''' Detect target chip based on the target archive name in the linker script part of the MAP file '''
     scan_to_header(map_file, 'Linker script and memory map')
 
-    RE_TARGET = re.compile(r'project_elf_src_(.*)\.c.obj')
+    RE_TARGET = re.compile(r'IDF_TARGET_(\S*) =')
+    # For back-compatible with cmake in idf version before 5.0
+    RE_TARGET_CMAKEv4x = re.compile(r'project_elf_src_(\S*)\.c.obj')
     # For back-compatible with make
     RE_TARGET_MAKE = re.compile(r'^LOAD .*?/xtensa-([^-]+)-elf/')
 
     for line in map_file:
         match_target = RE_TARGET.search(line)
+        if match_target:
+            return match_target.group(1).lower()
+
+        match_target = RE_TARGET_CMAKEv4x.search(line)
         if match_target:
             return match_target.group(1)
 
@@ -563,7 +569,6 @@ class StructureForSummary(object):
         r = StructureForSummary()
 
         diram_filter = filter(in_diram, segments)
-        # TODO: We assume all DIRAM region are covered by both I/D segments. If not, the total size cannot be calculated accurately. Add check for this.
         r.diram_total = int(get_size(diram_filter) / 2)
 
         dram_filter = filter(in_dram, segments)
@@ -1079,7 +1084,7 @@ class StructureForArchiveSymbols(object):
 
 
 def get_archive_symbols(sections: Dict, archive: str, as_json: bool=False, sections_diff: Dict=None) -> str:
-    diff_en = sections_diff is not None
+    diff_en = bool(sections_diff)
     current = StructureForArchiveSymbols.get(archive, sections)
     reference = StructureForArchiveSymbols.get(archive, sections_diff) if sections_diff else {}
 
@@ -1103,19 +1108,29 @@ def get_archive_symbols(sections: Dict, archive: str, as_json: bool=False, secti
         def _get_item_pairs(name: str, section: collections.OrderedDict) -> collections.OrderedDict:
             return collections.OrderedDict([(key.replace(name + '.', ''), val) for key, val in iteritems(section)])
 
+        def _get_max_len(symbols_dict: Dict) -> Tuple[int, int]:
+            # the lists have 0 in them because max() doesn't work with empty lists
+            names_max_len = 0
+            numbers_max_len = 0
+            for t, s in iteritems(symbols_dict):
+                numbers_max_len = max([numbers_max_len, *[len(str(x)) for _, x in iteritems(s)]])
+                names_max_len = max([names_max_len, *[len(x) for x in _get_item_pairs(t, s)]])
+
+            return names_max_len, numbers_max_len
+
         def _get_output(section_symbols: Dict) -> str:
             output = ''
+            names_max_len, numbers_max_len  = _get_max_len(section_symbols)
             for t, s in iteritems(section_symbols):
                 output += '{}Symbols from section: {}{}'.format(os.linesep, t, os.linesep)
                 item_pairs = _get_item_pairs(t, s)
-                output += ' '.join(['{}({})'.format(key, val) for key, val in iteritems(item_pairs)])
+                for key, val in iteritems(item_pairs):
+                    output += ' '.join([('\t{:<%d} : {:>%d}\n' % (names_max_len,numbers_max_len)).format(key, val)])
                 section_total = sum([val for _, val in iteritems(item_pairs)])
-                output += '{}Section total: {}{}'.format(os.linesep if section_total > 0 else '',
-                                                         section_total,
-                                                         os.linesep)
+                output += 'Section total: {}{}'.format(section_total, os.linesep)
             return output
 
-        output = 'Symbols within the archive: {} (Not all symbols may be reported){}'.format(archive, os.linesep)
+        output = '{}Symbols within the archive: {} (Not all symbols may be reported){}'.format(os.linesep, archive, os.linesep)
         if diff_en:
 
             def _generate_line_tuple(curr: collections.OrderedDict, ref: collections.OrderedDict, name: str) -> Tuple[str, int, int, str]:

@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdlib.h>
 #include <assert.h>
@@ -181,13 +173,15 @@ static esp_err_t load_partitions(void)
 #endif
 
     // map 64kB block where partition table is located
-    esp_err_t err = spi_flash_mmap(ESP_PARTITION_TABLE_OFFSET & 0xffff0000,
+    uint32_t partition_align_pg_size = (ESP_PARTITION_TABLE_OFFSET) & ~(0x10000 - 1);
+    uint32_t partition_pad = ESP_PARTITION_TABLE_OFFSET - partition_align_pg_size;
+    esp_err_t err = spi_flash_mmap(partition_align_pg_size,
                                    SPI_FLASH_SEC_SIZE, SPI_FLASH_MMAP_DATA, (const void **)&p_start, &handle);
     if (err != ESP_OK) {
         return err;
     }
     // calculate partition address within mmap-ed region
-    p_start += (ESP_PARTITION_TABLE_OFFSET & 0xffff);
+    p_start += partition_pad;
     p_end = p_start + SPI_FLASH_SEC_SIZE;
 
     for(const uint8_t *p_entry = p_start; p_entry < p_end; p_entry += sizeof(esp_partition_info_t)) {
@@ -227,13 +221,22 @@ static esp_err_t load_partitions(void)
         if (!esp_flash_encryption_enabled()) {
             /* If flash encryption is not turned on, no partitions should be treated as encrypted */
             item->info.encrypted = false;
-        } else if (entry.type == PART_TYPE_APP
-                || (entry.type == PART_TYPE_DATA && entry.subtype == PART_SUBTYPE_DATA_OTA)
-                || (entry.type == PART_TYPE_DATA && entry.subtype == PART_SUBTYPE_DATA_NVS_KEYS)) {
+        } else if (entry.type == ESP_PARTITION_TYPE_APP
+                || (entry.type == ESP_PARTITION_TYPE_DATA && entry.subtype == ESP_PARTITION_SUBTYPE_DATA_OTA)
+                || (entry.type == ESP_PARTITION_TYPE_DATA && entry.subtype == ESP_PARTITION_SUBTYPE_DATA_NVS_KEYS)) {
             /* If encryption is turned on, all app partitions and OTA data
                are always encrypted */
             item->info.encrypted = true;
         }
+
+#if CONFIG_NVS_COMPATIBLE_PRE_V4_3_ENCRYPTION_FLAG
+        if (entry.type == ESP_PARTITION_TYPE_DATA &&
+                    entry.subtype == ESP_PARTITION_SUBTYPE_DATA_NVS &&
+                    (entry.flags & PART_FLAG_ENCRYPTED)) {
+            ESP_LOGI(TAG, "Ignoring encrypted flag for \"%s\" partition", entry.label);
+            item->info.encrypted = false;
+        }
+#endif
 
         // item->info.label is initialized by calloc, so resulting string will be null terminated
         strncpy(item->info.label, (const char*) entry.label, sizeof(item->info.label) - 1);
@@ -255,6 +258,7 @@ static esp_err_t load_partitions(void)
         stored_md5 = md5_part + ESP_PARTITION_MD5_OFFSET;
 
         esp_rom_md5_final(calc_md5, &context);
+
 
         ESP_LOG_BUFFER_HEXDUMP("calculated md5", calc_md5, ESP_ROM_MD5_DIGEST_LEN, ESP_LOG_VERBOSE);
         ESP_LOG_BUFFER_HEXDUMP("stored md5", stored_md5, ESP_ROM_MD5_DIGEST_LEN, ESP_LOG_VERBOSE);

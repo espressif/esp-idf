@@ -93,5 +93,5 @@ void app_main(void)
     ESP_ERROR_CHECK(mpu9250_register_write_byte(MPU9250_PWR_MGMT_1_REG_ADDR, 1 << MPU9250_RESET_BIT));
 
     ESP_ERROR_CHECK(i2c_driver_delete(I2C_MASTER_NUM));
-    ESP_LOGI(TAG, "I2C unitialized successfully");
+    ESP_LOGI(TAG, "I2C de-initialized successfully");
 }

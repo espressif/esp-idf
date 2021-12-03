@@ -206,6 +206,9 @@ typedef struct httpd_config {
      * Called when a session is deleted, before freeing user and transport contexts and before
      * closing the socket. This is a place for custom de-init code common to all sockets.
      *
+     * The server will only close the socket if no custom session closing callback is set.
+     * If a custom callback is used, `close(sockfd)` should be called in here for most cases.
+     *
      * Set the user or transport context to NULL if it was freed here, so the server does not
      * try to free it again.
      *

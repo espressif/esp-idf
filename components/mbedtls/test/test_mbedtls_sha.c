@@ -1,4 +1,11 @@
-/* mbedTLS SHA unit tests
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * mbedTLS SHA unit tests
  */
 
 #include <string.h>
@@ -14,7 +21,6 @@
 #include "unity.h"
 #include "sdkconfig.h"
 #include "test_apb_dport_access.h"
-#include "sodium/utils.h"
 #include "soc/soc_caps.h"
 
 TEST_CASE("mbedtls SHA self-tests", "[mbedtls]")
@@ -478,6 +484,7 @@ TEST_CASE("mbedtls SHA512/t", "[mbedtls]")
 #endif //CONFIG_MBEDTLS_HARDWARE_SHA
 
 #ifdef CONFIG_SPIRAM_USE_MALLOC
+#include "test_mbedtls_utils.h"
 TEST_CASE("mbedtls SHA256 PSRAM DMA", "[mbedtls]")
 {
     const unsigned CALLS = 256;
@@ -505,7 +512,7 @@ TEST_CASE("mbedtls SHA256 PSRAM DMA", "[mbedtls]")
      */
     const char *expected_hash = "8d031167bd706ac337e07aa9129c34ae4ae792d0a79a2c70e7f012102e8adc3d";
     char hash_str[sizeof(sha256) * 2 + 1];
-    sodium_bin2hex(hash_str, sizeof(hash_str), sha256, sizeof(sha256));
+    utils_bin2hex(hash_str, sizeof(hash_str), sha256, sizeof(sha256));
 
     TEST_ASSERT_EQUAL_STRING(expected_hash, hash_str);
 

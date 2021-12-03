@@ -183,10 +183,6 @@ Currently these checks are performed for the following binaries:
 
    Although the build process will fail if the size check returns an error, the binary files are still generated and can be flashed (although they may not work if they are too large for the available space.)
 
-.. note::
-
-   Build system binary size checks are only performed when using the CMake build system. When using the legacy GNU Make build system, file sizes can be checked manually or an error will be logged during boot.
-
 MD5 checksum
 ~~~~~~~~~~~~
 

@@ -21,7 +21,7 @@ Unlike many operating systems using POSIX Threads, ESP-IDF is a real-time operat
 
    If calling a standard libc or C++ sleep function, such as ``usleep`` defined in ``unistd.h``, then the task will only block and yield the CPU if the sleep time is longer than :ref:`one FreeRTOS tick period <CONFIG_FREERTOS_HZ>`. If the time is shorter, the thread will busy-wait instead of yielding to another RTOS task.
 
-By default all POSIX Threads have the same RTOS priority, but it is possible to change this by calling a :ref:`custom API <esp-pthread>`.
+By default, all POSIX Threads have the same RTOS priority, but it is possible to change this by calling a :ref:`custom API <esp-pthread>`.
 
 Standard features
 -----------------
@@ -98,6 +98,20 @@ Static initializer constant ``PTHREAD_COND_INITIALIZER`` is supported.
 
 .. note:: These functions can be called from tasks created using either pthread or FreeRTOS APIs
 
+Read/Write Locks
+^^^^^^^^^^^^^^^^^^^
+
+* ``pthread_rwlock_init()``
+  - The ``attr`` argument is not implemented and is ignored.
+* ``pthread_rwlock_destroy()``
+* ``pthread_rwlock_rdlock()``
+* ``pthread_rwlock_wrlock()``
+* ``pthread_rwlock_unlock()``
+
+Static initializer constant ``PTHREAD_RWLOCK_INITIALIZER`` is supported.
+
+.. note:: These functions can be called from tasks created using either pthread or FreeRTOS APIs
+
 Thread-Specific Data
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -125,7 +139,7 @@ Other POSIX Threads functions (not listed here) are not implemented and will pro
 ESP-IDF Extensions
 ------------------
 
-The API :cpp:func:`esp_pthread_set_cfg` defined in the ``esp_pthreads.h`` header offers custom extensions to control how subsequent calls to ``pthread_create()`` will behave. Currently the following configuration can be set:
+The API :cpp:func:`esp_pthread_set_cfg` defined in the ``esp_pthreads.h`` header offers custom extensions to control how subsequent calls to ``pthread_create()`` will behave. Currently, the following configuration can be set:
 
 .. list::
   - Default stack size of new threads, if not specified when calling ``pthread_create()`` (overrides :ref:`CONFIG_PTHREAD_TASK_STACK_SIZE_DEFAULT`).

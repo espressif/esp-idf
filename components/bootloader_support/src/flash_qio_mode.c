@@ -23,45 +23,14 @@
 #include "esp32c3/rom/spi_flash.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP8684
+#include "esp8684/rom/spi_flash.h"
 #endif
 #include "soc/efuse_periph.h"
 #include "soc/io_mux_reg.h"
 
 
 static const char *TAG = "qio_mode";
-
-typedef unsigned (*read_status_fn_t)(void);
-typedef void (*write_status_fn_t)(unsigned);
-
-typedef struct __attribute__((packed))
-{
-    const char *manufacturer;
-    uint8_t mfg_id; /* 8-bit JEDEC manufacturer ID */
-    uint16_t flash_id; /* 16-bit JEDEC flash chip ID */
-    uint16_t id_mask; /* Bits to match on in flash chip ID */
-    read_status_fn_t read_status_fn;
-    write_status_fn_t write_status_fn;
-    uint8_t status_qio_bit;
-} qio_info_t;
-
-/* Read 8 bit status using RDSR command */
-static unsigned read_status_8b_rdsr(void);
-/* Read 8 bit status (second byte) using RDSR2 command */
-static unsigned read_status_8b_rdsr2(void);
-/* read 16 bit status using RDSR & RDSR2 (low and high bytes) */
-static unsigned read_status_16b_rdsr_rdsr2(void);
-
-/* Write 8 bit status using WRSR */
-static void write_status_8b_wrsr(unsigned new_status);
-/* Write 8 bit status (second byte) using WRSR2 */
-static void write_status_8b_wrsr2(unsigned new_status);
-/* Write 16 bit status using WRSR */
-static void write_status_16b_wrsr(unsigned new_status);
-
-/* Read 8 bit status of XM25QU64A  */
-static unsigned read_status_8b_xmc25qu64a(void);
-/* Write 8 bit status of XM25QU64A */
-static void write_status_8b_xmc25qu64a(unsigned new_status);
 
 /* Array of known flash chips and data to enable Quad I/O mode
 
@@ -75,13 +44,13 @@ static void write_status_8b_xmc25qu64a(unsigned new_status);
 
    Searching of this table stops when the first match is found.
  */
-const static qio_info_t chip_data[] = {
+const bootloader_qio_info_t __attribute__((weak)) bootloader_flash_qe_support_list[] = {
     /*   Manufacturer,   mfg_id, flash_id, id mask, Read Status,                Write Status,               QIE Bit */
-    { "MXIC",        0xC2,   0x2000, 0xFF00,    read_status_8b_rdsr,        write_status_8b_wrsr,       6 },
-    { "ISSI",        0x9D,   0x4000, 0xCF00,    read_status_8b_rdsr,        write_status_8b_wrsr,       6 }, /* IDs 0x40xx, 0x70xx */
-    { "WinBond",     0xEF,   0x4000, 0xFF00,    read_status_16b_rdsr_rdsr2, write_status_16b_wrsr,      9 },
-    { "GD",          0xC8,   0x6000, 0xFF00,    read_status_16b_rdsr_rdsr2, write_status_16b_wrsr,      9 },
-    { "XM25QU64A",   0x20,   0x3817, 0xFFFF,    read_status_8b_xmc25qu64a,  write_status_8b_xmc25qu64a, 6 },
+    { "MXIC",        0xC2,   0x2000, 0xFF00,    bootloader_read_status_8b_rdsr,        bootloader_write_status_8b_wrsr,       6 },
+    { "ISSI",        0x9D,   0x4000, 0xCF00,    bootloader_read_status_8b_rdsr,        bootloader_write_status_8b_wrsr,       6 }, /* IDs 0x40xx, 0x70xx */
+    { "WinBond",     0xEF,   0x4000, 0xFF00,    bootloader_read_status_16b_rdsr_rdsr2, bootloader_write_status_16b_wrsr,      9 },
+    { "GD",          0xC8,   0x6000, 0xFF00,    bootloader_read_status_16b_rdsr_rdsr2, bootloader_write_status_16b_wrsr,      9 },
+    { "XM25QU64A",   0x20,   0x3817, 0xFFFF,    bootloader_read_status_8b_xmc25qu64a,  bootloader_write_status_8b_xmc25qu64a, 6 },
 
     /* Final entry is default entry, if no other IDs have matched.
 
@@ -90,13 +59,13 @@ const static qio_info_t chip_data[] = {
        FM25Q32 (QOUT mode only, mfg ID 0xA1, flash IDs including 4016)
        BY25Q32 (mfg ID 0x68, flash IDs including 4016)
     */
-    { NULL,          0xFF,    0xFFFF, 0xFFFF,   read_status_8b_rdsr2,       write_status_8b_wrsr2,      1 },
+    { NULL,          0xFF,    0xFFFF, 0xFFFF,   bootloader_read_status_8b_rdsr2,       bootloader_write_status_8b_wrsr2,      1 },
 };
 
-#define NUM_CHIPS (sizeof(chip_data) / sizeof(qio_info_t))
+#define NUM_CHIPS (sizeof(bootloader_flash_qe_support_list) / sizeof(bootloader_qio_info_t))
 
-static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
-                                 write_status_fn_t write_status_fn,
+static esp_err_t enable_qio_mode(bootloader_flash_read_status_fn_t read_status_fn,
+                                 bootloader_flash_write_status_fn_t write_status_fn,
                                  uint8_t status_qio_bit);
 
 /* Generic function to use the "user command" SPI controller functionality
@@ -123,9 +92,9 @@ void bootloader_enable_qio_mode(void)
     ESP_LOGD(TAG, "Manufacturer ID 0x%02x chip ID 0x%04x", mfg_id, flash_id);
 
     for (i = 0; i < NUM_CHIPS - 1; i++) {
-        const qio_info_t *chip = &chip_data[i];
+        const bootloader_qio_info_t *chip = &bootloader_flash_qe_support_list[i];
         if (mfg_id == chip->mfg_id && (flash_id & chip->id_mask) == (chip->flash_id & chip->id_mask)) {
-            ESP_LOGI(TAG, "Enabling QIO for flash chip %s", chip_data[i].manufacturer);
+            ESP_LOGI(TAG, "Enabling QIO for flash chip %s", bootloader_flash_qe_support_list[i].manufacturer);
             break;
         }
     }
@@ -133,20 +102,19 @@ void bootloader_enable_qio_mode(void)
     if (i == NUM_CHIPS - 1) {
         ESP_LOGI(TAG, "Enabling default flash chip QIO");
     }
-    enable_qio_mode(chip_data[i].read_status_fn,
-                    chip_data[i].write_status_fn,
-                    chip_data[i].status_qio_bit);
+    enable_qio_mode(bootloader_flash_qe_support_list[i].read_status_fn,
+                    bootloader_flash_qe_support_list[i].write_status_fn,
+                    bootloader_flash_qe_support_list[i].status_qio_bit);
 #if SOC_CACHE_SUPPORT_WRAP
     bootloader_flash_wrap_set(FLASH_WRAP_MODE_DISABLE);
 #endif
 }
 
-static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
-                                 write_status_fn_t write_status_fn,
+static esp_err_t enable_qio_mode(bootloader_flash_read_status_fn_t read_status_fn,
+                                 bootloader_flash_write_status_fn_t write_status_fn,
                                  uint8_t status_qio_bit)
 {
     uint32_t status;
-    const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
 
     esp_rom_spiflash_wait_idle(&g_rom_flashchip);
 
@@ -181,46 +149,54 @@ static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
 
     esp_rom_spiflash_config_readmode(mode);
 
+#if !CONFIG_IDF_TARGET_ESP8684
+    //IDF-3914
+    const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
+#endif
+
 #if CONFIG_IDF_TARGET_ESP32
     int wp_pin = bootloader_flash_get_wp_pin();
     esp_rom_spiflash_select_qio_pins(wp_pin, spiconfig);
+#elif CONFIG_IDF_TARGET_ESP8684
+    //IDF-3914
+    esp_rom_spiflash_select_qio_pins(0, 0);
 #else
     esp_rom_spiflash_select_qio_pins(esp_rom_efuse_get_flash_wp_gpio(), spiconfig);
 #endif
     return ESP_OK;
 }
 
-static unsigned read_status_8b_rdsr(void)
+unsigned bootloader_read_status_8b_rdsr(void)
 {
     return bootloader_execute_flash_command(CMD_RDSR, 0, 0, 8);
 }
 
-static unsigned read_status_8b_rdsr2(void)
+unsigned bootloader_read_status_8b_rdsr2(void)
 {
     return bootloader_execute_flash_command(CMD_RDSR2, 0, 0, 8);
 }
 
-static unsigned read_status_16b_rdsr_rdsr2(void)
+unsigned bootloader_read_status_16b_rdsr_rdsr2(void)
 {
     return bootloader_execute_flash_command(CMD_RDSR, 0, 0, 8) | (bootloader_execute_flash_command(CMD_RDSR2, 0, 0, 8) << 8);
 }
 
-static void write_status_8b_wrsr(unsigned new_status)
+void bootloader_write_status_8b_wrsr(unsigned new_status)
 {
     bootloader_execute_flash_command(CMD_WRSR, new_status, 8, 0);
 }
 
-static void write_status_8b_wrsr2(unsigned new_status)
+void bootloader_write_status_8b_wrsr2(unsigned new_status)
 {
     bootloader_execute_flash_command(CMD_WRSR2, new_status, 8, 0);
 }
 
-static void write_status_16b_wrsr(unsigned new_status)
+void bootloader_write_status_16b_wrsr(unsigned new_status)
 {
     bootloader_execute_flash_command(CMD_WRSR, new_status, 16, 0);
 }
 
-static unsigned read_status_8b_xmc25qu64a(void)
+unsigned bootloader_read_status_8b_xmc25qu64a(void)
 {
     bootloader_execute_flash_command(CMD_OTPEN, 0, 0, 0);  /* Enter OTP mode */
     esp_rom_spiflash_wait_idle(&g_rom_flashchip);
@@ -229,7 +205,7 @@ static unsigned read_status_8b_xmc25qu64a(void)
     return read_status;
 }
 
-static void write_status_8b_xmc25qu64a(unsigned new_status)
+void bootloader_write_status_8b_xmc25qu64a(unsigned new_status)
 {
     bootloader_execute_flash_command(CMD_OTPEN, 0, 0, 0);  /* Enter OTP mode */
     esp_rom_spiflash_wait_idle(&g_rom_flashchip);

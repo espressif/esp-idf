@@ -1,22 +1,33 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
+#include "osi/allocator.h"
 #include "bta/bta_api.h"
 #include "btc/btc_task.h"
 #include "btc/btc_manage.h"
 #include "btc/btc_dev.h"
+
+void btc_dev_arg_deep_free(btc_msg_t *msg)
+{
+    BTC_TRACE_DEBUG("%s \n", __func__);
+
+    switch (msg->act) {
+    case BTC_DEV_ACT_SET_DEVICE_NAME:{
+        char *device_name = ((btc_dev_args_t *)msg->arg)->set_dev_name.device_name;
+        if (device_name) {
+            osi_free(device_name);
+        }
+        break;
+    }
+    default:
+        BTC_TRACE_DEBUG("Unhandled deep free %d\n", msg->act);
+        break;
+    }
+}
 
 void btc_dev_call_handler(btc_msg_t *msg)
 {
@@ -31,4 +42,6 @@ void btc_dev_call_handler(btc_msg_t *msg)
     default:
         break;
     }
+
+    btc_dev_arg_deep_free(msg);
 }

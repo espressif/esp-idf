@@ -1,19 +1,8 @@
 # internal use only for CI
 # some CI related util functions
 #
-# Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 #
 import functools
 import logging
@@ -21,11 +10,12 @@ import os
 import re
 import subprocess
 import sys
+from typing import List, Optional
 
 IDF_PATH = os.path.abspath(os.getenv('IDF_PATH', os.path.join(os.path.dirname(__file__), '..', '..')))
 
 
-def get_submodule_dirs(full_path=False):  # type: (bool) -> list
+def get_submodule_dirs(full_path: bool = False) -> List:
     """
     To avoid issue could be introduced by multi-os or additional dependency,
     we use python and git to get this output
@@ -60,7 +50,7 @@ def _check_git_filemode(full_path):  # type: (str) -> bool
     return False
 
 
-def is_executable(full_path):  # type: (str) -> bool
+def is_executable(full_path: str) -> bool:
     """
     os.X_OK will always return true on windows. Use git to check file mode.
     :param full_path: file full path
@@ -71,7 +61,7 @@ def is_executable(full_path):  # type: (str) -> bool
     return os.access(full_path, os.X_OK)
 
 
-def get_git_files(path=IDF_PATH, full_path=False):  # type: (str, bool) -> list[str]
+def get_git_files(path: str = IDF_PATH, full_path: bool = False) -> List[str]:
     """
     Get the result of git ls-files
     :param path: path to run git ls-files
@@ -79,7 +69,15 @@ def get_git_files(path=IDF_PATH, full_path=False):  # type: (str, bool) -> list[
     :return: list of file paths
     """
     try:
-        files = subprocess.check_output(['git', 'ls-files'], cwd=path).decode('utf8').strip().split('\n')
+        # this is a workaround when using under worktree
+        # if you're using worktree, when running git commit a new environment variable GIT_DIR would be declared,
+        # the value should be <origin_repo_path>/.git/worktrees/<worktree name>
+        # This would effect the return value of `git ls-files`, unset this would use the `cwd`value or its parent
+        # folder if no `.git` folder found in `cwd`.
+        workaround_env = os.environ.copy()
+        workaround_env.pop('GIT_DIR', None)
+        files = subprocess.check_output(['git', 'ls-files'], cwd=path, env=workaround_env) \
+            .decode('utf8').strip().split('\n')
     except Exception as e:  # pylint: disable=W0703
         logging.warning(str(e))
         files = []
@@ -90,7 +88,7 @@ def get_git_files(path=IDF_PATH, full_path=False):  # type: (str, bool) -> list[
 # https://github.com/python/cpython/pull/6299/commits/bfd63120c18bd055defb338c075550f975e3bec1
 # In order to solve python https://bugs.python.org/issue9584
 # glob pattern does not support brace expansion issue
-def _translate(pat):  # type: (str) -> str
+def _translate(pat: str) -> str:
     """Translate a shell PATTERN to a regular expression.
     There is no way to quote meta-characters.
     """
@@ -179,7 +177,7 @@ def _translate(pat):  # type: (str) -> str
     return res
 
 
-def translate(pat):  # type: (str) -> str
+def translate(pat: str) -> str:
     res = _translate(pat)
     return r'(?s:%s)\Z' % res
 
@@ -197,3 +195,36 @@ magic_check_bytes = re.compile(b'([*?[{])')
 # glob.magic_check = magic_check
 # glob.magic_check_bytes = magic_check_bytes
 # fnmatch.translate = translate
+
+
+def is_in_directory(file_path: str, folder: str) -> bool:
+    return os.path.realpath(file_path).startswith(os.path.realpath(folder) + os.sep)
+
+
+def get_pytest_dirs(folder: str, under_dir: Optional[str] = None) -> List[str]:
+    from io import StringIO
+
+    import pytest
+    from _pytest.nodes import Item
+
+    class CollectPlugin:
+        def __init__(self) -> None:
+            self.nodes: List[Item] = []
+
+        def pytest_collection_modifyitems(self, items: List[Item]) -> None:
+            for item in items:
+                self.nodes.append(item)
+
+    collector = CollectPlugin()
+
+    sys_stdout = sys.stdout
+    sys.stdout = StringIO()  # swallow the output
+    pytest.main(['--collect-only', folder], plugins=[collector])
+    sys.stdout = sys_stdout  # restore sys.stdout
+
+    test_file_paths = set(node.fspath for node in collector.nodes)
+
+    if under_dir:
+        return [os.path.dirname(file) for file in test_file_paths if is_in_directory(file, under_dir)]
+
+    return [os.path.dirname(file) for file in test_file_paths]

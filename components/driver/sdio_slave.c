@@ -86,7 +86,7 @@ The driver of FIFOs works as below:
 #include "soc/gpio_periph.h"
 #include "hal/cpu_hal.h"
 #include "freertos/semphr.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "driver/gpio.h"
 #include "hal/sdio_slave_hal.h"
 #include "hal/gpio_hal.h"

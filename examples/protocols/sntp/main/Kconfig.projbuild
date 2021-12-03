@@ -1,5 +1,11 @@
 menu "Example Configuration"
 
+    config SNTP_TIME_SERVER
+        string "SNTP server name"
+        default "pool.ntp.org"
+        help
+            Hostname of the main SNTP server.
+
     choice SNTP_TIME_SYNC_METHOD
         prompt "Time synchronization method"
         default SNTP_TIME_SYNC_METHOD_IMMED

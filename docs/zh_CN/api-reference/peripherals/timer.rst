@@ -3,21 +3,14 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_TIMER_COUNTER_BIT_WIDTH:default="54", esp32="64", esp32s2="64", esp32c3="54"}
+{IDF_TARGET_TIMER_COUNTER_BIT_WIDTH:default="54", esp32="64", esp32s2="64"}
+{IDF_TARGET_TIMERS_PER_GROUP:default="2", esp32c3="1"}
+{IDF_TARGET_TIMERS_TOTAL:default="4", esp32c3="2"}
 
 简介
 ----
 
-.. only:: not esp32c3
-
-    {IDF_TARGET_NAME} 芯片提供两组硬件定时器，每组包含两个通用硬件定时器。
-
-
-.. only:: esp32c3
-
-    {IDF_TARGET_NAME} 芯片提供两组硬件定时器，每组包含一个通用硬件定时器和一个主系统看门狗定时器。
-
-所有通用定时器均基于 16 位预分频器和 {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH} 位可自动重新加载向上/向下计数器。
+{IDF_TARGET_NAME} 芯片提供两组硬件定时器。每组包含 {IDF_TARGET_TIMERS_PER_GROUP} 个通用硬件定时器。这些 {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH} 位通用定时器均基于 16 位预分频器和 {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH} 位可自动重新加载向上/向下计数器。
 
 
 功能概述
@@ -36,16 +29,16 @@
 定时器初始化
 ^^^^^^^^^^^^
 
-两个 {IDF_TARGET_NAME} 定时器组中，每组都有两个定时器，两组共有四个定时器供使用。{IDF_TARGET_NAME} 定时器组的类型为 :cpp:type:`timer_group_t`，每组中的个体定时器类型为 :cpp:type:`timer_idx_t`。
+两个 {IDF_TARGET_NAME} 定时器组中，每组都有 {IDF_TARGET_TIMERS_PER_GROUP} 个定时器，两组共有 {IDF_TARGET_TIMERS_TOTAL} 个定时器供使用。可使用 :cpp:type:`timer_group_t` 查看 {IDF_TARGET_NAME} 定时器组的类型，使用 :cpp:type:`timer_idx_t` 查看每组中的个体定时器类型。
 
-首先调用 :cpp:func:`timer_init` 函数，并将 :cpp:type:`timer_config_t` 结构体传递给此函数，用于定义定时器的工作方式，实现定时器初始化。特别注意以下定时器参数可设置为：
+首先调用 :cpp:func:`timer_init` 函数，并将 :cpp:type:`timer_config_t` 结构体传递给此函数，用于定义定时器的工作方式，实现定时器初始化。特别注意设置以下定时器参数：
 
 .. list::
 
     :not esp32: - **时钟源**: 选择时钟源，与时钟分频器一起决定了定时器的分辨率。
     - **分频器**: 设置定时器中计数器计数的速度，:cpp:member:`divider` 的设置将用作输入时钟源的除数。默认的时钟源是 APB_CLK (一般是 80 MHz)。更多有关 APB_CLK 时钟频率信息，请查看 *{IDF_TARGET_NAME} 技术参考手册* > *复位和时钟* [`PDF <{IDF_TARGET_TRM_CN_URL}#resclk>`__] 章节。
-    - **模式**: 设置计数器是递增还是递减。可通过从 :cpp:type:`timer_count_dir_t` 中选取一个值，后使用 :cpp:member:`counter_dir` 来选择模式。
-    - **计数器使能**: 如果计数器已使能，则在调用 :cpp:func:`timer_init` 后计数器将立即开始递增/递减。您可通过从 :cpp:type:`timer_start_t` 中选取一个值，后使用 :cpp:member:`counter_en` 改变此行为。
+    - **模式**: 设置计数器是递增还是递减。可通过从 :cpp:type:`timer_count_dir_t` 中选取一个值，然后使用 :cpp:member:`counter_dir` 来选择模式。
+    - **计数器使能**: 如果计数器已使能，在调用 :cpp:func:`timer_init` 后计数器将立即开始递增/递减。您可通过从 :cpp:type:`timer_start_t` 中选取一个值，然后使用 :cpp:member:`counter_en` 改变此行为。
     - **报警使能**: 可使用 :cpp:member:`alarm_en` 设置。
     - **自动重载**: 设置计数器是否应该在定时器警报上使用 :cpp:member:`auto_reload` 自动重载首个计数值，还是继续递增或递减。
 
@@ -59,7 +52,7 @@
 
 定时器使能后便开始计数。要使能定时器，可首先设置 :cpp:member:`counter_en` 为 ``true``，然后调用函数 :cpp:func:`timer_init`，或者直接调用函数 :cpp:func:`timer_start`。您可通过调用函数 :cpp:func:`timer_set_counter_value` 来指定定时器的首个计数值。要检查定时器的当前值，调用函数 :cpp:func:`timer_get_counter_value` 或 :cpp:func:`timer_get_counter_time_sec`。
 
-可通过调用函数 :cpp:func:`timer_pause` 随时暂停定时器。要再次启动它，调用函数 :cpp:func:`timer_start`。
+可通过调用函数 :cpp:func:`timer_pause` 随时暂停定时器。若要再次启动它，可调用函数 :cpp:func:`timer_start`。
 
 要重新配置定时器，可调用函数 :cpp:func:`timer_init`，该函数详细介绍见 :ref:`timer-api-timer-initialization`。
 
@@ -98,7 +91,8 @@
 处理中断事务
 ^^^^^^^^^^^^
 
-调用 :cpp:func:`timer_isr_callback_add` 函数可以给某个定时器注册一个中断回调函数，顾名思义，该函数会在中断上下文中被执行，因此用户不能在回调函数中调用任何会阻塞 CPU 的 API。
+通过调用 :cpp:func:`timer_isr_callback_add` 函数并向该函数传递组 ID、定时器 ID、回调处理程序以及用户数据，可以给某个定时器注册一个中断回调函数。回调处理程序会在 ISR 上下文中调用，因此用户不能在回调函数中放置任何会阻塞 CPU 的 API。
+
 相较于从头编写中断处理程序，使用中断回调函数的好处是，用户无需检测和处理中断的状态位，这些操作会由驱动中默认的中断处理程序替我们完成。
 
 有关如何使用中断回调函数，请参考如下应用示例。

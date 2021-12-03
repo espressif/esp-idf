@@ -60,7 +60,7 @@ used, wolfssl SSL/TLS library is available publicly at https://github.com/espres
 also provides few examples which are useful for understanding the API. Please refer the repository README.md for
 information on licensing and other options. Please see below option for using wolfssl in your project.
 
-.. note::   `As the library options are internal to ESP-TLS, switching the libries will not change ESP-TLS specific code for a project.`
+.. note::   `As the library options are internal to ESP-TLS, switching the libraries will not change ESP-TLS specific code for a project.`
 
 How to use wolfssl with ESP-IDF
 -------------------------------
@@ -79,11 +79,11 @@ There are two ways to use wolfssl in your project
 
     git clone https://github.com/espressif/esp-wolfssl.git
 
-* Include  esp-wolfssl in ESP-IDF with setting EXTRA_COMPONENT_DIRS in CMakeLists.txt/Makefile of your project as done in `wolfssl/examples <https://github.com/espressif/esp-wolfssl/tree/master/examples>`_. For reference see Optional Project variables in :doc:`build-system.</api-guides/build-system>`
+* Include  esp-wolfssl in ESP-IDF with setting EXTRA_COMPONENT_DIRS in CMakeLists.txt of your project as done in `wolfssl/examples <https://github.com/espressif/esp-wolfssl/tree/master/examples>`_. For reference see Optional Project variables in :doc:`build-system.</api-guides/build-system>`
 
 After above steps, you will have option to choose wolfssl as underlying SSL/TLS library in configuration menu of your project as follows::
 
-    idf.py/make menuconfig -> ESP-TLS -> choose SSL/TLS Library -> mbedtls/wolfssl
+    idf.py menuconfig -> ESP-TLS -> choose SSL/TLS Library -> mbedtls/wolfssl
 
 Comparison between mbedtls and wolfssl
 --------------------------------------

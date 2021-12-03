@@ -10,7 +10,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "esp_crypto_lock.h"
 #include "hal/ds_hal.h"
 #include "hal/ds_ll.h"

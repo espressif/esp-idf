@@ -1,17 +1,10 @@
-/* Copyright 2018 Espressif Systems (Shanghai) PTE LTD
+/*
+ * SPDX-FileCopyrightText: 2006 Christian Walter
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * SPDX-License-Identifier: LGPL-2.0-only
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
-*/
+ * SPDX-FileContributor: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ */
 /*
   * FreeModbus Libary: ESP32 TCP Port
   * Copyright (C) 2006 Christian Walter <wolti@sil.at>
@@ -38,6 +31,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "esp_err.h"
+#include "esp_timer.h"
 
 /* ----------------------- lwIP includes ------------------------------------*/
 #include "lwip/err.h"
@@ -808,30 +802,30 @@ static void vMBTCPPortMasterTask(void *pvParameters)
             } else {
                 // Check to make sure that active slave data is ready
                 if (FD_ISSET(pxCurrInfo->xSockId, &xReadSet)) {
-                    xErr = ERR_BUF;
-                    for (int retry = 0; (xErr == ERR_BUF) && (retry < MB_TCP_READ_BUF_RETRY_CNT); retry++) {
-                        xErr = vMBTCPPortMasterReadPacket(pxCurrInfo);
+                    int xRet = ERR_BUF;
+                    for (int retry = 0; (xRet == ERR_BUF) && (retry < MB_TCP_READ_BUF_RETRY_CNT); retry++) {
+                        xRet = vMBTCPPortMasterReadPacket(pxCurrInfo);
                         // The error ERR_BUF means received response to previous request
                         // (due to timeout) with the same socket ID and incorrect TID,
                         // then ignore it and try to get next response buffer.
                     }
-                    if (xErr > 0) {
+                    if (xRet > 0) {
                         // Response received correctly, send an event to stack
                         xMBTCPPortMasterFsmSetError(EV_ERROR_INIT, EV_MASTER_FRAME_RECEIVED);
                         ESP_LOGD(MB_TCP_MASTER_PORT_TAG, MB_SLAVE_FMT(", frame received."),
                                     pxCurrInfo->xIndex, pxCurrInfo->xSockId, pxCurrInfo->pcIpAddr);
-                    } else if ((xErr == ERR_TIMEOUT) || (xMBTCPPortMasterGetRespTimeLeft(pxCurrInfo) == 0)) {
+                    } else if ((xRet == ERR_TIMEOUT) || (xMBTCPPortMasterGetRespTimeLeft(pxCurrInfo) == 0)) {
                         // Timeout occurred when receiving frame, process respond timeout
                         ESP_LOGD(MB_TCP_MASTER_PORT_TAG, MB_SLAVE_FMT(", frame read timeout."),
                                     pxCurrInfo->xIndex, pxCurrInfo->xSockId, pxCurrInfo->pcIpAddr);
-                    } else if (xErr == ERR_BUF) {
+                    } else if (xRet == ERR_BUF) {
                         // After retries a response with incorrect TID received, process failure.
                         xMBTCPPortMasterFsmSetError(EV_ERROR_RECEIVE_DATA, EV_MASTER_ERROR_PROCESS);
                         ESP_LOGD(MB_TCP_MASTER_PORT_TAG, MB_SLAVE_FMT(", frame error."),
                                     pxCurrInfo->xIndex, pxCurrInfo->xSockId, pxCurrInfo->pcIpAddr);
                     } else {
                         ESP_LOGE(MB_TCP_MASTER_PORT_TAG, MB_SLAVE_FMT(", critical error=%d."),
-                                    pxCurrInfo->xIndex, pxCurrInfo->xSockId, pxCurrInfo->pcIpAddr, xErr);
+                                    pxCurrInfo->xIndex, pxCurrInfo->xSockId, pxCurrInfo->pcIpAddr, xRet);
                         // Stop polling process
                         vMBTCPPortMasterStopPoll();
                         xMBTCPPortMasterCheckShutdown();

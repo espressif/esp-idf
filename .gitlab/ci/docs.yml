@@ -162,7 +162,7 @@ build_docs_pdf:
   dependencies: []
   script:
     - add_doc_server_ssh_keys $DOCS_DEPLOY_PRIVATEKEY $DOCS_DEPLOY_SERVER $DOCS_DEPLOY_SERVER_USER
-    - export GIT_VER=$(git describe --always)
+    - export GIT_VER=$(git describe --always ${PIPELINE_COMMIT_SHA} --)
     - pip install -r docs/requirements.txt
     - deploy-docs
 

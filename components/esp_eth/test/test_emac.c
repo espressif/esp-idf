@@ -87,7 +87,7 @@ static esp_err_t test_uninstall_driver(esp_eth_handle_t eth_hdl, uint32_t ms_to_
             break;
         }
     }
-    if (i < ms_to_wait / 10) {
+    if (i < ms_to_wait / 100) {
         return ESP_OK;
     } else {
         return ESP_FAIL;
@@ -121,6 +121,186 @@ TEST_CASE("esp32 ethernet io test", "[ethernet][test_env=UT_T2_Ethernet]")
     TEST_ESP_OK(esp_eth_driver_uninstall(eth_handle));
     TEST_ESP_OK(phy->del(phy));
     TEST_ESP_OK(mac->del(mac));
+}
+
+TEST_CASE("esp32 ethernet speed/duplex/autonegotiation", "[ethernet][test_env=UT_T2_Ethernet]")
+{
+    EventBits_t bits = 0;
+    EventGroupHandle_t eth_event_group = xEventGroupCreate();
+    TEST_ASSERT(eth_event_group != NULL);
+    TEST_ESP_OK(esp_event_loop_create_default());
+    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
+    eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
+    mac_config.flags = ETH_MAC_FLAG_PIN_TO_CORE; // pin to core
+    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
+    eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
+    // auto detect PHY address
+    phy_config.phy_addr = ESP_ETH_PHY_ADDR_AUTO;
+    esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);
+    esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
+    esp_eth_handle_t eth_handle = NULL;
+    TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
+
+    // Set PHY to loopback mode so we do not have to take care about link configuration of the other node.
+    // The reason behind is improbable, however, if the other node was configured to e.g. 100 Mbps and we
+    // tried to change the speed at ESP node to 10 Mbps, we could get into trouble to establish a link.
+    bool loopback_en = true;
+    esp_eth_ioctl(eth_handle, ETH_CMD_S_PHY_LOOPBACK, &loopback_en);
+
+    // this test only test layer2, so don't need to register input callback (i.e. esp_eth_update_input_path)
+    TEST_ESP_OK(esp_eth_start(eth_handle));
+    // wait for connection start
+    bits = xEventGroupWaitBits(eth_event_group, ETH_START_BIT, true, true, pdMS_TO_TICKS(ETH_START_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_START_BIT) == ETH_START_BIT);
+    // wait for connection establish
+    bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(ETH_CONNECT_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
+
+    eth_duplex_t exp_duplex;
+    esp_eth_ioctl(eth_handle, ETH_CMD_G_DUPLEX_MODE, &exp_duplex);
+
+    eth_speed_t exp_speed;
+    esp_eth_ioctl(eth_handle, ETH_CMD_G_SPEED, &exp_speed);
+    // verify autonegotiation result (expecting the best link configuration)
+    TEST_ASSERT_EQUAL(ETH_DUPLEX_FULL, exp_duplex);
+    TEST_ASSERT_EQUAL(ETH_SPEED_100M, exp_speed);
+
+    bool exp_autoneg_en;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_AUTONEGO, &exp_autoneg_en));
+    TEST_ASSERT_EQUAL(true, exp_autoneg_en);
+
+    ESP_LOGI(TAG, "try to change autonegotiation when driver is started...");
+    bool auto_nego_en = false;
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, esp_eth_ioctl(eth_handle, ETH_CMD_S_AUTONEGO, &auto_nego_en));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_AUTONEGO, &exp_autoneg_en));
+    TEST_ASSERT_EQUAL(true, exp_autoneg_en);
+
+    ESP_LOGI(TAG, "stop the Ethernet driver and...");
+    esp_eth_stop(eth_handle);
+
+    ESP_LOGI(TAG, "try to change speed/duplex prior disabling the autonegotiation...");
+    eth_duplex_t duplex = ETH_DUPLEX_HALF;
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, esp_eth_ioctl(eth_handle, ETH_CMD_S_DUPLEX_MODE, &duplex));
+
+    eth_speed_t speed = ETH_SPEED_10M;
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, esp_eth_ioctl(eth_handle, ETH_CMD_S_SPEED, &speed));
+
+    // Disable autonegotiation and change speed to 10 Mbps and duplex to half
+    ESP_LOGI(TAG, "disable the autonegotiation and change the speed/duplex...");
+    auto_nego_en = false;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_S_AUTONEGO, &auto_nego_en));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_AUTONEGO, &exp_autoneg_en));
+    TEST_ASSERT_EQUAL(false, exp_autoneg_en);
+
+    // set new duplex mode
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_S_DUPLEX_MODE, &duplex));
+
+    // set new speed
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_S_SPEED, &speed));
+
+    // start the driver and wait for connection establish
+    esp_eth_start(eth_handle);
+    bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(ETH_CONNECT_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_DUPLEX_MODE, &exp_duplex));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_SPEED, &exp_speed));
+
+    TEST_ASSERT_EQUAL(ETH_DUPLEX_HALF, exp_duplex);
+    TEST_ASSERT_EQUAL(ETH_SPEED_10M, exp_speed);
+
+    // Change speed back to 100 Mbps
+    esp_eth_stop(eth_handle);
+    ESP_LOGI(TAG, "change speed again...");
+    speed = ETH_SPEED_100M;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_S_SPEED, &speed));
+
+    // start the driver and wait for connection establish
+    esp_eth_start(eth_handle);
+    bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(ETH_CONNECT_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_SPEED, &exp_speed));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_DUPLEX_MODE, &exp_duplex));
+    TEST_ASSERT_EQUAL(ETH_DUPLEX_HALF, exp_duplex);
+    TEST_ASSERT_EQUAL(ETH_SPEED_100M, exp_speed);
+
+    // Change duplex back to full
+    esp_eth_stop(eth_handle);
+    ESP_LOGI(TAG, "change duplex again...");
+    duplex = ETH_DUPLEX_FULL;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_S_DUPLEX_MODE, &duplex));
+
+    // start the driver and wait for connection establish
+    esp_eth_start(eth_handle);
+    bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(ETH_CONNECT_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_DUPLEX_MODE, &exp_duplex));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_SPEED, &exp_speed));
+
+    TEST_ASSERT_EQUAL(ETH_DUPLEX_FULL, exp_duplex);
+    TEST_ASSERT_EQUAL(ETH_SPEED_100M, exp_speed);
+
+    ESP_LOGI(TAG, "try to change speed/duplex when driver is started and autonegotiation disabled...");
+    speed = ETH_SPEED_10M;
+    duplex = ETH_DUPLEX_HALF;
+
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, esp_eth_ioctl(eth_handle, ETH_CMD_S_DUPLEX_MODE, &duplex));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, esp_eth_ioctl(eth_handle, ETH_CMD_S_SPEED, &speed));
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_DUPLEX_MODE, &exp_duplex));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_SPEED, &exp_speed));
+
+    TEST_ASSERT_EQUAL(ETH_DUPLEX_FULL, exp_duplex);
+    TEST_ASSERT_EQUAL(ETH_SPEED_100M, exp_speed);
+
+    ESP_LOGI(TAG, "change the speed/duplex to 10 Mbps/half and then enable autonegotiation...");
+    esp_eth_stop(eth_handle);
+    speed = ETH_SPEED_10M;
+    duplex = ETH_DUPLEX_HALF;
+
+    // set new duplex mode
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_S_DUPLEX_MODE, &duplex));
+
+    // set new speed
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_S_SPEED, &speed));
+
+    // start the driver and wait for connection establish
+    esp_eth_start(eth_handle);
+    bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(ETH_CONNECT_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_DUPLEX_MODE, &exp_duplex));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_SPEED, &exp_speed));
+
+    TEST_ASSERT_EQUAL(ETH_DUPLEX_HALF, exp_duplex);
+    TEST_ASSERT_EQUAL(ETH_SPEED_10M, exp_speed);
+
+    esp_eth_stop(eth_handle);
+    auto_nego_en = true;
+    esp_eth_ioctl(eth_handle, ETH_CMD_S_AUTONEGO, &auto_nego_en);
+    esp_eth_start(eth_handle);
+    bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(ETH_CONNECT_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_AUTONEGO, &exp_autoneg_en));
+    TEST_ASSERT_EQUAL(true, exp_autoneg_en);
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_DUPLEX_MODE, &exp_duplex));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_eth_ioctl(eth_handle, ETH_CMD_G_SPEED, &exp_speed));
+
+    // verify autonegotiation result (expecting the best link configuration)
+    TEST_ASSERT_EQUAL(ETH_DUPLEX_FULL, exp_duplex);
+    TEST_ASSERT_EQUAL(ETH_SPEED_100M, exp_speed);
+
+    // stop Ethernet driver
+    TEST_ESP_OK(esp_eth_stop(eth_handle));
+    /* wait for connection stop */
+    bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(ETH_STOP_TIMEOUT_MS));
+    TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
+    TEST_ESP_OK(esp_eth_driver_uninstall(eth_handle));
+    TEST_ESP_OK(phy->del(phy));
+    TEST_ESP_OK(mac->del(mac));
+    TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
+    TEST_ESP_OK(esp_event_loop_delete_default());
+    vEventGroupDelete(eth_event_group);
 }
 
 TEST_CASE("esp32 ethernet event test", "[ethernet][test_env=UT_T2_Ethernet]")

@@ -16,7 +16,7 @@
 #include "freertos/timers.h"
 #include "esp_pm.h"
 #include "esp_intr_alloc.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "driver/rtc_io.h"
 #include "driver/rtc_cntl.h"
 #include "driver/gpio.h"

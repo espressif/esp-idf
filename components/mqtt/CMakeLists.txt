@@ -57,9 +57,9 @@ idf_component_get_property(mbedtls_dir mbedtls COMPONENT_DIR)
      ${esp_hw_support_dir}/include/esp_random.h
      ${esp_system_dir}/include/esp_system.h
      ${esp_tls_dir}/esp_tls.h
-     ${freertos_dir}/include/freertos/queue.h
-     ${freertos_dir}/include/freertos/task.h
-     ${freertos_dir}/include/freertos/event_groups.h
+     ${freertos_dir}/FreeRTOS-Kernel/include/freertos/queue.h
+     ${freertos_dir}/FreeRTOS-Kernel/include/freertos/task.h
+     ${freertos_dir}/FreeRTOS-Kernel/include/freertos/event_groups.h
      ${log_dir}/include/esp_log.h
      ${nghttp_dir}/port/include/http_parser.h
      )
@@ -103,7 +103,7 @@ idf_component_get_property(mbedtls_dir mbedtls COMPONENT_DIR)
     ${CMAKE_CURRENT_SOURCE_DIR}/host_test/mocks/include
     ${tcp_transport_dir}/include
     ${esp_tls_dir}
-    ${freertos_dir}/include
+    ${freertos_dir}/FreeRTOS-Kernel/include
     ${esp_event_dir}/include
     ${esp_system_dir}/include
     ${esp_common_dir}/include
@@ -115,7 +115,7 @@ idf_component_get_property(mbedtls_dir mbedtls COMPONENT_DIR)
     ${mbedtls_dir}/port/include
     ${nghttp_dir}/port/include
     ${mbedtls_dir}/mbedtls/include
-    ${freertos_dir}/include/freertos
+    ${freertos_dir}/FreeRTOS-Kernel/include/freertos
     esp-mqtt/lib/include
     ${MOCK_GEN_DIR}
     )

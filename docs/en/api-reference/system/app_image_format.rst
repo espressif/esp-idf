@@ -62,12 +62,12 @@ You can also see the information on segments in the IDF logs while your applicat
 
     For more details on the type of memory segments and their address ranges, see *{IDF_TARGET_NAME} Technical Reference Manual* > *System and Memory* > *Embedded Memory* [`PDF <{IDF_TARGET_TRM_EN_URL}#sysmem>`__].
 
-.. only:: esp32s2 or esp32c3
+.. only:: esp32s2 or esp32s3 or esp32c3
 
     For more details on the type of memory segments and their address ranges, see *{IDF_TARGET_NAME} Technical Reference Manual* > *System and Memory* > *Internal Memory* [`PDF <{IDF_TARGET_TRM_EN_URL}#sysmem>`__].
 
 3. The image has a single checksum byte after the last segment. This byte is written on a sixteen byte padded boundary, so the application image might need padding.
-4. If the ``hash_appended`` field from :cpp:type:`esp_image_header_t` is set then a SHA256 checksum will be appended. The value of SHA256 is calculated on the range from first byte and up to this field. The length of this field is 32 bytes.
+4. If the ``hash_appended`` field from :cpp:type:`esp_image_header_t` is set then a SHA256 checksum will be appended. The value of SHA256 is calculated on the range from the first byte and up to this field. The length of this field is 32 bytes.
 5. If the options :ref:`CONFIG_SECURE_SIGNED_APPS_SCHEME` is set to ECDSA then the application image will have additional 68 bytes for an ECDSA signature, which includes:
 
  * version word (4 bytes),
@@ -78,6 +78,7 @@ Application Description
 
 The ``DROM`` segment starts with the :cpp:type:`esp_app_desc_t` structure which carries specific fields describing the application:
 
+ * ``magic_word`` - the magic word for the esp_app_desc structure.
  * ``secure_version`` - see :doc:`Anti-rollback</api-reference/system/ota>`.
  * ``version`` - see :doc:`App version</api-reference/system/system>`. ``*``
  * ``project_name`` is filled from ``PROJECT_NAME``. ``*``
@@ -92,7 +93,7 @@ This structure is useful for identification of images uploaded OTA because it ha
 Adding a Custom Structure to an Application
 -------------------------------------------
 
-Customer also has the opportunity to have similar structure with a fixed offset relative to the beginning of the image.
+Users also have the opportunity to have similar structure with a fixed offset relative to the beginning of the image.
 The following pattern can be used to add a custom structure to your image:
 
 ::
@@ -101,14 +102,9 @@ The following pattern can be used to add a custom structure to your image:
 
 Offset for custom structure is sizeof(:cpp:type:`esp_image_header_t`) + sizeof(:cpp:type:`esp_image_segment_header_t`) + sizeof(:cpp:type:`esp_app_desc_t`).
 
-To guarantee that the custom structure is located in the image even if it is not used, you need to add:
-
- * For Make: add ``COMPONENT_ADD_LDFLAGS += -u custom_app_desc`` into ``component.mk``
- * For Cmake: add ``target_link_libraries(${COMPONENT_TARGET} "-u custom_app_desc")`` into ``CMakeLists.txt``
+To guarantee that the custom structure is located in the image even if it is not used, you need to add ``target_link_libraries(${COMPONENT_TARGET} "-u custom_app_desc")`` into ``CMakeLists.txt``.
 
 API Reference
 -------------
 
 .. include-build-file:: inc/esp_app_format.inc
-
-

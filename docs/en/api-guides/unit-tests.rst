@@ -4,8 +4,8 @@ Unit Testing in {IDF_TARGET_NAME}
 
 ESP-IDF provides the following methods to test software.
 
-- A unit test application which runs on the target and that is based on the Unity - unit test framework. These unit tests are integrated in the ESP-IDF repository and are placed in the ``test`` subdirectories of each component respectively. Target-based unit tests are covered in this document.
-- Linux-host based unit tests in which all the hardware is abstracted via mocks. Linux-host based tests are still under development and only a small fraction of IDF components supports them currently. They are covered here: :doc:`target based unit testing <linux-host-testing>`.
+- Target based tests using a central unit test application which runs on the {IDF_TARGET_PATH_NAME}. These tests use the `Unity <https://www.throwtheswitch.org/unity>` unit test framework. They can be integrated into an ESP-IDF component by placing them in the component's ``test`` subdirectory. For the most part, this document is about target based tests.
+- Linux-host based unit tests in which all the hardware is abstracted via mocks. Linux-host based tests are still under development and only a small fraction of IDF components support them, currently. They are covered here: :doc:`target based unit testing <linux-host-testing>`.
 
 Normal Test Cases
 ------------------
@@ -18,7 +18,7 @@ Tests are added in a function in the C file as follows:
 
 .. code-block:: c
 
-    TEST_CASE("test name", "[module name]"
+    TEST_CASE("test name", "[module name]")
     {
             // Add test here
     }
@@ -98,7 +98,7 @@ Once the signal is sent from DUT2, you need to press "Enter" on DUT1, then DUT1 
 Multi-stage Test Cases
 -----------------------
 
-The normal test cases are expected to finish without reset (or only need to check if reset happens). Sometimes we expect to run some specific tests after certain kinds of reset. For example, we expect to test if the reset reason is correct after a wakeup from deep sleep. We need to create a deep-sleep reset first and then check the reset reason. To support this, we can define multi-stage test cases, to group a set of test functions::
+The normal test cases are expected to finish without reset (or only need to check if reset happens). Sometimes we expect to run some specific tests after certain kinds of reset. For example, we want to test if the reset reason is correct after a wake up from deep sleep. We need to create a deep-sleep reset first and then check the reset reason. To support this, we can define multi-stage test cases, to group a set of test functions::
 
     static void trigger_deepsleep(void)
     {
@@ -121,7 +121,7 @@ Tests For Different Targets
 
 Some tests (especially those related to hardware) cannot run on all targets. Below is a guide how to make your unit tests run on only specified targets.
 
-1. Wrap your test code by ``!(TEMPORARY_)DISABLED_FOR_TARGETS()`` macros and place them either in the original test file, or sepeprate the code into files grouped by functions, but make sure all these files will be processed by the compiler. E.g.::
+1. Wrap your test code by ``!(TEMPORARY_)DISABLED_FOR_TARGETS()`` macros and place them either in the original test file, or separate the code into files grouped by functions, but make sure all these files will be processed by the compiler. E.g.::
 
       #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP8266)
       TEST_CASE("a test that is not ready for esp32 and esp8266 yet", "[]")
@@ -168,11 +168,11 @@ Change into ``tools/unit-test-app`` directory to configure and build it:
 * ``idf.py menuconfig`` - configure unit test app.
 * ``idf.py -T all build`` - build unit test app with tests for each component having tests in the ``test`` subdirectory.
 * ``idf.py -T "xxx yyy" build`` - build unit test app with tests for some space-separated specific components (For instance: ``idf.py -T heap build`` - build unit tests only for ``heap`` component directory).
-* ``idf.py -T all -E "xxx yyy" build`` - build unit test app with all unit tests, except for unit tests of some components (For instance: ``idf.py -T all -E "ulp mbedtls" build`` - build all unit tests exludes ``ulp`` and ``mbedtls`` components).
+* ``idf.py -T all -E "xxx yyy" build`` - build unit test app with all unit tests, except for unit tests of some components (For instance: ``idf.py -T all -E "ulp mbedtls" build`` - build all unit tests excludes ``ulp`` and ``mbedtls`` components).
 
 .. note::
 
-    Due to inherent limitations of Windows command prompt, following syntax has to be used in order to build unit-test-app with multiple components: ``idf.py -T xxx -T yyy build`` or with escaped quoates: ``idf.py -T \`"xxx yyy\`" build`` in PowerShell or ``idf.py -T \^"ssd1306 hts221\^" build`` in Windows command prompt.
+    Due to inherent limitations of Windows command prompt, following syntax has to be used in order to build unit-test-app with multiple components: ``idf.py -T xxx -T yyy build`` or with escaped quotes: ``idf.py -T \`"xxx yyy\`" build`` in PowerShell or ``idf.py -T \^"ssd1306 hts221\^" build`` in Windows command prompt.
 
 When the build finishes, it will print instructions for flashing the chip. You can simply run ``idf.py flash`` to flash all build output.
 
@@ -257,7 +257,7 @@ However, if the instruction or data is not in cache, it needs to be fetched from
 
 Code and data placements can vary between builds, and some arrangements may be more favorable with regards to cache access (i.e., minimizing cache misses). This can technically affect execution speed, however these factors are usually irrelevant as their effect 'average out' over the device's operation.
 
-The effect of the cache on execution speed, however, can be relevant in benchmarking scenarios (espcially microbenchmarks). There might be some variability in measured time between runs and between different builds. A technique for eliminating for some of the variability is to place code and data in instruction or data RAM (IRAM/DRAM), respectively. The CPU can access IRAM and DRAM directly, eliminating the cache out of the equation. However, this might not always be viable as the size of IRAM and DRAM is limited.
+The effect of the cache on execution speed, however, can be relevant in benchmarking scenarios (especially micro benchmarks). There might be some variability in measured time between runs and between different builds. A technique for eliminating for some of the variability is to place code and data in instruction or data RAM (IRAM/DRAM), respectively. The CPU can access IRAM and DRAM directly, eliminating the cache out of the equation. However, this might not always be viable as the size of IRAM and DRAM is limited.
 
 The cache compensated timer is an alternative to placing the code/data to be benchmarked in IRAM/DRAM. This timer uses the processor's internal event counters in order to determine the amount of time spent on waiting for code/data in case of a cache miss, then subtract that from the recorded wall time.
 
@@ -279,46 +279,80 @@ One limitation of the cache compensated timer is that the task that benchmarked 
 Mocks
 -----
 
-One of the biggest problems for unit testing in embedded systems are the strong hardware dependencies. This is why ESP-IDF has a component which integrates the `CMock <https://www.throwtheswitch.org/cmock>`_ mocking framework. Ideally, all components other than the one which should be tested *(component under test)* are mocked. This way, the test environment has complete control over all the interaction with the component under test. However, if mocking becomes problematic due to the tests becoming too specific, more "real" IDF code can always be included into the tests.
+.. note::
+    Currently, mocking is only possible with some selected components when running on the Linux host. In the future, we plan to make essential components in IDF mockable. This will also include mocking when running on the {IDF_TARGET_NAME}.
 
-Besides the usual IDF requirements, ``ruby`` is necessary to generate the mocks. Refer to :component_file:`cmock/CMock/docs/CMock_Summary.md` for more details on how CMock works and how to create and use mocks.
+One of the biggest problems regarding unit testing of embedded systems are the strong hardware dependencies. Running unit tests directly on the {IDF_TARGET_NAME} can be especially difficult for higher layer components for the following reasons:
 
-In IDF, adjustments are necessary inside the component(s) that should be mocked as well as inside the unit test, compared to writing normal components or unit tests without mocking.
+- Decreased test reliability due to lower layer components and/or hardware setup.
+- Increased difficulty in testing edge cases due to limitations of lower layer components and/or hardware setup
+- Increased difficulty in identifying the root cause due to the large number of dependencies influencing the behavior
 
-Adjustments in Mock Component
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+When testing a particular component, (i.e., the component under test), software mocking allows the dependencies of the component under test to be substituted (i.e., mocked) entirely in software. To allow software mocking, ESP-IDF integrates the `CMock <https://www.throwtheswitch.org/cmock>`_ mocking framework as a component. With the addition of some CMake functions in the ESP-IDF's build system, it is possible to conveniently mock the entirety (or a part of) an IDF component.
 
-The component that should be mocked requires a separate ``mock`` directory containing all additional files needed specifically for the mocking. Most importantly, it contains ``mock_config.yaml`` which configures CMock. For more details on what the options inside that configuration file mean and how to write your own, please take a look at the :component_file:`CMock documentation <cmock/CMock/docs/CMock_Summary.md>`. It may be necessary to have some more files related to mocking which should also be placed inside the `mock` directory.
+Ideally, all components that the component under test is dependent on should be mocked, thus allowing the test environment complete control over all interactions with the component under test. However, if mocking all dependent components becomes too complex or too tedious (e.g. because you need to mock too many function calls) you have the following options:
 
-Furthermore, the component's ``CMakeLists.txt`` needs a switch to build mocks instead of the actual code. This is usually done by checking the component property ``USE_MOCK`` for the particular component. E.g., the ``spi_flash`` component execute the following code in its ``CMakeLists.txt`` to check whether mocks should be built:
+.. list::
+    - Include more "real" IDF code in the tests. This may work but increases the dependency on the "real" code's behavior. Furthermore, once a test fails, you may not know if the failure is in your actual code under tests or the "real" IDF code.
+    - Re-evaluate the design of the code under test and attempt to reduce its dependencies by dividing the code under test into more manageable components. This may seem burdensome but it is common knowledge that unit tests often expose software design weaknesses. Fixing design weaknesses will not only help with unit testing in the short term, but will help future code maintenance as well.
 
-.. code-block:: cmake
+Refer to :component_file:`cmock/CMock/docs/CMock_Summary.md` for more details on how CMock works and how to create and use mocks.
 
-    idf_component_get_property(spi_flash_mock ${COMPONENT_NAME} USE_MOCK)
+Requirements
+^^^^^^^^^^^^
+The following requirements are necessary to generate the mocks: 
 
-An example CMake build command to create mocks of a component inside its ``CMakeLists.txt`` may look like this:
+.. list::
+    - Installed ESP-IDF with all its requirements
+    - ``ruby``
+    - On the Linux target, which is the only target where mocking currently works, ``libbsd`` is required, too
 
-.. code-block:: cmake
+Mock a Component
+^^^^^^^^^^^^^^^^
 
-  add_custom_command(
-    OUTPUT ${MOCK_OUTPUT}
-    COMMAND ruby ${CMOCK_DIR}/lib/cmock.rb -o${CMAKE_CURRENT_SOURCE_DIR}/mock/mock_config.yaml ${MOCK_HEADERS}
-    COMMAND ${CMAKE_COMMAND} -E env "UNITY_DIR=${IDF_PATH}/components/unity/unity" ruby ${CMOCK_DIR}/lib/cmock.rb -o${CMAKE_CURRENT_SOURCE_DIR}/mock/mock_config.yaml ${MOCK_HEADERS}
-    )
+To create a mock version of a component, called a *component mock*, the component needs to be overwritten in a particular way. Overriding a component entails creating a component with the exact same name as the original component, then let the build system discover it later than the original component (see `Multiple components with the same name <cmake-components-same-name>` for more details).
 
-``${MOCK_OUTPUT}`` contains all CMock generated output files, ``${MOCK_HEADERS}`` contains all headers to be mocked and ``${CMOCK_DIR}`` needs to be set to the CMock directory inside IDF. ``${CMAKE_COMMAND}`` is automatically set by the IDF build system.
+In the component mock, the following parts are specified:
 
-One aspect of CMock's usage is special here: CMock usually uses Unity as a submodule, but due to some Espressif-internal limitations with CI, IDF still uses Unity as an ordinary module in ESP-IDF. To use the IDF-supplied Unity component, which isn't a submodule, the build system needs to pass an environment variable ``UNITY_IDR`` to CMock. This variable simply contains the path to the Unity directory in IDF, e.g. ``export "UNITY_DIR=${IDF_PATH}/components/unity/unity"``. Refer to :component_file:`cmock/CMock/lib/cmock_generator.rb` to see how the Unity directory is determined in CMock.
+.. list::
+    - The headers providing the functions to generate mocks for
+    - Include paths of the aforementioned headers 
+    - Dependencies of the mock component (this is necessary e.g. if the headers include files from other components)
 
-An example ``CMakeLists.txt`` which enables mocking exists :component_file:`in spi_flash <spi_flash/CMakeLists.txt>`
+All these parts have to be specified using the IDF build system function ``idf_component_mock``. You can use the IDF build system function ``idf_component_get_property`` with the tag ``COMPONENT_OVERRIDEN_DIR`` to access the component directory of the original component and then register the mock component parts using ``idf_component_mock``:
+
+.. code:: none
+
+    idf_component_get_property(original_component_dir <original-component-name> COMPONENT_OVERRIDEN_DIR)
+    ...
+    idf_component_mock(INCLUDE_DIRS "${original_component_dir}/include"
+        REQUIRES freertos
+        MOCK_HEADER_FILES ${original_component_dir}/include/header_containing_functions_to_mock.h)
+
+The component mock also requires a separate ``mock`` directory containing a ``mock_config.yaml`` file that configures CMock. A simple ``mock_config.yaml`` could look like this:
+
+  .. code-block:: yaml
+
+    :cmock:
+      :plugins:
+        - expect
+        - expect_any_args
+
+For more details about the CMock configuration yaml file, have a look at :component_file:`cmock/CMock/docs/CMock_Summary.md`.
+
+Note that the component mock does not have to mock the original component in its entirety. As long as the test project's dependencies and dependencies of other code to the original components are satisfied by the component mock, partial mocking is adequate. In fact, most of the component mocks in IDF in ``tools/mocks`` are only partially mocking the original component.
+
+Examples of component mocks can be found under :idf:`tools/mocks` in the IDF directory. General information on how to *override an IDF component* can be found under the section "Multiple components with the same name" in the :doc:`IDF build system documentation`</api-guides/build-system>`.
 
 Adjustments in Unit Test
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-The unit test needs to set the component property ``USE_MOCK`` for the component that should be mocked. This lets the dependent component build the mocks instead of the actual component. E.g., in the nvs host test's :component_file:`CMakeLists.txt <nvs_flash/host_test/nvs_page_test/CMakeLists.txt>`, ``spi_flash`` mocks are enabled by the following line:
+The unit test needs to inform the cmake build system to mock dependent components (i.e., it needs to override the original component with the mock component). This is done by either placing the component mock into the project's ``components`` directory or adding the mock component's directory using the following line in the project's root ``CMakeLists.txt``:
 
-.. code-block:: cmake
+  .. code:: cmake
 
-    idf_component_set_property(spi_flash USE_MOCK 1)
+    list(APPEND EXTRA_COMPONENT_DIRS "<mock_component_dir>")
 
-Refer to the :component_file:`NVS host unit test <nvs_flash/host_test/nvs_page_test/README.md>` for more information on how to use and control CMock inside a unit test.
+Both methods will override existing components in ESP-IDF with the component mock. The latter is particularly convenient if you use component mocks that are already supplied by IDF.
+
+Users should refer to the ``esp_event`` host-based unit test and its :component_file:`esp_event/host_test/esp_event_unit_test/CMakeLists.txt` as an example of a component mock.

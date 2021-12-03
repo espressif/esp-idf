@@ -14,6 +14,14 @@ workflow:
     # Disable those non-protected push triggered pipelines
     - if: '$CI_COMMIT_REF_NAME != "master" && $CI_COMMIT_BRANCH !~ /^release\/v/ && $CI_COMMIT_TAG !~ /^v\d+\.\d+(\.\d+)?($|-)/ && $CI_PIPELINE_SOURCE == "push"'
       when: never
+    # when running merged result pipelines, it would create a temp commit id. use $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA instead of $CI_COMMIT_SHA.
+    # Please use PIPELINE_COMMIT_SHA at all places that require a commit sha
+    - if: $CI_OPEN_MERGE_REQUESTS != null
+      variables:
+        PIPELINE_COMMIT_SHA: $CI_MERGE_REQUEST_SOURCE_BRANCH_SHA
+    - if: $CI_OPEN_MERGE_REQUESTS == null
+      variables:
+        PIPELINE_COMMIT_SHA: $CI_COMMIT_SHA
     - when: always
 
 variables:
@@ -61,6 +69,7 @@ variables:
   TEST_ENV_CONFIG_REPO: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/qa/ci-test-runner-configs.git"
   CI_AUTO_TEST_SCRIPT_REPO_URL: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/qa/auto_test_script.git"
   CI_AUTO_TEST_SCRIPT_REPO_BRANCH: "ci/v3.1"
+  PYTEST_EMBEDDED_TAG: "v0.4.5"
 
 .setup_tools_unless_target_test: &setup_tools_unless_target_test |
   if [[ -n "$IDF_DONT_USE_MIRRORS" ]]; then
@@ -114,6 +123,25 @@ before_script:
     # Part of tools/ci/setup_python.sh; we don't use pyenv on macOS, so can't run the rest of the script.
     - export PYTHONPATH="$IDF_PATH/tools:$IDF_PATH/tools/ci/python_packages:$PYTHONPATH"
     - fetch_submodules
+
+.before_script_pytest:
+  before_script:
+    - source tools/ci/utils.sh
+    - source tools/ci/setup_python.sh
+    - add_gitlab_ssh_keys
+    - source tools/ci/configure_ci_environment.sh
+    - *setup_tools_unless_target_test
+    - fetch_submodules
+    - cd /tmp
+    - retry_failed git clone --depth 1 --branch $PYTEST_EMBEDDED_TAG https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/idf/pytest-embedded.git
+    - cd pytest-embedded && bash foreach.sh install
+    - cd $IDF_PATH
+
+default:
+  retry:
+    max: 2
+    # In case of a runner failure we could hop to another one, or a network error could go away.
+    when: runner_system_failure
 
 include:
   - '.gitlab/ci/rules.yml'

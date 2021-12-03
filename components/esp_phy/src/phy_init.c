@@ -23,7 +23,7 @@
 #include "phy.h"
 #include "phy_init_data.h"
 #include "esp_coexist_internal.h"
-#include "driver/periph_ctrl.h"
+#include "esp_private/periph_ctrl.h"
 #include "esp_private/wifi.h"
 #include "esp_rom_crc.h"
 #include "esp_rom_sys.h"
@@ -649,6 +649,10 @@ void esp_phy_load_cal_and_init(void)
         ESP_LOGE(TAG, "failed to obtain PHY init data");
         abort();
     }
+#endif
+
+#if CONFIG_ESP_PHY_ENABLE_USB
+    phy_bbpll_en_usb(true);
 #endif
 
 #ifdef CONFIG_ESP_PHY_CALIBRATION_AND_DATA_STORAGE

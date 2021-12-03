@@ -66,7 +66,6 @@
 /components/asio/                     @esp-idf-codeowners/network
 /components/bootloader*/              @esp-idf-codeowners/system @esp-idf-codeowners/security
 /components/bt/                       @esp-idf-codeowners/bluetooth
-/components/cbor/                     @esp-idf-codeowners/app-utilities
 /components/cmock/                    @esp-idf-codeowners/system
 /components/coap/                     @esp-idf-codeowners/app-utilities
 /components/console/                  @esp-idf-codeowners/system @esp-idf-codeowners/app-utilities
@@ -85,7 +84,6 @@
 /components/esp_https_ota/            @esp-idf-codeowners/app-utilities
 /components/esp_https_server/         @esp-idf-codeowners/app-utilities
 /components/esp_hw_support/           @esp-idf-codeowners/system
-/components/esp_ipc/                  @esp-idf-codeowners/system
 /components/esp_lcd/                  @esp-idf-codeowners/peripherals
 /components/esp_local_ctrl/           @esp-idf-codeowners/app-utilities
 /components/esp_netif/                @esp-idf-codeowners/network
@@ -103,15 +101,14 @@
 /components/esptool_py/               @esp-idf-codeowners/tools
 /components/expat/                    @esp-idf-codeowners/app-utilities
 /components/fatfs/                    @esp-idf-codeowners/storage
+/components/fatfs/**/*.py             @esp-idf-codeowners/tools
 /components/freemodbus/               @esp-idf-codeowners/peripherals
 /components/freertos/                 @esp-idf-codeowners/system
 /components/hal/                      @esp-idf-codeowners/peripherals
 /components/heap/                     @esp-idf-codeowners/system
 /components/idf_test/                 @esp-idf-codeowners/ci
 /components/ieee802154/               @esp-idf-codeowners/ieee802154
-/components/jsmn/                     @esp-idf-codeowners/app-utilities
 /components/json/                     @esp-idf-codeowners/app-utilities
-/components/libsodium/                @esp-idf-codeowners/security
 /components/log/                      @esp-idf-codeowners/system
 /components/lwip/                     @esp-idf-codeowners/lwip
 /components/mbedtls/                  @esp-idf-codeowners/app-utilities @esp-idf-codeowners/security
@@ -170,10 +167,9 @@
 /examples/storage/            @esp-idf-codeowners/storage
 /examples/system/             @esp-idf-codeowners/system
 /examples/wifi/               @esp-idf-codeowners/wifi
+/examples/zigbee/             @esp-idf-codeowners/ieee802154
 
 /examples/**/*.py             @esp-idf-codeowners/ci @esp-idf-codeowners/tools
-
-/make/    @esp-idf-codeowners/build-config
 
 /tools/                       @esp-idf-codeowners/tools
 /tools/*_apps.py              @esp-idf-codeowners/ci
@@ -204,8 +200,6 @@ requirements.txt              @esp-idf-codeowners/tools
 # sort-order-reset
 
 # ignore lists
-/tools/ci/check_copyright_ignore.txt                    @esp-idf-codeowners/tools
+/tools/ci/check_copyright_ignore.txt                    @esp-idf-codeowners/all-maintainers
 /tools/ci/check_copyright_permanent_ignore.txt          @esp-idf-codeowners/all-maintainers
-/tools/ci/check_examples_cmake_make-cmake_ignore.txt    @esp-idf-codeowners/tools
-/tools/ci/check_examples_cmake_make-make_ignore.txt     @esp-idf-codeowners/tools
 /tools/ci/mypy_ignore_list.txt                          @esp-idf-codeowners/tools

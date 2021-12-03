@@ -1,16 +1,8 @@
-// Copyright 2019-2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <string.h>
 #include <stdlib.h>
 #include <sys/cdefs.h>
@@ -337,7 +329,8 @@ static esp_err_t lan87xx_reset_hw(esp_eth_phy_t *phy)
         esp_rom_gpio_pad_select_gpio(lan87xx->reset_gpio_num);
         gpio_set_direction(lan87xx->reset_gpio_num, GPIO_MODE_OUTPUT);
         gpio_set_level(lan87xx->reset_gpio_num, 0);
-        esp_rom_delay_us(100); // insert min input assert time
+        /* assert nRST signal on LAN87xx a little longer than the minimum specified in datasheet */
+        esp_rom_delay_us(150);
         gpio_set_level(lan87xx->reset_gpio_num, 1);
     }
     return ESP_OK;
@@ -348,37 +341,64 @@ static esp_err_t lan87xx_reset_hw(esp_eth_phy_t *phy)
  *       the result of negotiation won't be relected to uppler layers.
  *       Instead, the negotiation result is fetched by linker timer, see `lan87xx_get_link()`
  */
-static esp_err_t lan87xx_negotiate(esp_eth_phy_t *phy)
+static esp_err_t lan87xx_autonego_ctrl(esp_eth_phy_t *phy, eth_phy_autoneg_cmd_t cmd, bool *autonego_en_stat)
 {
     esp_err_t ret = ESP_OK;
     phy_lan87xx_t *lan87xx = __containerof(phy, phy_lan87xx_t, parent);
     esp_eth_mediator_t *eth = lan87xx->eth;
-    /* in case any link status has changed, let's assume we're in link down status */
-    lan87xx->link_status = ETH_LINK_DOWN;
-    /* Restart auto negotiation */
-    bmcr_reg_t bmcr = {
-        .speed_select = 1,     /* 100Mbps */
-        .duplex_mode = 1,      /* Full Duplex */
-        .en_auto_nego = 1,     /* Auto Negotiation */
-        .restart_auto_nego = 1 /* Restart Auto Negotiation */
-    };
-    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, lan87xx->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
-    /* Wait for auto negotiation complete */
-    bmsr_reg_t bmsr;
-    pscsr_reg_t pscsr;
-    uint32_t to = 0;
-    for (to = 0; to < lan87xx->autonego_timeout_ms / 100; to++) {
-        vTaskDelay(pdMS_TO_TICKS(100));
-        ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan87xx->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)), err, TAG, "read BMSR failed");
-        ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan87xx->addr, ETH_PHY_PSCSR_REG_ADDR, &(pscsr.val)), err, TAG, "read PSCSR failed");
-        if (bmsr.auto_nego_complete && pscsr.auto_nego_done) {
-            break;
+
+    bmcr_reg_t bmcr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan87xx->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+
+    switch (cmd) {
+    case ESP_ETH_PHY_AUTONEGO_RESTART:
+        ESP_GOTO_ON_FALSE(bmcr.en_auto_nego, ESP_ERR_INVALID_STATE, err, TAG, "auto negotiation is disabled");
+        /* in case any link status has changed, let's assume we're in link down status */
+        lan87xx->link_status = ETH_LINK_DOWN;
+
+        bmcr.restart_auto_nego = 1; /* Restart Auto Negotiation */
+
+        ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, lan87xx->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+        /* Wait for auto negotiation complete */
+        bmsr_reg_t bmsr;
+        uint32_t to = 0;
+        for (to = 0; to < lan87xx->autonego_timeout_ms / 100; to++) {
+            vTaskDelay(pdMS_TO_TICKS(100));
+            ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan87xx->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)), err, TAG, "read BMSR failed");
+            if (bmsr.auto_nego_complete) {
+                break;
+            }
         }
+        if ((to >= lan87xx->autonego_timeout_ms / 100) && (lan87xx->link_status == ETH_LINK_UP)) {
+            ESP_LOGW(TAG, "auto negotiation timeout");
+        }
+        break;
+    case ESP_ETH_PHY_AUTONEGO_DIS:
+        if (bmcr.en_auto_nego == 1) {
+            bmcr.en_auto_nego = 0;     /* Disable Auto Negotiation */
+            ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, lan87xx->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+            /* read configuration back */
+            ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan87xx->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+            ESP_GOTO_ON_FALSE(bmcr.en_auto_nego == 0, ESP_FAIL, err, TAG, "disable auto-negotiation failed");
+        }
+        break;
+    case ESP_ETH_PHY_AUTONEGO_EN:
+        if (bmcr.en_auto_nego == 0) {
+            bmcr.en_auto_nego = 1;     /* Enable Auto Negotiation */
+            ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, lan87xx->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+            /* read configuration back */
+            ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan87xx->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+            ESP_GOTO_ON_FALSE(bmcr.en_auto_nego == 1, ESP_FAIL, err, TAG, "enable auto-negotiation failed");
+        }
+        break;
+    case ESP_ETH_PHY_AUTONEGO_G_STAT:
+        /* do nothing autonego_en_stat is set at the function end */
+        break;
+    default:
+        return ESP_ERR_INVALID_ARG;
     }
-    /* Auto negotiation failed, maybe no network cable plugged in, so output a warning */
-    if (to >= lan87xx->autonego_timeout_ms / 100 && (lan87xx->link_status == ETH_LINK_UP)) {
-        ESP_LOGW(TAG, "auto negotiation timeout");
-    }
+
+    *autonego_en_stat = bmcr.en_auto_nego;
     return ESP_OK;
 err:
     return ret;
@@ -484,6 +504,51 @@ err:
     return ret;
 }
 
+static esp_err_t lan87xx_set_speed(esp_eth_phy_t *phy, eth_speed_t speed)
+{
+    esp_err_t ret = ESP_OK;
+    phy_lan87xx_t *lan87xx = __containerof(phy, phy_lan87xx_t, parent);
+    esp_eth_mediator_t *eth = lan87xx->eth;
+    if (lan87xx->link_status == ETH_LINK_UP) {
+        /* Since the link is going to be reconfigured, consider it down for a while */
+        lan87xx->link_status = ETH_LINK_DOWN;
+        /* Indicate to upper stream apps the link is cosidered down */
+        ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)lan87xx->link_status), err, TAG, "change link failed");
+    }
+    /* Set speed */
+    bmcr_reg_t bmcr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan87xx->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+    bmcr.speed_select = speed;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, lan87xx->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+
+    return ESP_OK;
+err:
+    return ret;
+}
+
+static esp_err_t lan87xx_set_duplex(esp_eth_phy_t *phy, eth_duplex_t duplex)
+{
+    esp_err_t ret = ESP_OK;
+    phy_lan87xx_t *lan87xx = __containerof(phy, phy_lan87xx_t, parent);
+    esp_eth_mediator_t *eth = lan87xx->eth;
+
+    if (lan87xx->link_status == ETH_LINK_UP) {
+        /* Since the link is going to be reconfigured, consider it down for a while */
+        lan87xx->link_status = ETH_LINK_DOWN;
+        /* Indicate to upper stream apps the link is cosidered down */
+        ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)lan87xx->link_status), err, TAG, "change link failed");
+    }
+    /* Set duplex mode */
+    bmcr_reg_t bmcr;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, lan87xx->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+    bmcr.duplex_mode = duplex;
+    ESP_GOTO_ON_ERROR(eth->phy_reg_write(eth, lan87xx->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val), err, TAG, "write BMCR failed");
+
+    return ESP_OK;
+err:
+    return ret;
+}
+
 static esp_err_t lan87xx_init(esp_eth_phy_t *phy)
 {
     esp_err_t ret = ESP_OK;
@@ -542,12 +607,14 @@ esp_eth_phy_t *esp_eth_phy_new_lan87xx(const eth_phy_config_t *config)
     lan87xx->parent.init = lan87xx_init;
     lan87xx->parent.deinit = lan87xx_deinit;
     lan87xx->parent.set_mediator = lan87xx_set_mediator;
-    lan87xx->parent.negotiate = lan87xx_negotiate;
+    lan87xx->parent.autonego_ctrl = lan87xx_autonego_ctrl;
     lan87xx->parent.get_link = lan87xx_get_link;
     lan87xx->parent.pwrctl = lan87xx_pwrctl;
     lan87xx->parent.get_addr = lan87xx_get_addr;
     lan87xx->parent.set_addr = lan87xx_set_addr;
     lan87xx->parent.loopback = lan87xx_loopback;
+    lan87xx->parent.set_speed = lan87xx_set_speed;
+    lan87xx->parent.set_duplex = lan87xx_set_duplex;
     lan87xx->parent.advertise_pause_ability = lan87xx_advertise_pause_ability;
     lan87xx->parent.del = lan87xx_del;
 

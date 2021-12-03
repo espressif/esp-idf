@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 //
 // How It Works
 // ************
@@ -143,28 +149,16 @@
 #include "sdkconfig.h"
 #include "soc/soc.h"
 #include "soc/dport_access.h"
-#if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
+#include "soc/tracemem_config.h"
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 #include "soc/sensitive_reg.h"
 #endif
 #include "eri.h"
-#include "trax.h"
+#include "esp_private/trax.h"
 #include "esp_log.h"
 #include "esp_app_trace_membufs_proto.h"
 #include "esp_app_trace_port.h"
-
-// TODO: move these (and same definitions in trax.c to dport_reg.h)
-#if CONFIG_IDF_TARGET_ESP32
-#define TRACEMEM_MUX_PROBLK0_APPBLK1            0
-#define TRACEMEM_MUX_BLK0_ONLY                  1
-#define TRACEMEM_MUX_BLK1_ONLY                  2
-#define TRACEMEM_MUX_PROBLK1_APPBLK0            3
-#elif CONFIG_IDF_TARGET_ESP32S2
-#define TRACEMEM_MUX_BLK0_NUM                   19
-#define TRACEMEM_MUX_BLK1_NUM                   20
-#define TRACEMEM_BLK_NUM2ADDR(_n_)              (0x3FFB8000UL + 0x4000UL*((_n_)-4))
-#endif
 
 // TRAX is disabled, so we use its registers for our own purposes
 // | 31..XXXXXX..24 | 23 .(host_connect). 23 | 22 .(host_data). 22| 21..(block_id)..15 | 14..(block_len)..0 |
@@ -181,18 +175,6 @@
 #define ESP_APPTRACE_TRAX_HOST_CONNECT          (1 << 23)
 
 #define ESP_APPTRACE_TRAX_INITED(_hw_)          ((_hw_)->inited & (1 << cpu_hal_get_core_id()))
-
-#if CONFIG_IDF_TARGET_ESP32
-static uint8_t * const s_trax_blocks[] = {
-    (uint8_t *) 0x3FFFC000,
-    (uint8_t *) 0x3FFF8000
-};
-#elif CONFIG_IDF_TARGET_ESP32S2
-static uint8_t * const s_trax_blocks[] = {
-    (uint8_t *)TRACEMEM_BLK_NUM2ADDR(TRACEMEM_MUX_BLK0_NUM),
-    (uint8_t *)TRACEMEM_BLK_NUM2ADDR(TRACEMEM_MUX_BLK1_NUM)
-};
-#endif
 
 #define ESP_APPTRACE_TRAX_BLOCK_SIZE            (0x4000UL)
 
@@ -222,6 +204,12 @@ static bool esp_apptrace_trax_host_data_pending(void);
 
 
 const static char *TAG = "esp_apptrace";
+
+static uint8_t * const s_trax_blocks[] = {
+    (uint8_t *)TRACEMEM_BLK0_ADDR,
+    (uint8_t *)TRACEMEM_BLK1_ADDR
+};
+
 
 esp_apptrace_hw_t *esp_apptrace_uart_hw_get(int num, void **data)
 {
@@ -300,6 +288,14 @@ static inline void esp_apptrace_trax_select_memory_block(int block_num)
     DPORT_WRITE_PERI_REG(DPORT_TRACEMEM_MUX_MODE_REG, block_num ? TRACEMEM_MUX_BLK0_ONLY : TRACEMEM_MUX_BLK1_ONLY);
 #elif CONFIG_IDF_TARGET_ESP32S2
     WRITE_PERI_REG(DPORT_PMS_OCCUPY_3_REG, block_num ? BIT(TRACEMEM_MUX_BLK0_NUM-4) : BIT(TRACEMEM_MUX_BLK1_NUM-4));
+#elif CONFIG_IDF_TARGET_ESP32S3
+    // select memory block to be exposed to the TRAX module (accessed by host)
+    uint32_t block_bits = block_num ? TRACEMEM_CORE0_MUX_BLK_BITS(TRACEMEM_MUX_BLK0_NUM)
+                        : TRACEMEM_CORE0_MUX_BLK_BITS(TRACEMEM_MUX_BLK1_NUM);
+    block_bits |= block_num ? TRACEMEM_CORE1_MUX_BLK_BITS(TRACEMEM_MUX_BLK0_NUM)
+                        : TRACEMEM_CORE1_MUX_BLK_BITS(TRACEMEM_MUX_BLK1_NUM);
+    ESP_EARLY_LOGV(TAG, "Select block %d @ %p (bits 0x%x)", block_num, s_trax_blocks[block_num], block_bits);
+    DPORT_WRITE_PERI_REG(SENSITIVE_INTERNAL_SRAM_USAGE_2_REG, block_bits);
 #endif
 }
 
