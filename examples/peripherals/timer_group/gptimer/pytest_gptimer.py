@@ -5,10 +5,7 @@ import pytest
 from pytest_embedded.dut import Dut
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
-@pytest.mark.esp32c3
+@pytest.mark.supported_targets
 @pytest.mark.generic
 def test_gptimer_example(dut: Dut) -> None:
     dut.expect(r'Create timer handle', timeout=5)

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 # pylint: disable=W0621  # redefined-outer-name
@@ -25,6 +25,9 @@ from _pytest.nodes import Item
 from pytest_embedded.plugin import parse_configuration
 from pytest_embedded_idf.app import IdfApp
 
+SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3']
+PREVIEW_TARGETS = ['linux', 'esp32h2', 'esp8684']
+
 
 ##################
 # Help Functions #
@@ -43,29 +46,13 @@ def format_case_id(target: str, config: str, case: str) -> str:
     return f'{target}.{config}.{case}'
 
 
+def item_marker_names(item: Item) -> List[str]:
+    return [marker.name for marker in item.iter_markers()]
+
+
 ############
 # Fixtures #
 ############
-@pytest.fixture(scope='session')
-def target_markers(pytestconfig: Config) -> List[str]:
-    res = []
-    for item in pytestconfig.getini('markers'):
-        marker = item.split(':')[0]
-        if is_target_marker(marker):
-            res.append(marker)
-    return res
-
-
-@pytest.fixture(scope='session')
-def env_markers(pytestconfig: Config) -> List[str]:
-    res = []
-    for item in pytestconfig.getini('markers'):
-        marker = item.split(':')[0]
-        if not marker.startswith('esp32'):
-            res.append(marker)
-    return res
-
-
 @pytest.fixture
 def config(request: FixtureRequest) -> str:
     return getattr(request, 'param', None) or request.config.getoption('config', 'default')  # type: ignore
@@ -136,5 +123,17 @@ def pytest_collection_modifyitems(config: Config, items: List[Item]) -> None:
     if not target:
         return
 
+    # add markers for special markers
+    for item in items:
+        if 'supported_targets' in item_marker_names(item):
+            for target in SUPPORTED_TARGETS:
+                item.add_marker(target)
+        if 'preview_targets' in item_marker_names(item):
+            for target in PREVIEW_TARGETS:
+                item.add_marker(target)
+        if 'all_targets' in item_marker_names(item):
+            for target in [*SUPPORTED_TARGETS, *PREVIEW_TARGETS]:
+                item.add_marker(target)
+
     # filter all the test cases with "--target"
-    items[:] = [item for item in items if target in [marker.name for marker in item.iter_markers()]]
+    items[:] = [item for item in items if target in item_marker_names(item)]
