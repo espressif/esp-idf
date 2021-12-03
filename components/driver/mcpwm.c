@@ -463,7 +463,7 @@ esp_err_t mcpwm_deadtime_enable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num,
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.red_outinvert = 0;    //S2
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.fed_outinvert = 0;    //S3
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.red_insel = 0;        //S4
-        MCPWM[mcpwm_num]->channel[timer_num].db_cfg.fed_insel = 1;        //S5
+        MCPWM[mcpwm_num]->channel[timer_num].db_cfg.fed_insel = 0;        //S5
         break;
     case MCPWM_BYPASS_FED:
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.b_outbypass = 1;      //S0
@@ -479,7 +479,7 @@ esp_err_t mcpwm_deadtime_enable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num,
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.red_outinvert = 0;    //S2
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.fed_outinvert = 0;    //S3
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.red_insel = 0;        //S4
-        MCPWM[mcpwm_num]->channel[timer_num].db_cfg.fed_insel = 1;        //S5
+        MCPWM[mcpwm_num]->channel[timer_num].db_cfg.fed_insel = 0;        //S5
         break;
     case MCPWM_ACTIVE_LOW_MODE:
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.b_outbypass = 0;      //S0
@@ -487,7 +487,7 @@ esp_err_t mcpwm_deadtime_enable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num,
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.red_outinvert = 1;    //S2
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.fed_outinvert = 1;    //S3
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.red_insel = 0;        //S4
-        MCPWM[mcpwm_num]->channel[timer_num].db_cfg.fed_insel = 1;        //S5
+        MCPWM[mcpwm_num]->channel[timer_num].db_cfg.fed_insel = 0;        //S5
         break;
     case MCPWM_ACTIVE_HIGH_COMPLIMENT_MODE:
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.b_outbypass = 0;      //S0
@@ -495,20 +495,20 @@ esp_err_t mcpwm_deadtime_enable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num,
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.red_outinvert = 0;    //S2
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.fed_outinvert = 1;    //S3
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.red_insel = 0;        //S4
-        MCPWM[mcpwm_num]->channel[timer_num].db_cfg.fed_insel = 1;        //S5
+        MCPWM[mcpwm_num]->channel[timer_num].db_cfg.fed_insel = 0;        //S5
         break;
     case MCPWM_ACTIVE_LOW_COMPLIMENT_MODE:
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.b_outbypass = 0;      //S0
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.a_outbypass = 0;      //S1
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.red_outinvert = 1;    //S2
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.fed_outinvert = 0;    //S3
-        MCPWM[mcpwm_num]->channel[timer_num].db_cfg.red_insel = 1;        //S4
+        MCPWM[mcpwm_num]->channel[timer_num].db_cfg.red_insel = 0;        //S4
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.fed_insel = 0;        //S5
         break;
     case MCPWM_ACTIVE_RED_FED_FROM_PWMXA:
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.b_outbypass = 0;      //S0
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.fed_outinvert = 0;    //S3
-        MCPWM[mcpwm_num]->channel[timer_num].db_cfg.red_insel = 1;        //S4
+        MCPWM[mcpwm_num]->channel[timer_num].db_cfg.red_insel = 0;        //S4
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.a_outswap = 1;        //S6
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.b_outswap = 0;        //S7
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.deb_mode = 1;         //S8
@@ -516,7 +516,7 @@ esp_err_t mcpwm_deadtime_enable(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num,
     case MCPWM_ACTIVE_RED_FED_FROM_PWMXB:
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.b_outbypass = 0;      //S0
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.fed_outinvert = 0;    //S3
-        MCPWM[mcpwm_num]->channel[timer_num].db_cfg.red_insel = 0;        //S4
+        MCPWM[mcpwm_num]->channel[timer_num].db_cfg.red_insel = 1;        //S4
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.a_outswap = 1;        //S6
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.b_outswap = 0;        //S7
         MCPWM[mcpwm_num]->channel[timer_num].db_cfg.deb_mode = 1;         //S8
