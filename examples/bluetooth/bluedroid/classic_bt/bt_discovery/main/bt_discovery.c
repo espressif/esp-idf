@@ -120,6 +120,10 @@ static void update_device_info(esp_bt_gap_cb_param_t *param)
     char bda_str[18];
     uint32_t cod = 0;
     int32_t rssi = -129; /* invalid value */
+    uint8_t *bdname = NULL;
+    uint8_t bdname_len = 0;
+    uint8_t *eir = NULL;
+    uint8_t eir_len = 0;
     esp_bt_gap_dev_prop_t *p;
 
     ESP_LOGI(GAP_TAG, "Device found: %s", bda2str(param->disc_res.bda, bda_str, 18));
@@ -135,6 +139,15 @@ static void update_device_info(esp_bt_gap_cb_param_t *param)
             ESP_LOGI(GAP_TAG, "--RSSI: %d", rssi);
             break;
         case ESP_BT_GAP_DEV_PROP_BDNAME:
+            bdname_len = (p->len > ESP_BT_GAP_MAX_BDNAME_LEN) ? ESP_BT_GAP_MAX_BDNAME_LEN :
+                          (uint8_t)p->len;
+            bdname = (uint8_t *)(p->val);
+            break;
+        case ESP_BT_GAP_DEV_PROP_EIR: {
+            eir_len = p->len;
+            eir = (uint8_t *)(p->val);
+            break;
+        }
         default:
             break;
         }
@@ -142,7 +155,7 @@ static void update_device_info(esp_bt_gap_cb_param_t *param)
 
     /* search for device with MAJOR service class as "rendering" in COD */
     app_gap_cb_t *p_dev = &m_dev_info;
-    if (p_dev->dev_found && 0 != memcmp(param->disc_res.bda, p_dev->bda, ESP_BD_ADDR_LEN)) {
+    if (p_dev->dev_found) {
         return;
     }
 
@@ -154,40 +167,27 @@ static void update_device_info(esp_bt_gap_cb_param_t *param)
 
     memcpy(p_dev->bda, param->disc_res.bda, ESP_BD_ADDR_LEN);
     p_dev->dev_found = true;
-    for (int i = 0; i < param->disc_res.num_prop; i++) {
-        p = param->disc_res.prop + i;
-        switch (p->type) {
-        case ESP_BT_GAP_DEV_PROP_COD:
-            p_dev->cod = *(uint32_t *)(p->val);
-            break;
-        case ESP_BT_GAP_DEV_PROP_RSSI:
-            p_dev->rssi = *(int8_t *)(p->val);
-            break;
-        case ESP_BT_GAP_DEV_PROP_BDNAME: {
-            uint8_t len = (p->len > ESP_BT_GAP_MAX_BDNAME_LEN) ? ESP_BT_GAP_MAX_BDNAME_LEN :
-                          (uint8_t)p->len;
-            memcpy(p_dev->bdname, (uint8_t *)(p->val), len);
-            p_dev->bdname[len] = '\0';
-            p_dev->bdname_len = len;
-            break;
-        }
-        case ESP_BT_GAP_DEV_PROP_EIR: {
-            memcpy(p_dev->eir, (uint8_t *)(p->val), p->len);
-            p_dev->eir_len = p->len;
-            break;
-        }
-        default:
-            break;
-        }
+
+    p_dev->cod = cod;
+    p_dev->rssi = rssi;
+    if (bdname_len > 0) {
+        memcpy(p_dev->bdname, bdname, bdname_len);
+        p_dev->bdname[bdname_len] = '\0';
+        p_dev->bdname_len = bdname_len;
+    }
+    if (eir_len > 0) {
+        memcpy(p_dev->eir, eir, eir_len);
+        p_dev->eir_len = eir_len;
     }
 
     if (p_dev->eir && p_dev->bdname_len == 0) {
         get_name_from_eir(p_dev->eir, p_dev->bdname, &p_dev->bdname_len);
-        ESP_LOGI(GAP_TAG, "Found a target device, address %s, name %s", bda_str, p_dev->bdname);
-        p_dev->state = APP_GAP_STATE_DEVICE_DISCOVER_COMPLETE;
-        ESP_LOGI(GAP_TAG, "Cancel device discovery ...");
-        esp_bt_gap_cancel_discovery();
     }
+
+    ESP_LOGI(GAP_TAG, "Found a target device, address %s, name %s", bda_str, p_dev->bdname);
+    p_dev->state = APP_GAP_STATE_DEVICE_DISCOVER_COMPLETE;
+    ESP_LOGI(GAP_TAG, "Cancel device discovery ...");
+    esp_bt_gap_cancel_discovery();
 }
 
 static void bt_app_gap_init(void)
@@ -195,8 +195,7 @@ static void bt_app_gap_init(void)
     app_gap_cb_t *p_dev = &m_dev_info;
     memset(p_dev, 0, sizeof(app_gap_cb_t));
 
-    /* start to discover nearby Bluetooth devices */
-    p_dev->state = APP_GAP_STATE_DEVICE_DISCOVERING;
+    p_dev->state = APP_GAP_STATE_IDLE;
 }
 
 static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
@@ -234,7 +233,6 @@ static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
                 for (int i = 0; i < param->rmt_srvcs.num_uuids; i++) {
                     esp_bt_uuid_t *u = param->rmt_srvcs.uuid_list + i;
                     ESP_LOGI(GAP_TAG, "--%s", uuid2str(u, uuid_str, 37));
-                    // ESP_LOGI(GAP_TAG, "--%d", u->len);
                 }
             } else {
                 ESP_LOGI(GAP_TAG, "Services for device %s not found",  bda2str(p_dev->bda, bda_str, 18));
@@ -265,6 +263,9 @@ static void bt_app_gap_start_up(void)
     /* inititialize device information and status */
     bt_app_gap_init();
 
+    /* start to discover nearby Bluetooth devices */
+    app_gap_cb_t *p_dev = &m_dev_info;
+    p_dev->state = APP_GAP_STATE_DEVICE_DISCOVERING;
     esp_bt_gap_start_discovery(ESP_BT_INQ_MODE_GENERAL_INQUIRY, 10, 0);
 }
 
