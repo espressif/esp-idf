@@ -46,7 +46,7 @@ menu "OpenThread"
         config OPENTHREAD_RADIO
             bool "Radio Only Device"
             help
-                Select this to enable Radio Only Device which cannot can only forward 15.4 packets to the host.
+                Select this to enable Radio Only Device which can only forward 15.4 packets to the host.
                 The OpenThread stack will be run on the host and OpenThread will have minimal footprint on the
                 radio only device.
     endchoice
