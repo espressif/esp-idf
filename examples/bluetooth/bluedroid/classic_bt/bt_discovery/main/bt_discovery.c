@@ -155,7 +155,7 @@ static void update_device_info(esp_bt_gap_cb_param_t *param)
         }
     }
 
-    /* search for device with MAJOR service class as "rendering" in COD */
+    /* search for device with Major device type "PHONE" or "Audio/Video" in COD */
     app_gap_cb_t *p_dev = &m_dev_info;
     if (p_dev->dev_found) {
         return;
@@ -253,11 +253,11 @@ static void bt_app_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
 
 static void bt_app_gap_start_up(void)
 {
-    char *dev_name = "ESP_GAP_INQRUIY";
-    esp_bt_dev_set_device_name(dev_name);
-
     /* register GAP callback function */
     esp_bt_gap_register_callback(bt_app_gap_cb);
+
+    char *dev_name = "ESP_GAP_INQRUIY";
+    esp_bt_dev_set_device_name(dev_name);
 
     /* set discoverable and connectable mode, wait to be connected */
     esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
@@ -273,7 +273,7 @@ static void bt_app_gap_start_up(void)
 
 void app_main(void)
 {
-    /* Initialize NVS — it is used to store PHY calibration data */
+    /* Initialize NVS — it is used to store PHY calibration data and save key-value pairs in flash memory*/
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
