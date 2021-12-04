@@ -1,0 +1,22 @@
+diff --git a/src/portable/espressif/esp32s2/dcd_esp32s2.c b/src/portable/espressif/esp32s2/dcd_esp32s2.c
+index cd66af80..31c864a3 100644
+--- a/src/portable/espressif/esp32s2/dcd_esp32s2.c
++++ b/src/portable/espressif/esp32s2/dcd_esp32s2.c
+@@ -55,7 +55,7 @@
+ #define EP_FIFO_SIZE      1024
+ 
+ // Max number of IN EP FIFOs
+-#define EP_FIFO_NUM 5
++#define EP_FIFO_NUM 16
+ 
+ typedef struct {
+     uint8_t *buffer;
+@@ -253,7 +253,7 @@ bool dcd_edpt_open(uint8_t rhport, tusb_desc_endpoint_t const *desc_edpt)
+   uint8_t const dir = tu_edpt_dir(desc_edpt->bEndpointAddress);
+ 
+   TU_ASSERT(desc_edpt->wMaxPacketSize.size <= 64);
+-  TU_ASSERT(epnum < EP_MAX);
++  //TU_ASSERT(epnum < EP_MAX);
+ 
+   xfer_ctl_t *xfer = XFER_CTL_BASE(epnum, dir);
+   xfer->max_size = desc_edpt->wMaxPacketSize.size;

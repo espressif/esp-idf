@@ -1,0 +1,150 @@
+diff --git a/components/tinyusb/Kconfig b/components/tinyusb/Kconfig
+index e2e723075a..7a607e0ecf 100644
+--- a/components/tinyusb/Kconfig
++++ b/components/tinyusb/Kconfig
+@@ -124,6 +124,13 @@ menu "TinyUSB"
+         help
+             Enable USB Serial (CDC) TinyUSB driver.
+ 
++    config CFG_TUD_CDC
++        int "CDC Channel Count (1-3)"
++        default 1
++        depends on USB_CDC_ENABLED
++        help
++            The number of independent serial ports. Ranges 1-3. Anything else won't work/compile.
++
+     config USB_CDC_RX_BUFSIZE
+         int "CDC FIFO size of RX"
+         default 64
+diff --git a/components/tinyusb/additions/include/tusb_cdc_acm.h b/components/tinyusb/additions/include/tusb_cdc_acm.h
+index af7985e6c4..a05b110d34 100644
+--- a/components/tinyusb/additions/include/tusb_cdc_acm.h
++++ b/components/tinyusb/additions/include/tusb_cdc_acm.h
+@@ -30,7 +30,11 @@ extern "C" {
+  * @brief CDC ports available to setup
+  */
+ typedef enum{
+-    TINYUSB_CDC_ACM_0 = 0x0
++    TINYUSB_CDC_ACM_0 = 0x0,
++    TINYUSB_CDC_ACM_1 = 0x1,
++    TINYUSB_CDC_ACM_2 = 0x2,
++    TINYUSB_CDC_ACM_3 = 0x3,
++    TINYUSB_CDC_ACM_4 = 0x4
+ }tinyusb_cdcacm_itf_t;
+ 
+ /* Callbacks and events
+diff --git a/components/tinyusb/additions/include/tusb_config.h b/components/tinyusb/additions/include/tusb_config.h
+index 05509d5e4a..513609c98a 100644
+--- a/components/tinyusb/additions/include/tusb_config.h
++++ b/components/tinyusb/additions/include/tusb_config.h
+@@ -71,7 +71,8 @@ extern "C" {
+ // HID buffer size Should be sufficient to hold ID (if any) + Data
+ #define CFG_TUD_HID_BUFSIZE CONFIG_USB_HID_BUFSIZE
+ 
+-#define CFG_TUD_CDC CONFIG_USB_CDC_ENABLED
++//#define CFG_TUD_CDC CONFIG_USB_CDC_ENABLED
++#define CFG_TUD_CDC CONFIG_CFG_TUD_CDC
+ #define CFG_TUD_MSC CONFIG_USB_MSC_ENABLED
+ #define CFG_TUD_HID CONFIG_USB_HID_ENABLED
+ #define CFG_TUD_MIDI CONFIG_USB_MIDI_ENABLED
+diff --git a/components/tinyusb/additions/include_private/descriptors_control.h b/components/tinyusb/additions/include_private/descriptors_control.h
+index 4ef341932f..8c3cfa6133 100644
+--- a/components/tinyusb/additions/include_private/descriptors_control.h
++++ b/components/tinyusb/additions/include_private/descriptors_control.h
+@@ -24,7 +24,7 @@
+  * Auto ProductID layout's Bitmap:
+  *   [MSB]         HID | MSC | CDC          [LSB]
+  */
+-#define EPNUM_MSC 0x03
++#define EPNUM_MSC 0x0C
+ 
+ #ifdef __cplusplus
+ extern "C" {
+@@ -39,9 +39,25 @@ enum {
+ 
+ //------------- Configuration Descriptor -------------//
+ enum {
+-#   if CFG_TUD_CDC
+-    ITF_NUM_CDC = 0,
+-    ITF_NUM_CDC_DATA,
++#   if CFG_TUD_CDC>0
++    ITF_NUM_CDC0 = 0,
++    ITF_NUM_CDC0_DATA,
++#   endif
++#   if CFG_TUD_CDC>1
++    ITF_NUM_CDC1 = 2,
++    ITF_NUM_CDC1_DATA,
++#   endif
++#   if CFG_TUD_CDC>2
++    ITF_NUM_CDC2 = 4,
++    ITF_NUM_CDC2_DATA,
++#   endif
++#   if CFG_TUD_CDC>3
++    ITF_NUM_CDC3 = 6,
++    ITF_NUM_CDC3_DATA,
++#   endif
++#   if CFG_TUD_CDC>4
++    ITF_NUM_CDC4 = 8,
++    ITF_NUM_CDC4_DATA,
+ #   endif
+ 
+ #   if CFG_TUD_MSC
+diff --git a/components/tinyusb/additions/src/cdc.c b/components/tinyusb/additions/src/cdc.c
+index bee57ee2df..b2f6b8eefd 100644
+--- a/components/tinyusb/additions/src/cdc.c
++++ b/components/tinyusb/additions/src/cdc.c
+@@ -127,10 +127,12 @@ static esp_err_t tusb_cdc_deinit_data(int itf)
+ esp_err_t tinyusb_cdc_init(int itf, const tinyusb_config_cdc_t *cfg)
+ {
+     ESP_LOGD(TAG, "CDC initialization...");
++    /*
+     if (itf != 0) {
+         ESP_LOGE(TAG, "There is not CDC no.%d", itf);
+         return ESP_ERR_INVALID_ARG;
+     }
++    */
+     if (cfg->cdc_class == TUSB_CLASS_CDC) {
+         ESP_RETURN_ON_ERROR(tusb_cdc_comm_init(itf));
+         cdc_obj[itf]->cdc_subclass.comm_subclass = cfg->cdc_subclass.comm_subclass;
+diff --git a/components/tinyusb/additions/src/descriptors_control.c b/components/tinyusb/additions/src/descriptors_control.c
+index 659deeaf36..51181b5a5e 100644
+--- a/components/tinyusb/additions/src/descriptors_control.c
++++ b/components/tinyusb/additions/src/descriptors_control.c
+@@ -31,17 +31,33 @@ uint8_t const desc_configuration[] = {
+     // interface count, string index, total length, attribute, power in mA
+     TUD_CONFIG_DESCRIPTOR(1, ITF_NUM_TOTAL, 0, TUSB_DESC_TOTAL_LEN, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
+ 
+-#   if CFG_TUD_CDC
++#   if CFG_TUD_CDC>0
+     // Interface number, string index, EP notification address and size, EP data address (out, in) and size.
+-    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC, 4, 0x81, 8, 0x02, 0x82, 64),
++    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC0, 4, 0x81, 8, 0x02, 0x82, 64),
++#   endif
++#   if CFG_TUD_CDC>1
++    // Interface number, string index, EP notification address and size, EP data address (out, in) and size.
++    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC1, 4, 0x83, 8, 0x04, 0x84, 64),
++#   endif
++#   if CFG_TUD_CDC>2
++    // Interface number, string index, EP notification address and size, EP data address (out, in) and size.
++    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC2, 4, 0x85, 8, 0x06, 0x86, 64),
++#   endif
++#   if CFG_TUD_CDC>3
++    // Interface number, string index, EP notification address and size, EP data address (out, in) and size.
++    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC3, 4, 0x87, 8, 0x08, 0x88, 64),
++#   endif
++#   if CFG_TUD_CDC>4
++    // Interface number, string index, EP notification address and size, EP data address (out, in) and size.
++    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC4, 4, 0x89, 8, 0x0A, 0x8A, 64),
+ #   endif
+ #   if CFG_TUD_MSC
+     // Interface number, string index, EP Out & EP In address, EP size
+-    TUD_MSC_DESCRIPTOR(ITF_NUM_MSC, 5, EPNUM_MSC, 0x80 | EPNUM_MSC, 64), // highspeed 512
++    TUD_MSC_DESCRIPTOR(ITF_NUM_MSC, 10, EPNUM_MSC, 0x80 | EPNUM_MSC, 64), // highspeed 512
+ #   endif
+ #   if CFG_TUD_HID
+     // Interface number, string index, protocol, report descriptor len, EP In address, size & polling interval
+-    TUD_HID_DESCRIPTOR(ITF_NUM_HID, 6, HID_PROTOCOL_NONE, sizeof(desc_hid_report), 0x84, 16, 10)
++    TUD_HID_DESCRIPTOR(ITF_NUM_HID, 11, HID_PROTOCOL_NONE, sizeof(desc_hid_report), 0x8D, 16, 10)
+ #   endif
+ };
+
