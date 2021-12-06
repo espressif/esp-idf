@@ -307,7 +307,7 @@ def has_valid_copyright(file_name: str, mime: str, is_on_ignore: bool, config_se
     if detected_licenses:
         for detected_license, line_number in detected_licenses:
             allowed_licenses = ast.literal_eval(config_section['allowed_licenses'])
-            if detected_license not in allowed_licenses:
+            if not allowed_license_combination(detected_license, allowed_licenses):
                 valid = False
                 print(f'{TERMINAL_RED}{file_name}:{line_number} License "{detected_license}" is not allowed! Allowed licenses: {allowed_licenses}.')
 
@@ -523,6 +523,22 @@ def debug_output(args: argparse.Namespace, config: configparser.ConfigParser) ->
             print(f'    {key}: "{config[section][key]}"')
 
 
+def allowed_license_combination(license_to_match: str, all_licenses: List[str]) -> bool:
+    """
+    Licenses can be combined together with the OR keyword. Therefore, a simple "in" lookup in a list is not enough.
+    For example, if "A" and "B" are supported then "A OR B" and "B OR A" should be supported as well.
+    """
+    if license_to_match in all_licenses:
+        # This is the simple case, for example, when "A" is used from the list ["A", "B"]
+        return True
+
+    # for example, if license_to_match is "A OR B" then the following split will be ["A", "B"]
+    split_list = [sp for sp in map(str.strip, license_to_match.split(' OR ')) if len(sp) > 0]
+
+    # for example, "A" and "B" needs to be in the supported list in order to match "A OR B".
+    return all(i in all_licenses for i in split_list)
+
+
 def verify_config(config: configparser.ConfigParser) -> None:
     fail = False
     for section in config:
@@ -530,7 +546,7 @@ def verify_config(config: configparser.ConfigParser) -> None:
 
         # configparser stores all values as strings
         allowed_licenses = ast.literal_eval(config[section]['allowed_licenses'])
-        if license_for_new_files not in allowed_licenses:
+        if not allowed_license_combination(license_for_new_files, allowed_licenses):
             print(f'Invalid config, section "{section}":\nDefault license for new files '
                   f'({license_for_new_files}) is not on the allowed licenses list {allowed_licenses}.')
             fail = True

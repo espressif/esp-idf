@@ -53,7 +53,8 @@ examples_and_unit_tests:
    - 'components/**/test/**'
   allowed_licenses:
   - Apache-2.0
-  - Unlicense OR CC0-1.0
+  - Unlicense
+  - CC0-1.0
   license_for_new_files: Unlicense OR CC0-1.0
 
 # files matching this section do not perform the check
