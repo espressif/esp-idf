@@ -870,6 +870,15 @@ esp_err_t esp_http_client_set_method(esp_http_client_handle_t client, esp_http_c
     return ESP_OK;
 }
 
+esp_err_t esp_http_client_set_timeout_ms(esp_http_client_handle_t client, int timeout_ms)
+{
+    if (timeout_ms == 0) {
+        timeout_ms = DEFAULT_TIMEOUT_MS;
+    }
+    client->timeout_ms = timeout_ms;
+    return ESP_OK;
+}
+
 static int esp_http_client_get_data(esp_http_client_handle_t client)
 {
     if (client->state < HTTP_STATE_RES_COMPLETE_HEADER) {
