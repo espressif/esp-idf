@@ -182,6 +182,13 @@ example_test_protocols:
     - ESP32
     - Example_WIFI_Protocols
 
+# This job is only triggered by env var `NIGHTLY_RUN`, please do NOT remove
+example_test_esp32_WIFI_OTA:
+  extends: .example_test_esp32_template
+  tags:
+    - ESP32
+    - Example_WIFI_OTA
+
 example_test_002:
   extends: .example_test_esp32_template
   image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
