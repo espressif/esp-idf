@@ -11,7 +11,7 @@ Apply the patch called "multi-cdc_esp-idf.patch" into the esp-idf folder in your
 ```
 git apply multi-cdc_esp-idf.patch
 ```
-Then to into components/tinyusb/tinyusb. Copy the file "multi-cdc_tinyusb.patch" into it, then run the following command there:
+Then go into components/tinyusb/tinyusb. Copy the file "multi-cdc_tinyusb.patch" into it, then run the following command there:
 ```
 git apply multi-cdc_tinyusb.patch
 ```
