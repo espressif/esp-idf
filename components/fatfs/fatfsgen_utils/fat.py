@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 from .cluster import Cluster
@@ -18,7 +18,7 @@ class FAT:
         self.reserved_sectors_cnt = reserved_sectors_cnt
 
         self.clusters = [Cluster(cluster_id=i, fatfs_state=self.fatfs_state) for i in
-                         range(1, self.fatfs_state.max_clusters)]
+                         range(1, self.fatfs_state.clusters)]
 
         # update root directory record
         self.clusters[0].allocate_cluster()

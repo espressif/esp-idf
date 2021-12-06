@@ -1,10 +1,13 @@
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 from typing import Optional
 
+from construct import Int16ul
+
 from .fatfs_state import FATFSState
-from .utils import build_byte, clean_first_half_byte, clean_second_half_byte, split_by_half_byte_12_bit_little_endian
+from .utils import (FAT12, FAT16, build_byte, clean_first_half_byte, clean_second_half_byte,
+                    split_by_half_byte_12_bit_little_endian)
 
 
 class Cluster:
@@ -13,7 +16,10 @@ class Cluster:
     """
     RESERVED_BLOCK_ID = 0
     ROOT_BLOCK_ID = 1
-    ALLOCATED_BLOCK_VALUE = 0xFFF  # for fat 12
+    ALLOCATED_BLOCK_FAT12 = 0xFFF
+    ALLOCATED_BLOCK_FAT16 = 0xFFFF
+    ALLOCATED_BLOCK_SWITCH = {FAT12: ALLOCATED_BLOCK_FAT12, FAT16: ALLOCATED_BLOCK_FAT16}
+    INITIAL_BLOCK_SWITCH = {FAT12: 0xFF8, FAT16: 0xFFF8}
 
     def __init__(self,
                  cluster_id: int,
@@ -26,7 +32,7 @@ class Cluster:
         self._next_cluster = None  # type: Optional[Cluster]
         if self.id == Cluster.RESERVED_BLOCK_ID:
             self.is_empty = False
-            self.set_in_fat(0xff8)
+            self.set_in_fat(self.INITIAL_BLOCK_SWITCH[self.fatfs_state.fatfs_type])
             return
 
         self.cluster_data_address = self._compute_cluster_data_address()
@@ -86,14 +92,16 @@ class Cluster:
         assert value <= (1 << self.fatfs_state.fatfs_type) - 1
         half_bytes = split_by_half_byte_12_bit_little_endian(value)
 
-        # hardcoded for fat 12
-        # IDF-4046 will extend it for fat 16
-        if self.fat_cluster_address % 8 == 0:
-            self.fatfs_state.binary_image[self.real_cluster_address] = build_byte(half_bytes[1], half_bytes[0])
-            self._set_second_half_byte(self.real_cluster_address + 1, half_bytes[2])
-        elif self.fat_cluster_address % 8 != 0:
-            self._set_first_half_byte(self.real_cluster_address, half_bytes[0])
-            self.fatfs_state.binary_image[self.real_cluster_address + 1] = build_byte(half_bytes[2], half_bytes[1])
+        if self.fatfs_state.fatfs_type == FAT12:
+            if self.fat_cluster_address % 8 == 0:
+                self.fatfs_state.binary_image[self.real_cluster_address] = build_byte(half_bytes[1], half_bytes[0])
+                self._set_second_half_byte(self.real_cluster_address + 1, half_bytes[2])
+            elif self.fat_cluster_address % 8 != 0:
+                self._set_first_half_byte(self.real_cluster_address, half_bytes[0])
+                self.fatfs_state.binary_image[self.real_cluster_address + 1] = build_byte(half_bytes[2], half_bytes[1])
+        elif self.fatfs_state.fatfs_type == FAT16:
+            self.fatfs_state.binary_image[self.real_cluster_address:self.real_cluster_address + 2] = Int16ul.build(
+                value)
 
     @property
     def is_root(self) -> bool:
@@ -104,7 +112,7 @@ class Cluster:
         This method sets bits in FAT table to `allocated` and clean the corresponding sector(s)
         """
         self.is_empty = False
-        self.set_in_fat(Cluster.ALLOCATED_BLOCK_VALUE)
+        self.set_in_fat(self.ALLOCATED_BLOCK_SWITCH[self.fatfs_state.fatfs_type])
 
         cluster_start = self.cluster_data_address
         dir_size = self.fatfs_state.get_dir_size(self.is_root)

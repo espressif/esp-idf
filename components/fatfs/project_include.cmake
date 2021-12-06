@@ -16,6 +16,43 @@ function(fatfs_create_partition_image partition base_dir)
         set(fatfsgen_py ${python} ${idf_path}/components/fatfs/fatfsgen.py)
     endif()
 
+    if("${CONFIG_FATFS_SECTORS_PER_CLUSTER_1}")
+        set(sectors_per_cluster 1)
+    elseif("${CONFIG_FATFS_SECTORS_PER_CLUSTER_2}")
+        set(sectors_per_cluster 2)
+    elseif("${CONFIG_FATFS_SECTORS_PER_CLUSTER_4}")
+        set(sectors_per_cluster 4)
+    elseif("${CONFIG_FATFS_SECTORS_PER_CLUSTER_8}")
+        set(sectors_per_cluster 8)
+    elseif("${CONFIG_FATFS_SECTORS_PER_CLUSTER_16}")
+        set(sectors_per_cluster 16)
+    elseif("${CONFIG_FATFS_SECTORS_PER_CLUSTER_32}")
+        set(sectors_per_cluster 32)
+    elseif("${CONFIG_FATFS_SECTORS_PER_CLUSTER_64}")
+        set(sectors_per_cluster 64)
+    elseif("${CONFIG_FATFS_SECTORS_PER_CLUSTER_128}")
+        set(sectors_per_cluster 128)
+    endif()
+
+    if("${CONFIG_FATFS_SECTOR_512}")
+        set(fatfs_sector_size 512)
+    elseif("${CONFIG_FATFS_SECTOR_1024}")
+        set(fatfs_sector_size 1024)
+    elseif("${CONFIG_FATFS_SECTOR_2048}")
+        set(fatfs_sector_size 2048)
+    else()
+        set(fatfs_sector_size 4096)
+    endif()
+
+
+    if("${CONFIG_FATFS_AUTO_TYPE}")
+        set(fatfs_explicit_type 0)
+    elseif("${CONFIG_FATFS_FAT12}")
+        set(fatfs_explicit_type 12)
+    elseif("${CONFIG_FATFS_FAT16}")
+        set(fatfs_explicit_type 16)
+    endif()
+
     get_filename_component(base_dir_full_path ${base_dir} ABSOLUTE)
     partition_table_get_partition_info(size "--partition-name ${partition}" "size")
     partition_table_get_partition_info(offset "--partition-name ${partition}" "offset")
@@ -28,6 +65,9 @@ function(fatfs_create_partition_image partition base_dir)
             COMMAND ${fatfsgen_py} ${base_dir_full_path}
             --partition_size ${size}
             --output_file ${image_file}
+            --sector_size "${fatfs_sector_size}"
+            --sectors_per_cluster "${sectors_per_cluster}"
+            --fat_type "${fatfs_explicit_type}"
             )
 
         set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY
