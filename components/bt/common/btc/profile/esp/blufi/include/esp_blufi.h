@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #ifndef __ESP_BLUFI_H__
 #define __ESP_BLUFI_H__
 
