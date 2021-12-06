@@ -101,6 +101,27 @@ print_conn_desc(const struct ble_gap_conn_desc *desc)
                 desc->sec_state.bonded);
 }
 
+#if CONFIG_EXAMPLE_EXTENDED_ADV
+void
+print_addr(const void *addr, const char *name)
+{
+    const uint8_t *u8p;
+    u8p = addr;
+    MODLOG_DFLT(DEBUG, "%s = %02x:%02x:%02x:%02x:%02x:%02x",
+                name, u8p[5], u8p[4], u8p[3], u8p[2], u8p[1], u8p[0]);
+}
+void
+ext_print_adv_report(const void *param)
+{
+    const struct ble_gap_ext_disc_desc *disc = (struct ble_gap_ext_disc_desc *)param;
+    MODLOG_DFLT(DEBUG, "props=%d data_status=%d legacy_event_type=%d", disc->props, disc->data_status, disc->legacy_event_type);
+    print_addr(disc->addr.val, "address");
+    MODLOG_DFLT(DEBUG, "rssi=%d tx_power=%d", disc->rssi, disc->tx_power);
+    MODLOG_DFLT(DEBUG, "sid=%d prim_phy=%d sec_phy=%d", disc->sid, disc->prim_phy, disc->sec_phy);
+    MODLOG_DFLT(DEBUG, "periodic_adv_itvl=%d length_data=%d", disc->periodic_adv_itvl, disc->length_data);
+    print_addr(disc->direct_addr.val, "direct address");
+}
+#endif
 
 void
 print_adv_fields(const struct ble_hs_adv_fields *fields)

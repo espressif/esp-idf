@@ -25,6 +25,7 @@
 #include "services/gap/ble_svc_gap.h"
 #include "services/gatt/ble_svc_gatt.h"
 #include "bleprph.h"
+#include "services/ans/ble_svc_ans.h"
 
 /**
  * The vendor specific security test service consists of two characteristics:
@@ -195,6 +196,7 @@ gatt_svr_init(void)
 
     ble_svc_gap_init();
     ble_svc_gatt_init();
+    ble_svc_ans_init();
 
     rc = ble_gatts_count_cfg(gatt_svr_svcs);
     if (rc != 0) {

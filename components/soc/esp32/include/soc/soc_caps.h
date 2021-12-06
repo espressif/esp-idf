@@ -68,6 +68,7 @@
 #define SOC_MCPWM_SUPPORTED         1
 #define SOC_SDMMC_HOST_SUPPORTED    1
 #define SOC_BT_SUPPORTED            1
+#define SOC_BLUEDROID_SUPPORTED	    1
 #define SOC_CLASSIC_BT_SUPPORTED    1
 #define SOC_PCNT_SUPPORTED          1
 #define SOC_WIFI_SUPPORTED          1

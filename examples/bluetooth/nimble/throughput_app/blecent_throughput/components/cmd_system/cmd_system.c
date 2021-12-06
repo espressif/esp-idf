@@ -211,9 +211,14 @@ static int deep_sleep(int argc, char **argv)
         ESP_LOGI(TAG, "Enabling wakeup on GPIO%d, wakeup on %s level",
                  io_num, level ? "HIGH" : "LOW");
 
+#if SOC_PM_SUPPORT_EXT_WAKEUP
         ESP_ERROR_CHECK( esp_sleep_enable_ext1_wakeup(1ULL << io_num, level) );
+#endif
     }
+
+#if SOC_RTCIO_HOLD_SUPPORTED
     rtc_gpio_isolate(GPIO_NUM_12);
+#endif
     esp_deep_sleep_start();
 }
 

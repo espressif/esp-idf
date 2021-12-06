@@ -48,4 +48,11 @@ menu "Example Configuration"
         help
             Use this option to enable/disable Security Manager Secure Connection 4.2 feature.
 
+    config EXAMPLE_EXTENDED_ADV
+        bool
+        default y if SOC_ESP_NIMBLE_CONTROLLER
+        prompt "Enable Extended Adv"
+        help
+            Use this option to enable extended advertising in the example
+
 endmenu

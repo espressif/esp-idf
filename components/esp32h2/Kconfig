@@ -91,7 +91,7 @@ menu "ESP32H2-Specific"
         config ESP32H2_RTC_CLK_SRC_INT_RC
             bool "Internal 150kHz RC oscillator"
         config ESP32H2_RTC_CLK_SRC_EXT_CRYS
-            bool "External 32kHz crystal"
+            bool "External 32.768kHz crystal"
             select ESP_SYSTEM_RTC_EXT_XTAL
         config ESP32H2_RTC_CLK_SRC_EXT_OSC
             bool "External 32kHz oscillator at 32K_XP pin"

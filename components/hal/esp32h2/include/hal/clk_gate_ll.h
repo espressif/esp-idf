@@ -149,6 +149,8 @@ static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
     case PERIPH_GDMA_MODULE:
     case PERIPH_TEMPSENSOR_MODULE:
         return SYSTEM_PERIP_CLK_EN1_REG;
+    case PERIPH_BT_MODULE:
+	return SYSTEM_MODEM_CLK_EN_REG;
     default:
         return SYSTEM_PERIP_CLK_EN0_REG;
     }
@@ -165,6 +167,8 @@ static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
     case PERIPH_GDMA_MODULE:
     case PERIPH_TEMPSENSOR_MODULE:
         return SYSTEM_PERIP_RST_EN1_REG;
+    case PERIPH_BT_MODULE:
+	return SYSTEM_MODEM_RST_EN_REG;
     default:
         return SYSTEM_PERIP_RST_EN0_REG;
     }

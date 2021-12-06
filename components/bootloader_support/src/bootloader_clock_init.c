@@ -36,6 +36,8 @@ __attribute__((weak)) void bootloader_clock_configure(void)
             DPORT_REG_GET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL) == DPORT_CPUPERIOD_SEL_240) {
         cpu_freq_mhz = 240;
     }
+#elif CONFIG_IDF_TARGET_ESP32H2
+    cpu_freq_mhz = 64;
 #endif
 
     if (rtc_clk_apb_freq_get() < APB_CLK_FREQ || esp_rom_get_reset_reason(0) != RESET_REASON_CPU0_SW) {

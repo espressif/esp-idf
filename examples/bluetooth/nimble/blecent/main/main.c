@@ -213,7 +213,7 @@ blecent_on_disc_complete(const struct peer *peer, int status, void *arg)
      * list of services, characteristics, and descriptors that the peer
      * supports.
      */
-    MODLOG_DFLT(ERROR, "Service discovery complete; status=%d "
+    MODLOG_DFLT(INFO, "Service discovery complete; status=%d "
                 "conn_handle=%d\n", status, peer->conn_handle);
 
     /* Now perform three GATT procedures against the peer: read,
@@ -269,6 +269,52 @@ blecent_scan(void)
  * advertisement.  The function returns a positive result if the device
  * advertises connectability and support for the Alert Notification service.
  */
+#if CONFIG_EXAMPLE_EXTENDED_ADV
+static int
+ext_blecent_should_connect(const struct ble_gap_ext_disc_desc *disc)
+{
+    int offset = 0;
+    int ad_struct_len = 0;
+
+    if (disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
+            disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_DIR_IND) {
+        return 0;
+    }
+    if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen    ("ADDR_ANY")) != 0)) {
+        ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
+        /* Convert string to address */
+        sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+               &peer_addr[5], &peer_addr[4], &peer_addr[3],
+               &peer_addr[2], &peer_addr[1], &peer_addr[0]);
+        if (memcmp(peer_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
+            return 0;
+        }
+    }
+
+    /* The device has to advertise support for the Alert Notification
+    * service (0x1811).
+    */
+    do {
+        ad_struct_len = disc->data[offset];
+
+        if (!ad_struct_len) {
+            break;
+        }
+
+	/* Search if ANS UUID is advertised */
+        if (disc->data[offset] == 0x03 && disc->data[offset + 1] == 0x03) {
+            if ( disc->data[offset + 2] == 0x18 && disc->data[offset + 3] == 0x11 ) {
+                return 1;
+            }
+        }
+
+        offset += ad_struct_len + 1;
+
+     } while ( offset < disc->length_data );
+
+    return 0;
+}
+#else
 static int
 blecent_should_connect(const struct ble_gap_disc_desc *disc)
 {
@@ -310,6 +356,7 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
 
     return 0;
 }
+#endif
 
 /**
  * Connects to the sender of the specified advertisement of it looks
@@ -317,15 +364,22 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
  * support for the Alert Notification service.
  */
 static void
-blecent_connect_if_interesting(const struct ble_gap_disc_desc *disc)
+blecent_connect_if_interesting(void *disc)
 {
     uint8_t own_addr_type;
     int rc;
+    ble_addr_t *addr;
 
     /* Don't do anything if we don't care about this advertiser. */
-    if (!blecent_should_connect(disc)) {
+#if CONFIG_EXAMPLE_EXTENDED_ADV
+    if (!ext_blecent_should_connect((struct ble_gap_ext_disc_desc *)disc)) {
         return;
     }
+#else
+    if (!blecent_should_connect((struct ble_gap_disc_desc *)disc)) {
+        return;
+    }
+#endif
 
     /* Scanning must be stopped before a connection can be initiated. */
     rc = ble_gap_disc_cancel();
@@ -344,13 +398,18 @@ blecent_connect_if_interesting(const struct ble_gap_disc_desc *disc)
     /* Try to connect the the advertiser.  Allow 30 seconds (30000 ms) for
      * timeout.
      */
+#if CONFIG_EXAMPLE_EXTENDED_ADV
+    addr = &((struct ble_gap_ext_disc_desc *)disc)->addr;
+#else
+    addr = &((struct ble_gap_disc_desc *)disc)->addr;
+#endif
 
-    rc = ble_gap_connect(own_addr_type, &disc->addr, 30000, NULL,
+    rc = ble_gap_connect(own_addr_type, addr, 30000, NULL,
                          blecent_gap_event, NULL);
     if (rc != 0) {
         MODLOG_DFLT(ERROR, "Error: Failed to connect to device; addr_type=%d "
                     "addr=%s; rc=%d\n",
-                    disc->addr.type, addr_str(disc->addr.val), rc);
+                    addr->type, addr_str(addr->val), rc);
         return;
     }
 }
@@ -489,6 +548,15 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
          * continue with the pairing operation.
          */
         return BLE_GAP_REPEAT_PAIRING_RETRY;
+
+#if CONFIG_EXAMPLE_EXTENDED_ADV
+    case BLE_GAP_EVENT_EXT_DISC:
+        /* An advertisment report was received during GAP discovery. */
+        ext_print_adv_report(&event->disc);
+
+        blecent_connect_if_interesting(&event->disc);
+        return 0;
+#endif
 
     default:
         return 0;

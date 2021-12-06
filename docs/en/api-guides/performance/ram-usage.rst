@@ -79,7 +79,7 @@ The default stack sizes for these tasks are usually set conservatively high, to 
    - :doc:`/api-guides/event-handling` system task to execute callbacks for the default system event loop has stack size :ref:`CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE`.
    - :doc:`/api-guides/lwip` TCP/IP task has stack size :ref:`CONFIG_LWIP_TCPIP_TASK_STACK_SIZE`
    :SOC_BT_SUPPORTED: - :doc:`Bluedroid Bluetooth Host </api-reference/bluetooth/index>` have task stack sizes :ref:`CONFIG_BT_BTC_TASK_STACK_SIZE`, :ref:`CONFIG_BT_BTU_TASK_STACK_SIZE`.
-   :SOC_BT_SUPPORTED: - :doc:`NimBLE Bluetooth Host </api-reference/bluetooth/nimble/index>` has task stack size :ref:`CONFIG_BT_NIMBLE_TASK_STACK_SIZE`
+   :SOC_BT_SUPPORTED: - :doc:`NimBLE Bluetooth Host </api-reference/bluetooth/nimble/index>` has task stack size :ref:`CONFIG_BT_NIMBLE_HOST_TASK_STACK_SIZE`
    - The Ethernet driver creates a task for the MAC to receive Ethernet frames. If using the default config ``ETH_MAC_DEFAULT_CONFIG`` then the task stack size is 4 KB. This setting can be changed by passing a custom :cpp:class:`eth_mac_config_t` struct when initializing the Ethernet MAC.
    - FreeRTOS idle task stack size is configured by :ref:`CONFIG_FREERTOS_IDLE_TASK_STACKSIZE`.
    - If using the :doc:`mDNS </api-reference/protocols/mdns>` and/or :doc:`MQTT </api-reference/protocols/mqtt>` components, they create tasks with stack sizes configured by :ref:`CONFIG_MDNS_TASK_STACK_SIZE` and :ref:`CONFIG_MQTT_TASK_STACK_SIZE`, respectively. MQTT stack size can also be configured using ``task_stack`` field of :cpp:class:`esp_mqtt_client_config_t`.
