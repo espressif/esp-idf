@@ -16,86 +16,23 @@
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
 
-static const char *TAG = "ksz80xx";
+#define KSZ80XX_PHY_ID_MSB (0x22)
+#define KSZ80XX_PHY_ID_LSB (0x05)
 
-#define KSZ8041_MODEL_ID (0x11)
-#define KSZ8081_MODEL_ID (0x16)
-#define KSZ8091_MODEL_ID KSZ8081_MODEL_ID
+#define KSZ80XX_PC1R_REG_ADDR (0x1E)
+#define KSZ80XX_PC2R_REG_ADDR (0x1F)
 
-/***************Vendor Specific Register***************/
-/**
- * @brief PC2R(PHY Control 2 Register) for KSZ8041
- *
- */
-typedef union {
-    struct {
-        uint32_t dis_data_scr: 1;    /* Disable Scrambler */
-        uint32_t en_sqe_test : 1;    /* Enable SQE Test */
-        uint32_t op_mode : 3;        /* Operation Mode */
-        uint32_t phy_iso : 1;        /* PHY Isolate */
-        uint32_t en_flow_ctrl : 1;   /* Enable Flow Control */
-        uint32_t auto_nego_comp : 1; /* Auto Negotiation Complete */
-        uint32_t en_jabber : 1;      /* Enable Jabber Counter */
-        uint32_t irq_level : 1;      /* Interrupt Pin Active Level */
-        uint32_t power_saving : 1;   /* Enable Powering Saving */
-        uint32_t force_link : 1;     /* Force Link Pass */
-        uint32_t energy_det : 1;     /* Presence of Signal on RX+/- Wire Pair */
-        uint32_t pair_swap_dis : 1;  /* Disable Auto MDI/MDI-X */
-        uint32_t mdix_select : 1;    /* MDI/MDI-X Select */
-        uint32_t hp_mdix : 1;        /* HP Auto MDI/MDI-X Mode */
-    };
-    uint32_t val;
-} ksz8041_pc2r_reg_t;
-#define KSZ8041_PC2R_REG_ADDR (0x1F)
+typedef enum
+{
+    KSZ80XX_MODEL_NUMBER_11 = 0x11,     // KSZ8041
+    KSZ80XX_MODEL_NUMBER_15 = 0x15,     // KSZ8021/31
+    KSZ80XX_MODEL_NUMBER_16 = 0x16,     // KSZ8051/81/91
+    KSZ80XX_MODEL_NUMBER_17 = 0x17,     // KSZ8061
+    KSZ80XX_MODEL_NUMBER_21 = 0x21,     // KSZ8001
+} ksz80xx_model_number_t;
 
-/**
- * @brief PC1R(PHY Control 1 Register) for KSZ8081
- *
- */
-typedef union {
-    struct {
-        uint32_t op_mode : 3;         /* Operation Mode Indication */
-        uint32_t phy_iso : 1;         /* PHY in Isolate Mode */
-        uint32_t energy_det: 1;       /* Signal presence on RX pair */
-        uint32_t mdix_state : 1;      /* MDI/MDI-X state */
-        uint32_t reserved_6 : 1;      /* Reserved */
-        uint32_t polarity_status : 1; /* Polarity status */
-        uint32_t link_status : 1;     /* Link status */
-        uint32_t en_flow_ctrl : 1;    /* Flow control */
-        uint32_t reserved_15_10 : 6;  /* Reserved */
-    };
-    uint32_t val;
-} ksz8081_pc1r_reg_t;
-#define KSZ8081_PC1R_REG_ADDR (0x1E)
-
-/**
- * @brief PC2R(PHY Control 2 Register)
- *
- */
-typedef union {
-    struct {
-        uint32_t dis_data_scr: 1;       /* Disable Scrambler */
-        uint32_t enable_sqe_test : 1;   /* Enable SQE test. MLX/MNX/RNB only. */
-        uint32_t rem_loopb : 1;         /* Enable remote loopback */
-        uint32_t dis_trx : 1;           /* Disable Transmitter */
-        uint32_t led_mode : 2;          /* LED mode link-activity / link */
-        uint32_t reserved_6 : 1;
-        uint32_t rmii_ref_sel : 1;      /* RMII Reference Clock Select */
-        uint32_t en_jabber : 1;         /* Enable Jabber Counter */
-        uint32_t irq_level : 1;         /* Interrupt Pin Active Level */
-        uint32_t power_saving : 1;      /* Enable Powering Saving */
-        uint32_t force_link : 1;        /* Force Link Pass */
-        uint32_t reserved_12 : 1;
-        uint32_t pair_swap_dis : 1;     /* Disable Auto MDI/MDI-X */
-        uint32_t mdix_select : 1;       /* MDI/MDI-X Select */
-        uint32_t hp_mdix : 1;           /* HP Auto MDI/MDI-X Mode */
-    };
-    uint32_t val;
-} ksz8081_pc2r_reg_t;
-#define KSZ8081_PC2R_REG_ADDR (0x1F)
-
-
-typedef struct {
+typedef struct
+{
     esp_eth_phy_t parent;
     esp_eth_mediator_t *eth;
     int addr;
@@ -103,10 +40,31 @@ typedef struct {
     uint32_t autonego_timeout_ms;
     eth_link_t link_status;
     int reset_gpio_num;
-    int vendor_model;
+    uint8_t model_number;
+    uint32_t op_mode_reg;
+    uint32_t op_mode_offset;
 } phy_ksz80xx_t;
 
-static esp_err_t ksz80xx_update_link_duplex_speed(phy_ksz80xx_t *ksz80xx)
+static const uint8_t supported_model_numbers[] =
+{
+    KSZ80XX_MODEL_NUMBER_11,
+    KSZ80XX_MODEL_NUMBER_15,
+    KSZ80XX_MODEL_NUMBER_16,
+    KSZ80XX_MODEL_NUMBER_17,
+    KSZ80XX_MODEL_NUMBER_21,
+};
+
+static const char *model_names[] = {
+    "41",           // models with model number 0x11
+    "21/31",        // models with model number 0x15
+    "51/81/91",     // models with model number 0x16
+    "61",           // models with model number 0x17
+    "01",           // models with model number 0x21
+};
+
+static const char *TAG = "ksz80xx";
+
+static esp_err_t ksz80xx_update_link_duplex_speed(phy_ksz80xx_t * ksz80xx)
 {
     esp_err_t ret = ESP_OK;
     esp_eth_mediator_t *eth = ksz80xx->eth;
@@ -122,16 +80,9 @@ static esp_err_t ksz80xx_update_link_duplex_speed(phy_ksz80xx_t *ksz80xx)
     if (ksz80xx->link_status != link) {
         /* when link up, read negotiation result */
         if (link == ETH_LINK_UP) {
-            int op_mode = 0;
-            if (ksz80xx->vendor_model == KSZ8041_MODEL_ID) {
-                ksz8041_pc2r_reg_t pc2r;
-                ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, KSZ8041_PC2R_REG_ADDR, &(pc2r.val)), err, TAG, "read PC2R failed");
-                op_mode = pc2r.op_mode;
-            } else if (ksz80xx->vendor_model == KSZ8081_MODEL_ID) {
-                ksz8081_pc1r_reg_t pc1r;
-                ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, KSZ8081_PC1R_REG_ADDR, &(pc1r.val)), err, TAG, "read PC1R failed");
-                op_mode = pc1r.op_mode;
-            }
+            uint32_t reg_value = 0;
+            ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, ksz80xx->op_mode_reg, &reg_value), err, TAG, "read %#04x failed", ksz80xx->op_mode_reg);
+            uint8_t op_mode = (reg_value >> ksz80xx->op_mode_offset) & 0x07;
             switch (op_mode) {
             case 1: //10Base-T half-duplex
                 speed = ETH_SPEED_10M;
@@ -441,6 +392,29 @@ err:
     return ret;
 }
 
+static bool ksz80xx_init_model(phy_ksz80xx_t *ksz80xx)
+{
+    // set variables for op_mode access
+    switch (ksz80xx->model_number) {
+    case KSZ80XX_MODEL_NUMBER_21:   // models KSZ8001
+    case KSZ80XX_MODEL_NUMBER_11:   // models KSZ8041
+        ksz80xx->op_mode_reg = KSZ80XX_PC2R_REG_ADDR;
+        ksz80xx->op_mode_offset = 2; // bits 4:2
+        break;
+
+    case KSZ80XX_MODEL_NUMBER_15:   // models KSZ8021/31
+    case KSZ80XX_MODEL_NUMBER_16:   // models KSZ8051/81/91
+    case KSZ80XX_MODEL_NUMBER_17:   // models KSZ8061
+        ksz80xx->op_mode_reg = KSZ80XX_PC1R_REG_ADDR;
+        ksz80xx->op_mode_offset = 0; // bits 2:0
+        break;
+
+    default:
+        return false;
+    }
+    return true;
+}
+
 static esp_err_t ksz80xx_init(esp_eth_phy_t *phy)
 {
     esp_err_t ret = ESP_OK;
@@ -455,7 +429,17 @@ static esp_err_t ksz80xx_init(esp_eth_phy_t *phy)
     phyidr2_reg_t id2;
     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, ETH_PHY_IDR1_REG_ADDR, &(id1.val)), err, TAG, "read ID1 failed");
     ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, ksz80xx->addr, ETH_PHY_IDR2_REG_ADDR, &(id2.val)), err, TAG, "read ID2 failed");
-    ESP_GOTO_ON_FALSE(id1.oui_msb == 0x22 && id2.oui_lsb == 0x5 && id2.vendor_model == ksz80xx->vendor_model, ESP_FAIL, err, TAG, "wrong chip ID");
+    ESP_GOTO_ON_FALSE(id1.oui_msb == KSZ80XX_PHY_ID_MSB && id2.oui_lsb == KSZ80XX_PHY_ID_LSB, ESP_FAIL, err, TAG, "wrong chip ID");
+    const char* supported_model_name = NULL;
+    ksz80xx->model_number = id2.vendor_model;
+    for (size_t i = 0; i < sizeof(supported_model_numbers); i++) {
+        if (ksz80xx->model_number == supported_model_numbers[i]) {
+            supported_model_name = model_names[i];
+            break;
+        }
+    }
+    ESP_GOTO_ON_FALSE(supported_model_name != NULL && ksz80xx_init_model(ksz80xx), ESP_FAIL, err, TAG, "unsupported model number: %#04x", ksz80xx->model_number);
+    ESP_LOGI(TAG, "auto detected phy KSZ80%s", supported_model_name);
     return ESP_OK;
 err:
     return ret;
@@ -471,66 +455,33 @@ err:
     return ret;
 }
 
-esp_eth_phy_t *esp_eth_phy_new_ksz8041(const eth_phy_config_t *config)
+esp_eth_phy_t *esp_eth_phy_new_ksz80xx(const eth_phy_config_t *config)
 {
     esp_eth_phy_t *ret = NULL;
     ESP_GOTO_ON_FALSE(config, NULL, err, TAG, "can't set phy config to null");
-    phy_ksz80xx_t *ksz8041 = calloc(1, sizeof(phy_ksz80xx_t));
-    ESP_GOTO_ON_FALSE(ksz8041, NULL, err, TAG, "calloc ksz8041 failed");
-    ksz8041->vendor_model = KSZ8041_MODEL_ID;
-    ksz8041->addr = config->phy_addr;
-    ksz8041->reset_gpio_num = config->reset_gpio_num;
-    ksz8041->reset_timeout_ms = config->reset_timeout_ms;
-    ksz8041->link_status = ETH_LINK_DOWN;
-    ksz8041->autonego_timeout_ms = config->autonego_timeout_ms;
-    ksz8041->parent.reset = ksz80xx_reset;
-    ksz8041->parent.reset_hw = ksz80xx_reset_hw;
-    ksz8041->parent.init = ksz80xx_init;
-    ksz8041->parent.deinit = ksz80xx_deinit;
-    ksz8041->parent.set_mediator = ksz80xx_set_mediator;
-    ksz8041->parent.autonego_ctrl = ksz80xx_autonego_ctrl;
-    ksz8041->parent.get_link = ksz80xx_get_link;
-    ksz8041->parent.pwrctl = ksz80xx_pwrctl;
-    ksz8041->parent.get_addr = ksz80xx_get_addr;
-    ksz8041->parent.set_addr = ksz80xx_set_addr;
-    ksz8041->parent.advertise_pause_ability = ksz80xx_advertise_pause_ability;
-    ksz8041->parent.loopback = ksz80xx_loopback;
-    ksz8041->parent.set_speed = ksz80xx_set_speed;
-    ksz8041->parent.set_duplex = ksz80xx_set_duplex;
-    ksz8041->parent.del = ksz80xx_del;
-    return &(ksz8041->parent);
-err:
-    return ret;
-}
-
-esp_eth_phy_t *esp_eth_phy_new_ksz8081(const eth_phy_config_t *config)
-{
-    esp_eth_phy_t *ret = NULL;
-    ESP_GOTO_ON_FALSE(config, NULL, err, TAG, "can't set phy config to null");
-    phy_ksz80xx_t *ksz8081 = calloc(1, sizeof(phy_ksz80xx_t));
-    ESP_GOTO_ON_FALSE(ksz8081, NULL, err, TAG, "calloc ksz8081 failed");
-    ksz8081->vendor_model = KSZ8081_MODEL_ID;
-    ksz8081->addr = config->phy_addr;
-    ksz8081->reset_gpio_num = config->reset_gpio_num;
-    ksz8081->reset_timeout_ms = config->reset_timeout_ms;
-    ksz8081->link_status = ETH_LINK_DOWN;
-    ksz8081->autonego_timeout_ms = config->autonego_timeout_ms;
-    ksz8081->parent.reset = ksz80xx_reset;
-    ksz8081->parent.reset_hw = ksz80xx_reset_hw;
-    ksz8081->parent.init = ksz80xx_init;
-    ksz8081->parent.deinit = ksz80xx_deinit;
-    ksz8081->parent.set_mediator = ksz80xx_set_mediator;
-    ksz8081->parent.autonego_ctrl = ksz80xx_autonego_ctrl;
-    ksz8081->parent.get_link = ksz80xx_get_link;
-    ksz8081->parent.pwrctl = ksz80xx_pwrctl;
-    ksz8081->parent.get_addr = ksz80xx_get_addr;
-    ksz8081->parent.set_addr = ksz80xx_set_addr;
-    ksz8081->parent.advertise_pause_ability = ksz80xx_advertise_pause_ability;
-    ksz8081->parent.loopback = ksz80xx_loopback;
-    ksz8081->parent.set_speed = ksz80xx_set_speed;
-    ksz8081->parent.set_duplex = ksz80xx_set_duplex;
-    ksz8081->parent.del = ksz80xx_del;
-    return &(ksz8081->parent);
+    phy_ksz80xx_t *ksz80xx = calloc(1, sizeof(phy_ksz80xx_t));
+    ESP_GOTO_ON_FALSE(ksz80xx, NULL, err, TAG, "calloc ksz80xx failed");
+    ksz80xx->addr = config->phy_addr;
+    ksz80xx->reset_gpio_num = config->reset_gpio_num;
+    ksz80xx->reset_timeout_ms = config->reset_timeout_ms;
+    ksz80xx->link_status = ETH_LINK_DOWN;
+    ksz80xx->autonego_timeout_ms = config->autonego_timeout_ms;
+    ksz80xx->parent.reset = ksz80xx_reset;
+    ksz80xx->parent.reset_hw = ksz80xx_reset_hw;
+    ksz80xx->parent.init = ksz80xx_init;
+    ksz80xx->parent.deinit = ksz80xx_deinit;
+    ksz80xx->parent.set_mediator = ksz80xx_set_mediator;
+    ksz80xx->parent.autonego_ctrl = ksz80xx_autonego_ctrl;
+    ksz80xx->parent.get_link = ksz80xx_get_link;
+    ksz80xx->parent.pwrctl = ksz80xx_pwrctl;
+    ksz80xx->parent.get_addr = ksz80xx_get_addr;
+    ksz80xx->parent.set_addr = ksz80xx_set_addr;
+    ksz80xx->parent.advertise_pause_ability = ksz80xx_advertise_pause_ability;
+    ksz80xx->parent.loopback = ksz80xx_loopback;
+    ksz80xx->parent.set_speed = ksz80xx_set_speed;
+    ksz80xx->parent.set_duplex = ksz80xx_set_duplex;
+    ksz80xx->parent.del = ksz80xx_del;
+    return &(ksz80xx->parent);
 err:
     return ret;
 }

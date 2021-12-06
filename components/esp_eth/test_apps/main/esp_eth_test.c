@@ -53,8 +53,8 @@ TEST_CASE("start_and_stop", "[esp_eth]")
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG(); // apply default PHY configuration
 #if defined(CONFIG_TARGET_ETH_PHY_DEVICE_IP101)
     esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config); // create PHY instance
-#elif defined(CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720)
-    esp_eth_phy_t *phy = esp_eth_phy_new_lan8720(&phy_config);
+#elif defined(CONFIG_TARGET_ETH_PHY_DEVICE_LAN87XX)
+    esp_eth_phy_t *phy = esp_eth_phy_new_lan87xx(&phy_config);
 #endif
     TEST_ASSERT_NOT_NULL(phy);
     esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy); // apply default driver configuration
@@ -104,8 +104,8 @@ TEST_CASE("get_set_mac", "[esp_eth]")
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG(); // apply default PHY configuration
 #if defined(CONFIG_TARGET_ETH_PHY_DEVICE_IP101)
     esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config); // create PHY instance
-#elif defined(CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720)
-    esp_eth_phy_t *phy = esp_eth_phy_new_lan8720(&phy_config);
+#elif defined(CONFIG_TARGET_ETH_PHY_DEVICE_LAN87XX)
+    esp_eth_phy_t *phy = esp_eth_phy_new_lan87xx(&phy_config);
 #endif
     TEST_ASSERT_NOT_NULL(phy);
     esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy); // apply default driver configuration
@@ -157,8 +157,8 @@ TEST_CASE("ethernet_broadcast_transmit", "[esp_eth]")
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG(); // apply default PHY configuration
 #if defined(CONFIG_TARGET_ETH_PHY_DEVICE_IP101)
     esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config); // create PHY instance
-#elif defined(CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720)
-    esp_eth_phy_t *phy = esp_eth_phy_new_lan8720(&phy_config);
+#elif defined(CONFIG_TARGET_ETH_PHY_DEVICE_LAN87XX)
+    esp_eth_phy_t *phy = esp_eth_phy_new_lan87xx(&phy_config);
 #endif
     TEST_ASSERT_NOT_NULL(phy);
     esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy); // apply default driver configuration
@@ -227,8 +227,8 @@ TEST_CASE("recv_pkt", "[esp_eth]")
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG(); // apply default PHY configuration
 #if defined(CONFIG_TARGET_ETH_PHY_DEVICE_IP101)
     esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config); // create PHY instance
-#elif defined(CONFIG_TARGET_ETH_PHY_DEVICE_LAN8720)
-    esp_eth_phy_t *phy = esp_eth_phy_new_lan8720(&phy_config);
+#elif defined(CONFIG_TARGET_ETH_PHY_DEVICE_LAN87XX)
+    esp_eth_phy_t *phy = esp_eth_phy_new_lan87xx(&phy_config);
 #endif
     TEST_ASSERT_NOT_NULL(phy);
     esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy); // apply default driver configuration

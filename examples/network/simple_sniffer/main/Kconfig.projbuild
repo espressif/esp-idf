@@ -180,17 +180,14 @@ menu "Example Configuration"
                     DP83848 is a single port 10/100Mb/s Ethernet Physical Layer Transceiver.
                     Goto http://www.ti.com/product/DP83848J for more information about it.
 
-            config SNIFFER_ETH_PHY_KSZ8041
-                bool "KSZ8041"
+            config SNIFFER_ETH_PHY_KSZ80XX
+                bool "KSZ80xx"
                 help
-                    The KSZ8041 is a single supply 10Base-T/100Base-TX Physical Layer Transceiver.
-                    Goto https://www.microchip.com/wwwproducts/en/KSZ8041 for more information about it.
-
-            config SNIFFER_ETH_PHY_KSZ8081
-                bool "KSZ8081"
-                help
-                    The KSZ8081 is a single supply 10Base-T/100Base-TX Physical Layer Transceiver.
-                    Goto https://www.microchip.com/wwwproducts/en/KSZ8081 for more information about it.
+                    With the KSZ80xx series, Microchip offers single-chip 10BASE-T/100BASE-TX
+                    Ethernet Physical Layer Tranceivers (PHY).
+                    The following chips are supported: KSZ8001, KSZ8021, KSZ8031, KSZ8041,
+                        KSZ8051, KSZ8061, KSZ8081, KSZ8091
+                    Goto https://www.microchip.com for more information about them.
         endchoice # SNIFFER_ETH_PHY_MODEL
 
         config SNIFFER_ETH_MDC_GPIO
