@@ -2936,7 +2936,8 @@ static bool _mdns_question_matches(mdns_parsed_question_t * question, uint16_t t
     if (type == MDNS_TYPE_A || type == MDNS_TYPE_AAAA) {
         return true;
     } else if (type == MDNS_TYPE_PTR || type == MDNS_TYPE_SDPTR) {
-        if (!strcasecmp(service->service->service, question->service)
+        if (question->service && question->proto && question->domain
+            && !strcasecmp(service->service->service, question->service)
             && !strcasecmp(service->service->proto, question->proto)
             && !strcasecmp(MDNS_DEFAULT_DOMAIN, question->domain)) {
             return true;
