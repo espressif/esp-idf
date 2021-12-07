@@ -79,3 +79,13 @@ ESP-IoT-Solution includes:
 * Guide for Espressif open source solutions from practical application point.
 
 `ESP-IoT-Solution on GitHub <https://github.com/espressif/esp-iot-solution>`_.
+
+
+ESP-Protocols
+----------------
+
+`ESP-Protocols <https://github.com/espressif/esp-protocols>`_ repository contains collection of protocol components for ESP-IDF. The code within the ESP-Protocols is organized into separate components, allowing them to be easily integrated into an ESP-IDF project. In addition to that, each component is available in `IDF Component Registry <https://components.espressif.com/>`_.
+
+ESP-Protocols components:
+
+* `esp_modem <https://components.espressif.com/component/espressif/esp_modem>`_ enables connectivity with GSM/LTE modems using AT commands or PPP protocol, see the `esp_modem documentation <https://espressif.github.io/esp-protocols/esp_modem/index.html>`_.
