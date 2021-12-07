@@ -265,12 +265,14 @@ esp_err_t IRAM_ATTR esp_flash_init_main(esp_flash_t *chip)
     // 3. Get basic parameters of the chip (size, dummy count, etc.)
     // 4. Init chip into desired mode (without breaking the cache!)
     esp_err_t err = ESP_OK;
-    bool octal_mode = (chip->read_mode >= SPI_FLASH_OPI_FLAG);
+    bool octal_mode;
+
     if (chip == NULL || chip->host == NULL || chip->host->driver == NULL ||
         ((memspi_host_inst_t*)chip->host)->spi == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
+    octal_mode = (chip->read_mode >= SPI_FLASH_OPI_FLAG);
     //read chip id
     // This can indicate the MSPI support OPI, if the flash works on MSPI in OPI mode, we directly bypass read id.
     uint32_t flash_id = 0;

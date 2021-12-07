@@ -605,11 +605,8 @@ int64_t IRAM_ATTR esp_timer_get_next_alarm_for_wake_up(void)
     int64_t next_alarm = INT64_MAX;
     for (esp_timer_dispatch_t dispatch_method = ESP_TIMER_TASK; dispatch_method < ESP_TIMER_MAX; ++dispatch_method) {
         timer_list_lock(dispatch_method);
-        esp_timer_handle_t it;
+        esp_timer_handle_t it = NULL;
         LIST_FOREACH(it, &s_timers[dispatch_method], list_entry) {
-            if (it == NULL) {
-                break;
-            }
             // timers with the SKIP_UNHANDLED_EVENTS flag do not want to wake up CPU from a sleep mode.
             if ((it->flags & FL_SKIP_UNHANDLED_EVENTS) == 0) {
                 if (next_alarm > it->alarm) {
