@@ -136,10 +136,11 @@ Configuring {IDF_TARGET_NAME} Target
 
 Once OpenOCD is installed, you can proceed to configuring the {IDF_TARGET_NAME} target (i.e {IDF_TARGET_NAME} board with JTAG interface). Configuring the target is split into the following three steps:
 
-* Configure and connect JTAG interface
-* Run OpenOCD
-* Upload application for debugging
+* :ref:`jtag-debugging-configure-and-connect-JTAG-interface`
+* :ref:`jtag-debugging-run-openocd`
+* :ref:`jtag-upload-app-debug`
 
+.. _jtag-debugging-configure-and-connect-JTAG-interface:
 
 Configure and connect JTAG interface
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -311,7 +312,7 @@ Related Documents
 
 .. toctree::
     :hidden:
-    
+
     :maxdepth: 1
 
     using-debugger
@@ -323,4 +324,4 @@ Related Documents
 - :doc:`debugging-examples`
 - :doc:`tips-and-quirks`
 - :doc:`../app_trace`
-- `Introduction to ESP-Prog Board <https://docs.espressif.com/projects/espressif-esp-iot-solution/en/latest/hw-reference/ESP-Prog_guide.html>`__ 
+- `Introduction to ESP-Prog Board <https://docs.espressif.com/projects/espressif-esp-iot-solution/en/latest/hw-reference/ESP-Prog_guide.html>`__
