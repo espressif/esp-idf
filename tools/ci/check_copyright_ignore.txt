@@ -2723,7 +2723,6 @@ examples/bluetooth/bluedroid/classic_bt/a2dp_sink/main/bt_app_av.c
 examples/bluetooth/bluedroid/classic_bt/a2dp_sink/main/bt_app_av.h
 examples/bluetooth/bluedroid/classic_bt/a2dp_sink/main/bt_app_core.c
 examples/bluetooth/bluedroid/classic_bt/a2dp_sink/main/bt_app_core.h
-examples/bluetooth/bluedroid/classic_bt/a2dp_sink/main/main.c
 examples/bluetooth/bluedroid/classic_bt/a2dp_source/main/bt_app_core.c
 examples/bluetooth/bluedroid/classic_bt/a2dp_source/main/bt_app_core.h
 examples/bluetooth/bluedroid/classic_bt/a2dp_source/main/main.c

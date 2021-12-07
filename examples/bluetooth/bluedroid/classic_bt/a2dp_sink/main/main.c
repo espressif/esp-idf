@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -62,8 +54,8 @@ void app_main(void)
         .bits_per_sample = 16,
         .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,                           //2-channels
         .communication_format = I2S_COMM_FORMAT_STAND_MSB,
-        .dma_buf_count = 6,
-        .dma_buf_len = 60,
+        .dma_desc_num = 6,
+        .dma_frame_num = 60,
         .intr_alloc_flags = 0,                                                  //Default interrupt priority
         .tx_desc_auto_clear = true                                              //Auto clear tx descriptor on underflow
     };

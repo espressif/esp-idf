@@ -228,8 +228,8 @@ static void i2s_adc_init(void)
         .bits_per_sample = SAMPLE_BITS,
         .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
         .intr_alloc_flags = 0,
-        .dma_buf_count = 2,
-        .dma_buf_len = 1024,
+        .dma_desc_num = 2,
+        .dma_frame_num = 1024,
         .use_apll = 0,
     };
     // install and start I2S driver

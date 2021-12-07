@@ -75,7 +75,7 @@ Running this example, you will see the Bits per Sample changes every 5 seconds a
 
 ```
 I (361) pdm_rec_example: PDM microphone recording Example start
-I (371) I2S: DMA Malloc info, datalen=blocksize=2048, dma_buf_count=64
+I (371) I2S: DMA Malloc info, datalen=blocksize=2048, dma_desc_num=64
 I (401) I2S: APLL: Req RATE: 44100, real rate: 88199.977, BITS: 16, CLKM: 1, BCK_M: 8, MCLK: 22579194.000, SCLK: 2822399.250000, diva: 1, divb: 0
 I (431) I2S: APLL: Req RATE: 44100, real rate: 88199.977, BITS: 16, CLKM: 1, BCK_M: 8, MCLK: 22579194.000, SCLK: 2822399.250000, diva: 1, divb: 0
 I (431) pdm_rec_example: Initializing SD card

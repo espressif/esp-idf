@@ -100,8 +100,8 @@ static esp_err_t i2s_driver_init(void)
         .bit_order_msb = false,
         .skip_msk = false,
 #endif
-        .dma_buf_count = 8,
-        .dma_buf_len = 64,
+        .dma_desc_num = 8,
+        .dma_frame_num = 64,
         .use_apll = false,
         .mclk_multiple = EXAMPLE_MCLK_MULTIPLE,
         .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
