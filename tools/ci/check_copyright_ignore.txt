@@ -2097,7 +2097,6 @@ components/soc/esp32s3/include/soc/gpio_reg.h
 components/soc/esp32s3/include/soc/gpio_sd_reg.h
 components/soc/esp32s3/include/soc/gpio_sd_struct.h
 components/soc/esp32s3/include/soc/gpio_sig_map.h
-components/soc/esp32s3/include/soc/gpio_struct.h
 components/soc/esp32s3/include/soc/hinf_reg.h
 components/soc/esp32s3/include/soc/hinf_struct.h
 components/soc/esp32s3/include/soc/host_reg.h

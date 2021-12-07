@@ -29,8 +29,9 @@ extern "C" {
 // Get GPIO hardware instance with giving gpio num
 #define GPIO_LL_GET_HW(num) (((num) == 0) ? (&GPIO) : NULL)
 
-#define GPIO_LL_PRO_CPU_INTR_ENA      (BIT(0))
-#define GPIO_LL_PRO_CPU_NMI_INTR_ENA  (BIT(1))
+// On ESP32S3, pro cpu and app cpu shares the same interrupt enable bit
+#define GPIO_LL_INTR_ENA      (BIT(0))
+#define GPIO_LL_NMI_INTR_ENA  (BIT(1))
 
 /**
   * @brief Enable pull-up on GPIO.
@@ -97,6 +98,8 @@ static inline void gpio_ll_set_intr_type(gpio_dev_t *hw, gpio_num_t gpio_num, gp
   */
 static inline void gpio_ll_get_intr_status(gpio_dev_t *hw, uint32_t core_id, uint32_t *status)
 {
+    // On ESP32S3, pcpu_int register represents GPIO0-31 interrupt status on both cores
+    (void)core_id;
     *status = hw->pcpu_int;
 }
 
@@ -109,6 +112,8 @@ static inline void gpio_ll_get_intr_status(gpio_dev_t *hw, uint32_t core_id, uin
   */
 static inline void gpio_ll_get_intr_status_high(gpio_dev_t *hw, uint32_t core_id, uint32_t *status)
 {
+    // On ESP32S3, pcpu_int1 register represents GPIO32-48 interrupt status on both cores
+    (void)core_id;
     *status = hw->pcpu_int1.intr;
 }
 
@@ -143,9 +148,8 @@ static inline void gpio_ll_clear_intr_status_high(gpio_dev_t *hw, uint32_t mask)
  */
 static inline void gpio_ll_intr_enable_on_core(gpio_dev_t *hw, uint32_t core_id, gpio_num_t gpio_num)
 {
-    if (core_id == 0) {
-        GPIO.pin[gpio_num].int_ena = GPIO_LL_PRO_CPU_INTR_ENA;     //enable pro cpu intr
-    }
+    (void)core_id;
+    GPIO.pin[gpio_num].int_ena = GPIO_LL_INTR_ENA;     //enable intr
 }
 
 /**
