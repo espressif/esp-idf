@@ -1425,6 +1425,10 @@ static tGATT_STATUS gatts_send_app_read_request(tGATT_TCB *p_tcb, UINT8 op_code,
     UINT16   conn_id;
 
     i_rcb = gatt_sr_find_i_rcb_by_handle(handle);
+    if (i_rcb == GATT_MAX_SR_PROFILES) {
+        GATT_TRACE_ERROR("Failed to find i_rcb,Error in %s, line=%d, \n", __func__, __LINE__);
+        return (tGATT_STATUS) GATT_ERROR;
+    }
     p_sreg = &gatt_cb.sr_reg[i_rcb];
     conn_id = GATT_CREATE_CONN_ID(p_tcb->tcb_idx, p_sreg->gatt_if);
 

@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "string.h"
 #include "esp_gatt_defs.h"
@@ -38,7 +30,7 @@ esp_err_t esp_ble_gatts_register_callback(esp_gatts_cb_t callback)
 
 esp_err_t esp_ble_gatts_app_register(uint16_t app_id)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_gatts_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
@@ -59,7 +51,7 @@ esp_err_t esp_ble_gatts_app_register(uint16_t app_id)
 
 esp_err_t esp_ble_gatts_app_unregister(esp_gatt_if_t gatts_if)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_gatts_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
@@ -75,7 +67,7 @@ esp_err_t esp_ble_gatts_app_unregister(esp_gatt_if_t gatts_if)
 esp_err_t esp_ble_gatts_create_service(esp_gatt_if_t gatts_if,
                                        esp_gatt_srvc_id_t *service_id, uint16_t num_handle)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_gatts_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
@@ -95,7 +87,7 @@ esp_err_t esp_ble_gatts_create_attr_tab(const esp_gatts_attr_db_t *gatts_attr_db
                                         uint8_t max_nb_attr,
                                         uint8_t srvc_inst_id)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_gatts_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
@@ -115,7 +107,7 @@ esp_err_t esp_ble_gatts_create_attr_tab(const esp_gatts_attr_db_t *gatts_attr_db
 
 esp_err_t esp_ble_gatts_add_included_service(uint16_t service_handle, uint16_t included_service_handle)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_gatts_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
@@ -134,7 +126,7 @@ esp_err_t esp_ble_gatts_add_char(uint16_t service_handle,  esp_bt_uuid_t  *char_
                                  esp_gatt_perm_t perm, esp_gatt_char_prop_t property, esp_attr_value_t *char_val,
                                  esp_attr_control_t *control)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_gatts_args_t arg;
     esp_err_t status;
 
@@ -173,7 +165,7 @@ esp_err_t esp_ble_gatts_add_char_descr (uint16_t service_handle,
                                         esp_gatt_perm_t perm, esp_attr_value_t *char_descr_val,
                                         esp_attr_control_t *control)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_gatts_args_t arg;
     esp_err_t status;
 
@@ -208,7 +200,7 @@ esp_err_t esp_ble_gatts_add_char_descr (uint16_t service_handle,
 
 esp_err_t esp_ble_gatts_delete_service(uint16_t service_handle)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_gatts_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
@@ -223,7 +215,7 @@ esp_err_t esp_ble_gatts_delete_service(uint16_t service_handle)
 
 esp_err_t esp_ble_gatts_start_service(uint16_t service_handle)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_gatts_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
@@ -238,7 +230,7 @@ esp_err_t esp_ble_gatts_start_service(uint16_t service_handle)
 
 esp_err_t esp_ble_gatts_stop_service(uint16_t service_handle)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_gatts_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
@@ -255,7 +247,7 @@ esp_err_t esp_ble_gatts_stop_service(uint16_t service_handle)
 esp_err_t esp_ble_gatts_send_indicate(esp_gatt_if_t gatts_if, uint16_t conn_id, uint16_t attr_handle,
                                       uint16_t value_len, uint8_t *value, bool need_confirm)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_gatts_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
@@ -283,7 +275,7 @@ esp_err_t esp_ble_gatts_send_indicate(esp_gatt_if_t gatts_if, uint16_t conn_id, 
 esp_err_t esp_ble_gatts_send_response(esp_gatt_if_t gatts_if, uint16_t conn_id, uint32_t trans_id,
                                       esp_gatt_status_t status, esp_gatt_rsp_t *rsp)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_gatts_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
@@ -302,7 +294,7 @@ esp_err_t esp_ble_gatts_send_response(esp_gatt_if_t gatts_if, uint16_t conn_id, 
 
 esp_err_t esp_ble_gatts_set_attr_value(uint16_t attr_handle, uint16_t length, const uint8_t *value)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_gatts_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
@@ -332,7 +324,7 @@ esp_gatt_status_t esp_ble_gatts_get_attr_value(uint16_t attr_handle, uint16_t *l
 
 esp_err_t esp_ble_gatts_open(esp_gatt_if_t gatts_if, esp_bd_addr_t remote_bda, bool is_direct)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_gatts_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
@@ -350,7 +342,7 @@ esp_err_t esp_ble_gatts_open(esp_gatt_if_t gatts_if, esp_bd_addr_t remote_bda, b
 
 esp_err_t esp_ble_gatts_close(esp_gatt_if_t gatts_if, uint16_t conn_id)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_gatts_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
@@ -366,7 +358,7 @@ esp_err_t esp_ble_gatts_close(esp_gatt_if_t gatts_if, uint16_t conn_id)
 
 esp_err_t esp_ble_gatts_send_service_change_indication(esp_gatt_if_t gatts_if, esp_bd_addr_t remote_bda)
 {
-    btc_msg_t msg;
+    btc_msg_t msg = {0};
     btc_ble_gatts_args_t arg;
 
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
