@@ -38,8 +38,6 @@ The following attributes of ``Kconfig`` files are standardized:
 - No trailing spaces are allowed at the end of the lines.
 - The maximum length of options is set to 40 characters.
 - The maximum length of lines is set to 120 characters.
-- Lines cannot be wrapped by backslash (because there is a bug in earlier versions of ``conf-idf`` which causes that
-  Windows line endings are not recognized after a backslash).
 
 Format checker
 --------------

@@ -2,7 +2,9 @@ menu "Serial flasher config"
 
     config ESPTOOLPY_NO_STUB
         bool "Disable download stub"
+        default "y" if IDF_TARGET_ESP32H2 && IDF_ENV_FPGA # TODO: IDF-4288
         default "n"
+
         help
             The flasher tool sends a precompiled download stub first by default. That stub allows things
             like compressed downloads and more. Usually you should not need to disable that feature

@@ -1,0 +1,53 @@
+menu "Example Configuration"
+
+    choice
+        prompt "Enterprise configuration to be used"
+        default EXAMPLE_WPA_WPA2_ENTERPRISE
+        config EXAMPLE_WPA_WPA2_ENTERPRISE
+            bool "WPA_WPA2_ENT"
+        config EXAMPLE_WPA3_ENTERPRISE
+            bool "WPA3_ENT"
+            depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+            select ESP_WIFI_GCMP_SUPPORT
+            select ESP_WIFI_GMAC_SUPPORT
+            select WPA_SUITE_B_192
+    endchoice
+
+    config EXAMPLE_WIFI_SSID
+        string "WiFi SSID"
+        default "wpa2_test"
+        help
+            SSID (network name) for the example to connect to.
+
+    if EXAMPLE_WPA_WPA2_ENTERPRISE
+        config EXAMPLE_VALIDATE_SERVER_CERT
+            bool "Validate server"
+            default y
+            help
+                Validate the servers' certificate using CA cert.
+    endif
+
+    if !EXAMPLE_WPA_WPA2_ENTERPRISE
+        config EXAMPLE_VALIDATE_SERVER_CERT
+            default y
+    endif
+
+    config EXAMPLE_EAP_ID
+        string "EAP ID"
+        default "example@espressif.com"
+        help
+            Identity in phase 1 of EAP procedure.
+
+    config EXAMPLE_EAP_USERNAME
+        string "EAP USERNAME"
+        default "espressif"
+        help
+            Username for EAP method.
+
+    config EXAMPLE_EAP_PASSWORD
+        string "EAP PASSWORD"
+        default "test11"
+        help
+            Password for EAP method.
+
+endmenu

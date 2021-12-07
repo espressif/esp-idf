@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 
-// md5_digest_table 6aaac59bd3f6d31bea4aef43b1f0d78a
+// md5_digest_table 8d520559b0ed30f0cef34704317f2815
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -57,7 +57,7 @@ extern const esp_efuse_desc_t* ESP_EFUSE_DIS_DOWNLOAD_ICACHE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_DEVICE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_FORCE_DOWNLOAD[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_USB[];
-extern const esp_efuse_desc_t* ESP_EFUSE_DIS_CAN[];
+extern const esp_efuse_desc_t* ESP_EFUSE_DIS_TWAI[];
 extern const esp_efuse_desc_t* ESP_EFUSE_JTAG_SEL_ENABLE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SOFT_DIS_JTAG[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_PAD_JTAG[];

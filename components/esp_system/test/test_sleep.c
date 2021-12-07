@@ -25,18 +25,7 @@
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
 #include "esp_timer.h"
-
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/clk.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/clk.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/clk.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/clk.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/clk.h"
-#endif
+#include "esp_private/esp_clk.h"
 
 #define ESP_EXT0_WAKEUP_LEVEL_LOW 0
 #define ESP_EXT0_WAKEUP_LEVEL_HIGH 1
@@ -324,11 +313,12 @@ static void prepare_wake_stub_from_rtc(void)
        a memory capability (as it's an implementation detail). So to test this we need to allocate
        the stack statically.
     */
+   #define STACK_SIZE 1500
 #if CONFIG_IDF_TARGET_ESP32S3
-    uint8_t *sleep_stack = (uint8_t *)heap_caps_malloc(1024, MALLOC_CAP_RTCRAM);
+    uint8_t *sleep_stack = (uint8_t *)heap_caps_malloc(STACK_SIZE, MALLOC_CAP_RTCRAM);
     TEST_ASSERT((uint32_t)sleep_stack >= SOC_RTC_DRAM_LOW && (uint32_t)sleep_stack < SOC_RTC_DRAM_HIGH);
 #else
-    static RTC_FAST_ATTR uint8_t sleep_stack[1024];
+    static RTC_FAST_ATTR uint8_t sleep_stack[STACK_SIZE];
 #endif
     static RTC_FAST_ATTR StaticTask_t sleep_task;
 
@@ -336,7 +326,7 @@ static void prepare_wake_stub_from_rtc(void)
      * wake from deep sleep. So to ensure unused stack is different if test is re-run without a full reset,
      * fill with some random bytes
      */
-    esp_fill_random(sleep_stack, sizeof(sleep_stack));
+    esp_fill_random(sleep_stack, STACK_SIZE);
 
     /* to make things extra sure, start a periodic timer to write to RTC FAST RAM at high frequency */
     const esp_timer_create_args_t timer_args = {
@@ -350,7 +340,7 @@ static void prepare_wake_stub_from_rtc(void)
     ESP_ERROR_CHECK( esp_timer_start_periodic(timer, 200) );
 
     printf("Creating test task with stack %p\n", sleep_stack);
-    TEST_ASSERT_NOT_NULL(xTaskCreateStatic( (void *)prepare_wake_stub, "sleep", sizeof(sleep_stack), NULL,
+    TEST_ASSERT_NOT_NULL(xTaskCreateStatic( (void *)prepare_wake_stub, "sleep", STACK_SIZE, NULL,
                                             UNITY_FREERTOS_PRIORITY, sleep_stack, &sleep_task));
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_FAIL_MESSAGE("Should be asleep by now");

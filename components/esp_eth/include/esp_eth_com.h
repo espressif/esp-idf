@@ -1,67 +1,18 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
 #include "esp_err.h"
 #include "esp_event_base.h"
 #include "hal/eth_types.h"
+#include "esp_eth_spec.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @brief Maximum Ethernet payload size
- *
- */
-#define ETH_MAX_PAYLOAD_LEN (1500)
-
-/**
- * @brief Minimum Ethernet payload size
- *
- */
-#define ETH_MIN_PAYLOAD_LEN (46)
-
-/**
- * @brief Ethernet frame header size: Dest addr(6 Bytes) + Src addr(6 Bytes) + length/type(2 Bytes)
- *
- */
-#define ETH_HEADER_LEN (14)
-
-/**
- * @brief Optional 802.1q VLAN Tag length
- *
- */
-#define ETH_VLAN_TAG_LEN (4)
-
-/**
- * @brief Jumbo frame payload size
- *
- */
-#define ETH_JUMBO_FRAME_PAYLOAD_LEN (9000)
-
-/**
- * @brief Maximum frame size (1522 Bytes)
- *
- */
-#define ETH_MAX_PACKET_SIZE (ETH_HEADER_LEN + ETH_VLAN_TAG_LEN + ETH_MAX_PAYLOAD_LEN + ETH_CRC_LEN)
-
-/**
- * @brief Minimum frame size (64 Bytes)
- *
- */
-#define ETH_MIN_PACKET_SIZE (ETH_HEADER_LEN + ETH_MIN_PAYLOAD_LEN + ETH_CRC_LEN)
 
 /**
 * @brief Ethernet driver state
@@ -75,22 +26,6 @@ typedef enum {
     ETH_STATE_DUPLEX, /*!< Duplex updated */
     ETH_STATE_PAUSE,  /*!< Pause ability updated */
 } esp_eth_state_t;
-
-/**
-* @brief Command list for ioctl API
-*
-*/
-typedef enum {
-    ETH_CMD_G_MAC_ADDR,    /*!< Get MAC address */
-    ETH_CMD_S_MAC_ADDR,    /*!< Set MAC address */
-    ETH_CMD_G_PHY_ADDR,    /*!< Get PHY address */
-    ETH_CMD_S_PHY_ADDR,    /*!< Set PHY address */
-    ETH_CMD_G_SPEED,       /*!< Get Speed */
-    ETH_CMD_S_PROMISCUOUS, /*!< Set promiscuous mode */
-    ETH_CMD_S_FLOW_CTRL,   /*!< Set flow control */
-    ETH_CMD_G_DUPLEX_MODE, /*!< Get Duplex mode */
-    ETH_CMD_S_PHY_LOOPBACK,/*!< Set PHY loopback */
-} esp_eth_io_cmd_t;
 
 /**
 * @brief Ethernet mediator

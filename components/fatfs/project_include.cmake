@@ -3,16 +3,20 @@
 # Create a fatfs image of the specified directory on the host during build and optionally
 # have the created image flashed using `idf.py flash`
 function(fatfs_create_partition_image partition base_dir)
-    set(options FLASH_IN_PROJECT)
+    set(options FLASH_IN_PROJECT WL_INIT)
     cmake_parse_arguments(arg "${options}" "" "${multi}" "${ARGN}")
+
 
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(python PYTHON)
 
-    set(fatfsgen_py ${python} ${idf_path}/components/fatfs/fatfsgen.py)
+    if(arg_WL_INIT)
+        set(fatfsgen_py ${python} ${idf_path}/components/fatfs/wl_fatfsgen.py)
+    else()
+        set(fatfsgen_py ${python} ${idf_path}/components/fatfs/fatfsgen.py)
+    endif()
 
     get_filename_component(base_dir_full_path ${base_dir} ABSOLUTE)
-
     partition_table_get_partition_info(size "--partition-name ${partition}" "size")
     partition_table_get_partition_info(offset "--partition-name ${partition}" "offset")
 
@@ -38,7 +42,6 @@ function(fatfs_create_partition_image partition base_dir)
         esptool_py_flash_to_partition(${partition}-flash "${partition}" "${image_file}")
 
         add_dependencies(${partition}-flash fatfs_${partition}_bin)
-
         if(arg_FLASH_IN_PROJECT)
             esptool_py_flash_to_partition(flash "${partition}" "${image_file}")
             add_dependencies(flash fatfs_${partition}_bin)
@@ -47,5 +50,26 @@ function(fatfs_create_partition_image partition base_dir)
         set(message "Failed to create FATFS image for partition '${partition}'. "
                     "Check project configuration if using the correct partition table file.")
         fail_at_build_time(fatfs_${partition}_bin "${message}")
+    endif()
+endfunction()
+
+
+function(fatfs_create_rawflash_image partition base_dir)
+    set(options FLASH_IN_PROJECT)
+    cmake_parse_arguments(arg "${options}" "" "${multi}" "${ARGN}")
+    if(arg_FLASH_IN_PROJECT)
+        fatfs_create_partition_image(${partition} ${base_dir} FLASH_IN_PROJECT)
+    else()
+        fatfs_create_partition_image(${partition} ${base_dir})
+    endif()
+endfunction()
+
+function(fatfs_create_spiflash_image partition base_dir)
+    set(options FLASH_IN_PROJECT)
+    cmake_parse_arguments(arg "${options}" "" "${multi}" "${ARGN}")
+    if(arg_FLASH_IN_PROJECT)
+        fatfs_create_partition_image(${partition} ${base_dir} FLASH_IN_PROJECT WL_INIT)
+    else()
+        fatfs_create_partition_image(${partition} ${base_dir} WL_INIT)
     endif()
 endfunction()

@@ -18,15 +18,6 @@
 #include "sae.h"
 #include "esp_wifi_crypto_types.h"
 
-/*TBD Move the this api to proper files once they are taken out of lib*/
-void wpabuf_clear_free(struct wpabuf *buf)
-{
-    if (buf) {
-        os_memset(wpabuf_mhead(buf), 0, wpabuf_len(buf));
-        wpabuf_free(buf);
-    }
-}
-
 int sae_set_group(struct sae_data *sae, int group)
 {
 	struct sae_temporary_data *tmp;

@@ -2,6 +2,7 @@ tools/ble/**/*
 tools/catch/**/*
 tools/ci/build_template_app.sh
 tools/ci/check_*.{py,txt,sh}  # excluded because run in default pipeline pre-check stage
+tools/ci/check_copyright_config.yaml
 tools/ci/checkout_project_ref.py
 tools/ci/ci_fetch_submodule.py
 tools/ci/ci_get_mr_info.py
@@ -25,7 +26,6 @@ tools/eclipse-code-style.xml
 tools/format-minimal.sh
 tools/format.sh
 tools/gen_esp_err_to_name.py
-tools/kconfig/**/*
 tools/mocks/**/*
 tools/set-submodules-to-github.sh
 tools/templates/sample_component/CMakeLists.txt

@@ -103,7 +103,7 @@ static const char *result_code_strings[] = {
 *******************************************************************************/
 int RFCOMM_CreateConnection (UINT16 uuid, UINT8 scn, BOOLEAN is_server,
                              UINT16 mtu, BD_ADDR bd_addr, UINT16 *p_handle,
-                             tPORT_CALLBACK *p_mgmt_cb)
+                             tPORT_MGMT_CALLBACK *p_mgmt_cb)
 {
     tPORT      *p_port;
     int        i;

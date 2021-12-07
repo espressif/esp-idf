@@ -345,6 +345,17 @@ esp_err_t esp_http_client_set_password(esp_http_client_handle_t client, const ch
 esp_err_t esp_http_client_set_authtype(esp_http_client_handle_t client, esp_http_client_auth_type_t auth_type);
 
 /**
+ * @brief      Get HTTP client session errno
+ *
+ * @param[in]  client  The esp_http_client handle
+ *
+ * @return
+ *         - (-1) if invalid argument
+ *         - errno
+ */
+int esp_http_client_get_errno(esp_http_client_handle_t client);
+
+/**
  * @brief      Set http request method
  *
  * @param[in]  client  The esp_http_client handle

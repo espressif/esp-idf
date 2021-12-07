@@ -351,6 +351,24 @@ function run_tests()
     rm sdkconfig
     rm sdkconfig.defaults
 
+    print_status "Compiler flags on build command line are taken into account"
+    clean_build_dir
+    # Backup original source file
+    cp main/main.c main/main.c.bak
+    # Alter source file to check user flag
+    echo -e "\n#ifndef USER_FLAG \n \
+#error \"USER_FLAG is not defined!\" \n \
+#endif\n" >> main/main.c
+    idf.py build -DCMAKE_C_FLAGS=-DUSER_FLAG || failure "User flags should have been taken into account"
+    # Restore original file
+    mv main/main.c.bak main/main.c
+
+    print_status "Compiler flags cannot be overwritten"
+    clean_build_dir
+    # If the compiler flags are overriden, the following build command will
+    # cause issues at link time.
+    idf.py build -DCMAKE_C_FLAGS= -DCMAKE_CXX_FLAGS= || failure "CMake compiler flags have been overriden"
+
     # the next tests use the esp32s2 target
     export other_target=esp32s2
 
@@ -701,15 +719,8 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     git checkout CMakeLists.txt
     rm -f log.txt
 
-    print_status "Compiles with dependencies delivered by component manager"
-    clean_build_dir
-    printf "\n#include \"test_component.h\"\n" >> main/main.c
-    printf "dependencies:\n  test_component:\n    path: test_component\n    git: ${COMPONENT_MANAGER_TEST_REPO}\n" >> main/idf_component.yml
-    idf.py reconfigure build || failure "Build didn't succeed with required components installed by package manager"
-    rm main/idf_component.yml
-    git checkout main/main.c
-
     print_status "Build fails if partitions don't fit in flash"
+    clean_build_dir
     sed -i.bak "s/CONFIG_ESPTOOLPY_FLASHSIZE.\+//" sdkconfig  # remove all flashsize config
     echo "CONFIG_ESPTOOLPY_FLASHSIZE_1MB=y" >> sdkconfig     # introduce undersize flash
     ( idf.py build 2>&1 | grep "does not fit in configured flash size 1MB" ) || failure "Build didn't fail with expected flash size failure message"
@@ -856,13 +867,14 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     idf.py docs --no-browser --language en --version v4.2.1 --target esp32 --starting-page get-started | grep "https://docs.espressif.com/projects/esp-idf/en/v4.2.1/esp32/get-started" || failure "'idf.py docs --no-browser --language en --version v4.2.1 --target esp32 --starting-page get-started' failed"
 
     print_status "Deprecation warning check"
+    cd ${TESTDIR}/template
     # click warning
     idf.py post_debug &> tmp.log
-    grep "Warning: Command \"post_debug\" is deprecated and will be removed in v5.0." tmp.log || (failure "Missing deprecation warning with command \"post_debug\"")
+    grep "Warning: Command \"post_debug\" is deprecated and will be removed in v5.0." tmp.log || failure "Missing deprecation warning with command \"post_debug\""
     rm tmp.log
     # cmake warning
     idf.py efuse_common_table &> tmp.log
-    grep "Warning: Command efuse_common_table is deprecated and will be removed in the next major release." tmp.log || (failure "Missing deprecation warning with command \"efuse_common_table\"")
+    grep "Warning: Command efuse_common_table is deprecated and will be removed in the next major release." tmp.log || failure "Missing deprecation warning with command \"efuse_common_table\""
     rm tmp.log
 
     print_status "All tests completed"

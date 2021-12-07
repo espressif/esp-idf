@@ -63,7 +63,7 @@ Configuration:
         .cert_pem = (const char *)websocket_org_pem_start,
     };
 
-.. note:: If you want to verify the server, then you need to provide a certificate in PEM format, and provide to ``cert_pem`` in :cpp:type:`websocket_client_config_t`. If no certficate is provided then the TLS connection will to default not requiring verification.
+.. note:: If you want to verify the server, then you need to provide a certificate in PEM format, and provide to ``cert_pem`` in :cpp:type:`websocket_client_config_t`. If no certficate is provided then the TLS connection will default to not requiring verification.
 
 PEM certificate for this example could be extracted from an openssl `s_client` command connecting to websocket.org.
 In case a host operating system has `openssl` and `sed` packages installed, one could execute the following command to download and save the root or intermediate root certificate to a file (Note for Windows users: Both Linux like environment or Windows native packages may be used).

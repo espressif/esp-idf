@@ -273,39 +273,73 @@ BaseType_t IRAM_ATTR xPortInterruptedFromISRContext(void)
 
 // ------------------ Critical Sections --------------------
 
-void __attribute__((optimize("-O3"))) vPortEnterCritical(portMUX_TYPE *mux)
+BaseType_t __attribute__((optimize("-O3"))) xPortEnterCriticalTimeout(portMUX_TYPE *mux, BaseType_t timeout)
 {
-    BaseType_t oldInterruptLevel = portSET_INTERRUPT_MASK_FROM_ISR();
-    /* Interrupts may already be disabled (because we're doing this recursively)
-    * but we can't get the interrupt level after
-    * vPortCPUAquireMutex, because it also may mess with interrupts.
-    * Get it here first, then later figure out if we're nesting
-    * and save for real there.
-    */
-    vPortCPUAcquireMutex( mux );
+    /* Interrupts may already be disabled (if this function is called in nested
+     * manner). However, there's no atomic operation that will allow us to check,
+     * thus we have to disable interrupts again anyways.
+     *
+     * However, if this is call is NOT nested (i.e., the first call to enter a
+     * critical section), we will save the previous interrupt level so that the
+     * saved level can be restored on the last call to exit the critical.
+     */
+    BaseType_t xOldInterruptLevel = portSET_INTERRUPT_MASK_FROM_ISR();
+    if (!spinlock_acquire(mux, timeout)) {
+        //Timed out attempting to get spinlock. Restore previous interrupt level and return
+        portCLEAR_INTERRUPT_MASK_FROM_ISR(xOldInterruptLevel);
+        return pdFAIL;
+    }
+    //Spinlock acquired. Increment the critical nesting count.
     BaseType_t coreID = xPortGetCoreID();
     BaseType_t newNesting = port_uxCriticalNesting[coreID] + 1;
     port_uxCriticalNesting[coreID] = newNesting;
-
+    //If this is the first entry to a critical section. Save the old interrupt level.
     if ( newNesting == 1 ) {
-        //This is the first time we get called. Save original interrupt level.
-        port_uxOldInterruptState[coreID] = oldInterruptLevel;
+        port_uxOldInterruptState[coreID] = xOldInterruptLevel;
     }
+    return pdPASS;
 }
 
 void __attribute__((optimize("-O3"))) vPortExitCritical(portMUX_TYPE *mux)
 {
-    vPortCPUReleaseMutex( mux );
+    /* This function may be called in a nested manner. Therefore, we only need
+     * to reenable interrupts if this is the last call to exit the critical. We
+     * can use the nesting count to determine whether this is the last exit call.
+     */
+    spinlock_release(mux);
     BaseType_t coreID = xPortGetCoreID();
     BaseType_t nesting = port_uxCriticalNesting[coreID];
 
     if (nesting > 0) {
         nesting--;
         port_uxCriticalNesting[coreID] = nesting;
-
+        //This is the last exit call, restore the saved interrupt level
         if ( nesting == 0 ) {
             portCLEAR_INTERRUPT_MASK_FROM_ISR(port_uxOldInterruptState[coreID]);
         }
+    }
+}
+
+BaseType_t xPortEnterCriticalTimeoutCompliance(portMUX_TYPE *mux, BaseType_t timeout)
+{
+    BaseType_t ret;
+    if (!xPortInIsrContext()) {
+        ret = xPortEnterCriticalTimeout(mux, timeout);
+    } else {
+        esp_rom_printf("port*_CRITICAL called from ISR context. Aborting!\n");
+        abort();
+        ret = pdFAIL;
+    }
+    return ret;
+}
+
+void vPortExitCriticalCompliance(portMUX_TYPE *mux)
+{
+    if (!xPortInIsrContext()) {
+        vPortExitCritical(mux);
+    } else {
+        esp_rom_printf("port*_CRITICAL called from ISR context. Aborting!\n");
+        abort();
     }
 }
 

@@ -9,6 +9,8 @@ components/espcoredump/test/test_espcoredump.sh
 components/espcoredump/test_apps/build_espcoredump.sh
 components/fatfs/fatfsgen.py
 components/fatfs/test_fatfsgen/test_fatfsgen.py
+components/fatfs/test_fatfsgen/test_wl_fatfsgen.py
+components/fatfs/wl_fatfsgen.py
 components/heap/test_multi_heap_host/test_all_configs.sh
 components/mbedtls/esp_crt_bundle/gen_crt_bundle.py
 components/mbedtls/esp_crt_bundle/test_gen_crt_bundle/test_gen_crt_bundle.py
@@ -80,10 +82,6 @@ tools/idf.py
 tools/idf_monitor.py
 tools/idf_size.py
 tools/idf_tools.py
-tools/kconfig/check.sh
-tools/kconfig/lxdialog/check-lxdialog.sh
-tools/kconfig/merge_config.sh
-tools/kconfig/streamline_config.pl
 tools/kconfig_new/confgen.py
 tools/kconfig_new/confserver.py
 tools/kconfig_new/test/confgen/test_confgen.py

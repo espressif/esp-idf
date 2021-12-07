@@ -141,9 +141,6 @@ void i2s_hal_rx_set_pdm_mode_default(i2s_hal_context_t *hal)
     i2s_ll_rx_enable_pdm(hal->dev, true);
     /* set pdm rx downsample number */
     i2s_ll_rx_set_pdm_dsr(hal->dev, I2S_PDM_DSR_8S);
-#if !SOC_I2S_SUPPORTS_TDM
-    i2s_ll_rx_force_enable_fifo_mod(hal->dev, true);
-#endif
 #if SOC_I2S_SUPPORTS_TDM
     i2s_ll_rx_enable_clock(hal->dev);
     i2s_ll_rx_clk_set_src(hal->dev, I2S_CLK_D2CLK); // Set I2S_CLK_D2CLK as default

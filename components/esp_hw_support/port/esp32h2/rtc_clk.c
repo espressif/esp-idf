@@ -232,6 +232,7 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config)
     uint32_t src_freq_mhz = root_clk_slt(config->source);
     uint32_t div = src_freq_mhz / (config->freq_mhz);
     rtc_clk_cpu_freq_set(config->source, div);
+    ets_update_cpu_frequency(config->freq_mhz);
 }
 
 void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config)

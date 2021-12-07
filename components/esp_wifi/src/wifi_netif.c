@@ -83,6 +83,11 @@ static esp_err_t wifi_driver_start(esp_netif_t * esp_netif, void * args)
 
 void esp_wifi_destroy_if_driver(wifi_netif_driver_t h)
 {
+    if (h) {
+        esp_wifi_internal_reg_rxcb(h->wifi_if, NULL);  // ignore the potential error
+                                                       // as the wifi might have been already uninitialized
+        s_wifi_netifs[h->wifi_if] = NULL;
+    }
     free(h);
 }
 

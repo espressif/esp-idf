@@ -41,11 +41,6 @@ def create_project(target_path, name):
     replace_in_file(os.path.join(target_path, 'CMakeLists.txt'), 'main', name)
     os.remove(os.path.join(target_path, 'README.md'))
 
-    # after manual removing "Makefile" and "component.mk" from `examples/get-started/sample_project`
-    # remove following two lines as well
-    os.remove(os.path.join(target_path, 'Makefile'))
-    os.remove(os.path.join(target_path, 'main', 'component.mk'))
-
 
 def create_component(target_path, name):
     copy_tree(os.path.join(os.environ['IDF_PATH'], 'tools', 'templates', 'sample_component'), target_path)

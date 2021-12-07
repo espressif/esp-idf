@@ -10,6 +10,7 @@ import logging
 import os.path
 import re
 import sys
+from typing import List, Optional, TextIO
 
 from find_build_apps import BUILD_SYSTEMS, BuildError, BuildItem, setup_logging
 from find_build_apps.common import SIZE_JSON_FN, rmdir
@@ -21,7 +22,84 @@ LOG_ERROR_WARNING = re.compile(r'(error|warning):', re.IGNORECASE)
 LOG_DEBUG_LINES = 25
 
 
-def main():  # type: () -> None
+def build_apps(
+    build_items: List[BuildItem],
+    parallel_count: int = 1,
+    parallel_index: int = 1,
+    dry_run: bool = False,
+    build_verbose: bool = False,
+    keep_going: bool = False,
+    output_build_list: Optional[TextIO] = None,
+    size_info: Optional[TextIO] = None
+) -> None:
+    if not build_items:
+        logging.warning('Empty build list')
+        sys.exit(0)
+
+    num_builds = len(build_items)
+    num_jobs = parallel_count
+    job_index = parallel_index - 1  # convert to 0-based index
+    num_builds_per_job = (num_builds + num_jobs - 1) // num_jobs
+    min_job_index = num_builds_per_job * job_index
+    if min_job_index >= num_builds:
+        logging.warning(
+            f'Nothing to do for job {job_index + 1} (build total: {num_builds}, per job: {num_builds_per_job})')
+        sys.exit(0)
+
+    max_job_index = min(num_builds_per_job * (job_index + 1) - 1, num_builds - 1)
+    logging.info('Total {} builds, max. {} builds per job, running builds {}-{}'.format(
+        num_builds, num_builds_per_job, min_job_index + 1, max_job_index + 1))
+
+    builds_for_current_job = build_items[min_job_index:max_job_index + 1]
+    for i, build_item in enumerate(builds_for_current_job):
+        index = i + min_job_index + 1
+        build_item.index = index
+        build_item.dry_run = dry_run
+        build_item.verbose = build_verbose
+        build_item.keep_going = keep_going
+        logging.debug('\tBuild {}: {}'.format(index, repr(build_item)))
+        if output_build_list:
+            output_build_list.write(build_item.to_json_expanded() + '\n')
+
+    failed_builds = []
+    for build_item in builds_for_current_job:
+        logging.info('Running build {}: {}'.format(build_item.index, repr(build_item)))
+        build_system_class = BUILD_SYSTEMS[build_item.build_system]
+        try:
+            build_system_class.build(build_item)
+        except BuildError as e:
+            logging.error(str(e))
+            if build_item.build_log_path:
+                log_filename = os.path.basename(build_item.build_log_path)
+                with open(build_item.build_log_path, 'r') as f:
+                    lines = [line.rstrip() for line in f.readlines() if line.rstrip()]  # non-empty lines
+                    logging.debug('Error and warning lines from {}:'.format(log_filename))
+                    for line in lines:
+                        if LOG_ERROR_WARNING.search(line):
+                            logging.warning('>>> {}'.format(line))
+                    logging.debug('Last {} lines of {}:'.format(LOG_DEBUG_LINES, log_filename))
+                    for line in lines[-LOG_DEBUG_LINES:]:
+                        logging.debug('>>> {}'.format(line))
+            if keep_going:
+                failed_builds.append(build_item)
+            else:
+                sys.exit(1)
+        else:
+            if size_info:
+                build_item.write_size_info(size_info)
+            if not build_item.preserve:
+                logging.info(f'Removing build directory {build_item.build_path}')
+                # we only remove binaries here, log files are still needed by check_build_warnings.py
+                rmdir(build_item.build_path, exclude_file_pattern=SIZE_JSON_FN)
+
+    if failed_builds:
+        logging.error('The following build have failed:')
+        for build in failed_builds:
+            logging.error('\t{}'.format(build))
+        sys.exit(1)
+
+
+if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='ESP-IDF app builder')
     parser.add_argument(
         '-v',
@@ -87,76 +165,7 @@ def main():  # type: () -> None
         help='Name of the file to read the list of builds from. If not specified, read from stdin.',
     )
     args = parser.parse_args()
-
     setup_logging(args)
-
-    build_items = [BuildItem.from_json(line) for line in args.build_list]
-    if not build_items:
-        logging.warning('Empty build list')
-        SystemExit(0)
-
-    num_builds = len(build_items)
-    num_jobs = args.parallel_count
-    job_index = args.parallel_index - 1  # convert to 0-based index
-    num_builds_per_job = (num_builds + num_jobs - 1) // num_jobs
-    min_job_index = num_builds_per_job * job_index
-    if min_job_index >= num_builds:
-        logging.warn('Nothing to do for job {} (build total: {}, per job: {})'.format(
-            job_index + 1, num_builds, num_builds_per_job))
-        raise SystemExit(0)
-
-    max_job_index = min(num_builds_per_job * (job_index + 1) - 1, num_builds - 1)
-    logging.info('Total {} builds, max. {} builds per job, running builds {}-{}'.format(
-        num_builds, num_builds_per_job, min_job_index + 1, max_job_index + 1))
-
-    builds_for_current_job = build_items[min_job_index:max_job_index + 1]
-    for i, build_info in enumerate(builds_for_current_job):
-        index = i + min_job_index + 1
-        build_info.index = index
-        build_info.dry_run = args.dry_run
-        build_info.verbose = args.build_verbose
-        build_info.keep_going = args.keep_going
-        logging.debug('    Build {}: {}'.format(index, repr(build_info)))
-        if args.output_build_list:
-            args.output_build_list.write(build_info.to_json_expanded() + '\n')
-
-    failed_builds = []
-    for build_info in builds_for_current_job:
-        logging.info('Running build {}: {}'.format(build_info.index, repr(build_info)))
-        build_system_class = BUILD_SYSTEMS[build_info.build_system]
-        try:
-            build_system_class.build(build_info)
-        except BuildError as e:
-            logging.error(str(e))
-            if build_info.build_log_path:
-                log_filename = os.path.basename(build_info.build_log_path)
-                with open(build_info.build_log_path, 'r') as f:
-                    lines = [line.rstrip() for line in f.readlines() if line.rstrip()]  # non-empty lines
-                    logging.debug('Error and warning lines from {}:'.format(log_filename))
-                    for line in lines:
-                        if LOG_ERROR_WARNING.search(line):
-                            logging.warning('>>> {}'.format(line))
-                    logging.debug('Last {} lines of {}:'.format(LOG_DEBUG_LINES, log_filename))
-                    for line in lines[-LOG_DEBUG_LINES:]:
-                        logging.debug('>>> {}'.format(line))
-            if args.keep_going:
-                failed_builds.append(build_info)
-            else:
-                raise SystemExit(1)
-        else:
-            if args.size_info:
-                build_info.write_size_info(args.size_info)
-            if not build_info.preserve:
-                logging.info('Removing build directory {}'.format(build_info.build_path))
-                # we only remove binaries here, log files are still needed by check_build_warnings.py
-                rmdir(build_info.build_path, exclude_file_pattern=SIZE_JSON_FN)
-
-    if failed_builds:
-        logging.error('The following build have failed:')
-        for build in failed_builds:
-            logging.error('    {}'.format(build))
-        raise SystemExit(1)
-
-
-if __name__ == '__main__':
-    main()
+    items = [BuildItem.from_json(line) for line in args.build_list]
+    build_apps(items, args.parallel_count, args.parallel_index, args.dry_run, args.build_verbose,
+               args.keep_going, args.output_build_list, args.size_info)

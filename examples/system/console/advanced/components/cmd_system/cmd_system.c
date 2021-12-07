@@ -66,11 +66,34 @@ void register_system(void)
 /* 'version' command */
 static int get_version(int argc, char **argv)
 {
+    const char *model;
     esp_chip_info_t info;
     esp_chip_info(&info);
+
+    switch(info.model) {
+        case CHIP_ESP32:
+            model = "ESP32";
+            break;
+        case CHIP_ESP32S2:
+            model = "ESP32-S2";
+            break;
+        case CHIP_ESP32S3:
+            model = "ESP32-S3";
+            break;
+        case CHIP_ESP32C3:
+            model = "ESP32-C3";
+            break;
+        case CHIP_ESP32H2:
+            model = "ESP32-H2";
+            break;
+        default:
+            model = "Unknown";
+            break;
+    }
+
     printf("IDF Version:%s\r\n", esp_get_idf_version());
     printf("Chip info:\r\n");
-    printf("\tmodel:%s\r\n", info.model == CHIP_ESP32 ? "ESP32" : "Unknown");
+    printf("\tmodel:%s\r\n", model);
     printf("\tcores:%d\r\n", info.cores);
     printf("\tfeature:%s%s%s%s%d%s\r\n",
            info.features & CHIP_FEATURE_WIFI_BGN ? "/802.11bgn" : "",

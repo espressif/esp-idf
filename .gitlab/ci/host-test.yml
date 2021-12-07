@@ -137,6 +137,7 @@ test_fatfsgen_on_host:
   script:
     - cd components/fatfs/test_fatfsgen/
     - ./test_fatfsgen.py
+    - ./test_wl_fatfsgen.py
 
 test_multi_heap_on_host:
   extends: .host_test_template

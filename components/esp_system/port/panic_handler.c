@@ -17,7 +17,7 @@
 #include "hal/soc_hal.h"
 #include "hal/cpu_hal.h"
 
-#include "cache_err_int.h"
+#include "esp_private/cache_err_int.h"
 
 #include "sdkconfig.h"
 #include "esp_rom_sys.h"

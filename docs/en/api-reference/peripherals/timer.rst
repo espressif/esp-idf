@@ -92,6 +92,7 @@ Interrupts
 ^^^^^^^^^^
 
 Registration of an interrupt callback for a specific timer can be done by calling :cpp:func:`timer_isr_callback_add` and passing in the group ID, timer ID, callback handler and user data. The callback handler will be invoked in ISR context, so user shouldn't put any blocking API in the callback function.
+
 The benefit of using interrupt callback instead of precessing interrupt from scratch is, you don't have to deal with interrupt status check and clean stuffs, they are all addressed before the callback got run in driver's default interrupt handler.
 
 For more information on how to use interrupts, please see the application example below.

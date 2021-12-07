@@ -14,27 +14,27 @@ If you have a more complicated application to go (for example, connect to some I
 ### Hardware Required
 
 To run this example, you need to prepare following hardwares:
-* [ESP32 board](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/modules-and-boards.html) (e.g. ESP32-PICO, ESP32 DevKitC, etc)
-* ENC28J60 module (the latest revision should be 6)
+* [ESP32 dev board](https://www.espressif.com/en/products/devkits?id=ESP32) (e.g. ESP32-PICO, ESP32 DevKitC, etc)
+* ENC28J60 Ethernet module (the latest revision should be 6)
 * **!! IMPORTANT !!** Proper input power source since ENC28J60 is quite power consuming device (it consumes more than 200 mA in peaks when transmitting). If improper power source is used, input voltage may drop and ENC28J60 may either provide nonsense response to host controller via SPI (fail to read registers properly) or it may enter to some strange state in the worst case. There are several options how to resolve it:
-  * Power ESP32 board from `USB 3.0`, if board is used as source of power to ENC board.
-  * Power ESP32 board from external 5V power supply with current limit at least 1 A, if board is used as source of power to ENC board.
-  * Power ENC28J60 from external 3.3V power supply with common GND to ESP32 board. Note that there might be some ENC28J60 boards with integrated voltage regulator on market and so powered by 5 V. Please consult documentation of your board for details.
+  * Power ESP32 dev board from `USB 3.0`, if the dev board is used as source of power to the ENC28J60 module.
+  * Power ESP32 dev board from external 5 V power supply with current limit at least 1 A, if the dev board is used as source of power to the ENC28J60 module.
+  * Power ENC28J60 from external 3.3 V power supply with common GND to ESP32 dev board. Note that there might be some ENC28J60 modules with integrated voltage regulator on market and so powered by 5 V. Please consult documentation of your board for details.
 
-  If a ESP32 board is used as source of power to ENC board, ensure that that particular board is assembled with voltage regulator capable to deliver current up to 1 A. This is a case of ESP32 DevKitC or ESP-WROVER-KIT, for example. Such setup was tested and works as expected. Other boards may use different voltage regulators and may perform differently.
-  **WARNING:** Always consult documentation/schematics associated with particular ENC28J60 and ESP32 boards used in your use-case first.
+  If an ESP32 dev board is used as the source of power to the ENC28J60 module, ensure that that the particular dev board is assembled with a voltage regulator capable to deliver current of 1 A. This is a case of ESP32-DevKitC or ESP-WROVER-KIT, for example. Such setup was tested and works as expected. Other dev boards may use different voltage regulators and may perform differently.
+  **WARNING:** Always consult documentation/schematics associated with particular ENC28J60 and ESP32 dev boards used in your use-case first.
 
 #### Pin Assignment
 
-* ENC28J60 Ethernet module consumes one SPI interface plus an interrupt GPIO. By default they're connected as follows:
+* ENC28J60 Ethernet module consumes one SPI interface plus an interrupt GPIO. By default they're connected as follows, in case of ESP32 dev boards:
 
-| GPIO   | ENC28J60    |
-| ------ | ----------- |
-| GPIO19 | SPI_CLK     |
-| GPIO23 | SPI_MOSI    |
-| GPIO25 | SPI_MISO    |
-| GPIO22 | SPI_CS      |
-| GPIO4  | Interrupt   |
+| ESP32 GPIO | ENC28J60    |
+| ---------- | ----------- |
+| GPIO14     | SPI_CLK     |
+| GPIO13     | SPI_MOSI    |
+| GPIO12     | SPI_MISO    |
+| GPIO15     | SPI_CS      |
+| GPIO4      | Interrupt   |
 
 ### Configure the project
 
@@ -92,7 +92,7 @@ Now you can ping your ESP32 in the terminal by entering `ping 192.168.2.34` (it 
     sudo ethtool -s YOUR_INTERFACE_NAME speed 10 duplex full autoneg off
     ```
    * On Windows, go to `Network Connections` -> `Change adapter options` -> open `Properties` of selected network card -> `Configure` -> `Advanced` -> `Link Speed & Duplex` -> select `10 Mbps Full Duplex in dropdown menu`.
-3. Ensure that your wiring between ESP32 board and the ENC28J60 board is realized by short wires with the same length and no wire crossings.
+3. Ensure that your wiring between ESP32 dev board and the ENC28J60 module is realized by short wires with the same length and no wire crossings.
 4. CS Hold Time needs to be configured to be at least 210 ns to properly read MAC and MII registers as defined by ENC28J60 Data Sheet. This is automatically configured in the example based on selected SPI clock frequency by computing amount of SPI bit-cycles the CS should stay active after the transmission. However, if your PCB design/wiring requires different value, please update `cs_ena_posttrans` member of `devcfg` structure per your actual needs.
 
 

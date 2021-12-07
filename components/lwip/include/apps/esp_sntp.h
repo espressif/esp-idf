@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef __ESP_SNTP_H__
 #define __ESP_SNTP_H__
@@ -28,7 +20,7 @@ extern "C" {
  * The user has the ability to redefine this function in order
  * to re-define its functionality. This function has two time update modes,
  * which can be set via the sntp_set_sync_mode() function.
- * Two modes are available:
+ * Two available modes are as follows:
  * - the first is an immediate update when receiving time from the sntp server,
  * - the second is a smooth time update (if the time error is no more than 35 minutes,
  *   and an immediate update if the error is more than 35 minutes).
@@ -83,7 +75,7 @@ void sntp_sync_time(struct timeval *tv);
 /**
  * @brief Set the sync mode
  *
- * Allowable two mode: SNTP_SYNC_MODE_IMMED and SNTP_SYNC_MODE_SMOOTH.
+ * Modes allowed: SNTP_SYNC_MODE_IMMED and SNTP_SYNC_MODE_SMOOTH.
  * @param sync_mode Sync mode.
  */
 void sntp_set_sync_mode(sntp_sync_mode_t sync_mode);

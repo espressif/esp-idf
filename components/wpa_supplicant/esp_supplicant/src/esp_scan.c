@@ -22,8 +22,7 @@
 
 extern struct wpa_supplicant g_wpa_supp;
 
-static void scan_done_event_handler(void* arg, esp_event_base_t event_base,
-				    int32_t event_id, void* event_data)
+static void scan_done_event_handler(void *arg, STATUS status)
 {
 	struct wpa_supplicant *wpa_s = &g_wpa_supp;
 
@@ -90,8 +89,6 @@ void esp_scan_init(struct wpa_supplicant *wpa_s)
 	wpa_s->scanning = 0;
 	wpa_bss_init(wpa_s);
 	wpa_s->last_scan_res = NULL;
-	esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_SCAN_DONE,
-			&scan_done_event_handler, NULL);
 }
 
 void esp_scan_deinit(struct wpa_supplicant *wpa_s)
@@ -99,8 +96,6 @@ void esp_scan_deinit(struct wpa_supplicant *wpa_s)
 	wpa_bss_deinit(wpa_s);
 	os_free(wpa_s->last_scan_res);
 	wpa_s->last_scan_res = NULL;
-	esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_SCAN_DONE,
-			&scan_done_event_handler);
 }
 
 int esp_handle_beacon_probe(u8 type, u8 *frame, size_t len, u8 *sender,
@@ -223,8 +218,10 @@ static int issue_scan(struct wpa_supplicant *wpa_s,
 	wpa_s->type |= (1 << WLAN_FC_STYPE_BEACON) | (1 << WLAN_FC_STYPE_PROBE_RESP);
 	esp_wifi_register_mgmt_frame_internal(wpa_s->type, wpa_s->subtype);
 
+	typedef void (* scan_done_cb_t)(void *arg, STATUS status);
+	extern int esp_wifi_promiscuous_scan_start(wifi_scan_config_t *config, scan_done_cb_t cb);
 	/* issue scan */
-	if (esp_wifi_scan_start(params, false) < 0) {
+	if (esp_wifi_promiscuous_scan_start(params, scan_done_event_handler) < 0) {
 		ret = -1;
 		goto cleanup;
 	}

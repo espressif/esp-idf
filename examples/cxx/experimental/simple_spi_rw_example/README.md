@@ -53,7 +53,7 @@ If there's an error with the SPI peripheral:
 ...
 I (0) cpu_start: Starting scheduler on APP CPU.
 E (434) spi: spicommon_bus_initialize_io(429): mosi not valid
-Coulnd't read SPI!
+Couldn't read SPI!
 ```
 
 If the SPI pins are not connected properly, the resulting read may just return 0, this error can not be detected:

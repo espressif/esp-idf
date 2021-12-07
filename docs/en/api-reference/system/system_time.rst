@@ -2,7 +2,7 @@ System Time
 ===========
 
 {IDF_TARGET_RTC_CLK_FRE:default="150kHz", esp32s2="90kHz"}
-{IDF_TARGET_HARDWARE_DESIGN_URL:default="`ESP32 Hardware Design Guidelines <https://www.espressif.com/sites/default/files/documentation/esp32_hardware_design_guidelines_en.pdf#page=10>`_", esp32="`ESP32 Hardware Design Guidelines <https://www.espressif.com/sites/default/files/documentation/esp32_hardware_design_guidelines_en.pdf#page=10>`_", esp32s2="`ESP32-S2 Hardware Design Guidelines <https://www.espressif.com/sites/default/files/documentation/esp32-s2_hardware_design_guidelines_en.pdf#page=10>`_"}
+{IDF_TARGET_HARDWARE_DESIGN_URL:default="`ESP32 Hardware Design Guidelines <https://www.espressif.com/sites/default/files/documentation/esp32_hardware_design_guidelines_en.pdf#page=10>`_", esp32="`ESP32 Hardware Design Guidelines <https://www.espressif.com/sites/default/files/documentation/esp32_hardware_design_guidelines_en.pdf#page=10>`_", esp32s2="`ESP32-S2 Hardware Design Guidelines <https://www.espressif.com/sites/default/files/documentation/esp32-s2_hardware_design_guidelines_en.pdf#page=10>`_", esp32s3="`ESP32-S3 Hardware Design Guidelines <https://www.espressif.com/sites/default/files/documentation/esp32-s3_hardware_design_guidelines_en.pdf#page=11>`"}
 
 Overview
 --------
@@ -30,7 +30,7 @@ RTC Clock Source
 
 The RTC timer has the following clock sources:
 
-- ``Internal {IDF_TARGET_RTC_CLK_FRE} RC oscillator`` (default): Features lowest deep sleep current consumption and no dependence on any external components. However, as frequency stability is affected by temperature fluctuations, time may drift in both Deep and Light sleep modes.
+- ``Internal {IDF_TARGET_RTC_CLK_FRE} RC oscillator`` (default): Features the lowest deep sleep current consumption and no dependence on any external components. However, as frequency stability is affected by temperature fluctuations, time may drift in both Deep and Light sleep modes.
 
 - ``External 32kHz crystal``: Requires a 32kHz crystal to be connected to the 32K_XP and 32K_XN pins. Provides better frequency stability at the expense of slightly higher (by 1 uA) Deep sleep current consumption.
 
@@ -99,7 +99,7 @@ To set the current time, you can use the POSIX functions ``settimeofday()`` and 
 A function to use inside the lwIP SNTP library depends on a sync mode for system time. Use the function :cpp:func:`sntp_set_sync_mode` to set one of the following sync modes:
 
 - ``SNTP_SYNC_MODE_IMMED`` (default) updates system time immediately upon receiving a response from the SNTP server after using ``settimeofday()``.
-- ``SNTP_SYNC_MODE_SMOOTH`` updates time smoothly by gradually reducing time error using the funcion ``adjtime()``. If the difference between the SNTP response time and system time is more than 35 minutes, update system time immediately by using ``settimeofday()``.
+- ``SNTP_SYNC_MODE_SMOOTH`` updates time smoothly by gradually reducing time error using the function ``adjtime()``. If the difference between the SNTP response time and system time is more than 35 minutes, update system time immediately by using ``settimeofday()``.
 
 The lwIP SNTP library has API functions for setting a callback function for a certain event. You might need the following functions:
 

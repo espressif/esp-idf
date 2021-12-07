@@ -6,7 +6,7 @@
 
 #include "esp_efuse_utility.h"
 #include "soc/efuse_periph.h"
-#include "esp32s3/clk.h"
+#include "esp_private/esp_clk.h"
 #include "esp_log.h"
 #include "assert.h"
 #include "sdkconfig.h"

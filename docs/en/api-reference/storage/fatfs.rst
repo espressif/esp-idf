@@ -14,6 +14,7 @@ Using FatFs with VFS
 The header file :component_file:`fatfs/vfs/esp_vfs_fat.h` defines the functions for connecting FatFs and VFS.
 
 The function :cpp:func:`esp_vfs_fat_register` allocates a ``FATFS`` structure and registers a given path prefix in VFS. Subsequent operations on files starting with this prefix are forwarded to FatFs APIs.
+
 The function :cpp:func:`esp_vfs_fat_unregister_path` deletes the registration with VFS, and frees the ``FATFS`` structure.
 
 Most applications use the following workflow when working with ``esp_vfs_fat_`` functions:
@@ -29,7 +30,7 @@ Most applications use the following workflow when working with ``esp_vfs_fat_`` 
 
 4. Call the C standard library and POSIX API functions to perform such actions on files as open, read, write, erase, copy, etc. Use paths starting with the path prefix passed to :cpp:func:`esp_vfs_register` (for example, ``"/sdcard/hello.txt"``). The filesystem uses `8.3 filenames <https://en.wikipedia.org/wiki/8.3_filename>`_ format (SFN) by default. If you need to use long filenames (LFN), enable the :ref:`CONFIG_FATFS_LONG_FILENAMES` option. More details on the FatFs filenames are available `here <http://elm-chan.org/fsw/ff/doc/filename.html>`_.
 
-5. Optionally, by enabling the option :ref:`CONFIG_FATFS_USE_FASTSEEK`, use the POSIX lseek function to perform it faster, the fast seek will not work for files in write mode, so to take advantage of fast seek, you should open (or close and then reopen) the file in read-only mode. 
+5. Optionally, by enabling the option :ref:`CONFIG_FATFS_USE_FASTSEEK`, use the POSIX lseek function to perform it faster, the fast seek will not work for files in write mode, so to take advantage of fast seek, you should open (or close and then reopen) the file in read-only mode.
 
 6. Optionally, call the FatFs library functions directly. In this case, use paths without a VFS prefix (for example, ``"/hello.txt"``).
 
@@ -88,24 +89,33 @@ They provide implementation of disk I/O functions for SD/MMC cards and can be re
 FATFS partition generator
 -------------------------
 
-We provide partition generator for FATFS (:component_file:`fatfsgen.py<fatfs/fatfsgen.py>`)
-which is integrated into the build system and could be easily used in the user project.
+We provide a partition generator for FATFS (:component_file:`wl_fatfsgen.py<fatfs/wl_fatfsgen.py>`) which is integrated into the build system and could be easily used in the user project.
+
 The tool is used to create filesystem images on a host and populate it with content of the specified host folder.
-Current implementation supports short file names, FAT12 and read-only mode
-(because the wear levelling is not implemented yet). The WL, long file names, and FAT16 are subjects of future work.
+
+The script is based on the partition generator (:component_file:`fatfsgen.py<fatfs/fatfsgen.py>`) and except for generating partition also initializes wear levelling.
+
+Current implementation supports short file names and FAT12. Long file names, and FAT16 are subjects of the future work.
+
 
 Build system integration with FATFS partition generator
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-It is possible to invoke FATFS generator directly from the CMake build system by calling ``fatfs_create_partition_image``::
+It is possible to invoke FATFS generator directly from the CMake build system by calling ``fatfs_create_spiflash_image``::
 
-    fatfs_create_partition_image(<partition> <base_dir> [FLASH_IN_PROJECT])
+    fatfs_create_spiflash_image(<partition> <base_dir> [FLASH_IN_PROJECT])
 
-``fatfs_create_partition_image`` must be called from project's CMakeLists.txt.
+If you prefer generating partition without wear levelling support you can use ``fatfs_create_rawflash_image``::
+
+    fatfs_create_rawflash_image(<partition> <base_dir> [FLASH_IN_PROJECT])
+
+``fatfs_create_spiflash_image`` respectively ``fatfs_create_rawflash_image`` must be called from project's CMakeLists.txt.
+
+If you decided because of any reason to use ``fatfs_create_rawflash_image`` (without wear levelling support) beware that it supports mounting only in read-only mode in the device.
 
 The arguments of the function are as follows:
 
-1. partition - the name of the partition, you can define in partition table (e.g. :example_file:`storage/fatfsgen/partitions_example.csv`)
+1. partition - the name of the partition as defined in the partition table (e.g. :example_file:`storage/fatfsgen/partitions_example.csv`).
 
 2. base_dir - the directory that will be encoded to FATFS partition and optionally flashed into the device. Beware that you have to specified suitable size of the partition in the partition table.
 
@@ -113,7 +123,7 @@ The arguments of the function are as follows:
 
 For example::
 
-    fatfs_create_partition_image(my_fatfs_partition my_folder FLASH_IN_PROJECT)
+    fatfs_create_spiflash_image(my_fatfs_partition my_folder FLASH_IN_PROJECT)
 
 If FLASH_IN_PROJECT is not specified, the image will still be generated, but you will have to flash it manually using ``esptool.py`` or a custom build system target.
 

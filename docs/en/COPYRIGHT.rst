@@ -10,6 +10,8 @@ Additional third party copyrighted code is included under the following licenses
 
 Where source code headers specify Copyright & License information, this information takes precedence over the summaries made here.
 
+Some examples use external components which are not Apache licensed, please check the copyright description in each example source code.
+
 Firmware Components
 -------------------
 
@@ -27,8 +29,6 @@ These third party libraries can be included into the application (firmware) prod
 
 * `FreeBSD net80211`_ Copyright (c) 2004-2008 Sam Leffler, Errno Consulting and licensed under the BSD license.
 
-* `JSMN`_ JSON Parser (components/jsmn) Copyright (c) 2010 Serge A. Zaitsev and licensed under the MIT license.
-
 * `argtable3`_ argument parsing library Copyright (C) 1998-2001,2003-2011,2013 Stewart Heitmann and licensed under 3-clause BSD license.
 
 * `linenoise`_ line editing library Copyright (c) 2010-2014 Salvatore Sanfilippo, Copyright (c) 2010-2013 Pieter Noordhuis, licensed under 2-clause BSD license.
@@ -41,8 +41,6 @@ These third party libraries can be included into the application (firmware) prod
 
 * `cJSON`_ library, Copyright (c) 2009-2017 Dave Gamble and cJSON contributors, is licensed under MIT license as described in :component_file:`LICENSE file <json/cJSON/LICENSE>`.
 
-* `libsodium`_ library, Copyright (c) 2013-2018 Frank Denis, is licensed under ISC license as described in :component_file:`LICENSE file <libsodium/libsodium/LICENSE>`.
-
 * `micro-ecc`_ library, Copyright (c) 2014 Kenneth MacKay, is licensed under 2-clause BSD license.
 
 * `nghttp2`_ library, Copyright (c) 2012, 2014, 2015, 2016 Tatsuhiro Tsujikawa, Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors, is licensed under MIT license as described in :component_file:`COPYING file <nghttp/nghttp2/COPYING>`.
@@ -50,8 +48,6 @@ These third party libraries can be included into the application (firmware) prod
 * `Mbed TLS`_ library, Copyright (C) 2006-2018 ARM Limited, is licensed under Apache License 2.0 as described in :component_file:`LICENSE file <mbedtls/mbedtls/LICENSE>`.
 
 * `SPIFFS`_ library, Copyright (c) 2013-2017 Peter Andersson, is licensed under MIT license as described in :component_file:`LICENSE file <spiffs/spiffs/LICENSE>`.
-
-* `TinyCBOR`_ library, Copyright (c) 2017 Intel Corporation, is licensed under MIT License as described in :component_file:`LICENSE file <cbor/tinycbor/LICENSE>`.
 
 * :component_file:`SD/MMC driver <sdmmc/sdmmc_cmd.c>` is derived from `OpenBSD SD/MMC driver`_, Copyright (c) 2006 Uwe Stuehler, and is licensed under BSD license.
 
@@ -69,7 +65,7 @@ These third party libraries can be included into the application (firmware) prod
 
 * `qrcode`_ QR Code generator library Copyright (c) Project Nayuki, is licensed under MIT license.
 
-* :component:`openthread`, Copyright (c) The OpenThread Authors, is licensed under  Apache License 2.0 as described in :component_file:`LICENSE file<openthread/openthread/LICENSE>`.
+* :component:`openthread`, Copyright (c) The OpenThread Authors, is licensed under BSD License as described in :component_file:`LICENSE file<openthread/openthread/LICENSE>`.
 
 * :component_file:`UBSAN runtime <esp_system/ubsan.c>` — Copyright (c) 2016, Linaro Limited and Jiří Zárevúcky, licensed under the BSD 2-clause license.
 
@@ -79,8 +75,6 @@ Build Tools
 This is the list of licenses for tools included in this repository, which are used to build applications. The tools do not become part of the application (firmware), so their license does not affect licensing of the application.
 
 * :component:`esptool.py <esptool_py/esptool>` is Copyright (C) 2014-2016 Fredrik Ahlberg, Angus Gratton and is licensed under the GNU General Public License v2, as described in :component_file:`LICENSE file<esptool_py/LICENSE>`.
-
-* :idf:`KConfig <tools/kconfig>` is Copyright (C) 2002 Roman Zippel and others, and is licensed under the GNU General Public License V2.
 
 Documentation
 -------------
@@ -163,13 +157,11 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _wpa_supplicant: https://w1.fi/wpa_supplicant/
 .. _FreeBSD net80211: https://github.com/freebsd/freebsd/tree/master/sys/net80211
 .. _TJpgDec: http://elm-chan.org/fsw/tjpgd/00index.html
-.. _JSMN: https://zserge.com/jsmn.html
 .. _argtable3: https://github.com/argtable/argtable3
 .. _linenoise: https://github.com/antirez/linenoise
 .. _libcoap: https://github.com/obgm/libcoap
 .. _fatfs: http://elm-chan.org/fsw/ff/00index_e.html
 .. _cJSON: https://github.com/DaveGamble/cJSON
-.. _libsodium: https://github.com/jedisct1/libsodium
 .. _libexpat: https://github.com/libexpat/libexpat
 .. _micro-ecc: https://github.com/kmackay/micro-ecc
 .. _nghttp2: https://github.com/nghttp2/nghttp2
@@ -180,7 +172,6 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _mqtt: https://github.com/espressif/esp-mqtt
 .. _zephyr: https://github.com/zephyrproject-rtos/zephyr
 .. _mynewt-nimble: https://github.com/apache/mynewt-nimble
-.. _TinyCBOR: https://github.com/intel/tinycbor
 .. _ESP-IDF Programming Guide: https://docs.espressif.com/projects/esp-idf/en/latest/
 .. _sphinx_idf_theme: https://github.com/espressif/sphinx_idf_theme
 .. _sphinx_rtd_theme: https://github.com/readthedocs/sphinx_rtd_theme

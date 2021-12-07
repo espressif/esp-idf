@@ -1,0 +1,70 @@
+# This file configures the check_copyright pre-commit hook
+#
+# Values from the DEFAULT section are used, when the particular option is not set in a section.
+# The DEFAULT section also contains all options with description
+#
+# Section name is just an identifier, keep it unique.
+# Section must contain the option 'include' and at least one other option
+#
+# The sections are matched in the order they are in this config file, the last section which matches is used.
+# This means that the order of the sections should be from broad to specific.
+# For example:
+# sections:
+#   tools/
+#   tools/ci/file.c
+#   tools/ci/
+# files:
+# tools/file.c -> section tools/
+# tools/ci/file.c -> section tools/ci/
+#
+
+# don't modify this section!
+DEFAULT:
+  perform_check: yes  # should the check be performed?
+  # Sections setting this to 'no' don't need to include any other options as they are ignored
+  # When a file is using a section with the option set to 'no', no checks are performed.
+
+  # what licenses (or license expressions) are allowed for files in this section
+  # when setting this option in a section, you need to list all the allowed licenses
+  allowed_licenses:
+    - Apache-2.0
+  license_for_new_files: Apache-2.0  # license to be used when inserting a new copyright notice
+  new_notice_c: |  # notice for new C, CPP, H, HPP and LD files
+    /*
+     * SPDX-FileCopyrightText: {years} Espressif Systems (Shanghai) CO LTD
+     *
+     * SPDX-License-Identifier: {license}
+     */
+  new_notice_python: |  # notice for new python files
+    # SPDX-FileCopyrightText: {years} Espressif Systems (Shanghai) CO LTD
+    # SPDX-License-Identifier: {license}
+
+  # comment lines matching:
+  # SPDX-FileCopyrightText: year[-year] Espressif Systems
+  # or
+  # SPDX-FileContributor: year[-year] Espressif Systems
+  # are replaced with this template prefixed with the correct comment notation (# or // or *) and SPDX- notation
+  espressif_copyright: '{years} Espressif Systems (Shanghai) CO LTD'
+
+# this section sets the default license for examples and unit tests of components
+examples_and_unit_tests:
+  include:
+   - 'examples/'
+   - 'components/**/test/**'
+  allowed_licenses:
+  - Apache-2.0
+  - Unlicense OR CC0-1.0
+  license_for_new_files: Unlicense OR CC0-1.0
+
+# files matching this section do not perform the check
+# file patterns starting with ! are negated, meaning files matching them won't match the section.
+ignore:
+  perform_check: no
+  include:
+    - components/bt/host/nimble/nimble/
+    - components/bt/common/osi/
+    - components/wpa_supplicant/src/
+    - '!components/wpa_supplicant/esp_supplicant/'
+    - components/bt/host/bluedroid/
+    - '!components/bt/host/bluedroid/api/'
+    - '!components/bt/host/bluedroid/btc/'

@@ -319,6 +319,12 @@ gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_handle,
         return rc == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
 
     case BLE_GATT_ACCESS_OP_WRITE_CHR:
+        /* If empty packet is received, return */
+        if (ctxt->om->om_len == 0) {
+            ESP_LOGD(TAG,"Empty packet");
+            return 0;
+        }
+
         uuid = (uint8_t *) calloc(BLE_UUID128_VAL_LENGTH, sizeof(uint8_t));
         if (!uuid) {
             ESP_LOGE(TAG, "Error allocating memory for 128 bit UUID");

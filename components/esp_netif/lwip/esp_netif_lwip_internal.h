@@ -1,16 +1,8 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -115,6 +107,14 @@ struct esp_netif_obj {
     esp_err_t (*driver_transmit)(void *h, void *buffer, size_t len);
     esp_err_t (*driver_transmit_wrap)(void *h, void *buffer, size_t len, void *pbuf);
     void (*driver_free_rx_buffer)(void *h, void* buffer);
+#if CONFIG_ESP_NETIF_L2_TAP
+    SemaphoreHandle_t transmit_mutex;
+
+    // L2 manipulation hooks
+    esp_err_t (*transmit_hook)(void *h, void **buffer, size_t *len);
+    void (*post_transmit_hook)(void *h, void *buffer, size_t len);
+    esp_err_t (*receive_hook)(void *h, void *buffer, size_t *len);
+#endif
 
     // dhcp related
     esp_netif_dhcp_status_t dhcpc_status;

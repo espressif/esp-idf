@@ -102,7 +102,7 @@ def find_builds_for_app(app_path, work_dir, build_dir, build_log, target_arg,
                 ))
 
     if not build_items:
-        logging.debug('Adding build: app {}, default sdkconfig, config name "{}"'.format(app_path, default_config_name))
+        logging.debug('\tAdding build: app {}, default sdkconfig, config name "{}"'.format(app_path, default_config_name))
         return [
             BuildItem(
                 app_path,
@@ -134,16 +134,7 @@ def find_apps(build_system_class, path, recursive, exclude_list, target):
     """
     build_system_name = build_system_class.NAME
     logging.debug('Looking for {} apps in {}{}'.format(build_system_name, path, ' recursively' if recursive else ''))
-    if not recursive:
-        if exclude_list:
-            logging.warning('--exclude option is ignored when used without --recursive')
-        if not build_system_class.is_app(path):
-            logging.warning('Path {} specified without --recursive flag, but no {} app found there'.format(
-                path, build_system_name))
-            return []
-        return [path]
 
-    # The remaining part is for recursive == True
     apps_found = []  # type: typing.List[str]
     for root, dirs, _ in os.walk(path, topdown=True):
         logging.debug('Entering {}'.format(root))
@@ -166,6 +157,12 @@ def find_apps(build_system_class, path, recursive, exclude_list, target):
                 else:
                     logging.debug('Skipping, app has no supported targets')
                 continue
+
+        if not recursive:
+            if not apps_found:
+                logging.warning('Path {} specified without --recursive flag, but no {} app found there'.format(
+                    path, build_system_name))
+            break  # only check the top-most dir if "recursive" is unflagged
 
     return apps_found
 

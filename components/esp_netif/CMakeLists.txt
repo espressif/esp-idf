@@ -10,6 +10,7 @@ set(srcs
     "esp_netif_handlers.c"
     "esp_netif_objects.c"
     "esp_netif_defaults.c"
+    "vfs_l2tap/esp_vfs_l2tap.c"
     "lwip/esp_netif_lwip.c"
     "lwip/esp_netif_lwip_defaults.c"
     "lwip/esp_netif_sta_list.c")

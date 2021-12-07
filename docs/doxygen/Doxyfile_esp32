@@ -9,4 +9,6 @@ INPUT += \
          $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/touch_sensor_channel.h \
          $(PROJECT_PATH)/components/driver/$(IDF_TARGET)/include/driver/touch_sensor.h \
          $(PROJECT_PATH)/components/esp_hw_support/include/soc/esp32/himem.h \
-         $(PROJECT_PATH)/components/ulp/include/$(IDF_TARGET)/ulp.h
+         $(PROJECT_PATH)/components/ulp/include/$(IDF_TARGET)/ulp.h \
+         $(PROJECT_PATH)/components/esp_system/include/esp_ipc.h \
+         $(PROJECT_PATH)/components/esp_system/include/esp_ipc_isr.h

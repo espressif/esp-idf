@@ -1527,6 +1527,8 @@ tBTM_STATUS BTM_BleSetAdvParamsAll(UINT16 adv_int_min, UINT16 adv_int_max, UINT8
 
     if (p_dir_bda) {
         memcpy(&p_cb->direct_bda, p_dir_bda, sizeof(tBLE_BD_ADDR));
+    } else {
+        return BTM_ILLEGAL_VALUE;
     }
 
     BTM_TRACE_EVENT ("update params for an active adv\n");
@@ -1805,8 +1807,10 @@ tBTM_STATUS BTM_UpdateBleDuplicateExceptionalList(uint8_t subcode, uint32_t type
                                                 tBTM_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK update_exceptional_list_cmp_cb)
 {
     tBTM_BLE_CB *ble_cb = &btm_cb.ble_ctr_cb;
-    ble_cb->update_exceptional_list_cmp_cb = update_exceptional_list_cmp_cb;
     tBTM_STATUS status = BTM_NO_RESOURCES;
+
+    ble_cb->update_exceptional_list_cmp_cb = update_exceptional_list_cmp_cb;
+
     if (!controller_get_interface()->supports_ble()) {
         return BTM_ILLEGAL_VALUE;
     }
@@ -1840,9 +1844,6 @@ tBTM_STATUS BTM_UpdateBleDuplicateExceptionalList(uint8_t subcode, uint32_t type
         default:
             //do nothing
             break;
-    }
-    if(status == BTM_ILLEGAL_VALUE) {
-        return status;
     }
 
     status = BTM_VendorSpecificCommand(HCI_VENDOR_BLE_UPDATE_DUPLICATE_EXCEPTIONAL_LIST, 1 + 4 + BD_ADDR_LEN, device_info_array, NULL);

@@ -17,7 +17,7 @@ This example is designed to run on commonly available ESP32 development board, e
 idf.py menuconfig
 ```
 
-In `menuconfig` path: `Coponent config --> Bluetooth--> Bluedroid Options -->SPP` and `Coponent config --> Bluetooth--> Bluedroid Options -->Secure Simple Pair`.
+In `menuconfig` path: `Component config --> Bluetooth--> Bluedroid Options -->SPP` and `Component config --> Bluetooth--> Bluedroid Options -->Secure Simple Pair`.
 
 ### Build and Flash
 

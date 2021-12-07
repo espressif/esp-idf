@@ -160,6 +160,7 @@ void IRAM_ATTR esp_ipc_isr_stall_pause(void)
 
 void IRAM_ATTR esp_ipc_isr_stall_abort(void)
 {
+    //Note: We don't enter a critical section here as we are calling this from a panic.
     s_stall_state = STALL_STATE_IDLE;
 }
 

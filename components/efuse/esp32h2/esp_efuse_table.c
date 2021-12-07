@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 6aaac59bd3f6d31bea4aef43b1f0d78a
+// md5_digest_table 8d520559b0ed30f0cef34704317f2815
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -24,7 +24,7 @@ static const esp_efuse_desc_t WR_DIS_RD_DIS[] = {
 };
 
 static const esp_efuse_desc_t WR_DIS_GROUP_1[] = {
-    {EFUSE_BLK0, 2, 1}, 	 // Write protection for DIS_ICACHE DIS_DOWNLOAD_ICACHE DIS_FORCE_DOWNLOAD DIS_USB DIS_CAN SOFT_DIS_JTAG DIS_DOWNLOAD_MANUAL_ENCRYPT,
+    {EFUSE_BLK0, 2, 1}, 	 // Write protection for DIS_ICACHE DIS_DOWNLOAD_ICACHE DIS_FORCE_DOWNLOAD DIS_USB DIS_TWAI SOFT_DIS_JTAG DIS_DOWNLOAD_MANUAL_ENCRYPT,
 };
 
 static const esp_efuse_desc_t WR_DIS_GROUP_2[] = {
@@ -179,8 +179,8 @@ static const esp_efuse_desc_t DIS_USB[] = {
     {EFUSE_BLK0, 45, 1}, 	 // Disable USB function,
 };
 
-static const esp_efuse_desc_t DIS_CAN[] = {
-    {EFUSE_BLK0, 46, 1}, 	 // Disable CAN function,
+static const esp_efuse_desc_t DIS_TWAI[] = {
+    {EFUSE_BLK0, 46, 1}, 	 // Disable TWAI function,
 };
 
 static const esp_efuse_desc_t JTAG_SEL_ENABLE[] = {
@@ -508,7 +508,7 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_RD_DIS[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_GROUP_1[] = {
-    &WR_DIS_GROUP_1[0],    		// Write protection for DIS_ICACHE DIS_DOWNLOAD_ICACHE DIS_FORCE_DOWNLOAD DIS_USB DIS_CAN SOFT_DIS_JTAG DIS_DOWNLOAD_MANUAL_ENCRYPT
+    &WR_DIS_GROUP_1[0],    		// Write protection for DIS_ICACHE DIS_DOWNLOAD_ICACHE DIS_FORCE_DOWNLOAD DIS_USB DIS_TWAI SOFT_DIS_JTAG DIS_DOWNLOAD_MANUAL_ENCRYPT
     NULL
 };
 
@@ -702,8 +702,8 @@ const esp_efuse_desc_t* ESP_EFUSE_DIS_USB[] = {
     NULL
 };
 
-const esp_efuse_desc_t* ESP_EFUSE_DIS_CAN[] = {
-    &DIS_CAN[0],    		// Disable CAN function
+const esp_efuse_desc_t* ESP_EFUSE_DIS_TWAI[] = {
+    &DIS_TWAI[0],    		// Disable TWAI function
     NULL
 };
 

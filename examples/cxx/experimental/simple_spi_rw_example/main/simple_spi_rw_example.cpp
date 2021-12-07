@@ -43,6 +43,6 @@ extern "C" void app_main(void)
         this_thread::sleep_for(std::chrono::seconds(2));
 
     } catch (const SPIException &e) {
-        cout << "Coulnd't read SPI!" << endl;
+        cout << "Couldn't read SPI!" << endl;
     }
 }

@@ -9,8 +9,8 @@ if(CONFIG_IEEE802154_ENABLED)
     idf_component_get_property(esp_phy_lib esp_phy COMPONENT_LIB)
     if(CONFIG_IEEE802154_LIB_FROM_INTERNAL_SRC)
         idf_component_get_property(ieee802154_lib ieee802154_driver COMPONENT_LIB)
-        target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${ieee802154_lib}> libphy.a libbtbb.a
-                            $<TARGET_FILE:${esp_phy_lib}>)
+        target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${ieee802154_lib}>
+                            $<TARGET_FILE:${esp_phy_lib}> libphy.a libbtbb.a)
     else()
         target_link_libraries(${COMPONENT_LIB} INTERFACE "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}")
         target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> lib802154.a libphy.a libbtbb.a

@@ -51,27 +51,19 @@
 #include "esp_private/pm_impl.h"
 #include "esp_pthread.h"
 #include "esp_vfs_console.h"
+#include "esp_private/esp_clk.h"
 
-#include "brownout.h"
+#include "esp_private/brownout.h"
 
 #include "esp_rom_sys.h"
 
 // [refactor-todo] make this file completely target-independent
 #if CONFIG_IDF_TARGET_ESP32
-#include "esp32/clk.h"
 #include "esp32/spiram.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/clk.h"
 #include "esp32s2/spiram.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/clk.h"
 #include "esp32s3/spiram.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/clk.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/clk.h"
-#elif CONFIG_IDF_TARGET_ESP8684
-#include "esp_private/esp_clk.h"
 #endif
 /***********************************************/
 
@@ -237,6 +229,12 @@ static void do_core_init(void)
        app CPU, and when that is not up yet, the memory will be inaccessible and heap_caps_init may
        fail initializing it properly. */
     heap_caps_init();
+
+    // When apptrace module is enabled, there will be SEGGER_SYSVIEW calls in the newlib init.
+    // SEGGER_SYSVIEW relies on apptrace module
+    // apptrace module uses esp_timer_get_time to determine timeout conditions.
+    // esp_timer early initialization is required for esp_timer_get_time to work.
+    esp_timer_early_init();
     esp_newlib_init();
 
     if (g_spiram_ok) {
@@ -263,10 +261,6 @@ static void do_core_init(void)
     esp_brownout_init();
 #endif
 
-    // esp_timer early initialization is required for esp_timer_get_time to work.
-    // This needs to happen before VFS initialization, since some USB_SERIAL_JTAG VFS driver uses
-    // esp_timer_get_time to determine timeout conditions.
-    esp_timer_early_init();
     esp_newlib_time_init();
 
 #if CONFIG_VFS_SUPPORT_IO
@@ -374,7 +368,7 @@ static void start_cpu0_default(void)
 
     ESP_EARLY_LOGI(TAG, "Pro cpu start user code");
     int cpu_freq = esp_clk_cpu_freq();
-    ESP_EARLY_LOGI(TAG, "cpu freq: %d", cpu_freq);
+    ESP_EARLY_LOGI(TAG, "cpu freq: %d Hz", cpu_freq);
 
     // Display information about the current running image.
     if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO) {

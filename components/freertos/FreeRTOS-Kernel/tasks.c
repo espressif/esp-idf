@@ -1467,7 +1467,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
 
         configASSERT( pxPreviousWakeTime );
         configASSERT( ( xTimeIncrement > 0U ) );
-        configASSERT( uxSchedulerSuspended[xPortGetCoreID()] == 0 );
+        configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_SUSPENDED );
 
 #ifdef ESP_PLATFORM // IDF-3755
         taskENTER_CRITICAL();
@@ -1562,7 +1562,7 @@ static void prvAddNewTaskToReadyList( TCB_t * pxNewTCB,
         /* A delay time of zero just forces a reschedule. */
         if( xTicksToDelay > ( TickType_t ) 0U )
         {
-            configASSERT( uxSchedulerSuspended[xPortGetCoreID()] == 0 );
+            configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_SUSPENDED );
 #ifdef ESP_PLATFORM // IDF-3755
             taskENTER_CRITICAL();
 #else
@@ -2506,9 +2506,9 @@ BaseType_t xTaskResumeAll( void )
     BaseType_t xAlreadyYielded = pdFALSE;
     TickType_t xTicksToNextUnblockTime;
 
-    /* If uxSchedulerSuspended[xPortGetCoreID()] is zero then this function does not match a
+    /* If scheduler state is `taskSCHEDULER_RUNNING` then this function does not match a
      * previous call to taskENTER_CRITICAL(). */
-    configASSERT( uxSchedulerSuspended[xPortGetCoreID()] );
+    configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_RUNNING );
 
     /* It is possible that an ISR caused a task to be removed from an event
      * list while the scheduler was suspended.  If this was the case then the
@@ -2967,7 +2967,7 @@ BaseType_t xTaskCatchUpTicks( TickType_t xTicksToCatchUp )
 
     /* Must not be called with the scheduler suspended as the implementation
      * relies on xPendedTicks being wound down to 0 in xTaskResumeAll(). */
-    configASSERT( uxSchedulerSuspended[xPortGetCoreID()] == 0 );
+    configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_SUSPENDED );
 
     /* Use xPendedTicks to mimic xTicksToCatchUp number of ticks occuring when
      * the scheduler is suspended so the ticks are executed in xTaskResumeAll(). */
@@ -4664,7 +4664,9 @@ static void prvResetNextTaskUnblockTime( void )
     BaseType_t xTaskGetSchedulerState( void )
     {
         BaseType_t xReturn;
+        unsigned state;
 
+        state = portSET_INTERRUPT_MASK_FROM_ISR();
         if( xSchedulerRunning == pdFALSE )
         {
             xReturn = taskSCHEDULER_NOT_STARTED;
@@ -4680,6 +4682,7 @@ static void prvResetNextTaskUnblockTime( void )
                 xReturn = taskSCHEDULER_SUSPENDED;
             }
         }
+        portCLEAR_INTERRUPT_MASK_FROM_ISR(state);
 
         return xReturn;
     }

@@ -132,12 +132,13 @@ void app_main(void)
     // Register user defined event handers
     ESP_ERROR_CHECK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, NULL));
-    /* start Ethernet driver state machine */
-    ESP_ERROR_CHECK(esp_eth_start(eth_handle));
 
     /* It is recommended to use ENC28J60 in Full Duplex mode since multiple errata exist to the Half Duplex mode */
 #if CONFIG_EXAMPLE_ENC28J60_DUPLEX_FULL
-    /* Set duplex needs to be called after esp_eth_start since the driver is started with auto-negotiation by default */
-    enc28j60_set_phy_duplex(phy, ETH_DUPLEX_FULL);
+    eth_duplex_t duplex = ETH_DUPLEX_FULL;
+    ESP_ERROR_CHECK(esp_eth_ioctl(eth_handle, ETH_CMD_S_DUPLEX_MODE, &duplex));
 #endif
+
+    /* start Ethernet driver state machine */
+    ESP_ERROR_CHECK(esp_eth_start(eth_handle));
 }
