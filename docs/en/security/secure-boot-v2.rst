@@ -132,7 +132,7 @@ The content of each signature block is shown in the following table:
       - Pre-calculated M’, derived from ‘n’
     * - 812
       - 384 
-      - RSA-PSS Signature result (section 8.1.1 of RFC8017) of image content, computed using following PSS parameters: SHA256 hash, MFG1 function, 0 length salt, default trailer field (0xBC).
+      - RSA-PSS Signature result (section 8.1.1 of RFC8017) of image content, computed using following PSS parameters: SHA256 hash, MFG1 function, salt length 32 bytes, default trailer field (0xBC).
     * - 1196
       - 4 
       - CRC32 of the preceding 1095 bytes.
