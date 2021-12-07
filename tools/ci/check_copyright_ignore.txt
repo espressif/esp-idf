@@ -1707,7 +1707,6 @@ components/protocomm/src/common/protocomm_priv.h
 components/protocomm/src/security/security0.c
 components/protocomm/src/security/security1.c
 components/protocomm/src/transports/protocomm_console.c
-components/protocomm/src/transports/protocomm_httpd.c
 components/protocomm/test/test_protocomm.c
 components/pthread/include/esp_pthread.h
 components/pthread/pthread_cond_var.c
