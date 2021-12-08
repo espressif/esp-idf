@@ -49,10 +49,13 @@ typedef struct usb_device_handle_s * usb_device_handle_t;
  * @brief Basic information of an enumerated device
  */
 typedef struct {
-    usb_speed_t speed;                  /**< Device's speed */
-    uint8_t dev_addr;                   /**< Device's address */
-    uint8_t bMaxPacketSize0;            /**< The maximum packet size of the device's default endpoint */
-    uint8_t bConfigurationValue;        /**< Device's current configuration number */
+    usb_speed_t speed;                              /**< Device's speed */
+    uint8_t dev_addr;                               /**< Device's address */
+    uint8_t bMaxPacketSize0;                        /**< The maximum packet size of the device's default endpoint */
+    uint8_t bConfigurationValue;                    /**< Device's current configuration number */
+    const usb_str_desc_t *str_desc_manufacturer;    /**< Pointer to Manufacturer string descriptor (can be NULL) */
+    const usb_str_desc_t *str_desc_product;         /**< Pointer to Product string descriptor (can be NULL) */
+    const usb_str_desc_t *str_desc_serial_num;      /**< Pointer to Serial Number string descriptor (can be NULL) */
 } usb_device_info_t;
 
 // ------------------------------------------------ Transfer Related ---------------------------------------------------

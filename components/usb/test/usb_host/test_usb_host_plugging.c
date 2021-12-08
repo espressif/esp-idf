@@ -115,3 +115,40 @@ TEST_CASE("Test USB Host sudden disconnection (single client)", "[usb_host][igno
     ESP_ERROR_CHECK(usb_host_uninstall());
     test_usb_deinit_phy();  //Deinitialize the internal USB PHY after testing
 }
+
+TEST_CASE("Test USB Host enumeration", "[usb_host][ignore]")
+{
+    test_usb_init_phy();    //Initialize the internal USB PHY and USB Controller for testing
+    //Install USB Host
+    usb_host_config_t host_config = {
+        .skip_phy_setup = true,     //test_usb_init_phy() will already have setup the internal USB PHY for us
+        .intr_flags = ESP_INTR_FLAG_LEVEL1,
+    };
+    ESP_ERROR_CHECK(usb_host_install(&host_config));
+    printf("Installed\n");
+
+    //Create task to run client that checks the enumeration of the device
+    TaskHandle_t task_hdl;
+    xTaskCreatePinnedToCore(msc_client_async_enum_task, "async", 4096, NULL, 2, &task_hdl, 0);
+    //Start the task
+    xTaskNotifyGive(task_hdl);
+
+    while (1) {
+        //Start handling system events
+        uint32_t event_flags;
+        usb_host_lib_handle_events(portMAX_DELAY, &event_flags);
+        if (event_flags & USB_HOST_LIB_EVENT_FLAGS_NO_CLIENTS) {
+            printf("No more clients\n");
+            TEST_ASSERT_EQUAL(ESP_ERR_NOT_FINISHED, usb_host_device_free_all());
+        }
+        if (event_flags & USB_HOST_LIB_EVENT_FLAGS_ALL_FREE) {
+            break;
+        }
+    }
+
+    //Short delay to allow task to be cleaned up
+    vTaskDelay(10);
+    //Clean up USB Host
+    ESP_ERROR_CHECK(usb_host_uninstall());
+    test_usb_deinit_phy();  //Deinitialize the internal USB PHY after testing
+}

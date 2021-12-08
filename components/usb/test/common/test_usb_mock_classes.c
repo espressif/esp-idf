@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,49 @@
 // ---------------------------------------------------- MSC SCSI -------------------------------------------------------
 
 const char *MSC_CLIENT_TAG = "MSC Client";
+
+const uint8_t mock_msc_scsi_dev_desc[] = {
+    0x12, 0x01, 0x00, 0x02, 0x00, 0x00, 0x00, 0x40, 0x5F, 0x12, 0x8A, 0xC0, 0x00, 0x01, 0x01, 0x02, 0x03, 0x01,
+};
+
+const uint8_t mock_msc_scsi_config_desc[] = {
+    0x09, 0x02, 0x20, 0x00, 0x01, 0x01, 0x00, 0x80, 0xF0, 0x09, 0x04, 0x00, 0x00, 0x02, 0x08, 0x06, 0x50, 0x00, 0x07,
+    0x05, 0x01, 0x02, 0x40, 0x00, 0x01, 0x07, 0x05, 0x82, 0x02, 0x40, 0x00, 0x01,
+};
+
+
+const uint8_t mock_msc_scsi_str_desc_manu[] = {
+    0x0c, 0x03, 0x41, 0x00, 0x44, 0x00, 0x41, 0x00, 0x54, 0x00, 0x41, 0x00,
+};
+
+const uint8_t mock_msc_scsi_str_desc_prod[] = {
+    0x2c, 0x03, 0x41, 0x00, 0x44, 0x00, 0x41, 0x00, 0x54, 0x00, 0x41, 0x00, 0x20, 0x00, 0x55, 0x00, 0x53, 0x00, 0x42,
+    0x00, 0x20, 0x00, 0x46, 0x00, 0x6c, 0x00, 0x61, 0x00, 0x73, 0x00, 0x68, 0x00, 0x20, 0x00, 0x44, 0x00, 0x72, 0x00,
+    0x69, 0x00, 0x76, 0x00, 0x65, 0x00,
+};
+
+const uint8_t mock_msc_scsi_str_desc_ser_num[] = {
+    0x22, 0x03, 0x31, 0x00, 0x33, 0x00, 0x43, 0x00, 0x32, 0x00, 0x38, 0x00, 0x31, 0x00, 0x36, 0x00, 0x35, 0x00, 0x38,
+    0x00, 0x32, 0x00, 0x31, 0x00, 0x38, 0x00, 0x30, 0x00, 0x30, 0x00, 0x38, 0x00, 0x45, 0x00,
+};
+
+const usb_ep_desc_t mock_msc_scsi_bulk_out_ep_desc = {
+    .bLength = sizeof(usb_ep_desc_t),
+    .bDescriptorType = USB_B_DESCRIPTOR_TYPE_ENDPOINT,
+    .bEndpointAddress = 0x01,       //EP 1 OUT
+    .bmAttributes = USB_BM_ATTRIBUTES_XFER_BULK,
+    .wMaxPacketSize = 64,           //MPS of 64 bytes
+    .bInterval = 1,
+};
+
+const usb_ep_desc_t mock_msc_scsi_bulk_in_ep_desc = {
+    .bLength = sizeof(usb_ep_desc_t),
+    .bDescriptorType = USB_B_DESCRIPTOR_TYPE_ENDPOINT,
+    .bEndpointAddress = 0x82,       //EP 2 IN
+    .bmAttributes = USB_BM_ATTRIBUTES_XFER_BULK,
+    .wMaxPacketSize = 64,           //MPS of 64 bytes
+    .bInterval = 1,
+};
 
 void mock_msc_scsi_init_cbw(mock_msc_bulk_cbw_t *cbw, bool is_read, int offset, int num_sectors, uint32_t tag)
 {
@@ -59,6 +102,15 @@ bool mock_msc_scsi_check_csw(mock_msc_bulk_csw_t *csw, uint32_t tag_expect)
 
 
 // ---------------------------------------------------- HID Mouse ------------------------------------------------------
+
+const usb_ep_desc_t mock_hid_mouse_in_ep_desc = {
+    .bLength = sizeof(usb_ep_desc_t),
+    .bDescriptorType = USB_B_DESCRIPTOR_TYPE_ENDPOINT,
+    .bEndpointAddress = 0x81,       //EP 1 IN
+    .bmAttributes = USB_BM_ATTRIBUTES_XFER_INT,
+    .wMaxPacketSize = 4,            //MPS of 4 bytes
+    .bInterval = 10,                //Interval of 10ms
+};
 
 void mock_hid_process_report(mock_hid_mouse_report_t *report, int iter)
 {
