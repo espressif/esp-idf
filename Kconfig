@@ -22,6 +22,11 @@ mainmenu "Espressif IoT Development Framework Configuration"
         bool
         default "n"
 
+    config IDF_TARGET_ARCH
+        string
+        default "riscv" if IDF_TARGET_ARCH_RISCV
+        default "xtensa" if IDF_TARGET_ARCH_XTENSA
+
     config IDF_TARGET
         # This option records the IDF target when sdkconfig is generated the first time.
         # It is not updated if environment variable $IDF_TARGET changes later, and
