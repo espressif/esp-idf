@@ -171,3 +171,11 @@ languages = ['en', 'zh_CN']
 google_analytics_id = os.environ.get('CI_GOOGLE_ANALYTICS_ID', None)
 
 project_homepage = 'https://github.com/espressif/esp-idf'
+
+# Custom added feature to allow redirecting old URLs
+with open('../page_redirects.txt') as f:
+    lines = [re.sub(' +', ' ', line.strip()) for line in f.readlines() if line.strip() != '' and not line.startswith('#')]
+    for line in lines:  # check for well-formed entries
+        if len(line.split(' ')) != 2:
+            raise RuntimeError('Invalid line in page_redirects.txt: %s' % line)
+html_redirect_pages = [tuple(line.split(' ')) for line in lines]
