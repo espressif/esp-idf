@@ -542,6 +542,23 @@ esp_err_t usb_host_lib_unblock(void)
     return ESP_OK;
 }
 
+esp_err_t usb_host_lib_info(usb_host_lib_info_t *info_ret)
+{
+    HOST_CHECK(info_ret != NULL, ESP_ERR_INVALID_ARG);
+    int num_devs_temp;
+    int num_clients_temp;
+    HOST_ENTER_CRITICAL();
+    HOST_CHECK_FROM_CRIT(p_host_lib_obj != NULL, ESP_ERR_INVALID_STATE);
+    num_clients_temp = p_host_lib_obj->dynamic.flags.num_clients;
+    HOST_EXIT_CRITICAL();
+    usbh_num_devs(&num_devs_temp);
+
+    //Write back return values
+    info_ret->num_devices = num_devs_temp;
+    info_ret->num_clients = num_clients_temp;
+    return ESP_OK;
+}
+
 // ------------------------------------------------ Client Functions ---------------------------------------------------
 
 // ----------------------- Private -------------------------
