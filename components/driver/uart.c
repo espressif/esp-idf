@@ -124,6 +124,7 @@ typedef struct {
     uint8_t *rx_head_ptr;               /*!< pointer to the head of RX item*/
     uint8_t rx_data_buf[SOC_UART_FIFO_LEN]; /*!< Data buffer to stash FIFO data*/
     uint8_t rx_stash_len;               /*!< stashed data length.(When using flow control, after reading out FIFO data, if we fail to push to buffer, we can just stash them.) */
+    uint32_t rx_int_usr_mask;           /*!< RX interrupt status. Valid at any time, regardless of RX buffer status. */
     uart_pat_rb_t rx_pattern_pos;
     int tx_buf_size;                    /*!< TX ring buffer size */
     bool tx_waiting_fifo;               /*!< this flag indicates that some task is waiting for FIFO empty interrupt, used to send all data without any data buffer*/
@@ -367,8 +368,36 @@ esp_err_t uart_enable_intr_mask(uart_port_t uart_num, uint32_t enable_mask)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
+    /* Keep track of the interrupt toggling. In fact, without such variable,
+     * once the RX buffer is full and the RX interrupts disabled, it is
+     * impossible what was the previous state (enabled/disabled) of these
+     * interrupt masks. Thus, this will be very particularly handy when
+     * emptying a filled RX buffer. */
+    p_uart_obj[uart_num]->rx_int_usr_mask |= enable_mask;
     uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), enable_mask);
     uart_hal_ena_intr_mask(&(uart_context[uart_num].hal), enable_mask);
+    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
+    return ESP_OK;
+}
+
+/**
+ * @brief Function re-enabling the given interrupts (mask) if and only if
+ *        they have not been disabled by the user.
+ *
+ * @param uart_num      UART number to perform the operation on
+ * @param enable_mask   Interrupts (flags) to be re-enabled
+ *
+ * @return ESP_OK in success, ESP_FAIL if uart_num is incorrect
+ */
+static esp_err_t uart_reenable_intr_mask(uart_port_t uart_num, uint32_t enable_mask)
+{
+    UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
+    UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
+    /* Mask will only contain the interrupt flags that needs to be re-enabled
+     * AND which have NOT been explicitly disabled by the user. */
+    uint32_t mask = p_uart_obj[uart_num]->rx_int_usr_mask & enable_mask;
+    uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), mask);
+    uart_hal_ena_intr_mask(&(uart_context[uart_num].hal), mask);
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     return ESP_OK;
 }
@@ -377,6 +406,7 @@ esp_err_t uart_disable_intr_mask(uart_port_t uart_num, uint32_t disable_mask)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
+    p_uart_obj[uart_num]->rx_int_usr_mask &= ~disable_mask;
     uart_hal_disable_intr_mask(&(uart_context[uart_num].hal), disable_mask);
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     return ESP_OK;
@@ -1212,7 +1242,9 @@ static bool uart_check_buf_full(uart_port_t uart_num)
             p_uart_obj[uart_num]->rx_buffered_len += p_uart_obj[uart_num]->rx_stash_len;
             p_uart_obj[uart_num]->rx_buffer_full_flg = false;
             UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
-            uart_enable_rx_intr(p_uart_obj[uart_num]->uart_num);
+            /* Only re-activate UART_INTR_RXFIFO_TOUT or UART_INTR_RXFIFO_FULL
+             * interrupts if they were NOT explicitly disabled by the user. */
+            uart_reenable_intr_mask(p_uart_obj[uart_num]->uart_num, UART_INTR_RXFIFO_TOUT | UART_INTR_RXFIFO_FULL);
             return true;
         }
     }
@@ -1290,16 +1322,6 @@ esp_err_t uart_get_buffered_data_len(uart_port_t uart_num, size_t *size)
 
 esp_err_t uart_flush(uart_port_t uart_num) __attribute__((alias("uart_flush_input")));
 
-static esp_err_t uart_disable_intr_mask_and_return_prev(uart_port_t uart_num, uint32_t disable_mask, uint32_t *prev_mask)
-{
-    UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
-    UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
-    *prev_mask = uart_hal_get_intr_ena_status(&uart_context[uart_num].hal) & disable_mask;
-    uart_hal_disable_intr_mask(&(uart_context[uart_num].hal), disable_mask);
-    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
-    return ESP_OK;
-}
-
 esp_err_t uart_flush_input(uart_port_t uart_num)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
@@ -1307,11 +1329,12 @@ esp_err_t uart_flush_input(uart_port_t uart_num)
     uart_obj_t *p_uart = p_uart_obj[uart_num];
     uint8_t *data;
     size_t size;
-    uint32_t prev_mask;
 
     //rx sem protect the ring buffer read related functions
     xSemaphoreTake(p_uart->rx_mux, (portTickType)portMAX_DELAY);
-    uart_disable_intr_mask_and_return_prev(uart_num, UART_INTR_RXFIFO_FULL | UART_INTR_RXFIFO_TOUT, &prev_mask);
+    UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
+    uart_hal_disable_intr_mask(&(uart_context[uart_num].hal), UART_INTR_RXFIFO_FULL | UART_INTR_RXFIFO_TOUT);
+    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     while (true) {
         if (p_uart->rx_head_ptr) {
             vRingbufferReturnItem(p_uart->rx_ring_buf, p_uart->rx_head_ptr);
@@ -1359,7 +1382,9 @@ esp_err_t uart_flush_input(uart_port_t uart_num)
     p_uart->rx_cur_remain = 0;
     p_uart->rx_head_ptr = NULL;
     uart_hal_rxfifo_rst(&(uart_context[uart_num].hal));
-    uart_enable_intr_mask(uart_num, prev_mask);
+    /* Only re-enable UART_INTR_RXFIFO_TOUT or UART_INTR_RXFIFO_FULL if they
+     * were explicitly enabled by the user. */
+    uart_reenable_intr_mask(uart_num, UART_INTR_RXFIFO_TOUT | UART_INTR_RXFIFO_FULL);
     xSemaphoreGive(p_uart->rx_mux);
     return ESP_OK;
 }
@@ -1535,6 +1560,7 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
         p_uart_obj[uart_num]->tx_waiting_fifo = false;
         p_uart_obj[uart_num]->rx_ptr = NULL;
         p_uart_obj[uart_num]->rx_cur_remain = 0;
+        p_uart_obj[uart_num]->rx_int_usr_mask = UART_INTR_RXFIFO_FULL | UART_INTR_RXFIFO_TOUT;
         p_uart_obj[uart_num]->rx_head_ptr = NULL;
         p_uart_obj[uart_num]->tx_buf_size = tx_buffer_size;
         p_uart_obj[uart_num]->uart_select_notif_callback = NULL;
