@@ -115,8 +115,8 @@
     ,                                     EFUSE_BLK1,   16,    8,     Factory MAC addr [3]
     ,                                     EFUSE_BLK1,    8,    8,     Factory MAC addr [4]
     ,                                     EFUSE_BLK1,    0,    8,     Factory MAC addr [5]
-    MAC_EXT,                              EFUSE_BLK1,  123,    8,     Factory MAC addr [6]
-    ,                                     EFUSE_BLK1,  131,    8,     Factory MAC addr [7]
+    MAC_EXT,                              EFUSE_BLK1,  123,    8,     Extend MAC addr [0]
+    ,                                     EFUSE_BLK1,  131,    8,     Extend MAC addr [1]
     SPI_PAD_CONFIG_CLK,                   EFUSE_BLK1,   48,    6,     SPI_PAD_configure CLK
     SPI_PAD_CONFIG_Q_D1,                  EFUSE_BLK1,   54,    6,     SPI_PAD_configure Q(D1)
     SPI_PAD_CONFIG_D_D0,                  EFUSE_BLK1,   60,    6,     SPI_PAD_configure D(D0)
