@@ -13,12 +13,17 @@ extern "C" {
 /**
  * @brief LCD clock source
  * @note User should select the clock source based on the real requirement:
- *
- * | LCD clock source    | Features                 | Power Management           |
- * |---------------------|--------------------------|----------------------------|
- * | LCD_CLK_SRC_PLL160M | High resolution, fixed   | ESP_PM_APB_FREQ_MAX lock   |
- * | LCD_CLK_SRC_APLL    | Configurable resolution  | ESP_PM_NO_LIGHT_SLEEP lock |
- * | LCD_CLK_SRC_XTAL    | Medium resolution, fixed | No PM lock                 |
+ * @verbatim embed:rst:leading-asterisk
+ * +---------------------+-------------------------+----------------------------+
+ * | LCD clock source    | Features                | Power Management           |
+ * +=====================+=========================+============================+
+ * | LCD_CLK_SRC_PLL160M | High resolution         | ESP_PM_APB_FREQ_MAX lock   |
+ * +---------------------+-------------------------+----------------------------+
+ * | LCD_CLK_SRC_APLL    | Configurable resolution | ESP_PM_NO_LIGHT_SLEEP lock |
+ * +---------------------+-------------------------+----------------------------+
+ * | LCD_CLK_SRC_XTAL    | Medium resolution       | No PM lock                 |
+ * +---------------------+-------------------------+----------------------------+
+ * @endverbatim
  */
 typedef enum {
     LCD_CLK_SRC_PLL160M, /*!< Select PLL160M as the source clock */

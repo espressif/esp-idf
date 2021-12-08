@@ -250,7 +250,7 @@ static esp_err_t rgb_panel_init(esp_lcd_panel_t *panel)
     lcd_ll_set_pixel_clock_prescale(rgb_panel->hal.dev, pclk_prescale);
     rgb_panel->timings.pclk_hz = rgb_panel->resolution_hz / pclk_prescale;
     // pixel clock phase and polarity
-    lcd_ll_set_clock_idle_level(rgb_panel->hal.dev, !rgb_panel->timings.flags.pclk_idle_low);
+    lcd_ll_set_clock_idle_level(rgb_panel->hal.dev, rgb_panel->timings.flags.pclk_idle_high);
     lcd_ll_set_pixel_clock_edge(rgb_panel->hal.dev, rgb_panel->timings.flags.pclk_active_neg);
     // enable RGB mode and set data width
     lcd_ll_enable_rgb_mode(rgb_panel->hal.dev, true);
