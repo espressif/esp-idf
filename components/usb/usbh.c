@@ -68,6 +68,9 @@ struct device_s {
         usb_speed_t speed;
         const usb_device_desc_t *desc;
         const usb_config_desc_t *config_desc;
+        const usb_str_desc_t *str_desc_manu;
+        const usb_str_desc_t *str_desc_product;
+        const usb_str_desc_t *str_desc_ser_num;
     } constant;
 };
 
@@ -170,6 +173,16 @@ static void device_free(device_t *dev_obj)
     //Configuration might not have been allocated (in case of early enumeration failure)
     if (dev_obj->constant.config_desc) {
         heap_caps_free((usb_config_desc_t *)dev_obj->constant.config_desc);
+    }
+    //String descriptors might not have been allocated (in case of early enumeration failure)
+    if (dev_obj->constant.str_desc_manu) {
+        heap_caps_free((usb_str_desc_t *)dev_obj->constant.str_desc_manu);
+    }
+    if (dev_obj->constant.str_desc_product) {
+        heap_caps_free((usb_str_desc_t *)dev_obj->constant.str_desc_product);
+    }
+    if (dev_obj->constant.str_desc_ser_num) {
+        heap_caps_free((usb_str_desc_t *)dev_obj->constant.str_desc_ser_num);
     }
     heap_caps_free((usb_device_desc_t *)dev_obj->constant.desc);
     ESP_ERROR_CHECK(hcd_pipe_free(dev_obj->constant.default_pipe));
@@ -458,6 +471,15 @@ esp_err_t usbh_process(void)
     return ESP_OK;
 }
 
+esp_err_t usbh_num_devs(int *num_devs_ret)
+{
+    USBH_CHECK(num_devs_ret != NULL, ESP_ERR_INVALID_ARG);
+    xSemaphoreTake(p_usbh_obj->constant.mux_lock, portMAX_DELAY);
+    *num_devs_ret = p_usbh_obj->mux_protected.num_device;
+    xSemaphoreGive(p_usbh_obj->constant.mux_lock);
+    return ESP_OK;
+}
+
 // ------------------------------------------------ Device Functions ---------------------------------------------------
 
 // --------------------- Device Pool -----------------------
@@ -640,6 +662,10 @@ esp_err_t usbh_dev_get_info(usb_device_handle_t dev_hdl, usb_device_info_t *dev_
     USBH_EXIT_CRITICAL();
     assert(dev_obj->constant.config_desc);
     dev_info->bConfigurationValue = dev_obj->constant.config_desc->bConfigurationValue;
+    //String descriptors are allowed to be NULL as not all devices support them
+    dev_info->str_desc_manufacturer = dev_obj->constant.str_desc_manu;
+    dev_info->str_desc_product = dev_obj->constant.str_desc_product;
+    dev_info->str_desc_serial_num = dev_obj->constant.str_desc_ser_num;
     ret = ESP_OK;
 exit:
     return ret;
@@ -964,9 +990,38 @@ esp_err_t usbh_hub_enum_fill_config_desc(usb_device_handle_t dev_hdl, const usb_
     }
     //Copy the configuration descriptor
     memcpy(config_desc, config_desc_full, config_desc_full->wTotalLength);
-    //Assign the config object to the device object
+    //Assign the config desc to the device object
     assert(dev_obj->constant.config_desc == NULL);
     dev_obj->constant.config_desc = config_desc;
+    return ESP_OK;
+}
+
+esp_err_t usbh_hub_enum_fill_str_desc(usb_device_handle_t dev_hdl, const usb_str_desc_t *str_desc, int select)
+{
+    USBH_CHECK(dev_hdl != NULL && str_desc != NULL && (select >= 0 && select < 3), ESP_ERR_INVALID_ARG);
+    device_t *dev_obj = (device_t *)dev_hdl;
+    //Allocate memory to store the manufacturer string descriptor
+    usb_str_desc_t *str_desc_fill = heap_caps_malloc(str_desc->bLength, MALLOC_CAP_DEFAULT);
+    if (str_desc_fill == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+    //Copy the string descriptor
+    memcpy(str_desc_fill, str_desc, str_desc->bLength);
+    //Assign filled string descriptor to the device object
+    switch (select) {
+        case 0:
+            assert(dev_obj->constant.str_desc_manu == NULL);
+            dev_obj->constant.str_desc_manu = str_desc_fill;
+            break;
+        case 1:
+            assert(dev_obj->constant.str_desc_product == NULL);
+            dev_obj->constant.str_desc_product = str_desc_fill;
+            break;
+        default:    //2
+            assert(dev_obj->constant.str_desc_ser_num == NULL);
+            dev_obj->constant.str_desc_ser_num = str_desc_fill;
+            break;
+    }
     return ESP_OK;
 }
 

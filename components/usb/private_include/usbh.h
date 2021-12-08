@@ -119,6 +119,15 @@ esp_err_t usbh_uninstall(void);
  */
 esp_err_t usbh_process(void);
 
+/**
+ * @brief Get the current number of devices
+ *
+ * @note This function can block
+ * @param[out] num_devs_ret Current number of devices
+ * @return esp_err_t
+ */
+esp_err_t usbh_num_devs(int *num_devs_ret);
+
 // ------------------------------------------------ Device Functions ---------------------------------------------------
 
 // --------------------- Device Pool -----------------------
@@ -337,17 +346,6 @@ esp_err_t usbh_hub_dev_port_disabled(usb_device_handle_t dev_hdl);
 // ----------------- Enumeration Related -------------------
 
 /**
- * @brief Fill the enumerating device's descriptor
- *
- * @note Hub Driver only
- * @note Must call in sequence
- * @param[in] dev_hdl Device handle
- * @param device_desc
- * @return esp_err_t
- */
-esp_err_t usbh_hub_enum_fill_dev_desc(usb_device_handle_t dev_hdl, const usb_device_desc_t *device_desc);
-
-/**
  * @brief Assign the enumerating device's address
  *
  * @note Hub Driver only
@@ -357,6 +355,17 @@ esp_err_t usbh_hub_enum_fill_dev_desc(usb_device_handle_t dev_hdl, const usb_dev
  * @return esp_err_t
  */
 esp_err_t usbh_hub_enum_fill_dev_addr(usb_device_handle_t dev_hdl, uint8_t dev_addr);
+
+/**
+ * @brief Fill the enumerating device's descriptor
+ *
+ * @note Hub Driver only
+ * @note Must call in sequence
+ * @param[in] dev_hdl Device handle
+ * @param device_desc
+ * @return esp_err_t
+ */
+esp_err_t usbh_hub_enum_fill_dev_desc(usb_device_handle_t dev_hdl, const usb_device_desc_t *device_desc);
 
 /**
  * @brief Fill the enumerating device's active configuration descriptor
@@ -371,15 +380,16 @@ esp_err_t usbh_hub_enum_fill_dev_addr(usb_device_handle_t dev_hdl, uint8_t dev_a
 esp_err_t usbh_hub_enum_fill_config_desc(usb_device_handle_t dev_hdl, const usb_config_desc_t *config_desc_full);
 
 /**
- * @brief Assign the enumerating device's active configuration number
+ * @brief Fill one of the string descriptors of the enumerating device
  *
  * @note Hub Driver only
  * @note Must call in sequence
- * @param[in] dev_hdl Device handle
- * @param bConfigurationValue
+ * @param dev_hdl Device handle
+ * @param str_desc Pointer to string descriptor
+ * @param select Select which string descriptor. 0/1/2 for Manufacturer/Product/Serial Number string descriptors respecitvely
  * @return esp_err_t
  */
-esp_err_t usbh_hub_enum_fill_config_num(usb_device_handle_t dev_hdl, uint8_t bConfigurationValue);
+esp_err_t usbh_hub_enum_fill_str_desc(usb_device_handle_t dev_hdl, const usb_str_desc_t *str_desc, int select);
 
 /**
  * @brief Indicate the device enumeration is completed

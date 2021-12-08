@@ -72,6 +72,16 @@ typedef struct {
     };
 } usb_host_client_event_msg_t;
 
+// ------------------------ Info ---------------------------
+
+/**
+ * @brief Current information about the USB Host Library obtained via usb_host_lib_info()
+ */
+typedef struct {
+    int num_devices;    /**< Current number of connected (and enumerated) devices */
+    int num_clients;    /**< Current number of registered clients */
+} usb_host_lib_info_t;
+
 // ---------------------- Callbacks ------------------------
 
 /**
@@ -165,6 +175,14 @@ esp_err_t usb_host_lib_handle_events(TickType_t timeout_ticks, uint32_t *event_f
  * @return esp_err_t
  */
 esp_err_t usb_host_lib_unblock(void);
+
+/**
+ * @brief Get current information about the USB Host Library
+ *
+ * @param[out] info_ret USB Host Library Information
+ * @return esp_err_t
+ */
+esp_err_t usb_host_lib_info(usb_host_lib_info_t *info_ret);
 
 // ------------------------------------------------ Client Functions ---------------------------------------------------
 

@@ -494,7 +494,7 @@ static inline void usbh_hal_disable_debounce_lock(usbh_hal_context_t *hal)
     hal->flags.dbnc_lock_enabled = 0;
     //Clear Conenction and disconenction interrupt in case it triggered again
     usb_ll_intr_clear(hal->dev, USB_LL_INTR_CORE_DISCONNINT);
-    usbh_ll_hprt_intr_clear(hal->dev, USBH_LL_INTR_HPRT_PRTENCHNG);
+    usbh_ll_hprt_intr_clear(hal->dev, USBH_LL_INTR_HPRT_PRTCONNDET);
     //Reenable the hprt (connection) and disconnection interrupts
     usb_ll_en_intrs(hal->dev, USB_LL_INTR_CORE_PRTINT | USB_LL_INTR_CORE_DISCONNINT);
 }

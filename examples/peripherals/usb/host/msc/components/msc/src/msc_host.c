@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -432,7 +432,7 @@ static esp_err_t msc_read_string_desc(msc_device_t *dev, uint8_t index, wchar_t 
     }
 
     usb_transfer_t *xfer = dev->xfer;
-    USB_SETUP_PACKET_INIT_GET_STR_DESC((usb_setup_packet_t *)xfer->data_buffer, index, 64);
+    USB_SETUP_PACKET_INIT_GET_STR_DESC((usb_setup_packet_t *)xfer->data_buffer, index, 0x409, 64);
     MSC_RETURN_ON_ERROR( msc_control_transfer(dev, xfer, USB_SETUP_PACKET_SIZE + 64) );
 
     usb_standard_desc_t *desc = (usb_standard_desc_t *)(xfer->data_buffer + USB_SETUP_PACKET_SIZE);
