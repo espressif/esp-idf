@@ -601,7 +601,7 @@ endif()
 idf_component_register(SRCS "${srcs}"
                 INCLUDE_DIRS "${include_dirs}"
                 PRIV_INCLUDE_DIRS "${priv_include_dirs}"
-                REQUIRES nvs_flash soc esp_timer esp_pm esp_phy
+                REQUIRES nvs_flash soc esp_timer esp_pm esp_phy mbedtls
                 LDFRAGMENTS "linker.lf")
 
 if(CONFIG_BT_ENABLED)
