@@ -396,31 +396,6 @@ build_docker:
     # Therefore, build a copy of the example located inside the container.
     - docker run --rm --workdir /opt/esp/idf/examples/get-started/blink ${DOCKER_TMP_IMAGE_NAME} idf.py build
 
-.test-on-windows:
-  extends:
-    - .before_script_minimal
-    - .rules:build:windows
-  stage: host_test
-  needs: []
-  image: $CI_DOCKER_REGISTRY/esp32-toolchain-win-cross
-  tags:
-    - build
-  script:
-    - cd $TEST_DIR
-    - mkdir build
-    - cd build
-    - cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain-i686-w64-mingw32.cmake -DCMAKE_BUILD_TYPE=Release ..
-    - cmake --build .
-
-build_idf_exe:
-  extends: .test-on-windows
-  artifacts:
-    paths:
-      - tools/windows/idf_exe/build/idf-exe-v*.zip
-    expire_in: 4 days
-  variables:
-    TEST_DIR: tools/windows/idf_exe
-
 # This job builds template app with permutations of targets and optimization levels
 build_template_app:
   extends:
