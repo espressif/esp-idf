@@ -1,16 +1,8 @@
-// Copyright 2016-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include "string.h"
@@ -21,16 +13,11 @@
 #include "unity_test_runner.h"
 #include "test_utils.h"
 #include "esp_newlib.h"
+#include "memory_checks.h"
 
 #ifdef CONFIG_HEAP_TRACING
 #include "esp_heap_trace.h"
 #endif
-
-static size_t before_free_8bit;
-static size_t before_free_32bit;
-
-static size_t warn_leak_threshold;
-static size_t critical_leak_threshold;
 
 static void unity_task(void *pvParameters)
 {
@@ -46,28 +33,12 @@ void test_main(void)
                             UNITY_FREERTOS_PRIORITY, NULL, UNITY_FREERTOS_CPU);
 }
 
-void unity_reset_leak_checks(void)
-{
-    before_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
-    before_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
-
-#ifdef CONFIG_HEAP_TRACING
-    heap_trace_start(HEAP_TRACE_LEAKS);
-#endif
-}
-
 /* setUp runs before every test */
 void setUp(void)
 {
 // If heap tracing is enabled in kconfig, leak trace the test
 #ifdef CONFIG_HEAP_TRACING
-    const size_t num_heap_records = 80;
-    static heap_trace_record_t *record_buffer;
-    if (!record_buffer) {
-        record_buffer = malloc(sizeof(heap_trace_record_t) * num_heap_records);
-        assert(record_buffer);
-        heap_trace_init_standalone(record_buffer, num_heap_records);
-    }
+    setup_heap_record();
 #endif
 
     printf("%s", ""); /* sneakily lazy-allocate the reent structure for this test task */
@@ -81,55 +52,42 @@ void setUp(void)
     get_test_data_partition();  /* allocate persistent partition table structures */
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
-    unity_reset_leak_checks();
-    test_utils_set_leak_level(CONFIG_UNITY_CRITICAL_LEAK_LEVEL_GENERAL, TYPE_LEAK_CRITICAL, COMP_LEAK_GENERAL);
-    test_utils_set_leak_level(CONFIG_UNITY_WARN_LEAK_LEVEL_GENERAL, TYPE_LEAK_WARNING, COMP_LEAK_GENERAL);
+#ifdef CONFIG_HEAP_TRACING
+    heap_trace_start(HEAP_TRACE_LEAKS);
+#endif
+    test_utils_record_free_mem();
+    test_utils_set_leak_level(CONFIG_UNITY_CRITICAL_LEAK_LEVEL_GENERAL, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL);
+    test_utils_set_leak_level(CONFIG_UNITY_WARN_LEAK_LEVEL_GENERAL, ESP_LEAK_TYPE_WARNING, ESP_COMP_LEAK_GENERAL);
 }
 
-static void check_leak(size_t before_free, size_t after_free, const char *type)
+typedef enum {
+    NO_LEAK_CHECK,
+    DEFAULT_LEAK_CHECK,
+    SPECIAL_LEAK_CHECK
+} leak_check_type_t;
+
+/**
+ * It is possible to specify the maximum allowed memory leak level directly in the test case
+ * or disable leak checking for a test case.
+ * This function checks if this is the case and return the appropriate return value.
+ * If a custom leak level has been specified, that custom threshold is written to the value pointed by threshold.
+ */
+static leak_check_type_t leak_check_required(size_t *threshold)
 {
-    int free_delta = (int)after_free - (int)before_free;
-    printf("MALLOC_CAP_%s usage: Free memory delta: %d Leak threshold: -%u \n",
-           type,
-           free_delta,
-           critical_leak_threshold);
-
-    if (free_delta > 0) {
-        return; // free memory went up somehow
-    }
-
-    size_t leaked = (size_t)(free_delta * -1);
-    if (leaked <= warn_leak_threshold) {
-        return;
-    }
-
-    printf("MALLOC_CAP_%s %s leak: Before %u bytes free, After %u bytes free (delta %u)\n",
-           type,
-           leaked <= critical_leak_threshold ? "potential" : "critical",
-           before_free, after_free, leaked);
-    fflush(stdout);
-    TEST_ASSERT_MESSAGE(leaked <= critical_leak_threshold, "The test leaked too much memory");
-}
-
-static bool leak_check_required(void)
-{
-    warn_leak_threshold = test_utils_get_leak_level(TYPE_LEAK_WARNING, COMP_LEAK_ALL);
-    critical_leak_threshold = test_utils_get_leak_level(TYPE_LEAK_CRITICAL, COMP_LEAK_ALL);
     if (Unity.CurrentDetail1 != NULL) {
         const char *leaks = "[leaks";
         const int len_leaks = strlen(leaks);
         const char *sub_leaks = strstr(Unity.CurrentDetail1, leaks);
         if (sub_leaks != NULL) {
             if (sub_leaks[len_leaks] == ']') {
-                return false;
+                return NO_LEAK_CHECK;
             } else if (sub_leaks[len_leaks] == '=') {
-                critical_leak_threshold = strtol(&sub_leaks[len_leaks + 1], NULL, 10);
-                warn_leak_threshold = critical_leak_threshold;
-                return true;
+                *threshold = strtol(&sub_leaks[len_leaks + 1], NULL, 10);
+                return SPECIAL_LEAK_CHECK;
             }
         }
     }
-    return true;
+    return DEFAULT_LEAK_CHECK;
 }
 
 /* tearDown runs after every test */
@@ -154,11 +112,23 @@ void tearDown(void)
     heap_trace_dump();
 #endif
 
-    if (leak_check_required()) {
-          size_t after_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
-          size_t after_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
-          check_leak(before_free_8bit, after_free_8bit, "8BIT");
-          check_leak(before_free_32bit, after_free_32bit, "32BIT");
+    size_t leak_threshold_critical = 0;
+    size_t leak_threshold_warning = 0;
+    leak_check_type_t check_type = leak_check_required(&leak_threshold_critical);
+
+    // In the "special case", only one level can be passed directly from the test case.
+    // Hence, we set both warning and critical leak levels to that same value here
+    leak_threshold_warning = leak_threshold_critical;
+
+    if (check_type == NO_LEAK_CHECK) {
+        // do not check
+    } else if (check_type == SPECIAL_LEAK_CHECK) {
+        test_utils_finish_and_evaluate_leaks(leak_threshold_warning, leak_threshold_critical);
+    } else if (check_type == DEFAULT_LEAK_CHECK) {
+        test_utils_finish_and_evaluate_leaks(test_utils_get_leak_level(ESP_LEAK_TYPE_WARNING, ESP_COMP_LEAK_ALL),
+                test_utils_get_leak_level(ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_ALL));
+    } else {
+        assert(false); // coding error
     }
 
     Unity.TestFile = real_testfile; // go back to the real filename

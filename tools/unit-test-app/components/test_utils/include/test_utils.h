@@ -1,16 +1,9 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #pragma once
 
 // Utilities for esp-idf unit tests
@@ -118,18 +111,6 @@ uint64_t ref_clock_get(void);
  */
 void test_main(void);
 
-/**
- * @brief Reset automatic leak checking which happens in unit tests.
- *
- * Updates recorded "before" free memory values to the free memory values
- * at time of calling. Resets leak checker if tracing is enabled in
- * config.
- *
- * This can be called if a test case does something which allocates
- * memory on first use, for example.
- *
- * @note Use with care as this can mask real memory leak problems.
- */
 void unity_reset_leak_checks(void);
 
 
@@ -231,47 +212,6 @@ static inline void unity_send_signal(const char* signal_name)
  * @param[out] mac_addr store converted MAC address
  */
 bool unity_util_convert_mac_from_string(const char* mac_str, uint8_t *mac_addr);
-
-/**
- * @brief Leak for components
- */
-typedef enum {
-    COMP_LEAK_GENERAL = 0,  /**< Leak by default */
-    COMP_LEAK_LWIP,         /**< Leak for LWIP */
-    COMP_LEAK_NVS,          /**< Leak for NVS */
-    COMP_LEAK_ALL,          /**< Use for getting the summary leak level */
-} esp_comp_leak_t;
-
-/**
- * @brief Type of leak
- */
-typedef enum {
-    TYPE_LEAK_WARNING = 0,  /**< Warning level of leak */
-    TYPE_LEAK_CRITICAL,     /**< Critical level of leak */
-    TYPE_LEAK_MAX,          /**< Max number of leak levels */
-} esp_type_leak_t;
-
-/**
- * @brief Set a leak level for the required type and component.
- *
- * @param[in] leak_level Level of leak
- * @param[in] type       Type of leak
- * @param[in] component  Name of component
- *
- * return ESP_OK: Successful.
- *        ESP_ERR_INVALID_ARG: Invalid argument.
- */
-esp_err_t test_utils_set_leak_level(size_t leak_level, esp_type_leak_t type, esp_comp_leak_t component);
-
-/**
- * @brief Get a leak level for the required type and component.
- *
- * @param[in] type       Type of leak.
- * @param[in] component  Name of component. If COMP_LEAK_ALL, then the level will be summarized for all components.
- * return Leak level
- */
-size_t test_utils_get_leak_level(esp_type_leak_t type, esp_comp_leak_t component);
-
 
 typedef struct test_utils_exhaust_memory_record_s *test_utils_exhaust_memory_rec;
 

@@ -823,7 +823,6 @@ components/esp_timer/test/test_esp_timer_light_sleep.c
 components/esp_timer/test/test_ets_timer.c
 components/esp_websocket_client/esp_websocket_client.c
 components/esp_websocket_client/include/esp_websocket_client.h
-components/esp_websocket_client/test/test_websocket_client.c
 components/esp_wifi/include/esp_coexist_adapter.h
 components/esp_wifi/include/esp_mesh.h
 components/esp_wifi/include/esp_mesh_internal.h
@@ -839,7 +838,6 @@ components/esp_wifi/src/lib_printf.c
 components/esp_wifi/src/mesh_event.c
 components/esp_wifi/src/smartconfig.c
 components/esp_wifi/src/smartconfig_ack.c
-components/esp_wifi/test/test_wifi.c
 components/esp_wifi/test/test_wifi_init.c
 components/espcoredump/corefile/__init__.py
 components/espcoredump/corefile/_parse_soc_header.py
@@ -1426,7 +1424,6 @@ components/mqtt/host_test/mocks/include/freertos/FreeRTOSConfig.h
 components/mqtt/host_test/mocks/include/freertos/portmacro.h
 components/mqtt/host_test/mocks/include/machine/endian.h
 components/mqtt/host_test/mocks/include/sys/queue.h
-components/mqtt/test/test_mqtt.c
 components/newlib/abort.c
 components/newlib/assert.c
 components/newlib/heap.c
@@ -2501,7 +2498,6 @@ components/wpa_supplicant/src/wps/wps_registrar.c
 components/wpa_supplicant/src/wps/wps_validate.c
 components/wpa_supplicant/test/test_crypto.c
 components/wpa_supplicant/test/test_dpp.c
-components/wpa_supplicant/test/test_offchannel.c
 components/wpa_supplicant/test/test_sae.c
 components/xtensa/eri.c
 components/xtensa/esp32/include/xtensa/config/core-isa.h
@@ -3318,13 +3314,10 @@ tools/test_mkdfu/test_mkdfu.py
 tools/test_mkuf2/test_mkuf2.py
 tools/unit-test-app/components/test_utils/ccomp_timer.c
 tools/unit-test-app/components/test_utils/include/ccomp_timer.h
-tools/unit-test-app/components/test_utils/include/test_utils.h
 tools/unit-test-app/components/test_utils/private_include/ccomp_timer_impl.h
 tools/unit-test-app/components/test_utils/test/ccomp_timer_test_api.c
 tools/unit-test-app/components/test_utils/test/ccomp_timer_test_data.c
 tools/unit-test-app/components/test_utils/test/ccomp_timer_test_inst.c
-tools/unit-test-app/components/test_utils/test_runner.c
-tools/unit-test-app/components/test_utils/test_utils.c
 tools/unit-test-app/idf_ext.py
 tools/unit-test-app/main/app_main.c
 tools/unit-test-app/tools/CreateSectionTable.py

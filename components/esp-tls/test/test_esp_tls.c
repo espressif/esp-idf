@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "test_utils.h"
+#include "memory_checks.h"
 #include "esp_tls.h"
 #include "unity.h"
 #include "esp_err.h"
@@ -75,7 +75,7 @@ static void test_leak_setup(const char *file, long line)
     const uint8_t input_buffer[64];
     uint8_t output_buffer[64];
     esp_sha(SHA2_512, input_buffer, sizeof(input_buffer), output_buffer);
-    unity_reset_leak_checks();
+    test_utils_record_free_mem();
 }
 
 
