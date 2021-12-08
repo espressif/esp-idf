@@ -12,6 +12,9 @@
 #include "esp_timer.h"
 #include "esp_heap_caps.h"
 #include "test_utils.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/semphr.h"
 
 static const uint8_t key_256[] = {
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
@@ -296,7 +299,7 @@ TEST_CASE("mbedtls CFB-128 AES-256 test", "[aes]")
     free(decryptedtext);
 }
 
-TEST_CASE("mbedtls CTR stream test", "[aes]")
+static void aes_ctr_stream_test(void)
 {
     const unsigned SZ = 100;
     mbedtls_aes_context ctx;
@@ -394,6 +397,11 @@ TEST_CASE("mbedtls CTR stream test", "[aes]")
     free(plaintext);
     free(chipertext);
     free(decryptedtext);
+}
+
+TEST_CASE("mbedtls CTR stream test", "[aes]")
+{
+    aes_ctr_stream_test();
 }
 
 
@@ -774,10 +782,10 @@ TEST_CASE("mbedtls OFB, chained DMA descriptors", "[aes]")
 
 
 const uint8_t expected_cipher_ctr_end[] = {
-    0x7e, 0xdf, 0x13, 0xf3, 0x56, 0xef, 0x67, 0x01,
-    0xfc, 0x08, 0x49, 0x62, 0xfa, 0xfe, 0x0c, 0x8b,
-    0x99, 0x39, 0x09, 0x51, 0x2c, 0x9a, 0xd5, 0x48,
-    0x4f, 0x76, 0xa2, 0x19, 0x2c, 0x08, 0x9d, 0x6a,
+    0x93, 0xca, 0xe0, 0x44, 0x96, 0x6d, 0xcb, 0xb2,
+    0xcf, 0x8a, 0x8d, 0x73, 0x8c, 0x6b, 0xfa, 0x4d,
+    0xd6, 0xc4, 0x18, 0x49, 0xdd, 0xc6, 0xbf, 0xc2,
+    0xb9, 0xf0, 0x09, 0x69, 0x45, 0x42, 0xc6, 0x05,
 };
 
 
@@ -787,8 +795,8 @@ void aes_ctr_alignment_test(uint32_t input_buf_caps, uint32_t output_buf_caps)
     uint8_t nonce[16];
     uint8_t key[16];
     uint8_t stream_block[16];
-    size_t SZ = 6000;
-    size_t ALIGNMENT_SIZE_BYTES = 16;
+    size_t SZ = 32*200;
+    size_t ALIGNMENT_SIZE_BYTES = 64;
     memset(nonce, 0x2F, 16);
     memset(key, 0x1E, 16);
 
@@ -846,8 +854,8 @@ void aes_psram_one_buf_ctr_test(void)
     uint8_t nonce[16];
     uint8_t key[16];
     uint8_t stream_block[16];
-    size_t SZ = 6000;
-    size_t ALIGNMENT_SIZE_BYTES = 16;
+    size_t SZ = 32*200;
+    size_t ALIGNMENT_SIZE_BYTES = 32;
     memset(nonce, 0x2F, 16);
     memset(key, 0x1E, 16);
 
@@ -1464,3 +1472,32 @@ TEST_CASE("mbedtls AES external flash tests", "[aes]")
     aes_ext_flash_ctr_test(MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
 }
 #endif // CONFIG_SPIRAM_USE_MALLOC
+
+
+#if CONFIG_ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK
+
+RTC_FAST_ATTR uint8_t rtc_stack[4096];
+static xSemaphoreHandle done_sem;
+
+static void aes_ctr_stream_test_task(void *pv)
+{
+    aes_ctr_stream_test();
+    xSemaphoreGive(done_sem);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("mbedtls AES stack in RTC RAM", "[mbedtls]")
+{
+    done_sem = xSemaphoreCreateBinary();
+    static StaticTask_t rtc_task;
+    memset(rtc_stack, 0, sizeof(rtc_stack));
+
+    TEST_ASSERT(esp_ptr_in_rtc_dram_fast(rtc_stack));
+
+    TEST_ASSERT_NOT_NULL(xTaskCreateStatic(aes_ctr_stream_test_task, "aes_ctr_task", sizeof(rtc_stack), NULL,
+                                            3, rtc_stack, &rtc_task));
+    TEST_ASSERT_TRUE(xSemaphoreTake(done_sem, 10000 / portTICK_PERIOD_MS));
+    vSemaphoreDelete(done_sem);
+}
+
+#endif //CONFIG_ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK
