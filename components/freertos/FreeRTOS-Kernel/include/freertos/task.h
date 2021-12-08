@@ -33,9 +33,6 @@
 #endif
 
 #include "list.h"
-#ifdef ESP_PLATFORM // IDF-3793
-#include "freertos/portmacro.h"
-#endif // ESP_PLATFORM
 
 /* *INDENT-OFF* */
 #ifdef __cplusplus
