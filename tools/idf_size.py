@@ -228,11 +228,10 @@ def load_map_data(map_file: TextIO) -> Tuple[str, Dict, Dict]:
     detected_chip = detect_target_chip(map_file)
     sections = load_sections(map_file)
 
-    # Exclude the .dummy section, which usually means shared region among I/D buses
-    dummy_keys = [key for key in sections if key.endswith(('.dummy'))]
-    if dummy_keys:
-        sections.pop(*dummy_keys)
-
+    # Exclude the dummy and .text_end section, which usually means shared region among I/D buses
+    for key in list(sections.keys()):
+        if key.endswith(('dummy', '.text_end')):
+            sections.pop(key)
     return detected_chip, segments, sections
 
 
@@ -569,8 +568,6 @@ class StructureForSummary(object):
         r.dram_total = get_size(dram_filter)
         iram_filter = filter(in_iram, segments)
         r.iram_total = get_size(iram_filter)
-        if r.diram_total == 0:
-            r.diram_total = r.dram_total + r.iram_total
 
         def filter_in_section(sections: Iterable[MemRegions.Region], section_to_check: str) -> List[MemRegions.Region]:
             return list(filter(lambda x: LinkingSections.in_section(x.section, section_to_check), sections))  # type: ignore
@@ -578,8 +575,6 @@ class StructureForSummary(object):
         dram_sections = list(filter(in_dram, sections))
         iram_sections = list(filter(in_iram, sections))
         diram_sections = list(filter(in_diram, sections))
-        if not diram_sections:
-            diram_sections = dram_sections + iram_sections
         flash_sections = filter_in_section(sections, 'flash')
 
         dram_data_list = filter_in_section(dram_sections, 'data')
