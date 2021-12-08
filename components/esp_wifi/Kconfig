@@ -325,4 +325,10 @@ menu "Wi-Fi"
         help
             Select this option to enable GMAC support. GMAC support is compulsory for WiFi 192 bit certification.
 
+    config ESP_WIFI_SOFTAP_SUPPORT
+        bool "WiFi SoftAP Support"
+        default y
+        help
+            WiFi module can be compiled without SoftAP to save code size.
+
 endmenu  # Wi-Fi
