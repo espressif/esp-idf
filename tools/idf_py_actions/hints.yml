@@ -1,0 +1,29 @@
+#  -
+#     re: Regular expression of error to search
+#     hint: Message of the hint. Optionally, it is possible to use '{}' at the place where the matched group from 're' should be inserted. This requires 'match_to_output: True'.
+#     match_to_output: (False by default) see the description of 'hint'.
+
+
+# Rules to write regex for hints on how to resolve errors
+# - Do not use more than one whitespace in a row. The script automatically merges several whitespaces into one when capturing output
+# - Do not use \n in your regex. They are all automatically deletes by the script when capturing output
+-
+    re: "error: implicit declaration of function '(\\w+)'"
+    hint: "Maybe you forgot to import {} library(s) in header file or add the necessary REQURIES component. Try to add missing libraries to your project header file or check idf_component_register(REQUIRES ...) section in your component CmakeList.txt file. For more information run 'idf.py docs -sp api-guides/build-system.html'."
+    match_to_output: True
+
+-
+    re: "The CMAKE_[A-Z]+_COMPILER: [\\w+-]+ is not a full path and was not found in the PATH\\."
+    hint: "Try to reinstall the toolchain for the chip that you trying to use. \nFor more information run 'idf.py docs -sp get-started/#installation' and follow the instructions for your system"
+
+-
+    re: "CMake Error: The current CMakeCache\\.txt directory .* is different than the directory .* where CMakeCache\\.txt was created\\."
+    hint: "Run 'idf.py fullclean' and try the build again."
+
+-
+    re: "CMake Error at .* \\(message\\): Could not create symbolic link for: error\\.c --> Cannot create a file when that file already exists\\."
+    hint: "Run 'idf.py fullclean' and try the build again."
+
+-
+    re: "ImportError: bad magic number in 'kconfiglib':"
+    hint: "Run 'idf.py python-clean', and try again"

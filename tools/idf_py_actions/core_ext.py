@@ -18,7 +18,7 @@ from idf_py_actions.constants import GENERATORS, PREVIEW_TARGETS, SUPPORTED_TARG
 from idf_py_actions.errors import FatalError
 from idf_py_actions.global_options import global_options
 from idf_py_actions.tools import (PropertyDict, TargetChoice, ensure_build_directory, get_target, idf_version,
-                                  merge_action_lists, realpath, run_target)
+                                  merge_action_lists, print_hints, realpath, run_target)
 
 
 def action_extensions(base_actions: Dict, project_path: str) -> Any:
@@ -29,8 +29,9 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
         Calls ensure_build_directory() which will run cmake to generate a build
         directory (with the specified generator) as needed.
         """
+        hints = not args.no_hints
         ensure_build_directory(args, ctx.info_name)
-        run_target(target_name, args)
+        run_target(target_name, args, force_progression=GENERATORS[args.generator].get('force_progression', False), hints=hints)
 
     def size_target(target_name: str, ctx: Context, args: PropertyDict) -> None:
         """
@@ -40,11 +41,13 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
 
         """
 
-        def tool_error_handler(e: int) -> None:
-            pass
+        def tool_error_handler(e: int, stdout: str, stderr: str) -> None:
+            print_hints(stdout, stderr)
 
+        hints = not args.no_hints
         ensure_build_directory(args, ctx.info_name)
-        run_target('all', args, custom_error_handler=tool_error_handler)
+        run_target('all', args, force_progression=GENERATORS[args.generator].get('force_progression', False),
+                   custom_error_handler=tool_error_handler, hints=hints)
         run_target(target_name, args)
 
     def list_build_system_targets(target_name: str, ctx: Context, args: PropertyDict) -> None:
@@ -61,6 +64,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
             # This encoding step is required only in Python 2.
             style = style.encode(sys.getfilesystemencoding() or 'utf-8')
         os.environ['MENUCONFIG_STYLE'] = style
+        args.no_hints = True
         build_target(target_name, ctx, args)
 
     def fallback_target(target_name: str, ctx: Context, args: PropertyDict) -> None:
@@ -304,6 +308,12 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
                 'hidden': True,
                 'default': False,
             },
+            {
+                'names': ['--no-hints'],
+                'help': 'Disable hints on how to resolve errors and logging.',
+                'is_flag': True,
+                'default': False
+            }
         ],
         'global_action_callbacks': [validate_root_options],
     }
