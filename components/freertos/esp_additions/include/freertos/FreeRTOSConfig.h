@@ -166,10 +166,19 @@
 #define configSTACK_OVERHEAD_APPTRACE                   0
 #endif
 
+/* Stack watchpoint decreases minimum usable stack size by up to 60 bytes.
+   See FreeRTOS FREERTOS_WATCHPOINT_END_OF_STACK option in Kconfig. */
+#if CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK
+#define configSTACK_OVERHEAD_WATCHPOINT                   60
+#else
+#define configSTACK_OVERHEAD_WATCHPOINT                   0
+#endif
+
 #define configSTACK_OVERHEAD_TOTAL (                                    \
                                     configSTACK_OVERHEAD_CHECKER +      \
                                     configSTACK_OVERHEAD_OPTIMIZATION + \
-                                    configSTACK_OVERHEAD_APPTRACE       \
+                                    configSTACK_OVERHEAD_APPTRACE +     \
+                                    configSTACK_OVERHEAD_WATCHPOINT     \
                                                                         )
 
 #define configMINIMAL_STACK_SIZE                        (768 + configSTACK_OVERHEAD_TOTAL)
