@@ -1,11 +1,8 @@
-import http.server
 import multiprocessing
 import os
 import re
-import os
 import socket
 import ssl
-import sys
 
 from tiny_test_fw import DUT
 import ttfw_idf
