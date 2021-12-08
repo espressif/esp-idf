@@ -865,7 +865,7 @@ static int vfs_fat_access(void* ctx, const char *path, int amode)
         // it exists then it is readable and executable
     } else {
         ret = -1;
-        errno = fresult_to_errno(res);
+        errno = ENOENT;
     }
 
     return ret;
