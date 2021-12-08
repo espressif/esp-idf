@@ -127,24 +127,26 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
     uint32_t checksum_word = ESP_ROM_CHECKSUM_INITIAL;
     uint32_t *checksum = (do_verify) ? &checksum_word : NULL;
     bootloader_sha256_handle_t sha_handle = NULL;
+    bool verify_sha;
 #if (SECURE_BOOT_CHECK_SIGNATURE == 1)
      /* used for anti-FI checks */
     uint8_t image_digest[HASH_LEN] = { [ 0 ... 31] = 0xEE };
     uint8_t verified_digest[HASH_LEN] = { [ 0 ... 31 ] = 0x01 };
 #endif
-#if CONFIG_SECURE_BOOT_V2_ENABLED
-    // For Secure Boot V2, we do verify signature on bootloader which includes the SHA calculation.
-    bool verify_sha = do_verify;
-#else // Secure boot not enabled
-    // For secure boot V1 on ESP32, we don't calculate SHA or verify signature on bootloaders.
-    // (For non-secure boot, we don't verify any SHA-256 hash appended to the bootloader because
-    // esptool.py may have rewritten the header - rely on esptool.py having verified the bootloader at flashing time, instead.)
-    bool verify_sha = (part->offset != ESP_BOOTLOADER_OFFSET) && do_verify;
-#endif
 
     if (data == NULL || part == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
+
+#if CONFIG_SECURE_BOOT_V2_ENABLED
+    // For Secure Boot V2, we do verify signature on bootloader which includes the SHA calculation.
+    verify_sha = do_verify;
+#else // Secure boot not enabled
+    // For secure boot V1 on ESP32, we don't calculate SHA or verify signature on bootloaders.
+    // (For non-secure boot, we don't verify any SHA-256 hash appended to the bootloader because
+    // esptool.py may have rewritten the header - rely on esptool.py having verified the bootloader at flashing time, instead.)
+    verify_sha = (part->offset != ESP_BOOTLOADER_OFFSET) && do_verify;
+#endif
 
     if (part->size > SIXTEEN_MB) {
         err = ESP_ERR_INVALID_ARG;
