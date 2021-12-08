@@ -639,7 +639,7 @@
         ]
       ],
       "export_vars": {},
-      "info_url": "https://github.com/espressif/esp-idf/tree/master/tools/windows/idf_exe",
+      "info_url": "https://github.com/espressif/idf_py_exe_tool",
       "install": "never",
       "license": "Apache-2.0",
       "name": "idf-exe",
@@ -659,20 +659,20 @@
         "idf.py.exe",
         "-v"
       ],
-      "version_regex": "([0-9.]+)",
+      "version_regex": "v([0-9.]+)",
       "versions": [
         {
-          "name": "1.0.2",
+          "name": "1.0.3",
           "status": "recommended",
           "win32": {
-            "sha256": "93d45466cd2c86231f0693a60f68833db7bc63da17e876b2a64298a8869b916f",
-            "size": 7223,
-            "url": "https://dl.espressif.com/dl/idf-exe-v1.0.2.zip"
+            "sha256": "7c81ef534c562354a5402ab6b90a6eb1cc8473a9f4a7b7a7f93ebbd23b4a2755",
+            "size": 73562,
+            "url": "https://github.com/espressif/idf_py_exe_tool/releases/download/v1.0.3/idf-exe-v1.0.3.zip"
           },
           "win64": {
-            "sha256": "93d45466cd2c86231f0693a60f68833db7bc63da17e876b2a64298a8869b916f",
-            "size": 7223,
-            "url": "https://dl.espressif.com/dl/idf-exe-v1.0.2.zip"
+            "sha256": "7c81ef534c562354a5402ab6b90a6eb1cc8473a9f4a7b7a7f93ebbd23b4a2755",
+            "size": 73562,
+            "url": "https://github.com/espressif/idf_py_exe_tool/releases/download/v1.0.3/idf-exe-v1.0.3.zip"
           }
         }
       ]
