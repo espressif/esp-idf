@@ -399,7 +399,7 @@ int esp_vfs_open(struct _reent *r, const char * path, int flags, int mode)
         __errno_r(r) = ENOMEM;
         return -1;
     }
-    __errno_r(r) = ENOENT;
+    __errno_r(r) = errno;
     return -1;
 }
 
