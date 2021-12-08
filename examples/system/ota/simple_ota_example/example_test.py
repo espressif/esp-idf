@@ -4,7 +4,6 @@ import os
 import re
 import socket
 import ssl
-import sys
 
 import ttfw_idf
 from tiny_test_fw import DUT, Utility
