@@ -281,7 +281,7 @@ static void prvInitializeNewRingbuffer(size_t xBufferSize,
         pxNewRingbuffer->xGetCurMaxSize = prvGetCurMaxSizeByteBuf;
     }
     xSemaphoreGive(rbGET_TX_SEM_HANDLE(pxNewRingbuffer));
-    vPortCPUInitializeMutex(&pxNewRingbuffer->mux);
+    portMUX_INITIALIZE(&pxNewRingbuffer->mux);
 }
 
 static size_t prvGetFreeSize(Ringbuffer_t *pxRingbuffer)

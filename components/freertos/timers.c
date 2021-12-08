@@ -991,10 +991,6 @@ PRIVILEGED_DATA portMUX_TYPE xTimerMux = portMUX_INITIALIZER_UNLOCKED;
         /* Check that the list from which active timers are referenced, and the
          * queue used to communicate with the timer service, have been
          * initialised. */
-#ifdef ESP_PLATFORM
-        if( xTimerQueue == NULL ) vPortCPUInitializeMutex( &xTimerMux );
-#endif // ESP_PLATFORM
-
         taskENTER_CRITICAL();
         {
             if( xTimerQueue == NULL )

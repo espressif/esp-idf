@@ -289,7 +289,7 @@ BaseType_t xQueueGenericReset( QueueHandle_t xQueue,
 #ifdef ESP_PLATFORM
     if( xNewQueue == pdTRUE )
     {
-        vPortCPUInitializeMutex(&pxQueue->mux);
+        portMUX_INITIALIZE(&pxQueue->mux);
     }
 #endif // ESP_PLATFORM
 
@@ -538,7 +538,7 @@ static void prvInitialiseNewQueue( const UBaseType_t uxQueueLength,
             /* In case this is a recursive mutex. */
             pxNewQueue->u.xSemaphore.uxRecursiveCallCount = 0;
 #ifdef ESP_PLATFORM
-            vPortCPUInitializeMutex(&pxNewQueue->mux);
+            portMUX_INITIALIZE(&pxNewQueue->mux);
 #endif // ESP_PLATFORM
             traceCREATE_MUTEX( pxNewQueue );
 
