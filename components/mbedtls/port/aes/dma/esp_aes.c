@@ -377,7 +377,8 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
         block_out_desc = block_desc + lldesc_num;
 
         lldesc_setup_link(block_in_desc, input, block_bytes, 0);
-        lldesc_setup_link(block_out_desc, output, block_bytes, 0);
+        //Limit max inlink descriptor length to be 16 byte aligned, require for EDMA
+        lldesc_setup_link_constrained(block_out_desc, output, block_bytes, LLDESC_MAX_NUM_PER_DESC_16B_ALIGNED, 0);
 
         out_desc_tail = &block_out_desc[lldesc_num - 1];
     }
