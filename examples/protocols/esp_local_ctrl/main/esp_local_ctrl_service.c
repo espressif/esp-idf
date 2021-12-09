@@ -178,6 +178,11 @@ void start_esp_local_ctrl_service(void)
         .transport_config = {
             .httpd = &https_conf
         },
+        .proto_sec = {
+            .version = 0,
+            .custom_handle = NULL,
+            .pop = NULL,
+        },
         .handlers = {
             /* User defined handler functions */
             .get_prop_values = get_property_values,

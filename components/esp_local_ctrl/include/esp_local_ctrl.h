@@ -229,6 +229,37 @@ typedef union {
 } esp_local_ctrl_transport_config_t;
 
 /**
+ * @brief   Security types for esp_local_control
+ */
+typedef enum esp_local_ctrl_proto_sec {
+    PROTOCOM_SEC0 = 0,
+    PROTOCOM_SEC1,
+    PROTOCOM_SEC_CUSTOM,
+} esp_local_ctrl_proto_sec_t;
+
+/**
+ * Protocom security configs
+ */
+typedef struct esp_local_ctrl_proto_sec_cfg {
+     /**
+     * This sets protocom security version, sec0/sec1 or custom
+     * If custom, user must provide handle via `proto_sec_custom_handle` below
+     */
+    esp_local_ctrl_proto_sec_t version;
+
+    /**
+     * Custom security handle if security is set custom via `proto_sec` above
+     * This handle must follow `protocomm_security_t` signature
+     */
+    void *custom_handle;
+
+    /**
+     * Proof of possession to be used for local control. Could be NULL.
+     */
+    void *pop;
+} esp_local_ctrl_proto_sec_cfg_t;
+
+/**
  * @brief   Configuration structure to pass to `esp_local_ctrl_start()`
  */
 typedef struct esp_local_ctrl_config {
@@ -241,6 +272,11 @@ typedef struct esp_local_ctrl_config {
      * Transport layer over which service will be provided
      */
     esp_local_ctrl_transport_config_t transport_config;
+
+    /**
+     * Security version and POP
+     */
+    esp_local_ctrl_proto_sec_cfg_t proto_sec;
 
     /**
      * Register handlers for responding to get/set requests on properties
