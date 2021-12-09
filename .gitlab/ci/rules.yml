@@ -134,6 +134,8 @@
 
   - "tools/ci/test_reproducible_build.sh"
 
+  - "tools/gen_soc_caps_kconfig/*"
+
 .patterns-windows: &patterns-windows
   - "tools/windows/**/*"
 

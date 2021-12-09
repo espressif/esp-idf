@@ -9,6 +9,19 @@
 // separate these information into periph_caps.h for each peripheral and
 // include them here to avoid developing conflicts.
 
+/*
+ * These defines are parsed and imported as kconfig variables via the script
+ * `tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py`
+ *
+ * If this file is changed the script will automatically run the script
+ * and generate the kconfig variables as part of the pre-commit hooks.
+ *
+ * It can also be ran manually with `./tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py 'components/soc/esp32s3/include/soc/'`
+ *
+ * For more information see `tools/gen_soc_caps_kconfig/README.md`
+ *
+*/
+
 #pragma once
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
@@ -196,7 +209,7 @@
 #define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(host_id)  ({(void)host_id; 1;})
 
 // Peripheral supports output given level during its "dummy phase"
-#define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT 1
+#define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUT 1
 #define SOC_MEMSPI_IS_INDEPENDENT                   1
 #define SOC_SPI_MAX_PRE_DIVIDER                     16
 #define SOC_SPI_SUPPORT_OCT                         1
@@ -261,7 +274,6 @@
 #define SOC_SHA_SUPPORT_SHA224          (1)
 #define SOC_SHA_SUPPORT_SHA256          (1)
 #define SOC_SHA_SUPPORT_SHA384          (1)
-#define SOC_SHA_SUPPORT_SHA256          (1)
 #define SOC_SHA_SUPPORT_SHA512          (1)
 #define SOC_SHA_SUPPORT_SHA512_224      (1)
 #define SOC_SHA_SUPPORT_SHA512_256      (1)
@@ -295,7 +307,7 @@
 
 #define SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP    (1)     /*!<Supports waking up from touch pad trigger */
 
-#define SOC_PM_SUPPORT_DEEPSLEEP_VERIFY_STUB_ONLY   (1)
+#define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1)
 
 
 /*-------------------------- Flash Encryption CAPS----------------------------*/

@@ -20,11 +20,15 @@ set(srcs
 
 set(includes "include" "${target}/include" "deprecated")
 
+if(CONFIG_SOC_MCPWM_SUPPORTED)
+    list(APPEND srcs
+        "mcpwm.c")
+endif()
+
 if(${target} STREQUAL "esp32")
     # SDMMC and MCPWM are in ESP32 only.
     list(APPEND srcs "adc_common.c"
                      "dac_common.c"
-                     "mcpwm.c"
                      "sdio_slave.c"
                      "sdmmc_host.c"
                      "i2s.c"
@@ -61,7 +65,6 @@ if(${target} STREQUAL "esp32s3")
                      "gdma.c"
                      "sdmmc_host.c"
                      "sdmmc_transaction.c"
-                     "mcpwm.c"
                      "rmt.c"
                      "sigmadelta.c"
                      "usb_serial_jtag.c"

@@ -22,6 +22,8 @@
 extern "C" {
 #endif
 
+#define RTCIO_LL_PIN_FUNC     0
+
 typedef enum {
     RTCIO_FUNC_RTC = 0x0,         /*!< The pin controled by RTC module. */
     RTCIO_FUNC_DIGITAL = 0x1,     /*!< The pin controlled by DIGITAL module. */
