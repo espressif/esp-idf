@@ -7,10 +7,10 @@
 #define _SOC_SPI_MEM_REG_H_
 
 
+#include "soc.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "soc.h"
 
 #define SPI_MEM_CMD_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0)
 /* SPI_MEM_FLASH_READ : R/W/SC ;bitpos:[31] ;default: 1'b0 ; */

@@ -12,8 +12,6 @@
 #include "esp_bit_defs.h"
 #endif
 
-#include "sdkconfig.h"
-
 #define PRO_CPU_NUM (0)
 #define DR_REG_SYSTEM_BASE                      0x600c0000
 #define DR_REG_SENSITIVE_BASE                   0x600c1000
