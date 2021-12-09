@@ -78,7 +78,8 @@ def test_component_ut_esp_eth(env, appname):  # type: (tiny_test_fw.Env, str) ->
     stdout = dut.expect("Enter next test, or 'enter' to see menu", full_stdout=True)
     ttfw_idf.ComponentUTResult.parse_result(stdout, test_format=TestFormat.UNITY_BASIC)
     dut.write('"recv_pkt"')
-    expect_result = dut.expect(re.compile(r'([\s\S]*)DUT MAC: ([0-9a-zA-Z:]*)'), timeout=10)
+    expect_result = dut.expect(re.compile(r'([\s\S]*)DUT MAC: ([0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})'),
+                               timeout=10)
     stdout = expect_result[0]
     send_eth_packet(bytes.fromhex('ffffffffffff'))      # broadcast frame
     send_eth_packet(bytes.fromhex('010000000000'))      # multicast frame
