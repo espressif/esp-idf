@@ -15,6 +15,8 @@ What if the Checker's Suggestion is Incorrect?
 
 No automated checker (no matter how good is) can replace humans. So the developer's responsibility is to modify the offered header to be in line with the law and the license restrictions of the original code on which the work is based on. Certain licenses are not compatible between each other. Such corner cases will be covered by the following examples.
 
+The checker can be configured with the ``tools/ci/check_copyright_config.yaml`` configuration file. Please check the options it offers and consider updating it in order to match the headers correctly.
+
 Common Examples of Copyright Headers
 ------------------------------------
 
@@ -37,6 +39,8 @@ Some parts of ESP-IDF are deliberately under less restrictive licenses in order 
      * SPDX-License-Identifier: Unlicense OR CC0-1.0
      */
 
+The option allowing multiple licenses joined with the ``OR`` keyword from the above example can be achieved with the definition of multiple allowed licenses in the ``tools/ci/check_copyright_config.yaml`` configuration file. Please use this option with care and only selectively for a limited part of ESP-IDF.
+
 Third party licenses
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -53,3 +57,8 @@ The following example is a suitable header for a code licensed under the "GNU Ge
      */
 
 The licenses can be identified and the short SPDX identifiers can be found in the official `SPDX license list <https://spdx.org/licenses>`_. Other very common licenses are the GPL-2.0-only, the BSD-3-Clause, and the BSD-2-Clause.
+
+The configuration stored in ``tools/ci/check_copyright_config.yaml`` offers features useful for third party licenses:
+
+* A different license can be defined for the files part of a third party library.
+* The check for a selected set of files can be permanently disabled. Please use this option with care and only in cases when none of the other options are suitable.
