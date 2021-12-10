@@ -290,14 +290,14 @@ void app_main(void)
     uint8_t init_value[SOC_SPI_MAXIMUM_BUFFER_SIZE] = {0x0};
     spi_slave_hd_write_buffer(SLAVE_HOST, 0, init_value, SOC_SPI_MAXIMUM_BUFFER_SIZE);
 
-    uint32_t send_buf_size = 5000;
-    spi_slave_hd_write_buffer(SLAVE_HOST, SLAVE_MAX_TX_BUF_LEN_REG, (uint8_t *)&send_buf_size, 4);
+    static uint32_t send_buf_size = 5000;
+    spi_slave_hd_write_buffer(SLAVE_HOST, SLAVE_MAX_TX_BUF_LEN_REG, (uint8_t *)&send_buf_size, sizeof(send_buf_size));
 
-    uint32_t recv_buf_size = 120;
-    spi_slave_hd_write_buffer(SLAVE_HOST, SLAVE_MAX_RX_BUF_LEN_REG, (uint8_t *)&recv_buf_size, 4);
+    static uint32_t recv_buf_size = 120;
+    spi_slave_hd_write_buffer(SLAVE_HOST, SLAVE_MAX_RX_BUF_LEN_REG, (uint8_t *)&recv_buf_size, sizeof(recv_buf_size));
 
     uint32_t slave_ready_flag = SLAVE_READY_FLAG;
-    spi_slave_hd_write_buffer(SLAVE_HOST, SLAVE_READY_FLAG_REG, (uint8_t *)&slave_ready_flag, 4);
+    spi_slave_hd_write_buffer(SLAVE_HOST, SLAVE_READY_FLAG_REG, (uint8_t *)&slave_ready_flag, sizeof(slave_ready_flag));
 
     xTaskCreate(sender, "sendTask", 4096, &send_buf_size, 1, NULL);
     xTaskCreate(receiver, "recvTask", 4096, &recv_buf_size, 1, NULL);
