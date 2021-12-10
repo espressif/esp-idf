@@ -68,29 +68,24 @@ Case 2: API functions are declared with an extra context pointer (the FS driver 
 Synchronous input/output multiplexing
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Synchronous input/output multiplexing by :cpp:func:`select` is supported in the VFS component. The implementation
-works in the following way.
+Synchronous input/output multiplexing by :cpp:func:`select` is supported in the VFS component. The implementation works in the following way.
 
 1. :cpp:func:`select` is called with file descriptors which could belong to various VFS drivers.
+
 2. The file descriptors are divided into groups each belonging to one VFS driver.
-3. The file descriptors belonging to non-socket VFS drivers are handed over to the given VFS drivers by :cpp:func:`start_select`
-   described later on this page. This function represents the driver-specific implementation of :cpp:func:`select` for
-   the given driver. This should be a non-blocking call which means the function should immediately return after setting up
-   the environment for checking events related to the given file descriptors.
-4. The file descriptors belonging to the socket VFS driver are handed over to the socket driver by
-   :cpp:func:`socket_select` described later on this page. This is a blocking call which means that it will return only
-   if there is an event related to socket file descriptors or a non-socket driver signals :cpp:func:`socket_select`
-   to exit.
-5. Results are collected from each VFS driver and all drivers are stopped by deinitiazation
-   of the environment for checking events.
+
+3. The file descriptors belonging to non-socket VFS drivers are handed over to the given VFS drivers by :cpp:func:`start_select`, described later on this page. This function represents the driver-specific implementation of :cpp:func:`select` for the given driver. This should be a non-blocking call which means the function should immediately return after setting up the environment for checking events related to the given file descriptors.
+
+4. The file descriptors belonging to the socket VFS driver are handed over to the socket driver by :cpp:func:`socket_select` described later on this page. This is a blocking call which means that it will return only if there is an event related to socket file descriptors or a non-socket driver signals :cpp:func:`socket_select` to exit.
+
+5. Results are collected from each VFS driver and all drivers are stopped by de-initialization of the environment for checking events.
+
 6. The :cpp:func:`select` call ends and returns the appropriate results.
 
 Non-socket VFS drivers
 """"""""""""""""""""""
 
-If you want to use :cpp:func:`select` with a file descriptor belonging to a non-socket VFS driver
-then you need to register the driver with functions :cpp:func:`start_select` and
-:cpp:func:`end_select` similarly to the following example:
+If you want to use :cpp:func:`select` with a file descriptor belonging to a non-socket VFS driver, then you need to register the driver with functions :cpp:func:`start_select` and :cpp:func:`end_select` similarly to the following example:
 
 .. highlight:: c
 
@@ -101,32 +96,25 @@ then you need to register the driver with functions :cpp:func:`start_select` and
         .end_select = &uart_end_select,
     // ... other members initialized
 
-:cpp:func:`start_select` is called for setting up the environment for
-detection of read/write/error conditions on file descriptors belonging to the
-given VFS driver.
+:cpp:func:`start_select` is called for setting up the environment for detection of read/write/error conditions on file descriptors belonging to the given VFS driver.
 
-:cpp:func:`end_select` is called to stop/deinitialize/free the
-environment which was setup by :cpp:func:`start_select`.
+:cpp:func:`end_select` is called to stop/deinitialize/free the environment which was setup by :cpp:func:`start_select`.
 
 .. note::
-    :cpp:func:`end_select` might be called without a previous :cpp:func:`start_select` call in some rare
-    circumstances. :cpp:func:`end_select` should fail gracefully if this is the case.
+    :cpp:func:`end_select` might be called without a previous :cpp:func:`start_select` call in some rare circumstances. :cpp:func:`end_select` should fail gracefully if this is the case (i.e., should not crash but return an error instead).
 
-Please refer to the
-reference implementation for the UART peripheral in
-:component_file:`vfs/vfs_uart.c` and most particularly to the functions
-:cpp:func:`esp_vfs_dev_uart_register`, :cpp:func:`uart_start_select`, and
-:cpp:func:`uart_end_select` for more information.
+Please refer to the reference implementation for the UART peripheral in :component_file:`vfs/vfs_uart.c` and most particularly to the functions :cpp:func:`esp_vfs_dev_uart_register`, :cpp:func:`uart_start_select`, and :cpp:func:`uart_end_select` for more information.
 
 Please check the following examples that demonstrate the use of :cpp:func:`select` with VFS file descriptors:
-    - :example:`peripherals/uart/uart_select`
-    - :example:`system/select`
+
+- :example:`peripherals/uart/uart_select`
+- :example:`system/select`
+
 
 Socket VFS drivers
 """"""""""""""""""
 
-A socket VFS driver is using its own internal implementation of :cpp:func:`select` and non-socket VFS drivers notify
-it upon read/write/error conditions.
+A socket VFS driver is using its own internal implementation of :cpp:func:`select` and non-socket VFS drivers notify it upon read/write/error conditions.
 
 A socket VFS driver needs to be registered with the following functions defined:
 
@@ -141,27 +129,19 @@ A socket VFS driver needs to be registered with the following functions defined:
         .stop_socket_select_isr = &lwip_stop_socket_select_isr,
     // ... other members initialized
 
-:cpp:func:`socket_select` is the internal implementation of :cpp:func:`select` for the socket driver. It works only
-with file descriptors belonging to the socket VFS.
+:cpp:func:`socket_select` is the internal implementation of :cpp:func:`select` for the socket driver. It works only with file descriptors belonging to the socket VFS.
 
-:cpp:func:`get_socket_select_semaphore` returns the signalization object (semaphore) which will be used in non-socket
-drivers to stop the waiting in :cpp:func:`socket_select`.
+:cpp:func:`get_socket_select_semaphore` returns the signalization object (semaphore) which will be used in non-socket drivers to stop the waiting in :cpp:func:`socket_select`.
 
-:cpp:func:`stop_socket_select` call is used to stop the waiting in :cpp:func:`socket_select` by passing the object
-returned by :cpp:func:`get_socket_select_semaphore`.
+:cpp:func:`stop_socket_select` call is used to stop the waiting in :cpp:func:`socket_select` by passing the object returned by :cpp:func:`get_socket_select_semaphore`.
 
-:cpp:func:`stop_socket_select_isr` has the same functionality as :cpp:func:`stop_socket_select` but it can be used
-from ISR.
+:cpp:func:`stop_socket_select_isr` has the same functionality as :cpp:func:`stop_socket_select` but it can be used from ISR.
 
 Please see :component_file:`lwip/port/esp32/vfs_lwip.c` for a reference socket driver implementation using LWIP.
 
 .. note::
-    If you use :cpp:func:`select` for socket file descriptors only then you can enable the
-    :envvar:`CONFIG_LWIP_USE_ONLY_LWIP_SELECT` option to reduce the code size and improve performance.
-
-.. note::
-    Don't change the socket driver during an active :cpp:func:`select` call or you might experience some undefined
-    behavior.
+    If :cpp:func:`select` is only used on socket file descriptors, you can enable the :envvar:`CONFIG_LWIP_USE_ONLY_LWIP_SELECT` option to reduce the code size and improve performance.
+    You should not change the socket driver during an active :cpp:func:`select` call or you might experience some undefined behavior.
 
 Paths
 -----
@@ -213,7 +193,6 @@ Applications which use the UART driver can instruct VFS to use the driver's inte
 VFS also provides an optional newline conversion feature for input and output. Internally, most applications send and receive lines terminated by the LF (''\n'') character. Different terminal programs may require different line termination, such as CR or CRLF. Applications can configure this separately for input and output either via menuconfig, or by calls to the functions ``esp_vfs_dev_uart_port_set_rx_line_endings`` and ``esp_vfs_dev_uart_port_set_tx_line_endings``.
 
 
-
 Standard streams and FreeRTOS tasks
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -239,11 +218,11 @@ Such a design has the following consequences:
 Event fds
 -------------------------------------------
 
-``eventfd()`` call is a powerful tool to notify a ``select()`` based loop of custom events. The ``eventfd()`` implementation in ESP-IDF is generally the same as described in ``man(2) eventfd`` except for:
+``eventfd()`` call is a powerful tool to notify a ``select()`` based loop of custom events. The ``eventfd()`` implementation in ESP-IDF is generally the same as described in `man(2) eventfd <https://man7.org/linux/man-pages/man2/eventfd.2.html>`_ except for:
 
 - ``esp_vfs_eventfd_register()`` has to be called before calling ``eventfd()``
 - Options ``EFD_CLOEXEC``, ``EFD_NONBLOCK`` and ``EFD_SEMAPHORE`` are not supported in flags.
-- Option ``EFD_SUPPORT_ISR`` has been added in flags. This flag is required to read and the write the eventfd in an interrupt handler.
+- Option ``EFD_SUPPORT_ISR`` has been added in flags. This flag is required to read and write the eventfd in an interrupt handler.
 
 Note that creating an eventfd with ``EFD_SUPPORT_ISR`` will cause interrupts to be temporarily disabled when reading, writing the file and during the beginning and the ending of the ``select()`` when this file is set.
 

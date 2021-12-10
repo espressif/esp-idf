@@ -11,7 +11,7 @@
 底层存储
 ^^^^^^^^^^^^^^^^^^
 
-NVS 库通过调用 :ref:`esp_partition <flash-partition-apis>` API 使用主 flash 的部分空间，包括 ``data`` 类型和 ``nvs`` 子类型的所有分区。应用程序可调用 :cpp:func:`nvs_open` API 选择使用带有 ``nvs`` 标签的分区，也可以通过调用 :cpp:func:`nvs_open_from_partition` API 选择使用指定名称的任意分区。 
+NVS 库通过调用 :ref:`esp_partition <flash-partition-apis>` API 使用主 flash 的部分空间，即类型为 ``data`` 且子类型为 ``nvs`` 的所有分区。应用程序可调用 :cpp:func:`nvs_open` API 选择使用带有 ``nvs`` 标签的分区，也可以通过调用 :cpp:func:`nvs_open_from_partition` API 选择使用指定名称的任意分区。
 
 NVS 库后续版本可能会增加其他存储器后端，来将数据保存至其他 flash 芯片（SPI 或 I2C 接口）、RTC 或 FRAM 中。
 
@@ -77,9 +77,9 @@ NVS 与 {IDF_TARGET_NAME} flash 加密系统不直接兼容。但如果 NVS 加�
 NVS 加密
 --------------
 
-NVS 分区内存储的数据可使用 AES-XTS 进行加密，类似于 IEEE P1619 磁盘加密标准中提到的加密方式。为了实现加密，每个条目被均视为一个扇区，并将条目相对地址（相对于分区开头）传递给加密算法，用作扇区号。可通过 :ref:`CONFIG_NVS_ENCRYPTION` 启用 NVS 加密。NVS 加密所需的密钥存储于其他分区，并进行了 :doc:`Flash 加密 <../../security/flash-encryption>`。因此，在使用 NVS 加密前应先启用 :doc:`Flash 加密 <../../security/flash-encryption>`。 
+NVS 分区内存储的数据可使用 AES-XTS 进行加密，类似于 IEEE P1619 磁盘加密标准中提到的加密方式。为了实现加密，每个条目被均视为一个扇区，并将条目相对地址（相对于分区开头）传递给加密算法，用作扇区号。可通过 :ref:`CONFIG_NVS_ENCRYPTION` 启用 NVS 加密。NVS 加密所需的密钥存储于其他分区，并且被 :doc:`Flash 加密 <../../security/flash-encryption>` 保护。因此，在使用 NVS 加密前应先启用 :doc:`Flash 加密 <../../security/flash-encryption>`。
 
-启用 :doc:`Flash 加密 <../../security/flash-encryption>` 时，默认启用 NVS 加密。这是因为 Wi-Fi 驱动在默认的 NVS 分区中存储了凭证（如 SSID 和口令）。启用平台级加密后，仍需将它们作为默认选项进行加密。
+启用 :doc:`Flash 加密 <../../security/flash-encryption>` 时，默认启用 NVS 加密。这是因为 Wi-Fi 驱动在默认的 NVS 分区中存储了凭证（如 SSID 和密码）。启用平台级加密后，仍需将它们作为默认选项进行加密。
 
 使用 NVS 加密，分区表必须包含 :ref:`nvs_key_partition`。在分区表选项 (menuconfig->Partition Table) 下，为 NVS 加密提供了两个包含 :ref:`nvs_key_partition` 的分区表，您可以通过工程配置菜单 (``idf.py menuconfig``) 进行选择。请参考 :example:`security/flash_encryption` 中的例子，了解如何配置和使用 NVS 加密功能。
 
@@ -117,14 +117,14 @@ NVS 密钥分区
     i) 建立并烧录分区表
     ::
 
-        idf.py partition_table partition_table-flash
+        idf.py partition-table partition-table-flash
 
     ii) 调用 :component_file:`parttool.py<partition_table/parttool.py>`，将密钥存储在 flash 上的 :ref:`nvs_key_partition` 中。详见 :doc:` 分区表 </api-guides/partition-tables>` 的分区工具部分。
 
 
         parttool.py --port /dev/ttyUSB0 --partition-table-offset "nvs_key partition offset" write_partition --partition-name="name of nvs_key partition" --input "nvs_key partition"
 
-由于分区已标记为 `已加密`，而且启用了 :doc:`Flash 加密 <../../security/flash-encryption>`，引导程序在首次启动时将使用 flash 加密对密钥分区进行加密。 
+由于分区已标记为 `已加密`，而且启用了 :doc:`Flash 加密 <../../security/flash-encryption>`，引导程序在首次启动时将使用 flash 加密对密钥分区进行加密。
 
 应用程序可以使用不同的密钥对不同的 NVS 分区进行加密，这样就会需要多个加密密钥分区。应用程序应为加解密操作提供正确的密钥或密钥分区。
 
@@ -151,7 +151,7 @@ NVS 密钥分区
 NVS 分区生成程序
 ------------------
 
-NVS 分区生成程序帮助生成 NVS 分区二进制文件，可使用烧录程序将二进制文件单独烧录至特定分区。烧录至分区上的键值对由 CSV 文件提供，详情请参考 :doc:`NVS 分区生成程序 <nvs_partition_gen>`。 
+NVS 分区生成程序帮助生成 NVS 分区二进制文件，可使用烧录程序将二进制文件单独烧录至特定分区。烧录至分区上的键值对由 CSV 文件提供，详情请参考 :doc:`NVS 分区生成程序 <nvs_partition_gen>`。
 
 应用示例
 -------------------
@@ -162,7 +162,7 @@ ESP-IDF :example:`storage` 目录下提供了数个代码示例：
 
   演示如何读取及写入 NVS 单个整数值。
 
-  此示例中的值表示 {IDF_TARGET_NAME} 模组重启次数。NVS 中数据不会因为模组重启而丢失，因此只有将这一值存储于 NVS 中，才能起到重启次数计数器的作用。 
+  此示例中的值表示 {IDF_TARGET_NAME} 模组重启次数。NVS 中数据不会因为模组重启而丢失，因此只有将这一值存储于 NVS 中，才能起到重启次数计数器的作用。
 
   该示例也演示了如何检测读取/写入操作是否成功，以及某个特定值是否在 NVS 中尚未初始化。诊断程序以纯文本形式提供，帮助您追踪程序流程，及时发现问题。
 
@@ -291,12 +291,12 @@ Flash 扇区映射至逻辑页面并没有特定的顺序，NVS 库会检查存�
                                              Primitive  +--------------------------------+
                                             +-------->  |     Data (8)                   |
                                             | Types     +--------------------------------+
-                       +-> Fixed length --                                                
+                       +-> Fixed length --
                        |                    |           +---------+--------------+---------------+-------+
                        |                    +-------->  | Size(4) | ChunkCount(1)| ChunkStart(1) | Rsv(2)|
         Data format ---+                    BLOB Index  +---------+--------------+---------------+-------+
                        |
-                       |                             +----------+---------+-----------+ 
+                       |                             +----------+---------+-----------+
                        +->   Variable length   -->   | Size (2) | Rsv (2) | CRC32 (4) |
                             (Strings, BLOB Data)     +----------+---------+-----------+
 
@@ -329,14 +329,14 @@ CRC32
     - 块大小
         整个 BLOB 数据的大小（以字节为单位）。该字段仅用于 BLOB 索引类型条目。
 
-    - ChunkCount 
+    - ChunkCount
         存储过程中 BLOB 分成的数据块总量。该字段仅用于 BLOB 索引类型条目。
-     
-    - ChunkStart 
+
+    - ChunkStart
         BLOB 第一个数据块的块索引，后续数据块索引依次递增，步长为 1。该字段仅用于 BLOB 索引类型条目。
 
     如果键值类型为字符串或 BLOB 数据块，数据字段的这八个字节将保存该键值的一些附加信息，如下所示：
-  
+
     - 数据大小
         实际数据的大小（以字节为单位）。如果键值类型为字符串，此字段也应将零终止符包含在内。此字段仅用于字符串和 BLOB 类型条目。
 

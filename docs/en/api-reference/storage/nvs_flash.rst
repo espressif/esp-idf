@@ -78,9 +78,9 @@ NVS Encryption
 --------------
 
 Data stored in NVS partitions can be encrypted using AES-XTS in the manner similar to the one mentioned in disk encryption standard IEEE P1619. For the purpose of encryption, each entry is treated as one `sector` and relative address of the entry (w.r.t. partition-start) is fed to the encryption algorithm as `sector-number`. The NVS Encryption can be enabled by enabling :ref:`CONFIG_NVS_ENCRYPTION`. The keys required for NVS encryption are stored in yet another partition, which is protected using :doc:`Flash Encryption <../../security/flash-encryption>`. Therefore, enabling :doc:`Flash Encryption <../../security/flash-encryption>` is a prerequisite for NVS encryption.
-	
+
 The NVS Encryption is enabled by default when :doc:`Flash Encryption <../../security/flash-encryption>` is enabled. This is done because Wi-Fi driver stores credentials (like SSID and passphrase) in the default NVS partition. It is important to encrypt them as default choice if platform level encryption is already enabled.
-	
+
 For using NVS encryption, the partition table must contain the :ref:`nvs_key_partition`. Two partition tables containing the :ref:`nvs_key_partition` are provided for NVS encryption under the partition table option (menuconfig->Partition Table). They can be selected with the project configuration menu (``idf.py menuconfig``). Please refer to the example :example:`security/flash_encryption` for how to configure and use NVS encryption feature.
 
 .. _nvs_key_partition:
