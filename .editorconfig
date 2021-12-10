@@ -41,5 +41,5 @@ max_line_length = 120
 [{*.sh,*.yml,*.yaml}]
 indent_size = 2
 
-[*.ini]
+[* style.ini]
 indent_size = 2
