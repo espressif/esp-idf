@@ -56,7 +56,7 @@ ESP32-S2-Kaluga-1 套件包括以下几个开发板：
 ========
 
 
-本节介绍如何开始使用 ESP32-S2-Kaluga-1，主要包括三大部分：首先，介绍一些关于 ESP32-S2-Kaluga-1 的基本信息，然后在  `应用程序开发`_ 章节介绍如何进行硬件初始化，最后介绍如何为 ESP32-S2-Kaluga-1 烧录固件。
+本节介绍如何开始使用 ESP32-S2-Kaluga-1，主要包括三大部分：首先，介绍一些关于 ESP32-S2-Kaluga-1 的基本信息；然后，在  `应用程序开发`_ 章节介绍如何进行硬件初始化；最后，介绍如何为 ESP32-S2-Kaluga-1 烧录固件。
 
 
 概述
@@ -318,6 +318,11 @@ ESP32-S2-Kaluga-1 的主要组件和连接方式如下图所示。
      - IO6、IO11
      - IO11 管脚复用导致无法同时使用；IO6 管脚复用导致 ESP-LyraT-8311A 的 BT_ADC 管脚无法使用，因此无法初始化该扩展板的 6 个按钮。
      - **解决方法 1**：不要初始化 ESP-LyraP-TouchA 扩展板的 IO6 (PHOTO) 和 IO11 (NETWORK)。注意，此时 ESP-LyraT-8311A 的 6 个按钮依然无法使用。**解决方法 2**：移除 ESP-LyraP-LCD32 扩展板上的 R39，将 R41 换为 100 欧，并将 BLCT_L 开关打开。不要初始化 ESP-LyraP-TouchA 的 IO11 (NETWORK)。如果希望使用 ESP-LyraT-8311A 的 6 个按钮，则也不要初始化 IO6 (PHOTO)。
+
+另外，所有扩展板和 :ref:`JTAG 接口 <jtag-debugging-tip-jtag-pins-reconfigured>` 共用管脚 IO39、IO40、IO41 和 IO42。因此，以下情况可能会干扰 JTAG 操作：
+
+* 插上扩展板
+* 调试正在使用扩展板的应用程序
 
 
 已知问题
