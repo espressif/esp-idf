@@ -546,6 +546,7 @@ esp_err_t mdns_query_async_delete(mdns_search_once_t* search);
  * @param search pointer to search object
  * @param timeout time in milliseconds to wait for answers
  * @param results pointer to the results of the query
+ * @param num_results pointer to the number of the actual result items (set to NULL to ignore this return value)
  *
  * @return
  *      True if search has finished before or at timeout
