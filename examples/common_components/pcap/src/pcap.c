@@ -175,10 +175,10 @@ esp_err_t pcap_print_summary(pcap_file_handle_t pcap, FILE *print_file)
         real_read = fread(packet_payload, payload_length, 1, pcap->file);
         ESP_GOTO_ON_FALSE(real_read == 1, ESP_FAIL, err, TAG, "read payload error");
         // print packet information
-        // currently only print info for 802.11
         if (file_header.link_type == PCAP_LINK_TYPE_802_11) {
-            fprintf(print_file, "Packet Type: %2x\n", (packet_payload[0] >> 4) & 0x03);
-            fprintf(print_file, "Packet Subtype: %2x\n", packet_payload[0] & 0x0F);
+            // Frame Control Field is coded as LSB first
+            fprintf(print_file, "Frame Type: %2x\n", (packet_payload[0] >> 2) & 0x03);
+            fprintf(print_file, "Frame Subtype: %2x\n", (packet_payload[0] >> 4) & 0x0F);
             fprintf(print_file, "Destination: ");
             for (int j = 0; j < 5; j++) {
                 fprintf(print_file, "%2x ", packet_payload[4 + j]);
