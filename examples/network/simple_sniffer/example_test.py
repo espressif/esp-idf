@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 from __future__ import unicode_literals
 
 import re
@@ -33,8 +35,8 @@ def test_examples_simple_sniffer(env, _):  # type: (Any, Any) -> None
         dut.expect(re.compile(r'Timestamp \(Microseconds\): [0-9]*'))
         dut.expect(re.compile(r'Capture Length: [0-9]*'))
         dut.expect(re.compile(r'Packet Length: [0-9]*'))
-        dut.expect(re.compile(r'Packet Type: .*'))
-        dut.expect(re.compile(r'Packet Subtype: .*'))
+        dut.expect(re.compile(r'Frame Type: .*'))
+        dut.expect(re.compile(r'Frame Subtype: .*'))
         dut.expect(re.compile(r'Destination: .*'))
         dut.expect(re.compile(r'Source: .*'))
     dut.expect('Pcap packet Number: 10')
