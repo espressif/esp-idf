@@ -39,9 +39,9 @@ ESP-IDF :example:`storage/sd_card` 目录下提供了 SDMMC 驱动与 FatFs 库�
     协议层 API
     ------------------
 
-    协议层具备 :cpp:class:`sdmmc_host_t` 结构体，此结构体描述了 SD/MMC 主机驱动，列出了其功能，并提供指向驱动程序函数的指针。协议层将卡信息储存于 :cpp:class:`sdmmc_card_t` 结构体中。向 SD/MMC 主机发送命令时，协议层调用时需要一个 :cpp:class:`sdmmc_command_t` 结构体来描述命令、参数、预期返回值和需传输的数据（如有）。
+    协议层具备 :cpp:class:`sdmmc_host_t` 结构体，此结构体描述了 SD/MMC 主机驱动，列出了其功能，并提供指向驱动程序函数的指针。协议层将卡信息储存于 :cpp:class:`sdmmc_card_t` 结构体中。向 SD/MMC 主机发送命令时，协议层使用 :cpp:class:`sdmmc_command_t` 结构体来描述命令、参数、预期返回值和需传输的数据（如有）。
 
-    
+
     用于 SD 存储卡的 API
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -58,7 +58,7 @@ ESP-IDF :example:`storage/sd_card` 目录下提供了 SDMMC 驱动与 FatFs 库�
 
     如需初始化 eMMC 内存并执行读/写操作，请参照上一章节 SD 卡操作步骤。
 
-    
+
     用于 SDIO 卡的 API
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -68,26 +68,26 @@ ESP-IDF :example:`storage/sd_card` 目录下提供了 SDMMC 驱动与 FatFs 库�
 
     1. I/O 中止 (0x06) 寄存器：在该寄存器中设置 RES 位可重置卡的 IO 部分；
     2. 总线接口控制 (0x07) 寄存器：如果主机和插槽配置中启用 4 线模式，则驱动程序会尝试在该寄存器中设置总线宽度字段。如果字段设置成功，则从机支持 4 线模式，主机也切换至 4 线模式；
-    3. 高速（0x13）寄存器：如果主机配置中启用高速模式，则会在该寄存器中设置 SHS 位。
+    3. 高速（0x13）寄存器：如果主机配置中启用高速模式，则该寄存器的 SHS 位会被设置。
 
     注意，驱动程序不会在 (1) I/O 使能寄存器和 Int 使能寄存器，及 (2) I/O 块大小中，设置任何位。应用程序可通过调用 :cpp:func:`sdmmc_io_write_byte` 来设置相关位。
 
-    如需设置卡配置或传输数据，请根据您的具体情况选择下表中的函数：
+    如需卡配置或传输数据，请根据您的具体情况选择下表中的函数：
 
     .. list-table::
        :widths: 55 25 20
        :header-rows: 1
 
-       * - Action
-         - Read Function
-         - Write Function
-       * - Read and write a single byte using IO_RW_DIRECT (CMD52)
+       * - 操作
+         - 函数读取
+         - 函数写入
+       * - 使用 IO_RW_DIRECT (CMD52) 读写单个字节。
          - :cpp:func:`sdmmc_io_read_byte`
          - :cpp:func:`sdmmc_io_write_byte`
-       * - Read and write multiple bytes using IO_RW_EXTENDED (CMD53) in byte mode
+       * - 使用 IO_RW_EXTENDED (CMD53) 的字节模式读写多个字节。
          - :cpp:func:`sdmmc_io_read_bytes`
          - :cpp:func:`sdmmc_io_write_bytes`
-       * - Read and write blocks of data using IO_RW_EXTENDED (CMD53) in block mode
+       * - 块模式下，使用 IO_RW_EXTENDED (CMD53) 读写数据块。
          - :cpp:func:`sdmmc_io_read_blocks`
          - :cpp:func:`sdmmc_io_write_blocks`
 
@@ -97,7 +97,7 @@ ESP-IDF :example:`storage/sd_card` 目录下提供了 SDMMC 驱动与 FatFs 库�
 
     .. only:: esp32
 
-    如果您需要与 ESP32 的 SDIO 从设备通信，请使用 ESSL 组件（ESP 串行从设备链接）。请参阅 :doc:`/api-reference/protocols/esp_serial_slave_link` and example :example:`peripherals/sdio/host`
+    如果您需要与 ESP32 的 SDIO 从设备通信，请使用 ESSL 组件（ESP 串行从设备链接）。请参阅 :doc:`/api-reference/protocols/esp_serial_slave_link` 和 :example:`peripherals/sdio/host`。
 
 复合卡（存储 + IO）
 ^^^^^^^^^^^^^^^^^^^^^^^^^
