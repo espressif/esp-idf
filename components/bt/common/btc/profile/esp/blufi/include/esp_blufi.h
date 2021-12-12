@@ -20,7 +20,9 @@
 #endif
 
 #define BLUFI_APP_UUID      0xFFFF
+#ifndef BLUFI_DEVICE_NAME
 #define BLUFI_DEVICE_NAME            "BLUFI_DEVICE"
+#endif
 
 #ifdef CONFIG_BT_NIMBLE_ENABLED
 struct ble_hs_cfg;
