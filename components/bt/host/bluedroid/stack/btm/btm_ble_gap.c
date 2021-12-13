@@ -95,7 +95,7 @@ const UINT8 btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX][2] = {
         {HCI_SUPP_LE_STATES_INIT_MASK, HCI_SUPP_LE_STATES_INIT_OFF}, /* init */
         {HCI_SUPP_LE_STATES_INIT_MASK, HCI_SUPP_LE_STATES_INIT_OFF}, /* master */
         {HCI_SUPP_LE_STATES_SLAVE_MASK, HCI_SUPP_LE_STATES_SLAVE_OFF}, /* slave */
-        {0, 0},                   /* todo: lo du dir adv, not covered ? */
+        {HCI_SUPP_LE_STATES_LO_DUTY_DIR_ADV_MASK, HCI_SUPP_LE_STATES_LO_DUTY_DIR_ADV_OFF}, /* lo du dir adv */
         {HCI_SUPP_LE_STATES_HI_DUTY_DIR_ADV_MASK, HCI_SUPP_LE_STATES_HI_DUTY_DIR_ADV_OFF}, /* hi duty dir adv */
         {HCI_SUPP_LE_STATES_NON_CONN_ADV_MASK, HCI_SUPP_LE_STATES_NON_CONN_ADV_OFF},  /* non connectable adv */
         {HCI_SUPP_LE_STATES_PASS_SCAN_MASK, HCI_SUPP_LE_STATES_PASS_SCAN_OFF},   /*  passive scan */
@@ -161,8 +161,8 @@ const UINT8 btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX][2] = {
         {0, 0},  /* lo duty cycle adv 40 */
         {0, 0},   /* hi duty cycle adv 39 */
         {0, 0},  /*  non connectable adv */
-        {0, 0},   /* TODO: passive scan, not covered? */
-        {0, 0},  /* TODO:  active scan, not covered? */
+        {HCI_SUPP_LE_STATES_LO_DUTY_DIR_ADV_PASS_SCAN_MASK, HCI_SUPP_LE_STATES_LO_DUTY_DIR_ADV_PASS_SCAN_OFF},   /* passive scan */
+        {HCI_SUPP_LE_STATES_LO_DUTY_DIR_ADV_ACTIVE_SCAN_MASK, HCI_SUPP_LE_STATES_LO_DUTY_DIR_ADV_ACTIVE_SCAN_OFF},  /* active scan */
         {0, 0}   /*  scanable adv */
     },
     { /* hi duty cycle adv */
