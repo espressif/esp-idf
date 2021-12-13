@@ -224,10 +224,10 @@ esp_err_t sdmmc_io_enable_int(sdmmc_card_t* card);
 esp_err_t sdmmc_io_wait_int(sdmmc_card_t* card, TickType_t timeout_ticks);
 
 /**
- * Get the data of CIS region of a SDIO card.
+ * Get the data of CIS region of an SDIO card.
  *
  * You may provide a buffer not sufficient to store all the CIS data. In this
- * case, this functions store as much data into your buffer as possible. Also,
+ * case, this function stores as much data into your buffer as possible. Also,
  * this function will try to get and return the size required for you.
  *
  * @param card  pointer to card information structure previously initialized
@@ -253,7 +253,7 @@ esp_err_t sdmmc_io_wait_int(sdmmc_card_t* card, TickType_t timeout_ticks);
 esp_err_t sdmmc_io_get_cis_data(sdmmc_card_t* card, uint8_t* out_buffer, size_t buffer_size, size_t* inout_cis_size);
 
 /**
- * Parse and print the CIS information of a SDIO card.
+ * Parse and print the CIS information of an SDIO card.
  *
  * @note Not all the CIS codes and all kinds of tuples are supported. If you
  * see some unresolved code, you can add the parsing of these code in
