@@ -404,9 +404,8 @@ typedef struct {
         } hostname_set;
         char * instance;
         struct {
-            esp_event_base_t event_base;
-            int32_t event_id;
-            esp_netif_t* interface;
+            mdns_if_t interface;
+            mdns_event_actions_t event_action;
         } sys_event;
         struct {
             mdns_srv_item_t * service;

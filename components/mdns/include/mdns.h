@@ -22,16 +22,21 @@ extern "C" {
 #define MDNS_TYPE_ANY               0x00FF
 
 #define CONFIG_MDNS_IF_MAX 4
-#define ACTION_ENABLE 1
-#define ACTION_ENABLE_WITH_DHCP_CHECK 2
-#define ACTION_ANNOUNCE 3
-#define ACTION_ENABLE_ANNOUNCE 4
-#define ACTION_DISABLE 5
 
 /**
  * @brief   Asynchronous query handle
  */
 typedef struct mdns_search_once_s mdns_search_once_t;
+
+
+typedef enum {
+    MDNS_EVENT_ENABLE_IP4                   = 1 << 1,
+    MDNS_EVENT_ENABLE_IP6                   = 1 << 2,
+    MDNS_EVENT_ANNOUNCE_IP4                 = 1 << 3,
+    MDNS_EVENT_ANNOUNCE_IP6                 = 1 << 4,
+    MDNS_EVENT_DISABLE_IP4                  = 1 << 5,
+    MDNS_EVENT_DISABLE_IP6                  = 1 << 6,
+} mdns_event_actions_t;
 
 /**
  * @brief   mDNS enum to specify the ip_protocol type
