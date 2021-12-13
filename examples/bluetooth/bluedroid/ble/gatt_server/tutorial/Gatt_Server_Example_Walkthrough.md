@@ -18,17 +18,17 @@ First, let’s take a look at the includes:
 #include "esp_system.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
-#include "bt.h"
-#include "bta_api.h"
+#include "esp_bt.h"
 #include "esp_gap_ble_api.h"
 #include "esp_gatts_api.h"
 #include "esp_bt_defs.h"
 #include "esp_bt_main.h"
+#include "esp_gatt_common_api.h"
 #include "sdkconfig.h"
 ```
-These includes are required for the FreeRTOS and underlaying system components to run, including the logging functionality and a library to store data in non-volatile flash memory. We are interested in `"bt.h"`, `"esp_bt_main.h"`, `"esp_gap_ble_api.h"` and `"esp_gatts_api.h"`, which expose the BLE APIs required to implement this example.
+These includes are required for the FreeRTOS and underlaying system components to run, including the logging functionality and a library to store data in non-volatile flash memory. We are interested in `"esp_bt.h"`, `"esp_bt_main.h"`, `"esp_gap_ble_api.h"` and `"esp_gatts_api.h"`, which expose the BLE APIs required to implement this example.
 
-* `bt.h`: implements BT controller and VHCI configuration procedures from the host side.
+* `esp_bt.h`: implements BT controller and VHCI configuration procedures from the host side.
 * `esp_bt_main.h`: implements initialization and enabling of the Bluedroid stack.
 * `esp_gap_ble_api.h`: implements GAP configuration, such as advertising and connection parameters.
 * `esp_gatts_api.h`: implements GATT configuration, such as creating services and characteristics.
