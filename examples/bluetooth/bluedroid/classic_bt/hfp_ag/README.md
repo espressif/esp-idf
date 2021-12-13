@@ -23,33 +23,33 @@ idf.py menuconfig
 
 ESP32 HFP supports two types of audio datapath: PCM and HCI.
 
-The default configuration is `PCM`, if you want to use `vHCI` you should config the data path before build and download the binary.
+The default configuration is `PCM`, if you want to use `vHCI` you should configure the data path before building and downloading the binary.
 
-- PCM : To use PCM, audio stream is directed from Bluetooth controller to the specific GPIO pins you set in the demo, and you should link these GPIO pins to a speaker via I2S port. The audio data will not go through the `Bluedroid`. In menuconfig, you should choose PCM in `menuconfig` path:
+- PCM: To use PCM, audio stream is directed from Bluetooth controller to the specific GPIO pins you set in the demo, and you should link these GPIO pins to a speaker via I2S port. The audio data will not go through the `Bluedroid`. In menuconfig, you should choose PCM in `menuconfig` path:
 
-`Component config --> Bluetooth controller --> BR/EDR Sync(SCO/eSCO) default data path --> PCM`
+    `Component config --> Bluetooth controller --> BR/EDR Sync(SCO/eSCO) default data path --> PCM`
 
-and also
+    and also
 
-`Component config --> Bluetooth --> Bluedroid Options -->Hands Free/Handset Profile --> audio(SCO) data path --> PCM`.
+    `Component config --> Bluetooth --> Bluedroid Options --> Hands Free/Handset Profile --> audio(SCO) data path --> PCM`.
 
-- vHCI : To use vHCI, audio data stream will be directed from Bluetooth Controller through vHCI on ESP32 and go through the Bluedroid to the Application layer. In menuconfig, you should choose vHCI in `menuconfig` path:
+- vHCI: To use vHCI, audio data stream will be directed from Bluetooth Controller through vHCI on ESP32 and go through the Bluedroid to the Application layer. In menuconfig, you should choose vHCI in `menuconfig` path:
 
-`Component config -->Bluetooth controller -->BR/EDR Sync(SCO/eSCO) default data path --> HCI`
+    `Component config --> Bluetooth controller --> BR/EDR Sync(SCO/eSCO) default data path --> HCI`
 
-and also
+    and also
 
-`Component config --> Bluetooth --> Bluedroid Options -->Hands Free/Handset Profile --> audio(SCO) data path --> HCI`.
+    `Component config --> Bluetooth --> Bluedroid Options --> Hands Free/Handset Profile --> audio(SCO) data path --> HCI`.
 
 ### Codec Choice
 
-ESP32 support two types of codec for HFP audio data: `CVSD` and `mSBC`.
+ESP32 supports two types of codec for HFP audio data: `CVSD` and `mSBC`.
 
-`CVSD` is the default setting and is also the widely used codec for voice audio. But, `mSBC` is designed to have a better voice quality through `HFP`. To select which one is in used, we support `Wide Band Speech` item in the `menuconfig` path:
+`CVSD` is the default setting and is also the widely used codec for voice audio. But, `mSBC` is designed to have a better voice quality through `HFP`. To select which one is in use, we provide `Wide Band Speech` item in the `menuconfig`:
 
-`Component config --> Bluetooth --> Bluedroid Options --> Wide Band Speech`.
+`Component config --> Bluetooth --> Bluedroid Options --> Wide Band Speech.`
 
-Switching on the `Wide Band Speech` means that the prefer codec is `mSBC`, but which one is actually being used also depends on the `Data Path` configuration.
+Switching on the `Wide Band Speech` means that the preferred codec is `mSBC`, but which one is actually being used also depends on the `Data Path` configuration.
 
 - If you choose `PCM` for datapath, you can only use `CVSD` and hardware is responsible for the codec job. In the meanwhile, you cannot use `mSBC` by switching `Wide Band Speech` on, because the `mSBC` is implemented in the Bluedroid (Bluetooth Host Stack) by software.
 
