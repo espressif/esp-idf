@@ -671,6 +671,7 @@ static int sae_derive_commit(struct sae_data *sae)
 			 * theoretical infinite loop, break out after 100
 			 * attemps.
 			 */
+			crypto_bignum_deinit(mask, 1);
 			return ESP_FAIL;
 		}
 

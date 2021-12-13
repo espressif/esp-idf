@@ -552,17 +552,20 @@ void wpa_bss_tmp_disallow(struct wpa_supplicant *wpa_s, const u8 *bssid,
 	}
 
 	bss = os_malloc(sizeof(*bss));
+	if (!bss) {
+		wpa_printf(MSG_DEBUG,
+				"Failed to allocate memory for temp disallow BSS");
+		return;
+	}
+
 	esp_timer_create_args_t blacklist_timer_create = {
 		.callback = &wpa_bss_tmp_disallow_timeout,
 		.arg = bss,
 		.dispatch_method = ESP_TIMER_TASK,
 		.name = "blacklist_timeout_timer"
 	};
-	esp_timer_create(&blacklist_timer_create, &(bss->blacklist_timer));
-
-	if (!bss) {
-		wpa_printf(MSG_DEBUG,
-				"Failed to allocate memory for temp disallow BSS");
+	if (esp_timer_create(&blacklist_timer_create, &(bss->blacklist_timer)) != ESP_OK) {
+		os_free(bss);
 		return;
 	}
 
