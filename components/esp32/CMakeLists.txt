@@ -9,6 +9,5 @@ if(NOT BOOTLOADER_BUILD)
     set(legacy_reqs driver efuse soc)
 endif()
 
-idf_component_register(INCLUDE_DIRS include
-                       REQUIRES xtensa "${legacy_reqs}"
+idf_component_register(REQUIRES xtensa "${legacy_reqs}"
                        REQUIRED_IDF_TARGETS esp32)

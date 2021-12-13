@@ -29,3 +29,7 @@ Trax
 ----
 
 The header ``trax.h`` has been made private. ESP-IDF developers should include ``esp_private/trax.h`` instead.
+
+ROM
+---
+Deprecated ROM related header files from `components/esp32/rom/` (old include path: `rom/*.h`) have been deleted. Please update to use the new target-specific path from `components/esp_rom/include/{IDF_TARGET_NAME}/` (new include path: `{IDF_TARGET_NAME}/rom/*.h`).
