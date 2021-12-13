@@ -68,10 +68,11 @@ if(CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
     list(APPEND srcs "FreeRTOS-Kernel/portable/xtensa/xtensa_loadstore_handler.S")
 endif()
 
-# esp_timer is required by FreeRTOS because we use esp_tiemr_get_time() to do profiling
-# app_trace is required by FreeRTOS headers only when CONFIG_APPTRACE_SV_ENABLE=y,
-# REQUIRES can't depend on config options, so always require it.
-set(required_components app_trace esp_timer)
+# esp_timer is required by FreeRTOS when we use esp_timer_get_time() to do profiling
+# [refactor-todo]: make this an optional requirement depending on CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+# Note, many other components implicitly include esp_timer.h via freertos portmacro.h and some
+# components implicitly depend on esp_timer via freertos.
+set(required_components esp_timer)
 
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS ${include_dirs}
@@ -104,3 +105,12 @@ set_source_files_properties(
 # we can't establish dependency on what we don't yet know, so we force the
 # linker to not drop this symbol.
 target_link_libraries(${COMPONENT_LIB} INTERFACE "-u app_main")
+
+if(CONFIG_APPTRACE_SV_ENABLE)
+    # FreeRTOS headers have a dependency on app_trace when SystemView tracing is enabled
+    idf_component_optional_requires(PUBLIC app_trace)
+elseif(CONFIG_APPTRACE_ENABLE)
+    # [refactor-todo]: port.c has a dependency on esp_apptrace_init, for running it on APP CPU.
+    # this should be resolved when link-time registration of startup functions is added.
+    idf_component_optional_requires(PRIVATE app_trace)
+endif()

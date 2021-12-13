@@ -45,7 +45,10 @@
 #include "esp_core_dump.h"
 #endif
 
+#if CONFIG_APPTRACE_ENABLE
 #include "esp_app_trace.h"
+#endif
+
 #include "esp_private/dbg_stubs.h"
 #include "esp_pm.h"
 #include "esp_private/pm_impl.h"
