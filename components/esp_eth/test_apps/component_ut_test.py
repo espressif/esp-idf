@@ -37,8 +37,10 @@ def configure_eth_if(func):         # type: (typing.Any) -> typing.Any
 
 
 @configure_eth_if
-def check_eth_recv_packet(so):    # type: (socket.socket) -> None
+def check_eth_recv_packet(so, before_recv=None):    # type: (socket.socket, typing.Any) -> None
     so.settimeout(10)
+    if before_recv is not None:
+        before_recv()   # If configured, execute user function just before sock recv
     try:
         pkt = so.recv(1024)
         for i in range(128, 1024):
@@ -68,16 +70,23 @@ def test_component_ut_esp_eth(env, appname):  # type: (tiny_test_fw.Env, str) ->
     dut = env.get_dut('esp_eth', 'components/esp_eth/test_apps', app_config_name=appname)
     dut.start_app()
     stdout = dut.expect('Press ENTER to see the list of tests', full_stdout=True)
+
+    Utility.console_log('Running test case: start_and_stop')
     dut.write('"start_and_stop"')
     stdout += dut.expect("Enter next test, or 'enter' to see menu", full_stdout=True)
     ttfw_idf.ComponentUTResult.parse_result(stdout, test_format=TestFormat.UNITY_BASIC)
+
+    Utility.console_log('Running test case: get_set_mac')
     dut.write('"get_set_mac"')
     stdout = dut.expect("Enter next test, or 'enter' to see menu", full_stdout=True)
     ttfw_idf.ComponentUTResult.parse_result(stdout, test_format=TestFormat.UNITY_BASIC)
-    dut.write('"ethernet_broadcast_transmit"')
-    check_eth_recv_packet()
+
+    Utility.console_log('Running test case: ethernet_broadcast_transmit')
+    check_eth_recv_packet(dut.write('"ethernet_broadcast_transmit"'))  # Need to start the test after the socket is bound
     stdout = dut.expect("Enter next test, or 'enter' to see menu", full_stdout=True)
     ttfw_idf.ComponentUTResult.parse_result(stdout, test_format=TestFormat.UNITY_BASIC)
+
+    Utility.console_log('Running test case: recv_pkt')
     dut.write('"recv_pkt"')
     expect_result = dut.expect(re.compile(r'([\s\S]*)DUT MAC: ([0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})'),
                                timeout=10)
