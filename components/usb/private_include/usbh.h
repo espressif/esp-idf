@@ -23,14 +23,44 @@ extern "C" {
 // ----------------------- Events --------------------------
 
 typedef enum {
-    USBH_EVENT_DEV_NEW,                 /**< A new device has been enumerated and added to the device pool */
-    USBH_EVENT_DEV_GONE,                /**< A device is gone. Clients should close the device */
-    USBH_EVENT_DEV_ALL_FREE,            /**< All devices have been freed */
+    USBH_EVENT_DEV_NEW,             /**< A new device has been enumerated and added to the device pool */
+    USBH_EVENT_DEV_GONE,            /**< A device is gone. Clients should close the device */
+    USBH_EVENT_DEV_ALL_FREE,        /**< All devices have been freed */
 } usbh_event_t;
 
+/**
+ * @brief Hub driver requests
+ *
+ * Various requests of the Hub driver that the USBH can make.
+ */
 typedef enum {
-    USBH_HUB_EVENT_CLEANUP_PORT,        /**< Indicate to the Hub driver that it should clean up the port of a device (occurs after a gone device has been freed) */
-    USBH_HUB_EVENT_DISABLE_PORT,        /**< Indicate to the Hub driver that it should disable the port of a device (occurs after a device has been freed) */
+    USBH_HUB_REQ_PORT_DISABLE,      /**< Request that the Hub driver disable a particular port (occurs after a device
+                                         has been freed). Hub driver should respond with a USBH_HUB_EVENT_PORT_DISABLED */
+    USBH_HUB_REQ_PORT_RECOVER,      /**< Request that the Hub driver recovers a particular port (occurs after a gone
+                                         device has been freed). */
+} usbh_hub_req_t;
+
+/**
+ * @brief Hub driver events for the USBH
+ *
+ * These events as passed by the Hub driver to the USBH via usbh_hub_pass_event()
+ *
+ * USBH_HUB_EVENT_PORT_ERROR:
+ * - The port has encountered an error (such as a sudden disconnection). The device connected to that port is no longer valid.
+ * - The USBH should:
+ *      - Trigger a USBH_EVENT_DEV_GONE
+ *      - Prevent further transfers to the device
+ *      - Trigger the device's cleanup if it is already closed
+ *      - When the last client closes the device via usbh_dev_close(), free the device object and issue a USBH_HUB_REQ_PORT_RECOVER request
+ *
+ * USBH_HUB_EVENT_PORT_DISABLED:
+ * - A previous USBH_HUB_REQ_PORT_DISABLE has completed.
+ * - The USBH should free the device object
+ */
+typedef enum {
+    USBH_HUB_EVENT_PORT_ERROR,      /**< The port has encountered an error (such as a sudden disconnection). The device
+                                         connected to that port should be marked gone. */
+    USBH_HUB_EVENT_PORT_DISABLED,   /**< Previous USBH_HUB_REQ_PORT_DISABLE request completed */
 } usbh_hub_event_t;
 
 // ---------------------- Callbacks ------------------------
@@ -51,9 +81,11 @@ typedef void (*usbh_event_cb_t)(usb_device_handle_t dev_hdl, usbh_event_t usbh_e
 
 /**
  * @brief Callback used by the USBH to request actions from the Hub driver
- * @note This callback is called from within usbh_process()
+ *
+ * The Hub Request Callback allows the USBH to request the Hub actions on a particular port. Conversely, the Hub driver
+ * will indicate completion of some of these requests to the USBH via the usbh_hub_event() funtion.
  */
-typedef void (*usbh_hub_cb_t)(hcd_port_handle_t port_hdl, usbh_hub_event_t hub_event, void *arg);
+typedef void (*usbh_hub_req_cb_t)(hcd_port_handle_t port_hdl, usbh_hub_req_t hub_req, void *arg);
 
 // ----------------------- Objects -------------------------
 
@@ -289,11 +321,11 @@ esp_err_t usbh_ep_get_context(usb_device_handle_t dev_hdl, uint8_t bEndpointAddr
  * - This should only be called after the USBH has already be installed
  *
  * @note Hub Driver only
- * @param[in] hub_callback Hub callback
+ * @param[in] hub_req_callback Hub request callback
  * @param[in] callback_arg Callback argument
  * @return esp_err_t
  */
-esp_err_t usbh_hub_is_installed(usbh_hub_cb_t hub_callback, void *callback_arg);
+esp_err_t usbh_hub_is_installed(usbh_hub_req_cb_t hub_req_callback, void *callback_arg);
 
 /**
  * @brief Indicates to USBH the start of enumeration for a device
@@ -313,35 +345,13 @@ esp_err_t usbh_hub_is_installed(usbh_hub_cb_t hub_callback, void *callback_arg);
 esp_err_t usbh_hub_add_dev(hcd_port_handle_t port_hdl, usb_speed_t dev_speed, usb_device_handle_t *new_dev_hdl, hcd_pipe_handle_t *default_pipe_hdl);
 
 /**
- * @brief Indicate that a device is gone
+ * @brief Indicates to the USBH that a hub event has occurred for a particular device
  *
- * This Hub driver must call this function to indicate that a device is gone. A device is gone when:
- * - It suddenly disconnects
- * - Its upstream port or device has an error or is also gone.
- * Marking a device as gone will:
- * - Trigger a USBH_EVENT_DEV_GONE
- * - Prevent further transfers to the device
- * - Trigger the device's cleanup if it is already closed
- * - When the last client closes the device via usbh_dev_close(), the device's resources will be cleaned up
- *
- * @note Hub Driver only
- * @param[in] dev_hdl Device handle
+ * @param dev_hdl Device handle
+ * @param hub_event Hub event
  * @return esp_err_t
  */
-esp_err_t usbh_hub_mark_dev_gone(usb_device_handle_t dev_hdl);
-
-/**
- * @brief Indicate that a device's port has been disabled
- *
- * - The Hub driver must call this function once it has disabled the port of a particular device
- * - The Hub driver disables a device's port when requested by the USBH via the USBH_HUB_EVENT_DISABLE_PORT
- * - This function will trigger the device's cleanup.
- *
- * @note Hub Driver only
- * @param[in] dev_hdl Device handle
- * @return esp_err_t
- */
-esp_err_t usbh_hub_dev_port_disabled(usb_device_handle_t dev_hdl);
+esp_err_t usbh_hub_pass_event(usb_device_handle_t dev_hdl, usbh_hub_event_t hub_event);
 
 // ----------------- Enumeration Related -------------------
 

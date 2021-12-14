@@ -42,9 +42,11 @@ implement the bare minimum to control the root HCD port.
 #define ENUM_FULL_SPEED_MPS                         64      //Worst case MPS for the default endpoint of a full-speed device
 #define ENUM_LANGID                                 0x409   //Current enumeration only supports English (United States) string descriptors
 
+//Hub driver action flags. LISTED IN THE ORDER THEY SHOULD BE HANDLED IN within hub_process(). Some actions are mutually exclusive
 #define HUB_DRIVER_FLAG_ACTION_ROOT_EVENT           0x01
-#define HUB_DRIVER_FLAG_ACTION_ENUM_EVENT           0x02
+#define HUB_DRIVER_FLAG_ACTION_PORT_DISABLE         0x02
 #define HUB_DRIVER_FLAG_ACTION_PORT_RECOVER         0x04
+#define HUB_DRIVER_FLAG_ACTION_ENUM_EVENT           0x08
 
 /**
  * @brief Hub driver states
@@ -54,7 +56,8 @@ implement the bare minimum to control the root HCD port.
 typedef enum {
     HUB_DRIVER_STATE_INSTALLED,             /**< Hub driver is installed. Root port is not powered */
     HUB_DRIVER_STATE_ROOT_POWERED,          /**< Root port is powered, is not connected */
-    HUB_DRIVER_STATE_ROOT_ENUMERATING,      /**< A device has connected to the root port and is undergoing enumeration */
+    HUB_DRIVER_STATE_ROOT_ENUM,             /**< A device has connected to the root port and is undergoing enumeration */
+    HUB_DRIVER_STATE_ROOT_ENUM_FAILED,      /**< Enumeration of a connect device has failed. Waiting for that device to disconnect */
     HUB_DRIVER_STATE_ROOT_ACTIVE,           /**< The connected device is enumerated */
     HUB_DRIVER_STATE_ROOT_RECOVERY,         /**< Root port encountered an error and needs to be recovered */
 } hub_driver_state_t;
@@ -170,10 +173,10 @@ typedef struct {
             uint32_t val;
         } flags;
         hub_driver_state_t driver_state;
-        usb_device_handle_t root_dev_hdl;   //Indicates if an enumerated device is connected to the root port
     } dynamic;
     //Single thread members don't require a critical section so long as they are never accessed from multiple threads
     struct {
+        usb_device_handle_t root_dev_hdl;   //Indicates if an enumerated device is connected to the root port
         enum_ctrl_t enum_ctrl;
     } single_thread;
     //Constant members do no change after installation thus do not require a critical section
@@ -210,7 +213,46 @@ const char *HUB_DRIVER_TAG = "HUB";
 
 // ------------------------------------------------- Forward Declare ---------------------------------------------------
 
+/**
+ * @brief HCD port callback for the root port
+ *
+ * - This callback is called from the context of the HCD, so any event handling should be deferred to hub_process()
+ * - Under the current HCD implementation, this callback should only be ever be called in an ISR
+ * - This callback needs to call the notification to ensure hub_process() gets a chance to run
+ *
+ * @param port_hdl HCD port handle
+ * @param port_event HCD port event
+ * @param user_arg Callback argument
+ * @param in_isr Whether callback is in an ISR context
+ * @return Whether a yield is required
+ */
+static bool root_port_callback(hcd_port_handle_t port_hdl, hcd_port_event_t port_event, void *user_arg, bool in_isr);
+
+/**
+ * @brief HCD pipe callback for the default pipe of the device under enumeration
+ *
+ * - This callback is called from the context of the HCD, so any event handling should be deferred to hub_process()
+ * - This callback needs to call the notification to ensure hub_process() gets a chance to run
+ *
+ * @param pipe_hdl HCD pipe handle
+ * @param pipe_event Pipe event
+ * @param user_arg Callback argument
+ * @param in_isr Whether callback is in an ISR context
+ * @return Whether a yield is required
+ */
 static bool enum_dflt_pipe_callback(hcd_pipe_handle_t pipe_hdl, hcd_pipe_event_t pipe_event, void *user_arg, bool in_isr);
+
+/**
+ * @brief USBH Hub driver request callback
+ *
+ * - This callback is called from the context of the USBH, so so any event handling should be deferred to hub_process()
+ * - This callback needs to call the notification to ensure hub_process() gets a chance to run
+ *
+ * @param port_hdl HCD port handle
+ * @param hub_req Hub driver request
+ * @param arg Callback argument
+ */
+static void usbh_hub_req_callback(hcd_port_handle_t port_hdl, usbh_hub_req_t hub_req, void *arg);
 
 // ------------------------------------------------- Enum Functions ----------------------------------------------------
 
@@ -539,9 +581,9 @@ static void enum_stage_cleanup(enum_ctrl_t *enum_ctrl)
 {
     //We currently only support a single device connected to the root port. Move the device handle from enum to root
     HUB_DRIVER_ENTER_CRITICAL();
-    p_hub_driver_obj->dynamic.root_dev_hdl = enum_ctrl->dev_hdl;
     p_hub_driver_obj->dynamic.driver_state = HUB_DRIVER_STATE_ROOT_ACTIVE;
     HUB_DRIVER_EXIT_CRITICAL();
+    p_hub_driver_obj->single_thread.root_dev_hdl = enum_ctrl->dev_hdl;
     usb_device_handle_t dev_hdl = enum_ctrl->dev_hdl;
     //Clear values in enum_ctrl
     enum_ctrl->dev_hdl = NULL;
@@ -554,11 +596,11 @@ static void enum_stage_cleanup_failed(enum_ctrl_t *enum_ctrl)
 {
     //Enumeration failed. Clear the enum device handle and pipe
     if (enum_ctrl->dev_hdl) {
-        //Halt, flush, and dequeue enum default pipe
+        //If enumeration failed due to a port event, we need to Halt, flush, and dequeue enum default pipe in case there
+        //was an in-flight URB.
         ESP_ERROR_CHECK(hcd_pipe_command(enum_ctrl->pipe, HCD_PIPE_CMD_HALT));
         ESP_ERROR_CHECK(hcd_pipe_command(enum_ctrl->pipe, HCD_PIPE_CMD_FLUSH));
-        urb_t *dequeued_enum_urb = hcd_urb_dequeue(enum_ctrl->pipe);
-        assert(dequeued_enum_urb == enum_ctrl->urb);
+        hcd_urb_dequeue(enum_ctrl->pipe);   //This could return NULL if there
         ESP_ERROR_CHECK(usbh_hub_enum_failed(enum_ctrl->dev_hdl)); //Free the underlying device object first before recovering the port
     }
     //Clear values in enum_ctrl
@@ -568,6 +610,9 @@ static void enum_stage_cleanup_failed(enum_ctrl_t *enum_ctrl)
     //Enum could have failed due to a port error. If so, we need to trigger a port recovery
     if (p_hub_driver_obj->dynamic.driver_state == HUB_DRIVER_STATE_ROOT_RECOVERY) {
         p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_PORT_RECOVER;
+    } else {
+        //Otherwise, we move to the enum failed state and wait for the device to disconnect
+        p_hub_driver_obj->dynamic.driver_state = HUB_DRIVER_STATE_ROOT_ENUM_FAILED;
     }
     HUB_DRIVER_EXIT_CRITICAL();
 }
@@ -670,35 +715,27 @@ static bool enum_dflt_pipe_callback(hcd_pipe_handle_t pipe_hdl, hcd_pipe_event_t
     return p_hub_driver_obj->constant.notif_cb(USB_NOTIF_SOURCE_HUB, in_isr, p_hub_driver_obj->constant.notif_cb_arg);
 }
 
-static void usbh_hub_callback(hcd_port_handle_t port_hdl, usbh_hub_event_t hub_event, void *arg)
+static void usbh_hub_req_callback(hcd_port_handle_t port_hdl, usbh_hub_req_t hub_req, void *arg)
 {
-    //We currently only support the root port
+    //We currently only support the root port, so the port_hdl should match the root port
     assert(port_hdl == p_hub_driver_obj->constant.root_port_hdl);
+
     HUB_DRIVER_ENTER_CRITICAL();
-    //Any hub_event results in whatever device connected to the root port to no longer be valid. We clear root_dev_hdl here.
-    usb_device_handle_t dev_hdl = p_hub_driver_obj->dynamic.root_dev_hdl;
-    p_hub_driver_obj->dynamic.root_dev_hdl = NULL;
-    assert(dev_hdl);
-    bool call_port_disable = false;
-    switch (hub_event) {
-        case USBH_HUB_EVENT_CLEANUP_PORT:
-            //After USBH has cleaned up gone device. The port can be recovered.
+    switch (hub_req) {
+        case USBH_HUB_REQ_PORT_DISABLE:
+            p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_PORT_DISABLE;
+            break;
+        case USBH_HUB_REQ_PORT_RECOVER:
             p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_PORT_RECOVER;
             break;
-        case USBH_HUB_EVENT_DISABLE_PORT:
-            p_hub_driver_obj->dynamic.driver_state = HUB_DRIVER_STATE_ROOT_POWERED;
-            call_port_disable = true;
-            break;
         default:
-            abort();    //Should never occur
+            //Should never occur
+            abort();
             break;
     }
     HUB_DRIVER_EXIT_CRITICAL();
-    if (call_port_disable) {
-        ESP_LOGD(HUB_DRIVER_TAG, "Disabling root port");
-        hcd_port_command(port_hdl, HCD_PORT_CMD_DISABLE);
-        ESP_ERROR_CHECK(usbh_hub_dev_port_disabled(dev_hdl));
-    }
+
+    p_hub_driver_obj->constant.notif_cb(USB_NOTIF_SOURCE_HUB, false, p_hub_driver_obj->constant.notif_cb_arg);
 }
 
 // ---------------------- Handlers -------------------------
@@ -716,7 +753,7 @@ static void root_port_handle_events(hcd_port_handle_t root_port_hdl)
                 //Start enumeration
                 HUB_DRIVER_ENTER_CRITICAL();
                 p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_ENUM_EVENT;
-                p_hub_driver_obj->dynamic.driver_state = HUB_DRIVER_STATE_ROOT_ENUMERATING;
+                p_hub_driver_obj->dynamic.driver_state = HUB_DRIVER_STATE_ROOT_ENUM;
                 HUB_DRIVER_EXIT_CRITICAL();
                 p_hub_driver_obj->single_thread.enum_ctrl.stage = ENUM_STAGE_START;
             } else {
@@ -727,21 +764,22 @@ static void root_port_handle_events(hcd_port_handle_t root_port_hdl)
         case HCD_PORT_EVENT_DISCONNECTION:
         case HCD_PORT_EVENT_ERROR:
         case HCD_PORT_EVENT_OVERCURRENT: {
-            usb_device_handle_t dev_hdl = NULL;
+            bool pass_event_to_usbh = false;
             HUB_DRIVER_ENTER_CRITICAL();
             switch (p_hub_driver_obj->dynamic.driver_state) {
-                case HUB_DRIVER_STATE_ROOT_POWERED:
-                    //This occurred before enumeration. Therefore, there's no device and we can go straight to port recovery
-                    p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_ENUM_EVENT;
+                case HUB_DRIVER_STATE_ROOT_POWERED: //This occurred before enumeration
+                case HUB_DRIVER_STATE_ROOT_ENUM_FAILED: //This occurred after a failed enumeration.
+                    //Therefore, there's no device and we can go straight to port recovery
+                    p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_PORT_RECOVER;
                     break;
-                case HUB_DRIVER_STATE_ROOT_ENUMERATING:
+                case HUB_DRIVER_STATE_ROOT_ENUM:
                     //This occurred during enumeration. Therefore, we need to recover the failed enumeration
                     p_hub_driver_obj->dynamic.flags.actions |= HUB_DRIVER_FLAG_ACTION_ENUM_EVENT;
                     p_hub_driver_obj->single_thread.enum_ctrl.stage = ENUM_STAGE_CLEANUP_FAILED;
                     break;
                 case HUB_DRIVER_STATE_ROOT_ACTIVE:
                     //There was an enumerated device. We need to indicate to USBH that the device is gone
-                    dev_hdl = p_hub_driver_obj->dynamic.root_dev_hdl;
+                    pass_event_to_usbh = true;
                     break;
                 default:
                     abort();    //Should never occur
@@ -749,8 +787,9 @@ static void root_port_handle_events(hcd_port_handle_t root_port_hdl)
             }
             p_hub_driver_obj->dynamic.driver_state = HUB_DRIVER_STATE_ROOT_RECOVERY;
             HUB_DRIVER_EXIT_CRITICAL();
-            if (dev_hdl) {
-                ESP_ERROR_CHECK(usbh_hub_mark_dev_gone(dev_hdl));
+            if (pass_event_to_usbh) {
+                assert(p_hub_driver_obj->single_thread.root_dev_hdl);
+                ESP_ERROR_CHECK(usbh_hub_pass_event(p_hub_driver_obj->single_thread.root_dev_hdl, USBH_HUB_EVENT_PORT_ERROR));
             }
             break;
         }
@@ -868,7 +907,7 @@ esp_err_t hub_install(hub_config_t *hub_config)
     p_hub_driver_obj = hub_driver_obj;
     HUB_DRIVER_EXIT_CRITICAL();
     //Indicate to USBH that the hub is installed
-    ESP_ERROR_CHECK(usbh_hub_is_installed(usbh_hub_callback, NULL));
+    ESP_ERROR_CHECK(usbh_hub_is_installed(usbh_hub_req_callback, NULL));
     ret = ESP_OK;
     return ret;
 
@@ -937,12 +976,22 @@ esp_err_t hub_process(void)
     HUB_DRIVER_EXIT_CRITICAL();
 
     while (action_flags) {
+        /*
+        Mutually exclude Root event and Port disable:
+        If a device was waiting for its port to be disabled, and a port error occurs in that time, the root event
+        handler will send a USBH_HUB_EVENT_PORT_ERROR to the USBH already, thus freeing the device and canceling the
+        waiting of port disable.
+        */
         if (action_flags & HUB_DRIVER_FLAG_ACTION_ROOT_EVENT) {
             root_port_handle_events(p_hub_driver_obj->constant.root_port_hdl);
+        } else if (action_flags & HUB_DRIVER_FLAG_ACTION_PORT_DISABLE) {
+            ESP_LOGD(HUB_DRIVER_TAG, "Disabling root port");
+            hcd_port_command(p_hub_driver_obj->constant.root_port_hdl, HCD_PORT_CMD_DISABLE);
+            ESP_ERROR_CHECK(usbh_hub_pass_event(p_hub_driver_obj->single_thread.root_dev_hdl, USBH_HUB_EVENT_PORT_DISABLED));
+            //The root port has been disabled, so the root_dev_hdl is no longer valid
+            p_hub_driver_obj->single_thread.root_dev_hdl = NULL;
         }
-        if (action_flags & HUB_DRIVER_FLAG_ACTION_ENUM_EVENT) {
-            enum_handle_events();
-        }
+
         if (action_flags & HUB_DRIVER_FLAG_ACTION_PORT_RECOVER) {
             ESP_LOGD(HUB_DRIVER_TAG, "Recovering root port");
             ESP_ERROR_CHECK(hcd_port_recover(p_hub_driver_obj->constant.root_port_hdl));
@@ -950,7 +999,14 @@ esp_err_t hub_process(void)
             HUB_DRIVER_ENTER_CRITICAL();
             p_hub_driver_obj->dynamic.driver_state = HUB_DRIVER_STATE_ROOT_POWERED;
             HUB_DRIVER_EXIT_CRITICAL();
+            //USBH requesting a port recovery means the device has already been freed. Clear root_dev_hdl
+            p_hub_driver_obj->single_thread.root_dev_hdl = NULL;
         }
+
+        if (action_flags & HUB_DRIVER_FLAG_ACTION_ENUM_EVENT) {
+            enum_handle_events();
+        }
+
         HUB_DRIVER_ENTER_CRITICAL();
         action_flags = p_hub_driver_obj->dynamic.flags.actions;
         p_hub_driver_obj->dynamic.flags.actions = 0;

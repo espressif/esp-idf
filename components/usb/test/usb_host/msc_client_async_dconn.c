@@ -36,6 +36,8 @@ Implementation of an asynchronous MSC client used for USB Host disconnection tes
     - Deregister MSC client
 */
 
+#define TEST_DCONN_ITERATIONS   3
+
 typedef enum {
     TEST_STAGE_WAIT_CONN,
     TEST_STAGE_DEV_OPEN,
@@ -155,6 +157,7 @@ void msc_client_async_dconn_task(void *arg)
 
     bool exit_loop = false;
     bool skip_event_handling = false;
+    int dconn_iter = 0;
     while (!exit_loop) {
         if (!skip_event_handling) {
             TEST_ASSERT_EQUAL(ESP_OK, usb_host_client_handle_events(msc_obj.client_hdl, portMAX_DELAY));
@@ -166,6 +169,10 @@ void msc_client_async_dconn_task(void *arg)
         msc_obj.cur_stage = msc_obj.next_stage;
 
         switch (msc_obj.cur_stage) {
+            case TEST_STAGE_WAIT_CONN: {
+                //Nothing to do while waiting for connection
+                break;
+            }
             case TEST_STAGE_DEV_OPEN: {
                 ESP_LOGD(MSC_CLIENT_TAG, "Open");
                 //Open the device
@@ -227,7 +234,15 @@ void msc_client_async_dconn_task(void *arg)
                 ESP_LOGD(MSC_CLIENT_TAG, "Close");
                 TEST_ASSERT_EQUAL(ESP_OK, usb_host_interface_release(msc_obj.client_hdl, msc_obj.dev_hdl, MOCK_MSC_SCSI_INTF_NUMBER));
                 TEST_ASSERT_EQUAL(ESP_OK, usb_host_device_close(msc_obj.client_hdl, msc_obj.dev_hdl));
-                exit_loop = true;
+                dconn_iter++;
+                if (dconn_iter < TEST_DCONN_ITERATIONS) {
+                    //Start the next test iteration by going back to TEST_STAGE_WAIT_CONN and reenabling connections
+                    msc_obj.next_stage = TEST_STAGE_WAIT_CONN;
+                    skip_event_handling = true; //Need to execute TEST_STAGE_WAIT_CONN
+                    test_usb_set_phy_state(true, 0);
+                } else {
+                    exit_loop = true;
+                }
                 break;
             }
             default:
