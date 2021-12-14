@@ -11,7 +11,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "soc/cpu.h"
 #include "soc/timer_periph.h"
 #include "esp_app_trace.h"
 #include "esp_freertos_hooks.h"

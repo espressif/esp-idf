@@ -13,7 +13,7 @@
 #include "esp_private/usb_console.h"
 #include "esp_ota_ops.h"
 
-#include "soc/cpu.h"
+#include "esp_cpu.h"
 #include "soc/rtc.h"
 #include "hal/timer_hal.h"
 #include "hal/cpu_hal.h"

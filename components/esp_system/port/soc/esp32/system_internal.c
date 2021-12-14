@@ -18,7 +18,7 @@
 #include "soc/efuse_periph.h"
 #include "soc/rtc_periph.h"
 #include "soc/timer_periph.h"
-#include "soc/cpu.h"
+#include "esp_cpu.h"
 #include "soc/rtc.h"
 #include "hal/wdt_hal.h"
 #include "hal/cpu_hal.h"

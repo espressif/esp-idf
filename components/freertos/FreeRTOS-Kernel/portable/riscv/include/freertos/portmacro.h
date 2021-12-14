@@ -37,7 +37,6 @@
 #include <stdio.h>
 #include "soc/spinlock.h"
 #include "soc/interrupt_core0_reg.h"
-#include "soc/cpu.h"
 #include "esp_attr.h"
 #include "esp_rom_sys.h"
 #include "esp_timer.h"              /* required for FreeRTOS run time stats */

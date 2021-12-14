@@ -17,9 +17,9 @@
 extern "C" {
 #endif
 
-#define ESP_WATCHPOINT_LOAD 0x40000000
-#define ESP_WATCHPOINT_STORE 0x80000000
-#define ESP_WATCHPOINT_ACCESS 0xC0000000
+#define ESP_CPU_WATCHPOINT_LOAD 0x40000000
+#define ESP_CPU_WATCHPOINT_STORE 0x80000000
+#define ESP_CPU_WATCHPOINT_ACCESS 0xC0000000
 
 typedef uint32_t esp_cpu_ccount_t;
 
@@ -69,13 +69,19 @@ static inline void esp_cpu_set_ccount(esp_cpu_ccount_t val)
 }
 
 /**
+ * @brief Configure CPU to disable access to invalid memory regions
+ *
+ */
+void esp_cpu_configure_region_protection(void);
+
+/**
  * @brief Set a watchpoint to break/panic when a certain memory range is accessed.
  *
  * @param no Watchpoint number. On the ESP32, this can be 0 or 1.
  * @param adr Base address to watch
  * @param size Size of the region, starting at the base address, to watch. Must
  *             be one of 2^n, with n in [0..6].
- * @param flags One of ESP_WATCHPOINT_* flags
+ * @param flags One of ESP_CPU_WATCHPOINT_* flags
  *
  * @return ESP_ERR_INVALID_ARG on invalid arg, ESP_OK otherwise
  *

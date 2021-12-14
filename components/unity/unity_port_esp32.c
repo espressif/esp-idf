@@ -6,7 +6,6 @@
 #include <string.h>
 #include "unity.h"
 #include "sdkconfig.h"
-#include "soc/cpu.h"
 #include "hal/cpu_hal.h"
 #include "esp_rom_uart.h"
 #include "esp_private/esp_clk.h"

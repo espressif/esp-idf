@@ -67,6 +67,7 @@
 #include "FreeRTOS.h"        /* This pulls in portmacro.h */
 #include "task.h"            /* Required for TaskHandle_t, tskNO_AFFINITY, and vTaskStartScheduler */
 #include "port_systick.h"
+#include "esp_cpu.h"
 
 _Static_assert(tskNO_AFFINITY == CONFIG_FREERTOS_NO_AFFINITY, "incorrect tskNO_AFFINITY value");
 
@@ -417,7 +418,7 @@ void vPortSetStackWatchpoint( void *pxStackStart )
     //This way, we make sure we trigger before/when the stack canary is corrupted, not after.
     int addr = (int)pxStackStart;
     addr = (addr + 31) & (~31);
-    esp_cpu_set_watchpoint(STACK_WATCH_POINT_NUMBER, (char *)addr, 32, ESP_WATCHPOINT_STORE);
+    esp_cpu_set_watchpoint(STACK_WATCH_POINT_NUMBER, (char *)addr, 32, ESP_CPU_WATCHPOINT_STORE);
 }
 
 /* ---------------------------------------------- Misc Implementations -------------------------------------------------

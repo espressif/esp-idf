@@ -54,7 +54,6 @@
 #include <limits.h>
 #include <xtensa/config/system.h>
 #include <xtensa/xtensa_api.h>
-#include "soc/cpu.h"
 #ifdef CONFIG_LEGACY_INCLUDE_COMMON_HEADERS
 #include "soc/soc_memory_layout.h"
 #endif

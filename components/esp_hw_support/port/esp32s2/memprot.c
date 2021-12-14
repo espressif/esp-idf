@@ -18,7 +18,7 @@
 #include "hal/memprot_peri_ll.h"
 #include "esp32s2/memprot.h"
 #include "esp_fault.h"
-#include "soc/cpu.h"
+#include "esp_cpu.h"
 #include "esp32s2/rom/ets_sys.h"
 
 extern int _iram_text_end;
