@@ -145,7 +145,7 @@ config SOC_GDMA_GROUPS
 
 config SOC_GDMA_PAIRS_PER_GROUP
     int
-    default 3
+    default 1
 
 config SOC_GDMA_TX_RX_SHARE_INTERRUPT
     bool
