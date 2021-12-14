@@ -34,7 +34,7 @@ def get_dns_answer_to_mdns(tester_host):
     arr.type = dpkt.dns.DNS_A
     arr.name = tester_host
     arr.ip = socket.inet_aton('127.0.0.1')
-    dns. an.append(arr)
+    dns.an.append(arr)
     console_log('Created answer to mdns query: {} '.format(dns.__repr__()))
     return dns.pack()
 
@@ -64,7 +64,7 @@ def mdns_server(esp_host):
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
     sock.setblocking(False)
-    sock.bind((UDP_IP,UDP_PORT))
+    sock.bind((UDP_IP, UDP_PORT))
     mreq = struct.pack('4sl', socket.inet_aton(MCAST_GRP), socket.INADDR_ANY)
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
     last_query_timepoint = time.time()
@@ -74,9 +74,9 @@ def mdns_server(esp_host):
             if current_time - last_query_timepoint > QUERY_TIMEOUT:
                 last_query_timepoint = current_time
                 if not esp_answered.is_set():
-                    sock.sendto(get_dns_query_for_esp(esp_host), (MCAST_GRP,UDP_PORT))
+                    sock.sendto(get_dns_query_for_esp(esp_host), (MCAST_GRP, UDP_PORT))
                 if not esp_delegated_answered.is_set():
-                    sock.sendto(get_dns_query_for_esp(esp_host + '-delegated'), (MCAST_GRP,UDP_PORT))
+                    sock.sendto(get_dns_query_for_esp(esp_host + '-delegated'), (MCAST_GRP, UDP_PORT))
             timeout = max(0, QUERY_TIMEOUT - (current_time - last_query_timepoint))
             read_socks, _, _ = select.select([sock], [], [], timeout)
             if not read_socks:
@@ -86,7 +86,7 @@ def mdns_server(esp_host):
             if len(dns.qd) > 0 and dns.qd[0].type == dpkt.dns.DNS_A:
                 if dns.qd[0].name == TESTER_NAME:
                     console_log('Received query: {} '.format(dns.__repr__()))
-                    sock.sendto(get_dns_answer_to_mdns(TESTER_NAME), (MCAST_GRP,UDP_PORT))
+                    sock.sendto(get_dns_answer_to_mdns(TESTER_NAME), (MCAST_GRP, UDP_PORT))
                 elif dns.qd[0].name == TESTER_NAME_LWIP:
                     console_log('Received query: {} '.format(dns.__repr__()))
                     sock.sendto(get_dns_answer_to_mdns_lwip(TESTER_NAME_LWIP, dns.id), addr)
@@ -105,7 +105,7 @@ def mdns_server(esp_host):
 
 
 @ttfw_idf.idf_example_test(env_tag='Example_EthKitV1')
-def test_examples_protocol_mdns(env, extra_data):
+def test_examples_protocol_mdns(env, config):
     global stop_mdns_server
     """
     steps: |
@@ -152,5 +152,20 @@ def test_examples_protocol_mdns(env, extra_data):
         mdns_responder.join()
 
 
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
+def test_examples_protocol_mdns_default(env, _):
+    test_examples_protocol_mdns(env, None)
+
+
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
+def test_examples_protocol_mdns_socket(env, _):
+    test_examples_protocol_mdns(env, 'socket')
+
+
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
+def test_examples_protocol_mdns_custom_netif(env, _):
+    test_examples_protocol_mdns(env, 'custom_netif')
+
+
 if __name__ == '__main__':
-    test_examples_protocol_mdns()
+    test_examples_protocol_mdns_default()
