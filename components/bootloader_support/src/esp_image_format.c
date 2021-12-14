@@ -5,7 +5,7 @@
  */
 #include <string.h>
 #include <sys/param.h>
-#include <soc/cpu.h>
+#include <esp_cpu.h>
 #include <bootloader_utility.h>
 #include <esp_secure_boot.h>
 #include <esp_fault.h>

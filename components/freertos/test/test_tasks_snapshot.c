@@ -3,7 +3,7 @@
 */
 
 #include <stdio.h>
-#include "soc/cpu.h"
+#include "esp_cpu.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task_snapshot.h"
 #include "unity.h"

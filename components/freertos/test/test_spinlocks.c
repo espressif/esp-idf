@@ -10,7 +10,6 @@
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
 #include "unity.h"
-#include "soc/cpu.h"
 #include "hal/cpu_hal.h"
 
 #include "test_utils.h"

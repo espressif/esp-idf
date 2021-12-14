@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <string.h>
 #include <stdbool.h>
 #include "sdkconfig.h"
@@ -128,7 +120,7 @@ FORCE_INLINE_ATTR void esp_core_dump_setup_stack(void)
     if (esp_core_dump_in_isr_context()) {
         uint8_t* topStack = esp_core_dump_get_isr_stack_top();
         esp_cpu_clear_watchpoint(1);
-        esp_cpu_set_watchpoint(1, topStack+xPortGetCoreID()*configISR_STACK_SIZE, 1, ESP_WATCHPOINT_STORE);
+        esp_cpu_set_watchpoint(1, topStack+xPortGetCoreID()*configISR_STACK_SIZE, 1, ESP_CPU_WATCHPOINT_STORE);
     } else {
         /* for tasks user should enable stack overflow detection in menuconfig
         TODO: if not enabled in menuconfig enable it ourselves */

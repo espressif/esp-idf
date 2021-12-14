@@ -25,7 +25,6 @@
 
 #include "driver/uart.h"
 
-#include "soc/cpu.h"
 #include "soc/rtc.h"
 #include "soc/soc_caps.h"
 

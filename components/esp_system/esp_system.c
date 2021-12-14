@@ -9,7 +9,7 @@
 #include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "soc/cpu.h"
+#include "esp_cpu.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "esp_private/panic_internal.h"

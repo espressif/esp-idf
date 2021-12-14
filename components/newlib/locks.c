@@ -8,7 +8,6 @@
 #include <stdlib.h>
 #include <sys/reent.h>
 #include "esp_attr.h"
-#include "soc/cpu.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"

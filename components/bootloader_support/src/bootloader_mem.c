@@ -11,7 +11,7 @@
 #include "hal/mpu_types.h"
 #include "soc/soc_caps.h"
 #include "bootloader_mem.h"
-#include "soc/cpu.h"
+#include "esp_cpu.h"
 
 void bootloader_init_mem(void)
 {

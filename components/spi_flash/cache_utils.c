@@ -51,6 +51,7 @@
 #include "esp_intr_alloc.h"
 #include "esp_spi_flash.h"
 #include "esp_log.h"
+#include "esp_cpu.h"
 
 static __attribute__((unused)) const char *TAG = "cache";
 

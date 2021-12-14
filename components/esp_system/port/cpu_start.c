@@ -74,7 +74,7 @@
 #include "soc/rtc.h"
 #include "soc/efuse_reg.h"
 #include "soc/periph_defs.h"
-#include "soc/cpu.h"
+#include "esp_cpu.h"
 #include "soc/rtc.h"
 #include "soc/spinlock.h"
 

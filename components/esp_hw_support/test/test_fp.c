@@ -9,7 +9,6 @@
 
 #include <math.h>
 #include <stdio.h>
-#include "soc/cpu.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"

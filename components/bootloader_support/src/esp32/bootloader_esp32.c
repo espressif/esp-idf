@@ -18,7 +18,7 @@
 #include "bootloader_console.h"
 #include "bootloader_flash_priv.h"
 
-#include "soc/cpu.h"
+#include "esp_cpu.h"
 #include "soc/dport_reg.h"
 #include "soc/efuse_reg.h"
 #include "soc/gpio_periph.h"

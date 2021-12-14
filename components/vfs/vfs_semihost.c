@@ -7,7 +7,7 @@
 #include "esp_vfs.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "soc/cpu.h"
+#include "esp_cpu.h"
 #include <stdarg.h>
 #include <stdbool.h>
 #include <string.h>

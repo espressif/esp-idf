@@ -11,7 +11,6 @@
 #include "unity.h"
 #include "driver/timer.h"
 #include "esp_rom_sys.h"
-#include "soc/cpu.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/task.h"

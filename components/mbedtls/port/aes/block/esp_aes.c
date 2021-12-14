@@ -36,7 +36,6 @@
 
 #include <freertos/FreeRTOS.h>
 
-#include "soc/cpu.h"
 #include <stdio.h>
 #include "esp_private/periph_ctrl.h"
 

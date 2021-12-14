@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <assert.h>
-#include "soc/cpu.h"
+#include "esp_cpu.h"
 
 void esp_cpu_configure_region_protection(void)
 {
