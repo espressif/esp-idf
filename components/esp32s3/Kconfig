@@ -360,14 +360,9 @@ menu "ESP32S3-Specific"
         default 6 if ESP32S3_BROWNOUT_DET_LVL_SEL_6
         default 7 if ESP32S3_BROWNOUT_DET_LVL_SEL_7
 
-
-        # Note about the use of "FRC1" name: currently FRC1 timer is not used for
-        # high resolution timekeeping anymore. Instead the esp_timer API, implemented
-        # using FRC2 timer, is used.
-        # FRC1 name in the option name is kept for compatibility.
     choice ESP32S3_TIME_SYSCALL
         prompt "Timers used for gettimeofday function"
-        default ESP32S3_TIME_SYSCALL_USE_RTC_FRC1
+        default ESP32S3_TIME_SYSCALL_USE_RTC_SYSTIMER
         help
             This setting defines which hardware timers are used to
             implement 'gettimeofday' and 'time' functions in C library.
@@ -387,14 +382,14 @@ menu "ESP32S3-Specific"
             - When RTC is used for timekeeping, two RTC_STORE registers are
               used to keep time in deep sleep mode.
 
-        config ESP32S3_TIME_SYSCALL_USE_RTC_FRC1
+        config ESP32S3_TIME_SYSCALL_USE_RTC_SYSTIMER
             bool "RTC and high-resolution timer"
             select ESP_TIME_FUNCS_USE_RTC_TIMER
             select ESP_TIME_FUNCS_USE_ESP_TIMER
         config ESP32S3_TIME_SYSCALL_USE_RTC
             bool "RTC"
             select ESP_TIME_FUNCS_USE_RTC_TIMER
-        config ESP32S3_TIME_SYSCALL_USE_FRC1
+        config ESP32S3_TIME_SYSCALL_USE_SYSTIMER
             bool "High-resolution timer"
             select ESP_TIME_FUNCS_USE_ESP_TIMER
         config ESP32S3_TIME_SYSCALL_USE_NONE

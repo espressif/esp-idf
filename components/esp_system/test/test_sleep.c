@@ -519,7 +519,7 @@ static void trigger_deepsleep(void)
     // Save start time. Deep sleep.
     gettimeofday(&start, NULL);
     esp_sleep_enable_timer_wakeup(1000);
-    // In function esp_deep_sleep_start() uses function esp_sync_counters_rtc_and_frc()
+    // In function esp_deep_sleep_start() uses function esp_sync_timekeeping_timers()
     // to prevent a negative time after wake up.
     esp_deep_sleep_start();
 }
