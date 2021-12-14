@@ -1,24 +1,20 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <stdio.h>
 #include <string.h>
 #include "esp_console.h"
 #include "argtable3/argtable3.h"
 #include "mdns.h"
 
-static const char * if_str[] = {"STA", "AP", "ETH", "MAX"};
 static const char * ip_protocol_str[] = {"V4", "V6", "MAX"};
+
+static const char * if_str(esp_netif_t *netif)
+{
+    return esp_netif_get_ifkey(netif);
+}
 
 static void mdns_print_results(mdns_result_t * results)
 {
@@ -26,7 +22,7 @@ static void mdns_print_results(mdns_result_t * results)
     mdns_ip_addr_t * a = NULL;
     int i = 1;
     while (r) {
-        printf("%d: Interface: %s, Type: %s\n", i++, if_str[r->tcpip_if], ip_protocol_str[r->ip_protocol]);
+        printf("%d: Interface: %s, Type: %s\n", i++, if_str(r->esp_netif), ip_protocol_str[r->ip_protocol]);
         if (r->instance_name) {
             printf("  PTR : %s\n", r->instance_name);
         }

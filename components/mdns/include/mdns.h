@@ -21,8 +21,6 @@ extern "C" {
 #define MDNS_TYPE_NSEC              0x002F
 #define MDNS_TYPE_ANY               0x00FF
 
-#define CONFIG_MDNS_IF_MAX 4
-
 /**
  * @brief   Asynchronous query handle
  */
@@ -64,11 +62,6 @@ typedef struct mdns_ip_addr_s {
     struct mdns_ip_addr_s * next;           /*!< next IP, or NULL for the last IP in the list */
 } mdns_ip_addr_t;
 
-typedef enum mdns_if_internal {
-    MDNS_IF_INVALID = -1,
-    MDNS_IF_MAX = CONFIG_MDNS_IF_MAX
-} mdns_if_t;
-
 /**
  * @brief mDNS query type to be explicitly set to either Unicast or Multicast
  */
@@ -83,7 +76,7 @@ typedef enum {
 typedef struct mdns_result_s {
     struct mdns_result_s * next;            /*!< next result, or NULL for the last result in the list */
 
-    mdns_if_t tcpip_if;                     /*!< interface index */
+    esp_netif_t* esp_netif;                 /*!< ptr to corresponding esp-netif */
     uint32_t ttl;                           /*!< time to live */
 
     mdns_ip_protocol_t ip_protocol;         /*!< ip_protocol type of the interface (v4/v6) */

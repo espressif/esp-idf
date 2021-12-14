@@ -83,9 +83,6 @@ static void initialise_mdns(void)
     free(hostname);
 }
 
-/* these strings match tcpip_adapter_if_t enumeration */
-static const char * if_str[] = {"STA", "AP", "ETH", "MAX"};
-
 /* these strings match mdns_ip_protocol_t enumeration */
 static const char * ip_protocol_str[] = {"V4", "V6", "MAX"};
 
@@ -95,7 +92,7 @@ static void mdns_print_results(mdns_result_t *results)
     mdns_ip_addr_t *a = NULL;
     int i = 1, t;
     while (r) {
-        printf("%d: Interface: %s, Type: %s, TTL: %u\n", i++, if_str[r->tcpip_if], ip_protocol_str[r->ip_protocol],
+        printf("%d: Interface: %s, Type: %s, TTL: %u\n", i++, esp_netif_get_ifkey(r->esp_netif), ip_protocol_str[r->ip_protocol],
                r->ttl);
         if (r->instance_name) {
             printf("  PTR : %s.%s.%s\n", r->instance_name, r->service_type, r->proto);

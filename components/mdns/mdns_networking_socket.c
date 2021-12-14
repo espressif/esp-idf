@@ -101,7 +101,7 @@ esp_err_t _mdns_pcb_deinit(mdns_if_t tcpip_if, mdns_ip_protocol_t ip_protocol)
         }
     }
 
-    for (int i=0; i<MDNS_IF_MAX; i++) {
+    for (int i=0; i<MDNS_MAX_INTERFACES; i++) {
         for (int j=0; j<MDNS_IP_PROTOCOL_MAX; j++) {
             if (_mdns_server->interfaces[i].pcbs[j].pcb)
                 // If any of the interfaces/protocol initialized
@@ -247,7 +247,7 @@ void sock_recv_task(void* arg)
         fd_set rfds;
         FD_ZERO(&rfds);
         int max_sock = -1;
-        for (int i=0; i<MDNS_IF_MAX; i++) {
+        for (int i=0; i<MDNS_MAX_INTERFACES; i++) {
             for (int j=0; j<MDNS_IP_PROTOCOL_MAX; j++) {
                 int sock = pcb_to_sock(_mdns_server->interfaces[i].pcbs[j].pcb);
                 if (sock >= 0) {
@@ -267,7 +267,7 @@ void sock_recv_task(void* arg)
             ESP_LOGE(TAG, "Select failed. errno=%d: %s", errno, strerror(errno));
             break;
         } else if (s > 0) {
-            for (int tcpip_if=0; tcpip_if<MDNS_IF_MAX; tcpip_if++) {
+            for (int tcpip_if=0; tcpip_if<MDNS_MAX_INTERFACES; tcpip_if++) {
                 // Both protocols share once socket
                 int sock = pcb_to_sock(_mdns_server->interfaces[tcpip_if].pcbs[MDNS_IP_PROTOCOL_V4].pcb);
                 if (sock < 0) {

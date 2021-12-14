@@ -41,6 +41,27 @@
  * any item in question field */
 #define  MDNS_REPEAT_QUERY_IN_RESPONSE 1
 #endif
+
+/** Number of predefined interfaces */
+#ifndef CONFIG_MDNS_PREDEF_NETIF_STA
+#define CONFIG_MDNS_PREDEF_NETIF_STA 0
+#endif
+#ifndef CONFIG_MDNS_PREDEF_NETIF_AP
+#define CONFIG_MDNS_PREDEF_NETIF_AP 0
+#endif
+#ifndef CONFIG_MDNS_PREDEF_NETIF_ETH
+#define CONFIG_MDNS_PREDEF_NETIF_ETH 0
+#endif
+#define MDNS_MAX_PREDEF_INTERFACES (CONFIG_MDNS_PREDEF_NETIF_STA + CONFIG_MDNS_PREDEF_NETIF_AP + CONFIG_MDNS_PREDEF_NETIF_ETH)
+
+/** Number of configured interfaces */
+#if MDNS_MAX_PREDEF_INTERFACES > CONFIG_MDNS_MAX_INTERFACES
+#warning Number of configured interfaces is less then number of predefined interfaces. Please update CONFIG_MDNS_MAX_INTERFACES.
+#define MDNS_MAX_INTERFACES (MDNS_MAX_PREDEF_INTERFACES)
+#else
+#define MDNS_MAX_INTERFACES (CONFIG_MDNS_MAX_INTERFACES)
+#endif
+
 /** The maximum number of services */
 #define MDNS_MAX_SERVICES           CONFIG_MDNS_MAX_SERVICES
 
@@ -149,6 +170,8 @@
 #ifndef HOOK_MALLOC_FAILED
 #define HOOK_MALLOC_FAILED  ESP_LOGE(TAG, "Cannot allocate memory (line: %d, free heap: %d bytes)", __LINE__, esp_get_free_heap_size());
 #endif
+
+typedef size_t mdns_if_t;
 
 typedef enum {
     PCB_OFF, PCB_DUP, PCB_INIT,
@@ -384,7 +407,7 @@ typedef struct mdns_search_once_s {
 typedef struct mdns_server_s {
     struct {
         mdns_pcb_t pcbs[MDNS_IP_PROTOCOL_MAX];
-    } interfaces[MDNS_IF_MAX];
+    } interfaces[MDNS_MAX_INTERFACES];
     const char * hostname;
     const char * instance;
     mdns_srv_item_t * services;

@@ -1,5 +1,13 @@
 menu "mDNS"
 
+    config MDNS_MAX_INTERFACES
+        int "Max number of interfaces"
+        range 1 9
+        default 3
+        help
+            Number of network interfaces to be served by the mdns library.
+            Lowering this number helps to reduce some static RAM usage.
+
     config MDNS_MAX_SERVICES
         int "Max number of services"
         range 1 64
@@ -89,5 +97,30 @@ menu "mDNS"
         default y
         help
             Enables adding multiple service instances under the same service type.
+
+    menu "MDNS Predefined interfaces"
+
+        config MDNS_PREDEF_NETIF_STA
+            bool "Use predefined interface for WiFi Station"
+            default y
+            help
+                Set up mdns for the default WiFi station.
+                Disable this option if you do not need mDNS on default WiFi STA.
+
+        config MDNS_PREDEF_NETIF_AP
+            bool "Use predefined interface for WiFi Access Point"
+            default y
+            help
+                Set up mdns for the default WiFi Access Point.
+                Disable this option if you do not need mDNS on default WiFi AP.
+
+        config MDNS_PREDEF_NETIF_ETH
+            bool "Use predefined interface for Ethernet"
+            default y
+            help
+                Set up mdns for the default Ethernet interface.
+                Disable this option if you do not need mDNS on default Ethernet.
+
+    endmenu # MDNS Predefined interfaces
 
 endmenu
