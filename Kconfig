@@ -1,6 +1,6 @@
 #
-# For a description of the syntax of this configuration file,
-# see kconfig/kconfig-language.txt.
+# Please run the following command for opening a page with more information about this configuration file:
+# idf.py docs -sp api-reference/kconfig.html
 #
 mainmenu "Espressif IoT Development Framework Configuration"
 

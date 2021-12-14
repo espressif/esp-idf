@@ -241,4 +241,12 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         --config ${sdkconfig}
         VERBATIM
         USES_TERMINAL)
+
+    add_custom_target(save-defconfig
+        COMMAND ${prepare_kconfig_files_command}
+        COMMAND ${confgen_basecommand}
+        --dont-write-deprecated
+        --output savedefconfig ${CMAKE_SOURCE_DIR}/sdkconfig.defaults
+        USES_TERMINAL
+        )
 endfunction()

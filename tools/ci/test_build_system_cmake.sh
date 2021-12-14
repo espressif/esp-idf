@@ -889,6 +889,31 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     grep "Warning: Command efuse_common_table is deprecated and will be removed in the next major release." tmp.log || failure "Missing deprecation warning with command \"efuse_common_table\""
     rm tmp.log
 
+    print_status "Save-defconfig checks"
+    cd ${TESTDIR}/template
+    rm -f sdkconfig.defaults
+    rm -f sdkconfig
+    idf.py fullclean > /dev/null
+    echo "CONFIG_COMPILER_OPTIMIZATION_SIZE=y" >> sdkconfig
+    echo "CONFIG_ESPTOOLPY_FLASHFREQ_80M=y" >> sdkconfig
+    idf.py save-defconfig
+    wc -l sdkconfig.defaults
+    grep "CONFIG_IDF_TARGET" sdkconfig.defaults && failure "CONFIG_IDF_TARGET should not be in sdkconfig.defaults"
+    grep "CONFIG_COMPILER_OPTIMIZATION_SIZE=y" sdkconfig.defaults || failure "Missing CONFIG_COMPILER_OPTIMIZATION_SIZE=y in sdkconfig.defaults"
+    grep "CONFIG_ESPTOOLPY_FLASHFREQ_80M=y" sdkconfig.defaults || failure "Missing CONFIG_ESPTOOLPY_FLASHFREQ_80M=y in sdkconfig.defaults"
+    idf.py fullclean > /dev/null
+    rm -f sdkconfig.defaults
+    rm -f sdkconfig
+    idf.py set-target esp32c3
+    echo "CONFIG_PARTITION_TABLE_OFFSET=0x8001" >> sdkconfig
+    idf.py save-defconfig
+    wc -l sdkconfig.defaults
+    grep "CONFIG_IDF_TARGET=\"esp32c3\"" sdkconfig.defaults || failure "Missing CONFIG_IDF_TARGET=\"esp32c3\" in sdkconfig.defaults"
+    grep "CONFIG_PARTITION_TABLE_OFFSET=0x8001" sdkconfig.defaults || failure "Missing CONFIG_PARTITION_TABLE_OFFSET=0x8001 in sdkconfig.defaults"
+    idf.py fullclean > /dev/null
+    rm -f sdkconfig.defaults
+    rm -f sdkconfig
+
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
         echo "Some failures were detected:"
