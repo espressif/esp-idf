@@ -77,6 +77,28 @@ int sha1_vector(size_t num_elem, const u8 *addr[], const size_t *len,
 		u8 *mac);
 
 /**
+ * sha384_vector - SHA384 hash for data vector
+ * @num_elem: Number of elements in the data vector
+ * @addr: Pointers to the data areas
+ * @len: Lengths of the data blocks
+ * @mac: Buffer for the hash
+ * Returns: 0 on success, -1 on failure
+ */
+int sha384_vector(size_t num_elem, const u8 *addr[], const size_t *len,
+		  u8 *mac);
+
+/**
+ * sha512_vector - SHA512 hash for data vector
+ * @num_elem: Number of elements in the data vector
+ * @addr: Pointers to the data areas
+ * @len: Lengths of the data blocks
+ * @mac: Buffer for the hash
+ * Returns: 0 on success, -1 on failure
+ */
+int sha512_vector(size_t num_elem, const u8 *addr[], const size_t *len,
+		  u8 *mac);
+
+/**
  * fips186_2-prf - NIST FIPS Publication 186-2 change notice 1 PRF
  * @seed: Seed/key for the PRF
  * @seed_len: Seed length in bytes

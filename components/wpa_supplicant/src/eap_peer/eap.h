@@ -39,9 +39,16 @@ int g_wpa_password_len;
 u8 *g_wpa_new_password;
 int g_wpa_new_password_len;
 
+u8 *g_wpa_pac_file;
+int g_wpa_pac_file_len;
+
+char *g_wpa_ttls_phase2_type;
+char *g_wpa_phase1_options;
+
 const u8 * eap_get_eapKeyData(struct eap_sm *sm, size_t *len);
 void eap_deinit_prev_method(struct eap_sm *sm, const char *txt);
 struct wpabuf * eap_sm_build_nak(struct eap_sm *sm, EapType type, u8 id);
+struct wpabuf * eap_sm_buildIdentity(struct eap_sm *sm, int id, int encrypted);
 int eap_peer_blob_init(struct eap_sm *sm);
 void eap_peer_blob_deinit(struct eap_sm *sm);
 int eap_peer_config_init(
@@ -50,5 +57,8 @@ int eap_peer_config_init(
 void eap_peer_config_deinit(struct eap_sm *sm);
 void eap_sm_abort(struct eap_sm *sm);
 int eap_peer_register_methods(void);
+void eap_sm_request_identity(struct eap_sm *sm);
+void eap_sm_request_password(struct eap_sm *sm);
+void eap_sm_request_new_password(struct eap_sm *sm);
 
 #endif /* EAP_H */
