@@ -25,8 +25,6 @@ struct esp_eth_netif_glue_t {
     esp_event_handler_instance_t get_ip_ctx_handler;
 };
 
-bool s_netif_glue_legacy_events_registered = false;
-
 static esp_err_t eth_input_to_netif(esp_eth_handle_t eth_handle, uint8_t *buffer, uint32_t length, void *priv)
 {
     return esp_netif_receive((esp_netif_t *)priv, buffer, length, NULL);
@@ -196,11 +194,10 @@ esp_eth_netif_glue_handle_t esp_eth_new_netif_glue(esp_eth_handle_t eth_hdl)
     netif_glue->base.post_attach = esp_eth_post_attach;
     esp_eth_increase_reference(eth_hdl);
 
-    if (s_netif_glue_legacy_events_registered == false) {
-        if (esp_eth_set_glue_instance_handlers(netif_glue) != ESP_OK) {
-            esp_eth_del_netif_glue(netif_glue);
-            return NULL;
-        }
+    if (esp_eth_set_glue_instance_handlers(netif_glue) != ESP_OK) {
+        esp_eth_del_netif_glue(netif_glue);
+        return NULL;
     }
+
     return netif_glue;
 }
