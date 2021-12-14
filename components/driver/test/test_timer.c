@@ -15,6 +15,9 @@
 #include "soc/soc_caps.h"
 #include "esp_rom_sys.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)
+// TODO: Timer support IDF-3825
+
 #define TIMER_DIVIDER  16
 #define TIMER_SCALE    (TIMER_BASE_CLK / TIMER_DIVIDER)  /*!< used to calculate counter value */
 #define TIMER_DELTA    0.001
@@ -1040,3 +1043,5 @@ TEST_CASE("Timer check reinitialization sequence", "[hw_timer]")
     // The pending timer interrupt should not be triggered
     TEST_ASSERT_EQUAL(0, timer_group_get_intr_status_in_isr(TIMER_GROUP_0) & TIMER_INTR_T0);
 }
+
+#endif // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)

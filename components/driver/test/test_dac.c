@@ -16,10 +16,10 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "test_utils.h"
-#include "driver/i2s.h"
 #include "soc/soc_caps.h"
 
 #if SOC_DAC_SUPPORTED
+#include "driver/i2s.h"
 #include "driver/dac.h"
 #include "esp_adc_cal.h"
 

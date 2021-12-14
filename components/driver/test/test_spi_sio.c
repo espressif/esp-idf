@@ -29,7 +29,7 @@
 
 #include "hal/spi_ll.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP8684)
 #if !DISABLED_FOR_TARGETS(ESP32C3)  //There is only one GPSPI controller, so single-board test is disabled.
 
 /********************************************************************************
@@ -110,7 +110,7 @@ TEST_CASE("local test sio", "[spi]")
 #endif //!DISABLED_FOR_TARGETS(ESP32C3)  //There is only one GPSPI controller, so single-board test is disabled.
 
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3, ESP8684)
 //These tests are ESP32 only due to lack of runners
 /********************************************************************************
  *      Test SIO Master & Slave

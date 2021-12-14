@@ -13,7 +13,7 @@ menu "Test Configuration"
     menu "I2C Configuration"
         config TEST_I2C_SCL_NUM
             int "SCL GPIO Num"
-            default 9 if IDF_TARGET_ESP32C3
+            default 9 if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP8684
             default 2 if  IDF_TARGET_ESP32S3
             default 19 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2
             help
@@ -21,7 +21,7 @@ menu "Test Configuration"
 
         config TEST_I2C_SDA_NUM
             int "SDA GPIO Num"
-            default 5 if IDF_TARGET_ESP32C3
+            default 5 if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP8684
             default 1 if  IDF_TARGET_ESP32S3
             default 18 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2
             help
@@ -50,7 +50,7 @@ menu "Test Configuration"
     config TEST_I2C_WIFI_AP_ENABLE
         bool "Enable WIFI AP"
         default y
-        depends on TEST_I2C_MASTER_MODE
+        depends on TEST_I2C_MASTER_MODE && !IDF_TARGET_ESP8684
 
     menu "WiFi softAP Configuration"
         depends on TEST_I2C_WIFI_AP_ENABLE

@@ -9,6 +9,8 @@
 #include <string.h>
 #include "esp_log.h"
 #include "test_utils.h"
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)
+// TODO: Support ADC IDF-3908
 #include "esp_adc_cal.h"
 #include "driver/adc_common.h"
 
@@ -396,3 +398,5 @@ TEST_CASE("test_adc_single_cali_time", "[adc][ignore][manual]")
         }
     }
 }
+
+#endif //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)

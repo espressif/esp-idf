@@ -23,7 +23,7 @@
 #define CACHE_WAYS              8
 #define CACHE_LINE_SIZE         32
 #define CACHE_SIZE              (1 << 13)
-#elif CONFIG_IDF_TARGET_ESP32C3
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP8684
 #define CACHE_WAYS              8
 #define CACHE_LINE_SIZE         32
 #define CACHE_SIZE              (1 << 14)

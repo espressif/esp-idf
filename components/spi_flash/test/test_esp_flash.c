@@ -36,6 +36,9 @@
 #include "esp8684/rom/cache.h"
 #endif
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)
+// TODO: SPI_FLASH IDF-4025
+
 #define FUNC_SPI    1
 
 static uint8_t sector_buf[4096];
@@ -1237,3 +1240,5 @@ FLASH_TEST_CASE("esp_flash_read large PSRAM buffer low memory", test_flash_read_
 
 
 #endif
+
+#endif //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)
