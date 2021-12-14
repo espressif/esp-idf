@@ -17,7 +17,7 @@ cryptography>=2.1.4
 
 pyparsing>=2.0.3,<2.4.0
 pyelftools>=0.22
-idf-component-manager>=0.2.99-beta
+idf-component-manager~=1.0
 
 gdbgui==0.13.2.0
 # 0.13.2.1 supports Python 3.6+ only
