@@ -105,6 +105,8 @@ typedef int  (tPORT_DATA_CO_CALLBACK) (UINT16 port_handle, UINT8 *p_buf, UINT16 
 
 typedef void (tPORT_CALLBACK) (UINT32 code, UINT16 port_handle);
 
+typedef void (tPORT_MGMT_CALLBACK) (UINT32 code, UINT16 port_handle, void* data);
+
 /*
 ** Define events that registered application can receive in the callback
 */
@@ -219,7 +221,7 @@ extern "C"
 extern int RFCOMM_CreateConnection (UINT16 uuid, UINT8 scn,
                                     BOOLEAN is_server, UINT16 mtu,
                                     BD_ADDR bd_addr, UINT16 *p_handle,
-                                    tPORT_CALLBACK *p_mgmt_cb);
+                                    tPORT_MGMT_CALLBACK *p_mgmt_cb);
 
 
 /*******************************************************************************
