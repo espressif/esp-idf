@@ -34,8 +34,10 @@ extern mdns_server_t * _mdns_server;
 // mdns function wrappers for mdns setup in test mode
 static int mdns_test_hostname_set(const char * mdns_hostname)
 {
-    _mdns_server->interfaces[MDNS_IF_STA].pcbs[MDNS_IP_PROTOCOL_V4].state = PCB_RUNNING;    // mark the PCB running to exercise mdns in fully operational mode
-    _mdns_server->interfaces[MDNS_IF_STA].pcbs[MDNS_IP_PROTOCOL_V6].state = PCB_RUNNING;
+    for (int i=0; i<MDNS_MAX_INTERFACES; i++) {
+        _mdns_server->interfaces[i].pcbs[MDNS_IP_PROTOCOL_V4].state = PCB_RUNNING;    // mark the PCB running to exercise mdns in fully operational mode
+        _mdns_server->interfaces[i].pcbs[MDNS_IP_PROTOCOL_V6].state = PCB_RUNNING;
+    }
     int ret = mdns_hostname_set(mdns_hostname);
     mdns_action_t * a = NULL;
     GetLastItem(&a);
