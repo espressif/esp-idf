@@ -111,6 +111,7 @@ void simple_ota_example_task(void *pvParameter)
     config.skip_cert_common_name_check = true;
 #endif
 
+    ESP_LOGI(TAG, "Attempting to download update from %s", config.url);
     esp_err_t ret = esp_https_ota(&config);
     if (ret == ESP_OK) {
         esp_restart();
