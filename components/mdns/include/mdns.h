@@ -719,6 +719,11 @@ esp_err_t mdns_query_a(const char * host_name, uint32_t timeout, esp_ip4_addr_t 
 esp_err_t mdns_query_aaaa(const char * host_name, uint32_t timeout, esp_ip6_addr_t * addr);
 #endif
 
+
+esp_err_t mdns_add_custom_netif(esp_netif_t *esp_netif);
+esp_err_t mdns_post_custom_action(esp_netif_t *esp_netif, mdns_event_actions_t event_action);
+esp_err_t mdns_delete_custom_netif(esp_netif_t *esp_netif);
+
 #ifdef __cplusplus
 }
 #endif

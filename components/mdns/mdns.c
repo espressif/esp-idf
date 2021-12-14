@@ -5086,6 +5086,52 @@ esp_err_t mdns_post_custom_action(esp_netif_t *esp_netif, mdns_event_actions_t e
     return mdns_post_custom_action_tcpip_if(_mdns_get_if_from_esp_netif(esp_netif), event_action);
 }
 
+esp_err_t mdns_add_custom_netif(esp_netif_t *esp_netif)
+{
+    if (!_mdns_server) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    esp_err_t err = ESP_ERR_NO_MEM;
+    MDNS_SERVICE_LOCK();
+    for (mdns_if_t i=0; i<MDNS_MAX_INTERFACES; ++i) {
+        if (s_esp_netifs[i].netif == esp_netif) {
+            MDNS_SERVICE_UNLOCK();
+            return ESP_ERR_INVALID_STATE;
+        }
+    }
+
+    for (mdns_if_t i=0; i<MDNS_MAX_INTERFACES; ++i) {
+        if (!s_esp_netifs[i].predefined && s_esp_netifs[i].netif == NULL) {
+            s_esp_netifs[i].netif = esp_netif;
+            err = ESP_OK;
+            break;
+        }
+    }
+    MDNS_SERVICE_UNLOCK();
+    return err;
+}
+
+esp_err_t mdns_delete_custom_netif(esp_netif_t *esp_netif)
+{
+    if (!_mdns_server) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    esp_err_t err = ESP_ERR_NOT_FOUND;
+    MDNS_SERVICE_LOCK();
+    for (mdns_if_t i=0; i<MDNS_MAX_INTERFACES; ++i) {
+        if (!s_esp_netifs[i].predefined && s_esp_netifs[i].netif == esp_netif) {
+            s_esp_netifs[i].netif = NULL;
+            err = ESP_OK;
+            break;
+        }
+    }
+    MDNS_SERVICE_UNLOCK();
+    return err;
+}
+
+
 esp_err_t mdns_init(void)
 {
     esp_err_t err = ESP_OK;
@@ -5133,7 +5179,9 @@ esp_err_t mdns_init(void)
     }
 #endif
 
+#if CONFIG_MDNS_PREDEF_NETIF_STA || CONFIG_MDNS_PREDEF_NETIF_AP || CONFIG_MDNS_PREDEF_NETIF_ETH
     set_default_duplicated_interfaces();
+#endif
 
     uint8_t i;
 #if CONFIG_LWIP_IPV6
@@ -5166,8 +5214,10 @@ free_all_and_disable_pcbs:
         _mdns_disable_pcb(i, MDNS_IP_PROTOCOL_V4);
         s_esp_netifs[i].duplicate = MDNS_MAX_INTERFACES;
     }
+#if CONFIG_MDNS_PREDEF_NETIF_STA || CONFIG_MDNS_PREDEF_NETIF_AP || CONFIG_MDNS_PREDEF_NETIF_ETH
 free_event_handlers:
     unregister_predefined_handlers();
+#endif
     vQueueDelete(_mdns_server->action_queue);
 free_lock:
     vSemaphoreDelete(_mdns_server->lock);
