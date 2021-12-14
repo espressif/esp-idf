@@ -129,7 +129,6 @@ storing in efuse (based on ATE 5k ECO3 chips)
  * Enum values should be equal to frequency in MHz.
  */
 typedef enum {
-    RTC_XTAL_FREQ_32M = 32,
     RTC_XTAL_FREQ_40M = 40,     //!< 40 MHz XTAL
 } rtc_xtal_freq_t;
 
@@ -139,12 +138,9 @@ typedef enum {
 typedef enum {
     RTC_CPU_FREQ_XTAL = 0,      //!< Main XTAL frequency
     RTC_CPU_FREQ_80M = 1,       //!< 80 MHz
-    RTC_CPU_FREQ_160M = 2,      //!< 160 MHz
-    RTC_CPU_FREQ_240M = 3,      //!< 240 MHz
-    RTC_CPU_FREQ_2M = 4,        //!< 2 MHz
-    RTC_CPU_320M_80M = 5,       //!< for test
-    RTC_CPU_320M_160M = 6,      //!< for test
-    RTC_CPU_FREQ_XTAL_DIV2 = 7, //!< XTAL/2 after reset
+    RTC_CPU_FREQ_120M = 2,      //!< 120 MHz
+    RTC_CPU_FREQ_160M = 3,      //!< 160 MHz
+    RTC_CPU_FREQ_XTAL_DIV2 = 4, //!< XTAL/2 after reset
 } rtc_cpu_freq_t;
 
 /**
@@ -152,7 +148,7 @@ typedef enum {
  */
 typedef enum {
     RTC_CPU_FREQ_SRC_XTAL,  //!< XTAL
-    RTC_CPU_FREQ_SRC_PLL,   //!< PLL (480M or 320M)
+    RTC_CPU_FREQ_SRC_PLL,   //!< PLL (480M)
     RTC_CPU_FREQ_SRC_8M,    //!< Internal 8M RTC oscillator
     RTC_CPU_FREQ_SRC_APLL   //!< APLL
 } rtc_cpu_freq_src_t;

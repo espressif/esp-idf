@@ -26,7 +26,6 @@
 
 static const char *TAG = "rtc_clk";
 
-#define RTC_PLL_FREQ_320M   320
 #define RTC_PLL_FREQ_480M   480
 #define DELAY_RTC_CLK_SWITCH 5
 
@@ -137,85 +136,21 @@ static void rtc_clk_bbpll_enable(void)
 
 void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
 {
-    uint8_t div_ref;
-    uint8_t div7_0;
-    uint8_t dr1;
-    uint8_t dr3;
-    uint8_t dchgp;
-    uint8_t dcur;
-    uint8_t dbias;
+    (void) xtal_freq;
+    // ESP8684 only support 40M XTAL, all the parameters are given as 40M XTAL directly.
+    uint8_t div_ref = 0;
+    uint8_t div7_0 = 8;
+    uint8_t dr1 = 0;
+    uint8_t dr3 = 0;
+    uint8_t dchgp = 5;
+    uint8_t dcur = 3;
+    uint8_t dbias = 2;
 
     CLEAR_PERI_REG_MASK(I2C_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_HIGH);
     SET_PERI_REG_MASK(I2C_MST_ANA_CONF0_REG, I2C_MST_BBPLL_STOP_FORCE_LOW);
-    if (pll_freq == RTC_PLL_FREQ_480M) {
-        /* Set this register to let the digital part know 480M PLL is used */
-        SET_PERI_REG_MASK(SYSTEM_CPU_PER_CONF_REG, SYSTEM_PLL_FREQ_SEL);
-        /* Configure 480M PLL */
-        switch (xtal_freq) {
-        case RTC_XTAL_FREQ_40M:
-            div_ref = 0;
-            div7_0 = 8;
-            dr1 = 0;
-            dr3 = 0;
-            dchgp = 5;
-            dcur = 3;
-            dbias = 2;
-            break;
-        case RTC_XTAL_FREQ_32M:
-            div_ref = 1;
-            div7_0 = 26;
-            dr1 = 1;
-            dr3 = 1;
-            dchgp = 4;
-            dcur = 0;
-            dbias = 2;
-            break;
-        default:
-            div_ref = 0;
-            div7_0 = 8;
-            dr1 = 0;
-            dr3 = 0;
-            dchgp = 5;
-            dcur = 3;
-            dbias = 2;
-            break;
-        }
-        REGI2C_WRITE(I2C_BBPLL, I2C_BBPLL_MODE_HF, 0x6B);
-    } else {
-        /* Clear this register to let the digital part know 320M PLL is used */
-        CLEAR_PERI_REG_MASK(SYSTEM_CPU_PER_CONF_REG, SYSTEM_PLL_FREQ_SEL);
-        /* Configure 320M PLL */
-        switch (xtal_freq) {
-        case RTC_XTAL_FREQ_40M:
-            div_ref = 0;
-            div7_0 = 4;
-            dr1 = 0;
-            dr3 = 0;
-            dchgp = 5;
-            dcur = 3;
-            dbias = 2;
-            break;
-        case RTC_XTAL_FREQ_32M:
-            div_ref = 1;
-            div7_0 = 6;
-            dr1 = 0;
-            dr3 = 0;
-            dchgp = 5;
-            dcur = 3;
-            dbias = 2;
-            break;
-        default:
-            div_ref = 0;
-            div7_0 = 4;
-            dr1 = 0;
-            dr3 = 0;
-            dchgp = 5;
-            dcur = 3;
-            dbias = 2;
-            break;
-        }
-        REGI2C_WRITE(I2C_BBPLL, I2C_BBPLL_MODE_HF, 0x69);
-    }
+    /* Set this register to let the digital part know 480M PLL is used */
+    SET_PERI_REG_MASK(SYSTEM_CPU_PER_CONF_REG, SYSTEM_PLL_FREQ_SEL);
+    REGI2C_WRITE(I2C_BBPLL, I2C_BBPLL_MODE_HF, 0x6B);
     uint8_t i2c_bbpll_lref  = (dchgp << I2C_BBPLL_OC_DCHGP_LSB) | (div_ref);
     uint8_t i2c_bbpll_div_7_0 = div7_0;
     uint8_t i2c_bbpll_dcur = (2 << I2C_BBPLL_OC_DLREF_SEL_LSB ) | (1 << I2C_BBPLL_OC_DHREF_SEL_LSB) | dcur;
@@ -241,8 +176,8 @@ static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
     int per_conf = DPORT_CPUPERIOD_SEL_80;
     if (cpu_freq_mhz == 80) {
         /* nothing to do */
-    } else if (cpu_freq_mhz == 160) {
-        per_conf = DPORT_CPUPERIOD_SEL_160;
+    } else if (cpu_freq_mhz == 120) {
+        per_conf = DPORT_CPUPERIOD_SEL_120;
     } else {
         SOC_LOGE(TAG, "invalid frequency");
         abort();
@@ -250,7 +185,7 @@ static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
     REG_SET_FIELD(SYSTEM_CPU_PER_CONF_REG, SYSTEM_CPUPERIOD_SEL, per_conf);
     REG_SET_FIELD(SYSTEM_SYSCLK_CONF_REG, SYSTEM_PRE_DIV_CNT, 0);
     REG_SET_FIELD(SYSTEM_SYSCLK_CONF_REG, SYSTEM_SOC_CLK_SEL, DPORT_SOC_CLK_SEL_PLL);
-    rtc_clk_apb_freq_update(80 * MHZ);
+    rtc_clk_apb_freq_update(40 * MHZ);
     ets_update_cpu_frequency(cpu_freq_mhz);
 }
 
@@ -277,11 +212,11 @@ bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t *ou
         source = RTC_CPU_FREQ_SRC_PLL;
         source_freq_mhz = RTC_PLL_FREQ_480M;
         divider = 6;
-    } else if (freq_mhz == 160) {
+    } else if (freq_mhz == 120) {
         real_freq_mhz = freq_mhz;
         source = RTC_CPU_FREQ_SRC_PLL;
         source_freq_mhz = RTC_PLL_FREQ_480M;
-        divider = 3;
+        divider = 4;
     } else {
         // unsupported frequency
         return false;
@@ -335,15 +270,13 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config)
     case DPORT_SOC_CLK_SEL_PLL: {
         source = RTC_CPU_FREQ_SRC_PLL;
         uint32_t cpuperiod_sel = REG_GET_FIELD(SYSTEM_CPU_PER_CONF_REG, SYSTEM_CPUPERIOD_SEL);
-        uint32_t pllfreq_sel = REG_GET_FIELD(SYSTEM_CPU_PER_CONF_REG, SYSTEM_PLL_FREQ_SEL);
-        source_freq_mhz = (pllfreq_sel) ? RTC_PLL_FREQ_480M : RTC_PLL_FREQ_320M;
+        source_freq_mhz = RTC_PLL_FREQ_480M; // PLL clock on ESP8684 was fixed to 480MHz
         if (cpuperiod_sel == DPORT_CPUPERIOD_SEL_80) {
-            div = (source_freq_mhz == RTC_PLL_FREQ_480M) ? 6 : 4;
+            div = 6;
             freq_mhz = 80;
-        } else if (cpuperiod_sel == DPORT_CPUPERIOD_SEL_160) {
-            div = (source_freq_mhz == RTC_PLL_FREQ_480M) ? 3 : 2;
-            div = 3;
-            freq_mhz = 160;
+        } else if (cpuperiod_sel == DPORT_CPUPERIOD_SEL_120) {
+            div = 4;
+            freq_mhz = 120;
         } else {
             SOC_LOGE(TAG, "unsupported frequency configuration");
             abort();
