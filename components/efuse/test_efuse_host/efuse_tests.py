@@ -336,6 +336,73 @@ name4,                   EFUSE_BLK3,                      4,                    
         with self.assertRaisesRegex(efuse_table_gen.InputError, "overlaps"):
             two_tables.verify()
 
+    def test_two_fields_with_lists(self):
+        csv = """
+MAC_FACTORY,                          EFUSE_BLK1,   40,    8,     Factory MAC addr [0]
+,                                     EFUSE_BLK1,   32,    8,     Factory MAC addr [1]
+,                                     EFUSE_BLK1,   24,    8,     Factory MAC addr [2]
+,                                     EFUSE_BLK1,   16,    8,     Factory MAC addr [3]
+,                                     EFUSE_BLK1,    8,    8,     Factory MAC addr [4]
+,                                     EFUSE_BLK1,    0,    8,     Factory MAC addr [5]
+MAC_EXT,                              EFUSE_BLK1,  123,    8,     Extend MAC addr [0]
+,                                     EFUSE_BLK1,  131,    8,     Extend MAC addr [1]
+                """
+        t = efuse_table_gen.FuseTable.from_csv(csv)
+        t.verify()
+
+        self.assertEqual(t[0].field_name, 'MAC_FACTORY')
+        self.assertEqual(t[0].group, str(0))
+        self.assertEqual(t[1].field_name, 'MAC_FACTORY')
+        self.assertEqual(t[1].group, str(1))
+        self.assertEqual(t[2].field_name, 'MAC_FACTORY')
+        self.assertEqual(t[2].group, str(2))
+        self.assertEqual(t[3].field_name, 'MAC_FACTORY')
+        self.assertEqual(t[3].group, str(3))
+        self.assertEqual(t[4].field_name, 'MAC_FACTORY')
+        self.assertEqual(t[4].group, str(4))
+        self.assertEqual(t[5].field_name, 'MAC_FACTORY')
+        self.assertEqual(t[5].group, str(5))
+
+        self.assertEqual(t[6].field_name, 'MAC_EXT')
+        self.assertEqual(t[6].group, str(0))
+        self.assertEqual(t[7].field_name, 'MAC_EXT')
+        self.assertEqual(t[7].group, str(1))
+
+    def test_two_fields_with_lists_and_field_between(self):
+        csv = """
+MAC_FACTORY,                          EFUSE_BLK1,   40,    8,     Factory MAC addr [0]
+,                                     EFUSE_BLK1,   32,    8,     Factory MAC addr [1]
+,                                     EFUSE_BLK1,   24,    8,     Factory MAC addr [2]
+,                                     EFUSE_BLK1,   16,    8,     Factory MAC addr [3]
+,                                     EFUSE_BLK1,    8,    8,     Factory MAC addr [4]
+,                                     EFUSE_BLK1,    0,    8,     Factory MAC addr [5]
+name2,                                EFUSE_BLK3,    5,    1,     comment
+MAC_EXT,                              EFUSE_BLK1,  123,    8,     Extend MAC addr [0]
+,                                     EFUSE_BLK1,  131,    8,     Extend MAC addr [1]
+                """
+        t = efuse_table_gen.FuseTable.from_csv(csv)
+        t.verify()
+
+        self.assertEqual(t[0].field_name, 'MAC_FACTORY')
+        self.assertEqual(t[0].group, str(0))
+        self.assertEqual(t[1].field_name, 'MAC_FACTORY')
+        self.assertEqual(t[1].group, str(1))
+        self.assertEqual(t[2].field_name, 'MAC_FACTORY')
+        self.assertEqual(t[2].group, str(2))
+        self.assertEqual(t[3].field_name, 'MAC_FACTORY')
+        self.assertEqual(t[3].group, str(3))
+        self.assertEqual(t[4].field_name, 'MAC_FACTORY')
+        self.assertEqual(t[4].group, str(4))
+        self.assertEqual(t[5].field_name, 'MAC_FACTORY')
+        self.assertEqual(t[5].group, str(5))
+
+        self.assertEqual(t[6].field_name, 'name2')
+
+        self.assertEqual(t[7].field_name, 'MAC_EXT')
+        self.assertEqual(t[7].group, str(0))
+        self.assertEqual(t[8].field_name, 'MAC_EXT')
+        self.assertEqual(t[8].group, str(1))
+
 
 if __name__ == "__main__":
     unittest.main()
