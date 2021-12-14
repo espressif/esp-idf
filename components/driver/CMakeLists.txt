@@ -21,8 +21,11 @@ set(srcs
 set(includes "include" "${target}/include" "deprecated")
 
 if(CONFIG_SOC_MCPWM_SUPPORTED)
-    list(APPEND srcs
-        "mcpwm.c")
+    list(APPEND srcs "mcpwm.c")
+endif()
+
+if(CONFIG_SOC_GDMA_SUPPORTED)
+    list(APPEND srcs "gdma.c")
 endif()
 
 if(${target} STREQUAL "esp32")
@@ -62,7 +65,6 @@ endif()
 if(${target} STREQUAL "esp32s3")
     list(APPEND srcs "adc_common.c"
                      "dedic_gpio.c"
-                     "gdma.c"
                      "sdmmc_host.c"
                      "sdmmc_transaction.c"
                      "rmt.c"
@@ -76,8 +78,7 @@ if(${target} STREQUAL "esp32s3")
 endif()
 
 if(IDF_TARGET STREQUAL "esp32c3")
-    list(APPEND srcs "gdma.c"
-                     "spi_slave_hd.c"
+    list(APPEND srcs "spi_slave_hd.c"
                      "adc_common.c"
                      "dedic_gpio.c"
                      "usb_serial_jtag.c"
@@ -91,8 +92,7 @@ if(IDF_TARGET STREQUAL "esp32c3")
 endif()
 
 if(IDF_TARGET STREQUAL "esp32h2")
-    list(APPEND srcs "gdma.c"
-                     "spi_slave_hd.c"
+    list(APPEND srcs "spi_slave_hd.c"
                      "adc_common.c"
                      "dedic_gpio.c"
                      "i2s.c"
