@@ -484,6 +484,22 @@ TEST_CASE("multi_heap aligned allocations", "[multi_heap]")
         }
     }
 
+    /* Check that TLSF doesn't allocate a memory space smaller than required.
+     * In any case, TLSF will write data in the previous block than the one
+     * allocated. Thus, we should try to get/allocate this previous block. If
+     * the poisoned filled pattern has beeen overwritten by TLSF, then this
+     * previous block will trigger an exception.
+     * More info on this bug in !16296. */
+    const size_t size = 50; /* TLSF will round the size up */
+    uint8_t *buf1 = (uint8_t *)multi_heap_aligned_alloc(heap, size, 4);
+    uint8_t *buf2 = (uint8_t *)multi_heap_aligned_alloc(heap, size, 4);
+    multi_heap_free(heap, buf1);
+    /* By specifying a size equal of the gap between buf1 and buf2. We are
+     * trying to force TLSF to allocate two consecutive blocks. */
+    buf1 = (uint8_t *)multi_heap_aligned_alloc(heap, buf2 - buf1, 4);
+    multi_heap_free(heap, buf2);
+
+
     printf("[ALIGNED_ALLOC] heap_size after: %d \n", multi_heap_free_size(heap));
     REQUIRE((old_size - multi_heap_free_size(heap)) <= leakage);
 }
