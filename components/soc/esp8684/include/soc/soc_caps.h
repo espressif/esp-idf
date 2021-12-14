@@ -74,7 +74,7 @@
 
 /*-------------------------- GDMA CAPS -------------------------------------*/
 #define SOC_GDMA_GROUPS                 (1U) // Number of GDMA groups
-#define SOC_GDMA_PAIRS_PER_GROUP        (3)  // Number of GDMA pairs in each group
+#define SOC_GDMA_PAIRS_PER_GROUP        (1U) // Number of GDMA pairs in each group
 #define SOC_GDMA_TX_RX_SHARE_INTERRUPT  (1)  // TX and RX channel in the same pair will share the same interrupt source number
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
