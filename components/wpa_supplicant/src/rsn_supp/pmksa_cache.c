@@ -435,7 +435,7 @@ int pmksa_cache_set_current(struct wpa_sm *sm, const u8 *pmkid,
                 network_ctx,
                 bssid);
     if (sm->cur_pmksa) {
-        wpa_hexdump(MSG_ERROR, "RSN: PMKSA cache entry found - PMKID",
+        wpa_hexdump(MSG_DEBUG, "RSN: PMKSA cache entry found - PMKID",
                 sm->cur_pmksa->pmkid, PMKID_LEN);
         return 0;
     }
