@@ -88,7 +88,6 @@ mainmenu "Espressif IoT Development Framework Configuration"
         select FREERTOS_UNICORE
         select IDF_TARGET_ARCH_RISCV
         select ESPTOOLPY_NO_STUB  # remove if ESPTOOL-303
-        select IDF_ENV_FPGA
 
     config IDF_TARGET_LINUX
         bool

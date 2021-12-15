@@ -9,7 +9,7 @@
 #define MHZ (1000000)
 
 #define DPORT_CPUPERIOD_SEL_80      0
-#define DPORT_CPUPERIOD_SEL_160     1
+#define DPORT_CPUPERIOD_SEL_120     1
 
 #define DPORT_SOC_CLK_SEL_XTAL    0
 #define DPORT_SOC_CLK_SEL_PLL    1

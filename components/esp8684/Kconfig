@@ -15,8 +15,6 @@ menu "ESP8684-Specific"
             bool "80 MHz"
         config ESP8684_DEFAULT_CPU_FREQ_120
             bool "120 MHz"
-        config ESP8684_DEFAULT_CPU_FREQ_160
-            bool "160 MHz"
     endchoice
 
     config ESP8684_DEFAULT_CPU_FREQ_MHZ
@@ -24,7 +22,6 @@ menu "ESP8684-Specific"
         default 40 if ESP8684_DEFAULT_CPU_FREQ_40
         default 80 if ESP8684_DEFAULT_CPU_FREQ_80
         default 120 if ESP8684_DEFAULT_CPU_FREQ_120
-        default 160 if ESP8684_DEFAULT_CPU_FREQ_160
 
     menu "Cache config"
 
