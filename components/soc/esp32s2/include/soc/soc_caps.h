@@ -39,6 +39,7 @@
 #pragma once
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
+#define SOC_ADC_SUPPORTED               1
 #define SOC_DAC_SUPPORTED               1
 #define SOC_TWAI_SUPPORTED              1
 #define SOC_CP_DMA_SUPPORTED            1
@@ -73,6 +74,7 @@
 /*-------------------------- ADC CAPS ----------------------------------------*/
 /*!< SAR ADC Module*/
 #define SOC_ADC_RTC_CTRL_SUPPORTED              1
+#define SOC_ADC_DIG_CTRL_SUPPORTED              1
 #define SOC_ADC_ARBITER_SUPPORTED               1
 #define SOC_ADC_FILTER_SUPPORTED                1
 #define SOC_ADC_MONITOR_SUPPORTED               1
@@ -93,7 +95,6 @@
 
 /*!< Calibration */
 #define SOC_ADC_CALIBRATION_V1_SUPPORTED        (1) /*!< support HW offset calibration version 1*/
-
 
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #define SOC_BROWNOUT_RESET_SUPPORTED 1

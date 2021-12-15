@@ -139,7 +139,6 @@ if(NOT BOOTLOADER_BUILD)
             "twai_hal.c"
             "twai_hal_iram.c"
             "aes_hal.c"
-            "esp32h2/adc_hal.c"
             "esp32h2/brownout_hal.c"
             "esp32h2/hmac_hal.c"
             "esp32h2/rtc_cntl_hal.c")
@@ -151,7 +150,6 @@ if(NOT BOOTLOADER_BUILD)
               "spi_flash_hal_gpspi.c"
               "spi_slave_hd_hal.c"
               "systimer_hal.c"
-              "esp8684/adc_hal.c"
               "esp8684/brownout_hal.c"
               "esp8684/rtc_cntl_hal.c")
     endif()

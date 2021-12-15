@@ -30,7 +30,7 @@ int esp_efuse_rtc_calib_get_ver(void)
     return cali_version_v1;
 }
 
-uint16_t esp_efuse_rtc_calib_get_init_code(int version, uint32_t adc_unit, int atten)
+uint32_t esp_efuse_rtc_calib_get_init_code(int version, uint32_t adc_unit, int atten)
 {
     assert(version == 1);
     assert(atten < 4);

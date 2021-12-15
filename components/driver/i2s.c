@@ -8,7 +8,6 @@
 #include <stdbool.h>
 #include <math.h>
 #include <esp_types.h>
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"

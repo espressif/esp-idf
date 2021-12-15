@@ -7,6 +7,10 @@ config SOC_CPU_CORES_NUM
     bool
     default y
 
+config SOC_ADC_SUPPORTED
+    bool
+    default y
+
 config SOC_DEDICATED_GPIO_SUPPORTED
     bool
     default y
@@ -107,6 +111,10 @@ config SOC_AES_SUPPORT_AES_256
     bool
     default y
 
+config SOC_ADC_DIG_CTRL_SUPPORTED
+    bool
+    default y
+
 config SOC_ADC_ARBITER_SUPPORTED
     bool
     default y
@@ -128,8 +136,8 @@ config SOC_ADC_MAX_CHANNEL_NUM
     default 5
 
 config SOC_ADC_DIGI_CONTROLLER_NUM
-    bool
-    default y
+    int
+    default 1
 
 config SOC_ADC_PATT_LEN_MAX
     int
