@@ -770,8 +770,8 @@ class IDFFPGADUT(IDFDUT):
     def burn_efuse(self, field, val):
         if not self.efuse_operations:
             self.enable_efuses()
-        BurnEfuseArgs = collections.namedtuple('burn_efuse_args', ['name_value_pairs', 'only_burn_at_end'])
-        args = BurnEfuseArgs({field: val}, False)
+        BurnEfuseArgs = collections.namedtuple('burn_efuse_args', ['name_value_pairs'])
+        args = BurnEfuseArgs({field: val})
         self.efuse_operations.burn_efuse(self.esp, self.efuses, args)
 
     def burn_efuse_key(self, key, purpose, block):
@@ -779,11 +779,11 @@ class IDFFPGADUT(IDFDUT):
             self.enable_efuses()
         BurnKeyArgs = collections.namedtuple('burn_key_args',
                                              ['keyfile', 'keypurpose', 'block',
-                                              'force_write_always', 'no_write_protect', 'no_read_protect', 'only_burn_at_end'])
+                                              'force_write_always', 'no_write_protect', 'no_read_protect'])
         args = BurnKeyArgs([key],
                            [purpose],
                            [block],
-                           False, False, False, False)
+                           False, False, False)
         self.efuse_operations.burn_key(self.esp, self.efuses, args)
 
     def burn_efuse_key_digest(self, key, purpose, block):
@@ -791,11 +791,11 @@ class IDFFPGADUT(IDFDUT):
             self.enable_efuses()
         BurnDigestArgs = collections.namedtuple('burn_key_digest_args',
                                                 ['keyfile', 'keypurpose', 'block',
-                                                 'force_write_always', 'no_write_protect', 'no_read_protect', 'only_burn_at_end'])
+                                                 'force_write_always', 'no_write_protect', 'no_read_protect'])
         args = BurnDigestArgs([open(key, 'rb')],
                               [purpose],
                               [block],
-                              False, False, True, False)
+                              False, False, True)
         self.efuse_operations.burn_key_digest(self.esp, self.efuses, args)
 
     def reset_efuses(self):
