@@ -1,0 +1,28 @@
+menu "Example Configuration"
+
+    config TEST_MDNS_HOSTNAME
+        string "mDNS Hostname"
+        default "esp32-mdns"
+        help
+            mDNS Hostname for example to use
+
+    config TEST_MDNS_INSTANCE
+        string "mDNS Instance Name"
+        default "ESP32 with mDNS"
+        help
+            mDNS Instance Name for example to use
+
+    config TEST_MDNS_PUBLISH_DELEGATE_HOST
+        bool "Publish a delegated host"
+        help
+            Enable publishing a delegated host other than ESP32.
+            The example will also add a mock service for this host.
+
+    config TEST_MDNS_ADD_MAC_TO_HOSTNAME
+        bool "Add mac suffix to hostname"
+        default n
+        help
+            If enabled, a portion of MAC address is added to the hostname, this is used
+            for evaluation of tests in CI
+
+endmenu
