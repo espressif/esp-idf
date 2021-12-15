@@ -13,10 +13,6 @@ import ttfw_idf
 from tiny_test_fw import DUT
 from tiny_test_fw.Utility import console_log
 
-stop_mdns_server = Event()
-esp_answered = Event()
-esp_delegated_answered = Event()
-
 
 def get_dns_query_for_esp(esp_host):
     dns = dpkt.dns.DNS(b'\x00\x00\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x01')
@@ -52,8 +48,7 @@ def get_dns_answer_to_mdns_lwip(tester_host, id):
     return dns.pack()
 
 
-def mdns_server(esp_host):
-    global esp_answered
+def mdns_server(esp_host, events):
     UDP_IP = '0.0.0.0'
     UDP_PORT = 5353
     MCAST_GRP = '224.0.0.251'
@@ -68,14 +63,14 @@ def mdns_server(esp_host):
     mreq = struct.pack('4sl', socket.inet_aton(MCAST_GRP), socket.INADDR_ANY)
     sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
     last_query_timepoint = time.time()
-    while not stop_mdns_server.is_set():
+    while not events['stop'].is_set():
         try:
             current_time = time.time()
             if current_time - last_query_timepoint > QUERY_TIMEOUT:
                 last_query_timepoint = current_time
-                if not esp_answered.is_set():
+                if not events['esp_answered'].is_set():
                     sock.sendto(get_dns_query_for_esp(esp_host), (MCAST_GRP, UDP_PORT))
-                if not esp_delegated_answered.is_set():
+                if not events['esp_delegated_answered'].is_set():
                     sock.sendto(get_dns_query_for_esp(esp_host + '-delegated'), (MCAST_GRP, UDP_PORT))
             timeout = max(0, QUERY_TIMEOUT - (current_time - last_query_timepoint))
             read_socks, _, _ = select.select([sock], [], [], timeout)
@@ -94,19 +89,17 @@ def mdns_server(esp_host):
                 console_log('Received answer from {}'.format(dns.an[0].name))
                 if dns.an[0].name == esp_host + u'.local':
                     console_log('Received answer to esp32-mdns query: {}'.format(dns.__repr__()))
-                    esp_answered.set()
+                    events['esp_answered'].set()
                 if dns.an[0].name == esp_host + u'-delegated.local':
                     console_log('Received answer to esp32-mdns-delegate query: {}'.format(dns.__repr__()))
-                    esp_delegated_answered.set()
+                    events['esp_delegated_answered'].set()
         except socket.timeout:
             break
         except dpkt.UnpackError:
             continue
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_EthKitV1')
 def test_examples_protocol_mdns(env, config):
-    global stop_mdns_server
     """
     steps: |
       1. obtain IP address + init mdns example
@@ -114,7 +107,7 @@ def test_examples_protocol_mdns(env, config):
       3. check the mdns name is accessible
       4. check DUT output if mdns advertized host is resolved
     """
-    dut1 = env.get_dut('mdns-test', 'examples/protocols/mdns', dut_class=ttfw_idf.ESP32DUT, app_config_name='eth_kit')
+    dut1 = env.get_dut('mdns-test', 'examples/protocols/mdns', dut_class=ttfw_idf.ESP32DUT, app_config_name=config)
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, 'mdns_test.bin')
     bin_size = os.path.getsize(binary_file)
@@ -123,7 +116,9 @@ def test_examples_protocol_mdns(env, config):
     dut1.start_app()
     # 2. get the dut host name (and IP address)
     specific_host = dut1.expect(re.compile(r'mdns hostname set to: \[([^\]]+)\]'), timeout=30)[0]
-    mdns_responder = Thread(target=mdns_server, args=(str(specific_host),))
+
+    mdns_server_events = {'stop': Event(), 'esp_answered': Event(), 'esp_delegated_answered': Event()}
+    mdns_responder = Thread(target=mdns_server, args=(str(specific_host), mdns_server_events))
     try:
         ip_address = dut1.expect(re.compile(r' eth ip: ([^,]+),'), timeout=30)[0]
         console_log('Connected to AP with IP: {}'.format(ip_address))
@@ -132,9 +127,9 @@ def test_examples_protocol_mdns(env, config):
     try:
         # 3. check the mdns name is accessible
         mdns_responder.start()
-        if not esp_answered.wait(timeout=30):
+        if not mdns_server_events['esp_answered'].wait(timeout=30):
             raise ValueError('Test has failed: did not receive mdns answer within timeout')
-        if not esp_delegated_answered.wait(timeout=30):
+        if not mdns_server_events['esp_delegated_answered'].wait(timeout=30):
             raise ValueError('Test has failed: did not receive mdns answer for delegated host within timeout')
         # 4. check DUT output if mdns advertized host is resolved
         dut1.expect(re.compile(r'mdns-test: Query A: tinytester.local resolved to: 127.0.0.1'), timeout=30)
@@ -148,23 +143,23 @@ def test_examples_protocol_mdns(env, config):
             raise ValueError('Test has failed: Incorrectly resolved DUT hostname using dig'
                              "Output should've contained DUT's IP address:{}".format(ip_address))
     finally:
-        stop_mdns_server.set()
+        mdns_server_events['stop'].set()
         mdns_responder.join()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
+@ttfw_idf.idf_example_test(env_tag='Example_EthKitV1')
 def test_examples_protocol_mdns_default(env, _):
-    test_examples_protocol_mdns(env, None)
+    test_examples_protocol_mdns(env, 'eth_def')
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
+@ttfw_idf.idf_example_test(env_tag='Example_EthKitV1')
 def test_examples_protocol_mdns_socket(env, _):
-    test_examples_protocol_mdns(env, 'socket')
+    test_examples_protocol_mdns(env, 'eth_socket')
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
+@ttfw_idf.idf_example_test(env_tag='Example_EthKitV1')
 def test_examples_protocol_mdns_custom_netif(env, _):
-    test_examples_protocol_mdns(env, 'custom_netif')
+    test_examples_protocol_mdns(env, 'eth_custom_netif')
 
 
 if __name__ == '__main__':
