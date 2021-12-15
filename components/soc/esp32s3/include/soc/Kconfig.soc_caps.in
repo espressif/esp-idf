@@ -135,6 +135,10 @@ config SOC_RTCIO_WAKE_SUPPORTED
     bool
     default y
 
+config SOC_ADC_SUPPORTED
+    bool
+    default y
+
 config SOC_PCNT_SUPPORTED
     bool
     default y
@@ -260,6 +264,10 @@ config SOC_APPCPU_HAS_CLOCK_GATING_BUG
     default y
 
 config SOC_ADC_RTC_CTRL_SUPPORTED
+    bool
+    default y
+
+config SOC_ADC_DIG_CTRL_SUPPORTED
     bool
     default y
 

@@ -7,7 +7,6 @@
  Tests for the adc2 device driver
 */
 #include "esp_system.h"
-#include "driver/adc.h"
 #include "unity.h"
 #include "esp_system.h"
 #include "esp_event.h"
@@ -16,6 +15,7 @@
 #include "nvs_flash.h"
 #include "test_utils.h"
 #include "driver/gpio.h"
+#include "driver/adc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"

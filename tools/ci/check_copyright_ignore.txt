@@ -759,7 +759,6 @@ components/esp_serial_slave_link/include/esp_serial_slave_link/essl.h
 components/esp_serial_slave_link/include/esp_serial_slave_link/essl_sdio.h
 components/esp_serial_slave_link/include/esp_serial_slave_link/essl_spi.h
 components/esp_serial_slave_link/include/essl_spi/esp32c3_defs.h
-components/esp_serial_slave_link/include/essl_spi/esp32h2_defs.h
 components/esp_serial_slave_link/include/essl_spi/esp32s2_defs.h
 components/esp_serial_slave_link/include/essl_spi/esp32s3_defs.h
 components/esp_system/eh_frame_parser.c
@@ -973,12 +972,9 @@ components/hal/aes_hal.c
 components/hal/cpu_hal.c
 components/hal/dac_hal.c
 components/hal/ds_hal.c
-components/hal/esp32/adc_hal.c
 components/hal/esp32/brownout_hal.c
 components/hal/esp32/gpio_hal_workaround.c
-components/hal/esp32/include/hal/adc_hal.h
 components/hal/esp32/include/hal/adc_hal_conf.h
-components/hal/esp32/include/hal/adc_ll.h
 components/hal/esp32/include/hal/aes_ll.h
 components/hal/esp32/include/hal/can_hal.h
 components/hal/esp32/include/hal/can_ll.h
@@ -1009,12 +1005,9 @@ components/hal/esp32/include/hal/twai_ll.h
 components/hal/esp32/include/hal/uart_ll.h
 components/hal/esp32/interrupt_descriptor_table.c
 components/hal/esp32/touch_sensor_hal.c
-components/hal/esp32c3/adc_hal.c
 components/hal/esp32c3/brownout_hal.c
 components/hal/esp32c3/hmac_hal.c
-components/hal/esp32c3/include/hal/adc_hal.h
 components/hal/esp32c3/include/hal/adc_hal_conf.h
-components/hal/esp32c3/include/hal/adc_ll.h
 components/hal/esp32c3/include/hal/aes_ll.h
 components/hal/esp32c3/include/hal/clk_gate_ll.h
 components/hal/esp32c3/include/hal/ds_ll.h
@@ -1040,12 +1033,9 @@ components/hal/esp32c3/include/hal/uart_ll.h
 components/hal/esp32c3/include/hal/uhci_ll.h
 components/hal/esp32c3/include/hal/usb_serial_jtag_ll.h
 components/hal/esp32c3/rtc_cntl_hal.c
-components/hal/esp32h2/adc_hal.c
 components/hal/esp32h2/brownout_hal.c
 components/hal/esp32h2/hmac_hal.c
-components/hal/esp32h2/include/hal/adc_hal.h
 components/hal/esp32h2/include/hal/adc_hal_conf.h
-components/hal/esp32h2/include/hal/adc_ll.h
 components/hal/esp32h2/include/hal/aes_ll.h
 components/hal/esp32h2/include/hal/clk_gate_ll.h
 components/hal/esp32h2/include/hal/ds_ll.h
@@ -1068,13 +1058,9 @@ components/hal/esp32h2/include/hal/uhci_ll.h
 components/hal/esp32h2/include/hal/uhci_types.h
 components/hal/esp32h2/include/hal/usb_serial_jtag_ll.h
 components/hal/esp32h2/rtc_cntl_hal.c
-components/hal/esp32s2/adc_hal.c
 components/hal/esp32s2/brownout_hal.c
 components/hal/esp32s2/cp_dma_hal.c
-components/hal/esp32s2/dac_hal.c
-components/hal/esp32s2/include/hal/adc_hal.h
 components/hal/esp32s2/include/hal/adc_hal_conf.h
-components/hal/esp32s2/include/hal/adc_ll.h
 components/hal/esp32s2/include/hal/aes_ll.h
 components/hal/esp32s2/include/hal/clk_gate_ll.h
 components/hal/esp32s2/include/hal/cp_dma_hal.h
@@ -1100,7 +1086,6 @@ components/hal/esp32s2/include/hal/sigmadelta_ll.h
 components/hal/esp32s2/include/hal/soc_ll.h
 components/hal/esp32s2/include/hal/spi_flash_encrypted_ll.h
 components/hal/esp32s2/include/hal/spi_flash_ll.h
-components/hal/esp32s2/include/hal/spi_ll.h
 components/hal/esp32s2/include/hal/spimem_flash_ll.h
 components/hal/esp32s2/include/hal/systimer_ll.h
 components/hal/esp32s2/include/hal/touch_sensor_hal.h
@@ -1113,7 +1098,6 @@ components/hal/esp32s2/interrupt_descriptor_table.c
 components/hal/esp32s2/touch_sensor_hal.c
 components/hal/esp32s3/brownout_hal.c
 components/hal/esp32s3/include/hal/adc_hal_conf.h
-components/hal/esp32s3/include/hal/adc_ll.h
 components/hal/esp32s3/include/hal/aes_ll.h
 components/hal/esp32s3/include/hal/cpu_ll.h
 components/hal/esp32s3/include/hal/gpspi_flash_ll.h
@@ -1141,7 +1125,6 @@ components/hal/esp32s3/interrupt_descriptor_table.c
 components/hal/gpio_hal.c
 components/hal/i2c_hal.c
 components/hal/i2c_hal_iram.c
-components/hal/include/hal/adc_hal.h
 components/hal/include/hal/aes_hal.h
 components/hal/include/hal/aes_types.h
 components/hal/include/hal/brownout_hal.h
@@ -1649,7 +1632,6 @@ components/soc/esp32/include/soc/mmu.h
 components/soc/esp32/include/soc/nrx_reg.h
 components/soc/esp32/include/soc/pcnt_reg.h
 components/soc/esp32/include/soc/pcnt_struct.h
-components/soc/esp32/include/soc/periph_defs.h
 components/soc/esp32/include/soc/pid.h
 components/soc/esp32/include/soc/reset_reasons.h
 components/soc/esp32/include/soc/rmt_reg.h
@@ -1744,7 +1726,6 @@ components/soc/esp32c3/include/soc/rtc_i2c_reg.h
 components/soc/esp32c3/include/soc/rtc_i2c_struct.h
 components/soc/esp32c3/include/soc/sensitive_reg.h
 components/soc/esp32c3/include/soc/sensitive_struct.h
-components/soc/esp32c3/include/soc/soc_caps.h
 components/soc/esp32c3/include/soc/soc_pins.h
 components/soc/esp32c3/include/soc/spi_mem_reg.h
 components/soc/esp32c3/include/soc/spi_mem_struct.h
@@ -1875,7 +1856,6 @@ components/soc/esp32s2/include/soc/mmu.h
 components/soc/esp32s2/include/soc/nrx_reg.h
 components/soc/esp32s2/include/soc/pcnt_reg.h
 components/soc/esp32s2/include/soc/pcnt_struct.h
-components/soc/esp32s2/include/soc/periph_defs.h
 components/soc/esp32s2/include/soc/reset_reasons.h
 components/soc/esp32s2/include/soc/rmt_reg.h
 components/soc/esp32s2/include/soc/rmt_struct.h
@@ -1940,7 +1920,6 @@ components/soc/esp32s3/include/soc/adc_channel.h
 components/soc/esp32s3/include/soc/apb_ctrl_reg.h
 components/soc/esp32s3/include/soc/apb_ctrl_struct.h
 components/soc/esp32s3/include/soc/apb_saradc_reg.h
-components/soc/esp32s3/include/soc/apb_saradc_struct.h
 components/soc/esp32s3/include/soc/assist_debug_reg.h
 components/soc/esp32s3/include/soc/assist_debug_struct.h
 components/soc/esp32s3/include/soc/bb_reg.h
@@ -1986,7 +1965,6 @@ components/soc/esp32s3/include/soc/pcnt_reg.h
 components/soc/esp32s3/include/soc/pcnt_struct.h
 components/soc/esp32s3/include/soc/peri_backup_reg.h
 components/soc/esp32s3/include/soc/peri_backup_struct.h
-components/soc/esp32s3/include/soc/periph_defs.h
 components/soc/esp32s3/include/soc/reset_reasons.h
 components/soc/esp32s3/include/soc/rmt_reg.h
 components/soc/esp32s3/include/soc/rmt_struct.h
@@ -2720,10 +2698,8 @@ examples/network/simple_sniffer/components/pcap/pcap.h
 examples/network/simple_sniffer/main/cmd_sniffer.c
 examples/network/simple_sniffer/main/cmd_sniffer.h
 examples/network/simple_sniffer/main/simple_sniffer_example_main.c
-examples/peripherals/adc/esp32c3/adc/main/adc_dma_example_main.c
 examples/peripherals/adc/single_read/adc/main/adc1_example_main.c
 examples/peripherals/adc/single_read/adc2/main/adc2_example_main.c
-examples/peripherals/adc/single_read/single_read/main/single_read.c
 examples/peripherals/gpio/generic_gpio/example_test.py
 examples/peripherals/gpio/generic_gpio/main/gpio_example_main.c
 examples/peripherals/gpio/matrix_keyboard/components/matrix_keyboard/include/matrix_keyboard.h
