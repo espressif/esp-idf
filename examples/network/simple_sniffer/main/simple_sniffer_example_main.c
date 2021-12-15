@@ -135,8 +135,8 @@ static void initialize_eth(void)
     phy_config.phy_addr = CONFIG_SNIFFER_ETH_PHY_ADDR;
     phy_config.reset_gpio_num = CONFIG_SNIFFER_ETH_PHY_RST_GPIO;
 #if CONFIG_SNIFFER_USE_INTERNAL_ETHERNET
-    mac_config.smi_mdc_gpio_num = CONFIG_SNIFFER_ETH_MDC_GPIO;
-    mac_config.smi_mdio_gpio_num = CONFIG_SNIFFER_ETH_MDIO_GPIO;
+    mac_config.esp32_emac.smi_mdc_gpio_num = CONFIG_SNIFFER_ETH_MDC_GPIO;
+    mac_config.esp32_emac.smi_mdio_gpio_num = CONFIG_SNIFFER_ETH_MDIO_GPIO;
     esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
 #if CONFIG_SNIFFER_ETH_PHY_IP101
     esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);

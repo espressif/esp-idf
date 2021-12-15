@@ -439,7 +439,6 @@ components/esp_common/include/esp_compiler.h
 components/esp_common/include/esp_types.h
 components/esp_common/src/esp_err_to_name.c
 components/esp_common/test/test_attr.c
-components/esp_eth/include/esp_eth_mac.h
 components/esp_eth/include/eth_phy_regs_struct.h
 components/esp_eth/src/dm9051.h
 components/esp_eth/src/esp_eth_mac_openeth.c

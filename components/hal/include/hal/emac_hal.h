@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -189,7 +189,7 @@ void emac_hal_set_csr_clock_range(emac_hal_context_t *hal, int freq);
 
 void emac_hal_init_mac_default(emac_hal_context_t *hal);
 
-void emac_hal_init_dma_default(emac_hal_context_t *hal);
+void emac_hal_init_dma_default(emac_hal_context_t *hal, uint32_t dma_rx_burst_len);
 
 void emac_hal_set_speed(emac_hal_context_t *hal, uint32_t speed);
 

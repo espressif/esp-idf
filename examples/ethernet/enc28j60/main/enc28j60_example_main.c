@@ -101,8 +101,7 @@ void app_main(void)
     enc28j60_config.int_gpio_num = CONFIG_EXAMPLE_ENC28J60_INT_GPIO;
 
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
-    mac_config.smi_mdc_gpio_num = -1;  // ENC28J60 doesn't have SMI interface
-    mac_config.smi_mdio_gpio_num = -1;
+    mac_config.p_custom_mac = NULL;  // ENC28J60 MAC doesn't use any specific config
     esp_eth_mac_t *mac = esp_eth_mac_new_enc28j60(&enc28j60_config, &mac_config);
 
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();

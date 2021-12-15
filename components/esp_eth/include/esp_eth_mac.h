@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
 #include <stdbool.h>
@@ -365,6 +357,26 @@ typedef union {
     } rmii; /*!< EMAC RMII Clock Configuration */
 } eth_mac_clock_config_t;
 
+/**
+* @brief Options of EMAC DMA burst len
+*/
+typedef enum {
+    ETH_DMA_RX_BURST_LEN_32,
+    ETH_DMA_RX_BURST_LEN_16,
+    ETH_DMA_RX_BURST_LEN_8,
+} eth_mac_dma_rx_burst_len_t;
+
+/**
+* @brief EMAC specific configuration (sub-struct of Ethernet MAC config)
+*
+*/
+typedef struct {
+    int smi_mdc_gpio_num;                /*!< SMI MDC GPIO number, set to -1 could bypass the SMI GPIO configuration */
+    int smi_mdio_gpio_num;               /*!< SMI MDIO GPIO number, set to -1 could bypass the SMI GPIO configuration */
+    eth_data_interface_t interface;      /*!< EMAC Data interface to PHY (MII/RMII) */
+    eth_mac_clock_config_t clock_config; /*!< EMAC Interface clock configuration */
+    eth_mac_dma_rx_burst_len_t dma_rx_burst_len; /*!< EMAC DMA Rx burst len configuration */
+} eth_esp32_emac_t;
 
 /**
 * @brief Configuration of Ethernet MAC object
@@ -374,11 +386,15 @@ typedef struct {
     uint32_t sw_reset_timeout_ms;        /*!< Software reset timeout value (Unit: ms) */
     uint32_t rx_task_stack_size;         /*!< Stack size of the receive task */
     uint32_t rx_task_prio;               /*!< Priority of the receive task */
-    int smi_mdc_gpio_num;                /*!< SMI MDC GPIO number, set to -1 could bypass the SMI GPIO configuration */
-    int smi_mdio_gpio_num;               /*!< SMI MDIO GPIO number, set to -1 could bypass the SMI GPIO configuration */
     uint32_t flags;                      /*!< Flags that specify extra capability for mac driver */
-    eth_data_interface_t interface;      /*!< EMAC Data interface to PHY (MII/RMII) */
-    eth_mac_clock_config_t clock_config; /*!< EMAC Interface clock configuration */
+    union {
+        eth_esp32_emac_t esp32_emac;            /*!< ESP32's internal EMAC configuration */
+        // Placeholder for another supported MAC configs
+        struct eth_custom_mac *p_custom_mac;    /*!< Opaque pointer to an additional custom MAC config
+                                                 * Note: This config could be used for IDF supported MAC
+                                                 * as well as any additional MAC introduced in user-space
+                                                 * */
+    };                                  /*!< Union of mutually exclusive vendor specific MAC options */
 } eth_mac_config_t;
 
 #define ETH_MAC_FLAG_WORK_WITH_CACHE_DISABLE (1 << 0) /*!< MAC driver can work when cache is disabled */
@@ -388,21 +404,24 @@ typedef struct {
  * @brief Default configuration for Ethernet MAC object
  *
  */
+
 #define ETH_MAC_DEFAULT_CONFIG()                          \
     {                                                     \
         .sw_reset_timeout_ms = 100,                       \
         .rx_task_stack_size = 2048,                       \
         .rx_task_prio = 15,                               \
-        .smi_mdc_gpio_num = 23,                           \
-        .smi_mdio_gpio_num = 18,                          \
         .flags = 0,                                       \
-        .interface = EMAC_DATA_INTERFACE_RMII,            \
-        .clock_config =                                   \
-        {                                                 \
-            .rmii =                                       \
+        .esp32_emac = {                                   \
+            .smi_mdc_gpio_num = 23,                       \
+            .smi_mdio_gpio_num = 18,                      \
+            .interface = EMAC_DATA_INTERFACE_RMII,        \
+            .clock_config =                               \
             {                                             \
-                .clock_mode = EMAC_CLK_DEFAULT,           \
-                .clock_gpio = EMAC_CLK_IN_GPIO            \
+                .rmii =                                   \
+                {                                         \
+                    .clock_mode = EMAC_CLK_DEFAULT,       \
+                    .clock_gpio = EMAC_CLK_IN_GPIO        \
+                }                                         \
             }                                             \
         }                                                 \
     }
