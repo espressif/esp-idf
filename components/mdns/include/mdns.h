@@ -269,6 +269,7 @@ esp_err_t mdns_service_remove(const char * service_type, const char * proto);
 /**
  * @brief  Remove service from mDNS server with hostname
  *
+ * @param  instance     instance name
  * @param  service_type service type (_http, _ftp, etc)
  * @param  proto        service protocol (_tcp, _udp)
  * @param  hostname     service hostname. If NULL, local hostname will be used.
@@ -279,7 +280,7 @@ esp_err_t mdns_service_remove(const char * service_type, const char * proto);
  *     - ESP_ERR_NOT_FOUND Service not found
  *     - ESP_ERR_NO_MEM memory error
  */
-esp_err_t mdns_service_remove_for_host(const char * service_type, const char * proto, const char *hostname);
+esp_err_t mdns_service_remove_for_host(const char *instance, const char * service_type, const char * proto, const char *hostname);
 
 /**
  * @brief  Set instance name for service
@@ -299,6 +300,7 @@ esp_err_t mdns_service_instance_name_set(const char * service_type, const char *
 /**
  * @brief  Set instance name for service with hostname
  *
+ * @param  instance_old     original instance name
  * @param  service_type     service type (_http, _ftp, etc)
  * @param  proto            service protocol (_tcp, _udp)
  * @param  hostname         service hostname. If NULL, local hostname will be used.
@@ -310,7 +312,7 @@ esp_err_t mdns_service_instance_name_set(const char * service_type, const char *
  *     - ESP_ERR_NOT_FOUND Service not found
  *     - ESP_ERR_NO_MEM memory error
  */
-esp_err_t mdns_service_instance_name_set_for_host(const char * service_type, const char * proto, const char * hostname,
+esp_err_t mdns_service_instance_name_set_for_host(const char * instance_old, const char * service_type, const char * proto, const char * hostname,
                                                   const char * instance_name);
 
 /**
@@ -332,6 +334,7 @@ esp_err_t mdns_service_port_set(const char * service_type, const char * proto, u
 /**
  * @brief  Set service port with hostname
  *
+ * @param  instance     instance name
  * @param  service_type service type (_http, _ftp, etc)
  * @param  proto        service protocol (_tcp, _udp)
  * @param  hostname     service hostname. If NULL, local hostname will be used.
@@ -343,7 +346,7 @@ esp_err_t mdns_service_port_set(const char * service_type, const char * proto, u
  *     - ESP_ERR_NOT_FOUND Service not found
  *     - ESP_ERR_NO_MEM memory error
  */
-esp_err_t mdns_service_port_set_for_host(const char * service_type, const char * proto, const char * hostname,
+esp_err_t mdns_service_port_set_for_host(const char * instance, const char * service_type, const char * proto, const char * hostname,
                                          uint16_t port);
 
 /**
@@ -369,6 +372,7 @@ esp_err_t mdns_service_txt_set(const char * service_type, const char * proto, md
  *
  * @note The value length of txt items will be automatically decided by strlen
  *
+ * @param  instance     instance name
  * @param  service_type service type (_http, _ftp, etc)
  * @param  proto        service protocol (_tcp, _udp)
  * @param  hostname     service hostname. If NULL, local hostname will be used.
@@ -381,7 +385,7 @@ esp_err_t mdns_service_txt_set(const char * service_type, const char * proto, md
  *     - ESP_ERR_NOT_FOUND Service not found
  *     - ESP_ERR_NO_MEM memory error
  */
-esp_err_t mdns_service_txt_set_for_host(const char * service_type, const char * proto, const char * hostname,
+esp_err_t mdns_service_txt_set_for_host(const char * instance, const char * service_type, const char * proto, const char * hostname,
                                         mdns_txt_item_t txt[], uint8_t num_items);
 
 /**
@@ -425,6 +429,7 @@ esp_err_t mdns_service_txt_item_set_with_explicit_value_len(const char *service_
  *
  * @note The value length will be automatically decided by strlen
  *
+ * @param  instance     instance name
  * @param  service_type service type (_http, _ftp, etc)
  * @param  proto        service protocol (_tcp, _udp)
  * @param  hostname     service hostname. If NULL, local hostname will be used.
@@ -437,12 +442,13 @@ esp_err_t mdns_service_txt_item_set_with_explicit_value_len(const char *service_
  *     - ESP_ERR_NOT_FOUND Service not found
  *     - ESP_ERR_NO_MEM memory error
  */
-esp_err_t mdns_service_txt_item_set_for_host(const char * service_type, const char * proto, const char * hostname,
+esp_err_t mdns_service_txt_item_set_for_host(const char * instance, const char * service_type, const char * proto, const char * hostname,
                                              const char * key, const char * value);
 
 /**
  * @brief  Set/Add TXT item for service TXT record with hostname and txt value length
  *
+ * @param  instance     instance name
  * @param  service_type service type (_http, _ftp, etc)
  * @param  proto        service protocol (_tcp, _udp)
  * @param  hostname     service hostname. If NULL, local hostname will be used.
@@ -456,7 +462,7 @@ esp_err_t mdns_service_txt_item_set_for_host(const char * service_type, const ch
  *     - ESP_ERR_NOT_FOUND Service not found
  *     - ESP_ERR_NO_MEM memory error
  */
-esp_err_t mdns_service_txt_item_set_for_host_with_explicit_value_len(const char *service_type, const char *proto,
+esp_err_t mdns_service_txt_item_set_for_host_with_explicit_value_len(const char * instance, const char *service_type, const char *proto,
                                                                      const char *hostname, const char *key,
                                                                      const char *value, uint8_t value_len);
 
@@ -478,6 +484,7 @@ esp_err_t mdns_service_txt_item_remove(const char * service_type, const char * p
 /**
  * @brief  Remove TXT item for service TXT record with hostname
  *
+ * @param  instance     instance name
  * @param  service_type service type (_http, _ftp, etc)
  * @param  proto        service protocol (_tcp, _udp)
  * @param  hostname     service hostname. If NULL, local hostname will be used.
@@ -489,7 +496,7 @@ esp_err_t mdns_service_txt_item_remove(const char * service_type, const char * p
  *     - ESP_ERR_NOT_FOUND Service not found
  *     - ESP_ERR_NO_MEM memory error
  */
-esp_err_t mdns_service_txt_item_remove_for_host(const char * service_type, const char * proto, const char * hostname,
+esp_err_t mdns_service_txt_item_remove_for_host(const char * instance, const char * service_type, const char * proto, const char * hostname,
                                                 const char * key);
 
 /**

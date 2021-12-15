@@ -5131,11 +5131,7 @@ esp_err_t mdns_service_add_for_host(const char * instance, const char * service,
         return ESP_ERR_NO_MEM;
     }
 
-#if CONFIG_MDNS_MULTIPLE_INSTANCE
     mdns_srv_item_t * item = _mdns_get_service_item_instance(instance, service, proto, hostname);
-#else
-    mdns_srv_item_t * item = _mdns_get_service_item(service, proto, hostname);
-#endif // CONFIG_MDNS_MULTIPLE_INSTANCE
     if (item) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -5173,7 +5169,7 @@ esp_err_t mdns_service_add_for_host(const char * instance, const char * service,
 
     size_t start = xTaskGetTickCount();
     size_t timeout_ticks = pdMS_TO_TICKS(MDNS_SERVICE_ADD_TIMEOUT_MS);
-    while (_mdns_get_service_item(service, proto, hostname) == NULL) {
+    while (_mdns_get_service_item_instance(instance, service, proto, hostname) == NULL) {
         uint32_t expired = xTaskGetTickCount() - start;
         if (expired >= timeout_ticks) {
             return ESP_FAIL; // Timeout
@@ -5204,12 +5200,12 @@ bool mdns_service_exists_with_instance(const char *instance, const char *service
     return _mdns_get_service_item_instance(instance, service_type, proto, hostname) != NULL;
 }
 
-esp_err_t mdns_service_port_set_for_host(const char * service, const char * proto, const char * hostname, uint16_t port)
+esp_err_t mdns_service_port_set_for_host(const char *instance, const char * service, const char * proto, const char * hostname, uint16_t port)
 {
     if (!_mdns_server || !_mdns_server->services || _str_null_or_empty(service) || _str_null_or_empty(proto) || !port) {
         return ESP_ERR_INVALID_ARG;
     }
-    mdns_srv_item_t * s = _mdns_get_service_item(service, proto, hostname);
+    mdns_srv_item_t * s = _mdns_get_service_item_instance(instance, service, proto, hostname);
     if (!s) {
         return ESP_ERR_NOT_FOUND;
     }
@@ -5234,16 +5230,16 @@ esp_err_t mdns_service_port_set(const char * service, const char * proto, uint16
     if (!_mdns_server) {
         return ESP_ERR_INVALID_STATE;
     }
-    return mdns_service_port_set_for_host(service, proto, _mdns_server->hostname, port);
+    return mdns_service_port_set_for_host(NULL, service, proto, _mdns_server->hostname, port);
 }
 
-esp_err_t mdns_service_txt_set_for_host(const char * service, const char * proto, const char * hostname,
+esp_err_t mdns_service_txt_set_for_host(const char * instance, const char * service, const char * proto, const char * hostname,
                                         mdns_txt_item_t txt[], uint8_t num_items)
 {
     if (!_mdns_server || !_mdns_server->services || _str_null_or_empty(service) || _str_null_or_empty(proto) || (num_items && txt == NULL)) {
         return ESP_ERR_INVALID_ARG;
     }
-    mdns_srv_item_t * s = _mdns_get_service_item(service, proto, hostname);
+    mdns_srv_item_t * s = _mdns_get_service_item_instance(instance, service, proto, hostname);
     if (!s) {
         return ESP_ERR_NOT_FOUND;
     }
@@ -5279,10 +5275,10 @@ esp_err_t mdns_service_txt_set(const char * service, const char * proto, mdns_tx
     if (!_mdns_server) {
         return ESP_ERR_INVALID_STATE;
     }
-    return mdns_service_txt_set_for_host(service, proto, _mdns_server->hostname, txt, num_items);
+    return mdns_service_txt_set_for_host(NULL, service, proto, _mdns_server->hostname, txt, num_items);
 }
 
-esp_err_t mdns_service_txt_item_set_for_host_with_explicit_value_len(const char *service, const char *proto,
+esp_err_t mdns_service_txt_item_set_for_host_with_explicit_value_len(const char * instance, const char *service, const char *proto,
                                                                      const char *hostname, const char *key,
                                                                      const char *value, uint8_t value_len)
 {
@@ -5290,7 +5286,7 @@ esp_err_t mdns_service_txt_item_set_for_host_with_explicit_value_len(const char 
         _str_null_or_empty(key) || !value) {
         return ESP_ERR_INVALID_ARG;
     }
-    mdns_srv_item_t *s = _mdns_get_service_item(service, proto, hostname);
+    mdns_srv_item_t *s = _mdns_get_service_item_instance(instance, service, proto, hostname);
     if (!s) {
         return ESP_ERR_NOT_FOUND;
     }
@@ -5324,10 +5320,10 @@ esp_err_t mdns_service_txt_item_set_for_host_with_explicit_value_len(const char 
     return ESP_OK;
 }
 
-esp_err_t mdns_service_txt_item_set_for_host(const char *service, const char *proto, const char *hostname,
+esp_err_t mdns_service_txt_item_set_for_host(const char * instance, const char *service, const char *proto, const char *hostname,
                                              const char *key, const char *value)
 {
-    return mdns_service_txt_item_set_for_host_with_explicit_value_len(service, proto, hostname, key, value,
+    return mdns_service_txt_item_set_for_host_with_explicit_value_len(instance, service, proto, hostname, key, value,
                                                                       strlen(value));
 }
 
@@ -5337,7 +5333,7 @@ esp_err_t mdns_service_txt_item_set(const char *service, const char *proto, cons
     if (!_mdns_server) {
         return ESP_ERR_INVALID_STATE;
     }
-    return mdns_service_txt_item_set_for_host_with_explicit_value_len(service, proto, _mdns_server->hostname, key,
+    return mdns_service_txt_item_set_for_host_with_explicit_value_len(NULL, service, proto, _mdns_server->hostname, key,
                                                                       value, strlen(value));
 }
 
@@ -5347,17 +5343,17 @@ esp_err_t mdns_service_txt_item_set_with_explicit_value_len(const char *service,
     if (!_mdns_server) {
         return ESP_ERR_INVALID_STATE;
     }
-    return mdns_service_txt_item_set_for_host_with_explicit_value_len(service, proto, _mdns_server->hostname, key,
+    return mdns_service_txt_item_set_for_host_with_explicit_value_len(NULL, service, proto, _mdns_server->hostname, key,
                                                                       value, value_len);
 }
 
-esp_err_t mdns_service_txt_item_remove_for_host(const char * service, const char * proto, const char * hostname,
+esp_err_t mdns_service_txt_item_remove_for_host(const char * instance, const char * service, const char * proto, const char * hostname,
                                                 const char * key)
 {
     if (!_mdns_server || !_mdns_server->services || _str_null_or_empty(service) || _str_null_or_empty(proto) || _str_null_or_empty(key)) {
         return ESP_ERR_INVALID_ARG;
     }
-    mdns_srv_item_t * s = _mdns_get_service_item(service, proto, hostname);
+    mdns_srv_item_t * s = _mdns_get_service_item_instance(instance, service, proto, hostname);
     if (!s) {
         return ESP_ERR_NOT_FOUND;
     }
@@ -5387,7 +5383,7 @@ esp_err_t mdns_service_txt_item_remove(const char * service, const char * proto,
     if (!_mdns_server) {
         return ESP_ERR_INVALID_STATE;
     }
-    return mdns_service_txt_item_remove_for_host(service, proto, _mdns_server->hostname, key);
+    return mdns_service_txt_item_remove_for_host(NULL, service, proto, _mdns_server->hostname, key);
 }
 
 esp_err_t mdns_service_subtype_add_for_host(const char *instance_name, const char *service, const char *proto,
@@ -5398,7 +5394,6 @@ esp_err_t mdns_service_subtype_add_for_host(const char *instance_name, const cha
         return ESP_ERR_INVALID_ARG;
     }
     mdns_srv_item_t * s = _mdns_get_service_item_instance(instance_name, service, proto, hostname);
-
     if (!s) {
         return ESP_ERR_NOT_FOUND;
     }
@@ -5424,7 +5419,7 @@ esp_err_t mdns_service_subtype_add_for_host(const char *instance_name, const cha
     return ESP_OK;
 }
 
-esp_err_t mdns_service_instance_name_set_for_host(const char * service, const char * proto, const char * hostname,
+esp_err_t mdns_service_instance_name_set_for_host(const char * instance_old, const char * service, const char * proto, const char * hostname,
                                                   const char * instance)
 {
     if (!_mdns_server || !_mdns_server->services || _str_null_or_empty(service) || _str_null_or_empty(proto)) {
@@ -5433,7 +5428,7 @@ esp_err_t mdns_service_instance_name_set_for_host(const char * service, const ch
     if (_str_null_or_empty(instance) || strlen(instance) > (MDNS_NAME_BUF_LEN - 1)) {
         return ESP_ERR_INVALID_ARG;
     }
-    mdns_srv_item_t * s = _mdns_get_service_item(service, proto, hostname);
+    mdns_srv_item_t * s = _mdns_get_service_item_instance(instance_old, service, proto, hostname);
     if (!s) {
         return ESP_ERR_NOT_FOUND;
     }
@@ -5464,15 +5459,15 @@ esp_err_t mdns_service_instance_name_set(const char * service, const char * prot
     if (!_mdns_server) {
         return ESP_ERR_INVALID_STATE;
     }
-    return mdns_service_instance_name_set_for_host(service, proto, _mdns_server->hostname, instance);
+    return mdns_service_instance_name_set_for_host(NULL, service, proto, _mdns_server->hostname, instance);
 }
 
-esp_err_t mdns_service_remove_for_host(const char * service, const char * proto, const char * hostname)
+esp_err_t mdns_service_remove_for_host(const char * instance, const char * service, const char * proto, const char * hostname)
 {
     if (!_mdns_server || !_mdns_server->services || _str_null_or_empty(service) || _str_null_or_empty(proto)) {
         return ESP_ERR_INVALID_ARG;
     }
-    mdns_srv_item_t * s = _mdns_get_service_item(service, proto, hostname);
+    mdns_srv_item_t * s = _mdns_get_service_item_instance(instance, service, proto, hostname);
     if (!s) {
         return ESP_ERR_NOT_FOUND;
     }
@@ -5496,7 +5491,7 @@ esp_err_t mdns_service_remove(const char * service_type, const char * proto)
     if (!_mdns_server) {
         return ESP_ERR_INVALID_STATE;
     }
-    return mdns_service_remove_for_host(service_type, proto, _mdns_server->hostname);
+    return mdns_service_remove_for_host(NULL, service_type, proto, _mdns_server->hostname);
 }
 
 esp_err_t mdns_service_remove_all(void)
