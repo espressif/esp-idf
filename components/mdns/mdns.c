@@ -5573,10 +5573,15 @@ esp_err_t mdns_query_async_delete(mdns_search_once_t* search)
     return ESP_OK;
 }
 
-bool mdns_query_async_get_results(mdns_search_once_t* search, uint32_t timeout, mdns_result_t ** results)
+bool mdns_query_async_get_results(mdns_search_once_t* search, uint32_t timeout, mdns_result_t ** results, uint8_t * num_results)
 {
     if (xSemaphoreTake(search->done_semaphore, pdMS_TO_TICKS(timeout)) == pdTRUE) {
-        *results = search->result;
+        if (results) {
+            *results = search->result;
+        }
+        if (num_results) {
+            *num_results = search->num_results;
+        }
         return true;
     }
     return false;
