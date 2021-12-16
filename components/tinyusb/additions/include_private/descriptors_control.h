@@ -9,17 +9,6 @@
 #include <string.h>
 #include "usb_descriptors.h"
 
-
-/* A combination of interfaces must have a unique product id, since PC will save device driver after the first plug.
- * Same VID/PID with different interface e.g MSC (first), then CDC (later) will possibly cause system error on PC.
- *
- * Auto ProductID layout's Bitmap:
- *   [MSB]         HID | MSC | CDC          [LSB]
- */
-#define EPNUM_VENDOR 0x05
-#define EPNUM_MIDI 0x06
-#define EPNUM_MSC 0x03
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -36,6 +25,11 @@ enum {
 #   if CFG_TUD_CDC
     ITF_NUM_CDC = 0,
     ITF_NUM_CDC_DATA,
+#   endif
+
+#   if CFG_TUD_CDC > 1
+    ITF_NUM_CDC1,
+    ITF_NUM_CDC1_DATA,
 #   endif
 
 #   if CFG_TUD_MSC
