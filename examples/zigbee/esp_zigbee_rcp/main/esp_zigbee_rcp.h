@@ -36,37 +36,7 @@
  */
 
 #include "zboss_api.h"
-#include "light_driver.h"
 
-/* Zigbee configuration */
-#define IEEE_CHANNEL_MASK               (1l << 13)  /* Zigbee default setting is channel 13 for light example usage */
-#define ERASE_PERSISTENT_CONFIG         ZB_TRUE     /* erase network devices before running example */
-#define MAX_CHILDREN                    10          /* the max amount of connected devices */
-
-/* groups cluster attributes */
-typedef struct {
-    zb_uint8_t name_support;
-} zb_zcl_groups_attrs_t;
-
-/* scene cluster attributes */
-typedef struct {
-    zb_uint8_t  scene_count;
-    zb_uint8_t  current_scene;
-    zb_uint8_t  scene_valid;
-    zb_uint8_t  name_support;
-    zb_uint16_t current_group;
-} zb_zcl_scenes_attrs_t;
-
-/* light bulb device cluster attributes */
-typedef struct {
-    zb_zcl_basic_attrs_t            basic_attr;
-    zb_zcl_identify_attrs_t         identify_attr;
-    zb_zcl_groups_attrs_t           groups_attr;
-    zb_zcl_scenes_attrs_t           scenes_attr;
-    zb_zcl_on_off_attrs_t           on_off_attr;
-} bulb_device_ctx_t;
-
-#define HA_ESP_LIGHT_ENDPOINT        10    /* esp light bulb device endpoint, used to process light controlling commands */
 #define ZB_ESP_DEFAULT_RADIO_CONFIG()                           \
     {                                                           \
         .radio_mode = RADIO_MODE_NATIVE,                        \
@@ -74,5 +44,20 @@ typedef struct {
 
 #define ZB_ESP_DEFAULT_HOST_CONFIG()                            \
     {                                                           \
-        .host_connection_mode = HOST_CONNECTION_MODE_NONE,      \
+        .host_connection_mode = HOST_CONNECTION_MODE_RCP_UART,  \
+        .host_uart_config = {                                   \
+            .port = 0,                                          \
+            .uart_config =                                      \
+                {                                               \
+                    .baud_rate = 115200,                        \
+                    .data_bits = UART_DATA_8_BITS,              \
+                    .parity = UART_PARITY_DISABLE,              \
+                    .stop_bits = UART_STOP_BITS_1,              \
+                    .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,      \
+                    .rx_flow_ctrl_thresh = 0,                   \
+                    .source_clk = UART_SCLK_APB,                \
+                },                                              \
+            .rx_pin = UART_PIN_NO_CHANGE,                       \
+            .tx_pin = UART_PIN_NO_CHANGE,                       \
+        },                                                      \
     }

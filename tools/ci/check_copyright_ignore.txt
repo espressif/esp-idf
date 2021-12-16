@@ -2976,16 +2976,6 @@ examples/wifi/smart_config/main/smartconfig_main.c
 examples/wifi/wifi_easy_connect/dpp-enrollee/main/dpp_enrollee_main.c
 examples/wifi/wifi_enterprise/main/wifi_enterprise_main.c
 examples/wifi/wps/main/wps.c
-examples/zigbee/light_sample/light_bulb/main/esp_zb_light.c
-examples/zigbee/light_sample/light_bulb/main/esp_zb_light.h
-examples/zigbee/light_sample/light_bulb/main/light_driver.c
-examples/zigbee/light_sample/light_bulb/main/light_driver.h
-examples/zigbee/light_sample/light_coordinator/main/esp_zb_coordinator.c
-examples/zigbee/light_sample/light_coordinator/main/esp_zb_coordinator.h
-examples/zigbee/light_sample/light_switch/main/esp_zb_switch.c
-examples/zigbee/light_sample/light_switch/main/esp_zb_switch.h
-examples/zigbee/light_sample/light_switch/main/switch_driver.c
-examples/zigbee/light_sample/light_switch/main/switch_driver.h
 tools/ble/lib_ble_client.py
 tools/ble/lib_gap.py
 tools/ble/lib_gatt.py

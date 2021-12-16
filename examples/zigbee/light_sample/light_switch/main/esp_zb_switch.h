@@ -34,9 +34,10 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
-#include "switch_driver.h"
 #include "zboss_api.h"
+#include "zboss_api_zcl.h"
+#include "zb_ha.h"
+#include "switch_driver.h"
 
 /* Zigbee configuration */
 #define IEEE_CHANNEL_MASK               (1l << 13)  /* ZigBee default setting is channel 13 for light example usage */
@@ -60,3 +61,12 @@ typedef struct {
     zb_zcl_on_off_attrs_t           on_off_attr;
     light_switch_bulb_params_t      bulb_params;
 } switch_device_ctx_t;
+#define ZB_ESP_DEFAULT_RADIO_CONFIG()                           \
+    {                                                           \
+        .radio_mode = RADIO_MODE_NATIVE,                        \
+    }
+
+#define ZB_ESP_DEFAULT_HOST_CONFIG()                            \
+    {                                                           \
+        .host_connection_mode = HOST_CONNECTION_MODE_NONE,      \
+    }
