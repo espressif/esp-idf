@@ -293,8 +293,14 @@ static mdns_srv_item_t *_mdns_get_service_item_instance(const char *instance, co
 {
     mdns_srv_item_t *s = _mdns_server->services;
     while (s) {
-        if (_mdns_service_match_instance(s->service, instance, service, proto, hostname)) {
-            return s;
+        if (instance) {
+            if (_mdns_service_match_instance(s->service, instance, service, proto, hostname)) {
+                return s;
+            }
+        } else {
+            if (_mdns_service_match(s->service, service, proto, hostname)) {
+                return s;
+            }
         }
         s = s->next;
     }
