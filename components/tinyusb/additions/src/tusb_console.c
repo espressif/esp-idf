@@ -12,6 +12,7 @@
 #include "tusb_console.h"
 #include "tinyusb.h"
 #include "vfs_tinyusb.h"
+#include "esp_check.h"
 
 #define STRINGIFY(s) STRINGIFY2(s)
 #define STRINGIFY2(s) #s
@@ -100,35 +101,15 @@ static esp_err_t restore_std_streams(FILE **f_in, FILE **f_out, FILE **f_err)
 
 esp_err_t esp_tusb_init_console(int cdc_intf)
 {
-    if (!tinyusb_cdc_initialized(cdc_intf)) {
-        ESP_LOGE(TAG, "Can't init the console because TinyUSB's CDC is not initialized!");
-        return ESP_ERR_INVALID_STATE;
-    }
     /* Registering TUSB at VFS */
-    int res = esp_vfs_tusb_cdc_register(cdc_intf, NULL);
-    if (res != ESP_OK) {
-        return res;
-    }
-
-    res = redirect_std_streams_to(&con.in, &con.out, &con.err, "/dev/tusb_cdc");
-    if (res != ESP_OK) {
-        return res;
-    }
-
+    ESP_RETURN_ON_ERROR(esp_vfs_tusb_cdc_register(cdc_intf, NULL), TAG, "");
+    ESP_RETURN_ON_ERROR(redirect_std_streams_to(&con.in, &con.out, &con.err, "/dev/tusb_cdc"), TAG, "Failed to redirect STD streams");
     return ESP_OK;
 }
 
 esp_err_t esp_tusb_deinit_console(int cdc_intf)
 {
-    if (!tinyusb_cdc_initialized(cdc_intf)) {
-        ESP_LOGE(TAG, "Can't deinit the console because TinyUSB's CDC is not initialized!");
-        return ESP_ERR_INVALID_STATE;
-    }
-
-    int res = restore_std_streams(&con.in, &con.out, &con.err);
-    if (res != ESP_OK) {
-        return res;
-    }
+    ESP_RETURN_ON_ERROR(restore_std_streams(&con.in, &con.out, &con.err), TAG, "Failed to restore STD streams");
     esp_vfs_tusb_cdc_unregister(NULL);
     return ESP_OK;
 }

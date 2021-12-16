@@ -70,14 +70,6 @@ esp_err_t tinyusb_cdc_deinit(int itf);
 
 
 /**
- * @brief Checks if the CDC initialized and ready to interaction
- *
- * @return true or false
- */
-bool tinyusb_cdc_initialized(int itf);
-
-
-/**
  * @brief Return interface of a CDC device
  *
  * @param itf_num

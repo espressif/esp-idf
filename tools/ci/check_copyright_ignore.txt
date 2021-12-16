@@ -2096,6 +2096,7 @@ components/tcp_transport/transport_utils.c
 components/tcpip_adapter/include/tcpip_adapter.h
 components/tcpip_adapter/include/tcpip_adapter_compatible/tcpip_adapter_compat.h
 components/tcpip_adapter/include/tcpip_adapter_types.h
+components/tinyusb/additions/include/tusb_config.h
 components/touch_element/include/touch_element/touch_button.h
 components/touch_element/include/touch_element/touch_element.h
 components/touch_element/include/touch_element/touch_element_private.h
@@ -2687,9 +2688,6 @@ examples/peripherals/uart/uart_events/main/uart_events_example_main.c
 examples/peripherals/uart/uart_repl/main/uart_repl_example_main.c
 examples/peripherals/uart/uart_select/main/uart_select_example_main.c
 examples/peripherals/usb/host/msc/components/msc/test/msc_device.c
-examples/peripherals/usb/tusb_console/main/tusb_console_main.c
-examples/peripherals/usb/tusb_sample_descriptor/main/tusb_sample_descriptor_main.c
-examples/peripherals/usb/tusb_serial_device/main/tusb_serial_device_main.c
 examples/peripherals/wave_gen/main/wave_gen_example_main.c
 examples/protocols/asio/asio_chat/example_test.py
 examples/protocols/asio/asio_chat/main/asio_chat.cpp

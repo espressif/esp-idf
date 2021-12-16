@@ -1,15 +1,8 @@
-/* USB Example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
-
-// DESCRIPTION:
-// This example contains minimal code to make ESP32-S2 based device
-// recognizable by USB-host devices as a USB Serial Device.
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 
 #include <stdint.h>
 #include "esp_log.h"
@@ -30,8 +23,8 @@ void tinyusb_cdc_rx_callback(int itf, cdcacm_event_t *event)
     /* read */
     esp_err_t ret = tinyusb_cdcacm_read(itf, buf, CONFIG_TINYUSB_CDC_RX_BUFSIZE, &rx_size);
     if (ret == ESP_OK) {
-        buf[rx_size] = '\0';
-        ESP_LOGI(TAG, "Got data (%d bytes): %s", rx_size, buf);
+        ESP_LOGI(TAG, "Data from channel %d:", itf);
+        ESP_LOG_BUFFER_HEXDUMP(TAG, buf, rx_size, ESP_LOG_INFO);
     } else {
         ESP_LOGE(TAG, "Read error");
     }
@@ -44,8 +37,8 @@ void tinyusb_cdc_rx_callback(int itf, cdcacm_event_t *event)
 void tinyusb_cdc_line_state_changed_callback(int itf, cdcacm_event_t *event)
 {
     int dtr = event->line_state_changed_data.dtr;
-    int rst = event->line_state_changed_data.rts;
-    ESP_LOGI(TAG, "Line state changed! dtr:%d, rst:%d", dtr, rst);
+    int rts = event->line_state_changed_data.rts;
+    ESP_LOGI(TAG, "Line state changed on channel %d: DTR:%d, RTS:%d", itf, dtr, rts);
 }
 
 void app_main(void)
@@ -70,5 +63,15 @@ void app_main(void)
                         TINYUSB_CDC_ACM_0,
                         CDC_EVENT_LINE_STATE_CHANGED,
                         &tinyusb_cdc_line_state_changed_callback));
+
+#if (CONFIG_TINYUSB_CDC_COUNT > 1)
+    amc_cfg.cdc_port = TINYUSB_CDC_ACM_1;
+    ESP_ERROR_CHECK(tusb_cdc_acm_init(&amc_cfg));
+    ESP_ERROR_CHECK(tinyusb_cdcacm_register_callback(
+                        TINYUSB_CDC_ACM_1,
+                        CDC_EVENT_LINE_STATE_CHANGED,
+                        &tinyusb_cdc_line_state_changed_callback));
+#endif
+
     ESP_LOGI(TAG, "USB initialization DONE");
 }
