@@ -35,11 +35,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "esp_err.h"
 #include "esp_log.h"
-#include "esp_zb_coordinator.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "esp_zigbee_gateway.h"
 
-static const char *TAG = "ESP_ZB_COORDINATOR";
+#if (!defined ZB_MACSPLIT_HOST && defined ZB_MACSPLIT_DEVICE)
+#error Only Zigbee gateway hostdevice should be defined
+#endif
+
+static const char *TAG = "ESP_ZB_GATEWAY";
 
 /********************* Define functions **************************/
 static void bdb_start_top_level_commissioning_cb(zb_uint8_t mode_mask)
@@ -49,14 +54,8 @@ static void bdb_start_top_level_commissioning_cb(zb_uint8_t mode_mask)
     }
 }
 
-/**
- * @brief Zigbee zboss stack event signal handler.
- *
- * @param bufid   Zigbee zboss stack buffer id used to pass signal.
- */
 void zboss_signal_handler(zb_bufid_t bufid)
 {
-    /* Read signal description out of memory buffer. */
     zb_zdo_app_signal_hdr_t *p_sg_p       = NULL;
     zb_zdo_app_signal_type_t  sig         = zb_get_app_signal(bufid, &p_sg_p);
     zb_ret_t                  status      = ZB_GET_APP_SIGNAL_STATUS(bufid);
@@ -65,6 +64,10 @@ void zboss_signal_handler(zb_bufid_t bufid)
     case ZB_ZDO_SIGNAL_SKIP_STARTUP:
         ESP_LOGI(TAG, "Zigbee stack initialized");
         bdb_start_top_level_commissioning(ZB_BDB_INITIALIZATION);
+        break;
+
+    case ZB_MACSPLIT_DEVICE_BOOT:
+        ESP_LOGI(TAG, "Zigbee rcp device booted");
         break;
 
     case ZB_BDB_SIGNAL_DEVICE_FIRST_START:
@@ -78,11 +81,11 @@ void zboss_signal_handler(zb_bufid_t bufid)
 
     case ZB_BDB_SIGNAL_FORMATION:
         if (status == RET_OK) {
-            zb_ext_pan_id_t extended_pan_id;
-            zb_get_extended_pan_id(extended_pan_id);
-            ESP_LOGI(TAG, "Joined network successfully (Extended PAN ID: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x, PAN ID: 0x%04hx)",
-                     extended_pan_id[7], extended_pan_id[6], extended_pan_id[5], extended_pan_id[4],
-                     extended_pan_id[3], extended_pan_id[2], extended_pan_id[1], extended_pan_id[0],
+            zb_ieee_addr_t ieee_address;
+            zb_get_long_address(ieee_address);
+            ESP_LOGI(TAG, "Formed network successfully (ieee extended address: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x, PAN ID: 0x%04hx)",
+                     ieee_address[7], ieee_address[6], ieee_address[5], ieee_address[4],
+                     ieee_address[3], ieee_address[2], ieee_address[1], ieee_address[0],
                      ZB_PIBCACHE_PAN_ID());
             bdb_start_top_level_commissioning(ZB_BDB_NETWORK_STEERING);
         } else {
@@ -112,24 +115,27 @@ void zboss_signal_handler(zb_bufid_t bufid)
     }
 }
 
+void zboss_task()
+{
+    ZB_INIT("zigbee gateway");
+    zb_set_network_coordinator_role(IEEE_CHANNEL_MASK);
+    zb_set_nvram_erase_at_start(ERASE_PERSISTENT_CONFIG);
+    zb_set_max_children(MAX_CHILDREN);
+    /* initiate Zigbee Stack start without zb_send_no_autostart_signal auto-start */
+    ESP_ERROR_CHECK(zboss_start_no_autostart());
+    while (1) {
+        zboss_main_loop_iteration();
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+    }
+}
+
 void app_main()
 {
-    zb_ret_t       zb_err_code;
     zb_esp_platform_config_t config = {
         .radio_config = ZB_ESP_DEFAULT_RADIO_CONFIG(),
         .host_config = ZB_ESP_DEFAULT_HOST_CONFIG(),
     };
-
+    /* load Zigbee gateway platform config to initialization */
     ESP_ERROR_CHECK(zb_esp_platform_config(&config));
-    /* initialize Zigbee stack */
-    ZB_INIT("light_coordinator");
-    zb_set_network_coordinator_role(IEEE_CHANNEL_MASK);
-    zb_set_nvram_erase_at_start(ERASE_PERSISTENT_CONFIG);
-    zb_set_max_children(MAX_CHILDREN);
-    zb_err_code = zboss_start_no_autostart();
-    ESP_ERROR_CHECK(zb_err_code);
-
-    while (1) {
-        zboss_main_loop_iteration();
-    }
+    xTaskCreate(zboss_task, "zboss_main", 10240, xTaskGetCurrentTaskHandle(), 5, NULL);
 }

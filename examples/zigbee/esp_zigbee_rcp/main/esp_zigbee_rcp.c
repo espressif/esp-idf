@@ -35,44 +35,58 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "zboss_api.h"
-#include "light_driver.h"
+#include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "zb_scheduler.h"
+#include "esp_zigbee_rcp.h"
 
-/* Zigbee configuration */
-#define IEEE_CHANNEL_MASK               (1l << 13)  /* Zigbee default setting is channel 13 for light example usage */
-#define ERASE_PERSISTENT_CONFIG         ZB_TRUE     /* erase network devices before running example */
-#define MAX_CHILDREN                    10          /* the max amount of connected devices */
+#if (defined ZB_MACSPLIT_HOST && !defined ZB_MACSPLIT_DEVICE)
+#error Only Zigbee rcp device should be defined
+#endif
+static const char *TAG = "ESP_ZB_RCP";
 
-/* groups cluster attributes */
-typedef struct {
-    zb_uint8_t name_support;
-} zb_zcl_groups_attrs_t;
+void zboss_signal_handler(zb_uint8_t param)
+{
+    zb_zdo_app_signal_hdr_t *sg_p = NULL;
+    /* get application signal from the buffer */
+    zb_zdo_app_signal_type_t sig =  zb_get_app_signal(param, &sg_p);
 
-/* scene cluster attributes */
-typedef struct {
-    zb_uint8_t  scene_count;
-    zb_uint8_t  current_scene;
-    zb_uint8_t  scene_valid;
-    zb_uint8_t  name_support;
-    zb_uint16_t current_group;
-} zb_zcl_scenes_attrs_t;
-
-/* light bulb device cluster attributes */
-typedef struct {
-    zb_zcl_basic_attrs_t            basic_attr;
-    zb_zcl_identify_attrs_t         identify_attr;
-    zb_zcl_groups_attrs_t           groups_attr;
-    zb_zcl_scenes_attrs_t           scenes_attr;
-    zb_zcl_on_off_attrs_t           on_off_attr;
-} bulb_device_ctx_t;
-
-#define HA_ESP_LIGHT_ENDPOINT        10    /* esp light bulb device endpoint, used to process light controlling commands */
-#define ZB_ESP_DEFAULT_RADIO_CONFIG()                           \
-    {                                                           \
-        .radio_mode = RADIO_MODE_NATIVE,                        \
+    if (ZB_GET_APP_SIGNAL_STATUS(param) == 0) {
+        switch (sig) {
+        case ZB_COMMON_SIGNAL_CAN_SLEEP:
+#if defined(ZB_USE_SLEEP)
+            zb_sleep_now();
+#endif
+            break;
+        default: break;
+        }
+    } else if (sig == ZB_ZDO_SIGNAL_PRODUCTION_CONFIG_READY) {
+        ESP_LOGI(TAG, "Production config is not present or invalid");
+    } else {
+        ESP_LOGI(TAG, "Device started FAILED status %d", ZB_GET_APP_SIGNAL_STATUS(param));
     }
 
-#define ZB_ESP_DEFAULT_HOST_CONFIG()                            \
-    {                                                           \
-        .host_connection_mode = HOST_CONNECTION_MODE_NONE,      \
+    if (param) {
+        zb_buf_free(param);
     }
+}
+
+void zboss_task()
+{
+    ZB_INIT("esp_zigbee_rcp");
+    while (1) {
+        zb_sched_loop_iteration();
+    }
+}
+
+void app_main()
+{
+    zb_esp_platform_config_t config = {
+        .radio_config = ZB_ESP_DEFAULT_RADIO_CONFIG(),
+        .host_config = ZB_ESP_DEFAULT_HOST_CONFIG(),
+    };
+    /* load Zigbee rcp platform config to initialization */
+    ESP_ERROR_CHECK(zb_esp_platform_config(&config));
+    xTaskCreate(zboss_task, "zboss_main", 4096, xTaskGetCurrentTaskHandle(), 5, NULL);
+}
