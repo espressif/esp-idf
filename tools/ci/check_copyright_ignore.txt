@@ -2128,7 +2128,6 @@ components/soc/esp32s2/spi_periph.c
 components/soc/esp32s2/touch_sensor_periph.c
 components/soc/esp32s2/uart_periph.c
 components/soc/esp32s2/usb_periph.c
-components/soc/esp32s3/adc_periph.c
 components/soc/esp32s3/dedic_gpio_periph.c
 components/soc/esp32s3/gpio_periph.c
 components/soc/esp32s3/i2c_periph.c
