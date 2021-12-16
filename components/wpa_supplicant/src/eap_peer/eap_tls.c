@@ -16,6 +16,10 @@
 #include "eap_peer/eap_config.h"
 #include "eap_peer/eap_methods.h"
 
+
+static void eap_tls_deinit(struct eap_sm *sm, void *priv);
+
+
 struct eap_tls_data {
 	struct eap_ssl_data ssl;
 	u8 *key_data;
@@ -24,19 +28,6 @@ struct eap_tls_data {
 	void *ssl_ctx;
 	u8 eap_type;
 };
-
-
-
-static void eap_tls_deinit(struct eap_sm *sm, void *priv)
-{
-	struct eap_tls_data *data = priv;
-	if (data == NULL)
-		return;
-	eap_peer_tls_ssl_deinit(sm, &data->ssl);
-	os_free(data->key_data);
-	os_free(data->session_id);
-	os_free(data);
-}
 
 
 static void * eap_tls_init(struct eap_sm *sm)
@@ -65,6 +56,19 @@ static void * eap_tls_init(struct eap_sm *sm)
 
 	return data;
 }
+
+
+static void eap_tls_deinit(struct eap_sm *sm, void *priv)
+{
+	struct eap_tls_data *data = priv;
+	if (data == NULL)
+		return;
+	eap_peer_tls_ssl_deinit(sm, &data->ssl);
+	os_free(data->key_data);
+	os_free(data->session_id);
+	os_free(data);
+}
+
 
 static struct wpabuf * eap_tls_failure(struct eap_sm *sm,
 				       struct eap_tls_data *data,

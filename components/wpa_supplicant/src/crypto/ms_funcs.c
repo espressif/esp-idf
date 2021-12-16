@@ -491,11 +491,12 @@ int new_password_encrypted_with_old_nt_password_hash(
  * @block: 16-octet Block (IN)
  * @cypher: 16-octer Cypher (OUT)
  */
-void nt_password_hash_encrypted_with_block(const u8 *password_hash,
+int nt_password_hash_encrypted_with_block(const u8 *password_hash,
 				      const u8 *block, u8 *cypher)
 {
 	des_encrypt(password_hash, block, cypher);
 	des_encrypt(password_hash + 8, block + 7, cypher + 8);
+	return 0;
 }
 
 

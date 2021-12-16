@@ -167,6 +167,17 @@ struct eap_peer_config {
 	char *phase2;
 
 	/**
+	 * pcsc - Parameters for PC/SC smartcard interface for USIM and GSM SIM
+	 *
+	 * This field is used to configure PC/SC smartcard interface.
+	 * Currently, the only configuration is whether this field is %NULL (do
+	 * not use PC/SC) or non-NULL (e.g., "") to enable PC/SC.
+	 *
+	 * This field is used for EAP-SIM and EAP-AKA.
+	 */
+	char *pcsc;
+
+	/**
 	 * pin - PIN for USIM, GSM SIM, and smartcards
 	 *
 	 * This field is used to configure PIN for SIM and smartcards for
@@ -177,6 +188,87 @@ struct eap_peer_config {
 	 */
 	char *pin;
 
+	/**
+	 * pending_req_identity - Whether there is a pending identity request
+	 *
+	 * This field should not be set in configuration step. It is only used
+	 * internally when control interface is used to request needed
+	 * information.
+	 */
+	int pending_req_identity;
+
+	/**
+	 * pending_req_password - Whether there is a pending password request
+	 *
+	 * This field should not be set in configuration step. It is only used
+	 * internally when control interface is used to request needed
+	 * information.
+	 */
+	int pending_req_password;
+
+	/**
+	 * pending_req_pin - Whether there is a pending PIN request
+	 *
+	 * This field should not be set in configuration step. It is only used
+	 * internally when control interface is used to request needed
+	 * information.
+	 */
+	int pending_req_pin;
+
+	/**
+	 * pending_req_new_password - Pending password update request
+	 *
+	 * This field should not be set in configuration step. It is only used
+	 * internally when control interface is used to request needed
+	 * information.
+	 */
+	int pending_req_new_password;
+
+	/**
+	 * pending_req_passphrase - Pending passphrase request
+	 *
+	 * This field should not be set in configuration step. It is only used
+	 * internally when control interface is used to request needed
+	 * information.
+	 */
+	int pending_req_passphrase;
+
+	/**
+	 * pending_req_sim - Pending SIM request
+	 *
+	 * This field should not be set in configuration step. It is only used
+	 * internally when control interface is used to request needed
+	 * information.
+	 */
+	int pending_req_sim;
+
+	/**
+	 * pending_req_otp - Whether there is a pending OTP request
+	 *
+	 * This field should not be set in configuration step. It is only used
+	 * internally when control interface is used to request needed
+	 * information.
+	 */
+	char *pending_req_otp;
+
+	/**
+	 * pac_file - File path or blob name for the PAC entries (EAP-FAST)
+	 *
+	 * wpa_supplicant will need to be able to create this file and write
+	 * updates to it when PAC is being provisioned or refreshed. Full path
+	 * to the file should be used since working directory may change when
+	 * wpa_supplicant is run in the background.
+	 * Alternatively, a named configuration blob can be used by setting
+	 * this to blob://blob_name.
+	 */
+	char *pac_file;
+
+	/**
+	 * mschapv2_retry - MSCHAPv2 retry in progress
+	 *
+	 * This field is used internally by EAP-MSCHAPv2 and should not be set
+	 * as part of configuration.
+	 */
 	int mschapv2_retry;
 	u8 *new_password;
 	size_t new_password_len;
@@ -214,6 +306,26 @@ struct eap_peer_config {
 	 * 2 = require valid OCSP stapling response
 	 */
 	int ocsp;
+
+	/**
+	 * erp - Whether EAP Re-authentication Protocol (ERP) is enabled
+	 */
+	int erp;
+
+	/**
+	 * pending_ext_cert_check - External server certificate check status
+	 *
+	 * This field should not be set in configuration step. It is only used
+	 * internally when control interface is used to request external
+	 * validation of server certificate chain.
+	 */
+	enum {
+		NO_CHECK = 0,
+		PENDING_CHECK,
+		EXT_CERT_CHECK_GOOD,
+		EXT_CERT_CHECK_BAD,
+	} pending_ext_cert_check;
+
 };
 
 

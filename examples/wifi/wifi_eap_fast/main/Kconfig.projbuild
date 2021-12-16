@@ -1,0 +1,33 @@
+menu "Example Configuration"
+
+    config EXAMPLE_WIFI_SSID
+        string "WiFi SSID"
+        default "wpa2_test"
+        help
+            SSID (network name) for the example to connect to.
+
+    config EXAMPLE_VALIDATE_SERVER_CERT
+        bool "Validate server"
+        default y
+        help
+            Validate the servers' certificate using CA cert.
+
+    config EXAMPLE_EAP_ID
+        string "EAP ID"
+        default "example@espressif.com"
+        help
+            Identity in phase 1 of EAP procedure.
+
+    config EXAMPLE_EAP_USERNAME
+        string "EAP USERNAME"
+        default "espressif"
+        help
+            Username for EAP method.
+
+    config EXAMPLE_EAP_PASSWORD
+        string "EAP PASSWORD"
+        default "test11"
+        help
+            Password for EAP method.
+
+endmenu

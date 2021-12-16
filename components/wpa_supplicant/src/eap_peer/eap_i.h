@@ -90,13 +90,15 @@ struct eap_method {
 	void (*deinit_for_reauth)(struct eap_sm *sm, void *priv);
 	void * (*init_for_reauth)(struct eap_sm *sm, void *priv);
 	u8 * (*getSessionId)(struct eap_sm *sm, void *priv, size_t *len);
+	u8 * (*get_emsk)(struct eap_sm *sm, void *priv, size_t *len);
 };
 
 #define CLIENT_CERT_NAME	"CLC"
 #define CA_CERT_NAME		"CAC"
 #define PRIVATE_KEY_NAME	"PVK"
+#define PAC_FILE_NAME		"PAC"
 #define BLOB_NAME_LEN		3
-#define BLOB_NUM		3
+#define BLOB_NUM		4
 
 enum SIG_WPA2 {
     SIG_WPA2_START = 0,
@@ -111,6 +113,7 @@ enum SIG_WPA2 {
 struct eap_sm {
 	void *eap_method_priv;
 
+	void *msg_ctx;
 	void *ssl_ctx;
 
 	unsigned int workaround;
@@ -126,6 +129,12 @@ struct eap_sm {
 	u8 finish_state;
 
 	int init_phase2;
+	/* Optional challenges generated in Phase 1 (EAP-FAST) */
+	u8 *peer_challenge, *auth_challenge;
+
+	unsigned int expected_failure:1;
+	unsigned int ext_cert_check:1;
+	unsigned int waiting_ext_cert_check:1;
 	bool peap_done;
 
 	u8 *eapKeyData;
@@ -144,6 +153,7 @@ const u8 * eap_get_config_password(struct eap_sm *sm, size_t *len);
 const u8 * eap_get_config_password2(struct eap_sm *sm, size_t *len, int *hash);
 const u8 * eap_get_config_new_password(struct eap_sm *sm, size_t *len);
 struct eap_peer_config * eap_get_config(struct eap_sm *sm);
+void eap_set_config_blob(struct eap_sm *sm, struct wpa_config_blob *blob);
 const struct wpa_config_blob * eap_get_config_blob(struct eap_sm *sm, const char *name);
 bool wifi_sta_get_enterprise_disable_time_check(void);
 

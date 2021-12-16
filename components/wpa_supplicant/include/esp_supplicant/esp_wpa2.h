@@ -19,6 +19,12 @@
 
 #include "esp_err.h"
 
+typedef struct {
+   int fast_provisioning;
+   int fast_max_pac_list_len;
+   bool fast_pac_format_binary;
+} esp_eap_fast_config;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -190,6 +196,35 @@ esp_err_t esp_wifi_sta_wpa2_ent_set_disable_time_check(bool disable);
   *    - ESP_OK: succeed
   */
 esp_err_t esp_wifi_sta_wpa2_ent_get_disable_time_check(bool *disable);
+
+/**
+  * @brief  Set client pac file
+  *
+  * @attention  1. For files read from the file system, length has to be decremented by 1 byte.
+  * @attention  2. Disabling the WPA_MBEDTLS_CRYPTO config is required to use EAP-FAST.
+  *
+  * @param  pac_file: pointer to the pac file
+  *         pac_file_len: length of the pac file
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_NO_MEM: fail(internal memory malloc fail)
+  */
+esp_err_t esp_wifi_sta_wpa2_ent_set_pac_file(const unsigned char *pac_file, int pac_file_len);
+
+/**
+  * @brief  Set Phase 1 parameters for EAP-FAST
+  *
+  * @attention  1. Disabling the WPA_MBEDTLS_CRYPTO config is required to use EAP-FAST.
+  *
+  * @param  config: eap fast phase 1 configuration
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_INVALID_ARG: fail(out of bound arguments)
+  *    - ESP_ERR_NO_MEM: fail(internal memory malloc fail)
+  */
+esp_err_t esp_wifi_sta_wpa2_ent_set_fast_phase1_params(esp_eap_fast_config config);
 
 #ifdef __cplusplus
 }
