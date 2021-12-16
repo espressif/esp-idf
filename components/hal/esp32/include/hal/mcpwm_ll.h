@@ -1,16 +1,8 @@
-// Copyright 2015-2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*******************************************************************************
  * NOTICE
@@ -339,17 +331,15 @@ static inline void mcpwm_ll_timer_set_count_mode(mcpwm_dev_t *mcpwm, int timer_i
 static inline mcpwm_timer_count_mode_t mcpwm_ll_timer_get_count_mode(mcpwm_dev_t *mcpwm, int timer_id)
 {
     switch (mcpwm->timer[timer_id].timer_cfg1.timer_mod) {
-    case 0:
-        return MCPWM_TIMER_COUNT_MODE_PAUSE;
     case 1:
         return MCPWM_TIMER_COUNT_MODE_UP;
     case 2:
         return MCPWM_TIMER_COUNT_MODE_DOWN;
     case 3:
         return MCPWM_TIMER_COUNT_MODE_UP_DOWN;
+    case 0:
     default:
-        HAL_ASSERT(false && "unknown count mode");
-        return mcpwm->timer[timer_id].timer_cfg1.timer_mod;
+        return MCPWM_TIMER_COUNT_MODE_PAUSE;
     }
 }
 
