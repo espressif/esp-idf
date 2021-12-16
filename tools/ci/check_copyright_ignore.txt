@@ -1403,7 +1403,6 @@ components/mdns/host_test/main/main.c
 components/mdns/include/mdns_console.h
 components/mdns/mdns_console.c
 components/mdns/mdns_networking_lwip.c
-components/mdns/mdns_networking_socket.c
 components/mdns/private_include/mdns_networking.h
 components/mdns/test/test_mdns.c
 components/mdns/test_afl_fuzz_host/esp32_mock.c
