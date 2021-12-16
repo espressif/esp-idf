@@ -158,7 +158,7 @@ static inline periph_module_t get_dma_periph(int dma_chan)
 #endif
 }
 
-static bool spicommon_dma_chan_claim(int dma_chan, uint32_t *out_actual_dma_chan)
+static bool claim_dma_chan(int dma_chan, uint32_t *out_actual_dma_chan)
 {
     bool ret = false;
 
@@ -175,7 +175,7 @@ static bool spicommon_dma_chan_claim(int dma_chan, uint32_t *out_actual_dma_chan
     return ret;
 }
 
-static void spicommon_connect_spi_and_dma(spi_host_device_t host, int dma_chan)
+static void connect_spi_and_dma(spi_host_device_t host, int dma_chan)
 {
 #if CONFIG_IDF_TARGET_ESP32
     DPORT_SET_PERI_REG_BITS(DPORT_SPI_DMA_CHAN_SEL_REG, 3, dma_chan, (host * 2));
@@ -184,7 +184,7 @@ static void spicommon_connect_spi_and_dma(spi_host_device_t host, int dma_chan)
 #endif
 }
 
-static esp_err_t spicommon_dma_chan_alloc(spi_host_device_t host_id, spi_dma_chan_t dma_chan, uint32_t *out_actual_tx_dma_chan, uint32_t *out_actual_rx_dma_chan)
+static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_chan, uint32_t *out_actual_tx_dma_chan, uint32_t *out_actual_rx_dma_chan)
 {
     assert(is_valid_host(host_id));
 #if CONFIG_IDF_TARGET_ESP32
@@ -200,17 +200,17 @@ static esp_err_t spicommon_dma_chan_alloc(spi_host_device_t host_id, spi_dma_cha
     if (dma_chan == SPI_DMA_CH_AUTO) {
 #if CONFIG_IDF_TARGET_ESP32
         for (int i = 1; i < SOC_SPI_DMA_CHAN_NUM+1; i++) {
-            success = spicommon_dma_chan_claim(i, &actual_dma_chan);
+            success = claim_dma_chan(i, &actual_dma_chan);
             if (success) {
                 break;
             }
         }
 #elif CONFIG_IDF_TARGET_ESP32S2
         //On ESP32S2, each SPI controller has its own DMA channel
-        success = spicommon_dma_chan_claim(host_id, &actual_dma_chan);
+        success = claim_dma_chan(host_id, &actual_dma_chan);
 #endif  //#if CONFIG_IDF_TARGET_XXX
     } else {
-        success = spicommon_dma_chan_claim((int)dma_chan, &actual_dma_chan);
+        success = claim_dma_chan((int)dma_chan, &actual_dma_chan);
     }
 
     //On ESP32 and ESP32S2, actual_tx_dma_chan and actual_rx_dma_chan are always same
@@ -221,13 +221,13 @@ static esp_err_t spicommon_dma_chan_alloc(spi_host_device_t host_id, spi_dma_cha
         SPI_CHECK(false, "no available dma channel", ESP_ERR_NOT_FOUND);
     }
 
-    spicommon_connect_spi_and_dma(host_id, *out_actual_tx_dma_chan);
+    connect_spi_and_dma(host_id, *out_actual_tx_dma_chan);
 
     return ret;
 }
 
 #else //SOC_GDMA_SUPPORTED
-static esp_err_t spicommon_dma_chan_alloc(spi_host_device_t host_id, spi_dma_chan_t dma_chan, uint32_t *out_actual_tx_dma_chan, uint32_t *out_actual_rx_dma_chan)
+static esp_err_t alloc_dma_chan(spi_host_device_t host_id, spi_dma_chan_t dma_chan, uint32_t *out_actual_tx_dma_chan, uint32_t *out_actual_rx_dma_chan)
 {
     assert(is_valid_host(host_id));
     assert(dma_chan == SPI_DMA_CH_AUTO);
@@ -272,7 +272,7 @@ static esp_err_t spicommon_dma_chan_alloc(spi_host_device_t host_id, spi_dma_cha
 }
 #endif  //#if !SOC_GDMA_SUPPORTED
 
-esp_err_t spicommon_slave_dma_chan_alloc(spi_host_device_t host_id, spi_dma_chan_t dma_chan, uint32_t *out_actual_tx_dma_chan, uint32_t *out_actual_rx_dma_chan)
+esp_err_t spicommon_dma_chan_alloc(spi_host_device_t host_id, spi_dma_chan_t dma_chan, uint32_t *out_actual_tx_dma_chan, uint32_t *out_actual_rx_dma_chan)
 {
     assert(is_valid_host(host_id));
 #if CONFIG_IDF_TARGET_ESP32
@@ -292,7 +292,7 @@ esp_err_t spicommon_slave_dma_chan_alloc(spi_host_device_t host_id, spi_dma_chan
     bus_ctx[host_id] = ctx;
     ctx->host_id = host_id;
 
-    ret = spicommon_dma_chan_alloc(host_id, dma_chan, &actual_tx_dma_chan, &actual_rx_dma_chan);
+    ret = alloc_dma_chan(host_id, dma_chan, &actual_tx_dma_chan, &actual_rx_dma_chan);
     if (ret != ESP_OK) {
         goto cleanup;
     }
@@ -310,7 +310,7 @@ cleanup:
 }
 
 //----------------------------------------------------------free dma periph-------------------------------------------------------//
-static esp_err_t spicommon_dma_chan_free(spi_host_device_t host_id)
+static esp_err_t dma_chan_free(spi_host_device_t host_id)
 {
     assert(is_valid_host(host_id));
 
@@ -339,11 +339,11 @@ static esp_err_t spicommon_dma_chan_free(spi_host_device_t host_id)
     return ESP_OK;
 }
 
-esp_err_t spicommon_slave_free_dma(spi_host_device_t host_id)
+esp_err_t spicommon_dma_chan_free(spi_host_device_t host_id)
 {
     assert(is_valid_host(host_id));
 
-    esp_err_t ret = spicommon_dma_chan_free(host_id);
+    esp_err_t ret = dma_chan_free(host_id);
     free(bus_ctx[host_id]);
     bus_ctx[host_id] = NULL;
 
@@ -783,7 +783,7 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
     if (dma_chan != SPI_DMA_DISABLED) {
         bus_attr->dma_enabled = 1;
 
-        err = spicommon_dma_chan_alloc(host_id, dma_chan, &actual_tx_dma_chan, &actual_rx_dma_chan);
+        err = alloc_dma_chan(host_id, dma_chan, &actual_tx_dma_chan, &actual_rx_dma_chan);
         if (err != ESP_OK) {
             goto cleanup;
         }
@@ -844,7 +844,7 @@ cleanup:
         bus_attr->dmadesc_tx = NULL;
         bus_attr->dmadesc_rx = NULL;
         if (bus_attr->dma_enabled) {
-            spicommon_dma_chan_free(host_id);
+            dma_chan_free(host_id);
         }
     }
     spicommon_periph_free(host_id);
@@ -881,7 +881,7 @@ esp_err_t spi_bus_free(spi_host_device_t host_id)
     bus_attr->dmadesc_tx = NULL;
     bus_attr->dmadesc_rx = NULL;
     if (bus_attr->dma_enabled > 0) {
-        spicommon_dma_chan_free(host_id);
+        dma_chan_free(host_id);
     }
     spicommon_periph_free(host_id);
     free(ctx);

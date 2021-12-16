@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /* ADC1 Example
 
    This example code is in the Public Domain (or CC0 licensed, at your option.)
@@ -11,7 +17,7 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "driver/adc_common.h"
+#include "driver/adc.h"
 #include "esp_adc_cal.h"
 
 

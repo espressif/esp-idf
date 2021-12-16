@@ -8,6 +8,10 @@
  Tests for the adc device driver on ESP32-S2 only
 */
 #include "sdkconfig.h"
+#include "unity.h"
+#include "test_utils.h"
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)    //TODO: IDF-3160
 #if CONFIG_IDF_TARGET_ESP32S2
 
 
@@ -36,6 +40,10 @@
 #include "soc/soc.h"
 #include "soc/lldesc.h"
 #include "test/test_adc_dac_dma.h"
+
+#include "driver/adc_deprecated.h"
+#include "hal/adc_ll.h"
+#include "esp_pm.h"
 
 static const char *TAG = "test_adc";
 
@@ -83,7 +91,6 @@ static adc_channel_t adc_list[SOC_ADC_PATT_LEN_MAX] = {
 /* For ESP32S2, it should use same atten, or, it will have error. */
 #define TEST_ADC_ATTEN_DEFAULT (ADC_ATTEN_11db)
 
-extern esp_err_t adc_digi_reset(void);
 
 /* Work mode.
  * single: eof_num;
@@ -108,6 +115,20 @@ static lldesc_t dma1 = {0};
 static lldesc_t dma2 = {0};
 static QueueHandle_t que_adc = NULL;
 static adc_dma_event_t adc_evt;
+
+/**
+ * @brief Reset FSM of adc digital controller.
+ *
+ * @return
+ *      - ESP_OK Success
+ */
+static esp_err_t adc_digi_reset(void)
+{
+    adc_ll_digi_reset();
+    adc_ll_digi_clear_pattern_table(ADC_NUM_1);
+    adc_ll_digi_clear_pattern_table(ADC_NUM_2);
+    return ESP_OK;
+}
 
 /** ADC-DMA ISR handler. */
 static IRAM_ATTR void adc_dma_isr(void *arg)
@@ -630,3 +651,4 @@ TEST_CASE("test_adc_digi_slope_debug", "[adc_dma][ignore]")
 }
 
 #endif // CONFIG_IDF_TARGET_ESP32S2
+#endif  //#if !DISABLED_FOR_TARGETS(ESP32S2)

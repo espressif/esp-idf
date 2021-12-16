@@ -63,6 +63,7 @@
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 #define SOC_CAPS_ECO_VER_MAX        3
 
+#define SOC_ADC_SUPPORTED           1
 #define SOC_DAC_SUPPORTED           1
 #define SOC_MCPWM_SUPPORTED         1
 #define SOC_SDMMC_HOST_SUPPORTED    1
@@ -85,7 +86,7 @@
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
 /**
- * TO BE REMOVED in !14278
+ * TO BE REMOVED
  * Check if adc support digital controller (DMA) mode.
  * @value
  *      - 1 : support;
@@ -95,6 +96,7 @@
 
 /*!< SAR ADC Module*/
 #define SOC_ADC_RTC_CTRL_SUPPORTED              1
+#define SOC_ADC_DIG_CTRL_SUPPORTED              1
 #define SOC_ADC_PERIPH_NUM                      (2)
 #define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         ((PERIPH_NUM==0)? 8: 10)
 #define SOC_ADC_MAX_CHANNEL_NUM                 (10)
@@ -105,8 +107,8 @@
 #define SOC_ADC_DIGI_MIN_BITWIDTH               (9)
 #define SOC_ADC_DIGI_MAX_BITWIDTH               (12)
 /*!< F_sample = F_digi_con / 2 / interval. F_digi_con = 5M for now. 30 <= interva <= 4095 */
-#define SOC_ADC_SAMPLE_FREQ_THRES_HIGH          83333
-#define SOC_ADC_SAMPLE_FREQ_THRES_LOW           611
+#define SOC_ADC_SAMPLE_FREQ_THRES_HIGH          (2*1000*1000)
+#define SOC_ADC_SAMPLE_FREQ_THRES_LOW           (2000)
 
 /*!< RTC */
 #define SOC_ADC_MAX_BITWIDTH                    (12)

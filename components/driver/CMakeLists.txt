@@ -20,6 +20,12 @@ set(srcs
 
 set(includes "include" "${target}/include" "deprecated")
 
+if(CONFIG_SOC_ADC_SUPPORTED)
+    list(APPEND srcs
+         "adc_common.c"
+         "adc.c")
+endif()
+
 if(CONFIG_SOC_MCPWM_SUPPORTED)
     list(APPEND srcs "mcpwm.c")
 endif()
@@ -30,8 +36,7 @@ endif()
 
 if(${target} STREQUAL "esp32")
     # SDMMC and MCPWM are in ESP32 only.
-    list(APPEND srcs "adc_common.c"
-                     "dac_common.c"
+    list(APPEND srcs "dac_common.c"
                      "sdio_slave.c"
                      "sdmmc_host.c"
                      "i2s.c"
@@ -41,13 +46,13 @@ if(${target} STREQUAL "esp32")
                      "touch_sensor_common.c"
                      "esp32/touch_sensor.c"
                      "esp32/adc.c"
+                     "adc_deprecated.c"
                      "esp32/dac.c"
                      "twai.c")
 endif()
 
 if(IDF_TARGET STREQUAL "esp32s2")
-    list(APPEND srcs "adc_common.c"
-                     "dac_common.c"
+    list(APPEND srcs "dac_common.c"
                      "dedic_gpio.c"
                      "spi_slave_hd.c"
                      "touch_sensor_common.c"
@@ -58,13 +63,13 @@ if(IDF_TARGET STREQUAL "esp32s2")
                      "esp32s2/rtc_tempsensor.c"
                      "esp32s2/touch_sensor.c"
                      "esp32s2/adc.c"
+                     "adc_deprecated.c"
                      "esp32s2/adc2_init_cal.c"
                      "esp32s2/dac.c")
 endif()
 
 if(${target} STREQUAL "esp32s3")
-    list(APPEND srcs "adc_common.c"
-                     "dedic_gpio.c"
+    list(APPEND srcs "dedic_gpio.c"
                      "sdmmc_host.c"
                      "sdmmc_transaction.c"
                      "rmt.c"
@@ -79,13 +84,11 @@ endif()
 
 if(IDF_TARGET STREQUAL "esp32c3")
     list(APPEND srcs "spi_slave_hd.c"
-                     "adc_common.c"
                      "dedic_gpio.c"
                      "usb_serial_jtag.c"
                      "i2s.c"
                      "rmt.c"
                      "sigmadelta.c"
-                     "esp32c3/adc.c"
                      "esp32c3/adc2_init_cal.c"
                      "esp32c3/rtc_tempsensor.c"
                      "twai.c")
@@ -93,12 +96,10 @@ endif()
 
 if(IDF_TARGET STREQUAL "esp32h2")
     list(APPEND srcs "spi_slave_hd.c"
-                     "adc_common.c"
                      "dedic_gpio.c"
                      "i2s.c"
                      "rmt.c"
                      "sigmadelta.c"
-                     "esp32h2/adc.c"
                      "esp32h2/rtc_tempsensor.c"
                      "twai.c")
 endif()

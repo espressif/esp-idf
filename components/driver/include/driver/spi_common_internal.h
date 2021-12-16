@@ -110,7 +110,7 @@ bool spicommon_periph_in_use(spi_host_device_t host);
 bool spicommon_periph_free(spi_host_device_t host);
 
 /**
- * @brief Alloc DMA for SPI Slave
+ * @brief Alloc DMA for SPI
  *
  * @param host_id                      SPI host ID
  * @param dma_chan                     DMA channel to be used
@@ -122,17 +122,17 @@ bool spicommon_periph_free(spi_host_device_t host);
  *        - ESP_ERR_NO_MEM:        No enough memory
  *        - ESP_ERR_NOT_FOUND:     There is no available DMA channel
  */
-esp_err_t spicommon_slave_dma_chan_alloc(spi_host_device_t host_id, spi_dma_chan_t dma_chan, uint32_t *out_actual_tx_dma_chan, uint32_t *out_actual_rx_dma_chan);
+esp_err_t spicommon_dma_chan_alloc(spi_host_device_t host_id, spi_dma_chan_t dma_chan, uint32_t *out_actual_tx_dma_chan, uint32_t *out_actual_rx_dma_chan);
 
 /**
- * @brief Free DMA for SPI Slave
+ * @brief Free DMA for SPI
  *
  * @param host_id  SPI host ID
  *
  * @return
  *        - ESP_OK: On success
  */
-esp_err_t spicommon_slave_free_dma(spi_host_device_t host_id);
+esp_err_t spicommon_dma_chan_free(spi_host_device_t host_id);
 
 /**
  * @brief Connect a SPI peripheral to GPIO pins
