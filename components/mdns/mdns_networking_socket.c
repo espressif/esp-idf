@@ -210,7 +210,7 @@ size_t _mdns_udp_pcb_write(mdns_if_t tcpip_if, mdns_ip_protocol_t ip_protocol, c
     ESP_LOGD(TAG, "[sock=%d]: Sending to IP %s port %d", sock, get_string_address(&in_addr), port);
     ssize_t actual_len = sendto(sock, data, len, 0, (struct sockaddr *)&in_addr, ss_size);
     if (actual_len < 0) {
-        ESP_LOGE(TAG, "[sock=%d]: _mdns_udp_pcb_write sendto() has failed\n error=%d: %s", sock, errno, strerror(errno));
+        ESP_LOGE(TAG, "[sock=%d]: _mdns_udp_pcb_write sendto() has failed\n errno=%d: %s", sock, errno, strerror(errno));
     }
     return actual_len;
 }
@@ -396,7 +396,7 @@ static int create_socket(esp_netif_t *netif)
     int sock = socket(PF_INET, SOCK_DGRAM, 0);
 #endif
     if (sock < 0) {
-        ESP_LOGE(TAG, "Failed to create socket. Error %d", errno);
+        ESP_LOGE(TAG, "Failed to create socket. errno %d", errno);
         return -1;
     }
 
@@ -412,7 +412,7 @@ static int create_socket(esp_netif_t *netif)
     bzero(&saddr.sin6_addr.s6_addr, sizeof(saddr.sin6_addr.s6_addr));
     int err = bind(sock, (struct sockaddr *)&saddr, sizeof(struct sockaddr_in6));
     if (err < 0) {
-        ESP_LOGE(TAG, "Failed to bind socket. Error %d", errno);
+        ESP_LOGE(TAG, "Failed to bind socket. errno %d", errno);
         goto err;
     }
 #else
@@ -422,7 +422,7 @@ static int create_socket(esp_netif_t *netif)
     bzero(&saddr.sin_addr.s_addr, sizeof(saddr.sin_addr.s_addr));
     int err = bind(sock, (struct sockaddr *)&saddr, sizeof(struct sockaddr_in));
     if (err < 0) {
-        ESP_LOGE(TAG, "Failed to bind socket. Error %d", errno);
+        ESP_LOGE(TAG, "Failed to bind socket. errno %d", errno);
         goto err;
     }
 #endif // CONFIG_LWIP_IPV6
@@ -447,7 +447,7 @@ static int socket_add_ipv6_multicast_group(int sock, esp_netif_t *netif)
     int ifindex = esp_netif_get_netif_impl_index(netif);
     int err = setsockopt(sock, IPPROTO_IPV6, IPV6_MULTICAST_IF, &ifindex, sizeof(ifindex));
     if (err < 0) {
-        ESP_LOGE(TAG, "Failed to set IPV6_MULTICAST_IF. Error %d", errno);
+        ESP_LOGE(TAG, "Failed to set IPV6_MULTICAST_IF. errno %d", errno);
         return err;
     }
 
@@ -457,7 +457,7 @@ static int socket_add_ipv6_multicast_group(int sock, esp_netif_t *netif)
     v6imreq.ipv6mr_interface = ifindex;
     err = setsockopt(sock, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP, &v6imreq, sizeof(struct ipv6_mreq));
     if (err < 0) {
-        ESP_LOGE(TAG, "Failed to set IPV6_ADD_MEMBERSHIP. Error %d", errno);
+        ESP_LOGE(TAG, "Failed to set IPV6_ADD_MEMBERSHIP. errno %d", errno);
         return err;
     }
     return err;
@@ -482,7 +482,7 @@ static int socket_add_ipv4_multicast_group(int sock, esp_netif_t *netif)
     err = setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, &imreq, sizeof(struct ip_mreq));
     if (err < 0) {
         ESP_LOGE(TAG, "%d %s", sock, strerror(errno));
-        ESP_LOGE(TAG, "Failed to set IP_ADD_MEMBERSHIP. Error %d", errno);
+        ESP_LOGE(TAG, "Failed to set IP_ADD_MEMBERSHIP. errno %d", errno);
         goto err;
     }
 
