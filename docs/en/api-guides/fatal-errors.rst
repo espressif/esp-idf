@@ -31,9 +31,9 @@ This guide explains the procedure used in ESP-IDF for handling these errors, and
 Panic Handler
 -------------
 
-Every error cause listed in the `Overview`_ will be handled by *panic handler*.
+Every error cause listed in the `Overview`_ will be handled by the *panic handler*.
 
-Panic handler will start by printing the cause of the error to the console. For CPU exceptions, the message will be similar to
+The panic handler will start by printing the cause of the error to the console. For CPU exceptions, the message will be similar to
 
 .. parsed-literal::
 
@@ -45,7 +45,7 @@ For some of the system level checks (interrupt watchdog, cache access error), th
 
     Guru Meditation Error: Core 0 panic'ed (|CACHE_ERR_MSG|). Exception was unhandled.
 
-In all cases, error cause will be printed in parentheses. See `Guru Meditation Errors`_ for a list of possible error causes.
+In all cases, the error cause will be printed in parentheses. See `Guru Meditation Errors`_ for a list of possible error causes.
 
 Subsequent behavior of the panic handler can be set using :ref:`CONFIG_ESP_SYSTEM_PANIC` configuration choice. The available options are:
 
@@ -63,19 +63,23 @@ Subsequent behavior of the panic handler can be set using :ref:`CONFIG_ESP_SYSTE
 
 - Invoke GDB Stub (``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB``)
 
-  Start GDB server which can communicate with GDB over console UART port. See `GDB Stub`_ for more details.
+  Start GDB server which can communicate with GDB over console UART port. This option will only provide read-only debugging or post-mortem debugging. See `GDB Stub`_ for more details.
 
-Behavior of panic handler is affected by two other configuration options.
+- Invoke dynamic GDB Stub (``ESP_SYSTEM_GDBSTUB_RUNTIME``)
 
-- If :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_DEBUG_OCDAWARE` is enabled (which is the default), panic handler will detect whether a JTAG debugger is connected. If it is, execution will be halted and control will be passed to the debugger. In this case registers and backtrace are not dumped to the console, and GDBStub / Core Dump functions are not used.
+  Start GDB server which can communicate with GDB over console UART port. This option allows the user to debug a program at run time and set break points, alter the execution, etc. See `GDB Stub`_ for more details.
 
-- If :doc:`Core Dump <core_dump>` feature is enabled, then system state (task stacks and registers) will be dumped either to Flash or UART, for later analysis.
+The behavior of the panic handler is affected by two other configuration options.
 
-- If :ref:`CONFIG_ESP_PANIC_HANDLER_IRAM` is disabled (disabled by default), the panic handler code is placed in flash memory not IRAM. This means that if ESP-IDF crashes while flash cache is disabled, the panic handler will automatically re-enable flash cache before running GDB Stub or Core Dump. This adds some minor risk, if the flash cache status is also corrupted during the crash.
+- If :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_DEBUG_OCDAWARE` is enabled (which is the default), the panic handler will detect whether a JTAG debugger is connected. If it is, execution will be halted and control will be passed to the debugger. In this case, registers and backtrace are not dumped to the console, and GDBStub / Core Dump functions are not used.
 
-  If this option is enabled, the panic handler code (including required UART functions) is placed in IRAM. This may be necessary to debug some complex issues with crashes while flash cache is disabled (for example, when writing to SPI flash) or when flash cache is corrupted when an exception is triggered.
+- If the :doc:`Core Dump <core_dump>` feature is enabled, then the system state (task stacks and registers) will be dumped to either Flash or UART, for later analysis.
 
-The following diagram illustrates panic handler behavior:
+- If :ref:`CONFIG_ESP_PANIC_HANDLER_IRAM` is disabled (disabled by default), the panic handler code is placed in flash memory, not IRAM. This means that if ESP-IDF crashes while flash cache is disabled, the panic handler will automatically re-enable flash cache before running GDB Stub or Core Dump. This adds some minor risk, if the flash cache status is also corrupted during the crash.
+
+  If this option is enabled, the panic handler code (including required UART functions) is placed in IRAM, and hence will decrease the usable memory space in SRAM. But this may be necessary to debug some complex issues with crashes while flash cache is disabled (for example, when writing to SPI flash) or when flash cache is corrupted when an exception is triggered.
+
+The following diagram illustrates the panic handler behavior:
 
 .. blockdiag::
     :scale: 100%
@@ -123,7 +127,7 @@ The following diagram illustrates panic handler behavior:
 Register Dump and Backtrace
 ---------------------------
 
-Unless ``CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT`` option is enabled, panic handler prints some of the CPU registers, and the backtrace, to the console
+Unless the ``CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT`` option is enabled, the panic handler prints some of the CPU registers, and the backtrace, to the console
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
@@ -155,17 +159,17 @@ Unless ``CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT`` option is enabled, panic handle
         MSTATUS : 0x00001881  MTVEC   : 0x40380001  MCAUSE  : 0x00000007  MTVAL   : 0x00000000
         MHARTID : 0x00000000
 
-Register values printed are the register values in the exception frame, i.e. values at the moment when CPU exception or other fatal error has occured.
+The register values printed are the register values in the exception frame, i.e., values at the moment when the CPU exception or another fatal error has occurred.
 
-Register dump is not printed if the panic handler was executed as a result of an ``abort()`` call.
+A Register dump is not printed if the panic handler has been executed as a result of an ``abort()`` call.
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
     
-    In some cases, such as interrupt watchdog timeout, panic handler may print additional CPU registers (EPC1-EPC4) and the registers/backtrace of the code running on the other CPU.
+    In some cases, such as interrupt watchdog timeout, the panic handler may print additional CPU registers (EPC1-EPC4) and the registers/backtrace of the code running on the other CPU.
 
-    Backtrace line contains PC:SP pairs, where PC is the Program Counter and SP is Stack Pointer, for each stack frame of the current task. If a fatal error happens inside an ISR, the backtrace may include PC:SP pairs both from the task which was interrupted, and from the ISR.
+    The backtrace line contains PC:SP pairs, where PC is the Program Counter and SP is Stack Pointer, for each stack frame of the current task. If a fatal error happens inside an ISR, the backtrace may include PC:SP pairs both from the task which was interrupted, and from the ISR.
 
-If :doc:`IDF Monitor <tools/idf-monitor>` is used, Program Counter values will be converted to code locations (function name, file name, and line number), and the output will be annotated with additional lines
+If :doc:`IDF Monitor <tools/idf-monitor>` is used, Program Counter values will be converted to code locations (function name, file name, and line number), and the output will be annotated with additional lines:
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
@@ -247,9 +251,9 @@ To find the location where a fatal error has happened, look at the lines which f
 GDB Stub
 --------
 
-If ``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB`` option is enabled, panic handler will not reset the chip when fatal error happens. Instead, it will start GDB remote protocol server, commonly referred to as GDB Stub. When this happens, GDB instance running on the host computer can be instructed to connect to the {IDF_TARGET_NAME} UART port.
+If the ``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB`` option is enabled, the panic handler will not reset the chip when a fatal error happens. Instead, it will start a GDB remote protocol server, commonly referred to as GDB Stub. When this happens, a GDB instance running on the host computer can be instructed to connect to the {IDF_TARGET_NAME} UART port.
 
-If :doc:`IDF Monitor <tools/idf-monitor>` is used, GDB is started automatically when GDB Stub prompt is detected on the UART. The output would look like this::
+If :doc:`IDF Monitor <tools/idf-monitor>` is used, GDB is started automatically when a GDB Stub prompt is detected on the UART. The output looks like this::
 
     Entering gdb stub now.
     $T0b#e6GNU gdb (crosstool-NG crosstool-ng-1.22.0-80-gff1f415) 7.10
@@ -273,20 +277,20 @@ If :doc:`IDF Monitor <tools/idf-monitor>` is used, GDB is started automatically 
     36      *((int*) 0) = 0;
     (gdb)
 
-GDB prompt can be used to inspect CPU registers, local and static variables, and arbitrary locations in memory. It is not possible to set breakpoints, change PC, or continue execution. To reset the program, exit GDB and perform external reset: Ctrl-T Ctrl-R in IDF Monitor, or using external reset button on the development board.
+The GDB prompt can be used to inspect CPU registers, local and static variables, and arbitrary locations in memory. It is not possible to set breakpoints, change the PC, or continue execution. To reset the program, exit GDB and perform an external reset: Ctrl-T Ctrl-R in IDF Monitor, or using the external reset button on the development board.
 
 .. _Guru-Meditation-Errors:
 
 Guru Meditation Errors
 ----------------------
 
-.. Note to editor: titles of the following section need to match exception causes printed by the panic handler. Do not change the titles (insert spaces, reword, etc.) unless panic handler messages are also changed.
+.. Note to editor: titles of the following section need to match exception causes printed by the panic handler. Do not change the titles (insert spaces, reword, etc.) unless the panic handler messages are also changed.
 
-.. Note to translator: When translating this section, avoid translating the following section titles. "Guru Meditation" in the title of this section should also not be translated. Keep these two notes when translating.
+.. Note to translator: When translating this section, avoid translating the following section titles. "Guru Meditation" in the title of this section should not be translated either. Keep these two notes when translating.
 
-This section explains the meaning of different error causes, printed in parens after ``Guru Meditation Error: Core panic'ed`` message.
+This section explains the meaning of different error causes, printed in parens after the ``Guru Meditation Error: Core panic'ed`` message.
 
-.. note:: See `Wikipedia article <https://en.wikipedia.org/wiki/Guru_Meditation>`_ for historical origins of "Guru Meditation".
+.. note:: See the `Guru Meditation Wikipedia article <https://en.wikipedia.org/wiki/Guru_Meditation>`_ for historical origins of "Guru Meditation".
 
 
 |ILLEGAL_INSTR_MSG|
@@ -294,46 +298,46 @@ This section explains the meaning of different error causes, printed in parens a
 
 This CPU exception indicates that the instruction which was executed was not a valid instruction. Most common reasons for this error include:
 
-- FreeRTOS task function has returned. In FreeRTOS, if task function needs to terminate, it should call :cpp:func:`vTaskDelete` function and delete itself, instead of returning.
+- FreeRTOS task function has returned. In FreeRTOS, if a task function needs to terminate, it should call :cpp:func:`vTaskDelete` and delete itself, instead of returning.
 
-- Failure to load next instruction from SPI flash. This usually happens if:
+- Failure to read next instruction from SPI flash. This usually happens if:
 
-  - Application has reconfigured SPI flash pins as some other function (GPIO, UART, etc.). Consult Hardware Design Guidelines and the Datasheet for the chip or module for details about SPI flash pins.
+  - Application has reconfigured the SPI flash pins as some other function (GPIO, UART, etc.). Consult the Hardware Design Guidelines and the datasheet for the chip or module for details about the SPI flash pins.
 
-  - Some external device was accidentally connected to SPI flash pins, and has interfered with communication between {IDF_TARGET_NAME} and SPI flash.
+  - Some external device has accidentally been connected to the SPI flash pins, and has interfered with communication between {IDF_TARGET_NAME} and SPI flash.
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
     InstrFetchProhibited
     ^^^^^^^^^^^^^^^^^^^^
 
-    This CPU exception indicates that CPU could not load an instruction because the the address of the instruction did not belong to a valid region in instruction RAM or ROM.
+    This CPU exception indicates that the CPU could not read an instruction because the address of the instruction does not belong to a valid region in instruction RAM or ROM.
 
-    Usually this means an attempt to call a function pointer, which does not point to valid code. ``PC`` (Program Counter) register can be used as an indicator: it will be zero or will contain garbage value (not ``0x4xxxxxxx``).
+    Usually, this means an attempt to call a function pointer, which does not point to valid code. ``PC`` (Program Counter) register can be used as an indicator: it will be zero or will contain a garbage value (not ``0x4xxxxxxx``).
 
     LoadProhibited, StoreProhibited
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    This CPU exception happens when application attempts to read from or write to an invalid memory location. The address which was written/read is found in ``EXCVADDR`` register in the register dump. If this address is zero, it usually means that application attempted to dereference a NULL pointer. If this address is close to zero, it usually means that application attempted to access member of a structure, but the pointer to the structure was NULL. If this address is something else (garbage value, not in ``0x3fxxxxxx`` - ``0x6xxxxxxx`` range), it likely means that the pointer used to access the data was either not initialized or was corrupted.
+    These CPU exceptions happen when an application attempts to read from or write to an invalid memory location. The address which has been written/read is found in the ``EXCVADDR`` register in the register dump. If this address is zero, it usually means that the application has attempted to dereference a NULL pointer. If this address is close to zero, it usually means that the application has attempted to access a member of a structure, but the pointer to the structure is NULL. If this address is something else (garbage value, not in ``0x3fxxxxxx`` - ``0x6xxxxxxx`` range), it likely means that the pointer used to access the data is either not initialized or has been corrupted.
 
     IntegerDivideByZero
     ^^^^^^^^^^^^^^^^^^^
 
-    Application has attempted to do integer division by zero.
+    Application has attempted to do an integer division by zero.
 
     LoadStoreAlignment
     ^^^^^^^^^^^^^^^^^^
 
-    Application has attempted to read or write memory location, and address alignment did not match load/store size. For example, 32-bit load can only be done from 4-byte aligned address, and 16-bit load can only be done from a 2-byte aligned address.
+    Application has attempted to read or write a memory location, and the address alignment does not match the load/store size. For example, a 32-bit read can only be done from a 4-byte aligned address, and a 16-bit write can only be done to a 2-byte aligned address.
 
     LoadStoreError
     ^^^^^^^^^^^^^^
 
     This exception may happen in the following cases:
 
-    - If the application has attempted to do an 8- or 16- bit load/store from a memory region which only supports 32-bit loads/stores. For example, dereferencing a ``char*`` pointer to intruction memory (IRAM, IROM) will result in such an error.
+    - If the application has attempted to do an 8- or 16- bit read to, or write from, a memory region which only supports 32-bit reads/writes. For example, dereferencing a ``char*`` pointer to instruction memory (IRAM, IROM) will result in such an error.
 
-    - If the application has attempted a store to a read-only memory region, such as IROM or DROM.
+    - If the application has attempted to write to a read-only memory region, such as IROM or DROM.
 
     Unhandled debug exception
     ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -342,7 +346,7 @@ This CPU exception indicates that the instruction which was executed was not a v
 
         Debug exception reason: Stack canary watchpoint triggered (task_name)
 
-    This error indicates that application has written past the end of the stack of ``task_name`` task. Note that not every stack overflow is guaranteed to trigger this error. It is possible that the task writes to stack beyond the stack canary location, in which case the watchpoint will not be triggered.
+    This error indicates that the application has written past the end of the stack of the task with name ``task_name``. Note that not every stack overflow is guaranteed to trigger this error. It is possible that the task writes to memory beyond the stack canary location, in which case the watchpoint will not be triggered.
 
 .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
     
@@ -369,12 +373,12 @@ This CPU exception indicates that the instruction which was executed was not a v
 Interrupt wdt timeout on CPU0 / CPU1
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Indicates that interrupt watchdog timeout has occured. See :doc:`Watchdogs <../api-reference/system/wdts>` for more information.
+Indicates that an interrupt watchdog timeout has occurred. See :doc:`Watchdogs <../api-reference/system/wdts>` for more information.
 
 |CACHE_ERR_MSG|
 ^^^^^^^^^^^^^^^
 
-In some situations ESP-IDF will temporarily disable access to external SPI Flash and SPI RAM via caches. For example, this happens with spi_flash APIs are used to read/write/erase/mmap regions of SPI Flash. In these situations, tasks are suspended, and interrupt handlers not registered with ``ESP_INTR_FLAG_IRAM`` are disabled. Make sure that any interrupt handlers registered with this flag have all the code and data in IRAM/DRAM. Refer to the :ref:`SPI flash API documentation <iram-safe-interrupt-handlers>` for more details.
+In some situations, ESP-IDF will temporarily disable access to external SPI Flash and SPI RAM via caches. For example, this happens when spi_flash APIs are used to read/write/erase/mmap regions of SPI Flash. In these situations, tasks are suspended, and interrupt handlers not registered with ``ESP_INTR_FLAG_IRAM`` are disabled. Make sure that any interrupt handlers registered with this flag have all the code and data in IRAM/DRAM. Refer to the :ref:`SPI flash API documentation <iram-safe-interrupt-handlers>` for more details.
 
 .. only:: CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 
@@ -396,20 +400,20 @@ Other Fatal Errors
 Brownout
 ^^^^^^^^
 
-{IDF_TARGET_NAME} has a built-in brownout detector, which is enabled by default. Brownout detector can trigger system reset if supply voltage goes below safe level. Brownout detector can be configured using :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_BROWNOUT_DET` and :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_BROWNOUT_DET_LVL_SEL` options.
+{IDF_TARGET_NAME} has a built-in brownout detector, which is enabled by default. The brownout detector can trigger a system reset if the supply voltage goes below a safe level. The brownout detector can be configured using :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_BROWNOUT_DET` and :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_BROWNOUT_DET_LVL_SEL` options.
 
-When brownout detector triggers, the following message is printed::
+When the brownout detector triggers, the following message is printed::
 
     Brownout detector was triggered
 
-Chip is reset after the message is printed.
+The chip is reset after the message is printed.
 
-Note that if supply voltage is dropping at a fast rate, only part of the message may be seen on the console.
+Note that if the supply voltage is dropping at a fast rate, only part of the message may be seen on the console.
 
 Corrupt Heap
 ^^^^^^^^^^^^
 
-ESP-IDF heap implementation contains a number of run-time checks of heap structure. Additional checks ("Heap Poisoning") can be enabled in menuconfig. If one of the checks fails, message similar to the following will be printed::
+ESP-IDF's heap implementation contains a number of run-time checks of the heap structure. Additional checks ("Heap Poisoning") can be enabled in menuconfig. If one of the checks fails, a message similar to the following will be printed::
 
     CORRUPT HEAP: Bad tail at 0x3ffe270a. Expected 0xbaad5678 got 0xbaac5678
     assertion "head != NULL" failed: file "/Users/user/esp/esp-idf/components/heap/multi_heap_poisoning.c", line 201, function: multi_heap_free
@@ -429,7 +433,7 @@ Stack smashing protection (based on GCC ``-fstack-protector*`` flags) can be ena
     Backtrace: 0x4008e6c0:0x3ffc1780 0x4008e8b7:0x3ffc17a0 0x400d2138:0x3ffc17c0 0x400e79d5:0x3ffc17e0 0x400e79a7:0x3ffc1840 0x400e79df:0x3ffc18a0 0x400e2235:0x3ffc18c0 0x400e1916:0x3ffc18f0 0x400e19cd:0x3ffc1910 0x400e1a11:0x3ffc1930 0x400e1bb2:0x3ffc1950 0x400d2c44:0x3ffc1a80
     0
 
-The backtrace should point to the function where stack smashing has occured. Check the function code for unbounded access to local arrays.
+The backtrace should point to the function where stack smashing has occurred. Check the function code for unbounded access to local arrays.
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
@@ -457,26 +461,26 @@ See `GCC documentation <https://gcc.gnu.org/onlinedocs/gcc/Instrumentation-Optio
 Enabling UBSAN
 """"""""""""""
 
-UBSAN is disabled by default. It can be enabled at file, component, or project level by adding ``-fsanitize=undefined`` compiler option in the build system.
+UBSAN is disabled by default. It can be enabled at file, component, or project level by adding the ``-fsanitize=undefined`` compiler option in the build system.
 
-When enabling UBSAN for the code which uses hardware register header files (``soc/xxx_reg.h``), it is recommended to disable shift-base sanitizer using ``-fno-sanitize=shift-base`` option. This is due to the fact that ESP-IDF register header files currently contain patterns which cause false positives for this specific sanitizer option.
+When enabling UBSAN for code which uses the SOC hardware register header files (``soc/xxx_reg.h``), it is recommended to disable shift-base sanitizer using ``-fno-sanitize=shift-base`` option. This is due to the fact that ESP-IDF register header files currently contain patterns which cause false positives for this specific sanitizer option.
 
-To enable UBSAN at project level, add the following at the end of the project CMakeLists.txt file::
+To enable UBSAN at project level, add the following code at the end of the project's ``CMakeLists.txt`` file::
 
     idf_build_set_property(COMPILE_OPTIONS "-fsanitize=undefined" "-fno-sanitize=shift-base" APPEND)
 
-Alternatively, pass these options through ``EXTRA_CFLAGS`` and ``EXTRA_CXXFLAGS`` environment variables.
+Alternatively, pass these options through the ``EXTRA_CFLAGS`` and ``EXTRA_CXXFLAGS`` environment variables.
 
 Enabling UBSAN results in significant increase of code and data size. Most applications, except for the trivial ones, will not fit into the available RAM of the microcontroller when UBSAN is enabled for the whole application. Therefore it is recommended that UBSAN is instead enabled for specific components under test.
 
-To enable UBSAN for the specific component (``component_name``) from the project CMakeLists.txt file, add the following at the end of the file::
+To enable UBSAN for a specific component (``component_name``) from the project's ``CMakeLists.txt`` file, add the following code at the end of the file::
 
     idf_component_get_property(lib component_name COMPONENT_LIB)
     target_compile_options(${lib} PRIVATE "-fsanitize=undefined" "-fno-sanitize=shift-base")
 
 .. note:: See the build system documentation for more information about :ref:`build properties<cmake-build-properties>` and :ref:`component properties<cmake-component-properties>`.
 
-To enable UBSAN for the specific component (``component_name``) from CMakeLists.txt of the same component, add the following at the end of the file::
+To enable UBSAN for a specific component (``component_name``) from ``CMakeLists.txt`` of the same component, add the following at the end of the file::
 
     target_compile_options(${COMPONENT_LIB} PRIVATE "-fsanitize=undefined" "-fno-sanitize=shift-base")
 
