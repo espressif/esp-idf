@@ -148,23 +148,25 @@ endif()
 
 add_custom_target(erase_flash
     COMMAND ${CMAKE_COMMAND}
-    -D IDF_PATH="${idf_path}"
-    -D SERIAL_TOOL="${ESPTOOLPY}"
-    -D SERIAL_TOOL_ARGS="erase_flash"
+    -D "IDF_PATH=${idf_path}"
+    -D "SERIAL_TOOL=${ESPTOOLPY}"
+    -D "SERIAL_TOOL_ARGS=erase_flash"
     -P run_serial_tool.cmake
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
     USES_TERMINAL
+    VERBATIM
     )
 
 add_custom_target(monitor
     COMMAND ${CMAKE_COMMAND}
-    -D IDF_PATH="${idf_path}"
-    -D SERIAL_TOOL="${ESPMONITOR}"
-    -D SERIAL_TOOL_ARGS="--target;${target};${monitor_rev_args};${elf_dir}/${elf}"
-    -D WORKING_DIRECTORY="${build_dir}"
+    -D "IDF_PATH=${idf_path}"
+    -D "SERIAL_TOOL=${ESPMONITOR}"
+    -D "SERIAL_TOOL_ARGS=--target;${target};${monitor_rev_args};${elf_dir}/${elf}"
+    -D "WORKING_DIRECTORY=${build_dir}"
     -P run_serial_tool.cmake
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
     USES_TERMINAL
+    VERBATIM
     )
 
 set(esptool_flash_main_args "--before=${CONFIG_ESPTOOLPY_BEFORE}")
@@ -347,13 +349,14 @@ function(esptool_py_flash_target target_name main_args sub_args)
 
     add_custom_target(${target_name}
         COMMAND ${CMAKE_COMMAND}
-        -D IDF_PATH="${idf_path}"
-        -D SERIAL_TOOL="${ESPTOOLPY}"
-        -D SERIAL_TOOL_ARGS="${main_args};write_flash;@${target_name}_args"
-        -D WORKING_DIRECTORY="${build_dir}"
+        -D "IDF_PATH=${idf_path}"
+        -D "SERIAL_TOOL=${ESPTOOLPY}"
+        -D "SERIAL_TOOL_ARGS=${main_args};write_flash;@${target_name}_args"
+        -D "WORKING_DIRECTORY=${build_dir}"
         -P ${esptool_py_dir}/run_serial_tool.cmake
         WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
         USES_TERMINAL
+        VERBATIM
         )
 
     set_target_properties(${target_name} PROPERTIES SUB_ARGS "${sub_args}")
@@ -388,13 +391,14 @@ $<JOIN:$<TARGET_PROPERTY:${target_name},IMAGES>,\n>")
     if(${encrypted})
         add_custom_target(encrypted-${target_name}
             COMMAND ${CMAKE_COMMAND}
-            -D IDF_PATH="${idf_path}"
-            -D SERIAL_TOOL="${ESPTOOLPY}"
-            -D SERIAL_TOOL_ARGS="${main_args};write_flash;@encrypted_${target_name}_args"
-            -D WORKING_DIRECTORY="${build_dir}"
+            -D "IDF_PATH=${idf_path}"
+            -D "SERIAL_TOOL=${ESPTOOLPY}"
+            -D "SERIAL_TOOL_ARGS=${main_args};write_flash;@encrypted_${target_name}_args"
+            -D "WORKING_DIRECTORY=${build_dir}"
             -P ${esptool_py_dir}/run_serial_tool.cmake
             WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
             USES_TERMINAL
+            VERBATIM
             )
 
         # Generate the parameters for esptool.py command

@@ -468,6 +468,17 @@ function run_tests()
     mv main/main/main/* main
     rm -rf main/main
 
+    print_status "Non-existent paths in EXTRA_COMPONENT_DIRS are not allowed"
+    clean_build_dir
+    ! idf.py -DEXTRA_COMPONENT_DIRS="extra_components" reconfigure || failure "Build should fail when non-existent component path is added"
+
+    print_status "Component names may contain spaces"
+    clean_build_dir
+    mkdir -p "extra component"
+    echo "idf_component_register" > "extra component/CMakeLists.txt"
+    idf.py -DEXTRA_COMPONENT_DIRS="extra component;main" || failure "Build should succeed when a component name contains space"
+    rm -rf "extra component"
+
     print_status "sdkconfig should have contents of all files: sdkconfig, sdkconfig.defaults, sdkconfig.defaults.IDF_TARGET"
     idf.py clean > /dev/null
     idf.py fullclean > /dev/null
@@ -662,9 +673,10 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
 
     # idf.py subcommand options, (using monitor with as example)
     print_status "Can set options to subcommands: print_filter for monitor"
+    clean_build_dir
     mv ${IDF_PATH}/tools/idf_monitor.py ${IDF_PATH}/tools/idf_monitor.py.tmp
     echo "import sys;print(sys.argv[1:])" > ${IDF_PATH}/tools/idf_monitor.py
-    idf.py build || "Failed to build project"
+    idf.py build || failure "Failed to build project"
     idf.py monitor --print-filter="*:I" -p tty.fake | grep "'--print_filter', '\*:I'" || failure "It should process options for subcommands (and pass print-filter to idf_monitor.py)"
     mv ${IDF_PATH}/tools/idf_monitor.py.tmp ${IDF_PATH}/tools/idf_monitor.py
 

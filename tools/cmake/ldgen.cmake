@@ -46,35 +46,31 @@ function(__ldgen_process_template template output)
     # Create command to invoke the linker script generator tool.
     idf_build_get_property(sdkconfig SDKCONFIG)
     idf_build_get_property(root_kconfig __ROOT_KCONFIG)
-    idf_build_get_property(kconfigs KCONFIGS)
-    idf_build_get_property(kconfig_projbuilds KCONFIG_PROJBUILDS)
 
     idf_build_get_property(python PYTHON)
-
-    string(REPLACE ";" " " kconfigs "${kconfigs}")
-    string(REPLACE ";" " " kconfig_projbuilds "${kconfig_projbuilds}")
 
     idf_build_get_property(config_env_path CONFIG_ENV_PATH)
 
     if($ENV{LDGEN_CHECK_MAPPING})
         set(ldgen_check "--check-mapping"
-            "--check-mapping-exceptions=${idf_path}/tools/ci/check_ldgen_mapping_exceptions.txt")
+            "--check-mapping-exceptions" "${idf_path}/tools/ci/check_ldgen_mapping_exceptions.txt")
         message(STATUS "Mapping check enabled in ldgen")
     endif()
 
     add_custom_command(
         OUTPUT ${output}
-        COMMAND ${python} ${idf_path}/tools/ldgen/ldgen.py
-        --config    ${sdkconfig}
-        --fragments "$<JOIN:${ldgen_fragment_files},\t>"
-        --input     ${template}
-        --output    ${output}
-        --kconfig   ${root_kconfig}
+        COMMAND ${python} "${idf_path}/tools/ldgen/ldgen.py"
+        --config    "${sdkconfig}"
+        --fragments-list "${ldgen_fragment_files}"
+        --input     "${template}"
+        --output    "${output}"
+        --kconfig   "${root_kconfig}"
         --env-file  "${config_env_path}"
-        --libraries-file ${build_dir}/ldgen_libraries
-        --objdump   ${CMAKE_OBJDUMP}
+        --libraries-file "${build_dir}/ldgen_libraries"
+        --objdump   "${CMAKE_OBJDUMP}"
         ${ldgen_check}
         DEPENDS     ${template} ${ldgen_fragment_files} ${ldgen_depends} ${SDKCONFIG}
+        VERBATIM
     )
 
     get_filename_component(_name ${output} NAME)

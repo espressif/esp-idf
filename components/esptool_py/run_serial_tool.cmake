@@ -22,6 +22,8 @@ if(DEFINED ENV{IDF_ENV_FPGA})
     message("Note: IDF_ENV_FPGA is set, propagating to esptool with ESPTOOL_ENV_FPGA = 1")
 endif()
 
+set(serial_tool_cmd ${SERIAL_TOOL})
+
 # Main purpose of this script: we can't expand these environment variables in the main IDF CMake build,
 # because we want to expand them at flashing time not at CMake runtime (so they can change
 # without needing a CMake re-run)
@@ -30,7 +32,7 @@ if(NOT ESPPORT)
     message("Note: ${SERIAL_TOOL} will search for a serial port. "
             "To specify a port, set the ESPPORT environment variable.")
 else()
-    set(port_arg "-p ${ESPPORT}")
+    list(APPEND serial_tool_cmd -p ${ESPPORT})
 endif()
 
 set(ESPBAUD $ENV{ESPBAUD})
@@ -38,13 +40,10 @@ if(NOT ESPBAUD)
     message("Note: ${SERIAL_TOOL} will attempt to set baud rate automatically. "
             "To specify a baud rate, set the ESPBAUD environment variable.")
 else()
-    set(baud_arg "-b ${ESPBAUD}")
+    list(APPEND serial_tool_cmd -b ${ESPBAUD})
 endif()
 
-set(serial_tool_cmd "${SERIAL_TOOL} ${port_arg} ${baud_arg} ${SERIAL_TOOL_ARGS}")
-
-include("${IDF_PATH}/tools/cmake/utilities.cmake")
-spaces2list(serial_tool_cmd)
+list(APPEND serial_tool_cmd ${SERIAL_TOOL_ARGS})
 
 execute_process(COMMAND ${serial_tool_cmd}
     WORKING_DIRECTORY "${WORKING_DIRECTORY}"

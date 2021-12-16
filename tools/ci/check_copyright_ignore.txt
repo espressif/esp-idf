@@ -3182,7 +3182,6 @@ tools/idf_py_actions/tools.py
 tools/idf_py_actions/uf2_ext.py
 tools/kconfig_new/confserver.py
 tools/kconfig_new/gen_kconfig_doc.py
-tools/kconfig_new/prepare_kconfig_files.py
 tools/kconfig_new/test/confgen/test_confgen.py
 tools/kconfig_new/test/confserver/test_confserver.py
 tools/kconfig_new/test/gen_kconfig_doc/test_kconfig_out.py
