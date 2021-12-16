@@ -508,8 +508,8 @@ config SOC_TIMER_GROUPS
     default 2
 
 config SOC_TIMER_GROUP_TIMERS_PER_GROUP
-    bool
-    default y
+    int
+    default 1
 
 config SOC_TIMER_GROUP_COUNTER_BIT_WIDTH
     int
@@ -518,6 +518,10 @@ config SOC_TIMER_GROUP_COUNTER_BIT_WIDTH
 config SOC_TIMER_GROUP_SUPPORT_XTAL
     bool
     default y
+
+config SOC_TIMER_GROUP_TOTAL_TIMERS
+    int
+    default 2
 
 config SOC_TOUCH_SENSOR_NUM
     bool
