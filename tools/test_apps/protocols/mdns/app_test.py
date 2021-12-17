@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import re
@@ -25,6 +25,9 @@ HOST_NAME = u'tinytester.local'
 
 # This servce answer sent by host, when there is query from board
 MDNS_HOST_SERVICE = u'ESP32._http._tcp.local'
+
+# Number of retries to receive mdns answear
+RETRY_COUNT = 10
 
 stop_mdns_listener = Event()
 start_mdns_listener = Event()
@@ -136,6 +139,7 @@ def mdns_listener(esp_host):  # type:(str) -> None
                 continue
             data, _ = sock.recvfrom(1024)
             dns = dpkt.dns.DNS(data)
+            # Receives queries from esp board and sends answers
             if len(dns.qd) > 0:
                 if dns.qd[0].name == HOST_NAME:
                     console_log('Received query: {} '.format(dns.__repr__()))
@@ -147,12 +151,13 @@ def mdns_listener(esp_host):  # type:(str) -> None
                     print(dns.qd[0].name)
                     console_log('Received query: {} '.format(dns.__repr__()))
                     sock.sendto(get_dns_answer_to_service_query(MDNS_HOST_SERVICE), (MCAST_GRP,UDP_PORT))
+            # Receives answers from esp board and sets event flags for python test cases
             if len(dns.an) == 1:
-                if dns.an[0].name == SERVICE_NAME:
+                if dns.an[0].name.startswith(SERVICE_NAME):
                     console_log('Received answer to service query: {}'.format(dns.__repr__()))
                     esp_service_answered.set()
             if len(dns.an) > 1:
-                if dns.an[1].name == SUB_SERVICE_NAME:
+                if dns.an[1].name.startswith(SUB_SERVICE_NAME):
                     console_log('Received answer for sub service query: {}'.format(dns.__repr__()))
                     esp_sub_service_answered.set()
             if len(dns.an) > 0 and dns.an[0].type == dpkt.dns.DNS_A:
@@ -183,33 +188,49 @@ def create_socket():  # type:() -> socket.socket
 def test_query_dns_http_service(service):  # type: (str) -> None
     print('SRV: Query {}'.format(service))
     sock = create_socket()
-    sock.sendto(get_mdns_service_query(service), (MCAST_GRP,UDP_PORT))
-    if not esp_service_answered.wait(timeout=25):
-        raise ValueError('Test has failed: did not receive mdns answer within timeout')
+    packet = get_mdns_service_query(service)
+    for _ in range(RETRY_COUNT):
+        if esp_service_answered.wait(timeout=25):
+            break
+        sock.sendto(packet, (MCAST_GRP,UDP_PORT))
+    else:
+        raise RuntimeError('Test has failed: did not receive mdns answer within timeout')
 
 
 def test_query_dns_sub_service(sub_service):  # type: (str) -> None
     print('PTR: Query {}'.format(sub_service))
     sock = create_socket()
-    sock.sendto(get_mdns_sub_service_query(sub_service), (MCAST_GRP,UDP_PORT))
-    if not esp_sub_service_answered.wait(timeout=25):
-        raise ValueError('Test has failed: did not receive mdns answer within timeout')
+    packet = get_mdns_sub_service_query(sub_service)
+    for _ in range(RETRY_COUNT):
+        if esp_sub_service_answered.wait(timeout=25):
+            break
+        sock.sendto(packet, (MCAST_GRP,UDP_PORT))
+    else:
+        raise RuntimeError('Test has failed: did not receive mdns answer within timeout')
 
 
 def test_query_dns_host(esp_host):  # type: (str) -> None
     print('A: {}'.format(esp_host))
     sock = create_socket()
-    sock.sendto(get_dns_query_for_esp(esp_host), (MCAST_GRP,UDP_PORT))
-    if not esp_host_answered.wait(timeout=25):
-        raise ValueError('Test has failed: did not receive mdns answer within timeout')
+    packet = get_dns_query_for_esp(esp_host)
+    for _ in range(RETRY_COUNT):
+        if esp_host_answered.wait(timeout=25):
+            break
+        sock.sendto(packet, (MCAST_GRP,UDP_PORT))
+    else:
+        raise RuntimeError('Test has failed: did not receive mdns answer within timeout')
 
 
 def test_query_dns_host_delegated(esp_host):  # type: (str) -> None
     print('A: {}'.format(esp_host))
     sock = create_socket()
-    sock.sendto(get_dns_query_for_esp(esp_host + '-delegated'), (MCAST_GRP,UDP_PORT))
-    if not esp_delegated_host_answered.wait(timeout=25):
-        raise ValueError('Test has failed: did not receive mdns answer within timeout')
+    packet = get_dns_query_for_esp(esp_host + '-delegated')
+    for _ in range(RETRY_COUNT):
+        if esp_delegated_host_answered.wait(timeout=25):
+            break
+        sock.sendto(packet, (MCAST_GRP,UDP_PORT))
+    else:
+        raise RuntimeError('Test has failed: did not receive mdns answer within timeout')
 
 
 @ttfw_idf.idf_custom_test(env_tag='Example_WIFI', group='test-apps')
@@ -229,7 +250,7 @@ def test_app_esp_mdns(env, _):  # type: (ttfw_idf.TinyFW.Env, None) -> None
     def start_case(case, desc, result):  # type: (str, str, str) -> None
         print('Starting {}: {}'.format(case, desc))
         dut1.write(case)
-        dut1.expect(re.compile(result), timeout=10)
+        dut1.expect(re.compile(result), timeout=30)
 
     try:
         # start dns listener thread
@@ -251,14 +272,15 @@ def test_app_esp_mdns(env, _):  # type: (ttfw_idf.TinyFW.Env, None) -> None
         # query dns host name delegated, answer should be received from esp board
         test_query_dns_host_delegated(specific_host)
 
+        # query service from esp board, answer should be received from host
+        start_case('CONFIG_TEST_QUERY_SERVICE', 'Query SRV ESP32._http._tcp.local', 'SRV:ESP32')
+
         # query dns-host from esp board, answer should be received from host
         start_case('CONFIG_TEST_QUERY_HOST', 'Query tinytester.local', 'tinytester.local resolved to: 127.0.0.1')
 
         # query dns-host aynchrounusely from esp board, answer should be received from host
         start_case('CONFIG_TEST_QUERY_HOST_ASYNC', 'Query tinytester.local async', 'Async query resolved to A:127.0.0.1')
 
-        # query service from esp board, answer should be received from host
-        start_case('CONFIG_TEST_QUERY_SERVICE', 'Query SRV ESP32._http._tcp.local', 'SRV:ESP32')
     finally:
         stop_mdns_listener.set()
         mdns_responder.join()
