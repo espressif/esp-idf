@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifdef ESP_SUPPLICANT
 
@@ -19,10 +11,12 @@
 #include "common/eapol_common.h"
 #include "rsn_supp/wpa.h"
 #include "rsn_supp/pmksa_cache.h"
+#include "esp_wpas_glue.h"
+#include "esp_private/wifi.h"
 
-u8   *wpa_sm_alloc_eapol(struct wpa_sm *sm, u8 type,
-                         const void *data, u16 data_len,
-                         size_t *msg_len, void **data_pos)
+u8 *wpa_alloc_eapol(void *sm, u8 type,
+                    const void *data, u16 data_len,
+                    size_t *msg_len, void **data_pos)
 {
     void *buffer;
     struct ieee802_1x_hdr *hdr;
@@ -38,7 +32,7 @@ u8   *wpa_sm_alloc_eapol(struct wpa_sm *sm, u8 type,
     /* XXX: reserve l2_ethhdr is enough */
     hdr = (struct ieee802_1x_hdr *)((char *)buffer + sizeof(struct l2_ethhdr));
 
-    hdr->version = sm->eapol_version;
+    hdr->version = DEFAULT_EAPOL_VERSION;
     hdr->type = type;
     hdr->length = host_to_be16(data_len);
 
@@ -55,10 +49,40 @@ u8   *wpa_sm_alloc_eapol(struct wpa_sm *sm, u8 type,
     return (u8 *) hdr;
 }
 
-void  wpa_sm_free_eapol(u8 *buffer)
+void wpa_free_eapol(u8 *buffer)
 {
+    if (!buffer) {
+        return;
+    }
     buffer = buffer - sizeof(struct l2_ethhdr);
     os_free(buffer);
+}
+
+int wpa_ether_send(void *ctx, const u8 *dest, u16 proto,
+                   const u8 *data, size_t data_len)
+{
+    void *buffer = (void *)(data - sizeof(struct l2_ethhdr));
+    struct l2_ethhdr *eth = (struct l2_ethhdr *)buffer;
+
+    os_memcpy(eth->h_dest, dest, ETH_ALEN);
+    os_memcpy(eth->h_source, gWpaSm.own_addr, ETH_ALEN);
+    eth->h_proto = host_to_be16(proto);
+
+    esp_wifi_internal_tx(WIFI_IF_STA, buffer, sizeof(struct l2_ethhdr) + data_len);
+
+    return ESP_OK;
+}
+
+u8 *wpa_sm_alloc_eapol(struct wpa_sm *sm, u8 type,
+                       const void *data, u16 data_len,
+                       size_t *msg_len, void **data_pos)
+{
+    return wpa_alloc_eapol(sm, type, data, data_len, msg_len, data_pos);
+}
+
+void wpa_sm_free_eapol(u8 *buffer)
+{
+    return wpa_free_eapol(buffer);
 }
 
 void  wpa_sm_deauthenticate(struct wpa_sm *sm, u8 reason_code)

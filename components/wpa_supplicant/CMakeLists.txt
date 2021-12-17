@@ -22,6 +22,7 @@ set(srcs "port/os_xtensa.c"
     "src/crypto/sha384-prf.c"
     "src/crypto/md4-internal.c"
     "src/crypto/sha1-tprf.c"
+    "src/eap_common/eap_wsc_common.c"
     "src/eap_peer/chap.c"
     "src/eap_peer/eap.c"
     "src/eap_peer/eap_common.c"
@@ -51,9 +52,8 @@ set(srcs "port/os_xtensa.c"
     "src/wps/wps_attr_process.c"
     "src/wps/wps_common.c"
     "src/wps/wps_dev_attr.c"
-    "src/wps/wps_enrollee.c"
-    "src/wps/wps_registrar.c"
-    "src/wps/wps_validate.c")
+    "src/wps/wps_enrollee.c")
+#    "src/wps/wps_registrar.c")
 
 set(esp_srcs "esp_supplicant/src/esp_wpa2.c"
     "esp_supplicant/src/esp_wpa_main.c"
@@ -66,7 +66,7 @@ if(CONFIG_ESP_WIFI_SOFTAP_SUPPORT)
 endif()
 
 if(CONFIG_WPA_MBEDTLS_CRYPTO)
-    set(tls_src "src/crypto/tls_mbedtls.c")
+    set(tls_src "esp_supplicant/src/crypto/tls_mbedtls.c")
 else()
     set(tls_src
     "src/tls/asn1.c"
@@ -91,9 +91,9 @@ endif()
 
 if(CONFIG_WPA_MBEDTLS_CRYPTO)
     set(crypto_src
-    "src/crypto/crypto_mbedtls.c"
-    "src/crypto/crypto_mbedtls-bignum.c"
-    "src/crypto/crypto_mbedtls-ec.c")
+    "esp_supplicant/src/crypto/crypto_mbedtls.c"
+    "esp_supplicant/src/crypto/crypto_mbedtls-bignum.c"
+    "esp_supplicant/src/crypto/crypto_mbedtls-ec.c")
     # Add internal RC4 if RC4 is disabled in mbedtls
     if(CONFIG_MBEDTLS_RC4_DISABLED)
         set(crypto_src ${crypto_src} "src/crypto/rc4.c")
@@ -133,7 +133,6 @@ else()
     "src/crypto/crypto_internal-cipher.c"
     "src/crypto/crypto_internal-modexp.c"
     "src/crypto/crypto_internal-rsa.c"
-    "src/crypto/crypto_mbedtls-rsa.c"
     "src/crypto/crypto_internal.c"
     "src/crypto/des-internal.c"
     "src/crypto/md4-internal.c"
@@ -180,7 +179,7 @@ endif()
 idf_component_register(SRCS "${srcs}" ${esp_srcs} "${tls_src}" "${roaming_src}"
                             "${crypto_src}" "${mbo_src}" "${dpp_src}"
                     INCLUDE_DIRS include port/include esp_supplicant/include
-                    PRIV_INCLUDE_DIRS src src/utils esp_supplicant/src
+                    PRIV_INCLUDE_DIRS src src/utils esp_supplicant/src src/crypto
                     PRIV_REQUIRES mbedtls esp_timer)
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-strict-aliasing -Wno-write-strings -Werror)

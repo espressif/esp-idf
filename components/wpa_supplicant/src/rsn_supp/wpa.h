@@ -19,9 +19,9 @@
 #include "wpa_i.h"
 
 struct wpa_sm;
+extern struct wpa_sm gWpaSm;
 
 #define WPA_SM_STATE(_sm) ((_sm)->wpa_state)
-
 
 bool wpa_sta_is_cur_pmksa_set(void);
 bool wpa_sta_in_4way_handshake(void);
