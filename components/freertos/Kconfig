@@ -421,7 +421,7 @@ menu "FreeRTOS"
 
     config FREERTOS_TASK_FUNCTION_WRAPPER
         bool "Enclose all task functions in a wrapper function"
-        depends on COMPILER_OPTIMIZATION_DEFAULT
+        depends on COMPILER_OPTIMIZATION_DEFAULT || ESP_COREDUMP_ENABLE || ESP_GDBSTUB_ENABLED
         default y
         help
             If enabled, all FreeRTOS task functions will be enclosed in a wrapper function.
