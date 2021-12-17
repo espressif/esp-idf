@@ -2281,6 +2281,7 @@ static void _mdns_free_linked_txt(mdns_txt_linked_item_t *txt)
  * @brief  creates/allocates new service
  * @param  service       service type
  * @param  proto         service proto
+ * @param  hostname      service hostname
  * @param  port          service port
  * @param  instance      service instance
  * @param  num_items     service number of txt items or 0
