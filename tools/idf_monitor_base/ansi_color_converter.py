@@ -95,6 +95,7 @@ class ANSIColorConverter(object):
             b = bytes([b])
             length = len(self.matched)
             if b == b'\033':  # ESC
+                self._output_write(self.matched)
                 self.matched = b
             elif (length == 1 and b == b'[') or (1 < length < 7):
                 self.matched += b
