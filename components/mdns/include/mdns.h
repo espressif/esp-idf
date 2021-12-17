@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -573,8 +573,31 @@ mdns_search_once_t *mdns_query_async_new(const char *name, const char *service_t
                                          uint32_t timeout, size_t max_results, mdns_query_notify_t notifier);
 
 /**
- * @brief  Query mDNS for host or service
+ * @brief  Generic mDNS query
  *         All following query methods are derived from this one
+ *
+ * @param  name         service instance or host name (NULL for PTR queries)
+ * @param  service_type service type (_http, _arduino, _ftp etc.) (NULL for host queries)
+ * @param  proto        service protocol (_tcp, _udp, etc.) (NULL for host queries)
+ * @param  type         type of query (MDNS_TYPE_*)
+ * @param  unicast      true for Unicast query, false for Multicast query
+ * @param  timeout      time in milliseconds to wait for answers.
+ * @param  max_results  maximum results to be collected
+ * @param  results      pointer to the results of the query
+ *                      results must be freed using mdns_query_results_free below
+ *
+ * @return
+ *     - ESP_OK success
+ *     - ESP_ERR_INVALID_STATE  mDNS is not running
+ *     - ESP_ERR_NO_MEM         memory error
+ *     - ESP_ERR_INVALID_ARG    timeout was not given
+ */
+esp_err_t mdns_query_generic(const char * name, const char * service_type, const char * proto, uint16_t type, bool unicast, uint32_t timeout, size_t max_results, mdns_result_t ** results);
+
+/**
+ * @brief  Query mDNS for host or service
+ *
+ * Note that querying PTR types sends Multicast query, all other types send Unicast queries
  *
  * @param  name         service instance or host name (NULL for PTR queries)
  * @param  service_type service type (_http, _arduino, _ftp etc.) (NULL for host queries)
