@@ -4170,7 +4170,7 @@ static mdns_search_once_t * _mdns_search_find_from(mdns_search_once_t * s, mdns_
                 continue;
             }
             if (s->type != MDNS_TYPE_PTR) {
-                if (!strcasecmp(name->host, s->instance)) {
+                if (s->instance && strcasecmp(name->host, s->instance) == 0) {
                     return s;
                 }
                 s = s->next;
