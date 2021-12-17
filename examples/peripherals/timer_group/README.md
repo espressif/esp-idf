@@ -19,40 +19,27 @@ See the [ESP-IDF Getting Started Guide](https://idf.espressif.com/) for all the 
 ## Example Output
 
 ```
-Timer Group with auto reload
-Group[0], timer[0] alarm event
-------- EVENT TIME --------
-Counter: 0x0000000000000008
-Time   : 0.00000160 s
--------- TASK TIME --------
-Counter: 0x0000000000004ed8
-Time   : 0.00403680 s
-Timer Group without auto reload
-Group[1], timer[0] alarm event
-------- EVENT TIME --------
-Counter: 0x00000000017d7848
-Time   : 5.00000160 s
--------- TASK TIME --------
-Counter: 0x00000000017dcb32
-Time   : 5.00424680 s
-Timer Group with auto reload
-Group[0], timer[0] alarm event
-------- EVENT TIME --------
-Counter: 0x0000000000000008
-Time   : 0.00000160 s
--------- TASK TIME --------
-Counter: 0x0000000000004dd4
-Time   : 0.00398480 s
+I (0) cpu_start: Starting scheduler on APP CPU.
+I (325) example: Init timer with auto-reload
+I (835) example: Timer auto reloaded, count value in ISR: 3
+I (1335) example: Timer auto reloaded, count value in ISR: 3
+I (1835) example: Timer auto reloaded, count value in ISR: 3
+I (2335) example: Timer auto reloaded, count value in ISR: 3
+I (2335) example: Init timer without auto-reload
+I (2835) example: Timer alarmed at 500003
+I (3335) example: Timer alarmed at 1000003
+I (3835) example: Timer alarmed at 1500003
+I (4335) example: Timer alarmed at 2000003
 ```
 
 ## Functionality Overview
 
-* Two timers are configured
-* Each timer is set with some sample alarm interval
-* On reaching the interval value each timer will generate an alarm
-* One of the timers is configured to automatically reload it's counter value on the alarm
-* The other timer is configured to keep incrementing and is reloaded by the application each time the alarm happens
-* Alarms trigger subsequent interrupts, that is tracked with messages printed on the terminal:
+* Configure one timer with auto-reload enabled, alarm period set to 0.5s
+* On reaching the interval value the timer will generate an alarm
+* The timer will reload with initial count value on alarm, by hardware
+* Reconfigure the timer with auto-reload disabled, initial alarm value set to 0.5s
+* The timer keeps incrementing and in the alarm callback, the software reconfigures its alarm value by increasing 0.5s
+* The main task will print the count value that captured in the alarm callback
 
 ## Troubleshooting
 
