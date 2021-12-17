@@ -2296,6 +2296,7 @@ static mdns_service_t * _mdns_create_service(const char * service, const char * 
     if (hostname) {
         s->hostname = strndup(hostname, MDNS_NAME_BUF_LEN - 1);
         if (!s->hostname) {
+            free((char *)s->instance);
             free(s);
             return NULL;
         }
@@ -2305,12 +2306,14 @@ static mdns_service_t * _mdns_create_service(const char * service, const char * 
 
     s->service = strndup(service, MDNS_NAME_BUF_LEN - 1);
     if (!s->service) {
+        free((char *)s->instance);
         free(s);
         return NULL;
     }
 
     s->proto = strndup(proto, MDNS_NAME_BUF_LEN - 1);
     if (!s->proto) {
+        free((char *)s->instance);
         free((char *)s->service);
         free(s);
         return NULL;
