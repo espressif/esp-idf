@@ -47,6 +47,7 @@ typedef struct {
     gptimer_clock_source_t clk_src;
     gptimer_count_direction_t direction;
     uint32_t divider;
+    uint64_t alarm_value;
     bool alarm_en;
     bool auto_reload_en;
     bool counter_en;
@@ -171,6 +172,7 @@ esp_err_t timer_set_alarm_value(timer_group_t group_num, timer_idx_t timer_num, 
     ESP_RETURN_ON_FALSE(p_timer_obj[group_num][timer_num] != NULL, ESP_ERR_INVALID_ARG, TIMER_TAG,  TIMER_NEVER_INIT_ERROR);
     TIMER_ENTER_CRITICAL(&timer_spinlock[group_num]);
     timer_ll_set_alarm_value(p_timer_obj[group_num][timer_num]->hal.dev, timer_num, alarm_value);
+    p_timer_obj[group_num][timer_num]->alarm_value = alarm_value;
     TIMER_EXIT_CRITICAL(&timer_spinlock[group_num]);
     return ESP_OK;
 }
@@ -182,7 +184,7 @@ esp_err_t timer_get_alarm_value(timer_group_t group_num, timer_idx_t timer_num, 
     ESP_RETURN_ON_FALSE(alarm_value != NULL, ESP_ERR_INVALID_ARG, TIMER_TAG,  TIMER_PARAM_ADDR_ERROR);
     ESP_RETURN_ON_FALSE(p_timer_obj[group_num][timer_num] != NULL, ESP_ERR_INVALID_ARG, TIMER_TAG,  TIMER_NEVER_INIT_ERROR);
     TIMER_ENTER_CRITICAL(&timer_spinlock[group_num]);
-    *alarm_value = timer_ll_get_alarm_value(p_timer_obj[group_num][timer_num]->hal.dev, timer_num);
+    *alarm_value = p_timer_obj[group_num][timer_num]->alarm_value;
     TIMER_EXIT_CRITICAL(&timer_spinlock[group_num]);
     return ESP_OK;
 }
@@ -430,6 +432,7 @@ uint64_t IRAM_ATTR timer_group_get_counter_value_in_isr(timer_group_t group_num,
 void IRAM_ATTR timer_group_set_alarm_value_in_isr(timer_group_t group_num, timer_idx_t timer_num, uint64_t alarm_val)
 {
     timer_ll_set_alarm_value(p_timer_obj[group_num][timer_num]->hal.dev, timer_num, alarm_val);
+    p_timer_obj[group_num][timer_num]->alarm_value = alarm_val;
 }
 
 void IRAM_ATTR timer_group_set_counter_enable_in_isr(timer_group_t group_num, timer_idx_t timer_num, timer_start_t counter_en)

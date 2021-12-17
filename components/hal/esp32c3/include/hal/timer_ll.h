@@ -148,18 +148,6 @@ static inline void timer_ll_set_alarm_value(timg_dev_t *hw, uint32_t timer_num, 
 }
 
 /**
- * @brief Get alarm value
- *
- * @param hw Timer Group register base address
- * @param timer_num Timer number in the group
- * @return Counter value to trigger the alarm event
- */
-static inline uint64_t timer_ll_get_alarm_value(timg_dev_t *hw, uint32_t timer_num)
-{
-    return ((uint64_t) hw->hw_timer[timer_num].alarmhi.tx_alarm_hi << 32) | (hw->hw_timer[timer_num].alarmlo.tx_alarm_lo);
-}
-
-/**
  * @brief Set reload value
  *
  * @param hw Timer Group register base address
