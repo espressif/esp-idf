@@ -212,12 +212,16 @@ static void IRAM_ATTR timer_isr_default(void *arg)
     timer_hal_context_t *hal = &timer_obj->hal;
     TIMER_ENTER_CRITICAL(&timer_spinlock[timer_obj->timer_isr_fun.isr_timer_group]);
     uint32_t intr_status = timer_ll_get_intr_status(hal->dev);
+    uint64_t old_alarm_value = timer_obj->alarm_value;
     if (intr_status & TIMER_LL_EVENT_ALARM(timer_id)) {
-        //Clear intrrupt status
+        // Clear interrupt status
         timer_ll_clear_intr_status(hal->dev, TIMER_LL_EVENT_ALARM(timer_id));
+        // call user registered callback
         is_awoken = timer_obj->timer_isr_fun.fn(timer_obj->timer_isr_fun.args);
-        //If the timer is set to auto reload, we need enable it again, so it is triggered the next time
-        timer_ll_enable_alarm(hal->dev, timer_id, timer_obj->auto_reload_en);
+        // reenable alarm if required
+        uint64_t new_alarm_value = timer_obj->alarm_value;
+        bool reenable_alarm = (new_alarm_value != old_alarm_value) || timer_obj->auto_reload_en;
+        timer_ll_enable_alarm(hal->dev, timer_id, reenable_alarm);
     }
     TIMER_EXIT_CRITICAL(&timer_spinlock[timer_obj->timer_isr_fun.isr_timer_group]);
 
