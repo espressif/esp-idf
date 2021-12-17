@@ -290,10 +290,14 @@ if __name__ == '__main__':
         log_level = logging.DEBUG
     logging.basicConfig(format='%(levelname)s: %(message)s', level=log_level)
 
-    print('espcoredump.py v%s' % __version__)
-    if args.operation == 'info_corefile':
-        info_corefile()
-    elif args.operation == 'dbg_corefile':
-        dbg_corefile()
-    else:
-        raise ValueError('Please specify action, should be info_corefile or dbg_corefile')
+    try:
+        print('espcoredump.py v%s' % __version__)
+        if args.operation == 'info_corefile':
+            info_corefile()
+        elif args.operation == 'dbg_corefile':
+            dbg_corefile()
+        else:
+            raise ValueError('Please specify action, should be info_corefile or dbg_corefile')
+    except Exception as e:
+        print(e)
+        exit(1)
