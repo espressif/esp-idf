@@ -34,6 +34,10 @@ if(CONFIG_SOC_GDMA_SUPPORTED)
     list(APPEND srcs "gdma.c")
 endif()
 
+if(CONFIG_SOC_DEDICATED_GPIO_SUPPORTED)
+    list(APPEND srcs "dedic_gpio.c")
+endif()
+
 if(${target} STREQUAL "esp32")
     # SDMMC and MCPWM are in ESP32 only.
     list(APPEND srcs "dac_common.c"
@@ -53,7 +57,6 @@ endif()
 
 if(IDF_TARGET STREQUAL "esp32s2")
     list(APPEND srcs "dac_common.c"
-                     "dedic_gpio.c"
                      "spi_slave_hd.c"
                      "touch_sensor_common.c"
                      "sigmadelta.c"
@@ -69,8 +72,7 @@ if(IDF_TARGET STREQUAL "esp32s2")
 endif()
 
 if(${target} STREQUAL "esp32s3")
-    list(APPEND srcs "dedic_gpio.c"
-                     "sdmmc_host.c"
+    list(APPEND srcs "sdmmc_host.c"
                      "sdmmc_transaction.c"
                      "rmt.c"
                      "sigmadelta.c"
@@ -84,7 +86,6 @@ endif()
 
 if(IDF_TARGET STREQUAL "esp32c3")
     list(APPEND srcs "spi_slave_hd.c"
-                     "dedic_gpio.c"
                      "usb_serial_jtag.c"
                      "i2s.c"
                      "rmt.c"
@@ -96,7 +97,6 @@ endif()
 
 if(IDF_TARGET STREQUAL "esp32h2")
     list(APPEND srcs "spi_slave_hd.c"
-                     "dedic_gpio.c"
                      "i2s.c"
                      "rmt.c"
                      "sigmadelta.c"
