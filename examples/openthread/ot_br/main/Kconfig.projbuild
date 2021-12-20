@@ -15,7 +15,7 @@ menu "OpenThread Border Router Example"
 
     config OPENTHREAD_NETWORK_PANID
         hex "OpenThread network pan id"
-        range 0 0x1234
+        range 0 0xFFFE
         default 0x1234
         help
             The OpenThread network pan id to use
