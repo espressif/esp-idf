@@ -358,7 +358,10 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
     /* If we don't have one, maybe an SCO link. Send to MM */
     if (!p_lcb) {
 #if (BLE_INCLUDED == TRUE)
-        BTM_Recovery_Pre_State();
+        /* The Directed Advertising Timeout error code indicates that directed advertising completed */
+        if (reason != HCI_ERR_DIRECTED_ADVERTISING_TIMEOUT) {
+            BTM_Recovery_Pre_State();
+        }
 #endif  ///BLE_INCLUDED == TRUE
         status = FALSE;
     } else {
