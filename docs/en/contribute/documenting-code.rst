@@ -183,7 +183,7 @@ or for specific target and language with::
 
     build-docs -t esp32 -l en build
 
-For more in-depth documentation about `esp-docs` features please see the `esp-doc` documentation.
+For more in-depth documentation about `esp-docs` features please see the documentation in the `esp-docs repository <https://github.com/espressif/esp-docs/blob/master/docs/building-documention.md>`_.
 
 Wrap up
 -------

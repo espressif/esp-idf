@@ -23,11 +23,12 @@ About
     The {IDF_TARGET_NAME} is a 2.4 GHz Wi-Fi Bluetooth Low Energy combo SoC, which integrates a Xtensa® 32-bit LX7 CPU.
 
 
-.. only:: esp32c3
+.. only:: esp32c3 or esp8684
 
     This is documentation of `ESP-IDF <https://github.com/espressif/esp-idf>`_, the framework to develop applications for {IDF_TARGET_NAME}.
 
     The {IDF_TARGET_NAME} is a 2.4 GHz Wi-Fi Bluetooth Low Energy combo SoC, which integrates a 32-bit RISC-V RV32IMC single-core processor.
+
 
 .. figure:: ../_static/about-doc.png
     :align: center
