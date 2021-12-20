@@ -1,11 +1,3 @@
-languages
-contribute/contributor-agreement
-contribute/documenting-code
-contribute/creating-examples
-contribute/style-guide
-contribute/copyright-guide
-contribute/install-pre-commit-hook
-contribute/index
 api-guides/core_dump_internals
 api-guides/event-handling
 api-guides/performance/speed
@@ -74,13 +66,6 @@ api-guides/fatal-errors
 api-guides/memory-types
 api-guides/build-system-legacy
 api-guides/general-notes
-third-party-tools/platformio
-COPYRIGHT
-libraries-and-frameworks/libs-frameworks
-libraries-and-frameworks/index
-libraries-and-frameworks/cloud-frameworks
-versions
-gnu-make-legacy
 api-reference/api-conventions
 api-reference/template
 api-reference/provisioning/protocomm
@@ -216,8 +201,6 @@ api-reference/protocols/index
 api-reference/protocols/asio
 security/flash-encryption
 security/secure-boot-v2
-about
-resources
 get-started/establish-serial-connection
 get-started/macos-setup-scratch
 get-started/vscode-setup
@@ -230,4 +213,3 @@ get-started/linux-setup
 get-started/index
 get-started/windows-setup-update
 get-started/macos-setup
-index
