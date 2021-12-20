@@ -9,7 +9,6 @@
 #
 # SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import print_function
 
 import argparse
 import json
@@ -18,6 +17,7 @@ import os.path
 import re
 import sys
 import tempfile
+import textwrap
 
 import gen_kconfig_doc
 import kconfiglib
@@ -336,6 +336,21 @@ def write_config(deprecated_options, config, filename):
     deprecated_options.append_config(config, filename)
 
 
+def write_min_config(deprecated_options, config, filename):
+    target_symbol = config.syms['IDF_TARGET']
+    # 'esp32` is harcoded here because the default value of IDF_TARGET is set on the first run from the environment
+    # variable. I.E. `esp32  is not defined as default value.
+    write_target = target_symbol.str_value != 'esp32'
+
+    CONFIG_HEADING = textwrap.dedent('''\
+    # This file was generated using idf.py save-defconfig. It can be edited manually.
+    # Espressif IoT Development Framework (ESP-IDF) Project Minimal Configuration
+    #
+    {}\
+    '''.format(target_symbol.config_string if write_target else ''))
+    config.write_min_config(filename, header=CONFIG_HEADING)
+
+
 def write_header(deprecated_options, config, filename):
     CONFIG_HEADING = """/*
  * Automatically generated file. DO NOT EDIT.
@@ -568,6 +583,7 @@ OUTPUT_FORMATS = {'config': write_config,
                   'docs': write_docs,
                   'json': write_json,
                   'json_menus': write_json_menus,
+                  'savedefconfig': write_min_config,
                   }
 
 
