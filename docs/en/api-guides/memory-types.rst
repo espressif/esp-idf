@@ -125,7 +125,7 @@ The same region of RTC fast memory can be accessed as both instruction and data 
 
      In single core mode, remaining RTC fast memory is added to the heap unless the option :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` is disabled. This memory can be used interchangeably with :ref:`DRAM`, but is slightly slower to access and not DMA capable.
 
-.. only:: not esp32
+.. only:: not esp32 and not esp8684
 
      Remaining RTC fast memory is added to the heap unless the option :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` is disabled. This memory can be used interchangeably with :ref:`DRAM`, but is slightly slower to access.
 

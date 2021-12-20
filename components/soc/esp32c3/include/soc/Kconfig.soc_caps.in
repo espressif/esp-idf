@@ -55,6 +55,10 @@ config SOC_XT_WDT_SUPPORTED
     bool
     default y
 
+config SOC_WIFI_SUPPORTED
+    bool
+    default y
+
 config SOC_SUPPORTS_SECURE_DL_MODE
     bool
     default y

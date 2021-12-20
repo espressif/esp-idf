@@ -12,6 +12,7 @@
 from __future__ import print_function, unicode_literals
 
 import os.path
+import re
 
 from esp_docs.conf_docs import *  # noqa: F403,F401
 
@@ -44,6 +45,10 @@ CLASSIC_BT_DOCS = ['api-reference/bluetooth/classic_bt.rst',
                    'api-reference/bluetooth/esp_spp.rst',
                    'api-reference/bluetooth/esp_gap_bt.rst']
 
+WIFI_DOCS = ['api-guides/wifi.rst',
+             'api-guides/wifi-security.rst',
+             'api-guides/wireshark-user-guide.rst']
+
 SDMMC_DOCS = ['api-reference/peripherals/sdmmc_host.rst',
               'api-reference/peripherals/sd_pullup_requirements.rst']
 
@@ -55,6 +60,8 @@ MCPWM_DOCS = ['api-reference/peripherals/mcpwm.rst']
 DEDIC_GPIO_DOCS = ['api-reference/peripherals/dedic_gpio.rst']
 
 PCNT_DOCS = ['api-reference/peripherals/pcnt.rst']
+
+RMT_DOCS = ['api-reference/peripherals/rmt.rst']
 
 DAC_DOCS = ['api-reference/peripherals/dac.rst']
 
@@ -90,7 +97,8 @@ ESP32_DOCS = ['api-guides/ulp_instruction_set.rst',
               'security/secure-boot-v1.rst',
               'api-reference/peripherals/secure_element.rst',
               'api-reference/peripherals/dac.rst',
-              'hw-reference/esp32/**'] + FTDI_JTAG_DOCS
+              'hw-reference/esp32/**',
+              'api-guides/RF_calibration.rst'] + FTDI_JTAG_DOCS
 
 ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-guides/ulps2_instruction_set.rst',
@@ -99,17 +107,21 @@ ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-reference/peripherals/spi_slave_hd.rst',
                 'api-reference/peripherals/temp_sensor.rst',
                 'api-reference/system/async_memcpy.rst',
-                'api-reference/peripherals/touch_element.rst'] + FTDI_JTAG_DOCS
+                'api-reference/peripherals/touch_element.rst',
+                'api-guides/RF_calibration.rst'] + FTDI_JTAG_DOCS
 
 ESP32S3_DOCS = ['hw-reference/esp32s3/**',
                 'api-reference/system/ipc.rst',
-                'api-guides/flash_psram_config.rst']
+                'api-guides/flash_psram_config.rst',
+                'api-guides/RF_calibration.rst']
 
 # No JTAG docs for this one as it gets gated on SOC_USB_SERIAL_JTAG_SUPPORTED down below.
-ESP32C3_DOCS = ['hw-reference/esp32c3/**']
+ESP32C3_DOCS = ['hw-reference/esp32c3/**',
+                'api-guides/RF_calibration.rst']
 
 # format: {tag needed to include: documents to included}, tags are parsed from sdkconfig and peripheral_caps.h headers
 conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
+                            'SOC_WIFI_SUPPORTED':WIFI_DOCS,
                             'SOC_CLASSIC_BT_SUPPORTED':CLASSIC_BT_DOCS,
                             'SOC_SDMMC_HOST_SUPPORTED':SDMMC_DOCS,
                             'SOC_SDIO_SLAVE_SUPPORTED':SDIO_SLAVE_DOCS,
@@ -119,6 +131,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_DEDICATED_GPIO_SUPPORTED':DEDIC_GPIO_DOCS,
                             'SOC_SPIRAM_SUPPORTED':SPIRAM_DOCS,
                             'SOC_PCNT_SUPPORTED':PCNT_DOCS,
+                            'SOC_RMT_SUPPORTED':RMT_DOCS,
                             'SOC_DAC_SUPPORTED':DAC_DOCS,
                             'SOC_TOUCH_SENSOR_NUM':TOUCH_SENSOR_DOCS,
                             'SOC_ULP_SUPPORTED':ULP_DOCS,
@@ -173,3 +186,20 @@ with open('../page_redirects.txt') as f:
         if len(line.split(' ')) != 2:
             raise RuntimeError('Invalid line in page_redirects.txt: %s' % line)
 html_redirect_pages = [tuple(line.split(' ')) for line in lines]
+
+
+# Callback function for user setup that needs be done after `config-init`-event
+# config.idf_target is not available at the initial config stage
+def conf_setup(app, config):
+    config.add_warnings_content = 'This document is not updated for {} yet, so some of the content may not be correct.'.format(config.idf_target.upper())
+
+    add_warnings_file = '{}/../docs_not_updated/{}.txt'.format(app.confdir, config.idf_target)
+    try:
+        with open(add_warnings_file) as warning_file:
+            config.add_warnings_pages = warning_file.read().splitlines()
+    except FileNotFoundError:
+        # Not for all target
+        pass
+
+
+user_setup_callback = conf_setup

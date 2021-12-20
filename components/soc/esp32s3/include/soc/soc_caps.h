@@ -27,6 +27,7 @@
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 #define SOC_ADC_SUPPORTED               1
 #define SOC_PCNT_SUPPORTED              1
+#define SOC_WIFI_SUPPORTED              1
 #define SOC_TWAI_SUPPORTED              1
 #define SOC_GDMA_SUPPORTED              1
 #define SOC_LCDCAM_SUPPORTED            1
