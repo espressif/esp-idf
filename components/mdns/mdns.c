@@ -1540,6 +1540,8 @@ static bool _mdns_service_match_ptr_question(const mdns_service_t *service, cons
     if (!_mdns_service_match(service, question->service, question->proto, NULL)) {
         return false;
     }
+    // The question parser stores anything before _type._proto in question->host
+    // So the question->host can be subtype or instance name based on its content
     if (question->sub) {
         mdns_subtype_t *subtype = service->subtype;
         while (subtype) {
@@ -1549,6 +1551,11 @@ static bool _mdns_service_match_ptr_question(const mdns_service_t *service, cons
             subtype = subtype->next;
         }
         return false;
+    }
+    if (question->host) {
+        if (strcasecmp(service->instance, question->host) != 0) {
+            return false;
+        }
     }
     return true;
 }
