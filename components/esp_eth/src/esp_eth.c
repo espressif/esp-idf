@@ -323,6 +323,13 @@ esp_err_t esp_eth_transmit(esp_eth_handle_t hdl, void *buf, size_t length)
 {
     esp_err_t ret = ESP_OK;
     esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
+
+    if (atomic_load(&eth_driver->fsm) != ESP_ETH_FSM_START) {
+        ret = ESP_ERR_INVALID_STATE;
+        ESP_LOGD(TAG, "Ethernet is not started");
+        goto err;
+    }
+
     ETH_CHECK(buf, "can't set buf to null", err, ESP_ERR_INVALID_ARG);
     ETH_CHECK(length, "buf length can't be zero", err, ESP_ERR_INVALID_ARG);
     ETH_CHECK(eth_driver, "ethernet driver handle can't be null", err, ESP_ERR_INVALID_ARG);
