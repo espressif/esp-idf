@@ -99,6 +99,15 @@ single task will need to monopolise the CPU (for example, if you expect the app 
 intensive calculation and should not yield to other tasks). It is also possible to change this
 timeout at runtime by calling :cpp:func:`esp_task_wdt_init`.
 
+.. note::
+
+    It might cause severe watchdog timeout issue when erasing large flash areas. Here are two methods to avoid this issue:
+
+    - Increase :ref:`CONFIG_ESP_TASK_WDT_TIMEOUT_S` in menuconfig for a larger watchdog timeout period.
+    - You can also call :cpp:func:`esp_task_wdt_init` to increase the watchdog timeout period before erasing a large flash area.
+
+    For more information, you can refer to :doc:`SPI Flash <../storage/spi_flash>`.
+
 The following config options control TWDT configuration at startup. They are all enabled by default:
 
 {IDF_TARGET_IDLE_TASK:default="Idle task", esp32="CPU0 Idle task", esp32s3="CPU0 Idle task"}
