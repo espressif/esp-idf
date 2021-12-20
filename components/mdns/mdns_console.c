@@ -11,18 +11,13 @@
 
 static const char * ip_protocol_str[] = {"V4", "V6", "MAX"};
 
-static const char * if_str(esp_netif_t *netif)
-{
-    return esp_netif_get_ifkey(netif);
-}
-
 static void mdns_print_results(mdns_result_t * results)
 {
     mdns_result_t * r = results;
     mdns_ip_addr_t * a = NULL;
     int i = 1;
     while (r) {
-        printf("%d: Interface: %s, Type: %s\n", i++, if_str(r->esp_netif), ip_protocol_str[r->ip_protocol]);
+        printf("%d: Interface: %s, Type: %s\n", i++, esp_netif_get_ifkey(r->esp_netif), ip_protocol_str[r->ip_protocol]);
         if (r->instance_name) {
             printf("  PTR : %s\n", r->instance_name);
         }

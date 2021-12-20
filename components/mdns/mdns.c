@@ -3824,7 +3824,7 @@ void _mdns_disable_pcb(mdns_if_t tcpip_if, mdns_ip_protocol_t ip_protocol)
  */
 static void perform_event_action(mdns_if_t mdns_if, mdns_event_actions_t action)
 {
-    if (!_mdns_server || mdns_if > MDNS_MAX_INTERFACES) {
+    if (!_mdns_server || mdns_if >= MDNS_MAX_INTERFACES) {
         return;
     }
     if (action & MDNS_EVENT_ENABLE_IP4) {
@@ -5028,7 +5028,7 @@ static esp_err_t _mdns_service_task_stop(void)
 static esp_err_t mdns_post_custom_action_tcpip_if(mdns_if_t mdns_if, mdns_event_actions_t event_action)
 {
     if (!_mdns_server || mdns_if >= MDNS_MAX_INTERFACES) {
-        return ESP_FAIL;
+        return ESP_ERR_INVALID_STATE;
     }
 
     mdns_action_t * action = (mdns_action_t *)calloc(1, sizeof(mdns_action_t));
@@ -5081,12 +5081,12 @@ static inline void unregister_predefined_handlers(void)
  * Public Methods
  * */
 
-esp_err_t mdns_post_custom_action(esp_netif_t *esp_netif, mdns_event_actions_t event_action)
+esp_err_t mdns_set_esp_netif_action(esp_netif_t *esp_netif, mdns_event_actions_t event_action)
 {
     return mdns_post_custom_action_tcpip_if(_mdns_get_if_from_esp_netif(esp_netif), event_action);
 }
 
-esp_err_t mdns_add_custom_netif(esp_netif_t *esp_netif)
+esp_err_t mdns_register_esp_netif(esp_netif_t *esp_netif)
 {
     if (!_mdns_server) {
         return ESP_ERR_INVALID_STATE;
@@ -5112,7 +5112,7 @@ esp_err_t mdns_add_custom_netif(esp_netif_t *esp_netif)
     return err;
 }
 
-esp_err_t mdns_delete_custom_netif(esp_netif_t *esp_netif)
+esp_err_t mdns_unregister_esp_netif(esp_netif_t *esp_netif)
 {
     if (!_mdns_server) {
         return ESP_ERR_INVALID_STATE;

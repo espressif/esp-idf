@@ -720,9 +720,43 @@ esp_err_t mdns_query_aaaa(const char * host_name, uint32_t timeout, esp_ip6_addr
 #endif
 
 
-esp_err_t mdns_add_custom_netif(esp_netif_t *esp_netif);
-esp_err_t mdns_post_custom_action(esp_netif_t *esp_netif, mdns_event_actions_t event_action);
-esp_err_t mdns_delete_custom_netif(esp_netif_t *esp_netif);
+/**
+ * @brief   Register custom esp_netif with mDNS functionality
+ *          mDNS service runs by on default interfaces (STA, AP, ETH). This API enables running the service
+ *          on any customized interface, either using standard WiFi or Ethernet driver or any kind of user
+ *          defined driver.
+ *
+ * @param   esp_netif Pointer to esp-netif interface
+ * @return
+ *     - ESP_OK success
+ *     - ESP_ERR_INVALID_STATE  mDNS is not running or this netif is already registered
+ *     - ESP_ERR_NO_MEM         not enough memory for this in interface in the netif list (see CONFIG_MDNS_MAX_INTERFACES)
+ */
+esp_err_t mdns_register_esp_netif(esp_netif_t *esp_netif);
+
+/**
+ * @brief   Unregister esp-netif already registered in mDNS service
+ *
+ * @param   esp_netif Pointer to esp-netif interface
+ * @return
+ *     - ESP_OK success
+ *     - ESP_ERR_INVALID_STATE  mDNS is not running
+ *     - ESP_ERR_NOT_FOUND      this esp-netif was not registered in mDNS service
+ */
+esp_err_t mdns_unregister_esp_netif(esp_netif_t *esp_netif);
+
+/**
+ * @brief   Set esp_netif to a desired state, or perform a desired action, such as enable/disable this interface
+ *          or send announcement packets to this netif
+ * @param esp_netif  Pointer to esp-netif interface
+ * @param event_action  Disable/Enable/Announce on this interface over IPv4/IPv6 protocol.
+ *                      Actions enumerated in mdns_event_actions_t type.
+ * @return
+ *     - ESP_OK success
+ *     - ESP_ERR_INVALID_STATE  mDNS is not running or this netif is not registered
+ *     - ESP_ERR_NO_MEM         memory error
+ */
+esp_err_t mdns_set_esp_netif_action(esp_netif_t *esp_netif, mdns_event_actions_t event_action);
 
 #ifdef __cplusplus
 }

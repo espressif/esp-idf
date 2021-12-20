@@ -270,9 +270,9 @@ void app_main(void)
     /* Demonstration of adding a custom netif to mdns service, but we're adding the default example one,
      * so we must disable all predefined interfaces (PREDEF_NETIF_STA, AP and ETH) first
      */
-    ESP_ERROR_CHECK(mdns_add_custom_netif(EXAMPLE_INTERFACE));
-    ESP_ERROR_CHECK(mdns_post_custom_action(EXAMPLE_INTERFACE, MDNS_EVENT_ENABLE_IP4));
-    ESP_ERROR_CHECK(mdns_post_custom_action(EXAMPLE_INTERFACE, MDNS_EVENT_ANNOUNCE_IP4));
+    ESP_ERROR_CHECK(mdns_register_esp_netif(EXAMPLE_INTERFACE));
+    ESP_ERROR_CHECK(mdns_set_esp_netif_action(EXAMPLE_INTERFACE, MDNS_EVENT_ENABLE_IP4));
+    ESP_ERROR_CHECK(mdns_set_esp_netif_action(EXAMPLE_INTERFACE, MDNS_EVENT_ANNOUNCE_IP4));
 #endif
     initialise_button();
     xTaskCreate(&mdns_example_task, "mdns_example_task", 2048, NULL, 5, NULL);
