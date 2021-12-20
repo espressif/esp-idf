@@ -132,14 +132,14 @@ menu "mbedTLS"
             certificate and private key to ssl config object again.
 
     config MBEDTLS_DYNAMIC_FREE_CA_CERT
-        bool "Free SSL ca certificate after its usage"
+        bool "Free SSL CA certificate after its usage"
         default y
         depends on MBEDTLS_DYNAMIC_FREE_CONFIG_DATA
         help
-            Free ca certificate after its usage in the handshake process.
+            Free CA certificate after its usage in the handshake process.
             This option will decrease the heap footprint for the TLS handshake, but may lead to a problem:
             If the respective ssl object needs to perform the TLS handshake again,
-            the ca certificate should once again be registered to the ssl object.
+            the CA certificate should once again be registered to the ssl object.
 
     config MBEDTLS_DEBUG
         bool "Enable mbedTLS debugging"
