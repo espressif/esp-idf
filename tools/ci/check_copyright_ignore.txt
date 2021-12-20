@@ -968,7 +968,6 @@ components/hal/esp32/include/hal/can_types.h
 components/hal/esp32/include/hal/clk_gate_ll.h
 components/hal/esp32/include/hal/cpu_ll.h
 components/hal/esp32/include/hal/dac_ll.h
-components/hal/esp32/include/hal/emac_ll.h
 components/hal/esp32/include/hal/i2c_ll.h
 components/hal/esp32/include/hal/i2s_ll.h
 components/hal/esp32/include/hal/interrupt_controller_ll.h
@@ -1117,7 +1116,6 @@ components/hal/include/hal/cpu_types.h
 components/hal/include/hal/dac_hal.h
 components/hal/include/hal/dac_types.h
 components/hal/include/hal/ds_hal.h
-components/hal/include/hal/emac_hal.h
 components/hal/include/hal/esp_flash_err.h
 components/hal/include/hal/gpio_hal.h
 components/hal/include/hal/i2c_hal.h
