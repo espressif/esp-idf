@@ -51,16 +51,15 @@ extern "C" {
 
 #define RTC_SLOW_CLK_FREQ_150K      150000
 #define RTC_SLOW_CLK_FREQ_8MD256    (RTC_FAST_CLK_FREQ_APPROX / 256)
-#define RTC_SLOW_CLK_FREQ_32K       32768
+#define RTC_SLOW_CLK_FREQ_EXT       32768
 
 #define OTHER_BLOCKS_POWERUP        1
 #define OTHER_BLOCKS_WAIT           1
 
 /* Approximate mapping of voltages to RTC_CNTL_DBIAS_WAK, RTC_CNTL_DBIAS_SLP,
  * RTC_CNTL_DIG_DBIAS_WAK, RTC_CNTL_DIG_DBIAS_SLP values.
- * Valid if RTC_CNTL_DBG_ATTEN is 0.
  */
-#define RTC_CNTL_DBIAS_SLP  0 //sleep dig_dbias & rtc_dbias
+#define RTC_CNTL_DBIAS_SLP  5 //sleep dig_dbias & rtc_dbias
 #define RTC_CNTL_DBIAS_0V90 13 //digital voltage
 #define RTC_CNTL_DBIAS_0V95 16
 #define RTC_CNTL_DBIAS_1V00 18
@@ -105,12 +104,15 @@ extern "C" {
 /*
 set sleep_init default param
 */
-#define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_DEFAULT  3
+#define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_DEFAULT  5
+#define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_NODROP  0
 #define RTC_CNTL_DBG_ATTEN_DEEPSLEEP_DEFAULT  15
 #define RTC_CNTL_DBG_ATTEN_MONITOR_DEFAULT  0
 #define RTC_CNTL_BIASSLP_MONITOR_DEFAULT  0
+#define RTC_CNTL_BIASSLP_SLEEP_ON  0
 #define RTC_CNTL_BIASSLP_SLEEP_DEFAULT  1
 #define RTC_CNTL_PD_CUR_MONITOR_DEFAULT  0
+#define RTC_CNTL_PD_CUR_SLEEP_ON  0
 #define RTC_CNTL_PD_CUR_SLEEP_DEFAULT  1
 #define RTC_CNTL_DG_VDD_DRV_B_SLP_DEFAULT 254
 
@@ -131,17 +133,6 @@ storing in efuse (based on ATE 5k ECO3 chips)
 typedef enum {
     RTC_XTAL_FREQ_40M = 40,     //!< 40 MHz XTAL
 } rtc_xtal_freq_t;
-
-/**
- * @brief CPU frequency values
- */
-typedef enum {
-    RTC_CPU_FREQ_XTAL = 0,      //!< Main XTAL frequency
-    RTC_CPU_FREQ_80M = 1,       //!< 80 MHz
-    RTC_CPU_FREQ_120M = 2,      //!< 120 MHz
-    RTC_CPU_FREQ_160M = 3,      //!< 160 MHz
-    RTC_CPU_FREQ_XTAL_DIV2 = 4, //!< XTAL/2 after reset
-} rtc_cpu_freq_t;
 
 /**
  * @brief CPU clock source
@@ -167,7 +158,7 @@ typedef struct rtc_cpu_freq_config_s {
  */
 typedef enum {
     RTC_SLOW_FREQ_RTC = 0,      //!< Internal 150 kHz RC oscillator
-    RTC_SLOW_FREQ_32K_XTAL = 1, //!< External 32 kHz XTAL
+    RTC_SLOW_FREQ_EXT_CLK = 1,  //!< External clock input by pin0 with frequency no more than 150k
     RTC_SLOW_FREQ_8MD256 = 2,   //!< Internal 8 MHz RC oscillator, divided by 256
 } rtc_slow_freq_t;
 
@@ -193,7 +184,7 @@ typedef enum {
 typedef enum {
     RTC_CAL_RTC_MUX = 0,       //!< Currently selected RTC SLOW_CLK
     RTC_CAL_8MD256 = 1,        //!< Internal 8 MHz RC oscillator, divided by 256
-    RTC_CAL_32K_XTAL = 2       //!< External 32 kHz XTAL
+    RTC_CAL_EXT_CLK = 2       //!< External CLK
 } rtc_cal_sel_t;
 
 /**
@@ -222,20 +213,6 @@ typedef struct {
     .clk_8m_clk_div = 0, \
     .slow_clk_dcap = RTC_CNTL_SCK_DCAP_DEFAULT, \
     .clk_8m_dfreq = RTC_CNTL_CK8M_DFREQ_DEFAULT, \
-}
-
-typedef struct {
-    uint32_t dac : 6;
-    uint32_t dres : 3;
-    uint32_t dgm : 3;
-    uint32_t dbuf: 1;
-} x32k_config_t;
-
-#define X32K_CONFIG_DEFAULT() { \
-    .dac = 3, \
-    .dres = 3, \
-    .dgm = 3, \
-    .dbuf = 1, \
 }
 
 typedef struct {
@@ -294,29 +271,6 @@ rtc_xtal_freq_t rtc_clk_xtal_freq_get(void);
  * @param xtal_freq New frequency value
  */
 void rtc_clk_xtal_freq_update(rtc_xtal_freq_t xtal_freq);
-
-/**
- * @brief Configure 32 kHz XTAL oscillator to accept external clock signal
- */
-void rtc_clk_32k_enable_external(void);
-
-/**
- * @brief Get the state of 32k XTAL oscillator
- * @return true if 32k XTAL oscillator has been enabled
- */
-bool rtc_clk_32k_enabled(void);
-
-/**
- * @brief Enable 32k oscillator, configuring it for fast startup time.
- * Note: to achieve higher frequency stability, rtc_clk_32k_enable function
- * must be called one the 32k XTAL oscillator has started up. This function
- * will initially disable the 32k XTAL oscillator, so it should not be called
- * when the system is using 32k XTAL as RTC_SLOW_CLK.
- *
- * @param cycle Number of 32kHz cycles to bootstrap external crystal.
- *              If 0, no square wave will be used to bootstrap crystal oscillation.
- */
-void rtc_clk_32k_bootstrap(uint32_t cycle);
 
 /**
  * @brief Enable or disable 8 MHz internal oscillator
@@ -593,15 +547,7 @@ void rtc_sleep_pu(rtc_sleep_pu_config_t cfg);
  */
 typedef struct {
     uint32_t lslp_mem_inf_fpu : 1;      //!< force normal voltage in sleep mode (digital domain memory)
-    uint32_t rtc_mem_inf_follow_cpu : 1;//!< keep low voltage in sleep mode (even if ULP/touch is used)
-    uint32_t rtc_fastmem_pd_en : 1;     //!< power down RTC fast memory
-    uint32_t rtc_slowmem_pd_en : 1;     //!< power down RTC slow memory
-    uint32_t rtc_peri_pd_en : 1;        //!< power down RTC peripherals
-    uint32_t wifi_pd_en : 1;            //!< power down WiFi
-    uint32_t bt_pd_en : 1;              //!< power down BT
-    uint32_t cpu_pd_en : 1;             //!< power down CPU, but not restart when lightsleep.
     uint32_t int_8m_pd_en : 1;          //!< Power down Internal 8M oscillator
-    uint32_t dig_peri_pd_en : 1;        //!< power down digital peripherals
     uint32_t deep_slp : 1;              //!< power down digital domain
     uint32_t wdt_flashboot_mod_en : 1;  //!< enable WDT flashboot mode
     uint32_t dig_dbias_wak : 5;         //!< set bias for digital domain, in active mode
@@ -624,16 +570,8 @@ typedef struct {
  */
 #define is_dslp(pd_flags)   ((pd_flags) & RTC_SLEEP_PD_DIG)
 #define RTC_SLEEP_CONFIG_DEFAULT(sleep_flags) { \
-    .lslp_mem_inf_fpu = 0, \
-    .rtc_mem_inf_follow_cpu = ((sleep_flags) & RTC_SLEEP_PD_RTC_MEM_FOLLOW_CPU) ? 1 : 0, \
-    .rtc_fastmem_pd_en = ((sleep_flags) & RTC_SLEEP_PD_RTC_FAST_MEM) ? 1 : 0, \
-    .rtc_slowmem_pd_en = ((sleep_flags) & RTC_SLEEP_PD_RTC_SLOW_MEM) ? 1 : 0, \
-    .rtc_peri_pd_en = ((sleep_flags) & RTC_SLEEP_PD_RTC_PERIPH) ? 1 : 0, \
-    .wifi_pd_en = ((sleep_flags) & RTC_SLEEP_PD_WIFI) ? 1 : 0, \
-    .bt_pd_en = ((sleep_flags) & RTC_SLEEP_PD_BT) ? 1 : 0, \
-    .cpu_pd_en = ((sleep_flags) & RTC_SLEEP_PD_CPU) ? 1 : 0, \
+    .lslp_mem_inf_fpu = 1, \
     .int_8m_pd_en = is_dslp(sleep_flags) ? 1 : ((sleep_flags) & RTC_SLEEP_PD_INT_8M) ? 1 : 0, \
-    .dig_peri_pd_en = ((sleep_flags) & RTC_SLEEP_PD_DIG_PERIPH) ? 1 : 0, \
     .deep_slp = ((sleep_flags) & RTC_SLEEP_PD_DIG) ? 1 : 0, \
     .wdt_flashboot_mod_en = 0, \
     .dig_dbias_wak = RTC_CNTL_DBIAS_1V10, \
@@ -650,15 +588,7 @@ typedef struct {
     .light_slp_reject = 1 \
 };
 #define RTC_SLEEP_PD_DIG                BIT(0)  //!< Deep sleep (power down digital domain)
-#define RTC_SLEEP_PD_RTC_PERIPH         BIT(1)  //!< Power down RTC peripherals
-#define RTC_SLEEP_PD_RTC_SLOW_MEM       BIT(2)  //!< Power down RTC SLOW memory
-#define RTC_SLEEP_PD_RTC_FAST_MEM       BIT(3)  //!< Power down RTC FAST memory
-#define RTC_SLEEP_PD_RTC_MEM_FOLLOW_CPU BIT(4)  //!< RTC FAST and SLOW memories are automatically powered up and down along with the CPU
 #define RTC_SLEEP_PD_VDDSDIO            BIT(5)  //!< Power down VDDSDIO regulator
-#define RTC_SLEEP_PD_WIFI               BIT(6)  //!< Power down WIFI
-#define RTC_SLEEP_PD_BT                 BIT(7)  //!< Power down BT
-#define RTC_SLEEP_PD_CPU                BIT(8)  //!< Power down CPU when in lightsleep, but not restart
-#define RTC_SLEEP_PD_DIG_PERIPH         BIT(9)  //!< Power down DIG peripherals
 #define RTC_SLEEP_PD_INT_8M             BIT(10) //!< Power down Internal 8M oscillator
 #define RTC_SLEEP_PD_XTAL               BIT(11) //!< Power down main XTAL
 

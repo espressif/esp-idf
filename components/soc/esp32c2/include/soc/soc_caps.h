@@ -35,8 +35,6 @@
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     0
 #define SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK 1
-#define SOC_RTC_FAST_MEM_SUPPORTED      0
-#define SOC_RTC_SLOW_MEM_SUPPORTED      0
 
 #define SOC_SHA_SUPPORTED               0 // This will be enabled with IDF-3830
 #define SOC_ECC_SUPPORTED               1
@@ -267,9 +265,3 @@
 #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
 
 #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
-
-#define SOC_PM_SUPPORT_CPU_PD           (1)
-
-#define SOC_PM_SUPPORT_WIFI_PD          (1)
-
-#define SOC_PM_SUPPORT_BT_PD            (1)

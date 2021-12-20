@@ -43,14 +43,6 @@ config SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
     bool
     default y
 
-config SOC_RTC_FAST_MEM_SUPPORTED
-    bool
-    default n
-
-config SOC_RTC_SLOW_MEM_SUPPORTED
-    bool
-    default n
-
 config SOC_SHA_SUPPORTED
     bool
     default n
@@ -524,17 +516,5 @@ config SOC_PM_SUPPORT_WIFI_WAKEUP
     default y
 
 config SOC_PM_SUPPORT_BT_WAKEUP
-    bool
-    default y
-
-config SOC_PM_SUPPORT_CPU_PD
-    bool
-    default y
-
-config SOC_PM_SUPPORT_WIFI_PD
-    bool
-    default y
-
-config SOC_PM_SUPPORT_BT_PD
     bool
     default y

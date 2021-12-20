@@ -33,7 +33,7 @@ typedef struct {
     rtc_cntl_sleep_retent_t retent;
 } sleep_retention_t;
 
-static DRAM_ATTR sleep_retention_t s_retention;
+static DRAM_ATTR __attribute__((unused)) sleep_retention_t s_retention;
 
 #if SOC_PM_SUPPORT_TAGMEM_PD
 

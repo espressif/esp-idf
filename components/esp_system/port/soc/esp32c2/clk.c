@@ -52,9 +52,8 @@
  */
 typedef enum {
     SLOW_CLK_RTC = RTC_SLOW_FREQ_RTC,           //!< Internal 150 kHz RC oscillator
-    SLOW_CLK_32K_XTAL = RTC_SLOW_FREQ_32K_XTAL, //!< External 32 kHz XTAL
     SLOW_CLK_8MD256 = RTC_SLOW_FREQ_8MD256,     //!< Internal 8 MHz RC oscillator, divided by 256
-    SLOW_CLK_32K_EXT_OSC = RTC_SLOW_FREQ_32K_XTAL | EXT_OSC_FLAG //!< External 32k oscillator connected to 32K_XP pin
+    SLOW_CLK_32K_EXT_OSC = RTC_SLOW_FREQ_EXT_CLK | EXT_OSC_FLAG //!< External 32k oscillator connected to 32K_XP pin
 } slow_clk_sel_t;
 
 static void select_rtc_slow_clk(slow_clk_sel_t slow_clk);
@@ -137,27 +136,25 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
     /* number of times to repeat 32k XTAL calibration
      * before giving up and switching to the internal RC
      */
-    int retry_32k_xtal = 3;
+    int retry_ext_clk = 3;
 
     do {
-        if (rtc_slow_freq == RTC_SLOW_FREQ_32K_XTAL) {
-            /* 32k XTAL oscillator needs to be enabled and running before it can
-             * be used. Hardware doesn't have a direct way of checking if the
-             * oscillator is running. Here we use rtc_clk_cal function to count
-             * the number of main XTAL cycles in the given number of 32k XTAL
-             * oscillator cycles. If the 32k XTAL has not started up, calibration
+        if (rtc_slow_freq == RTC_SLOW_FREQ_EXT_CLK) {
+            /* external clock needs to be connected to PIN0 before it can
+             * be used. Here we use rtc_clk_cal function to count
+             * the number of ext clk cycles in the given number of ext clk
+             * cycles. If the ext clk has not started up, calibration
              * will time out, returning 0.
              */
-            ESP_EARLY_LOGD(TAG, "waiting for 32k oscillator to start up");
-
+            ESP_EARLY_LOGD(TAG, "waiting for external clock by pin0 to start up");
             // When SLOW_CLK_CAL_CYCLES is set to 0, clock calibration will not be performed at startup.
             if (SLOW_CLK_CAL_CYCLES > 0) {
-                cal_val = rtc_clk_cal(RTC_CAL_32K_XTAL, SLOW_CLK_CAL_CYCLES);
+                cal_val = rtc_clk_cal(RTC_CAL_EXT_CLK, SLOW_CLK_CAL_CYCLES);
                 if (cal_val == 0 || cal_val < MIN_32K_XTAL_CAL_VAL) {
-                    if (retry_32k_xtal-- > 0) {
+                    if (retry_ext_clk-- > 0) {
                         continue;
                     }
-                    ESP_EARLY_LOGW(TAG, "32 kHz XTAL not found, switching to internal 150 kHz oscillator");
+                    ESP_EARLY_LOGW(TAG, "external clock connected to pin0 not found, switching to internal 150 kHz oscillator");
                     rtc_slow_freq = RTC_SLOW_FREQ_RTC;
                 }
             }
@@ -182,7 +179,7 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
 
 void rtc_clk_select_rtc_slow_clk(void)
 {
-    select_rtc_slow_clk(RTC_SLOW_FREQ_32K_XTAL);
+    select_rtc_slow_clk(RTC_SLOW_FREQ_EXT_CLK);
 }
 
 /* This function is not exposed as an API at this point.

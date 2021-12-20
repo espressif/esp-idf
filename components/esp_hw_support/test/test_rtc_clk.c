@@ -70,24 +70,40 @@ static uint32_t calibrate_one(rtc_cal_sel_t cal_clk, const char* name)
 
 TEST_CASE("RTC_SLOW_CLK sources calibration", "[rtc_clk]")
 {
+#if !CONFIG_IDF_TARGET_ESP32C2
     rtc_clk_32k_enable(true);
+#endif
     rtc_clk_8m_enable(true, true);
 
     CALIBRATE_ONE(RTC_CAL_RTC_MUX);
     CALIBRATE_ONE(RTC_CAL_8MD256);
-    uint32_t cal_32k = CALIBRATE_ONE(RTC_CAL_32K_XTAL);
 
+#if CONFIG_IDF_TARGET_ESP32C2
+    uint32_t cal_ext_slow_clk = CALIBRATE_ONE(RTC_CAL_EXT_CLK);
+    if (cal_ext_slow_clk == 0) {
+        printf("EXT CLOCK by PIN has not started up");
+    } else {
+        printf("switching to RTC_SLOW_FREQ_EXT_CLK: ");
+        rtc_clk_slow_freq_set(RTC_SLOW_FREQ_EXT_CLK);
+        printf("done\n");
+
+        CALIBRATE_ONE(RTC_CAL_RTC_MUX);
+        CALIBRATE_ONE(RTC_CAL_8MD256);
+        CALIBRATE_ONE(RTC_CAL_EXT_CLK);
+    }
+#else
+    uint32_t cal_32k = CALIBRATE_ONE(RTC_CAL_32K_XTAL);
     if (cal_32k == 0) {
         printf("32K XTAL OSC has not started up");
     } else {
         printf("switching to RTC_SLOW_FREQ_32K_XTAL: ");
         rtc_clk_slow_freq_set(RTC_SLOW_FREQ_32K_XTAL);
         printf("done\n");
-
         CALIBRATE_ONE(RTC_CAL_RTC_MUX);
         CALIBRATE_ONE(RTC_CAL_8MD256);
         CALIBRATE_ONE(RTC_CAL_32K_XTAL);
     }
+#endif
 
     printf("switching to RTC_SLOW_FREQ_8MD256: ");
     rtc_clk_slow_freq_set(RTC_SLOW_FREQ_8MD256);
@@ -95,7 +111,11 @@ TEST_CASE("RTC_SLOW_CLK sources calibration", "[rtc_clk]")
 
     CALIBRATE_ONE(RTC_CAL_RTC_MUX);
     CALIBRATE_ONE(RTC_CAL_8MD256);
+#if CONFIG_IDF_TARGET_ESP32C2
+    CALIBRATE_ONE(RTC_CAL_EXT_CLK);
+#else
     CALIBRATE_ONE(RTC_CAL_32K_XTAL);
+#endif
 }
 
 /* The following two are not unit tests, but are added here to make it easy to
