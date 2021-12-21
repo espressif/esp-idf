@@ -156,9 +156,12 @@ enable_autocomplete() {
         eval "$(env _IDF.PY_COMPLETE=$SOURCE_ZSH idf.py)" || echo "WARNING: Failed to load shell autocompletion for zsh version: $ZSH_VERSION!"
     elif [ -n "${BASH_SOURCE-}" ]
     then
-        eval "$(env LANG=en _IDF.PY_COMPLETE=$SOURCE_BASH idf.py)"  || echo "WARNING: Failed to load shell autocompletion for bash version: $BASH_VERSION!"
+        WARNING_MSG="WARNING: Failed to load shell autocompletion for bash version: $BASH_VERSION!"
+        [[ ${BASH_VERSINFO[0]} -lt 4 ]] && { echo "$WARNING_MSG"; return; }
+        eval "$(env LANG=en _IDF.PY_COMPLETE=$SOURCE_BASH idf.py)"  || echo "$WARNING_MSG"
     fi
 
+    unset WARNING_MSG
     unset SOURCE_ZSH
     unset SOURCE_BASH
 
