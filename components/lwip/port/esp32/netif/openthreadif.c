@@ -1,15 +1,19 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
 
+#include "freertos/FreeRTOS.h"
 #include "esp_netif.h"
 #include "esp_netif_net_stack.h"
+#include "lwip/err.h"
 #include "lwip/netif.h"
 #include "lwip/pbuf.h"
 #include "netif/openthreadif.h"
+#include "esp_openthread.h"
+#include "esp_openthread_lock.h"
 #include "openthread/error.h"
 #include "openthread/ip6.h"
 #include "openthread/link.h"
@@ -47,7 +51,7 @@ static err_t openthread_output_ip6(struct netif *netif, struct pbuf *p, const st
         pbuf_free(q);
     }
     /* Check error */
-    switch(ret) {
+    switch (ret) {
     case ESP_ERR_NO_MEM:
         return ERR_MEM;
 
@@ -92,6 +96,34 @@ void openthread_netif_input(void *h, void *buffer, size_t len, void *eb)
     /* the pbuf will be free in upper layer, eg: tcpip_input */
 }
 
+static err_t openthread_netif_multicast_handler(struct netif *netif,
+        const ip6_addr_t *group, enum netif_mac_filter_action action)
+{
+    otError error = OT_ERROR_NONE;
+    otIp6Address multicast_addr;
+
+    memcpy(multicast_addr.mFields.m8, group->addr, sizeof(group->addr));
+    esp_openthread_lock_acquire(portMAX_DELAY);
+    if (action == NETIF_ADD_MAC_FILTER) {
+        error = otIp6SubscribeMulticastAddress(esp_openthread_get_instance(), &multicast_addr);
+    } else {
+        error = otIp6UnsubscribeMulticastAddress(esp_openthread_get_instance(), &multicast_addr);
+    }
+    esp_openthread_lock_release();
+    switch (error) {
+    case OT_ERROR_NONE:
+    case OT_ERROR_ALREADY:
+        return ERR_OK;
+    case OT_ERROR_NO_BUFS:
+        return ERR_MEM;
+    case OT_ERROR_INVALID_ARGS:
+        return ERR_ARG;
+    default:
+        return ERR_IF;
+    }
+}
+
+
 err_t openthread_netif_init(struct netif *netif)
 {
     netif->name[0] = 'o';
@@ -102,6 +134,7 @@ err_t openthread_netif_init(struct netif *netif)
     netif->flags = NETIF_FLAG_BROADCAST;
     netif->output = NULL;
     netif->output_ip6 = openthread_output_ip6;
+    netif->mld_mac_filter = openthread_netif_multicast_handler;
     netif->l2_buffer_free_notify = NULL;
     netif_set_link_up(netif);
 
