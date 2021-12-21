@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@
 #include <assert.h>
 #include "esp_err.h"
 #include "esp_ipc.h"
-#include "esp_ipc_isr.h"
+#include "esp_private/esp_ipc_isr.h"
 #include "esp_attr.h"
 
 #include "freertos/FreeRTOS.h"
@@ -44,6 +44,9 @@ static void IRAM_ATTR ipc_task(void* arg)
 {
     const int cpuid = (int) arg;
     assert(cpuid == xPortGetCoreID());
+#ifdef CONFIG_ESP_IPC_ISR_ENABLE
+    esp_ipc_isr_init();
+#endif
     while (true) {
         // Wait for IPC to be initiated.
         // This will be indicated by giving the semaphore corresponding to
@@ -97,9 +100,6 @@ static void esp_ipc_init(void) __attribute__((constructor));
 
 static void esp_ipc_init(void)
 {
-#ifdef CONFIG_ESP_IPC_ISR_ENABLE
-	esp_ipc_isr_init();
-#endif
     char task_name[15];
 
     for (int i = 0; i < portNUM_PROCESSORS; ++i) {
