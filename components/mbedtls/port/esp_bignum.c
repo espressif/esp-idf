@@ -67,8 +67,7 @@ static inline size_t bits_to_words(size_t bits)
 /* Return the number of words actually used to represent an mpi
    number.
 */
-int __wrap_mbedtls_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, const mbedtls_mpi *M, mbedtls_mpi *_Rinv );
-extern int __real_mbedtls_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, const mbedtls_mpi *M, mbedtls_mpi *_Rinv );
+#if defined(MBEDTLS_MPI_EXP_MOD_ALT) || defined(MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK)
 
 static size_t mpi_words(const mbedtls_mpi *mpi)
 {
@@ -80,6 +79,7 @@ static size_t mpi_words(const mbedtls_mpi *mpi)
     return 0;
 }
 
+#endif //(MBEDTLS_MPI_EXP_MOD_ALT || MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK)
 
 /**
  *
@@ -182,6 +182,8 @@ cleanup:
     return ret;
 }
 
+#if defined(MBEDTLS_MPI_EXP_MOD_ALT) || defined(MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK)
+
 #ifdef ESP_MPI_USE_MONT_EXP
 /*
  * Return the most significant one-bit.
@@ -272,22 +274,26 @@ cleanup2:
  * (See RSA Accelerator section in Technical Reference for more about Mprime, Rinv)
  *
  */
-int __wrap_mbedtls_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, const mbedtls_mpi *M, mbedtls_mpi *_Rinv )
+static int esp_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, const mbedtls_mpi *M, mbedtls_mpi *_Rinv )
 {
     int ret = 0;
+
+    mbedtls_mpi Rinv_new; /* used if _Rinv == NULL */
+    mbedtls_mpi *Rinv;    /* points to _Rinv (if not NULL) othwerwise &RR_new */
+    mbedtls_mpi_uint Mprime;
+
     size_t x_words = mpi_words(X);
     size_t y_words = mpi_words(Y);
     size_t m_words = mpi_words(M);
-
 
     /* "all numbers must be the same length", so choose longest number
        as cardinal length of operation...
     */
     size_t num_words = esp_mpi_hardware_words(MAX(m_words, MAX(x_words, y_words)));
 
-    mbedtls_mpi Rinv_new; /* used if _Rinv == NULL */
-    mbedtls_mpi *Rinv;    /* points to _Rinv (if not NULL) othwerwise &RR_new */
-    mbedtls_mpi_uint Mprime;
+    if (num_words * 32 > SOC_RSA_MAX_BIT_LEN) {
+        return MBEDTLS_ERR_MPI_NOT_ACCEPTABLE;
+    }
 
     if (mbedtls_mpi_cmp_int(M, 0) <= 0 || (M->p[0] & 1) == 0) {
         return MBEDTLS_ERR_MPI_BAD_INPUT_DATA;
@@ -299,14 +305,6 @@ int __wrap_mbedtls_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbed
 
     if (mbedtls_mpi_cmp_int(Y, 0) == 0) {
         return mbedtls_mpi_lset(Z, 1);
-    }
-
-    if (num_words * 32 > SOC_RSA_MAX_BIT_LEN) {
-#ifdef CONFIG_MBEDTLS_LARGE_KEY_SOFTWARE_MPI
-        return __real_mbedtls_mpi_exp_mod(Z, X, Y, M, _Rinv);
-#else
-        return MBEDTLS_ERR_MPI_NOT_ACCEPTABLE;
-#endif
     }
 
     /* Determine RR pointer, either _RR for cached value
@@ -352,6 +350,32 @@ cleanup:
     if (_Rinv == NULL) {
         mbedtls_mpi_free(&Rinv_new);
     }
+    return ret;
+}
+
+#endif /* (MBEDTLS_MPI_EXP_MOD_ALT || MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK) */
+
+/*
+ * Sliding-window exponentiation: X = A^E mod N  (HAC 14.85)
+ */
+int mbedtls_mpi_exp_mod( mbedtls_mpi *X, const mbedtls_mpi *A,
+                         const mbedtls_mpi *E, const mbedtls_mpi *N,
+                         mbedtls_mpi *_RR )
+{
+    int ret;
+#if defined(MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK)
+    /* Try hardware API first and then fallback to software */
+    ret = esp_mpi_exp_mod( X, A, E, N, _RR );
+    if( ret == MBEDTLS_ERR_MPI_NOT_ACCEPTABLE ) {
+        ret = mbedtls_mpi_exp_mod_soft( X, A, E, N, _RR );
+    }
+#else
+    /* Hardware approach */
+    ret = esp_mpi_exp_mod( X, A, E, N, _RR );
+#endif
+    /* Note: For software only approach, it gets handled in mbedTLS library.
+    This file is not part of build objects for that case */
+
     return ret;
 }
 

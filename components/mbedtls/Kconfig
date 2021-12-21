@@ -277,7 +277,7 @@ menu "mbedTLS"
             Enable hardware accelerated multiple precision integer operations.
 
             Hardware accelerated multiplication, modulo multiplication,
-            and modular exponentiation for up to 4096 bit results.
+            and modular exponentiation for up to SOC_RSA_MAX_BIT_LEN bit results.
 
             These operations are used by RSA.
 
