@@ -18,9 +18,6 @@ else()
              "${target}/trax_init.c"
              )
 
-    if(IDF_TARGET STREQUAL "esp32s2")
-        list(APPEND srcs "stdatomic.c")
-    endif()
 endif()
 
 idf_component_register(SRCS ${srcs}
