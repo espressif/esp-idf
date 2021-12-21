@@ -299,6 +299,7 @@ typedef struct {
     UINT32          port_status; /* PORT status */
     UINT32          handle;      /* The connection handle */
     BOOLEAN         async;       /* FALSE, if local initiates disconnect */
+    void *          user_data;   /* piggyback caller's private data */
 } tBTA_JV_RFCOMM_CLOSE;
 
 /* data associated with BTA_JV_RFCOMM_START_EVT */

@@ -462,7 +462,6 @@ components/bt/host/bluedroid/btc/profile/std/include/dis_api.h
 components/bt/host/bluedroid/btc/profile/std/include/srvc_api.h
 components/bt/host/bluedroid/btc/profile/std/smp/esp_app_sec.c
 components/bt/host/bluedroid/btc/profile/std/smp/include/esp_sec_api.h
-components/bt/host/bluedroid/btc/profile/std/spp/btc_spp.c
 components/bt/host/bluedroid/common/include/common/bluedroid_user_config.h
 components/bt/host/bluedroid/common/include/common/bt_common_types.h
 components/bt/host/bluedroid/common/include/common/bt_defs.h
