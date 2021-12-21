@@ -1850,7 +1850,6 @@ static mdns_tx_packet_t * _mdns_create_announce_packet(mdns_if_t tcpip_if, mdns_
  */
 static mdns_tx_packet_t * _mdns_create_announce_from_probe(mdns_tx_packet_t * probe)
 {
-
     mdns_tx_packet_t * packet = _mdns_alloc_packet_default(probe->tcpip_if, probe->ip_protocol);
     if (!packet) {
         return NULL;
@@ -1864,6 +1863,12 @@ static mdns_tx_packet_t * _mdns_create_announce_from_probe(mdns_tx_packet_t * pr
                     || !_mdns_alloc_answer(&packet->answers, MDNS_TYPE_PTR, s->service, NULL, false, false)
                     || !_mdns_alloc_answer(&packet->answers, MDNS_TYPE_SRV, s->service, NULL, true, false)
                     || !_mdns_alloc_answer(&packet->answers, MDNS_TYPE_TXT, s->service, NULL, true, false)) {
+                _mdns_free_tx_packet(packet);
+                return NULL;
+            }
+            mdns_host_item_t *host = mdns_get_host_item(s->service->hostname);
+            if (!_mdns_alloc_answer(&packet->answers, MDNS_TYPE_A, NULL, host, true, false)
+                    || !_mdns_alloc_answer(&packet->answers, MDNS_TYPE_AAAA, NULL, host, true, false)) {
                 _mdns_free_tx_packet(packet);
                 return NULL;
             }
