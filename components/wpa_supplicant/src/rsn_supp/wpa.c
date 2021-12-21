@@ -881,7 +881,7 @@ static bool wpa_supplicant_gtk_in_use(struct wpa_sm *sm, struct wpa_gtk_data *gd
     if (wpa_sm_get_key(&ifx, &alg, bssid, &keyidx, gtk_get, gd->gtk_len, gd->keyidx - 2) == 0) {
         if (ifx == 0 && alg == gd->alg && memcmp(bssid, sm->bssid, ETH_ALEN) == 0 &&
         		memcmp(_gtk, gtk_get, gd->gtk_len) == 0) {
-            wpa_printf(MSG_DEBUG, "GTK %d is already in use in entry %d, it may be an attack, ignore it.", gd->keyidx, hw_keyidx);
+            wpa_printf(MSG_DEBUG, "GTK %d is already in use in entry, it may be an attack, ignore it.", gd->keyidx);
             return true;
         }
     }
