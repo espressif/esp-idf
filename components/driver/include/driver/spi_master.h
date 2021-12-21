@@ -116,7 +116,6 @@ typedef struct {
 #define SPI_TRANS_VARIABLE_CMD        (1<<5)  ///< Use the ``command_bits`` in ``spi_transaction_ext_t`` rather than default value in ``spi_device_interface_config_t``.
 #define SPI_TRANS_VARIABLE_ADDR       (1<<6)  ///< Use the ``address_bits`` in ``spi_transaction_ext_t`` rather than default value in ``spi_device_interface_config_t``.
 #define SPI_TRANS_VARIABLE_DUMMY      (1<<7)  ///< Use the ``dummy_bits`` in ``spi_transaction_ext_t`` rather than default value in ``spi_device_interface_config_t``.
-#define SPI_TRANS_SET_CD              (1<<7)  ///< Set the CD pin
 
 /**
  * This structure describes one SPI transaction. The descriptor should not be modified until the transaction finishes.
