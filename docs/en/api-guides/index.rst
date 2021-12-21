@@ -42,4 +42,5 @@ API Guides
     :esp32: Unit Testing (Legacy GNU Make) <unit-tests-legacy>
     :SOC_USB_SUPPORTED: USB OTG Console <usb-otg-console>
     :SOC_USB_SERIAL_JTAG_SUPPORTED: USB Serial/JTAG Controller Console <usb-serial-jtag-console>
-    WiFi Driver <wifi>
+    Wi-Fi Driver <wifi>
+    Wi-Fi Security <wifi-security>

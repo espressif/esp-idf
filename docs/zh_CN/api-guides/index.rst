@@ -43,3 +43,4 @@ API 指南
    :SOC_USB_SUPPORTED: USB 控制台 <usb-otg-console>
    :SOC_USB_SERIAL_JTAG_SUPPORTED: USB Serial/JTAG Controller Console <usb-serial-jtag-console>
    Wi-Fi 驱动 <wifi>
+   Wi-Fi Security <wifi-security>
