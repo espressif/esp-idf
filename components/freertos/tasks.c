@@ -1421,7 +1421,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 
 		configASSERT( pxPreviousWakeTime );
 		configASSERT( ( xTimeIncrement > 0U ) );
-		configASSERT( uxSchedulerSuspended[xPortGetCoreID()] == 0 );
+		configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_SUSPENDED );
 
 		taskENTER_CRITICAL( &xTaskQueueMutex );
 		{
@@ -1505,7 +1505,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 		/* A delay time of zero just forces a reschedule. */
 		if( xTicksToDelay > ( TickType_t ) 0U )
 		{
-			configASSERT( uxSchedulerSuspended[xPortGetCoreID()] == 0 );
+			configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_SUSPENDED );
 			taskENTER_CRITICAL( &xTaskQueueMutex );
 			{
 				traceTASK_DELAY();
@@ -2434,9 +2434,9 @@ TCB_t *pxTCB = NULL;
 BaseType_t xAlreadyYielded = pdFALSE;
 TickType_t xTicksToNextUnblockTime;
 
-	/* If uxSchedulerSuspended[xPortGetCoreID()] is zero then this function does not match a
+	/* If scheduler state is `taskSCHEDULER_RUNNING` then this function does not match a
 	previous call to taskENTER_CRITICAL( &xTaskQueueMutex ). */
-	configASSERT( uxSchedulerSuspended[xPortGetCoreID()] );
+	configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_RUNNING );
 
 	/* It is possible that an ISR caused a task to be removed from an event
 	list while the scheduler was suspended.  If this was the case then the
@@ -2874,7 +2874,7 @@ BaseType_t xYieldRequired = pdFALSE;
 
 	/* Must not be called with the scheduler suspended as the implementation
 	relies on xPendedTicks being wound down to 0 in xTaskResumeAll(). */
-	configASSERT( uxSchedulerSuspended[xPortGetCoreID()] == 0 );
+	configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_SUSPENDED );
 
 	/* Use xPendedTicks to mimic xTicksToCatchUp number of ticks occuring when
 	the scheduler is suspended so the ticks are executed in xTaskResumeAll(). */
@@ -4511,7 +4511,9 @@ TCB_t *pxTCB;
 	BaseType_t xTaskGetSchedulerState( void )
 	{
 	BaseType_t xReturn;
+    unsigned state;
 
+        state = portENTER_CRITICAL_NESTED();
 		if( xSchedulerRunning == pdFALSE )
 		{
 			xReturn = taskSCHEDULER_NOT_STARTED;
@@ -4527,6 +4529,7 @@ TCB_t *pxTCB;
 				xReturn = taskSCHEDULER_SUSPENDED;
 			}
 		}
+        portEXIT_CRITICAL_NESTED(state);
 
 		return xReturn;
 	}
