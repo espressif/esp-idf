@@ -109,7 +109,7 @@ typedef struct {
     int (* _get_random)(uint8_t *buf, size_t len);
     int (* _get_time)(void *t);
     unsigned long (* _random)(void);
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
     uint32_t (* _slowclk_cal_get)(void);
 #endif
     void (* _log_write)(uint32_t level, const char* tag, const char* format, ...);

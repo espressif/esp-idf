@@ -1,10 +1,5 @@
 idf_build_get_property(idf_target IDF_TARGET)
 
-if(IDF_TARGET STREQUAL "esp32c2")
-    # TODO : IDF-3906
-    return()
-endif()
-
 set(srcs "src/phy_override.c" "src/lib_printf.c")
 
 if(CONFIG_APP_NO_BLOBS)
@@ -72,7 +67,7 @@ if(link_binary_libs)
         $<TARGET_FILE:${esp_phy_lib}>)
     endif()
 
-    if(CONFIG_IDF_TARGET_ESP32C3 OR CONFIG_IDF_TARGET_ESP32S3 OR CONFIG_IDF_TARGET_ESP32H2)
+    if(CONFIG_IDF_TARGET_ESP32C3 OR CONFIG_IDF_TARGET_ESP32S3 OR CONFIG_IDF_TARGET_ESP32H2  OR CONFIG_IDF_TARGET_ESP32C2)
         target_link_libraries(${COMPONENT_LIB} PUBLIC btbb)
         target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${esp_phy_lib}> libphy.a libbtbb.a
         $<TARGET_FILE:${esp_phy_lib}>)
