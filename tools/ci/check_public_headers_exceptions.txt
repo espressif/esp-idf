@@ -89,6 +89,9 @@ components/app_trace/include/esp_sysview_trace.h
 components/esp_gdbstub/include/esp_gdbstub.h
 components/openssl/include/platform/ssl_pm.h
 
+components/esp_hw_support/include/esp_memprot.h
+components/esp_hw_support/include/esp_private/esp_memprot_internal.h
+
 ### Here are the files that use CONFIG_XXX values but don't include sdkconfig.h
 #
 components/heap/include/esp_heap_task_info.h
