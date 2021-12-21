@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,7 @@
 #include "freertos/task.h"
 #include "freertos/portmacro.h"
 #include "esp_intr_alloc.h"
+#include "esp_private/esp_ipc_isr.h"
 #include "esp_ipc_isr.h"
 #include "xtensa/core-macros.h"
 #include "sdkconfig.h"
@@ -59,30 +60,16 @@ static void esp_ipc_isr_call_and_wait(esp_ipc_isr_func_t func, void* arg, esp_ip
 
 /* Initializing IPC_ISR */
 
-static void esp_ipc_isr_init_cpu(void* arg)
+void esp_ipc_isr_init(void)
 {
-    (void) arg;
     const uint32_t cpuid = xPortGetCoreID();
     uint32_t intr_source = ETS_FROM_CPU_INTR2_SOURCE + cpuid; // ETS_FROM_CPU_INTR2_SOURCE and ETS_FROM_CPU_INTR3_SOURCE
     ESP_INTR_DISABLE(ETS_IPC_ISR_INUM);
     intr_matrix_set(cpuid, intr_source, ETS_IPC_ISR_INUM);
     ESP_INTR_ENABLE(ETS_IPC_ISR_INUM);
 
-    /* If this fails then the minimum stack size for this config is too close to running out */
-    assert(uxTaskGetStackHighWaterMark(NULL) > 128);
-
     if (cpuid != 0) {
         s_stall_state = STALL_STATE_RUNNING;
-    }
-    vTaskDelete(NULL);
-}
-
-void esp_ipc_isr_init(void)
-{
-    for (unsigned i = 0; i < portNUM_PROCESSORS; ++i) {
-        portBASE_TYPE res = xTaskCreatePinnedToCore(esp_ipc_isr_init_cpu, "ipc_isr_init", configMINIMAL_STACK_SIZE, NULL, 5, NULL, i);
-        assert(res == pdTRUE);
-        (void)res;
     }
 }
 
