@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,7 +64,7 @@ typedef struct {
         unsigned int hsync_idle_low: 1;  /*!< The hsync signal is low in IDLE state */
         unsigned int vsync_idle_low: 1;  /*!< The vsync signal is low in IDLE state */
         unsigned int de_idle_high: 1;    /*!< The de signal is high in IDLE state */
-        unsigned int pclk_active_neg: 1; /*!< The display will write data lines when there's a falling edge on PCLK */
+        unsigned int pclk_active_neg: 1; /*!< Whether the display data is clocked out at the falling edge of PCLK */
         unsigned int pclk_idle_high: 1;  /*!< The PCLK stays at high level in IDLE phase */
     } flags;
 } esp_lcd_rgb_timing_t;
