@@ -6,7 +6,7 @@
 
 <!-- Add description of the change here --><!-- Mandatory -->
 
-<!-- ## Related --><!-- Optional -->
+## Related <!-- Optional -->
 <!-- Related Jira issues and Github issues -->
 
 ## Release notes <!-- Mandatory -->
