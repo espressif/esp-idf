@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "esp_dpp_i.h"
 #include "esp_dpp.h"
@@ -614,6 +606,7 @@ void esp_supp_dpp_stop_listen(void)
 esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
 {
     struct dpp_global_config cfg = {0};
+    int ret;
 
     os_bzero(&s_dpp_ctx, sizeof(s_dpp_ctx));
     s_dpp_ctx.dpp_event_cb = cb;
@@ -624,10 +617,15 @@ esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
 
     s_dpp_stop_listening = false;
     s_dpp_evt_queue = xQueueCreate(3, sizeof(dpp_event_t));
-    xTaskCreate(esp_dpp_task, "dppT", DPP_TASK_STACK_SIZE, NULL, 2, s_dpp_task_hdl);
+    ret = xTaskCreate(esp_dpp_task, "dppT", DPP_TASK_STACK_SIZE, NULL, 2, s_dpp_task_hdl);
+    if (ret != pdPASS) {
+        wpa_printf(MSG_ERROR, "DPP: failed to create task");
+        return ESP_FAIL;
+    }
 
     s_dpp_api_lock = xSemaphoreCreateRecursiveMutex();
     if (!s_dpp_api_lock) {
+        esp_supp_dpp_deinit();
         wpa_printf(MSG_ERROR, "DPP: dpp_init: failed to create DPP API lock");
         return ESP_ERR_NO_MEM;
     }

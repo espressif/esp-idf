@@ -4670,6 +4670,7 @@ static struct crypto_key * dpp_parse_jwk(struct json_token *jwk,
 	struct wpabuf *x = NULL, *y = NULL, *a = NULL;
 	struct crypto_ec_group *group;
 	struct crypto_key *pkey = NULL;
+	size_t len;
 
 	token = json_get_member(jwk, "kty");
 	if (!token || token->type != JSON_STRING) {
@@ -4728,9 +4729,10 @@ static struct crypto_key * dpp_parse_jwk(struct json_token *jwk,
 		goto fail;
 	}
 
+	len = wpabuf_len(x);
 	a = wpabuf_concat(x, y);
 	pkey = crypto_ec_set_pubkey_point(group, wpabuf_head(a),
-					  wpabuf_len(x));
+					  len);
 	crypto_ec_deinit((struct crypto_ec *)group);
 	*key_curve = curve;
 
@@ -4969,10 +4971,8 @@ static void dpp_copy_netaccesskey(struct dpp_authentication *auth,
 	unsigned char *der = NULL;
 	int der_len;
 
-	crypto_ec_get_priv_key_der(auth->own_protocol_key, &der, &der_len);
-	if (der_len <= 0) {
+	if (crypto_ec_get_priv_key_der(auth->own_protocol_key, &der, &der_len) < 0)
 		return;
-	}
 	wpabuf_free(auth->net_access_key);
 	auth->net_access_key = wpabuf_alloc_copy(der, der_len);
 	crypto_free_buffer(der);

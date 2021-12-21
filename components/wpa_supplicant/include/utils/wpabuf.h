@@ -1,6 +1,6 @@
 /*
  * Dynamic data buffer
- * Copyright (c) 2007-2009, Jouni Malinen <j@w1.fi>
+ * Copyright (c) 2007-2012, Jouni Malinen <j@w1.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -15,6 +15,9 @@
 #ifndef WPABUF_H
 #define WPABUF_H
 
+/* wpabuf::buf is a pointer to external data */
+#define WPABUF_FLAG_EXT_DATA BIT(0)
+
 /*
  * Internal data structure for wpabuf. Please do not touch this directly from
  * elsewhere. This is only defined in header file to allow inline functions
@@ -23,8 +26,8 @@
 struct wpabuf {
 	size_t size; /* total size of the allocated buffer */
 	size_t used; /* length of data in the buffer */
-	u8 *ext_data; /* pointer to external data; NULL if data follows
-		       * struct wpabuf */
+	u8 *buf; /* pointer to the head of the buffer */
+	unsigned int flags;
 	/* optionally followed by the allocated buffer */
 };
 
@@ -78,9 +81,7 @@ static inline size_t wpabuf_tailroom(const struct wpabuf *buf)
  */
 static inline const void * wpabuf_head(const struct wpabuf *buf)
 {
-	if (buf->ext_data)
-		return buf->ext_data;
-	return buf + 1;
+	return buf->buf;
 }
 
 static inline const u8 * wpabuf_head_u8(const struct wpabuf *buf)
@@ -95,9 +96,7 @@ static inline const u8 * wpabuf_head_u8(const struct wpabuf *buf)
  */
 static inline void * wpabuf_mhead(struct wpabuf *buf)
 {
-	if (buf->ext_data)
-		return buf->ext_data;
-	return buf + 1;
+	return buf->buf;
 }
 
 static inline u8 * wpabuf_mhead_u8(struct wpabuf *buf)
@@ -156,7 +155,8 @@ static inline void wpabuf_put_buf(struct wpabuf *dst,
 
 static inline void wpabuf_set(struct wpabuf *buf, const void *data, size_t len)
 {
-	buf->ext_data = (u8 *) data;
+	buf->buf = (u8 *) data;
+	buf->flags = WPABUF_FLAG_EXT_DATA;
 	buf->size = buf->used = len;
 }
 

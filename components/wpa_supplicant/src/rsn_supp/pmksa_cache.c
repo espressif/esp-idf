@@ -517,7 +517,10 @@ pmksa_cache_init(void (*free_cb)(struct rsn_pmksa_cache_entry *entry,
             .dispatch_method = ESP_TIMER_TASK,
             .name = "pmksa_timeout_timer"
         };
-        esp_timer_create(&pmksa_cache_timeout_timer_create, &(pmksa->cache_timeout_timer));
+        if (esp_timer_create(&pmksa_cache_timeout_timer_create, &(pmksa->cache_timeout_timer)) != ESP_OK) {
+            os_free(pmksa);
+            pmksa = NULL;
+        }
     }
 
     return pmksa;
