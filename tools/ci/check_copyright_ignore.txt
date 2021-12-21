@@ -2996,7 +2996,6 @@ tools/ci/check_build_warnings.py
 tools/ci/check_callgraph.py
 tools/ci/check_deprecated_kconfigs.py
 tools/ci/check_executables.py
-tools/ci/check_public_headers.py
 tools/ci/check_readme_links.py
 tools/ci/check_rules_yml.py
 tools/ci/check_soc_struct_headers.py
