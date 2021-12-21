@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import os
 import sys
 import unittest
@@ -52,11 +53,27 @@ OPENOCD = 'openocd-esp32'
 XTENSA_ESP32_ELF = 'xtensa-esp32-elf'
 XTENSA_ESP32S2_ELF = 'xtensa-esp32s2-elf'
 
-ESP32ULP_VERSION = '2.28.51-esp-20191205'
-ESP32S2ULP_VERSION = '2.28.51-esp-20191205'
-OPENOCD_VERSION = 'v0.10.0-esp32-20211111'
-XTENSA_ESP32_ELF_VERSION = 'esp-2020r3-8.4.0'
-XTENSA_ESP32S2_ELF_VERSION = 'esp-2020r3-8.4.0'
+
+def get_version_dict():
+    '''
+    Return a dictionary with tool name to tool version mapping.
+
+    It works with tools.json directly and not through idf_tools.py in order to bypass the script under test. This is
+    a little hacky but thanks to this, versions are not required to be updated here every time a tool is updated.
+    '''
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'tools.json')) as f:
+        tools_obj = json.loads(f.read())
+
+    return dict((tool['name'], tool['versions'][0]['name']) for tool in tools_obj['tools'])
+
+
+version_dict = get_version_dict()
+
+ESP32ULP_VERSION = version_dict[ESP32ULP]
+ESP32S2ULP_VERSION = version_dict[ESP32S2ULP]
+OPENOCD_VERSION = version_dict[OPENOCD]
+XTENSA_ESP32_ELF_VERSION = version_dict[XTENSA_ESP32_ELF]
+XTENSA_ESP32S2_ELF_VERSION = version_dict[XTENSA_ESP32S2_ELF]
 
 
 class TestUsage(unittest.TestCase):
