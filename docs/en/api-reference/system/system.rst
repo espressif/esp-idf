@@ -203,4 +203,4 @@ API Reference
 
 .. include-build-file:: inc/esp_system.inc
 .. include-build-file:: inc/esp_idf_version.inc
-
+.. include-build-file:: inc/esp_mac.inc
