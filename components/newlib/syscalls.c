@@ -17,15 +17,16 @@
 #include <stdarg.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <string.h>
 #include <errno.h>
 #include <reent.h>
 #include <sys/fcntl.h>
 #include "sdkconfig.h"
 #include "esp_rom_uart.h"
 
-static int syscall_not_implemented(void)
+static int syscall_not_implemented(struct _reent *r, ...)
 {
-    errno = ENOSYS;
+    __errno_r(r) = ENOSYS;
     return -1;
 }
 
@@ -43,7 +44,7 @@ ssize_t _write_r_console(struct _reent *r, int fd, const void * data, size_t siz
         }
         return size;
     }
-    errno = EBADF;
+    __errno_r(r) = EBADF;
     return -1;
 }
 
@@ -60,7 +61,19 @@ ssize_t _read_r_console(struct _reent *r, int fd, void * data, size_t size)
         }
         return received;
     }
-    errno = EBADF;
+    __errno_r(r) = EBADF;
+    return -1;
+}
+
+static ssize_t _fstat_r_console(struct _reent *r, int fd, struct stat * st)
+{
+    if (fd == STDOUT_FILENO || fd == STDERR_FILENO) {
+        memset(st, 0, sizeof(*st));
+        /* This needs to be set so that stdout and stderr are line buffered. */
+        st->st_mode = S_IFCHR;
+        return 0;
+    }
+    __errno_r(r) = EBADF;
     return -1;
 }
 
@@ -73,6 +86,8 @@ ssize_t _read_r(struct _reent *r, int fd, void * dst, size_t size)
     __attribute__((weak,alias("_read_r_console")));
 ssize_t _write_r(struct _reent *r, int fd, const void * data, size_t size)
     __attribute__((weak,alias("_write_r_console")));
+int _fstat_r (struct _reent *r, int fd, struct stat *st)
+    __attribute__((weak,alias("_fstat_r_console")));
 
 
 /* The aliases below are to "syscall_not_implemented", which
@@ -90,8 +105,6 @@ off_t _lseek_r(struct _reent *r, int fd, off_t size, int mode)
     __attribute__((weak,alias("syscall_not_implemented")));
 int _fcntl_r(struct _reent *r, int fd, int cmd, int arg)
     __attribute__((weak,alias("syscall_not_implemented")));
-int _fstat_r(struct _reent *r, int fd, struct stat * st)
-    __attribute__((weak,alias("syscall_not_implemented")));
 int _stat_r(struct _reent *r, const char * path, struct stat * st)
     __attribute__((weak,alias("syscall_not_implemented")));
 int _link_r(struct _reent *r, const char* n1, const char* n2)
@@ -105,8 +118,6 @@ int _isatty_r(struct _reent *r, int fd)
 
 
 /* These functions are not expected to be overridden */
-int system(const char* str)
-    __attribute__((alias("syscall_not_implemented")));
 int _system_r(struct _reent *r, const char *str)
     __attribute__((alias("syscall_not_implemented")));
 int raise(int sig)
@@ -123,6 +134,13 @@ void _exit(int __status)
     __attribute__((alias("syscall_not_implemented_aborts")));
 
 #pragma GCC diagnostic pop
+
+/* Similar to syscall_not_implemented, but not taking struct _reent argument */
+int system(const char* str)
+{
+    errno = ENOSYS;
+    return -1;
+}
 
 /* Replaces newlib fcntl, which has been compiled without HAVE_FCNTL */
 int fcntl(int fd, int cmd, ...)
