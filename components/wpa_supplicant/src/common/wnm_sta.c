@@ -384,7 +384,7 @@ compare_scan_neighbor_results(struct wpa_supplicant *wpa_s, os_time_t age_secs,
 			continue;
 		}
 
-		if (target->level < bss->level && target->level < -80) {
+		if (target->level < bss->level || target->level < -80) {
 			wpa_printf(MSG_DEBUG, "Candidate BSS " MACSTR
 				   " (pref %d) does not have sufficient signal level (%d)",
 				   MAC2STR(nei->bssid),
