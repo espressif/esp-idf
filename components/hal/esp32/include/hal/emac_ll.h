@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*******************************************************************************
  * NOTICE
@@ -342,6 +334,12 @@ static inline void emac_ll_transmit_flow_ctrl_enable(emac_mac_dev_t *mac_regs, b
 static inline void emac_ll_clear(emac_mac_dev_t *mac_regs)
 {
     mac_regs->gmacfc.val = 0;
+}
+
+/* emacdebug */
+static inline uint32_t emac_ll_transmit_frame_ctrl_status(emac_mac_dev_t *mac_regs)
+{
+    return mac_regs->emacdebug.mactfcs;
 }
 
 /* emacmiidata */
