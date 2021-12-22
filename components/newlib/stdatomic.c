@@ -132,11 +132,29 @@ __asm__(".type " # name_ ", @function\n"        \
     return ret; \
 }
 
+#define ADD_FETCH(n, type) type __atomic_add_fetch_ ## n (type* ptr, type value, int memorder) \
+{ \
+    unsigned state = _ATOMIC_ENTER_CRITICAL(); \
+    type ret = *ptr + value; \
+    *ptr = ret; \
+    _ATOMIC_EXIT_CRITICAL(state); \
+    return ret; \
+}
+
 #define FETCH_SUB(n, type) type __atomic_fetch_sub_ ## n (type* ptr, type value, int memorder) \
 { \
     unsigned state = _ATOMIC_ENTER_CRITICAL(); \
     type ret = *ptr; \
     *ptr = *ptr - value; \
+    _ATOMIC_EXIT_CRITICAL(state); \
+    return ret; \
+}
+
+#define SUB_FETCH(n, type) type __atomic_sub_fetch_ ## n (type* ptr, type value, int memorder) \
+{ \
+    unsigned state = _ATOMIC_ENTER_CRITICAL(); \
+    type ret = *ptr - value; \
+    *ptr = ret; \
     _ATOMIC_EXIT_CRITICAL(state); \
     return ret; \
 }
@@ -150,11 +168,29 @@ __asm__(".type " # name_ ", @function\n"        \
     return ret; \
 }
 
+#define AND_FETCH(n, type) type __atomic_and_fetch_ ## n (type* ptr, type value, int memorder) \
+{ \
+    unsigned state = _ATOMIC_ENTER_CRITICAL(); \
+    type ret = *ptr & value; \
+    *ptr = ret; \
+    _ATOMIC_EXIT_CRITICAL(state); \
+    return ret; \
+}
+
 #define FETCH_OR(n, type) type __atomic_fetch_or_ ## n (type* ptr, type value, int memorder) \
 { \
     unsigned state = _ATOMIC_ENTER_CRITICAL(); \
     type ret = *ptr; \
     *ptr = *ptr | value; \
+    _ATOMIC_EXIT_CRITICAL(state); \
+    return ret; \
+}
+
+#define OR_FETCH(n, type) type __atomic_or_fetch_ ## n (type* ptr, type value, int memorder) \
+{ \
+    unsigned state = _ATOMIC_ENTER_CRITICAL(); \
+    type ret = *ptr | value; \
+    *ptr = ret; \
     _ATOMIC_EXIT_CRITICAL(state); \
     return ret; \
 }
@@ -168,12 +204,44 @@ __asm__(".type " # name_ ", @function\n"        \
     return ret; \
 }
 
+#define XOR_FETCH(n, type) type __atomic_xor_fetch_ ## n (type* ptr, type value, int memorder) \
+{ \
+    unsigned state = _ATOMIC_ENTER_CRITICAL(); \
+    type ret = *ptr ^ value; \
+    *ptr = ret; \
+    _ATOMIC_EXIT_CRITICAL(state); \
+    return ret; \
+}
+
+#define FETCH_NAND(n, type) type __atomic_fetch_nand_ ## n (type* ptr, type value, int memorder) \
+{ \
+    unsigned state = _ATOMIC_ENTER_CRITICAL(); \
+    type ret = *ptr; \
+    *ptr = ~(*ptr & value); \
+    _ATOMIC_EXIT_CRITICAL(state); \
+    return ret; \
+}
+
+#define NAND_FETCH(n, type) type __atomic_nand_fetch_ ## n (type* ptr, type value, int memorder) \
+{ \
+    unsigned state = _ATOMIC_ENTER_CRITICAL(); \
+    type ret = ~(*ptr & value); \
+    *ptr = ret; \
+    _ATOMIC_EXIT_CRITICAL(state); \
+    return ret; \
+}
 
 #define SYNC_FETCH_OP(op, n, type) type CLANG_ATOMIC_SUFFIX(__sync_fetch_and_ ## op ##_ ## n) (type* ptr, type value) \
 {                                                                                \
     return __atomic_fetch_ ## op ##_ ## n (ptr, value, __ATOMIC_SEQ_CST);        \
 }                                                                                \
 CLANG_DECLARE_ALIAS( __sync_fetch_and_ ## op ##_ ## n )
+
+#define SYNC_OP_FETCH(op, n, type) type CLANG_ATOMIC_SUFFIX(__sync_ ## op ##_and_fetch_ ## n) (type* ptr, type value) \
+{                                                                                \
+    return __atomic_ ## op ##_fetch_ ## n (ptr, value, __ATOMIC_SEQ_CST);        \
+}                                                                                \
+CLANG_DECLARE_ALIAS( __sync_ ## op ##_and_fetch_ ## n )
 
 #define SYNC_BOOL_CMP_EXCHANGE(n, type) bool  CLANG_ATOMIC_SUFFIX(__sync_bool_compare_and_swap_ ## n)  (type *ptr, type oldval, type newval) \
 {                                                                                \
@@ -233,41 +301,97 @@ FETCH_ADD(1, uint8_t)
 FETCH_ADD(2, uint16_t)
 FETCH_ADD(4, uint32_t)
 
+ADD_FETCH(1, uint8_t)
+ADD_FETCH(2, uint16_t)
+ADD_FETCH(4, uint32_t)
+
 FETCH_SUB(1, uint8_t)
 FETCH_SUB(2, uint16_t)
 FETCH_SUB(4, uint32_t)
+
+SUB_FETCH(1, uint8_t)
+SUB_FETCH(2, uint16_t)
+SUB_FETCH(4, uint32_t)
 
 FETCH_AND(1, uint8_t)
 FETCH_AND(2, uint16_t)
 FETCH_AND(4, uint32_t)
 
+AND_FETCH(1, uint8_t)
+AND_FETCH(2, uint16_t)
+AND_FETCH(4, uint32_t)
+
 FETCH_OR(1, uint8_t)
 FETCH_OR(2, uint16_t)
 FETCH_OR(4, uint32_t)
+
+OR_FETCH(1, uint8_t)
+OR_FETCH(2, uint16_t)
+OR_FETCH(4, uint32_t)
 
 FETCH_XOR(1, uint8_t)
 FETCH_XOR(2, uint16_t)
 FETCH_XOR(4, uint32_t)
 
+XOR_FETCH(1, uint8_t)
+XOR_FETCH(2, uint16_t)
+XOR_FETCH(4, uint32_t)
+
+FETCH_NAND(1, uint8_t)
+FETCH_NAND(2, uint16_t)
+FETCH_NAND(4, uint32_t)
+
+NAND_FETCH(1, uint8_t)
+NAND_FETCH(2, uint16_t)
+NAND_FETCH(4, uint32_t)
+
 SYNC_FETCH_OP(add, 1, uint8_t)
 SYNC_FETCH_OP(add, 2, uint16_t)
 SYNC_FETCH_OP(add, 4, uint32_t)
+
+SYNC_OP_FETCH(add, 1, uint8_t)
+SYNC_OP_FETCH(add, 2, uint16_t)
+SYNC_OP_FETCH(add, 4, uint32_t)
 
 SYNC_FETCH_OP(sub, 1, uint8_t)
 SYNC_FETCH_OP(sub, 2, uint16_t)
 SYNC_FETCH_OP(sub, 4, uint32_t)
 
+SYNC_OP_FETCH(sub, 1, uint8_t)
+SYNC_OP_FETCH(sub, 2, uint16_t)
+SYNC_OP_FETCH(sub, 4, uint32_t)
+
 SYNC_FETCH_OP(and, 1, uint8_t)
 SYNC_FETCH_OP(and, 2, uint16_t)
 SYNC_FETCH_OP(and, 4, uint32_t)
+
+SYNC_OP_FETCH(and, 1, uint8_t)
+SYNC_OP_FETCH(and, 2, uint16_t)
+SYNC_OP_FETCH(and, 4, uint32_t)
 
 SYNC_FETCH_OP(or, 1, uint8_t)
 SYNC_FETCH_OP(or, 2, uint16_t)
 SYNC_FETCH_OP(or, 4, uint32_t)
 
+SYNC_OP_FETCH(or, 1, uint8_t)
+SYNC_OP_FETCH(or, 2, uint16_t)
+SYNC_OP_FETCH(or, 4, uint32_t)
+
 SYNC_FETCH_OP(xor, 1, uint8_t)
 SYNC_FETCH_OP(xor, 2, uint16_t)
 SYNC_FETCH_OP(xor, 4, uint32_t)
+
+SYNC_OP_FETCH(xor, 1, uint8_t)
+SYNC_OP_FETCH(xor, 2, uint16_t)
+SYNC_OP_FETCH(xor, 4, uint32_t)
+
+SYNC_FETCH_OP(nand, 1, uint8_t)
+SYNC_FETCH_OP(nand, 2, uint16_t)
+SYNC_FETCH_OP(nand, 4, uint32_t)
+
+SYNC_OP_FETCH(nand, 1, uint8_t)
+SYNC_OP_FETCH(nand, 2, uint16_t)
+SYNC_OP_FETCH(nand, 4, uint32_t)
 
 SYNC_BOOL_CMP_EXCHANGE(1, uint8_t)
 SYNC_BOOL_CMP_EXCHANGE(2, uint16_t)
@@ -313,6 +437,20 @@ FETCH_OR(8, uint64_t)
 
 FETCH_XOR(8, uint64_t)
 
+FETCH_NAND(8, uint64_t)
+
+ADD_FETCH(8, uint64_t)
+
+SUB_FETCH(8, uint64_t)
+
+AND_FETCH(8, uint64_t)
+
+OR_FETCH(8, uint64_t)
+
+XOR_FETCH(8, uint64_t)
+
+NAND_FETCH(8, uint64_t)
+
 SYNC_FETCH_OP(add, 8, uint64_t)
 
 SYNC_FETCH_OP(sub, 8, uint64_t)
@@ -322,6 +460,20 @@ SYNC_FETCH_OP(and, 8, uint64_t)
 SYNC_FETCH_OP(or, 8, uint64_t)
 
 SYNC_FETCH_OP(xor, 8, uint64_t)
+
+SYNC_FETCH_OP(nand, 8, uint64_t)
+
+SYNC_OP_FETCH(add, 8, uint64_t)
+
+SYNC_OP_FETCH(sub, 8, uint64_t)
+
+SYNC_OP_FETCH(and, 8, uint64_t)
+
+SYNC_OP_FETCH(or, 8, uint64_t)
+
+SYNC_OP_FETCH(xor, 8, uint64_t)
+
+SYNC_OP_FETCH(nand, 8, uint64_t)
 
 SYNC_BOOL_CMP_EXCHANGE(8, uint64_t)
 
