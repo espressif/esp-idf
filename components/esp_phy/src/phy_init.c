@@ -28,6 +28,10 @@
 #include "esp_rom_crc.h"
 #include "esp_rom_sys.h"
 
+#if CONFIG_ESP_PHY_ENABLE_USB
+#include "hal/usb_serial_jtag_ll.h"
+#endif
+
 #include "soc/rtc_cntl_reg.h"
 #if CONFIG_IDF_TARGET_ESP32C3
 #include "soc/syscon_reg.h"
@@ -652,7 +656,13 @@ void esp_phy_load_cal_and_init(void)
 #endif
 
 #if CONFIG_ESP_PHY_ENABLE_USB
-    phy_bbpll_en_usb(true);
+#if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG || CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+    if (usb_serial_jtag_ll_txfifo_writable() == 1)
+#endif // Only check usb_jtag status with usb_jtag related config options enabled.
+    {
+        // If the USB_SEIRAL_JTAG is really in use.
+        phy_bbpll_en_usb(true);
+    }
 #endif
 
 #ifdef CONFIG_ESP_PHY_CALIBRATION_AND_DATA_STORAGE
