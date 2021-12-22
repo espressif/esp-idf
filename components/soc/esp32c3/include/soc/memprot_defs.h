@@ -35,14 +35,6 @@ typedef union {
 
 #define DRAM_SRAM_START             0x3FC7C000
 
-#ifndef MAP_DRAM_TO_IRAM
-#define MAP_DRAM_TO_IRAM(addr)       (addr - DRAM_SRAM_START + SOC_IRAM_LOW)
-#endif
-
-#ifndef MAP_IRAM_TO_DRAM
-#define MAP_IRAM_TO_DRAM(addr)       (addr - SOC_IRAM_LOW + DRAM_SRAM_START)
-#endif
-
 //IRAM0
 
 //16kB (ICACHE)

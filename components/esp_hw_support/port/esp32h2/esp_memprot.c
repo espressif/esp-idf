@@ -121,7 +121,7 @@ esp_err_t esp_mprot_get_monitor_en(const esp_mprot_mem_t mem_type, bool *enabled
     return ESP_OK;
 }
 
-esp_err_t IRAM_ATTR esp_mprot_monitor_clear_intr(const esp_mprot_mem_t mem_type, int const *const core __attribute__((unused)))
+esp_err_t IRAM_ATTR esp_mprot_monitor_clear_intr(const esp_mprot_mem_t mem_type, const int core __attribute__((unused)))
 {
     return ESP_OK;
 }
@@ -160,7 +160,7 @@ esp_err_t IRAM_ATTR esp_mprot_is_intr_ena_any(bool *enabled)
     return ESP_OK;
 }
 
-esp_err_t IRAM_ATTR esp_mprot_get_violate_addr(const esp_mprot_mem_t mem_type, void **fault_addr, int const *const core __attribute__((unused)))
+esp_err_t IRAM_ATTR esp_mprot_get_violate_addr(const esp_mprot_mem_t mem_type, void **fault_addr, const int core __attribute__((unused)))
 {
     if (fault_addr == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -171,7 +171,7 @@ esp_err_t IRAM_ATTR esp_mprot_get_violate_addr(const esp_mprot_mem_t mem_type, v
     return ESP_OK;
 }
 
-esp_err_t IRAM_ATTR esp_mprot_get_violate_world(const esp_mprot_mem_t mem_type, esp_mprot_pms_world_t *world, int const *const core __attribute__((unused)))
+esp_err_t IRAM_ATTR esp_mprot_get_violate_world(const esp_mprot_mem_t mem_type, esp_mprot_pms_world_t *world, const int core __attribute__((unused)))
 {
     if (world == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -182,7 +182,7 @@ esp_err_t IRAM_ATTR esp_mprot_get_violate_world(const esp_mprot_mem_t mem_type, 
     return ESP_OK;
 }
 
-esp_err_t IRAM_ATTR esp_mprot_get_violate_operation(const esp_mprot_mem_t mem_type, uint32_t *oper, int const *const core __attribute__((unused)))
+esp_err_t IRAM_ATTR esp_mprot_get_violate_operation(const esp_mprot_mem_t mem_type, uint32_t *oper, const int core __attribute__((unused)))
 {
     if (oper == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -198,7 +198,7 @@ bool IRAM_ATTR esp_mprot_has_byte_enables(const esp_mprot_mem_t mem_type)
     return false;
 }
 
-esp_err_t IRAM_ATTR esp_mprot_get_violate_byte_enables(const esp_mprot_mem_t mem_type, uint32_t *byte_en, int const *const core __attribute__((unused)))
+esp_err_t IRAM_ATTR esp_mprot_get_violate_byte_enables(const esp_mprot_mem_t mem_type, uint32_t *byte_en, const int core __attribute__((unused)))
 {
     if (byte_en == NULL) {
         return ESP_ERR_INVALID_ARG;
