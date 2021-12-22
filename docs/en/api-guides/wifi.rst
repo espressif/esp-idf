@@ -1313,7 +1313,6 @@ For establishing a secure connection, AP and station negotiate and agree on the 
      - MSCHAP and MSCHAP-V2.
   - EAP-FAST: This is a Protected Access Credentials (PAC) based authentication method which also uses identity and password. Currently, USE_MBEDTLS_CRYPTO flag should be disabled to use this feature.
 
-
 Detailed information on creating certificates and how to run wpa2_enterprise example on {IDF_TARGET_NAME} can be found in :example:`wifi/wifi_enterprise`.
 
 Wireless Network Management

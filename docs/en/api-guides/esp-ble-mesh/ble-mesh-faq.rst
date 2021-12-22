@@ -1,6 +1,8 @@
 ESP-BLE-MESH FAQ
 ================
 
+:link_to_translation:`zh_CN:[中文]`
+
 This document provides a summary of frequently asked questions about developing with ESP-BLE-MESH, and is divided into seven sections:
 
 * :ref:`ble-mesh-faq-provisioner-development`
@@ -58,6 +60,7 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     The unicast address of Provisioner can be set only once during initialization and can't be changed afterwards. In theory, it can serve as the destination address of the node-reporting-status message, provided that the unicast address of the Provisioner is known by nodes. Nodes can know the unicast address of Provisioner during configuration since Provisioner sends messages to them with its unicast address used as the source address.
+
     Subscription address can also be used. Provisioner subscribes to a group address or virtual address, and nodes send messages to the subscription address.
 
 1.7 Is the unicast address of the node that is firstly provisioned by Provisioner to ESP-BLE-MESH network fixed？
