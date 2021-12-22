@@ -6115,7 +6115,7 @@ int dpp_bootstrap_gen(struct dpp_global *dpp, const char *cmd)
 		    hexstr2bin(key, privkey, privkey_len) < 0)
 			goto fail;
 	}
-	wpa_hexdump(MSG_ERROR, "private key", privkey, privkey_len);
+	wpa_hexdump(MSG_DEBUG, "private key", privkey, privkey_len);
 
 	pk = dpp_keygen(bi, curve, privkey, privkey_len);
 	if (!pk)
