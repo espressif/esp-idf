@@ -464,11 +464,12 @@ int PORT_SetEventMask (UINT16 port_handle, UINT32 mask)
 **                  by handle is up and running
 **
 ** Parameters:      handle     - Handle returned in the RFCOMM_CreateConnection
+**                  ignore_rfc_state - If need to ignore rfc state
 **                  bd_addr    - OUT bd_addr of the peer
 **                  p_lcid     - OUT L2CAP's LCID
 **
 *******************************************************************************/
-int PORT_CheckConnection (UINT16 handle, BD_ADDR bd_addr, UINT16 *p_lcid)
+int PORT_CheckConnection(UINT16 handle, BOOLEAN ignore_rfc_state, BD_ADDR bd_addr, UINT16 *p_lcid)
 {
     tPORT      *p_port;
 
@@ -485,9 +486,8 @@ int PORT_CheckConnection (UINT16 handle, BD_ADDR bd_addr, UINT16 *p_lcid)
         return (PORT_NOT_OPENED);
     }
 
-    if (!p_port->rfc.p_mcb
-            || !p_port->rfc.p_mcb->peer_ready
-            || (p_port->rfc.state != RFC_STATE_OPENED)) {
+    if (!p_port->rfc.p_mcb || !p_port->rfc.p_mcb->peer_ready ||
+        (!ignore_rfc_state ? (p_port->rfc.state != RFC_STATE_OPENED) : false)) {
         return (PORT_LINE_ERR);
     }
 
