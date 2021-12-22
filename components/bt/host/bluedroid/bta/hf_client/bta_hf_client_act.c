@@ -267,7 +267,7 @@ void bta_hf_client_rfc_open(tBTA_HF_CLIENT_DATA *p_data)
 void bta_hf_client_rfc_acp_open(tBTA_HF_CLIENT_DATA *p_data)
 {
     UINT16          lcid;
-    BD_ADDR         dev_addr;
+    BD_ADDR         dev_addr = {0};
     int             status;
 
     /* set role */
@@ -277,7 +277,7 @@ void bta_hf_client_rfc_acp_open(tBTA_HF_CLIENT_DATA *p_data)
                       bta_hf_client_cb.scb.serv_handle, p_data->rfc.port_handle);
 
     /* get bd addr of peer */
-    if (PORT_SUCCESS != (status = PORT_CheckConnection(p_data->rfc.port_handle, dev_addr, &lcid))) {
+    if (PORT_SUCCESS != (status = PORT_CheckConnection(p_data->rfc.port_handle, FALSE, dev_addr, &lcid))) {
         APPL_TRACE_DEBUG ("bta_hf_client_rfc_acp_open error PORT_CheckConnection returned status %d", status);
     }
 
