@@ -72,7 +72,7 @@
 #include "hal/gpio_hal.h"
 #include "hal/wdt_hal.h"
 #include "soc/rtc.h"
-#include "soc/efuse_reg.h"
+#include "hal/efuse_ll.h"
 #include "soc/periph_defs.h"
 #include "esp_cpu.h"
 #include "soc/rtc.h"
@@ -363,7 +363,7 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif // CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
 
 #if CONFIG_ESPTOOLPY_OCT_FLASH
-    bool efuse_opflash_en = REG_GET_FIELD(EFUSE_RD_REPEAT_DATA3_REG, EFUSE_FLASH_TYPE);
+    bool efuse_opflash_en = efuse_ll_get_flash_type();
     if (!efuse_opflash_en) {
         ESP_EARLY_LOGE(TAG, "Octal Flash option selected, but EFUSE not configured!");
         abort();

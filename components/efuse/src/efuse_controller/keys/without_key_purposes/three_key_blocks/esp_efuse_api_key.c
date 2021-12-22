@@ -6,7 +6,7 @@
 
 #include "esp_efuse.h"
 #include "esp_efuse_utility.h"
-#include "soc/efuse_periph.h"
+#include "hal/efuse_ll.h"
 #include "assert.h"
 #include "sdkconfig.h"
 #include "esp_efuse_table.h"
@@ -62,7 +62,7 @@ esp_efuse_coding_scheme_t esp_efuse_get_coding_scheme(esp_efuse_block_t blk)
     if (blk == EFUSE_BLK0) {
         scheme = EFUSE_CODING_SCHEME_NONE;
     } else {
-        uint32_t coding_scheme = REG_GET_FIELD(EFUSE_BLK0_RDATA6_REG, EFUSE_CODING_SCHEME);
+        uint32_t coding_scheme = efuse_ll_get_coding_scheme();
         if (coding_scheme == EFUSE_CODING_SCHEME_VAL_NONE ||
             coding_scheme == (EFUSE_CODING_SCHEME_VAL_34 | EFUSE_CODING_SCHEME_VAL_REPEAT)) {
             scheme = EFUSE_CODING_SCHEME_NONE;

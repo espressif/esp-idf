@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1850,6 +1850,9 @@ extern "C" {
 #define EFUSE_MEM_FORCE_PD_M  (BIT(0))
 #define EFUSE_MEM_FORCE_PD_V  0x1
 #define EFUSE_MEM_FORCE_PD_S  0
+
+#define EFUSE_WRITE_OP_CODE 0x5a5a
+#define EFUSE_READ_OP_CODE 0x5aa5
 
 #define EFUSE_CONF_REG          (DR_REG_EFUSE_BASE + 0x1CC)
 /* EFUSE_OP_CODE : R/W ;bitpos:[15:0] ;default: 16'h0 ; */

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,7 +16,7 @@ extern "C" {
 #include "hal/wdt_types.h"
 #include "soc/rtc_cntl_periph.h"
 #include "soc/rtc_cntl_struct.h"
-#include "soc/efuse_reg.h"
+#include "hal/efuse_ll.h"
 #include "esp_attr.h"
 
 //Type check wdt_stage_action_t
@@ -93,7 +93,7 @@ FORCE_INLINE_ATTR void rwdt_ll_config_stage(rtc_cntl_dev_t *hw, wdt_stage_t stag
     case WDT_STAGE0:
         hw->wdt_config0.stg0 = behavior;
         //Account of implicty multiplier applied to stage 0 timeout tick config value
-        hw->wdt_config1 = timeout_ticks >> (1 + REG_GET_FIELD(EFUSE_RD_REPEAT_DATA1_REG, EFUSE_WDT_DELAY_SEL));
+        hw->wdt_config1 = timeout_ticks >> (1 + efuse_ll_get_wdt_delay_sel());
         break;
     case WDT_STAGE1:
         hw->wdt_config0.stg1 = behavior;

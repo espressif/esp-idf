@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,8 +10,7 @@
 #include "assert.h"
 #include "esp_efuse_utility.h"
 #include "soc/efuse_periph.h"
-#include "esp_private/esp_clk.h"
-#include "esp32h2/rom/efuse.h"
+#include "hal/efuse_hal.h"
 
 static const char *TAG = "efuse";
 
@@ -55,14 +54,9 @@ const esp_efuse_range_addr_t range_write_addr_blocks[] = {
 // Update Efuse timing configuration
 static esp_err_t esp_efuse_set_timing(void)
 {
-    // efuse clock is fixed in ESP32-C3, so the ets_efuse_set_timing() function
-    // takes an argument for compatibility with older ROM functions but it's ignored.
-    int res = ets_efuse_set_timing(0);
-    assert(res == 0);
-    (void)res;
-
-    REG_SET_FIELD(EFUSE_WR_TIM_CONF2_REG, EFUSE_PWR_OFF_NUM, 0x60);
-
+    // efuse clock is fixed.
+    // An argument (0) is for compatibility and will be ignored.
+    efuse_hal_set_timing(0);
     return ESP_OK;
 }
 #endif // ifndef CONFIG_EFUSE_VIRTUAL
@@ -70,8 +64,8 @@ static esp_err_t esp_efuse_set_timing(void)
 // Efuse read operation: copies data from physical efuses to efuse read registers.
 void esp_efuse_utility_clear_program_registers(void)
 {
-    ets_efuse_read();
-    ets_efuse_clear_program_registers();
+    efuse_hal_read();
+    efuse_hal_clear_program_registers();
 }
 
 // Burn values written to the efuse write registers
@@ -99,12 +93,12 @@ void esp_efuse_utility_burn_chip(void)
                 if (REG_READ(addr_wr_block) != 0) {
                     if (esp_efuse_get_coding_scheme(num_block) == EFUSE_CODING_SCHEME_RS) {
                         uint8_t block_rs[12];
-                        ets_efuse_rs_calculate((void *)range_write_addr_blocks[num_block].start, block_rs);
+                        efuse_hal_rs_calculate((void *)range_write_addr_blocks[num_block].start, block_rs);
                         memcpy((void *)EFUSE_PGM_CHECK_VALUE0_REG, block_rs, sizeof(block_rs));
                     }
                     int data_len = (range_write_addr_blocks[num_block].end - range_write_addr_blocks[num_block].start) + sizeof(uint32_t);
                     memcpy((void *)EFUSE_PGM_DATA0_REG, (void *)range_write_addr_blocks[num_block].start, data_len);
-                    ets_efuse_program(num_block);
+                    efuse_hal_program(num_block);
                     break;
                 }
             }

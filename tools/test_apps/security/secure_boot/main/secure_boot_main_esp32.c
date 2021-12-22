@@ -10,6 +10,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "soc/efuse_reg.h"
+#include "hal/efuse_ll.h"
 #include "esp_efuse.h"
 #include "esp_system.h"
 #include "esp_spi_flash.h"
@@ -51,14 +52,15 @@ static void example_print_chip_info(void)
 
 static void example_secure_boot_status(void)
 {
-    uint32_t efuse_block0 = REG_READ(EFUSE_BLK0_RDATA6_REG);
-
 #ifdef CONFIG_ESP32_REV_MIN_3
     uint8_t efuse_trusted_digest[DIGEST_LEN] = {0}, i;
     ESP_LOGI(TAG, "Checking for secure boot v2..");
-    if(efuse_block0 & EFUSE_RD_ABS_DONE_1) {
+    if(efuse_ll_get_secure_boot_v2_en()) {
         ESP_LOGI(TAG, "ABS_DONE_1 is set. Secure Boot V2 enabled");
-        memcpy(efuse_trusted_digest, (uint8_t *)EFUSE_BLK2_RDATA0_REG, DIGEST_LEN);
+        esp_err_t err = esp_efuse_read_block(EFUSE_BLK2, &efuse_trusted_digest, 0, DIGEST_LEN * 8);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Error (0x%x) while reading eFuse BLK2", err);
+        }
         ESP_LOGI(TAG,  "Reading the public key digest from BLK2.");
         for (i = 0; i < DIGEST_LEN; i++) {
             ESP_LOGI(TAG, "%02x \t", efuse_trusted_digest[i]);
@@ -70,21 +72,17 @@ static void example_secure_boot_status(void)
 #endif
 
     ESP_LOGI(TAG, "Checking for secure boot v1..");
-    uint32_t dis_reg = REG_READ(EFUSE_BLK0_RDATA0_REG);
-    if (efuse_block0 & EFUSE_RD_ABS_DONE_0) {
+    if (efuse_ll_get_secure_boot_v1_en()) {
     ESP_LOGI(TAG, "ABS_DONE_0 is set. Secure Boot V1 enabled");
 #ifdef CONFIG_ESP32_REV_MIN_3
-    ESP_LOGW(TAG, "This chip version supports Secure Boot V2. It is recommended to use Secure Boot V2.");
+        ESP_LOGW(TAG, "This chip version supports Secure Boot V2. It is recommended to use Secure Boot V2.");
 #endif
-        bool efuse_key_read_protected = dis_reg & EFUSE_RD_DIS_BLK2;
-        bool efuse_key_write_protected = dis_reg & EFUSE_WR_DIS_BLK2;
-
         ESP_LOGI(TAG, "Checking the integrityof the key in BLK2..");
-        if (!efuse_key_read_protected) {
+        if (!esp_efuse_get_key_dis_read(EFUSE_BLK2)) {
             ESP_LOGE(TAG, "Key is not read protected. Refusing to blow secure boot efuse.");
             return;
         }
-        if (!efuse_key_write_protected) {
+        if (!esp_efuse_get_key_dis_write(EFUSE_BLK2)) {
             ESP_LOGE(TAG, "Key is not write protected. Refusing to blow secure boot efuse.");
             return;
         }

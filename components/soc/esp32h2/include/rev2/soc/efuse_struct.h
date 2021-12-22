@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -475,10 +475,9 @@ typedef union {
          *  Stores the second part of SPI_PAD_CONF.
          */
         uint32_t spi_pad_conf_2:18;
-        /** sys_data_part0_0 : RO; bitpos: [31:18]; default: 0;
-         *  Stores the fist 14 bits of the zeroth part of system data.
-         */
-        uint32_t sys_data_part0_0:14;
+        uint32_t wafer_version:3;
+        uint32_t pkg_version:3;
+        uint32_t sys_data_part0_0:8;
     };
     uint32_t val;
 } efuse_rd_mac_spi_sys_3_reg_t;

@@ -1,12 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "sdkconfig.h"
 #include "soc/soc.h"
 #include "soc/rtc.h"
-#include "soc/efuse_periph.h"
+#include "hal/efuse_hal.h"
 #include "soc/rtc_cntl_reg.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
@@ -32,8 +32,7 @@ __attribute__((weak)) void bootloader_clock_configure(void)
      * document). For rev. 0, switch to 240 instead if it has been enabled
      * previously.
      */
-    uint32_t chip_ver_reg = REG_READ(EFUSE_BLK0_RDATA3_REG);
-    if ((chip_ver_reg & EFUSE_RD_CHIP_VER_REV1_M) == 0 &&
+    if (efuse_hal_get_chip_revision() == 0 &&
             DPORT_REG_GET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL) == DPORT_CPUPERIOD_SEL_240) {
         cpu_freq_mhz = 240;
     }

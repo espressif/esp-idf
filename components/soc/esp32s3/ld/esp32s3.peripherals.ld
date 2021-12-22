@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@ PROVIDE ( SPIMEM1 = 0x60002000 );
 PROVIDE ( SPIMEM0 = 0x60003000 );
 PROVIDE ( GPIO = 0x60004000 );
 PROVIDE ( SIGMADELTA = 0x60004f00 );
+PROVIDE ( EFUSE = 0x60007000 );
 PROVIDE ( RTCCNTL = 0x60008000 );
 PROVIDE ( RTCIO = 0x60008400 );
 PROVIDE ( SENS = 0x60008800 );

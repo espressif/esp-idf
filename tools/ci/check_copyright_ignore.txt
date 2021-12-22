@@ -1,14 +1,5 @@
 components/bootloader/subproject/main/bootloader_hooks.h
 components/bootloader/subproject/main/bootloader_start.c
-components/bootloader/subproject/main/ld/esp32/bootloader.ld
-components/bootloader/subproject/main/ld/esp32/bootloader.rom.ld
-components/bootloader/subproject/main/ld/esp32c3/bootloader.ld
-components/bootloader/subproject/main/ld/esp32c3/bootloader.rom.ld
-components/bootloader/subproject/main/ld/esp32h2/bootloader.ld
-components/bootloader/subproject/main/ld/esp32s2/bootloader.ld
-components/bootloader/subproject/main/ld/esp32s2/bootloader.rom.ld
-components/bootloader/subproject/main/ld/esp32s3/bootloader.ld
-components/bootloader/subproject/main/ld/esp32s3/bootloader.rom.ld
 components/bt/common/osi/alarm.c
 components/bt/common/osi/allocator.c
 components/bt/common/osi/buffer.c
@@ -565,7 +556,6 @@ components/esp_rom/esp32s2/ld/esp32s2.rom.newlib-data.ld
 components/esp_rom/esp32s2/ld/esp32s2.rom.newlib-funcs.ld
 components/esp_rom/esp32s2/ld/esp32s2.rom.newlib-nano.ld
 components/esp_rom/esp32s2/ld/esp32s2.rom.spiflash.ld
-components/esp_rom/esp32s2/usb_descriptors.c
 components/esp_rom/esp32s3/ld/esp32s3.rom.api.ld
 components/esp_rom/esp32s3/ld/esp32s3.rom.ld
 components/esp_rom/esp32s3/ld/esp32s3.rom.libgcc.ld
@@ -876,7 +866,6 @@ components/hal/esp32c3/include/hal/i2c_ll.h
 components/hal/esp32c3/include/hal/interrupt_controller_ll.h
 components/hal/esp32c3/include/hal/mpu_ll.h
 components/hal/esp32c3/include/hal/rtc_cntl_ll.h
-components/hal/esp32c3/include/hal/rwdt_ll.h
 components/hal/esp32c3/include/hal/sha_ll.h
 components/hal/esp32c3/include/hal/sigmadelta_ll.h
 components/hal/esp32c3/include/hal/soc_ll.h
@@ -935,7 +924,6 @@ components/hal/esp32s2/include/hal/mpu_ll.h
 components/hal/esp32s2/include/hal/pcnt_ll.h
 components/hal/esp32s2/include/hal/rtc_cntl_ll.h
 components/hal/esp32s2/include/hal/rtc_io_ll.h
-components/hal/esp32s2/include/hal/rwdt_ll.h
 components/hal/esp32s2/include/hal/sha_ll.h
 components/hal/esp32s2/include/hal/sigmadelta_ll.h
 components/hal/esp32s2/include/hal/soc_ll.h
@@ -1484,7 +1472,6 @@ components/soc/esp32c3/include/soc/bb_reg.h
 components/soc/esp32c3/include/soc/boot_mode.h
 components/soc/esp32c3/include/soc/clkout_channel.h
 components/soc/esp32c3/include/soc/dport_access.h
-components/soc/esp32c3/include/soc/efuse_struct.h
 components/soc/esp32c3/include/soc/extmem_reg.h
 components/soc/esp32c3/include/soc/fe_reg.h
 components/soc/esp32c3/include/soc/gpio_pins.h
@@ -1534,7 +1521,6 @@ components/soc/esp32c3/include/soc/usb_serial_jtag_reg.h
 components/soc/esp32c3/include/soc/usb_serial_jtag_struct.h
 components/soc/esp32c3/include/soc/wdev_reg.h
 components/soc/esp32c3/interrupts.c
-components/soc/esp32c3/ld/esp32c3.peripherals.ld
 components/soc/esp32c3/ledc_periph.c
 components/soc/esp32c3/rmt_periph.c
 components/soc/esp32c3/sigmadelta_periph.c
@@ -1586,7 +1572,6 @@ components/soc/esp32h2/include/soc/uart_pins.h
 components/soc/esp32h2/include/soc/usb_serial_jtag_reg.h
 components/soc/esp32h2/include/soc/usb_serial_jtag_struct.h
 components/soc/esp32h2/include/soc/wdev_reg.h
-components/soc/esp32h2/ld/esp32h2.peripherals.ld
 components/soc/esp32h2/ledc_periph.c
 components/soc/esp32h2/rmt_periph.c
 components/soc/esp32h2/sigmadelta_periph.c
@@ -1613,8 +1598,6 @@ components/soc/esp32s2/include/soc/dac_channel.h
 components/soc/esp32s2/include/soc/dedic_gpio_reg.h
 components/soc/esp32s2/include/soc/dedic_gpio_struct.h
 components/soc/esp32s2/include/soc/dport_access.h
-components/soc/esp32s2/include/soc/efuse_reg.h
-components/soc/esp32s2/include/soc/efuse_struct.h
 components/soc/esp32s2/include/soc/extmem_reg.h
 components/soc/esp32s2/include/soc/fe_reg.h
 components/soc/esp32s2/include/soc/gpio_pins.h
@@ -1804,7 +1787,6 @@ components/soc/esp32s3/usb_periph.h
 components/soc/include/soc/adc_periph.h
 components/soc/include/soc/dac_periph.h
 components/soc/include/soc/dedic_gpio_periph.h
-components/soc/include/soc/efuse_periph.h
 components/soc/include/soc/emac_periph.h
 components/soc/include/soc/gpio_periph.h
 components/soc/include/soc/hwcrypto_periph.h
