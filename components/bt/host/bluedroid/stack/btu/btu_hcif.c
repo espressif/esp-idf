@@ -2065,14 +2065,41 @@ static void btu_ble_phy_update_complete_evt(UINT8 *p)
     btm_ble_update_phy_evt(&update_phy);
 }
 
+#if BLE_PRIVACY_SPT == TRUE
+/*******************************************************************************
+**
+** Function         btm_ble_resolve_random_addr_adv_ext
+**
+** Description      resolve random address complete callback.
+**
+** Returns          void
+**
+*******************************************************************************/
+static void btm_ble_resolve_random_addr_adv_ext(void *p_rec, void *p)
+{
+    tBTM_SEC_DEV_REC    *match_rec = (tBTM_SEC_DEV_REC *) p_rec;
+    BD_ADDR     bda;
+    UINT8       *pp = (UINT8 *)p+4; //jump to the location of bd addr
+    if (match_rec) {
+        // Assign the original address to be the current report address
+        memcpy(bda, match_rec->ble.pseudo_addr, BD_ADDR_LEN);
+        BDADDR_TO_STREAM(pp,bda);
+    }
+}
+#endif
+
 static void btu_ble_ext_adv_report_evt(UINT8 *p, UINT16 evt_len)
 {
     tBTM_BLE_EXT_ADV_REPORT ext_adv_report = {0};
     UINT8 num_reports = {0};
+    UINT8 *pp = p;
     //UINT8 legacy_event_type = 0;
     UINT16 evt_type = 0;
     uint8_t addr_type;
     BD_ADDR bda;
+    #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
+    BOOLEAN             match = FALSE;
+    #endif
 
     if (!p) {
         HCI_TRACE_ERROR("%s, Invalid params.", __func__);
@@ -2106,12 +2133,17 @@ static void btu_ble_ext_adv_report_evt(UINT8 *p, UINT16 evt_len)
 
         STREAM_TO_UINT8(addr_type, p);
         STREAM_TO_BDADDR(bda, p);
-        // If it is an anonymous adv, skip address resolution
-        if(addr_type != 0xFF) {
 #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
-            btm_identity_addr_to_random_pseudo(bda, &addr_type, FALSE);
-#endif
+        if(addr_type != 0xFF) {
+            match = btm_identity_addr_to_random_pseudo(bda, &addr_type, FALSE);
+            if (!match && BTM_BLE_IS_RESOLVE_BDA(bda)) {
+                btm_ble_resolve_random_addr(bda, btm_ble_resolve_random_addr_adv_ext, pp);
+                //the BDADDR may be updated, so read it again
+                p = p - sizeof(bda);
+                STREAM_TO_BDADDR(bda, p);
+            }
         }
+#endif
         ext_adv_report.addr_type = addr_type;
         memcpy(ext_adv_report.addr, bda, 6);
         STREAM_TO_UINT8(ext_adv_report.primary_phy, p);
