@@ -177,20 +177,6 @@ static int ssl_handshake_init( mbedtls_ssl_context *ssl )
     ssl_transform_init( ssl->transform_negotiate );
     ssl_handshake_params_init( ssl->handshake );
 
-#if defined(MBEDTLS_SSL_PROTO_DTLS)
-    if( ssl->conf->transport == MBEDTLS_SSL_TRANSPORT_DATAGRAM )
-    {
-        ssl->handshake->alt_transform_out = ssl->transform_out;
-
-        if( ssl->conf->endpoint == MBEDTLS_SSL_IS_CLIENT )
-            ssl->handshake->retransmit_state = MBEDTLS_SSL_RETRANS_PREPARING;
-        else
-            ssl->handshake->retransmit_state = MBEDTLS_SSL_RETRANS_WAITING;
-
-        ssl_set_timer( ssl, 0 );
-    }
-#endif
-
     return( 0 );
 }
 
