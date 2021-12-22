@@ -6,6 +6,7 @@
 #pragma once
 
 #define SOC_CPU_CORES_NUM               1
+#define SOC_ADC_SUPPORTED               1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_GDMA_SUPPORTED              1
 #define SOC_TWAI_SUPPORTED              1
@@ -31,18 +32,28 @@
 #define SOC_AES_SUPPORT_AES_256 (1)
 
 /*-------------------------- ADC CAPS -------------------------------*/
+/*!< SAR ADC Module*/
+#define SOC_ADC_DIG_CTRL_SUPPORTED              1
+#define SOC_ADC_ARBITER_SUPPORTED               1
+#define SOC_ADC_FILTER_SUPPORTED                1
+#define SOC_ADC_MONITOR_SUPPORTED               1
 #define SOC_ADC_PERIPH_NUM                      (2)
-#define SOC_ADC_PATT_LEN_MAX                    (16)
 #define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         ((PERIPH_NUM==0)? 5 : 1)
 #define SOC_ADC_MAX_CHANNEL_NUM                 (5)
-#define SOC_ADC_MAX_BITWIDTH                    (12)
+
+/*!< Digital */
+#define SOC_ADC_DIGI_CONTROLLER_NUM             (1U)
+#define SOC_ADC_PATT_LEN_MAX                    (8) /*!< One pattern table, each contains 8 items. Each item takes 1 byte */
+#define SOC_ADC_DIGI_MAX_BITWIDTH               (12)
 #define SOC_ADC_DIGI_FILTER_NUM                 (2)
 #define SOC_ADC_DIGI_MONITOR_NUM                (2)
-#define SOC_ADC_CALIBRATION_V1_SUPPORTED        (1) /*!< support HW offset calibration version 1*/
-#define SOC_ADC_SUPPORT_DMA_MODE(PERIPH_NUM)    1
-//F_sample = F_digi_con / 2 / interval. F_digi_con = 5M for now. 30 <= interva <= 4095
+/*!< F_sample = F_digi_con / 2 / interval. F_digi_con = 5M for now. 30 <= interva <= 4095 */
 #define SOC_ADC_SAMPLE_FREQ_THRES_HIGH          83333
 #define SOC_ADC_SAMPLE_FREQ_THRES_LOW           611
+
+/*!< RTC */
+#define SOC_ADC_MAX_BITWIDTH                    (12)
+
 
 /*-------------------------- APB BACKUP DMA CAPS -------------------------------*/
 #define SOC_APB_BACKUP_DMA              (1)
@@ -259,6 +270,7 @@
 #define SOC_MAC_BB_PD_MEM_SIZE          (192*4)
 
 /*-------------------------- Power Management CAPS ----------------------------*/
+
 #define SOC_PM_SUPPORT_BT_WAKEUP        (1)
 
 #define SOC_PM_SUPPORT_CPU_PD           (1)

@@ -10,14 +10,15 @@
 #include "esp_log.h"
 #include "test_utils.h"
 #include "esp_adc_cal.h"
-#include "driver/adc_common.h"
+#include "driver/adc.h"
 
 static const char *TAG = "ADC";
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP32S2, ESP32S3)
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP32S2, ESP32S3, ESP32C3)   //TODO: IDF-3160
 //API only supported for C3 now.
 
-#include "driver/adc.h"
+#include "esp_adc_cal.h"
 #include "esp_log.h"
 
 #define TEST_COUNT      4096

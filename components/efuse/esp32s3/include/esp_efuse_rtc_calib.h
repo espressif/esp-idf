@@ -11,6 +11,9 @@
 extern "C" {
 #endif
 
+//This is the ADC calibration value version burnt in efuse
+#define ESP_EFUSE_ADC_CALIB_VER     1
+
 /**
  * @brief Get the RTC calibration efuse version
  *
@@ -26,7 +29,7 @@ int esp_efuse_rtc_calib_get_ver(void);
  * @param atten         Attenuation of the init code
  * @return The init code stored in efuse
  */
-uint16_t esp_efuse_rtc_calib_get_init_code(int version, uint32_t adc_unit, int atten);
+uint32_t esp_efuse_rtc_calib_get_init_code(int version, uint32_t adc_unit, int atten);
 
 /**
  * @brief Get the calibration digits stored in the efuse, and the corresponding voltage.

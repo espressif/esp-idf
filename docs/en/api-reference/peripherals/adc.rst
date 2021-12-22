@@ -161,7 +161,7 @@ Driver Usage
 
     .. only:: esp32c3
 
-    The code example for using ADC continuous (DMA) read mode can be found in the :example:`peripherals/adc/esp32c3/adc` directory of ESP-IDF examples.
+    The code example for using ADC continuous (DMA) read mode can be found in the :example:`peripherals/adc/dma_read` directory of ESP-IDF examples.
 
     .. note:: See :ref:`adc_limitations` for the limitation of using ADC continuous (DMA) read mode.
 
@@ -447,8 +447,6 @@ ADC driver
 .. include-build-file:: inc/adc.inc
 
 .. include-build-file:: inc/adc_types.inc
-
-.. include-build-file:: inc/adc_common.inc
 
 .. _adc-api-reference-adc-calibration:
 

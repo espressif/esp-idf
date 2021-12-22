@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*******************************************************************************
  * NOTICE
@@ -1089,10 +1081,6 @@ static inline uint32_t spi_ll_slave_hd_get_last_addr(spi_dev_t *hw)
  */
 static inline void spi_dma_ll_rx_reset(spi_dma_dev_t *dma_in, uint32_t channel)
 {
-    //Reset RX DMA peripheral
-    dma_in->dma_in_link.dma_rx_ena = 0;
-    HAL_ASSERT(dma_in->dma_in_link.dma_rx_ena == 0);
-
     dma_in->dma_conf.in_rst = 1;
     dma_in->dma_conf.in_rst = 0;
 }
@@ -1108,6 +1096,17 @@ static inline void spi_dma_ll_rx_start(spi_dma_dev_t *dma_in, uint32_t channel, 
 {
     dma_in->dma_in_link.addr = (int) addr & 0xFFFFF;
     dma_in->dma_in_link.start = 1;
+}
+
+/**
+ * Stop RX DMA.
+ *
+ * @param dma_in  Beginning address of the DMA peripheral registers which stores the data received from a peripheral into RAM.
+ * @param channel DMA channel, for chip version compatibility, not used.
+ */
+static inline void spi_dma_ll_rx_stop(spi_dma_dev_t *dma_in, uint32_t channel)
+{
+    dma_in->dma_in_link.stop = 1;
 }
 
 /**
@@ -1171,6 +1170,17 @@ static inline void spi_dma_ll_tx_start(spi_dma_dev_t *dma_out, uint32_t channel,
 {
     dma_out->dma_out_link.addr = (int) addr & 0xFFFFF;
     dma_out->dma_out_link.start = 1;
+}
+
+/**
+ * Stop TX DMA.
+ *
+ * @param dma_out Beginning address of the DMA peripheral registers which transmits the data from RAM to a peripheral.
+ * @param channel DMA channel, for chip version compatibility, not used.
+ */
+static inline void spi_dma_ll_tx_stop(spi_dma_dev_t *dma_out, uint32_t channel)
+{
+    dma_out->dma_out_link.stop = 1;
 }
 
 /**
@@ -1251,7 +1261,6 @@ static inline void spi_dma_ll_rx_disable(spi_dma_dev_t *dma_in)
 static inline void spi_dma_ll_tx_disable(spi_dma_dev_t *dma_out)
 {
     dma_out->dma_out_link.dma_tx_ena = 0;
-    dma_out->dma_out_link.stop = 1;
 }
 
 static inline bool spi_ll_tx_get_empty_err(spi_dev_t *hw)

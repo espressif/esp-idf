@@ -15,6 +15,9 @@ extern "C" {
 #include "esp_err.h"
 #include "sdkconfig.h"
 
+//This is the ADC calibration value version burnt in efuse
+#define ESP_EFUSE_ADC_CALIB_VER     2
+
 #define RTCCALIB_ESP32S2_ADCCOUNT 2
 #define RTCCALIB_ESP32S2_ATTENCOUNT 4
 
