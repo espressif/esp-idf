@@ -154,7 +154,6 @@ void btc_a2dp_control_media_ctrl(esp_a2d_media_ctrl_t ctrl)
             }
 #endif
         } else if (btc_av_stream_started_ready()) {
-            btc_a2dp_dispatch_datapath_evt(BTC_AV_DATAPATH_OPEN_EVT);
             btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_SUCCESS);
         } else {
             btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_FAILURE);
