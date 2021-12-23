@@ -571,6 +571,7 @@ static void _handle_pending_ep(client_t *client_obj)
 
 esp_err_t usb_host_client_register(const usb_host_client_config_t *client_config, usb_host_client_handle_t *client_hdl_ret)
 {
+    HOST_CHECK(p_host_lib_obj, ESP_ERR_INVALID_STATE);
     HOST_CHECK(client_config != NULL && client_hdl_ret != NULL, ESP_ERR_INVALID_ARG);
     HOST_CHECK(client_config->max_num_event_msg > 0, ESP_ERR_INVALID_ARG);
     if (!client_config->is_synchronous) {
@@ -1229,7 +1230,9 @@ esp_err_t usb_host_transfer_alloc(size_t data_buffer_size, int num_isoc_packets,
 
 esp_err_t usb_host_transfer_free(usb_transfer_t *transfer)
 {
-    HOST_CHECK(transfer != NULL, ESP_ERR_INVALID_ARG);
+    if (transfer == NULL) {
+        return ESP_OK;
+    }
     urb_t *urb = __containerof(transfer, urb_t, transfer);
     urb_free(urb);
     return ESP_OK;
