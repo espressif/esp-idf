@@ -15,12 +15,9 @@
 #include "soc/soc_caps.h"
 #include "esp_rom_sys.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)
-// TODO: Timer support IDF-3825
-
-#define TIMER_DIVIDER  16
-#define TIMER_SCALE    (TIMER_BASE_CLK / TIMER_DIVIDER)  /*!< used to calculate counter value */
+#define TEST_TIMER_RESOLUTION_HZ 1000000 // 1MHz resolution
 #define TIMER_DELTA    0.001
+
 static bool alarm_flag;
 static xQueueHandle timer_queue;
 
@@ -39,14 +36,16 @@ typedef struct {
 #define TIMER_INFO_INIT(TG, TID)    {.timer_group = (TG), .timer_idx = (TID),}
 
 static timer_info_t timer_info[] = {
-#if !CONFIG_IDF_TARGET_ESP32C3
+#if SOC_TIMER_GROUP_TOTAL_TIMERS >= 4
     TIMER_INFO_INIT(TIMER_GROUP_0, TIMER_0),
     TIMER_INFO_INIT(TIMER_GROUP_0, TIMER_1),
     TIMER_INFO_INIT(TIMER_GROUP_1, TIMER_0),
     TIMER_INFO_INIT(TIMER_GROUP_1, TIMER_1),
-#else
+#elif SOC_TIMER_GROUP_TOTAL_TIMERS >= 2
     TIMER_INFO_INIT(TIMER_GROUP_0, TIMER_0),
     TIMER_INFO_INIT(TIMER_GROUP_1, TIMER_0),
+#else
+    TIMER_INFO_INIT(TIMER_GROUP_0, TIMER_0),
 #endif
 };
 
@@ -248,7 +247,7 @@ static void timer_intr_enable_and_start(int timer_group, int timer_idx, double a
 {
     TEST_ESP_OK(timer_pause(timer_group, timer_idx));
     TEST_ESP_OK(timer_set_counter_value(timer_group, timer_idx, 0x0));
-    TEST_ESP_OK(timer_set_alarm_value(timer_group, timer_idx, alarm_time * TIMER_SCALE));
+    TEST_ESP_OK(timer_set_alarm_value(timer_group, timer_idx, alarm_time * TEST_TIMER_RESOLUTION_HZ));
     TEST_ESP_OK(timer_set_alarm(timer_group, timer_idx, TIMER_ALARM_EN));
     TEST_ESP_OK(timer_enable_intr(timer_group, timer_idx));
     TEST_ESP_OK(timer_start(timer_group, timer_idx));
@@ -300,9 +299,10 @@ TEST_CASE("Timer init", "[hw_timer]")
 
     // lack one parameter
     timer_config_t config2 = {
+        .clk_src = TIMER_SRC_CLK_APB,
+        .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .auto_reload = TIMER_AUTORELOAD_EN,
         .counter_dir = TIMER_COUNT_UP,
-        .divider = TIMER_DIVIDER,
         .counter_en = TIMER_START,
         .intr_type = TIMER_INTR_LEVEL
     };
@@ -311,33 +311,20 @@ TEST_CASE("Timer init", "[hw_timer]")
     config2.counter_en = TIMER_PAUSE;
     all_timer_init(&config2, true);
 
-    // error config parameter
-    timer_config_t config3 = {
-        .alarm_en = 3,     //error parameter
-        .auto_reload = TIMER_AUTORELOAD_EN,
-        .counter_dir = TIMER_COUNT_UP,
-        .divider = TIMER_DIVIDER,
-        .counter_en = TIMER_START,
-        .intr_type = TIMER_INTR_LEVEL
-    };
-    all_timer_init(&config3, true);
-    timer_config_t get_config;
-    TEST_ESP_OK(timer_get_config(TIMER_GROUP_1, TIMER_0, &get_config));
-    printf("Error config alarm_en is %d\n", get_config.alarm_en);
-    TEST_ASSERT_NOT_EQUAL(config3.alarm_en, get_config.alarm_en);
-
     // Test init 2:  init
     uint64_t set_timer_val = 0x0;
     timer_config_t config = {
+        .clk_src = TIMER_SRC_CLK_APB,
+        .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_DIS,
         .auto_reload = TIMER_AUTORELOAD_EN,
         .counter_dir = TIMER_COUNT_UP,
-        .divider = TIMER_DIVIDER,
         .counter_en = TIMER_START,
         .intr_type = TIMER_INTR_LEVEL
     };
 
     // judge get config parameters
+    timer_config_t get_config;
     TEST_ESP_OK(timer_init(TIMER_GROUP_0, TIMER_0, &config));
     TEST_ESP_OK(timer_get_config(TIMER_GROUP_0, TIMER_0, &get_config));
     TEST_ASSERT_EQUAL(config.alarm_en, get_config.alarm_en);
@@ -355,8 +342,8 @@ TEST_CASE("Timer init", "[hw_timer]")
 
     // Test init 3:  wrong parameter
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, timer_init(-1, TIMER_0, &config));
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, timer_init(TIMER_GROUP_1, 2, &config));
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, timer_init(TIMER_GROUP_1, -1, &config));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, timer_init(TIMER_GROUP_0, 2, &config));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, timer_init(TIMER_GROUP_0, -1, &config));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, timer_init(2, TIMER_0, &config));
     all_timer_deinit();
 }
@@ -369,10 +356,11 @@ TEST_CASE("Timer init", "[hw_timer]")
 TEST_CASE("Timer read counter value", "[hw_timer]")
 {
     timer_config_t config = {
+        .clk_src = TIMER_SRC_CLK_APB,
+        .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_EN,
         .auto_reload = TIMER_AUTORELOAD_EN,
         .counter_dir = TIMER_COUNT_UP,
-        .divider = TIMER_DIVIDER,
         .counter_en = TIMER_START,
         .intr_type = TIMER_INTR_LEVEL
     };
@@ -408,10 +396,11 @@ TEST_CASE("Timer read counter value", "[hw_timer]")
 TEST_CASE("Timer start", "[hw_timer]")
 {
     timer_config_t config = {
+        .clk_src = TIMER_SRC_CLK_APB,
+        .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_EN,
         .auto_reload = TIMER_AUTORELOAD_EN,
         .counter_dir = TIMER_COUNT_UP,
-        .divider = TIMER_DIVIDER,
         .counter_en = TIMER_START,
         .intr_type = TIMER_INTR_LEVEL
     };
@@ -426,8 +415,8 @@ TEST_CASE("Timer start", "[hw_timer]")
     //Test start 2:wrong parameter
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, timer_start(2, TIMER_0));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, timer_start(-1, TIMER_0));
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, timer_start(TIMER_GROUP_1, 2));
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, timer_start(TIMER_GROUP_1, -1));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, timer_start(TIMER_GROUP_0, 2));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, timer_start(TIMER_GROUP_0, -1));
     all_timer_deinit();
 }
 
@@ -439,10 +428,11 @@ TEST_CASE("Timer start", "[hw_timer]")
 TEST_CASE("Timer pause", "[hw_timer]")
 {
     timer_config_t config = {
+        .clk_src = TIMER_SRC_CLK_APB,
+        .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_EN,
         .auto_reload = TIMER_AUTORELOAD_EN,
         .counter_dir = TIMER_COUNT_UP,
-        .divider = TIMER_DIVIDER,
         .counter_en = TIMER_START,
         .intr_type = TIMER_INTR_LEVEL
     };
@@ -458,7 +448,7 @@ TEST_CASE("Timer pause", "[hw_timer]")
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, timer_pause(-1, TIMER_0));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, timer_pause(TIMER_GROUP_0, -1));
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, timer_pause(2, TIMER_0));
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, timer_pause(TIMER_GROUP_1, 2));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, timer_pause(TIMER_GROUP_0, 2));
     all_timer_deinit();
 }
 
@@ -466,10 +456,11 @@ TEST_CASE("Timer pause", "[hw_timer]")
 TEST_CASE("Timer counter mode (up / down)", "[hw_timer]")
 {
     timer_config_t config = {
+        .clk_src = TIMER_SRC_CLK_APB,
+        .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_EN,
         .auto_reload = TIMER_AUTORELOAD_EN,
         .counter_dir = TIMER_COUNT_UP,
-        .divider = TIMER_DIVIDER,
         .counter_en = TIMER_START,
         .intr_type = TIMER_INTR_LEVEL
     };
@@ -486,7 +477,7 @@ TEST_CASE("Timer counter mode (up / down)", "[hw_timer]")
 
     // Test counter mode 2: TIMER_COUNT_DOWN
     all_timer_pause();
-    set_timer_val = 0x00E4E1C0ULL;          // 3s clock counter value
+    set_timer_val = TEST_TIMER_RESOLUTION_HZ * 3; // 3s clock counter value
     all_timer_set_counter_mode(TIMER_COUNT_DOWN);
     all_timer_set_counter_value(set_timer_val);
     all_timer_start();
@@ -499,24 +490,14 @@ TEST_CASE("Timer counter mode (up / down)", "[hw_timer]")
     all_timer_deinit();
 }
 
-/**
- * divider case:
- * 1. different divider, read value
- *       Note: divide 0 = divide max, divide 1 = divide 2
- * 2. error parameter
- *
- * the frequency(timer counts in one sec):
- *  80M/divider = 800*100000
- *  max divider value is 65536, its frequency is 1220 (nearly about 1KHz)
- */
 TEST_CASE("Timer divider", "[hw_timer]")
 {
-    int i;
     timer_config_t config = {
+        .clk_src = TIMER_SRC_CLK_APB,
+        .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_EN,
         .auto_reload = TIMER_AUTORELOAD_EN,
         .counter_dir = TIMER_COUNT_UP,
-        .divider = TIMER_DIVIDER,
         .counter_en = TIMER_START,
         .intr_type = TIMER_INTR_LEVEL
     };
@@ -532,41 +513,36 @@ TEST_CASE("Timer divider", "[hw_timer]")
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     all_timer_get_counter_value(set_timer_val, false, time_val);
 
-    // compare divider  16 and 8, value should be double
     all_timer_pause();
-    all_timer_set_divider(8);
+    all_timer_set_divider(config.divider / 2); // half of original divider
     all_timer_set_counter_value(set_timer_val);
 
     all_timer_start();
     vTaskDelay(1000 / portTICK_PERIOD_MS);         //delay the same time
     all_timer_get_counter_value(set_timer_val, false, comp_time_val);
-    for (i = 0; i < TIMER_GROUP_MAX * TIMER_MAX; i++) {
-        TEST_ASSERT_INT_WITHIN(5000, 5000000, time_val[i]);
-        TEST_ASSERT_INT_WITHIN(10000, 10000000, comp_time_val[i]);
+    for (int i = 0; i < TIMER_GROUP_MAX * TIMER_MAX; i++) {
+        TEST_ASSERT_INT_WITHIN(2000, 1000000, time_val[i]);
+        TEST_ASSERT_INT_WITHIN(2000, 2000000, comp_time_val[i]);
     }
 
-    // divider is 256, value should be 2^4
     all_timer_pause();
     all_timer_set_divider(256);
     all_timer_set_counter_value(set_timer_val);
     all_timer_start();
     vTaskDelay(1000 / portTICK_PERIOD_MS);         //delay the same time
     all_timer_get_counter_value(set_timer_val, false, comp_time_val);
-    for (i = 0; i < TIMER_GROUP_MAX * TIMER_MAX; i++) {
-        TEST_ASSERT_INT_WITHIN(5000, 5000000, time_val[i]);
-        TEST_ASSERT_INT_WITHIN(3126, 312500, comp_time_val[i]);
+    for (int i = 0; i < TIMER_GROUP_MAX * TIMER_MAX; i++) {
+        TEST_ASSERT_INT_WITHIN(100, APB_CLK_FREQ / 256, comp_time_val[i]);
     }
 
-    // extrem value test
     all_timer_pause();
     all_timer_set_divider(2);
     all_timer_set_counter_value(set_timer_val);
     all_timer_start();
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     all_timer_get_counter_value(set_timer_val, false, comp_time_val);
-    for (i = 0; i < TIMER_GROUP_MAX * TIMER_MAX; i++) {
-        TEST_ASSERT_INT_WITHIN(5000, 5000000, time_val[i]);
-        TEST_ASSERT_INT_WITHIN(40000, 40000000, comp_time_val[i]);
+    for (int i = 0; i < TIMER_GROUP_MAX * TIMER_MAX; i++) {
+        TEST_ASSERT_INT_WITHIN(5000, APB_CLK_FREQ / 2, comp_time_val[i]);
     }
 
     all_timer_pause();
@@ -575,19 +551,13 @@ TEST_CASE("Timer divider", "[hw_timer]")
     all_timer_start();
     vTaskDelay(1000 / portTICK_PERIOD_MS);         //delay the same time
     all_timer_get_counter_value(set_timer_val, false, comp_time_val);
-    for (i = 0; i < TIMER_GROUP_MAX * TIMER_MAX; i++) {
-        TEST_ASSERT_INT_WITHIN(5000, 5000000, time_val[i]);
-        TEST_ASSERT_INT_WITHIN(2, 1220, comp_time_val[i]);
+    for (int i = 0; i < TIMER_GROUP_MAX * TIMER_MAX; i++) {
+        TEST_ASSERT_INT_WITHIN(10, APB_CLK_FREQ / 65536, comp_time_val[i]);
     }
 
-    // divider is 1 should be equal with 2
     all_timer_pause();
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, timer_set_divider(TIMER_GROUP_0, TIMER_0, 1));
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, timer_set_divider(TIMER_GROUP_1, TIMER_0, 1));
-
-    all_timer_pause();
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, timer_set_divider(TIMER_GROUP_0, TIMER_0, 65537));
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, timer_set_divider(TIMER_GROUP_1, TIMER_0, 65537));
     all_timer_deinit();
 }
 
@@ -599,10 +569,11 @@ TEST_CASE("Timer divider", "[hw_timer]")
 TEST_CASE("Timer enable alarm", "[hw_timer]")
 {
     timer_config_t config_test = {
+        .clk_src = TIMER_SRC_CLK_APB,
+        .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_DIS,
         .auto_reload = TIMER_AUTORELOAD_DIS,
         .counter_dir = TIMER_COUNT_UP,
-        .divider = TIMER_DIVIDER,
         .counter_en = TIMER_PAUSE,
         .intr_type = TIMER_INTR_LEVEL
     };
@@ -613,7 +584,7 @@ TEST_CASE("Timer enable alarm", "[hw_timer]")
     alarm_flag = false;
     TEST_ESP_OK(timer_set_alarm(TIMER_GROUP_0, TIMER_0, TIMER_ALARM_EN));
     timer_intr_enable_and_start(TIMER_GROUP_0, TIMER_0, 1.2);
-    timer_isr_check(TIMER_GROUP_0, TIMER_0, TIMER_AUTORELOAD_DIS, 1.2 * TIMER_SCALE);
+    timer_isr_check(TIMER_GROUP_0, TIMER_0, TIMER_AUTORELOAD_DIS, 1.2 * TEST_TIMER_RESOLUTION_HZ);
     TEST_ASSERT_EQUAL(true, alarm_flag);
 
     // disable alarm of tg0_timer1
@@ -623,11 +594,12 @@ TEST_CASE("Timer enable alarm", "[hw_timer]")
     vTaskDelay(2000 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL(false, alarm_flag);
 
+#if SOC_TIMER_GROUPS > 1
     // enable alarm of tg1_timer0
     alarm_flag = false;
     TEST_ESP_OK(timer_set_alarm(TIMER_GROUP_1, TIMER_0, TIMER_ALARM_EN));
     timer_intr_enable_and_start(TIMER_GROUP_1, TIMER_0, 1.2);
-    timer_isr_check(TIMER_GROUP_1, TIMER_0, TIMER_AUTORELOAD_DIS, 1.2 * TIMER_SCALE);
+    timer_isr_check(TIMER_GROUP_1, TIMER_0, TIMER_AUTORELOAD_DIS, 1.2 * TEST_TIMER_RESOLUTION_HZ);
     TEST_ASSERT_EQUAL(true, alarm_flag);
 
     // disable alarm of tg1_timer0
@@ -636,6 +608,7 @@ TEST_CASE("Timer enable alarm", "[hw_timer]")
     TEST_ESP_OK(timer_set_alarm(TIMER_GROUP_1, TIMER_0, TIMER_ALARM_DIS));
     vTaskDelay(2000 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL(false, alarm_flag);
+#endif
     all_timer_isr_unreg();
     all_timer_deinit();
 }
@@ -649,10 +622,11 @@ TEST_CASE("Timer set alarm value", "[hw_timer]")
 {
     uint64_t alarm_val[SOC_TIMER_GROUP_TOTAL_TIMERS];
     timer_config_t config = {
+        .clk_src = TIMER_SRC_CLK_APB,
+        .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_EN,
         .auto_reload = TIMER_AUTORELOAD_DIS,
         .counter_dir = TIMER_COUNT_UP,
-        .divider = TIMER_DIVIDER,
         .counter_en = TIMER_PAUSE,
         .intr_type = TIMER_INTR_LEVEL
     };
@@ -660,17 +634,19 @@ TEST_CASE("Timer set alarm value", "[hw_timer]")
     all_timer_isr_reg();
 
     // set and get alarm value
-    all_timer_set_alarm_value(3 * TIMER_SCALE);
+    all_timer_set_alarm_value(3 * TEST_TIMER_RESOLUTION_HZ);
     all_timer_get_alarm_value(alarm_val);
     for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
-        TEST_ASSERT_EQUAL_UINT32(3 * TIMER_SCALE, (uint32_t)alarm_val[i]);
+        TEST_ASSERT_EQUAL_UINT32(3 * TEST_TIMER_RESOLUTION_HZ, (uint32_t)alarm_val[i]);
     }
 
     // set interrupt read alarm value
     timer_intr_enable_and_start(TIMER_GROUP_0, TIMER_0, 2.4);
-    timer_isr_check(TIMER_GROUP_0, TIMER_0, TIMER_AUTORELOAD_DIS, 2.4 * TIMER_SCALE);
+    timer_isr_check(TIMER_GROUP_0, TIMER_0, TIMER_AUTORELOAD_DIS, 2.4 * TEST_TIMER_RESOLUTION_HZ);
+#if SOC_TIMER_GROUPS > 1
     timer_intr_enable_and_start(TIMER_GROUP_1, TIMER_0, 1.4);
-    timer_isr_check(TIMER_GROUP_1, TIMER_0, TIMER_AUTORELOAD_DIS, 1.4 * TIMER_SCALE);
+    timer_isr_check(TIMER_GROUP_1, TIMER_0, TIMER_AUTORELOAD_DIS, 1.4 * TEST_TIMER_RESOLUTION_HZ);
+#endif
     all_timer_isr_unreg();
     all_timer_deinit();
 }
@@ -683,10 +659,11 @@ TEST_CASE("Timer set alarm value", "[hw_timer]")
 TEST_CASE("Timer auto reload", "[hw_timer]")
 {
     timer_config_t config = {
+        .clk_src = TIMER_SRC_CLK_APB,
+        .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_EN,
         .auto_reload = TIMER_AUTORELOAD_DIS,
         .counter_dir = TIMER_COUNT_UP,
-        .divider = TIMER_DIVIDER,
         .counter_en = TIMER_PAUSE,
         .intr_type = TIMER_INTR_LEVEL
     };
@@ -695,17 +672,21 @@ TEST_CASE("Timer auto reload", "[hw_timer]")
 
     // test disable auto_reload
     timer_intr_enable_and_start(TIMER_GROUP_0, TIMER_0, 1.14);
-    timer_isr_check(TIMER_GROUP_0, TIMER_0, TIMER_AUTORELOAD_DIS, 1.14 * TIMER_SCALE);
+    timer_isr_check(TIMER_GROUP_0, TIMER_0, TIMER_AUTORELOAD_DIS, 1.14 * TEST_TIMER_RESOLUTION_HZ);
+#if SOC_TIMER_GROUPS > 1
     timer_intr_enable_and_start(TIMER_GROUP_1, TIMER_0, 1.14);
-    timer_isr_check(TIMER_GROUP_1, TIMER_0, TIMER_AUTORELOAD_DIS, 1.14 * TIMER_SCALE);
+    timer_isr_check(TIMER_GROUP_1, TIMER_0, TIMER_AUTORELOAD_DIS, 1.14 * TEST_TIMER_RESOLUTION_HZ);
+#endif
 
     //test enable auto_reload
     TEST_ESP_OK(timer_set_auto_reload(TIMER_GROUP_0, TIMER_0, TIMER_AUTORELOAD_EN));
     timer_intr_enable_and_start(TIMER_GROUP_0, TIMER_0, 1.4);
     timer_isr_check(TIMER_GROUP_0, TIMER_0, TIMER_AUTORELOAD_EN, 0);
+#if SOC_TIMER_GROUPS > 1
     TEST_ESP_OK(timer_set_auto_reload(TIMER_GROUP_1, TIMER_0, TIMER_AUTORELOAD_EN));
     timer_intr_enable_and_start(TIMER_GROUP_1, TIMER_0, 1.4);
     timer_isr_check(TIMER_GROUP_1, TIMER_0, TIMER_AUTORELOAD_EN, 0);
+#endif
     all_timer_isr_unreg();
     all_timer_deinit();
 }
@@ -718,30 +699,33 @@ TEST_CASE("Timer auto reload", "[hw_timer]")
 TEST_CASE("Timer enable timer interrupt", "[hw_timer]")
 {
     timer_config_t config = {
+        .clk_src = TIMER_SRC_CLK_APB,
+        .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_DIS,
         .counter_dir = TIMER_COUNT_UP,
         .auto_reload = TIMER_AUTORELOAD_DIS,
-        .divider = TIMER_DIVIDER,
         .counter_en = TIMER_PAUSE,
         .intr_type = TIMER_INTR_LEVEL
     };
 
     all_timer_init(&config, true);
     all_timer_pause();
-    all_timer_set_alarm_value(1.2 * TIMER_SCALE);
+    all_timer_set_alarm_value(1.2 * TEST_TIMER_RESOLUTION_HZ);
     all_timer_set_counter_value(0);
     all_timer_isr_reg();
-    timer_intr_enable_disable_test(TIMER_GROUP_0, TIMER_0, 1.2 * TIMER_SCALE);
-    timer_intr_enable_disable_test(TIMER_GROUP_1, TIMER_0, 1.2 * TIMER_SCALE);
+    timer_intr_enable_disable_test(TIMER_GROUP_0, TIMER_0, 1.2 * TEST_TIMER_RESOLUTION_HZ);
+#if SOC_TIMER_GROUPS > 1
+    timer_intr_enable_disable_test(TIMER_GROUP_1, TIMER_0, 1.2 * TEST_TIMER_RESOLUTION_HZ);
+#endif
 
-    // enable interrupt of tg1_timer0 again
+    // enable interrupt of tg0_timer0 again
     alarm_flag = false;
-    TEST_ESP_OK(timer_pause(TIMER_GROUP_1, TIMER_0));
-    TEST_ESP_OK(timer_set_counter_value(TIMER_GROUP_1, TIMER_0, 0));
-    TEST_ESP_OK(timer_set_alarm(TIMER_GROUP_1, TIMER_0, TIMER_ALARM_EN));
-    TEST_ESP_OK(timer_enable_intr(TIMER_GROUP_1, TIMER_0));
-    TEST_ESP_OK(timer_start(TIMER_GROUP_1, TIMER_0));
-    timer_isr_check(TIMER_GROUP_1, TIMER_0, TIMER_AUTORELOAD_DIS, 1.2 * TIMER_SCALE);
+    TEST_ESP_OK(timer_pause(TIMER_GROUP_0, TIMER_0));
+    TEST_ESP_OK(timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0));
+    TEST_ESP_OK(timer_set_alarm(TIMER_GROUP_0, TIMER_0, TIMER_ALARM_EN));
+    TEST_ESP_OK(timer_enable_intr(TIMER_GROUP_0, TIMER_0));
+    TEST_ESP_OK(timer_start(TIMER_GROUP_0, TIMER_0));
+    timer_isr_check(TIMER_GROUP_0, TIMER_0, TIMER_AUTORELOAD_DIS, 1.2 * TEST_TIMER_RESOLUTION_HZ);
     TEST_ASSERT_EQUAL(true, alarm_flag);
     all_timer_isr_unreg();
     all_timer_deinit();
@@ -757,10 +741,11 @@ TEST_CASE("Timer enable timer group interrupt", "[hw_timer][ignore]")
     intr_handle_t isr_handle = NULL;
     alarm_flag = false;
     timer_config_t config = {
+        .clk_src = TIMER_SRC_CLK_APB,
+        .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_EN,
         .auto_reload = TIMER_AUTORELOAD_DIS,
         .counter_dir = TIMER_COUNT_UP,
-        .divider = TIMER_DIVIDER,
         .counter_en = TIMER_PAUSE,
         .intr_type = TIMER_INTR_LEVEL
     };
@@ -768,14 +753,14 @@ TEST_CASE("Timer enable timer group interrupt", "[hw_timer][ignore]")
     all_timer_init(&config, true);
     all_timer_pause();
     all_timer_set_counter_value(set_timer_val);
-    all_timer_set_alarm_value(1.2 * TIMER_SCALE);
+    all_timer_set_alarm_value(1.2 * TEST_TIMER_RESOLUTION_HZ);
 
     // enable interrupt of tg0_timer0
     TEST_ESP_OK(timer_group_intr_enable(TIMER_GROUP_0, TIMER_INTR_T0));
     TEST_ESP_OK(timer_isr_register(TIMER_GROUP_0, TIMER_0, test_timer_group_isr,
                                    GET_TIMER_INFO(TIMER_GROUP_0, TIMER_0), ESP_INTR_FLAG_LOWMED, &isr_handle));
     TEST_ESP_OK(timer_start(TIMER_GROUP_0, TIMER_0));
-    timer_isr_check(TIMER_GROUP_0, TIMER_0, TIMER_AUTORELOAD_DIS, 1.2 * TIMER_SCALE);
+    timer_isr_check(TIMER_GROUP_0, TIMER_0, TIMER_AUTORELOAD_DIS, 1.2 * TEST_TIMER_RESOLUTION_HZ);
     TEST_ASSERT_EQUAL(true, alarm_flag);
 
     // disable interrupt of tg0_timer0
@@ -795,10 +780,11 @@ TEST_CASE("Timer enable timer group interrupt", "[hw_timer][ignore]")
 TEST_CASE("Timer interrupt register", "[hw_timer]")
 {
     timer_config_t config = {
+        .clk_src = TIMER_SRC_CLK_APB,
+        .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_DIS,
         .auto_reload = TIMER_AUTORELOAD_DIS,
         .counter_dir = TIMER_COUNT_UP,
-        .divider = TIMER_DIVIDER,
         .counter_en = TIMER_PAUSE,
         .intr_type = TIMER_INTR_LEVEL
     };
@@ -815,15 +801,19 @@ TEST_CASE("Timer interrupt register", "[hw_timer]")
 
         TEST_ESP_OK(timer_set_alarm(TIMER_GROUP_0, TIMER_0, TIMER_ALARM_EN));
         timer_intr_enable_and_start(TIMER_GROUP_0, TIMER_0, 0.54);
+#if SOC_TIMER_GROUPS > 1
         TEST_ESP_OK(timer_set_alarm(TIMER_GROUP_1, TIMER_0, TIMER_ALARM_EN));
         timer_intr_enable_and_start(TIMER_GROUP_1, TIMER_0, 0.34);
+#endif
 
         TEST_ESP_OK(timer_set_auto_reload(TIMER_GROUP_0, TIMER_0, TIMER_AUTORELOAD_EN));
         TEST_ESP_OK(timer_set_alarm(TIMER_GROUP_0, TIMER_0, TIMER_ALARM_EN));
         timer_intr_enable_and_start(TIMER_GROUP_0, TIMER_0, 0.4);
+#if SOC_TIMER_GROUPS > 1
         TEST_ESP_OK(timer_set_auto_reload(TIMER_GROUP_1, TIMER_0, TIMER_AUTORELOAD_EN));
         TEST_ESP_OK(timer_set_alarm(TIMER_GROUP_1, TIMER_0, TIMER_ALARM_EN));
         timer_intr_enable_and_start(TIMER_GROUP_1, TIMER_0, 0.6);
+#endif
         vTaskDelay(1000 / portTICK_PERIOD_MS);
 
         // ISR hanlde function should be free before next ISR register.
@@ -845,34 +835,37 @@ TEST_CASE("Timer interrupt register", "[hw_timer]")
 TEST_CASE("Timer clock source", "[hw_timer]")
 {
     // configure clock source as APB clock
-    uint32_t timer_scale = rtc_clk_apb_freq_get() / TIMER_DIVIDER;
     timer_config_t config = {
+        .clk_src = TIMER_SRC_CLK_APB,
+        .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_DIS,
         .auto_reload = TIMER_AUTORELOAD_DIS,
         .counter_dir = TIMER_COUNT_UP,
-        .divider = TIMER_DIVIDER,
         .counter_en = TIMER_PAUSE,
         .intr_type = TIMER_INTR_LEVEL,
-        .clk_src = TIMER_SRC_CLK_APB
     };
     all_timer_init(&config, true);
     all_timer_pause();
-    all_timer_set_alarm_value(1.2 * timer_scale);
+    all_timer_set_alarm_value(1.2 * TEST_TIMER_RESOLUTION_HZ);
     all_timer_set_counter_value(0);
     all_timer_isr_reg();
 
-    timer_intr_enable_disable_test(TIMER_GROUP_0, TIMER_0, 1.2 * timer_scale);
-    timer_intr_enable_disable_test(TIMER_GROUP_1, TIMER_0, 1.2 * timer_scale );
+    timer_intr_enable_disable_test(TIMER_GROUP_0, TIMER_0, 1.2 * TEST_TIMER_RESOLUTION_HZ);
+#if SOC_TIMER_GROUPS > 1
+    timer_intr_enable_disable_test(TIMER_GROUP_1, TIMER_0, 1.2 * TEST_TIMER_RESOLUTION_HZ);
+#endif
 
     // configure clock source as XTAL clock
     all_timer_pause();
-    timer_scale = rtc_clk_xtal_freq_get() * 1000000 / TIMER_DIVIDER;
     config.clk_src = TIMER_SRC_CLK_XTAL;
+    config.divider = rtc_clk_xtal_freq_get() * 1000000 / TEST_TIMER_RESOLUTION_HZ;
     all_timer_init(&config, true);
-    all_timer_set_alarm_value(1.2 * timer_scale);
+    all_timer_set_alarm_value(1.2 * TEST_TIMER_RESOLUTION_HZ);
 
-    timer_intr_enable_disable_test(TIMER_GROUP_0, TIMER_0, 1.2 * timer_scale);
-    timer_intr_enable_disable_test(TIMER_GROUP_1, TIMER_0, 1.2 * timer_scale );
+    timer_intr_enable_disable_test(TIMER_GROUP_0, TIMER_0, 1.2 * TEST_TIMER_RESOLUTION_HZ);
+#if SOC_TIMER_GROUPS > 1
+    timer_intr_enable_disable_test(TIMER_GROUP_1, TIMER_0, 1.2 * TEST_TIMER_RESOLUTION_HZ);
+#endif
 
     all_timer_isr_unreg();
     all_timer_deinit();
@@ -886,15 +879,15 @@ TEST_CASE("Timer ISR callback", "[hw_timer]")
 {
     alarm_flag = false;
     timer_config_t config = {
+        .clk_src = TIMER_SRC_CLK_APB,
+        .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_EN,
         .auto_reload = TIMER_AUTORELOAD_DIS,
         .counter_dir = TIMER_COUNT_UP,
-        .divider = TIMER_DIVIDER,
         .counter_en = TIMER_PAUSE,
         .intr_type = TIMER_INTR_LEVEL,
     };
-    uint32_t timer_scale = rtc_clk_apb_freq_get() / TIMER_DIVIDER;
-    uint64_t alarm_cnt_val = 1.2 * timer_scale;
+    uint64_t alarm_cnt_val = 1.2 * TEST_TIMER_RESOLUTION_HZ;
     uint64_t set_timer_val = 0x0;
     all_timer_init(&config, true);
     all_timer_pause();
@@ -918,6 +911,7 @@ TEST_CASE("Timer ISR callback", "[hw_timer]")
     vTaskDelay(2000 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL(false, alarm_flag);
 
+#if SOC_TIMER_GROUPS > 1
     // add isr callback for tg1_timer0
     TEST_ESP_OK(timer_pause(TIMER_GROUP_1, TIMER_0));
     TEST_ESP_OK(timer_isr_callback_add(TIMER_GROUP_1, TIMER_0, test_timer_group_isr_cb,
@@ -935,19 +929,21 @@ TEST_CASE("Timer ISR callback", "[hw_timer]")
     TEST_ESP_OK(timer_start(TIMER_GROUP_1, TIMER_0));
     vTaskDelay(2000 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL(false, alarm_flag);
+#endif
     all_timer_deinit();
 }
 
 /**
  * Timer memory test
  */
-TEST_CASE("Timer memory test", "[hw_timer]")
+TEST_CASE("Timer init/deinit stress test", "[hw_timer]")
 {
     timer_config_t config = {
+        .clk_src = TIMER_SRC_CLK_APB,
+        .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .alarm_en = TIMER_ALARM_EN,
         .auto_reload = TIMER_AUTORELOAD_EN,
         .counter_dir = TIMER_COUNT_UP,
-        .divider = TIMER_DIVIDER,
         .counter_en = TIMER_PAUSE,
         .intr_type = TIMER_INTR_LEVEL,
     };
@@ -964,10 +960,10 @@ TEST_CASE("Timer memory test", "[hw_timer]")
 static void timer_group_test_init(void)
 {
     static const uint32_t time_ms = 100;  // Alarm value 100ms.
-    static const uint16_t timer_div = TIMER_DIVIDER; // Timer prescaler
-    static const uint32_t ste_val = time_ms * (TIMER_BASE_CLK / timer_div / 1000);
+    static const uint32_t ste_val = time_ms * TEST_TIMER_RESOLUTION_HZ / 1000;
     timer_config_t config = {
-        .divider = timer_div,
+        .clk_src = TIMER_SRC_CLK_APB,
+        .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .counter_dir = TIMER_COUNT_UP,
         .counter_en = TIMER_PAUSE,
         .alarm_en = TIMER_ALARM_EN,
@@ -1028,7 +1024,8 @@ TEST_CASE("Timer check reinitialization sequence", "[hw_timer]")
     // 3 - deinit timer driver
     TEST_ESP_OK(timer_deinit(TIMER_GROUP_0, TIMER_0));
     timer_config_t config = {
-        .divider = TIMER_DIVIDER,
+        .clk_src = TIMER_SRC_CLK_APB,
+        .divider = APB_CLK_FREQ / TEST_TIMER_RESOLUTION_HZ,
         .counter_dir = TIMER_COUNT_UP,
         .counter_en = TIMER_START,
         .alarm_en = TIMER_ALARM_EN,
@@ -1043,5 +1040,3 @@ TEST_CASE("Timer check reinitialization sequence", "[hw_timer]")
     // The pending timer interrupt should not be triggered
     TEST_ASSERT_EQUAL(0, timer_group_get_intr_status_in_isr(TIMER_GROUP_0) & TIMER_INTR_T0);
 }
-
-#endif // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)
