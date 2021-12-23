@@ -324,6 +324,12 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         blufi_env.conn_id = p_data->conn.conn_id;
         blufi_env.recv_seq = blufi_env.send_seq = 0;
         blufi_env.sec_mode = 0x0;
+        blufi_env.offset = 0;
+
+        if (blufi_env.aggr_buf != NULL) {
+            osi_free(blufi_env.aggr_buf);
+            blufi_env.aggr_buf = NULL;
+        }
 
         msg.sig = BTC_SIG_API_CB;
         msg.pid = BTC_PID_BLUFI;

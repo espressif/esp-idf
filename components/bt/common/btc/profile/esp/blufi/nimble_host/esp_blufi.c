@@ -274,6 +274,13 @@ esp_blufi_gap_event(struct ble_gap_event *event, void *arg)
         blufi_env.is_connected = false;
         blufi_env.recv_seq = blufi_env.send_seq = 0;
         blufi_env.sec_mode = 0x0;
+        blufi_env.offset = 0;
+
+        if (blufi_env.aggr_buf != NULL) {
+            osi_free(blufi_env.aggr_buf);
+            blufi_env.aggr_buf = NULL;
+        }
+
         btc_msg_t msg;
         esp_blufi_cb_param_t param;
 
