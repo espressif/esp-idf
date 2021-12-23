@@ -4,13 +4,14 @@ General Purpose Timer
 :link_to_translation:`zh_CN:[中文]`
 
 {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH:default="54", esp32="64", esp32s2="64"}
-{IDF_TARGET_TIMERS_PER_GROUP:default="two", esp32c3="one"}
-{IDF_TARGET_TIMERS_TOTAL:default="four", esp32c3="two"}
+{IDF_TARGET_TIMER_GROUPS:default="two", esp8684="one"}
+{IDF_TARGET_TIMERS_PER_GROUP:default="two", esp32c3="one", esp8684="one"}
+{IDF_TARGET_TIMERS_TOTAL:default="four", esp32c3="two", esp8684="one"}
 
 Introduction
 ------------
 
-The {IDF_TARGET_NAME} chip contains two hardware timer groups. Each group has {IDF_TARGET_TIMERS_PER_GROUP} general-purpose hardware timer(s). They are all {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH}-bit generic timers based on 16-bit pre-scalers and {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH}-bit up / down counters which are capable of being auto-reloaded.
+The {IDF_TARGET_NAME} chip contains {IDF_TARGET_TIMER_GROUPS} hardware timer group(s). Each group has {IDF_TARGET_TIMERS_PER_GROUP} general-purpose hardware timer(s). They are all {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH}-bit generic timers based on 16-bit pre-scalers and {IDF_TARGET_TIMER_COUNTER_BIT_WIDTH}-bit up / down counters which are capable of being auto-reloaded.
 
 
 Functional Overview
@@ -29,7 +30,7 @@ The following sections of this document cover the typical steps to configure and
 Timer Initialization
 ^^^^^^^^^^^^^^^^^^^^
 
-The two {IDF_TARGET_NAME} timer groups, with {IDF_TARGET_TIMERS_PER_GROUP} timer(s) in each, provide the total of {IDF_TARGET_TIMERS_TOTAL} individual timers for use. An {IDF_TARGET_NAME} timer group should be identified using :cpp:type:`timer_group_t`. An individual timer in a group should be identified with :cpp:type:`timer_idx_t`.
+The {IDF_TARGET_TIMER_GROUPS} {IDF_TARGET_NAME} timer group(s), with {IDF_TARGET_TIMERS_PER_GROUP} timer(s) in each, provide the total of {IDF_TARGET_TIMERS_TOTAL} individual timers for use. An {IDF_TARGET_NAME} timer group should be identified using :cpp:type:`timer_group_t`. An individual timer in a group should be identified with :cpp:type:`timer_idx_t`.
 
 First of all, the timer should be initialized by calling the function :cpp:func:`timer_init` and passing a structure :cpp:type:`timer_config_t` to it to define how the timer should operate. In particular, the following timer parameters can be set:
 

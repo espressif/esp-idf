@@ -102,7 +102,6 @@ api-reference/storage/index
 api-reference/peripherals/adc
 api-reference/peripherals/usb_host
 api-reference/peripherals/sigmadelta
-api-reference/peripherals/timer
 api-reference/peripherals/twai
 api-reference/peripherals/hmac
 api-reference/peripherals/usb_device
