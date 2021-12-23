@@ -71,8 +71,8 @@ static void produce_pulse(void)
     ledc_timer_config_t ledc_timer = {
         .speed_mode = LEDC_LOW_SPEED_MODE,
         .timer_num  = LEDC_TIMER_1,
-        .duty_resolution = LEDC_TIMER_10_BIT,
-        .freq_hz = 1,
+        .duty_resolution = LEDC_TIMER_14_BIT,
+        .freq_hz = 2,
         .clk_cfg = LEDC_AUTO_CLK,
     };
     ESP_ERROR_CHECK(ledc_timer_config(&ledc_timer));
@@ -115,7 +115,7 @@ static void event_calculate(event_times *event)
     BaseType_t port_status;
     uint32_t status = 0;
     while (times < 10) {
-        port_status = xQueueReceive(pcnt_evt_queue, &status, 1000 / portTICK_PERIOD_MS);
+        port_status = xQueueReceive(pcnt_evt_queue, &status, 1001 / portTICK_PERIOD_MS);
         if (port_status == pdTRUE) {
             event->filter_time++;
             TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
@@ -216,6 +216,8 @@ static void count_mode_test(gpio_num_t ctl_io)
     } else {
         result = result2;
     }
+    // Wait for ledc and pcnt settling down
+    vTaskDelay(500 / portTICK_RATE_MS);
 
     // 1, 0, 0, 0
     TEST_ESP_OK(pcnt_counter_pause(PCNT_UNIT_0));
@@ -418,7 +420,7 @@ TEST_CASE("PCNT basic function test", "[pcnt]")
 
     //count now
     while (time != 10) {
-        vTaskDelay(1001 / portTICK_RATE_MS);  // in case of can't wait to get counter(edge effect)
+        vTaskDelay(501 / portTICK_RATE_MS);  // in case of can't wait to get counter(edge effect)
         TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
         printf("COUNT: %d\n", test_counter);
         TEST_ASSERT_NOT_EQUAL(test_counter, temp_value);
@@ -434,14 +436,14 @@ TEST_CASE("PCNT basic function test", "[pcnt]")
         if (test_counter == 0) {
             //test pause
             TEST_ESP_OK(pcnt_counter_pause(PCNT_UNIT_0));
-            vTaskDelay(1000 / portTICK_RATE_MS);
+            vTaskDelay(500 / portTICK_RATE_MS);
             TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
             printf("PAUSE: %d\n", test_counter);
             TEST_ASSERT_EQUAL_INT16(test_counter, 0);
 
             // test resume
             TEST_ESP_OK(pcnt_counter_resume(PCNT_UNIT_0));
-            vTaskDelay(1000 / portTICK_RATE_MS);
+            vTaskDelay(500 / portTICK_RATE_MS);
             TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
             printf("RESUME: %d\n", test_counter);
             TEST_ASSERT_EQUAL_INT16(test_counter, 1);
@@ -478,7 +480,7 @@ TEST_CASE("PCNT interrupt method test(control IO is high)", "[pcnt][timeout=120]
         .neg_mode = PCNT_COUNT_DIS,
         .lctrl_mode = PCNT_MODE_REVERSE,
         .hctrl_mode = PCNT_MODE_KEEP,
-        .counter_h_lim = 5,
+        .counter_h_lim = 10,
         .counter_l_lim = 0,
     };
     TEST_ESP_OK(pcnt_unit_config(&config));
@@ -497,9 +499,9 @@ TEST_CASE("PCNT interrupt method test(control IO is high)", "[pcnt][timeout=120]
     //interrupt set
     TEST_ESP_OK(pcnt_set_filter_value(PCNT_UNIT_0, 2));
     TEST_ESP_OK(pcnt_filter_enable(PCNT_UNIT_0));
-    TEST_ESP_OK(pcnt_set_event_value(PCNT_UNIT_0, PCNT_EVT_THRES_1, 4));  // when arrive to max threshold trigger
+    TEST_ESP_OK(pcnt_set_event_value(PCNT_UNIT_0, PCNT_EVT_THRES_1, 8));  // when arrive to max threshold trigger
     TEST_ESP_OK(pcnt_event_enable(PCNT_UNIT_0, PCNT_EVT_THRES_1));
-    TEST_ESP_OK(pcnt_set_event_value(PCNT_UNIT_0, PCNT_EVT_THRES_0, 1));  // when arrive to minimum threshold trigger
+    TEST_ESP_OK(pcnt_set_event_value(PCNT_UNIT_0, PCNT_EVT_THRES_0, 2));  // when arrive to minimum threshold trigger
     TEST_ESP_OK(pcnt_event_enable(PCNT_UNIT_0, PCNT_EVT_THRES_0));
     TEST_ESP_OK(pcnt_event_enable(PCNT_UNIT_0, PCNT_EVT_ZERO));
     TEST_ESP_OK(pcnt_event_enable(PCNT_UNIT_0, PCNT_EVT_H_LIM));  // when arrive to max limit trigger
@@ -579,7 +581,7 @@ TEST_CASE("PCNT interrupt method test(control IO is low)", "[pcnt][timeout=120]"
         .lctrl_mode = PCNT_MODE_REVERSE,
         .hctrl_mode = PCNT_MODE_KEEP,
         .counter_h_lim = 0,
-        .counter_l_lim = -5,
+        .counter_l_lim = -10,
     };
     TEST_ESP_OK(pcnt_unit_config(&config));
     produce_pulse();
@@ -597,7 +599,7 @@ TEST_CASE("PCNT interrupt method test(control IO is low)", "[pcnt][timeout=120]"
     //interrupt set
     TEST_ESP_OK(pcnt_set_filter_value(PCNT_UNIT_0, 2));
     TEST_ESP_OK(pcnt_filter_enable(PCNT_UNIT_0));
-    TEST_ESP_OK(pcnt_set_event_value(PCNT_UNIT_0, PCNT_EVT_THRES_1, -4));  // when arrive to max threshold trigger
+    TEST_ESP_OK(pcnt_set_event_value(PCNT_UNIT_0, PCNT_EVT_THRES_1, -8));  // when arrive to max threshold trigger
     TEST_ESP_OK(pcnt_event_enable(PCNT_UNIT_0, PCNT_EVT_THRES_1));
     TEST_ESP_OK(pcnt_set_event_value(PCNT_UNIT_0, PCNT_EVT_THRES_0, 0));  // when arrive to minimum threshold trigger
     TEST_ESP_OK(pcnt_event_enable(PCNT_UNIT_0, PCNT_EVT_THRES_0));
