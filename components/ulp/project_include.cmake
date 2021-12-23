@@ -31,20 +31,19 @@ function(ulp_embed_binary app_name s_sources exp_dep_srcs)
 
         idf_build_get_property(sdkconfig_header SDKCONFIG_HEADER)
         idf_build_get_property(idf_path IDF_PATH)
+        idf_build_get_property(idf_target IDF_TARGET)
         idf_build_get_property(python PYTHON)
         idf_build_get_property(extra_cmake_args EXTRA_CMAKE_ARGS)
 
         if(IDF_TARGET STREQUAL "esp32")
-            set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-esp32-ulp.cmake)
+            set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-${idf_target}-ulp.cmake)
             set(ULP_IS_RISCV OFF)
-        endif()
-
-        if(IDF_TARGET STREQUAL "esp32s2")
-            if(CONFIG_ESP32S2_ULP_COPROC_RISCV STREQUAL "y")
-                set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-esp32s2-ulp-riscv.cmake)
+        elseif(IDF_TARGET STREQUAL "esp32s2" OR IDF_TARGET STREQUAL "esp32s3")
+            if(CONFIG_ESP32S2_ULP_COPROC_RISCV STREQUAL "y" OR CONFIG_ESP32S3_ULP_COPROC_RISCV STREQUAL "y")
+                set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-ulp-riscv.cmake)
                 set(ULP_IS_RISCV ON)
             else()
-                set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-esp32s2-ulp.cmake)
+                set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-${idf_target}-ulp.cmake)
                 set(ULP_IS_RISCV OFF)
             endif()
         endif()
@@ -60,6 +59,7 @@ function(ulp_embed_binary app_name s_sources exp_dep_srcs)
                             -DCOMPONENT_DIR=${COMPONENT_DIR}
                             -DCOMPONENT_INCLUDES=$<TARGET_PROPERTY:${COMPONENT_TARGET},INTERFACE_INCLUDE_DIRECTORIES>
                             -DIDF_PATH=${idf_path}
+                            -DIDF_TARGET=${idf_target}
                             -DSDKCONFIG_HEADER=${SDKCONFIG_HEADER}
                             -DPYTHON=${python}
                             -DULP_COCPU_IS_RISCV=${ULP_IS_RISCV}

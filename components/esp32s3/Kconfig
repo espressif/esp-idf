@@ -320,6 +320,13 @@ menu "ESP32S3-Specific"
 
             Data is reserved at the beginning of RTC slow memory.
 
+    config ESP32S3_ULP_COPROC_RISCV
+        bool "Enable RISC-V as ULP coprocessor"
+        depends on ESP32S3_ULP_COPROC_ENABLED
+        default n
+        help
+            Set this to y to use the RISC-V coprocessor instead of the FSM-ULP.
+
     config ESP32S3_DEBUG_OCDAWARE
         bool "Make exception and panic handlers JTAG/OCD aware"
         default y
