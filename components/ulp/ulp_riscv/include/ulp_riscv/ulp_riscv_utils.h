@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -63,10 +55,14 @@ void __attribute__((noreturn)) ulp_riscv_shutdown(void);
 				__ccount; })
 
 
+#if CONFIG_IDF_TARGET_ESP32S2
 /* These are only approximate default numbers, the default frequency
    of the 8M oscillator is 8.5MHz +/- 5%, at the default DCAP setting
 */
 #define ULP_RISCV_CYCLES_PER_US 8.5
+#elif CONFIG_IDF_TARGET_ESP32S3
+#define ULP_RISCV_CYCLES_PER_US 17.5
+#endif
 #define ULP_RISCV_CYCLES_PER_MS ULP_RISCV_CYCLES_PER_US*1000
 
 /**
