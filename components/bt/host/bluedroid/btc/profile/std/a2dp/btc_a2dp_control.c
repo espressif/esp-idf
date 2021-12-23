@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -138,10 +138,8 @@ void btc_a2dp_control_media_ctrl(esp_a2d_media_ctrl_t ctrl)
         break;
     case ESP_A2D_MEDIA_CTRL_START:
         if (btc_av_stream_ready() == TRUE ) {
-            /* post start event and wait for audio path to open */
+            /* post start event */
             btc_dispatch_sm_event(BTC_AV_START_STREAM_REQ_EVT, NULL, 0);
-
-            btc_a2dp_dispatch_datapath_evt(BTC_AV_DATAPATH_OPEN_EVT);
 #if (BTC_AV_SINK_INCLUDED == TRUE)
             if (btc_av_get_peer_sep() == AVDT_TSEP_SRC && btc_av_get_service_id() == BTA_A2DP_SINK_SERVICE_ID) {
                 btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_SUCCESS);
