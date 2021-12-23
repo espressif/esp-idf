@@ -748,13 +748,8 @@ esp_err_t usbh_ep_alloc(usb_device_handle_t dev_hdl, usbh_ep_config_t *ep_config
 {
     USBH_CHECK(dev_hdl != NULL && ep_config != NULL && pipe_hdl_ret != NULL, ESP_ERR_INVALID_ARG);
     device_t *dev_obj = (device_t *)dev_hdl;
-
-    USBH_ENTER_CRITICAL();
-    USBH_CHECK_FROM_CRIT(dev_obj->dynamic.state == USB_DEVICE_STATE_CONFIGURED, ESP_ERR_INVALID_STATE);
-    dev_obj->dynamic.ref_count++;   //Increase the ref_count to keep the device alive while allocating the endpoint
-    USBH_EXIT_CRITICAL();
-
     esp_err_t ret;
+
     //Allocate HCD pipe
     hcd_pipe_config_t pipe_config = {
         .callback = ep_config->pipe_cb,
@@ -776,17 +771,22 @@ esp_err_t usbh_ep_alloc(usb_device_handle_t dev_hdl, usbh_ep_config_t *ep_config
 
     //We need to take the mux_lock to access mux_protected members
     xSemaphoreTake(p_usbh_obj->constant.mux_lock, portMAX_DELAY);
-    if (is_in && dev_obj->mux_protected.ep_in[addr - 1] == NULL) {    //Is an IN EP
+    USBH_ENTER_CRITICAL();
+    //Check the device's state before we assign the pipes to the endpoint
+    if (dev_obj->dynamic.state != USB_DEVICE_STATE_CONFIGURED) {
+        USBH_EXIT_CRITICAL();
+        ret = ESP_ERR_INVALID_STATE;
+        goto assign_err;
+    }
+    USBH_EXIT_CRITICAL();
+    //Assign the allocated pipe to the correct endpoint
+    if (is_in && dev_obj->mux_protected.ep_in[addr - 1] == NULL) {  //Is an IN EP
         dev_obj->mux_protected.ep_in[addr - 1] = pipe_hdl;
         assigned = true;
-    } else {
+    } else if (dev_obj->mux_protected.ep_out[addr - 1] == NULL) {   //Is an OUT EP
         dev_obj->mux_protected.ep_out[addr - 1] = pipe_hdl;
         assigned = true;
     }
-    //Restore ref_count
-    USBH_ENTER_CRITICAL();
-    dev_obj->dynamic.ref_count--;
-    USBH_EXIT_CRITICAL();
     xSemaphoreGive(p_usbh_obj->constant.mux_lock);
 
     if (!assigned) {

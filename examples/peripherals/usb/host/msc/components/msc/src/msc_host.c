@@ -469,7 +469,14 @@ esp_err_t msc_host_get_device_info(msc_host_device_handle_t device, msc_host_dev
 
 esp_err_t msc_host_print_descriptors(msc_host_device_handle_t device)
 {
-    return usb_print_descriptors(((msc_device_t *)device)->handle, NULL);
+    msc_device_t *dev = (msc_device_t *)device;
+    const usb_device_desc_t *device_desc;
+    const usb_config_desc_t *config_desc;
+    MSC_RETURN_ON_ERROR( usb_host_get_device_descriptor(dev->handle, &device_desc) );
+    MSC_RETURN_ON_ERROR( usb_host_get_active_config_descriptor(dev->handle, &config_desc) );
+    usb_print_device_descriptor(device_desc);
+    usb_print_config_descriptor(config_desc, NULL);
+    return ESP_OK;
 }
 
 static void transfer_callback(usb_transfer_t *transfer)

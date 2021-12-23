@@ -148,7 +148,7 @@ esp_err_t usb_host_install(const usb_host_config_t *config);
  * - All devices must have been freed by calling usb_host_device_free_all() and receiving the
  *   USB_HOST_LIB_EVENT_FLAGS_ALL_FREE event flag
  *
- * @note If skip_phy_setup was set when the Host Library was installed, the user is responsible for diasbling the
+ * @note If skip_phy_setup was set when the Host Library was installed, the user is responsible for disabling the
  *       underlying Host Controller and USB PHY (internal or external).
  * @return esp_err_t
  */
@@ -159,10 +159,11 @@ esp_err_t usb_host_uninstall(void);
  *
  * - This function handles all of the USB Host Library's processing and should be called repeatedly in a loop
  * - Check event_flags_ret to see if an flags are set indicating particular USB Host Library events
+ * - This function should never be called by multiple threads simultaneously
  *
  * @note This function can block
  * @param[in] timeout_ticks Timeout in ticks to wait for an event to occur
- * @param[out] event_flags_ret Event flags that indicate what USB Host Library event occurred
+ * @param[out] event_flags_ret Event flags that indicate what USB Host Library event occurred.
  * @return esp_err_t
  */
 esp_err_t usb_host_lib_handle_events(TickType_t timeout_ticks, uint32_t *event_flags_ret);
@@ -213,6 +214,7 @@ esp_err_t usb_host_client_deregister(usb_host_client_handle_t client_hdl);
  * @brief USB Host Library client processing function
  *
  * - This function handles all of a client's processing and should be called repeatedly in a loop
+ * - For a particular client, this function should never be called by multiple threads simultaneously
  *
  * @note This function can block
  * @param[in] client_hdl Client handle
@@ -283,8 +285,7 @@ esp_err_t usb_host_device_free_all(void);
  *
  * - This function fills an empty list with the address of connected devices
  * - The Device addresses can then used in usb_host_device_open()
- * - If there are more devices than the list_len, this function will only fill
- *   up to list_len number of devices.
+ * - If there are more devices than the list_len, this function will only fill up to list_len number of devices.
  *
  * @param[in] list_len Length of the empty list
  * @param[inout] dev_addr_list Empty list to be filled
