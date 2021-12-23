@@ -261,7 +261,10 @@ static bool wifi_perform_scan(const char *ssid, bool internal)
     uint8_t i;
 
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
-    ESP_ERROR_CHECK( esp_wifi_scan_start(&scan_config, true) );
+    if (ESP_OK != esp_wifi_scan_start(&scan_config, true)) {
+        ESP_LOGI(TAG_STA, "Failed to perform scan");
+        return false;
+    }
 
     esp_wifi_scan_get_ap_num(&g_scan_ap_num);
     if (g_scan_ap_num == 0) {
