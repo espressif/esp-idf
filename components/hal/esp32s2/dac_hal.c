@@ -1,21 +1,13 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // The HAL layer for ADC (esp32s2 specific part)
 
 #include "hal/dac_hal.h"
-#include "hal/adc_hal.h"
+#include "hal/adc_ll.h"
 #include "hal/dac_types.h"
 
 /*---------------------------------------------------------------
@@ -39,7 +31,8 @@ void dac_hal_digi_controller_config(const dac_digi_config_t *cfg)
 {
     dac_ll_digi_set_convert_mode(cfg->mode);
     dac_ll_digi_set_trigger_interval(cfg->interval);
-    adc_hal_digi_clk_config(&cfg->dig_clk);
+    adc_ll_digi_controller_clk_div(cfg->dig_clk.div_num, cfg->dig_clk.div_b, cfg->dig_clk.div_a);
+    adc_ll_digi_clk_sel(cfg->dig_clk.use_apll);
 }
 
 void dac_hal_digi_start(void)
