@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -356,7 +356,7 @@ uint32_t rtc_clk_ahb_freq_get()
     rtc_cpu_freq_config_t cpu_config;
     uint32_t ahb_div = REG_GET_FIELD(SYSTEM_BUSCLK_CONF_REG, SYSTEM_AHB_DIV_NUM) + 1;
     rtc_clk_cpu_freq_get_config(&cpu_config) ;
-    return   cpu_config.freq_mhz / ahb_div;
+    return   cpu_config.freq_mhz * MHZ / ahb_div;
 }
 
 uint32_t rtc_clk_ahb_freq_set(uint32_t div)
