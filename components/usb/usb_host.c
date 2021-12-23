@@ -1012,14 +1012,14 @@ static esp_err_t interface_claim(client_t *client_obj, usb_device_handle_t dev_h
         if (ret != ESP_OK) {
             goto ep_alloc_err;
         }
-        //Store endpoint object into interface object
+        //Fill the interface object with the allocated endpoints
         intf_obj->constant.endpoints[i] = ep_obj;
     }
     //Add interface object to client (safe because we have already taken the mutex)
     TAILQ_INSERT_TAIL(&client_obj->mux_protected.interface_tailq, intf_obj, mux_protected.tailq_entry);
     //Add each endpoint to the client's endpoint list
     HOST_ENTER_CRITICAL();
-    for (int i = 0; i < intf_obj->constant.intf_desc->bNumEndpoints; i++) {
+    for (int i = 0; i < intf_desc->bNumEndpoints; i++) {
         TAILQ_INSERT_TAIL(&client_obj->dynamic.idle_ep_tailq, intf_obj->constant.endpoints[i], dynamic.tailq_entry);
     }
     HOST_EXIT_CRITICAL();
@@ -1029,7 +1029,7 @@ static esp_err_t interface_claim(client_t *client_obj, usb_device_handle_t dev_h
     return ret;
 
 ep_alloc_err:
-    for (int i = 0; i < intf_obj->constant.intf_desc->bNumEndpoints; i++) {
+    for (int i = 0; i < intf_desc->bNumEndpoints; i++) {
         endpoint_free(dev_hdl, intf_obj->constant.endpoints[i]);
         intf_obj->constant.endpoints[i] = NULL;
     }
