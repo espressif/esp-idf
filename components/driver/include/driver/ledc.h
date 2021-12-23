@@ -475,9 +475,6 @@ esp_err_t ledc_set_fade_time_and_start(ledc_mode_t speed_mode, ledc_channel_t ch
  *     - ESP_FAIL Fade function init error
  */
 esp_err_t ledc_set_fade_step_and_start(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t target_duty, uint32_t scale, uint32_t cycle_num, ledc_fade_mode_t fade_mode);
-#ifdef __cplusplus
-}
-#endif
 
 /**
  * @brief LEDC callback registration function
@@ -493,3 +490,6 @@ esp_err_t ledc_set_fade_step_and_start(ledc_mode_t speed_mode, ledc_channel_t ch
  *     - ESP_FAIL Fade function init error
  */
 esp_err_t ledc_cb_register(ledc_mode_t speed_mode, ledc_channel_t channel, ledc_cbs_t *cbs, void *user_arg);
+#ifdef __cplusplus
+}
+#endif
