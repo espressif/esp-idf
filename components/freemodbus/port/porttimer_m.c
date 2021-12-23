@@ -45,7 +45,7 @@
 #define MB_US50_FREQ            (20000) // 20kHz 1/20000 = 50mks
 #define MB_TICK_TIME_US         (50)    // 50uS = one tick for timer
 
-#define MB_TIMER_PRESCALLER     ((TIMER_BASE_CLK / MB_US50_FREQ) - 1);
+#define MB_TIMER_PRESCALLER     ((TIMER_BASE_CLK / MB_US50_FREQ) - 1)
 #define MB_TIMER_SCALE          (TIMER_BASE_CLK / TIMER_DIVIDER)
 #define MB_TIMER_DIVIDER        ((TIMER_BASE_CLK / 1000000UL) * MB_TICK_TIME_US - 1) // divider for 50uS
 #define MB_TIMER_WITH_RELOAD    (1)
@@ -77,13 +77,14 @@ BOOL xMBMasterPortTimersInit(USHORT usTimeOut50us)
     // Save timer reload value for Modbus T35 period
     usT35TimeOut50us = usTimeOut50us;
     esp_err_t xErr;
-    timer_config_t config;
-    config.alarm_en = TIMER_ALARM_EN;
-    config.auto_reload = MB_TIMER_WITH_RELOAD;
-    config.counter_dir = TIMER_COUNT_UP;
-    config.divider = MB_TIMER_PRESCALLER;
-    config.intr_type = TIMER_INTR_LEVEL;
-    config.counter_en = TIMER_PAUSE;
+    timer_config_t config = {
+        .alarm_en = TIMER_ALARM_EN,
+        .auto_reload = MB_TIMER_WITH_RELOAD,
+        .counter_dir = TIMER_COUNT_UP,
+        .divider = MB_TIMER_PRESCALLER,
+        .intr_type = TIMER_INTR_LEVEL,
+        .counter_en = TIMER_PAUSE,
+    };
     // Configure timer
     xErr = timer_init(usTimerGroupIndex, usTimerIndex, &config);
     MB_PORT_CHECK((xErr == ESP_OK), FALSE,
