@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -487,6 +487,11 @@ void rtc_clk_apb_freq_update(uint32_t apb_freq);
 uint32_t rtc_clk_apb_freq_get(void);
 
 void rtc_clk_cpu_freq_set(uint32_t source, uint32_t div);
+
+/**
+ * @brief Get the current stored AHB frequency.
+ * @return The AHB frequency value as last set via rtc_clk_ahb_freq_set(), in Hz.
+ */
 uint32_t rtc_clk_ahb_freq_get(void);
 
 
