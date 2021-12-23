@@ -125,6 +125,7 @@
 /components/protobuf-c/               @esp-idf-codeowners/app-utilities
 /components/protocomm/                @esp-idf-codeowners/app-utilities
 /components/pthread/                  @esp-idf-codeowners/system
+/components/riscv/                    @esp-idf-codeowners/system
 /components/sdmmc/                    @esp-idf-codeowners/storage
 /components/soc/                      @esp-idf-codeowners/peripherals @esp-idf-codeowners/system
 /components/spi_flash/                @esp-idf-codeowners/peripherals
