@@ -51,26 +51,56 @@ static const uint8_t inq_len = 30;
 static const uint8_t inq_num_rsps = 0;
 
 #define SPP_DATA_LEN 20
-static uint8_t spp_data[SPP_DATA_LEN];
+
+static char *bda2str(uint8_t * bda, char *str, size_t size)
+{
+    if (bda == NULL || str == NULL || size < 18) {
+        return NULL;
+    }
+
+    uint8_t *p = bda;
+    sprintf(str, "%02x:%02x:%02x:%02x:%02x:%02x",
+            p[0], p[1], p[2], p[3], p[4], p[5]);
+    return str;
+}
 
 static void spp_write_handle(void * param)
 {
     int size = 0;
     int fd = (int)param;
-    printf("%s %d  %p\n", __func__,fd,param);
-    do {
-        /*Controll the log frequency, retry after 1s*/
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    uint8_t *spp_data = NULL;
+    uint16_t i = 0;
 
-        size = write (fd, spp_data, SPP_DATA_LEN);
-        ESP_LOGI(SPP_TAG, "fd = %d  data_len = %d",fd, size);
+    spp_data = malloc(SPP_DATA_LEN);
+    if (!spp_data) {
+        ESP_LOGE(SPP_TAG, "malloc spp_data failed, fd:%d", fd);
+        goto done;
+    }
+
+    for (i = 0; i < SPP_DATA_LEN; ++i) {
+        spp_data[i] = i;
+    }
+
+    do {
+        /*
+         * The write function is blocked until all the target length of data has been sent to the lower layer
+         * successfully an error occurs.
+         */
+        size = write(fd, spp_data, SPP_DATA_LEN);
         if (size == -1) {
             break;
         } else if ( size == 0) {
-            /*write fail due to ringbuf is full, retry after 1s*/
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
+            /*write fail due to ringbuf is full, retry after 500 ms*/
+            vTaskDelay(500 / portTICK_PERIOD_MS);
+        } else {
+            ESP_LOGI(SPP_TAG, "fd = %d  data_len = %d", fd, size);
+            vTaskDelay(10 / portTICK_PERIOD_MS);
         }
     } while (1);
+done:
+    if (spp_data) {
+        free(spp_data);
+    }
     spp_wr_task_shut_down();
 }
 
@@ -110,37 +140,57 @@ static void esp_spp_cb(uint16_t e, void *p)
 {
     esp_spp_cb_event_t event = e;
     esp_spp_cb_param_t *param = p;
+    uint8_t i = 0;
+    char bda_str[18] = {0};
 
     switch (event) {
     case ESP_SPP_INIT_EVT:
-        ESP_LOGI(SPP_TAG, "ESP_SPP_INIT_EVT status=%d", param->init.status);
         if (param->init.status == ESP_SPP_SUCCESS) {
+            ESP_LOGI(SPP_TAG, "ESP_SPP_INIT_EVT");
+            /* Enable SPP VFS mode */
             esp_spp_vfs_register();
             esp_bt_dev_set_device_name(EXAMPLE_DEVICE_NAME);
             esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
             esp_bt_gap_start_discovery(inq_mode, inq_len, inq_num_rsps);
+        } else {
+            ESP_LOGE(SPP_TAG, "ESP_SPP_INIT_EVT status:%d", param->init.status);
         }
         break;
     case ESP_SPP_DISCOVERY_COMP_EVT:
-        ESP_LOGI(SPP_TAG, "ESP_SPP_DISCOVERY_COMP_EVT status=%d scn_num=%d",param->disc_comp.status, param->disc_comp.scn_num);
         if (param->disc_comp.status == ESP_SPP_SUCCESS) {
+            ESP_LOGI(SPP_TAG, "ESP_SPP_DISCOVERY_COMP_EVT scn_num:%d", param->disc_comp.scn_num);
+            for (i = 0; i < param->disc_comp.scn_num; i++) {
+                ESP_LOGI(SPP_TAG, "-- [%d] scn:%d service_name:%s", i, param->disc_comp.scn[i],
+                         param->disc_comp.service_name[i]);
+            }
+            /* We only connect to the first found server on the remote SPP acceptor here */
             esp_spp_connect(sec_mask, role_master, param->disc_comp.scn[0], peer_bd_addr);
+        } else {
+            ESP_LOGE(SPP_TAG, "ESP_SPP_DISCOVERY_COMP_EVT status=%d", param->disc_comp.status);
         }
         break;
     case ESP_SPP_OPEN_EVT:
-        ESP_LOGI(SPP_TAG, "ESP_SPP_OPEN_EVT status=%d", param->open.status);
         if (param->open.status == ESP_SPP_SUCCESS) {
+            ESP_LOGI(SPP_TAG, "ESP_SPP_OPEN_EVT handle:%d fd:%d rem_bda:[%s]", param->open.handle, param->open.fd,
+                     bda2str(param->open.rem_bda, bda_str, sizeof(bda_str)));
             spp_wr_task_start_up(spp_write_handle, param->open.fd);
+        } else {
+            ESP_LOGE(SPP_TAG, "ESP_SPP_OPEN_EVT status:%d", param->open.status);
         }
         break;
     case ESP_SPP_CLOSE_EVT:
-        ESP_LOGI(SPP_TAG, "ESP_SPP_CLOSE_EVT");
+        ESP_LOGI(SPP_TAG, "ESP_SPP_CLOSE_EVT status:%d handle:%d close_by_remote:%d", param->close.status,
+                 param->close.handle, param->close.async);
         break;
     case ESP_SPP_START_EVT:
         ESP_LOGI(SPP_TAG, "ESP_SPP_START_EVT");
         break;
     case ESP_SPP_CL_INIT_EVT:
-        ESP_LOGI(SPP_TAG, "ESP_SPP_CL_INIT_EVT");
+        if (param->cl_init.status == ESP_SPP_SUCCESS) {
+            ESP_LOGI(SPP_TAG, "ESP_SPP_CL_INIT_EVT handle:%d sec_id:%d", param->cl_init.handle, param->cl_init.sec_id);
+        } else {
+            ESP_LOGE(SPP_TAG, "ESP_SPP_CL_INIT_EVT status:%d", param->cl_init.status);
+        }
         break;
     case ESP_SPP_SRV_OPEN_EVT:
         ESP_LOGI(SPP_TAG, "ESP_SPP_SRV_OPEN_EVT");
@@ -156,6 +206,7 @@ static void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
     case ESP_BT_GAP_DISC_RES_EVT:
         ESP_LOGI(SPP_TAG, "ESP_BT_GAP_DISC_RES_EVT");
         esp_log_buffer_hex(SPP_TAG, param->disc_res.bda, ESP_BD_ADDR_LEN);
+        /* Find the target peer device name in the EIR data */
         for (int i = 0; i < param->disc_res.num_prop; i++){
             if (param->disc_res.prop[i].type == ESP_BT_GAP_DEV_PROP_EIR
                 && get_name_from_eir(param->disc_res.prop[i].val, peer_bdname, &peer_bdname_len)){
@@ -163,8 +214,10 @@ static void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
                 if (strlen(remote_device_name) == peer_bdname_len
                     && strncmp(peer_bdname, remote_device_name, peer_bdname_len) == 0) {
                     memcpy(peer_bd_addr, param->disc_res.bda, ESP_BD_ADDR_LEN);
-                    esp_spp_start_discovery(peer_bd_addr);
+                    /* Have found the target peer device, cancel the previous GAP discover procedure. And go on
+                     * dsicovering the SPP service on the peer device */
                     esp_bt_gap_cancel_discovery();
+                    esp_spp_start_discovery(peer_bd_addr);
                 }
             }
         }
@@ -229,16 +282,16 @@ static void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
 
 static void esp_spp_stack_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
 {
+    /* To avoid stucking Bluetooth stack, we dispatch the SPP callback event to the other lower priority task */
     spp_task_work_dispatch(esp_spp_cb, event, param, sizeof(esp_spp_cb_param_t), NULL);
 }
 
 void app_main(void)
 {
-    for (int i = 0; i < SPP_DATA_LEN; ++i) {
-        spp_data[i] = i;
-    }
+    esp_err_t ret = ESP_OK;
+    char bda_str[18] = {0};
 
-    esp_err_t ret = nvs_flash_init();
+    ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
         ret = nvs_flash_init();
@@ -298,4 +351,6 @@ void app_main(void)
     esp_bt_pin_type_t pin_type = ESP_BT_PIN_TYPE_VARIABLE;
     esp_bt_pin_code_t pin_code;
     esp_bt_gap_set_pin(pin_type, 0, pin_code);
+
+    ESP_LOGI(SPP_TAG, "Own address:[%s]", bda2str((uint8_t *)esp_bt_dev_get_address(), bda_str, sizeof(bda_str)));
 }
