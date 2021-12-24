@@ -57,6 +57,7 @@ test_ldgen_on_host:
   extends: .host_test_template
   script:
     - cd tools/ldgen/test
+    - export PYTHONPATH=$PYTHONPATH:..
     - python -m unittest
   variables:
     LC_ALL: C.UTF-8
@@ -314,7 +315,7 @@ test_mkuf2:
 
 test_autocomplete:
   extends: .host_test_template
-  image: $CI_DOCKER_REGISTRY/linux-shells:1
+  image: $LINUX_SHELL_IMAGE
   artifacts:
     when: on_failure
     paths:
@@ -325,7 +326,7 @@ test_autocomplete:
 
 test_detect_python:
   extends: .host_test_template
-  image: $CI_DOCKER_REGISTRY/linux-shells:1
+  image: $LINUX_SHELL_IMAGE
   script:
     - cd ${IDF_PATH}
     - shellcheck -s sh tools/detect_python.sh
