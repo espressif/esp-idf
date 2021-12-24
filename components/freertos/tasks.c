@@ -2026,7 +2026,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 		if( listIS_CONTAINED_WITHIN( &xSuspendedTaskList, &( pxTCB->xStateListItem ) ) != pdFALSE )
 		{
 			/* Has the task already been resumed from within an ISR? */
-			if( listIS_CONTAINED_WITHIN( &xPendingReadyList[xPortGetCoreID()], &( pxTCB->xEventListItem )) ||
+			if( listIS_CONTAINED_WITHIN( &xPendingReadyList[xPortGetCoreID()], &( pxTCB->xEventListItem )) == pdFALSE &&
 				listIS_CONTAINED_WITHIN( &xPendingReadyList[!xPortGetCoreID()], &( pxTCB->xEventListItem ))  == pdFALSE )
 			{
 				/* Is it in the suspended list because it is in the	Suspended
