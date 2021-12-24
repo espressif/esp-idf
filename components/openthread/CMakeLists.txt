@@ -135,7 +135,7 @@ idf_component_register(SRC_DIRS "${src_dirs}"
                        EXCLUDE_SRCS "${exclude_srcs}"
                        INCLUDE_DIRS "${public_include_dirs}"
                        PRIV_INCLUDE_DIRS "${private_include_dirs}"
-                       REQUIRES mbedtls ieee802154 console)
+                       REQUIRES mbedtls ieee802154 console lwip)
 
 if(CONFIG_OPENTHREAD_ENABLED)
     if(CONFIG_OPENTHREAD_RADIO)
@@ -156,11 +156,18 @@ if(CONFIG_OPENTHREAD_ENABLED)
 
     if(CONFIG_OPENTHREAD_ESP_LIB_FROM_INTERNAL_SRC)
         idf_component_get_property(openthread_port_lib openthread_port COMPONENT_LIB)
+        idf_component_get_property(lwip_lib lwip COMPONENT_LIB)
+        idf_component_get_property(esp_netif_lib esp_netif COMPONENT_LIB)
         idf_component_get_property(esp_system_lib esp_system COMPONENT_LIB)
         target_link_libraries(${COMPONENT_LIB} PUBLIC
                               $<TARGET_FILE:${openthread_port_lib}>
                               $<TARGET_FILE:${esp_system_lib}>)
-
+        target_link_libraries(${COMPONENT_LIB} PUBLIC
+                              $<TARGET_FILE:${lwip_lib}>
+                              $<TARGET_FILE:${esp_netif_lib}>
+                              $<TARGET_FILE:${openthread_port_lib}>
+                              $<TARGET_FILE:${esp_netif_lib}>
+                              $<TARGET_FILE:${lwip_lib}>)
         if(CONFIG_OPENTHREAD_BORDER_ROUTER)
             idf_component_get_property(openthread_br_lib openthread_br COMPONENT_LIB)
             target_link_libraries(${COMPONENT_LIB} PUBLIC $<TARGET_FILE:${openthread_br_lib}>)
