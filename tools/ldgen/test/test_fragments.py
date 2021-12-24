@@ -13,12 +13,12 @@ from io import StringIO
 from pyparsing import ParseException, ParseFatalException, Word, alphanums
 
 try:
-    from fragments import FRAGMENT_TYPES, Fragment, FragmentFile, Mapping
-    from sdkconfig import SDKConfig
+    from ldgen.fragments import FRAGMENT_TYPES, Fragment, FragmentFile, Mapping
+    from ldgen.sdkconfig import SDKConfig
 except ImportError:
     sys.path.append('../')
-    from fragments import FRAGMENT_TYPES, Fragment, FragmentFile, Mapping
-    from sdkconfig import SDKConfig
+    from ldgen.fragments import FRAGMENT_TYPES, Fragment, FragmentFile, Mapping
+    from ldgen.sdkconfig import SDKConfig
 
 
 class SampleFragment(Fragment):

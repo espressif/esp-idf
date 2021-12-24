@@ -6,9 +6,10 @@
 import collections
 import os
 
-from fragments import Fragment
-from generation import GenerationException
 from pyparsing import ParseException, Suppress, White
+
+from .fragments import Fragment
+from .generation import GenerationException
 
 
 class LinkerScript:

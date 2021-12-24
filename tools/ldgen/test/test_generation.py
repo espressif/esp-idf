@@ -12,18 +12,18 @@ import tempfile
 import unittest
 
 try:
-    from generation import Generation, GenerationException
+    from ldgen.generation import Generation, GenerationException
 except ImportError:
     sys.path.append('../')
-    from generation import Generation, GenerationException
+    from ldgen.generation import Generation, GenerationException
 
 from io import StringIO
 
-from entity import Entity, EntityDB
-from fragments import FragmentFile
-from linker_script import LinkerScript
-from output_commands import AlignAtAddress, InputSectionDesc, SymbolAtAddress
-from sdkconfig import SDKConfig
+from ldgen.entity import Entity, EntityDB
+from ldgen.fragments import FragmentFile
+from ldgen.linker_script import LinkerScript
+from ldgen.output_commands import AlignAtAddress, InputSectionDesc, SymbolAtAddress
+from ldgen.sdkconfig import SDKConfig
 
 ROOT = Entity('*')
 

@@ -1,17 +1,6 @@
 #
-# Copyright 2021 Espressif Systems (Shanghai) CO LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 #
 
 import kconfiglib
@@ -28,8 +17,8 @@ class SDKConfig:
     # A configuration entry is in the form CONFIG=VALUE. Definitions of components of that grammar
     IDENTIFIER = Word(alphanums.upper() + '_')
 
-    HEX = Combine('0x' + Word(hexnums)).setParseAction(lambda t:int(t[0], 16))
-    DECIMAL = Combine(Optional(Literal('+') | Literal('-')) + Word(nums)).setParseAction(lambda t:int(t[0]))
+    HEX = Combine('0x' + Word(hexnums)).setParseAction(lambda t: int(t[0], 16))
+    DECIMAL = Combine(Optional(Literal('+') | Literal('-')) + Word(nums)).setParseAction(lambda t: int(t[0]))
     LITERAL = Word(printables.replace(':', ''))
     QUOTED_LITERAL = quotedString.setParseAction(removeQuotes)
 
@@ -66,8 +55,8 @@ class SDKConfig:
         condition = Group(Optional('(').suppress() + test + Optional(')').suppress())
 
         grammar = infixNotation(condition, [
-                                ('!', 1, opAssoc.RIGHT),
-                                ('&&', 2, opAssoc.LEFT),
-                                ('||',  2, opAssoc.LEFT)])
+            ('!', 1, opAssoc.RIGHT),
+            ('&&', 2, opAssoc.LEFT),
+            ('||', 2, opAssoc.LEFT)])
 
         return grammar
