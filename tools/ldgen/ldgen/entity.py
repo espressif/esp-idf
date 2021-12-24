@@ -1,5 +1,5 @@
 #
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 
@@ -10,7 +10,7 @@ from enum import Enum
 from functools import total_ordering
 
 from pyparsing import (Group, Literal, OneOrMore, ParseException, SkipTo, Suppress, White, Word, ZeroOrMore, alphas,
-                       nums, restOfLine)
+                       nums, rest_of_line)
 
 
 @total_ordering
@@ -82,7 +82,7 @@ class Entity:
         return '%s:%s %s' % self.__repr__()
 
     def __repr__(self):
-        return (self.archive, self.obj, self.symbol)
+        return self.archive, self.obj, self.symbol
 
     def __getitem__(self, spec):
         res = None
@@ -97,7 +97,7 @@ class Entity:
         return res
 
 
-class EntityDB():
+class EntityDB:
     """
     Collection of entities extracted from libraries known in the build.
     Allows retrieving a list of archives, a list of object files in an archive
@@ -116,11 +116,9 @@ class EntityDB():
         archive_path = (Literal('In archive').suppress() +
                         White().suppress() +
                         # trim the colon and line ending characters from archive_path
-                        restOfLine.setResultsName('archive_path').setParseAction(
+                        rest_of_line.set_results_name('archive_path').set_parse_action(
                             lambda s, loc, toks: s.rstrip(':\n\r ')))
         parser = archive_path
-
-        results = None
 
         try:
             results = parser.parseString(first_line, parseAll=True)
@@ -132,7 +130,7 @@ class EntityDB():
 
     def _get_infos_from_file(self, info):
         # {object}:  file format elf32-xtensa-le
-        object_line = SkipTo(':').setResultsName('object') + Suppress(restOfLine)
+        object_line = SkipTo(':').set_results_name('object') + Suppress(rest_of_line)
 
         # Sections:
         # Idx Name ...
@@ -141,12 +139,14 @@ class EntityDB():
 
         # 00 {section} 0000000 ...
         #              CONTENTS, ALLOC, ....
-        section_entry = Suppress(Word(nums)) + SkipTo(' ') + Suppress(restOfLine) + \
-            Suppress(ZeroOrMore(Word(alphas) + Literal(',')) + Word(alphas))
+        section_entry = (Suppress(Word(nums)) + SkipTo(' ') + Suppress(rest_of_line)
+                         + Suppress(ZeroOrMore(Word(alphas) + Literal(',')) + Word(alphas)))
 
-        content = Group(
-            object_line + section_start + section_header + Group(OneOrMore(section_entry)).setResultsName('sections'))
-        parser = Group(ZeroOrMore(content)).setResultsName('contents')
+        content = Group(object_line
+                        + section_start
+                        + section_header
+                        + Group(OneOrMore(section_entry)).set_results_name('sections'))
+        parser = Group(ZeroOrMore(content)).set_results_name('contents')
 
         try:
             results = parser.parseString(info.content, parseAll=True)
@@ -181,8 +181,9 @@ class EntityDB():
 
     def _match_obj(self, archive, obj):
         objs = self.get_objects(archive)
-        match_objs = fnmatch.filter(objs, obj + '.o') + fnmatch.filter(objs, obj + '.*.obj') + fnmatch.filter(objs,
-                                                                                                              obj + '.obj')
+        match_objs = (fnmatch.filter(objs, obj + '.o')
+                      + fnmatch.filter(objs, obj + '.*.obj')
+                      + fnmatch.filter(objs, obj + '.obj'))
 
         if len(match_objs) > 1:
             raise ValueError("Multiple matches for object: '%s: %s': %s" % (archive, obj, str(match_objs)))

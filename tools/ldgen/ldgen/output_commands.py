@@ -1,5 +1,5 @@
 #
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 
@@ -9,7 +9,7 @@ from .entity import Entity
 # https://www.acrc.bris.ac.uk/acrc/RedHat/rhel-ld-en-4/sections.html#OUTPUT-SECTION-DESCRIPTION.
 
 
-class AlignAtAddress():
+class AlignAtAddress:
     """
     Outputs assignment of builtin function ALIGN to current
     position:
@@ -31,7 +31,7 @@ class AlignAtAddress():
                 self.alignment == other.alignment)
 
 
-class SymbolAtAddress():
+class SymbolAtAddress:
     """
     Outputs assignment of builtin function ABSOLUTE to a symbol
     for current position:
@@ -54,7 +54,7 @@ class SymbolAtAddress():
                 self.symbol == other.symbol)
 
 
-class InputSectionDesc():
+class InputSectionDesc:
     """
     Outputs an input section description as described in
     https://www.acrc.bris.ac.uk/acrc/RedHat/rhel-ld-en-4/sections.html#INPUT-SECTION.
