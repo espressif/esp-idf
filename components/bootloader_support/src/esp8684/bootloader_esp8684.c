@@ -68,12 +68,6 @@ void IRAM_ATTR bootloader_configure_spi_pins(int drv)
 
 static void bootloader_reset_mmu(void)
 {
-    int page_mode = MMU_Get_Page_Mode();
-    int size = (page_mode == 0? 16:
-                page_mode == 1? 32:
-                page_mode == 2? 64: 0);
-    ESP_LOGI(TAG, "mmu page mode = %dK", size);
-
     Cache_Suspend_ICache();
     Cache_Invalidate_ICache_All();
     Cache_MMU_Init();
@@ -176,6 +170,15 @@ static void print_flash_info(const esp_image_header_t *bootloader_hdr)
     ESP_LOGI(TAG, "SPI Flash Size : %s", str);
 }
 
+static void bootloader_print_mmu_page_size(void)
+{
+    int page_mode = MMU_Get_Page_Mode();
+    int size = (page_mode == 0 ? 16 :
+                page_mode == 1 ? 32 :
+                page_mode == 2 ? 64 : 0);
+    ESP_LOGI(TAG, "MMU Page Size  : %dK", size);
+}
+
 static void IRAM_ATTR bootloader_init_flash_configure(void)
 {
     bootloader_flash_dummy_config(&bootloader_image_hdr);
@@ -206,6 +209,7 @@ static esp_err_t bootloader_init_spi_flash(void)
     bootloader_enable_qio_mode();
 #endif
 
+    bootloader_print_mmu_page_size();
     print_flash_info(&bootloader_image_hdr);
     update_flash_config(&bootloader_image_hdr);
     //ensure the flash is write-protected
