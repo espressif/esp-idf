@@ -11,6 +11,6 @@
 void app_main(void)
 {
     UNITY_BEGIN();
-    unity_run_all_tests();
+    unity_run_menu();
     UNITY_END();
 }
