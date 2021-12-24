@@ -639,7 +639,7 @@ esp_hidh_dev_report_t *esp_hidh_dev_get_input_report_by_proto_and_data(esp_hidh_
         }
         r = dev->reports;
         while (r) {
-            if (r->value_len == len + 1 && r->report_id == *data && (r->report_type & 1) &&
+            if (r->value_len == len - 1 && r->report_id == *data && (r->report_type & 1) &&
                 r->protocol_mode == protocol_mode) {
                 *has_report_id = true;
                 break;
