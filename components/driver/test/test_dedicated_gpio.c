@@ -7,7 +7,6 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "unity.h"
-#include "test_utils.h"
 #include "esp_rom_sys.h"
 #include "soc/soc_caps.h"
 #include "hal/cpu_ll.h"
