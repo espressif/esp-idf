@@ -237,7 +237,6 @@ tools/ldgen/ldgen.py
 tools/ldgen/ldgen/entity.py
 tools/ldgen/ldgen/fragments.py
 tools/ldgen/ldgen/generation.py
-tools/ldgen/ldgen/ldgen_common.py
 tools/ldgen/ldgen/linker_script.py
 tools/ldgen/ldgen/output_commands.py
 tools/ldgen/ldgen/sdkconfig.py

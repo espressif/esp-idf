@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 
@@ -14,7 +14,7 @@ import tempfile
 from io import StringIO
 
 from ldgen.entity import EntityDB
-from ldgen.fragments import FragmentFile
+from ldgen.fragments import parse_fragment_file
 from ldgen.generation import Generation
 from ldgen.ldgen_common import LdGenFailure
 from ldgen.linker_script import LinkerScript
@@ -148,12 +148,12 @@ def main():
 
         for fragment_file in fragment_files:
             try:
-                fragment_file = FragmentFile(fragment_file, sdkconfig)
+                fragment_file = parse_fragment_file(fragment_file, sdkconfig)
             except (ParseException, ParseFatalException) as e:
                 # ParseException is raised on incorrect grammar
                 # ParseFatalException is raised on correct grammar, but inconsistent contents (ex. duplicate
                 # keys, key unsupported by fragment, unexpected number of values, etc.)
-                raise LdGenFailure('failed to parse %s\n%s' % (fragment_file.name, str(e)))
+                raise LdGenFailure('failed to parse %s\n%s' % (fragment_file, str(e)))
             generation_model.add_fragments_from_file(fragment_file)
 
         mapping_rules = generation_model.generate(sections_infos)

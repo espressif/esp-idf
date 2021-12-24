@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 
+import os
 import sys
 import unittest
 
@@ -11,7 +12,7 @@ try:
     from ldgen.entity import Entity
     from ldgen.output_commands import AlignAtAddress, InputSectionDesc, SymbolAtAddress
 except ImportError:
-    sys.path.append('../')
+    sys.path.append(os.path.dirname(os.path.dirname(__file__)))
     from ldgen.entity import Entity
     from ldgen.output_commands import AlignAtAddress, InputSectionDesc, SymbolAtAddress
 

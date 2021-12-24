@@ -57,10 +57,7 @@ test_ldgen_on_host:
   extends: .host_test_template
   script:
     - cd tools/ldgen/test
-    - ./test_fragments.py
-    - ./test_generation.py
-    - ./test_entity.py
-    - ./test_output_commands.py
+    - python -m unittest
   variables:
     LC_ALL: C.UTF-8
 
