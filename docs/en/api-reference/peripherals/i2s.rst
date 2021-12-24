@@ -347,6 +347,66 @@ Example for general usage.
             i2s_driver_uninstall(i2s_num); //stop & destroy i2s driver
 
 
+Application Notes
+^^^^^^^^^^^^^^^^^
+
+If you are using a high sample rate like more than 48 kHz or see the data being lost, the following information might help.
+
+Considering different applications have different requirements, ``dma_desc_num`` and ``dma_frame_num`` are made public. Here is the detailed explanation to these two fields:
+
+- ``dma_desc_num``: The total number of descriptors used by I2S DMA to receive/transmit data. A descriptor includes some information such as buffer address, the address of the next descriptor, and the buffer length. Since one descriptor points to one buffer, therefore, ``dma_desc_num`` can be interpreted as the total number of DMA buffers used to store data from DMA interrupt. Notice that these buffers are internal to :cpp:func:`i2s_read` and descriptors are created automatically inside of the I2S driver. Users only need to set the buffer number while the length is derived from the parameter described below.
+- ``dma_frame_num``: The number of frames for one-time sampling. The frame here means the total data from all the channels in one WS cycle. For example, if two channels in stereo mode (i.e., ``channel_format`` is set to ``I2S_CHANNEL_FMT_RIGHT_LEFT``) are active, and each channel transfers 32 bits (i.e., ``bits_per_sample`` is set to ``I2S_BITS_PER_CHAN_32BIT``), then the total number of bytes of a frame is ``channel_format`` * ``bits_per_sample`` = 2 * 32 / 8 = 8 bytes. For example, we assume that the current ``dma_frame_num`` is 100, then the length of the DMA buffer is 8 * 100 = 800 bytes. Note that the length of an internal DMA buffer shouldn't be greater than 4092.
+
+When the data received by DMA reach the size of internal DMA buffer, a receive interrupt is triggered, and an internal message queue will transport this buffer to :cpp:func:`i2s_read`. The main task of :cpp:func:`i2s_read` is to copy the data in the internal DMA buffer into the user given buffer. Since the internal DMA buffer is usually not equal to the user given buffer size, there are two cases:
+
+- If the size of internal DMA buffers is smaller than the user given buffer size, :cpp:func:`i2s_read` will consume several internal DMA buffers to fill up the user given buffer. If the message queue of DMA buffer is not long enough, :cpp:func:`i2s_read` will be blocked on receive message queue untill getting enough data. You can estimate the time :cpp:func:`i2s_read` function is blocked by the formula block_time (sec) = (given_bufer_size) / (sample_rate * channel_num * channel_bytes). If we place :cpp:func:`i2s_read` in a ``while`` together with other functions we should also consider the time the loop execution is blocked by the other functions before :cpp:func:`i2s_read` is executed again. It is not allowed to exceed the max_wait_time (sec) = ((``dma_desc_num`` - 1) * dma_buffer_size) / (sample_rate), otherwise the internal message queue will overflow and in consequence some data will be lost.
+- If the DMA buffer size is greater than the user given buffer size, it means :cpp:func:`i2s_read` would need to be called in a loop several times to take all the data, the max_wait_time may be exceeded, and the message queue overflow is likely to happen. Therefore it is quite risky to use a small user buffer for data receiving.
+
+Here are a couple of tips when the sample rate is high:
+
+1. Increasing ``dma_frame_num`` can help to reduce the I2S DMA interrupt frequency;
+2. Increasing ``dma_desc_num`` can help to alow a longer max_wait_time to be spent by the other functions in the loop conatining :cpp:func:`i2s_read` ;
+
+    .. code-block:: c
+
+        while (1) {
+            ... // Other operations (e.g. Waiting on a semaphore)
+            i2s_read(I2S_NUM, user_given_buffer, user_given_buffer_size, &i2s_bytes_read, 100);
+            ... // Other operations (e.g. Sending the data to another thread. Avoid any data processing here.)
+        }
+
+3. Increasing the size of the buffer internal to :cpp:func:`i2s_read` can help to increase the max_wait_time. When you process I2S data (like storing the data to an SD card) in another thread, the time spent in processing thread for one loop should not exceed the max_wait_time otherwise some data will be lost. So if the processing of the received data received is rather slow, please allow :cpp:func:`i2s_read` a big internal buffer for storing the read data;
+4. Allocating at least two user given buffers can improve the data receipt efficiency. One buffer can continue to receive data while the other one is under processing. But we have to guarantee the buffer that is going to read data is not under processing in the other thread. We can use a semaphore or another lock to avoid overwriting the data in the buffer while it is still under processing;
+
+    .. code-block:: c
+
+        uint8_t **user_given_buffers = (uint8_t **)calloc(buffer_num, sizeof(uint8_t *));
+        // Don't forget to check if user_given_buffers is NULL here
+        for (int i = 0; i < buffer_num; i++) {
+            user_given_buffers[i] = (uint8_t *)calloc(user_given_buffer_size, sizeof(uint8_t));
+            // Don't forget to check if user_given_buffers[i] is NULL here
+        }
+        int cnt = 0;
+        while (1) {
+            ... // Other operations (e.g. Waiting on a semaphore)
+            i2s_read(I2S_NUM, user_given_buffer[cnt], user_given_buffer_size, &i2s_bytes_read, 100);
+            ... // Other operations (e.g. Sending the data to another thread. Avoid any data processing here.)
+            cnt++;
+            cnt %= buffer_num;
+        }
+
+5. Increasing the priority of the thread that contains :cpp:func:`i2s_read` can help the data in the message queue to be taken more timely.
+
+To check whether there are data lost, you can offer an event queue handler to the driver during installation:
+
+    .. code-block:: c
+
+        QueueHandle_t evt_que;
+        i2s_driver_install(i2s_num, &i2s_config, 10, &evt_que);
+
+You will receive ``I2S_EVENT_RX_Q_OVF`` event when there are data lost.
+
+
 API Reference
 -------------
 
