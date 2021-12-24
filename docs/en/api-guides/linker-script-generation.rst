@@ -24,16 +24,16 @@ This section presents a guide for quickly placing code/data to RAM and RTC memor
 
 For this guide, suppose we have the following::
 
-    - components/
-                    - my_component/
-                                    - CMakeLists.txt
-                                    - component.mk
-                                    - Kconfig
-                                    - src/
-                                          - my_src1.c
-                                          - my_src2.c
-                                          - my_src3.c
-                                    - my_linker_fragment_file.lf
+    component
+    └── my_component
+        └── CMakeLists.txt
+            ├── component.mk
+            ├── Kconfig
+            ├── src/
+            │   ├── my_src1.c
+            │   ├── my_src2.c
+            │   └── my_src3.c
+            └── my_linker_fragment_file.lf
 
 - a component named ``my_component`` that is archived as library ``libmy_component.a`` during build
 - three source files archived under the library, ``my_src1.c``, ``my_src2.c`` and ``my_src3.c`` which are compiled as ``my_src1.o``, ``my_src2.o`` and ``my_src3.o``, respectively
@@ -71,7 +71,7 @@ Placing object files
 """"""""""""""""""""
 
 Suppose the entirety of ``my_src1.o`` is performance-critical, so it is desirable to place it in RAM. On the other hand, the entirety of ``my_src2.o`` contains symbols needed coming out of deep sleep, so it needs to be put under RTC memory.
-In the the linker fragment file, we can write:
+In the linker fragment file, we can write:
 
 .. code-block:: none
 
@@ -124,6 +124,9 @@ Similarly, this places the entire component in RTC memory:
     archive: libmy_component.a
     entries:
         * (rtc)
+
+
+.. _ldgen-conditional-placements:
 
 Configuration-dependent placements
 """"""""""""""""""""""""""""""""""
@@ -224,6 +227,9 @@ The three fragment types share a common grammar:
 - type: Corresponds to the fragment type, can either be ``sections``, ``scheme`` or ``mapping``.
 - name: The name of the fragment, should be unique for the specified fragment type.
 - key, value: Contents of the fragment; each fragment type may support different keys and different grammars for the key values.
+   
+    - For :ref:`sections<ldgen-sections-fragment>` and :ref:`scheme<ldgen-scheme-fragment>`, the only supported key is ``entries``
+    - For :ref:`mappings<ldgen-mapping-fragment>`, both ``archive`` and ``entries`` are supported.
 
 .. note::
 
@@ -286,23 +292,9 @@ Condition checking behaves as you would expect an ``if...elseif/elif...else`` bl
         key_2:
             value_b
 
-
 **Comments**
 
 Comment in linker fragment files begin with ``#``. Like in other languages, comment are used to provide helpful descriptions and documentation and are ignored during processing.
-
-Compatibility with ESP-IDF v3.x Linker Script Fragment Files
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-ESP-IDF v4.0 brings some changes to the linker script fragment file grammar:
-
-- indentation is enforced and improperly indented fragment files generate a parse exception; this was not enforced in the old version but previous documentation and examples demonstrates properly indented grammar
-- move to ``if...elif...else`` structure for conditionals, with the ability to nest checks and place entire fragments themselves inside conditionals
-- mapping fragments now requires a name like other fragment types
-
-Linker script generator should be able to parse ESP-IDF v3.x linker fragment files that are indented properly (as demonstrated by the ESP-IDF v3.x version of this document). Backward compatibility with the previous mapping fragment grammar (optional name and the old grammar for conditionals) has also been retained but with a deprecation warning. Users should switch to the newer grammar discussed in this document as support for the old grammar is planned to be removed in the future.
-
-Note that linker fragment files using the new ESP-IDF v4.0 grammar is not supported on ESP-IDF v3.x, however.
 
 Types
 """""
@@ -608,3 +600,14 @@ Then the corresponding excerpt from the generated linker script will be as follo
     Rule generated from the default scheme entry 	``iram -> iram0_text``. Since the default scheme specifies an ``iram -> iram0_text`` entry, it too is placed wherever ``iram0_text`` is referenced by a marker. Since it is a rule generated from the default scheme, it comes first among all other rules collected under the same target name.
 
     The linker script template currently used is :component_file:`esp_system/ld/{IDF_TARGET_PATH_NAME}/sections.ld.in`; the generated output script ``sections.ld`` is put under its build directory.
+
+.. _ldgen-migrate-lf-grammar :
+
+Migrate to ESP-IDF v5.0 Linker Script Fragment Files Grammar
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The old grammar supported in ESP-IDF v3.x would be dropped in ESP-IDF v5.0. Here are a few notes on how to migrate properly:
+
+1. Now indentation is enforced and improperly indented fragment files would generate a runtime parse exception. This was not enforced in the old version but previous documentation and examples demonstrate properly indented grammar.
+2. Migrate the old condition entry to the ``if...elif...else`` structure for conditionals. You can refer to the :ref:`earlier chapter<ldgen-conditional-placements>` for detailed grammar.
+3. mapping fragments now requires a name like other fragment types.
