@@ -79,7 +79,6 @@ typedef enum {
     BTC_AV_SRC_API_REG_DATA_CB_EVT,
 #endif  /* BTC_AV_SRC_INCLUDED */
     BTC_AV_API_MEDIA_CTRL_EVT,
-    BTC_AV_DATAPATH_CTRL_EVT,
 } btc_av_act_t;
 
 /* btc_av_args_t */
@@ -104,8 +103,6 @@ typedef union {
 #endif /* BTC_AV_SRC_INCLUDED */
     // BTC_AV_API_MEDIA_CTRL_EVT
     esp_a2d_media_ctrl_t ctrl;
-    // BTC_AV_DATAPATH_CTRL_EVT
-    uint32_t dp_evt;
 } btc_av_args_t;
 
 /*******************************************************************************
