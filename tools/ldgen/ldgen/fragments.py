@@ -8,11 +8,12 @@ import re
 from collections import namedtuple
 from enum import Enum
 
-from entity import Entity
 from pyparsing import (Combine, Forward, Group, Keyword, Literal, OneOrMore, Optional, Or, ParseFatalException,
                        Suppress, Word, ZeroOrMore, alphanums, alphas, delimitedList, indentedBlock, nums,
                        originalTextFor, restOfLine)
-from sdkconfig import SDKConfig
+
+from .entity import Entity
+from .sdkconfig import SDKConfig
 
 
 class FragmentFile():
@@ -70,38 +71,6 @@ class FragmentFile():
                     for tok in toks:
                         expand_conditionals(tok, stmts)
 
-        def key_body_parsed(pstr, loc, toks):
-            stmts = list()
-            expand_conditionals(toks, stmts)
-
-            if parse_ctx.key_grammar.min and len(stmts) < parse_ctx.key_grammar.min:
-                raise ParseFatalException(pstr, loc, "fragment requires at least %d values for key '%s'" %
-                                          (parse_ctx.key_grammar.min, parse_ctx.key))
-
-            if parse_ctx.key_grammar.max and len(stmts) > parse_ctx.key_grammar.max:
-                raise ParseFatalException(pstr, loc, "fragment requires at most %d values for key '%s'" %
-                                          (parse_ctx.key_grammar.max, parse_ctx.key))
-
-            try:
-                parse_ctx.fragment.set_key_value(parse_ctx.key, stmts)
-            except Exception as e:
-                raise ParseFatalException(pstr, loc, "unable to add key '%s'; %s" % (parse_ctx.key, str(e)))
-            return None
-
-        key = Word(alphanums + '_') + Suppress(':')
-        key_stmt = Forward()
-
-        condition_block = indentedBlock(key_stmt, indent_stack)
-        key_stmts = OneOrMore(condition_block)
-        key_body = Suppress(key) + key_stmts
-        key_body.setParseAction(key_body_parsed)
-
-        condition = originalTextFor(SDKConfig.get_expression_grammar()).setResultsName('condition')
-        if_condition = Group(Suppress('if') + condition + Suppress(':') + condition_block)
-        elif_condition = Group(Suppress('elif') + condition + Suppress(':') + condition_block)
-        else_condition = Group(Suppress('else') + Suppress(':') + condition_block)
-        conditional = (if_condition + Optional(OneOrMore(elif_condition)) + Optional(else_condition)).setResultsName('conditional')
-
         def key_parse_action(pstr, loc, toks):
             key = toks[0]
 
@@ -123,10 +92,41 @@ class FragmentFile():
 
             return None
 
+        def key_body_parsed(pstr, loc, toks):
+            stmts = list()
+            expand_conditionals(toks, stmts)
+
+            if parse_ctx.key_grammar.min and len(stmts) < parse_ctx.key_grammar.min:
+                raise ParseFatalException(pstr, loc, "fragment requires at least %d values for key '%s'" %
+                                          (parse_ctx.key_grammar.min, parse_ctx.key))
+
+            if parse_ctx.key_grammar.max and len(stmts) > parse_ctx.key_grammar.max:
+                raise ParseFatalException(pstr, loc, "fragment requires at most %d values for key '%s'" %
+                                          (parse_ctx.key_grammar.max, parse_ctx.key))
+
+            try:
+                parse_ctx.fragment.set_key_value(parse_ctx.key, stmts)
+            except Exception as e:
+                raise ParseFatalException(pstr, loc, "unable to add key '%s'; %s" % (parse_ctx.key, str(e)))
+            return None
+
+        key = (Word(alphanums + '_') + Suppress(':')).setParseAction(key_parse_action)
+        key_stmt = Forward()
+
+        condition_block = indentedBlock(key_stmt, indent_stack)
+        key_stmts = OneOrMore(condition_block)
+        key_body = Suppress(key) + key_stmts
+        key_body.setParseAction(key_body_parsed)
+
+        condition = originalTextFor(SDKConfig.get_expression_grammar()).setResultsName('condition')
+        if_condition = Group(Suppress('if') + condition + Suppress(':') + condition_block)
+        elif_condition = Group(Suppress('elif') + condition + Suppress(':') + condition_block)
+        else_condition = Group(Suppress('else') + Suppress(':') + condition_block)
+        conditional = (if_condition + Optional(OneOrMore(elif_condition)) + Optional(else_condition)).setResultsName(
+            'conditional')
+
         def name_parse_action(pstr, loc, toks):
             parse_ctx.fragment.name = toks[0]
-
-        key.setParseAction(key_parse_action)
 
         ftype = Word(alphas).setParseAction(fragment_type_parse_action)
         fid = Suppress(':') + Word(alphanums + '_.').setResultsName('name')
@@ -135,7 +135,7 @@ class FragmentFile():
 
         def fragment_parse_action(pstr, loc, toks):
             key_grammars = parse_ctx.fragment.get_key_grammars()
-            required_keys = set([k for (k,v) in key_grammars.items() if v.required])
+            required_keys = set([k for (k, v) in key_grammars.items() if v.required])
             present_keys = required_keys.intersection(set(parse_ctx.keys))
             if present_keys != required_keys:
                 raise ParseFatalException(pstr, loc, 'required keys %s for fragment not found' %
@@ -155,7 +155,8 @@ class FragmentFile():
         fragment.setParseAction(fragment_parse_action)
         fragment.ignore('#' + restOfLine)
 
-        deprecated_mapping = DeprecatedMapping.get_fragment_grammar(sdkconfig, fragment_file.name).setResultsName('value')
+        deprecated_mapping = DeprecatedMapping.get_fragment_grammar(sdkconfig, fragment_file.name).setResultsName(
+            'value')
 
         fragment_stmt << (Group(deprecated_mapping) | Group(fragment) | Group(fragment_conditional))
 
@@ -164,8 +165,7 @@ class FragmentFile():
             expand_conditionals(toks, stmts)
             return stmts
 
-        parser = ZeroOrMore(fragment_stmt)
-        parser.setParseAction(fragment_stmt_parsed)
+        parser = ZeroOrMore(fragment_stmt).setParseAction(fragment_stmt_parsed)
 
         self.fragments = parser.parseFile(fragment_file, parseAll=True)
 
@@ -173,7 +173,7 @@ class FragmentFile():
             fragment.path = path
 
 
-class Fragment():
+class Fragment:
     """
     Base class for a fragment that can be parsed from a fragment file. All fragments
     share the common grammar:
@@ -242,6 +242,7 @@ class Sections(Fragment):
     Utility function that returns a list of sections given a sections fragment entry,
     with the '+' notation and symbol concatenation handled automatically.
     """
+
     @staticmethod
     def get_section_data_from_entry(sections_entry, symbol=None):
         if not symbol:
@@ -504,7 +505,8 @@ class Mapping(Fragment):
                  Optional(Suppress(';') + delimitedList(section_target_flags).setResultsName('sections_target_flags')))
 
         grammars = {
-            'archive': Fragment.KeyValue(Or([Fragment.ENTITY, Word(Entity.ALL)]).setResultsName('archive'), 1, 1, True),
+            'archive': Fragment.KeyValue(Or([Fragment.ENTITY, Word(Entity.ALL)]).setResultsName('archive'), 1, 1,
+                                         True),
             'entries': Fragment.KeyValue(entry, 0, None, True)
         }
 
@@ -570,12 +572,13 @@ class DeprecatedMapping():
             fragment.entries = set()
             condition_true = False
             for entries in toks[0].entries[0]:
-                condition  = next(iter(entries.condition.asList())).strip()
+                condition = next(iter(entries.condition.asList())).strip()
                 condition_val = sdkconfig.evaluate_expression(condition)
 
                 if condition_val:
                     for entry in entries[1]:
-                        fragment.entries.add((entry.object, None if entry.symbol == '' else entry.symbol, entry.scheme))
+                        fragment.entries.add(
+                            (entry.object, None if entry.symbol == '' else entry.symbol, entry.scheme))
                     condition_true = True
                     break
 
@@ -591,7 +594,7 @@ class DeprecatedMapping():
                 fragment.entries.add(('*', None, 'default'))
 
             dep_warning = str(ParseFatalException(pstr, loc,
-                              'Warning: Deprecated old-style mapping fragment parsed in file %s.' % fragment_file))
+                                                  'Warning: Deprecated old-style mapping fragment parsed in file %s.' % fragment_file))
 
             print(dep_warning)
             return fragment

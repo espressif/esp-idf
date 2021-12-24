@@ -13,13 +13,13 @@ import sys
 import tempfile
 from io import StringIO
 
-from entity import EntityDB
-from fragments import FragmentFile
-from generation import Generation
-from ldgen_common import LdGenFailure
-from linker_script import LinkerScript
+from ldgen.entity import EntityDB
+from ldgen.fragments import FragmentFile
+from ldgen.generation import Generation
+from ldgen.ldgen_common import LdGenFailure
+from ldgen.linker_script import LinkerScript
+from ldgen.sdkconfig import SDKConfig
 from pyparsing import ParseException, ParseFatalException
-from sdkconfig import SDKConfig
 
 try:
     import confgen
