@@ -1504,10 +1504,6 @@ void btc_a2dp_call_handler(btc_msg_t *msg)
         btc_a2dp_control_media_ctrl(arg->ctrl);
         break;
     }
-    case BTC_AV_DATAPATH_CTRL_EVT: {
-        btc_a2dp_control_datapath_ctrl(arg->dp_evt);
-        break;
-    }
     case BTC_AV_CONNECT_REQ_EVT:
         btc_sm_dispatch(btc_av_cb.sm_handle, msg->act, (char *)msg->arg);
         break;
