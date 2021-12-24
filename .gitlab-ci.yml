@@ -56,11 +56,12 @@ variables:
 
   # Docker images
   BOT_DOCKER_IMAGE_TAG: ":latest"
-  ESP_IDF_DOC_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-idf-doc-env:v4.4-1-v5"
-  ESP_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-env:v4.4-1"
-  AFL_FUZZER_TEST_IMAGE: "$CI_DOCKER_REGISTRY/afl-fuzzer-test:v4.4-1-1"
-  CLANG_STATIC_ANALYSIS_IMAGE: "${CI_DOCKER_REGISTRY}/clang-static-analysis:v4.4-1-2"
+  ESP_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-env-v5.0:1"
+  AFL_FUZZER_TEST_IMAGE: "${CI_DOCKER_REGISTRY}/afl-fuzzer-test-v5.0:1-1"
+  CLANG_STATIC_ANALYSIS_IMAGE: "${CI_DOCKER_REGISTRY}/clang-static-analysis-v5.0:1-1"
+  ESP_IDF_DOC_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-idf-doc-env-v5.0:1-1"
   SONARQUBE_SCANNER_IMAGE: "${CI_DOCKER_REGISTRY}/sonarqube-scanner:3"
+  LINUX_SHELL_IMAGE: "${CI_DOCKER_REGISTRY}/linux-shells:2"
 
   # target test config file, used by assign test job
   CI_TARGET_TEST_CONFIG_FILE: "$CI_PROJECT_DIR/.gitlab/ci/target-test.yml"
