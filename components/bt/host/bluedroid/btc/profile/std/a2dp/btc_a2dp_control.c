@@ -96,22 +96,6 @@ void btc_a2dp_control_set_datachnl_stat(BOOLEAN open)
     btc_aa_ctrl_cb.data_channel_open = open;
 }
 
-static void btc_a2dp_dispatch_datapath_evt(uint32_t dp_evt)
-{
-    btc_msg_t msg;
-    msg.sig = BTC_SIG_API_CALL;
-    msg.pid = BTC_PID_A2DP;
-    msg.act = BTC_AV_DATAPATH_CTRL_EVT;
-
-    btc_av_args_t arg;
-    memset(&arg, 0, sizeof(btc_av_args_t));
-    arg.dp_evt = dp_evt;
-
-    /* Switch to BTC context */
-    APPL_TRACE_DEBUG("%s sig %u act %u, dp_evt %u\n", __func__, msg.sig, msg.act, arg.dp_evt);
-    btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL);
-}
-
 void btc_a2dp_control_media_ctrl(esp_a2d_media_ctrl_t ctrl)
 {
     APPL_TRACE_DEBUG("BTC MEDIA (A2DP-DATA) EVENT %u", ctrl);
