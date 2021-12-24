@@ -11,7 +11,7 @@
 
 /* get_ps_other_cpu(void *arg)
  *
- * It should be called by the CALLX0 command from the handler of High-priority interrupt (4 lvl).
+ * It should be called by the CALLX0 command from the handler of High-priority interrupt.
  * Only these registers [a2, a3, a4] can be used here.
  * Returns PS.
  */
@@ -29,7 +29,7 @@ get_ps_other_cpu:
 
 /* extended_ipc_isr_asm(void *arg)
  *
- * It should be called by the CALLX0 command from the handler of High-priority interrupt (4 lvl).
+ * It should be called by the CALLX0 command from the handler of High-priority interrupt.
  * Only these registers [a2, a3, a4] can be used here.
  * This function receives a structure (arg) where can be saved some regs
  * to get them available here, at the end of the function we recover the saved regs.
