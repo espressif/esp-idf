@@ -251,8 +251,6 @@
       "license": "GPL-3.0-with-GCC-exception",
       "name": "riscv32-esp-elf",
       "supported_targets": [
-        "esp32s2",
-        "esp32s3",
         "esp32c3"
       ],
       "version_cmd": [
@@ -388,8 +386,7 @@
         }
       ],
       "supported_targets": [
-        "esp32s2",
-        "esp32s3"
+        "esp32s2"
       ],
       "version_cmd": [
         "esp32s2ulp-elf-as",
