@@ -101,7 +101,7 @@ typedef struct {
         int dma_buf_count __attribute__((deprecated));  /*!< This is an alias to 'dma_desc_num' for backward compatibility */
     };
     union {
-        int dma_frame_num;                              /*!< Frame number for one-time sampling. Frame here means the total data from all the channels in a WS cycle */
+        int dma_frame_num;                              /*!< Number of frames for one-time sampling. The frame here means the total data from all the channels in a WS cycle */
         int dma_buf_len __attribute__((deprecated));    /*!< This is an alias to 'dma_frame_num' for backward compatibility */
     };
 

@@ -27,8 +27,14 @@ ESP32 pin | ESP32-H2 pin
 ```
 idf.py menuconfig
 ```
+Two ways are provided to setup the Thread Border Router in this example:
 
-You need to configure the `CONFIG_EXAMPLE_WIFI_SSID` and `CONFIG_EXAMPLE_WIFI_PASSWORD` with your access point's ssid and psk.
+- Auto Start
+Enable `OPENTHREAD_BR_AUTO_START`, configure the `CONFIG_EXAMPLE_WIFI_SSID` and `CONFIG_EXAMPLE_WIFI_PASSWORD` with your access point's ssid and psk.
+The device will connect to Wi-Fi and form a Thread network automatically after bootup.
+
+- Manual mode
+Disable `OPENTHREAD_BR_AUTO_START`, and use the CLI command to configure the Wi-Fi and form Thread network manually.
 
 ### Build, Flash, and Run
 
@@ -37,6 +43,57 @@ Build the project and flash it to the board, then run monitor tool to view seria
 ```
 idf.py -p PORT build flash monitor
 ```
+If the OPENTHREAD_BR_AUTO_START option is enabled, The device will be connected to the configured Wi-Fi and Thread network automatically then act as the border router.
+
+Otherwise, you need to manually configure the Wi-Fi and Thread network with CLI command.
+
+Command `sta` is used for connecting WiFi.
+
+```bash
+> sta
+---wifi sta parameter---
+-s                   :     wifi ssid
+-p                   :     wifi psk
+---example---
+join a wifi, 
+ssid: threadcertAP 
+psk: threadcertAP    :     sta -s threadcertAP -p threadcertAP
+Done 
+> sta -s threadcertAP -p threadcertAP
+ssid: threadcertAP
+psk: threadcertAP
+I (47043) wifi:wifi driver task: 3ffd05ac, prio:23, stack:6656, core=0
+
+
+......
+
+
+I (49263) wifi:AP's beacon interval = 102400 us, DTIM period = 1
+I (50233) esp_netif_handlers: sta ip: 192.168.3.10, mask: 255.255.255.0, gw: 192.168.3.1
+wifi sta is connected successfully
+Done
+>
+```
+
+Command `wifiinfo` is used for checking the state of Wi-Fi connection and printing IP addresses.
+
+```bash
+> wifiinfo
+---get WiFi informations---
+-i                   :     get sta addr
+-s                   :     get wifi state, disconnect or connect
+Done
+> wifiinfo -s
+connected
+Done
+> wifiinfo -i
+inet 192.168.3.10
+inet6 FE80::7AE3:6DFF:FECD:125C 
+Done
+> 
+```
+
+For forming Thread network, you can refer to [ot_cli_README](../ot_cli/README.md)
 
 ## Example Output
 
@@ -56,9 +113,6 @@ I(8139) OPENTHREAD:[NOTE]-MLE-----: Allocate router id 50
 I(8139) OPENTHREAD:[NOTE]-MLE-----: RLOC16 fffe -> c800
 I(8159) OPENTHREAD:[NOTE]-MLE-----: Role Detached -> Leader
 ```
-
-The device will automatically connect to the configured Wi-Fi and Thread network and act as the border router.
-
 ## Using the border agent feature
 
 You need to ot-commissioner on the host machine and another Thread end device running OpenThread cli.
