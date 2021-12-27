@@ -64,6 +64,7 @@ struct tls_connection {
 	tls_context_t *tls;
 	struct tls_data tls_io_data;
 	unsigned char randbytes[2 * TLS_RANDOM_LEN];
+	mbedtls_md_type_t mac;
 };
 
 static void tls_mbedtls_cleanup(tls_context_t *tls)
@@ -652,6 +653,7 @@ struct wpabuf * tls_connection_handshake(void *tls_ctx,
 			if (tls->ssl.handshake) {
 				os_memcpy(conn->randbytes, tls->ssl.handshake->randbytes,
 					  TLS_RANDOM_LEN * 2);
+				conn->mac = tls->ssl.handshake->ciphersuite_info->mac;
 			}
 		}
 		ret = mbedtls_ssl_handshake_step(&tls->ssl);
@@ -881,10 +883,10 @@ static int tls_connection_prf(void *tls_ctx, struct tls_connection *conn,
 	wpa_hexdump_key(MSG_MSGDUMP, "random", seed, 2 * TLS_RANDOM_LEN);
 	wpa_hexdump_key(MSG_MSGDUMP, "master", ssl->session->master, TLS_MASTER_SECRET_LEN);
 
-	if (ssl->transform->ciphersuite_info->mac == MBEDTLS_MD_SHA384) {
+	if (conn->mac == MBEDTLS_MD_SHA384) {
 		ret = tls_prf_sha384(ssl->session->master, TLS_MASTER_SECRET_LEN,
 				label, seed, 2 * TLS_RANDOM_LEN, out, out_len);
-	} else if (ssl->transform->ciphersuite_info->mac == MBEDTLS_MD_SHA256) {
+	} else if (conn->mac == MBEDTLS_MD_SHA256) {
 		ret = tls_prf_sha256(ssl->session->master, TLS_MASTER_SECRET_LEN,
 				label, seed, 2 * TLS_RANDOM_LEN, out, out_len);
 	} else {
