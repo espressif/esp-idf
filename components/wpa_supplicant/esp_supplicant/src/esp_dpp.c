@@ -34,22 +34,36 @@ struct action_rx_param {
 
 static int esp_dpp_post_evt(uint32_t evt_id, uint32_t data)
 {
-    DPP_API_LOCK();
-
     dpp_event_t *evt = os_zalloc(sizeof(dpp_event_t));
+    int ret = ESP_OK;
+
     if (evt == NULL) {
-        DPP_API_UNLOCK();
-        return ESP_ERR_NO_MEM;
+        ret = ESP_ERR_NO_MEM;
+        goto end;
     }
     evt->id = evt_id;
     evt->data = data;
-    if ( xQueueSend(s_dpp_evt_queue, &evt, 10 / portTICK_PERIOD_MS ) != pdPASS) {
-        DPP_API_UNLOCK();
-        os_free(evt);
-        return ESP_ERR_DPP_FAILURE;
+    if (s_dpp_api_lock) {
+        DPP_API_LOCK();
+    } else {
+        ret = ESP_ERR_DPP_FAILURE;
+        goto end;
     }
-    DPP_API_UNLOCK();
-    return ESP_OK;
+    if (xQueueSend(s_dpp_evt_queue, &evt, 10 / portTICK_PERIOD_MS ) != pdPASS) {
+        DPP_API_UNLOCK();
+        ret = ESP_ERR_DPP_FAILURE;
+        goto end;
+    }
+    if (evt_id != SIG_DPP_DEL_TASK) {
+        DPP_API_UNLOCK();
+    }
+
+    return ret;
+end:
+    if (evt) {
+        os_free(evt);
+    }
+    return ret;
 }
 
 static void esp_dpp_call_cb(esp_supp_dpp_event_t evt, void *data)
@@ -653,6 +667,10 @@ void esp_supp_dpp_deinit(void)
         params->key = NULL;
     }
 
+    esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_ACTION_TX_STATUS,
+                               &offchan_event_handler);
+    esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_ROC_DONE,
+                               &offchan_event_handler);
     s_dpp_auth_retries = 0;
     dpp_global_deinit(s_dpp_ctx.dpp_global);
     esp_dpp_post_evt(SIG_DPP_DEL_TASK, 0);
