@@ -62,7 +62,7 @@ An example which combines the SDMMC driver with the FATFS library is provided in
     Using API with SDIO cards
     ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    Initialization and the probing process is the same as with SD memory cards. The only difference is in data transfer commands in SDIO mode.
+    Initialization and the probing process are the same as with SD memory cards. The only difference is in data transfer commands in SDIO mode.
 
     During the card initialization and probing, performed with :cpp:func:`sdmmc_card_init`, the driver only configures the following registers of the IO card:
 

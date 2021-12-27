@@ -12,11 +12,11 @@ ESP-IDF requires some prerequisite tools to be installed so you can build firmwa
 For this Getting Started we're going to use the Command Prompt, but after ESP-IDF is installed you can use :doc:`Eclipse <eclipse-setup>` or another graphical IDE with CMake support instead.
 
 .. note::
-    Limitations: 
+    Limitations:
     - The installation path of ESP-IDF and ESP-IDF Tools must not be longer than 90 characters. Too long installation paths might result in a failed build.
     - The installation path of Python or ESP-IDF must not contain white spaces or parentheses.
     - The installation path of Python or ESP-IDF should not contain special characters (non-ASCII) unless the operating system is configured with "Unicode UTF-8" support.
-    
+
     System Administrator can enable the support via Control Panel - Change date, time, or number formats - Administrative tab - Change system locale - check the option "Beta: Use Unicode UTF-8 for worldwide language support" - Ok and reboot the computer.
 
 .. _get-started-windows-tools-installer:
