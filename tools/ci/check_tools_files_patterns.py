@@ -4,30 +4,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
-import fnmatch
-import glob
 import os
 import sys
+from pathlib import Path
 
 import yaml
-from idf_ci_utils import IDF_PATH, get_git_files, magic_check, magic_check_bytes, translate
-
-# Monkey patch starts
-# glob.glob will ignore all files starts with ``.``
-# don't ignore them here
-# need to keep the same argument as glob._ishidden
-
-
-def _ishidden(path):  # pylint: disable=W0613
-    return False
-
-
-fnmatch.translate = translate
-
-glob.magic_check = magic_check  # type: ignore
-glob.magic_check_bytes = magic_check_bytes  # type: ignore
-glob._ishidden = _ishidden  # type: ignore # pylint: disable=W0212
-# ends here
+from idf_ci_utils import IDF_PATH, get_git_files
 
 
 def check(pattern_yml, exclude_list):
@@ -37,18 +19,24 @@ def check(pattern_yml, exclude_list):
         if k.startswith('.pattern') and isinstance(v, list):
             rules_patterns_set.update(v)
     rules_files_set = set()
+    idf_path = Path(IDF_PATH)
     for pat in rules_patterns_set:
-        rules_files_set.update(glob.glob(os.path.join(IDF_PATH, pat), recursive=True))
+        rules_files_set.update(idf_path.glob(pat))
 
     exclude_patterns_set = set()
-    exclude_patterns_set.update([path.split('#')[0].strip() for path in open(exclude_list).readlines() if path])
+    for line in open(exclude_list).readlines():
+        pat = line.split('#')[0].strip()
+        if pat:
+            exclude_patterns_set.add(pat)
+
     exclude_files_set = set()
     for pat in exclude_patterns_set:
-        exclude_files_set.update(glob.glob(os.path.join(IDF_PATH, pat), recursive=True))
+        exclude_files_set.update(idf_path.glob(pat))
 
     missing_files = set()
     git_files = get_git_files(os.path.join(IDF_PATH, 'tools'), full_path=True)
     for f in git_files:
+        f = Path(f)
         if f in rules_files_set or f in exclude_files_set:
             continue
         missing_files.add(os.path.relpath(f, IDF_PATH))
@@ -76,7 +64,7 @@ if __name__ == '__main__':
         if not_included_files:
             print('Missing Files:')
             for file in not_included_files:
-                print('\t' + file)
+                print('\t' + str(file))
             print('Please add these files or glob patterns to ".gitlab/ci/rules.yml" and put related files under '
                   '".patterns-<test_group>" block to trigger related tests.\n'
                   'Or add them to "tools/ci/exclude_check_tools_files.txt" to exclude them.')
