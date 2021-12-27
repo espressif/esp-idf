@@ -16,8 +16,9 @@ def check(pattern_yml, exclude_list):
     rules_dict = yaml.load(open(pattern_yml), Loader=yaml.FullLoader)
     rules_patterns_set = set()
     for k, v in rules_dict.items():
-        if k.startswith('.pattern') and isinstance(v, list):
+        if k.startswith('.pattern') and k != '.patterns-python-files' and isinstance(v, list):
             rules_patterns_set.update(v)
+
     rules_files_set = set()
     idf_path = Path(IDF_PATH)
     for pat in rules_patterns_set:
