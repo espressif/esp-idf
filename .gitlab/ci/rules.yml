@@ -27,6 +27,7 @@
   - "tools/ci/python_packages/ttfw_idf/**/*"
 
   - "tools/ci/find_apps_build_apps.sh"
+  - "tools/ci/build_pytest_apps.py"
   - "tools/build_apps.py"
   - "tools/find_apps.py"
   - "tools/find_build_apps/**/*"
@@ -135,6 +136,13 @@
   - "tools/ci/test_reproducible_build.sh"
 
   - "tools/gen_soc_caps_kconfig/*"
+  - "tools/gen_soc_caps_kconfig/test/test_gen_soc_caps_kconfig.py"
+
+  - "tools/mkuf2.py"
+  - "tools/test_mkuf2/test_mkuf2.py"
+
+  - "tools/split_paths_by_spaces.py"
+
 
 .patterns-windows: &patterns-windows
   - "tools/windows/**/*"
