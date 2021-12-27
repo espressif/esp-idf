@@ -69,6 +69,8 @@ These third party libraries can be included into the application (firmware) prod
 
 * :component_file:`UBSAN runtime <esp_system/ubsan.c>` — Copyright (c) 2016, Linaro Limited and Jiří Zárevúcky, licensed under the BSD 2-clause license.
 
+* `freemodbus`_ Copyright (c) 2006-2013 Christian Walter, Armink and licensed under the BSD license.
+
 Build Tools
 -----------
 
@@ -177,3 +179,4 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _sphinx_rtd_theme: https://github.com/readthedocs/sphinx_rtd_theme
 .. _cryptoauthlib: https://github.com/MicrochipTech/cryptoauthlib
 .. _qrcode: https://github.com/nayuki/QR-Code-generator
+.. _freemodbus: https://github.com/armink/FreeModbus_Slave-Master-RTT-STM32
