@@ -261,6 +261,7 @@ void app_main(void)
         /* What is the service key (could be NULL)
          * This translates to :
          *     - Wi-Fi password when scheme is wifi_prov_scheme_softap
+         *          (Minimum expected length: 8, maximum 64 for WPA2-PSK)
          *     - simply ignored when scheme is wifi_prov_scheme_ble
          */
         const char *service_key = NULL;
