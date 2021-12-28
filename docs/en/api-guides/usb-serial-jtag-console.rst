@@ -13,14 +13,17 @@ Note that, in contrast with the USB OTG peripheral found in some Espressif chips
 Hardware Requirements
 =====================
 
+{IDF_TARGET_USB_DP_GPIO:default="Not Updated!",esp32c3="19",esp32s3="20"}
+{IDF_TARGET_USB_DM_GPIO:default="Not Updated!",esp32c3="18",esp32s3="19"}
+
 Connect {IDF_TARGET_NAME} to the USB port as follows:
 
 +------+-------------+
 | GPIO | USB         |
 +======+=============+
-| 19   | D+ (green)  |
+| {IDF_TARGET_USB_DP_GPIO}   | D+ (green)  |
 +------+-------------+
-| 18   | D- (white)  |
+| {IDF_TARGET_USB_DM_GPIO}   | D- (white)  |
 +------+-------------+
 | GND  | GND (black) |
 +------+-------------+
