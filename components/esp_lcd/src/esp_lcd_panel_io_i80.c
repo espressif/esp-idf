@@ -24,6 +24,7 @@
 #include "esp_rom_gpio.h"
 #include "soc/soc_caps.h"
 #include "soc/rtc.h" // for `rtc_clk_xtal_freq_get()`
+#include "soc/soc_memory_types.h"
 #include "hal/dma_types.h"
 #include "hal/gpio_hal.h"
 #include "esp_private/gdma.h"
@@ -40,6 +41,9 @@ static const char *TAG = "lcd_panel.io.i80";
 typedef struct esp_lcd_i80_bus_t esp_lcd_i80_bus_t;
 typedef struct lcd_panel_io_i80_t lcd_panel_io_i80_t;
 typedef struct lcd_i80_trans_descriptor_t lcd_i80_trans_descriptor_t;
+
+// This function is located in ROM (also see esp_rom/${target}/ld/${target}.rom.ld)
+extern int Cache_WriteBack_Addr(uint32_t addr, uint32_t size);
 
 static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, const void *param, size_t param_size);
 static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, const void *color, size_t color_size);
@@ -63,6 +67,8 @@ struct esp_lcd_i80_bus_t {
     uint8_t *format_buffer;  // The driver allocates an internal buffer for DMA to do data format transformer
     size_t resolution_hz;    // LCD_CLK resolution, determined by selected clock source
     gdma_channel_handle_t dma_chan; // DMA channel handle
+    size_t psram_trans_align; // DMA transfer alignment for data allocated from PSRAM
+    size_t sram_trans_align;  // DMA transfer alignment for data allocated from SRAM
     lcd_i80_trans_descriptor_t *cur_trans; // Current transaction
     lcd_panel_io_i80_t *cur_device; // Current working device
     LIST_HEAD(i80_device_list, lcd_panel_io_i80_t) device_list; // Head of i80 device list
@@ -120,11 +126,11 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     ESP_GOTO_ON_FALSE(bus_config && ret_bus, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
     size_t num_dma_nodes = bus_config->max_transfer_bytes / DMA_DESCRIPTOR_BUFFER_MAX_SIZE + 1;
     // DMA descriptors must be placed in internal SRAM
-    bus = heap_caps_calloc(1, sizeof(esp_lcd_i80_bus_t) + num_dma_nodes * sizeof(dma_descriptor_t), MALLOC_CAP_DMA);
+    bus = heap_caps_calloc(1, sizeof(esp_lcd_i80_bus_t) + num_dma_nodes * sizeof(dma_descriptor_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
     ESP_GOTO_ON_FALSE(bus, ESP_ERR_NO_MEM, err, TAG, "no mem for i80 bus");
     bus->num_dma_nodes = num_dma_nodes;
     bus->bus_id = -1;
-    bus->format_buffer = heap_caps_calloc(1, CONFIG_LCD_PANEL_IO_FORMAT_BUF_SIZE, MALLOC_CAP_DMA);
+    bus->format_buffer = heap_caps_calloc(1, CONFIG_LCD_PANEL_IO_FORMAT_BUF_SIZE, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
     ESP_GOTO_ON_FALSE(bus->format_buffer, ESP_ERR_NO_MEM, err, TAG, "no mem for format buffer");
     // register to platform
     int bus_id = lcd_com_register_device(LCD_COM_DEVICE_TYPE_I80, bus);
@@ -151,6 +157,8 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     lcd_ll_enable_interrupt(bus->hal.dev, LCD_LL_EVENT_TRANS_DONE, false); // disable all interrupts
     lcd_ll_clear_interrupt_status(bus->hal.dev, UINT32_MAX); // clear pending interrupt
     // install DMA service
+    bus->psram_trans_align = bus_config->psram_trans_align;
+    bus->sram_trans_align = bus_config->sram_trans_align;
     ret = lcd_i80_init_dma_link(bus);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "install DMA failed");
     // enable 8080 mode and set bus width
@@ -436,6 +444,12 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     trans_desc->data_length = color_size;
     trans_desc->trans_done_cb = i80_device->on_color_trans_done;
     trans_desc->user_ctx = i80_device->user_ctx;
+
+    if (esp_ptr_external_ram(color)) {
+        // flush framebuffer from cache to the physical PSRAM
+        Cache_WriteBack_Addr((uint32_t)color, color_size);
+    }
+
     // send transaction to trans_queue
     xQueueSend(i80_device->trans_queue, &trans_desc, portMAX_DELAY);
     i80_device->num_trans_inflight++;
@@ -489,6 +503,12 @@ static esp_err_t lcd_i80_init_dma_link(esp_lcd_i80_bus_handle_t bus)
         .owner_check = true
     };
     gdma_apply_strategy(bus->dma_chan, &strategy_config);
+    // set DMA transfer ability
+    gdma_transfer_ability_t ability = {
+        .psram_trans_align = bus->psram_trans_align,
+        .sram_trans_align = bus->sram_trans_align,
+    };
+    gdma_set_transfer_ability(bus->dma_chan, &ability);
     return ESP_OK;
 err:
     if (bus->dma_chan) {
