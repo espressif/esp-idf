@@ -20,10 +20,10 @@ menu "Example Configuration"
             Router password.
 
     choice
-        bool "Mesh AP Authentication Mode"
-        default WIFI_AUTH_WPA2_PSK
+        bool "Mesh/Non-mesh AP Authentication Mode"
+        default WIFI_AUTH_OPEN
         help
-            Authentication mode.
+            Mesh/Non-mesh Authentication mode.
 
         config WIFI_AUTH_OPEN
             bool "WIFI_AUTH_OPEN"
@@ -35,14 +35,14 @@ menu "Example Configuration"
             bool "WIFI_AUTH_WPA_WPA2_PSK"
     endchoice
 
-    config MESH_AP_AUTHMODE
+    config AP_AUTHMODE
         int
         default 0 if WIFI_AUTH_OPEN
         default 2 if WIFI_AUTH_WPA_PSK
         default 3 if WIFI_AUTH_WPA2_PSK
         default 4 if WIFI_AUTH_WPA_WPA2_PSK
         help
-            Mesh AP authentication mode.
+            Mesh/Non-mesh AP authentication mode.
 
     config MESH_AP_PASSWD
         string "Mesh AP Password"
@@ -60,7 +60,7 @@ menu "Example Configuration"
     config MESH_NON_MESH_AP_CONNECTIONS
         int "Mesh Non Mesh AP Connections"
         range 0 9
-        default 0
+        default 3
         help
             The number of non-mesh stations allowed to connect in.
 
@@ -97,4 +97,23 @@ menu "Example Configuration"
             Note: The IP address is in platform (not network)
             format.
 
+
+    config NONMESH_AP_SSID
+        string "SoftAP Non-mesh SSID"
+        default "entrypoint"
+        help
+            Non-mesh SSID.
+
+    config NONMESH_AP_PASSWD
+        string "SoftAP Non-mesh password"
+        default ""
+        help
+            Non-mesh SSID password.
+
+    config NONMESH_CHANNEL
+        int "channel"
+        range 0 14
+        default 11
+        help
+            mesh network channel.
 endmenu

@@ -40,7 +40,7 @@ static esp_console_repl_t *s_repl = NULL;
 void register_ping_command(void);
 void mesh_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
 void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
-void register_leaf_command();
+void register_ap_command();
 
 void ip_event_handler(void *arg, esp_event_base_t event_base,
                       int32_t event_id, void *event_data)
@@ -124,7 +124,7 @@ void app_main(void)
     memcpy((uint8_t *) &cfg.router.password, CONFIG_MESH_ROUTER_PASSWD,
            strlen(CONFIG_MESH_ROUTER_PASSWD));
     /* mesh softAP */
-    ESP_ERROR_CHECK(esp_mesh_set_ap_authmode(CONFIG_MESH_AP_AUTHMODE));
+    ESP_ERROR_CHECK(esp_mesh_set_ap_authmode(CONFIG_AP_AUTHMODE));
     cfg.mesh_ap.max_connection = CONFIG_MESH_AP_CONNECTIONS;
     cfg.mesh_ap.nonmesh_max_connection = CONFIG_MESH_NON_MESH_AP_CONNECTIONS;
     memcpy((uint8_t *) &cfg.mesh_ap.password, CONFIG_MESH_AP_PASSWD,
@@ -148,7 +148,7 @@ void app_main(void)
     #endif
     register_quit_command();
     register_ping_command();
-    register_leaf_command();
+    register_ap_command();
 
 
     // start console REPL

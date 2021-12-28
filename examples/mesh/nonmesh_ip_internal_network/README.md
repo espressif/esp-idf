@@ -15,7 +15,6 @@ To do so you need to send `ap` command to the esp console of the desired node.
 This command reconfigure the soft-AP and creates a new WiFI network (with DHCP server support). 
 Traffic coming from that network (nonmesh-network) will be NATed and forwarded to the root node and ultimately reach the Internet.
 
-
 ### Hardware Required
 
 This example can be executed on any platform board, the only required interface is WiFi and connection to internet.

@@ -7,7 +7,6 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 #include "esp_wifi.h"
-#include "esp_netif.h"
 #include "esp_log.h"
 #include <string.h>
 #include <esp_console.h>
@@ -502,13 +501,10 @@ esp_err_t mesh_netifs_stop(void)
     return ESP_OK;
 }
 
-void netif_status_callback(struct netif* netif, netif_nsc_reason_t reason, const netif_ext_callback_args_t* args){
-    ESP_LOGI(TAG, "netif_status_callback %s: %d [%d]", netif->name, reason,strcmp(netif->name, "ap"));
-    if(reason == LWIP_NSC_STATUS_CHANGED && netif->name[0] == 'a' && netif->name[1] == 'p'){
+void enable_pnat_callback(void* arg){
+    if(netif_ap){
         ESP_LOGI(TAG, "Enabling NAT on AP interface");
         ip_napt_enable(g_nonmesh_netif_subnet_ip.ip.addr, 1);
-        netif_remove_ext_callback(&netif_callback);
-
     }
 }
 
@@ -521,94 +517,46 @@ int do_convert_to_entrypoint_node(int argc, char* argv[]) {
         esp_netif_destroy(netif_ap);
         netif_ap = NULL;
     }
-    // we enable NAT after the interface has been reconfigured
-    netif_add_ext_callback(&netif_callback, netif_status_callback);
-    esp_netif_inherent_config_t cfg = ESP_NETIF_INHERENT_DEFAULT_WIFI_AP();
-    cfg.ip_info = &g_nonmesh_netif_subnet_ip;
-    netif_ap = esp_netif_create_wifi(WIFI_IF_AP, &cfg);
+    esp_netif_inherent_config_t base_cfg = ESP_NETIF_INHERENT_DEFAULT_WIFI_AP();
+    base_cfg.if_desc = "nonmesh_ap";
+    base_cfg.ip_info = &g_nonmesh_netif_subnet_ip;
+    esp_netif_config_t cfg = {
+            .base = &base_cfg,
+            .driver = NULL,
+            .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_AP };
+    netif_ap = esp_netif_new(&cfg);
     ESP_ERROR_CHECK(esp_netif_attach_wifi_ap(netif_ap));
     ESP_ERROR_CHECK(esp_wifi_set_default_wifi_ap_handlers());
     wifi_config_t wifi_config = {
             .ap = {
-                    .ssid = "entrypoint",
-                    .channel = 11,
+                    .ssid = CONFIG_NONMESH_AP_SSID,
+                    .channel = CONFIG_NONMESH_CHANNEL,
                     .max_connection = 5,
-                    .authmode = WIFI_AUTH_OPEN
+                    .password = CONFIG_NONMESH_AP_PASSWD,
+                    .authmode = CONFIG_AP_AUTHMODE
             }
     };
-
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
     // we need to increase this value since the mesh AP will trigger an expiration (the node is concretly not part of the
     ESP_LOGI(TAG, "Increasing mesh association timeout value");
     ESP_ERROR_CHECK(esp_mesh_set_ap_assoc_expire(INT_MAX));
+    // This 1sec delayed task is just to allow the netif to be created (otherwise enabling NAPT will have no effect)
+    // Unfortunately the LWIP_NETIF_EXT_STATUS_CALLBACK cannot be enabled via the usual menuconfig
+    esp_timer_handle_t oneshot_timer;
+    const esp_timer_create_args_t oneshot_timer_args = {
+            .callback = &enable_pnat_callback,
+            .name = "one-shot"
+    };
+    ESP_ERROR_CHECK(esp_timer_create(&oneshot_timer_args, &oneshot_timer));
+    ESP_ERROR_CHECK(esp_timer_start_once(oneshot_timer, 1000000));
     return 0;
 }
 
-int do_reconfigure_stas(int argc, char* argv[]) {
-    if(netif_sta != NULL){
-        ESP_LOGI(TAG, "Configuring IP stack on netif_sta");
-        esp_netif_set_ip_info(netif_sta, &g_nonmesh_netif_subnet_ip);
-        struct netif *netif;
-        NETIF_FOREACH(netif) {
-            ESP_LOGI(TAG, "Interface %s, idx %d, IPv4: " IPSTR, netif->name, netif_name_to_index(netif->name), IP2STR(&netif->ip_addr.u_addr.ip4));
-        }
-        ESP_LOGI(TAG, "Configuring starting DHCP server on netif_sta");
-        ESP_ERROR_CHECK(esp_netif_dhcps_start(netif_sta));
-    } else {
-        ESP_LOGW(TAG, "netif_sta not set");
-    }
-    return 0;
-}
-
-int do_make_leaf(int argc, char* argv[]) {
-    ESP_LOGI(TAG, "Setting mesh node as leaf");
-    esp_mesh_set_type(MESH_LEAF);
-    return 0;
-}
-
-int enable_nat_ap(int argc, char* argv[]){
-    if(netif_ap != NULL){
-        ESP_LOGI(TAG, "Enabling NAT on AP interface");
-        ip_napt_enable(g_nonmesh_netif_subnet_ip.ip.addr, 1);
-    } else {
-        ESP_LOGW(TAG, "Unable to enable NAT on AP interface");
-    }
-    return 0;
-}
-
-int disable_nat_sta(int argc, char* argv[]){
-    ESP_LOGI(TAG, "Disabling NAT on STA interface");
-    ip_napt_enable(ESP_IP4TOADDR( 172, 16, 0, 2), 0);
-    return 0;
-}
-
-void register_leaf_command() {
+void register_ap_command() {
     esp_console_cmd_t ap_command = {
             .command = "ap",
-            .help = "Convert to entrypoint node (create AP)",
+            .help = "Convert to entrypoint node (create softAP)",
             .func = &do_convert_to_entrypoint_node
     };
     ESP_ERROR_CHECK(esp_console_cmd_register(&ap_command));
-
-    esp_console_cmd_t leaf_command = {
-            .command = "leaf",
-            .help = "Convert node to leaf node (disable softAP to be able to reuse it)",
-            .func = &do_make_leaf
-    };
-    ESP_ERROR_CHECK(esp_console_cmd_register(&leaf_command));
-
-    esp_console_cmd_t napt_command = {
-            .command = "napt",
-            .help = "Enable PNAT on AP interface",
-            .func = &enable_nat_ap
-    };
-    ESP_ERROR_CHECK(esp_console_cmd_register(&napt_command));
-
-    esp_console_cmd_t denapt_command = {
-            .command = "denapt",
-            .help = "Disable PNAT on STA interface",
-            .func = &disable_nat_sta
-    };
-    ESP_ERROR_CHECK(esp_console_cmd_register(&denapt_command));
-
 }
