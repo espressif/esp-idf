@@ -64,6 +64,17 @@ static bool leaf_mode = false;
 /*******************************************************
  *                Function Definitions
  *******************************************************/
+void adjust_mtu(int newMTU, const char netif_name[2]){
+    struct netif *netif;
+    NETIF_FOREACH(netif) {
+        if(netif->name[0] == netif_name[0] && netif->name[1] == netif_name[1]){
+            ESP_LOGI(TAG, "Adjusting MTU for interface %s from %d to %d bytes", netif->name, netif->mtu, newMTU);
+            netif->mtu = newMTU;
+        }
+        ESP_LOGI(TAG, "netif_find: %c%c %d\n", netif->name[0], netif->name[1], netif->num);
+    }
+}
+
 //  setup DHCP server's DNS OFFER
 //
 static esp_err_t set_dhcps_dns(esp_netif_t *netif, uint32_t addr)
@@ -288,7 +299,6 @@ static void mesh_netif_init_station(void)
     ESP_ERROR_CHECK(esp_wifi_set_default_wifi_sta_handlers());
 }
 
-
 // Init by default for both potential root and node
 //
 esp_err_t mesh_netifs_init()
@@ -404,6 +414,9 @@ esp_err_t mesh_netif_start_root_ap(bool is_root, uint32_t addr)
         set_dhcps_dns(netif_ap, addr);
         start_mesh_link_ap();
         ip_napt_enable(g_mesh_netif_subnet_ip.ip.addr, 1);
+        // Why the 14 bytes? Seems to be the ethernet header size
+        const char name1[] = {'a', 'p'};
+        adjust_mtu(MESH_MPS-14, name1);
     }
     return ESP_OK;
 }
@@ -501,10 +514,13 @@ esp_err_t mesh_netifs_stop(void)
     return ESP_OK;
 }
 
+
 void enable_pnat_callback(void* arg){
     if(netif_ap){
         ESP_LOGI(TAG, "Enabling NAT on AP interface");
         ip_napt_enable(g_nonmesh_netif_subnet_ip.ip.addr, 1);
+        const char name[] = {'a', 'p'};
+        adjust_mtu(MESH_MPS, name);
     }
 }
 
@@ -525,6 +541,12 @@ int do_convert_to_entrypoint_node(int argc, char* argv[]) {
             .driver = NULL,
             .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_AP };
     netif_ap = esp_netif_new(&cfg);
+    esp_netif_dns_info_t dns;
+    dns.ip.u_addr.ip4.addr = ESP_IP4TOADDR(1,1,1,1);
+    dns.ip.type = IPADDR_TYPE_V4;
+    dhcps_offer_t dhcps_dns_value = OFFER_DNS;
+    ESP_ERROR_CHECK(esp_netif_dhcps_option(netif_ap, ESP_NETIF_OP_SET, ESP_NETIF_DOMAIN_NAME_SERVER, &dhcps_dns_value, sizeof(dhcps_dns_value)));
+    ESP_ERROR_CHECK(esp_netif_set_dns_info(netif_ap, ESP_NETIF_DNS_MAIN, &dns));
     ESP_ERROR_CHECK(esp_netif_attach_wifi_ap(netif_ap));
     ESP_ERROR_CHECK(esp_wifi_set_default_wifi_ap_handlers());
     wifi_config_t wifi_config = {
