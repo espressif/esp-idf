@@ -80,4 +80,17 @@ void esp_mpi_exp_mpi_mod_hw_op(const mbedtls_mpi *X, const mbedtls_mpi *Y, const
 
 #endif //ESP_MPI_USE_MONT_EXP
 
+/**
+ * @brief Enable/disables MPI operation complete interrupt
+ *
+ * @param enable true: enable, false: disable
+ */
+void esp_mpi_interrupt_enable( bool enable );
+
+/**
+ * @brief Clears the MPI operation complete interrupt status
+ *
+ */
+void esp_mpi_interrupt_clear( void );
+
 #endif

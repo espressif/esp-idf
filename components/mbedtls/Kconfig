@@ -282,6 +282,16 @@ menu "mbedTLS"
 
             These operations are used by RSA.
 
+    config MBEDTLS_MPI_USE_INTERRUPT
+        bool "Use interrupt for MPI exp-mod operations"
+        depends on !IDF_TARGET_ESP32 && MBEDTLS_HARDWARE_MPI
+        default n
+        help
+            Use an interrupt to coordinate long MPI operations.
+
+            This allows other code to run on the CPU while an MPI operation is pending.
+            Otherwise the CPU busy-waits.
+
     config MBEDTLS_HARDWARE_SHA
         bool "Enable hardware SHA acceleration"
         default y
