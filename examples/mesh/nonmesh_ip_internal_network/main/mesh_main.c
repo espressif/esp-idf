@@ -39,6 +39,7 @@ static esp_console_repl_t *s_repl = NULL;
  *******************************************************/
 void register_ping_command(void);
 void mesh_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
+void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
 void register_leaf_command();
 
 void ip_event_handler(void *arg, esp_event_base_t event_base,

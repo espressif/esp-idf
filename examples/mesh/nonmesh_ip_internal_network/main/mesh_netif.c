@@ -36,6 +36,8 @@ typedef struct mesh_netif_driver {
     uint8_t sta_mac_addr[MAC_ADDR_LEN];
 }* mesh_netif_driver_t;
 
+NETIF_DECLARE_EXT_CALLBACK(netif_callback)
+
 /*******************************************************
  *                Constants
  *******************************************************/
@@ -500,10 +502,14 @@ esp_err_t mesh_netifs_stop(void)
     return ESP_OK;
 }
 
-uint8_t* mesh_netif_get_station_mac(void)
-{
-    mesh_netif_driver_t mesh =  esp_netif_get_io_driver(netif_sta);
-    return mesh->sta_mac_addr;
+void netif_status_callback(struct netif* netif, netif_nsc_reason_t reason, const netif_ext_callback_args_t* args){
+    ESP_LOGI(TAG, "netif_status_callback %s: %d [%d]", netif->name, reason,strcmp(netif->name, "ap"));
+    if(reason == LWIP_NSC_STATUS_CHANGED && netif->name[0] == 'a' && netif->name[1] == 'p'){
+        ESP_LOGI(TAG, "Enabling NAT on AP interface");
+        ip_napt_enable(g_nonmesh_netif_subnet_ip.ip.addr, 1);
+        netif_remove_ext_callback(&netif_callback);
+
+    }
 }
 
 int do_convert_to_entrypoint_node(int argc, char* argv[]) {
@@ -515,6 +521,8 @@ int do_convert_to_entrypoint_node(int argc, char* argv[]) {
         esp_netif_destroy(netif_ap);
         netif_ap = NULL;
     }
+    // we enable NAT after the interface has been reconfigured
+    netif_add_ext_callback(&netif_callback, netif_status_callback);
     esp_netif_inherent_config_t cfg = ESP_NETIF_INHERENT_DEFAULT_WIFI_AP();
     cfg.ip_info = &g_nonmesh_netif_subnet_ip;
     netif_ap = esp_netif_create_wifi(WIFI_IF_AP, &cfg);
@@ -530,6 +538,9 @@ int do_convert_to_entrypoint_node(int argc, char* argv[]) {
     };
 
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
+    // we need to increase this value since the mesh AP will trigger an expiration (the node is concretly not part of the
+    ESP_LOGI(TAG, "Increasing mesh association timeout value");
+    ESP_ERROR_CHECK(esp_mesh_set_ap_assoc_expire(INT_MAX));
     return 0;
 }
 
