@@ -1,0 +1,100 @@
+menu "Example Configuration"
+
+    config MESH_CHANNEL
+        int "channel"
+        range 0 14
+        default 0
+        help
+            mesh network channel.
+
+    config MESH_ROUTER_SSID
+        string "Router SSID"
+        default "ROUTER_SSID"
+        help
+            Router SSID.
+
+    config MESH_ROUTER_PASSWD
+        string "Router password"
+        default "ROUTER_PASSWD"
+        help
+            Router password.
+
+    choice
+        bool "Mesh AP Authentication Mode"
+        default WIFI_AUTH_WPA2_PSK
+        help
+            Authentication mode.
+
+        config WIFI_AUTH_OPEN
+            bool "WIFI_AUTH_OPEN"
+        config WIFI_AUTH_WPA_PSK
+            bool "WIFI_AUTH_WPA_PSK"
+        config WIFI_AUTH_WPA2_PSK
+            bool "WIFI_AUTH_WPA2_PSK"
+        config WIFI_AUTH_WPA_WPA2_PSK
+            bool "WIFI_AUTH_WPA_WPA2_PSK"
+    endchoice
+
+    config MESH_AP_AUTHMODE
+        int
+        default 0 if WIFI_AUTH_OPEN
+        default 2 if WIFI_AUTH_WPA_PSK
+        default 3 if WIFI_AUTH_WPA2_PSK
+        default 4 if WIFI_AUTH_WPA_WPA2_PSK
+        help
+            Mesh AP authentication mode.
+
+    config MESH_AP_PASSWD
+        string "Mesh AP Password"
+        default "MAP_PASSWD"
+        help
+            Mesh AP password.
+
+    config MESH_AP_CONNECTIONS
+        int "Mesh AP Connections"
+        range 1 10
+        default 6
+        help
+            The number of mesh stations allowed to connect in.
+
+    config MESH_NON_MESH_AP_CONNECTIONS
+        int "Mesh Non Mesh AP Connections"
+        range 0 9
+        default 0
+        help
+            The number of non-mesh stations allowed to connect in.
+
+    config MESH_MAX_LAYER
+        int "Mesh Max Layer"
+        range 1 25
+        default 6
+        help
+            Max layer allowed in mesh network.
+
+    config MESH_ROUTE_TABLE_SIZE
+        int "Mesh Routing Table Size"
+        range 1 300
+        default 50
+        help
+            The number of devices over the network(max: 300).
+
+    config MESH_USE_GLOBAL_DNS_IP
+        bool "Use global DNS IP"
+        default n
+        help
+            Use fixed DNS server IP address. If enabled, root node
+            advertises the specified DNS address in DHCP packets.
+            By default it uses DNS record received from the router.
+
+    config MESH_GLOBAL_DNS_IP
+        hex "Global DNS"
+        depends on MESH_USE_GLOBAL_DNS_IP
+        default 0x08080808
+        help
+            The IP address of global DNS server that is used
+            for internal IP subnet formed by the mesh network
+            if MESH_USE_GLOBAL_DNS_IP is enabled.
+            Note: The IP address is in platform (not network)
+            format.
+
+endmenu
