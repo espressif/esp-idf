@@ -115,18 +115,6 @@ int xt_clock_freq(void) __attribute__((deprecated));
 #endif
 #endif // __ASSEMBLER__
 
-// If CONFIG_FREERTOS_ASSERT_DISABLE is set then configASSERT is defined empty later in FreeRTOS.h and the macro
-// configASSERT_DEFINED remains unset (meaning some warnings are avoided)
-
-#if defined(CONFIG_FREERTOS_ASSERT_FAIL_PRINT_CONTINUE)
-#define configASSERT(a) if (unlikely(!(a))) {                           \
-        esp_rom_printf("%s:%d (%s)- assert failed!\n", __FILE__, __LINE__,  \
-                   __FUNCTION__);                                           \
-    }
-#elif defined(CONFIG_FREERTOS_ASSERT_FAIL_ABORT)
-#define configASSERT(a) assert(a)
-#endif
-
 #if CONFIG_FREERTOS_ASSERT_ON_UNTESTED_FUNCTION
 #define UNTESTED_FUNCTION() { esp_rom_printf("Untested FreeRTOS function %s\r\n", __FUNCTION__); configASSERT(false); } while(0)
 #else
