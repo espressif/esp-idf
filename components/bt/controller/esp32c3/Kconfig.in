@@ -66,6 +66,13 @@ config BT_CTRL_HW_CCA
     help
         It enables HW CCA feature in controller
 
+config BT_CTRL_HW_CCA_VAL
+    int "CCA threshold value"
+    range 20 60
+    default 20
+    help
+        It is the threshold value of HW CCA, if the value is 30, it means CCA threshold is -30 dBm.
+
 config BT_CTRL_HW_CCA_EFF
     int
     default 1 if BT_CTRL_HW_CCA
