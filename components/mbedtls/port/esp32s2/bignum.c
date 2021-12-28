@@ -46,6 +46,8 @@ void esp_mpi_enable_hardware_hw_op( void )
     while (DPORT_REG_READ(RSA_QUERY_CLEAN_REG) != 1) {
     }
     // Note: from enabling RSA clock to here takes about 1.3us
+
+    REG_WRITE(RSA_INTERRUPT_REG, 0);
 }
 
 void esp_mpi_disable_hardware_hw_op( void )
@@ -58,6 +60,15 @@ void esp_mpi_disable_hardware_hw_op( void )
     esp_crypto_mpi_lock_release();
 }
 
+void esp_mpi_interrupt_enable( bool enable )
+{
+    REG_WRITE(RSA_INTERRUPT_REG, enable);
+}
+
+void esp_mpi_interrupt_clear( void )
+{
+    REG_WRITE(RSA_CLEAR_INTERRUPT_REG, 1);
+}
 
 /* Copy mbedTLS MPI bignum 'mpi' to hardware memory block at 'mem_base'.
 

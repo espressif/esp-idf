@@ -64,6 +64,16 @@ void esp_mpi_disable_hardware_hw_op( void )
 }
 
 
+void esp_mpi_interrupt_enable( bool enable )
+{
+    DPORT_REG_WRITE(RSA_INTERRUPT_REG, enable);
+}
+
+void esp_mpi_interrupt_clear( void )
+{
+    DPORT_REG_WRITE(RSA_CLEAR_INTERRUPT_REG, 1);
+}
+
 /* Copy mbedTLS MPI bignum 'mpi' to hardware memory block at 'mem_base'.
 
    If hw_words is higher than the number of words in the bignum then
