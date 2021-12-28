@@ -1,5 +1,26 @@
 
 ***
+Building project for esp32...
+
+***
+Running mem_test.py for esp32...
+Test complete without errors
+
+***
+Building project for esp32s2...
+
+***
+Running mem_test.py for esp32s2...
+Test complete without errors
+
+***
+Building project for esp32c3...
+
+***
+Running mem_test.py for esp32c3...
+Test complete without errors
+
+***
 Running idf_size.py...
 Total sizes:
 Used static DRAM:   17620 bytes ( 163116 remain, 9.7% used)
