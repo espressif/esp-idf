@@ -6,7 +6,7 @@
 # Includes information which is not shown in "xtensa-esp32-elf-size",
 # or easy to parse from "xtensa-esp32-elf-objdump" or raw map files.
 #
-# SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 from __future__ import division, print_function, unicode_literals
