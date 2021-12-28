@@ -62,6 +62,7 @@ Call the function :cpp:func:`uart_param_config` and pass to it a :cpp:type:`uart
     // Configure UART parameters
     ESP_ERROR_CHECK(uart_param_config(uart_num, &uart_config));
 
+For more information on how to configure the hardware flow control options, please refer to :example:`peripherals/uart/uart_echo`.
 
 Multiple Steps
 """"""""""""""
