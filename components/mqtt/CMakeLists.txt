@@ -79,8 +79,7 @@ idf_component_get_property(mbedtls_dir mbedtls COMPONENT_DIR)
      ${MOCK_GEN_DIR}/Mockhttp_parser.c
      ${MOCK_GEN_DIR}/Mockevent_groups.c
      ${MOCK_GEN_DIR}/Mockqueue.c
-     ${MOCK_GEN_DIR}/Mocktask.c
-         ../../examples/mesh/nonmesh_ip_internal_network/main/include/lwipopts.h)
+     ${MOCK_GEN_DIR}/Mocktask.c)
 
  add_custom_command(
      OUTPUT ruby_found SYMBOLIC
