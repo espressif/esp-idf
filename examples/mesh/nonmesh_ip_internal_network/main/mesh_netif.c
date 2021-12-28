@@ -11,6 +11,7 @@
 #include <string.h>
 #include <esp_console.h>
 #include <lwip/netif.h>
+#include <lwip/inet.h>
 #include "esp_mesh.h"
 #include "lwip/lwip_napt.h"
 #include "esp_wifi_netif.h"
@@ -541,12 +542,15 @@ int do_convert_to_entrypoint_node(int argc, char* argv[]) {
             .driver = NULL,
             .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_AP };
     netif_ap = esp_netif_new(&cfg);
+    // Forward the DNS given by the root
     esp_netif_dns_info_t dns;
-    dns.ip.u_addr.ip4.addr = ESP_IP4TOADDR(1,1,1,1);
+    ESP_ERROR_CHECK(esp_netif_get_dns_info(netif_sta, ESP_NETIF_DNS_MAIN, &dns));
+    dns.ip.u_addr.ip4.addr = dns.ip.u_addr.ip4.addr;
     dns.ip.type = IPADDR_TYPE_V4;
     dhcps_offer_t dhcps_dns_value = OFFER_DNS;
     ESP_ERROR_CHECK(esp_netif_dhcps_option(netif_ap, ESP_NETIF_OP_SET, ESP_NETIF_DOMAIN_NAME_SERVER, &dhcps_dns_value, sizeof(dhcps_dns_value)));
     ESP_ERROR_CHECK(esp_netif_set_dns_info(netif_ap, ESP_NETIF_DNS_MAIN, &dns));
+    ESP_LOGI(TAG, "Setting DNS address for non-mesh client to %s", inet_ntoa(dns.ip.u_addr.ip4.addr));
     ESP_ERROR_CHECK(esp_netif_attach_wifi_ap(netif_ap));
     ESP_ERROR_CHECK(esp_wifi_set_default_wifi_ap_handlers());
     wifi_config_t wifi_config = {
