@@ -12,6 +12,8 @@
 #include "esp_system.h"             // for uint32_t esp_random()
 #include "esp_rom_gpio.h"
 #include "soc/uart_periph.h"
+#include "hal/uart_ll.h"
+#include "hal/uart_hal.h"
 
 #define UART_TAG         "Uart"
 #define UART_NUM1        (UART_NUM_1)
@@ -358,4 +360,100 @@ TEST_CASE("uart tx with ringbuffer test", "[uart]")
     TEST_ESP_OK(uart_driver_delete(uart_num));
     free(rd_data);
     free(wr_data);
+}
+
+/* Global variable shared between the ISR and the test function */
+volatile uint32_t uart_isr_happened = 0;
+
+static void uart_custom_isr(void* arg) {
+    (void) arg;
+
+    /* Clear interrupt status and disable TX interrupt here in order to
+     * prevent an infinite call loop. Use the LL function to prevent
+     * entering a critical section from an interrupt. */
+    uart_ll_disable_intr_mask(UART_LL_GET_HW(1), UART_INTR_TXFIFO_EMPTY);
+    uart_clear_intr_status(UART_NUM_1, UART_INTR_TXFIFO_EMPTY);
+
+    /* Mark the interrupt as serviced */
+    uart_isr_happened = 1;
+}
+
+
+/**
+ * This function shall always be executed by core 0.
+ * This is required by `uart_isr_free`.
+ */
+static void uart_test_custom_isr_core0(void* param) {
+    /**
+     * Setup the UART1 and make sure we can register and free a custom ISR
+     */
+    uart_config_t uart_config = {
+        .baud_rate = 115200,
+        .data_bits = UART_DATA_8_BITS,
+        .parity    = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .source_clk = UART_SCLK_APB,
+    };
+
+    const uart_port_t uart_echo = UART_NUM_1;
+    const int uart_tx = 4;
+    const int uart_rx = 5;
+    const int buf_size = 256;
+    const int intr_alloc_flags = 0;
+    const char msg[] = "hello world\n";
+    uart_isr_handle_t handle = NULL;
+
+    TEST_ESP_OK(uart_driver_install(uart_echo, buf_size * 2, 0, 0, NULL, intr_alloc_flags));
+    TEST_ESP_OK(uart_param_config(uart_echo, &uart_config));
+    TEST_ESP_OK(uart_set_pin(uart_echo, uart_tx, uart_rx, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
+
+    /* Unregister the default ISR setup by the function call above */
+    TEST_ESP_OK(uart_isr_free(uart_echo));
+    TEST_ESP_OK(uart_isr_register(uart_echo, uart_custom_isr, NULL, intr_alloc_flags, &handle));
+    /* Set the TX FIFO empty threshold to the size of the message we are sending,
+     * make sure it is never 0 in any case */
+    TEST_ESP_OK(uart_enable_tx_intr(uart_echo, true, MAX(sizeof(msg), 1)));
+    uart_write_bytes(uart_echo, msg, sizeof(msg));
+
+    /* 10ms will be enough to receive the interrupt */
+    vTaskDelay(10 / portTICK_PERIOD_MS);
+
+    /* Make sure the ISR occured */
+    TEST_ASSERT_EQUAL(uart_isr_happened, 1);
+    esp_rom_printf("ISR happened: %d\n", uart_isr_happened);
+    TEST_ESP_OK(uart_isr_free(uart_echo));
+    TEST_ESP_OK(uart_driver_delete(uart_echo));
+
+#if !CONFIG_FREERTOS_UNICORE
+    TaskHandle_t* parent_task = (TaskHandle_t*) param;
+    esp_rom_printf("Notifying caller\n");
+    TEST_ASSERT(xTaskNotify(*parent_task, 0, eNoAction));
+    vTaskDelete(NULL);
+#else
+    (void) param;
+#endif //!CONFIG_FREERTOS_UNICORE
+}
+
+
+TEST_CASE("uart can register and free custom ISRs", "[uart]")
+{
+#if !CONFIG_FREERTOS_UNICORE
+    TaskHandle_t task_handle;
+    TaskHandle_t current_handler = xTaskGetCurrentTaskHandle();
+    /* Run the test on a determianted core, do not allow the core to be changed
+     * as we will manipulate ISRs. */
+    BaseType_t ret = xTaskCreatePinnedToCore(uart_test_custom_isr_core0,
+                                             "uart_test_custom_isr_core0_task",
+                                             2048,
+                                             &current_handler,
+                                             5,
+                                             &task_handle,
+                                             0);
+    TEST_ASSERT(ret)
+    TEST_ASSERT(xTaskNotifyWait(0, 0, NULL, 1000 / portTICK_PERIOD_MS));
+    (void) task_handle;
+#else
+    uart_test_custom_isr_core0(NULL);
+#endif //!CONFIG_FREERTOS_UNICORE
 }
