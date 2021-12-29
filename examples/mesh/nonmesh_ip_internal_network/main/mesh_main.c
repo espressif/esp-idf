@@ -26,7 +26,7 @@
  *                Constants
  *******************************************************/
 static const char *MESH_TAG = "mesh_main";
-static const uint8_t MESH_ID[6] = { 0x77, 0x77, 0x77, 0x77, 0x77, 0x76};
+static const uint8_t MESH_ID[6] = {0x77, 0x77, 0x77, 0x77, 0x77, 0x76};
 
 /*******************************************************
  *                Variable Definitions
@@ -38,13 +38,15 @@ static esp_console_repl_t *s_repl = NULL;
  *                Function Definitions
  *******************************************************/
 void register_ping_command(void);
+
 void mesh_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
-void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
+
+void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
+
 void register_ap_command();
 
 void ip_event_handler(void *arg, esp_event_base_t event_base,
-                      int32_t event_id, void *event_data)
-{
+                      int32_t event_id, void *event_data) {
     ip_event_got_ip_t *event = (ip_event_got_ip_t *) event_data;
     ESP_LOGI(MESH_TAG, "<IP_EVENT_STA_GOT_IP>IP:" IPSTR, IP2STR(&event->ip_info.ip));
     s_current_ip.addr = event->ip_info.ip.addr;
@@ -56,15 +58,13 @@ void ip_event_handler(void *arg, esp_event_base_t event_base,
 #endif
 }
 
-static int do_cmd_quit(int argc, char **argv)
-{
+static int do_cmd_quit(int argc, char **argv) {
     ESP_LOGI(MESH_TAG, "BYE BYE\r\n");
     s_repl->del(s_repl);
     return 0;
 }
 
-static void register_quit_command(void)
-{
+static void register_quit_command(void) {
     esp_console_cmd_t quit_command = {
             .command = "quit",
             .help = "Quit REPL environment",
@@ -73,26 +73,59 @@ static void register_quit_command(void)
     ESP_ERROR_CHECK(esp_console_cmd_register(&quit_command));
 }
 
-static void print_stats(void* args){
-    while(1){
+static int do_set_log(int argc, char **argv) {
+    if (argc > 2) {
+        ESP_LOGW(MESH_TAG, "Setting level %s for %s", argv[2], argv[1]);
+        if (strcmp(argv[2], "error") == 0) {
+            esp_log_level_set(argv[1], ESP_LOG_ERROR);
+        } else if (strcmp(argv[2], "warn") == 0) {
+            esp_log_level_set(argv[1], ESP_LOG_WARN);
+        } else if (strcmp(argv[2], "info") == 0) {
+            esp_log_level_set(argv[1], ESP_LOG_INFO);
+        } else if (strcmp(argv[2], "debug") == 0) {
+            esp_log_level_set(argv[1], ESP_LOG_DEBUG);
+        } else if (strcmp(argv[2], "verbose") == 0) {
+            esp_log_level_set(argv[1], ESP_LOG_VERBOSE);
+        } else {
+            ESP_LOGW(MESH_TAG, "Unknown level %s", argv[2]);
+        }
+    } else {
+        ESP_LOGW(MESH_TAG, "Log level not specified!");
+    }
+    return 0;
+}
+
+static void register_log_command(void) {
+    esp_console_cmd_t log_command = {
+            .command = "log",
+            .help = "set log level for component",
+            .hint = "<component> [debug | info | warn | error]",
+            .func = &do_set_log
+    };
+    ESP_ERROR_CHECK(esp_console_cmd_register(&log_command));
+}
+
+static void print_stats(void *args) {
+    while (1) {
         uint8_t apmac[MAC_ADDR_LEN];
         uint8_t stamac[MAC_ADDR_LEN];
         esp_wifi_get_mac(WIFI_IF_AP, apmac);
         esp_wifi_get_mac(WIFI_IF_STA, stamac);
-        ESP_LOGI(MESH_TAG, "[%s] LAYER: %1d | TYPE: %1d | MESH_SSID: ESPM_%2X%2X%2X | IP:" IPSTR " | AP: " MACSTR " | STA: " MACSTR,
+        ESP_LOGI(MESH_TAG,
+                 "[%s] LAYER: %1d | TYPE: %1d | TOPO: %s | NODE#: %d | IP:" IPSTR " | AP: " MACSTR " | STA: " MACSTR,
                  esp_mesh_is_root() ? "ROOT" : "NODE", esp_mesh_get_layer(), esp_mesh_get_type(),
-                 stamac[3], stamac[4], stamac[5],
+                 esp_mesh_get_topology() == MESH_TOPO_TREE ? "tree" : "chain", esp_mesh_get_total_node_num(),
                  IP2STR(&s_current_ip), MAC2STR(apmac), MAC2STR(stamac));
         struct netif *netif;
         NETIF_FOREACH(netif) {
-            ESP_LOGI(MESH_TAG, "Interface %s, NAPT: %d, IPv4: " IPSTR, netif->name, netif->napt, IP2STR(&netif->ip_addr.u_addr.ip4));
+            ESP_LOGI(MESH_TAG, "Interface %s, NAPT: %d, IPv4: " IPSTR, netif->name, netif->napt,
+                     IP2STR(&netif->ip_addr.u_addr.ip4));
         }
         vTaskDelay(1000 / portTICK_RATE_MS);
     }
 }
 
-void app_main(void)
-{
+void app_main(void) {
     ESP_ERROR_CHECK(nvs_flash_init());
     /*  tcpip initialization */
     ESP_ERROR_CHECK(esp_netif_init());
@@ -109,6 +142,8 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
     ESP_ERROR_CHECK(esp_wifi_start());
     /*  mesh initialization */
+    // Set chain topology
+    esp_mesh_set_topology(MESH_TOPO_CHAIN);
     ESP_ERROR_CHECK(esp_mesh_init());
     ESP_ERROR_CHECK(esp_event_handler_register(MESH_EVENT, ESP_EVENT_ANY_ID, &mesh_event_handler, NULL));
     ESP_ERROR_CHECK(esp_mesh_set_max_layer(CONFIG_MESH_MAX_LAYER));
@@ -132,7 +167,7 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_mesh_set_config(&cfg));
     /* mesh start */
     ESP_ERROR_CHECK(esp_mesh_start());
-    ESP_LOGI(MESH_TAG, "mesh starts successfully, heap:%d, %s\n",  esp_get_free_heap_size(),
+    ESP_LOGI(MESH_TAG, "mesh starts successfully, heap:%d, %s\n", esp_get_free_heap_size(),
              esp_mesh_is_root_fixed() ? "root fixed" : "root not fixed");
 
     // add some info
@@ -142,14 +177,17 @@ void app_main(void)
     // configure console
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
     // install console REPL environment
-    #if CONFIG_ESP_CONSOLE_UART
-        esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
-        ESP_ERROR_CHECK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
-    #endif
+#if CONFIG_ESP_CONSOLE_UART
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
+    ESP_ERROR_CHECK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
+#endif
     register_quit_command();
     register_ping_command();
     register_ap_command();
+    register_log_command();
 
+    //esp_log_level_set("mesh_hexdump", ESP_LOG_VERBOSE);
+    //esp_log_level_set("mesh_main", ESP_LOG_INFO);
 
     // start console REPL
     ESP_ERROR_CHECK(esp_console_start_repl(s_repl));

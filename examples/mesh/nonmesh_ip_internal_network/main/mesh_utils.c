@@ -190,3 +190,42 @@ void mesh_event_handler(void *arg, esp_event_base_t event_base,
             break;
     }
 }
+
+// From https://github.com/nkolban/esp32-snippets/blob/master/cpp_utils/GeneralUtils.cpp#L293
+void hex_dump(const uint8_t* pData, uint32_t length) {
+    char *LOG_TAG = "mesh_hexdump";
+    char ascii[80];
+    char hex[80];
+    char tempBuf[80];
+    uint32_t lineNumber = 0;
+
+    ESP_LOGV(LOG_TAG, "     00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f");
+    ESP_LOGV(LOG_TAG, "     -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --");
+    strcpy(ascii, "");
+    strcpy(hex, "");
+    uint32_t index = 0;
+    while (index < length) {
+        sprintf(tempBuf, "%.2x ", pData[index]);
+        strcat(hex, tempBuf);
+        if (isprint(pData[index])) {
+            sprintf(tempBuf, "%c", pData[index]);
+        } else {
+            sprintf(tempBuf, ".");
+        }
+        strcat(ascii, tempBuf);
+        index++;
+        if (index % 16 == 0) {
+            ESP_LOGV(LOG_TAG, "%.4x %s %s", lineNumber * 16, hex, ascii);
+            strcpy(ascii, "");
+            strcpy(hex, "");
+            lineNumber++;
+        }
+    }
+    if (index %16 != 0) {
+        while (index % 16 != 0) {
+            strcat(hex, "   ");
+            index++;
+        }
+        ESP_LOGV(LOG_TAG, "%.4x %s %s", lineNumber * 16, hex, ascii);
+    }
+} // hexDump

@@ -62,6 +62,9 @@ static bool receive_task_is_running = false;
 static mesh_addr_t s_route_table[CONFIG_MESH_ROUTE_TABLE_SIZE] = { 0 };
 static mesh_raw_recv_cb_t *s_mesh_raw_recv_cb = NULL;
 static bool leaf_mode = false;
+
+void hex_dump(const uint8_t* pData, uint32_t length);
+
 /*******************************************************
  *                Function Definitions
  *******************************************************/
@@ -169,6 +172,7 @@ static esp_err_t mesh_netif_transmit_from_root_ap(void *h, void *buffer, size_t 
     data.size = len;
     data.proto = MESH_PROTO_STA; // sending from root AP -> Node's STA
     data.tos = MESH_TOS_P2P;
+
     if (MAC_ADDR_EQUAL(dest_addr.addr, eth_broadcast)) {
         ESP_LOGI(TAG, "Broadcasting!");
         esp_mesh_get_routing_table((mesh_addr_t *) &s_route_table,
@@ -210,7 +214,8 @@ static esp_err_t mesh_netif_transmit_from_node_sta(void *h, void *buffer, size_t
     data.tos = MESH_TOS_P2P;
     esp_err_t err = esp_mesh_send(NULL, &data, MESH_DATA_TODS, NULL, 0);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Send with err code %d %s", err, esp_err_to_name(err));
+        ESP_LOGE(TAG, "Send with err code %d %s, dumping packet", err, esp_err_to_name(err));
+        hex_dump(buffer, len);
     }
     return err;
 }
@@ -415,9 +420,13 @@ esp_err_t mesh_netif_start_root_ap(bool is_root, uint32_t addr)
         set_dhcps_dns(netif_ap, addr);
         start_mesh_link_ap();
         ip_napt_enable(g_mesh_netif_subnet_ip.ip.addr, 1);
-        // Why the 14 bytes? Seems to be the ethernet header size
-        const char name1[] = {'a', 'p'};
-        adjust_mtu(MESH_MPS-14, name1);
+        // TODO: we limit the MTU size of the STA network (the one talking to internet)
+        // to the max size of a mesh payload this unfortunately still seem to
+        // generate ESP_ERR_MESH_ARGUMENT for certain packets, why?
+        const char name[] = {'s', 't'};
+        adjust_mtu(MESH_MPS, name);
+        //const char name1[] = {'a', 'p'};
+        //adjust_mtu(MESH_MPS, name1);
     }
     return ESP_OK;
 }
@@ -521,6 +530,7 @@ void enable_pnat_callback(void* arg){
         ESP_LOGI(TAG, "Enabling NAT on AP interface");
         ip_napt_enable(g_nonmesh_netif_subnet_ip.ip.addr, 1);
         const char name[] = {'a', 'p'};
+        // TODO: same as the other adjust_mtu todo, it still generate ESP_ERR_MESH_ARGUMENT in some cases
         adjust_mtu(MESH_MPS, name);
     }
 }

@@ -15,6 +15,99 @@ To do so you need to send `ap` command to the esp console of the desired node.
 This command reconfigure the soft-AP and creates a new WiFI network (with DHCP server support). 
 Traffic coming from that network (nonmesh-network) will be NATed and forwarded to the root node and ultimately reach the Internet.
 
+## Perf
+
+### WiFi iPerf client (directly connected to router SSID)
+```
+Accepted connection from 192.168.1.101, port 54900
+[  5] local 192.168.1.107 port 5201 connected to 192.168.1.101 port 54901
+[ ID] Interval           Transfer     Bitrate
+[  5]   0.00-1.00   sec  4.81 MBytes  40.3 Mbits/sec                  
+[  5]   1.00-2.00   sec  4.14 MBytes  34.7 Mbits/sec                  
+[  5]   2.00-3.00   sec  4.51 MBytes  37.9 Mbits/sec                  
+[  5]   3.00-4.00   sec  3.39 MBytes  28.5 Mbits/sec                  
+[  5]   4.00-5.00   sec  3.43 MBytes  28.8 Mbits/sec                  
+[  5]   5.00-6.00   sec  5.38 MBytes  45.2 Mbits/sec                  
+[  5]   6.00-7.00   sec  5.86 MBytes  49.2 Mbits/sec                  
+[  5]   7.00-8.00   sec  5.41 MBytes  45.4 Mbits/sec                  
+[  5]   8.00-9.00   sec  6.23 MBytes  52.3 Mbits/sec                  
+[  5]   9.00-10.00  sec  5.31 MBytes  44.5 Mbits/sec                  
+[  5]  10.00-10.33  sec  1.87 MBytes  47.6 Mbits/sec                  
+- - - - - - - - - - - - - - - - - - - - - - - - -
+[ ID] Interval           Transfer     Bitrate
+[  5]   0.00-10.33  sec  50.4 MBytes  40.9 Mbits/sec                  receiver
+```
+
+### WiFi iPerf client (via 2-layer mesh network)
+The node on the 2nd layer is used as entrypoint node, the WiFi client attaches to it.
+```
+Accepted connection from 192.168.1.101, port 55390
+[  5] local 192.168.1.107 port 5201 connected to 192.168.1.101 port 55391
+[ ID] Interval           Transfer     Bitrate
+[  5]   0.00-1.00   sec  92.8 KBytes   760 Kbits/sec                  
+[  5]   1.00-2.00   sec   245 KBytes  2.01 Mbits/sec                  
+[  5]   2.00-3.00   sec   266 KBytes  2.18 Mbits/sec                  
+[  5]   3.00-4.00   sec   261 KBytes  2.14 Mbits/sec                  
+[  5]   4.00-5.00   sec   220 KBytes  1.81 Mbits/sec                  
+[  5]   5.00-6.00   sec   303 KBytes  2.48 Mbits/sec                  
+[  5]   6.00-7.00   sec   239 KBytes  1.96 Mbits/sec                  
+[  5]   7.00-8.00   sec   256 KBytes  2.10 Mbits/sec                  
+[  5]   8.00-9.00   sec   247 KBytes  2.02 Mbits/sec                  
+[  5]   9.00-10.00  sec   187 KBytes  1.53 Mbits/sec                  
+- - - - - - - - - - - - - - - - - - - - - - - - -
+[ ID] Interval           Transfer     Bitrate
+[  5]   0.00-10.06  sec  2.26 MBytes  1.89 Mbits/sec                  receiver
+```
+
+### WiFi iPerf client (directly attached to the root node in a "single-node" network)
+```
+Accepted connection from 192.168.1.101, port 55916
+[  5] local 192.168.1.107 port 5201 connected to 192.168.1.101 port 55917
+[ ID] Interval           Transfer     Bitrate
+[  5]   0.00-1.00   sec  0.00 Bytes  0.00 bits/sec                  
+[  5]   1.00-2.00   sec   493 KBytes  4.04 Mbits/sec                  
+[  5]   2.00-3.00   sec  1.38 MBytes  11.6 Mbits/sec                  
+[  5]   3.00-4.00   sec  1.55 MBytes  13.0 Mbits/sec                  
+[  5]   4.00-5.00   sec  1.48 MBytes  12.4 Mbits/sec                  
+[  5]   5.00-6.00   sec  1.25 MBytes  10.5 Mbits/sec                  
+[  5]   6.00-7.00   sec  1.33 MBytes  11.2 Mbits/sec                  
+[  5]   7.00-8.00   sec  1.45 MBytes  12.1 Mbits/sec                  
+[  5]   8.00-9.00   sec  1.24 MBytes  10.4 Mbits/sec                  
+[  5]   9.00-10.00  sec  1.48 MBytes  12.4 Mbits/sec                  
+[  5]  10.00-10.02  sec  32.5 KBytes  17.5 Mbits/sec                  
+- - - - - - - - - - - - - - - - - - - - - - - - -
+[ ID] Interval           Transfer     Bitrate
+[  5]   0.00-10.02  sec  11.7 MBytes  9.77 Mbits/sec                  receiver
+```
+
+## ToDo's
+- [ ] Perf are awful (see [Perf](#Perf) section), wireshark shows many TCP retransmission, dup ACK and OOO packets
+- [ ] Even the MTU settings the node forwarding traffic generate the `ESP_ERR_MESH_ARGUMENT` error
+- [ ] entrypoint node crashes when parent disappears
+    ```
+    I (1531915) mesh: [wifi]disconnected reason:105(parent stopped), continuous:2/max:12, non-root, vote(,stopped)<><>
+    I (1531925) wifi:new:<1,1>, old:<1,1>, ap:<1,1>, sta:<1,1>, prof:11
+    I (1531925) wifi:state: init -> auth (b0)
+    Guru Meditation Error: Core  0 panic'ed (InstrFetchProhibited). Exception was unhandled.
+    
+    Core  0 register dump:
+    PC      : 0xffff0000  PS      : 0x00060d30  A0      : 0x800e69b0  A1      : 0x3ffc1a70  
+    A2      : 0x3ffbbeb8  A3      : 0x3ffd8610  A4      : 0x00000158  A5      : 0x3ffd8584  
+    A6      : 0x00000000  A7      : 0x3ffb61c4  A8      : 0x80175ee4  A9      : 0x3ffc1a30  
+    A10     : 0x4400ffff  A11     : 0x3ffd8610  A12     : 0x00000158  A13     : 0x3ffd8584  
+    A14     : 0x00000000  A15     : 0x3ffd8610  SAR     : 0x00000014  EXCCAUSE: 0x00000014  
+    EXCVADDR: 0xffff0000  LBEG    : 0x4000c2e0  LEND    : 0x4000c2f6  LCOUNT  : 0xffffffff  
+    
+    Backtrace:0x7ffefffd:0x3ffc1a700x400e69ad:0x3ffc1a90 0x4012e35d:0x3ffc1ab0 0x4012f68e:0x3ffc1ad0 0x4012e56f:0x3ffc1b30 0x40093899:0x3ffc1b50 0x400918e8:0x3ffc1b70 0x4008c62d:0x3ffc1ba0 
+    0x400e69ad: wifi_ap_receive at /home/wizche/esp-idf/components/esp_wifi/src/wifi_netif.c:45
+    0x4012e35d: hostap_deliver_data at ??:?
+    0x4012f68e: hostap_input at ??:?
+    0x4012e56f: ap_rx_cb at ??:?
+    0x40093899: ppRxPkt at ??:?
+    0x400918e8: ppTask at ??:?
+    0x4008c62d: vPortTaskWrapper at /home/wizche/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/port.c:133
+    ```
+
 ### Hardware Required
 
 This example can be executed on any platform board, the only required interface is WiFi and connection to internet.
