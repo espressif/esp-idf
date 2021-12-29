@@ -182,10 +182,15 @@ static esp_err_t set_config_service(void *config, const char *service_name, cons
     }
 
     wifi_prov_softap_config_t *softap_config = (wifi_prov_softap_config_t *) config;
-    strlcpy(softap_config->ssid, service_name, sizeof(softap_config->ssid));
     if (service_key) {
+        const int service_key_len = strlen(service_key);
+        if (service_key_len < 8 || service_key_len >= sizeof(softap_config->password)) {
+            ESP_LOGE(TAG, "Incorrect passphrase length for softAP: %d (Expected: Min - 8, Max - 64)", service_key_len);
+            return ESP_ERR_INVALID_ARG;
+        }
         strlcpy(softap_config->password, service_key,  sizeof(softap_config->password));
     }
+    strlcpy(softap_config->ssid, service_name, sizeof(softap_config->ssid));
     return ESP_OK;
 }
 
