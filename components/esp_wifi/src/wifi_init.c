@@ -274,10 +274,12 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 #ifdef CONFIG_PM_ENABLE
 void wifi_apb80m_request(void)
 {
+    uint32_t rtc_clk_apb_freq;
     assert(s_wifi_modem_sleep_lock);
     esp_pm_lock_acquire(s_wifi_modem_sleep_lock);
-    if (rtc_clk_apb_freq_get() != APB_CLK_FREQ) {
-        ESP_LOGE(__func__, "WiFi needs 80MHz APB frequency to work, but got %dHz", rtc_clk_apb_freq_get());
+    rtc_clk_apb_freq = rtc_clk_apb_freq_get();
+    if (rtc_clk_apb_freq != APB_CLK_FREQ) {
+        ESP_LOGE(__func__, "WiFi needs 80MHz APB frequency to work, but got %dHz", rtc_clk_apb_freq);
     }
 }
 
