@@ -60,7 +60,7 @@ const soc_memory_type_desc_t soc_memory_types[] = {
     //Type 15: SPI SRAM data
     { "SPIRAM", { MALLOC_CAP_SPIRAM|MALLOC_CAP_DEFAULT, 0, MALLOC_CAP_8BIT|MALLOC_CAP_32BIT}, false, false},
     //Type 16: RTC Fast RAM
-    { "RTCRAM", { MALLOC_CAP_8BIT|MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL|MALLOC_CAP_32BIT, MALLOC_CAP_RTCRAM }, false, false},
+    { "RTCRAM", { MALLOC_CAP_RTCRAM, MALLOC_CAP_8BIT|MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL|MALLOC_CAP_32BIT }, false, false},
 };
 
 const size_t soc_memory_type_count = sizeof(soc_memory_types)/sizeof(soc_memory_type_desc_t);
@@ -72,9 +72,6 @@ Because of requirements in the coalescing code which merges adjacent regions, th
 from low to high start address.
 */
 const soc_memory_region_t soc_memory_regions[] = {
-#ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-    { SOC_RTC_DRAM_LOW, 0x2000, 16, 0}, //RTC Fast Memory
-#endif
 #ifdef CONFIG_SPIRAM
     { SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_SIZE, 15, 0}, //SPI SRAM, if available
 #endif
@@ -121,6 +118,9 @@ const soc_memory_region_t soc_memory_regions[] = {
     { 0x4009A000, 0x2000, 2, 0}, //pool 2-5, mmu page 13
     { 0x4009C000, 0x2000, 2, 0}, //pool 2-5, mmu page 14
     { 0x4009E000, 0x2000, 2, 0}, //pool 2-5, mmu page 15
+#ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
+    { SOC_RTC_DRAM_LOW, 0x2000, 16, 0}, //RTC Fast Memory
+#endif
 };
 
 const size_t soc_memory_region_count = sizeof(soc_memory_regions)/sizeof(soc_memory_region_t);
