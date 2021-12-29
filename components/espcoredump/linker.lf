@@ -8,20 +8,21 @@ entries:
 
 [sections:dram_coredump]
 entries:
-    .dram1.coredump+
+    .dram2.coredump+
 
-if IDF_TARGET_ESP32S2 = n:
-    [sections:iram_coredump]
-    entries:
-        .iram.data.coredump+
+# Always include .iram2.coredump section in the final linker script file,
+# even though it may be empty. The coredump component will ignore empty
+# sections when generating the ELF dump.
+[sections:iram_coredump]
+entries:
+    .iram2.coredump+
 
 [scheme:coredump_default]
 entries:
     dram_coredump -> dram0_data
     rtc_coredump -> rtc_data
     rtc_fast_coredump -> rtc_force_fast
-    if IDF_TARGET_ESP32S2 = n:
-        iram_coredump -> iram0_data
+    iram_coredump -> iram0_data
 
 [mapping:coredump_default]
 archive: *
@@ -29,10 +30,8 @@ entries:
     * (coredump_default);
         rtc_fast_coredump -> rtc_force_fast SURROUND(coredump_rtc_fast),
         rtc_coredump -> rtc_data SURROUND(coredump_rtc),
-        dram_coredump -> dram0_data SURROUND(coredump_dram)
-    if IDF_TARGET_ESP32S2 = n:
-        * (coredump_default);
-            iram_coredump -> iram0_data SURROUND(coredump_iram)
+        dram_coredump -> dram0_data SURROUND(coredump_dram),
+        iram_coredump -> iram0_data SURROUND(coredump_iram)
 
 [mapping:espcoredump]
 archive: libespcoredump.a
