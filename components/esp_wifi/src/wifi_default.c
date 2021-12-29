@@ -378,16 +378,23 @@ esp_netif_t* esp_netif_create_wifi(wifi_interface_t wifi_if, esp_netif_inherent_
  */
 esp_err_t esp_netif_create_default_wifi_mesh_netifs(esp_netif_t **p_netif_sta, esp_netif_t **p_netif_ap)
 {
-    esp_netif_config_t cfg_ap = ESP_NETIF_DEFAULT_WIFI_AP();
+    // Create "almost" default AP, with un-flagged DHCP server
+    esp_netif_inherent_config_t netif_cfg;
+    memcpy(&netif_cfg, ESP_NETIF_BASE_DEFAULT_WIFI_AP, sizeof(netif_cfg));
+    netif_cfg.flags &= ~ESP_NETIF_DHCP_SERVER;
+    esp_netif_config_t cfg_ap = {
+            .base = &netif_cfg,
+            .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_AP,
+    };
     esp_netif_t *netif_ap = esp_netif_new(&cfg_ap);
     assert(netif_ap);
     ESP_ERROR_CHECK(esp_netif_attach_wifi_ap(netif_ap));
     ESP_ERROR_CHECK(esp_wifi_set_default_wifi_ap_handlers());
 
-// ...and stop DHCP server to be compatible with former tcpip_adapter (to keep the ESP_NETIF_DHCP_STOPPED state)
+    // ...and stop DHCP server to be compatible with former tcpip_adapter (to keep the ESP_NETIF_DHCP_STOPPED state)
     ESP_ERROR_CHECK(esp_netif_dhcps_stop(netif_ap));
-// Create "almost" default station, but with un-flagged DHCP client
-    esp_netif_inherent_config_t netif_cfg;
+
+    // Create "almost" default station, but with un-flagged DHCP client
     memcpy(&netif_cfg, ESP_NETIF_BASE_DEFAULT_WIFI_STA, sizeof(netif_cfg));
     netif_cfg.flags &= ~ESP_NETIF_DHCP_CLIENT;
     esp_netif_config_t cfg_sta = {
@@ -399,7 +406,7 @@ esp_err_t esp_netif_create_default_wifi_mesh_netifs(esp_netif_t **p_netif_sta, e
     ESP_ERROR_CHECK(esp_netif_attach_wifi_station(netif_sta));
     ESP_ERROR_CHECK(esp_wifi_set_default_wifi_sta_handlers());
 
-// ...and stop DHCP client (to be started separately if the station were promoted to root)
+    // ...and stop DHCP client (to be started separately if the station were promoted to root)
     ESP_ERROR_CHECK(esp_netif_dhcpc_stop(netif_sta));
 
     if (p_netif_sta) {
