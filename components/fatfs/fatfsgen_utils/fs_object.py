@@ -47,7 +47,7 @@ class File:
         # we assume that the correct amount of clusters is allocated
         current_cluster = self._first_cluster
         for content_part in split_content_into_sectors(content, self.fatfs_state.sector_size):
-            content_as_list = content_part.encode()
+            content_as_list = content_part
             if current_cluster is None:
                 raise FatalError('No free space left!')
 
