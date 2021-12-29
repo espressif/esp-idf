@@ -876,7 +876,7 @@ nvs_compatible_test:
 
 IT_001:
   extends: .integration_test_template
-  parallel: 3
+  parallel: 2
   tags:
     - ESP32_IDF
     - SSC_T1_4
@@ -889,34 +889,26 @@ IT_002:
 
 IT_003:
   extends: .integration_test_template
-  parallel: 14
+  parallel: 9
   tags:
     - ESP32_IDF
     - SSC_T2_5
 
-IT_004:
-  extends: .integration_test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T1_APC
-
 IT_005:
   extends: .integration_test_template
-  parallel: 2
   tags:
     - ESP32_IDF
     - SSC_T1_5
 
 IT_006:
   extends: .integration_test_template
-  parallel: 12
+  parallel: 5
   tags:
     - ESP32_IDF
     - SSC_T1_6
 
 IT_007:
   extends: .integration_test_template
-  parallel: 3
   tags:
     - ESP32_IDF
     - SSC_T1_7
@@ -926,12 +918,6 @@ IT_008:
   tags:
     - ESP32_IDF
     - SSC_T1_8
-
-IT_009:
-  extends: .integration_test_template
-  tags:
-    - ESP32_IDF
-    - SSC_T1_3
 
 IT_011:
   extends: .integration_test_template
@@ -985,7 +971,6 @@ IT_018:
 
 IT_019:
   extends: .integration_test_template
-  parallel: 2
   tags:
     - ESP32_IDF
     - SSC_T2_2
@@ -996,8 +981,8 @@ IT_020:
     - ESP32_IDF
     - SSC_T2_3
 
-IT_021:
+IT_022:
   extends: .integration_test_template
   tags:
     - ESP32_IDF
-    - SSC_T2_4
+    - SSC_T3_2
