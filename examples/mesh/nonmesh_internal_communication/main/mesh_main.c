@@ -1,4 +1,5 @@
-/* Mesh Internal Communication Example
+#include <sys/cdefs.h>
+/* Non-Mesh Communication Example
 
    This example code is in the Public Domain (or CC0 licensed, at your option.)
 
@@ -26,8 +27,6 @@
 /*******************************************************
  *                Constants
  *******************************************************/
-#define RX_SIZE          (1500)
-#define TX_SIZE          (1460)
 
 const esp_netif_ip_info_t g_mesh_netif_subnet_ip = {        // mesh subnet IP info
         .ip = {.addr = ESP_IP4TOADDR(172, 16, 0, 1)},
@@ -292,7 +291,7 @@ void ip_event_handler(void *arg, esp_event_base_t event_base,
     }
 }
 
-static void print_stats(void *args) {
+_Noreturn static void print_stats(void *args) {
     while (1) {
         uint8_t apmac[MAC_ADDR_LEN];
         uint8_t stamac[MAC_ADDR_LEN];
