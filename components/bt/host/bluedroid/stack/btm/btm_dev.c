@@ -314,25 +314,60 @@ BOOLEAN btm_find_sec_dev_in_list (void *p_node_data, void *context)
 tBTM_SEC_DEV_REC *btm_sec_alloc_dev (BD_ADDR bd_addr)
 {
     tBTM_SEC_DEV_REC *p_dev_rec = NULL;
+    tBTM_SEC_DEV_REC *p_dev_new_rec = NULL;
+    tBTM_SEC_DEV_REC *p_dev_old_rec = NULL;
     tBTM_INQ_INFO    *p_inq_info;
+    list_node_t      *p_node    = NULL;
+    BOOLEAN           new_entry_found  = FALSE;
+    BOOLEAN           old_entry_found  = FALSE;
+    BOOLEAN           malloc_new_entry = FALSE;
     BTM_TRACE_EVENT ("btm_sec_alloc_dev\n");
-
-    /* Old devices which are not in use are deleted already */
-    /* Allocate new device or reuse the oldest device */
-    if (list_length(btm_cb.p_sec_dev_rec_list) < BTM_SEC_MAX_DEVICE_RECORDS) {
-        //Max number of devices is not exceeded, allocate new device
-        p_dev_rec = (tBTM_SEC_DEV_REC *)osi_malloc(sizeof(tBTM_SEC_DEV_REC));
-        if (p_dev_rec) {
-            list_append(btm_cb.p_sec_dev_rec_list, p_dev_rec);
-        } else {
-            return NULL;
+    for (p_node = list_begin(btm_cb.p_sec_dev_rec_list); p_node; p_node = list_next(p_node)) {
+        p_dev_old_rec = list_node(p_node);
+        /* look for old entry which match the bd_addr and the BTM_SEC_IN_USE is cleared */
+        if (!(p_dev_old_rec->sec_flags & BTM_SEC_IN_USE) &&
+            (!memcmp (p_dev_old_rec->bd_addr, bd_addr, BD_ADDR_LEN))) {
+            old_entry_found = TRUE;
+            BTM_TRACE_EVENT ("btm_sec_alloc_dev old device found\n");
+            break;
         }
     }
-    else {
-        //Find and reuse the oldest device
-        p_dev_rec = btm_find_oldest_dev();
+    for (p_node = list_begin(btm_cb.p_sec_dev_rec_list); p_node; p_node = list_next(p_node)) {
+        p_dev_new_rec = list_node(p_node);
+        /* find the first entry whose BTM_SEC_IN_USE is cleared */
+        if (!(p_dev_new_rec->sec_flags & BTM_SEC_IN_USE)) {
+            new_entry_found = TRUE;
+            break;
+        }
     }
-
+    if (!new_entry_found) {
+        /* We can not find new device. We need malloc a new one if p_sec_dev_rec_list is not full */
+        if (list_length(btm_cb.p_sec_dev_rec_list) < BTM_SEC_MAX_DEVICE_RECORDS){
+            p_dev_new_rec = (tBTM_SEC_DEV_REC *)osi_malloc(sizeof(tBTM_SEC_DEV_REC));
+            if (p_dev_new_rec) {
+                new_entry_found = TRUE;
+                malloc_new_entry = TRUE;
+            } else {
+                return NULL;
+            }
+        }
+    }
+    if (!new_entry_found) {
+        p_dev_rec = btm_find_oldest_dev();
+    } else {
+        /* if the old device entry not present go with new entry */
+        if (old_entry_found) {
+            p_dev_rec = p_dev_old_rec;
+            if (malloc_new_entry) {
+                osi_free(p_dev_new_rec);
+            }
+        } else {
+            if (malloc_new_entry) {
+                list_append(btm_cb.p_sec_dev_rec_list, p_dev_new_rec);
+            }
+            p_dev_rec = p_dev_new_rec;
+        }
+    }
     memset (p_dev_rec, 0, sizeof (tBTM_SEC_DEV_REC));
 
     p_dev_rec->bond_type = BOND_TYPE_UNKNOWN;           /* Default value */
