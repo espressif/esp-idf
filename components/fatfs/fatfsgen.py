@@ -167,7 +167,7 @@ class FATFS:
         normal_path = os.path.normpath(folder_relative_path)
         split_path = normal_path.split(os.sep)
         if os.path.isfile(real_path):
-            with open(real_path) as file:
+            with open(real_path, "rb") as file:
                 content = file.read()
             file_name, extension = os.path.splitext(split_path[-1])
             extension = extension[1:]  # remove the dot from the extension
