@@ -266,9 +266,7 @@ void ip_event_handler(void *arg, esp_event_base_t event_base,
     ESP_ERROR_CHECK(esp_netif_get_dns_info(netif_sta, ESP_NETIF_DNS_MAIN, &dns));
     u32_t dns_addr = dns.ip.u_addr.ip4.addr;
     if(dns_addr != ESP_IP4TOADDR(0,0,0,0)){
-        // TODO: this seems to be caused by the unset ESP_NETIF_DHCP_SERVER on the ap in esp_netif_create_default_wifi_mesh_netifs
         dns.ip.u_addr.ip4.addr = dns_addr;
-        ESP_LOGI(MESH_TAG, "Forwarding DNS %s to AP clients", inet_ntoa(dns.ip.u_addr.ip4.addr));
     } else {
         ESP_LOGW(MESH_TAG, "Invalid DNS address, forward default DNS to AP clients");
         dns.ip.u_addr.ip4.addr = ESP_IP4TOADDR(1, 1, 1, 1);
@@ -277,6 +275,7 @@ void ip_event_handler(void *arg, esp_event_base_t event_base,
     dhcps_offer_t dhcps_dns_value = OFFER_DNS;
     ESP_ERROR_CHECK(esp_netif_dhcps_option(netif_ap, ESP_NETIF_OP_SET, ESP_NETIF_DOMAIN_NAME_SERVER, &dhcps_dns_value, sizeof(dhcps_dns_value)));
     ESP_ERROR_CHECK(esp_netif_set_dns_info(netif_ap, ESP_NETIF_DNS_MAIN, &dns));
+    ESP_LOGI(MESH_TAG, "Forwarding DNS %s to AP clients", inet_ntoa(dns.ip.u_addr.ip4.addr));
 
     if (esp_mesh_is_root()) {
         ESP_LOGI(MESH_TAG, "[ROOT] Enabling PNAT on " IPSTR, IP2STR(&g_mesh_netif_subnet_ip.ip));

@@ -7,8 +7,9 @@ Basically it provides internet access via every node hidden SSID (`ESPM_XXYYZZ` 
 ![nonmesh architecture](docs/esp_mesh_architecture_v2.png)
 
 ## Limitations
-* No internet connectivity from the hidden SSID of the ROOT node (only from forward/leaf nodes)
-* DNS server is not correctly forwarded which seems to be caused by the unset `ESP_NETIF_DHCP_SERVER` on the ap in `esp_netif_create_default_wifi_mesh_netifs`
+* DNS server is not (always) correctly set 
+* Sometimes it seems that it takes some seconds in order for the connectivity work
+* Non-mesh clients gets disconnected probably because of `esp_mesh_set_ap_assoc_expire` timer
 
 ## Perf
 
@@ -31,6 +32,27 @@ Accepted connection from 192.168.1.101, port 58107
 - - - - - - - - - - - - - - - - - - - - - - - - -
 [ ID] Interval           Transfer     Bitrate
 [  5]   0.00-10.04  sec   106 MBytes  88.5 Mbits/sec                  receiver
+```
+
+### WiFi iPerf client (directly connected to the ROOT node hidden SSID of the mesh network)
+```
+Accepted connection from 192.168.1.101, port 58117
+[  5] local 192.168.1.107 port 5201 connected to 192.168.1.101 port 58118
+[ ID] Interval           Transfer     Bitrate
+[  5]   0.00-1.00   sec  2.18 MBytes  18.3 Mbits/sec                  
+[  5]   1.00-2.00   sec  2.18 MBytes  18.3 Mbits/sec                  
+[  5]   2.00-3.00   sec  2.18 MBytes  18.3 Mbits/sec                  
+[  5]   3.00-4.00   sec  2.13 MBytes  17.9 Mbits/sec                  
+[  5]   4.00-5.00   sec  2.24 MBytes  18.8 Mbits/sec                  
+[  5]   5.00-6.00   sec  2.09 MBytes  17.5 Mbits/sec                  
+[  5]   6.00-7.00   sec  2.28 MBytes  19.1 Mbits/sec                  
+[  5]   7.00-8.00   sec  2.18 MBytes  18.3 Mbits/sec                  
+[  5]   8.00-9.00   sec  2.08 MBytes  17.5 Mbits/sec                  
+[  5]   9.00-10.00  sec  2.16 MBytes  18.1 Mbits/sec                  
+[  5]  10.00-10.01  sec  38.2 KBytes  25.7 Mbits/sec                  
+- - - - - - - - - - - - - - - - - - - - - - - - -
+[ ID] Interval           Transfer     Bitrate
+[  5]   0.00-10.01  sec  21.7 MBytes  18.2 Mbits/sec                  receiver
 ```
 
 ### WiFi iPerf client (via 2-layer mesh network)
