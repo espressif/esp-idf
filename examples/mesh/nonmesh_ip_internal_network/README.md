@@ -2,9 +2,15 @@
 
 This example demonstrates how to use mesh to forward non-mesh IP traffic to internet edge and back. 
 It's basically a fork of the `ip_internal_network` but where a node can be converted to an entrypoint node 
-for non-mesh devices to reach internet via the mesh network. It can be seen as a WiFi extender/repeater. 
+for non-mesh devices to reach internet via the mesh network. It can be seen as a WiFi extender/repeater.
+To do so I have to (mis)configure the mesh network on the node(s) that will be used as entry-point for the non-mesh clients.
+Specifically I introduce the `ap` console command that will reconfigure the node in the following way:
+* Reconfigure SoftAP to expose a new SSID that will be used by non-mesh clients
+* Enable DHCP server on SoftAP
+* Enable PNAT on the SoftAP interface (traffic from the non-mesh clients is NATed and forwarded to ST and therefore to the root node)
 
 ![nonmesh architecture](docs/esp_mesh_architecture.png)
+
 
 ## Functionality
 
@@ -14,6 +20,11 @@ At the same time, a node can be converted in an entrypoint node for non-mesh dev
 To do so you need to send `ap` command to the esp console of the desired node.
 This command reconfigure the soft-AP and creates a new WiFI network (with DHCP server support). 
 Traffic coming from that network (nonmesh-network) will be NATed and forwarded to the root node and ultimately reach the Internet.
+
+## Limitations
+* This explicitly mess up the mesh configuration on a specific node, aka such node cannot be used as "forwarder" node anymore
+* There is no intra-node/intra-nonmesh clients IP communication
+* It only allows a non-mesh client to access internet via the mesh network (and root node)
 
 ## Perf
 
