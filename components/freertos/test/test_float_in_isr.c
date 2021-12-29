@@ -7,7 +7,6 @@
 #include "freertos/queue.h"
 #include "esp_intr_alloc.h"
 #include "unity.h"
-#include "soc/cpu.h"
 #include "test_utils.h"
 #include "math.h"
 

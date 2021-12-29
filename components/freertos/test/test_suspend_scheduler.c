@@ -6,7 +6,6 @@
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
 #include "unity.h"
-#include "soc/cpu.h"
 #include "test_utils.h"
 
 #include "driver/timer.h"

@@ -30,7 +30,7 @@
 #include "esp_image_format.h"
 #include "flash_qio_mode.h"
 #include "soc/assist_debug_reg.h"
-#include "soc/cpu.h"
+#include "esp_cpu.h"
 #include "soc/dport_reg.h"
 #include "soc/extmem_reg.h"
 #include "soc/rtc.h"

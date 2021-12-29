@@ -489,10 +489,8 @@ components/esp_gdbstub/esp_common/gdbstub_common.c
 components/esp_gdbstub/include/esp_gdbstub.h
 components/esp_gdbstub/private_include/esp_gdbstub_common.h
 components/esp_gdbstub/riscv/esp_gdbstub_arch.h
-components/esp_gdbstub/riscv/gdbstub_riscv.c
 components/esp_gdbstub/src/packet.c
 components/esp_gdbstub/xtensa/esp_gdbstub_arch.h
-components/esp_gdbstub/xtensa/gdbstub_xtensa.c
 components/esp_hid/include/esp_hid_common.h
 components/esp_hid/include/esp_hidd.h
 components/esp_hid/include/esp_hidd_gatts.h
@@ -776,7 +774,6 @@ components/esp_system/include/esp_private/usb_console.h
 components/esp_system/include/esp_task.h
 components/esp_system/include/esp_task_wdt.h
 components/esp_system/port/arch/riscv/expression_with_stack.c
-components/esp_system/port/arch/xtensa/debug_helpers.c
 components/esp_system/port/arch/xtensa/expression_with_stack.c
 components/esp_system/port/public_compat/brownout.h
 components/esp_system/port/public_compat/cache_err_int.h
@@ -796,11 +793,9 @@ components/esp_system/port/soc/esp32h2/reset_reason.c
 components/esp_system/port/soc/esp32s2/cache_err_int.c
 components/esp_system/port/soc/esp32s2/cache_err_int.h
 components/esp_system/port/soc/esp32s2/reset_reason.c
-components/esp_system/port/soc/esp32s2/system_internal.c
 components/esp_system/port/soc/esp32s2/usb_console.c
 components/esp_system/port/soc/esp32s3/cache_err_int.h
 components/esp_system/port/soc/esp32s3/reset_reason.c
-components/esp_system/port/soc/esp32s3/system_internal.c
 components/esp_system/port/soc/esp32s3/usb_console.c
 components/esp_system/stack_check.c
 components/esp_system/test/test_delay.c
@@ -851,14 +846,11 @@ components/espcoredump/include_core_dump/core_dump_binary.h
 components/espcoredump/include_core_dump/core_dump_checksum.h
 components/espcoredump/include_core_dump/core_dump_elf.h
 components/espcoredump/include_core_dump/elf.h
-components/espcoredump/include_core_dump/esp_core_dump_common.h
-components/espcoredump/include_core_dump/esp_core_dump_port.h
 components/espcoredump/include_core_dump/esp_core_dump_types.h
 components/espcoredump/include_core_dump/port/riscv/esp_core_dump_port_impl.h
 components/espcoredump/include_core_dump/port/xtensa/esp_core_dump_port_impl.h
 components/espcoredump/src/core_dump_binary.c
 components/espcoredump/src/core_dump_checksum.c
-components/espcoredump/src/core_dump_common.c
 components/espcoredump/src/core_dump_elf.c
 components/espcoredump/src/core_dump_flash.c
 components/espcoredump/src/core_dump_uart.c

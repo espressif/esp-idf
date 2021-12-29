@@ -5,7 +5,7 @@
  */
 
 #include "esp_attr.h"
-#include "soc/cpu.h"
+#include "esp_cpu.h"
 #include "soc/soc.h"
 #include "soc/rtc_periph.h"
 #include "sdkconfig.h"
@@ -46,13 +46,13 @@ esp_err_t IRAM_ATTR esp_cpu_set_watchpoint(int no, void *adr, int size, int flag
 
     switch (flags)
     {
-    case ESP_WATCHPOINT_LOAD:
+    case ESP_CPU_WATCHPOINT_LOAD:
         trigger = WATCHPOINT_TRIGGER_ON_RO;
         break;
-    case ESP_WATCHPOINT_STORE:
+    case ESP_CPU_WATCHPOINT_STORE:
         trigger = WATCHPOINT_TRIGGER_ON_WO;
         break;
-    case ESP_WATCHPOINT_ACCESS:
+    case ESP_CPU_WATCHPOINT_ACCESS:
         trigger = WATCHPOINT_TRIGGER_ON_RW;
         break;
     default:

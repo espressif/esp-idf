@@ -11,7 +11,7 @@
 #include "esp_private/system_internal.h"
 
 #include "soc/soc_memory_layout.h"
-#include "soc/cpu.h"
+#include "esp_cpu.h"
 #include "soc/soc_caps.h"
 #include "soc/rtc.h"
 

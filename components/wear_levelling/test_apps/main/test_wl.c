@@ -11,7 +11,6 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "esp_private/esp_clk.h"
-#include "soc/cpu.h"
 #include "sdkconfig.h"
 
 
