@@ -7,7 +7,6 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "soc/soc_caps.h"
-#if SOC_PCNT_SUPPORTED
 #include "esp_private/periph_ctrl.h"
 #include "driver/pcnt.h"
 #include "hal/pcnt_hal.h"
@@ -542,5 +541,3 @@ void pcnt_isr_service_uninstall()
 {
     _pcnt_isr_service_uninstall(PCNT_PORT_0);
 }
-
-#endif // #if SOC_PCNT_SUPPORTED
