@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C3 |
-| ----------------- | -------- |
+| Supported Targets | ESP32-C3 | ESP32-S3 |
+| ----------------- | -------- | -------- |
 
 ESP-IDF UART HCI Controller
 =================================
@@ -60,20 +60,19 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 The example sets up the HCI UART transport and enable Bluetooth Controller, after started. UART1 PIN and baudrate settings is printed at serial output:
 
 ```
-I (296) gpio: GPIO[4]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
-I (296) gpio: GPIO[6]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
-I (306) gpio: GPIO[4]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
-I (316) gpio: GPIO[6]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
-I (326) BTDM_INIT: BT controller compile version [6ab3130]
-I (336) coexist: coexist rom version 8459080
-I (336) phy_init: phy_version 500,985899c,Apr 19 2021,16:05:08
-I (466) system_api: Base MAC address is not set
-I (466) system_api: read default base MAC address from EFUSE
-I (476) BTDM_INIT: Bluetooth MAC: 7c:df:a1:40:3f:16
+I (306) gpio: GPIO[4]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
+I (306) gpio: GPIO[6]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
+I (316) gpio: GPIO[5]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
+I (326) gpio: GPIO[7]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
+I (336) BTDM_INIT: BT controller compile version [33175c8]
+I (346) phy_init: phy_version 907,3369105-dirty,Dec  3 2021,14:55:12
+I (406) system_api: Base MAC address is not set
+I (406) system_api: read default base MAC address from EFUSE
+I (406) BTDM_INIT: Bluetooth MAC: 7c:df:a1:61:e5:36
 
-I (476) UHCI: HCI messages can be communicated over UART1:
+I (406) UHCI: HCI messages can be communicated over UART1:
 --PINs: TxD 4, RxD 5, RTS 6, CTS 7
---Baudrate: 921600
+--Baudrate: 115200
 ```
 
 After these output occurs, HCI messages can be commnunicated over UART1.
