@@ -1135,7 +1135,6 @@ components/hal/include/hal/esp_flash_err.h
 components/hal/include/hal/gpio_hal.h
 components/hal/include/hal/i2c_hal.h
 components/hal/include/hal/i2c_types.h
-components/hal/include/hal/i2s_types.h
 components/hal/include/hal/interrupt_controller_hal.h
 components/hal/include/hal/interrupt_controller_types.h
 components/hal/include/hal/ledc_hal.h
@@ -1632,7 +1631,6 @@ components/soc/esp32/include/soc/pid.h
 components/soc/esp32/include/soc/reset_reasons.h
 components/soc/esp32/include/soc/rmt_reg.h
 components/soc/esp32/include/soc/rmt_struct.h
-components/soc/esp32/include/soc/rtc.h
 components/soc/esp32/include/soc/rtc_cntl_reg.h
 components/soc/esp32/include/soc/rtc_cntl_struct.h
 components/soc/esp32/include/soc/rtc_i2c_reg.h
@@ -1855,7 +1853,6 @@ components/soc/esp32s2/include/soc/pcnt_struct.h
 components/soc/esp32s2/include/soc/reset_reasons.h
 components/soc/esp32s2/include/soc/rmt_reg.h
 components/soc/esp32s2/include/soc/rmt_struct.h
-components/soc/esp32s2/include/soc/rtc.h
 components/soc/esp32s2/include/soc/rtc_cntl_reg.h
 components/soc/esp32s2/include/soc/rtc_cntl_struct.h
 components/soc/esp32s2/include/soc/rtc_i2c_reg.h

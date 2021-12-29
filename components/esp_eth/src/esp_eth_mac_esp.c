@@ -24,7 +24,7 @@
 #include "hal/emac_hal.h"
 #include "hal/gpio_hal.h"
 #include "soc/soc.h"
-#include "soc/rtc.h"
+#include "soc/clk_ctrl_os.h"
 #include "sdkconfig.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
@@ -56,6 +56,7 @@ typedef struct {
     bool isr_need_yield;
     bool flow_ctrl_enabled; // indicates whether the user want to do flow control
     bool do_flow_ctrl;  // indicates whether we need to do software flow control
+    bool use_apll;  // Only use APLL in EMAC_DATA_INTERFACE_RMII && EMAC_CLK_OUT
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;
 #endif
@@ -299,30 +300,20 @@ static void emac_esp32_init_smi_gpio(emac_esp32_t *emac)
     }
 }
 
-static void emac_config_apll_clock(void)
+static esp_err_t emac_config_apll_clock(void)
 {
-    /* apll_freq = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536)/((o_div + 2) * 2) */
-    rtc_xtal_freq_t rtc_xtal_freq = rtc_clk_xtal_freq_get();
-    switch (rtc_xtal_freq) {
-    case RTC_XTAL_FREQ_40M: // Recommended
-        /* 50 MHz = 40MHz * (4 + 6) / (2 * (2 + 2) = 50.000 */
-        /* sdm0 = 0, sdm1 = 0, sdm2 = 6, o_div = 2 */
-        rtc_clk_apll_enable(true, 0, 0, 6, 2);
-        break;
-    case RTC_XTAL_FREQ_26M:
-        /* 50 MHz = 26MHz * (4 + 15 + 118 / 256 + 39/65536) / ((3 + 2) * 2) = 49.999992 */
-        /* sdm0 = 39, sdm1 = 118, sdm2 = 15, o_div = 3 */
-        rtc_clk_apll_enable(true, 39, 118, 15, 3);
-        break;
-    case RTC_XTAL_FREQ_24M:
-        /* 50 MHz = 24MHz * (4 + 12 + 255 / 256 + 255/65536) / ((2 + 2) * 2) = 49.499977 */
-        /* sdm0 = 255, sdm1 = 255, sdm2 = 12, o_div = 2 */
-        rtc_clk_apll_enable(true, 255, 255, 12, 2);
-        break;
-    default: // Assume we have a 40M xtal
-        rtc_clk_apll_enable(true, 0, 0, 6, 2);
-        break;
+    uint32_t expt_freq = 50000000; // 50MHz
+    uint32_t real_freq = 0;
+    esp_err_t ret = periph_rtc_apll_freq_set(expt_freq, &real_freq);
+    ESP_RETURN_ON_FALSE(ret != ESP_ERR_INVALID_ARG, ESP_FAIL, TAG, "Set APLL clock coefficients failed");
+    if (ret == ESP_ERR_INVALID_STATE) {
+        ESP_LOGW(TAG, "APLL is occupied already, it is working at %d Hz", real_freq);
     }
+    // If the difference of real APLL frequency is not within 50 ppm, i.e. 2500 Hz, the APLL is unavailable
+    ESP_RETURN_ON_FALSE(abs(real_freq - expt_freq) <= 2500,
+                         ESP_ERR_INVALID_STATE, TAG, "The APLL is working at an unusable frequency");
+
+    return ESP_OK;
 }
 
 static esp_err_t emac_esp32_init(esp_eth_mac_t *mac)
@@ -428,6 +419,9 @@ static void esp_emac_free_driver_obj(emac_esp32_t *emac, void *descriptors)
         }
         if (emac->intr_hdl) {
             esp_intr_free(emac->intr_hdl);
+        }
+        if (emac->use_apll) {
+            periph_rtc_apll_release();
         }
         for (int i = 0; i < CONFIG_ETH_DMA_TX_BUFFER_NUM; i++) {
             free(emac->tx_buf[i]);
@@ -546,7 +540,10 @@ static esp_err_t esp_emac_config_data_interface(const eth_mac_config_t *config, 
             }
             /* Enable RMII clock */
             emac_ll_clock_enable_rmii_output(emac->hal.ext_regs);
-            emac_config_apll_clock();
+            // Power up APLL clock
+            periph_rtc_apll_acquire();
+            ESP_GOTO_ON_ERROR(emac_config_apll_clock(), err, TAG, "Configure APLL for RMII failed");
+            emac->use_apll = true;
         } else {
             ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "invalid EMAC clock mode");
         }
@@ -589,6 +586,7 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config)
     emac->smi_mdio_gpio_num = config->smi_mdio_gpio_num;
     emac->flow_control_high_water_mark = FLOW_CONTROL_HIGH_WATER_MARK;
     emac->flow_control_low_water_mark = FLOW_CONTROL_LOW_WATER_MARK;
+    emac->use_apll = false;
     emac->parent.set_mediator = emac_esp32_set_mediator;
     emac->parent.init = emac_esp32_init;
     emac->parent.deinit = emac_esp32_deinit;

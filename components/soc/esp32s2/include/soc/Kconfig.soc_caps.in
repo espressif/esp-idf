@@ -279,6 +279,26 @@ config SOC_I2C_SUPPORT_APB
     bool
     default y
 
+config SOC_CLK_APLL_SUPPORTED
+    bool
+    default y
+
+config SOC_APLL_MULTIPLIER_OUT_MIN_HZ
+    int
+    default 350000000
+
+config SOC_APLL_MULTIPLIER_OUT_MAX_HZ
+    int
+    default 500000000
+
+config SOC_APLL_MIN_HZ
+    int
+    default 5303031
+
+config SOC_APLL_MAX_HZ
+    int
+    default 125000000
+
 config SOC_I2S_NUM
     int
     default 1
@@ -290,18 +310,6 @@ config SOC_I2S_SUPPORTS_APLL
 config SOC_I2S_SUPPORTS_DMA_EQUAL
     bool
     default y
-
-config SOC_I2S_APLL_MIN_FREQ
-    int
-    default 250000000
-
-config SOC_I2S_APLL_MAX_FREQ
-    int
-    default 500000000
-
-config SOC_I2S_APLL_MIN_RATE
-    int
-    default 10675
 
 config SOC_I2S_LCD_I80_VARIANT
     bool
