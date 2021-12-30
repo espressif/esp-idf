@@ -1,4 +1,4 @@
-构建系统（CMake 版）
+构建系统
 ********************
 
 :link_to_translation:`en:[English]`
