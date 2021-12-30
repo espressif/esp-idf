@@ -268,20 +268,20 @@ void ip_event_handler(void *arg, esp_event_base_t event_base,
     if(dns_addr != ESP_IP4TOADDR(0,0,0,0)){
         dns.ip.u_addr.ip4.addr = dns_addr;
     } else {
-        ESP_LOGW(MESH_TAG, "Invalid DNS address, forward default DNS to AP clients");
+        ESP_LOGW(MESH_TAG, "[%s] Invalid DNS address, forward default DNS to AP clients", esp_mesh_is_root() ? "ROOT" : "NODE");
         dns.ip.u_addr.ip4.addr = ESP_IP4TOADDR(1, 1, 1, 1);
     }
     dns.ip.type = IPADDR_TYPE_V4;
     dhcps_offer_t dhcps_dns_value = OFFER_DNS;
     ESP_ERROR_CHECK(esp_netif_dhcps_option(netif_ap, ESP_NETIF_OP_SET, ESP_NETIF_DOMAIN_NAME_SERVER, &dhcps_dns_value, sizeof(dhcps_dns_value)));
     ESP_ERROR_CHECK(esp_netif_set_dns_info(netif_ap, ESP_NETIF_DNS_MAIN, &dns));
-    ESP_LOGI(MESH_TAG, "Forwarding DNS %s to AP clients", inet_ntoa(dns.ip.u_addr.ip4.addr));
+    ESP_LOGI(MESH_TAG, "[%s] Forwarding DNS %s to AP clients", esp_mesh_is_root() ? "ROOT" : "NODE", inet_ntoa(dns.ip.u_addr.ip4.addr));
 
     if (esp_mesh_is_root()) {
         ESP_LOGI(MESH_TAG, "[ROOT] Enabling PNAT on " IPSTR, IP2STR(&g_mesh_netif_subnet_ip.ip));
         ip_napt_enable(g_mesh_netif_subnet_ip.ip.addr, 1);
         esp_netif_dhcps_start(netif_ap);
-        ESP_LOGI(MESH_TAG, "[NODE] DHCP Server for network " IPSTR " on AP started!", IP2STR(&g_mesh_netif_subnet_ip.ip));
+        ESP_LOGI(MESH_TAG, "[ROOT] DHCP Server for network " IPSTR " on AP started!", IP2STR(&g_mesh_netif_subnet_ip.ip));
     } else {
         ESP_LOGI(MESH_TAG, "[NODE] Enabling PNAT on " IPSTR, IP2STR(&g_nonmesh_netif_subnet_ip.ip));
         ip_napt_enable(g_nonmesh_netif_subnet_ip.ip.addr, 1);
@@ -334,6 +334,7 @@ void app_main(void) {
     ESP_ERROR_CHECK(esp_event_handler_register(MESH_EVENT, ESP_EVENT_ANY_ID, &mesh_event_handler, NULL));
     /*  set mesh topology */
     ESP_ERROR_CHECK(esp_mesh_set_topology(CONFIG_MESH_TOPOLOGY));
+    ESP_LOGI(MESH_TAG, "Setting mesh topology to %s", CONFIG_MESH_TOPOLOGY == MESH_TOPO_TREE ? "tree" : "chain");
     /*  set mesh max layer according to the topology */
     ESP_ERROR_CHECK(esp_mesh_set_max_layer(CONFIG_MESH_MAX_LAYER));
     ESP_ERROR_CHECK(esp_mesh_set_vote_percentage(1));
