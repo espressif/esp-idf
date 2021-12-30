@@ -1693,7 +1693,6 @@ components/soc/esp32c3/include/soc/i2s_reg.h
 components/soc/esp32c3/include/soc/i2s_struct.h
 components/soc/esp32c3/include/soc/interrupt_core0_reg.h
 components/soc/esp32c3/include/soc/interrupt_reg.h
-components/soc/esp32c3/include/soc/io_mux_reg.h
 components/soc/esp32c3/include/soc/ledc_reg.h
 components/soc/esp32c3/include/soc/mmu.h
 components/soc/esp32c3/include/soc/nrx_reg.h
@@ -1759,7 +1758,6 @@ components/soc/esp32h2/include/soc/gpio_sd_struct.h
 components/soc/esp32h2/include/soc/gpio_struct.h
 components/soc/esp32h2/include/soc/hwcrypto_reg.h
 components/soc/esp32h2/include/soc/interrupt_reg.h
-components/soc/esp32h2/include/soc/io_mux_reg.h
 components/soc/esp32h2/include/soc/ledc_reg.h
 components/soc/esp32h2/include/soc/mmu.h
 components/soc/esp32h2/include/soc/nrx_reg.h
@@ -1793,7 +1791,6 @@ components/soc/esp32h2/uart_periph.c
 components/soc/esp32s2/adc_periph.c
 components/soc/esp32s2/dac_periph.c
 components/soc/esp32s2/dedic_gpio_periph.c
-components/soc/esp32s2/gpio_periph.c
 components/soc/esp32s2/i2c_periph.c
 components/soc/esp32s2/i2s_periph.c
 components/soc/esp32s2/include/soc/adc_channel.h
@@ -1829,7 +1826,6 @@ components/soc/esp32s2/include/soc/i2c_struct.h
 components/soc/esp32s2/include/soc/i2s_reg.h
 components/soc/esp32s2/include/soc/i2s_struct.h
 components/soc/esp32s2/include/soc/interrupt_reg.h
-components/soc/esp32s2/include/soc/io_mux_reg.h
 components/soc/esp32s2/include/soc/ledc_reg.h
 components/soc/esp32s2/include/soc/ledc_struct.h
 components/soc/esp32s2/include/soc/memprot_defs.h
@@ -1886,7 +1882,6 @@ components/soc/esp32s2/interrupts.c
 components/soc/esp32s2/ledc_periph.c
 components/soc/esp32s2/pcnt_periph.c
 components/soc/esp32s2/rmt_periph.c
-components/soc/esp32s2/rtc_io_periph.c
 components/soc/esp32s2/sigmadelta_periph.c
 components/soc/esp32s2/spi_periph.c
 components/soc/esp32s2/touch_sensor_periph.c
@@ -1934,7 +1929,6 @@ components/soc/esp32s3/include/soc/interrupt_core1_reg.h
 components/soc/esp32s3/include/soc/interrupt_core1_struct.h
 components/soc/esp32s3/include/soc/interrupt_reg.h
 components/soc/esp32s3/include/soc/interrupt_struct.h
-components/soc/esp32s3/include/soc/io_mux_reg.h
 components/soc/esp32s3/include/soc/ledc_reg.h
 components/soc/esp32s3/include/soc/ledc_struct.h
 components/soc/esp32s3/include/soc/mmu.h

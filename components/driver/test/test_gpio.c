@@ -58,7 +58,7 @@
 #define TEST_GPIO_EXT_OUT_IO            2  // default output GPIO
 #define TEST_GPIO_EXT_IN_IO             3  // default input GPIO
 #define TEST_GPIO_OUTPUT_PIN            1
-#define TEST_GPIO_OUTPUT_MAX            GPIO_NUM_21
+#define TEST_GPIO_OUTPUT_MAX            GPIO_NUM_MAX
 #define TEST_GPIO_USB_DM_IO             18  // USB D- GPIO
 #define TEST_GPIO_USB_DP_IO             19  // USB D+ GPIO
 #define TEST_GPIO_INPUT_LEVEL_HIGH_PIN  10
@@ -67,7 +67,7 @@
 #define TEST_GPIO_EXT_OUT_IO            2  // default output GPIO
 #define TEST_GPIO_EXT_IN_IO             3  // default input GPIO
 #define TEST_GPIO_OUTPUT_PIN            1
-#define TEST_GPIO_OUTPUT_MAX            GPIO_NUM_21
+#define TEST_GPIO_OUTPUT_MAX            GPIO_NUM_MAX
 #define TEST_GPIO_INPUT_LEVEL_HIGH_PIN  10
 #define TEST_GPIO_INPUT_LEVEL_LOW_PIN   1
 #endif
@@ -75,7 +75,7 @@
 // If there is any input-only pin, enable input-only pin part of some tests.
 #define SOC_HAS_INPUT_ONLY_PIN (CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2)
 
-// define public test io on all boards(esp32, esp32s2, esp32s3, esp32c3)
+// define public test io on all boards
 #define TEST_IO_9 GPIO_NUM_9
 #define TEST_IO_10 GPIO_NUM_10
 
@@ -95,12 +95,13 @@ static bool wake_up_result = false;  // use this to judge the wake up event happ
 static gpio_config_t init_io(gpio_num_t num)
 {
     TEST_ASSERT(num < TEST_GPIO_OUTPUT_MAX);
-    gpio_config_t io_conf;
-    io_conf.intr_type = GPIO_INTR_DISABLE;
-    io_conf.mode = GPIO_MODE_OUTPUT;
-    io_conf.pin_bit_mask = (1ULL << num);
-    io_conf.pull_down_en = 0;
-    io_conf.pull_up_en = 0;
+    gpio_config_t io_conf = {
+        .intr_type = GPIO_INTR_DISABLE,
+        .mode = GPIO_MODE_OUTPUT,
+        .pin_bit_mask = (1ULL << num),
+        .pull_down_en = 0,
+        .pull_up_en = 0,
+    };
     return io_conf;
 }
 
@@ -800,11 +801,11 @@ static void gpio_isr_handler(void *arg)
  */
 TEST_CASE("GPIO ISR service test", "[gpio][ignore]")
 {
-    static gpio_isr_param_t io9_param = {
+    gpio_isr_param_t io9_param = {
         .gpio_num =  TEST_IO_9,
         .isr_cnt = 0,
     };
-    static gpio_isr_param_t io10_param = {
+    gpio_isr_param_t io10_param = {
         .gpio_num =  TEST_IO_10,
         .isr_cnt = 0,
     };
