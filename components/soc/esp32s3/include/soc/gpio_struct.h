@@ -115,20 +115,20 @@ typedef volatile struct {
         };
         uint32_t val;
     } status1_w1tc;
-    uint32_t pcpu_int;                                /**/
-    uint32_t pcpu_nmi_int;                            /**/
-    uint32_t cpusdio_int;                             /**/
+    uint32_t pcpu_int;                                            /*GPIO0~31 PRO & APP CPU interrupt status*/
+    uint32_t pcpu_nmi_int;                                        /*GPIO0~31 PRO & APP CPU non-maskable interrupt status*/
+    uint32_t cpusdio_int;
     union {
         struct {
-            uint32_t intr:      22;
-            uint32_t reserved22: 10;
+            uint32_t intr                          :    22;       /*GPIO32-48 PRO & APP CPU interrupt status*/
+            uint32_t reserved22                    :    10;
         };
         uint32_t val;
     } pcpu_int1;
     union {
         struct {
-            uint32_t intr:          22;
-            uint32_t reserved22:    10;
+            uint32_t intr                          :    22;       /*GPIO32-48 PRO & APP CPU non-maskable interrupt status*/
+            uint32_t reserved22                    :    10;
         };
         uint32_t val;
     } pcpu_nmi_int1;
