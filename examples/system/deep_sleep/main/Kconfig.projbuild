@@ -33,16 +33,18 @@ menu "Example Configuration"
         default y
         depends on SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
         help
-            This option enables wake up from GPIO, only GPIO0~5 can be used to wake up. Be aware that if you use low
-            level to trigger wakeup, we strongly recommand you to connect external pull-up resistance.
+            This option enables wake up from GPIO. Be aware that if you use low level to trigger wakeup, we strongly
+            recommand you to connect external pull-up resistance.
 
     menu "GPIO wakeup configuration"
         visible if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 
         config EXAMPLE_GPIO_WAKEUP_PIN
             int "Enable wakeup from GPIO"
-            default 0
-            range 0 5
+            default 0 if !IDF_TARGET_ESP32H2_BETA_VERSION_2
+            default 7 if IDF_TARGET_ESP32H2_BETA_VERSION_2
+            range 0 5 if !IDF_TARGET_ESP32H2_BETA_VERSION_2
+            range 7 12 if IDF_TARGET_ESP32H2_BETA_VERSION_2
 
         config EXAMPLE_GPIO_WAKEUP_HIGH_LEVEL
             bool "Enable GPIO high-level wakeup"

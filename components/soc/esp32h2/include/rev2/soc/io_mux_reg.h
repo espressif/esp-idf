@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
+
 #include "soc/soc.h"
 
 /* The following are the bit fields for PERIPHS_IO_MUX_x_U registers */
@@ -110,7 +111,6 @@
 #define IO_MUX_GPIO24_REG              PERIPHS_IO_MUX_GPIO24_U
 #define IO_MUX_GPIO25_REG              PERIPHS_IO_MUX_GPIO25_U
 
-#define FUNC_GPIO_GPIO                              1
 #define PIN_FUNC_GPIO								1
 
 #define GPIO_PAD_PULLUP(num) do{PIN_PULLDWN_DIS(IOMUX_REG_GPIO##num);PIN_PULLUP_EN(IOMUX_REG_GPIO##num);}while(0)
@@ -124,9 +124,9 @@
 #define SPI_D_GPIO_NUM               18
 #define SPI_Q_GPIO_NUM               14
 
-#define MAX_RTC_GPIO_NUM              5
-#define MAX_PAD_GPIO_NUM             20
-#define MAX_GPIO_NUM                 24
+#define MAX_RTC_GPIO_NUM             12            // GPIO7~12 are the rtc_io pads
+#define MAX_PAD_GPIO_NUM             25
+#define MAX_GPIO_NUM                 29
 #define DIG_IO_HOLD_BIT_SHIFT         0
 
 

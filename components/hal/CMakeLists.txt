@@ -8,6 +8,14 @@ set(srcs "wdt_hal_iram.c"
 
 set(includes "${target}/include" "include" "platform_port/include")
 
+if(target STREQUAL "esp32h2")
+    if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1)
+        list(APPEND includes "${target}/include/rev1")
+    elseif(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2)
+        list(APPEND includes "${target}/include/rev2")
+    endif()
+endif()
+
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs
         "rtc_io_hal.c"

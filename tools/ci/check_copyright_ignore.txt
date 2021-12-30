@@ -1444,7 +1444,6 @@ components/soc/esp32h2/include/soc/fe_reg.h
 components/soc/esp32h2/include/soc/gpio_pins.h
 components/soc/esp32h2/include/soc/gpio_sd_reg.h
 components/soc/esp32h2/include/soc/gpio_sd_struct.h
-components/soc/esp32h2/include/soc/gpio_struct.h
 components/soc/esp32h2/include/soc/hwcrypto_reg.h
 components/soc/esp32h2/include/soc/interrupt_reg.h
 components/soc/esp32h2/include/soc/ledc_reg.h
@@ -1647,10 +1646,8 @@ components/soc/esp32s3/include/soc/uart_reg.h
 components/soc/esp32s3/include/soc/uart_struct.h
 components/soc/esp32s3/include/soc/uhci_reg.h
 components/soc/esp32s3/include/soc/uhci_struct.h
-components/soc/esp32s3/include/soc/usb_device_reg.h
 components/soc/esp32s3/include/soc/usb_pins.h
 components/soc/esp32s3/include/soc/usb_reg.h
-components/soc/esp32s3/include/soc/usb_serial_jtag_reg.h
 components/soc/esp32s3/include/soc/usb_serial_jtag_struct.h
 components/soc/esp32s3/include/soc/usb_struct.h
 components/soc/esp32s3/include/soc/usb_types.h

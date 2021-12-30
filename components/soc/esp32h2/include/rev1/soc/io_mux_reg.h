@@ -86,28 +86,47 @@
 #define PIN_PULLDWN_EN(PIN_NAME)              REG_SET_BIT(PIN_NAME, FUN_PD)
 #define PIN_FUNC_SELECT(PIN_NAME, FUNC)      REG_SET_FIELD(PIN_NAME, MCU_SEL, FUNC)
 
-#define IO_MUX_GPIO0_REG		PERIPHS_IO_MUX_XTAL_32K_P_U
-#define IO_MUX_GPIO1_REG		PERIPHS_IO_MUX_XTAL_32K_N_U
-#define IO_MUX_GPIO2_REG		PERIPHS_IO_MUX_GPIO2_U
-#define IO_MUX_GPIO3_REG		PERIPHS_IO_MUX_GPIO3_U
-#define IO_MUX_GPIO4_REG		PERIPHS_IO_MUX_MTMS_U
-#define IO_MUX_GPIO5_REG		PERIPHS_IO_MUX_MTDI_U
-#define IO_MUX_GPIO6_REG		PERIPHS_IO_MUX_MTCK_U
-#define IO_MUX_GPIO7_REG		PERIPHS_IO_MUX_MTDO_U
-#define IO_MUX_GPIO8_REG		PERIPHS_IO_MUX_GPIO8_U
-#define IO_MUX_GPIO9_REG		PERIPHS_IO_MUX_GPIO9_U
-#define IO_MUX_GPIO10_REG	PERIPHS_IO_MUX_GPIO10_U
-#define IO_MUX_GPIO11_REG	PERIPHS_IO_MUX_VDD_SPI_U
-#define IO_MUX_GPIO12_REG	PERIPHS_IO_MUX_SPIHD_U
-#define IO_MUX_GPIO13_REG	PERIPHS_IO_MUX_SPIWP_U
-#define IO_MUX_GPIO14_REG	PERIPHS_IO_MUX_SPICS0_U
-#define IO_MUX_GPIO15_REG	PERIPHS_IO_MUX_SPICLK_U
-#define IO_MUX_GPIO16_REG	PERIPHS_IO_MUX_SPID_U
-#define IO_MUX_GPIO17_REG	PERIPHS_IO_MUX_SPIQ_U
-#define IO_MUX_GPIO18_REG	PERIPHS_IO_MUX_GPIO18_U
-#define IO_MUX_GPIO19_REG	PERIPHS_IO_MUX_GPIO19_U
-#define IO_MUX_GPIO20_REG	PERIPHS_IO_MUX_U0RXD_U
-#define IO_MUX_GPIO21_REG	PERIPHS_IO_MUX_U0TXD_U
+#define IO_MUX_GPIO0_REG        PERIPHS_IO_MUX_XTAL_32K_P_U
+#define IO_MUX_GPIO1_REG        PERIPHS_IO_MUX_XTAL_32K_N_U
+#define IO_MUX_GPIO2_REG        PERIPHS_IO_MUX_GPIO2_U
+#define IO_MUX_GPIO3_REG        PERIPHS_IO_MUX_GPIO3_U
+#define IO_MUX_GPIO4_REG        PERIPHS_IO_MUX_MTMS_U
+#define IO_MUX_GPIO5_REG        PERIPHS_IO_MUX_MTDI_U
+#define IO_MUX_GPIO6_REG        PERIPHS_IO_MUX_MTCK_U
+#define IO_MUX_GPIO7_REG        PERIPHS_IO_MUX_MTDO_U
+#define IO_MUX_GPIO8_REG        PERIPHS_IO_MUX_GPIO8_U
+#define IO_MUX_GPIO9_REG        PERIPHS_IO_MUX_GPIO9_U
+#define IO_MUX_GPIO10_REG       PERIPHS_IO_MUX_GPIO10_U
+#define IO_MUX_GPIO11_REG       PERIPHS_IO_MUX_VDD_SPI_U
+#define IO_MUX_GPIO12_REG       PERIPHS_IO_MUX_SPIHD_U
+#define IO_MUX_GPIO13_REG       PERIPHS_IO_MUX_SPIWP_U
+#define IO_MUX_GPIO14_REG       PERIPHS_IO_MUX_SPICS0_U
+#define IO_MUX_GPIO15_REG       PERIPHS_IO_MUX_SPICLK_U
+#define IO_MUX_GPIO16_REG       PERIPHS_IO_MUX_SPID_U
+#define IO_MUX_GPIO17_REG       PERIPHS_IO_MUX_SPIQ_U
+#define IO_MUX_GPIO18_REG       PERIPHS_IO_MUX_GPIO18_U
+#define IO_MUX_GPIO19_REG       PERIPHS_IO_MUX_GPIO19_U
+#define IO_MUX_GPIO20_REG       PERIPHS_IO_MUX_U0RXD_U
+#define IO_MUX_GPIO21_REG       PERIPHS_IO_MUX_U0TXD_U
+#define IO_MUX_GPIO22_REG       PERIPHS_IO_MUX_GPIO22_U
+#define IO_MUX_GPIO23_REG       PERIPHS_IO_MUX_GPIO23_U
+#define IO_MUX_GPIO24_REG       PERIPHS_IO_MUX_GPIO24_U
+#define IO_MUX_GPIO25_REG       PERIPHS_IO_MUX_GPIO25_U
+#define IO_MUX_GPIO26_REG       PERIPHS_IO_MUX_GPIO26_U
+#define IO_MUX_GPIO27_REG       PERIPHS_IO_MUX_GPIO27_U
+#define IO_MUX_GPIO28_REG       PERIPHS_IO_MUX_GPIO28_U
+#define IO_MUX_GPIO29_REG       PERIPHS_IO_MUX_GPIO29_U
+#define IO_MUX_GPIO30_REG       PERIPHS_IO_MUX_GPIO30_U
+#define IO_MUX_GPIO31_REG       PERIPHS_IO_MUX_GPIO31_U
+#define IO_MUX_GPIO32_REG       PERIPHS_IO_MUX_GPIO32_U
+#define IO_MUX_GPIO33_REG       PERIPHS_IO_MUX_GPIO33_U
+#define IO_MUX_GPIO34_REG       PERIPHS_IO_MUX_GPIO34_U
+#define IO_MUX_GPIO35_REG       PERIPHS_IO_MUX_GPIO35_U
+#define IO_MUX_GPIO36_REG       PERIPHS_IO_MUX_GPIO36_U
+#define IO_MUX_GPIO37_REG       PERIPHS_IO_MUX_GPIO37_U
+#define IO_MUX_GPIO38_REG       PERIPHS_IO_MUX_GPIO38_U
+#define IO_MUX_GPIO39_REG       PERIPHS_IO_MUX_GPIO39_U
+#define IO_MUX_GPIO40_REG       PERIPHS_IO_MUX_GPIO40_U
 
 /* Value to set in IO Mux to use a pin as GPIO. */
 #define PIN_FUNC_GPIO								1
@@ -130,9 +149,9 @@
 #define SD_DATA2_GPIO_NUM 9
 #define SD_DATA3_GPIO_NUM 10
 
-#define MAX_RTC_GPIO_NUM 0
-#define MAX_PAD_GPIO_NUM 22
-#define MAX_GPIO_NUM    22
+#define MAX_RTC_GPIO_NUM 5
+#define MAX_PAD_GPIO_NUM 40
+#define MAX_GPIO_NUM    44
 
 #define REG_IO_MUX_BASE DR_REG_IO_MUX_BASE
 #define PIN_CTRL                          (REG_IO_MUX_BASE +0x00)
@@ -255,9 +274,93 @@
 #define FUNC_U0TXD_GPIO21                           1
 #define FUNC_U0TXD_U0TXD                            0
 
-#define IO_MUX_DATE_REG (REG_IO_MUX_BASE + 0xfc)
-#define IO_MUX_DATE 0xFFFFFFFF
-#define IO_MUX_DATE_S 0
-#define IO_MUX_DATE_VERSION 0x2006050
+#define PERIPHS_IO_MUX_GPIO22_U           (REG_IO_MUX_BASE +0x5c)
+#define FUNC_GPIO22_GPIO22                          1
+#define FUNC_GPIO22_GPIO22_0                        0
+
+#define PERIPHS_IO_MUX_GPIO23_U           (REG_IO_MUX_BASE +0x60)
+#define FUNC_GPIO23_GPIO23                          1
+#define FUNC_GPIO23_GPIO23_0                        0
+
+#define PERIPHS_IO_MUX_GPIO24_U           (REG_IO_MUX_BASE +0x64)
+#define FUNC_GPIO24_GPIO24                          1
+#define FUNC_GPIO24_GPIO24_0                        0
+
+#define PERIPHS_IO_MUX_GPIO25_U           (REG_IO_MUX_BASE +0x68)
+#define FUNC_GPIO25_GPIO25                          1
+#define FUNC_GPIO25_GPIO25_0                        0
+
+#define PERIPHS_IO_MUX_GPIO26_U           (REG_IO_MUX_BASE +0x6c)
+#define FUNC_GPIO26_GPIO26                          1
+#define FUNC_GPIO26_GPIO26_0                        0
+
+#define PERIPHS_IO_MUX_GPIO27_U           (REG_IO_MUX_BASE +0x70)
+#define FUNC_GPIO27_GPIO27                          1
+#define FUNC_GPIO27_GPIO27_0                        0
+
+#define PERIPHS_IO_MUX_GPIO28_U           (REG_IO_MUX_BASE +0x74)
+#define FUNC_GPIO28_GPIO28                          1
+#define FUNC_GPIO28_GPIO28_0                        0
+
+#define PERIPHS_IO_MUX_GPIO29_U           (REG_IO_MUX_BASE +0x78)
+#define FUNC_GPIO29_GPIO29                          1
+#define FUNC_GPIO29_GPIO29_0                        0
+
+#define PERIPHS_IO_MUX_GPIO30_U           (REG_IO_MUX_BASE +0x7c)
+#define FUNC_GPIO30_GPIO30                          1
+#define FUNC_GPIO30_GPIO30_0                        0
+
+#define PERIPHS_IO_MUX_GPIO31_U           (REG_IO_MUX_BASE +0x80)
+#define FUNC_GPIO31_GPIO31                          1
+#define FUNC_GPIO31_GPIO31_0                        0
+
+#define PERIPHS_IO_MUX_GPIO32_U           (REG_IO_MUX_BASE +0x84)
+#define FUNC_GPIO32_GPIO32                          1
+#define FUNC_GPIO32_GPIO32_0                        0
+
+#define PERIPHS_IO_MUX_GPIO33_U           (REG_IO_MUX_BASE +0x88)
+#define FUNC_GPIO33_GPIO33                          1
+#define FUNC_GPIO33_GPIO33_0                        0
+
+#define PERIPHS_IO_MUX_GPIO34_U           (REG_IO_MUX_BASE +0x8c)
+#define FUNC_GPIO34_GPIO34                          1
+#define FUNC_GPIO34_GPIO34_0                        0
+
+#define PERIPHS_IO_MUX_GPIO35_U           (REG_IO_MUX_BASE +0x90)
+#define FUNC_GPIO35_GPIO35                          1
+#define FUNC_GPIO35_GPIO35_0                        0
+
+#define PERIPHS_IO_MUX_GPIO36_U           (REG_IO_MUX_BASE +0x94)
+#define FUNC_GPIO36_GPIO36                          1
+#define FUNC_GPIO36_GPIO36_0                        0
+
+#define PERIPHS_IO_MUX_GPIO37_U           (REG_IO_MUX_BASE +0x98)
+#define FUNC_GPIO37_GPIO37                          1
+#define FUNC_GPIO37_GPIO37_0                        0
+
+#define PERIPHS_IO_MUX_GPIO38_U           (REG_IO_MUX_BASE +0x9c)
+#define FUNC_GPIO38_GPIO38                          1
+#define FUNC_GPIO38_GPIO38_0                        0
+
+#define PERIPHS_IO_MUX_GPIO39_U           (REG_IO_MUX_BASE +0xa0)
+#define FUNC_GPIO39_GPIO39                          1
+#define FUNC_GPIO39_GPIO39_0                        0
+
+#define PERIPHS_IO_MUX_GPIO40_U           (REG_IO_MUX_BASE +0xa4)
+#define FUNC_GPIO40_GPIO40                          1
+#define FUNC_GPIO40_GPIO40_0                        0
+
+/** IO_MUX_DATE_REG register
+ *  IO MUX Version Control Register
+ */
+#define IO_MUX_DATE_REG (DR_REG_IO_MUX_BASE + 0xfc)
+/** IO_MUX_REG_DATE : R/W; bitpos: [27:0]; default: 33628944;
+ *  Version control register
+ */
+#define IO_MUX_REG_DATE    0x0FFFFFFFU
+#define IO_MUX_REG_DATE_M  (IO_MUX_REG_DATE_V << IO_MUX_REG_DATE_S)
+#define IO_MUX_REG_DATE_V  0x0FFFFFFFU
+#define IO_MUX_REG_DATE_S  0
+#define IO_MUX_DATE_VERSION 0x2012310
 
 #endif

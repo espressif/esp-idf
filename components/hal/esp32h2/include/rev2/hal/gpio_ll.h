@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,13 +10,15 @@
  * See readme.md in hal/include/hal/readme.md
  ******************************************************************************/
 
-// The LL layer for ESP32-C2 GPIO register operations
+// The LL layer for ESP32-H2 GPIO register operations
 
 #pragma once
 
 #include "soc/soc.h"
 #include "soc/gpio_periph.h"
 #include "soc/rtc_cntl_reg.h"
+#include "soc/gpio_struct.h"
+#include "soc/usb_serial_jtag_reg.h"
 #include "hal/gpio_types.h"
 #include "hal/assert.h"
 #include "stdlib.h"
@@ -83,7 +85,7 @@ static inline void gpio_ll_pulldown_dis(gpio_dev_t *hw, gpio_num_t gpio_num)
  */
 static inline void gpio_ll_set_intr_type(gpio_dev_t *hw, gpio_num_t gpio_num, gpio_int_type_t intr_type)
 {
-    hw->pin[gpio_num].int_type = intr_type;
+    hw->pin[gpio_num].pin_int_type = intr_type;
 }
 
 /**
@@ -107,7 +109,7 @@ static inline void gpio_ll_get_intr_status(gpio_dev_t *hw, uint32_t core_id, uin
   */
 static inline void gpio_ll_get_intr_status_high(gpio_dev_t *hw, uint32_t core_id, uint32_t *status)
 {
-    *status = 0; // Less than 32 GPIOs in ESP32-C2
+    *status = 0; // Less than 32 GPIOs in ESP32-H2Beta2
 }
 
 /**
@@ -129,7 +131,7 @@ static inline void gpio_ll_clear_intr_status(gpio_dev_t *hw, uint32_t mask)
   */
 static inline void gpio_ll_clear_intr_status_high(gpio_dev_t *hw, uint32_t mask)
 {
-    // Less than 32 GPIOs in ESP32-C2. Do nothing.
+    // Less than 32 GPIOs in ESP32-H2Beta2. Do nothing.
 }
 
 /**
@@ -142,7 +144,7 @@ static inline void gpio_ll_clear_intr_status_high(gpio_dev_t *hw, uint32_t mask)
 static inline void gpio_ll_intr_enable_on_core(gpio_dev_t *hw, uint32_t core_id, gpio_num_t gpio_num)
 {
     HAL_ASSERT(core_id == 0 && "target SoC only has a single core");
-    GPIO.pin[gpio_num].int_ena = GPIO_LL_PRO_CPU_INTR_ENA;     //enable pro cpu intr
+    GPIO.pin[gpio_num].pin_int_ena = GPIO_LL_PRO_CPU_INTR_ENA;     //enable pro cpu intr
 }
 
 /**
@@ -153,7 +155,7 @@ static inline void gpio_ll_intr_enable_on_core(gpio_dev_t *hw, uint32_t core_id,
  */
 static inline void gpio_ll_intr_disable(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
-    hw->pin[gpio_num].int_ena = 0;                             //disable GPIO intr
+    hw->pin[gpio_num].pin_int_ena = 0;                             //disable GPIO intr
 }
 
 /**
@@ -211,7 +213,7 @@ static inline __attribute__((always_inline)) void gpio_ll_output_enable(gpio_dev
   */
 static inline __attribute__((always_inline)) void gpio_ll_od_disable(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
-    hw->pin[gpio_num].pad_driver = 0;
+    hw->pin[gpio_num].pin_pad_driver = 0;
 }
 
 /**
@@ -222,7 +224,7 @@ static inline __attribute__((always_inline)) void gpio_ll_od_disable(gpio_dev_t 
   */
 static inline void gpio_ll_od_enable(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
-    hw->pin[gpio_num].pad_driver = 1;
+    hw->pin[gpio_num].pin_pad_driver = 1;
 }
 
 /**
@@ -266,7 +268,7 @@ static inline int gpio_ll_get_level(gpio_dev_t *hw, gpio_num_t gpio_num)
  */
 static inline void gpio_ll_wakeup_enable(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
-    hw->pin[gpio_num].wakeup_enable = 0x1;
+    hw->pin[gpio_num].pin_wakeup_enable = 0x1;
 }
 
 /**
@@ -277,7 +279,7 @@ static inline void gpio_ll_wakeup_enable(gpio_dev_t *hw, gpio_num_t gpio_num)
  */
 static inline void gpio_ll_wakeup_disable(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
-    hw->pin[gpio_num].wakeup_enable = 0;
+    hw->pin[gpio_num].pin_wakeup_enable = 0;
 }
 
 /**
@@ -333,8 +335,8 @@ static inline void gpio_ll_deep_sleep_hold_dis(gpio_dev_t *hw)
   */
 static inline void gpio_ll_hold_en(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
-    if (gpio_num <= GPIO_NUM_5) {
-        REG_SET_BIT(RTC_CNTL_PAD_HOLD_REG, BIT(gpio_num));
+    if (gpio_num >= GPIO_NUM_7 && gpio_num <= GPIO_NUM_12) {
+        REG_SET_BIT(RTC_CNTL_PAD_HOLD_REG, GPIO_HOLD_MASK[gpio_num]);
     } else {
         SET_PERI_REG_MASK(RTC_CNTL_DIG_PAD_HOLD_REG, GPIO_HOLD_MASK[gpio_num]);
     }
@@ -348,8 +350,8 @@ static inline void gpio_ll_hold_en(gpio_dev_t *hw, gpio_num_t gpio_num)
   */
 static inline void gpio_ll_hold_dis(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
-    if (gpio_num <= GPIO_NUM_5) {
-        REG_CLR_BIT(RTC_CNTL_PAD_HOLD_REG, BIT(gpio_num));
+    if (gpio_num >= GPIO_NUM_7 && gpio_num <= GPIO_NUM_12) {
+        REG_CLR_BIT(RTC_CNTL_PAD_HOLD_REG, GPIO_HOLD_MASK[gpio_num]);
     } else {
         CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_PAD_HOLD_REG, GPIO_HOLD_MASK[gpio_num]);
     }
@@ -376,6 +378,10 @@ static inline void gpio_ll_iomux_in(gpio_dev_t *hw, uint32_t gpio, uint32_t sign
  */
 static inline __attribute__((always_inline)) void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
 {
+    // Disable USB Serial JTAG if pin 24 or pin 25 needs to select an IOMUX function
+    if (pin_name == IO_MUX_GPIO24_REG || pin_name == IO_MUX_GPIO25_REG) {
+        CLEAR_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_USB_PAD_ENABLE);
+    }
     PIN_FUNC_SELECT(pin_name, func);
 }
 
@@ -390,8 +396,8 @@ static inline __attribute__((always_inline)) void gpio_ll_iomux_func_sel(uint32_
   */
 static inline void gpio_ll_iomux_out(gpio_dev_t *hw, uint8_t gpio_num, int func, uint32_t oen_inv)
 {
-    hw->func_out_sel_cfg[gpio_num].oen_sel = 0;
-    hw->func_out_sel_cfg[gpio_num].oen_inv_sel = oen_inv;
+    hw->func_out_sel_cfg[gpio_num].func_oen_sel = 0;
+    hw->func_out_sel_cfg[gpio_num].func_oen_inv_sel = oen_inv;
     gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_num], func);
 }
 
@@ -537,7 +543,8 @@ static inline void gpio_ll_sleep_output_enable(gpio_dev_t *hw, gpio_num_t gpio_n
  */
 static inline void gpio_ll_deepsleep_wakeup_enable(gpio_dev_t *hw, gpio_num_t gpio_num, gpio_int_type_t intr_type)
 {
-    HAL_ASSERT(gpio_num <= GPIO_NUM_5 && "gpio larger than 5 does not support deep sleep wake-up function");
+    HAL_ASSERT((gpio_num >= GPIO_NUM_7 && gpio_num <= GPIO_NUM_12) &&
+                "only gpio7~12 support deep sleep wake-up function");
 
     REG_SET_BIT(RTC_CNTL_GPIO_WAKEUP_REG, RTC_CNTL_GPIO_PIN_CLK_GATE);
     REG_SET_BIT(RTC_CNTL_EXT_WAKEUP_CONF_REG, RTC_CNTL_GPIO_WAKEUP_FILTER);
@@ -556,7 +563,8 @@ static inline void gpio_ll_deepsleep_wakeup_enable(gpio_dev_t *hw, gpio_num_t gp
  */
 static inline void gpio_ll_deepsleep_wakeup_disable(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
-    HAL_ASSERT(gpio_num <= GPIO_NUM_5 && "gpio larger than 5 does not support deep sleep wake-up function");
+    HAL_ASSERT((gpio_num >= GPIO_NUM_7 && gpio_num <= GPIO_NUM_12) &&
+                "only gpio7~12 support deep sleep wake-up function");
 
     CLEAR_PERI_REG_MASK(RTC_CNTL_GPIO_WAKEUP_REG, 1 << (RTC_CNTL_GPIO_PIN0_WAKEUP_ENABLE_S - gpio_num));
     CLEAR_PERI_REG_MASK(RTC_CNTL_GPIO_WAKEUP_REG, RTC_CNTL_GPIO_PIN0_INT_TYPE_S - gpio_num * 3);

@@ -210,7 +210,7 @@ static inline void gpio_ll_output_disable(gpio_dev_t *hw, gpio_num_t gpio_num)
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number
   */
-static inline void gpio_ll_output_enable(gpio_dev_t *hw, gpio_num_t gpio_num)
+static inline __attribute__((always_inline)) void gpio_ll_output_enable(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
     if (gpio_num < 32) {
         hw->enable_w1ts = (0x1 << gpio_num);
@@ -225,7 +225,7 @@ static inline void gpio_ll_output_enable(gpio_dev_t *hw, gpio_num_t gpio_num)
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number
   */
-static inline void gpio_ll_od_disable(gpio_dev_t *hw, gpio_num_t gpio_num)
+static inline __attribute__((always_inline)) void gpio_ll_od_disable(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
     hw->pin[gpio_num].pad_driver = 0;
 }
@@ -291,11 +291,9 @@ static inline int gpio_ll_get_level(gpio_dev_t *hw, gpio_num_t gpio_num)
  *
  * @param hw Peripheral GPIO hardware instance address.
  * @param gpio_num GPIO number.
- * @param intr_type GPIO wake-up type. Only GPIO_INTR_LOW_LEVEL or GPIO_INTR_HIGH_LEVEL can be used.
  */
-static inline void gpio_ll_wakeup_enable(gpio_dev_t *hw, gpio_num_t gpio_num, gpio_int_type_t intr_type)
+static inline void gpio_ll_wakeup_enable(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
-    hw->pin[gpio_num].int_type = intr_type;
     hw->pin[gpio_num].wakeup_enable = 0x1;
 }
 
@@ -419,12 +417,20 @@ static inline void gpio_ll_iomux_out(gpio_dev_t *hw, uint8_t gpio_num, int func,
     gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_num], func);
 }
 
-static inline void gpio_ll_force_hold_all(gpio_dev_t *hw)
+/**
+  * @brief Force hold digital and rtc gpio pad.
+  * @note GPIO force hold, whether the chip in sleep mode or wakeup mode.
+  */
+static inline void gpio_ll_force_hold_all(void)
 {
     CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_UNHOLD);
     SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_HOLD);
 }
 
+/**
+  * @brief Force unhold digital and rtc gpio pad.
+  * @note GPIO force unhold, whether the chip in sleep mode or wakeup mode.
+  */
 static inline void gpio_ll_force_unhold_all(void)
 {
     CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_HOLD);

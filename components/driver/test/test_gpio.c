@@ -70,6 +70,15 @@
 #define TEST_GPIO_OUTPUT_MAX            GPIO_NUM_MAX
 #define TEST_GPIO_INPUT_LEVEL_HIGH_PIN  10
 #define TEST_GPIO_INPUT_LEVEL_LOW_PIN   1
+#elif CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2
+#define TEST_GPIO_EXT_OUT_IO            6  // default output GPIO
+#define TEST_GPIO_EXT_IN_IO             7  // default input GPIO
+#define TEST_GPIO_OUTPUT_PIN            1
+#define TEST_GPIO_OUTPUT_MAX            GPIO_NUM_MAX
+#define TEST_GPIO_USB_DM_IO             24  // USB D- GPIO
+#define TEST_GPIO_USB_DP_IO             25  // USB D+ GPIO
+#define TEST_GPIO_INPUT_LEVEL_HIGH_PIN  9
+#define TEST_GPIO_INPUT_LEVEL_LOW_PIN   1
 #endif
 
 // If there is any input-only pin, enable input-only pin part of some tests.
@@ -113,7 +122,7 @@ __attribute__((unused)) static void gpio_isr_edge_handler(void *arg)
     edge_intr_times++;
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2, ESP32H2)
 //No runners
 // level interrupt event with "gpio_intr_disable"
 static void gpio_isr_level_handler(void *arg)
@@ -138,7 +147,7 @@ static void gpio_isr_level_handler2(void *arg)
     esp_rom_printf("GPIO[%d] intr, val: %d, level_intr_times = %d\n", TEST_GPIO_EXT_OUT_IO, gpio_get_level(TEST_GPIO_EXT_OUT_IO), level_intr_times);
     esp_rom_printf("GPIO[%d] intr, val: %d, level_intr_times = %d\n", gpio_num, gpio_get_level(gpio_num), level_intr_times);
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2, ESP32H2)
 
 #if !WAKE_UP_IGNORE
 // get result of waking up or not
@@ -223,7 +232,7 @@ TEST_CASE("GPIO config parameters test", "[gpio]")
 #endif // SOC_HAS_INPUT_ONLY_PIN
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2, ESP32H2)
 //No runners
 TEST_CASE("GPIO rising edge interrupt test", "[gpio][test_env=UT_T1_GPIO]")
 {
@@ -415,7 +424,7 @@ TEST_CASE("GPIO enable and disable interrupt test", "[gpio][test_env=UT_T1_GPIO]
     TEST_ASSERT(gpio_isr_handler_add(TEST_GPIO_EXT_IN_IO, gpio_isr_level_handler, (void *) TEST_GPIO_EXT_IN_IO) == ESP_ERR_INVALID_STATE);
     TEST_ASSERT(gpio_isr_handler_remove(TEST_GPIO_EXT_IN_IO) == ESP_ERR_INVALID_STATE);
 }
-#endif //DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
+#endif //DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2, ESP32H2)
 
 #if !CONFIG_FREERTOS_UNICORE
 static void install_isr_service_task(void *arg)
@@ -527,7 +536,7 @@ TEST_CASE("GPIO io pull up/down function", "[gpio]")
     TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(TEST_GPIO_EXT_IN_IO), 0, "gpio_pullup_dis error, it can pull up");
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2, ESP32H2)
 //No runners
 TEST_CASE("GPIO output and input mode test", "[gpio][test_env=UT_T1_GPIO]")
 {
@@ -601,7 +610,7 @@ TEST_CASE("GPIO repeate call service and isr has no memory leak test", "[gpio][t
     }
     TEST_ASSERT_INT32_WITHIN(size, esp_get_free_heap_size(), 100);
 }
-#endif //DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
+#endif //DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2, ESP32H2)
 
 #if !WAKE_UP_IGNORE
 //this function development is not completed yet, set it ignored
@@ -848,7 +857,7 @@ TEST_CASE("GPIO ISR service test", "[gpio][ignore]")
     TEST_ASSERT((io9_param.isr_cnt == 1) && (io10_param.isr_cnt == 1));
 }
 
-#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+#if SOC_USB_SERIAL_JTAG_SUPPORTED
 TEST_CASE("GPIO input and output of USB pins test", "[gpio]")
 {
     const int test_pins[] = {TEST_GPIO_USB_DP_IO, TEST_GPIO_USB_DM_IO};
@@ -885,4 +894,4 @@ TEST_CASE("GPIO input and output of USB pins test", "[gpio]")
         TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(pin), 1, "get level error! the level should be high!");
     }
 }
-#endif //CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+#endif //SOC_USB_SERIAL_JTAG_SUPPORTED
