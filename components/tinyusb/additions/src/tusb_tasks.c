@@ -20,6 +20,8 @@
 #include "tinyusb.h"
 #include "tusb_tasks.h"
 
+#if !CONFIG_TINYUSB_NO_DEFAULT_TASK
+
 const static char *TAG = "tusb_tsk";
 static TaskHandle_t s_tusb_tskh;
 
@@ -52,3 +54,5 @@ esp_err_t tusb_stop_task(void)
     s_tusb_tskh = NULL;
     return ESP_OK;
 }
+
+#endif // !CONFIG_TINYUSB_NO_DEFAULT_TASK
