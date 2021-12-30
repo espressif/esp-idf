@@ -23,19 +23,7 @@
 #   define SPIFLASH SPIMEM1
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP8684
-#include "esp8684/rom/spi_flash.h"
-#endif
+#include "esp_rom_spiflash.h"
 
 #ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
 #define ENCRYPTION_IS_VIRTUAL 1
@@ -127,29 +115,24 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 #else //BOOTLOADER_BUILD
 /* Bootloader version, uses ROM functions only */
 #if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/spi_flash.h"
 #include "esp32/rom/cache.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/spi_flash.h"
 #include "esp32s2/rom/cache.h"
 #include "soc/cache_memory.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/spi_flash.h"
 #include "esp32s3/rom/cache.h"
 #include "soc/cache_memory.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/spi_flash.h"
 #include "esp32c3/rom/cache.h"
 #include "soc/cache_memory.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/spi_flash.h"
 #include "esp32h2/rom/cache.h"
 #include "soc/cache_memory.h"
 #elif CONFIG_IDF_TARGET_ESP8684
-#include "esp8684/rom/spi_flash.h"
 #include "esp8684/rom/cache.h"
 #include "soc/cache_memory.h"
 #endif
+#include "esp_rom_spiflash.h"
 static const char *TAG = "bootloader_flash";
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -526,10 +509,6 @@ esp_err_t IRAM_ATTR __attribute__((weak)) bootloader_flash_unlock(void)
     return err;
 }
 
-/* dummy_len_plus values defined in ROM for SPI flash configuration */
-#ifndef g_rom_spiflash_dummy_len_plus // ESP32-C3 uses a macro to access ROM data here
-extern uint8_t g_rom_spiflash_dummy_len_plus[];
-#endif
 IRAM_ATTR static uint32_t bootloader_flash_execute_command_common(
     uint8_t command,
     uint32_t addr_len, uint32_t address,

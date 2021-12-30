@@ -13,6 +13,7 @@
 #include "esp_rom_efuse.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
+#include "esp_rom_spiflash.h"
 #include "soc/efuse_reg.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/io_mux_reg.h"
@@ -24,10 +25,8 @@
 #include "soc/io_mux_reg.h"
 #include "soc/system_reg.h"
 #include "esp8684/rom/efuse.h"
-#include "esp8684/rom/spi_flash.h"
 #include "esp8684/rom/cache.h"
 #include "esp8684/rom/ets_sys.h"
-#include "esp8684/rom/spi_flash.h"
 #include "esp8684/rom/rtc.h"
 #include "bootloader_common.h"
 #include "bootloader_init.h"
@@ -203,7 +202,7 @@ static esp_err_t bootloader_init_spi_flash(void)
 #endif
 
     bootloader_spi_flash_resume();
-    esp_rom_spiflash_unlock();
+    bootloader_flash_unlock();
 
 #if CONFIG_ESPTOOLPY_FLASHMODE_QIO || CONFIG_ESPTOOLPY_FLASHMODE_QOUT
     bootloader_enable_qio_mode();

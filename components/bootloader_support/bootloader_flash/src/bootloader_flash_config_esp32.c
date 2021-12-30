@@ -134,7 +134,6 @@ void IRAM_ATTR bootloader_flash_dummy_config(const esp_image_header_t* pfhdr)
         }
     }
 
-    extern uint8_t g_rom_spiflash_dummy_len_plus[];
     switch (pfhdr->spi_speed) {
         case ESP_IMAGE_SPI_SPEED_80M:
             g_rom_spiflash_dummy_len_plus[0] = ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_80M;
