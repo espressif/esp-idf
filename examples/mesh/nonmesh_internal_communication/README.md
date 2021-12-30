@@ -7,8 +7,6 @@ Basically it provides internet access via every node hidden SSID (`ESPM_XXYYZZ` 
 ![nonmesh architecture](docs/esp_mesh_architecture_v2.png)
 
 ## Limitations
-* DNS server is not (always) correctly set 
-* Sometimes it seems that it takes some seconds in order for the connectivity work
 * Non-mesh clients gets disconnected probably because of `esp_mesh_set_ap_assoc_expire` timer
 * Unstable performance (see the 3-layer iPerf test below) sometimes starting the iPerf client make the connectivity drops completely (not even a ping) which is later then restore
 

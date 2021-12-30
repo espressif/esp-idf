@@ -7,17 +7,18 @@
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
+#include <lwip/netif.h>
+#include <lwip/lwip_napt.h>
+#include <esp_console.h>
+#include <lwip/inet.h>
 #include <string.h>
 #include "esp_wifi.h"
 #include "esp_system.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "esp_mesh.h"
-#include <lwip/lwip_napt.h>
-#include <lwip/netif.h>
-#include <esp_console.h>
-#include <lwip/inet.h>
 #include "nvs_flash.h"
+
 
 /*******************************************************
  *                Macros
@@ -256,25 +257,73 @@ void mesh_event_handler(void *arg, esp_event_base_t event_base,
     }
 }
 
+static esp_err_t set_dhcps_dns(esp_netif_t *netif, uint32_t addr)
+{
+    esp_netif_dns_info_t dns;
+    dns.ip.u_addr.ip4.addr = addr;
+    dns.ip.type = IPADDR_TYPE_V4;
+    dhcps_offer_t dhcps_dns_value = OFFER_DNS;
+    ESP_ERROR_CHECK(esp_netif_dhcps_option(netif, ESP_NETIF_OP_SET, ESP_NETIF_DOMAIN_NAME_SERVER, &dhcps_dns_value, sizeof(dhcps_dns_value)));
+    ESP_ERROR_CHECK(esp_netif_set_dns_info(netif, ESP_NETIF_DNS_MAIN, &dns));
+    return ESP_OK;
+}
+
+// Cloned method where I removed the ESP_NETIF_DHCP_SERVER flag from the SoftAP configuration
+// TODO: This fixes the DNS not properly sent to clients (the DNS in the DHCP options was always 0.0.0.0, no idea why its directly related to this flag)
+esp_err_t my_esp_netif_create_default_wifi_mesh_netifs(esp_netif_t **p_netif_sta, esp_netif_t **p_netif_ap)
+{
+    // Create "almost" default AP, with un-flagged DHCP server
+    esp_netif_inherent_config_t netif_cfg;
+    memcpy(&netif_cfg, ESP_NETIF_BASE_DEFAULT_WIFI_AP, sizeof(netif_cfg));
+    //netif_cfg.flags &= ~ESP_NETIF_DHCP_SERVER;
+    esp_netif_config_t cfg_ap = {
+            .base = &netif_cfg,
+            .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_AP,
+    };
+    esp_netif_t *netif_ap = esp_netif_new(&cfg_ap);
+    assert(netif_ap);
+    ESP_ERROR_CHECK(esp_netif_attach_wifi_ap(netif_ap));
+    ESP_ERROR_CHECK(esp_wifi_set_default_wifi_ap_handlers());
+
+    // ...and stop DHCP server to be compatible with former tcpip_adapter (to keep the ESP_NETIF_DHCP_STOPPED state)
+    ESP_ERROR_CHECK(esp_netif_dhcps_stop(netif_ap));
+
+    // Create "almost" default station, but with un-flagged DHCP client
+    memcpy(&netif_cfg, ESP_NETIF_BASE_DEFAULT_WIFI_STA, sizeof(netif_cfg));
+    netif_cfg.flags &= ~ESP_NETIF_DHCP_CLIENT;
+    esp_netif_config_t cfg_sta = {
+            .base = &netif_cfg,
+            .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA,
+    };
+    esp_netif_t *netif_sta = esp_netif_new(&cfg_sta);
+    assert(netif_sta);
+    ESP_ERROR_CHECK(esp_netif_attach_wifi_station(netif_sta));
+    ESP_ERROR_CHECK(esp_wifi_set_default_wifi_sta_handlers());
+
+    // ...and stop DHCP client (to be started separately if the station were promoted to root)
+    ESP_ERROR_CHECK(esp_netif_dhcpc_stop(netif_sta));
+
+    if (p_netif_sta) {
+        *p_netif_sta = netif_sta;
+    }
+    if (p_netif_ap) {
+        *p_netif_ap = netif_ap;
+    }
+    return ESP_OK;
+}
+
 void ip_event_handler(void *arg, esp_event_base_t event_base,
                       int32_t event_id, void *event_data) {
     ip_event_got_ip_t *event = (ip_event_got_ip_t *) event_data;
-    ESP_LOGI(MESH_TAG, "<IP_EVENT_STA_GOT_IP>IP:" IPSTR, IP2STR(&event->ip_info.ip));
+    char netif_name[3];
+    esp_netif_get_netif_impl_name(event->esp_netif, netif_name);
+    ESP_LOGI(MESH_TAG, "<IP_EVENT_STA_GOT_IP> netif %s IP:" IPSTR, netif_name,IP2STR(&event->ip_info.ip));
     s_current_ip.addr = event->ip_info.ip.addr;
 
     esp_netif_dns_info_t dns;
-    ESP_ERROR_CHECK(esp_netif_get_dns_info(netif_sta, ESP_NETIF_DNS_MAIN, &dns));
-    u32_t dns_addr = dns.ip.u_addr.ip4.addr;
-    if(dns_addr != ESP_IP4TOADDR(0,0,0,0)){
-        dns.ip.u_addr.ip4.addr = dns_addr;
-    } else {
-        ESP_LOGW(MESH_TAG, "[%s] Invalid DNS address, forward default DNS to AP clients", esp_mesh_is_root() ? "ROOT" : "NODE");
-        dns.ip.u_addr.ip4.addr = ESP_IP4TOADDR(1, 1, 1, 1);
-    }
-    dns.ip.type = IPADDR_TYPE_V4;
-    dhcps_offer_t dhcps_dns_value = OFFER_DNS;
-    ESP_ERROR_CHECK(esp_netif_dhcps_option(netif_ap, ESP_NETIF_OP_SET, ESP_NETIF_DOMAIN_NAME_SERVER, &dhcps_dns_value, sizeof(dhcps_dns_value)));
-    ESP_ERROR_CHECK(esp_netif_set_dns_info(netif_ap, ESP_NETIF_DNS_MAIN, &dns));
+    ESP_ERROR_CHECK(esp_netif_get_dns_info(event->esp_netif, ESP_NETIF_DNS_MAIN, &dns));
+    ESP_LOGI(MESH_TAG, "[%s] Read DNS AP IP %s", esp_mesh_is_root() ? "ROOT" : "NODE", inet_ntoa(dns.ip.u_addr.ip4.addr));
+    set_dhcps_dns(netif_ap, dns.ip.u_addr.ip4.addr);
     ESP_LOGI(MESH_TAG, "[%s] Forwarding DNS %s to AP clients", esp_mesh_is_root() ? "ROOT" : "NODE", inet_ntoa(dns.ip.u_addr.ip4.addr));
 
     if (esp_mesh_is_root()) {
@@ -319,7 +368,7 @@ void app_main(void) {
     /*  event initialization */
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     /*  create network interfaces for mesh (only station instance saved for further manipulation, soft AP instance ignored */
-    ESP_ERROR_CHECK(esp_netif_create_default_wifi_mesh_netifs(&netif_sta, &netif_ap));
+    ESP_ERROR_CHECK(my_esp_netif_create_default_wifi_mesh_netifs(&netif_sta, &netif_ap));
     ESP_LOGI(MESH_TAG, "Changed IP of ROOT AP to" IPSTR, IP2STR(&g_mesh_netif_subnet_ip.ip));
     esp_netif_set_ip_info(netif_ap, &g_mesh_netif_subnet_ip);
 

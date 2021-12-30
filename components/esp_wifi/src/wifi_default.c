@@ -381,7 +381,7 @@ esp_err_t esp_netif_create_default_wifi_mesh_netifs(esp_netif_t **p_netif_sta, e
     // Create "almost" default AP, with un-flagged DHCP server
     esp_netif_inherent_config_t netif_cfg;
     memcpy(&netif_cfg, ESP_NETIF_BASE_DEFAULT_WIFI_AP, sizeof(netif_cfg));
-    netif_cfg.flags &= ~ESP_NETIF_DHCP_SERVER;
+    //netif_cfg.flags &= ~ESP_NETIF_DHCP_SERVER;
     esp_netif_config_t cfg_ap = {
             .base = &netif_cfg,
             .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_AP,
