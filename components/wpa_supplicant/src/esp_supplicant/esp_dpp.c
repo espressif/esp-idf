@@ -13,7 +13,7 @@
 #include "common/ieee802_11_defs.h"
 
 #ifdef CONFIG_DPP
-static void *s_dpp_task_hdl = NULL;
+static TaskHandle_t s_dpp_task_hdl = NULL;
 static void *s_dpp_evt_queue = NULL;
 static void *s_dpp_api_lock = NULL;
 
@@ -620,6 +620,7 @@ void esp_supp_dpp_stop_listen(void)
 esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
 {
     struct dpp_global_config cfg = {0};
+    int ret;
 
     os_bzero(&s_dpp_ctx, sizeof(s_dpp_ctx));
     s_dpp_ctx.dpp_event_cb = cb;
@@ -630,7 +631,11 @@ esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
 
     s_dpp_stop_listening = false;
     s_dpp_evt_queue = xQueueCreate(3, sizeof(dpp_event_t));
-    xTaskCreate(esp_dpp_task, "dppT", DPP_TASK_STACK_SIZE, NULL, 2, s_dpp_task_hdl);
+    ret = xTaskCreate(esp_dpp_task, "dppT", DPP_TASK_STACK_SIZE, NULL, 2, &s_dpp_task_hdl);
+    if (ret != pdPASS) {
+        wpa_printf(MSG_ERROR, "DPP: failed to create task");
+        return ESP_FAIL;
+    }
 
     s_dpp_api_lock = xSemaphoreCreateRecursiveMutex();
     if (!s_dpp_api_lock) {
