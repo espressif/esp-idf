@@ -147,7 +147,6 @@ exclude =
         components/expat/expat,
         components/json/cJSON,
         components/mbedtls/mbedtls,
-        components/nghttp/nghttp2,
         components/openthread/openthread,
         components/tinyusb,
         components/unity/unity,

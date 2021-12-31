@@ -26,7 +26,6 @@ skip:
   - "components/lwip/lwip"
   - "components/mbedtls/mbedtls"
   - "components/mqtt/esp-mqtt"
-  - "components/nghttp/nghttp2"
   - "components/openthread/lib"
   - "components/openthread/openthread"
   - "components/protobuf-c/protobuf-c"
