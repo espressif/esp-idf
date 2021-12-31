@@ -34,7 +34,7 @@ void esp_vfs_dev_uart_register(void);
  *
  * @param mode line endings expected on UART
  */
-void esp_vfs_dev_uart_set_rx_line_endings(esp_line_endings_t mode) __attribute__((deprecated));
+void esp_vfs_dev_uart_set_rx_line_endings(esp_line_endings_t mode) __attribute__((deprecated("Please use esp_vfs_dev_uart_port_set_rx_line_endings")));
 
 /**
  * @brief Set the line endings to sent to UART
@@ -50,7 +50,7 @@ void esp_vfs_dev_uart_set_rx_line_endings(esp_line_endings_t mode) __attribute__
  *
  * @param mode line endings to send to UART
  */
-void esp_vfs_dev_uart_set_tx_line_endings(esp_line_endings_t mode) __attribute__((deprecated));
+void esp_vfs_dev_uart_set_tx_line_endings(esp_line_endings_t mode) __attribute__((deprecated("Please use esp_vfs_dev_uart_port_set_tx_line_endings")));
 
 /**
  * @brief Set the line endings expected to be received on specified UART
