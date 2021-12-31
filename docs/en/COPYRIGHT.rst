@@ -69,6 +69,8 @@ These third party libraries can be included into the application (firmware) prod
 
 * `freemodbus`_ Copyright (c) 2006-2013 Christian Walter, Armink and licensed under the BSD license.
 
+* :component:`HTTP Parser <http_parser>` Based on src/http/ngx_http_parse.c from NGINX copyright Igor Sysoev. Additional changes are licensed under the same terms as NGINX and Joyent, Inc. and other Node contributors. For details please check :component_file:`LICENSE file<http_parser/LICENSE.txt>`.
+
 Build Tools
 -----------
 
