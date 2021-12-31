@@ -2669,7 +2669,6 @@ examples/protocols/esp_local_ctrl/main/app_main.c
 examples/protocols/esp_local_ctrl/main/esp_local_ctrl_service.c
 examples/protocols/esp_local_ctrl/scripts/esp_local_ctrl.py
 examples/protocols/esp_local_ctrl/scripts/proto_lc.py
-examples/protocols/http2_request/components/sh2lib/sh2lib.h
 examples/protocols/http2_request/main/http2_request_example_main.c
 examples/protocols/http_request/main/http_request_example_main.c
 examples/protocols/http_server/advanced_tests/http_server_advanced_test.py
