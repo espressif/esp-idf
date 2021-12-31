@@ -3,13 +3,28 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 // The long term plan is to have a single soc_caps.h for each peripheral.
 // During the refactoring and multichip support development process, we
 // seperate these information into periph_caps.h for each peripheral and
 // include them here.
 
+/*
+ * These defines are parsed and imported as kconfig variables via the script
+ * `tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py`
+ *
+ * If this file is changed the script will automatically run the script
+ * and generate the kconfig variables as part of the pre-commit hooks.
+ *
+ * It can also be ran manually with `./tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py 'components/soc/esp32c3/include/soc/'`
+ *
+ * For more information see `tools/gen_soc_caps_kconfig/README.md`
+ *
+*/
+
 #pragma once
 
+/*-------------------------- COMMON CAPS ---------------------------------------*/
 #define SOC_CPU_CORES_NUM               1
 #define SOC_ADC_SUPPORTED               1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
@@ -17,8 +32,6 @@
 #define SOC_BT_SUPPORTED                0 // Enable during bringup, IDF-4357
 #define SOC_WIFI_SUPPORTED              0 // Enable during bringup, IDF-3905
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
-
-/*-------------------------- COMMON CAPS ---------------------------------------*/
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 3
 #define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS 1
@@ -144,6 +157,11 @@
 
 #define SOC_RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE  (SOC_RTC_CNTL_CPU_PD_REG_FILE_NUM * (SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH >> 3))
 
+/*-------------------------- RTCIO CAPS --------------------------------------*/
+/* No dedicated RTCIO subsystem on ESP8684. RTC functions are still supported
+ * for hold, wake & 32kHz crystal functions - via rtc_cntl_reg */
+#define SOC_RTCIO_PIN_COUNT    (0U)
+
 /*--------------------------- RSA CAPS ---------------------------------------*/
 #define SOC_RSA_MAX_BIT_LEN    (3072)
 
@@ -227,7 +245,6 @@
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP8684 has 2 UARTs
 #define SOC_UART_NUM                (2)
-
 #define SOC_UART_FIFO_LEN           (128)      /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX        (5000000)  /*!< Max bit rate supported by UART */
 

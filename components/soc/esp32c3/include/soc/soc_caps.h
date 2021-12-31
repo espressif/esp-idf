@@ -193,7 +193,7 @@
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 /* No dedicated RTCIO subsystem on ESP32-C3. RTC functions are still supported
  * for hold, wake & 32kHz crystal functions - via rtc_cntl_reg */
-#define SOC_RTCIO_PIN_COUNT    0
+#define SOC_RTCIO_PIN_COUNT    (0U)
 
 /*--------------------------- RSA CAPS ---------------------------------------*/
 #define SOC_RSA_MAX_BIT_LEN    (3072)

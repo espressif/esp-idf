@@ -368,8 +368,8 @@ config SOC_RTC_CNTL_CPU_PD_REG_FILE_NUM
     default 108
 
 config SOC_RTCIO_PIN_COUNT
-    bool
-    default n
+    int
+    default 0
 
 config SOC_RSA_MAX_BIT_LEN
     int
