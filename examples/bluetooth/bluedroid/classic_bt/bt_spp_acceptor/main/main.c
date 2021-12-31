@@ -39,7 +39,7 @@ static long data_num = 0;
 static const esp_spp_sec_t sec_mask = ESP_SPP_SEC_AUTHENTICATE;
 static const esp_spp_role_t role_slave = ESP_SPP_ROLE_SLAVE;
 
-static char *bda2str(uint8_t * bda, char *str, size_t size)
+static char *bda2str(uint8_t *bda, char *str, size_t size)
 {
     if (bda == NULL || str == NULL || size < 18) {
         return NULL;

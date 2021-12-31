@@ -56,7 +56,7 @@ static const uint8_t inq_num_rsps = 0;
 static uint8_t spp_data[SPP_DATA_LEN];
 static uint8_t *s_p_data = NULL; /* data pointer of spp_data */
 
-static char *bda2str(uint8_t * bda, char *str, size_t size)
+static char *bda2str(uint8_t *bda, char *str, size_t size)
 {
     if (bda == NULL || str == NULL || size < 18) {
         return NULL;

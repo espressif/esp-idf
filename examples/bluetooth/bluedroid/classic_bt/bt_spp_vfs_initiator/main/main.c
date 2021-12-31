@@ -54,7 +54,7 @@ static const uint8_t inq_num_rsps = 0;
 
 #define SPP_DATA_LEN 20
 
-static char *bda2str(uint8_t * bda, char *str, size_t size)
+static char *bda2str(uint8_t *bda, char *str, size_t size)
 {
     if (bda == NULL || str == NULL || size < 18) {
         return NULL;
