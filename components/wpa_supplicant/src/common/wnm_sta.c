@@ -308,11 +308,14 @@ bool wpa_scan_res_match(struct wpa_supplicant *wpa_s,
 		return false;
 	}
 
-	/* TODO security Match */
+	/* Just check for Open/secure mode */
+	if ((current_bss->caps & WLAN_CAPABILITY_PRIVACY) != (target_bss->caps & WLAN_CAPABILITY_PRIVACY)) {
+		wpa_printf(MSG_DEBUG, "WNM: Security didn't match");
+		return false;
+	}
 
 	return true;
 }
-
 
 static struct wpa_bss *
 compare_scan_neighbor_results(struct wpa_supplicant *wpa_s, os_time_t age_secs,
