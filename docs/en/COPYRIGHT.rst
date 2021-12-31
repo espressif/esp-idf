@@ -43,8 +43,6 @@ These third party libraries can be included into the application (firmware) prod
 
 * `micro-ecc`_ library, Copyright (c) 2014 Kenneth MacKay, is licensed under 2-clause BSD license.
 
-* `nghttp2`_ library, Copyright (c) 2012, 2014, 2015, 2016 Tatsuhiro Tsujikawa, Copyright (c) 2012, 2014, 2015, 2016 nghttp2 contributors, is licensed under MIT license as described in :component_file:`COPYING file <nghttp/nghttp2/COPYING>`.
-
 * `Mbed TLS`_ library, Copyright (C) 2006-2018 ARM Limited, is licensed under Apache License 2.0 as described in :component_file:`LICENSE file <mbedtls/mbedtls/LICENSE>`.
 
 * `SPIFFS`_ library, Copyright (c) 2013-2017 Peter Andersson, is licensed under MIT license as described in :component_file:`LICENSE file <spiffs/spiffs/LICENSE>`.
@@ -166,7 +164,6 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _cJSON: https://github.com/DaveGamble/cJSON
 .. _libexpat: https://github.com/libexpat/libexpat
 .. _micro-ecc: https://github.com/kmackay/micro-ecc
-.. _nghttp2: https://github.com/nghttp2/nghttp2
 .. _OpenBSD SD/MMC driver: https://github.com/openbsd/src/blob/f303646/sys/dev/sdmmc/sdmmc.c
 .. _Mbed TLS: https://github.com/ARMmbed/mbedtls
 .. _spiffs: https://github.com/pellepl/spiffs
