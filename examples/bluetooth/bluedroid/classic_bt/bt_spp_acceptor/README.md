@@ -1,9 +1,9 @@
 | Supported Targets | ESP32 |
 | ----------------- | ----- |
 
-## ESP-IDF BT-SPP-ACCEPTOR demo
+## ESP-IDF BT-SPP-ACCEPTOR Example
 
-This example is to show how to use the APIs of **Serial Port Protocol** (**SPP**) to create an SPP acceptor which performs as a server. We aggregate **Secure Simple Pair** (**SSP**) into this demo to show how to use SPP when creating your own APPs. We also provide the demo `bt_spp_initiator` or the demo `bt_spp_vfs_initiator` to create an SPP initiator which performs as a client. In fact, you can create SPP acceptors and SPP initiators on a single device at the same time.
+This example is to show how to use the APIs of **Serial Port Protocol** (**SPP**) to create an SPP acceptor which performs as a server. We aggregate **Secure Simple Pair** (**SSP**) into this example to show how to use SPP when creating your own APPs. We also provide the example `bt_spp_initiator` or the example `bt_spp_vfs_initiator` to create an SPP initiator which performs as a client. In fact, you can create SPP acceptors and SPP initiators on a single device at the same time.
 
 ## How to use example
 
@@ -58,7 +58,7 @@ After the program starts, the example will start an SPP acceptor. The example wi
 
 ## FAQ
 Q: How to change the process of SSP?
-A: Users can set the IO Capability and Security Mask for their device (fixed Security Mode, Security Mode 4). In short, the Security Mask sets the security level for authentication stage and the IO Capability determines the way of user interaction during pairing. The default Security Mask of this demo is `ESP_SPP_SEC_AUTHENTICATE` which support MITM (Man In The Middle) protection. For more information about Security Simple Pair on ESP32, please refer to [ESP32_SSP](./ESP32_SSP.md).
+A: Users can set the IO Capability and Security Mask for their device (fixed Security Mode, Security Mode 4). In short, the Security Mask sets the security level for authentication stage and the IO Capability determines the way of user interaction during pairing. The default Security Mask of this example is `ESP_SPP_SEC_AUTHENTICATE` which support MITM (Man In The Middle) protection. For more information about Security Simple Pair on ESP32, please refer to [ESP32_SSP](./ESP32_SSP.md).
 
 
 Q: How many SPP servers does ESP32 support?
