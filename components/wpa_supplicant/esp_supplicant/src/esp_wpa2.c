@@ -64,7 +64,7 @@ static int wpa2_start_eapol_internal(void);
 int wpa2_post(uint32_t sig, uint32_t par);
 
 #ifdef USE_WPA2_TASK
-static void *s_wpa2_task_hdl = NULL;
+static TaskHandle_t s_wpa2_task_hdl = NULL;
 static void *s_wpa2_queue = NULL;
 static wpa2_state_t s_wpa2_state = WPA2_STATE_DISABLED;
 static void *s_wpa2_api_lock = NULL;
@@ -784,7 +784,7 @@ static int eap_peer_sm_init(void)
     gEapSm = sm;
 #ifdef USE_WPA2_TASK
     s_wpa2_queue = xQueueCreate(SIG_WPA2_MAX, sizeof(s_wpa2_queue));
-    ret = xTaskCreate(wpa2_task, "wpa2T", WPA2_TASK_STACK_SIZE, NULL, 2, s_wpa2_task_hdl);
+    ret = xTaskCreate(wpa2_task, "wpa2T", WPA2_TASK_STACK_SIZE, NULL, 2, &s_wpa2_task_hdl);
     if (ret != pdPASS) {
         wpa_printf(MSG_ERROR, "wps enable: failed to create task");
         ret = ESP_FAIL;
