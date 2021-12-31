@@ -19,10 +19,6 @@
 	path = components/coap/libcoap
 	url = ../../obgm/libcoap.git
 
-[submodule "components/nghttp/nghttp2"]
-	path = components/nghttp/nghttp2
-	url = ../../nghttp2/nghttp2.git
-
 [submodule "components/spiffs/spiffs"]
 	path = components/spiffs/spiffs
 	url = ../../pellepl/spiffs.git
