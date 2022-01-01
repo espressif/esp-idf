@@ -146,7 +146,7 @@ esp_err_t temp_sensor_read_celsius(float *celsius)
     esp_err_t ret = temp_sensor_get_config(&tsens);
     if (ret == ESP_OK) {
         ret = temp_sensor_read_raw(&tsens_out);
-        printf("tsens_out %d\r\n", tsens_out);
+        ESP_LOGV(TAG,"tsens_out %d\r\n", tsens_out);
         TSENS_CHECK(ret == ESP_OK, ret);
         const tsens_dac_offset_t *dac = &dac_offset[tsens.dac_offset];
         *celsius = parse_temp_sensor_raw_value(tsens_out, dac->offset);
