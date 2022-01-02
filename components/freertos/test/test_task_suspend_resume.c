@@ -9,21 +9,12 @@
 #include "freertos/queue.h"
 #include "unity.h"
 #include "test_utils.h"
-
-#include "driver/timer.h"
-
+#include "driver/gptimer.h"
 #ifndef CONFIG_FREERTOS_UNICORE
 #include "esp_ipc.h"
 #endif
 #include "esp_freertos_hooks.h"
-
 #include "esp_rom_sys.h"
-
-#ifdef CONFIG_IDF_TARGET_ESP32S2
-#define int_clr_timers int_clr
-#define update update.update
-#define int_st_timers int_st
-#endif
 
 /* Counter task counts a target variable forever */
 static void task_count(void *vp_counter)
@@ -116,33 +107,29 @@ TEST_CASE("Suspend the current running task", "[freertos]")
 }
 
 
-volatile bool timer_isr_fired;
+static volatile bool timer_isr_fired;
+static gptimer_handle_t gptimer = NULL;
 
 /* Timer ISR clears interrupt, sets flag, then resumes the task supplied in the
  * callback argument.
  */
-void IRAM_ATTR timer_group0_isr(void *vp_arg)
+bool on_timer_alarm_cb(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
-    // Clear interrupt
-    timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
-
-    timer_isr_fired = true;
-
-    TaskHandle_t handle = vp_arg;
+    TaskHandle_t handle = user_ctx;
     BaseType_t higherPriorityTaskWoken = pdFALSE;
+    gptimer_stop(timer);
+    timer_isr_fired = true;
     higherPriorityTaskWoken = xTaskResumeFromISR(handle);
-    if (higherPriorityTaskWoken == pdTRUE) {
-        portYIELD_FROM_ISR();
-    }
+    return higherPriorityTaskWoken == pdTRUE;
 }
 
 /* Task suspends itself, then sets parameter value to the current timer group counter and deletes itself */
-static void task_suspend_self_with_timer(void *vp_resumed)
+static IRAM_ATTR void task_suspend_self_with_timer(void *vp_resumed)
 {
     volatile uint64_t *resumed_counter = vp_resumed;
     *resumed_counter = 0;
     vTaskSuspend(NULL);
-    timer_get_counter_value(TIMER_GROUP_0, TIMER_0, vp_resumed);
+    gptimer_get_raw_count(gptimer, (uint64_t *)resumed_counter);
     vTaskDelete(NULL);
 }
 
@@ -157,49 +144,40 @@ static void test_resume_task_from_isr(int target_core)
     xTaskCreatePinnedToCore(task_suspend_self_with_timer, "suspend_self", 2048,
                             (void *)&resumed_counter, UNITY_FREERTOS_PRIORITY + 1,
                             &suspend_task, target_core);
-
+    // delay to make the task has resumed itself
     vTaskDelay(1);
     TEST_ASSERT_EQUAL(0, resumed_counter);
 
-    const unsigned APB_CYCLES_PER_TICK = TIMER_BASE_CLK / configTICK_RATE_HZ;
-    const unsigned TEST_TIMER_DIV = 2;
-    const unsigned TEST_TIMER_CYCLES_PER_TICK = APB_CYCLES_PER_TICK / TEST_TIMER_DIV;
-    const unsigned TEST_TIMER_CYCLES_PER_MS = TIMER_BASE_CLK / 1000 / TEST_TIMER_DIV;
-    const unsigned TEST_TIMER_ALARM = TEST_TIMER_CYCLES_PER_TICK / 2; // half an RTOS tick
-
     /* Configure timer ISR */
-    timer_isr_handle_t isr_handle;
-    const timer_config_t config = {
-        .alarm_en = 1,
-        .auto_reload = 0,
-        .counter_dir = TIMER_COUNT_UP,
-        .divider = TEST_TIMER_DIV,
-        .intr_type = TIMER_INTR_LEVEL,
-        .counter_en = TIMER_PAUSE,
+    gptimer_config_t timer_config = {
+        .clk_src = GPTIMER_CLK_SRC_APB,
+        .direction = GPTIMER_COUNT_UP,
+        .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
     };
-    /*Configure timer*/
-    ESP_ERROR_CHECK( timer_init(TIMER_GROUP_0, TIMER_0, &config) );
-    ESP_ERROR_CHECK( timer_pause(TIMER_GROUP_0, TIMER_0) );
-    ESP_ERROR_CHECK( timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0) );
-    ESP_ERROR_CHECK( timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, TEST_TIMER_ALARM) );
-    ESP_ERROR_CHECK( timer_enable_intr(TIMER_GROUP_0, TIMER_0) );
-    ESP_ERROR_CHECK( timer_isr_register(TIMER_GROUP_0, TIMER_0, timer_group0_isr, (void*)suspend_task, ESP_INTR_FLAG_IRAM, &isr_handle) );
+    TEST_ESP_OK(gptimer_new_timer(&timer_config, &gptimer));
     timer_isr_fired = false;
     vTaskDelay(1); // Make sure we're at the start of a new tick
-
-    ESP_ERROR_CHECK( timer_start(TIMER_GROUP_0, TIMER_0) );
-
-    vTaskDelay(1); // We expect timer group will fire half-way through this delay
-
+    gptimer_alarm_config_t alarm_config = {
+        .alarm_count = 1000000 / configTICK_RATE_HZ / 2,
+        .reload_count = 0,
+    };
+    gptimer_event_callbacks_t cbs = {
+        .on_alarm = on_timer_alarm_cb,
+    };
+    TEST_ESP_OK(gptimer_register_event_callbacks(gptimer, &cbs, suspend_task));
+    TEST_ESP_OK(gptimer_set_alarm_action(gptimer, &alarm_config));
+    TEST_ESP_OK(gptimer_start(gptimer));
+    // wait the timer interrupt fires up
+    vTaskDelay(2);
     TEST_ASSERT_TRUE(timer_isr_fired);
+    // check the task was resumed
     TEST_ASSERT_NOT_EQUAL(0, resumed_counter);
     // The task should have woken within 500us of the timer interrupt event (note: task may be a flash cache miss)
-    printf("alarm value %u task resumed at %u\n", TEST_TIMER_ALARM, (unsigned)resumed_counter);
-    TEST_ASSERT_UINT32_WITHIN(TEST_TIMER_CYCLES_PER_MS/2, TEST_TIMER_ALARM, (unsigned)resumed_counter);
+    printf("alarm value %llu task resumed at %u\n", alarm_config.alarm_count, (unsigned)resumed_counter);
+    TEST_ASSERT_UINT32_WITHIN(100, alarm_config.alarm_count, (unsigned)resumed_counter);
 
     // clean up
-    timer_deinit(TIMER_GROUP_0, TIMER_0);
-    ESP_ERROR_CHECK( esp_intr_free(isr_handle) );
+    TEST_ESP_OK(gptimer_del_timer(gptimer));
 }
 
 TEST_CASE("Resume task from ISR (same core)", "[freertos]")
@@ -216,7 +194,7 @@ TEST_CASE("Resume task from ISR (other core)", "[freertos]")
 static volatile bool block;
 static bool suspend_both_cpus;
 
-static void IRAM_ATTR suspend_scheduler_while_block_set(void* arg)
+static void IRAM_ATTR suspend_scheduler_while_block_set(void *arg)
 {
     vTaskSuspendAll();
 

@@ -8,8 +8,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
-#include "esp_private/periph_ctrl.h"
-#include "driver/timer.h"
 
 #include "esp_event.h"
 #include "esp_event_private.h"

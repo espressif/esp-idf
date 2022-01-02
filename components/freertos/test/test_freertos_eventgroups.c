@@ -5,14 +5,8 @@
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
 #include "freertos/event_groups.h"
-#include "driver/timer.h"
+#include "driver/gptimer.h"
 #include "unity.h"
-
-#ifdef CONFIG_IDF_TARGET_ESP32S2
-#define int_clr_timers int_clr
-#define update update.update
-#define int_st_timers int_st
-#endif
 
 #define BIT_CALL (1 << 0)
 #define BIT_RESPONSE(TASK) (1 << (TASK+1))
@@ -72,7 +66,7 @@ TEST_CASE("FreeRTOS Event Groups", "[freertos]")
 
     /* Ensure all tasks cleaned up correctly */
     for (int c = 0; c < NUM_TASKS; c++) {
-        TEST_ASSERT( xSemaphoreTake(done_sem, 100/portTICK_PERIOD_MS) );
+        TEST_ASSERT( xSemaphoreTake(done_sem, 100 / portTICK_PERIOD_MS) );
     }
 
     vSemaphoreDelete(done_sem);
@@ -117,7 +111,7 @@ TEST_CASE("FreeRTOS Event Group Sync", "[freertos]")
 
     /* Ensure all tasks cleaned up correctly */
     for (int c = 0; c < NUM_TASKS; c++) {
-        TEST_ASSERT( xSemaphoreTake(done_sem, 100/portTICK_PERIOD_MS) );
+        TEST_ASSERT( xSemaphoreTake(done_sem, 100 / portTICK_PERIOD_MS) );
     }
 
     vSemaphoreDelete(done_sem);
@@ -132,63 +126,27 @@ TEST_CASE("FreeRTOS Event Group Sync", "[freertos]")
  */
 
 //Use a timer to trigger an ISr
-#define TIMER_DIVIDER   10000
-#define TIMER_COUNT     100
-#define TIMER_NUMBER    0
 #define BITS            0xAA
-
-static timer_isr_handle_t isr_handle;
+static gptimer_handle_t gptimer;
 static bool test_set_bits;
 static bool test_clear_bits;
 
-static void IRAM_ATTR event_group_isr(void *arg)
+static bool on_timer_alarm_cb(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
     portBASE_TYPE task_woken = pdFALSE;
-    timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
-    timer_group_enable_alarm_in_isr(TIMER_GROUP_0, xPortGetCoreID());
 
-    if(test_set_bits){
+    gptimer_stop(timer);
+
+    if (test_set_bits) {
         xEventGroupSetBitsFromISR(eg, BITS, &task_woken);
-        timer_pause(TIMER_GROUP_0, TIMER_NUMBER);
         test_set_bits = false;
-    } else if (test_clear_bits){
+    } else if (test_clear_bits) {
         xEventGroupClearBitsFromISR(eg, BITS);
         xSemaphoreGiveFromISR(done_sem, &task_woken);
-        timer_pause(TIMER_GROUP_0, TIMER_NUMBER);
         test_clear_bits = false;
     }
     //Switch context if necessary
-    if(task_woken ==  pdTRUE){
-        portYIELD_FROM_ISR();
-    }
-}
-
-static void setup_timer(void)
-{
-    //Setup timer for ISR
-    int timer_group = TIMER_GROUP_0;
-    int timer_idx = TIMER_NUMBER;
-    timer_config_t config = {
-        .alarm_en = 1,
-        .auto_reload = 1,
-        .counter_dir = TIMER_COUNT_UP,
-        .divider = TIMER_DIVIDER,
-        .intr_type = TIMER_INTR_LEVEL,
-        .counter_en = TIMER_PAUSE,
-    };
-    timer_init(timer_group, timer_idx, &config);    //Configure timer
-    timer_pause(timer_group, timer_idx);    //Stop timer counter
-    timer_set_counter_value(timer_group, timer_idx, 0x00000000ULL); //Load counter value
-    timer_set_alarm_value(timer_group, timer_idx, TIMER_COUNT); //Set alarm value
-    timer_enable_intr(timer_group, timer_idx);  //Enable timer interrupt
-    timer_set_auto_reload(timer_group, timer_idx, 1);   //Auto Reload
-    timer_isr_register(timer_group, timer_idx, event_group_isr, NULL, ESP_INTR_FLAG_IRAM, &isr_handle);    //Set ISR handler
-}
-
-static void cleanup_timer(void)
-{
-    timer_disable_intr(TIMER_GROUP_0, TIMER_NUMBER);
-    esp_intr_free(isr_handle);
+    return task_woken == pdTRUE;
 }
 
 TEST_CASE("FreeRTOS Event Group ISR", "[freertos]")
@@ -197,23 +155,41 @@ TEST_CASE("FreeRTOS Event Group ISR", "[freertos]")
     eg = xEventGroupCreate();
     test_set_bits = false;
     test_clear_bits = false;
-    setup_timer();                                   //Init timer to trigger ISR
+    //Setup timer for ISR
+    gptimer_config_t config = {
+        .clk_src = GPTIMER_CLK_SRC_APB,
+        .direction = GPTIMER_COUNT_UP,
+        .resolution_hz = 1000000,
+    };
+    TEST_ESP_OK(gptimer_new_timer(&config, &gptimer));
+    gptimer_alarm_config_t alarm_config = {
+        .reload_count = 0,
+        .alarm_count = 200000,
+    };
+    gptimer_event_callbacks_t cbs = {
+        .on_alarm = on_timer_alarm_cb,
+    };
+    TEST_ESP_OK(gptimer_register_event_callbacks(gptimer, &cbs, NULL));
+    TEST_ESP_OK(gptimer_set_alarm_action(gptimer, &alarm_config));
 
     //Test set bits
+    printf("test set bits\r\n");
     test_set_bits = true;
-    timer_start(TIMER_GROUP_0, TIMER_NUMBER);
+    TEST_ESP_OK(gptimer_start(gptimer));
     TEST_ASSERT_EQUAL(BITS, xEventGroupWaitBits(eg, BITS, pdFALSE, pdTRUE, portMAX_DELAY));     //Let ISR set event group bits
 
     //Test clear bits
+    printf("test clear bits\r\n");
     xEventGroupSetBits(eg, BITS);                   //Set bits to be cleared
     test_clear_bits = true;
-    timer_start(TIMER_GROUP_0, TIMER_NUMBER);
+    TEST_ESP_OK(gptimer_set_raw_count(gptimer, 0));
+    TEST_ESP_OK(gptimer_start(gptimer));
     xSemaphoreTake(done_sem, portMAX_DELAY);        //Wait for ISR to clear bits
     vTaskDelay(10);                                 //Event group clear bits runs via daemon task, delay so daemon can run
     TEST_ASSERT_EQUAL(0, xEventGroupGetBits(eg));   //Check bits are cleared
 
     //Clean up
-    cleanup_timer();
+    TEST_ESP_OK(gptimer_del_timer(gptimer));
     vEventGroupDelete(eg);
     vSemaphoreDelete(done_sem);
     vTaskDelay(10);     //Give time for idle task to clear up deleted tasks

@@ -8,7 +8,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include <freertos/semphr.h>
-#include "driver/timer.h"
 #include "unity.h"
 #include "test_utils.h"
 

@@ -944,7 +944,6 @@ components/freertos/test/test_task_priorities.c
 components/freertos/test/test_task_suspend_resume.c
 components/freertos/test/test_tasks_snapshot.c
 components/freertos/test/test_thread_local.c
-components/freertos/test/test_timers.c
 components/freertos/test/test_xtensa_loadstore_handler.c
 components/hal/aes_hal.c
 components/hal/cpu_hal.c
@@ -2106,7 +2105,6 @@ components/vfs/include/esp_vfs_eventfd.h
 components/vfs/include/esp_vfs_semihost.h
 components/vfs/test/test_vfs_access.c
 components/vfs/test/test_vfs_append.c
-components/vfs/test/test_vfs_eventfd.c
 components/vfs/test/test_vfs_fd.c
 components/vfs/test/test_vfs_lwip.c
 components/vfs/test/test_vfs_paths.c

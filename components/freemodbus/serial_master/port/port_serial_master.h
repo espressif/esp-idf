@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * SPDX-FileContributor: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
  */
 /*
  * FreeModbus Libary: ESP32 Port Demo Application
@@ -39,7 +39,6 @@
 
 /* ----------------------- Platform includes --------------------------------*/
 #include "driver/uart.h"
-#include "driver/timer.h"
 #include "esp_log.h"                // for ESP_LOGE macro
 #include "mb_m.h"
 #include "port.h"
