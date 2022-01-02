@@ -14,6 +14,7 @@ if(NOT BOOTLOADER_BUILD)
         "spi_slave_hal.c"
         "spi_slave_hal_iram.c"
         "timer_hal.c"
+        "timer_hal_iram.c"
         "ledc_hal.c"
         "ledc_hal_iram.c"
         "i2c_hal.c"

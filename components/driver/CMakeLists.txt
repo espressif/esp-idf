@@ -2,8 +2,11 @@ idf_build_get_property(target IDF_TARGET)
 
 set(srcs
     "gpio.c"
+    "gptimer.c"
+    "timer_legacy.c"
     "i2c.c"
     "ledc.c"
+    "legacy_new_driver_coexist.c"
     "periph_ctrl.c"
     "rtc_io.c"
     "rtc_module.c"
@@ -14,7 +17,6 @@ set(srcs
     "spi_master.c"
     "spi_slave.c"
     "spi_bus_lock.c"
-    "timer.c"
     "uart.c")
 
 set(includes "include" "${target}/include" "deprecated")

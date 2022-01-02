@@ -22,3 +22,5 @@ entries:
     if IDF_TARGET_ESP32 = n:
         spi_flash_hal_gpspi (noflash)
         systimer_hal (noflash)
+    if GPTIMER_CTRL_FUNC_IN_IRAM = y:
+        timer_hal_iram (noflash)
