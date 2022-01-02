@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,25 +7,13 @@
 #ifndef __IOT_LIGHT_H__
 #define __IOT_LIGHT_H__
 
+#include "driver/ledc.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "driver/ledc.h"
-
-/********************************** NOTE *********************************/
-/* When we create a light object, a hardware timer will be enabled, this */
-/* timer is used to realize fade and blink operation. The default timer  */
-/* occupied is timer 0 of timer group 0, user can change this config in  */
-/* menuconfig.                                                           */
-/*************************************************************************/
-
 typedef void *light_handle_t;
-
-#define HW_TIMER_GROUP         (0)   /**< Hardware timer group */
-#define HW_TIMER_ID            (0)   /**< Hardware timer number */
-#define HW_TIMER_DIVIDER       (16)  /**< Hardware timer clock divider */
-#define HW_TIMER_SCALE         (TIMER_BASE_CLK / HW_TIMER_DIVIDER)  /**< Convert counter value to seconds */
 
 #define DUTY_SET_CYCLE         (20)  /**< Set duty cycle */
 #define DUTY_SET_GAMMA         (0.6) /**< Set the Gamma value for the fade curve, default value is 0.6 */

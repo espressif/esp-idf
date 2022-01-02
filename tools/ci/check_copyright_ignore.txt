@@ -2582,8 +2582,6 @@ examples/peripherals/lcd/tjpgd/main/pretty_effect.h
 examples/peripherals/ledc/ledc_basic/main/ledc_basic_example_main.c
 examples/peripherals/ledc/ledc_fade/main/ledc_fade_example_main.c
 examples/peripherals/mcpwm/mcpwm_bldc_hall_control/main/mcpwm_bldc_hall_control_example_main.c
-examples/peripherals/mcpwm/mcpwm_brushed_dc_control/components/motor_ctrl_timer/motor_ctrl_timer.c
-examples/peripherals/mcpwm/mcpwm_brushed_dc_control/components/motor_ctrl_timer/motor_ctrl_timer.h
 examples/peripherals/mcpwm/mcpwm_brushed_dc_control/main/cmd_mcpwm_motor.c
 examples/peripherals/mcpwm/mcpwm_brushed_dc_control/main/mcpwm_brushed_dc_control_example.c
 examples/peripherals/mcpwm/mcpwm_brushed_dc_control/main/mcpwm_brushed_dc_control_example.h

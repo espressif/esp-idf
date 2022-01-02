@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,13 +7,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "errno.h"
-
-#include "math.h"
+#include <errno.h>
+#include <math.h>
 #include "soc/ledc_reg.h"
 #include "soc/timer_group_struct.h"
 #include "soc/ledc_struct.h"
-#include "driver/timer.h"
+#include "driver/gptimer.h"
 #include "driver/ledc.h"
 #include "iot_led.h"
 #include "esp_log.h"
@@ -27,6 +26,8 @@
 #define GET_FIXED_INTEGER_PART(X, Q) (X >> Q)
 #define GET_FIXED_DECIMAL_PART(X, Q) (X & ((0x1U << Q) - 1))
 
+#define GPTIMER_RESOLUTION_HZ 1000000 // 1MHz, 1 tick=1us
+
 typedef struct {
     int cur;
     int final;
@@ -36,15 +37,10 @@ typedef struct {
 } ledc_fade_data_t;
 
 typedef struct {
-    timer_group_t timer_group;
-    timer_idx_t timer_id;
-} hw_timer_idx_t;
-
-typedef struct {
     ledc_fade_data_t fade_data[LEDC_CHANNEL_MAX];
     ledc_mode_t speed_mode;
     ledc_timer_t timer_num;
-    hw_timer_idx_t timer_id;
+    gptimer_handle_t gptimer;
 } iot_light_t;
 
 static const char *TAG = "iot_light";
@@ -52,40 +48,27 @@ static DRAM_ATTR iot_light_t *g_light_config = NULL;
 static DRAM_ATTR uint16_t *g_gamma_table = NULL;
 static DRAM_ATTR bool g_hw_timer_started = false;
 
-static void iot_timer_create(hw_timer_idx_t *timer_id, bool auto_reload,
-                             uint32_t timer_interval_ms, void *isr_handle)
+static IRAM_ATTR bool fade_timercb(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx);
+
+static void iot_timer_start(gptimer_handle_t gptimer)
 {
-    /* Select and initialize basic parameters of the timer */
-    timer_config_t config = {
-        .divider     = HW_TIMER_DIVIDER,
-        .counter_dir = TIMER_COUNT_UP,
-        .counter_en  = TIMER_PAUSE,
-        .alarm_en    = TIMER_ALARM_EN,
-        .intr_type   = TIMER_INTR_LEVEL,
-        .auto_reload = auto_reload,
+    gptimer_alarm_config_t alarm_config = {
+        .reload_count = 0,
+        .alarm_count = DUTY_SET_CYCLE / 1000 * GPTIMER_RESOLUTION_HZ,
+        .flags.auto_reload_on_alarm = true,
     };
-    timer_init(timer_id->timer_group, timer_id->timer_id, &config);
-
-    /* Timer's counter will initially start from value below.
-       Also, if auto_reload is set, this value will be automatically reload on alarm */
-    timer_set_counter_value(timer_id->timer_group, timer_id->timer_id, 0x00000000ULL);
-
-    /* Configure the alarm value and the interrupt on alarm. */
-    timer_set_alarm_value(timer_id->timer_group, timer_id->timer_id, timer_interval_ms * HW_TIMER_SCALE / 1000);
-    timer_enable_intr(timer_id->timer_group, timer_id->timer_id);
-    timer_isr_register(timer_id->timer_group, timer_id->timer_id, isr_handle,
-                       (void *) timer_id->timer_id, ESP_INTR_FLAG_IRAM, NULL);
-}
-
-static void iot_timer_start(hw_timer_idx_t *timer_id)
-{
-    timer_start(timer_id->timer_group, timer_id->timer_id);
+    gptimer_event_callbacks_t cbs = {
+        .on_alarm = fade_timercb,
+    };
+    gptimer_register_event_callbacks(gptimer, &cbs, NULL);
+    gptimer_set_alarm_action(gptimer, &alarm_config);
+    gptimer_start(gptimer);
     g_hw_timer_started = true;
 }
 
-static IRAM_ATTR void iot_timer_stop(hw_timer_idx_t *timer_id)
+static IRAM_ATTR void iot_timer_stop(gptimer_handle_t gptimer)
 {
-    timer_group_set_counter_enable_in_isr(timer_id->timer_group, timer_id->timer_id, TIMER_PAUSE);
+    gptimer_stop(gptimer);
     g_hw_timer_started = false;
 }
 
@@ -265,17 +248,9 @@ static IRAM_ATTR uint32_t gamma_value_to_duty(int value)
     return (cur + (next - cur) * tmp_r / (0x1U << LEDC_FIXED_Q));
 }
 
-static IRAM_ATTR void fade_timercb(void *para)
+static IRAM_ATTR bool fade_timercb(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
-    int timer_idx = (int) para;
     int idle_channel_num = 0;
-
-    /* Retrieve the interrupt status */
-    timer_group_get_intr_status_in_isr(HW_TIMER_GROUP);
-    timer_group_clr_intr_status_in_isr(HW_TIMER_GROUP, timer_idx);
-    /* After the alarm has been triggered
-      we need enable it again, so it is triggered the next time */
-    timer_group_enable_alarm_in_isr(HW_TIMER_GROUP, timer_idx);
 
     for (int channel = 0; channel < LEDC_CHANNEL_MAX; channel++) {
         ledc_fade_data_t *fade_data = g_light_config->fade_data + channel;
@@ -320,8 +295,10 @@ static IRAM_ATTR void fade_timercb(void *para)
     }
 
     if (idle_channel_num >= LEDC_CHANNEL_MAX) {
-        iot_timer_stop(&g_light_config->timer_id);
+        iot_timer_stop(timer);
     }
+
+    return false;
 }
 
 esp_err_t iot_led_init(ledc_timer_t timer_num, ledc_mode_t speed_mode, uint32_t freq_hz)
@@ -352,13 +329,12 @@ esp_err_t iot_led_init(ledc_timer_t timer_num, ledc_mode_t speed_mode, uint32_t 
         g_light_config->timer_num  = timer_num;
         g_light_config->speed_mode = speed_mode;
 
-
-        hw_timer_idx_t hw_timer = {
-            .timer_group = HW_TIMER_GROUP,
-            .timer_id    = HW_TIMER_ID,
+        gptimer_config_t timer_config = {
+            .clk_src = GPTIMER_CLK_SRC_APB,
+            .direction = GPTIMER_COUNT_UP,
+            .resolution_hz = GPTIMER_RESOLUTION_HZ,
         };
-        g_light_config->timer_id = hw_timer;
-        iot_timer_create(&hw_timer, 1, DUTY_SET_CYCLE, fade_timercb);
+        ESP_ERROR_CHECK(gptimer_new_timer(&timer_config, &g_light_config->gptimer));
     } else {
         ESP_LOGE(TAG, "g_light_config has been initialized");
     }
@@ -372,11 +348,11 @@ esp_err_t iot_led_deinit(void)
         free(g_gamma_table);
     }
 
+
     if (g_light_config) {
+        gptimer_del_timer(g_light_config->gptimer);
         free(g_light_config);
     }
-
-    timer_disable_intr(g_light_config->timer_id.timer_group, g_light_config->timer_id.timer_id);
 
     return ESP_OK;
 }
@@ -449,7 +425,7 @@ esp_err_t iot_led_set_channel(ledc_channel_t channel, uint8_t value, uint32_t fa
     }
 
     if (g_hw_timer_started != true) {
-        iot_timer_start(&g_light_config->timer_id);
+        iot_timer_start(g_light_config->gptimer);
     }
 
     return ESP_OK;
@@ -469,7 +445,7 @@ esp_err_t iot_led_start_blink(ledc_channel_t channel, uint8_t value, uint32_t pe
     fade_data->step  = (fade_flag) ? fade_data->cur / fade_data->num * -1 : 0;
 
     if (g_hw_timer_started != true) {
-        iot_timer_start(&g_light_config->timer_id);
+        iot_timer_start(g_light_config->gptimer);
     }
 
     return ESP_OK;
