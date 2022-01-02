@@ -94,7 +94,7 @@ menu "Application Level Tracing"
             prompt "Timer to use as timestamp source"
             depends on APPTRACE_SV_ENABLE
             default APPTRACE_SV_TS_SOURCE_CCOUNT if FREERTOS_UNICORE && !PM_ENABLE && !IDF_TARGET_ESP32C3
-            default APPTRACE_SV_TS_SOURCE_TIMER_00 if !FREERTOS_UNICORE && !PM_ENABLE && !IDF_TARGET_ESP32C3
+            default APPTRACE_SV_TS_SOURCE_GPTIMER if !FREERTOS_UNICORE && !PM_ENABLE && !IDF_TARGET_ESP32C3
             default APPTRACE_SV_TS_SOURCE_ESP_TIMER if PM_ENABLE || IDF_TARGET_ESP32C3
             help
                 SystemView needs to use a hardware timer as the source of timestamps
@@ -104,20 +104,8 @@ menu "Application Level Tracing"
                 bool "CPU cycle counter (CCOUNT)"
                 depends on FREERTOS_UNICORE && !PM_ENABLE && !IDF_TARGET_ESP32C3
 
-            config APPTRACE_SV_TS_SOURCE_TIMER_00
-                bool "Timer 0, Group 0"
-                depends on !PM_ENABLE && !IDF_TARGET_ESP32C3
-
-            config APPTRACE_SV_TS_SOURCE_TIMER_01
-                bool "Timer 1, Group 0"
-                depends on !PM_ENABLE && !IDF_TARGET_ESP32C3
-
-            config APPTRACE_SV_TS_SOURCE_TIMER_10
-                bool "Timer 0, Group 1"
-                depends on !PM_ENABLE && !IDF_TARGET_ESP32C3
-
-            config APPTRACE_SV_TS_SOURCE_TIMER_11
-                bool "Timer 1, Group 1"
+            config APPTRACE_SV_TS_SOURCE_GPTIMER
+                bool "General Purpose Timer (Timer Group)"
                 depends on !PM_ENABLE && !IDF_TARGET_ESP32C3
 
             config APPTRACE_SV_TS_SOURCE_ESP_TIMER

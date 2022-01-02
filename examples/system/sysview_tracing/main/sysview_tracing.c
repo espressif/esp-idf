@@ -13,18 +13,9 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "driver/timer.h"
-
+#include "driver/gptimer.h"
 
 static const char *TAG = "example";
-
-typedef struct {
-    int          group;
-    int          timer;
-    int          count;
-    TaskHandle_t thnd;
-} example_event_data_t;
-
 
 #if CONFIG_APPTRACE_SV_ENABLE
 #if !CONFIG_USE_CUSTOM_EVENT_ID
@@ -72,7 +63,7 @@ static void example_sysview_event_send(uint32_t id, uint32_t val)
     SEGGER_SYSVIEW_SendPacket(&aPacket[0], pPayload, s_example_sysview_module.EventOffset + id);
 }
 
-#endif
+#endif // !CONFIG_USE_CUSTOM_EVENT_ID
 
 #else
 
@@ -81,36 +72,20 @@ static void example_sysview_event_send(uint32_t id, uint32_t val)
 #define SYSVIEW_EXAMPLE_WAIT_EVENT_START()
 #define SYSVIEW_EXAMPLE_WAIT_EVENT_END(_val_)
 
-#endif
+#endif // CONFIG_APPTRACE_SV_ENABLE
 
+typedef struct {
+    gptimer_handle_t gptimer;
+    int count;
+    TaskHandle_t thnd;
+    uint64_t period;
+    char task_name[32];
+} example_event_data_t;
 
-static void example_timer_init(int timer_group, int timer_idx, uint32_t period)
+static bool example_timer_alarm_cb(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
-    uint64_t alarm_val = (period * (TIMER_BASE_CLK / 1000000UL)) / 2;
-
-    timer_config_t config = {
-        .alarm_en = 1,
-        .auto_reload = 1,
-        .counter_dir = TIMER_COUNT_UP,
-        .divider = 2,     //Range is 2 to 65536
-        .intr_type = TIMER_INTR_LEVEL,
-        .counter_en = TIMER_PAUSE,
-    };
-    /*Configure timer*/
-    timer_init(timer_group, timer_idx, &config);
-    /*Stop timer counter*/
-    timer_pause(timer_group, timer_idx);
-    /*Load counter value */
-    timer_set_counter_value(timer_group, timer_idx, 0x00000000ULL);
-    /*Set alarm value*/
-    timer_set_alarm_value(timer_group, timer_idx, alarm_val);
-    /*Enable timer interrupt*/
-    timer_enable_intr(timer_group, timer_idx);
-}
-
-static void example_timer_isr(void *arg)
-{
-    example_event_data_t *tim_arg = (example_event_data_t *)arg;
+    example_event_data_t *tim_arg = (example_event_data_t *)user_ctx;
+    bool need_yield = false;
 
     if (tim_arg->thnd != NULL) {
         if (tim_arg->count++ < 10) {
@@ -121,35 +96,32 @@ static void example_timer_isr(void *arg)
             } else {
                 SYSVIEW_EXAMPLE_SEND_EVENT_END(tim_arg->count);
                 if (xHigherPriorityTaskWoken == pdTRUE) {
-                    portYIELD_FROM_ISR();
+                    need_yield = true;
                 }
             }
         }
     }
-    // re-start timer
-    timer_group_clr_intr_status_in_isr(tim_arg->group, tim_arg->timer);
-    timer_group_enable_alarm_in_isr(tim_arg->group, tim_arg->timer);
+    return need_yield;
 }
 
 static void example_task(void *p)
 {
+    uint32_t event_val;
     example_event_data_t *arg = (example_event_data_t *) p;
-    timer_isr_handle_t inth;
-
     ESP_LOGI(TAG, "%p: run task", xTaskGetCurrentTaskHandle());
-
-    esp_err_t res = timer_isr_register(arg->group, arg->timer, example_timer_isr, arg, 0, &inth);
-    if (res != ESP_OK) {
-        ESP_LOGE(TAG, "%p: failed to register timer ISR", xTaskGetCurrentTaskHandle());
-    } else {
-        res = timer_start(arg->group, arg->timer);
-        if (res != ESP_OK) {
-            ESP_LOGE(TAG, "%p: failed to start timer", xTaskGetCurrentTaskHandle());
-        }
-    }
-
+    gptimer_alarm_config_t alarm_config = {
+        .reload_count = 0,
+        .alarm_count = arg->period,
+        .flags.auto_reload_on_alarm = true,
+    };
+    // This task is pinned to a specific core, to the interrupt will also be install to that core
+    gptimer_event_callbacks_t cbs = {
+        .on_alarm = example_timer_alarm_cb,
+    };
+    ESP_ERROR_CHECK(gptimer_register_event_callbacks(arg->gptimer, &cbs, arg));
+    ESP_ERROR_CHECK(gptimer_set_alarm_action(arg->gptimer, &alarm_config));
+    ESP_ERROR_CHECK(gptimer_start(arg->gptimer));
     while (1) {
-        uint32_t event_val;
         SYSVIEW_EXAMPLE_WAIT_EVENT_START();
         xTaskNotifyWait(0, 0, &event_val, portMAX_DELAY);
         SYSVIEW_EXAMPLE_WAIT_EVENT_END(event_val);
@@ -159,18 +131,7 @@ static void example_task(void *p)
 
 void app_main(void)
 {
-    static example_event_data_t event_data[portNUM_PROCESSORS] = {
-        {
-            .group = TIMER_GROUP_1,
-            .timer = TIMER_0,
-        },
-#if CONFIG_FREERTOS_UNICORE == 0
-        {
-            .group = TIMER_GROUP_0,
-            .timer = TIMER_0,
-        },
-#endif
-    };
+    static example_event_data_t event_data[portNUM_PROCESSORS];
 
 #if CONFIG_APPTRACE_SV_ENABLE && CONFIG_USE_CUSTOM_EVENT_ID
     // Currently OpenOCD does not support requesting module info from target. So do the following...
@@ -183,22 +144,19 @@ void app_main(void)
     SEGGER_SYSVIEW_RegisterModule(&s_example_sysview_module);
 #endif
 
-#if !CONFIG_APPTRACE_SV_TS_SOURCE_TIMER_10
-    example_timer_init(TIMER_GROUP_1, TIMER_0, 2000);
-#else
-#warning "Timer (Group 1, Timer 0) is used by sysview module itself!"
-#endif
+    for (int i = 0; i < portNUM_PROCESSORS; i++) {
+        gptimer_config_t timer_config = {
+            .clk_src = GPTIMER_CLK_SRC_APB,
+            .direction = GPTIMER_COUNT_UP,
+            .resolution_hz = 1000000,
+        };
+        ESP_ERROR_CHECK(gptimer_new_timer(&timer_config, &event_data[i].gptimer));
+        event_data[i].period = 1000000 * (i + 1);
+    }
 
-#if !CONFIG_APPTRACE_SV_TS_SOURCE_TIMER_00
-    example_timer_init(TIMER_GROUP_0, TIMER_0, 4000);
-#else
-#warning "Timer (Group 0, Timer 0) is used by sysview module itself!"
-#endif
-
-    xTaskCreatePinnedToCore(example_task, "svtrace0", 2048, &event_data[0], 3, &event_data[0].thnd, 0);
-    ESP_LOGI(TAG, "Created task %p", event_data[0].thnd);
-#if CONFIG_FREERTOS_UNICORE == 0
-    xTaskCreatePinnedToCore(example_task, "svtrace1", 2048, &event_data[1], 3, &event_data[1].thnd, 1);
-    ESP_LOGI(TAG, "Created task %p", event_data[1].thnd);
-#endif
+    for (int i = 0; i < portNUM_PROCESSORS; i++) {
+        sprintf(event_data->task_name, "svtrace%d", i);
+        xTaskCreatePinnedToCore(example_task, event_data->task_name, 4096, &event_data[i], 3, &event_data[i].thnd, i);
+        ESP_LOGI(TAG, "Created task %p", event_data[i].thnd);
+    }
 }
