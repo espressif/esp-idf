@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import os
@@ -56,7 +56,7 @@ class FatFSGen(unittest.TestCase):
     def test_write_to_file_with_extension_sn_fat12(self) -> None:
         fatfs = fatfsgen.FATFS()
         fatfs.create_file('WRITEF', extension='TXT')
-        fatfs.write_content(path_from_root=['WRITEF.TXT'], content='testcontent')
+        fatfs.write_content(path_from_root=['WRITEF.TXT'], content=b'testcontent')
         fatfs.write_filesystem(CFG['output_file'])
         file_system = fatfs.read_filesystem(CFG['output_file'])
 
@@ -69,7 +69,7 @@ class FatFSGen(unittest.TestCase):
         fatfs = fatfsgen.FATFS()
         fatfs.create_directory('TESTFOLD')
         fatfs.create_file('WRITEF', extension='TXT', path_from_root=['TESTFOLD'])
-        fatfs.write_content(path_from_root=['TESTFOLD', 'WRITEF.TXT'], content='testcontent')
+        fatfs.write_content(path_from_root=['TESTFOLD', 'WRITEF.TXT'], content=b'testcontent')
         fatfs.write_filesystem(CFG['output_file'])
         file_system = fatfs.read_filesystem(CFG['output_file'])
 
@@ -100,7 +100,7 @@ class FatFSGen(unittest.TestCase):
     def test_full_sector_file(self) -> None:
         fatfs = fatfsgen.FATFS()
         fatfs.create_file('WRITEF', extension='TXT')
-        fatfs.write_content(path_from_root=['WRITEF.TXT'], content=CFG['sector_size'] * 'a')
+        fatfs.write_content(path_from_root=['WRITEF.TXT'], content=CFG['sector_size'] * b'a')
         fatfs.write_filesystem(CFG['output_file'])
         file_system = fatfs.read_filesystem(CFG['output_file'])
         self.assertEqual(file_system[0x1000: 0x100e], b'\xf8\xff\xff\xff\x0f\x00\x00\x00\x00\x00\x00\x00\x00\x00')
@@ -109,7 +109,7 @@ class FatFSGen(unittest.TestCase):
     def test_file_chaining(self) -> None:
         fatfs = fatfsgen.FATFS()
         fatfs.create_file('WRITEF', extension='TXT')
-        fatfs.write_content(path_from_root=['WRITEF.TXT'], content=CFG['sector_size'] * 'a' + 'a')
+        fatfs.write_content(path_from_root=['WRITEF.TXT'], content=CFG['sector_size'] * b'a' + b'a')
         fatfs.write_filesystem(CFG['output_file'])
         file_system = fatfs.read_filesystem(CFG['output_file'])
         self.assertEqual(file_system[0x1000: 0x100e], b'\xf8\xff\xff\x03\xf0\xff\x00\x00\x00\x00\x00\x00\x00\x00')
@@ -121,8 +121,8 @@ class FatFSGen(unittest.TestCase):
 
         for i in range(CFG['sector_size'] // CFG['entry_size']):
             fatfs.create_file(f'A{str(i).upper()}', path_from_root=['TESTFOLD'])
-        fatfs.write_content(path_from_root=['TESTFOLD', 'A0'], content='first')
-        fatfs.write_content(path_from_root=['TESTFOLD', 'A126'], content='later')
+        fatfs.write_content(path_from_root=['TESTFOLD', 'A0'], content=b'first')
+        fatfs.write_content(path_from_root=['TESTFOLD', 'A126'], content=b'later')
         fatfs.write_filesystem(CFG['output_file'])
         file_system = fatfs.read_filesystem(CFG['output_file'])
         self.assertEqual(file_system[0x1000: 0x10d0],
@@ -136,13 +136,13 @@ class FatFSGen(unittest.TestCase):
         fatfs.create_directory('TESTFOLD')
         fatfs.create_directory('TESTFOLL', path_from_root=['TESTFOLD'])
         self.assertRaises(WriteDirectoryException, fatfs.write_content, path_from_root=['TESTFOLD', 'TESTFOLL'],
-                          content='testcontent')
+                          content=b'testcontent')
 
     def test_write_non_existing_file_in_folder_sn_fat12(self) -> None:
         fatfs = fatfsgen.FATFS()
         fatfs.create_directory('TESTFOLD')
         self.assertRaises(FileNotFoundError, fatfs.write_content, path_from_root=['TESTFOLD', 'AHOJ'],
-                          content='testcontent')
+                          content=b'testcontent')
 
     @staticmethod
     def create_too_many_files() -> None:
@@ -160,8 +160,8 @@ class FatFSGen(unittest.TestCase):
 
         for i in range(2 * CFG['sector_size'] // CFG['entry_size']):
             fatfs.create_file(f'A{str(i).upper()}', path_from_root=['TESTFOLD'])
-        fatfs.write_content(path_from_root=['TESTFOLD', 'A253'], content='later')
-        fatfs.write_content(path_from_root=['TESTFOLD', 'A255'], content='last')
+        fatfs.write_content(path_from_root=['TESTFOLD', 'A253'], content=b'later')
+        fatfs.write_content(path_from_root=['TESTFOLD', 'A255'], content=b'last')
         fatfs.write_filesystem(CFG['output_file'])
         file_system = fatfs.read_filesystem(CFG['output_file'])
         self.assertEqual(file_system[0x105000:0x105010], b'later\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
@@ -192,7 +192,7 @@ class FatFSGen(unittest.TestCase):
         fatfs.create_directory('TESTFOLL', path_from_root=['TESTFOLD'])
         fatfs.create_directory('TESTFOLO', path_from_root=['TESTFOLD', 'TESTFOLL'])
         fatfs.create_file('WRITEF', extension='TXT', path_from_root=['TESTFOLD', 'TESTFOLL', 'TESTFOLO'])
-        fatfs.write_content(path_from_root=['TESTFOLD', 'TESTFOLL', 'TESTFOLO', 'WRITEF.TXT'], content='later')
+        fatfs.write_content(path_from_root=['TESTFOLD', 'TESTFOLL', 'TESTFOLO', 'WRITEF.TXT'], content=b'later')
         fatfs.write_filesystem(CFG['output_file'])
         file_system = fatfs.read_filesystem(CFG['output_file'])
 
@@ -204,7 +204,7 @@ class FatFSGen(unittest.TestCase):
         fatfs.create_directory('TESTFOLD', path_from_root=['TESTFOLD'])
         fatfs.create_directory('TESTFOLD', path_from_root=['TESTFOLD', 'TESTFOLD'])
         fatfs.create_file('WRITEF', extension='TXT', path_from_root=['TESTFOLD', 'TESTFOLD', 'TESTFOLD'])
-        fatfs.write_content(path_from_root=['TESTFOLD', 'TESTFOLD', 'TESTFOLD', 'WRITEF.TXT'], content='later')
+        fatfs.write_content(path_from_root=['TESTFOLD', 'TESTFOLD', 'TESTFOLD', 'WRITEF.TXT'], content=b'later')
         fatfs.write_filesystem(CFG['output_file'])
         file_system = fatfs.read_filesystem(CFG['output_file'])
 
