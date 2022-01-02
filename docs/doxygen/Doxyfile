@@ -106,7 +106,7 @@ INPUT = \
     $(PROJECT_PATH)/components/driver/include/driver/spi_slave.h \
     $(PROJECT_PATH)/components/driver/include/driver/spi_slave_hd.h \
     $(PROJECT_PATH)/components/hal/include/hal/timer_types.h \
-    $(PROJECT_PATH)/components/driver/include/driver/timer.h \
+    $(PROJECT_PATH)/components/driver/include/driver/gptimer.h \
     $(PROJECT_PATH)/components/hal/include/hal/touch_sensor_types.h \
     $(PROJECT_PATH)/components/driver/include/driver/touch_sensor_common.h \
     $(PROJECT_PATH)/components/hal/include/hal/twai_types.h \

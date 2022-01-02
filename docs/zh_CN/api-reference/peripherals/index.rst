@@ -8,8 +8,8 @@
 
     adc
     :SOC_DAC_SUPPORTED: dac
-    timer
     gpio
+    gptimer
     :SOC_DEDICATED_GPIO_SUPPORTED: dedic_gpio
     :SOC_HMAC_SUPPORTED: hmac
     :SOC_DIG_SIGN_SUPPORTED: ds
