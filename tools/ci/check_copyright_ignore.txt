@@ -2751,7 +2751,6 @@ examples/protocols/http_server/restful_server/main/rest_server.c
 examples/protocols/http_server/simple/http_server_simple_test.py
 examples/protocols/http_server/simple/main/main.c
 examples/protocols/http_server/ws_echo_server/main/ws_echo_server.c
-examples/protocols/http_server/ws_echo_server/ws_server_example_test.py
 examples/protocols/https_mbedtls/main/https_mbedtls_example_main.c
 examples/protocols/https_request/example_test.py
 examples/protocols/https_request/main/https_request_example_main.c
