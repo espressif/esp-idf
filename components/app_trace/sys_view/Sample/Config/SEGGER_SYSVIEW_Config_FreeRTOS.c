@@ -101,26 +101,16 @@ extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
 #endif
 
 #if TS_USE_TIMERGROUP
-#include "driver/timer.h"
+#include "driver/gptimer.h"
 
 // Timer group timer divisor
 #define SYSVIEW_TIMER_DIV       2
 
-// Frequency of the timestamp.
+// Frequency of the timestamp, using APB as GPTimer source clock
 #define SYSVIEW_TIMESTAMP_FREQ  (esp_clk_apb_freq() / SYSVIEW_TIMER_DIV)
 
-// Timer ID and group ID
-#if defined(CONFIG_APPTRACE_SV_TS_SOURCE_TIMER_00) || defined(CONFIG_APPTRACE_SV_TS_SOURCE_TIMER_10)
-#define TS_TIMER_ID 0
-#else
-#define TS_TIMER_ID 1
-#endif // TIMER_00 || TIMER_01
-
-#if defined(CONFIG_APPTRACE_SV_TS_SOURCE_TIMER_00) || defined(CONFIG_APPTRACE_SV_TS_SOURCE_TIMER_01)
-#define TS_TIMER_GROUP 0
-#else
-#define TS_TIMER_GROUP 1
-#endif // TIMER_00 || TIMER_10
+// GPTimer handle
+gptimer_handle_t s_sv_gptimer;
 
 #endif // TS_USE_TIMERGROUP
 
@@ -199,19 +189,15 @@ static void SEGGER_SYSVIEW_TS_Init(void)
      * esp_timer and ccount can be used as is.
      */
 #if TS_USE_TIMERGROUP
-    timer_config_t config = {
-        .alarm_en = 0,
-        .auto_reload = 0,
-        .counter_dir = TIMER_COUNT_UP,
-        .divider = SYSVIEW_TIMER_DIV,
-        .counter_en = 0
+    gptimer_config_t config = {
+        .clk_src = GPTIMER_CLK_SRC_APB,
+        .direction = GPTIMER_COUNT_UP,
+        .resolution_hz = SYSVIEW_TIMESTAMP_FREQ,
     };
-    /* Configure timer */
-    timer_init(TS_TIMER_GROUP, TS_TIMER_ID, &config);
-    /* Load counter value */
-    timer_set_counter_value(TS_TIMER_GROUP, TS_TIMER_ID, 0x00000000ULL);
+    // pick any free GPTimer instance
+    ESP_ERROR_CHECK(gptimer_new_timer(&config, &s_sv_gptimer));
     /* Start counting */
-    timer_start(TS_TIMER_GROUP, TS_TIMER_ID);
+    gptimer_start(s_sv_gptimer);
 #endif // TS_USE_TIMERGROUP
 }
 
@@ -269,7 +255,7 @@ U32 SEGGER_SYSVIEW_X_GetTimestamp(void)
 {
 #if TS_USE_TIMERGROUP
     uint64_t ts = 0;
-    timer_get_counter_value(TS_TIMER_GROUP, TS_TIMER_ID, &ts);
+    gptimer_get_raw_count(s_sv_gptimer, &ts);
     return (U32) ts; // return lower part of counter value
 #elif TS_USE_CCOUNT
     return portGET_RUN_TIME_COUNTER_VALUE();
