@@ -1,17 +1,18 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
+#include "sdkconfig.h"
+#include "esp_err.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "esp_err.h"
-#include "soc/soc_caps.h"
 
 /**
  * @brief For WIFI module to claim the usage of ADC2.

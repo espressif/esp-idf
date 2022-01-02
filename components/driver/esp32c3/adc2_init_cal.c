@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,8 +8,8 @@
 The linker will link constructor (adc2_init_code_calibration) only when any sections inside the same file (adc2_cal_include) is used.
 Don't put any other code into this file. */
 
-#include "adc2_wifi_private.h"
 #include "hal/adc_hal.h"
+#include "esp_private/adc2_wifi.h"
 #include "esp_private/adc_cali.h"
 
 /**

@@ -16,3 +16,8 @@ Version before v5.0, spi flash functions in rom can be included by ``esp32**/rom
 Therefore, the common APIs are extracted to ``esp_rom_spiflash.h``. Although it's not a breaking change, it is strongly recommended to only use the functions with prefix ``esp_rom_spiflash`` included by ``esp_rom_spiflash.h`` for better cross-compatibility.
 
 To make the API clearer, we renamed the function ``esp_rom_spiflash_lock`` to ``esp_rom_spiflash_set_bp``. We renamed ``esp_rom_spiflash_unlock`` to ``esp_rom_spiflash_clear_bp``.
+
+ADC
+---
+
+Previous `driver/adc2_wifi_private.h` has been moved to `esp_private/adc2_wifi.h`.
