@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 
 import pytest
@@ -10,7 +10,7 @@ from pytest_embedded.dut import Dut
 @pytest.mark.esp32s3
 @pytest.mark.esp32c3
 @pytest.mark.generic
-def test_timer_group_example(dut: Dut):  # type: ignore
+def test_timer_group_example(dut: Dut) -> None:
     dut.expect(r'Init timer with auto-reload', timeout=5)
     res = dut.expect(r'Timer auto reloaded, count value in ISR: (\d+)', timeout=5)
     reloaded_count = res.group(1).decode('utf8')
