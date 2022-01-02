@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,16 +7,12 @@
 #ifndef __IOT_LED_H__
 #define __IOT_LED_H__
 
+#include "driver/ledc.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "driver/ledc.h"
-
-#define HW_TIMER_GROUP (0)                                 /**< Hardware timer group */
-#define HW_TIMER_ID (0)                                    /**< Hardware timer number */
-#define HW_TIMER_DIVIDER (16)                              /**< Hardware timer clock divider */
-#define HW_TIMER_SCALE (TIMER_BASE_CLK / HW_TIMER_DIVIDER) /**< Convert counter value to seconds */
 #define GAMMA_CORRECTION 0.8                               /**< Gamma curve parameter */
 #define GAMMA_TABLE_SIZE 256                               /**< Gamma table size, used for led fade*/
 #define DUTY_SET_CYCLE (20)                                /**< Set duty cycle */
