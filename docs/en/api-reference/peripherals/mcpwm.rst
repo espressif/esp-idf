@@ -224,7 +224,7 @@ Application Example
 MCPWM example are located under: :example:`peripherals/mcpwm`:
 
 * Control of BLDC (brushless DC) motor with hall sensor feedback - :example:`peripherals/mcpwm/mcpwm_bldc_hall_control`
-* Brushed DC motor control - :example:`peripherals/mcpwm/mcpwm_brushed_dc_control`
+* Brushed DC motor control - :example:`peripherals/mcpwm/mcpwm_bdc_speed_control`
 * Servo motor control - :example:`peripherals/mcpwm/mcpwm_servo_control`
 * HC-SR04 sensor with capture - :example:`peripherals/mcpwm/mcpwm_capture_hc_sr04`
 
