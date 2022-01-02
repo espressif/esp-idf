@@ -7,8 +7,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
-#include "esp_private/periph_ctrl.h"
-#include "driver/timer.h"
+#include "driver/gptimer.h"
 
 #include "esp_event.h"
 #include "esp_event_private.h"
@@ -301,10 +300,6 @@ static void test_teardown(void)
 {
     TEST_ESP_OK(esp_event_loop_delete_default());
 }
-
-#define TIMER_DIVIDER         16  //  Hardware timer clock divider
-#define TIMER_SCALE           (TIMER_BASE_CLK / TIMER_DIVIDER)  // convert counter value to seconds
-#define TIMER_INTERVAL0_SEC   (2.0) // sample test interval for the first timer
 
 TEST_CASE("can create and delete event loops", "[event]")
 {
@@ -1973,63 +1968,51 @@ static void test_handler_post_from_isr(void* event_handler_arg, esp_event_base_t
     xSemaphoreGive(*sem);
 }
 
-void IRAM_ATTR test_event_on_timer_alarm(void* para)
+bool test_event_on_timer_alarm(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
-    /* Retrieve the interrupt status and the counter value
-       from the timer that reported the interrupt */
-    uint64_t timer_counter_value =
-        timer_group_get_counter_value_in_isr(TIMER_GROUP_0, TIMER_0);
-    timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
-    timer_counter_value += (uint64_t) (TIMER_INTERVAL0_SEC * TIMER_SCALE);
-    timer_group_set_alarm_value_in_isr(TIMER_GROUP_0, TIMER_0, timer_counter_value);
-
-    int data = (int) para;
+    int data = (int)user_ctx;
+    gptimer_stop(timer);
     // Posting events with data more than 4 bytes should fail.
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_event_isr_post(s_test_base1, TEST_EVENT_BASE1_EV1, &data, 5, NULL));
     // This should succeedd, as data is int-sized. The handler for the event checks that the passed event data
     // is correct.
     BaseType_t task_unblocked;
     TEST_ESP_OK(esp_event_isr_post(s_test_base1, TEST_EVENT_BASE1_EV1, &data, sizeof(data), &task_unblocked));
-    if (task_unblocked == pdTRUE) {
-        portYIELD_FROM_ISR();
-    }
+    return task_unblocked == pdTRUE;
 }
 
 TEST_CASE("can post events from interrupt handler", "[event]")
 {
     SemaphoreHandle_t sem = xSemaphoreCreateBinary();
-
+    gptimer_handle_t gptimer = NULL;
     /* Select and initialize basic parameters of the timer */
-    timer_config_t config = {
-        .divider = TIMER_DIVIDER,
-        .counter_dir = TIMER_COUNT_UP,
-        .counter_en = TIMER_PAUSE,
-        .alarm_en = TIMER_ALARM_EN,
-        .intr_type = TIMER_INTR_LEVEL,
-        .auto_reload = false,
+    gptimer_config_t config = {
+        .clk_src = GPTIMER_CLK_SRC_APB,
+        .direction = GPTIMER_COUNT_UP,
+        .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
     };
-    timer_init(TIMER_GROUP_0, TIMER_0, &config);
+    TEST_ESP_OK(gptimer_new_timer(&config, &gptimer));
 
-    /* Timer's counter will initially start from value below.
-       Also, if auto_reload is set, this value will be automatically reload on alarm */
-    timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x00000000ULL);
-
-    /* Configure the alarm value and the interrupt on alarm. */
-    timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, TIMER_INTERVAL0_SEC * TIMER_SCALE);
-    timer_enable_intr(TIMER_GROUP_0, TIMER_0);
-    timer_isr_register(TIMER_GROUP_0, TIMER_0, test_event_on_timer_alarm,
-        (void *) sem, ESP_INTR_FLAG_IRAM, NULL);
-
-    timer_start(TIMER_GROUP_0, TIMER_0);
+    gptimer_alarm_config_t alarm_config = {
+        .reload_count = 0,
+        .alarm_count = 500000,
+    };
+    gptimer_event_callbacks_t cbs = {
+        .on_alarm = test_event_on_timer_alarm
+    };
+    TEST_ESP_OK(gptimer_register_event_callbacks(gptimer, &cbs, sem));
+    TEST_ESP_OK(gptimer_set_alarm_action(gptimer, &alarm_config));
+    TEST_ESP_OK(gptimer_start(gptimer));
 
     TEST_SETUP();
 
     TEST_ESP_OK(esp_event_handler_register(s_test_base1, TEST_EVENT_BASE1_EV1,
-                                                        test_handler_post_from_isr, &sem));
+                                           test_handler_post_from_isr, &sem));
 
     xSemaphoreTake(sem, portMAX_DELAY);
 
     TEST_TEARDOWN();
+    TEST_ESP_OK(gptimer_del_timer(gptimer));
 }
 
 #endif // CONFIG_ESP_EVENT_POST_FROM_ISR
