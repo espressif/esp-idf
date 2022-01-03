@@ -84,10 +84,6 @@ build_examples_pytest_esp32c3:
     - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
     # Only do the default cmake build for each target, remaining part are done in the build_template_app job
     - tools/ci/build_template_app.sh ${BUILD_COMMAND_ARGS}
-    # Check if there are any stray printf/ets_printf references in WiFi libs
-    - cd components/esp_wifi/lib
-    - for dir in esp32 esp32s2; do test $(xtensa-esp32-elf-nm $dir/*.a | grep -w printf | wc -l) -eq 0; done;
-    - for dir in esp32 esp32s2; do test $(xtensa-esp32-elf-nm $dir/*.a | grep -w ets_printf | wc -l) -eq 0; done;
 
 # build-related-pre-check-jobs ------------------------------------------------
 # Build at least one project for each target at earliest stage to reduce build cost for obvious failing commits
