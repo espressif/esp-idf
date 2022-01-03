@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import os
@@ -107,7 +107,7 @@ class FATFS:
             parent_dir = self.root_directory.recursive_search(path_from_root, self.root_directory)
         self.root_directory.new_directory(name=name, parent=parent_dir, path_from_root=path_from_root)
 
-    def write_content(self, path_from_root: List[str], content: str) -> None:
+    def write_content(self, path_from_root: List[str], content: bytes) -> None:
         """
         fat fs invokes root directory to recursively find the required file and writes the content
         """
@@ -167,7 +167,7 @@ class FATFS:
         normal_path = os.path.normpath(folder_relative_path)
         split_path = normal_path.split(os.sep)
         if os.path.isfile(real_path):
-            with open(real_path) as file:
+            with open(real_path, 'rb') as file:
                 content = file.read()
             file_name, extension = os.path.splitext(split_path[-1])
             extension = extension[1:]  # remove the dot from the extension

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 from typing import List, Optional
@@ -180,7 +180,7 @@ class WLFATFS:
     def wl_create_directory(self, name: str, path_from_root: Optional[List[str]] = None) -> None:
         self.plain_fatfs.create_directory(name, path_from_root)
 
-    def wl_write_content(self, path_from_root: List[str], content: str) -> None:
+    def wl_write_content(self, path_from_root: List[str], content: bytes) -> None:
         self.plain_fatfs.write_content(path_from_root, content)
 
 
