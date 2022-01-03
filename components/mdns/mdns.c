@@ -68,9 +68,9 @@ typedef enum {
 typedef struct mdns_interfaces mdns_interfaces_t;
 
 struct mdns_interfaces {
-    bool predefined;
+    const bool predefined;
     esp_netif_t * netif;
-    mdns_predef_if_t predef_if;
+    const mdns_predef_if_t predef_if;
     mdns_if_t duplicate;
 };
 
@@ -91,10 +91,13 @@ static mdns_interfaces_t s_esp_netifs[MDNS_MAX_INTERFACES] = {
 };
 
 
-/*
- * @brief  Convert mdns if to esp-netif handle
+/**
+ * @brief  Convert Predefined interface to the netif id from the internal netif list
+ * @param  predef_if Predefined interface enum
+ * @return Ordinal number of internal list of mdns network interface.
+ *         Returns MDNS_MAX_INTERFACES if the predefined interface wasn't found in the list
  */
-static mdns_if_t mdns_if_from_predef_if(mdns_predef_if_t predef_if)
+static mdns_if_t mdns_if_from_preset_if(mdns_predef_if_t predef_if)
 {
     for (int i=0; i<MDNS_MAX_INTERFACES; ++i) {
         if (s_esp_netifs[i].predefined && s_esp_netifs[i].predef_if == predef_if) {
@@ -104,9 +107,14 @@ static mdns_if_t mdns_if_from_predef_if(mdns_predef_if_t predef_if)
     return MDNS_MAX_INTERFACES;
 }
 
-static inline esp_netif_t *esp_netif_from_preset_if(mdns_predef_if_t preset_if)
+/**
+ * @brief  Convert Predefined interface to esp-netif handle
+ * @param  predef_if Predefined interface enum
+ * @return esp_netif pointer from system list of network interfaces
+ */
+static inline esp_netif_t *esp_netif_from_preset_if(mdns_predef_if_t predef_if)
 {
-    switch (preset_if) {
+    switch (predef_if) {
         case MDNS_IF_STA:
             return esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
         case MDNS_IF_AP:
@@ -120,12 +128,25 @@ static inline esp_netif_t *esp_netif_from_preset_if(mdns_predef_if_t preset_if)
     }
 }
 
+/**
+ * @brief Gets the actual esp_netif pointer from the internal network interface list
+ *
+ * The supplied ordinal number could
+ * - point to a predef netif -> "STA", "AP", "ETH"
+ *      - if no entry in the list (NULL) -> check if the system added this netif
+ * - point to a custom netif -> just return the entry in the list
+ *      - users is responsible for the lifetime of this netif (to be valid between mdns-init -> deinit)
+ *
+ * @param tcpip_if Ordinal number of the interface
+ * @return Pointer ot the esp_netif object if the interface is available, NULL otherwise
+ */
 esp_netif_t *_mdns_get_esp_netif(mdns_if_t tcpip_if)
 {
     if (tcpip_if < MDNS_MAX_INTERFACES) {
         if (s_esp_netifs[tcpip_if].netif == NULL && s_esp_netifs[tcpip_if].predefined) {
-            // if a predefined interface face and used local copy is NULL, try to search for the default interface key
+            // If the local copy is NULL and this netif is predefined -> we can find it in the global netif list
             s_esp_netifs[tcpip_if].netif = esp_netif_from_preset_if(s_esp_netifs[tcpip_if].predef_if);
+            // failing to find it means that the netif is *not* available -> return NULL
         }
         return s_esp_netifs[tcpip_if].netif;
     }
@@ -146,11 +167,12 @@ static inline void _mdns_clean_netif_ptr(mdns_if_t tcpip_if) {
 /*
  * @brief  Convert esp-netif handle to mdns if
  */
-static mdns_if_t _mdns_get_if_from_esp_netif(esp_netif_t *interface)
+static mdns_if_t _mdns_get_if_from_esp_netif(esp_netif_t *esp_netif)
 {
     for (int i=0; i<MDNS_MAX_INTERFACES; ++i) {
-        if (interface == s_esp_netifs[i].netif)
+        if (esp_netif == s_esp_netifs[i].netif) {
             return i;
+        }
     }
     return MDNS_MAX_INTERFACES;
 }
@@ -3852,17 +3874,17 @@ static void perform_event_action(mdns_if_t mdns_if, mdns_event_actions_t action)
  */
 static inline void post_mdns_disable_pcb(mdns_predef_if_t preset_if, mdns_ip_protocol_t protocol)
 {
-    mdns_post_custom_action_tcpip_if(mdns_if_from_predef_if(preset_if), protocol==MDNS_IP_PROTOCOL_V4 ? MDNS_EVENT_DISABLE_IP4 : MDNS_EVENT_DISABLE_IP6);
+    mdns_post_custom_action_tcpip_if(mdns_if_from_preset_if(preset_if), protocol == MDNS_IP_PROTOCOL_V4 ? MDNS_EVENT_DISABLE_IP4 : MDNS_EVENT_DISABLE_IP6);
 }
 
 static inline void post_mdns_enable_pcb(mdns_predef_if_t preset_if, mdns_ip_protocol_t protocol)
 {
-    mdns_post_custom_action_tcpip_if(mdns_if_from_predef_if(preset_if), protocol==MDNS_IP_PROTOCOL_V4 ? MDNS_EVENT_ENABLE_IP4 : MDNS_EVENT_ENABLE_IP6);
+    mdns_post_custom_action_tcpip_if(mdns_if_from_preset_if(preset_if), protocol == MDNS_IP_PROTOCOL_V4 ? MDNS_EVENT_ENABLE_IP4 : MDNS_EVENT_ENABLE_IP6);
 }
 
 static inline void post_mdns_announce_pcb(mdns_predef_if_t preset_if, mdns_ip_protocol_t protocol)
 {
-    mdns_post_custom_action_tcpip_if(mdns_if_from_predef_if(preset_if), protocol==MDNS_IP_PROTOCOL_V4 ? MDNS_EVENT_ANNOUNCE_IP4 : MDNS_EVENT_ANNOUNCE_IP6);
+    mdns_post_custom_action_tcpip_if(mdns_if_from_preset_if(preset_if), protocol == MDNS_IP_PROTOCOL_V4 ? MDNS_EVENT_ANNOUNCE_IP4 : MDNS_EVENT_ANNOUNCE_IP6);
 }
 
 void mdns_preset_if_handle_system_event(void *arg, esp_event_base_t event_base,
@@ -5081,12 +5103,12 @@ static inline void unregister_predefined_handlers(void)
  * Public Methods
  * */
 
-esp_err_t mdns_set_esp_netif_action(esp_netif_t *esp_netif, mdns_event_actions_t event_action)
+esp_err_t mdns_netif_action(esp_netif_t *esp_netif, mdns_event_actions_t event_action)
 {
     return mdns_post_custom_action_tcpip_if(_mdns_get_if_from_esp_netif(esp_netif), event_action);
 }
 
-esp_err_t mdns_register_esp_netif(esp_netif_t *esp_netif)
+esp_err_t mdns_register_netif(esp_netif_t *esp_netif)
 {
     if (!_mdns_server) {
         return ESP_ERR_INVALID_STATE;
@@ -5112,7 +5134,7 @@ esp_err_t mdns_register_esp_netif(esp_netif_t *esp_netif)
     return err;
 }
 
-esp_err_t mdns_unregister_esp_netif(esp_netif_t *esp_netif)
+esp_err_t mdns_unregister_netif(esp_netif_t *esp_netif)
 {
     if (!_mdns_server) {
         return ESP_ERR_INVALID_STATE;

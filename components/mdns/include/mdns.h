@@ -722,9 +722,9 @@ esp_err_t mdns_query_aaaa(const char * host_name, uint32_t timeout, esp_ip6_addr
 
 /**
  * @brief   Register custom esp_netif with mDNS functionality
- *          mDNS service runs by on default interfaces (STA, AP, ETH). This API enables running the service
- *          on any customized interface, either using standard WiFi or Ethernet driver or any kind of user
- *          defined driver.
+ *          mDNS service runs by default on preconfigured interfaces (STA, AP, ETH).
+ *          This API enables running the service on any customized interface,
+ *          either using standard WiFi or Ethernet driver or any kind of user defined driver.
  *
  * @param   esp_netif Pointer to esp-netif interface
  * @return
@@ -732,7 +732,7 @@ esp_err_t mdns_query_aaaa(const char * host_name, uint32_t timeout, esp_ip6_addr
  *     - ESP_ERR_INVALID_STATE  mDNS is not running or this netif is already registered
  *     - ESP_ERR_NO_MEM         not enough memory for this in interface in the netif list (see CONFIG_MDNS_MAX_INTERFACES)
  */
-esp_err_t mdns_register_esp_netif(esp_netif_t *esp_netif);
+esp_err_t mdns_register_netif(esp_netif_t *esp_netif);
 
 /**
  * @brief   Unregister esp-netif already registered in mDNS service
@@ -743,11 +743,19 @@ esp_err_t mdns_register_esp_netif(esp_netif_t *esp_netif);
  *     - ESP_ERR_INVALID_STATE  mDNS is not running
  *     - ESP_ERR_NOT_FOUND      this esp-netif was not registered in mDNS service
  */
-esp_err_t mdns_unregister_esp_netif(esp_netif_t *esp_netif);
+esp_err_t mdns_unregister_netif(esp_netif_t *esp_netif);
 
 /**
  * @brief   Set esp_netif to a desired state, or perform a desired action, such as enable/disable this interface
  *          or send announcement packets to this netif
+ *
+ *  * This function is used to enable (probe, resolve conflicts and announce), announce, or disable (send bye) mDNS
+ *  services on the specified network interface.
+ *  * This function must be called if users registers a specific interface using mdns_register_netif()
+ *  to enable mDNS services on that interface.
+ *  * This function could be used in IP/connection event handlers to automatically enable/announce mDNS services
+ *  when network properties change and/or disable them on disconnection.
+ *
  * @param esp_netif  Pointer to esp-netif interface
  * @param event_action  Disable/Enable/Announce on this interface over IPv4/IPv6 protocol.
  *                      Actions enumerated in mdns_event_actions_t type.
@@ -756,7 +764,7 @@ esp_err_t mdns_unregister_esp_netif(esp_netif_t *esp_netif);
  *     - ESP_ERR_INVALID_STATE  mDNS is not running or this netif is not registered
  *     - ESP_ERR_NO_MEM         memory error
  */
-esp_err_t mdns_set_esp_netif_action(esp_netif_t *esp_netif, mdns_event_actions_t event_action);
+esp_err_t mdns_netif_action(esp_netif_t *esp_netif, mdns_event_actions_t event_action);
 
 #ifdef __cplusplus
 }

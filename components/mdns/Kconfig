@@ -5,7 +5,7 @@ menu "mDNS"
         range 1 9
         default 3
         help
-            Number of network interfaces to be served by the mdns library.
+            Number of network interfaces to be served by the mDNS library.
             Lowering this number helps to reduce some static RAM usage.
 
     config MDNS_MAX_SERVICES
@@ -72,7 +72,7 @@ menu "mDNS"
             Currently the only strict feature: Do not repeat original questions in response packets
             (defined in RFC6762 sec. 6).
             Default configuration is 0, i.e. non-strict mode, since some implementations,
-            such as lwIP mdns resolver (used by standard POSIX API like getaddrinfo, gethostbyname)
+            such as lwIP mDNS resolver (used by standard POSIX API like getaddrinfo, gethostbyname)
             could not correctly resolve advertised names.
 
     config MDNS_TIMER_PERIOD_MS
@@ -84,10 +84,10 @@ menu "mDNS"
             and schedules mDNS searches.
 
     config MDNS_NETWORKING_SOCKET
-        bool "Use BSD sockets for mdns networking"
+        bool "Use BSD sockets for mDNS networking"
         default n
         help
-            Enables optional mdns networking implementation using BSD sockets
+            Enables optional mDNS networking implementation using BSD sockets
             in UDP multicast mode.
             This option creates a new thread to serve receiving packets (TODO).
             This option uses additional N sockets, where N is number of interfaces.
@@ -104,21 +104,22 @@ menu "mDNS"
             bool "Use predefined interface for WiFi Station"
             default y
             help
-                Set up mdns for the default WiFi station.
+                Set up mDNS for the default WiFi station.
                 Disable this option if you do not need mDNS on default WiFi STA.
 
         config MDNS_PREDEF_NETIF_AP
             bool "Use predefined interface for WiFi Access Point"
             default y
             help
-                Set up mdns for the default WiFi Access Point.
+                Set up mDNS for the default WiFi Access Point.
                 Disable this option if you do not need mDNS on default WiFi AP.
 
         config MDNS_PREDEF_NETIF_ETH
             bool "Use predefined interface for Ethernet"
+            depends on ETH_ENABLED
             default y
             help
-                Set up mdns for the default Ethernet interface.
+                Set up mDNS for the default Ethernet interface.
                 Disable this option if you do not need mDNS on default Ethernet.
 
     endmenu # MDNS Predefined interfaces
