@@ -751,7 +751,6 @@ components/esp_eth/include/esp_eth_phy.h
 components/esp_eth/include/eth_phy_regs_struct.h
 components/esp_eth/src/dm9051.h
 components/esp_eth/src/esp_eth.c
-components/esp_eth/src/esp_eth_mac_dm9051.c
 components/esp_eth/src/esp_eth_mac_esp.c
 components/esp_eth/src/esp_eth_mac_ksz8851snl.c
 components/esp_eth/src/esp_eth_mac_openeth.c

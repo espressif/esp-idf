@@ -1,16 +1,9 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <string.h>
 #include <stdlib.h>
 #include <sys/cdefs.h>
@@ -19,6 +12,7 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_eth.h"
+#include "esp_timer.h"
 #include "esp_system.h"
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
@@ -648,16 +642,24 @@ static esp_err_t emac_dm9051_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint32_t
     emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
     /* Check if last transmit complete */
     uint8_t tcr = 0;
-    MAC_CHECK(dm9051_register_read(emac, DM9051_TCR, &tcr) == ESP_OK, "read TCR failed", err, ESP_FAIL);
-    MAC_CHECK(!(tcr & TCR_TXREQ), "last transmit still in progress", err, ESP_ERR_INVALID_STATE);
+
+    int64_t wait_time =  esp_timer_get_time();
+    do {
+        MAC_CHECK(dm9051_register_read(emac, DM9051_TCR, &tcr) == ESP_OK, "read TCR failed", err, ESP_FAIL);
+    } while((tcr & TCR_TXREQ) && ((esp_timer_get_time() - wait_time) < 100));
+
+    if (tcr & TCR_TXREQ) {
+        ESP_LOGE(TAG, "last transmit still in progress, cannot send.");
+        return ESP_ERR_INVALID_STATE;
+    }
+
     /* set tx length */
     MAC_CHECK(dm9051_register_write(emac, DM9051_TXPLL, length & 0xFF) == ESP_OK, "write TXPLL failed", err, ESP_FAIL);
     MAC_CHECK(dm9051_register_write(emac, DM9051_TXPLH, (length >> 8) & 0xFF) == ESP_OK, "write TXPLH failed", err, ESP_FAIL);
     /* copy data to tx memory */
     MAC_CHECK(dm9051_memory_write(emac, buf, length) == ESP_OK, "write memory failed", err, ESP_FAIL);
     /* issue tx polling command */
-    tcr |= TCR_TXREQ;
-    MAC_CHECK(dm9051_register_write(emac, DM9051_TCR, tcr) == ESP_OK, "write TCR failed", err, ESP_FAIL);
+    MAC_CHECK(dm9051_register_write(emac, DM9051_TCR, TCR_TXREQ) == ESP_OK, "write TCR failed", err, ESP_FAIL);
     return ESP_OK;
 err:
     return ret;
