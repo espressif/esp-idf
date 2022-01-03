@@ -187,6 +187,8 @@ with open('../page_redirects.txt') as f:
             raise RuntimeError('Invalid line in page_redirects.txt: %s' % line)
 html_redirect_pages = [tuple(line.split(' ')) for line in lines]
 
+html_static_path = ['../_static']
+
 
 # Callback function for user setup that needs be done after `config-init`-event
 # config.idf_target is not available at the initial config stage
