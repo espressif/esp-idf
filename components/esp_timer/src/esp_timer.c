@@ -110,7 +110,7 @@ esp_err_t esp_timer_create(const esp_timer_create_args_t* args,
     if (args == NULL || args->callback == NULL || out_handle == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    esp_timer_handle_t result = (esp_timer_handle_t) calloc(1, sizeof(*result));
+    esp_timer_handle_t result = (esp_timer_handle_t) heap_caps_calloc(1, sizeof(*result), MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
     if (result == NULL) {
         return ESP_ERR_NO_MEM;
     }
