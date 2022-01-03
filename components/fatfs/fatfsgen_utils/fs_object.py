@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import os
@@ -42,7 +42,7 @@ class File:
     def name_equals(self, name: str, extension: str) -> bool:
         return self.name == name and self.extension == extension
 
-    def write(self, content: str) -> None:
+    def write(self, content: bytes) -> None:
         self.entry.update_content_size(len(content))
         # we assume that the correct amount of clusters is allocated
         current_cluster = self._first_cluster
@@ -207,7 +207,7 @@ class Directory:
         directory.init_directory()
         target_dir.entities.append(directory)
 
-    def write_to_file(self, path: List[str], content: str) -> None:
+    def write_to_file(self, path: List[str], content: bytes) -> None:
         """
         Writes to file existing in the directory structure.
 

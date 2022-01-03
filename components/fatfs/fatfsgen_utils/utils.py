@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
@@ -18,7 +18,7 @@ def crc32(input_values: List[int], crc: int) -> int:
     return binascii.crc32(bytearray(input_values), crc)
 
 
-def required_clusters_count(cluster_size: int, content: str) -> int:
+def required_clusters_count(cluster_size: int, content: bytes) -> int:
     # compute number of required clusters for file text
     return (len(content) + cluster_size - 1) // cluster_size
 
@@ -66,7 +66,7 @@ def clean_second_half_byte(bytes_array: bytearray, address: int) -> None:
     bytes_array[address] &= 0x0f
 
 
-def split_content_into_sectors(content: str, sector_size: int) -> List[str]:
+def split_content_into_sectors(content: bytes, sector_size: int) -> List[bytes]:
     result = []
     clusters_cnt = required_clusters_count(cluster_size=sector_size, content=content)
 

@@ -49,7 +49,6 @@ class FatFSGen(unittest.TestCase):
         fatfs.create_file('TESTF', extension='TXT')
         fatfs.write_filesystem(CFG['output_file'])
         file_system = fatfs.read_filesystem(CFG['output_file'])
-
         self.assertEqual(file_system[0x2000:0x200c], b'TESTF   TXT\x20')  # check entry name and type
         self.assertEqual(file_system[0x1000:0x1006], b'\xf8\xff\xff\xff\x0f\x00')  # check fat
 
