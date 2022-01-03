@@ -1503,7 +1503,6 @@ components/protocomm/python/session_pb2.py
 components/protocomm/src/common/protocomm.c
 components/protocomm/src/common/protocomm_priv.h
 components/protocomm/src/security/security0.c
-components/protocomm/src/security/security1.c
 components/protocomm/src/transports/protocomm_console.c
 components/protocomm/test/test_protocomm.c
 components/pthread/include/esp_pthread.h
