@@ -3065,7 +3065,6 @@ tools/find_build_apps/cmake.py
 tools/find_build_apps/common.py
 tools/gdb_panic_server.py
 tools/gen_esp_err_to_name.py
-tools/idf_monitor_base/ansi_color_converter.py
 tools/idf_monitor_base/argument_parser.py
 tools/idf_monitor_base/chip_specific_config.py
 tools/idf_monitor_base/console_reader.py
