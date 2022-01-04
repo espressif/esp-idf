@@ -1008,6 +1008,26 @@ menu "LWIP"
 
         endchoice
 
+        choice LWIP_HOOK_IP6_INPUT
+            prompt "IPv6 packet input"
+            depends on LWIP_IPV6
+            default LWIP_HOOK_IP6_INPUT_NONE
+            help
+                Enables custom IPv6 packet input.
+                Setting this to "default" provides weak implementation
+                stub that could be overwritten in application code.
+                Setting this to "custom" provides hook's declaration
+                only and expects the application to implement it.
+
+            config LWIP_HOOK_IP6_INPUT_NONE
+                bool "No hook declared"
+            config LWIP_HOOK_IP6_INPUT_DEFAULT
+                bool "Default (weak) implementation"
+            config LWIP_HOOK_IP6_INPUT_CUSTOM
+                bool "Custom implementation"
+
+        endchoice
+
     endmenu # Hooks
 
     menuconfig LWIP_DEBUG
