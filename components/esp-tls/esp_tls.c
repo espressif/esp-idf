@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -92,11 +92,6 @@ static ssize_t tcp_write(esp_tls_t *tls, const char *data, size_t datalen)
 /**
  * @brief      Close the TLS connection and free any allocated resources.
  */
-void esp_tls_conn_delete(esp_tls_t *tls)
-{
-    esp_tls_conn_destroy(tls);
-}
-
 int esp_tls_conn_destroy(esp_tls_t *tls)
 {
     if (tls != NULL) {
@@ -463,14 +458,14 @@ esp_tls_t *esp_tls_conn_new(const char *hostname, int hostlen, int port, const e
         if (ret == 1) {
             return tls;
         } else if (ret == -1) {
-            esp_tls_conn_delete(tls);
+            esp_tls_conn_destroy(tls);
             ESP_LOGE(TAG, "Failed to open new connection");
             return NULL;
         } else if (ret == 0 && cfg->timeout_ms >= 0) {
             size_t timeout_ticks = pdMS_TO_TICKS(cfg->timeout_ms);
             uint32_t expired = xTaskGetTickCount() - start;
             if (expired >= timeout_ticks) {
-                esp_tls_conn_delete(tls);
+                esp_tls_conn_destroy(tls);
                 ESP_LOGE(TAG, "Failed to open new connection in specified timeout");
                 return NULL;
             }
@@ -544,7 +539,7 @@ esp_tls_t *esp_tls_conn_http_new(const char *url, const esp_tls_cfg_t *cfg)
                               get_port(url, &u), cfg, tls) == 1) {
         return tls;
     }
-    esp_tls_conn_delete(tls);
+    esp_tls_conn_destroy(tls);
     return NULL;
 }
 
