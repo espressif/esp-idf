@@ -1,22 +1,15 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _LWIP_DEFAULT_HOOKS_H_
 #define _LWIP_DEFAULT_HOOKS_H_
 #include "lwip/ip_addr.h"
 #include "lwip/arch.h"
 #include "lwip/err.h"
+#include "lwip/pbuf.h"
 
 #ifdef ESP_IDF_LWIP_HOOK_FILENAME
 #include ESP_IDF_LWIP_HOOK_FILENAME
@@ -53,6 +46,12 @@ int lwip_hook_netconn_external_resolve(const char *name, ip_addr_t *addr, u8_t a
 
 #define LWIP_HOOK_NETCONN_EXTERNAL_RESOLVE lwip_hook_netconn_external_resolve
 #endif /* CONFIG_LWIP_HOOK_NETCONN_EXTERNAL_RESOLVE... */
+
+#if defined(CONFIG_LWIP_HOOK_IP6_INPUT_CUSTOM) || defined(CONFIG_LWIP_HOOK_IP6_INPUT_DEFAULT)
+int lwip_hook_ip6_input(struct pbuf *p, struct netif *inp);
+
+#define LWIP_HOOK_IP6_INPUT lwip_hook_ip6_input
+#endif /* CONFIG_LWIP_HOOK_IP6_INPUT_CUSTIOM... */
 
 #ifdef __cplusplus
 }

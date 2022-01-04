@@ -1209,7 +1209,6 @@ components/lwip/include/apps/ping/ping_sock.h
 components/lwip/include/apps/sntp/sntp.h
 components/lwip/port/esp32/debug/lwip_debug.c
 components/lwip/port/esp32/freertos/sys_arch.c
-components/lwip/port/esp32/hooks/lwip_default_hooks.c
 components/lwip/port/esp32/hooks/tcp_isn_default.c
 components/lwip/port/esp32/include/arch/cc.h
 components/lwip/port/esp32/include/arch/perf.h
@@ -1217,7 +1216,6 @@ components/lwip/port/esp32/include/arch/sys_arch.h
 components/lwip/port/esp32/include/arch/vfs_lwip.h
 components/lwip/port/esp32/include/arpa/inet.h
 components/lwip/port/esp32/include/debug/lwip_debug.h
-components/lwip/port/esp32/include/lwip_default_hooks.h
 components/lwip/port/esp32/include/netdb.h
 components/lwip/port/esp32/include/netif/dhcp_state.h
 components/lwip/port/esp32/include/netif/ethernetif.h
