@@ -3,3 +3,4 @@
 #define __warning__ deprecated
 #define IRAM_ATTR
 #define __ESP_ATTR_H__
+#include <features.h>
