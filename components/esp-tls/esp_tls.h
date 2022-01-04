@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -499,11 +499,9 @@ static inline ssize_t esp_tls_conn_read(esp_tls_t *tls, void  *data, size_t data
 /**
  * @brief      Compatible version of esp_tls_conn_destroy() to close the TLS/SSL connection
  *
- * @note This API will be removed in IDFv5.0
- *
  * @param[in]  tls  pointer to esp-tls as esp-tls handle.
  */
-void esp_tls_conn_delete(esp_tls_t *tls);
+void esp_tls_conn_delete(esp_tls_t *tls) __attribute__((deprecated("Please use esp_tls_conn_destroy() instead")));
 
 /**
  * @brief      Close the TLS/SSL connection and free any allocated resources.
