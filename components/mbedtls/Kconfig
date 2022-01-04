@@ -285,7 +285,7 @@ menu "mbedTLS"
     config MBEDTLS_MPI_USE_INTERRUPT
         bool "Use interrupt for MPI exp-mod operations"
         depends on !IDF_TARGET_ESP32 && MBEDTLS_HARDWARE_MPI
-        default n
+        default y
         help
             Use an interrupt to coordinate long MPI operations.
 
