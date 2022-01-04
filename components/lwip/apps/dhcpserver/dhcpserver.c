@@ -955,6 +955,7 @@ static void handle_dhcp(void *arg,
     u16_t dhcps_msg_cnt = 0;
     u8_t *p_dhcps_msg = NULL;
     u8_t *data;
+    s16_t state;
 
 #if DHCPS_DEBUG
     DHCPS_LOG("dhcps: handle_dhcp-> receive a packet\n");
@@ -1026,7 +1027,12 @@ static void handle_dhcp(void *arg,
     DHCPS_LOG("dhcps: handle_dhcp-> parse_msg(p)\n");
 #endif
 
-    switch (parse_msg(pmsg_dhcps, tlen - 240)) {
+    state = parse_msg(pmsg_dhcps, tlen - 240);
+#ifdef LWIP_HOOK_DHCPS_POST_STATE
+    state = LWIP_HOOK_DHCPS_POST_STATE(pmsg_dhcps, malloc_len, state);
+#endif /* LWIP_HOOK_DHCPS_POST_STATE */
+
+    switch (state) {
         case DHCPS_STATE_OFFER://1
 #if DHCPS_DEBUG
             DHCPS_LOG("dhcps: handle_dhcp-> DHCPD_STATE_OFFER\n");

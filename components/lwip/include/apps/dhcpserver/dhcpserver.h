@@ -45,6 +45,21 @@ enum dhcps_offer_option{
 	OFFER_END
 };
 
+/** @brief DHCP server's description of compile time configuration values in dhcpserver.c
+ *
+ * - DHCPS_DEBUG: Prints very detailed debug messages if set to 1, hardcoded to 0
+ * - USE_CLASS_B_NET: Use class B network mask if enabled, not-defined (could be enabled as CC_FLAGS)
+ * - MAX_STATION_NUM: Maximum number of clients, set to Kconfig value CONFIG_LWIP_DHCPS_MAX_STATION_NUM
+ * - LWIP_HOOK_DHCPS_POST_STATE: Used to inject user code after parsing DHCP message, not defined
+ *      - could be enabled in lwipopts.h or via CC_FLAGS
+ *      - basic usage of the hook to print hex representation of the entire option field is below:
+ *          #define LWIP_HOOK_DHCPS_POST_STATE(msg, len, state) \
+ *          ({ s16_t ret = state; if (state == DHCPS_STATE_ACK) { ESP_LOG_BUFFER_HEXDUMP("DHCPS",msg->options, 312, ESP_LOG_INFO);} ret; })
+ */
+
+/**
+ * @brief Definitions related to lease time, units and limits
+ */
 #define DHCPS_COARSE_TIMER_SECS  1
 #define DHCPS_MAX_LEASE 0x64
 #define DHCPS_LEASE_TIME_DEF (120)
