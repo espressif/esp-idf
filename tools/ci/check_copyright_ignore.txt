@@ -2442,7 +2442,6 @@ components/xtensa/esp32s3/include/xtensa/config/system.h
 components/xtensa/esp32s3/include/xtensa/config/tie-asm.h
 components/xtensa/esp32s3/include/xtensa/config/tie.h
 components/xtensa/include/eri.h
-components/xtensa/include/esp_panic.h
 components/xtensa/include/esp_private/panic_reason.h
 components/xtensa/include/xt_instr_macros.h
 components/xtensa/include/xt_trax.h
