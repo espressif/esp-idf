@@ -975,8 +975,6 @@ components/hal/esp32s3/include/hal/usb_ll.h
 components/hal/esp32s3/include/hal/usb_serial_jtag_ll.h
 components/hal/esp32s3/interrupt_descriptor_table.c
 components/hal/gpio_hal.c
-components/hal/i2c_hal.c
-components/hal/i2c_hal_iram.c
 components/hal/include/hal/aes_hal.h
 components/hal/include/hal/aes_types.h
 components/hal/include/hal/brownout_hal.h
@@ -985,8 +983,6 @@ components/hal/include/hal/dac_hal.h
 components/hal/include/hal/dac_types.h
 components/hal/include/hal/ds_hal.h
 components/hal/include/hal/esp_flash_err.h
-components/hal/include/hal/i2c_hal.h
-components/hal/include/hal/i2c_types.h
 components/hal/include/hal/interrupt_controller_hal.h
 components/hal/include/hal/interrupt_controller_types.h
 components/hal/include/hal/ledc_hal.h

@@ -275,6 +275,10 @@ config SOC_I2C_FIFO_LEN
     int
     default 32
 
+config SOC_I2C_SUPPORT_SLAVE
+    bool
+    default y
+
 config SOC_I2C_SUPPORT_HW_FSM_RST
     bool
     default y
