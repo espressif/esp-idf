@@ -687,7 +687,7 @@ esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t *i2c_conf)
     }
 #if SOC_I2C_SUPPORT_SLAVE
     else {
-    #if CONFIG_IDF_TARGET_ESP32S2
+    #if SOC_I2C_SUPPORT_REF_TICK
         /* On ESP32-S2, APB clock shall always be used in slave mode as the
          * other one, I2C_SCLK_REF_TICK, is too slow, even for sampling a
          * 100KHz SCL. */

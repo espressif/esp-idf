@@ -91,9 +91,10 @@ typedef void *i2c_cmd_handle_t;    /*!< I2C command handle  */
 
 /**
  * @brief Install an I2C driver
+ * @note  Not all Espressif chips can support slave mode (e.g. ESP32C2)
  *
  * @param i2c_num I2C port number
- * @param mode I2C mode (either master or slave). ESP8684 doesn't support i2c slave mode
+ * @param mode I2C mode (either master or slave).
  * @param slv_rx_buf_len Receiving buffer size. Only slave mode will use this value, it is ignored in master mode.
  * @param slv_tx_buf_len Sending buffer size. Only slave mode will use this value, it is ignored in master mode.
  * @param intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred) ESP_INTR_FLAG_* values.

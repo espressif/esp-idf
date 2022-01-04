@@ -726,7 +726,7 @@ static inline void i2c_ll_set_source_clk(i2c_dev_t *hw, i2c_sclk_t src_clk)
     // rtc_clk needs to switch on.
     if (src_clk == I2C_SCLK_RTC) {
         SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN_M);
-        esp_rom_delay_us(DELAY_RTC_CLK_SWITCH);
+        esp_rom_delay_us(DELAY_RTC_CLK_SWITCH); // TODO: IDF-4535
     }
     // src_clk : (1) for RTC_CLK, (0) for XTAL
     hw->clk_conf.sclk_sel = (src_clk == I2C_SCLK_RTC) ? 1 : 0;

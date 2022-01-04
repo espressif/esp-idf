@@ -590,7 +590,6 @@ components/esp_rom/include/esp32/rom/tjpgd.h
 components/esp_rom/include/esp32/rom/uart.h
 components/esp_rom/include/esp32c2/rom/md5_hash.h
 components/esp_rom/include/esp32c3/rom/aes.h
-components/esp_rom/include/esp32c3/rom/apb_backup_dma.h
 components/esp_rom/include/esp32c3/rom/bigint.h
 components/esp_rom/include/esp32c3/rom/cache.h
 components/esp_rom/include/esp32c3/rom/crc.h
@@ -912,7 +911,6 @@ components/hal/esp32h2/include/hal/twai_ll.h
 components/hal/esp32h2/include/hal/uhci_ll.h
 components/hal/esp32h2/include/hal/uhci_types.h
 components/hal/esp32h2/include/hal/usb_serial_jtag_ll.h
-components/hal/esp32h2/rtc_cntl_hal.c
 components/hal/esp32s2/brownout_hal.c
 components/hal/esp32s2/cp_dma_hal.c
 components/hal/esp32s2/include/hal/adc_hal_conf.h
@@ -2333,10 +2331,8 @@ examples/peripherals/gpio/generic_gpio/main/gpio_example_main.c
 examples/peripherals/gpio/matrix_keyboard/components/matrix_keyboard/include/matrix_keyboard.h
 examples/peripherals/gpio/matrix_keyboard/components/matrix_keyboard/src/matrix_keyboard.c
 examples/peripherals/gpio/matrix_keyboard/main/matrix_keyboard_example_main.c
-examples/peripherals/i2c/i2c_self_test/main/i2c_example_main.c
 examples/peripherals/i2c/i2c_simple/main/i2c_simple_main.c
 examples/peripherals/i2c/i2c_tools/example_test.py
-examples/peripherals/i2c/i2c_tools/main/cmd_i2ctools.c
 examples/peripherals/i2c/i2c_tools/main/cmd_i2ctools.h
 examples/peripherals/i2c/i2c_tools/main/i2ctools_example_main.c
 examples/peripherals/i2s/i2s_adc_dac/main/app_main.c

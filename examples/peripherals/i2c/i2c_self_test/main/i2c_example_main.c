@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 /* i2c - Example
 
    For other examples please check:
@@ -25,7 +30,7 @@ static const char *TAG = "i2c-example";
 #define RW_TEST_LENGTH 128               /*!< Data length for r/w test, [0,DATA_LENGTH] */
 #define DELAY_TIME_BETWEEN_ITEMS_MS 1000 /*!< delay time between different test items */
 
-#if !(CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP8684)
+#if SOC_I2C_NUM > 1
     #define I2C_SLAVE_SCL_IO CONFIG_I2C_SLAVE_SCL               /*!< gpio number for i2c slave clock */
     #define I2C_SLAVE_SDA_IO CONFIG_I2C_SLAVE_SDA               /*!< gpio number for i2c slave data */
     #define I2C_SLAVE_NUM I2C_NUMBER(CONFIG_I2C_SLAVE_PORT_NUM) /*!< I2C port number for slave dev */
@@ -52,7 +57,7 @@ static const char *TAG = "i2c-example";
 
 SemaphoreHandle_t print_mux = NULL;
 
-#if !(CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP8684)
+#if SOC_I2C_NUM > 1
 /**
  * @brief test code to read esp-i2c-slave
  *        We need to fill the buffer of esp slave device, then master can read them out.
@@ -166,7 +171,7 @@ static esp_err_t i2c_master_init(void)
     return i2c_driver_install(i2c_master_port, conf.mode, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0);
 }
 
-#if !(CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP8684)
+#if SOC_I2C_NUM > 1
 /**
  * @brief i2c slave initialization
  */
@@ -209,7 +214,7 @@ static void i2c_test_task(void *arg)
 {
     int ret;
     uint32_t task_idx = (uint32_t)arg;
-#if !(CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP8684)
+#if SOC_I2C_NUM > 1
     int i = 0;
     uint8_t *data = (uint8_t *)malloc(DATA_LENGTH);
     uint8_t *data_wr = (uint8_t *)malloc(DATA_LENGTH);
@@ -236,7 +241,7 @@ static void i2c_test_task(void *arg)
         xSemaphoreGive(print_mux);
         vTaskDelay((DELAY_TIME_BETWEEN_ITEMS_MS * (task_idx + 1)) / portTICK_PERIOD_MS);
         //---------------------------------------------------
-#if !(CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP8684)
+#if SOC_I2C_NUM > 1
         for (i = 0; i < DATA_LENGTH; i++) {
             data[i] = i;
         }
@@ -301,7 +306,7 @@ static void i2c_test_task(void *arg)
 void app_main(void)
 {
     print_mux = xSemaphoreCreateMutex();
-#if !(CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP8684)
+#if SOC_I2C_NUM > 1
     ESP_ERROR_CHECK(i2c_slave_init());
 #endif
     ESP_ERROR_CHECK(i2c_master_init());
