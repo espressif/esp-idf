@@ -81,6 +81,13 @@ Receiving ESP-NOW Data
 Call ``esp_now_register_recv_cb`` to register receiving callback function.  Call the receiving callback function when receiving ESP-NOW. The receiving callback function also runs from the Wi-Fi task. So, do not do lengthy operations in the callback function. 
 Instead, post the necessary data to a queue and handle it from a lower priority task.
 
+Application Examples
+--------------------
+
+* Example of sending and receiving ESP-NOW data between two devices: :example:`wifi/espnow`.
+
+* For more application examples of how to use ESP-NOW, please visit `ESP-NOW <https://github.com/espressif/esp-now>`_ repository.
+
 API Reference
 -------------
 
