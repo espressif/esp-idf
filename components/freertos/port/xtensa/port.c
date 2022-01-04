@@ -92,6 +92,7 @@ extern void _xt_coproc_init(void);
 
 BaseType_t xPortStartScheduler( void )
 {
+    portDISABLE_INTERRUPTS();
     // Interrupts are disabled at this point and stack contains PS with enabled interrupts when task context is restored
 
 #if XCHAL_CP_NUM > 0
