@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021  Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  *
@@ -13,15 +13,22 @@
 */
 
 #pragma once
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
-* @brief Init the custom command.
-*
-*/
-void esp_cli_custom_command_init(void);
+ * @brief User command "tcpsockserver" process.
+ *
+ */
+void esp_ot_process_tcp_server(void *aContext, uint8_t aArgsLength, char *aArgs[]);
+
+/**
+ * @brief User command "tcpsockclient" process.
+ *
+ */
+void esp_ot_process_tcp_client(void *aContext, uint8_t aArgsLength, char *aArgs[]);
 
 #ifdef __cplusplus
 }

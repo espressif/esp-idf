@@ -47,53 +47,8 @@ If the OPENTHREAD_BR_AUTO_START option is enabled, The device will be connected 
 
 Otherwise, you need to manually configure the Wi-Fi and Thread network with CLI command.
 
-Command `sta` is used for connecting WiFi.
-
-```bash
-> sta
----wifi sta parameter---
--s                   :     wifi ssid
--p                   :     wifi psk
----example---
-join a wifi, 
-ssid: threadcertAP 
-psk: threadcertAP    :     sta -s threadcertAP -p threadcertAP
-Done 
-> sta -s threadcertAP -p threadcertAP
-ssid: threadcertAP
-psk: threadcertAP
-I (47043) wifi:wifi driver task: 3ffd05ac, prio:23, stack:6656, core=0
-
-
-......
-
-
-I (49263) wifi:AP's beacon interval = 102400 us, DTIM period = 1
-I (50233) esp_netif_handlers: sta ip: 192.168.3.10, mask: 255.255.255.0, gw: 192.168.3.1
-wifi sta is connected successfully
-Done
->
-```
-
-Command `wifiinfo` is used for checking the state of Wi-Fi connection and printing IP addresses.
-
-```bash
-> wifiinfo
----get WiFi informations---
--i                   :     get sta addr
--s                   :     get wifi state, disconnect or connect
-Done
-> wifiinfo -s
-connected
-Done
-> wifiinfo -i
-inet 192.168.3.10
-inet6 FE80::7AE3:6DFF:FECD:125C 
-Done
-> 
-```
-
-For forming Thread network, you can refer to [ot_cli_README](../ot_cli/README.md)
+For connecting to Wi-Fi, you can refer to [extension_command](../extension_command/README.md) about `wifi` command.
+For forming Thread network, you can refer to [ot_cli_README](../ot_cli/README.md).
 
 ## Example Output
 
