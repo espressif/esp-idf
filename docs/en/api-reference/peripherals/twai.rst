@@ -204,6 +204,12 @@ Bit timing **macro initializers** are also available for commonly used bit rates
     :esp32s2: - ``TWAI_TIMING_CONFIG_10KBITS()``
     :esp32s2: - ``TWAI_TIMING_CONFIG_5KBITS()``
     :esp32s2: - ``TWAI_TIMING_CONFIG_1KBITS()``
+    :esp32s3: - ``TWAI_TIMING_CONFIG_20KBITS()``
+    :esp32s3: - ``TWAI_TIMING_CONFIG_16KBITS()``
+    :esp32s3: - ``TWAI_TIMING_CONFIG_12_5KBITS()``
+    :esp32s3: - ``TWAI_TIMING_CONFIG_10KBITS()``
+    :esp32s3: - ``TWAI_TIMING_CONFIG_5KBITS()``
+    :esp32s3: - ``TWAI_TIMING_CONFIG_1KBITS()``
     :esp32c3: - ``TWAI_TIMING_CONFIG_20KBITS()``
     :esp32c3: - ``TWAI_TIMING_CONFIG_16KBITS()``
     :esp32c3: - ``TWAI_TIMING_CONFIG_12_5KBITS()``
