@@ -2,11 +2,6 @@
 Device Firmware Upgrade through USB
 ***********************************************
 
-.. only:: esp32
-
-    .. note::
-        Device Firmware Upgrade through USB is not supported with ESP32 chips.
-
 Device Firmware Upgrade (DFU) is a mechanism for upgrading the firmware of devices through Universal Serial Bus (USB).
 DFU is supported by {IDF_TARGET_NAME} chips. The necessary connections for the USB peripheral are shown in the following table.
 

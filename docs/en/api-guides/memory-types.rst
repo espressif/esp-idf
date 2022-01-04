@@ -14,9 +14,11 @@ DRAM (Data RAM)
 
 Non-constant static data (.data) and zero-initialized data (.bss) is placed by the linker into Internal SRAM as data memory. Remaining space in this region is used for the runtime heap.
 
-.. only:: esp32
+.. only:: esp32 or esp32s2
 
    By applying the ``EXT_RAM_ATTR`` macro, zero-initialized data can also be placed into external RAM. To use this macro, the :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` needs to be enabled. See :ref:`external_ram_config_bss`.
+
+.. only:: esp32
 
    The available size of the internal DRAM region is reduced by 64kB (by shifting start address to ``0x3FFC0000``) if Bluetooth stack is used. Length of this region is also reduced by 16 kB or 32kB if trace memory is used. Due to some memory fragmentation issues caused by ROM, it is also not possible to use all available DRAM for static allocations - however the remaining DRAM is still available as heap at runtime.
 
@@ -200,7 +202,7 @@ Placing DMA buffers in the stack is possible but discouraged. If doing so, pay a
 
 .. list::
 
-    :SOC_SPIRAM_SUPPORTED: - Placing DRAM buffers on the stack is not recommended if if the stack may be in PSRAM. If the stack of a task is placed in the PSRAM, several steps have to be taken as described in :doc:`external-ram`.
+    :SOC_SPIRAM_SUPPORTED: - Placing DRAM buffers on the stack is not recommended if the stack may be in PSRAM. If the stack of a task is placed in the PSRAM, several steps have to be taken as described in :doc:`external-ram`.
     - Use macro ``WORD_ALIGNED_ATTR`` in functions before variables to place them in proper positions like::
 
         void app_main()
