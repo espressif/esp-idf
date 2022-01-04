@@ -223,6 +223,30 @@ esp_err_t twai_stop(void);
 esp_err_t twai_transmit(const twai_message_t *message, TickType_t ticks_to_wait);
 
 /**
+ * @brief   Get the number of pending messages in TX queue
+ *
+ * @param[out]   pending_tx         Number of messages
+ *
+ * @return
+ *      - ESP_OK: Transmission successfully queued/initiated
+ *      - ESP_ERR_INVALID_ARG: Arguments are invalid
+ *      - ESP_ERR_INVALID_STATE: TWAI driver is not in running state, or is not installed
+ */
+esp_err_t twai_get_pending_tx(unsigned *pending_tx);
+
+/**
+ * @brief   Get the number of pending messages in RX queue
+ *
+ * @param[out]   pending_rx         Number of messages
+ *
+ * @return
+ *      - ESP_OK: Transmission successfully queued/initiated
+ *      - ESP_ERR_INVALID_ARG: Arguments are invalid
+ *      - ESP_ERR_INVALID_STATE: TWAI driver is not in running state, or is not installed
+ */
+esp_err_t twai_get_pending_rx(unsigned *pending_rx);
+
+/**
  * @brief   Receive a TWAI message
  *
  * This function receives a message from the RX queue. The flags field of the

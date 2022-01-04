@@ -584,6 +584,30 @@ esp_err_t twai_transmit(const twai_message_t *message, TickType_t ticks_to_wait)
     return ret;
 }
 
+esp_err_t twai_get_pending_tx(unsigned *pending_tx)
+{
+    //Check arguments
+    TWAI_CHECK(p_twai_obj != NULL, ESP_ERR_INVALID_STATE);
+    if (!pending_tx)
+        return ESP_ERR_INVALID_ARG;
+
+    *pending_tx = uxQueueMessagesWaiting(p_twai_obj->tx_queue);
+
+    return ESP_OK;
+}
+
+esp_err_t twai_get_pending_rx(unsigned *pending_rx)
+{
+    //Check arguments
+    TWAI_CHECK(p_twai_obj != NULL, ESP_ERR_INVALID_STATE);
+    if (!pending_rx)
+        return ESP_ERR_INVALID_ARG;
+
+    *pending_rx = uxQueueMessagesWaiting(p_twai_obj->rx_queue);
+
+    return ESP_OK;
+}
+
 esp_err_t twai_receive(twai_message_t *message, TickType_t ticks_to_wait)
 {
     //Check arguments and state
