@@ -36,7 +36,7 @@ Concepts
 
 - "components" are modular pieces of standalone code which are compiled into static libraries (.a files) and linked into an app. Some are provided by ESP-IDF itself, others may be sourced from other places.
 
-- "Target" is the hardware for which an application is built. At the moment, ESP-IDF supports ``esp32``, ``esp32s2`` and ``esp32c3`` targets.
+- "Target" is the hardware for which an application is built. A full list of supported targets in your version if ESP-IDF can be seen by running `idf.py --list-targets`.
 
 Some things are not part of the project:
 
@@ -52,15 +52,15 @@ Using the Build System
 idf.py
 ------
 
-The ``idf.py`` command line tool provides a front-end for easily managing your project builds. It manages the following tools:
+The ``idf.py`` command-line tool provides a front-end for easily managing your project builds. It manages the following tools:
 
 - CMake_, which configures the project to be built
-- A command line build tool (either Ninja_ build or `GNU Make`)
+- A command-line build tool (either Ninja_ build or `GNU Make`)
 - `esptool.py`_ for flashing the target.
 
 The :ref:`getting started guide <get-started-configure>` contains a brief introduction to how to set up ``idf.py`` to configure, build, and flash projects.
 
-``idf.py`` should be run in an ESP-IDF "project" directory, ie one containing a ``CMakeLists.txt`` file. Older style projects with a Makefile will not work with ``idf.py``.
+``idf.py`` should be run in an ESP-IDF "project" directory, i.e. one containing a ``CMakeLists.txt`` file. Older style projects with a Makefile will not work with ``idf.py``.
 
 Type ``idf.py --help`` for a list of commands. Here are a summary of the most useful ones:
 
@@ -1065,11 +1065,7 @@ The subproject is inserted as an external project from the top-level project, by
 Selecting the Target
 ====================
 
-ESP-IDF supports multiple targets (chips). The identifiers used for each chip are as follows:
-
-* ``esp32`` — for ESP32-D0WD, ESP32-D2WD, ESP32-S0WD (ESP-SOLO), ESP32-U4WDH, ESP32-PICO-D4
-* ``esp32s2``— for ESP32-S2
-* ``esp32c3``— for ESP32-C3
+ESP-IDF supports multiple targets (chips). A full list of supported targets in your version if ESP-IDF can be seen by running `idf.py --list-targets`.
 
 To select the target before building the project, use ``idf.py set-target <target>`` command, for example::
 
