@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  *
@@ -107,19 +107,23 @@ static void wifi_join(const char *ssid, const char *psk)
     }
 }
 
-void esp_ot_process_wifi_sta(void *aContext, uint8_t aArgsLength, char *aArgs[])
+void esp_ot_process_wifi_cmd(void *aContext, uint8_t aArgsLength, char *aArgs[])
 {
     char ssid[100] = "";
     char psk[100] = "";
     (void)(aContext);
     if (aArgsLength == 0) {
-        otCliOutputFormat("---wifi sta parameter---\n");
+        otCliOutputFormat("---wifi parameter---\n");
+        otCliOutputFormat("connect\n");
         otCliOutputFormat("-s                   :     wifi ssid\n");
         otCliOutputFormat("-p                   :     wifi psk\n");
         otCliOutputFormat("---example---\n");
-        otCliOutputFormat("join a wifi:\nssid: threadcertAP \npsk: threadcertAP    :     sta -s threadcertAP -p threadcertAP\n");
-    } else {
-        for (int i = 0; i < aArgsLength; i++) {
+        otCliOutputFormat("join a wifi:\nssid: threadcertAP \npsk: threadcertAP    :     wifi connect -s threadcertAP -p threadcertAP\n");
+        otCliOutputFormat("state                :     get wifi state, disconnect or connect\n");
+        otCliOutputFormat("---example---\n");
+        otCliOutputFormat("get wifi state       :     wifi state\n");
+    } else if (strcmp(aArgs[0], "connect") == 0) {
+        for (int i = 1; i < aArgsLength; i++) {
             if (strcmp(aArgs[i], "-s") == 0) {
                 i++;
                 strcpy(ssid, aArgs[i]);
@@ -135,39 +139,13 @@ void esp_ot_process_wifi_sta(void *aContext, uint8_t aArgsLength, char *aArgs[])
         } else {
             otCliOutputFormat("wifi has already connected\n");
         }
-    }
-}
-
-void esp_ot_process_get_wifi_info(void *aContext, uint8_t aArgsLength, char *aArgs[])
-{
-    (void)(aContext);
-    if (aArgsLength == 0) {
-        otCliOutputFormat("---get wifi informations---\n");
-        otCliOutputFormat("-i                   :     get sta addr\n");
-        otCliOutputFormat("-s                   :     get wifi state, disconnect or connect\n");
-    } else {
-        for (int i = 0; i < aArgsLength; i++) {
-            if (strcmp(aArgs[i], "-i") == 0) {
-                if (s_wifi_connected) {
-                    esp_netif_ip_info_t local_ip;
-                    char addr_str[128];
-                    esp_netif_get_ip_info(esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"), &local_ip);
-                    ip4addr_ntoa_r((ip4_addr_t *)(&local_ip.ip), addr_str, sizeof(addr_str) - 1);
-                    otCliOutputFormat("inet %s\n");
-                    esp_ip6_addr_t if_ip6;
-                    esp_netif_get_ip6_linklocal(esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"), &if_ip6);
-                    ip6addr_ntoa_r((ip6_addr_t *)(&if_ip6), addr_str, sizeof(addr_str) - 1);
-                    otCliOutputFormat("inet6 %s\n", addr_str);
-                } else {
-                    otCliOutputFormat("wifi is disconnected\n");
-                }
-            } else if (strcmp(aArgs[i], "-s") == 0) {
-                if (s_wifi_connected) {
-                    otCliOutputFormat("connected\n");
-                } else {
-                    otCliOutputFormat("disconnected\n");
-                }
-            }
+    } else if (strcmp(aArgs[0], "state") == 0) {
+        if (s_wifi_connected) {
+            otCliOutputFormat("connected\n");
+        } else {
+            otCliOutputFormat("disconnected\n");
         }
+    } else {
+        otCliOutputFormat("invalid commands\n");
     }
 }

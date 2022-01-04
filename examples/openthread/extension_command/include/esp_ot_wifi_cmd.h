@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  *
@@ -20,16 +20,10 @@ extern "C" {
 #endif
 
 /**
- * @brief User command "sta" process.
+ * @brief User command "wifi" process.
  *
  */
-void esp_ot_process_wifi_sta(void *aContext, uint8_t aArgsLength, char *aArgs[]);
-
-/**
- * @brief User command "wifiinfo" process.
- *
- */
-void esp_ot_process_get_wifi_info(void *aContext, uint8_t aArgsLength, char *aArgs[]);
+void esp_ot_process_wifi_cmd(void *aContext, uint8_t aArgsLength, char *aArgs[]);
 
 /**
  * @brief Wifi netif init.
