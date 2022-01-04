@@ -81,6 +81,13 @@ ESP-NOW 采用 CCMP 方法保护供应商特定动作帧的安全，具体可参
 调用 ``esp_now_register_recv_cb`` 注册接收回调函数。当接收 ESP-NOW 数据时，需要调用接收回调函数。接收回调函数也在 Wi-Fi 任务任务中运行。因此，不要在回调函数中执行冗长的操作。
 相反，将必要的数据发布到队列，并交给优先级较低的任务处理。
 
+应用示例
+----------
+
+* 如何在设备间传输 ESP-NOW 数据：:example:`wifi/espnow`。
+
+* 了解更多 ESP-NOW 的应用示例，请参考 `README.md 文件 <https://github.com/espressif/esp-now>`_。
+
 API 参考
 -------------
 
