@@ -6,11 +6,14 @@
 */
 #include <string.h>
 #include <stdbool.h>
-#include <esp_system.h>
+#include "esp_system.h"
+#include "esp_task_wdt.h"
 #include "mbedtls/rsa.h"
 #include "mbedtls/pk.h"
 #include "mbedtls/x509_crt.h"
 #include "mbedtls/entropy_poll.h"
+#include <mbedtls/entropy.h>
+#include <mbedtls/ctr_drbg.h>
 #include "freertos/FreeRTOS.h"
 #include "unity.h"
 #include "test_utils.h"
@@ -518,3 +521,39 @@ static void rsa_key_operations(int keysize, bool check_performance, bool use_bli
 }
 
 #endif // CONFIG_MBEDTLS_HARDWARE_MPI
+
+TEST_CASE("mbedtls RSA Generate Key", "[mbedtls][timeout=60]")
+{
+
+    mbedtls_rsa_context ctx;
+    mbedtls_entropy_context entropy;
+    mbedtls_ctr_drbg_context ctr_drbg;
+
+    const unsigned int key_size = 3072;
+    const int exponent = 65537;
+
+#if CONFIG_MBEDTLS_MPI_USE_INTERRUPT
+    /* Check that generating keys doesnt starve the watchdog if interrupt-based driver is used */
+    const int timeout_s = 1;
+    esp_task_wdt_init(timeout_s, true);
+    esp_task_wdt_add(xTaskGetIdleTaskHandleForCPU(0));
+#endif //CONFIG_MBEDTLS_MPI_USE_INTERRUPT
+
+    mbedtls_rsa_init(&ctx, MBEDTLS_RSA_PKCS_V15, 0);
+    mbedtls_ctr_drbg_init(&ctr_drbg);
+
+    mbedtls_entropy_init(&entropy);
+    TEST_ASSERT_FALSE( mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0) );
+
+    TEST_ASSERT_FALSE( mbedtls_rsa_gen_key(&ctx, mbedtls_ctr_drbg_random, &ctr_drbg, key_size, exponent) );
+
+    mbedtls_rsa_free(&ctx);
+    mbedtls_ctr_drbg_free(&ctr_drbg);
+    mbedtls_entropy_free(&entropy);
+
+#if CONFIG_MBEDTLS_MPI_USE_INTERRUPT
+    esp_task_wdt_delete(xTaskGetIdleTaskHandleForCPU(0));
+    esp_task_wdt_deinit();
+#endif //CONFIG_MBEDTLS_MPI_USE_INTERRUPT
+
+}
