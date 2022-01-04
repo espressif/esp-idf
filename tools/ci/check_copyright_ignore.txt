@@ -1244,7 +1244,6 @@ components/lwip/test_afl_host/dhcp_di.h
 components/lwip/test_afl_host/dhcpserver_di.h
 components/lwip/test_afl_host/dns_di.h
 components/lwip/test_afl_host/esp_attr.h
-components/lwip/test_afl_host/esp_netif_loopback_mock.c
 components/lwip/test_afl_host/network_mock.c
 components/lwip/test_afl_host/no_warn_host.h
 components/lwip/test_afl_host/test_dhcp_client.c
@@ -1351,7 +1350,6 @@ components/mdns/mdns_networking_lwip.c
 components/mdns/private_include/mdns_networking.h
 components/mdns/test/test_mdns.c
 components/mdns/test_afl_fuzz_host/esp32_mock.c
-components/mdns/test_afl_fuzz_host/esp32_mock.h
 components/mdns/test_afl_fuzz_host/esp_attr.h
 components/mdns/test_afl_fuzz_host/esp_netif_mock.c
 components/mdns/test_afl_fuzz_host/mdns_di.h
