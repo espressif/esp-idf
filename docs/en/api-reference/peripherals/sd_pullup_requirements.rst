@@ -7,6 +7,12 @@ SD Pull-up Requirements
 
         This document is not updated for ESP32-C3 yet.
 
+.. only:: esp32s3
+
+    .. warning::
+
+        This document is not updated for ESP32-S3 yet.
+
 Espressif hardware products are designed for multiple use cases which may require different pull states on pins. For this reason, the pull state of particular pins on certain products will need to be adjusted to provide the pull-ups required in the SD bus.
 
 SD pull-up requirements apply to cases where {IDF_TARGET_NAME} uses the SPI controller to communicate with SD cards. When an SD card is operating in SPI mode or 1-bit SD mode, the CMD and DATA (DAT0 - DAT3) lines of the SD bus must be pulled up by 10 kOhm resistors. Slaves should also have pull-ups on all above-mentioned lines (regardless of whether these lines are connected to the host) in order to prevent SD cards from entering a wrong state.

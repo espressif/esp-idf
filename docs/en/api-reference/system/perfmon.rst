@@ -1,6 +1,13 @@
 Performance Monitor
 ===================
 
+.. only:: esp32s3
+
+    .. warning::
+
+        This feature is not supported in v4.4
+
+
 The Performance Monitor component provides APIs to use {IDF_TARGET_NAME} internal performance counters to profile functions and
 applications.
 
