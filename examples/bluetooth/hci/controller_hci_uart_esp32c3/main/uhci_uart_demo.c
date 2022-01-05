@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -166,7 +166,7 @@ static IRAM_ATTR bool hci_uart_tl_tx_eof_callback(gdma_channel_handle_t dma_chan
 static void uart_gpio_set(void)
 {
     gpio_config_t io_output_conf = {
-        .intr_type = GPIO_PIN_INTR_DISABLE,    //disable interrupt
+        .intr_type = GPIO_INTR_DISABLE,    //disable interrupt
         .mode = GPIO_MODE_OUTPUT,    // output mode
         .pin_bit_mask = GPIO_OUTPUT_PIN_SEL,    // bit mask of the output pins
         .pull_down_en = 0,    // disable pull-down mode
@@ -175,7 +175,7 @@ static void uart_gpio_set(void)
     gpio_config(&io_output_conf);
 
     gpio_config_t io_input_conf = {
-        .intr_type = GPIO_PIN_INTR_DISABLE,    //disable interrupt
+        .intr_type = GPIO_INTR_DISABLE,    //disable interrupt
         .mode = GPIO_MODE_INPUT,    // input mode
         .pin_bit_mask = GPIO_INPUT_PIN_SEL,  // bit mask of the input pins
         .pull_down_en = 0,    // disable pull-down mode

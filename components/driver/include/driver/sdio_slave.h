@@ -1,17 +1,14 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
-#include "freertos/FreeRTOS.h"
 #include "esp_err.h"
-#include "sys/queue.h"
-
+#include "freertos/FreeRTOS.h" // for TickType_t
 #include "hal/sdio_slave_types.h"
-#include "soc/sdio_slave_periph.h"
 
 #ifdef __cplusplus
 extern "C" {

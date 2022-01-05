@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,10 +11,6 @@
 #include "esp_attr.h"
 #include "sdkconfig.h"
 #include "esp_rom_spiflash.h"
-
-#ifdef CONFIG_LEGACY_INCLUDE_COMMON_HEADERS
-#include "soc/spi_reg.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include "freertos/timers.h"
 #include "driver/rtc_io.h"
 #include "hal/rtc_io_hal.h"
+#include "soc/soc_caps.h"
 
 static const char __attribute__((__unused__)) *RTCIO_TAG = "RTCIO";
 
@@ -220,3 +221,20 @@ esp_err_t rtc_gpio_wakeup_disable(gpio_num_t gpio_num)
 }
 
 #endif // SOC_RTCIO_WAKE_SUPPORTED
+
+bool rtc_gpio_is_valid_gpio(gpio_num_t gpio_num)
+{
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+    return (gpio_num < GPIO_PIN_COUNT && rtc_io_num_map[gpio_num] >= 0);
+#else
+    return false;
+#endif
+}
+
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+int rtc_io_number_get(gpio_num_t gpio_num)
+{
+    return rtc_io_num_map[gpio_num];
+}
+
+#endif // SOC_RTCIO_INPUT_OUTPUT_SUPPORTED

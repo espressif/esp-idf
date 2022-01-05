@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 #include "hal/usb_hal.h"
 #include "soc/gpio_periph.h"
 #include "soc/usb_periph.h"
+#include "soc/gpio_pins.h"
 #include "tinyusb.h"
 #include "descriptors_control.h"
 #include "tusb.h"
@@ -34,7 +35,7 @@ static void configure_pins(usb_hal_context_t *usb)
                 esp_rom_gpio_connect_out_signal(iopin->pin, iopin->func, false, false);
             } else {
                 esp_rom_gpio_connect_in_signal(iopin->pin, iopin->func, false);
-                if ((iopin->pin != GPIO_FUNC_IN_LOW) && (iopin->pin != GPIO_FUNC_IN_HIGH)) {
+                if ((iopin->pin != GPIO_MATRIX_CONST_ZERO_INPUT) && (iopin->pin != GPIO_MATRIX_CONST_ONE_INPUT)) {
                     gpio_ll_input_enable(&GPIO, iopin->pin);
                 }
             }

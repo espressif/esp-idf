@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -542,7 +542,7 @@ TEST_CASE("Timer divider", "[hw_timer]")
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     all_timer_get_counter_value(set_timer_val, false, comp_time_val);
     for (int i = 0; i < TIMER_GROUP_MAX * TIMER_MAX; i++) {
-        TEST_ASSERT_INT_WITHIN(5000, APB_CLK_FREQ / 2, comp_time_val[i]);
+        TEST_ASSERT_INT_WITHIN(10000, APB_CLK_FREQ / 2, comp_time_val[i]);
     }
 
     all_timer_pause();

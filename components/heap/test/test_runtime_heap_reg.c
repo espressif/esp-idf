@@ -3,10 +3,11 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include "unity.h"
 #include "esp_heap_caps_init.h"
 #include "esp_system.h"
-#include <stdlib.h>
+#include "heap_memory_layout.h"
 
 
 /* NOTE: This is not a well-formed unit test, it leaks memory */

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,6 @@
 
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
-#include "soc/soc.h"
 #include "hal/ledc_types.h"
 #include "driver/gpio.h"
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,7 @@
 #include "driver/twai.h"
 #include "soc/soc_caps.h"
 #include "soc/twai_periph.h"
+#include "soc/gpio_sig_map.h"
 #include "hal/twai_hal.h"
 #include "esp_rom_gpio.h"
 
