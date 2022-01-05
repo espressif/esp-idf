@@ -175,6 +175,17 @@ menu "ESP32S2-specific"
                 If SPIRAM_FETCH_INSTRUCTIONS also enabled,
                 you can run the instruction when erasing or programming the flash.
 
+        config SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+            bool "Allow external memory as an argument to xTaskCreateStatic"
+            default n
+            help
+                Accessing memory in SPIRAM has certain restrictions, so task stacks allocated by xTaskCreate
+                are by default allocated from internal RAM.
+
+                This option allows for passing memory allocated from SPIRAM to be passed to xTaskCreateStatic.
+                This should only be used for tasks where the stack is never accessed while the cache is disabled.
+                Cannot be used together with ESP_COREDUMP_ENABLE_TO_FLASH.
+
         choice SPIRAM_SPEED
             prompt "Set RAM clock speed"
             default SPIRAM_SPEED_40M
@@ -191,7 +202,8 @@ menu "ESP32S2-specific"
                 bool "20Mhz clock speed"
         endchoice
 
-        # insert non-chip-specific items here
+
+        # insert non-chip-specific items here NOERROR
         source "$IDF_PATH/components/esp_hw_support/Kconfig.spiram.common"
 
     endmenu
