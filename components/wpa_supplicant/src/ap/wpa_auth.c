@@ -140,7 +140,35 @@ static inline int wpa_auth_set_key(struct wpa_authenticator *wpa_auth,
                    enum wpa_alg alg, const u8 *addr, int idx,
                    u8 *key, size_t key_len)
 {
-    return esp_wifi_set_ap_key_internal(alg, addr, idx, key, key_len);
+    int ret;
+
+    if (alg == WIFI_WPA_ALG_IGTK) {
+	if (key) {
+	    wpa_printf (MSG_DEBUG, "%s : igtk idx %d\n", __func__, idx);
+	    wifi_wpa_igtk_t *igtk = malloc(sizeof(wifi_wpa_igtk_t));
+
+	    if (igtk != NULL) {
+		memcpy(&igtk->igtk[0], key, WPA_IGTK_LEN);
+		memset((uint8_t*)&igtk->pn[0],0,6);
+		igtk->keyid[0] = idx;
+		igtk->keyid[1] = 0;
+
+	    } else {
+                return -1;
+	    }
+	    ret = esp_wifi_set_igtk_internal(ESP_IF_WIFI_AP, igtk);
+	    os_free(igtk);
+	    return ret;
+
+	} else {
+            wpa_printf( MSG_DEBUG, "Key is empty");
+            return -1;
+	}
+    } else {
+	wpa_printf( MSG_DEBUG, "%s : key idx  %d alg %d vlan_id %d key_len %d key \n", __func__, idx, alg, vlan_id, key_len);
+	return esp_wifi_set_ap_key_internal(alg, addr, idx, key, key_len);
+    }
+    return 0;
 }
 
 
@@ -157,7 +185,7 @@ static inline int
 wpa_auth_send_eapol(struct wpa_authenticator *wpa_auth, const u8 *addr,
             const u8 *data, size_t data_len, int encrypt)
 {
-    void *buffer = os_malloc(256);
+    void *buffer = os_malloc(data_len + sizeof(struct l2_ethhdr));
     struct l2_ethhdr *eth = buffer;
 
     if (!buffer){
@@ -2304,8 +2332,8 @@ static int wpa_group_config_group_keys(struct wpa_authenticator *wpa_auth,
                  group->IGTK[group->GN_igtk - 4],
                  WPA_IGTK_LEN) < 0)
         ret = -1;
-#endif /* CONFIG_IEEE80211W */
 
+#endif /* CONFIG_IEEE80211W */
     return ret;
 }
 
@@ -2385,7 +2413,7 @@ static int wpa_sm_step(struct wpa_state_machine *sm)
     return 0;
 }
 
-bool wpa_ap_join(void** sm, uint8_t *bssid, uint8_t *wpa_ie, uint8_t wpa_ie_len)
+bool wpa_ap_join(void** sm, uint8_t *bssid, uint8_t *wpa_ie, uint8_t wpa_ie_len, bool *pmf_enable)
 {
     struct hostapd_data *hapd = (struct hostapd_data*)esp_wifi_get_hostap_private_internal();
     struct wpa_state_machine   **wpa_sm;
@@ -2412,7 +2440,10 @@ bool wpa_ap_join(void** sm, uint8_t *bssid, uint8_t *wpa_ie, uint8_t wpa_ie_len)
 
             if (wpa_validate_wpa_ie(hapd->wpa_auth, *wpa_sm, wpa_ie, wpa_ie_len)) {
                 return false;
-            }
+	    }
+
+	    //Check whether AP uses Management Frame Protection for this connection
+	    *pmf_enable = wpa_auth_uses_mfp(*wpa_sm);
         }
 
         wpa_auth_sta_associated(hapd->wpa_auth, *wpa_sm);

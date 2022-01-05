@@ -369,7 +369,7 @@ int hostapd_wep_key_cmp(struct hostapd_wep_keys *a,
 const u8 * hostapd_get_psk(const struct hostapd_bss_config *conf,
 			   const u8 *addr, const u8 *prev_psk);
 int hostapd_setup_wpa_psk(struct hostapd_bss_config *conf);
-bool wpa_ap_join(void** sm, uint8_t *bssid, uint8_t *wpa_ie, uint8_t wpa_ie_len);
+bool wpa_ap_join(void** sm, uint8_t *bssid, uint8_t *wpa_ie, uint8_t wpa_ie_len, bool *pmf_enable);
 bool wpa_ap_remove(void* sm);
 
 #endif /* HOSTAPD_CONFIG_H */
