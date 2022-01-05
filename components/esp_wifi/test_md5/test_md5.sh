@@ -15,17 +15,22 @@ fi
 case $IDF_TARGET in
     esp32)
         PREFIX=xtensa-esp32-elf-
-        LIB_DIR=esp32
         ;;
     esp32s2)
         PREFIX=xtensa-esp32s2-elf-
-        LIB_DIR=esp32s2
+        ;;
+    esp32s3)
+        PREFIX=xtensa-esp32s3-elf-
+        ;;
+    esp32c3)
+        PREFIX=riscv32-esp-elf-
         ;;
     *)
         echo "Invalid IDF_TARGET value: \"${IDF_TARGET}\""
         exit 1
         ;;
 esac
+LIB_DIR=${IDF_TARGET}
 
 ELF_FILE=test.elf
 
