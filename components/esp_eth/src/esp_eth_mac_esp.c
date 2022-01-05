@@ -33,6 +33,7 @@
 static const char *TAG = "esp.emac";
 
 #define PHY_OPERATION_TIMEOUT_US (1000)
+#define MAC_STOP_TIMEOUT_MS (100)
 #define FLOW_CONTROL_LOW_WATER_MARK (CONFIG_ETH_DMA_RX_BUFFER_NUM / 3)
 #define FLOW_CONTROL_HIGH_WATER_MARK (FLOW_CONTROL_LOW_WATER_MARK * 2)
 
@@ -372,6 +373,7 @@ static esp_err_t emac_esp32_deinit(esp_eth_mac_t *mac)
 static esp_err_t emac_esp32_start(esp_eth_mac_t *mac)
 {
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    emac_hal_reset_desc_chain(&emac->hal);
     emac_hal_start(&emac->hal);
     return ESP_OK;
 }
@@ -379,8 +381,16 @@ static esp_err_t emac_esp32_start(esp_eth_mac_t *mac)
 static esp_err_t emac_esp32_stop(esp_eth_mac_t *mac)
 {
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    emac_hal_stop(&emac->hal);
-    return ESP_OK;
+    esp_err_t ret = ESP_OK;
+    int32_t to = 0;
+    do {
+        if ((ret = emac_hal_stop(&emac->hal)) == ESP_OK) {
+            break;
+        }
+        to += 20;
+        vTaskDelay(pdMS_TO_TICKS(20));
+    } while (to < MAC_STOP_TIMEOUT_MS);
+    return ret;
 }
 
 static esp_err_t emac_esp32_del(esp_eth_mac_t *mac)
