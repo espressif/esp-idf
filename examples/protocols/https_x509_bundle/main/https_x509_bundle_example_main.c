@@ -72,7 +72,7 @@ static void https_get_task(void *pvParameters)
                 ESP_LOGE(TAG, "Could not connect to %s", web_urls[i]);
             }
 
-            esp_tls_conn_delete(tls);
+            esp_tls_conn_destroy(tls);
             vTaskDelay(1000 / portTICK_PERIOD_MS);
         }
 

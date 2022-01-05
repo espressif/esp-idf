@@ -11,7 +11,7 @@ All the configuration can be specified in the ``esp_tls_cfg_t`` data structure. 
     * :cpp:func:`esp_tls_conn_new`: for opening a new TLS connection.
     * :cpp:func:`esp_tls_conn_read`: for reading from the connection.
     * :cpp:func:`esp_tls_conn_write`: for writing into the connection.
-    * :cpp:func:`esp_tls_conn_delete`: for freeing up the connection.
+    * :cpp:func:`esp_tls_conn_destroy`: for freeing up the connection.
 
 Any application layer protocol like HTTP1, HTTP2 etc can be executed on top of this layer.
 
