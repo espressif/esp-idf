@@ -1474,30 +1474,58 @@ TEST_CASE("mbedtls AES external flash tests", "[aes]")
 #endif // CONFIG_SPIRAM_USE_MALLOC
 
 
-#if CONFIG_ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK
-
-RTC_FAST_ATTR uint8_t rtc_stack[4096];
 static SemaphoreHandle_t done_sem;
 
-static void aes_ctr_stream_test_task(void *pv)
+static void __attribute__((unused)) aes_ctr_stream_test_task(void *pv)
 {
     aes_ctr_stream_test();
     xSemaphoreGive(done_sem);
     vTaskDelete(NULL);
 }
 
+#if CONFIG_ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK
+
 TEST_CASE("mbedtls AES stack in RTC RAM", "[mbedtls]")
 {
     done_sem = xSemaphoreCreateBinary();
     static StaticTask_t rtc_task;
-    memset(rtc_stack, 0, sizeof(rtc_stack));
-
+    size_t STACK_SIZE = 3072;
+    uint8_t *rtc_stack = heap_caps_calloc(STACK_SIZE, 1, MALLOC_CAP_RTCRAM);
     TEST_ASSERT(esp_ptr_in_rtc_dram_fast(rtc_stack));
 
-    TEST_ASSERT_NOT_NULL(xTaskCreateStatic(aes_ctr_stream_test_task, "aes_ctr_task", sizeof(rtc_stack), NULL,
+    TEST_ASSERT_NOT_NULL(xTaskCreateStatic(aes_ctr_stream_test_task, "aes_ctr_task", STACK_SIZE, NULL,
                                             3, rtc_stack, &rtc_task));
     TEST_ASSERT_TRUE(xSemaphoreTake(done_sem, 10000 / portTICK_PERIOD_MS));
+
+    /* Give task time to cleanup before freeing stack */
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    free(rtc_stack);
+
     vSemaphoreDelete(done_sem);
 }
 
 #endif //CONFIG_ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK
+
+#if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY && CONFIG_SPIRAM_USE_MALLOC
+
+TEST_CASE("mbedtls AES stack in PSRAM", "[mbedtls]")
+{
+    done_sem = xSemaphoreCreateBinary();
+    static StaticTask_t psram_task;
+    size_t STACK_SIZE = 3072;
+    uint8_t *psram_stack = heap_caps_calloc(STACK_SIZE, 1, MALLOC_CAP_SPIRAM);
+
+    TEST_ASSERT(esp_ptr_external_ram(psram_stack));
+
+    TEST_ASSERT_NOT_NULL(xTaskCreateStatic(aes_ctr_stream_test_task, "aes_ctr_task", STACK_SIZE, NULL,
+                                            3, psram_stack, &psram_task));
+    TEST_ASSERT_TRUE(xSemaphoreTake(done_sem, 10000 / portTICK_PERIOD_MS));
+
+    /* Give task time to cleanup before freeing stack */
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    free(psram_stack);
+
+    vSemaphoreDelete(done_sem);
+}
+
+#endif //CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY && CONFIG_SPIRAM_USE_MALLOC
