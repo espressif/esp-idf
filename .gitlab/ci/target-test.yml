@@ -54,6 +54,19 @@ example_test_pytest_esp32c3_generic:
     - ESP32C3
     - Example_GENERIC
 
+example_test_pytest_esp32c3_flash_suspend:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c3
+  needs:
+    - build_examples_pytest_esp32c3
+  variables:
+    TARGET: esp32c3
+    ENV_MARKER: flash_suspend
+  tags:
+    - ESP32C3_IDF
+    - UT_T1_Flash_Suspend
+
 # for parallel jobs, CI_JOB_NAME will be "job_name index/total" (for example, "IT_001 1/2")
 # we need to convert to pattern "job_name_index.yml"
 .define_config_file_name: &define_config_file_name |
