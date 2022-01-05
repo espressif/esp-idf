@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import http.client
@@ -11,7 +11,7 @@ import ttfw_idf
 from tiny_test_fw import Utility
 
 HTTP_OK = 200
-TEST_SERVER = 'http2.golang.org'
+TEST_SERVER = 'http2.github.io'
 
 
 def is_test_server_available():  # type: () -> bool
@@ -33,7 +33,7 @@ def test_examples_protocol_http2_request(env, extra_data):  # type: (tiny_test_f
     """
     steps: |
       1. join AP
-      2. connect to http2.golang.org
+      2. connect to http2.github.io
       3. send http2 request
       4. send http2 put response
     """
@@ -45,15 +45,12 @@ def test_examples_protocol_http2_request(env, extra_data):  # type: (tiny_test_f
     # start the test
     # check if test server is avilable
     test_server_available = is_test_server_available()
-    # Skip the test if the server test server (http2.golang.org) is not available at the moment.
+    # Skip the test if the server test server (http2.github.io) is not available at the moment.
     if test_server_available:
+        Utility.console_log('test server \"{}\" is available'.format(TEST_SERVER))
         dut1.start_app()
         # check for connection
         dut1.expect('Connection done', timeout=30)
-        # check for echo response
-        dut1.expect('[echo-response] HELLO WORLD', timeout=30)
-        dut1.expect('[echo-response] Frame fully received')
-        dut1.expect('[echo-response] Stream Closed')
         # check for get response
         dut1.expect('[get-response] Frame fully received')
     else:
