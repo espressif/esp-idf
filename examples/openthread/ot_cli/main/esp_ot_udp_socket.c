@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: CC0
+ * SPDX-License-Identifier: CC0-1.0
  *
  * OpenThread Command Line Example
  *
@@ -15,8 +15,11 @@
 #include "esp_check.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#include "esp_netif.h"
+#include "esp_openthread_lock.h"
 #include "esp_ot_udp_socket.h"
 #include "lwip/err.h"
+#include "lwip/mld6.h"
 #include "lwip/sockets.h"
 
 #define TAG "ot_socket"
@@ -94,6 +97,7 @@ static void udp_socket_client_task(void *pvParameters)
     esp_err_t ret = ESP_OK;
     struct sockaddr_storage source_addr; // Large enough for both IPv4 or IPv6
     struct sockaddr_in6 dest_addr = { 0 };
+    uint8_t netif_index = esp_netif_get_netif_impl_index(esp_netif_get_handle_from_ifkey("OT_DEF"));
 
     inet6_aton(host_ip, &dest_addr.sin6_addr);
     dest_addr.sin6_family = AF_INET6;
@@ -102,6 +106,8 @@ static void udp_socket_client_task(void *pvParameters)
     client_sock = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
     ESP_GOTO_ON_FALSE((client_sock >= 0), ESP_OK, exit, TAG, "Unable to create socket: errno %d", errno);
     ESP_LOGI(TAG, "Socket created, sending to %s:%d", host_ip, port);
+
+    setsockopt(client_sock, IPPROTO_IPV6, IPV6_MULTICAST_IF, &netif_index, sizeof(netif_index));
 
     err = sendto(client_sock, payload, strlen(payload), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
     ESP_GOTO_ON_FALSE((err >= 0), ESP_FAIL, exit, TAG, "Error occurred during sending: errno %d", errno);
@@ -135,10 +141,30 @@ void esp_ot_process_udp_server(void *aContext, uint8_t aArgsLength, char *aArgs[
 void esp_ot_process_udp_client(void *aContext, uint8_t aArgsLength, char *aArgs[])
 {
     (void)(aContext);
-    (void)(aArgsLength);
     if (aArgsLength == 0) {
         ESP_LOGE(TAG, "Invalid arguments.");
     } else {
         xTaskCreate(udp_socket_client_task, "ot_udp_socket_client", 4096, aArgs[0], 4, NULL);
+    }
+}
+
+void esp_ot_process_mcast_group(void *aContext, uint8_t aArgsLength, char *aArgs[])
+{
+    if (aArgsLength != 2 || (strncmp(aArgs[0], "join", 4) != 0 && strncmp(aArgs[0], "leave", 5) != 0) ) {
+        ESP_LOGE(TAG, "Invalid arguments: mcast [join|leave] group_address");
+        return;
+    }
+
+    ip6_addr_t group;
+    inet6_aton(aArgs[1], &group);
+    struct netif *netif = netif_get_by_index(esp_netif_get_netif_impl_index(esp_netif_get_handle_from_ifkey("OT_DEF")));
+    if (strncmp(aArgs[0], "join", 4) == 0) {
+        if (mld6_joingroup_netif(netif, &group) != ERR_OK) {
+            ESP_LOGE(TAG, "Failed to join group");
+        }
+    } else {
+        if (mld6_leavegroup_netif(netif, &group) != ERR_OK) {
+            ESP_LOGE(TAG, "Failed to leave group");
+        }
     }
 }

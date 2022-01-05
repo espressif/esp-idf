@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: CC0
+ * SPDX-License-Identifier: CC0-1.0
  *
  * OpenThread Command Line Example
  *
@@ -14,6 +14,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "esp_err.h"
 #include "esp_event.h"
@@ -29,7 +30,6 @@
 #include "esp_vfs_eventfd.h"
 #include "driver/uart.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/portmacro.h"
 #include "freertos/task.h"
 #include "hal/uart_types.h"
 #include "openthread/cli.h"

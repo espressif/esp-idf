@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: CC0
+ * SPDX-License-Identifier: CC0-1.0
  *
  * OpenThread Command Line Example
  *
@@ -27,6 +27,7 @@ static const otCliCommand kCommands[] = {
     {"tcpsockclient", esp_ot_process_tcp_client},
     {"udpsockserver", esp_ot_process_udp_server},
     {"udpsockclient", esp_ot_process_udp_client},
+    {"mcast", esp_ot_process_mcast_group},
     {"iperf", esp_ot_process_iperf}
 };
 
