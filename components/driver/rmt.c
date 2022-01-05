@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -742,7 +742,7 @@ static int IRAM_ATTR rmt_rx_get_mem_len_in_isr(rmt_channel_t channel)
 static void IRAM_ATTR rmt_driver_isr_default(void *arg)
 {
     uint32_t status = 0;
-    rmt_item32_t volatile *addr = NULL;
+    rmt_item32_t *addr = NULL;
     uint8_t channel = 0;
     rmt_hal_context_t *hal = (rmt_hal_context_t *)arg;
     portBASE_TYPE HPTaskAwoken = pdFALSE;
@@ -829,7 +829,7 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
             int item_len = rmt_rx_get_mem_len_in_isr(channel);
             rmt_ll_rx_set_mem_owner(rmt_contex.hal.regs, channel, RMT_MEM_OWNER_SW);
             if (p_rmt->rx_buf) {
-                addr = RMTMEM.chan[RMT_ENCODE_RX_CHANNEL(channel)].data32;
+                addr = (rmt_item32_t *)RMTMEM.chan[RMT_ENCODE_RX_CHANNEL(channel)].data32;
 #if SOC_RMT_SUPPORT_RX_PINGPONG
                 if (item_len > p_rmt->rx_item_start_idx) {
                     item_len = item_len - p_rmt->rx_item_start_idx;

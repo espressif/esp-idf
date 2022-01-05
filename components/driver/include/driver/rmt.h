@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,6 @@ extern "C" {
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/ringbuf.h"
-#include "soc/rmt_struct.h"
 #include "hal/rmt_types.h"
 
 #define RMT_CHANNEL_FLAGS_AWARE_DFS (1 << 0) /*!< Channel can work during APB clock scaling */
@@ -32,6 +31,21 @@ extern "C" {
  *
  */
 #define RMT_MEM_ITEM_NUM SOC_RMT_MEM_WORDS_PER_CHANNEL
+
+/**
+ * @brief Definition of RMT item
+ */
+typedef struct {
+    union {
+        struct {
+            uint32_t duration0 : 15; /*!< Duration of level0 */
+            uint32_t level0 : 1;     /*!< Level of the first part */
+            uint32_t duration1 : 15; /*!< Duration of level1 */
+            uint32_t level1 : 1;     /*!< Level of the second part */
+        };
+        uint32_t val; /*!< Equivelent unsigned value for the RMT item */
+    };
+} rmt_item32_t;
 
 /**
 * @brief Data struct of RMT TX configure parameters
