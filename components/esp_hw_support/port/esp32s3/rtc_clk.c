@@ -22,6 +22,8 @@
 #include "soc/system_reg.h"
 #include "esp_rom_sys.h"
 #include "regi2c_ctrl.h"
+#include "regi2c_dig_reg.h"
+#include "regi2c_bbpll.h"
 #include "esp_hw_log.h"
 #include "rtc_clk_common.h"
 #include "hal/usb_serial_jtag_ll.h"

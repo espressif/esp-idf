@@ -104,7 +104,6 @@ components/esp_common/include/esp_compiler.h
 components/lwip/lwip/src/include/lwip/prot/nd6.h
 components/lwip/port/esp32/include/netif/dhcp_state.h
 components/soc/src/esp32/rtc_clk_common.h
-components/esp_hw_support/port/esp32/regi2c_ctrl.h
 components/esp_rom/include/esp32/rom/sha.h
 components/esp_rom/include/esp32/rom/secure_boot.h
 components/esp_rom/include/esp32c3/rom/spi_flash.h

@@ -847,7 +847,6 @@ components/hal/esp32/include/hal/twai_ll.h
 components/hal/esp32/include/hal/uart_ll.h
 components/hal/esp32/interrupt_descriptor_table.c
 components/hal/esp32/touch_sensor_hal.c
-components/hal/esp32c3/brownout_hal.c
 components/hal/esp32c3/hmac_hal.c
 components/hal/esp32c3/include/hal/adc_hal_conf.h
 components/hal/esp32c3/include/hal/aes_ll.h
@@ -870,7 +869,6 @@ components/hal/esp32c3/include/hal/twai_ll.h
 components/hal/esp32c3/include/hal/uhci_ll.h
 components/hal/esp32c3/include/hal/usb_serial_jtag_ll.h
 components/hal/esp32c3/rtc_cntl_hal.c
-components/hal/esp32h2/brownout_hal.c
 components/hal/esp32h2/hmac_hal.c
 components/hal/esp32h2/include/hal/adc_hal_conf.h
 components/hal/esp32h2/include/hal/aes_ll.h
@@ -893,7 +891,6 @@ components/hal/esp32h2/include/hal/twai_ll.h
 components/hal/esp32h2/include/hal/uhci_ll.h
 components/hal/esp32h2/include/hal/uhci_types.h
 components/hal/esp32h2/include/hal/usb_serial_jtag_ll.h
-components/hal/esp32s2/brownout_hal.c
 components/hal/esp32s2/cp_dma_hal.c
 components/hal/esp32s2/include/hal/adc_hal_conf.h
 components/hal/esp32s2/include/hal/aes_ll.h
@@ -925,7 +922,6 @@ components/hal/esp32s2/include/hal/twai_ll.h
 components/hal/esp32s2/include/hal/usb_ll.h
 components/hal/esp32s2/interrupt_descriptor_table.c
 components/hal/esp32s2/touch_sensor_hal.c
-components/hal/esp32s3/brownout_hal.c
 components/hal/esp32s3/include/hal/adc_hal_conf.h
 components/hal/esp32s3/include/hal/aes_ll.h
 components/hal/esp32s3/include/hal/gpspi_flash_ll.h

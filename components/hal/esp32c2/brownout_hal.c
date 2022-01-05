@@ -8,7 +8,7 @@
 #include "hal/brownout_hal.h"
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_cntl_reg.h"
-#include "regi2c_ctrl.h"
+#include "esp_private/regi2c_ctrl.h"
 #include "regi2c_brownout.h"
 
 

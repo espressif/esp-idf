@@ -33,7 +33,6 @@
 #include "bootloader_clock.h"
 #include "bootloader_flash_config.h"
 #include "bootloader_mem.h"
-#include "regi2c_ctrl.h"
 #include "bootloader_console.h"
 #include "bootloader_flash_priv.h"
 #include "esp_efuse.h"
