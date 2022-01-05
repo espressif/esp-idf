@@ -125,7 +125,7 @@ struct crypto_ec_group *crypto_ec_get_group_byname(const char *name)
 
 	mbedtls_ecp_group_init( &e->group );
 
-	if (mbedtls_ecp_group_load(&e->group, curve->MBEDTLS_PRIVATE(grp_id))) {
+	if (mbedtls_ecp_group_load(&e->group, curve->grp_id)) {
 		crypto_ec_deinit(e);
 		e = NULL;
 	}

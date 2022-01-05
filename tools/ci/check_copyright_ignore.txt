@@ -1100,7 +1100,6 @@ components/mbedtls/port/aes/esp_aes_xts.c
 components/mbedtls/port/crypto_shared_gdma/esp_crypto_shared_gdma.c
 components/mbedtls/port/dynamic/esp_ssl_cli.c
 components/mbedtls/port/dynamic/esp_ssl_srv.c
-components/mbedtls/port/dynamic/esp_mbedtls_dynamic_impl.h
 components/mbedtls/port/esp32/bignum.c
 components/mbedtls/port/esp32c2/bignum.c
 components/mbedtls/port/esp32c3/bignum.c
@@ -1135,7 +1134,6 @@ components/mbedtls/port/include/sha1_alt.h
 components/mbedtls/port/include/sha256_alt.h
 components/mbedtls/port/include/sha512_alt.h
 components/mbedtls/port/mbedtls_debug.c
-components/mbedtls/port/net_sockets.c
 components/mbedtls/port/sha/dma/esp_sha1.c
 components/mbedtls/port/sha/dma/esp_sha256.c
 components/mbedtls/port/sha/dma/esp_sha512.c
@@ -1154,7 +1152,6 @@ components/mbedtls/test/test_apb_dport_access.c
 components/mbedtls/test/test_apb_dport_access.h
 components/mbedtls/test/test_mbedtls.c
 components/mbedtls/test/test_mbedtls_mpi.c
-components/mbedtls/test/test_rsa.c
 components/mbedtls/test/test_mbedtls_sha.c
 components/mbedtls/test/test_sha_perf.c
 components/mdns/host_test/components/esp_event_mock/esp_event_mock.c
@@ -1298,7 +1295,6 @@ components/protocomm/python/session_pb2.py
 components/protocomm/src/common/protocomm.c
 components/protocomm/src/common/protocomm_priv.h
 components/protocomm/src/security/security0.c
-components/protocomm/test/test_protocomm.c
 components/protocomm/src/transports/protocomm_httpd.c
 components/pthread/include/esp_pthread.h
 components/pthread/pthread_cond_var.c

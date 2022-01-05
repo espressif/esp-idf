@@ -62,7 +62,7 @@ static int net_prepare( void )
  */
 void mbedtls_net_init( mbedtls_net_context *ctx )
 {
-    ctx->MBEDTLS_PRIVATE(fd) = -1;
+    ctx->fd = -1;
 }
 
 /*
@@ -98,7 +98,7 @@ int mbedtls_net_connect( mbedtls_net_context *ctx, const char *host, const char 
         }
 
         if ( connect( fd, cur->ai_addr, cur->ai_addrlen ) == 0 ) {
-            ctx->MBEDTLS_PRIVATE(fd) = fd; // connected!
+            ctx->fd = fd; // connected!
             ret = 0;
             break;
         }
@@ -175,7 +175,7 @@ int mbedtls_net_bind( mbedtls_net_context *ctx, const char *bind_ip, const char 
         }
 
         /* I we ever get there, it's a success */
-        ctx->MBEDTLS_PRIVATE(fd) = fd;
+        ctx->fd = fd;
         ret = 0;
         break;
     }
@@ -224,7 +224,7 @@ int mbedtls_net_accept( mbedtls_net_context *bind_ctx,
     socklen_t type_len = (socklen_t) sizeof( type );
 
     /* Is this a TCP or UDP socket? */
-    if ( getsockopt( bind_ctx->MBEDTLS_PRIVATE(fd), SOL_SOCKET, SO_TYPE,
+    if ( getsockopt( bind_ctx->fd, SOL_SOCKET, SO_TYPE,
                      (void *) &type, (socklen_t *) &type_len ) != 0 ||
             ( type != SOCK_STREAM && type != SOCK_DGRAM ) ) {
         return ( MBEDTLS_ERR_NET_ACCEPT_FAILED );
@@ -232,13 +232,13 @@ int mbedtls_net_accept( mbedtls_net_context *bind_ctx,
 
     if ( type == SOCK_STREAM ) {
         /* TCP: actual accept() */
-        ret = client_ctx->MBEDTLS_PRIVATE(fd) = (int) accept( bind_ctx->MBEDTLS_PRIVATE(fd),
+        ret = client_ctx->fd = (int) accept( bind_ctx->fd,
                                              (struct sockaddr *) &client_addr, &n );
     } else {
         /* UDP: wait for a message, but keep it in the queue */
         char buf[1] = { 0 };
 
-        ret = recvfrom( bind_ctx->MBEDTLS_PRIVATE(fd), buf, sizeof( buf ), MSG_PEEK,
+        ret = recvfrom( bind_ctx->fd, buf, sizeof( buf ), MSG_PEEK,
                         (struct sockaddr *) &client_addr, &n );
 
     }
@@ -257,24 +257,24 @@ int mbedtls_net_accept( mbedtls_net_context *bind_ctx,
         struct sockaddr_in local_addr;
         int one = 1;
 
-        if ( connect( bind_ctx->MBEDTLS_PRIVATE(fd), (struct sockaddr *) &client_addr, n ) != 0 ) {
+        if ( connect( bind_ctx->fd, (struct sockaddr *) &client_addr, n ) != 0 ) {
             return ( MBEDTLS_ERR_NET_ACCEPT_FAILED );
         }
 
-        client_ctx->MBEDTLS_PRIVATE(fd) = bind_ctx->MBEDTLS_PRIVATE(fd);
-        bind_ctx->MBEDTLS_PRIVATE(fd)   = -1; /* In case we exit early */
+        client_ctx->fd = bind_ctx->fd;
+        bind_ctx->fd   = -1; /* In case we exit early */
 
         n = sizeof( struct sockaddr_in );
-        if ( getsockname( client_ctx->MBEDTLS_PRIVATE(fd),
+        if ( getsockname( client_ctx->fd,
                           (struct sockaddr *) &local_addr, &n ) != 0 ||
-                ( bind_ctx->MBEDTLS_PRIVATE(fd) = (int) socket( AF_INET,
+                ( bind_ctx->fd = (int) socket( AF_INET,
                                                SOCK_DGRAM, IPPROTO_UDP ) ) < 0 ||
-                setsockopt( bind_ctx->MBEDTLS_PRIVATE(fd), SOL_SOCKET, SO_REUSEADDR,
+                setsockopt( bind_ctx->fd, SOL_SOCKET, SO_REUSEADDR,
                             (const char *) &one, sizeof( one ) ) != 0 ) {
             return ( MBEDTLS_ERR_NET_SOCKET_FAILED );
         }
 
-        if ( bind( bind_ctx->MBEDTLS_PRIVATE(fd), (struct sockaddr *) &local_addr, n ) != 0 ) {
+        if ( bind( bind_ctx->fd, (struct sockaddr *) &local_addr, n ) != 0 ) {
             return ( MBEDTLS_ERR_NET_BIND_FAILED );
         }
     }
@@ -298,12 +298,12 @@ int mbedtls_net_accept( mbedtls_net_context *bind_ctx,
  */
 int mbedtls_net_set_block( mbedtls_net_context *ctx )
 {
-    return ( fcntl( ctx->MBEDTLS_PRIVATE(fd), F_SETFL, fcntl( ctx->MBEDTLS_PRIVATE(fd), F_GETFL, 0 ) & ~O_NONBLOCK ) );
+    return ( fcntl( ctx->fd, F_SETFL, fcntl( ctx->fd, F_GETFL, 0 ) & ~O_NONBLOCK ) );
 }
 
 int mbedtls_net_set_nonblock( mbedtls_net_context *ctx )
 {
-    return ( fcntl( ctx->MBEDTLS_PRIVATE(fd), F_SETFL, fcntl( ctx->MBEDTLS_PRIVATE(fd), F_GETFL, 0 ) | O_NONBLOCK ) );
+    return ( fcntl( ctx->fd, F_SETFL, fcntl( ctx->fd, F_GETFL, 0 ) | O_NONBLOCK ) );
 }
 
 /*
@@ -323,7 +323,7 @@ void mbedtls_net_usleep( unsigned long usec )
 int mbedtls_net_recv( void *ctx, unsigned char *buf, size_t len )
 {
     int ret;
-    int fd = ((mbedtls_net_context *) ctx)->MBEDTLS_PRIVATE(fd);
+    int fd = ((mbedtls_net_context *) ctx)->fd;
 
     if ( fd < 0 ) {
         return ( MBEDTLS_ERR_NET_INVALID_CONTEXT );
@@ -359,7 +359,7 @@ int mbedtls_net_recv_timeout( void *ctx, unsigned char *buf, size_t len,
     int ret;
     struct timeval tv;
     fd_set read_fds;
-    int fd = ((mbedtls_net_context *) ctx)->MBEDTLS_PRIVATE(fd);
+    int fd = ((mbedtls_net_context *) ctx)->fd;
 
     if ( fd < 0 ) {
         return ( MBEDTLS_ERR_NET_INVALID_CONTEXT );
@@ -396,7 +396,7 @@ int mbedtls_net_recv_timeout( void *ctx, unsigned char *buf, size_t len,
 int mbedtls_net_send( void *ctx, const unsigned char *buf, size_t len )
 {
     int ret;
-    int fd = ((mbedtls_net_context *) ctx)->MBEDTLS_PRIVATE(fd);
+    int fd = ((mbedtls_net_context *) ctx)->fd;
 
     if ( fd < 0 ) {
         return ( MBEDTLS_ERR_NET_INVALID_CONTEXT );
@@ -428,14 +428,14 @@ int mbedtls_net_send( void *ctx, const unsigned char *buf, size_t len )
  */
 void mbedtls_net_free( mbedtls_net_context *ctx )
 {
-    if ( ctx->MBEDTLS_PRIVATE(fd) == -1 ) {
+    if ( ctx->fd == -1) {
         return;
     }
 
-    shutdown( ctx->MBEDTLS_PRIVATE(fd), 2 );
-    close( ctx->MBEDTLS_PRIVATE(fd) );
+    shutdown( ctx->fd, 2);
+    close(ctx->fd);
 
-    ctx->MBEDTLS_PRIVATE(fd) = -1;
+    ctx->fd = -1;
 }
 
 #endif /* MBEDTLS_NET_C */

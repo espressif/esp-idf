@@ -35,6 +35,8 @@ which are undefined if the following flag is not defined */
 #define TLS_MASTER_SECRET_LEN 48
 #define MAX_CIPHERSUITE 32
 
+
+
 /* Throw a compilation error if basic requirements in mbedtls are not enabled */
 #if !defined(MBEDTLS_SSL_TLS_C)
 #error "TLS not enabled in mbedtls config"
@@ -465,7 +467,7 @@ static void tls_set_ciphersuite(const struct tls_connection_params *cfg, tls_con
 	if (tls->ciphersuite[0]) {
 		mbedtls_ssl_conf_ciphersuites(&tls->conf, tls->ciphersuite);
 	} else if (mbedtls_pk_get_bitlen(&tls->clientkey) > 2048 ||
-		(tls->cacert_ptr && mbedtls_pk_get_bitlen(&tls->cacert_ptr->MBEDTLS_PRIVATE(pk)) > 2048)) {
+		(tls->cacert_ptr && mbedtls_pk_get_bitlen(&tls->cacert_ptr->pk) > 2048)) {
 		mbedtls_ssl_conf_ciphersuites(&tls->conf, eap_ciphersuite_preference);
 	}
 }

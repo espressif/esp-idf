@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -74,7 +74,7 @@ esp_err_t esp_create_mbedtls_handle(const char *hostname, size_t hostlen, const 
     assert(tls != NULL);
     int ret;
     esp_err_t esp_ret = ESP_FAIL;
-    tls->server_fd.MBEDTLS_PRIVATE(fd) = tls->sockfd;
+    tls->server_fd.fd = tls->sockfd;
     mbedtls_ssl_init(&tls->ssl);
     mbedtls_ctr_drbg_init(&tls->ctr_drbg);
     mbedtls_ssl_config_init(&tls->conf);
@@ -251,7 +251,7 @@ void esp_mbedtls_conn_delete(esp_tls_t *tls)
         esp_mbedtls_cleanup(tls);
         if (tls->is_tls) {
             mbedtls_net_free(&tls->server_fd);
-            tls->sockfd = tls->server_fd.MBEDTLS_PRIVATE(fd);
+            tls->sockfd = tls->server_fd.fd;
         }
     }
 }

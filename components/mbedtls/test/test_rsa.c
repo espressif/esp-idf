@@ -3,7 +3,7 @@
  * Focus on testing functionality where we use ESP32 hardware
  * accelerated crypto features
  *
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -361,7 +361,7 @@ static void test_cert(const char *cert, const uint8_t *expected_output, size_t o
                                                             strlen(cert)+1),
                                     "parse cert");
 
-    rsa = mbedtls_pk_rsa(crt.MBEDTLS_PRIVATE(pk));
+    rsa = mbedtls_pk_rsa(crt.pk);
     TEST_ASSERT_NOT_NULL(rsa);
 
     res = mbedtls_rsa_check_pubkey(rsa);
@@ -542,7 +542,7 @@ TEST_CASE("mbedtls RSA Generate Key", "[mbedtls][timeout=60]")
     esp_task_wdt_add(xTaskGetIdleTaskHandleForCPU(0));
 #endif //CONFIG_MBEDTLS_MPI_USE_INTERRUPT
 
-    mbedtls_rsa_init(&ctx, MBEDTLS_RSA_PKCS_V15, 0);
+    mbedtls_rsa_init(&ctx);
     mbedtls_ctr_drbg_init(&ctr_drbg);
 
     mbedtls_entropy_init(&entropy);

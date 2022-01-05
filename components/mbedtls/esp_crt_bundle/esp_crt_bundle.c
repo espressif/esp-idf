@@ -1,18 +1,8 @@
-// Copyright 2018-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-
+/*
+ * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <string.h>
 #include <esp_system.h>
 #include "esp_crt_bundle.h"
@@ -53,28 +43,28 @@ static int esp_crt_check_signature(mbedtls_x509_crt *child, const uint8_t *pub_k
 
     mbedtls_x509_crt_init(&parent);
 
-    if ( (ret = mbedtls_pk_parse_public_key(&parent.MBEDTLS_PRIVATE(pk), pub_key_buf, pub_key_len) ) != 0) {
+    if ( (ret = mbedtls_pk_parse_public_key(&parent.pk, pub_key_buf, pub_key_len) ) != 0) {
         ESP_LOGE(TAG, "PK parse failed with error %X", ret);
         goto cleanup;
     }
 
 
     // Fast check to avoid expensive computations when not necessary
-    if (!mbedtls_pk_can_do(&parent.MBEDTLS_PRIVATE(pk), child->MBEDTLS_PRIVATE(sig_pk))) {
+    if (!mbedtls_pk_can_do(&parent.pk, child->MBEDTLS_PRIVATE(sig_pk))) {
         ESP_LOGE(TAG, "Simple compare failed");
         ret = -1;
         goto cleanup;
     }
 
     md_info = mbedtls_md_info_from_type(child->MBEDTLS_PRIVATE(sig_md));
-    if ( (ret = mbedtls_md( md_info, child->MBEDTLS_PRIVATE(tbs).MBEDTLS_PRIVATE(p), child->MBEDTLS_PRIVATE(tbs).MBEDTLS_PRIVATE(len), hash )) != 0 ) {
+    if ( (ret = mbedtls_md( md_info, child->tbs.p, child->tbs.len, hash )) != 0 ) {
         ESP_LOGE(TAG, "Internal mbedTLS error %X", ret);
         goto cleanup;
     }
 
-    if ( (ret = mbedtls_pk_verify_ext( child->MBEDTLS_PRIVATE(sig_pk), child->MBEDTLS_PRIVATE(sig_opts), &parent.MBEDTLS_PRIVATE(pk),
+    if ( (ret = mbedtls_pk_verify_ext( child->MBEDTLS_PRIVATE(sig_pk), child->MBEDTLS_PRIVATE(sig_opts), &parent.pk,
                                        child->MBEDTLS_PRIVATE(sig_md), hash, mbedtls_md_get_size( md_info ),
-                                       child->MBEDTLS_PRIVATE(sig).MBEDTLS_PRIVATE(p), child->MBEDTLS_PRIVATE(sig).MBEDTLS_PRIVATE(len) )) != 0 ) {
+                                       child->MBEDTLS_PRIVATE(sig).p, child->MBEDTLS_PRIVATE(sig).len )) != 0 ) {
 
         ESP_LOGE(TAG, "PK verify failed with error %X", ret);
         goto cleanup;
@@ -125,7 +115,7 @@ int esp_crt_verify_callback(void *buf, mbedtls_x509_crt *crt, int depth, uint32_
         name_len = s_crt_bundle.crts[middle][0] << 8 | s_crt_bundle.crts[middle][1];
         crt_name = s_crt_bundle.crts[middle] + CRT_HEADER_OFFSET;
 
-        int cmp_res = memcmp(child->MBEDTLS_PRIVATE(issuer_raw).MBEDTLS_PRIVATE(p), crt_name, name_len );
+        int cmp_res = memcmp(child->issuer_raw.p, crt_name, name_len );
         if (cmp_res == 0) {
             crt_found = true;
             break;

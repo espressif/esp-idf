@@ -14,6 +14,13 @@
 #include <unistd.h>
 #include <unity.h>
 
+/* ToDo - Remove this once appropriate solution is available.
+We need to define this for the file as ssl_misc.h uses private structures from mbedtls,
+which are undefined if the following flag is not defined */
+/* Many APIs in the file make use of this flag instead of `MBEDTLS_PRIVATE()` */
+/* ToDo - Replace them with proper getter-setter once they are added */
+#define MBEDTLS_ALLOW_PRIVATE_ACCESS
+
 #include <mbedtls/aes.h>
 #include <mbedtls/sha256.h>
 #include <mbedtls/entropy.h>
@@ -147,24 +154,24 @@ static esp_err_t verify_response0(session_t *session, SessionData *resp)
     hexdump("Device pubkey", dev_pubkey, PUBLIC_KEY_LEN);
     hexdump("Client pubkey", cli_pubkey, PUBLIC_KEY_LEN);
 
-    ret = mbedtls_mpi_lset(&session->ctx_client.MBEDTLS_PRIVATE(Qp).MBEDTLS_PRIVATE(Z), 1);
+    ret = mbedtls_mpi_lset(&session->ctx_client.ctx.mbed_ecdh.Qp.Z, 1);
     if (ret != 0) {
         ESP_LOGE(TAG, "Failed at mbedtls_mpi_lset with error code : %d", ret);
         return ESP_FAIL;
     }
 
     flip_endian(session->device_pubkey, PUBLIC_KEY_LEN);
-    ret = mbedtls_mpi_read_binary(&session->ctx_client.MBEDTLS_PRIVATE(Qp).MBEDTLS_PRIVATE(X), dev_pubkey, PUBLIC_KEY_LEN);
+    ret = mbedtls_mpi_read_binary(&session->ctx_client.ctx.mbed_ecdh.Qp.X, dev_pubkey, PUBLIC_KEY_LEN);
     flip_endian(session->device_pubkey, PUBLIC_KEY_LEN);
     if (ret != 0) {
         ESP_LOGE(TAG, "Failed at mbedtls_mpi_read_binary with error code : %d", ret);
         return ESP_FAIL;
     }
 
-    ret = mbedtls_ecdh_compute_shared(&session->ctx_client.MBEDTLS_PRIVATE(grp),
-                                      &session->ctx_client.MBEDTLS_PRIVATE(z),
-                                      &session->ctx_client.MBEDTLS_PRIVATE(Qp),
-                                      &session->ctx_client.MBEDTLS_PRIVATE(d),
+    ret = mbedtls_ecdh_compute_shared(&session->ctx_client.ctx.mbed_ecdh.grp,
+                                      &session->ctx_client.ctx.mbed_ecdh.z,
+                                      &session->ctx_client.ctx.mbed_ecdh.Qp,
+                                      &session->ctx_client.ctx.mbed_ecdh.d,
                                       mbedtls_ctr_drbg_random,
                                       &session->ctr_drbg);
     if (ret != 0) {
@@ -172,7 +179,7 @@ static esp_err_t verify_response0(session_t *session, SessionData *resp)
         return ESP_FAIL;
     }
 
-    ret = mbedtls_mpi_write_binary(&session->ctx_client.MBEDTLS_PRIVATE(z), session->sym_key, PUBLIC_KEY_LEN);
+    ret = mbedtls_mpi_write_binary(&session->ctx_client.ctx.mbed_ecdh.z, session->sym_key, PUBLIC_KEY_LEN);
     if (ret != 0) {
         ESP_LOGE(TAG, "Failed at mbedtls_mpi_write_binary with error code : %d", ret);
         return ESP_FAIL;
@@ -373,15 +380,15 @@ static esp_err_t test_sec_endpoint(session_t *session)
         goto abort_test_sec_endpoint;
     }
 
-    ret = mbedtls_ecp_group_load(&session->ctx_client.MBEDTLS_PRIVATE(grp), MBEDTLS_ECP_DP_CURVE25519);
+    ret = mbedtls_ecp_group_load(&session->ctx_client.ctx.mbed_ecdh.grp, MBEDTLS_ECP_DP_CURVE25519);
     if (ret != 0) {
         ESP_LOGE(TAG, "Failed at mbedtls_ecp_group_load with error code : %d", ret);
         goto abort_test_sec_endpoint;
     }
 
-    ret = mbedtls_ecdh_gen_public(&session->ctx_client.MBEDTLS_PRIVATE(grp),
-                                  &session->ctx_client.MBEDTLS_PRIVATE(d),
-                                  &session->ctx_client.MBEDTLS_PRIVATE(Q),
+    ret = mbedtls_ecdh_gen_public(&session->ctx_client.ctx.mbed_ecdh.grp,
+                                  &session->ctx_client.ctx.mbed_ecdh.d,
+                                  &session->ctx_client.ctx.mbed_ecdh.Q,
                                   mbedtls_ctr_drbg_random,
                                   &session->ctr_drbg);
     if (ret != 0) {
@@ -391,7 +398,7 @@ static esp_err_t test_sec_endpoint(session_t *session)
 
     if (session->weak) {
         /* Read zero client public key */
-        ret = mbedtls_mpi_read_binary(&session->ctx_client.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(X),
+        ret = mbedtls_mpi_read_binary(&session->ctx_client.ctx.mbed_ecdh.Q.X,
                                       session->client_pubkey,
                                       PUBLIC_KEY_LEN);
         if (ret != 0) {
@@ -399,7 +406,7 @@ static esp_err_t test_sec_endpoint(session_t *session)
             goto abort_test_sec_endpoint;
         }
     }
-    ret = mbedtls_mpi_write_binary(&session->ctx_client.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(X),
+    ret = mbedtls_mpi_write_binary(&session->ctx_client.ctx.mbed_ecdh.Q.X,
                                    session->client_pubkey,
                                    PUBLIC_KEY_LEN);
     if (ret != 0) {
