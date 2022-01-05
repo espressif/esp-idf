@@ -156,20 +156,6 @@ menu "Driver configurations"
 
     endmenu # UART Configuration
 
-    menu "RTCIO configuration"
-        visible if IDF_TARGET_ESP32
-
-        config RTCIO_SUPPORT_RTC_GPIO_DESC
-            bool "Support array `rtc_gpio_desc` for ESP32"
-            depends on IDF_TARGET_ESP32
-            default n
-            help
-                The the array `rtc_gpio_desc` will don't compile by default.
-                If this option is selected, the array `rtc_gpio_desc` can be compile.
-                If user use this array, please enable this configuration.
-
-    endmenu # RTCIO Configuration
-
     menu "GPIO Configuration"
         visible if IDF_TARGET_ESP32
 

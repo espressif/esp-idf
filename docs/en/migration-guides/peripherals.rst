@@ -21,3 +21,8 @@ ADC
 ---
 
 Previous `driver/adc2_wifi_private.h` has been moved to `esp_private/adc2_wifi.h`.
+
+GPIO
+----
+
+The previous Kconfig option `RTCIO_SUPPORT_RTC_GPIO_DESC` has been removed, thus the ``rtc_gpio_desc`` array is unavailable. Please use ``rtc_io_desc`` array instead.
