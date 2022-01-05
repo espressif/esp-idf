@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include <esp_wifi.h>
 #include "esp_log.h"
 #include "esp_private/wifi.h"
+#include "esp_private/adc2_wifi.h"
 #include "esp_pm.h"
 #include "esp_sleep.h"
 #include "esp_private/pm_impl.h"
@@ -16,7 +17,6 @@
 #include "esp_netif.h"
 #include "tcpip_adapter_compatible/tcpip_adapter_compat.h"
 #include "driver/adc.h"
-#include "driver/adc2_wifi_private.h"
 #include "esp_coexist_internal.h"
 #include "esp_phy_init.h"
 #include "phy.h"
