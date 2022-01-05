@@ -1652,7 +1652,6 @@ components/soc/esp32/ledc_periph.c
 components/soc/esp32/mcpwm_periph.c
 components/soc/esp32/pcnt_periph.c
 components/soc/esp32/rmt_periph.c
-components/soc/esp32/rtc_io_periph.c
 components/soc/esp32/sdio_slave_periph.c
 components/soc/esp32/sdmmc_periph.c
 components/soc/esp32/sigmadelta_periph.c
@@ -2018,7 +2017,6 @@ components/soc/include/soc/mcpwm_periph.h
 components/soc/include/soc/pcnt_periph.h
 components/soc/include/soc/rmt_periph.h
 components/soc/include/soc/rtc_cntl_periph.h
-components/soc/include/soc/rtc_io_periph.h
 components/soc/include/soc/rtc_periph.h
 components/soc/include/soc/sdio_slave_periph.h
 components/soc/include/soc/sdmmc_periph.h
