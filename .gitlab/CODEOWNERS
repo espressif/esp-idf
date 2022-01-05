@@ -153,6 +153,7 @@
 /docs/**/api-reference/storage/         @esp-idf-codeowners/storage
 /docs/**/api-reference/system/          @esp-idf-codeowners/system
 /docs/**/security/                      @esp-idf-codeowners/security
+/docs/**/migration-guides/              @esp-idf-codeowners/docs @esp-idf-codeowners/all-maintainers
 
 /examples/bluetooth/          @esp-idf-codeowners/bluetooth
 /examples/build_system/       @esp-idf-codeowners/build-config
