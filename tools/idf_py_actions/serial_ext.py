@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import json
@@ -89,10 +89,6 @@ def action_extensions(base_actions, project_path):
         """
         project_desc = _get_project_desc(ctx, args)
         elf_file = os.path.join(args.build_dir, project_desc['app_elf'])
-        if not os.path.exists(elf_file):
-            raise FatalError("ELF file '%s' not found. You need to build & flash the project before running 'monitor', "
-                             'and the binary on the device must match the one in the build directory exactly. '
-                             "Try '%s flash monitor'." % (elf_file, ctx.info_name), ctx)
 
         idf_monitor = os.path.join(os.environ['IDF_PATH'], 'tools/idf_monitor.py')
         monitor_args = [PYTHON, idf_monitor]
@@ -123,7 +119,9 @@ def action_extensions(base_actions, project_path):
 
         if print_filter is not None:
             monitor_args += ['--print_filter', print_filter]
-        monitor_args += [elf_file]
+
+        if elf_file:
+            monitor_args += [elf_file]
 
         if encrypted:
             monitor_args += ['--encrypted']
