@@ -20,7 +20,7 @@ See common pin assignments for USB Device examples from [upper level](../../../R
 
 ### Build and Flash
 
-1. Build and flash [tusb_serial_device example](../../../tusb_serial_device) to USB device board.
+1. Build and flash [tusb_serial_device example](../../../device/tusb_serial_device) to USB device board.
 2. Build this project and flash it to the USB host board, then run monitor tool to view serial output:
 
 ```bash
