@@ -1,16 +1,7 @@
-/** Copyright 2021 Espressif Systems (Shanghai) PTE LTD
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
@@ -123,7 +114,11 @@ typedef union {
          *  synchronization bit for CHANNELn
          */
         uint32_t conf_update_n: 1;
-        uint32_t reserved_25: 7;
+        /** dma_access_en_n : WT; bitpos: [25]; default: 0;
+         *  DMA access control bit for CHANNELn
+         */
+        uint32_t dma_access_en_n: 1;
+        uint32_t reserved_26: 6;
     };
     uint32_t val;
 } rmt_chnconf0_reg_t;
@@ -143,7 +138,10 @@ typedef struct {
              *  than this register value, received process is finished.
              */
             uint32_t idle_thres_m: 15;
-            uint32_t reserved_23: 1;
+            /** dma_access_en_m : WT; bitpos: [23]; default: 0;
+             *  DMA access control bit for CHANNELm
+             */
+            uint32_t dma_access_en_m: 1;
             /** mem_size_m : R/W; bitpos: [27:24]; default: 1;
              *  This register is used to configure the maximum size of memory allocated to CHANNELm.
              */
@@ -1064,7 +1062,7 @@ typedef union {
 } rmt_date_reg_t;
 
 
-typedef struct {
+typedef struct rmt_dev_t {
     volatile rmt_chndata_reg_t chndata[4];
     volatile rmt_chmdata_reg_t chmdata[4];
     volatile rmt_chnconf0_reg_t chnconf0[4];
@@ -1089,31 +1087,7 @@ typedef struct {
 _Static_assert(sizeof(rmt_dev_t) == 0xd0, "Invalid size of rmt_dev_t structure");
 #endif
 
-typedef struct {
-    union {
-        struct {
-            uint32_t duration0 : 15;
-            uint32_t level0 : 1;
-            uint32_t duration1 : 15;
-            uint32_t level1 : 1;
-        };
-        uint32_t val;
-    };
-} rmt_item32_t;
-
-typedef struct {
-    struct {
-        volatile rmt_item32_t data32[48];
-    } chan[8];
-} rmt_mem_t;
-
-#ifndef __cplusplus
-_Static_assert(sizeof(rmt_item32_t) == 0x04, "Invalid size of rmt_item32_t structure");
-_Static_assert(sizeof(rmt_mem_t) == 0x04 * 8 * 48, "Invalid size of rmt_mem_t structure");
-#endif
-
 extern rmt_dev_t RMT;
-extern rmt_mem_t RMTMEM;
 
 #ifdef __cplusplus
 }

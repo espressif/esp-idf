@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
 #ifdef __cplusplus
@@ -18,16 +10,17 @@ extern "C" {
 #endif
 
 #include <stdint.h>
-#include "soc/soc_caps.h"
-#include "soc/rmt_struct.h"
+
+typedef struct rmt_dev_t *rmt_soc_handle_t; // RMT SOC layer handle
+typedef struct rmt_mem_t *rmt_mem_handle_t; // RMT memory handle
 
 /**
  * @brief HAL context type of RMT driver
  *
  */
 typedef struct {
-    rmt_dev_t *regs;     /*!< RMT Register base address */
-    rmt_mem_t *mem;      /*!< RMT Memory base address */
+    rmt_soc_handle_t regs; /*!< RMT Register base address */
+    rmt_mem_handle_t mem;  /*!< RMT Memory base address */
 } rmt_hal_context_t;
 
 #define RMT_MEM_OWNER_SW (0) /*!< RMT Memory ownership belongs to software side */
@@ -96,16 +89,6 @@ void rmt_hal_set_rx_filter_thres(rmt_hal_context_t *hal, uint32_t channel, uint3
  * @param thres_us: IDLE threshold for RMT receive channel
  */
 void rmt_hal_set_rx_idle_thres(rmt_hal_context_t *hal, uint32_t channel, uint32_t base_clk_hz, uint32_t thres_us);
-
-/**
- * @brief Receive a frame from RMT channel
- *
- * @param hal: RMT HAL context
- * @param channel: RMT channel number
- * @param buf: buffer to store received RMT frame
- * @return number of items that get received
- */
-uint32_t rmt_hal_receive(rmt_hal_context_t *hal, uint32_t channel, rmt_item32_t *buf);
 
 #ifdef __cplusplus
 }

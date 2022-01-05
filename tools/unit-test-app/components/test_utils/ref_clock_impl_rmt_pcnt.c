@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,7 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_intr_alloc.h"
 #include "esp_private/periph_ctrl.h"
+#include "driver/rmt.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/gpio_periph.h"
 #include "soc/soc_caps.h"

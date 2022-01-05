@@ -973,7 +973,6 @@ components/hal/esp32/include/hal/i2s_ll.h
 components/hal/esp32/include/hal/interrupt_controller_ll.h
 components/hal/esp32/include/hal/mpu_ll.h
 components/hal/esp32/include/hal/pcnt_ll.h
-components/hal/esp32/include/hal/rmt_ll.h
 components/hal/esp32/include/hal/rtc_cntl_ll.h
 components/hal/esp32/include/hal/rtc_io_ll.h
 components/hal/esp32/include/hal/rwdt_ll.h
@@ -1129,7 +1128,6 @@ components/hal/include/hal/mpu_hal.h
 components/hal/include/hal/mpu_types.h
 components/hal/include/hal/pcnt_hal.h
 components/hal/include/hal/pcnt_types.h
-components/hal/include/hal/rmt_hal.h
 components/hal/include/hal/rmt_types.h
 components/hal/include/hal/rtc_io_types.h
 components/hal/include/hal/sdio_slave_hal.h
@@ -1166,7 +1164,6 @@ components/hal/platform_port/include/hal/assert.h
 components/hal/platform_port/include/hal/check.h
 components/hal/platform_port/include/hal/log.h
 components/hal/platform_port/include/hal/misc.h
-components/hal/rmt_hal.c
 components/hal/rtc_io_hal.c
 components/hal/sdio_slave_hal.c
 components/hal/sha_hal.c
@@ -1615,7 +1612,6 @@ components/soc/esp32/include/soc/pcnt_struct.h
 components/soc/esp32/include/soc/pid.h
 components/soc/esp32/include/soc/reset_reasons.h
 components/soc/esp32/include/soc/rmt_reg.h
-components/soc/esp32/include/soc/rmt_struct.h
 components/soc/esp32/include/soc/rtc_cntl_reg.h
 components/soc/esp32/include/soc/rtc_cntl_struct.h
 components/soc/esp32/include/soc/rtc_i2c_reg.h
@@ -1696,7 +1692,6 @@ components/soc/esp32c3/include/soc/nrx_reg.h
 components/soc/esp32c3/include/soc/periph_defs.h
 components/soc/esp32c3/include/soc/reset_reasons.h
 components/soc/esp32c3/include/soc/rmt_reg.h
-components/soc/esp32c3/include/soc/rmt_struct.h
 components/soc/esp32c3/include/soc/rtc_cntl_reg.h
 components/soc/esp32c3/include/soc/rtc_cntl_struct.h
 components/soc/esp32c3/include/soc/rtc_i2c_reg.h
@@ -1832,7 +1827,6 @@ components/soc/esp32s2/include/soc/pcnt_reg.h
 components/soc/esp32s2/include/soc/pcnt_struct.h
 components/soc/esp32s2/include/soc/reset_reasons.h
 components/soc/esp32s2/include/soc/rmt_reg.h
-components/soc/esp32s2/include/soc/rmt_struct.h
 components/soc/esp32s2/include/soc/rtc_cntl_reg.h
 components/soc/esp32s2/include/soc/rtc_cntl_struct.h
 components/soc/esp32s2/include/soc/rtc_i2c_reg.h
@@ -1938,7 +1932,6 @@ components/soc/esp32s3/include/soc/peri_backup_reg.h
 components/soc/esp32s3/include/soc/peri_backup_struct.h
 components/soc/esp32s3/include/soc/reset_reasons.h
 components/soc/esp32s3/include/soc/rmt_reg.h
-components/soc/esp32s3/include/soc/rmt_struct.h
 components/soc/esp32s3/include/soc/rtc_gpio_channel.h
 components/soc/esp32s3/include/soc/rtc_i2c_reg.h
 components/soc/esp32s3/include/soc/rtc_i2c_struct.h
