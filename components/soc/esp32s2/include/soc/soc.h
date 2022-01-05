@@ -37,59 +37,43 @@
 
 #ifndef __ASSEMBLER__
 
-#define IS_DPORT_REG(_r) (((_r) >= DR_REG_DPORT_BASE) && (_r) <= DR_REG_DPORT_END)
-
-#if !defined( BOOTLOADER_BUILD ) && !defined( CONFIG_FREERTOS_UNICORE ) && defined( ESP_PLATFORM )
-#define ASSERT_IF_DPORT_REG(_r, OP)  TRY_STATIC_ASSERT(!IS_DPORT_REG(_r), (Cannot use OP for DPORT registers use DPORT_##OP));
-#else
-#define ASSERT_IF_DPORT_REG(_r, OP)
-#endif
-
 //write value to register
 #define REG_WRITE(_r, _v) ({                                                                                           \
-            ASSERT_IF_DPORT_REG((_r), REG_WRITE);                                                                      \
             (*(volatile uint32_t *)(_r)) = (_v);                                                                       \
         })
 
 //read value from register
 #define REG_READ(_r) ({                                                                                                \
-            ASSERT_IF_DPORT_REG((_r), REG_READ);                                                                       \
             (*(volatile uint32_t *)(_r));                                                                              \
         })
 
 //get bit or get bits from register
 #define REG_GET_BIT(_r, _b)  ({                                                                                        \
-            ASSERT_IF_DPORT_REG((_r), REG_GET_BIT);                                                                    \
             (*(volatile uint32_t*)(_r) & (_b));                                                                        \
         })
 
 //set bit or set bits to register
 #define REG_SET_BIT(_r, _b)  ({                                                                                        \
-            ASSERT_IF_DPORT_REG((_r), REG_SET_BIT);                                                                    \
             (*(volatile uint32_t*)(_r) |= (_b));                                                                       \
         })
 
 //clear bit or clear bits of register
 #define REG_CLR_BIT(_r, _b)  ({                                                                                        \
-            ASSERT_IF_DPORT_REG((_r), REG_CLR_BIT);                                                                    \
             (*(volatile uint32_t*)(_r) &= ~(_b));                                                                      \
         })
 
 //set bits of register controlled by mask
 #define REG_SET_BITS(_r, _b, _m) ({                                                                                    \
-            ASSERT_IF_DPORT_REG((_r), REG_SET_BITS);                                                                   \
             (*(volatile uint32_t*)(_r) = (*(volatile uint32_t*)(_r) & ~(_m)) | ((_b) & (_m)));                         \
         })
 
 //get field from register, uses field _S & _V to determine mask
 #define REG_GET_FIELD(_r, _f) ({                                                                                       \
-            ASSERT_IF_DPORT_REG((_r), REG_GET_FIELD);                                                                  \
             ((REG_READ(_r) >> (_f##_S)) & (_f##_V));                                                                   \
         })
 
 //set field of a register from variable, uses field _S & _V to determine mask
 #define REG_SET_FIELD(_r, _f, _v) ({                                                                                   \
-            ASSERT_IF_DPORT_REG((_r), REG_SET_FIELD);                                                                  \
             (REG_WRITE((_r),((REG_READ(_r) & ~((_f##_V) << (_f##_S)))|(((_v) & (_f##_V))<<(_f##_S)))));                \
         })
 
@@ -113,49 +97,41 @@
 
 //read value from register
 #define READ_PERI_REG(addr) ({                                                                                         \
-            ASSERT_IF_DPORT_REG((addr), READ_PERI_REG);                                                                \
             (*((volatile uint32_t *)ETS_UNCACHED_ADDR(addr)));                                                         \
         })
 
 //write value to register
 #define WRITE_PERI_REG(addr, val) ({                                                                                   \
-            ASSERT_IF_DPORT_REG((addr), WRITE_PERI_REG);                                                               \
             (*((volatile uint32_t *)ETS_UNCACHED_ADDR(addr))) = (uint32_t)(val);                                       \
         })
 
 //clear bits of register controlled by mask
 #define CLEAR_PERI_REG_MASK(reg, mask) ({                                                                              \
-            ASSERT_IF_DPORT_REG((reg), CLEAR_PERI_REG_MASK);                                                           \
             WRITE_PERI_REG((reg), (READ_PERI_REG(reg)&(~(mask))));                                                     \
         })
 
 //set bits of register controlled by mask
 #define SET_PERI_REG_MASK(reg, mask) ({                                                                                \
-            ASSERT_IF_DPORT_REG((reg), SET_PERI_REG_MASK);                                                             \
             WRITE_PERI_REG((reg), (READ_PERI_REG(reg)|(mask)));                                                        \
         })
 
 //get bits of register controlled by mask
 #define GET_PERI_REG_MASK(reg, mask) ({                                                                                \
-            ASSERT_IF_DPORT_REG((reg), GET_PERI_REG_MASK);                                                             \
             (READ_PERI_REG(reg) & (mask));                                                                             \
         })
 
 //get bits of register controlled by highest bit and lowest bit
 #define GET_PERI_REG_BITS(reg, hipos,lowpos) ({                                                                        \
-            ASSERT_IF_DPORT_REG((reg), GET_PERI_REG_BITS);                                                             \
             ((READ_PERI_REG(reg)>>(lowpos))&((1<<((hipos)-(lowpos)+1))-1));                                            \
         })
 
 //set bits of register controlled by mask and shift
 #define SET_PERI_REG_BITS(reg,bit_map,value,shift) ({                                                                  \
-            ASSERT_IF_DPORT_REG((reg), SET_PERI_REG_BITS);                                                             \
             (WRITE_PERI_REG((reg),(READ_PERI_REG(reg)&(~((bit_map)<<(shift))))|(((value) & bit_map)<<(shift)) ));      \
         })
 
 //get field of register
 #define GET_PERI_REG_BITS2(reg, mask,shift) ({                                                                         \
-            ASSERT_IF_DPORT_REG((reg), GET_PERI_REG_BITS2);                                                            \
             ((READ_PERI_REG(reg)>>(shift))&(mask));                                                                    \
         })
 
