@@ -215,12 +215,14 @@ static void esp_zb_light_cb(zb_bufid_t bufid)
 void app_main()
 {
     zb_ret_t       zb_err_code;
-    zb_ieee_addr_t g_ieee_addr;
+    zb_esp_platform_config_t config = {
+        .radio_config = ZB_ESP_DEFAULT_RADIO_CONFIG(),
+        .host_config = ZB_ESP_DEFAULT_HOST_CONFIG(),
+    };
 
+    ESP_ERROR_CHECK(zb_esp_platform_config(&config));
     /* initialize Zigbee stack */
     ZB_INIT("light_bulb");
-    esp_read_mac(g_ieee_addr, ESP_MAC_IEEE802154);
-    zb_set_long_address(g_ieee_addr);
     zb_set_network_router_role(IEEE_CHANNEL_MASK);
     zb_set_max_children(MAX_CHILDREN);
     zb_set_nvram_erase_at_start(ERASE_PERSISTENT_CONFIG);

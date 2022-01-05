@@ -35,11 +35,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "switch_driver.h"
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include "freertos/queue.h"
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
+#include "switch_driver.h"
 
 /**
  * @brief:

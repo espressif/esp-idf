@@ -35,9 +35,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "light_driver.h"
-#include "led_strip.h"
 #include "esp_log.h"
+#include "led_strip.h"
+#include "light_driver.h"
 
 static led_strip_t *led_strip;
 
