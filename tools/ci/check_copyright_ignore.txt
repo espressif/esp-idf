@@ -1626,7 +1626,6 @@ components/soc/esp32/include/soc/sens_reg.h
 components/soc/esp32/include/soc/sens_struct.h
 components/soc/esp32/include/soc/slc_reg.h
 components/soc/esp32/include/soc/slc_struct.h
-components/soc/esp32/include/soc/soc.h
 components/soc/esp32/include/soc/soc_pins.h
 components/soc/esp32/include/soc/soc_ulp.h
 components/soc/esp32/include/soc/spi_pins.h
@@ -1689,7 +1688,6 @@ components/soc/esp32c3/include/soc/interrupt_reg.h
 components/soc/esp32c3/include/soc/ledc_reg.h
 components/soc/esp32c3/include/soc/mmu.h
 components/soc/esp32c3/include/soc/nrx_reg.h
-components/soc/esp32c3/include/soc/periph_defs.h
 components/soc/esp32c3/include/soc/reset_reasons.h
 components/soc/esp32c3/include/soc/rmt_reg.h
 components/soc/esp32c3/include/soc/rtc_cntl_reg.h
@@ -1839,7 +1837,6 @@ components/soc/esp32s2/include/soc/sdmmc_pins.h
 components/soc/esp32s2/include/soc/sens_reg.h
 components/soc/esp32s2/include/soc/sens_struct.h
 components/soc/esp32s2/include/soc/sensitive_reg.h
-components/soc/esp32s2/include/soc/soc.h
 components/soc/esp32s2/include/soc/soc_pins.h
 components/soc/esp32s2/include/soc/soc_ulp.h
 components/soc/esp32s2/include/soc/spi_mem_reg.h
@@ -1945,7 +1942,6 @@ components/soc/esp32s3/include/soc/sdmmc_struct.h
 components/soc/esp32s3/include/soc/sens_reg.h
 components/soc/esp32s3/include/soc/sensitive_reg.h
 components/soc/esp32s3/include/soc/sensitive_struct.h
-components/soc/esp32s3/include/soc/soc.h
 components/soc/esp32s3/include/soc/soc_ulp.h
 components/soc/esp32s3/include/soc/spi_mem_reg.h
 components/soc/esp32s3/include/soc/spi_mem_struct.h
