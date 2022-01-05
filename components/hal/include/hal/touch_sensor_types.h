@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,10 +7,10 @@
 #pragma once
 
 #include <stdbool.h>
-#include "esp_attr.h"
-#include "soc/soc.h"
-#include "soc/soc_caps.h"
 #include "sdkconfig.h"
+#include "esp_attr.h"
+#include "esp_bit_defs.h"
+#include "soc/soc_caps.h"
 
 /** Touch pad channel */
 typedef enum {

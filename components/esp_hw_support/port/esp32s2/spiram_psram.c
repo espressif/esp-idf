@@ -3,7 +3,7 @@
 */
 
 /*
- * SPDX-FileCopyrightText: 2013-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2013-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,7 @@
 #include "soc/dport_reg.h"
 #include "soc/efuse_periph.h"
 #include "soc/soc_caps.h"
+#include "soc/spi_reg.h"
 #include "soc/io_mux_reg.h"
 #include "soc/syscon_reg.h"
 #include "soc/efuse_reg.h"

@@ -19,6 +19,7 @@
 #include "esp_vfs.h"
 #include "esp_vfs_fat.h"
 #include "esp_system.h"
+#include "soc/spi_pins.h"
 
 static const char *TAG = "example";
 

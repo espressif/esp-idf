@@ -445,22 +445,3 @@ mainmenu "Espressif IoT Development Framework Configuration"
     menu "Component config"
         source "$COMPONENT_KCONFIGS_SOURCE_FILE"
     endmenu
-
-    menu "Compatibility options"
-        config LEGACY_INCLUDE_COMMON_HEADERS
-            bool "Include headers across components as before IDF v4.0"
-            default n
-            help
-                Soc, esp32, and driver components, the most common
-                components. Some header of these components are included
-                implicitly by headers of other components before IDF v4.0.
-                It's not required for high-level components, but still
-                included through long header chain everywhere.
-
-                This is harmful to the modularity. So it's changed in IDF
-                v4.0.
-
-                You can still include these headers in a legacy way until it
-                is totally deprecated by enable this option.
-
-    endmenu #Compatibility options

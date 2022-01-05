@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,6 @@
 
 #include <stdint.h>                 // for standard int types definition
 #include <stddef.h>                 // for NULL and std defines
-#include "soc/soc.h"                // for BITN definitions
 #include "esp_modbus_common.h"      // for common types
 
 #ifdef __cplusplus

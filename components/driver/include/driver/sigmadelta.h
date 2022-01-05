@@ -1,20 +1,28 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
-#include <esp_types.h>
-#include "soc/soc_caps.h"
-#include "soc/sigmadelta_periph.h"
+#include "esp_types.h"
 #include "driver/gpio.h"
 #include "hal/sigmadelta_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Sigma-delta configure struct
+ */
+typedef struct {
+    sigmadelta_channel_t channel;    /*!< Sigma-delta channel number */
+    int8_t sigmadelta_duty;          /*!< Sigma-delta duty, duty ranges from -128 to 127. */
+    uint8_t sigmadelta_prescale;     /*!< Sigma-delta prescale, prescale ranges from 0 to 255. */
+    uint8_t  sigmadelta_gpio;        /*!< Sigma-delta output io number, refer to gpio.h for more details. */
+} sigmadelta_config_t;
 
 /**
  * @brief Configure Sigma-delta channel
