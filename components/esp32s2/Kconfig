@@ -118,6 +118,10 @@ menu "ESP32S2-specific"
     menu "SPI RAM config"
         depends on ESP32S2_SPIRAM_SUPPORT
 
+        config SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+            bool
+            default "y"
+
         choice SPIRAM_TYPE
             prompt "Type of SPI RAM chip in use"
             default SPIRAM_TYPE_AUTO
@@ -191,7 +195,8 @@ menu "ESP32S2-specific"
                 bool "20Mhz clock speed"
         endchoice
 
-        # insert non-chip-specific items here
+
+        # insert non-chip-specific items here NOERROR
         source "$IDF_PATH/components/esp_hw_support/Kconfig.spiram.common"
 
     endmenu
