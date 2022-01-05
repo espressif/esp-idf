@@ -347,32 +347,20 @@ void i2s_hal_config_param(i2s_hal_context_t *hal, const i2s_hal_config_t *hal_cf
 
 void i2s_hal_start_tx(i2s_hal_context_t *hal)
 {
-#if SOC_I2S_SUPPORTS_TDM
-    i2s_ll_tx_enable_clock(hal->dev);
-#endif
     i2s_ll_tx_start(hal->dev);
 }
 
 void i2s_hal_start_rx(i2s_hal_context_t *hal)
 {
-#if SOC_I2S_SUPPORTS_TDM
-    i2s_ll_rx_enable_clock(hal->dev);
-#endif
     i2s_ll_rx_start(hal->dev);
 }
 
 void i2s_hal_stop_tx(i2s_hal_context_t *hal)
 {
     i2s_ll_tx_stop(hal->dev);
-#if SOC_I2S_SUPPORTS_TDM
-    i2s_ll_tx_disable_clock(hal->dev);
-#endif
 }
 
 void i2s_hal_stop_rx(i2s_hal_context_t *hal)
 {
     i2s_ll_rx_stop(hal->dev);
-#if SOC_I2S_SUPPORTS_TDM
-    i2s_ll_rx_disable_clock(hal->dev);
-#endif
 }
