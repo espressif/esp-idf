@@ -1000,7 +1000,6 @@ components/hal/esp32c3/include/hal/sigmadelta_ll.h
 components/hal/esp32c3/include/hal/soc_ll.h
 components/hal/esp32c3/include/hal/spi_flash_encrypted_ll.h
 components/hal/esp32c3/include/hal/spi_flash_ll.h
-components/hal/esp32c3/include/hal/spi_ll.h
 components/hal/esp32c3/include/hal/spimem_flash_ll.h
 components/hal/esp32c3/include/hal/systimer_ll.h
 components/hal/esp32c3/include/hal/twai_ll.h
@@ -1088,7 +1087,6 @@ components/hal/esp32s3/include/hal/sigmadelta_ll.h
 components/hal/esp32s3/include/hal/soc_ll.h
 components/hal/esp32s3/include/hal/spi_flash_encrypted_ll.h
 components/hal/esp32s3/include/hal/spi_flash_ll.h
-components/hal/esp32s3/include/hal/spi_ll.h
 components/hal/esp32s3/include/hal/spimem_flash_ll.h
 components/hal/esp32s3/include/hal/systimer_ll.h
 components/hal/esp32s3/include/hal/twai_ll.h
