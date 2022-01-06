@@ -1387,6 +1387,50 @@ AP 睡眠
 
     使用 iperf example 测试吞吐量时，sdkconfig 是 :idf_file:` 示例/wifi/iperf/sdkconfig.defaults.esp32c3`。
 
+.. only:: esp32s3
+
+     .. list-table::
+        :header-rows: 1
+        :widths: 10 10 10 15 20
+
+        * - 类型/吞吐量
+          - 实验室空气状况
+          - 屏蔽箱
+          - 测试工具
+          - IDF 版本 (commit ID)
+        * - 原始 802.11 数据包接收数据
+          - N/A
+          - **130 MBit/s**
+          - 内部工具
+          - N/A
+        * - 原始 802.11 数据包发送数据
+          - N/A
+          - **130 MBit/s**
+          - 内部工具
+          - N/A
+        * - UDP 接收数据
+          - 30 MBit/s
+          - 88 MBit/s
+          - iperf example
+          - 15575346
+        * - UDP 发送数据
+          - 30 MBit/s
+          - 98 MBit/s
+          - iperf example
+          - 15575346
+        * - TCP 接收数据
+          - 20 MBit/s
+          - 73 MBit/s
+          - iperf example
+          - 15575346
+        * - TCP 发送数据
+          - 20 MBit/s
+          - 83 MBit/s
+          - iperf example
+          - 15575346
+
+    使用 iperf example 测试吞吐量时，sdkconfig 是 :idf_file:` 示例/wifi/iperf/sdkconfig.defaults.esp32s3`。
+
 Wi-Fi 80211 数据包发送
 ---------------------------
 
@@ -1664,9 +1708,9 @@ Wi-Fi 分片
 
     支持 Wi-Fi 接收分片，但不支持 Wi-Fi 发送分片。
 
-.. only:: esp32c3
+.. only:: esp32c3 or esp32s3
 
-    ESP32C3 支持 Wi-Fi 接收和发送分片。
+    {IDF_TARGET_NAME} 支持 Wi-Fi 接收和发送分片。
 
 WPS 注册
 -------------------------
@@ -1793,6 +1837,28 @@ Wi-Fi 使用的堆内存峰值是 Wi-Fi 驱动程序 **理论上消耗的最大�
 
      - :ref:`CONFIG_ESP32S2_INSTRUCTION_CACHE_LINE_SIZE`
         配置指令缓存总线的宽度。
+
+.. only:: esp32s3
+
+    **缓存：**
+
+     - :ref:`CONFIG_ESP32S3_INSTRUCTION_CACHE_SIZE`
+        配置指令缓存的大小。
+
+     - :ref:`CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_SIZE`
+        配置指令缓存总线的宽度。
+
+     - :ref:`CONFIG_ESP32S3_ICACHE_ASSOCIATED_WAYS`
+        配置指令缓存相连方式.
+
+     - :ref:`CONFIG_ESP32S3_DATA_CACHE_SIZE`
+        配置数据缓存的大小.
+
+     - :ref:`CONFIG_ESP32S3_DATA_CACHE_LINE_SIZE`
+        配置数据缓存行大小.
+
+     - :ref:`CONFIG_ESP32S3_DCACHE_ASSOCIATED_WAYS`
+        配置数据缓存相连方式.
 
 .. note::
     上述的缓冲区大小固定为 1.6 KB。
@@ -2002,7 +2068,7 @@ Wi-Fi 使用的堆内存峰值是 Wi-Fi 驱动程序 **理论上消耗的最大�
      - **最小等级**
         {IDF_TARGET_NAME} 的最小配置等级。协议栈只使用运行所需的内存。适用于对性能没有要求，而应用程序需要大量内存的场景。
 
-.. only:: esp32c3
+.. only:: esp32c3 or esp32s3
 
     **等级：**
 

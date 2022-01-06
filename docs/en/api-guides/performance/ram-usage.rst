@@ -38,7 +38,7 @@ To minimize static memory use:
 .. list::
 
    - Declare structures, buffers, or other variables ``const`` whenever possible. Constant data can be stored in flash not RAM. This may require changing functions in the firmware to take ``const *`` arguments instead of mutable pointer arguments. These changes can also reduce the stack usage of some functions.
-   :esp32: - If using Bluedroid, setting the option :ref:`CONFIG_BT_BLE_DYNAMIC_ENV_MEMORY` will cause Bluedroid to allocate memory on initialization and free it on deinitialization. This doesn't necessarily reduce the peak memory usage, but changes it from static memory usage to runtime memory usage.
+   :SOC_BT_SUPPORTED: - If using Bluedroid, setting the option :ref:`CONFIG_BT_BLE_DYNAMIC_ENV_MEMORY` will cause Bluedroid to allocate memory on initialization and free it on deinitialization. This doesn't necessarily reduce the peak memory usage, but changes it from static memory usage to runtime memory usage.
 
 .. _optimize-stack-sizes:
 
@@ -78,7 +78,7 @@ The default stack sizes for these tasks are usually set conservatively high, to 
    - FreeRTOS Timer Task to handle FreeRTOS timer callbacks has stack size :ref:`CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH`.
    - :doc:`/api-guides/event-handling` system task to execute callbacks for the default system event loop has stack size :ref:`CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE`.
    - :doc:`/api-guides/lwip` TCP/IP task has stack size :ref:`CONFIG_LWIP_TCPIP_TASK_STACK_SIZE`
-   :esp32: - :doc:`Bluedroid Bluetooth Host </api-reference/bluetooth/index>` have task stack sizes :ref:`CONFIG_BT_BTC_TASK_STACK_SIZE`, :ref:`CONFIG_BT_BTU_TASK_STACK_SIZE`.
+   :SOC_BT_SUPPORTED: - :doc:`Bluedroid Bluetooth Host </api-reference/bluetooth/index>` have task stack sizes :ref:`CONFIG_BT_BTC_TASK_STACK_SIZE`, :ref:`CONFIG_BT_BTU_TASK_STACK_SIZE`.
    :SOC_BT_SUPPORTED: - :doc:`NimBLE Bluetooth Host </api-reference/bluetooth/nimble/index>` has task stack size :ref:`CONFIG_BT_NIMBLE_TASK_STACK_SIZE`
    - The Ethernet driver creates a task for the MAC to receive Ethernet frames. If using the default config ``ETH_MAC_DEFAULT_CONFIG`` then the task stack size is 4 KB. This setting can be changed by passing a custom :cpp:class:`eth_mac_config_t` struct when initializing the Ethernet MAC.
    - FreeRTOS idle task stack size is configured by :ref:`CONFIG_FREERTOS_IDLE_TASK_STACKSIZE`.

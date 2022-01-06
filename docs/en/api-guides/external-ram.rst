@@ -9,8 +9,9 @@ Support for external RAM
 
 Introduction
 ============
+{IDF_TARGET_PSRAM_SIZE:default="Value not updated", esp32="4 MB", esp32s2="10.5 MB", esp32s3="16 MB"}
 
-{IDF_TARGET_NAME} has a few hundred kilobytes of internal RAM, residing on the same die as the rest of the chip components. It can be insufficient for some purposes, so {IDF_TARGET_NAME} has the ability to also use up to 4 MB of external SPI RAM memory. The external memory is incorporated in the memory map and, with certain restrictions, is usable in the same way as internal data RAM.
+{IDF_TARGET_NAME} has a few hundred kilobytes of internal RAM, residing on the same die as the rest of the chip components. It can be insufficient for some purposes, so {IDF_TARGET_NAME} has the ability to also use up to {IDF_TARGET_PSRAM_SIZE} of external SPI RAM memory. The external memory is incorporated in the memory map and, with certain restrictions, is usable in the same way as internal data RAM.
 
 
 Hardware
@@ -37,19 +38,20 @@ ESP-IDF fully supports the use of external memory in applications. Once the exte
     * :ref:`external_ram_config_memory_map`
     * :ref:`external_ram_config_capability_allocator`
     * :ref:`external_ram_config_malloc` (default)
-    :esp32: * :ref:`external_ram_config_bss`
+    :esp32 or esp32s2: * :ref:`external_ram_config_bss`
     :esp32: * :ref:`external_ram_config_noinit`
 
 .. _external_ram_config_memory_map:
 
 Integrate RAM into the {IDF_TARGET_NAME} memory map
 ---------------------------------------------------
+{IDF_TARGET_PSRAM_ADDR_START:default="Value not updated", esp32="0x3F800000", esp32s2="0x3F500000", esp32s3="0x3D000000"}
 
 Select this option by choosing "Integrate RAM into memory map" from :ref:`CONFIG_SPIRAM_USE`.
 
 This is the most basic option for external SPI RAM integration. Most likely, you will need another, more advanced option.
 
-During the ESP-IDF startup, external RAM is mapped into the data address space, starting at address 0x3F800000 (byte-accessible). The length of this region is the same as the SPI RAM size (up to the limit of 4 MB).
+During the ESP-IDF startup, external RAM is mapped into the data address space, starting at address {IDF_TARGET_PSRAM_ADDR_START} (byte-accessible). The length of this region is the same as the SPI RAM size (up to the limit of {IDF_TARGET_PSRAM_SIZE}).
 
 Applications can manually place data in external memory by creating pointers to this region. So if an application uses external memory, it is responsible for all management of the external SPI RAM: coordinating buffer usage, preventing corruption, etc.
 
@@ -61,7 +63,7 @@ Add external RAM to the capability allocator
 
 Select this option by choosing "Make RAM allocatable using heap_caps_malloc(..., MALLOC_CAP_SPIRAM)" from :ref:`CONFIG_SPIRAM_USE`.
 
-When enabled, memory is mapped to address 0x3F800000 and also added to the :doc:`capabilities-based heap memory allocator </api-reference/system/mem_alloc>` using ``MALLOC_CAP_SPIRAM``.
+When enabled, memory is mapped to address {IDF_TARGET_PSRAM_ADDR_START} and also added to the :doc:`capabilities-based heap memory allocator </api-reference/system/mem_alloc>` using ``MALLOC_CAP_SPIRAM``.
 
 To allocate memory from external RAM, a program should call ``heap_caps_malloc(size, MALLOC_CAP_SPIRAM)``. After use, this memory can be freed by calling the normal ``free()`` function.
 
@@ -86,7 +88,7 @@ If a suitable block of preferred internal/external memory is not available, the 
 
 Because some buffers can only be allocated in internal memory, a second configuration item :ref:`CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL` defines a pool of internal memory which is reserved for *only* explicitly internal allocations (such as memory for DMA use). Regular ``malloc()`` will not allocate from this pool. The :ref:`MALLOC_CAP_DMA <dma-capable-memory>` and ``MALLOC_CAP_INTERNAL`` flags can be used to allocate memory from this pool.
 
-.. only:: esp32
+.. only:: esp32 or esp32s2
 
     .. _external_ram_config_bss:
 
@@ -95,7 +97,7 @@ Because some buffers can only be allocated in internal memory, a second configur
 
     Enable this option by checking :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`. This configuration setting is independent of the other three.
 
-    If enabled, a region of the address space starting from 0x3F800000 will be used to store zero-initialized data (BSS segment) from the lwIP, net80211, libpp, and bluedroid ESP-IDF libraries.
+    If enabled, a region of the address space starting from {IDF_TARGET_PSRAM_ADDR_START} will be used to store zero-initialized data (BSS segment) from the lwIP, net80211, libpp, and bluedroid ESP-IDF libraries.
 
     Additional data can be moved from the internal BSS segment to external RAM by applying the macro ``EXT_RAM_ATTR`` to any static declaration (which is not initialized to a non-zero value).
 
@@ -104,6 +106,9 @@ Because some buffers can only be allocated in internal memory, a second configur
     This option reduces the internal static memory used by the BSS segment.
 
     Remaining external RAM can also be added to the capability heap allocator using the method shown above.
+
+
+.. only:: esp32
 
     .. _external_ram_config_noinit:
 
@@ -136,7 +141,7 @@ Failure to initialize
 
  By default, failure to initialize external RAM will cause the ESP-IDF startup to abort. This can be disabled by enabling the config item :ref:`CONFIG_SPIRAM_IGNORE_NOTFOUND`.
 
- .. only:: esp32
+ .. only:: esp32 or esp32s2
 
     If :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` is enabled, the option to ignore failure is not available as the linker will have assigned symbols to external memory addresses at link time.
 
