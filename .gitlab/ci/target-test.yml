@@ -775,8 +775,8 @@ component_ut_test_lan8720:
     LOG_PATH: "${CI_PROJECT_DIR}/TEST_LOGS"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/auto_test_script/TestCaseFiles"
     MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/ModuleDefinition.yml"
-    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/components/idf_test/integration_test/test_configs"
-    KNOWN_ISSUE_FILE: "${CI_PROJECT_DIR}/components/idf_test/integration_test/KnownIssues"
+    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/tools/ci/integration_test/test_configs"
+    KNOWN_ISSUE_FILE: "${CI_PROJECT_DIR}/tools/ci/integration_test/KnownIssues"
     CI_RUNNER_SCRIPT: "${CI_PROJECT_DIR}/auto_test_script/bin/CIRunner.py"
     PYTHONPATH: ${CI_PROJECT_DIR}/auto_test_script/packages
     # auto_test_script only supports python 3.7.x

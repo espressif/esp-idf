@@ -89,6 +89,7 @@
 
 .patterns-integration_test: &patterns-integration_test
   - "tools/ci/python_packages/tiny_test_fw/**/*"
+  - "tools/ci/integration_test/**/*"
 
 .patterns-host_test: &patterns-host_test
   - ".gitlab/ci/host-test.yml"
