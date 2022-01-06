@@ -138,7 +138,7 @@ struct usb_transfer_s{
     usb_transfer_cb_t callback;                     /**< Transfer callback */
     void *context;                                  /**< Context variable for transfer to associate transfer with something */
     const int num_isoc_packets;                     /**< Only relevant to Isochronous. Number of service periods (i.e., intervals) to transfer data buffer over. */
-    usb_isoc_packet_desc_t isoc_packet_desc[0];     /**< Descriptors for each Isochronous packet */
+    usb_isoc_packet_desc_t isoc_packet_desc[];      /**< Descriptors for each Isochronous packet */
 };
 
 /**
