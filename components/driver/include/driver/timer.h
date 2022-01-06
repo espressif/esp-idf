@@ -1,16 +1,15 @@
 /*
- * SPDX-FileCopyrightText: 2010-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
+#include <stdint.h>
 #include "esp_err.h"
 #include "esp_attr.h"
-#include "soc/soc.h"
 #include "soc/soc_caps.h"
-#include "soc/timer_periph.h"
 #include "esp_intr_alloc.h"
 #include "hal/timer_types.h"
 

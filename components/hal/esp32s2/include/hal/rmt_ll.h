@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef struct rmt_mem_t {
+    struct {
+        uint32_t data32[64];
+    } chan[4];
+} rmt_mem_t;
+extern rmt_mem_t RMTMEM;
 
 #define RMT_LL_MAX_LOOP_COUNT          (1023)/*!< Max loop count that hardware is supported */
 

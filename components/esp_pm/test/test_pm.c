@@ -12,6 +12,7 @@
 #include "esp_log.h"
 #include "driver/timer.h"
 #include "driver/rtc_io.h"
+#include "soc/rtc.h"
 #include "soc/rtc_periph.h"
 #include "esp_rom_sys.h"
 #include "esp_private/esp_clk.h"

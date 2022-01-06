@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -51,6 +51,8 @@ typedef struct spi_bus_lock_dev_t* spi_bus_lock_dev_handle_t;
 
 /// Background operation control function
 typedef void (*bg_ctrl_func_t)(void*);
+
+typedef struct lldesc_s lldesc_t;
 
 /// Attributes of an SPI bus
 typedef struct {

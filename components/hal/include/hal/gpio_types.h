@@ -1,13 +1,14 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
-#include "soc/gpio_periph.h"
+#include "sdkconfig.h"
 #include "soc/soc_caps.h"
+#include "esp_bit_defs.h"
 
 #ifdef __cplusplus
 extern "C" {

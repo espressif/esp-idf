@@ -559,10 +559,6 @@ components/esp_netif/test_apps/main/esp_netif_test.c
 components/esp_phy/esp32h2/include/phy_init_data.h
 components/esp_phy/src/phy_init_esp32hxx.c
 components/esp_phy/test/test_phy_rtc.c
-components/esp_pm/include/esp32c3/pm.h
-components/esp_pm/include/esp32h2/pm.h
-components/esp_pm/include/esp32s2/pm.h
-components/esp_pm/include/esp32s3/pm.h
 components/esp_pm/include/esp_private/pm_impl.h
 components/esp_pm/include/esp_private/pm_trace.h
 components/esp_pm/pm_locks.c
@@ -614,8 +610,6 @@ components/esp_rom/include/esp32/rom/bigint.h
 components/esp_rom/include/esp32/rom/cache.h
 components/esp_rom/include/esp32/rom/crc.h
 components/esp_rom/include/esp32/rom/efuse.h
-components/esp_rom/include/esp32/rom/ets_sys.h
-components/esp_rom/include/esp32/rom/gpio.h
 components/esp_rom/include/esp32/rom/libc_stubs.h
 components/esp_rom/include/esp32/rom/lldesc.h
 components/esp_rom/include/esp32/rom/md5_hash.h
@@ -973,7 +967,6 @@ components/hal/esp32/include/hal/i2s_ll.h
 components/hal/esp32/include/hal/interrupt_controller_ll.h
 components/hal/esp32/include/hal/mpu_ll.h
 components/hal/esp32/include/hal/pcnt_ll.h
-components/hal/esp32/include/hal/rmt_ll.h
 components/hal/esp32/include/hal/rtc_cntl_ll.h
 components/hal/esp32/include/hal/rtc_io_ll.h
 components/hal/esp32/include/hal/rwdt_ll.h
@@ -1117,7 +1110,6 @@ components/hal/include/hal/dac_hal.h
 components/hal/include/hal/dac_types.h
 components/hal/include/hal/ds_hal.h
 components/hal/include/hal/esp_flash_err.h
-components/hal/include/hal/gpio_hal.h
 components/hal/include/hal/i2c_hal.h
 components/hal/include/hal/i2c_types.h
 components/hal/include/hal/interrupt_controller_hal.h
@@ -1129,15 +1121,12 @@ components/hal/include/hal/mpu_hal.h
 components/hal/include/hal/mpu_types.h
 components/hal/include/hal/pcnt_hal.h
 components/hal/include/hal/pcnt_types.h
-components/hal/include/hal/rmt_hal.h
 components/hal/include/hal/rmt_types.h
 components/hal/include/hal/rtc_io_types.h
 components/hal/include/hal/sdio_slave_hal.h
 components/hal/include/hal/sdio_slave_ll.h
-components/hal/include/hal/sdio_slave_types.h
 components/hal/include/hal/sha_hal.h
 components/hal/include/hal/sigmadelta_hal.h
-components/hal/include/hal/sigmadelta_types.h
 components/hal/include/hal/soc_hal.h
 components/hal/include/hal/spi_flash_encrypt_hal.h
 components/hal/include/hal/spi_flash_hal.h
@@ -1166,7 +1155,6 @@ components/hal/platform_port/include/hal/assert.h
 components/hal/platform_port/include/hal/check.h
 components/hal/platform_port/include/hal/log.h
 components/hal/platform_port/include/hal/misc.h
-components/hal/rmt_hal.c
 components/hal/rtc_io_hal.c
 components/hal/sdio_slave_hal.c
 components/hal/sha_hal.c
@@ -1195,7 +1183,6 @@ components/heap/heap_tlsf.h
 components/heap/heap_tlsf_block_functions.h
 components/heap/heap_tlsf_config.h
 components/heap/heap_trace_standalone.c
-components/heap/include/esp_heap_caps_init.h
 components/heap/include/esp_heap_task_info.h
 components/heap/include/esp_heap_trace.h
 components/heap/include/heap_memory_layout.h
@@ -1567,7 +1554,6 @@ components/sdmmc/sdmmc_init.c
 components/sdmmc/sdmmc_io.c
 components/sdmmc/sdmmc_mmc.c
 components/sdmmc/sdmmc_sd.c
-components/sdmmc/test/test_sdio.c
 components/soc/esp32/adc_periph.c
 components/soc/esp32/dac_periph.c
 components/soc/esp32/gpio_periph.c
@@ -1615,7 +1601,6 @@ components/soc/esp32/include/soc/pcnt_struct.h
 components/soc/esp32/include/soc/pid.h
 components/soc/esp32/include/soc/reset_reasons.h
 components/soc/esp32/include/soc/rmt_reg.h
-components/soc/esp32/include/soc/rmt_struct.h
 components/soc/esp32/include/soc/rtc_cntl_reg.h
 components/soc/esp32/include/soc/rtc_cntl_struct.h
 components/soc/esp32/include/soc/rtc_i2c_reg.h
@@ -1630,7 +1615,6 @@ components/soc/esp32/include/soc/sens_reg.h
 components/soc/esp32/include/soc/sens_struct.h
 components/soc/esp32/include/soc/slc_reg.h
 components/soc/esp32/include/soc/slc_struct.h
-components/soc/esp32/include/soc/soc.h
 components/soc/esp32/include/soc/soc_pins.h
 components/soc/esp32/include/soc/soc_ulp.h
 components/soc/esp32/include/soc/spi_pins.h
@@ -1652,7 +1636,6 @@ components/soc/esp32/ledc_periph.c
 components/soc/esp32/mcpwm_periph.c
 components/soc/esp32/pcnt_periph.c
 components/soc/esp32/rmt_periph.c
-components/soc/esp32/rtc_io_periph.c
 components/soc/esp32/sdio_slave_periph.c
 components/soc/esp32/sdmmc_periph.c
 components/soc/esp32/sigmadelta_periph.c
@@ -1694,10 +1677,8 @@ components/soc/esp32c3/include/soc/interrupt_reg.h
 components/soc/esp32c3/include/soc/ledc_reg.h
 components/soc/esp32c3/include/soc/mmu.h
 components/soc/esp32c3/include/soc/nrx_reg.h
-components/soc/esp32c3/include/soc/periph_defs.h
 components/soc/esp32c3/include/soc/reset_reasons.h
 components/soc/esp32c3/include/soc/rmt_reg.h
-components/soc/esp32c3/include/soc/rmt_struct.h
 components/soc/esp32c3/include/soc/rtc_cntl_reg.h
 components/soc/esp32c3/include/soc/rtc_cntl_struct.h
 components/soc/esp32c3/include/soc/rtc_i2c_reg.h
@@ -1833,7 +1814,6 @@ components/soc/esp32s2/include/soc/pcnt_reg.h
 components/soc/esp32s2/include/soc/pcnt_struct.h
 components/soc/esp32s2/include/soc/reset_reasons.h
 components/soc/esp32s2/include/soc/rmt_reg.h
-components/soc/esp32s2/include/soc/rmt_struct.h
 components/soc/esp32s2/include/soc/rtc_cntl_reg.h
 components/soc/esp32s2/include/soc/rtc_cntl_struct.h
 components/soc/esp32s2/include/soc/rtc_i2c_reg.h
@@ -1846,7 +1826,6 @@ components/soc/esp32s2/include/soc/sdmmc_pins.h
 components/soc/esp32s2/include/soc/sens_reg.h
 components/soc/esp32s2/include/soc/sens_struct.h
 components/soc/esp32s2/include/soc/sensitive_reg.h
-components/soc/esp32s2/include/soc/soc.h
 components/soc/esp32s2/include/soc/soc_pins.h
 components/soc/esp32s2/include/soc/soc_ulp.h
 components/soc/esp32s2/include/soc/spi_mem_reg.h
@@ -1939,7 +1918,6 @@ components/soc/esp32s3/include/soc/peri_backup_reg.h
 components/soc/esp32s3/include/soc/peri_backup_struct.h
 components/soc/esp32s3/include/soc/reset_reasons.h
 components/soc/esp32s3/include/soc/rmt_reg.h
-components/soc/esp32s3/include/soc/rmt_struct.h
 components/soc/esp32s3/include/soc/rtc_gpio_channel.h
 components/soc/esp32s3/include/soc/rtc_i2c_reg.h
 components/soc/esp32s3/include/soc/rtc_i2c_struct.h
@@ -1953,7 +1931,6 @@ components/soc/esp32s3/include/soc/sdmmc_struct.h
 components/soc/esp32s3/include/soc/sens_reg.h
 components/soc/esp32s3/include/soc/sensitive_reg.h
 components/soc/esp32s3/include/soc/sensitive_struct.h
-components/soc/esp32s3/include/soc/soc.h
 components/soc/esp32s3/include/soc/soc_ulp.h
 components/soc/esp32s3/include/soc/spi_mem_reg.h
 components/soc/esp32s3/include/soc/spi_mem_struct.h
@@ -2018,7 +1995,6 @@ components/soc/include/soc/mcpwm_periph.h
 components/soc/include/soc/pcnt_periph.h
 components/soc/include/soc/rmt_periph.h
 components/soc/include/soc/rtc_cntl_periph.h
-components/soc/include/soc/rtc_io_periph.h
 components/soc/include/soc/rtc_periph.h
 components/soc/include/soc/sdio_slave_periph.h
 components/soc/include/soc/sdmmc_periph.h
@@ -2109,10 +2085,6 @@ components/touch_element/touch_element.c
 components/touch_element/touch_matrix.c
 components/touch_element/touch_slider.c
 components/ulp/esp32ulp_mapgen.py
-components/ulp/include/esp32/ulp.h
-components/ulp/include/esp32s2/ulp.h
-components/ulp/include/esp32s2/ulp_riscv.h
-components/ulp/include/esp32s3/ulp.h
 components/ulp/include/ulp_common.h
 components/ulp/ld/esp32.ulp.ld
 components/ulp/ld/esp32s2.ulp.riscv.ld

@@ -1,18 +1,9 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-#ifndef _SOC_RMT_STRUCT_H_
-#define _SOC_RMT_STRUCT_H_
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#pragma once
 
 #include <stdint.h>
 
@@ -20,9 +11,9 @@
 extern "C" {
 #endif
 
-typedef volatile struct rmt_dev_s {
-    uint32_t data_ch[4]; /* Data FIFO, Can only be accessed by PeriBus2 */
-    struct {
+typedef struct rmt_dev_t {
+    volatile uint32_t data_ch[4]; /* Data FIFO, Can only be accessed by PeriBus2 */
+    volatile struct {
         union {
             struct {
                 uint32_t div_cnt:            8;
@@ -56,7 +47,7 @@ typedef volatile struct rmt_dev_s {
             uint32_t val;
         } conf1;
     } conf_ch[4];
-    union {
+    volatile union {
         struct {
             uint32_t mem_waddr_ex:       9;
             uint32_t reserved9:          1;
@@ -72,7 +63,7 @@ typedef volatile struct rmt_dev_s {
         };
         uint32_t val;
     } status_ch[4];
-    union {
+    volatile union {
         struct {
             uint32_t waddr:             9;
             uint32_t reserved9:         1;
@@ -81,7 +72,7 @@ typedef volatile struct rmt_dev_s {
         };
         uint32_t val;
     } apb_mem_addr_ch[4];
-    union {
+    volatile union {
         struct {
             uint32_t ch0_tx_end:               1;
             uint32_t ch0_rx_end:               1;
@@ -111,7 +102,7 @@ typedef volatile struct rmt_dev_s {
         };
         uint32_t val;
     } int_raw;
-    union {
+    volatile union {
         struct {
             uint32_t ch0_tx_end:              1;
             uint32_t ch0_rx_end:              1;
@@ -141,7 +132,7 @@ typedef volatile struct rmt_dev_s {
         };
         uint32_t val;
     } int_st;
-    union {
+    volatile union {
         struct {
             uint32_t ch0_tx_end:               1;
             uint32_t ch0_rx_end:               1;
@@ -171,7 +162,7 @@ typedef volatile struct rmt_dev_s {
         };
         uint32_t val;
     } int_ena;
-    union {
+    volatile union {
         struct {
             uint32_t ch0_tx_end:               1;
             uint32_t ch0_rx_end:               1;
@@ -201,14 +192,14 @@ typedef volatile struct rmt_dev_s {
         };
         uint32_t val;
     } int_clr;
-    union {
+    volatile union {
         struct {
             uint32_t low:             16;
             uint32_t high:            16;
         };
         uint32_t val;
     } carrier_duty_ch[4];
-    union {
+    volatile union {
         struct {
             uint32_t limit:                9;
             uint32_t tx_loop_num:         10;
@@ -219,7 +210,7 @@ typedef volatile struct rmt_dev_s {
         };
         uint32_t val;
     } tx_lim_ch[4];
-    union {
+    volatile union {
         struct {
             uint32_t fifo_mask:        1;
             uint32_t mem_tx_wrap_en:   1;
@@ -231,7 +222,7 @@ typedef volatile struct rmt_dev_s {
         };
         uint32_t val;
     } apb_conf;
-    union {
+    volatile union {
         struct {
             uint32_t ch0:        1;
             uint32_t ch1:        1;
@@ -242,7 +233,7 @@ typedef volatile struct rmt_dev_s {
         };
         uint32_t val;
     } tx_sim;
-    union {
+    volatile union {
         struct {
             uint32_t ch0:             1;
             uint32_t ch1:             1;
@@ -252,10 +243,10 @@ typedef volatile struct rmt_dev_s {
         };
         uint32_t val;
     } ref_cnt_rst;
-    union {
+    volatile union {
         struct {
             uint32_t carrier_low_thres_ch: 16;
-            uint32_t carrier_high_thres_ch:16;
+            uint32_t carrier_high_thres_ch: 16;
         };
         uint32_t val;
     } ch_rx_carrier_rm[4];
@@ -283,32 +274,11 @@ typedef volatile struct rmt_dev_s {
     uint32_t reserved_f0;
     uint32_t reserved_f4;
     uint32_t reserved_f8;
-    uint32_t date; /* Version Control Register */
+    volatile uint32_t date;
 } rmt_dev_t;
+
 extern rmt_dev_t RMT;
-
-typedef struct {
-    union {
-        struct {
-            uint32_t duration0 :15;
-            uint32_t level0 :1;
-            uint32_t duration1 :15;
-            uint32_t level1 :1;
-        };
-        uint32_t val;
-    };
-} rmt_item32_t;
-
-//Allow access to RMT memory using RMTMEM.chan[0].data32[8]
-typedef volatile struct rmt_mem_s {
-    struct {
-        rmt_item32_t data32[64];
-    } chan[4];
-} rmt_mem_t;
-extern rmt_mem_t RMTMEM;
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif  /* _SOC_RMT_STRUCT_H_ */

@@ -119,10 +119,6 @@ externalproject_add(bootloader
                 -DEXTRA_COMPONENT_DIRS=${CMAKE_CURRENT_LIST_DIR}
                 -DPROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR}
                 ${sign_key_arg} ${ver_key_arg}
-                # LEGACY_INCLUDE_COMMON_HEADERS has to be passed in via cache variable since
-                # the bootloader common component requirements depends on this and
-                # config variables are not available before project() call.
-                -DLEGACY_INCLUDE_COMMON_HEADERS=${CONFIG_LEGACY_INCLUDE_COMMON_HEADERS}
                 ${extra_cmake_args}
     INSTALL_COMMAND ""
     BUILD_ALWAYS 1  # no easy way around this...

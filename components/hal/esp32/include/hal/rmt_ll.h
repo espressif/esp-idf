@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
 #include <stdbool.h>
@@ -21,6 +13,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+typedef struct rmt_mem_t {
+    struct {
+        uint32_t data32[64];
+    } chan[8];
+} rmt_mem_t;
+extern rmt_mem_t RMTMEM;
 
 #define RMT_LL_HW_BASE  (&RMT)
 #define RMT_LL_MEM_BASE (&RMTMEM)
@@ -87,7 +86,7 @@ static inline void rmt_ll_tx_start(rmt_dev_t *dev, uint32_t channel)
 
 static inline void rmt_ll_tx_stop(rmt_dev_t *dev, uint32_t channel)
 {
-    RMTMEM.chan[channel].data32[0].val = 0;
+    RMTMEM.chan[channel].data32[0] = 0;
     dev->conf_ch[channel].conf1.tx_start = 0;
     dev->conf_ch[channel].conf1.mem_rd_rst = 1;
     dev->conf_ch[channel].conf1.mem_rd_rst = 0;

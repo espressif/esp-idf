@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,13 +8,9 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "esp_err.h"
-#ifndef SPI_MOCK
-#include "soc/lldesc.h"
-#include "soc/spi_periph.h"
-#endif
-#include "hal/spi_types.h"
 #include "sdkconfig.h"
+#include "esp_err.h"
+#include "hal/spi_types.h"
 
 #ifdef __cplusplus
 extern "C"

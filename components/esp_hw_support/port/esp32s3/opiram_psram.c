@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,7 @@
 #include "esp32s3/rom/opi_flash.h"
 #include "esp32s3/rom/gpio.h"
 #include "esp32s3/rom/cache.h"
+#include "soc/gpio_periph.h"
 #include "soc/io_mux_reg.h"
 #include "soc/dport_reg.h"
 #include "soc/syscon_reg.h"

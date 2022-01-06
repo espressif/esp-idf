@@ -47,9 +47,6 @@
 
 /* [refactor-todo] These includes are not directly used in this file. They are kept into to prevent a breaking change. Remove these. */
 #include <limits.h>
-#ifdef CONFIG_LEGACY_INCLUDE_COMMON_HEADERS
-#include "soc/soc_memory_layout.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {
