@@ -84,11 +84,13 @@ if __name__ == '__main__':
 
     ref_to_use = ''
     for candidate in candidate_branches:
-        # check if candidate branch exists
-        branch_match = subprocess.check_output(['git', 'branch', '-a', '--list', 'origin/' + candidate])
-        if branch_match:
+        # check if the branch, tag or commit exists
+        try:
+            subprocess.check_call(['git', 'cat-file', '-t', candidate], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             ref_to_use = candidate
             break
+        except subprocess.CalledProcessError:
+            continue
 
     if ref_to_use:
         for _ in range(RETRY_COUNT):
