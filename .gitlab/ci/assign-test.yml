@@ -84,6 +84,7 @@ assign_integration_test:
     - .rules:test:integration_test
   needs:
     - build_ssc_esp32
+    - build_ssc_esp32c3
   artifacts:
     paths:
       - $TEST_DIR/test_configs
@@ -123,7 +124,7 @@ update_test_cases:
     SUBMODULES_TO_FETCH: "components/esptool_py/esptool"
     UNIT_TEST_DIR: "${CI_PROJECT_DIR}/components/idf_test/unit_test"
     BOT_ACCOUNT_CONFIG_FILE: "${CI_PROJECT_DIR}/test-management/Config/Account.local.yml"
-    AUTO_TEST_SCRIPT_PATH: "${CI_PROJECT_DIR}/auto_test_script"
+    PYTHONPATH: ${CI_PROJECT_DIR}/auto_test_script/packages
     PYTHON_VER: 3.7.7
   script:
     - export GIT_SHA=$(echo ${PIPELINE_COMMIT_SHA} | cut -c 1-8)
