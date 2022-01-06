@@ -571,6 +571,9 @@ esp_err_t uart_disable_tx_intr(uart_port_t uart_num)
 
 esp_err_t uart_enable_tx_intr(uart_port_t uart_num, int enable, int thresh)
 {
+    if (enable == 0) {
+        return uart_disable_tx_intr(uart_num);
+    }
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
     ESP_RETURN_ON_FALSE((thresh < SOC_UART_FIFO_LEN), ESP_FAIL, UART_TAG, "empty intr threshold error");
     uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_TXFIFO_EMPTY);
@@ -587,6 +590,9 @@ esp_err_t uart_isr_register(uart_port_t uart_num, void (*fn)(void *), void *arg,
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     ret = esp_intr_alloc(uart_periph_signal[uart_num].irq, intr_alloc_flags, fn, arg, handle);
+    if (ret == ESP_OK) {
+        p_uart_obj[uart_num]->intr_handle = *handle;
+    }
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     return ret;
 }
