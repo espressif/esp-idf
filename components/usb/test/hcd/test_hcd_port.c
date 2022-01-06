@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -66,7 +66,7 @@ TEST_CASE("Test HCD port sudden disconnect", "[hcd][ignore]")
     }
     //Add a short delay to let the transfers run for a bit
     esp_rom_delay_us(POST_ENQUEUE_DELAY_US);
-    test_usb_force_conn_state(false, 0);
+    test_usb_set_phy_state(false, 0);
     //Disconnect event should have occurred. Handle the port event
     test_hcd_expect_port_event(port_hdl, HCD_PORT_EVENT_DISCONNECTION);
     TEST_ASSERT_EQUAL(HCD_PORT_EVENT_DISCONNECTION, hcd_port_handle_event(port_hdl));
@@ -118,20 +118,19 @@ Test port suspend and resume with active pipes
 
 Purpose:
     - Test port suspend and resume procedure
-    - When suspending, the pipes should be halted before suspending the port. Any pending transfers should remain pending
+    - When suspending, the pipes should be halted before suspending the port
     - When resuming, the pipes should remain in the halted state
-    - Pipes on being cleared of the halt should resume transferring the pending transfers
 
 Procedure:
     - Setup the HCD and a port
     - Trigger a port connection
     - Create a default pipe
-    - Start transfers
+    - Test that port can't be suspended with an active pipe
     - Halt the default pipe after a short delay
     - Suspend the port
     - Resume the port
-    - Check that all the URBs have either completed successfully or been canceled by the pipe halt
-    - Cleanup URBs and default pipe
+    - Check that all the pipe is still halted
+    - Cleanup default pipe
     - Trigger disconnection and teardown
 */
 TEST_CASE("Test HCD port suspend and resume", "[hcd][ignore]")
@@ -142,26 +141,15 @@ TEST_CASE("Test HCD port suspend and resume", "[hcd][ignore]")
 
     //Allocate some URBs and initialize their data buffers with control transfers
     hcd_pipe_handle_t default_pipe = test_hcd_pipe_alloc(port_hdl, NULL, TEST_DEV_ADDR, port_speed); //Create a default pipe (using a NULL EP descriptor)
-    urb_t *urb_list[NUM_URBS];
-    for (int i = 0; i < NUM_URBS; i++) {
-        urb_list[i] = test_hcd_alloc_urb(0, URB_DATA_BUFF_SIZE);
-        //Initialize with a "Get Config Descriptor request"
-        urb_list[i]->transfer.num_bytes = sizeof(usb_setup_packet_t) + TRANSFER_MAX_BYTES;
-        USB_SETUP_PACKET_INIT_GET_CONFIG_DESC((usb_setup_packet_t *)urb_list[i]->transfer.data_buffer, 0, TRANSFER_MAX_BYTES);
-        urb_list[i]->transfer.context = (void *)0xDEADBEEF;
-    }
 
-    //Enqueue URBs but immediately suspend the port
-    printf("Enqueuing URBs\n");
-    for (int i = 0; i < NUM_URBS; i++) {
-        TEST_ASSERT_EQUAL(ESP_OK, hcd_urb_enqueue(default_pipe, urb_list[i]));
-    }
-    //Add a short delay to let the transfers run for a bit
-    esp_rom_delay_us(POST_ENQUEUE_DELAY_US);
+    //Test that suspending the port now fails as there is an active pipe
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, hcd_port_command(port_hdl, HCD_PORT_CMD_SUSPEND));
+
     //Halt the default pipe before suspending
     TEST_ASSERT_EQUAL(HCD_PIPE_STATE_ACTIVE, hcd_pipe_get_state(default_pipe));
     TEST_ASSERT_EQUAL(ESP_OK, hcd_pipe_command(default_pipe, HCD_PIPE_CMD_HALT));
     TEST_ASSERT_EQUAL(HCD_PIPE_STATE_HALTED, hcd_pipe_get_state(default_pipe));
+
     //Suspend the port
     TEST_ASSERT_EQUAL(ESP_OK, hcd_port_command(port_hdl, HCD_PORT_CMD_SUSPEND));
     TEST_ASSERT_EQUAL(HCD_PORT_STATE_SUSPENDED, hcd_port_get_state(port_hdl));
@@ -172,30 +160,12 @@ TEST_CASE("Test HCD port suspend and resume", "[hcd][ignore]")
     TEST_ASSERT_EQUAL(ESP_OK, hcd_port_command(port_hdl, HCD_PORT_CMD_RESUME));
     TEST_ASSERT_EQUAL(HCD_PORT_STATE_ENABLED, hcd_port_get_state(port_hdl));
     printf("Resumed\n");
+
     //Clear the default pipe's halt
     TEST_ASSERT_EQUAL(ESP_OK, hcd_pipe_command(default_pipe, HCD_PIPE_CMD_CLEAR));
     TEST_ASSERT_EQUAL(HCD_PIPE_STATE_ACTIVE, hcd_pipe_get_state(default_pipe));
     vTaskDelay(pdMS_TO_TICKS(100)); //Give some time for resumed URBs to complete
-    //Dequeue URBs
-    for (int i = 0; i < NUM_URBS; i++) {
-        urb_t *urb = hcd_urb_dequeue(default_pipe);
-        TEST_ASSERT_EQUAL(urb_list[i], urb);
-        TEST_ASSERT(urb->transfer.status == USB_TRANSFER_STATUS_COMPLETED || urb->transfer.status == USB_TRANSFER_STATUS_CANCELED);
-        if (urb->transfer.status == USB_TRANSFER_STATUS_COMPLETED) {
-            //We must have transmitted at least the setup packet, but device may return less than bytes requested
-            TEST_ASSERT_GREATER_OR_EQUAL(sizeof(usb_setup_packet_t), urb->transfer.actual_num_bytes);
-            TEST_ASSERT_LESS_OR_EQUAL(urb->transfer.num_bytes, urb->transfer.actual_num_bytes);
-        } else {
-            //A failed transfer should 0 actual number of bytes transmitted
-            TEST_ASSERT_EQUAL(0, urb->transfer.actual_num_bytes);
-        }
-        TEST_ASSERT_EQUAL(0xDEADBEEF, urb->transfer.context);
-    }
 
-    //Free URB list and pipe
-    for (int i = 0; i < NUM_URBS; i++) {
-        test_hcd_free_urb(urb_list[i]);
-    }
     test_hcd_pipe_free(default_pipe);
     //Cleanup
     test_hcd_wait_for_disconn(port_hdl, false);
@@ -305,7 +275,7 @@ static void concurrent_task(void *arg)
     xSemaphoreTake(sync_sem, portMAX_DELAY);
     vTaskDelay(pdMS_TO_TICKS(10));  //Give a short delay let reset command start in main thread
     //Force a disconnection
-    test_usb_force_conn_state(false, 0);
+    test_usb_set_phy_state(false, 0);
     vTaskDelay(portMAX_DELAY);  //Block forever and wait to be deleted
 }
 

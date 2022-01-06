@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -133,7 +133,10 @@ void app_main(void)
     app_queue = xQueueCreate(3, sizeof(msc_host_event_t));
     assert(app_queue);
 
-    const usb_host_config_t host_config = { .intr_flags = ESP_INTR_FLAG_LEVEL1 };
+    const usb_host_config_t host_config = {
+        .skip_phy_setup = false,
+        .intr_flags = ESP_INTR_FLAG_LEVEL1,
+    };
     ESP_ERROR_CHECK( usb_host_install(&host_config) );
 
     task_created = xTaskCreate(handle_usb_events, "usb_events", 2048, NULL, 2, NULL);

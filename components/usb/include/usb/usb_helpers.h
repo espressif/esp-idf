@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -111,6 +111,44 @@ const usb_ep_desc_t *usb_parse_endpoint_descriptor_by_index(const usb_intf_desc_
  */
 const usb_ep_desc_t *usb_parse_endpoint_descriptor_by_address(const usb_config_desc_t *config_desc, uint8_t bInterfaceNumber, uint8_t bAlternateSetting, uint8_t bEndpointAddress, int *offset);
 
+// ----------------------------------------------- Descriptor Printing -------------------------------------------------
+
+/**
+ * @brief Print class specific descriptor callback
+ *
+ * Optional callback to be provided to usb_print_config_descriptor() function.
+ * The callback is called when when a non-standard descriptor is encountered.
+ * The callback should decode the descriptor as print it.
+ */
+typedef void (*print_class_descriptor_cb)(const usb_standard_desc_t *);
+
+/**
+ * @brief Print device descriptor
+ *
+ * @param devc_desc Device descriptor
+ */
+void usb_print_device_descriptor(const usb_device_desc_t *devc_desc);
+
+/**
+ * @brief Print configuration descriptor
+ *
+ * - This function prints the full contents of a configuration descriptor (including interface and endpoint descriptors)
+ * - When a non-standard descriptor is encountered, this function will call the class_specific_cb if it is provided
+ *
+ * @param cfg_desc Configuration descriptor
+ * @param class_specific_cb Class specific descriptor callback. Can be NULL
+ */
+void usb_print_config_descriptor(const usb_config_desc_t *cfg_desc, print_class_descriptor_cb class_specific_cb);
+
+/**
+ * @brief Print a string descriptor
+ *
+ * This funciton will only print ASCII characters of the UTF-16 encoded string
+ *
+ * @param str_desc String descriptor
+ */
+void usb_print_string_descriptor(const usb_str_desc_t *str_desc);
+
 // ------------------------------------------------------ Misc ---------------------------------------------------------
 
 /**
@@ -118,6 +156,8 @@ const usb_ep_desc_t *usb_parse_endpoint_descriptor_by_address(const usb_config_d
  *
  * This is a convenience function to round up a size/length to an endpoint's MPS (Maximum packet size). This is useful
  * when calculating transfer or buffer lengths of IN endpoints.
+ * - If MPS <= 0, this function will return 0
+ * - If num_bytes <= 0, this function will return 0
  *
  * @param[in] num_bytes Number of bytes
  * @param[in] mps MPS
@@ -125,30 +165,11 @@ const usb_ep_desc_t *usb_parse_endpoint_descriptor_by_address(const usb_config_d
  */
 static inline int usb_round_up_to_mps(int num_bytes, int mps)
 {
-    if (num_bytes < 0 || mps < 0) {
+    if (num_bytes <= 0 || mps <= 0) {    //MPS can never be zero
         return 0;
     }
     return ((num_bytes + mps - 1) / mps) * mps;
 }
-
-/**
- * @brief Print class specific descriptor callback
- *
- * Optional callback to be provided to usb_print_descriptors() function.
- * The callback is called when when a non-standard descriptor is encountered.
- * The callback should decode the descriptor as print it.
- */
-
-typedef void (*print_class_descriptor_cb)(const usb_standard_desc_t *);
-
-/**
- * @brief Prints usb descriptors
- *
- * @param[in] device Handle to device
- * @param[in] class_specific_cb Optional callback to print class specific descriptors
- * @return esp_err_t
- */
-esp_err_t usb_print_descriptors(usb_device_handle_t device, print_class_descriptor_cb class_specific_cb);
 
 #ifdef __cplusplus
 }
