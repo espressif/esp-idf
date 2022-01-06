@@ -173,8 +173,6 @@ component_ut_pytest_esp32c3_generic:
 
 .target_test_job_template:
   stage: target_test
-  needs:
-    - assign_test
   artifacts:
     when: always
     paths:
@@ -204,6 +202,8 @@ component_ut_pytest_esp32c3_generic:
 
 .example_test_template:
   extends: .target_test_job_template
+  needs:
+    - assign_example_test
   variables:
     TEST_CASE_PATH: "$CI_PROJECT_DIR/examples"
     CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/examples/test_configs"
@@ -467,6 +467,8 @@ example_test_ESP32C3_SDSPI:
 
 .test_app_template:
   extends: .target_test_job_template
+  needs:
+    - assign_custom_test
   variables:
     TEST_CASE_PATH: "$CI_PROJECT_DIR/tools/test_apps"
     CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/tools/test_apps/test_configs"
@@ -558,9 +560,11 @@ test_app_test_flash_psram_f8r8:
 
 .unit_test_template:
   extends: .target_test_job_template
+  needs: # the assign already needs all the build jobs
+    - assign_unit_test
   variables:
     TEST_CASE_PATH: "$CI_PROJECT_DIR/tools/unit-test-app"
-    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/components/idf_test/unit_test/CIConfigs"
+    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/components/idf_test/unit_test/test_configs"
 
 .unit_test_esp32_template:
   extends:
@@ -867,14 +871,14 @@ UT_S3_FLASH:
     # needn't install idf python env
     - .before_script_minimal
   needs:
-    - assign_test
+    - assign_integration_test
     - build_ssc_esp32
   variables:
     LOCAL_ENV_CONFIG_PATH: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32_IDF"
     LOG_PATH: "${CI_PROJECT_DIR}/TEST_LOGS"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/auto_test_script/TestCaseFiles"
     MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/ModuleDefinition.yml"
-    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/components/idf_test/integration_test/CIConfigs"
+    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/components/idf_test/integration_test/test_configs"
     KNOWN_ISSUE_FILE: "${CI_PROJECT_DIR}/components/idf_test/integration_test/KnownIssues"
     CI_RUNNER_SCRIPT: "${CI_PROJECT_DIR}/auto_test_script/bin/CIRunner.py"
     PYTHONPATH: ${CI_PROJECT_DIR}/auto_test_script/packages
