@@ -1579,7 +1579,6 @@ static void btc_a2dp_source_thread_init(UNUSED_ATTR void *context)
 
 static void btc_a2dp_source_thread_cleanup(UNUSED_ATTR void *context)
 {
-    btc_a2dp_control_set_datachnl_stat(FALSE);
     /* Clear media task flag */
     btc_a2dp_source_state = BTC_A2DP_SOURCE_STATE_OFF;
 
