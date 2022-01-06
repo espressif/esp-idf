@@ -104,26 +104,6 @@ mainmenu "Espressif IoT Development Framework Configuration"
         default 0x000E if IDF_TARGET_ESP32H2_BETA_VERSION_2 # ESP32H2-TODO: IDF-3475
         default 0xFFFF
 
-    menu "SDK tool configuration"
-
-        config SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS
-            bool "Toolchain supports time_t wide 64-bits"
-            default n
-            help
-                Enable this option in case you have a custom toolchain which supports time_t wide 64-bits.
-                This option checks time_t is 64-bits and disables ROM time functions
-                to use the time functions from the toolchain instead.
-                This option allows resolving the Y2K38 problem.
-                See "Setup Linux Toolchain from Scratch" to build
-                a custom toolchain which supports 64-bits time_t.
-
-                Note: ESP-IDF does not currently come with any pre-compiled toolchain
-                that supports 64-bit wide time_t.
-                This will change in a future major release,
-                but currently 64-bit time_t requires a custom built toolchain.
-
-    endmenu  # SDK tool configuration
-
 
     menu "Build type"
 

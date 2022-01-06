@@ -1396,7 +1396,6 @@ components/newlib/test/test_time.c
 components/newlib/test_apps/app_test.py
 components/newlib/test_apps/main/test_newlib_main.c
 components/newlib/test_apps/main/test_stdatomic.c
-components/newlib/time.c
 components/nvs_flash/host_test/fixtures/test_fixtures.hpp
 components/nvs_flash/host_test/nvs_page_test/main/nvs_page_test.cpp
 components/nvs_flash/include/nvs.h
