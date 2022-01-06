@@ -227,10 +227,6 @@ Implementation of basic functionality of deep sleep is shown in :example:`protoc
 
     More extensive example in :example:`system/deep_sleep` illustrates usage of various deep sleep wakeup triggers and ULP coprocessor programming.
 
-.. only:: esp32c3
-
-    An example in :example:`system/deep_sleep` illustrates usage of deep sleep wakeup triggered by timer.
-
 API Reference
 -------------
 
