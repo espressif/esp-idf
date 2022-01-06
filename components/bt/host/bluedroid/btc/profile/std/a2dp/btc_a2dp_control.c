@@ -25,7 +25,7 @@
 #if BTC_AV_INCLUDED
 
 typedef struct {
-    BOOLEAN data_channel_open;
+    BOOLEAN data_channel_open; /* used only by A2DP sink */
     UINT8 a2dp_cmd_pending; /* we can have max one command pending */
 } tBTC_AA_CTRL_CB;
 
@@ -75,7 +75,9 @@ static void btc_a2dp_datapath_open(void)
         btc_a2dp_source_encoder_update();
     }
 #endif
+#if (BTC_AV_SINK_INCLUDED == TRUE)
     btc_aa_ctrl_cb.data_channel_open = TRUE;
+#endif
 }
 
 BOOLEAN btc_a2dp_control_get_datachnl_stat(void)
