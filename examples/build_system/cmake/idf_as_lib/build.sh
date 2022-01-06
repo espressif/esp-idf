@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+PARAM=""
+
 # Retrive the target from the current filename, if no target specified,
 # the variable will be empty
 TARGET=$(echo $0 | cut -s -f2 -d- | cut -s -f1 -d.)
