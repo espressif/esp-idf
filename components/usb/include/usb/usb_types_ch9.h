@@ -474,7 +474,7 @@ typedef union {
     struct {
         uint8_t bLength;                    /**< Size of the descriptor in bytes */
         uint8_t bDescriptorType;            /**< STRING Descriptor Type */
-        uint16_t wData[0];                  /**< UTF-16LE encoded */
+        uint16_t wData[];                   /**< UTF-16LE encoded */
     } USB_DESC_ATTR;
     uint8_t val[USB_STR_DESC_SIZE];
 } usb_str_desc_t;
