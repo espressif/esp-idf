@@ -88,7 +88,7 @@ assign_integration_test:
     paths:
       - $TEST_DIR/test_configs
   variables:
-    TEST_DIR: ${CI_PROJECT_DIR}/components/idf_test/integration_test
+    TEST_DIR: ${CI_PROJECT_DIR}/tools/ci/integration_test
     BUILD_DIR: ${CI_PROJECT_DIR}/SSC/ssc_bin
     INTEGRATION_TEST_CASE_PATH: "${CI_PROJECT_DIR}/auto_test_script/TestCaseFiles"
     ASSIGN_TEST_CASE_SCRIPT: "${CI_PROJECT_DIR}/auto_test_script/bin/CIAssignTestCases.py"
