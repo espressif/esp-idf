@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
 #include "unity.h"
 #include "driver/adc.h"
@@ -446,8 +447,7 @@ TEST_CASE("test posix_timers clock_... functions", "[newlib]")
     test_posix_timers_clock();
 }
 
-#ifdef CONFIG_SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS
-#include <string.h>
+#ifndef _USE_LONG_TIME_T
 
 static struct timeval get_time(const char *desc, char *buffer)
 {
@@ -533,7 +533,7 @@ TEST_CASE("test time functions wide 64 bits", "[newlib]")
     }
 }
 
-#endif // CONFIG_SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS
+#endif // !_USE_LONG_TIME_T
 
 #if defined( CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER ) && defined( CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER )
 
