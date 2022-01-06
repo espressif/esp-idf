@@ -1,13 +1,19 @@
+include($ENV{IDF_PATH}/tools/cmake/utilities.cmake)
+
 set(CMAKE_SYSTEM_NAME Generic)
 
 set(CMAKE_C_COMPILER riscv32-esp-elf-gcc)
 set(CMAKE_CXX_COMPILER riscv32-esp-elf-g++)
 set(CMAKE_ASM_COMPILER riscv32-esp-elf-gcc)
 
-list(APPEND compile_options "-march=rv32imc")
+remove_duplicated_flags("-march=rv32imc ${CMAKE_C_FLAGS}"
+                        UNIQ_CMAKE_C_FLAGS)
+set(CMAKE_C_FLAGS "${UNIQ_CMAKE_C_FLAGS}" CACHE STRING "C Compiler Base Flags" FORCE)
+remove_duplicated_flags("-march=rv32imc ${CMAKE_CXX_FLAGS}"
+                        UNIQ_CMAKE_CXX_FLAGS)
+set(CMAKE_CXX_FLAGS "${UNIQ_CMAKE_CXX_FLAGS}" CACHE STRING "C++ Compiler Base Flags" FORCE)
 
-# Option `--specs` must only be defined ONCE in the final linker command, else GCC will complain:
-# "attempt to rename spec 'link_gcc_c_sequence' to already defined spec 'nosys_link_gcc_c_sequence'"
-# so unset `link_options` first.
-unset(link_options)
-list(APPEND link_options "-nostartfiles" "-march=rv32imc" "--specs=nosys.specs")
+remove_duplicated_flags("-nostartfiles -march=rv32imc --specs=nosys.specs \
+                        ${CMAKE_EXE_LINKER_FLAGS}"
+                        UNIQ_CMAKE_SAFE_EXE_LINKER_FLAGS)
+set(CMAKE_EXE_LINKER_FLAGS "${UNIQ_CMAKE_SAFE_EXE_LINKER_FLAGS}" CACHE STRING "Linker Base Flags" FORCE)
