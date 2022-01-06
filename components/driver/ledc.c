@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1035,7 +1035,7 @@ esp_err_t ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t channel
 
 esp_err_t ledc_fade_start(ledc_mode_t speed_mode, ledc_channel_t channel, ledc_fade_mode_t fade_mode)
 {
-    LEDC_CHECK(s_ledc_fade_rec != NULL, LEDC_FADE_SERVICE_ERR_STR, ESP_ERR_INVALID_STATE);
+    LEDC_CHECK(s_ledc_fade_rec[speed_mode][channel] != NULL, LEDC_FADE_SERVICE_ERR_STR, ESP_ERR_INVALID_STATE);
     LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
     LEDC_ARG_CHECK(fade_mode < LEDC_FADE_MAX, "fade_mode");
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
@@ -1053,9 +1053,6 @@ esp_err_t ledc_fade_func_install(int intr_alloc_flags)
 
 void ledc_fade_func_uninstall(void)
 {
-    if (s_ledc_fade_rec == NULL) {
-        return;
-    }
     if (s_ledc_fade_isr_handle) {
         esp_intr_free(s_ledc_fade_isr_handle);
         s_ledc_fade_isr_handle = NULL;
