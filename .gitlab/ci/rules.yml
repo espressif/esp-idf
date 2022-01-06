@@ -366,6 +366,27 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
 
+.rules:build:component_ut:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32
+    - <<: *if-label-component_ut_esp32c3
+    - <<: *if-label-component_ut_esp32s2
+    - <<: *if-label-component_ut_esp32s3
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32
+    - <<: *if-label-unit_test_esp32c3
+    - <<: *if-label-unit_test_esp32s2
+    - <<: *if-label-unit_test_esp32s3
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-component_ut
+
 .rules:build:component_ut-esp32:
   rules:
     - <<: *if-protected
@@ -425,6 +446,23 @@
       changes: *patterns-build_system
     - <<: *if-dev-push
       changes: *patterns-component_ut
+
+.rules:build:custom_test:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-custom_test
+    - <<: *if-label-custom_test_esp32
+    - <<: *if-label-custom_test_esp32c3
+    - <<: *if-label-custom_test_esp32s2
+    - <<: *if-label-custom_test_esp32s3
+    - <<: *if-label-weekend_test
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-custom_test
 
 .rules:build:custom_test-esp32:
   rules:
@@ -486,6 +524,25 @@
     - <<: *if-label-docker
     - <<: *if-dev-push
       changes: *patterns-docker
+
+.rules:build:example_test:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32
+    - <<: *if-label-example_test_esp32c3
+    - <<: *if-label-example_test_esp32s2
+    - <<: *if-label-example_test_esp32s3
+    - <<: *if-label-iperf_stress_test
+    - <<: *if-dev-push
+      changes: *patterns-build-example_test
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-example_test
 
 .rules:build:example_test-esp32:
   rules:
@@ -613,6 +670,22 @@
     - <<: *if-dev-push
       changes: *patterns-unit_test
 
+.rules:build:unit_test:
+  rules:
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32
+    - <<: *if-label-unit_test_esp32c3
+    - <<: *if-label-unit_test_esp32s2
+    - <<: *if-label-unit_test_esp32s3
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-unit_test
+
 .rules:build:unit_test-esp32:
   rules:
     - <<: *if-protected
@@ -691,50 +764,6 @@
 .rules:labels:weekend_test:
   rules:
     - <<: *if-label-weekend_test
-
-.rules:test:any_test:
-  rules:
-    - <<: *if-protected
-    - <<: *if-label-build-only
-      when: never
-    - <<: *if-label-component_ut
-    - <<: *if-label-component_ut_esp32
-    - <<: *if-label-component_ut_esp32c3
-    - <<: *if-label-component_ut_esp32s2
-    - <<: *if-label-component_ut_esp32s3
-    - <<: *if-label-custom_test
-    - <<: *if-label-custom_test_esp32
-    - <<: *if-label-custom_test_esp32c3
-    - <<: *if-label-custom_test_esp32s2
-    - <<: *if-label-custom_test_esp32s3
-    - <<: *if-label-example_test
-    - <<: *if-label-example_test_esp32
-    - <<: *if-label-example_test_esp32c3
-    - <<: *if-label-example_test_esp32s2
-    - <<: *if-label-example_test_esp32s3
-    - <<: *if-label-host_test
-    - <<: *if-label-integration_test
-    - <<: *if-label-iperf_stress_test
-    - <<: *if-label-unit_test
-    - <<: *if-label-unit_test_esp32
-    - <<: *if-label-unit_test_esp32c3
-    - <<: *if-label-unit_test_esp32s2
-    - <<: *if-label-unit_test_esp32s3
-    - <<: *if-label-weekend_test
-    - <<: *if-dev-push
-      changes: *patterns-build-example_test
-    - <<: *if-dev-push
-      changes: *patterns-component_ut
-    - <<: *if-dev-push
-      changes: *patterns-custom_test
-    - <<: *if-dev-push
-      changes: *patterns-example_test
-    - <<: *if-dev-push
-      changes: *patterns-host_test
-    - <<: *if-dev-push
-      changes: *patterns-integration_test
-    - <<: *if-dev-push
-      changes: *patterns-unit_test
 
 .rules:test:component_ut-esp32:
   rules:

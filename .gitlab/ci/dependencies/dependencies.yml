@@ -61,6 +61,8 @@
   patterns:
     - build_components
     - build_system
+  included_in:
+    - "build:{0}"
 
 build:integration_test:
   labels:
@@ -83,10 +85,10 @@ build:integration_test:
     - "{0}"
     - "build-{0}"
   included_in: # Parent rules
+    - "build:{0}"
     - "build:{0}-{1}"
     - build:target_test
     - test:target_test
-    - test:any_test
 
 # -------------
 # Special Cases
@@ -103,29 +105,26 @@ build:integration_test:
     - component_ut
     - "build-component_ut-{0}"
   included_in:
+    - build:component_ut
     - "build:component_ut-{0}"
     - build:target_test
     - test:target_test
-    - test:any_test
 
 "test:integration_test":
   labels:
-    - "integration_test"
+    - integration_test
   patterns:
-    - "integration_test"
+    - integration_test
   included_in:
-    - "build:integration_test"
+    - build:integration_test
     - build:target_test
     - test:target_test
-    - test:any_test
 
 "test:host_test":
   labels:
     - host_test
   patterns:
     - host_test
-  included_in:
-    - test:any_test
 
 "test:submodule":
   labels:
@@ -140,17 +139,17 @@ build:integration_test:
   labels:
     - iperf_stress_test
   included_in:
+    - build:example_test
     - build:example_test-esp32
     - build:target_test
-    - test:any_test
 
 "labels:weekend_test": # custom test
   labels:
     - weekend_test
   included_in:
+    - build:custom_test
     - build:custom_test-esp32
     - build:target_test
-    - test:any_test
 
 "labels:nvs_coverage": # host_test
   labels:
