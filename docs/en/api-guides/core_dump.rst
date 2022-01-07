@@ -92,15 +92,33 @@ There are no special requirements for partition name. It can be chosen according
 sub-type should be 'coredump'. Also when choosing partition size note that core dump data structure introduces constant overhead of 20 bytes and per-task overhead of 12 bytes.
 This overhead does not include size of TCB and stack for every task. So partition size should be at least 20 + max tasks number x (12 + TCB size + max task stack size) bytes.
 
-The example of generic command to analyze core dump from flash is: ``espcoredump.py -p </path/to/serial/port> info_corefile </path/to/program/elf/file>``
-or ``espcoredump.py -p </path/to/serial/port> dbg_corefile </path/to/program/elf/file>``
+The example of generic command to analyze core dump from flash is:
+
+.. code-block:: bash
+
+    espcoredump.py -p </path/to/serial/port> info_corefile </path/to/program/elf/file>
+
+or
+
+.. code-block:: bash
+
+    espcoredump.py -p </path/to/serial/port> dbg_corefile </path/to/program/elf/file>
 
 Print core dump to UART
 -----------------------
 
 When this option is selected base64-encoded core dumps are printed on UART upon system panic. In this case user should save core dump text body to some file manually and
-then run the following command: ``espcoredump.py --chip <target_chip_type> info_corefile -t b64 -c </path/to/saved/base64/text> </path/to/program/elf/file>``
-or ``espcoredump.py --chip <target_chip_type> dbg_corefile -t b64 -c </path/to/saved/base64/text> </path/to/program/elf/file>``
+then run the following command:
+
+.. code-block:: bash
+
+    espcoredump.py --chip {IDF_TARGET_PATH_NAME} info_corefile -t b64 -c </path/to/saved/base64/text> </path/to/program/elf/file>
+
+or
+
+.. code-block:: bash
+
+    espcoredump.py --chip {IDF_TARGET_PATH_NAME} dbg_corefile -t b64 -c </path/to/saved/base64/text> </path/to/program/elf/file>
 
 Base64-encoded body of core dump will be between the following header and footer::
 
