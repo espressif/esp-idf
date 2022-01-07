@@ -27,12 +27,21 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <sys/param.h>
-#include "soc/hwcrypto_periph.h"
+
 #include "esp_system.h"
 #include "esp_log.h"
 #include "esp_attr.h"
-#include "bignum_impl.h"
+#include "esp_intr_alloc.h"
+#include "esp_pm.h"
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
+
+#include "soc/hwcrypto_periph.h"
+#include "soc/periph_defs.h"
 #include "soc/soc_caps.h"
+
+#include "bignum_impl.h"
 
 #include <mbedtls/bignum.h>
 
@@ -56,6 +65,77 @@ static const __attribute__((unused)) char *TAG = "bignum";
 #define ciL    (sizeof(mbedtls_mpi_uint))         /* chars in limb  */
 #define biL    (ciL << 3)                         /* bits  in limb  */
 
+#if defined(CONFIG_MBEDTLS_MPI_USE_INTERRUPT)
+static SemaphoreHandle_t op_complete_sem;
+#if defined(CONFIG_PM_ENABLE)
+static esp_pm_lock_handle_t s_pm_cpu_lock;
+static esp_pm_lock_handle_t s_pm_sleep_lock;
+#endif
+
+static IRAM_ATTR void esp_mpi_complete_isr(void *arg)
+{
+    BaseType_t higher_woken;
+    esp_mpi_interrupt_clear();
+
+    xSemaphoreGiveFromISR(op_complete_sem, &higher_woken);
+    if (higher_woken) {
+        portYIELD_FROM_ISR();
+    }
+}
+
+
+static esp_err_t esp_mpi_isr_initialise(void)
+{
+    esp_mpi_interrupt_clear();
+    esp_mpi_interrupt_enable(true);
+    if (op_complete_sem == NULL) {
+        op_complete_sem = xSemaphoreCreateBinary();
+
+        if (op_complete_sem == NULL) {
+            ESP_LOGE(TAG, "Failed to create intr semaphore");
+            return ESP_FAIL;
+        }
+
+        esp_intr_alloc(ETS_RSA_INTR_SOURCE, 0, esp_mpi_complete_isr, NULL, NULL);
+    }
+
+    /* MPI is clocked proportionally to CPU clock, take power management lock */
+#ifdef CONFIG_PM_ENABLE
+    if (s_pm_cpu_lock == NULL) {
+        if (esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "mpi_sleep", &s_pm_sleep_lock) != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to create PM sleep lock");
+            return ESP_FAIL;
+        }
+        if (esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "mpi_cpu", &s_pm_cpu_lock) != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to create PM CPU lock");
+            return ESP_FAIL;
+        }
+    }
+    esp_pm_lock_acquire(s_pm_cpu_lock);
+    esp_pm_lock_acquire(s_pm_sleep_lock);
+#endif
+
+    return ESP_OK;
+}
+
+static int esp_mpi_wait_intr(void)
+{
+    if (!xSemaphoreTake(op_complete_sem, 2000 / portTICK_PERIOD_MS)) {
+        ESP_LOGE("MPI", "Timed out waiting for completion of MPI Interrupt");
+        return -1;
+    }
+
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_release(s_pm_cpu_lock);
+    esp_pm_lock_release(s_pm_sleep_lock);
+#endif  // CONFIG_PM_ENABLE
+
+    esp_mpi_interrupt_enable(false);
+
+    return 0;
+}
+
+#endif // CONFIG_MBEDTLS_MPI_USE_INTERRUPT
 
 /* Convert bit count to word count
  */
@@ -327,12 +407,29 @@ static int esp_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_
 #else
     esp_mpi_enable_hardware_hw_op();
 
+#if defined (CONFIG_MBEDTLS_MPI_USE_INTERRUPT)
+    if (esp_mpi_isr_initialise() == ESP_FAIL) {
+        ret = -1;
+        esp_mpi_disable_hardware_hw_op();
+        goto cleanup;
+    }
+#endif
+
     esp_mpi_exp_mpi_mod_hw_op(X, Y, M, Rinv, Mprime, num_words);
     ret = mbedtls_mpi_grow(Z, m_words);
     if (ret != 0) {
         esp_mpi_disable_hardware_hw_op();
         goto cleanup;
     }
+
+#if defined(CONFIG_MBEDTLS_MPI_USE_INTERRUPT)
+    ret = esp_mpi_wait_intr();
+    if (ret != 0) {
+        esp_mpi_disable_hardware_hw_op();
+        goto cleanup;
+    }
+#endif //CONFIG_MBEDTLS_MPI_USE_INTERRUPT
+
     esp_mpi_read_result_hw_op(Z, m_words);
     esp_mpi_disable_hardware_hw_op();
 #endif
