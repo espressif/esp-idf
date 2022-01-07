@@ -55,7 +55,7 @@ extern "C" {
 #define ntohs(x) __builtin_bswap16(x)
 #define htonl(x) __builtin_bswap32(x)
 #define ntohl(x) __builtin_bswap32(x)
-    
+
 #ifndef CONFIG_LWIP_ESP_LWIP_ASSERT
 #define LWIP_NOASSERT 1
 #endif
