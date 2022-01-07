@@ -47,6 +47,7 @@
 * @esp-idf-codeowners/other
 
 /.*                                   @esp-idf-codeowners/tools
+/.github/workflows/                   @esp-idf-codeowners/ci
 /.gitlab-ci.yml                       @esp-idf-codeowners/ci
 /.gitlab/ci/                          @esp-idf-codeowners/ci
 /.pre-commit-config.yaml              @esp-idf-codeowners/ci
