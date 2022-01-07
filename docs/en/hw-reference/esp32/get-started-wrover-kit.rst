@@ -24,7 +24,7 @@ ESP-WROVER-KIT features the following integrated components:
 
 - ESP32-WROVER-E module
 - LCD screen
-- MicroSD card slot
+- microSD card slot
 
 Its another distinguishing feature is the embedded FTDI FT2232HL chip - an advanced multi-interface USB bridge. This chip enables to use JTAG for direct debugging of ESP32 through the USB interface without a separate JTAG debugger. ESP-WROVER-KIT makes development convenient, easy, and cost-effective.
 
@@ -123,8 +123,8 @@ The table below provides description in the following manner:
       - Red, green and blue (RGB) light emitting diodes (LEDs), can be controlled by pulse width modulation (PWM).
     * - I/O Connector
       - All the pins on the ESP32 module are broken out to pin headers. You can program ESP32 to enable multiple functions, such as PWM, ADC, DAC, I2C, I2S, SPI, etc.
-    * - MicroSD Card Slot
-      - Useful for developing applications that access MicroSD card for data storage and retrieval.
+    * - microSD Card Slot
+      - Useful for developing applications that access microSD card for data storage and retrieval.
     * - LCD 
       - Support for mounting and interfacing a 3.2” SPI (standard 4-wire Serial Peripheral Interface) LCD, as shown on figure :ref:`get-started-esp-wrover-kit-v4.1-board-back`.
 
@@ -137,15 +137,28 @@ Setup Options
 
 There are three jumper blocks available to set up the board functionality. The most frequently required options are listed in the table below.
 
-=======  ================  =========================================================
-Header   Jumper Setting    Description of Functionality
-=======  ================  =========================================================
-JP7      |jp7-ext_5v|      Power ESP-WROVER-KIT via an external power supply
-JP7      |jp7-usb_5v|      Power ESP-WROVER-KIT via USB
-JP2      |jp2-jtag|        Enable JTAG functionality
-JP2      |jp2-tx-rx|       Enable UART communication
-JP14     |jp14|            Enable RTS/CTS flow control for serial communication
-=======  ================  =========================================================
+.. list-table::
+    :widths: 25 35 40
+    :header-rows: 1
+
+    * - Header
+      - Jumper Setting
+      - Description of Functionality
+    * - JP7
+      - |jp7-ext_5v|
+      - Power ESP-WROVER-KIT via an external power supply
+    * - JP7
+      - |jp7-usb_5v|      
+      - Power ESP-WROVER-KIT via USB
+    * - JP2
+      - |jp2-jtag|
+      - Enable JTAG functionality
+    * - JP2
+      - |jp2-tx-rx|
+      - Enable UART communication
+    * - JP14
+      - |jp14|
+      - Enable RTS/CTS flow control for serial communication
 
 
 Allocation of ESP32 Pins
@@ -165,24 +178,70 @@ Main I/O Connector / JP1
 
 The JP1 connector consists of 14x2 male pins whose functions are shown in the middle two "I/O" columns of the table below. The two "Shared With" columns on both sides describe where else on the board a certain GPIO is used.
 
-=====================  =====  =====  =====================
-Shared With            I/O    I/O    Shared With
-=====================  =====  =====  =====================
-n/a                    3.3V   GND    n/a
-NC/XTAL                IO32   IO33   NC/XTAL
-JTAG, MicroSD          IO12   IO13   JTAG, MicroSD
-JTAG, MicroSD          IO14   IO27   Camera
-Camera                 IO26   IO25   Camera, LCD
-Camera                 IO35   IO34   Camera
-Camera                 IO39   IO36   Camera
-JTAG                   EN     IO23   Camera, LCD
-Camera, LCD            IO22   IO21   Camera, LCD, MicroSD
-Camera, LCD            IO19   IO18   Camera, LCD
-Camera, LCD            IO5    IO17   PSRAM
-PSRAM                  IO16   IO4    LED, Camera, MicroSD
-Camera, LED, Boot      IO0    IO2    LED, MicroSD
-JTAG, MicroSD          IO15   5V
-=====================  =====  =====  =====================
+.. list-table::
+    :widths: 30 20 20 30
+    :header-rows: 1
+
+    * - Shared With
+      - I/O
+      - I/O
+      - Shared With
+    * - n/a
+      - 3.3V
+      - GND
+      - n/a
+    * - NC/XTAL
+      - IO32
+      - IO33
+      - NC/XTAL
+    * - JTAG, microSD
+      - IO12
+      - IO13
+      - JTAG，microSD
+    * - JTAG, microSD
+      - IO14
+      - IO27
+      - Camera
+    * - Camera
+      - IO26
+      - IO25
+      - Camera, LCD
+    * - Camera
+      - IO35
+      - IO34
+      - Camera
+    * - Camera
+      - IO39
+      - IO36
+      - Camera
+    * - JTAG
+      - EN
+      - IO23
+      - Camera, LCD
+    * - Camera, LCD
+      - IO22
+      - IO21
+      - Camera, LCD, microSD
+    * - Camera, LCD
+      - IO19
+      - IO18
+      - Camera, LCD
+    * - Camera, LCD
+      - IO5
+      - IO17
+      - PSRAM
+    * - PSRAM
+      - IO16
+      - IO4
+      - LED, Camera, microSD
+    * - Camera, LED, Boot
+      - IO0
+      - IO2
+      - LED, microSD
+    * - JTAG, microSD
+      - IO15
+      - 5V
+      - 
 
 Legend:
 
@@ -191,7 +250,7 @@ Legend:
 * Boot - Boot button / SW2
 * Camera - :ref:`Camera / JP4 <get-started-esp-wrover-kit-v4.1-camera-header>`
 * LED - :ref:`RGB LED <get-started-esp-wrover-kit-v4.1-rgb-led-connections>`
-* MicroSD - :ref:`MicroSD Card / J4 <get-started-esp-wrover-kit-v4.1-microsd-card-slot>`
+* microSD - :ref:`microSD Card / J4 <get-started-esp-wrover-kit-v4.1-microsd-card-slot>`
 * LCD - :ref:`LCD / U5 <get-started-esp-wrover-kit-v4.1-lcd-connector>`
 * PSRAM - ESP32-WROVER-E's PSRAM
 
@@ -297,11 +356,11 @@ RGB LED
 
 .. _get-started-esp-wrover-kit-v4.1-microsd-card-slot:
 
-MicroSD Card
+microSD Card
 ^^^^^^^^^^^^
 
 ====  ==============  ===============
-.     ESP32 Pin       MicroSD Signal
+.     ESP32 Pin       microSD Signal
 ====  ==============  ===============
 1     MTDI / GPIO12   DATA2
 2     MTCK / GPIO13   CD / DATA3
@@ -368,6 +427,7 @@ The application examples that use some hardware specific to your ESP-WROVER-KIT 
 * On-board LCD example: :example:`peripherals/spi_master/lcd`
 * SD card slot example: :example:`storage/sd_card`
 * Camera connector example: https://github.com/espressif/esp32-camera
+
 
 Related Documents
 -----------------

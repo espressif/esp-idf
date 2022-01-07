@@ -63,27 +63,31 @@ The following figure and the table below describe the key components, interfaces
 
     ESP32-PICO-KIT-1 board layout - front (click to enlarge) 
 
+
 Below is the description of the items identified in the figure starting from the top left corner and going clockwise.
 
-==================  =================================================================================================================================
-Key Component       Description
-==================  =================================================================================================================================
-ESP32-PICO-V3       Standard ESP32-PICO-V3 module soldered to the ESP32-PICO-KIT-1 board. The complete ESP32 system on a chip (ESP32 SoC) has been integrated into the SiP module, requiring only an external antenna with LC matching network, decoupling capacitors, and a pull-up resistor for EN signals to function properly.
+.. list-table:: 
+   :widths: 10 25
+   :header-rows: 1
 
-LDO                 5V-to-3.3V Low dropout voltage regulator (LDO).
-
-USB-to-UART bridge     CP2102N, single-chip USB-to-UART bridge that offers up to 3 Mbps transfers rates.
-
-Micro USB Port      USB interface. Power supply for the board as well as the communication interface between a computer and the board.
-
-5V Power On LED     This red LED turns on when power is supplied to the board. For details, see the schematic in `Related Documents`_.
-
-I/O Connector       All the pins on ESP32-PICO-V3 are broken out to pin headers. You can program ESP32 to enable multiple functions, such as PWM, ADC, DAC, I2C, I2S, SPI, etc. For details, please see Section `Pin Descriptions`_.
-
-BOOT Button         Download button. Holding down **Boot** and then pressing **EN** initiates Firmware Download mode for downloading firmware through the serial port.
-
-EN Button           Reset button.
-==================  =================================================================================================================================
+   * - Key Component
+     - Description
+   * - ESP32-PICO-V3
+     - Standard ESP32-PICO-V3 module soldered to the ESP32-PICO-KIT-1 board. The complete ESP32 system on a chip (ESP32 SoC) has been integrated into the SiP module, requiring only an external antenna with LC matching network, decoupling capacitors, and a pull-up resistor for EN signals to function properly.
+   * - LDO
+     - 5V-to-3.3V Low dropout voltage regulator (LDO).
+   * - USB-to-UART bridge
+     - CP2102N, single-chip USB-to-UART bridge that offers up to 3 Mbps transfers rates.
+   * - Micro USB Port
+     - USB interface. Power supply for the board as well as the communication interface between a computer and the board.
+   * - 5V Power On LED
+     - This red LED turns on when power is supplied to the board. For details, see the schematic in `Related Documents`_.
+   * - I/O Connector
+     - All the pins on ESP32-PICO-V3 are broken out to pin headers. You can program ESP32 to enable multiple functions, such as PWM, ADC, DAC, I2C, I2S, SPI, etc. For details, please see Section `Pin Descriptions`_.
+   * - BOOT Button
+     - Download button. Holding down **Boot** and then pressing **EN** initiates Firmware Download mode for downloading firmware through the serial port.
+   * - EN Button
+     - Reset button.
 
 Start Application Development
 -----------------------------
@@ -103,6 +107,7 @@ Software Setup
 """"""""""""""""
 
 Please proceed to :doc:`../../get-started/index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment.
+
 
 Contents and Packaging
 =======================
@@ -329,7 +334,7 @@ Header J3
 
 .. _get-started-pico-kit-1-pin-notes:
 
-The following notes give more information about the items in the tables above.
+.. note::
 
     1. This pin is connected to the pin of the USB bridge chip on the board.
     2. 32.768 kHz crystal oscillator:
@@ -362,4 +367,3 @@ Related Documents
 * `ESP32-PICO-KIT-1 PCB Layout <https://dl.espressif.com/dl/schematics/PCB_ESP32-PICO-KIT-1_V1.0_20200811.pdf>`_ (PDF)
 
 For other design documentation for the board, please contact us at sales@espressif.com.
-

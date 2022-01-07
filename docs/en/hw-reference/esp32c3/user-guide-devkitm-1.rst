@@ -29,7 +29,6 @@ Getting Started
 
 This section provides a brief introduction of ESP32-C3-DevKitM-1, instructions on how to do the initial hardware setup and how to flash firmware onto it.
 
-
 Description of Components
 -------------------------
 

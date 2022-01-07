@@ -10,7 +10,7 @@ ESP-WROVER-KIT V4.1 入门指南
 
 * :ref:`ESP-WROVER-KIT V4.1 开发板 <get-started-esp-wrover-kit-v4.1-board-front>`
 * USB 2.0 数据线（A 转 Micro-B）
-* PC（Windows、Linux 或 Mac OS）
+* PC（Windows、Linux 或 macOS）
 
 您可以跳过介绍部分，直接前往 `应用程序开发`_ 章节。
 
@@ -24,7 +24,7 @@ ESP-WROVER-KIT 开发板已集成了如下组件：
 
 - ESP32-WROVER-E 模组
 - LCD 屏
-- MicroSD 卡槽
+- microSD 卡槽
 
 此外，ESP-WROVER-KIT 的独特之处在于集成了一款先进多协议 USB 桥接器 (FTDI FT2232HL)，允许开发人员直接通过 USB 接口，使用 JTAG 对 ESP32 进行调试，无需额外的 JTAG 调试器。ESP-WROVER-KIT 可为开发人员提供简单、便捷且极具成本效益的开发体验。
 
@@ -72,10 +72,10 @@ ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
     ESP-WROVER-KIT 开发板布局 -- 仰视图
 
 
-下表将从图片右上角开始，以顺时针顺序介绍图 1 中的主要组件，然后按同样顺序介绍图 2 中的主要组件。
+下表介绍了开发板的主要组件，顺序如下：
 
-
-
+- 从图片右上角开始，以顺时针顺序介绍了图 1 中的主要组件
+- 然后以同样的顺序介绍了图 2 中的主要组件
 
 .. list-table::
     :widths: 25 75
@@ -178,11 +178,9 @@ ESP32 模组的部分管脚/终端已被板上组件占用或用于外部硬件�
 
 JP1 连接器包括 14 x 2 个排针，具体功能可见下表中间 “I/O” 列的介绍。两侧的“共用”列则介绍了这些管脚在板上的其他用途。
 
-
 .. list-table::
     :widths: 30 20 20 30
     :header-rows: 1
-
 
     * - 共用
       - I/O
@@ -196,11 +194,11 @@ JP1 连接器包括 14 x 2 个排针，具体功能可见下表中间 “I/O” 
       - IO32
       - IO33
       - NC/XTAL
-    * - JTAG，MicroSD
+    * - JTAG，microSD
       - IO12
       - IO13
-      - JTAG，MicroSD
-    * - JTAG，MicroSD
+      - JTAG，microSD
+    * - JTAG，microSD
       - IO14
       - IO27
       - 摄像头
@@ -223,7 +221,7 @@ JP1 连接器包括 14 x 2 个排针，具体功能可见下表中间 “I/O” 
     * - 摄像头，LCD
       - IO22
       - IO21
-      - 摄像头，LCD，MicroSD
+      - 摄像头，LCD，microSD
     * - 摄像头，LCD
       - IO19
       - IO18
@@ -235,12 +233,12 @@ JP1 连接器包括 14 x 2 个排针，具体功能可见下表中间 “I/O” 
     * - PSRAM
       - IO16
       - IO4
-      - LED，摄像头，MicroSD
+      - LED，摄像头，microSD
     * - 摄像头，LED，Boot
       - IO0
       - IO2
-      - LED，MicroSD
-    * - JTAG，MicroSD
+      - LED，microSD
+    * - JTAG，microSD
       - IO15
       - 5V
       -
@@ -252,7 +250,7 @@ JP1 连接器包括 14 x 2 个排针，具体功能可见下表中间 “I/O” 
 * Boot - Boot 按键 / SW2
 * 摄像头 - :ref:`摄像头 / JP4 <get-started-esp-wrover-kit-v4.1-camera-header>`
 * LED - :ref:`RGB LED <get-started-esp-wrover-kit-v4.1-rgb-led-connections>`
-* MicroSD - :ref:`MicroSD Card / J4 <get-started-esp-wrover-kit-v4.1-microsd-card-slot>`
+* microSD - :ref:`microSD Card / J4 <get-started-esp-wrover-kit-v4.1-microsd-card-slot>`
 * LCD - :ref:`LCD / U5 <get-started-esp-wrover-kit-v4.1-lcd-connector>`
 * PSRAM - ESP32-WROVER-E 的 PSRAM
 
@@ -282,18 +280,17 @@ SPI Flash / JP2
 ====  =============
 .     ESP32 管脚
 ====  =============
-1.    CLK / GPIO6
-2.    SD0 / GPIO7
-3.    SD1 / GPIO8
-4.    SD2 / GPIO9
-5.    SD3 / GPIO10
-6.    CMD / GPIO11
+1     CLK / GPIO6
+2     SD0 / GPIO7
+3     SD1 / GPIO8
+4     SD2 / GPIO9
+5     SD3 / GPIO10
+6     CMD / GPIO11
 ====  =============
 
 .. important::
 
     模组的 flash 总线已通过 0 欧电阻 R140 ~ R145 连接至排针 JP2。如果需要将 flash 的工作频率控制在 80 MHz，以达到保证总线信号完整性等目的，建议移除 R140 ~ R145 电阻，将模组的 flash 总线与排针 JP2 断开。
-
 
 
 .. _get-started-esp-wrover-kit-v4.1-jtag-header:
@@ -304,11 +301,11 @@ JTAG / JP2
 ====  ==============  =============
 .     ESP32 管脚       JTAG 信号
 ====  ==============  =============
-1.    EN              TRST_N
-2.    MTMS / GPIO14   TMS
-3.    MTDO / GPIO15   TDO
-4.    MTDI / GPIO12   TDI
-5.    MTCK / GPIO13   TCK
+1     EN              TRST_N
+2     MTMS / GPIO14   TMS
+3     MTDO / GPIO15   TDO
+4     MTDI / GPIO12   TDI
+5     MTCK / GPIO13   TCK
 ====  ==============  =============
 
 
@@ -320,24 +317,24 @@ JTAG / JP2
 ====  ==========  =============================
 .     ESP32 管脚   摄像头信号
 ====  ==========  =============================
-1.    n/a         3.3V
-2.    n/a         地
-3.    GPIO27      SIO_C / SCCB 时钟
-4.    GPIO26      SIO_D / SCCB 数据
-5.    GPIO25      VSYNC / 垂直同步
-6.    GPIO23      HREF / 水平参考
-7.    GPIO22      PCLK / 像素时钟
-8.    GPIO21      XCLK / 系统时钟
-9.    GPIO35      D7 / 像素数据 Bit 7
-10.   GPIO34      D6 / 像素数据 Bit 6
-11.   GPIO39      D5 / 像素数据 Bit 5
-12.   GPIO36      D4 / 像素数据 Bit 4
-13.   GPIO19      D3 / 像素数据 Bit 3
-14.   GPIO18      D2 / 像素数据 Bit 2
-15.   GPIO5       D1 / 像素数据 Bit 1
-16.   GPIO4       D0 / 像素数据 Bit 0
-17.   GPIO0       RESET / 摄像头复位
-18.   n/a         PWDN / 摄像头断电
+1     n/a         3.3V
+2     n/a         地
+3     GPIO27      SIO_C / SCCB 时钟
+4     GPIO26      SIO_D / SCCB 数据
+5     GPIO25      VSYNC / 垂直同步
+6     GPIO23      HREF / 水平参考
+7     GPIO22      PCLK / 像素时钟
+8     GPIO21      XCLK / 系统时钟
+9     GPIO35      D7 / 像素数据 Bit 7
+10    GPIO34      D6 / 像素数据 Bit 6
+11    GPIO39      D5 / 像素数据 Bit 5
+12    GPIO36      D4 / 像素数据 Bit 4
+13    GPIO19      D3 / 像素数据 Bit 3
+14    GPIO18      D2 / 像素数据 Bit 2
+15    GPIO5       D1 / 像素数据 Bit 1
+16    GPIO4       D0 / 像素数据 Bit 0
+17    GPIO0       RESET / 摄像头复位
+18    n/a         PWDN / 摄像头断电
 ====  ==========  =============================
 
 * D0 到 D7 为摄像头的数据总线
@@ -351,19 +348,19 @@ RGB LED
 ====  ==========  =========
 .     ESP32 管脚   RGB LED
 ====  ==========  =========
-1.    GPIO0       红色
-2.    GPIO2       绿色
-3.    GPIO4       蓝色
+1     GPIO0       红色
+2     GPIO2       绿色
+3     GPIO4       蓝色
 ====  ==========  =========
 
 
 .. _get-started-esp-wrover-kit-v4.1-microsd-card-slot:
 
-MicroSD 卡
+microSD 卡
 ^^^^^^^^^^^^
 
 ====  ==============  ===============
-.     ESP32 管脚       MicroSD 信号
+.     ESP32 管脚       microSD 信号
 ====  ==============  ===============
 1.    MTDI / GPIO12   DATA2
 2.    MTCK / GPIO13   CD / DATA3
@@ -383,13 +380,13 @@ LCD / U5
 ====  ==============  ===============
 .     ESP32 管脚       LCD 信号
 ====  ==============  ===============
-1.    GPIO18          复位
-2.    GPIO19          SCL
-3.    GPIO21          D/C
-4.    GPIO22          CS
-5.    GPIO23          SDA
-6.    GPIO25          SDO
-7.    GPIO5           背光
+1     GPIO18          复位
+2     GPIO19          SCL
+3     GPIO21          D/C
+4     GPIO22          CS
+5     GPIO23          SDA
+6     GPIO25          SDO
+7     GPIO5           背光
 ====  ==============  ===============
 
 

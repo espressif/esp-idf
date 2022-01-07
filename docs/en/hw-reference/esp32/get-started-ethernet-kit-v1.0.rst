@@ -21,7 +21,7 @@ Overview
 
 ESP32-Ethernet-Kit is an ESP32-based development board produced by `Espressif <https://espressif.com>`_.
 
-It consists of two development boards, the Ethernet board A and the PoE board B, The :ref:`Ethernet board (A) <get-started-esp32-ethernet-kit-a-v1.0-layout>` contains Bluetooth / Wi-Fi dual-mode ESP32-WROVER-B module and IP101GRI, a Single Port 10/100 Fast Ethernet Transceiver (PHY). The :ref:`PoE board (B) <get-started-esp32-ethernet-kit-b-v1.0-layout>` provides power over Ethernet functionality. The A board can work independently, without the board B installed.
+It consists of two development boards, the Ethernet board A and the PoE board B. The :ref:`Ethernet board (A) <get-started-esp32-ethernet-kit-a-v1.0-layout>` contains Bluetooth / Wi-Fi dual-mode ESP32-WROVER-B module and IP101GRI, a Single Port 10/100 Fast Ethernet Transceiver (PHY). The :ref:`PoE board (B) <get-started-esp32-ethernet-kit-b-v1.0-layout>` provides power over Ethernet functionality. The A board can work independently, without the board B installed.
 
 .. _get-started-esp32-ethernet-kit-b-v1.0:
 
@@ -159,7 +159,7 @@ This section describes options to configure the ESP32-Ethernet-Kit hardware.
 Function Switch
 ^^^^^^^^^^^^^^^
 
-The functions for specific GPIO pins can be selected with the Function Switch.
+The functions for specific GPIO pins can be selected with the **Function Switch**.
 
 =======  ================  ================================================================
 DIP SW   GPIO Pin          Pin Functionality if DIP SW is ON
@@ -348,6 +348,8 @@ Now to Development
 
 Proceed to :doc:`../../get-started/index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an example project onto your board.
 
+To use the older GNU Make compilation system, please refer to :ref:`get-started-step-by-step` section.
+
 Move on to the next section only if you have successfully completed all the above steps.
 
 
@@ -371,3 +373,5 @@ For other design documentation for the board, please contact us at sales@espress
 
 .. _ESP32-Ethernet-Kit V1.0 Ethernet board (A) schematic: https://dl.espressif.com/dl/schematics/SCH_ESP32-ETHERNET-KIT_A_V1.0_20190517.pdf
 .. _ESP32-Ethernet-Kit V1.0 PoE board (B) schematic: https://dl.espressif.com/dl/schematics/SCH_ESP32-ETHERNET-KIT_B_V1.0_20190517.pdf
+.. _IP101GRI: http://www.bdtic.com/DataSheet/ICplus/IP101G_DS_R01_20121224.pdf
+.. _MII: https://en.wikipedia.org/wiki/Media-independent_interface
