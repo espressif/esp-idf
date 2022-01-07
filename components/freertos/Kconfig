@@ -175,39 +175,6 @@ menu "FreeRTOS"
             This value must be at least 1. Index 0 is reserved for use by the pthreads API
             thread-local-storage. Other indexes can be used for any desired purpose.
 
-    choice FREERTOS_ASSERT
-        prompt "FreeRTOS assertions"
-        default FREERTOS_ASSERT_FAIL_ABORT if !COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE
-        default FREERTOS_ASSERT_DISABLE if COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE
-        help
-            Failed FreeRTOS configASSERT() assertions can be configured to
-            behave in different ways.
-
-            By default these behave the same as the global project assert settings.
-
-        config FREERTOS_ASSERT_FAIL_ABORT
-            bool "abort() on failed assertions"
-            depends on !COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE
-            help
-                If a FreeRTOS configASSERT() fails, FreeRTOS will abort() and
-                halt execution. The panic handler can be configured to handle
-                the outcome of an abort() in different ways.
-
-                If assertions are disabled for the entire project, they are also
-                disabled in FreeRTOS and this option is unavailable.
-
-        config FREERTOS_ASSERT_FAIL_PRINT_CONTINUE
-            bool "Print and continue failed assertions"
-            help
-                If a FreeRTOS assertion fails, print it out and continue.
-
-        config FREERTOS_ASSERT_DISABLE
-            bool "Disable FreeRTOS assertions"
-            help
-                FreeRTOS configASSERT() will not be compiled into the binary.
-
-    endchoice
-
     config FREERTOS_IDLE_TASK_STACKSIZE
         int "Idle Task stack size"
         range 768 32768

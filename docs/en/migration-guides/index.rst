@@ -9,5 +9,6 @@ ESP-IDF 5.0 Migration Guides
     Peripherals <peripherals>
     Build System <build-system>
     System <system>
+    FreeRTOS <freertos>
     Ethernet <ethernet>
     Removed or deprecated components <removed-components>

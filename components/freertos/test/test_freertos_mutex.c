@@ -5,7 +5,7 @@
 #include "test_utils.h"
 
 /* If assertions aren't set to fail this code still crashes, but not with an abort... */
-#if CONFIG_FREERTOS_CHECK_MUTEX_GIVEN_BY_OWNER && CONFIG_FREERTOS_ASSERT_FAIL_ABORT
+#if CONFIG_FREERTOS_CHECK_MUTEX_GIVEN_BY_OWNER && !CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE
 
 static void mutex_release_task(void* arg)
 {

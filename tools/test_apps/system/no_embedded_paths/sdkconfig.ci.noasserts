@@ -1,5 +1,4 @@
 CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE=y
-CONFIG_FREERTOS_ASSERT_DISABLE=y
 CONFIG_COMPILER_HIDE_PATHS_MACROS=n
 
 # compiling as many files as possible here (we don't have 100% coverage of course, due to config options, but
