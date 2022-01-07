@@ -18,7 +18,6 @@ ESP-LyraT-8311A 扩展板可为您的主板增加音频处理功能。
 
 ESP-LyraT-8311A 扩展板有多种使用方式。该应用程序包括语音用户界面、语音控制、语音授权、录音和播放等功能。
 
-
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp-lyrat-8311a-v1.3-3d.png
     :align: center
     :width: 1934px

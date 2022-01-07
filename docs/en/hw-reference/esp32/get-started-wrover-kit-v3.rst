@@ -1,4 +1,3 @@
-
 ESP-WROVER-KIT V3 Getting Started Guide
 =======================================
 :link_to_translation:`zh_CN:[中文]`
@@ -19,7 +18,7 @@ You can skip the introduction sections and go directly to Section `Start Applica
 Overview
 --------
 
-ESP-WROVER-KIT is an ESP32-based development board produced by `Espressif <https://espressif.com>`_. This board features an integrated LCD screen and MicroSD card slot.
+ESP-WROVER-KIT is an ESP32-based development board produced by `Espressif <https://espressif.com>`_. This board features an integrated LCD screen and microSD card slot.
 
 ESP-WROVER-KIT comes with the following ESP32 modules:
 
@@ -77,51 +76,52 @@ The table below provides description in the following manner:
 - Starting from the first picture's top right corner and going clockwise
 - Then moving on to the second picture
 
+.. list-table::
+    :widths: 25 75
+    :header-rows: 1
 
-==================  =================================================================================================================================
-Key Component       Description
-==================  =================================================================================================================================
-32.768 kHz          External precision 32.768 kHz crystal oscillator serves as a clock with low-power consumption while the chip is in Deep-sleep mode.
-
-0R                  Zero-ohm resistor intended as a placeholder for a current shunt, can be desoldered or replaced with a current shunt to facilitate the measurement of ESP32's current consumption in different modes.
-
-ESP32 Module        Either ESP32-WROOM-32 or ESP32-WROVER with an integrated ESP32. The ESP32-WROVER module features all the functions of ESP32-WROOM-32 and integrates an external 32-MBit PSRAM for flexible extended storage and data processing capabilities.
-
-FT2232              The FT2232 chip serves as a multi-protocol USB-to-serial bridge which can be programmed and controlled via USB to provide communication with ESP32. FT2232 also features USB-to-JTAG interface which is available on channel A of the chip, while USB-to-serial is on channel B. The FT2232 chip enhances user-friendliness in terms of application development and debugging. See `ESP-WROVER-KIT V3 schematic`_.
-
-UART                Serial port. The serial TX/RX signals of FT2232 and ESP32 are broken out to the inward and outward sides of JP11 respectively. By default, these pairs of pins are connected with jumpers. To use ESP32's serial interface, remove the jumpers and connect another external serial device to the respective pins.
-
-SPI                 By default, ESP32 uses its SPI interface to access flash and PSRAM memory inside the module. Use these pins to connect ESP32 to another SPI device. In this case, an extra chip select (CS) signal is needed. Please note that the interface voltage for the version with ESP32-WROVER is 1.8V, while that for the version with ESP32-WROOM-32 is 3.3V.
-
-CTS/RTS             Serial port flow control signals: the pins are not connected to the circuitry by default. To enable them, short the respective pins of JP14 with jumpers.
-
-JTAG                JTAG interface. JTAG signals of FT2232 and ESP32 are broken out to the inward and outward sides of JP8 respectively. By default, these pairs of pins are disconnected. To enable JTAG, short the respective pins with jumpers as shown in Section `Setup Options`_.
-
-EN                  Reset button.
-
-Boot                Download button. Holding down **Boot** and then pressing **EN** initiates Firmware Download mode for downloading firmware through the serial port.
-
-USB                 USB interface. Power supply for the board as well as the communication interface between a computer and the board.
-
-Power Key           Power On/Off Switch. Toggling toward **USB** powers the board on, toggling away from **USB** powers the board off.
-
-Power Select        Power supply selector interface. The board can be powered either via USB or via the 5V Input interface. Select the power source with a jumper. For more details, see Section `Setup Options`_, jumper header JP7.
-
-5V Input            The 5V power supply interface can be more convenient when the board is operating autonomously (not connected to a computer).
-
-LDO                 NCP1117(1A). 5V-to-3.3V LDO. NCP1117 can provide a maximum current of 1A. The LDO on the board has a fixed output voltage. Although, the user can install an LDO with adjustable output voltage. For details, please refer to `ESP-WROVER-KIT V3 schematic`_.
-
-Camera              Camera interface, a standard OV7670 camera module.
-
-RGB LED             Red, green and blue (RGB) light emitting diodes (LEDs), can be controlled by pulse width modulation (PWM).
-
-I/O                 All the pins on the ESP32 module are broken out to pin headers. You can program ESP32 to enable multiple functions, such as PWM, ADC, DAC, I2C, I2S, SPI, etc.
-
-MicroSD Card Slot   Useful for developing applications that access MicroSD card for data storage and retrieval.
-
-LCD                 Support for mounting and interfacing a 3.2” SPI (standard 4-wire Serial Peripheral Interface) LCD, as shown on figure :ref:`get-started-esp-wrover-kit-v3-board-back`.
-==================  =================================================================================================================================
-
+    * - Key Component 
+      - Description
+    * - 32.768 kHz
+      - External precision 32.768 kHz crystal oscillator serves as a clock with low-power consumption while the chip is in Deep-sleep mode.
+    * - 0R
+      - Zero-ohm resistor intended as a placeholder for a current shunt, can be desoldered or replaced with a current shunt to facilitate the measurement of ESP32's current consumption in different modes.
+    * - ESP32 Module
+      - Either ESP32-WROOM-32 or ESP32-WROVER with an integrated ESP32. The ESP32-WROVER module features all the functions of ESP32-WROOM-32 and integrates an external 32-MBit PSRAM for flexible extended storage and data processing capabilities.
+    * - FT2232
+      - The FT2232 chip serves as a multi-protocol USB-to-serial bridge which can be programmed and controlled via USB to provide communication with ESP32. FT2232 also features USB-to-JTAG interface which is available on channel A of the chip, while USB-to-serial is on channel B. The FT2232 chip enhances user-friendliness in terms of application development and debugging. See `ESP-WROVER-KIT V3 schematic`_.
+    * - UART
+      - Serial port. The serial TX/RX signals of FT2232 and ESP32 are broken out to the inward and outward sides of JP11 respectively. By default, these pairs of pins are connected with jumpers. To use ESP32's serial interface, remove the jumpers and connect another external serial device to the respective pins.
+    * - SPI
+      - By default, ESP32 uses its SPI interface to access flash and PSRAM memory inside the module. Use these pins to connect ESP32 to another SPI device. In this case, an extra chip select (CS) signal is needed. Please note that the interface voltage for the version with ESP32-WROVER is 1.8V, while that for the version with ESP32-WROOM-32 is 3.3V.
+    * - CTS/RTS
+      - Serial port flow control signals: the pins are not connected to the circuitry by default. To enable them, short the respective pins of JP14 with jumpers.
+    * - JTAG
+      - JTAG interface. JTAG signals of FT2232 and ESP32 are broken out to the inward and outward sides of JP8 respectively. By default, these pairs of pins are disconnected. To enable JTAG, short the respective pins with jumpers as shown in Section `Setup Options`_.
+    * - EN
+      - Reset button.
+    * - Boot
+      - Download button. Holding down **Boot** and then pressing **EN** initiates Firmware Download mode for downloading firmware through the serial port.
+    * - USB
+      - USB interface. Power supply for the board as well as the communication interface between a computer and the board.
+    * - Power Key
+      - Power On/Off Switch. Toggling toward **USB** powers the board on, toggling away from **USB** powers the board off.
+    * - Power Select
+      - Power supply selector interface. The board can be powered either via USB or via the 5V Input interface. Select the power source with a jumper. For more details, see Section `Setup Options`_, jumper header JP7.
+    * - 5V Input
+      - The 5 V power supply interface can be more convenient when the board is operating autonomously (not connected to a computer).
+    * - LDO
+      - NCP1117(1A). 5V-to-3.3V LDO. NCP1117 can provide a maximum current of 1A. The LDO on the board has a fixed output voltage. Although, the user can install an LDO with adjustable output voltage. For details, please refer to `ESP-WROVER-KIT V3 schematic`_.
+    * - Camera
+      - Camera interface, a standard OV7670 camera module.
+    * - RGB LED
+      - Red, green and blue (RGB) light emitting diodes (LEDs), can be controlled by pulse width modulation (PWM).
+    * - I/O
+      - All the pins on the ESP32 module are broken out to pin headers. You can program ESP32 to enable multiple functions, such as PWM, ADC, DAC, I2C, I2S, SPI, etc.
+    * - microSD Card Slot
+      - Useful for developing applications that access microSD card for data storage and retrieval.
+    * - LCD
+      - Support for mounting and interfacing a 3.2” SPI (standard 4-wire Serial Peripheral Interface) LCD, as shown on figure :ref:`get-started-esp-wrover-kit-v3-board-back`.
 
 .. _get-started-esp-wrover-kit-v3-setup-options:
 
@@ -163,18 +163,18 @@ Shared With            I/O    I/O    Shared With
 =====================  =====  =====  =====================
 n/a                    3.3V   GND    n/a
 NC/XTAL                IO32   IO33   NC/XTAL
-JTAG, MicroSD          IO12   IO13   JTAG, MicroSD
-JTAG, MicroSD          IO14   IO27   Camera
+JTAG, microSD          IO12   IO13   JTAG, microSD
+JTAG, microSD          IO14   IO27   Camera
 Camera                 IO26   IO25   Camera, LCD
 Camera                 IO35   IO34   Camera
 Camera                 IO39   IO36   Camera
 JTAG                   EN     IO23   Camera, LCD
-Camera, LCD            IO22   IO21   Camera, LCD, MicroSD
+Camera, LCD            IO22   IO21   Camera, LCD, microSD
 Camera, LCD            IO19   IO18   Camera, LCD
 Camera, LCD            IO5    IO17   PSRAM
-PSRAM                  IO16   IO4    LED, Camera, MicroSD
-Camera, LED, Boot      IO0    IO2    LED, MicroSD
-JTAG, MicroSD          IO15   5V
+PSRAM                  IO16   IO4    LED, Camera, microSD
+Camera, LED, Boot      IO0    IO2    LED, microSD
+JTAG, microSD          IO15   5V
 =====================  =====  =====  =====================
 
 Legend:
@@ -184,7 +184,7 @@ Legend:
 * Boot - Boot button / SW2
 * Camera - :ref:`Camera / JP4 <get-started-esp-wrover-kit-v3-camera-header>`
 * LED - :ref:`RGB LED <get-started-esp-wrover-kit-v3-rgb-led-connections>`
-* MicroSD - :ref:`MicroSD Card / J4 <get-started-esp-wrover-kit-v3-microsd-card-slot>`
+* microSD - :ref:`microSD Card / J4 <get-started-esp-wrover-kit-v3-microsd-card-slot>`
 * LCD - :ref:`LCD / U5 <get-started-esp-wrover-kit-v3-lcd-connector>`
 * PSRAM - only in case ESP32-WROVER is installed
 
@@ -290,11 +290,11 @@ RGB LED
 
 .. _get-started-esp-wrover-kit-v3-microsd-card-slot:
 
-MicroSD Card
+microSD Card
 ^^^^^^^^^^^^
 
 ====  ==============  ===============
-.     ESP32 Pin       MicroSD Signal
+.     ESP32 Pin       microSD Signal
 ====  ==============  ===============
 1     MTDI / GPIO12   DATA2
 2     MTCK / GPIO13   CD / DATA3

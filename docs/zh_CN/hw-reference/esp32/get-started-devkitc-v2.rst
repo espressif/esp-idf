@@ -11,7 +11,7 @@ ESP32-DevKitC V2 入门指南
 
 * :ref:`ESP32-DevKitC V2 开发板 <get-started-esp32-devkitc-v2-board-front>`
 * USB A / micro USB B 数据线
-* PC（Windows、Linux 或 Mac OS）
+* PC（Windows、Linux 或 macOS）
 
 您可以跳过介绍部分，直接前往 `应用程序开发`_ 章节。
 
@@ -34,9 +34,8 @@ ESP32-DevKitC V2 开发板的主要组件、接口及控制方式见下。
     :alt: ESP32-DevKitC V2 开发板
     :figclass: align-center
 
+    ESP32-DevKitC V2 开发板
 
-
-ESP32-DevKitC V2 开发板
 
 .. list-table::
     :widths: 25 75
@@ -54,6 +53,7 @@ ESP32-DevKitC V2 开发板
       - USB 接口。可用作电路板的供电电源，或连接 PC 和 ESP32-WROOM-32 模组的通信接口。
     * - I/O
       - 板上模组的绝大部分管脚均已引出至开发板的排针。用户可以对 ESP32 进行编程，实现 PWM、ADC、DAC、I2C、I2S、SPI 等多种功能。
+
 
 电源选项
 --------
@@ -83,4 +83,3 @@ ESP32-DevKitC V2 上电前，请首先确认开发板完好无损。
 * `ESP32-DevKitC 原理图 <https://dl.espressif.com/dl/schematics/ESP32-Core-Board-V2_sch.pdf>`_ (PDF)
 * `《ESP32 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_cn.pdf>`_ (PDF)
 * `《ESP32-WROOM-32 技术规格书》 <https://espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_cn.pdf>`_ (PDF)
-

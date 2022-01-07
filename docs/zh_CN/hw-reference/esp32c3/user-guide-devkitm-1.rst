@@ -68,6 +68,7 @@ ESP32-C3-DevKitM-1 是一款入门级开发板，使用以尺寸小而得名的 
    * - RGB LED
      - 可寻址 RGB 发光二极管，由 GPIO8 驱动。
 
+
 开始开发应用
 ------------
 
@@ -155,6 +156,7 @@ J1
 7     RST   I           CHIP_PU
 8     GND   G           接地
 9     IO1   I/O/T       GPIO1, ADC1_CH1, XTAL_32K_N
+10    IO1   I/O/T       GPIO1, ADC1_CH1, XTAL_32K_N
 11    IO10  I/O/T       GPIO10, FSPICS0
 12    GND   G           接地
 13    5V    P           5 V 电源
@@ -214,7 +216,9 @@ J3
 
 有关本开发板的更多设计文档，请联系我们的商务部门 `sales@espressif.com <sales@espressif.com>`_。
 
-
 .. _ESP32-C3 技术规格书: https://www.espressif.com/sites/default/files/documentation/esp32-c3_datasheet_cn.pdf
 .. _ESP32-C3-MINI-1 规格书: https://www.espressif.com/sites/default/files/documentation/esp32-c3-mini-1_datasheet_cn.pdf
 .. _ESP32-C3-DevKitM-1 原理图: https://dl.espressif.com/dl/schematics/SCH_ESP32-C3-DEVKITM-1_V1_20200915A.pdf
+.. _ESP32-C3-DevKitM-1 PCB 布局图: https://dl.espressif.com/dl/schematics/PCB_ESP32-C3-DEVKITM-1_V1_20200915AA.pdf
+.. _ESP32-C3-DevKitM-1 尺寸图: https://dl.espressif.com/dl/schematics/DIMENSION_ESP32-C3-DEVKITM-1_V1_20200915AA.pdf
+.. _ESP32-C3-DevKitM-1 尺寸图源文件: https://dl.espressif.com/dl/schematics/DIMENSION_ESP32-C3-DEVKITM-1_V1_20200915AA.dxf

@@ -10,7 +10,7 @@ ESP32-PICO-KIT V3 入门指南
 
 * ESP32-PICO-KIT V3 迷你开发板
 * USB 2.0 线（A 型转 Micro-B 型）
-* PC（Windows、Linux 或 Mac OS）
+* PC（Windows、Linux 或 macOS）
 
 您可以跳过介绍部分，直接前往 `应用程序开发`_ 章节。
 
@@ -77,5 +77,3 @@ ESP32-PICO-KIT V3 上电前，请首先确认开发板完好无损。
 * `ESP32-PICO-KIT V3 原理图 <https://dl.espressif.com/dl/schematics/esp32-pico-kit-v3_schematic.pdf>`_ (PDF)
 * `《ESP32-PICO-D4 技术规格书》 <http://espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_cn.pdf>`_ (PDF)
 * :doc:`../../hw-reference/index`
-
-
