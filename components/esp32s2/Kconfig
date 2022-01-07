@@ -220,60 +220,6 @@ menu "ESP32S2-specific"
         default 0x4000 if ESP32S2_MEMMAP_TRACEMEM && !ESP32S2_MEMMAP_TRACEMEM_TWOBANKS
         default 0x0
 
-    config ESP32S2_DEBUG_OCDAWARE
-        bool "Make exception and panic handlers JTAG/OCD aware"
-        default y
-        select FREERTOS_DEBUG_OCDAWARE
-        help
-            The FreeRTOS panic and unhandled exception handers can detect a JTAG OCD debugger and
-            instead of panicking, have the debugger stop on the offending instruction.
-
-    config ESP32S2_BROWNOUT_DET
-        bool "Hardware brownout detect & reset"
-        depends on !IDF_ENV_FPGA
-        default y
-        help
-            The ESP32-S2 has a built-in brownout detector which can detect if the voltage is lower than
-            a specific value. If this happens, it will reset the chip in order to prevent unintended
-            behaviour.
-
-    choice ESP32S2_BROWNOUT_DET_LVL_SEL
-        prompt "Brownout voltage level"
-        depends on ESP32S2_BROWNOUT_DET
-        default ESP32S2_BROWNOUT_DET_LVL_SEL_7
-        help
-            The brownout detector will reset the chip when the supply voltage is approximately
-            below this level. Note that there may be some variation of brownout voltage level
-            between each ESP3-S2 chip.
-
-            #The voltage levels here are estimates, more work needs to be done to figure out the exact voltages
-            #of the brownout threshold levels.
-        config ESP32S2_BROWNOUT_DET_LVL_SEL_7
-            bool "2.44V"
-        config ESP32S2_BROWNOUT_DET_LVL_SEL_6
-            bool "2.56V"
-        config ESP32S2_BROWNOUT_DET_LVL_SEL_5
-            bool "2.67V"
-        config ESP32S2_BROWNOUT_DET_LVL_SEL_4
-            bool "2.84V"
-        config ESP32S2_BROWNOUT_DET_LVL_SEL_3
-            bool "2.98V"
-        config ESP32S2_BROWNOUT_DET_LVL_SEL_2
-            bool "3.19V"
-        config ESP32S2_BROWNOUT_DET_LVL_SEL_1
-            bool "3.30V"
-    endchoice
-
-    config ESP32S2_BROWNOUT_DET_LVL
-        int
-        default 1 if ESP32S2_BROWNOUT_DET_LVL_SEL_1
-        default 2 if ESP32S2_BROWNOUT_DET_LVL_SEL_2
-        default 3 if ESP32S2_BROWNOUT_DET_LVL_SEL_3
-        default 4 if ESP32S2_BROWNOUT_DET_LVL_SEL_4
-        default 5 if ESP32S2_BROWNOUT_DET_LVL_SEL_5
-        default 6 if ESP32S2_BROWNOUT_DET_LVL_SEL_6
-        default 7 if ESP32S2_BROWNOUT_DET_LVL_SEL_7
-
     choice ESP32S2_TIME_SYSCALL
         prompt "Timers used for gettimeofday function"
         default ESP32S2_TIME_SYSCALL_USE_RTC_SYSTIMER

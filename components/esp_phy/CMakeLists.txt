@@ -5,7 +5,7 @@ if(IDF_TARGET STREQUAL "esp32c2")
     return()
 endif()
 
-if(CONFIG_ESP32_NO_BLOBS OR CONFIG_ESP32S2_NO_BLOBS)
+if(CONFIG_APP_NO_BLOBS)
     set(link_binary_libs 0)
     set(ldfragments)
 else()

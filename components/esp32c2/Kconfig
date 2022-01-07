@@ -56,13 +56,6 @@ menu "ESP32C2-Specific"
 
     endmenu
 
-    config ESP32C2_DEBUG_OCDAWARE
-        bool "Make exception and panic handlers JTAG/OCD aware"
-        default y
-        select FREERTOS_DEBUG_OCDAWARE
-        help
-            The FreeRTOS panic and unhandled exception handers can detect a JTAG OCD debugger and
-            instead of panicking, have the debugger stop on the offending instruction.
 
     config ESP32C2_DEBUG_STUBS_ENABLE
         bool "OpenOCD debug stubs"
@@ -71,48 +64,6 @@ menu "ESP32C2-Specific"
         help
             Debug stubs are used by OpenOCD to execute pre-compiled onboard code which does some useful debugging,
             e.g. GCOV data dump.
-
-    config ESP32C2_BROWNOUT_DET
-        bool "Hardware brownout detect & reset"
-        default y
-        help
-            The ESP32C2 has a built-in brownout detector which can detect if the voltage is lower than
-            a specific value. If this happens, it will reset the chip in order to prevent unintended
-            behaviour.
-
-    choice ESP32C2_BROWNOUT_DET_LVL_SEL
-        prompt "Brownout voltage level"
-        depends on ESP32C2_BROWNOUT_DET
-        default ESP32C2_BROWNOUT_DET_LVL_SEL_7
-        help
-            The brownout detector will reset the chip when the supply voltage is approximately
-            below this level. Note that there may be some variation of brownout voltage level
-            between each chip.
-
-            #The voltage levels here are estimates, more work needs to be done to figure out the exact voltages
-            #of the brownout threshold levels.
-        config ESP32C2_BROWNOUT_DET_LVL_SEL_7
-            bool "2.51V"
-        config ESP32C2_BROWNOUT_DET_LVL_SEL_6
-            bool "2.64V"
-        config ESP32C2_BROWNOUT_DET_LVL_SEL_5
-            bool "2.76V"
-        config ESP32C2_BROWNOUT_DET_LVL_SEL_4
-            bool "2.92V"
-        config ESP32C2_BROWNOUT_DET_LVL_SEL_3
-            bool "3.10V"
-        config ESP32C2_BROWNOUT_DET_LVL_SEL_2
-            bool "3.27V"
-    endchoice
-
-    config ESP32C2_BROWNOUT_DET_LVL
-        int
-        default 2 if ESP32C2_BROWNOUT_DET_LVL_SEL_2
-        default 3 if ESP32C2_BROWNOUT_DET_LVL_SEL_3
-        default 4 if ESP32C2_BROWNOUT_DET_LVL_SEL_4
-        default 5 if ESP32C2_BROWNOUT_DET_LVL_SEL_5
-        default 6 if ESP32C2_BROWNOUT_DET_LVL_SEL_6
-        default 7 if ESP32C2_BROWNOUT_DET_LVL_SEL_7
 
     choice ESP32C2_TIME_SYSCALL
         prompt "Timers used for gettimeofday function"
@@ -186,14 +137,6 @@ menu "ESP32C2-Specific"
             - 32768 Hz if the 32k crystal oscillator is used. For this use value 3000 or more.
               In case more value will help improve the definition of the launch of the crystal.
               If the crystal could not start, it will be switched to internal RC.
-
-    config ESP32C2_NO_BLOBS
-        bool "No Binary Blobs"
-        depends on !BT_ENABLED
-        default n
-        help
-            If enabled, this disables the linking of binary libraries in the application build. Note
-            that after enabling this Wi-Fi/Bluetooth will not work.
 
     config ESP32C2_LIGHTSLEEP_GPIO_RESET_WORKAROUND # IDF-3904
         bool "light sleep GPIO reset workaround"
