@@ -9,7 +9,7 @@
 # - If core dump output is detected, it is converted to a human-readable report
 #   by espcoredump.py.
 #
-# SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 # Contains elements taken from miniterm "Very simple serial terminal" which
@@ -20,6 +20,7 @@
 #
 
 import codecs
+import io
 import os
 import queue
 import re
@@ -49,7 +50,7 @@ from idf_monitor_base.gdbhelper import GDBHelper
 from idf_monitor_base.line_matcher import LineMatcher
 from idf_monitor_base.logger import Logger
 from idf_monitor_base.output_helpers import normal_print, yellow_print
-from idf_monitor_base.serial_handler import SerialHandler, run_make
+from idf_monitor_base.serial_handler import SerialHandler, SerialHandlerNoElf, run_make
 from idf_monitor_base.serial_reader import LinuxReader, SerialReader
 from idf_monitor_base.web_socket_client import WebSocketClient
 from serial.tools import miniterm
@@ -92,10 +93,13 @@ class Monitor:
         self.console.output = get_converter(self.console.output)
         self.console.byte_output = get_converter(self.console.byte_output)
 
-        self.elf_file = elf_file
+        self.elf_file = elf_file or ''
+        self.elf_exists = os.path.exists(self.elf_file)
         self.logger = Logger(self.elf_file, self.console, timestamps, timestamp_format, b'', enable_address_decoding,
                              toolchain_prefix)
-        self.coredump = CoreDump(decode_coredumps, self.event_queue, self.logger, websocket_client, self.elf_file)
+
+        self.coredump = CoreDump(decode_coredumps, self.event_queue, self.logger, websocket_client,
+                                 self.elf_file) if self.elf_exists else None
 
         # allow for possibility the "make" arg is a list of arguments (for idf.py)
         self.make = make if os.path.exists(make) else shlex.split(make)  # type: Any[Union[str, List[str]], str]
@@ -108,17 +112,19 @@ class Monitor:
             self.serial_reader = SerialReader(self.serial, self.event_queue)
 
             self.gdb_helper = GDBHelper(toolchain_prefix, websocket_client, self.elf_file, self.serial.port,
-                                        self.serial.baudrate)
+                                        self.serial.baudrate) if self.elf_exists else None
+
         else:
             socket_mode = False
-            self.serial = subprocess.Popen([elf_file], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            self.serial = subprocess.Popen([self.elf_file], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                            stderr=subprocess.STDOUT)
             self.serial_reader = LinuxReader(self.serial, self.event_queue)
 
             self.gdb_helper = None
 
-        self.serial_handler = SerialHandler(b'', socket_mode, self.logger, decode_panic, PANIC_IDLE, b'', target,
-                                            False, False, self.serial, encrypted)
+        cls = SerialHandler if self.elf_exists else SerialHandlerNoElf
+        self.serial_handler = cls(b'', socket_mode, self.logger, decode_panic, PANIC_IDLE, b'', target,
+                                  False, False, self.serial, encrypted, self.elf_file)
 
         self.console_parser = ConsoleParser(eol)
         self.console_reader = ConsoleReader(self.console, self.event_queue, self.cmd_queue, self.console_parser,
@@ -227,7 +233,8 @@ class SerialMonitor(Monitor):
 
     def _pre_start(self) -> None:
         super()._pre_start()
-        self.gdb_helper.gdb_exit = False
+        if self.elf_exists:
+            self.gdb_helper.gdb_exit = False
         self.serial_handler.start_cmd_sent = False
 
     def serial_write(self, *args, **kwargs):  # type: ignore
@@ -240,12 +247,12 @@ class SerialMonitor(Monitor):
             pass  # this can happen if a non-ascii character was passed, ignoring
 
     def check_gdb_stub_and_run(self, line: bytes) -> None:  # type: ignore # The base class one is a None value
-        if self.gdb_helper.check_gdb_stub_trigger(line):
+        if self.gdb_helper and self.gdb_helper.check_gdb_stub_trigger(line):
             with self:  # disable console control
                 self.gdb_helper.run_gdb()
 
     def _main_loop(self) -> None:
-        if self.gdb_helper.gdb_exit:
+        if self.elf_exists and self.gdb_helper.gdb_exit:
             self.gdb_helper.gdb_exit = False
             time.sleep(GDB_EXIT_TIMEOUT)
             # Continue the program after exit from the GDB
@@ -283,7 +290,11 @@ def main() -> None:
         yellow_print('--- WARNING: Serial ports accessed as /dev/tty.* will hang gdb if launched.')
         yellow_print('--- Using %s instead...' % args.port)
 
-    args.elf_file.close()  # don't need this as a file
+    if isinstance(args.elf_file, io.BufferedReader):
+        elf_file = args.elf_file.name
+        args.elf_file.close()  # don't need this as a file
+    else:
+        elf_file = args.elf_file
 
     # remove the parallel jobserver arguments from MAKEFLAGS, as any
     # parent make is only running 1 job (monitor), so we can re-spawn
@@ -318,7 +329,7 @@ def main() -> None:
             yellow_print('--- idf_monitor on {p.name} {p.baudrate} ---'.format(p=serial_instance))
 
         monitor = cls(serial_instance,
-                      args.elf_file.name,
+                      elf_file,
                       args.print_filter,
                       args.make,
                       args.encrypted,
