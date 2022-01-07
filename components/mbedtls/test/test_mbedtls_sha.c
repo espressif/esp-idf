@@ -475,11 +475,11 @@ TEST_CASE("mbedtls SHA512/t", "[mbedtls]")
         }
     }
 }
+#endif //CONFIG_MBEDTLS_HARDWARE_SHA
 
-#ifdef CONFIG_SPIRAM
+#ifdef CONFIG_SPIRAM_USE_MALLOC
 TEST_CASE("mbedtls SHA256 PSRAM DMA", "[mbedtls]")
 {
-
     const unsigned CALLS = 256;
     const unsigned CALL_SZ = 16 * 1024;
     mbedtls_sha256_context sha256_ctx;
@@ -510,6 +510,26 @@ TEST_CASE("mbedtls SHA256 PSRAM DMA", "[mbedtls]")
     TEST_ASSERT_EQUAL_STRING(expected_hash, hash_str);
 
 }
-#endif //CONFIG_SPIRAM
+#endif //CONFIG_SPIRAM_USE_MALLOC
 
-#endif //CONFIG_MBEDTLS_HARDWARE_SHA
+#if CONFIG_ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK
+
+extern RTC_FAST_ATTR uint8_t rtc_stack[4096];
+
+static xSemaphoreHandle done_sem;
+
+TEST_CASE("mbedtls SHA stack in RTC RAM", "[mbedtls]")
+{
+    done_sem = xSemaphoreCreateBinary();
+    static StaticTask_t rtc_task;
+    memset(rtc_stack, 0, sizeof(rtc_stack));
+
+    TEST_ASSERT(esp_ptr_in_rtc_dram_fast(rtc_stack));
+
+    TEST_ASSERT_NOT_NULL(xTaskCreateStatic(tskRunSHA256Test, "tskRunSHA256Test_task", sizeof(rtc_stack), NULL,
+                                            3, rtc_stack, &rtc_task));
+    TEST_ASSERT_TRUE(xSemaphoreTake(done_sem, 10000 / portTICK_PERIOD_MS));
+    vSemaphoreDelete(done_sem);
+}
+
+#endif //CONFIG_ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK

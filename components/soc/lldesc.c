@@ -1,12 +1,12 @@
 #include "soc/lldesc.h"
 
-void lldesc_setup_link(lldesc_t *dmadesc, const void *data, int len, bool isrx)
+void lldesc_setup_link_constrained(lldesc_t *dmadesc, const void *data, int len, int max_desc_size, bool isrx)
 {
     int n = 0;
     while (len) {
         int dmachunklen = len;
-        if (dmachunklen > LLDESC_MAX_NUM_PER_DESC) {
-            dmachunklen = LLDESC_MAX_NUM_PER_DESC;
+        if (dmachunklen > max_desc_size) {
+            dmachunklen = max_desc_size;
         }
         if (isrx) {
             //Receive needs DMA length rounded to next 32-bit boundary
