@@ -1311,7 +1311,7 @@ WPA2-Enterprise 是企业无线网络的安全认证机制。在连接到接入�
      - PAP: 密码认证协议
      - CHAP: 询问握手身份验证协议
      - MSCHAP 和 MSCHAP-V2
-
+  - EAP-FAST: 这是一种基于受保护的访问凭据 (PAC) 的认证方法，使用身份验证和密码。目前使用此功能时需要禁用 USE_MBEDTLS_CRYPTO 标志。
 
 请查看 :example:`wifi/wifi_enterprise` 获取关于证书创建以及如何在 {IDF_TARGET_NAME} 上运行 wpa2_enterprise 示例的详细信息。
 

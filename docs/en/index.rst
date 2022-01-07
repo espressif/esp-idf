@@ -66,6 +66,3 @@ This is the documentation for Espressif IoT Development Framework (`esp-idf <htt
    语言/Languages <languages>
 
 * :ref:`genindex`
-
-
-

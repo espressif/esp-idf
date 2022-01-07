@@ -15,13 +15,13 @@ ESP-BLE-MESH 常见问题手册
 
 用户可以参考这些章节，快速找到问题的答案。该文档会根据各种渠道收集的反馈进行更新。
 
+
 .. _ble-mesh-faq-provisioner-development:
 
 1. Provisioner 开发
 --------------------
 
 通常而言，Provisioner 用于配网未配网设备并形成 mesh 网络。组网后，设备的角色变成节点。
-
 
 1.1 未配网设备加入 ESP-BLE-MESH 网络的流程是什么？
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -54,7 +54,7 @@ ESP-BLE-MESH 常见问题手册
 1.5 Provisioner 的单播地址是不是固定的？
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    :cpp:type:`esp_ble_mesh_prov_t` 中 :code:`prov_unicast_addr` 的值用于设置 Provisioner 的单播地址，只能在初始化期间设置一次，此后不能更改。 
+    :cpp:type:`esp_ble_mesh_prov_t` 中 :code:`prov_unicast_addr` 的值用于设置 Provisioner 的单播地址，只能在初始化期间设置一次，此后不能更改。
 
 1.6 Provisioner 的地址是否可以作为节点上报状态消息的目的地址？
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -320,7 +320,7 @@ ESP-BLE-MESH 常见问题手册
 1.22 Provisioner 如何管理 mesh 网络中的节点？
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    ESP-BLE-MESH 在示例中实现了一些基本的节点管理功能，比如 :cpp:func:`esp_ble_mesh_store_node_info`。 
+    ESP-BLE-MESH 在示例中实现了一些基本的节点管理功能，比如 :cpp:func:`esp_ble_mesh_store_node_info`。
     ESP-BLE-MESH 还提供可用于设置节点本地名称的 API :cpp:func:`esp_ble_mesh_provisioner_set_node_name` 和可用于获取节点本地名称的 API :cpp:func:`esp_ble_mesh_provisioner_get_node_name`。
 
 1.23 Provisioner 想要控制节点的服务器模型时需要什么？
@@ -346,31 +346,31 @@ ESP-BLE-MESH 常见问题手册
     - Configuration Client Model
 
         - API :cpp:func:`esp_ble_mesh_config_client_get_state` 可用于获取 Configuration Server Model 的 :cpp:type:`esp_ble_mesh_cfg_client_get_state_t` 值。
-        - API :cpp:func:`esp_ble_mesh_config_client_set_state` 可用于获取 Configuration Server Model 的 :cpp:type:`esp_ble_mesh_cfg_client_set_state_t` 值。
+        - API :cpp:func:`esp_ble_mesh_config_client_set_state` 可用于设置 Configuration Server Model 的 :cpp:type:`esp_ble_mesh_cfg_client_set_state_t` 值。
 
     - Health Client Model
 
         - API :cpp:func:`esp_ble_mesh_health_client_get_state` 可用于获取 Health Server Model 的 :cpp:type:`esp_ble_mesh_health_client_get_state_t` 值。
-        - API :cpp:func:`esp_ble_mesh_health_client_set_state` 可用于获取 Health Server Model 的 :cpp:type:`esp_ble_mesh_health_client_set_state_t` 值。
+        - API :cpp:func:`esp_ble_mesh_health_client_set_state` 可用于设置 Health Server Model 的 :cpp:type:`esp_ble_mesh_health_client_set_state_t` 值。
 
     - Generic Client Models
 
         - API :cpp:func:`esp_ble_mesh_generic_client_get_state` 可用于获取 Generic Server Model 的 :cpp:type:`esp_ble_mesh_generic_client_get_state_t` 值。
-        - API :cpp:func:`esp_ble_mesh_generic_client_set_state` 可用于获取 Generic Server Model 的 :cpp:type:`esp_ble_mesh_generic_client_set_state_t` 值。
+        - API :cpp:func:`esp_ble_mesh_generic_client_set_state` 可用于设置 Generic Server Model 的 :cpp:type:`esp_ble_mesh_generic_client_set_state_t` 值。
 
     - Lighting Client Models
 
         - API :cpp:func:`esp_ble_mesh_light_client_get_state` 可用于获取 Lighting Server Model 的 :cpp:type:`esp_ble_mesh_light_client_get_state_t` 值。
-        - API :cpp:func:`esp_ble_mesh_light_client_set_state` 可用于获取 Lighting Server Model 的 :cpp:type:`esp_ble_mesh_light_client_set_state_t` 值。
+        - API :cpp:func:`esp_ble_mesh_light_client_set_state` 可用于设置 Lighting Server Model 的 :cpp:type:`esp_ble_mesh_light_client_set_state_t` 值。
 
     - Sensor Client Models
 
         - API :cpp:func:`esp_ble_mesh_sensor_client_get_state` 可用于获取 Sensor Server Model 的 :cpp:type:`esp_ble_mesh_sensor_client_get_state_t` 值。
-        - API :cpp:func:`esp_ble_mesh_sensor_client_set_state` 可用于获取 Sensor Server Model 的 :cpp:type:`esp_ble_mesh_sensor_client_set_state_t` 值。
+        - API :cpp:func:`esp_ble_mesh_sensor_client_set_state` 可用于设置 Sensor Server Model 的 :cpp:type:`esp_ble_mesh_sensor_client_set_state_t` 值。
 
     - Time and Scenes Client Models
         - API :cpp:func:`esp_ble_mesh_time_scene_client_get_state` 可用于获取 Time and Scenes Server Model 的 :cpp:type:`esp_ble_mesh_time_scene_client_get_state_t` 值。
-        - API :cpp:func:`esp_ble_mesh_time_scene_client_set_state` 可用于获取 Time and Scenes Server Model 的 :cpp:type:`esp_ble_mesh_time_scene_client_set_state_t` 值。
+        - API :cpp:func:`esp_ble_mesh_time_scene_client_set_state` 可用于设置 Time and Scenes Server Model 的 :cpp:type:`esp_ble_mesh_time_scene_client_set_state_t` 值。
 
 
 .. _ble-mesh-faq-node-development:
@@ -502,7 +502,7 @@ ESP-BLE-MESH 常见问题手册
 2.18 设备通信必须要网关吗？
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    - 情况 1：节点仅在 mesh 网络内通信。这种情况下，不需要网关。ESP-BLE-MESH 网络是一个泛洪的网络，网络中的消息没有固定的路径，节点与节点之间可以随意通信. 
+    - 情况 1：节点仅在 mesh 网络内通信。这种情况下，不需要网关。ESP-BLE-MESH 网络是一个泛洪的网络，网络中的消息没有固定的路径，节点与节点之间可以随意通信.
 
     - 情况 2：如果用户想要远程控制网络，比如在到家之前打开某些节点，则需要网关。
 
@@ -539,6 +539,7 @@ ESP-BLE-MESH 常见问题手册
         - :code:`Bluetooth --> Bluedriod Enable --> Use dynamic memory allocation in BT/BLE stack.`
         - :code:`Bluetooth --> Blutooth controller --> BLE full scan feature supported.`
         - :code:`Wi-Fi --> Software controls Wi-Fi/Bluetooth coexistence --> Wi-Fi`
+
 
 .. _ble-mesh-faq-fast-provisioning:
 
