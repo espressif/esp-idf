@@ -71,14 +71,6 @@ config SOC_I2C_SUPPORT_RTC
     bool
     default y
 
-config SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
-    bool
-    default y
-
-config SOC_LEDC_SUPPORT_REF_TICK
-    bool
-    default y
-
 config SOC_LEDC_SUPPORT_XTAL_CLOCK
     bool
     default y
@@ -135,7 +127,15 @@ config SOC_RTCIO_WAKE_SUPPORTED
     bool
     default y
 
+config SOC_ADC_SUPPORTED
+    bool
+    default y
+
 config SOC_PCNT_SUPPORTED
+    bool
+    default y
+
+config SOC_WIFI_SUPPORTED
     bool
     default y
 
@@ -260,6 +260,10 @@ config SOC_APPCPU_HAS_CLOCK_GATING_BUG
     default y
 
 config SOC_ADC_RTC_CTRL_SUPPORTED
+    bool
+    default y
+
+config SOC_ADC_DIG_CTRL_SUPPORTED
     bool
     default y
 
@@ -630,6 +634,10 @@ config SOC_TIMER_GROUP_COUNTER_BIT_WIDTH
 config SOC_TIMER_GROUP_SUPPORT_XTAL
     bool
     default y
+
+config SOC_TIMER_GROUP_TOTAL_TIMERS
+    int
+    default 4
 
 config SOC_TOUCH_SENSOR_NUM
     int

@@ -82,6 +82,7 @@ Unzip the zip file to ``C:\Program Files`` (or some other location). The zip fil
 
 Next, the ``bin`` subdirectory of this directory must be :ref:`added to your Path <add-directory-windows-path>`. For example, the directory to add may be ``C:\Program Files\{IDF_TARGET_TOOLCHAIN_PREFIX}\bin``.
 
+
 .. _add-directory-windows-path:
 
 Adding Directory to Path

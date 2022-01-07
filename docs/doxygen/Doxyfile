@@ -81,8 +81,7 @@ INPUT = \
     $(PROJECT_PATH)/components/hal/include/hal/lcd_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/adc_types.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/adc_channel.h \
-    $(PROJECT_PATH)/components/driver/include/driver/adc_common.h \
-    $(PROJECT_PATH)/components/driver/$(IDF_TARGET)/include/driver/adc.h \
+    $(PROJECT_PATH)/components/driver/include/driver/adc.h \
     $(PROJECT_PATH)/components/esp_adc_cal/include/esp_adc_cal.h \
     $(PROJECT_PATH)/components/hal/include/hal/dac_types.h \
     $(PROJECT_PATH)/components/driver/include/driver/dac_common.h \
@@ -183,6 +182,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_system/include/esp_int_wdt.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_task_wdt.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_crc.h \
+    $(PROJECT_PATH)/components/esp_hw_support/include/esp_mac.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_freertos_hooks.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_ipc.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_expression_with_stack.h \

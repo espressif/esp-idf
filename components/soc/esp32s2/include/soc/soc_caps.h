@@ -39,6 +39,7 @@
 #pragma once
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
+#define SOC_ADC_SUPPORTED               1
 #define SOC_DAC_SUPPORTED               1
 #define SOC_TWAI_SUPPORTED              1
 #define SOC_CP_DMA_SUPPORTED            1
@@ -48,6 +49,7 @@
 #define SOC_RISCV_COPROC_SUPPORTED      1
 #define SOC_USB_OTG_SUPPORTED           1
 #define SOC_PCNT_SUPPORTED              1
+#define SOC_WIFI_SUPPORTED              1
 #define SOC_ULP_SUPPORTED               1
 #define SOC_CCOMP_TIMER_SUPPORTED       1
 #define SOC_DIG_SIGN_SUPPORTED          1
@@ -73,6 +75,7 @@
 /*-------------------------- ADC CAPS ----------------------------------------*/
 /*!< SAR ADC Module*/
 #define SOC_ADC_RTC_CTRL_SUPPORTED              1
+#define SOC_ADC_DIG_CTRL_SUPPORTED              1
 #define SOC_ADC_ARBITER_SUPPORTED               1
 #define SOC_ADC_FILTER_SUPPORTED                1
 #define SOC_ADC_MONITOR_SUPPORTED               1
@@ -94,7 +97,6 @@
 /*!< Calibration */
 #define SOC_ADC_CALIBRATION_V1_SUPPORTED        (1) /*!< support HW offset calibration version 1*/
 
-
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #define SOC_BROWNOUT_RESET_SUPPORTED 1
 
@@ -114,18 +116,18 @@
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-S2 has 1 GPIO peripheral
 #define SOC_GPIO_PORT           (1U)
-#define SOC_GPIO_PIN_COUNT      (48)
+#define SOC_GPIO_PIN_COUNT      (47)
 
-// On ESP32 those PADs which have RTC functions must set pullup/down/capability via RTC register.
+// On ESP32-S2 those PADs which have RTC functions must set pullup/down/capability via RTC register.
 // On ESP32-S2, Digital IOs have their own registers to control pullup/down/capability, independent with RTC registers.
 #define SOC_GPIO_SUPPORT_RTC_INDEPENDENT (1)
 // Force hold is a new function of ESP32-S2
 #define SOC_GPIO_SUPPORT_FORCE_HOLD      (1)
 
-// 0~47 except from 22~25, 47 are valid
-#define SOC_GPIO_VALID_GPIO_MASK             (0xFFFFFFFFFFFFULL & ~(0ULL | BIT22 | BIT23 | BIT24 | BIT25 | BIT47))
-// GPIO 46, 47 are input only
-#define SOC_GPIO_VALID_OUTPUT_GPIO_MASK     (SOC_GPIO_VALID_GPIO_MASK & ~(0ULL | BIT46 | BIT47))
+// 0~46 except from 22~25 are valid
+#define SOC_GPIO_VALID_GPIO_MASK             (0x7FFFFFFFFFFFULL & ~(0ULL | BIT22 | BIT23 | BIT24 | BIT25))
+// GPIO 46 is input only
+#define SOC_GPIO_VALID_OUTPUT_GPIO_MASK     (SOC_GPIO_VALID_GPIO_MASK & ~(0ULL | BIT46))
 
 // Support to configure slept status
 #define SOC_GPIO_SUPPORT_SLP_SWITCH  (1)
@@ -151,14 +153,19 @@
 #define SOC_I2C_SUPPORT_REF_TICK   (1)
 #define SOC_I2C_SUPPORT_APB        (1)
 
+/*-------------------------- APLL CAPS ----------------------------------------*/
+#define SOC_CLK_APLL_SUPPORTED       (1)
+// apll_multiplier_out = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536)
+#define SOC_APLL_MULTIPLIER_OUT_MIN_HZ (350000000) // 350 MHz
+#define SOC_APLL_MULTIPLIER_OUT_MAX_HZ (500000000) // 500 MHz
+#define SOC_APLL_MIN_HZ    (5303031)   // 5.303031 MHz, refer to 'periph_rtc_apll_freq_set' for the calculation
+#define SOC_APLL_MAX_HZ    (125000000) // 125MHz, refer to 'periph_rtc_apll_freq_set' for the calculation
+
 /*-------------------------- I2S CAPS ----------------------------------------*/
 // ESP32-S2 have 1 I2S
 #define SOC_I2S_NUM                (1U)
-#define SOC_I2S_SUPPORTS_APLL      (1)// ESP32-S2 support APLL
+#define SOC_I2S_SUPPORTS_APLL      (1) // ESP32-S2 support APLL
 #define SOC_I2S_SUPPORTS_DMA_EQUAL (1)
-#define SOC_I2S_APLL_MIN_FREQ      (250000000)
-#define SOC_I2S_APLL_MAX_FREQ      (500000000)
-#define SOC_I2S_APLL_MIN_RATE      (10675) //in Hz, I2S Clock rate limited by hardware
 #define SOC_I2S_LCD_I80_VARIANT    (1)
 
 /*-------------------------- LCD CAPS ----------------------------------------*/
@@ -246,11 +253,11 @@
 #define SOC_SYSTIMER_BIT_WIDTH_HI (32) // Bit width of systimer high part
 
 /*-------------------------- TIMER GROUP CAPS --------------------------------*/
-#define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH (64)
 #define SOC_TIMER_GROUPS                  (2)
 #define SOC_TIMER_GROUP_TIMERS_PER_GROUP  (2)
+#define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH (64)
 #define SOC_TIMER_GROUP_SUPPORT_XTAL      (1)
-#define SOC_TIMER_GROUP_TOTAL_TIMERS (SOC_TIMER_GROUPS * SOC_TIMER_GROUP_TIMERS_PER_GROUP)
+#define SOC_TIMER_GROUP_TOTAL_TIMERS      (4)
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_VERSION_2                 (1)     /*!<Hardware version of touch sensor */

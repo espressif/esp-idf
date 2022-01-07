@@ -8,7 +8,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "soc/cpu.h"
+#include "esp_cpu.h"
 #include "soc/soc_memory_types.h"
 
 #if __XTENSA__

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,8 +8,12 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <stdio.h>
+#include <string.h>
 #include "usb/usb_helpers.h"
 #include "usb/usb_types_ch9.h"
+#include "esp_check.h"
+#include "usb/usb_host.h"
 
 // ---------------------------------------- Configuration Descriptor Parsing -------------------------------------------
 
@@ -165,4 +169,138 @@ const usb_ep_desc_t *usb_parse_endpoint_descriptor_by_address(const usb_config_d
     return ep_desc;
 }
 
-// ------------------------------------------------------ Misc ---------------------------------------------------------
+// ----------------------------------------------- Descriptor Printing -------------------------------------------------
+
+static void print_ep_desc(const usb_ep_desc_t *ep_desc)
+{
+    const char *ep_type_str;
+    int type = ep_desc->bmAttributes & USB_BM_ATTRIBUTES_XFERTYPE_MASK;
+
+    switch (type) {
+        case USB_BM_ATTRIBUTES_XFER_CONTROL:
+            ep_type_str = "CTRL";
+            break;
+        case USB_BM_ATTRIBUTES_XFER_ISOC:
+            ep_type_str = "ISOC";
+            break;
+        case USB_BM_ATTRIBUTES_XFER_BULK:
+            ep_type_str = "BULK";
+            break;
+        case USB_BM_ATTRIBUTES_XFER_INT:
+            ep_type_str = "INT";
+            break;
+        default:
+            ep_type_str = NULL;
+            break;
+    }
+
+    printf("\t\t*** Endpoint descriptor ***\n");
+    printf("\t\tbLength %d\n", ep_desc->bLength);
+    printf("\t\tbDescriptorType %d\n", ep_desc->bDescriptorType);
+    printf("\t\tbEndpointAddress 0x%x\tEP %d %s\n", ep_desc->bEndpointAddress,
+           USB_EP_DESC_GET_EP_NUM(ep_desc),
+           USB_EP_DESC_GET_EP_DIR(ep_desc) ? "IN" : "OUT");
+    printf("\t\tbmAttributes 0x%x\t%s\n", ep_desc->bmAttributes, ep_type_str);
+    printf("\t\twMaxPacketSize %d\n", ep_desc->wMaxPacketSize);
+    printf("\t\tbInterval %d\n", ep_desc->bInterval);
+}
+
+static void usbh_print_intf_desc(const usb_intf_desc_t *intf_desc)
+{
+    printf("\t*** Interface descriptor ***\n");
+    printf("\tbLength %d\n", intf_desc->bLength);
+    printf("\tbDescriptorType %d\n", intf_desc->bDescriptorType);
+    printf("\tbInterfaceNumber %d\n", intf_desc->bInterfaceNumber);
+    printf("\tbAlternateSetting %d\n", intf_desc->bAlternateSetting);
+    printf("\tbNumEndpoints %d\n", intf_desc->bNumEndpoints);
+    printf("\tbInterfaceClass 0x%x\n", intf_desc->bInterfaceProtocol);
+    printf("\tiInterface %d\n", intf_desc->iInterface);
+}
+
+static void usbh_print_cfg_desc(const usb_config_desc_t *cfg_desc)
+{
+    printf("*** Configuration descriptor ***\n");
+    printf("bLength %d\n", cfg_desc->bLength);
+    printf("bDescriptorType %d\n", cfg_desc->bDescriptorType);
+    printf("wTotalLength %d\n", cfg_desc->wTotalLength);
+    printf("bNumInterfaces %d\n", cfg_desc->bNumInterfaces);
+    printf("bConfigurationValue %d\n", cfg_desc->bConfigurationValue);
+    printf("iConfiguration %d\n", cfg_desc->iConfiguration);
+    printf("bmAttributes 0x%x\n", cfg_desc->bmAttributes);
+    printf("bMaxPower %dmA\n", cfg_desc->bMaxPower * 2);
+}
+
+void usb_print_device_descriptor(const usb_device_desc_t *devc_desc)
+{
+    if (devc_desc == NULL) {
+        return;
+    }
+
+    printf("*** Device descriptor ***\n");
+    printf("bLength %d\n", devc_desc->bLength);
+    printf("bDescriptorType %d\n", devc_desc->bDescriptorType);
+    printf("bcdUSB %d.%d0\n", ((devc_desc->bcdUSB >> 8) & 0xF), ((devc_desc->bcdUSB >> 4) & 0xF));
+    printf("bDeviceClass 0x%x\n", devc_desc->bDeviceClass);
+    printf("bDeviceSubClass 0x%x\n", devc_desc->bDeviceSubClass);
+    printf("bDeviceProtocol 0x%x\n", devc_desc->bDeviceProtocol);
+    printf("bMaxPacketSize0 %d\n", devc_desc->bMaxPacketSize0);
+    printf("idVendor 0x%x\n", devc_desc->idVendor);
+    printf("idProduct 0x%x\n", devc_desc->idProduct);
+    printf("bcdDevice %d.%d0\n", ((devc_desc->bcdDevice >> 8) & 0xF), ((devc_desc->bcdDevice >> 4) & 0xF));
+    printf("iManufacturer %d\n", devc_desc->iManufacturer);
+    printf("iProduct %d\n", devc_desc->iProduct);
+    printf("iSerialNumber %d\n", devc_desc->iSerialNumber);
+    printf("bNumConfigurations %d\n", devc_desc->bNumConfigurations);
+}
+
+void usb_print_config_descriptor(const usb_config_desc_t *cfg_desc, print_class_descriptor_cb class_specific_cb)
+{
+    if (cfg_desc == NULL) {
+        return;
+    }
+
+    int offset = 0;
+    uint16_t wTotalLength = cfg_desc->wTotalLength;
+    const usb_standard_desc_t *next_desc = (const usb_standard_desc_t *)cfg_desc;
+
+    do {
+        switch (next_desc->bDescriptorType) {
+            case USB_W_VALUE_DT_CONFIG:
+                usbh_print_cfg_desc((const usb_config_desc_t *)next_desc);
+                break;
+            case USB_W_VALUE_DT_INTERFACE:
+                usbh_print_intf_desc((const usb_intf_desc_t *)next_desc);
+                break;
+            case USB_W_VALUE_DT_ENDPOINT:
+                print_ep_desc((const usb_ep_desc_t *)next_desc);
+                break;
+            default:
+                if(class_specific_cb) {
+                    class_specific_cb(next_desc);
+                }
+                break;
+        }
+
+        next_desc = usb_parse_next_descriptor(next_desc, wTotalLength, &offset);
+
+    } while (next_desc != NULL);
+}
+
+void usb_print_string_descriptor(const usb_str_desc_t *str_desc)
+{
+    if (str_desc == NULL) {
+        return;
+    }
+
+    for (int i = 0; i < str_desc->bLength/2; i++) {
+        /*
+        USB String descriptors of UTF-16.
+        Right now We just skip any character larger than 0xFF to stay in BMP Basic Latin and Latin-1 Supplement range.
+        */
+        if (str_desc->wData[i] > 0xFF) {
+            continue;
+        }
+        printf("%c", (char)str_desc->wData[i]);
+    }
+    printf("\n");
+}

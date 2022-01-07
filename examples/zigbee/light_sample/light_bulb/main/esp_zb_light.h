@@ -35,8 +35,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "light_driver.h"
 #include "zboss_api.h"
+#include "light_driver.h"
 
 /* Zigbee configuration */
 #define IEEE_CHANNEL_MASK               (1l << 13)  /* Zigbee default setting is channel 13 for light example usage */
@@ -67,3 +67,12 @@ typedef struct {
 } bulb_device_ctx_t;
 
 #define HA_ESP_LIGHT_ENDPOINT        10    /* esp light bulb device endpoint, used to process light controlling commands */
+#define ZB_ESP_DEFAULT_RADIO_CONFIG()                           \
+    {                                                           \
+        .radio_mode = RADIO_MODE_NATIVE,                        \
+    }
+
+#define ZB_ESP_DEFAULT_HOST_CONFIG()                            \
+    {                                                           \
+        .host_connection_mode = HOST_CONNECTION_MODE_NONE,      \
+    }

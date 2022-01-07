@@ -3,21 +3,35 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 // The long term plan is to have a single soc_caps.h for each peripheral.
 // During the refactoring and multichip support development process, we
 // seperate these information into periph_caps.h for each peripheral and
 // include them here.
 
+/*
+ * These defines are parsed and imported as kconfig variables via the script
+ * `tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py`
+ *
+ * If this file is changed the script will automatically run the script
+ * and generate the kconfig variables as part of the pre-commit hooks.
+ *
+ * It can also be ran manually with `./tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py 'components/soc/esp32c3/include/soc/'`
+ *
+ * For more information see `tools/gen_soc_caps_kconfig/README.md`
+ *
+*/
+
 #pragma once
 
-#define SOC_CPU_CORES_NUM               1
-#define SOC_GDMA_SUPPORTED              1
-#define SOC_BT_SUPPORTED                1
-#define SOC_DIG_SIGN_SUPPORTED          1
-#define SOC_HMAC_SUPPORTED              1
-#define SOC_ASYNC_MEMCPY_SUPPORTED      1
-
 /*-------------------------- COMMON CAPS ---------------------------------------*/
+#define SOC_CPU_CORES_NUM               1
+#define SOC_ADC_SUPPORTED               1
+#define SOC_DEDICATED_GPIO_SUPPORTED    1
+#define SOC_GDMA_SUPPORTED              1
+#define SOC_BT_SUPPORTED                0 // Enable during bringup, IDF-4357
+#define SOC_WIFI_SUPPORTED              0 // Enable during bringup, IDF-3905
+#define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 3
 #define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS 1
@@ -25,6 +39,7 @@
 #define SOC_RTC_SLOW_MEM_SUPPORTED      0
 #define SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY             0
 #define SOC_ICACHE_ACCESS_RODATA_SUPPORTED 1
+#define SOC_FLASH_ENCRYPTION_XTS_AES    1
 
 /*-------------------------- AES CAPS -----------------------------------------*/
 #define SOC_AES_SUPPORT_DMA     (1)
@@ -33,19 +48,27 @@
 #define SOC_AES_GDMA            (1)
 
 /*-------------------------- ADC CAPS -------------------------------*/
+/*!< SAR ADC Module*/
+#define SOC_ADC_DIG_CTRL_SUPPORTED              1
+#define SOC_ADC_ARBITER_SUPPORTED               1
+#define SOC_ADC_FILTER_SUPPORTED                1
+#define SOC_ADC_MONITOR_SUPPORTED               1
 #define SOC_ADC_PERIPH_NUM                      (2)
-#define SOC_ADC_PATT_LEN_MAX                    (16)
 #define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         ((PERIPH_NUM==0)? 5 : 1)
 #define SOC_ADC_MAX_CHANNEL_NUM                 (5)
-#define SOC_ADC_MAX_BITWIDTH                    (12)
-#define SOC_ADC_CALIBRATION_V1_SUPPORTED        (1) /*!< support HW offset calibration version 1*/
+
+/*!< Digital */
+#define SOC_ADC_DIGI_CONTROLLER_NUM             (1U)
+#define SOC_ADC_PATT_LEN_MAX                    (8) /*!< One pattern table, each contains 8 items. Each item takes 1 byte */
+#define SOC_ADC_DIGI_MAX_BITWIDTH               (12)
 #define SOC_ADC_DIGI_FILTER_NUM                 (2)
 #define SOC_ADC_DIGI_MONITOR_NUM                (2)
-#define SOC_ADC_HW_CALIBRATION_V1               (1) /*!< support HW offset calibration */
-#define SOC_ADC_SUPPORT_DMA_MODE(PERIPH_NUM)    1
-//F_sample = F_digi_con / 2 / interval. F_digi_con = 5M for now. 30 <= interva <= 4095
+/*!< F_sample = F_digi_con / 2 / interval. F_digi_con = 5M for now. 30 <= interva <= 4095 */
 #define SOC_ADC_SAMPLE_FREQ_THRES_HIGH          83333
 #define SOC_ADC_SAMPLE_FREQ_THRES_LOW           611
+
+/*!< RTC */
+#define SOC_ADC_MAX_BITWIDTH                    (12)
 
 /*-------------------------- APB BACKUP DMA CAPS -------------------------------*/
 #define SOC_APB_BACKUP_DMA              (1)
@@ -90,13 +113,17 @@
 // GPIO0~5 on ESP8684 can support chip deep sleep wakeup
 #define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP   (1)
 
-// GPIO19 on ESP8684 is invalid.
-#define SOC_GPIO_VALID_GPIO_MASK        (((1U<<SOC_GPIO_PIN_COUNT) - 1) & (~(BIT19)))
+#define SOC_GPIO_VALID_GPIO_MASK        ((1U<<SOC_GPIO_PIN_COUNT) - 1)
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK SOC_GPIO_VALID_GPIO_MASK
 #define SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK        (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5)
 
 // Support to configure sleep status
 #define SOC_GPIO_SUPPORT_SLP_SWITCH  (1)
+
+/*-------------------------- Dedicated GPIO CAPS -----------------------------*/
+#define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
+#define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (8) /*!< 8 inward channels on each CPU core */
+#define SOC_DEDIC_PERIPH_ALWAYS_ENABLE  (1) /*!< The dedicated GPIO (a.k.a. fast GPIO) is featured by some customized CPU instructions, which is always enabled */
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
 // TODO IDF-3918
@@ -129,6 +156,11 @@
 #define SOC_RTC_CNTL_CPU_PD_DMA_BLOCK_SIZE      (SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH >> 3)
 
 #define SOC_RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE  (SOC_RTC_CNTL_CPU_PD_REG_FILE_NUM * (SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH >> 3))
+
+/*-------------------------- RTCIO CAPS --------------------------------------*/
+/* No dedicated RTCIO subsystem on ESP8684. RTC functions are still supported
+ * for hold, wake & 32kHz crystal functions - via rtc_cntl_reg */
+#define SOC_RTCIO_PIN_COUNT    (0U)
 
 /*--------------------------- RSA CAPS ---------------------------------------*/
 #define SOC_RSA_MAX_BIT_LEN    (3072)
@@ -202,7 +234,7 @@
 #define SOC_TIMER_GROUP_TIMERS_PER_GROUP  (1U)
 #define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH (54)
 #define SOC_TIMER_GROUP_SUPPORT_XTAL      (1)
-#define SOC_TIMER_GROUP_TOTAL_TIMERS (SOC_TIMER_GROUPS * SOC_TIMER_GROUP_TIMERS_PER_GROUP)
+#define SOC_TIMER_GROUP_TOTAL_TIMERS      (1U)
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_NUM            (0U)    /*! No touch sensors on ESP8684 */
@@ -213,7 +245,6 @@
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP8684 has 2 UARTs
 #define SOC_UART_NUM                (2)
-
 #define SOC_UART_FIFO_LEN           (128)      /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX        (5000000)  /*!< Max bit rate supported by UART */
 

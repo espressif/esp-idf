@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 #include "esp_log.h"
 #include "esp_err.h"
 
+#include "esp_private/usb_phy.h"
 #include "usb/usb_host.h"
 #include "usb/cdc_acm_host.h"
 #include <string.h>
@@ -27,33 +28,32 @@ static uint8_t tx_buf[] = "HELLO";
 static uint8_t tx_buf2[] = "WORLD";
 static int nb_of_responses;
 static int nb_of_responses2;
+static usb_phy_handle_t phy_hdl = NULL;
 
-void test_usb_force_conn_state(bool connected, TickType_t delay_ticks)
+static void force_conn_state(bool connected, TickType_t delay_ticks)
 {
+    TEST_ASSERT_NOT_EQUAL(NULL, phy_hdl);
     if (delay_ticks > 0) {
         //Delay of 0 ticks causes a yield. So skip if delay_ticks is 0.
         vTaskDelay(delay_ticks);
     }
-    usb_wrap_dev_t *wrap = &USB_WRAP;
-    if (connected) {
-        //Disable test mode to return to previous internal PHY configuration
-        wrap->test_conf.test_enable = 0;
-    } else {
-        /*
-        Mimic a disconnection by using the internal PHY's test mode.
-        Force Output Enable to 1 (even if the controller isn't outputting). With test_tx_dp and test_tx_dm set to 0,
-        this will look like a disconnection.
-        */
-        wrap->test_conf.val = 0;
-        wrap->test_conf.test_usb_wrap_oe = 1;
-        wrap->test_conf.test_enable = 1;
-    }
+    ESP_ERROR_CHECK(usb_phy_action(phy_hdl, (connected) ? USB_PHY_ACTION_HOST_ALLOW_CONN : USB_PHY_ACTION_HOST_FORCE_DISCONN));
 }
 
 void usb_lib_task(void *arg)
 {
+    //Initialize the internal USB PHY to connect to the USB OTG peripheral. We manually install the USB PHY for testing
+    usb_phy_config_t phy_config = {
+        .controller = USB_PHY_CTRL_OTG,
+        .target = USB_PHY_TARGET_INT,
+        .otg_mode = USB_OTG_MODE_HOST,
+        .otg_speed = USB_PHY_SPEED_UNDEFINED,   //In Host mode, the speed is determined by the connected device
+        .gpio_conf = NULL,
+    };
+    TEST_ASSERT_EQUAL(ESP_OK, usb_new_phy(&phy_config, &phy_hdl));
     // Install USB Host driver. Should only be called once in entire application
     const usb_host_config_t host_config = {
+        .skip_phy_setup = true,
         .intr_flags = ESP_INTR_FLAG_LEVEL1,
     };
     TEST_ASSERT_EQUAL(ESP_OK, usb_host_install(&host_config));
@@ -79,6 +79,9 @@ void usb_lib_task(void *arg)
     vTaskDelay(10); // Short delay to allow clients clean-up
     usb_host_lib_handle_events(0, NULL); // Make sure there are now pending events
     TEST_ASSERT_EQUAL(ESP_OK, usb_host_uninstall());
+    //Tear down USB PHY
+    TEST_ASSERT_EQUAL(ESP_OK, usb_del_phy(phy_hdl));
+    phy_hdl = NULL;
     vTaskDelete(NULL);
 }
 
@@ -290,11 +293,11 @@ TEST_CASE("USB Host CDC-ACM driver: Sudden disconnection test", "[cdc_acm][ignor
     TEST_ASSERT_EQUAL(ESP_OK, cdc_acm_host_open(0x303A, 0x4002, 0, &dev_config, &cdc_dev));
     TEST_ASSERT_NOT_NULL(cdc_dev);
 
-    test_usb_force_conn_state(false, pdMS_TO_TICKS(10));
+    force_conn_state(false, pdMS_TO_TICKS(10));
     // Notify will succeed only if CDC_ACM_HOST_DEVICE_DISCONNECTED notification was generated
     TEST_ASSERT_EQUAL(1, ulTaskNotifyTake(false, pdMS_TO_TICKS(100)));
 
-    test_usb_force_conn_state(true, 0); // Switch back to real PHY
+    force_conn_state(true, 0); // Switch back to real PHY
     TEST_ASSERT_EQUAL(ESP_OK, cdc_acm_host_uninstall());
     vTaskDelay(20); //Short delay to allow task to be cleaned up
 }

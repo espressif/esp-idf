@@ -1,7 +1,6 @@
-
 /*
- * Copyright (c) 2017 Intel Corporation
- * Additional Copyright (c) 2020 Espressif Systems (Shanghai) PTE LTD
+ * SPDX-FileCopyrightText: 2017 Intel Corporation
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */

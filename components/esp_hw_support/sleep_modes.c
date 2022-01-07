@@ -25,7 +25,6 @@
 
 #include "driver/uart.h"
 
-#include "soc/cpu.h"
 #include "soc/rtc.h"
 #include "soc/soc_caps.h"
 
@@ -144,7 +143,7 @@ typedef struct {
     uint64_t sleep_duration;
     uint32_t wakeup_triggers : 15;
     uint32_t ext1_trigger_mode : 1;
-    uint32_t ext1_rtc_gpio_mask : 18;
+    uint32_t ext1_rtc_gpio_mask : 22; //22 is the maximum RTCIO number in all chips
     uint32_t ext0_trigger_level : 1;
     uint32_t ext0_rtc_gpio_num : 5;
     uint32_t gpio_wakeup_mask : 6;
@@ -155,6 +154,9 @@ typedef struct {
     uint32_t rtc_clk_cal_period;
     uint64_t rtc_ticks_at_sleep_start;
 } sleep_config_t;
+
+
+_Static_assert(22 >= SOC_RTCIO_PIN_COUNT, "Chip has more RTCIOs than 22, should increase ext1_rtc_gpio_mask field size");
 
 static sleep_config_t s_config = {
     .pd_options = {

@@ -19,7 +19,7 @@ Peripherals API
     ledc
     :SOC_MCPWM_SUPPORTED: mcpwm
     :SOC_PCNT_SUPPORTED: pcnt
-    rmt
+    :SOC_RMT_SUPPORTED: rmt
     :esp32 or esp32s3: sd_pullup_requirements
     :SOC_SDMMC_HOST_SUPPORTED: sdmmc_host
     sdspi_host

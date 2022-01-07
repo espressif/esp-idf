@@ -36,9 +36,17 @@
  */
 
 #include "zboss_api.h"
-#include "esp_err.h"
 
 /* Zigbee Configuration */
-#define IEEE_CHANNEL_MASK               (1l << 13)  /* ZigBee default setting is channel 13 for light example usage */
+#define IEEE_CHANNEL_MASK               (1l << 13)  /* Zigbee default setting is channel 13 for light example usage */
 #define ERASE_PERSISTENT_CONFIG         ZB_TRUE     /* erase network devices before running example */
 #define MAX_CHILDREN                    10          /* the max amount of connected devices */
+#define ZB_ESP_DEFAULT_RADIO_CONFIG()                           \
+    {                                                           \
+        .radio_mode = RADIO_MODE_NATIVE,                        \
+    }
+
+#define ZB_ESP_DEFAULT_HOST_CONFIG()                            \
+    {                                                           \
+        .host_connection_mode = HOST_CONNECTION_MODE_NONE,      \
+    }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -65,7 +65,7 @@ void test_hcd_teardown(hcd_port_handle_t port_hdl);
 /**
  * @brief Wait for a connection on an HCD port
  *
- * @note This function will internally call test_usb_force_conn_state() to allow for a connection
+ * @note This function will internally call test_usb_set_phy_state() to allow for a connection
  *
  * @param port_hdl Port handle
  * @return usb_speed_t Speed of the connected device
@@ -75,7 +75,7 @@ usb_speed_t test_hcd_wait_for_conn(hcd_port_handle_t port_hdl);
 /**
  * @brief Wait for a disconnection on an HCD port
  *
- * @note This fucntion will internally call test_usb_force_conn_state() to force a disconnection
+ * @note This fucntion will internally call test_usb_set_phy_state() to force a disconnection
  *
  * @param port_hdl Port handle
  * @param already_disabled Whether the HCD port is already in the disabled state

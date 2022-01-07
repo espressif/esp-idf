@@ -17,17 +17,14 @@
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
 #include "esp32/rom/cache.h"
-#include "esp32/rom/spi_flash.h"
 #include "esp32/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/cache.h"
-#include "esp32s2/rom/spi_flash.h"
 #include "esp32s2/rom/secure_boot.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/cache.h"
-#include "esp32s3/rom/spi_flash.h"
 #include "esp32s3/rom/secure_boot.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
@@ -35,7 +32,6 @@
 #include "esp32c3/rom/cache.h"
 #include "esp32c3/rom/efuse.h"
 #include "esp32c3/rom/ets_sys.h"
-#include "esp32c3/rom/spi_flash.h"
 #include "esp32c3/rom/crc.h"
 #include "esp32c3/rom/uart.h"
 #include "esp32c3/rom/gpio.h"
@@ -46,7 +42,6 @@
 #include "esp32h2/rom/cache.h"
 #include "esp32h2/rom/efuse.h"
 #include "esp32h2/rom/ets_sys.h"
-#include "esp32h2/rom/spi_flash.h"
 #include "esp32h2/rom/crc.h"
 #include "esp32h2/rom/uart.h"
 #include "esp32h2/rom/gpio.h"
@@ -57,7 +52,6 @@
 #include "esp8684/rom/cache.h"
 #include "esp8684/rom/efuse.h"
 #include "esp8684/rom/ets_sys.h"
-#include "esp8684/rom/spi_flash.h"
 #include "esp8684/rom/crc.h"
 #include "esp8684/rom/rtc.h"
 #include "esp8684/rom/uart.h"
@@ -68,9 +62,10 @@
 #else // CONFIG_IDF_TARGET_*
 #error "Unsupported IDF_TARGET"
 #endif
+#include "esp_rom_spiflash.h"
 
 #include "soc/soc.h"
-#include "soc/cpu.h"
+#include "esp_cpu.h"
 #include "soc/rtc.h"
 #include "soc/gpio_periph.h"
 #include "soc/efuse_periph.h"

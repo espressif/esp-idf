@@ -13,7 +13,7 @@
 #include "soc/gpio_sig_map.h"
 #include "soc/io_mux_reg.h"
 #include "soc/assist_debug_reg.h"
-#include "soc/cpu.h"
+#include "esp_cpu.h"
 #include "soc/dport_reg.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
@@ -23,7 +23,7 @@
 #include "esp_rom_gpio.h"
 #include "esp_rom_efuse.h"
 #include "esp_rom_sys.h"
-#include "esp32s3/rom/spi_flash.h"
+#include "esp_rom_spiflash.h"
 #include "esp32s3/rom/cache.h"
 #include "esp32s3/rom/rtc.h"
 

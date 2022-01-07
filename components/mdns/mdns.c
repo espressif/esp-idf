@@ -293,8 +293,14 @@ static mdns_srv_item_t *_mdns_get_service_item_instance(const char *instance, co
 {
     mdns_srv_item_t *s = _mdns_server->services;
     while (s) {
-        if (_mdns_service_match_instance(s->service, instance, service, proto, hostname)) {
-            return s;
+        if (instance) {
+            if (_mdns_service_match_instance(s->service, instance, service, proto, hostname)) {
+                return s;
+            }
+        } else {
+            if (_mdns_service_match(s->service, service, proto, hostname)) {
+                return s;
+            }
         }
         s = s->next;
     }
@@ -1534,6 +1540,8 @@ static bool _mdns_service_match_ptr_question(const mdns_service_t *service, cons
     if (!_mdns_service_match(service, question->service, question->proto, NULL)) {
         return false;
     }
+    // The question parser stores anything before _type._proto in question->host
+    // So the question->host can be subtype or instance name based on its content
     if (question->sub) {
         mdns_subtype_t *subtype = service->subtype;
         while (subtype) {
@@ -1543,6 +1551,11 @@ static bool _mdns_service_match_ptr_question(const mdns_service_t *service, cons
             subtype = subtype->next;
         }
         return false;
+    }
+    if (question->host) {
+        if (strcasecmp(service->instance, question->host) != 0) {
+            return false;
+        }
     }
     return true;
 }
@@ -1837,7 +1850,6 @@ static mdns_tx_packet_t * _mdns_create_announce_packet(mdns_if_t tcpip_if, mdns_
  */
 static mdns_tx_packet_t * _mdns_create_announce_from_probe(mdns_tx_packet_t * probe)
 {
-
     mdns_tx_packet_t * packet = _mdns_alloc_packet_default(probe->tcpip_if, probe->ip_protocol);
     if (!packet) {
         return NULL;
@@ -1851,6 +1863,12 @@ static mdns_tx_packet_t * _mdns_create_announce_from_probe(mdns_tx_packet_t * pr
                     || !_mdns_alloc_answer(&packet->answers, MDNS_TYPE_PTR, s->service, NULL, false, false)
                     || !_mdns_alloc_answer(&packet->answers, MDNS_TYPE_SRV, s->service, NULL, true, false)
                     || !_mdns_alloc_answer(&packet->answers, MDNS_TYPE_TXT, s->service, NULL, true, false)) {
+                _mdns_free_tx_packet(packet);
+                return NULL;
+            }
+            mdns_host_item_t *host = mdns_get_host_item(s->service->hostname);
+            if (!_mdns_alloc_answer(&packet->answers, MDNS_TYPE_A, NULL, host, true, false)
+                    || !_mdns_alloc_answer(&packet->answers, MDNS_TYPE_AAAA, NULL, host, true, false)) {
                 _mdns_free_tx_packet(packet);
                 return NULL;
             }
@@ -2931,7 +2949,8 @@ static bool _mdns_question_matches(mdns_parsed_question_t * question, uint16_t t
     if (type == MDNS_TYPE_A || type == MDNS_TYPE_AAAA) {
         return true;
     } else if (type == MDNS_TYPE_PTR || type == MDNS_TYPE_SDPTR) {
-        if (!strcasecmp(service->service->service, question->service)
+        if (question->service && question->proto && question->domain
+            && !strcasecmp(service->service->service, question->service)
             && !strcasecmp(service->service->proto, question->proto)
             && !strcasecmp(MDNS_DEFAULT_DOMAIN, question->domain)) {
             return true;
@@ -5568,10 +5587,15 @@ esp_err_t mdns_query_async_delete(mdns_search_once_t* search)
     return ESP_OK;
 }
 
-bool mdns_query_async_get_results(mdns_search_once_t* search, uint32_t timeout, mdns_result_t ** results)
+bool mdns_query_async_get_results(mdns_search_once_t* search, uint32_t timeout, mdns_result_t ** results, uint8_t * num_results)
 {
     if (xSemaphoreTake(search->done_semaphore, pdMS_TO_TICKS(timeout)) == pdTRUE) {
-        *results = search->result;
+        if (results) {
+            *results = search->result;
+        }
+        if (num_results) {
+            *num_results = search->num_results;
+        }
         return true;
     }
     return false;

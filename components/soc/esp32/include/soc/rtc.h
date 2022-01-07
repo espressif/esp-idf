@@ -1,16 +1,8 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
 #include <stdbool.h>
@@ -53,7 +45,6 @@ extern "C" {
  * - rtc_sleep: entry into sleep modes
  * - rtc_init: initialization
  */
-
 
 /**
  * @brief Possible main XTAL frequency values.
@@ -260,13 +251,33 @@ bool rtc_clk_8md256_enabled(void);
  * In rev. 0 of ESP32, sdm0 and sdm1 are unused and always set to 0.
  *
  * @param enable  true to enable, false to disable
+ */
+void rtc_clk_apll_enable(bool enable);
+
+/**
+ * @brief Calculate APLL clock coeffifcients
+ *
+ * @param freq  expected APLL frequency
+ * @param o_div  frequency divider, 0..31
  * @param sdm0  frequency adjustment parameter, 0..255
  * @param sdm1  frequency adjustment parameter, 0..255
  * @param sdm2  frequency adjustment parameter, 0..63
- * @param o_div  frequency divider, 0..31
+ *
+ * @return
+ *      - 0 Failed
+ *      - else Sucess
  */
-void rtc_clk_apll_enable(bool enable, uint32_t sdm0, uint32_t sdm1,
-        uint32_t sdm2, uint32_t o_div);
+uint32_t rtc_clk_apll_coeff_calc(uint32_t freq, uint32_t *_o_div, uint32_t *_sdm0, uint32_t *_sdm1, uint32_t *_sdm2);
+
+/**
+ * @brief Set APLL clock coeffifcients
+ *
+ * @param o_div  frequency divider, 0..31
+ * @param sdm0  frequency adjustment parameter, 0..255
+ * @param sdm1  frequency adjustment parameter, 0..255
+ * @param sdm2  frequency adjustment parameter, 0..63
+ */
+void rtc_clk_apll_coeff_set(uint32_t o_div, uint32_t sdm0, uint32_t sdm1, uint32_t sdm2);
 
 /**
  * @brief Select source for RTC_SLOW_CLK

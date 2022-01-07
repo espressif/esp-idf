@@ -6,7 +6,7 @@
 .. toctree::
     :maxdepth: 3
 
-    {IDF_TARGET_NAME} 技术参考手册 (PDF) <{IDF_TARGET_TRM_CN_URL}>
+    :not esp8684: {IDF_TARGET_NAME} 技术参考手册 (PDF) <{IDF_TARGET_TRM_CN_URL}>
     :esp32:   ESP32 技术规格书 (PDF) <https://espressif.com/sites/default/files/documentation/esp32_datasheet_cn.pdf>
     :esp32s2: ESP32-S2 技术规格书 (PDF) <https://espressif.com/sites/default/files/documentation/esp32-s2_datasheet_cn.pdf>
     :esp32c3: ESP32-C3 技术规格书 (PDF) <https://espressif.com/sites/default/files/documentation/esp32-c3_datasheet_cn.pdf>

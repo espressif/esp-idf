@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 // The long term plan is to have a single soc_caps.h for each peripheral.
 // During the refactoring and multichip support development process, we
 // seperate these information into periph_caps.h for each peripheral and
@@ -20,6 +26,7 @@
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 #define SOC_CPU_CORES_NUM               1
+#define SOC_ADC_SUPPORTED               1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_GDMA_SUPPORTED              1
 #define SOC_TWAI_SUPPORTED              1
@@ -31,6 +38,7 @@
 #define SOC_TEMP_SENSOR_SUPPORTED       1
 #define SOC_FLASH_ENCRYPTION_XTS_AES    1
 #define SOC_XT_WDT_SUPPORTED            1
+#define SOC_WIFI_SUPPORTED              1
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   3
 #define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS   1
@@ -53,6 +61,7 @@
 
 /*-------------------------- ADC CAPS -------------------------------*/
 /*!< SAR ADC Module*/
+#define SOC_ADC_DIG_CTRL_SUPPORTED              1
 #define SOC_ADC_ARBITER_SUPPORTED               1
 #define SOC_ADC_FILTER_SUPPORTED                1
 #define SOC_ADC_MONITOR_SUPPORTED               1
@@ -61,7 +70,7 @@
 #define SOC_ADC_MAX_CHANNEL_NUM                 (5)
 
 /*!< Digital */
-#define SOC_ADC_DIGI_CONTROLLER_NUM             (1)
+#define SOC_ADC_DIGI_CONTROLLER_NUM             (1U)
 #define SOC_ADC_PATT_LEN_MAX                    (8) /*!< One pattern table, each contains 8 items. Each item takes 1 byte */
 #define SOC_ADC_DIGI_MAX_BITWIDTH               (12)
 #define SOC_ADC_DIGI_FILTER_NUM                 (2)
@@ -75,7 +84,6 @@
 
 /*!< Calibration */
 #define SOC_ADC_CALIBRATION_V1_SUPPORTED        (1) /*!< support HW offset calibration version 1*/
-
 
 /*-------------------------- APB BACKUP DMA CAPS -------------------------------*/
 #define SOC_APB_BACKUP_DMA              (1)
@@ -129,7 +137,7 @@
 /*-------------------------- Dedicated GPIO CAPS -----------------------------*/
 #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
 #define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (8) /*!< 8 inward channels on each CPU core */
-#define SOC_DEDIC_PERIPH_AUTO_ENABLE    (1) /*!< The dedicated GPIO peripheral is enabled automatically */
+#define SOC_DEDIC_PERIPH_ALWAYS_ENABLE  (1) /*!< The dedicated GPIO (a.k.a. fast GPIO) is featured by some customized CPU instructions, which is always enabled */
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
 // ESP32-C3 have 2 I2C.
@@ -185,7 +193,7 @@
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 /* No dedicated RTCIO subsystem on ESP32-C3. RTC functions are still supported
  * for hold, wake & 32kHz crystal functions - via rtc_cntl_reg */
-#define SOC_RTCIO_PIN_COUNT    0
+#define SOC_RTCIO_PIN_COUNT    (0U)
 
 /*--------------------------- RSA CAPS ---------------------------------------*/
 #define SOC_RSA_MAX_BIT_LEN    (3072)
@@ -256,10 +264,10 @@
 
 /*--------------------------- TIMER GROUP CAPS ---------------------------------------*/
 #define SOC_TIMER_GROUPS                  (2)
-#define SOC_TIMER_GROUP_TIMERS_PER_GROUP  (1)
+#define SOC_TIMER_GROUP_TIMERS_PER_GROUP  (1U)
 #define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH (54)
 #define SOC_TIMER_GROUP_SUPPORT_XTAL      (1)
-#define SOC_TIMER_GROUP_TOTAL_TIMERS (SOC_TIMER_GROUPS * SOC_TIMER_GROUP_TIMERS_PER_GROUP)
+#define SOC_TIMER_GROUP_TOTAL_TIMERS      (2)
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_NUM            (0)    /*! No touch sensors on ESP32-C3 */

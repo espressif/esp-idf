@@ -17,10 +17,20 @@
 #include <list>
 #include <future>
 
-#include "driver/i2c.h"
+#include "sdkconfig.h"
 #include "esp_exception.hpp"
+#include "system_cxx.hpp"
+#include "gpio_cxx.hpp"
 
 namespace idf {
+
+/**
+ * @brief Check if the provided numerical value is a valid I2C address.
+ *
+ * @param addr raw number to be checked.
+ * @return ESP_OK if \c addr is a valid I2C address, otherwise ESP_ERR_INVALID_ARG.
+ */
+esp_err_t check_i2c_addr(uint32_t addr) noexcept;
 
 struct I2CException : public ESPException {
     I2CException(esp_err_t error);
@@ -31,21 +41,161 @@ struct I2CTransferException : public I2CException {
 };
 
 /**
+ * @brief Represents a valid SDA signal pin number.
+ */
+class SDA_type;
+using SDA_GPIO = GPIONumBase<class SDA_type>;
+
+/**
+ * @brief Represents a valid SCL signal pin number.
+ */
+class SCL_type;
+using SCL_GPIO = GPIONumBase<class SCL_type>;
+
+/**
+ * @brief Valid representation of I2C number.
+ *
+ * A chip can have multiple I2C interfaces, each identified by a bus number, subsequently called I2C number.
+ * Instances of this class are guaranteed to always contain a valid I2C number.
+ */
+class I2CNumber : public StrongValueComparable<uint32_t> {
+    /**
+     * Construct a valid representation of the I2C number.
+     *
+     * This constructor is private because the it can only be accessed but the static creation methods below.
+     * This guarantees that an instance of I2CNumber always carries a valid number.
+     */
+    constexpr explicit I2CNumber(uint32_t number) : StrongValueComparable<uint32_t>(number) { }
+
+public:
+    /**
+     * @brief create an I2C number representing the first I2C bus of the chip.
+     */
+    constexpr static I2CNumber I2C0() {
+        return I2CNumber(0);
+    }
+
+#if CONFIG_SOC_I2C_NUM == 2
+    /**
+     * @brief create an I2C number representing the second I2C bus of the chip.
+     */
+    constexpr static I2CNumber I2C1() {
+        return I2CNumber(1);
+    }
+#endif
+
+    /**
+     * Retrieves the valid numerical representation of the I2C number.
+     */
+    uint32_t get_num();
+};
+
+/**
+ * @brief Valid representation of I2C address.
+ *
+ * Instances of this class are guaranteed to always contain a valid I2C address.
+ */
+class I2CAddress : public StrongValueComparable<uint8_t> {
+public:
+    /**
+     *
+     */
+    explicit I2CAddress(uint8_t addr);
+
+    /**
+     * Retrieves the valid numerical representation of the I2C adress.
+     */
+    uint8_t get_addr();
+};
+
+/**
+ * @brief Low-level I2C transaction descriptor
+ *
+ * This class records and decribes a low-level transaction. Users use the methods (except \c execute_transfer)
+ * to record the transaction. Afterwards, the transaction will be executed by calling \c execute_transfer,
+ * which blocks until the transaction is finished.
+ *
+ * @note This is a low-level class, which only exists due to the underlying I2C driver. All data referenced in
+ *      read and write calls must not be changed and must stay allocated until at least \c execute_transfer
+ *      has finished.
+ */
+class I2CCommandLink {
+public:
+    /**
+     * @brief Allocate and create the transaction descriptor.
+     */
+    I2CCommandLink();
+
+    /**
+     * @brief Delete the transaction descriptor, de-allocate all resources.
+     */
+    ~I2CCommandLink();
+
+    I2CCommandLink(const I2CCommandLink&) = delete;
+    I2CCommandLink operator=(const I2CCommandLink&) = delete;
+
+    /**
+     * @brief Record a start signal on the I2C bus.
+     */
+    void start();
+
+    /**
+     * @brief Record a write of the vector \c bytes on the I2C bus.
+     *
+     * @param[in] bytes The data to be written. Must stay allocated until execute_transfer has finished or
+     *          destructor of this class has been called.
+     * @param[in] expect_ack If acknowledgement shall be requested after each written byte, pass true,
+     *          otherwise false.
+     */
+    void write(const std::vector<uint8_t> &bytes, bool expect_ack = true);
+
+    /**
+     * @brief Record a one-byte-write on the I2C bus.
+     *
+     * @param[in] byte The data to be written. No restrictions apply.
+     * @param[in] expect_ack If acknowledgement shall be requested after writing the byte, pass true,
+     *          otherwise false.
+     */
+    void write_byte(uint8_t byte, bool expect_ack = true);
+
+    /**
+     * @brief Record a read of the size of vector \c bytes on the I2C bus.
+     *
+     * @param[in] bytes Vector with the size of the data to be read (in bytes). Must stay allocated until
+     *          execute_transfer has finished or destructor of this class has been called.
+     * @param[in] expect_ack If acknowledgement shall be requested after each written byte, pass true,
+     *          otherwise false.
+     */
+    void read(std::vector<uint8_t> &bytes);
+
+    /**
+     * @brief Record a stop command on the I2C bus.
+     */
+    void stop();
+
+    /**
+     * @brief Execute the transaction and wait until it has finished.
+     *
+     * This method will issue the transaction with the operations in the order in which they have been recorded
+     * before.
+     *
+     * @param i2c_num I2C bus number on the chip.
+     * @param driver_timeout Timeout for this transaction.
+     */
+    void execute_transfer(I2CNumber i2c_num, std::chrono::milliseconds driver_timeout);
+
+private:
+    /**
+     * @brief Internal driver data.
+     */
+    void *handle;
+};
+
+/**
  * Superclass for all transfer objects which are accepted by \c I2CMaster::transfer().
  */
 template<typename TReturn>
 class I2CTransfer {
-protected:
-    /**
-     * Wrapper around i2c_cmd_handle_t, makes it exception-safe.
-     */
-    struct I2CCommandLink {
-        I2CCommandLink();
-        ~I2CCommandLink();
-
-        i2c_cmd_handle_t handle;
-    };
-
 public:
     /**
      * Helper typedef to facilitate type resolution during calls to I2CMaster::transfer().
@@ -55,7 +205,7 @@ public:
     /**
      * @param driver_timeout The timeout used for calls like i2c_master_cmd_begin() to the underlying driver.
      */
-    I2CTransfer(std::chrono::milliseconds driver_timeout = std::chrono::milliseconds(1000));
+    I2CTransfer(std::chrono::milliseconds driver_timeout_arg = std::chrono::milliseconds(1000));
 
     virtual ~I2CTransfer() { }
 
@@ -74,7 +224,7 @@ public:
      *
      * @throws I2CException for any particular I2C error
      */
-    TReturn do_transfer(i2c_port_t i2c_num, uint8_t i2c_addr);
+    TReturn do_transfer(I2CNumber i2c_num, I2CAddress i2c_addr);
 
 protected:
     /**
@@ -88,7 +238,7 @@ protected:
      *
      * @throw I2CException
      */
-    virtual void queue_cmd(i2c_cmd_handle_t handle, uint8_t i2c_addr) = 0;
+    virtual void queue_cmd(I2CCommandLink &handle, I2CAddress i2c_addr) = 0;
 
     /**
      * Implementation of whatever neccessary action after successfully sending the I2C command.
@@ -101,7 +251,7 @@ protected:
     /**
      * For some calls to the underlying driver (e.g. \c i2c_master_cmd_begin() ), this general timeout will be passed.
      */
-    const TickType_t driver_timeout;
+    std::chrono::milliseconds driver_timeout;
 };
 
 /**
@@ -116,7 +266,7 @@ public:
      *
      * @param i2c_number The I2C port number.
      */
-    I2CBus(i2c_port_t i2c_number);
+    explicit I2CBus(I2CNumber i2c_number);
 
     /**
      * @brief uninstall the bus driver.
@@ -126,7 +276,7 @@ public:
     /**
      * The I2C port number.
      */
-    const i2c_port_t i2c_num;
+    const I2CNumber i2c_num;
 };
 
 /**
@@ -154,10 +304,10 @@ public:
      *
      * @throws I2CException with the corrsponding esp_err_t return value if something goes wrong
      */
-    I2CMaster(i2c_port_t i2c_number,
-              int scl_gpio,
-              int sda_gpio,
-              uint32_t clock_speed,
+    explicit I2CMaster(I2CNumber i2c_number,
+              SCL_GPIO scl_gpio,
+              SDA_GPIO sda_gpio,
+              Frequency clock_speed,
               bool scl_pullup = true,
               bool sda_pullup = true);
 
@@ -195,7 +345,7 @@ public:
      * @throws std::exception for failures in libstdc++
      */
     template<typename TransferT>
-    std::future<typename TransferT::TransferReturnT> transfer(std::shared_ptr<TransferT> xfer, uint8_t i2c_addr);
+    std::future<typename TransferT::TransferReturnT> transfer(I2CAddress i2c_addr, std::shared_ptr<TransferT> xfer);
 
     /**
      * Do a synchronous write.
@@ -209,7 +359,7 @@ public:
      * @throws I2CException with the corrsponding esp_err_t return value if something goes wrong
      * @throws std::exception for failures in libstdc++
      */
-    void sync_write(uint8_t i2c_addr, const std::vector<uint8_t> &data);
+    void sync_write(I2CAddress i2c_addr, const std::vector<uint8_t> &data);
 
     /**
      * Do a synchronous read.
@@ -226,7 +376,7 @@ public:
      * @throws I2CException with the corrsponding esp_err_t return value if something goes wrong
      * @throws std::exception for failures in libstdc++
      */
-    std::vector<uint8_t> sync_read(uint8_t i2c_addr, size_t n_bytes);
+    std::vector<uint8_t> sync_read(I2CAddress i2c_addr, size_t n_bytes);
 
     /**
      * Do a simple synchronous write-read transfer.
@@ -245,7 +395,7 @@ public:
      * @throws I2CException with the corrsponding esp_err_t return value if something goes wrong
      * @throws std::exception for failures in libstdc++
      */
-    std::vector<uint8_t> sync_transfer(uint8_t i2c_addr,
+    std::vector<uint8_t> sync_transfer(I2CAddress i2c_addr,
             const std::vector<uint8_t> &write_data,
             size_t read_n_bytes);
 };
@@ -273,10 +423,10 @@ public:
      *
      * @throws
      */
-    I2CSlave(i2c_port_t i2c_number,
-        int scl_gpio,
-        int sda_gpio,
-        uint8_t slave_addr,
+    I2CSlave(I2CNumber i2c_number,
+        SCL_GPIO scl_gpio,
+        SDA_GPIO sda_gpio,
+        I2CAddress slave_addr,
         size_t rx_buf_len,
         size_t tx_buf_len,
         bool scl_pullup = true,
@@ -322,7 +472,7 @@ protected:
      * @param handle The initialized I2C command handle.
      * @param i2c_addr The I2C address of the slave.
      */
-    void queue_cmd(i2c_cmd_handle_t handle, uint8_t i2c_addr) override;
+    void queue_cmd(I2CCommandLink &handle, I2CAddress i2c_addr) override;
 
     /**
      * Set the value of the promise to unblock any callers waiting on it.
@@ -356,7 +506,7 @@ protected:
      * @param handle The initialized I2C command handle.
      * @param i2c_addr The I2C address of the slave.
      */
-    void queue_cmd(i2c_cmd_handle_t handle, uint8_t i2c_addr) override;
+    void queue_cmd(I2CCommandLink &handle, I2CAddress i2c_addr) override;
 
     /**
      * Set the return value of the promise to unblock any callers waiting on it.
@@ -401,7 +551,7 @@ protected:
      * @param handle The initialized I2C command handle.
      * @param i2c_addr The I2C address of the slave.
      */
-    void queue_cmd(i2c_cmd_handle_t handle, uint8_t i2c_addr) override;
+    void queue_cmd(I2CCommandLink &handle, I2CAddress i2c_addr) override;
 
     /**
      * Creates the vector with the vectors from all reads.
@@ -412,14 +562,14 @@ private:
     class CompTransferNode {
     public:
         virtual ~CompTransferNode() { }
-        virtual void queue_cmd(i2c_cmd_handle_t handle, uint8_t i2c_addr) = 0;
+        virtual void queue_cmd(I2CCommandLink &handle, I2CAddress i2c_addr) = 0;
         virtual void process_result(std::vector<std::vector<uint8_t> > &read_results) { }
     };
 
     class CompTransferNodeRead : public CompTransferNode {
     public:
         CompTransferNodeRead(size_t size) : bytes(size) { }
-        void queue_cmd(i2c_cmd_handle_t handle, uint8_t i2c_addr) override;
+        void queue_cmd(I2CCommandLink &handle, I2CAddress i2c_addr) override;
 
         void process_result(std::vector<std::vector<uint8_t> > &read_results) override;
     private:
@@ -429,7 +579,7 @@ private:
     class CompTransferNodeWrite : public CompTransferNode {
     public:
         CompTransferNodeWrite(std::vector<uint8_t> bytes) : bytes(bytes) { }
-        void queue_cmd(i2c_cmd_handle_t handle, uint8_t i2c_addr) override;
+        void queue_cmd(I2CCommandLink &handle, I2CAddress i2c_addr) override;
     private:
         std::vector<uint8_t> bytes;
     };
@@ -441,44 +591,29 @@ private:
 };
 
 template<typename TReturn>
-I2CTransfer<TReturn>::I2CTransfer(std::chrono::milliseconds driver_timeout)
-        : driver_timeout(driver_timeout.count()) { }
+I2CTransfer<TReturn>::I2CTransfer(std::chrono::milliseconds driver_timeout_arg)
+        : driver_timeout(driver_timeout_arg) { }
 
 template<typename TReturn>
-I2CTransfer<TReturn>::I2CCommandLink::I2CCommandLink()
-{
-    handle = i2c_cmd_link_create();
-    if (!handle) {
-        throw I2CException(ESP_ERR_NO_MEM);
-    }
-}
-
-template<typename TReturn>
-I2CTransfer<TReturn>::I2CCommandLink::~I2CCommandLink()
-{
-    i2c_cmd_link_delete(handle);
-}
-
-template<typename TReturn>
-TReturn I2CTransfer<TReturn>::do_transfer(i2c_port_t i2c_num, uint8_t i2c_addr)
+TReturn I2CTransfer<TReturn>::do_transfer(I2CNumber i2c_num, I2CAddress i2c_addr)
 {
     I2CCommandLink cmd_link;
 
-    queue_cmd(cmd_link.handle, i2c_addr);
+    queue_cmd(cmd_link, i2c_addr);
 
-    CHECK_THROW_SPECIFIC(i2c_master_stop(cmd_link.handle), I2CException);
+    cmd_link.stop();
 
-    CHECK_THROW_SPECIFIC(i2c_master_cmd_begin(i2c_num, cmd_link.handle, driver_timeout / portTICK_RATE_MS), I2CTransferException);
+    cmd_link.execute_transfer(i2c_num, driver_timeout);
 
     return process_result();
 }
 
 template<typename TransferT>
-std::future<typename TransferT::TransferReturnT> I2CMaster::transfer(std::shared_ptr<TransferT> xfer, uint8_t i2c_addr)
+std::future<typename TransferT::TransferReturnT> I2CMaster::transfer(I2CAddress i2c_addr, std::shared_ptr<TransferT> xfer)
 {
     if (!xfer) throw I2CException(ESP_ERR_INVALID_ARG);
 
-    return std::async(std::launch::async, [this](std::shared_ptr<TransferT> xfer, uint8_t i2c_addr) {
+    return std::async(std::launch::async, [this](std::shared_ptr<TransferT> xfer, I2CAddress i2c_addr) {
         return xfer->do_transfer(i2c_num, i2c_addr);
     }, xfer, i2c_addr);
 }

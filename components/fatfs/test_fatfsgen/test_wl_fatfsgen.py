@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 import os
@@ -132,6 +132,7 @@ class WLFatFSGen(unittest.TestCase):
         fatfs.wl_write_filesystem(CFG['output_file'])
         with open(CFG['output_file'], 'rb') as fs_file:
             file_system = bytearray(fs_file.read())
+
         self.assertEqual(file_system[0x7060:0x7070], b'TESTFIL2    \x00\x00\x01\x00')
         self.assertEqual(file_system[0x7070:0x7080], b'!\x00\x00\x00\x00\x00\x01\x00\x01\x00\x05\x00\x0b\x00\x00\x00')
         self.assertEqual(file_system[0x8040:0x8050], b'LASTFILE    \x00\x00\x01\x00')

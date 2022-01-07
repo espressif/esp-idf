@@ -12,11 +12,7 @@
 #include "string.h"
 #include "sdkconfig.h"
 
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/spi_flash.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/spi_flash.h"
-#endif
+#include "esp_rom_spiflash.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -25,7 +21,7 @@
 #include "unity.h"
 
 #include "bootloader_common.h"
-#include "../include_bootloader/bootloader_flash_priv.h"
+#include "../bootloader_flash/include/bootloader_flash_priv.h"
 
 #include "esp_log.h"
 #include "esp_ota_ops.h"

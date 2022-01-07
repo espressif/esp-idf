@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) Co. Ltd.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdint.h>
 #include "esp_check.h"
@@ -18,65 +10,29 @@
 #include "esp_log.h"
 #include "tusb.h"
 #include "cdc.h"
-#include "sdkconfig.h"
-
-static const char *TAG = "tusb_cdc";
 
 #define CDC_INTF_NUM            CFG_TUD_CDC // number of cdc blocks
-
 static esp_tusb_cdc_t *cdc_obj[CDC_INTF_NUM] = {};
-
-/* Common CDC functions
-   ********************************************************************* */
-bool tinyusb_cdc_initialized(int itf)
-{
-    return (cdc_obj[itf] != NULL);
-}
-
-static esp_err_t cdc_interface_check(int itf)
-{
-    if (tinyusb_cdc_initialized(itf)) {
-        return ESP_OK;
-    } else {
-        ESP_LOGE(TAG, "Interface is not initialized. Use `tinyusb_cdc_init` for initialization");
-        return ESP_ERR_INVALID_STATE;
-    }
-}
-
-/**
- * @brief
- *
- * @param itf
- * @param expected_inited
- * @param expected_type use -1 if you don't care
- * @return esp_err_t
- */
-static esp_err_t cdc_obj_check(int itf, bool expected_inited, tusb_class_code_t expected_type)
-{
-    bool inited = (cdc_obj[itf] != NULL);
-    if (expected_inited != inited) {
-        ESP_LOGE(TAG, "Wrong state of the interface. Expected state: %s",
-                 expected_inited ? "initialized" : "not initialized");
-        return ESP_ERR_INVALID_STATE;
-    }
-    if (inited && (expected_type != -1) && !(cdc_obj[itf]->type == expected_type)) {
-        ESP_LOGE(TAG, "Wrong type of the interface. Should be : 0x%x (tusb_class_code_t)", expected_type);
-        return ESP_ERR_INVALID_ARG;
-    }
-    return ESP_OK;
-}
+static const char *TAG = "tusb_cdc";
 
 esp_tusb_cdc_t *tinyusb_cdc_get_intf(int itf_num)
 {
-    if (cdc_interface_check(itf_num) != ESP_OK) {
+    if (itf_num >= CDC_INTF_NUM || itf_num < 0) {
         return NULL;
     }
     return cdc_obj[itf_num];
 }
 
-/*********************************************************************** Common CDC functions*/
-/* CDC class funcs
-   ********************************************************************* */
+static esp_err_t cdc_obj_check(int itf, bool expected_inited, tusb_class_code_t expected_type)
+{
+    esp_tusb_cdc_t *this_itf = tinyusb_cdc_get_intf(itf);
+
+    bool inited = (this_itf != NULL);
+    ESP_RETURN_ON_FALSE(expected_inited == inited, ESP_ERR_INVALID_STATE, TAG, "Wrong state of the interface. Expected state: %s", expected_inited ? "initialized" : "not initialized");
+    ESP_RETURN_ON_FALSE(!(inited && (expected_type != -1) && !(this_itf->type == expected_type)), ESP_ERR_INVALID_STATE, TAG, "Wrong type of the interface. Should be : 0x%x (tusb_class_code_t)", expected_type);
+    return ESP_OK;
+}
+
 static esp_err_t tusb_cdc_comm_init(int itf)
 {
     ESP_RETURN_ON_ERROR(cdc_obj_check(itf, false, -1), TAG, "cdc_obj_check failed");
@@ -120,16 +76,12 @@ static esp_err_t tusb_cdc_deinit_data(int itf)
     cdc_obj[itf] = NULL;
     return ESP_OK;
 }
-/*********************************************************************** CDC class funcs*/
-/* CDC initialization
-   ********************************************************************* */
+
 esp_err_t tinyusb_cdc_init(int itf, const tinyusb_config_cdc_t *cfg)
 {
-    ESP_LOGD(TAG, "CDC initialization...");
-    if (itf != 0) {
-        ESP_LOGE(TAG, "There is not CDC no.%d", itf);
-        return ESP_ERR_INVALID_ARG;
-    }
+    ESP_RETURN_ON_ERROR(cdc_obj_check(itf, false, -1), TAG, "cdc_obj_check failed");
+
+    ESP_LOGD(TAG, "Init CDC %d", itf);
     if (cfg->cdc_class == TUSB_CLASS_CDC) {
         ESP_RETURN_ON_ERROR(tusb_cdc_comm_init(itf), TAG, "tusb_cdc_comm_init failed");
         cdc_obj[itf]->cdc_subclass.comm_subclass = cfg->cdc_subclass.comm_subclass;
@@ -141,13 +93,11 @@ esp_err_t tinyusb_cdc_init(int itf, const tinyusb_config_cdc_t *cfg)
     return ESP_OK;
 }
 
-
 esp_err_t tinyusb_cdc_deinit(int itf)
 {
-    if (itf != 0) {
-        ESP_LOGE(TAG, "There is not CDC no.%d", itf);
-        return ESP_ERR_INVALID_ARG;
-    }
+    ESP_RETURN_ON_ERROR(cdc_obj_check(itf, true, -1), TAG, "cdc_obj_check failed");
+
+    ESP_LOGD(TAG, "Deinit CDC %d", itf);
     if (cdc_obj[itf]->type == TUSB_CLASS_CDC) {
         ESP_RETURN_ON_ERROR(tusb_cdc_deinit_comm(itf), TAG, "tusb_cdc_deinit_comm failed");
     } else if (cdc_obj[itf]->type == TUSB_CLASS_CDC_DATA) {
@@ -155,7 +105,5 @@ esp_err_t tinyusb_cdc_deinit(int itf)
     } else {
         return ESP_ERR_INVALID_ARG;
     }
-    ESP_LOGD(TAG, "De-initialized");
     return ESP_OK;
 }
-/*********************************************************************** CDC initialization*/

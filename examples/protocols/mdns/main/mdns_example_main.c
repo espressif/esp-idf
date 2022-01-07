@@ -146,7 +146,7 @@ static bool check_and_print_result(mdns_search_once_t *search)
 {
     // Check if any result is available
     mdns_result_t * result = NULL;
-    if (!mdns_query_async_get_results(search, 0, &result)) {
+    if (!mdns_query_async_get_results(search, 0, &result, NULL)) {
         return false;
     }
 

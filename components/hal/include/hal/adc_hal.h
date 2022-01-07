@@ -1,20 +1,50 @@
+/*
+ * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #pragma once
 
+#include "esp_err.h"
 #include "soc/soc_caps.h"
+#include "hal/dma_types.h"
 #include "hal/adc_types.h"
 #include "hal/adc_ll.h"
 #include "esp_err.h"
 
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP8684
+#if SOC_GDMA_SUPPORTED
 #include "soc/gdma_struct.h"
 #include "hal/gdma_ll.h"
-#include "hal/dma_types.h"
-#include "hal/adc_ll.h"
-#include "hal/dma_types.h"
-#include "esp_err.h"
+#endif
+
+#if CONFIG_IDF_TARGET_ESP32S2
+//ADC utilises SPI3 DMA on ESP32S2
+#include "hal/spi_ll.h"
+#endif
+
+#if CONFIG_IDF_TARGET_ESP32
+//ADC utilises I2S0 DMA on ESP32
+#include "hal/i2s_ll.h"
+#endif
+
+#if SOC_GDMA_SUPPORTED
+#define ADC_HAL_DMA_INTR_MASK                           GDMA_LL_EVENT_RX_SUC_EOF
+#elif CONFIG_IDF_TARGET_ESP32S2
+#define ADC_HAL_DMA_INTR_MASK                           SPI_LL_INTR_IN_SUC_EOF
+#else //CONFIG_IDF_TARGET_ESP32
+#define ADC_HAL_DMA_INTR_MASK                           BIT(9)
+#endif
 
 //For ADC module, each conversion contains 4 bytes
 #define ADC_HAL_DATA_LEN_PER_CONV 4
+
+typedef enum adc_hal_work_mode_t {
+    ADC_HAL_ULP_MODE,
+    ADC_HAL_SINGLE_READ_MODE,
+    ADC_HAL_CONTINUOUS_READ_MODE,
+    ADC_HAL_PWDET_MODE
+} adc_hal_work_mode_t;
 
 /**
  * @brief Enum for DMA descriptor status
@@ -29,6 +59,7 @@ typedef enum adc_hal_dma_desc_status_t {
  * @brief Configuration of the HAL
  */
 typedef struct adc_hal_config_t {
+    void                *dev;               ///< DMA peripheral address
     uint32_t            desc_max_num;       ///< Number of the descriptors linked once
     uint32_t            dma_chan;           ///< DMA channel to be used
     uint32_t            eof_num;            ///< Bytes between 2 in_suc_eof interrupts
@@ -42,25 +73,30 @@ typedef struct adc_hal_context_t {
     dma_descriptor_t    *rx_desc;           ///< DMA descriptors
 
     /**< these will be assigned by hal layer itself */
-    gdma_dev_t          *dev;               ///< GDMA address
     dma_descriptor_t    desc_dummy_head;    ///< Dummy DMA descriptor for ``cur_desc_ptr`` to start
     dma_descriptor_t    *cur_desc_ptr;      ///< Pointer to the current descriptor
 
     /**< these need to be configured by `adc_hal_config_t` via driver layer*/
+    void                *dev;               ///< DMA address
     uint32_t            desc_max_num;       ///< Number of the descriptors linked once
     uint32_t            dma_chan;           ///< DMA channel to be used
     uint32_t            eof_num;            ///< Words between 2 in_suc_eof interrupts
 } adc_hal_context_t;
-#endif
+
+typedef struct adc_hal_digi_ctrlr_cfg_t {
+    bool                        conv_limit_en;      //1: adc conversion will stop when `conv_limit_num` reaches. 0: won't stop. NOTE: esp32 should always be set to 1.
+    uint32_t                    conv_limit_num;     //see `conv_limit_en`
+    uint32_t                    adc_pattern_len;    //total pattern item number, including ADC1 and ADC2
+    adc_digi_pattern_config_t   *adc_pattern;       //pattern item
+    uint32_t                    sample_freq_hz;     //ADC sample frequency
+    adc_digi_convert_mode_t     conv_mode;          //controller work mode
+    uint32_t                    bit_width;          //output data width
+} adc_hal_digi_ctrlr_cfg_t;
+
 
 /*---------------------------------------------------------------
                     Common setting
 ---------------------------------------------------------------*/
-/**
- * ADC module initialization.
- */
-void adc_hal_init(void);
-
 /**
  * Set ADC module power management.
  *
@@ -68,51 +104,7 @@ void adc_hal_init(void);
  */
 #define adc_hal_set_power_manage(manage) adc_ll_set_power_manage(manage)
 
-/**
- * ADC module clock division factor setting. ADC clock devided from APB clock.
- *
- * @prarm div Division factor.
- */
-#define adc_hal_digi_set_clk_div(div) adc_ll_digi_set_clk_div(div)
-
-#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP8684
-/**
- * ADC SAR clock division factor setting. ADC SAR clock devided from `RTC_FAST_CLK`.
- *
- * @prarm div Division factor.
- */
-#define adc_hal_set_sar_clk_div(adc_n, div) adc_ll_set_sar_clk_div(adc_n, div)
-
-/**
- * Set ADC module controller.
- * There are five SAR ADC controllers:
- * Two digital controller: Continuous conversion mode (DMA). High performance with multiple channel scan modes;
- * Two RTC controller: Single conversion modes (Polling). For low power purpose working during deep sleep;
- * the other is dedicated for Power detect (PWDET / PKDET), Only support ADC2.
- *
- * @prarm adc_n ADC unit.
- * @prarm ctrl ADC controller.
- */
-#define adc_hal_set_controller(adc_n, ctrl) adc_ll_set_controller(adc_n, ctrl)
-#endif  //#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP8684
-
-#if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
-/**
- * Get the attenuation of a particular channel on ADCn.
- *
- * @param adc_n ADC unit.
- * @param channel ADCn channel number.
- * @return atten The attenuation option.
- */
-#define adc_hal_get_atten(adc_n, channel) adc_ll_get_atten(adc_n, channel)
-#endif
-
-#if CONFIG_IDF_TARGET_ESP32
-/**
- * Close ADC AMP module if don't use it for power save.
- */
-#define adc_hal_amp_disable() adc_ll_amp_disable()
-#endif
+void adc_hal_set_controller(adc_ll_num_t unit, adc_hal_work_mode_t work_mode);
 
 #if SOC_ADC_ARBITER_SUPPORTED
 //No ADC2 controller arbiter on ESP32
@@ -133,7 +125,6 @@ void adc_hal_arbiter_config(adc_arbiter_t *config);
 /*---------------------------------------------------------------
                     PWDET(Power detect) controller setting
 ---------------------------------------------------------------*/
-
 /**
  * Set adc cct for PWDET controller.
  *
@@ -149,26 +140,6 @@ void adc_hal_arbiter_config(adc_arbiter_t *config);
  * @return cct Range: 0 ~ 7.
  */
 #define adc_hal_pwdet_get_cct() adc_ll_pwdet_get_cct()
-
-/*---------------------------------------------------------------
-                    RTC controller setting
----------------------------------------------------------------*/
-#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP8684
-/**
- * Set adc output data format for RTC controller.
- *
- * @prarm adc_n ADC unit.
- * @prarm bits Output data bits width option.
- */
-#define adc_hal_rtc_set_output_format(adc_n, bits) adc_ll_rtc_set_output_format(adc_n, bits)
-
-/**
- * ADC module output data invert or not.
- *
- * @prarm adc_n ADC unit.
- */
-#define adc_hal_rtc_output_invert(adc_n, inv_en) adc_ll_rtc_output_invert(adc_n, inv_en)
-#endif  //#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP8684
 
 /**
  *  Enable/disable the output of ADCn's internal reference voltage to one of ADC2's channels.
@@ -188,28 +159,108 @@ void adc_hal_arbiter_config(adc_arbiter_t *config);
                     Digital controller setting
 ---------------------------------------------------------------*/
 /**
- * Digital controller deinitialization.
+ * ADC module initialization.
  */
-void adc_hal_digi_deinit(void);
+void adc_hal_init(void);
+
+/**
+ * Digital controller deinitialization.
+ *
+ * @param hal Context of the HAL
+ */
+void adc_hal_digi_deinit(adc_hal_context_t *hal);
+
+/**
+ * @brief Initialize the hal context
+ *
+ * @param hal    Context of the HAL
+ * @param config Configuration of the HAL
+ */
+void adc_hal_context_config(adc_hal_context_t *hal, const adc_hal_config_t *config);
+
+/**
+ * @brief Initialize the HW
+ *
+ * @param hal Context of the HAL
+ */
+void adc_hal_digi_init(adc_hal_context_t *hal);
 
 /**
  * Setting the digital controller.
  *
- * @param cfg Pointer to digital controller paramter.
+ * @param hal    Context of the HAL
+ * @param cfg    Pointer to digital controller paramter.
  */
-void adc_hal_digi_controller_config(const adc_digi_config_t *cfg);
+void adc_hal_digi_controller_config(adc_hal_context_t *hal, const adc_hal_digi_ctrlr_cfg_t *cfg);
 
 /**
- * Reset the pattern table pointer, then take the measurement rule from table header in next measurement.
+ * @brief Start Conversion
  *
- * @param adc_n ADC unit.
+ * @param hal Context of the HAL
+ * @param data_buf Pointer to the data buffer, the length should be multiple of ``desc_max_num`` and ``eof_num`` in ``adc_hal_context_t``
  */
-#define adc_hal_digi_clear_pattern_table(adc_n) adc_ll_digi_clear_pattern_table(adc_n)
+void adc_hal_digi_start(adc_hal_context_t *hal, uint8_t *data_buf);
+
+#if !SOC_GDMA_SUPPORTED
+/**
+ * @brief Get the DMA descriptor that Hardware has finished processing.
+ *
+ * @param hal Context of the HAL
+ *
+ * @return DMA descriptor address
+ */
+intptr_t adc_hal_get_desc_addr(adc_hal_context_t *hal);
+
+/**
+ * @brief Check the hardware interrupt event
+ *
+ * @param hal Context of the HAL
+ * @param mask Event mask
+ *
+ * @return True: the event is triggered. False: the event is not triggered yet.
+ */
+bool adc_hal_check_event(adc_hal_context_t *hal, uint32_t mask);
+#endif
+
+/**
+ * @brief Get the ADC reading result
+ *
+ * @param      hal           Context of the HAL
+ * @param      eof_desc_addr The last descriptor that is finished by HW. Should be got from DMA
+ * @param[out] cur_desc      The descriptor with ADC reading result (from the 1st one to the last one (``eof_desc_addr``))
+ *
+ * @return                   See ``adc_hal_dma_desc_status_t``
+ */
+adc_hal_dma_desc_status_t adc_hal_get_reading_result(adc_hal_context_t *hal, const intptr_t eof_desc_addr, dma_descriptor_t **cur_desc);
+
+/**
+ * @brief Clear interrupt
+ *
+ * @param hal  Context of the HAL
+ * @param mask mask of the interrupt
+ */
+void adc_hal_digi_clr_intr(adc_hal_context_t *hal, uint32_t mask);
+
+/**
+ * @brief Enable interrupt
+ *
+ * @param hal  Context of the HAL
+ * @param mask mask of the interrupt
+ */
+void adc_hal_digi_dis_intr(adc_hal_context_t *hal, uint32_t mask);
+
+/**
+ * @brief Stop conversion
+ *
+ * @param hal Context of the HAL
+ */
+void adc_hal_digi_stop(adc_hal_context_t *hal);
+
 
 /*---------------------------------------------------------------
                     ADC Single Read
 ---------------------------------------------------------------*/
-#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP8684
+#if SOC_ADC_RTC_CTRL_SUPPORTED
 /**
  * Set the attenuation of a particular channel on ADCn.
  *
@@ -245,7 +296,7 @@ void adc_hal_digi_controller_config(const adc_digi_config_t *cfg);
  */
 #define adc_hal_set_atten(adc_n, channel, atten) adc_ll_set_atten(adc_n, channel, atten)
 
-#else // CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP8684
+#else // #if !SOC_ADC_RTC_CTRL_SUPPORTED
 /**
  * Set the attenuation for ADC to single read
  *
@@ -256,7 +307,7 @@ void adc_hal_digi_controller_config(const adc_digi_config_t *cfg);
  * @param atten    ADC attenuation. See ``adc_atten_t``
  */
 #define adc_hal_set_atten(adc_n, channel, atten) adc_ll_onetime_set_atten(atten)
-#endif
+#endif  //#if SOC_ADC_RTC_CTRL_SUPPORTED
 
 /**
  * Start an ADC conversion and get the converted value.
@@ -277,7 +328,6 @@ esp_err_t adc_hal_convert(adc_ll_num_t adc_n, int channel, int *out_raw);
                     ADC calibration setting
 ---------------------------------------------------------------*/
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
-// ESP32-S2, C3 and H2 support HW offset calibration.
 
 /**
  * @brief Initialize default parameter for the calibration block.
@@ -314,86 +364,21 @@ uint32_t adc_hal_self_calibration(adc_ll_num_t adc_n, adc_channel_t channel, adc
 
 #endif //SOC_ADC_CALIBRATION_V1_SUPPORTED
 
-#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP8684
+
 /*---------------------------------------------------------------
-                    DMA setting
+                    RTC controller setting
 ---------------------------------------------------------------*/
 /**
- * @brief Initialize the hal context
+ * Set adc output data format for RTC controller.
  *
- * @param hal    Context of the HAL
- * @param config Configuration of the HAL
+ * @prarm adc_n ADC unit.
+ * @prarm bits Output data bits width option.
  */
-void adc_hal_context_config(adc_hal_context_t *hal, const adc_hal_config_t *config);
+#define adc_hal_rtc_set_output_format(adc_n, bits) adc_ll_rtc_set_output_format(adc_n, bits)
 
 /**
- * @brief Initialize the HW
+ * ADC module output data invert or not.
  *
- * @param hal Context of the HAL
+ * @prarm adc_n ADC unit.
  */
-void adc_hal_digi_init(adc_hal_context_t *hal);
-
-/**
- * @brief Reset ADC / DMA fifo
- *
- * @param hal Context of the HAL
- */
-void adc_hal_fifo_reset(adc_hal_context_t *hal);
-
-/**
- * @brief Start DMA
- *
- * @param hal      Context of the HAL
- * @param data_buf Pointer to the data buffer, the length should be multiple of ``desc_max_num`` and ``eof_num`` in ``adc_hal_context_t``
- */
-void adc_hal_digi_rxdma_start(adc_hal_context_t *hal, uint8_t *data_buf);
-
-/**
- * @brief Start ADC
- *
- * @param hal Context of the HAL
- */
-void adc_hal_digi_start(adc_hal_context_t *hal);
-
-/**
- * @brief Get the ADC reading result
- *
- * @param      hal           Context of the HAL
- * @param      eof_desc_addr The last descriptor that is finished by HW. Should be got from DMA
- * @param[out] cur_desc      The descriptor with ADC reading result (from the 1st one to the last one (``eof_desc_addr``))
- *
- * @return                   See ``adc_hal_dma_desc_status_t``
- */
-adc_hal_dma_desc_status_t adc_hal_get_reading_result(adc_hal_context_t *hal, const intptr_t eof_desc_addr, dma_descriptor_t **cur_desc);
-
-/**
- * @brief Stop DMA
- *
- * @param hal Context of the HAL
- */
-void adc_hal_digi_rxdma_stop(adc_hal_context_t *hal);
-
-/**
- * @brief Clear interrupt
- *
- * @param hal  Context of the HAL
- * @param mask mask of the interrupt
- */
-void adc_hal_digi_clr_intr(adc_hal_context_t *hal, uint32_t mask);
-
-/**
- * @brief Enable interrupt
- *
- * @param hal  Context of the HAL
- * @param mask mask of the interrupt
- */
-void adc_hal_digi_dis_intr(adc_hal_context_t *hal, uint32_t mask);
-
-/**
- * @brief Stop ADC
- *
- * @param hal Context of the HAL
- */
-void adc_hal_digi_stop(adc_hal_context_t *hal);
-
-#endif  //#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP8684
+#define adc_hal_rtc_output_invert(adc_n, inv_en) adc_ll_rtc_output_invert(adc_n, inv_en)

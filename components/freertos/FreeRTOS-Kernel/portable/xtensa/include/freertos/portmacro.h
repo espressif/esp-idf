@@ -54,7 +54,6 @@
 #include <limits.h>
 #include <xtensa/config/system.h>
 #include <xtensa/xtensa_api.h>
-#include "soc/cpu.h"
 #ifdef CONFIG_LEGACY_INCLUDE_COMMON_HEADERS
 #include "soc/soc_memory_layout.h"
 #endif
@@ -568,7 +567,7 @@ static inline UBaseType_t xPortSetInterruptMaskFromISR(void)
 static inline void vPortClearInterruptMaskFromISR(UBaseType_t prev_level)
 {
     portbenchmarkINTERRUPT_RESTORE(prev_level);
-    XTOS_RESTORE_JUST_INTLEVEL(prev_level);
+    XTOS_RESTORE_JUST_INTLEVEL((int) prev_level);
 }
 
 // ------------------ Critical Sections --------------------
@@ -631,7 +630,7 @@ static inline bool IRAM_ATTR xPortCanYield(void)
 
 static inline BaseType_t IRAM_ATTR xPortGetCoreID(void)
 {
-    return (uint32_t) cpu_hal_get_core_id();
+    return (BaseType_t) cpu_hal_get_core_id();
 }
 
 static inline void __attribute__((always_inline)) uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, uint32_t *set)

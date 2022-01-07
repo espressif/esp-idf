@@ -1,6 +1,6 @@
 /* HTTP2 GET Example using nghttp2
 
-   Contacts http2.golang.org and executes the GET/PUT requests. A thin API
+   Contacts http2.github.io and executes the GET request. A thin API
    wrapper on top of nghttp2, to properly demonstrate the interactions.
 
    This example code is in the Public Domain (or CC0 licensed, at your option.)
@@ -26,15 +26,13 @@
 #include "sh2lib.h"
 
 
-extern const uint8_t server_root_cert_pem_start[] asm("_binary_golang_root_cert_pem_start");
-extern const uint8_t server_root_cert_pem_end[]   asm("_binary_golang_root_cert_pem_end");
+extern const uint8_t server_root_cert_pem_start[] asm("_binary_http2_github_io_root_cert_pem_start");
+extern const uint8_t server_root_cert_pem_end[]   asm("_binary_http2_github_io_root_cert_pem_end");
 
 /* The HTTP/2 server to connect to */
-#define HTTP2_SERVER_URI  "https://http2.golang.org"
+#define HTTP2_SERVER_URI  "https://http2.github.io"
 /* A GET request that keeps streaming current time every second */
-#define HTTP2_STREAMING_GET_PATH  "/clockstream"
-/* A PUT request that echoes whatever we had sent to it */
-#define HTTP2_PUT_PATH            "/ECHO"
+#define HTTP2_STREAMING_GET_PATH  "/index.html"
 
 
 int handle_get_response(struct sh2lib_handle *handle, const char *data, size_t len, int flags)
@@ -120,10 +118,6 @@ static void http2_task(void *args)
 
     /* HTTP GET  */
     sh2lib_do_get(&hd, HTTP2_STREAMING_GET_PATH, handle_get_response);
-
-    /* HTTP PUT  */
-    sh2lib_do_put(&hd, HTTP2_PUT_PATH, send_put_data, handle_echo_response);
-
     while (1) {
         /* Process HTTP2 send/receive */
         if (sh2lib_execute(&hd) < 0) {

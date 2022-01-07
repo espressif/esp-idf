@@ -18,7 +18,6 @@ if(NOT BOOTLOADER_BUILD)
         "esp_hmac.c"
         "esp_ds.c"
         "esp_crypto_lock.c"
-        "memprot.c"
         "spiram.c")
 
     if(CONFIG_SPIRAM_MODE_QUAD)

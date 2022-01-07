@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,18 +22,15 @@
 #include "usb/usb_types_ch9.h"
 
 //Device action flags. LISTED IN THE ORDER THEY SHOULD BE HANDLED IN within usbh_process(). Some actions are mutually exclusive
-#define DEV_FLAG_ACTION_PIPE_HALT_AND_FLUSH         0x01    //Halt all non-default pipes then flush them (called after a device gone is gone)
-#define DEV_FLAG_ACTION_DEFAULT_PIPE_FLUSH          0x02    //Retire all URBS in the default pipe
-#define DEV_FLAG_ACTION_DEFAULT_PIPE_DEQUEUE        0x04    //Dequeue all URBs from default pipe
-#define DEV_FLAG_ACTION_DEFAULT_PIPE_CLEAR          0x08    //Move the default pipe to the active state
-#define DEV_FLAG_ACTION_SEND_GONE_EVENT             0x10    //Send a USB_HOST_CLIENT_EVENT_DEV_GONE event
-#define DEV_FLAG_ACTION_FREE                        0x20    //Free the device object
-#define DEV_FLAG_ACTION_PORT_DISABLE                0x40    //Request the hub driver to disable the port of the device
-#define DEV_FLAG_ACTION_SEND_NEW                    0x80    //Send a new device event
-
-#define DEV_ENUM_TODO_FLAG_DEV_ADDR                 0x01
-#define DEV_ENUM_TODO_FLAG_DEV_DESC                 0x02
-#define DEV_ENUM_TODO_FLAG_CONFIG_DESC              0x04
+#define DEV_FLAG_ACTION_PIPE_HALT_AND_FLUSH         0x0001  //Halt all non-default pipes then flush them (called after a device gone is gone)
+#define DEV_FLAG_ACTION_DEFAULT_PIPE_FLUSH          0x0002  //Retire all URBS in the default pipe
+#define DEV_FLAG_ACTION_DEFAULT_PIPE_DEQUEUE        0x0004  //Dequeue all URBs from default pipe
+#define DEV_FLAG_ACTION_DEFAULT_PIPE_CLEAR          0x0008  //Move the default pipe to the active state
+#define DEV_FLAG_ACTION_SEND_GONE_EVENT             0x0010  //Send a USB_HOST_CLIENT_EVENT_DEV_GONE event
+#define DEV_FLAG_ACTION_FREE                        0x0020  //Free the device object
+#define DEV_FLAG_ACTION_FREE_AND_RECOVER            0x0040  //Free the device object, but send a USBH_HUB_REQ_PORT_RECOVER request afterwards.
+#define DEV_FLAG_ACTION_PORT_DISABLE                0x0080  //Request the hub driver to disable the port of the device
+#define DEV_FLAG_ACTION_SEND_NEW                    0x0100  //Send a new device event
 
 #define EP_NUM_MIN                                  1
 #define EP_NUM_MAX                                  16
@@ -45,23 +42,22 @@ struct device_s {
         TAILQ_ENTRY(device_s) tailq_entry;
         union {
             struct {
-                uint32_t actions: 8;
                 uint32_t in_pending_list: 1;
                 uint32_t is_gone: 1;
                 uint32_t waiting_close: 1;
                 uint32_t waiting_port_disable: 1;
                 uint32_t waiting_free: 1;
-                uint32_t reserved19: 19;
+                uint32_t reserved27: 27;
             };
             uint32_t val;
         } flags;
+        uint32_t action_flags;
         int num_ctrl_xfers_inflight;
         usb_device_state_t state;
         uint32_t ref_count;
     } dynamic;
     //Mux protected members must be protected by the USBH mux_lock when accessed
     struct {
-        usb_config_desc_t *config_desc;
         hcd_pipe_handle_t ep_in[EP_NUM_MAX - 1];    //IN EP owner contexts. -1 to exclude the default endpoint
         hcd_pipe_handle_t ep_out[EP_NUM_MAX - 1];   //OUT EP owner contexts. -1 to exclude the default endpoint
     } mux_protected;
@@ -72,7 +68,10 @@ struct device_s {
         uint8_t address;
         usb_speed_t speed;
         const usb_device_desc_t *desc;
-        uint32_t enum_todo_flags;
+        const usb_config_desc_t *config_desc;
+        const usb_str_desc_t *str_desc_manu;
+        const usb_str_desc_t *str_desc_product;
+        const usb_str_desc_t *str_desc_ser_num;
     } constant;
 };
 
@@ -90,8 +89,8 @@ typedef struct {
     struct {
         usb_notif_cb_t notif_cb;
         void *notif_cb_arg;
-        usbh_hub_cb_t hub_cb;
-        void *hub_cb_arg;
+        usbh_hub_req_cb_t hub_req_cb;
+        void *hub_req_cb_arg;
         usbh_event_cb_t event_cb;
         void *event_cb_arg;
         usbh_ctrl_xfer_cb_t ctrl_xfer_cb;
@@ -157,7 +156,6 @@ static esp_err_t device_alloc(hcd_port_handle_t port_hdl, usb_speed_t speed, dev
     //Note: dev_obj->constant.address is assigned later during enumeration
     dev_obj->constant.speed = speed;
     dev_obj->constant.desc = dev_desc;
-    dev_obj->constant.enum_todo_flags = (DEV_ENUM_TODO_FLAG_DEV_ADDR | DEV_ENUM_TODO_FLAG_DEV_DESC | DEV_ENUM_TODO_FLAG_CONFIG_DESC);
     *dev_obj_ret = dev_obj;
     ret = ESP_OK;
     return ret;
@@ -173,10 +171,22 @@ static void device_free(device_t *dev_obj)
     if (dev_obj == NULL) {
         return;
     }
-    //Configuration must be freed
-    assert(dev_obj->mux_protected.config_desc == NULL); //Sanity check. No need for mux
-    ESP_ERROR_CHECK(hcd_pipe_free(dev_obj->constant.default_pipe));
+    //Configuration might not have been allocated (in case of early enumeration failure)
+    if (dev_obj->constant.config_desc) {
+        heap_caps_free((usb_config_desc_t *)dev_obj->constant.config_desc);
+    }
+    //String descriptors might not have been allocated (in case of early enumeration failure)
+    if (dev_obj->constant.str_desc_manu) {
+        heap_caps_free((usb_str_desc_t *)dev_obj->constant.str_desc_manu);
+    }
+    if (dev_obj->constant.str_desc_product) {
+        heap_caps_free((usb_str_desc_t *)dev_obj->constant.str_desc_product);
+    }
+    if (dev_obj->constant.str_desc_ser_num) {
+        heap_caps_free((usb_str_desc_t *)dev_obj->constant.str_desc_ser_num);
+    }
     heap_caps_free((usb_device_desc_t *)dev_obj->constant.desc);
+    ESP_ERROR_CHECK(hcd_pipe_free(dev_obj->constant.default_pipe));
     heap_caps_free(dev_obj);
 }
 
@@ -193,7 +203,7 @@ static bool _dev_set_actions(device_t *dev_obj, uint32_t action_flags)
         //Move device form idle device list to callback device list
         TAILQ_REMOVE(&p_usbh_obj->dynamic.devs_idle_tailq, dev_obj, dynamic.tailq_entry);
         TAILQ_INSERT_TAIL(&p_usbh_obj->dynamic.devs_pending_tailq, dev_obj, dynamic.tailq_entry);
-        dev_obj->dynamic.flags.actions |= action_flags;
+        dev_obj->dynamic.action_flags |= action_flags;
         dev_obj->dynamic.flags.in_pending_list = 1;
         call_notif_cb = true;
     } else {
@@ -282,10 +292,8 @@ static bool handle_dev_free(device_t *dev_obj)
     USBH_EXIT_CRITICAL();
     p_usbh_obj->mux_protected.num_device--;
     bool all_free = (p_usbh_obj->mux_protected.num_device == 0);
-    heap_caps_free(dev_obj->mux_protected.config_desc);
-    dev_obj->mux_protected.config_desc = NULL;
-    device_free(dev_obj);
     xSemaphoreGive(p_usbh_obj->constant.mux_lock);
+    device_free(dev_obj);
     return all_free;
 }
 
@@ -391,8 +399,8 @@ esp_err_t usbh_process(void)
         TAILQ_REMOVE(&p_usbh_obj->dynamic.devs_pending_tailq, dev_obj, dynamic.tailq_entry);
         TAILQ_INSERT_TAIL(&p_usbh_obj->dynamic.devs_idle_tailq, dev_obj, dynamic.tailq_entry);
         //Clear the device's flags
-        uint32_t action_flags = dev_obj->dynamic.flags.actions;
-        dev_obj->dynamic.flags.actions = 0;
+        uint32_t action_flags = dev_obj->dynamic.action_flags;
+        dev_obj->dynamic.action_flags = 0;
         dev_obj->dynamic.flags.in_pending_list = 0;
 
         /* ---------------------------------------------------------------------
@@ -440,16 +448,22 @@ esp_err_t usbh_process(void)
         - New device event is requested followed immediately by a disconnection
         - Port disable requested followed immediately by a disconnection
         */
-        if (action_flags & DEV_FLAG_ACTION_FREE) {
+        if (action_flags & (DEV_FLAG_ACTION_FREE | DEV_FLAG_ACTION_FREE_AND_RECOVER)) {
+            //Cache a copy of the port handle as we are about to free the device object
+            hcd_port_handle_t port_hdl = dev_obj->constant.port_hdl;
             ESP_LOGD(USBH_TAG, "Freeing device %d", dev_obj->constant.address);
             if (handle_dev_free(dev_obj)) {
                 ESP_LOGD(USBH_TAG, "Device all free");
                 p_usbh_obj->constant.event_cb((usb_device_handle_t)NULL, USBH_EVENT_DEV_ALL_FREE, p_usbh_obj->constant.event_cb_arg);
             }
+            //Check if we need to recover the device's port
+            if (action_flags & DEV_FLAG_ACTION_FREE_AND_RECOVER) {
+                p_usbh_obj->constant.hub_req_cb(port_hdl, USBH_HUB_REQ_PORT_RECOVER, p_usbh_obj->constant.hub_req_cb_arg);
+            }
         } else if (action_flags & DEV_FLAG_ACTION_PORT_DISABLE) {
             //Request that the HUB disables this device's port
             ESP_LOGD(USBH_TAG, "Disable device port %d", dev_obj->constant.address);
-            p_usbh_obj->constant.hub_cb(dev_obj->constant.port_hdl, USBH_HUB_EVENT_DISABLE_PORT, p_usbh_obj->constant.hub_cb_arg);
+            p_usbh_obj->constant.hub_req_cb(dev_obj->constant.port_hdl, USBH_HUB_REQ_PORT_DISABLE, p_usbh_obj->constant.hub_req_cb_arg);
         } else if (action_flags & DEV_FLAG_ACTION_SEND_NEW) {
             ESP_LOGD(USBH_TAG, "New device %d", dev_obj->constant.address);
             p_usbh_obj->constant.event_cb((usb_device_handle_t)dev_obj, USBH_EVENT_DEV_NEW, p_usbh_obj->constant.event_cb_arg);
@@ -461,6 +475,15 @@ esp_err_t usbh_process(void)
 
     }
     USBH_EXIT_CRITICAL();
+    return ESP_OK;
+}
+
+esp_err_t usbh_num_devs(int *num_devs_ret)
+{
+    USBH_CHECK(num_devs_ret != NULL, ESP_ERR_INVALID_ARG);
+    xSemaphoreTake(p_usbh_obj->constant.mux_lock, portMAX_DELAY);
+    *num_devs_ret = p_usbh_obj->mux_protected.num_device;
+    xSemaphoreGive(p_usbh_obj->constant.mux_lock);
     return ESP_OK;
 }
 
@@ -543,16 +566,16 @@ esp_err_t usbh_dev_close(usb_device_handle_t dev_hdl)
     device_t *dev_obj = (device_t *)dev_hdl;
 
     USBH_ENTER_CRITICAL();
-    USBH_CHECK_FROM_CRIT(dev_obj->dynamic.num_ctrl_xfers_inflight == 0, ESP_ERR_INVALID_STATE);
     dev_obj->dynamic.ref_count--;
     bool call_notif_cb = false;
     if (dev_obj->dynamic.ref_count == 0) {
-        //Sanity check. This can only be set when ref count reaches 0
-        assert(!dev_obj->dynamic.flags.waiting_free);
+        //Sanity check.
+        assert(dev_obj->dynamic.num_ctrl_xfers_inflight == 0);  //There cannot be any control transfer inflight
+        assert(!dev_obj->dynamic.flags.waiting_free);   //This can only be set when ref count reaches 0
         if (dev_obj->dynamic.flags.is_gone) {
             //Device is already gone so it's port is already disabled. Trigger the USBH process to free the device
             dev_obj->dynamic.flags.waiting_free = 1;
-            call_notif_cb = _dev_set_actions(dev_obj, DEV_FLAG_ACTION_FREE);
+            call_notif_cb = _dev_set_actions(dev_obj, DEV_FLAG_ACTION_FREE_AND_RECOVER); //Port error occurred so we need to recover it
         } else if (dev_obj->dynamic.flags.waiting_close) {
             //Device is still connected but is no longer needed. Trigger the USBH process to request device's port be disabled
             dev_obj->dynamic.flags.waiting_port_disable = 1;
@@ -632,8 +655,6 @@ esp_err_t usbh_dev_get_info(usb_device_handle_t dev_hdl, usb_device_info_t *dev_
     device_t *dev_obj = (device_t *)dev_hdl;
 
     esp_err_t ret;
-    //We need to take the mux_lock to access mux_protected members
-    xSemaphoreTake(p_usbh_obj->constant.mux_lock, portMAX_DELAY);
     //Device must be configured, or not attached (if it suddenly disconnected)
     USBH_ENTER_CRITICAL();
     if (!(dev_obj->dynamic.state == USB_DEVICE_STATE_CONFIGURED || dev_obj->dynamic.state == USB_DEVICE_STATE_NOT_ATTACHED)) {
@@ -646,14 +667,14 @@ esp_err_t usbh_dev_get_info(usb_device_handle_t dev_hdl, usb_device_info_t *dev_
     dev_info->dev_addr = dev_obj->constant.address;
     dev_info->bMaxPacketSize0 = dev_obj->constant.desc->bMaxPacketSize0;
     USBH_EXIT_CRITICAL();
-    if (dev_obj->mux_protected.config_desc == NULL) {
-        dev_info->bConfigurationValue = 0;
-    } else {
-        dev_info->bConfigurationValue = dev_obj->mux_protected.config_desc->bConfigurationValue;
-    }
+    assert(dev_obj->constant.config_desc);
+    dev_info->bConfigurationValue = dev_obj->constant.config_desc->bConfigurationValue;
+    //String descriptors are allowed to be NULL as not all devices support them
+    dev_info->str_desc_manufacturer = dev_obj->constant.str_desc_manu;
+    dev_info->str_desc_product = dev_obj->constant.str_desc_product;
+    dev_info->str_desc_serial_num = dev_obj->constant.str_desc_ser_num;
     ret = ESP_OK;
 exit:
-    xSemaphoreGive(p_usbh_obj->constant.mux_lock);
     return ret;
 }
 
@@ -676,8 +697,6 @@ esp_err_t usbh_dev_get_config_desc(usb_device_handle_t dev_hdl, const usb_config
     device_t *dev_obj = (device_t *)dev_hdl;
 
     esp_err_t ret;
-    //We need to take the mux_lock to access mux_protected members
-    xSemaphoreTake(p_usbh_obj->constant.mux_lock, portMAX_DELAY);
     //Device must be in the configured state
     USBH_ENTER_CRITICAL();
     if (dev_obj->dynamic.state != USB_DEVICE_STATE_CONFIGURED) {
@@ -686,10 +705,10 @@ esp_err_t usbh_dev_get_config_desc(usb_device_handle_t dev_hdl, const usb_config
         goto exit;
     }
     USBH_EXIT_CRITICAL();
-    *config_desc_ret = dev_obj->mux_protected.config_desc;
+    assert(dev_obj->constant.config_desc);
+    *config_desc_ret = dev_obj->constant.config_desc;
     ret = ESP_OK;
 exit:
-    xSemaphoreGive(p_usbh_obj->constant.mux_lock);
     return ret;
 }
 
@@ -729,13 +748,8 @@ esp_err_t usbh_ep_alloc(usb_device_handle_t dev_hdl, usbh_ep_config_t *ep_config
 {
     USBH_CHECK(dev_hdl != NULL && ep_config != NULL && pipe_hdl_ret != NULL, ESP_ERR_INVALID_ARG);
     device_t *dev_obj = (device_t *)dev_hdl;
-
-    USBH_ENTER_CRITICAL();
-    USBH_CHECK_FROM_CRIT(dev_obj->dynamic.state == USB_DEVICE_STATE_CONFIGURED, ESP_ERR_INVALID_STATE);
-    dev_obj->dynamic.ref_count++;   //Increase the ref_count to keep the device alive while allocating the endpoint
-    USBH_EXIT_CRITICAL();
-
     esp_err_t ret;
+
     //Allocate HCD pipe
     hcd_pipe_config_t pipe_config = {
         .callback = ep_config->pipe_cb,
@@ -757,17 +771,22 @@ esp_err_t usbh_ep_alloc(usb_device_handle_t dev_hdl, usbh_ep_config_t *ep_config
 
     //We need to take the mux_lock to access mux_protected members
     xSemaphoreTake(p_usbh_obj->constant.mux_lock, portMAX_DELAY);
-    if (is_in && dev_obj->mux_protected.ep_in[addr - 1] == NULL) {    //Is an IN EP
+    USBH_ENTER_CRITICAL();
+    //Check the device's state before we assign the pipes to the endpoint
+    if (dev_obj->dynamic.state != USB_DEVICE_STATE_CONFIGURED) {
+        USBH_EXIT_CRITICAL();
+        ret = ESP_ERR_INVALID_STATE;
+        goto assign_err;
+    }
+    USBH_EXIT_CRITICAL();
+    //Assign the allocated pipe to the correct endpoint
+    if (is_in && dev_obj->mux_protected.ep_in[addr - 1] == NULL) {  //Is an IN EP
         dev_obj->mux_protected.ep_in[addr - 1] = pipe_hdl;
         assigned = true;
-    } else {
+    } else if (dev_obj->mux_protected.ep_out[addr - 1] == NULL) {   //Is an OUT EP
         dev_obj->mux_protected.ep_out[addr - 1] = pipe_hdl;
         assigned = true;
     }
-    //Restore ref_count
-    USBH_ENTER_CRITICAL();
-    dev_obj->dynamic.ref_count--;
-    USBH_EXIT_CRITICAL();
     xSemaphoreGive(p_usbh_obj->constant.mux_lock);
 
     if (!assigned) {
@@ -864,17 +883,17 @@ exit:
 
 // ------------------- Device Related ----------------------
 
-esp_err_t usbh_hub_is_installed(usbh_hub_cb_t hub_callback, void *callback_arg)
+esp_err_t usbh_hub_is_installed(usbh_hub_req_cb_t hub_req_callback, void *callback_arg)
 {
-    USBH_CHECK(hub_callback != NULL, ESP_ERR_INVALID_ARG);
+    USBH_CHECK(hub_req_callback != NULL, ESP_ERR_INVALID_ARG);
 
     USBH_ENTER_CRITICAL();
     //Check that USBH is already installed
     USBH_CHECK_FROM_CRIT(p_usbh_obj != NULL, ESP_ERR_INVALID_STATE);
     //Check that Hub has not be installed yet
-    USBH_CHECK_FROM_CRIT(p_usbh_obj->constant.hub_cb == NULL, ESP_ERR_INVALID_STATE);
-    p_usbh_obj->constant.hub_cb = hub_callback;
-    p_usbh_obj->constant.hub_cb_arg = callback_arg;
+    USBH_CHECK_FROM_CRIT(p_usbh_obj->constant.hub_req_cb == NULL, ESP_ERR_INVALID_STATE);
+    p_usbh_obj->constant.hub_req_cb = hub_req_callback;
+    p_usbh_obj->constant.hub_req_cb_arg = callback_arg;
     USBH_EXIT_CRITICAL();
 
     return ESP_OK;
@@ -897,46 +916,43 @@ esp_err_t usbh_hub_add_dev(hcd_port_handle_t port_hdl, usb_speed_t dev_speed, us
     return ret;
 }
 
-esp_err_t usbh_hub_mark_dev_gone(usb_device_handle_t dev_hdl)
+esp_err_t usbh_hub_pass_event(usb_device_handle_t dev_hdl, usbh_hub_event_t hub_event)
 {
     USBH_CHECK(dev_hdl != NULL, ESP_ERR_INVALID_ARG);
     device_t *dev_obj = (device_t *)dev_hdl;
 
-    USBH_ENTER_CRITICAL();
-    dev_obj->dynamic.flags.is_gone = 1;
     bool call_notif_cb;
-    //Check if the device can be freed now
-    if (dev_obj->dynamic.ref_count == 0) {
-        dev_obj->dynamic.flags.waiting_free = 1;
-        //Device is already waiting free so none of it's pipes will be in use. Can free immediately.
-        call_notif_cb = _dev_set_actions(dev_obj, DEV_FLAG_ACTION_FREE);
-    } else {
-        call_notif_cb = _dev_set_actions(dev_obj, DEV_FLAG_ACTION_PIPE_HALT_AND_FLUSH |
-                                                  DEV_FLAG_ACTION_DEFAULT_PIPE_FLUSH |
-                                                  DEV_FLAG_ACTION_DEFAULT_PIPE_DEQUEUE |
-                                                  DEV_FLAG_ACTION_SEND_GONE_EVENT);
+    switch (hub_event) {
+        case USBH_HUB_EVENT_PORT_ERROR: {
+            USBH_ENTER_CRITICAL();
+            dev_obj->dynamic.flags.is_gone = 1;
+            //Check if the device can be freed now
+            if (dev_obj->dynamic.ref_count == 0) {
+                dev_obj->dynamic.flags.waiting_free = 1;
+                //Device is already waiting free so none of it's pipes will be in use. Can free immediately.
+                call_notif_cb = _dev_set_actions(dev_obj, DEV_FLAG_ACTION_FREE_AND_RECOVER); //Port error occurred so we need to recover it
+            } else {
+                call_notif_cb = _dev_set_actions(dev_obj, DEV_FLAG_ACTION_PIPE_HALT_AND_FLUSH |
+                                                          DEV_FLAG_ACTION_DEFAULT_PIPE_FLUSH |
+                                                          DEV_FLAG_ACTION_DEFAULT_PIPE_DEQUEUE |
+                                                          DEV_FLAG_ACTION_SEND_GONE_EVENT);
+            }
+            USBH_EXIT_CRITICAL();
+            break;
+        }
+        case USBH_HUB_EVENT_PORT_DISABLED: {
+            USBH_ENTER_CRITICAL();
+            assert(dev_obj->dynamic.ref_count == 0);    //At this stage, the device should have been closed by all users
+            dev_obj->dynamic.flags.waiting_free = 1;
+            call_notif_cb = _dev_set_actions(dev_obj, DEV_FLAG_ACTION_FREE);
+            USBH_EXIT_CRITICAL();
+            break;
+        }
+        default:
+            return ESP_ERR_INVALID_ARG;
     }
-    USBH_EXIT_CRITICAL();
 
     if (call_notif_cb) {
-        p_usbh_obj->constant.notif_cb(USB_NOTIF_SOURCE_USBH, false, p_usbh_obj->constant.notif_cb_arg);
-    }
-    return ESP_OK;
-}
-
-esp_err_t usbh_hub_dev_port_disabled(usb_device_handle_t dev_hdl)
-{
-    USBH_CHECK(dev_hdl != NULL, ESP_ERR_INVALID_ARG);
-    device_t *dev_obj = (device_t *)dev_hdl;
-
-    USBH_ENTER_CRITICAL();
-    assert(dev_obj->dynamic.ref_count == 0);    //At this stage, the device should have been closed by all users
-    dev_obj->dynamic.flags.waiting_free = 1;
-    bool call_notif_cb = _dev_set_actions(dev_obj, DEV_FLAG_ACTION_FREE);
-    USBH_EXIT_CRITICAL();
-
-    if (call_notif_cb) {
-        ESP_LOGD(USBH_TAG, "Notif free");
         p_usbh_obj->constant.notif_cb(USB_NOTIF_SOURCE_USBH, false, p_usbh_obj->constant.notif_cb_arg);
     }
     return ESP_OK;
@@ -950,12 +966,10 @@ esp_err_t usbh_hub_enum_fill_dev_addr(usb_device_handle_t dev_hdl, uint8_t dev_a
     device_t *dev_obj = (device_t *)dev_hdl;
 
     USBH_ENTER_CRITICAL();
-    USBH_CHECK_FROM_CRIT(dev_obj->constant.enum_todo_flags & DEV_ENUM_TODO_FLAG_DEV_ADDR, ESP_ERR_INVALID_STATE);
     dev_obj->dynamic.state = USB_DEVICE_STATE_ADDRESS;
     USBH_EXIT_CRITICAL();
 
     //We can modify the info members outside the critical section
-    dev_obj->constant.enum_todo_flags &= ~DEV_ENUM_TODO_FLAG_DEV_ADDR;
     dev_obj->constant.address = dev_addr;
     return ESP_OK;
 }
@@ -965,8 +979,6 @@ esp_err_t usbh_hub_enum_fill_dev_desc(usb_device_handle_t dev_hdl, const usb_dev
     USBH_CHECK(dev_hdl != NULL && device_desc != NULL, ESP_ERR_INVALID_ARG);
     device_t *dev_obj = (device_t *)dev_hdl;
     //We can modify the info members outside the critical section
-    USBH_CHECK(dev_obj->constant.enum_todo_flags & DEV_ENUM_TODO_FLAG_DEV_DESC, ESP_ERR_INVALID_STATE);
-    dev_obj->constant.enum_todo_flags &= ~DEV_ENUM_TODO_FLAG_DEV_DESC;
     memcpy((usb_device_desc_t *)dev_obj->constant.desc, device_desc, sizeof(usb_device_desc_t));
     return ESP_OK;
 }
@@ -975,43 +987,52 @@ esp_err_t usbh_hub_enum_fill_config_desc(usb_device_handle_t dev_hdl, const usb_
 {
     USBH_CHECK(dev_hdl != NULL && config_desc_full != NULL, ESP_ERR_INVALID_ARG);
     device_t *dev_obj = (device_t *)dev_hdl;
-    esp_err_t ret;
     //Allocate memory to store the configuration descriptor
     usb_config_desc_t *config_desc = heap_caps_malloc(config_desc_full->wTotalLength, MALLOC_CAP_DEFAULT);  //Buffer to copy over full configuration descriptor (wTotalLength)
     if (config_desc == NULL) {
-        ret = ESP_ERR_NO_MEM;
-        goto err;
+        return ESP_ERR_NO_MEM;
     }
     //Copy the configuration descriptor
     memcpy(config_desc, config_desc_full, config_desc_full->wTotalLength);
-    //Assign the config object to the device object
-    if (!(dev_obj->constant.enum_todo_flags & DEV_ENUM_TODO_FLAG_CONFIG_DESC)) {
-        ret = ESP_ERR_INVALID_STATE;
-        goto assign_err;
+    //Assign the config desc to the device object
+    assert(dev_obj->constant.config_desc == NULL);
+    dev_obj->constant.config_desc = config_desc;
+    return ESP_OK;
+}
+
+esp_err_t usbh_hub_enum_fill_str_desc(usb_device_handle_t dev_hdl, const usb_str_desc_t *str_desc, int select)
+{
+    USBH_CHECK(dev_hdl != NULL && str_desc != NULL && (select >= 0 && select < 3), ESP_ERR_INVALID_ARG);
+    device_t *dev_obj = (device_t *)dev_hdl;
+    //Allocate memory to store the manufacturer string descriptor
+    usb_str_desc_t *str_desc_fill = heap_caps_malloc(str_desc->bLength, MALLOC_CAP_DEFAULT);
+    if (str_desc_fill == NULL) {
+        return ESP_ERR_NO_MEM;
     }
-
-    //We need to take the mux_lock to access mux_protected members
-    xSemaphoreTake(p_usbh_obj->constant.mux_lock, portMAX_DELAY);
-    assert(dev_obj->mux_protected.config_desc == NULL);
-    dev_obj->mux_protected.config_desc = config_desc;
-    xSemaphoreGive(p_usbh_obj->constant.mux_lock);
-
-    //We can modify the info members outside the critical section
-    dev_obj->constant.enum_todo_flags &= ~DEV_ENUM_TODO_FLAG_CONFIG_DESC;
-    ret = ESP_OK;
-    return ret;
-
-assign_err:
-    heap_caps_free(config_desc);
-err:
-    return ret;
+    //Copy the string descriptor
+    memcpy(str_desc_fill, str_desc, str_desc->bLength);
+    //Assign filled string descriptor to the device object
+    switch (select) {
+        case 0:
+            assert(dev_obj->constant.str_desc_manu == NULL);
+            dev_obj->constant.str_desc_manu = str_desc_fill;
+            break;
+        case 1:
+            assert(dev_obj->constant.str_desc_product == NULL);
+            dev_obj->constant.str_desc_product = str_desc_fill;
+            break;
+        default:    //2
+            assert(dev_obj->constant.str_desc_ser_num == NULL);
+            dev_obj->constant.str_desc_ser_num = str_desc_fill;
+            break;
+    }
+    return ESP_OK;
 }
 
 esp_err_t usbh_hub_enum_done(usb_device_handle_t dev_hdl)
 {
     USBH_CHECK(dev_hdl != NULL, ESP_ERR_INVALID_ARG);
     device_t *dev_obj = (device_t *)dev_hdl;
-    USBH_CHECK(dev_obj->constant.enum_todo_flags == 0, ESP_ERR_INVALID_STATE);  //All enumeration stages to be done
 
     //We need to take the mux_lock to access mux_protected members
     xSemaphoreTake(p_usbh_obj->constant.mux_lock, portMAX_DELAY);
@@ -1037,16 +1058,6 @@ esp_err_t usbh_hub_enum_failed(usb_device_handle_t dev_hdl)
 {
     USBH_CHECK(dev_hdl != NULL, ESP_ERR_INVALID_ARG);
     device_t *dev_obj = (device_t *)dev_hdl;
-
-    //We need to take the mux_lock to access mux_protected members
-    xSemaphoreTake(p_usbh_obj->constant.mux_lock, portMAX_DELAY);
-    usb_config_desc_t *config_desc = dev_obj->mux_protected.config_desc;
-    dev_obj->mux_protected.config_desc = NULL;
-    xSemaphoreGive(p_usbh_obj->constant.mux_lock);
-
-    if (config_desc) {
-        heap_caps_free(config_desc);
-    }
     device_free(dev_obj);
     return ESP_OK;
 }

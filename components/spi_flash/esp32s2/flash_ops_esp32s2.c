@@ -1,16 +1,8 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 #include <sys/param.h>
@@ -18,12 +10,12 @@
 #include "esp_spi_flash.h"
 #include "soc/system_reg.h"
 #include "soc/soc_memory_layout.h"
-#include "esp32s2/rom/spi_flash.h"
 #include "esp32s2/rom/cache.h"
 #include "bootloader_flash.h"
 #include "hal/spi_flash_hal.h"
 #include "esp_flash.h"
 #include "esp_log.h"
+#include "esp_rom_spiflash.h"
 
 static const char *TAG = "spiflash_s2";
 
@@ -71,7 +63,7 @@ esp_rom_spiflash_result_t IRAM_ATTR spi_flash_write_encrypted_chip(size_t dest_a
             ops->start();
         }
         flash_rom_init();
-        rc = SPI_Encrypt_Write(dest_addr, src, size);
+        rc = esp_rom_spiflash_write_encrypted(dest_addr, (uint32_t*)src, size);
         if (ops && ops->end) {
             ops->end();
         }

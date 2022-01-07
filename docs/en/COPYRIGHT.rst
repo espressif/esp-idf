@@ -69,6 +69,8 @@ These third party libraries can be included into the application (firmware) prod
 
 * :component_file:`UBSAN runtime <esp_system/ubsan.c>` — Copyright (c) 2016, Linaro Limited and Jiří Zárevúcky, licensed under the BSD 2-clause license.
 
+* `freemodbus`_ Copyright (c) 2006-2013 Christian Walter, Armink and licensed under the BSD license.
+
 Build Tools
 -----------
 
@@ -84,7 +86,7 @@ Documentation
 ROM Source Code Copyrights
 ==========================
 
-ESP32, ESP32-S and ESP32-C Series SoCs mask ROM hardware includes binaries compiled from portions of the following third party software:
+ESP32, ESP8684, ESP32-S and ESP32-C Series SoCs mask ROM hardware includes binaries compiled from portions of the following third party software:
 
 * :component:`Newlib <newlib>`, licensed under the BSD License and is Copyright of various parties, as described in :component_file:`COPYING.NEWLIB<newlib/COPYING.NEWLIB>`.
 
@@ -177,3 +179,4 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _sphinx_rtd_theme: https://github.com/readthedocs/sphinx_rtd_theme
 .. _cryptoauthlib: https://github.com/MicrochipTech/cryptoauthlib
 .. _qrcode: https://github.com/nayuki/QR-Code-generator
+.. _freemodbus: https://github.com/armink/FreeModbus_Slave-Master-RTT-STM32

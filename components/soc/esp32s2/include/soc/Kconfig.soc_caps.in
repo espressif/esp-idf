@@ -3,6 +3,10 @@
 # using gen_soc_caps_kconfig.py, do not edit manually
 #####################################################
 
+config SOC_ADC_SUPPORTED
+    bool
+    default y
+
 config SOC_DAC_SUPPORTED
     bool
     default y
@@ -36,6 +40,10 @@ config SOC_USB_OTG_SUPPORTED
     default y
 
 config SOC_PCNT_SUPPORTED
+    bool
+    default y
+
+config SOC_WIFI_SUPPORTED
     bool
     default y
 
@@ -123,6 +131,10 @@ config SOC_ADC_RTC_CTRL_SUPPORTED
     bool
     default y
 
+config SOC_ADC_DIG_CTRL_SUPPORTED
+    bool
+    default y
+
 config SOC_ADC_ARBITER_SUPPORTED
     bool
     default y
@@ -205,7 +217,7 @@ config SOC_GPIO_PORT
 
 config SOC_GPIO_PIN_COUNT
     int
-    default 48
+    default 47
 
 config SOC_GPIO_SUPPORT_RTC_INDEPENDENT
     bool
@@ -217,7 +229,7 @@ config SOC_GPIO_SUPPORT_FORCE_HOLD
 
 config SOC_GPIO_VALID_GPIO_MASK
     hex
-    default 0xFFFFFFFFFFFF
+    default 0x7FFFFFFFFFFF
 
 config SOC_GPIO_SUPPORT_SLP_SWITCH
     bool
@@ -267,6 +279,26 @@ config SOC_I2C_SUPPORT_APB
     bool
     default y
 
+config SOC_CLK_APLL_SUPPORTED
+    bool
+    default y
+
+config SOC_APLL_MULTIPLIER_OUT_MIN_HZ
+    int
+    default 350000000
+
+config SOC_APLL_MULTIPLIER_OUT_MAX_HZ
+    int
+    default 500000000
+
+config SOC_APLL_MIN_HZ
+    int
+    default 5303031
+
+config SOC_APLL_MAX_HZ
+    int
+    default 125000000
+
 config SOC_I2S_NUM
     int
     default 1
@@ -278,18 +310,6 @@ config SOC_I2S_SUPPORTS_APLL
 config SOC_I2S_SUPPORTS_DMA_EQUAL
     bool
     default y
-
-config SOC_I2S_APLL_MIN_FREQ
-    int
-    default 250000000
-
-config SOC_I2S_APLL_MAX_FREQ
-    int
-    default 500000000
-
-config SOC_I2S_APLL_MIN_RATE
-    int
-    default 10675
 
 config SOC_I2S_LCD_I80_VARIANT
     bool
@@ -495,10 +515,6 @@ config SOC_SYSTIMER_BIT_WIDTH_HI
     int
     default 32
 
-config SOC_TIMER_GROUP_COUNTER_BIT_WIDTH
-    int
-    default 64
-
 config SOC_TIMER_GROUPS
     int
     default 2
@@ -507,9 +523,17 @@ config SOC_TIMER_GROUP_TIMERS_PER_GROUP
     int
     default 2
 
+config SOC_TIMER_GROUP_COUNTER_BIT_WIDTH
+    int
+    default 64
+
 config SOC_TIMER_GROUP_SUPPORT_XTAL
     bool
     default y
+
+config SOC_TIMER_GROUP_TOTAL_TIMERS
+    int
+    default 4
 
 config SOC_TOUCH_VERSION_2
     bool

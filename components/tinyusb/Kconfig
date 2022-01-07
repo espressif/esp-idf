@@ -116,6 +116,7 @@ menu "TinyUSB Stack"
 
         menu "Massive Storage Class (MSC)"
             config TINYUSB_MSC_ENABLED
+                depends on TINYUSB_CDC_COUNT < 2
                 bool "Enable TinyUSB MSC feature"
                 default n
                 help
@@ -135,6 +136,14 @@ menu "TinyUSB Stack"
                 default n
                 help
                     Enable TinyUSB CDC feature.
+
+            config TINYUSB_CDC_COUNT
+                int "CDC Channel Count"
+                default 1
+                range 1 2
+                depends on TINYUSB_CDC_ENABLED
+                help
+                    Number of independent serial ports.
 
             config TINYUSB_CDC_RX_BUFSIZE
                 depends on TINYUSB_CDC_ENABLED

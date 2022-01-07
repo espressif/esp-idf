@@ -65,6 +65,7 @@
 /components/app_update/               @esp-idf-codeowners/system @esp-idf-codeowners/app-utilities
 /components/asio/                     @esp-idf-codeowners/network
 /components/bootloader*/              @esp-idf-codeowners/system @esp-idf-codeowners/security
+/components/bootloader_support/bootloader_flash/    @esp-idf-codeowners/peripherals
 /components/bt/                       @esp-idf-codeowners/bluetooth
 /components/cmock/                    @esp-idf-codeowners/system
 /components/coap/                     @esp-idf-codeowners/app-utilities
@@ -125,6 +126,7 @@
 /components/protobuf-c/               @esp-idf-codeowners/app-utilities
 /components/protocomm/                @esp-idf-codeowners/app-utilities
 /components/pthread/                  @esp-idf-codeowners/system
+/components/riscv/                    @esp-idf-codeowners/system
 /components/sdmmc/                    @esp-idf-codeowners/storage
 /components/soc/                      @esp-idf-codeowners/peripherals @esp-idf-codeowners/system
 /components/spi_flash/                @esp-idf-codeowners/peripherals
@@ -151,6 +153,7 @@
 /docs/**/api-reference/storage/         @esp-idf-codeowners/storage
 /docs/**/api-reference/system/          @esp-idf-codeowners/system
 /docs/**/security/                      @esp-idf-codeowners/security
+/docs/**/migration-guides/              @esp-idf-codeowners/docs @esp-idf-codeowners/all-maintainers
 
 /examples/bluetooth/          @esp-idf-codeowners/bluetooth
 /examples/build_system/       @esp-idf-codeowners/build-config

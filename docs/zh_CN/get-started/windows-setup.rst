@@ -4,7 +4,6 @@ Windows 平台工具链的标准设置
 
 :link_to_translation:`en:[English]`
 
-
 概述
 ============
 

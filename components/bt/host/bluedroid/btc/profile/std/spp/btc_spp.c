@@ -135,6 +135,11 @@ static spp_slot_t *spp_malloc_slot(void)
             (*slot)->is_server = false;
             (*slot)->write_data = NULL;
             (*slot)->close_alarm = NULL;
+            /* clear the old event bits */
+            if (spp_local_param.tx_event_group) {
+                xEventGroupClearBits(spp_local_param.tx_event_group, SLOT_WRITE_BIT(i) | SLOT_CLOSE_BIT(i));
+            }
+
             if (init_slot_data(&(*slot)->rx, QUEUE_SIZE_MAX)) {
                 BTC_TRACE_ERROR("%s unable to malloc rx queue!", __func__);
                 err_no = 1;

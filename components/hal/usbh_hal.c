@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -84,7 +84,6 @@
 
 static void set_defaults(usbh_hal_context_t *hal)
 {
-    usbh_ll_internal_phy_conf(hal->wrap_dev);   //Enable and configure internal PHY
     //GAHBCFG register
     usb_ll_en_dma_mode(hal->dev);
 #ifdef CONFIG_IDF_TARGET_ESP32S2
@@ -114,7 +113,6 @@ void usbh_hal_init(usbh_hal_context_t *hal)
     //Initialize HAL context
     memset(hal, 0, sizeof(usbh_hal_context_t));
     hal->dev = dev;
-    hal->wrap_dev = &USB_WRAP;
     set_defaults(hal);
 }
 
@@ -125,7 +123,6 @@ void usbh_hal_deinit(usbh_hal_context_t *hal)
     usb_ll_intr_read_and_clear(hal->dev);   //Clear interrupts
     usb_ll_dis_global_intr(hal->dev);       //Disable interrupt signal
     hal->dev = NULL;
-    hal->wrap_dev = NULL;
 }
 
 void usbh_hal_core_soft_reset(usbh_hal_context_t *hal)

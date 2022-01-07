@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -88,23 +88,14 @@ Configuration Descriptor:
 If you're using a flash driver with different endpoints, modify the endpoint descriptors below.
 */
 
-static const usb_ep_desc_t mock_msc_scsi_bulk_out_ep_desc = {
-    .bLength = sizeof(usb_ep_desc_t),
-    .bDescriptorType = USB_B_DESCRIPTOR_TYPE_ENDPOINT,
-    .bEndpointAddress = 0x01,       //EP 1 OUT
-    .bmAttributes = USB_BM_ATTRIBUTES_XFER_BULK,
-    .wMaxPacketSize = 64,           //MPS of 64 bytes
-    .bInterval = 1,
-};
-
-static const usb_ep_desc_t mock_msc_scsi_bulk_in_ep_desc = {
-    .bLength = sizeof(usb_ep_desc_t),
-    .bDescriptorType = USB_B_DESCRIPTOR_TYPE_ENDPOINT,
-    .bEndpointAddress = 0x82,       //EP 2 IN
-    .bmAttributes = USB_BM_ATTRIBUTES_XFER_BULK,
-    .wMaxPacketSize = 64,           //MPS of 64 bytes
-    .bInterval = 1,
-};
+//Constant descriptors
+extern const uint8_t mock_msc_scsi_dev_desc[];
+extern const uint8_t mock_msc_scsi_config_desc[];
+extern const uint8_t mock_msc_scsi_str_desc_manu[];
+extern const uint8_t mock_msc_scsi_str_desc_prod[];
+extern const uint8_t mock_msc_scsi_str_desc_ser_num[];
+extern const usb_ep_desc_t mock_msc_scsi_bulk_out_ep_desc;
+extern const usb_ep_desc_t mock_msc_scsi_bulk_in_ep_desc;
 
 #define MOCK_MSC_SCSI_DEV_ID_VENDOR     0x125F
 #define MOCK_MSC_SCSI_DEV_ID_PRODUCT    0xc08A
@@ -246,14 +237,8 @@ Device Descriptor:
 
 If you're using another mice with different endpoints, modify the endpoint descriptor below
 */
-static const usb_ep_desc_t mock_hid_mouse_in_ep_desc = {
-    .bLength = sizeof(usb_ep_desc_t),
-    .bDescriptorType = USB_B_DESCRIPTOR_TYPE_ENDPOINT,
-    .bEndpointAddress = 0x81,       //EP 1 IN
-    .bmAttributes = USB_BM_ATTRIBUTES_XFER_INT,
-    .wMaxPacketSize = 4,            //MPS of 4 bytes
-    .bInterval = 10,                //Interval of 10ms
-};
+
+extern  const usb_ep_desc_t mock_hid_mouse_in_ep_desc;
 
 #define MOCK_HID_MOUSE_DEV_ID_VENDOR        0x413C
 #define MOCK_HID_MOUSE_DEV_ID_PRODUCT       0x301A

@@ -7,21 +7,25 @@ config SOC_CPU_CORES_NUM
     bool
     default y
 
+config SOC_ADC_SUPPORTED
+    bool
+    default y
+
+config SOC_DEDICATED_GPIO_SUPPORTED
+    bool
+    default y
+
 config SOC_GDMA_SUPPORTED
     bool
     default y
 
 config SOC_BT_SUPPORTED
     bool
-    default y
+    default n
 
-config SOC_DIG_SIGN_SUPPORTED
+config SOC_WIFI_SUPPORTED
     bool
-    default y
-
-config SOC_HMAC_SUPPORTED
-    bool
-    default y
+    default n
 
 config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
@@ -55,6 +59,10 @@ config SOC_ICACHE_ACCESS_RODATA_SUPPORTED
     bool
     default y
 
+config SOC_FLASH_ENCRYPTION_XTS_AES
+    bool
+    default y
+
 config SOC_AES_SUPPORT_DMA
     bool
     default y
@@ -63,25 +71,41 @@ config SOC_AES_GDMA
     bool
     default y
 
+config SOC_ADC_DIG_CTRL_SUPPORTED
+    bool
+    default y
+
+config SOC_ADC_ARBITER_SUPPORTED
+    bool
+    default y
+
+config SOC_ADC_FILTER_SUPPORTED
+    bool
+    default y
+
+config SOC_ADC_MONITOR_SUPPORTED
+    bool
+    default y
+
 config SOC_ADC_PERIPH_NUM
     int
     default 2
-
-config SOC_ADC_PATT_LEN_MAX
-    int
-    default 16
 
 config SOC_ADC_MAX_CHANNEL_NUM
     int
     default 5
 
-config SOC_ADC_MAX_BITWIDTH
+config SOC_ADC_DIGI_CONTROLLER_NUM
+    int
+    default 1
+
+config SOC_ADC_PATT_LEN_MAX
+    int
+    default 8
+
+config SOC_ADC_DIGI_MAX_BITWIDTH
     int
     default 12
-
-config SOC_ADC_CALIBRATION_V1_SUPPORTED
-    bool
-    default y
 
 config SOC_ADC_DIGI_FILTER_NUM
     int
@@ -91,10 +115,6 @@ config SOC_ADC_DIGI_MONITOR_NUM
     int
     default 2
 
-config SOC_ADC_HW_CALIBRATION_V1
-    bool
-    default y
-
 config SOC_ADC_SAMPLE_FREQ_THRES_HIGH
     int
     default 83333
@@ -102,6 +122,10 @@ config SOC_ADC_SAMPLE_FREQ_THRES_HIGH
 config SOC_ADC_SAMPLE_FREQ_THRES_LOW
     int
     default 611
+
+config SOC_ADC_MAX_BITWIDTH
+    int
+    default 12
 
 config SOC_APB_BACKUP_DMA
     bool
@@ -179,6 +203,18 @@ config SOC_GPIO_SUPPORT_SLP_SWITCH
     bool
     default y
 
+config SOC_DEDIC_GPIO_OUT_CHANNELS_NUM
+    int
+    default 8
+
+config SOC_DEDIC_GPIO_IN_CHANNELS_NUM
+    int
+    default 8
+
+config SOC_DEDIC_PERIPH_ALWAYS_ENABLE
+    bool
+    default y
+
 config SOC_I2C_NUM
     int
     default 1
@@ -242,6 +278,10 @@ config SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH
 config SOC_RTC_CNTL_CPU_PD_REG_FILE_NUM
     int
     default 108
+
+config SOC_RTCIO_PIN_COUNT
+    int
+    default 0
 
 config SOC_RSA_MAX_BIT_LEN
     int
@@ -390,6 +430,10 @@ config SOC_TIMER_GROUP_COUNTER_BIT_WIDTH
 config SOC_TIMER_GROUP_SUPPORT_XTAL
     bool
     default y
+
+config SOC_TIMER_GROUP_TOTAL_TIMERS
+    int
+    default 1
 
 config SOC_TOUCH_SENSOR_NUM
     int

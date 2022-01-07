@@ -128,11 +128,11 @@ The table below describes the code examples available in the directory :example:
 
    * - Code Example
      - Description
-   * - :example:`peripherals/usb/tusb_console`
+   * - :example:`peripherals/usb/device/tusb_console`
      - How to set up {IDF_TARGET_NAME} chip to get log output via Serial Device connection
-   * - :example:`peripherals/usb/tusb_sample_descriptor`
+   * - :example:`peripherals/usb/device/tusb_sample_descriptor`
      - How to set up {IDF_TARGET_NAME} chip to work as a Generic USB Device with a user-defined descriptor
-   * - :example:`peripherals/usb/tusb_serial_device`
+   * - :example:`peripherals/usb/device/tusb_serial_device`
      - How to set up {IDF_TARGET_NAME} chip to work as a USB Serial Device
 
 

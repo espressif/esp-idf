@@ -19,9 +19,33 @@
 static ff_diskio_impl_t * s_impls[FF_VOLUMES] = { NULL };
 
 #if FF_MULTI_PARTITION		/* Multiple partition configuration */
-PARTITION VolToPart[] = {
+const PARTITION VolToPart[FF_VOLUMES] = {
     {0, 0},    /* Logical drive 0 ==> Physical drive 0, auto detection */
-    {1, 0}     /* Logical drive 1 ==> Physical drive 1, auto detection */
+    {1, 0},    /* Logical drive 1 ==> Physical drive 1, auto detection */
+#if FF_VOLUMES > 2
+    {2, 0},     /* Logical drive 2 ==> Physical drive 2, auto detection */
+#endif
+#if FF_VOLUMES > 3
+    {3, 0},     /* Logical drive 3 ==> Physical drive 3, auto detection */
+#endif
+#if FF_VOLUMES > 4
+    {4, 0},     /* Logical drive 4 ==> Physical drive 4, auto detection */
+#endif
+#if FF_VOLUMES > 5
+    {5, 0},     /* Logical drive 5 ==> Physical drive 5, auto detection */
+#endif
+#if FF_VOLUMES > 6
+    {6, 0},     /* Logical drive 6 ==> Physical drive 6, auto detection */
+#endif
+#if FF_VOLUMES > 7
+    {7, 0},     /* Logical drive 7 ==> Physical drive 7, auto detection */
+#endif
+#if FF_VOLUMES > 8
+    {8, 0},     /* Logical drive 8 ==> Physical drive 8, auto detection */
+#endif
+#if FF_VOLUMES > 9
+    {9, 0},     /* Logical drive 9 ==> Physical drive 9, auto detection */
+#endif
 };
 #endif
 

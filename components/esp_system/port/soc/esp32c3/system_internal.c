@@ -17,7 +17,7 @@
 #include "soc/gpio_reg.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_reg.h"
-#include "soc/cpu.h"
+#include "esp_cpu.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
 #include "soc/syscon_reg.h"

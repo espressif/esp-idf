@@ -1,6 +1,12 @@
 Temperature Sensor
 ===================
 
+.. only:: esp32s3
+
+    .. warning::
+
+        This feature is not supported in v4.4
+
 Overview
 --------
 

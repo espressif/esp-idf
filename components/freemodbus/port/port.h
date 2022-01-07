@@ -6,9 +6,8 @@
  * SPDX-FileContributor: 2016-2021 Espressif Systems (Shanghai) CO LTD
  */
 /*
- * FreeModbus Libary: ESP32 Port Demo Application
+ * FreeModbus Libary: ESP32 Port
  * Copyright (C) 2010 Christian Walter <cwalter@embedded-solutions.at>
- *
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,7 +31,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * File: $Id: portother.c,v 1.1 2010/06/06 13:07:20 wolti Exp $
+ * File: $Id: port.h,v 1.1 2010/06/06 13:07:20 wolti Exp $
  */
 
 #ifndef PORT_COMMON_H_

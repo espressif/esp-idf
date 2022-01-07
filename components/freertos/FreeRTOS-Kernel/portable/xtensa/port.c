@@ -61,10 +61,13 @@
 #include "esp_system.h"
 #include "esp_log.h"
 #include "esp_int_wdt.h"
+#ifdef CONFIG_APPTRACE_ENABLE
 #include "esp_app_trace.h"    /* Required for esp_apptrace_init. [refactor-todo] */
+#endif
 #include "FreeRTOS.h"        /* This pulls in portmacro.h */
 #include "task.h"            /* Required for TaskHandle_t, tskNO_AFFINITY, and vTaskStartScheduler */
 #include "port_systick.h"
+#include "esp_cpu.h"
 
 _Static_assert(tskNO_AFFINITY == CONFIG_FREERTOS_NO_AFFINITY, "incorrect tskNO_AFFINITY value");
 
@@ -92,6 +95,7 @@ extern void _xt_coproc_init(void);
 
 BaseType_t xPortStartScheduler( void )
 {
+    portDISABLE_INTERRUPTS();
     // Interrupts are disabled at this point and stack contains PS with enabled interrupts when task context is restored
 
 #if XCHAL_CP_NUM > 0
@@ -414,7 +418,7 @@ void vPortSetStackWatchpoint( void *pxStackStart )
     //This way, we make sure we trigger before/when the stack canary is corrupted, not after.
     int addr = (int)pxStackStart;
     addr = (addr + 31) & (~31);
-    esp_cpu_set_watchpoint(STACK_WATCH_POINT_NUMBER, (char *)addr, 32, ESP_WATCHPOINT_STORE);
+    esp_cpu_set_watchpoint(STACK_WATCH_POINT_NUMBER, (char *)addr, 32, ESP_CPU_WATCHPOINT_STORE);
 }
 
 /* ---------------------------------------------- Misc Implementations -------------------------------------------------

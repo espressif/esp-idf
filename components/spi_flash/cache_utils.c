@@ -14,34 +14,29 @@
 #include <freertos/semphr.h>
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
-#include <esp32/rom/spi_flash.h>
 #include <esp32/rom/cache.h>
 #elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/spi_flash.h"
 #include "esp32s2/rom/cache.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/spi_flash.h"
 #include "esp32s3/rom/cache.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/spi_flash.h"
 #include "esp32c3/rom/cache.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/spi_flash.h"
 #include "esp32h2/rom/cache.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
 #elif CONFIG_IDF_TARGET_ESP8684
-#include "esp8684/rom/spi_flash.h"
 #include "esp8684/rom/cache.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
 #endif
+#include "esp_rom_spiflash.h"
 #include <soc/soc.h>
 #include "sdkconfig.h"
 #ifndef CONFIG_FREERTOS_UNICORE
@@ -51,6 +46,7 @@
 #include "esp_intr_alloc.h"
 #include "esp_spi_flash.h"
 #include "esp_log.h"
+#include "esp_cpu.h"
 
 static __attribute__((unused)) const char *TAG = "cache";
 

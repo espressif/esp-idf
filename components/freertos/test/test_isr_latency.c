@@ -7,7 +7,6 @@
 #include "freertos/queue.h"
 #include "esp_intr_alloc.h"
 #include "unity.h"
-#include "soc/cpu.h"
 #include "test_utils.h"
 #if CONFIG_IDF_TARGET_ARCH_XTENSA
 #include "xtensa/hal.h"

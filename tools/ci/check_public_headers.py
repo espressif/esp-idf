@@ -2,19 +2,8 @@
 #
 # Checks all public headers in IDF in the ci
 #
-# Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 #
 
 from __future__ import print_function, unicode_literals
@@ -60,10 +49,10 @@ class HeaderFailedContainsCode(HeaderFailed):
 #
 def exec_cmd_to_temp_file(what, suffix=''):
     out_file = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
-    rc, out, err = exec_cmd(what, out_file)
+    rc, out, err, cmd = exec_cmd(what, out_file)
     with open(out_file.name, 'r', encoding='utf-8') as f:
         out = f.read()
-    return rc, out, err, out_file.name
+    return rc, out, err, out_file.name, cmd
 
 
 def exec_cmd(what, out_file=subprocess.PIPE):
@@ -72,7 +61,7 @@ def exec_cmd(what, out_file=subprocess.PIPE):
     rc = p.returncode
     output = output.decode('utf-8') if output is not None else None
     err = err.decode('utf-8') if err is not None else None
-    return rc, output, err
+    return rc, output, err, ' '.join(what)
 
 
 class PublicHeaderChecker:
@@ -174,7 +163,7 @@ class PublicHeaderChecker:
             self.compile_one_header(header)
             temp_header = None
             try:
-                _, _, _, temp_header = exec_cmd_to_temp_file(['sed', '/#include/d; /#error/d', header], suffix='.h')
+                _, _, _, temp_header, _ = exec_cmd_to_temp_file(['sed', '/#include/d; /#error/d', header], suffix='.h')
                 res = self.preprocess_one_header(temp_header, num, ignore_sdkconfig_issue=True)
                 if res == self.PREPROC_OUT_SAME_HRD_FAILED:
                     raise HeaderFailedCppGuardMissing()
@@ -185,26 +174,27 @@ class PublicHeaderChecker:
                     os.unlink(temp_header)
 
     def compile_one_header(self, header):
-        rc, out, err = exec_cmd([self.gcc, '-S', '-o-', '-include', header, self.main_c] + self.include_dir_flags)
+        rc, out, err, cmd = exec_cmd([self.gcc, '-S', '-o-', '-include', header, self.main_c] + self.include_dir_flags)
         if rc == 0:
             if not re.sub(self.assembly_nocode, '', out, flags=re.M).isspace():
                 raise HeaderFailedContainsCode()
             return  # Header OK: produced zero code
         self.log('{}: FAILED: compilation issue'.format(header), True)
         self.log(err, True)
+        self.log('\nCompilation command failed:\n{}\n'.format(cmd), True)
         raise HeaderFailedBuildError()
 
     def preprocess_one_header(self, header, num, ignore_sdkconfig_issue=False):
         all_compilation_flags = ['-w', '-P', '-E', '-DESP_PLATFORM', '-include', header, self.main_c] + self.include_dir_flags
         if not ignore_sdkconfig_issue:
             # just strip commnets to check for CONFIG_... macros
-            rc, out, err = exec_cmd([self.gcc, '-fpreprocessed', '-dD',  '-P',  '-E', header] + self.include_dir_flags)
+            rc, out, err, _ = exec_cmd([self.gcc, '-fpreprocessed', '-dD',  '-P',  '-E', header] + self.include_dir_flags)
             if re.search(self.kconfig_macro, out):
                 # enable defined #error if sdkconfig.h not included
                 all_compilation_flags.append('-DIDF_CHECK_SDKCONFIG_INCLUDED')
         try:
             # compile with C++, check for errors, outputs for a temp file
-            rc, cpp_out, err, cpp_out_file = exec_cmd_to_temp_file([self.gpp, '--std=c++17'] + all_compilation_flags)
+            rc, cpp_out, err, cpp_out_file, cmd = exec_cmd_to_temp_file([self.gpp, '--std=c++17'] + all_compilation_flags)
             if rc != 0:
                 if re.search(self.error_macro, err):
                     if re.search(self.error_orphan_kconfig, err):
@@ -213,15 +203,16 @@ class PublicHeaderChecker:
                     self.log('{}: Error directive failure: OK'.format(header))
                     return self.COMPILE_ERR_ERROR_MACRO_HDR_OK
                 self.log('{}: FAILED: compilation issue'.format(header), True)
-                self.log(err)
+                self.log(err, True)
+                self.log('\nCompilation command failed:\n{}\n'.format(cmd), True)
                 return self.COMPILE_ERR_HDR_FAILED
             # compile with C compiler, outputs to another temp file
-            rc, c99_out, err, c99_out_file = exec_cmd_to_temp_file([self.gcc, '--std=c99'] + all_compilation_flags)
+            rc, _, err, c99_out_file, _ = exec_cmd_to_temp_file([self.gcc, '--std=c99'] + all_compilation_flags)
             if rc != 0:
                 self.log('{} FAILED should never happen'.format(header))
                 return self.COMPILE_ERR_HDR_FAILED
             # diff the two outputs
-            rc, diff, err = exec_cmd(['diff', c99_out_file, cpp_out_file])
+            rc, diff, err, _ = exec_cmd(['diff', c99_out_file, cpp_out_file])
             if not diff or diff.isspace():
                 if not cpp_out or cpp_out.isspace():
                     self.log('{} The same, but empty out - OK'.format(header))
@@ -302,7 +293,33 @@ class PublicHeaderChecker:
 
 
 def check_all_headers():
-    parser = argparse.ArgumentParser('Public header checker file')
+    parser = argparse.ArgumentParser('Public header checker file', formatter_class=argparse.RawDescriptionHelpFormatter, epilog='''\
+    Tips for fixing failures reported by this script
+    ------------------------------------------------
+    This checker validates all public headers to detect these types of issues:
+    1) "Sdkconfig Error": Using SDK config macros without including "sdkconfig.h"
+        * Check if the failing include file or any other included file uses "CONFIG_..." prefixed macros
+    2) "Header Build Error": Header itself is not compilable (missing includes, macros, types)
+        * Check that all referenced macros, types are available (defined or included)
+        * Check that all included header files are available (included in paths)
+        * Check for possible compilation issues
+        * Try to compile only the offending header file
+    3) "Header Missing C++ Guard": Preprocessing the header by C and C++ should produce different output
+        * Check if the "#ifdef __cplusplus" header sentinels are present
+    4) "Header Produced non-zero object": Header contains some object, a definition
+        * Check if no definition is present in the offending header file
+
+    Notes:
+    * The script validates *all* header files (recursively) in public folders for all components.
+    * The script locates include paths from running a default build of  "examples/get-started/blink'
+    * The script does not support any other targets than esp32
+
+    General tips:
+    * Use "-d" argument to make the script check only the offending header file
+    * Use "-v" argument to produce more verbose output
+    * Copy, paste and execute the compilation commands to reproduce build errors (script prints out
+      the entire compilation command line with absolute paths)
+    ''')
     parser.add_argument('--verbose', '-v', help='enables verbose mode', action='store_true')
     parser.add_argument('--jobs', '-j', help='number of jobs to run checker', default=1, type=int)
     parser.add_argument('--prefix', '-p', help='compiler prefix', default='xtensa-esp32-elf-', type=str)
@@ -333,6 +350,7 @@ def check_all_headers():
             if len(failures) > 0:
                 for failed in failures:
                     print(failed)
+                print(parser.epilog)
                 exit(1)
             print('No errors found')
         except KeyboardInterrupt:

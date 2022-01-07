@@ -12,7 +12,7 @@
  *
  * This file lists register fields of APLL, located on an internal configuration
  * bus. These definitions are used via macros defined in regi2c_ctrl.h, by
- * rtc_clk_apll_enable function in rtc_clk.c.
+ * rtc_clk_apll_freq_set and rtc_clk_apll_enable function in rtc_clk.c.
  */
 
 #define I2C_APLL            0X6D

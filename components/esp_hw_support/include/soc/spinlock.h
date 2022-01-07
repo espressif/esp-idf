@@ -8,7 +8,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "sdkconfig.h"
-#include "soc/cpu.h"
 #include "hal/cpu_hal.h"
 #include "soc/compare_set.h"
 

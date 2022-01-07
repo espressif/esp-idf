@@ -16,9 +16,6 @@ This test code shows how to configure Zigbee coordinator device.
 
 ## Configure the project
 
-[**Mandatory**] Download esp-zboss-lib packages from [Espressif's component serivce](https://components.espressif.com/).
-You can add them to your project via `idf.py add-dependency espressif/esp-zboss-lib==0.0.2`
-
 Before project configuration and build, make sure to set the correct chip target using `idf.py set-target esp32h2`.
 
 ## Build and Flash
@@ -32,20 +29,20 @@ Build the project, flash it to the board, and start the monitor tool to view the
 As you run the example, you will see the following log:
 
 light coodrinator:
-I (9556) ESP_ZB_COORDINATOR: status: -1
-I (9556) ESP_ZB_COORDINATOR: Zigbee stack initialized
-I (9556) ESP_ZB_COORDINATOR: Start network formation
-I (10066) ESP_ZB_COORDINATOR: Joined network successfully (Extended PAN ID: f9:54:2d:01:a0:03:f7:84, PAN ID: 0xf5b5)
-I (10526) ESP_ZB_COORDINATOR: Network steering started
-I (11306) ESP_ZB_COORDINATOR: status: 0
-I (11806) ESP_ZB_COORDINATOR: status: 0
-I (11886) ESP_ZB_COORDINATOR: New device commissioned or rejoined (short: 0x434a)
-I (12386) ESP_ZB_COORDINATOR: status: 0
-I (12486) ESP_ZB_COORDINATOR: status: 0
-I (12896) ESP_ZB_COORDINATOR: status: 0
-I (12946) ESP_ZB_COORDINATOR: New device commissioned or rejoined (short: 0x09c2)
-I (13516) ESP_ZB_COORDINATOR: status: 0
-I (26686) ESP_ZB_COORDINATOR: status: 0
+I (9556) ESP_ZB_COORDINATOR: status: -1  
+I (9556) ESP_ZB_COORDINATOR: Zigbee stack initialized  
+I (9556) ESP_ZB_COORDINATOR: Start network formation  
+I (10066) ESP_ZB_COORDINATOR: Joined network successfully (Extended PAN ID: f9:54:2d:01:a0:03:f7:84, PAN ID: 0xf5b5)  
+I (10526) ESP_ZB_COORDINATOR: Network steering started  
+I (11306) ESP_ZB_COORDINATOR: status: 0  
+I (11806) ESP_ZB_COORDINATOR: status: 0  
+I (11886) ESP_ZB_COORDINATOR: New device commissioned or rejoined (short: 0x434a)  
+I (12386) ESP_ZB_COORDINATOR: status: 0  
+I (12486) ESP_ZB_COORDINATOR: status: 0  
+I (12896) ESP_ZB_COORDINATOR: status: 0  
+I (12946) ESP_ZB_COORDINATOR: New device commissioned or rejoined (short: 0x09c2)  
+I (13516) ESP_ZB_COORDINATOR: status: 0  
+I (26686) ESP_ZB_COORDINATOR: status: 0  
 
 ## Light Control Functions
 

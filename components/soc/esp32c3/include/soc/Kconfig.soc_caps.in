@@ -7,6 +7,10 @@ config SOC_CPU_CORES_NUM
     bool
     default y
 
+config SOC_ADC_SUPPORTED
+    bool
+    default y
+
 config SOC_DEDICATED_GPIO_SUPPORTED
     bool
     default y
@@ -48,6 +52,10 @@ config SOC_FLASH_ENCRYPTION_XTS_AES
     default y
 
 config SOC_XT_WDT_SUPPORTED
+    bool
+    default y
+
+config SOC_WIFI_SUPPORTED
     bool
     default y
 
@@ -107,6 +115,10 @@ config SOC_AES_SUPPORT_AES_256
     bool
     default y
 
+config SOC_ADC_DIG_CTRL_SUPPORTED
+    bool
+    default y
+
 config SOC_ADC_ARBITER_SUPPORTED
     bool
     default y
@@ -128,8 +140,8 @@ config SOC_ADC_MAX_CHANNEL_NUM
     default 5
 
 config SOC_ADC_DIGI_CONTROLLER_NUM
-    bool
-    default y
+    int
+    default 1
 
 config SOC_ADC_PATT_LEN_MAX
     int
@@ -247,7 +259,7 @@ config SOC_DEDIC_GPIO_IN_CHANNELS_NUM
     int
     default 8
 
-config SOC_DEDIC_PERIPH_AUTO_ENABLE
+config SOC_DEDIC_PERIPH_ALWAYS_ENABLE
     bool
     default y
 
@@ -376,8 +388,8 @@ config SOC_RTC_CNTL_CPU_PD_REG_FILE_NUM
     default 108
 
 config SOC_RTCIO_PIN_COUNT
-    bool
-    default n
+    int
+    default 0
 
 config SOC_RSA_MAX_BIT_LEN
     int
@@ -516,8 +528,8 @@ config SOC_TIMER_GROUPS
     default 2
 
 config SOC_TIMER_GROUP_TIMERS_PER_GROUP
-    bool
-    default y
+    int
+    default 1
 
 config SOC_TIMER_GROUP_COUNTER_BIT_WIDTH
     int
@@ -526,6 +538,10 @@ config SOC_TIMER_GROUP_COUNTER_BIT_WIDTH
 config SOC_TIMER_GROUP_SUPPORT_XTAL
     bool
     default y
+
+config SOC_TIMER_GROUP_TOTAL_TIMERS
+    int
+    default 2
 
 config SOC_TOUCH_SENSOR_NUM
     bool

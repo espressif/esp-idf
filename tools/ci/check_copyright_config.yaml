@@ -69,3 +69,4 @@ ignore:
     - components/bt/host/bluedroid/
     - '!components/bt/host/bluedroid/api/'
     - '!components/bt/host/bluedroid/btc/'
+    - examples/zigbee/

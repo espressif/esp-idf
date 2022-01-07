@@ -35,6 +35,9 @@
 
 export PATH="$IDF_PATH/tools:$PATH"  # for idf.py
 
+# Some tests assume that ccache is not enabled
+unset IDF_CCACHE_ENABLE
+
 function run_tests()
 {
     FAILURES=
@@ -468,6 +471,17 @@ function run_tests()
     mv main/main/main/* main
     rm -rf main/main
 
+    print_status "Non-existent paths in EXTRA_COMPONENT_DIRS are not allowed"
+    clean_build_dir
+    ! idf.py -DEXTRA_COMPONENT_DIRS="extra_components" reconfigure || failure "Build should fail when non-existent component path is added"
+
+    print_status "Component names may contain spaces"
+    clean_build_dir
+    mkdir -p "extra component"
+    echo "idf_component_register" > "extra component/CMakeLists.txt"
+    idf.py -DEXTRA_COMPONENT_DIRS="extra component;main" || failure "Build should succeed when a component name contains space"
+    rm -rf "extra component"
+
     print_status "sdkconfig should have contents of all files: sdkconfig, sdkconfig.defaults, sdkconfig.defaults.IDF_TARGET"
     idf.py clean > /dev/null
     idf.py fullclean > /dev/null
@@ -662,9 +676,10 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
 
     # idf.py subcommand options, (using monitor with as example)
     print_status "Can set options to subcommands: print_filter for monitor"
+    clean_build_dir
     mv ${IDF_PATH}/tools/idf_monitor.py ${IDF_PATH}/tools/idf_monitor.py.tmp
     echo "import sys;print(sys.argv[1:])" > ${IDF_PATH}/tools/idf_monitor.py
-    idf.py build || "Failed to build project"
+    idf.py build || failure "Failed to build project"
     idf.py monitor --print-filter="*:I" -p tty.fake | grep "'--print_filter', '\*:I'" || failure "It should process options for subcommands (and pass print-filter to idf_monitor.py)"
     mv ${IDF_PATH}/tools/idf_monitor.py.tmp ${IDF_PATH}/tools/idf_monitor.py
 
@@ -876,6 +891,31 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     idf.py efuse_common_table &> tmp.log
     grep "Warning: Command efuse_common_table is deprecated and will be removed in the next major release." tmp.log || failure "Missing deprecation warning with command \"efuse_common_table\""
     rm tmp.log
+
+    print_status "Save-defconfig checks"
+    cd ${TESTDIR}/template
+    rm -f sdkconfig.defaults
+    rm -f sdkconfig
+    idf.py fullclean > /dev/null
+    echo "CONFIG_COMPILER_OPTIMIZATION_SIZE=y" >> sdkconfig
+    echo "CONFIG_ESPTOOLPY_FLASHFREQ_80M=y" >> sdkconfig
+    idf.py save-defconfig
+    wc -l sdkconfig.defaults
+    grep "CONFIG_IDF_TARGET" sdkconfig.defaults && failure "CONFIG_IDF_TARGET should not be in sdkconfig.defaults"
+    grep "CONFIG_COMPILER_OPTIMIZATION_SIZE=y" sdkconfig.defaults || failure "Missing CONFIG_COMPILER_OPTIMIZATION_SIZE=y in sdkconfig.defaults"
+    grep "CONFIG_ESPTOOLPY_FLASHFREQ_80M=y" sdkconfig.defaults || failure "Missing CONFIG_ESPTOOLPY_FLASHFREQ_80M=y in sdkconfig.defaults"
+    idf.py fullclean > /dev/null
+    rm -f sdkconfig.defaults
+    rm -f sdkconfig
+    idf.py set-target esp32c3
+    echo "CONFIG_PARTITION_TABLE_OFFSET=0x8001" >> sdkconfig
+    idf.py save-defconfig
+    wc -l sdkconfig.defaults
+    grep "CONFIG_IDF_TARGET=\"esp32c3\"" sdkconfig.defaults || failure "Missing CONFIG_IDF_TARGET=\"esp32c3\" in sdkconfig.defaults"
+    grep "CONFIG_PARTITION_TABLE_OFFSET=0x8001" sdkconfig.defaults || failure "Missing CONFIG_PARTITION_TABLE_OFFSET=0x8001 in sdkconfig.defaults"
+    idf.py fullclean > /dev/null
+    rm -f sdkconfig.defaults
+    rm -f sdkconfig
 
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then

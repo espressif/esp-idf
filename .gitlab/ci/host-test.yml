@@ -339,6 +339,12 @@ test_detect_python:
     - "zsh -c '. tools/detect_python.sh && echo Our Python: ${ESP_PYTHON?Python is not set}'"
     - "fish -c 'source tools/detect_python.fish && echo Our Python: $ESP_PYTHON'"
 
+test_split_path_by_spaces:
+  extends: .host_test_template
+  script:
+    - cd ${IDF_PATH}/tools
+    - python -m unittest split_paths_by_spaces.py
+
 test_nvs_page:
   extends: .host_test_template
   script:

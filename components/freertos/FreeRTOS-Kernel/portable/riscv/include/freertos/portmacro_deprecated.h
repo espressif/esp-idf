@@ -18,7 +18,7 @@
  * @deprecated This function is deprecated. Call portSET_INTERRUPT_MASK_FROM_ISR() instead
  */
 static inline __attribute__((deprecated)) UBaseType_t portENTER_CRITICAL_NESTED(void) {
-    return portSET_INTERRUPT_MASK_FROM_ISR();
+    return (UBaseType_t) portSET_INTERRUPT_MASK_FROM_ISR();
 }
 
 /**
@@ -30,7 +30,7 @@ static inline __attribute__((deprecated)) UBaseType_t portENTER_CRITICAL_NESTED(
  */
 static inline void __attribute__((deprecated)) portEXIT_CRITICAL_NESTED(UBaseType_t prev_level)
 {
-    portCLEAR_INTERRUPT_MASK_FROM_ISR(prev_level);
+    portCLEAR_INTERRUPT_MASK_FROM_ISR((int) prev_level);
 }
 
 /* ---------------------- Spinlocks --------------------- */

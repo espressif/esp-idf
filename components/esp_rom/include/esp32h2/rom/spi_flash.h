@@ -1,36 +1,19 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-#ifndef _ROM_SPI_FLASH_H_
-#define _ROM_SPI_FLASH_H_
+#pragma once
 
 #include <stdint.h>
 #include <stdbool.h>
-
 #include "esp_attr.h"
+#include "esp_rom_spiflash.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/** \defgroup spi_flash_apis, spi flash operation related apis
-  * @brief spi_flash apis
-  */
-
-/** @addtogroup spi_flash_apis
-  * @{
-  */
 
 #define PERIPHS_SPI_FLASH_CMD                 SPI_MEM_CMD_REG(1)
 #define PERIPHS_SPI_FLASH_ADDR                SPI_MEM_ADDR_REG(1)
@@ -75,40 +58,33 @@ extern "C" {
 #define ESP_ROM_SPIFLASH_BUFF_BYTE_READ_NUM   16
 #define ESP_ROM_SPIFLASH_BUFF_BYTE_READ_BITS  0xf
 
-//SPI status register
-#define  ESP_ROM_SPIFLASH_BUSY_FLAG           BIT0
-#define  ESP_ROM_SPIFLASH_WRENABLE_FLAG       BIT1
-#define  ESP_ROM_SPIFLASH_BP0                 BIT2
-#define  ESP_ROM_SPIFLASH_BP1                 BIT3
-#define  ESP_ROM_SPIFLASH_BP2                 BIT4
-#define  ESP_ROM_SPIFLASH_WR_PROTECT          (ESP_ROM_SPIFLASH_BP0|ESP_ROM_SPIFLASH_BP1|ESP_ROM_SPIFLASH_BP2)
-#define  ESP_ROM_SPIFLASH_QE                  BIT9
-
-#define FLASH_ID_GD25LQ32C  0xC86016
-
-typedef enum {
-    ESP_ROM_SPIFLASH_QIO_MODE = 0,
-    ESP_ROM_SPIFLASH_QOUT_MODE,
-    ESP_ROM_SPIFLASH_DIO_MODE,
-    ESP_ROM_SPIFLASH_DOUT_MODE,
-    ESP_ROM_SPIFLASH_FASTRD_MODE,
-    ESP_ROM_SPIFLASH_SLOWRD_MODE
-} esp_rom_spiflash_read_mode_t;
-
-typedef enum {
-    ESP_ROM_SPIFLASH_RESULT_OK,
-    ESP_ROM_SPIFLASH_RESULT_ERR,
-    ESP_ROM_SPIFLASH_RESULT_TIMEOUT
-} esp_rom_spiflash_result_t;
+typedef void (* spi_flash_func_t)(void);
+typedef esp_rom_spiflash_result_t (* spi_flash_op_t)(void);
+typedef esp_rom_spiflash_result_t (* spi_flash_erase_t)(uint32_t);
+typedef esp_rom_spiflash_result_t (* spi_flash_rd_t)(uint32_t, uint32_t*, int);
+typedef esp_rom_spiflash_result_t (* spi_flash_wr_t)(uint32_t, const uint32_t*, int);
+typedef esp_rom_spiflash_result_t (* spi_flash_ewr_t)(uint32_t, const void*, uint32_t);
+typedef esp_rom_spiflash_result_t (* spi_flash_wren_t)(void*);
+typedef esp_rom_spiflash_result_t (* spi_flash_erase_area_t)(uint32_t, uint32_t);
 
 typedef struct {
-    uint32_t device_id;
-    uint32_t chip_size;    // chip size in bytes
-    uint32_t block_size;
-    uint32_t sector_size;
-    uint32_t page_size;
-    uint32_t status_mask;
-} esp_rom_spiflash_chip_t;
+    uint8_t pp_addr_bit_len;
+    uint8_t se_addr_bit_len;
+    uint8_t be_addr_bit_len;
+    uint8_t rd_addr_bit_len;
+    uint32_t read_sub_len;
+    uint32_t write_sub_len;
+    spi_flash_op_t unlock;
+    spi_flash_erase_t erase_sector;
+    spi_flash_erase_t erase_block;
+    spi_flash_rd_t read;
+    spi_flash_wr_t write;
+    spi_flash_ewr_t encrypt_write;
+    spi_flash_func_t check_sus;
+    spi_flash_wren_t wren;
+    spi_flash_op_t wait_idle;
+    spi_flash_erase_area_t erase_area;
+} spiflash_legacy_funcs_t;
 
 typedef struct {
     uint8_t  data_length;
@@ -120,67 +96,13 @@ typedef struct {
 } esp_rom_spiflash_common_cmd_t;
 
 /**
-  * @brief Fix the bug in SPI hardware communication with Flash/Ext-SRAM in High Speed.
-  *    Please do not call this function in SDK.
-  *
-  * @param  uint8_t spi: 0 for SPI0(Cache Access), 1 for SPI1(Flash read/write).
-  *
-  * @param  uint8_t freqdiv: Pll is 80M, 4 for 20M, 3 for 26.7M, 2 for 40M, 1 for 80M.
-  *
-  * @return None
-  */
-void esp_rom_spiflash_fix_dummylen(uint8_t spi, uint8_t freqdiv);
-
-/**
-  * @brief Select SPI Flash to QIO mode when WP pad is read from Flash.
-  *    Please do not call this function in SDK.
-  *
-  * @param  uint8_t wp_gpio_num: WP gpio number.
-  *
-  * @param  uint32_t ishspi: 0 for spi, 1 for hspi, flash pad decided by strapping
-  *              else, bit[5:0] spiclk, bit[11:6] spiq, bit[17:12] spid, bit[23:18] spics0, bit[29:24] spihd
-  *
-  * @return None
-  */
-void esp_rom_spiflash_select_qiomode(uint8_t wp_gpio_num, uint32_t ishspi);
-
-/**
-  * @brief Set SPI Flash pad drivers.
-  *    Please do not call this function in SDK.
-  *
-  * @param  uint8_t wp_gpio_num: WP gpio number.
-  *
-  * @param  uint32_t ishspi: 0 for spi, 1 for hspi, flash pad decided by strapping
-  *              else, bit[5:0] spiclk, bit[11:6] spiq, bit[17:12] spid, bit[23:18] spics0, bit[29:24] spihd
-  *
-  * @param  uint8_t *drvs: drvs[0]-bit[3:0] for cpiclk, bit[7:4] for spiq, drvs[1]-bit[3:0] for spid, drvs[1]-bit[7:4] for spid
-  *            drvs[2]-bit[3:0] for spihd, drvs[2]-bit[7:4] for spiwp.
-  *                        Values usually read from falsh by rom code, function usually callde by rom code.
-  *                        if value with bit(3) set, the value is valid, bit[2:0] is the real value.
-  *
-  * @return None
-  */
-void esp_rom_spiflash_set_drvs(uint8_t wp_gpio_num, uint32_t ishspi, uint8_t *drvs);
-
-/**
-  * @brief Select SPI Flash function for pads.
-  *    Please do not call this function in SDK.
-  *
-  * @param  uint32_t ishspi: 0 for spi, 1 for hspi, flash pad decided by strapping
-  *              else, bit[5:0] spiclk, bit[11:6] spiq, bit[17:12] spid, bit[23:18] spics0, bit[29:24] spihd
-  *
-  * @return None
-  */
-void esp_rom_spiflash_select_padsfunc(uint32_t ishspi);
-
-/**
   * @brief SPI Flash init, clock divisor is 4, use 1 line Slow read mode.
   *    Please do not call this function in SDK.
   *
   * @param  uint32_t ishspi: 0 for spi, 1 for hspi, flash pad decided by strapping
   *              else, bit[5:0] spiclk, bit[11:6] spiq, bit[17:12] spid, bit[23:18] spics0, bit[29:24] spihd
   *
-  * @param  uint8_t legacy: In legacy mode, more SPI command is used in line.
+  * @param  uint8_t legacy: always keeping false.
   *
   * @return None
   */
@@ -215,7 +137,7 @@ esp_rom_spiflash_result_t esp_rom_spiflash_read_status(esp_rom_spiflash_chip_t *
 esp_rom_spiflash_result_t esp_rom_spiflash_read_statushigh(esp_rom_spiflash_chip_t *spi, uint32_t *status);
 
 /**
-  * @brief Write status to Falsh status register.
+  * @brief Write status to Flash status register.
   *        Please do not call this function in SDK.
   *
   * @param  esp_rom_spiflash_chip_t *spi : The information for Flash, which is exported from ld file.
@@ -271,19 +193,19 @@ esp_rom_spiflash_result_t esp_rom_spiflash_config_readmode(esp_rom_spiflash_read
 esp_rom_spiflash_result_t esp_rom_spiflash_config_clk(uint8_t freqdiv, uint8_t spi);
 
 /**
-  * @brief Send CommonCmd to Flash so that is can go into QIO mode, some Flash use different CMD.
+  * @brief Clear all SR bits except QE bit.
   *        Please do not call this function in SDK.
   *
-  * @param  esp_rom_spiflash_common_cmd_t *cmd : A struct to show the action of a command.
+  * @param  None.
   *
-  * @return uint16_t  0 : do not send command any more.
-  *                   1 : go to the next command.
-  *                   n > 1 : skip (n - 1) commands.
+  * @return ESP_ROM_SPIFLASH_RESULT_OK : Unlock OK.
+  *         ESP_ROM_SPIFLASH_RESULT_ERR : Unlock error.
+  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : Unlock timeout.
   */
-uint16_t esp_rom_spiflash_common_cmd(esp_rom_spiflash_common_cmd_t *cmd);
+esp_rom_spiflash_result_t esp_rom_spiflash_clear_bp(void);
 
 /**
-  * @brief Unlock SPI write protect.
+  * @brief Clear all SR bits except QE bit.
   *        Please do not call this function in SDK.
   *
   * @param  None.
@@ -293,18 +215,6 @@ uint16_t esp_rom_spiflash_common_cmd(esp_rom_spiflash_common_cmd_t *cmd);
   *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : Unlock timeout.
   */
 esp_rom_spiflash_result_t esp_rom_spiflash_unlock(void);
-
-/**
-  * @brief SPI write protect.
-  *        Please do not call this function in SDK.
-  *
-  * @param  None.
-  *
-  * @return ESP_ROM_SPIFLASH_RESULT_OK : Lock OK.
-  *         ESP_ROM_SPIFLASH_RESULT_ERR : Lock error.
-  *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : Lock timeout.
-  */
-esp_rom_spiflash_result_t esp_rom_spiflash_lock(void);
 
 /**
   * @brief Update SPI Flash parameter.
@@ -327,7 +237,7 @@ esp_rom_spiflash_result_t esp_rom_spiflash_lock(void);
   *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : Update timeout.
   */
 esp_rom_spiflash_result_t esp_rom_spiflash_config_param(uint32_t deviceId, uint32_t chip_size, uint32_t block_size,
-        uint32_t sector_size, uint32_t page_size, uint32_t status_mask);
+                                                        uint32_t sector_size, uint32_t page_size, uint32_t status_mask);
 
 /**
   * @brief Erase whole flash chip.
@@ -468,18 +378,6 @@ void esp_rom_spiflash_write_encrypted_disable(void);
 esp_rom_spiflash_result_t esp_rom_spiflash_write_encrypted(uint32_t flash_addr, uint32_t *data, uint32_t len);
 
 
-/* TODO: figure out how to map these to their new names */
-typedef enum {
-    SPI_ENCRYPT_DESTINATION_FLASH,
-} SpiEncryptDest;
-
-typedef esp_rom_spiflash_result_t SpiFlashOpResult;
-
-SpiFlashOpResult SPI_Encrypt_Write(uint32_t flash_addr, const void *data, uint32_t len);
-SpiFlashOpResult SPI_Encrypt_Write_Dest(SpiEncryptDest dest, uint32_t flash_addr, const void *data, uint32_t len);
-void SPI_Write_Encrypt_Enable(void);
-void SPI_Write_Encrypt_Disable(void);
-
 /** @brief Wait until SPI flash write operation is complete
  *
  * @note Please do not call this function in SDK.
@@ -511,47 +409,6 @@ esp_rom_spiflash_result_t esp_rom_spiflash_wait_idle(esp_rom_spiflash_chip_t *sp
  */
 void esp_rom_spiflash_select_qio_pins(uint8_t wp_gpio_num, uint32_t spiconfig);
 
-
-typedef void (* spi_flash_func_t)(void);
-typedef SpiFlashOpResult (* spi_flash_op_t)(void);
-typedef SpiFlashOpResult (* spi_flash_erase_t)(uint32_t);
-typedef SpiFlashOpResult (* spi_flash_rd_t)(uint32_t, uint32_t*, int);
-typedef SpiFlashOpResult (* spi_flash_wr_t)(uint32_t, const uint32_t*, int);
-typedef SpiFlashOpResult (* spi_flash_ewr_t)(uint32_t, const void*, uint32_t);
-typedef SpiFlashOpResult (* spi_flash_wren_t)(void*);
-
-typedef struct {
-    uint32_t read_sub_len;
-    uint32_t write_sub_len;
-    spi_flash_op_t unlock;
-    spi_flash_erase_t erase_sector;
-    spi_flash_erase_t erase_block;
-    spi_flash_rd_t read;
-    spi_flash_wr_t write;
-    spi_flash_ewr_t encrypt_write;
-    spi_flash_func_t check_sus;
-    spi_flash_wren_t wren;
-    spi_flash_op_t wait_idle;
-} spiflash_legacy_funcs_t;
-
-
-extern const spiflash_legacy_funcs_t *rom_spiflash_legacy_funcs;
-
-/** @brief Global ROM spiflash data, as used by legacy
-    SPI flash functions
-*/
-typedef struct {
-    esp_rom_spiflash_chip_t chip;
-    uint8_t dummy_len_plus[3];
-    uint8_t sig_matrix;
-} spiflash_legacy_data_t;
-
-extern spiflash_legacy_data_t *rom_spiflash_legacy_data;
-
-/* Defines to make the H2 ROM legacvy data access compatible with previous chips */
-#define g_rom_flashchip (rom_spiflash_legacy_data->chip)
-#define g_rom_spiflash_dummy_len_plus (rom_spiflash_legacy_data->dummy_len_plus)
-
 /**
  * @brief Clear WEL bit unconditionally.
  *
@@ -560,11 +417,82 @@ extern spiflash_legacy_data_t *rom_spiflash_legacy_data;
 esp_rom_spiflash_result_t esp_rom_spiflash_write_disable(void);
 
 /**
-  * @}
+ * @brief Set WREN bit.
+ *
+ * @param  esp_rom_spiflash_chip_t *spi : The information for Flash, which is exported from ld file.
+ *
+ * @return always ESP_ROM_SPIFLASH_RESULT_OK
+ */
+esp_rom_spiflash_result_t esp_rom_spiflash_write_enable(esp_rom_spiflash_chip_t *spi);
+
+/**
+  * @brief Fix the bug in SPI hardware communication with Flash/Ext-SRAM in High Speed.
+  *    Please do not call this function in SDK.
+  *
+  * @param  uint8_t spi: 0 for SPI0(Cache Access), 1 for SPI1(Flash read/write).
+  *
+  * @param  uint8_t freqdiv: Pll is 80M, 4 for 20M, 3 for 26.7M, 2 for 40M, 1 for 80M.
+  *
+  * @return None
   */
+void esp_rom_spiflash_fix_dummylen(uint8_t spi, uint8_t freqdiv);
+
+/**
+  * @brief Select SPI Flash to QIO mode when WP pad is read from Flash.
+  *    Please do not call this function in SDK.
+  *
+  * @param  uint8_t wp_gpio_num: WP gpio number.
+  *
+  * @param  uint32_t ishspi: 0 for spi, 1 for hspi, flash pad decided by strapping
+  *              else, bit[5:0] spiclk, bit[11:6] spiq, bit[17:12] spid, bit[23:18] spics0, bit[29:24] spihd
+  *
+  * @return None
+  */
+void esp_rom_spiflash_select_qiomode(uint8_t wp_gpio_num, uint32_t ishspi);
+
+/**
+  * @brief Set SPI Flash pad drivers.
+  *    Please do not call this function in SDK.
+  *
+  * @param  uint8_t wp_gpio_num: WP gpio number.
+  *
+  * @param  uint32_t ishspi: 0 for spi, 1 for hspi, flash pad decided by strapping
+  *              else, bit[5:0] spiclk, bit[11:6] spiq, bit[17:12] spid, bit[23:18] spics0, bit[29:24] spihd
+  *
+  * @param  uint8_t *drvs: drvs[0]-bit[3:0] for cpiclk, bit[7:4] for spiq, drvs[1]-bit[3:0] for spid, drvs[1]-bit[7:4] for spid
+  *            drvs[2]-bit[3:0] for spihd, drvs[2]-bit[7:4] for spiwp.
+  *                        Values usually read from falsh by rom code, function usually callde by rom code.
+  *                        if value with bit(3) set, the value is valid, bit[2:0] is the real value.
+  *
+  * @return None
+  */
+void esp_rom_spiflash_set_drvs(uint8_t wp_gpio_num, uint32_t ishspi, uint8_t *drvs);
+
+/**
+  * @brief Select SPI Flash function for pads.
+  *    Please do not call this function in SDK.
+  *
+  * @param  uint32_t ishspi: 0 for spi, 1 for hspi, flash pad decided by strapping
+  *              else, bit[5:0] spiclk, bit[11:6] spiq, bit[17:12] spid, bit[23:18] spics0, bit[29:24] spihd
+  *
+  * @return None
+  */
+void esp_rom_spiflash_select_padsfunc(uint32_t ishspi);
+
+/**
+  * @brief Send CommonCmd to Flash so that is can go into QIO mode, some Flash use different CMD.
+  *        Please do not call this function in SDK.
+  *
+  * @param  esp_rom_spiflash_common_cmd_t *cmd : A struct to show the action of a command.
+  *
+  * @return uint16_t  0 : do not send command any more.
+  *                   1 : go to the next command.
+  *                   n > 1 : skip (n - 1) commands.
+  */
+uint16_t esp_rom_spiflash_common_cmd(esp_rom_spiflash_common_cmd_t *cmd);
+
+extern const spiflash_legacy_funcs_t *rom_spiflash_legacy_funcs;
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* _ROM_SPI_FLASH_H_ */

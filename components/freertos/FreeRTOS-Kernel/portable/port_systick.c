@@ -6,7 +6,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "soc/cpu.h"
 #include "FreeRTOS.h"
 #include "task.h"
 #include "esp_intr_alloc.h"

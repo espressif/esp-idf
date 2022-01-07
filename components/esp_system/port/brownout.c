@@ -15,7 +15,7 @@
 #include "esp_rom_sys.h"
 
 #include "soc/soc.h"
-#include "soc/cpu.h"
+#include "esp_cpu.h"
 #include "soc/rtc_periph.h"
 #include "hal/cpu_hal.h"
 
