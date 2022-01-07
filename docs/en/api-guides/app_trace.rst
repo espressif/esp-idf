@@ -479,7 +479,7 @@ Compiler Option
 In order to obtain code coverage data in a project, one or more source files within the project must be compiled with the ``--coverage`` option. In ESP-IDF, this can be achieved at the component level or the individual source file level:
 
 - To cause all source files in a component to be compiled with the ``--coverage`` option, you can add ``target_compile_options(${COMPONENT_LIB} PRIVATE --coverage)`` to the ``CMakeLists.txt`` file of the component.
-- To cause a select number of source files (e.g. ``sourec1.c`` and ``source2.c``) in the same component to be compiled with the ``--coverage`` option, you can add ``set_source_files_properties(source1.c source2.c PROPERTIES COMPILE_FLAGS --coverage)`` to the ``CMakeLists.txt`` file of the component.
+- To cause a select number of source files (e.g. ``source1.c`` and ``source2.c``) in the same component to be compiled with the ``--coverage`` option, you can add ``set_source_files_properties(source1.c source2.c PROPERTIES COMPILE_FLAGS --coverage)`` to the ``CMakeLists.txt`` file of the component.
 
 When a source file is compiled with the ``--coverage`` option (e.g. ``gcov_example.c``), the compiler will generate the ``gcov_example.gcno`` file in the project's build directory.
 
