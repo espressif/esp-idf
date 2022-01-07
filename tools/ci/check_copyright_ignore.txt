@@ -523,7 +523,6 @@ components/esp_hid/src/esp_hidh.c
 components/esp_hid/test/hid_descriptor.h
 components/esp_hid/test/test_esp_hid.c
 components/esp_https_ota/include/esp_https_ota.h
-components/esp_https_ota/src/esp_https_ota.c
 components/esp_hw_support/include/esp_clk.h
 components/esp_hw_support/include/soc/esp_himem.h
 components/esp_hw_support/include/soc/esp_spiram.h
