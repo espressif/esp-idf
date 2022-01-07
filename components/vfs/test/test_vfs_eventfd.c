@@ -1,26 +1,16 @@
-// Copyright 2021 Espressif Systems (Shanghai) CO LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License
-
-#include "esp_vfs_eventfd.h"
+/*
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <errno.h>
 #include <sys/select.h>
-
-#include "driver/timer.h"
-#include "esp_vfs.h"
 #include "freertos/FreeRTOS.h"
 #include "unity.h"
+#include "driver/gptimer.h"
+#include "esp_vfs.h"
+#include "esp_vfs_eventfd.h"
 
 TEST_CASE("eventfd create and close", "[vfs][eventfd]")
 {
@@ -217,13 +207,14 @@ TEST_CASE("eventfd signal from task", "[vfs][eventfd]")
     TEST_ESP_OK(esp_vfs_eventfd_unregister());
 }
 
-static void eventfd_select_test_isr(void *arg)
+static bool eventfd_select_test_isr(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
-    int fd = *((int *)arg);
+    gptimer_stop(timer);
+    int fd = *((int *)user_ctx);
     uint64_t val = 1;
-    timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
     int ret = write(fd, &val, sizeof(val));
     assert(ret == sizeof(val));
+    return true;
 }
 
 TEST_CASE("eventfd signal from ISR", "[vfs][eventfd]")
@@ -234,22 +225,23 @@ TEST_CASE("eventfd signal from ISR", "[vfs][eventfd]")
     int fd = eventfd(0, EFD_SUPPORT_ISR);
     TEST_ASSERT_GREATER_OR_EQUAL(0, fd);
 
-    timer_config_t timer_config = {
-        .divider = 16,
-        .counter_dir = TIMER_COUNT_UP,
-        .counter_en = TIMER_PAUSE,
-        .alarm_en = TIMER_ALARM_EN,
-        .auto_reload = false,
+    gptimer_handle_t gptimer = NULL;
+    gptimer_config_t timer_config = {
+        .clk_src = GPTIMER_CLK_SRC_APB,
+        .direction = GPTIMER_COUNT_UP,
+        .resolution_hz = 1000000,
     };
-    TEST_ESP_OK(timer_init(TIMER_GROUP_0, TIMER_0, &timer_config));
-
-    TEST_ESP_OK(timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x00000000ULL));
-
-    TEST_ESP_OK(timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, TIMER_BASE_CLK / 16));
-    TEST_ESP_OK(timer_enable_intr(TIMER_GROUP_0, TIMER_0));
-    TEST_ESP_OK(timer_isr_register(TIMER_GROUP_0, TIMER_0, eventfd_select_test_isr,
-                                   &fd, ESP_INTR_FLAG_LOWMED, NULL));
-    TEST_ESP_OK(timer_start(TIMER_GROUP_0, TIMER_0));
+    TEST_ESP_OK(gptimer_new_timer(&timer_config, &gptimer));
+    gptimer_alarm_config_t alarm_config = {
+        .reload_count = 0,
+        .alarm_count = 200000,
+    };
+    gptimer_event_callbacks_t cbs = {
+        .on_alarm = eventfd_select_test_isr,
+    };
+    TEST_ESP_OK(gptimer_register_event_callbacks(gptimer, &cbs, &fd));
+    TEST_ESP_OK(gptimer_set_alarm_action(gptimer, &alarm_config));
+    TEST_ESP_OK(gptimer_start(gptimer));
 
     struct timeval wait_time;
     fd_set read_fds, write_fds, error_fds;
@@ -264,9 +256,9 @@ TEST_CASE("eventfd signal from ISR", "[vfs][eventfd]")
     int ret = select(fd + 1, &read_fds, &write_fds, &error_fds, &wait_time);
     TEST_ASSERT_EQUAL(1, ret);
     TEST_ASSERT(FD_ISSET(fd, &read_fds));
-    timer_deinit(TIMER_GROUP_0, TIMER_0);
     TEST_ASSERT_EQUAL(0, close(fd));
     TEST_ESP_OK(esp_vfs_eventfd_unregister());
+    TEST_ESP_OK(gptimer_del_timer(gptimer));
 }
 
 static void close_task(void *arg)

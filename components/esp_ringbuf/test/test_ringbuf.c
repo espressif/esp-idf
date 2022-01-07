@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +11,7 @@
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 #include "freertos/ringbuf.h"
-#include "driver/timer.h"
+#include "driver/gptimer.h"
 #include "esp_heap_caps.h"
 #include "esp_spi_flash.h"
 #include "unity.h"
@@ -29,7 +29,8 @@
 
 static const uint8_t small_item[SMALL_ITEM_SIZE] = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
 static const uint8_t large_item[LARGE_ITEM_SIZE] = { 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
-                                                     0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17};
+                                                     0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17
+                                                   };
 static RingbufHandle_t buffer_handles[NO_OF_RB_TYPES];
 static SemaphoreHandle_t done_sem;
 
@@ -87,9 +88,9 @@ static void receive_check_and_return_item_allow_split(RingbufHandle_t handle, co
     uint8_t *item1, *item2;
     BaseType_t ret;
     if (in_isr) {
-        ret = xRingbufferReceiveSplitFromISR(handle, (void**)&item1, (void **)&item2, &item_size1, &item_size2);
+        ret = xRingbufferReceiveSplitFromISR(handle, (void **)&item1, (void **)&item2, &item_size1, &item_size2);
     } else {
-        ret = xRingbufferReceiveSplit(handle, (void**)&item1, (void **)&item2, &item_size1, &item_size2, ticks_to_wait);
+        ret = xRingbufferReceiveSplit(handle, (void **)&item1, (void **)&item2, &item_size1, &item_size2, ticks_to_wait);
     }
     TEST_ASSERT_MESSAGE(ret == pdTRUE, "Failed to receive item");
     TEST_ASSERT_MESSAGE(item1 != NULL, "Failed to receive item");
@@ -643,7 +644,7 @@ static void queue_set_receiving_task(void *queue_set_handle)
             //Allow-split buffer
             receive_check_and_return_item_allow_split(buffer_handles[1], small_item, SMALL_ITEM_SIZE, 0, false);
             items_rec_count[1] ++;
-        } else if (xRingbufferCanRead(buffer_handles[2], member) == pdTRUE){
+        } else if (xRingbufferCanRead(buffer_handles[2], member) == pdTRUE) {
             //Byte buffer
             receive_check_and_return_item_byte_buffer(buffer_handles[2], small_item, SMALL_ITEM_SIZE, 0, false);
             items_rec_count[2] ++;
@@ -653,8 +654,8 @@ static void queue_set_receiving_task(void *queue_set_handle)
 
         //Check for completion
         if (items_rec_count[0] == no_of_items &&
-            items_rec_count[1] == no_of_items &&
-            items_rec_count[2] == no_of_items) {
+                items_rec_count[1] == no_of_items &&
+                items_rec_count[2] == no_of_items) {
             done = pdTRUE;
         }
     }
@@ -676,7 +677,7 @@ TEST_CASE("Test ring buffer with queue sets", "[esp_ringbuf]")
     }
     //Create a task to send items to each ring buffer
     int no_of_items = BUFFER_SIZE / SMALL_ITEM_SIZE;
-    xTaskCreatePinnedToCore(queue_set_receiving_task, "rec tsk", 2048, (void *)queue_set, UNITY_FREERTOS_PRIORITY + 1 , NULL, 0);
+    xTaskCreatePinnedToCore(queue_set_receiving_task, "rec tsk", 2048, (void *)queue_set, UNITY_FREERTOS_PRIORITY + 1, NULL, 0);
 
     //Send multiple items to each type of ring buffer
     for (int i = 0; i < no_of_items; i++) {
@@ -687,7 +688,7 @@ TEST_CASE("Test ring buffer with queue sets", "[esp_ringbuf]")
 
     xSemaphoreTake(done_sem, portMAX_DELAY);
     vSemaphoreDelete(done_sem);
-   //Remove and delete ring buffers from queue sets
+    //Remove and delete ring buffers from queue sets
     for (int i = 0; i < NO_OF_RB_TYPES; i++) {
         TEST_ASSERT_MESSAGE(xRingbufferRemoveFromQueueSetRead(buffer_handles[i], queue_set) == pdTRUE, "Failed to remove from read queue set");
         vRingbufferDelete(buffer_handles[i]);
@@ -703,19 +704,14 @@ TEST_CASE("Test ring buffer with queue sets", "[esp_ringbuf]")
  *    will send then receive an item to a ring buffer.
  */
 
-#define TIMER_GROUP     0
-#define TIMER_NUMBER    0
 #define ISR_ITERATIONS  ((BUFFER_SIZE / SMALL_ITEM_SIZE) * 2)
 
-intr_handle_t ringbuffer_isr_handle;
 static int buf_type;
 static int iterations;
 
-static void ringbuffer_isr(void *arg)
+static bool on_timer_alarm(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
-    //Clear timer interrupt
-    timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
-    timer_group_enable_alarm_in_isr(TIMER_GROUP_0, xPortGetCoreID());
+    bool need_yield = false;
 
     //Test sending to buffer from ISR from ISR
     if (buf_type < NO_OF_RB_TYPES) {
@@ -740,63 +736,56 @@ static void ringbuffer_isr(void *arg)
         if (iterations < ISR_ITERATIONS) {
             iterations++;
             buf_type = 0;   //Reset and iterate through each buffer type again
-            return;
+            goto out;
         } else {
             //Signal complete
             BaseType_t task_woken = pdFALSE;
             xSemaphoreGiveFromISR(done_sem, &task_woken);
             if (task_woken == pdTRUE) {
                 buf_type++;
-                portYIELD_FROM_ISR();
+                need_yield = true;
             }
         }
     }
-}
 
-static void setup_timer(void)
-{
-    //Setup timer for ISR
-    int timer_group = TIMER_GROUP;
-    int timer_idx = TIMER_NUMBER;
-    timer_config_t config = {
-        .alarm_en = 1,
-        .auto_reload = 1,
-        .counter_dir = TIMER_COUNT_UP,
-        .divider = 10000,
-        .intr_type = TIMER_INTR_LEVEL,
-        .counter_en = TIMER_PAUSE,
-    };
-    timer_init(timer_group, timer_idx, &config);    //Configure timer
-    timer_pause(timer_group, timer_idx);    //Stop timer counter
-    timer_set_counter_value(timer_group, timer_idx, 0x00000000ULL); //Load counter value
-    timer_set_alarm_value(timer_group, timer_idx, 20); //Set alarm value
-    timer_enable_intr(timer_group, timer_idx);  //Enable timer interrupt
-    timer_set_auto_reload(timer_group, timer_idx, 1);   //Auto Reload
-    timer_isr_register(timer_group, timer_idx, ringbuffer_isr, NULL, 0, &ringbuffer_isr_handle);    //Set ISR handler
-}
-
-static void cleanup_timer(void)
-{
-    timer_disable_intr(TIMER_GROUP, TIMER_NUMBER);
-    esp_intr_free(ringbuffer_isr_handle);
+out:
+    return need_yield;
 }
 
 TEST_CASE("Test ring buffer ISR", "[esp_ringbuf]")
 {
+    gptimer_handle_t gptimer;
     for (int i = 0; i < NO_OF_RB_TYPES; i++) {
         buffer_handles[i] = xRingbufferCreate(BUFFER_SIZE, i);
     }
     done_sem = xSemaphoreCreateBinary();
     buf_type = 0;
     iterations = 0;
-    setup_timer();
-    //Start timer to trigger ISR
-    timer_start(TIMER_GROUP, TIMER_NUMBER);
+
+    //Setup timer for ISR
+    gptimer_config_t config = {
+        .clk_src = GPTIMER_CLK_SRC_APB,
+        .direction = GPTIMER_COUNT_UP,
+        .resolution_hz = 1000000,
+    };
+    TEST_ESP_OK(gptimer_new_timer(&config, &gptimer));
+    gptimer_alarm_config_t alarm_config = {
+        .reload_count = 0,
+        .alarm_count = 2000,
+        .flags.auto_reload_on_alarm = true,
+    };
+    gptimer_event_callbacks_t cbs = {
+        .on_alarm = on_timer_alarm,
+    };
+    TEST_ESP_OK(gptimer_register_event_callbacks(gptimer, &cbs, NULL));
+    TEST_ESP_OK(gptimer_set_alarm_action(gptimer, &alarm_config));
+    TEST_ESP_OK(gptimer_start(gptimer));
     //Wait for ISR to complete multiple iterations
     xSemaphoreTake(done_sem, portMAX_DELAY);
 
     //Cleanup
-    cleanup_timer();
+    TEST_ESP_OK(gptimer_stop(gptimer));
+    TEST_ESP_OK(gptimer_del_timer(gptimer));
     vSemaphoreDelete(done_sem);
     for (int i = 0; i < NO_OF_RB_TYPES; i++) {
         vRingbufferDelete(buffer_handles[i]);
@@ -819,7 +808,8 @@ static const char continuous_data[] = {"A_very_long_string_that_will_be_split_in
                                        "items_of_random_lengths_and_sent_to_the_ring_"
                                        "buffer._The_maximum_random_length_will_also_"
                                        "be_increased_over_multiple_iterations_in_this"
-                                       "_test"};
+                                       "_test"
+                                      };
 #define CONT_DATA_LEN                   sizeof(continuous_data)
 //32-bit aligned size that guarantees a wrap around at some point
 #define CONT_DATA_TEST_BUFF_LEN         (((CONT_DATA_LEN/2) + 0x03) & ~0x3)
@@ -847,7 +837,7 @@ static void send_to_buffer(RingbufHandle_t buffer, size_t max_item_size)
             }
 
             //Send item
-            TEST_ASSERT_MESSAGE(xRingbufferSend(buffer, (void *)&(continuous_data[bytes_sent]), next_item_size, TIMEOUT_TICKS) == pdTRUE, "Failed to send an item");
+            TEST_ASSERT_MESSAGE(xRingbufferSend(buffer, (void *) & (continuous_data[bytes_sent]), next_item_size, TIMEOUT_TICKS) == pdTRUE, "Failed to send an item");
             bytes_sent += next_item_size;
         }
         xSemaphoreGive(tx_done);
@@ -907,7 +897,7 @@ static void send_task(void *args)
     //Test sending short length items
     send_to_buffer(buffer, 1);
     //Test sending mid length items
-    send_to_buffer(buffer, max_item_len/2);
+    send_to_buffer(buffer, max_item_len / 2);
     //Test sending long length items
     send_to_buffer(buffer, max_item_len);
     vTaskDelete(NULL);
@@ -921,7 +911,7 @@ static void rec_task(void *args)
     //Test receiving short length items
     read_from_buffer(buffer, ((task_args_t *)args)->type, 1);
     //Test receiving mid length items
-    read_from_buffer(buffer, ((task_args_t *)args)->type, max_rec_len/2);
+    read_from_buffer(buffer, ((task_args_t *)args)->type, max_rec_len / 2);
     //Test receiving long length items
     read_from_buffer(buffer, ((task_args_t *)args)->type, max_rec_len);
 
@@ -988,10 +978,10 @@ TEST_CASE("Test static ring buffer SMP", "[esp_ringbuf]")
         //Allocate memory and create semaphores
 #if CONFIG_SPIRAM_USE_CAPS_ALLOC   //When SPIRAM can only be allocated using heap_caps_malloc()
         buffer_struct = (StaticRingbuffer_t *)heap_caps_malloc(sizeof(StaticRingbuffer_t), MALLOC_CAP_SPIRAM);
-        buffer_storage = (uint8_t *)heap_caps_malloc(sizeof(uint8_t)*CONT_DATA_TEST_BUFF_LEN, MALLOC_CAP_SPIRAM);
+        buffer_storage = (uint8_t *)heap_caps_malloc(sizeof(uint8_t) * CONT_DATA_TEST_BUFF_LEN, MALLOC_CAP_SPIRAM);
 #else   //Case where SPIRAM is disabled or when SPIRAM is allocatable through malloc()
         buffer_struct = (StaticRingbuffer_t *)malloc(sizeof(StaticRingbuffer_t));
-        buffer_storage = (uint8_t *)malloc(sizeof(uint8_t)*CONT_DATA_TEST_BUFF_LEN);
+        buffer_storage = (uint8_t *)malloc(sizeof(uint8_t) * CONT_DATA_TEST_BUFF_LEN);
 #endif
         TEST_ASSERT(buffer_struct != NULL && buffer_storage != NULL);
 

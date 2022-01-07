@@ -7,33 +7,24 @@
 #include "freertos/queue.h"
 #include "unity.h"
 #include "test_utils.h"
-
-#include "driver/timer.h"
+#include "esp_intr_alloc.h"
+#include "driver/gptimer.h"
+#include "esp_private/gptimer.h"
 #include "sdkconfig.h"
 
 #include "esp_rom_sys.h"
-
-#ifdef CONFIG_IDF_TARGET_ESP32S2
-#define int_clr_timers int_clr
-#define update update.update
-#define int_st_timers int_st
-#endif
 
 static SemaphoreHandle_t isr_semaphore;
 static volatile unsigned isr_count;
 
 /* Timer ISR increments an ISR counter, and signals a
    mutex semaphore to wake up another counter task */
-static void timer_group0_isr(void *vp_arg)
+static bool on_timer_alarm_cb(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
-    timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
-    timer_group_enable_alarm_in_isr(TIMER_GROUP_0, TIMER_0);
     portBASE_TYPE higher_awoken = pdFALSE;
     isr_count++;
     xSemaphoreGiveFromISR(isr_semaphore, &higher_awoken);
-    if (higher_awoken == pdTRUE) {
-        portYIELD_FROM_ISR();
-    }
+    return higher_awoken == pdTRUE;
 }
 
 typedef struct {
@@ -45,7 +36,7 @@ static void counter_task_fn(void *vp_config)
 {
     counter_config_t *config = (counter_config_t *)vp_config;
     printf("counter_task running...\n");
-    while(1) {
+    while (1) {
         xSemaphoreTake(config->trigger_sem, portMAX_DELAY);
         config->counter++;
     }
@@ -59,9 +50,11 @@ static void counter_task_fn(void *vp_config)
 TEST_CASE("Scheduler disabled can handle a pending context switch on resume", "[freertos]")
 {
     isr_count = 0;
-    isr_semaphore = xSemaphoreCreateBinary();
     TaskHandle_t counter_task;
-    intr_handle_t isr_handle = NULL;
+    gptimer_handle_t gptimer = NULL;
+    intr_handle_t intr_handle = NULL;
+    isr_semaphore = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(isr_semaphore);
 
     counter_config_t count_config = {
         .trigger_sem = isr_semaphore,
@@ -71,25 +64,26 @@ TEST_CASE("Scheduler disabled can handle a pending context switch on resume", "[
                             &count_config, UNITY_FREERTOS_PRIORITY + 1,
                             &counter_task, UNITY_FREERTOS_CPU);
 
-    /* Configure timer ISR */
-    const timer_config_t timer_config = {
-        .alarm_en = 1,
-        .auto_reload = 1,
-        .counter_dir = TIMER_COUNT_UP,
-        .divider = 2,       //Range is 2 to 65536
-        .intr_type = TIMER_INTR_LEVEL,
-        .counter_en = TIMER_PAUSE,
+    gptimer_config_t timer_config = {
+        .clk_src = GPTIMER_CLK_SRC_APB,
+        .direction = GPTIMER_COUNT_UP,
+        .resolution_hz = 1000000, // 1MHz, 1 tick=1us
     };
-    /* Configure timer */
-    timer_init(TIMER_GROUP_0, TIMER_0, &timer_config);
-    timer_pause(TIMER_GROUP_0, TIMER_0);
-    timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0);
-    timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, 1000);
-    timer_enable_intr(TIMER_GROUP_0, TIMER_0);
-    timer_isr_register(TIMER_GROUP_0, TIMER_0, timer_group0_isr, NULL, 0, &isr_handle);
-    timer_start(TIMER_GROUP_0, TIMER_0);
+    TEST_ESP_OK(gptimer_new_timer(&timer_config, &gptimer));
+    gptimer_alarm_config_t alarm_config = {
+        .reload_count = 0,
+        .alarm_count = 1000, // alarm period 1ms
+        .flags.auto_reload_on_alarm = true,
+    };
+    gptimer_event_callbacks_t cbs = {
+        .on_alarm = on_timer_alarm_cb,
+    };
+    TEST_ESP_OK(gptimer_register_event_callbacks(gptimer, &cbs, NULL));
+    TEST_ESP_OK(gptimer_set_alarm_action(gptimer, &alarm_config));
+    TEST_ESP_OK(gptimer_start(gptimer));
+    TEST_ESP_OK(gptimer_get_intr_handle(gptimer, &intr_handle));
 
-    vTaskDelay(5);
+    vTaskDelay(pdMS_TO_TICKS(20));
 
     // Check some counts have been triggered via the ISR
     TEST_ASSERT(count_config.counter > 10);
@@ -104,24 +98,22 @@ TEST_CASE("Scheduler disabled can handle a pending context switch on resume", "[
         // scheduler off on this CPU...
         esp_rom_delay_us(20 * 1000);
 
-        //TEST_ASSERT_NOT_EQUAL(no_sched_isr, isr_count);
         TEST_ASSERT_EQUAL(count_config.counter, no_sched_task);
 
         // disable timer interrupts
-        timer_disable_intr(TIMER_GROUP_0, TIMER_0);
+        esp_intr_disable(intr_handle);
 
         // When we resume scheduler, we expect the counter task
         // will preempt and count at least one more item
         esp_intr_noniram_enable();
-        timer_enable_intr(TIMER_GROUP_0, TIMER_0);
+        esp_intr_enable(intr_handle);
         xTaskResumeAll();
 
         TEST_ASSERT_NOT_EQUAL(count_config.counter, no_sched_task);
     }
 
-    esp_intr_free(isr_handle);
-    timer_disable_intr(TIMER_GROUP_0, TIMER_0);
-
+    TEST_ESP_OK(gptimer_stop(gptimer));
+    TEST_ESP_OK(gptimer_del_timer(gptimer));
     vTaskDelete(counter_task);
     vSemaphoreDelete(isr_semaphore);
 }
@@ -132,7 +124,7 @@ TEST_CASE("Scheduler disabled can handle a pending context switch on resume", "[
 */
 TEST_CASE("Scheduler disabled can wake multiple tasks on resume", "[freertos]")
 {
-    #define TASKS_PER_PROC 4
+#define TASKS_PER_PROC 4
     TaskHandle_t tasks[portNUM_PROCESSORS][TASKS_PER_PROC] = { 0 };
     counter_config_t counters[portNUM_PROCESSORS][TASKS_PER_PROC] = { 0 };
 
@@ -169,7 +161,7 @@ TEST_CASE("Scheduler disabled can wake multiple tasks on resume", "[freertos]")
         for (int t = 0; t < TASKS_PER_PROC; t++) {
             xSemaphoreGive(counters[p][t].trigger_sem);
         }
-   }
+    }
 
     esp_rom_delay_us(200); /* Let the other CPU do some things */
 
@@ -207,7 +199,7 @@ static void suspend_scheduler_5ms_task_fn(void *ignore)
 {
     vTaskSuspendAll();
     sched_suspended = true;
-    for (int i = 0; i <5; i++) {
+    for (int i = 0; i < 5; i++) {
         esp_rom_delay_us(1000);
     }
     xTaskResumeAll();
@@ -237,7 +229,7 @@ TEST_CASE("Scheduler disabled on CPU B, tasks on A can wake", "[freertos]")
 
     /* counter task is now blocked on other CPU, waiting for wake_sem, and we expect
      that this CPU's scheduler will be suspended for 5ms shortly... */
-    while(!sched_suspended) { }
+    while (!sched_suspended) { }
 
     xSemaphoreGive(wake_sem);
     esp_rom_delay_us(1000);
@@ -247,7 +239,7 @@ TEST_CASE("Scheduler disabled on CPU B, tasks on A can wake", "[freertos]")
     TEST_ASSERT(sched_suspended);
 
     /* wait for the rest of the 5ms... */
-    while(sched_suspended) { }
+    while (sched_suspended) { }
 
     esp_rom_delay_us(100);
     TEST_ASSERT_EQUAL(1, count_config.counter); // when scheduler resumes, counter task should immediately count

@@ -103,6 +103,7 @@ The following peripherals work normally even when the APB frequency is changing:
 - **UART**: if REF_TICK is used as a clock source. See `use_ref_tick` member of :cpp:class:`uart_config_t`.
 - **LEDC**: if REF_TICK is used as a clock source. See :cpp:func:`ledc_timer_config` function.
 - **RMT**: if REF_TICK or XTAL is used as a clock source. See `flags` member of :cpp:class:`rmt_config_t` and macro `RMT_CHANNEL_FLAGS_AWARE_DFS`.
+- **GPTimer**: if APB is used as the clock source. See :c:member:`clk_src` member of :c:type:`gptimer_config_t`.
 
 Currently, the following peripheral drivers are aware of DFS and will use the ``ESP_PM_APB_FREQ_MAX`` lock for the duration of the transaction:
 
@@ -128,7 +129,7 @@ The following peripheral drivers are not aware of DFS yet. Applications need to 
 
     - PCNT
     - Sigma-delta
-    - Timer group
+    - The legacy timer group driver (note, the new :doc:`GPTimer <../peripherals/gptimer>` will hold the ``ESP_PM_APB_FREQ_MAX`` lock while the timer is working, if the clock source is set to APB)
     :SOC_MCPWM_SUPPORTED: - MCPWM
 
 API Reference
