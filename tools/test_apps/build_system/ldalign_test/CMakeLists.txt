@@ -9,7 +9,7 @@ idf_build_get_property(python PYTHON)
 idf_build_get_property(elf EXECUTABLE)
 
 set(check_alignment  "${CMAKE_CURRENT_LIST_DIR}/check_alignment.py")
-set(readelf "${CMAKE_TOOLCHAIN_PREFIX}readelf")
+set(readelf "${_CMAKE_TOOLCHAIN_PREFIX}readelf")
 
 add_custom_command(
     TARGET ${elf}

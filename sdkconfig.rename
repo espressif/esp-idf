@@ -1,9 +1,6 @@
 # sdkconfig replacement configurations for deprecated options formatted as
 # CONFIG_DEPRECATED_OPTION CONFIG_NEW_OPTION
 
-# SDK tool configuration
-CONFIG_TOOLPREFIX                      CONFIG_SDK_TOOLPREFIX
-
 # Compiler options
 CONFIG_OPTIMIZATION_COMPILER                  CONFIG_COMPILER_OPTIMIZATION
 CONFIG_OPTIMIZATION_LEVEL_DEBUG               CONFIG_COMPILER_OPTIMIZATION_DEFAULT
