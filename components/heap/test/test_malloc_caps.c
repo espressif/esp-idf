@@ -8,6 +8,7 @@
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
 #include "esp_spi_flash.h"
+#include "soc/soc_memory_types.h"
 #include <stdlib.h>
 #include <sys/param.h>
 
@@ -245,3 +246,25 @@ TEST_CASE("allocation with invalid capability should also trigger the alloc fail
 
     (void)ptr;
 }
+
+#ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
+/**
+ * In MR 16031, the priority of RTC memory has been adjusted to the lowest.
+ * RTC memory will not be consumed a lot during the startup process.
+ */
+TEST_CASE("RTC memory shoule be lowest priority and its free size should be big enough", "[heap]")
+{
+    const size_t allocation_size = 1024 * 4;
+    void *ptr = NULL;
+    size_t free_size = 0;
+
+    ptr = heap_caps_malloc(allocation_size, MALLOC_CAP_DEFAULT);
+    TEST_ASSERT_NOT_NULL(ptr);
+    TEST_ASSERT(!esp_ptr_in_rtc_dram_fast(ptr));
+
+    free_size = heap_caps_get_free_size(MALLOC_CAP_RTCRAM);
+    TEST_ASSERT_GREATER_OR_EQUAL(1024 * 4, free_size);
+
+    free(ptr);
+}
+#endif

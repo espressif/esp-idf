@@ -52,7 +52,7 @@ const soc_memory_type_desc_t soc_memory_types[] = {
     //TODO, in fact, part of them support EDMA, to be supported.
     { "SPIRAM", { MALLOC_CAP_SPIRAM|MALLOC_CAP_DEFAULT, 0, MALLOC_CAP_8BIT|MALLOC_CAP_32BIT}, false, false},
     //Type 5: RTC Fast RAM
-    { "RTCRAM", { MALLOC_CAP_8BIT|MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL|MALLOC_CAP_32BIT, MALLOC_CAP_RTCRAM }, false, false},
+    { "RTCRAM", { MALLOC_CAP_RTCRAM, MALLOC_CAP_8BIT|MALLOC_CAP_DEFAULT, MALLOC_CAP_INTERNAL|MALLOC_CAP_32BIT }, false, false},
 };
 
 #ifdef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
@@ -70,9 +70,6 @@ Because of requirements in the coalescing code which merges adjacent regions, th
 from low to high start address.
 */
 const soc_memory_region_t soc_memory_regions[] = {
-#ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-    { SOC_RTC_DRAM_LOW, 0x2000, 5, 0}, //RTC Fast Memory
-#endif
 #ifdef CONFIG_SPIRAM
     { SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_SIZE, 4, 0}, //SPI SRAM, if available
 #endif
@@ -114,6 +111,9 @@ const soc_memory_region_t soc_memory_regions[] = {
     { 0x3FFF4000, 0x4000, SOC_MEMORY_TYPE_DEFAULT, 0x40064000}, //Block 19,  can be used for MAC dump, can be used as trace memory
     { 0x3FFF8000, 0x4000, SOC_MEMORY_TYPE_DEFAULT, 0x40068000}, //Block 20,  can be used for MAC dump, can be used as trace memory
     { 0x3FFFC000, 0x4000, 1, 0x4006C000}, //Block 21,  can be used for MAC dump, can be used as trace memory, used for startup stack
+#ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
+    { SOC_RTC_DRAM_LOW, 0x2000, 5, 0}, //RTC Fast Memory
+#endif
 };
 
 const size_t soc_memory_region_count = sizeof(soc_memory_regions)/sizeof(soc_memory_region_t);
