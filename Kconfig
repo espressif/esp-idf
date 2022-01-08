@@ -105,18 +105,6 @@ mainmenu "Espressif IoT Development Framework Configuration"
         default 0xFFFF
 
     menu "SDK tool configuration"
-        config SDK_TOOLPREFIX
-            string "Compiler toolchain path/prefix"
-            default "xtensa-esp32-elf-" if IDF_TARGET_ESP32
-            default "xtensa-esp32s2-elf-" if IDF_TARGET_ESP32S2
-            default "xtensa-esp32s3-elf-" if IDF_TARGET_ESP32S3
-            default "riscv32-esp-elf-" if IDF_TARGET_ESP32C3
-            default "riscv32-esp-elf-" if IDF_TARGET_ESP32H2
-            default "riscv32-esp-elf-" if IDF_TARGET_ESP8684
-
-            help
-                The prefix/path that is used to call the toolchain. The default setting assumes
-                a crosstool-ng gcc setup that is in your PATH.
 
         config SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS
             bool "Toolchain supports time_t wide 64-bits"
