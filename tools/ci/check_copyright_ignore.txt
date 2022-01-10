@@ -1883,7 +1883,6 @@ components/soc/esp32s3/include/soc/hinf_reg.h
 components/soc/esp32s3/include/soc/hinf_struct.h
 components/soc/esp32s3/include/soc/host_reg.h
 components/soc/esp32s3/include/soc/host_struct.h
-components/soc/esp32s3/include/soc/i2c_caps.h
 components/soc/esp32s3/include/soc/i2c_reg.h
 components/soc/esp32s3/include/soc/i2c_struct.h
 components/soc/esp32s3/include/soc/i2s_reg.h

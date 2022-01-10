@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -122,7 +122,18 @@
 #define SOC_DEDIC_GPIO_OUT_AUTO_ENABLE  (1) /*!< Dedicated GPIO output attribution is enabled automatically */
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
-#include "i2c_caps.h"
+// ESP32-S3 has 2 I2C
+#define SOC_I2C_NUM            (2)
+
+#define SOC_I2C_FIFO_LEN       (32) /*!< I2C hardware FIFO depth */
+
+//ESP32-S3 support hardware FSM reset
+#define SOC_I2C_SUPPORT_HW_FSM_RST  (1)
+//ESP32-S3 support hardware clear bus
+#define SOC_I2C_SUPPORT_HW_CLR_BUS  (1)
+
+#define SOC_I2C_SUPPORT_XTAL       (1)
+#define SOC_I2C_SUPPORT_RTC        (1)
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
 #define SOC_I2S_NUM                 (2)
