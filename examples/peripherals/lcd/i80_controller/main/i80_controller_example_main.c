@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -21,22 +21,28 @@ static const char *TAG = "example";
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////// Please update the following configuration according to your LCD spec //////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#if CONFIG_EXAMPLE_LCD_I80_COLOR_IN_PSRAM
+// PCLK frequency can't go too high as the limitation of PSRAM bandwidth
+#define EXAMPLE_LCD_PIXEL_CLOCK_HZ     (2 * 1000 * 1000)
+#else
 #define EXAMPLE_LCD_PIXEL_CLOCK_HZ     (10 * 1000 * 1000)
+#endif // CONFIG_EXAMPLE_LCD_I80_COLOR_IN_PSRAM
+
 #define EXAMPLE_LCD_BK_LIGHT_ON_LEVEL  1
 #define EXAMPLE_LCD_BK_LIGHT_OFF_LEVEL !EXAMPLE_LCD_BK_LIGHT_ON_LEVEL
-#define EXAMPLE_PIN_NUM_DATA0          19
-#define EXAMPLE_PIN_NUM_DATA1          21
-#define EXAMPLE_PIN_NUM_DATA2          0
-#define EXAMPLE_PIN_NUM_DATA3          22
-#define EXAMPLE_PIN_NUM_DATA4          23
-#define EXAMPLE_PIN_NUM_DATA5          33
-#define EXAMPLE_PIN_NUM_DATA6          32
-#define EXAMPLE_PIN_NUM_DATA7          27
-#define EXAMPLE_PIN_NUM_PCLK           18
-#define EXAMPLE_PIN_NUM_CS             4
-#define EXAMPLE_PIN_NUM_DC             5
-#define EXAMPLE_PIN_NUM_RST            -1
-#define EXAMPLE_PIN_NUM_BK_LIGHT       2
+#define EXAMPLE_PIN_NUM_DATA0          6
+#define EXAMPLE_PIN_NUM_DATA1          7
+#define EXAMPLE_PIN_NUM_DATA2          8
+#define EXAMPLE_PIN_NUM_DATA3          9
+#define EXAMPLE_PIN_NUM_DATA4          10
+#define EXAMPLE_PIN_NUM_DATA5          11
+#define EXAMPLE_PIN_NUM_DATA6          12
+#define EXAMPLE_PIN_NUM_DATA7          13
+#define EXAMPLE_PIN_NUM_PCLK           5
+#define EXAMPLE_PIN_NUM_CS             3
+#define EXAMPLE_PIN_NUM_DC             4
+#define EXAMPLE_PIN_NUM_RST            2
+#define EXAMPLE_PIN_NUM_BK_LIGHT       1
 
 // The pixel number in horizontal and vertical
 #define EXAMPLE_LCD_H_RES              240
@@ -46,6 +52,9 @@ static const char *TAG = "example";
 #define EXAMPLE_LCD_PARAM_BITS         8
 
 #define EXAMPLE_LVGL_TICK_PERIOD_MS    2
+
+// Supported alignment: 16, 32, 64. A higher alignment can enables higher burst transfer size, thus a higher i80 bus throughput.
+#define EXAMPLE_PSRAM_DATA_ALIGNMENT   64
 
 extern void example_lvgl_demo_ui(lv_obj_t *scr);
 
@@ -102,7 +111,9 @@ void app_main(void)
             EXAMPLE_PIN_NUM_DATA7,
         },
         .bus_width = 8,
-        .max_transfer_bytes = EXAMPLE_LCD_H_RES * 40 * sizeof(uint16_t)
+        .max_transfer_bytes = EXAMPLE_LCD_H_RES * 100 * sizeof(uint16_t),
+        .psram_trans_align = EXAMPLE_PSRAM_DATA_ALIGNMENT,
+        .sram_trans_align = 4,
     };
     ESP_ERROR_CHECK(esp_lcd_new_i80_bus(&bus_config, &i80_bus));
     esp_lcd_panel_io_handle_t io_handle = NULL;
@@ -145,12 +156,23 @@ void app_main(void)
     lv_init();
     // alloc draw buffers used by LVGL
     // it's recommended to choose the size of the draw buffer(s) to be at least 1/10 screen sized
-    lv_color_t *buf1 = heap_caps_malloc(EXAMPLE_LCD_H_RES * 20 * sizeof(lv_color_t), MALLOC_CAP_DMA);
+    lv_color_t *buf1 = NULL;
+    lv_color_t *buf2 = NULL;
+#if CONFIG_EXAMPLE_LCD_I80_COLOR_IN_PSRAM
+    buf1 = heap_caps_aligned_alloc(EXAMPLE_PSRAM_DATA_ALIGNMENT, EXAMPLE_LCD_H_RES * 100 * sizeof(lv_color_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+#else
+    buf1 = heap_caps_malloc(EXAMPLE_LCD_H_RES * 100 * sizeof(lv_color_t), MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+#endif
     assert(buf1);
-    lv_color_t *buf2 = heap_caps_malloc(EXAMPLE_LCD_H_RES * 20 * sizeof(lv_color_t), MALLOC_CAP_DMA);
+#if CONFIG_EXAMPLE_LCD_I80_COLOR_IN_PSRAM
+    buf2 = heap_caps_aligned_alloc(EXAMPLE_PSRAM_DATA_ALIGNMENT, EXAMPLE_LCD_H_RES * 100 * sizeof(lv_color_t), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+#else
+    buf2 = heap_caps_malloc(EXAMPLE_LCD_H_RES * 100 * sizeof(lv_color_t), MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+#endif
     assert(buf2);
+    ESP_LOGI(TAG, "buf1@%p, buf2@%p", buf1, buf2);
     // initialize LVGL draw buffers
-    lv_disp_draw_buf_init(&disp_buf, buf1, buf2, EXAMPLE_LCD_H_RES * 20);
+    lv_disp_draw_buf_init(&disp_buf, buf1, buf2, EXAMPLE_LCD_H_RES * 100);
 
     ESP_LOGI(TAG, "Register display driver to LVGL");
     lv_disp_drv_init(&disp_drv);
