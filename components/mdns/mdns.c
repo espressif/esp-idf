@@ -5624,7 +5624,7 @@ mdns_search_once_t *mdns_query_async_new(const char *name, const char *service, 
     return search;
 }
 
-esp_err_t mdns_query_generic(const char * name, const char * service, const char * proto, uint16_t type, bool unicast, uint32_t timeout, size_t max_results, mdns_result_t ** results)
+esp_err_t mdns_query_generic(const char * name, const char * service, const char * proto, uint16_t type, mdns_query_transmission_type_t transmission_type, uint32_t timeout, size_t max_results, mdns_result_t ** results)
 {
     mdns_search_once_t * search = NULL;
 
@@ -5638,7 +5638,7 @@ esp_err_t mdns_query_generic(const char * name, const char * service, const char
         return ESP_ERR_INVALID_ARG;
     }
 
-    search = _mdns_search_init(name, service, proto, type, unicast, timeout, max_results, NULL);
+    search = _mdns_search_init(name, service, proto, type, transmission_type == MDNS_QUERY_UNICAST, timeout, max_results, NULL);
     if (!search) {
         return ESP_ERR_NO_MEM;
     }
