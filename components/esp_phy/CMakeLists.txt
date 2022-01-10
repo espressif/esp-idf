@@ -13,6 +13,7 @@ if(IDF_TARGET STREQUAL "esp32h2")
 else()
     set(srcs "src/phy_init.c")
 endif()
+    list(APPEND srcs "src/lib_printf.c")
 
 idf_build_get_property(build_dir BUILD_DIR)
 
