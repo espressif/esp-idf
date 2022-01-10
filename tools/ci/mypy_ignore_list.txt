@@ -48,7 +48,6 @@ docs/sanitize_version.py
 docs/test/en/conf.py
 docs/test/test_docs.py
 docs/test/test_sphinx_idf_extensions.py
-docs/zh_CN/conf.py
 examples/bluetooth/nimble/blecent/blecent_test.py
 examples/bluetooth/nimble/blehr/blehr_test.py
 examples/bluetooth/nimble/bleprph/bleprph_test.py

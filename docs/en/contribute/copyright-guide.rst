@@ -23,7 +23,7 @@ Common Examples of Copyright Headers
 The simplest case is when the code is not based on any licensed previous work, e.g. it was written completely from scratch. Such code can be decorated with the following copyright header and put under the license of ESP-IDF::
 
     /*
-     * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+     * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
      *
      * SPDX-License-Identifier: Apache-2.0
      */
@@ -34,7 +34,7 @@ Less restrictive parts of ESP-IDF
 Some parts of ESP-IDF are deliberately under less restrictive licenses in order to ease their re-use in commercial closed source projects. This is the case for :project:`ESP-IDF examples <examples>` which are in Public domain or under the Creative Commons Zero Universal (CC0) license. The following header can be used in such source files::
 
     /*
-     * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+     * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
      *
      * SPDX-License-Identifier: Unlicense OR CC0-1.0
      */
@@ -53,7 +53,7 @@ The following example is a suitable header for a code licensed under the "GNU Ge
      *
      * SPDX-License-Identifier: GPL-2.0-or-later
      *
-     * SPDX-FileContributor: 2019-2021 Espressif Systems (Shanghai) CO LTD
+     * SPDX-FileContributor: 2019-2022 Espressif Systems (Shanghai) CO LTD
      */
 
 The licenses can be identified and the short SPDX identifiers can be found in the official `SPDX license list <https://spdx.org/licenses>`_. Other very common licenses are the GPL-2.0-only, the BSD-3-Clause, and the BSD-2-Clause.
