@@ -5,6 +5,30 @@
   tags:
     - deploy
 
+# Check this before push_to_github
+check_submodule_sync:
+  extends:
+    - .deploy_job_template
+    - .rules:test:submodule
+  stage: test_deploy
+  tags:
+    - github_sync
+  retry: 2
+  variables:
+    GIT_STRATEGY: clone
+    SUBMODULES_TO_FETCH: "none"
+    PUBLIC_IDF_URL: "https://github.com/espressif/esp-idf.git"
+  dependencies: []
+  script:
+    - git submodule deinit --force .
+    # setting the default remote URL to the public one, to resolve relative location URLs
+    - git config remote.origin.url ${PUBLIC_IDF_URL}
+    # check if all submodules are correctly synced to public repository
+    - git submodule init
+    - git config --get-regexp '^submodule\..*\.url$' || true
+    - git submodule update --recursive
+    - echo "IDF was cloned from ${PUBLIC_IDF_URL} completely"
+
 push_to_github:
   extends:
     - .deploy_job_template
@@ -51,25 +75,3 @@ deploy_test_result:
     - echo $BOT_JIRA_ACCOUNT > ${BOT_ACCOUNT_CONFIG_FILE}
     # update test results
     - python3 ImportTestResult.py -r "$GIT_SHA (r${REV_COUNT})" -j $JIRA_TEST_MANAGEMENT_PROJECT -s "$SUMMARY" -l CI -p ${CI_PROJECT_DIR}/TEST_LOGS --pipeline_url ${CI_PIPELINE_URL}
-
-check_submodule_sync:
-  extends:
-    - .deploy_job_template
-    - .rules:test:submodule
-  tags:
-    - github_sync
-  retry: 2
-  variables:
-    GIT_STRATEGY: clone
-    SUBMODULES_TO_FETCH: "none"
-    PUBLIC_IDF_URL: "https://github.com/espressif/esp-idf.git"
-  dependencies: []
-  script:
-    - git submodule deinit --force .
-    # setting the default remote URL to the public one, to resolve relative location URLs
-    - git config remote.origin.url ${PUBLIC_IDF_URL}
-    # check if all submodules are correctly synced to public repository
-    - git submodule init
-    - git config --get-regexp '^submodule\..*\.url$' || true
-    - git submodule update --recursive
-    - echo "IDF was cloned from ${PUBLIC_IDF_URL} completely"

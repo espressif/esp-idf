@@ -152,13 +152,12 @@ build_docs_pdf:
   image: $ESP_IDF_DOC_ENV_IMAGE
   variables:
     PYTHON_VER: 3.6.13
+    DOCS_BUILD_DIR: "${IDF_PATH}/docs/_build/"
+    PYTHONUNBUFFERED: 1
   stage: test_deploy
   tags:
     - deploy
     - shiny
-  variables:
-    DOCS_BUILD_DIR: "${IDF_PATH}/docs/_build/"
-    PYTHONUNBUFFERED: 1
   dependencies: []
   script:
     - add_doc_server_ssh_keys $DOCS_DEPLOY_PRIVATEKEY $DOCS_DEPLOY_SERVER $DOCS_DEPLOY_SERVER_USER
