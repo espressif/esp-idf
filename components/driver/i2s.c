@@ -1878,6 +1878,15 @@ esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config,
 #endif
     /* Enable module clock */
     i2s_hal_enable_module_clock(&p_i2s[i2s_num]->hal);
+#if SOC_I2S_SUPPORTS_TDM
+    /* Enable tx/rx submodule clock */
+    if (i2s_config->mode & I2S_MODE_TX) {
+        i2s_ll_tx_enable_clock(p_i2s[i2s_num]->hal.dev);
+    }
+    if (i2s_config->mode & I2S_MODE_RX) {
+        i2s_ll_rx_enable_clock(p_i2s[i2s_num]->hal.dev);
+    }
+#endif
 
     /* Step 5: Initialize I2S configuration and set the configurations to register */
     i2s_hal_config_param(&(pre_alloc_i2s_obj->hal), &pre_alloc_i2s_obj->hal_cfg);
@@ -1901,6 +1910,7 @@ esp_err_t i2s_driver_install(i2s_port_t i2s_num, const i2s_config_t *i2s_config,
 
     /* Step 7: Set I2S clocks and start. No need to give parameters since configurations has been set in 'i2s_driver_init' */
     ESP_GOTO_ON_ERROR(i2s_set_clk(i2s_num, 0, 0, 0), err, TAG, "I2S set clock failed");
+
     return ESP_OK;
 
 err:
@@ -1961,6 +1971,14 @@ esp_err_t i2s_driver_uninstall(i2s_port_t i2s_num)
     if (p_i2s[i2s_num]->pm_lock) {
         esp_pm_lock_delete(p_i2s[i2s_num]->pm_lock);
         p_i2s[i2s_num]->pm_lock = NULL;
+    }
+#endif
+#if SOC_I2S_SUPPORTS_TDM
+    if (p_i2s[i2s_num]->hal_cfg.mode & I2S_MODE_TX) {
+        i2s_ll_tx_disable_clock(p_i2s[i2s_num]->hal.dev);
+    }
+    if (p_i2s[i2s_num]->hal_cfg.mode & I2S_MODE_RX) {
+        i2s_ll_rx_disable_clock(p_i2s[i2s_num]->hal.dev);
     }
 #endif
     /* Disable module clock */
