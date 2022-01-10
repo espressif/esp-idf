@@ -7,7 +7,6 @@ entries:
     spi_flash_chip_mxic (noflash)
     spi_flash_chip_gd (noflash)
     spi_flash_chip_winbond (noflash)
+    spi_flash_chip_boya (noflash)
+    spi_flash_chip_th (noflash)
     memspi_host_driver (noflash)
-
-    if IDF_TARGET_ESP32 = n:
-            spi_flash_chip_boya (noflash)

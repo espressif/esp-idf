@@ -228,10 +228,21 @@ menu "SPI Flash driver"
 
         config SPI_FLASH_SUPPORT_BOYA_CHIP
             bool "BOYA"
-            depends on !IDF_TARGET_ESP32
+            # ESP32 doens't usually use this chip, default n to save iram.
+            default n if IDF_TARGET_ESP32
             default y
             help
                 Enable this to support auto detection of BOYA chips if chip vendor not directly
+                given by ``chip_drv`` member of the chip struct. This adds support for variant
+                chips, however will extend detecting time.
+
+        config SPI_FLASH_SUPPORT_TH_CHIP
+            bool "TH"
+            # ESP32 doens't usually use this chip, default n to save iram.
+            default n if IDF_TARGET_ESP32
+            default y
+            help
+                Enable this to support auto detection of TH chips if chip vendor not directly
                 given by ``chip_drv`` member of the chip struct. This adds support for variant
                 chips, however will extend detecting time.
 
