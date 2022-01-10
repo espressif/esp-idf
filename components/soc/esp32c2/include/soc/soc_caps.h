@@ -141,6 +141,7 @@
 #define SOC_LEDC_SUPPORT_XTAL_CLOCK  (1)
 #define SOC_LEDC_CHANNEL_NUM         (6)
 #define SOC_LEDC_TIMER_BIT_WIDE_NUM  (14)
+#define SOC_LEDC_SUPPORT_FADE_STOP   (1)
 
 /*-------------------------- MPU CAPS ----------------------------------------*/
 #define SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED    0

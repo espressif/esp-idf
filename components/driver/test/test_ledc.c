@@ -184,7 +184,7 @@ static void timer_frequency_test(ledc_channel_t channel, ledc_timer_bit_t timer_
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
     frequency_set_get(ledc_ch_config.speed_mode, ledc_ch_config.timer_sel, 100, 100, 2);
     frequency_set_get(ledc_ch_config.speed_mode, ledc_ch_config.timer_sel, 5000, 5000, 5);
-    frequency_set_get(ledc_ch_config.speed_mode, ledc_ch_config.timer_sel, 9000, 9025, 5);
+    frequency_set_get(ledc_ch_config.speed_mode, ledc_ch_config.timer_sel, 9000, 8993, 5);
 }
 
 #endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
@@ -438,6 +438,34 @@ TEST_CASE("LEDC fast switching duty with fade_no_wait", "[ledc]")
     //deinitialize fade service
     ledc_fade_func_uninstall();
 }
+
+#if SOC_LEDC_SUPPORT_FADE_STOP
+TEST_CASE("LEDC fade stop test", "[ledc]")
+{
+    const ledc_mode_t test_speed_mode = TEST_SPEED_MODE;
+    fade_setup();
+
+    // Overwrite the last fade with new fade
+    int64_t fade_start, fade_stop;
+    int time_ms = 0;
+    fade_start = esp_timer_get_time();
+    TEST_ESP_OK(ledc_set_fade_with_time(test_speed_mode, LEDC_CHANNEL_0, 4000, 500));
+    TEST_ESP_OK(ledc_fade_start(test_speed_mode, LEDC_CHANNEL_0, LEDC_FADE_NO_WAIT));
+    // Add some delay before stopping the fade
+    vTaskDelay(127 / portTICK_RATE_MS);
+    uint32_t duty_at_stop = ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0);
+    TEST_ESP_OK(ledc_fade_stop(test_speed_mode, LEDC_CHANNEL_0));
+    fade_stop = esp_timer_get_time();
+    time_ms = (fade_stop - fade_start) / 1000;
+    TEST_ASSERT_TRUE(fabs(time_ms - 127) < 20);
+    vTaskDelay(300 / portTICK_RATE_MS);
+    TEST_ASSERT_EQUAL_INT32(duty_at_stop, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
+    TEST_ASSERT_NOT_EQUAL(4000, duty_at_stop);
+
+    //deinitialize fade service
+    ledc_fade_func_uninstall();
+}
+#endif // SOC_LEDC_SUPPORT_FADE_STOP
 
 #if SOC_PCNT_SUPPORTED
 
