@@ -275,6 +275,13 @@ build_examples_cmake_esp32c3:
   variables:
     IDF_TARGET: esp32c3
 
+build_examples_cmake_esp32h2:
+  extends:
+    - .build_examples_cmake_template
+    - .rules:build:example_test-esp32h2
+  variables:
+    IDF_TARGET: esp32h2
+
 .build_test_apps_template:
   extends: .build_examples_cmake_template
   variables:
