@@ -150,7 +150,7 @@
 #define SOC_GPIO_SUPPORT_SLP_SWITCH  (1)
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
-// ESP32 have 2 I2C.
+// ESP32 has 2 I2C
 #define SOC_I2C_NUM             (2)
 
 #define SOC_I2C_FIFO_LEN        (32) /*!< I2C hardware FIFO depth */
@@ -166,7 +166,7 @@
 #define SOC_APLL_MAX_HZ    (125000000) // 125MHz, refer to 'periph_rtc_apll_freq_set' for the calculation
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
-// ESP32 have 2 I2S
+// ESP32 has 2 I2S
 #define SOC_I2S_NUM                 (2U)
 #define SOC_I2S_SUPPORTS_APLL       (1) // ESP32 support APLL
 #define SOC_I2S_SUPPORTS_PDM_TX     (1)
