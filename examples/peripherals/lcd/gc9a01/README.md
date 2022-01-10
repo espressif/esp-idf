@@ -4,7 +4,7 @@
 
 `esp_lcd` allows user to add their own panel drivers in the project scope (i.e. panel driver can live outside of esp-idf), so that the upper layer code like LVGL porting code can be reused without any modifications, as long as user-implemented panel driver follows the interface defined in the `esp_lcd` component.
 
-This example shows how to add the GC9A01 driver in the project folder but still use the API provided by `esp_lcd` component. As GC9A01 is famous in the form of a circular screen, this example will draw a fancy dash board with the LVGL library. For more information about porting the LVGL library, you can also refer to another [lvgl porting example](../lvgl/README.md).
+This example shows how to add the GC9A01 driver in the project folder but still use the API provided by `esp_lcd` component. As GC9A01 is famous in the form of a circular screen, this example will draw a fancy dash board with the LVGL library. For more information about porting the LVGL library, you can also refer to another [lvgl porting example](../i80_controller/README.md).
 
 ## How to use the example
 

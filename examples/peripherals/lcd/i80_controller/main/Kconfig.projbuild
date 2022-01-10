@@ -1,0 +1,11 @@
+menu "Example Configuration"
+
+    config EXAMPLE_LCD_I80_COLOR_IN_PSRAM
+        bool "Allocate color data from PSRAM"
+        depends on IDF_TARGET_ESP32S3
+        default y
+        help
+            Enable this option if you wish to allocate the color buffer used by LVGL from PSRAM.
+            Unmatched PSRAM band width with LCD requirement can lead to blurred image display.
+
+endmenu
