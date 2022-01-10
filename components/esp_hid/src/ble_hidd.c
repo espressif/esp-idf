@@ -1,16 +1,8 @@
-// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 #include <stdbool.h>
@@ -55,6 +47,7 @@ static const uint8_t s_char_prop_write_nr = ESP_GATT_CHAR_PROP_BIT_WRITE_NR;
 static const uint8_t s_char_prop_read_notify = ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_NOTIFY;
 static const uint8_t s_char_prop_read_write = ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_READ;
 static const uint8_t s_char_prop_read_write_nr = ESP_GATT_CHAR_PROP_BIT_WRITE_NR | ESP_GATT_CHAR_PROP_BIT_READ;
+static const uint8_t s_char_prop_read_write_write_nr = ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_WRITE_NR | ESP_GATT_CHAR_PROP_BIT_READ;
 //static const uint8_t s_char_prop_read_write_notify = ESP_GATT_CHAR_PROP_BIT_READ|ESP_GATT_CHAR_PROP_BIT_WRITE|ESP_GATT_CHAR_PROP_BIT_NOTIFY;
 
 // Service UUIDs
@@ -331,8 +324,13 @@ static esp_err_t create_hid_db(esp_ble_hidd_dev_t *dev, int device_index)
                 report->index = index;
                 add_db_record(_last_db, index++, (uint8_t *)&s_hid_report_uuid, ESP_GATT_PERM_READ, report->value_len, 0, NULL);
                 add_db_record(_last_db, index++, (uint8_t *)&s_character_client_config_uuid, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, 2, 0, NULL);
+            } else if (report->report_type == ESP_HID_REPORT_TYPE_OUTPUT) {
+                //Output Report
+                add_db_record(_last_db, index++, (uint8_t *)&s_character_declaration_uuid, ESP_GATT_PERM_READ, 1, 1, (uint8_t *)&s_char_prop_read_write_write_nr);
+                report->index = index;
+                add_db_record(_last_db, index++, (uint8_t *)&s_hid_report_uuid, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, report->value_len, 0, NULL);
             } else {
-                //Output or Feature Report
+                //Feature Report
                 add_db_record(_last_db, index++, (uint8_t *)&s_character_declaration_uuid, ESP_GATT_PERM_READ, 1, 1, (uint8_t *)&s_char_prop_read_write);
                 report->index = index;
                 add_db_record(_last_db, index++, (uint8_t *)&s_hid_report_uuid, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, report->value_len, 0, NULL);
@@ -349,7 +347,7 @@ static esp_err_t create_hid_db(esp_ble_hidd_dev_t *dev, int device_index)
                 }
                 add_db_record(_last_db, index++, (uint8_t *)&s_character_client_config_uuid, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, 2, 0, NULL);
             } else { //Boot Keyboard Output
-                add_db_record(_last_db, index++, (uint8_t *)&s_character_declaration_uuid, ESP_GATT_PERM_READ, 1, 1, (uint8_t *)&s_char_prop_read_write);
+                add_db_record(_last_db, index++, (uint8_t *)&s_character_declaration_uuid, ESP_GATT_PERM_READ, 1, 1, (uint8_t *)&s_char_prop_read_write_write_nr);
                 report->index = index;
                 add_db_record(_last_db, index++, (uint8_t *)&s_hid_boot_kb_output_uuid, ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, HIDD_LE_BOOT_REPORT_MAX_LEN, 0, NULL);
             }
