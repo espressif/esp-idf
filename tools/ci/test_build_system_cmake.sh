@@ -502,6 +502,19 @@ function run_tests()
     popd
     rm -r $IDF_PATH/examples/build_system/cmake/idf_as_lib/build
 
+    print_status "Test build ESP-IDF as a library to a custom CMake projects for all targets"
+    IDF_AS_LIB=$IDF_PATH/examples/build_system/cmake/idf_as_lib
+    # note: we just need to run cmake
+    for TARGET in "esp32" "esp32s2" "esp32s3" "esp32c3" "esp32h2" "esp8684"
+    do
+      echo "Build idf_as_lib for $TARGET target"
+      rm -rf build
+      mkdir -p build && cd build
+      cmake $IDF_AS_LIB -DCMAKE_TOOLCHAIN_FILE=$IDF_PATH/tools/cmake/toolchain-$TARGET.cmake -DTARGET=$TARGET || failure "Failed to generate idf_as_lib build files for target $TARGET"
+      cmake --build . || failure "Failed to build idf_as_lib for target $TARGET"
+      cd ..
+    done
+
     print_status "Building a project with CMake library imported and PSRAM workaround, all files compile with workaround"
     # Test for libraries compiled within ESP-IDF
     rm -r build sdkconfig
