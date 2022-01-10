@@ -1,14 +1,15 @@
 #
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 
 import collections
 import os
 
-from fragments import Fragment
-from generation import GenerationException
 from pyparsing import ParseException, Suppress, White
+
+from .fragments import Fragment
+from .generation import GenerationException
 
 
 class LinkerScript:
@@ -32,24 +33,21 @@ class LinkerScript:
         lines = template_file.readlines()
 
         target = Fragment.IDENTIFIER
-        reference = Suppress('mapping') + Suppress('[') + target.setResultsName('target') + Suppress(']')
-        pattern = White(' \t').setResultsName('indent') + reference
+        reference = Suppress('mapping') + Suppress('[') + target + Suppress(']')
+        pattern = White(' \t') + reference
 
         # Find the markers in the template file line by line. If line does not match marker grammar,
         # set it as a literal to be copied as is to the output file.
         for line in lines:
             try:
-                parsed = pattern.parseString(line)
-
-                indent = parsed.indent
-                target = parsed.target
-
-                marker = LinkerScript.Marker(target, indent, [])
-
-                self.members.append(marker)
+                parsed = pattern.parse_string(line)
             except ParseException:
                 # Does not match marker syntax
                 self.members.append(line)
+            else:
+                indent, target = parsed
+                marker = LinkerScript.Marker(target, indent, [])
+                self.members.append(marker)
 
     def fill(self, mapping_rules):
         for member in self.members:

@@ -15,7 +15,7 @@ cryptography>=2.1.4
 # We do have cryptography binary on https://dl.espressif.com/pypi for ARM
 # On https://pypi.org/ are no ARM binaries as standard now
 
-pyparsing>=2.0.3,<2.4.0
+pyparsing>=3.0.3  # https://github.com/pyparsing/pyparsing/issues/319 is fixed in 3.0.3
 pyelftools>=0.22
 idf-component-manager>=0.2.99-beta
 

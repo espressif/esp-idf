@@ -1,26 +1,15 @@
 #
-# Copyright 2021 Espressif Systems (Shanghai) CO LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 #
 
-from entity import Entity
+from .entity import Entity
 
 # Contains classes for output section commands referred to in
 # https://www.acrc.bris.ac.uk/acrc/RedHat/rhel-ld-en-4/sections.html#OUTPUT-SECTION-DESCRIPTION.
 
 
-class AlignAtAddress():
+class AlignAtAddress:
     """
     Outputs assignment of builtin function ALIGN to current
     position:
@@ -42,7 +31,7 @@ class AlignAtAddress():
                 self.alignment == other.alignment)
 
 
-class SymbolAtAddress():
+class SymbolAtAddress:
     """
     Outputs assignment of builtin function ABSOLUTE to a symbol
     for current position:
@@ -65,7 +54,7 @@ class SymbolAtAddress():
                 self.symbol == other.symbol)
 
 
-class InputSectionDesc():
+class InputSectionDesc:
     """
     Outputs an input section description as described in
     https://www.acrc.bris.ac.uk/acrc/RedHat/rhel-ld-en-4/sections.html#INPUT-SECTION.
@@ -76,7 +65,7 @@ class InputSectionDesc():
     """
 
     def __init__(self, entity, sections, exclusions=None, keep=False, sort=None):
-        assert(entity.specificity != Entity.Specificity.SYMBOL)
+        assert (entity.specificity != Entity.Specificity.SYMBOL)
 
         self.entity = entity
         self.sections = set(sections)
@@ -84,8 +73,8 @@ class InputSectionDesc():
         self.exclusions = set()
 
         if exclusions:
-            assert(not [e for e in exclusions if e.specificity == Entity.Specificity.SYMBOL or
-                        e.specificity == Entity.Specificity.NONE])
+            assert (not [e for e in exclusions if e.specificity == Entity.Specificity.SYMBOL or
+                         e.specificity == Entity.Specificity.NONE])
             self.exclusions = set(exclusions)
         else:
             self.exclusions = set()

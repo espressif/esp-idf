@@ -1,5 +1,5 @@
 #
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 
@@ -8,13 +8,13 @@ import fnmatch
 import itertools
 from collections import namedtuple
 
-from entity import Entity
-from fragments import Mapping, Scheme, Sections
-from ldgen_common import LdGenFailure
-from output_commands import AlignAtAddress, InputSectionDesc, SymbolAtAddress
+from .entity import Entity
+from .fragments import Keep, Scheme, Sections, Sort, Surround
+from .ldgen_common import LdGenFailure
+from .output_commands import AlignAtAddress, InputSectionDesc, SymbolAtAddress
 
 
-class Placement():
+class Placement:
     """
     A Placement is an assignment of an entity's input sections to a target
     in the output linker script - a precursor to the input section description.
@@ -97,7 +97,7 @@ class Placement():
         self.subplacements.add(subplacement)
 
 
-class EntityNode():
+class EntityNode:
     """
     Node in entity tree. An EntityNode
     is created from an Entity (see entity.py).
@@ -134,12 +134,12 @@ class EntityNode():
 
     def add_child(self, entity):
         child_specificity = self.entity.specificity.value + 1
-        assert(child_specificity <= Entity.Specificity.SYMBOL.value)
+        assert (child_specificity <= Entity.Specificity.SYMBOL.value)
         name = entity[Entity.Specificity(child_specificity)]
-        assert(name and name != Entity.ALL)
+        assert (name and name != Entity.ALL)
 
         child = [c for c in self.children if c.name == name]
-        assert(len(child) <= 1)
+        assert (len(child) <= 1)
 
         if not child:
             child = self.child_t(self, name)
@@ -174,7 +174,7 @@ class EntityNode():
         for sections in self.get_output_sections():
             placement = self.placements[sections]
             if placement.is_significant():
-                assert(placement.node == self)
+                assert (placement.node == self)
 
                 keep = False
                 sort = None
@@ -183,16 +183,16 @@ class EntityNode():
                 placement_flags = placement.flags if placement.flags is not None else []
 
                 for flag in placement_flags:
-                    if isinstance(flag, Mapping.Keep):
+                    if isinstance(flag, Keep):
                         keep = True
-                    elif isinstance(flag, Mapping.Sort):
+                    elif isinstance(flag, Sort):
                         sort = (flag.first, flag.second)
                     else:  # SURROUND or ALIGN
                         surround_type.append(flag)
 
                 for flag in surround_type:
                     if flag.pre:
-                        if isinstance(flag, Mapping.Surround):
+                        if isinstance(flag, Surround):
                             commands[placement.target].append(SymbolAtAddress('_%s_start' % flag.symbol))
                         else:  # ALIGN
                             commands[placement.target].append(AlignAtAddress(flag.alignment))
@@ -202,11 +202,12 @@ class EntityNode():
                 placement_sections = frozenset(placement.sections)
                 command_sections = sections if sections == placement_sections else placement_sections
 
-                command = InputSectionDesc(placement.node.entity, command_sections, [e.node.entity for e in placement.exclusions], keep, sort)
+                command = InputSectionDesc(placement.node.entity, command_sections,
+                                           [e.node.entity for e in placement.exclusions], keep, sort)
                 commands[placement.target].append(command)
 
-                # Generate commands for intermediate, non-explicit exclusion placements here, so that they can be enclosed by
-                # flags that affect the parent placement.
+                # Generate commands for intermediate, non-explicit exclusion placements here,
+                # so that they can be enclosed by flags that affect the parent placement.
                 for subplacement in placement.subplacements:
                     if not subplacement.flags and not subplacement.explicit:
                         command = InputSectionDesc(subplacement.node.entity, subplacement.sections,
@@ -215,7 +216,7 @@ class EntityNode():
 
                 for flag in surround_type:
                     if flag.post:
-                        if isinstance(flag, Mapping.Surround):
+                        if isinstance(flag, Surround):
                             commands[placement.target].append(SymbolAtAddress('_%s_end' % flag.symbol))
                         else:  # ALIGN
                             commands[placement.target].append(AlignAtAddress(flag.alignment))
@@ -248,6 +249,7 @@ class SymbolNode(EntityNode):
     Entities at depth=3. Represents entities with archive, object
     and symbol specified.
     """
+
     def __init__(self, parent, name):
         EntityNode.__init__(self, parent, name)
         self.entity = Entity(self.parent.parent.name, self.parent.name)
@@ -270,6 +272,7 @@ class ObjectNode(EntityNode):
     An intermediate placement on this node is created, if one does not exist,
     and is the one excluded from its basis placement.
     """
+
     def __init__(self, parent, name):
         EntityNode.__init__(self, parent, name)
         self.child_t = SymbolNode
@@ -334,6 +337,7 @@ class ArchiveNode(EntityNode):
     """
     Entities at depth=1. Represents entities with archive specified.
     """
+
     def __init__(self, parent, name):
         EntityNode.__init__(self, parent, name)
         self.child_t = ObjectNode
@@ -345,6 +349,7 @@ class RootNode(EntityNode):
     Single entity at depth=0. Represents entities with no specific members
     specified.
     """
+
     def __init__(self):
         EntityNode.__init__(self, None, Entity.ALL)
         self.child_t = ArchiveNode
@@ -382,7 +387,7 @@ class Generation:
 
             for (sections_name, target_name) in scheme.entries:
                 # Get the sections under the bucket 'target_name'. If this bucket does not exist
-                # is is created automatically
+                # is created automatically
                 sections_in_bucket = sections_bucket[target_name]
 
                 try:
@@ -433,9 +438,9 @@ class Generation:
                 entity = Entity(archive, obj, symbol)
 
                 # Check the entity exists
-                if (self.check_mappings and
-                        entity.specificity.value > Entity.Specificity.ARCHIVE.value and
-                        mapping.name not in self.check_mapping_exceptions):
+                if (self.check_mappings
+                        and entity.specificity.value > Entity.Specificity.ARCHIVE.value
+                        and mapping.name not in self.check_mapping_exceptions):
                     if not entities.check_exists(entity):
                         message = "'%s' not found" % str(entity)
                         raise GenerationException(message, mapping)
@@ -444,11 +449,11 @@ class Generation:
                     flags = mapping.flags[(obj, symbol, scheme_name)]
                     # Check if all section->target defined in the current
                     # scheme.
-                    for (s, t, f) in flags:
-                        if (t not in scheme_dictionary[scheme_name].keys() or
-                                s not in [_s.name for _s in scheme_dictionary[scheme_name][t]]):
-
-                            message = "%s->%s not defined in scheme '%s'" % (s, t, scheme_name)
+                    for flag in flags:
+                        if (flag.target not in scheme_dictionary[scheme_name].keys()
+                                or flag.section not in
+                                [_s.name for _s in scheme_dictionary[scheme_name][flag.target]]):
+                            message = "%s->%s not defined in scheme '%s'" % (flag.section, flag.target, scheme_name)
                             raise GenerationException(message, mapping)
                 else:
                     flags = None
@@ -460,9 +465,9 @@ class Generation:
                         _flags = []
 
                         if flags:
-                            for (s, t, f) in flags:
-                                if (s, t) == (section.name, target):
-                                    _flags.extend(f)
+                            for flag in flags:
+                                if (flag.section, flag.target) == (section.name, target):
+                                    _flags.extend(flag.flags)
 
                         sections_str = get_section_strs(section)
 
@@ -477,18 +482,18 @@ class Generation:
                             entity_mappings[key] = Generation.EntityMapping(entity, sections_str, target, _flags)
                         else:
                             # Check for conflicts.
-                            if (target != existing.target):
+                            if target != existing.target:
                                 raise GenerationException('Sections mapped to multiple targets.', mapping)
 
                             # Combine flags here if applicable, to simplify
                             # insertion logic.
-                            if (_flags or existing.flags):
-                                if ((_flags and not existing.flags) or (not _flags and existing.flags)):
+                            if _flags or existing.flags:
+                                if (_flags and not existing.flags) or (not _flags and existing.flags):
                                     _flags.extend(existing.flags)
                                     entity_mappings[key] = Generation.EntityMapping(entity,
                                                                                     sections_str,
                                                                                     target, _flags)
-                                elif (_flags == existing.flags):
+                                elif _flags == existing.flags:
                                     pass
                                 else:
                                     raise GenerationException('Conflicting flags specified.', mapping)
@@ -517,26 +522,22 @@ class Generation:
 
     def add_fragments_from_file(self, fragment_file):
         for fragment in fragment_file.fragments:
-            dict_to_append_to = None
-
-            if isinstance(fragment, Mapping) and fragment.deprecated and fragment.name in self.mappings.keys():
-                self.mappings[fragment.name].entries |= fragment.entries
+            if isinstance(fragment, Scheme):
+                dict_to_append_to = self.schemes
+            elif isinstance(fragment, Sections):
+                dict_to_append_to = self.placements
             else:
-                if isinstance(fragment, Scheme):
-                    dict_to_append_to = self.schemes
-                elif isinstance(fragment, Sections):
-                    dict_to_append_to = self.placements
-                else:
-                    dict_to_append_to = self.mappings
+                dict_to_append_to = self.mappings
 
-                # Raise exception when the fragment of the same type is already in the stored fragments
-                if fragment.name in dict_to_append_to.keys():
-                    stored = dict_to_append_to[fragment.name].path
-                    new = fragment.path
-                    message = "Duplicate definition of fragment '%s' found in %s and %s." % (fragment.name, stored, new)
-                    raise GenerationException(message)
+            # Raise exception when the fragment of the same type is already in the stored fragments
+            if fragment.name in dict_to_append_to:
+                stored = dict_to_append_to[fragment.name].path
+                new = fragment.path
+                message = "Duplicate definition of fragment '%s' found in %s and %s." % (
+                    fragment.name, stored, new)
+                raise GenerationException(message)
 
-                dict_to_append_to[fragment.name] = fragment
+            dict_to_append_to[fragment.name] = fragment
 
 
 class GenerationException(LdGenFailure):
