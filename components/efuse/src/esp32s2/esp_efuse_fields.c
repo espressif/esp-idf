@@ -34,7 +34,7 @@ uint8_t esp_efuse_get_chip_ver(void)
 {
     // should return the same value as bootloader_common_get_chip_revision()
     uint32_t chip_ver = 0;
-    // TODO: ESP32S2 does not have this field
+    esp_efuse_read_field_blob(ESP_EFUSE_WAFER_VERSION, &chip_ver, ESP_EFUSE_WAFER_VERSION[0]->bit_count);
     return chip_ver;
 }
 

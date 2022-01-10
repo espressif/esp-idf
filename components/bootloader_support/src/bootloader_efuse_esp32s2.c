@@ -15,10 +15,10 @@
 #include "sdkconfig.h"
 #include "bootloader_clock.h"
 #include "bootloader_common.h"
+#include "soc/efuse_reg.h"
 
 uint8_t bootloader_common_get_chip_revision(void)
 {
     // should return the same value as esp_efuse_get_chip_ver()
-    /* No other revisions for ESP32-S2 */
-    return 0;
+    return REG_GET_FIELD(EFUSE_RD_MAC_SPI_SYS_3_REG, EFUSE_WAFER_VERSION);
 }
