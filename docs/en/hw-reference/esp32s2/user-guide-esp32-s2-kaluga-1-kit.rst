@@ -342,6 +342,10 @@ If you want to use more than one extension board at the same time, please check 
      - If ESP-LyraT-8311A's pin BT_ADC is used to initialize the board's six buttons, IO6 and IO11 will not be available for the other boards.
      - Do not initialize IO11 (NETWORK) for your ESP-LyraP-TouchA. Also, if you need to use BT_ADC, do not initialize IO6 (PHOTO).
 
+Also, all extension boards and the :ref:`JTAG interface <jtag-debugging-tip-jtag-pins-reconfigured>` share the same pins IO39, IO40, IO41 and IO42. For this reason, the following may disturb the JTAG operation:
+
+* Plugging in any extension board
+* Debugging an application that is using an extension board
 
 
 Hardware Revision Details
@@ -387,6 +391,3 @@ Related Documents
 - `ESP32-S2-Kaluga-1 Pin Mapping <https://dl.espressif.com/dl/schematics/ESP32-S2-Kaluga-1_V1.3-Pin-Mapping-v0.1.xlsx>`_ (Excel)
 
 For other design documentation for the board, please contact us at sales@espressif.com.
-
-
-    
