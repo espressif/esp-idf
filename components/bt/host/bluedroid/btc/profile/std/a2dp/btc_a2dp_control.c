@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +25,7 @@
 #if BTC_AV_INCLUDED
 
 typedef struct {
-    BOOLEAN data_channel_open;
+    BOOLEAN data_channel_open; /* used only by A2DP sink */
     UINT8 a2dp_cmd_pending; /* we can have max one command pending */
 } tBTC_AA_CTRL_CB;
 
@@ -75,7 +75,9 @@ static void btc_a2dp_datapath_open(void)
         btc_a2dp_source_encoder_update();
     }
 #endif
+#if (BTC_AV_SINK_INCLUDED == TRUE)
     btc_aa_ctrl_cb.data_channel_open = TRUE;
+#endif
 }
 
 BOOLEAN btc_a2dp_control_get_datachnl_stat(void)
@@ -86,22 +88,6 @@ BOOLEAN btc_a2dp_control_get_datachnl_stat(void)
 void btc_a2dp_control_set_datachnl_stat(BOOLEAN open)
 {
     btc_aa_ctrl_cb.data_channel_open = open;
-}
-
-static void btc_a2dp_dispatch_datapath_evt(uint32_t dp_evt)
-{
-    btc_msg_t msg;
-    msg.sig = BTC_SIG_API_CALL;
-    msg.pid = BTC_PID_A2DP;
-    msg.act = BTC_AV_DATAPATH_CTRL_EVT;
-
-    btc_av_args_t arg;
-    memset(&arg, 0, sizeof(btc_av_args_t));
-    arg.dp_evt = dp_evt;
-
-    /* Switch to BTC context */
-    APPL_TRACE_DEBUG("%s sig %u act %u, dp_evt %u\n", __func__, msg.sig, msg.act, arg.dp_evt);
-    btc_transfer_context(&msg, &arg, sizeof(btc_av_args_t), NULL);
 }
 
 void btc_a2dp_control_media_ctrl(esp_a2d_media_ctrl_t ctrl)
@@ -138,17 +124,14 @@ void btc_a2dp_control_media_ctrl(esp_a2d_media_ctrl_t ctrl)
         break;
     case ESP_A2D_MEDIA_CTRL_START:
         if (btc_av_stream_ready() == TRUE ) {
-            /* post start event and wait for audio path to open */
+            /* post start event */
             btc_dispatch_sm_event(BTC_AV_START_STREAM_REQ_EVT, NULL, 0);
-
-            btc_a2dp_dispatch_datapath_evt(BTC_AV_DATAPATH_OPEN_EVT);
 #if (BTC_AV_SINK_INCLUDED == TRUE)
             if (btc_av_get_peer_sep() == AVDT_TSEP_SRC && btc_av_get_service_id() == BTA_A2DP_SINK_SERVICE_ID) {
                 btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_SUCCESS);
             }
 #endif
         } else if (btc_av_stream_started_ready()) {
-            btc_a2dp_dispatch_datapath_evt(BTC_AV_DATAPATH_OPEN_EVT);
             btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_SUCCESS);
         } else {
             btc_a2dp_control_command_ack(ESP_A2D_MEDIA_CTRL_ACK_FAILURE);

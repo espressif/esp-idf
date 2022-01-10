@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -673,6 +673,9 @@ static BOOLEAN btc_av_state_opened_handler(btc_sm_event_t event, void *p_data)
             /* pending start flag will be cleared when exit current state */
         }
 #endif /* BTC_AV_SRC_INCLUDED */
+        /* wait for audio path to open */
+        btc_a2dp_control_datapath_ctrl(BTC_AV_DATAPATH_OPEN_EVT);
+
         btc_sm_change_state(btc_av_cb.sm_handle, BTC_AV_STATE_STARTED);
 
     } break;
@@ -1499,10 +1502,6 @@ void btc_a2dp_call_handler(btc_msg_t *msg)
 #endif /* BTC_AV_SRC_INCLUDED */
     case BTC_AV_API_MEDIA_CTRL_EVT: {
         btc_a2dp_control_media_ctrl(arg->ctrl);
-        break;
-    }
-    case BTC_AV_DATAPATH_CTRL_EVT: {
-        btc_a2dp_control_datapath_ctrl(arg->dp_evt);
         break;
     }
     case BTC_AV_CONNECT_REQ_EVT:
