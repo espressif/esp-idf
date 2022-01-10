@@ -241,6 +241,11 @@ rtc_xtal_freq_t rtc_clk_xtal_freq_get(void);
 void rtc_clk_xtal_freq_update(rtc_xtal_freq_t xtal_freq);
 
 /**
+ * @brief Enable 32KHz external oscillator
+ */
+void rtc_clk_32k_enable_external(void);
+
+/**
  * @brief Enable or disable 8 MHz internal oscillator
  *
  * Output from 8 MHz internal oscillator is passed into a configurable
