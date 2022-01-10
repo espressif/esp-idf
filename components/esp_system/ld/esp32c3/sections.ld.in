@@ -220,6 +220,7 @@ SECTIONS
 
     *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
     *(.irom0.text) /* catch stray ICACHE_RODATA_ATTR */
+    *(.rwtext) /* catch stray .wrtext section */
     *(.fini.literal)
     *(.fini)
     *(.gnu.version)
