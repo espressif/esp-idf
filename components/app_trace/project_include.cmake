@@ -2,7 +2,7 @@
 #
 # Create coverage report.
 function(idf_create_coverage_report report_dir)
-    set(gcov_tool ${CONFIG_SDK_TOOLPREFIX}gcov)
+    set(gcov_tool ${_CMAKE_TOOLCHAIN_PREFIX}gcov)
     idf_build_get_property(project_name PROJECT_NAME)
 
     add_custom_target(pre-cov-report

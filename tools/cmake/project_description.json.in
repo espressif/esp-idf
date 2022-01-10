@@ -11,7 +11,7 @@
     "rev":                "${CONFIG_ESP32_REV_MIN}",
     "phy_data_partition": "${CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION}",
     "monitor_baud" :      "${CONFIG_ESPTOOLPY_MONITOR_BAUD}",
-    "monitor_toolprefix": "${CONFIG_SDK_TOOLPREFIX}",
+    "monitor_toolprefix": "${_CMAKE_TOOLCHAIN_PREFIX}",
     "config_environment" : {
         "COMPONENT_KCONFIGS" : "${COMPONENT_KCONFIGS}",
         "COMPONENT_KCONFIGS_PROJBUILD" : "${COMPONENT_KCONFIGS_PROJBUILD}"
