@@ -1,3 +1,5 @@
+.. _concurrency-constraints-flash:
+
 Concurrency Constraints for flash on SPI1
 =========================================
 
@@ -9,33 +11,43 @@ The SPI0/1 bus is shared between the instruction & data cache (for firmware exec
 
 .. only:: esp32c3
 
-    On {IDF_TARGET_NAME}, the config option :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` (enabled by default) allows the cache to read flash & PSRAM concurrently with SPI1 operations. See :ref:`auto_suspend` for more details.
+    On {IDF_TARGET_NAME}, the config option :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` (enabled by default) allows the cache to read flash concurrently with SPI1 operations. See :ref:`auto-suspend` for more details.
 
     If this option is disabled, the caches must be disabled while reading/writing/erasing operations. There are some constraints using driver on the SPI1 bus, see :ref:`impact_disabled_cache`. This constraints will cause more IRAM/DRAM usages.
+
 
 .. _impact_disabled_cache:
 
 When the caches are disabled
 ----------------------------
 
-This means that all CPUs must be running code from IRAM and must only be reading data from DRAM while flash write operations occur. If you use the API functions documented here, then the caches will be disabled automatically and transparently. However, note that it will have some performance impact on other tasks in the system.
+Under this condition, all CPUs should always execute code and access data from internal RAM. The APIs documented in this file will disable the caches automatically and transparently.
 
-There are no such constraints and impacts for flash chips on other SPI buses than SPI0/1.
+.. only:: esp32c3
 
-For differences between IRAM, DRAM, and flash cache, please refer to the :ref:`application memory layout <memory-layout>` documentation.
+    However, when :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` is enabled, these APIs won't disable the caches. The hardware will handle the arbitration between them.
 
 .. only:: not CONFIG_FREERTOS_UNICORE
 
-    To avoid reading flash cache accidentally, when one CPU initiates a flash write or erase operation, the other CPU is put into a blocked state, and all non-IRAM-safe interrupts are disabled on all CPUs until the flash operation completes.
+    The way that these APIs disable the caches will suspend all the other tasks. Besides, all non-IRAM-safe interrupts will be disabled. The other core will be polling in a busy loop. These will be restored until the Flash operation completes.
+
+.. only:: CONFIG_FREERTOS_UNICORE
+
+    The way that these APIs disable the caches will also disable non-IRAM-safe interrupts. These will be restored until the Flash operation completes.
 
 See also :ref:`esp_flash_os_func`, :ref:`spi_bus_lock`.
+
+There are no such constraints and impacts for flash chips on other SPI buses than SPI0/1.
+
+For differences between internal RAM (e.g. IRAM, DRAM) and flash cache, please refer to the :ref:`application memory layout <memory-layout>` documentation.
+
 
 .. _iram-safe-interrupt-handlers:
 
 IRAM-Safe Interrupt Handlers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If you have an interrupt handler that you want to execute while a flash operation is in progress (for example, for low latency operations), set the ``ESP_INTR_FLAG_IRAM`` flag when the :doc:`interrupt handler is registered </api-reference/system/intr_alloc>`.
+For interrupt handlers which need to execute when the cache is disabled (e.g., for low latency operations), set the ``ESP_INTR_FLAG_IRAM`` flag when the :doc:`interrupt handler is registered </api-reference/system/intr_alloc>`.
 
 You must ensure that all data and functions accessed by these interrupt handlers, including the ones that handlers call, are located in IRAM or DRAM. See :ref:`how-to-place-code-in-iram`.
 
@@ -44,6 +56,12 @@ If a function or symbol is not correctly put into IRAM/DRAM, and the interrupt h
 .. note::
 
    When working with string in ISRs, it is not advised to use ``printf`` and other output functions. For debugging purposes, use :cpp:func:`ESP_DRAM_LOGE` and similar macros when logging from ISRs. Make sure that both ``TAG`` and format string are placed into ``DRAM`` in that case.
+
+Non-IRAM-Safe Interrupt Handlers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If the ``ESP_INTR_FLAG_IRAM`` flag is not set when registering, the interrupt handler will not get executed when the caches are disabled. Once the caches are restored, the non-IRAM-safe interrupts will be re-enabled. After this moment, the interrupt handler will run normally again. This means that as long as caches are disabled, users won't see the corresponding hardware event happening.
+
 
 .. only:: esp32c3
 
