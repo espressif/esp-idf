@@ -117,11 +117,11 @@ Done
 ```
 The second device has joined the Thread network as a router (or a child).
 
-## Extension command example
+## Extension commands
 
-You can refer to [extension command](../extension_command/README.md) for how to use the extension commands.
+You can refer to the [extension command](../extension_command/README.md) about the extension commands.
 
-these examples are supported by ot_cli:
+The following examples are supported by `ot_cli`:
 
 * TCP and UDP Example
 * Iperf Example

@@ -34,7 +34,7 @@ Enable `OPENTHREAD_BR_AUTO_START`, configure the `CONFIG_EXAMPLE_WIFI_SSID` and 
 The device will connect to Wi-Fi and form a Thread network automatically after bootup.
 
 - Manual mode
-Disable `OPENTHREAD_BR_AUTO_START`, and use the CLI command to configure the Wi-Fi and form Thread network manually.
+Disable `OPENTHREAD_BR_AUTO_START` and enable `OPENTHREAD_CLI_ESP_EXTENSION`. `wifi` command will be added for connecting the device to the Wi-Fi network.
 
 ### Build, Flash, and Run
 
@@ -43,12 +43,58 @@ Build the project and flash it to the board, then run monitor tool to view seria
 ```
 idf.py -p PORT build flash monitor
 ```
-If the OPENTHREAD_BR_AUTO_START option is enabled, The device will be connected to the configured Wi-Fi and Thread network automatically then act as the border router.
+If the `OPENTHREAD_BR_AUTO_START` option is enabled, The device will be connected to the configured Wi-Fi and Thread network automatically then act as the border router.
 
-Otherwise, you need to manually configure the Wi-Fi and Thread network with CLI command.
+Otherwise, you need to manually configure the networks with CLI commands.
 
-For connecting to Wi-Fi, you can refer to [extension_command](../extension_command/README.md) about `wifi` command.
-For forming Thread network, you can refer to [ot_cli_README](../ot_cli/README.md).
+`wifi` command can be used to configure the Wi-Fi network.
+
+```bash
+> wifi
+--wifi parameter---
+connect
+-s                   :     wifi ssid
+-p                   :     wifi psk
+---example---
+join a wifi:
+ssid: threadcertAP
+psk: threadcertAP    :     wifi connect -s threadcertAP -p threadcertAP
+state                :     get wifi state, disconnect or connect
+---example---
+get wifi state       :     wifi state
+Done
+```
+
+To join a Wi-Fi network, please use the `wifi connect` command:
+
+```bash
+> wifi connect -s threadcertAP -p threadcertAP
+ssid: threadcertAP
+psk: threadcertAP
+I (11331) wifi:wifi driver task: 3ffd06e4, prio:23, stack:6656, core=0
+I (11331) system_api: Base MAC address is not set
+I (11331) system_api: read default base MAC address from EFUSE
+I (11341) wifi:wifi firmware version: 45c46a4
+I (11341) wifi:wifi certification version: v7.0
+
+
+..........
+
+I (13741) esp_netif_handlers: sta ip: 192.168.3.10, mask: 255.255.255.0, gw: 192.168.3.1
+W (13771) wifi:<ba-add>idx:0 (ifx:0, 02:0f:c1:32:3b:2b), tid:0, ssn:2, winSize:64
+wifi sta is connected successfully
+Done
+```
+
+To get the state of the Wi-Fi network:
+
+```bash
+> wifi state
+connected
+Done
+```
+
+For forming the Thread network, please refer to the [ot_cli_README](../ot_cli/README.md).
 
 ## Example Output
 
@@ -70,7 +116,7 @@ I(8159) OPENTHREAD:[NOTE]-MLE-----: Role Detached -> Leader
 ```
 ## Using the border agent feature
 
-You need to ot-commissioner on the host machine and another Thread end device running OpenThread cli.
+You need to build ot-commissioner on the host machine and another Thread end device running OpenThread cli.
 
 You can find the guide to build and run ot-commissioner [here](https://openthread.io/guides/commissioner/build).
 
