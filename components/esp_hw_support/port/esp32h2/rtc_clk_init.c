@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,7 +62,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     rtc_xtal_freq_t xtal_freq = cfg.xtal_freq;
     esp_rom_uart_tx_wait_idle(0);
     rtc_clk_xtal_freq_update(xtal_freq);
-    rtc_clk_apb_freq_update(rtc_clk_apb_freq_get() * MHZ);
+    rtc_clk_apb_freq_update(rtc_clk_apb_freq_get());
 
     /* Set CPU frequency */
     rtc_clk_cpu_freq_get_config(&old_config);
