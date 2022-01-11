@@ -1,16 +1,8 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -214,10 +206,18 @@ esp_err_t esp_https_ota_begin(esp_https_ota_config_t *ota_config, esp_https_ota_
     if (https_ota_handle->partial_http_download) {
         esp_http_client_set_method(https_ota_handle->http_client, HTTP_METHOD_HEAD);
         err = esp_http_client_perform(https_ota_handle->http_client);
-        if (err != ESP_OK || esp_http_client_get_status_code(https_ota_handle->http_client) != HttpStatus_Ok) {
-            ESP_LOGE(TAG, "Failed to get image length");
+        if (err == ESP_OK) {
+            int status = esp_http_client_get_status_code(https_ota_handle->http_client);
+            if (status != HttpStatus_Ok) {
+                ESP_LOGE(TAG, "Received incorrect http status %d", status);
+                err = ESP_FAIL;
+                goto http_cleanup;
+            }
+        } else {
+            ESP_LOGE(TAG, "ESP HTTP client perform failed: %d", err);
             goto http_cleanup;
         }
+
         https_ota_handle->image_length = esp_http_client_get_content_length(https_ota_handle->http_client);
         esp_http_client_close(https_ota_handle->http_client);
 
@@ -239,7 +239,7 @@ esp_err_t esp_https_ota_begin(esp_https_ota_config_t *ota_config, esp_https_ota_
         err = ota_config->http_client_init_cb(https_ota_handle->http_client);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "http_client_init_cb returned 0x%x", err);
-            goto failure;
+            goto http_cleanup;
         }
     }
 
