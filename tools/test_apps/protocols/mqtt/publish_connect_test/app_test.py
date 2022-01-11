@@ -307,7 +307,7 @@ def connection_tests(dut, cases):
     teardown_connection_suite()
 
 
-@ttfw_idf.idf_custom_test(env_tag='Example_WIFI', group='test-apps')
+@ttfw_idf.idf_custom_test(env_tag='Example_EthKitV1', group='test-apps')
 def test_app_protocol_mqtt_publish_connect(env, extra_data):
     """
     steps:
