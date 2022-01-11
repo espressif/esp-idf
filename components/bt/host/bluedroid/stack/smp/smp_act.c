@@ -1539,13 +1539,12 @@ void smp_idle_terminate(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 *******************************************************************************/
 void smp_fast_conn_param(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 {
-#if (BT_MULTI_CONNECTION_ENBALE == FALSE)
     if(p_cb->role == BTM_ROLE_MASTER) {
+#if (BT_MULTI_CONNECTION_ENBALE == FALSE)
         L2CA_EnableUpdateBleConnParams(p_cb->pairing_bda, FALSE);
-    }
 #endif
+    } else {
 #if (SMP_SLAVE_CON_PARAMS_UPD_ENABLE == TRUE)
-    else {
         tBTM_SEC_DEV_REC    *p_rec = btm_find_dev (p_cb->pairing_bda);
         if(p_rec && p_rec->ble.skip_update_conn_param) {
             //do nothing
@@ -1558,8 +1557,8 @@ void smp_fast_conn_param(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
         #if (BT_MULTI_CONNECTION_ENBALE == FALSE)
         L2CA_EnableUpdateBleConnParams(p_cb->pairing_bda, FALSE);
         #endif
-    }
 #endif
+    }
 }
 
 /*******************************************************************************
