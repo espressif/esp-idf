@@ -231,7 +231,7 @@ static void bdb_start_top_level_commissioning_cb(zb_uint8_t mode_mask)
  *
  * @param bufid   Zigbee zboss stack buffer id used to pass signal.
  */
-void zboss_signal_handler(zb_uint8_t bufid)
+void zboss_signal_handler(zb_bufid_t bufid)
 {
     zb_zdo_app_signal_hdr_t       *p_sg_p = NULL;
     zb_zdo_app_signal_type_t       sig    = zb_get_app_signal(bufid, &p_sg_p);
@@ -281,7 +281,7 @@ void zboss_signal_handler(zb_uint8_t bufid)
     }
 }
 
-void app_main()
+void app_main(void)
 {
     zb_ret_t    zb_err_code;
     zb_esp_platform_config_t config = {
