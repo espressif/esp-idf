@@ -13,7 +13,7 @@ idf_component_get_property(esp_hw_support_dir esp_hw_support COMPONENT_DIR)
 idf_component_get_property(esp_event_dir esp_event COMPONENT_DIR)
 idf_component_get_property(log_dir log COMPONENT_DIR)
 idf_component_get_property(freertos_dir freertos COMPONENT_DIR)
-idf_component_get_property(nghttp_dir nghttp COMPONENT_DIR)
+idf_component_get_property(http_parser_dir http_parser COMPONENT_DIR)
 idf_component_get_property(esp_wifi_dir esp_wifi COMPONENT_DIR)
 idf_component_get_property(esp_hw_support_dir esp_hw_support COMPONENT_DIR)
 idf_component_get_property(esp_tls_dir esp-tls COMPONENT_DIR)
@@ -61,7 +61,7 @@ idf_component_get_property(mbedtls_dir mbedtls COMPONENT_DIR)
      ${freertos_dir}/FreeRTOS-Kernel/include/freertos/task.h
      ${freertos_dir}/FreeRTOS-Kernel/include/freertos/event_groups.h
      ${log_dir}/include/esp_log.h
-     ${nghttp_dir}/port/include/http_parser.h
+     ${http_parser_dir}/http_parser.h
      )
 
  set(srcs
@@ -113,7 +113,7 @@ idf_component_get_property(mbedtls_dir mbedtls COMPONENT_DIR)
     ${log_dir}/include
     ${esp_rom_dir}/include
     ${mbedtls_dir}/port/include
-    ${nghttp_dir}/port/include
+    ${http_parser_dir}
     ${mbedtls_dir}/mbedtls/include
     ${freertos_dir}/FreeRTOS-Kernel/include/freertos
     esp-mqtt/lib/include
@@ -131,7 +131,7 @@ idf_component_get_property(mbedtls_dir mbedtls COMPONENT_DIR)
  target_link_libraries(${COMPONENT_LIB} PUBLIC mocks)
 
 else()
-    idf_component_get_property(nghttp_lib nghttp COMPONENT_LIB)
+    idf_component_get_property(http_parser_lib http_parser COMPONENT_LIB)
     idf_component_get_property(tcp_transport_lib tcp_transport COMPONENT_LIB)
-    target_link_libraries(${COMPONENT_LIB} PUBLIC ${nghttp_lib} ${tcp_transport_lib})
+    target_link_libraries(${COMPONENT_LIB} PUBLIC ${http_parser_lib} ${tcp_transport_lib})
 endif()

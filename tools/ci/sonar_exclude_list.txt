@@ -13,3 +13,7 @@ components/freertos/FreeRTOS-Kernel/include/freertos/*.h
 # wpa_supplicant upstream code
 components/wpa_supplicant/src/**
 components/wpa_supplicant/include/**
+
+# HTTP Parser code
+components/http_parser/*.c
+components/http_parser/*.h

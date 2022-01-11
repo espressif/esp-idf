@@ -109,6 +109,7 @@
 /components/freertos/                 @esp-idf-codeowners/system
 /components/hal/                      @esp-idf-codeowners/peripherals
 /components/heap/                     @esp-idf-codeowners/system
+/components/http_parser/              @esp-idf-codeowners/app-utilities
 /components/idf_test/                 @esp-idf-codeowners/ci
 /components/ieee802154/               @esp-idf-codeowners/ieee802154
 /components/json/                     @esp-idf-codeowners/app-utilities
@@ -118,7 +119,6 @@
 /components/mdns/                     @esp-idf-codeowners/network
 /components/mqtt/                     @esp-idf-codeowners/network
 /components/newlib/                   @esp-idf-codeowners/system @esp-idf-codeowners/tools
-/components/nghttp/                   @esp-idf-codeowners/app-utilities
 /components/nvs_flash/                @esp-idf-codeowners/storage
 /components/openssl/                  @esp-idf-codeowners/network
 /components/openthread/               @esp-idf-codeowners/ieee802154

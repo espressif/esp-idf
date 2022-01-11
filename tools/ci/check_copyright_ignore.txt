@@ -1397,10 +1397,6 @@ components/newlib/test_apps/app_test.py
 components/newlib/test_apps/main/test_newlib_main.c
 components/newlib/test_apps/main/test_stdatomic.c
 components/newlib/time.c
-components/nghttp/port/http_parser.c
-components/nghttp/port/include/http_parser.h
-components/nghttp/port/include/nghttp2/nghttp2ver.h
-components/nghttp/private_include/config.h
 components/nvs_flash/host_test/fixtures/test_fixtures.hpp
 components/nvs_flash/host_test/nvs_page_test/main/nvs_page_test.cpp
 components/nvs_flash/include/nvs.h
@@ -2669,7 +2665,6 @@ examples/protocols/esp_local_ctrl/main/app_main.c
 examples/protocols/esp_local_ctrl/main/esp_local_ctrl_service.c
 examples/protocols/esp_local_ctrl/scripts/esp_local_ctrl.py
 examples/protocols/esp_local_ctrl/scripts/proto_lc.py
-examples/protocols/http2_request/components/sh2lib/sh2lib.h
 examples/protocols/http2_request/main/http2_request_example_main.c
 examples/protocols/http_request/main/http_request_example_main.c
 examples/protocols/http_server/advanced_tests/http_server_advanced_test.py
