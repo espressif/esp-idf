@@ -178,7 +178,8 @@ SECTIONS
 
     mapping[iram0_text]
 
-    /* added to maintain compability */
+    /* Added to maintain compability, there are no iram0 data section to put
+     * sections:iram_coredump entry defined in espcoredump's linker.lf file */
     _coredump_iram_start = 0;
     _coredump_iram_end = 0;
 
