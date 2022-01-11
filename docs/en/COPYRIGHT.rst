@@ -4,7 +4,7 @@ Copyrights and Licenses
 Software Copyrights
 ===================
 
-All original source code in this repository is Copyright (C) 2015-2021 Espressif Systems. This source code is licensed under the Apache License 2.0 as described in the file LICENSE.
+All original source code in this repository is Copyright (C) 2015-2022 Espressif Systems. This source code is licensed under the Apache License 2.0 as described in the file LICENSE.
 
 Additional third party copyrighted code is included under the following licenses.
 
