@@ -133,8 +133,8 @@ menu "SPIFFS Configuration"
             If the chip already has the spiffs image with the time field = 32 bits
             then this option cannot be applied in this case.
             Erase it first before using this option.
-            To resolve the Y2K38 problem for the spiffs, use a toolchain with support
-            time_t 64 bits (see SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS).
+            To resolve the Y2K38 problem for the spiffs, use a toolchain with
+            64-bit time_t support.
 
     menu "Debug Configuration"
 
