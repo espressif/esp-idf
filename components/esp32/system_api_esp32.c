@@ -52,7 +52,6 @@ void IRAM_ATTR esp_restart_noos(void)
     wdt_hal_config_stage(&rtc_wdt_ctx, WDT_STAGE0, stage_timeout_ticks, WDT_STAGE_ACTION_RESET_SYSTEM);
     wdt_hal_config_stage(&rtc_wdt_ctx, WDT_STAGE1, stage_timeout_ticks, WDT_STAGE_ACTION_RESET_RTC);
     wdt_hal_set_flashboot_en(&rtc_wdt_ctx, true);
-    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 
     // Reset and stall the other CPU.
     // CPU must be reset before stalling, in case it was running a s32c1i
