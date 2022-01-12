@@ -16,3 +16,5 @@ entries:
             spiram_psram (noflash)
         if SPIRAM_MODE_OCT = y:
             opiram_psram (noflash)
+    if IDF_TARGET_ESP32S2 = y:
+        mmu_psram (noflash)
