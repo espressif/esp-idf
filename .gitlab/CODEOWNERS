@@ -102,7 +102,6 @@
 /components/esp_wifi/                 @esp-idf-codeowners/wifi
 /components/espcoredump/              @esp-idf-codeowners/tools
 /components/esptool_py/               @esp-idf-codeowners/tools
-/components/expat/                    @esp-idf-codeowners/app-utilities
 /components/fatfs/                    @esp-idf-codeowners/storage
 /components/fatfs/**/*.py             @esp-idf-codeowners/tools
 /components/freemodbus/               @esp-idf-codeowners/peripherals
