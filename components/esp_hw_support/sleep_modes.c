@@ -156,10 +156,10 @@ static sleep_config_t s_config = {
 #if SOC_PM_SUPPORT_RTC_PERIPH_PD
         ESP_PD_OPTION_AUTO,
 #endif
-#if SOC_RTC_SLOW_MEM_SUPPORTED
+#if SOC_PM_SUPPORT_RTC_SLOW_MEM_PD
         ESP_PD_OPTION_AUTO,
 #endif
-#if SOC_RTC_FAST_MEM_SUPPORTED
+#if SOC_PM_SUPPORT_RTC_FAST_MEM_PD
         ESP_PD_OPTION_AUTO,
 #endif
         ESP_PD_OPTION_AUTO,
@@ -1247,7 +1247,7 @@ static uint32_t get_power_down_flags(void)
     // If there is any data placed into .rtc.data or .rtc.bss segments, and
     // RTC_SLOW_MEM is Auto, keep it powered up as well.
 
-#if SOC_RTC_SLOW_MEM_SUPPORTED && SOC_ULP_SUPPORTED
+#if SOC_PM_SUPPORT_RTC_SLOW_MEM_PD && SOC_ULP_SUPPORTED
     // Labels are defined in the linker script
     extern int _rtc_slow_length;
     /**
@@ -1262,7 +1262,7 @@ static uint32_t get_power_down_flags(void)
     }
 #endif
 
-#if SOC_RTC_FAST_MEM_SUPPORTED
+#if SOC_PM_SUPPORT_RTC_FAST_MEM_PD
 #if !CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
     /* RTC_FAST_MEM is needed for deep sleep stub.
        If RTC_FAST_MEM is Auto, keep it powered on, so that deep sleep stub can run.
@@ -1318,21 +1318,21 @@ static uint32_t get_power_down_flags(void)
 #if SOC_PM_SUPPORT_RTC_PERIPH_PD
     ESP_EARLY_LOGD(TAG, "RTC_PERIPH: %s", option_str[s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH]]);
 #endif
-#if SOC_RTC_SLOW_MEM_SUPPORTED
+#if SOC_PM_SUPPORT_RTC_SLOW_MEM_PD
     ESP_EARLY_LOGD(TAG, "RTC_SLOW_MEM: %s", option_str[s_config.pd_options[ESP_PD_DOMAIN_RTC_SLOW_MEM]]);
 #endif
-#if SOC_RTC_FAST_MEM_SUPPORTED
+#if SOC_PM_SUPPORT_RTC_FAST_MEM_PD
     ESP_EARLY_LOGD(TAG, "RTC_FAST_MEM: %s", option_str[s_config.pd_options[ESP_PD_DOMAIN_RTC_FAST_MEM]]);
 #endif
 
     // Prepare flags based on the selected options
     uint32_t pd_flags = 0;
-#if SOC_RTC_FAST_MEM_SUPPORTED
+#if SOC_PM_SUPPORT_RTC_FAST_MEM_PD
     if (s_config.pd_options[ESP_PD_DOMAIN_RTC_FAST_MEM] != ESP_PD_OPTION_ON) {
         pd_flags |= RTC_SLEEP_PD_RTC_FAST_MEM;
     }
 #endif
-#if SOC_RTC_SLOW_MEM_SUPPORTED
+#if SOC_PM_SUPPORT_RTC_SLOW_MEM_PD
     if (s_config.pd_options[ESP_PD_DOMAIN_RTC_SLOW_MEM] != ESP_PD_OPTION_ON) {
         pd_flags |= RTC_SLEEP_PD_RTC_SLOW_MEM;
     }

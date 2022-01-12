@@ -40,10 +40,10 @@ typedef enum {
 #if SOC_PM_SUPPORT_RTC_PERIPH_PD
     ESP_PD_DOMAIN_RTC_PERIPH,      //!< RTC IO, sensors and ULP co-processor
 #endif
-#if SOC_RTC_SLOW_MEM_SUPPORTED
+#if SOC_PM_SUPPORT_RTC_SLOW_MEM_PD
     ESP_PD_DOMAIN_RTC_SLOW_MEM,    //!< RTC slow memory
 #endif
-#if SOC_RTC_FAST_MEM_SUPPORTED
+#if SOC_PM_SUPPORT_RTC_FAST_MEM_PD
     ESP_PD_DOMAIN_RTC_FAST_MEM,    //!< RTC fast memory
 #endif
     ESP_PD_DOMAIN_XTAL,            //!< XTAL oscillator
