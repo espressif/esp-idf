@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,7 +32,7 @@
 #define INVALID_PHY_PAGE 0xffff
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/cache.h"
-#include "esp32s2/spiram.h"
+#include "esp_private/mmu_psram.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
 #include "soc/mmu.h"

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -404,9 +404,12 @@ void IRAM_ATTR call_start_cpu0(void)
         abort();
 #endif
     }
+    //TODO: IDF-4382
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3
     if (g_spiram_ok) {
         esp_spiram_init_cache();
     }
+#endif  //#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3, //TODO: IDF-4382
 #endif
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
@@ -435,6 +438,8 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif // SOC_CPU_CORES_NUM > 1
 
 #if CONFIG_SPIRAM_MEMTEST
+    //TODO: IDF-4382
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3
     if (g_spiram_ok) {
         bool ext_ram_ok = esp_spiram_test();
         if (!ext_ram_ok) {
@@ -442,8 +447,11 @@ void IRAM_ATTR call_start_cpu0(void)
             abort();
         }
     }
-#endif
+#endif  //CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3, //TODO: IDF-4382
+#endif  //CONFIG_SPIRAM_MEMTEST
 
+    //TODO: IDF-4382
+#if CONFIG_IDF_TARGET_ESP32S3
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
     extern void instruction_flash_page_info_init(void);
     instruction_flash_page_info_init();
@@ -462,7 +470,6 @@ void IRAM_ATTR call_start_cpu0(void)
     esp_spiram_enable_rodata_access();
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32S3
     int s_instr_flash2spiram_off = 0;
     int s_rodata_flash2spiram_off = 0;
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS

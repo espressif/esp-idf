@@ -21,6 +21,7 @@ if(NOT BOOTLOADER_BUILD)
                      "esp_ds.c"
                      "dport_access.c"
                      "spiram.c"
+                     "mmu_psram.c"
                      "spiram_psram.c")
 endif()
 
