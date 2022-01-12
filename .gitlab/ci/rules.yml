@@ -164,7 +164,6 @@
   - "components/esp_phy/lib"
   - "components/esp_wifi/lib"
   - "components/esptool_py/esptool"
-  - "components/expat/expat"
   - "components/json/cJSON"
   - "components/lwip/lwip"
   - "components/mbedtls/mbedtls"

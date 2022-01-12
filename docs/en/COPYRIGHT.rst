@@ -35,8 +35,6 @@ These third party libraries can be included into the application (firmware) prod
 
 * `libcoap`_ COAP library Copyright (c) 2010-2017 Olaf Bergmann and others, is licensed under 2-clause BSD license as described in :component_file:`LICENSE file <coap/libcoap/LICENSE>` and :component_file:`COPYING file <coap/libcoap/COPYING>` .
 
-* `libexpat`_ XML parsing library Copyright (c) 1998-2000 Thai Open Source Software Center Ltd and Clark Cooper, Copyright (c) 2001-2017 Expat maintainers, is licensed under MIT license as described in :component_file:`COPYING file <expat/expat/expat/COPYING>`.
-
 * `FatFS`_ library, Copyright (C) 2017 ChaN, is licensed under :component_file:`a BSD-style license <fatfs/src/ff.h#L1-L18>`.
 
 * `cJSON`_ library, Copyright (c) 2009-2017 Dave Gamble and cJSON contributors, is licensed under MIT license as described in :component_file:`LICENSE file <json/cJSON/LICENSE>`.
@@ -164,7 +162,6 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _libcoap: https://github.com/obgm/libcoap
 .. _fatfs: http://elm-chan.org/fsw/ff/00index_e.html
 .. _cJSON: https://github.com/DaveGamble/cJSON
-.. _libexpat: https://github.com/libexpat/libexpat
 .. _micro-ecc: https://github.com/kmackay/micro-ecc
 .. _OpenBSD SD/MMC driver: https://github.com/openbsd/src/blob/f303646/sys/dev/sdmmc/sdmmc.c
 .. _Mbed TLS: https://github.com/ARMmbed/mbedtls
