@@ -201,9 +201,9 @@ No.  Name  Type   Function
 17   IO33  I/O    GPIO33
 17   IO26  I/O    GPIO26
 18   IO21  I/O    GPIO21
-19   IO20  I/O    GPIO20, ADC2_CH3, USB_D+
-20   IO19  I/O    GPIO19, ADC2_CH3, USB_D-
-21   IO18  I/O    GPIO18, ADC2_CH3, DAC_2, RGB LED
+19   IO20  I/O    GPIO20, ADC2_CH9, USB_D+
+20   IO19  I/O    GPIO19, ADC2_CH8, USB_D-
+21   IO18  I/O    GPIO18, ADC2_CH7, DAC_2, RGB LED
 ===  ====  =====  ====================================
 
 .. [#] P: Power supply; I: Input; O: Output; T: High impedance. 
