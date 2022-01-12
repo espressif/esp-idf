@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,11 @@ typedef enum {
     SPI3_HOST=2,    ///< SPI3
     SPI_HOST_MAX,   ///< invalid host value
 } spi_host_device_t;
+
+typedef enum {
+    SPI_CLK_APB,    ///< Select APB as the source clock
+    SPI_CLK_XTAL    ///< Select XTAL as the source clock
+} spi_clock_source_t;
 
 /// SPI Events
 typedef enum {

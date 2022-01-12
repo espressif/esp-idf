@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -202,7 +202,6 @@
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_PERIPH_NUM                  3
-#define SOC_SPI_DMA_CHAN_NUM                3
 #define SOC_SPI_PERIPH_CS_NUM(i)            3
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE         64
 #define SOC_SPI_SUPPORT_DDRCLK              1

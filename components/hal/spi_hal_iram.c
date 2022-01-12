@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // The HAL layer for SPI (common part, in iram)
 // make these functions in a seperate file to make sure all LL functions are in the IRAM.
@@ -40,7 +32,7 @@ void spi_hal_setup_device(spi_hal_context_t *hal, const spi_hal_dev_config_t *de
 {
     //Configure clock settings
     spi_dev_t *hw = hal->hw;
-#if SOC_SPI_SUPPORT_AS_CS
+#if SOC_SPI_AS_CS_SUPPORTED
     spi_ll_master_set_cksel(hw, dev->cs_pin_id, dev->as_cs);
 #endif
     spi_ll_master_set_pos_cs(hw, dev->cs_pin_id, dev->positive_cs);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,11 +17,9 @@
 #include "esp_log.h"
 #include "esp_rom_gpio.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)
-// TODO: SPI SUPPORT IDF-4024
 
-//There is only one GPSPI controller, so single-board test is disabled.
-#if !DISABLED_FOR_TARGETS(ESP32C3)
+#if (TEST_SPI_PERIPH_NUM >= 2)
+//These will only be enabled on chips with 2 or more SPI peripherals
 
 #ifndef CONFIG_SPIRAM
 //This test should be removed once the timing test is merged.
@@ -261,15 +259,15 @@ TEST_CASE("test slave send unaligned","[spi]")
 
 #endif // !CONFIG_SPIRAM
 
-#endif // !TEMPORARY_DISABLED_FOR_TARGETS
+#endif // #if (TEST_SPI_PERIPH_NUM >= 2)
 
-
-#if !DISABLED_FOR_TARGETS(ESP32, ESP32S2, ESP32S3)
+#if (TEST_SPI_PERIPH_NUM == 1)
 //These tests are for chips which only have 1 SPI controller
 /********************************************************************************
  *      Test By Master & Slave (2 boards)
  *
- *      PIN | Master(C3) | Slave (C3) |
+ * Master (C3, 8684, H2) && Slave (C3, 8684, H2):
+ *      PIN | Master     | Slave      |
  *      ----| ---------  | ---------  |
  *      CS  | 10         | 10         |
  *      CLK | 6          | 6          |
@@ -385,6 +383,4 @@ static void unaligned_test_slave(void)
 
 TEST_CASE_MULTIPLE_DEVICES("SPI_Slave_Unaligned_Test", "[spi_ms][test_env=Example_SPI_Multi_device][timeout=120]", unaligned_test_master, unaligned_test_slave);
 
-#endif  //#if !DISABLED_FOR_TARGETS(ESP32, ESP32S2, ESP32S3)
-
-#endif //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)
+#endif  //#if (TEST_SPI_PERIPH_NUM == 1)

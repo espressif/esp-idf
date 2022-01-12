@@ -15,12 +15,12 @@
 #include "esp_serial_slave_link/essl_spi.h"
 
 //Pin setting
-#if !CONFIG_IDF_TARGET_ESP32C3
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
 #define GPIO_MOSI    11
 #define GPIO_MISO    13
 #define GPIO_SCLK    12
 #define GPIO_CS      10
-#else
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP8684
 #define GPIO_MOSI    7
 #define GPIO_MISO    2
 #define GPIO_SCLK    6

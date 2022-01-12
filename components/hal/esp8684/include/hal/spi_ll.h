@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -82,7 +82,26 @@ FLAG_ATTR(spi_ll_trans_len_cond_t)
  */
 static inline void spi_ll_master_init(spi_dev_t *hw)
 {
-    abort(); // TODO: SPI support IDF-4024
+    //Reset timing
+    hw->user1.cs_setup_time = 0;
+    hw->user1.cs_hold_time = 0;
+
+    //use all 64 bytes of the buffer
+    hw->user.usr_miso_highpart = 0;
+    hw->user.usr_mosi_highpart = 0;
+
+    //Disable unneeded ints
+    hw->slave.val = 0;
+    hw->user.val = 0;
+
+    hw->clk_gate.clk_en = 1;
+    hw->clk_gate.mst_clk_active = 1;
+    hw->clk_gate.mst_clk_sel = 1;
+
+    hw->dma_conf.val = 0;
+    hw->dma_conf.tx_seg_trans_clr_en = 1;
+    hw->dma_conf.rx_seg_trans_clr_en = 1;
+    hw->dma_conf.dma_seg_trans_en = 0;
 }
 
 /**
@@ -92,7 +111,25 @@ static inline void spi_ll_master_init(spi_dev_t *hw)
  */
 static inline void spi_ll_slave_init(spi_dev_t *hw)
 {
-    abort(); // TODO: SPI support IDF-4024
+    //Configure slave
+    hw->clock.val = 0;
+    hw->user.val = 0;
+    hw->ctrl.val = 0;
+    hw->user.doutdin = 1; //we only support full duplex
+    hw->user.sio = 0;
+    hw->slave.slave_mode = 1;
+    hw->slave.soft_reset = 1;
+    hw->slave.soft_reset = 0;
+    //use all 64 bytes of the buffer
+    hw->user.usr_miso_highpart = 0;
+    hw->user.usr_mosi_highpart = 0;
+
+    // Configure DMA In-Link to not be terminated when transaction bit counter exceeds
+    hw->dma_conf.rx_eof_en = 0;
+    hw->dma_conf.dma_seg_trans_en = 0;
+
+    //Disable unneeded ints
+    hw->dma_int_ena.val &= ~SPI_LL_UNUSED_INT_MASK;
 }
 
 /**
@@ -102,7 +139,15 @@ static inline void spi_ll_slave_init(spi_dev_t *hw)
  */
 static inline void spi_ll_slave_hd_init(spi_dev_t *hw)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->clock.val = 0;
+    hw->user.val = 0;
+    hw->ctrl.val = 0;
+    hw->user.doutdin = 0;
+    hw->user.sio = 0;
+
+    hw->slave.soft_reset = 1;
+    hw->slave.soft_reset = 0;
+    hw->slave.slave_mode = 1;
 }
 
 /**
@@ -114,7 +159,7 @@ static inline void spi_ll_slave_hd_init(spi_dev_t *hw)
  */
 static inline bool spi_ll_usr_is_done(spi_dev_t *hw)
 {
-    abort(); // TODO: SPI support IDF-4024
+    return hw->dma_int_raw.trans_done;
 }
 
 /**
@@ -125,7 +170,9 @@ static inline bool spi_ll_usr_is_done(spi_dev_t *hw)
  */
 static inline void spi_ll_master_user_start(spi_dev_t *hw)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->cmd.update = 1;
+    while (hw->cmd.update);
+    hw->cmd.usr = 1;
 }
 
 /**
@@ -135,7 +182,7 @@ static inline void spi_ll_master_user_start(spi_dev_t *hw)
  */
 static inline void spi_ll_slave_user_start(spi_dev_t *hw)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->cmd.usr = 1;
 }
 
 /**
@@ -147,7 +194,7 @@ static inline void spi_ll_slave_user_start(spi_dev_t *hw)
  */
 static inline uint32_t spi_ll_get_running_cmd(spi_dev_t *hw)
 {
-    abort(); // TODO: SPI support IDF-4024
+    return hw->cmd.val;
 }
 
 /**
@@ -157,7 +204,8 @@ static inline uint32_t spi_ll_get_running_cmd(spi_dev_t *hw)
  */
 static inline void spi_ll_slave_reset(spi_dev_t *hw)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->slave.soft_reset = 1;
+    hw->slave.soft_reset = 0;
 }
 
 /**
@@ -169,7 +217,8 @@ static inline void spi_ll_slave_reset(spi_dev_t *hw)
  */
 static inline void spi_ll_cpu_tx_fifo_reset(spi_dev_t *hw)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->dma_conf.buf_afifo_rst = 1;
+    hw->dma_conf.buf_afifo_rst = 0;
 }
 
 /**
@@ -181,7 +230,8 @@ static inline void spi_ll_cpu_tx_fifo_reset(spi_dev_t *hw)
  */
 static inline void spi_ll_cpu_rx_fifo_reset(spi_dev_t *hw)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->dma_conf.rx_afifo_rst = 1;
+    hw->dma_conf.rx_afifo_rst = 0;
 }
 
 /**
@@ -191,7 +241,8 @@ static inline void spi_ll_cpu_rx_fifo_reset(spi_dev_t *hw)
  */
 static inline void spi_ll_dma_tx_fifo_reset(spi_dev_t *hw)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->dma_conf.dma_afifo_rst = 1;
+    hw->dma_conf.dma_afifo_rst = 0;
 }
 
 /**
@@ -201,7 +252,8 @@ static inline void spi_ll_dma_tx_fifo_reset(spi_dev_t *hw)
  */
 static inline void spi_ll_dma_rx_fifo_reset(spi_dev_t *hw)
 {
-   abort(); // TODO: SPI support IDF-4024
+    hw->dma_conf.rx_afifo_rst = 1;
+    hw->dma_conf.rx_afifo_rst = 0;
 }
 
 /**
@@ -211,7 +263,7 @@ static inline void spi_ll_dma_rx_fifo_reset(spi_dev_t *hw)
  */
 static inline void spi_ll_infifo_full_clr(spi_dev_t *hw)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->dma_int_clr.infifo_full_err = 1;
 }
 
 /**
@@ -221,7 +273,7 @@ static inline void spi_ll_infifo_full_clr(spi_dev_t *hw)
  */
 static inline void spi_ll_outfifo_empty_clr(spi_dev_t *hw)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->dma_int_clr.outfifo_empty_err = 1;
 }
 
 /*------------------------------------------------------------------------------
@@ -235,7 +287,7 @@ static inline void spi_ll_outfifo_empty_clr(spi_dev_t *hw)
  */
 static inline void spi_ll_dma_rx_enable(spi_dev_t *hw, bool enable)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->dma_conf.dma_rx_ena = enable;
 }
 
 /**
@@ -246,7 +298,7 @@ static inline void spi_ll_dma_rx_enable(spi_dev_t *hw, bool enable)
  */
 static inline void spi_ll_dma_tx_enable(spi_dev_t *hw, bool enable)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->dma_conf.dma_tx_ena = enable;
 }
 
 /**
@@ -257,7 +309,7 @@ static inline void spi_ll_dma_tx_enable(spi_dev_t *hw, bool enable)
  */
 static inline void spi_ll_dma_set_rx_eof_generation(spi_dev_t *hw, bool enable)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->dma_conf.rx_eof_en = enable;
 }
 
 /*------------------------------------------------------------------------------
@@ -272,7 +324,12 @@ static inline void spi_ll_dma_set_rx_eof_generation(spi_dev_t *hw, bool enable)
  */
 static inline void spi_ll_write_buffer(spi_dev_t *hw, const uint8_t *buffer_to_send, size_t bitlen)
 {
-    abort(); // TODO: SPI support IDF-4024
+    for (int x = 0; x < bitlen; x += 32) {
+        //Use memcpy to get around alignment issues for txdata
+        uint32_t word;
+        memcpy(&word, &buffer_to_send[x / 8], 4);
+        hw->data_buf[(x / 32)] = word;
+    }
 }
 
 /**
@@ -285,7 +342,29 @@ static inline void spi_ll_write_buffer(spi_dev_t *hw, const uint8_t *buffer_to_s
  */
 static inline void spi_ll_write_buffer_byte(spi_dev_t *hw, int byte_id, uint8_t *data, int len)
 {
-    abort(); // TODO: SPI support IDF-4024
+    HAL_ASSERT(byte_id + len <= 64);
+    HAL_ASSERT(len > 0);
+    HAL_ASSERT(byte_id >= 0);
+
+    while (len > 0) {
+        uint32_t word;
+        int offset = byte_id % 4;
+        int copy_len = 4 - offset;
+        if (copy_len > len) {
+            copy_len = len;
+        }
+
+        //read-modify-write
+        if (copy_len != 4) {
+            word = hw->data_buf[byte_id / 4];    //read
+        }
+        memcpy(((uint8_t *)&word) + offset, data, copy_len);  //modify
+        hw->data_buf[byte_id / 4] = word;                     //write
+
+        data += copy_len;
+        byte_id += copy_len;
+        len -= copy_len;
+    }
 }
 
 /**
@@ -297,7 +376,15 @@ static inline void spi_ll_write_buffer_byte(spi_dev_t *hw, int byte_id, uint8_t 
  */
 static inline void spi_ll_read_buffer(spi_dev_t *hw, uint8_t *buffer_to_rcv, size_t bitlen)
 {
-    abort(); // TODO: SPI support IDF-4024
+    for (int x = 0; x < bitlen; x += 32) {
+        //Do a memcpy to get around possible alignment issues in rx_buffer
+        uint32_t word = hw->data_buf[x / 32];
+        int len = bitlen - x;
+        if (len > 32) {
+            len = 32;
+        }
+        memcpy(&buffer_to_rcv[x / 8], &word, (len + 7) / 8);
+    }
 }
 
 /**
@@ -310,7 +397,19 @@ static inline void spi_ll_read_buffer(spi_dev_t *hw, uint8_t *buffer_to_rcv, siz
  */
 static inline void spi_ll_read_buffer_byte(spi_dev_t *hw, int byte_id, uint8_t *out_data, int len)
 {
-    abort(); // TODO: SPI support IDF-4024
+    while (len > 0) {
+        uint32_t word = hw->data_buf[byte_id / 4];
+        int offset = byte_id % 4;
+        int copy_len = 4 - offset;
+        if (copy_len > len) {
+            copy_len = len;
+        }
+
+        memcpy(out_data, ((uint8_t *)&word) + offset, copy_len);
+        byte_id += copy_len;
+        out_data += copy_len;
+        len -= copy_len;
+    }
 }
 
 /*------------------------------------------------------------------------------
@@ -325,7 +424,11 @@ static inline void spi_ll_read_buffer_byte(spi_dev_t *hw, int byte_id, uint8_t *
  */
 static inline void spi_ll_master_set_pos_cs(spi_dev_t *hw, int cs, uint32_t pos_cs)
 {
-    abort(); // TODO: SPI support IDF-4024
+    if (pos_cs) {
+        hw->misc.master_cs_pol |= (1 << cs);
+    } else {
+        hw->misc.master_cs_pol &= ~(1 << cs);
+    }
 }
 
 /**
@@ -358,7 +461,20 @@ static inline void spi_ll_set_rx_lsbfirst(spi_dev_t *hw, bool lsbfirst)
  */
 static inline void spi_ll_master_set_mode(spi_dev_t *hw, uint8_t mode)
 {
-    abort(); // TODO: SPI support IDF-4024
+    //Configure polarity
+    if (mode == 0) {
+        hw->misc.ck_idle_edge = 0;
+        hw->user.ck_out_edge = 0;
+    } else if (mode == 1) {
+        hw->misc.ck_idle_edge = 0;
+        hw->user.ck_out_edge = 1;
+    } else if (mode == 2) {
+        hw->misc.ck_idle_edge = 1;
+        hw->user.ck_out_edge = 1;
+    } else if (mode == 3) {
+        hw->misc.ck_idle_edge = 1;
+        hw->user.ck_out_edge = 0;
+    }
 }
 
 /**
@@ -369,7 +485,28 @@ static inline void spi_ll_master_set_mode(spi_dev_t *hw, uint8_t mode)
  */
 static inline void spi_ll_slave_set_mode(spi_dev_t *hw, const int mode, bool dma_used)
 {
-    abort(); // TODO: SPI support IDF-4024
+    if (mode == 0) {
+        hw->misc.ck_idle_edge = 0;
+        hw->user.rsck_i_edge = 0;
+        hw->user.tsck_i_edge = 0;
+        hw->slave.clk_mode_13 = 0;
+    } else if (mode == 1) {
+        hw->misc.ck_idle_edge = 0;
+        hw->user.rsck_i_edge = 1;
+        hw->user.tsck_i_edge = 1;
+        hw->slave.clk_mode_13 = 1;
+    } else if (mode == 2) {
+        hw->misc.ck_idle_edge = 1;
+        hw->user.rsck_i_edge = 1;
+        hw->user.tsck_i_edge = 1;
+        hw->slave.clk_mode_13 = 0;
+    } else if (mode == 3) {
+        hw->misc.ck_idle_edge = 1;
+        hw->user.rsck_i_edge = 0;
+        hw->user.tsck_i_edge = 0;
+        hw->slave.clk_mode_13 = 1;
+    }
+    hw->slave.rsck_data_out = 0;
 }
 
 /**
@@ -380,7 +517,7 @@ static inline void spi_ll_slave_set_mode(spi_dev_t *hw, const int mode, bool dma
  */
 static inline void spi_ll_set_half_duplex(spi_dev_t *hw, bool half_duplex)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->user.doutdin = !half_duplex;
 }
 
 /**
@@ -393,7 +530,7 @@ static inline void spi_ll_set_half_duplex(spi_dev_t *hw, bool half_duplex)
  */
 static inline void spi_ll_set_sio_mode(spi_dev_t *hw, int sio_mode)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->user.sio = sio_mode;
 }
 
 /**
@@ -404,7 +541,16 @@ static inline void spi_ll_set_sio_mode(spi_dev_t *hw, int sio_mode)
  */
 static inline void spi_ll_master_set_line_mode(spi_dev_t *hw, spi_line_mode_t line_mode)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->ctrl.val &= ~SPI_LL_ONE_LINE_CTRL_MASK;
+    hw->user.val &= ~SPI_LL_ONE_LINE_USER_MASK;
+    hw->ctrl.fcmd_dual = (line_mode.cmd_lines == 2);
+    hw->ctrl.fcmd_quad = (line_mode.cmd_lines == 4);
+    hw->ctrl.faddr_dual = (line_mode.addr_lines == 2);
+    hw->ctrl.faddr_quad = (line_mode.addr_lines == 4);
+    hw->ctrl.fread_dual = (line_mode.data_lines == 2);
+    hw->user.fwrite_dual = (line_mode.data_lines == 2);
+    hw->ctrl.fread_quad = (line_mode.data_lines == 4);
+    hw->user.fwrite_quad = (line_mode.data_lines == 4);
 }
 
 /**
@@ -426,7 +572,12 @@ static inline void spi_ll_slave_set_seg_mode(spi_dev_t *hw, bool seg_trans)
  */
 static inline void spi_ll_master_select_cs(spi_dev_t *hw, int cs_id)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->misc.cs0_dis = (cs_id == 0) ? 0 : 1;
+    hw->misc.cs1_dis = (cs_id == 1) ? 0 : 1;
+    hw->misc.cs2_dis = (cs_id == 2) ? 0 : 1;
+    hw->misc.cs3_dis = (cs_id == 3) ? 0 : 1;
+    hw->misc.cs4_dis = (cs_id == 4) ? 0 : 1;
+    hw->misc.cs5_dis = (cs_id == 5) ? 0 : 1;
 }
 
 /**
@@ -451,7 +602,7 @@ static inline void spi_ll_master_keep_cs(spi_dev_t *hw, int keep_active)
  */
 static inline void spi_ll_master_set_clock_by_reg(spi_dev_t *hw, const spi_ll_clock_val_t *val)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->clock.val = *(uint32_t *)val;
 }
 
 /**
@@ -465,7 +616,7 @@ static inline void spi_ll_master_set_clock_by_reg(spi_dev_t *hw, const spi_ll_cl
  */
 static inline int spi_ll_freq_for_pre_n(int fapb, int pre, int n)
 {
-    abort(); // TODO: SPI support IDF-4024
+    return (fapb / (pre * n));
 }
 
 /**
@@ -480,7 +631,66 @@ static inline int spi_ll_freq_for_pre_n(int fapb, int pre, int n)
  */
 static inline int spi_ll_master_cal_clock(int fapb, int hz, int duty_cycle, spi_ll_clock_val_t *out_reg)
 {
-    abort(); // TODO: SPI support IDF-4024
+typeof(GPSPI2.clock) reg;
+    int eff_clk;
+
+    //In hw, n, h and l are 1-64, pre is 1-8K. Value written to register is one lower than used value.
+    if (hz > ((fapb / 4) * 3)) {
+        //Using Fapb directly will give us the best result here.
+        reg.clkcnt_l = 0;
+        reg.clkcnt_h = 0;
+        reg.clkcnt_n = 0;
+        reg.clkdiv_pre = 0;
+        reg.clk_equ_sysclk = 1;
+        eff_clk = fapb;
+    } else {
+        //For best duty cycle resolution, we want n to be as close to 32 as possible, but
+        //we also need a pre/n combo that gets us as close as possible to the intended freq.
+        //To do this, we bruteforce n and calculate the best pre to go along with that.
+        //If there's a choice between pre/n combos that give the same result, use the one
+        //with the higher n.
+        int pre, n, h, l;
+        int bestn = -1;
+        int bestpre = -1;
+        int besterr = 0;
+        int errval;
+        for (n = 2; n <= 64; n++) { //Start at 2: we need to be able to set h/l so we have at least one high and one low pulse.
+            //Effectively, this does pre=round((fapb/n)/hz).
+            pre = ((fapb / n) + (hz / 2)) / hz;
+            if (pre <= 0) {
+                pre = 1;
+            }
+            if (pre > 16) {
+                pre = 16;
+            }
+            errval = abs(spi_ll_freq_for_pre_n(fapb, pre, n) - hz);
+            if (bestn == -1 || errval <= besterr) {
+                besterr = errval;
+                bestn = n;
+                bestpre = pre;
+            }
+        }
+
+        n = bestn;
+        pre = bestpre;
+        l = n;
+        //This effectively does round((duty_cycle*n)/256)
+        h = (duty_cycle * n + 127) / 256;
+        if (h <= 0) {
+            h = 1;
+        }
+
+        reg.clk_equ_sysclk = 0;
+        reg.clkcnt_n = n - 1;
+        reg.clkdiv_pre = pre - 1;
+        reg.clkcnt_h = h - 1;
+        reg.clkcnt_l = l - 1;
+        eff_clk = spi_ll_freq_for_pre_n(fapb, pre, n);
+    }
+    if (out_reg != NULL) {
+        *(uint32_t *)out_reg = reg.val;
+    }
+    return eff_clk;
 }
 
 /**
@@ -500,7 +710,10 @@ static inline int spi_ll_master_cal_clock(int fapb, int hz, int duty_cycle, spi_
  */
 static inline int spi_ll_master_set_clock(spi_dev_t *hw, int fapb, int hz, int duty_cycle)
 {
-    abort(); // TODO: SPI support IDF-4024
+    spi_ll_clock_val_t reg_val;
+    int freq = spi_ll_master_cal_clock(fapb, hz, duty_cycle, &reg_val);
+    spi_ll_master_set_clock_by_reg(hw, &reg_val);
+    return freq;
 }
 
 /**
@@ -537,7 +750,8 @@ static inline void spi_ll_set_miso_delay(spi_dev_t *hw, int delay_mode, int dela
  */
 static inline void spi_ll_master_set_cs_hold(spi_dev_t *hw, int hold)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->user1.cs_hold_time = hold;
+    hw->user.cs_hold = hold ? 1 : 0;
 }
 
 /**
@@ -551,7 +765,8 @@ static inline void spi_ll_master_set_cs_hold(spi_dev_t *hw, int hold)
  */
 static inline void spi_ll_master_set_cs_setup(spi_dev_t *hw, uint8_t setup)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->user1.cs_setup_time = setup - 1;
+    hw->user.cs_setup = setup ? 1 : 0;
 }
 
 /*------------------------------------------------------------------------------
@@ -566,7 +781,9 @@ static inline void spi_ll_master_set_cs_setup(spi_dev_t *hw, uint8_t setup)
  */
 static inline void spi_ll_set_mosi_bitlen(spi_dev_t *hw, size_t bitlen)
 {
-    abort(); // TODO: SPI support IDF-4024
+    if (bitlen > 0) {
+        hw->ms_dlen.ms_data_bitlen = bitlen - 1;
+    }
 }
 
 /**
@@ -577,7 +794,9 @@ static inline void spi_ll_set_mosi_bitlen(spi_dev_t *hw, size_t bitlen)
  */
 static inline void spi_ll_set_miso_bitlen(spi_dev_t *hw, size_t bitlen)
 {
-    abort(); // TODO: SPI support IDF-4024
+    if (bitlen > 0) {
+        hw->ms_dlen.ms_data_bitlen = bitlen - 1;
+    }
 }
 
 /**
@@ -588,7 +807,7 @@ static inline void spi_ll_set_miso_bitlen(spi_dev_t *hw, size_t bitlen)
  */
 static inline void spi_ll_slave_set_rx_bitlen(spi_dev_t *hw, size_t bitlen)
 {
-    abort(); // TODO: SPI support IDF-4024
+    //This is not used in esp8684
 }
 
 /**
@@ -599,7 +818,7 @@ static inline void spi_ll_slave_set_rx_bitlen(spi_dev_t *hw, size_t bitlen)
  */
 static inline void spi_ll_slave_set_tx_bitlen(spi_dev_t *hw, size_t bitlen)
 {
-    abort(); // TODO: SPI support IDF-4024
+    //This is not used in esp8684
 }
 
 /**
@@ -613,7 +832,8 @@ static inline void spi_ll_slave_set_tx_bitlen(spi_dev_t *hw, size_t bitlen)
  */
 static inline void spi_ll_set_command_bitlen(spi_dev_t *hw, int bitlen)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->user2.usr_command_bitlen = bitlen - 1;
+    hw->user.usr_command = bitlen ? 1 : 0;
 }
 
 /**
@@ -627,7 +847,8 @@ static inline void spi_ll_set_command_bitlen(spi_dev_t *hw, int bitlen)
  */
 static inline void spi_ll_set_addr_bitlen(spi_dev_t *hw, int bitlen)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->user1.usr_addr_bitlen = bitlen - 1;
+    hw->user.usr_addr = bitlen ? 1 : 0;
 }
 
 /**
@@ -642,7 +863,21 @@ static inline void spi_ll_set_addr_bitlen(spi_dev_t *hw, int bitlen)
  */
 static inline void spi_ll_set_address(spi_dev_t *hw, uint64_t addr, int addrlen, uint32_t lsbfirst)
 {
-    abort(); // TODO: SPI support IDF-4024
+    if (lsbfirst) {
+        /* The output address start from the LSB of the highest byte, i.e.
+        * addr[24] -> addr[31]
+        * ...
+        * addr[0] -> addr[7]
+        * So swap the byte order to let the LSB sent first.
+        */
+        addr = HAL_SWAP32(addr);
+        //otherwise only addr register is sent
+        hw->addr = addr;
+    } else {
+        // shift the address to MSB of addr register.
+        // output address will be sent from MSB to LSB of addr register
+        hw->addr = addr << (32 - addrlen);
+    }
 }
 
 /**
@@ -657,7 +892,16 @@ static inline void spi_ll_set_address(spi_dev_t *hw, uint64_t addr, int addrlen,
  */
 static inline void spi_ll_set_command(spi_dev_t *hw, uint16_t cmd, int cmdlen, bool lsbfirst)
 {
-    abort(); // TODO: SPI support IDF-4024
+    if (lsbfirst) {
+        // The output command start from bit0 to bit 15, kept as is.
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->user2, usr_command_value, cmd);
+    } else {
+        /* Output command will be sent from bit 7 to 0 of command_value, and
+         * then bit 15 to 8 of the same register field. Shift and swap to send
+         * more straightly.
+         */
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->user2, usr_command_value, HAL_SPI_SWAP_DATA_TX(cmd, cmdlen));
+    }
 }
 
 /**
@@ -671,7 +915,8 @@ static inline void spi_ll_set_command(spi_dev_t *hw, uint16_t cmd, int cmdlen, b
  */
 static inline void spi_ll_set_dummy(spi_dev_t *hw, int dummy_n)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->user.usr_dummy = dummy_n ? 1 : 0;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->user1, usr_dummy_cyclelen, dummy_n - 1);
 }
 
 /**
@@ -682,7 +927,7 @@ static inline void spi_ll_set_dummy(spi_dev_t *hw, int dummy_n)
  */
 static inline void spi_ll_enable_miso(spi_dev_t *hw, int enable)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->user.usr_miso = enable;
 }
 
 /**
@@ -693,7 +938,7 @@ static inline void spi_ll_enable_miso(spi_dev_t *hw, int enable)
  */
 static inline void spi_ll_enable_mosi(spi_dev_t *hw, int enable)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->user.usr_mosi = enable;
 }
 
 /**
@@ -705,7 +950,7 @@ static inline void spi_ll_enable_mosi(spi_dev_t *hw, int enable)
  */
 static inline uint32_t spi_ll_slave_get_rcv_bitlen(spi_dev_t *hw)
 {
-    abort(); // TODO: SPI support IDF-4024
+    return hw->slave1.data_bitlen;
 }
 
 /*------------------------------------------------------------------------------
@@ -714,16 +959,16 @@ static inline uint32_t spi_ll_slave_get_rcv_bitlen(spi_dev_t *hw)
 //helper macros to generate code for each interrupts
 #define FOR_EACH_ITEM(op, list) do { list(op) } while(0)
 #define INTR_LIST(item)    \
-    item(SPI_LL_INTR_TRANS_DONE,    dma_int_ena.trans_done,         dma_int_raw.trans_done,         dma_int_clr.trans_done=1) \
-    item(SPI_LL_INTR_RDBUF,         dma_int_ena.rd_buf_done,        dma_int_raw.rd_buf_done,        dma_int_clr.rd_buf_done=1) \
-    item(SPI_LL_INTR_WRBUF,         dma_int_ena.wr_buf_done,        dma_int_raw.wr_buf_done,        dma_int_clr.wr_buf_done=1) \
-    item(SPI_LL_INTR_RDDMA,         dma_int_ena.rd_dma_done,        dma_int_raw.rd_dma_done,        dma_int_clr.rd_dma_done=1) \
-    item(SPI_LL_INTR_WRDMA,         dma_int_ena.wr_dma_done,        dma_int_raw.wr_dma_done,        dma_int_clr.wr_dma_done=1) \
-    item(SPI_LL_INTR_SEG_DONE,      dma_int_ena.dma_seg_trans_done, dma_int_raw.dma_seg_trans_done, dma_int_clr.dma_seg_trans_done=1) \
-    item(SPI_LL_INTR_CMD7,          dma_int_ena.cmd7,               dma_int_raw.cmd7,               dma_int_clr.cmd7=1) \
-    item(SPI_LL_INTR_CMD8,          dma_int_ena.cmd8,               dma_int_raw.cmd8,               dma_int_clr.cmd8=1) \
-    item(SPI_LL_INTR_CMD9,          dma_int_ena.cmd9,               dma_int_raw.cmd9,               dma_int_clr.cmd9=1) \
-    item(SPI_LL_INTR_CMDA,          dma_int_ena.cmda,               dma_int_raw.cmda,               dma_int_clr.cmda=1)
+    item(SPI_LL_INTR_TRANS_DONE,    dma_int_ena.trans_done,         dma_int_raw.trans_done,         dma_int_clr.trans_done,         dma_int_set.trans_done_int_set) \
+    item(SPI_LL_INTR_RDBUF,         dma_int_ena.rd_buf_done,        dma_int_raw.rd_buf_done,        dma_int_clr.rd_buf_done,        dma_int_set.rd_buf_done_int_set) \
+    item(SPI_LL_INTR_WRBUF,         dma_int_ena.wr_buf_done,        dma_int_raw.wr_buf_done,        dma_int_clr.wr_buf_done,        dma_int_set.wr_buf_done_int_set) \
+    item(SPI_LL_INTR_RDDMA,         dma_int_ena.rd_dma_done,        dma_int_raw.rd_dma_done,        dma_int_clr.rd_dma_done,        dma_int_set.rd_dma_done_int_set) \
+    item(SPI_LL_INTR_WRDMA,         dma_int_ena.wr_dma_done,        dma_int_raw.wr_dma_done,        dma_int_clr.wr_dma_done,        dma_int_set.wr_dma_done_int_set) \
+    item(SPI_LL_INTR_SEG_DONE,      dma_int_ena.dma_seg_trans_done, dma_int_raw.dma_seg_trans_done, dma_int_clr.dma_seg_trans_done, dma_int_set.dma_seg_trans_done_int_set) \
+    item(SPI_LL_INTR_CMD7,          dma_int_ena.cmd7,               dma_int_raw.cmd7,               dma_int_clr.cmd7,               dma_int_set.cmd7_int_set) \
+    item(SPI_LL_INTR_CMD8,          dma_int_ena.cmd8,               dma_int_raw.cmd8,               dma_int_clr.cmd8,               dma_int_set.cmd8_int_set) \
+    item(SPI_LL_INTR_CMD9,          dma_int_ena.cmd9,               dma_int_raw.cmd9,               dma_int_clr.cmd9,               dma_int_set.cmd9_int_set) \
+    item(SPI_LL_INTR_CMDA,          dma_int_ena.cmda,               dma_int_raw.cmda,               dma_int_clr.cmda,               dma_int_set.cmda_int_set)
 
 
 static inline void spi_ll_enable_intr(spi_dev_t *hw, spi_ll_intr_t intr_mask)
@@ -742,21 +987,21 @@ static inline void spi_ll_disable_intr(spi_dev_t *hw, spi_ll_intr_t intr_mask)
 
 static inline void spi_ll_set_intr(spi_dev_t *hw, spi_ll_intr_t intr_mask)
 {
-#define SET_INTR(intr_bit, _, st_reg, ...) if (intr_mask & (intr_bit)) hw->st_reg = 1;
+#define SET_INTR(intr_bit, _, __, ___, set_reg) if (intr_mask & (intr_bit)) hw->set_reg = 1;
     FOR_EACH_ITEM(SET_INTR, INTR_LIST);
 #undef SET_INTR
 }
 
 static inline void spi_ll_clear_intr(spi_dev_t *hw, spi_ll_intr_t intr_mask)
 {
-#define CLR_INTR(intr_bit, _, __, clr_reg) if (intr_mask & (intr_bit)) hw->clr_reg;
+#define CLR_INTR(intr_bit, _, __, clr_reg, ...) if (intr_mask & (intr_bit)) hw->clr_reg = 1;
     FOR_EACH_ITEM(CLR_INTR, INTR_LIST);
 #undef CLR_INTR
 }
 
 static inline bool spi_ll_get_intr(spi_dev_t *hw, spi_ll_intr_t intr_mask)
 {
-#define GET_INTR(intr_bit, _, st_reg, ...) if (intr_mask & (intr_bit) && hw->st_reg) return true;
+#define GET_INTR(intr_bit, _, raw_reg, ...) if (intr_mask & (intr_bit) && hw->raw_reg) return true;
     FOR_EACH_ITEM(GET_INTR, INTR_LIST);
     return false;
 #undef GET_INTR
@@ -772,7 +1017,7 @@ static inline bool spi_ll_get_intr(spi_dev_t *hw, spi_ll_intr_t intr_mask)
  */
 static inline void spi_ll_disable_int(spi_dev_t *hw)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->dma_int_ena.trans_done = 0;
 }
 
 /**
@@ -782,7 +1027,7 @@ static inline void spi_ll_disable_int(spi_dev_t *hw)
  */
 static inline void spi_ll_clear_int_stat(spi_dev_t *hw)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->dma_int_clr.trans_done = 1;
 }
 
 /**
@@ -792,7 +1037,7 @@ static inline void spi_ll_clear_int_stat(spi_dev_t *hw)
  */
 static inline void spi_ll_set_int_stat(spi_dev_t *hw)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->dma_int_set.trans_done_int_set = 1;
 }
 
 /**
@@ -802,7 +1047,7 @@ static inline void spi_ll_set_int_stat(spi_dev_t *hw)
  */
 static inline void spi_ll_enable_int(spi_dev_t *hw)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->dma_int_ena.trans_done = 1;
 }
 
 /*------------------------------------------------------------------------------
@@ -810,17 +1055,20 @@ static inline void spi_ll_enable_int(spi_dev_t *hw)
  *----------------------------------------------------------------------------*/
 static inline void spi_ll_slave_hd_set_len_cond(spi_dev_t *hw, spi_ll_trans_len_cond_t cond_mask)
 {
-    abort(); // TODO: SPI support IDF-4024
+    hw->slave.rdbuf_bitlen_en = (cond_mask & SPI_LL_TRANS_LEN_COND_RDBUF) ? 1 : 0;
+    hw->slave.wrbuf_bitlen_en = (cond_mask & SPI_LL_TRANS_LEN_COND_WRBUF) ? 1 : 0;
+    hw->slave.rddma_bitlen_en = (cond_mask & SPI_LL_TRANS_LEN_COND_RDDMA) ? 1 : 0;
+    hw->slave.wrdma_bitlen_en = (cond_mask & SPI_LL_TRANS_LEN_COND_WRDMA) ? 1 : 0;
 }
 
 static inline int spi_ll_slave_get_rx_byte_len(spi_dev_t *hw)
 {
-    abort(); // TODO: SPI support IDF-4024
+    return hw->slave1.data_bitlen / 8;
 }
 
 static inline uint32_t spi_ll_slave_hd_get_last_addr(spi_dev_t *hw)
 {
-    abort(); // TODO: SPI support IDF-4024
+    return hw->slave1.last_addr;
 }
 
 #undef SPI_LL_RST_MASK
