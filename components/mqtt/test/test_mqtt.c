@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  *
@@ -22,6 +22,7 @@
 #include "sdkconfig.h"
 #include "test_mqtt_client_broker.h"
 #include "test_mqtt_connection.h"
+#include "esp_mac.h"
 
 static void test_leak_setup(const char * file, long line)
 {

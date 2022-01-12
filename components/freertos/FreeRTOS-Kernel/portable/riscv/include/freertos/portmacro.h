@@ -42,7 +42,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include "soc/spinlock.h"
+#include "spinlock.h"
 #include "soc/interrupt_core0_reg.h"
 #include "esp_macro.h"
 #include "esp_attr.h"

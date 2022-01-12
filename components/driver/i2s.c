@@ -29,7 +29,7 @@
 #include "esp_private/gdma.h"
 #endif
 
-#include "soc/clk_ctrl_os.h"
+#include "clk_ctrl_os.h"
 #include "esp_intr_alloc.h"
 #include "esp_err.h"
 #include "esp_check.h"

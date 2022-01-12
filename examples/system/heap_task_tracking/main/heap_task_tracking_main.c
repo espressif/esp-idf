@@ -11,6 +11,7 @@
 #include "freertos/task.h"
 #include "esp_heap_task_info.h"
 #include "esp_log.h"
+#include "esp_random.h"
 
 
 #define MAX_TASK_NUM 20                         // Max number of per tasks info that it can store

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,7 +16,7 @@
 #include "soc/syscon_reg.h"
 #include "regi2c_ctrl.h"
 #include "regi2c_ulp.h"
-#include "soc_log.h"
+#include "esp_hw_log.h"
 #include "esp_err.h"
 #include "esp_attr.h"
 #include "esp_efuse.h"
@@ -73,7 +73,7 @@ void rtc_init(rtc_config_t cfg)
         esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_BLK_VER_MAJOR, &blk_ver_major, ESP_EFUSE_BLK_VER_MAJOR[0]->bit_count);
         if (err != ESP_OK) {
             blk_ver_major = 0;
-            SOC_LOGW(TAG, "efuse read fail, set default blk_ver_major: %d\n", blk_ver_major);
+            ESP_HW_LOGW(TAG, "efuse read fail, set default blk_ver_major: %d\n", blk_ver_major);
         }
 
         //default blk_ver_major will fallback to using the self-calibration way for OCode
@@ -289,7 +289,7 @@ static void calibrate_ocode(void)
             break;
         }
         if (cycle1 >= timeout_cycle) {
-            SOC_LOGW(TAG, "o_code calibration fail\n");
+            ESP_HW_LOGW(TAG, "o_code calibration fail\n");
             break;
         }
     }

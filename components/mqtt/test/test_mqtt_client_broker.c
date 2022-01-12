@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #include "freertos/event_groups.h"
 #include "mqtt_client.h"
 #include "esp_log.h"
+#include "esp_mac.h"
 
 #define WAIT_FOR_EVENT(event) \
     TEST_ASSERT_TRUE(xEventGroupWaitBits(s_event_group, event, pdTRUE, pdTRUE, pdMS_TO_TICKS(COMMON_OPERATION_TIMEOUT)) & event);

@@ -12,7 +12,7 @@
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_vendor.h"
 #include "esp_lcd_panel_ops.h"
-#include "esp_system.h"
+#include "esp_random.h"
 #include "soc/soc_caps.h"
 #include "test_spi_board.h"
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,7 +22,7 @@
 #include "soc/syscon_reg.h"
 #include "esp_rom_sys.h"
 #include "regi2c_ctrl.h"
-#include "soc_log.h"
+#include "esp_hw_log.h"
 #include "rtc_clk_common.h"
 #include "sdkconfig.h"
 
@@ -131,7 +131,7 @@ uint32_t rtc_clk_apll_coeff_calc(uint32_t freq, uint32_t *_o_div, uint32_t *_sdm
     uint32_t rtc_xtal_freq = (uint32_t)rtc_clk_xtal_freq_get();
     if (rtc_xtal_freq == 0) {
         // xtal_freq has not set yet
-        SOC_LOGE(TAG, "Get xtal clock frequency failed, it has not been set yet");
+        ESP_HW_LOGE(TAG, "Get xtal clock frequency failed, it has not been set yet");
         abort();
     }
     /* Reference formula: apll_freq = xtal_freq * (4 + sdm2 + sdm1/256 + sdm0/65536) / ((o_div + 2) * 2)
@@ -148,7 +148,7 @@ uint32_t rtc_clk_apll_coeff_calc(uint32_t freq, uint32_t *_o_div, uint32_t *_sdm
      * 350 MHz / ((31 + 2) * 2) = 5303031 Hz (for ceil) */
     o_div = (int)(SOC_APLL_MULTIPLIER_OUT_MIN_HZ / (float)(freq * 2) + 1) - 2;
     if (o_div > 31) {
-        SOC_LOGE(TAG, "Expected frequency is too small");
+        ESP_HW_LOGE(TAG, "Expected frequency is too small");
         return 0;
     }
     if (o_div < 0) {
@@ -158,7 +158,7 @@ uint32_t rtc_clk_apll_coeff_calc(uint32_t freq, uint32_t *_o_div, uint32_t *_sdm
          * 500 MHz / ((0 + 2) * 2) = 125000000 Hz */
         o_div = (int)(SOC_APLL_MULTIPLIER_OUT_MAX_HZ / (float)(freq * 2)) - 2;
         if (o_div < 0) {
-            SOC_LOGE(TAG, "Expected frequency is too big");
+            ESP_HW_LOGE(TAG, "Expected frequency is too big");
             return 0;
         }
     }
@@ -315,7 +315,7 @@ void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
             break;
         }
         if (ext_cap == 15) {
-            SOC_LOGE(TAG, "BBPLL SOFTWARE CAL FAIL");
+            ESP_HW_LOGE(TAG, "BBPLL SOFTWARE CAL FAIL");
             abort();
         }
     }
@@ -340,7 +340,7 @@ static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
         dbias = DIG_DBIAS_240M;
         per_conf = DPORT_CPUPERIOD_SEL_240;
     } else {
-        SOC_LOGE(TAG, "invalid frequency");
+        ESP_HW_LOGE(TAG, "invalid frequency");
         abort();
     }
     REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, per_conf);
@@ -450,7 +450,7 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t* out_config)
                 div = 2;
                 freq_mhz = 240;
             } else {
-                SOC_LOGE(TAG, "unsupported frequency configuration");
+                ESP_HW_LOGE(TAG, "unsupported frequency configuration");
                 abort();
             }
             break;
@@ -463,7 +463,7 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t* out_config)
             break;
         case DPORT_SOC_CLK_SEL_APLL:
         default:
-            SOC_LOGE(TAG, "unsupported frequency configuration");
+            ESP_HW_LOGE(TAG, "unsupported frequency configuration");
             abort();
     }
     *out_config = (rtc_cpu_freq_config_t) {

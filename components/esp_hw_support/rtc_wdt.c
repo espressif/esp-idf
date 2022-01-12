@@ -5,7 +5,7 @@
  */
 
 #include "soc/efuse_periph.h"
-#include "soc/rtc_wdt.h"
+#include "rtc_wdt.h"
 #include "soc/rtc.h"
 #include "hal/efuse_ll.h"
 

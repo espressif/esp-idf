@@ -12,7 +12,7 @@
 #include "esp_err.h"
 
 #include "esp_log.h"
-#include "esp_system.h"
+#include "esp_chip_info.h"
 
 #include "esp_efuse.h"
 #include "esp_private/cache_err_int.h"
@@ -76,7 +76,6 @@
 #include "soc/periph_defs.h"
 #include "esp_cpu.h"
 #include "soc/rtc.h"
-#include "soc/spinlock.h"
 
 #if CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX || CONFIG_ESP32S3_TRAX
 #include "esp_private/trax.h"

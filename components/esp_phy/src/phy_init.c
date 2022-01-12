@@ -13,7 +13,7 @@
 #include "soc/rtc.h"
 #include "esp_err.h"
 #include "esp_phy_init.h"
-#include "esp_system.h"
+#include "esp_mac.h"
 #include "esp_log.h"
 #include "nvs.h"
 #include "nvs_flash.h"

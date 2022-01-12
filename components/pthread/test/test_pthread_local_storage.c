@@ -4,7 +4,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "test_utils.h"
-#include "esp_system.h"
+#include "esp_random.h"
 
 TEST_CASE("pthread local storage basics", "[pthread]")
 {

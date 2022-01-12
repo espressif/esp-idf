@@ -50,7 +50,6 @@
 #include "esp_attr.h"
 #include "esp_system.h"
 #include "esp_intr_alloc.h"
-#include "esp_debug_helpers.h"
 #include "esp_log.h"
 #include "FreeRTOS.h"       /* This pulls in portmacro.h */
 #include "task.h"

@@ -16,7 +16,7 @@
  * http://dwarfstd.org/Download.php
  */
 
-#include "eh_frame_parser.h"
+#include "esp_private/eh_frame_parser.h"
 #include "esp_private/panic_internal.h"
 #include <string.h>
 

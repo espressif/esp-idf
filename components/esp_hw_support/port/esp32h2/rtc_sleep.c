@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +21,7 @@
 #include "regi2c_ctrl.h"
 #include "esp_efuse.h"
 #include "i2c_pmu.h"
-#include "soc_log.h"
+#include "esp_hw_log.h"
 #include "esp_rom_uart.h"
 
 #if CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2
@@ -81,7 +81,7 @@ void dcdc_ctl(uint32_t mode)
     } else if (mode == 2) {
         REG_SET_FIELD(RTC_CNTL_DCDC_CTRL1_REG, RTC_CNTL_DCDC_MODE_SLP, RTC_CNTL_DCDC_DSLP_MODE);
     } else {
-        SOC_LOGE(TAG, "invalid dcdc mode!\n");
+        ESP_HW_LOGE(TAG, "invalid dcdc mode!\n");
     }
 }
 

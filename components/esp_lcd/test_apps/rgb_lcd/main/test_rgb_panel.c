@@ -8,7 +8,7 @@
 #include "unity.h"
 #include "esp_lcd_panel_rgb.h"
 #include "esp_lcd_panel_ops.h"
-#include "esp_system.h"
+#include "esp_random.h"
 #include "test_rgb_board.h"
 
 void test_app_include_rgb_lcd(void)

@@ -1,11 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <freertos/FreeRTOS.h>
-#include "soc/clk_ctrl_os.h"
+#include "clk_ctrl_os.h"
 #include "esp_check.h"
 #include "sdkconfig.h"
 

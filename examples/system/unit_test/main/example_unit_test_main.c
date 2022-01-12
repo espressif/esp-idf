@@ -8,7 +8,7 @@
 */
 
 #include <stdio.h>
-#include "esp_system.h"
+#include "esp_random.h"
 #include "testable.h"
 
 /* This application has a test subproject in 'test' directory, all the

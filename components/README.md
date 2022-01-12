@@ -150,7 +150,6 @@ The current implementation in `esp_system` can then just register the interrupt 
 #### `esp_mac.h`, `esp_chip_info.h`, `esp_random.h` (`esp_hw_support`)
 
 The functions in these headers used to be in `esp_system.h`, but have been split-off.
-However, to maintain backward compatibility, `esp_system.h` includes these headers.
 
 The remaining functions in `esp_system.h` are those that deal with system behavior, such
 as `esp_register_shutdown_handler`, or are proxy for other system components's APIs such as

@@ -52,7 +52,7 @@
 #define ESP_LOGV(a,b,c,d)
 
 #define LWIP_HDR_PBUF_H
-#define __ESP_SYSTEM_H__
+#define __ESP_RANDOM_H__
 #define INC_TASK_H
 
 #define pdMS_TO_TICKS(a) a
