@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*******************************************************************************
  * NOTICE
@@ -44,10 +36,12 @@
  * Input parameters to the ``spi_hal_cal_clock_conf`` to calculate the timing configuration
  */
 typedef struct {
+    spi_clock_source_t clk_sel;         ///< Select SPI clock source
+    uint32_t clk_src_hz;                ///< Selected SPI clock source speed in Hz
     uint32_t half_duplex;               ///< Whether half duplex mode is used, device specific
     uint32_t no_compensate;             ///< No need to add dummy to compensate the timing, device specific
-    uint32_t clock_speed_hz;            ///< Desired frequency.
-    uint32_t duty_cycle;                ///< Desired duty cycle of SPI clock
+    uint32_t expected_freq;             ///< Expected frequency in Hz.
+    uint32_t duty_cycle;                ///< Expected duty cycle of SPI clock
     uint32_t input_delay_ns;            /**< Maximum delay between SPI launch clock and the data to be valid.
                                          *   This is used to compensate/calculate the maximum frequency allowed.
                                          *   Left 0 if not known.
@@ -151,7 +145,7 @@ typedef struct {
         uint32_t tx_lsbfirst : 1;       ///< Whether LSB is sent first for TX data, device specific
         uint32_t rx_lsbfirst : 1;       ///< Whether LSB is received first for RX data, device specific
         uint32_t no_compensate : 1;     ///< No need to add dummy to compensate the timing, device specific
-#if SOC_SPI_SUPPORT_AS_CS
+#if SOC_SPI_AS_CS_SUPPORTED
         uint32_t as_cs  : 1;            ///< Whether to toggle the CS while the clock toggles, device specific
 #endif
         uint32_t positive_cs : 1;       ///< Whether the postive CS feature is abled, device specific

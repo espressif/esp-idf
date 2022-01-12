@@ -21,7 +21,8 @@ Following is the connection between 2 ESP32S2 boards:
 | SCLK      | GPIO12 | GPIO12 |
 | CS        | GPIO10 | GPIO10 |
 
-(Feel free to change the GPIO settings by editing the macro definations at the top of ``app_main.c`` files.)
+Plase refer to the macro definations at the top of ``app_main.c`` files, to know the connection on different chips.
+Feel free to change the GPIO settings by editing the macro definations.
 
 ### Build and Flash
 

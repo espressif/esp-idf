@@ -407,6 +407,14 @@ config SOC_SIGMADELTA_CHANNEL_NUM
     int
     default 8
 
+config SOC_SPI_HD_BOTH_INOUT_SUPPORTED
+    bool
+    default y
+
+config SOC_SPI_AS_CS_SUPPORTED
+    bool
+    default y
+
 config SOC_SPI_PERIPH_NUM
     int
     default 3
@@ -422,10 +430,6 @@ config SOC_SPI_MAXIMUM_BUFFER_SIZE
 config SOC_SPI_MAX_PRE_DIVIDER
     int
     default 8192
-
-config SOC_SPI_SUPPORT_AS_CS
-    bool
-    default y
 
 config SOC_TIMER_GROUPS
     int

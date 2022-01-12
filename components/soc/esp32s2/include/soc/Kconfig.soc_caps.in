@@ -451,6 +451,10 @@ config SOC_SIGMADELTA_CHANNEL_NUM
     int
     default 8
 
+config SOC_SPI_HD_BOTH_INOUT_SUPPORTED
+    bool
+    default y
+
 config SOC_SPI_PERIPH_NUM
     int
     default 3

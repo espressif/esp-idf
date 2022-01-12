@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,8 +11,8 @@
 #include "driver/spi_master.h"
 #include "driver/spi_slave.h"
 
-#if !DISABLED_FOR_TARGETS(ESP32C3, ESP8684)
-//There is only one GPSPI controller on ESP32C3 and ESP8684, so single-board test is disabled.
+#if (TEST_SPI_PERIPH_NUM >= 2)
+//These will only be enabled on chips with 2 or more SPI peripherals
 
 #ifndef MIN
 #define MIN(a, b)((a) > (b)? (b): (a))
@@ -1177,4 +1177,4 @@ TEST_SPI_MASTER_SLAVE(MODE, mode_conf, "")
 
 #endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
 
-#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C3, ESP8684)
+#endif // #if (TEST_SPI_PERIPH_NUM >= 2)

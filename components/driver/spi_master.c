@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -121,6 +121,8 @@ We have two bits to control the interrupt:
 #include "driver/gpio.h"
 #include "hal/spi_hal.h"
 #include "esp_heap_caps.h"
+//Temporarily include soc/rtc.h, will be replaced by clock tree API
+#include "soc/rtc.h"
 
 
 typedef struct spi_device_t spi_device_t;
@@ -318,7 +320,9 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     spi_host_t *host = bus_driver_ctx[host_id];
     const spi_bus_attr_t* bus_attr = host->bus_attr;
     SPI_CHECK(dev_config->spics_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(dev_config->spics_io_num), "spics pin invalid", ESP_ERR_INVALID_ARG);
-    SPI_CHECK(dev_config->clock_speed_hz > 0, "invalid sclk speed", ESP_ERR_INVALID_ARG);
+    uint32_t apb_clk_freq_hz = rtc_clk_apb_freq_get();
+    assert((apb_clk_freq_hz == 80 * 1000 * 1000) || (apb_clk_freq_hz == 40 * 1000 * 1000));
+    SPI_CHECK((dev_config->clock_speed_hz > 0) && (dev_config->clock_speed_hz <= apb_clk_freq_hz) , "invalid sclk speed", ESP_ERR_INVALID_ARG);
 #ifdef CONFIG_IDF_TARGET_ESP32
     //The hardware looks like it would support this, but actually setting cs_ena_pretrans when transferring in full
     //duplex mode does absolutely nothing on the ESP32.
@@ -345,9 +349,11 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     int duty_cycle = (dev_config->duty_cycle_pos==0) ? 128 : dev_config->duty_cycle_pos;
     int use_gpio = !(bus_attr->flags & SPICOMMON_BUSFLAG_IOMUX_PINS);
     spi_hal_timing_param_t timing_param = {
+        .clk_src_hz = rtc_clk_apb_freq_get(),
+        .clk_sel = SPI_CLK_APB,     //Currently, SPI driver only set SPI to APB clock. SPI is not supposed to be used during sleep modes.
         .half_duplex = half_duplex,
         .no_compensate = no_compensate,
-        .clock_speed_hz = dev_config->clock_speed_hz,
+        .expected_freq = dev_config->clock_speed_hz,
         .duty_cycle = duty_cycle,
         .input_delay_ns = dev_config->input_delay_ns,
         .use_gpio = use_gpio
@@ -406,7 +412,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     hal_dev->tx_lsbfirst = dev_config->flags & SPI_DEVICE_TXBIT_LSBFIRST ? 1 : 0;
     hal_dev->rx_lsbfirst = dev_config->flags & SPI_DEVICE_RXBIT_LSBFIRST ? 1 : 0;
     hal_dev->no_compensate = dev_config->flags & SPI_DEVICE_NO_DUMMY ? 1 : 0;
-#if SOC_SPI_SUPPORT_AS_CS
+#if SOC_SPI_AS_CS_SUPPORTED
     hal_dev->as_cs = dev_config->flags& SPI_DEVICE_CLK_AS_CS ? 1 : 0;
 #endif
     hal_dev->positive_cs = dev_config->flags & SPI_DEVICE_POSITIVE_CS ? 1 : 0;
@@ -699,7 +705,8 @@ static SPI_MASTER_ISR_ATTR esp_err_t check_trans_valid(spi_device_handle_t handl
     SPI_CHECK(!((trans_desc->flags & (SPI_TRANS_MODE_DIO|SPI_TRANS_MODE_QIO)) && !is_half_duplex), "Incompatible when setting to both multi-line mode and half duplex mode", ESP_ERR_INVALID_ARG);
 #ifdef CONFIG_IDF_TARGET_ESP32
     SPI_CHECK(!is_half_duplex || !bus_attr->dma_enabled || !rx_enabled || !tx_enabled, "SPI half duplex mode does not support using DMA with both MOSI and MISO phases.", ESP_ERR_INVALID_ARG );
-#elif CONFIG_IDF_TARGET_ESP32S3
+#endif
+#if !SOC_SPI_HD_BOTH_INOUT_SUPPORTED
     SPI_CHECK(!is_half_duplex || !tx_enabled || !rx_enabled, "SPI half duplex mode is not supported when both MOSI and MISO phases are enabled.", ESP_ERR_INVALID_ARG);
 #endif
     //MOSI phase is skipped only when both tx_buffer and SPI_TRANS_USE_TXDATA are not set.

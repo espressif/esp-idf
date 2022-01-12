@@ -1126,7 +1126,6 @@ components/hal/include/hal/soc_hal.h
 components/hal/include/hal/spi_flash_encrypt_hal.h
 components/hal/include/hal/spi_flash_hal.h
 components/hal/include/hal/spi_flash_types.h
-components/hal/include/hal/spi_hal.h
 components/hal/include/hal/spi_slave_hal.h
 components/hal/include/hal/spi_slave_hd_hal.h
 components/hal/include/hal/systimer_hal.h
@@ -1158,8 +1157,6 @@ components/hal/soc_hal.c
 components/hal/spi_flash_encrypt_hal_iram.c
 components/hal/spi_flash_hal.c
 components/hal/spi_flash_hal_gpspi.c
-components/hal/spi_hal.c
-components/hal/spi_hal_iram.c
 components/hal/spi_slave_hal.c
 components/hal/spi_slave_hal_iram.c
 components/hal/spi_slave_hd_hal.c
@@ -1196,9 +1193,6 @@ components/heap/test/test_realloc.c
 components/heap/test/test_runtime_heap_reg.c
 components/heap/test_multi_heap_host/main.cpp
 components/heap/test_multi_heap_host/test_multi_heap.cpp
-components/idf_test/include/esp32/idf_performance_target.h
-components/idf_test/include/esp32c3/idf_performance_target.h
-components/idf_test/include/esp32h2/idf_performance_target.h
 components/idf_test/include/idf_performance.h
 components/linux/include/sys/queue.h
 components/log/esp_log_private.h

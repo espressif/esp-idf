@@ -18,7 +18,7 @@ Overview of {IDF_TARGET_NAME}'s SPI peripherals
 
     SPI2 and SPI3 have independent signal buses with the same respective names.
 
-.. only:: esp32c3
+.. only:: esp32c3 or esp8684
 
     {IDF_TARGET_NAME} integrates one general purpose SPI controller which can be used as slave node driven by an off-chip SPI master. The controller is called SPI2 and has an independent signal bus with the same name.
 
@@ -158,7 +158,7 @@ You can also configure a GPIO pin through which the Device will signal to the Ho
 SCLK Frequency Requirements
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-{IDF_TARGET_MAX_FREQ:default="40", esp32="10", esp32s2="40", esp32c3="60", esp32s3="60}
+{IDF_TARGET_MAX_FREQ:default="60", esp32="10", esp32s2="40"}
 
 The SPI slaves are designed to operate at up to {IDF_TARGET_MAX_FREQ} MHz. The data cannot be recognized or received correctly if the clock is too fast or does not have a 50% duty cycle.
 

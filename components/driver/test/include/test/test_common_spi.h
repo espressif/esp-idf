@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,9 @@
 
 // All the tests using the header should use this definition as much as possible,
 // so that the working host can be changed easily in the future.
+
+#define TEST_SPI_PERIPH_NUM     (SOC_SPI_PERIPH_NUM - 1)
+
 #if CONFIG_IDF_TARGET_ESP32
 #define TEST_SPI_HOST           SPI2_HOST
 #define TEST_SLAVE_HOST         SPI3_HOST
@@ -83,8 +86,8 @@
 #define ESP_SPI_SLAVE_TV        0
 #define WIRE_DELAY              12.5
 
-#elif CONFIG_IDF_TARGET_ESP32C3
-//NOTE: On esp32c3, there is only 1 GPSPI controller, so master-slave test on single board should be disabled
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP8684
+//NOTE: On these chips, there is only 1 GPSPI controller, so master-slave test on single board should be disabled
 #define TEST_SPI_HOST           SPI2_HOST
 #define TEST_SLAVE_HOST         SPI2_HOST
 
