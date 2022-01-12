@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -787,7 +787,7 @@ static esp_err_t esp_http_check_response(esp_http_client_handle_t client)
     if (client->response->status_code >= HttpStatus_Ok && client->response->status_code < HttpStatus_MultipleChoices) {
         return ESP_OK;
     }
-    if (client->redirect_counter >= client->max_redirection_count || client->disable_auto_redirect) {
+    if (client->redirect_counter >= client->max_redirection_count) {
         ESP_LOGE(TAG, "Error, reach max_redirection_count count=%d", client->redirect_counter);
         return ESP_ERR_HTTP_MAX_REDIRECT;
     }
@@ -795,6 +795,9 @@ static esp_err_t esp_http_check_response(esp_http_client_handle_t client)
         case HttpStatus_MovedPermanently:
         case HttpStatus_Found:
         case HttpStatus_TemporaryRedirect:
+            if (client->disable_auto_redirect) {
+                http_dispatch_event(client, HTTP_EVENT_REDIRECT, NULL, 0);
+            }
             esp_http_client_set_redirection(client);
             client->redirect_counter ++;
             client->process_again = 1;
