@@ -539,10 +539,6 @@ config SOC_SPI_PERIPH_NUM
     int
     default 3
 
-config SOC_SPI_DMA_CHAN_NUM
-    int
-    default 3
-
 config SOC_SPI_MAXIMUM_BUFFER_SIZE
     int
     default 64

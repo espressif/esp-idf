@@ -20,13 +20,6 @@
 #define IDF_PERFORMANCE_MAX_ESP_TIMER_GET_TIME_PER_CALL                         1000
 #endif
 
-#ifndef IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING
-#define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING                               15
-#endif
-#ifndef IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING_NO_DMA
-#define IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING_NO_DMA                        15
-#endif
-
 /* Due to code size & linker layout differences interacting with cache, VFS
    microbenchmark currently runs slower with PSRAM enabled. */
 #ifndef IDF_PERFORMANCE_MAX_VFS_OPEN_WRITE_CLOSE_TIME

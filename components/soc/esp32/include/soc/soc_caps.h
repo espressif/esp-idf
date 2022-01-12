@@ -1,6 +1,6 @@
 
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -237,15 +237,17 @@
 #define SOC_SIGMADELTA_CHANNEL_NUM (8) // 8 channels
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
-#define SOC_SPI_PERIPH_NUM          3
-#define SOC_SPI_DMA_CHAN_NUM        2
+#define SOC_SPI_HD_BOTH_INOUT_SUPPORTED 1  //Support enabling MOSI and MISO phases together under Halfduplex mode
+#define SOC_SPI_AS_CS_SUPPORTED         1  //Support to toggle the CS while the clock toggles
+#define SOC_SPI_PERIPH_NUM              3
+#define SOC_SPI_DMA_CHAN_NUM            2
 
-#define SOC_SPI_PERIPH_CS_NUM(i)    3
+#define SOC_SPI_PERIPH_CS_NUM(i)        3
 
-#define SOC_SPI_MAXIMUM_BUFFER_SIZE 64
-#define SOC_SPI_MAX_PRE_DIVIDER     8192
+#define SOC_SPI_MAXIMUM_BUFFER_SIZE     64
+#define SOC_SPI_MAX_PRE_DIVIDER         8192
 
-#define SOC_SPI_SUPPORT_AS_CS       1 //Support to toggle the CS while the clock toggles
+
 
 // Peripheral supports DIO, DOUT, QIO, or QOUT
 #define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(spi_host)         ({(void)spi_host; 1;})
