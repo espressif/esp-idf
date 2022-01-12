@@ -300,6 +300,10 @@ class BuildSystem:
         'Linux': 'linux',
     }
 
+    # ESP32H2-TODO: IDF-4559
+    # Build only apps who has ESP32-H2 in the README.md supported targets table.
+    DEFAULT_TARGETS = ['esp32', 'esp32s2', 'esp32s3', 'esp32c3', 'esp8684', 'linux']
+
     @classmethod
     def build_prepare(cls, build_item):
         app_path = build_item.app_dir
@@ -417,10 +421,10 @@ class BuildSystem:
     def _supported_targets(cls, app_path):
         readme_file_content = BuildSystem._read_readme(app_path)
         if not readme_file_content:
-            return cls.FORMAL_TO_USUAL.values()  # supports all targets if no readme found
+            return cls.DEFAULT_TARGETS  # supports all default targets if no readme found
         match = re.findall(BuildSystem.SUPPORTED_TARGETS_REGEX, readme_file_content)
         if not match:
-            return cls.FORMAL_TO_USUAL.values()  # supports all targets if no such header in readme
+            return cls.DEFAULT_TARGETS  # supports all default targets if no such header in readme
         if len(match) > 1:
             raise NotImplementedError("Can't determine the value of SUPPORTED_TARGETS in {}".format(app_path))
         support_str = match[0].strip()
