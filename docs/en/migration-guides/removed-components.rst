@@ -12,6 +12,7 @@ Following components are removed from ESP-IDF and moved to `IDF Component Regist
 .. note:: Please note that http parser functionality which was previously part of ``nghttp`` component is now part of :component:`http_parser <http_parser>` component.
 
 * `sh2lib <https://components.espressif.com/component/espressif/sh2lib>`_
+* `expat <https://components.espressif.com/component/espressif/expat>`_
 
 These components can be installed using ``idf.py add-dependency`` command.
 
