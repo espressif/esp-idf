@@ -48,6 +48,7 @@ typedef enum {
     UART_INTR_RS485_FRM_ERR    = (0x1 << 16),
     UART_INTR_RS485_CLASH      = (0x1 << 17),
     UART_INTR_CMD_CHAR_DET     = (0x1 << 18),
+    UART_INTR_WAKEUP           = (0x1 << 19),
 } uart_intr_t;
 
 static inline void uart_ll_reset_core(uart_dev_t *hw) {

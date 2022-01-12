@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -279,7 +279,7 @@
 #define SOC_UART_NUM                (2)
 #define SOC_UART_FIFO_LEN           (128)      /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX        (5000000)  /*!< Max bit rate supported by UART */
-
+#define SOC_UART_SUPPORT_WAKEUP_INT (1)        /*!< Support UART wakeup interrupt */
 #define SOC_UART_SUPPORT_RTC_CLK    (1)
 #define SOC_UART_SUPPORT_XTAL_CLK   (1)
 
