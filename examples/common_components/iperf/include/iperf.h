@@ -33,6 +33,7 @@ extern "C" {
 #define IPERF_DEFAULT_PORT 5001
 #define IPERF_DEFAULT_INTERVAL 3
 #define IPERF_DEFAULT_TIME 30
+#define IPERF_DEFAULT_NO_BW_LIMIT -1
 
 #define IPERF_TRAFFIC_TASK_NAME "iperf_traffic"
 #define IPERF_TRAFFIC_TASK_PRIORITY 4
@@ -67,6 +68,7 @@ typedef struct {
     uint32_t interval;
     uint32_t time;
     uint16_t len_send_buf;
+    int32_t bw_lim;
 } iperf_cfg_t;
 
 esp_err_t iperf_start(iperf_cfg_t *cfg);
