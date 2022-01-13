@@ -182,7 +182,7 @@ esp_err_t esp_https_ota_begin(esp_https_ota_config_t *ota_config, esp_https_ota_
         err = ota_config->http_client_init_cb(https_ota_handle->http_client);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "http_client_init_cb returned 0x%x", err);
-            goto failure;
+            goto http_cleanup;
         }
     }
 
