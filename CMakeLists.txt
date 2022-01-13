@@ -26,6 +26,8 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND compile_options "-O0")
     elseif(CONFIG_COMPILER_OPTIMIZATION_PERF)
         list(APPEND compile_options "-O2")
+    elseif(CONFIG_COMPILER_OPTIMIZATION_FAST)
+        list(APPEND compile_options "-Ofast")
     endif()
 
 else()  # BOOTLOADER_BUILD
@@ -41,6 +43,8 @@ else()  # BOOTLOADER_BUILD
         list(APPEND compile_options "-O0")
     elseif(CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_PERF)
         list(APPEND compile_options "-O2")
+    elseif(CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_FAST)
+        list(APPEND compile_options "-Ofast")
     endif()
 
 endif()

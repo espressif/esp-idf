@@ -259,6 +259,8 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 bool "Optimize for size (-Os)"
             config COMPILER_OPTIMIZATION_PERF
                 bool "Optimize for performance (-O2)"
+            config COMPILER_OPTIMIZATION_FAST
+                bool "Optimize for fast (-Ofast)"
             config COMPILER_OPTIMIZATION_NONE
                 bool "Debug without optimization (-O0)"
 

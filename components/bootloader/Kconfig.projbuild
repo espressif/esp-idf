@@ -29,6 +29,8 @@ menu "Bootloader config"
             bool "Debug (-Og)"
         config BOOTLOADER_COMPILER_OPTIMIZATION_PERF
             bool "Optimize for performance (-O2)"
+        config BOOTLOADER_COMPILER_OPTIMIZATION_FAST
+            bool "Optimize for fast (-Ofast)"
         config BOOTLOADER_COMPILER_OPTIMIZATION_NONE
             bool "Debug without optimization (-O0)"
     endchoice

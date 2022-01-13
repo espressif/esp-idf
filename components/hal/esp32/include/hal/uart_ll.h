@@ -213,7 +213,7 @@ FORCE_INLINE_ATTR void uart_ll_read_rxfifo(uart_dev_t *hw, uint8_t *buf, uint32_
     uint32_t fifo_addr = (hw == &UART0) ? UART_FIFO_REG(0) : (hw == &UART1) ? UART_FIFO_REG(1) : UART_FIFO_REG(2);
     for(uint32_t i = 0; i < rd_len; i++) {
         buf[i] = READ_PERI_REG(fifo_addr);
-#ifdef CONFIG_COMPILER_OPTIMIZATION_PERF
+#if defined(CONFIG_COMPILER_OPTIMIZATION_PERF) || defined(CONFIG_COMPILER_OPTIMIZATION_FAST)
         __asm__ __volatile__("nop");
 #endif
     }

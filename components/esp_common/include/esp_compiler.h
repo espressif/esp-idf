@@ -22,7 +22,7 @@
  * to reorder instructions producing more optimized
  * code.
  */
-#if (CONFIG_COMPILER_OPTIMIZATION_PERF)
+#if (CONFIG_COMPILER_OPTIMIZATION_PERF) || (CONFIG_COMPILER_OPTIMIZATION_FAST)
 #ifndef likely
 #define likely(x)      __builtin_expect(!!(x), 1)
 #endif

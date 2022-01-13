@@ -27,6 +27,10 @@ gen_configs() {
     echo "CONFIG_COMPILER_OPTIMIZATION_PERF=y" > esp-idf-template/sdkconfig.ci.O2
     echo "CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_PERF=y" >> esp-idf-template/sdkconfig.ci.O2
 
+    # CONFIG_COMPILER_OPTIMIZATION_FAST with flag -Ofast
+    echo "CONFIG_COMPILER_OPTIMIZATION_FAST=y" > esp-idf-template/sdkconfig.ci.Of
+    echo "CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_FAST=y" >> esp-idf-template/sdkconfig.ci.Of
+
     # This part will be built in earlier stage (pre_build job) with only cmake. Built with make in later stage
     # CONFIG_COMPILER_OPTIMIZATION_DEFAULT with flag -Og
     echo "CONFIG_COMPILER_OPTIMIZATION_DEFAULT=y" > esp-idf-template/sdkconfig.ci2.Og
