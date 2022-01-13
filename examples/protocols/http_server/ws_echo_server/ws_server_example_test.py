@@ -20,8 +20,13 @@ import os
 import re
 
 import ttfw_idf
-import websocket
 from tiny_test_fw import Utility
+
+try:
+    import websocket
+except ImportError:
+    print("Please install 'websocket' by running 'python -m pip install websocket-client'")
+    raise
 
 OPCODE_TEXT = 0x1
 OPCODE_BIN = 0x2

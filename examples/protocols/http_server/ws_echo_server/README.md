@@ -6,7 +6,8 @@ This example demonstrates the HTTPD server using the WebSocket feature.
 ## How to Use Example
 
 The example starts a WS server on a local network, so a WS client is needed to interact with the server (an example test
-ws_server_example_test.py could be used as a simple WS client).
+ws_server_example_test.py could be used as a simple WS client). If you run ws_server_example_test.py and get
+`ModuleNotFoundError: No module named 'websocket'`, then please install `websocket` by running `python -m pip install websocket-client`.
 
 The server registers WebSocket handler which echoes back the received WebSocket frame. It also demonstrates
 use of asynchronous send, which is triggered on reception of a certain message.
