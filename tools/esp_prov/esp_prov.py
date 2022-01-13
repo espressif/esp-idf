@@ -1,18 +1,7 @@
 #!/usr/bin/env python
 #
-# Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 #
 
 from __future__ import print_function
@@ -368,18 +357,7 @@ if __name__ == '__main__':
     parser.add_argument('--custom_data', dest='custom_data', type=str, default='',
                         help=desc_format(
                             'This is an optional parameter, only intended for use with '
-                            '"examples/provisioning/wifi_prov_mgr_custom_data"'))
-
-    parser.add_argument('--custom_config', action='store_true',
-                        help=desc_format(
-                            'This is an optional parameter, only intended for use with '
-                            '"examples/provisioning/custom_config"'))
-    parser.add_argument('--custom_info', dest='custom_info', type=str, default='<some custom info string>',
-                        help=desc_format(
-                            'Custom Config Info String. "--custom_config" must be specified for using this'))
-    parser.add_argument('--custom_ver', dest='custom_ver', type=int, default=2,
-                        help=desc_format(
-                            'Custom Config Version Number. "--custom_config" must be specified for using this'))
+                            '"examples/provisioning/wifi_prov_mgr"'))
 
     parser.add_argument('-v','--verbose', help='Increase output verbosity', action='store_true')
 
@@ -428,13 +406,6 @@ if __name__ == '__main__':
         print('---- Error in establishing session ----')
         exit(4)
     print('==== Session Established ====')
-
-    if args.custom_config:
-        print('\n==== Sending Custom config to esp32 ====')
-        if not custom_config(obj_transport, obj_security, args.custom_info, args.custom_ver):
-            print('---- Error in custom config ----')
-            exit(5)
-        print('==== Custom config sent successfully ====')
 
     if args.custom_data != '':
         print('\n==== Sending Custom data to esp32 ====')
