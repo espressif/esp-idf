@@ -140,3 +140,16 @@ TEST_CASE("Username and password will not reset if new absolute URL doesnot spec
     TEST_ASSERT_NOT_NULL(value);
     esp_http_client_cleanup(client);
 }
+
+/**
+ * Test case to verify that, esp_http_client_init() should return NULL if configuration has url with empty hostname.
+ **/
+TEST_CASE("esp_http_client_init() should return NULL if configured with wrong url", "[ESP HTTP CLIENT]")
+{
+    esp_http_client_config_t config = {
+        .url = "//httpbin.org/post",
+    };
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    TEST_ASSERT_NULL(client);
+    esp_http_client_cleanup(client);
+}
