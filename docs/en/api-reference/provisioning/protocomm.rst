@@ -19,7 +19,7 @@ Note that the client still needs to establish session (only for protocomm_securi
 
 Transport Example (SoftAP + HTTP) with Security 1
 -------------------------------------------------
-For complete example see :example:`provisioning/legacy/softap_prov`
+For sample usage, see :component_file:`wifi_provisioning/src/scheme_softap.c`
 
     .. highlight:: c
 
@@ -113,7 +113,7 @@ For complete example see :example:`provisioning/legacy/softap_prov`
 
 Transport Example (BLE) with Security 0
 ---------------------------------------
-For complete example see :example:`provisioning/legacy/ble_prov`
+For sample usage, see :component_file:`wifi_provisioning/src/scheme_ble.c`
 
     .. highlight:: c
 
