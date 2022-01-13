@@ -1157,6 +1157,26 @@ esp_err_t esp_sleep_disable_wifi_wakeup(void)
 #endif
 }
 
+esp_err_t esp_sleep_enable_bt_wakeup(void)
+{
+#if SOC_PM_SUPPORT_BT_WAKEUP
+    s_config.wakeup_triggers |= RTC_BT_TRIG_EN;
+    return ESP_OK;
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+}
+
+esp_err_t esp_sleep_disable_bt_wakeup(void)
+{
+#if SOC_PM_SUPPORT_BT_WAKEUP
+    s_config.wakeup_triggers &= (~RTC_BT_TRIG_EN);
+    return ESP_OK;
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+}
+
 esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
 {
     if (esp_rom_get_reset_reason(0) != RESET_REASON_CORE_DEEP_SLEEP && !s_light_sleep_wakeup) {
