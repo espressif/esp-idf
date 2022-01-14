@@ -68,7 +68,7 @@ class Websocket(object):
 
 def test_echo(dut):
     dut.expect('WEBSOCKET_EVENT_CONNECTED')
-    for i in range(0, 10):
+    for i in range(0, 5):
         dut.expect(re.compile(r'Received=hello (\d)'), timeout=30)
     print('All echos received')
 
