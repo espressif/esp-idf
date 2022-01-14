@@ -2819,11 +2819,7 @@ examples/system/light_sleep/main/light_sleep_example_main.c
 examples/system/ota/advanced_https_ota/example_test.py
 examples/system/ota/advanced_https_ota/main/advanced_https_ota_example.c
 examples/system/ota/advanced_https_ota/main/ble_helper/ble_api.c
-examples/system/ota/advanced_https_ota/main/ble_helper/bluedroid_gatts.c
 examples/system/ota/advanced_https_ota/main/ble_helper/include/ble_api.h
-examples/system/ota/advanced_https_ota/main/ble_helper/include/bluedroid_gatts.h
-examples/system/ota/advanced_https_ota/main/ble_helper/include/nimble_gatts.h
-examples/system/ota/advanced_https_ota/main/ble_helper/nimble_gatts.c
 examples/system/ota/native_ota_example/example_test.py
 examples/system/ota/native_ota_example/main/native_ota_example.c
 examples/system/ota/otatool/example_test.py
