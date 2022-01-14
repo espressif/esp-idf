@@ -53,7 +53,7 @@ typedef struct {
     uint16_t *package_index;
     uint8_t  ttl;
 } ble_mesh_performance_statistics_t;
-ble_mesh_performance_statistics_t test_perf_statistics;
+extern ble_mesh_performance_statistics_t test_perf_statistics;
 
 typedef struct {
     uint32_t statistics;
@@ -61,7 +61,7 @@ typedef struct {
     uint16_t *package_index;
     uint32_t total_package_num;
 } ble_mesh_node_statistics_t;
-ble_mesh_node_statistics_t ble_mesh_node_statistics;
+extern ble_mesh_node_statistics_t ble_mesh_node_statistics;
 
 extern SemaphoreHandle_t ble_mesh_node_sema;
 
