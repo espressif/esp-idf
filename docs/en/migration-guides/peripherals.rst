@@ -53,3 +53,13 @@ Breaking Changes in Usage
 -  The driver will install the interrupt service as well if :cpp:member:`on_alarm` is set to a valid callback function. In the callback, user doesn't have to deal with the low level registers (like "clear interrupt status", "re-enable alarm event" and so on). So functions like ``timer_group_get_intr_status_in_isr`` and ``timer_group_get_auto_reload_in_isr`` are not used anymore.
 -  To update the alarm configurations when alarm event happens, one can call :cpp:func:`gptimer_set_alarm_action` in the interrupt callback, then the alarm will be re-enabled again.
 -  Alarm will always be re-enabled by the driver if :cpp:member:`auto_reload_on_alarm` is set to true.
+
+UART
+~~~~
+
+- :cpp:member:`uart_isr_register` and :cpp:member:`uart_isr_free` have been removed as the UART interrupt handling is closely related to the driver implementation.
+
+I2C
+~~~~
+
+- :cpp:member:`i2c_isr_register` and :cpp:member:`i2c_isr_free` have been removed as the I2C interrupt handling is closely related to the driver implementation.

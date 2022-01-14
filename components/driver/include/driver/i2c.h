@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -155,33 +155,6 @@ esp_err_t i2c_reset_tx_fifo(i2c_port_t i2c_num);
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
 esp_err_t i2c_reset_rx_fifo(i2c_port_t i2c_num);
-
-/**
- * @brief Register an I2C ISR handler.
- *
- * @param i2c_num I2C port number to attach handler to
- * @param fn ISR handler function
- * @param arg Parameter for the ISR handler
- * @param intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
- *                         ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
- * @param handle Handle return from esp_intr_alloc.
- *
- * @return
- *     - ESP_OK Success
- *     - ESP_ERR_INVALID_ARG Parameter error
- */
-esp_err_t i2c_isr_register(i2c_port_t i2c_num, void (*fn)(void *), void *arg, int intr_alloc_flags, intr_handle_t *handle);
-
-/**
- * @brief Delete and free I2C ISR handle.
- *
- * @param handle Handle of isr to delete.
- *
- * @return
- *     - ESP_OK Success
- *     - ESP_ERR_INVALID_ARG Parameter error
- */
-esp_err_t i2c_isr_free(intr_handle_t handle);
 
 /**
  * @brief Configure GPIO pins for I2C SCK and SDA signals.

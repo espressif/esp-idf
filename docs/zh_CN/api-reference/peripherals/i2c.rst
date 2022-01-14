@@ -303,9 +303,7 @@ API 为从机提供以下功能：
 中断处理
 ^^^^^^^^^^^
 
-安装驱动程序时，默认情况下会安装中断处理程序。但是，您可以通过调用函数 :cpp:func:`i2c_isr_register` 来注册自己的而不是默认的中断处理程序。在运行自己的中断处理程序时，可以参考 *{IDF_TARGET_NAME} 技术参考手册* > *I2C 控制器 (I2C)* > *中断* [`PDF <{IDF_TARGET_TRM_CN_URL}#i2c>`__]，以获取有关 I2C 控制器触发的中断描述。
-
-调用函数 :cpp:func:`i2c_isr_free` 删除中断处理程序。
+安装驱动程序时，默认情况下会安装中断处理程序。
 
 .. _i2c-api-customized-configuration:
 
