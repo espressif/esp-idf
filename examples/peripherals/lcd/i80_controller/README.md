@@ -1,12 +1,12 @@
 | Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 |
 | ----------------- | ----- | -------- | -------- |
-# LVGL porting example
+# LVGL porting example (based on i80 interfaced LCD controller)
 
 LVGL is an open-source graphics library for creating modern GUIs. It has plenty of built-in graphical elements with low memory footprint, which is friendly for embedded GUI applications.
 
 This example can be taken as a skeleton of porting the LVGL library onto the `esp_lcd` driver layer. **Note** that, this example only focuses on the display interface, regardless of the input device driver.
 
-The whole porting code is located in [this main file](main/lvgl_example_main.c), and the UI demo code is located in [another single file](main/lvgl_demo_ui.c).
+The whole porting code is located in [i80_controller_example_main.c](main/i80_controller_example_main.c), and the UI demo code is located in [lvgl_demo_ui.c](main/lvgl_demo_ui.c).
 
 The UI will display two images (one Espressif logo and another Espressif text), which have been converted into C arrays by the [online converting tool](https://lvgl.io/tools/imageconverter), and will be compiled directly into application binary.
 
@@ -49,10 +49,16 @@ The connection between ESP Board and the LCD is as follows:
 └─────────────┘              └────────────────┘
 ```
 
-The GPIO number used by this example can be changed in [lvgl_example_main.c](main/lvgl_example_main.c).
-Especially, please pay attention to the level used to turn on the LCD backlight, some LCD module needs a low level to turn it on, while others take a high level. You can change the backlight level macro `EXAMPLE_LCD_BK_LIGHT_ON_LEVEL` in [lvgl_example_main.c](main/lvgl_example_main.c).
+The GPIO number used by this example can be changed in [i80_controller_example_main.c](main/i80_controller_example_main.c).
+Especially, please pay attention to the binary signal level used to turn the LCD backlight on, some LCD modules need a low level to turn it on, while others require a high level. You can change the backlight level macro `EXAMPLE_LCD_BK_LIGHT_ON_LEVEL` in [i80_controller_example_main.c](main/i80_controller_example_main.c).
 
 ### Build and Flash
+
+Run `idf.py set-target <target-name>` to select one supported target that can run this example. This step will also apply the default Kconfig configurations into the `sdkconfig` file.
+
+Run `idf.py menuconfig` to open a terminal UI where you can tune specific configuration for this example in the `Example Configuration` menu.
+
+* `Allocate color data from PSRAM`: Select this option if you want to allocate the LVGL draw buffers from PSRAM.
 
 Run `idf.py -p PORT build flash monitor` to build, flash and monitor the project. A fancy animation will show up on the LCD as expected.
 
@@ -79,5 +85,9 @@ I (558) example: Display LVGL animation
 
 
 ## Troubleshooting
+
+* Can't get a stable UI when `EXAMPLE_LCD_I80_COLOR_IN_PSRAM` is enabled.
+
+   This is because of the limited PSRAM bandwidth, compared to the internal SRAM. You can either decrease the PCLK clock `EXAMPLE_LCD_PIXEL_CLOCK_HZ` in [i80_controller_example_main.c](main/i80_controller_example_main.c) or increase the PSRAM working frequency `SPIRAM_SPEED` from the KConfig (e.g. **ESP32S3-Specific** -> **Set RAM clock speed**) or decrease the FPS in LVGL configuration. For illustration, this example has set the refresh period to 100ms in the default sdkconfig file.
 
 For any technical queries, please open an [issue] (https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.

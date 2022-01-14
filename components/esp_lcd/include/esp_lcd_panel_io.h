@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -151,6 +151,8 @@ typedef struct {
     int data_gpio_nums[SOC_LCD_I80_BUS_WIDTH]; /*!< GPIOs used for data lines */
     size_t bus_width;          /*!< Number of data lines, 8 or 16 */
     size_t max_transfer_bytes; /*!< Maximum transfer size, this determines the length of internal DMA link */
+    size_t psram_trans_align;  /*!< DMA transfer alignment for data allocated from PSRAM */
+    size_t sram_trans_align;   /*!< DMA transfer alignment for data allocated from SRAM */
 } esp_lcd_i80_bus_config_t;
 
 /**

@@ -1,3 +1,11 @@
+/*
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
+
+// NOTE: The logo in this file is registered trademark by Espressif Systems (Shanghai) CO LTD.
+
 #include "lvgl.h"
 
 
