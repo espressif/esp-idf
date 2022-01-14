@@ -1,16 +1,8 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <string.h>
@@ -265,4 +257,34 @@ TEST_CASE("Open & write & close through VFS passes performance test", "[vfs]")
     TEST_PERFORMANCE_CCOMP_LESS_THAN(VFS_OPEN_WRITE_CLOSE_TIME, "%dns", ns_per_iter);
 #endif
 
+}
+
+static int vfs_overlap_test_open(const char * path, int flags, int mode)
+{
+    return 0;
+}
+
+static int vfs_overlap_test_close(int fd)
+{
+    return 0;
+}
+
+
+TEST_CASE("esp_vfs_register_fd_range checks for overlap", "[vfs]")
+{
+    esp_vfs_t vfs1 = {
+        .open = vfs_overlap_test_open,
+        .close = vfs_overlap_test_close
+    };
+
+
+    TEST_ESP_OK(esp_vfs_register("/test", &vfs1, NULL));
+    int fd = open("/test/1", 0, 0);
+    TEST_ASSERT_NOT_EQUAL(-1, fd);
+    esp_vfs_t vfs2 = { };
+    esp_err_t err = esp_vfs_register_fd_range(&vfs2, NULL, fd, fd + 1);
+    close(fd);
+
+    TEST_ESP_OK(esp_vfs_unregister("/test"));
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, err);
 }
