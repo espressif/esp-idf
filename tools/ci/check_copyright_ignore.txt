@@ -1511,7 +1511,6 @@ components/pthread/test/test_pthread.c
 components/pthread/test/test_pthread_cond_var.c
 components/pthread/test/test_pthread_cxx.cpp
 components/pthread/test/test_pthread_local_storage.c
-components/riscv/include/esp_private/panic_reason.h
 components/riscv/include/riscv/csr.h
 components/riscv/include/riscv/encoding.h
 components/riscv/include/riscv/instruction_decode.h
