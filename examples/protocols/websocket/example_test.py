@@ -97,11 +97,11 @@ def test_recv_long_msg(dut, websocket, msg_len, repeats):
                             \nreceived: {}\nwith length {}'.format(send_msg, len(send_msg), recv_msg, len(recv_msg)))
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
+@ttfw_idf.idf_example_test(env_tag='Example_EthKitV1')
 def test_examples_protocol_websocket(env, extra_data):
     """
     steps:
-      1. join AP
+      1. obtain IP address
       2. connect to uri specified in the config
       3. send and receive data
     """
