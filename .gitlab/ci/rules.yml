@@ -284,6 +284,9 @@
 .if-label-component_ut_esp32c3: &if-label-component_ut_esp32c3
   if: '$BOT_LABEL_COMPONENT_UT_ESP32C3 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*component_ut_esp32c3(?:,[^,\n\r]+)*$/i'
 
+.if-label-component_ut_esp32h2: &if-label-component_ut_esp32h2
+  if: '$BOT_LABEL_COMPONENT_UT_ESP32H2 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*component_ut_esp32h2(?:,[^,\n\r]+)*$/i'
+
 .if-label-component_ut_esp32s2: &if-label-component_ut_esp32s2
   if: '$BOT_LABEL_COMPONENT_UT_ESP32S2 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*component_ut_esp32s2(?:,[^,\n\r]+)*$/i'
 
@@ -301,6 +304,9 @@
 
 .if-label-custom_test_esp32c3: &if-label-custom_test_esp32c3
   if: '$BOT_LABEL_CUSTOM_TEST_ESP32C3 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*custom_test_esp32c3(?:,[^,\n\r]+)*$/i'
+
+.if-label-custom_test_esp32h2: &if-label-custom_test_esp32h2
+  if: '$BOT_LABEL_CUSTOM_TEST_ESP32H2 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*custom_test_esp32h2(?:,[^,\n\r]+)*$/i'
 
 .if-label-custom_test_esp32s2: &if-label-custom_test_esp32s2
   if: '$BOT_LABEL_CUSTOM_TEST_ESP32S2 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*custom_test_esp32s2(?:,[^,\n\r]+)*$/i'
@@ -322,6 +328,9 @@
 
 .if-label-example_test_esp32c3: &if-label-example_test_esp32c3
   if: '$BOT_LABEL_EXAMPLE_TEST_ESP32C3 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*example_test_esp32c3(?:,[^,\n\r]+)*$/i'
+
+.if-label-example_test_esp32h2: &if-label-example_test_esp32h2
+  if: '$BOT_LABEL_EXAMPLE_TEST_ESP32H2 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*example_test_esp32h2(?:,[^,\n\r]+)*$/i'
 
 .if-label-example_test_esp32s2: &if-label-example_test_esp32s2
   if: '$BOT_LABEL_EXAMPLE_TEST_ESP32S2 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*example_test_esp32s2(?:,[^,\n\r]+)*$/i'
@@ -364,6 +373,9 @@
 
 .if-label-unit_test_esp32c3: &if-label-unit_test_esp32c3
   if: '$BOT_LABEL_UNIT_TEST_ESP32C3 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*unit_test_esp32c3(?:,[^,\n\r]+)*$/i'
+
+.if-label-unit_test_esp32h2: &if-label-unit_test_esp32h2
+  if: '$BOT_LABEL_UNIT_TEST_ESP32H2 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*unit_test_esp32h2(?:,[^,\n\r]+)*$/i'
 
 .if-label-unit_test_esp32s2: &if-label-unit_test_esp32s2
   if: '$BOT_LABEL_UNIT_TEST_ESP32S2 || $CI_MERGE_REQUEST_LABELS =~ /^(?:[^,\n\r]+,)*unit_test_esp32s2(?:,[^,\n\r]+)*$/i'
@@ -418,6 +430,23 @@
     - <<: *if-label-component_ut_esp32c3
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32c3
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-component_ut
+
+.rules:build:component_ut-esp32h2:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32h2
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32h2
     - <<: *if-dev-push
       changes: *patterns-build_components
     - <<: *if-dev-push
@@ -500,6 +529,21 @@
     - <<: *if-label-build
     - <<: *if-label-custom_test
     - <<: *if-label-custom_test_esp32c3
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-custom_test
+
+.rules:build:custom_test-esp32h2:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-custom_test
+    - <<: *if-label-custom_test_esp32h2
     - <<: *if-dev-push
       changes: *patterns-build_components
     - <<: *if-dev-push
@@ -597,6 +641,23 @@
     - <<: *if-dev-push
       changes: *patterns-example_test
 
+.rules:build:example_test-esp32h2:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32h2
+    - <<: *if-dev-push
+      changes: *patterns-build-example_test
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-example_test
+
 .rules:build:example_test-esp32s2:
   rules:
     - <<: *if-revert-branch
@@ -682,18 +743,21 @@
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32
     - <<: *if-label-component_ut_esp32c3
+    - <<: *if-label-component_ut_esp32h2
     - <<: *if-label-component_ut_esp32s2
     - <<: *if-label-component_ut_esp32s3
     - <<: *if-label-component_ut_esp8684
     - <<: *if-label-custom_test
     - <<: *if-label-custom_test_esp32
     - <<: *if-label-custom_test_esp32c3
+    - <<: *if-label-custom_test_esp32h2
     - <<: *if-label-custom_test_esp32s2
     - <<: *if-label-custom_test_esp32s3
     - <<: *if-label-custom_test_esp8684
     - <<: *if-label-example_test
     - <<: *if-label-example_test_esp32
     - <<: *if-label-example_test_esp32c3
+    - <<: *if-label-example_test_esp32h2
     - <<: *if-label-example_test_esp32s2
     - <<: *if-label-example_test_esp32s3
     - <<: *if-label-example_test_esp8684
@@ -702,6 +766,7 @@
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32
     - <<: *if-label-unit_test_esp32c3
+    - <<: *if-label-unit_test_esp32h2
     - <<: *if-label-unit_test_esp32s2
     - <<: *if-label-unit_test_esp32s3
     - <<: *if-label-unit_test_esp8684
@@ -746,6 +811,21 @@
     - <<: *if-label-build
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32c3
+    - <<: *if-dev-push
+      changes: *patterns-build_components
+    - <<: *if-dev-push
+      changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-unit_test
+
+.rules:build:unit_test-esp32h2:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32h2
     - <<: *if-dev-push
       changes: *patterns-build_components
     - <<: *if-dev-push
@@ -845,18 +925,21 @@
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32
     - <<: *if-label-component_ut_esp32c3
+    - <<: *if-label-component_ut_esp32h2
     - <<: *if-label-component_ut_esp32s2
     - <<: *if-label-component_ut_esp32s3
     - <<: *if-label-component_ut_esp8684
     - <<: *if-label-custom_test
     - <<: *if-label-custom_test_esp32
     - <<: *if-label-custom_test_esp32c3
+    - <<: *if-label-custom_test_esp32h2
     - <<: *if-label-custom_test_esp32s2
     - <<: *if-label-custom_test_esp32s3
     - <<: *if-label-custom_test_esp8684
     - <<: *if-label-example_test
     - <<: *if-label-example_test_esp32
     - <<: *if-label-example_test_esp32c3
+    - <<: *if-label-example_test_esp32h2
     - <<: *if-label-example_test_esp32s2
     - <<: *if-label-example_test_esp32s3
     - <<: *if-label-example_test_esp8684
@@ -866,6 +949,7 @@
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32
     - <<: *if-label-unit_test_esp32c3
+    - <<: *if-label-unit_test_esp32h2
     - <<: *if-label-unit_test_esp32s2
     - <<: *if-label-unit_test_esp32s3
     - <<: *if-label-unit_test_esp8684
@@ -910,6 +994,20 @@
     - <<: *if-label-component_ut_esp32c3
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32c3
+    - <<: *if-dev-push
+      changes: *patterns-component_ut
+
+.rules:test:component_ut-esp32h2:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-component_ut
+    - <<: *if-label-component_ut_esp32h2
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32h2
     - <<: *if-dev-push
       changes: *patterns-component_ut
 
@@ -979,6 +1077,18 @@
     - <<: *if-dev-push
       changes: *patterns-custom_test
 
+.rules:test:custom_test-esp32h2:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-custom_test
+    - <<: *if-label-custom_test_esp32h2
+    - <<: *if-dev-push
+      changes: *patterns-custom_test
+
 .rules:test:custom_test-esp32s2:
   rules:
     - <<: *if-revert-branch
@@ -1038,6 +1148,20 @@
       when: never
     - <<: *if-label-example_test
     - <<: *if-label-example_test_esp32c3
+    - <<: *if-dev-push
+      changes: *patterns-build-example_test
+    - <<: *if-dev-push
+      changes: *patterns-example_test
+
+.rules:test:example_test-esp32h2:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-example_test
+    - <<: *if-label-example_test_esp32h2
     - <<: *if-dev-push
       changes: *patterns-build-example_test
     - <<: *if-dev-push
@@ -1128,18 +1252,21 @@
     - <<: *if-label-component_ut
     - <<: *if-label-component_ut_esp32
     - <<: *if-label-component_ut_esp32c3
+    - <<: *if-label-component_ut_esp32h2
     - <<: *if-label-component_ut_esp32s2
     - <<: *if-label-component_ut_esp32s3
     - <<: *if-label-component_ut_esp8684
     - <<: *if-label-custom_test
     - <<: *if-label-custom_test_esp32
     - <<: *if-label-custom_test_esp32c3
+    - <<: *if-label-custom_test_esp32h2
     - <<: *if-label-custom_test_esp32s2
     - <<: *if-label-custom_test_esp32s3
     - <<: *if-label-custom_test_esp8684
     - <<: *if-label-example_test
     - <<: *if-label-example_test_esp32
     - <<: *if-label-example_test_esp32c3
+    - <<: *if-label-example_test_esp32h2
     - <<: *if-label-example_test_esp32s2
     - <<: *if-label-example_test_esp32s3
     - <<: *if-label-example_test_esp8684
@@ -1147,6 +1274,7 @@
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32
     - <<: *if-label-unit_test_esp32c3
+    - <<: *if-label-unit_test_esp32h2
     - <<: *if-label-unit_test_esp32s2
     - <<: *if-label-unit_test_esp32s3
     - <<: *if-label-unit_test_esp8684
@@ -1184,6 +1312,18 @@
       when: never
     - <<: *if-label-unit_test
     - <<: *if-label-unit_test_esp32c3
+    - <<: *if-dev-push
+      changes: *patterns-unit_test
+
+.rules:test:unit_test-esp32h2:
+  rules:
+    - <<: *if-revert-branch
+      when: never
+    - <<: *if-protected
+    - <<: *if-label-build-only
+      when: never
+    - <<: *if-label-unit_test
+    - <<: *if-label-unit_test_esp32h2
     - <<: *if-dev-push
       changes: *patterns-unit_test
 
