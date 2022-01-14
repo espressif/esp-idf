@@ -307,9 +307,7 @@ A code example showing how to use these functions can be found in :example:`peri
 Interrupt Handling
 ^^^^^^^^^^^^^^^^^^
 
-During driver installation, an interrupt handler is installed by default. However, you can register your own interrupt handler instead of the default one by calling the function :cpp:func:`i2c_isr_register`. When implementing your own interrupt handler, refer to *{IDF_TARGET_NAME} Technical Reference Manual* > *I2C Controller (I2C)* > *Interrupts* [`PDF <{IDF_TARGET_TRM_EN_URL}#i2c>`__] for the description of interrupts triggered by the I2C controller.
-
-To delete an interrupt handler, call :cpp:func:`i2c_isr_free`.
+During driver installation, an interrupt handler is installed by default.
 
 .. _i2c-api-customized-configuration:
 
