@@ -587,8 +587,8 @@ static tBTA_JV_PM_CB *bta_jv_alloc_set_pm_profile_cb(UINT32 jv_handle, tBTA_JV_P
                 for (j = 0; j < BTA_JV_MAX_RFC_CONN; j++) {
                     if (jv_handle == bta_jv_cb.port_cb[j].handle) {
                         pp_cb = &bta_jv_cb.port_cb[j].p_pm_cb;
-                        if (PORT_SUCCESS != PORT_CheckConnection(
-                                    bta_jv_cb.port_cb[j].port_handle, peer_bd_addr, NULL)) {
+                        if (PORT_SUCCESS !=
+                            PORT_CheckConnection(bta_jv_cb.port_cb[j].port_handle, FALSE, peer_bd_addr, NULL)) {
                             i = BTA_JV_PM_MAX_NUM;
                         }
                         break;
@@ -1666,7 +1666,7 @@ static void bta_jv_port_mgmt_cl_cback(UINT32 code, UINT16 port_handle, void* dat
     tBTA_JV_RFC_CB  *p_cb = bta_jv_rfc_port_to_cb(port_handle);
     tBTA_JV_PCB     *p_pcb = bta_jv_rfc_port_to_pcb(port_handle);
     tBTA_JV evt_data = {0};
-    BD_ADDR rem_bda;
+    BD_ADDR rem_bda = {0};
     UINT16 lcid;
     tBTA_JV_RFCOMM_CBACK *p_cback;  /* the callback function */
 
@@ -1678,7 +1678,7 @@ static void bta_jv_port_mgmt_cl_cback(UINT32 code, UINT16 port_handle, void* dat
     APPL_TRACE_DEBUG( "bta_jv_port_mgmt_cl_cback code=%d port_handle:%d handle:%d",
                       code, port_handle, p_cb->handle);
 
-    PORT_CheckConnection(port_handle, rem_bda, &lcid);
+    PORT_CheckConnection(port_handle, FALSE, rem_bda, &lcid);
 
     if (code == PORT_SUCCESS) {
         evt_data.rfc_open.handle = p_pcb->handle;
@@ -1930,11 +1930,13 @@ static void bta_jv_port_mgmt_sr_cback(UINT32 code, UINT16 port_handle, void *dat
     tBTA_JV_PCB     *p_pcb = bta_jv_rfc_port_to_pcb(port_handle);
     tBTA_JV_RFC_CB  *p_cb = bta_jv_rfc_port_to_cb(port_handle);
     tBTA_JV evt_data = {0};
-    BD_ADDR rem_bda;
+    BD_ADDR rem_bda = {0};
     UINT16 lcid;
-    BOOLEAN *accept = (BOOLEAN *)data;
+    tPORT_MGMT_SR_CALLBACK_ARG *p_mgmt_cb_arg = (tPORT_MGMT_SR_CALLBACK_ARG *)data;
     void *user_data = NULL;
     void *new_user_data = NULL;
+    int status;
+    int failed = TRUE;
 
     // APPL_TRACE_DEBUG("bta_jv_port_mgmt_sr_cback, code:0x%x, port_handle:%d", code, (uint16_t)port_handle);
     if (NULL == p_cb || NULL == p_cb->p_cback) {
@@ -1946,13 +1948,20 @@ static void bta_jv_port_mgmt_sr_cback(UINT32 code, UINT16 port_handle, void *dat
     // APPL_TRACE_DEBUG( "bta_jv_port_mgmt_sr_cback code=%p port_handle:0x%x handle:0x%x, p_pcb:%p, user:%p",
     // code, port_handle, p_cb->handle, p_pcb, p_pcb->user_data);
 
-    PORT_CheckConnection(port_handle, rem_bda, &lcid);
-    int failed = TRUE;
+    if (p_mgmt_cb_arg) {
+        if ((status = PORT_CheckConnection(port_handle, p_mgmt_cb_arg->ignore_rfc_state, rem_bda, &lcid)) !=
+            PORT_SUCCESS) {
+            APPL_TRACE_WARNING("PORT_CheckConnection status:%d", status);
+        }
+    } else {
+        PORT_CheckConnection(port_handle, FALSE, rem_bda, &lcid);
+    }
+
     if (code == PORT_SUCCESS) {
         failed = FALSE;
         /* accept the connection defaulted */
-        if (accept) {
-            *accept = TRUE;
+        if (p_mgmt_cb_arg) {
+            p_mgmt_cb_arg->accept = TRUE;
         }
         evt_data.rfc_srv_open.handle = p_pcb->handle;
         evt_data.rfc_srv_open.status = BTA_JV_SUCCESS;
@@ -1974,8 +1983,8 @@ static void bta_jv_port_mgmt_sr_cback(UINT32 code, UINT16 port_handle, void *dat
                 p_pcb_new_listen->user_data = NULL;
                 p_pcb->state = BTA_JV_ST_SR_LISTEN;
                 bta_jv_free_rfc_cb(p_cb, p_pcb_new_listen, FALSE);
-                if (accept) {
-                    *accept = FALSE;
+                if (p_mgmt_cb_arg) {
+                    p_mgmt_cb_arg->accept = FALSE;
                 }
             }
         } else {
@@ -1991,8 +2000,8 @@ static void bta_jv_port_mgmt_sr_cback(UINT32 code, UINT16 port_handle, void *dat
                  */
                 APPL_TRACE_ERROR("no listen port, and upper layer reject connection");
                 p_pcb->state = BTA_JV_ST_SR_LISTEN;
-                if (accept) {
-                    *accept = FALSE;
+                if (p_mgmt_cb_arg) {
+                    p_mgmt_cb_arg->accept = FALSE;
                 }
             }
             APPL_TRACE_ERROR("bta_jv_add_rfc_port failed to create new listen port");

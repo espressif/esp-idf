@@ -494,14 +494,14 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
     UINT16          lcid;
     int             i;
     tBTA_AG_SCB     *ag_scb, *other_scb;
-    BD_ADDR         dev_addr;
+    BD_ADDR         dev_addr = {0};
     int             status;
     /* set role */
     p_scb->role = BTA_AG_ACP;
     APPL_TRACE_DEBUG ("bta_ag_rfc_acp_open: serv_handle0 = %d serv_handle1 = %d",
                        p_scb->serv_handle[0], p_scb->serv_handle[1]);
     /* get bd addr of peer */
-    if (PORT_SUCCESS != (status=PORT_CheckConnection(p_data->rfc.port_handle, dev_addr, &lcid))) {
+    if (PORT_SUCCESS != (status = PORT_CheckConnection(p_data->rfc.port_handle, FALSE, dev_addr, &lcid))) {
         APPL_TRACE_DEBUG ("bta_ag_rfc_acp_open error PORT_CheckConnection returned status %d", status);
     }
     /* Collision Handling */
