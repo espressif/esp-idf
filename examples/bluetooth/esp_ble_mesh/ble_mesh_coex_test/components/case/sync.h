@@ -1,7 +1,7 @@
 /*
  * ESP BLE Mesh Example
  *
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -86,7 +86,7 @@ typedef struct {
     uint8_t  case_id;
     const uint16_t excpet_param_bit;
 } auto_tc;
-auto_tc auto_tb[6];
+extern auto_tc auto_tb[6];
 
 
 typedef enum {
@@ -113,7 +113,7 @@ struct sync_t {
     esp_timer_handle_t sync_timer;
     sync_recv     cmd_recv;
 };
-struct sync_t sync_obj;
+extern struct sync_t sync_obj;
 
 extern SemaphoreHandle_t client_mutex;
 void sync_init(void);
