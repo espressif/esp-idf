@@ -1,0 +1,44 @@
+menu "OpenThread Extension CLI"
+
+    menuconfig OPENTHREAD_CLI_ESP_EXTENSION
+        depends on OPENTHREAD_FTD || OPENTHREAD_MTD
+        bool "Enable Espressif's extended features"
+        default y
+        help
+            Enable Espressif's extended features.
+
+    config OPENTHREAD_CLI_IPERF
+        bool "Enable iperf command"
+        depends on OPENTHREAD_CLI_ESP_EXTENSION
+        default y
+
+    config OPENTHREAD_CLI_TCP_SOCKET
+        bool "Enable TCP socket command"
+        depends on OPENTHREAD_CLI_ESP_EXTENSION
+        default y
+
+    config OPENTHREAD_CLI_TCP_SERVER_PORT
+        int "the port of TCP server"
+        default 12345
+        depends on OPENTHREAD_CLI_TCP_SOCKET
+        help
+            Set the connect port of socket
+
+    config OPENTHREAD_CLI_UDP_SOCKET
+        bool "Enable UDP socket command"
+        depends on OPENTHREAD_CLI_ESP_EXTENSION
+        default y
+
+    config OPENTHREAD_CLI_UDP_SERVER_PORT
+        int "the port of UDP server"
+        default 54321
+        depends on OPENTHREAD_CLI_UDP_SOCKET
+        help
+            Set the connect port of socket
+
+    config OPENTHREAD_CLI_WIFI
+        bool "Enable wifi connection command"
+        depends on OPENTHREAD_CLI_ESP_EXTENSION && OPENTHREAD_BORDER_ROUTER
+        default y
+
+endmenu
