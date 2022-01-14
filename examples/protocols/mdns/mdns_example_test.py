@@ -103,12 +103,12 @@ def mdns_server(esp_host):
             continue
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
+@ttfw_idf.idf_example_test(env_tag='Example_EthKitV1')
 def test_examples_protocol_mdns(env, extra_data):
     global stop_mdns_server
     """
     steps: |
-      1. join AP + init mdns example
+      1. obtain IP address + init mdns example
       2. get the dut host name (and IP address)
       3. check the mdns name is accessible
       4. check DUT output if mdns advertized host is resolved
@@ -124,7 +124,7 @@ def test_examples_protocol_mdns(env, extra_data):
     specific_host = dut1.expect(re.compile(r'mdns hostname set to: \[([^\]]+)\]'), timeout=30)[0]
     mdns_responder = Thread(target=mdns_server, args=(str(specific_host),))
     try:
-        ip_address = dut1.expect(re.compile(r' sta ip: ([^,]+),'), timeout=30)[0]
+        ip_address = dut1.expect(re.compile(r' eth ip: ([^,]+),'), timeout=30)[0]
         console_log('Connected to AP with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
