@@ -66,19 +66,19 @@ static int s_retry_num = 0;
 static const char *TAG_STA = "ftm_station";
 static const char *TAG_AP = "ftm_ap";
 
-static EventGroupHandle_t wifi_event_group;
-const int CONNECTED_BIT = BIT0;
-const int DISCONNECTED_BIT = BIT1;
+static EventGroupHandle_t s_wifi_event_group;
+static const int CONNECTED_BIT = BIT0;
+static const int DISCONNECTED_BIT = BIT1;
 
-static EventGroupHandle_t ftm_event_group;
-const int FTM_REPORT_BIT = BIT0;
-const int FTM_FAILURE_BIT = BIT1;
-wifi_ftm_report_entry_t *g_ftm_report;
-uint8_t g_ftm_report_num_entries;
-static uint32_t g_rtt_est, g_dist_est;
-bool g_ap_started;
-uint8_t g_ap_channel;
-uint8_t g_ap_bssid[ETH_ALEN];
+static EventGroupHandle_t s_ftm_event_group;
+static const int FTM_REPORT_BIT = BIT0;
+static const int FTM_FAILURE_BIT = BIT1;
+static wifi_ftm_report_entry_t *s_ftm_report;
+static uint8_t s_ftm_report_num_entries;
+static uint32_t s_rtt_est, s_dist_est;
+static bool s_ap_started;
+static uint8_t s_ap_channel;
+static uint8_t s_ap_bssid[ETH_ALEN];
 
 const int g_report_lvl =
 #ifdef CONFIG_ESP_FTM_REPORT_SHOW_DIAG
@@ -107,10 +107,10 @@ static void event_handler(void *arg, esp_event_base_t event_base,
         ESP_LOGI(TAG_STA, "Connected to %s (BSSID: "MACSTR", Channel: %d)", event->ssid,
                  MAC2STR(event->bssid), event->channel);
 
-        memcpy(g_ap_bssid, event->bssid, ETH_ALEN);
-        g_ap_channel = event->channel;
-        xEventGroupClearBits(wifi_event_group, DISCONNECTED_BIT);
-        xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
+        memcpy(s_ap_bssid, event->bssid, ETH_ALEN);
+        s_ap_channel = event->channel;
+        xEventGroupClearBits(s_wifi_event_group, DISCONNECTED_BIT);
+        xEventGroupSetBits(s_wifi_event_group, CONNECTED_BIT);
     } else if (event_id == WIFI_EVENT_STA_DISCONNECTED) {
         if (s_reconnect && ++s_retry_num < MAX_CONNECT_RETRY_ATTEMPTS) {
             ESP_LOGI(TAG_STA, "sta disconnect, retry attempt %d...", s_retry_num);
@@ -118,26 +118,26 @@ static void event_handler(void *arg, esp_event_base_t event_base,
         } else {
             ESP_LOGI(TAG_STA, "sta disconnected");
         }
-        xEventGroupClearBits(wifi_event_group, CONNECTED_BIT);
-        xEventGroupSetBits(wifi_event_group, DISCONNECTED_BIT);
+        xEventGroupClearBits(s_wifi_event_group, CONNECTED_BIT);
+        xEventGroupSetBits(s_wifi_event_group, DISCONNECTED_BIT);
     } else if (event_id == WIFI_EVENT_FTM_REPORT) {
         wifi_event_ftm_report_t *event = (wifi_event_ftm_report_t *) event_data;
 
         if (event->status == FTM_STATUS_SUCCESS) {
-            g_rtt_est = event->rtt_est;
-            g_dist_est = event->dist_est;
-            g_ftm_report = event->ftm_report_data;
-            g_ftm_report_num_entries = event->ftm_report_num_entries;
-            xEventGroupSetBits(ftm_event_group, FTM_REPORT_BIT);
+            s_rtt_est = event->rtt_est;
+            s_dist_est = event->dist_est;
+            s_ftm_report = event->ftm_report_data;
+            s_ftm_report_num_entries = event->ftm_report_num_entries;
+            xEventGroupSetBits(s_ftm_event_group, FTM_REPORT_BIT);
         } else {
             ESP_LOGI(TAG_STA, "FTM procedure with Peer("MACSTR") failed! (Status - %d)",
                      MAC2STR(event->peer_mac), event->status);
-            xEventGroupSetBits(ftm_event_group, FTM_FAILURE_BIT);
+            xEventGroupSetBits(s_ftm_event_group, FTM_FAILURE_BIT);
         }
     } else if (event_id == WIFI_EVENT_AP_START) {
-        g_ap_started = true;
+        s_ap_started = true;
     } else if (event_id == WIFI_EVENT_AP_STOP) {
-        g_ap_started = false;
+        s_ap_started = false;
     }
 }
 
@@ -160,22 +160,22 @@ static void ftm_process_report(void)
                  g_report_lvl & BIT3 ? "  RSSI  |":"");
     ESP_LOGI(TAG_STA, "FTM Report:");
     ESP_LOGI(TAG_STA, "|%s", log);
-    for (i = 0; i < g_ftm_report_num_entries; i++) {
+    for (i = 0; i < s_ftm_report_num_entries; i++) {
         char *log_ptr = log;
 
         bzero(log, 200);
         if (g_report_lvl & BIT0) {
-            log_ptr += sprintf(log_ptr, "%6d|", g_ftm_report[i].dlog_token);
+            log_ptr += sprintf(log_ptr, "%6d|", s_ftm_report[i].dlog_token);
         }
         if (g_report_lvl & BIT1) {
-            log_ptr += sprintf(log_ptr, "%7u  |", g_ftm_report[i].rtt);
+            log_ptr += sprintf(log_ptr, "%7u  |", s_ftm_report[i].rtt);
         }
         if (g_report_lvl & BIT2) {
-            log_ptr += sprintf(log_ptr, "%14llu  |%14llu  |%14llu  |%14llu  |", g_ftm_report[i].t1,
-                                        g_ftm_report[i].t2, g_ftm_report[i].t3, g_ftm_report[i].t4);
+            log_ptr += sprintf(log_ptr, "%14llu  |%14llu  |%14llu  |%14llu  |", s_ftm_report[i].t1,
+                                        s_ftm_report[i].t2, s_ftm_report[i].t3, s_ftm_report[i].t4);
         }
         if (g_report_lvl & BIT3) {
-            log_ptr += sprintf(log_ptr, "%6d  |", g_ftm_report[i].rssi);
+            log_ptr += sprintf(log_ptr, "%6d  |", s_ftm_report[i].rssi);
         }
         ESP_LOGI(TAG_STA, "|%s", log);
     }
@@ -192,8 +192,8 @@ void initialise_wifi(void)
     }
 
     ESP_ERROR_CHECK(esp_netif_init());
-    wifi_event_group = xEventGroupCreate();
-    ftm_event_group = xEventGroupCreate();
+    s_wifi_event_group = xEventGroupCreate();
+    s_ftm_event_group = xEventGroupCreate();
     ESP_ERROR_CHECK( esp_event_loop_create_default() );
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
@@ -213,7 +213,7 @@ void initialise_wifi(void)
 
 static bool wifi_cmd_sta_join(const char *ssid, const char *pass)
 {
-    int bits = xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, 0, 1, 0);
+    int bits = xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT, 0, 1, 0);
 
     wifi_config_t wifi_config = { 0 };
 
@@ -224,9 +224,9 @@ static bool wifi_cmd_sta_join(const char *ssid, const char *pass)
 
     if (bits & CONNECTED_BIT) {
         s_reconnect = false;
-        xEventGroupClearBits(wifi_event_group, CONNECTED_BIT);
+        xEventGroupClearBits(s_wifi_event_group, CONNECTED_BIT);
         ESP_ERROR_CHECK( esp_wifi_disconnect() );
-        xEventGroupWaitBits(wifi_event_group, DISCONNECTED_BIT, 0, 1, portTICK_RATE_MS);
+        xEventGroupWaitBits(s_wifi_event_group, DISCONNECTED_BIT, 0, 1, portTICK_RATE_MS);
     }
 
     s_reconnect = true;
@@ -235,7 +235,7 @@ static bool wifi_cmd_sta_join(const char *ssid, const char *pass)
     ESP_ERROR_CHECK( esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
     ESP_ERROR_CHECK( esp_wifi_connect() );
 
-    xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, 0, 1, 5000 / portTICK_RATE_MS);
+    xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT, 0, 1, 5000 / portTICK_RATE_MS);
 
     return true;
 }
@@ -362,7 +362,7 @@ static int wifi_cmd_query(int argc, char **argv)
         esp_wifi_get_config(WIFI_IF_AP, &cfg);
         ESP_LOGI(TAG_AP, "AP mode, %s %s", cfg.ap.ssid, cfg.ap.password);
     } else if (WIFI_MODE_STA == mode) {
-        int bits = xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, 0, 1, 0);
+        int bits = xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT, 0, 1, 0);
         if (bits & CONNECTED_BIT) {
             esp_wifi_get_config(WIFI_IF_STA, &cfg);
             ESP_LOGI(TAG_STA, "sta mode, connected %s", cfg.ap.ssid);
@@ -436,10 +436,10 @@ static int wifi_cmd_ftm(int argc, char **argv)
     if (ftm_args.responder->count != 0)
         goto ftm_responder;
 
-    bits = xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, 0, 1, 0);
+    bits = xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT, 0, 1, 0);
     if (bits & CONNECTED_BIT && !ftm_args.ssid->count) {
-        memcpy(ftmi_cfg.resp_mac, g_ap_bssid, ETH_ALEN);
-        ftmi_cfg.channel = g_ap_channel;
+        memcpy(ftmi_cfg.resp_mac, s_ap_bssid, ETH_ALEN);
+        ftmi_cfg.channel = s_ap_channel;
     } else if (ftm_args.ssid->count == 1) {
         ap_record = find_ftm_responder_ap(ftm_args.ssid->sval[0]);
         if (ap_record) {
@@ -481,16 +481,16 @@ static int wifi_cmd_ftm(int argc, char **argv)
         return 0;
     }
 
-    bits = xEventGroupWaitBits(ftm_event_group, FTM_REPORT_BIT | FTM_FAILURE_BIT,
+    bits = xEventGroupWaitBits(s_ftm_event_group, FTM_REPORT_BIT | FTM_FAILURE_BIT,
                                            pdTRUE, pdFALSE, portMAX_DELAY);
     /* Processing data from FTM session */
     if (bits & FTM_REPORT_BIT) {
         ftm_process_report();
-        free(g_ftm_report);
-        g_ftm_report = NULL;
-        g_ftm_report_num_entries = 0;
+        free(s_ftm_report);
+        s_ftm_report = NULL;
+        s_ftm_report_num_entries = 0;
         ESP_LOGI(TAG_STA, "Estimated RTT - %d nSec, Estimated Distance - %d.%02d meters",
-                          g_rtt_est, g_dist_est / 100, g_dist_est % 100);
+                          s_rtt_est, s_dist_est / 100, s_dist_est % 100);
     } else {
         /* Failure case */
     }
@@ -505,7 +505,7 @@ ftm_responder:
     }
 
     if (ftm_args.enable->count != 0) {
-        if (!g_ap_started) {
+        if (!s_ap_started) {
             ESP_LOGE(TAG_AP, "Start the SoftAP first with 'ap' command");
             return 0;
         }
@@ -517,7 +517,7 @@ ftm_responder:
     }
 
     if (ftm_args.disable->count != 0) {
-        if (!g_ap_started) {
+        if (!s_ap_started) {
             ESP_LOGE(TAG_AP, "Start the SoftAP first with 'ap' command");
             return 0;
         }
