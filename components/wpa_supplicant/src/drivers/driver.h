@@ -173,7 +173,7 @@ struct scan_info {
 	int nl_scan_event;
 	u64 scan_start_tsf;
 	u8 scan_start_tsf_bssid[ETH_ALEN];
-} scan_info;
+};
 
 struct wpa_bss_trans_info {
 	u8 mbo_transition_reason;
