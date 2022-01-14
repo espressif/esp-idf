@@ -7,6 +7,9 @@
 #include "esp_ble_mesh_networking_api.h"
 #include "ble_mesh_adapter.h"
 
+ble_mesh_performance_statistics_t test_perf_statistics;
+ble_mesh_node_statistics_t ble_mesh_node_statistics;
+
 esp_ble_mesh_model_t *ble_mesh_get_model(uint16_t model_id)
 {
     esp_ble_mesh_model_t *model = NULL;
