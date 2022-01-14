@@ -286,17 +286,8 @@ failure:
     return err;
 }
 
-esp_err_t esp_https_ota_get_img_desc(esp_https_ota_handle_t https_ota_handle, esp_app_desc_t *new_app_info)
+static esp_err_t read_header(esp_https_ota_t *handle)
 {
-    esp_https_ota_t *handle = (esp_https_ota_t *)https_ota_handle;
-    if (handle == NULL || new_app_info == NULL)  {
-        ESP_LOGE(TAG, "esp_https_ota_read_img_desc: Invalid argument");
-        return ESP_ERR_INVALID_ARG;
-    }
-    if (handle->state < ESP_HTTPS_OTA_BEGIN) {
-        ESP_LOGE(TAG, "esp_https_ota_read_img_desc: Invalid state");
-        return ESP_FAIL;
-    }
     /*
      * `data_read_size` holds number of bytes needed to read complete header.
      * `bytes_read` holds number of bytes read.
@@ -327,7 +318,34 @@ esp_err_t esp_https_ota_get_img_desc(esp_https_ota_handle_t https_ota_handle, es
         return ESP_FAIL;
     }
     handle->binary_file_len = bytes_read;
+    return ESP_OK;
+}
+
+esp_err_t esp_https_ota_get_img_desc(esp_https_ota_handle_t https_ota_handle, esp_app_desc_t *new_app_info)
+{
+    esp_https_ota_t *handle = (esp_https_ota_t *)https_ota_handle;
+    if (handle == NULL || new_app_info == NULL)  {
+        ESP_LOGE(TAG, "esp_https_ota_read_img_desc: Invalid argument");
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (handle->state < ESP_HTTPS_OTA_BEGIN) {
+        ESP_LOGE(TAG, "esp_https_ota_read_img_desc: Invalid state");
+        return ESP_FAIL;
+    }
+    if (read_header(handle) != ESP_OK) {
+        return ESP_FAIL;
+    }
     memcpy(new_app_info, &handle->ota_upgrade_buf[sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t)], sizeof(esp_app_desc_t));
+    return ESP_OK;
+}
+
+static esp_err_t esp_ota_verify_chip_id(void *arg)
+{
+    esp_image_header_t *data = (esp_image_header_t*)(arg);
+    if (data->chip_id != CONFIG_IDF_FIRMWARE_CHIP_ID) {
+        ESP_LOGE(TAG, "Mismatch chip id, expected %d, found %d", CONFIG_IDF_FIRMWARE_CHIP_ID, data->chip_id);
+        return ESP_ERR_INVALID_VERSION;
+    }
     return ESP_OK;
 }
 
@@ -357,16 +375,25 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
             /* In case `esp_https_ota_read_img_desc` was invoked first,
                then the image data read there should be written to OTA partition
                */
+            int binary_file_len = 0;
             if (handle->binary_file_len) {
                 /*
                  * Header length gets added to handle->binary_file_len in _ota_write
                  * Clear handle->binary_file_len to avoid additional 289 bytes in binary_file_len
                  */
-                int binary_file_len = handle->binary_file_len;
+                binary_file_len = handle->binary_file_len;
                 handle->binary_file_len = 0;
-                return _ota_write(handle, (const void *)handle->ota_upgrade_buf, binary_file_len);
+            } else {
+                if (read_header(handle) != ESP_OK) {
+                    return ESP_FAIL;
+                }
+                binary_file_len = IMAGE_HEADER_SIZE;
             }
-            /* falls through */
+            err = esp_ota_verify_chip_id(handle->ota_upgrade_buf);
+            if (err != ESP_OK) {
+                return err;
+            }
+            return _ota_write(handle, (const void *)handle->ota_upgrade_buf, binary_file_len);
         case ESP_HTTPS_OTA_IN_PROGRESS:
             data_read = esp_http_client_read(handle->http_client,
                                              handle->ota_upgrade_buf,
