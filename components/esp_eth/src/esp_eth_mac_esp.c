@@ -61,7 +61,7 @@ typedef struct {
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;
 #endif
-    eth_mac_dma_rx_burst_len_t dma_rx_burst_len;
+    eth_mac_dma_burst_len_t dma_burst_len;
 } emac_esp32_t;
 
 static esp_err_t esp_emac_alloc_driver_obj(const eth_mac_config_t *config, emac_esp32_t **emac_out_hdl, void **out_descriptors);
@@ -345,8 +345,11 @@ static esp_err_t emac_esp32_init(esp_eth_mac_t *mac)
     emac_hal_init_mac_default(&emac->hal);
     /* init dma registers by default with selected EMAC_RX_DMA_BURST */
     emac_hal_init_dma_default(&emac->hal,
-                              emac->dma_rx_burst_len == ETH_DMA_RX_BURST_LEN_8  ? EMAC_LL_DMA_BURST_LENGTH_8BEAT :
-                              emac->dma_rx_burst_len == ETH_DMA_RX_BURST_LEN_16 ? EMAC_LL_DMA_BURST_LENGTH_16BEAT :
+                              emac->dma_burst_len == ETH_DMA_BURST_LEN_1 ? EMAC_LL_DMA_BURST_LENGTH_1BEAT :
+                              emac->dma_burst_len == ETH_DMA_BURST_LEN_2 ? EMAC_LL_DMA_BURST_LENGTH_2BEAT :
+                              emac->dma_burst_len == ETH_DMA_BURST_LEN_4 ? EMAC_LL_DMA_BURST_LENGTH_4BEAT :
+                              emac->dma_burst_len == ETH_DMA_BURST_LEN_8 ? EMAC_LL_DMA_BURST_LENGTH_8BEAT :
+                              emac->dma_burst_len == ETH_DMA_BURST_LEN_16 ? EMAC_LL_DMA_BURST_LENGTH_16BEAT :
                               EMAC_LL_DMA_BURST_LENGTH_32BEAT);
     /* get emac address from efuse */
     ESP_GOTO_ON_ERROR(esp_read_mac(emac->addr, ESP_MAC_ETH), err, TAG, "fetch ethernet mac address failed");
@@ -466,7 +469,7 @@ static esp_err_t esp_emac_alloc_driver_obj(const eth_mac_config_t *config, emac_
         emac = calloc(1, sizeof(emac_esp32_t));
     }
     ESP_GOTO_ON_FALSE(emac, ESP_ERR_NO_MEM, err, TAG, "no mem for esp emac object");
-    emac->dma_rx_burst_len = config->esp32_emac.dma_rx_burst_len;
+    emac->dma_burst_len = config->esp32_emac.dma_burst_len;
     /* alloc memory for ethernet dma descriptor */
     uint32_t desc_size = CONFIG_ETH_DMA_RX_BUFFER_NUM * sizeof(eth_dma_rx_descriptor_t) +
                          CONFIG_ETH_DMA_TX_BUFFER_NUM * sizeof(eth_dma_tx_descriptor_t);

@@ -361,21 +361,24 @@ typedef union {
 * @brief Options of EMAC DMA burst len
 */
 typedef enum {
-    ETH_DMA_RX_BURST_LEN_32,
-    ETH_DMA_RX_BURST_LEN_16,
-    ETH_DMA_RX_BURST_LEN_8,
-} eth_mac_dma_rx_burst_len_t;
+    ETH_DMA_BURST_LEN_32,
+    ETH_DMA_BURST_LEN_16,
+    ETH_DMA_BURST_LEN_8,
+    ETH_DMA_BURST_LEN_4,
+    ETH_DMA_BURST_LEN_2,
+    ETH_DMA_BURST_LEN_1,
+} eth_mac_dma_burst_len_t;
 
 /**
 * @brief EMAC specific configuration (sub-struct of Ethernet MAC config)
 *
 */
 typedef struct {
-    int smi_mdc_gpio_num;                /*!< SMI MDC GPIO number, set to -1 could bypass the SMI GPIO configuration */
-    int smi_mdio_gpio_num;               /*!< SMI MDIO GPIO number, set to -1 could bypass the SMI GPIO configuration */
-    eth_data_interface_t interface;      /*!< EMAC Data interface to PHY (MII/RMII) */
-    eth_mac_clock_config_t clock_config; /*!< EMAC Interface clock configuration */
-    eth_mac_dma_rx_burst_len_t dma_rx_burst_len; /*!< EMAC DMA Rx burst len configuration */
+    int smi_mdc_gpio_num;                   /*!< SMI MDC GPIO number, set to -1 could bypass the SMI GPIO configuration */
+    int smi_mdio_gpio_num;                  /*!< SMI MDIO GPIO number, set to -1 could bypass the SMI GPIO configuration */
+    eth_data_interface_t interface;         /*!< EMAC Data interface to PHY (MII/RMII) */
+    eth_mac_clock_config_t clock_config;    /*!< EMAC Interface clock configuration */
+    eth_mac_dma_burst_len_t dma_burst_len;  /*!< EMAC DMA burst length for both Tx and Rx */
 } eth_esp32_emac_t;
 
 /**
@@ -422,7 +425,8 @@ typedef struct {
                     .clock_mode = EMAC_CLK_DEFAULT,       \
                     .clock_gpio = EMAC_CLK_IN_GPIO        \
                 }                                         \
-            }                                             \
+            },                                            \
+            .dma_burst_len = ETH_DMA_BURST_LEN_32         \
         }                                                 \
     }
 
