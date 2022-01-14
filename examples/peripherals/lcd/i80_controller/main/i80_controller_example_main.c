@@ -98,6 +98,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Initialize Intel 8080 bus");
     esp_lcd_i80_bus_handle_t i80_bus = NULL;
     esp_lcd_i80_bus_config_t bus_config = {
+        .clk_src = LCD_CLK_SRC_PLL160M,
         .dc_gpio_num = EXAMPLE_PIN_NUM_DC,
         .wr_gpio_num = EXAMPLE_PIN_NUM_PCLK,
         .data_gpio_nums = {
