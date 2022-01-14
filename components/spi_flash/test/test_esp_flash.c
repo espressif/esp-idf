@@ -814,6 +814,37 @@ static uint32_t measure_read(const char* name, const esp_partition_t* part, uint
     return time_measure_end(&time_ctx);
 }
 
+static const char* get_chip_vendor(uint32_t id)
+{
+    switch (id)
+    {
+    case 0x20:
+        return "XMC";
+        break;
+    case 0x68:
+        return "BOYA";
+        break;
+    case 0xC8:
+        return "GigaDevice";
+        break;
+    case 0x9D:
+        return "ISSI";
+        break;
+    case 0xC2:
+        return "MXIC";
+        break;
+    case 0xEF:
+        return "Winbond";
+        break;
+    case 0xA1:
+        return "Fudan Micro";
+        break;
+    default:
+        break;
+    }
+    return "generic";
+}
+
 #define MEAS_WRITE(n)   (measure_write("write in "#n"-byte chunks", &test_part, data_to_write, n))
 #define MEAS_READ(n)    (measure_read("read in "#n"-byte chunks", &test_part, data_read, n))
 
@@ -844,37 +875,35 @@ static void test_flash_read_write_performance(esp_flash_t* chip)
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(data_to_write, data_read, total_len);
 
-#if !CONFIG_SPIRAM_SUPPORT && !CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
-#  define CHECK_DATA(bus, suffix) TEST_PERFORMANCE_GREATER_THAN(FLASH_SPEED_BYTE_PER_SEC_##bus##suffix, "%d", speed_##suffix)
-#  define CHECK_ERASE(bus, var) TEST_PERFORMANCE_GREATER_THAN(FLASH_SPEED_BYTE_PER_SEC_##bus##ERASE, "%d", var)
-#else
-#  define CHECK_DATA(bus, suffix) ((void)speed_##suffix)
-#  define CHECK_ERASE(bus, var)   ((void)var)
-#endif
+#define LOG_DATA(bus, suffix, chip) IDF_LOG_PERFORMANCE("FLASH_SPEED_BYTE_PER_SEC_"#bus#suffix, "%d, flash_chip: %s", speed_##suffix, chip)
+#define LOG_ERASE(bus, var, chip) IDF_LOG_PERFORMANCE("FLASH_SPEED_BYTE_PER_SEC_"#bus"ERASE", "%d, flash_chip: %s", var, chip)
 
 // Erase time may vary a lot, can increase threshold if this fails with a reasonable speed
-#define CHECK_PERFORMANCE(bus) do {\
-            CHECK_DATA(bus, WR_4B); \
-            CHECK_DATA(bus, RD_4B); \
-            CHECK_DATA(bus, WR_2KB); \
-            CHECK_DATA(bus, RD_2KB); \
-            CHECK_ERASE(bus, erase_1); \
-            CHECK_ERASE(bus, erase_2); \
+#define LOG_PERFORMANCE(bus, chip) do {\
+            LOG_DATA(bus, WR_4B, chip); \
+            LOG_DATA(bus, RD_4B, chip); \
+            LOG_DATA(bus, WR_2KB, chip); \
+            LOG_DATA(bus, RD_2KB, chip); \
+            LOG_ERASE(bus, erase_1, chip); \
+            LOG_ERASE(bus, erase_2, chip); \
         } while (0)
 
     spi_host_device_t host_id;
     int cs_id;
+    uint32_t id;
+    esp_flash_read_id(chip, &id);
+    const char *chip_name = get_chip_vendor(id >> 16);
 
     get_chip_host(chip, &host_id, &cs_id);
     if (host_id != SPI_HOST) {
         // Chips on other SPI buses
-        CHECK_PERFORMANCE(EXT_);
+        LOG_PERFORMANCE(EXT_, chip_name);
     } else if (cs_id == 0) {
         // Main flash
-        CHECK_PERFORMANCE();
+        LOG_PERFORMANCE(,chip_name);
     } else {
         // Other cs pins on SPI1
-        CHECK_PERFORMANCE(SPI1_);
+        LOG_PERFORMANCE(SPI1_, chip_name);
     }
     free(data_to_write);
     free(data_read);
