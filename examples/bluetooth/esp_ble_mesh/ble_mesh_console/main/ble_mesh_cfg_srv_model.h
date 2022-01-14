@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,7 +39,7 @@ extern esp_ble_mesh_elem_t config_server_elements[];
 extern esp_ble_mesh_comp_t config_server_comp;
 
 // config client model
-esp_ble_mesh_client_t cfg_cli;
+extern esp_ble_mesh_client_t cfg_cli;
 extern esp_ble_mesh_model_t config_client_models[];
 
 extern esp_ble_mesh_elem_t config_client_elements[];
