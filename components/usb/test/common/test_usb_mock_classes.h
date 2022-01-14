@@ -21,7 +21,7 @@ extern "C" {
 
 // ---------------------------------------------------- MSC SCSI -------------------------------------------------------
 
-const char *MSC_CLIENT_TAG;
+extern const char *MSC_CLIENT_TAG;
 
 /*
 Note: The mock MSC SCSI tests requires that USB flash drive be connected. The flash drive should...
