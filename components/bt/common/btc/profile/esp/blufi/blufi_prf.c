@@ -144,29 +144,33 @@ void btc_blufi_recv_handler(uint8_t *data, int len)
                 return;
             }
         }
-        if (blufi_env.offset + hdr->data_len  - 2 <= blufi_env.total_len){
-            memcpy(blufi_env.aggr_buf + blufi_env.offset, hdr->data + 2, hdr->data_len  - 2);
-            blufi_env.offset += (hdr->data_len - 2);
+
+        // 6 bytes: hdr->type, hdr->fc, hdr->seq, hdr->data_len, hdr->data[0], hdr->data[1]
+        if (blufi_env.offset + len - 6 <= blufi_env.total_len){
+            memcpy(blufi_env.aggr_buf + blufi_env.offset, hdr->data + 2, len - 6);
+            blufi_env.offset += (len - 6);
         } else {
             BTC_TRACE_ERROR("%s payload is longer than packet length, len %d \n", __func__, blufi_env.total_len);
             btc_blufi_report_error(ESP_BLUFI_DATA_FORMAT_ERROR);
             return;
         }
-
     } else {
         if (blufi_env.offset > 0) {   /* if previous pkt is frag */
-            memcpy(blufi_env.aggr_buf + blufi_env.offset, hdr->data, hdr->data_len);
+            // 4 bytes: hdr->type, hdr->fc, hdr->seq, hdr->data_len
+            memcpy(blufi_env.aggr_buf + blufi_env.offset, hdr->data, len - 4);
 
             btc_blufi_protocol_handler(hdr->type, blufi_env.aggr_buf, blufi_env.total_len);
             blufi_env.offset = 0;
             osi_free(blufi_env.aggr_buf);
             blufi_env.aggr_buf = NULL;
         } else {
-            btc_blufi_protocol_handler(hdr->type, hdr->data, hdr->data_len);
+            // 4 bytes: hdr->type, hdr->fc, hdr->seq, hdr->data_len
+            btc_blufi_protocol_handler(hdr->type, hdr->data, len - 4);
             blufi_env.offset = 0;
         }
     }
 }
+
 void btc_blufi_send_encap(uint8_t type, uint8_t *data, int total_data_len)
 {
     struct blufi_hdr *hdr = NULL;
