@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 """
 Check files for copyright headers:
@@ -22,7 +22,7 @@ import os
 import re
 import sys
 import textwrap
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import pathspec
 import yaml
@@ -251,7 +251,7 @@ def has_valid_copyright(file_name: str, mime: str, is_on_ignore: bool, config_se
         if matches:
             detected_notices.append((matches.group(1), comment.line_number()))
             try:
-                year = extract_year_from_espressif_notice(matches.group(1))
+                years = extract_years_from_espressif_notice(matches.group(1))
             except NotFound as e:
                 if args.verbose:
                     print(f'{TERMINAL_GRAY}Not an {e.thing} {file_name}:{comment.line_number()}{TERMINAL_RESET}')
@@ -263,13 +263,17 @@ def has_valid_copyright(file_name: str, mime: str, is_on_ignore: bool, config_se
                     template = '/* SPDX-FileCopyrightText: ' + config_section['espressif_copyright']
                 if mime == MIME['python']:
                     template = '# SPDX-FileCopyrightText: ' + config_section['espressif_copyright']
-                code_lines[comment.line_number() - 1] = template.format(years=format_years(year, file_name))
+                candidate_line = template.format(years=format_years(years[0], file_name))
+                no_time_update = template.format(years=format_years(years[0], file_name, years[1]))
+                if code_lines[comment.line_number() - 1] != no_time_update:
+                    # update the line only in cases when not only the dates are changing
+                    code_lines[comment.line_number() - 1] = candidate_line
 
         matches = re.search(r'SPDX-FileContributor: ?(.*)', comment.text(), re.IGNORECASE)
         if matches:
             detected_contributors.append((matches.group(1), comment.line_number()))
             try:
-                year = extract_year_from_espressif_notice(matches.group(1))
+                years = extract_years_from_espressif_notice(matches.group(1))
             except NotFound as e:
                 if args.debug:
                     print(f'{TERMINAL_GRAY}Not an {e.thing} {file_name}:{comment.line_number()}{TERMINAL_RESET}')
@@ -281,7 +285,11 @@ def has_valid_copyright(file_name: str, mime: str, is_on_ignore: bool, config_se
                     template = '/* SPDX-FileContributor: ' + config_section['espressif_copyright']
                 if mime == MIME['python']:
                     template = '# SPDX-FileContributor: ' + config_section['espressif_copyright']
-                code_lines[comment.line_number() - 1] = template.format(years=format_years(year, file_name))
+                candidate_line = template.format(years=format_years(years[0], file_name))
+                no_time_update = template.format(years=format_years(years[0], file_name, years[1]))
+                if code_lines[comment.line_number() - 1] != no_time_update:
+                    # update the line only in cases when not only the dates are changing
+                    code_lines[comment.line_number() - 1] = candidate_line
 
         matches = re.search(r'SPDX-License-Identifier: ?(.*)', comment.text(), re.IGNORECASE)
         if matches:
@@ -342,13 +350,15 @@ def insert_copyright(code_lines: list, file_name: str, mime: str, config_section
     return new_code_lines
 
 
-def extract_year_from_espressif_notice(notice: str) -> int:
+def extract_years_from_espressif_notice(notice: str) -> Tuple[int, Optional[int]]:
     """
-    Extracts copyright year (creation date) from a Espressif copyright notice
+    Extracts copyright years from a Espressif copyright notice. It returns a tuple (x, y) where x is the first year of
+    the copyright and y is the second year. y is None if the copyright notice contains only one year.
     """
-    matches = re.search(r'(\d{4})(?:-\d{4})? Espressif Systems', notice, re.IGNORECASE)
+    matches = re.search(r'(\d{4})(-(\d{4}))? Espressif Systems', notice, re.IGNORECASE)
     if matches:
-        return int(matches.group(1))
+        years = matches.group(1, 3)
+        return (int(years[0]), int(years[1]) if years[1] else None)
     raise NotFound('Espressif copyright notice')
 
 
@@ -390,7 +400,7 @@ def detect_old_header_style(file_name: str, comments: list, args: argparse.Names
             if comment.line_number() > args.max_lines:
                 break
             try:
-                year = extract_year_from_espressif_notice(comment.text())
+                year = extract_years_from_espressif_notice(comment.text())[0]
             except NotFound:
                 pass
             else:
@@ -398,23 +408,23 @@ def detect_old_header_style(file_name: str, comments: list, args: argparse.Names
     raise NotFound('Old Espressif header')
 
 
-def format_years(past: int, file_name: str) -> str:
+def format_years(past: int, file_name: str, today: Optional[int]=None) -> str:
     """
     Function to format a year:
      - just current year -> output: [year]
      - some year in the past -> output: [past year]-[current year]
     """
-    today = datetime.datetime.now().year
+    _today = today or datetime.datetime.now().year
     if past == 0:
         # use the current year
-        past = today
-    if past == today:
+        past = _today
+    if past == _today:
         return str(past)
-    if past > today or past < 1972:
+    if past > _today or past < 1972:
         error_msg = f'{file_name}: invalid year in the copyright header detected. ' \
             + 'Check your system clock and the copyright header.'
         raise ValueError(error_msg)
-    return '{past}-{today}'.format(past=past, today=today)
+    return '{past}-{today}'.format(past=past, today=_today)
 
 
 def check_copyrights(args: argparse.Namespace, config: configparser.ConfigParser) -> Tuple[List, List]:
