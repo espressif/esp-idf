@@ -110,7 +110,15 @@ static void sc_ack_send_task(void *pvParameters)
                 goto _end;	
             }
 
-            setsockopt(send_sock, SOL_SOCKET, SO_BROADCAST | SO_REUSEADDR, &optval, sizeof(int));
+            if (setsockopt(send_sock, SOL_SOCKET, SO_BROADCAST, &optval, sizeof(int)) < 0) {
+                ESP_LOGE(TAG,  "setsockopt SO_BROADCAST failed");
+                goto _end;
+            }
+
+            if (setsockopt(send_sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(int)) < 0) {
+                ESP_LOGE(TAG,  "setsockopt SO_REUSEADDR failed");
+                goto _end;
+            }
 
             if (ack->type == SC_TYPE_AIRKISS) {
                 char data = 0;
