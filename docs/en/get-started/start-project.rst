@@ -8,10 +8,12 @@ Now you have all requirements to start using ESP-IDF, the next topic will guide 
 
 This guide will help you on the first steps using ESP-IDF. By following this guide you will able to start a new project, connect the {IDF_TARGET_NAME}, change the project configuration, build, flash, and monitor the project.
 
-.. note:: If you haven't yet installed the ESP-IDF, please go to :ref:`get-started-step-by-step` and follow the instruction in oder to get all the software needed to use this guide.
+.. note::
+
+    If you haven't yet installed the ESP-IDF, please go to :ref:`get-started-step-by-step` and follow the instruction in oder to get all the software needed to use this guide.
 
 Start a Project
-===============
+===================
 
 Now you are ready to prepare your application for {IDF_TARGET_NAME}. You can start with :example:`get-started/hello_world` project from :idf:`examples` directory in IDF.
 
@@ -79,7 +81,7 @@ Linux/macOS
     idf.py set-target {IDF_TARGET_PATH_NAME}
     idf.py menuconfig
 
-Setting the target with ``idf.py set-target {IDF_TARGET_PATH_NAME}`` should be done once, after opening a new project. If the project contains some existing builds and configuration, they will be cleared and initialized. The target may be saved in environment variable to skip this step at all. See :ref:`selecting-idf-target` for additional information.
+Setting the target with ``idf.py set-target {IDF_TARGET_PATH_NAME}`` should be done once  after opening a new project. If the project contains some existing builds and configurations, they will be cleared and initialized. The target may be saved in the environment variable to skip this step at all. See :ref:`selecting-idf-target` for additional information.
 
 If the previous steps have been done correctly, the following menu appears:
 
@@ -135,6 +137,7 @@ This command will compile the application and all ESP-IDF components, then it wi
 
 If there are no errors, the build will finish by generating the firmware binary .bin files.
 
+
 Flash onto the Device
 =====================
 
@@ -171,7 +174,7 @@ In general, you should have no problems with the `official esp-idf development b
 
 Depending on the kind of hardware you have, it may also be possible to manually put your {IDF_TARGET_NAME} board into Firmware Download mode (reset).
 
-- For development boards produced by Espressif, this information can be found in the respective getting started guides or user guides. For example, to manually reset an esp-idf development board, hold down the **Boot** button (``{IDF_TARGET_STRAP_GPIO}``) and press the **EN** button (``CHIP_PU``).
+- For development boards produced by Espressif, this information can be found in the respective getting started guides or user guides. For example, to manually reset an ESP-IDF development board, hold down the **Boot** button (``{IDF_TARGET_STRAP_GPIO}``) and press the **EN** button (``CHIP_PU``).
 - For other types of hardware, try pulling ``{IDF_TARGET_STRAP_GPIO}`` down.
 
 Normal Operation

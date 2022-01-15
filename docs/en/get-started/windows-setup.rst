@@ -27,7 +27,7 @@ ESP-IDF Tools Installer
 The easiest way to install ESP-IDF's prerequisites is to download one of ESP-IDF Tools Installers.
 
 +-------------------+--------------------------------+
-| |download-logo|   | `Windows Installer Download`_  | 
+| |download-logo|   | `Windows Installer Download`_  |
 +-------------------+--------------------------------+
 
 .. |download-logo| image:: ../../_static/logo_windows_install.png

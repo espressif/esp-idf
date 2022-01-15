@@ -52,17 +52,18 @@ This is the documentation for Espressif IoT Development Framework (`esp-idf <htt
 .. toctree::
    :hidden:
 
-   Get Started <get-started/index>
-   API Reference <api-reference/index>
-   H/W Reference <hw-reference/index>
-   API Guides <api-guides/index>
-   ESP-IDF 5.0 Migration Guides <migration-guides/index>
-   Libraries and Frameworks <libraries-and-frameworks/index>
-   Contribute <contribute/index>
-   Versions <versions>
-   Resources <resources>
-   Copyrights <COPYRIGHT>
-   About <about>
-   语言/Languages <languages>
+   get-started/index
+   get-started/start-project
+   api-reference/index
+   hw-reference/index
+   api-guides/index
+   migration-guides/index
+   libraries-and-frameworks/index
+   contribute/index
+   versions
+   resources
+   COPYRIGHT
+   about
+   languages
 
 * :ref:`genindex`
