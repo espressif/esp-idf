@@ -144,7 +144,6 @@ exclude =
         components/bt/host/nimble/nimble,
         components/cmock/CMock,
         components/esptool_py/esptool,
-        components/expat/expat,
         components/json/cJSON,
         components/mbedtls/mbedtls,
         components/openthread/openthread,

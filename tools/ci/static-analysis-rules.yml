@@ -20,7 +20,6 @@ skip:
   - "components/esp_wifi/lib"
   - "components/esp_wifi/lib_esp32"
   - "components/esptool_py/esptool"
-  - "components/expat/expat"
   - "components/ieee802154/lib"
   - "components/json/cJSON"
   - "components/lwip/lwip"
