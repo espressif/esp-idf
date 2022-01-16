@@ -109,6 +109,11 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
                 ESP_LOGI(TAG, "Last mbedtls failure: 0x%x", mbedtls_err);
             }
             break;
+        case HTTP_EVENT_REDIRECT:
+            ESP_LOGD(TAG, "HTTP_EVENT_REDIRECT");
+            esp_http_client_set_header(evt->client, "From", "user@example.com");
+            esp_http_client_set_header(evt->client, "Accept", "text/html");
+            break;
     }
     return ESP_OK;
 }
@@ -447,6 +452,26 @@ static void http_absolute_redirect(void)
     esp_http_client_cleanup(client);
 }
 
+static void http_absolute_redirect_manual(void)
+{
+    esp_http_client_config_t config = {
+        .url = "http://httpbin.org/absolute-redirect/3",
+        .event_handler = _http_event_handler,
+        .disable_auto_redirect = true,
+    };
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    esp_err_t err = esp_http_client_perform(client);
+
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "HTTP Absolute path redirect (manual) Status = %d, content_length = %lld",
+                esp_http_client_get_status_code(client),
+                esp_http_client_get_content_length(client));
+    } else {
+        ESP_LOGE(TAG, "Error perform http request %s", esp_err_to_name(err));
+    }
+    esp_http_client_cleanup(client);
+}
+
 static void http_redirect_to_https(void)
 {
     esp_http_client_config_t config = {
@@ -699,6 +724,7 @@ static void http_test_task(void *pvParameters)
 #endif
     http_relative_redirect();
     http_absolute_redirect();
+    http_absolute_redirect_manual();
     https_with_url();
     https_with_hostname_path();
     http_redirect_to_https();
