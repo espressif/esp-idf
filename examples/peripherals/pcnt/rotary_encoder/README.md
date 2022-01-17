@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 | ESP32-S2 |
-| ----------------- | ----- | -------- |
+| Supported Targets | ESP32 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- |
 
 # Rotary Encoder Example
 
@@ -49,6 +49,8 @@ Connection :
       +--------+              +---------------------------------+
 ```
 
+The GPIO used by the example can be changed according to your board by `EXAMPLE_EC11_GPIO_A` and `EXAMPLE_EC11_GPIO_B` in [source file](main/rotary_encoder_example_main.c);
+
 ### Build and Flash
 
 Run `idf.py -p PORT flash monitor` to build, flash and monitor the project.
@@ -60,18 +62,42 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 ## Example Output
 
 ```
-I (181323) example: Encoder value: 0
-I (182323) example: Encoder value: 0
-I (183323) example: Encoder value: -12
-I (184323) example: Encoder value: -18
-I (185323) example: Encoder value: -24
-I (188323) example: Encoder value: 4
-I (189323) example: Encoder value: 8
-I (190323) example: Encoder value: 8
-I (191323) example: Encoder value: 8
+I (0) cpu_start: Starting scheduler on APP CPU.
+I (325) example: install pcnt unit
+I (335) example: set glitch filter
+I (345) example: install pcnt channels
+I (395) example: set edge and level actions for pcnt channels
+I (405) example: add watch points and register callbacks
+I (405) example: clear pcnt unit
+I (415) example: start pcnt unit
+I (1415) example: Pulse count: 0
+I (2415) example: Pulse count: 8
+I (3415) example: Pulse count: 27
+I (4415) example: Pulse count: 40
+I (4705) example: Watch point event, count: 50
+I (5705) example: Pulse count: 72
+I (6705) example: Pulse count: 96
+I (6785) example: Watch point event, count: 100
+I (6785) example: Watch point event, count: 0
+I (7785) example: Pulse count: 8
+I (8785) example: Pulse count: 8
+I (9225) example: Watch point event, count: 0
+I (10225) example: Pulse count: -20
+I (11225) example: Pulse count: -28
+I (12225) example: Pulse count: -48
+I (12995) example: Watch point event, count: -50
+I (13995) example: Pulse count: -68
+I (14995) example: Pulse count: -82
+I (15995) example: Pulse count: -92
+I (16875) example: Watch point event, count: -100
+I (16875) example: Watch point event, count: 0
+I (17875) example: Pulse count: -12
+I (18875) example: Pulse count: -12
+I (19875) example: Pulse count: -12
 ```
 
-This example enables the 4X mode to parse the rotary signals, which means, each complete rotary step will result PCNT counter to increase/decrease by 4, depending on the direction of rotation.
+This example enables the 4X mode to parse the rotary signals, which means, each complete rotary step will result in PCNT counter increasing or decreasing by 4, depending on the direction of rotation.
+The example adds five watch points, events will be triggered when counter reaches to any watch point.
 
 ## Troubleshooting
 
