@@ -28,9 +28,16 @@ def retry(func):  # type: (TR) -> TR
             try:
                 res = func(self, *args, **kwargs)
             except (IOError, EOFError, gitlab.exceptions.GitlabError) as e:
-                if isinstance(e, gitlab.exceptions.GitlabError) and e.response_code != 500:
-                    # Only retry on error 500
-                    raise e
+                if isinstance(e, gitlab.exceptions.GitlabError):
+                    if e.response_code == 500:
+                        # retry on this error
+                        pass
+                    elif e.response_code == 404 and os.environ.get('LOCAL_GITLAB_HTTPS_HOST', None):
+                        # remove the environment variable "LOCAL_GITLAB_HTTPS_HOST" and retry
+                        os.environ.pop('LOCAL_GITLAB_HTTPS_HOST', None)
+                    else:
+                        # other GitlabErrors aren't retried
+                        raise e
                 retried += 1
                 if retried > self.DOWNLOAD_ERROR_MAX_RETRIES:
                     raise e  # get out of the loop
