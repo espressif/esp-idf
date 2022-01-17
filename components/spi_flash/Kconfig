@@ -131,6 +131,11 @@ menu "SPI Flash driver"
         help
             This allows to yield the CPUs between erase commands.
             Prevents starvation of other tasks.
+            Please use this configuration together with ``SPI_FLASH_ERASE_YIELD_DURATION_MS`` and
+            ``SPI_FLASH_ERASE_YIELD_TICKS`` after carefully checking flash datasheet to avoid a
+            watchdog timeout.
+            For more information, please check `SPI Flash API` reference documenation
+            under section `OS Function`.
 
     config SPI_FLASH_ERASE_YIELD_DURATION_MS
         int "Duration of erasing to yield CPUs (ms)"

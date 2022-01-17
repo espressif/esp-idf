@@ -210,6 +210,18 @@ The delay is used by some long operations which requires the master to wait or p
 
 The top API wraps these the chip driver and OS functions into an entire component, and also provides some argument checking.
 
+OS functions can also help to avoid a watchdog timeout when erasing large flash areas. During this time, the CPU is occupied with the flash erasing task. This stops other tasks from being executed. Among these tasks is the idle task to feed the watchdog timer (WDT). If the configuration option :ref:`CONFIG_ESP_TASK_WDT_PANIC` is selected and the flash operation time is longer than the watchdog timeout period, the system will reboot. 
+
+It's pretty hard to totally eliminate this risk, because the erasing time varies with different flash chips, making it hard to be compatible in flash drivers. Therefore, users need to pay attention to it. Please use the following guidelines:
+
+1. It is recommended to enable the :ref:`CONFIG_SPI_FLASH_YIELD_DURING_ERASE` option to allow the scheduler to re-schedule during erasing flash memory. Besides, following parameters can also be used.
+
+- Increase :ref:`CONFIG_SPI_FLASH_ERASE_YIELD_TICKS` or decrease :ref:`CONFIG_SPI_FLASH_ERASE_YIELD_DURATION_MS` in menuconfig.
+- You can also increase :ref:`CONFIG_ESP_TASK_WDT_TIMEOUT_S` in menuconfig for a larger watchdog timeout period. However, with larger watchdog timeout period, previously detected timeouts may no longer be detected.
+
+2. Please be aware of the consequences of enabling the :ref:`CONFIG_ESP_TASK_WDT_PANIC` option when doing long-running SPI flash operations which will trigger the panic handler when it times out. However, this option can also help dealing with unexpected exceptions in your application. Please decide whether this is needed to be enabled according to actual condition.
+
+3. During your development, please carefully review the actual flash operation according to the specific requirements and time limits on erasing flash memory of your projects. Always allow reasonable redundancy based on your specific product requirements when configuring the flash erasing timeout threshold, thus improving the reliability of your product.
 
 See Also
 --------
