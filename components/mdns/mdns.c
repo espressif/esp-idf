@@ -1552,6 +1552,8 @@ static bool _mdns_service_match_ptr_question(const mdns_service_t *service, cons
         }
         return false;
     }
+    if (question->host && !service->instance)
+        return false;
     if (question->host) {
         if (strcasecmp(service->instance, question->host) != 0) {
             return false;
