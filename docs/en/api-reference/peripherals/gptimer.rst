@@ -23,11 +23,17 @@ The following sections of this document cover the typical steps to install and o
 
 -  `Set and Get count value <#set-and-get-count-value>`__ - covers how to force the timer counting from a start point and how to get the count value at anytime.
 
--  `Start and Stop timer <#start-and-stop-timer>`__ - covers which parameters should be set up to start the timer with specific alarm event behavior.
+-  `Set Up Alarm Action <#set-up-alarm-action>`__ - covers the parameters that should be set up to enable the alarm event.
+
+-  `Register Event Callbacks <#register-event-callbacks>`__ - covers how to hook user specific code to the alarm event callback function.
+
+-  `Start and Stop timer <#start-and-stop-timer>`__ - shows some typical use cases that start the timer with different alarm behavior.
 
 -  `Power Management <#power-management>`__ - describes how different source clock selections can affect power consumption.
 
--  `IRAM safe <#iram-safe>`__ - describes tips on how to make the timer interrupt and IO control functions work better along with a disabled cache.
+-  `IRAM Safe <#iram-safe>`__ - describes tips on how to make the timer interrupt and IO control functions work better along with a disabled cache.
+
+-  `Thread Safety <#thread-safety>`__ - lists which APIs are guaranteed to be thread safe by the driver.
 
 Resource Allocation
 ^^^^^^^^^^^^^^^^^^^
@@ -259,6 +265,12 @@ There's another Kconfig option :ref:`CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` that can 
 - :cpp:func:`gptimer_get_raw_count`
 - :cpp:func:`gptimer_set_raw_count`
 - :cpp:func:`gptimer_set_alarm_action`
+
+Thread Safety
+^^^^^^^^^^^^^
+
+The factory function :cpp:func:`gptimer_new_timer` is guaranteed to be thread safe by the driver, which means, user can call it from different RTOS tasks without protection by extra locks.
+Other functions that take the :cpp:type:`gptimer_handle_t` as the first positional parameter, are not thread safe. The lifecycle of the gptimer handle is maintained by the user. So user should avoid calling them concurrently. If it has to, then one should introduce another mutex to prevent the gptimer handle being accessed concurrently.
 
 Application Examples
 --------------------
