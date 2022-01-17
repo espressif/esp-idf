@@ -258,12 +258,12 @@ int esp_mbedtls_add_tx_buffer(mbedtls_ssl_context *ssl, size_t buffer_len)
 
     esp_buf = mbedtls_calloc(1, SSL_BUF_HEAD_OFFSET_SIZE + buffer_len);
     if (!esp_buf) {
-        ESP_LOGE(TAG, "alloc(%d bytes) failed", SSL_BUF_HEAD_OFFSET_SIZE + buffer_len);
+        ESP_LOGE(TAG, "alloc(%zu bytes) failed", SSL_BUF_HEAD_OFFSET_SIZE + buffer_len);
         ret = MBEDTLS_ERR_SSL_ALLOC_FAILED;
         goto exit;
     }
 
-    ESP_LOGV(TAG, "add out buffer %d bytes @ %p", buffer_len, esp_buf->buf);
+    ESP_LOGV(TAG, "add out buffer %zu bytes @ %p", buffer_len, esp_buf->buf);
 
     esp_mbedtls_init_ssl_buf(esp_buf, buffer_len);
     init_tx_buffer(ssl, esp_buf->buf);
@@ -342,13 +342,13 @@ int esp_mbedtls_add_rx_buffer(mbedtls_ssl_context *ssl)
     ssl->in_hdr = msg_head;
     ssl->in_len = msg_head + 3;
 
-    if ((ret = mbedtls_ssl_fetch_input(ssl, mbedtls_ssl_hdr_len(ssl))) != 0) {
+    if ((ret = mbedtls_ssl_fetch_input(ssl, mbedtls_ssl_in_hdr_len(ssl))) != 0) {
         if (ret == MBEDTLS_ERR_SSL_TIMEOUT) {
             ESP_LOGD(TAG, "mbedtls_ssl_fetch_input reads data times out");
         } else if (ret == MBEDTLS_ERR_SSL_WANT_READ) {
             ESP_LOGD(TAG, "mbedtls_ssl_fetch_input wants to read more data");
         } else {
-            ESP_LOGE(TAG, "mbedtls_ssl_fetch_input error=-0x%x", -ret);
+            ESP_LOGE(TAG, "mbedtls_ssl_fetch_input error=%d", -ret);
         }
 
         goto exit;
