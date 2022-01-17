@@ -692,13 +692,6 @@ UT_008:
     - UT_T1_GPIO
     - psram
 
-UT_012:
-  extends: .unit_test_esp32_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_LEDC
-    - psram
-
 UT_014:
   extends: .unit_test_esp32_template
   tags:
@@ -781,13 +774,6 @@ UT_036:
     - ESP32_IDF
     - UT_T1_PSRAMV0
     - psram
-
-# ToDo: re-enable this job when ESP32-S2 LEDC runner installed
-# UT_037:
-#   extends: .unit_test_esp32s2_template
-#   tags:
-#     - ESP32S2_IDF
-#     - UT_T1_LEDC
 
 UT_038:
   extends: .unit_test_esp32s2_template

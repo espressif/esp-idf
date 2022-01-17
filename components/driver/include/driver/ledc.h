@@ -132,7 +132,9 @@ esp_err_t ledc_update_duty(ledc_mode_t speed_mode, ledc_channel_t channel);
 
 /**
  * @brief Set LEDC output gpio.
- * @deprecated This function is redundant, please use ledc_channel_config to set gpio pins.
+ *
+ * @note This function only routes the LEDC signal to GPIO through matrix, other LEDC resources initialization are not involved.
+ *       Please use `ledc_channel_config()` instead to fully configure a LEDC channel.
  *
  * @param  gpio_num The LEDC output gpio
  * @param  speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
@@ -142,8 +144,8 @@ esp_err_t ledc_update_duty(ledc_mode_t speed_mode, ledc_channel_t channel);
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
-esp_err_t ledc_set_pin(int gpio_num, ledc_mode_t speed_mode, ledc_channel_t ledc_channel)
-    __attribute__((deprecated("use ledc_channel_config instead")));
+esp_err_t ledc_set_pin(int gpio_num, ledc_mode_t speed_mode, ledc_channel_t ledc_channel);
+
 /**
  * @brief LEDC stop.
  *        Disable LEDC output, and set idle level

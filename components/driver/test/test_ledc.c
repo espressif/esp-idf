@@ -6,10 +6,6 @@
 /* LEDC tested by PCNT in some case
  * PCNT can get the LEDC waveform frequency
  *
- * test environment of UT_T1_LEDC:
- * 1. connect GPIO18 with GPIO4
- * 2. connect GPIO5 to 3.3v (in case of it is pulled down by default)
- *
  * some calculation related with duty:
  * real duty = duty/2^duty_resolution
  */
@@ -24,15 +20,13 @@
 #include "freertos/queue.h"
 #include "unity.h"
 #include "soc/ledc_periph.h"
+#include "soc/gpio_periph.h"
+#include "soc/io_mux_reg.h"
 #include "esp_system.h"
 #include "driver/ledc.h"
 #include "driver/gpio.h"
 
-#define PULSE_IO 18
-#define PCNT_INPUT_IO 4
-#define PCNT_CTRL_FLOATING_IO 5
-#define HIGHEST_LIMIT 10000
-#define LOWEST_LIMIT -10000
+#define PULSE_IO      18
 
 #define TEST_PWM_FREQ 2000
 
@@ -115,81 +109,6 @@ static void timer_duty_test(ledc_channel_t channel, ledc_timer_bit_t timer_bit, 
     timer_duty_set_get(ledc_ch_config.speed_mode, ledc_ch_config.channel, (1 << 13) - 1);
     timer_duty_set_get(ledc_ch_config.speed_mode, ledc_ch_config.channel, (1 << 13) - 2);
 }
-
-#if SOC_PCNT_SUPPORTED
-#include "driver/pcnt.h" // TODO: C3 doesn't have PCNT peripheral
-
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
-//no runners
-
-// use PCNT to test the waveform of LEDC
-static int16_t wave_count(int last_time)
-{
-    int16_t test_counter;
-    pcnt_config_t pcnt_config = {
-        .pulse_gpio_num = PCNT_INPUT_IO,
-        .ctrl_gpio_num = PCNT_CTRL_FLOATING_IO,
-        .channel = PCNT_CHANNEL_0,
-        .unit = PCNT_UNIT_0,
-        .pos_mode = PCNT_COUNT_INC,
-        .neg_mode = PCNT_COUNT_DIS,
-        .lctrl_mode = PCNT_MODE_REVERSE,
-        .hctrl_mode = PCNT_MODE_KEEP,
-        .counter_h_lim = HIGHEST_LIMIT,
-        .counter_l_lim = LOWEST_LIMIT,
-    };
-    TEST_ESP_OK(pcnt_unit_config(&pcnt_config));
-
-    // initialize first
-    TEST_ESP_OK(pcnt_counter_pause(PCNT_UNIT_0));
-    TEST_ESP_OK(pcnt_counter_clear(PCNT_UNIT_0));
-    vTaskDelay(100 / portTICK_PERIOD_MS);
-    TEST_ESP_OK(pcnt_counter_resume(PCNT_UNIT_0));
-    TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
-
-    vTaskDelay(last_time / portTICK_PERIOD_MS);
-    TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
-    return test_counter;
-}
-
-// the PCNT will count the frequency of it
-static void frequency_set_get(ledc_mode_t speed_mode, ledc_timer_t timer, uint32_t freq_hz, int16_t real_freq, int16_t error)
-{
-    int16_t count;
-    TEST_ESP_OK(ledc_set_freq(speed_mode, timer, freq_hz));
-    count = wave_count(1000);
-    TEST_ASSERT_INT16_WITHIN(error, count, real_freq);
-    TEST_ASSERT_EQUAL_INT32(ledc_get_freq(speed_mode, timer), real_freq);
-}
-
-static void timer_frequency_test(ledc_channel_t channel, ledc_timer_bit_t timer_bit, ledc_timer_t timer, ledc_mode_t speed_mode)
-{
-    ledc_channel_config_t ledc_ch_config = {
-        .gpio_num = PULSE_IO,
-        .speed_mode = speed_mode,
-        .channel  = channel,
-        .intr_type = LEDC_INTR_DISABLE,
-        .timer_sel = timer,
-        .duty = 4000,
-        .hpoint = 0,
-    };
-    ledc_timer_config_t ledc_time_config = {
-        .speed_mode = speed_mode,
-        .duty_resolution = timer_bit,
-        .timer_num = timer,
-        .freq_hz = 5000,
-        .clk_cfg = LEDC_USE_APB_CLK,
-    };
-    TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
-    TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
-    frequency_set_get(ledc_ch_config.speed_mode, ledc_ch_config.timer_sel, 100, 100, 2);
-    frequency_set_get(ledc_ch_config.speed_mode, ledc_ch_config.timer_sel, 5000, 5000, 5);
-    frequency_set_get(ledc_ch_config.speed_mode, ledc_ch_config.timer_sel, 9000, 8993, 5);
-}
-
-#endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
-
-#endif // SOC_PCNT_SUPPORTED
 
 TEST_CASE("LEDC channel config wrong gpio", "[ledc]")
 {
@@ -324,8 +243,8 @@ TEST_CASE("LEDC set and get duty", "[ledc]")
 {
     ledc_timer_t timer_list[4] = {LEDC_TIMER_0, LEDC_TIMER_1, LEDC_TIMER_2, LEDC_TIMER_3};
     ledc_mode_t speed_mode_list[LEDC_SPEED_MODE_MAX] = SPEED_MODE_LIST;
-    for(int i=0; i<LEDC_TIMER_MAX-1; i++) {
-        for(int j=0; j<LEDC_SPEED_MODE_MAX; j++) {
+    for (int i = 0; i < LEDC_TIMER_MAX - 1; i++) {
+        for (int j = 0; j < LEDC_SPEED_MODE_MAX; j++) {
             timer_duty_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, timer_list[i], speed_mode_list[j]);
         }
     }
@@ -473,10 +392,88 @@ TEST_CASE("LEDC fade stop test", "[ledc]")
 
 #if SOC_PCNT_SUPPORTED
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
+#include "driver/pulse_cnt.h"
 
-TEST_CASE("LEDC set and get frequency", "[ledc][test_env=UT_T1_LEDC][timeout=60][ignore]")
+#define HIGHEST_LIMIT 10000
+#define LOWEST_LIMIT -10000
+
+static pcnt_unit_handle_t pcnt_unit;
+static pcnt_channel_handle_t pcnt_chan;
+
+static void setup_testbench(void)
 {
+    pcnt_unit_config_t unit_config = {
+        .high_limit = HIGHEST_LIMIT,
+        .low_limit = LOWEST_LIMIT,
+    };
+    TEST_ESP_OK(pcnt_new_unit(&unit_config, &pcnt_unit));
+    pcnt_chan_config_t chan_config = {
+        .edge_gpio_num = PULSE_IO,
+        .level_gpio_num = -1,
+    };
+    TEST_ESP_OK(pcnt_new_channel(pcnt_unit, &chan_config, &pcnt_chan));
+    TEST_ESP_OK(pcnt_channel_set_level_action(pcnt_chan, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_KEEP));
+    TEST_ESP_OK(pcnt_channel_set_edge_action(pcnt_chan, PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_EDGE_ACTION_HOLD));
+}
+
+static void tear_testbench(void)
+{
+    TEST_ESP_OK(pcnt_del_channel(pcnt_chan));
+    TEST_ESP_OK(pcnt_del_unit(pcnt_unit));
+}
+
+// use PCNT to test the waveform of LEDC
+static int wave_count(int last_time)
+{
+    // The input ability of PULSE_IO is disabled after ledc driver install, so we need to reenable it again
+    PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[PULSE_IO]);
+    int test_counter = 0;
+    TEST_ESP_OK(pcnt_unit_clear_count(pcnt_unit));
+    TEST_ESP_OK(pcnt_unit_start(pcnt_unit));
+    vTaskDelay(pdMS_TO_TICKS(last_time));
+    TEST_ESP_OK(pcnt_unit_stop(pcnt_unit));
+    TEST_ESP_OK(pcnt_unit_get_count(pcnt_unit, &test_counter));
+    return test_counter;
+}
+
+// the PCNT will count the frequency of it
+static void frequency_set_get(ledc_mode_t speed_mode, ledc_timer_t timer, uint32_t freq_hz, int16_t real_freq, int16_t error)
+{
+    int count;
+    TEST_ESP_OK(ledc_set_freq(speed_mode, timer, freq_hz));
+    count = wave_count(1000);
+    TEST_ASSERT_INT16_WITHIN(error, count, real_freq);
+    TEST_ASSERT_EQUAL_INT32(real_freq, ledc_get_freq(speed_mode, timer));
+}
+
+static void timer_frequency_test(ledc_channel_t channel, ledc_timer_bit_t timer_bit, ledc_timer_t timer, ledc_mode_t speed_mode)
+{
+    ledc_channel_config_t ledc_ch_config = {
+        .gpio_num = PULSE_IO,
+        .speed_mode = speed_mode,
+        .channel  = channel,
+        .intr_type = LEDC_INTR_DISABLE,
+        .timer_sel = timer,
+        .duty = 4000,
+        .hpoint = 0,
+    };
+    ledc_timer_config_t ledc_time_config = {
+        .speed_mode = speed_mode,
+        .duty_resolution = timer_bit,
+        .timer_num = timer,
+        .freq_hz = 5000,
+        .clk_cfg = LEDC_USE_APB_CLK,
+    };
+    TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
+    TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
+    frequency_set_get(ledc_ch_config.speed_mode, ledc_ch_config.timer_sel, 100, 100, 20);
+    frequency_set_get(ledc_ch_config.speed_mode, ledc_ch_config.timer_sel, 5000, 5000, 50);
+    frequency_set_get(ledc_ch_config.speed_mode, ledc_ch_config.timer_sel, 9000, 8992, 50);
+}
+
+TEST_CASE("LEDC set and get frequency", "[ledc][timeout=60][ignore]")
+{
+    setup_testbench();
 #if SOC_LEDC_SUPPORT_HS_MODE
     timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, LEDC_TIMER_0, LEDC_HIGH_SPEED_MODE);
     timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, LEDC_TIMER_1, LEDC_HIGH_SPEED_MODE);
@@ -487,10 +484,12 @@ TEST_CASE("LEDC set and get frequency", "[ledc][test_env=UT_T1_LEDC][timeout=60]
     timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, LEDC_TIMER_1, LEDC_LOW_SPEED_MODE);
     timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, LEDC_TIMER_2, LEDC_LOW_SPEED_MODE);
     timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, LEDC_TIMER_3, LEDC_LOW_SPEED_MODE);
+    tear_testbench();
 }
 
-TEST_CASE("LEDC timer set", "[ledc][test_env=UT_T1_LEDC]")
+TEST_CASE("LEDC timer set", "[ledc]")
 {
+    setup_testbench();
     const ledc_mode_t test_speed_mode = TEST_SPEED_MODE;
     ledc_channel_config_t ledc_ch_config = {
         .gpio_num = PULSE_IO,
@@ -513,7 +512,8 @@ TEST_CASE("LEDC timer set", "[ledc][test_env=UT_T1_LEDC]")
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
 
     uint32_t freq_get;
-    uint32_t count;
+    int count;
+#if SOC_LEDC_SUPPORT_REF_TICK
     //set timer 0 as 250Hz, use REF_TICK
     TEST_ESP_OK(ledc_timer_set(test_speed_mode, LEDC_TIMER_0, 1000, 10, LEDC_REF_TICK));
     TEST_ESP_OK(ledc_timer_rst(test_speed_mode, LEDC_TIMER_0));
@@ -521,6 +521,7 @@ TEST_CASE("LEDC timer set", "[ledc][test_env=UT_T1_LEDC]")
     freq_get = ledc_get_freq(test_speed_mode, LEDC_TIMER_0);
     count = wave_count(1000);
     TEST_ASSERT_UINT32_WITHIN(10, count, freq_get);
+#endif
 
     //set timer 0 as 500Hz, use APB_CLK
     TEST_ESP_OK(ledc_timer_set(test_speed_mode, LEDC_TIMER_0, 5000, 13, LEDC_APB_CLK));
@@ -539,12 +540,14 @@ TEST_CASE("LEDC timer set", "[ledc][test_env=UT_T1_LEDC]")
     TEST_ESP_OK(ledc_stop(test_speed_mode, LEDC_CHANNEL_0, !current_level));
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT32( LEDC.channel_group[test_speed_mode].channel[LEDC_CHANNEL_0].conf0.idle_lv, !current_level);
+    tear_testbench();
 }
 
-TEST_CASE("LEDC timer pause and resume", "[ledc][test_env=UT_T1_LEDC]")
+TEST_CASE("LEDC timer pause and resume", "[ledc]")
 {
+    setup_testbench();
     const ledc_mode_t test_speed_mode = TEST_SPEED_MODE;
-    int16_t count;
+    int count;
     ledc_channel_config_t ledc_ch_config = {
         .gpio_num = PULSE_IO,
         .speed_mode = test_speed_mode,
@@ -588,6 +591,7 @@ TEST_CASE("LEDC timer pause and resume", "[ledc][test_env=UT_T1_LEDC]")
     TEST_ESP_OK(ledc_timer_rst(test_speed_mode, LEDC_TIMER_0));
     vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ASSERT_UINT32_WITHIN(5, count, 5000);
+    tear_testbench();
 }
 
 static void ledc_cpu_reset_test_first_stage(void)
@@ -603,17 +607,18 @@ static void ledc_cpu_reset_test_first_stage(void)
 
 static void ledc_cpu_reset_test_second_stage(void)
 {
+    int count;
     TEST_ASSERT_EQUAL(ESP_RST_SW, esp_reset_reason());
-    int16_t count;
+    setup_testbench();
+    // reconfigure the GPIO again, as the GPIO output ability has been disabled during initialize pcnt peripheral
+    ledc_set_pin(PULSE_IO, TEST_SPEED_MODE, LEDC_CHANNEL_0);
     count = wave_count(1000);
-    TEST_ASSERT_UINT32_WITHIN(5, count, TEST_PWM_FREQ);
+    TEST_ASSERT_UINT32_WITHIN(5, TEST_PWM_FREQ, count);
+    tear_testbench();
 }
 
-TEST_CASE_MULTIPLE_STAGES("LEDC software reset test",
-                          "[ledc][test_env=UT_T1_LEDC]",
+TEST_CASE_MULTIPLE_STAGES("LEDC continue work after software reset", "[ledc]",
                           ledc_cpu_reset_test_first_stage,
                           ledc_cpu_reset_test_second_stage);
-
-#endif  //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
 
 #endif // SOC_PCNT_SUPPORTED
