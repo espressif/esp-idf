@@ -186,7 +186,7 @@ static void _ledc_op_lock_release(ledc_mode_t mode, ledc_channel_t channel)
     }
 }
 
-static uint32_t ledc_get_max_duty(ledc_mode_t speed_mode, ledc_channel_t channel)
+static uint32_t _ledc_get_max_duty(ledc_mode_t speed_mode, ledc_channel_t channel)
 {
     // The arguments are checked before internally calling this function.
     uint32_t max_duty;
@@ -738,6 +738,14 @@ uint32_t ledc_get_duty(ledc_mode_t speed_mode, ledc_channel_t channel)
     return duty;
 }
 
+uint32_t ledc_get_max_duty(ledc_mode_t speed_mode, ledc_channel_t channel)
+{
+    LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
+    LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
+    LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
+    return _ledc_get_max_duty(speed_mode, channel);
+}
+
 int ledc_get_hpoint(ledc_mode_t speed_mode, ledc_channel_t channel)
 {
     LEDC_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode argument is invalid", LEDC_ERR_VAL);
@@ -920,7 +928,7 @@ static esp_err_t _ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t
     uint32_t duty_cur = 0;
     ledc_hal_get_duty(&(p_ledc_obj[speed_mode]->ledc_hal), channel, &duty_cur);
     // When duty == max_duty, meanwhile, if scale == 1 and fade_down == 1, counter would overflow.
-    if (duty_cur == ledc_get_max_duty(speed_mode, channel)) {
+    if (duty_cur == _ledc_get_max_duty(speed_mode, channel)) {
         duty_cur -= 1;
     }
     s_ledc_fade_rec[speed_mode][channel]->speed_mode = speed_mode;
@@ -1007,7 +1015,7 @@ esp_err_t ledc_set_fade_with_time(ledc_mode_t speed_mode, ledc_channel_t channel
 {
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
     LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
-    LEDC_ARG_CHECK(target_duty <= ledc_get_max_duty(speed_mode, channel), "target_duty");
+    LEDC_ARG_CHECK(target_duty <= _ledc_get_max_duty(speed_mode, channel), "target_duty");
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
     LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK, LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
 
@@ -1023,7 +1031,7 @@ esp_err_t ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t channel
     LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
     LEDC_ARG_CHECK((scale > 0) && (scale <= LEDC_DUTY_SCALE_MAX), "fade scale");
     LEDC_ARG_CHECK((cycle_num > 0) && (cycle_num <= LEDC_DUTY_CYCLE_MAX), "cycle_num");
-    LEDC_ARG_CHECK(target_duty <= ledc_get_max_duty(speed_mode, channel), "target_duty");
+    LEDC_ARG_CHECK(target_duty <= _ledc_get_max_duty(speed_mode, channel), "target_duty");
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
     LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK, LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
 
@@ -1085,7 +1093,7 @@ esp_err_t ledc_set_duty_and_update(ledc_mode_t speed_mode, ledc_channel_t channe
 {
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
     LEDC_ARG_CHECK(channel < LEDC_CHANNEL_MAX, "channel");
-    LEDC_ARG_CHECK(duty <= ledc_get_max_duty(speed_mode, channel), "target_duty");
+    LEDC_ARG_CHECK(duty <= _ledc_get_max_duty(speed_mode, channel), "target_duty");
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
     LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK, LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
     _ledc_op_lock_acquire(speed_mode, channel);
@@ -1104,7 +1112,7 @@ esp_err_t ledc_set_fade_time_and_start(ledc_mode_t speed_mode, ledc_channel_t ch
     LEDC_ARG_CHECK(fade_mode < LEDC_FADE_MAX, "fade_mode");
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
     LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK, LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
-    LEDC_ARG_CHECK(target_duty <= ledc_get_max_duty(speed_mode, channel), "target_duty");
+    LEDC_ARG_CHECK(target_duty <= _ledc_get_max_duty(speed_mode, channel), "target_duty");
     _ledc_op_lock_acquire(speed_mode, channel);
     _ledc_fade_hw_acquire(speed_mode, channel);
     _ledc_set_fade_with_time(speed_mode, channel, target_duty, max_fade_time_ms);
@@ -1125,7 +1133,7 @@ esp_err_t ledc_set_fade_step_and_start(ledc_mode_t speed_mode, ledc_channel_t ch
     LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK, LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
     LEDC_ARG_CHECK((scale > 0) && (scale <= LEDC_DUTY_SCALE_MAX), "fade scale");
     LEDC_ARG_CHECK((cycle_num > 0) && (cycle_num <= LEDC_DUTY_CYCLE_MAX), "cycle_num");
-    LEDC_ARG_CHECK(target_duty <= ledc_get_max_duty(speed_mode, channel), "target_duty");
+    LEDC_ARG_CHECK(target_duty <= _ledc_get_max_duty(speed_mode, channel), "target_duty");
     _ledc_op_lock_acquire(speed_mode, channel);
     _ledc_fade_hw_acquire(speed_mode, channel);
     _ledc_set_fade_with_step(speed_mode, channel, target_duty, scale, cycle_num);

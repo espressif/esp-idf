@@ -245,6 +245,20 @@ esp_err_t ledc_set_duty(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t
 uint32_t ledc_get_duty(ledc_mode_t speed_mode, ledc_channel_t channel);
 
 /**
+ * @brief LEDC get maximum channel duty
+ *
+ * Channel maximum duty depends on timer resolution where ledc channel is attached to, ((2^LEDC_TIMER_BIT) - 1)
+ *
+ * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
+ * @param channel LEDC channel (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
+ *
+ * @return
+ *     - LEDC_ERR_DUTY if parameter error
+ *     - Otherwise Maximum duty value for the specified LEDC channel
+ */
+uint32_t ledc_get_max_duty(ledc_mode_t speed_mode, ledc_channel_t channel);
+
+/**
  * @brief LEDC set gradient
  *        Set LEDC gradient, After the function calls the ledc_update_duty function, the function can take effect.
  * @note  If a fade operation is running in progress on that channel, the driver would not allow it to be stopped.
