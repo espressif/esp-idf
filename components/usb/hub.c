@@ -155,7 +155,7 @@ typedef struct {
     enum_stage_t stage;             /**< Current enumeration stage */
     int expect_num_bytes;           /**< Expected number of bytes for IN transfers stages. Set to 0 for OUT transfer */
     uint8_t bMaxPacketSize0;        /**< Max packet size of the device's EP0. Read from bMaxPacketSize0 field of device descriptor */
-    uint8_t wTotalLength;           /**< Total length of device's configuration descriptor. Read from wTotalLength field of config descriptor */
+    uint16_t wTotalLength;          /**< Total length of device's configuration descriptor. Read from wTotalLength field of config descriptor */
     uint8_t iManufacturer;          /**< Index of the Manufacturer string descriptor */
     uint8_t iProduct;               /**< Index of the Product string descriptor */
     uint8_t iSerialNumber;          /**< Index of the Serial Number string descriptor */
