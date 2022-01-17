@@ -26,7 +26,7 @@
     TRACE_CHECK(_fn, "state"); \
  \
     if ((_ret = _fn) != 0) { \
-        ESP_LOGV(TAG, "\"%s\" result is -0x%x", # _fn, -_ret); \
+        ESP_LOGV(TAG, "\"%s\" result is %d", # _fn, -_ret); \
         TRACE_CHECK(_fn, "fail"); \
         return _ret; \
     } \
@@ -46,7 +46,7 @@ struct esp_mbedtls_ssl_buf {
     unsigned char buf[];
 };
 
-#define SSL_BUF_HEAD_OFFSET_SIZE offsetof(struct esp_mbedtls_ssl_buf, buf)
+#define SSL_BUF_HEAD_OFFSET_SIZE ((int)offsetof(struct esp_mbedtls_ssl_buf, buf))
 
 void esp_mbedtls_free_buf(unsigned char *buf);
 

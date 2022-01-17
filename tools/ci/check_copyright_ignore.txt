@@ -1250,7 +1250,6 @@ components/mbedtls/port/aes/dma/include/esp_aes_dma_priv.h
 components/mbedtls/port/aes/esp_aes_common.c
 components/mbedtls/port/aes/esp_aes_gcm.c
 components/mbedtls/port/aes/esp_aes_xts.c
-components/mbedtls/port/crypto_shared_gdma/esp_crypto_shared_gdma.c
 components/mbedtls/port/esp32/bignum.c
 components/mbedtls/port/esp32c2/bignum.c
 components/mbedtls/port/esp32c3/bignum.c
@@ -1294,7 +1293,6 @@ components/mbedtls/port/sha/dma/esp_sha_crypto_dma_impl.c
 components/mbedtls/port/sha/dma/esp_sha_gdma_impl.c
 components/mbedtls/port/sha/dma/include/esp_sha_dma_priv.h
 components/mbedtls/port/sha/dma/sha.c
-components/mbedtls/port/sha/esp_sha.c
 components/mbedtls/port/sha/parallel_engine/esp_sha1.c
 components/mbedtls/port/sha/parallel_engine/esp_sha256.c
 components/mbedtls/port/sha/parallel_engine/esp_sha512.c
