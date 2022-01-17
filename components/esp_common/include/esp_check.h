@@ -25,6 +25,7 @@ extern "C" {
  */
 #if defined(CONFIG_COMPILER_OPTIMIZATION_CHECKS_SILENT)
 #define ESP_RETURN_ON_ERROR(x, log_tag, format, ...) do {                                       \
+        (void)log_tag;                                                                          \
         esp_err_t err_rc_ = (x);                                                                \
         if (unlikely(err_rc_ != ESP_OK)) {                                                      \
             return err_rc_;                                                                     \
@@ -35,6 +36,7 @@ extern "C" {
  * A version of ESP_RETURN_ON_ERROR() macro that can be called from ISR.
  */
 #define ESP_RETURN_ON_ERROR_ISR(x, log_tag, format, ...) do {                                   \
+        (void)log_tag;                                                                          \
         esp_err_t err_rc_ = (x);                                                                \
         if (unlikely(err_rc_ != ESP_OK)) {                                                      \
             return err_rc_;                                                                     \
@@ -46,6 +48,7 @@ extern "C" {
  * sets the local variable 'ret' to the code, and then exits by jumping to 'goto_tag'.
  */
 #define ESP_GOTO_ON_ERROR(x, goto_tag, log_tag, format, ...) do {                               \
+        (void)log_tag;                                                                          \
         esp_err_t err_rc_ = (x);                                                                \
         if (unlikely(err_rc_ != ESP_OK)) {                                                      \
             ret = err_rc_;                                                                      \
@@ -57,6 +60,7 @@ extern "C" {
  * A version of ESP_GOTO_ON_ERROR() macro that can be called from ISR.
  */
 #define ESP_GOTO_ON_ERROR_ISR(x, goto_tag, log_tag, format, ...) do {                           \
+        (void)log_tag;                                                                          \
         esp_err_t err_rc_ = (x);                                                                \
         if (unlikely(err_rc_ != ESP_OK)) {                                                      \
             ret = err_rc_;                                                                      \
@@ -69,6 +73,7 @@ extern "C" {
  * and returns with the supplied 'err_code'.
  */
 #define ESP_RETURN_ON_FALSE(a, err_code, log_tag, format, ...) do {                             \
+        (void)log_tag;                                                                          \
         if (unlikely(!(a))) {                                                                   \
             return err_code;                                                                    \
         }                                                                                       \
@@ -78,6 +83,7 @@ extern "C" {
  * A version of ESP_RETURN_ON_FALSE() macro that can be called from ISR.
  */
 #define ESP_RETURN_ON_FALSE_ISR(a, err_code, log_tag, format, ...) do {                         \
+        (void)log_tag;                                                                          \
         if (unlikely(!(a))) {                                                                   \
             return err_code;                                                                    \
         }                                                                                       \
@@ -88,6 +94,7 @@ extern "C" {
  * sets the local variable 'ret' to the supplied 'err_code', and then exits by jumping to 'goto_tag'.
  */
 #define ESP_GOTO_ON_FALSE(a, err_code, goto_tag, log_tag, format, ...) do {                     \
+        (void)log_tag;                                                                          \
         if (unlikely(!(a))) {                                                                   \
             ret = err_code;                                                                     \
             goto goto_tag;                                                                      \
@@ -98,6 +105,7 @@ extern "C" {
  * A version of ESP_GOTO_ON_FALSE() macro that can be called from ISR.
  */
 #define ESP_GOTO_ON_FALSE_ISR(a, err_code, goto_tag, log_tag, format, ...) do {                 \
+        (void)log_tag;                                                                          \
         if (unlikely(!(a))) {                                                                   \
             ret = err_code;                                                                     \
             goto goto_tag;                                                                      \
