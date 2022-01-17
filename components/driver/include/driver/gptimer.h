@@ -21,7 +21,7 @@ extern "C" {
 typedef struct gptimer_t *gptimer_handle_t;
 
 /**
- * @brief GPTimer event data
+ * @brief GPTimer alarm event data
  */
 typedef struct {
     uint64_t count_value; /*!< Current count value */
@@ -33,7 +33,7 @@ typedef struct {
  *
  * @param[in] timer Timer handle created by `gptimer_new_timer()`
  * @param[in] edata Alarm event data, fed by driver
- * @param[in] user_ctx User data, passed from `gptimer_config_t`
+ * @param[in] user_ctx User data, passed from `gptimer_register_event_callbacks()`
  * @return Whether a high priority task has been waken up by this function
  */
 typedef bool (*gptimer_alarm_cb_t) (gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx);

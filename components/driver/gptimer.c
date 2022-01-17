@@ -70,7 +70,6 @@ struct gptimer_t {
     timer_hal_context_t hal;
     gptimer_lifecycle_fsm_t fsm; // access to fsm should be protect by spinlock, as fsm is also accessed from ISR handler
     intr_handle_t intr;
-    _lock_t mutex;         // to protect other resource allocation, like interrupt handle
     portMUX_TYPE spinlock; // to protect per-timer resources concurent accessed by task and ISR handler
     gptimer_alarm_cb_t on_alarm;
     void *user_ctx;
@@ -91,7 +90,6 @@ static gptimer_platform_t s_platform;
 static gptimer_group_t *gptimer_acquire_group_handle(int group_id);
 static void gptimer_release_group_handle(gptimer_group_t *group);
 static esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_source_t src_clk, uint32_t resolution_hz);
-static esp_err_t gptimer_install_interrupt(gptimer_t *timer);
 IRAM_ATTR static void gptimer_default_isr(void *args);
 
 esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *ret_timer)
@@ -109,7 +107,7 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
 
     for (int i = 0; (i < SOC_TIMER_GROUPS) && (timer_id < 0); i++) {
         group = gptimer_acquire_group_handle(i);
-        ESP_GOTO_ON_FALSE(group, ESP_ERR_NO_MEM, err, TAG, "no mem for group (%d)", group_id);
+        ESP_GOTO_ON_FALSE(group, ESP_ERR_NO_MEM, err, TAG, "no mem for group (%d)", i);
         // loop to search free timer in the group
         portENTER_CRITICAL(&group->spinlock);
         for (int j = 0; j < SOC_TIMER_GROUP_TIMERS_PER_GROUP; j++) {
@@ -153,7 +151,6 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
     timer->fsm = GPTIMER_FSM_STOP;
     timer->direction = config->direction;
     timer->flags.intr_shared = config->flags.intr_shared;
-    _lock_init(&timer->mutex);
     ESP_LOGD(TAG, "new gptimer (%d,%d) at %p, resolution=%uHz", group_id, timer_id, timer, timer->resolution_hz);
     *ret_timer = timer;
     return ESP_OK;
@@ -194,7 +191,6 @@ esp_err_t gptimer_del_timer(gptimer_handle_t timer)
         esp_pm_lock_delete(timer->pm_lock);
         ESP_LOGD(TAG, "uninstall APB_FREQ_MAX lock for timer (%d,%d)", group_id, timer_id);
     }
-    _lock_close(&timer->mutex);
     free(timer);
     ESP_LOGD(TAG, "del timer (%d,%d)", group_id, timer_id);
 
@@ -232,6 +228,8 @@ esp_err_t gptimer_register_event_callbacks(gptimer_handle_t timer, const gptimer
     gptimer_group_t *group = NULL;
     ESP_RETURN_ON_FALSE(timer && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     group = timer->group;
+    int group_id = group->group_id;
+    int timer_id = timer->timer_id;
 
 #if CONFIG_GPTIMER_ISR_IRAM_SAFE
     if (cbs->on_alarm) {
@@ -245,11 +243,17 @@ esp_err_t gptimer_register_event_callbacks(gptimer_handle_t timer, const gptimer
 #endif
 
     // lazy install interrupt service
-    ESP_RETURN_ON_ERROR(gptimer_install_interrupt(timer), TAG, "install interrupt service failed");
+    if (!timer->intr) {
+        // if user wants to control the interrupt allocation more precisely, we can expose more flags in `gptimer_config_t`
+        int isr_flags = timer->flags.intr_shared ? ESP_INTR_FLAG_SHARED | GPTIMER_INTR_ALLOC_FLAGS : GPTIMER_INTR_ALLOC_FLAGS;
+        ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(timer_group_periph_signals.groups[group_id].timer_irq_id[timer_id], isr_flags,
+                            (uint32_t)timer_ll_get_intr_status_reg(timer->hal.dev), TIMER_LL_EVENT_ALARM(timer_id),
+                            gptimer_default_isr, timer, &timer->intr), TAG, "install interrupt service failed");
+    }
 
     // enable/disable GPTimer interrupt events
     portENTER_CRITICAL_SAFE(&group->spinlock);
-    timer_ll_enable_intr(timer->hal.dev, TIMER_LL_EVENT_ALARM(timer->timer_id), cbs->on_alarm); // enable timer interrupt
+    timer_ll_enable_intr(timer->hal.dev, TIMER_LL_EVENT_ALARM(timer->timer_id), cbs->on_alarm != NULL); // enable timer interrupt
     portEXIT_CRITICAL_SAFE(&group->spinlock);
 
     timer->on_alarm = cbs->on_alarm;
@@ -353,8 +357,10 @@ static gptimer_group_t *gptimer_acquire_group_handle(int group_id)
     } else {
         group = s_platform.groups[group_id];
     }
-    // someone acquired the group handle means we have a new object that refer to this group
-    s_platform.group_ref_counts[group_id]++;
+    if (group) {
+        // someone acquired the group handle means we have a new object that refer to this group
+        s_platform.group_ref_counts[group_id]++;
+    }
     _lock_release(&s_platform.mutex);
 
     if (new_group) {
@@ -419,34 +425,6 @@ static esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_sou
     if (timer->resolution_hz != resolution_hz) {
         ESP_LOGW(TAG, "resolution lost, expect %ul, real %ul", resolution_hz, timer->resolution_hz);
     }
-    return ret;
-}
-
-static esp_err_t gptimer_install_interrupt(gptimer_t *timer)
-{
-    esp_err_t ret = ESP_OK;
-    gptimer_group_t *group = timer->group;
-    int group_id = group->group_id;
-    int timer_id = timer->timer_id;
-    bool new_isr = false;
-
-    if (!timer->intr) {
-        _lock_acquire(&timer->mutex);
-        if (!timer->intr) {
-            // if user wants to control the interrupt allocation more precisely, we can expose more flags in `gptimer_config_t`
-            int extra_isr_flags = timer->flags.intr_shared ? ESP_INTR_FLAG_SHARED : 0;
-            ret = esp_intr_alloc_intrstatus(timer_group_periph_signals.groups[group_id].timer_irq_id[timer_id], extra_isr_flags | GPTIMER_INTR_ALLOC_FLAGS,
-                                            (uint32_t)timer_ll_get_intr_status_reg(timer->hal.dev), TIMER_LL_EVENT_ALARM(timer_id),
-                                            gptimer_default_isr, timer, &timer->intr);
-            new_isr = (ret == ESP_OK);
-        }
-        _lock_release(&timer->mutex);
-    }
-
-    if (new_isr) {
-        ESP_LOGD(TAG, "install interrupt service for timer (%d,%d)", group_id, timer_id);
-    }
-
     return ret;
 }
 
