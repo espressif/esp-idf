@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.5)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(gptimer_test)
 
-if(CONFIG_GPTIMER_ISR_IRAM_SAFE)
+if(CONFIG_COMPILER_DUMP_RTL_FILES)
     add_custom_target(check_test_app_sections ALL
                       COMMAND ${PYTHON} $ENV{IDF_PATH}/tools/ci/check_callgraph.py
                       --rtl-dir ${CMAKE_BINARY_DIR}/esp-idf/driver/

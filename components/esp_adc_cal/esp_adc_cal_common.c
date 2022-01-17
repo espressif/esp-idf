@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@
 #include "hal/adc_types.h"
 #include "esp_adc_cal.h"
 
-const static char *TAG = "ADC_CALI";
+const __attribute__((unused)) static char *TAG = "ADC_CALI";
 
 esp_err_t esp_adc_cal_get_voltage(adc_channel_t channel,
                                   const esp_adc_cal_characteristics_t *chars,
