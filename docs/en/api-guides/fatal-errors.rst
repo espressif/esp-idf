@@ -306,6 +306,8 @@ This CPU exception indicates that the instruction which was executed was not a v
 
   - Some external device has accidentally been connected to the SPI flash pins, and has interfered with communication between {IDF_TARGET_NAME} and SPI flash.
 
+- In C++ code, exiting from a non-void function without returning a value is considered to be an undefined behavior. When optimizations are enabled, the compiler will often omit the epilogue in such functions. This most often results in an |ILLEGAL_INSTR_MSG| exception. By default, ESP-IDF build system enables ``-Werror=return-type`` which means that missing return statements are treated as compile time errors. However if the application project disables compiler warnings, this issue might go undetected and the |ILLEGAL_INSTR_MSG| exception will occur at run time.
+
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
     InstrFetchProhibited
