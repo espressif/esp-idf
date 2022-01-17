@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,20 +39,9 @@ static int rx_done(mbedtls_ssl_context *ssl)
         return 1;
     }
 
-    ESP_LOGD(TAG, "RX left %d bytes", ssl->in_msglen);
+    ESP_LOGD(TAG, "RX left %zu bytes", ssl->in_msglen);
 
     return 0;
-}
-
-static void ssl_transform_init( mbedtls_ssl_transform *transform )
-{
-    memset( transform, 0, sizeof(mbedtls_ssl_transform) );
-
-    mbedtls_cipher_init( &transform->cipher_ctx_enc );
-    mbedtls_cipher_init( &transform->cipher_ctx_dec );
-
-    mbedtls_md_init( &transform->md_ctx_enc );
-    mbedtls_md_init( &transform->md_ctx_dec );
 }
 
 static void ssl_update_checksum_start( mbedtls_ssl_context *ssl,
@@ -98,7 +87,7 @@ static void ssl_handshake_params_init( mbedtls_ssl_handshake_params *handshake )
     handshake->update_checksum = ssl_update_checksum_start;
 
 #if defined(MBEDTLS_SSL_PROTO_TLS1_2) && \
-    defined(MBEDTLS_KEY_EXCHANGE__WITH_CERT__ENABLED)
+    defined(MBEDTLS_KEY_EXCHANGE_WITH_CERT_ENABLED)
     mbedtls_ssl_sig_hash_set_init( &handshake->hash_algs );
 #endif
 
@@ -116,12 +105,17 @@ static void ssl_handshake_params_init( mbedtls_ssl_handshake_params *handshake )
 #endif
 #endif
 
-#if defined(MBEDTLS_SSL__ECP_RESTARTABLE)
+#if defined(MBEDTLS_SSL_ECP_RESTARTABLE)
     mbedtls_x509_crt_restart_init( &handshake->ecrs_ctx );
 #endif
 
 #if defined(MBEDTLS_SSL_SERVER_NAME_INDICATION)
     handshake->sni_authmode = MBEDTLS_SSL_VERIFY_UNSET;
+#endif
+
+#if defined(MBEDTLS_X509_CRT_PARSE_C) && \
+    !defined(MBEDTLS_SSL_KEEP_PEER_CERTIFICATE)
+    mbedtls_pk_init( &handshake->peer_pubkey );
 #endif
 }
 
@@ -174,7 +168,7 @@ static int ssl_handshake_init( mbedtls_ssl_context *ssl )
 
     /* Initialize structures */
     mbedtls_ssl_session_init( ssl->session_negotiate );
-    ssl_transform_init( ssl->transform_negotiate );
+    mbedtls_ssl_transform_init( ssl->transform_negotiate );
     ssl_handshake_params_init( ssl->handshake );
 
     return( 0 );
@@ -219,7 +213,7 @@ int __wrap_mbedtls_ssl_read(mbedtls_ssl_context *ssl, unsigned char *buf, size_t
         ESP_LOGD(TAG, "fail, the connection indicated an EOF");
         return 0;
     } else if (ret < 0) {
-        ESP_LOGD(TAG, "fail, error=-0x%x", -ret);
+        ESP_LOGD(TAG, "fail, error=%d", -ret);
         return ret;
     }
     ESP_LOGD(TAG, "end");
