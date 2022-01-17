@@ -56,6 +56,18 @@ typedef enum {
     UART_INTR_CMD_CHAR_DET     = (0x1 << 18),
 } uart_intr_t;
 
+/**
+ * @brief  Configure the UART core reset.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  core_rst_en True to enable the core reset, otherwise set it false.
+ *
+ * @return None.
+ */
+static inline void uart_ll_set_reset_core(uart_dev_t *hw, bool core_rst_en)
+{
+    hw->clk_conf.rst_core = core_rst_en;
+}
 
 /**
  * @brief  Set the UART source clock.
