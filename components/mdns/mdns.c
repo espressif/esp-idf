@@ -2265,6 +2265,11 @@ static mdns_txt_linked_item_t * _mdns_allocate_txt(size_t num_items, mdns_txt_it
     }
     return new_txt;
 }
+
+/**
+ * @brief Deallocate the txt linked list
+ * @param txt pointer to the txt pointer to free, noop if txt==NULL
+ */
 static void _mdns_free_linked_txt(mdns_txt_linked_item_t *txt)
 {
     mdns_txt_linked_item_t *t;
@@ -2293,7 +2298,7 @@ static mdns_service_t * _mdns_create_service(const char * service, const char * 
                                              uint16_t port, const char * instance, size_t num_items,
                                              mdns_txt_item_t txt[])
 {
-    mdns_service_t * s = (mdns_service_t *)malloc(sizeof(mdns_service_t));
+    mdns_service_t * s = (mdns_service_t *)calloc(1, sizeof(mdns_service_t));
     if (!s) {
         HOOK_MALLOC_FAILED;
         return NULL;
@@ -2301,8 +2306,7 @@ static mdns_service_t * _mdns_create_service(const char * service, const char * 
 
     mdns_txt_linked_item_t * new_txt = _mdns_allocate_txt(num_items, txt);
     if (num_items && new_txt == NULL) {
-        free(s);
-        return NULL;
+        goto fail;
     }
 
     s->priority = 0;
@@ -2328,19 +2332,16 @@ static mdns_service_t * _mdns_create_service(const char * service, const char * 
 
     s->proto = strndup(proto, MDNS_NAME_BUF_LEN - 1);
     if (!s->proto) {
-        free((char *)s->service);
         goto fail;
     }
-
     return s;
 
 fail:
-    if (s->instance) {
-        free(s->instance);
-    }
-    if (s->hostname) {
-        free(s->hostname);
-    }
+    _mdns_free_linked_txt(s->txt);
+    free((char *)s->instance);
+    free((char *)s->service);
+    free((char *)s->proto);
+    free((char *)s->hostname);
     free(s);
 
     return NULL;
