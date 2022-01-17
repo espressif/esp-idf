@@ -35,12 +35,6 @@
 #define GPTIMER_MEM_ALLOC_CAPS      MALLOC_CAP_DEFAULT
 #endif //CONFIG_GPTIMER_ISR_IRAM_SAFE
 
-#if CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM
-#define GPTIMER_CTRL_FUNC_ATTR IRAM_ATTR
-#else
-#define GPTIMER_CTRL_FUNC_ATTR
-#endif // CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM
-
 #define GPTIMER_PM_LOCK_NAME_LEN_MAX 16
 
 static const char *TAG = "gptimer";
@@ -213,7 +207,6 @@ esp_err_t gptimer_del_timer(gptimer_handle_t timer)
     return ESP_OK;
 }
 
-GPTIMER_CTRL_FUNC_ATTR
 esp_err_t gptimer_set_raw_count(gptimer_handle_t timer, unsigned long long value)
 {
     ESP_RETURN_ON_FALSE(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
@@ -224,7 +217,6 @@ esp_err_t gptimer_set_raw_count(gptimer_handle_t timer, unsigned long long value
     return ESP_OK;
 }
 
-GPTIMER_CTRL_FUNC_ATTR
 esp_err_t gptimer_get_raw_count(gptimer_handle_t timer, unsigned long long *value)
 {
     ESP_RETURN_ON_FALSE(timer && value, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
@@ -265,7 +257,6 @@ esp_err_t gptimer_register_event_callbacks(gptimer_handle_t timer, const gptimer
     return ESP_OK;
 }
 
-GPTIMER_CTRL_FUNC_ATTR
 esp_err_t gptimer_set_alarm_action(gptimer_handle_t timer, const gptimer_alarm_config_t *config)
 {
     ESP_RETURN_ON_FALSE(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
@@ -295,7 +286,6 @@ esp_err_t gptimer_set_alarm_action(gptimer_handle_t timer, const gptimer_alarm_c
     return ESP_OK;
 }
 
-GPTIMER_CTRL_FUNC_ATTR
 esp_err_t gptimer_start(gptimer_handle_t timer)
 {
     ESP_RETURN_ON_FALSE(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
@@ -318,7 +308,6 @@ esp_err_t gptimer_start(gptimer_handle_t timer)
     return ESP_OK;
 }
 
-GPTIMER_CTRL_FUNC_ATTR
 esp_err_t gptimer_stop(gptimer_handle_t timer)
 {
     ESP_RETURN_ON_FALSE(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
