@@ -4,10 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG // uncomment this line to enable debug logs
-
 #include <stdlib.h>
 #include <sys/lock.h>
+#include "sdkconfig.h"
+#if CONFIG_GPTIMER_ENABLE_DEBUG_LOG
+// The local log level must be defined before including esp_log.h
+// Set the maximum log level for this source file
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+#endif
 #include "freertos/FreeRTOS.h"
 #include "esp_attr.h"
 #include "esp_err.h"
@@ -90,7 +94,7 @@ static gptimer_platform_t s_platform;
 static gptimer_group_t *gptimer_acquire_group_handle(int group_id);
 static void gptimer_release_group_handle(gptimer_group_t *group);
 static esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_source_t src_clk, uint32_t resolution_hz);
-IRAM_ATTR static void gptimer_default_isr(void *args);
+static void gptimer_default_isr(void *args);
 
 esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *ret_timer)
 {
@@ -205,7 +209,7 @@ esp_err_t gptimer_del_timer(gptimer_handle_t timer)
 
 esp_err_t gptimer_set_raw_count(gptimer_handle_t timer, unsigned long long value)
 {
-    ESP_RETURN_ON_FALSE(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE_ISR(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
 
     portENTER_CRITICAL_SAFE(&timer->spinlock);
     timer_hal_set_counter_value(&timer->hal, value);
@@ -215,7 +219,7 @@ esp_err_t gptimer_set_raw_count(gptimer_handle_t timer, unsigned long long value
 
 esp_err_t gptimer_get_raw_count(gptimer_handle_t timer, unsigned long long *value)
 {
-    ESP_RETURN_ON_FALSE(timer && value, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE_ISR(timer && value, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
 
     portENTER_CRITICAL_SAFE(&timer->spinlock);
     *value = timer_ll_get_counter_value(timer->hal.dev, timer->timer_id);
@@ -252,9 +256,9 @@ esp_err_t gptimer_register_event_callbacks(gptimer_handle_t timer, const gptimer
     }
 
     // enable/disable GPTimer interrupt events
-    portENTER_CRITICAL_SAFE(&group->spinlock);
+    portENTER_CRITICAL(&group->spinlock);
     timer_ll_enable_intr(timer->hal.dev, TIMER_LL_EVENT_ALARM(timer->timer_id), cbs->on_alarm != NULL); // enable timer interrupt
-    portEXIT_CRITICAL_SAFE(&group->spinlock);
+    portEXIT_CRITICAL(&group->spinlock);
 
     timer->on_alarm = cbs->on_alarm;
     timer->user_ctx = user_data;
@@ -263,11 +267,11 @@ esp_err_t gptimer_register_event_callbacks(gptimer_handle_t timer, const gptimer
 
 esp_err_t gptimer_set_alarm_action(gptimer_handle_t timer, const gptimer_alarm_config_t *config)
 {
-    ESP_RETURN_ON_FALSE(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE_ISR(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     if (config) {
         // When auto_reload is enabled, alarm_count should not be equal to reload_count
         bool valid_auto_reload = !config->flags.auto_reload_on_alarm || config->alarm_count != config->reload_count;
-        ESP_RETURN_ON_FALSE(valid_auto_reload, ESP_ERR_INVALID_ARG, TAG, "reload count can't equal to alarm count");
+        ESP_RETURN_ON_FALSE_ISR(valid_auto_reload, ESP_ERR_INVALID_ARG, TAG, "reload count can't equal to alarm count");
 
         timer->reload_count = config->reload_count;
         timer->alarm_count = config->alarm_count;
@@ -292,15 +296,15 @@ esp_err_t gptimer_set_alarm_action(gptimer_handle_t timer, const gptimer_alarm_c
 
 esp_err_t gptimer_start(gptimer_handle_t timer)
 {
-    ESP_RETURN_ON_FALSE(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE_ISR(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
 
     // acquire power manager lock
     if (timer->pm_lock) {
-        ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(timer->pm_lock), TAG, "acquire APB_FREQ_MAX lock failed");
+        ESP_RETURN_ON_ERROR_ISR(esp_pm_lock_acquire(timer->pm_lock), TAG, "acquire APB_FREQ_MAX lock failed");
     }
     // interrupt interupt service
     if (timer->intr) {
-        ESP_RETURN_ON_ERROR(esp_intr_enable(timer->intr), TAG, "enable interrupt service failed");
+        ESP_RETURN_ON_ERROR_ISR(esp_intr_enable(timer->intr), TAG, "enable interrupt service failed");
     }
 
     portENTER_CRITICAL_SAFE(&timer->spinlock);
@@ -314,7 +318,7 @@ esp_err_t gptimer_start(gptimer_handle_t timer)
 
 esp_err_t gptimer_stop(gptimer_handle_t timer)
 {
-    ESP_RETURN_ON_FALSE(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE_ISR(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
 
     // disable counter, alarm, autoreload
     portENTER_CRITICAL_SAFE(&timer->spinlock);
@@ -325,11 +329,11 @@ esp_err_t gptimer_stop(gptimer_handle_t timer)
 
     // disable interrupt service
     if (timer->intr) {
-        ESP_RETURN_ON_ERROR(esp_intr_disable(timer->intr), TAG, "disable interrupt service failed");
+        ESP_RETURN_ON_ERROR_ISR(esp_intr_disable(timer->intr), TAG, "disable interrupt service failed");
     }
     // release power manager lock
     if (timer->pm_lock) {
-        ESP_RETURN_ON_ERROR(esp_pm_lock_release(timer->pm_lock), TAG, "release APB_FREQ_MAX lock failed");
+        ESP_RETURN_ON_ERROR_ISR(esp_pm_lock_release(timer->pm_lock), TAG, "release APB_FREQ_MAX lock failed");
     }
 
     return ESP_OK;
@@ -337,7 +341,9 @@ esp_err_t gptimer_stop(gptimer_handle_t timer)
 
 static gptimer_group_t *gptimer_acquire_group_handle(int group_id)
 {
-    // esp_log_level_set(TAG, ESP_LOG_DEBUG);
+#if CONFIG_GPTIMER_ENABLE_DEBUG_LOG
+    esp_log_level_set(TAG, ESP_LOG_DEBUG);
+#endif
     bool new_group = false;
     gptimer_group_t *group = NULL;
 

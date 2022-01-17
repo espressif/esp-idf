@@ -818,7 +818,6 @@ components/hal/esp32/include/hal/dac_ll.h
 components/hal/esp32/include/hal/i2c_ll.h
 components/hal/esp32/include/hal/interrupt_controller_ll.h
 components/hal/esp32/include/hal/mpu_ll.h
-components/hal/esp32/include/hal/pcnt_ll.h
 components/hal/esp32/include/hal/rtc_cntl_ll.h
 components/hal/esp32/include/hal/rtc_io_ll.h
 components/hal/esp32/include/hal/rwdt_ll.h
@@ -901,7 +900,6 @@ components/hal/esp32s2/include/hal/interrupt_controller_ll.h
 components/hal/esp32s2/include/hal/memprot_ll.h
 components/hal/esp32s2/include/hal/memprot_peri_ll.h
 components/hal/esp32s2/include/hal/mpu_ll.h
-components/hal/esp32s2/include/hal/pcnt_ll.h
 components/hal/esp32s2/include/hal/rtc_cntl_ll.h
 components/hal/esp32s2/include/hal/rtc_io_ll.h
 components/hal/esp32s2/include/hal/sha_ll.h
@@ -927,7 +925,6 @@ components/hal/esp32s3/include/hal/i2c_ll.h
 components/hal/esp32s3/include/hal/interrupt_controller_ll.h
 components/hal/esp32s3/include/hal/memprot_ll.h
 components/hal/esp32s3/include/hal/mpu_ll.h
-components/hal/esp32s3/include/hal/pcnt_ll.h
 components/hal/esp32s3/include/hal/rtc_cntl_ll.h
 components/hal/esp32s3/include/hal/rwdt_ll.h
 components/hal/esp32s3/include/hal/sha_ll.h
@@ -958,8 +955,6 @@ components/hal/include/hal/mcpwm_hal.h
 components/hal/include/hal/mcpwm_types.h
 components/hal/include/hal/mpu_hal.h
 components/hal/include/hal/mpu_types.h
-components/hal/include/hal/pcnt_hal.h
-components/hal/include/hal/pcnt_types.h
 components/hal/include/hal/rmt_types.h
 components/hal/include/hal/rtc_io_types.h
 components/hal/include/hal/sdio_slave_hal.h
@@ -987,7 +982,6 @@ components/hal/interrupt_controller_hal.c
 components/hal/ledc_hal_iram.c
 components/hal/mcpwm_hal.c
 components/hal/mpu_hal.c
-components/hal/pcnt_hal.c
 components/hal/platform_port/include/hal/assert.h
 components/hal/platform_port/include/hal/check.h
 components/hal/platform_port/include/hal/log.h
@@ -1315,8 +1309,6 @@ components/soc/esp32/include/soc/ledc_reg.h
 components/soc/esp32/include/soc/ledc_struct.h
 components/soc/esp32/include/soc/mmu.h
 components/soc/esp32/include/soc/nrx_reg.h
-components/soc/esp32/include/soc/pcnt_reg.h
-components/soc/esp32/include/soc/pcnt_struct.h
 components/soc/esp32/include/soc/pid.h
 components/soc/esp32/include/soc/reset_reasons.h
 components/soc/esp32/include/soc/rmt_reg.h
@@ -1352,7 +1344,6 @@ components/soc/esp32/include/soc/wdev_reg.h
 components/soc/esp32/interrupts.c
 components/soc/esp32/ledc_periph.c
 components/soc/esp32/mcpwm_periph.c
-components/soc/esp32/pcnt_periph.c
 components/soc/esp32/rmt_periph.c
 components/soc/esp32/sdio_slave_periph.c
 components/soc/esp32/sdmmc_periph.c
@@ -1511,8 +1502,6 @@ components/soc/esp32s2/include/soc/ledc_struct.h
 components/soc/esp32s2/include/soc/memprot_defs.h
 components/soc/esp32s2/include/soc/mmu.h
 components/soc/esp32s2/include/soc/nrx_reg.h
-components/soc/esp32s2/include/soc/pcnt_reg.h
-components/soc/esp32s2/include/soc/pcnt_struct.h
 components/soc/esp32s2/include/soc/reset_reasons.h
 components/soc/esp32s2/include/soc/rtc_cntl_reg.h
 components/soc/esp32s2/include/soc/rtc_cntl_struct.h
@@ -1556,7 +1545,6 @@ components/soc/esp32s2/include/soc/usbh_struct.h
 components/soc/esp32s2/include/soc/wdev_reg.h
 components/soc/esp32s2/interrupts.c
 components/soc/esp32s2/ledc_periph.c
-components/soc/esp32s2/pcnt_periph.c
 components/soc/esp32s2/rmt_periph.c
 components/soc/esp32s2/sigmadelta_periph.c
 components/soc/esp32s2/spi_periph.c
@@ -1605,9 +1593,6 @@ components/soc/esp32s3/include/soc/ledc_struct.h
 components/soc/esp32s3/include/soc/mmu.h
 components/soc/esp32s3/include/soc/mpu_caps.h
 components/soc/esp32s3/include/soc/nrx_reg.h
-components/soc/esp32s3/include/soc/pcnt_caps.h
-components/soc/esp32s3/include/soc/pcnt_reg.h
-components/soc/esp32s3/include/soc/pcnt_struct.h
 components/soc/esp32s3/include/soc/peri_backup_reg.h
 components/soc/esp32s3/include/soc/peri_backup_struct.h
 components/soc/esp32s3/include/soc/reset_reasons.h
@@ -1663,7 +1648,6 @@ components/soc/esp32s3/include/soc/world_controller_struct.h
 components/soc/esp32s3/interrupts.c
 components/soc/esp32s3/ledc_periph.c
 components/soc/esp32s3/mcpwm_periph.c
-components/soc/esp32s3/pcnt_periph.c
 components/soc/esp32s3/rmt_periph.c
 components/soc/esp32s3/rtc_io_periph.c
 components/soc/esp32s3/sdio_slave_periph.c
@@ -1683,7 +1667,6 @@ components/soc/include/soc/i2c_periph.h
 components/soc/include/soc/interrupts.h
 components/soc/include/soc/ledc_periph.h
 components/soc/include/soc/mcpwm_periph.h
-components/soc/include/soc/pcnt_periph.h
 components/soc/include/soc/rmt_periph.h
 components/soc/include/soc/rtc_cntl_periph.h
 components/soc/include/soc/rtc_periph.h
@@ -2223,10 +2206,6 @@ examples/peripherals/mcpwm/mcpwm_brushed_dc_control/main/mcpwm_brushed_dc_contro
 examples/peripherals/mcpwm/mcpwm_capture_hc_sr04/main/mcpwm_capture_hc_sr04.c
 examples/peripherals/mcpwm/mcpwm_servo_control/main/mcpwm_servo_control_example_main.c
 examples/peripherals/mcpwm/mcpwm_sync_example/main/mcpwm_sync_example.c
-examples/peripherals/pcnt/pulse_count_event/main/pcnt_event_example_main.c
-examples/peripherals/pcnt/rotary_encoder/components/rotary_encoder/include/rotary_encoder.h
-examples/peripherals/pcnt/rotary_encoder/components/rotary_encoder/src/rotary_encoder_pcnt_ec11.c
-examples/peripherals/pcnt/rotary_encoder/main/rotary_encoder_example_main.c
 examples/peripherals/rmt/ir_protocols/components/infrared_tools/include/ir_timings.h
 examples/peripherals/rmt/ir_protocols/components/infrared_tools/src/ir_builder_rmt_nec.c
 examples/peripherals/rmt/ir_protocols/components/infrared_tools/src/ir_builder_rmt_rc5.c

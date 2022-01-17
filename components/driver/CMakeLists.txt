@@ -48,7 +48,7 @@ if(CONFIG_SOC_RMT_SUPPORTED)
 endif()
 
 if(CONFIG_SOC_PCNT_SUPPORTED)
-    list(APPEND srcs "pcnt.c")
+    list(APPEND srcs "pcnt_legacy.c" "pulse_cnt.c")
 endif()
 
 if(CONFIG_SOC_SDMMC_HOST_SUPPORTED)
