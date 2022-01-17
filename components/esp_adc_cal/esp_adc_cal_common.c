@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,7 +34,10 @@ esp_err_t esp_adc_cal_get_voltage(adc_channel_t channel,
         ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(1), ESP_ERR_INVALID_ARG, TAG, "Invalid channel");
         ret = adc2_get_raw(channel, chars->bit_width, &adc_reading);
     }
-    *voltage = esp_adc_cal_raw_to_voltage((uint32_t)adc_reading, chars);
+
+    if (ret == ESP_OK) {
+        *voltage = esp_adc_cal_raw_to_voltage((uint32_t)adc_reading, chars);
+    }
     return ret;
 }
 
