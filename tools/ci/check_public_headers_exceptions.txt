@@ -46,6 +46,7 @@ components/wpa_supplicant/esp_supplicant/include/
 
 components/mbedtls/port/include/
 components/mbedtls/mbedtls/include/mbedtls/
+components/mbedtls/mbedtls/include/psa/
 
 components/coap/
 components/nghttp/
