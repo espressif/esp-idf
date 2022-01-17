@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,8 @@
 #include "esp_check.h"
 #include "soc/soc_caps.h"
 #include "esp_private/periph_ctrl.h"
-#include "driver/pcnt.h"
+#include "driver/pcnt_types_legacy.h"
+#include "driver/gpio.h"
 #include "hal/pcnt_hal.h"
 #include "hal/pcnt_ll.h"
 #include "hal/gpio_hal.h"
@@ -53,6 +54,9 @@ typedef struct {
 static pcnt_isr_func_t *pcnt_isr_func = NULL;
 static pcnt_isr_handle_t pcnt_isr_service = NULL;
 static portMUX_TYPE pcnt_spinlock = portMUX_INITIALIZER_UNLOCKED;
+
+esp_err_t pcnt_isr_register(void (*fun)(void *), void *arg, int intr_alloc_flags, pcnt_isr_handle_t *handle);
+esp_err_t pcnt_isr_unregister(pcnt_isr_handle_t handle);
 
 static inline esp_err_t _pcnt_set_mode(pcnt_port_t pcnt_port, pcnt_unit_t unit, pcnt_channel_t channel, pcnt_count_mode_t pos_mode, pcnt_count_mode_t neg_mode, pcnt_ctrl_mode_t hctrl_mode, pcnt_ctrl_mode_t lctrl_mode)
 {
@@ -537,7 +541,22 @@ esp_err_t pcnt_isr_service_install(int intr_alloc_flags)
     return _pcnt_isr_service_install(PCNT_PORT_0, intr_alloc_flags);
 }
 
-void pcnt_isr_service_uninstall()
+void pcnt_isr_service_uninstall(void)
 {
     _pcnt_isr_service_uninstall(PCNT_PORT_0);
+}
+
+/**
+ * @brief This function will be called during start up, to check that pulse_cnt driver is not running along with the legacy pcnt driver
+ */
+__attribute__((constructor))
+static void check_pcnt_driver_conflict(void)
+{
+    extern int pcnt_driver_init_count;
+    pcnt_driver_init_count++;
+    if (pcnt_driver_init_count > 1) {
+        ESP_EARLY_LOGE(TAG, "CONFLICT! The pulse_cnt driver can't work along with the legacy pcnt driver");
+        abort();
+    }
+    ESP_EARLY_LOGW(TAG, "legacy pcnt driver is deprecated, please migrate to use driver/pulse_cnt.h");
 }
