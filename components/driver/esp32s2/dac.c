@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +18,7 @@
 #include "soc/dac_periph.h"
 #include "hal/dac_hal.h"
 
-static const char *TAG = "DAC";
+static __attribute__((unused)) const char *TAG = "DAC";
 
 extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate position after the rtc module is finished.
 #define DAC_ENTER_CRITICAL()  portENTER_CRITICAL(&rtc_spinlock)

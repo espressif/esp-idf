@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,7 +36,7 @@
 #define TOUCH_PAD_SHIFT_ROUND_DEFAULT     (8)   // ROUND = 2^(n-1); rounding off for fractional.
 #define TOUCH_PAD_MEASURE_WAIT_DEFAULT  (0xFF)  // The timer frequency is 8Mhz, the max value is 0xff
 
-static const char *TOUCH_TAG = "TOUCH_SENSOR";
+static __attribute__((unused)) const char *TOUCH_TAG = "TOUCH_SENSOR";
 
 #define TOUCH_CHANNEL_CHECK(channel) do { \
         ESP_RETURN_ON_FALSE(channel < SOC_TOUCH_SENSOR_NUM && channel >= 0, ESP_ERR_INVALID_ARG, TOUCH_TAG,  "Touch channel error"); \

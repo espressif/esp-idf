@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,7 @@
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_panel_interface.h"
 
-static const char *TAG = "lcd_panel";
+static __attribute__((unused)) const char *TAG = "lcd_panel";
 
 esp_err_t esp_lcd_panel_reset(esp_lcd_panel_handle_t panel)
 {
