@@ -42,6 +42,7 @@
 #include "esp_smartconfig.h"
 #include "esp_coexist_internal.h"
 #include "esp_coexist_adapter.h"
+#include "esp32c3/rom/ets_sys.h"
 
 #define TAG "esp_adapter"
 

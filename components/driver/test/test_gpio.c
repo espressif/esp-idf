@@ -171,7 +171,7 @@ static void prompt_to_continue(const char *str)
     char sign[5] = {0};
     while (strlen(sign) == 0) {
         /* Flush anything already in the RX buffer */
-        while (esp_rom_uart_rx_one_char((uint8_t *) sign) == ETS_OK) {
+        while (esp_rom_uart_rx_one_char((uint8_t *) sign) == 0) {
         }
         /* Read line */
         esp_rom_uart_rx_string((uint8_t *) sign, sizeof(sign) - 1);

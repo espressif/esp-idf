@@ -65,7 +65,7 @@ void esp_ipc_isr_init(void)
     const uint32_t cpuid = xPortGetCoreID();
     uint32_t intr_source = ETS_FROM_CPU_INTR2_SOURCE + cpuid; // ETS_FROM_CPU_INTR2_SOURCE and ETS_FROM_CPU_INTR3_SOURCE
     ESP_INTR_DISABLE(ETS_IPC_ISR_INUM);
-    intr_matrix_set(cpuid, intr_source, ETS_IPC_ISR_INUM);
+    esp_rom_route_intr_matrix(cpuid, intr_source, ETS_IPC_ISR_INUM);
     ESP_INTR_ENABLE(ETS_IPC_ISR_INUM);
 
     if (cpuid != 0) {

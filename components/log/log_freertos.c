@@ -117,6 +117,6 @@ uint32_t esp_log_early_timestamp(void)
     extern uint32_t g_ticks_per_us_pro;
     return cpu_hal_get_cycle_count() / (g_ticks_per_us_pro * 1000);
 #else
-    return cpu_hal_get_cycle_count() / (ets_get_cpu_frequency() * 1000);
+    return cpu_hal_get_cycle_count() / (esp_rom_get_cpu_ticks_per_us() * 1000);
 #endif
 }

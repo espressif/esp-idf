@@ -43,13 +43,6 @@ int xt_clock_freq(void) __attribute__((deprecated));
 #ifndef __ASSEMBLER__
 #include <assert.h>
 #include "esp_rom_sys.h"
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/ets_sys.h"  // will be removed in idf v5.0
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/ets_sys.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/ets_sys.h"
-#endif
 #endif // __ASSEMBLER__
 
 #if CONFIG_FREERTOS_ASSERT_ON_UNTESTED_FUNCTION

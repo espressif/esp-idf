@@ -1,16 +1,8 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*
  The cache has an interrupt that can be raised as soon as an access to a cached
@@ -35,7 +27,7 @@
 #include "hal/cpu_hal.h"
 
 #include "esp32s2/dport_access.h"
-#include "esp32s2/rom/ets_sys.h"  // for intr_matrix_set
+#include "esp_rom_sys.h"
 
 #include "sdkconfig.h"
 
@@ -48,7 +40,7 @@ void esp_cache_err_int_init(void)
     // level 4 which is not serviceable from C. Instead, xtensa_vectors.S has
     // a call to the panic handler for
     // this interrupt.
-    intr_matrix_set(core_id, ETS_CACHE_IA_INTR_SOURCE, ETS_MEMACCESS_ERR_INUM);
+    esp_rom_route_intr_matrix(core_id, ETS_CACHE_IA_INTR_SOURCE, ETS_MEMACCESS_ERR_INUM);
 
     // Enable invalid cache access interrupt when the cache is disabled.
     // The status bits are cleared first, in case we are restarting after

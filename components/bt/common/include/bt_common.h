@@ -8,6 +8,7 @@
 #define _BT_COMMON_H_
 
 #include <assert.h>
+#include <stdbool.h>
 #include "bt_user_config.h"
 #include "esp_log.h"
 

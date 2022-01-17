@@ -138,7 +138,7 @@ static void core_intr_matrix_clear(void)
     uint32_t core_id = cpu_hal_get_core_id();
 
     for (int i = 0; i < ETS_MAX_INTR_SOURCE; i++) {
-        intr_matrix_set(core_id, i, ETS_INVALID_INUM);
+        esp_rom_route_intr_matrix(core_id, i, ETS_INVALID_INUM);
     }
 }
 
