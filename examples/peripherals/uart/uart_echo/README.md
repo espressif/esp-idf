@@ -17,30 +17,30 @@ monitoring. The external interface should have 3.3V outputs. You may use e.g. 3.
 Connect the external serial interface to the board as follows.
 
 ```
-  ---------------------------------------------------------------------------------------
-  | Target chip Interface | #define          | Default ESP Pin      | External UART Pin |
-  | ----------------------|------------------|----------------------|--------------------
-  | Transmit Data (TxD)   | EXAMPLE_UART_TXD | GPIO4                | RxD               |
-  | Receive Data (RxD)    | EXAMPLE_UART_RXD | GPIO5                | TxD               |
-  | Ground                | n/a              | GND                  | GND               |
-  ---------------------------------------------------------------------------------------
+  -----------------------------------------------------------------------------------------
+  | Target chip Interface | Kconfig Option     | Default ESP Pin      | External UART Pin |
+  | ----------------------|--------------------|----------------------|--------------------
+  | Transmit Data (TxD)   | EXAMPLE_UART_TXD   | GPIO4                | RxD               |
+  | Receive Data (RxD)    | EXAMPLE_UART_RXD   | GPIO5                | TxD               |
+  | Ground                | n/a                | GND                  | GND               |
+  -----------------------------------------------------------------------------------------
 ```
 Note: Some GPIOs can not be used with certain chips because they are reserved for internal use. Please refer to UART documentation for selected target.
 
 Optionally, you can set-up and use a serial interface that has RTS and CTS signals in order to verify that the
 hardware control flow works. Connect the extra signals according to the following table, configure both extra pins in
-the example code by replacing existing `UART_PIN_NO_CHANGE` macros with the appropriate pin numbers and configure
-UART1 driver to use the hardware flow control by setting `.flow_ctrl = UART_HW_FLOWCTRL_CTS_RTS` and adding
-`.rx_flow_ctrl_thresh = 122`.
+the example code `uart_echo_example_main.c` by replacing existing `UART_PIN_NO_CHANGE` macros with the appropriate pin
+numbers and configure UART1 driver to use the hardware flow control by setting `.flow_ctrl = UART_HW_FLOWCTRL_CTS_RTS`
+and adding `.rx_flow_ctrl_thresh = 122` to the `uart_config` structure.
 
 ```
-  --------------------------------------------------------------------------------------
-  | Target chip Interface | #define         | Default ESP Pin      | External UART Pin |
-  | ----------------------|-----------------|----------------------|--------------------
-  | Transmit Data (TxD)   | ECHO_TEST_RTS   | GPIO18               | CTS               |
-  | Receive Data (RxD)    | ECHO_TEST_CTS   | GPIO19               | RTS               |
-  | Ground                | n/a             | GND                  | GND               |
-  --------------------------------------------------------------------------------------
+  ---------------------------------------------------------------
+  | Target chip Interface | Macro           | External UART Pin |
+  | ----------------------|-----------------|--------------------
+  | Transmit Data (TxD)   | ECHO_TEST_RTS   | CTS               |
+  | Receive Data (RxD)    | ECHO_TEST_CTS   | RTS               |
+  | Ground                | n/a             | GND               |
+  ---------------------------------------------------------------
 ```
 
 ### Configure the project

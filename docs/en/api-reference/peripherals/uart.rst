@@ -1,20 +1,16 @@
 Universal Asynchronous Receiver/Transmitter (UART)
 ==================================================
 
-{IDF_TARGET_UART_NUM:default = "UART_NUM_1", esp32 = "UART_NUM_2", esp32s3 = "UART_NUM_2"}
+{IDF_TARGET_UART_NUM:default="two", esp32="three", esp32s3="three"}
+
+{IDF_TARGET_UART_EXAMPLE_PORT:default = "UART_NUM_1", esp32 = "UART_NUM_2", esp32s3 = "UART_NUM_2"}
 
 Overview
 --------
 
 A Universal Asynchronous Receiver/Transmitter (UART) is a hardware feature that handles communication (i.e., timing requirements and data framing) using widely-adopted asynchronous serial communication interfaces, such as RS232, RS422, RS485. A UART provides a widely adopted and cheap method to realize full-duplex or half-duplex data exchange among different devices.
 
-.. only:: esp32 or esp32s3
-
-    The {IDF_TARGET_NAME} chip has three UART controllers (UART0, UART1, and UART2), each featuring an identical set of registers to simplify programming and for more flexibility.
-
-.. only:: esp32s2 or esp32c3
-
-    The {IDF_TARGET_NAME} chip has two UART controllers (UART0 and UART1), each featuring an identical set of registers to simplify programming and for more flexibility.
+The {IDF_TARGET_NAME} chip has {IDF_TARGET_UART_NUM} UART controllers (also referred to as port), each featuring an identical set of registers to simplify programming and for more flexibility.
 
 Each UART controller is independently configurable with parameters such as baud rate, data bit length, bit ordering, number of stop bits, parity bit etc. All the controllers are compatible with UART-enabled devices from various manufacturers and can also support Infrared Data Association protocols (IrDA).
 
@@ -50,7 +46,7 @@ Call the function :cpp:func:`uart_param_config` and pass to it a :cpp:type:`uart
 
 .. code-block:: c
 
-    const uart_port_t uart_num = {IDF_TARGET_UART_NUM};
+    const uart_port_t uart_num = {IDF_TARGET_UART_EXAMPLE_PORT};
     uart_config_t uart_config = {
         .baud_rate = 115200,
         .data_bits = UART_DATA_8_BITS,
@@ -103,7 +99,7 @@ The same macro should be specified for pins that will not be used.
 .. code-block:: c
 
   // Set UART pins(TX: IO4, RX: IO5, RTS: IO18, CTS: IO19)
-  ESP_ERROR_CHECK(uart_set_pin({IDF_TARGET_UART_NUM}, 4, 5, 18, 19));
+  ESP_ERROR_CHECK(uart_set_pin({IDF_TARGET_UART_EXAMPLE_PORT}, 4, 5, 18, 19));
 
 .. _uart-api-driver-installation:
 
@@ -125,7 +121,7 @@ The function will allocate the required internal resources for the UART driver.
     const int uart_buffer_size = (1024 * 2);
     QueueHandle_t uart_queue;
     // Install UART driver using an event queue here
-    ESP_ERROR_CHECK(uart_driver_install({IDF_TARGET_UART_NUM}, uart_buffer_size, \
+    ESP_ERROR_CHECK(uart_driver_install({IDF_TARGET_UART_EXAMPLE_PORT}, uart_buffer_size, \
                                             uart_buffer_size, 10, &uart_queue, 0));
 
 Once this step is complete, you can connect the external UART device and check the communication.
@@ -178,7 +174,7 @@ There is a 'companion' function :cpp:func:`uart_wait_tx_done` that monitors the 
 .. code-block:: c
 
     // Wait for packet to be sent
-    const uart_port_t uart_num = {IDF_TARGET_UART_NUM};
+    const uart_port_t uart_num = {IDF_TARGET_UART_EXAMPLE_PORT};
     ESP_ERROR_CHECK(uart_wait_tx_done(uart_num, 100)); // wait timeout is 100 RTOS ticks (TickType_t)
 
 
@@ -190,7 +186,7 @@ Once the data is received by the UART and saved in the Rx FIFO buffer, it needs 
 .. code-block:: c
 
     // Read data from UART.
-    const uart_port_t uart_num = {IDF_TARGET_UART_NUM};
+    const uart_port_t uart_num = {IDF_TARGET_UART_EXAMPLE_PORT};
     uint8_t data[128];
     int length = 0;
     ESP_ERROR_CHECK(uart_get_buffered_data_len(uart_num, (size_t*)&length));
