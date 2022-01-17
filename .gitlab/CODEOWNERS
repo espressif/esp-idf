@@ -199,7 +199,7 @@
 
 /tools/unit-test-app/         @esp-idf-codeowners/system @esp-idf-codeowners/tools
 
-requirements.txt              @esp-idf-codeowners/tools
+requirements.*.txt              @esp-idf-codeowners/tools
 
 # sort-order-reset
 

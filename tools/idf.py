@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -95,7 +95,8 @@ def check_environment():
         out = subprocess.check_output(
             [
                 os.environ['PYTHON'],
-                os.path.join(os.environ['IDF_PATH'], 'tools', 'check_python_dependencies.py'),
+                os.path.join(os.environ['IDF_PATH'], 'tools', 'idf_tools.py'),
+                'check-python-dependencies',
             ],
             env=os.environ,
         )

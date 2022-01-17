@@ -148,7 +148,6 @@ examples/wifi/iperf/iperf_test.py
 tools/ble/lib_ble_client.py
 tools/ble/lib_gap.py
 tools/ble/lib_gatt.py
-tools/check_python_dependencies.py
 tools/check_term.py
 tools/ci/check_artifacts_expire_time.py
 tools/ci/check_callgraph.py

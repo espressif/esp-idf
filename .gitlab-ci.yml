@@ -72,6 +72,13 @@ variables:
   CI_AUTO_TEST_SCRIPT_REPO_BRANCH: "ci/v4.1"
   PYTEST_EMBEDDED_TAG: "v0.4.5"
 
+  # cache python dependencies
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+  paths:
+    - .cache/pip
+
 .setup_tools_unless_target_test: &setup_tools_unless_target_test |
   if [[ -n "$IDF_DONT_USE_MIRRORS" ]]; then
   export IDF_MIRROR_PREFIX_MAP=
@@ -95,6 +102,7 @@ before_script:
   - source tools/ci/configure_ci_environment.sh
   - *setup_tools_unless_target_test
   - fetch_submodules
+  - $IDF_PATH/tools/idf_tools.py install-python-env
 
 # used for check scripts which we want to run unconditionally
 .before_script_no_sync_submodule:
@@ -103,6 +111,7 @@ before_script:
     - source tools/ci/utils.sh
     - source tools/ci/setup_python.sh
     - source tools/ci/configure_ci_environment.sh
+    - $IDF_PATH/tools/idf_tools.py install-python-env
 
 .before_script_minimal:
   before_script:
@@ -133,6 +142,7 @@ before_script:
     - source tools/ci/configure_ci_environment.sh
     - *setup_tools_unless_target_test
     - fetch_submodules
+    - $IDF_PATH/tools/idf_tools.py install-python-env
     - cd /tmp
     - retry_failed git clone --depth 1 --branch $PYTEST_EMBEDDED_TAG https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/idf/pytest-embedded.git
     - cd pytest-embedded && bash foreach.sh install

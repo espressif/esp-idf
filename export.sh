@@ -96,7 +96,7 @@ __main() {
 
     __verbose "Using Python interpreter in $(which python)"
     __verbose "Checking if Python packages are up to date..."
-    python "${IDF_PATH}/tools/check_python_dependencies.py" || return 1
+    python "${IDF_PATH}/tools/idf_tools.py" check-python-dependencies || return 1
 
 
     # Allow calling some IDF python tools without specifying the full path
