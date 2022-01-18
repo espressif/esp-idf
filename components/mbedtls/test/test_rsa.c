@@ -529,7 +529,7 @@ TEST_CASE("mbedtls RSA Generate Key", "[mbedtls][timeout=60]")
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
 
-    const unsigned int key_size = 3072;
+    const unsigned int key_size = 2048;
     const int exponent = 65537;
 
 #if CONFIG_MBEDTLS_MPI_USE_INTERRUPT
