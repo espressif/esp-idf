@@ -392,6 +392,12 @@ int usb_transfer_sync(uint8_t ep, uint8_t *data, size_t dlen, unsigned int flags
  */
 void usb_cancel_transfer(uint8_t ep);
 
+/**
+ * @brief Provide IDF with an interface to clear the static variable usb_dev
+ *
+ *
+ */
+void usb_dev_deinit(void);
 
 void usb_dev_resume(int configuration);
 int usb_dev_get_configuration(void);

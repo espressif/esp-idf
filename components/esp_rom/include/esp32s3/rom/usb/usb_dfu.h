@@ -140,6 +140,7 @@ int dfu_custom_handle_req(struct usb_setup_packet *pSetup,
 
 typedef void(*usb_dfu_detach_routine_t)(int delay);
 void usb_dfu_set_detach_cb(usb_dfu_detach_routine_t cb);
+void usb_dfu_force_detach(void);
 
 
 #ifdef __cplusplus

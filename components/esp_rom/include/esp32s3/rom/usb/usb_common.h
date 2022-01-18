@@ -217,26 +217,6 @@ struct string_descriptor {
     uint16_t bString[];
 } __packed;
 
-#define ROM_MAX_CFG_DESC_CNT 1
-
-struct rom_usb_descriptors {
-    const struct usb_device_descriptor *device_descr;
-    const void *config_descr[ROM_MAX_CFG_DESC_CNT];
-    int string_count; // including string_descriptor_zero
-    const struct string_descriptor_zero *string0_descr;
-    const struct string_descriptor *string_descrs[];
-};
-
-/* Descriptors defined in the ROM */
-extern struct usb_device_descriptor general_device_descr;
-extern const void* acm_config_descr;
-extern const void* dfu_config_descr;
-extern const struct string_descriptor str_manu_descr;
-extern const struct string_descriptor str_prod_descr;
-extern const struct string_descriptor_zero string0_descr;
-extern const struct rom_usb_descriptors acm_usb_descriptors;
-extern const struct rom_usb_descriptors dfu_usb_descriptors;
-extern const struct rom_usb_descriptors *rom_usb_curr_desc;
 
 #ifdef __cplusplus
 }
