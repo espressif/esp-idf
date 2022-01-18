@@ -8,7 +8,6 @@ set(srcs
     "rtc_pm.c"
     "rtc_sleep.c"
     "rtc_time.c"
-    "rtc_wdt.c"
     "regi2c_ctrl.c"
     "chip_info.c"
     )

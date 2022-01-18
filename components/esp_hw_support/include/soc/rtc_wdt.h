@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,6 +44,8 @@ without description where were CPUs when it happened.
 #include <stdbool.h>
 #include "soc/rtc_periph.h"
 #include "esp_err.h"
+
+#if SOC_RTC_WDT_SUPPORTED
 
 #ifdef __cplusplus
 extern "C"
@@ -188,3 +190,5 @@ bool rtc_wdt_is_on(void);
 #ifdef __cplusplus
 }
 #endif
+
+#endif // SOC_CAPS_RTC_WDT
