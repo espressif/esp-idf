@@ -60,6 +60,7 @@ void zboss_signal_handler(zb_bufid_t bufid)
     zb_zdo_app_signal_hdr_t *p_sg_p       = NULL;
     zb_zdo_app_signal_type_t  sig         = zb_get_app_signal(bufid, &p_sg_p);
     zb_ret_t                  status      = ZB_GET_APP_SIGNAL_STATUS(bufid);
+    zb_zdo_signal_device_annce_params_t *dev_annce_params = NULL;
 
     switch (sig) {
     case ZB_ZDO_SIGNAL_SKIP_STARTUP:
@@ -97,11 +98,11 @@ void zboss_signal_handler(zb_bufid_t bufid)
         }
         break;
 
-    case ZB_ZDO_SIGNAL_DEVICE_ANNCE: {
-        zb_zdo_signal_device_annce_params_t *dev_annce_params = ZB_ZDO_SIGNAL_GET_PARAMS(p_sg_p, zb_zdo_signal_device_annce_params_t);
+    case ZB_ZDO_SIGNAL_DEVICE_ANNCE:
+        dev_annce_params = ZB_ZDO_SIGNAL_GET_PARAMS(p_sg_p, zb_zdo_signal_device_annce_params_t);
         ESP_LOGI(TAG, "New device commissioned or rejoined (short: 0x%04hx)", dev_annce_params->device_short_addr);
-    }
-    break;
+        break;
+
     default:
         ESP_LOGI(TAG, "status: %d", status);
         break;
@@ -112,7 +113,7 @@ void zboss_signal_handler(zb_bufid_t bufid)
     }
 }
 
-void app_main()
+void app_main(void)
 {
     zb_ret_t       zb_err_code;
     zb_esp_platform_config_t config = {
