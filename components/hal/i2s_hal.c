@@ -172,7 +172,6 @@ void i2s_hal_tx_set_common_mode(i2s_hal_context_t *hal, const i2s_hal_config_t *
     i2s_ll_tx_clk_set_src(hal->dev, I2S_CLK_D2CLK); // Set I2S_CLK_D2CLK as default
     i2s_ll_mclk_use_tx_clk(hal->dev);
 
-    i2s_ll_tx_set_active_chan_mask(hal->dev, hal_cfg->chan_mask);
     // In TDM mode(more than 2 channels), the ws polarity should be high first.
     if (hal_cfg->total_chan > 2) {
         i2s_ll_tx_set_ws_idle_pol(hal->dev, true);
@@ -198,7 +197,6 @@ void i2s_hal_rx_set_common_mode(i2s_hal_context_t *hal, const i2s_hal_config_t *
     i2s_ll_rx_clk_set_src(hal->dev, I2S_CLK_D2CLK); // Set I2S_CLK_D2CLK as default
     i2s_ll_mclk_use_rx_clk(hal->dev);
 
-    i2s_ll_rx_set_active_chan_mask(hal->dev, hal_cfg->chan_mask);
     // In TDM mode(more than 2 channels), the ws polarity should be high first.
     if (hal_cfg->total_chan > 2) {
         i2s_ll_rx_set_ws_idle_pol(hal->dev, true);
@@ -238,6 +236,7 @@ void i2s_hal_tx_set_channel_style(i2s_hal_context_t *hal, const i2s_hal_config_t
     /* Set channel number and valid data bits */
 #if SOC_I2S_SUPPORTS_TDM
     chan_num = hal_cfg->total_chan;
+    i2s_ll_tx_set_active_chan_mask(hal->dev, hal_cfg->chan_mask >> 16);
     i2s_ll_tx_set_chan_num(hal->dev, chan_num);
 #endif
     i2s_ll_tx_set_sample_bit(hal->dev, chan_bits, data_bits);
@@ -263,6 +262,7 @@ void i2s_hal_rx_set_channel_style(i2s_hal_context_t *hal, const i2s_hal_config_t
 
 #if SOC_I2S_SUPPORTS_TDM
     chan_num = hal_cfg->total_chan;
+    i2s_ll_rx_set_active_chan_mask(hal->dev, hal_cfg->chan_mask >> 16);
     i2s_ll_rx_set_chan_num(hal->dev, chan_num);
 #endif
     i2s_ll_rx_set_sample_bit(hal->dev, chan_bits, data_bits);
