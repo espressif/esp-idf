@@ -20,7 +20,7 @@ example_test_pytest_esp32_generic:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32
   needs:
-    - build_examples_pytest_esp32
+    - build_pytest_examples_esp32
   variables:
     TARGET: esp32
     ENV_MARKER: generic
@@ -33,7 +33,7 @@ example_test_pytest_esp32s2_generic:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32s2
   needs:
-    - build_examples_pytest_esp32s2
+    - build_pytest_examples_esp32s2
   variables:
     TARGET: esp32s2
     ENV_MARKER: generic
@@ -46,7 +46,7 @@ example_test_pytest_esp32c3_generic:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c3
   needs:
-    - build_examples_pytest_esp32c3
+    - build_pytest_examples_esp32c3
   variables:
     TARGET: esp32c3
     ENV_MARKER: generic
@@ -59,7 +59,7 @@ example_test_pytest_esp32c3_flash_suspend:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c3
   needs:
-    - build_examples_pytest_esp32c3
+    - build_pytest_examples_esp32c3
   variables:
     TARGET: esp32c3
     ENV_MARKER: flash_suspend
