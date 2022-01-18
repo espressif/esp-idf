@@ -13,16 +13,30 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "esp_system.h"
+#include "esp_log.h"
+#include "esp_timer.h"
+#include "esp_check.h"
 #include "esp_intr_alloc.h"
 #include "esp_private/usb_console.h"
+#include "esp_private/system_internal.h"
+#include "esp_private/startup_internal.h"
 #include "soc/periph_defs.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/usb_struct.h"
 #include "soc/usb_reg.h"
-#include "spinlock.h"
 #include "hal/soc_hal.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
+#include "esp_rom_caps.h"
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/usb/usb_dc.h"
+#include "esp32s2/rom/usb/cdc_acm.h"
+#include "esp32s2/rom/usb/usb_dfu.h"
+#include "esp32s2/rom/usb/usb_device.h"
+#include "esp32s2/rom/usb/usb_os_glue.h"
+#include "esp32s2/rom/usb/usb_persist.h"
+#include "esp32s2/rom/usb/chip_usb_dw_wrapper.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/usb/usb_dc.h"
 #include "esp32s3/rom/usb/cdc_acm.h"
 #include "esp32s3/rom/usb/usb_dfu.h"
@@ -30,6 +44,7 @@
 #include "esp32s3/rom/usb/usb_os_glue.h"
 #include "esp32s3/rom/usb/usb_persist.h"
 #include "esp32s3/rom/usb/chip_usb_dw_wrapper.h"
+#endif
 
 #define CDC_WORK_BUF_SIZE (ESP_ROM_CDC_ACM_WORK_BUF_MIN + CONFIG_ESP_CONSOLE_USB_CDC_RX_BUF_SIZE)
 
@@ -51,9 +66,21 @@ static uint8_t cdcmem[CDC_WORK_BUF_SIZE];
 static esp_usb_console_cb_t s_rx_cb;
 static esp_usb_console_cb_t s_tx_cb;
 static void *s_cb_arg;
+static esp_timer_handle_t s_restart_timer;
 
+static const char* TAG = "usb_console";
+
+/* This lock is used for two purposes:
+ * - To protect functions which write something to USB, e.g. esp_usb_console_write_buf.
+ *   This is necessary since these functions may be called by esp_rom_printf, so the calls
+ *   may preempt each other or happen concurrently.
+ *   (The calls coming from regular 'printf', i.e. via VFS layer, are already protected
+ *   by a mutex in the VFS driver.)
+ * - To implement "osglue" functions of the USB stack. These normally require interrupts
+ *   to be disabled. However on multi-core chips a critical section is necessary.
+ */
+static portMUX_TYPE s_lock = portMUX_INITIALIZER_UNLOCKED;
 #ifdef CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
-static portMUX_TYPE s_write_lock = portMUX_INITIALIZER_UNLOCKED;
 void esp_usb_console_write_char(char c);
 #define ISR_FLAG  ESP_INTR_FLAG_IRAM
 #else
@@ -65,17 +92,16 @@ void esp_usb_console_write_char(char c);
 static inline void write_lock_acquire(void);
 static inline void write_lock_release(void);
 
-/* The two functions below need to be revisited in the multicore case TODO ESP32-S3 IDF-2048*/
-_Static_assert(SOC_CPU_CORES_NUM == 1, "usb_osglue_*_int is not multicore capable");
+
+/* Other forward declarations */
+void esp_usb_console_before_restart(void);
 
 /* Called by ROM to disable the interrupts
  * Non-static to allow placement into IRAM by ldgen.
  */
 void esp_usb_console_osglue_dis_int(void)
 {
-    if (s_usb_int_handle) {
-        esp_intr_disable(s_usb_int_handle);
-    }
+    portENTER_CRITICAL_SAFE(&s_lock);
 }
 
 /* Called by ROM to enable the interrupts
@@ -83,9 +109,7 @@ void esp_usb_console_osglue_dis_int(void)
  */
 void esp_usb_console_osglue_ena_int(void)
 {
-    if (s_usb_int_handle) {
-        esp_intr_enable(s_usb_int_handle);
-    }
+    portEXIT_CRITICAL_SAFE(&s_lock);
 }
 
 /* Delay function called by ROM USB driver.
@@ -150,8 +174,35 @@ void esp_usb_console_interrupt(void *arg)
     usb_dc_check_poll_for_interrupts();
     /* Restart can be requested from esp_usb_console_cdc_acm_cb or esp_usb_console_dfu_detach_cb */
     if (s_queue_reboot != REBOOT_NONE) {
-        esp_restart();
+        /* We can't call esp_restart here directly, since this function is called from an ISR.
+         * Instead, start an esp_timer and call esp_restart from the callback.
+         */
+        esp_err_t err = ESP_FAIL;
+        if (s_restart_timer) {
+            /* In case the timer is already running, stop it. No error check since this will fail if
+             * the timer is not running.
+             */
+            esp_timer_stop(s_restart_timer);
+            /* Start the timer again. 50ms seems to be not too long for the user to notice, but
+             * enough for the USB console output to be flushed.
+             */
+            const int restart_timeout_us = 50 * 1000;
+            err = esp_timer_start_once(s_restart_timer, restart_timeout_us);
+        }
+        if (err != ESP_OK) {
+            /* Can't schedule a restart for some reason? Call the "no-OS" restart function directly. */
+            esp_usb_console_before_restart();
+            esp_restart_noos();
+        }
     }
+}
+
+/* Called as esp_timer callback when the restart timeout expires.
+ * Non-static to allow placement into IRAM by ldgen.
+ */
+void esp_usb_console_on_restart_timeout(void *arg)
+{
+    esp_restart();
 }
 
 /* Call the USB interrupt handler while any interrupts are pending,
@@ -193,13 +244,9 @@ void esp_usb_console_before_restart(void)
  */
 static void esp_usb_console_rom_cleanup(void)
 {
-    /* TODO ESP32-S3 IDF-2987 */
-    // extern char rom_usb_dev, rom_usb_dev_end;
-    // extern char rom_usb_dw_ctrl, rom_usb_dw_ctrl_end;
-
-    // uart_acm_dev = NULL;
-    // memset((void *) &rom_usb_dev, 0, &rom_usb_dev_end - &rom_usb_dev);
-    // memset((void *) &rom_usb_dw_ctrl, 0, &rom_usb_dw_ctrl_end - &rom_usb_dw_ctrl);
+    usb_dev_deinit();
+    usb_dw_ctrl_deinit();
+    uart_acm_dev = NULL;
 }
 
 esp_err_t esp_usb_console_init(void)
@@ -213,9 +260,9 @@ esp_err_t esp_usb_console_init(void)
     esp_usb_console_rom_cleanup();
 
     /* Install OS hooks */
-    s_usb_osglue.int_dis_proc = esp_usb_console_osglue_dis_int;
-    s_usb_osglue.int_ena_proc = esp_usb_console_osglue_ena_int;
-    s_usb_osglue.wait_proc = esp_usb_console_osglue_wait_proc;
+    rom_usb_osglue.int_dis_proc = esp_usb_console_osglue_dis_int;
+    rom_usb_osglue.int_ena_proc = esp_usb_console_osglue_ena_int;
+    rom_usb_osglue.wait_proc = esp_usb_console_osglue_wait_proc;
 
     /* Install interrupt.
      * In case of ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF:
@@ -251,9 +298,25 @@ esp_err_t esp_usb_console_init(void)
 
 #ifdef CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
     /* Install esp_rom_printf handler */
-    ets_install_putc1(&esp_usb_console_write_char);
+    esp_rom_uart_set_as_console(ESP_ROM_USB_OTG_NUM);
+    esp_rom_install_channel_putc(1, &esp_usb_console_write_char);
 #endif // CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
 
+    return ESP_OK;
+}
+
+/* This function runs as part of the startup code to initialize the restart timer.
+ * This is not done as part of esp_usb_console_init since that function is called
+ * too early, before esp_timer is fully initialized.
+ * This gets called a bit later in the process when we can already register a timer.
+ */
+ESP_SYSTEM_INIT_FN(esp_usb_console_init_restart_timer, BIT(0), 220)
+{
+    esp_timer_create_args_t timer_create_args = {
+        .callback = &esp_usb_console_on_restart_timeout,
+        .name = "usb_console_restart"
+    };
+    ESP_RETURN_ON_ERROR(esp_timer_create(&timer_create_args, &s_restart_timer), TAG, "failed to create the restart timer");
     return ESP_OK;
 }
 
@@ -268,7 +331,7 @@ ssize_t esp_usb_console_flush_internal(size_t last_write_size)
     assert(s_usb_tx_buf_pos >= last_write_size);
     ssize_t ret;
     size_t tx_buf_pos_before = s_usb_tx_buf_pos - last_write_size;
-    int sent = cdc_acm_fifo_fill(s_cdc_acm_device, (const uint8_t*) s_usb_tx_buf, s_usb_tx_buf_pos);
+    size_t sent = cdc_acm_fifo_fill(s_cdc_acm_device, (const uint8_t*) s_usb_tx_buf, s_usb_tx_buf_pos);
     if (sent == last_write_size) {
         /* everything was sent */
         ret = last_write_size;
@@ -334,7 +397,7 @@ ssize_t esp_usb_console_read_buf(char *buf, size_t buf_size)
     if (s_cdc_acm_device == NULL) {
         return -1;
     }
-    if (!esp_usb_console_read_available()) {
+    if (esp_usb_console_available_for_read() == 0) {
         return 0;
     }
     int bytes_read = cdc_acm_fifo_read(s_cdc_acm_device, (uint8_t*) buf, buf_size);
@@ -362,12 +425,12 @@ esp_err_t esp_usb_console_set_cb(esp_usb_console_cb_t rx_cb, esp_usb_console_cb_
     return ESP_OK;
 }
 
-bool esp_usb_console_read_available(void)
+ssize_t esp_usb_console_available_for_read(void)
 {
     if (s_cdc_acm_device == NULL) {
-        return false;
+        return -1;
     }
-    return cdc_acm_rx_fifo_cnt(s_cdc_acm_device) > 0;
+    return cdc_acm_rx_fifo_cnt(s_cdc_acm_device);
 }
 
 bool esp_usb_console_write_available(void)
@@ -399,11 +462,11 @@ void esp_usb_console_write_char(char c)
 }
 static inline void write_lock_acquire(void)
 {
-    portENTER_CRITICAL_SAFE(&s_write_lock);
+    portENTER_CRITICAL_SAFE(&s_lock);
 }
 static inline void write_lock_release(void)
 {
-    portEXIT_CRITICAL_SAFE(&s_write_lock);
+    portEXIT_CRITICAL_SAFE(&s_lock);
 }
 
 #else // CONFIG_ESP_CONSOLE_USB_CDC_SUPPORT_ETS_PRINTF
