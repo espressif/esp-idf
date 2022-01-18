@@ -6,6 +6,7 @@ LED Control
 
 Introduction
 ------------
+
 The LED control (LEDC) peripheral is primarily designed to control the intensity of LEDs, although it can also be used to generate PWM signals for other purposes.
 It has {IDF_TARGET_LEDC_CHAN_NUM} channels which can generate independent waveforms that can be used, for example, to drive RGB LED devices.
 
