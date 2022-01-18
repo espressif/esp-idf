@@ -31,6 +31,7 @@
 import argparse
 import contextlib
 import copy
+import datetime
 import errno
 import functools
 import hashlib
@@ -1516,6 +1517,16 @@ def get_constraints(idf_version):  # type: (str) -> str
     temp_path = constraint_path + '.tmp'
 
     mkdir_p(os.path.dirname(temp_path))
+
+    try:
+        age = datetime.date.today() - datetime.date.fromtimestamp(os.path.getmtime(constraint_path))
+        if age < datetime.timedelta(days=1):
+            info(f'Skipping the download of {constraint_path} because it was downloaded recently. If you believe '
+                 f'that this is causing you trouble then remove it manually and re-run your install script.')
+            return constraint_path
+    except OSError:
+        # doesn't exist or inaccessible
+        pass
 
     for _ in range(DOWNLOAD_RETRY_COUNT):
         download(constraint_url, temp_path)
