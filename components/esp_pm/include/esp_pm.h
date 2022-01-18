@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,8 +19,8 @@
 #include "esp32c3/pm.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/pm.h"
-#elif CONFIG_IDF_TARGET_ESP8684
-#include "esp8684/pm.h"
+#elif CONFIG_IDF_TARGET_ESP32C2
+#include "esp32c2/pm.h"
 #endif
 
 #ifdef __cplusplus

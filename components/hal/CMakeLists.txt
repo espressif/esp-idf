@@ -145,14 +145,14 @@ if(NOT BOOTLOADER_BUILD)
             "esp32h2/rtc_cntl_hal.c")
     endif()
 
-    if(${target} STREQUAL "esp8684")
+    if(${target} STREQUAL "esp32c2")
         list(APPEND srcs
               "gdma_hal.c"
               "spi_flash_hal_gpspi.c"
               "spi_slave_hd_hal.c"
               "systimer_hal.c"
-              "esp8684/brownout_hal.c"
-              "esp8684/rtc_cntl_hal.c")
+              "esp32c2/brownout_hal.c"
+              "esp32c2/rtc_cntl_hal.c")
     endif()
 endif()
 

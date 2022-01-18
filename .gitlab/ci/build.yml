@@ -194,12 +194,12 @@ build_esp_idf_tests_cmake_esp32c3:
   variables:
     IDF_TARGET: esp32c3
 
-build_esp_idf_tests_cmake_esp8684:
+build_esp_idf_tests_cmake_esp32c2:
   extends:
     - .build_esp_idf_tests_cmake_template
-    - .rules:build:unit_test-esp8684
+    - .rules:build:unit_test-esp32c2
   variables:
-    IDF_TARGET: esp8684
+    IDF_TARGET: esp32c2
 
 .build_examples_template:
   extends: .build_template
@@ -323,13 +323,13 @@ build_test_apps_esp32c3:
   variables:
     IDF_TARGET: esp32c3
 
-build_test_apps_esp8684:
+build_test_apps_esp32c2:
   extends:
     - .build_test_apps_template
-    - .rules:build:custom_test-esp8684
+    - .rules:build:custom_test-esp32c2
   parallel: 8
   variables:
-    IDF_TARGET: esp8684
+    IDF_TARGET: esp32c2
 
 .build_component_ut_template:
   extends: .build_test_apps_template
@@ -365,12 +365,12 @@ build_component_ut_esp32c3:
   variables:
     IDF_TARGET: esp32c3
 
-build_component_ut_esp8684:
+build_component_ut_esp32c2:
   extends:
     - .build_component_ut_template
-    - .rules:build:component_ut-esp8684
+    - .rules:build:component_ut-esp32c2
   variables:
-    IDF_TARGET: esp8684
+    IDF_TARGET: esp32c2
 
 .test_build_system_template:
   stage: host_test

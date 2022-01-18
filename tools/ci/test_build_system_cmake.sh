@@ -505,7 +505,7 @@ function run_tests()
     print_status "Test build ESP-IDF as a library to a custom CMake projects for all targets"
     IDF_AS_LIB=$IDF_PATH/examples/build_system/cmake/idf_as_lib
     # note: we just need to run cmake
-    for TARGET in "esp32" "esp32s2" "esp32s3" "esp32c3" "esp32h2" "esp8684"
+    for TARGET in "esp32" "esp32s2" "esp32s3" "esp32c3" "esp32h2" "esp32c2"
     do
       echo "Build idf_as_lib for $TARGET target"
       rm -rf build

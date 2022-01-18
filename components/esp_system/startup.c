@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -258,7 +258,7 @@ static void do_core_init(void)
     CONFIG_ESP32S3_BROWNOUT_DET || \
     CONFIG_ESP32C3_BROWNOUT_DET || \
     CONFIG_ESP32H2_BROWNOUT_DET || \
-    CONFIG_ESP8684_BROWNOUT_DET
+    CONFIG_ESP32C2_BROWNOUT_DET
     // [refactor-todo] leads to call chain rtc_is_register (driver) -> esp_intr_alloc (esp32/esp32s2) ->
     // malloc (newlib) -> heap_caps_malloc (heap), so heap must be at least initialized
     esp_brownout_init();

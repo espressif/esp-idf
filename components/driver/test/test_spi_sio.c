@@ -144,7 +144,7 @@ TEST_CASE("SPI Single Board Test SIO", "[spi]")
 
 
 //TODO IDF-4455
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3, ESP32S3, ESP8684, ESP32H2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3, ESP32S3, ESP32C2, ESP32H2)
 //These tests are ESP32 only due to lack of runners
 /********************************************************************************
  *      Test SIO Master & Slave
@@ -262,4 +262,4 @@ void test_sio_slave(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("sio mode", "[spi][test_env=Example_SPI_Multi_device]", test_sio_master, test_sio_slave);
-#endif //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3, ESP8684, ESP32H2)
+#endif //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3, ESP32C2, ESP32H2)

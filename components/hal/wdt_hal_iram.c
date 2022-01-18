@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -67,7 +67,7 @@ void wdt_hal_init(wdt_hal_context_t *hal, wdt_inst_t wdt_inst, uint32_t prescale
         mwdt_ll_disable_stage(hal->mwdt_dev, 1);
         mwdt_ll_disable_stage(hal->mwdt_dev, 2);
         mwdt_ll_disable_stage(hal->mwdt_dev, 3);
-#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP8684
+#if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32C2
         //Enable or disable level interrupt. Edge interrupt is always disabled.
         mwdt_ll_set_edge_intr(hal->mwdt_dev, false);
         mwdt_ll_set_level_intr(hal->mwdt_dev, enable_intr);

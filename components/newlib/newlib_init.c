@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,8 +31,8 @@
 #include "esp32c3/rom/libc_stubs.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/libc_stubs.h"
-#elif CONFIG_IDF_TARGET_ESP8684
-#include "esp8684/rom/libc_stubs.h"
+#elif CONFIG_IDF_TARGET_ESP32C2
+#include "esp32c2/rom/libc_stubs.h"
 #endif
 
 static struct _reent s_reent;
@@ -109,7 +109,7 @@ static struct syscall_stub_table s_stub_table = {
     ._printf_float = NULL,
     ._scanf_float = NULL,
 #endif
-#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP8684
+#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
     /* TODO IDF-2570 : mark that this assert failed in ROM, to avoid confusion between IDF & ROM
        assertion failures (as function names & source file names will be similar)
     */
@@ -132,7 +132,7 @@ void esp_newlib_init(void)
     syscall_table_ptr_pro = syscall_table_ptr_app = &s_stub_table;
 #elif CONFIG_IDF_TARGET_ESP32S2
     syscall_table_ptr_pro = &s_stub_table;
-#elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP8684
+#elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
     syscall_table_ptr = &s_stub_table;
 #endif
 

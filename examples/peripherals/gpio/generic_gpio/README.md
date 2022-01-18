@@ -22,7 +22,7 @@ This test code shows how to configure GPIO and how to use it with interruption.
 
 |                 | CONFIG_GPIO_OUTPUT_0 | CONFIG_GPIO_OUTPUT_1 | CONFIG_GPIO_INPUT_0 | CONFIG_GPIO_INPUT_1 |
 | --------------- | -------------------- | -------------------- | ------------------- | ------------------- |
-| ESP8684/ESP32H2 | 8                    | 9                    | 4                   | 5                   |
+| ESP32-C2/ESP32H2| 8                    | 9                    | 4                   | 5                   |
 | All other chips | 18                   | 19                   | 4                   | 5                   |
 
 ## How to use example

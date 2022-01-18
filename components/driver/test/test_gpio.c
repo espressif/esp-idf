@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,7 +63,7 @@
 #define TEST_GPIO_USB_DP_IO             19  // USB D+ GPIO
 #define TEST_GPIO_INPUT_LEVEL_HIGH_PIN  10
 #define TEST_GPIO_INPUT_LEVEL_LOW_PIN   1
-#elif CONFIG_IDF_TARGET_ESP8684
+#elif CONFIG_IDF_TARGET_ESP32C2
 #define TEST_GPIO_EXT_OUT_IO            2  // default output GPIO
 #define TEST_GPIO_EXT_IN_IO             3  // default input GPIO
 #define TEST_GPIO_OUTPUT_PIN            1
@@ -113,7 +113,7 @@ __attribute__((unused)) static void gpio_isr_edge_handler(void *arg)
     edge_intr_times++;
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP8684)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2)
 //No runners
 // level interrupt event with "gpio_intr_disable"
 static void gpio_isr_level_handler(void *arg)
@@ -223,7 +223,7 @@ TEST_CASE("GPIO config parameters test", "[gpio]")
 #endif // SOC_HAS_INPUT_ONLY_PIN
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP8684)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2)
 //No runners
 TEST_CASE("GPIO rising edge interrupt test", "[gpio][test_env=UT_T1_GPIO]")
 {
@@ -527,7 +527,7 @@ TEST_CASE("GPIO io pull up/down function", "[gpio]")
     TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(TEST_GPIO_EXT_IN_IO), 0, "gpio_pullup_dis error, it can pull up");
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP8684)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2)
 //No runners
 TEST_CASE("GPIO output and input mode test", "[gpio][test_env=UT_T1_GPIO]")
 {

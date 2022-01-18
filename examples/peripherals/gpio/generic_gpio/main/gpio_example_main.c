@@ -19,8 +19,8 @@
  * This test code shows how to configure gpio and how to use gpio interrupt.
  *
  * GPIO status:
- * GPIO18: output (ESP8684/ESP32H2 uses GPIO8 as the second output pin)
- * GPIO19: output (ESP8684/ESP32H2 uses GPIO9 as the second output pin)
+ * GPIO18: output (ESP32C2/ESP32H2 uses GPIO8 as the second output pin)
+ * GPIO19: output (ESP32C2/ESP32H2 uses GPIO9 as the second output pin)
  * GPIO4:  input, pulled up, interrupt from rising edge and falling edge
  * GPIO5:  input, pulled up, interrupt from rising edge.
  *

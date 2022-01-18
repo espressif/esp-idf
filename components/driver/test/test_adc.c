@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include <string.h>
 #include "esp_log.h"
 #include "test_utils.h"
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 // TODO: Support ADC IDF-3908
 #include "esp_adc_cal.h"
 #include "driver/adc.h"
@@ -400,4 +400,4 @@ TEST_CASE("test_adc_single_cali_time", "[adc][ignore][manual]")
     }
 }
 
-#endif //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)
+#endif //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -138,7 +138,7 @@ static esp_err_t enable_qio_mode(bootloader_flash_read_status_fn_t read_status_f
 
     esp_rom_spiflash_config_readmode(mode);
 
-#if !CONFIG_IDF_TARGET_ESP8684
+#if !CONFIG_IDF_TARGET_ESP32C2
     //IDF-3914
     const uint32_t spiconfig = esp_rom_efuse_get_flash_gpio_info();
 #endif
@@ -146,7 +146,7 @@ static esp_err_t enable_qio_mode(bootloader_flash_read_status_fn_t read_status_f
 #if CONFIG_IDF_TARGET_ESP32
     int wp_pin = bootloader_flash_get_wp_pin();
     esp_rom_spiflash_select_qio_pins(wp_pin, spiconfig);
-#elif CONFIG_IDF_TARGET_ESP8684
+#elif CONFIG_IDF_TARGET_ESP32C2
     //IDF-3914
     esp_rom_spiflash_select_qio_pins(0, 0);
 #else

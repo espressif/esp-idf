@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,8 +33,8 @@
 #define BROWNOUT_DET_LVL CONFIG_ESP32C3_BROWNOUT_DET_LVL
 #elif defined(CONFIG_ESP32H2_BROWNOUT_DET_LVL)
 #define BROWNOUT_DET_LVL CONFIG_ESP32H2_BROWNOUT_DET_LVL
-#elif defined(CONFIG_ESP8684_BROWNOUT_DET_LVL)
-#define BROWNOUT_DET_LVL CONFIG_ESP8684_BROWNOUT_DET_LVL
+#elif defined(CONFIG_ESP32C2_BROWNOUT_DET_LVL)
+#define BROWNOUT_DET_LVL CONFIG_ESP32C2_BROWNOUT_DET_LVL
 #else
 #define BROWNOUT_DET_LVL 0
 #endif
