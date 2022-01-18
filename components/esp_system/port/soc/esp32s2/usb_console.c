@@ -232,12 +232,9 @@ void esp_usb_console_before_restart(void)
  */
 static void esp_usb_console_rom_cleanup(void)
 {
-    extern char rom_usb_dev, rom_usb_dev_end;
-    extern char rom_usb_dw_ctrl, rom_usb_dw_ctrl_end;
-
+    usb_dev_deinit();
+    usb_dw_ctrl_deinit();
     uart_acm_dev = NULL;
-    memset((void *) &rom_usb_dev, 0, &rom_usb_dev_end - &rom_usb_dev);
-    memset((void *) &rom_usb_dw_ctrl, 0, &rom_usb_dw_ctrl_end - &rom_usb_dw_ctrl);
 }
 
 esp_err_t esp_usb_console_init(void)

@@ -65,3 +65,19 @@ void rom_usb_cdc_set_descriptor_patch(void)
     /* Override the pointer to descriptors structure */
     rom_usb_curr_desc = &s_acm_usb_descriptors_override;
 }
+
+/* On ESP32-S2, ROM doesn't provide interfaces to clear usb_dev and usb_dw_ctrl structures.
+ * Starting from ESP32-S3, usb_dev_deinit and usb_dw_ctrl_deinit ROM functions are available.
+ * Here we implement the missing functionality for the ESP32-S2.
+ */
+void usb_dev_deinit(void)
+{
+    extern char rom_usb_dev, rom_usb_dev_end;
+    memset((void *) &rom_usb_dev, 0, &rom_usb_dev_end - &rom_usb_dev);
+}
+
+void usb_dw_ctrl_deinit(void)
+{
+    extern char rom_usb_dw_ctrl, rom_usb_dw_ctrl_end;
+    memset((void *) &rom_usb_dw_ctrl, 0, &rom_usb_dw_ctrl_end - &rom_usb_dw_ctrl);
+}
