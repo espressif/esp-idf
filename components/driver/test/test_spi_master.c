@@ -35,7 +35,7 @@
 const static char TAG[] = "test_spi";
 
 // There is no input-only pin on esp32c3 and esp32s3
-#define TEST_SOC_HAS_INPUT_ONLY_PINS  (!DISABLED_FOR_TARGETS(ESP32C3, ESP32S3, ESP8684))
+#define TEST_SOC_HAS_INPUT_ONLY_PINS  (!DISABLED_FOR_TARGETS(ESP32C3, ESP32S3, ESP32C2))
 
 static void check_spi_pre_n_for(int clk, int pre, int n)
 {
@@ -1316,8 +1316,8 @@ TEST_CASE_MULTIPLE_DEVICES("SPI Master: FD, DMA, Master Single Direction Test", 
 #define GET_US_BY_CCOUNT(t) ((double)t/CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ)
 #elif CONFIG_IDF_TARGET_ESP32C3
 #define GET_US_BY_CCOUNT(t) ((double)t/CONFIG_ESP32C3_DEFAULT_CPU_FREQ_MHZ)
-#elif CONFIG_IDF_TARGET_ESP8684
-#define GET_US_BY_CCOUNT(t) ((double)t/CONFIG_ESP8684_DEFAULT_CPU_FREQ_MHZ)
+#elif CONFIG_IDF_TARGET_ESP32C2
+#define GET_US_BY_CCOUNT(t) ((double)t/CONFIG_ESP32C2_DEFAULT_CPU_FREQ_MHZ)
 #endif
 
 static void speed_setup(spi_device_handle_t *spi, bool use_dma)

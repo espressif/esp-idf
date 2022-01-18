@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -276,7 +276,7 @@ TEST_CASE("I2C driver memory leaking check", "[i2c]")
     TEST_ASSERT_INT_WITHIN(100, size, esp_get_free_heap_size());
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP8684)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C2)
 
 // print the reading buffer
 static void disp_buf(uint8_t *buf, int len)
@@ -657,7 +657,7 @@ TEST_CASE("I2C general API test", "[i2c]")
     }
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C3, ESP8684)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C3, ESP32C2)
 //Init uart baud rate detection
 static void uart_aut_baud_det_init(int rxd_io_num)
 {

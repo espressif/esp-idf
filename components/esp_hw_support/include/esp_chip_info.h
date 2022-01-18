@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +25,7 @@ typedef enum {
     CHIP_ESP32S3 = 9, //!< ESP32-S3
     CHIP_ESP32C3 = 5, //!< ESP32-C3
     CHIP_ESP32H2 = 6, //!< ESP32-H2
-    CHIP_ESP8684 = 12, //!< ESP-8684
+    CHIP_ESP32C2 = 12, //!< ESP32-C2
 } esp_chip_model_t;
 
 /* Chip feature flags, used in esp_chip_info_t */

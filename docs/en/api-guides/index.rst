@@ -31,7 +31,7 @@ API Guides
     OpenThread <openthread>
     Partition Tables <partition-tables>
     Performance <performance/index>
-    :not esp8684: RF Calibration <RF_calibration>
+    :not esp32c2: RF Calibration <RF_calibration>
     :esp32: Secure Boot <../security/secure-boot-v1>
     Secure Boot V2 <../security/secure-boot-v2>
     Thread Local Storage <thread-local-storage>

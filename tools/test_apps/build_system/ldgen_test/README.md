@@ -7,4 +7,4 @@ tests the placement for the main component, as specified in `main/linker.lf`
 The Python script that performs the checks, `check_placements.py`, automatically
 runs after the app is built.
 
-ESP8684 doesn't have rtc memory, IDF-3834
+ESP32-C2 doesn't have rtc memory, IDF-3834

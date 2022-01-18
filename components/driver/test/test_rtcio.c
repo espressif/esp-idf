@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,7 +21,7 @@
 #include "esp_log.h"
 #include "soc/rtc_io_periph.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C3, ESP8684)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C3, ESP32C2)
 
 #define RTCIO_CHECK(condition) TEST_ASSERT_MESSAGE((condition == ESP_OK), "ret is not ESP_OK")
 #define RTCIO_VERIFY(condition, msg) TEST_ASSERT_MESSAGE((condition), msg)

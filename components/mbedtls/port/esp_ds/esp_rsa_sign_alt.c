@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,8 +15,8 @@
 #include "esp32h2/rom/digital_signature.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/digital_signature.h"
-#elif CONFIG_IDF_TARGET_ESP8684
-#include "esp8684/rom/digital_signature.h"
+#elif CONFIG_IDF_TARGET_ESP32C2
+#include "esp32c2/rom/digital_signature.h"
 #else
 #error   "Selected target does not support esp_rsa_sign_alt (for DS)"
 #endif

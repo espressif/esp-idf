@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,8 +21,8 @@
 #include "esp32c3/rom/ets_sys.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/ets_sys.h"
-#elif CONFIG_IDF_TARGET_ESP8684
-#include "esp8684/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32C2
+#include "esp32c2/rom/ets_sys.h"
 #endif
 
 #ifdef __cplusplus

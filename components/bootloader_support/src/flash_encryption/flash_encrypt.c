@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,9 +15,9 @@
 #include "esp_efuse_table.h"
 #include "esp_log.h"
 #include "hal/wdt_hal.h"
-#ifdef CONFIG_IDF_TARGET_ESP8684
+#ifdef CONFIG_IDF_TARGET_ESP32C2
 // IDF-3899
-#warning "Not support flash encryption on esp8684 yet."
+#warning "Not support flash encryption on esp32c2 yet."
 #endif
 
 #ifdef CONFIG_SECURE_FLASH_ENC_ENABLED

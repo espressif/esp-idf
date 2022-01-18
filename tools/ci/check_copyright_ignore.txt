@@ -617,6 +617,7 @@ components/esp_rom/include/esp32/rom/sha.h
 components/esp_rom/include/esp32/rom/tbconsole.h
 components/esp_rom/include/esp32/rom/tjpgd.h
 components/esp_rom/include/esp32/rom/uart.h
+components/esp_rom/include/esp32c2/rom/md5_hash.h
 components/esp_rom/include/esp32c3/rom/aes.h
 components/esp_rom/include/esp32c3/rom/apb_backup_dma.h
 components/esp_rom/include/esp32c3/rom/bigint.h
@@ -718,7 +719,6 @@ components/esp_rom/include/esp32s3/rom/usb/usb_device.h
 components/esp_rom/include/esp32s3/rom/usb/usb_dfu.h
 components/esp_rom/include/esp32s3/rom/usb/usb_os_glue.h
 components/esp_rom/include/esp32s3/rom/usb/usb_persist.h
-components/esp_rom/include/esp8684/rom/md5_hash.h
 components/esp_rom/include/esp_rom_crc.h
 components/esp_rom/include/esp_rom_efuse.h
 components/esp_rom/include/esp_rom_gpio.h
@@ -1254,11 +1254,11 @@ components/mbedtls/port/crypto_shared_gdma/esp_crypto_shared_gdma.c
 components/mbedtls/port/dynamic/esp_ssl_cli.c
 components/mbedtls/port/dynamic/esp_ssl_srv.c
 components/mbedtls/port/esp32/bignum.c
+components/mbedtls/port/esp32c2/bignum.c
 components/mbedtls/port/esp32c3/bignum.c
 components/mbedtls/port/esp32h2/bignum.c
 components/mbedtls/port/esp32s2/bignum.c
 components/mbedtls/port/esp32s3/bignum.c
-components/mbedtls/port/esp8684/bignum.c
 components/mbedtls/port/esp_bignum.c
 components/mbedtls/port/esp_hardware.c
 components/mbedtls/port/esp_mem.c
