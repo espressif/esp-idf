@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,20 +21,6 @@ extern "C" {
  * esp_ipc_isr_asm_call_blocking().
  */
 typedef void (*esp_ipc_isr_func_t)(void* arg);
-
-/**
- * @brief Initialize the IPC ISR feature
- *
- * This function initializes the IPC ISR feature and must be called before any other esp_ipc_isr...() functions.
- * The IPC ISR feature allows for callbacks (written in assembly) to be run on a particular CPU in the context of a
- * High Priority Interrupt.
- *
- * - This function will register a High Priority Interrupt on each CPU. The priority of the interrupts is dependent on
- *   the CONFIG_ESP_SYSTEM_CHECK_INT_LEVEL option.
- * - Callbacks written in assembly can then run in context of the registered High Priority Interrupts
- * - Callbacks can be executed by calling esp_ipc_isr_asm_call() or esp_ipc_isr_asm_call_blocking()
- */
-void esp_ipc_isr_init(void);
 
 /**
  * @brief Execute an assembly callback on the other CPU
