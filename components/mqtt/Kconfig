@@ -137,8 +137,12 @@ menu "ESP-MQTT Configurations"
         bool "Enable custom outbox implementation"
         default n
         help
-            Set to true if a specific implementation of message outbox is needed (e.g. persistant outbox in NVM or
+            Set to true if a specific implementation of message outbox is needed (e.g. persistent outbox in NVM or
             similar).
+            Note: Implementation of the custom outbox must be added to the mqtt component. These CMake commands
+            could be used to append the custom implementation to lib-mqtt sources:
+            idf_component_get_property(mqtt mqtt COMPONENT_LIB)
+            set_property(TARGET ${mqtt} PROPERTY SOURCES ${PROJECT_DIR}/custom_outbox.c APPEND)
 
     config MQTT_OUTBOX_EXPIRED_TIMEOUT_MS
         int "Outbox message expired timeout[ms]"
