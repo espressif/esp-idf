@@ -9,7 +9,7 @@ This guide shows how to start using the ESP32-DevKitC V4 development board. For 
 What You Need
 -------------
 
-* ESP32-DevKitC V4 board
+* :ref:`ESP32-DevKitC V4 board <get-started-esp32-devkitc-board-front>`
 * USB A / micro USB B cable
 * Computer running Windows, Linux, or macOS
 
@@ -55,31 +55,34 @@ The following figure and the table below describe the key components, interfaces
     ESP32-DevKitC V4 with ESP32-WROOM-32 module soldered
 
 
-+--------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Key Component      | Description                                                                                                                                                                          |
-+====================+======================================================================================================================================================================================+
-| ESP32-WROOM-32     | A module with ESP32 at its core.                                                                                                                                                     |
-+--------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| EN                 | Reset button.                                                                                                                                                                        |
-+--------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Boot               | Download button. Holding down **Boot** and then pressing **EN** initiates Firmware Download mode for downloading firmware through the serial port.                                   |
-+--------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| USB-to-UART Bridge | Single USB-UART bridge chip provides transfer rates of up to 3 Mbps.                                                                                                                 |
-+--------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Micro USB Port     | USB interface. Power supply for the board as well as the communication interface between a computer and the ESP32 module.                                                            |
-+--------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| 5V Power On LED    | Turns on when the USB or an external 5V power supply is connected to the board. For details see the schematics in `Related Documents`_.                                              |
-+--------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| I/O                | Most of the pins on the ESP module are broken out to the pin headers on the board. You can program ESP32 to enable multiple functions such as PWM, ADC, DAC, I2C, I2S, SPI, etc.     |
-+--------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+.. list-table::
+    :widths: 25 75
+    :header-rows: 1
 
-    .. note::
+    * - Key Component
+      - Description
+    * - ESP32-WROOM-32
+      - A module with ESP32 at its core. For more information, see `ESP32-WROOM-32 Datasheet`_.
+    * - EN
+      - Reset button.
+    * - Boot
+      - Download button. Holding down **Boot** and then pressing **EN** initiates Firmware Download mode for downloading firmware through the serial port.
+    * - USB-to-UART Bridge 
+      - Single USB-UART bridge chip provides transfer rates of up to 3 Mbps.
+    * - Micro USB Port
+      - USB interface. Power supply for the board as well as the communication interface between a computer and the ESP32-WROOM-32 module. 
+    * - 5V Power On LED
+      - Turns on when the USB or an external 5V power supply is connected to the board. For details see the schematics in `Related Documents`_.
+    * - I/O
+      - Most of the pins on the ESP module are broken out to the pin headers on the board. You can program ESP32 to enable multiple functions such as PWM, ADC, DAC, I2C, I2S, SPI, etc.
 
-        The pins D0, D1, D2, D3, CMD and CLK are used internally for communication between ESP32 and SPI flash memory. They are grouped on both sides near the USB connector. Avoid using these pins, as it may disrupt access to the SPI flash memory / SPI RAM.
+.. note::
 
-    .. note::
+    The pins D0, D1, D2, D3, CMD and CLK are used internally for communication between ESP32 and SPI flash memory. They are grouped on both sides near the USB connector. Avoid using these pins, as it may disrupt access to the SPI flash memory / SPI RAM.
 
-        The pins GPIO16 and GPIO17 are available for use only on the boards with the modules ESP32-WROOM and ESP32-SOLO-1. The boards with ESP32-WROVER modules have the pins reserved for internal use.
+.. note::
+
+    The pins GPIO16 and GPIO17 are available for use only on the boards with the modules ESP32-WROOM and ESP32-SOLO-1. The boards with ESP32-WROVER modules have the pins reserved for internal use.
 
 
 Power Supply Options
@@ -105,7 +108,6 @@ The component C15 may cause the following issues on earlier ESP32-DevKitC V4 boa
 * If you output clock on GPIO0, C15 may impact the signal
 
 In case these issues occur, please remove the component. The figure below shows C15 highlighted in yellow.
-
 
 .. figure:: ../../../_static/esp32-devkitc-c15-location.png
     :align: center
@@ -138,23 +140,14 @@ Board Dimensions
 Related Documents
 -----------------
 
-* `ESP32-DevKitC V4 schematics`_ (PDF)
-* `ESP32 Datasheet`_ (PDF)
-* `ESP32-WROOM-32 Datasheet`_ (PDF)
-* `ESP32-WROOM-32D and ESP32-WROOM-32U Datasheet`_ (PDF)
-* `ESP32-WROVER Datasheet`_ (PDF)
-* `ESP32-WROVER-B Datasheet`_ (PDF)
-* `ESP Product Selector`_ 
-
-For further design documentation for the board, please contact us at `sales@espressif.com <sales@espressif.com>`_.
-
-.. _ESP32-DevKitC V4 schematics: https://dl.espressif.com/dl/schematics/esp32_devkitc_v4-sch.pdf
-.. _ESP32 Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf
-.. _ESP32-WROOM-32 Datasheet: https://espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_en.pdf
-.. _ESP32-WROOM-32D and ESP32-WROOM-32U Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_en.pdf
-.. _ESP32-WROVER Datasheet: https://espressif.com/sites/default/files/documentation/esp32-wrover_datasheet_en.pdf
-.. _ESP32-WROVER-B Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-wrover-b_datasheet_en.pdf
-.. _ESP Product Selector: https://products.espressif.com/#/product-selector?names=
+* `ESP32-DevKitC V4 schematics <https://dl.espressif.com/dl/schematics/esp32_devkitc_v4-sch.pdf>`_ (PDF)
+* `ESP32 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF)
+* `ESP32-WROOM-32 Datasheet <https://espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_en.pdf>`_ (PDF)
+* `ESP32-WROOM-32D and ESP32-WROOM-32U Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_en.pdf>`_ (PDF)
+* `ESP32-WROOM-DA Datasheet <https://espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_en.pdf>`_ (PDF)
+* `ESP32-WROVER Datasheet <https://espressif.com/sites/default/files/documentation/esp32-wrover_datasheet_en.pdf>`_ (PDF)
+* `ESP32-WROVER-B Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-b_datasheet_en.pdf>`_ (PDF)
+* `ESP Product Selector <https://products.espressif.com/#/product-selector?names=>`_ 
 
 .. toctree::
     :hidden:

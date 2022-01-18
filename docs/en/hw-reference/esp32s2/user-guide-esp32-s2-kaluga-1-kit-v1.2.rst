@@ -319,6 +319,11 @@ If you want to use more than one extension board at the same time, please check 
      - IO11 is multiplexed; IO11 is also multiplexed stopping you from using ESP-LyraT-8311A's pin BT_ADC that is needed to initialize the board's six buttons.
      - **Solution 1**: For ESP-LyraP-TouchA, do not initialize IO6 (PHOTO) and IO11 (NETWORK). Please note that the six buttons on ESP-LyraT-8311A still cannot be used. **Solution 2**: On your ESP-LyraP-LCD32, remove R39, change R41 to 100 Ohm, switch BLCT_L to on. For your ESP-LyraP-TouchA, do not initialize IO11 (NETWORK). If you want to use the six buttons on your ESP-LyraT-8311A, also do not initialize IO6 (PHOTO).
 
+Also, all extension boards and the :ref:`JTAG interface <jtag-debugging-tip-jtag-pins-reconfigured>` share the same pins IO39, IO40, IO41 and IO42. For this reason, the following may disturb the JTAG operation:
+
+* Plugging in any extension board
+* Debugging an application that is using an extension board
+
 
 Known issues
 ============
