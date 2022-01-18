@@ -20,6 +20,74 @@ menu "Example Connection Configuration"
             help
                 WiFi password (WPA or WPA2) for the example to use.
                 Can be left blank if the network has no security set.
+
+        choice EXAMPLE_WIFI_SCAN_METHOD
+            prompt "WiFi Scan Method"
+            default EXAMPLE_WIFI_SCAN_METHOD_FAST
+            help
+                WiFi scan method:
+
+                If "Fast" is selected, scan will end after find SSID match AP.
+
+                If "All Channel" is selected, scan will end after scan all the channel.
+
+            config EXAMPLE_WIFI_SCAN_METHOD_FAST
+                bool "Fast"
+            config EXAMPLE_WIFI_SCAN_METHOD_ALL_CHANNEL
+                bool "All Channel"
+        endchoice
+
+        menu "WiFi Scan threshold"
+            config EXAMPLE_WIFI_SCAN_RSSI_THRESHOLD
+                int "WiFi minimum rssi"
+                range -127 0
+
+                default -127
+                help
+                    The minimum rssi to accept in the scan mode.
+
+            choice EXAMPLE_WIFI_SCAN_AUTH_MODE_THRESHOLD
+                prompt "WiFi Scan auth mode threshold"
+                default EXAMPLE_WIFI_AUTH_OPEN
+                help
+                    The weakest authmode to accept in the scan mode.
+
+                config EXAMPLE_WIFI_AUTH_OPEN
+                    bool "OPEN"
+                config EXAMPLE_WIFI_AUTH_WEP
+                    bool "WEP"
+                config EXAMPLE_WIFI_AUTH_WPA_PSK
+                    bool "WPA PSK"
+                config EXAMPLE_WIFI_AUTH_WPA2_PSK
+                    bool "WPA2 PSK"
+                config EXAMPLE_WIFI_AUTH_WPA_WPA2_PSK
+                    bool "WPA WPA2 PSK"
+                config EXAMPLE_WIFI_AUTH_WPA2_ENTERPRISE
+                    bool "WPA2 ENTERPRISE"
+                config EXAMPLE_WIFI_AUTH_WPA3_PSK
+                    bool "WPA3 PSK"
+                config EXAMPLE_WIFI_AUTH_WPA2_WPA3_PSK
+                    bool "WPA2 WPA3 PSK"
+                config EXAMPLE_WIFI_AUTH_WAPI_PSK
+                    bool "WAPI PSK"
+            endchoice
+        endmenu
+
+        choice EXAMPLE_WIFI_CONNECT_AP_SORT_METHOD
+            prompt "WiFi Connect AP Sort Method"
+            default EXAMPLE_WIFI_CONNECT_AP_BY_SIGNAL
+            help
+                WiFi connect AP sort method:
+
+                If "Signal" is selected, Sort matched APs in scan list by RSSI.
+
+                If "Security" is selected, Sort matched APs in scan list by security mode.
+
+            config EXAMPLE_WIFI_CONNECT_AP_BY_SIGNAL
+                bool "Signal"
+            config EXAMPLE_WIFI_CONNECT_AP_BY_SECURITY
+                bool "Security"
+        endchoice
     endif
 
     config EXAMPLE_CONNECT_ETHERNET

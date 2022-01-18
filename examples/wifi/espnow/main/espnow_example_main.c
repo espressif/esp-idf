@@ -29,6 +29,8 @@
 #include "esp_crc.h"
 #include "espnow_example.h"
 
+#define ESPNOW_MAXDELAY 512
+
 static const char *TAG = "espnow_example";
 
 static xQueueHandle s_example_espnow_queue;
@@ -70,7 +72,7 @@ static void example_espnow_send_cb(const uint8_t *mac_addr, esp_now_send_status_
     evt.id = EXAMPLE_ESPNOW_SEND_CB;
     memcpy(send_cb->mac_addr, mac_addr, ESP_NOW_ETH_ALEN);
     send_cb->status = status;
-    if (xQueueSend(s_example_espnow_queue, &evt, portMAX_DELAY) != pdTRUE) {
+    if (xQueueSend(s_example_espnow_queue, &evt, ESPNOW_MAXDELAY) != pdTRUE) {
         ESP_LOGW(TAG, "Send send queue fail");
     }
 }
@@ -94,7 +96,7 @@ static void example_espnow_recv_cb(const uint8_t *mac_addr, const uint8_t *data,
     }
     memcpy(recv_cb->data, data, len);
     recv_cb->data_len = len;
-    if (xQueueSend(s_example_espnow_queue, &evt, portMAX_DELAY) != pdTRUE) {
+    if (xQueueSend(s_example_espnow_queue, &evt, ESPNOW_MAXDELAY) != pdTRUE) {
         ESP_LOGW(TAG, "Send receive queue fail");
         free(recv_cb->data);
     }

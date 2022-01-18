@@ -501,16 +501,43 @@ const esp_phy_init_data_t* esp_phy_get_init_data(void)
         ESP_LOGE(TAG, "failed to allocate memory for PHY init data");
         return NULL;
     }
+    // read phy data from flash
     esp_err_t err = esp_partition_read(partition, 0, init_data_store, init_data_store_length);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "failed to read PHY data partition (0x%x)", err);
+        free(init_data_store);
         return NULL;
     }
+    // verify data
     if (memcmp(init_data_store, PHY_INIT_MAGIC, sizeof(phy_init_magic_pre)) != 0 ||
         memcmp(init_data_store + init_data_store_length - sizeof(phy_init_magic_post),
                 PHY_INIT_MAGIC, sizeof(phy_init_magic_post)) != 0) {
+#ifndef CONFIG_ESP32_PHY_DEFAULT_INIT_IF_INVALID
         ESP_LOGE(TAG, "failed to validate PHY data partition");
+        free(init_data_store);
         return NULL;
+#else
+        ESP_LOGE(TAG, "failed to validate PHY data partition, restoring default data into flash...");
+
+        memcpy(init_data_store,
+               PHY_INIT_MAGIC, sizeof(phy_init_magic_pre));
+        memcpy(init_data_store + sizeof(phy_init_magic_pre),
+               &phy_init_data, sizeof(phy_init_data));
+        memcpy(init_data_store + sizeof(phy_init_magic_pre) + sizeof(phy_init_data),
+               PHY_INIT_MAGIC, sizeof(phy_init_magic_post));
+
+        assert(memcmp(init_data_store, PHY_INIT_MAGIC, sizeof(phy_init_magic_pre)) == 0);
+        assert(memcmp(init_data_store + init_data_store_length - sizeof(phy_init_magic_post),
+                      PHY_INIT_MAGIC, sizeof(phy_init_magic_post)) == 0);
+
+        // write default data
+        err = esp_partition_write(partition, 0, init_data_store, init_data_store_length);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "failed to write default PHY data partition (0x%x)", err);
+            free(init_data_store);
+            return NULL;
+        }
+#endif // CONFIG_ESP32_PHY_DEFAULT_INIT_IF_INVALID
     }
 #if CONFIG_ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN    
     if ((*(init_data_store + (sizeof(phy_init_magic_pre) + PHY_SUPPORT_MULTIPLE_BIN_OFFSET)))) {
@@ -909,8 +936,8 @@ static esp_err_t phy_get_multiple_init_data(const esp_partition_t* partition,
 
     err = phy_find_bin_data_according_type(init_data_store, init_data_control_info, init_data_multiple, init_data_type);
     if (err != ESP_OK) {
-		ESP_LOGW(TAG, "%s has not been certified, use DEFAULT PHY init data", s_phy_type[init_data_type]);
-		s_phy_init_data_type = ESP_PHY_INIT_DATA_TYPE_DEFAULT; 
+        ESP_LOGW(TAG, "%s has not been certified, use DEFAULT PHY init data", s_phy_type[init_data_type]);
+        s_phy_init_data_type = ESP_PHY_INIT_DATA_TYPE_DEFAULT;
     } else {
         s_phy_init_data_type = init_data_type;
     }
@@ -987,17 +1014,18 @@ esp_err_t esp_phy_update_country_info(const char *country)
 {
 #if CONFIG_ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN
     uint8_t phy_init_data_type_map = 0;
-    //if country equal s_phy_current_country, return;
+
+    if (!s_multiple_phy_init_data_bin) {
+        ESP_LOGD(TAG, "Does not support multiple PHY init data bins");
+        return ESP_FAIL;
+    }
+
+   //if country equal s_phy_current_country, return;
     if (!memcmp(country, s_phy_current_country, sizeof(s_phy_current_country))) {
         return ESP_OK;
     }
 
     memcpy(s_phy_current_country, country, sizeof(s_phy_current_country));
-    
-    if (!s_multiple_phy_init_data_bin) {
-        ESP_LOGD(TAG, "Does not support multiple PHY init data bins");
-        return ESP_FAIL;
-    }
 
     phy_init_data_type_map = phy_find_bin_type_according_country(country);
     if (phy_init_data_type_map == s_phy_init_data_type) {
