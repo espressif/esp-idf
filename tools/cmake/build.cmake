@@ -274,27 +274,6 @@ function(__build_write_properties output_file)
 endfunction()
 
 #
-# Check if the Python interpreter used for the build has all the required modules.
-#
-function(__build_check_python)
-    idf_build_get_property(check __CHECK_PYTHON)
-    if(check)
-        idf_build_get_property(python PYTHON)
-        idf_build_get_property(idf_path IDF_PATH)
-        message(STATUS "Checking Python dependencies...")
-        execute_process(COMMAND "${python}" "${idf_path}/tools/idf_tools.py" "check-python-dependencies"
-            RESULT_VARIABLE result)
-        if(result EQUAL 1)
-            # check_python_dependencies returns error code 1 on failure
-            message(FATAL_ERROR "Some Python dependencies must be installed. Check above message for details.")
-        elseif(NOT result EQUAL 0)
-            # means check_python_dependencies.py failed to run at all, result should be an error message
-            message(FATAL_ERROR "Failed to run Python dependency check. Python: ${python}, Error: ${result}")
-        endif()
-    endif()
-endfunction()
-
-#
 # Prepare for component processing expanding each component's project include
 #
 macro(__build_process_project_includes)
@@ -413,9 +392,6 @@ macro(idf_build_process target)
     __build_set_default(SDKCONFIG "${project_dir}/sdkconfig")
 
     __build_set_default(SDKCONFIG_DEFAULTS "")
-
-    # Check for required Python modules
-    __build_check_python()
 
     idf_build_get_property(target IDF_TARGET)
 
