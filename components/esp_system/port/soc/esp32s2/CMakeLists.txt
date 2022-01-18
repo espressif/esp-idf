@@ -22,9 +22,6 @@ endif()
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" ${srcs})
 
 target_sources(${COMPONENT_LIB} PRIVATE ${srcs})
-if(CONFIG_ESP_CONSOLE_USB_CDC)
-    target_sources(${COMPONENT_LIB} PRIVATE "${CMAKE_CURRENT_LIST_DIR}/usb_console.c")
-endif()
 
 #ld_include_highint_hdl is added as an undefined symbol because otherwise the
 #linker will ignore highint_hdl.S as it has no other files depending on any
