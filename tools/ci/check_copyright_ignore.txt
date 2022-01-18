@@ -589,8 +589,6 @@ components/esp_rom/include/esp32s3/rom/usb/usb_dc.h
 components/esp_rom/include/esp32s3/rom/usb/usb_descriptor.h
 components/esp_rom/include/esp32s3/rom/usb/usb_device.h
 components/esp_rom/include/esp32s3/rom/usb/usb_dfu.h
-components/esp_rom/include/esp32s3/rom/usb/usb_os_glue.h
-components/esp_rom/include/esp32s3/rom/usb/usb_persist.h
 components/esp_rom/include/esp_rom_crc.h
 components/esp_rom/include/esp_rom_gpio.h
 components/esp_rom/include/esp_rom_uart.h

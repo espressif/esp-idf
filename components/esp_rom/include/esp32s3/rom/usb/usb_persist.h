@@ -1,16 +1,8 @@
-// Copyright 2019-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -34,7 +26,7 @@ extern "C" {
 
 //This being non-0 indicates a memory location where a 'testament' is stored, aka a piece of text that should be output
 //after a reboot. Can contain core dump info or something.
-#define USBDC_TESTAMENT_LOC_MASK 0x7FFFF //bits 19-0; this is added to a base address of 0x3FF80000.
+#define USBDC_TESTAMENT_LOC_MASK 0x7FFFF //bits 19-0; this is added to a base address of SOC_MEM_INTERNAL_LOW. (0x3FF9E000)
 
 //The testament is a FIFO. The ROM will output all data between textstart and textend; if textend is lower than textstart it will
 //output everything from textstart to memend, then memstart to textend.
