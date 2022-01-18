@@ -7,3 +7,14 @@ entries:
     # placed in flash.
     if TWAI_ISR_IN_IRAM = y  && (TWAI_ERRATA_FIX_RX_FRAME_INVALID = y || TWAI_ERRATA_FIX_RX_FIFO_CORRUPT = y):
         periph_ctrl: periph_module_reset (noflash)
+    if GPTIMER_CTRL_FUNC_IN_IRAM = y:
+        gptimer: gptimer_set_raw_count (noflash)
+        gptimer: gptimer_get_raw_count (noflash)
+        gptimer: gptimer_set_alarm_action (noflash)
+        gptimer: gptimer_start (noflash)
+        gptimer: gptimer_stop (noflash)
+    if GDMA_CTRL_FUNC_IN_IRAM = y:
+        gdma: gdma_start (noflash)
+        gdma: gdma_stop (noflash)
+        gdma: gdma_append (noflash)
+        gdma: gdma_reset (noflash)

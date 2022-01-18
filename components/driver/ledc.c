@@ -21,7 +21,7 @@
 #include "soc/clk_ctrl_os.h"
 #include "esp_private/periph_ctrl.h"
 
-static const char *LEDC_TAG = "ledc";
+static __attribute__((unused)) const char *LEDC_TAG = "ledc";
 
 #define LEDC_CHECK(a, str, ret_val) ESP_RETURN_ON_FALSE(a, ret_val, LEDC_TAG, "%s", str)
 #define LEDC_ARG_CHECK(a, param) ESP_RETURN_ON_FALSE(a, ESP_ERR_INVALID_ARG, LEDC_TAG, param " argument is invalid")
@@ -66,9 +66,9 @@ static portMUX_TYPE ledc_spinlock = portMUX_INITIALIZER_UNLOCKED;
 #define DIM(array)                (sizeof(array)/sizeof(*array))
 #define LEDC_IS_DIV_INVALID(div)  ((div) <= LEDC_LL_FRACTIONAL_MAX || (div) > LEDC_TIMER_DIV_NUM_MAX)
 
-static const char *LEDC_NOT_INIT = "LEDC is not initialized";
-static const char *LEDC_FADE_SERVICE_ERR_STR = "LEDC fade service not installed";
-static const char *LEDC_FADE_INIT_ERROR_STR = "LEDC fade channel init error, not enough memory or service not installed";
+static __attribute__((unused)) const char *LEDC_NOT_INIT = "LEDC is not initialized";
+static __attribute__((unused)) const char *LEDC_FADE_SERVICE_ERR_STR = "LEDC fade service not installed";
+static __attribute__((unused)) const char *LEDC_FADE_INIT_ERROR_STR = "LEDC fade channel init error, not enough memory or service not installed";
 
 //This value will be calibrated when in use.
 static uint32_t s_ledc_slow_clk_8M = 0;
