@@ -148,7 +148,7 @@ int main (void)
         break;
     }
 
-    /* ulp_riscv_shutdown() is called automatically when main exits,
+    /* ulp_riscv_halt() is called automatically when main exits,
        main will be executed again at the next timeout period,
        according to ulp_set_wakeup_period()
      */

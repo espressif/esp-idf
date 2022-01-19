@@ -33,3 +33,29 @@ esp_err_t ulp_riscv_run(void);
  *      - ESP_ERR_INVALID_SIZE if program_size_bytes is more than 8KiB
  */
 esp_err_t ulp_riscv_load_binary(const uint8_t* program_binary, size_t program_size_bytes);
+
+/**
+ * @brief Stop the ULP timer
+ *
+ * @note This will stop the ULP from waking up if halted, but will not abort any program
+ *       currently executing on the ULP.
+ */
+void ulp_riscv_timer_stop(void);
+
+
+/**
+ * @brief Resumes the ULP timer
+ *
+ * @note This will resume an already configured timer, but does no other configuration
+ *
+ */
+void ulp_riscv_timer_resume(void);
+
+
+/**
+ * @brief Halts the program currently running on the ULP-RISC-V
+ *
+ * @note  Program will restart at the next ULP timer trigger if timer is still running.
+ *        If you want to stop the ULP from waking up then call ulp_riscv_timer_stop() first.
+ */
+void ulp_riscv_halt(void);

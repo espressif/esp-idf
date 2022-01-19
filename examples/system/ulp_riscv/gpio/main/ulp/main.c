@@ -36,6 +36,6 @@ int main (void)
             break;
         }
     }
-    /* ulp_riscv_shutdown() is called automatically when main exits */
+    /* ulp_riscv_halt() is called automatically when main exits */
     return 0;
 }
