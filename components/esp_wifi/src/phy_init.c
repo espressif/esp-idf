@@ -34,6 +34,7 @@
 #include "esp_coexist_internal.h"
 #include "driver/periph_ctrl.h"
 #include "esp_private/wifi.h"
+#include "soc/soc_caps.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"
@@ -78,6 +79,9 @@ static int64_t s_phy_rf_en_ts = 0;
 #endif
 
 static DRAM_ATTR portMUX_TYPE s_phy_int_mux = portMUX_INITIALIZER_UNLOCKED;
+
+/* Memory to store PHY digital registers */
+static uint32_t* s_phy_digital_regs_mem = NULL;
 
 #if CONFIG_ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN
 /* The following static variables are only used by Wi-Fi tasks, so they can be handled without lock */
@@ -199,6 +203,24 @@ IRAM_ATTR void esp_phy_common_clock_disable(void)
     wifi_bt_common_module_disable();
 }
 
+static inline void phy_digital_regs_store(void)
+{
+    if (s_phy_digital_regs_mem == NULL) {
+        s_phy_digital_regs_mem = (uint32_t *)malloc(SOC_PHY_DIG_REGS_MEM_SIZE);
+    }
+
+    if (s_phy_digital_regs_mem != NULL) {
+        phy_dig_reg_backup(true, s_phy_digital_regs_mem);
+    }
+}
+
+static inline void phy_digital_regs_load(void)
+{
+    if (s_phy_digital_regs_mem != NULL) {
+        phy_dig_reg_backup(false, s_phy_digital_regs_mem);
+    }
+}
+
 esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data, esp_phy_calibration_mode_t mode,
                           esp_phy_calibration_data_t* calibration_data, phy_rf_module_t module)
 {
@@ -254,6 +276,7 @@ esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data, esp_phy_calibrat
 #if CONFIG_IDF_TARGET_ESP32S2
             if (module == PHY_MODEM_MODULE) {
                 phy_wakeup_init();
+                phy_digital_regs_load();
             }
             else
 #endif
@@ -335,6 +358,7 @@ esp_err_t esp_phy_rf_deinit(phy_rf_module_t module)
         }
 
         if (s_is_phy_rf_en == false) {
+            phy_digital_regs_store();
             // Disable PHY and RF.
             phy_close_rf();
 #if CONFIG_IDF_TARGET_ESP32
