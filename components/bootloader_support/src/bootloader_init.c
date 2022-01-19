@@ -146,12 +146,14 @@ static esp_err_t bootloader_main()
     bootloader_clock_configure();
     uart_console_configure();
 
+#if CONFIG_BOOTLOADER_FLASH_XMC_SUPPORT_ENA
     /* Check and run XMC startup flow. The function depends on the clock and console, so it's run right after these stuff
      * are initialized. */
     if (bootloader_flash_xmc_startup() != ESP_OK) {
         ESP_LOGE(TAG, "failed when running XMC startup flow, reboot!");
         return ESP_FAIL;
     }
+#endif
 
     wdt_reset_check();
     ESP_LOGI(TAG, "ESP-IDF %s 2nd stage bootloader", IDF_VER);
