@@ -12,7 +12,6 @@
 #include "lwip/udp.h"
 #include "lwip/mem.h"
 #include "lwip/ip_addr.h"
-#include "esp_netif.h"
 
 #include "dhcpserver/dhcpserver.h"
 #include "dhcpserver/dhcpserver_options.h"
@@ -69,11 +68,16 @@ typedef struct _list_node {
 	struct _list_node *pnext;
 } list_node;
 
+typedef struct {
+    ip4_addr_t ip;
+    ip4_addr_t netmask;
+    ip4_addr_t gw;
+} ip_info_t;
 ////////////////////////////////////////////////////////////////////////////////////
 
 static const u32_t magic_cookie  = 0x63538263;
 
-static struct netif   *dhcps_netif = NULL;
+static struct netif *dhcps_netif = NULL;
 static ip4_addr_t  broadcast_dhcps;
 static ip4_addr_t server_address;
 static ip4_addr_t dns_server = {0};
@@ -95,6 +99,16 @@ static dhcps_time_t dhcps_lease_time = DHCPS_LEASE_TIME_DEF;  //minute
 static dhcps_offer_t dhcps_offer = 0xFF;
 static dhcps_offer_t dhcps_dns = 0x00;
 static dhcps_cb_t dhcps_cb;
+static struct udp_pcb *dhcps_pcb = NULL;
+
+static void get_ip_info(struct netif * netif, ip_info_t *ip_info)
+{
+    if (netif != NULL && netif_is_up(netif)) {
+        ip4_addr_set(&ip_info->ip, ip_2_ip4(&netif->ip_addr));
+        ip4_addr_set(&ip_info->netmask, ip_2_ip4(&netif->netmask));
+        ip4_addr_set(&ip_info->gw, ip_2_ip4(&netif->gw));
+    }
+}
 
 /******************************************************************************
  * FunctionName : dhcps_option_info
@@ -328,9 +342,8 @@ static u8_t *add_offer_options(u8_t *optptr)
     *optptr++ = ip4_addr4(&ipadd);
 
     if (dhcps_router_enabled(dhcps_offer)) {
-        esp_netif_ip_info_t if_ip;
-        memset(&if_ip , 0x00, sizeof(esp_netif_ip_info_t));
-        esp_netif_get_ip_info(dhcps_netif->state, &if_ip);
+        ip_info_t if_ip = { 0 };
+        get_ip_info(dhcps_netif, &if_ip);
 
         ip4_addr_t* gw_ip = (ip4_addr_t*)&if_ip.gw;
 
@@ -520,12 +533,11 @@ static void send_offer(struct dhcps_msg *m, u16_t len)
 
     ip_addr_t ip_temp = IPADDR4_INIT(0x0);
     ip4_addr_set(ip_2_ip4(&ip_temp), &broadcast_dhcps);
-    struct udp_pcb *pcb_dhcps = dhcps_netif->dhcps_pcb;
 #if DHCPS_DEBUG
     SendOffer_err_t = udp_sendto(pcb_dhcps, p, &ip_temp, DHCPS_CLIENT_PORT);
     DHCPS_LOG("dhcps: send_offer>>udp_sendto result %x\n", SendOffer_err_t);
 #else
-    udp_sendto(pcb_dhcps, p, &ip_temp, DHCPS_CLIENT_PORT);
+    udp_sendto(dhcps_pcb, p, &ip_temp, DHCPS_CLIENT_PORT);
 #endif
 
     if (p->ref != 0) {
@@ -598,12 +610,11 @@ static void send_nak(struct dhcps_msg *m, u16_t len)
 
     ip_addr_t ip_temp = IPADDR4_INIT(0x0);
     ip4_addr_set(ip_2_ip4(&ip_temp), &broadcast_dhcps);
-    struct udp_pcb *pcb_dhcps = dhcps_netif->dhcps_pcb;
 #if DHCPS_DEBUG
     SendNak_err_t = udp_sendto(pcb_dhcps, p, &ip_temp, DHCPS_CLIENT_PORT);
     DHCPS_LOG("dhcps: send_nak>>udp_sendto result %x\n", SendNak_err_t);
 #else
-    udp_sendto(pcb_dhcps, p, &ip_temp, DHCPS_CLIENT_PORT);
+    udp_sendto(dhcps_pcb, p, &ip_temp, DHCPS_CLIENT_PORT);
 #endif
 
     if (p->ref != 0) {
@@ -675,8 +686,7 @@ static void send_ack(struct dhcps_msg *m, u16_t len)
 
     ip_addr_t ip_temp = IPADDR4_INIT(0x0);
     ip4_addr_set(ip_2_ip4(&ip_temp), &broadcast_dhcps);
-    struct udp_pcb *pcb_dhcps = dhcps_netif->dhcps_pcb;
-    SendAck_err_t = udp_sendto(pcb_dhcps, p, &ip_temp, DHCPS_CLIENT_PORT);
+    SendAck_err_t = udp_sendto(dhcps_pcb, p, &ip_temp, DHCPS_CLIENT_PORT);
 #if DHCPS_DEBUG
     DHCPS_LOG("dhcps: send_ack>>udp_sendto result %x\n", SendAck_err_t);
 #endif
@@ -1140,19 +1150,15 @@ void dhcps_set_new_lease_cb(dhcps_cb_t cb)
 void dhcps_start(struct netif *netif, ip4_addr_t ip)
 {
     dhcps_netif = netif;
-
-    if (dhcps_netif->dhcps_pcb != NULL) {
-        udp_remove(dhcps_netif->dhcps_pcb);
+    if (dhcps_pcb != NULL) {
+        udp_remove(dhcps_pcb);
     }
 
-    dhcps_netif->dhcps_pcb = udp_new();
-    struct udp_pcb *pcb_dhcps = dhcps_netif->dhcps_pcb;
+    dhcps_pcb = udp_new();
 
-    if (pcb_dhcps == NULL || ip4_addr_isany_val(ip)) {
+    if (dhcps_pcb == NULL || ip4_addr_isany_val(ip)) {
         printf("dhcps_start(): could not obtain pcb\n");
     }
-
-    dhcps_netif->dhcps_pcb = pcb_dhcps;
 
     IP4_ADDR(&broadcast_dhcps, 255, 255, 255, 255);
 
@@ -1161,8 +1167,8 @@ void dhcps_start(struct netif *netif, ip4_addr_t ip)
 
     client_address_plus.addr = dhcps_poll.start_ip.addr;
 
-    udp_bind(pcb_dhcps, &netif->ip_addr, DHCPS_SERVER_PORT);
-    udp_recv(pcb_dhcps, handle_dhcp, NULL);
+    udp_bind(dhcps_pcb, &netif->ip_addr, DHCPS_SERVER_PORT);
+    udp_recv(dhcps_pcb, handle_dhcp, NULL);
 #if DHCPS_DEBUG
     DHCPS_LOG("dhcps:dhcps_start->udp_recv function Set a receive callback handle_dhcp for UDP_PCB pcb_dhcps\n");
 #endif
@@ -1177,17 +1183,15 @@ void dhcps_start(struct netif *netif, ip4_addr_t ip)
 *******************************************************************************/
 void dhcps_stop(struct netif *netif)
 {
-    struct netif *apnetif = netif;
-
-    if (apnetif == NULL) {
-        printf("dhcps_stop: apnetif == NULL\n");
+    if (netif == NULL || dhcps_netif != netif->state) {
+        printf("dhcps_stop: netif is NULL or invalid\n");
         return;
     }
 
-    if (apnetif->dhcps_pcb != NULL) {
-        udp_disconnect(apnetif->dhcps_pcb);
-        udp_remove(apnetif->dhcps_pcb);
-        apnetif->dhcps_pcb = NULL;
+    if (dhcps_pcb != NULL) {
+        udp_disconnect(dhcps_pcb);
+        udp_remove(dhcps_pcb);
+        dhcps_pcb = NULL;
     }
 
     list_node *pnode = NULL;
