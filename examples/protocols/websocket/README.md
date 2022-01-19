@@ -36,7 +36,7 @@ I (4472) tcpip_adapter: eth ip: 192.168.2.137, mask: 255.255.255.0, gw: 192.168.
 I (4472) example_connect: Connected to Ethernet
 I (4472) example_connect: IPv4 address: 192.168.2.137
 I (4472) example_connect: IPv6 address: fe80:0000:0000:0000:bedd:c2ff:fed4:a92b
-I (4482) WEBSOCKET: Connecting to ws://echo.websocket.org...
+I (4482) WEBSOCKET: Connecting to ws://echo.websocket.events...
 I (5012) WEBSOCKET: WEBSOCKET_EVENT_CONNECTED
 I (5492) WEBSOCKET: Sending hello 0000
 I (6052) WEBSOCKET: WEBSOCKET_EVENT_DATA
@@ -55,4 +55,22 @@ I (9152) WEBSOCKET: WEBSOCKET_EVENT_DATA
 W (9162) WEBSOCKET: Received=hello 0003
 
 ```
+
+
+## Python Flask echo server
+
+By default, the `ws://echo.websocket.events` endpoint is used. You can setup a Python websocket echo server locally and try the `ws://<your-ip>:5000` endpoint. To do this, install Flask-sock Python package
+
+```
+pip install flask-sock
+```
+
+and start a Flask websocket echo server locally
+
+```
+python flask_echo_server.py
+```
+
+See [`flask_echo_server.py`](./flask_echo_server.py).
+
 
