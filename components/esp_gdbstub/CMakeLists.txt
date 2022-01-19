@@ -1,6 +1,6 @@
 idf_build_get_property(target IDF_TARGET)
 
-if(NOT "${target}" STREQUAL "esp8684") # TODO: IDF-4135
+if(NOT "${target}" STREQUAL "esp32c2") # TODO: IDF-4135
 idf_component_register(SRCS "src/gdbstub.c" "src/packet.c"
                        INCLUDE_DIRS "include"
                        PRIV_INCLUDE_DIRS "private_include"

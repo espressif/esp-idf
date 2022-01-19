@@ -4,7 +4,7 @@
   - esp32s3
   - esp32c3
   - esp32h2
-  - esp8684
+  - esp32c2
 
 .target_test: &target_test
   - example_test

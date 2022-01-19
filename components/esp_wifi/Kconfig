@@ -4,7 +4,7 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_ENABLED
         bool
-        default "n" if IDF_TARGET_ESP8684 # TODO: replace with SOC_CAPS_SUPPORT_WIFI after IDF-2223 is done
+        default "n" if IDF_TARGET_ESP32C2 # TODO: replace with SOC_CAPS_SUPPORT_WIFI after IDF-2223 is done
         default "y" if !IDF_TARGET_ESP32H2
 
     config ESP32_WIFI_SW_COEXIST_ENABLE

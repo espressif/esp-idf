@@ -1,5 +1,5 @@
-if(IDF_TARGET STREQUAL "esp8684")
-    # ESP8684 does't support rmt
+if(IDF_TARGET STREQUAL "esp32c2")
+    # ESP32-C2 does't support rmt
     return()
 endif()
 

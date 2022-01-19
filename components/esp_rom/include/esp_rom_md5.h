@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +18,7 @@ extern "C" {
  */
 #define ESP_ROM_MD5_DIGEST_LEN 16
 
-#if CONFIG_IDF_TARGET_ESP8684
+#if CONFIG_IDF_TARGET_ESP32C2
 /**
  * \brief          MD5 context structure
  *
@@ -70,7 +70,7 @@ static inline void esp_rom_md5_final(uint8_t *digest, md5_context_t *context)
     esp_rom_mbedtls_md5_finish_ret(context, digest);
 }
 
-#else //#if !CONFIG_IDF_TARGET_ESP8684
+#else //#if !CONFIG_IDF_TARGET_ESP32C2
 /**
  * @brief Type defined for MD5 context
  *

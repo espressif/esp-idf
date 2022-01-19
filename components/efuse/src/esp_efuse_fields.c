@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,7 +33,7 @@ void esp_efuse_reset(void)
     esp_efuse_utility_reset();
 }
 
-#if !CONFIG_IDF_TARGET_ESP8684
+#if !CONFIG_IDF_TARGET_ESP32C2
 // IDF-3818
 uint32_t esp_efuse_read_secure_version(void)
 {

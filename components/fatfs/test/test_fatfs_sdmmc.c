@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -320,7 +320,7 @@ TEST_CASE("(SD) opendir, readdir, rewinddir, seekdir work as expected using UTF-
 #endif  //SDMMC HOST SUPPORTED
 
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP8684)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C2)
 //no runners
 static void sdspi_speed_test(void *buf, size_t buf_size, size_t file_size, bool write);
 

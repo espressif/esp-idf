@@ -1,6 +1,6 @@
 idf_build_get_property(idf_target IDF_TARGET)
 
-if(IDF_TARGET STREQUAL "esp8684")
+if(IDF_TARGET STREQUAL "esp32c2")
     # TODO : IDF-3906
     return()
 endif()

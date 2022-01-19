@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,7 @@
 #include "test_utils.h"
 #include "soc/adc_periph.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3,ESP32C3, ESP8684)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3,ESP32C3, ESP32C2)
 #include "driver/dac.h"
 
 static const char *TAG = "test_adc";

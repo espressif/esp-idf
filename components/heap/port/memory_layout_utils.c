@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,8 +17,8 @@
 #define ROM_HAS_LAYOUT_TABLE 1
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/rom_layout.h"
-#elif CONFIG_IDF_TARGET_ESP8684
-#include "esp8684/rom/rom_layout.h"
+#elif CONFIG_IDF_TARGET_ESP32C2
+#include "esp32c2/rom/rom_layout.h"
 #define ROM_HAS_LAYOUT_TABLE 1
 #else
 #define ROM_HAS_LAYOUT_TABLE 0

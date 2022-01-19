@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -67,4 +67,4 @@ TEST_CASE("SigmaDelta pin, duty, prescale set", "[sigma_delta][ignore]")
     vTaskDelay(3000 / portTICK_PERIOD_MS);
 }
 
-#endif // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)
+#endif // SOC_SIGMADELTA_SUPPORTED

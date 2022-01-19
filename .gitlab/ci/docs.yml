@@ -69,7 +69,7 @@ check_docs_lang_sync:
   parallel:
     matrix:
       - DOCLANG: ["en", "zh_CN"]
-        DOCTGT: ["esp32", "esp32s2", "esp32s3", "esp32c3", "esp8684"]
+        DOCTGT: ["esp32", "esp32s2", "esp32s3", "esp32c3"] # TODO: temporary disable building docs for esp32c2, IDF-4551
 
 check_docs_gh_links:
   image: $ESP_IDF_DOC_ENV_IMAGE

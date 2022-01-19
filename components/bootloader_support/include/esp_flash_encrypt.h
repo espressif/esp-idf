@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,7 +55,7 @@ static inline /** @cond */ IRAM_ATTR /** @endcond */ bool esp_flash_encryption_e
     #endif
 #else
     #ifndef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
-        #if CONFIG_IDF_TARGET_ESP8684
+        #if CONFIG_IDF_TARGET_ESP32C2
             // 	IDF-3899
         #else
             flash_crypt_cnt = REG_GET_FIELD(EFUSE_RD_REPEAT_DATA1_REG, EFUSE_SPI_BOOT_CRYPT_CNT);

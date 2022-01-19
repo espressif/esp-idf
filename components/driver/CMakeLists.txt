@@ -108,7 +108,7 @@ if(IDF_TARGET STREQUAL "esp32h2")
                      "twai.c")
 endif()
 
-if(IDF_TARGET STREQUAL "esp8684")
+if(IDF_TARGET STREQUAL "esp32c2")
     list(APPEND srcs "spi_slave_hd.c")
 endif()
 

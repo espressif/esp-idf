@@ -26,7 +26,7 @@ else()
             "xt_wdt.c"
             "debug_stubs.c")
 
-    if(NOT (${target} STREQUAL "esp8684"))
+    if(NOT (${target} STREQUAL "esp32c2"))
         list(APPEND srcs "debug_stubs.c")
     endif()
 

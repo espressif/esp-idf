@@ -18,7 +18,7 @@ Overview of {IDF_TARGET_NAME}'s SPI peripherals
 
     SPI2 and SPI3 have independent signal buses with the same respective names.
 
-.. only:: esp32c3 or esp8684
+.. only:: esp32c3 or esp32c2
 
     {IDF_TARGET_NAME} integrates one general purpose SPI controller which can be used as slave node driven by an off-chip SPI master. The controller is called SPI2 and has an independent signal bus with the same name.
 

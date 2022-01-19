@@ -32,11 +32,11 @@
 #include "esp32c3/rom/cache.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP8684
-#include "esp8684/rom/cache.h"
+#elif CONFIG_IDF_TARGET_ESP32C2
+#include "esp32c2/rom/cache.h"
 #endif
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 // TODO: SPI_FLASH IDF-4025
 
 #define FUNC_SPI    1
@@ -1233,4 +1233,4 @@ FLASH_TEST_CASE("esp_flash_read large PSRAM buffer low memory", test_flash_read_
 
 #endif
 
-#endif //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)
+#endif //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

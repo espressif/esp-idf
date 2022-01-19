@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 
 project(idf_as_lib C)
 
-set(targets "esp32" "esp32s2" "esp32s3" "esp32c3" "esp32h2" "esp8684")
+set(targets "esp32" "esp32s2" "esp32s3" "esp32c3" "esp32h2" "esp32c2")
 
 if("${TARGET}" IN_LIST targets)
     # Include for ESP-IDF build system functions

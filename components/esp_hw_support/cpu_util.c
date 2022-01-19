@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -75,7 +75,7 @@ bool IRAM_ATTR esp_cpu_in_ocd_debug_mode(void)
     CONFIG_ESP32S3_DEBUG_OCDAWARE || \
     CONFIG_ESP32C3_DEBUG_OCDAWARE || \
     CONFIG_ESP32H2_DEBUG_OCDAWARE || \
-    CONFIG_ESP8684_DEBUG_OCDAWARE
+    CONFIG_ESP32C2_DEBUG_OCDAWARE
     return cpu_ll_is_debugger_attached();
 #else
     return false; // Always return false if "OCD aware" is disabled
