@@ -1344,7 +1344,7 @@
  */
 #ifdef CONFIG_LWIP_DHCPS
 #define ESP_DHCPS                       1
-#define ESP_DHCPS_TIMER                 1
+#define ESP_DHCPS_TIMER                 0
 #else
 #define ESP_DHCPS                       0
 #define ESP_DHCPS_TIMER                 0

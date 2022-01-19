@@ -93,14 +93,19 @@ static inline bool dhcps_dns_enabled (dhcps_offer_t offer)
     return (offer & OFFER_DNS) != 0;
 }
 
-void dhcps_start(struct netif *netif, ip4_addr_t ip);
-void dhcps_stop(struct netif *netif);
-void *dhcps_option_info(u8_t op_id, u32_t opt_len);
-void dhcps_set_option_info(u8_t op_id, void *opt_info, u32_t opt_len);
-bool dhcp_search_ip_on_mac(u8_t *mac, ip4_addr_t *ip);
-void dhcps_dns_setserver(const ip_addr_t *dnsserver);
-ip4_addr_t dhcps_dns_getserver(void);
-void dhcps_set_new_lease_cb(dhcps_cb_t cb);
+typedef struct dhcps_t dhcps_t;
+
+dhcps_t *dhcps_new(void);
+void dhcps_delete(dhcps_t *dhcps);
+
+void dhcps_start(dhcps_t *dhcps, struct netif *netif, ip4_addr_t ip);
+void dhcps_stop(dhcps_t *dhcps, struct netif *netif);
+void *dhcps_option_info(dhcps_t *dhcps, u8_t op_id, u32_t opt_len);
+void dhcps_set_option_info(dhcps_t *dhcps, u8_t op_id, void *opt_info, u32_t opt_len);
+bool dhcp_search_ip_on_mac(dhcps_t *dhcps, u8_t *mac, ip4_addr_t *ip);
+void dhcps_dns_setserver(dhcps_t *dhcps, const ip_addr_t *dnsserver);
+ip4_addr_t dhcps_dns_getserver(dhcps_t *dhcps);
+void dhcps_set_new_lease_cb(dhcps_t *dhcps, dhcps_cb_t cb);
 
 #ifdef __cplusplus
 }
