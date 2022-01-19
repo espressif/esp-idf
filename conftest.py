@@ -16,17 +16,19 @@
 import logging
 import os
 import sys
+import xml.etree.ElementTree as ET
 from typing import Callable, List, Optional
 
 import pytest
 from _pytest.config import Config
 from _pytest.fixtures import FixtureRequest
 from _pytest.nodes import Item
+from _pytest.python import Function
 from pytest_embedded.plugin import parse_configuration
-from pytest_embedded_idf.app import IdfApp
+from pytest_embedded.utils import find_by_suffix
 
 SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3']
-PREVIEW_TARGETS = ['linux', 'esp32h2', 'esp8684']
+PREVIEW_TARGETS = ['linux', 'esp32h2', 'esp32c2']
 
 
 ##################
@@ -42,7 +44,7 @@ def is_target_marker(marker: str) -> bool:
     return False
 
 
-def format_case_id(target: str, config: str, case: str) -> str:
+def format_case_id(target: Optional[str], config: Optional[str], case: str) -> str:
     return f'{target}.{config}.{case}'
 
 
@@ -56,6 +58,11 @@ def item_marker_names(item: Item) -> List[str]:
 @pytest.fixture
 def config(request: FixtureRequest) -> str:
     return getattr(request, 'param', None) or request.config.getoption('config', 'default')  # type: ignore
+
+
+@pytest.fixture
+def test_case_name(request: FixtureRequest, target: str, config: str) -> str:
+    return format_case_id(target, config, request.node.originalname)
 
 
 @pytest.fixture
@@ -106,34 +113,58 @@ def build_dir(request: FixtureRequest, app_path: str, target: Optional[str], con
 
 
 @pytest.fixture(autouse=True)
-def junit_properties(app: IdfApp, config: str, test_case_name: str,
-                     record_xml_attribute: Callable[[str, object], None]) -> None:
+def junit_properties(test_case_name: str, record_xml_attribute: Callable[[str, object], None]) -> None:
     """
     This fixture is autoused and will modify the junit report test case name to <target>.<config>.<case_name>
     """
-    record_xml_attribute('name', format_case_id(app.target, config, test_case_name))
+    record_xml_attribute('name', test_case_name)
 
 
 ##################
 # Hook functions #
 ##################
-@pytest.hookimpl(trylast=True)
+@pytest.hookimpl(tryfirst=True)
 def pytest_collection_modifyitems(config: Config, items: List[Item]) -> None:
-    target = config.getoption('target', None)
+    target = config.getoption('target', None)  # use the `build` dir
     if not target:
         return
 
     # add markers for special markers
     for item in items:
         if 'supported_targets' in item_marker_names(item):
-            for target in SUPPORTED_TARGETS:
-                item.add_marker(target)
+            for _target in SUPPORTED_TARGETS:
+                item.add_marker(_target)
         if 'preview_targets' in item_marker_names(item):
-            for target in PREVIEW_TARGETS:
-                item.add_marker(target)
+            for _target in PREVIEW_TARGETS:
+                item.add_marker(_target)
         if 'all_targets' in item_marker_names(item):
-            for target in [*SUPPORTED_TARGETS, *PREVIEW_TARGETS]:
-                item.add_marker(target)
+            for _target in [*SUPPORTED_TARGETS, *PREVIEW_TARGETS]:
+                item.add_marker(_target)
 
     # filter all the test cases with "--target"
     items[:] = [item for item in items if target in item_marker_names(item)]
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_runtest_teardown(item: Function) -> None:
+    """
+    Format the test case generated junit reports
+    """
+    tempdir = item.funcargs.get('test_case_tempdir')
+    if not tempdir:
+        return
+
+    junits = find_by_suffix('.xml', tempdir)
+    if not junits:
+        return
+
+    target = item.funcargs['target']
+    config = item.funcargs['config']
+    for junit in junits:
+        xml = ET.parse(junit)
+        testcases = xml.findall('.//testcase')
+        for case in testcases:
+            case.attrib['name'] = format_case_id(target, config, case.attrib['name'])
+            if 'file' in case.attrib:
+                case.attrib['file'] = case.attrib['file'].replace('/IDF/', '')  # our unity test framework
+        xml.write(junit)
