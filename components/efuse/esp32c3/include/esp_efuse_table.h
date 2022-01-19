@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 
-// md5_digest_table fe80e03d1417e5757ef89923f8d01d33
+// md5_digest_table 74dc1b50febce95860a7a077efe28121
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -62,7 +62,6 @@ extern const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_JTAG[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_DOWNLOAD_ICACHE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_DEVICE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_FORCE_DOWNLOAD[];
-extern const esp_efuse_desc_t* ESP_EFUSE_DIS_USB[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_CAN[];
 extern const esp_efuse_desc_t* ESP_EFUSE_JTAG_SEL_ENABLE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SOFT_DIS_JTAG[];
@@ -92,14 +91,9 @@ extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_TPUW[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_DOWNLOAD_MODE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_LEGACY_SPI_BOOT[];
 extern const esp_efuse_desc_t* ESP_EFUSE_UART_PRINT_CHANNEL[];
-extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_ECC_MODE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_DOWNLOAD_MODE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_ENABLE_SECURITY_DOWNLOAD[];
 extern const esp_efuse_desc_t* ESP_EFUSE_UART_PRINT_CONTROL[];
-extern const esp_efuse_desc_t* ESP_EFUSE_PIN_POWER_SELECTION[];
-extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_TYPE[];
-extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_PAGE_SIZE[];
-extern const esp_efuse_desc_t* ESP_EFUSE_FLASH_ECC_EN[];
 extern const esp_efuse_desc_t* ESP_EFUSE_FORCE_SEND_RESUME[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SECURE_VERSION[];
 extern const esp_efuse_desc_t* ESP_EFUSE_MAC_FACTORY[];
