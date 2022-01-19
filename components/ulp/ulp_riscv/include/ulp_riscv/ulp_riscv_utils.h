@@ -43,12 +43,34 @@ void ulp_riscv_rescue_from_monitor(void);
  * @note Returning from main() in the ULP program results on
  *       calling this function.
  *
+ * @note To stop the ULP from waking up, call ulp_riscv_timer_stop()
+ *       before halting.
+ *
  * This function should be called after the ULP program Finishes
  * its processing, it will trigger the timer for the next wakeup,
  * put the ULP in monitor mode and triggers a reset.
  *
  */
-void __attribute__((noreturn)) ulp_riscv_shutdown(void);
+void __attribute__((noreturn)) ulp_riscv_halt(void);
+
+#define ulp_riscv_shutdown ulp_riscv_halt
+
+/**
+ * @brief Stop the ULP timer
+ *
+ * @note This will stop the ULP from waking up if halted, but will not abort any program
+ *       currently executing on the ULP.
+ */
+void ulp_riscv_timer_stop(void);
+
+
+/**
+ * @brief Resumes the ULP timer
+ *
+ * @note This will resume an already configured timer, but does no other configuration
+ *
+ */
+void ulp_riscv_timer_resume(void);
 
 #define ULP_RISCV_GET_CCOUNT()	({ int __ccount; \
 				asm volatile("rdcycle %0;" : "=r"(__ccount)); \

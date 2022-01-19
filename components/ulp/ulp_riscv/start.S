@@ -18,6 +18,6 @@ __start:
 	la sp, __stack_top
 	call ulp_riscv_rescue_from_monitor
 	call main
-	call ulp_riscv_shutdown
+	call ulp_riscv_halt
 loop:
 	j loop

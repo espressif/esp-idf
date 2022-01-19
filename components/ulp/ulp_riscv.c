@@ -97,6 +97,27 @@ esp_err_t ulp_riscv_run(void)
 #endif
 }
 
+void ulp_riscv_timer_stop(void)
+{
+    CLEAR_PERI_REG_MASK(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
+}
+
+void ulp_riscv_timer_resume(void)
+{
+    SET_PERI_REG_MASK(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
+}
+
+void ulp_riscv_halt(void)
+{
+    ulp_riscv_timer_stop();
+
+    /* suspends the ulp operation*/
+    SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_DONE);
+
+    /* Resets the processor */
+    SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SHUT_RESET_EN);
+}
+
 esp_err_t ulp_riscv_load_binary(const uint8_t* program_binary, size_t program_size_bytes)
 {
     if (program_binary == NULL) {
