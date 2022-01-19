@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,11 +37,7 @@ const soc_memory_type_desc_t soc_memory_types[] = {
     { "IRAM", { MALLOC_CAP_EXEC | MALLOC_CAP_32BIT | MALLOC_CAP_INTERNAL, 0, 0 }, false, false},
 };
 
-#ifdef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
-#define SOC_MEMORY_TYPE_DEFAULT 0
-#else
 #define SOC_MEMORY_TYPE_DEFAULT 2
-#endif
 
 const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memory_type_desc_t);
 
@@ -52,11 +48,27 @@ const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memor
  *       this list should always be sorted from low to high by start address.
  *
  */
+
+#define RAM_BOTTOM_LEVEL_REUSE_SIZE   0x18000
+#define RAM_BOTTOM_LEVEL_RESERVE_SIZE 0x8000
+#define MIN_ADDR_OF_STARTUP_STACK_TOP 0x3FCD81D0    //TODO: IDF-4585
+
+/*|------------------------------------  SRAM LEVEL 3  -------------------------------------|*/
+/*|0x3FCC0000                                                                     0x3FCDFFFF|*/
+/*|------------------------------------------------|--------------------------|-------------|*/
+/*|                  Shared Buffer                 |       Startup Stack      |  Interface  |*/
+/*|------------------------------------------------|--------------------------|-------------|*/
+/*| <---RAM_BOTTOM_LEVEL_REUSE_SIZE---> | <---------RAM_BOTTOM_LEVEL_RESERVE_SIZE---------> |*/
+/*|-----------------------------------------------------------------------------------------|*/
+
 const soc_memory_region_t soc_memory_regions[] = {
-    { 0x3FCA0000, 0x10000, SOC_MEMORY_TYPE_DEFAULT, 0x40380000}, //Block 4,  can be remapped to ROM, can be used as trace memory
-    { 0x3FCB0000, 0x10000, SOC_MEMORY_TYPE_DEFAULT, 0x40390000}, //Block 5,  can be remapped to ROM, can be used as trace memory
-    { 0x3FCC0000, 0x20000, 1, 0x403A0000}, //Block 9,  can be used as trace memory
+    { 0x3FCA0000, 0x10000,                        SOC_MEMORY_TYPE_DEFAULT, 0x40380000}, //Block 1,  can be remapped to ROM, can be used as trace memory
+    { 0x3FCB0000, 0x10000,                        SOC_MEMORY_TYPE_DEFAULT, 0x40390000}, //Block 2,  can be remapped to ROM, can be used as trace memory
+    { 0x3FCC0000, RAM_BOTTOM_LEVEL_REUSE_SIZE,    SOC_MEMORY_TYPE_DEFAULT, 0x403A0000}, //Block 3,  can be remapped to ROM, can be used as trace memory
+    { 0x3FCC0000 + RAM_BOTTOM_LEVEL_REUSE_SIZE,   RAM_BOTTOM_LEVEL_RESERVE_SIZE, 1, 0x403A0000 + RAM_BOTTOM_LEVEL_REUSE_SIZE}  //Block 4,  can be used as trace memory
 };
+
+_Static_assert(0x3FCC0000 + RAM_BOTTOM_LEVEL_REUSE_SIZE <= MIN_ADDR_OF_STARTUP_STACK_TOP, "Heap reuse area overlaps startup stack");
 
 const size_t soc_memory_region_count = sizeof(soc_memory_regions) / sizeof(soc_memory_region_t);
 
