@@ -119,7 +119,7 @@ static esp_err_t mbc_tcp_slave_destroy(void)
     (void)vQueueDelete(mbs_opts->mbs_notification_queue_handle);
     (void)vEventGroupDelete(mbs_opts->mbs_event_group);
     (void)vMBTCPPortClose();
-
+    mbs_interface_ptr = NULL;
     vMBPortSetMode((UCHAR)MB_PORT_INACTIVE);
     return ESP_OK;
 }
