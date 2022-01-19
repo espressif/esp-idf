@@ -65,6 +65,8 @@ These third party libraries can be included into the application (firmware) prod
 
 * `cryptoauthlib`_ Microchip CryptoAuthentication Library - Copyright (c) 2015 - 2018 Microchip Technology Inc, is licensed under common Microchip software License as described in :example_file:`LICENSE file <peripherals/secure_element/atecc608_ecdsa/components/esp-cryptoauthlib/cryptoauthlib/LICENSE>`
 
+* `freemodbus`_ Copyright (c) 2006-2013 Christian Walter, Armink and licensed under the BSD license.
+
 Build Tools
 -----------
 
@@ -182,3 +184,4 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _sphinx_idf_theme: https://github.com/espressif/sphinx_idf_theme
 .. _sphinx_rtd_theme: https://github.com/readthedocs/sphinx_rtd_theme
 .. _cryptoauthlib: https://github.com/MicrochipTech/cryptoauthlib
+.. _freemodbus: https://github.com/armink/FreeModbus_Slave-Master-RTT-STM32
