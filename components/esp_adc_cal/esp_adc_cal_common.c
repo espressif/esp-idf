@@ -12,6 +12,7 @@
 #include "driver/adc.h"
 #include "hal/adc_types.h"
 #include "esp_adc_cal.h"
+#include "esp_adc_cal_internal.h"
 
 #define ADC_CAL_CHECK(cond, ret) ({                                         \
             if(!(cond)){                                                    \
@@ -44,3 +45,49 @@ esp_err_t esp_adc_cal_get_voltage(adc_channel_t channel,
     }
     return ret;
 }
+
+#if ESP_ADC_CAL_CURVE_FITTING_SUPPORTED
+/*------------------------------------------------------------------------------
+ * Private API
+ *----------------------------------------------------------------------------*/
+int32_t esp_adc_cal_get_reading_error(const esp_adc_error_calc_param_t *param, uint8_t atten)
+{
+    if (param->v_cali_input == 0) {
+        return 0;
+    }
+
+    uint64_t v_cali_1 = param->v_cali_input;
+    uint8_t term_num = param->term_num;
+    int32_t error = 0;
+    uint64_t coeff = 0;
+    uint64_t variable[term_num];
+    uint64_t term[term_num];
+    memset(variable, 0, term_num * sizeof(uint64_t));
+    memset(term, 0, term_num * sizeof(uint64_t));
+
+    /**
+     * For atten0 ~ 2:
+     * error = (K0 * X^0) + (K1 * X^1) + (K2 * X^2);
+     *
+     * For atten3:
+     * error = (K0 * X^0) + (K1 * X^1)  + (K2 * X^2) + (K3 * X^3) + (K4 * X^4);
+     */
+    variable[0] = 1;
+    coeff = (*param->coeff)[atten][0][0];
+    term[0] = variable[0] * coeff / (*param->coeff)[atten][0][1];
+    error = (int32_t)term[0] * (*param->sign)[atten][0];
+
+    for (int i = 1; i < term_num; i++) {
+        variable[i] = variable[i-1] * v_cali_1;
+        coeff = (*param->coeff)[atten][i][0];
+        term[i] = variable[i] * coeff;
+        ESP_LOGV(TAG, "big coef is %llu, big term%d is %llu, coef_id is %d", coeff, i, term[i], i);
+
+        term[i] = term[i] / (*param->coeff)[atten][i][1];
+        error += (int32_t)term[i] * (*param->sign)[atten][i];
+        ESP_LOGV(TAG, "term%d is %llu, error is %d", i, term[i], error);
+    }
+
+    return error;
+}
+#endif  //#if ESP_ADC_CAL_CURVE_FITTING_SUPPORTED
