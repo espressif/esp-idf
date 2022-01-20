@@ -828,6 +828,8 @@ component_ut_test_lan8720:
   extends:
     - .target_test_job_template
     - .rules:test:integration_test
+    # needn't install idf python env
+    - .before_script_minimal
   needs:
     - assign_test
     - build_ssc_esp32
@@ -846,6 +848,10 @@ component_ut_test_lan8720:
     - *define_config_file_name
     # first test if config file exists, if not exist, exit 0
     - test -e $CONFIG_FILE || exit 0
+    # prepare test utilities
+    - source tools/ci/setup_python.sh
+    - add_gitlab_ssh_keys
+    - fetch_submodules
     # clone local test env configs
     - retry_failed git clone $TEST_ENV_CONFIG_REPO
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
@@ -873,6 +879,10 @@ nvs_compatible_test:
     - *define_config_file_name
     # first test if config file exists, if not exist, exit 0
     - test -e $CONFIG_FILE || exit 0
+    # prepare test utilities
+    - source tools/ci/setup_python.sh
+    - add_gitlab_ssh_keys
+    - fetch_submodules
     # clone local test env configs
     - retry_failed git clone $TEST_ENV_CONFIG_REPO
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
