@@ -115,7 +115,7 @@ typedef union {
 
 /* We can determine the padding thank to the previous macros */
 #define PRSTATUS_SIG_PADDING        (PRSTATUS_OFFSET_PR_CURSIG)
-#define PRSTATUS_PID_PADDING        (PRSTATUS_OFFSET_PR_PID - PRSTATUS_OFFSET_PR_CURSIG - sizeof(uint32_t))
+#define PRSTATUS_PID_PADDING        (PRSTATUS_OFFSET_PR_PID - PRSTATUS_OFFSET_PR_CURSIG - sizeof(uint16_t))
 #define PRSTATUS_REG_PADDING        (PRSTATUS_OFFSET_PR_REG - PRSTATUS_OFFSET_PR_PID - sizeof(uint32_t))
 #define PRSTATUS_END_PADDING        (PRSTATUS_SIZE - PRSTATUS_OFFSET_PR_REG - ELF_GREGSET_T_SIZE)
 

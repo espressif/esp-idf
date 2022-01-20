@@ -1,5 +1,5 @@
 #
-# Copyright 2021 Espressif Systems (Shanghai) PTE LTD
+# Copyright 2021 Espressif Systems (Shanghai) CO., LTD
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,11 +16,15 @@
 
 from construct import Int16ul, Int32ul, Int64ul, Struct
 
-from . import ESPCoreDumpLoaderError, _ArchMethodsBase, _TargetMethodsBase
+from . import BaseArchMethodsMixin, BaseTargetMethods, ESPCoreDumpLoaderError
+
+try:
+    from typing import Any, Optional, Tuple
+except ImportError:
+    pass
 
 INVALID_CAUSE_VALUE = 0xFFFF
 XCHAL_EXCCAUSE_NUM = 64
-
 
 # Exception cause dictionary to get translation of exccause register
 # From 4.4.1.5 table 4-64 Exception Causes of Xtensa
@@ -81,7 +85,7 @@ XTENSA_EXCEPTION_CAUSE_DICT = {
 }
 
 
-class XtensaRegisters(object):
+class ExceptionRegisters(object):
     # extra regs IDs used in EXTRA_INFO note
     EXCCAUSE_IDX = 0
     EXCVADDR_IDX = 1
@@ -100,14 +104,14 @@ class XtensaRegisters(object):
     EPS7_IDX = 199
 
     @property
-    def registers(self):
+    def registers(self):  # type: () -> dict[str, int]
         return {k: v for k, v in self.__class__.__dict__.items()
                 if not k.startswith('__') and isinstance(v, int)}
 
 
 # Following structs are based on source code
 # IDF_PATH/components/espcoredump/src/core_dump_port.c
-XtensaPrStatus = Struct(
+PrStatus = Struct(
     'si_signo' / Int32ul,
     'si_code' / Int32ul,
     'si_errno' / Int32ul,
@@ -126,28 +130,28 @@ XtensaPrStatus = Struct(
 )
 
 
-def print_exc_regs_info(extra_info):
+def print_exc_regs_info(extra_info):  # type: (list[int]) -> None
     """
     Print the register info by parsing extra_info
     :param extra_info: extra info data str
     :return: None
     """
-    exccause = extra_info[1 + 2 * XtensaRegisters.EXCCAUSE_IDX + 1]
+    exccause = extra_info[1 + 2 * ExceptionRegisters.EXCCAUSE_IDX + 1]
     exccause_str = XTENSA_EXCEPTION_CAUSE_DICT.get(exccause)
     if not exccause_str:
         exccause_str = ('Invalid EXCCAUSE code', 'Invalid EXCAUSE description or not found.')
     print('exccause       0x%x (%s)' % (exccause, exccause_str[0]))
-    print('excvaddr       0x%x' % extra_info[1 + 2 * XtensaRegisters.EXCVADDR_IDX + 1])
+    print('excvaddr       0x%x' % extra_info[1 + 2 * ExceptionRegisters.EXCVADDR_IDX + 1])
 
     # skip crashed_task_tcb, exccause, and excvaddr
     for i in range(5, len(extra_info), 2):
-        if (extra_info[i] >= XtensaRegisters.EPC1_IDX and extra_info[i] <= XtensaRegisters.EPC7_IDX):
-            print('epc%d           0x%x' % ((extra_info[i] - XtensaRegisters.EPC1_IDX + 1), extra_info[i + 1]))
+        if (extra_info[i] >= ExceptionRegisters.EPC1_IDX and extra_info[i] <= ExceptionRegisters.EPC7_IDX):
+            print('epc%d           0x%x' % ((extra_info[i] - ExceptionRegisters.EPC1_IDX + 1), extra_info[i + 1]))
 
     # skip crashed_task_tcb, exccause, and excvaddr
     for i in range(5, len(extra_info), 2):
-        if (extra_info[i] >= XtensaRegisters.EPS2_IDX and extra_info[i] <= XtensaRegisters.EPS7_IDX):
-            print('eps%d           0x%x' % ((extra_info[i] - XtensaRegisters.EPS2_IDX + 2), extra_info[i + 1]))
+        if (extra_info[i] >= ExceptionRegisters.EPS2_IDX and extra_info[i] <= ExceptionRegisters.EPS7_IDX):
+            print('eps%d           0x%x' % ((extra_info[i] - ExceptionRegisters.EPS2_IDX + 2), extra_info[i + 1]))
 
 
 # from "gdb/xtensa-tdep.h"
@@ -200,24 +204,11 @@ XT_STK_LCOUNT = 24
 XT_STK_FRMSZ = 25
 
 
-class _TargetMethodsESP32(_TargetMethodsBase):
-    @staticmethod
-    def tcb_is_sane(tcb_addr, tcb_size):
-        return not (tcb_addr < 0x3ffae000 or (tcb_addr + tcb_size) > 0x40000000)
-
-    @staticmethod
-    def stack_is_sane(sp):
-        return not (sp < 0x3ffae010 or sp > 0x3fffffff)
-
-    @staticmethod
-    def addr_is_fake(addr):
-        return (0x20000000 <= addr < 0x3f3fffff) or addr >= 0x80000000
-
-
-class _ArchMethodsXtensa(_ArchMethodsBase):
+class XtensaMethodsMixin(BaseArchMethodsMixin):
     @staticmethod
     def get_registers_from_stack(data, grows_down):
-        extra_regs = {v: 0 for v in XtensaRegisters().registers.values()}
+        # type: (bytes, bool) -> Tuple[list[int], Optional[dict[int, int]]]
+        extra_regs = {v: 0 for v in ExceptionRegisters().registers.values()}
         regs = [0] * REG_NUM
         # TODO: support for growing up stacks
         if not grows_down:
@@ -245,10 +236,10 @@ class _ArchMethodsXtensa(_ArchMethodsBase):
             if regs[REG_PS_IDX] & (1 << 5):
                 regs[REG_PS_IDX] &= ~(1 << 4)
             if stack[XT_STK_EXCCAUSE] in XTENSA_EXCEPTION_CAUSE_DICT:
-                extra_regs[XtensaRegisters.EXCCAUSE_IDX] = stack[XT_STK_EXCCAUSE]
+                extra_regs[ExceptionRegisters.EXCCAUSE_IDX] = stack[XT_STK_EXCCAUSE]
             else:
-                extra_regs[XtensaRegisters.EXCCAUSE_IDX] = INVALID_CAUSE_VALUE
-            extra_regs[XtensaRegisters.EXCVADDR_IDX] = stack[XT_STK_EXCVADDR]
+                extra_regs[ExceptionRegisters.EXCCAUSE_IDX] = INVALID_CAUSE_VALUE
+            extra_regs[ExceptionRegisters.EXCVADDR_IDX] = stack[XT_STK_EXCVADDR]
         else:
             regs[REG_PC_IDX] = stack[XT_SOL_PC]
             regs[REG_PS_IDX] = stack[XT_SOL_PS]
@@ -258,8 +249,8 @@ class _ArchMethodsXtensa(_ArchMethodsBase):
         return regs, extra_regs
 
     @staticmethod
-    def build_prstatus_data(tcb_addr, task_regs):
-        return XtensaPrStatus.build({
+    def build_prstatus_data(tcb_addr, task_regs):  # type: (int, list[int]) -> Any
+        return PrStatus.build({
             'si_signo': 0,
             'si_code': 0,
             'si_errno': 0,
@@ -276,3 +267,11 @@ class _ArchMethodsXtensa(_ArchMethodsBase):
             'pr_cutime': 0,
             'pr_cstime': 0,
         }) + Int32ul[len(task_regs)].build(task_regs)
+
+
+class Esp32Methods(BaseTargetMethods, XtensaMethodsMixin):
+    TARGET = 'esp32'
+
+
+class Esp32S2Methods(BaseTargetMethods, XtensaMethodsMixin):
+    TARGET = 'esp32s2'

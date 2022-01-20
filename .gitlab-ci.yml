@@ -70,7 +70,7 @@ variables:
   export IDF_MIRROR_PREFIX_MAP=
   fi
   if [[ "$SETUP_TOOLS" == "1" || "$CI_JOB_STAGE" != "target_test" ]]; then
-  tools/idf_tools.py --non-interactive install && eval "$(tools/idf_tools.py --non-interactive export)" || exit 1
+    tools/idf_tools.py --non-interactive install ${SETUP_TOOLS_LIST:-} && eval "$(tools/idf_tools.py --non-interactive export)" || exit 1
   fi
 
 before_script:

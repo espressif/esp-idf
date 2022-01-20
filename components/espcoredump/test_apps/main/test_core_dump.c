@@ -96,10 +96,17 @@ void failed_assert_task(void *pvParameter)
     fflush(stdout);
 }
 
-TEST_CASE("verify coredump functionality", "[coredump][ignore]")
+void test_core_dump(void)
 {
     nvs_flash_init();
     xTaskCreate(&bad_ptr_task, "bad_ptr_task", 2048, NULL, 5, NULL);
     xTaskCreatePinnedToCore(&unaligned_ptr_task, "unaligned_ptr_task", 2048, NULL, 7, NULL, 1);
     xTaskCreatePinnedToCore(&failed_assert_task, "failed_assert_task", 2048, NULL, 10, NULL, 0);
+}
+
+void app_main(void)
+{
+    UNITY_BEGIN();
+    RUN_TEST(test_core_dump);
+    UNITY_END();
 }

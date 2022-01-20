@@ -30,27 +30,32 @@ except ImportError:
     from corefile.elf import ESPCoreDumpElfFile
     from corefile.loader import ESPCoreDumpFileLoader, ESPCoreDumpLoaderError
 
+SUPPORTED_TARGET = ['esp32', 'esp32s2', 'esp32c3']
+
 
 class TestESPCoreDumpElfFile(unittest.TestCase):
     def test_read_elf(self):
-        elf = ESPCoreDumpElfFile('core.elf')
-        assert elf.load_segments
-        assert elf.note_segments
+        for target in SUPPORTED_TARGET:
+            elf = ESPCoreDumpElfFile(os.path.join(target, 'core.elf'))
+            assert elf.load_segments
+            assert elf.note_segments
 
 
 class TestESPCoreDumpFileLoader(unittest.TestCase):
     def test_load_wrong_encode_core_bin(self):
-        with self.assertRaises(ESPCoreDumpLoaderError):
-            ESPCoreDumpFileLoader(path='coredump.b64', is_b64=False)
+        for target in SUPPORTED_TARGET:
+            with self.assertRaises(ESPCoreDumpLoaderError):
+                ESPCoreDumpFileLoader(path=os.path.join(target, 'coredump.b64'), is_b64=False)
 
     def test_create_corefile(self):
-        loader = ESPCoreDumpFileLoader(path='coredump.b64', is_b64=True)
-        loader.create_corefile()
+        for target in SUPPORTED_TARGET:
+            loader = ESPCoreDumpFileLoader(path=os.path.join(target, 'coredump.b64'), is_b64=True)
+            loader.create_corefile()
 
 
 if __name__ == '__main__':
     # The purpose of these tests is to increase the code coverage at places which are sensitive to issues related to
     # Python 2&3 compatibility.
-    # The espcoredump is not suited for through unit testting. There lot of nested functions, interactive
-    # communication with the developement board and GDB, ...
+    # The espcoredump is not suited for through unit testing. There lot of nested functions, interactive
+    # communication with the development board and GDB, ...
     unittest.main()
