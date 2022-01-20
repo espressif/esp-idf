@@ -103,6 +103,9 @@ function(__build_set_default_build_specifications)
                                     "-Wextra"
                                     "-Wno-unused-parameter"
                                     "-Wno-sign-compare"
+                                    # ignore multiple enum conversion warnings since gcc 11
+                                    # TODO: IDF-5163
+                                    "-Wno-enum-conversion"
                                     # Default is dwarf-5 since GCC 11, fallback to dwarf-4 because of binary size
                                     # TODO: IDF-5160
                                     "-gdwarf-4"
