@@ -103,6 +103,9 @@ function(__build_set_default_build_specifications)
                                     "-Wextra"
                                     "-Wno-unused-parameter"
                                     "-Wno-sign-compare"
+                                    # Default is dwarf-5 since GCC 11, fallback to dwarf-4 because of binary size
+                                    # TODO: IDF-5160
+                                    "-gdwarf-4"
                                     # always generate debug symbols (even in release mode, these don't
                                     # go into the final binary so have no impact on size
                                     "-ggdb")
