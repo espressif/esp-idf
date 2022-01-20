@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 import pytest
-from pytest_embedded.dut import Dut
+from pytest_embedded import Dut
 
 
 @pytest.mark.supported_targets
