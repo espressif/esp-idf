@@ -9,7 +9,7 @@ This guide shows how to start using the ESP32-DevKitC V2 development board.
 What You Need
 -------------
 
-* ESP32-DevKitC V2 board
+* :ref:`ESP32-DevKitC V2 board <get-started-esp32-devkitc-v2-board-front-make>`
 * USB A / micro USB B cable
 * Computer running Windows, Linux, or macOS
 
@@ -37,19 +37,22 @@ The following figure and the table below describe the key components, interfaces
     ESP32-DevKitC V2 board layout
 
 
-+---------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Key Component       | Description                                                                                                                                                                             |
-+=====================+=========================================================================================================================================================================================+
-| ESP32-WROOM-32      | Standard module with ESP32 at its core. For more information, see `ESP32-WROOM-32 Datasheet <https://espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_en.pdf>`_ |
-+---------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| EN                  | Reset button.                                                                                                                                                                           |
-+---------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Boot                | Download button. Holding down **Boot** and then pressing **EN** initiates Firmware Download mode for downloading firmware through the serial port.                                      |
-+---------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| Micro USB Port      | USB interface. Power supply for the board as well as the communication interface between a computer and ESP32-WROOM-32.                                                                 |
-+---------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| I/O                 | Most of the pins on the ESP module are broken out to the pin headers on the board. You can program ESP32 to enable multiple functions such as PWM, ADC, DAC, I2C, I2S, SPI, etc.        |
-+---------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+.. list-table::
+    :widths: 25 75
+    :header-rows: 1
+
+    * - Key Component
+      - Description
+    * - ESP32-WROOM-32
+      - Standard module with ESP32 at its core. For more information, see `ESP32-WROOM-32 Datasheet <https://espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_en.pdf>`_
+    * - EN
+      - Reset button.
+    * - Boot
+      - Download button. Holding down **Boot** and then pressing **EN** initiates Firmware Download mode for downloading firmware through the serial port. 
+    * - Micro USB Port
+      - USB interface. Power supply for the board as well as the communication interface between a computer and ESP32-WROOM-32.
+    * - I/O
+      - Most of the pins on the ESP module are broken out to the pin headers on the board. You can program ESP32 to enable multiple functions such as PWM, ADC, DAC, I2C, I2S, SPI, etc.
 
 
 Power Supply Options

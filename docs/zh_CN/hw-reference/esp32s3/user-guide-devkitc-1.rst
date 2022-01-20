@@ -256,6 +256,5 @@ J3
 - `ESP32-S3-DevKitC-1 PCB 布局图 <https://dl.espressif.com/dl/PCB_ESP32-S3-DevKitC-1_V1_20210312CB.pdf>`_ (PDF)
 - `ESP32-S3-DevKitC-1 尺寸图 <https://dl.espressif.com/dl/DXF_ESP32-S3-DevKitC-1_V1_20210312CB.pdf>`_ (PDF)
 - `ESP32-S3-DevKitC-1 尺寸图源文件 <https://dl.espressif.com/dl/DXF_ESP32-S3-DevKitC-1_V1_20210312CB.dxf>`_ (DXF) - 可使用 `Autodesk Viewer <https://viewer.autodesk.com/>`_ 查看
-- ...
 
 有关本开发板的更多设计文档，请联系我们的商务部门 `sales@espressif.com <sales@espressif.com>`_。

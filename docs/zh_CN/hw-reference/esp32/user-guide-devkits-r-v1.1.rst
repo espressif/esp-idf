@@ -54,6 +54,7 @@ ESP32-DevKitS 和 ESP32-DevKitS-R 仅在弹簧布局上有所不同，用于适�
 
 有关上述模组的详细信息，请参考 `ESP32 系列模组 <https://www.espressif.com/zh-hans/products/modules?id=ESP32>`_。
 
+
 组件介绍
 --------
 
