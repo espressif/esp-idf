@@ -249,7 +249,7 @@ void IRAM_ATTR esp_timer_impl_set_alarm_id(uint64_t timestamp, unsigned alarm_id
                     (the alarm will be less than the counter) and it leads to the infinity loop.
                     To exclude this behavior to the offset was added the delta to have the opportunity to go through it.
                 */
-                offset += abs((int)delta) + s_timer_ticks_per_us * 2;
+                offset += llabs(delta) + s_timer_ticks_per_us * 2;
             } else {
                 break;
             }

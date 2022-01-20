@@ -311,7 +311,7 @@ static esp_err_t emac_config_apll_clock(void)
         ESP_LOGW(TAG, "APLL is occupied already, it is working at %d Hz", real_freq);
     }
     // If the difference of real APLL frequency is not within 50 ppm, i.e. 2500 Hz, the APLL is unavailable
-    ESP_RETURN_ON_FALSE(abs(real_freq - expt_freq) <= 2500,
+    ESP_RETURN_ON_FALSE(abs((int)real_freq - (int)expt_freq) <= 2500,
                          ESP_ERR_INVALID_STATE, TAG, "The APLL is working at an unusable frequency");
 
     return ESP_OK;
