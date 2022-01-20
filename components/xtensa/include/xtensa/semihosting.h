@@ -27,28 +27,32 @@ extern "C" {
  */
 static inline long semihosting_call(long id, long *data, int *out_errno)    // NOLINT(readability-non-const-parameter)
 {
-    long host_ret;
-    long host_errno;
+    /* GCC doesn't allow using specific register names in constraints for Xtensa.
+     * For this case, GCC extended inline assembly manual says the following:
+     *   If you must use a specific register, but your Machine Constraints do not provide
+     *   sufficient control to select the specific register you want, local register variables
+     *   may provide a solution.
+     * Using local register variables results in simpler generated code than
+     * the previous implementation which listed a2-a6 as clobbered registers.
+     */
+    register long a2 asm ("a2") = id;
+    register long a3 asm ("a3") = (long) data[0];
+    register long a4 asm ("a4") = (long) data[1];
+    register long a5 asm ("a5") = (long) data[2];
+    register long a6 asm ("a6") = (long) data[3];
+
     /* The break instruction operands should be (1, 14) according to the ISA manual.
      * We keep (1, 1) for compatibility, until OpenOCD is updated to support both
      * conventions.
      */
     __asm__ __volatile__ (
-        "mov a2, %[sys_nr]\n" \
-        "mov a3, %[arg1]\n" \
-        "mov a4, %[arg2]\n" \
-        "mov a5, %[arg3]\n" \
-        "mov a6, %[arg4]\n" \
-        "break 1, 1\n" \
-        "mov %[host_ret], a2\n" \
-        "mov %[host_errno], a3\n" \
-        :[host_ret]"=r"(host_ret), [host_errno]"=r"(host_errno)
-        :[sys_nr]"r"(id),
-        [arg1]"r"(data[0]),
-        [arg2]"r"(data[1]),
-        [arg3]"r"(data[2]),
-        [arg4]"r"(data[3])
-        :"a2", "a3", "a4", "a5", "a6");
+        "break 1, 1\n"
+        : "+r"(a2), "+r"(a3)
+        : "r"(a4), "r"(a5), "r"(a6)
+        : "memory");
+
+    long host_ret = a2;
+    long host_errno = a3;
     if (host_ret < 0) {
         *out_errno = host_errno;
     }
