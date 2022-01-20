@@ -687,6 +687,11 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     rm -rf esp32
     rm -rf mycomponents
 
+    print_status "toolchain prefix is set in project description file"
+    clean_build_dir
+    idf.py reconfigure
+    grep "prefix.*esp.*elf-" $PWD/build/project_description.json || failure "toolchain prefix not set or determined by CMake"
+
     # idf.py subcommand options, (using monitor with as example)
     print_status "Can set options to subcommands: print_filter for monitor"
     clean_build_dir

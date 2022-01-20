@@ -5,6 +5,7 @@ set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_C_COMPILER riscv32-esp-elf-gcc)
 set(CMAKE_CXX_COMPILER riscv32-esp-elf-g++)
 set(CMAKE_ASM_COMPILER riscv32-esp-elf-gcc)
+set(_CMAKE_TOOLCHAIN_PREFIX riscv32-esp-elf-)
 
 remove_duplicated_flags("-march=rv32imc ${CMAKE_C_FLAGS}" UNIQ_CMAKE_C_FLAGS)
 set(CMAKE_C_FLAGS "${UNIQ_CMAKE_C_FLAGS}" CACHE STRING "C Compiler Base Flags" FORCE)
