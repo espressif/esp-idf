@@ -359,7 +359,7 @@ void vPortYieldOtherCore(BaseType_t coreid);
  * @return true Core can yield
  * @return false Core cannot yield
  */
-static inline bool IRAM_ATTR xPortCanYield(void);
+static inline bool xPortCanYield(void);
 
 // ------------------- Hook Functions ----------------------
 
@@ -398,7 +398,7 @@ void vPortSetStackWatchpoint( void *pxStackStart );
  * @note [refactor-todo] IDF should call a FreeRTOS like macro instead of port function directly
  * @return BaseType_t Core ID
  */
-static inline BaseType_t IRAM_ATTR xPortGetCoreID(void);
+static inline BaseType_t xPortGetCoreID(void);
 
 /**
  * @brief Wrapper for atomic compare-and-set instruction

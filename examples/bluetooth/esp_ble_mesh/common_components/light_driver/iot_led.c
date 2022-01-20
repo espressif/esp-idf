@@ -48,7 +48,7 @@ static DRAM_ATTR iot_light_t *g_light_config = NULL;
 static DRAM_ATTR uint16_t *g_gamma_table = NULL;
 static DRAM_ATTR bool g_hw_timer_started = false;
 
-static IRAM_ATTR bool fade_timercb(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx);
+static bool fade_timercb(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx);
 
 static void iot_timer_start(gptimer_handle_t gptimer)
 {

@@ -63,8 +63,8 @@ static __attribute__((unused)) const char *TAG = "cache";
 #define DPORT_CACHE_GET_VAL(cpuid) (cpuid == 0) ? DPORT_CACHE_VAL(PRO) : DPORT_CACHE_VAL(APP)
 #define DPORT_CACHE_GET_MASK(cpuid) (cpuid == 0) ? DPORT_CACHE_MASK(PRO) : DPORT_CACHE_MASK(APP)
 
-static void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state);
-static void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state);
+static void spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state);
+static void spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state);
 
 static uint32_t s_flash_op_cache_state[2];
 

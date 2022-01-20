@@ -158,7 +158,7 @@ typedef enum {
 typedef esp_rom_spi_cmd_t psram_cmd_t;
 
 static uint32_t s_psram_id = 0;
-static void IRAM_ATTR psram_cache_init(psram_cache_mode_t psram_cache_mode, psram_vaddr_mode_t vaddrmode);
+static void psram_cache_init(psram_cache_mode_t psram_cache_mode, psram_vaddr_mode_t vaddrmode);
 extern void esp_rom_spi_set_op_mode(int spi_num, esp_rom_spiflash_read_mode_t mode);
 
 static uint8_t s_psram_cs_io = (uint8_t)-1;
