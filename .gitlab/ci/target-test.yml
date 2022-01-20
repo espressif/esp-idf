@@ -178,6 +178,8 @@ component_ut_pytest_esp32c3_generic:
     paths:
       - "**/*.log"
       - $LOG_PATH
+    exclude:
+      - .git/**/*
     expire_in: 1 week
     reports:
       junit: $LOG_PATH/*/XUNIT_RESULT.xml
