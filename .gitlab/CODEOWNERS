@@ -55,8 +55,10 @@
 /CMakeLists.txt                       @esp-idf-codeowners/build-config
 /Kconfig                              @esp-idf-codeowners/build-config
 /add_path.sh                          @esp-idf-codeowners/tools
+/conftest.py                          @esp-idf-codeowners/ci
 /export.*                             @esp-idf-codeowners/tools
 /install.*                            @esp-idf-codeowners/tools
+/pytest.ini                           @esp-idf-codeowners/ci
 /sdkconfig.rename                     @esp-idf-codeowners/build-config
 /sonar-project.properties             @esp-idf-codeowners/ci
 
