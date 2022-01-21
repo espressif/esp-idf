@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -65,6 +65,8 @@ struct esp_rgb_panel_t {
     int panel_id;          // LCD panel ID
     lcd_hal_context_t hal; // Hal layer object
     size_t data_width;     // Number of data lines (e.g. for RGB565, the data width is 16)
+    size_t sram_trans_align;  // Alignment for framebuffer that allocated in SRAM
+    size_t psram_trans_align; // Alignment for framebuffer that allocated in PSRAM
     int disp_gpio_num;     // Display control GPIO, which is used to perform action like "disp_off"
     intr_handle_t intr;    // LCD peripheral interrupt handle
     esp_pm_lock_handle_t pm_lock; // Power management lock
@@ -125,12 +127,17 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
         }
 #endif
     }
+    size_t psram_trans_align = rgb_panel_config->psram_trans_align ? rgb_panel_config->psram_trans_align : 64;
+    size_t sram_trans_align = rgb_panel_config->sram_trans_align ? rgb_panel_config->sram_trans_align : 4;
     if (alloc_from_psram) {
-        rgb_panel->fb = heap_caps_calloc(1, fb_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+        // the low level malloc function will help check the validation of alignment
+        rgb_panel->fb = heap_caps_aligned_calloc(psram_trans_align, 1, fb_size, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     } else {
-        rgb_panel->fb = heap_caps_calloc(1, fb_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
+        rgb_panel->fb = heap_caps_aligned_calloc(sram_trans_align, 1, fb_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
     }
     ESP_GOTO_ON_FALSE(rgb_panel->fb, ESP_ERR_NO_MEM, err, TAG, "no mem for frame buffer");
+    rgb_panel->psram_trans_align = psram_trans_align;
+    rgb_panel->sram_trans_align = sram_trans_align;
     rgb_panel->fb_size = fb_size;
     rgb_panel->flags.fb_in_psram = alloc_from_psram;
     // semaphore indicates new frame trans done
@@ -379,8 +386,11 @@ static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *panel, const esp_
 {
     int panel_id = panel->panel_id;
     // check validation of GPIO number
-    bool valid_gpio = (panel_config->hsync_gpio_num >= 0) && (panel_config->vsync_gpio_num >= 0) &&
-                      (panel_config->pclk_gpio_num >= 0);
+    bool valid_gpio = (panel_config->pclk_gpio_num >= 0);
+    if (panel_config->de_gpio_num < 0) {
+        // Hsync and Vsync are required in HV mode
+        valid_gpio = valid_gpio && (panel_config->hsync_gpio_num >= 0) && (panel_config->vsync_gpio_num >= 0);
+    }
     for (size_t i = 0; i < panel_config->data_width; i++) {
         valid_gpio = valid_gpio && (panel_config->data_gpio_nums[i] >= 0);
     }
@@ -394,14 +404,18 @@ static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *panel, const esp_
         esp_rom_gpio_connect_out_signal(panel_config->data_gpio_nums[i],
                                         lcd_periph_signals.panels[panel_id].data_sigs[i], false, false);
     }
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[panel_config->hsync_gpio_num], PIN_FUNC_GPIO);
-    gpio_set_direction(panel_config->hsync_gpio_num, GPIO_MODE_OUTPUT);
-    esp_rom_gpio_connect_out_signal(panel_config->hsync_gpio_num,
-                                    lcd_periph_signals.panels[panel_id].hsync_sig, false, false);
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[panel_config->vsync_gpio_num], PIN_FUNC_GPIO);
-    gpio_set_direction(panel_config->vsync_gpio_num, GPIO_MODE_OUTPUT);
-    esp_rom_gpio_connect_out_signal(panel_config->vsync_gpio_num,
-                                    lcd_periph_signals.panels[panel_id].vsync_sig, false, false);
+    if (panel_config->hsync_gpio_num >= 0) {
+        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[panel_config->hsync_gpio_num], PIN_FUNC_GPIO);
+        gpio_set_direction(panel_config->hsync_gpio_num, GPIO_MODE_OUTPUT);
+        esp_rom_gpio_connect_out_signal(panel_config->hsync_gpio_num,
+                                        lcd_periph_signals.panels[panel_id].hsync_sig, false, false);
+    }
+    if (panel_config->vsync_gpio_num >= 0) {
+        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[panel_config->vsync_gpio_num], PIN_FUNC_GPIO);
+        gpio_set_direction(panel_config->vsync_gpio_num, GPIO_MODE_OUTPUT);
+        esp_rom_gpio_connect_out_signal(panel_config->vsync_gpio_num,
+                                        lcd_periph_signals.panels[panel_id].vsync_sig, false, false);
+    }
     gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[panel_config->pclk_gpio_num], PIN_FUNC_GPIO);
     gpio_set_direction(panel_config->pclk_gpio_num, GPIO_MODE_OUTPUT);
     esp_rom_gpio_connect_out_signal(panel_config->pclk_gpio_num,
@@ -471,8 +485,8 @@ static esp_err_t lcd_rgb_panel_create_trans_link(esp_rgb_panel_t *panel)
     ESP_GOTO_ON_ERROR(ret, err, TAG, "alloc DMA channel failed");
     gdma_connect(panel->dma_chan, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_LCD, 0));
     gdma_transfer_ability_t ability = {
-        .psram_trans_align = 64,
-        .sram_trans_align = 4,
+        .psram_trans_align = panel->psram_trans_align,
+        .sram_trans_align = panel->sram_trans_align,
     };
     gdma_set_transfer_ability(panel->dma_chan, &ability);
     // the start of DMA should be prior to the start of LCD engine
