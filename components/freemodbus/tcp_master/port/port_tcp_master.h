@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * SPDX-FileContributor: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
  */
 /*
  * FreeModbus Libary: ESP32 TCP Port
@@ -67,6 +67,7 @@ typedef struct {
     int xError;                 /*!< Socket error */
     int xRcvErr;                /*!< Socket receive error */
     const char* pcIpAddr;       /*!< TCP/UDP IP address */
+    UCHAR ucSlaveAddr;          /*!< Slave short address */
     UCHAR* pucRcvBuf;           /*!< Receive buffer pointer */
     USHORT usRcvPos;            /*!< Receive buffer position */
     int pcPort;                 /*!< TCP/UDP port number */
@@ -77,16 +78,23 @@ typedef struct {
 } MbSlaveInfo_t;
 
 typedef struct {
-    TaskHandle_t  xMbTcpTaskHandle; /*!< Master TCP/UDP handling task handle */
-    QueueHandle_t xConnectQueue;    /*!< Master connection queue */
-    USHORT usPort;                  /*!< Master TCP/UDP port number */
-    USHORT usMbSlaveInfoCount;      /*!< Master count of connected slaves */
-    USHORT ucCurSlaveIndex;         /*!< Master current processing slave index */
-    eMBPortIpVer eMbIpVer;          /*!< Master IP version */
-    eMBPortProto eMbProto;          /*!< Master protocol type */
-    void* pvNetIface;               /*!< Master netif interface pointer */
-    MbSlaveInfo_t** pxMbSlaveInfo;  /*!< Master information structure for each connected slave */
+    TaskHandle_t  xMbTcpTaskHandle;     /*!< Master TCP/UDP handling task handle */
+    QueueHandle_t xConnectQueue;        /*!< Master connection queue */
+    USHORT usPort;                      /*!< Master TCP/UDP port number */
+    USHORT usMbSlaveInfoCount;          /*!< Master count of connected slaves */
+    USHORT ucCurSlaveIndex;             /*!< Master current processing slave index */
+    eMBPortIpVer eMbIpVer;              /*!< Master IP version */
+    eMBPortProto eMbProto;              /*!< Master protocol type */
+    void* pvNetIface;                   /*!< Master netif interface pointer */
+    MbSlaveInfo_t** pxMbSlaveInfo;      /*!< Master information structure for each connected slave */
+    MbSlaveInfo_t* pxMbSlaveCurrInfo;   /*!< Master current slave information */
 } MbPortConfig_t;
+
+typedef struct {
+    USHORT usIndex;                     /*!< index of the address info */
+    const char* pcIPAddr;               /*!< represents the IP address of the slave */
+    UCHAR ucSlaveAddr;                  /*!< slave unit ID (UID) field for MBAP frame  */
+} MbSlaveAddrInfo_t;
 
 /* ----------------------- Function prototypes ------------------------------*/
 
@@ -94,11 +102,13 @@ typedef struct {
 /**
  * Registers slave IP address
  *
+ * @param usIndex index of element in the configuration
  * @param pcIpStr IP address to register
+ * @param ucSlaveAddress slave element index
  *
  * @return TRUE if address registered successfully, else FALSE
  */
-BOOL xMBTCPPortMasterAddSlaveIp(const CHAR* pcIpStr);
+BOOL xMBTCPPortMasterAddSlaveIp(const USHORT usIndex, const CHAR* pcIpStr, UCHAR ucSlaveAddress);
 
 /**
  * Keeps FSM event handle and mask then wait for Master stack to start
