@@ -2053,14 +2053,7 @@ components/touch_element/touch_element.c
 components/touch_element/touch_matrix.c
 components/touch_element/touch_slider.c
 components/ulp/esp32ulp_mapgen.py
-components/ulp/ld/esp32.ulp.ld
-components/ulp/ld/esp32s2.ulp.riscv.ld
-components/ulp/test/esp32/test_ulp.c
 components/ulp/test/esp32/test_ulp_as.c
-components/ulp/ulp_macro.c
-components/ulp/ulp_private.h
-components/ulp/ulp_riscv/include/ulp_riscv/ulp_riscv.h
-components/ulp/ulp_riscv/include/ulp_riscv/ulp_riscv_register_ops.h
 components/unity/include/priv/setjmp.h
 components/unity/include/unity_config.h
 components/unity/include/unity_fixture_extras.h

@@ -20,6 +20,7 @@
 
 #include "sdkconfig.h"
 
+#if CONFIG_ULP_COPROC_TYPE_FSM
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/ulp.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -27,6 +28,7 @@
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/ulp.h"
 #endif
+#endif //CONFIG_ULP_COPROC_TYPE_FSM
 
 TEST_CASE("Can dump power management lock stats", "[pm]")
 {
@@ -174,6 +176,7 @@ TEST_CASE("Automatic light occurs when tasks are suspended", "[pm]")
     TEST_ESP_OK(gptimer_del_timer(gptimer));
 }
 
+#if CONFIG_ULP_COPROC_TYPE_FSM
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
 #if !DISABLED_FOR_TARGETS(ESP32C3)
 // No ULP on C3
@@ -181,13 +184,7 @@ TEST_CASE("Automatic light occurs when tasks are suspended", "[pm]")
 // Fix failure on ESP32 when running alone; passes when the previous test is run before this one
 TEST_CASE("Can wake up from automatic light sleep by GPIO", "[pm][ignore]")
 {
-#if CONFIG_IDF_TARGET_ESP32
-    assert(CONFIG_ESP32_ULP_COPROC_RESERVE_MEM >= 16 && "this test needs ESP32_ULP_COPROC_RESERVE_MEM option set in menuconfig");
-#elif CONFIG_IDF_TARGET_ESP32S2
-    assert(CONFIG_ESP32S2_ULP_COPROC_RESERVE_MEM >= 16 && "this test needs ESP32_ULP_COPROC_RESERVE_MEM option set in menuconfig");
-#elif CONFIG_IDF_TARGET_ESP32S3
-    assert(CONFIG_ESP32S3_ULP_COPROC_RESERVE_MEM >= 16 && "this test needs ESP32_ULP_COPROC_RESERVE_MEM option set in menuconfig");
-#endif
+    assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 16 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
 
     /* Set up GPIO used to wake up RTC */
     const int ext1_wakeup_gpio = 25;
@@ -253,6 +250,7 @@ TEST_CASE("Can wake up from automatic light sleep by GPIO", "[pm][ignore]")
 }
 #endif //!DISABLED_FOR_TARGETS(ESP32C3)
 #endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
+#endif //CONFIG_ULP_COPROC_TYPE_FSM
 
 typedef struct {
     int delay_us;
