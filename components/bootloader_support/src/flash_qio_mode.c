@@ -264,8 +264,6 @@ IRAM_ATTR static uint32_t bootloader_flash_execute_command_common(
     uint8_t mosi_len, uint32_t mosi_data,
     uint8_t miso_len)
 {
-    assert(mosi_len <= 32);
-    assert(miso_len <= 32);
     uint32_t old_ctrl_reg = SPIFLASH.ctrl.val;
     uint32_t old_user_reg = SPIFLASH.user.val;
     uint32_t old_user1_reg = SPIFLASH.user1.val;
@@ -320,26 +318,11 @@ static uint32_t IRAM_ATTR execute_flash_command(uint8_t command, uint32_t mosi_d
             dummy_len, mosi_len, mosi_data, miso_len);
 }
 
-// cmd(0x5A) + 24bit address + 8 cycles dummy
-uint32_t IRAM_ATTR bootloader_flash_read_sfdp(uint32_t sfdp_addr, unsigned int miso_byte_num)
-{
-    assert(miso_byte_num <= 4);
-    const uint8_t command = CMD_RDSFDP;
-    const uint8_t addr_len = 24;
-    const uint8_t dummy_len = 8;
-    const uint8_t mosi_len = 0;
-    const uint32_t mosi_data = 0;
-    const uint8_t miso_len = miso_byte_num * 8;
-
-    return bootloader_flash_execute_command_common(command, addr_len, sfdp_addr,
-            dummy_len, mosi_len, mosi_data, miso_len);
-}
-
 /*******************************************************************************
  * XMC startup flow
  ******************************************************************************/
 
-#define XMC_SUPPORT CONFIG_BOOTLOADER_FLASH_XMC_SUPPORT
+#define XMC_SUPPORT CONFIG_BOOTLOADER_FLASH_XMC_SUPPORT_ENA
 #define XMC_VENDOR_ID 0x20
 
 #if BOOTLOADER_BUILD
@@ -360,7 +343,21 @@ uint32_t IRAM_ATTR bootloader_flash_read_sfdp(uint32_t sfdp_addr, unsigned int m
 
 #endif
 
-#if XMC_SUPPORT
+#if XMC_SUPPORT || !BOOTLOADER_BUILD
+// cmd(0x5A) + 24bit address + 8 cycles dummy
+uint32_t IRAM_ATTR bootloader_flash_read_sfdp(uint32_t sfdp_addr, unsigned int miso_byte_num)
+{
+    const uint8_t command = CMD_RDSFDP;
+    const uint8_t addr_len = 24;
+    const uint8_t dummy_len = 8;
+    const uint8_t mosi_len = 0;
+    const uint32_t mosi_data = 0;
+    const uint8_t miso_len = miso_byte_num * 8;
+
+    return bootloader_flash_execute_command_common(command, addr_len, sfdp_addr,
+            dummy_len, mosi_len, mosi_data, miso_len);
+}
+
 //strictly check the model
 static IRAM_ATTR bool is_xmc_chip_strict(uint32_t rdid)
 {
@@ -421,29 +418,10 @@ esp_err_t IRAM_ATTR bootloader_flash_xmc_startup(void)
     // Read flash ID and check again
     g_rom_flashchip.device_id = bootloader_read_flash_id();
     if (!is_xmc_chip_strict(g_rom_flashchip.device_id)) {
-        BOOTLOADER_FLASH_LOG(E, "XMC flash startup fail");
         return ESP_FAIL;
     }
 
-    return ESP_OK;
-}
-
-#else
-//only compare the vendor id
-static IRAM_ATTR bool is_xmc_chip(uint32_t rdid)
-{
-    uint32_t vendor_id = (rdid >> 16) & 0xFF;
-    return (vendor_id == XMC_VENDOR_ID);
-}
-
-esp_err_t IRAM_ATTR bootloader_flash_xmc_startup(void)
-{
-    if (is_xmc_chip(g_rom_flashchip.device_id)) {
-        BOOTLOADER_FLASH_LOG(E, "XMC chip detected (%08X) while support disabled.", g_rom_flashchip.device_id);
-        return ESP_FAIL;
-    }
     return ESP_OK;
 }
 
 #endif //XMC_SUPPORT
-

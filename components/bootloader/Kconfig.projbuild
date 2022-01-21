@@ -233,14 +233,15 @@ menu "Bootloader config"
             It allow to test anti-rollback implemention without permanent write eFuse bits.
             In partition table should be exist this partition `emul_efuse, data, 5, , 0x2000`.
 
-    config BOOTLOADER_FLASH_XMC_SUPPORT
+    config BOOTLOADER_FLASH_XMC_SUPPORT_ENA
         bool "Enable the support for flash chips of XMC (READ HELP FIRST)"
-        default y
+        default n
         help
             Perform the startup flow recommended by XMC. Please consult XMC for the details of this flow.
             XMC chips will be forbidden to be used, when this option is disabled.
 
-            DON'T DISABLE THIS UNLESS YOU KNOW WHAT YOU ARE DOING.
+            Due to the limitation of Flash size, this flow is disabled by default on IDF v3.3. You may need to disable
+            some bootloader features to enable it.
 
 endmenu  # Bootloader
 
