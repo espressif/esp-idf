@@ -1634,7 +1634,6 @@ components/soc/esp32c3/include/soc/bb_reg.h
 components/soc/esp32c3/include/soc/boot_mode.h
 components/soc/esp32c3/include/soc/clkout_channel.h
 components/soc/esp32c3/include/soc/dport_access.h
-components/soc/esp32c3/include/soc/efuse_reg.h
 components/soc/esp32c3/include/soc/efuse_struct.h
 components/soc/esp32c3/include/soc/extmem_reg.h
 components/soc/esp32c3/include/soc/fe_reg.h
