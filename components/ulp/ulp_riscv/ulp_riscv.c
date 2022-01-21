@@ -12,18 +12,12 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_private/esp_clk.h"
-#if CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/ulp.h"
-#include "esp32s2/ulp_riscv.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/ulp.h"
-#include "esp32s3/ulp_riscv.h"
-#endif
+#include "ulp_riscv.h"
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/sens_reg.h"
-#include "ulp_private.h"
+#include "ulp_common.h"
 #include "esp_rom_sys.h"
 
 esp_err_t ulp_riscv_run(void)
@@ -123,14 +117,14 @@ esp_err_t ulp_riscv_load_binary(const uint8_t* program_binary, size_t program_si
     if (program_binary == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (program_size_bytes > ULP_RESERVE_MEM) {
+    if (program_size_bytes > CONFIG_ULP_COPROC_RESERVE_MEM) {
         return ESP_ERR_INVALID_SIZE;
     }
 
     uint8_t* base = (uint8_t*) RTC_SLOW_MEM;
 
     //Start by clearing memory reserved with zeros, this will also will initialize the bss:
-    memset(base, 0, ULP_RESERVE_MEM);
+    memset(base, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
     memcpy(base, program_binary, program_size_bytes);
 
     return ESP_OK;

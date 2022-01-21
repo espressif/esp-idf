@@ -1,5 +1,5 @@
-Programming ULP coprocessor using C macros (legacy)
-===================================================
+Programming ULP FSM coprocessor using C macros (legacy)
+=======================================================
 
 In addition to the existing binutils port for the ESP32 ULP coprocessor, it is possible to generate programs for the ULP by embedding assembly-like macros into an ESP32 application. Here is an example how this can be done::
 
@@ -65,9 +65,10 @@ Header File
 
 .. list::
 
-    :esp32: - :component_file:`ulp/include/esp32/ulp.h`
-    :esp32s2: - :component_file:`ulp/include/esp32s2/ulp.h`
-    :esp32s3: - :component_file:`ulp/include/esp32s3/ulp.h`
+    :component_file:`ulp/ulp_fsm/include/ulp_fsm_common.h`
+    :esp32: - :component_file:`ulp/ulp_fsm/include/esp32/ulp.h`
+    :esp32s2: - :component_file:`ulp/ulp_fsm/include/esp32s2/ulp.h`
+    :esp32s3: - :component_file:`ulp/ulp_fsm/include/esp32s3/ulp.h`
 
 Functions
 ^^^^^^^^^

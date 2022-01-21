@@ -1,10 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "sdkconfig.h"
 
 ENTRY(reset_vector)
 
 MEMORY
 {
-    ram(RW) : ORIGIN = 0, LENGTH = CONFIG_ESP32S2_ULP_COPROC_RESERVE_MEM
+    ram(RW) : ORIGIN = 0, LENGTH = CONFIG_ULP_COPROC_RESERVE_MEM
 }
 
 SECTIONS

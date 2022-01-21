@@ -306,34 +306,6 @@ menu "ESP32S3-Specific"
         default 0x4000 if ESP32S3_MEMMAP_TRACEMEM && !ESP32S3_MEMMAP_TRACEMEM_TWOBANKS
         default 0x0
 
-
-    config ESP32S3_ULP_COPROC_ENABLED
-        bool "Enable Ultra Low Power (ULP) Coprocessor"
-        default "n"
-        help
-            Set to 'y' if you plan to load a firmware for the coprocessor.
-
-            If this option is enabled, further coprocessor configuration will appear in the Components menu.
-
-    config ESP32S3_ULP_COPROC_RESERVE_MEM
-        int
-        prompt "RTC slow memory reserved for coprocessor" if ESP32S3_ULP_COPROC_ENABLED
-        default 512 if ESP32S3_ULP_COPROC_ENABLED
-        range 32 8176 if ESP32S3_ULP_COPROC_ENABLED
-        default 0 if !ESP32S3_ULP_COPROC_ENABLED
-        range 0 0 if !ESP32S3_ULP_COPROC_ENABLED
-        help
-            Bytes of memory to reserve for ULP coprocessor firmware & data.
-
-            Data is reserved at the beginning of RTC slow memory.
-
-    config ESP32S3_ULP_COPROC_RISCV
-        bool "Enable RISC-V as ULP coprocessor"
-        depends on ESP32S3_ULP_COPROC_ENABLED
-        default n
-        help
-            Set this to y to use the RISC-V coprocessor instead of the FSM-ULP.
-
     config ESP32S3_DEBUG_OCDAWARE
         bool "Make exception and panic handlers JTAG/OCD aware"
         default y
