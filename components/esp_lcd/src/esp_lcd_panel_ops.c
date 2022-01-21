@@ -8,7 +8,7 @@
 #include "esp_lcd_panel_ops.h"
 #include "esp_lcd_panel_interface.h"
 
-static __attribute__((unused)) const char *TAG = "lcd_panel";
+static const char *TAG = "lcd_panel";
 
 esp_err_t esp_lcd_panel_reset(esp_lcd_panel_handle_t panel)
 {

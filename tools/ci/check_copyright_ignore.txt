@@ -450,7 +450,6 @@ components/esp32/include/rom/tjpgd.h
 components/esp32/include/rom/uart.h
 components/esp_common/include/esp_assert.h
 components/esp_common/include/esp_bit_defs.h
-components/esp_common/include/esp_check.h
 components/esp_common/include/esp_compiler.h
 components/esp_common/include/esp_types.h
 components/esp_common/src/esp_err_to_name.c
