@@ -90,6 +90,7 @@ def actual_test(dut: Dut) -> None:
 @pytest.mark.parametrize('config', [
     'ip101',
 ], indirect=True)
+@pytest.mark.flaky(reruns=3, reruns_delay=5)
 def test_esp_eth_ip101(dut: Dut) -> None:
     actual_test(dut)
 
@@ -99,5 +100,6 @@ def test_esp_eth_ip101(dut: Dut) -> None:
 @pytest.mark.parametrize('config', [
     'lan8720',
 ], indirect=True)
+@pytest.mark.flaky(reruns=3, reruns_delay=5)
 def test_esp_eth_lan8720(dut: Dut) -> None:
     actual_test(dut)
