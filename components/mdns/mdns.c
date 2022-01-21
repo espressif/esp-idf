@@ -514,6 +514,37 @@ static inline uint8_t _mdns_append_string(uint8_t * packet, uint16_t * index, co
 }
 
 /**
+ * @brief  appends one TXT record ("key=value" or "key")
+ *
+ * @param  packet       MDNS packet
+ * @param  index        offset in the packet
+ * @param  txt          one txt record
+ *
+ * @return length of added data: length of the added txt value + 1 on success
+ *         0  if data won't fit the packet
+ *         -1 if invalid TXT entry
+ */
+static inline int append_one_txt_record_entry(uint8_t * packet, uint16_t * index, mdns_txt_linked_item_t * txt)
+{
+    if (txt == NULL || txt->key == NULL) {
+        return -1;
+    }
+    size_t key_len = strlen(txt->key);
+    size_t len = key_len + txt->value_len + (txt->value ? 1 : 0);
+    if ((*index + len + 1) >= MDNS_MAX_PACKET_SIZE) {
+        return 0;
+    }
+    _mdns_append_u8(packet, index, len);
+    memcpy(packet + *index, txt->key, key_len);
+    if (txt->value) {
+        packet[*index + key_len] = '=';
+        memcpy(packet + *index + key_len + 1, txt->value, txt->value_len);
+    }
+    *index += len;
+    return len + 1;
+}
+
+/**
  * @brief  appends FQDN to a packet, incrementing the index and
  *         compressing the output if previous occurrence of the string (or part of it) has been found
  *
@@ -775,19 +806,13 @@ static uint16_t _mdns_append_txt_record(uint8_t * packet, uint16_t * index, mdns
     uint16_t data_len_location = *index - 2;
     uint16_t data_len = 0;
 
-    char * tmp;
     mdns_txt_linked_item_t * txt = service->txt;
     while (txt) {
-        if (asprintf(&tmp, "%s%s%.*s", txt->key, txt->value ? "=" : "", txt->value_len, txt->value) > 0) {
-            uint8_t l = _mdns_append_string(packet, index, tmp);
-            free(tmp);
-            if (!l) {
-                return 0;
-            }
+        int l = append_one_txt_record_entry(packet, index, txt);
+        if (l > 0) {
             data_len += l;
-        } else {
-            HOOK_MALLOC_FAILED;
-            // continue
+        } else if (l == 0) { // TXT entry won't fit into the mdns packet
+            return 0;
         }
         txt = txt->next;
     }
@@ -2574,17 +2599,10 @@ static int _mdns_check_txt_collision(mdns_service_t * service, const uint8_t * d
 
     uint8_t ours[len];
     uint16_t index = 0;
-    char * tmp;
 
     txt = service->txt;
     while (txt) {
-        if (asprintf(&tmp, "%s%s%.*s", txt->key, txt->value ? "=" : "", txt->value_len, txt->value) > 0) {
-            _mdns_append_string(ours, &index, tmp);
-            free(tmp);
-        } else {
-            HOOK_MALLOC_FAILED;
-            // continue
-        }
+        append_one_txt_record_entry(ours, &index, txt);
         txt = txt->next;
     }
 
