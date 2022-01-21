@@ -778,8 +778,8 @@ static uint16_t _mdns_append_txt_record(uint8_t * packet, uint16_t * index, mdns
     char * tmp;
     mdns_txt_linked_item_t * txt = service->txt;
     while (txt) {
-        uint8_t txt_data_len = strlen(txt->key) + txt->value_len + 1;
-        tmp = (char *)malloc(txt_data_len);
+        uint8_t txt_data_len = strlen(txt->key) + txt->value_len + 1 /* + '=' char */;
+        tmp = (char *)malloc(txt_data_len + 1 /* + '\0' term-char in sprintf() */);
         if (tmp) {
             int offset = sprintf(tmp, "%s=", txt->key);
             memcpy(tmp + offset, txt->value, txt->value_len);
