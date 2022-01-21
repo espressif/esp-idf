@@ -1175,6 +1175,7 @@ void bta_av_conn_chg(tBTA_AV_DATA *p_data)
         }
     } else {
         if ((p_cb->conn_audio & mask) && bta_av_cb.audio_open_cnt) {
+            bta_sys_conn_close(TSEP_TO_SYS_ID(p_scb->seps[p_scb->sep_idx].tsep), bta_av_cb.audio_open_cnt, p_scb->peer_addr);
             /* this channel is still marked as open. decrease the count */
             bta_av_cb.audio_open_cnt--;
         }
