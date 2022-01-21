@@ -1,16 +1,8 @@
-// Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <sys/param.h>
 #include "sdkconfig.h"
@@ -59,25 +51,44 @@ const esp_efuse_range_addr_t range_write_addr_blocks[] = {
     {(uint32_t) &write_mass_blocks[EFUSE_BLK10][0], (uint32_t) &write_mass_blocks[EFUSE_BLK10][7]},
 };
 
-#ifndef CONFIG_EFUSE_VIRTUAL
 // Update Efuse timing configuration
 static esp_err_t esp_efuse_set_timing(void)
 {
-    // efuse clock is fixed in ESP32-C3, so the ets_efuse_set_timing() function
-    // takes an argument for compatibility with older ROM functions but it's ignored.
-    int res = ets_efuse_set_timing(0);
-    assert(res == 0);
-
-    REG_SET_FIELD(EFUSE_WR_TIM_CONF2_REG, EFUSE_PWR_OFF_NUM, 0x60);
-
+    REG_SET_FIELD(EFUSE_WR_TIM_CONF2_REG, EFUSE_PWR_OFF_NUM, 0x190);
     return ESP_OK;
+}
+
+static void efuse_read(void)
+{
+    esp_efuse_set_timing();
+    REG_WRITE(EFUSE_CONF_REG, EFUSE_READ_OP_CODE);
+    REG_WRITE(EFUSE_CMD_REG, EFUSE_READ_CMD);
+
+    while (REG_GET_BIT(EFUSE_CMD_REG, EFUSE_READ_CMD) != 0) { }
+    /*Due to a hardware error, we have to read READ_CMD again to make sure the efuse clock is normal*/
+    while (REG_GET_BIT(EFUSE_CMD_REG, EFUSE_READ_CMD) != 0) { }
+}
+
+#ifndef CONFIG_EFUSE_VIRTUAL
+static void efuse_program(esp_efuse_block_t block)
+{
+    esp_efuse_set_timing();
+
+    REG_WRITE(EFUSE_CONF_REG, EFUSE_WRITE_OP_CODE);
+
+    REG_WRITE(EFUSE_CMD_REG, ((block << EFUSE_BLK_NUM_S) & EFUSE_BLK_NUM_M) | EFUSE_PGM_CMD);
+
+    while (REG_GET_BIT(EFUSE_CMD_REG, EFUSE_PGM_CMD) != 0) { };
+
+    ets_efuse_clear_program_registers();
+    efuse_read();
 }
 #endif // ifndef CONFIG_EFUSE_VIRTUAL
 
 // Efuse read operation: copies data from physical efuses to efuse read registers.
 void esp_efuse_utility_clear_program_registers(void)
 {
-    ets_efuse_read();
+    efuse_read();
     ets_efuse_clear_program_registers();
 }
 
@@ -108,7 +119,7 @@ void esp_efuse_utility_burn_efuses(void)
                     }
                     int data_len = (range_write_addr_blocks[num_block].end - range_write_addr_blocks[num_block].start) + sizeof(uint32_t);
                     memcpy((void *)EFUSE_PGM_DATA0_REG, (void *)range_write_addr_blocks[num_block].start, data_len);
-                    ets_efuse_program(num_block);
+                    efuse_program(num_block);
                     break;
                 }
             }
