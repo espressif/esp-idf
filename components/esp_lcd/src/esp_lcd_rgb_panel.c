@@ -439,7 +439,8 @@ static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *panel, const esp_
 static esp_err_t lcd_rgb_panel_select_periph_clock(esp_rgb_panel_t *panel, lcd_clock_source_t clk_src)
 {
     esp_err_t ret = ESP_OK;
-    lcd_ll_set_group_clock_src(panel->hal.dev, clk_src, LCD_PERIPH_CLOCK_PRE_SCALE, 1, 0);
+    // force to use integer division, as fractional division might lead to clock jitter
+    lcd_ll_set_group_clock_src(panel->hal.dev, clk_src, LCD_PERIPH_CLOCK_PRE_SCALE, 0, 0);
     switch (clk_src) {
     case LCD_CLK_SRC_PLL160M:
         panel->resolution_hz = 160000000 / LCD_PERIPH_CLOCK_PRE_SCALE;
