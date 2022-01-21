@@ -59,7 +59,7 @@ variables:
   ESP_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-env-v5.0:1"
   AFL_FUZZER_TEST_IMAGE: "${CI_DOCKER_REGISTRY}/afl-fuzzer-test-v5.0:1-1"
   CLANG_STATIC_ANALYSIS_IMAGE: "${CI_DOCKER_REGISTRY}/clang-static-analysis-v5.0:1-1"
-  ESP_IDF_DOC_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-idf-doc-env-v5.0:1-1"
+  ESP_IDF_DOC_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-idf-doc-env-v5.0:1-2"
   SONARQUBE_SCANNER_IMAGE: "${CI_DOCKER_REGISTRY}/sonarqube-scanner:3"
   LINUX_SHELL_IMAGE: "${CI_DOCKER_REGISTRY}/linux-shells:2"
 
