@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,8 @@
 #include "mbc_master.h"         // for master interface define
 #include "esp_modbus_master.h"  // for public interface defines
 #include "esp_modbus_callbacks.h"   // for callback functions
+
+static const char TAG[] __attribute__((unused)) = "MB_CONTROLLER_MASTER";
 
 // This file implements public API for Modbus master controller.
 // These functions are wrappers for interface functions of the controller
