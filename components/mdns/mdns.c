@@ -778,12 +778,8 @@ static uint16_t _mdns_append_txt_record(uint8_t * packet, uint16_t * index, mdns
     char * tmp;
     mdns_txt_linked_item_t * txt = service->txt;
     while (txt) {
-        uint8_t txt_data_len = strlen(txt->key) + txt->value_len + 1 /* + '=' char */;
-        tmp = (char *)malloc(txt_data_len + 1 /* + '\0' term-char in sprintf() */);
-        if (tmp) {
-            int offset = sprintf(tmp, "%s=", txt->key);
-            memcpy(tmp + offset, txt->value, txt->value_len);
-            uint8_t l = _mdns_append_string_with_len(packet, index, tmp, txt_data_len);
+        if (asprintf(&tmp, "%s%s%.*s", txt->key, txt->value ? "=" : "", txt->value_len, txt->value) > 0) {
+            uint8_t l = _mdns_append_string(packet, index, tmp);
             free(tmp);
             if (!l) {
                 return 0;
@@ -2566,7 +2562,7 @@ static int _mdns_check_txt_collision(mdns_service_t * service, const uint8_t * d
 
     mdns_txt_linked_item_t * txt = service->txt;
     while (txt) {
-        data_len += 2 + strlen(txt->key) + strlen(txt->value);
+        data_len += 1 /* record-len */ + strlen(txt->key) + txt->value_len + (txt->value ? 1 : 0 /* "=" */);
         txt = txt->next;
     }
 
@@ -2582,9 +2578,7 @@ static int _mdns_check_txt_collision(mdns_service_t * service, const uint8_t * d
 
     txt = service->txt;
     while (txt) {
-        tmp = (char *)malloc(2 + strlen(txt->key) + strlen(txt->value));
-        if (tmp) {
-            sprintf(tmp, "%s=%s", txt->key, txt->value);
+        if (asprintf(&tmp, "%s%s%.*s", txt->key, txt->value ? "=" : "", txt->value_len, txt->value) > 0) {
             _mdns_append_string(ours, &index, tmp);
             free(tmp);
         } else {
@@ -5313,7 +5307,7 @@ esp_err_t mdns_service_txt_item_set_for_host_with_explicit_value_len(const char 
                                                                      const char *value, uint8_t value_len)
 {
     if (!_mdns_server || !_mdns_server->services || _str_null_or_empty(service) || _str_null_or_empty(proto) ||
-        _str_null_or_empty(key) || !value) {
+        _str_null_or_empty(key) || (!value && value_len)) {
         return ESP_ERR_INVALID_ARG;
     }
     mdns_srv_item_t *s = _mdns_get_service_item_instance(instance, service, proto, hostname);
@@ -5333,14 +5327,19 @@ esp_err_t mdns_service_txt_item_set_for_host_with_explicit_value_len(const char 
         free(action);
         return ESP_ERR_NO_MEM;
     }
-    action->data.srv_txt_set.value = (char *)malloc(value_len);
-    if (!action->data.srv_txt_set.value) {
-        free(action->data.srv_txt_set.key);
-        free(action);
-        return ESP_ERR_NO_MEM;
+    if (value_len > 0) {
+        action->data.srv_txt_set.value = (char *)malloc(value_len);
+        if (!action->data.srv_txt_set.value) {
+            free(action->data.srv_txt_set.key);
+            free(action);
+            return ESP_ERR_NO_MEM;
+        }
+        memcpy(action->data.srv_txt_set.value, value, value_len);
+        action->data.srv_txt_set.value_len = value_len;
+    } else {
+        action->data.srv_txt_set.value = NULL;
+        action->data.srv_txt_set.value_len = 0;
     }
-    memcpy(action->data.srv_txt_set.value, value, value_len);
-    action->data.srv_txt_set.value_len = value_len;
     if (xQueueSend(_mdns_server->action_queue, &action, (portTickType)0) != pdPASS) {
         free(action->data.srv_txt_set.key);
         free(action->data.srv_txt_set.value);
