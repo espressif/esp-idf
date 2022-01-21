@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,7 @@
 
 // Shared pointer to interface structure
 static mb_slave_interface_t* mbs_interface_ptr = NULL;
+static const char *TAG = "MB_CONTROLLER_SLAVE";
 
 // Modbus task function
 static void modbus_tcp_slave_task(void *pvParameters)
