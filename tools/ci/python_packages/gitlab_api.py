@@ -29,7 +29,7 @@ def retry(func: TR) -> TR:
                     if e.response_code == 500:
                         # retry on this error
                         pass
-                    elif e.response_code == 404:
+                    elif e.response_code == 404 and os.environ.get('LOCAL_GITLAB_HTTPS_HOST', None):
                         # remove the environment variable "LOCAL_GITLAB_HTTPS_HOST" and retry
                         os.environ.pop('LOCAL_GITLAB_HTTPS_HOST', None)
                     else:
