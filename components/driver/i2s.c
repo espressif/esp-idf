@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -2064,7 +2064,6 @@ esp_err_t i2s_driver_uninstall(i2s_port_t i2s_num)
  */
 esp_err_t i2s_write(i2s_port_t i2s_num, const void *src, size_t size, size_t *bytes_written, TickType_t ticks_to_wait)
 {
-    esp_err_t ret = ESP_OK;
     char *data_ptr, *src_byte;
     size_t bytes_can_write;
     *bytes_written = 0;
@@ -2078,7 +2077,6 @@ esp_err_t i2s_write(i2s_port_t i2s_num, const void *src, size_t size, size_t *by
     while (size > 0) {
         if (p_i2s[i2s_num]->tx->rw_pos == p_i2s[i2s_num]->tx->buf_size || p_i2s[i2s_num]->tx->curr_ptr == NULL) {
             if (xQueueReceive(p_i2s[i2s_num]->tx->queue, &p_i2s[i2s_num]->tx->curr_ptr, ticks_to_wait) == pdFALSE) {
-                ret = ESP_ERR_TIMEOUT;
                 break;
             }
             p_i2s[i2s_num]->tx->rw_pos = 0;
@@ -2100,7 +2098,7 @@ esp_err_t i2s_write(i2s_port_t i2s_num, const void *src, size_t size, size_t *by
     esp_pm_lock_release(p_i2s[i2s_num]->pm_lock);
 #endif
     xSemaphoreGive(p_i2s[i2s_num]->tx->mux);
-    return ret;
+    return ESP_OK;
 }
 
 /**
@@ -2125,7 +2123,6 @@ esp_err_t i2s_write(i2s_port_t i2s_num, const void *src, size_t size, size_t *by
  */
 esp_err_t i2s_write_expand(i2s_port_t i2s_num, const void *src, size_t size, size_t src_bits, size_t aim_bits, size_t *bytes_written, TickType_t ticks_to_wait)
 {
-    esp_err_t ret = ESP_OK;
     char *data_ptr;
     int bytes_can_write, tail;
     int src_bytes, aim_bytes, zero_bytes;
@@ -2160,7 +2157,6 @@ esp_err_t i2s_write_expand(i2s_port_t i2s_num, const void *src, size_t size, siz
     while (size > 0) {
         if (p_i2s[i2s_num]->tx->rw_pos == p_i2s[i2s_num]->tx->buf_size || p_i2s[i2s_num]->tx->curr_ptr == NULL) {
             if (xQueueReceive(p_i2s[i2s_num]->tx->queue, &p_i2s[i2s_num]->tx->curr_ptr, ticks_to_wait) == pdFALSE) {
-                ret = ESP_ERR_TIMEOUT;
                 break;
             }
             p_i2s[i2s_num]->tx->rw_pos = 0;
@@ -2184,7 +2180,7 @@ esp_err_t i2s_write_expand(i2s_port_t i2s_num, const void *src, size_t size, siz
         p_i2s[i2s_num]->tx->rw_pos += bytes_can_write;
     }
     xSemaphoreGive(p_i2s[i2s_num]->tx->mux);
-    return ret;
+    return ESP_OK;
 }
 
 /**
@@ -2203,7 +2199,6 @@ esp_err_t i2s_write_expand(i2s_port_t i2s_num, const void *src, size_t size, siz
  */
 esp_err_t i2s_read(i2s_port_t i2s_num, void *dest, size_t size, size_t *bytes_read, TickType_t ticks_to_wait)
 {
-    esp_err_t ret = ESP_OK;
     char *data_ptr, *dest_byte;
     int bytes_can_read;
     *bytes_read = 0;
@@ -2217,7 +2212,6 @@ esp_err_t i2s_read(i2s_port_t i2s_num, void *dest, size_t size, size_t *bytes_re
     while (size > 0) {
         if (p_i2s[i2s_num]->rx->rw_pos == p_i2s[i2s_num]->rx->buf_size || p_i2s[i2s_num]->rx->curr_ptr == NULL) {
             if (xQueueReceive(p_i2s[i2s_num]->rx->queue, &p_i2s[i2s_num]->rx->curr_ptr, ticks_to_wait) == pdFALSE) {
-                ret = ESP_ERR_TIMEOUT;
                 break;
             }
             p_i2s[i2s_num]->rx->rw_pos = 0;
@@ -2238,7 +2232,7 @@ esp_err_t i2s_read(i2s_port_t i2s_num, void *dest, size_t size, size_t *bytes_re
     esp_pm_lock_release(p_i2s[i2s_num]->pm_lock);
 #endif
     xSemaphoreGive(p_i2s[i2s_num]->rx->mux);
-    return ret;
+    return ESP_OK;
 }
 
 esp_err_t i2s_priv_register_object(void *driver_obj, int port_id)
