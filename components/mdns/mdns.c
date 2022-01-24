@@ -514,6 +514,37 @@ static inline uint8_t _mdns_append_string(uint8_t * packet, uint16_t * index, co
 }
 
 /**
+ * @brief  appends one TXT record ("key=value" or "key")
+ *
+ * @param  packet       MDNS packet
+ * @param  index        offset in the packet
+ * @param  txt          one txt record
+ *
+ * @return length of added data: length of the added txt value + 1 on success
+ *         0  if data won't fit the packet
+ *         -1 if invalid TXT entry
+ */
+static inline int append_one_txt_record_entry(uint8_t * packet, uint16_t * index, mdns_txt_linked_item_t * txt)
+{
+    if (txt == NULL || txt->key == NULL) {
+        return -1;
+    }
+    size_t key_len = strlen(txt->key);
+    size_t len = key_len + txt->value_len + (txt->value ? 1 : 0);
+    if ((*index + len + 1) >= MDNS_MAX_PACKET_SIZE) {
+        return 0;
+    }
+    _mdns_append_u8(packet, index, len);
+    memcpy(packet + *index, txt->key, key_len);
+    if (txt->value) {
+        packet[*index + key_len] = '=';
+        memcpy(packet + *index + key_len + 1, txt->value, txt->value_len);
+    }
+    *index += len;
+    return len + 1;
+}
+
+/**
  * @brief  appends FQDN to a packet, incrementing the index and
  *         compressing the output if previous occurrence of the string (or part of it) has been found
  *
@@ -775,23 +806,13 @@ static uint16_t _mdns_append_txt_record(uint8_t * packet, uint16_t * index, mdns
     uint16_t data_len_location = *index - 2;
     uint16_t data_len = 0;
 
-    char * tmp;
     mdns_txt_linked_item_t * txt = service->txt;
     while (txt) {
-        uint8_t txt_data_len = strlen(txt->key) + txt->value_len + 1 /* + '=' char */;
-        tmp = (char *)malloc(txt_data_len + 1 /* + '\0' term-char in sprintf() */);
-        if (tmp) {
-            int offset = sprintf(tmp, "%s=", txt->key);
-            memcpy(tmp + offset, txt->value, txt->value_len);
-            uint8_t l = _mdns_append_string_with_len(packet, index, tmp, txt_data_len);
-            free(tmp);
-            if (!l) {
-                return 0;
-            }
+        int l = append_one_txt_record_entry(packet, index, txt);
+        if (l > 0) {
             data_len += l;
-        } else {
-            HOOK_MALLOC_FAILED;
-            // continue
+        } else if (l == 0) { // TXT entry won't fit into the mdns packet
+            return 0;
         }
         txt = txt->next;
     }
@@ -2566,7 +2587,7 @@ static int _mdns_check_txt_collision(mdns_service_t * service, const uint8_t * d
 
     mdns_txt_linked_item_t * txt = service->txt;
     while (txt) {
-        data_len += 2 + strlen(txt->key) + strlen(txt->value);
+        data_len += 1 /* record-len */ + strlen(txt->key) + txt->value_len + (txt->value ? 1 : 0 /* "=" */);
         txt = txt->next;
     }
 
@@ -2578,19 +2599,10 @@ static int _mdns_check_txt_collision(mdns_service_t * service, const uint8_t * d
 
     uint8_t ours[len];
     uint16_t index = 0;
-    char * tmp;
 
     txt = service->txt;
     while (txt) {
-        tmp = (char *)malloc(2 + strlen(txt->key) + strlen(txt->value));
-        if (tmp) {
-            sprintf(tmp, "%s=%s", txt->key, txt->value);
-            _mdns_append_string(ours, &index, tmp);
-            free(tmp);
-        } else {
-            HOOK_MALLOC_FAILED;
-            // continue
-        }
+        append_one_txt_record_entry(ours, &index, txt);
         txt = txt->next;
     }
 
@@ -5313,7 +5325,7 @@ esp_err_t mdns_service_txt_item_set_for_host_with_explicit_value_len(const char 
                                                                      const char *value, uint8_t value_len)
 {
     if (!_mdns_server || !_mdns_server->services || _str_null_or_empty(service) || _str_null_or_empty(proto) ||
-        _str_null_or_empty(key) || !value) {
+        _str_null_or_empty(key) || (!value && value_len)) {
         return ESP_ERR_INVALID_ARG;
     }
     mdns_srv_item_t *s = _mdns_get_service_item_instance(instance, service, proto, hostname);
@@ -5333,14 +5345,19 @@ esp_err_t mdns_service_txt_item_set_for_host_with_explicit_value_len(const char 
         free(action);
         return ESP_ERR_NO_MEM;
     }
-    action->data.srv_txt_set.value = (char *)malloc(value_len);
-    if (!action->data.srv_txt_set.value) {
-        free(action->data.srv_txt_set.key);
-        free(action);
-        return ESP_ERR_NO_MEM;
+    if (value_len > 0) {
+        action->data.srv_txt_set.value = (char *)malloc(value_len);
+        if (!action->data.srv_txt_set.value) {
+            free(action->data.srv_txt_set.key);
+            free(action);
+            return ESP_ERR_NO_MEM;
+        }
+        memcpy(action->data.srv_txt_set.value, value, value_len);
+        action->data.srv_txt_set.value_len = value_len;
+    } else {
+        action->data.srv_txt_set.value = NULL;
+        action->data.srv_txt_set.value_len = 0;
     }
-    memcpy(action->data.srv_txt_set.value, value, value_len);
-    action->data.srv_txt_set.value_len = value_len;
     if (xQueueSend(_mdns_server->action_queue, &action, (portTickType)0) != pdPASS) {
         free(action->data.srv_txt_set.key);
         free(action->data.srv_txt_set.value);
