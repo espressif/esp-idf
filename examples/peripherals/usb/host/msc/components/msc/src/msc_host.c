@@ -363,7 +363,6 @@ esp_err_t msc_host_install_device(uint8_t device_address, msc_host_device_handle
                                                 msc_device->handle,
                                                 msc_device->config.iface_num, 0) );
 
-    MSC_GOTO_ON_ERROR( msc_mass_reset(msc_device) );
     MSC_GOTO_ON_ERROR( msc_get_max_lun(msc_device, &lun) );
     MSC_GOTO_ON_ERROR( scsi_cmd_inquiry(msc_device) );
     MSC_GOTO_ON_ERROR( msc_wait_for_ready_state(msc_device, WAIT_FOR_READY_TIMEOUT_MS) );
