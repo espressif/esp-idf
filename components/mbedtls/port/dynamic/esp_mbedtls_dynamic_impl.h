@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -84,12 +84,6 @@ void esp_mbedtls_free_keycert_key(mbedtls_ssl_context *ssl);
 
 #ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_CA_CERT
 void esp_mbedtls_free_cacert(mbedtls_ssl_context *ssl);
-#endif
-
-#ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_PEER_CERT
-void esp_mbedtls_free_peer_cert(mbedtls_ssl_context *ssl);
-
-bool esp_mbedtls_ssl_is_rsa(mbedtls_ssl_context *ssl);
 #endif
 
 #endif /* _DYNAMIC_IMPL_H_ */

@@ -97,19 +97,12 @@ menu "mbedTLS"
             This defines maximum outgoing fragment length, overriding default
             maximum content length (MBEDTLS_SSL_MAX_CONTENT_LEN).
 
-    config MBEDTLS_SSL_VARIABLE_BUFFER_LENGTH
-        bool "Variable SSL buffer length"
-        default n
-        help
-            This enables the SSL buffer to be resized automatically
-            based on the negotiated maximum fragment length in each direction.
-
     config MBEDTLS_DYNAMIC_BUFFER
         bool "Using dynamic TX/RX buffer"
         default n
         select MBEDTLS_ASYMMETRIC_CONTENT_LEN
         # Dynamic buffer feature is not supported with DTLS
-        depends on !MBEDTLS_SSL_PROTO_DTLS
+        depends on !MBEDTLS_SSL_PROTO_DTLS && !MBEDTLS_SSL_VARIABLE_BUFFER_LENGTH
         help
             Using dynamic TX/RX buffer. After enabling this option, mbedTLS will
             allocate TX buffer when need to send data and then free it if all data
@@ -185,6 +178,111 @@ menu "mbedTLS"
         default 3 if MBEDTLS_DEBUG_LEVEL_DEBUG
         default 4 if MBEDTLS_DEBUG_LEVEL_VERBOSE
 
+    menu "mbedTLS v2.28.x related"
+
+        config MBEDTLS_SSL_VARIABLE_BUFFER_LENGTH
+            bool "Variable SSL buffer length"
+            default n
+            help
+                This enables the SSL buffer to be resized automatically
+                based on the negotiated maximum fragment length in each direction.
+
+        config MBEDTLS_ECDH_LEGACY_CONTEXT
+            bool "Use a backward compatible ECDH context (Experimental)"
+            default y
+            depends on MBEDTLS_ECDH_C && MBEDTLS_ECP_RESTARTABLE
+            help
+                Use the legacy ECDH context format.
+                Define this option only if you enable MBEDTLS_ECP_RESTARTABLE or if you
+                want to access ECDH context fields directly.
+
+        config MBEDTLS_X509_TRUSTED_CERT_CALLBACK
+            bool "Enable trusted certificate callbacks"
+            default n
+            help
+                Enables users to configure the set of trusted certificates
+                through a callback instead of a linked list.
+
+                See mbedTLS documentation for required API and more details.
+
+        config MBEDTLS_SSL_CONTEXT_SERIALIZATION
+            bool "Enable serialization of the TLS context structures"
+            default n
+            help
+                Enable serialization of the TLS context structures
+                This is a local optimization in handling a single, potentially long-lived connection.
+
+                See mbedTLS documentation for required API and more details.
+                Disabling this option will save some code size.
+
+        config MBEDTLS_SSL_KEEP_PEER_CERTIFICATE
+            bool "Keep peer certificate after handshake completion"
+            default y
+            depends on !MBEDTLS_DYNAMIC_FREE_PEER_CERT
+            help
+                Keep the peer's certificate after completion of the handshake.
+                Disabling this option will save about 4kB of heap and some code size.
+
+                See mbedTLS documentation for required API and more details.
+
+        menu "DTLS-based configurations"
+            visible if MBEDTLS_SSL_PROTO_DTLS
+
+            config MBEDTLS_SSL_DTLS_CONNECTION_ID
+                bool "Support for the DTLS Connection ID extension"
+                depends on MBEDTLS_SSL_PROTO_DTLS
+                default n
+                help
+                    Enable support for the DTLS Connection ID extension which allows to
+                    identify DTLS connections across changes in the underlying transport.
+                    The Connection ID extension is still in draft state.
+                    Refer: version draft-ietf-tls-dtls-connection-id-05
+
+            config MBEDTLS_SSL_CID_IN_LEN_MAX
+                int "Maximum length of CIDs used for incoming DTLS messages"
+                default 32
+                range 0 32
+                depends on MBEDTLS_SSL_DTLS_CONNECTION_ID
+                help
+                    Maximum length of CIDs used for incoming DTLS messages
+
+            config MBEDTLS_SSL_CID_OUT_LEN_MAX
+                int "Maximum length of CIDs used for outgoing DTLS messages"
+                default 32
+                range 0 32
+                depends on MBEDTLS_SSL_DTLS_CONNECTION_ID
+                help
+                    Maximum length of CIDs used for outgoing DTLS messages
+
+            config MBEDTLS_SSL_CID_PADDING_GRANULARITY
+                int "Record plaintext padding (for DTLS 1.2)"
+                default 16
+                range 0 32
+                depends on MBEDTLS_SSL_DTLS_CONNECTION_ID
+                help
+                    Controls the use of record plaintext padding when
+                    using the Connection ID extension in DTLS 1.2.
+
+                    The padding will always be chosen so that the length of the
+                    padded plaintext is a multiple of the value of this option.
+
+                    Notes:
+                        A value of 1 means that no padding will be used for outgoing records.
+                        On systems lacking division instructions, a power of two should be preferred.
+
+            config MBEDTLS_SSL_DTLS_SRTP
+                bool "Enable support for negotiation of DTLS-SRTP (RFC 5764)"
+                depends on MBEDTLS_SSL_PROTO_DTLS
+                default n
+                help
+                    Enable support for negotiation of DTLS-SRTP (RFC 5764) through the use_srtp extension.
+
+                    See mbedTLS documentation for required API and more details.
+                    Disabling this option will save some code size.
+
+        endmenu
+
+    endmenu
 
     menu "Certificate Bundle"
 
@@ -232,15 +330,6 @@ menu "mbedTLS"
         default n
         help
             Enable "non-blocking" ECC operations that can return early and be resumed.
-
-    config MBEDTLS_ECDH_LEGACY_CONTEXT
-        bool "Use a backward compatible ECDH context (Experimental)"
-        default y
-        depends on MBEDTLS_ECDH_C && MBEDTLS_ECP_RESTARTABLE
-        help
-            Use the legacy ECDH context format.
-            Define this option only if you enable MBEDTLS_ECP_RESTARTABLE or if you
-            want to access ECDH context fields directly.
 
     config MBEDTLS_CMAC_C
         bool "Enable CMAC mode for block ciphers"
@@ -735,93 +824,7 @@ menu "mbedTLS"
             help
                 Support for parsing X.509 Certifificate Signing Requests
 
-        config MBEDTLS_X509_TRUSTED_CERT_CALLBACK
-            bool "Enable trusted certificate callbacks"
-            default n
-            help
-                Enables users to configure the set of trusted certificates
-                through a callback instead of a linked list.
-
-                See mbedTLS documentation for required API and more details.
-
     endmenu # Certificates
-
-
-    menu "DTLS-based configurations"
-        visible if MBEDTLS_SSL_PROTO_DTLS
-
-        config MBEDTLS_SSL_DTLS_CONNECTION_ID
-            bool "Support for the DTLS Connection ID extension"
-            depends on MBEDTLS_SSL_PROTO_DTLS
-            default n
-            help
-                Enable support for the DTLS Connection ID extension which allows to
-                identify DTLS connections across changes in the underlying transport.
-                The Connection ID extension is still in draft state.
-                Refer: version draft-ietf-tls-dtls-connection-id-05
-
-        config MBEDTLS_SSL_CID_IN_LEN_MAX
-            int "Maximum length of CIDs used for incoming DTLS messages"
-            default 32
-            range 0 32
-            depends on MBEDTLS_SSL_DTLS_CONNECTION_ID
-            help
-                Maximum length of CIDs used for incoming DTLS messages
-
-        config MBEDTLS_SSL_CID_OUT_LEN_MAX
-            int "Maximum length of CIDs used for outgoing DTLS messages"
-            default 32
-            range 0 32
-            depends on MBEDTLS_SSL_DTLS_CONNECTION_ID
-            help
-                Maximum length of CIDs used for outgoing DTLS messages
-
-        config MBEDTLS_SSL_CID_PADDING_GRANULARITY
-            int "Record plaintext padding (for DTLS 1.2)"
-            default 16
-            range 0 32
-            depends on MBEDTLS_SSL_DTLS_CONNECTION_ID
-            help
-                Controls the use of record plaintext padding when
-                using the Connection ID extension in DTLS 1.2.
-
-                The padding will always be chosen so that the length of the
-                padded plaintext is a multiple of the value of this option.
-
-                Notes:
-                    A value of 1 means that no padding will be used for outgoing records.
-                    On systems lacking division instructions, a power of two should be preferred.
-
-        config MBEDTLS_SSL_DTLS_SRTP
-            bool "Enable support for negotiation of DTLS-SRTP (RFC 5764)"
-            depends on MBEDTLS_SSL_PROTO_DTLS
-            default n
-            help
-                Enable support for negotiation of DTLS-SRTP (RFC 5764) through the use_srtp extension.
-
-                See mbedTLS documentation for required API and more details.
-                Disabling this option will save some code size.
-
-    endmenu
-
-    config MBEDTLS_SSL_CONTEXT_SERIALIZATION
-        bool "Enable serialization of the TLS context structures"
-        default n
-        help
-            Enable serialization of the TLS context structures
-            This is a local optimization in handling a single, potentially long-lived connection.
-
-            See mbedTLS documentation for required API and more details.
-            Disabling this option will save some code size.
-
-    config MBEDTLS_SSL_KEEP_PEER_CERTIFICATE
-        bool "Keep peer certificate after handshake completion"
-        default y
-        help
-            Keep the peer's certificate after completion of the handshake.
-            Disabling this option will save about 4kB of heap and some code size.
-
-            See mbedTLS documentation for required API and more details.
 
     menuconfig MBEDTLS_ECP_C
         bool  "Elliptic Curve Ciphers"
