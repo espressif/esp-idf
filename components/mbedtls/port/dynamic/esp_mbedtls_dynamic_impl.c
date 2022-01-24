@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 #include "esp_mbedtls_dynamic_impl.h"
@@ -531,27 +523,3 @@ void esp_mbedtls_free_cacert(mbedtls_ssl_context *ssl)
     }
 }
 #endif /* CONFIG_MBEDTLS_DYNAMIC_FREE_CA_CERT */
-
-#ifdef CONFIG_MBEDTLS_DYNAMIC_FREE_PEER_CERT
-void esp_mbedtls_free_peer_cert(mbedtls_ssl_context *ssl)
-{
-    if (ssl->session_negotiate->peer_cert) {
-        mbedtls_x509_crt_free( ssl->session_negotiate->peer_cert );
-        mbedtls_free( ssl->session_negotiate->peer_cert );
-        ssl->session_negotiate->peer_cert = NULL;
-    }
-}
-
-bool esp_mbedtls_ssl_is_rsa(mbedtls_ssl_context *ssl)
-{
-    const mbedtls_ssl_ciphersuite_t *ciphersuite_info =
-        ssl->transform_negotiate->ciphersuite_info;
-
-    if (ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_RSA ||
-        ciphersuite_info->key_exchange == MBEDTLS_KEY_EXCHANGE_RSA_PSK) {
-        return true;
-    } else {
-        return false;
-    }
-}
-#endif
