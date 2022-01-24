@@ -1,3 +1,5 @@
+.. _concurrency-constraints-flash:
+
 SPI1 Flash 并发约束
 =========================================
 
@@ -9,7 +11,7 @@ SPI1 Flash 并发约束
 
 .. only:: esp32c3
 
-    在 {IDF_TARGET_NAME} 上，默认启用的配置选项 :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 允许 flash / PSRAM 的 cache 访问和 SPI1 的操作存并发地执行。更多详情，参见 :ref:`auto_suspend` 。
+    在 {IDF_TARGET_NAME} 上，默认启用的配置选项 :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 允许 flash / PSRAM 的 cache 访问和 SPI1 的操作存并发地执行。更多详情，参见 :ref:`auto-suspend` 。
 
     然而当该选项被禁用时，读取/写入/擦除 flash 时， cache 必须被禁用。使用驱动访问 SPI1 的相关约束参见 :ref:`impact_disabled_cache` 。这些约束会带来更多的 IRAM / DRAM 消耗。
 
