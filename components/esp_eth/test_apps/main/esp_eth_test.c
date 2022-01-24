@@ -48,7 +48,8 @@ TEST_CASE("start_and_stop", "[esp_eth]")
     TEST_ASSERT(eth_event_group != NULL);
 
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();  // apply default MAC configuration
-    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config); // create MAC instance
+    eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config); // create MAC instance
     TEST_ASSERT_NOT_NULL(mac);
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG(); // apply default PHY configuration
 #if defined(CONFIG_TARGET_ETH_PHY_DEVICE_IP101)
@@ -99,7 +100,8 @@ TEST_CASE("get_set_mac", "[esp_eth]")
     TEST_ASSERT_NOT_NULL(mutex);
 
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();  // apply default MAC configuration
-    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config); // create MAC instance
+    eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config); // create MAC instance
     TEST_ASSERT_NOT_NULL(mac);
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG(); // apply default PHY configuration
 #if defined(CONFIG_TARGET_ETH_PHY_DEVICE_IP101)
@@ -152,7 +154,8 @@ TEST_CASE("ethernet_broadcast_transmit", "[esp_eth]")
     TEST_ASSERT_NOT_NULL(mutex);
 
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();  // apply default MAC configuration
-    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config); // create MAC instance
+    eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config); // create MAC instance
     TEST_ASSERT_NOT_NULL(mac);
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG(); // apply default PHY configuration
 #if defined(CONFIG_TARGET_ETH_PHY_DEVICE_IP101)
@@ -222,7 +225,8 @@ TEST_CASE("recv_pkt", "[esp_eth]")
     TEST_ASSERT(eth_event_group != NULL);
 
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();  // apply default MAC configuration
-    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config); // create MAC instance
+    eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config); // create MAC instance
     TEST_ASSERT_NOT_NULL(mac);
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG(); // apply default PHY configuration
 #if defined(CONFIG_TARGET_ETH_PHY_DEVICE_IP101)

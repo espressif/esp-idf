@@ -164,6 +164,13 @@ typedef struct {
 
 } emac_hal_context_t;
 
+/**
+ * @brief EMAC related configuration
+ */
+typedef struct {
+    eth_mac_dma_burst_len_t dma_burst_len;  /*!< eth-type enum of chosen dma burst-len */
+} emac_hal_dma_config_t;
+
 void emac_hal_init(emac_hal_context_t *hal, void *descriptors,
                    uint8_t **rx_buf, uint8_t **tx_buf);
 
@@ -189,7 +196,7 @@ void emac_hal_set_csr_clock_range(emac_hal_context_t *hal, int freq);
 
 void emac_hal_init_mac_default(emac_hal_context_t *hal);
 
-void emac_hal_init_dma_default(emac_hal_context_t *hal, uint32_t dma_burst_len);
+void emac_hal_init_dma_default(emac_hal_context_t *hal, emac_hal_dma_config_t *hal_config);
 
 void emac_hal_set_speed(emac_hal_context_t *hal, uint32_t speed);
 

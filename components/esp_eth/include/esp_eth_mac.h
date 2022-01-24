@@ -357,29 +357,6 @@ typedef union {
     } rmii; /*!< EMAC RMII Clock Configuration */
 } eth_mac_clock_config_t;
 
-/**
-* @brief Options of EMAC DMA burst len
-*/
-typedef enum {
-    ETH_DMA_BURST_LEN_32,
-    ETH_DMA_BURST_LEN_16,
-    ETH_DMA_BURST_LEN_8,
-    ETH_DMA_BURST_LEN_4,
-    ETH_DMA_BURST_LEN_2,
-    ETH_DMA_BURST_LEN_1,
-} eth_mac_dma_burst_len_t;
-
-/**
-* @brief EMAC specific configuration (sub-struct of Ethernet MAC config)
-*
-*/
-typedef struct {
-    int smi_mdc_gpio_num;                   /*!< SMI MDC GPIO number, set to -1 could bypass the SMI GPIO configuration */
-    int smi_mdio_gpio_num;                  /*!< SMI MDIO GPIO number, set to -1 could bypass the SMI GPIO configuration */
-    eth_data_interface_t interface;         /*!< EMAC Data interface to PHY (MII/RMII) */
-    eth_mac_clock_config_t clock_config;    /*!< EMAC Interface clock configuration */
-    eth_mac_dma_burst_len_t dma_burst_len;  /*!< EMAC DMA burst length for both Tx and Rx */
-} eth_esp32_emac_t;
 
 /**
 * @brief Configuration of Ethernet MAC object
@@ -390,14 +367,6 @@ typedef struct {
     uint32_t rx_task_stack_size;         /*!< Stack size of the receive task */
     uint32_t rx_task_prio;               /*!< Priority of the receive task */
     uint32_t flags;                      /*!< Flags that specify extra capability for mac driver */
-    union {
-        eth_esp32_emac_t esp32_emac;            /*!< ESP32's internal EMAC configuration */
-        // Placeholder for another supported MAC configs
-        struct eth_custom_mac *p_custom_mac;    /*!< Opaque pointer to an additional custom MAC config
-                                                 * Note: This config could be used for IDF supported MAC
-                                                 * as well as any additional MAC introduced in user-space
-                                                 * */
-    };                                  /*!< Union of mutually exclusive vendor specific MAC options */
 } eth_mac_config_t;
 
 #define ETH_MAC_FLAG_WORK_WITH_CACHE_DISABLE (1 << 0) /*!< MAC driver can work when cache is disabled */
@@ -407,30 +376,47 @@ typedef struct {
  * @brief Default configuration for Ethernet MAC object
  *
  */
-
 #define ETH_MAC_DEFAULT_CONFIG()                          \
     {                                                     \
         .sw_reset_timeout_ms = 100,                       \
         .rx_task_stack_size = 2048,                       \
         .rx_task_prio = 15,                               \
         .flags = 0,                                       \
-        .esp32_emac = {                                   \
-            .smi_mdc_gpio_num = 23,                       \
-            .smi_mdio_gpio_num = 18,                      \
-            .interface = EMAC_DATA_INTERFACE_RMII,        \
-            .clock_config =                               \
-            {                                             \
-                .rmii =                                   \
-                {                                         \
-                    .clock_mode = EMAC_CLK_DEFAULT,       \
-                    .clock_gpio = EMAC_CLK_IN_GPIO        \
-                }                                         \
-            },                                            \
-            .dma_burst_len = ETH_DMA_BURST_LEN_32         \
-        }                                                 \
     }
 
 #if CONFIG_ETH_USE_ESP32_EMAC
+/**
+* @brief EMAC specific configuration
+*
+*/
+typedef struct {
+    int smi_mdc_gpio_num;                   /*!< SMI MDC GPIO number, set to -1 could bypass the SMI GPIO configuration */
+    int smi_mdio_gpio_num;                  /*!< SMI MDIO GPIO number, set to -1 could bypass the SMI GPIO configuration */
+    eth_data_interface_t interface;         /*!< EMAC Data interface to PHY (MII/RMII) */
+    eth_mac_clock_config_t clock_config;    /*!< EMAC Interface clock configuration */
+    eth_mac_dma_burst_len_t dma_burst_len;  /*!< EMAC DMA burst length for both Tx and Rx */
+} eth_esp32_emac_config_t;
+
+/**
+ * @brief Default ESP32's EMAC specific configuration
+ *
+ */
+#define ETH_ESP32_EMAC_DEFAULT_CONFIG()               \
+    {                                                 \
+        .smi_mdc_gpio_num = 23,                       \
+        .smi_mdio_gpio_num = 18,                      \
+        .interface = EMAC_DATA_INTERFACE_RMII,        \
+        .clock_config =                               \
+        {                                             \
+            .rmii =                                   \
+            {                                         \
+                .clock_mode = EMAC_CLK_DEFAULT,       \
+                .clock_gpio = EMAC_CLK_IN_GPIO        \
+            }                                         \
+        },                                            \
+        .dma_burst_len = ETH_DMA_BURST_LEN_32         \
+    }
+
 /**
 * @brief Create ESP32 Ethernet MAC instance
 *
@@ -440,7 +426,7 @@ typedef struct {
 *      - instance: create MAC instance successfully
 *      - NULL: create MAC instance failed because some error occurred
 */
-esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config);
+esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_esp32_emac_config_t *esp32_config, const eth_mac_config_t *config);
 #endif // CONFIG_ETH_USE_ESP32_EMAC
 
 #if CONFIG_ETH_SPI_ETHERNET_DM9051
