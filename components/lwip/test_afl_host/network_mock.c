@@ -237,3 +237,7 @@ void mem_free(void *rmem)
 void sys_timeout(u32_t msecs, sys_timeout_handler handler, void *arg)
 {
 }
+
+void sys_untimeout(sys_timeout_handler handler, void *arg)
+{
+}

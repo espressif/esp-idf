@@ -129,13 +129,20 @@ dhcps_t *dhcps_new(void)
     dhcps->dhcps_dns = 0x00;
     dhcps->dhcps_pcb = NULL;
     dhcps->state = DHCPS_HANDLE_CREATED;
-    sys_timeout(DHCP_COARSE_TIMER_MSECS, dhcps_tmr, dhcps);
     return dhcps;
 }
 
 void dhcps_delete(dhcps_t *dhcps)
 {
-    dhcps->state = DHCPS_HANDLE_DELETE_PENDING;
+    if (dhcps) {
+        if (dhcps->state == DHCPS_HANDLE_STARTED) {
+            // if the dhcp-server has started already, we have to postpone the deletion
+            dhcps->state = DHCPS_HANDLE_DELETE_PENDING;
+        } else {
+            // otherwise, we're free to delete the handle immediately
+            free(dhcps);
+        }
+    }
 }
 
 static void get_ip_info(struct netif * netif, ip_info_t *ip_info)
@@ -1207,10 +1214,11 @@ void dhcps_start(dhcps_t *dhcps, struct netif *netif, ip4_addr_t ip)
 
     udp_bind(dhcps->dhcps_pcb, &netif->ip_addr, DHCPS_SERVER_PORT);
     udp_recv(dhcps->dhcps_pcb, handle_dhcp, dhcps);
-    dhcps->state = DHCPS_HANDLE_STARTED;
 #if DHCPS_DEBUG
     DHCPS_LOG("dhcps:dhcps_start->udp_recv function Set a receive callback handle_dhcp for UDP_PCB pcb_dhcps\n");
 #endif
+    dhcps->state = DHCPS_HANDLE_STARTED;
+    sys_timeout(DHCP_COARSE_TIMER_MSECS, dhcps_tmr, dhcps);
 
 }
 
@@ -1246,6 +1254,7 @@ void dhcps_stop(dhcps_t *dhcps, struct netif *netif)
         free(pback_node);
         pback_node = NULL;
     }
+    sys_untimeout(dhcps_tmr, dhcps);
     dhcps->state = DHCPS_HANDLE_STOPPED;
 }
 
@@ -1301,10 +1310,10 @@ static void dhcps_tmr(void *arg)
         return;
     }
 
-    sys_timeout(DHCP_COARSE_TIMER_MSECS, dhcps_tmr, dhcps);
     if (state != DHCPS_HANDLE_STARTED) {
         return;
     }
+    sys_timeout(DHCP_COARSE_TIMER_MSECS, dhcps_tmr, dhcps);
     u8_t num_dhcps_pool = 0;
     list_node *pback_node = NULL;
     list_node *pnode = NULL;
