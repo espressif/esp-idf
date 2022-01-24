@@ -8,7 +8,6 @@ Introduction
 
 Non-volatile storage (NVS) library is designed to store key-value pairs in flash. This section introduces some concepts used by NVS.
 
-
 Underlying storage
 ^^^^^^^^^^^^^^^^^^
 
@@ -378,5 +377,3 @@ API Reference
 .. include-build-file:: inc/nvs_flash.inc
 
 .. include-build-file:: inc/nvs.inc
-
-
