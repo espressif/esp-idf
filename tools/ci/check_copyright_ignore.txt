@@ -1852,7 +1852,6 @@ components/soc/esp32s3/include/soc/clkout_channel.h
 components/soc/esp32s3/include/soc/cpu.h
 components/soc/esp32s3/include/soc/cpu_caps.h
 components/soc/esp32s3/include/soc/dport_access.h
-components/soc/esp32s3/include/soc/efuse_reg.h
 components/soc/esp32s3/include/soc/efuse_struct.h
 components/soc/esp32s3/include/soc/extmem_reg.h
 components/soc/esp32s3/include/soc/extmem_struct.h
