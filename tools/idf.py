@@ -89,6 +89,24 @@ def check_environment():
     except RuntimeError as e:
         raise FatalError(e)
 
+    # check Python dependencies
+    checks_output.append('Checking Python dependencies...')
+    try:
+        out = subprocess.check_output(
+            [
+                os.environ['PYTHON'],
+                os.path.join(os.environ['IDF_PATH'], 'tools', 'idf_tools.py'),
+                'check-python-dependencies',
+            ],
+            env=os.environ,
+        )
+
+        checks_output.append(out.decode('utf-8', 'ignore').strip())
+    except subprocess.CalledProcessError as e:
+        print_warning(e.output.decode('utf-8', 'ignore'), stream=sys.stderr)
+        debug_print_idf_version()
+        raise SystemExit(1)
+
     return checks_output
 
 
