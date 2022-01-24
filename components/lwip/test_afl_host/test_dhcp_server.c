@@ -29,8 +29,9 @@ int main(int argc, char** argv)
     dhcp_test_init_di();
 
     IP4_ADDR(&server_ip, 192,168,4,1);
-    dhcps_set_new_lease_cb(dhcp_test_dhcps_cb);
-    dhcps_start(&mynetif, server_ip);
+    dhcps_t *dhcps = dhcps_new();
+    dhcps_set_new_lease_cb(dhcps, dhcp_test_dhcps_cb);
+    dhcps_start(dhcps, &mynetif, server_ip);
 
 #ifdef INSTR_IS_OFF
     p = pbuf_alloc(PBUF_RAW, len, PBUF_POOL);
@@ -62,7 +63,9 @@ int main(int argc, char** argv)
         p->tot_len = len;
         p->next = NULL;
 
-        dhcp_test_handle_dhcp(NULL, NULL, p, &ip_addr_any, 0);
+        dhcp_test_handle_dhcp(dhcps, NULL, p, &ip_addr_any, 0);
     }
+    dhcps_stop(dhcps, &mynetif);
+    dhcps_delete(dhcps);
     return 0;
 }

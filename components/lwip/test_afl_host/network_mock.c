@@ -1,11 +1,10 @@
 #include "no_warn_host.h"
 #include "lwip/opt.h"
-#include "lwip/def.h"
 #include "lwip/pbuf.h"
 #include "lwip/udp.h"
 #include "esp_netif.h"
+#include "lwip/timeouts.h"
 #include <string.h>
-#include <stdio.h>
 
 const ip_addr_t ip_addr_any;
 const ip_addr_t ip_addr_broadcast;
@@ -233,4 +232,8 @@ void * mem_malloc(mem_size_t size)
 void mem_free(void *rmem)
 {
     free(rmem);
+}
+
+void sys_timeout(u32_t msecs, sys_timeout_handler handler, void *arg)
+{
 }
