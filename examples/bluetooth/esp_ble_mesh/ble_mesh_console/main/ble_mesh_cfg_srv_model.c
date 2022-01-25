@@ -8,6 +8,7 @@
 #include "esp_ble_mesh_generic_model_api.h"
 uint8_t dev_uuid[16] = {0xdd, 0xdd};
 
+ble_mesh_node_config_params ble_mesh_node_prestore_params[NODE_MAX_GROUP_CONFIG];
 
 esp_ble_mesh_prov_t prov = {
 #if CONFIG_BLE_MESH_NODE

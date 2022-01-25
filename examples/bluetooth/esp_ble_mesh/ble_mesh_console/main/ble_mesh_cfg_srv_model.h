@@ -23,7 +23,7 @@ typedef struct {
     uint16_t net_idx;
     uint16_t unicast_addr;
 } ble_mesh_node_config_params;
-ble_mesh_node_config_params ble_mesh_node_prestore_params[NODE_MAX_GROUP_CONFIG];
+extern ble_mesh_node_config_params ble_mesh_node_prestore_params[NODE_MAX_GROUP_CONFIG];
 
 extern esp_ble_mesh_prov_t prov;
 
