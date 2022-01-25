@@ -1,22 +1,18 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
 #include <stdint.h>
 #include "regi2c_bbpll.h"
 #include "regi2c_dig_reg.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* Analog function control register */
 #define ANA_CONFIG_REG  0x6000E044
@@ -77,3 +73,17 @@ void regi2c_ctrl_write_reg_mask(uint8_t block, uint8_t host_id, uint8_t reg_add,
 
 #define REGI2C_READ(block, reg_add) \
       regi2c_ctrl_read_reg(block, block##_HOSTID,  reg_add)
+
+
+/**
+ * Restore regi2c analog calibration related configuration registers.
+ * This is a workaround, and is fixed on later chips
+ */
+#if REGI2C_ANA_CALI_PD_WORKAROUND
+void regi2c_analog_cali_reg_read(void);
+void regi2c_analog_cali_reg_write(void);
+#endif   //#if ADC_CALI_PD_WORKAROUND
+
+#ifdef __cplusplus
+}
+#endif

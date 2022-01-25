@@ -1,5 +1,5 @@
 target_include_directories(${COMPONENT_LIB} PUBLIC .)
-target_include_directories(${COMPONENT_LIB} PRIVATE private_include)
+target_include_directories(${COMPONENT_LIB} PUBLIC private_include)
 
 set(srcs
     "rtc_clk.c"
