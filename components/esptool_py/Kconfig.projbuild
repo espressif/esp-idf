@@ -174,50 +174,8 @@ menu "Serial flasher config"
         default "hard_reset" if ESPTOOLPY_AFTER_RESET
         default "no_reset" if ESPTOOLPY_AFTER_NORESET
 
-    choice ESPTOOLPY_MONITOR_BAUD
-        prompt "'idf.py monitor' baud rate"
-        default ESPTOOLPY_MONITOR_BAUD_115200B
-        help
-            Baud rate to use when running 'idf.py monitor' or 'make monitor'
-            to view serial output from a running chip.
-
-            If "Same as UART Console baud rate" is chosen then the value will
-            follow the "UART Console baud rate" config item.
-
-            Can override by setting the MONITORBAUD environment variable.
-
-        config ESPTOOLPY_MONITOR_BAUD_CONSOLE
-            bool "Same as UART console baud rate"
-        config ESPTOOLPY_MONITOR_BAUD_9600B
-            bool "9600 bps"
-        config ESPTOOLPY_MONITOR_BAUD_57600B
-            bool "57600 bps"
-        config ESPTOOLPY_MONITOR_BAUD_115200B
-            bool "115200 bps"
-        config ESPTOOLPY_MONITOR_BAUD_230400B
-            bool "230400 bps"
-        config ESPTOOLPY_MONITOR_BAUD_921600B
-            bool "921600 bps"
-        config ESPTOOLPY_MONITOR_BAUD_2MB
-            bool "2 Mbps"
-        config ESPTOOLPY_MONITOR_BAUD_OTHER
-            bool "Custom baud rate"
-
-    endchoice
-
-    config ESPTOOLPY_MONITOR_BAUD_OTHER_VAL
-        int "Custom baud rate value" if ESPTOOLPY_MONITOR_BAUD_OTHER
-        default 115200
-
     config ESPTOOLPY_MONITOR_BAUD
         int
-        default ESP_CONSOLE_UART_BAUDRATE if ESPTOOLPY_MONITOR_BAUD_CONSOLE
-        default 9600 if ESPTOOLPY_MONITOR_BAUD_9600B
-        default 57600 if ESPTOOLPY_MONITOR_BAUD_57600B
-        default 115200 if ESPTOOLPY_MONITOR_BAUD_115200B
-        default 230400 if ESPTOOLPY_MONITOR_BAUD_230400B
-        default 921600 if ESPTOOLPY_MONITOR_BAUD_921600B
-        default 2000000 if ESPTOOLPY_MONITOR_BAUD_2MB
-        default ESPTOOLPY_MONITOR_BAUD_OTHER_VAL if ESPTOOLPY_MONITOR_BAUD_OTHER
-
+        default ESP_CONSOLE_UART_BAUDRATE if ESP_CONSOLE_UART
+        default 115200 if !ESP_CONSOLE_UART
 endmenu
