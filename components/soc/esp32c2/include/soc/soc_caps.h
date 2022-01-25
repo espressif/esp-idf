@@ -203,6 +203,7 @@
 #define SOC_SPI_MEM_SUPPORT_IDLE_INTR                     (1)
 #define SOC_SPI_MEM_SUPPORT_SW_SUSPEND                    (1)
 #define SOC_SPI_MEM_SUPPORT_CHECK_SUS                     (1)
+#define SOC_SPI_MEM_SUPPORT_CONFIG_GPIO_BY_EFUSE          (0)
 
 #define SOC_MEMSPI_SRC_FREQ_60M_SUPPORTED         1
 #define SOC_MEMSPI_SRC_FREQ_30M_SUPPORTED         1

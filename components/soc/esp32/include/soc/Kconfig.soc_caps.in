@@ -579,6 +579,10 @@ config SOC_SPIRAM_SUPPORTED
     bool
     default y
 
+config SOC_SPI_MEM_SUPPORT_CONFIG_GPIO_BY_EFUSE
+    bool
+    default y
+
 config SOC_SHA_SUPPORT_PARALLEL_ENG
     bool
     default y

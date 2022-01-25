@@ -310,6 +310,9 @@
 /*-------------------------- SPIRAM CAPS -------------------------------------*/
 #define SOC_SPIRAM_SUPPORTED    1
 
+/*-------------------------- SPI MEM CAPS ---------------------------------------*/
+#define SOC_SPI_MEM_SUPPORT_CONFIG_GPIO_BY_EFUSE         (1)
+
 /*--------------------------- SHA CAPS ---------------------------------------*/
 /* ESP32 style SHA engine, where multiple states can be stored in parallel */
 #define SOC_SHA_SUPPORT_PARALLEL_ENG    (1)
