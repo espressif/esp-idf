@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -566,8 +566,8 @@ static uint32_t read_cal_channel(adc_ll_num_t adc_n, int channel)
     return (uint32_t)adc_ll_rtc_get_convert_value(adc_n);
 }
 
-#elif SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
 //For those RTC controller not supported chips, they use digital controller to do the single read. e.g.: esp32c3
+#elif SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
 static void cal_setup(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten, bool internal_gnd)
 {
     adc_ll_onetime_sample_enable(ADC_NUM_1, false);
