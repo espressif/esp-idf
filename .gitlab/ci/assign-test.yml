@@ -17,8 +17,6 @@ assign_test:
     EXAMPLE_TEST_DIR: "${CI_PROJECT_DIR}/examples"
     CUSTOM_TEST_DIR: "${CI_PROJECT_DIR}/tools/test_apps"
     UNIT_TEST_DIR: "${CI_PROJECT_DIR}/components/idf_test/unit_test"
-    # COMPONENT_UT_DIRS is set by `set_component_ut_vars` in `utils.sh`
-    COMPONENT_UT_OUTPUT_DIR: "${CI_PROJECT_DIR}/component_ut"
     INTEGRATION_CONFIG_OUTPUT_PATH: "${CI_PROJECT_DIR}/components/idf_test/integration_test/CIConfigs"
     INTEGRATION_TEST_CASE_PATH: "${CI_PROJECT_DIR}/auto_test_script/TestCaseFiles"
     ASSIGN_TEST_CASE_SCRIPT: "${CI_PROJECT_DIR}/auto_test_script/bin/CIAssignTestCases.py"
@@ -30,17 +28,13 @@ assign_test:
       - components/idf_test/*/CIConfigs
       - $EXAMPLE_TEST_DIR/test_configs
       - $CUSTOM_TEST_DIR/test_configs
-      - $COMPONENT_UT_OUTPUT_DIR/test_configs
       - build_examples/artifact_index.json
       - build_test_apps/artifact_index.json
-      - build_component_ut/artifact_index.json
       - tools/unit-test-app/builds/artifact_index.json
     expire_in: 1 week
   script:
-    - set_component_ut_vars
     - python tools/ci/python_packages/ttfw_idf/IDFAssignTest.py example_test $EXAMPLE_TEST_DIR -c $CI_TARGET_TEST_CONFIG_FILE -o $EXAMPLE_TEST_DIR/test_configs
     - python tools/ci/python_packages/ttfw_idf/IDFAssignTest.py custom_test $CUSTOM_TEST_DIR -c $CI_TARGET_TEST_CONFIG_FILE -o $CUSTOM_TEST_DIR/test_configs
-    - python tools/ci/python_packages/ttfw_idf/IDFAssignTest.py component_ut $COMPONENT_UT_DIRS -c $CI_TARGET_TEST_CONFIG_FILE -o $COMPONENT_UT_OUTPUT_DIR/test_configs
     - python tools/ci/python_packages/ttfw_idf/IDFAssignTest.py unit_test $UNIT_TEST_DIR -c $CI_TARGET_TEST_CONFIG_FILE -o $UNIT_TEST_DIR/CIConfigs
     # clone test script to assign tests
     # can not retry if downing git lfs files failed, so using empty_branch first.

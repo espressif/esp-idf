@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
 """
@@ -27,7 +27,7 @@ except ImportError:
 
 def main(args: argparse.Namespace) -> None:
     if args.all_pytest_apps:
-        paths = get_pytest_dirs(IDF_PATH, args.under_dir)
+        paths = get_pytest_dirs(args.under_dir)
         args.recursive = True
     elif args.paths is None:
         paths = [os.getcwd()]

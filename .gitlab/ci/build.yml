@@ -37,26 +37,68 @@
     when: always
     expire_in: 3 days
 
-build_examples_pytest_esp32:
+build_pytest_examples_esp32:
   extends:
     - .build_pytest_template
     - .rules:build:example_test-esp32
   script:
     - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir examples --target esp32 --size-info $SIZE_INFO_LOCATION -vv
 
-build_examples_pytest_esp32s2:
+build_pytest_examples_esp32s2:
   extends:
     - .build_pytest_template
     - .rules:build:example_test-esp32s2
   script:
     - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir examples --target esp32s2 --size-info $SIZE_INFO_LOCATION -vv
 
-build_examples_pytest_esp32c3:
+build_pytest_examples_esp32s3:
+  extends:
+    - .build_pytest_template
+    - .rules:build:example_test-esp32s3
+  script:
+    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir examples --target esp32s3 --size-info $SIZE_INFO_LOCATION -vv
+
+build_pytest_examples_esp32c3:
   extends:
     - .build_pytest_template
     - .rules:build:example_test-esp32c3
   script:
     - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir examples --target esp32c3 --size-info $SIZE_INFO_LOCATION -vv
+
+build_pytest_components_esp32:
+  extends:
+    - .build_pytest_template
+    - .rules:build:component_ut-esp32
+  script:
+    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir components --target esp32 --size-info $SIZE_INFO_LOCATION -vv
+
+build_pytest_components_esp32s2:
+  extends:
+    - .build_pytest_template
+    - .rules:build:component_ut-esp32s2
+  script:
+    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir components --target esp32s2 --size-info $SIZE_INFO_LOCATION -vv
+
+build_pytest_components_esp32s3:
+  extends:
+    - .build_pytest_template
+    - .rules:build:component_ut-esp32s3
+  script:
+    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir components --target esp32s3 --size-info $SIZE_INFO_LOCATION -vv
+
+build_pytest_components_esp32c2:
+  extends:
+    - .build_pytest_template
+    - .rules:build:component_ut-esp32c2
+  script:
+    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir components --target esp32c2 --size-info $SIZE_INFO_LOCATION -vv
+
+build_pytest_components_esp32c3:
+  extends:
+    - .build_pytest_template
+    - .rules:build:component_ut-esp32c3
+  script:
+    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir components --target esp32c3 --size-info $SIZE_INFO_LOCATION -vv
 
 .build_template_app_template:
   extends: .build_template
@@ -328,47 +370,6 @@ build_test_apps_esp32c2:
     - .build_test_apps_template
     - .rules:build:custom_test-esp32c2
   parallel: 8
-  variables:
-    IDF_TARGET: esp32c2
-
-.build_component_ut_template:
-  extends: .build_test_apps_template
-  variables:
-    TEST_PREFIX: component_ut
-    TEST_RELATIVE_DIR: component_ut
-
-build_component_ut_esp32:
-  extends:
-    - .build_component_ut_template
-    - .rules:build:component_ut-esp32
-  variables:
-    IDF_TARGET: esp32
-
-build_component_ut_esp32s2:
-  extends:
-    - .build_component_ut_template
-    - .rules:build:component_ut-esp32s2
-  variables:
-    IDF_TARGET: esp32s2
-
-build_component_ut_esp32s3:
-  extends:
-    - .build_component_ut_template
-    - .rules:build:component_ut-esp32s3
-  variables:
-    IDF_TARGET: esp32s3
-
-build_component_ut_esp32c3:
-  extends:
-    - .build_component_ut_template
-    - .rules:build:component_ut-esp32c3
-  variables:
-    IDF_TARGET: esp32c3
-
-build_component_ut_esp32c2:
-  extends:
-    - .build_component_ut_template
-    - .rules:build:component_ut-esp32c2
   variables:
     IDF_TARGET: esp32c2
 

@@ -70,7 +70,7 @@ variables:
   TEST_ENV_CONFIG_REPO: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/qa/ci-test-runner-configs.git"
   CI_AUTO_TEST_SCRIPT_REPO_URL: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/qa/auto_test_script.git"
   CI_AUTO_TEST_SCRIPT_REPO_BRANCH: "ci/v4.1"
-  PYTEST_EMBEDDED_TAG: "v0.4.5"
+  PYTEST_EMBEDDED_TAG: "v0.5.1"
 
   # cache python dependencies
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
@@ -146,6 +146,7 @@ before_script:
     - cd /tmp
     - retry_failed git clone --depth 1 --branch $PYTEST_EMBEDDED_TAG https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/idf/pytest-embedded.git
     - cd pytest-embedded && bash foreach.sh install
+    - pip install pytest-rerunfailures
     - cd $IDF_PATH
 
 default:

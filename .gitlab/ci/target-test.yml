@@ -5,6 +5,7 @@
     when: always
     paths:
       - XUNIT_RESULT.xml
+      - /tmp/pytest-embedded/
     reports:
       junit: XUNIT_RESULT.xml
   script:
@@ -20,7 +21,7 @@ example_test_pytest_esp32_generic:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32
   needs:
-    - build_examples_pytest_esp32
+    - build_pytest_examples_esp32
   variables:
     TARGET: esp32
     ENV_MARKER: generic
@@ -33,7 +34,7 @@ example_test_pytest_esp32s2_generic:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32s2
   needs:
-    - build_examples_pytest_esp32s2
+    - build_pytest_examples_esp32s2
   variables:
     TARGET: esp32s2
     ENV_MARKER: generic
@@ -41,12 +42,25 @@ example_test_pytest_esp32s2_generic:
     - ESP32S2
     - Example_GENERIC
 
+example_test_pytest_esp32s3_generic:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32s3
+  needs:
+    - build_pytest_examples_esp32s3
+  variables:
+    TARGET: esp32s3
+    ENV_MARKER: generic
+  tags:
+    - ESP32S3
+    - Example_GENERIC
+
 example_test_pytest_esp32c3_generic:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c3
   needs:
-    - build_examples_pytest_esp32c3
+    - build_pytest_examples_esp32c3
   variables:
     TARGET: esp32c3
     ENV_MARKER: generic
@@ -59,13 +73,96 @@ example_test_pytest_esp32c3_flash_suspend:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c3
   needs:
-    - build_examples_pytest_esp32c3
+    - build_pytest_examples_esp32c3
   variables:
     TARGET: esp32c3
     ENV_MARKER: flash_suspend
   tags:
     - ESP32C3_IDF
     - UT_T1_Flash_Suspend
+
+.pytest_components_dir_template:
+  extends: .pytest_template
+  variables:
+    TEST_DIR: components
+
+component_ut_pytest_esp32_generic:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
+  needs:
+    - build_pytest_components_esp32
+  variables:
+    TARGET: esp32
+    ENV_MARKER: generic
+  tags:
+    - ESP32
+    - COMPONENT_UT_GENERIC
+
+component_ut_pytest_esp32_ip101:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
+  needs:
+    - build_pytest_components_esp32
+  variables:
+    TARGET: esp32
+    ENV_MARKER: ip101
+  tags:
+    - ESP32
+    - COMPONENT_UT_IP101
+
+component_ut_pytest_esp32_lan8720:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
+  needs:
+    - build_pytest_components_esp32
+  variables:
+    TARGET: esp32
+    ENV_MARKER: lan8720
+  tags:
+    - ESP32
+    - COMPONENT_UT_LAN8720
+
+component_ut_pytest_esp32s2_generic:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s2
+  needs:
+    - build_pytest_components_esp32s2
+  variables:
+    TARGET: esp32s2
+    ENV_MARKER: generic
+  tags:
+    - ESP32S2
+    - COMPONENT_UT_GENERIC
+
+component_ut_pytest_esp32s3_generic:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s3
+  needs:
+    - build_pytest_components_esp32s3
+  variables:
+    TARGET: esp32s3
+    ENV_MARKER: generic
+  tags:
+    - ESP32S3
+    - COMPONENT_UT_GENERIC
+
+component_ut_pytest_esp32c3_generic:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c3
+  needs:
+    - build_pytest_components_esp32c3
+  variables:
+    TARGET: esp32c3
+    ENV_MARKER: generic
+  tags:
+    - ESP32C3
+    - COMPONENT_UT_GENERIC
 
 # for parallel jobs, CI_JOB_NAME will be "job_name index/total" (for example, "IT_001 1/2")
 # we need to convert to pattern "job_name_index.yml"
@@ -459,68 +556,6 @@ test_app_test_flash_psram_f8r8:
     - ESP32S3
     - MSPI_F8R8
 
-.component_ut_template:
-  extends: .target_test_job_template
-  variables:
-    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/component_ut/test_configs"
-  script:
-    - *define_config_file_name
-    # first test if config file exists, if not exist, exit 0
-    - test -e $CONFIG_FILE || exit 0
-    - set_component_ut_vars
-    # clone test env configs
-    - retry_failed git clone $TEST_ENV_CONFIG_REPO
-    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
-    # git clone the known failure cases repo, run test
-    - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
-    # run test
-    - cd tools/ci/python_packages/tiny_test_fw/bin
-    - run_cmd python Runner.py $COMPONENT_UT_DIRS -c $CONFIG_FILE -e $ENV_FILE --known_failure_cases_file $CI_PROJECT_DIR/known_failure_cases/known_failure_cases.txt
-
-.component_ut_esp32_template:
-  extends:
-    - .component_ut_template
-    - .rules:test:component_ut-esp32
-
-.component_ut_esp32s2_template:
-  extends:
-    - .component_ut_template
-    - .rules:test:component_ut-esp32s2
-
-.component_ut_esp32s3_template:
-  extends:
-    - .component_ut_template
-    - .rules:test:component_ut-esp32s3
-
-.component_ut_esp32c3_template:
-  extends:
-    - .component_ut_template
-    - .rules:test:component_ut-esp32c3
-
-component_ut_test_001:
-  extends: .component_ut_esp32_template
-  tags:
-    - ESP32
-    - COMPONENT_UT_GENERIC
-
-component_ut_test_esp32s2:
-  extends: .component_ut_esp32s2_template
-  tags:
-    - ESP32S2
-    - COMPONENT_UT_GENERIC
-
-component_ut_test_esp32s3:
-  extends: .component_ut_esp32s3_template
-  tags:
-    - ESP32S3
-    - COMPONENT_UT_GENERIC
-
-component_ut_test_esp32c3:
-  extends: .component_ut_esp32c3_template
-  tags:
-    - ESP32C3
-    - COMPONENT_UT_GENERIC
-
 .unit_test_template:
   extends: .target_test_job_template
   variables:
@@ -824,18 +859,6 @@ UT_S3_FLASH:
   tags:
     - ESP32S3_IDF
     - UT_T1_ESP_FLASH
-
-component_ut_test_ip101:
-  extends: .component_ut_esp32_template
-  tags:
-    - ESP32
-    - COMPONENT_UT_IP101
-
-component_ut_test_lan8720:
-  extends: .component_ut_esp32_template
-  tags:
-    - ESP32
-    - COMPONENT_UT_LAN8720
 
 .integration_test_template:
   extends:

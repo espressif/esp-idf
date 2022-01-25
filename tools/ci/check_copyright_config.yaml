@@ -51,6 +51,7 @@ examples_and_unit_tests:
   include:
    - 'examples/'
    - 'components/**/test/**'
+   - 'components/**/test_apps/**'
   allowed_licenses:
   - Apache-2.0
   - Unlicense

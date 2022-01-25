@@ -2,13 +2,10 @@
 # SPDX-License-Identifier: CC0-1.0
 
 import pytest
-from pytest_embedded.dut import Dut
+from pytest_embedded import Dut
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
-@pytest.mark.esp32c3
+@pytest.mark.supported_targets
 @pytest.mark.generic
 def test_timer_group_example(dut: Dut) -> None:
     dut.expect(r'Init timer with auto-reload', timeout=5)

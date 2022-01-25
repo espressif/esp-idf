@@ -8,7 +8,7 @@ import logging
 import os
 import subprocess
 import sys
-from typing import List, Optional
+from typing import List
 
 IDF_PATH = os.path.abspath(os.getenv('IDF_PATH', os.path.join(os.path.dirname(__file__), '..', '..')))
 
@@ -86,7 +86,7 @@ def is_in_directory(file_path: str, folder: str) -> bool:
     return os.path.realpath(file_path).startswith(os.path.realpath(folder) + os.sep)
 
 
-def get_pytest_dirs(folder: str, under_dir: Optional[str] = None) -> List[str]:
+def get_pytest_dirs(folder: str) -> List[str]:
     from io import StringIO
 
     import pytest
@@ -108,8 +108,5 @@ def get_pytest_dirs(folder: str, under_dir: Optional[str] = None) -> List[str]:
     sys.stdout = sys_stdout  # restore sys.stdout
 
     test_file_paths = set(node.fspath for node in collector.nodes)
-
-    if under_dir:
-        return [os.path.dirname(file) for file in test_file_paths if is_in_directory(file, under_dir)]
 
     return [os.path.dirname(file) for file in test_file_paths]
