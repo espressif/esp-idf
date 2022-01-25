@@ -1,16 +1,8 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,6 +17,7 @@
 #include <mbedtls/ecdh.h>
 #include <mbedtls/error.h>
 #include <mbedtls/ssl_internal.h>
+#include <mbedtls/constant_time.h>
 
 #include <protocomm_security.h>
 #include <protocomm_security1.h>
@@ -116,7 +109,7 @@ static esp_err_t handle_session_command1(session_t *cur_session,
     hexdump("Dec Client verifier", check_buf, sizeof(check_buf));
 
     /* constant time memcmp */
-    if (mbedtls_ssl_safer_memcmp(check_buf, cur_session->device_pubkey,
+    if (mbedtls_ct_memcmp(check_buf, cur_session->device_pubkey,
                                  sizeof(cur_session->device_pubkey)) != 0) {
         ESP_LOGE(TAG, "Key mismatch. Close connection");
         mbedtls_aes_free(&cur_session->ctx_aes);
