@@ -147,9 +147,14 @@ FORCE_INLINE_ATTR TYPE& operator<<=(TYPE& a, int b) { a = a << b; return a; }
 //
 // Using unique sections also means --gc-sections can remove unused
 // data with a custom section type set
+#ifndef CONFIG_IDF_TARGET_LINUX
 #define _SECTION_ATTR_IMPL(SECTION, COUNTER) __attribute__((section(SECTION "." _COUNTER_STRINGIFY(COUNTER))))
-
 #define _COUNTER_STRINGIFY(COUNTER) #COUNTER
+#else
+// Custom section attributes are generally not used in the port files for Linux target, but may be found
+// in the common header files. Don't declare custom sections in that case.
+#define _SECTION_ATTR_IMPL(SECTION, COUNTER)
+#endif
 
 /* Use IDF_DEPRECATED attribute to mark anything deprecated from use in
    ESP-IDF's own source code, but not deprecated for external users.

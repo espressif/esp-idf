@@ -37,6 +37,10 @@ mainmenu "Espressif IoT Development Framework Configuration"
         string
         default "$IDF_TARGET"
 
+    config IDF_TARGET_LINUX
+        bool
+        default "y" if IDF_TARGET="linux"
+
     config IDF_TARGET_ESP32
         bool
         default "y" if IDF_TARGET="esp32"
@@ -163,6 +167,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
             config APP_BUILD_TYPE_APP_2NDBOOT
                 bool
                 prompt "Default (binary application + 2nd stage bootloader)"
+                depends on !IDF_TARGET_LINUX
                 select APP_BUILD_GENERATE_BINARIES
                 select APP_BUILD_BOOTLOADER
                 select APP_BUILD_USE_FLASH_SECTIONS
