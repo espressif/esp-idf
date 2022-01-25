@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 
@@ -577,7 +569,7 @@ wps_parse_scan_result(struct wps_scan_ie *scan)
     }
 
     if (!scan->rsn && !scan->wpa && (scan->capinfo & WIFI_CAPINFO_PRIVACY)) {
-        wpa_printf(MSG_ERROR, "WEP not suppported in WPS");
+        wpa_printf(MSG_INFO, "WEP not suppported in WPS");
         return false;
     }
 
@@ -1853,8 +1845,8 @@ wifi_wps_scan_done(void *arg, STATUS status)
         esp_wifi_connect();
         ets_timer_disarm(&sm->wps_msg_timeout_timer);
         ets_timer_arm(&sm->wps_msg_timeout_timer, 2000, 0);
-    } else if (wps_get_status() == WPS_STATUS_SCANNING && wps_get_type() == WPS_TYPE_PIN) {
-        if (sm->scan_cnt > WPS_IGNORE_SEL_REG_MAX_CNT) {
+    } else if (wps_get_status() == WPS_STATUS_SCANNING) {
+        if (wps_get_type() == WPS_TYPE_PIN && sm->scan_cnt > WPS_IGNORE_SEL_REG_MAX_CNT) {
             sm->ignore_sel_reg = true;
             sm->wps_pin_war = false;
         }
