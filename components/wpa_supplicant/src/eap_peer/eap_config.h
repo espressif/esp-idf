@@ -295,6 +295,15 @@ struct eap_peer_config {
 	int pending_req_passphrase;
 
 	/**
+	 * pending_req_sim - Pending SIM request
+	 *
+	 * This field should not be set in configuration step. It is only used
+	 * internally when control interface is used to request needed
+	 * information.
+	 */
+	int pending_req_sim;
+
+	/**
 	 * pending_req_otp - Whether there is a pending OTP request
 	 *
 	 * This field should not be set in configuration step. It is only used
@@ -302,6 +311,18 @@ struct eap_peer_config {
 	 * information.
 	 */
 	char *pending_req_otp;
+
+	/**
+	 * pac_file - File path or blob name for the PAC entries (EAP-FAST)
+	 *
+	 * wpa_supplicant will need to be able to create this file and write
+	 * updates to it when PAC is being provisioned or refreshed. Full path
+	 * to the file should be used since working directory may change when
+	 * wpa_supplicant is run in the background.
+	 * Alternatively, a named configuration blob can be used by setting
+	 * this to blob://blob_name.
+	 */
+	char *pac_file;
 
 	/**
 	 * mschapv2_retry - MSCHAPv2 retry in progress
@@ -358,6 +379,26 @@ struct eap_peer_config {
 	 * 2 = require valid OCSP stapling response
 	 */
 	int ocsp;
+
+	/**
+	 * erp - Whether EAP Re-authentication Protocol (ERP) is enabled
+	 */
+	int erp;
+
+	/**
+	 * pending_ext_cert_check - External server certificate check status
+	 *
+	 * This field should not be set in configuration step. It is only used
+	 * internally when control interface is used to request external
+	 * validation of server certificate chain.
+	 */
+	enum {
+		NO_CHECK = 0,
+		PENDING_CHECK,
+		EXT_CERT_CHECK_GOOD,
+		EXT_CERT_CHECK_BAD,
+	} pending_ext_cert_check;
+
 };
 
 

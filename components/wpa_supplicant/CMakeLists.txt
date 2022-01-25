@@ -37,6 +37,9 @@ set(srcs "port/os_xtensa.c"
     "src/esp_supplicant/esp_wps.c"
     "src/esp_supplicant/esp_wpa3.c"
     "src/esp_supplicant/esp_dpp.c"
+    "src/eap_peer/eap_fast.c"
+    "src/eap_peer/eap_fast_common.c"
+    "src/eap_peer/eap_fast_pac.c"
     "src/rsn_supp/pmksa_cache.c"
     "src/rsn_supp/wpa.c"
     "src/rsn_supp/wpa_ie.c"
@@ -134,6 +137,7 @@ else()
     "src/crypto/sha1-internal.c"
     "src/crypto/sha1-pbkdf2.c"
     "src/crypto/sha1.c"
+    "src/crypto/sha1-tprf.c"
     "src/crypto/sha256-internal.c"
     "src/crypto/sha384-internal.c"
     "src/crypto/sha512-internal.c"
@@ -169,6 +173,7 @@ target_compile_definitions(${COMPONENT_LIB} PRIVATE
     EAP_TTLS
     EAP_TLS
     EAP_PEAP
+    EAP_FAST
     USE_WPA2_TASK
     CONFIG_WPS2
     CONFIG_WPS_PIN
