@@ -5061,7 +5061,7 @@ esp_err_t mdns_hostname_set(const char * hostname)
         free(action);
         return ESP_ERR_NO_MEM;
     }
-    xTaskNotifyWait(0, 0, NULL, portMAX_DELAY);
+    xTaskNotifyWait(0, 0x01, NULL, portMAX_DELAY);
     return ESP_OK;
 }
 
