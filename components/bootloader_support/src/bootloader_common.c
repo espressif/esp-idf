@@ -158,6 +158,12 @@ esp_err_t bootloader_common_get_sha256_of_partition (uint32_t address, uint32_t 
         }
         if (data.image.hash_appended) {
             memcpy(out_sha_256, data.image_digest, ESP_PARTITION_HASH_LEN);
+            uint8_t calc_sha256[ESP_PARTITION_HASH_LEN];
+            // The hash is verified before returning, if app content is invalid then the function returns ESP_ERR_IMAGE_INVALID.
+            esp_err_t error = bootloader_sha256_flash_contents(address, data.image_len - ESP_PARTITION_HASH_LEN, calc_sha256);
+            if (error || memcmp(data.image_digest, calc_sha256, ESP_PARTITION_HASH_LEN) != 0) {
+                return ESP_ERR_IMAGE_INVALID;
+            }
             return ESP_OK;
         }
         // If image doesn't have a appended hash then hash calculates for entire image.
