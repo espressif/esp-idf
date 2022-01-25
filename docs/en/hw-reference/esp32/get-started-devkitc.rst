@@ -51,7 +51,6 @@ The following figure and the table below describe the key components, interfaces
 .. figure:: ../../../_static/esp32-devkitc-functional-overview.jpg
     :align: center
     :alt: ESP32-DevKitC V4 with ESP-WROOM-32 module soldered
-    :figclass: align-center
 
     ESP32-DevKitC V4 with ESP32-WROOM-32 module soldered
 
@@ -164,11 +163,10 @@ Pin Layout
 ^^^^^^^^^^^
 .. figure:: ../../../_static/esp32-devkitC-v4-pinout.png
     :align: center
-    :scale: 100%
-    :alt: ESP32-DevKitC  (click to enlarge)
-    :figclass: align-center
+    :scale: 45%
+    :alt: ESP32-DevKitC (click to enlarge)
 
-    ESP32-DevKitC Pin Layout  (click to enlarge)
+    ESP32-DevKitC Pin Layout (click to enlarge)
 
     
 Note on C15
@@ -204,11 +202,10 @@ Board Dimensions
 
 .. figure:: ../../../_static/esp32-devkitc-dimensions-back.jpg
     :align: center
-    :alt: Dimensions of ESP32-DevKitC board with ESP32-WROOM-32 module soldered - back
-    :figclass: align-center
-    :width: 30%
+    :scale: 80%
+    :alt: Dimensions of ESP32-DevKitC board with ESP32-WROOM-32 module soldered - back (click to enlarge)
 
-    Dimensions of ESP32-DevKitC board with ESP32-WROOM-32 module soldered - back
+    Dimensions of ESP32-DevKitC board with ESP32-WROOM-32 module soldered - back (click to enlarge)
 
 
 Related Documents
