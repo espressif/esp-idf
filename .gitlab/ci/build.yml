@@ -5,6 +5,11 @@
     - build
   variables:
     SIZE_INFO_LOCATION: "$CI_PROJECT_DIR/size_info.txt"
+    # Enable ccache for all build jobs. See configure_ci_environment.sh for more ccache related settings.
+    IDF_CCACHE_ENABLE: "1"
+  after_script:
+    # Show ccache statistics if enabled globally
+    - test "$CI_CCACHE_STATS" == 1 && test -n "$(which ccache)" && ccache --show-stats || true
   dependencies: []
 
 .build_template_app_template:
