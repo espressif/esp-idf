@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +34,8 @@
 #define HIGHEST_LIMIT 10000
 #define LOWEST_LIMIT -10000
 
+#define TEST_PWM_FREQ 2000
+
 #if SOC_LEDC_SUPPORT_HS_MODE
 #define TEST_SPEED_MODE LEDC_HIGH_SPEED_MODE
 #define SPEED_MODE_LIST {LEDC_HIGH_SPEED_MODE, LEDC_LOW_SPEED_MODE}
@@ -63,17 +65,31 @@ static ledc_timer_config_t create_default_timer_config(void)
     ledc_time_config.speed_mode = TEST_SPEED_MODE;
     ledc_time_config.duty_resolution = LEDC_TIMER_13_BIT;
     ledc_time_config.timer_num = LEDC_TIMER_0;
-    ledc_time_config.freq_hz = 2000;
+    ledc_time_config.freq_hz = TEST_PWM_FREQ;
     ledc_time_config.clk_cfg = LEDC_USE_APB_CLK;
     return ledc_time_config;
+}
+
+static void fade_setup(void)
+{
+    ledc_channel_config_t ledc_ch_config = initialize_channel_config();
+    ledc_ch_config.duty = 0;
+    ledc_timer_config_t ledc_time_config = create_default_timer_config();
+
+    TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
+    TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
+    vTaskDelay(5 / portTICK_RATE_MS);
+
+    //initialize fade service
+    TEST_ESP_OK(ledc_fade_func_install(0));
 }
 
 static void timer_duty_set_get(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t duty)
 {
     TEST_ESP_OK(ledc_set_duty(speed_mode, channel, duty));
     TEST_ESP_OK(ledc_update_duty(speed_mode, channel));
-    vTaskDelay(1000 / portTICK_RATE_MS);
-    TEST_ASSERT_EQUAL_INT32(ledc_get_duty(speed_mode, channel), duty);
+    vTaskDelay(100 / portTICK_RATE_MS);
+    TEST_ASSERT_EQUAL_INT32(duty, ledc_get_duty(speed_mode, channel));
 }
 
 // use logic analyzer to view
@@ -168,7 +184,7 @@ static void timer_frequency_test(ledc_channel_t channel, ledc_timer_bit_t timer_
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
     frequency_set_get(ledc_ch_config.speed_mode, ledc_ch_config.timer_sel, 100, 100, 2);
     frequency_set_get(ledc_ch_config.speed_mode, ledc_ch_config.timer_sel, 5000, 5000, 5);
-    frequency_set_get(ledc_ch_config.speed_mode, ledc_ch_config.timer_sel, 9000, 9025, 5);
+    frequency_set_get(ledc_ch_config.speed_mode, ledc_ch_config.timer_sel, 9000, 8993, 5);
 }
 
 #endif // !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
@@ -302,9 +318,9 @@ TEST_CASE("LEDC memory leak test", "[ledc]")
     TEST_ESP_OK(ledc_stop(ledc_time_config.speed_mode, LEDC_CHANNEL_0, 0));
 }
 
-// the duty need to be detected by waveform given by the logic analyzer
-// can't get it directly, so set it "ignore"
-TEST_CASE("LEDC set and get dut(with logic analyzer)", "[ledc][ignore]")
+// duty should be manually checked from the waveform using a logic analyzer
+// this test is enabled only for testting the settings
+TEST_CASE("LEDC set and get duty", "[ledc]")
 {
     ledc_timer_t timer_list[4] = {LEDC_TIMER_0, LEDC_TIMER_1, LEDC_TIMER_2, LEDC_TIMER_3};
     ledc_mode_t speed_mode_list[LEDC_SPEED_MODE_MAX] = SPEED_MODE_LIST;
@@ -315,63 +331,141 @@ TEST_CASE("LEDC set and get dut(with logic analyzer)", "[ledc][ignore]")
     }
 }
 
-TEST_CASE("LEDC fade with time(logic analyzer)", "[ledc][ignore]")
+TEST_CASE("LEDC fade with time", "[ledc]")
 {
     const ledc_mode_t test_speed_mode = TEST_SPEED_MODE;
-    ledc_channel_config_t ledc_ch_config = initialize_channel_config();
-    ledc_ch_config.duty = 0;
-    ledc_timer_config_t ledc_time_config = create_default_timer_config();
+    fade_setup();
 
-    TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
-    TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
-
-    //initialize fade service
-    TEST_ESP_OK(ledc_fade_func_install(0));
-
-    TEST_ESP_OK(ledc_set_fade_with_time(test_speed_mode, LEDC_CHANNEL_0, 4000, 1000));
+    TEST_ESP_OK(ledc_set_fade_with_time(test_speed_mode, LEDC_CHANNEL_0, 4000, 200));
     TEST_ESP_OK(ledc_fade_start(test_speed_mode, LEDC_CHANNEL_0, LEDC_FADE_WAIT_DONE));
-    // TODO: allows for 5% deviation here due to driver code (IDF-2099)
-    vTaskDelay(1050 / portTICK_RATE_MS);
-    TEST_ASSERT_EQUAL_INT32(ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0), 4000);
+    TEST_ASSERT_EQUAL_INT32(4000, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
 
-    TEST_ESP_OK(ledc_set_fade_with_time(test_speed_mode, LEDC_CHANNEL_0, 0, 1000));
+    TEST_ESP_OK(ledc_set_fade_with_time(test_speed_mode, LEDC_CHANNEL_0, 0, 200));
     TEST_ESP_OK(ledc_fade_start(test_speed_mode, LEDC_CHANNEL_0, LEDC_FADE_NO_WAIT));
-    vTaskDelay(1050 / portTICK_RATE_MS);
-    TEST_ASSERT_EQUAL_INT32(ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0), 0);
+    // duty should not be too far from initial value
+    TEST_ASSERT_INT32_WITHIN(20, 4000, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
+    vTaskDelay(210 / portTICK_RATE_MS);
+    TEST_ASSERT_EQUAL_INT32(0, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
 
-    //deinitial fade service
+    //deinitialize fade service
     ledc_fade_func_uninstall();
 }
 
-TEST_CASE("LEDC fade with step(logic analyzer)", "[ledc][ignore]")
+TEST_CASE("LEDC fade with step", "[ledc]")
 {
     const ledc_mode_t test_speed_mode = TEST_SPEED_MODE;
-    ledc_channel_config_t ledc_ch_config = initialize_channel_config();
-    ledc_ch_config.duty = 0;
-    ledc_timer_config_t ledc_time_config = create_default_timer_config();
+    fade_setup();
 
-    TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
-    TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
-
-    //initialize fade service.
-    TEST_ESP_OK(ledc_fade_func_install(0));
-
-    TEST_ESP_OK(ledc_set_fade_with_step(test_speed_mode, LEDC_CHANNEL_0, 4000, 2, 1));
+    TEST_ESP_OK(ledc_set_fade_with_step(test_speed_mode, LEDC_CHANNEL_0, 4000, 4, 1));
     TEST_ESP_OK(ledc_fade_start(test_speed_mode, LEDC_CHANNEL_0, LEDC_FADE_WAIT_DONE));
-    vTaskDelay(1050 / portTICK_RATE_MS);
-    TEST_ASSERT_EQUAL_INT32(ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0), 4000);
+    TEST_ASSERT_EQUAL_INT32(4000, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
 
-    TEST_ESP_OK(ledc_set_fade_with_step(test_speed_mode, LEDC_CHANNEL_0, 0, 4, 2));
+    TEST_ESP_OK(ledc_set_fade_with_step(test_speed_mode, LEDC_CHANNEL_0, 0, 4, 1));
     TEST_ESP_OK(ledc_fade_start(test_speed_mode, LEDC_CHANNEL_0, LEDC_FADE_NO_WAIT));
-    vTaskDelay(1050 / portTICK_RATE_MS);
-    TEST_ASSERT_EQUAL_INT32(ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0), 0);
+    // duty should not be too far from initial value
+    TEST_ASSERT_INT32_WITHIN(20, 4000, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
+    vTaskDelay(525 / portTICK_RATE_MS);
+    TEST_ASSERT_EQUAL_INT32(0, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
 
     //scaler=0 check
     TEST_ASSERT(ledc_set_fade_with_step(test_speed_mode, LEDC_CHANNEL_0, 4000, 0, 1) == ESP_ERR_INVALID_ARG);
 
-    //deinitial fade service
+    //deinitialize fade service
     ledc_fade_func_uninstall();
 }
+
+TEST_CASE("LEDC fast switching duty with fade_wait_done", "[ledc]")
+{
+    const ledc_mode_t test_speed_mode = TEST_SPEED_MODE;
+    fade_setup();
+
+    // fade function will block until fading to the target duty
+    int64_t fade_start, fade_stop;
+    fade_start = esp_timer_get_time();
+    TEST_ESP_OK(ledc_set_fade_with_time(test_speed_mode, LEDC_CHANNEL_0, 4000, 200));
+    TEST_ESP_OK(ledc_fade_start(test_speed_mode, LEDC_CHANNEL_0, LEDC_FADE_WAIT_DONE));
+    TEST_ASSERT_EQUAL_INT32(4000, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
+    TEST_ESP_OK(ledc_set_fade_with_time(test_speed_mode, LEDC_CHANNEL_0, 1000, 150));
+    TEST_ESP_OK(ledc_fade_start(test_speed_mode, LEDC_CHANNEL_0, LEDC_FADE_WAIT_DONE));
+    TEST_ASSERT_EQUAL_INT32(1000, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
+    fade_stop = esp_timer_get_time();
+    int time_ms = (fade_stop - fade_start) / 1000;
+    TEST_ASSERT_TRUE(fabs(time_ms - 350) < 20);
+
+    // next duty update will not take place until last fade reaches its target duty
+    TEST_ESP_OK(ledc_set_fade_with_time(test_speed_mode, LEDC_CHANNEL_0, 4000, 200));
+    TEST_ESP_OK(ledc_fade_start(test_speed_mode, LEDC_CHANNEL_0, LEDC_FADE_WAIT_DONE));
+    TEST_ASSERT_EQUAL_INT32(4000, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
+    TEST_ESP_OK(ledc_set_duty(test_speed_mode, LEDC_CHANNEL_0, 500));
+    TEST_ESP_OK(ledc_update_duty(test_speed_mode, LEDC_CHANNEL_0));
+    vTaskDelay(5 / portTICK_RATE_MS);
+    TEST_ASSERT_EQUAL_INT32(500, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
+
+    //deinitialize fade service
+    ledc_fade_func_uninstall();
+}
+
+TEST_CASE("LEDC fast switching duty with fade_no_wait", "[ledc]")
+{
+    const ledc_mode_t test_speed_mode = TEST_SPEED_MODE;
+    fade_setup();
+
+    // fade function returns immediately, but next fade still needs to wait for last fade ends
+    int64_t fade_start, first_fade_complete;
+    fade_start = esp_timer_get_time();
+    TEST_ESP_OK(ledc_set_fade_with_time(test_speed_mode, LEDC_CHANNEL_0, 4000, 200));
+    TEST_ESP_OK(ledc_fade_start(test_speed_mode, LEDC_CHANNEL_0, LEDC_FADE_NO_WAIT));
+    TEST_ASSERT_LESS_THAN(4000, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
+    TEST_ESP_OK(ledc_set_fade_with_time(test_speed_mode, LEDC_CHANNEL_0, 1000, 150));
+    TEST_ESP_OK(ledc_fade_start(test_speed_mode, LEDC_CHANNEL_0, LEDC_FADE_NO_WAIT));
+    first_fade_complete = esp_timer_get_time();
+    // duty should not be too far from first fade target duty
+    TEST_ASSERT_INT32_WITHIN(20, 4000, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
+    int time_ms = (first_fade_complete - fade_start) / 1000;
+    TEST_ASSERT_TRUE(fabs(time_ms - 200) < 20);
+    vTaskDelay(158 / portTICK_RATE_MS);
+    TEST_ASSERT_EQUAL_INT32(1000, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
+
+    // next duty update will not take place until last fade reaches its target duty
+    TEST_ESP_OK(ledc_set_fade_with_time(test_speed_mode, LEDC_CHANNEL_0, 4000, 200));
+    TEST_ESP_OK(ledc_fade_start(test_speed_mode, LEDC_CHANNEL_0, LEDC_FADE_NO_WAIT));
+    TEST_ASSERT_LESS_THAN(4000, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
+    TEST_ESP_OK(ledc_set_duty(test_speed_mode, LEDC_CHANNEL_0, 500));
+    TEST_ESP_OK(ledc_update_duty(test_speed_mode, LEDC_CHANNEL_0));
+    vTaskDelay(5 / portTICK_RATE_MS);
+    TEST_ASSERT_EQUAL_INT32(500, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
+
+    //deinitialize fade service
+    ledc_fade_func_uninstall();
+}
+
+#if SOC_LEDC_SUPPORT_FADE_STOP
+TEST_CASE("LEDC fade stop test", "[ledc]")
+{
+    const ledc_mode_t test_speed_mode = TEST_SPEED_MODE;
+    fade_setup();
+
+    // Overwrite the last fade with new fade
+    int64_t fade_start, fade_stop;
+    int time_ms = 0;
+    fade_start = esp_timer_get_time();
+    TEST_ESP_OK(ledc_set_fade_with_time(test_speed_mode, LEDC_CHANNEL_0, 4000, 500));
+    TEST_ESP_OK(ledc_fade_start(test_speed_mode, LEDC_CHANNEL_0, LEDC_FADE_NO_WAIT));
+    // Add some delay before stopping the fade
+    vTaskDelay(127 / portTICK_RATE_MS);
+    uint32_t duty_at_stop = ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0);
+    TEST_ESP_OK(ledc_fade_stop(test_speed_mode, LEDC_CHANNEL_0));
+    fade_stop = esp_timer_get_time();
+    time_ms = (fade_stop - fade_start) / 1000;
+    TEST_ASSERT_TRUE(fabs(time_ms - 127) < 20);
+    vTaskDelay(300 / portTICK_RATE_MS);
+    TEST_ASSERT_EQUAL_INT32(duty_at_stop, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
+    TEST_ASSERT_NOT_EQUAL(4000, duty_at_stop);
+
+    //deinitialize fade service
+    ledc_fade_func_uninstall();
+}
+#endif // SOC_LEDC_SUPPORT_FADE_STOP
 
 #if SOC_PCNT_SUPPORTED
 
@@ -424,7 +518,7 @@ TEST_CASE("LEDC timer set", "[ledc][test_env=UT_T1_LEDC]")
     count = wave_count(1000);
     TEST_ASSERT_UINT32_WITHIN(10, count, freq_get);
 
-    //set timer 3 as 500Hz, use APB_CLK
+    //set timer 0 as 500Hz, use APB_CLK
     TEST_ESP_OK(ledc_timer_set(test_speed_mode, LEDC_TIMER_0, 5000, 13, LEDC_APB_CLK));
     TEST_ESP_OK(ledc_timer_rst(test_speed_mode, LEDC_TIMER_0));
     TEST_ASSERT_EQUAL_INT32(ledc_get_freq(test_speed_mode, LEDC_TIMER_0), 500);
