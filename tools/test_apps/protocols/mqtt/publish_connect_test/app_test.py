@@ -9,7 +9,8 @@ import ssl
 import string
 import subprocess
 import sys
-from threading import Event, Thread
+import time
+from threading import Event, Lock, Thread
 
 import paho.mqtt.client as mqtt
 import ttfw_idf
@@ -59,6 +60,7 @@ class MqttPublisher:
         self.publish_cfg['qos'] = qos
         self.publish_cfg['queue'] = queue
         self.publish_cfg['transport'] = transport
+        self.lock = Lock()
         # static variables used to pass options to and from static callbacks of paho-mqtt client
         MqttPublisher.event_client_connected = Event()
         MqttPublisher.event_client_got_all = Event()
@@ -71,9 +73,11 @@ class MqttPublisher:
         if self.log_details:
             print(text)
 
-    def mqtt_client_task(self, client):
+    def mqtt_client_task(self, client, lock):
         while not self.event_stop_client.is_set():
-            client.loop()
+            with lock:
+                client.loop()
+            time.sleep(0.001)   # yield to other threads
 
     # The callback for when the client receives a CONNACK response from the server (needs to be static)
     @staticmethod
@@ -120,18 +124,20 @@ class MqttPublisher:
             self.print_details('ENV_TEST_FAILURE: Unexpected error while connecting to broker {}'.format(broker_host))
             raise
         # Starting a py-client in a separate thread
-        thread1 = Thread(target=self.mqtt_client_task, args=(self.client,))
+        thread1 = Thread(target=self.mqtt_client_task, args=(self.client, self.lock))
         thread1.start()
         self.print_details('Connecting py-client to broker {}:{}...'.format(broker_host, broker_port))
         if not MqttPublisher.event_client_connected.wait(timeout=30):
             raise ValueError('ENV_TEST_FAILURE: Test script cannot connect to broker: {}'.format(broker_host))
-        self.client.subscribe(self.publish_cfg['subscribe_topic'], qos)
+        with self.lock:
+            self.client.subscribe(self.publish_cfg['subscribe_topic'], qos)
         self.dut.write(' '.join(str(x) for x in (transport, self.sample_string, self.repeat, MqttPublisher.published, qos, queue)), eol='\n')
         try:
             # waiting till subscribed to defined topic
             self.dut.expect(re.compile(r'MQTT_EVENT_SUBSCRIBED'), timeout=30)
             for _ in range(MqttPublisher.published):
-                self.client.publish(self.publish_cfg['publish_topic'], self.sample_string * self.repeat, qos)
+                with self.lock:
+                    self.client.publish(self.publish_cfg['publish_topic'], self.sample_string * self.repeat, qos)
                 self.print_details('Publishing...')
             self.print_details('Checking esp-client received msg published from py-client...')
             self.dut.expect(re.compile(r'Correct pattern received exactly x times'), timeout=60)

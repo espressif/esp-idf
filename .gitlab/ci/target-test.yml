@@ -223,7 +223,7 @@ test_weekend_mqtt:
     - .rules:labels:weekend_test
   tags:
     - ESP32
-    - Example_WIFI
+    - Example_EthKitV1
   script:
     - export MQTT_PUBLISH_TEST=1
     - export TEST_PATH=$CI_PROJECT_DIR/tools/test_apps/protocols/mqtt/publish_connect_test
