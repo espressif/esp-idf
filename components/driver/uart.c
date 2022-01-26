@@ -600,29 +600,6 @@ esp_err_t uart_enable_tx_intr(uart_port_t uart_num, int enable, int thresh)
     return ESP_OK;
 }
 
-esp_err_t uart_isr_register(uart_port_t uart_num, void (*fn)(void *), void *arg, int intr_alloc_flags,  uart_isr_handle_t *handle)
-{
-    int ret;
-    ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
-    UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
-    ret = esp_intr_alloc(uart_periph_signal[uart_num].irq, intr_alloc_flags, fn, arg, handle);
-    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
-    return ret;
-}
-
-esp_err_t uart_isr_free(uart_port_t uart_num)
-{
-    esp_err_t ret;
-    ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
-    ESP_RETURN_ON_FALSE((p_uart_obj[uart_num]), ESP_FAIL, UART_TAG, "uart driver error");
-    ESP_RETURN_ON_FALSE((p_uart_obj[uart_num]->intr_handle != NULL), ESP_ERR_INVALID_ARG, UART_TAG, "uart driver error");
-    UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
-    ret = esp_intr_free(p_uart_obj[uart_num]->intr_handle);
-    p_uart_obj[uart_num]->intr_handle = NULL;
-    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
-    return ret;
-}
-
 static bool uart_try_set_iomux_pin(uart_port_t uart_num, int io_num, uint32_t idx)
 {
     /* Store a pointer to the default pin, to optimize access to its fields. */
@@ -1528,7 +1505,7 @@ err:
 
 esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_buffer_size, int event_queue_size, QueueHandle_t *uart_queue, int intr_alloc_flags)
 {
-    esp_err_t r;
+    esp_err_t ret;
 #ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
     ESP_RETURN_ON_FALSE((uart_num != CONFIG_ESP_CONSOLE_UART_NUM), ESP_FAIL, UART_TAG, "UART used by GDB-stubs! Please disable GDB in menuconfig.");
 #endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
@@ -1593,19 +1570,20 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
     uart_module_enable(uart_num);
     uart_hal_disable_intr_mask(&(uart_context[uart_num].hal), UART_LL_INTR_MASK);
     uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_LL_INTR_MASK);
-    r = uart_isr_register(uart_num, uart_rx_intr_handler_default, p_uart_obj[uart_num], intr_alloc_flags, &p_uart_obj[uart_num]->intr_handle);
-    if (r != ESP_OK) {
-        goto err;
-    }
-    r = uart_intr_config(uart_num, &uart_intr);
-    if (r != ESP_OK) {
-        goto err;
-    }
-    return r;
+
+    ret = esp_intr_alloc(uart_periph_signal[uart_num].irq, intr_alloc_flags,
+                       uart_rx_intr_handler_default, p_uart_obj[uart_num],
+                       &p_uart_obj[uart_num]->intr_handle);
+    ESP_GOTO_ON_ERROR(ret, err, UART_TAG, "Could not allocate an interrupt for UART");
+
+    ret = uart_intr_config(uart_num, &uart_intr);
+    ESP_GOTO_ON_ERROR(ret, err, UART_TAG, "Could not configure the interrupt for UART");
+
+    return ret;
 
 err:
     uart_driver_delete(uart_num);
-    return r;
+    return ret;
 }
 
 //Make sure no other tasks are still using UART before you call this function
