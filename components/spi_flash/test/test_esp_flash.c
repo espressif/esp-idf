@@ -158,9 +158,6 @@ typedef void (*flash_test_func_t)(const esp_partition_t *part);
 #endif // !CONFIG_IDF_TARGET_ESP32C3
 #endif //CONFIG_SPIRAM
 
-#define TEST_FLASH_PERFORMANCE_CCOMP_GREATER_THAN(name, value, chip) \
-    printf("[Performance][" PERFORMANCE_STR(name) "]: %d, flash_chip: %s\n", value, chip);\
-    _TEST_PERFORMANCE_ASSERT(value > PERFORMANCE_CON(IDF_PERFORMANCE_MIN_, name));
 
 //currently all the configs are the same with esp_flash_spi_device_config_t, no more information required
 typedef esp_flash_spi_device_config_t flashtest_config_t;
@@ -1120,22 +1117,17 @@ static void test_flash_read_write_performance(const esp_partition_t *part)
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(data_to_write, data_read, total_len);
 
-#if !CONFIG_SPIRAM && !CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
-#  define CHECK_DATA(bus, suffix, chip) TEST_FLASH_PERFORMANCE_CCOMP_GREATER_THAN(FLASH_SPEED_BYTE_PER_SEC_##bus##suffix, speed_##suffix, chip)
-#  define CHECK_ERASE(bus, var, chip) TEST_FLASH_PERFORMANCE_CCOMP_GREATER_THAN(FLASH_SPEED_BYTE_PER_SEC_##bus##ERASE, var, chip)
-#else
-#  define CHECK_DATA(bus, suffix, chip) ((void)speed_##suffix);((void)chip)
-#  define CHECK_ERASE(bus, var, chip)   ((void)var);((void)chip)
-#endif
+#define LOG_DATA(bus, suffix, chip) IDF_LOG_PERFORMANCE("FLASH_SPEED_BYTE_PER_SEC_"#bus#suffix, "%d, flash_chip: %s", speed_##suffix, chip)
+#define LOG_ERASE(bus, var, chip) IDF_LOG_PERFORMANCE("FLASH_SPEED_BYTE_PER_SEC_"#bus"ERASE", "%d, flash_chip: %s", var, chip)
 
 // Erase time may vary a lot, can increase threshold if this fails with a reasonable speed
-#define CHECK_PERFORMANCE(bus, chip) do {\
-            CHECK_DATA(bus, WR_4B, chip); \
-            CHECK_DATA(bus, RD_4B, chip); \
-            CHECK_DATA(bus, WR_2KB, chip); \
-            CHECK_DATA(bus, RD_2KB, chip); \
-            CHECK_ERASE(bus, erase_1, chip); \
-            CHECK_ERASE(bus, erase_2, chip); \
+#define LOG_PERFORMANCE(bus, chip) do {\
+            LOG_DATA(bus, WR_4B, chip); \
+            LOG_DATA(bus, RD_4B, chip); \
+            LOG_DATA(bus, WR_2KB, chip); \
+            LOG_DATA(bus, RD_2KB, chip); \
+            LOG_ERASE(bus, erase_1, chip); \
+            LOG_ERASE(bus, erase_2, chip); \
         } while (0)
 
     spi_host_device_t host_id;
@@ -1147,13 +1139,13 @@ static void test_flash_read_write_performance(const esp_partition_t *part)
     get_chip_host(chip, &host_id, &cs_id);
     if (host_id != SPI1_HOST) {
         // Chips on other SPI buses
-        CHECK_PERFORMANCE(EXT_, chip_name);
+        LOG_PERFORMANCE(EXT_, chip_name);
     } else if (cs_id == 0) {
         // Main flash
-        CHECK_PERFORMANCE(,chip_name);
+        LOG_PERFORMANCE(,chip_name);
     } else {
         // Other cs pins on SPI1
-        CHECK_PERFORMANCE(SPI1_, chip_name);
+        LOG_PERFORMANCE(SPI1_, chip_name);
     }
     free(data_to_write);
     free(data_read);
