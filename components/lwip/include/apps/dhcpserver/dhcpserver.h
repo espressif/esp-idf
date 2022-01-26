@@ -95,16 +95,85 @@ static inline bool dhcps_dns_enabled (dhcps_offer_t offer)
 
 typedef struct dhcps_t dhcps_t;
 
+/**
+ * @brief Creates new DHCP server object
+ *
+ * @return Pointer to the DHCP server handle on success, NULL on error
+ */
 dhcps_t *dhcps_new(void);
+
+/**
+ * @brief Deletes supplied DHPC server object
+ *
+ * @warning This may not delete the handle immediately if the server wasn't
+ * stopped properly, but mark for deleting once the timer callback occurs
+ *
+ * @param dhcps Pointer to the DHCP handle
+ */
 void dhcps_delete(dhcps_t *dhcps);
 
+/**
+ * @brief Starts the DHCP server on the specified network interface
+ *
+ * @param dhcps Pointer to the DHCP handle
+ * @param netif Pointer to the lwIP's network interface struct
+ * @param ip DHCP server's address
+ */
 void dhcps_start(dhcps_t *dhcps, struct netif *netif, ip4_addr_t ip);
+
+/**
+ * @brief Stops the DHCP server on the specified netif
+ * @param dhcps Pointer to the DHCP handle
+ * @param netif Pointer to the lwIP's network interface struct
+ */
 void dhcps_stop(dhcps_t *dhcps, struct netif *netif);
+
+/**
+ * @brief Gets the DHCP server option info
+ * @param dhcps Pointer to the DHCP handle
+ * @param op_id DHCP message option id
+ * @param opt_len DHCP message option length
+ * @return DHCP message option addr
+ */
 void *dhcps_option_info(dhcps_t *dhcps, u8_t op_id, u32_t opt_len);
+
+/**
+ * @brief Sets the DHCP server option info
+ * @param dhcps Pointer to the DHCP handle
+ * @param op_id DHCP message option id
+ * @param opt_info DHCP message option info
+ * @param opt_len DHCP message option length
+ */
 void dhcps_set_option_info(dhcps_t *dhcps, u8_t op_id, void *opt_info, u32_t opt_len);
+
+/**
+ * @brief Tries to find IP address corresponding to the supplied MAC
+ * @param dhcps Pointer to the DHCP handle
+ * @param mac Supplied MAC address
+ * @param ip Pointer to the resultant IP address
+ * @return True if the IP address has been found
+ */
 bool dhcp_search_ip_on_mac(dhcps_t *dhcps, u8_t *mac, ip4_addr_t *ip);
+
+/**
+ * @brief Sets DNS server address for the DHCP server
+ * @param dhcps Pointer to the DHCP handle
+ * @param dnsserver Address of the DNS server
+ */
 void dhcps_dns_setserver(dhcps_t *dhcps, const ip_addr_t *dnsserver);
+
+/**
+ * @brief Returns DNS server associated with this DHCP server
+ * @param dhcps Pointer to the DHCP handle
+ * @return Address of the DNS server
+ */
 ip4_addr_t dhcps_dns_getserver(dhcps_t *dhcps);
+
+/**
+ * @brief Sets callback on assigning an IP to the connected client
+ * @param dhcps Pointer to the DHCP handle
+ * @param cb Callback for dhcp server
+ */
 void dhcps_set_new_lease_cb(dhcps_t *dhcps, dhcps_cb_t cb);
 
 #ifdef __cplusplus
