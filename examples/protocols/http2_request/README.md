@@ -1,8 +1,7 @@
 # HTTP/2 Request Example
 
-Established HTTP/2 connection with https://http2.golang.org
-- Performs a GET on /clockstream
-- Performs a PUT on /ECHO
+Establish an HTTP/2 connection with https://http2.github.io
+- Performs a GET on /index.html
 
 ## How to use example
 Before project configuration and build, be sure to set the correct chip target using `idf.py set-target <chip_name>`.
@@ -36,37 +35,21 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 ## Example Output
 
 ```
-I (9637) example_connect: - IPv4 address: 192.168.194.219
-I (9637) example_connect: - IPv6 address: fe80:0000:0000:0000:266f:28ff:fe80:2c74, type: ESP_IP6_ADDR_IS_LINK_LOCAL
+I (5609) example_connect: - IPv4 address: 192.168.0.103
+I (5609) example_connect: - IPv6 address: fe80:0000:0000:0000:ae67:b2ff:fe45:0194, type: ESP_IP6_ADDR_IS_LINK_LOCAL
 Connecting to server
 Connection done
-[data-prvd] Sending 11 bytes
-[echo-response] HELLO WORLD
-[echo-response] Frame fully received
-[echo-response] Frame fully received
-[echo-response] Stream Closed
-[get-response] # ~1KB of junk to force browsers to start rendering immediately:
-# xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-# xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-# xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-# xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-# xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-# xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-# xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-# xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-# xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-# xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-# xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-# xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-# xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-2021-09-07 08:22:10.73175944 +0000 UTC m=+530259.401042400
-
+[get-response] <!DOCTYPE HTML>
+<html lang="en">
+.
+.
+.
+Body of index.html
+.
+.
+.
+.
+</html>
 [get-response] Frame fully received
-[get-response] 2021-09-07 08:22:11.73205314 +0000 UTC m=+530260.401336111
-
-[get-response] Frame fully received
-[get-response] 2021-09-07 08:22:12.7320106 +0000 UTC m=+530261.401293569
-
-[get-response] Frame fully received
-[get-response] 2021-09-07 08:22:13.732013218 +0000 UTC m=+530262.401296183
+[get-response] Stream Closed
 ```
