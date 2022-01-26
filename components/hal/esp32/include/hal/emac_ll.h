@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -340,6 +340,11 @@ static inline void emac_ll_clear(emac_mac_dev_t *mac_regs)
 static inline uint32_t emac_ll_transmit_frame_ctrl_status(emac_mac_dev_t *mac_regs)
 {
     return mac_regs->emacdebug.mactfcs;
+}
+
+static inline uint32_t emac_ll_receive_read_ctrl_state(emac_mac_dev_t *mac_regs)
+{
+    return mac_regs->emacdebug.mtlrfrcs;
 }
 
 /* emacmiidata */
