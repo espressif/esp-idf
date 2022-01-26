@@ -201,6 +201,17 @@ _interrupt_handler:
     save_general_regs
     save_mepc
 
+    /* Though it is not necessary we save GP and SP here.
+     * SP is necessary to help GDB to properly unwind
+     * the backtrace of threads preempted by interrupts (OS tick etc.).
+     * GP is saved just to have its proper value in GDB. */
+    /* As gp register is not saved by the macro, save it here */
+    sw    gp, RV_STK_GP(sp)
+    /* Same goes for the SP value before trapping */
+    addi  t0, sp, CONTEXT_SIZE /* restore sp with the value when interrupt happened */
+    /* Save SP */
+    sw    t0, RV_STK_SP(sp)
+
     /* Before doing anythig preserve the stack pointer */
     /* It will be saved in current TCB, if needed */
     mv      a0, sp
