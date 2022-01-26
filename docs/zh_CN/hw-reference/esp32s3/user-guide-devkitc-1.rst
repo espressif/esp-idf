@@ -232,7 +232,7 @@ J3
 ^^^^^^^^^^^
 
 
-.. figure:: ../../../_static/ESP32-S3-DevKitC-1-pin-layout.png
+.. figure:: ../../../_static/ESP32-S3_DevKitC-1_pinlayout.jpg
     :align: center
     :scale: 50%
     :alt: ESP32-S3-DevKitC-1（点击放大）
