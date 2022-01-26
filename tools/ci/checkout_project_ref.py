@@ -86,10 +86,17 @@ if __name__ == '__main__':
     for candidate in candidate_branches:
         # check if the branch, tag or commit exists
         try:
-            subprocess.check_call(['git', 'cat-file', '-t', candidate], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            subprocess.check_call(['git', 'cat-file', '-t', 'origin/{}'.format(candidate)], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             ref_to_use = candidate
             break
         except subprocess.CalledProcessError:
+            try:
+                # For customized commits
+                subprocess.check_call(['git', 'cat-file', '-t', candidate], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                ref_to_use = candidate
+                break
+            except subprocess.CalledProcessError:
+                pass
             continue
 
     if ref_to_use:
