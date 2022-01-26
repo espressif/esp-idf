@@ -232,7 +232,7 @@ J3
 ^^^^^^^^^^^
 
 
-.. figure:: ../../../_static/ESP32-S3-DevKitM-1-pinout.png
+.. figure:: ../../../_static/ESP32-S3_DevKitM-1_pinlayout.jpg
     :align: center
     :scale: 50%
     :alt: ESP32-S3-DevKitM-1（点击放大）
