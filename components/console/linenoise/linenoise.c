@@ -865,7 +865,7 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
         nread = read(in_fd, &c, 1);
         if (nread <= 0) return l.len;
 
-        if ( (getMillis() - t1) < LINENOISE_PASTE_KEY_DELAY ) {
+        if ( (getMillis() - t1) < LINENOISE_PASTE_KEY_DELAY && c != ENTER) {
             /* Pasting data, insert characters without formatting.
              * This can only be performed when the cursor is at the end of the
              * line. */
