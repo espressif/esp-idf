@@ -47,30 +47,6 @@ config SOC_GPIO_SUPPORT_SLP_SWITCH
     bool
     default y
 
-config SOC_I2C_NUM
-    int
-    default 2
-
-config SOC_I2C_FIFO_LEN
-    int
-    default 32
-
-config SOC_I2C_SUPPORT_HW_FSM_RST
-    bool
-    default y
-
-config SOC_I2C_SUPPORT_HW_CLR_BUS
-    bool
-    default y
-
-config SOC_I2C_SUPPORT_XTAL
-    bool
-    default y
-
-config SOC_I2C_SUPPORT_RTC
-    bool
-    default y
-
 config SOC_LEDC_SUPPORT_XTAL_CLOCK
     bool
     default y
@@ -360,6 +336,30 @@ config SOC_DEDIC_GPIO_IN_CHANNELS_NUM
     default 8
 
 config SOC_DEDIC_GPIO_OUT_AUTO_ENABLE
+    bool
+    default y
+
+config SOC_I2C_NUM
+    int
+    default 2
+
+config SOC_I2C_FIFO_LEN
+    int
+    default 32
+
+config SOC_I2C_SUPPORT_HW_FSM_RST
+    bool
+    default y
+
+config SOC_I2C_SUPPORT_HW_CLR_BUS
+    bool
+    default y
+
+config SOC_I2C_SUPPORT_XTAL
+    bool
+    default y
+
+config SOC_I2C_SUPPORT_RTC
     bool
     default y
 

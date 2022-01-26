@@ -140,7 +140,7 @@
 #define SOC_DEDIC_GPIO_OUT_AUTO_ENABLE  (1) /*!< Dedicated GPIO output attribution is enabled automatically */
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
-// ESP32-S2 have 2 I2C.
+// ESP32-S2 has 2 I2C
 #define SOC_I2C_NUM            (2)
 
 #define SOC_I2C_FIFO_LEN       (32) /*!< I2C hardware FIFO depth */
@@ -162,7 +162,7 @@
 #define SOC_APLL_MAX_HZ    (125000000) // 125MHz, refer to 'periph_rtc_apll_freq_set' for the calculation
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
-// ESP32-S2 have 1 I2S
+// ESP32-S2 has 1 I2S
 #define SOC_I2S_NUM                (1U)
 #define SOC_I2S_SUPPORTS_APLL      (1) // ESP32-S2 support APLL
 #define SOC_I2S_SUPPORTS_DMA_EQUAL (1)
