@@ -2054,7 +2054,6 @@ examples/cxx/experimental/esp_event_cxx/main/esp_event_cxx_example.cpp
 examples/cxx/experimental/esp_modem_cxx/main/simple_client.cpp
 examples/cxx/experimental/esp_modem_cxx/main/simple_mqtt_client.cpp
 examples/cxx/experimental/esp_modem_cxx/main/simple_mqtt_client.hpp
-examples/cxx/experimental/esp_mqtt_cxx/components/esp_mqtt_cxx/esp_mqtt_cxx.cpp
 examples/cxx/experimental/esp_mqtt_cxx/components/esp_mqtt_cxx/include/esp_mqtt.hpp
 examples/cxx/experimental/esp_mqtt_cxx/components/esp_mqtt_cxx/include/esp_mqtt_client_config.hpp
 examples/cxx/experimental/esp_mqtt_cxx/ssl/main/mqtt_ssl_example.cpp
