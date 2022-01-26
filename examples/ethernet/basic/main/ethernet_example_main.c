@@ -95,6 +95,9 @@ void app_main(void)
     esp_netif_config_t cfg = ESP_NETIF_DEFAULT_ETH();
     esp_netif_t *eth_netif = esp_netif_new(&cfg);
 
+    // Set default handlers to process TCP/IP stuff
+    ESP_ERROR_CHECK(esp_eth_set_default_handlers(eth_netif));
+    
     // Init MAC and PHY configs to default
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
@@ -141,6 +144,9 @@ void app_main(void)
         esp_netif_config.if_desc = if_desc_str;
         esp_netif_config.route_prio = 30 - i;
         eth_netif_spi[i] = esp_netif_new(&cfg_spi);
+
+        // Set default handlers to process TCP/IP stuff
+        ESP_ERROR_CHECK(esp_eth_set_default_handlers(eth_netif_spi[i]));
     }
 
     // Init MAC and PHY configs to default
