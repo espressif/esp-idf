@@ -5,7 +5,6 @@ Documenting Code
 
 The purpose of this description is to provide quick summary on documentation style used in `espressif/esp-idf`_ repository and how to add new documentation.
 
-
 Introduction
 ------------
 
@@ -245,6 +244,7 @@ Before pushing your changes to origin, please set the value of ``todo_include_to
 
 For more details about the extension, see `sphinx.ext.todo <https://www.sphinx-doc.org/en/master/usage/extensions/todo.html#directive-todolist>`_ documentation.
 
+
 Writing generic documentation for multiple chips
 ------------------------------------------------
 
@@ -252,6 +252,7 @@ The documentation for all of Espressif's chips is built from the same files. To 
 
 Exclusion of content based on chip-target
 """""""""""""""""""""""""""""""""""""""""
+
 Occasionally there will be content that is only relevant for one of targets. When this is the case, you can exclude that content by using the ''.. only:: TAG'' directive, where you replace 'TAG' with one of the following names:
 
 Chip name:
@@ -342,6 +343,7 @@ If you need to exclude content inside a list or bullet points, then this should 
 
 Substitution macros
 """""""""""""""""""
+
 When you need to refer to the chip's name, toolchain name, path or other common names that depend on the target type you can consider using the substitution macros supplied by :idf_file:`docs/idf_extensions/format_idf_target.py`.
 
 For example, the following reStructuredText content:
@@ -406,7 +408,6 @@ You can setup environment to build documentation locally on your PC by installin
 5. Custom 404 page "sphinx-notfound-page" - https://github.com/readthedocs/sphinx-notfound-page
 6. Blockdiag - http://blockdiag.com/en/index.html
 7. Recommonmark - https://github.com/rtfd/recommonmark
-
 
 The package "sphinx_idf_theme" is added to have the same "look and feel" of `ESP-IDF Programming Guide <https://docs.espressif.com/projects/esp-idf/en/latest/index.html>`_.
 
@@ -498,6 +499,7 @@ Build documentation will be placed in ``_build/<language>/<target>/html`` folder
 
 Building a subset of the documentation
 """"""""""""""""""""""""""""""""""""""
+
 Since building the full documentation can be quite slow, it might be useful to just build just the subset of the documentation you are interested in.
 
 This can be achieved by listing the document you want to build::

@@ -8,7 +8,7 @@
 概述
 ----
 
-在项目库内编写代码文档时，请遵循 `Doxygen 代码注释风格 <http://doxygen.nl/manual/docblocks.html#specialblock>`_。要采用这一风格，您可以将 ``@param`` 等特殊命令插入到标准注释块中，比如： ::
+在项目库内编写代码文档时，请遵循 `Doxygen 代码注释风格 <http://doxygen.nl/manual/docblocks.html#specialblock>`_。要采用这一风格，您可以将 ``@param`` 等特殊命令插入到标准注释块中，比如::
 
     /**
      * @param ratio this is oxygen to air ratio
@@ -42,7 +42,7 @@ Doxygen 支持多种排版风格，对于文档中可以包含的细节非常灵
 
 在本项目库编写代码文档时，请遵守下列准则。
 
-1. 写明代码的基本内容：函数、结构、类型定义、枚举、宏等。请详细说明代码的用途、功能和限制，因为在阅读他人的文档时你也想看到这些信息。
+1. 写明代码的基本内容：函数、结构体、类型定义、枚举、宏等。请详细说明代码的用途、功能和限制，因为在阅读他人的文档时你也想看到这些信息。
 
 2. 函数文档需简述该函数的功能，并解释输入参数和返回值的含义。
 
@@ -213,7 +213,7 @@ CI build 脚本中添加了检查功能，查找 RST 文件中的硬编码链接
 
 .. note::
 
-     `interactive shell`_ 使用的字体和 esp-idf 文档使用的字体略有不同。
+    `interactive shell`_ 使用的字体和 esp-idf 文档使用的字体渲染后显示的效果略有不同。
 
 
 添加注释
@@ -221,7 +221,7 @@ CI build 脚本中添加了检查功能，查找 RST 文件中的硬编码链接
 
 写文档时，您可能需要：
 
-- 留下建议，说明之后需添加会修改哪些内容。
+- 留下建议，说明之后哪些内容需要添加或修改。
 - 提醒自己或其他人跟进。
 
 这时，您可以使用 ``.. todo::`` 命令在 reST 文件中添加待做事项。如：
@@ -250,7 +250,6 @@ CI build 脚本中添加了检查功能，查找 RST 文件中的硬编码链接
 
 乐鑫各芯片的文档是基于现有文档完成的。为提高文档写作效率，使所写文档可重复用于其它芯片（以下称“目标”）文档中，我们为您提供以下功能：
 
-
 依据目标类型排除内容
 """""""""""""""""""""
 
@@ -260,6 +259,7 @@ CI build 脚本中添加了检查功能，查找 RST 文件中的硬编码链接
 
 * esp32
 * esp32s2
+* esp32c3
 
 从 'sdkconfig.h' 中定义标识符，标识符由目标的默认 menuconfig 设置生成，例如：
 
@@ -278,9 +278,7 @@ CI build 脚本中添加了检查功能，查找 RST 文件中的硬编码链接
 
         ESP32 specific content.
 
-该指令也支持布尔逻辑操作符 'and'、'or' 和 'not'。
-
-示例：
+该指令也支持布尔逻辑操作符 'and'、'or' 和 'not'。示例：
 
 .. code-block:: none
 
@@ -305,9 +303,9 @@ CI build 脚本中添加了检查功能，查找 RST 文件中的硬编码链接
 
         .. _section_2_label:
 
-    .. only:: esp32s2
+    .. only:: not esp32
 
-        _section_2_label:
+        .. _section_2_label:
 
     Section 2
     ^^^^^^^^^
@@ -330,7 +328,6 @@ CI build 脚本中添加了检查功能，查找 RST 文件中的硬编码链接
     如希望根据目标的标签从 toctree 中排除一整个文档，则需同时更新 :idf_file:`docs/conf_common.py` 中的 ``exclude_patterns`` 列表，为其它目标排除该文档。否则，Sphinx 将发出一条错误警报：WARNING: document isn't included in any toctree。
 
     对此推荐的解决方案是：将这个文档添加到 :idf_file:`docs/conf_common.py` ``conditional_include_dict`` 中的一个列表里，例如，一个仅供支持蓝牙的目标可见的文档应被添加至 ``BT_DOCS``。此后，如果该文档未设置对应的标签，则 :idf_file:`docs/idf_extensions/exclude_docs.py` 会将其添加至 ``exclude_patterns``。
-
 
 如果你需要从一个列表或项目符号条目中排除某一内容，应通过在 ''.. list:: '' 指令中使用 '':TAG:'' 角色来完成。
 
@@ -357,13 +354,13 @@ CI build 脚本中添加了检查功能，查找 RST 文件中的硬编码链接
 
     This is a {IDF_TARGET_NAME}, with /{IDF_TARGET_PATH_NAME}/soc.c, compiled with `{IDF_TARGET_TOOLCHAIN_PREFIX}-gcc` with `CONFIG_{IDF_TARGET_CFG_PREFIX}_MULTI_DOC`.
 
-这一扩展也支持定义本地（在单个源文件中）替代名称的标记。请在 RST 文件的一行中插入下示定义语言：
+这一扩展也支持定义本地（在单个源文件中）替代名称的标记。请在 RST 文件的一行中插入以下定义语言：
 
-    {\IDF_TARGET_SUFFIX:default="DEFAULT_VALUE", esp32="ESP32_VALUE", esp32s2="ESP32S2_VALUE"}
+    {\IDF_TARGET_SUFFIX:default="DEFAULT_VALUE", esp32="ESP32_VALUE", esp32s2="ESP32S2_VALUE", esp32c3="ESP32C3_VALUE"}
 
 这样将在当前的 RST 文件中根据目标类型为 {\IDF_TARGET_SUFFIX} 标签定义一个替代名称。例如：
 
-    {\IDF_TARGET_TX_PIN:default="IO3", esp32="IO4", esp32s2="IO5"}
+    {\IDF_TARGET_TX_PIN:default="IO3", esp32="IO4", esp32s2="IO5", esp32c3="IO6"}
 
 上例将为 {\IDF_TARGET_TX_PIN} 标签定义一个替代名称，当使用 esp32s2 标签调用 sphinx 时，{\IDF_TARGET_TX_PIN} 将被替代为 "IO5"。
 
@@ -407,8 +404,8 @@ Sphinx 新手怎么办
 1. Doxygen - http://doxygen.nl/
 2. Sphinx - https://github.com/sphinx-doc/sphinx/#readme-for-sphinx
 3. Breathe - https://github.com/michaeljones/breathe#breathe
-4. Document theme "sphinx_idf_theme" - https://github.com/rtfd/sphinx_idf_theme
-5. Custom 404 page "sphinx-notfound-page" - https://github.com/rtfd/sphinx-notfound-page
+4. "sphinx_idf_theme" 文档主题 - https://github.com/espressif/sphinx_idf_theme
+5. "sphinx-notfound-page" 自定义 404 页面 - https://github.com/readthedocs/sphinx-notfound-page
 6. Blockdiag - http://blockdiag.com/en/index.html
 7. Recommonmark - https://github.com/rtfd/recommonmark
 
@@ -500,7 +497,6 @@ Doxygen 的安装取决于操作系统：
 
 生成后的文档将位于 ``_build/<language>/<target>/html`` 文件夹中。如需查阅，请在网页浏览器中打开该目录里的 ``index.html``。
 
-
 生成文档子集
 """"""""""""""
 
@@ -519,7 +515,6 @@ Doxygen 的安装取决于操作系统：
     ./build_docs.py -l en -t esp32 -i api-reference/peripherals/* build
 
 请注意，这一功能仅用于文档写作过程中的检查和测试。其生成的 HTML 页面并非渲染完成后的格式，比如，运行这一指令并不会生成一个列有所有文档的索引，而且如果其中涉及到任何还未生成的文档参考都将导致错误警报出现。
-
 
 生成 PDF
 """"""""""""
