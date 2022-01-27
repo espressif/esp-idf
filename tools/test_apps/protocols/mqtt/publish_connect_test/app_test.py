@@ -10,6 +10,7 @@ import string
 import subprocess
 import sys
 import time
+from itertools import count
 from threading import Event, Lock, Thread
 
 import paho.mqtt.client as mqtt
@@ -383,16 +384,31 @@ def test_app_protocol_mqtt_publish_connect(env, extra_data):
         with MqttPublisher(dut1, transport, qos, repeat, published, queue, publish_cfg):
             pass
 
+    # Initialize message sizes and repeat counts (if defined in the environment)
+    messages = []
+    for i in count(0):
+        # Check env variable: MQTT_PUBLISH_MSG_{len|repeat}_{x}
+        env_dict = {var:'MQTT_PUBLISH_MSG_' + var + '_' + str(i) for var in ['len', 'repeat']}
+        if os.getenv(env_dict['len']) and os.getenv(env_dict['repeat']):
+            messages.append({var: int(os.getenv(env_dict[var])) for var in ['len', 'repeat']})
+            continue
+        break
+    if not messages:    # No message sizes present in the env - set defaults
+        messages = [{'len':0,   'repeat':5},    # zero-sized messages
+                    {'len':2,   'repeat':10},   # short messages
+                    {'len':200, 'repeat':3},    # long messages
+                    {'len':20,  'repeat':50}    # many medium sized
+                    ]
+
+    # Iterate over all publish message properties
     for qos in [0, 1, 2]:
         for transport in ['tcp', 'ssl', 'ws', 'wss']:
             for q in [0, 1]:
                 if publish_cfg['broker_host_' + transport] is None:
                     print('Skipping transport: {}...'.format(transport))
                     continue
-                start_publish_case(transport, qos, 0, 5, q)
-                start_publish_case(transport, qos, 2, 5, q)
-                start_publish_case(transport, qos, 50, 1, q)
-                start_publish_case(transport, qos, 10, 20, q)
+                for msg in messages:
+                    start_publish_case(transport, qos, msg['len'], msg['repeat'], q)
 
 
 if __name__ == '__main__':
