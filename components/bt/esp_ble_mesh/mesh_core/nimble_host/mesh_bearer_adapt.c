@@ -539,7 +539,8 @@ static int disc_cb(struct ble_gap_event *event, void *arg)
                 }
             }
         } else if (bt_mesh_gattc_info[i].service_uuid == BLE_MESH_UUID_MESH_PROXY_VAL) {
-            if (bt_mesh_gattc_conn_cb != NULL && bt_mesh_gattc_conn_cb->proxy_notify != NULL) {
+            if (bt_mesh_gattc_conn_cb != NULL && bt_mesh_gattc_conn_cb->proxy_notify != NULL &&
+                bt_mesh_gattc_info[i].wr_desc_done) {
                 len = bt_mesh_gattc_conn_cb->proxy_notify(&bt_mesh_gattc_info[i].conn,
                         notif_data, notif_len);
                 if (len < 0) {
