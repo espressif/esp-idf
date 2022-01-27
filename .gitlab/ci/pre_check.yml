@@ -83,15 +83,20 @@ test_check_kconfigs:
   script:
     - python ${IDF_PATH}/tools/ci/test_check_kconfigs.py
 
-check_wifi_lib_md5:
+check_blobs:
   extends: .pre_check_base_template
   tags:
     - build
   variables:
-    SUBMODULES_TO_FETCH: "components/esp_wifi/lib"
+    SUBMODULES_TO_FETCH: "components/esp_wifi/lib;components/esp_phy/lib"
   script:
+    # Check if Wi-Fi library header files match between IDF and the version used when compiling the libraries
     - IDF_TARGET=esp32 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
     - IDF_TARGET=esp32s2 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    - IDF_TARGET=esp32s3 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    - IDF_TARGET=esp32c3 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    # Check if Wi-Fi, PHY, BT blobs contain references to specific symbols
+    - bash $IDF_PATH/tools/ci/check_blobs.sh
 
 check_fuzzer_compilation:
    extends: .pre_check_base_template
