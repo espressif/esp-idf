@@ -39,6 +39,14 @@ Flash 特性支持情况
 6. XMC
 7. BOYA
 
+.. only:: esp32s3
+
+    下列 flash 芯片支持八线模式 (OPI)：
+
+    1. MXIC
+
+    关于如何为具有不同 flash 和 PSRAM 容量的开发板设置 menuconfig，请参考 :ref:`SPI flash 和片外 SPI RAM 设置 <flash-psram-configuration>`。
+
 当前驱动支持以下厂家/型号的 flash 的 32 位地址范围的访问：
 
 1. W25Q256
@@ -248,5 +256,3 @@ Flash 加密 API 参考
 -----------------------------
 
 .. include-build-file:: inc/esp_flash_encrypt.inc
-
-

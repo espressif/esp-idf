@@ -774,6 +774,12 @@ Windows 操作系统
 
     ``idf.py -p PORT flash monitor``
 
+.. only:: esp32s3
+
+    .. note::
+
+        如果带有八线 flash 的开发板在二级引导加载程序之前复位，请参考 :ref:`八线 flash 错误处理 <flash-psram-error>`。
+
 此外，
 
 - 请前往 :doc:`IDF 监视器 <../api-guides/tools/idf-monitor>`，了解更多使用 IDF 监视器的快捷键和其他详情。

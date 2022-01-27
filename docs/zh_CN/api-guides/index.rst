@@ -21,7 +21,7 @@ API 指南
    :SOC_SPIRAM_SUPPORTED: 片外 SPI RAM <external-ram>
    严重错误 <fatal-errors>
    Flash 加密 <../security/flash-encryption>
-   :esp32s3: Flash and External SPI RAM Configuration <flash_psram_config>
+   :esp32s3: SPI flash 和片外 SPI RAM 设置 <flash_psram_config>
    FreeRTOS SMP 变化 <freertos-smp>
    硬件抽象层 <hardware-abstraction>
    :CONFIG_IDF_TARGET_ARCH_XTENSA: 高层中断 <hlinterrupts>
