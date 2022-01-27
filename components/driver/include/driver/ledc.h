@@ -364,7 +364,8 @@ void ledc_fade_func_uninstall(void);
  *        Other duty operations will have to wait until the fade operation has finished.
  * @param speed_mode Select the LEDC speed_mode, high-speed mode and low-speed mode
  * @param channel LEDC channel number
- * @param fade_mode Whether to block until fading done.
+ * @param fade_mode Whether to block until fading done. See ledc_types.h ledc_fade_mode_t for more info.
+ *        Note that this function will not return until fading to the target duty if LEDC_FADE_WAIT_DONE mode is selected.
  *
  * @return
  *     - ESP_OK Success
