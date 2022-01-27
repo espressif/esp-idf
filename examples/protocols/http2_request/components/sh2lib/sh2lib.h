@@ -38,6 +38,15 @@ struct sh2lib_handle {
     struct esp_tls  *http2_tls;    /*!< Pointer to the TLS session handle */
 };
 
+/**
+ * @brief sh2lib configuration structure
+ */
+struct sh2lib_config_t {
+    const char *uri;                    /*!< Pointer to the URI that should be connected to */
+    const unsigned char *cacert_buf;    /*!< Pointer to the buffer containing CA certificate */
+    unsigned int cacert_bytes;          /*!< Size of the CA certifiacte pointed by cacert_buf */
+};
+
 /** Flag indicating receive stream is reset */
 #define DATA_RECV_RST_STREAM      1
 /** Flag indicating frame is completely received  */
@@ -88,14 +97,13 @@ typedef int (*sh2lib_putpost_data_cb_t)(struct sh2lib_handle *handle, char *data
  *
  * Only 'https' URIs are supported.
  *
+ * @param[in]  cfg     Pointer to the sh2lib configurations of the type 'struct sh2lib_config_t'.
  * @param[out] hd      Pointer to a variable of the type 'struct sh2lib_handle'.
- * @param[in]  uri      Pointer to the URI that should be connected to.
- *
  * @return
  *             - ESP_OK if the connection was successful
  *             - ESP_FAIL if the connection fails
  */
-int sh2lib_connect(struct sh2lib_handle *hd, const char *uri);
+int sh2lib_connect(struct sh2lib_config_t *cfg, struct sh2lib_handle *hd);
 
 /**
  * @brief Free a sh2lib handle
