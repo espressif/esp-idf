@@ -1,23 +1,30 @@
 | Supported Targets | ESP32 |
 | ----------------- | ----- |
 
-# ESP-IDF BT-SPP-INITATOR demo
+# ESP-IDF BT-SPP-INITATOR Example
 
-This is the demo for user to use ESP_APIs to create a **Serial Port Protocol** (**SPP**) initiator and we aggregate **Secure Simple Pair** (**SSP**) into this demo to show how to use SPP when creating your own APPs.
+This example is to show how to use the APIs of **Serial Port Protocol** (**SPP**) to create an SPP initiator which performs as a client. we aggregate **Secure Simple Pair** (**SSP**) into this example to show how to use SPP when creating your own APPs. We also provide the example `bt_spp_acceptor` or the example `bt_spp_vfs_acceptor` to create an SPP acceptor which performs as a server. In fact, you can create SPP acceptors and SPP initiators on a single device at the same time.
 
 ## How to use example
 
 ### Hardware Required
 
-This example is designed to run on commonly available ESP32 development board, e.g. ESP32-DevKitC. To operate it should be connected to an SPP Acceptor running on another device.
+This example is designed to run on commonly available ESP32 development board, e.g. ESP32-DevKitC. To operate the example, you should be connect to an SPP acceptor running on a smartphone, a computer or on another ESP32 development board.
 
 ### Configure the project
-
+1. Open the project configuration menu:
 ```
 idf.py menuconfig
 ```
 
-In `menuconfig` path: `Coponent config --> Bluetooth--> Bluedroid Options -->SPP` and `Coponent config --> Bluetooth--> Bluedroid Options -->Secure Simple Pair`.
+2. Enable the SPP functionality by choosing the path as following:
+
+`Component config --> Bluetooth --> Bluedroid Options --> SPP`.
+
+3. SSP is enabled as default in this example. If you prefer the legacy pairing, you can disable it in the following path.
+
+`Component config --> Bluetooth--> Bluedroid Options --> Secure Simple Pair`.
+
 
 ### Build and Flash
 
@@ -33,6 +40,9 @@ idf.py -p PORT flash monitor
 
 See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html) for full steps to configure and use ESP-IDF to build projects.
 
+## Example Description
+
+After the program starts, the example will initiate a Bluetooth discovery procedure and filter out the peer device by the name in the EIR(Extended Inquiry Response). After discovering the SPP service, it will connect to the SPP acceptor and send data. The example will calculate the data rate or print the sent data after the SPP connection is established.
 ### Example Output
 
 When you run this example and the IO capability is `ESP_IO_CAP_IO` or `ESP_IO_CAP_IN` , the commands help table prints the following at the very beginning:
@@ -98,13 +108,9 @@ Whether you should passkey or confirm the number also depends on the IO capabili
 
 ## Troubleshouting
 
-- Set `SPP_SHOW_MODE` as `SPP_SHOW_DATA` or `SPP_SHOW_SPEED` in code (should be same with bt_spp_acceptor).
+- Set `SPP_SHOW_MODE` as `SPP_SHOW_DATA` or `SPP_SHOW_SPEED` in code (should be same with `bt_spp_acceptor`, if the peer device runs it). When setting `SPP_SHOW_MODE` as `SPP_SHOW_DATA`, if the data rate is too high or the data length is too long, it is strongly recommended to process them in other lower priority application task rather than in this callback directly. Since the printing takes too much time, and it may stuck the Bluetooth stack.
 
-- After the program started, It will connect to bt_spp_acceptor and send data.
-
-- We haven't do the same update to `bt_acceptor_demo` for the sake of reducing the size of ESP_IDF, but transplanting of input module is supported.
-
-- We also show the Security Simple Pair in this SPP demo. Users can set the IO Capability and Security Mode for their device (security level is fixed level 4). The default security mode of this demo is `ESP_SPP_SEC_AUTHENTICATE` which support MITM (Man In The Middle) protection. For more information about Security Simple Pair on ESP32, please refer to [ESP32_SSP](../bt_spp_acceptor/ESP32_SSP.md).
+- We haven't do the same update to the example `bt_spp_acceptor` for the sake of reducing the size of ESP_IDF, but transplanting of input module is supported.
 
 ## Example Breakdown
 
@@ -116,11 +122,10 @@ To clearly show how the SSP aggregate with the SPP , we use the Commands and Eff
 
 - If you want to update the command parse rules, please refer to `app_spp_msg_prs.c`.
 
-- If you want to update the responses of HF Unit or want to update the log, please refer to `bt_app_spp.c`.
-
-- Task configuration part is in `example_spp_initiator_demo.c`.
-
 ## FAQ
+Q: How to change the process of SSP?
+A: Users can set the IO Capability and Security Mask for their device (fixed Security Mode, Security Mode 4). In short, the Security Mask sets the security level for authentication stage and the IO Capability determines the way of user interaction during pairing. The default Security Mask of this example is `ESP_SPP_SEC_AUTHENTICATE` which support MITM (Man In The Middle) protection. For more information about Security Simple Pair on ESP32, please refer to [ESP32_SSP](../bt_spp_acceptor/ESP32_SSP.md).
+
 Q: How can we reach the maximum throughput when using SPP?
 A: The default MTU size of classic Bluetooth SPP on ESP32 is 990 bytes, and higher throughput can be achieved in the case that data chunck size is close to the MTU size or multiple of MTU size. For example, sending 100 bytes data per second is much better than sending 10 bytes every 100 milliseconds.
 

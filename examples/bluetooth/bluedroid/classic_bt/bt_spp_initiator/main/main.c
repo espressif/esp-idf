@@ -54,6 +54,19 @@ static const uint8_t inq_num_rsps = 0;
 #define SPP_DATA_LEN ESP_SPP_MAX_MTU
 #endif
 static uint8_t spp_data[SPP_DATA_LEN];
+static uint8_t *s_p_data = NULL; /* data pointer of spp_data */
+
+static char *bda2str(uint8_t *bda, char *str, size_t size)
+{
+    if (bda == NULL || str == NULL || size < 18) {
+        return NULL;
+    }
+
+    uint8_t *p = bda;
+    sprintf(str, "%02x:%02x:%02x:%02x:%02x:%02x",
+            p[0], p[1], p[2], p[3], p[4], p[5]);
+    return str;
+}
 
 static void print_speed(void)
 {
@@ -101,58 +114,123 @@ static bool get_name_from_eir(uint8_t *eir, char *bdname, uint8_t *bdname_len)
 
 static void esp_spp_cb(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
 {
+    uint8_t i = 0;
+    char bda_str[18] = {0};
+
     switch (event) {
     case ESP_SPP_INIT_EVT:
-        ESP_LOGI(SPP_TAG, "ESP_SPP_INIT_EVT");
-        esp_bt_dev_set_device_name(EXAMPLE_DEVICE_NAME);
-        esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
-        esp_bt_gap_start_discovery(inq_mode, inq_len, inq_num_rsps);
-
+        if (param->init.status == ESP_SPP_SUCCESS) {
+            ESP_LOGI(SPP_TAG, "ESP_SPP_INIT_EVT");
+            esp_bt_dev_set_device_name(EXAMPLE_DEVICE_NAME);
+            esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
+            esp_bt_gap_start_discovery(inq_mode, inq_len, inq_num_rsps);
+        } else {
+            ESP_LOGE(SPP_TAG, "ESP_SPP_INIT_EVT status:%d", param->init.status);
+        }
         break;
     case ESP_SPP_DISCOVERY_COMP_EVT:
-        ESP_LOGI(SPP_TAG, "ESP_SPP_DISCOVERY_COMP_EVT status=%d scn_num=%d",param->disc_comp.status, param->disc_comp.scn_num);
         if (param->disc_comp.status == ESP_SPP_SUCCESS) {
+            ESP_LOGI(SPP_TAG, "ESP_SPP_DISCOVERY_COMP_EVT scn_num:%d", param->disc_comp.scn_num);
+            for (i = 0; i < param->disc_comp.scn_num; i++) {
+                ESP_LOGI(SPP_TAG, "-- [%d] scn:%d service_name:%s", i, param->disc_comp.scn[i],
+                         param->disc_comp.service_name[i]);
+            }
+            /* We only connect to the first found server on the remote SPP acceptor here */
             esp_spp_connect(sec_mask, role_master, param->disc_comp.scn[0], peer_bd_addr);
+        } else {
+            ESP_LOGE(SPP_TAG, "ESP_SPP_DISCOVERY_COMP_EVT status=%d", param->disc_comp.status);
         }
         break;
     case ESP_SPP_OPEN_EVT:
-        ESP_LOGI(SPP_TAG, "ESP_SPP_OPEN_EVT");
-        esp_spp_write(param->open.handle, SPP_DATA_LEN, spp_data);
-        gettimeofday(&time_old, NULL);
+        if (param->open.status == ESP_SPP_SUCCESS) {
+            ESP_LOGI(SPP_TAG, "ESP_SPP_OPEN_EVT handle:%d rem_bda:[%s]", param->open.handle,
+                     bda2str(param->open.rem_bda, bda_str, sizeof(bda_str)));
+            /* Start to write the first data packet */
+            esp_spp_write(param->open.handle, SPP_DATA_LEN, spp_data);
+            s_p_data = spp_data;
+            gettimeofday(&time_old, NULL);
+        } else {
+            ESP_LOGE(SPP_TAG, "ESP_SPP_OPEN_EVT status:%d", param->open.status);
+        }
         break;
     case ESP_SPP_CLOSE_EVT:
-        ESP_LOGI(SPP_TAG, "ESP_SPP_CLOSE_EVT");
+        ESP_LOGI(SPP_TAG, "ESP_SPP_CLOSE_EVT status:%d handle:%d close_by_remote:%d", param->close.status,
+                 param->close.handle, param->close.async);
         break;
     case ESP_SPP_START_EVT:
         ESP_LOGI(SPP_TAG, "ESP_SPP_START_EVT");
         break;
     case ESP_SPP_CL_INIT_EVT:
-        ESP_LOGI(SPP_TAG, "ESP_SPP_CL_INIT_EVT");
+        if (param->cl_init.status == ESP_SPP_SUCCESS) {
+            ESP_LOGI(SPP_TAG, "ESP_SPP_CL_INIT_EVT handle:%d sec_id:%d", param->cl_init.handle, param->cl_init.sec_id);
+        } else {
+            ESP_LOGE(SPP_TAG, "ESP_SPP_CL_INIT_EVT status:%d", param->cl_init.status);
+        }
         break;
     case ESP_SPP_DATA_IND_EVT:
         ESP_LOGI(SPP_TAG, "ESP_SPP_DATA_IND_EVT");
         break;
+    case ESP_SPP_WRITE_EVT:
+        if (param->write.status == ESP_SPP_SUCCESS) {
+            if (s_p_data + param->write.len == spp_data + SPP_DATA_LEN) {
+                /* Means the previous data packet be sent completely, send a new data packet */
+                s_p_data = spp_data;
+            } else {
+                /*
+                 * Means the previous data packet only be sent partially due to the lower layer congestion, resend the
+                 * remainning data.
+                 */
+                s_p_data += param->write.len;
+            }
+#if (SPP_SHOW_MODE == SPP_SHOW_DATA)
+            /*
+             * We only show the data in which the data length is less than 128 here. If you want to print the data and
+             * the data rate is high, it is strongly recommended to process them in other lower priority application task
+             * rather than in this callback directly. Since the printing takes too much time, it may stuck the Bluetooth
+             * stack and also have a effect on the throughput!
+             */
+            ESP_LOGI(SPP_TAG, "ESP_SPP_WRITE_EVT len:%d handle:%d cong:%d", param->write.len, param->write.handle,
+                     param->write.cong);
+            if (param->write.len < 128) {
+                esp_log_buffer_hex("", spp_data, param->write.len);
+                /* Delay a little to avoid the task watch dog */
+                vTaskDelay(pdMS_TO_TICKS(10));
+            }
+#else
+            gettimeofday(&time_new, NULL);
+            data_num += param->write.len;
+            if (time_new.tv_sec - time_old.tv_sec >= 3) {
+                print_speed();
+            }
+#endif
+        } else {
+            /* Means the prevous data packet is not sent at all, need to send the whole data packet again. */
+            ESP_LOGE(SPP_TAG, "ESP_SPP_WRITE_EVT status:%d", param->write.status);
+        }
+
+        if (!param->write.cong) {
+            /* The lower layer is not congested, you can send the next data packet now. */
+            esp_spp_write(param->write.handle, spp_data + SPP_DATA_LEN - s_p_data, s_p_data);
+        } else {
+            /*
+             * The lower layer is congested now, don't send the next data packet until receiving the
+             * ESP_SPP_CONG_EVT with param->cong.cong == 0.
+             */
+            ;
+        }
+
+        /*
+         * If you don't want to manage this complicated process, we also provide the SPP VFS mode that hides the
+         * implementation details. However, it is less efficient and will block the caller until all data has been sent.
+         */
+        break;
     case ESP_SPP_CONG_EVT:
 #if (SPP_SHOW_MODE == SPP_SHOW_DATA)
-        ESP_LOGI(SPP_TAG, "ESP_SPP_CONG_EVT cong=%d", param->cong.cong);
+        ESP_LOGI(SPP_TAG, "ESP_SPP_CONG_EVT cong:%d", param->cong.cong);
 #endif
         if (param->cong.cong == 0) {
-            esp_spp_write(param->cong.handle, SPP_DATA_LEN, spp_data);
-        }
-        break;
-    case ESP_SPP_WRITE_EVT:
-#if (SPP_SHOW_MODE == SPP_SHOW_DATA)
-        ESP_LOGI(SPP_TAG, "ESP_SPP_WRITE_EVT len=%d cong=%d", param->write.len , param->write.cong);
-        esp_log_buffer_hex("",spp_data,SPP_DATA_LEN);
-#else
-        gettimeofday(&time_new, NULL);
-        data_num += param->write.len;
-        if (time_new.tv_sec - time_old.tv_sec >= 3) {
-            print_speed();
-        }
-#endif
-        if (param->write.cong == 0) {
-            esp_spp_write(param->write.handle, SPP_DATA_LEN, spp_data);
+            /* Send the privous (partial) data packet or the next data packet. */
+            esp_spp_write(param->write.handle, spp_data + SPP_DATA_LEN - s_p_data, s_p_data);
         }
         break;
     case ESP_SPP_SRV_OPEN_EVT:
@@ -172,6 +250,7 @@ static void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
     case ESP_BT_GAP_DISC_RES_EVT:
         ESP_LOGI(SPP_TAG, "ESP_BT_GAP_DISC_RES_EVT");
         esp_log_buffer_hex(SPP_TAG, param->disc_res.bda, ESP_BD_ADDR_LEN);
+        /* Find the target peer device name in the EIR data */
         for (int i = 0; i < param->disc_res.num_prop; i++){
             if (param->disc_res.prop[i].type == ESP_BT_GAP_DEV_PROP_EIR
                 && get_name_from_eir(param->disc_res.prop[i].val, peer_bdname, &peer_bdname_len)){
@@ -179,8 +258,10 @@ static void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
                 if (strlen(remote_device_name) == peer_bdname_len
                     && strncmp(peer_bdname, remote_device_name, peer_bdname_len) == 0) {
                     memcpy(peer_bd_addr, param->disc_res.bda, ESP_BD_ADDR_LEN);
-                    esp_spp_start_discovery(peer_bd_addr);
+                    /* Have found the target peer device, cancel the previous GAP discover procedure. And go on
+                     * dsicovering the SPP service on the peer device */
                     esp_bt_gap_cancel_discovery();
+                    esp_spp_start_discovery(peer_bd_addr);
                 }
             }
         }
@@ -247,11 +328,14 @@ static void esp_bt_gap_cb(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *pa
 
 void app_main(void)
 {
+    esp_err_t ret = ESP_OK;
+    char bda_str[18] = {0};
+
     for (int i = 0; i < SPP_DATA_LEN; ++i) {
         spp_data[i] = i;
     }
 
-    esp_err_t ret = nvs_flash_init();
+    ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
         ret = nvs_flash_init();
@@ -286,6 +370,17 @@ void app_main(void)
         return;
     }
 
+#if (CONFIG_BT_SSP_ENABLED == true)
+    /* Set default parameters for Secure Simple Pairing */
+    esp_bt_sp_param_t param_type = ESP_BT_SP_IOCAP_MODE;
+    esp_bt_io_cap_t iocap = ESP_BT_IO_CAP_IN;
+    esp_bt_gap_set_security_param(param_type, &iocap, sizeof(uint8_t));
+    if (iocap == ESP_BT_IO_CAP_IN || iocap == ESP_BT_IO_CAP_IO) {
+        console_uart_init();
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
+#endif
+
     if ((ret = esp_spp_register_callback(esp_spp_cb)) != ESP_OK) {
         ESP_LOGE(SPP_TAG, "%s spp register failed: %s\n", __func__, esp_err_to_name(ret));
         return;
@@ -296,16 +391,6 @@ void app_main(void)
         return;
     }
 
-#if (CONFIG_BT_SSP_ENABLED == true)
-    /* Set default parameters for Secure Simple Pairing */
-    esp_bt_sp_param_t param_type = ESP_BT_SP_IOCAP_MODE;
-    esp_bt_io_cap_t iocap = ESP_BT_IO_CAP_IN;
-    esp_bt_gap_set_security_param(param_type, &iocap, sizeof(uint8_t));
-    if (iocap == ESP_BT_IO_CAP_IN || iocap == ESP_BT_IO_CAP_IO) {
-        console_uart_init();
-    }
-#endif
-
     /*
      * Set default parameters for Legacy Pairing
      * Use variable pin, input pin code when pairing
@@ -313,4 +398,6 @@ void app_main(void)
     esp_bt_pin_type_t pin_type = ESP_BT_PIN_TYPE_VARIABLE;
     esp_bt_pin_code_t pin_code;
     esp_bt_gap_set_pin(pin_type, 0, pin_code);
+
+    ESP_LOGI(SPP_TAG, "Own address:[%s]", bda2str((uint8_t *)esp_bt_dev_get_address(), bda_str, sizeof(bda_str)));
 }
