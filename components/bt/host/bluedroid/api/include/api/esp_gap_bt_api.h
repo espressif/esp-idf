@@ -236,7 +236,7 @@ typedef enum {
 #define ESP_BT_GAP_MIN_INQ_LEN                (0x01)  /*!< Minimum inquiry duration, unit is 1.28s */
 #define ESP_BT_GAP_MAX_INQ_LEN                (0x30)  /*!< Maximum inquiry duration, unit is 1.28s */
 
-/// A2DP state callback parameters
+/// GAP state callback parameters
 typedef union {
     /**
      * @brief ESP_BT_GAP_DISC_RES_EVT
