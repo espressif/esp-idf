@@ -13,13 +13,13 @@ python esp_prov.py --transport < mode of provisioning : softap \ ble \ console >
 
 Usage of `esp-prov` assumes that the provisioning app has specific protocomm endpoints active. These endpoints are active in the provisioning examples and accept specific protobuf data structures:
 
-| Endpoint Name | URI (HTTP server on ip:port) | Description                                               |
-|---------------|------------------------------|-----------------------------------------------------------|
-| prov-session  | http://ip:port/prov-session  | Security endpoint used for session establishment          |
-| prov-config   | http://ip:port/prov-config   | Endpoint used for configuring Wi-Fi credentials on device |
-| proto-ver     | http://ip:port/proto-ver     | Version endpoint for checking protocol compatibility      |
-| prov-scan     | http://ip:port/prov-scan     | Endpoint used for scanning Wi-Fi APs                      |
-| custom-config | http://ip:port/custom-config | Optional endpoint for configuring custom credentials      |
+| Endpoint Name | URI (HTTP server on ip:port) | Description                                                                              |
+|---------------|------------------------------|------------------------------------------------------------------------------------------|
+| prov-session  | http://ip:port/prov-session  | Security endpoint used for session establishment                                         |
+| prov-config   | http://ip:port/prov-config   | Endpoint used for configuring Wi-Fi credentials on device                                |
+| proto-ver     | http://ip:port/proto-ver     | Version endpoint for checking protocol compatibility                                     |
+| prov-scan     | http://ip:port/prov-scan     | Endpoint used for scanning Wi-Fi APs                                                     |
+| custom-data   | http://ip:port/custom-data   | Optional endpoint for sending custom data (refer `wifi_prov_mgr` example)                |
 
 
 # PARAMETERS
@@ -53,18 +53,13 @@ Usage of `esp-prov` assumes that the provisioning app has specific protocomm end
 * `--pop <Proof of possession string>` (Optional)
     For specifying optional Proof of Possession string to use for protocomm endpoint security version 1. This option is ignored when security version 0 is in use
 
-* `--service_name <name> (Optional)
+* `--service_name <name>` (Optional)
     When transport mode is ble, this specifies the BLE device name to which connection is to be established for provisioned.
     When transport mode is softap, this specifies the HTTP server hostname / IP which is running the provisioning service, on the SoftAP network of the device which is to be provisioned. This defaults to `192.168.4.1:80` if not specified
 
-* `--custom_config` (Optional)
-    This flag assumes the provisioning app has an endpoint called `custom-config`. Use `--custom_info` and `--custom_ver` options to specify the fields accepted by this endpoint
-
-* `--custom_info <some string>` (Optional) (Only use along with `--custom_config`)
-    For specifying an information string to be sent to the `custom-config` endpoint during provisioning
-
-* `--custom_ver <some integer>` (Optional) (Only use along with `--custom_config`)
-    For specifying a version number (int) to be sent to the `custom-config` endpoint during provisioning
+* `--custom_data <some string>` (Optional)
+    An information string can be sent to the `custom-data` endpoint during provisioning using this argument.
+    (Assumes the provisioning app has an endpoint called `custom-data` - see [provisioning/wifi_prov_mgr](https://github.com/espressif/esp-idf/tree/master/examples/provisioning/wifi_prov_mgr) example for implementation details).
 
 # AVAILABILITY
 
