@@ -86,6 +86,7 @@ menu "Driver configurations"
     endmenu # SPI Configuration
 
     menu "TWAI configuration"
+        depends on SOC_TWAI_SUPPORTED
 
         config TWAI_ISR_IN_IRAM
             bool "Place TWAI ISR function into IRAM"
