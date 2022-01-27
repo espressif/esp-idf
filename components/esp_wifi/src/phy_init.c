@@ -229,11 +229,7 @@ void esp_phy_enable(void)
             s_is_phy_calibrated = true;
         }
         else {
-#if CONFIG_IDF_TARGET_ESP32S2
             phy_wakeup_init();
-#elif CONFIG_IDF_TARGET_ESP32
-            register_chipv7_phy(NULL, NULL, PHY_RF_CAL_NONE);
-#endif
         }
 
 #if CONFIG_IDF_TARGET_ESP32

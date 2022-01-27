@@ -459,6 +459,22 @@ static void * IRAM_ATTR zalloc_internal_wrapper(size_t size)
     return ptr;
 }
 
+static int coex_init_wrapper(void)
+{
+#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
+    return coex_init();
+#else
+    return 0;
+#endif
+}
+
+static void coex_deinit_wrapper(void)
+{
+#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
+    coex_deinit();
+#endif
+}
+
 static uint32_t coex_status_get_wrapper(void)
 {
 #if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
@@ -623,8 +639,8 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._rand = esp_random,
     ._dport_access_stall_other_cpu_start_wrap = esp_empty_wrapper,
     ._dport_access_stall_other_cpu_end_wrap = esp_empty_wrapper,
-    ._phy_rf_deinit = esp_phy_rf_deinit,
-    ._phy_load_cal_and_init = esp_phy_load_cal_and_init,
+    ._phy_disable = esp_phy_disable,
+    ._phy_enable = esp_phy_enable,
     ._phy_update_country_info = esp_phy_update_country_info,
     ._read_mac = esp_read_mac,
     ._timer_arm = timer_arm_wrapper,
@@ -667,10 +683,8 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._wifi_zalloc = wifi_zalloc_wrapper,
     ._wifi_create_queue = wifi_create_queue_wrapper,
     ._wifi_delete_queue = wifi_delete_queue_wrapper,
-    ._modem_sleep_enter = esp_modem_sleep_enter,
-    ._modem_sleep_exit = esp_modem_sleep_exit,
-    ._modem_sleep_register = esp_modem_sleep_register,
-    ._modem_sleep_deregister = esp_modem_sleep_deregister,
+    ._coex_init = coex_init_wrapper,
+    ._coex_deinit = coex_deinit_wrapper,
     ._coex_status_get = coex_status_get_wrapper,
     ._coex_condition_set = coex_condition_set_wrapper,
     ._coex_wifi_request = coex_wifi_request_wrapper,
