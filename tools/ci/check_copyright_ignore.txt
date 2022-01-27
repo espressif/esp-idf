@@ -2386,7 +2386,6 @@ components/xtensa/xt_trax.c
 components/xtensa/xtensa_intr.c
 docs/conf_common.py
 docs/en/conf.py
-docs/generate_chart.py
 docs/zh_CN/conf.py
 examples/bluetooth/esp_ble_mesh/aligenie_demo/components/vendor_model/genie_event.c
 examples/bluetooth/esp_ble_mesh/aligenie_demo/components/vendor_model/genie_mesh.c
