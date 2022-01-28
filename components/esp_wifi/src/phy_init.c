@@ -156,7 +156,6 @@ void esp_phy_enable(void)
         phy_update_wifi_mac_time(false, s_phy_rf_en_ts);
 #endif
         esp_phy_common_clock_enable();
-        phy_set_wifi_mode_only(0);
 
         if (s_is_phy_calibrated == false) {
             esp_phy_load_cal_and_init();
