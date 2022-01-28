@@ -209,8 +209,8 @@ esp_err_t esp_https_ota_begin(esp_https_ota_config_t *ota_config, esp_https_ota_
     }
 
     if (!is_server_verification_enabled(ota_config)) {
-#if CONFIG_OTA_ALLOW_HTTP
-        ESP_LOGW(TAG, "Continuing with insecure option because CONFIG_OTA_ALLOW_HTTP is set.");
+#if CONFIG_ESP_HTTPS_OTA_ALLOW_HTTP
+        ESP_LOGW(TAG, "Continuing with insecure option because CONFIG_ESP_HTTPS_OTA_ALLOW_HTTP is set.");
 #else
         ESP_LOGE(TAG, "No option for server verification is enabled in esp_http_client config.");
         *handle = NULL;
