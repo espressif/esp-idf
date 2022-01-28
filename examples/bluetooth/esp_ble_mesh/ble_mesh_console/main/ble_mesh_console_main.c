@@ -116,6 +116,8 @@ void app_main(void)
     initialize_filesystem();
 #endif
 
+    printf("!!!ready!!!\n");
+
     initialize_console();
 
     /* Register commands */
