@@ -627,6 +627,8 @@ Main component requirements
 
 The component named ``main`` is special because it automatically requires all other components in the build. So it's not necessary to pass ``REQUIRES`` or ``PRIV_REQUIRES`` to this component. See :ref:`renaming main <rename-main>` for a description of what needs to be changed if no longer using the ``main`` component.
 
+.. _component-common-requirements:
+
 Common component requirements
 -----------------------------
 

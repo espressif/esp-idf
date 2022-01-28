@@ -627,6 +627,8 @@ Spark Plug 组件
 
 ``main`` 组件比较特别，因为它在构建过程中自动依赖所有其他组件。所以不需要向这个组件传递 ``REQUIRES`` 或 ``PRIV_REQUIRES``。有关不再使用 ``main`` 组件时需要更改哪些内容，请参考 :ref:`重命名 main 组件<rename-main>`。
 
+.. _component-common-requirements:
+
 通用组件依赖项
 --------------
 

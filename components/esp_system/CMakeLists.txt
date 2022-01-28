@@ -41,7 +41,11 @@ else()
                                     # should be removable once using component init functions
                                     # link-time registration is used.
                                     esp_pm app_update nvs_flash pthread
-                                    esp_phy efuse
+                                    # [refactor-todo] requires "driver" for headers:
+                                    # - periph_ctrl.h
+                                    # - rtc_cntl.h
+                                    # - spi_common_internal.h
+                                    esp_phy efuse driver
                         LDFRAGMENTS "linker.lf" "app.lf")
     add_subdirectory(port)
 

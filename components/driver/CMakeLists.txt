@@ -108,13 +108,18 @@ if(IDF_TARGET STREQUAL "esp32c2")
     list(APPEND srcs "spi_slave_hd.c")
 endif()
 
-idf_component_register(SRCS "${srcs}"
-                    INCLUDE_DIRS ${includes}
-                    PRIV_INCLUDE_DIRS "include/driver"
-                    PRIV_REQUIRES efuse esp_timer
-                    REQUIRES esp_pm esp_ringbuf freertos soc hal esp_hw_support
-                    LDFRAGMENTS linker.lf)
-# (REQUIRES cannot hide soc headers, since many arguments in the driver headers are chip-dependent)
+if(BOOTLOADER_BUILD)
+    # Bootloader shall NOT depend on the drivers
+    idf_component_register()
+else()
+    # (REQUIRES cannot hide soc headers, since many arguments in the driver headers are chip-dependent)
+    idf_component_register(SRCS "${srcs}"
+                        INCLUDE_DIRS ${includes}
+                        PRIV_INCLUDE_DIRS "include/driver"
+                        PRIV_REQUIRES efuse esp_timer
+                        REQUIRES esp_pm esp_ringbuf freertos soc hal esp_hw_support
+                        LDFRAGMENTS linker.lf)
+endif()
 
 # uses C11 atomic feature
 set_source_files_properties(spi_master.c PROPERTIES COMPILE_FLAGS -std=gnu11)
