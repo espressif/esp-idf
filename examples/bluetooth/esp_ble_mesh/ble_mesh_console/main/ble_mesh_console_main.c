@@ -70,7 +70,13 @@ void app_main(void)
     initialize_filesystem();
     repl_config.history_save_path = HISTORY_PATH;
 #endif
+
+#if CONFIG_IDF_TARGET_ESP32C3
+    repl_config.prompt = "esp32c3>";
+#else
     repl_config.prompt = "esp32>";
+#endif
+
     // init console REPL environment
     ESP_ERROR_CHECK(esp_console_new_repl_uart(&uart_config, &repl_config, &repl));
 
