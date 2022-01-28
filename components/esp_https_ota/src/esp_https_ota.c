@@ -13,8 +13,14 @@
 #include <errno.h>
 #include <sys/param.h>
 
-#define IMAGE_HEADER_SIZE sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t) + sizeof(esp_app_desc_t) + 1
-#define DEFAULT_OTA_BUF_SIZE IMAGE_HEADER_SIZE
+#define IMAGE_HEADER_SIZE (1024)
+
+/* This is kept sufficiently large enough to cover image format headers
+ * and also this defines default minimum OTA buffer chunk size */
+#define DEFAULT_OTA_BUF_SIZE (IMAGE_HEADER_SIZE)
+
+_Static_assert(DEFAULT_OTA_BUF_SIZE > (sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t) + sizeof(esp_app_desc_t) + 1), "OTA data buffer too small");
+
 #define DEFAULT_REQUEST_SIZE (64 * 1024)
 static const char *TAG = "esp_https_ota";
 
@@ -77,7 +83,7 @@ static esp_err_t _http_handle_response_code(esp_http_client_handle_t http_client
         return ESP_FAIL;
     }
 
-    char upgrade_data_buf[DEFAULT_OTA_BUF_SIZE];
+    char upgrade_data_buf[256];
     // process_again() returns true only in case of redirection.
     if (process_again(status_code)) {
         while (1) {
@@ -85,7 +91,7 @@ static esp_err_t _http_handle_response_code(esp_http_client_handle_t http_client
              *  In case of redirection, esp_http_client_read() is called
              *  to clear the response buffer of http_client.
              */
-            int data_read = esp_http_client_read(http_client, upgrade_data_buf, DEFAULT_OTA_BUF_SIZE);
+            int data_read = esp_http_client_read(http_client, upgrade_data_buf, sizeof(upgrade_data_buf));
             if (data_read <= 0) {
                 return ESP_OK;
             }
