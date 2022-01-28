@@ -1684,7 +1684,6 @@ components/spi_flash/cache_utils.h
 components/spi_flash/include/esp_flash.h
 components/spi_flash/include/esp_flash_internal.h
 components/spi_flash/include/esp_flash_spi_init.h
-components/spi_flash/include/esp_partition.h
 components/spi_flash/include/esp_spi_flash.h
 components/spi_flash/include/esp_spi_flash_counters.h
 components/spi_flash/include/memspi_host_driver.h

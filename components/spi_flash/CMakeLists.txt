@@ -1,4 +1,17 @@
 idf_build_get_property(target IDF_TARGET)
+if(${target} STREQUAL "linux")
+    set(srcs "partition.c"
+         "partition_linux.c")
+    idf_component_get_property(hal_dir hal COMPONENT_DIR)
+    idf_component_get_property(bootloader_support_dir bootloader_support COMPONENT_DIR)
+
+    idf_component_register(SRCS "${srcs}"
+        INCLUDE_DIRS include ${hal_dir}/include ${bootloader_support_dir}/include
+        PRIV_INCLUDE_DIRS include/spi_flash
+        PRIV_REQUIRES linux partition_table)
+    return()
+endif()
+
 if(BOOTLOADER_BUILD)
     set(cache_srcs "")
     set(priv_requires bootloader_support soc)
@@ -11,6 +24,7 @@ else()
     )
     set(srcs
         "partition.c"
+        "partition_target.c"
     )
 
     if(CONFIG_ESPTOOLPY_OCT_FLASH)

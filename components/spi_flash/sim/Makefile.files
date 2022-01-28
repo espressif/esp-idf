@@ -4,6 +4,7 @@ SOURCE_FILES := \
     flash_mock_util.c \
     $(addprefix ../, \
     partition.c \
+    ../spi_flash/partition_target.c \
     flash_ops.c \
     esp32/flash_ops_esp32.c \
     ) \
