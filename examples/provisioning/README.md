@@ -24,21 +24,3 @@ The Android and iOS provisioning applications allow the user to configure the de
 ```
 
 The more details about QR code format, you can refer to [QR Code Scan](https://github.com/espressif/esp-idf-provisioning-android#qr-code-scan).
-
-## Legacy Examples
-
-The legacy examples require own implementation of provisioning functions and handlers. The Wi-Fi provisioning component abstracts out most of this complexity and provides a simpler interface and so, that is recommended for use. However, if you want to use lower level provisioning and protocomm APIs, you can check the these examples under legacy/ folder:
-
-* softap_prov
-    Provisioning involves Wi-Fi station configuration via an HTTP server running on the device, which is initially configured to be in SoftAP mode. After provisioning, device runs in Wi-Fi station mode only and connects to the AP whose credentials were provided during provisioning.
-
-* ble_prov
-    Provisioning involves Wi-Fi station configuration via BLE service endpoints running on the device initially. After provisioning, BLE is turned off and device runs in Wi-Fi station mode, connecting to the AP whose credentials were provided during provisioning.
-
-* console_prov
-    Provisioning involves Wi-Fi station configuration via UART console. This is intended for debugging protocomm and provisioning related features.
-
-* custom_config
-    Similar to softap_prov examples, but allows for configuration of custom (device-local) information during provisioning. This is intended as an example for implementing custom provisioning schemes.
-
-Refer to the README.md files in each example directory for more information.
