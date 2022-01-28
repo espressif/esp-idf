@@ -12,6 +12,8 @@
 #include "wps/wps.h"
 
 
+#ifdef CONFIG_WPS_STRICT
+
 #ifndef WPS_STRICT_ALL
 #define WPS_STRICT_WPS2
 #endif /* WPS_STRICT_ALL */
@@ -95,7 +97,6 @@ static int wps_validate_response_type(const u8 *response_type, int mandatory)
 
 static int valid_config_methods(u16 val, int wps2)
 {
-#ifndef CONFIG_WPA_WPS_WARS
 	if (wps2) {
 		if (!(val & 0x6000) && (val & WPS_CONFIG_DISPLAY)) {
 			wpa_printf(MSG_INFO, "WPS-STRICT: Display flag "
@@ -109,7 +110,6 @@ static int valid_config_methods(u16 val, int wps2)
 		}
 	}
 
-#endif
 	return 1;
 }
 
@@ -2363,3 +2363,4 @@ _out:
 
 	return ret;
 }
+#endif

@@ -1327,9 +1327,9 @@ int wps_dev_init(void)
     dev->config_methods = WPS_CONFIG_VIRT_PUSHBUTTON | WPS_CONFIG_PHY_DISPLAY;
     dev->rf_bands = WPS_RF_24GHZ;
 
-    WPA_PUT_BE16(dev->pri_dev_type, WPS_DEV_COMPUTER);
+    WPA_PUT_BE16(dev->pri_dev_type, WPS_DEV_PHONE);
     WPA_PUT_BE32(dev->pri_dev_type + 2, WPS_DEV_OUI_WFA);
-    WPA_PUT_BE16(dev->pri_dev_type + 6, WPS_DEV_COMPUTER_PC);
+    WPA_PUT_BE16(dev->pri_dev_type + 6, WPS_DEV_PHONE_SINGLE_MODE);
 
     if (!s_factory_info) {
         ret = wps_set_default_factory();
