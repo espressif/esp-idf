@@ -28,7 +28,6 @@ docs/extensions/google_analytics.py
 docs/extensions/html_redirects.py
 docs/extensions/list_filter.py
 docs/extensions/toctree_filter.py
-docs/generate_chart.py
 docs/get_github_rev.py
 docs/idf_extensions/build_system/__init__.py
 docs/idf_extensions/esp_err_definitions.py
