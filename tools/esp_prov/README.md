@@ -91,11 +91,6 @@ Run `pip install -r $IDF_PATH/tools/esp_prov/requirements_linux_extra.txt`
 
 # EXAMPLE USAGE
 
-Please refer to the README.md files with the examples present under `$IDF_PATH/examples/provisioning/`, namely:
+Please refer to the README.md file with the `wifi_prov_mgr` example present under `$IDF_PATH/examples/provisioning/`.
 
-* `ble_prov`
-* `softap_prov`
-* `custom_config`
-* `console_prov`
-
-Each of these examples use specific options of the `esp_prov` tool and give an overview to simple as well as advanced usage scenarios.
+This example uses specific options of the `esp_prov` tool and gives an overview of simple as well as advanced usage scenarios.
