@@ -17,6 +17,17 @@ extern "C" {
 typedef void *esp_https_ota_handle_t;
 typedef esp_err_t(*http_client_init_cb_t)(esp_http_client_handle_t);
 
+#if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+typedef struct {
+    const char *data_in;    /*!< Pointer to data to be decrypted */
+    size_t data_in_len;     /*!< Input data length */
+    char *data_out;         /*!< Pointer to data decrypted using callback, this will be freed after data is written to flash */
+    size_t data_out_len;    /*!< Output data length */
+} decrypt_cb_arg_t;
+
+typedef esp_err_t(*decrypt_cb_t)(decrypt_cb_arg_t *args);
+#endif // CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+
 /**
  * @brief ESP HTTPS OTA configuration
  */
@@ -26,6 +37,9 @@ typedef struct {
     bool bulk_flash_erase;                         /*!< Erase entire flash partition during initialization. By default flash partition is erased during write operation and in chunk of 4K sector size */
     bool partial_http_download;                    /*!< Enable Firmware image to be downloaded over multiple HTTP requests */
     int max_http_request_size;                     /*!< Maximum request size for partial HTTP download */
+#if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+    decrypt_cb_t decrypt_cb;                       /*!< Callback for external decryption layer */
+#endif
 } esp_https_ota_config_t;
 
 #define ESP_ERR_HTTPS_OTA_BASE            (0x9000)

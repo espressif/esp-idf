@@ -43,6 +43,9 @@ struct esp_https_ota_handle {
     esp_https_ota_state state;
     bool bulk_flash_erase;
     bool partial_http_download;
+#if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+    decrypt_cb_t decrypt_cb;
+#endif
 };
 
 typedef struct esp_https_ota_handle esp_https_ota_t;
@@ -147,6 +150,27 @@ static void _http_cleanup(esp_http_client_handle_t client)
     esp_http_client_cleanup(client);
 }
 
+#if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+static esp_err_t esp_https_ota_decrypt_cb(esp_https_ota_t *handle, decrypt_cb_arg_t *args)
+{
+    esp_err_t ret = handle->decrypt_cb(args);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Decrypt callback failed %d", ret);
+        return ret;
+    }
+    if (args->data_out_len > 0) {
+        return ESP_OK;
+    } else {
+        return ESP_HTTPS_OTA_IN_PROGRESS;
+    }
+}
+
+static void esp_https_ota_decrypt_cb_free_buf(void *buffer)
+{
+    free(buffer);
+}
+#endif // CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+
 static esp_err_t _ota_write(esp_https_ota_t *https_ota_handle, const void *buffer, size_t buf_len)
 {
     if (buffer == NULL || https_ota_handle == NULL) {
@@ -160,6 +184,9 @@ static esp_err_t _ota_write(esp_https_ota_t *https_ota_handle, const void *buffe
         ESP_LOGD(TAG, "Written image length %d", https_ota_handle->binary_file_len);
         err = ESP_ERR_HTTPS_OTA_IN_PROGRESS;
     }
+#if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+    esp_https_ota_decrypt_cb_free_buf((void *) buffer);
+#endif
     return err;
 }
 
@@ -277,6 +304,13 @@ esp_err_t esp_https_ota_begin(esp_https_ota_config_t *ota_config, esp_https_ota_
         err = ESP_ERR_NO_MEM;
         goto http_cleanup;
     }
+#if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+    if (ota_config->decrypt_cb == NULL) {
+        err = ESP_ERR_INVALID_ARG;
+        goto http_cleanup;
+    }
+    https_ota_handle->decrypt_cb = ota_config->decrypt_cb;
+#endif
     https_ota_handle->ota_upgrade_buf_size = alloc_size;
     https_ota_handle->bulk_flash_erase = ota_config->bulk_flash_erase;
     https_ota_handle->binary_file_len = 0;
@@ -403,11 +437,26 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
                 }
                 binary_file_len = IMAGE_HEADER_SIZE;
             }
-            err = esp_ota_verify_chip_id(handle->ota_upgrade_buf);
+
+            const void *data_buf = (const void *) handle->ota_upgrade_buf;
+#if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+            decrypt_cb_arg_t args = {};
+            args.data_in = handle->ota_upgrade_buf;
+            args.data_in_len = binary_file_len;
+            err = esp_https_ota_decrypt_cb(handle, &args);
+            if (err == ESP_OK) {
+                data_buf = args.data_out;
+                binary_file_len = args.data_out_len;
+            } else {
+                ESP_LOGE(TAG, "Decryption of image header failed");
+                return ESP_FAIL;
+            }
+#endif // CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+            err = esp_ota_verify_chip_id(data_buf);
             if (err != ESP_OK) {
                 return err;
             }
-            return _ota_write(handle, (const void *)handle->ota_upgrade_buf, binary_file_len);
+            return _ota_write(handle, data_buf, binary_file_len);
         case ESP_HTTPS_OTA_IN_PROGRESS:
             data_read = esp_http_client_read(handle->http_client,
                                              handle->ota_upgrade_buf,
@@ -433,7 +482,21 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
                 }
                 ESP_LOGD(TAG, "Connection closed");
             } else if (data_read > 0) {
-                return _ota_write(handle, (const void *)handle->ota_upgrade_buf, data_read);
+                const void *data_buf = (const void *) handle->ota_upgrade_buf;
+                int data_len = data_read;
+#if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+                decrypt_cb_arg_t args = {};
+                args.data_in = handle->ota_upgrade_buf;
+                args.data_in_len = data_read;
+                err = esp_https_ota_decrypt_cb(handle, &args);
+                if (err == ESP_OK) {
+                    data_buf = args.data_out;
+                    data_len = args.data_out_len;
+                } else {
+                    return err;
+                }
+#endif // CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+                return _ota_write(handle, data_buf, data_len);
             } else {
                 ESP_LOGE(TAG, "data read %d, errno %d", data_read, errno);
                 return ESP_FAIL;
