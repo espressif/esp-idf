@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include "esp_ble_mesh_generic_model_api.h"
 uint8_t dev_uuid[16] = {0xdd, 0xdd};
 
+ble_mesh_node_config_params ble_mesh_node_prestore_params[NODE_MAX_GROUP_CONFIG];
 
 esp_ble_mesh_prov_t prov = {
 #if CONFIG_BLE_MESH_NODE
@@ -66,6 +67,8 @@ esp_ble_mesh_comp_t config_server_comp = {
 };
 
 // config client model
+esp_ble_mesh_client_t cfg_cli;
+
 esp_ble_mesh_model_t config_client_models[] = {
     ESP_BLE_MESH_MODEL_CFG_SRV(&cfg_srv),
     ESP_BLE_MESH_MODEL_CFG_CLI(&cfg_cli),

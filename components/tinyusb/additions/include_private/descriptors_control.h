@@ -48,7 +48,6 @@ enum {
                        CFG_TUD_HID * TUD_HID_DESC_LEN
 };
 
-bool tusb_desc_set;
 void tusb_set_descriptor(tusb_desc_device_t *desc, const char **str_desc);
 tusb_desc_device_t *tusb_get_active_desc(void);
 char **tusb_get_active_str_desc(void);

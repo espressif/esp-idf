@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +18,6 @@
 
 //#include "esp_wifi.h"
 #if (BLUFI_INCLUDED == TRUE)
-// extern tBLUFI_ENV blufi_env;
 
 void btc_blufi_protocol_handler(uint8_t type, uint8_t *data, int len)
 {

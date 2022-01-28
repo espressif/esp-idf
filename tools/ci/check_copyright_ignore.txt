@@ -859,7 +859,6 @@ components/fatfs/src/ffconf.h
 components/fatfs/src/ffsystem.c
 components/fatfs/src/ffunicode.c
 components/fatfs/test/test_fatfs_common.c
-components/fatfs/test/test_fatfs_common.h
 components/fatfs/test/test_fatfs_rawflash.c
 components/fatfs/test/test_fatfs_spiflash.c
 components/fatfs/test_fatfs_host/main.cpp
@@ -1509,7 +1508,6 @@ components/pthread/test/test_pthread.c
 components/pthread/test/test_pthread_cond_var.c
 components/pthread/test/test_pthread_cxx.cpp
 components/pthread/test/test_pthread_local_storage.c
-components/riscv/include/esp_private/panic_reason.h
 components/riscv/include/riscv/csr.h
 components/riscv/include/riscv/encoding.h
 components/riscv/include/riscv/instruction_decode.h
@@ -2111,7 +2109,6 @@ components/wifi_provisioning/src/wifi_provisioning_priv.h
 components/wifi_provisioning/src/wifi_scan.c
 components/wpa_supplicant/esp_supplicant/include/esp_dpp.h
 components/wpa_supplicant/esp_supplicant/include/esp_rrm.h
-components/wpa_supplicant/esp_supplicant/include/esp_wpa.h
 components/wpa_supplicant/esp_supplicant/include/esp_wps.h
 components/wpa_supplicant/esp_supplicant/src/esp_dpp_i.h
 components/wpa_supplicant/esp_supplicant/src/esp_scan_i.h
@@ -2789,11 +2786,7 @@ examples/system/light_sleep/main/light_sleep_example_main.c
 examples/system/ota/advanced_https_ota/example_test.py
 examples/system/ota/advanced_https_ota/main/advanced_https_ota_example.c
 examples/system/ota/advanced_https_ota/main/ble_helper/ble_api.c
-examples/system/ota/advanced_https_ota/main/ble_helper/bluedroid_gatts.c
 examples/system/ota/advanced_https_ota/main/ble_helper/include/ble_api.h
-examples/system/ota/advanced_https_ota/main/ble_helper/include/bluedroid_gatts.h
-examples/system/ota/advanced_https_ota/main/ble_helper/include/nimble_gatts.h
-examples/system/ota/advanced_https_ota/main/ble_helper/nimble_gatts.c
 examples/system/ota/native_ota_example/example_test.py
 examples/system/ota/native_ota_example/main/native_ota_example.c
 examples/system/ota/otatool/example_test.py
