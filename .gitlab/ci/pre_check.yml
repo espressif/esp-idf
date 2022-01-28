@@ -142,6 +142,7 @@ check_esp_err_to_name:
 scan_tests:
   extends:
     - .pre_check_base_template
+    - .before_script_pytest
     - .rules:build:target_test
   image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
   tags:

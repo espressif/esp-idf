@@ -5,12 +5,9 @@ import logging
 import os
 from collections import defaultdict
 from copy import deepcopy
+from typing import Any
 
-try:
-    from typing import Any
-except ImportError:
-    # Only used for type annotations
-    pass
+from ci.idf_ci_utils import get_pytest_app_paths
 from find_apps import find_apps
 from find_build_apps import BUILD_SYSTEM_CMAKE, BUILD_SYSTEMS
 from idf_py_actions.constants import PREVIEW_TARGETS, SUPPORTED_TARGETS
@@ -174,8 +171,16 @@ def main():  # type: () -> None
             scan_info_dict[target]['standalone_apps'] = set()
     test_case_apps_preserve_default = True if build_system == 'cmake' else False
     for target in SUPPORTED_TARGETS:
+        # get pytest apps paths
+        pytest_app_paths = set()
+        for path in paths:
+            pytest_app_paths.update(get_pytest_app_paths(path, target))
+
         apps = []
         for app_dir in scan_info_dict[target]['test_case_apps']:
+            if app_dir in pytest_app_paths:
+                print(f'WARNING: has pytest script: {app_dir}')
+                continue
             apps.append({
                 'app_dir': app_dir,
                 'build_system': args.build_system,
@@ -183,6 +188,9 @@ def main():  # type: () -> None
                 'preserve': args.preserve_all or test_case_apps_preserve_default
             })
         for app_dir in scan_info_dict[target]['standalone_apps']:
+            if app_dir in pytest_app_paths:
+                print(f'Skipping pytest app: {app_dir}')
+                continue
             apps.append({
                 'app_dir': app_dir,
                 'build_system': args.build_system,
