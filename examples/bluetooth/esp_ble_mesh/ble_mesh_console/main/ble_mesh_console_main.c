@@ -19,15 +19,10 @@
 #include "esp_vfs_dev.h"
 #include "nvs.h"
 #include "nvs_flash.h"
-
 #include "esp_vfs_fat.h"
-
 #include "esp_console.h"
-
 #include "ble_mesh_console_decl.h"
 #include "ble_mesh_example_init.h"
-
-#define TAG "ble_mesh_test"
 
 #if CONFIG_STORE_HISTORY
 
