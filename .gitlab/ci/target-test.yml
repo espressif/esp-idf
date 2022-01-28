@@ -7,13 +7,13 @@
 
 .target_test_job_template:
   stage: target_test
-  needs:
-    - assign_test
   artifacts:
     when: always
     paths:
       - "**/*.log"
       - $LOG_PATH
+    exclude:
+      - .git/**/*
     expire_in: 1 week
     reports:
       junit: $LOG_PATH/*/XUNIT_RESULT.xml
@@ -38,6 +38,8 @@
 
 .example_test_template:
   extends: .target_test_job_template
+  needs:
+    - assign_example_test
   variables:
     TEST_CASE_PATH: "$CI_PROJECT_DIR/examples"
     CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/examples/test_configs"
@@ -295,6 +297,8 @@ example_test_ESP32C3_SDSPI:
 
 .test_app_template:
   extends: .target_test_job_template
+  needs:
+    - assign_custom_test
   variables:
     TEST_CASE_PATH: "$CI_PROJECT_DIR/tools/test_apps"
     CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/tools/test_apps/test_configs"
@@ -381,6 +385,8 @@ test_app_test_flash_psram_f8r8:
 
 .component_ut_template:
   extends: .target_test_job_template
+  needs: # the assign already needs all the build jobs
+    - assign_component_ut
   variables:
     CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/component_ut/test_configs"
   script:
@@ -443,9 +449,11 @@ component_ut_test_esp32c3:
 
 .unit_test_template:
   extends: .target_test_job_template
+  needs: # the assign already needs all the build jobs
+    - assign_unit_test
   variables:
     TEST_CASE_PATH: "$CI_PROJECT_DIR/tools/unit-test-app"
-    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/components/idf_test/unit_test/CIConfigs"
+    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/components/idf_test/unit_test/test_configs"
 
 .unit_test_esp32_template:
   extends:
@@ -761,18 +769,18 @@ component_ut_test_lan8720:
   extends:
     - .target_test_job_template
     - .rules:test:integration_test
-  needs:
-    - assign_test
-    - build_ssc_esp32
+  needs: # the assign already needs all the build jobs
+    - assign_integration_test
   variables:
     LOCAL_ENV_CONFIG_PATH: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32_IDF"
     LOG_PATH: "${CI_PROJECT_DIR}/TEST_LOGS"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/auto_test_script/TestCaseFiles"
-    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/ModuleDefinition.yml"
-    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/components/idf_test/integration_test/CIConfigs"
-    KNOWN_ISSUE_FILE: "${CI_PROJECT_DIR}/components/idf_test/integration_test/KnownIssues"
+    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/tools/ci/integration_test/test_configs"
+    KNOWN_ISSUE_FILE: "${CI_PROJECT_DIR}/tools/ci/integration_test/KnownIssues"
     CI_RUNNER_SCRIPT: "${CI_PROJECT_DIR}/auto_test_script/bin/CIRunner.py"
-    PYTHONPATH: ${CI_PROJECT_DIR}/auto_test_script/packages
+    PREPARE_TEST_BIN_SCRIPT: "${CI_PROJECT_DIR}/tools/ci/integration_test/prepare_test_bins.py"
+    PYTHONPATH: "${CI_PROJECT_DIR}/auto_test_script/packages:${PYTHONPATH}"
+    INITIAL_CONDITION_RETRY_COUNT: "1"
     # auto_test_script only supports python 3.7.x
     PYTHON_VER: 3.7.7
   script:
@@ -789,7 +797,14 @@ component_ut_test_lan8720:
     - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script --customized_only
     - cat ${KNOWN_ISSUE_FILE} >> ${TEST_CASE_FILE_PATH}/KnownIssues
     # run test
+    - python ${PREPARE_TEST_BIN_SCRIPT} $CONFIG_FILE
     - python ${CI_RUNNER_SCRIPT} -l "$LOG_PATH/$JOB_FULL_NAME" -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH
+
+.integration_test_esp32c3_template:
+  extends:
+    - .integration_test_template
+  variables:
+    LOCAL_ENV_CONFIG_PATH: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32C3_IDF"
 
 nvs_compatible_test:
   extends: .integration_test_template
@@ -818,6 +833,7 @@ nvs_compatible_test:
     - cd auto_test_script
     - ./tools/prepare_nvs_bin.sh
     # run test
+    - python ${PREPARE_TEST_BIN_SCRIPT} $CONFIG_FILE
     - python ${CI_RUNNER_SCRIPT} -l "$LOG_PATH/$JOB_FULL_NAME" -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH
 
 IT_001:
@@ -932,3 +948,10 @@ IT_022:
   tags:
     - ESP32_IDF
     - SSC_T3_2
+
+IT_C3_001:
+  extends: .integration_test_esp32c3_template
+  parallel: 6
+  tags:
+    - ESP32C3_IDF
+    - SSC_T2_5
