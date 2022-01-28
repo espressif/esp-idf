@@ -42,63 +42,56 @@ build_pytest_examples_esp32:
     - .build_pytest_template
     - .rules:build:example_test-esp32
   script:
-    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir examples --target esp32 --size-info $SIZE_INFO_LOCATION -vv
+    - run_cmd python tools/ci/build_pytest_apps.py examples --target esp32 --size-info $SIZE_INFO_LOCATION -vv
 
 build_pytest_examples_esp32s2:
   extends:
     - .build_pytest_template
     - .rules:build:example_test-esp32s2
   script:
-    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir examples --target esp32s2 --size-info $SIZE_INFO_LOCATION -vv
+    - run_cmd python tools/ci/build_pytest_apps.py examples --target esp32s2 --size-info $SIZE_INFO_LOCATION -vv
 
 build_pytest_examples_esp32s3:
   extends:
     - .build_pytest_template
     - .rules:build:example_test-esp32s3
   script:
-    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir examples --target esp32s3 --size-info $SIZE_INFO_LOCATION -vv
+    - run_cmd python tools/ci/build_pytest_apps.py examples --target esp32s3 --size-info $SIZE_INFO_LOCATION -vv
 
 build_pytest_examples_esp32c3:
   extends:
     - .build_pytest_template
     - .rules:build:example_test-esp32c3
   script:
-    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir examples --target esp32c3 --size-info $SIZE_INFO_LOCATION -vv
+    - run_cmd python tools/ci/build_pytest_apps.py examples --target esp32c3 --size-info $SIZE_INFO_LOCATION -vv
 
 build_pytest_components_esp32:
   extends:
     - .build_pytest_template
     - .rules:build:component_ut-esp32
   script:
-    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir components --target esp32 --size-info $SIZE_INFO_LOCATION -vv
+    - run_cmd python tools/ci/build_pytest_apps.py components --target esp32 --size-info $SIZE_INFO_LOCATION -vv
 
 build_pytest_components_esp32s2:
   extends:
     - .build_pytest_template
     - .rules:build:component_ut-esp32s2
   script:
-    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir components --target esp32s2 --size-info $SIZE_INFO_LOCATION -vv
+    - run_cmd python tools/ci/build_pytest_apps.py components --target esp32s2 --size-info $SIZE_INFO_LOCATION -vv
 
 build_pytest_components_esp32s3:
   extends:
     - .build_pytest_template
     - .rules:build:component_ut-esp32s3
   script:
-    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir components --target esp32s3 --size-info $SIZE_INFO_LOCATION -vv
-
-build_pytest_components_esp32c2:
-  extends:
-    - .build_pytest_template
-    - .rules:build:component_ut-esp32c2
-  script:
-    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir components --target esp32c2 --size-info $SIZE_INFO_LOCATION -vv
+    - run_cmd python tools/ci/build_pytest_apps.py components --target esp32s3 --size-info $SIZE_INFO_LOCATION -vv
 
 build_pytest_components_esp32c3:
   extends:
     - .build_pytest_template
     - .rules:build:component_ut-esp32c3
   script:
-    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir components --target esp32c3 --size-info $SIZE_INFO_LOCATION -vv
+    - run_cmd python tools/ci/build_pytest_apps.py components --target esp32c3 --size-info $SIZE_INFO_LOCATION -vv
 
 .build_template_app_template:
   extends: .build_template

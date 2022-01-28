@@ -9,39 +9,39 @@ import argparse
 import logging
 import os
 import sys
+from collections import defaultdict
 from typing import List
 
-from idf_ci_utils import IDF_PATH, get_pytest_dirs
+from idf_ci_utils import IDF_PATH, get_pytest_cases
 
 try:
     from build_apps import build_apps
-    from find_apps import find_apps, find_builds_for_app
-    from find_build_apps import BuildItem, CMakeBuildSystem, config_rules_from_str, setup_logging
+    from find_apps import find_builds_for_app
+    from find_build_apps import BuildItem, config_rules_from_str, setup_logging
 except ImportError:
     sys.path.append(os.path.join(IDF_PATH, 'tools'))
 
     from build_apps import build_apps
-    from find_apps import find_apps, find_builds_for_app
-    from find_build_apps import BuildItem, CMakeBuildSystem, config_rules_from_str, setup_logging
+    from find_apps import find_builds_for_app
+    from find_build_apps import BuildItem, config_rules_from_str, setup_logging
 
 
 def main(args: argparse.Namespace) -> None:
-    if args.all_pytest_apps:
-        paths = get_pytest_dirs(args.under_dir)
-        args.recursive = True
-    elif args.paths is None:
-        paths = [os.getcwd()]
-    else:
-        paths = args.paths
+    pytest_cases = []
+    for path in args.paths:
+        pytest_cases += get_pytest_cases(path, args.target)
 
-    app_dirs = []
-    for path in paths:
-        app_dirs += find_apps(CMakeBuildSystem, path, args.recursive, [], args.target)
+    paths = set()
+    app_configs = defaultdict(set)
+    for case in pytest_cases:
+        paths.add(case.app_path)
+        app_configs[case.app_path].add(case.config)
+
+    app_dirs = list(paths)
     if not app_dirs:
-        logging.error('No apps found')
-        sys.exit(1)
+        raise RuntimeError('No apps found')
 
-    logging.info('Found {} apps'.format(len(app_dirs)))
+    logging.info(f'Found {len(app_dirs)} apps')
     app_dirs.sort()
 
     # Find compatible configurations of each app, collect them as BuildItems
@@ -50,61 +50,58 @@ def main(args: argparse.Namespace) -> None:
     for app_dir in app_dirs:
         app_dir = os.path.realpath(app_dir)
         build_items += find_builds_for_app(
-            app_dir,
-            app_dir,
-            'build_@t_@w',
-            f'{app_dir}/build_@t_@w/build.log',
-            args.target,
-            'cmake',
-            config_rules,
-            True,
+            app_path=app_dir,
+            work_dir=app_dir,
+            build_dir='build_@t_@w',
+            build_log=f'{app_dir}/build_@t_@w/build.log',
+            target_arg=args.target,
+            build_system='cmake',
+            config_rules=config_rules,
         )
-    logging.info('Found {} builds'.format(len(build_items)))
+    logging.info(f'Found {len(build_items)} builds')
     build_items.sort(key=lambda x: x.build_path)  # type: ignore
 
-    build_apps(build_items, args.parallel_count, args.parallel_index, False, args.build_verbose, True, None,
-               args.size_info)
+    # auto clean up the binaries if no flag --preserve-all
+    if args.preserve_all is False:
+        for item in build_items:
+            if item.config_name not in app_configs[item.app_dir]:
+                item.preserve = False
+
+    build_apps(
+        build_items=build_items,
+        parallel_count=args.parallel_count,
+        parallel_index=args.parallel_index,
+        dry_run=False,
+        build_verbose=args.build_verbose,
+        keep_going=True,
+        output_build_list=None,
+        size_info=args.size_info,
+    )
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Tool to generate build steps for IDF apps')
-    parser.add_argument(
-        '--recursive',
-        action='store_true',
-        help='Look for apps in the specified directories recursively.',
+    parser = argparse.ArgumentParser(
+        description='Build all the pytest apps under specified paths. Will auto remove those non-test apps binaries'
     )
     parser.add_argument('--target', required=True, help='Build apps for given target.')
     parser.add_argument(
         '--config',
         default=['sdkconfig.ci=default', 'sdkconfig.ci.*=', '=default'],
         action='append',
-        help='Adds configurations (sdkconfig file names) to build. This can either be ' +
-             'FILENAME[=NAME] or FILEPATTERN. FILENAME is the name of the sdkconfig file, ' +
-             'relative to the project directory, to be used. Optional NAME can be specified, ' +
-             'which can be used as a name of this configuration. FILEPATTERN is the name of ' +
-             'the sdkconfig file, relative to the project directory, with at most one wildcard. ' +
-             'The part captured by the wildcard is used as the name of the configuration.',
+        help='Adds configurations (sdkconfig file names) to build. This can either be '
+        + 'FILENAME[=NAME] or FILEPATTERN. FILENAME is the name of the sdkconfig file, '
+        + 'relative to the project directory, to be used. Optional NAME can be specified, '
+        + 'which can be used as a name of this configuration. FILEPATTERN is the name of '
+        + 'the sdkconfig file, relative to the project directory, with at most one wildcard. '
+        + 'The part captured by the wildcard is used as the name of the configuration.',
     )
     parser.add_argument(
-        '-p', '--paths',
-        nargs='*',
-        help='One or more app paths. Will use the current path if not specified.'
+        'paths',
+        nargs='+',
+        help='One or more app paths. Will use the current path if not specified.',
     )
     parser.add_argument(
-        '--all-pytest-apps',
-        action='store_true',
-        help='Look for all pytest apps. "--paths" would be ignored if specify this flag.'
-    )
-    parser.add_argument(
-        '--under-dir',
-        help='Build only the pytest apps under this directory if specified. '
-             'Would be ignored if "--all-pytest-apps" is unflagged.'
-    )
-    parser.add_argument(
-        '--parallel-count',
-        default=1,
-        type=int,
-        help='Number of parallel build jobs.'
+        '--parallel-count', default=1, type=int, help='Number of parallel build jobs.'
     )
     parser.add_argument(
         '--parallel-index',
@@ -115,7 +112,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--size-info',
         type=argparse.FileType('a'),
-        help='If specified, the test case name and size info json will be written to this file'
+        help='If specified, the test case name and size info json will be written to this file',
     )
     parser.add_argument(
         '-v',
@@ -127,6 +124,11 @@ if __name__ == '__main__':
         '--build-verbose',
         action='store_true',
         help='Enable verbose output from build system.',
+    )
+    parser.add_argument(
+        '--preserve-all',
+        action='store_true',
+        help='add this flag to preserve the binaries for all apps',
     )
     arguments = parser.parse_args()
     setup_logging(arguments)
