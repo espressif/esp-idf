@@ -336,18 +336,26 @@ esp_err_t esp_https_ota_get_img_desc(esp_https_ota_handle_t https_ota_handle, es
     }
     if (handle->state < ESP_HTTPS_OTA_BEGIN) {
         ESP_LOGE(TAG, "esp_https_ota_read_img_desc: Invalid state");
-        return ESP_FAIL;
+        return ESP_ERR_INVALID_STATE;
     }
     if (read_header(handle) != ESP_OK) {
         return ESP_FAIL;
     }
-    memcpy(new_app_info, &handle->ota_upgrade_buf[sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t)], sizeof(esp_app_desc_t));
+
+    const int app_desc_offset = sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t);
+    esp_app_desc_t *app_info = (esp_app_desc_t *) &handle->ota_upgrade_buf[app_desc_offset];
+    if (app_info->magic_word != ESP_APP_DESC_MAGIC_WORD) {
+        ESP_LOGE(TAG, "Incorrect app descriptor magic");
+        return ESP_FAIL;
+    }
+
+    memcpy(new_app_info, app_info, sizeof(esp_app_desc_t));
     return ESP_OK;
 }
 
-static esp_err_t esp_ota_verify_chip_id(void *arg)
+static esp_err_t esp_ota_verify_chip_id(const void *arg)
 {
-    esp_image_header_t *data = (esp_image_header_t*)(arg);
+    esp_image_header_t *data = (esp_image_header_t *)(arg);
     if (data->chip_id != CONFIG_IDF_FIRMWARE_CHIP_ID) {
         ESP_LOGE(TAG, "Mismatch chip id, expected %d, found %d", CONFIG_IDF_FIRMWARE_CHIP_ID, data->chip_id);
         return ESP_ERR_INVALID_VERSION;
