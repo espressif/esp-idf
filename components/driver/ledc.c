@@ -63,9 +63,9 @@ static portMUX_TYPE ledc_spinlock = portMUX_INITIALIZER_UNLOCKED;
 #define LEDC_FADE_TOO_SLOW_STR    "LEDC FADE TOO SLOW"
 #define LEDC_FADE_TOO_FAST_STR    "LEDC FADE TOO FAST"
 
-static const char *LEDC_NOT_INIT = "LEDC is not initialized";
-static const char *LEDC_FADE_SERVICE_ERR_STR = "LEDC fade service not installed";
-static const char *LEDC_FADE_INIT_ERROR_STR = "LEDC fade channel init error, not enough memory or service not installed";
+static __attribute__((unused)) const char *LEDC_NOT_INIT = "LEDC is not initialized";
+static __attribute__((unused)) const char *LEDC_FADE_SERVICE_ERR_STR = "LEDC fade service not installed";
+static __attribute__((unused)) const char *LEDC_FADE_INIT_ERROR_STR = "LEDC fade channel init error, not enough memory or service not installed";
 
 //This value will be calibrated when in use.
 static uint32_t s_ledc_slow_clk_8M = 0;
