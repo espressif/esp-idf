@@ -4,8 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "ulp_riscv/ulp_riscv.h"
-#include "ulp_riscv/ulp_riscv_utils.h"
+#include "ulp_riscv_utils.h"
+#include "ulp_riscv_register_ops.h"
+#include "soc/soc.h"
+#include "soc/rtc_cntl_reg.h"
+#include "soc/soc_ulp.h"
 
 void ulp_riscv_rescue_from_monitor(void)
 {

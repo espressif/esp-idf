@@ -17,10 +17,10 @@ string(REGEX MATCH "\\(GNU Binutils\\) (${version_pattern})" as_version ${as_out
 set(as_version ${CMAKE_MATCH_1})
 
 
-message(STATUS "Building ULP app ${ULP_APP_NAME} for ${IDF_TARGET}")
+message(STATUS "Building ULP app ${ULP_APP_NAME}")
 
 if(ULP_COCPU_IS_RISCV)
-    set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/${IDF_TARGET}.ulp.riscv.ld)
+    set(ULP_LD_TEMPLATE ${IDF_PATH}/components/ulp/ld/ulp_riscv.ld)
 else()
     message(STATUS "ULP assembler version: ${as_version}")
 

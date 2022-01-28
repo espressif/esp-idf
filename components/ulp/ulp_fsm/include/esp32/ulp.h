@@ -10,14 +10,12 @@
 #include <stdlib.h>
 #include "esp_err.h"
 #include "ulp_common.h"
+#include "ulp_fsm_common.h"
 #include "soc/reg_base.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define ULP_FSM_PREPARE_SLEEP_CYCLES 2    /*!< Cycles spent by FSM preparing ULP for sleep */
-#define ULP_FSM_WAKEUP_SLEEP_CYCLES  2    /*!< Cycles spent by FSM waking up ULP from sleep */
 
 /**
  * @defgroup ulp_registers ULP coprocessor registers
@@ -1030,9 +1028,6 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
  * Slave address (in 7-bit format) has to be set in advance into SENS_I2C_SLAVE_ADDRx register field, where x == slave_sel.
  */
 #define I_I2C_WRITE(slave_sel, sub_addr, val) I_I2C_RW(sub_addr, val, 0, 7, slave_sel, SUB_OPCODE_I2C_WR)
-
-#define RTC_SLOW_MEM ((uint32_t*) 0x50000000)       /*!< RTC slow memory, 8k size */
-
 
 #ifdef __cplusplus
 }
