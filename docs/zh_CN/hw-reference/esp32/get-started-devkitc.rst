@@ -51,7 +51,6 @@ ESP32-DevKitC V4 开发板的主要组件、接口及控制方式见下。
 .. figure:: ../../../_static/esp32-devkitc-functional-overview.jpg
     :align: center
     :alt: ESP32-DevKitC V4（板载 ESP32-WROOM-32）
-    :figclass: align-center
 
     ESP32-DevKitC V4（板载 ESP32-WROOM-32）
 
@@ -164,9 +163,8 @@ J3
 ^^^^^^^^^^^
 .. figure:: ../../../_static/esp32-devkitC-v4-pinout.png
     :align: center
-    :scale: 100%
+    :scale: 45%
     :alt: ESP32-DevKitC 管脚布局（点击放大）
-    :figclass: align-center
 
     ESP32-DevKitC 管脚布局（点击放大）
 
@@ -185,7 +183,6 @@ J3
 .. figure:: ../../../_static/esp32-devkitc-c15-location.png
     :align: center
     :alt: C15（黄色）在 ESP32-DevKitC V4 开发板上的位置
-    :figclass: align-center
     :width: 30%
 
     C15（黄色）在 ESP32-DevKitC V4 开发板上的位置
@@ -204,9 +201,8 @@ ESP32-DevKitC V4 上电前，请首先确认开发板完好无损。
 
 .. figure:: ../../../_static/esp32-devkitc-dimensions-back.jpg
     :align: center
+    :scale: 80%
     :alt: ESP32-DevKitC 开发板尺寸（板载 ESP32-WROOM-32 模组）-- 仰视图
-    :figclass: align-center
-    :width: 30%
 
     ESP32-DevKitC 开发板尺寸（板载 ESP32-WROOM-32 模组）-- 仰视图
 
