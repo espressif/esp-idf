@@ -427,7 +427,10 @@ void PORT_ParNegCnf (tRFC_MCB *p_mcb, UINT8 dlci, UINT16 mtu, UINT8 cl, UINT8 k)
 void PORT_DlcEstablishInd (tRFC_MCB *p_mcb, UINT8 dlci, UINT16 mtu)
 {
     tPORT *p_port = port_find_mcb_dlci_port (p_mcb, dlci);
-    BOOLEAN accept = true;
+    tPORT_MGMT_SR_CALLBACK_ARG mgmt_cb_arg = {
+        .accept = TRUE,
+        .ignore_rfc_state = FALSE,
+    };
 
     RFCOMM_TRACE_DEBUG ("PORT_DlcEstablishInd p_mcb:%p, dlci:%d mtu:%di, p_port:%p", p_mcb, dlci, mtu, p_port);
     RFCOMM_TRACE_DEBUG ("PORT_DlcEstablishInd p_mcb addr:%02x:%02x:%02x:%02x:%02x:%02x",
@@ -461,10 +464,17 @@ void PORT_DlcEstablishInd (tRFC_MCB *p_mcb, UINT8 dlci, UINT16 mtu)
     }
 
     if (p_port->p_mgmt_callback) {
-        p_port->p_mgmt_callback (PORT_SUCCESS, p_port->inx, &accept);
+        /**
+         * @note
+         * 1. The manage callback function may change the value of accept in mgmt_cb_arg.
+         * 2. Use mgmt_cb_arg.ignore_rfc_state to work around the issue caused by sending
+         * RFCOMM establish response after the manage callback function.
+         */
+        mgmt_cb_arg.ignore_rfc_state = TRUE;
+        p_port->p_mgmt_callback (PORT_SUCCESS, p_port->inx, &mgmt_cb_arg);
     }
 
-    if (accept) {
+    if (mgmt_cb_arg.accept) {
         RFCOMM_DlcEstablishRsp(p_mcb, dlci, p_port->mtu, RFCOMM_SUCCESS);
         p_port->state = PORT_STATE_OPENED;
     } else {
