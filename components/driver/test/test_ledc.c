@@ -445,7 +445,6 @@ TEST_CASE("LEDC fade stop test", "[ledc]")
     const ledc_mode_t test_speed_mode = TEST_SPEED_MODE;
     fade_setup();
 
-    // Overwrite the last fade with new fade
     int64_t fade_start, fade_stop;
     int time_ms = 0;
     fade_start = esp_timer_get_time();
@@ -453,14 +452,19 @@ TEST_CASE("LEDC fade stop test", "[ledc]")
     TEST_ESP_OK(ledc_fade_start(test_speed_mode, LEDC_CHANNEL_0, LEDC_FADE_NO_WAIT));
     // Add some delay before stopping the fade
     vTaskDelay(127 / portTICK_RATE_MS);
-    uint32_t duty_at_stop = ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0);
+    // Get duty value right before stopping the fade
+    uint32_t duty_before_stop = ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0);
     TEST_ESP_OK(ledc_fade_stop(test_speed_mode, LEDC_CHANNEL_0));
     fade_stop = esp_timer_get_time();
     time_ms = (fade_stop - fade_start) / 1000;
     TEST_ASSERT_TRUE(fabs(time_ms - 127) < 20);
+    // Get duty value after fade_stop returns (give at least one cycle for the duty set in fade_stop to take effective)
+    uint32_t duty_after_stop = ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0);
+    TEST_ASSERT_INT32_WITHIN(4, duty_before_stop, duty_after_stop); // 4 is the scale for one step in the last fade
     vTaskDelay(300 / portTICK_RATE_MS);
-    TEST_ASSERT_EQUAL_INT32(duty_at_stop, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
-    TEST_ASSERT_NOT_EQUAL(4000, duty_at_stop);
+    // Duty should not change any more after ledc_fade_stop returns
+    TEST_ASSERT_EQUAL_INT32(duty_after_stop, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
+    TEST_ASSERT_NOT_EQUAL(4000, duty_after_stop);
 
     //deinitialize fade service
     ledc_fade_func_uninstall();
