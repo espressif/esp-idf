@@ -76,6 +76,7 @@ void app_main(void)
 #else
     repl_config.prompt = "esp32>";
 #endif
+    printf("!!!ready!!!\n");
 
     // init console REPL environment
     ESP_ERROR_CHECK(esp_console_new_repl_uart(&uart_config, &repl_config, &repl));
