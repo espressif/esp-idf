@@ -1,13 +1,9 @@
 /*
- * Copyright (c) 2017, Intel Corporation
+ * SPDX-FileCopyrightText: 2017, Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
- */
-
-/*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
  */
 
 /* File adapted to use on IDF FreeRTOS component, extracted

@@ -1,43 +1,50 @@
-/*******************************************************************************
-// Copyright (c) 2003-2015 Cadence Design Systems, Inc.
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-// SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
---------------------------------------------------------------------------------
+/*
+ * SPDX-FileCopyrightText: 2015-2019 Cadence Design Systems, Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ */
+/*
+ * Copyright (c) 2015-2019 Cadence Design Systems, Inc.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 
-        RTOS-SPECIFIC INFORMATION FOR XTENSA RTOS ASSEMBLER SOURCES
-                            (FreeRTOS Port)
-
-This header is the primary glue between generic Xtensa RTOS support
-sources and a specific RTOS port for Xtensa.  It contains definitions
-and macros for use primarily by Xtensa assembly coded source files.
-
-Macros in this header map callouts from generic Xtensa files to specific
-RTOS functions. It may also be included in C source files.
-
-Xtensa RTOS ports support all RTOS-compatible configurations of the Xtensa
-architecture, using the Xtensa hardware abstraction layer (HAL) to deal
-with configuration specifics.
-
-Should be included by all Xtensa generic and RTOS port-specific sources.
-
-*******************************************************************************/
+/*
+ * RTOS-SPECIFIC INFORMATION FOR XTENSA RTOS ASSEMBLER SOURCES
+ *                       (FreeRTOS Port)
+ *
+ * This header is the primary glue between generic Xtensa RTOS support
+ * sources and a specific RTOS port for Xtensa.  It contains definitions
+ * and macros for use primarily by Xtensa assembly coded source files.
+ *
+ * Macros in this header map callouts from generic Xtensa files to specific
+ * RTOS functions. It may also be included in C source files.
+ *
+ * Xtensa RTOS ports support all RTOS-compatible configurations of the Xtensa
+ * architecture, using the Xtensa hardware abstraction layer (HAL) to deal
+ * with configuration specifics.
+ *
+ * Should be included by all Xtensa generic and RTOS port-specific sources.
+ */
 
 #ifndef XTENSA_RTOS_H
 #define XTENSA_RTOS_H
@@ -86,7 +93,7 @@ However these can still be overridden from the command line.
   #endif
 #endif
 
-#if !defined(XT_SIMULATOR) && !defined(XT_BOARD)
+#if (!XT_SIMULATOR) && (!XT_BOARD)
   #error Either XT_SIMULATOR or XT_BOARD must be defined.
 #endif
 
@@ -228,7 +235,7 @@ Xtensa Port Version.
 
 *******************************************************************************/
 
-#define XTENSA_PORT_VERSION             1.4.2
-#define XTENSA_PORT_VERSION_STRING      "1.4.2"
+#define XTENSA_PORT_VERSION             1.7
+#define XTENSA_PORT_VERSION_STRING      "1.7"
 
 #endif /* XTENSA_RTOS_H */

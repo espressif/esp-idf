@@ -1,41 +1,48 @@
-/*******************************************************************************
-// Copyright (c) 2003-2015 Cadence Design Systems, Inc.
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-// SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
---------------------------------------------------------------------------------
+/*
+ * SPDX-FileCopyrightText: 2015-2019 Cadence Design Systems, Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ */
+/*
+ * Copyright (c) 2015-2019 Cadence Design Systems, Inc.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 
-        XTENSA INFORMATION FOR RTOS TICK TIMER AND CLOCK FREQUENCY
-
-This header contains definitions and macros for use primarily by Xtensa
-RTOS assembly coded source files. It includes and uses the Xtensa hardware
-abstraction layer (HAL) to deal with config specifics. It may also be
-included in C source files.
-
-User may edit to modify timer selection and to specify clock frequency and
-tick duration to match timer interrupt to the real-time tick duration.
-
-If the RTOS has no timer interrupt, then there is no tick timer and the
-clock frequency is irrelevant, so all of these macros are left undefined
-and the Xtensa core configuration need not have a timer.
-
-*******************************************************************************/
+/*
+ * XTENSA INFORMATION FOR RTOS TICK TIMER AND CLOCK FREQUENCY
+ *
+ * This header contains definitions and macros for use primarily by Xtensa
+ * RTOS assembly coded source files. It includes and uses the Xtensa hardware
+ * abstraction layer (HAL) to deal with config specifics. It may also be
+ * included in C source files.
+ *
+ * Edit this file to modify timer selection and to specify clock frequency and
+ * tick duration to match timer interrupt to the real-time tick duration.
+ *
+ * If the RTOS has no timer interrupt, then there is no tick timer and the
+ * clock frequency is irrelevant, so all of these macros are left undefined
+ * and the Xtensa core configuration need not have a timer.
+ */
 
 #ifndef XTENSA_TIMER_H
 #define XTENSA_TIMER_H
