@@ -157,7 +157,9 @@ IRAM_ATTR void SysTickIsrHandler(void *arg)
  */
 BaseType_t xPortSysTickHandler(void)
 {
+#if configBENCHMARK
     portbenchmarkIntLatency();
+#endif //configBENCHMARK
     traceISR_ENTER(SYSTICK_INTR_ID);
     BaseType_t ret = xTaskIncrementTick();
     if(ret != pdFALSE) {
