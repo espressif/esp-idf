@@ -93,6 +93,15 @@ build_pytest_components_esp32c3:
   script:
     - run_cmd python tools/ci/build_pytest_apps.py components --target esp32c3 --size-info $SIZE_INFO_LOCATION -vv
 
+build_non_test_components_apps:
+  extends:
+    - .build_template
+    - .build_test_apps_template
+  variables:
+    IDF_TARGET: all
+    TEST_PREFIX: component_ut
+    TEST_RELATIVE_DIR: component_ut
+
 .build_template_app_template:
   extends: .build_template
   variables:

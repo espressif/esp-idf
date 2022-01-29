@@ -97,6 +97,10 @@ def main():  # type: () -> None
                         help='add this flag to preserve artifacts for all apps')
     parser.add_argument('--build-all', action='store_true',
                         help='add this flag to build all apps')
+    parser.add_argument('--combine-all-targets', action='store_true',
+                        help='add this flag to combine all target jsons into one')
+    parser.add_argument('--except-targets', nargs='+',
+                        help='only useful when "--combine-all-targets". Specified targets would be skipped.')
 
     args = parser.parse_args()
     build_test_case_apps, build_standalone_apps = _judge_build_or_not(args.test_type, args.build_all)
@@ -170,6 +174,7 @@ def main():  # type: () -> None
         else:
             scan_info_dict[target]['standalone_apps'] = set()
     test_case_apps_preserve_default = True if build_system == 'cmake' else False
+    output_files = []
     for target in SUPPORTED_TARGETS:
         # get pytest apps paths
         pytest_app_paths = set()
@@ -200,6 +205,24 @@ def main():  # type: () -> None
         output_path = os.path.join(args.output_path, 'scan_{}_{}.json'.format(target.lower(), build_system))
         with open(output_path, 'w') as fw:
             fw.writelines([json.dumps(app) + '\n' for app in apps])
+
+        if args.combine_all_targets:
+            if (args.except_targets and target not in [t.lower() for t in args.except_targets]) \
+                    or (not args.except_targets):
+                output_files.append(output_path)
+                build_items_total_count += len(build_items)
+            else:
+                print(f'skipping combining target {target}')
+
+    if args.combine_all_targets:
+        scan_all_json = os.path.join(args.output_path, f'scan_all_{build_system}.json')
+        lines = []
+        for file in output_files:
+            with open(file) as fr:
+                lines.extend([line for line in fr.readlines() if line.strip()])
+        with open(scan_all_json, 'w') as fw:
+            fw.writelines(lines)
+        print(f'combined into file: {scan_all_json}')
 
 
 if __name__ == '__main__':

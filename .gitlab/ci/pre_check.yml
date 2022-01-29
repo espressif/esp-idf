@@ -151,11 +151,13 @@ scan_tests:
     paths:
       - $EXAMPLE_TEST_OUTPUT_DIR
       - $TEST_APPS_OUTPUT_DIR
+      - $COMPONENT_UT_OUTPUT_DIR
   variables:
     EXAMPLE_TEST_DIR: ${CI_PROJECT_DIR}/examples
     EXAMPLE_TEST_OUTPUT_DIR: ${CI_PROJECT_DIR}/examples/test_configs
     TEST_APPS_TEST_DIR: ${CI_PROJECT_DIR}/tools/test_apps
     TEST_APPS_OUTPUT_DIR: ${CI_PROJECT_DIR}/tools/test_apps/test_configs
+    COMPONENT_UT_OUTPUT_DIR: ${CI_PROJECT_DIR}/component_ut/test_configs
     CI_SCAN_TESTS_PY: ${CI_PROJECT_DIR}/tools/ci/python_packages/ttfw_idf/CIScanTests.py
     EXTRA_TEST_DIRS: >-
       examples/bluetooth/esp_ble_mesh/ble_mesh_console
@@ -164,6 +166,8 @@ scan_tests:
   script:
     - run_cmd python $CI_SCAN_TESTS_PY example_test $EXAMPLE_TEST_DIR -b cmake --exclude examples/build_system/idf_as_lib -c $CI_TARGET_TEST_CONFIG_FILE -o $EXAMPLE_TEST_OUTPUT_DIR --extra_test_dirs $EXTRA_TEST_DIRS
     - run_cmd python $CI_SCAN_TESTS_PY test_apps $TEST_APPS_TEST_DIR -c $CI_TARGET_TEST_CONFIG_FILE -o $TEST_APPS_OUTPUT_DIR
+    - set_component_ut_vars
+    - run_cmd python $CI_SCAN_TESTS_PY component_ut $COMPONENT_UT_DIRS --exclude $COMPONENT_UT_EXCLUDES -c $CI_TARGET_TEST_CONFIG_FILE -o $COMPONENT_UT_OUTPUT_DIR --combine-all-targets --except-targets linux
 
 # For release tag pipelines only, make sure the tag was created with 'git tag -a' so it will update
 # the version returned by 'git describe'
