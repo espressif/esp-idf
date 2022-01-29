@@ -16,6 +16,8 @@
 #include "bt_app_core.h"
 #include "driver/i2s.h"
 #include "freertos/ringbuf.h"
+#include "bt_app_av.h"
+#include "bt_app_volume_control.h"
 
 static void bt_app_task_handler(void *arg);
 static bool bt_app_send_msg(bt_app_msg_t *msg);
@@ -24,7 +26,7 @@ static void bt_app_work_dispatched(bt_app_msg_t *msg);
 static xQueueHandle s_bt_app_task_queue = NULL;
 static xTaskHandle s_bt_app_task_handle = NULL;
 static xTaskHandle s_bt_i2s_task_handle = NULL;
-static RingbufHandle_t s_ringbuf_i2s = NULL;;
+static RingbufHandle_t s_ringbuf_i2s = NULL;
 
 bool bt_app_work_dispatch(bt_app_cb_t p_cback, uint16_t event, void *p_params, int param_len, bt_app_copy_cb_t p_copy_cback)
 {
@@ -123,6 +125,7 @@ static void bt_i2s_task_handler(void *arg)
     for (;;) {
         data = (uint8_t *)xRingbufferReceive(s_ringbuf_i2s, &item_size, (portTickType)portMAX_DELAY);
         if (item_size != 0){
+            bt_app_adjust_volume(data, item_size);
             i2s_write(0, data, item_size, &bytes_written, portMAX_DELAY);
             vRingbufferReturnItem(s_ringbuf_i2s,(void *)data);
         }

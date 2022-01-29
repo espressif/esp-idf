@@ -48,4 +48,9 @@ void bt_i2s_task_shut_down(void);
 
 size_t write_ringbuf(const uint8_t *data, size_t size);
 
+/**
+ * adjusts volume. 0 - 127 levels
+ */
+void bt_i2s_set_volume(uint8_t level);
+
 #endif /* __BT_APP_CORE_H__ */

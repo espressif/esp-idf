@@ -13,6 +13,7 @@
 
 #include "bt_app_core.h"
 #include "bt_app_av.h"
+#include "bt_app_volume_control.h"
 #include "esp_bt_main.h"
 #include "esp_bt_device.h"
 #include "esp_gap_bt_api.h"
@@ -163,7 +164,7 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
             } else if (oct0 & (0x01 << 4)) {
                 sample_rate = 48000;
             }
-            i2s_set_clk(0, sample_rate, 16, 2);
+            i2s_set_clk(0, sample_rate, BT_SBC_BITS_PER_SAMPLE, 2);
 
             ESP_LOGI(BT_AV_TAG, "Configure audio player %x-%x-%x-%x",
                      a2d->audio_cfg.mcc.cie.sbc[0],
@@ -293,6 +294,7 @@ static void volume_set_by_controller(uint8_t volume)
     _lock_acquire(&s_volume_lock);
     s_volume = volume;
     _lock_release(&s_volume_lock);
+    bt_app_set_volume(volume);
 }
 
 static void volume_set_by_local_host(uint8_t volume)
@@ -322,6 +324,23 @@ static void volume_change_simulation(void *arg)
     }
 }
 
+static void bt_app_volume_sim_task_handler(bool create) {
+    #ifdef CONFIG_EXAMPLE_A2DP_ENABLE_VOLUME_SIMULATION_TASK
+        if (create) {
+            // create task to simulate volume change
+            xTaskCreate(volume_change_simulation, "vcsT", 2048, NULL, 5, &s_vcs_task_hdl);
+        } else {
+            vTaskDelete(s_vcs_task_hdl);
+            ESP_LOGI(BT_RC_TG_TAG, "Stop volume change simulation");
+        }
+    #else
+        // unused variables and functions.
+        (void) create;
+        (void) s_vcs_task_hdl;
+        (void) volume_change_simulation;
+    #endif
+}
+
 static void bt_av_hdl_avrc_tg_evt(uint16_t event, void *p_param)
 {
     ESP_LOGD(BT_RC_TG_TAG, "%s evt %d", __func__, event);
@@ -331,13 +350,8 @@ static void bt_av_hdl_avrc_tg_evt(uint16_t event, void *p_param)
         uint8_t *bda = rc->conn_stat.remote_bda;
         ESP_LOGI(BT_RC_TG_TAG, "AVRC conn_state evt: state %d, [%02x:%02x:%02x:%02x:%02x:%02x]",
                  rc->conn_stat.connected, bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
-        if (rc->conn_stat.connected) {
-            // create task to simulate volume change
-            xTaskCreate(volume_change_simulation, "vcsT", 2048, NULL, 5, &s_vcs_task_hdl);
-        } else {
-            vTaskDelete(s_vcs_task_hdl);
-            ESP_LOGI(BT_RC_TG_TAG, "Stop volume change simulation");
-        }
+        
+        bt_app_volume_sim_task_handler(rc->conn_stat.connected);
         break;
     }
     case ESP_AVRC_TG_PASSTHROUGH_CMD_EVT: {

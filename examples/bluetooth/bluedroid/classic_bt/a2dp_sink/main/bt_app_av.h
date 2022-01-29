@@ -15,6 +15,7 @@
 #define BT_RC_TG_TAG            "RCTG"
 #define BT_RC_CT_TAG            "RCCT"
 
+#define BT_SBC_BITS_PER_SAMPLE   0x10 /* bit depth */
 /**
  * @brief     callback function for A2DP sink
  */
