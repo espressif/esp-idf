@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -6,7 +6,7 @@
 #
 # There are related tools/detect_python.{sh,fish} scripts which are called earlier when the paths are not properly
 # set-up and they only intend to prefer the use of Python 3 over Python 2. Why not more? All possible executables
-# (python3.6, python3.7, ...) cannot be hardcoded there and at the end, the user is responsible to set-up a system
+# (python3.7, python3.8, ...) cannot be hardcoded there and at the end, the user is responsible to set-up a system
 # where "python" or "python3" of compatible version is available.
 
 import sys
@@ -18,7 +18,7 @@ try:
 except ImportError:
     pass
 
-OLDEST_PYTHON_SUPPORTED = (3, 6)  # keep it as tuple for comparison with sys.version_info
+OLDEST_PYTHON_SUPPORTED = (3, 7)  # keep it as tuple for comparison with sys.version_info
 
 
 def _ver_to_str(it):  # type: (Iterable) -> str
@@ -31,6 +31,9 @@ def is_supported():  # type: () -> bool
 
 def check():  # type: () -> None
     if not is_supported():
-        raise RuntimeError('ESP-IDF supports Python {} or newer but you are using Python {}. Please upgrade your '
-                           'installation as described in the documentation.'.format(_ver_to_str(OLDEST_PYTHON_SUPPORTED),
-                                                                                    _ver_to_str(sys.version_info[:3])))
+        raise RuntimeError(
+            'ESP-IDF supports Python {} or newer but you are using Python {}. Please upgrade your '
+            'installation as described in the documentation.'.format(
+                _ver_to_str(OLDEST_PYTHON_SUPPORTED), _ver_to_str(sys.version_info[:3])
+            )
+        )

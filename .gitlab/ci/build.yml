@@ -21,7 +21,7 @@
     - job: fast_template_app
       artifacts: false
   variables:
-    PYTHON_VER: 3.6.13
+    PYTHON_VER: 3.7.10
   artifacts:
     paths:
       - "**/build*/size.json"
@@ -202,7 +202,7 @@ build_ssc_esp32s3:
     OUTPUT_PATH: ${CI_PROJECT_DIR}/tools/unit-test-app/output
     BUILD_SYSTEM: "cmake"
     TEST_TYPE: "unit_test"
-    PYTHON_VER: 3.6.13
+    PYTHON_VER: 3.7.10
     LDGEN_CHECK_MAPPING: 1
   script:
     - ${IDF_PATH}/tools/ci/find_apps_build_apps.sh
@@ -260,7 +260,7 @@ build_esp_idf_tests_cmake_esp32c2:
     TEST_TYPE: example_test
     LOG_PATH: ${CI_PROJECT_DIR}/log_${TEST_PREFIX}
     BUILD_PATH: ${CI_PROJECT_DIR}/build_${TEST_PREFIX}
-    PYTHON_VER: 3.6.13
+    PYTHON_VER: 3.7.10
     LDGEN_CHECK_MAPPING: 1
   script:
     # it's not possible to build 100% out-of-tree and have the "artifacts"

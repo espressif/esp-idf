@@ -58,7 +58,7 @@ check_docs_lang_sync:
 .build_docs_template:
   image: $ESP_IDF_DOC_ENV_IMAGE
   variables:
-    PYTHON_VER: 3.6.13
+    PYTHON_VER: 3.7.10
   tags:
     - build_docs
   dependencies: []
@@ -74,7 +74,7 @@ check_docs_lang_sync:
 check_docs_gh_links:
   image: $ESP_IDF_DOC_ENV_IMAGE
   variables:
-    PYTHON_VER: 3.6.13
+    PYTHON_VER: 3.7.10
   extends:
     - .pre_check_job_template
     - .doc-rules:build:docs
@@ -151,7 +151,7 @@ build_docs_pdf:
     - .before_script_no_sync_submodule
   image: $ESP_IDF_DOC_ENV_IMAGE
   variables:
-    PYTHON_VER: 3.6.13
+    PYTHON_VER: 3.7.10
     DOCS_BUILD_DIR: "${IDF_PATH}/docs/_build/"
     PYTHONUNBUFFERED: 1
   stage: test_deploy
