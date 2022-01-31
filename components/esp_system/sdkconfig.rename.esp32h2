@@ -1,0 +1,5 @@
+# sdkconfig replacement configurations for deprecated options formatted as
+# CONFIG_DEPRECATED_OPTION CONFIG_NEW_OPTION
+
+CONFIG_ESP32H2_MEMPROT_FEATURE                          CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+CONFIG_ESP32H2_MEMPROT_FEATURE_LOCK                     CONFIG_ESP_SYSTEM_MEMPROT_FEATURE_LOCK
