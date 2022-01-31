@@ -111,12 +111,14 @@
 #endif
 
 /*** nimble */
+#if CONFIG_BT_NIMBLE_ENABLED
+
 #ifndef CONFIG_BT_NIMBLE_50_FEATURE_SUPPORT
 #define BLE_50_FEATURE_SUPPORT (0)
 #else
 #define BLE_50_FEATURE_SUPPORT (CONFIG_BT_NIMBLE_50_FEATURE_SUPPORT)
 #endif
-
+#endif
 #ifndef CONFIG_BT_NIMBLE_EXT_ADV
 #define MYNEWT_VAL_BLE_EXT_ADV (0)
 #else
@@ -188,7 +190,6 @@
 #ifndef MYNEWT_VAL_BLE_WHITELIST
 #define MYNEWT_VAL_BLE_WHITELIST (1)
 #endif
-
 /*** @apache-mynewt-nimble/nimble/controller */
 /*** @apache-mynewt-nimble/nimble/controller */
 #ifndef MYNEWT_VAL_BLE_CONTROLLER
