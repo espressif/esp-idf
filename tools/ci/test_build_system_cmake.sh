@@ -631,6 +631,35 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     git checkout -- sdkconfig.rename Kconfig
     popd
 
+    echo "Can have multiple deprecated Kconfig options map to a single new option"
+    idf.py clean > /dev/null
+    rm -f sdkconfig.defaults
+    rm -f sdkconfig
+    echo "" > ${IDF_PATH}/sdkconfig.rename
+    idf.py reconfigure > /dev/null
+    echo "CONFIG_TEST_NEW_OPTION=y" >> sdkconfig
+    echo "CONFIG_TEST_OLD_OPTION_1 CONFIG_TEST_NEW_OPTION" >> ${IDF_PATH}/sdkconfig.rename
+    echo "CONFIG_TEST_OLD_OPTION_2 CONFIG_TEST_NEW_OPTION" >> ${IDF_PATH}/sdkconfig.rename
+    echo -e "\n\
+    menu \"test\"\n\
+    config TEST_NEW_OPTION\n\
+        bool \"test\"\n\
+        default \"n\"\n\
+        help\n\
+            TEST_NEW_OPTION description\n\
+    endmenu\n" >> ${IDF_PATH}/Kconfig
+    idf.py reconfigure > /dev/null
+    grep "CONFIG_TEST_OLD_OPTION_1=y" sdkconfig || failure "CONFIG_TEST_OLD_OPTION_1 should be in sdkconfig for backward compatibility"
+    grep "CONFIG_TEST_OLD_OPTION_2=y" sdkconfig || failure "CONFIG_TEST_OLD_OPTION_2 should be in sdkconfig for backward compatibility"
+    grep "#define CONFIG_TEST_OLD_OPTION_1 CONFIG_TEST_NEW_OPTION" build/config/sdkconfig.h || failure "sdkconfig.h should contain the compatibility macro"
+    grep "#define CONFIG_TEST_OLD_OPTION_2 CONFIG_TEST_NEW_OPTION" build/config/sdkconfig.h || failure "sdkconfig.h should contain the compatibility macro"
+    grep "set(CONFIG_TEST_OLD_OPTION_1 \"y\")" build/config/sdkconfig.cmake || failure "CONFIG_TEST_OLD_OPTION_1 should be in auto.conf for backward compatibility"
+    grep "set(CONFIG_TEST_OLD_OPTION_2 \"y\")" build/config/sdkconfig.cmake || failure "CONFIG_TEST_OLD_OPTION_2 should be in auto.conf for backward compatibility"
+    rm -rf sdkconfig sdkconfig.defaults build
+    pushd ${IDF_PATH}
+    git checkout -- sdkconfig.rename Kconfig
+    popd
+
     echo "Can have target specific deprecated Kconfig options"
     idf.py clean
     rm -f sdkconfig

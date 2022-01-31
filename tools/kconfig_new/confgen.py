@@ -18,6 +18,7 @@ import re
 import sys
 import tempfile
 import textwrap
+from collections import defaultdict
 
 import gen_kconfig_doc
 import kconfiglib
@@ -43,7 +44,7 @@ class DeprecatedOptions(object):
 
     def _parse_replacements(self, repl_paths):
         rep_dic = {}
-        rev_rep_dic = {}
+        rev_rep_dic = defaultdict(list)
 
         def remove_config_prefix(string):
             if string.startswith(self.config_prefix):
@@ -68,11 +69,11 @@ class DeprecatedOptions(object):
 
                     (dep_opt, new_opt) = (remove_config_prefix(x) for x in sp_line)
                     rep_dic[dep_opt] = new_opt
-                    rev_rep_dic[new_opt] = dep_opt
+                    rev_rep_dic[new_opt].append(dep_opt)
         return rep_dic, rev_rep_dic
 
     def get_deprecated_option(self, new_option):
-        return self.rev_r_dic.get(new_option, None)
+        return self.rev_r_dic.get(new_option, [])
 
     def get_new_option(self, deprecated_option):
         return self.r_dic.get(deprecated_option, None)
@@ -128,10 +129,10 @@ class DeprecatedOptions(object):
                             for sym in syms:
                                 if sym.name in self.rev_r_dic:
                                     # only if the symbol has been renamed
-                                    dep_name = self.rev_r_dic[sym.name]
-
+                                    dep_names = self.rev_r_dic[sym.name]
+                                    dep_names = [config.config_prefix + name for name in dep_names]
                                     # config options doesn't have references
-                                    f_o.write('    - {}{}\n'.format(config.config_prefix, dep_name))
+                                    f_o.write('    - {}\n'.format(', '.join(dep_names)))
 
     def append_config(self, config, path_output):
         tmp_list = []
@@ -142,8 +143,9 @@ class DeprecatedOptions(object):
                 if item.name in self.rev_r_dic:
                     c_string = item.config_string
                     if c_string:
-                        tmp_list.append(c_string.replace(self.config_prefix + item.name,
-                                                         self.config_prefix + self.rev_r_dic[item.name]))
+                        for dep_name in self.rev_r_dic[item.name]:
+                            tmp_list.append(c_string.replace(self.config_prefix + item.name,
+                                                             self.config_prefix + dep_name))
 
         for n in config.node_iter():
             append_config_node_process(n)
@@ -392,10 +394,10 @@ def write_cmake(deprecated_options, config, filename):
                 write('set({}{} "{}")\n'.format(prefix, sym.name, val))
 
                 configs_list.append(prefix + sym.name)
-                dep_opt = deprecated_options.get_deprecated_option(sym.name)
-                if dep_opt:
-                    tmp_dep_list.append('set({}{} "{}")\n'.format(prefix, dep_opt, val))
-                    configs_list.append(prefix + dep_opt)
+                dep_opts = deprecated_options.get_deprecated_option(sym.name)
+                for opt in dep_opts:
+                    tmp_dep_list.append('set({}{} "{}")\n'.format(prefix, opt, val))
+                    configs_list.append(prefix + opt)
 
         for n in config.node_iter():
             write_node(n)
