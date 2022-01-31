@@ -5,3 +5,4 @@ idf_component_register(
     INCLUDE_DIRS "."
     REQUIRES esp_netif slip_modem driver
 )
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
