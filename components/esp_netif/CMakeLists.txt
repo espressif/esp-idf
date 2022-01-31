@@ -54,3 +54,5 @@ idf_component_register(SRCS "${srcs}"
 if(CONFIG_ESP_NETIF_L2_TAP OR CONFIG_ESP_NETIF_BRIDGE_EN)
     idf_component_optional_requires(PRIVATE esp_eth vfs)
 endif()
+
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

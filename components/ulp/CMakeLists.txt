@@ -34,3 +34,7 @@ endif()
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
                        REQUIRES driver esp_adc)
+
+if(CONFIG_SOC_ULP_SUPPORTED OR CONFIG_SOC_RISCV_COPROC_SUPPORTED)
+    target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
+endif()

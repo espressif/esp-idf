@@ -112,3 +112,5 @@ if(CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION)
     esptool_py_flash_target_image(${phy_name}-flash ${phy_name} "${phy_partition_offset}" "${phy_init_data_bin}")
     esptool_py_flash_target_image(flash ${phy_name} "${phy_partition_offset}" "${phy_init_data_bin}")
 endif()
+
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")

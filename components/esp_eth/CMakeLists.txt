@@ -52,6 +52,9 @@ idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS ${include}
                        REQUIRES esp_event # For using "ESP_EVENT_DECLARE_BASE" in header file
                        PRIV_REQUIRES ${priv_requires})
+if(CONFIG_ETH_ENABLED)
+    target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
+endif()
 
 if(CONFIG_ETH_ENABLED)
     if(CONFIG_ETH_USE_SPI_ETHERNET)

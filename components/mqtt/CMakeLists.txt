@@ -9,6 +9,7 @@ idf_component_register(SRCS "${srcs}"
                     PRIV_INCLUDE_DIRS "esp-mqtt/lib/include"
                     PRIV_REQUIRES esp_timer
                     )
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
 
 if(TEST_BUILD)
 message(STATUS "building MOCKS")

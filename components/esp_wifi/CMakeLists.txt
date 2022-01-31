@@ -57,4 +57,6 @@ if(CONFIG_ESP32_WIFI_ENABLED)
             target_link_libraries(${COMPONENT_LIB} PUBLIC ${blob})
         endforeach()
     endif()
+
+    target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
 endif()

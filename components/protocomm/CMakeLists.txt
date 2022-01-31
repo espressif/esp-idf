@@ -48,3 +48,5 @@ idf_component_register(SRCS "${srcs}"
                     PRIV_INCLUDE_DIRS "${priv_include_dirs}"
                     PRIV_REQUIRES protobuf-c mbedtls console esp_http_server driver
                     REQUIRES bt)
+
+target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
