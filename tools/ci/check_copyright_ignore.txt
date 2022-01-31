@@ -2099,7 +2099,6 @@ components/wifi_provisioning/python/wifi_config_pb2.py
 components/wifi_provisioning/python/wifi_constants_pb2.py
 components/wifi_provisioning/python/wifi_scan_pb2.py
 components/wifi_provisioning/src/handlers.c
-components/wifi_provisioning/src/manager.c
 components/wifi_provisioning/src/scheme_console.c
 components/wifi_provisioning/src/wifi_config.c
 components/wifi_provisioning/src/wifi_provisioning_priv.h
