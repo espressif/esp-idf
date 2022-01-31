@@ -1,4 +1,5 @@
 .pytest_template:
+  image: $TARGET_TEST_ENV_IMAGE
   stage: target_test
   timeout: 1 hour
   extends: .before_script_pytest
@@ -176,6 +177,7 @@ component_ut_pytest_esp32c3_generic:
 .target_test_job_template:
   stage: target_test
   timeout: 1 hour
+  image: $TARGET_TEST_ENV_IMAGE
   artifacts:
     when: always
     paths:
@@ -306,7 +308,6 @@ example_test_esp32_WIFI_OTA:
 
 example_test_002:
   extends: .example_test_esp32_template
-  image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - ESP32
     - Example_ShieldBox_Basic
@@ -345,7 +346,6 @@ example_test_006:
   extends:
     - .example_test_esp32_template
     - .rules:labels:iperf_stress_test
-  image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - ESP32
     - Example_ShieldBox
