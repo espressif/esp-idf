@@ -2657,7 +2657,6 @@ examples/protocols/mdns/main/mdns_example_main.c
 examples/protocols/mdns/mdns_example_test.py
 examples/protocols/mqtt/ssl/main/app_main.c
 examples/protocols/mqtt/ssl/mqtt_ssl_example_test.py
-examples/protocols/mqtt/ssl_ds/configure_ds.py
 examples/protocols/mqtt/ssl_ds/main/app_main.c
 examples/protocols/mqtt/ssl_mutual_auth/main/app_main.c
 examples/protocols/mqtt/ssl_psk/main/app_main.c
