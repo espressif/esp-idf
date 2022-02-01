@@ -75,6 +75,14 @@ variables:
   # cache python dependencies
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
+  # Set this variable to the branch of idf-constraints repo in order to test a custom Python constraint file. The
+  # branch name must be without the remote part ("origin/"). Keep the variable empty in order to use the constraint
+  # file from https://dl.espressif.com/dl/esp-idf.
+  CI_PYTHON_CONSTRAINT_BRANCH: ""
+
+  # Update the filename for a specific ESP-IDF release. It is used only with CI_PYTHON_CONSTRAINT_BRANCH.
+  CI_PYTHON_CONSTRAINT_FILE: "espidf.constraints.v5.0.txt"
+
 cache:
   paths:
     - .cache/pip
@@ -95,6 +103,13 @@ cache:
     fi
   fi
 
+.download_test_python_contraint_file: &download_test_python_contraint_file |
+  if [[ -n "$CI_PYTHON_CONSTRAINT_BRANCH" ]]; then
+    wget -O /tmp/constraint.txt --header="Authorization:Bearer ${ESPCI_TOKEN}" https://gitlab.espressif.cn:6688/api/v4/projects/2581/repository/files/${CI_PYTHON_CONSTRAINT_FILE}/raw?ref=${CI_PYTHON_CONSTRAINT_BRANCH}
+    mkdir -p ~/.espressif
+    mv /tmp/constraint.txt ~/.espressif/${CI_PYTHON_CONSTRAINT_FILE}
+  fi
+
 before_script:
   - source tools/ci/utils.sh
   - source tools/ci/setup_python.sh
@@ -102,6 +117,7 @@ before_script:
   - source tools/ci/configure_ci_environment.sh
   - *setup_tools_unless_target_test
   - fetch_submodules
+  - *download_test_python_contraint_file
   - $IDF_PATH/tools/idf_tools.py install-python-env
 
 # used for check scripts which we want to run unconditionally
@@ -111,6 +127,7 @@ before_script:
     - source tools/ci/utils.sh
     - source tools/ci/setup_python.sh
     - source tools/ci/configure_ci_environment.sh
+    - *download_test_python_contraint_file
     - $IDF_PATH/tools/idf_tools.py install-python-env
 
 .before_script_minimal:
@@ -122,6 +139,7 @@ before_script:
   before_script:
     - source tools/ci/utils.sh
     - export IDF_TOOLS_PATH="${HOME}/.espressif_runner_${CI_RUNNER_ID}_${CI_CONCURRENT_ID}"
+    - *download_test_python_contraint_file
     - $IDF_PATH/tools/idf_tools.py install-python-env
     # On macOS, these tools need to be installed
     - $IDF_PATH/tools/idf_tools.py --non-interactive install cmake ninja
@@ -142,6 +160,7 @@ before_script:
     - source tools/ci/configure_ci_environment.sh
     - *setup_tools_unless_target_test
     - fetch_submodules
+    - *download_test_python_contraint_file
     - $IDF_PATH/tools/idf_tools.py install-python-env
     - cd /tmp
     - retry_failed git clone --depth 1 --branch $PYTEST_EMBEDDED_TAG https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/idf/pytest-embedded.git
