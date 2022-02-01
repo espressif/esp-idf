@@ -1091,7 +1091,7 @@ def add_and_save_targets(targets_str):  # type: (str) -> list[str]
 
 
 def feature_to_requirements_path(feature):  # type: (str) -> str
-    return os.path.join(global_idf_path or '', 'requirements.{}.txt'.format(feature))
+    return os.path.join(global_idf_path or '', 'tools', 'requirements', 'requirements.{}.txt'.format(feature))
 
 
 def add_and_save_features(features_str):  # type: (str) -> list[str]

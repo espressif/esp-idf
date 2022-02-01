@@ -47,6 +47,7 @@
   - "tools/cmake/**/*"
   - "tools/kconfig_new/**/*"
   - "tools/tools.json"
+  - "tools/requirements.json"
   - "tools/ci/test_build_system*.sh"
 
 .patterns-custom_test: &patterns-custom_test
@@ -126,6 +127,10 @@
   - "tools/idf_tools.py"
   - "tools/test_idf_tools/**/*"
   - "tools/install_util.py"
+
+  - "tools/requirements/*"
+  - "tools/requirements.json"
+  - "tools/requirements_schema.json"
 
   - "tools/mkdfu.py"
   - "tools/test_mkdfu/**/*"

@@ -60,6 +60,7 @@ tools/ci/check_executables.py
 tools/ci/check_idf_version.sh
 tools/ci/check_kconfigs.py
 tools/ci/check_readme_links.py
+tools/ci/check_requirement_files.py
 tools/ci/check_rules_yml.py
 tools/ci/check_soc_struct_headers.py
 tools/ci/check_tools_files_patterns.py

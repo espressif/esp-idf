@@ -18,8 +18,8 @@ IDF_PATH = os.environ.get('IDF_PATH', '../..')
 TOOLS_DIR = os.environ.get('IDF_TOOLS_PATH') or os.path.expanduser(idf_tools.IDF_TOOLS_PATH_DEFAULT)
 PYTHON_DIR = os.path.join(TOOLS_DIR, 'python_env')
 REQ_SATISFIED = 'Python requirements are satisfied'
-REQ_CORE = '- {}/requirements.core.txt'.format(IDF_PATH)
-REQ_GDBGUI = '- {}/requirements.gdbgui.txt'.format(IDF_PATH)
+REQ_CORE = '- {}'.format(os.path.join(IDF_PATH, 'tools', 'requirements', 'requirements.core.txt'))
+REQ_GDBGUI = '- {}'.format(os.path.join(IDF_PATH, 'tools', 'requirements', 'requirements.gdbgui.txt'))
 CONSTR = 'Constraint file: {}/espidf.constraints'.format(TOOLS_DIR)
 
 
