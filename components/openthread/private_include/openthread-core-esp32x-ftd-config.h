@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -204,6 +204,16 @@
 #define OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE CONFIG_OPENTHREAD_TREL
 #endif
 
+/**
+ * @def OPENTHREAD_CONFIG_BACKBONE_ROUTER_ENABLE
+ *
+ * Define to 1 to enable Backbone Router support.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_BACKBONE_ROUTER_ENABLE
+#define OPENTHREAD_CONFIG_BACKBONE_ROUTER_ENABLE 1
+#endif
+
 #endif // CONFIG_OPENTHREAD_BORDER_ROUTER
 
 /**
@@ -355,6 +365,26 @@
  *
  */
 #define OPENTHREAD_CONFIG_PING_SENDER_ENABLE 1
+
+/**
+ * @def OPENTHREAD_CONFIG_DUA_ENABLE
+ *
+ * Define as 1 to support Thread 1.2 Domain Unicast Address feature.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_DUA_ENABLE
+#define OPENTHREAD_CONFIG_DUA_ENABLE 0
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_MLR_ENABLE
+ *
+ * Define as 1 to support Thread 1.2 Multicast Listener Registration feature.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_MLR_ENABLE
+#define OPENTHREAD_CONFIG_MLR_ENABLE 1
+#endif
 
 /**
  * @def OPENTHREAD_CONFIG_DTLS_MAX_CONTENT_LEN

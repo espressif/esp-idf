@@ -859,7 +859,6 @@ components/fatfs/src/ffconf.h
 components/fatfs/src/ffsystem.c
 components/fatfs/src/ffunicode.c
 components/fatfs/test/test_fatfs_common.c
-components/fatfs/test/test_fatfs_common.h
 components/fatfs/test/test_fatfs_rawflash.c
 components/fatfs/test/test_fatfs_spiflash.c
 components/fatfs/test_fatfs_host/main.cpp
@@ -1195,11 +1194,9 @@ components/linux/include/sys/queue.h
 components/log/esp_log_private.h
 components/log/host_test/log_test/main/log_test.cpp
 components/log/log_linux.c
-components/lwip/apps/dhcpserver/dhcpserver.c
 components/lwip/apps/ping/esp_ping.c
 components/lwip/apps/ping/ping.c
 components/lwip/apps/sntp/sntp.c
-components/lwip/include/apps/dhcpserver/dhcpserver.h
 components/lwip/include/apps/dhcpserver/dhcpserver_options.h
 components/lwip/include/apps/esp_ping.h
 components/lwip/include/apps/ping/ping.h
@@ -1383,7 +1380,6 @@ components/newlib/test_apps/main/test_newlib_main.c
 components/newlib/test_apps/main/test_stdatomic.c
 components/nvs_flash/host_test/fixtures/test_fixtures.hpp
 components/nvs_flash/host_test/nvs_page_test/main/nvs_page_test.cpp
-components/nvs_flash/include/nvs.h
 components/nvs_flash/include/nvs_flash.h
 components/nvs_flash/include/nvs_handle.hpp
 components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py
@@ -1400,7 +1396,6 @@ components/nvs_flash/src/nvs_handle_simple.cpp
 components/nvs_flash/src/nvs_handle_simple.hpp
 components/nvs_flash/src/nvs_item_hash_list.cpp
 components/nvs_flash/src/nvs_item_hash_list.hpp
-components/nvs_flash/src/nvs_page.cpp
 components/nvs_flash/src/nvs_page.hpp
 components/nvs_flash/src/nvs_pagemanager.cpp
 components/nvs_flash/src/nvs_pagemanager.hpp
@@ -1410,7 +1405,6 @@ components/nvs_flash/src/nvs_partition_lookup.cpp
 components/nvs_flash/src/nvs_partition_lookup.hpp
 components/nvs_flash/src/nvs_partition_manager.hpp
 components/nvs_flash/src/nvs_platform.hpp
-components/nvs_flash/src/nvs_storage.cpp
 components/nvs_flash/src/nvs_storage.hpp
 components/nvs_flash/src/nvs_test_api.h
 components/nvs_flash/src/nvs_types.cpp
@@ -1511,7 +1505,6 @@ components/pthread/test/test_pthread.c
 components/pthread/test/test_pthread_cond_var.c
 components/pthread/test/test_pthread_cxx.cpp
 components/pthread/test/test_pthread_local_storage.c
-components/riscv/include/esp_private/panic_reason.h
 components/riscv/include/riscv/csr.h
 components/riscv/include/riscv/encoding.h
 components/riscv/include/riscv/instruction_decode.h
@@ -2053,14 +2046,7 @@ components/touch_element/touch_element.c
 components/touch_element/touch_matrix.c
 components/touch_element/touch_slider.c
 components/ulp/esp32ulp_mapgen.py
-components/ulp/ld/esp32.ulp.ld
-components/ulp/ld/esp32s2.ulp.riscv.ld
-components/ulp/test/esp32/test_ulp.c
 components/ulp/test/esp32/test_ulp_as.c
-components/ulp/ulp_macro.c
-components/ulp/ulp_private.h
-components/ulp/ulp_riscv/include/ulp_riscv/ulp_riscv.h
-components/ulp/ulp_riscv/include/ulp_riscv/ulp_riscv_register_ops.h
 components/unity/include/priv/setjmp.h
 components/unity/include/unity_config.h
 components/unity/include/unity_fixture_extras.h
@@ -2120,7 +2106,6 @@ components/wifi_provisioning/src/wifi_provisioning_priv.h
 components/wifi_provisioning/src/wifi_scan.c
 components/wpa_supplicant/esp_supplicant/include/esp_dpp.h
 components/wpa_supplicant/esp_supplicant/include/esp_rrm.h
-components/wpa_supplicant/esp_supplicant/include/esp_wpa.h
 components/wpa_supplicant/esp_supplicant/include/esp_wps.h
 components/wpa_supplicant/esp_supplicant/src/esp_dpp_i.h
 components/wpa_supplicant/esp_supplicant/src/esp_scan_i.h
@@ -2386,7 +2371,6 @@ components/xtensa/xt_trax.c
 components/xtensa/xtensa_intr.c
 docs/conf_common.py
 docs/en/conf.py
-docs/generate_chart.py
 docs/zh_CN/conf.py
 examples/bluetooth/esp_ble_mesh/aligenie_demo/components/vendor_model/genie_event.c
 examples/bluetooth/esp_ble_mesh/aligenie_demo/components/vendor_model/genie_mesh.c
@@ -2799,11 +2783,7 @@ examples/system/light_sleep/main/light_sleep_example_main.c
 examples/system/ota/advanced_https_ota/example_test.py
 examples/system/ota/advanced_https_ota/main/advanced_https_ota_example.c
 examples/system/ota/advanced_https_ota/main/ble_helper/ble_api.c
-examples/system/ota/advanced_https_ota/main/ble_helper/bluedroid_gatts.c
 examples/system/ota/advanced_https_ota/main/ble_helper/include/ble_api.h
-examples/system/ota/advanced_https_ota/main/ble_helper/include/bluedroid_gatts.h
-examples/system/ota/advanced_https_ota/main/ble_helper/include/nimble_gatts.h
-examples/system/ota/advanced_https_ota/main/ble_helper/nimble_gatts.c
 examples/system/ota/native_ota_example/example_test.py
 examples/system/ota/native_ota_example/main/native_ota_example.c
 examples/system/ota/otatool/example_test.py

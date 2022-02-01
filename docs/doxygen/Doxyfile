@@ -195,7 +195,10 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_rom/include/esp_rom_sys.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_system.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_idf_version.h \
-    $(PROJECT_PATH)/components/ulp/include/ulp_common.h \
+    $(PROJECT_PATH)/components/ulp/ulp_common/include/ulp_common.h \
+    $(PROJECT_PATH)/components/ulp/ulp_fsm/include/ulp_fsm_common.h \
+    $(PROJECT_PATH)/components/ulp/ulp_riscv/include/ulp_riscv.h \
+    $(PROJECT_PATH)/components/ulp/ulp_riscv/include/ulp_riscv_utils.h \
     $(PROJECT_PATH)/components/app_trace/include/esp_app_trace.h \
     $(PROJECT_PATH)/components/app_trace/include/esp_sysview_trace.h \
     $(PROJECT_PATH)/components/esp_pm/include/esp_pm.h \

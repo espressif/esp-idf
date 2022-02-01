@@ -2,13 +2,20 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+import importlib.util
 import os
-from types import ModuleType
+import sys
+from importlib.abc import Loader
+from typing import Any
 
 
-def _load_source(name, path):  # type: (str, str) -> ModuleType
-    from importlib.machinery import SourceFileLoader
-    return SourceFileLoader(name, path).load_module(name)
+def _load_source(name, path):  # type: (str, str) -> Any
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    assert isinstance(spec.loader, Loader)
+    spec.loader.exec_module(module)
+    return module
 
 
 idf_path = os.environ['IDF_PATH']

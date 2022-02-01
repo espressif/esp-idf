@@ -10,13 +10,7 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/sens_reg.h"
 #include "soc/rtc_periph.h"
-#if CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/ulp.h"
-#include "esp32s2/ulp_riscv.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/ulp.h"
-#include "esp32s3/ulp_riscv.h"
-#endif
+#include "ulp_riscv.h"
 #include "ulp_test_app.h"
 #include "unity.h"
 #include <sys/time.h>
@@ -129,22 +123,6 @@ TEST_CASE("ULP-RISC-V is able to wakeup main CPU from light sleep", "[ulp]")
     ulp_main_cpu_command = RISCV_NO_COMMAND;
 }
 
-TEST_CASE("ULP-RISC-V is able to wakeup main CPU from deep sleep", "[ulp][reset=SW_CPU_RESET][ignore]")
-{
-    /* Load ULP RISC-V firmware and start the ULP RISC-V Coprocessor */
-    load_and_start_ulp_firmware();
-
-    /* Setup wakeup triggers */
-    TEST_ASSERT(esp_sleep_enable_ulp_wakeup() == ESP_OK);
-
-    /* Setup test data */
-    ulp_main_cpu_command = RISCV_DEEP_SLEEP_WAKEUP_TEST;
-
-    /* Enter Deep Sleep */
-    esp_deep_sleep_start();
-    UNITY_TEST_FAIL(__LINE__, "Should not get here!");
-}
-
 static bool ulp_riscv_is_running(void)
 {
     uint32_t start_cnt = ulp_riscv_counter;
@@ -204,4 +182,24 @@ TEST_CASE("ULP-RISC-V can stop itself and be resumed from the main CPU", "[ulp]"
     ulp_riscv_timer_resume();
 
     TEST_ASSERT(ulp_riscv_is_running());
+}
+
+/*
+* Keep this test case as the last test case in this suite as a CPU reset occurs.
+* Add new test cases above in order to ensure they run when all test cases are run together.
+*/
+TEST_CASE("ULP-RISC-V is able to wakeup main CPU from deep sleep", "[ulp][reset=SW_CPU_RESET][ignore]")
+{
+    /* Load ULP RISC-V firmware and start the ULP RISC-V Coprocessor */
+    load_and_start_ulp_firmware();
+
+    /* Setup wakeup triggers */
+    TEST_ASSERT(esp_sleep_enable_ulp_wakeup() == ESP_OK);
+
+    /* Setup test data */
+    ulp_main_cpu_command = RISCV_DEEP_SLEEP_WAKEUP_TEST;
+
+    /* Enter Deep Sleep */
+    esp_deep_sleep_start();
+    UNITY_TEST_FAIL(__LINE__, "Should not get here!");
 }

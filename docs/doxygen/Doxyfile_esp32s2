@@ -9,8 +9,8 @@ INPUT += \
          $(PROJECT_PATH)/components/driver/$(IDF_TARGET)/include/driver/touch_sensor.h \
          $(PROJECT_PATH)/components/esp_hw_support/include/soc/esp32s2/esp_ds.h \
          $(PROJECT_PATH)/components/esp_hw_support/include/soc/esp32s2/esp_hmac.h \
-         $(PROJECT_PATH)/components/ulp/include/esp32s2/ulp_riscv.h \
-         $(PROJECT_PATH)/components/ulp/include/$(IDF_TARGET)/ulp.h \
+         $(PROJECT_PATH)/components/ulp/ulp_fsm/include/$(IDF_TARGET)/ulp.h \
+         $(PROJECT_PATH)/components/ulp/ulp_common/include/$(IDF_TARGET)/ulp_common_defs.h \
          $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_element.h \
          $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_button.h \
          $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_slider.h \

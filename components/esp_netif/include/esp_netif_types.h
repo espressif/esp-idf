@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -136,6 +136,7 @@ typedef struct {
 /** Event structure for IP_EVENT_AP_STAIPASSIGNED event */
 typedef struct {
     esp_ip4_addr_t ip; /*!< IP address which was assigned to the station */
+    uint8_t mac[6];    /*!< MAC address of the connected client */
 } ip_event_ap_staipassigned_t;
 
 

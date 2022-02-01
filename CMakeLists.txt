@@ -195,6 +195,7 @@ if(CONFIG_ESP_SYSTEM_USE_EH_FRAME)
 endif()
 
 list(APPEND link_options "-fno-lto")
+list(APPEND link_options "-Wl,--warn-common")
 
 if(CONFIG_IDF_TARGET_LINUX AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
     list(APPEND link_options "-Wl,-dead_strip")

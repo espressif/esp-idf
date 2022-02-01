@@ -1,27 +1,8 @@
-// Copyright 2010-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
+/*
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-#pragma once
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include "ulp_riscv_register_ops.h"
-#include "soc/soc.h"
-#include "soc/rtc_cntl_reg.h"
-#include "soc/soc_ulp.h"
-
-#ifdef __cplusplus
-}
-#endif
+#warning Contents of ulp_riscv/ulp_riscv.h have been merged with ulp_riscv_utils.Please include the later to avoid the warning.
+#include "ulp_riscv_utils.h"
