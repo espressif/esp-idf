@@ -130,7 +130,9 @@ idf_component_get_property(COMPONENT_DIR freertos COMPONENT_DIR)
 idf_component_set_property(freertos ORIG_INCLUDE_PATH "${COMPONENT_DIR}/include/freertos/")
 
 if(CONFIG_FREERTOS_DEBUG_OCDAWARE)
-    target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--undefined=uxTopUsedPriority")
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--undefined=uxTopUsedPriority") #will be removed
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--undefined=FreeRTOS_openocd_params")
+    idf_build_set_property(COMPILE_OPTIONS "-DconfigENABLE_FREERTOS_DEBUG_OCDAWARE=1" APPEND)
 endif()
 
 set_source_files_properties(

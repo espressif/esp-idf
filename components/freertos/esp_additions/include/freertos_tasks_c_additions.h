@@ -74,3 +74,35 @@
 	}
 
 #endif
+
+#if ( configENABLE_FREERTOS_DEBUG_OCDAWARE == 1 )
+
+/**
+ * Debug param indexes. DO NOT change the order. OpenOCD uses the same indexes
+ * Entries in FreeRTOS_openocd_params must match the order of these indexes
+ */
+enum {
+	ESP_FREERTOS_DEBUG_TABLE_SIZE = 0,
+	ESP_FREERTOS_DEBUG_TABLE_VERSION,
+	ESP_FREERTOS_DEBUG_KERNEL_VER_MAJOR,
+	ESP_FREERTOS_DEBUG_KERNEL_VER_MINOR,
+	ESP_FREERTOS_DEBUG_KERNEL_VER_BUILD,
+	ESP_FREERTOS_DEBUG_UX_TOP_USED_PIORITY,
+	ESP_FREERTOS_DEBUG_PX_TOP_OF_STACK,
+	ESP_FREERTOS_DEBUG_PC_TASK_NAME,
+	/* New entries must be inserted here */
+	ESP_FREERTOS_DEBUG_TABLE_END,
+};
+
+const DRAM_ATTR uint8_t FreeRTOS_openocd_params[ESP_FREERTOS_DEBUG_TABLE_END]  = {
+	ESP_FREERTOS_DEBUG_TABLE_END,	 /* table size */
+	1,								 /* table version */
+	tskKERNEL_VERSION_MAJOR,
+	tskKERNEL_VERSION_MINOR,
+	tskKERNEL_VERSION_BUILD,
+	configMAX_PRIORITIES - 1, 		 /* uxTopUsedPriority */
+	offsetof(TCB_t, pxTopOfStack),	 /* thread_stack_offset; */
+	offsetof(TCB_t, pcTaskName),	 /* thread_name_offset; */
+};
+
+#endif
