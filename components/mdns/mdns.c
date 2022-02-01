@@ -158,6 +158,9 @@ static char * _mdns_mangle_name(char* in) {
 static bool _mdns_service_match(const mdns_service_t * srv, const char * service, const char * proto,
                                 const char * hostname)
 {
+    if (!service || !proto) {
+        return false;
+    }
     return !strcasecmp(srv->service, service) && !strcasecmp(srv->proto, proto) &&
         (_str_null_or_empty(hostname) || !strcasecmp(srv->hostname, hostname));
 }
@@ -289,6 +292,12 @@ static bool _mdns_instance_name_match(const char *lhs, const char *rhs)
 static bool _mdns_service_match_instance(const mdns_service_t *srv, const char *instance, const char *service,
                                          const char *proto, const char *hostname)
 {
+    // service and proto must be supplied, if not this instance won't match
+    if (!service || !proto) {
+        return false;
+    }
+    // instance==NULL -> _mdns_instance_name_match() will check the default instance
+    // hostname==NULL -> matches if instance, service and proto matches
     return !strcasecmp(srv->service, service) && _mdns_instance_name_match(srv->instance, instance) &&
         !strcasecmp(srv->proto, proto) && (_str_null_or_empty(hostname) || !strcasecmp(srv->hostname, hostname));
 }
@@ -1610,7 +1619,7 @@ static void _mdns_create_answer_from_parsed_packet(mdns_parsed_packet_t *parsed_
         shared = q->type == MDNS_TYPE_PTR || q->type == MDNS_TYPE_SDPTR || !parsed_packet->probe;
         if (q->type == MDNS_TYPE_SRV || q->type == MDNS_TYPE_TXT) {
             mdns_srv_item_t *service = _mdns_get_service_item_instance(q->host, q->service, q->proto, NULL);
-            if (!_mdns_create_answer_from_service(packet, service->service, q, shared, send_flush)) {
+            if (service == NULL || !_mdns_create_answer_from_service(packet, service->service, q, shared, send_flush)) {
                 _mdns_free_tx_packet(packet);
                 return;
             }
@@ -3382,8 +3391,7 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
                     _mdns_search_result_add_ptr(search_result, name->host, name->service, name->proto,
                                                 packet->tcpip_if, packet->ip_protocol, ttl);
                 } else if ((discovery || ours) && !name->sub && _mdns_name_is_ours(name)) {
-                    if (discovery) {
-                        service = _mdns_get_service_item(name->service, name->proto, NULL);
+                    if (discovery && (service = _mdns_get_service_item(name->service, name->proto, NULL))) {
                         _mdns_remove_parsed_question(parsed_packet, MDNS_TYPE_SDPTR, service);
                     } else if (service && parsed_packet->questions && !parsed_packet->probe) {
                         _mdns_remove_parsed_question(parsed_packet, type, service);
