@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,17 +28,32 @@ mdns_search_once_t * mdns_test_search_init(const char * name, const char * servi
 esp_err_t mdns_test_send_search_action(mdns_action_type_t type, mdns_search_once_t * search);
 void mdns_test_search_free(mdns_search_once_t * search);
 void mdns_test_init_di(void);
+extern mdns_server_t * _mdns_server;
 
 //
 // mdns function wrappers for mdns setup in test mode
 static int mdns_test_hostname_set(const char * mdns_hostname)
 {
+    _mdns_server->interfaces[MDNS_IF_STA].pcbs[MDNS_IP_PROTOCOL_V4].state = PCB_RUNNING;    // mark the PCB running to exercise mdns in fully operational mode
+    _mdns_server->interfaces[MDNS_IF_STA].pcbs[MDNS_IP_PROTOCOL_V6].state = PCB_RUNNING;
     int ret = mdns_hostname_set(mdns_hostname);
     mdns_action_t * a = NULL;
     GetLastItem(&a);
     mdns_test_execute_action(a);
     return ret;
 }
+
+static int mdns_test_add_delegated_host(const char * mdns_hostname)
+{
+    mdns_ip_addr_t addr = { .addr = { .u_addr = ESP_IPADDR_TYPE_V4 } };
+    addr.addr.u_addr.ip4.addr = 0x11111111;
+    int ret = mdns_delegate_hostname_add(mdns_hostname, &addr);
+    mdns_action_t * a = NULL;
+    GetLastItem(&a);
+    mdns_test_execute_action(a);
+    return ret;
+}
+
 
 static int mdns_test_service_instance_name_set(const char * service, const char * proto, const char * instance)
 {
@@ -61,6 +68,25 @@ static int mdns_test_service_txt_set(const char * service, const char * proto,  
 {
     int ret = mdns_service_txt_set(service, proto, txt, num_items);
     mdns_action_t * a = NULL;
+    GetLastItem(&a);
+    mdns_test_execute_action(a);
+    return ret;
+}
+
+static int mdns_test_sub_service_add(const char * sub_name, const char * service_name, const char * proto, uint32_t port)
+{
+    if (mdns_service_add(NULL, service_name, proto, port, NULL, 0)) {
+        // This is expected failure as the service thread is not running
+    }
+    mdns_action_t * a = NULL;
+    GetLastItem(&a);
+    mdns_test_execute_action(a);
+
+    if (mdns_test_mdns_get_service_item(service_name, proto)==NULL) {
+        return ESP_FAIL;
+    }
+    int ret = mdns_service_subtype_add_for_host(NULL, service_name, proto, NULL, sub_name);
+    a = NULL;
     GetLastItem(&a);
     mdns_test_execute_action(a);
     return ret;
@@ -81,9 +107,9 @@ static int mdns_test_service_add(const char * service_name, const char * proto, 
     return ESP_OK;
 }
 
-static mdns_result_t* mdns_test_query(const char * service_name, const char * proto)
+static mdns_result_t* mdns_test_query(const char * name, const char * service, const char * proto, uint16_t type)
 {
-    search = mdns_test_search_init(NULL, service_name, proto, MDNS_TYPE_PTR, 3000, 20);
+    search = mdns_test_search_init(name, service, proto, type, 3000, 20);
     if (!search) {
         abort();
     }
@@ -142,6 +168,20 @@ int main(int argc, char** argv)
         abort();
     }
 
+    if (mdns_test_add_delegated_host(mdns_hostname) || mdns_test_add_delegated_host("megafritz")) {
+        abort();
+    }
+
+#ifndef MDNS_NO_SERVICES
+
+    if (mdns_test_sub_service_add("_server", "_fritz", "_tcp", 22)) {
+        abort();
+    }
+
+    if (mdns_test_service_add("_telnet", "_tcp", 22)) {
+        abort();
+    }
+
     if (mdns_test_service_add("_workstation", "_tcp", 9)) {
         abort();
     }
@@ -186,7 +226,7 @@ int main(int argc, char** argv)
     {
         abort();
     }
-
+#endif
     mdns_result_t * results = NULL;
     FILE *file;
     size_t nread;
@@ -216,12 +256,22 @@ int main(int argc, char** argv)
         memset(buf, 0, 1460);
         size_t len = read(0, buf, 1460);
 #endif
-        mypbuf.payload = buf;
+        mypbuf.payload = malloc(len);
+        memcpy(mypbuf.payload, buf, len);
         mypbuf.len = len;
         g_packet.pb = &mypbuf;
-        mdns_test_query("_afpovertcp", "_tcp");
+        mdns_test_query("minifritz", "_fritz", "_tcp", MDNS_TYPE_ANY);
+        mdns_test_query(NULL, "_fritz", "_tcp", MDNS_TYPE_PTR);
+        mdns_test_query(NULL, "_afpovertcp", "_tcp", MDNS_TYPE_PTR);
         mdns_parse_packet(&g_packet);
+        free(mypbuf.payload);
     }
+#ifndef MDNS_NO_SERVICES
+    mdns_service_remove_all();
+    mdns_action_t *a = NULL;
+    GetLastItem(&a);
+    mdns_test_execute_action(a);
+#endif
     ForceTaskDelete();
     mdns_free();
     return 0;
