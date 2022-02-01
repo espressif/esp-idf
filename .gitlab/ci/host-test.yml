@@ -104,6 +104,12 @@ test_mdns_fuzzer_on_host:
   variables:
     FUZZER_TEST_DIR: components/mdns/test_afl_fuzz_host
 
+test_mdns_no_serv_fuzzer_on_host:
+  extends: .host_fuzzer_test_template
+  variables:
+    FUZZER_TEST_DIR: components/mdns/test_afl_fuzz_host
+    FUZZER_PARAMS: MDNS_NO_SERVICES=on
+
 test_lwip_dns_fuzzer_on_host:
   extends: .host_fuzzer_test_template
   variables:
