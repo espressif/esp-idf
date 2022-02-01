@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,9 +10,10 @@ extern "C" {
 
 
 // md5_digest_table 7d587827a6f6134241dce7d3713b3edc
-// This file was generated automatically from the file esp_efuse_test_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
-// If you want to change some fields, you need to change esp_efuse_test_table.csv file then build system will generate this header file
-// To show efuse_table run the command 'make show_efuse_table'.
+// This file was generated from the file esp_efuse_test_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
+// If you want to change some fields, you need to change esp_efuse_test_table.csv file
+// then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
+// To show efuse_table run the command 'show_efuse_table'.
 
 
 extern const esp_efuse_desc_t* ESP_EFUSE_TEST1_LEN_8[];

@@ -11,6 +11,11 @@
 #include "sdkconfig.h"
 #include "esp_efuse_table.h"
 
+/*
+ * Each eFuse key block has a special field that defines the purpose of this block.
+ * This special field is called key_purpose.
+ */
+
 const static char *TAG = "efuse";
 
 /**
@@ -31,9 +36,6 @@ typedef struct {
 } esp_efuse_revokes_t;
 
 const esp_efuse_keys_t s_table[EFUSE_BLK_KEY_MAX - EFUSE_BLK_KEY0] = {
-#if CONFIG_IDF_TARGET_ESP32C2
-    {ESP_EFUSE_KEY0, NULL, ESP_EFUSE_RD_DIS_KEY0, ESP_EFUSE_WR_DIS_KEY0, NULL},
-#else
     {ESP_EFUSE_KEY0, ESP_EFUSE_KEY_PURPOSE_0, ESP_EFUSE_RD_DIS_KEY0, ESP_EFUSE_WR_DIS_KEY0, ESP_EFUSE_WR_DIS_KEY0_PURPOSE},
     {ESP_EFUSE_KEY1, ESP_EFUSE_KEY_PURPOSE_1, ESP_EFUSE_RD_DIS_KEY1, ESP_EFUSE_WR_DIS_KEY1, ESP_EFUSE_WR_DIS_KEY1_PURPOSE},
     {ESP_EFUSE_KEY2, ESP_EFUSE_KEY_PURPOSE_2, ESP_EFUSE_RD_DIS_KEY2, ESP_EFUSE_WR_DIS_KEY2, ESP_EFUSE_WR_DIS_KEY2_PURPOSE},
@@ -43,7 +45,6 @@ const esp_efuse_keys_t s_table[EFUSE_BLK_KEY_MAX - EFUSE_BLK_KEY0] = {
 #if 0
     {ESP_EFUSE_KEY6, ESP_EFUSE_KEY_PURPOSE_6, ESP_EFUSE_RD_DIS_KEY6, ESP_EFUSE_WR_DIS_KEY6, ESP_EFUSE_WR_DIS_KEY6_PURPOSE},
 #endif
-#endif //#if CONFIG_IDF_TARGET_ESP32C2
 };
 
 #if SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY
@@ -76,7 +77,6 @@ bool esp_efuse_block_is_empty(esp_efuse_block_t block)
 // Sets a write protection for the whole block.
 esp_err_t esp_efuse_set_write_protect(esp_efuse_block_t blk)
 {
-#if !CONFIG_IDF_TARGET_ESP32C2
     if (blk == EFUSE_BLK1) {
         return esp_efuse_write_field_cnt(ESP_EFUSE_WR_DIS_BLK1, 1);
     } else if (blk == EFUSE_BLK2) {
@@ -89,8 +89,7 @@ esp_err_t esp_efuse_set_write_protect(esp_efuse_block_t blk)
         unsigned idx = blk - EFUSE_BLK_KEY0;
         return esp_efuse_write_field_cnt(s_table[idx].key_wr_dis, 1);
     }
-#endif
-    return ESP_ERR_NOT_SUPPORTED; // IDF-3818
+    return ESP_ERR_NOT_SUPPORTED;
 }
 
 // read protect for blk.
@@ -100,11 +99,9 @@ esp_err_t esp_efuse_set_read_protect(esp_efuse_block_t blk)
         unsigned idx = blk - EFUSE_BLK_KEY0;
         return esp_efuse_write_field_cnt(s_table[idx].key_rd_dis, 1);
     }
-#if !CONFIG_IDF_TARGET_ESP32C2 // IDF-3818
     else if (blk == EFUSE_BLK10) {
         return esp_efuse_write_field_cnt(ESP_EFUSE_RD_DIS_SYS_DATA_PART2, 1);
     }
-#endif
     return ESP_ERR_NOT_SUPPORTED;
 
 }
@@ -171,7 +168,6 @@ esp_err_t esp_efuse_set_key_dis_write(esp_efuse_block_t block)
     return esp_efuse_write_field_bit(s_table[idx].key_wr_dis);
 }
 
-#if !CONFIG_IDF_TARGET_ESP32C2 // cause esp32c2 efuse has no purpose region
 esp_efuse_purpose_t esp_efuse_get_key_purpose(esp_efuse_block_t block)
 {
     if (block < EFUSE_BLK_KEY0 || block >= EFUSE_BLK_KEY_MAX) {
@@ -194,7 +190,6 @@ esp_err_t esp_efuse_set_key_purpose(esp_efuse_block_t block, esp_efuse_purpose_t
     unsigned idx = block - EFUSE_BLK_KEY0;
     return esp_efuse_write_field_blob(s_table[idx].keypurpose, &purpose, s_table[idx].keypurpose[0]->bit_count);
 }
-#endif //CONFIG_IDF_TARGET_ESP32C2
 
 bool esp_efuse_get_keypurpose_dis_write(esp_efuse_block_t block)
 {
@@ -256,11 +251,8 @@ bool esp_efuse_key_block_unused(esp_efuse_block_t block)
         return false; // Not a key block
     }
 
-    if (
-#if !CONFIG_IDF_TARGET_ESP32C2
-            esp_efuse_get_key_purpose(block) != ESP_EFUSE_KEY_PURPOSE_USER ||
+    if (esp_efuse_get_key_purpose(block) != ESP_EFUSE_KEY_PURPOSE_USER ||
             esp_efuse_get_keypurpose_dis_write(block) ||
-#endif
             esp_efuse_get_key_dis_read(block) ||
             esp_efuse_get_key_dis_write(block)) {
         return false; // Block in use!
@@ -277,15 +269,9 @@ esp_err_t esp_efuse_write_key(esp_efuse_block_t block, esp_efuse_purpose_t purpo
 {
     esp_err_t err = ESP_OK;
 
-#if CONFIG_IDF_TARGET_ESP32C2
-    if (block != EFUSE_BLK_KEY0) {
-        return ESP_ERR_INVALID_ARG;
-    }
-#else
     if (block < EFUSE_BLK_KEY0 || block >= EFUSE_BLK_KEY_MAX || key_size_bytes > 32 || purpose >= ESP_EFUSE_KEY_PURPOSE_MAX) {
         return ESP_ERR_INVALID_ARG;
     }
-#endif
 
     esp_efuse_batch_write_begin();
 
@@ -296,7 +282,6 @@ esp_err_t esp_efuse_write_key(esp_efuse_block_t block, esp_efuse_purpose_t purpo
         ESP_EFUSE_CHK(esp_efuse_write_field_blob(s_table[idx].key, key, key_size_bytes * 8));
         ESP_EFUSE_CHK(esp_efuse_set_key_dis_write(block));
 
-#if !CONFIG_IDF_TARGET_ESP32C2
         if (purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY ||
 #ifdef SOC_FLASH_ENCRYPTION_XTS_AES_256
             purpose == ESP_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1 ||
@@ -310,7 +295,6 @@ esp_err_t esp_efuse_write_key(esp_efuse_block_t block, esp_efuse_purpose_t purpo
         }
         ESP_EFUSE_CHK(esp_efuse_set_key_purpose(block, purpose));
         ESP_EFUSE_CHK(esp_efuse_set_keypurpose_dis_write(block));
-#endif //#if !CONFIG_IDF_TARGET_ESP32C2
         return esp_efuse_batch_write_commit();
     }
 err_exit:
