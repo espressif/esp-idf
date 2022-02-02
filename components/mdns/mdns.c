@@ -2738,10 +2738,17 @@ static bool _hostname_is_ours(const char * hostname)
     return false;
 }
 
+/**
+ * @brief Adds a delegated hostname to the linked list
+ * @param hostname Host name pointer
+ * @param address_list Address list
+ * @return  true on success
+ *          false if the host wasn't attached (this is our hostname, or alloc failure) so we have to free the structs
+ */
 static bool _mdns_delegate_hostname_add(const char * hostname, mdns_ip_addr_t * address_list)
 {
     if (_hostname_is_ours(hostname)) {
-        return true;
+        return false;
     }
 
     mdns_host_item_t * host = (mdns_host_item_t *)malloc(sizeof(mdns_host_item_t));
@@ -2787,6 +2794,18 @@ static mdns_ip_addr_t * copy_address_list(const mdns_ip_addr_t * address_list)
         address_list = address_list->next;
     }
     return head;
+}
+
+static void free_delegated_hostnames(void)
+{
+    mdns_host_item_t * host = _mdns_host_list;
+    while (host != NULL) {
+        free_address_list(host->address_list);
+        free((char *)host->hostname);
+        mdns_host_item_t *item = host;
+        host = host->next;
+        free(item);
+    }
 }
 
 static bool _mdns_delegate_hostname_remove(const char * hostname)
@@ -4657,8 +4676,11 @@ static void _mdns_execute_action(mdns_action_t * action)
         _mdns_packet_free(action->data.rx_handle.packet);
         break;
     case ACTION_DELEGATE_HOSTNAME_ADD:
-        _mdns_delegate_hostname_add(action->data.delegate_hostname.hostname,
-                                    action->data.delegate_hostname.address_list);
+        if (!_mdns_delegate_hostname_add(action->data.delegate_hostname.hostname,
+                                    action->data.delegate_hostname.address_list)) {
+            free((char *)action->data.delegate_hostname.hostname);
+            free_address_list(action->data.delegate_hostname.address_list);
+        }
         break;
     case ACTION_DELEGATE_HOSTNAME_REMOVE:
         _mdns_delegate_hostname_remove(action->data.delegate_hostname.hostname);
@@ -5008,6 +5030,7 @@ void mdns_free(void)
 #endif
 
     mdns_service_remove_all();
+    free_delegated_hostnames();
     _mdns_service_task_stop();
     for (i=0; i<MDNS_IF_MAX; i++) {
         for (j=0; j<MDNS_IP_PROTOCOL_MAX; j++) {
