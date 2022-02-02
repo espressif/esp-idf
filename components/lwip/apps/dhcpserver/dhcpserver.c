@@ -111,7 +111,9 @@ static void dhcps_tmr(void* arg);
 
 dhcps_t *dhcps_new(void)
 {
-    dhcps_t *dhcps = calloc(1, sizeof(dhcps_t));
+    dhcps_t *dhcps = mem_malloc(sizeof(dhcps_t));
+    memset(dhcps , 0x00 , sizeof(dhcps_t));
+
     if (dhcps == NULL) {
         return NULL;
     }
@@ -164,6 +166,9 @@ static void get_ip_info(struct netif * netif, ip_info_t *ip_info)
 void *dhcps_option_info(dhcps_t *dhcps, u8_t op_id, u32_t opt_len)
 {
     void *option_arg = NULL;
+    if (dhcps == NULL) {
+        return NULL;
+    }
 
     switch (op_id) {
         case IP_ADDRESS_LEASE_TIME:
@@ -214,10 +219,10 @@ void *dhcps_option_info(dhcps_t *dhcps, u8_t op_id, u32_t opt_len)
  *                opt_len -- DHCP message option length
  * Returns      : none
 *******************************************************************************/
-void dhcps_set_option_info(dhcps_t *dhcps, u8_t op_id, void *opt_info, u32_t opt_len)
+err_t dhcps_set_option_info(dhcps_t *dhcps, u8_t op_id, void *opt_info, u32_t opt_len)
 {
-    if (opt_info == NULL) {
-        return;
+    if (dhcps == NULL || opt_info == NULL) {
+        return ERR_ARG;
     }
     switch (op_id) {
         case IP_ADDRESS_LEASE_TIME:
@@ -256,7 +261,7 @@ void dhcps_set_option_info(dhcps_t *dhcps, u8_t op_id, void *opt_info, u32_t opt
         default:
             break;
     }
-    return;
+    return ERR_OK;
 }
 
 /******************************************************************************
@@ -1178,11 +1183,15 @@ static void dhcps_poll_set(dhcps_t *dhcps, u32_t ip)
  * Description  : set callback for dhcp server when it assign an IP
  *                to the connected dhcp client
  * Parameters   : cb -- callback for dhcp server
- * Returns      : none
+ * Returns      : ERR_OK on success
 *******************************************************************************/
-void dhcps_set_new_lease_cb(dhcps_t *dhcps, dhcps_cb_t cb)
+err_t dhcps_set_new_lease_cb(dhcps_t *dhcps, dhcps_cb_t cb)
 {
+    if (dhcps == NULL) {
+        return ERR_ARG;
+    }
     dhcps->dhcps_cb = cb;
+    return ERR_OK;
 }
 
 /******************************************************************************
@@ -1192,8 +1201,11 @@ void dhcps_set_new_lease_cb(dhcps_t *dhcps, dhcps_cb_t cb)
  *              : info  -- The current ip info
  * Returns      : none
 *******************************************************************************/
-void dhcps_start(dhcps_t *dhcps, struct netif *netif, ip4_addr_t ip)
+err_t dhcps_start(dhcps_t *dhcps, struct netif *netif, ip4_addr_t ip)
 {
+    if (dhcps == NULL || netif == NULL) {
+        return ERR_ARG;
+    }
     dhcps->dhcps_netif = netif;
     if (dhcps->dhcps_pcb != NULL) {
         udp_remove(dhcps->dhcps_pcb);
@@ -1203,6 +1215,7 @@ void dhcps_start(dhcps_t *dhcps, struct netif *netif, ip4_addr_t ip)
 
     if (dhcps->dhcps_pcb == NULL || ip4_addr_isany_val(ip)) {
         printf("dhcps_start(): could not obtain pcb\n");
+        return ERR_ARG;
     }
 
     IP4_ADDR(&dhcps->broadcast_dhcps, 255, 255, 255, 255);
@@ -1219,7 +1232,7 @@ void dhcps_start(dhcps_t *dhcps, struct netif *netif, ip4_addr_t ip)
 #endif
     dhcps->state = DHCPS_HANDLE_STARTED;
     sys_timeout(DHCP_COARSE_TIMER_MSECS, dhcps_tmr, dhcps);
-
+    return ERR_OK;
 }
 
 /******************************************************************************
@@ -1228,11 +1241,13 @@ void dhcps_start(dhcps_t *dhcps, struct netif *netif, ip4_addr_t ip)
  * Parameters   : netif -- The current netif addr
  * Returns      : none
 *******************************************************************************/
-void dhcps_stop(dhcps_t *dhcps, struct netif *netif)
+err_t dhcps_stop(dhcps_t *dhcps, struct netif *netif)
 {
-    if (netif == NULL || dhcps->dhcps_netif != netif) {
-        printf("dhcps_stop: netif is NULL or invalid\n");
-        return;
+    if (dhcps == NULL || netif == NULL || dhcps->dhcps_netif != netif) {
+#if DHCPS_DEBUG
+        DHCPS_LOG("dhcps_stop: netif is NULL or invalid\n");
+#endif
+        return ERR_ARG;
     }
 
     if (dhcps->dhcps_pcb != NULL) {
@@ -1256,6 +1271,7 @@ void dhcps_stop(dhcps_t *dhcps, struct netif *netif)
     }
     sys_untimeout(dhcps_tmr, dhcps);
     dhcps->state = DHCPS_HANDLE_STOPPED;
+    return ERR_OK;
 }
 
 /******************************************************************************
@@ -1356,6 +1372,10 @@ bool dhcp_search_ip_on_mac(dhcps_t *dhcps, u8_t *mac, ip4_addr_t *ip)
     list_node *pback_node = NULL;
     bool ret = false;
 
+    if (dhcps == NULL) {
+        return false;
+    }
+
     for (pback_node = dhcps->plist; pback_node != NULL; pback_node = pback_node->pnext) {
         pdhcps_pool = pback_node->pnode;
 
@@ -1373,16 +1393,19 @@ bool dhcp_search_ip_on_mac(dhcps_t *dhcps, u8_t *mac, ip4_addr_t *ip)
  * FunctionName : dhcps_dns_setserver
  * Description  : set DNS server address for dhcpserver
  * Parameters   : dnsserver -- The DNS server address
- * Returns      : none
+ * Returns      : ERR_ARG if invalid handle, ERR_OK on success
 *******************************************************************************/
-void
-dhcps_dns_setserver(dhcps_t *dhcps, const ip_addr_t *dnsserver)
+err_t dhcps_dns_setserver(dhcps_t *dhcps, const ip_addr_t *dnsserver)
 {
+    if (dhcps == NULL) {
+        return ERR_ARG;
+    }
     if (dnsserver != NULL) {
         dhcps->dns_server = *(ip_2_ip4(dnsserver));
     } else {
         dhcps->dns_server = *(ip_2_ip4(IP_ADDR_ANY));
     }
+    return ERR_OK;
 }
 
 /******************************************************************************
@@ -1391,9 +1414,12 @@ dhcps_dns_setserver(dhcps_t *dhcps, const ip_addr_t *dnsserver)
  * Parameters   : none
  * Returns      : ip4_addr_t
 *******************************************************************************/
-ip4_addr_t
-dhcps_dns_getserver(dhcps_t *dhcps)
+err_t dhcps_dns_getserver(dhcps_t *dhcps, ip4_addr_t *dnsserver)
 {
-    return dhcps->dns_server;
+    if (dhcps) {
+        *dnsserver = dhcps->dns_server;
+        return ERR_OK;
+    }
+    return ERR_ARG;
 }
 #endif // ESP_DHCP

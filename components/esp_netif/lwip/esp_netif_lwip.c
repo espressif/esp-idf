@@ -1698,7 +1698,8 @@ static esp_err_t esp_netif_get_dns_info_api(esp_netif_api_msg_t *msg)
 
     if (esp_netif->flags & ESP_NETIF_DHCP_SERVER) {
 #if ESP_DHCPS
-        ip4_addr_t dns_ip = dhcps_dns_getserver(esp_netif->dhcps);
+        ip4_addr_t dns_ip;
+        dhcps_dns_getserver(esp_netif->dhcps, &dns_ip);
         memcpy(&dns->ip.u_addr.ip4, &dns_ip, sizeof(ip4_addr_t));
 #else
         LOG_NETIF_DISABLED_AND_DO("DHCP Server", return ESP_ERR_NOT_SUPPORTED);
