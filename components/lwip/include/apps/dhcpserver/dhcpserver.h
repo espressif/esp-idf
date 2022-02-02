@@ -82,7 +82,7 @@ typedef struct {
         dhcps_lease_t dhcps_poll;
 } dhcps_options_t;
 
-typedef void (*dhcps_cb_t)(u8_t client_ip[4], u8_t client_mac[6]);
+typedef void (*dhcps_cb_t)(void* cb_arg, u8_t client_ip[4], u8_t client_mac[6]);
 
 static inline bool dhcps_router_enabled (dhcps_offer_t offer)
 {
@@ -179,9 +179,10 @@ err_t dhcps_dns_getserver(dhcps_t *dhcps, ip4_addr_t *dnsserver);
  * @brief Sets callback on assigning an IP to the connected client
  * @param dhcps Pointer to the DHCP handle
  * @param cb Callback for dhcp server
+ * @param cb_arg Context pointer to be added to the callback
  * @return ERR_ARG if invalid handle, ERR_OK on success
  */
-err_t dhcps_set_new_lease_cb(dhcps_t *dhcps, dhcps_cb_t cb);
+err_t dhcps_set_new_lease_cb(dhcps_t *dhcps, dhcps_cb_t cb, void* cb_arg);
 
 #ifdef __cplusplus
 }

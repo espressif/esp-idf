@@ -793,12 +793,14 @@ esp_err_t esp_netif_recv_hook_detach(esp_netif_t *esp_netif)
 #endif // CONFIG_ESP_NETIF_L2_TAP
 
 #if ESP_DHCPS
-static void esp_netif_dhcps_cb(uint8_t ip[4], uint8_t mac[6])
+static void esp_netif_dhcps_cb(void* arg, uint8_t ip[4], uint8_t mac[6])
 {
-    ip_event_ap_staipassigned_t evt = { 0 };
+    esp_netif_t *esp_netif = arg;
+    ESP_LOGD(TAG, "%s esp_netif:%p", __func__, esp_netif);
+    ip_event_ap_staipassigned_t evt = { .esp_netif = esp_netif };
     memcpy((char *)&evt.ip.addr, (char *)ip, sizeof(evt.ip.addr));
     memcpy((char *)&evt.mac, mac, sizeof(evt.mac));
-    ESP_LOGI(TAG, "DHCP server assigned IP to a station, IP is: " IPSTR, IP2STR(&evt.ip));
+    ESP_LOGI(TAG, "DHCP server assigned IP to a client, IP is: " IPSTR, IP2STR(&evt.ip));
     ESP_LOGD(TAG, "Client's MAC: %x:%x:%x:%x:%x:%x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
     int ret = esp_event_post(IP_EVENT, IP_EVENT_AP_STAIPASSIGNED, &evt, sizeof(evt), 0);
@@ -866,7 +868,7 @@ static esp_err_t esp_netif_start_api(esp_netif_api_msg_t *msg)
                 ip4_addr_t lwip_netmask;
                 memcpy(&lwip_ip, &default_ip->ip, sizeof(struct ip4_addr));
                 memcpy(&lwip_netmask, &default_ip->netmask, sizeof(struct ip4_addr));
-                dhcps_set_new_lease_cb(esp_netif->dhcps, esp_netif_dhcps_cb);
+                dhcps_set_new_lease_cb(esp_netif->dhcps, esp_netif_dhcps_cb, esp_netif);
                 dhcps_set_option_info(esp_netif->dhcps, SUBNET_MASK, (void*)&lwip_netmask, sizeof(lwip_netmask));
                 dhcps_start(esp_netif->dhcps, p_netif, lwip_ip);
                 esp_netif->dhcps_status = ESP_NETIF_DHCP_STARTED;
@@ -1313,7 +1315,7 @@ static esp_err_t esp_netif_dhcps_start_api(esp_netif_api_msg_t *msg)
         ip4_addr_t lwip_netmask;
         memcpy(&lwip_ip, &default_ip->ip, sizeof(struct ip4_addr));
         memcpy(&lwip_netmask, &default_ip->netmask, sizeof(struct ip4_addr));
-        dhcps_set_new_lease_cb(esp_netif->dhcps, esp_netif_dhcps_cb);
+        dhcps_set_new_lease_cb(esp_netif->dhcps, esp_netif_dhcps_cb, esp_netif);
         dhcps_set_option_info(esp_netif->dhcps, SUBNET_MASK, (void*)&lwip_netmask, sizeof(lwip_netmask));
         dhcps_start(esp_netif->dhcps, p_netif, lwip_ip);
         esp_netif->dhcps_status = ESP_NETIF_DHCP_STARTED;

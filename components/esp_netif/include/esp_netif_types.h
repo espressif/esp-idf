@@ -135,6 +135,7 @@ typedef struct {
 
 /** Event structure for IP_EVENT_AP_STAIPASSIGNED event */
 typedef struct {
+    esp_netif_t *esp_netif; /*!< Pointer to the associated netif handle */
     esp_ip4_addr_t ip; /*!< IP address which was assigned to the station */
     uint8_t mac[6];    /*!< MAC address of the connected client */
 } ip_event_ap_staipassigned_t;

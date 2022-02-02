@@ -101,6 +101,7 @@ struct dhcps_t {
     dhcps_offer_t dhcps_offer;
     dhcps_offer_t dhcps_dns;
     dhcps_cb_t dhcps_cb;
+    void* dhcps_cb_arg;
     struct udp_pcb *dhcps_pcb;
     dhcps_handle_state state;
 };
@@ -741,7 +742,7 @@ static void send_ack(dhcps_t *dhcps, struct dhcps_msg *m, u16_t len)
 #endif
 
     if (SendAck_err_t == ERR_OK) {
-        dhcps->dhcps_cb(m->yiaddr, m->chaddr);
+        dhcps->dhcps_cb(dhcps->dhcps_cb_arg, m->yiaddr, m->chaddr);
     }
 
     if (p->ref != 0) {
@@ -1185,12 +1186,13 @@ static void dhcps_poll_set(dhcps_t *dhcps, u32_t ip)
  * Parameters   : cb -- callback for dhcp server
  * Returns      : ERR_OK on success
 *******************************************************************************/
-err_t dhcps_set_new_lease_cb(dhcps_t *dhcps, dhcps_cb_t cb)
+err_t dhcps_set_new_lease_cb(dhcps_t *dhcps, dhcps_cb_t cb, void* cb_arg)
 {
     if (dhcps == NULL) {
         return ERR_ARG;
     }
     dhcps->dhcps_cb = cb;
+    dhcps->dhcps_cb_arg = cb_arg;
     return ERR_OK;
 }
 
