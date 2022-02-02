@@ -229,6 +229,11 @@ void * mem_malloc(mem_size_t size)
     return malloc(size);
 }
 
+void * mem_calloc(size_t nr, mem_size_t size)
+{
+    return calloc(nr, size);
+}
+
 void mem_free(void *rmem)
 {
     free(rmem);

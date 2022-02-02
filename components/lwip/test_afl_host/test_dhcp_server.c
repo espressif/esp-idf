@@ -10,7 +10,7 @@ ip4_addr_t server_ip;
 struct netif mynetif;
 
 // dhcps callback
-void dhcp_test_dhcps_cb (u8_t client_ip[4]) {}
+void dhcp_test_dhcps_cb (void* cb_arg, u8_t client_ip[4], u8_t client_mac[6]) {}
 
 // Dependency injected static function to pass the packet into parser
 void dhcp_test_handle_dhcp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port);
@@ -30,7 +30,7 @@ int main(int argc, char** argv)
 
     IP4_ADDR(&server_ip, 192,168,4,1);
     dhcps_t *dhcps = dhcps_new();
-    dhcps_set_new_lease_cb(dhcps, dhcp_test_dhcps_cb);
+    dhcps_set_new_lease_cb(dhcps, dhcp_test_dhcps_cb, NULL);
     dhcps_start(dhcps, &mynetif, server_ip);
 
 #ifdef INSTR_IS_OFF

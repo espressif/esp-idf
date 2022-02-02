@@ -6,8 +6,7 @@
 //#include "esp_common.h"
 #include <stdlib.h>
 #include <string.h>
-#include <lwip/dhcp.h>
-#include "lwip/inet.h"
+#include "lwip/dhcp.h"
 #include "lwip/err.h"
 #include "lwip/pbuf.h"
 #include "lwip/udp.h"
