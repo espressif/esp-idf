@@ -134,6 +134,9 @@ __attribute__((naked)) static void prvTaskExitError(void)
                 ".option norvc\n" \
                 "nop\n" \
                 ".option pop");
+    /* Task entry's RA will point here. Shifting RA into prvTaskExitError is necessary
+       to make GDB backtrace ending inside that function.
+       Otherwise backtrace will end in the function laying just before prvTaskExitError in address space. */
     _prvTaskExitError();
 }
 
@@ -201,7 +204,7 @@ StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxC
     memset(frame, 0, sizeof(*frame));
     /* Shifting RA into prvTaskExitError is necessary to make GDB backtrace ending inside that function.
        Otherwise backtrace will end in the function laying just before prvTaskExitError in address space. */
-    frame->ra = (UBaseType_t)prvTaskExitError + 4/*nop size*/;
+    frame->ra = (UBaseType_t)prvTaskExitError + 4/*size of the nop insruction at the beginning of prvTaskExitError*/;
     frame->mepc = (UBaseType_t)pxCode;
     frame->a0 = (UBaseType_t)pvParameters;
     frame->gp = (UBaseType_t)&__global_pointer$;
