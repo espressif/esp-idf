@@ -289,6 +289,7 @@ static int base_close(esp_transport_handle_t t)
     } else if (ssl && ssl->sockfd >= 0) {
         close(ssl->sockfd);
         ssl->sockfd = INVALID_SOCKET;
+        ret = 0;
     }
     return ret;
 }
