@@ -332,10 +332,11 @@ static mdns_srv_item_t *_mdns_get_service_item_instance(const char *instance, co
  *
  * @return the address after the parsed FQDN in the packet or NULL on error
  */
-static const uint8_t * _mdns_read_fqdn(const uint8_t * packet, const uint8_t * start, mdns_name_t * name, char * buf)
+static const uint8_t * _mdns_read_fqdn(const uint8_t * packet, const uint8_t * start, mdns_name_t * name, char * buf, size_t packet_len)
 {
     size_t index = 0;
-    while (start[index]) {
+    const uint8_t * packet_end = packet + packet_len;
+    while (start + index < packet_end && start[index]) {
         if (name->parts == 4) {
             name->invalid = true;
         }
@@ -347,6 +348,9 @@ static const uint8_t * _mdns_read_fqdn(const uint8_t * packet, const uint8_t * s
             }
             uint8_t i;
             for (i=0; i<len; i++) {
+                if (start + index >= packet_end) {
+                    return NULL;
+                }
                 buf[i] = start[index++];
             }
             buf[len] = '\0';
@@ -369,7 +373,7 @@ static const uint8_t * _mdns_read_fqdn(const uint8_t * packet, const uint8_t * s
                 //reference address can not be after where we are
                 return NULL;
             }
-            if (_mdns_read_fqdn(packet, packet + address, name, buf)) {
+            if (_mdns_read_fqdn(packet, packet + address, name, buf, packet_len)) {
                 return start + index;
             }
             return NULL;
@@ -569,7 +573,7 @@ static inline int append_one_txt_record_entry(uint8_t * packet, uint16_t * index
  *
  * @return length of added data: 0 on error or length on success
  */
-static uint16_t _mdns_append_fqdn(uint8_t * packet, uint16_t * index, const char * strings[], uint8_t count)
+static uint16_t _mdns_append_fqdn(uint8_t * packet, uint16_t * index, const char * strings[], uint8_t count, size_t packet_len)
 {
     if (!count) {
         //empty string so terminate
@@ -596,7 +600,7 @@ search_next:
         name.service[0] = 0;
         name.proto[0] = 0;
         name.domain[0] = 0;
-        const uint8_t * content = _mdns_read_fqdn(packet, len_location, &name, buf);
+        const uint8_t * content = _mdns_read_fqdn(packet, len_location, &name, buf, packet_len);
         if (!content) {
             //not a readable fqdn?
             return 0;
@@ -622,7 +626,7 @@ search_next:
             return 0;
         }
         //run the same for the other strings in the name
-        return written + _mdns_append_fqdn(packet, index, &strings[1], count - 1);
+        return written + _mdns_append_fqdn(packet, index, &strings[1], count - 1, packet_len);
     }
 
     //we have found the string so let's insert a pointer to it instead
@@ -656,7 +660,7 @@ static uint16_t _mdns_append_ptr_record(uint8_t * packet, uint16_t * index, cons
     str[2] = proto;
     str[3] = MDNS_DEFAULT_DOMAIN;
 
-    part_length = _mdns_append_fqdn(packet, index, str + 1, 3);
+    part_length = _mdns_append_fqdn(packet, index, str + 1, 3, MDNS_MAX_PACKET_SIZE);
     if (!part_length) {
         return 0;
     }
@@ -669,7 +673,7 @@ static uint16_t _mdns_append_ptr_record(uint8_t * packet, uint16_t * index, cons
     record_length += part_length;
 
     uint16_t data_len_location = *index - 2;
-    part_length = _mdns_append_fqdn(packet, index, str, 4);
+    part_length = _mdns_append_fqdn(packet, index, str, 4, MDNS_MAX_PACKET_SIZE);
     if (!part_length) {
         return 0;
     }
@@ -704,7 +708,7 @@ static uint16_t _mdns_append_subtype_ptr_record(uint8_t *packet, uint16_t *index
         return 0;
     }
 
-    part_length = _mdns_append_fqdn(packet, index, subtype_str, ARRAY_SIZE(subtype_str));
+    part_length = _mdns_append_fqdn(packet, index, subtype_str, ARRAY_SIZE(subtype_str), MDNS_MAX_PACKET_SIZE);
     if (!part_length) {
         return 0;
     }
@@ -717,7 +721,7 @@ static uint16_t _mdns_append_subtype_ptr_record(uint8_t *packet, uint16_t *index
     record_length += part_length;
 
     uint16_t data_len_location = *index - 2;
-    part_length = _mdns_append_fqdn(packet, index, instance_str, ARRAY_SIZE(instance_str));
+    part_length = _mdns_append_fqdn(packet, index, instance_str, ARRAY_SIZE(instance_str), MDNS_MAX_PACKET_SIZE);
     if (!part_length) {
         return 0;
     }
@@ -756,7 +760,7 @@ static uint16_t _mdns_append_sdptr_record(uint8_t * packet, uint16_t * index, md
     str[1] = service->proto;
     str[2] = MDNS_DEFAULT_DOMAIN;
 
-    part_length = _mdns_append_fqdn(packet, index, sd_str, 4);
+    part_length = _mdns_append_fqdn(packet, index, sd_str, 4, MDNS_MAX_PACKET_SIZE);
 
     record_length += part_length;
 
@@ -767,7 +771,7 @@ static uint16_t _mdns_append_sdptr_record(uint8_t * packet, uint16_t * index, md
     record_length += part_length;
 
     uint16_t data_len_location = *index - 2;
-    part_length = _mdns_append_fqdn(packet, index, str, 3);
+    part_length = _mdns_append_fqdn(packet, index, str, 3, MDNS_MAX_PACKET_SIZE);
     if (!part_length) {
         return 0;
     }
@@ -805,7 +809,7 @@ static uint16_t _mdns_append_txt_record(uint8_t * packet, uint16_t * index, mdns
         return 0;
     }
 
-    part_length = _mdns_append_fqdn(packet, index, str, 4);
+    part_length = _mdns_append_fqdn(packet, index, str, 4, MDNS_MAX_PACKET_SIZE);
     if (!part_length) {
         return 0;
     }
@@ -869,7 +873,7 @@ static uint16_t _mdns_append_srv_record(uint8_t * packet, uint16_t * index, mdns
         return 0;
     }
 
-    part_length = _mdns_append_fqdn(packet, index, str, 4);
+    part_length = _mdns_append_fqdn(packet, index, str, 4, MDNS_MAX_PACKET_SIZE);
     if (!part_length) {
         return 0;
     }
@@ -902,7 +906,7 @@ static uint16_t _mdns_append_srv_record(uint8_t * packet, uint16_t * index, mdns
         return 0;
     }
 
-    part_length = _mdns_append_fqdn(packet, index, str, 2);
+    part_length = _mdns_append_fqdn(packet, index, str, 2, MDNS_MAX_PACKET_SIZE);
     if (!part_length) {
         return 0;
     }
@@ -935,7 +939,7 @@ static uint16_t _mdns_append_a_record(uint8_t * packet, uint16_t * index, const 
         return 0;
     }
 
-    part_length = _mdns_append_fqdn(packet, index, str, 2);
+    part_length = _mdns_append_fqdn(packet, index, str, 2, MDNS_MAX_PACKET_SIZE);
     if (!part_length) {
         return 0;
     }
@@ -987,7 +991,7 @@ static uint16_t _mdns_append_aaaa_record(uint8_t * packet, uint16_t * index, con
     }
 
 
-    part_length = _mdns_append_fqdn(packet, index, str, 2);
+    part_length = _mdns_append_fqdn(packet, index, str, 2, MDNS_MAX_PACKET_SIZE);
     if (!part_length) {
         return 0;
     }
@@ -1035,7 +1039,7 @@ static uint16_t _mdns_append_question(uint8_t * packet, uint16_t * index, mdns_o
         str[str_index++] = q->domain;
     }
 
-    part_length = _mdns_append_fqdn(packet, index, str, str_index);
+    part_length = _mdns_append_fqdn(packet, index, str, str_index, MDNS_MAX_PACKET_SIZE);
     if (!part_length) {
         return 0;
     }
@@ -2958,7 +2962,7 @@ static inline uint32_t _mdns_read_u32(const uint8_t * packet, uint16_t index)
  *
  * @return the address after the parsed FQDN in the packet or NULL on error
  */
-static const uint8_t * _mdns_parse_fqdn(const uint8_t * packet, const uint8_t * start, mdns_name_t * name)
+static const uint8_t * _mdns_parse_fqdn(const uint8_t * packet, const uint8_t * start, mdns_name_t * name, size_t packet_len)
 {
     name->parts = 0;
     name->sub = 0;
@@ -2970,7 +2974,7 @@ static const uint8_t * _mdns_parse_fqdn(const uint8_t * packet, const uint8_t * 
 
     static char buf[MDNS_NAME_BUF_LEN];
 
-    const uint8_t * next_data = (uint8_t*)_mdns_read_fqdn(packet, start, name, buf);
+    const uint8_t * next_data = (uint8_t*)_mdns_read_fqdn(packet, start, name, buf, packet_len);
     if (!next_data) {
         return 0;
     }
@@ -3243,6 +3247,10 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
     mdns_name_t * name = &n;
     memset(name, 0, sizeof(mdns_name_t));
 
+    if (len <=  MDNS_HEAD_ADDITIONAL_OFFSET) {
+        free(parsed_packet);
+        return;
+    }
     header.id = _mdns_read_u16(data, MDNS_HEAD_ID_OFFSET);
     header.flags.value = _mdns_read_u16(data, MDNS_HEAD_FLAGS_OFFSET);
     header.questions = _mdns_read_u16(data, MDNS_HEAD_QUESTIONS_OFFSET);
@@ -3274,7 +3282,7 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
         uint8_t qs = header.questions;
 
         while (qs--) {
-            content = _mdns_parse_fqdn(data, content, name);
+            content = _mdns_parse_fqdn(data, content, name, len);
             if (!content) {
                 header.answers = 0;
                 header.additional = 0;
@@ -3282,6 +3290,9 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
                 goto clear_rx_packet;//error
             }
 
+            if (content + MDNS_CLASS_OFFSET + 1 >= data + len) {
+                goto clear_rx_packet; // malformed packet, won't read behind it
+            }
             uint16_t type = _mdns_read_u16(content, MDNS_TYPE_OFFSET);
             uint16_t mdns_class = _mdns_read_u16(content, MDNS_CLASS_OFFSET);
             bool unicast = !!(mdns_class & 0x8000);
@@ -3353,11 +3364,14 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
 
         while (content < (data + len)) {
 
-            content = _mdns_parse_fqdn(data, content, name);
+            content = _mdns_parse_fqdn(data, content, name, len);
             if (!content) {
                 goto clear_rx_packet;//error
             }
 
+            if (content + MDNS_LEN_OFFSET + 1 >= data + len) {
+                goto clear_rx_packet; // malformed packet, won't read behind it
+            }
             uint16_t type = _mdns_read_u16(content, MDNS_TYPE_OFFSET);
             uint16_t mdns_class = _mdns_read_u16(content, MDNS_CLASS_OFFSET);
             uint32_t ttl = _mdns_read_u32(content, MDNS_TTL_OFFSET);
@@ -3403,7 +3417,7 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
             }
 
             if (type == MDNS_TYPE_PTR) {
-                if (!_mdns_parse_fqdn(data, data_ptr, name)) {
+                if (!_mdns_parse_fqdn(data, data_ptr, name, len)) {
                     continue;//error
                 }
                 if (search_result) {
@@ -3442,8 +3456,11 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
                     }
                 }
 
-                if (!_mdns_parse_fqdn(data, data_ptr + MDNS_SRV_FQDN_OFFSET, name)) {
+                if (!_mdns_parse_fqdn(data, data_ptr + MDNS_SRV_FQDN_OFFSET, name, len)) {
                     continue;//error
+                }
+                if (data_ptr + MDNS_SRV_PORT_OFFSET + 1 >= data + len) {
+                    goto clear_rx_packet; // malformed packet, won't read behind it
                 }
                 uint16_t priority = _mdns_read_u16(data_ptr, MDNS_SRV_PRIORITY_OFFSET);
                 uint16_t weight = _mdns_read_u16(data_ptr, MDNS_SRV_WEIGHT_OFFSET);
@@ -5852,8 +5869,8 @@ void mdns_debug_packet(const uint8_t * data, size_t len)
         uint8_t qs = header.questions;
 
         while (qs--) {
-            content = _mdns_parse_fqdn(data, content, name);
-            if (!content) {
+            content = _mdns_parse_fqdn(data, content, name, len);
+            if (!content || content + MDNS_CLASS_OFFSET + 1 >= data + len) {
                 header.answers = 0;
                 header.additional = 0;
                 header.servers = 0;
@@ -5903,7 +5920,7 @@ void mdns_debug_packet(const uint8_t * data, size_t len)
 
         while (content < (data + len)) {
 
-            content = _mdns_parse_fqdn(data, content, name);
+            content = _mdns_parse_fqdn(data, content, name, len);
             if (!content) {
                 _mdns_dbg_printf("ERROR: parse mdns records\n");
                 break;
@@ -5971,13 +5988,13 @@ void mdns_debug_packet(const uint8_t * data, size_t len)
             _mdns_dbg_printf("%u ", ttl);
             _mdns_dbg_printf("[%u] ", data_len);
             if (type == MDNS_TYPE_PTR) {
-                if (!_mdns_parse_fqdn(data, data_ptr, name)) {
+                if (!_mdns_parse_fqdn(data, data_ptr, name, len)) {
                     _mdns_dbg_printf("ERROR: parse PTR\n");
                     continue;
                 }
                 _mdns_dbg_printf("%s.%s.%s.%s.\n", name->host, name->service, name->proto, name->domain);
             } else if (type == MDNS_TYPE_SRV) {
-                if (!_mdns_parse_fqdn(data, data_ptr + MDNS_SRV_FQDN_OFFSET, name)) {
+                if (!_mdns_parse_fqdn(data, data_ptr + MDNS_SRV_FQDN_OFFSET, name, len)) {
                     _mdns_dbg_printf("ERROR: parse SRV\n");
                     continue;
                 }
@@ -6015,7 +6032,7 @@ void mdns_debug_packet(const uint8_t * data, size_t len)
                 _mdns_dbg_printf(IPSTR "\n", IP2STR(&ip));
             } else if (type == MDNS_TYPE_NSEC) {
                 const uint8_t * old_ptr = data_ptr;
-                const uint8_t * new_ptr = _mdns_parse_fqdn(data, data_ptr, name);
+                const uint8_t * new_ptr = _mdns_parse_fqdn(data, data_ptr, name, len);
                 if (new_ptr) {
                     _mdns_dbg_printf("%s.%s.%s.%s. ", name->host, name->service, name->proto, name->domain);
                     size_t diff = new_ptr - old_ptr;
