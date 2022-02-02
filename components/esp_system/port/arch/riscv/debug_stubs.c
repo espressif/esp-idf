@@ -14,7 +14,6 @@
 
 const static char *TAG = "esp_dbg_stubs";
 
-#define RISCV_DBG_STUBS_SYSNR    0x65
 
 /* Advertises apptrace control block address to host */
 static int esp_dbg_stubs_advertise_table(void *stub_table_addr)
@@ -22,7 +21,7 @@ static int esp_dbg_stubs_advertise_table(void *stub_table_addr)
     if (!esp_cpu_in_ocd_debug_mode()) {
         return 0;
     }
-    return (int) semihosting_call_noerrno(RISCV_DBG_STUBS_SYSNR, (long*)stub_table_addr);
+    return (int) semihosting_call_noerrno(ESP_SEMIHOSTING_SYS_DBG_STUBS_INIT, (long*)stub_table_addr);
 }
 
 void esp_dbg_stubs_ll_init(void *stub_table_addr)
