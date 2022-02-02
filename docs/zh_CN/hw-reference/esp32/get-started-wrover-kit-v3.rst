@@ -18,7 +18,7 @@ ESP-WROVER-KIT V3 入门指南
 概述
 --------
 
-ESP-WROVER-KIT 是 `乐鑫 <https://espressif.com>`_ 一款基于 ESP32 的开发板，集成了 LCD 屏幕和 MicroSD 卡槽。
+ESP-WROVER-KIT 是 `乐鑫 <https://espressif.com>`_ 一款基于 ESP32 的开发板，集成了 LCD 屏幕和 microSD 卡槽。
 
 ESP-WROVER-KIT 可选贴以下 ESP32 模组：
 
@@ -71,7 +71,10 @@ ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
     ESP-WROVER-KIT 开发板布局 -- 仰视图
 
 
-下表从图片右上角开始，以顺时针顺序介绍了图 1 中的主要组件，然后以同样的顺序介绍图 2 中的主要组件。
+下表介绍了开发板的主要组件，顺序如下：
+
+- 从图片右上角开始，以顺时针顺序介绍了图 1 中的主要组件
+- 然后以同样的顺序介绍了图 2 中的主要组件
 
 .. list-table::
     :widths: 25 75
@@ -90,7 +93,7 @@ ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
     * - UART
       - 串口。FT2232HL 和 ESP32 的串行 TX/RX 信号已引出至 JP11 的两端。默认情况下，这两路信号由跳线帽连接。如果要跳过 FT2232 使用 ESP32 模组串口，则可移除相关跳线帽，将模组连接至其他外部串口设备。
     * - SPI
-      - 默认情况下，ESP32 使用 SPI 接口访问内置 flash 和 PSRAM。使用这些引脚连接 ESP32 和其他 SPI 设备。这种情况下，需增加额外的片选 (CS) 信号。注意，选贴 ESP32-WROVER 模组时，该接口的工作电压为 1.8 V；选贴 ESP32-WROOM-32 时，该接口的工作电压为 3.3V。
+      - 默认情况下，ESP32 使用 SPI 接口访问内置 flash 和 PSRAM。使用这些引脚连接 ESP32 和其他 SPI 设备。这种情况下，需增加额外的片选 (CS) 信号。注意，选贴 ESP32-WROVER 模组时，该接口的工作电压为 1.8 V；选贴 ESP32-WROOM-32 时，该接口的工作电压为 3.3 V。
     * - CTS/RTS
       - 串口流控信号。管脚默认不连接至电路。为了使能该功能，必须用跳线帽短路掉 JP14 的相应管脚。
     * - JTAG
@@ -115,7 +118,7 @@ ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
       - 红绿蓝发光二极管，可由 PWM（脉冲宽度调制）控制。
     * - I/O
       - 板上模组的所有管脚均已引出至开发板的排针。用户可以对 ESP32 进行编程，实现 PWM、ADC、DAC、I2C、I2S、SPI 等多种功能。
-    * - MicroSD 卡槽
+    * - microSD 卡槽
       - 适用于需要扩充数据存储空间或进行备份的应用开发场景。
     * - LCD 显示屏
       - 支持贴装一款 3.2” 的 SPI（标准四线串行外设接口）LCD 显示器，请见 :ref:`get-started-esp-wrover-kit-v3-board-back`。
@@ -160,18 +163,18 @@ JP1 连接器包括 14 x 2 个排针，具体功能可见下表中间 “I/O” 
 =====================  =====  =====  =====================
 n/a                    3.3V   GND    n/a
 NC/XTAL                IO32   IO33   NC/XTAL
-JTAG, MicroSD          IO12   IO13   JTAG, MicroSD
-JTAG, MicroSD          IO14   IO27   摄像头
+JTAG, microSD          IO12   IO13   JTAG, microSD
+JTAG, microSD          IO14   IO27   摄像头
 摄像头                  IO26   IO25   摄像头，LCD
 摄像头                  IO35   IO34   摄像头
 摄像头                  IO39   IO36   摄像头
 JTAG                   EN     IO23   摄像头，LCD
-摄像头，LCD             IO22   IO21   摄像头，LCD，MicroSD
+摄像头，LCD             IO22   IO21   摄像头，LCD，microSD
 摄像头，LCD             IO19   IO18   摄像头，LCD
 摄像头，LCD             IO5    IO17   PSRAM
-PSRAM                  IO16   IO4    LED，摄像头，MicroSD
-摄像头，LED，Boot       IO0    IO2    LED，MicroSD
-JTAG，MicroSD          IO15   5V
+PSRAM                  IO16   IO4    LED，摄像头，microSD
+摄像头，LED，Boot       IO0    IO2    LED，microSD
+JTAG，microSD          IO15   5V
 =====================  =====  =====  =====================
 
 说明：
@@ -181,7 +184,7 @@ JTAG，MicroSD          IO15   5V
 * Boot - Boot 按键 / SW2
 * 摄像头 - :ref:`摄像头 / JP4 <get-started-esp-wrover-kit-v3-camera-header>`
 * LED - :ref:`RGB LED <get-started-esp-wrover-kit-v3-rgb-led-connections>`
-* MicroSD - :ref:`MicroSD Card / J4 <get-started-esp-wrover-kit-v3-microsd-card-slot>`
+* microSD - :ref:`microSD Card / J4 <get-started-esp-wrover-kit-v3-microsd-card-slot>`
 * LCD - :ref:`LCD / U5 <get-started-esp-wrover-kit-v3-lcd-connector>`
 * PSRAM - 仅适用于选贴 ESP32-WROVER 的情况。
 
@@ -222,7 +225,6 @@ SPI Flash / JP13
 .. important::
 
     模组的 flash 总线已通过 0 欧电阻 R140 ~ R145 连接至排针 JP13。如果需要将 flash 的工作频率控制在 80 MHz，为了达到保证总线信号完整性等目的，建议移除 R140 ~ R145 电阻，将模组的 flash 总线与排针 JP2 断开。
-
 
 
 .. _get-started-esp-wrover-kit-v3-jtag-header:
@@ -288,11 +290,11 @@ RGB LED
 
 .. _get-started-esp-wrover-kit-v3-microsd-card-slot:
 
-MicroSD 卡
+microSD 卡
 ^^^^^^^^^^^^
 
 ====  ==============  ===============
-.     ESP32 管脚       MicroSD 信号
+.     ESP32 管脚       microSD 信号
 ====  ==============  ===============
 1.    MTDI / GPIO12   DATA2
 2.    MTCK / GPIO13   CD / DATA3
@@ -353,6 +355,7 @@ USB 供电                   使能 UART 通信
 ^^^^^^^^^^^^^^^^^^
 
 现在，请前往 :doc:`../../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
+
 
 相关文档
 -----------------

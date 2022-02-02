@@ -42,13 +42,6 @@ function get_all_submodules() {
   git config --file .gitmodules --get-regexp path | awk '{ print $2 }' | sed -e 's|$|/**|' | xargs | sed -e 's/ /,/g'
 }
 
-function set_component_ut_vars() {
-  local exclude_list_fp="${IDF_PATH}/tools/ci/component_ut_excludes.txt"
-  export COMPONENT_UT_DIRS=$(find components/ -name test_apps -type d)
-  export COMPONENT_UT_EXCLUDES=$([ -r $exclude_list_fp ] && cat $exclude_list_fp | xargs)
-  echo "COMPONENT_UT_DIRS, COMPONENT_UT_EXCLUDES written into export"
-}
-
 function error() {
   printf "\033[0;31m%s\n\033[0m" "${1}" >&2
 }

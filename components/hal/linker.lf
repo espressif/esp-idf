@@ -14,11 +14,8 @@ entries:
     cpu_hal (noflash)
     soc_hal (noflash)
     wdt_hal_iram (noflash)
-    if IDF_TARGET_ESP32C3 = n && IDF_TARGET_ESP32H2 = n && IDF_TARGET_ESP8684 = n:
-        if TWAI_ISR_IN_IRAM = y:
-            twai_hal_iram (noflash)
-        else:
-            twai_hal_iram (default)
+    if TWAI_ISR_IN_IRAM = y:
+        twai_hal_iram (noflash)
     if IDF_TARGET_ESP32 = n:
         spi_flash_hal_gpspi (noflash)
         systimer_hal (noflash)

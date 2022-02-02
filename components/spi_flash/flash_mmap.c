@@ -50,8 +50,8 @@
 #include "esp32h2/rom/cache.h"
 #include "soc/cache_memory.h"
 #include "soc/mmu.h"
-#elif CONFIG_IDF_TARGET_ESP8684
-#include "esp8684/rom/cache.h"
+#elif CONFIG_IDF_TARGET_ESP32C2
+#include "esp32c2/rom/cache.h"
 #include "soc/cache_memory.h"
 #include "soc/mmu.h"
 #endif

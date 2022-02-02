@@ -37,6 +37,10 @@ mainmenu "Espressif IoT Development Framework Configuration"
         string
         default "$IDF_TARGET"
 
+    config IDF_TARGET_LINUX
+        bool
+        default "y" if IDF_TARGET="linux"
+
     config IDF_TARGET_ESP32
         bool
         default "y" if IDF_TARGET="esp32"
@@ -82,9 +86,9 @@ mainmenu "Espressif IoT Development Framework Configuration"
             select ESPTOOLPY_NO_STUB    # TODO: IDF-4288
     endchoice
 
-    config IDF_TARGET_ESP8684
+    config IDF_TARGET_ESP32C2
         bool
-        default "y" if IDF_TARGET="esp8684"
+        default "y" if IDF_TARGET="esp32c2"
         select FREERTOS_UNICORE
         select IDF_TARGET_ARCH_RISCV
         select ESPTOOLPY_NO_STUB  # remove if ESPTOOL-303
@@ -99,7 +103,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
         default 0x0002 if IDF_TARGET_ESP32S2
         default 0x0005 if IDF_TARGET_ESP32C3
         default 0x0009 if IDF_TARGET_ESP32S3
-        default 0x000C if IDF_TARGET_ESP8684
+        default 0x000C if IDF_TARGET_ESP32C2
         default 0x000A if IDF_TARGET_ESP32H2_BETA_VERSION_1
         default 0x000E if IDF_TARGET_ESP32H2_BETA_VERSION_2 # ESP32H2-TODO: IDF-3475
         default 0xFFFF
@@ -163,6 +167,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
             config APP_BUILD_TYPE_APP_2NDBOOT
                 bool
                 prompt "Default (binary application + 2nd stage bootloader)"
+                depends on !IDF_TARGET_LINUX
                 select APP_BUILD_GENERATE_BINARIES
                 select APP_BUILD_BOOTLOADER
                 select APP_BUILD_USE_FLASH_SECTIONS

@@ -8,7 +8,7 @@ import logging
 import os
 import subprocess
 import sys
-from typing import List, Optional
+from typing import List
 
 IDF_PATH = os.path.abspath(os.getenv('IDF_PATH', os.path.join(os.path.dirname(__file__), '..', '..')))
 
@@ -86,9 +86,7 @@ def is_in_directory(file_path: str, folder: str) -> bool:
     return os.path.realpath(file_path).startswith(os.path.realpath(folder) + os.sep)
 
 
-def get_pytest_dirs(folder: str, under_dir: Optional[str] = None) -> List[str]:
-    from io import StringIO
-
+def get_pytest_dirs(folder: str) -> List[str]:
     import pytest
     from _pytest.nodes import Item
 
@@ -102,14 +100,11 @@ def get_pytest_dirs(folder: str, under_dir: Optional[str] = None) -> List[str]:
 
     collector = CollectPlugin()
 
-    sys_stdout = sys.stdout
-    sys.stdout = StringIO()  # swallow the output
-    pytest.main(['--collect-only', folder], plugins=[collector])
-    sys.stdout = sys_stdout  # restore sys.stdout
+    res = pytest.main(['--collect-only', '-q', folder], plugins=[collector])
+    if res.value != 0:
+        raise RuntimeError('pytest collection failed')
 
+    sys.stdout.flush()  # print instantly
     test_file_paths = set(node.fspath for node in collector.nodes)
-
-    if under_dir:
-        return [os.path.dirname(file) for file in test_file_paths if is_in_directory(file, under_dir)]
 
     return [os.path.dirname(file) for file in test_file_paths]

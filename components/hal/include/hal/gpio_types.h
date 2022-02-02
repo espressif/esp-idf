@@ -342,7 +342,7 @@ typedef enum {
     GPIO_NUM_MAX,
 /** @endcond */
 } gpio_num_t;
-#elif CONFIG_IDF_TARGET_ESP8684
+#elif CONFIG_IDF_TARGET_ESP32C2
 typedef enum {
     GPIO_NUM_NC = -1,    /*!< Use to signal not connected to S/W */
     GPIO_NUM_0 = 0,     /*!< GPIO0, input and output */

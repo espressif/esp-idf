@@ -71,6 +71,10 @@ config SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
     bool
     default y
 
+config SOC_EFUSE_KEY_PURPOSE_FIELD
+    bool
+    default y
+
 config SOC_ICACHE_ACCESS_RODATA_SUPPORTED
     bool
     default y
@@ -318,6 +322,10 @@ config SOC_LEDC_CHANNEL_NUM
 config SOC_LEDC_TIMER_BIT_WIDE_NUM
     int
     default 14
+
+config SOC_LEDC_SUPPORT_FADE_STOP
+    bool
+    default y
 
 config SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED
     bool

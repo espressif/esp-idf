@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,18 +22,6 @@
 
 #define MB_CONTROLLER_NOTIFY_QUEUE_SIZE     (CONFIG_FMB_CONTROLLER_NOTIFY_QUEUE_SIZE) // Number of messages in parameter notification queue
 #define MB_CONTROLLER_NOTIFY_TIMEOUT        (pdMS_TO_TICKS(CONFIG_FMB_CONTROLLER_NOTIFY_TIMEOUT)) // notification timeout
-
-#define MB_SLAVE_TAG "MB_CONTROLLER_SLAVE"
-
-#define MB_SLAVE_CHECK(a, ret_val, str, ...) \
-    if (!(a)) { \
-        ESP_LOGE(MB_SLAVE_TAG, "%s(%u): " str, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
-        return (ret_val); \
-    }
-
-#define MB_SLAVE_ASSERT(con) do { \
-        if (!(con)) { ESP_LOGE(MB_SLAVE_TAG, "assert errno:%d, errno_str: !(%s)", errno, strerror(errno)); assert(0 && #con); } \
-    } while (0)
 
 /**
  * @brief Device communication parameters for master

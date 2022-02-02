@@ -50,7 +50,7 @@ DOSKEY otatool.py=python.exe "%IDF_PATH%\components\app_update\otatool.py" $*
 DOSKEY parttool.py=python.exe "%IDF_PATH%\components\partition_table\parttool.py" $*
 
 echo Checking if Python packages are up to date...
-python.exe "%IDF_PATH%\tools\check_python_dependencies.py"
+python.exe "%IDF_PATH%\tools\idf_tools.py" check-python-dependencies
 if %errorlevel% neq 0 goto :__end
 
 echo.

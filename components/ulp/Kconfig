@@ -1,0 +1,38 @@
+menu "Ultra Low Power (ULP) Co-processor"
+    depends on (SOC_ULP_SUPPORTED || SOC_RISCV_COPROC_SUPPORTED)
+
+    config ULP_COPROC_ENABLED
+        bool "Enable Ultra Low Power (ULP) Co-processor"
+        default "n"
+        help
+            Enable this feature if you plan to use the ULP Co-processor.
+            Once this option is enabled, further ULP co-processor configuration will appear in the menu.
+
+    choice ULP_COPROC_TYPE
+        prompt "ULP Co-processor type"
+        depends on ULP_COPROC_ENABLED
+        default ULP_COPROC_TYPE_FSM if IDF_TARGET_ESP32
+        default ULP_COPROC_TYPE_RISCV if (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3)
+        help
+            Choose the ULP Coprocessor type: ULP FSM (Finite State Machine) or ULP RISC-V.
+            Please note that ESP32 only supports ULP FSM.
+
+        config ULP_COPROC_TYPE_FSM
+            bool "ULP FSM (Finite State Machine)"
+        config ULP_COPROC_TYPE_RISCV
+            bool "ULP RISC-V"
+            depends on !IDF_TARGET_ESP32
+    endchoice
+
+    config ULP_COPROC_RESERVE_MEM
+        int
+        prompt "RTC slow memory reserved for coprocessor"
+        depends on ULP_COPROC_ENABLED
+        default 512 if IDF_TARGET_ESP32
+        default 4096 if (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3)
+        range 32 8176
+        help
+            Bytes of memory to reserve for ULP Co-processor firmware & data.
+            Data is reserved at the beginning of RTC slow memory.
+
+endmenu  # Ultra Low Power (ULP) Co-processor

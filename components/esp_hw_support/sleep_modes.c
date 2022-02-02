@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -69,9 +69,9 @@
 #include "esp32h2/rom/cache.h"
 #include "esp32h2/rom/rtc.h"
 #include "soc/extmem_reg.h"
-#elif CONFIG_IDF_TARGET_ESP8684
-#include "esp8684/rom/cache.h"
-#include "esp8684/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32C2
+#include "esp32c2/rom/cache.h"
+#include "esp32c2/rom/rtc.h"
 #include "soc/extmem_reg.h"
 #endif
 
@@ -104,8 +104,8 @@
 #define DEFAULT_CPU_FREQ_MHZ                CONFIG_ESP32H2_DEFAULT_CPU_FREQ_MHZ
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (105)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (37)
-#elif CONFIG_IDF_TARGET_ESP8684
-#define DEFAULT_CPU_FREQ_MHZ                CONFIG_ESP8684_DEFAULT_CPU_FREQ_MHZ
+#elif CONFIG_IDF_TARGET_ESP32C2
+#define DEFAULT_CPU_FREQ_MHZ                CONFIG_ESP32C2_DEFAULT_CPU_FREQ_MHZ
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (105)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (37)
 #endif
@@ -462,7 +462,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 #else
 #if !CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
         /* If not possible stack is in RTC FAST memory, use the ROM function to calculate the CRC and save ~140 bytes IRAM */
-#if !CONFIG_IDF_TARGET_ESP8684
+#if !CONFIG_IDF_TARGET_ESP32C2
         // RTC has no rtc memory, IDF-3901
         set_rtc_memory_crc();
 #endif
@@ -765,7 +765,7 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
     } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_UART, (RTC_UART0_TRIG_EN | RTC_UART1_TRIG_EN))) {
         s_config.wakeup_triggers &= ~(RTC_UART0_TRIG_EN | RTC_UART1_TRIG_EN);
     }
-#if defined(CONFIG_ESP32_ULP_COPROC_ENABLED) || defined(CONFIG_ESP32S2_ULP_COPROC_ENABLED)
+#if CONFIG_ULP_COPROC_ENABLED
     else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_ULP, RTC_ULP_TRIG_EN)) {
         s_config.wakeup_triggers &= ~RTC_ULP_TRIG_EN;
     }
@@ -779,21 +779,21 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
 
 esp_err_t esp_sleep_enable_ulp_wakeup(void)
 {
+#ifndef CONFIG_ULP_COPROC_ENABLED
+    return ESP_ERR_INVALID_STATE;
+#endif // CONFIG_ULP_COPROC_ENABLED
+
 #if CONFIG_IDF_TARGET_ESP32
 #if ((defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT) || (defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT_V2))
     ESP_LOGE(TAG, "Failed to enable wakeup when provide current to external 32kHz crystal");
     return ESP_ERR_NOT_SUPPORTED;
 #endif
-#ifdef CONFIG_ESP32_ULP_COPROC_ENABLED
     if (s_config.wakeup_triggers & RTC_EXT0_TRIG_EN) {
         ESP_LOGE(TAG, "Conflicting wake-up trigger: ext0");
         return ESP_ERR_INVALID_STATE;
     }
     s_config.wakeup_triggers |= RTC_ULP_TRIG_EN;
     return ESP_OK;
-#else // CONFIG_ESP32_ULP_COPROC_ENABLED
-    return ESP_ERR_INVALID_STATE;
-#endif // CONFIG_ESP32_ULP_COPROC_ENABLED
 #elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     s_config.wakeup_triggers |= (RTC_ULP_TRIG_EN | RTC_COCPU_TRIG_EN | RTC_COCPU_TRAP_TRIG_EN);
     return ESP_OK;
@@ -1135,7 +1135,7 @@ esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
     } else if (wakeup_cause & RTC_BT_TRIG_EN) {
         return ESP_SLEEP_WAKEUP_BT;
 #endif
-#if CONFIG_IDF_TARGET_ESP32S2
+#if SOC_RISCV_COPROC_SUPPORTED
     } else if (wakeup_cause & RTC_COCPU_TRIG_EN) {
         return ESP_SLEEP_WAKEUP_ULP;
     } else if (wakeup_cause & RTC_COCPU_TRAP_TRIG_EN) {

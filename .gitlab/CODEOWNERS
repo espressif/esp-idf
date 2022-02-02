@@ -55,8 +55,10 @@
 /CMakeLists.txt                       @esp-idf-codeowners/build-config
 /Kconfig                              @esp-idf-codeowners/build-config
 /add_path.sh                          @esp-idf-codeowners/tools
+/conftest.py                          @esp-idf-codeowners/ci
 /export.*                             @esp-idf-codeowners/tools
 /install.*                            @esp-idf-codeowners/tools
+/pytest.ini                           @esp-idf-codeowners/ci
 /sdkconfig.rename                     @esp-idf-codeowners/build-config
 /sonar-project.properties             @esp-idf-codeowners/ci
 
@@ -75,7 +77,6 @@
 /components/driver/                   @esp-idf-codeowners/peripherals
 /components/efuse/                    @esp-idf-codeowners/system
 /components/esp32*/                   @esp-idf-codeowners/system
-/components/esp8684/                  @esp-idf-codeowners/system
 /components/esp_adc_cal/              @esp-idf-codeowners/peripherals
 /components/esp_common/               @esp-idf-codeowners/system
 /components/esp_eth/                  @esp-idf-codeowners/network
@@ -112,6 +113,7 @@
 /components/idf_test/                 @esp-idf-codeowners/ci
 /components/ieee802154/               @esp-idf-codeowners/ieee802154
 /components/json/                     @esp-idf-codeowners/app-utilities
+/components/linux/                    @esp-idf-codeowners/system
 /components/log/                      @esp-idf-codeowners/system
 /components/lwip/                     @esp-idf-codeowners/lwip
 /components/mbedtls/                  @esp-idf-codeowners/app-utilities @esp-idf-codeowners/security
@@ -199,7 +201,7 @@
 
 /tools/unit-test-app/         @esp-idf-codeowners/system @esp-idf-codeowners/tools
 
-requirements.txt              @esp-idf-codeowners/tools
+requirements.*.txt              @esp-idf-codeowners/tools
 
 # sort-order-reset
 

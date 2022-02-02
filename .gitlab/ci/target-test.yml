@@ -5,6 +5,7 @@
     when: always
     paths:
       - XUNIT_RESULT.xml
+      - /tmp/pytest-embedded/
     reports:
       junit: XUNIT_RESULT.xml
   script:
@@ -20,7 +21,7 @@ example_test_pytest_esp32_generic:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32
   needs:
-    - build_examples_pytest_esp32
+    - build_pytest_examples_esp32
   variables:
     TARGET: esp32
     ENV_MARKER: generic
@@ -33,7 +34,7 @@ example_test_pytest_esp32s2_generic:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32s2
   needs:
-    - build_examples_pytest_esp32s2
+    - build_pytest_examples_esp32s2
   variables:
     TARGET: esp32s2
     ENV_MARKER: generic
@@ -41,18 +42,127 @@ example_test_pytest_esp32s2_generic:
     - ESP32S2
     - Example_GENERIC
 
+example_test_pytest_esp32s3_generic:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32s3
+  needs:
+    - build_pytest_examples_esp32s3
+  variables:
+    TARGET: esp32s3
+    ENV_MARKER: generic
+  tags:
+    - ESP32S3
+    - Example_GENERIC
+
 example_test_pytest_esp32c3_generic:
   extends:
     - .pytest_examples_dir_template
     - .rules:test:example_test-esp32c3
   needs:
-    - build_examples_pytest_esp32c3
+    - build_pytest_examples_esp32c3
   variables:
     TARGET: esp32c3
     ENV_MARKER: generic
   tags:
     - ESP32C3
     - Example_GENERIC
+
+example_test_pytest_esp32c3_flash_suspend:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c3
+  needs:
+    - build_pytest_examples_esp32c3
+  variables:
+    TARGET: esp32c3
+    ENV_MARKER: flash_suspend
+  tags:
+    - ESP32C3_IDF
+    - UT_T1_Flash_Suspend
+
+.pytest_components_dir_template:
+  extends: .pytest_template
+  variables:
+    TEST_DIR: components
+
+component_ut_pytest_esp32_generic:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
+  needs:
+    - build_pytest_components_esp32
+  variables:
+    TARGET: esp32
+    ENV_MARKER: generic
+  tags:
+    - ESP32
+    - COMPONENT_UT_GENERIC
+
+component_ut_pytest_esp32_ip101:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
+  needs:
+    - build_pytest_components_esp32
+  variables:
+    TARGET: esp32
+    ENV_MARKER: ip101
+  tags:
+    - ESP32
+    - COMPONENT_UT_IP101
+
+component_ut_pytest_esp32_lan8720:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32
+  needs:
+    - build_pytest_components_esp32
+  variables:
+    TARGET: esp32
+    ENV_MARKER: lan8720
+  tags:
+    - ESP32
+    - COMPONENT_UT_LAN8720
+
+component_ut_pytest_esp32s2_generic:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s2
+  needs:
+    - build_pytest_components_esp32s2
+  variables:
+    TARGET: esp32s2
+    ENV_MARKER: generic
+  tags:
+    - ESP32S2
+    - COMPONENT_UT_GENERIC
+
+component_ut_pytest_esp32s3_generic:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s3
+  needs:
+    - build_pytest_components_esp32s3
+  variables:
+    TARGET: esp32s3
+    ENV_MARKER: generic
+  tags:
+    - ESP32S3
+    - COMPONENT_UT_GENERIC
+
+component_ut_pytest_esp32c3_generic:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c3
+  needs:
+    - build_pytest_components_esp32c3
+  variables:
+    TARGET: esp32c3
+    ENV_MARKER: generic
+  tags:
+    - ESP32C3
+    - COMPONENT_UT_GENERIC
 
 # for parallel jobs, CI_JOB_NAME will be "job_name index/total" (for example, "IT_001 1/2")
 # we need to convert to pattern "job_name_index.yml"
@@ -63,13 +173,13 @@ example_test_pytest_esp32c3_generic:
 
 .target_test_job_template:
   stage: target_test
-  needs:
-    - assign_test
   artifacts:
     when: always
     paths:
       - "**/*.log"
       - $LOG_PATH
+    exclude:
+      - .git/**/*
     expire_in: 1 week
     reports:
       junit: $LOG_PATH/*/XUNIT_RESULT.xml
@@ -94,6 +204,8 @@ example_test_pytest_esp32c3_generic:
 
 .example_test_template:
   extends: .target_test_job_template
+  needs:
+    - assign_example_test
   variables:
     TEST_CASE_PATH: "$CI_PROJECT_DIR/examples"
     CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/examples/test_configs"
@@ -111,7 +223,7 @@ test_weekend_mqtt:
     - .rules:labels:weekend_test
   tags:
     - ESP32
-    - Example_WIFI
+    - Example_EthKitV1
   script:
     - export MQTT_PUBLISH_TEST=1
     - export TEST_PATH=$CI_PROJECT_DIR/tools/test_apps/protocols/mqtt/publish_connect_test
@@ -357,6 +469,8 @@ example_test_ESP32C3_SDSPI:
 
 .test_app_template:
   extends: .target_test_job_template
+  needs:
+    - assign_custom_test
   variables:
     TEST_CASE_PATH: "$CI_PROJECT_DIR/tools/test_apps"
     CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/tools/test_apps/test_configs"
@@ -394,6 +508,12 @@ test_app_test_002:
   tags:
     - ESP32
     - Example_WIFI
+
+test_app_test_eth:
+  extends: .test_app_esp32_template
+  tags:
+    - ESP32
+    - Example_EthKitV1
 
 test_app_test_003:
   extends: .test_app_esp32_template
@@ -434,79 +554,19 @@ test_app_test_flash_psram_f4r8:
     - ESP32S3
     - MSPI_F4R8
 
-test_app_test_flash_psram_f8r8:
+.test_app_test_flash_psram_f8r8:
   extends: .test_app_esp32s3_template
   tags:
     - ESP32S3
     - MSPI_F8R8
 
-.component_ut_template:
-  extends: .target_test_job_template
-  variables:
-    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/component_ut/test_configs"
-  script:
-    - *define_config_file_name
-    # first test if config file exists, if not exist, exit 0
-    - test -e $CONFIG_FILE || exit 0
-    - set_component_ut_vars
-    # clone test env configs
-    - retry_failed git clone $TEST_ENV_CONFIG_REPO
-    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
-    # git clone the known failure cases repo, run test
-    - retry_failed git clone $KNOWN_FAILURE_CASES_REPO known_failure_cases
-    # run test
-    - cd tools/ci/python_packages/tiny_test_fw/bin
-    - run_cmd python Runner.py $COMPONENT_UT_DIRS -c $CONFIG_FILE -e $ENV_FILE --known_failure_cases_file $CI_PROJECT_DIR/known_failure_cases/known_failure_cases.txt
-
-.component_ut_esp32_template:
-  extends:
-    - .component_ut_template
-    - .rules:test:component_ut-esp32
-
-.component_ut_esp32s2_template:
-  extends:
-    - .component_ut_template
-    - .rules:test:component_ut-esp32s2
-
-.component_ut_esp32s3_template:
-  extends:
-    - .component_ut_template
-    - .rules:test:component_ut-esp32s3
-
-.component_ut_esp32c3_template:
-  extends:
-    - .component_ut_template
-    - .rules:test:component_ut-esp32c3
-
-component_ut_test_001:
-  extends: .component_ut_esp32_template
-  tags:
-    - ESP32
-    - COMPONENT_UT_GENERIC
-
-component_ut_test_esp32s2:
-  extends: .component_ut_esp32s2_template
-  tags:
-    - ESP32S2
-    - COMPONENT_UT_GENERIC
-
-component_ut_test_esp32s3:
-  extends: .component_ut_esp32s3_template
-  tags:
-    - ESP32S3
-    - COMPONENT_UT_GENERIC
-
-component_ut_test_esp32c3:
-  extends: .component_ut_esp32c3_template
-  tags:
-    - ESP32C3
-    - COMPONENT_UT_GENERIC
-
 .unit_test_template:
   extends: .target_test_job_template
+  needs: # the assign already needs all the build jobs
+    - assign_unit_test
   variables:
     TEST_CASE_PATH: "$CI_PROJECT_DIR/tools/unit-test-app"
-    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/components/idf_test/unit_test/CIConfigs"
+    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/components/idf_test/unit_test/test_configs"
 
 .unit_test_esp32_template:
   extends:
@@ -574,7 +634,7 @@ UT_006:
 
 UT_007:
   extends: .unit_test_esp32_template
-  parallel: 4
+  parallel: 5
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -725,7 +785,7 @@ UT_046:
 
 UT_047:
   extends: .unit_test_esp32s2_template
-  parallel: 5
+  parallel: 6
   tags:
     - ESP32S2_IDF
     - UT_T1_1
@@ -744,7 +804,7 @@ UT_S2_SDSPI:
 
 UT_C3:
   extends: .unit_test_esp32c3_template
-  parallel: 33
+  parallel: 34
   tags:
     - ESP32C3_IDF
     - UT_T1_1
@@ -788,7 +848,7 @@ UT_C3_SDSPI:
 
 UT_S3:
   extends: .unit_test_esp32s3_template
-  parallel: 31
+  parallel: 32
   tags:
     - ESP32S3_IDF
     - UT_T1_1
@@ -806,40 +866,34 @@ UT_S3_FLASH:
     - ESP32S3_IDF
     - UT_T1_ESP_FLASH
 
-component_ut_test_ip101:
-  extends: .component_ut_esp32_template
-  tags:
-    - ESP32
-    - COMPONENT_UT_IP101
-
-component_ut_test_lan8720:
-  extends: .component_ut_esp32_template
-  tags:
-    - ESP32
-    - COMPONENT_UT_LAN8720
-
 .integration_test_template:
   extends:
     - .target_test_job_template
     - .rules:test:integration_test
-  needs:
-    - assign_test
-    - build_ssc_esp32
+    # needn't install idf python env
+    - .before_script_minimal
+  needs: # the assign already needs all the build jobs
+    - assign_integration_test
   variables:
     LOCAL_ENV_CONFIG_PATH: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32_IDF"
     LOG_PATH: "${CI_PROJECT_DIR}/TEST_LOGS"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/auto_test_script/TestCaseFiles"
-    MODULE_UPDATE_FILE: "$CI_PROJECT_DIR/components/idf_test/ModuleDefinition.yml"
-    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/components/idf_test/integration_test/CIConfigs"
-    KNOWN_ISSUE_FILE: "${CI_PROJECT_DIR}/components/idf_test/integration_test/KnownIssues"
+    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/tools/ci/integration_test/test_configs"
+    KNOWN_ISSUE_FILE: "${CI_PROJECT_DIR}/tools/ci/integration_test/KnownIssues"
     CI_RUNNER_SCRIPT: "${CI_PROJECT_DIR}/auto_test_script/bin/CIRunner.py"
-    PYTHONPATH: ${CI_PROJECT_DIR}/auto_test_script/packages
+    PREPARE_TEST_BIN_SCRIPT: "${CI_PROJECT_DIR}/tools/ci/integration_test/prepare_test_bins.py"
+    PYTHONPATH: "${CI_PROJECT_DIR}/auto_test_script/packages:${PYTHONPATH}"
+    INITIAL_CONDITION_RETRY_COUNT: "1"
     # auto_test_script only supports python 3.7.x
     PYTHON_VER: 3.7.7
   script:
     - *define_config_file_name
     # first test if config file exists, if not exist, exit 0
     - test -e $CONFIG_FILE || exit 0
+    # prepare test utilities
+    - source tools/ci/setup_python.sh
+    - add_gitlab_ssh_keys
+    - fetch_submodules
     # clone local test env configs
     - retry_failed git clone $TEST_ENV_CONFIG_REPO
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
@@ -850,7 +904,14 @@ component_ut_test_lan8720:
     - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script --customized_only
     - cat ${KNOWN_ISSUE_FILE} >> ${TEST_CASE_FILE_PATH}/KnownIssues
     # run test
+    - python ${PREPARE_TEST_BIN_SCRIPT} $CONFIG_FILE
     - python ${CI_RUNNER_SCRIPT} -l "$LOG_PATH/$JOB_FULL_NAME" -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH
+
+.integration_test_esp32c3_template:
+  extends:
+    - .integration_test_template
+  variables:
+    LOCAL_ENV_CONFIG_PATH: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32C3_IDF"
 
 nvs_compatible_test:
   extends: .integration_test_template
@@ -867,6 +928,10 @@ nvs_compatible_test:
     - *define_config_file_name
     # first test if config file exists, if not exist, exit 0
     - test -e $CONFIG_FILE || exit 0
+    # prepare test utilities
+    - source tools/ci/setup_python.sh
+    - add_gitlab_ssh_keys
+    - fetch_submodules
     # clone local test env configs
     - retry_failed git clone $TEST_ENV_CONFIG_REPO
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
@@ -879,6 +944,7 @@ nvs_compatible_test:
     - cd auto_test_script
     - ./tools/prepare_nvs_bin.sh
     # run test
+    - python ${PREPARE_TEST_BIN_SCRIPT} $CONFIG_FILE
     - python ${CI_RUNNER_SCRIPT} -l "$LOG_PATH/$JOB_FULL_NAME" -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH
 
 IT_001:
@@ -993,3 +1059,10 @@ IT_022:
   tags:
     - ESP32_IDF
     - SSC_T3_2
+
+IT_C3_001:
+  extends: .integration_test_esp32c3_template
+  parallel: 6
+  tags:
+    - ESP32C3_IDF
+    - SSC_T2_5

@@ -1,16 +1,8 @@
-// Copyright 2010-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <string.h>
@@ -47,7 +39,7 @@ static void hexdump(const uint32_t* src, size_t count) {
 
 TEST_CASE("ulp add test", "[ulp]")
 {
-    memset(RTC_SLOW_MEM, 0, CONFIG_ESP32_ULP_COPROC_RESERVE_MEM);
+    memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
     const ulp_insn_t program[] = {
         I_MOVI(R3, 16),
         I_LD(R0, R3, 0),
@@ -62,14 +54,14 @@ TEST_CASE("ulp add test", "[ulp]")
     TEST_ASSERT_EQUAL(ESP_OK, ulp_process_macros_and_load(0, program, &size));
     TEST_ASSERT_EQUAL(ESP_OK, ulp_run(0));
     esp_rom_delay_us(1000);
-    hexdump(RTC_SLOW_MEM, CONFIG_ESP32_ULP_COPROC_RESERVE_MEM / 4);
+    hexdump(RTC_SLOW_MEM, CONFIG_ULP_COPROC_RESERVE_MEM / 4);
     TEST_ASSERT_EQUAL(10 + 11, RTC_SLOW_MEM[18] & 0xffff);
 }
 
 TEST_CASE("ulp branch test", "[ulp]")
 {
-    assert(CONFIG_ESP32_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ESP32_ULP_COPROC_RESERVE_MEM option set in menuconfig");
-    memset(RTC_SLOW_MEM, 0, CONFIG_ESP32_ULP_COPROC_RESERVE_MEM);
+    assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
+    memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
     const ulp_insn_t program[] = {
         I_MOVI(R0, 34),     // r0 = dst
         M_LABEL(1),
@@ -85,12 +77,12 @@ TEST_CASE("ulp branch test", "[ulp]")
     };
     RTC_SLOW_MEM[32] = 42;
     RTC_SLOW_MEM[33] = 18;
-    hexdump(RTC_SLOW_MEM, CONFIG_ESP32_ULP_COPROC_RESERVE_MEM / 4);
+    hexdump(RTC_SLOW_MEM, CONFIG_ULP_COPROC_RESERVE_MEM / 4);
     size_t size = sizeof(program)/sizeof(ulp_insn_t);
     ulp_process_macros_and_load(0, program, &size);
     ulp_run(0);
     printf("\n\n");
-    hexdump(RTC_SLOW_MEM, CONFIG_ESP32_ULP_COPROC_RESERVE_MEM / 4);
+    hexdump(RTC_SLOW_MEM, CONFIG_ULP_COPROC_RESERVE_MEM / 4);
     for (int i = 34; i < 64; ++i) {
         TEST_ASSERT_EQUAL(42 - 18, RTC_SLOW_MEM[i] & 0xffff);
     }
@@ -99,8 +91,8 @@ TEST_CASE("ulp branch test", "[ulp]")
 
 TEST_CASE("ulp wakeup test", "[ulp][ignore]")
 {
-    assert(CONFIG_ESP32_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ESP32_ULP_COPROC_RESERVE_MEM option set in menuconfig");
-    memset(RTC_SLOW_MEM, 0, CONFIG_ESP32_ULP_COPROC_RESERVE_MEM);
+    assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
+    memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
     const ulp_insn_t program[] = {
         I_MOVI(R1, 1024),
         M_LABEL(1),
@@ -127,9 +119,9 @@ TEST_CASE("ulp wakeup test", "[ulp][ignore]")
 
 TEST_CASE("ulp can write and read peripheral registers", "[ulp]")
 {
-    assert(CONFIG_ESP32_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ESP32_ULP_COPROC_RESERVE_MEM option set in menuconfig");
+    assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
     CLEAR_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
-    memset(RTC_SLOW_MEM, 0, CONFIG_ESP32_ULP_COPROC_RESERVE_MEM);
+    memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
     REG_WRITE(RTC_CNTL_STORE1_REG, 0x89abcdef);
 
     const ulp_insn_t program[] = {
@@ -167,8 +159,8 @@ TEST_CASE("ulp can write and read peripheral registers", "[ulp]")
 
 TEST_CASE("ULP I_WR_REG instruction test", "[ulp]")
 {
-    assert(CONFIG_ESP32_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ESP32_ULP_COPROC_RESERVE_MEM option set in menuconfig");
-    memset(RTC_SLOW_MEM, 0, CONFIG_ESP32_ULP_COPROC_RESERVE_MEM);
+    assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
+    memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
     typedef struct {
         int low;
         int width;
@@ -221,8 +213,8 @@ TEST_CASE("ULP I_WR_REG instruction test", "[ulp]")
 
 TEST_CASE("ulp controls RTC_IO", "[ulp][ignore]")
 {
-    assert(CONFIG_ESP32_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ESP32_ULP_COPROC_RESERVE_MEM option set in menuconfig");
-    memset(RTC_SLOW_MEM, 0, CONFIG_ESP32_ULP_COPROC_RESERVE_MEM);
+    assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
+    memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
     const ulp_insn_t program[] = {
         I_MOVI(R0, 0),                  // R0 is LED state
         I_MOVI(R2, 16),                 // loop R2 from 16 down to 0
@@ -270,7 +262,7 @@ TEST_CASE("ulp controls RTC_IO", "[ulp][ignore]")
 
 TEST_CASE("ulp power consumption in deep sleep", "[ulp][ignore]")
 {
-    assert(CONFIG_ESP32_ULP_COPROC_RESERVE_MEM >= 4 && "this test needs ESP32_ULP_COPROC_RESERVE_MEM option set in menuconfig");
+    assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 4 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
     ulp_insn_t insn = I_HALT();
     memcpy(&RTC_SLOW_MEM[0], &insn, sizeof(insn));
 
@@ -290,8 +282,8 @@ TEST_CASE("ulp timer setting", "[ulp]")
      * Program calls I_HALT each time and gets restarted by the timer.
      * Compare the expected number of times the program runs with the actual.
      */
-    assert(CONFIG_ESP32_ULP_COPROC_RESERVE_MEM >= 32 && "this test needs ESP32_ULP_COPROC_RESERVE_MEM option set in menuconfig");
-    memset(RTC_SLOW_MEM, 0, CONFIG_ESP32_ULP_COPROC_RESERVE_MEM);
+    assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 32 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
+    memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
 
     const int offset = 6;
     const ulp_insn_t program[] = {
@@ -333,11 +325,11 @@ TEST_CASE("ulp timer setting", "[ulp]")
 
 TEST_CASE("ulp can use TSENS in deep sleep", "[ulp][ignore]")
 {
-    assert(CONFIG_ESP32_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ESP32_ULP_COPROC_RESERVE_MEM option set in menuconfig");
+    assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
 
-    hexdump(RTC_SLOW_MEM, CONFIG_ESP32_ULP_COPROC_RESERVE_MEM / 4);
+    hexdump(RTC_SLOW_MEM, CONFIG_ULP_COPROC_RESERVE_MEM / 4);
     printf("\n\n");
-    memset(RTC_SLOW_MEM, 0, CONFIG_ESP32_ULP_COPROC_RESERVE_MEM);
+    memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
 
     // Allow TSENS to be controlled by the ULP
     SET_PERI_REG_BITS(SENS_SAR_TSENS_CTRL_REG, SENS_TSENS_CLK_DIV, 10, SENS_TSENS_CLK_DIV_S);
@@ -349,7 +341,7 @@ TEST_CASE("ulp can use TSENS in deep sleep", "[ulp][ignore]")
     // data start offset
     size_t offset = 20;
     // number of samples to collect
-    RTC_SLOW_MEM[offset] = (CONFIG_ESP32_ULP_COPROC_RESERVE_MEM) / 4 - offset - 8;
+    RTC_SLOW_MEM[offset] = (CONFIG_ULP_COPROC_RESERVE_MEM) / 4 - offset - 8;
     // sample counter
     RTC_SLOW_MEM[offset + 1] = 0;
 
@@ -385,11 +377,11 @@ TEST_CASE("ulp can use TSENS in deep sleep", "[ulp][ignore]")
 
 TEST_CASE("can use ADC in deep sleep", "[ulp][ignore]")
 {
-    assert(CONFIG_ESP32_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ESP32_ULP_COPROC_RESERVE_MEM option set in menuconfig");
+    assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
 
-    hexdump(RTC_SLOW_MEM, CONFIG_ESP32_ULP_COPROC_RESERVE_MEM / 4);
+    hexdump(RTC_SLOW_MEM, CONFIG_ULP_COPROC_RESERVE_MEM / 4);
     printf("\n\n");
-    memset(RTC_SLOW_MEM, 0, CONFIG_ESP32_ULP_COPROC_RESERVE_MEM);
+    memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
 
     SET_PERI_REG_BITS(SENS_SAR_START_FORCE_REG, SENS_SAR1_BIT_WIDTH, 3, SENS_SAR1_BIT_WIDTH_S);
     SET_PERI_REG_BITS(SENS_SAR_START_FORCE_REG, SENS_SAR2_BIT_WIDTH, 3, SENS_SAR2_BIT_WIDTH_S);
@@ -429,7 +421,7 @@ TEST_CASE("can use ADC in deep sleep", "[ulp][ignore]")
     // data start offset
     size_t offset = 20;
     // number of samples to collect
-    RTC_SLOW_MEM[offset] = (CONFIG_ESP32_ULP_COPROC_RESERVE_MEM) / 4 - offset - 8;
+    RTC_SLOW_MEM[offset] = (CONFIG_ULP_COPROC_RESERVE_MEM) / 4 - offset - 8;
     // sample counter
     RTC_SLOW_MEM[offset + 1] = 0;
 

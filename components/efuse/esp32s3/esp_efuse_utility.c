@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -51,19 +51,44 @@ const esp_efuse_range_addr_t range_write_addr_blocks[] = {
     {(uint32_t) &write_mass_blocks[EFUSE_BLK10][0], (uint32_t) &write_mass_blocks[EFUSE_BLK10][7]},
 };
 
-#ifndef CONFIG_EFUSE_VIRTUAL
 // Update Efuse timing configuration
 static esp_err_t esp_efuse_set_timing(void)
 {
-    uint32_t clock_hz = esp_clk_apb_freq();
-    return ets_efuse_set_timing(clock_hz) ? ESP_FAIL : ESP_OK;
+    REG_SET_FIELD(EFUSE_WR_TIM_CONF2_REG, EFUSE_PWR_OFF_NUM, 0x190);
+    return ESP_OK;
+}
+
+static void efuse_read(void)
+{
+    esp_efuse_set_timing();
+    REG_WRITE(EFUSE_CONF_REG, EFUSE_READ_OP_CODE);
+    REG_WRITE(EFUSE_CMD_REG, EFUSE_READ_CMD);
+
+    while (REG_GET_BIT(EFUSE_CMD_REG, EFUSE_READ_CMD) != 0) { }
+    /*Due to a hardware error, we have to read READ_CMD again to make sure the efuse clock is normal*/
+    while (REG_GET_BIT(EFUSE_CMD_REG, EFUSE_READ_CMD) != 0) { }
+}
+
+#ifndef CONFIG_EFUSE_VIRTUAL
+static void efuse_program(esp_efuse_block_t block)
+{
+    esp_efuse_set_timing();
+
+    REG_WRITE(EFUSE_CONF_REG, EFUSE_WRITE_OP_CODE);
+
+    REG_WRITE(EFUSE_CMD_REG, ((block << EFUSE_BLK_NUM_S) & EFUSE_BLK_NUM_M) | EFUSE_PGM_CMD);
+
+    while (REG_GET_BIT(EFUSE_CMD_REG, EFUSE_PGM_CMD) != 0) { };
+
+    ets_efuse_clear_program_registers();
+    efuse_read();
 }
 #endif // ifndef CONFIG_EFUSE_VIRTUAL
 
 // Efuse read operation: copies data from physical efuses to efuse read registers.
 void esp_efuse_utility_clear_program_registers(void)
 {
-    ets_efuse_read();
+    efuse_read();
     ets_efuse_clear_program_registers();
 }
 
@@ -97,7 +122,7 @@ void esp_efuse_utility_burn_chip(void)
                     }
                     int data_len = (range_write_addr_blocks[num_block].end - range_write_addr_blocks[num_block].start) + sizeof(uint32_t);
                     memcpy((void *)EFUSE_PGM_DATA0_REG, (void *)range_write_addr_blocks[num_block].start, data_len);
-                    ets_efuse_program(num_block);
+                    efuse_program(num_block);
                     break;
                 }
             }

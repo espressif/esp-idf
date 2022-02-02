@@ -62,8 +62,8 @@
 #if __has_include("soc/esp32s2/esp_ds.h")
 #include "soc/esp32s2/esp_ds.h"
 #endif
-#if __has_include("ulp_common.h")
-#include "ulp_common.h"
+#if __has_include("ulp_fsm_common.h")
+#include "ulp_fsm_common.h"
 #endif
 
 #ifdef CONFIG_ESP_ERR_TO_NAME_LOOKUP
@@ -221,7 +221,7 @@ static const esp_err_msg_t esp_err_msg_table[] = {
                                                                                 forbidden since the NVS encryption works
                                                                                 differently. */
 #   endif
-    // components/ulp/include/ulp_common.h
+    // components/ulp/ulp_fsm/include/ulp_fsm_common.h
 #   ifdef      ESP_ERR_ULP_BASE
     ERR_TBL_IT(ESP_ERR_ULP_BASE),                               /*  4608 0x1200 Offset for ULP-related error codes */
 #   endif

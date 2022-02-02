@@ -97,7 +97,6 @@ Hardware Setup
 
 Connect the board with the computer using **USB-to-UART Port**. Connection using **ESP32-S3 USB Port** is not fully implemented in software. In subsequent steps, **USB-to-UART Port** will be used by default.
 
-
 Software Setup
 ^^^^^^^^^^^^^^
 
@@ -233,7 +232,7 @@ Pin Layout
 ^^^^^^^^^^^
 
 
-.. figure:: ../../../_static/ESP32-S3-DevKitM-1-pinout.png
+.. figure:: ../../../_static/ESP32-S3_DevKitM-1_pinlayout.jpg
     :align: center
     :scale: 50%
     :alt: ESP32-S3-DevKitM-1 (click to enlarge)
@@ -259,5 +258,3 @@ Related Documents
 - `ESP32-S3-DevKitM-1 Dimensions source file <https://dl.espressif.com/dl/schematics/DXF_ESP32-S3-DevKitM-1_V1_20210310AC.dxf>`_ (DXF) - You can view it with `Autodesk Viewer <https://viewer.autodesk.com/>`_ online
 
 For further design documentation for the board, please contact us at `sales@espressif.com <sales@espressif.com>`_.
-
-

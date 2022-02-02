@@ -296,13 +296,13 @@ class BuildSystem:
         'ESP32-S3': 'esp32s3',
         'ESP32-C3': 'esp32c3',
         'ESP32-H2': 'esp32h2',
-        'ESP8684': 'esp8684',
+        'ESP32-C2': 'esp32c2',
         'Linux': 'linux',
     }
 
     # ESP32H2-TODO: IDF-4559
     # Build only apps who has ESP32-H2 in the README.md supported targets table.
-    DEFAULT_TARGETS = ['esp32', 'esp32s2', 'esp32s3', 'esp32c3', 'esp8684', 'linux']
+    DEFAULT_TARGETS = ['esp32', 'esp32s2', 'esp32s3', 'esp32c3', 'esp32c2', 'linux']
 
     @classmethod
     def build_prepare(cls, build_item):

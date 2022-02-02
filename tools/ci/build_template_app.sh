@@ -69,7 +69,7 @@ build_stage2() {
     search_cmake esp32s3 ${CONFIG_STR}
     search_cmake esp32c3 ${CONFIG_STR}
     search_cmake esp32h2 ${CONFIG_STR}
-    search_cmake esp8684 ${CONFIG_STR}
+    search_cmake esp32c2 ${CONFIG_STR}
 
     build build_list_1.json
 
@@ -79,7 +79,7 @@ build_stage2() {
     search_cmake esp32s3 ${CONFIG_STR}
     search_cmake esp32c3 ${CONFIG_STR}
     search_cmake esp32h2 ${CONFIG_STR}
-    search_cmake esp8684 ${CONFIG_STR}
+    search_cmake esp32c2 ${CONFIG_STR}
 
     # Override EXTRA_CFLAGS and EXTRA_CXXFLAGS in the environment
     export EXTRA_CFLAGS=${PEDANTIC_CFLAGS/-Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function/}
@@ -94,7 +94,7 @@ build_stage1() {
     search_cmake esp32s3 ${CONFIG_STR}
     search_cmake esp32c3 ${CONFIG_STR}
     search_cmake esp32h2 ${CONFIG_STR}
-    search_cmake esp8684 ${CONFIG_STR}
+    search_cmake esp32c2 ${CONFIG_STR}
 
     build
 }

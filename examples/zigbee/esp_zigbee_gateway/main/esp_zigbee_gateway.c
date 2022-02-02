@@ -59,6 +59,9 @@ void zboss_signal_handler(zb_bufid_t bufid)
     zb_zdo_app_signal_hdr_t *p_sg_p       = NULL;
     zb_zdo_app_signal_type_t  sig         = zb_get_app_signal(bufid, &p_sg_p);
     zb_ret_t                  status      = ZB_GET_APP_SIGNAL_STATUS(bufid);
+    zb_zdo_signal_device_annce_params_t *dev_annce_params = NULL;
+    zb_zdo_signal_macsplit_dev_boot_params_t *rcp_version = NULL;
+    zb_uint32_t    gateway_version;
 
     switch (sig) {
     case ZB_ZDO_SIGNAL_SKIP_STARTUP:
@@ -68,6 +71,13 @@ void zboss_signal_handler(zb_bufid_t bufid)
 
     case ZB_MACSPLIT_DEVICE_BOOT:
         ESP_LOGI(TAG, "Zigbee rcp device booted");
+        gateway_version = zb_esp_macsplit_get_version();
+        rcp_version = ZB_ZDO_SIGNAL_GET_PARAMS(p_sg_p, zb_zdo_signal_macsplit_dev_boot_params_t);
+        ESP_LOGI(TAG, "Zigbee rcp device version: %d.%d.%d", (rcp_version->dev_version >> 24 & 0x000000FF), (rcp_version->dev_version >> 16 & 0x000000FF), (rcp_version->dev_version & 0x000000FF));
+        ESP_LOGI(TAG, "Zigbee gateway version: %d.%d.%d", (gateway_version >> 24 & 0x000000FF), (gateway_version >> 16 & 0x000000FF), (gateway_version & 0x000000FF));
+        if (gateway_version != rcp_version->dev_version) {
+            ESP_LOGE(TAG, "rcp has different Zigbee stack version with Zigbee gateway! Please check the rcp software or other issues");
+        }
         break;
 
     case ZB_BDB_SIGNAL_DEVICE_FIRST_START:
@@ -100,11 +110,11 @@ void zboss_signal_handler(zb_bufid_t bufid)
         }
         break;
 
-    case ZB_ZDO_SIGNAL_DEVICE_ANNCE: {
-        zb_zdo_signal_device_annce_params_t *dev_annce_params = ZB_ZDO_SIGNAL_GET_PARAMS(p_sg_p, zb_zdo_signal_device_annce_params_t);
+    case ZB_ZDO_SIGNAL_DEVICE_ANNCE:
+        dev_annce_params = ZB_ZDO_SIGNAL_GET_PARAMS(p_sg_p, zb_zdo_signal_device_annce_params_t);
         ESP_LOGI(TAG, "New device commissioned or rejoined (short: 0x%04hx)", dev_annce_params->device_short_addr);
-    }
-    break;
+        break;
+
     default:
         ESP_LOGI(TAG, "status: %d", status);
         break;
@@ -115,7 +125,7 @@ void zboss_signal_handler(zb_bufid_t bufid)
     }
 }
 
-void zboss_task()
+static void zboss_task(void *pvParameters)
 {
     ZB_INIT("zigbee gateway");
     zb_set_network_coordinator_role(IEEE_CHANNEL_MASK);
@@ -125,11 +135,10 @@ void zboss_task()
     ESP_ERROR_CHECK(zboss_start_no_autostart());
     while (1) {
         zboss_main_loop_iteration();
-        vTaskDelay(10 / portTICK_PERIOD_MS);
     }
 }
 
-void app_main()
+void app_main(void)
 {
     zb_esp_platform_config_t config = {
         .radio_config = ZB_ESP_DEFAULT_RADIO_CONFIG(),
@@ -137,5 +146,5 @@ void app_main()
     };
     /* load Zigbee gateway platform config to initialization */
     ESP_ERROR_CHECK(zb_esp_platform_config(&config));
-    xTaskCreate(zboss_task, "zboss_main", 10240, xTaskGetCurrentTaskHandle(), 5, NULL);
+    xTaskCreate(zboss_task, "zboss_main", 4096, NULL, 5, NULL);
 }

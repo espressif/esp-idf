@@ -57,6 +57,7 @@
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   3
 #define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS   1
+#define SOC_EFUSE_KEY_PURPOSE_FIELD         1
 #define SOC_ICACHE_ACCESS_RODATA_SUPPORTED  1
 #define SOC_TEMP_SENSOR_SUPPORTED           1
 #define SOC_CACHE_SUPPORT_WRAP              1
@@ -140,7 +141,7 @@
 #define SOC_DEDIC_GPIO_OUT_AUTO_ENABLE  (1) /*!< Dedicated GPIO output attribution is enabled automatically */
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
-// ESP32-S2 have 2 I2C.
+// ESP32-S2 has 2 I2C
 #define SOC_I2C_NUM            (2)
 
 #define SOC_I2C_FIFO_LEN       (32) /*!< I2C hardware FIFO depth */
@@ -162,7 +163,7 @@
 #define SOC_APLL_MAX_HZ    (125000000) // 125MHz, refer to 'periph_rtc_apll_freq_set' for the calculation
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
-// ESP32-S2 have 1 I2S
+// ESP32-S2 has 1 I2S
 #define SOC_I2S_NUM                (1U)
 #define SOC_I2S_SUPPORTS_APLL      (1) // ESP32-S2 support APLL
 #define SOC_I2S_SUPPORTS_DMA_EQUAL (1)
@@ -180,6 +181,7 @@
 #define SOC_LEDC_SUPPORT_XTAL_CLOCK  (1)
 #define SOC_LEDC_CHANNEL_NUM         (8)
 #define SOC_LEDC_TIMER_BIT_WIDE_NUM  (14)
+#define SOC_LEDC_SUPPORT_FADE_STOP   (1)
 
 /*-------------------------- MPU CAPS ----------------------------------------*/
 //TODO: correct the caller and remove unsupported lines

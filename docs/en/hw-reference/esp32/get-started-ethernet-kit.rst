@@ -26,6 +26,7 @@ What You Need
 
 You can skip the introduction sections and go directly to Section `Start Application Development`_.
 
+
 Overview
 --------
 
@@ -65,8 +66,8 @@ Functional Description
 
 The following figures and tables describe the key components, interfaces, and controls of the ESP32-Ethernet-Kit.
 
-
 .. _get-started-esp32-ethernet-kit-a-v1.2-layout:
+
 
 Ethernet Board (A)
 ^^^^^^^^^^^^^^^^^^
@@ -81,47 +82,48 @@ Ethernet Board (A)
 
 The table below provides description starting from the picture's top right corner and going clockwise.
 
-==================  ===========================================================================
-Key Component       Description
-==================  ===========================================================================
-ESP32-WROVER-E      This ESP32 module features 64-Mbit PSRAM for flexible extended storage and data processing capabilities.
+.. list-table:: Table 1  Component Description
+  :widths: 40 150
+  :header-rows: 1
 
-GPIO Header 2       Five unpopulated through-hole solder pads to provide access to selected GPIOs of ESP32. For details, see `GPIO Header 2`_.
-
-Function Switch     A 4-bit DIP switch used to configure the functionality of selected GPIOs of ESP32. For details see `Function Switch`_.
-
-
-Tx/Rx LEDs          Two LEDs to show the status of UART transmission.
-
-FT2232H             The FT2232H chip serves as a multi-protocol USB-to-serial bridge which can be programmed and controlled via USB to provide communication with ESP32. FT2232H also features USB-to-JTAG interface which is available on channel A of the chip, while USB-to-serial is on channel B. The FT2232H chip enhances user-friendliness in terms of application development and debugging. See `ESP32-Ethernet-Kit V1.2 Ethernet board (A) schematic`_.
-
-USB Port            USB interface. Power supply for the board as well as the communication interface between a computer and the board.
-
-Power Switch        Power On/Off Switch. Toggling the switch to **5V0** position powers the board on, toggling to **GND** position powers the board off.
-
-5V Input            The 5V power supply interface can be more convenient when the board is operating autonomously (not connected to a computer).
-
-5V Power On LED     This red LED turns on when power is supplied to the board, either from USB or 5V Input.
-
-DC/DC Converter     Provided DC 5 V to 3.3 V conversion, output current up to 2 A.
-
-Board B Connectors  A pair male and female header pins for mounting the `PoE board (B)`_.
-
-IP101GRI (PHY)      The physical layer (PHY) connection to the Ethernet cable is implemented using the `IP101GRI <http://www.bdtic.com/DataSheet/ICplus/IP101G_DS_R01_20121224.pdf>`_ chip. The connection between PHY and ESP32 is done through the reduced media-independent interface (RMII), a variant of the media-independent interface `(MII) <https://en.wikipedia.org/wiki/Media-independent_interface>`_ standard. The PHY supports the IEEE 802.3/802.3u standard of 10/100 Mbps.
-
-RJ45 Port           Ethernet network data transmission port.
-
-Magnetics Module    The Magnetics are part of the Ethernet specification to protect against faults and transients, including rejection of common mode signals between the transceiver IC and the cable. The magnetics also provide galvanic isolation between the transceiver and the Ethernet device.
-
-Link/Activity LEDs  Two LEDs (green and red) that respectively indicate the "Link" and "Activity" statuses of the PHY.
-
-BOOT Button         Download button. Holding down **BOOT** and then pressing **EN** initiates Firmware Download mode for downloading firmware through the serial port.
-
-EN Button           Reset button.
-
-GPIO Header 1       This header provides six unpopulated through-hole solder pads connected to spare GPIOs of ESP32. For details, see `GPIO Header 1`_.
-
-==================  ===========================================================================
+  * - Key Component
+    - Description
+  * - ESP32-WROVER-E
+    - This ESP32 module features 64-Mbit PSRAM for flexible extended storage and data processing capabilities.
+  * - GPIO Header 2
+    - Five unpopulated through-hole solder pads to provide access to selected GPIOs of ESP32. For details, see `GPIO Header 2`_.
+  * - Function Switch 
+    - A 4-bit DIP switch used to configure the functionality of selected GPIOs of ESP32. For details see `Function Switch`_.
+  * - Tx/Rx LEDs
+    - Two LEDs to show the status of UART transmission.
+  * - FT2232H 
+    - The FT2232H chip serves as a multi-protocol USB-to-serial bridge which can be programmed and controlled via USB to provide communication with ESP32. FT2232H also features USB-to-JTAG interface which is available on channel A of the chip, while USB-to-serial is on channel B. The FT2232H chip enhances user-friendliness in terms of application development and debugging. See `ESP32-Ethernet-Kit V1.2 Ethernet board (A) schematic`_.
+  * - USB Port
+    - USB interface. Power supply for the board as well as the communication interface between a computer and the board.
+  * - Power Switch
+    - Power On/Off Switch. Toggling the switch to **5V0** position powers the board on, toggling to **GND** position powers the board off.
+  * - 5V Input
+    - The 5 V power supply interface can be more convenient when the board is operating autonomously (not connected to a computer).
+  * - 5V Power On LED
+    - This red LED turns on when power is supplied to the board, either from USB or 5 V Input.
+  * - DC/DC Converter
+    - Provided DC 5 V to 3.3 V conversion, output current up to 2 A.
+  * - Board B Connectors
+    - A pair male and female header pins for mounting the `PoE board (B)`_
+  * - IP101GRI (PHY)
+    -  The physical layer (PHY) connection to the Ethernet cable is implemented using the `IP101GRI <http://www.bdtic.com/DataSheet/ICplus/IP101G_DS_R01_20121224.pdf>`_ chip. The connection between PHY and ESP32 is done through the reduced media-independent interface (RMII), a variant of the media-independent interface `(MII) <https://en.wikipedia.org/wiki/Media-independent_interface>`_ standard. The PHY supports the IEEE 802.3/802.3u standard of 10/100 Mbps.
+  * - RJ45 Port
+    - Ethernet network data transmission port.
+  * - Magnetics Module
+    - The Magnetics are part of the Ethernet specification to protect against faults and transients, including rejection of common mode signals between the transceiver IC and the cable. The magnetics also provide galvanic isolation between the transceiver and the Ethernet device.
+  * - Link/Activity LEDs
+    - Two LEDs (green and red) that respectively indicate the "Link" and "Activity" statuses of the PHY.
+  * - BOOT Button
+    - Download button. Holding down **BOOT** and then pressing **EN** initiates Firmware Download mode for downloading firmware through the serial port.
+  * - EN Button
+    - Reset button.
+  * - GPIO Header 1
+    - This header provides six unpopulated through-hole solder pads connected to spare GPIOs of ESP32. For details, see `GPIO Header 1`_.
 
 .. note::
 
@@ -154,11 +156,12 @@ To take advantage of the PoE functionality the **RJ45 Port** of the Ethernet boa
   * - Key Component 
     - Description
   * - Board A Connector  
-    - Four female (left) and four male (right) header pins for connecting the PoE board (B) to :ref:`Ethernet board (A) <get-started-esp32-ethernet-kit-a-v1.2-layout>`. The pins on the left accept power coming from a PoE switch. The pins on the right deliver 5 V power supply to the  Ethernet board (A).
+    - Four female (left) and four male (right) header pins for connecting the PoE board (B) to :ref:`Ethernet board (A) <get-started-esp32-ethernet-kit-a-v1.2-layout>`. The pins on the left accept power coming from a PoE switch. The pins on the right deliver 5 V power supply to the Ethernet board (A).
   * - External Power Terminals
     - Optional power supply (26.6 ~ 54 V) to the PoE board (B).
 
 .. _get-started-esp32-ethernet-kit-v1.2-setup-options:
+
 
 Setup Options
 -------------
@@ -190,6 +193,7 @@ The ethernet MAC and PHY under RMII working mode need a common 50 MHz reference 
 
     For additional information on the RMII clock selection, please refer to `ESP32-Ethernet-Kit V1.2 Ethernet board (A) schematic`_, sheet 2, location D2.
 
+
 RMII Clock Sourced Externally by PHY
 """"""""""""""""""""""""""""""""""""
 
@@ -205,11 +209,11 @@ By default, the ESP32-Ethernet-Kit is configured to provide RMII clock for the I
 
 Please note that the PHY is reset on power up by pulling the RESET_N signal down with a resistor. ESP32 should assert RESET_N high with GPIO5 to enable PHY. Only this can ensure the power-up of system. Otherwise ESP32 may enter download mode (when the clock signal of REF_CLK_50M is at a high logic level during the GPIO0 power-up sampling phase).
 
+
 RMII Clock Sourced Internally from ESP32's APLL
 """""""""""""""""""""""""""""""""""""""""""""""
 
 Another option is to source the RMII Clock from internal ESP32 APLL, see figure below. The clock signal coming from GPIO0 is first inverted, to account for transmission line delay, and then supplied to the PHY.
-
 
 .. figure:: ../../../_static/esp32-ethernet-kit-rmii-clk-to-phy.png
     :align: center
@@ -220,6 +224,7 @@ Another option is to source the RMII Clock from internal ESP32 APLL, see figure 
     RMII Clock from ESP Internal APLL
 
 To implement this option, users need to remove or add some RC components on the board. For details please refer to `ESP32-Ethernet-Kit V1.2 Ethernet board (A) schematic`_, sheet 2, location D2. Please note that if the APLL is already used for other purposes (e.g. I2S peripheral), then you have no choice but use an external RMII clock.
+
 
 GPIO Allocation
 ---------------
@@ -348,6 +353,7 @@ Start Application Development
 -----------------------------
 
 Before powering up your ESP32-Ethernet-Kit, please make sure that the board is in good condition with no obvious signs of damage.
+
 
 Initial Setup
 ^^^^^^^^^^^^^

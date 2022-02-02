@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,7 +23,7 @@ typedef struct {
     uint16_t net_idx;
     uint16_t unicast_addr;
 } ble_mesh_node_config_params;
-ble_mesh_node_config_params ble_mesh_node_prestore_params[NODE_MAX_GROUP_CONFIG];
+extern ble_mesh_node_config_params ble_mesh_node_prestore_params[NODE_MAX_GROUP_CONFIG];
 
 extern esp_ble_mesh_prov_t prov;
 
@@ -39,7 +39,7 @@ extern esp_ble_mesh_elem_t config_server_elements[];
 extern esp_ble_mesh_comp_t config_server_comp;
 
 // config client model
-esp_ble_mesh_client_t cfg_cli;
+extern esp_ble_mesh_client_t cfg_cli;
 extern esp_ble_mesh_model_t config_client_models[];
 
 extern esp_ble_mesh_elem_t config_client_elements[];

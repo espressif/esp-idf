@@ -51,6 +51,7 @@ examples_and_unit_tests:
   include:
    - 'examples/'
    - 'components/**/test/**'
+   - 'components/**/test_apps/**'
   allowed_licenses:
   - Apache-2.0
   - Unlicense
@@ -60,6 +61,14 @@ examples_and_unit_tests:
 freemodbus_component:
   include:
     - 'components/freemodbus/**'
+  allowed_licenses:
+    - Apache-2.0
+    - BSD-3-Clause
+  license_for_new_files: Apache-2.0
+
+lwip_component:
+  include:
+    - 'components/lwip/**'
   allowed_licenses:
     - Apache-2.0
     - BSD-3-Clause

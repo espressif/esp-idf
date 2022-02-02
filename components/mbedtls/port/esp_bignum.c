@@ -554,7 +554,18 @@ cleanup:
     return ret;
 }
 
+int mbedtls_mpi_mul_int( mbedtls_mpi *X, const mbedtls_mpi *A, mbedtls_mpi_uint b )
+{
+    mbedtls_mpi _B;
+    mbedtls_mpi_uint p[1];
 
+    _B.s = 1;
+    _B.n = 1;
+    _B.p = p;
+    p[0] = b;
+
+    return( mbedtls_mpi_mul_mpi( X, A, &_B ) );
+}
 
 /* Deal with the case when X & Y are too long for the hardware unit, by splitting one operand
    into two halves.

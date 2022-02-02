@@ -21,6 +21,11 @@
 #include "esp_vfs_private.h"
 #include "sdkconfig.h"
 
+// Warn about using deprecated option
+#ifdef CONFIG_LWIP_USE_ONLY_LWIP_SELECT
+#warning CONFIG_LWIP_USE_ONLY_LWIP_SELECT is deprecated: Please use CONFIG_VFS_SUPPORT_SELECT instead
+#endif
+
 #ifdef CONFIG_VFS_SUPPRESS_SELECT_DEBUG_OUTPUT
 #define LOG_LOCAL_LEVEL ESP_LOG_NONE
 #endif //CONFIG_VFS_SUPPRESS_SELECT_DEBUG_OUTPUT

@@ -368,11 +368,6 @@ The following API functions are supported. For full details see :component_file:
 - ``sys_timeouts_init()``
 - ``sys_timeouts_deinit()``
 
-Abort TCP connections when IP changes
-+++++++++++++++++++++++++++++++++++++
-
-:ref:`CONFIG_LWIP_TCP_KEEP_CONNECTION_WHEN_IP_CHANGES` is disabled by default. This disables the default lwIP behaviour of keeping TCP connections open if an interface IP changes, in case the interface IP changes back (for example, if an interface connection goes down and comes back up). Enable this option to keep TCP connections open in this case, until they time out normally. This may increase the number of sockets in use if a network interface goes down temporarily.
-
 Additional Socket Options
 +++++++++++++++++++++++++
 
@@ -417,7 +412,7 @@ The :example_file:`wifi/iperf/sdkconfig.defaults` file for the iperf example con
 
 - If a lot of tasks are competing for CPU time on the system, consider that the lwIP task has configurable CPU affinity (:ref:`CONFIG_LWIP_TCPIP_TASK_AFFINITY`) and runs at fixed priority ``ESP_TASK_TCPIP_PRIO`` (18). Configure competing tasks to be pinned to a different core, or to run at a lower priority. See also :ref:`built-in-task-priorities`.
 
-- If using ``select()`` function with socket arguments only, setting :ref:`CONFIG_LWIP_USE_ONLY_LWIP_SELECT` will make ``select()`` calls faster.
+- If using ``select()`` function with socket arguments only, disabling :ref:`CONFIG_VFS_SUPPORT_SELECT` will make ``select()`` calls faster.
 
 - If there is enough free IRAM, select :ref:`CONFIG_LWIP_IRAM_OPTIMIZATION` to improve TX/RX throughput
 

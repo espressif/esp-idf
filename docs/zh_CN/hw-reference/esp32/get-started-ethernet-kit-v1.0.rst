@@ -3,7 +3,6 @@ ESP32-Ethernet-Kit V1.0 入门指南
 
 :link_to_translation:`en:[English]`
 
-
 本指南介绍了如何使用 ESP32-Ethernet-Kit 开发板以及配置相关功能。
 
 :ref:`ESP32-Ethernet-Kit <get-started-esp32-ethernet-kit-b-v1.0>` 是一款以太网转 Wi-Fi 开发板，可为以太网设备赋予 Wi-Fi 连接功能。为了提供更灵活的电源选项，ESP32-Ethernet-Kit 也同时支持以太网供电 (PoE)。
@@ -13,14 +12,16 @@ ESP32-Ethernet-Kit V1.0 入门指南
 
 * :ref:`ESP32-Ethernet-Kit V1.0 开发板 <get-started-esp32-ethernet-kit-b-v1.0>`
 * USB 数据线（A 转 Micro-B）
-* PC（Windows、Linux 或 Mac OS）
+* PC（Windows、Linux 或 macOS）
 
 您可以跳过介绍部分，直接前往 `应用程序开发`_ 章节。
 
 概述
 --------
 
-ESP32-Ethernet-Kit 是一款来自 `乐鑫 <https://espressif.com>`_ 的开发板，由以太网母板（A 板）和 PoE 子板（B 板）两部分组成。其中 :ref:`以太网母板（A 板）<get-started-esp32-ethernet-kit-a-v1.0-layout>` 贴蓝牙 / Wi-Fi 双模 ESP32-WROVER-B 模组和单端口 10/100 快速以太网收发器 (PHY) IP101GRI。:ref:`PoE 子板（B 板） <get-started-esp32-ethernet-kit-b-v1.0-layout>` 提供以太网供电功能。ESP32-Ethernet-Kit 的 A 板可在不连接 B 板的情况下独立工作。
+ESP32-Ethernet-Kit 是一款来自 `乐鑫 <https://espressif.com>`_ 的开发板。
+
+该开发板由以太网母板（A 板）和 PoE 子板（B 板）两部分组成。其中 :ref:`以太网母板（A 板）<get-started-esp32-ethernet-kit-a-v1.0-layout>` 贴蓝牙 / Wi-Fi 双模 ESP32-WROVER-B 模组和单端口 10/100 快速以太网收发器 (PHY) IP101GRI。:ref:`PoE 子板（B 板） <get-started-esp32-ethernet-kit-b-v1.0-layout>` 提供以太网供电功能。ESP32-Ethernet-Kit 的 A 板可在不连接 B 板的情况下独立工作。
 
 .. _get-started-esp32-ethernet-kit-b-v1.0:
 
@@ -111,7 +112,9 @@ BOOT 按键                  下载按键。按下 **BOOT** 键并保持，同�
 CH_PU 按键                  复位按键。
 
 GPIO Header 1              由 6 个未引出通孔组成，可连接至 ESP32 的备用 GPIO。具体介绍，请见 `GPIO Header 1`_。
+
 =======================  ==================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================
+
 
 .. _get-started-esp32-ethernet-kit-b-v1.0-layout:
 
@@ -139,8 +142,11 @@ PoE 子板（B 板）具有以下特性：
 主要组件                      基本介绍
 ==========================  =================================================================================================================================
 A 板连接器                    1 个 4 针排母，用于将 B 板连接至 :ref:`以太网母板（A 板）<get-started-esp32-ethernet-kit-a-v1.0-layout>`。
+
 外部电源终端                   PoE 子板（B 板）备用电源。
+
 ==========================  =================================================================================================================================
+
 
 .. _get-started-esp32-ethernet-kit-b-v1.0-setup-options:
 
@@ -195,7 +201,7 @@ GPIO 分配
 IP101GRI (PHY) 接口
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-ESP32 (MAC) 与 IP101GRI (PHY) 的管脚对应关系见下：
+ESP32 (MAC) 与 IP101GRI (PHY) 的管脚对应关系见下。ESP32-Ethernet-Kit 开发板默认使用媒体独立接口 (RMII)。
 
 ====  ================  ===============
 .     ESP32 管脚 (MAC)   IP101GRI (PHY)
@@ -369,5 +375,3 @@ ESP32-Ethernet-Kit 上电前，请首先确认开发板完好无损。
 .. _ESP32-Ethernet-Kit V1.0 PoE 子板（B 板）原理图: https://dl.espressif.com/dl/schematics/SCH_ESP32-ETHERNET-KIT_B_V1.0_20190517.pdf
 .. _IP101GRI: http://www.bdtic.com/DataSheet/ICplus/IP101G_DS_R01_20121224.pdf
 .. _媒体独立接口 (MII): https://en.wikipedia.org/wiki/Media-independent_interface
-
-

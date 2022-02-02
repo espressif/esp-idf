@@ -31,13 +31,13 @@ API 指南
    Memory Types <memory-types>
    分区表 <partition-tables>
    Performance <performance/index>
-   :not esp8684: 射频校准 <RF_calibration>
+   :not esp32c2: 射频校准 <RF_calibration>
    :esp32: 安全启动 <../security/secure-boot-v1>
    安全启动 V2 <../security/secure-boot-v2>
    线程本地存储 <thread-local-storage>
    工具 <tools/index>
    :SOC_ULP_SUPPORTED: ULP 协处理器 <ulp>
-   :esp32s2: ULP-RISC-V 协处理器 <ulp-risc-v>
+   :SOC_RISCV_COPROC_SUPPORTED: ULP-RISC-V 协处理器 <ulp-risc-v>
    单元测试 (Target) <unit-tests>
    单元测试 (Linux Host) <linux-host-testing>
    :SOC_USB_OTG_SUPPORTED: USB 控制台 <usb-otg-console>

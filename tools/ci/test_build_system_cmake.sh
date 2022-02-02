@@ -505,7 +505,7 @@ function run_tests()
     print_status "Test build ESP-IDF as a library to a custom CMake projects for all targets"
     IDF_AS_LIB=$IDF_PATH/examples/build_system/cmake/idf_as_lib
     # note: we just need to run cmake
-    for TARGET in "esp32" "esp32s2" "esp32s3" "esp32c3" "esp32h2" "esp8684"
+    for TARGET in "esp32" "esp32s2" "esp32s3" "esp32c3" "esp32h2" "esp32c2"
     do
       echo "Build idf_as_lib for $TARGET target"
       rm -rf build
@@ -686,6 +686,11 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     grep "$PWD/mycomponents/mycomponent" $PWD/build/project_description.json || failure "EXTRA_COMPONENT_DIRS valid sibling directory should be in the build"
     rm -rf esp32
     rm -rf mycomponents
+
+    print_status "toolchain prefix is set in project description file"
+    clean_build_dir
+    idf.py reconfigure
+    grep "prefix.*esp.*elf-" $PWD/build/project_description.json || failure "toolchain prefix not set or determined by CMake"
 
     # idf.py subcommand options, (using monitor with as example)
     print_status "Can set options to subcommands: print_filter for monitor"

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,12 +33,6 @@ static const char *TAG = "gdma";
 #define GDMA_INTR_ALLOC_FLAGS  ESP_INTR_FLAG_INTRDISABLED
 #define GDMA_MEM_ALLOC_CAPS    MALLOC_CAP_DEFAULT
 #endif  // CONFIG_GDMA_ISR_IRAM_SAFE
-
-#if CONFIG_GDMA_CTRL_FUNC_IN_IRAM
-#define GDMA_CTRL_FUNC_ATTR    IRAM_ATTR
-#else
-#define GDMA_CTRL_FUNC_ATTR
-#endif // CONFIG_GDMA_CTRL_FUNC_IN_IRAM
 
 #define GDMA_INVALID_PERIPH_TRIG  (0x3F)
 #define SEARCH_REQUEST_RX_CHANNEL (1 << 0)
@@ -452,7 +446,7 @@ err:
     return ret;
 }
 
-GDMA_CTRL_FUNC_ATTR esp_err_t gdma_start(gdma_channel_handle_t dma_chan, intptr_t desc_base_addr)
+esp_err_t gdma_start(gdma_channel_handle_t dma_chan, intptr_t desc_base_addr)
 {
     esp_err_t ret = ESP_OK;
     gdma_pair_t *pair = NULL;
@@ -473,7 +467,7 @@ err:
     return ret;
 }
 
-GDMA_CTRL_FUNC_ATTR esp_err_t gdma_stop(gdma_channel_handle_t dma_chan)
+esp_err_t gdma_stop(gdma_channel_handle_t dma_chan)
 {
     esp_err_t ret = ESP_OK;
     gdma_pair_t *pair = NULL;
@@ -492,7 +486,7 @@ err:
     return ret;
 }
 
-GDMA_CTRL_FUNC_ATTR esp_err_t gdma_append(gdma_channel_handle_t dma_chan)
+esp_err_t gdma_append(gdma_channel_handle_t dma_chan)
 {
     esp_err_t ret = ESP_OK;
     gdma_pair_t *pair = NULL;
@@ -511,7 +505,7 @@ err:
     return ret;
 }
 
-GDMA_CTRL_FUNC_ATTR esp_err_t gdma_reset(gdma_channel_handle_t dma_chan)
+esp_err_t gdma_reset(gdma_channel_handle_t dma_chan)
 {
     esp_err_t ret = ESP_OK;
     gdma_pair_t *pair = NULL;

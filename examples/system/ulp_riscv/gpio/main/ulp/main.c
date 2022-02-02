@@ -12,9 +12,9 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "ulp_riscv/ulp_riscv.h"
-#include "ulp_riscv/ulp_riscv_utils.h"
-#include "ulp_riscv/ulp_riscv_gpio.h"
+#include "ulp_riscv.h"
+#include "ulp_riscv_utils.h"
+#include "ulp_riscv_gpio.h"
 
 static bool gpio_level = false;
 
@@ -36,6 +36,6 @@ int main (void)
             break;
         }
     }
-    /* ulp_riscv_shutdown() is called automatically when main exits */
+    /* ulp_riscv_halt() is called automatically when main exits */
     return 0;
 }

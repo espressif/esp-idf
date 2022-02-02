@@ -37,9 +37,9 @@
 #include "sdkconfig.h"
 #include "driver/uart.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/portmacro.h"
 #include "freertos/task.h"
 #include "hal/uart_types.h"
+#include "openthread/backbone_router_ftd.h"
 #include "openthread/border_router.h"
 #include "openthread/cli.h"
 #include "openthread/dataset.h"
@@ -50,7 +50,6 @@
 #include "openthread/ip6.h"
 #include "openthread/logging.h"
 #include "openthread/tasklet.h"
-#include "openthread/thread.h"
 #include "openthread/thread_ftd.h"
 #include "esp_ot_wifi_cmd.h"
 #include "esp_ot_cli_extension.h"
@@ -137,10 +136,6 @@ static void create_config_network(otInstance *instance)
         ESP_LOGE(TAG, "Failed to set OpenThread active dataset.");
         abort();
     }
-    if (otBorderRouterRegister(instance) != OT_ERROR_NONE) {
-        ESP_LOGE(TAG, "Failed to register border router.");
-        abort();
-    }
     return;
 }
 
@@ -154,6 +149,11 @@ static void launch_openthread_network(otInstance *instance)
         ESP_LOGE(TAG, "Failed to enable OpenThread");
         abort();
     }
+    if (otBorderRouterRegister(instance) != OT_ERROR_NONE) {
+        ESP_LOGE(TAG, "Failed to register border router.");
+        abort();
+    }
+    otBackboneRouterSetEnabled(instance, true);
 }
 #endif // CONFIG_OPENTHREAD_BR_AUTO_START
 

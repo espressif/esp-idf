@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -11,7 +11,7 @@
 #include "esp_hf_ag_api.h"
 #include "esp_bt_defs.h"
 
-esp_bd_addr_t hf_peer_addr; // Declaration of peer device bdaddr
+extern esp_bd_addr_t hf_peer_addr; // Declaration of peer device bdaddr
 
 #define BT_HF_TAG               "BT_APP_HF"
 

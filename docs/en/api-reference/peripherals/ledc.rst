@@ -1,6 +1,6 @@
 LED Control (LEDC)
 ==================
-{IDF_TARGET_LEDC_CHAN_NUM:default="8", esp32="16", esp32s2="8", esp32c3="6"}
+{IDF_TARGET_LEDC_CHAN_NUM:default="8", esp32="16", esp32s2="8", esp32c3="6", esp32s3="8"}
 
 :link_to_translation:`zh_CN:[中文]`
 
@@ -45,7 +45,7 @@ As an optional step, it is also possible to set up an interrupt on fade end.
 
 .. _ledc-api-configure-timer:
 
-Timer Configuration 
+Timer Configuration
 ^^^^^^^^^^^^^^^^^^^
 
 Setting the timer is done by calling the function :cpp:func:`ledc_timer_config` and passing the data structure :cpp:type:`ledc_timer_config_t` that contains the following configuration settings:
@@ -57,8 +57,79 @@ Setting the timer is done by calling the function :cpp:func:`ledc_timer_config` 
     - Timer number :cpp:type:`ledc_timer_t`
     - PWM signal frequency
     - Resolution of PWM duty
+    - Source clock :cpp:type:`ledc_clk_cfg_t`
 
 The frequency and the duty resolution are interdependent. The higher the PWM frequency, the lower the duty resolution which is available, and vice versa. This relationship might be important if you are planning to use this API for purposes other than changing the intensity of LEDs. For more details, see Section :ref:`ledc-api-supported-range-frequency-duty-resolution`.
+
+The source clock can also limit the PWM frequency. The higher the source clock frequency, the higher the maximum PWM frequency can be configured.
+
+.. only:: esp32
+
+    .. list-table:: Characteristics of {IDF_TARGET_NAME} LEDC source clocks
+       :widths: 5 5 5 20
+       :header-rows: 1
+
+       * - Clock name
+         - Clock freq
+         - Speed mode
+         - Clock capabilities
+       * - APB_CLK
+         - 80 MHz
+         - High / Low
+         - /
+       * - REF_TICK
+         - 1 MHz
+         - High / Low
+         - Dynamic Frequency Scaling compatible
+       * - RTC8M_CLK
+         - ~8 MHz
+         - Low
+         - Dynamic Frequency Scaling compatible, Light sleep compatible
+
+.. only:: esp32s2
+
+    .. list-table:: Characteristics of {IDF_TARGET_NAME} LEDC source clocks
+       :widths: 15 15 30
+       :header-rows: 1
+
+       * - Clock name
+         - Clock freq
+         - Clock capabilities
+       * - APB_CLK
+         - 80 MHz
+         - /
+       * - REF_TICK
+         - 1 MHz
+         - Dynamic Frequency Scaling compatible
+       * - RTC8M_CLK
+         - ~8 MHz
+         - Dynamic Frequency Scaling compatible, Light sleep compatible
+       * - XTAL_CLK
+         - 40 MHz
+         - Dynamic Frequency Scaling compatible
+
+.. only:: esp32s3 or esp32c3
+
+    .. list-table:: Characteristics of {IDF_TARGET_NAME} LEDC source clocks
+       :widths: 15 15 30
+       :header-rows: 1
+
+       * - Clock name
+         - Clock freq
+         - Clock capabilities
+       * - APB_CLK
+         - 80 MHz
+         - /
+       * - RTC20M_CLK
+         - ~20 MHz
+         - Dynamic Frequency Scaling compatible, Light sleep compatible
+       * - XTAL_CLK
+         - 40 MHz
+         - Dynamic Frequency Scaling compatible
+
+    .. note::
+
+        For {IDF_TARGET_NAME}, all timers share one clock source. In other words, it is impossible to use different clock sources for different timers.
 
 
 .. _ledc-api-configure-channel:
@@ -82,7 +153,7 @@ Once the channel starts operating and generating the PWM signal with the constan
 
 The following two sections describe how to change the duty cycle using software and hardware fading. If required, the signal's frequency can also be changed; it is covered in Section :ref:`ledc-api-change-pwm-frequency`.
 
-.. only:: esp32s2 or esp32c3
+.. only:: not esp32
 
     .. note::
 
@@ -108,7 +179,15 @@ The LEDC hardware provides the means to gradually transition from one duty cycle
 * :cpp:func:`ledc_set_fade_with_step`
 * :cpp:func:`ledc_set_fade`
 
-Finally start fading with :cpp:func:`ledc_fade_start`.
+.. only:: esp32
+
+    Start fading with :cpp:func:`ledc_fade_start`. A fade can be operated in blocking or non-blocking mode, please check :cpp:enum:`ledc_fade_mode_t` for the difference between the two available fade modes. Note that with either fade mode, the next fade or fixed-duty update will not take effect until the last fade finishes. Due to hardware limitations, there is no way to stop a fade before it reaches its target duty.
+
+.. only:: not esp32
+
+    Start fading with :cpp:func:`ledc_fade_start`. A fade can be operated in blocking or non-blocking mode, please check :cpp:enum:`ledc_fade_mode_t` for the difference between the two available fade modes. Note that with either fade mode, the next fade or fixed-duty update will not take effect until the last fade finishes or is stopped. :cpp:func:`ledc_fade_stop` has to be called to stop a fade that is in progress.
+
+To get a notification about the completion of a fade operation, a fade end callback function can be registered for each channel by calling :cpp:func:`ledc_cb_register` after the fade service being installed.
 
 If not required anymore, fading and an associated interrupt can be disabled with :cpp:func:`ledc_fade_func_uninstall`.
 
@@ -149,13 +228,13 @@ For registration of a handler to address this interrupt, call :cpp:func:`ledc_is
 .. only:: esp32
 
     .. _ledc-api-high_low_speed_mode:
-    
+
     LEDC High and Low Speed Mode
     ----------------------------
 
-    High speed mode enables a glitch-free changeover of timer settings. This means that if the timer settings are modified, the changes will be applied automatically on the next overflow interrupt of the timer. In contrast, when updating the low-speed timer, the change of settings should be explicitly triggered by software. The LEDC driver handles it in the background, e.g., when :cpp:func:`ledc_timer_config` or :cpp:func:`ledc_timer_set` is called. 
+    High speed mode enables a glitch-free changeover of timer settings. This means that if the timer settings are modified, the changes will be applied automatically on the next overflow interrupt of the timer. In contrast, when updating the low-speed timer, the change of settings should be explicitly triggered by software. The LEDC driver handles it in the background, e.g., when :cpp:func:`ledc_timer_config` or :cpp:func:`ledc_timer_set` is called.
 
-    For additional details regarding speed modes, see *{IDF_TARGET_NAME} Technical Reference Manual* > *LED PWM Controller (LEDC)* [`PDF <{IDF_TARGET_TRM_EN_URL}#ledpwm>`__]. Please note that the support for ``SLOW_CLOCK`` mentioned in this manual is not yet supported in the LEDC driver.
+    For additional details regarding speed modes, see *{IDF_TARGET_NAME} Technical Reference Manual* > *LED PWM Controller (LEDC)* [`PDF <{IDF_TARGET_TRM_EN_URL}#ledpwm>`__].
 
     .. _ledc-api-supported-range-frequency-duty-resolution:
 

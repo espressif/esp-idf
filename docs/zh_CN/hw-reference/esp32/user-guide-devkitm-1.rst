@@ -45,7 +45,6 @@ ESP32-DevKitM-1 开发板是一款小巧实用的开发板，具备以下特色�
 - 以及其他组件
 
 
-
 内含组件和包装
 ---------------
 
@@ -114,7 +113,7 @@ ESP32-DevKitM-1 上电前，请首先确认开发板完好无损。
 
 - ESP32-DevKitM-1 开发板
 - USB A / micro USB B 数据线
-- PC（Windows、Linux 或 Mac OS）
+- PC（Windows、Linux 或 macS）
 
 
 软件设置

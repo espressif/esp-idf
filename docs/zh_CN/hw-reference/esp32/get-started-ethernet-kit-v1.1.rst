@@ -13,7 +13,7 @@ ESP32-Ethernet-Kit V1.1 入门指南
 
 * :ref:`ESP32-Ethernet-Kit V1.1 开发板 <get-started-esp32-ethernet-kit-v1.1>`
 * USB 数据线（A 转 Micro-B）
-* PC（Windows、Linux 或 Mac OS）
+* PC（Windows、Linux 或 macOS）
 
 您可以跳过介绍部分，直接前往 `应用程序开发`_ 章节。
 
@@ -68,7 +68,7 @@ ESP32-Ethernet-Kit 开发板的主要组件和连接方式如下。
     :alt: ESP32-Ethernet-Kit - Ethernet board (A) layout
     :figclass: align-center
 
-    ESP32-Ethernet-Kit - 以太网母板（A 板）布局（点击放大）（请更新图片）
+    ESP32-Ethernet-Kit - 以太网母板（A 板）布局（点击放大）
 
 下表将从图片右上角开始，以顺时针顺序介绍图中的主要组件。
 
@@ -93,9 +93,9 @@ ESP32-Ethernet-Kit 开发板的主要组件和连接方式如下。
   * - 电源开关
     - 电源开关。拨向 **5V0** 按键侧，开发板上电；拨向 **GND** 按键一侧，开发板掉电。
   * - 5V Input
-    - 5V 电源接口建议仅在开发板自动运行（未连接 PC）时使用。
+    - 5 V 电源接口建议仅在开发板自动运行（未连接 PC）时使用。
   * - 5V Power On LED
-    - 当开发板通电后（USB 或外部 5V 供电），该红色指示灯将亮起。
+    - 当开发板通电后（USB 或外部 5 V 供电），该红色指示灯将亮起。
   * - DC/DC 转换器
     - 直流 5 V 转 3.3 V，输出电流最高可达 2 A。
   * - Board B 连接器
@@ -159,7 +159,7 @@ PoE 子板（B 板）具有以下特性：
 功能选择开关
 ^^^^^^^^^^^^^^
 
-拨码开关打开时，拨码开关将列出的 GPIO 路由到 FT2232H 以提供JTAG功能。拨码开关关闭时，GPIO 可以用于其他目的。
+拨码开关打开时，拨码开关将列出的 GPIO 路由到 FT2232H 以提供 JTAG 功能。拨码开关关闭时，GPIO 可以用于其他目的。
 
 =========   ==========
 拨码开关      GPIO 管脚
@@ -178,7 +178,7 @@ PoE 子板（B 板）具有以下特性：
 RMII 时钟源选择
 ^^^^^^^^^^^^^^^^
 
-RMII 工作模式下的以太网 MAC 和 PHY 需要一个公共的 50MHz 同步时钟（即 RMII 时钟），它既可以由外部提供，也可以由内部的 ESP32 APLL 产生。
+RMII 工作模式下的以太网 MAC 和 PHY 需要一个公共的 50 MHz 同步时钟（即 RMII 时钟），它既可以由外部提供，也可以由内部的 ESP32 APLL 产生。
 
 .. note::
 
@@ -297,7 +297,6 @@ GPIO Header 2
 
     1. ESP32 芯片的 GPIO16 和 GPIO17 管脚没有引出至 ESP32-WROVER-B 模组的管脚，因此无法使用。如需使用 ESP32 的 GP1016 和 GPIO17 管脚，建议更换其他不含 PSRAM 的模组，比如 ESP32-WROOM-32D 或 ESP32-SOLO-1。
 
-
     2. 具体功能取决于 `功能选择开关`_ 的设置。
 
 
@@ -338,7 +337,6 @@ GPIO 管脚分配总结
 
     1. 为防止 ESP32 侧 GPIO0 的上电状态受 PHY 侧时钟输出的影响，PHY 侧 RESET_N 默认为低，以关闭 PHY 侧时钟输出。上电后，您可通过 GPIO5 控制 RESET_N 以打开该时钟输出。参见 `PHY 侧提供 RMII 时钟`_。对于无法通过 RESET_N 关闭时钟输出的 PHY，PHY 侧建议使用可在外部禁用/使能的有源晶振。与使用 RESET_N 类似，默认情况下晶振模块应禁用，并在上电后由 ESP32 开启。有关参考设计，请参见 `ESP32-Ethernet-Kit V1.1 以太网母板（A 板）原理图`_。
 
-
     2. ESP32 芯片的 GPIO16 和 GPIO17 管脚没有引出至 ESP32-WROVER-B 模组的管脚，因此无法使用。如需使用 ESP32 的 GP1016 和 GPIO17 管脚，建议更换其他不含 PSRAM 的模组，比如 ESP32-WROOM-32D 或 ESP32-SOLO-1。
 
 
@@ -372,7 +370,7 @@ ESP32-Ethernet-Kit 上电前，请首先确认开发板完好无损。
 在完成开发环境设置和开发板测试后，您可以配置并烧录 :example:`ethernet/basic` 示例。本示例专门用于测试以太网功能，支持不同 PHY，包括 :ref:`get-started-esp32-ethernet-kit-v1.1` 开发板使用的 **IP101GRI** 。
 
 
-针对 ESP32-Ethernet-Kit V1.0 的主要修改：
+针对 ESP32-Ethernet-Kit V1.0 的主要修改
 -----------------------------------------
 
 * 原 GPIO0 反相后时钟提供给 PHY 方案改为由 PHY 侧外接无源晶振，提供时钟给 GPIO0。原用于控制有源晶振的 OSC_EN 的 IO2 释放，可用作其他用途。
@@ -382,6 +380,7 @@ ESP32-Ethernet-Kit 上电前，请首先确认开发板完好无损。
 * 移除 nTRST JTAG信号，相应的 GPIO4 可用作其他用途。
 * GPIO15 线上的上拉电阻 R68 移至 JTAG 的 MTDO 侧。
 * 为了加强 A 板和 B 板连接间的防呆设计（减少反向插入 B 板的机会），将原先 A 板上的 2 排 4 针排针改为 1 排 4 针排母和 1 排 4 针排针。相应的 4 针排针排和排母排则安装在 B 板上。
+
 
 ESP32-Ethernet-Kit 的其他版本
 -------------------------------

@@ -273,6 +273,8 @@ menu "Bootloader config"
         depends on BOOTLOADER_APP_ANTI_ROLLBACK
         range 1 32 if IDF_TARGET_ESP32
         default 32 if IDF_TARGET_ESP32
+        range 1 4 if IDF_TARGET_ESP32C2
+        default 4 if IDF_TARGET_ESP32C2
         range 1 16
         default 16
         help
@@ -681,7 +683,7 @@ menu "Security features"
     choice SECURE_FLASH_ENCRYPTION_KEYSIZE
         bool "Size of generated AES-XTS key"
         default SECURE_FLASH_ENCRYPTION_AES128
-        depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP8684) && SECURE_FLASH_ENC_ENABLED
+        depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C2) && SECURE_FLASH_ENC_ENABLED
         help
             Size of generated AES-XTS key.
 
@@ -693,11 +695,11 @@ menu "Security features"
 
         config SECURE_FLASH_ENCRYPTION_AES128
             bool "AES-128 (256-bit key)"
-            depends on !IDF_TARGET_ESP8684 # TODO: IDF-3899
+            depends on !IDF_TARGET_ESP32C2 # TODO: IDF-3899
 
         config SECURE_FLASH_ENCRYPTION_AES256
             bool "AES-256 (512-bit key)"
-            depends on !IDF_TARGET_ESP8684 # TODO: IDF-3899
+            depends on !IDF_TARGET_ESP32C2 # TODO: IDF-3899
     endchoice
 
     choice SECURE_FLASH_ENCRYPTION_MODE

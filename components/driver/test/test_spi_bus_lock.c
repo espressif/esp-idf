@@ -279,7 +279,7 @@ static void test_bus_lock(bool test_flash)
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST) );
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3, ESP32S3, ESP8684)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32C3, ESP32S3, ESP32C2)
 //no runners
 TEST_CASE("spi bus lock, with flash","[spi][test_env=UT_T1_ESP_FLASH]")
 {
@@ -293,7 +293,7 @@ TEST_CASE("spi bus lock","[spi]")
     test_bus_lock(false);
 }
 
-#if !DISABLED_FOR_TARGETS(ESP32S2, ESP32C3, ESP32S3, ESP8684, ESP32H2)
+#if !DISABLED_FOR_TARGETS(ESP32S2, ESP32C3, ESP32S3, ESP32C2, ESP32H2)
 //disable, SPI1 is not available for GPSPI usage on chips later than ESP32
 static IRAM_ATTR esp_err_t test_polling_send(spi_device_handle_t handle)
 {

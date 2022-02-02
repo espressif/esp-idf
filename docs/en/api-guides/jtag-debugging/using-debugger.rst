@@ -228,7 +228,7 @@ It is also possible to execute the described debugging tools conveniently from `
 
 4.  ``idf.py gdbgui``
 
-    Starts `gdbgui <https://www.gdbgui.com>`_ debugger frontend enabling out-of-the-box debugging in a browser window.
+    Starts `gdbgui <https://www.gdbgui.com>`_ debugger frontend enabling out-of-the-box debugging in a browser window. Please run the install script with the "--enable-gdbgui" argument in order to make this option supported, e.g. ``install.sh --enable-gdbgui``.
 
 
     It is possible to combine these debugging actions on a single command line allowing convenient setup of blocking and non-blocking actions in one step. ``idf.py`` implements a simple logic to move the background actions (such as openocd) to the beginning and the interactive ones (such as gdb, monitor) to the end of the action list.

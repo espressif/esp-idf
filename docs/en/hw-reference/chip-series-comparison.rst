@@ -276,9 +276,12 @@ The comparison below covers key features of chips supported by ESP-IDF. For the 
      - QFN32 5*5
      - QFN56 7*7
 
+
 - **Note** 1: Reduced chip area compared with ESP32
 - **Note** 2: Reduced chip area compared with ESP32 and ESP32-S2
 - **Note** 3: Die size: ESP32-C3 < ESP32-S2 < ESP32-S3 < ESP32
+
+
 
 
 

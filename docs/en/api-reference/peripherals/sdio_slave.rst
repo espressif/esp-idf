@@ -1,18 +1,6 @@
 SDIO Card Slave Driver
 ======================
 
-.. only:: esp32c3
-
-    .. warning::
-
-        This document is not updated for ESP32-C3 yet.
-
-.. only:: esp32s3
-
-    .. warning::
-
-        This document is not updated for ESP32-S3 yet.
-
 Overview
 --------
 

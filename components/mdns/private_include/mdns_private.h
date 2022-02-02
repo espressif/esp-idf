@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -368,6 +368,7 @@ typedef struct mdns_search_once_s {
     mdns_query_notify_t notifier;
     SemaphoreHandle_t done_semaphore;
     uint16_t type;
+    bool unicast;
     uint8_t max_results;
     uint8_t num_results;
     char * instance;

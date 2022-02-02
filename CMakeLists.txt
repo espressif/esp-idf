@@ -195,6 +195,13 @@ if(CONFIG_ESP_SYSTEM_USE_EH_FRAME)
 endif()
 
 list(APPEND link_options "-fno-lto")
+list(APPEND link_options "-Wl,--warn-common")
+
+if(CONFIG_IDF_TARGET_LINUX AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+    list(APPEND link_options "-Wl,-dead_strip")
+else()
+    list(APPEND link_options "-Wl,--gc-sections")
+endif()
 
 # Placing jump tables in flash would cause issues with code that required
 # to be placed in IRAM

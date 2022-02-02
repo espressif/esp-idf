@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,7 +24,7 @@
 #include "esp32/rom/spi_flash.h"
 #endif
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
 // TODO: SPI_FLASH IDF-4025
 
 #define MIN_BLOCK_SIZE  12
@@ -383,4 +383,4 @@ TEST_CASE("spi_flash_read less than 16 bytes into buffer in external RAM", "[spi
 
 #endif // CONFIG_SPIRAM
 
-#endif // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP8684)
+#endif // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)

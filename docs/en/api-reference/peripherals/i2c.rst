@@ -3,6 +3,8 @@ Inter-Integrated Circuit (I2C)
 
 :link_to_translation:`zh_CN:[中文]`
 
+{IDF_TARGET_I2C_NUM:default="2", esp32c3="1", esp32h2="1", esp328684="1"}
+
 Overview
 --------
 
@@ -10,13 +12,7 @@ I2C is a serial, synchronous, half-duplex communication protocol that allows co-
 
 With such advantages as simplicity and low manufacturing cost, I2C is mostly used for communication of low-speed peripheral devices over short distances (within one foot).
 
-.. only:: esp32c3
-
-    {IDF_TARGET_NAME} has only one I2C controller (also referred to as port) which is responsible for handling communications on I2C bus. The I2C controller can operate as master or slave.
-
-.. only:: not esp32c3
-
-    {IDF_TARGET_NAME} has two I2C controllers (also referred to as ports) which are responsible for handling communications on the I2C bus. Each I2C controller can operate as master or slave. As an example, one controller can act as a master and the other as a slave at the same time.
+{IDF_TARGET_NAME} has {IDF_TARGET_I2C_NUM} I2C controller (also referred to as port), responsible for handling communications on the I2C bus. A single I2C controller can operate as master or slave.
 
 Driver Features
 ---------------
@@ -307,9 +303,7 @@ A code example showing how to use these functions can be found in :example:`peri
 Interrupt Handling
 ^^^^^^^^^^^^^^^^^^
 
-During driver installation, an interrupt handler is installed by default. However, you can register your own interrupt handler instead of the default one by calling the function :cpp:func:`i2c_isr_register`. When implementing your own interrupt handler, refer to *{IDF_TARGET_NAME} Technical Reference Manual* > *I2C Controller (I2C)* > *Interrupts* [`PDF <{IDF_TARGET_TRM_EN_URL}#i2c>`__] for the description of interrupts triggered by the I2C controller.
-
-To delete an interrupt handler, call :cpp:func:`i2c_isr_free`.
+During driver installation, an interrupt handler is installed by default.
 
 .. _i2c-api-customized-configuration:
 

@@ -20,12 +20,12 @@ ESP32-DevKitM-1 is an ESP32-MINI-1(1U)-based development board produced by Espre
 .. |ESP32-DevKitM-1 - isometric| image:: ../../../_static/esp32-DevKitM-1-isometric.png
 
 
-
 The document consists of the following major sections:
 
 - `Getting started`_: Provides an overview of the ESP32-DevKitM-1 and hardware/software setup instructions to get started.
 - `Hardware reference`_: Provides more detailed information about the ESP32-DevKitM-1's hardware.
 - `Related Documents`_: Gives links to related documentaiton.
+
 
 Getting Started 
 ===================
@@ -35,7 +35,6 @@ This section describes how to get started with ESP32-DevKitM-1. It begins with a
 
 Overview 
 -------------
-
 
 This is a small and convenient development board that features:
 
@@ -161,7 +160,6 @@ Pin Descriptions
 -------------------
 
 The table below provides the Name and Function of pins on both sides of the board. For peripheral pin configurations, please refer to `ESP32 Datasheet`_.
-
 
 .. list-table::     
    :header-rows: 1      

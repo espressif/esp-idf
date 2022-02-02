@@ -1,11 +1,14 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "esp_ble_mesh_networking_api.h"
 #include "ble_mesh_adapter.h"
+
+ble_mesh_performance_statistics_t test_perf_statistics;
+ble_mesh_node_statistics_t ble_mesh_node_statistics;
 
 esp_ble_mesh_model_t *ble_mesh_get_model(uint16_t model_id)
 {
@@ -109,9 +112,10 @@ int ble_mesh_node_statistics_accumulate(uint8_t *data, uint32_t value, uint16_t 
     xSemaphoreTake(ble_mesh_node_sema, portMAX_DELAY);
 
     for (i = 0; i < ble_mesh_node_statistics.total_package_num; i++) {
+        /* Filter out repeated packages during retransmission */
         if (ble_mesh_node_statistics.package_index[i] == sequence_num) {
             xSemaphoreGive(ble_mesh_node_sema);
-            return 1;
+            return 0;
         }
     }
 
@@ -122,6 +126,7 @@ int ble_mesh_node_statistics_accumulate(uint8_t *data, uint32_t value, uint16_t 
     }
 
     for (i = 0; i < ble_mesh_node_statistics.total_package_num; i++) {
+        /* Judge whether the package is received for the first time */
         if (ble_mesh_node_statistics.package_index[i] == 0) {
             ble_mesh_node_statistics.package_index[i] = sequence_num;
             ble_mesh_node_statistics.package_num += 1;

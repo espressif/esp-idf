@@ -48,8 +48,11 @@ endfunction()
 
 if(target STREQUAL "linux")
     # We need to disable some warnings due to the ROM code's printf implementation
-    if(${CMAKE_CXX_COMPILER_VERSION} GREATER "7.0.0") # TODO: clang compatibility
-        target_compile_options(${COMPONENT_LIB} PUBLIC -Wimplicit-fallthrough=0 -Wno-shift-count-overflow)
+    if(CMAKE_C_COMPILER_ID STREQUAL "GNU" AND ${CMAKE_CXX_COMPILER_VERSION} GREATER "7.0.0")
+        target_compile_options(${COMPONENT_LIB} PRIVATE -Wimplicit-fallthrough=0 -Wno-shift-count-overflow)
+    endif()
+    if(CMAKE_C_COMPILER_ID MATCHES "Clang")  # Clang or AppleClang
+        target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-integer-overflow -Wno-shift-count-overflow)
     endif()
 else()
     target_linker_script(${COMPONENT_LIB} INTERFACE "${target}/${ld_folder}/${target}.rom.ld")
@@ -82,7 +85,7 @@ if(BOOTLOADER_BUILD)
     elseif(target STREQUAL "esp32h2")
         rom_linker_script("newlib")
 
-    elseif(target STREQUAL "esp8684")
+    elseif(target STREQUAL "esp32c2")
         rom_linker_script("newlib")
         rom_linker_script("mbedtls")
     endif()
@@ -181,7 +184,7 @@ else() # Regular app build
             rom_linker_script("newlib-nano")
         endif()
 
-    elseif(target STREQUAL "esp8684")
+    elseif(target STREQUAL "esp32c2")
         rom_linker_script("newlib")
         rom_linker_script("version")
         rom_linker_script("mbedtls")

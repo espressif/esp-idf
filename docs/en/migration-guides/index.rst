@@ -5,10 +5,11 @@ ESP-IDF 5.0 Migration Guides
 .. toctree::
     :maxdepth: 1
 
-    Environment Setup on Windows <windows-env>
-    Peripherals <peripherals>
     Build System <build-system>
-    System <system>
-    FreeRTOS <freertos>
+    Environment Setup on Windows <windows-env>
     Ethernet <ethernet>
+    FreeRTOS <freertos>
+    Peripherals <peripherals>
     Removed or deprecated components <removed-components>
+    System <system>
+    Tools <tools>

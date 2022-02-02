@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -820,3 +820,25 @@ static void test_flow6(void)
 // 2 Stage: run factory -> check it -> copy factory to OTA0             -> reboot  --//--
 // 3 Stage: run OTA0    -> check it -> erase OTA_DATA for next tests    -> PASS
 TEST_CASE_MULTIPLE_STAGES("Switching between factory, OTA0 using esp_ota_write_with_offset", "[app_update][timeout=90][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET]", start_test, test_flow6, test_flow6);
+
+TEST_CASE("Test bootloader_common_get_sha256_of_partition returns ESP_ERR_IMAGE_INVALID when image is ivalid", "[partitions]")
+{
+    const esp_partition_t *cur_app = esp_ota_get_running_partition();
+    ESP_LOGI(TAG, "copy current app to next part");
+    const esp_partition_t *other_app = get_next_update_partition();
+    copy_current_app_to_next_part(cur_app, other_app);
+    erase_ota_data();
+
+    uint8_t sha_256_cur_app[32];
+    uint8_t sha_256_other_app[32];
+    TEST_ESP_OK(bootloader_common_get_sha256_of_partition(cur_app->address, cur_app->size, cur_app->type, sha_256_cur_app));
+    TEST_ESP_OK(bootloader_common_get_sha256_of_partition(other_app->address, other_app->size, other_app->type, sha_256_other_app));
+
+    TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha_256_cur_app, sha_256_other_app, sizeof(sha_256_cur_app), "must be the same");
+
+    uint32_t data = 0;
+    bootloader_flash_write(other_app->address + 0x50, &data, sizeof(data), false);
+
+    TEST_ESP_ERR(ESP_ERR_IMAGE_INVALID, bootloader_common_get_sha256_of_partition(other_app->address, other_app->size, other_app->type, sha_256_other_app));
+    TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha_256_cur_app, sha_256_other_app, sizeof(sha_256_cur_app), "must be the same");
+}

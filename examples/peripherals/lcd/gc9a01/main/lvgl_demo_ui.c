@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -17,7 +17,7 @@ static void set_value(void *indic, int32_t v)
 
 void example_lvgl_demo_ui(lv_obj_t *scr)
 {
-    meter = lv_meter_create(lv_scr_act());
+    meter = lv_meter_create(scr);
     lv_obj_center(meter);
     lv_obj_set_size(meter, 200, 200);
 

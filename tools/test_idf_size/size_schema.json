@@ -77,10 +77,7 @@
                 "(^\\.flash\\.(rodata|text|appdesc|rodata_noload)$)": {
                     "$ref": "#/$defs/archive_details"
                 },
-                "(^\\.flash_rodata_dummy$)": {
-                    "$ref": "#/$defs/archive_details"
-                },
-                "(^\\.iram0\\.(text|vectors|text_end|bss|data)$)": {
+                "(^\\.iram0\\.(text|vectors|bss|data)$)": {
                     "$ref": "#/$defs/archive_details"
                 },
                 "(^\\.rtc\\.(bss|data|text)$)": {
