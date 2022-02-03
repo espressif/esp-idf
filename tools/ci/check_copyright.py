@@ -188,7 +188,7 @@ def get_file_mime(fn: str) -> str:
         return MIME['python']
     if fn.endswith(('.cpp', '.hpp')):
         return MIME['cpp']
-    if fn.endswith(('.c', '.h', '.ld')):
+    if fn.endswith(('.c', '.h', '.ld', '.s', '.S')):
         return MIME['c']
     raise UnsupportedFileType(fn)
 
