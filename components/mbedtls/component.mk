@@ -5,6 +5,8 @@
 
 COMPONENT_ADD_INCLUDEDIRS := port/include mbedtls/include esp_crt_bundle/include
 
+COMPONENT_PRIV_INCLUDEDIRS := mbedtls/library
+
 COMPONENT_SRCDIRS := mbedtls/library port port/$(IDF_TARGET) port/sha port/sha/parallel_engine port/aes port/aes/block port/md esp_crt_bundle
 
 COMPONENT_OBJEXCLUDE := mbedtls/library/net_sockets.o
