@@ -42,18 +42,20 @@ static void esp_unity_readline(char* dst, size_t len)
           continue;
         }
         if (c == '\r' || c == '\n') {
+            /* Add null terminator and return on newline */
             unity_putc('\n');
             dst[write_index] = '\0';
             return;
         } else if (c == '\b') {
             if (write_index > 0) {
+                /* Delete previously entered character */
                 write_index--;
-                // Delete previously entered character
                 esp_rom_uart_tx_one_char('\b');
                 esp_rom_uart_tx_one_char(' ');
                 esp_rom_uart_tx_one_char('\b');
             }
-        } else if (write_index < len - 1 && !iscontrol(c)) {
+        } else if (len > 0 && write_index < len - 1 && !iscontrol(c)) {
+            /* Write a max of len - 1 characters to allow for null terminator */
             unity_putc(c);
             dst[write_index++] = c;
         }
@@ -79,14 +81,9 @@ void unity_gets(char *dst, size_t len)
         memset(unity_input_from_gdb, 0, sizeof(unity_input_from_gdb));
         return;
     }
-    /* esp_rom_uart_rx_string length argument is uint8_t */
-    if (len >= UINT8_MAX) {
-        len = UINT8_MAX;
-    }
     /* Flush anything already in the RX buffer */
     uint8_t ignore;
-    while (esp_rom_uart_rx_one_char(&ignore) == 0) {
-    }
+    while (esp_rom_uart_rx_one_char(&ignore) == 0) { }
     /* Read input */
     esp_unity_readline(dst, len);
 }
