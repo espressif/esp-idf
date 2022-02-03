@@ -622,6 +622,8 @@ _xt_user_exc:
     s32i    a0, sp, XT_STK_PS
     rsr     a0, EPC_1                       /* save interruptee's PC */
     s32i    a0, sp, XT_STK_PC
+    rsr     a0, EXCSAVE_1                   /* save interruptee's a0 */
+    s32i    a0, sp, XT_STK_A0
     #if XCHAL_HAVE_WINDOWED
     s32e    a0, sp, -16                     /* for debug backtrace */
     #endif
@@ -634,10 +636,6 @@ _xt_user_exc:
     s32i    a0, sp, XT_STK_EXCCAUSE
     rsr     a0, EXCVADDR
     s32i    a0, sp, XT_STK_EXCVADDR
-
-    /* _xt_context_save seems to save the current a0, but we need the interuptees a0. Fix this. */
-    rsr     a0, EXCSAVE_1                   /* save interruptee's a0 */
-    s32i    a0, sp, XT_STK_A0
 
     /* Set up PS for C, reenable debug and NMI interrupts, and clear EXCM. */
     #ifdef __XTENSA_CALL0_ABI__
