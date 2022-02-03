@@ -1950,7 +1950,6 @@ components/tcp_transport/test/tcp_transport_fixtures.h
 components/tcp_transport/test/test_transport_basic.c
 components/tcp_transport/test/test_transport_connect.c
 components/tcp_transport/test/test_transport_fixtures.c
-components/tcp_transport/transport_ssl.c
 components/tcp_transport/transport_utils.c
 components/tcpip_adapter/include/tcpip_adapter.h
 components/tcpip_adapter/include/tcpip_adapter_compatible/tcpip_adapter_compat.h
