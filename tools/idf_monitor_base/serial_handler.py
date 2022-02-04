@@ -115,8 +115,18 @@ class SerialHandler:
         ))
         if self._last_line_part != b'' and force_print_or_matched:
             self._force_line_print = True
+            if self._decode_panic != PANIC_DECODE_DISABLE:
+                if self._reading_panic == PANIC_READING:
+                    self._panic_buffer += self._last_line_part.replace(b'\r', b'')
+
             self.logger.print(self._last_line_part)
             self.logger.handle_possible_pc_address_in_line(self._last_line_part)
+            if gdb_helper:
+                self.check_panic_decode_trigger(self._last_line_part, gdb_helper)
+            with coredump.check(line):
+                if self._force_line_print or line_matcher.match(line.decode(errors='ignore')):
+                    self.logger.print(line + b'\n')
+                    self.logger.handle_possible_pc_address_in_line(line)
             check_gdb_stub_and_run(self._last_line_part)
             # It is possible that the incomplete line cuts in half the PC
             # address. A small buffer is kept and will be used the next time
