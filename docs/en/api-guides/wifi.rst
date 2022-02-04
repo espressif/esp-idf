@@ -206,11 +206,11 @@ IP_EVENT_GOT_IP6
 ++++++++++++++++++++++++++++++++++++
 This event arises when the IPV6 SLAAC support auto-configures an address for the {IDF_TARGET_NAME}, or when this address changes. The event means that everything is ready and the application can begin its tasks (e.g., creating sockets).
 
-IP_STA_LOST_IP
+IP_EVENT_STA_LOST_IP
 ++++++++++++++++++++++++++++++++++++
 This event arises when the IPV4 address become invalid.
 
-IP_STA_LOST_IP doesn't arise immediately after the Wi-Fi disconnects, instead it starts an IPV4 address lost timer, if the IPV4 address is got before ip lost timer expires, IP_EVENT_STA_LOST_IP doesn't happen. Otherwise, the event arises when IPV4 address lost timer expires.
+IP_EVENT_STA_LOST_IP doesn't arise immediately after the Wi-Fi disconnects, instead it starts an IPV4 address lost timer, if the IPV4 address is got before ip lost timer expires, IP_EVENT_STA_LOST_IP doesn't happen. Otherwise, the event arises when IPV4 address lost timer expires.
 
 Generally the application don't need to care about this event, it is just a debug event to let the application know that the IPV4 address is lost.
 
