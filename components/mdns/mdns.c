@@ -3237,6 +3237,28 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
     mdns_debug_packet(data, len);
 #endif
 
+    // Check if the packet wasn't sent by us
+    if (packet->ip_protocol == MDNS_IP_PROTOCOL_V4) {
+        esp_netif_ip_info_t if_ip_info;
+        if (esp_netif_get_ip_info(_mdns_get_esp_netif(packet->tcpip_if), &if_ip_info) == ESP_OK &&
+            memcmp(&if_ip_info.ip.addr, &packet->src.u_addr.ip4.addr, sizeof(esp_ip4_addr_t)) == 0) {
+            return;
+        }
+#if CONFIG_LWIP_IPV6
+    } else {
+        struct esp_ip6_addr if_ip6;
+        if (esp_netif_get_ip6_linklocal(_mdns_get_esp_netif(packet->tcpip_if), &if_ip6) == ESP_OK &&
+            memcmp(&if_ip6, &packet->src.u_addr.ip6, sizeof(esp_ip6_addr_t)) == 0) {
+            return;
+        }
+#endif
+    }
+
+    // Check for the minimum size of mdns packet
+    if (len <=  MDNS_HEAD_ADDITIONAL_OFFSET) {
+        return;
+    }
+
     mdns_parsed_packet_t * parsed_packet = (mdns_parsed_packet_t *)malloc(sizeof(mdns_parsed_packet_t));
     if (!parsed_packet) {
         HOOK_MALLOC_FAILED;
@@ -3247,10 +3269,6 @@ void mdns_parse_packet(mdns_rx_packet_t * packet)
     mdns_name_t * name = &n;
     memset(name, 0, sizeof(mdns_name_t));
 
-    if (len <=  MDNS_HEAD_ADDITIONAL_OFFSET) {
-        free(parsed_packet);
-        return;
-    }
     header.id = _mdns_read_u16(data, MDNS_HEAD_ID_OFFSET);
     header.flags.value = _mdns_read_u16(data, MDNS_HEAD_FLAGS_OFFSET);
     header.questions = _mdns_read_u16(data, MDNS_HEAD_QUESTIONS_OFFSET);
