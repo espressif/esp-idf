@@ -114,7 +114,7 @@ def test_examples_protocol_mdns(env, extra_data):
       3. check the mdns name is accessible
       4. check DUT output if mdns advertized host is resolved
     """
-    dut1 = env.get_dut('mdns-test', 'examples/protocols/mdns', dut_class=ttfw_idf.ESP32DUT)
+    dut1 = env.get_dut('mdns-test', 'examples/protocols/mdns', dut_class=ttfw_idf.ESP32DUT, app_config_name='eth_kit')
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, 'mdns_test.bin')
     bin_size = os.path.getsize(binary_file)
