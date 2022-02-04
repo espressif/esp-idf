@@ -925,7 +925,6 @@ components/hal/esp32c3/include/hal/spi_flash_ll.h
 components/hal/esp32c3/include/hal/spimem_flash_ll.h
 components/hal/esp32c3/include/hal/systimer_ll.h
 components/hal/esp32c3/include/hal/twai_ll.h
-components/hal/esp32c3/include/hal/uart_ll.h
 components/hal/esp32c3/include/hal/uhci_ll.h
 components/hal/esp32c3/include/hal/usb_serial_jtag_ll.h
 components/hal/esp32c3/rtc_cntl_hal.c
@@ -988,7 +987,6 @@ components/hal/esp32s2/include/hal/touch_sensor_hal.h
 components/hal/esp32s2/include/hal/touch_sensor_ll.h
 components/hal/esp32s2/include/hal/trace_ll.h
 components/hal/esp32s2/include/hal/twai_ll.h
-components/hal/esp32s2/include/hal/uart_ll.h
 components/hal/esp32s2/include/hal/usb_ll.h
 components/hal/esp32s2/interrupt_descriptor_table.c
 components/hal/esp32s2/touch_sensor_hal.c
@@ -1012,7 +1010,6 @@ components/hal/esp32s3/include/hal/spi_flash_ll.h
 components/hal/esp32s3/include/hal/spimem_flash_ll.h
 components/hal/esp32s3/include/hal/systimer_ll.h
 components/hal/esp32s3/include/hal/twai_ll.h
-components/hal/esp32s3/include/hal/uart_ll.h
 components/hal/esp32s3/include/hal/uhci_ll.h
 components/hal/esp32s3/include/hal/usb_ll.h
 components/hal/esp32s3/include/hal/usb_serial_jtag_ll.h
@@ -2704,7 +2701,6 @@ examples/system/himem/main/himem_example_main.c
 examples/system/ipc/ipc_isr/example_test.py
 examples/system/ipc/ipc_isr/main/main.c
 examples/system/light_sleep/example_test.py
-examples/system/light_sleep/main/light_sleep_example_main.c
 examples/system/ota/advanced_https_ota/example_test.py
 examples/system/ota/advanced_https_ota/main/advanced_https_ota_example.c
 examples/system/ota/advanced_https_ota/main/ble_helper/ble_api.c

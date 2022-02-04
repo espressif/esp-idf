@@ -264,8 +264,13 @@
 #include "twai_caps.h"
 
 /*-------------------------- UART CAPS ---------------------------------------*/
-#include "uart_caps.h"
-
+// ESP32-S3 has 3 UARTs
+#define SOC_UART_NUM                (3)
+#define SOC_UART_FIFO_LEN           (128)      /*!< The UART hardware FIFO length */
+#define SOC_UART_BITRATE_MAX        (5000000)  /*!< Max bit rate supported by UART */
+// UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
+#define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
+#define SOC_UART_SUPPORT_WAKEUP_INT (1)        /*!< Support UART wakeup interrupt */
 #define SOC_UART_SUPPORT_RTC_CLK    (1)     /*!< Support RTC clock as the clock source */
 #define SOC_UART_SUPPORT_XTAL_CLK   (1)     /*!< Support XTAL clock as the clock source */
 

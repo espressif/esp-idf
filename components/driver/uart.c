@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,11 +47,20 @@ static const char *UART_TAG = "uart";
 #define UART_PATTERN_DET_QLEN_DEFAULT   (10)
 #define UART_MIN_WAKEUP_THRESH          (UART_LL_MIN_WAKEUP_THRESH)
 
+#if SOC_UART_SUPPORT_WAKEUP_INT
+#define UART_INTR_CONFIG_FLAG ((UART_INTR_RXFIFO_FULL) \
+                            | (UART_INTR_RXFIFO_TOUT) \
+                            | (UART_INTR_RXFIFO_OVF) \
+                            | (UART_INTR_BRK_DET) \
+                            | (UART_INTR_PARITY_ERR)) \
+                            | (UART_INTR_WAKEUP)
+#else
 #define UART_INTR_CONFIG_FLAG ((UART_INTR_RXFIFO_FULL) \
                             | (UART_INTR_RXFIFO_TOUT) \
                             | (UART_INTR_RXFIFO_OVF) \
                             | (UART_INTR_BRK_DET) \
                             | (UART_INTR_PARITY_ERR))
+#endif
 
 #define UART_ENTER_CRITICAL_ISR(mux)    portENTER_CRITICAL_ISR(mux)
 #define UART_EXIT_CRITICAL_ISR(mux)     portEXIT_CRITICAL_ISR(mux)
@@ -1058,7 +1067,14 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                 uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
                 xSemaphoreGiveFromISR(p_uart_obj[uart_num]->tx_done_sem, &HPTaskAwoken);
             }
-        } else {
+        }
+    #if SOC_UART_SUPPORT_WAKEUP_INT
+        else if (uart_intr_status & UART_INTR_WAKEUP) {
+            uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_WAKEUP);
+            uart_event.type = UART_WAKEUP;
+        }
+    #endif
+        else {
             uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), uart_intr_status); /*simply clear all other intr status*/
             uart_event.type = UART_EVENT_MAX;
         }

@@ -8,6 +8,7 @@ The example enables the following wakeup sources:
 
 - Timer: wake up the chip in 2 seconds
 - EXT0: wake up the chip if a button attached to GPIO0 is pressed (i.e. if GPIO0 goes low)
+- UART0: wake up the chip when the uart rx pin (default GPIO6) receive more than 3 edges.
 
 The example also prints time spent in light sleep mode to illustrate that timekeeping continues while the chip is in light sleep.
 
@@ -39,19 +40,47 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 ## Example Output
 
+### Wake-up by Timer
+
+If do nothing to the example, the chip will wake-up every 2000 ms by timer, and fall into light sleep again after print some logs. We can see the wake-up reason is `timer` in this case.
+
+### Wake-up by GPIO
+
+For this example, the wake-up GPIO is bound to the 'BOOT' button on the board, we can wake-up the chip from light sleep by pressing the 'BOOT' button, the chip will wake-up immediately after we pressed the button. We can see the wake-up reason is `pin` in this case and the chip will fall into light sleep again if we release the button.
+
+### Wake-up by UART
+
+For this example, the wake-up UART is bound to the default console port (UART_NUM_0), we can wake-up the chip from light sleep by inputting some keys on the key board. We can see the wake-up reason is `uart` in this case.
+
+Note #1: the UART wake-up threshould is set to 3 in this example, which means the ascii code of the input character should has at least 3 edges, for example, the ascii code of character `0` is `0011 0000` in binary, which only contains 2 edges, so the character `0` is not enough to wakeup the chip.
+
+Note #2: only UART0 and UART1 (if has) are supported to be configured as wake up source. And for ESP32, we have to use iomux pin for RX signal (i.e. GPIO3 for UART0 & GPIO9 for UART1), otherwise it won't success.
+
+Note #3: due to limitation of the HW, the bytes that received during light sleep is only used for waking up, and it will not be received by UART peripheral or passed to the driver.
+
 ```
 Entering light sleep
-Returned from light sleep, reason: timer, t=2014 ms, slept for 2000 ms
+Returned from light sleep, reason: timer, t=2713 ms, slept for 1999 ms
 Entering light sleep
-Returned from light sleep, reason: timer, t=4023 ms, slept for 2000 ms
+Returned from light sleep, reason: timer, t=4722 ms, slept for 2000 ms
 Entering light sleep
-Returned from light sleep, reason: pin, t=5297 ms, slept for 1266 ms
-Waiting for GPIO0 to go high...
+Returned from light sleep, reason: uart, t=5148 ms, slept for 418 ms
 Entering light sleep
-Returned from light sleep, reason: timer, t=10072 ms, slept for 2000 ms
+Returned from light sleep, reason: uart, t=6178 ms, slept for 1022 ms
 Entering light sleep
-Returned from light sleep, reason: timer, t=12080 ms, slept for 2000 ms
+Returned from light sleep, reason: timer, t=8187 ms, slept for 2000 ms
 Entering light sleep
+Returned from light sleep, reason: timer, t=10195 ms, slept for 2000 ms
+Entering light sleep
+Returned from light sleep, reason: timer, t=12203 ms, slept for 2000 ms
+Entering light sleep
+Returned from light sleep, reason: pin, t=12555 ms, slept for 342 ms
+Waiting for GPIO9 to go high...
+Entering light sleep
+Returned from light sleep, reason: pin, t=12564 ms, slept for 1 ms
+Waiting for GPIO9 to go high...
+Entering light sleep
+...
 ```
 
 In the scenario above, the button attached to GPIO0 was pressed and held for about 3 seconds, after the 2nd wakeup from light sleep. The program has indicated the wakeup reason after each sleep iteration.
