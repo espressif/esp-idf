@@ -14,6 +14,8 @@ static char *s_str_descriptor[USB_STRING_DESCRIPTOR_ARRAY_SIZE];
 
 #define EPNUM_MSC ((CFG_TUD_CDC * 2) + 1)
 #define EPNUM_HID (EPNUM_MSC + 1)
+#define EPNUM_VENDOR (EPNUM_HID + 1)
+#define EPNUM_MIDI (EPNUM_VENDOR + 1)
 
 #if CFG_TUD_HID //HID Report Descriptor
 uint8_t const desc_hid_report[] = {
