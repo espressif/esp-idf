@@ -377,7 +377,7 @@ test_app_test_flash_psram_f4r8:
     - ESP32S3
     - MSPI_F4R8
 
-test_app_test_flash_psram_f8r8:
+.test_app_test_flash_psram_f8r8:
   extends: .test_app_esp32s3_template
   tags:
     - ESP32S3
