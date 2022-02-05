@@ -114,7 +114,12 @@ extern "C" {
 #define CFG_TUD_MIDI                CONFIG_TINYUSB_MIDI_ENABLED
 #define CFG_TUD_DFU_RUNTIME         CONFIG_TINYUSB_DFU_RT_ENABLED
 #define CFG_TUD_CUSTOM_CLASS        CONFIG_TINYUSB_CUSTOM_CLASS_ENABLED
+// #define CFG_TUD_ENDPPOINT_MAX   8
 
+#   if (CFG_TUD_ENDPPOINT_MAX < 8)
+#       define CFG_TUD_ENDPPOINT_MAX 8
+#       warning "CFG_TUD_ENDPPOINT_MAX was too low and was set to 8"
+#   endif
 #ifdef __cplusplus
 }
 #endif

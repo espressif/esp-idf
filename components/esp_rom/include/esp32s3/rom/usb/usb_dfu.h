@@ -73,10 +73,10 @@ extern "C" {
 #define DFU_FUNC_DESC           0x21
 
 /** DFU attributes DFU Functional Descriptor */
-#define DFU_ATTR_WILL_DETACH        0x08
-#define DFU_ATTR_MANIFESTATION_TOLERANT 0x04
-#define DFU_ATTR_CAN_UPLOAD     0x02
-#define DFU_ATTR_CAN_DNLOAD     0x01
+// #define DFU_ATTR_WILL_DETACH        0x08
+// #define DFU_ATTR_MANIFESTATION_TOLERANT 0x04
+// #define DFU_ATTR_CAN_UPLOAD     0x02
+// #define DFU_ATTR_CAN_DNLOAD     0x01
 
 /** DFU Specification release */
 #define DFU_VERSION         0x0110
