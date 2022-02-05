@@ -105,6 +105,11 @@ def get_pytest_dirs(folder: str) -> List[str]:
         raise RuntimeError('pytest collection failed')
 
     sys.stdout.flush()  # print instantly
-    test_file_paths = set(node.fspath for node in collector.nodes)
+
+    try:
+        test_file_paths = set(node.path for node in collector.nodes)
+    except AttributeError:
+        # pytest 6.x
+        test_file_paths = set(node.fspath for node in collector.nodes)
 
     return [os.path.dirname(file) for file in test_file_paths]
