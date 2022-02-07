@@ -33,6 +33,9 @@
 #define MB_SERIAL_RX_TOUT_TICKS     pdMS_TO_TICKS(1) // timeout for rx from buffer
 #define MB_SERIAL_RESP_LEN_MIN      (4)
 
+// The task affinity for Modbus stack tasks
+#define MB_PORT_TASK_AFFINITY           (CONFIG_FMB_PORT_TASK_AFFINITY)
+
 #define MB_PORT_CHECK(a, ret_val, str, ...) \
     if (!(a)) { \
         ESP_LOGE(MB_PORT_TAG, "%s(%u): " str, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
