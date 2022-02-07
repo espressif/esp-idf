@@ -693,22 +693,15 @@ tBTM_STATUS BTM_BlePeriodicAdvCfgDataRaw(UINT8 instance, UINT16 len, UINT8 *data
 {
     tBTM_STATUS status = BTM_SUCCESS;
     tHCI_STATUS err = HCI_SUCCESS;
-    uint16_t rem_len;
+    uint16_t rem_len = len;
     UINT8 operation = 0;
     UINT16 data_offset = 0;
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
 
     if ((status = btm_ble_ext_adv_set_data_validate(instance, len, data)) != BTM_SUCCESS) {
        BTM_TRACE_ERROR("%s, invalid extend adv data.", __func__);
+       goto end;
     }
-
-    if (len > controller_get_interface()->ble_get_ext_adv_data_max_len()) {
-        BTM_TRACE_ERROR("%s, The adv data len(%d) is longer then the controller adv max len(%d)",
-            __func__, len, controller_get_interface()->ble_get_ext_adv_data_max_len());
-        status = BTM_ILLEGAL_VALUE;
-    }
-
-    rem_len = len;
 
     do {
         UINT8 send_data_len = (rem_len > BTM_BLE_PERIODIC_ADV_DATA_LEN_MAX) ? BTM_BLE_PERIODIC_ADV_DATA_LEN_MAX : rem_len;
@@ -733,8 +726,8 @@ tBTM_STATUS BTM_BlePeriodicAdvCfgDataRaw(UINT8 instance, UINT16 len, UINT8 *data
 	data_offset += send_data_len;
     } while(rem_len);
 
+end:
     cb_params.status = status;
-
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PERIODIC_ADV_DATA_SET_COMPLETE_EVT, &cb_params);
 
     return status;
@@ -1110,6 +1103,12 @@ static tBTM_STATUS btm_ble_ext_adv_set_data_validate(UINT8 instance, UINT16 len,
     if (extend_adv_cb.inst[instance].legacy_pdu) {
         if (len > 31) {
             BTM_TRACE_ERROR("%s, for the legacy adv, the adv data length can't exceed 31. line %d", __func__, __LINE__);
+            return BTM_ILLEGAL_VALUE;
+        }
+    } else {
+        if (len > controller_get_interface()->ble_get_ext_adv_data_max_len()) {
+            BTM_TRACE_ERROR("%s, The adv data len(%d) is longer then the controller adv max len(%d)",
+                __func__, len, controller_get_interface()->ble_get_ext_adv_data_max_len());
             return BTM_ILLEGAL_VALUE;
         }
     }
