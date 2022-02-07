@@ -1,17 +1,3 @@
-components/app_trace/port/include/esp_app_trace_port.h
-components/app_trace/private_include/esp_app_trace_membufs_proto.h
-components/app_trace/sys_view/Config/Global.h
-components/app_trace/sys_view/Config/SEGGER_RTT_Conf.h
-components/app_trace/sys_view/Config/SEGGER_SYSVIEW_Conf.h
-components/app_trace/sys_view/SEGGER/SEGGER.h
-components/app_trace/sys_view/SEGGER/SEGGER_RTT.h
-components/app_trace/sys_view/SEGGER/SEGGER_SYSVIEW.c
-components/app_trace/sys_view/SEGGER/SEGGER_SYSVIEW.h
-components/app_trace/sys_view/SEGGER/SEGGER_SYSVIEW_ConfDefaults.h
-components/app_trace/sys_view/SEGGER/SEGGER_SYSVIEW_Int.h
-components/app_trace/sys_view/Sample/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c
-components/app_trace/sys_view/Sample/OS/SEGGER_SYSVIEW_FreeRTOS.c
-components/app_trace/sys_view/Sample/OS/SEGGER_SYSVIEW_FreeRTOS.h
 components/bootloader/subproject/main/bootloader_hooks.h
 components/bootloader/subproject/main/bootloader_start.c
 components/bootloader/subproject/main/ld/esp32/bootloader.ld

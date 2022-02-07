@@ -69,6 +69,8 @@ These third party libraries can be included into the application (firmware) prod
 
 * :component:`HTTP Parser <http_parser>` Based on src/http/ngx_http_parse.c from NGINX copyright Igor Sysoev. Additional changes are licensed under the same terms as NGINX and Joyent, Inc. and other Node contributors. For details please check :component_file:`LICENSE file<http_parser/LICENSE.txt>`.
 
+* `SEGGER SystemView`_ target-side library, Copyright (c) 2015-2017  SEGGER Microcontroller GmbH & Co. KG, is licensed under BSD 3-clause license.
+
 Build Tools
 -----------
 
@@ -176,3 +178,4 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _cryptoauthlib: https://github.com/MicrochipTech/cryptoauthlib
 .. _qrcode: https://github.com/nayuki/QR-Code-generator
 .. _freemodbus: https://github.com/armink/FreeModbus_Slave-Master-RTT-STM32
+.. _SEGGER SystemView: https://www.segger.com/downloads/systemview/

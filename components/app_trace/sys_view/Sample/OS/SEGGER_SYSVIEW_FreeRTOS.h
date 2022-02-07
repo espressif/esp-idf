@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2015-2017 SEGGER Microcontroller GmbH & Co. KG
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 /*********************************************************************
 *                SEGGER Microcontroller GmbH & Co. KG                *
 *                        The Embedded Experts                        *
