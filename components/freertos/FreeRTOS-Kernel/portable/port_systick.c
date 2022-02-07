@@ -19,6 +19,10 @@
 #include "hal/systimer_ll.h"
 #endif
 
+#ifdef CONFIG_PM_TRACE
+#include "esp_private/pm_trace.h"
+#endif //CONFIG_PM_TRACE
+
 BaseType_t xPortSysTickHandler(void);
 
 #ifdef CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
