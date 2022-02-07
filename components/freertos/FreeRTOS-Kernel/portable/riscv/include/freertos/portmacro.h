@@ -44,6 +44,7 @@
 #include <stdio.h>
 #include "soc/spinlock.h"
 #include "soc/interrupt_core0_reg.h"
+#include "esp_macro.h"
 #include "esp_attr.h"
 #include "esp_rom_sys.h"
 #include "esp_timer.h"              /* required for FreeRTOS run time stats */
@@ -57,8 +58,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
 
 /* --------------------------------------------------- Port Types ------------------------------------------------------
  * - Port specific types.
@@ -383,7 +382,24 @@ static inline BaseType_t IRAM_ATTR xPortGetCoreID(void)
 // ---------------------- Yielding -------------------------
 
 #define portYIELD() vPortYield()
-#define portYIELD_FROM_ISR() vPortYieldFromISR()
+#define portYIELD_FROM_ISR_NO_ARG() vPortYieldFromISR()
+#define portYIELD_FROM_ISR_ARG(xHigherPriorityTaskWoken) ({ \
+    if (xHigherPriorityTaskWoken == pdTRUE) { \
+        vPortYieldFromISR(); \
+    } \
+})
+/**
+ * @note    The macro below could be used when passing a single argument, or without any argument,
+ *          it was developed to support both usages of portYIELD inside of an ISR. Any other usage form
+ *          might result in undesired behavior
+ */
+#if defined(__cplusplus) && (__cplusplus >  201703L)
+#define portYIELD_FROM_ISR(...) CHOOSE_MACRO_VA_ARG(_0 __VA_OPT__(,) ##__VA_ARGS__, portYIELD_FROM_ISR_ARG, portYIELD_FROM_ISR_NO_ARG)(__VA_ARGS__)
+#else
+#define portYIELD_FROM_ISR(...) CHOOSE_MACRO_VA_ARG(_0, ##__VA_ARGS__, portYIELD_FROM_ISR_ARG, portYIELD_FROM_ISR_NO_ARG)(__VA_ARGS__)
+#endif
+
+
 #define portEND_SWITCHING_ISR(xSwitchRequired) if(xSwitchRequired) vPortYield()
 /* Yielding within an API call (when interrupts are off), means the yield should be delayed
    until interrupts are re-enabled.
