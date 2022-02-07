@@ -22,7 +22,7 @@ def test_loop(env, config_names):  # type: (Any, Any) -> None
 
 
 # For F8R8 board (Octal Flash and Octal PSRAM)
-@ttfw_idf.idf_custom_test(env_tag='MSPI_F8R8', target=['esp32s3'], ignore=True)
+@ttfw_idf.idf_custom_test(env_tag='MSPI_F8R8', target=['esp32s3'])
 def test_flash8_psram8(env, _):  # type: (Any, Any) -> None
 
     config_files = glob.glob(os.path.join(os.path.dirname(__file__), 'sdkconfig.ci.f8r8*'))
