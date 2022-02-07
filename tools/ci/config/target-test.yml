@@ -584,6 +584,12 @@ UT_047:
     - ESP32S2_IDF
     - UT_T1_1
 
+UT_048:
+  extends: .unit_test_32_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
+
 UT_C3:
   extends: .unit_test_c3_template
   parallel: 31
