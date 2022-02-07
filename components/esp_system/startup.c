@@ -12,7 +12,6 @@
 
 #include "esp_system.h"
 #include "esp_log.h"
-#include "esp_ota_ops.h"
 
 #include "sdkconfig.h"
 
@@ -35,10 +34,13 @@
 #include "esp_sleep.h"
 #include "esp_xt_wdt.h"
 
+#if __has_include("esp_ota_ops.h")
+#include "esp_ota_ops.h"
+#define HAS_ESP_OTA 1
+#endif
+
 /***********************************************/
 // Headers for other components init functions
-#include "nvs_flash.h"
-
 #include "esp_coexist_internal.h"
 
 #if CONFIG_ESP_COREDUMP_ENABLE
@@ -50,8 +52,12 @@
 #endif
 
 #include "esp_private/dbg_stubs.h"
+
+#if CONFIG_PM_ENABLE
 #include "esp_pm.h"
 #include "esp_private/pm_impl.h"
+#endif
+
 #include "esp_pthread.h"
 #include "esp_vfs_console.h"
 #include "esp_private/esp_clk.h"
@@ -368,6 +374,7 @@ static void start_cpu0_default(void)
     int cpu_freq = esp_clk_cpu_freq();
     ESP_EARLY_LOGI(TAG, "cpu freq: %d Hz", cpu_freq);
 
+#if HAS_ESP_OTA // [refactor-todo] find a better way to handle this.
     // Display information about the current running image.
     if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO) {
         const esp_app_desc_t *app_desc = esp_ota_get_app_description();
@@ -389,6 +396,7 @@ static void start_cpu0_default(void)
         ESP_EARLY_LOGI(TAG, "ELF file SHA256:  %s...", buf);
         ESP_EARLY_LOGI(TAG, "ESP-IDF:          %s", app_desc->idf_ver);
     }
+#endif //HAS_ESP_OTA
 
     // Initialize core components and services.
     do_core_init();

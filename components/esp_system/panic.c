@@ -11,7 +11,6 @@
 
 #include "esp_private/system_internal.h"
 #include "esp_private/usb_console.h"
-#include "esp_ota_ops.h"
 
 #include "esp_cpu.h"
 #include "soc/rtc.h"
@@ -25,6 +24,11 @@
 #include "esp_rom_sys.h"
 
 #include "sdkconfig.h"
+
+#if __has_include("esp_ota_ops.h")
+#include "esp_ota_ops.h"
+#define HAS_ESP_OTA 1
+#endif
 
 #if CONFIG_ESP_COREDUMP_ENABLE
 #include "esp_core_dump.h"
@@ -309,11 +313,13 @@ void esp_panic_handler(panic_info_t *info)
     PANIC_INFO_DUMP(info, state);
     panic_print_str("\r\n");
 
+#if HAS_ESP_OTA
     panic_print_str("\r\nELF file SHA256: ");
     char sha256_buf[65];
     esp_ota_get_app_elf_sha256(sha256_buf, sizeof(sha256_buf));
     panic_print_str(sha256_buf);
     panic_print_str("\r\n");
+#endif //HAS_ESP_OTA
 
     panic_print_str("\r\n");
 
