@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@
 #include "esp_netif_types.h"
 #include "esp_netif_defaults.h"
 
-#if CONFIG_ETH_ENABLED
+#ifdef CONFIG_ETH_ENABLED
 #include "esp_eth_netif_glue.h"
 #endif
 
@@ -22,7 +22,7 @@
 // Note: tcpip_adapter legacy API has to be included by default to provide full compatibility
 //  for applications that used tcpip_adapter API without explicit inclusion of tcpip_adapter.h
 //
-#if CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
+#ifdef CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
 #define _ESP_NETIF_SUPPRESS_LEGACY_WARNING_
 #include "tcpip_adapter.h"
 #undef _ESP_NETIF_SUPPRESS_LEGACY_WARNING_
