@@ -15,6 +15,7 @@
 #include "hal/adc_types.h"
 #include "esp_efuse_rtc_calib.h"
 #include "esp_adc_cal.h"
+#include "../esp_adc_cal_internal.h"
 
 const static char LOG_TAG[] = "ADC_CALI";
 
@@ -33,33 +34,35 @@ static const int coeff_a_scaling = 1000000;
  *
  * @note {0,0} stands for unused item
  * @note In case of the overflow, these coeffcients are recorded as Absolute Value
- * @note For atten0 ~ 2, error = a1 * X^2 + a2 * X + a3; For atten3, error = a1 * X^4 + a2 * X^3 + a3 * X^2 + a4 * X + a5;
+ * @note For atten0 ~ 2, error = (K0 * X^0) + (K1 * X^1) + (K2 * X^2); For atten3, error = (K0 * X^0) + (K1 * X^1)  + (K2 * X^2) + (K3 * X^3) + (K4 * X^4);
+ * @note Above formula is rewritten from the original documentation, please note that the coefficients are re-ordered.
  */
-const static uint64_t adc_error_coef_atten[4][10][2] = {
-                                                            {{9798249589, 1e15}, {50871540569528, 1e16}, {3, 1}, {0, 0}, {0, 0},     //ADC1 atten0
-                                                             {36615265189, 1e16}, {1353548869615, 1e16}, {3, 1}, {0, 0}, {0, 0}},    //ADC2 atten0
-
-                                                            {{101379430548, 1e16}, {49393185868806, 1e16}, {3, 1}, {0, 0}, {0, 0},   //ADC1 atten1
-                                                             {118964995959, 1e16}, {66319894226185, 1e16}, {2, 1}, {0, 0}, {0, 0}},  //ADC2 atten1
-
-                                                            {{208385525314, 1e16}, {147640181047414, 1e16}, {2, 1}, {0, 0}, {0, 0},  //ADC1 atten2
-                                                             {259011467956, 1e16}, {200996773954387, 1e16}, {1, 1}, {0, 0}, {0, 0}}, //ADC2 atten2
-
-                                                            {{13515, 1e15}, {70769718, 1e15}, {1297891447611, 1e16}, {644334888647536, 1e16}, {1,1},    //ADC1 atten3
-                                                             {15038, 1e15}, {79672528, 1e15}, {1478791187119, 1e16}, {755717904943462, 1e16}, {1,1}}    //ADC2 atten3
+const static uint64_t adc1_error_coef_atten[4][5][2] = {
+                                                            {{27856531419538344, 1e16}, {50871540569528, 1e16}, {9798249589, 1e15}, {0, 0}, {0, 0}},                       //ADC1 atten0
+                                                            {{29831022915028695, 1e16}, {49393185868806, 1e16}, {101379430548, 1e16}, {0, 0}, {0, 0}},                     //ADC1 atten1
+                                                            {{23285545746296417, 1e16}, {147640181047414, 1e16}, {208385525314, 1e16}, {0, 0}, {0, 0}},                    //ADC1 atten2
+                                                            {{644403418269478, 1e15}, {644334888647536, 1e16}, {1297891447611, 1e16}, {70769718, 1e15}, {13515, 1e15}}     //ADC1 atten3
                                                         };
-const static int32_t adc_error_sign[4][10] = {
-                                                {1, -1, -1, 0, 0,   //ADC1 atten0
-                                                 1,  1, -1, 0, 0},  //ADC2 atten0
-
-                                                {1, -1, -1, 0, 0,   //ADC1 atten1
-                                                 1, -1, -1, 0, 0},  //ADC2 atten1
-
-                                                {1, -1, -1, 0, 0,   //ADC1 atten2
-                                                 1, -1, -1, 0, 0},  //ADC2 atten2
-
-                                                {1, -1, 1, -1, -1,  //ADC1 atten3
-                                                 1, -1, 1, -1,  1}  //ADC2 atten3
+const static uint64_t adc2_error_coef_atten[4][5][2] = {
+                                                            {{25668651654328927, 1e16}, {1353548869615, 1e16}, {36615265189, 1e16}, {0, 0}, {0, 0}},                       //ADC2 atten0
+                                                            {{23690184690298404, 1e16}, {66319894226185, 1e16}, {118964995959, 1e16}, {0, 0}, {0, 0}},                     //ADC2 atten1
+                                                            {{9452499397020617, 1e16}, {200996773954387, 1e16}, {259011467956, 1e16}, {0, 0}, {0, 0}},                     //ADC2 atten2
+                                                            {{12247719764336924,1e16}, {755717904943462, 1e16}, {1478791187119, 1e16}, {79672528, 1e15}, {15038, 1e15}}    //ADC2 atten3
+                                                        };
+/**
+ * Term sign
+ */
+const static int32_t adc1_error_sign[4][5] = {
+                                                {-1, -1, 1, 0,  0},  //ADC1 atten0
+                                                {-1, -1, 1, 0,  0},  //ADC1 atten1
+                                                {-1, -1, 1, 0,  0},  //ADC1 atten2
+                                                {-1, -1, 1, -1, 1}   //ADC1 atten3
+                                            };
+const static int32_t adc2_error_sign[4][5] = {
+                                                {-1,  1, 1,  0, 0},  //ADC2 atten0
+                                                {-1, -1, 1,  0, 0},  //ADC2 atten1
+                                                {-1, -1, 1,  0, 0},  //ADC2 atten2
+                                                { 1, -1, 1, -1, 1}   //ADC2 atten3
                                             };
 
 /* -------------------- Characterization Helper Data Types ------------------ */
@@ -151,47 +154,6 @@ esp_adc_cal_value_t esp_adc_cal_characterize(adc_unit_t adc_num,
     return ESP_ADC_CAL_VAL_EFUSE_TP_FIT;
 }
 
-static int32_t get_reading_error(uint64_t v_cali_1, uint8_t adc_num, uint8_t atten)
-{
-    if (v_cali_1 == 0) {
-        return 0;
-    }
-
-    uint8_t term_max = (atten == 3) ? 5 : 3;
-    int32_t error = 0;
-    uint64_t coeff = 0;
-    uint64_t term[5] = {0};
-
-    /**
-     * For atten0 ~ 2:
-     * error = a1 * X^2 + a2 * X + a3;
-     *
-     * For atten3:
-     * error = a1 * X^4 + a2 * X^3 + a3 * X^2 + a4 * X + a5;
-     */
-
-    //Calculate all the power beforehand
-    term[term_max-1] = 1;
-    term[term_max-2] = v_cali_1;
-    for (int term_id = term_max - 3; term_id >= 0; term_id--) {
-        term[term_id] = term[term_id + 1] * v_cali_1;
-    }
-
-    //Calculate each term
-    uint8_t coef_id_start = (adc_num == ADC_UNIT_1) ? 0 : 5;
-    for (int i = 0; i < term_max; i++) {
-        coeff = adc_error_coef_atten[atten][coef_id_start + i][0];
-        term[i] = term[i] * coeff;
-        ESP_LOGV(LOG_TAG, "big coef is %llu, big term%d is %llu, coef_id is %d", coeff, i, term[i], coef_id_start + i);
-
-        term[i] = term[i] / adc_error_coef_atten[atten][coef_id_start + i][1];
-        error += (int32_t)term[i] * adc_error_sign[atten][i];
-        ESP_LOGV(LOG_TAG, "term%d is %llu, error is %d", i, term[i], error);
-    }
-
-    return error;
-}
-
 uint32_t esp_adc_cal_raw_to_voltage(uint32_t adc_reading, const esp_adc_cal_characteristics_t *chars)
 {
     assert(chars != NULL);
@@ -209,7 +171,15 @@ uint32_t esp_adc_cal_raw_to_voltage(uint32_t adc_reading, const esp_adc_cal_char
     v_cali_1 = v_cali_1 / coeff_a_scaling;
     ESP_LOGV(LOG_TAG, "v_cali_1 is %llu", v_cali_1);
 
-    error = get_reading_error(v_cali_1, chars->adc_num, chars->atten);
+    //Curve Fitting error correction
+    esp_adc_error_calc_param_t param = {
+        .v_cali_input = v_cali_1,
+        .term_num = (chars->atten == 3) ? 5 : 3,
+        .coeff = (chars->adc_num == ADC_UNIT_1) ? &adc1_error_coef_atten : &adc2_error_coef_atten,
+        .sign = (chars->adc_num == ADC_UNIT_1) ? &adc1_error_sign : &adc2_error_sign,
+    };
+    error = esp_adc_cal_get_reading_error(&param, chars->atten);
+
     voltage = (int32_t)v_cali_1 - error;
 
     return voltage;
