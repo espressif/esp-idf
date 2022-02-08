@@ -52,7 +52,7 @@ class WLFATFS:
                  sectors_per_cluster: int = 1,
                  sector_size: int = 0x1000,
                  sectors_per_fat: int = 1,
-                 root_dir_sectors_cnt: int = 4,
+                 explicit_fat_type: int = None,
                  hidden_sectors: int = 0,
                  long_names_enabled: bool = False,
                  entry_size: int = 32,
@@ -63,8 +63,9 @@ class WLFATFS:
                  file_sys_type: str = 'FAT',
                  version: int = 2,
                  temp_buff_size: int = 32,
-                 updaterate: int = 16,
+                 update_rate: int = 16,
                  device_id: int = None,
+                 root_entry_count: int = 512,
                  media_type: int = 0xf8) -> None:
         if sector_size != WLFATFS.WL_SECTOR_SIZE:
             raise NotImplementedError(f'The only supported sector size is currently {WLFATFS.WL_SECTOR_SIZE}')
@@ -74,7 +75,7 @@ class WLFATFS:
         self._version = version
         self._temp_buff_size = temp_buff_size
         self._device_id = device_id
-        self._updaterate = updaterate
+        self._update_rate = update_rate
         self.partition_size = size
         self.total_sectors = self.partition_size // self.sector_size
         self.wl_state_size = WLFATFS.WL_STATE_HEADER_SIZE + WLFATFS.WL_STATE_RECORD_SIZE * self.total_sectors
@@ -89,13 +90,14 @@ class WLFATFS:
         self.plain_fat_sectors = self.total_sectors - wl_sectors
 
         self.plain_fatfs = FATFS(
+            explicit_fat_type=explicit_fat_type,
             size=self.plain_fat_sectors * self.sector_size,
             reserved_sectors_cnt=reserved_sectors_cnt,
             fat_tables_cnt=fat_tables_cnt,
             sectors_per_cluster=sectors_per_cluster,
             sector_size=sector_size,
             sectors_per_fat=sectors_per_fat,
-            root_dir_sectors_cnt=root_dir_sectors_cnt,
+            root_entry_count=root_entry_count,
             hidden_sectors=hidden_sectors,
             long_names_enabled=long_names_enabled,
             entry_size=entry_size,
@@ -127,7 +129,7 @@ class WLFATFS:
                 full_mem_size=self.partition_size,
                 page_size=self.sector_size,
                 sector_size=self.sector_size,
-                updaterate=self._updaterate,
+                updaterate=self._update_rate,
                 wr_size=16,
                 version=self._version,
                 temp_buff_size=self._temp_buff_size
@@ -149,7 +151,7 @@ class WLFATFS:
                 max_pos=self.plain_fat_sectors + WLFATFS.DUMMY_SECTORS_COUNT,
                 move_count=0,
                 access_count=0,
-                max_count=self._updaterate,
+                max_count=self._update_rate,
                 block_size=self.sector_size,
                 version=self._version,
                 device_id=self._device_id or generate_4bytes_random(),
@@ -187,12 +189,13 @@ class WLFATFS:
 if __name__ == '__main__':
     desc = 'Create a FAT filesystem with support for wear levelling and populate it with directory content'
     args = get_args_for_partition_generator(desc)
-    input_dir = args.input_directory
 
-    partition_size = int(str(args.partition_size), 0)
-    sector_size_bytes = int(str(args.sector_size), 0)
+    wl_fatfs = WLFATFS(sector_size=args.sector_size,
+                       sectors_per_cluster=args.sectors_per_cluster,
+                       size=args.partition_size,
+                       root_entry_count=args.root_entry_count,
+                       explicit_fat_type=args.fat_type)
 
-    wl_fatfs = WLFATFS(size=partition_size, sector_size=sector_size_bytes)
-    wl_fatfs.wl_generate(input_dir)
+    wl_fatfs.wl_generate(args.input_directory)
     wl_fatfs.init_wl()
     wl_fatfs.wl_write_filesystem(args.output_file)
