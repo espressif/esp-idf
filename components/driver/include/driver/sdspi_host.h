@@ -22,8 +22,10 @@ typedef int sdspi_dev_handle_t;
 
 #if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
 #define SDSPI_DEFAULT_HOST HSPI_HOST
+#define SDSPI_DEFAULT_DMA  SDSPI_DEFAULT_HOST
 #else
 #define SDSPI_DEFAULT_HOST SPI2_HOST
+#define SDSPI_DEFAULT_DMA  SPI_DMA_CH_AUTO
 #endif
 
 /**
@@ -216,7 +218,7 @@ typedef struct {
     .gpio_miso = GPIO_NUM_2, \
     .gpio_mosi = GPIO_NUM_15, \
     .gpio_sck  = GPIO_NUM_14, \
-    .dma_channel = 1, \
+    .dma_channel = SDSPI_DEFAULT_DMA, \
 }
 
 /**
