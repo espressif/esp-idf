@@ -125,7 +125,6 @@ For advanced users who want to customize the install process:
     vscode-setup
     ../api-guides/tools/idf-monitor
 
-.. _MSYS2: https://www.msys2.org/
 .. _CMake: https://cmake.org/download/
 .. _Ninja: https://ninja-build.org/
 .. _Python: https://www.python.org/downloads/windows/

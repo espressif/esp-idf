@@ -4,9 +4,9 @@
 
 {IDF_TARGET_HEAP_SIZE:default="298968", esp32="298968", esp32s2="253900", esp32s3="390684", esp32c3="337332"}
 
-Now you have all requirements to start using ESP-IDF, the next topic will guide you on how to start your first project.
+Now you have all requirements met, the next topic will guide you on how to start your first project.
 
-This guide will help you on the first steps using ESP-IDF. By following this guide you will able to start a new project, connect the {IDF_TARGET_NAME}, change the project configuration, build, flash, and monitor the project.
+This guide will help you on the first steps using ESP-IDF. Follow this guide to start a new project on the {IDF_TARGET_NAME} and build, flash, and monitor the device output.
 
 .. note::
 
