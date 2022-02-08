@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "esp_partition.h"
 #include "nvs_partition_manager.hpp"
 #include "nvs_partition_lookup.hpp"
@@ -188,6 +180,10 @@ esp_err_t NVSPartitionManager::open_handle(const char *part_name,
     uint8_t nsIndex;
     Storage* sHandle;
 
+    if (handle == nullptr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     if (nvs_storage_list.empty()) {
         return ESP_ERR_NVS_NOT_INITIALIZED;
     }
@@ -202,14 +198,14 @@ esp_err_t NVSPartitionManager::open_handle(const char *part_name,
         return err;
     }
 
-    *handle = new (std::nothrow) NVSHandleSimple(open_mode==NVS_READONLY, nsIndex, sHandle);
-
-    if (handle == nullptr) {
+    NVSHandleSimple* new_handle = new (std::nothrow) NVSHandleSimple(open_mode==NVS_READONLY, nsIndex, sHandle);
+    if (new_handle == nullptr) {
         return ESP_ERR_NO_MEM;
     }
 
-    nvs_handles.push_back(*handle);
+    nvs_handles.push_back(new_handle);
 
+    *handle = new_handle;
     return ESP_OK;
 }
 
