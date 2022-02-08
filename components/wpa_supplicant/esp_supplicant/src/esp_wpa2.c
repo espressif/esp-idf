@@ -37,6 +37,9 @@
 #include "esp_wifi_driver.h"
 #include "esp_private/wifi.h"
 #include "esp_wpa_err.h"
+#ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+#include "esp_crt_bundle.h"
+#endif
 
 #define WPA2_VERSION    "v2.0"
 
@@ -1249,4 +1252,19 @@ esp_err_t esp_wifi_sta_wpa2_ent_set_fast_phase1_params(esp_eap_fast_config confi
     os_memcpy(g_wpa_phase1_options, &config_for_supplicant, sizeof(config_for_supplicant));
     return ESP_OK;
 
+}
+
+esp_err_t esp_wifi_sta_wpa2_use_default_cert_bundle(bool use_default_bundle)
+{
+#ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+    g_wpa_default_cert_bundle = use_default_bundle;
+    if (use_default_bundle) {
+        esp_crt_bundle_attach_fn = esp_crt_bundle_attach;
+    } else {
+        esp_crt_bundle_attach_fn = NULL;
+    }
+    return ESP_OK;
+#else
+    return ESP_FAIL;
+#endif
 }

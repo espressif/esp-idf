@@ -84,6 +84,7 @@ struct tls_config {
 #define TLS_CONN_REQUIRE_OCSP BIT(4)
 #define TLS_CONN_SUITEB BIT(11)
 #define TLS_CONN_EAP_FAST BIT(7)
+#define TLS_CONN_USE_DEFAULT_CERT_BUNDLE BIT(18)
 
 /**
  * struct tls_connection_params - Parameters for TLS connection

@@ -246,6 +246,17 @@ esp_err_t esp_wifi_sta_wpa2_ent_set_pac_file(const unsigned char *pac_file, int 
   */
 esp_err_t esp_wifi_sta_wpa2_ent_set_fast_phase1_params(esp_eap_fast_config config);
 
+/**
+  * @brief  Use default CA cert bundle for server validation
+  *
+  * @use_default_bundle : whether to use bundle or not
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_FAIL: fail
+  */
+esp_err_t esp_wifi_sta_wpa2_use_default_cert_bundle(bool use_default_bundle);
+
 #ifdef __cplusplus
 }
 #endif

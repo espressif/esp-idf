@@ -157,6 +157,9 @@ static void initialise_wifi(void)
     ESP_LOGI(TAG, "Enabling 192 bit certification");
     ESP_ERROR_CHECK(esp_wifi_sta_wpa2_set_suiteb_192bit_certification(true));
 #endif
+#ifdef CONFIG_EXAMPLE_USE_DEFAULT_CERT_BUNDLE
+    ESP_ERROR_CHECK(esp_wifi_sta_wpa2_use_default_cert_bundle(true));
+#endif
     ESP_ERROR_CHECK( esp_wifi_sta_wpa2_ent_enable() );
     ESP_ERROR_CHECK( esp_wifi_start() );
 }

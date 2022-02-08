@@ -30,6 +30,8 @@ which are undefined if the following flag is not defined */
 #else
 #include "mbedtls/config.h"
 #endif
+#include "eap_peer/eap.h"
+
 
 #define TLS_RANDOM_LEN 32
 #define TLS_MASTER_SECRET_LEN 48
@@ -506,7 +508,6 @@ static int set_client_config(const struct tls_connection_params *cfg, tls_contex
 		if (ret != 0) {
 			return ret;
 		}
-		mbedtls_ssl_conf_ca_chain(&tls->conf, tls->cacert_ptr, NULL);
 	} else {
 		mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_NONE);
 	}
@@ -523,6 +524,19 @@ static int set_client_config(const struct tls_connection_params *cfg, tls_contex
 	 * and can cause watchdog. Enabling the ciphers which are secured enough
 	 * but doesn't take that much processing power */
 	tls_set_ciphersuite(cfg, tls);
+
+#ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+	if (cfg->flags & TLS_CONN_USE_DEFAULT_CERT_BUNDLE) {
+		wpa_printf(MSG_INFO, "Using default cert bundle");
+		if (esp_crt_bundle_attach_fn) {
+			ret = (*esp_crt_bundle_attach_fn)(&tls->conf);
+		}
+		if (ret != 0) {
+			wpa_printf(MSG_ERROR, "Failed to set default cert bundle");
+			return ret;
+		}
+	}
+#endif
 
 	return 0;
 }
