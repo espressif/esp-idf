@@ -106,7 +106,7 @@ static inline void rmt_ll_enable_tx_pingpong(rmt_dev_t *dev, bool enable)
 
 static inline void rmt_ll_enable_mem_access(rmt_dev_t *dev, bool enable)
 {
-    dev->apb_conf.fifo_mask = enable;
+    dev->apb_conf.apb_fifo_mask = enable;
 }
 
 static inline void rmt_ll_set_rx_idle_thres(rmt_dev_t *dev, uint32_t channel, uint32_t thres)
@@ -218,17 +218,7 @@ static inline uint32_t rmt_ll_get_channel_status(rmt_dev_t *dev, uint32_t channe
 
 static inline void rmt_ll_set_tx_limit(rmt_dev_t *dev, uint32_t channel, uint32_t limit)
 {
-    dev->tx_lim_ch[channel].limit = limit;
-}
-
-static inline void rmt_ll_set_rx_limit(rmt_dev_t *dev, uint32_t channel, uint32_t limit)
-{
-    dev->tx_lim_ch[channel].rx_lim = limit;
-}
-
-static inline uint32_t rmt_ll_get_rx_limit(rmt_dev_t *dev, uint32_t channel)
-{
-    return dev->tx_lim_ch[channel].rx_lim;
+    dev->tx_lim_ch[channel].tx_lim = limit;
 }
 
 static inline void rmt_ll_enable_tx_end_interrupt(rmt_dev_t *dev, uint32_t channel, bool enable)
@@ -261,12 +251,6 @@ static inline void rmt_ll_enable_tx_loop_interrupt(rmt_dev_t *dev, uint32_t chan
     dev->int_ena.val |= (enable << (channel + 16));
 }
 
-static inline void rmt_ll_enable_rx_thres_interrupt(rmt_dev_t *dev, uint32_t channel, bool enable)
-{
-    dev->int_ena.val &= ~(1 << (channel + 20));
-    dev->int_ena.val |= (enable << (channel + 20));
-}
-
 static inline void rmt_ll_clear_tx_end_interrupt(rmt_dev_t *dev, uint32_t channel)
 {
     dev->int_clr.val = (1 << (channel * 3));
@@ -290,11 +274,6 @@ static inline void rmt_ll_clear_tx_thres_interrupt(rmt_dev_t *dev, uint32_t chan
 static inline void rmt_ll_clear_tx_loop_interrupt(rmt_dev_t *dev, uint32_t channel)
 {
     dev->int_clr.val = (1 << (channel + 16));
-}
-
-static inline void rmt_ll_clear_rx_thres_interrupt(rmt_dev_t *dev, uint32_t channel)
-{
-    dev->int_clr.val = (1 << (channel + 20));
 }
 
 static inline uint32_t rmt_ll_get_tx_end_interrupt_status(rmt_dev_t *dev)
@@ -325,12 +304,6 @@ static inline uint32_t rmt_ll_get_tx_loop_interrupt_status(rmt_dev_t *dev)
 {
     uint32_t status =  dev->int_st.val;
     return (status & 0xF0000) >> 16;
-}
-
-static inline uint32_t rmt_ll_get_rx_thres_interrupt_status(rmt_dev_t *dev)
-{
-    uint32_t status =  dev->int_st.val;
-    return (status & 0xF00000) >> 20;
 }
 
 static inline void rmt_ll_set_tx_carrier_high_low_ticks(rmt_dev_t *dev, uint32_t channel, uint32_t high_ticks, uint32_t low_ticks)
@@ -378,11 +351,6 @@ static inline void rmt_ll_write_memory(rmt_mem_t *mem, uint32_t channel, const r
     for (uint32_t i = 0; i < length; i++) {
         mem->chan[channel].data32[i + off].val = data[i].val;
     }
-}
-
-static inline void rmt_ll_enable_rx_pingpong(rmt_dev_t *dev, uint32_t channel, bool enable)
-{
-    dev->conf_ch[channel].conf1.chk_rx_carrier_en = enable;
 }
 
 /************************************************************************************************
