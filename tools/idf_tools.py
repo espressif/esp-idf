@@ -55,6 +55,7 @@ import ssl
 import subprocess
 import sys
 import tarfile
+import time
 import zipfile
 from collections import OrderedDict, namedtuple
 
@@ -368,20 +369,20 @@ def urlretrieve_ctx(url, filename, reporthook=None, data=None, context=None):
 # https://github.com/espressif/esp-idf/issues/3819#issuecomment-515167118
 # https://github.com/espressif/esp-idf/issues/4063#issuecomment-531490140
 # https://stackoverflow.com/a/43046729
-def rename_with_retry(path_from, path_to):
-    if sys.platform.startswith('win'):
-        retry_count = 100
-    else:
-        retry_count = 1
-
+def rename_with_retry(path_from, path_to):  # type: (str, str) -> None
+    retry_count = 20 if sys.platform.startswith('win') else 1
     for retry in range(retry_count):
         try:
             os.rename(path_from, path_to)
             return
-        except (OSError, WindowsError):       # WindowsError until Python 3.3, then OSError
+        except OSError:
+            msg = 'Rename {} to {} failed'.format(path_from, path_to)
             if retry == retry_count - 1:
+                fatal(msg + '. Antivirus software might be causing this. Disabling it temporarily could solve the issue.')
                 raise
-            warn('Rename {} to {} failed, retrying...'.format(path_from, path_to))
+            warn(msg + ', retrying...')
+            # Sleep before the next try in order to pass the antivirus check on Windows
+            time.sleep(0.5)
 
 
 def strip_container_dirs(path, levels):
