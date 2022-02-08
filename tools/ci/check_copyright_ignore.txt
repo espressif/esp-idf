@@ -414,7 +414,6 @@ components/console/argtable3/argtable3.h
 components/console/linenoise/linenoise.c
 components/console/linenoise/linenoise.h
 components/driver/include/driver/usb_serial_jtag.h
-components/driver/usb_serial_jtag.c
 components/esp32/include/rom/aes.h
 components/esp32/include/rom/bigint.h
 components/esp32/include/rom/cache.h
@@ -490,8 +489,6 @@ components/esp_hid/private/ble_hidh.h
 components/esp_hid/private/bt_hidd.h
 components/esp_hid/private/bt_hidh.h
 components/esp_hid/private/esp_hidd_private.h
-components/esp_hid/private/esp_hidh_private.h
-components/esp_hid/src/ble_hidh.c
 components/esp_hid/src/bt_hidd.c
 components/esp_hid/src/bt_hidh.c
 components/esp_hid/src/esp_hid_common.c
@@ -523,7 +520,6 @@ components/esp_local_ctrl/src/esp_local_ctrl_priv.h
 components/esp_local_ctrl/src/esp_local_ctrl_transport_ble.c
 components/esp_local_ctrl/src/esp_local_ctrl_transport_httpd.c
 components/esp_netif/esp_netif_handlers.c
-components/esp_netif/esp_netif_objects.c
 components/esp_netif/include/esp_netif_net_stack.h
 components/esp_netif/include/esp_netif_ppp.h
 components/esp_netif/include/esp_netif_slip.h
@@ -817,7 +813,6 @@ components/espcoredump/include_core_dump/port/riscv/esp_core_dump_port_impl.h
 components/espcoredump/include_core_dump/port/xtensa/esp_core_dump_port_impl.h
 components/espcoredump/src/core_dump_binary.c
 components/espcoredump/src/core_dump_checksum.c
-components/espcoredump/src/core_dump_elf.c
 components/espcoredump/src/core_dump_flash.c
 components/espcoredump/src/core_dump_uart.c
 components/espcoredump/src/port/riscv/core_dump_port.c
@@ -1224,8 +1219,6 @@ components/mdns/host_test/components/esp_timer_linux/timer_task.cpp
 components/mdns/host_test/components/esp_timer_linux/timer_task.hpp
 components/mdns/host_test/components/freertos_linux/freertos_linux.c
 components/mdns/host_test/components/freertos_linux/include/esp_task.h
-components/mdns/host_test/components/freertos_linux/include/freertos/FreeRTOS.h
-components/mdns/host_test/components/freertos_linux/include/freertos/task.h
 components/mdns/host_test/components/freertos_linux/queue_unique_ptr.cpp
 components/mdns/host_test/components/freertos_linux/queue_unique_ptr.hpp
 components/mdns/host_test/main/main.c
@@ -1389,7 +1382,6 @@ components/protocomm/python/session_pb2.py
 components/protocomm/src/common/protocomm.c
 components/protocomm/src/common/protocomm_priv.h
 components/protocomm/src/security/security0.c
-components/protocomm/src/transports/protocomm_console.c
 components/protocomm/test/test_protocomm.c
 components/pthread/pthread_cond_var.c
 components/pthread/pthread_internal.h
@@ -1953,7 +1945,6 @@ components/vfs/test/test_vfs_access.c
 components/vfs/test/test_vfs_append.c
 components/vfs/test/test_vfs_lwip.c
 components/vfs/test/test_vfs_paths.c
-components/vfs/test/test_vfs_select.c
 components/vfs/test/test_vfs_uart.c
 components/vfs/vfs_eventfd.c
 components/wear_levelling/Partition.cpp
@@ -2565,7 +2556,6 @@ examples/protocols/openssl_server/example_test.py
 examples/protocols/openssl_server/main/openssl_server_example.h
 examples/protocols/openssl_server/main/openssl_server_example_main.c
 examples/protocols/slip/slip_udp/components/slip_modem/include/slip_modem.h
-examples/protocols/slip/slip_udp/components/slip_modem/library/slip_modem.c
 examples/protocols/slip/slip_udp/main/slip_client_main.c
 examples/protocols/smtp_client/main/smtp_client_example_main.c
 examples/protocols/sntp/example_test.py

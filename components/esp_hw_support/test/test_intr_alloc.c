@@ -247,7 +247,7 @@ void isr_alloc_free_test(void)
     }
     TEST_ASSERT(ret == ESP_OK);
     xTaskCreatePinnedToCore(isr_free_task, "isr_free_task", 1024 * 2, (void *)&test_handle, 10, NULL, !xPortGetCoreID());
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ASSERT(test_handle == NULL);
     printf("test passed\n");
 }

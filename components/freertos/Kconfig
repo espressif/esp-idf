@@ -219,6 +219,13 @@ menu "FreeRTOS"
 
             For most uses, the default of 16 is OK.
 
+    config FREERTOS_ENABLE_BACKWARD_COMPATIBILITY
+        bool "Support legacy FreeRTOS API"
+        default n
+        help
+            This option enables the configENABLE_BACKWARD_COMPATIBILITY option, thus allowing the usage
+            of legacy function names and types present in versions prior to FreeRTOS v8.0.0.
+
     config FREERTOS_SUPPORT_STATIC_ALLOCATION
         # Always enabled.
         # Kconfig option preserved for compatibility with code

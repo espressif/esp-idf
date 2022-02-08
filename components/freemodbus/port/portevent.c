@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * SPDX-FileContributor: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
  */
 /*
  * FreeModbus Libary: ESP32 Port Demo Application
@@ -47,7 +47,7 @@
 #include "sdkconfig.h"
 #include "port_serial_slave.h"
 /* ----------------------- Variables ----------------------------------------*/
-static xQueueHandle xQueueHdl;
+static QueueHandle_t xQueueHdl;
 
 #define MB_EVENT_QUEUE_SIZE     (6)
 #define MB_EVENT_QUEUE_TIMEOUT  (pdMS_TO_TICKS(CONFIG_FMB_EVENT_QUEUE_TIMEOUT))
@@ -113,7 +113,7 @@ xMBPortEventGet(eMBEventType * peEvent)
     return xEventHappened;
 }
 
-xQueueHandle
+QueueHandle_t
 xMBPortEventGetHandle(void)
 {
     if(xQueueHdl != NULL)

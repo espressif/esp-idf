@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -141,8 +141,8 @@ static uint64_t s_time_new, s_time_old;
 static esp_timer_handle_t s_periodic_timer;
 static uint64_t s_last_enter_time, s_now_enter_time;
 static uint64_t s_us_duration;
-static xSemaphoreHandle s_send_data_Semaphore = NULL;
-static xTaskHandle s_bt_app_send_data_task_handler = NULL;
+static SemaphoreHandle_t s_send_data_Semaphore = NULL;
+static TaskHandle_t s_bt_app_send_data_task_handler = NULL;
 static esp_hf_audio_state_t s_audio_code;
 
 static void print_speed(void);
@@ -214,7 +214,7 @@ static void bt_app_send_data_task(void *arg)
     uint32_t item_size = 0;
     uint8_t *buf = NULL;
     for (;;) {
-        if (xSemaphoreTake(s_send_data_Semaphore, (portTickType)portMAX_DELAY)) {
+        if (xSemaphoreTake(s_send_data_Semaphore, (TickType_t)portMAX_DELAY)) {
             s_now_enter_time = esp_timer_get_time();
             s_us_duration = s_now_enter_time - s_last_enter_time;
             if(s_audio_code == ESP_HF_AUDIO_STATE_CONNECTED_MSBC) {

@@ -39,7 +39,7 @@ typedef struct {
 static uint32_t cap_val_begin_of_sample = 0;
 static uint32_t cap_val_end_of_sample = 0;
 
-static xQueueHandle cap_queue;
+static QueueHandle_t cap_queue;
 
 /**
  * @brief generate single pulse on Trig pin to activate a new sample

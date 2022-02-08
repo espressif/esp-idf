@@ -38,7 +38,7 @@ static void uart_wakeup_task(void *arg)
 
     while(1) {
         // Waiting for UART event.
-        if(xQueueReceive(uart_evt_que, (void * )&event, (portTickType)portMAX_DELAY)) {
+        if(xQueueReceive(uart_evt_que, (void * )&event, (TickType_t)portMAX_DELAY)) {
             ESP_LOGI(TAG, "uart%d recved event:%d", EXAMPLE_UART_NUM, event.type);
             switch(event.type) {
                 case UART_DATA:

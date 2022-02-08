@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -146,7 +146,7 @@ static void print_debug_exception_details(const void *f)
             }
 #endif
 
-            const char *name = pcTaskGetTaskName(xTaskGetCurrentTaskHandleForCPU(core));
+            const char *name = pcTaskGetName(xTaskGetCurrentTaskHandleForCPU(core));
             panic_print_str("Stack canary watchpoint triggered (");
             panic_print_str(name);
             panic_print_str(") ");

@@ -296,7 +296,7 @@ TEST_CASE("eventfd select closed fd", "[vfs][eventfd]")
 }
 
 typedef struct {
-    xQueueHandle queue;
+    QueueHandle_t queue;
     int fd;
 } select_task_args_t;
 

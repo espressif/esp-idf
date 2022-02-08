@@ -273,7 +273,7 @@ void start_esp_local_ctrl_service(void)
     /* Just for fun, let us keep toggling the value
      * of the boolean property2, every 1 second */
     while (1) {
-        vTaskDelay(1000 / portTICK_RATE_MS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
         prop2_value = !prop2_value;
     }
 }

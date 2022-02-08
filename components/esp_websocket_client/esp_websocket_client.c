@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -105,7 +105,7 @@ struct esp_websocket_client {
     bool                        run;
     bool                        wait_for_pong_resp;
     EventGroupHandle_t          status_bits;
-    xSemaphoreHandle            lock;
+    SemaphoreHandle_t            lock;
     char                        *rx_buffer;
     char                        *tx_buffer;
     int                         buffer_size;
@@ -696,7 +696,7 @@ static void esp_websocket_client_task(void *pv)
             }
         } else if (WEBSOCKET_STATE_WAIT_TIMEOUT == client->state) {
             // waiting for reconnecting...
-            vTaskDelay(client->wait_timeout_ms / 2 / portTICK_RATE_MS);
+            vTaskDelay(client->wait_timeout_ms / 2 / portTICK_PERIOD_MS);
         } else if (WEBSOCKET_STATE_CLOSING == client->state &&
                   (CLOSE_FRAME_SENT_BIT & xEventGroupGetBits(client->status_bits))) {
             ESP_LOGD(TAG, " Waiting for TCP connection to be closed by the server");

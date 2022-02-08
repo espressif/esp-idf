@@ -167,7 +167,7 @@ void esp_mesh_mqtt_task(void *arg)
                         MACSTR ": sent with err code: %d", i, MAC2STR(s_route_table[i].addr), err);
             }
         }
-        vTaskDelay(2 * 1000 / portTICK_RATE_MS);
+        vTaskDelay(2 * 1000 / portTICK_PERIOD_MS);
     }
     vTaskDelete(NULL);
 }

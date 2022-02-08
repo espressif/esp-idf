@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,7 +42,7 @@
 #define PCNT_CTRL_HIGH_LEVEL 1
 #define PCNT_CTRL_LOW_LEVEL 0
 
-static xQueueHandle pcnt_evt_queue = NULL;
+static QueueHandle_t pcnt_evt_queue = NULL;
 
 typedef struct {
     int zero_times;
@@ -217,7 +217,7 @@ static void count_mode_test(gpio_num_t ctl_io)
         result = result2;
     }
     // Wait for ledc and pcnt settling down
-    vTaskDelay(500 / portTICK_RATE_MS);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
 
     // 1, 0, 0, 0
     TEST_ESP_OK(pcnt_counter_pause(PCNT_UNIT_0));
@@ -226,7 +226,7 @@ static void count_mode_test(gpio_num_t ctl_io)
                               PCNT_COUNT_INC, PCNT_COUNT_DIS,
                               PCNT_MODE_KEEP, PCNT_MODE_KEEP));
     TEST_ESP_OK(pcnt_counter_resume(PCNT_UNIT_0));
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
     printf("value: %d\n", test_counter);
     TEST_ASSERT_INT16_WITHIN(1, test_counter, result[0]);
@@ -238,7 +238,7 @@ static void count_mode_test(gpio_num_t ctl_io)
                               PCNT_COUNT_DEC, PCNT_COUNT_DIS,
                               PCNT_MODE_KEEP, PCNT_MODE_KEEP));
     TEST_ESP_OK(pcnt_counter_resume(PCNT_UNIT_0));
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
     printf("value: %d\n", test_counter);
     TEST_ASSERT_INT16_WITHIN(1, test_counter, result[1]);
@@ -250,7 +250,7 @@ static void count_mode_test(gpio_num_t ctl_io)
                               PCNT_COUNT_DIS, PCNT_COUNT_DIS,
                               PCNT_MODE_KEEP, PCNT_MODE_KEEP));
     TEST_ESP_OK(pcnt_counter_resume(PCNT_UNIT_0));
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
     printf("value: %d\n", test_counter);
     TEST_ASSERT_INT16_WITHIN(1, test_counter, result[2]);
@@ -262,7 +262,7 @@ static void count_mode_test(gpio_num_t ctl_io)
                               PCNT_COUNT_INC, PCNT_COUNT_DIS,
                               PCNT_MODE_REVERSE, PCNT_MODE_KEEP));
     TEST_ESP_OK(pcnt_counter_resume(PCNT_UNIT_0));
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
     printf("value: %d\n", test_counter);
     TEST_ASSERT_INT16_WITHIN(1, test_counter, result[3]);
@@ -274,7 +274,7 @@ static void count_mode_test(gpio_num_t ctl_io)
                               PCNT_COUNT_INC, PCNT_COUNT_DIS,
                               PCNT_MODE_KEEP, PCNT_MODE_REVERSE));
     TEST_ESP_OK(pcnt_counter_resume(PCNT_UNIT_0));
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
     printf("value: %d\n", test_counter);
     TEST_ASSERT_INT16_WITHIN(1, test_counter, result[4]);
@@ -286,7 +286,7 @@ static void count_mode_test(gpio_num_t ctl_io)
                               PCNT_COUNT_DEC, PCNT_COUNT_DIS,
                               PCNT_MODE_REVERSE, PCNT_MODE_KEEP));
     TEST_ESP_OK(pcnt_counter_resume(PCNT_UNIT_0));
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
     printf("value: %d\n", test_counter);
     TEST_ASSERT_INT16_WITHIN(1, test_counter, result[5]);
@@ -298,7 +298,7 @@ static void count_mode_test(gpio_num_t ctl_io)
                               PCNT_COUNT_INC, PCNT_COUNT_DIS,
                               PCNT_MODE_DISABLE, PCNT_MODE_KEEP));
     TEST_ESP_OK(pcnt_counter_resume(PCNT_UNIT_0));
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
     printf("value: %d\n", test_counter);
     TEST_ASSERT_INT16_WITHIN(1, test_counter, result[6]);
@@ -310,7 +310,7 @@ static void count_mode_test(gpio_num_t ctl_io)
                               PCNT_COUNT_INC, PCNT_COUNT_DIS,
                               PCNT_MODE_KEEP, PCNT_MODE_DISABLE));
     TEST_ESP_OK(pcnt_counter_resume(PCNT_UNIT_0));
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
     printf("value: %d\n", test_counter);
     TEST_ASSERT_INT16_WITHIN(1, test_counter, result[7]);
@@ -420,7 +420,7 @@ TEST_CASE("PCNT basic function test", "[pcnt]")
 
     //count now
     while (time != 10) {
-        vTaskDelay(501 / portTICK_RATE_MS);  // in case of can't wait to get counter(edge effect)
+        vTaskDelay(501 / portTICK_PERIOD_MS);  // in case of can't wait to get counter(edge effect)
         TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
         printf("COUNT: %d\n", test_counter);
         TEST_ASSERT_NOT_EQUAL(test_counter, temp_value);
@@ -436,14 +436,14 @@ TEST_CASE("PCNT basic function test", "[pcnt]")
         if (test_counter == 0) {
             //test pause
             TEST_ESP_OK(pcnt_counter_pause(PCNT_UNIT_0));
-            vTaskDelay(500 / portTICK_RATE_MS);
+            vTaskDelay(500 / portTICK_PERIOD_MS);
             TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
             printf("PAUSE: %d\n", test_counter);
             TEST_ASSERT_EQUAL_INT16(test_counter, 0);
 
             // test resume
             TEST_ESP_OK(pcnt_counter_resume(PCNT_UNIT_0));
-            vTaskDelay(500 / portTICK_RATE_MS);
+            vTaskDelay(500 / portTICK_PERIOD_MS);
             TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
             printf("RESUME: %d\n", test_counter);
             TEST_ASSERT_EQUAL_INT16(test_counter, 1);

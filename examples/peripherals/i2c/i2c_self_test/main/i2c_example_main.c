@@ -73,7 +73,7 @@ static esp_err_t __attribute__((unused)) i2c_master_read_slave(i2c_port_t i2c_nu
     }
     i2c_master_read_byte(cmd, data_rd + size - 1, NACK_VAL);
     i2c_master_stop(cmd);
-    esp_err_t ret = i2c_master_cmd_begin(i2c_num, cmd, 1000 / portTICK_RATE_MS);
+    esp_err_t ret = i2c_master_cmd_begin(i2c_num, cmd, 1000 / portTICK_PERIOD_MS);
     i2c_cmd_link_delete(cmd);
     return ret;
 }
@@ -97,7 +97,7 @@ static esp_err_t __attribute__((unused)) i2c_master_write_slave(i2c_port_t i2c_n
     i2c_master_write_byte(cmd, (ESP_SLAVE_ADDR << 1) | WRITE_BIT, ACK_CHECK_EN);
     i2c_master_write(cmd, data_wr, size, ACK_CHECK_EN);
     i2c_master_stop(cmd);
-    esp_err_t ret = i2c_master_cmd_begin(i2c_num, cmd, 1000 / portTICK_RATE_MS);
+    esp_err_t ret = i2c_master_cmd_begin(i2c_num, cmd, 1000 / portTICK_PERIOD_MS);
     i2c_cmd_link_delete(cmd);
     return ret;
 }
@@ -123,19 +123,19 @@ static esp_err_t i2c_master_sensor_test(i2c_port_t i2c_num, uint8_t *data_h, uin
     i2c_master_write_byte(cmd, BH1750_SENSOR_ADDR << 1 | WRITE_BIT, ACK_CHECK_EN);
     i2c_master_write_byte(cmd, BH1750_CMD_START, ACK_CHECK_EN);
     i2c_master_stop(cmd);
-    ret = i2c_master_cmd_begin(i2c_num, cmd, 1000 / portTICK_RATE_MS);
+    ret = i2c_master_cmd_begin(i2c_num, cmd, 1000 / portTICK_PERIOD_MS);
     i2c_cmd_link_delete(cmd);
     if (ret != ESP_OK) {
         return ret;
     }
-    vTaskDelay(30 / portTICK_RATE_MS);
+    vTaskDelay(30 / portTICK_PERIOD_MS);
     cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
     i2c_master_write_byte(cmd, BH1750_SENSOR_ADDR << 1 | READ_BIT, ACK_CHECK_EN);
     i2c_master_read_byte(cmd, data_h, ACK_VAL);
     i2c_master_read_byte(cmd, data_l, NACK_VAL);
     i2c_master_stop(cmd);
-    ret = i2c_master_cmd_begin(i2c_num, cmd, 1000 / portTICK_RATE_MS);
+    ret = i2c_master_cmd_begin(i2c_num, cmd, 1000 / portTICK_PERIOD_MS);
     i2c_cmd_link_delete(cmd);
     return ret;
 }
@@ -230,14 +230,14 @@ static void i2c_test_task(void *arg)
             ESP_LOGW(TAG, "%s: No ack, sensor not connected...skip...", esp_err_to_name(ret));
         }
         xSemaphoreGive(print_mux);
-        vTaskDelay((DELAY_TIME_BETWEEN_ITEMS_MS * (task_idx + 1)) / portTICK_RATE_MS);
+        vTaskDelay((DELAY_TIME_BETWEEN_ITEMS_MS * (task_idx + 1)) / portTICK_PERIOD_MS);
         //---------------------------------------------------
 #if !CONFIG_IDF_TARGET_ESP32C3
         for (i = 0; i < DATA_LENGTH; i++) {
             data[i] = i;
         }
         xSemaphoreTake(print_mux, portMAX_DELAY);
-        size_t d_size = i2c_slave_write_buffer(I2C_SLAVE_NUM, data, RW_TEST_LENGTH, 1000 / portTICK_RATE_MS);
+        size_t d_size = i2c_slave_write_buffer(I2C_SLAVE_NUM, data, RW_TEST_LENGTH, 1000 / portTICK_PERIOD_MS);
         if (d_size == 0) {
             ESP_LOGW(TAG, "i2c slave tx buffer full");
             ret = i2c_master_read_slave(I2C_MASTER_NUM, data_rd, DATA_LENGTH);
@@ -260,7 +260,7 @@ static void i2c_test_task(void *arg)
                      task_idx, esp_err_to_name(ret));
         }
         xSemaphoreGive(print_mux);
-        vTaskDelay((DELAY_TIME_BETWEEN_ITEMS_MS * (task_idx + 1)) / portTICK_RATE_MS);
+        vTaskDelay((DELAY_TIME_BETWEEN_ITEMS_MS * (task_idx + 1)) / portTICK_PERIOD_MS);
         //---------------------------------------------------
         int size;
         for (i = 0; i < DATA_LENGTH; i++) {
@@ -270,7 +270,7 @@ static void i2c_test_task(void *arg)
         //we need to fill the slave buffer so that master can read later
         ret = i2c_master_write_slave(I2C_MASTER_NUM, data_wr, RW_TEST_LENGTH);
         if (ret == ESP_OK) {
-            size = i2c_slave_read_buffer(I2C_SLAVE_NUM, data, RW_TEST_LENGTH, 1000 / portTICK_RATE_MS);
+            size = i2c_slave_read_buffer(I2C_SLAVE_NUM, data, RW_TEST_LENGTH, 1000 / portTICK_PERIOD_MS);
         }
         if (ret == ESP_ERR_TIMEOUT) {
             ESP_LOGE(TAG, "I2C Timeout");
@@ -287,7 +287,7 @@ static void i2c_test_task(void *arg)
                      task_idx, esp_err_to_name(ret));
         }
         xSemaphoreGive(print_mux);
-        vTaskDelay((DELAY_TIME_BETWEEN_ITEMS_MS * (task_idx + 1)) / portTICK_RATE_MS);
+        vTaskDelay((DELAY_TIME_BETWEEN_ITEMS_MS * (task_idx + 1)) / portTICK_PERIOD_MS);
 #endif //!CONFIG_IDF_TARGET_ESP32C3
     }
     vSemaphoreDelete(print_mux);

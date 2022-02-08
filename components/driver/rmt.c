@@ -77,7 +77,7 @@ typedef struct {
     bool loop_autostop; // mark whether loop auto-stop is enabled
     rmt_channel_t channel;
     const rmt_item32_t *tx_data;
-    xSemaphoreHandle tx_sem;
+    SemaphoreHandle_t tx_sem;
 #if CONFIG_SPIRAM_USE_MALLOC
     int intr_alloc_flags;
     StaticSemaphore_t tx_sem_buffer;

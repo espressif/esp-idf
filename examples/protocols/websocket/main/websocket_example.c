@@ -121,7 +121,7 @@ static void websocket_app_start(void)
             ESP_LOGI(TAG, "Sending %s", data);
             esp_websocket_client_send_text(client, data, len, portMAX_DELAY);
         }
-        vTaskDelay(1000 / portTICK_RATE_MS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 
     xSemaphoreTake(shutdown_sema, portMAX_DELAY);

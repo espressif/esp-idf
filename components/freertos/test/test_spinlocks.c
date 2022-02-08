@@ -1,4 +1,9 @@
 /*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/*
  Combined unit tests & benchmarking for spinlock "portMUX" functionality
 */
 
@@ -73,7 +78,7 @@ TEST_CASE("portMUX recursive locks (no contention)", "[freertos]")
 
 static volatile int shared_value;
 static portMUX_TYPE shared_mux;
-static xSemaphoreHandle done_sem;
+static SemaphoreHandle_t done_sem;
 
 static void task_shared_value_increment(void *ignore)
 {

@@ -306,7 +306,7 @@ The following example demonstrates queue set usage with ring buffers.
     ...
 
         //Block on queue set
-        xQueueSetMemberHandle member = xQueueSelectFromSet(queue_set, pdMS_TO_TICKS(1000));
+        QueueSetMemberHandle_t member = xQueueSelectFromSet(queue_set, pdMS_TO_TICKS(1000));
 
         //Check if member is ring buffer
         if (member != NULL && xRingbufferCanRead(buf_handle, member) == pdTRUE) {

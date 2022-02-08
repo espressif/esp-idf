@@ -72,7 +72,7 @@ static const char *s_a2d_audio_state_str[] = {"Suspended", "Stopped", "Started"}
 static esp_avrc_rn_evt_cap_mask_t s_avrc_peer_rn_cap;
                                              /* AVRC target notification capability bit mask */
 static _lock_t s_volume_lock;
-static xTaskHandle s_vcs_task_hdl = NULL;    /* handle for volume change simulation task */
+static TaskHandle_t s_vcs_task_hdl = NULL;    /* handle for volume change simulation task */
 static uint8_t s_volume = 0;                 /* local volume value */
 static bool s_volume_notify;                 /* notify volume change or not */
 
@@ -183,7 +183,7 @@ static void volume_change_simulation(void *arg)
 
     for (;;) {
         /* volume up locally every 10 seconds */
-        vTaskDelay(10000 / portTICK_RATE_MS);
+        vTaskDelay(10000 / portTICK_PERIOD_MS);
         uint8_t volume = (s_volume + 5) & 0x7f;
         volume_set_by_local_host(volume);
     }

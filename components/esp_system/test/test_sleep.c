@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -514,7 +514,7 @@ static void trigger_deepsleep(void)
     esp_set_time_from_rtc();
 
     // Delay for time error accumulation.
-    vTaskDelay(10000/portTICK_RATE_MS);
+    vTaskDelay(10000/portTICK_PERIOD_MS);
 
     // Save start time. Deep sleep.
     gettimeofday(&start, NULL);

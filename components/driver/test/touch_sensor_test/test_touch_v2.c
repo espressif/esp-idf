@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -2070,7 +2070,7 @@ void test_touch_slope_debug(int pad_num)
             scope_temp[i] = scope_data[i];
         }
         test_tp_print_to_scope(scope_temp, TEST_TOUCH_CHANNEL);
-        vTaskDelay(SCOPE_DEBUG_FREQ_MS / portTICK_RATE_MS);
+        vTaskDelay(SCOPE_DEBUG_FREQ_MS / portTICK_PERIOD_MS);
     }
 #elif SCOPE_DEBUG_TYPE == 1
     while (1) {
@@ -2084,13 +2084,13 @@ void test_touch_slope_debug(int pad_num)
             scope_temp[i + SCOPE_DEBUG_CHANNEL_MAX / 2] = scope_data[i];
         }
         test_tp_print_to_scope(scope_temp, SCOPE_DEBUG_CHANNEL_MAX);
-        vTaskDelay(SCOPE_DEBUG_FREQ_MS / portTICK_RATE_MS);
+        vTaskDelay(SCOPE_DEBUG_FREQ_MS / portTICK_PERIOD_MS);
     }
 #elif SCOPE_DEBUG_TYPE == 2
     uint32_t status;
     touch_pad_read_benchmark(pad_num, &status);
     while (1) {
-        xQueueReceive(que_touch, &evt, SCOPE_DEBUG_FREQ_MS / portTICK_RATE_MS);
+        xQueueReceive(que_touch, &evt, SCOPE_DEBUG_FREQ_MS / portTICK_PERIOD_MS);
         //read filtered value
         touch_pad_read_raw_data(pad_num, &scope_data[0]);
         touch_pad_read_benchmark(pad_num, &scope_data[1]);

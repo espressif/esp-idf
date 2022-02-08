@@ -129,7 +129,7 @@ static esp_err_t i2c_master_write_to_slave(uint8_t *data, uint32_t size)
     i2c_master_write(cmd, data, size, I2C_ACK_CHECK_DIS);
 
     i2c_master_stop(cmd);
-    esp_err_t ret = i2c_master_cmd_begin(I2C_MASTER_NUM_PORT, cmd, 1000 / portTICK_RATE_MS);
+    esp_err_t ret = i2c_master_cmd_begin(I2C_MASTER_NUM_PORT, cmd, 1000 / portTICK_PERIOD_MS);
     i2c_cmd_link_delete(cmd);
     return ret;
 }
@@ -193,7 +193,7 @@ static void i2c_data_read(void *arg)
     printf("slave mode.read thread start...\r\n");
     while (1) {
         uint8_t data[11] = {0};
-        i2c_slave_read_buffer(I2C_SLAVE_NUM_PORT, data, sizeof(data), 1000 / portTICK_RATE_MS);
+        i2c_slave_read_buffer(I2C_SLAVE_NUM_PORT, data, sizeof(data), 1000 / portTICK_PERIOD_MS);
         ESP_LOG_BUFFER_HEX(TAG, data, sizeof(data));
         vTaskDelay(1);
     }

@@ -32,7 +32,7 @@
 
 static const char *tag = "NimBLE_BLE_HeartRate";
 
-static xTimerHandle blehr_tx_timer;
+static TimerHandle_t blehr_tx_timer;
 
 static bool notify_state;
 
@@ -152,7 +152,7 @@ blehr_tx_hrate_reset(void)
 
 /* This function simulates heart beat and notifies it to the client */
 static void
-blehr_tx_hrate(xTimerHandle ev)
+blehr_tx_hrate(TimerHandle_t ev)
 {
     static uint8_t hrm[2];
     int rc;

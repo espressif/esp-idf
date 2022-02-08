@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -269,7 +269,7 @@ static esp_err_t adc_dma_data_multi_st_check(adc_unit_t adc, void *dma_addr, uin
     }
     TEST_ESP_OK( adc_digi_start() );
     while (1) {
-        TEST_ASSERT_EQUAL( xQueueReceive(que_adc, &evt, SAR_SIMPLE_TIMEOUT_MS / portTICK_RATE_MS), pdTRUE );
+        TEST_ASSERT_EQUAL( xQueueReceive(que_adc, &evt, SAR_SIMPLE_TIMEOUT_MS / portTICK_PERIOD_MS), pdTRUE );
         if (evt.int_msk & SPI_IN_SUC_EOF_INT_ENA) {
             break;
         }
@@ -285,7 +285,7 @@ static esp_err_t adc_dma_data_multi_st_check(adc_unit_t adc, void *dma_addr, uin
     }
     TEST_ESP_OK( adc_digi_start() );
     while (1) {
-        TEST_ASSERT_EQUAL( xQueueReceive(que_adc, &evt, SAR_SIMPLE_TIMEOUT_MS / portTICK_RATE_MS), pdTRUE );
+        TEST_ASSERT_EQUAL( xQueueReceive(que_adc, &evt, SAR_SIMPLE_TIMEOUT_MS / portTICK_PERIOD_MS), pdTRUE );
         if (evt.int_msk & SPI_IN_SUC_EOF_INT_ENA) {
             break;
         }
@@ -301,7 +301,7 @@ static esp_err_t adc_dma_data_multi_st_check(adc_unit_t adc, void *dma_addr, uin
     }
     TEST_ESP_OK( adc_digi_start() );
     while (1) {
-        TEST_ASSERT_EQUAL( xQueueReceive(que_adc, &evt, SAR_SIMPLE_TIMEOUT_MS / portTICK_RATE_MS), pdTRUE );
+        TEST_ASSERT_EQUAL( xQueueReceive(que_adc, &evt, SAR_SIMPLE_TIMEOUT_MS / portTICK_PERIOD_MS), pdTRUE );
         if (evt.int_msk & SPI_IN_SUC_EOF_INT_ENA) {
             break;
         }
@@ -317,7 +317,7 @@ static esp_err_t adc_dma_data_multi_st_check(adc_unit_t adc, void *dma_addr, uin
     }
     TEST_ESP_OK( adc_digi_start() );
     while (1) {
-        TEST_ASSERT_EQUAL( xQueueReceive(que_adc, &evt, SAR_SIMPLE_TIMEOUT_MS / portTICK_RATE_MS), pdTRUE );
+        TEST_ASSERT_EQUAL( xQueueReceive(que_adc, &evt, SAR_SIMPLE_TIMEOUT_MS / portTICK_PERIOD_MS), pdTRUE );
         if (evt.int_msk & SPI_IN_SUC_EOF_INT_ENA) {
             break;
         }
@@ -460,7 +460,7 @@ int test_adc_dig_dma_single_unit(adc_unit_t adc)
     adc_dac_dma_linker_deinit();
     adc_dac_dma_isr_deregister(adc_dma_isr, NULL);
     TEST_ESP_OK( adc_digi_deinit() );
-    vTaskDelay(10 / portTICK_RATE_MS);
+    vTaskDelay(10 / portTICK_PERIOD_MS);
 
     return 0;
 }
@@ -601,7 +601,7 @@ static void scope_output(int adc_num, int channel, int data)
     }
     if (i == adc_test_num) {
         test_tp_print_to_scope(scope_temp, adc_test_num);
-        vTaskDelay(SCOPE_DEBUG_FREQ_MS / portTICK_RATE_MS);
+        vTaskDelay(SCOPE_DEBUG_FREQ_MS / portTICK_PERIOD_MS);
         for (int i = 0; i < adc_test_num; i++) {
             scope_temp[i] = 0;
         }

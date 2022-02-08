@@ -65,7 +65,7 @@ extern ble_mesh_node_statistics_t ble_mesh_node_statistics;
 
 extern SemaphoreHandle_t ble_mesh_node_sema;
 
-#define SEND_MESSAGE_TIMEOUT (30000/portTICK_RATE_MS)
+#define SEND_MESSAGE_TIMEOUT (30000/portTICK_PERIOD_MS)
 
 #define arg_int_to_value(src_msg, dst_msg, message) do { \
     if (src_msg->count != 0) {\

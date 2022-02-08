@@ -191,6 +191,12 @@
 #define configUSE_NEWLIB_REENTRANT                      1
 #endif
 
+#if CONFIG_FREERTOS_ENABLE_BACKWARD_COMPATIBILITY
+#define configENABLE_BACKWARD_COMPATIBILITY             1
+#else
+#define configENABLE_BACKWARD_COMPATIBILITY             0
+#endif
+
 #define configSUPPORT_DYNAMIC_ALLOCATION                1
 #define configSUPPORT_STATIC_ALLOCATION                 1
 

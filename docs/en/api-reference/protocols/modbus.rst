@@ -559,7 +559,7 @@ Example to get event when holding or input registers accessed in the slave:
     #define MB_READ_MASK            (MB_EVENT_INPUT_REG_RD | MB_EVENT_HOLDING_REG_RD)
     #define MB_WRITE_MASK           (MB_EVENT_HOLDING_REG_WR)
     #define MB_READ_WRITE_MASK      (MB_READ_MASK | MB_WRITE_MASK)
-    #define MB_PAR_INFO_GET_TOUT    (10 / portTICK_RATE_MS)                           
+    #define MB_PAR_INFO_GET_TOUT    (10 / portTICK_PERIOD_MS)                           
     ....
                                                 
     // The function blocks while waiting for register access

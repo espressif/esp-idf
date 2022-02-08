@@ -103,7 +103,7 @@ static void sc_ack_send_task(void *pvParameters)
 
     esp_wifi_get_mac(WIFI_IF_STA, ack->ctx.mac);
 
-    vTaskDelay(200 / portTICK_RATE_MS);
+    vTaskDelay(200 / portTICK_PERIOD_MS);
 
     while (s_sc_ack_send) {
         /* Get local IP address of station */
@@ -171,13 +171,13 @@ static void sc_ack_send_task(void *pvParameters)
 
             while (s_sc_ack_send) {
                 /* Send smartconfig ACK every 100ms. */
-                vTaskDelay(100 / portTICK_RATE_MS);
+                vTaskDelay(100 / portTICK_PERIOD_MS);
 
                 sendlen = sendto(send_sock, &ack->ctx, ack_len, 0, (struct sockaddr*) &server_addr, sin_size);
                 if (sendlen <= 0) {
                     err = sc_ack_send_get_errno(send_sock);
                     ESP_LOGD(TAG, "send failed, errno %d", err);
-                    vTaskDelay(100 / portTICK_RATE_MS);
+                    vTaskDelay(100 / portTICK_PERIOD_MS);
                 }
 
                 /*  Send 30 smartconfig ACKs. Then smartconfig is successful. */
@@ -188,7 +188,7 @@ static void sc_ack_send_task(void *pvParameters)
             }
         }
         else {
-            vTaskDelay((portTickType)(100 / portTICK_RATE_MS));
+            vTaskDelay((TickType_t)(100 / portTICK_PERIOD_MS));
         }
     }
 

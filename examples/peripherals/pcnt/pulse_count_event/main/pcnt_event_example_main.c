@@ -49,7 +49,7 @@ static const char *TAG = "example";
 #define PCNT_INPUT_CTRL_IO  5  // Control GPIO HIGH=count up, LOW=count down
 #define LEDC_OUTPUT_IO      18 // Output GPIO of a sample 1 Hz pulse generator
 
-xQueueHandle pcnt_evt_queue;   // A queue to handle pulse counter events
+QueueHandle_t pcnt_evt_queue;   // A queue to handle pulse counter events
 
 /* A sample structure to pass events from the PCNT
  * interrupt handler to the main program.

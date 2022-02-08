@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -507,7 +507,7 @@ static void handle_qThreadExtraInfo_command(const unsigned char *cmd, int len)
     }
     esp_gdbstub_send_start();
     esp_gdbstub_send_str_as_hex("Name: ");
-    esp_gdbstub_send_str_as_hex((const char *)pcTaskGetTaskName(handle));
+    esp_gdbstub_send_str_as_hex((const char *)pcTaskGetName(handle));
     esp_gdbstub_send_hex(' ', 8);
 
     // Current version report only Suspended state
