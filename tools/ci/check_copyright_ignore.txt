@@ -1374,14 +1374,6 @@ components/partition_table/test/test_partition.c
 components/partition_table/test_gen_esp32part_host/check_sizes_test.py
 components/partition_table/test_gen_esp32part_host/gen_esp32part_tests.py
 components/partition_table/test_gen_esp32part_host/test_utils.py
-components/perfmon/include/perfmon.h
-components/perfmon/include/xtensa_perfmon_access.h
-components/perfmon/include/xtensa_perfmon_apis.h
-components/perfmon/include/xtensa_perfmon_masks.h
-components/perfmon/test/test_perfmon_ansi.c
-components/perfmon/xtensa_perfmon_access.c
-components/perfmon/xtensa_perfmon_apis.c
-components/perfmon/xtensa_perfmon_masks.c
 components/protocomm/include/common/protocomm.h
 components/protocomm/include/security/protocomm_security.h
 components/protocomm/include/security/protocomm_security0.h
