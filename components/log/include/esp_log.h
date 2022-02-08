@@ -298,7 +298,6 @@ void esp_log_writev(esp_log_level_t level, const char* tag, const char* format, 
 
 /// macro to output logs in startup code, before heap allocator and syscalls have been initialized.
 /// Log at ``ESP_LOG_ERROR`` level. @see ``printf``,``ESP_LOGE``,``ESP_DRAM_LOGE``
-#define portGET_ARGUMENT_COUNT_INNER(zero, one, count, ...) count
 
 /**
  * In the future, we want to switch to C++20. We also want to become compatible with clang.
