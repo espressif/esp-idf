@@ -7,79 +7,62 @@
 #ifndef FREERTOS_CONFIG_XTENSA_H
 #define FREERTOS_CONFIG_XTENSA_H
 
+//Xtensa Archiecture specific configuration. This file is included in the common FreeRTOSConfig.h.
+
 #include "sdkconfig.h"
 
-/* enable use of optimized task selection by the scheduler */
-#ifdef CONFIG_FREERTOS_OPTIMIZED_SCHEDULER
-#define configUSE_PORT_OPTIMISED_TASK_SELECTION         1
-#endif
+/* Required for configuration-dependent settings. */
+#include "xtensa_config.h"
 
-#define XT_USE_THREAD_SAFE_CLIB                         0
-#undef XT_USE_SWPRI
+/* -------------------------------------------- Xtensa Additional Config  ----------------------------------------------
+ * - Provide Xtensa definitions usually given by -D option when building with xt-make (see readme_xtensa.txt)
+ * - xtensa_rtos.h and xtensa_timer.h will default some of these values
+ *      - XT_SIMULATOR         configXT_SIMULATOR
+ *      - XT_BOARD             configXT_BOARD
+ *      - XT_CLOCK_FREQ        Should not be defined as we are using XT_BOARD mode
+ *      - XT_TICK_PER_SEC      Defaults to configTICK_RATE_HZ
+ *      - XT_TIMER_INDEX       Defaults to configXT_TIMER_INDEX
+ *      - XT_INTEXC_HOOKS      Defaults to configXT_INTEXC_HOOKS
+ *      - XT_USE_OVLY          We don't define this (unused)
+ *      - XT_USE_SWPRI         We don't define this (unused)
+ * ------------------------------------------------------------------------------------------------------------------ */
 
+#define configXT_SIMULATOR                                  0
+#define configXT_BOARD                                      1   /* Board mode */
 #if CONFIG_FREERTOS_CORETIMER_0
-#define XT_TIMER_INDEX                                  0
+#define configXT_TIMER_INDEX                                0
 #elif CONFIG_FREERTOS_CORETIMER_1
-#define XT_TIMER_INDEX                                  1
+#define configXT_TIMER_INDEX                                1
 #endif
+#define configXT_INTEXC_HOOKS                               0
 
-#ifndef __ASSEMBLER__
-/**
- * This function is defined to provide a deprecation warning whenever
- * XT_CLOCK_FREQ macro is used.
- * Update the code to use esp_clk_cpu_freq function instead.
- * @return current CPU clock frequency, in Hz
- */
-int xt_clock_freq(void) __attribute__((deprecated));
+#define configBENCHMARK                                     0
 
-#define XT_CLOCK_FREQ   (xt_clock_freq())
+/* ------------------------------------------------- FreeRTOS Config ---------------------------------------------------
+ * - All Vanilla FreeRTOS configuration goes into this section
+ * ------------------------------------------------------------------------------------------------------------------ */
 
-#endif // __ASSEMBLER__
+// ------------------ Scheduler Related --------------------
 
-/* Required for configuration-dependent settings */
-#include <freertos/xtensa_config.h>
-
-/* configASSERT behaviour */
-#ifndef __ASSEMBLER__
-#include <assert.h>
-#include "esp_rom_sys.h"
-#endif // __ASSEMBLER__
-
-#if CONFIG_FREERTOS_ASSERT_ON_UNTESTED_FUNCTION
-#define UNTESTED_FUNCTION() { esp_rom_printf("Untested FreeRTOS function %s\r\n", __FUNCTION__); configASSERT(false); } while(0)
+#ifdef CONFIG_FREERTOS_OPTIMIZED_SCHEDULER
+#define configUSE_PORT_OPTIMISED_TASK_SELECTION             1
 #else
-#define UNTESTED_FUNCTION()
+#define configUSE_PORT_OPTIMISED_TASK_SELECTION             0
 #endif
+#define configMAX_API_CALL_INTERRUPT_PRIORITY               XCHAL_EXCM_LEVEL
 
-#define configXT_BOARD                                  1   /* Board mode */
-#define configXT_SIMULATOR                              0
-#define configBENCHMARK                                 0
-
-/* The maximum interrupt priority from which FreeRTOS.org API functions can
-   be called.  Only API functions that end in ...FromISR() can be used within
-   interrupts. */
-#define configMAX_SYSCALL_INTERRUPT_PRIORITY	XCHAL_EXCM_LEVEL
-
-/* Stack alignment, architecture specifc. Must be a power of two. */
-#define configSTACK_ALIGNMENT                           16
-
+/* ------------------------------------------------ ESP-IDF Additions --------------------------------------------------
+ *
+ * ------------------------------------------------------------------------------------------------------------------ */
 
 /* The Xtensa port uses a separate interrupt stack. Adjust the stack size
  * to suit the needs of your specific application.
  * Size needs to be aligned to the stack increment, since the location of
  * the stack for the 2nd CPU will be calculated using configISR_STACK_SIZE.
  */
+#define configSTACK_ALIGNMENT                               16
 #ifndef configISR_STACK_SIZE
-#define configISR_STACK_SIZE                            ((CONFIG_FREERTOS_ISR_STACKSIZE + configSTACK_ALIGNMENT - 1) & (~(configSTACK_ALIGNMENT - 1)))
-#endif
-
-#ifndef __ASSEMBLER__
-#if CONFIG_APPTRACE_SV_ENABLE
-extern uint32_t port_switch_flag[];
-#define os_task_switch_is_pended(_cpu_) (port_switch_flag[_cpu_])
-#else
-#define os_task_switch_is_pended(_cpu_) (false)
-#endif
+#define configISR_STACK_SIZE                                ((CONFIG_FREERTOS_ISR_STACKSIZE + configSTACK_ALIGNMENT - 1) & (~(configSTACK_ALIGNMENT - 1)))
 #endif
 
 #endif // FREERTOS_CONFIG_XTENSA_H

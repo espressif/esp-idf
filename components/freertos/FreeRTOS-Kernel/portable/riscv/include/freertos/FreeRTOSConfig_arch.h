@@ -7,32 +7,25 @@
 #ifndef FREERTOS_CONFIG_RISCV_H
 #define FREERTOS_CONFIG_RISCV_H
 
-// This file is included in the common FreeRTOSConfig.h.
+//RISC-V Archiecture specific configuration. This file is included in the common FreeRTOSConfig.h.
 
 #include "sdkconfig.h"
 
-#define configUSE_PORT_OPTIMISED_TASK_SELECTION         0
+/* ------------------------------------------------- FreeRTOS Config ---------------------------------------------------
+ * - All Vanilla FreeRTOS configuration goes into this section
+ * ------------------------------------------------------------------------------------------------------------------ */
 
-#ifndef __ASSEMBLER__
-#include "esp_rom_sys.h"
-#endif // __ASSEMBLER__
+// ------------------ Scheduler Related --------------------
 
-/* The maximum interrupt priority from which FreeRTOS.org API functions can
-   be called.  Only API functions that end in ...FromISR() can be used within
-   interrupts. */
-#define configMAX_SYSCALL_INTERRUPT_PRIORITY            0
+#define configUSE_PORT_OPTIMISED_TASK_SELECTION             0
+#define configMAX_API_CALL_INTERRUPT_PRIORITY               0
+
+/* ------------------------------------------------ ESP-IDF Additions --------------------------------------------------
+ *
+ * ------------------------------------------------------------------------------------------------------------------ */
 
 #ifndef configISR_STACK_SIZE
-#define configISR_STACK_SIZE                            (CONFIG_FREERTOS_ISR_STACKSIZE)
-#endif
-
-#ifndef __ASSEMBLER__
-#if CONFIG_APPTRACE_SV_ENABLE
-extern int xPortSwitchFlag;
-#define os_task_switch_is_pended(_cpu_) (xPortSwitchFlag)
-#else
-#define os_task_switch_is_pended(_cpu_) (false)
-#endif
+#define configISR_STACK_SIZE                                (CONFIG_FREERTOS_ISR_STACKSIZE)
 #endif
 
 #endif // FREERTOS_CONFIG_RISCV_H

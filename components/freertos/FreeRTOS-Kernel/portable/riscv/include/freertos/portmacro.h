@@ -498,7 +498,22 @@ bool xPortcheckValidStackMem(const void *ptr);
 #define portVALID_TCB_MEM(ptr) xPortCheckValidTCBMem(ptr)
 #define portVALID_STACK_MEM(ptr) xPortcheckValidStackMem(ptr)
 
+// --------------------- App-Trace -------------------------
 
+#if CONFIG_APPTRACE_SV_ENABLE
+extern int xPortSwitchFlag;
+#define os_task_switch_is_pended(_cpu_) (xPortSwitchFlag)
+#else
+#define os_task_switch_is_pended(_cpu_) (false)
+#endif
+
+// --------------------- Debugging -------------------------
+
+#if CONFIG_FREERTOS_ASSERT_ON_UNTESTED_FUNCTION
+#define UNTESTED_FUNCTION() { esp_rom_printf("Untested FreeRTOS function %s\r\n", __FUNCTION__); configASSERT(false); } while(0)
+#else
+#define UNTESTED_FUNCTION()
+#endif
 
 /* ---------------------------------------------------- Deprecate ------------------------------------------------------
  * - Pull in header containing deprecated macros here
