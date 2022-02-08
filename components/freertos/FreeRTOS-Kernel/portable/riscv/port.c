@@ -47,7 +47,6 @@
 #include "riscv/riscv_interrupts.h"
 #include "riscv/interrupt.h"
 #include "esp_private/crosscore_int.h"
-#include "esp_private/pm_trace.h"
 #include "esp_attr.h"
 #include "esp_system.h"
 #include "esp_intr_alloc.h"
