@@ -15,3 +15,4 @@ ESP-IDF 5.0 Migration Guides
     Storage <storage>
     System <system>
     Tools <tools>
+    TCP/IP Adapter <tcpip-adapter>

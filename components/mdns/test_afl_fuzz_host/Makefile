@@ -33,7 +33,6 @@ CFLAGS=-g -Wno-unused-value -Wno-missing-declarations -Wno-pointer-bool-conversi
                  -I$(COMPONENTS_DIR)/soc/include \
                  -I$(COMPONENTS_DIR)/soc/esp32/include \
                  -I$(COMPONENTS_DIR)/soc/src/esp32/include \
-                 -I$(COMPONENTS_DIR)/tcpip_adapter/include \
                  -I$(COMPONENTS_DIR)/xtensa/include \
                  -I$(COMPONENTS_DIR)/xtensa/esp32/include \
                  -I$(COMPILER_ICLUDE_DIR)/include

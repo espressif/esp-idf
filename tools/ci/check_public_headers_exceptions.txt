@@ -135,9 +135,7 @@ components/esp_netif/include/esp_netif_sta_list.h
 components/esp_netif/include/esp_netif_defaults.h
 components/esp_netif/include/esp_netif_net_stack.h
 components/esp_netif/include/esp_netif_ppp.h
-components/tcpip_adapter/include/tcpip_adapter_compatible/tcpip_adapter_compat.h
 components/bootloader_support/include/bootloader_util.h
-components/tcpip_adapter/include/tcpip_adapter_types.h
 components/console/linenoise/linenoise.h
 components/protocomm/include/transports/protocomm_httpd.h
 components/fatfs/src/diskio.h

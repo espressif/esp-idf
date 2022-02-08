@@ -12,8 +12,6 @@ Some ESP-NETIF API functions are intended to be called by application code, for 
 
 In many cases, applications do not need to call ESP-NETIF APIs directly as they are called from the default network event handlers.
 
-ESP-NETIF component is a successor of the tcpip_adapter, former network interface abstraction, which has become deprecated since IDF v4.1. Please refer to the :doc:`/api-reference/network/tcpip_adapter_migration` section in case existing applications to be ported to use the esp-netif API instead.
-
 ESP-NETIF architecture
 ----------------------
 
@@ -114,8 +112,8 @@ Communication driver plays these two important roles in relation with ESP-NETIF:
   * Calls :cpp:func:`esp_netif_receive()` to pass incoming data to network stack
 
 
-C) ESP-NETIF, former tcpip_adapter
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C) ESP-NETIF
+^^^^^^^^^^^^
 
 ESP-NETIF is an intermediary between an IO driver and a network stack, connecting packet data path between these two. As that it provides a set of interfaces for attaching a driver to ESP-NETIF object (runtime) and configuring a network stack (compile time). In addition to that a set of API is provided to control network interface lifecycle and its TCP/IP properties. As an overview, the ESP-NETIF public interface could be divided into these 6 groups:
 

@@ -98,7 +98,6 @@ The summary output provided by ``idf.py size`` does not give enough detail to fi
              libesp_system.a        245    206       0   3078        0       5990     3817   13336
                 libesp-tls.a          0      4       0      0        0       5637     3524    9165
     [... removed some lines here ...]
-          libtcpip_adapter.a          0     17       0      0        0        216        0     233
                 libesp_rom.a          0      0       0    112        0          0        0     112
                     libcxx.a          0      0       0      0        0         47        0      47
                        (exe)          0      0       0      3        0          3       12      18

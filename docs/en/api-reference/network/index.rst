@@ -55,12 +55,9 @@ IP Network Layer
 .. toctree::
     :hidden:
 
-    tcpip_adapter_migration
     esp_netif_driver
 
 Code examples for TCP/IP socket APIs are provided in the :example:`protocols/sockets` directory of ESP-IDF examples.
-
-The TCP/IP Adapter (legacy network interface library) has been deprecated, please consult the :doc:`/api-reference/network/tcpip_adapter_migration` to update existing IDF applications.
 
 Application Layer 
 =================

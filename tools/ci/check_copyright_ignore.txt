@@ -728,7 +728,6 @@ components/esp_timer/test/test_esp_timer.c
 components/esp_timer/test/test_esp_timer_light_sleep.c
 components/esp_timer/test/test_ets_timer.c
 components/esp_wifi/include/esp_coexist_adapter.h
-components/esp_wifi/include/esp_mesh.h
 components/esp_wifi/include/esp_mesh_internal.h
 components/esp_wifi/include/esp_now.h
 components/esp_wifi/include/esp_private/esp_wifi_private.h
@@ -1719,9 +1718,6 @@ components/tcp_transport/test/test_transport_basic.c
 components/tcp_transport/test/test_transport_connect.c
 components/tcp_transport/test/test_transport_fixtures.c
 components/tcp_transport/transport_utils.c
-components/tcpip_adapter/include/tcpip_adapter.h
-components/tcpip_adapter/include/tcpip_adapter_compatible/tcpip_adapter_compat.h
-components/tcpip_adapter/include/tcpip_adapter_types.h
 components/tinyusb/additions/include/tusb_config.h
 components/touch_element/include/touch_element/touch_button.h
 components/touch_element/include/touch_element/touch_element.h
@@ -2543,7 +2539,6 @@ tools/find_build_apps/__init__.py
 tools/find_build_apps/cmake.py
 tools/find_build_apps/common.py
 tools/gdb_panic_server.py
-tools/gen_esp_err_to_name.py
 tools/idf_monitor_base/chip_specific_config.py
 tools/idf_monitor_base/console_reader.py
 tools/idf_monitor_base/coredump.py

@@ -65,24 +65,7 @@ LwIP & ESP-WIFI-MESH
 
 应用程序无需通过 LwIP 层便可直接访问 ESP-WIFI-MESH 软件栈，LwIP 层仅在根节点和外部 IP 网络的数据发送与接收时会用到。但是，由于每个节点都有可能成为根节点（由于自动根节点选择机制的存在），每个节点仍必须初始化 LwIP 软件栈。
 
-**每个节点都需要通过调用** :cpp:func:`tcpip_adapter_init` **初始化 LwIP 软件栈**。 为了防止非根节点访问 LwIP，应用程序应该在 LwIP 初始化完成后停止以下服务：
-
-- SoftAP 接口上的 DHCP 服务器服务。
-- Station 接口上的 DHCP 客户端服务。
-
-下方代码片段展示如何为 ESP-WIFI-MESH 应用程序进行 LwIP 初始化。
-
-.. code-block:: c
-
-    /*  tcpip 初始化 */
-    tcpip_adapter_init();
-    /*
-    * 对于 MESH
-    * 默认情况下，在 SoftAP 接口上停止 DHCP 服务器
-    * 默认情况下，在 Station 接口上停止 DHCP 客户端
-    */
-    ESP_ERROR_CHECK(tcpip_adapter_dhcps_stop(TCPIP_ADAPTER_IF_AP));
-    ESP_ERROR_CHECK(tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA));
+**每个节点都需要通过调用** :cpp:func:`esp_netif_init`。
 
 .. note::
 
@@ -100,14 +83,7 @@ ESP-WIFI-MESH 在正常启动前必须先初始化 LwIP 和 Wi-Fi 软件栈。�
 
 .. code-block:: c
 
-    tcpip_adapter_init();
-    /*
-    * 对于 MESH
-    * 默认情况下，在 SoftAP 接口上停止 DHCP 服务器
-    * 默认情况下，在 Station 接口上停止 DHCP 客户端
-    */
-    ESP_ERROR_CHECK(tcpip_adapter_dhcps_stop(TCPIP_ADAPTER_IF_AP));
-    ESP_ERROR_CHECK(tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA));
+    ESP_ERROR_CHECK(esp_netif_init());
 
     /*事件初始化*/
     ESP_ERROR_CHECK(esp_event_loop_create_default());

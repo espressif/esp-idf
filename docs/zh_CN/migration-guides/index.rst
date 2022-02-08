@@ -15,3 +15,4 @@ ESP-IDF 5.0 迁移指南
     Protocols <protocols>
     Removed or deprecated components <removed-components>
     Tools <tools>
+    TCPIP Adapter <tcpip-adapter>    

@@ -15,7 +15,6 @@
 #include "soc/rtc.h"
 #include "esp_wpa.h"
 #include "esp_netif.h"
-#include "tcpip_adapter_compatible/tcpip_adapter_compat.h"
 #include "driver/adc.h"
 #include "esp_coexist_internal.h"
 #include "esp_phy_init.h"
@@ -114,9 +113,6 @@ esp_err_t esp_wifi_deinit(void)
         return err;
     }
 
-#if CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
-    tcpip_adapter_clear_default_wifi_handlers();
-#endif
 #if CONFIG_ESP_WIFI_SLP_IRAM_OPT
     esp_pm_unregister_light_sleep_default_params_config_callback();
 #endif
@@ -234,12 +230,6 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 #endif
 #endif
 
-#if CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
-    esp_err_t err = tcpip_adapter_set_default_wifi_handlers();
-    if (err != ESP_OK) {
-        ESP_LOGW(TAG, "Failed to set default Wi-Fi event handlers (0x%x)", err);
-    }
-#endif
 #if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
     coex_init();
 #endif

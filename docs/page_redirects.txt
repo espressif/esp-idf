@@ -21,7 +21,7 @@ api-reference/wifi/index                        api-reference/network/index
 api-reference/wifi/esp_now                      api-reference/network/esp_now
 api-reference/wifi/esp_smartconfig              api-reference/network/esp_smartconfig
 api-reference/wifi/esp_wifi                     api-reference/network/esp_wifi
-api-reference/system/tcpip_adapter              api-reference/network/esp_netif
+api-reference/system/tcpip_adapter              migration-guides/tcpip-adapter
 api-reference/system/esp_pthread                api-reference/system/pthread
 get-started/idf-monitor                         api-guides/tools/idf-monitor
 get-started-cmake/idf-monitor                   api-guides/tools/idf-monitor
@@ -62,7 +62,7 @@ api-guides/ulps2_instruction_set.rst            api-reference/system/ulp_instruc
 api-guides/ulp_macros.rst                       api-reference/system/ulp_macros.rst
 api-guides/ulp-risc-v.rst                       api-reference/system/ulp-risc-v.rst
 
-api-reference/network/tcpip_adapter            api-reference/network/esp_netif
+api-reference/network/tcpip_adapter             migration-guides/tcpip-adapter
 
 # The 'secure boot' guides are now 'secure boot v1' guides
 security/secure-boot                           security/secure-boot-v1
