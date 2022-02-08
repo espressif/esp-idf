@@ -25,14 +25,6 @@ static const char *TAG = "example";
 #define PIN_NUM_CLK   CONFIG_EXAMPLE_PIN_CLK
 #define PIN_NUM_CS    CONFIG_EXAMPLE_PIN_CS
 
-#if CONFIG_IDF_TARGET_ESP32S2
-#define SPI_DMA_CHAN    host.slot
-#elif CONFIG_IDF_TARGET_ESP32C3
-#define SPI_DMA_CHAN    SPI_DMA_CH_AUTO
-#else
-#define SPI_DMA_CHAN    1
-#endif
-
 
 void app_main(void)
 {
@@ -69,7 +61,7 @@ void app_main(void)
         .quadhd_io_num = -1,
         .max_transfer_sz = 4000,
     };
-    ret = spi_bus_initialize(host.slot, &bus_cfg, SPI_DMA_CHAN);
+    ret = spi_bus_initialize(host.slot, &bus_cfg, SDSPI_DEFAULT_DMA);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to initialize bus.");
         return;
