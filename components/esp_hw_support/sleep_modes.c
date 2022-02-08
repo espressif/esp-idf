@@ -80,6 +80,7 @@
 #include "esp_private/esp_pmu.h"
 #include "esp_private/sleep_sys_periph.h"
 #include "esp_private/sleep_clock.h"
+#include "esp_private/sleep_modem.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/rtc.h"
 #include "esp32h2/rom/cache.h"
@@ -679,13 +680,17 @@ void IRAM_ATTR esp_deep_sleep_start(void)
 #endif
 
 
+
+#if SOC_PM_SUPPORT_MODEM_PD
+    force_pd_flags |= PMU_SLEEP_PD_MODEM;
+#else // !SOC_PM_SUPPORT_MODEM_PD
 #if SOC_PM_SUPPORT_WIFI_PD
     force_pd_flags |= RTC_SLEEP_PD_WIFI;
 #endif
-
 #if SOC_PM_SUPPORT_BT_PD
     force_pd_flags |= RTC_SLEEP_PD_BT;
 #endif
+#endif // !SOC_PM_SUPPORT_MODEM_PD
 
     // Enter sleep
     esp_sleep_start(force_pd_flags | pd_flags, ESP_SLEEP_MODE_DEEP_SLEEP);
@@ -1496,9 +1501,15 @@ static uint32_t get_power_down_flags(void)
 #endif
     }
 #endif
+#if SOC_PM_SUPPORT_MODEM_PD
+    if (!modem_domain_pd_allowed()) {
+        s_config.domain[ESP_PD_DOMAIN_MODEM].pd_option = ESP_PD_OPTION_ON;
+    }
+#endif
 
 #if SOC_PM_SUPPORT_TOP_PD
-    if (!cpu_domain_pd_allowed() || !clock_domain_pd_allowed() || !peripheral_domain_pd_allowed()) {
+    if (!cpu_domain_pd_allowed() || !clock_domain_pd_allowed() ||
+        !peripheral_domain_pd_allowed() || !modem_domain_pd_allowed()) {
         s_config.domain[ESP_PD_DOMAIN_TOP].pd_option = ESP_PD_OPTION_ON;
     }
 #endif
@@ -1565,6 +1576,13 @@ static uint32_t get_power_down_flags(void)
         pd_flags |= PMU_SLEEP_PD_TOP;
     }
 #endif
+
+#if SOC_PM_SUPPORT_MODEM_PD
+    if (s_config.domain[ESP_PD_DOMAIN_MODEM].pd_option != ESP_PD_OPTION_ON) {
+        pd_flags |= PMU_SLEEP_PD_MODEM;
+    }
+#endif
+
 #if SOC_PM_SUPPORT_VDDSDIO_PD
     if (s_config.domain[ESP_PD_DOMAIN_VDDSDIO].pd_option != ESP_PD_OPTION_ON) {
         pd_flags |= RTC_SLEEP_PD_VDDSDIO;
