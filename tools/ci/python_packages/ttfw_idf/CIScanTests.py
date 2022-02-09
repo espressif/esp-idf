@@ -27,6 +27,8 @@ BUILD_ALL_LABELS = [
     'BOT_LABEL_BUILD_ALL_APPS',
     'BOT_LABEL_REGULAR_TEST',
     'BOT_LABEL_WEEKEND_TEST',
+    'NIGHTLY_RUN',
+    'BOT_LABEL_NIGHTLY_RUN',
 ]
 
 BUILD_PER_JOB = 30  # each build takes 1 mins around
