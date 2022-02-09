@@ -2,30 +2,34 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
 
 from .entry import Entry
 from .exceptions import FatalError, WriteDirectoryException
 from .fat import FAT, Cluster
 from .fatfs_state import FATFSState
-from .utils import required_clusters_count, split_content_into_sectors, split_to_name_and_extension
+from .long_filename_utils import (build_lfn_full_name, build_lfn_unique_entry_name_order,
+                                  get_required_lfn_entries_count, split_name_to_lfn_entries,
+                                  split_name_to_lfn_entry_blocks)
+from .utils import (MAX_EXT_SIZE, MAX_NAME_SIZE, build_lfn_short_entry_name, lfn_checksum, required_clusters_count,
+                    split_content_into_sectors, split_to_name_and_extension)
 
 
 class File:
     """
     The class File provides API to write into the files. It represents file in the FS.
     """
-    ATTR_ARCHIVE = 0x20
-    ENTITY_TYPE = ATTR_ARCHIVE
+    ATTR_ARCHIVE: int = 0x20
+    ENTITY_TYPE: int = ATTR_ARCHIVE
 
     def __init__(self, name: str, fat: FAT, fatfs_state: FATFSState, entry: Entry, extension: str = '') -> None:
-        self.name = name
-        self.extension = extension
-        self.fatfs_state = fatfs_state
-        self.fat = fat
-        self.size = 0
-        self._first_cluster = None
-        self._entry = entry
+        self.name: str = name
+        self.extension: str = extension
+        self.fatfs_state: FATFSState = fatfs_state
+        self.fat: FAT = fat
+        self.size: int = 0
+        self._first_cluster: Optional[Cluster] = None
+        self._entry: Entry = entry
 
     @property
     def entry(self) -> Entry:
@@ -51,7 +55,7 @@ class File:
             if current_cluster is None:
                 raise FatalError('No free space left!')
 
-            address = current_cluster.cluster_data_address
+            address: int = current_cluster.cluster_data_address
             self.fatfs_state.binary_image[address: address + len(content_part)] = content_as_list
             current_cluster = current_cluster.next_cluster
 
@@ -61,9 +65,12 @@ class Directory:
     The Directory class provides API to add files and directories into the directory
     and to find the file according to path and write it.
     """
-    ATTR_DIRECTORY = 0x10
-    ATTR_ARCHIVE = 0x20
-    ENTITY_TYPE = ATTR_DIRECTORY
+    ATTR_DIRECTORY: int = 0x10
+    ATTR_ARCHIVE: int = 0x20
+    ENTITY_TYPE: int = ATTR_DIRECTORY
+
+    CURRENT_DIRECTORY = '.'
+    PARENT_DIRECTORY = '..'
 
     def __init__(self,
                  name,
@@ -75,20 +82,20 @@ class Directory:
                  extension='',
                  parent=None):
         # type: (str, FAT, FATFSState, Optional[Entry], Cluster, Optional[int], str, Directory) -> None
-        self.name = name
-        self.fatfs_state = fatfs_state
-        self.extension = extension
+        self.name: str = name
+        self.fatfs_state: FATFSState = fatfs_state
+        self.extension: str = extension
 
-        self.fat = fat
-        self.size = size or self.fatfs_state.sector_size
+        self.fat: FAT = fat
+        self.size: int = size or self.fatfs_state.sector_size
 
         # if directory is root its parent is itself
         self.parent: Directory = parent or self
-        self._first_cluster = cluster
+        self._first_cluster: Cluster = cluster
 
         # entries will be initialized after the cluster allocation
         self.entries: List[Entry] = []
-        self.entities = []  # type: ignore
+        self.entities: List[Union[File, Directory]] = []  # type: ignore
         self._entry = entry  # currently not in use (will use later for e.g. modification time, etc.)
 
     @property
@@ -106,7 +113,7 @@ class Directory:
     def name_equals(self, name: str, extension: str) -> bool:
         return self.name == name and self.extension == extension
 
-    def create_entries(self, cluster: Cluster) -> list:
+    def create_entries(self, cluster: Cluster) -> List[Entry]:
         return [Entry(entry_id=i,
                       parent_dir_entries_address=cluster.cluster_data_address,
                       fatfs_state=self.fatfs_state)
@@ -114,19 +121,20 @@ class Directory:
 
     def init_directory(self) -> None:
         self.entries = self.create_entries(self._first_cluster)
+
+        # the root directory doesn't contain link to itself nor the parent
         if not self.is_root:
-            # the root directory doesn't contain link to itself nor the parent
-            free_entry1 = self.find_free_entry() or self.chain_directory()
-            free_entry1.allocate_entry(first_cluster_id=self.first_cluster.id,
-                                       entity_name='.',
-                                       entity_extension='',
-                                       entity_type=self.ENTITY_TYPE)
+            self_dir_reference: Entry = self.find_free_entry() or self.chain_directory()
+            self_dir_reference.allocate_entry(first_cluster_id=self.first_cluster.id,
+                                              entity_name=self.CURRENT_DIRECTORY,
+                                              entity_extension='',
+                                              entity_type=self.ENTITY_TYPE)
             self.first_cluster = self._first_cluster
-            free_entry2 = self.find_free_entry() or self.chain_directory()
-            free_entry2.allocate_entry(first_cluster_id=self.parent.first_cluster.id,
-                                       entity_name='..',
-                                       entity_extension='',
-                                       entity_type=self.parent.ENTITY_TYPE)
+            parent_dir_reference: Entry = self.find_free_entry() or self.chain_directory()
+            parent_dir_reference.allocate_entry(first_cluster_id=self.parent.first_cluster.id,
+                                                entity_name=self.PARENT_DIRECTORY,
+                                                entity_extension='',
+                                                entity_type=self.parent.ENTITY_TYPE)
             self.parent.first_cluster = self.parent.first_cluster
 
     def lookup_entity(self, object_name: str, extension: str):  # type: ignore
@@ -151,20 +159,56 @@ class Directory:
         return None
 
     def _extend_directory(self) -> None:
-        current = self.first_cluster
+        current: Cluster = self.first_cluster
         while current.next_cluster is not None:
             current = current.next_cluster
-        new_cluster = self.fat.find_free_cluster()
+        new_cluster: Cluster = self.fat.find_free_cluster()
         current.set_in_fat(new_cluster.id)
         current.next_cluster = new_cluster
         self.entries += self.create_entries(new_cluster)
 
     def chain_directory(self) -> Entry:
         self._extend_directory()
-        free_entry = self.find_free_entry()
+        free_entry: Entry = self.find_free_entry()
         if free_entry is None:
             raise FatalError('No more space left!')
         return free_entry
+
+    @staticmethod
+    def allocate_long_name_object(free_entry,
+                                  name,
+                                  extension,
+                                  target_dir,
+                                  free_cluster,
+                                  entity_type):
+        # type: (Entry, str, str, Directory, Cluster, int) -> Tuple[Cluster, Entry, Directory]
+        lfn_full_name: str = build_lfn_full_name(name, extension)
+        lfn_unique_entry_order: int = build_lfn_unique_entry_name_order(target_dir.entities, name)
+        lfn_short_entry_name: str = build_lfn_short_entry_name(name, extension, lfn_unique_entry_order)
+        checksum: int = lfn_checksum(lfn_short_entry_name)
+        entries_count: int = get_required_lfn_entries_count(lfn_full_name)
+
+        # entries in long file name entries chain starts with the last entry
+        split_names_reversed = reversed(list(enumerate(split_name_to_lfn_entries(lfn_full_name, entries_count))))
+        for i, name_split_to_entry in split_names_reversed:
+            order: int = i + 1
+            lfn_names: List[bytes] = list(
+                map(lambda x: x.lower(), split_name_to_lfn_entry_blocks(name_split_to_entry)))  # type: ignore
+            free_entry.allocate_entry(first_cluster_id=free_cluster.id,
+                                      entity_name=name,
+                                      entity_extension=extension,
+                                      entity_type=entity_type,
+                                      lfn_order=order,
+                                      lfn_names=lfn_names,
+                                      lfn_checksum_=checksum,
+                                      lfn_is_last=order == entries_count)
+            free_entry = target_dir.find_free_entry() or target_dir.chain_directory()
+        free_entry.allocate_entry(first_cluster_id=free_cluster.id,
+                                  entity_name=lfn_short_entry_name[:MAX_NAME_SIZE],
+                                  entity_extension=lfn_short_entry_name[MAX_NAME_SIZE:],
+                                  entity_type=entity_type,
+                                  lfn_order=Entry.SHORT_ENTRY_LN)
+        return free_cluster, free_entry, target_dir
 
     def allocate_object(self,
                         name,
@@ -177,14 +221,23 @@ class Directory:
         and allocates cluster (both the record in FAT and cluster in the data region)
         and entry in the specified directory
         """
-        free_cluster = self.fat.find_free_cluster()
-        target_dir = self if not path_from_root else self.recursive_search(path_from_root, self)
-        free_entry = target_dir.find_free_entry() or target_dir.chain_directory()
-        free_entry.allocate_entry(first_cluster_id=free_cluster.id,
-                                  entity_name=name,
-                                  entity_extension=extension,
-                                  entity_type=entity_type)
-        return free_cluster, free_entry, target_dir
+        free_cluster: Cluster = self.fat.find_free_cluster()
+        target_dir: Directory = self if not path_from_root else self.recursive_search(path_from_root, self)
+        free_entry: Entry = target_dir.find_free_entry() or target_dir.chain_directory()
+
+        name_fits_short_struct: bool = len(name) <= MAX_NAME_SIZE and len(extension) <= MAX_EXT_SIZE
+        if not self.fatfs_state.long_names_enabled or name_fits_short_struct:
+            free_entry.allocate_entry(first_cluster_id=free_cluster.id,
+                                      entity_name=name,
+                                      entity_extension=extension,
+                                      entity_type=entity_type)
+            return free_cluster, free_entry, target_dir
+        return self.allocate_long_name_object(free_entry=free_entry,
+                                              name=name,
+                                              extension=extension,
+                                              target_dir=target_dir,
+                                              free_cluster=free_cluster,
+                                              entity_type=entity_type)
 
     def new_file(self, name: str, extension: str, path_from_root: Optional[List[str]]) -> None:
         free_cluster, free_entry, target_dir = self.allocate_object(name=name,
@@ -192,7 +245,11 @@ class Directory:
                                                                     entity_type=Directory.ATTR_ARCHIVE,
                                                                     path_from_root=path_from_root)
 
-        file = File(name, fat=self.fat, extension=extension, fatfs_state=self.fatfs_state, entry=free_entry)
+        file: File = File(name=name,
+                          fat=self.fat,
+                          extension=extension,
+                          fatfs_state=self.fatfs_state,
+                          entry=free_entry)
         file.first_cluster = free_cluster
         target_dir.entities.append(file)
 
@@ -202,7 +259,11 @@ class Directory:
                                                                     entity_type=Directory.ATTR_DIRECTORY,
                                                                     path_from_root=path_from_root)
 
-        directory = Directory(name=name, fat=self.fat, parent=parent, fatfs_state=self.fatfs_state, entry=free_entry)
+        directory: Directory = Directory(name=name,
+                                         fat=self.fat,
+                                         parent=parent,
+                                         fatfs_state=self.fatfs_state,
+                                         entry=free_entry)
         directory.first_cluster = free_cluster
         directory.init_directory()
         target_dir.entities.append(directory)
@@ -216,9 +277,9 @@ class Directory:
         :returns: None
         :raises WriteDirectoryException: raised is the target object for writing is a directory
         """
-        entity_to_write = self.recursive_search(path, self)
+        entity_to_write: Entry = self.recursive_search(path, self)
         if isinstance(entity_to_write, File):
-            clusters_cnt = required_clusters_count(cluster_size=self.fatfs_state.sector_size, content=content)
+            clusters_cnt: int = required_clusters_count(cluster_size=self.fatfs_state.sector_size, content=content)
             self.fat.allocate_chain(entity_to_write.first_cluster, clusters_cnt)
             entity_to_write.write(content)
         else:
