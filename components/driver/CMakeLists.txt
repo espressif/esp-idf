@@ -51,14 +51,15 @@ if(CONFIG_SOC_PCNT_SUPPORTED)
     list(APPEND srcs "pcnt.c")
 endif()
 
+if(CONFIG_SOC_SDMMC_HOST_SUPPORTED)
+    list(APPEND srcs "sdmmc_transaction.c" "sdmmc_host.c")
+endif()
+
 
 if(${target} STREQUAL "esp32")
-    # SDMMC and MCPWM are in ESP32 only.
     list(APPEND srcs "dac_common.c"
                      "sdio_slave.c"
-                     "sdmmc_host.c"
                      "i2s.c"
-                     "sdmmc_transaction.c"
                      "touch_sensor_common.c"
                      "esp32/touch_sensor.c"
                      "esp32/adc.c"
@@ -82,9 +83,7 @@ if(IDF_TARGET STREQUAL "esp32s2")
 endif()
 
 if(${target} STREQUAL "esp32s3")
-    list(APPEND srcs "sdmmc_host.c"
-                     "sdmmc_transaction.c"
-                     "usb_serial_jtag.c"
+    list(APPEND srcs "usb_serial_jtag.c"
                      "spi_slave_hd.c"
                      "touch_sensor_common.c"
                      "esp32s3/touch_sensor.c"
