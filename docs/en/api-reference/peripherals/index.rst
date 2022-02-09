@@ -20,7 +20,7 @@ Peripherals API
     :SOC_MCPWM_SUPPORTED: mcpwm
     :SOC_PCNT_SUPPORTED: pcnt
     rmt
-    :esp32 or esp32s3: sd_pullup_requirements
+    :SOC_SDMMC_HOST_SUPPORTED: sd_pullup_requirements
     :SOC_SDMMC_HOST_SUPPORTED: sdmmc_host
     sdspi_host
     :SOC_SDIO_SLAVE_SUPPORTED: sdio_slave

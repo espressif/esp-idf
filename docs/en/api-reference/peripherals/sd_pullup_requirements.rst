@@ -1,23 +1,13 @@
 SD Pull-up Requirements
 =======================
 
-.. only:: esp32c3
-
-    .. warning::
-
-        This document is not updated for ESP32-C3 yet.
-
-.. only:: esp32s3
-
-    .. warning::
-
-        This document is not updated for ESP32-S3 yet.
-
 Espressif hardware products are designed for multiple use cases which may require different pull states on pins. For this reason, the pull state of particular pins on certain products will need to be adjusted to provide the pull-ups required in the SD bus.
 
-SD pull-up requirements apply to cases where {IDF_TARGET_NAME} uses the SPI controller to communicate with SD cards. When an SD card is operating in SPI mode or 1-bit SD mode, the CMD and DATA (DAT0 - DAT3) lines of the SD bus must be pulled up by 10 kOhm resistors. Slaves should also have pull-ups on all above-mentioned lines (regardless of whether these lines are connected to the host) in order to prevent SD cards from entering a wrong state.
+SD pull-up requirements apply to cases where {IDF_TARGET_NAME} uses the SPI or SDMMC controller to communicate with SD cards. When an SD card is operating in SPI mode or 1-bit SD mode, the CMD and DATA (DAT0 - DAT3) lines of the SD bus must be pulled up by 10 kOhm resistors. SD cards and SDIO devices should also have pull-ups on all above-mentioned lines (regardless of whether these lines are connected to the host) in order to prevent them from entering a wrong state.
 
-By default, the MTDI bootstrapping pin is incompatible with the DAT2 line pull-up if the flash voltage is 3.3 V. For more information, see :ref:`mtdi_strapping_pin` below.
+.. only:: esp32
+
+    By default, the MTDI bootstrapping pin is incompatible with the DAT2 line pull-up if the flash voltage is 3.3 V. For more information, see :ref:`mtdi_strapping_pin` below.
 
 .. todo::
 
@@ -53,11 +43,18 @@ Systems on a Chip (SoCs)
         - :ref:`sd_pull-up_no_pull-ups`
         - :ref:`no_pull-up_on_gpio12`
 
-    .. only:: esp32s2
+.. only:: SOC_SDMMC_USE_GPIO_MATRIX
 
-        .. note::
+    {IDF_TARGET_NAME} SDMMC host controller allows using any of GPIOs for any of SD interface signals. However, it is recommended to avoid using strapping GPIOs, GPIOs with internal weak pull-downs and GPIOs commonly used for other purposes to prevent conflicts:
 
-            No chips listed for ESP32-S2 yet.
+.. only:: esp32s3
+
+    - GPIO0 (strapping pin)
+    - GPIO45, GPIO46 (strapping pins, internal weak pulldown)
+    - GPIO26 - GPIO32 (commonly used for SPI Flash and PSRAM)
+    - GPIO33 - GPIO37 (when using chips and modules with Octal SPI Flash or Octal PSRAM)
+    - GPIO43, GPIO44 (GPIOs used for UART0 by default)
+    - GPIO19, GPIO20 (GPIOs used for USB by default)
 
 
 Systems in Packages (SIP)
@@ -69,13 +66,6 @@ Systems in Packages (SIP)
 
         - :ref:`sd_pull-up_no_pull-ups`
         - :ref:`strapping_conflicts_dat2`
-
-
-.. only:: esp32s2
-
-    .. note::
-
-        No chips listed for ESP32-S2 yet.
 
 
 Modules
@@ -96,12 +86,6 @@ Modules
 
         - :ref:`sd_pull-up_no_pull-ups`
         - :ref:`strapping_conflicts_dat2`
-
-.. only:: esp32s2
-
-    .. note::
-
-        No chips listed for ESP32-S2 yet.
 
 
 .. _sdio_dev_kits:
@@ -146,17 +130,28 @@ Development Boards
         - Required pull-ups are provided
         - :ref:`pull-up_conflicts_on_gpio13`
 
-.. only:: esp32s2
+.. only:: esp32s3
 
-    .. note::
+    - ESP32-S3-DevKitC-1
 
-        No chips listed for ESP32-S2 yet.
+        - :ref:`sd_pull-up_no_pull-ups`
 
+    - ESP32-S3-USB-OTG
 
-Non-Espressif Hosts
-^^^^^^^^^^^^^^^^^^^
+        - The board may be used in 1-line and 4-line SD mode or SPI mode.
+        - Required pull-ups are provided on GPIOs 33-38.
 
-Please make sure that your SDIO host provides necessary pull-ups for all SD bus signals.
+    - ESP32-S3-EYE
+
+        - The board is limited to 1-line SD mode.
+        - Required pull-ups are provided on GPIOs 38-40.
+
+.. only:: SOC_SDIO_SLAVE_SUPPORTED
+
+    Non-Espressif Hosts
+    ^^^^^^^^^^^^^^^^^^^
+
+    Please make sure that your SDIO host provides necessary pull-ups for all SD bus signals.
 
 
 Solutions
@@ -169,98 +164,99 @@ No Pull-ups
 
 If you use a development board without pull-ups, you can do the following:
 
-- If your host and slave device are on seperate boards, replace one of them with a board that has pull-ups. For the list of Espressif's development boards with pull-ups, go to :ref:`sdio_dev_kits`.
+- If your host and slave device are on separate boards, replace one of them with a board that has pull-ups. For the list of Espressif's development boards with pull-ups, go to :ref:`sdio_dev_kits`.
 - Attach external pull-ups by connecting each pin which requires a pull-up to VDD via a 10 kOhm resistor.
 
+.. only:: esp32
 
-.. _pull-up_conflicts_on_gpio13:
+    .. _pull-up_conflicts_on_gpio13:
 
-Pull-up Conflicts on GPIO13
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    Pull-up Conflicts on GPIO13
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If DAT3 of your device is not properly pulled up, you have the following options:
+    If DAT3 of your device is not properly pulled up, you have the following options:
 
-- Use 1-bit SD mode and tie the device's DAT3 to VDD
-- Use SPI mode
-- Perform one of the following actions on the GPIO13 pin:
-    - Remove the pull-down resistors
-    - Attach a pull-up resistor of less than 5 kOhm (2 kOhm suggested)
-    - Pull it up or drive it high either by using the host or with 3.3 V on VDD in 1-bit SD mode
-
-
-.. _strapping_conflicts_dat2:
-
-Conflicts Between Bootstrap and SDIO on DAT2
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-There is a conflict between the boot strapping requirements of the ESP32 and the SDIO protocol. For details, see :ref:`mtdi_strapping_pin`.
-
-To resolve the conflict, you have the following options:
-
-1. (Recommended) Burn the flash voltage selection eFuses. This will permanently configure the internal regulator's output voltage to 3.3 V, and GPIO12 will not be used as a bootstrapping pin. After that, connect a pull-up resistor to GPIO12.
-
-   .. warning::
-
-      Burning eFuses is irreversible! The issue list above might be out of date, so please make sure that the module you are burning has a 3.3 V flash chip by checking the information on http://www.espressif.com/. If you burn the 3.3 V eFuses on a module with a 1.8 V flash chip, the module will stop functioning.
-
-   If you are sure that you need to irreversibly burn eFuses, go to your ESP-IDF directory and run the following command:
-
-   .. code-block:: bash
-
-       components/esptool_py/esptool/espefuse.py set_flash_voltage 3.3V
-
-   This command will burn the `XPD_SDIO_TIEH`, `XPD_SDIO_FORCE`, and `XPD_SDIO_REG` eFuses. After all the three eFuses are burned to value 1, the internal VDD_SDIO flash voltage regulator will be permanently set to 3.3 V. You will see the following log if the burning succeeds:
-
-   .. code-block:: bash
-
-       espefuse.py v2.6
-       Connecting....
-
-       Enable internal flash voltage regulator (VDD_SDIO) to 3.3 V.
-       The following eFuses are burned: XPD_SDIO_FORCE, XPD_SDIO_REG, XPD_SDIO_TIEH.
-       This is an irreversible operation.
-       Type 'BURN' (all capitals) to continue.
-       BURN
-       VDD_SDIO setting complete.
-
-   To check the status of the eFuses, run::
-
-       ``components/esptool_py/esptool/espefuse.py summary``
-
-   If running from an automated flashing script, ``espefuse.py`` has an option ``--do-not-confirm``.
-
-   For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* [`PDF <{IDF_TARGET_TRM_EN_URL}#efuse>`__].
-
-2. **If using 1-bit SD mode or SPI mode**, disconnect the DAT2 pin and make sure it is pulled high. For this, do one the following:
-
-    - Leave the host's DAT2 floating and directly connect the slave's DAT2 to VDD.
-    - For a slave device, build a firmware with the option ``SDIO_SLAVE_FLAG_DAT2_DISABLED`` and re-flash your device. This option will help avoid slave detecting on the DAT2 line. Note that 4-bit SD mode will no longer be supported by the standard Card Common Control Register (CCCR); however, the host will not be aware of that. The use of 4-bit SD mode will have to be disabled on the host's side.
+    - Use 1-bit SD mode and tie the device's DAT3 to VDD
+    - Use SPI mode
+    - Perform one of the following actions on the GPIO13 pin:
+        - Remove the pull-down resistors
+        - Attach a pull-up resistor of less than 5 kOhm (2 kOhm suggested)
+        - Pull it up or drive it high either by using the host or with 3.3 V on VDD in 1-bit SD mode
 
 
-.. _no_pull-up_on_gpio12:
+    .. _strapping_conflicts_dat2:
 
-No Pull-up on GPIO12
-^^^^^^^^^^^^^^^^^^^^
+    Conflicts Between Bootstrap and SDIO on DAT2
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Your module is compatible with the SDIO protocol. Just connect GPIO12 to VDD via a 10 kOhm resistor.
+    There is a conflict between the boot strapping requirements of the ESP32 and the SDIO protocol. For details, see :ref:`mtdi_strapping_pin`.
+
+    To resolve the conflict, you have the following options:
+
+    1. (Recommended) Burn the flash voltage selection eFuses. This will permanently configure the internal regulator's output voltage to 3.3 V, and GPIO12 will not be used as a bootstrapping pin. After that, connect a pull-up resistor to GPIO12.
+
+    .. warning::
+
+        Burning eFuses is irreversible! The issue list above might be out of date, so please make sure that the module you are burning has a 3.3 V flash chip by checking the information on http://www.espressif.com/. If you burn the 3.3 V eFuses on a module with a 1.8 V flash chip, the module will stop functioning.
+
+    If you are sure that you need to irreversibly burn eFuses, go to your ESP-IDF directory and run the following command:
+
+    .. code-block:: bash
+
+        components/esptool_py/esptool/espefuse.py set_flash_voltage 3.3V
+
+    This command will burn the `XPD_SDIO_TIEH`, `XPD_SDIO_FORCE`, and `XPD_SDIO_REG` eFuses. After all the three eFuses are burned to value 1, the internal VDD_SDIO flash voltage regulator will be permanently set to 3.3 V. You will see the following log if the burning succeeds:
+
+    .. code-block:: bash
+
+        espefuse.py v2.6
+        Connecting....
+
+        Enable internal flash voltage regulator (VDD_SDIO) to 3.3 V.
+        The following eFuses are burned: XPD_SDIO_FORCE, XPD_SDIO_REG, XPD_SDIO_TIEH.
+        This is an irreversible operation.
+        Type 'BURN' (all capitals) to continue.
+        BURN
+        VDD_SDIO setting complete.
+
+    To check the status of the eFuses, run::
+
+        ``components/esptool_py/esptool/espefuse.py summary``
+
+    If running from an automated flashing script, ``espefuse.py`` has an option ``--do-not-confirm``.
+
+    For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* [`PDF <{IDF_TARGET_TRM_EN_URL}#efuse>`__].
+
+    2. **If using 1-bit SD mode or SPI mode**, disconnect the DAT2 pin and make sure it is pulled high. For this, do one the following:
+
+        - Leave the host's DAT2 floating and directly connect the slave's DAT2 to VDD.
+        - For a slave device, build a firmware with the option ``SDIO_SLAVE_FLAG_DAT2_DISABLED`` and re-flash your device. This option will help avoid slave detecting on the DAT2 line. Note that 4-bit SD mode will no longer be supported by the standard Card Common Control Register (CCCR); however, the host will not be aware of that. The use of 4-bit SD mode will have to be disabled on the host's side.
 
 
-.. _gpio2_strapping_pin:
+    .. _no_pull-up_on_gpio12:
 
-Download Mode Not Working (minor issue)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    No Pull-up on GPIO12
+    ^^^^^^^^^^^^^^^^^^^^
 
-When the GPIO2 pin is pulled high in accordance with the SD pull-up requirements, you cannot enter Download mode because GPIO2 is a bootstrapping pin which in this case must be pulled low.
+    Your module is compatible with the SDIO protocol. Just connect GPIO12 to VDD via a 10 kOhm resistor.
 
-There are the following solutions:
 
-- For boards that require shorting the GPIO0 and GPIO2 pins with a jumper, put the jumper in place, and the auto-reset circuit will pull GPIO2 low along with GPIO0 before entering Download mode.
-- For boards with components attached to their GPIO2 pin (such as pull-down resistors and/or LEDs), check the schematic of your development board for anything connected to GPIO2.
+    .. _gpio2_strapping_pin:
 
-    - **LEDs** would not affect operation in most cases.
-    - **Pull-down resistors** can interfere with DAT0 signals and must be removed.
+    Download Mode Not Working (minor issue)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If the above solutions do not work for you, please determine if it is the host or slave device that has pull-ups affecting their GPIO2, then locate these pull-ups and remove them.
+    When the GPIO2 pin is pulled high in accordance with the SD pull-up requirements, you cannot enter Download mode because GPIO2 is a bootstrapping pin which in this case must be pulled low.
+
+    There are the following solutions:
+
+    - For boards that require shorting the GPIO0 and GPIO2 pins with a jumper, put the jumper in place, and the auto-reset circuit will pull GPIO2 low along with GPIO0 before entering Download mode.
+    - For boards with components attached to their GPIO2 pin (such as pull-down resistors and/or LEDs), check the schematic of your development board for anything connected to GPIO2.
+
+        - **LEDs** would not affect operation in most cases.
+        - **Pull-down resistors** can interfere with DAT0 signals and must be removed.
+
+    If the above solutions do not work for you, please determine if it is the host or slave device that has pull-ups affecting their GPIO2, then locate these pull-ups and remove them.
 
 
 .. _related_info_sdio:
@@ -268,62 +264,62 @@ If the above solutions do not work for you, please determine if it is the host o
 Related Information
 -------------------
 
-.. _mtdi_strapping_pin:
-
-MTDI Strapping Pin
-^^^^^^^^^^^^^^^^^^
-
-MTDI (GPIO12) is used as a bootstrapping pin to select the output voltage of an internal regulator (VDD_SDIO) which powers the flash chip. This pin has an internal pull-down, so, if left unconnected, it will read low at startup, which will lead to selecting the default 3.3 V operation.
-
 .. only:: esp32
+
+    .. _mtdi_strapping_pin:
+
+    MTDI Strapping Pin
+    ^^^^^^^^^^^^^^^^^^
+
+    MTDI (GPIO12) is used as a bootstrapping pin to select the output voltage of an internal regulator (VDD_SDIO) which powers the flash chip. This pin has an internal pull-down, so, if left unconnected, it will read low level at startup, which will lead to selecting the default 3.3 V operation.
 
     All ESP32-WROVER modules, excluding ESP32-WROVER-B, use 1.8 V flash and have internal pull-ups on GPIO12. Other modules that use 3.3 V flash have no pull-ups on the GPIO12 pin, and this pin is slightly pulled down internally.
 
-When adding a pull-up to this pin for SD card operation, consider the following:
+    When adding a pull-up to this pin for SD card operation, consider the following:
 
-- For boards that do not use the internal regulator (VDD_SDIO) to power flash, GPIO12 can be pulled high.
-- For boards using 1.8 V flash chips, GPIO12 needs to be pulled high at reset. This is fully compatible with the SD card operation.
-- On boards using the internal regulator and a 3.3 V flash chip, GPIO12 must be pulled low at reset. This is incompatible with the SD card operation. For reference information on compatibility of Espressif's boards with the SD card operation, see :ref:`compatibility_overview_espressif_hw_sdio`.
+    - For boards that do not use the internal regulator (VDD_SDIO) to power flash, GPIO12 can be pulled high.
+    - For boards using 1.8 V flash chips, GPIO12 needs to be pulled high at reset. This is fully compatible with the SD card operation.
+    - On boards using the internal regulator and a 3.3 V flash chip, GPIO12 must be pulled low at reset. This is incompatible with the SD card operation. For reference information on compatibility of Espressif's boards with the SD card operation, see :ref:`compatibility_overview_espressif_hw_sdio`.
 
 
-Internal Pull-ups and Strapping Requirements
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    Internal Pull-ups and Strapping Requirements
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Using external resistors is always preferable. However, Espressif's products have internal weak pull-up and pull-down resistors which can be enabled and used instead of external ones. Please keep in mind that this solution cannot guarantee reliable SDIO communication.
+    Using external resistors is always preferable. However, Espressif's products have internal weak pull-up and pull-down resistors which can be enabled and used instead of external ones. Please keep in mind that this solution cannot guarantee reliable SDIO communication.
 
-With that said, the information about these internal pull-ups and strapping requirements can still be useful. Espressif hardware products have different weak internal pull-ups / pull-downs connected to CMD and DATA pins. The table below shows the default pull-up and pull-down states of the CMD and DATA pins.
+    With that said, the information about these internal pull-ups and strapping requirements can still be useful. Espressif hardware products have different weak internal pull-ups / pull-downs connected to CMD and DATA pins. The table below shows the default pull-up and pull-down states of the CMD and DATA pins.
 
-The following abbreviations are used in the table:
+    The following abbreviations are used in the table:
 
-- **WPU**: Weak pull-up inside the SoC
-- **WPD**: Weak pull-down inside the SoC
-- **PU**: Pull-up inside Espressif modules but outside the SoC
+    - **WPU**: Weak pull-up inside the SoC
+    - **WPD**: Weak pull-down inside the SoC
+    - **PU**: Pull-up inside Espressif modules but outside the SoC
 
-.. list-table:: Default pull-up and pull-down states of the CMD and DATA pins
-   :widths: 25 25 25 25
-   :header-rows: 1
+    .. list-table:: Default pull-up and pull-down states of the CMD and DATA pins
+       :widths: 25 25 25 25
+       :header-rows: 1
 
-   * - GPIO number
-     - Pin Name
-     - Startup State
-     - Strapping Requirement
-   * - **15**
-     - CMD
-     - WPU
-     -
-   * - **2**
-     - DAT0
-     - WPD
-     - Low for Download mode
-   * - **4**
-     - DAT1
-     - WPD
-     -
-   * - **12**
-     - DAT2
-     - PU for 1.8 V flash; WPD for 3.3 V flash
-     - High for 1.8 V flash; Low for 3.3 V flash
-   * - **13**
-     - DAT3
-     - WPU
-     -
+       * - GPIO number
+         - Pin Name
+         - Startup State
+         - Strapping Requirement
+       * - **15**
+         - CMD
+         - WPU
+         -
+       * - **2**
+         - DAT0
+         - WPD
+         - Low for Download mode
+       * - **4**
+         - DAT1
+         - WPD
+         -
+       * - **12**
+         - DAT2
+         - PU for 1.8 V flash; WPD for 3.3 V flash
+         - High for 1.8 V flash; Low for 3.3 V flash
+       * - **13**
+         - DAT3
+         - WPU
+         -
