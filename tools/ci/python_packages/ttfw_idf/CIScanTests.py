@@ -5,14 +5,11 @@ import logging
 import os
 from collections import defaultdict
 from copy import deepcopy
+from typing import Any
 
-try:
-    from typing import Any
-except ImportError:
-    # Only used for type annotations
-    pass
-from find_apps import find_apps
-from find_build_apps import BUILD_SYSTEM_CMAKE, BUILD_SYSTEMS
+from ci.idf_ci_utils import get_pytest_app_paths
+from find_apps import find_apps, find_builds_for_app
+from find_build_apps import BUILD_SYSTEM_CMAKE, BUILD_SYSTEMS, config_rules_from_str
 from idf_py_actions.constants import PREVIEW_TARGETS, SUPPORTED_TARGETS
 from ttfw_idf.IDFAssignTest import ExampleAssignTest, TestAppsAssignTest
 
@@ -31,6 +28,8 @@ BUILD_ALL_LABELS = [
     'BOT_LABEL_REGULAR_TEST',
     'BOT_LABEL_WEEKEND_TEST',
 ]
+
+BUILD_PER_JOB = 30  # each build takes 1 mins around
 
 
 def _has_build_all_label():  # type: () -> bool
@@ -100,6 +99,23 @@ def main():  # type: () -> None
                         help='add this flag to preserve artifacts for all apps')
     parser.add_argument('--build-all', action='store_true',
                         help='add this flag to build all apps')
+    parser.add_argument('--combine-all-targets', action='store_true',
+                        help='add this flag to combine all target jsons into one')
+    parser.add_argument('--except-targets', nargs='+',
+                        help='only useful when "--combine-all-targets". Specified targets would be skipped.')
+    parser.add_argument(
+        '--config',
+        action='append',
+        help='Only useful when "--evaluate-parallel-count" is flagged.'
+             'Adds configurations (sdkconfig file names) to build. This can either be ' +
+             'FILENAME[=NAME] or FILEPATTERN. FILENAME is the name of the sdkconfig file, ' +
+             'relative to the project directory, to be used. Optional NAME can be specified, ' +
+             'which can be used as a name of this configuration. FILEPATTERN is the name of ' +
+             'the sdkconfig file, relative to the project directory, with at most one wildcard. ' +
+             'The part captured by the wildcard is used as the name of the configuration.',
+    )
+    parser.add_argument('--evaluate-parallel-count', action='store_true',
+                        help='suggest parallel count according to build items')
 
     args = parser.parse_args()
     build_test_case_apps, build_standalone_apps = _judge_build_or_not(args.test_type, args.build_all)
@@ -173,9 +189,19 @@ def main():  # type: () -> None
         else:
             scan_info_dict[target]['standalone_apps'] = set()
     test_case_apps_preserve_default = True if build_system == 'cmake' else False
+    output_files = []
+    build_items_total_count = 0
     for target in SUPPORTED_TARGETS:
+        # get pytest apps paths
+        pytest_app_paths = set()
+        for path in paths:
+            pytest_app_paths.update(get_pytest_app_paths(path, target))
+
         apps = []
         for app_dir in scan_info_dict[target]['test_case_apps']:
+            if app_dir in pytest_app_paths:
+                print(f'WARNING: has pytest script: {app_dir}')
+                continue
             apps.append({
                 'app_dir': app_dir,
                 'build_system': args.build_system,
@@ -183,6 +209,9 @@ def main():  # type: () -> None
                 'preserve': args.preserve_all or test_case_apps_preserve_default
             })
         for app_dir in scan_info_dict[target]['standalone_apps']:
+            if app_dir in pytest_app_paths:
+                print(f'Skipping pytest app: {app_dir}')
+                continue
             apps.append({
                 'app_dir': app_dir,
                 'build_system': args.build_system,
@@ -191,7 +220,48 @@ def main():  # type: () -> None
             })
         output_path = os.path.join(args.output_path, 'scan_{}_{}.json'.format(target.lower(), build_system))
         with open(output_path, 'w') as fw:
+            if args.evaluate_parallel_count:
+                build_items = []
+                config_rules = config_rules_from_str(args.config or [])
+                for app in apps:
+                    build_items += find_builds_for_app(
+                        app['app_dir'],
+                        app['app_dir'],
+                        'build',
+                        '',
+                        app['target'],
+                        app['build_system'],
+                        config_rules,
+                        app['preserve'],
+                    )
+                print('Found {} builds'.format(len(build_items)))
+                if args.combine_all_targets:
+                    if (args.except_targets and target not in [t.lower() for t in args.except_targets]) \
+                            or (not args.except_targets):
+                        build_items_total_count += len(build_items)
+                else:
+                    print(f'suggest set parallel count for target {target} to {len(build_items) // BUILD_PER_JOB + 1}')
             fw.writelines([json.dumps(app) + '\n' for app in apps])
+
+            if args.combine_all_targets:
+                if (args.except_targets and target not in [t.lower() for t in args.except_targets]) \
+                        or (not args.except_targets):
+                    output_files.append(output_path)
+                else:
+                    print(f'skipping combining target {target}')
+
+    if args.combine_all_targets:
+        scan_all_json = os.path.join(args.output_path, f'scan_all_{build_system}.json')
+        lines = []
+        for file in output_files:
+            with open(file) as fr:
+                lines.extend([line for line in fr.readlines() if line.strip()])
+        with open(scan_all_json, 'w') as fw:
+            fw.writelines(lines)
+        print(f'combined into file: {scan_all_json}')
+
+        if args.evaluate_parallel_count:
+            print(f'Total build: {build_items_total_count}. Suggest set parallel count for all target to {build_items_total_count // BUILD_PER_JOB + 1}')
 
 
 if __name__ == '__main__':
