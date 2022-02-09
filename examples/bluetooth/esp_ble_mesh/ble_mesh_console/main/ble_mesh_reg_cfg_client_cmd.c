@@ -1,16 +1,8 @@
-// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "esp_ble_mesh_networking_api.h"
 #include "ble_mesh_adapter.h"
@@ -20,6 +12,8 @@ typedef struct {
     struct arg_str *action_type;
     struct arg_str *set_state;
     struct arg_int *opcode;
+    struct arg_int *count;
+    struct arg_int *feature;
     struct arg_int *unicast_address;
     struct arg_int *appkey_index;
     struct arg_int *mod_id;
@@ -218,6 +212,7 @@ int ble_mesh_configuration_client_model_operation(int argc, char **argv)
     esp_ble_mesh_cfg_default_ttl_set_t ttl_set;
     esp_ble_mesh_cfg_gatt_proxy_set_t proxy_set;
     esp_ble_mesh_cfg_app_key_add_t app_key_add;
+    esp_ble_mesh_cfg_heartbeat_pub_set_t heartbeat_pub_set;
     esp_ble_mesh_cfg_model_pub_set_t mod_pub_set = {
         .company_id = 0xFFFF,
         .cred_flag = false,
@@ -261,6 +256,7 @@ int ble_mesh_configuration_client_model_operation(int argc, char **argv)
     if (configuration_client_model_operation.net_idx->count != 0) {
         client_common.ctx.net_idx = configuration_client_model_operation.net_idx->ival[0];
         app_key_add.net_idx = configuration_client_model_operation.net_idx->ival[0];
+        heartbeat_pub_set.net_idx = configuration_client_model_operation.net_idx->ival[0];
     }
 
     if (configuration_client_model_operation.unicast_address->count != 0) {
@@ -283,12 +279,14 @@ int ble_mesh_configuration_client_model_operation(int argc, char **argv)
         ttl_set.ttl = configuration_client_model_operation.value->ival[0];
         proxy_set.gatt_proxy = configuration_client_model_operation.value->ival[0];
         mod_pub_set.publish_ttl = configuration_client_model_operation.value->ival[0];
+        heartbeat_pub_set.ttl = configuration_client_model_operation.value->ival[0];
     }
 
     if (configuration_client_model_operation.addr->count != 0) {
         mod_sub_del.sub_addr = configuration_client_model_operation.addr->ival[0];
         mod_sub_add.sub_addr = configuration_client_model_operation.addr->ival[0];
         mod_pub_set.publish_addr = configuration_client_model_operation.addr->ival[0];
+        heartbeat_pub_set.dst = configuration_client_model_operation.addr->ival[0];
     }
 
     if (configuration_client_model_operation.mod_id->count != 0) {
@@ -302,6 +300,7 @@ int ble_mesh_configuration_client_model_operation(int argc, char **argv)
     if (configuration_client_model_operation.relay_statue->count != 0) {
         relay_set.relay = configuration_client_model_operation.relay_statue->ival[0];
         mod_pub_set.publish_period = configuration_client_model_operation.relay_statue->ival[0];
+        heartbeat_pub_set.period = configuration_client_model_operation.relay_statue->ival[0];
     }
 
     if (configuration_client_model_operation.relay_transmit->count != 0) {
@@ -314,6 +313,14 @@ int ble_mesh_configuration_client_model_operation(int argc, char **argv)
         mod_sub_del.company_id = configuration_client_model_operation.cid->ival[0];
         mod_sub_add.company_id = configuration_client_model_operation.cid->ival[0];
         mod_pub_set.company_id = configuration_client_model_operation.cid->ival[0];
+    }
+
+    if (configuration_client_model_operation.count->count != 0) {
+        heartbeat_pub_set.count = configuration_client_model_operation.count->ival[0];
+    }
+
+    if (configuration_client_model_operation.feature->count != 0) {
+        heartbeat_pub_set.feature = configuration_client_model_operation.feature->ival[0];
     }
 
     if (configuration_client_model_operation.action_type->count != 0) {
@@ -346,6 +353,8 @@ int ble_mesh_configuration_client_model_operation(int argc, char **argv)
                     err = esp_ble_mesh_config_client_set_state(&client_common, (esp_ble_mesh_cfg_client_set_state_t *)&mod_pub_set);
                 } else if (strcmp(configuration_client_model_operation.set_state->sval[0], "reset") == 0) {
                     err = esp_ble_mesh_config_client_set_state(&client_common, NULL);
+                }else if(strcmp(configuration_client_model_operation.set_state->sval[0], "hbpub") == 0){
+                    err = esp_ble_mesh_config_client_set_state(&client_common, (esp_ble_mesh_cfg_client_set_state_t *)&heartbeat_pub_set);
                 }
             }
         } else if (strcmp(configuration_client_model_operation.action_type->sval[0], "reg") == 0) {
@@ -377,6 +386,8 @@ void ble_mesh_register_configuration_client_model_command(void)
     configuration_client_model_operation.value = arg_int0("v", NULL, "<value>", "value");
     configuration_client_model_operation.addr = arg_int0("a", NULL, "<address>", "address");
     configuration_client_model_operation.mod_id = arg_int0("m", NULL, "<mod id>", "model id");
+    configuration_client_model_operation.count = arg_int0("b", NULL, "<heartbeat count>", "heartbeat count");
+    configuration_client_model_operation.feature = arg_int0("f", NULL, "<features>", "features");
     configuration_client_model_operation.end = arg_end(1);
 
     const esp_console_cmd_t client_stconfiguration_client_model_operationate_cmd = {
