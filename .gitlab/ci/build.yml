@@ -97,6 +97,7 @@ build_non_test_components_apps:
   extends:
     - .build_template
     - .build_test_apps_template
+    - .rules:build:component_ut
   variables:
     IDF_TARGET: all
     TEST_PREFIX: component_ut
