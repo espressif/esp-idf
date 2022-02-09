@@ -5,7 +5,7 @@ on:
   pull_request:
     paths:
       - "**.py"
-      - "python_lint.yml"
+      - "**/python_lint.yml"
 
 jobs:
   python_lint:
