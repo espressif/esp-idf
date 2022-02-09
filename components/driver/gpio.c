@@ -562,7 +562,7 @@ esp_err_t gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
 #endif
         portENTER_CRITICAL(&gpio_context.gpio_spinlock);
         gpio_hal_wakeup_enable(gpio_context.gpio_hal, gpio_num, intr_type);
-#if SOC_GPIO_SUPPORT_SLP_SWITCH && CONFIG_ESP32C3_LIGHTSLEEP_GPIO_RESET_WORKAROUND
+#if SOC_GPIO_SUPPORT_SLP_SWITCH && CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND
         gpio_hal_sleep_sel_dis(gpio_context.gpio_hal, gpio_num);
 #endif
         portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
@@ -585,7 +585,7 @@ esp_err_t gpio_wakeup_disable(gpio_num_t gpio_num)
 #endif
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
     gpio_hal_wakeup_disable(gpio_context.gpio_hal, gpio_num);
-#if SOC_GPIO_SUPPORT_SLP_SWITCH && CONFIG_ESP32C3_LIGHTSLEEP_GPIO_RESET_WORKAROUND
+#if SOC_GPIO_SUPPORT_SLP_SWITCH && CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND
     gpio_hal_sleep_sel_en(gpio_context.gpio_hal, gpio_num);
 #endif
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
@@ -910,7 +910,7 @@ esp_err_t gpio_deep_sleep_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t int
     }
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
     gpio_hal_deepsleep_wakeup_enable(gpio_context.gpio_hal, gpio_num, intr_type);
-#if SOC_GPIO_SUPPORT_SLP_SWITCH && CONFIG_ESP32C3_LIGHTSLEEP_GPIO_RESET_WORKAROUND
+#if SOC_GPIO_SUPPORT_SLP_SWITCH && CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND
     gpio_hal_sleep_sel_dis(gpio_context.gpio_hal, gpio_num);
 #endif
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
@@ -925,7 +925,7 @@ esp_err_t gpio_deep_sleep_wakeup_disable(gpio_num_t gpio_num)
     }
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
     gpio_hal_deepsleep_wakeup_disable(gpio_context.gpio_hal, gpio_num);
-#if SOC_GPIO_SUPPORT_SLP_SWITCH && CONFIG_ESP32C3_LIGHTSLEEP_GPIO_RESET_WORKAROUND
+#if SOC_GPIO_SUPPORT_SLP_SWITCH && CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND
     gpio_hal_sleep_sel_en(gpio_context.gpio_hal, gpio_num);
 #endif
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
