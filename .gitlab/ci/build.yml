@@ -117,6 +117,7 @@ build_non_test_components_apps:
       - log_template_app/*
       - size_info.txt
       - build_template_app/**/size.json
+    expire_in: 1 week
   script:
     # Set the variable for 'esp-idf-template' testing
     - ESP_IDF_TEMPLATE_GIT=${ESP_IDF_TEMPLATE_GIT:-"https://github.com/espressif/esp-idf-template.git"}

@@ -1,5 +1,6 @@
 .pytest_template:
   stage: target_test
+  timeout: 1 hour
   extends: .before_script_pytest
   artifacts:
     when: always
@@ -8,6 +9,7 @@
       - /tmp/pytest-embedded/
     reports:
       junit: XUNIT_RESULT.xml
+    expire_in: 1 week
   script:
     - pytest $TEST_DIR --target $TARGET -m $ENV_MARKER --junitxml=XUNIT_RESULT.xml
 
@@ -173,6 +175,7 @@ component_ut_pytest_esp32c3_generic:
 
 .target_test_job_template:
   stage: target_test
+  timeout: 1 hour
   artifacts:
     when: always
     paths:
@@ -180,9 +183,9 @@ component_ut_pytest_esp32c3_generic:
       - $LOG_PATH
     exclude:
       - .git/**/*
-    expire_in: 1 week
     reports:
       junit: $LOG_PATH/*/XUNIT_RESULT.xml
+    expire_in: 1 week
   variables:
     TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
     LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
