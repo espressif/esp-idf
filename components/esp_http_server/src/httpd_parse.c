@@ -756,13 +756,10 @@ esp_err_t httpd_req_new(struct httpd_data *hd, struct sock_db *sd)
         ret = httpd_ws_get_frame_type(r);
         ESP_LOGD(TAG, LOG_FMT("New WS request from existing socket, ws_type=%d"), ra->ws_type);
 
-        /*  Stop and return here immediately if it's a CLOSE frame */
         if (ra->ws_type == HTTPD_WS_TYPE_CLOSE) {
+            /*  Only mark ws_close to true if it's a CLOSE frame */
             sd->ws_close = true;
-            return ret;
-        }
-
-        if (ra->ws_type == HTTPD_WS_TYPE_PONG) {
+        } else if (ra->ws_type == HTTPD_WS_TYPE_PONG) {
             /* Pass the PONG frames to the handler as well, as user app might send PINGs */
             ESP_LOGD(TAG, LOG_FMT("Received PONG frame"));
         }
