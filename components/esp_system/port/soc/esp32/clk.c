@@ -1,4 +1,3 @@
-
 /*
  * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
  *
@@ -218,9 +217,9 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     /* For reason that only reset CPU, do not disable the clocks
      * that have been enabled before reset.
      */
-    if ((rst_reas[0] >= RESET_REASON_CPU0_MWDT0 && rst_reas[0] <= RESET_REASON_CPU0_RTC_WDT)
+    if ((rst_reas[0] == RESET_REASON_CPU0_MWDT0 || rst_reas[0] == RESET_REASON_CPU0_SW || rst_reas[0] == RESET_REASON_CPU0_RTC_WDT)
 #if !CONFIG_FREERTOS_UNICORE
-        || (rst_reas[1] >= RESET_REASON_CPU1_MWDT1 && rst_reas[1] <= RESET_REASON_CPU1_RTC_WDT)
+        || (rst_reas[1] == RESET_REASON_CPU1_MWDT1 || rst_reas[1] == RESET_REASON_CPU1_SW || rst_reas[1] == RESET_REASON_CPU1_RTC_WDT)
 #endif
     ) {
         common_perip_clk = ~DPORT_READ_PERI_REG(DPORT_PERIP_CLK_EN_REG);
