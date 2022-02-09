@@ -11,6 +11,7 @@
 #include "soc/lldesc.h"
 #include "esp_private/gdma.h"
 #include "hal/uhci_ll.h"
+#include "nvs_flash.h"
 #include "esp_bt.h"
 #include "esp_log.h"
 
@@ -252,6 +253,14 @@ void uhci_uart_install(void)
 void app_main(void)
 {
     esp_err_t ret;
+
+    /* Initialize NVS — it is used to store PHY calibration data */
+    ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK( ret );
 
     uhci_uart_install();
 
