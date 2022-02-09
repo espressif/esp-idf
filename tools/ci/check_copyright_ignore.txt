@@ -909,7 +909,6 @@ components/hal/include/hal/ds_hal.h
 components/hal/include/hal/esp_flash_err.h
 components/hal/include/hal/interrupt_controller_hal.h
 components/hal/include/hal/interrupt_controller_types.h
-components/hal/include/hal/ledc_hal.h
 components/hal/include/hal/mcpwm_hal.h
 components/hal/include/hal/mcpwm_types.h
 components/hal/include/hal/mpu_hal.h

@@ -27,11 +27,14 @@
  *
  * 3. You can also set a target duty directly without fading.
  *
- * 4. This example uses GPIO18/19/4/5 as LEDC output,
- *    and it will change the duty repeatedly.
+ * 4. On ESP32, GPIO18/19/4/5 are used as the LEDC outputs:
+ *              GPIO18/19 are from the high speed channel group
+ *              GPIO4/5 are from the low speed channel group
  *
- * 5. GPIO18/19 are from high speed channel group.
- *    GPIO4/5 are from low speed channel group.
+ *    On other targets, GPIO8/9/4/5 are used as the LEDC outputs,
+ *    and they are all from the low speed channel group.
+ *
+ * 5. All the LEDC outputs change the duty repeatedly.
  *
  */
 #if CONFIG_IDF_TARGET_ESP32
@@ -45,9 +48,9 @@
 #define LEDC_LS_TIMER          LEDC_TIMER_1
 #define LEDC_LS_MODE           LEDC_LOW_SPEED_MODE
 #if !CONFIG_IDF_TARGET_ESP32
-#define LEDC_LS_CH0_GPIO       (18)
+#define LEDC_LS_CH0_GPIO       (8)
 #define LEDC_LS_CH0_CHANNEL    LEDC_CHANNEL_0
-#define LEDC_LS_CH1_GPIO       (19)
+#define LEDC_LS_CH1_GPIO       (9)
 #define LEDC_LS_CH1_CHANNEL    LEDC_CHANNEL_1
 #endif
 #define LEDC_LS_CH2_GPIO       (4)
