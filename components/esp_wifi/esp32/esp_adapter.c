@@ -42,6 +42,8 @@
 #include "esp_coexist_adapter.h"
 #include "esp32/dport_access.h"
 #include "esp_timer.h"
+#include "esp_rom_sys.h"
+#include "esp32/rom/ets_sys.h"
 
 #define TAG "esp_adapter"
 
@@ -181,7 +183,7 @@ static bool IRAM_ATTR env_is_chip_wrapper(void)
 
 static void set_intr_wrapper(int32_t cpu_no, uint32_t intr_source, uint32_t intr_num, int32_t intr_prio)
 {
-    intr_matrix_set(cpu_no, intr_source, intr_num);
+    esp_rom_route_intr_matrix(cpu_no, intr_source, intr_num);
 }
 
 static void clear_intr_wrapper(uint32_t intr_source, uint32_t intr_num)

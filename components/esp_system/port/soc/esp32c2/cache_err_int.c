@@ -10,7 +10,7 @@
  to panic the CPU, which from a debugging perspective is better than grabbing bad
  data from the bus.
 */
-#include "esp32c2/rom/ets_sys.h"
+#include "esp_rom_sys.h"
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
 #include "soc/extmem_reg.h"
@@ -46,8 +46,8 @@ void esp_cache_err_int_init(void)
      * This error can occur if the dbus performs a request but the icache
      * (or simply cache) is disabled.
      */
-    intr_matrix_set(core_id, ETS_CACHE_IA_INTR_SOURCE, ETS_CACHEERR_INUM);
-    intr_matrix_set(core_id, ETS_CACHE_CORE0_ACS_INTR_SOURCE, ETS_CACHEERR_INUM);
+    esp_rom_route_intr_matrix(core_id, ETS_CACHE_IA_INTR_SOURCE, ETS_CACHEERR_INUM);
+    esp_rom_route_intr_matrix(core_id, ETS_CACHE_CORE0_ACS_INTR_SOURCE, ETS_CACHEERR_INUM);
 
     /* Set the type and priority to cache error interrupts. */
     esprv_intc_int_set_type(BIT(ETS_CACHEERR_INUM), INTR_TYPE_LEVEL);

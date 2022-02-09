@@ -10,8 +10,6 @@
 #ifdef EAP_MSCHAPv2
 
 #include "rsn_supp/wpa.h"
-#include "utils/includes.h"
-#include "utils/common.h"
 #include "crypto/random.h"
 #include "crypto/ms_funcs.h"
 #include "tls/tls.h"

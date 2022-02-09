@@ -43,6 +43,8 @@ PROVIDE ( esp_rom_printf   = ets_printf );
 PROVIDE ( esp_rom_delay_us = ets_delay_us );
 PROVIDE ( esp_rom_install_uart_printf = ets_install_uart_printf );
 PROVIDE ( esp_rom_get_reset_reason = rtc_get_reset_reason );
+PROVIDE ( esp_rom_route_intr_matrix = intr_matrix_set );
+PROVIDE ( esp_rom_get_cpu_ticks_per_us = ets_get_cpu_frequency );
 
 PROVIDE( esp_rom_spiflash_attach = spi_flash_attach );
 PROVIDE ( esp_rom_spiflash_clear_bp = esp_rom_spiflash_unlock );

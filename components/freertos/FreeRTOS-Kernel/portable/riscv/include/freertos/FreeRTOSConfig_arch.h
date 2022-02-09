@@ -14,13 +14,7 @@
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION         0
 
 #ifndef __ASSEMBLER__
-#if CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/ets_sys.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/ets_sys.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/rom/ets_sys.h"
-#endif
+#include "esp_rom_sys.h"
 #endif // __ASSEMBLER__
 
 /* The maximum interrupt priority from which FreeRTOS.org API functions can

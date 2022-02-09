@@ -560,7 +560,7 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
         non_iram_int_mask[cpu]|=(1<<intr);
     }
     if (source>=0) {
-        intr_matrix_set(cpu, source, intr);
+        esp_rom_route_intr_matrix(cpu, source, intr);
     }
 
     //Fill return handle data.
@@ -735,7 +735,7 @@ esp_err_t IRAM_ATTR esp_intr_enable(intr_handle_t handle)
     }
     if (source >= 0) {
         //Disabled using int matrix; re-connect to enable
-        intr_matrix_set(handle->vector_desc->cpu, source, handle->vector_desc->intno);
+        esp_rom_route_intr_matrix(handle->vector_desc->cpu, source, handle->vector_desc->intno);
     } else {
         //Re-enable using cpu int ena reg
         if (handle->vector_desc->cpu!=cpu_hal_get_core_id()) return ESP_ERR_INVALID_ARG; //Can only enable these ints on this cpu
@@ -771,7 +771,7 @@ esp_err_t IRAM_ATTR esp_intr_disable(intr_handle_t handle)
     if (source >= 0) {
         if ( disabled ) {
             //Disable using int matrix
-            intr_matrix_set(handle->vector_desc->cpu, source, INT_MUX_DISABLED_INTNO);
+            esp_rom_route_intr_matrix(handle->vector_desc->cpu, source, INT_MUX_DISABLED_INTNO);
         }
     } else {
         //Disable using per-cpu regs

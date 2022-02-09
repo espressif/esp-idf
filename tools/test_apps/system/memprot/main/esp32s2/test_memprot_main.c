@@ -1,10 +1,11 @@
 /* MEMPROT IramDram testing code */
 #include <stdio.h>
+#include <string.h>
 #include "sdkconfig.h"
+#include "esp_log.h"
 #include "esp_spi_flash.h"
 #include "esp32s2/memprot.h"
-#include <string.h>
-#include "esp_log.h"
+#include "soc/soc.h"
 
 /*
  * ESP32S2 MEMORY PROTECTION MODULE TEST

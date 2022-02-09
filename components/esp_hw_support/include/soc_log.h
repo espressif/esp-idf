@@ -24,20 +24,6 @@
 #define SOC_LOGV(tag, fmt, ...) ESP_EARLY_LOGV(tag, fmt, ##__VA_ARGS__)
 
 #else
-#include "sdkconfig.h"
-#ifdef CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/ets_sys.h"  // will be removed in idf v5.0
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/ets_sys.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/ets_sys.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/ets_sys.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/ets_sys.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/rom/ets_sys.h"
-#endif
 
 #define SOC_LOGE(tag, fmt, ...) esp_rom_printf("%s(err): " fmt, tag, ##__VA_ARGS__)
 #define SOC_LOGW(tag, fmt, ...) esp_rom_printf("%s(warn): " fmt, tag, ##__VA_ARGS__)

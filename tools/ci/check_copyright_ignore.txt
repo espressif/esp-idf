@@ -708,7 +708,6 @@ components/esp_rom/include/esp32s3/rom/usb/usb_persist.h
 components/esp_rom/include/esp_rom_crc.h
 components/esp_rom/include/esp_rom_efuse.h
 components/esp_rom/include/esp_rom_gpio.h
-components/esp_rom/include/esp_rom_sys.h
 components/esp_rom/include/esp_rom_uart.h
 components/esp_rom/include/linux/soc/reset_reasons.h
 components/esp_rom/linux/esp_rom_crc.c
@@ -750,19 +749,15 @@ components/esp_system/port/arch/xtensa/expression_with_stack.c
 components/esp_system/port/public_compat/brownout.h
 components/esp_system/port/public_compat/cache_err_int.h
 components/esp_system/port/public_compat/trax.h
-components/esp_system/port/soc/esp32/cache_err_int.c
 components/esp_system/port/soc/esp32/cache_err_int.h
 components/esp_system/port/soc/esp32/intr.c
 components/esp_system/port/soc/esp32/reset_reason.c
 components/esp_system/port/soc/esp32c3/apb_backup_dma.c
-components/esp_system/port/soc/esp32c3/cache_err_int.c
 components/esp_system/port/soc/esp32c3/cache_err_int.h
 components/esp_system/port/soc/esp32c3/reset_reason.c
 components/esp_system/port/soc/esp32h2/apb_backup_dma.c
-components/esp_system/port/soc/esp32h2/cache_err_int.c
 components/esp_system/port/soc/esp32h2/cache_err_int.h
 components/esp_system/port/soc/esp32h2/reset_reason.c
-components/esp_system/port/soc/esp32s2/cache_err_int.c
 components/esp_system/port/soc/esp32s2/cache_err_int.h
 components/esp_system/port/soc/esp32s2/reset_reason.c
 components/esp_system/port/soc/esp32s2/usb_console.c
@@ -780,7 +775,6 @@ components/esp_system/test_eh_frame_parser/linker.ld
 components/esp_system/test_eh_frame_parser/main.c
 components/esp_system/ubsan.c
 components/esp_timer/include/esp_private/esp_timer_private.h
-components/esp_timer/src/ets_timer_legacy.c
 components/esp_timer/test/test_esp_timer.c
 components/esp_timer/test/test_esp_timer_light_sleep.c
 components/esp_timer/test/test_ets_timer.c
@@ -1397,7 +1391,6 @@ components/protocomm/src/common/protocomm_priv.h
 components/protocomm/src/security/security0.c
 components/protocomm/src/transports/protocomm_console.c
 components/protocomm/test/test_protocomm.c
-components/pthread/include/esp_pthread.h
 components/pthread/pthread_cond_var.c
 components/pthread/pthread_internal.h
 components/pthread/pthread_local_storage.c
@@ -2440,7 +2433,6 @@ examples/peripherals/pcnt/rotary_encoder/components/rotary_encoder/include/rotar
 examples/peripherals/pcnt/rotary_encoder/components/rotary_encoder/src/rotary_encoder_pcnt_ec11.c
 examples/peripherals/pcnt/rotary_encoder/main/rotary_encoder_example_main.c
 examples/peripherals/rmt/ir_protocols/components/infrared_tools/include/ir_timings.h
-examples/peripherals/rmt/ir_protocols/components/infrared_tools/include/ir_tools.h
 examples/peripherals/rmt/ir_protocols/components/infrared_tools/src/ir_builder_rmt_nec.c
 examples/peripherals/rmt/ir_protocols/components/infrared_tools/src/ir_builder_rmt_rc5.c
 examples/peripherals/rmt/ir_protocols/components/infrared_tools/src/ir_parser_rmt_nec.c

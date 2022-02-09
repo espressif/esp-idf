@@ -37,6 +37,7 @@
 #include "esp_coexist_internal.h"
 #include "esp_timer.h"
 #include "esp_sleep.h"
+#include "esp_rom_sys.h"
 
 #if CONFIG_BT_ENABLED
 
@@ -431,7 +432,7 @@ static inline void esp_bt_power_domain_off(void)
 
 static void interrupt_set_wrapper(int32_t cpu_no, int32_t intr_source, int32_t intr_num, int32_t intr_prio)
 {
-    intr_matrix_set(cpu_no, intr_source, intr_num);
+    esp_rom_route_intr_matrix(cpu_no, intr_source, intr_num);
 }
 
 static void interrupt_clear_wrapper(int32_t intr_source, int32_t intr_num)
