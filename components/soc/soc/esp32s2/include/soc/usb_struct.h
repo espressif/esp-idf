@@ -22,82 +22,81 @@ extern "C" {
 #endif
 
 typedef struct usb_reg {
-    volatile uint32_t gotgctl; /*!< 0x0 */
-    volatile uint32_t gotgint;
-    volatile uint32_t gahbcfg;
-    volatile uint32_t gusbcfg;
-    volatile uint32_t grstctl; /*!< 0x10 */
-    volatile uint32_t gintsts;
-    volatile uint32_t gintmsk;
-    volatile uint32_t grxstsr;
-    volatile uint32_t grxstsp; /*!< 0x20 */
-    volatile uint32_t grxfsiz;
-    volatile uint32_t gnptxfsiz;
-    volatile uint32_t gnptxsts;
-    volatile uint32_t reserved0x2c;
-    volatile uint32_t gpvndctl; /*!< 0x30 */
-    volatile uint32_t ggpio;
-    volatile uint32_t guid;
-    volatile uint32_t gsnpsid;
-    volatile uint32_t ghwcfg1; /*!< 0x40 */
-    volatile uint32_t ghwcfg2;
-    volatile uint32_t ghwcfg3;
-    volatile uint32_t ghwcfg4;   /*!< 0x50 */
-    volatile uint32_t glpmcfg;   /*!< 0x54 */
-    volatile uint32_t gpwrdn;    /*!< 0x58 */
-    volatile uint32_t gdfifocfg; /*!< 0x5c */
-    volatile uint32_t gadpctl;   /*!< 0x60 */
-    uint32_t reserved0x64[39];
-    volatile uint32_t hptxfsiz;    /*!< 0x100 */
-    volatile uint32_t dieptxf[15]; /*!< 0x104 */
-    uint32_t reserved0x140[176];       /*!<  0x140 */
+    volatile uint32_t gotgctl;              // 0x0000 OTG Control and Status Register
+    volatile uint32_t gotgint;              // 0x0004 OTG Interrupt Register
+    volatile uint32_t gahbcfg;              // 0x0008 AHB Configuration Register
+    volatile uint32_t gusbcfg;              // 0x000c USB Configuration Register
+    volatile uint32_t grstctl;              // 0x0010 Reset Register
+    volatile uint32_t gintsts;              // 0x0014 Interrupt Register
+    volatile uint32_t gintmsk;              // 0x0018 Interrupt Mask Register
+    volatile uint32_t grxstsr;              // 0x001c Receive Status Debug Read Register
+    volatile uint32_t grxstsp;              // 0x0020 Receive Status Read/Pop Register
+    volatile uint32_t grxfsiz;              // 0x0024 Receive FIFO Size Register
+    volatile uint32_t gnptxfsiz;            // 0x0028 Non-periodic Transmit FIFO Size Register
+    volatile uint32_t gnptxsts;             // 0x002c Non-periodic Transmit FIFO/Queue Status Register
+    uint32_t reserved_0x0030_0x0040[4];     // 0x0030 to 0x0040
+    volatile uint32_t gsnpsid;              // 0x0040 Synopsys ID Register
+    volatile uint32_t ghwcfg1;              // 0x0044 User Hardware Configuration 1 Register
+    volatile uint32_t ghwcfg2;              // 0x0048 User Hardware Configuration 2 Register
+    volatile uint32_t ghwcfg3;              // 0x004c User Hardware Configuration 3 Register
+    volatile uint32_t ghwcfg4;              // 0x0050 User Hardware Configuration 4 Register
+    uint32_t reserved_0x0054_0x005c[2];     // 0x0054 to 0x005c
+    volatile uint32_t gdfifocfg;            // 0x005c Global DFIFO Configuration Register
+    uint32_t reserved_0x0060_0x0100[40];    // 0x0060 to 0x0100
+    volatile uint32_t hptxfsiz;             // 0x0100 Host Periodic Transmit FIFO Size Register
+    volatile uint32_t dieptxf[4];           // 0x0104 to 0x0114 Device IN Endpoint Transmit FIFO Size Register i
+    uint32_t reserved_0x0114_0x0140[11];    // 0x0114 to 0x0140
+    uint32_t reserved_0x0140_0x0400[176];   // 0x0140 to 0x0400
     /**
-     * The Host Global Registers structure defines the size and relative
-     * field offsets for the Host Mode Global Registers.  Host Global
-     * Registers offsets 400h-7FFh.
-    */
-    volatile uint32_t hcfg;     /*!< Host Configuration Register.   <i>Offset: 400h</i> */
-    volatile uint32_t hfir;     /*!< Host Frame Interval Register.  <i>Offset: 404h</i> */
-    volatile uint32_t hfnum;    /*!< Host Frame Number / Frame Remaining Register. <i>Offset: 408h</i> */
-    uint32_t reserved0x40C;       /*!< Reserved.  <i>Offset: 40Ch</i> */
-    volatile uint32_t hptxsts;  /*!< Host Periodic Transmit FIFO/ Queue Status Register. <i>Offset: 410h</i> */
-    volatile uint32_t haint;    /*!< Host All Channels Interrupt Register. <i>Offset: 414h</i> */
-    volatile uint32_t haintmsk; /*!< Host All Channels Interrupt Mask Register. <i>Offset: 418h</i> */
-    volatile uint32_t hflbaddr; /*!< Host Frame List Base Address Register . <i>Offset: 41Ch</i> */
-    uint32_t reserved0x420[7];
-    volatile uint32_t hprt; //0x440
-    uint32_t reserved0x444[240];
-    volatile uint32_t dcfg;                 /*!< Device Configuration Register. <i>Offset 800h</i> */
-    volatile uint32_t dctl;                 /*!< Device Control Register. <i>Offset: 804h</i> */
-    volatile uint32_t dsts;                 /*!< Device Status Register (Read Only). <i>Offset: 808h</i> */
-    uint32_t reserved0x80c;                 /*!< Reserved. <i>Offset: 80Ch</i> */
-    volatile uint32_t diepmsk;              /*!< Device IN Endpoint Common Interrupt Mask Register. <i>Offset: 810h</i> */
-    volatile uint32_t doepmsk;              /*!< Device OUT Endpoint Common Interrupt Mask Register. <i>Offset: 814h</i> */
-    volatile uint32_t daint;                /*!< Device All Endpoints Interrupt Register.  <i>Offset: 818h</i> */
-    volatile uint32_t daintmsk;             /*!< Device All Endpoints Interrupt Mask Register.  <i>Offset: 81Ch</i> */
-    volatile uint32_t dtknqr1;              /*!< Device IN Token Queue Read Register-1 (Read Only). <i>Offset: 820h</i> */
-    volatile uint32_t dtknqr2;              /*!< Device IN Token Queue Read Register-2 (Read Only). <i>Offset: 824h</i> */
-    volatile uint32_t dvbusdis;             /*!< Device VBUS     discharge Register.  <i>Offset: 828h</i> */
-    volatile uint32_t dvbuspulse;           /*!< Device VBUS Pulse Register.     <i>Offset: 82Ch</i> */
-    volatile uint32_t dtknqr3_dthrctl;      /*!< Device IN Token Queue Read Register-3 (Read Only). Device Thresholding control register (Read/Write) <i>Offset: 830h</i> */
-    volatile uint32_t dtknqr4_fifoemptymsk; /*!< Device IN Token Queue Read Register-4 (Read Only). Device IN EPs empty Inr. Mask Register (Read/Write)<i>Offset: 834h</i> */
-    volatile uint32_t deachint;             /*!< Device Each Endpoint Interrupt Register (Read Only). <i>Offset: 838h</i> */
-    volatile uint32_t deachintmsk;          /*!< Device Each Endpoint Interrupt mask Register (Read/Write). <i>Offset: 83Ch</i> */
-    volatile uint32_t diepeachintmsk[16];   /*!< Device Each In Endpoint Interrupt mask Register (Read/Write). <i>Offset: 840h</i> */
-    volatile uint32_t doepeachintmsk[16];   /*!< Device Each Out Endpoint Interrupt mask Register (Read/Write). <i>Offset: 880h</i> */
-    uint32_t reserved0x8c0[16];
-    /* Input Endpoints*/
-    usb_in_endpoint_t in_ep_reg[USB_IN_EP_NUM]; /*!< 0x900*/
-    uint32_t reserved6[72];
-    /* Output Endpoints */
-    usb_out_endpoint_t out_ep_reg[USB_OUT_EP_NUM];
-    uint32_t reserved7[136];
-    uint32_t pcgctrl; /*!<0xe00*/
-    uint32_t pcgctrl1;
-    uint8_t reserved8[0x1000 - 0xe08]; /*!<0xd00*/
-    uint32_t fifo[16][0x400];          /*!<0x1000*/
+     * Host mode registers offsets from 0x0400 to 0x07FF
+     */
+    volatile uint32_t hcfg;                 // 0x0400 Host Configuration Register
+    volatile uint32_t hfir;                 // 0x0404 Host Frame Interval Register
+    volatile uint32_t hfnum;                // 0x0408 Host Frame Number/Frame Remaining Register
+    uint32_t reserved0x40C;                 // 0x040c Reserved
+    volatile uint32_t hptxsts;              // 0x0410 Host Periodic Transmit FIFO/ Queue Status Register
+    volatile uint32_t haint;                // 0x0414 Host All Channels Interrupt Register
+    volatile uint32_t haintmsk;             // 0x0418 Host All Channels Interrupt Mask Register
+    volatile uint32_t hflbaddr;             // 0x041c Host Frame List Base Address Register
+    uint32_t reserved0x0420_0x0440[8];      // 0x0420 to 0x0440
+    volatile uint32_t hprt;                 // 0x0440 Host Port Control and Status Register
+    uint32_t reserved_0x0444_0x0500[47];    // 0x0444 to 0x0500
+    //Skip over the host channel registers
+    volatile uint32_t host_chan_regs[128];  // 0x0500 to 0x0700
+    uint32_t reserved_0x0700_0x0800[64];    // 0x0700 to 0x0800
+    /**
+     * Device mode registers offsets from
+     */
+    volatile uint32_t dcfg;                 // 0x0800 Device Configuration Register
+    volatile uint32_t dctl;                 // 0x0804 Device Control Register
+    volatile uint32_t dsts;                 // 0x0808 Device Status Register (Read Only)
+    uint32_t reserved0x80c;                 // 0x080c
+    volatile uint32_t diepmsk;              // 0x0810 Device IN Endpoint Common Interrupt Mask Register
+    volatile uint32_t doepmsk;              // 0x0814 Device OUT Endpoint Common Interrupt Mask Register
+    volatile uint32_t daint;                // 0x0818 Device All Endpoints Interrupt Register
+    volatile uint32_t daintmsk;             // 0x081c Device All Endpoints Interrupt Mask Register
+    uint32_t reserved_0x0820_0x0828[2];     // 0x0820 to 0x0828
+    volatile uint32_t dvbusdis;             // 0x0828 Device VBUS discharge Register
+    volatile uint32_t dvbuspulse;           // 0x082c Device VBUS Pulse Register
+    volatile uint32_t dthrctl;              // 0x0830 Device Thresholding control register (Read/Write)
+    volatile uint32_t dtknqr4_fifoemptymsk; // 0x0834 Device IN Endpoint FIFO Empty Interrupt Mask register
+    uint32_t reserved_0x0838_0x0900[50];    // 0x0838 to 0x0900
+    // Input Endpoints
+    usb_in_endpoint_t in_ep_reg[USB_IN_EP_NUM];     // 0x0900 to 0x09e0 IN EP registers
+    uint32_t reserved_0x09e0_0x0b00[72];    // 0x09e0 to 0x0b00
+    // Output Endpoints
+    usb_out_endpoint_t out_ep_reg[USB_OUT_EP_NUM];  // 0x0b00 to 0x0be0 OUT EP registers
+    uint32_t reserved_0x0be0_0x0d00[72];    // 0x0be0 to 0x0d00
+    uint32_t reserved_0x0d00_0x0e00[64];    // 0x0d00 to 0x0e00
+    /**
+     * Power Control and direct FIFO access
+     */
+    uint32_t pcgctrl;                       // 0x0e00 Power and Clock Gating Control Register
+    uint32_t reserved_0x0e04;               // 0x0e04
+    uint8_t reserved8[0x1000 - 0xe08];      // 0x0d00 to 0x1000
+    uint32_t fifo[16][0x400];               // 0x1000 to 0x2000 Device EP i/Host Channel i FIFO
     uint8_t reserved0x11000[0x20000 - 0x11000];
-    uint32_t dbg_fifo[0x20000]; /*!< 0x20000*/
+    uint32_t dbg_fifo[0x20000];             // 0x2000 to 0x22000 Direct Access to Data FIFO RAM for Debugging
 } usb_dev_t;
 
 extern usb_dev_t USB0;
