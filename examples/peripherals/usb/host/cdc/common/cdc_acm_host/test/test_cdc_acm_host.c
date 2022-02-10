@@ -373,4 +373,11 @@ TEST_CASE("USB Host CDC-ACM driver: Error handling", "[cdc_acm][ignore]")
     vTaskDelay(20);
 }
 
+/* Following test case implements dual CDC-ACM USB device that can be used as mock device for CDC-ACM Host tests */
+void run_usb_dual_cdc_device(void);
+TEST_CASE("USB_CDC_Mock_Device_App", "[cdc_acm_device][ignore]")
+{
+    run_usb_dual_cdc_device();
+}
+
 #endif
