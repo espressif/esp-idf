@@ -642,7 +642,6 @@ components/esp_rom/include/esp32h2/rom/md5_hash.h
 components/esp_rom/include/esp32h2/rom/miniz.h
 components/esp_rom/include/esp32h2/rom/rom_layout.h
 components/esp_rom/include/esp32h2/rom/rsa_pss.h
-components/esp_rom/include/esp32h2/rom/rtc.h
 components/esp_rom/include/esp32h2/rom/sha.h
 components/esp_rom/include/esp32h2/rom/tjpgd.h
 components/esp_rom/include/esp32h2/rom/uart.h
@@ -1599,7 +1598,6 @@ components/soc/esp32h2/include/soc/interrupt_reg.h
 components/soc/esp32h2/include/soc/ledc_reg.h
 components/soc/esp32h2/include/soc/mmu.h
 components/soc/esp32h2/include/soc/nrx_reg.h
-components/soc/esp32h2/include/soc/reset_reasons.h
 components/soc/esp32h2/include/soc/rtc_caps.h
 components/soc/esp32h2/include/soc/rtc_i2c_reg.h
 components/soc/esp32h2/include/soc/rtc_i2c_struct.h

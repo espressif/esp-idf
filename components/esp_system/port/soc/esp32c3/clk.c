@@ -208,10 +208,8 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     /* For reason that only reset CPU, do not disable the clocks
      * that have been enabled before reset.
      */
-    /* For reason that only reset CPU, do not disable the clocks
-     * that have been enabled before reset.
-     */
-    if (rst_reason >= RESET_REASON_CPU0_MWDT0 && rst_reason <= RESET_REASON_CPU0_RTC_WDT && rst_reason != RESET_REASON_SYS_BROWN_OUT) {
+    if (rst_reason == RESET_REASON_CPU0_MWDT0 || rst_reason == RESET_REASON_CPU0_SW ||
+            rst_reason == RESET_REASON_CPU0_RTC_WDT || rst_reason == RESET_REASON_CPU0_MWDT1) {
         common_perip_clk = ~READ_PERI_REG(SYSTEM_PERIP_CLK_EN0_REG);
         hwcrypto_perip_clk = ~READ_PERI_REG(SYSTEM_PERIP_CLK_EN1_REG);
         wifi_bt_sdio_clk = ~READ_PERI_REG(SYSTEM_WIFI_CLK_EN_REG);

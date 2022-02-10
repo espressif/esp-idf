@@ -590,6 +590,30 @@ TEST_CASE("LEDC timer pause and resume", "[ledc][test_env=UT_T1_LEDC]")
     TEST_ASSERT_UINT32_WITHIN(5, count, 5000);
 }
 
+static void ledc_cpu_reset_test_first_stage(void)
+{
+    ledc_channel_config_t ledc_ch_config = initialize_channel_config();
+    TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
+
+    ledc_timer_config_t ledc_time_config = create_default_timer_config();
+    TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
+    vTaskDelay(50 / portTICK_RATE_MS);
+    esp_restart();
+}
+
+static void ledc_cpu_reset_test_second_stage(void)
+{
+    TEST_ASSERT_EQUAL(ESP_RST_SW, esp_reset_reason());
+    int16_t count;
+    count = wave_count(1000);
+    TEST_ASSERT_UINT32_WITHIN(5, count, TEST_PWM_FREQ);
+}
+
+TEST_CASE_MULTIPLE_STAGES("LEDC software reset test",
+                          "[ledc][test_env=UT_T1_LEDC]",
+                          ledc_cpu_reset_test_first_stage,
+                          ledc_cpu_reset_test_second_stage);
+
 #endif  //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
 
 #endif // SOC_PCNT_SUPPORTED
