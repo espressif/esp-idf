@@ -52,7 +52,7 @@ check_python_style:
     - .pre_check_base_template
     - .rules:patterns:python-files
   variables:
-    PYTHON_VER: 3.6.13
+    PYTHON_VER: 3.7.10
   artifacts:
     when: on_failure
     paths:
@@ -64,7 +64,7 @@ check_python_style:
 test_check_kconfigs:
   extends: .pre_check_job_template
   variables:
-    PYTHON_VER: 3.6.13
+    PYTHON_VER: 3.7.10
   artifacts:
     when: on_failure
     paths:
