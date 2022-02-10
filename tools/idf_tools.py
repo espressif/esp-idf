@@ -988,12 +988,15 @@ def get_python_env_path():  # type: () -> Tuple[str, str, str, str]
         idf_version_str = ''
         try:
             idf_version_str = subprocess.check_output(['git', 'describe'],
-                                                      cwd=global_idf_path, env=os.environ).decode()
+                                                      cwd=global_idf_path, env=os.environ,
+                                                      stderr=subprocess.DEVNULL).decode()
         except OSError:
             # OSError should cover FileNotFoundError and WindowsError
             warn('Git was not found')
-        except subprocess.CalledProcessError as e:
-            warn('Git describe was unsuccessful: {}'.format(e.output))
+        except subprocess.CalledProcessError:
+            # This happens quite often when the repo is shallow. Don't print a warning because there are other
+            # possibilities for version detection.
+            pass
     match = re.match(r'^v([0-9]+\.[0-9]+).*', idf_version_str)
     if match:
         idf_version = match.group(1)  # type: Optional[str]
