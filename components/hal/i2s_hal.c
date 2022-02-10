@@ -27,7 +27,7 @@ static void i2s_hal_mclk_div_decimal_cal(i2s_hal_clock_cfg_t *clk_cfg, i2s_ll_mc
     cal->a = 1;
     cal->b = 0;
 
-    uint32_t freq_diff = abs(clk_cfg->sclk - clk_cfg->mclk * cal->mclk_div);
+    uint32_t freq_diff = abs((int)clk_cfg->sclk - (int)(clk_cfg->mclk * cal->mclk_div));
     if (!freq_diff) {
         return;
     }
