@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "soc/soc_caps.h"
 
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
@@ -28,6 +27,7 @@
 #include "driver/gpio.h"
 #include "driver/periph_ctrl.h"
 #include "driver/twai.h"
+#include "soc/soc_caps.h"
 #include "soc/twai_periph.h"
 #include "hal/twai_hal.h"
 
@@ -68,6 +68,7 @@ typedef struct {
     twai_state_t state;
     twai_mode_t mode;
     uint32_t rx_missed_count;
+    uint32_t rx_overrun_count;
     uint32_t tx_failed_count;
     uint32_t arb_lost_count;
     uint32_t bus_error_count;
@@ -127,19 +128,49 @@ TWAI_ISR_ATTR static void twai_alert_handler(uint32_t alert_code, int *alert_req
 
 static inline void twai_handle_rx_buffer_frames(BaseType_t *task_woken, int *alert_req)
 {
+#ifdef TWAI_SUPPORTS_RX_STATUS
     uint32_t msg_count = twai_hal_get_rx_msg_count(&twai_context);
 
-    for (int i = 0; i < msg_count; i++) {
+    for (uint32_t i = 0; i < msg_count; i++) {
         twai_hal_frame_t frame;
-        twai_hal_read_rx_buffer_and_clear(&twai_context, &frame);
-        //Copy frame into RX Queue
-        if (xQueueSendFromISR(p_twai_obj->rx_queue, &frame, task_woken) == pdTRUE) {
-            p_twai_obj->rx_msg_count++;
-        } else {
-            p_twai_obj->rx_missed_count++;
-            twai_alert_handler(TWAI_ALERT_RX_QUEUE_FULL, alert_req);
+        if (twai_hal_read_rx_buffer_and_clear(&twai_context, &frame)) {
+            //Valid frame copied from RX buffer
+            if (xQueueSendFromISR(p_twai_obj->rx_queue, &frame, task_woken) == pdTRUE) {
+                p_twai_obj->rx_msg_count++;
+            } else {    //Failed to send to queue
+                p_twai_obj->rx_missed_count++;
+                twai_alert_handler(TWAI_ALERT_RX_QUEUE_FULL, alert_req);
+            }
+        } else {    //Failed to read from RX buffer because message is overrun
+            p_twai_obj->rx_overrun_count++;
+            twai_alert_handler(TWAI_ALERT_RX_FIFO_OVERRUN, alert_req);
         }
     }
+#else   //TWAI_SUPPORTS_RX_STATUS
+    uint32_t msg_count = twai_hal_get_rx_msg_count(&twai_context);
+    bool overrun = false;
+    //Clear all valid RX frames
+    for (int i = 0; i < msg_count; i++) {
+        twai_hal_frame_t frame;
+        if (twai_hal_read_rx_buffer_and_clear(&twai_context, &frame)) {
+            //Valid frame copied from RX buffer
+            if (xQueueSendFromISR(p_twai_obj->rx_queue, &frame, task_woken) == pdTRUE) {
+                p_twai_obj->rx_msg_count++;
+            } else {
+                p_twai_obj->rx_missed_count++;
+                twai_alert_handler(TWAI_ALERT_RX_QUEUE_FULL, alert_req);
+            }
+        } else {
+            overrun = true;
+            break;
+        }
+    }
+    //All remaining frames are treated as overrun. Clear them all
+    if (overrun) {
+        p_twai_obj->rx_overrun_count += twai_hal_clear_rx_fifo_overrun(&twai_context);
+        twai_alert_handler(TWAI_ALERT_RX_FIFO_OVERRUN, alert_req);
+    }
+#endif  //TWAI_SUPPORTS_RX_STATUS
 }
 
 static inline void twai_handle_tx_buffer_frame(BaseType_t *task_woken, int *alert_req)
@@ -175,56 +206,65 @@ TWAI_ISR_ATTR static void twai_intr_handler_main(void *arg)
 {
     BaseType_t task_woken = pdFALSE;
     int alert_req = 0;
-    uint32_t event;
+    uint32_t events;
     TWAI_ENTER_CRITICAL_ISR();
-    if (p_twai_obj == NULL) {    //Incase intr occurs whilst driver is being uninstalled
+    if (p_twai_obj == NULL) {    //In case intr occurs whilst driver is being uninstalled
         TWAI_EXIT_CRITICAL_ISR();
         return;
     }
-    event = twai_hal_decode_interrupt_events(&twai_context);
-    if (event & TWAI_HAL_EVENT_RX_BUFF_FRAME) {
+    events = twai_hal_get_events(&twai_context);    //Get the events that triggered the interrupt
+
+#if defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
+    if (events & TWAI_HAL_EVENT_NEED_PERIPH_RESET) {
+        twai_hal_prepare_for_reset(&twai_context);
+        periph_module_reset(PERIPH_TWAI_MODULE);
+        twai_hal_recover_from_reset(&twai_context);
+        p_twai_obj->rx_missed_count += twai_hal_get_reset_lost_rx_cnt(&twai_context);
+        twai_alert_handler(TWAI_ALERT_PERIPH_RESET, &alert_req);
+    }
+#endif
+    if (events & TWAI_HAL_EVENT_RX_BUFF_FRAME) {
+        //Note: This event will never occur if there is a periph reset event
         twai_handle_rx_buffer_frames(&task_woken, &alert_req);
     }
-    //TX command should be the last command related handler to be called, so that
-    //other command register bits do not overwrite the TX command bit.
-    if (event & TWAI_HAL_EVENT_TX_BUFF_FREE) {
+    if (events & TWAI_HAL_EVENT_TX_BUFF_FREE) {
         twai_handle_tx_buffer_frame(&task_woken, &alert_req);
     }
 
     //Handle events that only require alerting (i.e. no handler)
-    if (event & TWAI_HAL_EVENT_BUS_OFF) {
+    if (events & TWAI_HAL_EVENT_BUS_OFF) {
         p_twai_obj->state = TWAI_STATE_BUS_OFF;
         twai_alert_handler(TWAI_ALERT_BUS_OFF, &alert_req);
     }
-    if (event & TWAI_HAL_EVENT_BUS_RECOV_CPLT) {
+    if (events & TWAI_HAL_EVENT_BUS_RECOV_CPLT) {
         p_twai_obj->state = TWAI_STATE_STOPPED;
         twai_alert_handler(TWAI_ALERT_BUS_RECOVERED, &alert_req);
     }
-    if (event & TWAI_HAL_EVENT_BUS_ERR) {
+    if (events & TWAI_HAL_EVENT_BUS_ERR) {
         p_twai_obj->bus_error_count++;
         twai_alert_handler(TWAI_ALERT_BUS_ERROR, &alert_req);
     }
-    if (event & TWAI_HAL_EVENT_ARB_LOST) {
+    if (events & TWAI_HAL_EVENT_ARB_LOST) {
         p_twai_obj->arb_lost_count++;
         twai_alert_handler(TWAI_ALERT_ARB_LOST, &alert_req);
     }
-    if (event & TWAI_HAL_EVENT_BUS_RECOV_PROGRESS) {
+    if (events & TWAI_HAL_EVENT_BUS_RECOV_PROGRESS) {
         //Bus-recovery in progress. TEC has dropped below error warning limit
         twai_alert_handler(TWAI_ALERT_RECOVERY_IN_PROGRESS, &alert_req);
     }
-    if (event & TWAI_HAL_EVENT_ERROR_PASSIVE) {
+    if (events & TWAI_HAL_EVENT_ERROR_PASSIVE) {
         //Entered error passive
         twai_alert_handler(TWAI_ALERT_ERR_PASS, &alert_req);
     }
-    if (event & TWAI_HAL_EVENT_ERROR_ACTIVE) {
+    if (events & TWAI_HAL_EVENT_ERROR_ACTIVE) {
         //Returned to error active
         twai_alert_handler(TWAI_ALERT_ERR_ACTIVE, &alert_req);
     }
-    if (event & TWAI_HAL_EVENT_ABOVE_EWL) {
+    if (events & TWAI_HAL_EVENT_ABOVE_EWL) {
         //TEC or REC surpassed error warning limit
         twai_alert_handler(TWAI_ALERT_ABOVE_ERR_WARN, &alert_req);
     }
-    if (event & TWAI_HAL_EVENT_BELOW_EWL) {
+    if (events & TWAI_HAL_EVENT_BELOW_EWL) {
         //TEC and REC are both below error warning
         twai_alert_handler(TWAI_ALERT_BELOW_ERR_WARN, &alert_req);
     }
@@ -644,6 +684,7 @@ esp_err_t twai_get_status_info(twai_status_info_t *status_info)
     status_info->msgs_to_rx = p_twai_obj->rx_msg_count;
     status_info->tx_failed_count = p_twai_obj->tx_failed_count;
     status_info->rx_missed_count = p_twai_obj->rx_missed_count;
+    status_info->rx_overrun_count = p_twai_obj->rx_overrun_count;
     status_info->arb_lost_count = p_twai_obj->arb_lost_count;
     status_info->bus_error_count = p_twai_obj->bus_error_count;
     status_info->state = p_twai_obj->state;

@@ -86,6 +86,70 @@ typedef union {
 
 _Static_assert(sizeof(twai_ll_frame_buffer_t) == 13, "TX/RX buffer type should be 13 bytes");
 
+#if defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
+/**
+ * Some errata workarounds will require a hardware reset of the peripheral. Thus
+ * certain registers must be saved before the reset, and then restored after the
+ * reset. This structure is used to hold some of those registers.
+ */
+typedef struct {
+    uint8_t mode_reg;
+    uint8_t interrupt_enable_reg;
+    uint8_t bus_timing_0_reg;
+    uint8_t bus_timing_1_reg;
+    uint8_t error_warning_limit_reg;
+    uint8_t acr_reg[4];
+    uint8_t amr_reg[4];
+    uint8_t rx_error_counter_reg;
+    uint8_t tx_error_counter_reg;
+    uint8_t clock_divider_reg;
+} __attribute__((packed)) twai_ll_reg_save_t;
+#endif  //defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
+
+#ifdef CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID
+typedef enum {
+    TWAI_LL_ERR_BIT = 0,
+    TWAI_LL_ERR_FORM,
+    TWAI_LL_ERR_STUFF,
+    TWAI_LL_ERR_OTHER,
+    TWAI_LL_ERR_MAX,
+} twai_ll_err_type_t;
+
+typedef enum {
+    TWAI_LL_ERR_DIR_TX = 0,
+    TWAI_LL_ERR_DIR_RX,
+    TWAI_LL_ERR_DIR_MAX,
+} twai_ll_err_dir_t;
+
+typedef enum {
+    TWAI_LL_ERR_SEG_SOF = 0,
+    TWAI_LL_ERR_SEG_ID_28_21 = 2,
+    TWAI_LL_ERR_SEG_SRTR = 4,
+    TWAI_LL_ERR_SEG_IDE = 5,
+    TWAI_LL_ERR_SEG_ID_20_18 = 6,
+    TWAI_LL_ERR_SEG_ID_17_13 = 7,
+    TWAI_LL_ERR_SEG_CRC_SEQ = 8,
+    TWAI_LL_ERR_SEG_R0 = 9,
+    TWAI_LL_ERR_SEG_DATA = 10,
+    TWAI_LL_ERR_SEG_DLC = 11,
+    TWAI_LL_ERR_SEG_RTR = 12,
+    TWAI_LL_ERR_SEG_R1 = 13,
+    TWAI_LL_ERR_SEG_ID_4_0 = 14,
+    TWAI_LL_ERR_SEG_ID_12_5 = 15,
+    TWAI_LL_ERR_SEG_ACT_FLAG = 17,
+    TWAI_LL_ERR_SEG_INTER = 18,
+    TWAI_LL_ERR_SEG_SUPERPOS = 19,
+    TWAI_LL_ERR_SEG_PASS_FLAG = 22,
+    TWAI_LL_ERR_SEG_ERR_DELIM = 23,
+    TWAI_LL_ERR_SEG_CRC_DELIM = 24,
+    TWAI_LL_ERR_SEG_ACK_SLOT = 25,
+    TWAI_LL_ERR_SEG_EOF = 26,
+    TWAI_LL_ERR_SEG_ACK_DELIM = 27,
+    TWAI_LL_ERR_SEG_OVRLD_FLAG = 28,
+    TWAI_LL_ERR_SEG_MAX = 29,
+} twai_ll_err_seg_t;
+#endif
+
 /* ---------------------------- Mode Register ------------------------------- */
 
 /**
@@ -402,6 +466,19 @@ static inline void twai_ll_clear_err_code_cap(twai_dev_t *hw)
     (void)hw->error_code_capture_reg.val;
 }
 
+#ifdef CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID
+static inline void twai_ll_parse_err_code_cap(twai_dev_t *hw,
+                                              twai_ll_err_type_t *type,
+                                              twai_ll_err_dir_t *dir,
+                                              twai_ll_err_seg_t *seg)
+{
+    uint32_t ecc = hw->error_code_capture_reg.val;
+    *type = (twai_ll_err_type_t) ((ecc >> 6) & 0x3);
+    *dir = (twai_ll_err_dir_t) ((ecc >> 5) & 0x1);
+    *seg = (twai_ll_err_seg_t) (ecc & 0x1F);
+}
+#endif
+
 /* ----------------------------- EWL Register ------------------------------- */
 
 /**
@@ -693,6 +770,65 @@ static inline void twai_ll_enable_extended_reg_layout(twai_dev_t *hw)
 {
     hw->clock_divider_reg.cm = 1;
 }
+
+/* ------------------------- Register Save/Restore -------------------------- */
+
+#if defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
+/**
+ * @brief   Saves the current values of the TWAI controller's registers
+ *
+ * This function saves the current values of the some of the TWAI controller's
+ * registers in preparation for a hardware reset of the controller.
+ *
+ * @param hw Start address of the TWAI registers
+ * @param reg_save Pointer to structure to store register values
+ * @note Must be called in reset mode so that config registers become accessible.
+ * @note Some registers are cleared on entering reset mode so must be saved
+ *       separate from this function.
+ */
+static inline void twai_ll_save_reg(twai_dev_t *hw, twai_ll_reg_save_t *reg_save)
+{
+    reg_save->mode_reg = (uint8_t) hw->mode_reg.val;
+    reg_save->interrupt_enable_reg = (uint8_t) hw->interrupt_enable_reg.val;
+    reg_save->bus_timing_0_reg = (uint8_t) hw->bus_timing_0_reg.val;
+    reg_save->bus_timing_1_reg = (uint8_t) hw->bus_timing_1_reg.val;
+    reg_save->error_warning_limit_reg = (uint8_t) hw->error_warning_limit_reg.val;
+    for (int i = 0; i < 4; i++) {
+        reg_save->acr_reg[i] = hw->acceptance_filter.acr[i].byte;
+        reg_save->amr_reg[i] = hw->acceptance_filter.amr[i].byte;
+    }
+    reg_save->rx_error_counter_reg = (uint8_t) hw->rx_error_counter_reg.val;
+    reg_save->tx_error_counter_reg = (uint8_t) hw->tx_error_counter_reg.val;
+    reg_save->clock_divider_reg = (uint8_t) hw->clock_divider_reg.val;
+}
+
+/**
+ * @brief   Restores the previous values of the TWAI controller's registers
+ *
+ * This function restores the previous values of some of the TWAI controller's
+ * registers following a hardware reset of the controller.
+ *
+ * @param hw Start address of the TWAI registers
+ * @param reg_save Pointer to structure to storing register values to restore
+ * @note Must be called in reset mode so that config registers become accessible
+ * @note Some registers are read only thus cannot be restored
+ */
+static inline void twai_ll_restore_reg(twai_dev_t *hw, twai_ll_reg_save_t *reg_save)
+{
+    hw->mode_reg.val = reg_save->mode_reg;
+    hw->interrupt_enable_reg.val = reg_save->interrupt_enable_reg;
+    hw->bus_timing_0_reg.val = reg_save->bus_timing_0_reg;
+    hw->bus_timing_1_reg.val = reg_save->bus_timing_1_reg;
+    hw->error_warning_limit_reg.val = reg_save->error_warning_limit_reg;
+    for (int i = 0; i < 4; i++) {
+        hw->acceptance_filter.acr[i].byte = reg_save->acr_reg[i];
+        hw->acceptance_filter.amr[i].byte = reg_save->amr_reg[i];
+    }
+    hw->rx_error_counter_reg.val = reg_save->rx_error_counter_reg;
+    hw->tx_error_counter_reg.val = reg_save->tx_error_counter_reg;
+    hw->clock_divider_reg.val = reg_save->clock_divider_reg;
+}
+#endif  //defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
 
 #ifdef __cplusplus
 }

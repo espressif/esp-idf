@@ -42,6 +42,7 @@ extern "C" {
 #define TWAI_LL_STATUS_TS       (0x1 << 5)      //Transmit Status
 #define TWAI_LL_STATUS_ES       (0x1 << 6)      //Error Status
 #define TWAI_LL_STATUS_BS       (0x1 << 7)      //Bus Status
+#define TWAI_LL_STATUS_MS       (0x1 << 8)      //Miss Status
 
 #define TWAI_LL_INTR_RI         (0x1 << 0)      //Receive Interrupt
 #define TWAI_LL_INTR_TI         (0x1 << 1)      //Transmit Interrupt

@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include <stddef.h>
+#include "sdkconfig.h"
 #include "hal/twai_hal.h"
+#include "soc/twai_periph.h"
 
 //Default values written to various registers on initialization
 #define TWAI_HAL_INIT_TEC    0
@@ -69,8 +71,8 @@ void twai_hal_start(twai_hal_context_t *hal_ctx, twai_mode_t mode)
 {
     twai_ll_set_mode(hal_ctx->dev, mode);                //Set operating mode
     (void) twai_ll_get_and_clear_intrs(hal_ctx->dev);    //Clear any latched interrupts
-    TWAI_HAL_SET_FLAG(hal_ctx->state_flags, TWAI_HAL_STATE_FLAG_RUNNING);
-    twai_ll_exit_reset_mode(hal_ctx->dev); 
+    TWAI_HAL_SET_BITS(hal_ctx->state_flags, TWAI_HAL_STATE_FLAG_RUNNING);
+    twai_ll_exit_reset_mode(hal_ctx->dev);
 }
 
 void twai_hal_stop(twai_hal_context_t *hal_ctx)
@@ -79,6 +81,5 @@ void twai_hal_stop(twai_hal_context_t *hal_ctx)
     (void) twai_ll_get_and_clear_intrs(hal_ctx->dev);
     twai_ll_set_mode(hal_ctx->dev, TWAI_MODE_LISTEN_ONLY);    //Freeze REC by changing to LOM mode
     //Any TX is immediately halted on entering reset mode
-    TWAI_HAL_RESET_FLAG(hal_ctx->state_flags, TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED);
-    TWAI_HAL_RESET_FLAG(hal_ctx->state_flags, TWAI_HAL_STATE_FLAG_RUNNING);
+    TWAI_HAL_CLEAR_BITS(hal_ctx->state_flags, TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED | TWAI_HAL_STATE_FLAG_RUNNING);
 }

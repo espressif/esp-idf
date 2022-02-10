@@ -109,7 +109,7 @@ static inline bool can_hal_check_state_flags(can_hal_context_t *hal_ctx, uint32_
 /* ----------------------------- Event Handling ----------------------------- */
 
 static inline uint32_t can_hal_decode_interrupt_events(can_hal_context_t *hal_ctx) {
-    return twai_hal_decode_interrupt_events(hal_ctx);
+    return twai_hal_decode_interrupt(hal_ctx);
 }
 
 /* ------------------------------- TX and RX -------------------------------- */
