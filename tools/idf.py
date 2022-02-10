@@ -32,8 +32,14 @@ from pkgutil import iter_modules
 sys.dont_write_bytecode = True
 
 import python_version_checker  # noqa: E402
-from idf_py_actions.errors import FatalError  # noqa: E402
-from idf_py_actions.tools import executable_exists, idf_version, merge_action_lists, realpath  # noqa: E402
+
+try:
+    from idf_py_actions.errors import FatalError  # noqa: E402
+    from idf_py_actions.tools import executable_exists, idf_version, merge_action_lists, realpath  # noqa: E402
+except ImportError:
+    # For example, importing click could cause this.
+    print('Please use idf.py only in an ESP-IDF shell environment.', file=sys.stderr)
+    sys.exit(1)
 
 # Use this Python interpreter for any subprocesses we launch
 PYTHON = sys.executable
@@ -46,13 +52,18 @@ os.environ['PYTHON'] = sys.executable
 # Can be overridden from idf.bat using IDF_PY_PROGRAM_NAME
 PROG = os.getenv('IDF_PY_PROGRAM_NAME', 'idf.py')
 
+# environment variable used during click shell completion run
+SHELL_COMPLETE_VAR = '_IDF.PY_COMPLETE'
+
+# was shell completion invoked?
+SHELL_COMPLETE_RUN = SHELL_COMPLETE_VAR in os.environ
+
 
 # function prints warning when autocompletion is not being performed
 # set argument stream to sys.stderr for errors and exceptions
 def print_warning(message, stream=None):
-    stream = stream or sys.stderr
-    if not os.getenv('_IDF.PY_COMPLETE'):
-        print(message, file=stream)
+    if not SHELL_COMPLETE_RUN:
+        print(message, file=stream or sys.stderr)
 
 
 def check_environment():
@@ -729,14 +740,21 @@ def signal_handler(_signal, _frame):
 
 
 def main():
-
     # Processing of Ctrl+C event for all threads made by main()
     signal.signal(signal.SIGINT, signal_handler)
 
-    checks_output = check_environment()
-    cli = init_cli(verbose_output=checks_output)
-    # the argument `prog_name` must contain name of the file - not the absolute path to it!
-    cli(sys.argv[1:], prog_name=PROG, complete_var='_IDF.PY_COMPLETE')
+    # Check the environment only when idf.py is invoked regularly from command line.
+    checks_output = None if SHELL_COMPLETE_RUN else check_environment()
+
+    try:
+        cli = init_cli(verbose_output=checks_output)
+    except ImportError:
+        if SHELL_COMPLETE_RUN:
+            pass
+        else:
+            raise
+    else:
+        cli(sys.argv[1:], prog_name=PROG, complete_var=SHELL_COMPLETE_VAR)
 
 
 def _valid_unicode_config():
