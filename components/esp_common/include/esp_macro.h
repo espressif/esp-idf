@@ -34,12 +34,39 @@ extern "C" {
  * ##__VA_ARGS__.
  */
 #if defined(__cplusplus) && (__cplusplus >  201703L)
-#define CHOOSE_MACRO_VA_ARG(_0 __VA_OPT__(,) __VA_ARGS__, MACRO, ...) MACRO
+#define CHOOSE_MACRO_VA_ARG_INN_IMPL(...) __VA_OPT__(0)
+#define CHOOSE_MACRO_VA_ARG_INN(one, MACRO1, MACRO2, ...) MACRO1
+#define CHOOSE_MACRO_VA_ARG(MACRO_WITH_ARGS, MACRO_WITH_NO_ARGS, ...) CHOOSE_MACRO_VA_ARG_INN(CHOOSE_MACRO_VA_ARG_INN_IMPL(__VA_ARGS__) __VA_OPT__(,) MACRO_WITH_ARGS, MACRO_WITH_NO_ARGS, 0)
 #else
-#define CHOOSE_MACRO_VA_ARG(_0, _1, MACRO, ...) MACRO
+#define CHOOSE_MACRO_VA_ARG_INN(one, two, MACRO1, MACRO2, ...) MACRO1
+#define CHOOSE_MACRO_VA_ARG(MACRO_WITH_ARGS, MACRO_WITH_NO_ARGS, ...) CHOOSE_MACRO_VA_ARG_INN(0, ##__VA_ARGS__, MACRO_WITH_ARGS, MACRO_WITH_NO_ARGS, 0)
 #endif
-_Static_assert(CHOOSE_MACRO_VA_ARG(_0, x, 0, 1) == 0, "CHOOSE_MACRO_VA_ARG() result does not match for 0 arguments");
-_Static_assert(CHOOSE_MACRO_VA_ARG(_0, 0, 1) == 1, "CHOOSE_MACRO_VA_ARG() result does not match for 1 argument");
+
+/* test macros */
+#define foo_args(...) 1
+#define foo_no_args() 2
+#if defined(__cplusplus) && (__cplusplus >  201703L)
+#define foo(...) CHOOSE_MACRO_VA_ARG(foo_args, foo_no_args __VA_OPT__(,) __VA_ARGS__)(__VA_ARGS__)
+#else
+#define foo(...) CHOOSE_MACRO_VA_ARG(foo_args, foo_no_args, ##__VA_ARGS__)(__VA_ARGS__)
+#endif
+
+#if defined(__cplusplus)
+#define MY_STATIC_ASSERT static_assert
+#else
+#define MY_STATIC_ASSERT _Static_assert
+#endif
+
+MY_STATIC_ASSERT(foo() == 2, "CHOOSE_MACRO_VA_ARG() result does not match for 0 arguments");
+MY_STATIC_ASSERT(foo(42) == 1, "CHOOSE_MACRO_VA_ARG() result does not match for 1 argument");
+#if defined(__cplusplus) && (__cplusplus >  201703L)
+static_assert(foo(42, 87) == 1, "CHOOSE_MACRO_VA_ARG() result does not match for n arguments");
+#endif
+
+#undef MY_STATIC_ASSERT
+#undef foo
+#undef foo_args
+#undef foo_no_args
 
 #ifdef __cplusplus
 }

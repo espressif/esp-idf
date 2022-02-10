@@ -527,9 +527,9 @@ extern void _frxt_setup_switch( void );     //Defined in portasm.S
  *          might result in undesired behavior
  */
 #if defined(__cplusplus) && (__cplusplus >  201703L)
-#define portYIELD_FROM_ISR(...) CHOOSE_MACRO_VA_ARG(_0 __VA_OPT__(,) ##__VA_ARGS__, portYIELD_FROM_ISR_ARG, portYIELD_FROM_ISR_NO_ARG)(__VA_ARGS__)
+#define portYIELD_FROM_ISR(...) CHOOSE_MACRO_VA_ARG(portYIELD_FROM_ISR_ARG, portYIELD_FROM_ISR_NO_ARG __VA_OPT__(,) __VA_ARGS__)(__VA_ARGS__)
 #else
-#define portYIELD_FROM_ISR(...) CHOOSE_MACRO_VA_ARG(_0, ##__VA_ARGS__, portYIELD_FROM_ISR_ARG, portYIELD_FROM_ISR_NO_ARG)(__VA_ARGS__)
+#define portYIELD_FROM_ISR(...) CHOOSE_MACRO_VA_ARG(portYIELD_FROM_ISR_ARG, portYIELD_FROM_ISR_NO_ARG, ##__VA_ARGS__)(__VA_ARGS__)
 #endif
 
 /* Yielding within an API call (when interrupts are off), means the yield should be delayed
