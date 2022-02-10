@@ -597,7 +597,7 @@ static void ledc_cpu_reset_test_first_stage(void)
 
     ledc_timer_config_t ledc_time_config = create_default_timer_config();
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
-    vTaskDelay(50 / portTICK_RATE_MS);
+    vTaskDelay(50 / portTICK_PERIOD_MS);
     esp_restart();
 }
 
