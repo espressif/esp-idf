@@ -6,19 +6,8 @@
 # Includes information which is not shown in "xtensa-esp32-elf-size",
 # or easy to parse from "xtensa-esp32-elf-objdump" or raw map files.
 #
-# Copyright 2017-2021 Espressif Systems (Shanghai) CO LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 #
 from __future__ import division, print_function, unicode_literals
 
@@ -248,11 +237,10 @@ def load_map_data(map_file):  # type: (TextIO) -> Tuple[str, Dict, Dict]
     detected_chip = detect_target_chip(map_file)
     sections = load_sections(map_file)
 
-    # Exclude the .dummy section, which usually means shared region among I/D buses
-    dummy_keys = [key for key in sections if key.endswith(('.dummy'))]
-    if dummy_keys:
-        sections.pop(*dummy_keys)
-
+    # Exclude the dummy and .text_end section, which usually means shared region among I/D buses
+    for key in list(sections.keys()):
+        if key.endswith(('dummy', '.text_end')):
+            sections.pop(key)
     return detected_chip, segments, sections
 
 
@@ -582,8 +570,6 @@ class StructureForSummary(object):
         r.dram_total = get_size(dram_filter)
         iram_filter = filter(in_iram, segments)
         r.iram_total = get_size(iram_filter)
-        if r.diram_total == 0:
-            r.diram_total = r.dram_total + r.iram_total
 
         def filter_in_section(sections, section_to_check):  # type: (Iterable[MemRegions.Region], str) -> List[MemRegions.Region]
             return list(filter(lambda x: LinkingSections.in_section(x.section, section_to_check), sections))  # type: ignore
@@ -591,8 +577,6 @@ class StructureForSummary(object):
         dram_sections = list(filter(in_dram, sections))
         iram_sections = list(filter(in_iram, sections))
         diram_sections = list(filter(in_diram, sections))
-        if not diram_sections:
-            diram_sections = dram_sections + iram_sections
         flash_sections = filter_in_section(sections, 'flash')
 
         dram_data_list = filter_in_section(dram_sections, 'data')

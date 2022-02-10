@@ -1,7 +1,22 @@
 #!/usr/bin/env bash
 
-{ coverage debug sys \
-    && coverage erase &> output \
+
+memory_test () {
+    pushd $IDF_PATH/examples/get-started/hello_world \
+    && echo -e "\n***\nBuilding project for $1..." &>> $IDF_PATH/tools/test_idf_size/output \
+    && idf.py set-target $1 \
+    && idf.py build \
+    && echo -e "\n***\nRunning mem_test.py for $1..." &>> $IDF_PATH/tools/test_idf_size/output \
+    && python -m coverage run -a $IDF_PATH/tools/idf_size.py --json build/hello-world.map > size_output.json \
+    && python $IDF_PATH/components/esptool_py/esptool/esptool.py --chip $1 image_info build/hello-world.bin > esptool_output \
+    && python -m coverage run -a $IDF_PATH/tools/test_idf_size/mem_test.py size_output.json esptool_output &>> $IDF_PATH/tools/test_idf_size/output \
+    && popd
+}
+
+{ python -m coverage debug sys \
+    && python -m coverage erase &> output \
+    && memory_test esp32 \
+    && memory_test esp32s2 \
     && echo -e "\n***\nRunning idf_size.py..." &>> output \
     && coverage run -a $IDF_PATH/tools/idf_size.py app.map &>> output \
     && echo -e "\n***\nRunning idf_size.py on bootloader..." &>> output \
