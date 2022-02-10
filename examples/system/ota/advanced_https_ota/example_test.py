@@ -105,7 +105,7 @@ def start_redirect_server(ota_image_dir, server_ip, server_port, redirection_por
     httpd.serve_forever()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
+@ttfw_idf.idf_example_test(env_tag='EXAMPLE_ETH_OTA')
 def test_examples_protocol_advanced_https_ota_example(env, extra_data):
     """
     This is a positive test case, which downloads complete binary file multiple number of times.
@@ -135,7 +135,7 @@ def test_examples_protocol_advanced_https_ota_example(env, extra_data):
     for i in range(iterations):
         dut1.expect('Loaded app from partition at offset', timeout=30)
         try:
-            ip_address = dut1.expect(re.compile(r' sta ip: ([^,]+),'), timeout=30)
+            ip_address = dut1.expect(re.compile(r' (sta|eth) ip: ([^,]+),'), timeout=30)
             print('Connected to AP with IP: {}'.format(ip_address))
         except DUT.ExpectTimeout:
             raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
@@ -150,7 +150,7 @@ def test_examples_protocol_advanced_https_ota_example(env, extra_data):
     thread1.terminate()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
+@ttfw_idf.idf_example_test(env_tag='EXAMPLE_ETH_OTA')
 def test_examples_protocol_advanced_https_ota_example_truncated_bin(env, extra_data):
     """
     Working of OTA if binary file is truncated is validated in this test case.
@@ -189,7 +189,7 @@ def test_examples_protocol_advanced_https_ota_example_truncated_bin(env, extra_d
     dut1.start_app()
     dut1.expect('Loaded app from partition at offset', timeout=30)
     try:
-        ip_address = dut1.expect(re.compile(r' sta ip: ([^,]+),'), timeout=30)
+        ip_address = dut1.expect(re.compile(r' (sta|eth) ip: ([^,]+),'), timeout=30)
         print('Connected to AP with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
@@ -203,7 +203,7 @@ def test_examples_protocol_advanced_https_ota_example_truncated_bin(env, extra_d
     thread1.terminate()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
+@ttfw_idf.idf_example_test(env_tag='EXAMPLE_ETH_OTA')
 def test_examples_protocol_advanced_https_ota_example_truncated_header(env, extra_data):
     """
     Working of OTA if headers of binary file are truncated is vaildated in this test case.
@@ -241,7 +241,7 @@ def test_examples_protocol_advanced_https_ota_example_truncated_header(env, extr
     dut1.start_app()
     dut1.expect('Loaded app from partition at offset', timeout=30)
     try:
-        ip_address = dut1.expect(re.compile(r' sta ip: ([^,]+),'), timeout=30)
+        ip_address = dut1.expect(re.compile(r' (sta|eth) ip: ([^,]+),'), timeout=30)
         print('Connected to AP with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
@@ -255,7 +255,7 @@ def test_examples_protocol_advanced_https_ota_example_truncated_header(env, extr
     thread1.terminate()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
+@ttfw_idf.idf_example_test(env_tag='EXAMPLE_ETH_OTA')
 def test_examples_protocol_advanced_https_ota_example_random(env, extra_data):
     """
     Working of OTA if random data is added in binary file are validated in this test case.
@@ -292,7 +292,7 @@ def test_examples_protocol_advanced_https_ota_example_random(env, extra_data):
     dut1.start_app()
     dut1.expect('Loaded app from partition at offset', timeout=30)
     try:
-        ip_address = dut1.expect(re.compile(r' sta ip: ([^,]+),'), timeout=30)
+        ip_address = dut1.expect(re.compile(r' (sta|eth) ip: ([^,]+),'), timeout=30)
         print('Connected to AP with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
@@ -306,7 +306,7 @@ def test_examples_protocol_advanced_https_ota_example_random(env, extra_data):
     thread1.terminate()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
+@ttfw_idf.idf_example_test(env_tag='EXAMPLE_ETH_OTA')
 def test_examples_protocol_advanced_https_ota_example_chunked(env, extra_data):
     """
     This is a positive test case, which downloads complete binary file multiple number of times.
@@ -329,7 +329,7 @@ def test_examples_protocol_advanced_https_ota_example_chunked(env, extra_data):
     dut1.start_app()
     dut1.expect('Loaded app from partition at offset', timeout=30)
     try:
-        ip_address = dut1.expect(re.compile(r' sta ip: ([^,]+),'), timeout=30)
+        ip_address = dut1.expect(re.compile(r' (sta|eth) ip: ([^,]+),'), timeout=30)
         print('Connected to AP with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
@@ -342,7 +342,7 @@ def test_examples_protocol_advanced_https_ota_example_chunked(env, extra_data):
     chunked_server.kill()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
+@ttfw_idf.idf_example_test(env_tag='EXAMPLE_ETH_OTA')
 def test_examples_protocol_advanced_https_ota_example_redirect_url(env, extra_data):
     """
     This is a positive test case, which starts a server and a redirection server.
@@ -375,7 +375,7 @@ def test_examples_protocol_advanced_https_ota_example_redirect_url(env, extra_da
     dut1.start_app()
     dut1.expect('Loaded app from partition at offset', timeout=30)
     try:
-        ip_address = dut1.expect(re.compile(r' sta ip: ([^,]+),'), timeout=30)
+        ip_address = dut1.expect(re.compile(r' (sta|eth) ip: ([^,]+),'), timeout=30)
         print('Connected to AP with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
@@ -436,7 +436,7 @@ def test_examples_protocol_advanced_https_ota_example_anti_rollback(env, extra_d
     # Positive Case
     dut1.expect('Loaded app from partition at offset', timeout=30)
     try:
-        ip_address = dut1.expect(re.compile(r' eth ip: ([^,]+),'), timeout=30)
+        ip_address = dut1.expect(re.compile(r' (sta|eth) ip: ([^,]+),'), timeout=30)
         print('Connected to AP with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
@@ -447,7 +447,7 @@ def test_examples_protocol_advanced_https_ota_example_anti_rollback(env, extra_d
     print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + bin_name))
     dut1.write('https://' + host_ip + ':' + str(server_port) + '/' + bin_name)
     dut1.expect('Loaded app from partition at offset', timeout=60)
-    dut1.expect(re.compile(r' eth ip: ([^,]+),'), timeout=30)
+    dut1.expect(re.compile(r' (sta|eth) ip: ([^,]+),'), timeout=30)
     dut1.expect('App is valid, rollback cancelled successfully', 30)
 
     # Negative Case
@@ -460,7 +460,7 @@ def test_examples_protocol_advanced_https_ota_example_anti_rollback(env, extra_d
     thread1.terminate()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
+@ttfw_idf.idf_example_test(env_tag='EXAMPLE_ETH_OTA')
 def test_examples_protocol_advanced_https_ota_example_partial_request(env, extra_data):
     """
     This is a positive test case, to test OTA workflow with Range HTTP header.
@@ -489,7 +489,7 @@ def test_examples_protocol_advanced_https_ota_example_partial_request(env, extra
     dut1.start_app()
     dut1.expect('Loaded app from partition at offset', timeout=30)
     try:
-        ip_address = dut1.expect(re.compile(r' sta ip: ([^,]+),'), timeout=30)
+        ip_address = dut1.expect(re.compile(r' (sta|eth) ip: ([^,]+),'), timeout=30)
         print('Connected to AP with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
         Utility.console_log('ENV_TEST_FAILURE: Cannot connect to AP')
@@ -507,7 +507,7 @@ def test_examples_protocol_advanced_https_ota_example_partial_request(env, extra
     thread1.terminate()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA', nightly_run=True)
 def test_examples_protocol_advanced_https_ota_example_nimble_gatts(env, extra_data):
     """
     Run an OTA image update while a BLE GATT Server is running in background. This GATT server will be using NimBLE Host stack.
@@ -552,7 +552,7 @@ def test_examples_protocol_advanced_https_ota_example_nimble_gatts(env, extra_da
     thread1.terminate()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA', nightly_run=True)
 def test_examples_protocol_advanced_https_ota_example_bluedroid_gatts(env, extra_data):
     """
     Run an OTA image update while a BLE GATT Server is running in background. This GATT server will be using Bluedroid Host stack.
@@ -597,7 +597,7 @@ def test_examples_protocol_advanced_https_ota_example_bluedroid_gatts(env, extra
     thread1.terminate()
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_WIFI_OTA')
+@ttfw_idf.idf_example_test(env_tag='EXAMPLE_ETH_OTA')
 def test_examples_protocol_advanced_https_ota_example_openssl_aligned_bin(env, extra_data):
     """
     This is a test case for esp_http_client_read with binary size multiple of 289 bytes
@@ -630,7 +630,7 @@ def test_examples_protocol_advanced_https_ota_example_openssl_aligned_bin(env, e
     dut1.start_app()
     dut1.expect('Loaded app from partition at offset', timeout=30)
     try:
-        ip_address = dut1.expect(re.compile(r' sta ip: ([^,]+),'), timeout=30)
+        ip_address = dut1.expect(re.compile(r' (sta|eth) ip: ([^,]+),'), timeout=30)
         print('Connected to AP with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
