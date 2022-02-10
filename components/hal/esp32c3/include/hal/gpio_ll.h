@@ -18,23 +18,13 @@
 #include "soc/gpio_periph.h"
 #include "soc/gpio_struct.h"
 #include "soc/rtc_cntl_reg.h"
+#include "soc/usb_serial_jtag_reg.h"
 #include "hal/gpio_types.h"
 #include "stdlib.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/*
- * The following defines are used to disable USB JTAG when pins 18 and pins 19
- * are set to be used as GPIO.
- * See gpio_pad_select_gpio() below.
- *
- * TODO: Delete these definitions once the USB device registers definition is
- * merged.
- */
-#define USB_DEVICE_CONF0_REG        (0x60043018)
-#define USB_DEVICE_USB_PAD_ENABLE   (BIT(14))
 
 // Get GPIO hardware instance with giving gpio num
 #define GPIO_LL_GET_HW(num) (((num) == 0) ? (&GPIO) : NULL)
@@ -392,8 +382,9 @@ static inline void gpio_ll_iomux_in(gpio_dev_t *hw, uint32_t gpio, uint32_t sign
  */
 static inline void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
 {
+    // Disable USB Serial JTAG if pins 18 or pins 19 needs to select an IOMUX function
     if (pin_name == IO_MUX_GPIO18_REG || pin_name == IO_MUX_GPIO19_REG) {
-        CLEAR_PERI_REG_MASK(USB_DEVICE_CONF0_REG, USB_DEVICE_USB_PAD_ENABLE);
+        CLEAR_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_USB_PAD_ENABLE);
     }
     PIN_FUNC_SELECT(pin_name, func);
 }
