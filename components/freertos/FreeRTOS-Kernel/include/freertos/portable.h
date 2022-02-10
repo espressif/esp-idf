@@ -136,7 +136,7 @@
                                              TaskFunction_t pxCode,
                                              void * pvParameters ) PRIVILEGED_FUNCTION;
     #endif
-#endif
+#endif /* if ( portUSING_MPU_WRAPPERS == 1 ) */
 
 #ifdef configUSE_FREERTOS_PROVIDED_HEAP
 

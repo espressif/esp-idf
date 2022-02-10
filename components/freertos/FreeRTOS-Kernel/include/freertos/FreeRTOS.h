@@ -499,12 +499,6 @@
     #define traceQUEUE_SET_SEND    traceQUEUE_SEND
 #endif
 
-#ifdef ESP_PLATFORM
-#ifndef traceQUEUE_SEMAPHORE_RECEIVE
-    #define traceQUEUE_SEMAPHORE_RECEIVE( pxQueue )
-#endif
-#endif // ESP_PLATFORM
-
 #ifndef traceQUEUE_SEND
     #define traceQUEUE_SEND( pxQueue )
 #endif
@@ -556,16 +550,6 @@
 #ifndef traceQUEUE_DELETE
     #define traceQUEUE_DELETE( pxQueue )
 #endif
-
-#ifdef ESP_PLATFORM
-#ifndef traceQUEUE_GIVE_FROM_ISR
-    #define traceQUEUE_GIVE_FROM_ISR( pxQueue )
-#endif
-
-#ifndef traceQUEUE_GIVE_FROM_ISR_FAILED
-    #define traceQUEUE_GIVE_FROM_ISR_FAILED( pxQueue )
-#endif
-#endif // ESP_PLATFORM
 
 #ifndef traceTASK_CREATE
     #define traceTASK_CREATE( pxNewTCB )
@@ -771,6 +755,9 @@
     #define traceSTREAM_BUFFER_RECEIVE_FROM_ISR( xStreamBuffer, xReceivedLength )
 #endif
 
+/*
+Default values for trace macros added by ESP-IDF and are not part of Vanilla FreeRTOS
+*/
 #ifdef ESP_PLATFORM
 #ifndef traceISR_EXIT_TO_SCHEDULER
     #define traceISR_EXIT_TO_SCHEDULER()
@@ -782,6 +769,18 @@
 
 #ifndef traceISR_ENTER
     #define traceISR_ENTER(_n_)
+#endif
+
+#ifndef traceQUEUE_SEMAPHORE_RECEIVE
+    #define traceQUEUE_SEMAPHORE_RECEIVE( pxQueue )
+#endif
+
+#ifndef traceQUEUE_GIVE_FROM_ISR
+    #define traceQUEUE_GIVE_FROM_ISR( pxQueue )
+#endif
+
+#ifndef traceQUEUE_GIVE_FROM_ISR_FAILED
+    #define traceQUEUE_GIVE_FROM_ISR_FAILED( pxQueue )
 #endif
 #endif // ESP_PLATFORM
 
@@ -977,8 +976,8 @@
 /* Either variables of tick type cannot be read atomically, or
  * portTICK_TYPE_IS_ATOMIC was not set - map the critical sections used when
  * the tick count is returned to the standard critical section macros. */
-    #define portTICK_TYPE_ENTER_CRITICAL(mux) portENTER_CRITICAL(mux)
-    #define portTICK_TYPE_EXIT_CRITICAL(mux) portEXIT_CRITICAL(mux)
+    #define portTICK_TYPE_ENTER_CRITICAL()                      portENTER_CRITICAL()
+    #define portTICK_TYPE_EXIT_CRITICAL()                       portEXIT_CRITICAL()
     #define portTICK_TYPE_SET_INTERRUPT_MASK_FROM_ISR()         portSET_INTERRUPT_MASK_FROM_ISR()
     #define portTICK_TYPE_CLEAR_INTERRUPT_MASK_FROM_ISR( x )    portCLEAR_INTERRUPT_MASK_FROM_ISR( ( x ) )
 #else
@@ -1059,12 +1058,6 @@
  * members directly (which is not supposed to be done). */
     #define pxContainer                   pvContainer
 #endif /* configENABLE_BACKWARD_COMPATIBILITY */
-
-#ifdef ESP_PLATFORM
-#ifndef configESP32_PER_TASK_DATA
-    #define configESP32_PER_TASK_DATA 1
-#endif
-#endif // ESP_PLATFORM
 
 #if ( configUSE_ALTERNATIVE_API != 0 )
     #error The alternative API was deprecated some time ago, and was removed in FreeRTOS V9.0 0
