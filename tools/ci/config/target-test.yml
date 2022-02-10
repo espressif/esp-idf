@@ -117,6 +117,7 @@
   needs:
     - assign_test
     - build_ssc_esp32
+    - build_ssc_esp32c3
   variables:
     LOCAL_ENV_CONFIG_PATH: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32_IDF"
     LOG_PATH: "${CI_PROJECT_DIR}/TEST_LOGS"
@@ -746,3 +747,10 @@ IT_022:
   tags:
     - ESP32_IDF
     - SSC_T3_2
+
+IT_C3_001:
+  extends: .integration_test_template
+  parallel: 5
+  tags:
+    - ESP32C3_IDF
+    - SSC_T2_5

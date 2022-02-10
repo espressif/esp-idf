@@ -9,6 +9,7 @@ assign_test:
   # we have a lot build example jobs. now we don't use dependencies, just download all artifacts of build stage.
   dependencies: # Here is not a hard dependency relationship, could be skipped. so we do not use "needs" here.
     - build_ssc_esp32
+    - build_ssc_esp32c3
     - build_esp_idf_tests_cmake_esp32
     - build_esp_idf_tests_cmake_esp32s2
     - build_esp_idf_tests_cmake_esp32c3
