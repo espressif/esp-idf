@@ -88,6 +88,7 @@ assign_integration_test:
   artifacts:
     paths:
       - $TEST_DIR/test_configs
+    expire_in: 1 week
   variables:
     TEST_DIR: ${CI_PROJECT_DIR}/tools/ci/integration_test
     BUILD_DIR: ${CI_PROJECT_DIR}/SSC/ssc_bin

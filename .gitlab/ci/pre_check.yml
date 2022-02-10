@@ -152,6 +152,7 @@ scan_tests:
       - $EXAMPLE_TEST_OUTPUT_DIR
       - $TEST_APPS_OUTPUT_DIR
       - $COMPONENT_UT_OUTPUT_DIR
+    expire_in: 1 week
   variables:
     EXAMPLE_TEST_DIR: ${CI_PROJECT_DIR}/examples
     EXAMPLE_TEST_OUTPUT_DIR: ${CI_PROJECT_DIR}/examples/test_configs

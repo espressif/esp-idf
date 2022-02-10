@@ -75,3 +75,6 @@ deploy_test_result:
     - echo $BOT_JIRA_ACCOUNT > ${BOT_ACCOUNT_CONFIG_FILE}
     # update test results
     - python3 ImportTestResult.py -r "$GIT_SHA (r${REV_COUNT})" -j $JIRA_TEST_MANAGEMENT_PROJECT -s "$SUMMARY" -l CI -p ${CI_PROJECT_DIR}/TEST_LOGS --pipeline_url ${CI_PIPELINE_URL}
+  # May need a long time to upload all test results.
+  retry: 2
+  timeout: 4 hours
