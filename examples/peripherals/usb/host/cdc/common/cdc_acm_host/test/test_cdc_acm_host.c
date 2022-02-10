@@ -72,7 +72,7 @@ void usb_lib_task(void *arg)
             all_clients_gone = true;
         }
         if (event_flags & USB_HOST_LIB_EVENT_FLAGS_ALL_FREE) {
-            printf("All device's freed\n");
+            printf("All devices freed\n");
             all_dev_free = true;
         }
     }
@@ -133,7 +133,7 @@ static void notif_cb(cdc_acm_dev_hdl_t cdc_hdl, const cdc_acm_host_dev_event_dat
 /* Basic test to check CDC communication:
  * open/read/write/close device
  * CDC-ACM specific commands: set/get_line_coding, set_control_line_state */
-TEST_CASE("USB Host CDC-ACM driver: Basic test", "[cdc_acm][ignore]")
+TEST_CASE("read_write", "[cdc_acm]")
 {
     nb_of_responses = 0;
     cdc_acm_dev_hdl_t cdc_dev = NULL;
@@ -180,7 +180,7 @@ TEST_CASE("USB Host CDC-ACM driver: Basic test", "[cdc_acm][ignore]")
 }
 
 /* Test communication with multiple CDC-ACM devices from one thread */
-TEST_CASE("USB Host CDC-ACM driver: Multiple devices test", "[cdc_acm][ignore]")
+TEST_CASE("multiple_devices", "[cdc_acm]")
 {
     nb_of_responses = 0;
     nb_of_responses2 = 0;
@@ -244,7 +244,7 @@ void tx_task(void *arg)
  * In this test, one CDC device is accessed from multiple threads.
  * It has to be opened/closed just once, though.
  */
-TEST_CASE("USB Host CDC-ACM driver: Multiple threads test", "[cdc_acm][ignore]")
+TEST_CASE("multiple_threads", "[cdc_acm]")
 {
     nb_of_responses = 0;
     cdc_acm_dev_hdl_t cdc_dev;
@@ -278,7 +278,7 @@ TEST_CASE("USB Host CDC-ACM driver: Multiple threads test", "[cdc_acm][ignore]")
 }
 
 /* Test CDC driver reaction to USB device sudden disconnection */
-TEST_CASE("USB Host CDC-ACM driver: Sudden disconnection test", "[cdc_acm][ignore]")
+TEST_CASE("sudden_disconnection", "[cdc_acm]")
 {
     test_install_cdc_driver();
 
@@ -315,7 +315,7 @@ TEST_CASE("USB Host CDC-ACM driver: Sudden disconnection test", "[cdc_acm][ignor
  * -# Send unsupported CDC request
  * -# Write to read-only device
  */
-TEST_CASE("USB Host CDC-ACM driver: Error handling", "[cdc_acm][ignore]")
+TEST_CASE("error_handling", "[cdc_acm]")
 {
     cdc_acm_dev_hdl_t cdc_dev;
     cdc_acm_host_device_config_t dev_config = {
@@ -375,7 +375,7 @@ TEST_CASE("USB Host CDC-ACM driver: Error handling", "[cdc_acm][ignore]")
 
 /* Following test case implements dual CDC-ACM USB device that can be used as mock device for CDC-ACM Host tests */
 void run_usb_dual_cdc_device(void);
-TEST_CASE("USB_CDC_Mock_Device_App", "[cdc_acm_device][ignore]")
+TEST_CASE("mock_device_app", "[cdc_acm_device][ignore]")
 {
     run_usb_dual_cdc_device();
 }
