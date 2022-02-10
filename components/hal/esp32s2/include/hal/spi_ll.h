@@ -746,7 +746,7 @@ static inline void spi_ll_set_dummy(spi_dev_t *hw, int dummy_n)
  */
 static inline void spi_ll_master_set_cs_hold(spi_dev_t *hw, int hold)
 {
-    hw->ctrl2.cs_hold_time = hold - 1;
+    hw->ctrl2.cs_hold_time = hold;
     hw->user.cs_hold = hold ? 1 : 0;
 }
 
