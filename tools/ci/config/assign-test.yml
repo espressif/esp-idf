@@ -20,7 +20,7 @@ assign_test:
     UNIT_TEST_DIR: "${CI_PROJECT_DIR}/components/idf_test/unit_test"
     # COMPONENT_UT_DIRS is set by `set_component_ut_vars` in `utils.sh`
     COMPONENT_UT_OUTPUT_DIR: "${CI_PROJECT_DIR}/component_ut"
-    INTEGRATION_CONFIG_OUTPUT_PATH: "${CI_PROJECT_DIR}/components/idf_test/integration_test/CIConfigs"
+    INTEGRATION_TEST_DIR: "${CI_PROJECT_DIR}/tools/ci/integration_test"
     INTEGRATION_TEST_CASE_PATH: "${CI_PROJECT_DIR}/auto_test_script/TestCaseFiles"
     ASSIGN_TEST_CASE_SCRIPT: "${CI_PROJECT_DIR}/auto_test_script/bin/CIAssignTestCases.py"
     PYTHONPATH: ${CI_PROJECT_DIR}/auto_test_script/packages
@@ -32,6 +32,7 @@ assign_test:
       - $EXAMPLE_TEST_DIR/test_configs
       - $CUSTOM_TEST_DIR/test_configs
       - $COMPONENT_UT_OUTPUT_DIR/test_configs
+      - $INTEGRATION_TEST_DIR/test_configs
       - build_examples/artifact_index.json
       - build_test_apps/artifact_index.json
       - build_component_ut/artifact_index.json
@@ -49,7 +50,7 @@ assign_test:
     - retry_failed git -C auto_test_script checkout -f ${CI_AUTO_TEST_SCRIPT_REPO_BRANCH}
     - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script --customized_only
     # assign integration test cases
-    - python ${ASSIGN_TEST_CASE_SCRIPT} -t ${INTEGRATION_TEST_CASE_PATH} -c $CI_TARGET_TEST_CONFIG_FILE -b $IDF_PATH/SSC/ssc_bin -o $INTEGRATION_CONFIG_OUTPUT_PATH
+    - python ${ASSIGN_TEST_CASE_SCRIPT} -t ${INTEGRATION_TEST_CASE_PATH} -c $CI_TARGET_TEST_CONFIG_FILE -b $IDF_PATH/SSC/ssc_bin -o $INTEGRATION_TEST_DIR/test_configs
 
 update_test_cases:
   extends: .rules:ref:master-schedule
