@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,7 +45,7 @@ void test_case_uses_tcpip(void)
     }
 
     // Allow LWIP tasks to finish initialising themselves
-    vTaskDelay(25 / portTICK_RATE_MS);
+    vTaskDelay(25 / portTICK_PERIOD_MS);
 
     printf("Note: esp_netif_init() has been called. Until next reset, TCP/IP task will periodicially allocate memory and consume CPU time.\n");
 

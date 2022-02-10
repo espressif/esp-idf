@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,7 +33,7 @@ static volatile bool exit_flag = false;
 
 static void aes_task(void *pvParameters)
 {
-    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
+    SemaphoreHandle_t *sema = (SemaphoreHandle_t *) pvParameters;
     ESP_LOGI(TAG, "aes_task is started");
     esp_aes_context ctx = {
             .key_bytes = 16,
@@ -55,7 +55,7 @@ static void aes_task(void *pvParameters)
 
 static void sha_task(void *pvParameters)
 {
-    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
+    SemaphoreHandle_t *sema = (SemaphoreHandle_t *) pvParameters;
     ESP_LOGI(TAG, "sha_task is started");
     const char *input = "Space!#$%&()*+,-.0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_abcdefghijklmnopqrstuvwxyz~DEL0123456789";
     unsigned char output[64];
@@ -73,7 +73,7 @@ static void sha_task(void *pvParameters)
 
 static void mbedtls_sha256_task(void *pvParameters)
 {
-    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
+    SemaphoreHandle_t *sema = (SemaphoreHandle_t *) pvParameters;
     ESP_LOGI(TAG, "mbedtls_sha256_task is started");
     const char *input = "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_abcdefghijklmnopqrstuvwxyz~DEL0123456789Space!#$%&()*+,-.0123456789:;<=>?";
     mbedtls_sha256_context sha256_ctx;
@@ -111,7 +111,7 @@ TEST_CASE("Test shared using AES SHA512 SHA256", "[hw_crypto]")
 #else
     const int max_tasks = 3;
 #endif
-    xSemaphoreHandle exit_sema[max_tasks];
+    SemaphoreHandle_t exit_sema[max_tasks];
 
     for (int i = 0; i < max_tasks; ++i) {
         exit_sema[i] = xSemaphoreCreateBinary();
@@ -145,7 +145,7 @@ TEST_CASE("Test shared using AES SHA512 SHA256", "[hw_crypto]")
 
 static void rsa_task(void *pvParameters)
 {
-    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
+    SemaphoreHandle_t *sema = (SemaphoreHandle_t *) pvParameters;
     ESP_LOGI(TAG, "rsa_task is started");
     while (exit_flag == false) {
         mbedtls_rsa_self_test(0);
@@ -161,7 +161,7 @@ TEST_CASE("Test shared using AES RSA", "[hw_crypto]")
 #else
     const int max_tasks = 2;
 #endif
-    xSemaphoreHandle exit_sema[max_tasks];
+    SemaphoreHandle_t exit_sema[max_tasks];
 
     for (int i = 0; i < max_tasks; ++i) {
         exit_sema[i] = xSemaphoreCreateBinary();
@@ -195,7 +195,7 @@ TEST_CASE("Test shared using SHA512 RSA", "[hw_crypto]")
 #else
     const int max_tasks = 2;
 #endif
-    xSemaphoreHandle exit_sema[max_tasks];
+    SemaphoreHandle_t exit_sema[max_tasks];
 
     for (int i = 0; i < max_tasks; ++i) {
         exit_sema[i] = xSemaphoreCreateBinary();
@@ -229,7 +229,7 @@ TEST_CASE("Test shared using SHA256 RSA", "[hw_crypto]")
 #else
     const int max_tasks = 2;
 #endif
-    xSemaphoreHandle exit_sema[max_tasks];
+    SemaphoreHandle_t exit_sema[max_tasks];
 
     for (int i = 0; i < max_tasks; ++i) {
         exit_sema[i] = xSemaphoreCreateBinary();
@@ -263,7 +263,7 @@ TEST_CASE("Test shared using AES SHA RSA", "[hw_crypto]")
 #else
     const int max_tasks = 3;
 #endif
-    xSemaphoreHandle exit_sema[max_tasks];
+    SemaphoreHandle_t exit_sema[max_tasks];
 
     for (int i = 0; i < max_tasks; ++i) {
         exit_sema[i] = xSemaphoreCreateBinary();

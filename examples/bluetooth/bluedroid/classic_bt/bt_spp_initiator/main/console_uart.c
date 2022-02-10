@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -48,7 +48,7 @@ static void console_uart_task(void *pvParameters)
 
     for (;;) {
         //Waiting for UART event.
-        if (xQueueReceive(uart_queue, (void * )&event, (portTickType)portMAX_DELAY)) {
+        if (xQueueReceive(uart_queue, (void * )&event, (TickType_t)portMAX_DELAY)) {
             switch (event.type) {
                 //Event of UART receving data
                 case UART_DATA:

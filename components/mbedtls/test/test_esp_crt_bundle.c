@@ -160,7 +160,7 @@ void server_task(void *pvParameters)
 {
     int ret;
     mbedtls_endpoint_t server;
-    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
+    SemaphoreHandle_t *sema = (SemaphoreHandle_t *) pvParameters;
 
 
     if (server_setup(&server) != ESP_OK) {
@@ -320,7 +320,7 @@ TEST_CASE("custom certificate bundle", "[mbedtls]")
 
    test_case_uses_tcpip();
 
-   xSemaphoreHandle signal_sem = xSemaphoreCreateBinary();
+   SemaphoreHandle_t signal_sem = xSemaphoreCreateBinary();
    TEST_ASSERT_NOT_NULL(signal_sem);
 
    exit_flag = false;

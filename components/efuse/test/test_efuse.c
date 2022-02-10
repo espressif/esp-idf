@@ -652,7 +652,7 @@ TEST_CASE("Test Bits are not empty. Write operation is forbidden", "[efuse]")
 
 #ifndef CONFIG_FREERTOS_UNICORE
 static const int delay_ms = 2000;
-static xSemaphoreHandle sema;
+static SemaphoreHandle_t sema;
 
 static void task1(void* arg)
 {
@@ -761,7 +761,7 @@ TEST_CASE("Check a case when ESP_ERR_DAMAGED_READING occurs and read and burn ar
 {
     cmd_stop_reset_task1 = false;
     TaskHandle_t read_task_hdl;
-    xSemaphoreHandle sema[2];
+    SemaphoreHandle_t sema[2];
     sema[0] = xSemaphoreCreateBinary();
     sema[1] = xSemaphoreCreateBinary();
 

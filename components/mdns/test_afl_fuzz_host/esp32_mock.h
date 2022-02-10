@@ -53,7 +53,7 @@
 #define INC_TASK_H
 
 #define pdMS_TO_TICKS(a) a
-#define portTICK_RATE_MS 10
+#define portTICK_PERIOD_MS 10
 #define xSemaphoreTake(s,d)        true
 #define xTaskDelete(a)
 #define vTaskDelete(a)             free(a)
@@ -73,19 +73,16 @@
 #define ESP_TASK_PRIO_MAX 25
 #define ESP_TASKD_EVENT_PRIO 5
 #define _mdns_udp_pcb_write(tcpip_if, ip_protocol, ip, port, data, len) len
-#define xTaskHandle TaskHandle_t
+#define TaskHandle_t TaskHandle_t
 
 
 typedef int32_t esp_err_t;
 
-typedef void * xSemaphoreHandle;
 typedef void * SemaphoreHandle_t;
-typedef void * xQueueHandle;
 typedef void * QueueHandle_t;
 typedef void * TaskHandle_t;
 typedef int    BaseType_t;
 typedef uint32_t TickType_t;
-typedef uint32_t portTickType;
 
 
 extern const char * WIFI_EVENT;

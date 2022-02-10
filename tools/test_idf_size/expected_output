@@ -3141,7 +3141,7 @@ Section total:                                      0            0
     .text                                         814          878                       -64
     __getreent                                     27           21                        +6
     _xt_tick_divisor_init                          32           32
-    pcTaskGetTaskName                              50           50
+    pcTaskGetName                                  50           50
     prvAddCurrentTaskToDelayedList                106          110                        -4
     prvAddNewTaskToReadyList                      368          380                       -12
     prvCheckForValidListAndQueue                  142          138                        +4

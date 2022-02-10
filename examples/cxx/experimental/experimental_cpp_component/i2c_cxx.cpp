@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -96,7 +96,7 @@ void I2CCommandLink::stop()
 
 void I2CCommandLink::execute_transfer(I2CNumber i2c_num, chrono::milliseconds driver_timeout)
 {
-    esp_err_t err = i2c_master_cmd_begin(i2c_num.get_num(), handle, driver_timeout.count() / portTICK_RATE_MS);
+    esp_err_t err = i2c_master_cmd_begin(i2c_num.get_num(), handle, driver_timeout.count() / portTICK_PERIOD_MS);
     if (err != ESP_OK) {
         throw I2CTransferException(err);
     }
@@ -184,12 +184,12 @@ I2CSlave::~I2CSlave()
 
 int I2CSlave::write_raw(const uint8_t *data, size_t data_len, chrono::milliseconds timeout)
 {
-    return i2c_slave_write_buffer(i2c_num.get_value(), data, data_len, (TickType_t) timeout.count() / portTICK_RATE_MS);
+    return i2c_slave_write_buffer(i2c_num.get_value(), data, data_len, (TickType_t) timeout.count() / portTICK_PERIOD_MS);
 }
 
 int I2CSlave::read_raw(uint8_t *buffer, size_t buffer_len, chrono::milliseconds timeout)
 {
-    return i2c_slave_read_buffer(i2c_num.get_value(), buffer, buffer_len, (TickType_t) timeout.count() / portTICK_RATE_MS);
+    return i2c_slave_read_buffer(i2c_num.get_value(), buffer, buffer_len, (TickType_t) timeout.count() / portTICK_PERIOD_MS);
 }
 
 I2CWrite::I2CWrite(const vector<uint8_t> &bytes, chrono::milliseconds driver_timeout)

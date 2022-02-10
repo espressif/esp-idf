@@ -1339,7 +1339,7 @@ Discarded input sections
                 0x0000000000000000       0x22 /home/user/esp/esp-idf/tools/unit-test-app/build/freertos/libfreertos.a(timers.o)
  .text.xTimerGetExpiryTime
                 0x0000000000000000       0x22 /home/user/esp/esp-idf/tools/unit-test-app/build/freertos/libfreertos.a(timers.o)
- .text.pcTimerGetTimerName
+ .text.pcTimerGetName
                 0x0000000000000000        0x7 /home/user/esp/esp-idf/tools/unit-test-app/build/freertos/libfreertos.a(timers.o)
  .text.xTimerIsTimerActive
                 0x0000000000000000       0x24 /home/user/esp/esp-idf/tools/unit-test-app/build/freertos/libfreertos.a(timers.o)
@@ -17072,7 +17072,7 @@ END GROUP
  .literal.__getreent
                 0x0000000040080950        0x0 /home/user/esp/esp-idf/tools/unit-test-app/build/freertos/libfreertos.a(tasks.o)
                                           0x8 (size before relaxing)
- .literal.pcTaskGetTaskName
+ .literal.pcTaskGetName
                 0x0000000040080950        0x8 /home/user/esp/esp-idf/tools/unit-test-app/build/freertos/libfreertos.a(tasks.o)
                                          0x1c (size before relaxing)
  .literal.pvTaskGetThreadLocalStoragePointer
@@ -17807,10 +17807,10 @@ END GROUP
                 0x0000000040085428       0x1b /home/user/esp/esp-idf/tools/unit-test-app/build/freertos/libfreertos.a(tasks.o)
                 0x0000000040085428                __getreent
  *fill*         0x0000000040085443        0x1 
- .text.pcTaskGetTaskName
+ .text.pcTaskGetName
                 0x0000000040085444       0x2a /home/user/esp/esp-idf/tools/unit-test-app/build/freertos/libfreertos.a(tasks.o)
                                          0x2d (size before relaxing)
-                0x0000000040085444                pcTaskGetTaskName
+                0x0000000040085444                pcTaskGetName
  *fill*         0x000000004008546e        0x2 
  .text.pvTaskGetThreadLocalStoragePointer
                 0x0000000040085470       0x1e /home/user/esp/esp-idf/tools/unit-test-app/build/freertos/libfreertos.a(tasks.o)

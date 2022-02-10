@@ -396,7 +396,7 @@ typedef struct {
     union {
         struct {
             char * hostname;
-            xTaskHandle calling_task;
+            TaskHandle_t calling_task;
         } hostname_set;
         char * instance;
         struct {

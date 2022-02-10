@@ -3,7 +3,7 @@
 version: "1.0.0"
 
 dependencies:
-  espressif/es8311: "==0.0.2-alpha"
+  espressif/es8311: ">=0.0.2"
   ## Required IDF version
   idf:
     version: "^5.0"

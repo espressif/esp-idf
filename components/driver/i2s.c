@@ -70,7 +70,7 @@ typedef struct {
     volatile int rw_pos;
     volatile void *curr_ptr;
     SemaphoreHandle_t mux;
-    xQueueHandle queue;
+    QueueHandle_t queue;
     lldesc_t **desc;
 } i2s_dma_t;
 
@@ -1568,12 +1568,12 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
         cfg->total_chan = 2;
 #endif
         if (cfg->mode & I2S_MODE_TX) {
-            xSemaphoreTake(p_i2s[i2s_num]->tx->mux, (portTickType)portMAX_DELAY);
+            xSemaphoreTake(p_i2s[i2s_num]->tx->mux, (TickType_t)portMAX_DELAY);
             i2s_hal_tx_set_channel_style(&(p_i2s[i2s_num]->hal), cfg);
             xSemaphoreGive(p_i2s[i2s_num]->tx->mux);
         }
         if (cfg->mode & I2S_MODE_RX) {
-            xSemaphoreTake(p_i2s[i2s_num]->rx->mux, (portTickType)portMAX_DELAY);
+            xSemaphoreTake(p_i2s[i2s_num]->rx->mux, (TickType_t)portMAX_DELAY);
             i2s_hal_rx_set_channel_style(&(p_i2s[i2s_num]->hal), cfg);
             xSemaphoreGive(p_i2s[i2s_num]->rx->mux);
         }
@@ -1598,7 +1598,7 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
     if (cfg->mode & I2S_MODE_TX) {
         ESP_RETURN_ON_FALSE(p_i2s[i2s_num]->tx, ESP_ERR_INVALID_ARG, TAG, "I2S TX DMA object has not initialized yet");
         /* Waiting for transmit finish */
-        xSemaphoreTake(p_i2s[i2s_num]->tx->mux, (portTickType)portMAX_DELAY);
+        xSemaphoreTake(p_i2s[i2s_num]->tx->mux, (TickType_t)portMAX_DELAY);
         i2s_tx_set_clk_and_channel(i2s_num, &clk_cfg);
         /* If buffer size changed, the DMA buffer need realloc */
         if (need_realloc) {
@@ -1618,7 +1618,7 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
     if (cfg->mode & I2S_MODE_RX) {
         ESP_RETURN_ON_FALSE(p_i2s[i2s_num]->rx, ESP_ERR_INVALID_ARG, TAG, "I2S TX DMA object has not initialized yet");
         /* Waiting for receive finish */
-        xSemaphoreTake(p_i2s[i2s_num]->rx->mux, (portTickType)portMAX_DELAY);
+        xSemaphoreTake(p_i2s[i2s_num]->rx->mux, (TickType_t)portMAX_DELAY);
         i2s_rx_set_clk_and_channel(i2s_num, &clk_cfg);
         /* If buffer size changed, the DMA buffer need realloc */
         if (need_realloc) {
@@ -2012,7 +2012,7 @@ esp_err_t i2s_write(i2s_port_t i2s_num, const void *src, size_t size, size_t *by
     *bytes_written = 0;
     ESP_RETURN_ON_FALSE((i2s_num < I2S_NUM_MAX), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
     ESP_RETURN_ON_FALSE((p_i2s[i2s_num]->tx), ESP_ERR_INVALID_ARG, TAG, "TX mode is not enabled");
-    xSemaphoreTake(p_i2s[i2s_num]->tx->mux, (portTickType)portMAX_DELAY);
+    xSemaphoreTake(p_i2s[i2s_num]->tx->mux, (TickType_t)portMAX_DELAY);
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_acquire(p_i2s[i2s_num]->pm_lock);
 #endif
@@ -2094,7 +2094,7 @@ esp_err_t i2s_write_expand(i2s_port_t i2s_num, const void *src, size_t size, siz
     src_bytes = src_bits / 8;
     aim_bytes = aim_bits / 8;
     zero_bytes = aim_bytes - src_bytes;
-    xSemaphoreTake(p_i2s[i2s_num]->tx->mux, (portTickType)portMAX_DELAY);
+    xSemaphoreTake(p_i2s[i2s_num]->tx->mux, (TickType_t)portMAX_DELAY);
     size = size * aim_bytes / src_bytes;
     ESP_LOGD(TAG, "aim_bytes %d src_bytes %d size %d", aim_bytes, src_bytes, size);
     while (size > 0) {
@@ -2148,7 +2148,7 @@ esp_err_t i2s_read(i2s_port_t i2s_num, void *dest, size_t size, size_t *bytes_re
     dest_byte = (char *)dest;
     ESP_RETURN_ON_FALSE((i2s_num < I2S_NUM_MAX), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
     ESP_RETURN_ON_FALSE((p_i2s[i2s_num]->rx), ESP_ERR_INVALID_ARG, TAG, "RX mode is not enabled");
-    xSemaphoreTake(p_i2s[i2s_num]->rx->mux, (portTickType)portMAX_DELAY);
+    xSemaphoreTake(p_i2s[i2s_num]->rx->mux, (TickType_t)portMAX_DELAY);
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_acquire(p_i2s[i2s_num]->pm_lock);
 #endif

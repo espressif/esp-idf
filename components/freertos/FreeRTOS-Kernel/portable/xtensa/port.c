@@ -140,7 +140,7 @@ static void vPortTaskWrapper(TaskFunction_t pxCode, void *pvParameters)
 {
     pxCode(pvParameters);
     //FreeRTOS tasks should not return. Log the task name and abort.
-    char *pcTaskName = pcTaskGetTaskName(NULL);
+    char *pcTaskName = pcTaskGetName(NULL);
     ESP_LOGE("FreeRTOS", "FreeRTOS Task \"%s\" should not return, Aborting now!", pcTaskName);
     abort();
 }

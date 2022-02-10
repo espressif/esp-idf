@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,7 +36,7 @@ uint32_t volatile apb_intr_test_result;
 
 static void accessDPORT(void *pvParameters)
 {
-    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
+    SemaphoreHandle_t *sema = (SemaphoreHandle_t *) pvParameters;
     uint32_t dport_date = DPORT_REG_READ(DPORT_DATE_REG);
 
     dport_test_result = true;
@@ -55,7 +55,7 @@ static void accessDPORT(void *pvParameters)
 
 static void accessAPB(void *pvParameters)
 {
-    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
+    SemaphoreHandle_t *sema = (SemaphoreHandle_t *) pvParameters;
     uint32_t uart_date = REG_READ(UART_DATE_REG(0));
 
     apb_test_result = true;
@@ -77,7 +77,7 @@ void run_tasks(const char *task1_description, void (* task1_func)(void *), const
     apb_intr_test_result = 1;
     int i;
     TaskHandle_t th[2];
-    xSemaphoreHandle exit_sema[2];
+    SemaphoreHandle_t exit_sema[2];
 
     for (i=0; i<2; i++) {
         if((task1_func != NULL && i == 0) || (task2_func != NULL && i == 1)){
@@ -172,7 +172,7 @@ static uint32_t apb_counter;
 
 static void accessDPORT_stall_other_cpu(void *pvParameters)
 {
-    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
+    SemaphoreHandle_t *sema = (SemaphoreHandle_t *) pvParameters;
     uint32_t dport_date = DPORT_REG_READ(DPORT_DATE_REG);
     uint32_t dport_date_cur;
     dport_test_result = true;
@@ -195,7 +195,7 @@ static void accessDPORT_stall_other_cpu(void *pvParameters)
 
 static void accessAPB_measure_performance(void *pvParameters)
 {
-    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
+    SemaphoreHandle_t *sema = (SemaphoreHandle_t *) pvParameters;
     uint32_t uart_date = REG_READ(UART_DATE_REG(0));
 
     apb_test_result = true;
@@ -215,7 +215,7 @@ static void accessAPB_measure_performance(void *pvParameters)
 
 static void accessDPORT_pre_reading_apb(void *pvParameters)
 {
-    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
+    SemaphoreHandle_t *sema = (SemaphoreHandle_t *) pvParameters;
     uint32_t dport_date = DPORT_REG_READ(DPORT_DATE_REG);
     uint32_t dport_date_cur;
     dport_test_result = true;
@@ -346,7 +346,7 @@ uint32_t xt_highint5_read_apb;
 
 #ifndef CONFIG_FREERTOS_UNICORE
 intr_handle_t inth;
-xSemaphoreHandle sync_sema;
+SemaphoreHandle_t sync_sema;
 
 static void init_hi_interrupt(void *arg)
 {
@@ -360,7 +360,7 @@ static void init_hi_interrupt(void *arg)
 
 static void accessDPORT2_stall_other_cpu(void *pvParameters)
 {
-    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
+    SemaphoreHandle_t *sema = (SemaphoreHandle_t *) pvParameters;
     dport_test_result = true;
     while (exit_flag == false) {
         DPORT_STALL_OTHER_CPU_START();
@@ -395,7 +395,7 @@ TEST_CASE("Check stall workaround DPORT and Hi-interrupt", "[esp32]")
 
 static void accessDPORT2(void *pvParameters)
 {
-    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
+    SemaphoreHandle_t *sema = (SemaphoreHandle_t *) pvParameters;
     dport_test_result = true;
 
     TEST_ESP_OK(esp_intr_alloc(ETS_INTERNAL_TIMER2_INTR_SOURCE, ESP_INTR_FLAG_LEVEL5 | ESP_INTR_FLAG_IRAM, NULL, NULL, &inth));
@@ -471,7 +471,7 @@ static uint32_t IRAM_ATTR test_dport_access_reg_read(uint32_t reg)
 // The accessDPORT3 task is similar accessDPORT2 but uses test_dport_access_reg_read() instead of usual DPORT_REG_READ().
 static void accessDPORT3(void *pvParameters)
 {
-    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
+    SemaphoreHandle_t *sema = (SemaphoreHandle_t *) pvParameters;
     dport_test_result = true;
 
     TEST_ESP_OK(esp_intr_alloc(ETS_INTERNAL_TIMER2_INTR_SOURCE, ESP_INTR_FLAG_LEVEL5 | ESP_INTR_FLAG_IRAM, NULL, NULL, &inth));

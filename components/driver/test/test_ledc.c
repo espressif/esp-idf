@@ -78,7 +78,7 @@ static void fade_setup(void)
 
     TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
-    vTaskDelay(5 / portTICK_RATE_MS);
+    vTaskDelay(5 / portTICK_PERIOD_MS);
 
     //initialize fade service
     TEST_ESP_OK(ledc_fade_func_install(0));
@@ -88,7 +88,7 @@ static void timer_duty_set_get(ledc_mode_t speed_mode, ledc_channel_t channel, u
 {
     TEST_ESP_OK(ledc_set_duty(speed_mode, channel, duty));
     TEST_ESP_OK(ledc_update_duty(speed_mode, channel));
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT32(duty, ledc_get_duty(speed_mode, channel));
 }
 
@@ -143,11 +143,11 @@ static int16_t wave_count(int last_time)
     // initialize first
     TEST_ESP_OK(pcnt_counter_pause(PCNT_UNIT_0));
     TEST_ESP_OK(pcnt_counter_clear(PCNT_UNIT_0));
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ESP_OK(pcnt_counter_resume(PCNT_UNIT_0));
     TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
 
-    vTaskDelay(last_time / portTICK_RATE_MS);
+    vTaskDelay(last_time / portTICK_PERIOD_MS);
     TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
     return test_counter;
 }
@@ -269,7 +269,7 @@ TEST_CASE("LEDC error log channel and timer config", "[ledc]")
 
     uint32_t current_level = LEDC.channel_group[test_speed_mode].channel[LEDC_CHANNEL_0].conf0.idle_lv;
     TEST_ESP_OK(ledc_stop(test_speed_mode, LEDC_CHANNEL_0, !current_level));
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT32(LEDC.channel_group[test_speed_mode].channel[LEDC_CHANNEL_0].conf0.idle_lv, !current_level);
 }
 
@@ -344,7 +344,7 @@ TEST_CASE("LEDC fade with time", "[ledc]")
     TEST_ESP_OK(ledc_fade_start(test_speed_mode, LEDC_CHANNEL_0, LEDC_FADE_NO_WAIT));
     // duty should not be too far from initial value
     TEST_ASSERT_INT32_WITHIN(20, 4000, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
-    vTaskDelay(210 / portTICK_RATE_MS);
+    vTaskDelay(210 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT32(0, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
 
     //deinitialize fade service
@@ -364,7 +364,7 @@ TEST_CASE("LEDC fade with step", "[ledc]")
     TEST_ESP_OK(ledc_fade_start(test_speed_mode, LEDC_CHANNEL_0, LEDC_FADE_NO_WAIT));
     // duty should not be too far from initial value
     TEST_ASSERT_INT32_WITHIN(20, 4000, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
-    vTaskDelay(525 / portTICK_RATE_MS);
+    vTaskDelay(525 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT32(0, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
 
     //scaler=0 check
@@ -398,7 +398,7 @@ TEST_CASE("LEDC fast switching duty with fade_wait_done", "[ledc]")
     TEST_ASSERT_EQUAL_INT32(4000, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
     TEST_ESP_OK(ledc_set_duty(test_speed_mode, LEDC_CHANNEL_0, 500));
     TEST_ESP_OK(ledc_update_duty(test_speed_mode, LEDC_CHANNEL_0));
-    vTaskDelay(5 / portTICK_RATE_MS);
+    vTaskDelay(5 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT32(500, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
 
     //deinitialize fade service
@@ -423,7 +423,7 @@ TEST_CASE("LEDC fast switching duty with fade_no_wait", "[ledc]")
     TEST_ASSERT_INT32_WITHIN(20, 4000, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
     int time_ms = (first_fade_complete - fade_start) / 1000;
     TEST_ASSERT_TRUE(fabs(time_ms - 200) < 20);
-    vTaskDelay(158 / portTICK_RATE_MS);
+    vTaskDelay(158 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT32(1000, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
 
     // next duty update will not take place until last fade reaches its target duty
@@ -432,7 +432,7 @@ TEST_CASE("LEDC fast switching duty with fade_no_wait", "[ledc]")
     TEST_ASSERT_LESS_THAN(4000, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
     TEST_ESP_OK(ledc_set_duty(test_speed_mode, LEDC_CHANNEL_0, 500));
     TEST_ESP_OK(ledc_update_duty(test_speed_mode, LEDC_CHANNEL_0));
-    vTaskDelay(5 / portTICK_RATE_MS);
+    vTaskDelay(5 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT32(500, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
 
     //deinitialize fade service
@@ -451,7 +451,7 @@ TEST_CASE("LEDC fade stop test", "[ledc]")
     TEST_ESP_OK(ledc_set_fade_with_time(test_speed_mode, LEDC_CHANNEL_0, 4000, 500));
     TEST_ESP_OK(ledc_fade_start(test_speed_mode, LEDC_CHANNEL_0, LEDC_FADE_NO_WAIT));
     // Add some delay before stopping the fade
-    vTaskDelay(127 / portTICK_RATE_MS);
+    vTaskDelay(127 / portTICK_PERIOD_MS);
     // Get duty value right before stopping the fade
     uint32_t duty_before_stop = ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0);
     TEST_ESP_OK(ledc_fade_stop(test_speed_mode, LEDC_CHANNEL_0));
@@ -461,7 +461,7 @@ TEST_CASE("LEDC fade stop test", "[ledc]")
     // Get duty value after fade_stop returns (give at least one cycle for the duty set in fade_stop to take effective)
     uint32_t duty_after_stop = ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0);
     TEST_ASSERT_INT32_WITHIN(4, duty_before_stop, duty_after_stop); // 4 is the scale for one step in the last fade
-    vTaskDelay(300 / portTICK_RATE_MS);
+    vTaskDelay(300 / portTICK_PERIOD_MS);
     // Duty should not change any more after ledc_fade_stop returns
     TEST_ASSERT_EQUAL_INT32(duty_after_stop, ledc_get_duty(test_speed_mode, LEDC_CHANNEL_0));
     TEST_ASSERT_NOT_EQUAL(4000, duty_after_stop);
@@ -532,12 +532,12 @@ TEST_CASE("LEDC timer set", "[ledc][test_env=UT_T1_LEDC]")
 
     printf("Bind channel 0 to timer 0\n");
     TEST_ESP_OK(ledc_bind_channel_timer(test_speed_mode, LEDC_CHANNEL_0, LEDC_TIMER_0));
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT32(ledc_get_freq(test_speed_mode, LEDC_TIMER_0), 500);
 
     uint32_t current_level = LEDC.channel_group[test_speed_mode].channel[LEDC_CHANNEL_0].conf0.idle_lv;
     TEST_ESP_OK(ledc_stop(test_speed_mode, LEDC_CHANNEL_0, !current_level));
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT32( LEDC.channel_group[test_speed_mode].channel[LEDC_CHANNEL_0].conf0.idle_lv, !current_level);
 }
 
@@ -571,7 +571,7 @@ TEST_CASE("LEDC timer pause and resume", "[ledc][test_env=UT_T1_LEDC]")
     //pause ledc timer, when pause it, will get no waveform count
     printf("Pause ledc timer\n");
     TEST_ESP_OK(ledc_timer_pause(test_speed_mode, LEDC_TIMER_0));
-    vTaskDelay(10 / portTICK_RATE_MS);
+    vTaskDelay(10 / portTICK_PERIOD_MS);
     count = wave_count(1000);
     TEST_ASSERT_INT16_WITHIN(5, count, 0);
     TEST_ASSERT_EQUAL_UINT32(count, 0);
@@ -579,14 +579,14 @@ TEST_CASE("LEDC timer pause and resume", "[ledc][test_env=UT_T1_LEDC]")
     //resume ledc timer
     printf("Resume ledc timer\n");
     TEST_ESP_OK(ledc_timer_resume(test_speed_mode, LEDC_TIMER_0));
-    vTaskDelay(10 / portTICK_RATE_MS);
+    vTaskDelay(10 / portTICK_PERIOD_MS);
     count = wave_count(1000);
     TEST_ASSERT_UINT32_WITHIN(5, count, 5000);
 
     //reset ledc timer
     printf("reset ledc timer\n");
     TEST_ESP_OK(ledc_timer_rst(test_speed_mode, LEDC_TIMER_0));
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ASSERT_UINT32_WITHIN(5, count, 5000);
 }
 

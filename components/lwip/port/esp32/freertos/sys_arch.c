@@ -184,7 +184,7 @@ sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
     ret = xSemaphoreTake(*sem, portMAX_DELAY);
     LWIP_ASSERT("taking semaphore failed", ret == pdTRUE);
   } else {
-    TickType_t timeout_ticks = timeout / portTICK_RATE_MS;
+    TickType_t timeout_ticks = timeout / portTICK_PERIOD_MS;
     ret = xSemaphoreTake(*sem, timeout_ticks);
     if (ret == errQUEUE_EMPTY) {
       /* timed out */
@@ -326,7 +326,7 @@ sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
     ret = xQueueReceive((*mbox)->os_mbox, &(*msg), portMAX_DELAY);
     LWIP_ASSERT("mbox fetch failed", ret == pdTRUE);
   } else {
-    TickType_t timeout_ticks = timeout / portTICK_RATE_MS;
+    TickType_t timeout_ticks = timeout / portTICK_PERIOD_MS;
     ret = xQueueReceive((*mbox)->os_mbox, &(*msg), timeout_ticks);
     if (ret == errQUEUE_EMPTY) {
       /* timed out */

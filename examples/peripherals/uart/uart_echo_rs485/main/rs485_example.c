@@ -38,7 +38,7 @@
 #define BAUD_RATE       (CONFIG_ECHO_UART_BAUD_RATE)
 
 // Read packet timeout
-#define PACKET_READ_TICS        (100 / portTICK_RATE_MS)
+#define PACKET_READ_TICS        (100 / portTICK_PERIOD_MS)
 #define ECHO_TASK_STACK_SIZE    (2048)
 #define ECHO_TASK_PRIO          (10)
 #define ECHO_UART_PORT          (CONFIG_ECHO_UART_PORT_NUM)

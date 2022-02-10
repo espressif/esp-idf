@@ -87,7 +87,7 @@ void adc_fake_tie_middle(adc_unit_t adc_unit, adc_channel_t channel)
         TEST_ESP_OK(gpio_set_pull_mode(gpio_num, GPIO_PULLUP_PULLDOWN));
         TEST_ESP_OK(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED));
     }
-    vTaskDelay(10 / portTICK_RATE_MS);
+    vTaskDelay(10 / portTICK_PERIOD_MS);
 }
 
 void adc_fake_tie_high(adc_unit_t adc_unit, adc_channel_t channel)
@@ -111,7 +111,7 @@ void adc_fake_tie_high(adc_unit_t adc_unit, adc_channel_t channel)
         TEST_ESP_OK(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_OUTPUT_ONLY));
         TEST_ESP_OK(rtc_gpio_set_level(gpio_num, 1));
     }
-    vTaskDelay(10 / portTICK_RATE_MS);
+    vTaskDelay(10 / portTICK_PERIOD_MS);
 }
 
 void adc_fake_tie_low(adc_unit_t adc_unit, adc_channel_t channel)
@@ -135,7 +135,7 @@ void adc_fake_tie_low(adc_unit_t adc_unit, adc_channel_t channel)
         TEST_ESP_OK(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_OUTPUT_ONLY));
         TEST_ESP_OK(rtc_gpio_set_level(gpio_num, 0));
     }
-    vTaskDelay(10 / portTICK_RATE_MS);
+    vTaskDelay(10 / portTICK_PERIOD_MS);
 }
 
 void adc_io_normal(adc_unit_t adc_unit, adc_channel_t channel)
@@ -157,7 +157,7 @@ void adc_io_normal(adc_unit_t adc_unit, adc_channel_t channel)
         TEST_ESP_OK(gpio_set_pull_mode(gpio_num, GPIO_FLOATING));
         TEST_ESP_OK(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED));
     }
-    vTaskDelay(10 / portTICK_RATE_MS);
+    vTaskDelay(10 / portTICK_PERIOD_MS);
 }
 
 TEST_CASE("ADC1 rtc read", "[adc1]")
@@ -172,7 +172,7 @@ TEST_CASE("ADC1 rtc read", "[adc1]")
         ESP_LOGI(TAG, "[CH%d - IO%d]:", adc1_ch[i], ADC_GET_IO_NUM(0, adc1_ch[i]));
     }
     printf("ADC tie normal read: ");
-    vTaskDelay(10 / portTICK_RATE_MS);
+    vTaskDelay(10 / portTICK_PERIOD_MS);
 
     /* adc Read */
     printf("ADC1: ");
@@ -187,7 +187,7 @@ TEST_CASE("ADC1 rtc read", "[adc1]")
         adc_fake_tie_high(ADC_UNIT_1, adc1_ch[i]);
     }
     printf("ADC tie high read: ");
-    vTaskDelay(50 / portTICK_RATE_MS);
+    vTaskDelay(50 / portTICK_PERIOD_MS);
     /* adc Read */
     printf("ADC1: ");
     for (int i = 0; i < ADC1_TEST_CHANNEL_NUM; i++) {
@@ -204,7 +204,7 @@ TEST_CASE("ADC1 rtc read", "[adc1]")
         adc_fake_tie_low(ADC_UNIT_1, adc1_ch[i]);
     }
     printf("ADC tie low  read: ");
-    vTaskDelay(50 / portTICK_RATE_MS);
+    vTaskDelay(50 / portTICK_PERIOD_MS);
     /* adc Read */
     printf("ADC1: ");
     for (int i = 0; i < ADC1_TEST_CHANNEL_NUM; i++) {
@@ -221,7 +221,7 @@ TEST_CASE("ADC1 rtc read", "[adc1]")
         adc_fake_tie_middle(ADC_UNIT_1, adc1_ch[i]);
     }
     printf("ADC tie mid  read: ");
-    vTaskDelay(50 / portTICK_RATE_MS);
+    vTaskDelay(50 / portTICK_PERIOD_MS);
     /* adc Read */
     printf("ADC1: ");
     for (int i = 0; i < ADC1_TEST_CHANNEL_NUM; i++) {
@@ -250,7 +250,7 @@ TEST_CASE("ADC2 rtc read", "[adc2]")
         ESP_LOGI(TAG, "[CH%d - IO%d]:", adc2_ch[i], ADC_GET_IO_NUM(1, adc2_ch[i]));
     }
     printf("ADC float read: ");
-    vTaskDelay(10 / portTICK_RATE_MS);
+    vTaskDelay(10 / portTICK_PERIOD_MS);
 
     /* adc Read */
     printf("ADC2: ");
@@ -265,7 +265,7 @@ TEST_CASE("ADC2 rtc read", "[adc2]")
         adc_fake_tie_high(ADC_UNIT_2, adc2_ch[i]);
     }
     printf("ADC tie high read: ");
-    vTaskDelay(10 / portTICK_RATE_MS);
+    vTaskDelay(10 / portTICK_PERIOD_MS);
     /* adc Read */
     printf("ADC2: ");
     for (int i = 0; i < ADC2_TEST_CHANNEL_NUM; i++) {
@@ -282,7 +282,7 @@ TEST_CASE("ADC2 rtc read", "[adc2]")
         adc_fake_tie_low(ADC_UNIT_2, adc2_ch[i]);
     }
     printf("ADC tie low read: ");
-    vTaskDelay(10 / portTICK_RATE_MS);
+    vTaskDelay(10 / portTICK_PERIOD_MS);
     /* adc Read */
     printf("ADC2: ");
     for (int i = 0; i < ADC2_TEST_CHANNEL_NUM; i++) {
@@ -299,7 +299,7 @@ TEST_CASE("ADC2 rtc read", "[adc2]")
         adc_fake_tie_middle(ADC_UNIT_2, adc2_ch[i]);
     }
     printf("ADC tie middle read: ");
-    vTaskDelay(10 / portTICK_RATE_MS);
+    vTaskDelay(10 / portTICK_PERIOD_MS);
     /* adc Read */
     printf("ADC2: ");
     for (int i = 0; i < ADC2_TEST_CHANNEL_NUM; i++) {
@@ -352,7 +352,7 @@ void test_adc_slope_debug(void)
     for (int i = 0; i < ADC1_TEST_CHANNEL_NUM; i++) {
         adc_fake_tie_middle(ADC_UNIT_1, adc1_ch[i]);
     }
-    vTaskDelay(10 / portTICK_RATE_MS);
+    vTaskDelay(10 / portTICK_PERIOD_MS);
 
     while (1) {
         /* adc Read */
@@ -360,7 +360,7 @@ void test_adc_slope_debug(void)
             scope_temp[i] = adc1_get_raw((adc1_channel_t)adc1_ch[i]);
         }
         test_tp_print_to_scope(scope_temp, ADC1_TEST_CHANNEL_NUM);
-        vTaskDelay(SCOPE_DEBUG_FREQ_MS / portTICK_RATE_MS);
+        vTaskDelay(SCOPE_DEBUG_FREQ_MS / portTICK_PERIOD_MS);
     }
 #elif SCOPE_DEBUG_TYPE == 1
     int adc2_val[ADC2_TEST_CHANNEL_NUM] = {0};
@@ -375,7 +375,7 @@ void test_adc_slope_debug(void)
     for (int i = 0; i < ADC2_TEST_CHANNEL_NUM; i++) {
         adc_fake_tie_middle(ADC_UNIT_2, adc2_ch[i]);
     }
-    vTaskDelay(10 / portTICK_RATE_MS);
+    vTaskDelay(10 / portTICK_PERIOD_MS);
 
     while (1) {
         /* adc Read */
@@ -386,7 +386,7 @@ void test_adc_slope_debug(void)
         }
 
         test_tp_print_to_scope(scope_temp, ADC2_TEST_CHANNEL_NUM);
-        vTaskDelay(SCOPE_DEBUG_FREQ_MS / portTICK_RATE_MS);
+        vTaskDelay(SCOPE_DEBUG_FREQ_MS / portTICK_PERIOD_MS);
     }
 #endif
 }

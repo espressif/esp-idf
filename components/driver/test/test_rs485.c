@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,7 +32,7 @@
 #define PACKETS_NUMBER  (10)
 
 // Wait timeout for uart driver
-#define PACKET_READ_TICS    (1000 / portTICK_RATE_MS)
+#define PACKET_READ_TICS    (1000 / portTICK_PERIOD_MS)
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
 //No runners

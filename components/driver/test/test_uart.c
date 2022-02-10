@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,7 +30,7 @@
 #define PACKETS_NUMBER  (10)
 
 // Wait timeout for uart driver
-#define PACKET_READ_TICS    (1000 / portTICK_RATE_MS)
+#define PACKET_READ_TICS    (1000 / portTICK_PERIOD_MS)
 
 #define TEST_DEFAULT_CLK UART_SCLK_APB
 
@@ -54,7 +54,7 @@ static volatile bool exit_flag;
 
 static void test_task(void *pvParameters)
 {
-    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
+    SemaphoreHandle_t *sema = (SemaphoreHandle_t *) pvParameters;
     char* data = (char *) malloc(256);
 
     while (exit_flag == false) {
@@ -82,7 +82,7 @@ TEST_CASE("test uart_wait_tx_done is not blocked when ticks_to_wait=0", "[uart]"
 {
     uart_config(UART_BAUD_11520, TEST_DEFAULT_CLK);
 
-    xSemaphoreHandle exit_sema = xSemaphoreCreateBinary();
+    SemaphoreHandle_t exit_sema = xSemaphoreCreateBinary();
     exit_flag = false;
 
     xTaskCreate(test_task,  "tsk1", 2048, &exit_sema, 5, NULL);
@@ -132,7 +132,7 @@ TEST_CASE("test uart tx data with break", "[uart]")
     uart_config(UART_BAUD_115200, TEST_DEFAULT_CLK);
     printf("Uart%d send %d bytes with break\n", UART_NUM1, send_len);
     uart_write_bytes_with_break(UART_NUM1, (const char *)psend, send_len, brk_len);
-    uart_wait_tx_done(UART_NUM1, (portTickType)portMAX_DELAY);
+    uart_wait_tx_done(UART_NUM1, (TickType_t)portMAX_DELAY);
     //If the code is running here, it means the test passed, otherwise it will crash due to the interrupt wdt timeout.
     printf("Send data with break test passed\n");
     free(psend);
@@ -396,7 +396,7 @@ TEST_CASE("uart int state restored after flush", "[uart]")
     uart_write_bytes(uart_echo, (const char *) data, buf_size);
 
     /* As we set up a loopback, we can read them back on RX */
-    int len = uart_read_bytes(uart_echo, data, buf_size, 1000 / portTICK_RATE_MS);
+    int len = uart_read_bytes(uart_echo, data, buf_size, 1000 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL(len, buf_size);
 
     /* Fill the RX buffer, this should disable the RX interrupts */
@@ -411,7 +411,7 @@ TEST_CASE("uart int state restored after flush", "[uart]")
     uart_flush_input(uart_echo);
     written = uart_write_bytes(uart_echo, (const char *) data, buf_size);
     TEST_ASSERT_NOT_EQUAL(-1, written);
-    len = uart_read_bytes(uart_echo, data, buf_size, 1000 / portTICK_RATE_MS);
+    len = uart_read_bytes(uart_echo, data, buf_size, 1000 / portTICK_PERIOD_MS);
     /* len equals buf_size bytes if interrupts were indeed re-enabled */
     TEST_ASSERT_EQUAL(len, buf_size);
 
@@ -426,7 +426,7 @@ TEST_CASE("uart int state restored after flush", "[uart]")
     uart_flush_input(uart_echo);
     written = uart_write_bytes(uart_echo, (const char *) data, buf_size);
     TEST_ASSERT_NOT_EQUAL(-1, written);
-    len = uart_read_bytes(uart_echo, data, buf_size, 250 / portTICK_RATE_MS);
+    len = uart_read_bytes(uart_echo, data, buf_size, 250 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL(len, 0);
 
     TEST_ESP_OK(uart_driver_delete(uart_echo));

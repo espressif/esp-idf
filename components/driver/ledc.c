@@ -40,8 +40,8 @@ typedef struct {
     int cycle_num;
     int scale;
     ledc_fade_mode_t mode;
-    xSemaphoreHandle ledc_fade_sem;
-    xSemaphoreHandle ledc_fade_mux;
+    SemaphoreHandle_t ledc_fade_sem;
+    SemaphoreHandle_t ledc_fade_mux;
 #if CONFIG_SPIRAM_USE_MALLOC
     StaticQueue_t ledc_fade_sem_storage;
 #endif

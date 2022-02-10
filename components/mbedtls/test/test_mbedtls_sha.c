@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -95,7 +95,7 @@ TEST_CASE("mbedtls SHA interleaving", "[mbedtls]")
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha1_thousand_as, sha1, 20, "SHA1 calculation");
 }
 
-static xSemaphoreHandle done_sem;
+static SemaphoreHandle_t done_sem;
 static void tskRunSHA1Test(void *pvParameters)
 {
     mbedtls_sha1_context sha1_ctx;
@@ -523,7 +523,7 @@ TEST_CASE("mbedtls SHA256 PSRAM DMA", "[mbedtls]")
 
 extern RTC_FAST_ATTR uint8_t rtc_stack[4096];
 
-static xSemaphoreHandle done_sem;
+static SemaphoreHandle_t done_sem;
 
 TEST_CASE("mbedtls SHA stack in RTC RAM", "[mbedtls]")
 {

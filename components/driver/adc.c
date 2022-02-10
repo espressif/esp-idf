@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -479,7 +479,7 @@ esp_err_t adc_digi_read_bytes(uint8_t *buf, uint32_t length_max, uint32_t *out_l
     uint8_t *data = NULL;
     size_t size = 0;
 
-    ticks_to_wait = timeout_ms / portTICK_RATE_MS;
+    ticks_to_wait = timeout_ms / portTICK_PERIOD_MS;
     if (timeout_ms == ADC_MAX_DELAY) {
         ticks_to_wait = portMAX_DELAY;
     }

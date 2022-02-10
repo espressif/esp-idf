@@ -251,7 +251,7 @@ static void i2s_adc_test(void)
             } else {
                 gpio_set_pull_mode(ADC1_CHANNEL_4_IO, GPIO_PULLUP_ONLY);
             }
-            vTaskDelay(200 / portTICK_RATE_MS);
+            vTaskDelay(200 / portTICK_PERIOD_MS);
             // read data from adc, will block until buffer is full
             i2s_read(I2S_NUM_0, (void *)i2sReadBuffer, 1024 * sizeof(uint16_t), &bytesRead, portMAX_DELAY);
 

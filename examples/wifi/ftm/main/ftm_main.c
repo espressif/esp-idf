@@ -226,7 +226,7 @@ static bool wifi_cmd_sta_join(const char *ssid, const char *pass)
         s_reconnect = false;
         xEventGroupClearBits(s_wifi_event_group, CONNECTED_BIT);
         ESP_ERROR_CHECK( esp_wifi_disconnect() );
-        xEventGroupWaitBits(s_wifi_event_group, DISCONNECTED_BIT, 0, 1, portTICK_RATE_MS);
+        xEventGroupWaitBits(s_wifi_event_group, DISCONNECTED_BIT, 0, 1, portTICK_PERIOD_MS);
     }
 
     s_reconnect = true;
@@ -235,7 +235,7 @@ static bool wifi_cmd_sta_join(const char *ssid, const char *pass)
     ESP_ERROR_CHECK( esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
     ESP_ERROR_CHECK( esp_wifi_connect() );
 
-    xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT, 0, 1, 5000 / portTICK_RATE_MS);
+    xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT, 0, 1, 5000 / portTICK_PERIOD_MS);
 
     return true;
 }

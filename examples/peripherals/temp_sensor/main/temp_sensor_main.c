@@ -32,7 +32,7 @@ void tempsensor_example(void *arg)
     temp_sensor_start();
     ESP_LOGI(TAG, "Temperature sensor started");
     while (1) {
-        vTaskDelay(1000 / portTICK_RATE_MS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
         temp_sensor_read_celsius(&tsens_out);
         ESP_LOGI(TAG, "Temperature out celsius %f°C", tsens_out);
     }

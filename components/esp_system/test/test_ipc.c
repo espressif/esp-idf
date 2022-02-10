@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,7 +52,7 @@ static void test_func_ipc(void *sema)
 {
     esp_rom_delay_us(1000000 + xPortGetCoreID() * 100);
     func_ipc_priority = uxTaskPriorityGet(NULL);
-    xSemaphoreGive(*(xSemaphoreHandle *)sema);
+    xSemaphoreGive(*(SemaphoreHandle_t *)sema);
     esp_rom_printf("test_func_ipc: [%d, %d]\n", func_ipc_priority, xPortGetCoreID());
 }
 
@@ -62,7 +62,7 @@ TEST_CASE("Test ipc_task works with the priority of the caller's task", "[ipc]")
     func_ipc_priority = 0;
     vTaskPrioritySet(NULL, priority);
 
-    xSemaphoreHandle sema_ipc_done = xSemaphoreCreateBinary();
+    SemaphoreHandle_t sema_ipc_done = xSemaphoreCreateBinary();
 
     exit_flag = false;
     xTaskCreatePinnedToCore(task1, "task1", 4096, NULL, priority + 2, NULL, 1);
@@ -93,9 +93,9 @@ static void task(void *sema)
 {
     int priority = uxTaskPriorityGet(NULL);
     ESP_LOGI("task", "start [priority = %d, cpu = %d]", priority, xPortGetCoreID());
-    xSemaphoreTake(*(xSemaphoreHandle *)sema, portMAX_DELAY);
+    xSemaphoreTake(*(SemaphoreHandle_t *)sema, portMAX_DELAY);
     esp_ipc_call_blocking(!xPortGetCoreID(), test_func2_ipc, &priority);
-    xSemaphoreGive(*(xSemaphoreHandle *)sema);
+    xSemaphoreGive(*(SemaphoreHandle_t *)sema);
     ESP_LOGI("task", "finish [priority = %d, cpu = %d]", priority, xPortGetCoreID());
     vTaskDelete(NULL);
 }
@@ -105,7 +105,7 @@ TEST_CASE("Test multiple ipc_calls", "[ipc]")
     const int max_tasks = 5;
     UBaseType_t priority = uxTaskPriorityGet(NULL);
     ESP_LOGI("test", "priority = %d, cpu = %d", priority, xPortGetCoreID());
-    xSemaphoreHandle sema_ipc_done[max_tasks * portNUM_PROCESSORS];
+    SemaphoreHandle_t sema_ipc_done[max_tasks * portNUM_PROCESSORS];
 
     for (int task_num = 0; task_num < max_tasks; ++task_num) {
         ++priority;

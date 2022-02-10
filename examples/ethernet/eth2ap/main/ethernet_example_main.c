@@ -25,7 +25,7 @@
 
 static const char *TAG = "eth_example";
 static esp_eth_handle_t s_eth_handle = NULL;
-static xQueueHandle flow_control_queue = NULL;
+static QueueHandle_t flow_control_queue = NULL;
 static bool s_sta_is_connected = false;
 static bool s_ethernet_is_connected = false;
 static uint8_t s_eth_mac[6];
