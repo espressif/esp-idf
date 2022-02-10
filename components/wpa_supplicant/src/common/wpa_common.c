@@ -674,4 +674,14 @@ int wpa_cipher_put_suites(u8 *pos, int ciphers)
 	return num_suites;
 }
 
+unsigned int wpa_mic_len(int akmp)
+{
+    /* The following code is supposed to be used for 192 bit encryption support only
+	if (akmp == WPA_KEY_MGMT_IEEE8021X_SUITE_B_192)
+		return 24;
+    */
+
+	return 16;
+}
+
 #endif // ESP_SUPPLICANT
