@@ -42,7 +42,7 @@ static void force_conn_state(bool connected, TickType_t delay_ticks)
 
 void usb_lib_task(void *arg)
 {
-    //Initialize the internal USB PHY to connect to the USB OTG peripheral. We manually install the USB PHY for testing
+    // Initialize the internal USB PHY to connect to the USB OTG peripheral. We manually install the USB PHY for testing
     usb_phy_config_t phy_config = {
         .controller = USB_PHY_CTRL_OTG,
         .target = USB_PHY_TARGET_INT,
@@ -60,27 +60,27 @@ void usb_lib_task(void *arg)
     printf("USB Host installed\n");
     xTaskNotifyGive(arg);
 
-    while (1) {
+    bool all_clients_gone = false;
+    bool all_dev_free = false;
+    while (!all_clients_gone || !all_dev_free) {
         // Start handling system events
         uint32_t event_flags;
         usb_host_lib_handle_events(portMAX_DELAY, &event_flags);
         if (event_flags & USB_HOST_LIB_EVENT_FLAGS_NO_CLIENTS) {
-            printf("No more clients: clean up\n");
-            // The device should not have been freed yet, so we expect an ESP_ERR_NOT_FINISHED
-            TEST_ASSERT_EQUAL(ESP_ERR_NOT_FINISHED, usb_host_device_free_all());
+            printf("No more clients\n");
+            usb_host_device_free_all();
+            all_clients_gone = true;
         }
         if (event_flags & USB_HOST_LIB_EVENT_FLAGS_ALL_FREE) {
-            printf("All free: uninstall USB lib\n");
-            break;
+            printf("All device's freed\n");
+            all_dev_free = true;
         }
     }
 
     // Clean up USB Host
     vTaskDelay(10); // Short delay to allow clients clean-up
-    usb_host_lib_handle_events(0, NULL); // Make sure there are now pending events
     TEST_ASSERT_EQUAL(ESP_OK, usb_host_uninstall());
-    //Tear down USB PHY
-    TEST_ASSERT_EQUAL(ESP_OK, usb_del_phy(phy_hdl));
+    TEST_ASSERT_EQUAL(ESP_OK, usb_del_phy(phy_hdl)); //Tear down USB PHY
     phy_hdl = NULL;
     vTaskDelete(NULL);
 }
@@ -293,11 +293,9 @@ TEST_CASE("USB Host CDC-ACM driver: Sudden disconnection test", "[cdc_acm][ignor
     TEST_ASSERT_EQUAL(ESP_OK, cdc_acm_host_open(0x303A, 0x4002, 0, &dev_config, &cdc_dev));
     TEST_ASSERT_NOT_NULL(cdc_dev);
 
-    force_conn_state(false, pdMS_TO_TICKS(10));
-    // Notify will succeed only if CDC_ACM_HOST_DEVICE_DISCONNECTED notification was generated
-    TEST_ASSERT_EQUAL(1, ulTaskNotifyTake(false, pdMS_TO_TICKS(100)));
+    force_conn_state(false, pdMS_TO_TICKS(10));                        // Simulate device disconnection
+    TEST_ASSERT_EQUAL(1, ulTaskNotifyTake(false, pdMS_TO_TICKS(100))); // Notify will succeed only if CDC_ACM_HOST_DEVICE_DISCONNECTED notification was generated
 
-    force_conn_state(true, 0); // Switch back to real PHY
     TEST_ASSERT_EQUAL(ESP_OK, cdc_acm_host_uninstall());
     vTaskDelay(20); //Short delay to allow task to be cleaned up
 }
@@ -347,10 +345,10 @@ TEST_CASE("USB Host CDC-ACM driver: Error handling", "[cdc_acm][ignore]")
     TEST_ASSERT_EQUAL(ESP_OK, cdc_acm_host_open(0x303A, 0x4002, 0, &dev_config, &cdc_dev));
     TEST_ASSERT_NOT_NULL(cdc_dev);
 
-    // Open one CDC-ACM device twice //@todo this test is commented out due to bug in usb_host
-    //cdc_acm_dev_hdl_t cdc_dev_test;
-    //TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, cdc_acm_host_open(0x303A, 0x4002, 0, &dev_config, &cdc_dev_test));
-    //TEST_ASSERT_NULL(cdc_dev_test);
+    // Open one CDC-ACM device twice
+    cdc_acm_dev_hdl_t cdc_dev_test;
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, cdc_acm_host_open(0x303A, 0x4002, 0, &dev_config, &cdc_dev_test));
+    TEST_ASSERT_NULL(cdc_dev_test);
 
     // Uninstall driver with open devices
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_STATE, cdc_acm_host_uninstall());
