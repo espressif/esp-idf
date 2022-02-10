@@ -4,6 +4,16 @@
 .. before processing :start-after: and :end-before: options.
 
 
+.. tool-xtensa-esp-elf-gdb-notes
+
+
+---
+
+.. tool-riscv32-esp-elf-gdb-notes
+
+
+---
+
 .. tool-xtensa-esp32-elf-notes
 
 

@@ -66,9 +66,9 @@ a15            0x0                 0
 ======================== THREADS INFO =========================
   Id   Target Id          Frame 
 * 1    process 1073493400 0x40085825 in recur_func () at ../main/test_core_dump.c:70
-  2    process 1073490916 0x40027c8f in vTaskDelay (xTicksToDelay=100) at ../../../hal/esp32s2/include/hal/cpu_ll.h:33
-  3    process 1073487360 0x400958be in esp_pm_impl_waiti () at ../../../hal/esp32s2/include/hal/cpu_ll.h:202
-  4    process 1073495796 0x40027c8f in vTaskDelay (xTicksToDelay=100) at ../../../hal/esp32s2/include/hal/cpu_ll.h:33
+  2    process 1073490916 0x40027c8f in vTaskDelay (xTicksToDelay=100) at /builds/espressif/esp-idf/components/freertos/tasks.c:1593
+  3    process 1073487360 0x400958be in esp_pm_impl_waiti () at /builds/espressif/esp-idf/components/esp_pm/pm_impl.c:840
+  4    process 1073495796 0x40027c8f in vTaskDelay (xTicksToDelay=100) at /builds/espressif/esp-idf/components/freertos/tasks.c:1593
   5    process 1073347944 0x4001a8d4 in ?? ()
 
 ==================== THREAD 1 (TCB: 0x3ffc3598, name: 'unaligned_ptr_t') =====================
@@ -79,18 +79,18 @@ a15            0x0                 0
 #4  0x40028ea8 in vPortTaskWrapper (pxCode=0x40085830 <unaligned_ptr_task>, pvParameters=0x0) at /builds/espressif/esp-idf/components/freertos/port/xtensa/port.c:159
 
 ==================== THREAD 2 (TCB: 0x3ffc2be4, name: 'bad_ptr_task') =====================
-#0  0x40027c8f in vTaskDelay (xTicksToDelay=100) at ../../../hal/esp32s2/include/hal/cpu_ll.h:33
+#0  0x40027c8f in vTaskDelay (xTicksToDelay=100) at /builds/espressif/esp-idf/components/freertos/tasks.c:1593
 #1  0x400857c3 in bad_ptr_task (pvParameter=0x0) at ../main/test_core_dump.c:43
 #2  0x40028ea8 in vPortTaskWrapper (pxCode=0x400857b4 <bad_ptr_task>, pvParameters=0x0) at /builds/espressif/esp-idf/components/freertos/port/xtensa/port.c:159
 
 ==================== THREAD 3 (TCB: 0x3ffc1e00, name: 'IDLE') =====================
-#0  0x400958be in esp_pm_impl_waiti () at ../../../hal/esp32s2/include/hal/cpu_ll.h:202
+#0  0x400958be in esp_pm_impl_waiti () at /builds/espressif/esp-idf/components/esp_pm/pm_impl.c:840
 #1  0x4008a0fa in esp_vApplicationIdleHook () at /builds/espressif/esp-idf/components/esp_system/freertos_hooks.c:63
 #2  0x40027b99 in prvIdleTask (pvParameters=0x0) at /builds/espressif/esp-idf/components/freertos/tasks.c:3959
 #3  0x40028ea8 in vPortTaskWrapper (pxCode=0x40027b90 <prvIdleTask>, pvParameters=0x0) at /builds/espressif/esp-idf/components/freertos/port/xtensa/port.c:159
 
 ==================== THREAD 4 (TCB: 0x3ffc3ef4, name: 'failed_assert_t') =====================
-#0  0x40027c8f in vTaskDelay (xTicksToDelay=100) at ../../../hal/esp32s2/include/hal/cpu_ll.h:33
+#0  0x40027c8f in vTaskDelay (xTicksToDelay=100) at /builds/espressif/esp-idf/components/freertos/tasks.c:1593
 #1  0x40085703 in failed_assert_task (pvParameter=0x0) at ../main/test_core_dump.c:89
 #2  0x40028ea8 in vPortTaskWrapper (pxCode=0x400856f4 <failed_assert_task>, pvParameters=0x0) at /builds/espressif/esp-idf/components/freertos/port/xtensa/port.c:159
 
