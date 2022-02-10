@@ -10,6 +10,7 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/ringbuf.h"
 #include "tusb.h"
 #include "tusb_cdc_acm.h"
 #include "cdc.h"

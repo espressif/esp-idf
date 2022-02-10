@@ -116,7 +116,6 @@ menu "TinyUSB Stack"
 
         menu "Massive Storage Class (MSC)"
             config TINYUSB_MSC_ENABLED
-                depends on TINYUSB_CDC_COUNT < 2
                 bool "Enable TinyUSB MSC feature"
                 default n
                 help

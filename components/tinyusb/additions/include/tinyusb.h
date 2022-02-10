@@ -64,9 +64,13 @@ extern "C" {
  * @brief Configuration structure of the tinyUSB core
  */
 typedef struct {
-    tusb_desc_device_t *descriptor; /*!< Pointer to a device descriptor */
-    const char **string_descriptor; /*!< Pointer to an array of string descriptors */
-    bool external_phy;              /*!< Should USB use an external PHY */
+    union {
+        const tusb_desc_device_t *device_descriptor; /*!< Pointer to a device descriptor. If set to NULL, the TinyUSB device will use a default device descriptor whose values are set in Kconfig */
+        const tusb_desc_device_t *descriptor  __attribute__((deprecated)); /*!< Alias to `device_descriptor` for backward compatibility */
+    };
+    const char **string_descriptor;            /*!< Pointer to an array of string descriptors */
+    bool external_phy;                         /*!< Should USB use an external PHY */
+    const uint8_t *configuration_descriptor;   /*!< Pointer to a configuration descriptor. If set to NULL, TinyUSB device will use a default configuration descriptor whose values are set in Kconfig */
 } tinyusb_config_t;
 
 /**
