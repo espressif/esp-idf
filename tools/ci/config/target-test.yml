@@ -542,8 +542,8 @@ UT_034:
       - triggers
       - schedules
     variables:
-      # Due to lack of runners, S2 tests will only be triggered with label (@bot test will not trigger)
-      # - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_UNIT_TEST
       - $BOT_LABEL_UNIT_TEST_S2
 
 UT_035:
