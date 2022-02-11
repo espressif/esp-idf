@@ -75,10 +75,6 @@ config SOC_EFUSE_KEY_PURPOSE_FIELD
     bool
     default y
 
-config SOC_ICACHE_ACCESS_RODATA_SUPPORTED
-    bool
-    default y
-
 config SOC_RTC_FAST_MEM_SUPPORTED
     bool
     default y
@@ -184,6 +180,10 @@ config SOC_APB_BACKUP_DMA
     default y
 
 config SOC_BROWNOUT_RESET_SUPPORTED
+    bool
+    default y
+
+config SOC_SHARED_IDCACHE_SUPPORTED
     bool
     default y
 

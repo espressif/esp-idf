@@ -20,7 +20,7 @@
 
 #if !CONFIG_IDF_TARGET_ESP32
 #include "soc/extmem_reg.h"
-#include "soc/cache_memory.h"
+#include "soc/ext_mem_defs.h"
 #include "soc/rtc_cntl_reg.h"
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 #ifdef CONFIG_IDF_TARGET_ESP32S2

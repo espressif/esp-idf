@@ -33,7 +33,7 @@
 #include "esp_crypto_lock.h"
 #include "esp_attr.h"
 #include "soc/lldesc.h"
-#include "soc/cache_memory.h"
+#include "soc/ext_mem_defs.h"
 #include "soc/periph_defs.h"
 
 #include "freertos/FreeRTOS.h"

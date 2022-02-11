@@ -11,8 +11,8 @@
 
 MEMORY
 {
-  iram_seg (RWX) :                  org = 0x403B6000, len = 0x4000
-  iram_loader_seg (RWX) :           org = 0x403BA000, len = 0x6000
+  iram_seg (RWX) :                  org = 0x403B6000, len = 0x3000
+  iram_loader_seg (RWX) :           org = 0x403B9000, len = 0x7000
   dram_seg (RW) :                   org = 0x3FCD0000, len = 0x4000
 }
 
@@ -52,6 +52,8 @@ SECTIONS
     *libmicro-ecc.a:*.*(.literal .text .literal.* .text.*)
     *libspi_flash.a:*.*(.literal .text .literal.* .text.*)
     *libhal.a:wdt_hal_iram.*(.literal .text .literal.* .text.*)
+    *libhal.a:mmu_hal.*(.literal .text .literal.* .text.*)
+    *libhal.a:cache_hal.*(.literal .text .literal.* .text.*)
     *libhal.a:efuse_hal.*(.literal .text .literal.* .text.*)
     *libesp_hw_support.a:rtc_clk.*(.literal .text .literal.* .text.*)
     *libesp_hw_support.a:rtc_time.*(.literal .text .literal.* .text.*)

@@ -42,7 +42,6 @@
 #define ESP_BOOTLOADER_SPIFLASH_QE_GD_SR2        BIT1   // QE position when you write 8 bits(for SR2) at one time.
 #define ESP_BOOTLOADER_SPIFLASH_QE_SR1_2BYTE     BIT9   // QE position when you write 16 bits at one time.
 
-
 #ifndef BOOTLOADER_BUILD
 /* Normal app version maps to esp_spi_flash.h operations...
  */
@@ -116,23 +115,11 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 /* Bootloader version, uses ROM functions only */
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/cache.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/cache.h"
-#include "soc/cache_memory.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/cache.h"
-#include "soc/cache_memory.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/cache.h"
-#include "soc/cache_memory.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/cache.h"
-#include "soc/cache_memory.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/rom/cache.h"
-#include "soc/cache_memory.h"
 #endif
 #include "esp_rom_spiflash.h"
+#include "hal/mmu_hal.h"
+#include "hal/mmu_ll.h"
+#include "hal/cache_hal.h"
 static const char *TAG = "bootloader_flash";
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -171,60 +158,75 @@ uint32_t bootloader_mmap_get_free_pages(void)
     return MMU_FREE_PAGES;
 }
 
-const void *bootloader_mmap(uint32_t src_addr, uint32_t size)
+const void *bootloader_mmap(uint32_t src_paddr, uint32_t size)
 {
     if (mapped) {
-        ESP_LOGE(TAG, "tried to bootloader_mmap twice");
+        ESP_EARLY_LOGE(TAG, "tried to bootloader_mmap twice");
         return NULL; /* can't map twice */
     }
     if (size > MMU_SIZE) {
-        ESP_LOGE(TAG, "bootloader_mmap excess size %x", size);
+        ESP_EARLY_LOGE(TAG, "bootloader_mmap excess size %x", size);
         return NULL;
     }
 
-    uint32_t src_addr_aligned = src_addr & MMU_FLASH_MASK;
-    uint32_t count = bootloader_cache_pages_to_map(size, src_addr);
+    uint32_t src_paddr_aligned = src_paddr & MMU_FLASH_MASK;
+    //The addr is aligned, so we add the mask off length to the size, to make sure the corresponding buses are enabled.
+    uint32_t size_after_paddr_aligned = (src_paddr - src_paddr_aligned) + size;
+    /**
+     * @note 1
+     * Will add here a check to make sure the vaddr is on read-only and executable buses, since we use others for psram
+     * Now simply check if it's valid vaddr, didn't check if it's readable, writable or executable.
+     * TODO: IDF-4710
+     */
+    if (mmu_ll_check_valid_ext_vaddr_region(0, MMU_BLOCK0_VADDR, size_after_paddr_aligned) == 0) {
+        ESP_EARLY_LOGE(TAG, "vaddr not valid");
+        return NULL;
+    }
+
+    //-------------stop cache to do the MMU mapping--------------
 #if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Disable(0);
     Cache_Flush(0);
-#elif SOC_ICACHE_ACCESS_RODATA_SUPPORTED
-    uint32_t autoload = Cache_Suspend_ICache();
-    Cache_Invalidate_ICache_All();
-#else // access rodata with DCache
-    uint32_t autoload = Cache_Suspend_DCache();
-    Cache_Invalidate_DCache_All();
-#endif
-    ESP_LOGD(TAG, "mmu set paddr=%08x count=%d size=%x src_addr=%x src_addr_aligned=%x",
-             src_addr & MMU_FLASH_MASK, count, size, src_addr, src_addr_aligned );
-#if CONFIG_IDF_TARGET_ESP32
-    int e = cache_flash_mmu_set(0, 0, MMU_BLOCK0_VADDR, src_addr_aligned, 64, count);
-#elif CONFIG_IDF_TARGET_ESP32S2
-    int e = Cache_Ibus_MMU_Set(MMU_ACCESS_FLASH, MMU_BLOCK0_VADDR, src_addr_aligned, 64, count, 0);
 #else
-    int e = Cache_Dbus_MMU_Set(MMU_ACCESS_FLASH, MMU_BLOCK0_VADDR, src_addr_aligned, 64, count, 0);
+    cache_hal_disable(CACHE_TYPE_ALL);
 #endif
-    if (e != 0) {
-        ESP_LOGE(TAG, "cache_flash_mmu_set failed: %d\n", e);
+
+    //---------------Do mapping------------------------
+    ESP_EARLY_LOGD(TAG, "rodata starts from paddr=0x%08x, size=0x%x, will be mapped to vaddr=0x%08x", src_paddr, size, MMU_BLOCK0_VADDR);
 #if CONFIG_IDF_TARGET_ESP32
+    uint32_t count = GET_REQUIRED_MMU_PAGES(size, src_paddr);
+    int e = cache_flash_mmu_set(0, 0, MMU_BLOCK0_VADDR, src_paddr_aligned, 64, count);
+    ESP_EARLY_LOGV(TAG, "after mapping, starting from paddr=0x%08x and vaddr=0x%08x, 0x%x bytes are mapped", src_paddr_aligned, MMU_BLOCK0_VADDR, count * MMU_PAGE_SIZE);
+    if (e != 0) {
+        ESP_EARLY_LOGE(TAG, "cache_flash_mmu_set failed: %d\n", e);
         Cache_Read_Enable(0);
-#elif SOC_ICACHE_ACCESS_RODATA_SUPPORTED
-        Cache_Resume_ICache(autoload);
-#else // access rodata with DCache
-        Cache_Resume_DCache(autoload);
-#endif
         return NULL;
     }
+#else
+    /**
+     * This hal won't return error, it assumes the inputs are valid. The related check should be done in `bootloader_mmap()`.
+     * See above comments (note 1) about IDF-4710
+     */
+    uint32_t actual_mapped_len = 0;
+    mmu_hal_map_region(0, MMU_TARGET_FLASH0, MMU_BLOCK0_VADDR, src_paddr_aligned, size_after_paddr_aligned, &actual_mapped_len);
+    ESP_EARLY_LOGV(TAG, "after mapping, starting from paddr=0x%08x and vaddr=0x%08x, 0x%x bytes are mapped", src_paddr_aligned, MMU_BLOCK0_VADDR, actual_mapped_len);
+#endif
+
+    /**
+     * If after mapping, your code stucks, it possibly means that some of the buses are not enabled, check `cache_ll_l1_enable_bus()`
+     * For now, keep this unchanged.
+     */
+
+    //-------------enable cache--------------
 #if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Enable(0);
-#elif SOC_ICACHE_ACCESS_RODATA_SUPPORTED
-    Cache_Resume_ICache(autoload);
-#else // access rodata with DCache
-    Cache_Resume_DCache(autoload);
+#else
+    cache_hal_enable(CACHE_TYPE_ALL);
 #endif
 
     mapped = true;
 
-    return (void *)(MMU_BLOCK0_VADDR + (src_addr - src_addr_aligned));
+    return (void *)(MMU_BLOCK0_VADDR + (src_paddr - src_paddr_aligned));
 }
 
 void bootloader_munmap(const void *mapping)
@@ -235,15 +237,9 @@ void bootloader_munmap(const void *mapping)
         Cache_Read_Disable(0);
         Cache_Flush(0);
         mmu_init(0);
-#elif SOC_ICACHE_ACCESS_RODATA_SUPPORTED
-        //TODO, save the autoload value.
-        Cache_Suspend_ICache();
-        Cache_Invalidate_ICache_All();
-        Cache_MMU_Init();
-#else // access rodata with DCache
-        Cache_Suspend_DCache();
-        Cache_Invalidate_DCache_All();
-        Cache_MMU_Init();
+#else
+        cache_hal_disable(CACHE_TYPE_ALL);
+        mmu_hal_init();
 #endif
         mapped = false;
         current_read_mapping = UINT32_MAX;
@@ -269,18 +265,16 @@ static esp_err_t bootloader_flash_read_no_decrypt(size_t src_addr, void *dest, s
 #if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Disable(0);
     Cache_Flush(0);
-#elif SOC_ICACHE_ACCESS_RODATA_SUPPORTED
-    uint32_t autoload = Cache_Suspend_ICache();
-#else // access rodata with DCache
-    uint32_t autoload = Cache_Suspend_DCache();
+#else
+    cache_hal_disable(CACHE_TYPE_ALL);
 #endif
+
     esp_rom_spiflash_result_t r = esp_rom_spiflash_read(src_addr, dest, size);
+
 #if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Enable(0);
-#elif SOC_ICACHE_ACCESS_RODATA_SUPPORTED
-    Cache_Resume_ICache(autoload);
-#else // access rodata with DCache
-    Cache_Resume_DCache(autoload);
+#else
+    cache_hal_enable(CACHE_TYPE_ALL);
 #endif
 
     return spi_to_esp_err(r);
@@ -294,44 +288,35 @@ static esp_err_t bootloader_flash_read_allow_decrypt(size_t src_addr, void *dest
         uint32_t word_src = src_addr + word * 4;  /* Read this offset from flash */
         uint32_t map_at = word_src & MMU_FLASH_MASK; /* Map this 64KB block from flash */
         uint32_t *map_ptr;
+
+        /* Move the 64KB mmu mapping window to fit map_at */
         if (map_at != current_read_mapping) {
-            /* Move the 64KB mmu mapping window to fit map_at */
+
+            //----------Stop cache for mapping----------------
 #if CONFIG_IDF_TARGET_ESP32
             Cache_Read_Disable(0);
             Cache_Flush(0);
-#elif SOC_ICACHE_ACCESS_RODATA_SUPPORTED
-            uint32_t autoload = Cache_Suspend_ICache();
-            Cache_Invalidate_ICache_All();
-#else // access rodata with DCache
-            uint32_t autoload = Cache_Suspend_DCache();
-            Cache_Invalidate_DCache_All();
+#else
+            cache_hal_disable(CACHE_TYPE_ALL);
 #endif
-            ESP_LOGD(TAG, "mmu set block paddr=0x%08x (was 0x%08x)", map_at, current_read_mapping);
+
+            //---------------Do mapping------------------------
+            ESP_EARLY_LOGD(TAG, "mmu set block paddr=0x%08x (was 0x%08x)", map_at, current_read_mapping);
 #if CONFIG_IDF_TARGET_ESP32
+            //Should never fail if we only map a MMU_PAGE_SIZE to the vaddr starting from FLASH_READ_VADDR
             int e = cache_flash_mmu_set(0, 0, FLASH_READ_VADDR, map_at, 64, 1);
-#elif CONFIG_IDF_TARGET_ESP32S2
-            int e = Cache_Ibus_MMU_Set(MMU_ACCESS_FLASH, MMU_BLOCK63_VADDR, map_at, 64, 1, 0);
-#else // map rodata with DBus
-            int e = Cache_Dbus_MMU_Set(MMU_ACCESS_FLASH, MMU_BLOCK63_VADDR, map_at, 64, 1, 0);
+            assert(e == 0);
+#else
+            uint32_t actual_mapped_len = 0;
+            mmu_hal_map_region(0, MMU_TARGET_FLASH0, FLASH_READ_VADDR, map_at, MMU_PAGE_SIZE - 1, &actual_mapped_len);
 #endif
-            if (e != 0) {
-                ESP_LOGE(TAG, "cache_flash_mmu_set failed: %d\n", e);
-#if CONFIG_IDF_TARGET_ESP32
-                Cache_Read_Enable(0);
-#elif SOC_ICACHE_ACCESS_RODATA_SUPPORTED
-                Cache_Resume_ICache(autoload);
-#else // access rodata with DCache
-                Cache_Resume_DCache(autoload);
-#endif
-                return ESP_FAIL;
-            }
             current_read_mapping = map_at;
+
+            //-------------enable cache-------------------------
 #if CONFIG_IDF_TARGET_ESP32
             Cache_Read_Enable(0);
-#elif SOC_ICACHE_ACCESS_RODATA_SUPPORTED
-            Cache_Resume_ICache(autoload);
-#else // access rodata with DCache
-            Cache_Resume_DCache(autoload);
+#else
+            cache_hal_enable(CACHE_TYPE_ALL);
 #endif
         }
         map_ptr = (uint32_t *)(FLASH_READ_VADDR + (word_src - map_at));

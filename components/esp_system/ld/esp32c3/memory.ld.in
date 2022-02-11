@@ -23,11 +23,15 @@
 #define ESP_BOOTLOADER_RESERVE_RTC 0
 #endif
 
+/**
+ * physical memory is mapped twice to the vritual address (IRAM and DRAM).
+ * `I_D_SRAM_OFFSET` is the offset between the two locations of the same physical memory
+ */
 #define SRAM_IRAM_START     0x4037C000
 #define SRAM_DRAM_START     0x3FC7C000
 #define ICACHE_SIZE         0x4000 /* ICache size is fixed to 16KB on ESP32-C3 */
 #define I_D_SRAM_OFFSET     (SRAM_IRAM_START - SRAM_DRAM_START)
-#define SRAM_DRAM_END       0x403D0000 - I_D_SRAM_OFFSET  /* 2nd stage bootloader iram_loader_seg start address */
+#define SRAM_DRAM_END       0x403CF600 - I_D_SRAM_OFFSET  /* 2nd stage bootloader iram_loader_seg start address */
 
 #define SRAM_IRAM_ORG       (SRAM_IRAM_START + ICACHE_SIZE)
 #define SRAM_DRAM_ORG       (SRAM_DRAM_START + ICACHE_SIZE)

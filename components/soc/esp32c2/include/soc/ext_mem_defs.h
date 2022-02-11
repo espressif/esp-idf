@@ -6,16 +6,18 @@
 #ifndef _CACHE_MEMORY_H_
 #define _CACHE_MEMORY_H_
 
+#include "esp_bit_defs.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include <stdint.h>
-#include "esp32c2/rom/cache.h"
+
+//TODO IDF-3821, for now it's always 64KB
+#define MMU_PAGE_MODE			        2
 
 /*IRAM0 is connected with Cache IBUS0*/
-#define MMU_PAGE_MODE			MMU_Get_Page_Mode()
-
 #define IRAM0_ADDRESS_LOW               0x40000000
 #define IRAM0_ADDRESS_HIGH              IRAM0_CACHE_ADDRESS_HIGH
 #define IRAM0_CACHE_ADDRESS_LOW         0x42000000
@@ -51,6 +53,7 @@ extern "C" {
 #define CACHE_DBUS_MMU_START            0
 #define CACHE_DBUS_MMU_END              0x100
 
+//TODO, remove these cache function dependencies
 #define CACHE_IROM_MMU_START            0
 #define CACHE_IROM_MMU_END              Cache_Get_IROM_MMU_End()
 #define CACHE_IROM_MMU_SIZE             (CACHE_IROM_MMU_END - CACHE_IROM_MMU_START)
@@ -68,6 +71,7 @@ extern "C" {
 #define MMU_BUS_SIZE(i)                 0x100
 
 #define MMU_INVALID                     BIT(6)
+#define MMU_VALID                       0
 #define MMU_TYPE                        0
 #define MMU_ACCESS_FLASH                0
 
@@ -79,12 +83,29 @@ extern "C" {
 
 #define MMU_TABLE_INVALID_VAL 		MMU_INVALID
 #define FLASH_MMU_TABLE_INVALID_VAL DPORT_MMU_TABLE_INVALID_VAL
-#define MMU_ADDRESS_MASK 		(MMU_TABLE_INVALID_VAL - 1)
-#define MMU_PAGE_SIZE                   (0x4000 << (MMU_PAGE_MODE))
-#define INVALID_PHY_PAGE                (MMU_PAGE_SIZE - 1)
+/**
+ * MMU entry valid bit mask for mapping value. For an entry:
+ * valid bit + value bits
+ * valid bit is BIT(6), so value bits are 0x3f
+ */
+#define MMU_VALID_VAL_MASK 		        0x3f
+/**
+ * Helper macro to make a MMU entry invalid
+ * Check this! IDF-3821
+ */
+#define INVALID_PHY_PAGE                0x7f
+/**
+ * Max MMU entry num.
+ * `MMU_MAX_ENTRY_NUM * MMU_PAGE_SIZE` means the max paddr and vaddr region supported by the MMU. e.g.:
+ * 64 * 64KB, means MMU can map 4MB at most
+ */
+#define MMU_MAX_ENTRY_NUM    64
+/**
+ * This is the mask used for mapping. e.g.:
+ * 0x4200_0000 & MMU_VADDR_MASK
+ */
+#define MMU_VADDR_MASK ((0x100000 << (MMU_PAGE_MODE)) - 1)
 
-#define BUS_ADDR_SIZE 			(0x100000 << (MMU_PAGE_MODE))
-#define BUS_ADDR_MASK (BUS_ADDR_SIZE - 1)
 #define BUS_PMS_MASK  0xffffff
 
 #define CACHE_ICACHE_LOW_SHIFT         0

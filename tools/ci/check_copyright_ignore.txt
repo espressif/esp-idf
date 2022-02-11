@@ -885,7 +885,6 @@ components/hal/esp32h2/include/hal/gpspi_flash_ll.h
 components/hal/esp32h2/include/hal/hmac_hal.h
 components/hal/esp32h2/include/hal/hmac_ll.h
 components/hal/esp32h2/include/hal/interrupt_controller_ll.h
-components/hal/esp32h2/include/hal/memprot_ll.h
 components/hal/esp32h2/include/hal/mpu_ll.h
 components/hal/esp32h2/include/hal/rtc_cntl_ll.h
 components/hal/esp32h2/include/hal/sha_ll.h
@@ -1392,7 +1391,6 @@ components/soc/esp32c3/include/soc/i2c_struct.h
 components/soc/esp32c3/include/soc/interrupt_core0_reg.h
 components/soc/esp32c3/include/soc/interrupt_reg.h
 components/soc/esp32c3/include/soc/ledc_reg.h
-components/soc/esp32c3/include/soc/mmu.h
 components/soc/esp32c3/include/soc/nrx_reg.h
 components/soc/esp32c3/include/soc/reset_reasons.h
 components/soc/esp32c3/include/soc/rmt_reg.h
@@ -1451,7 +1449,6 @@ components/soc/esp32h2/include/soc/gpio_sd_struct.h
 components/soc/esp32h2/include/soc/hwcrypto_reg.h
 components/soc/esp32h2/include/soc/interrupt_reg.h
 components/soc/esp32h2/include/soc/ledc_reg.h
-components/soc/esp32h2/include/soc/mmu.h
 components/soc/esp32h2/include/soc/nrx_reg.h
 components/soc/esp32h2/include/soc/rtc_caps.h
 components/soc/esp32h2/include/soc/rtc_i2c_reg.h
@@ -1512,7 +1509,6 @@ components/soc/esp32s2/include/soc/interrupt_reg.h
 components/soc/esp32s2/include/soc/ledc_reg.h
 components/soc/esp32s2/include/soc/ledc_struct.h
 components/soc/esp32s2/include/soc/memprot_defs.h
-components/soc/esp32s2/include/soc/mmu.h
 components/soc/esp32s2/include/soc/nrx_reg.h
 components/soc/esp32s2/include/soc/reset_reasons.h
 components/soc/esp32s2/include/soc/rtc_cntl_reg.h
@@ -1601,7 +1597,6 @@ components/soc/esp32s3/include/soc/interrupt_reg.h
 components/soc/esp32s3/include/soc/interrupt_struct.h
 components/soc/esp32s3/include/soc/ledc_reg.h
 components/soc/esp32s3/include/soc/ledc_struct.h
-components/soc/esp32s3/include/soc/mmu.h
 components/soc/esp32s3/include/soc/mpu_caps.h
 components/soc/esp32s3/include/soc/nrx_reg.h
 components/soc/esp32s3/include/soc/peri_backup_reg.h

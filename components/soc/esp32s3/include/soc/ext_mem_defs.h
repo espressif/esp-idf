@@ -5,6 +5,8 @@
  */
 #pragma once
 
+#include "esp_bit_defs.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -42,6 +44,7 @@ extern "C" {
 #define CACHE_DBUS_MMU_START            0
 #define CACHE_DBUS_MMU_END              0x800
 
+//TODO, remove these cache function dependencies
 #define CACHE_IROM_MMU_START            0
 #define CACHE_IROM_MMU_END              Cache_Get_IROM_MMU_End()
 #define CACHE_IROM_MMU_SIZE             (CACHE_IROM_MMU_END - CACHE_IROM_MMU_START)
@@ -59,6 +62,7 @@ extern "C" {
 #define MMU_BUS_SIZE(i)                 0x800
 
 #define MMU_INVALID                     BIT(14)
+#define MMU_VALID                       0
 #define MMU_TYPE                        BIT(15)
 #define MMU_ACCESS_FLASH                0
 #define MMU_ACCESS_SPIRAM               BIT(15)
@@ -71,12 +75,27 @@ extern "C" {
 
 #define MMU_TABLE_INVALID_VAL 0x4000
 #define FLASH_MMU_TABLE_INVALID_VAL DPORT_MMU_TABLE_INVALID_VAL
-#define MMU_ADDRESS_MASK 0x3fff
-#define MMU_PAGE_SIZE 0x10000
+/**
+ * MMU entry valid bit mask for mapping value. For an entry:
+ * valid bit + value bits
+ * valid bit is BIT(14), so value bits are 0x3fff
+ */
+#define MMU_VALID_VAL_MASK 0x3fff
+/**
+ * Helper macro to make a MMU entry invalid
+ */
 #define INVALID_PHY_PAGE 0xffff
-
-#define BUS_ADDR_SIZE 0x2000000
-#define BUS_ADDR_MASK (BUS_ADDR_SIZE - 1)
+/**
+ * Max MMU entry num.
+ * `MMU_MAX_ENTRY_NUM * MMU_PAGE_SIZE` means the max paddr and vaddr region supported by the MMU. e.g.:
+ * 16384 * 64KB, means MMU can map 1GB at most
+ */
+#define MMU_MAX_ENTRY_NUM    16384
+/**
+ * This is the mask used for mapping. e.g.:
+ * 0x4200_0000 & MMU_VADDR_MASK
+ */
+#define MMU_VADDR_MASK  0x1FFFFFF
 
 #define CACHE_ICACHE_LOW_SHIFT         0
 #define CACHE_ICACHE_HIGH_SHIFT        2

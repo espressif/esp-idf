@@ -139,6 +139,10 @@ config SOC_ADC_MAX_BITWIDTH
     int
     default 12
 
+config SOC_SHARED_IDCACHE_SUPPORTED
+    bool
+    default y
+
 config SOC_CPU_BREAKPOINTS_NUM
     int
     default 2

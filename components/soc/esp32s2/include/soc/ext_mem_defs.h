@@ -6,6 +6,8 @@
 #ifndef _CACHE_MEMORY_H_
 #define _CACHE_MEMORY_H_
 
+#include "esp_bit_defs.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -93,6 +95,7 @@ extern "C" {
 #define MMU_BUS_SIZE                    0x100
 
 #define MMU_INVALID                     BIT(14)
+#define MMU_VALID                       0
 #define MMU_ACCESS_FLASH                BIT(15)
 #define MMU_ACCESS_SPIRAM               BIT(16)
 
@@ -101,11 +104,23 @@ extern "C" {
 
 #define MMU_TABLE_INVALID_VAL 0x4000
 #define FLASH_MMU_TABLE_INVALID_VAL DPORT_MMU_TABLE_INVALID_VAL
-#define MMU_ADDRESS_MASK 0x3fff
-#define MMU_PAGE_SIZE 0x10000
-
-#define BUS_ADDR_SIZE 0x400000
-#define BUS_ADDR_MASK (BUS_ADDR_SIZE - 1)
+/**
+ * MMU entry valid bit mask for mapping value. For an entry:
+ * valid bit + value bits
+ * valid bit is BIT(14), so value bits are 0x3fff
+ */
+#define MMU_VALID_VAL_MASK 0x3fff
+/**
+ * Max MMU entry num.
+ * `MMU_MAX_ENTRY_NUM * MMU_PAGE_SIZE` means the max paddr and vaddr region supported by the MMU. e.g.:
+ * 16384 * 64KB, means MMU can map 1GB at most
+ */
+#define MMU_MAX_ENTRY_NUM    16384
+/**
+ * This is the mask used for mapping. e.g.:
+ * 0x4200_0000 & MMU_VADDR_MASK
+ */
+#define MMU_VADDR_MASK  0x3FFFFF
 #define BUS_NUM_MASK  0x3
 
 #define CACHE_MEMORY_BANK_SIZE         8192
