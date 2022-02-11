@@ -220,10 +220,9 @@ esp_err_t cdc_acm_host_set_control_line_state(cdc_acm_dev_hdl_t cdc_hdl, bool dt
 esp_err_t cdc_acm_host_send_break(cdc_acm_dev_hdl_t cdc_hdl, uint16_t duration_ms);
 
 /**
- * @brief Print CDC-ACM specific descriptors
+ * @brief Print device's descriptors
  *
- * Descriptors are printed in human readable format to stdout.
- * Intended for debugging and for CDC-ACM compliant devices only.
+ * Device and full Configuration descriptors are printed in human readable format to stdout.
  *
  * @param cdc_hdl CDC handle obtained from cdc_acm_host_open()
  */

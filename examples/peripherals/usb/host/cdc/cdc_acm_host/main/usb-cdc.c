@@ -16,7 +16,7 @@
 
 #define EXAMPLE_USB_HOST_PRIORITY 20
 #define EXAMPLE_USB_DEVICE_VID    0x303A  // 0x303A:0x4001 (TinyUSB CDC device)
-#define EXAMPLE_USB_DEVICE_PID    0x4001
+#define EXAMPLE_USB_DEVICE_PID    0x4001  // Change this to 0x4002 for dual CDC device
 
 static const char *TAG = "USB-CDC";
 

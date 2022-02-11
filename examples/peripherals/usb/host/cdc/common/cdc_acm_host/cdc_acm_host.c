@@ -673,7 +673,7 @@ static esp_err_t cdc_acm_find_intf_and_ep_desc(cdc_dev_t *cdc_dev, uint8_t intf_
         const usb_standard_desc_t *cdc_desc = (usb_standard_desc_t *)cdc_dev->notif.intf_desc;
         do {
             cdc_desc = usb_parse_next_descriptor(cdc_desc, config_desc->wTotalLength, &desc_offset);
-            if ((cdc_desc == NULL) || (cdc_desc->bDescriptorType != ((USB_CLASS_COMM << 4) | USB_W_VALUE_DT_INTERFACE)))
+            if ((cdc_desc == NULL) || (cdc_desc->bDescriptorType != ((USB_CLASS_COMM << 4) | USB_B_DESCRIPTOR_TYPE_INTERFACE )))
                 break; // We found all CDC specific descriptors
             cdc_dev->num_cdc_intf_desc++;
             cdc_dev->cdc_intf_desc =
@@ -844,46 +844,66 @@ esp_err_t cdc_acm_host_close(cdc_acm_dev_hdl_t cdc_hdl)
     return ESP_OK;
 }
 
+/**
+ * @brief Print CDC specific descriptor in human readable form
+ *
+ * This is a callback function that is called from USB Host library,
+ * when it wants to print full configuration descriptor to stdout.
+ *
+ * @param[in] _desc CDC specific descriptor
+ */
+static void cdc_acm_print_desc(const usb_standard_desc_t *_desc)
+{
+    if (_desc->bDescriptorType != ((USB_CLASS_COMM << 4) | USB_B_DESCRIPTOR_TYPE_INTERFACE ))
+    {
+        // Quietly return in case that this descriptor is not CDC interface descriptor
+        return;
+    }
+
+    switch (((cdc_header_desc_t *)_desc)->bDescriptorSubtype) {
+    case CDC_DESC_SUBTYPE_HEADER: {
+        cdc_header_desc_t *desc = (cdc_header_desc_t *)_desc;
+        printf("\t*** CDC Header Descriptor ***\n");
+        printf("\tbcdCDC: %d.%d0\n", ((desc->bcdCDC >> 8) & 0xF), ((desc->bcdCDC >> 4) & 0xF));
+        break;
+    }
+    case CDC_DESC_SUBTYPE_CALL: {
+        cdc_acm_call_desc_t *desc = (cdc_acm_call_desc_t *)_desc;
+        printf("\t*** CDC Call Descriptor ***\n");
+        printf("\tbmCapabilities: 0x%02X\n", desc->bmCapabilities.val);
+        printf("\tbDataInterface: %d\n", desc->bDataInterface);
+        break;
+    }
+    case CDC_DESC_SUBTYPE_ACM: {
+        cdc_acm_acm_desc_t *desc = (cdc_acm_acm_desc_t *)_desc;
+        printf("\t*** CDC ACM Descriptor ***\n");
+        printf("\tbmCapabilities: 0x%02X\n", desc->bmCapabilities.val);
+        break;
+    }
+    case CDC_DESC_SUBTYPE_UNION: {
+        cdc_union_desc_t *desc = (cdc_union_desc_t *)_desc;
+        printf("\t*** CDC Union Descriptor ***\n");
+        printf("\tbControlInterface: %d\n", desc->bControlInterface);
+        printf("\tbSubordinateInterface[0]: %d\n", desc->bSubordinateInterface[0]);
+        break;
+    }
+    default:
+        ESP_LOGW(TAG, "Unsupported CDC specific descriptor");
+        break;
+    }
+}
+
 void cdc_acm_host_desc_print(cdc_acm_dev_hdl_t cdc_hdl)
 {
     assert(cdc_hdl);
     cdc_dev_t *cdc_dev = (cdc_dev_t *)cdc_hdl;
 
-    ESP_RETURN_ON_FALSE(cdc_dev->num_cdc_intf_desc > 0,, TAG, "No CDC-ACM specific descriptors found");
-
-    for (int i = 0; i < cdc_dev->num_cdc_intf_desc; i++) {
-        switch (((cdc_header_desc_t *)cdc_dev->cdc_intf_desc[i])->bDescriptorSubtype) {
-        case CDC_DESC_SUBTYPE_HEADER: {
-            cdc_header_desc_t *desc = (cdc_header_desc_t *)cdc_dev->cdc_intf_desc[i];
-            printf("CDC Header Descriptor:\n");
-            printf("\tbcdCDC: %d.%d0\n", ((desc->bcdCDC >> 8) & 0xF), ((desc->bcdCDC >> 4) & 0xF));
-            break;
-        }
-        case CDC_DESC_SUBTYPE_CALL: {
-            cdc_acm_call_desc_t *desc = (cdc_acm_call_desc_t *)cdc_dev->cdc_intf_desc[i];
-            printf("CDC Call Descriptor:\n");
-            printf("\tbmCapabilities: 0x%02X\n", desc->bmCapabilities.val);
-            printf("\tbDataInterface: %d\n", desc->bDataInterface);
-            break;
-        }
-        case CDC_DESC_SUBTYPE_ACM: {
-            cdc_acm_acm_desc_t *desc = (cdc_acm_acm_desc_t *)cdc_dev->cdc_intf_desc[i];
-            printf("CDC ACM Descriptor:\n");
-            printf("\tbmCapabilities: 0x%02X\n", desc->bmCapabilities.val);
-            break;
-        }
-        case CDC_DESC_SUBTYPE_UNION: {
-            cdc_union_desc_t *desc = (cdc_union_desc_t *)cdc_dev->cdc_intf_desc[i];
-            printf("CDC Union Descriptor:\n");
-            printf("\tbControlInterface: %d\n", desc->bControlInterface);
-            printf("\tbSubordinateInterface[0]: %d\n", desc->bSubordinateInterface[0]);
-            break;
-        }
-        default:
-            ESP_LOGW(TAG, "Unsupported CDC specific descriptor");
-            break;
-        }
-    }
+    const usb_device_desc_t *device_desc;
+    const usb_config_desc_t *config_desc;
+    ESP_ERROR_CHECK_WITHOUT_ABORT(usb_host_get_device_descriptor(cdc_dev->dev_hdl, &device_desc));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(usb_host_get_active_config_descriptor(cdc_dev->dev_hdl, &config_desc));
+    usb_print_device_descriptor(device_desc);
+    usb_print_config_descriptor(config_desc, cdc_acm_print_desc);
 }
 
 /**
