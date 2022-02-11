@@ -6,6 +6,7 @@ This file is used to generate binary files for the given path.
 """
 
 import argparse
+import copy
 import logging
 import os
 import sys
@@ -58,17 +59,25 @@ def main(args: argparse.Namespace) -> None:
             build_system='cmake',
             config_rules=config_rules,
         )
-    logging.info(f'Found {len(build_items)} builds')
-    build_items.sort(key=lambda x: x.build_path)  # type: ignore
 
+    modified_build_items = []
     # auto clean up the binaries if no flag --preserve-all
-    if args.preserve_all is False:
-        for item in build_items:
-            if item.config_name not in app_configs[item.app_dir]:
-                item.preserve = False
+    for item in build_items:
+        is_test_related = item.config_name in app_configs[item.app_dir]
+        if args.test_only and not is_test_related:
+            logging.info(f'Skipping non-test app: {item}')
+            continue
+
+        copied_item = copy.deepcopy(item)
+        if not args.preserve_all and not is_test_related:
+            copied_item.preserve = False
+        modified_build_items.append(copied_item)
+
+    logging.info(f'Found {len(modified_build_items)} builds')
+    modified_build_items.sort(key=lambda x: x.build_path)  # type: ignore
 
     build_apps(
-        build_items=build_items,
+        build_items=modified_build_items,
         parallel_count=args.parallel_count,
         parallel_index=args.parallel_index,
         dry_run=False,
@@ -128,7 +137,12 @@ if __name__ == '__main__':
     parser.add_argument(
         '--preserve-all',
         action='store_true',
-        help='add this flag to preserve the binaries for all apps',
+        help='Preserve the binaries for all apps when specified.',
+    )
+    parser.add_argument(
+        '--test-only',
+        action='store_true',
+        help='Build only test related app when specified.',
     )
     arguments = parser.parse_args()
     setup_logging(arguments)

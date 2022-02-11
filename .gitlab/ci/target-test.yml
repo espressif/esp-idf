@@ -167,6 +167,39 @@ component_ut_pytest_esp32c3_generic:
     - ESP32C3
     - COMPONENT_UT_GENERIC
 
+.pytest_test_apps_dir_template:
+  extends: .pytest_template
+  variables:
+    TEST_DIR: tools/test_apps
+
+test_app_test_pytest_esp32_generic:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32
+  needs:
+    - build_pytest_test_apps_esp32
+  variables:
+    TARGET: esp32
+    ENV_MARKER: generic
+    SETUP_TOOLS: "1"  # need gdb
+  tags:
+    - ESP32
+    - Example_GENERIC
+
+test_app_test_pytest_esp32s2_generic:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32s2
+  needs:
+    - build_pytest_test_apps_esp32s2
+  variables:
+    TARGET: esp32s2
+    ENV_MARKER: generic
+    SETUP_TOOLS: "1"  # need gdb
+  tags:
+    - ESP32S2
+    - Example_GENERIC
+
 # for parallel jobs, CI_JOB_NAME will be "job_name index/total" (for example, "IT_001 1/2")
 # we need to convert to pattern "job_name_index.yml"
 .define_config_file_name: &define_config_file_name |
@@ -538,12 +571,9 @@ test_app_test_005:
 
 test_app_test_esp32_generic:
   extends: .test_app_esp32_template
-  parallel: 5
   tags:
     - ESP32
     - Example_GENERIC
-  variables:
-    SETUP_TOOLS: "1"
 
 test_app_test_flash_psram_f4r4:
   extends: .test_app_esp32s3_template
