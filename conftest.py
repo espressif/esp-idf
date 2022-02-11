@@ -62,6 +62,11 @@ def config(request: FixtureRequest) -> str:
 
 
 @pytest.fixture
+def test_func_name(request: FixtureRequest) -> str:
+    return request.node.function.__name__  # type: ignore
+
+
+@pytest.fixture
 def test_case_name(request: FixtureRequest, target: str, config: str) -> str:
     return format_case_id(target, config, request.node.originalname)
 
@@ -110,7 +115,7 @@ def build_dir(
             return check_dir
 
         logging.warning(
-            f'checking binary path: {binary_path}... missing... try another place'
+            'checking binary path: %s... missing... try another place', binary_path
         )
 
     recommend_place = check_dirs[0]
