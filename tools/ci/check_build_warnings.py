@@ -25,6 +25,7 @@ IGNORE_WARNS = [
         r'library/error\.o',
         r'/.*error\S*\.o',
         r'.*error.*\.c\.obj',
+        r'.*error.*\.c',
         r'.*error.*\.cpp\.obj',
         r'.*error.*\.cxx\.obj',
         r'.*error.*\.cc\.obj',
