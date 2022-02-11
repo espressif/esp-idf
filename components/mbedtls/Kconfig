@@ -189,7 +189,7 @@ menu "mbedTLS"
 
         config MBEDTLS_ECDH_LEGACY_CONTEXT
             bool "Use a backward compatible ECDH context (Experimental)"
-            default y
+            default n
             depends on MBEDTLS_ECDH_C && MBEDTLS_ECP_RESTARTABLE
             help
                 Use the legacy ECDH context format.
@@ -327,6 +327,7 @@ menu "mbedTLS"
 
     config MBEDTLS_ECP_RESTARTABLE
         bool "Enable mbedTLS ecp restartable"
+        select MBEDTLS_ECDH_LEGACY_CONTEXT
         default n
         help
             Enable "non-blocking" ECC operations that can return early and be resumed.

@@ -2696,8 +2696,8 @@
 #include MBEDTLS_USER_CONFIG_FILE
 #endif
 
-/* Define this flag for now */
-/* To Do - while updating to v3.0 remove all the code where this flag is used */
+/* This flag makes sure that we are not using
+ * any functino that is deprecated by mbedtls */
 #define MBEDTLS_DEPRECATED_REMOVED
 
 #endif /* ESP_CONFIG_H */

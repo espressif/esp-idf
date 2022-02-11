@@ -122,14 +122,6 @@ int mbedtls_sha512_starts( mbedtls_sha512_context *ctx, int is384 )
     return 0;
 }
 
-#if !defined(MBEDTLS_DEPRECATED_REMOVED)
-void mbedtls_sha512_starts( mbedtls_sha512_context *ctx,
-                            int is384 )
-{
-    mbedtls_sha512_starts( ctx, is384 );
-}
-#endif
-
 static int esp_internal_sha512_dma_process(mbedtls_sha512_context *ctx,
         const uint8_t *data, size_t len,
         uint8_t *buf, size_t buf_len)
@@ -151,14 +143,6 @@ int mbedtls_internal_sha512_process( mbedtls_sha512_context *ctx, const unsigned
     return ret;
 
 }
-
-#if !defined(MBEDTLS_DEPRECATED_REMOVED)
-void mbedtls_sha512_process( mbedtls_sha512_context *ctx,
-                             const unsigned char data[128] )
-{
-    mbedtls_internal_sha512_process( ctx, data );
-}
-#endif
 
 /*
  * SHA-512 process buffer
@@ -233,16 +217,6 @@ int mbedtls_sha512_update( mbedtls_sha512_context *ctx, const unsigned char *inp
     return 0;
 }
 
-#if !defined(MBEDTLS_DEPRECATED_REMOVED)
-void mbedtls_sha512_update( mbedtls_sha512_context *ctx,
-                            const unsigned char *input,
-                            size_t ilen )
-{
-    mbedtls_sha512_update( ctx, input, ilen );
-}
-#endif
-
-
 static const unsigned char sha512_padding[128] = {
     0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -290,13 +264,5 @@ int mbedtls_sha512_finish( mbedtls_sha512_context *ctx, unsigned char output[64]
 
     return ret;
 }
-
-#if !defined(MBEDTLS_DEPRECATED_REMOVED)
-void mbedtls_sha512_finish( mbedtls_sha512_context *ctx,
-                            unsigned char output[64] )
-{
-    mbedtls_sha512_finish( ctx, output );
-}
-#endif
 
 #endif /* MBEDTLS_SHA512_C && MBEDTLS_SHA512_ALT */

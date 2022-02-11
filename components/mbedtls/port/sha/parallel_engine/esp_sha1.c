@@ -145,15 +145,6 @@ int mbedtls_internal_sha1_process( mbedtls_sha1_context *ctx, const unsigned cha
     return 0;
 }
 
-#if !defined(MBEDTLS_DEPRECATED_REMOVED)
-void mbedtls_sha1_process( mbedtls_sha1_context *ctx,
-                           const unsigned char data[64] )
-{
-    mbedtls_internal_sha1_process( ctx, data );
-}
-#endif
-
-
 static void mbedtls_sha1_software_process( mbedtls_sha1_context *ctx, const unsigned char data[64] )
 {
     uint32_t temp, W[16], A, B, C, D, E;
@@ -361,15 +352,6 @@ int mbedtls_sha1_update( mbedtls_sha1_context *ctx, const unsigned char *input, 
     return 0;
 }
 
-#if !defined(MBEDTLS_DEPRECATED_REMOVED)
-void mbedtls_sha1_update( mbedtls_sha1_context *ctx,
-                          const unsigned char *input,
-                          size_t ilen )
-{
-    mbedtls_sha1_update( ctx, input, ilen );
-}
-#endif
-
 static const unsigned char sha1_padding[64] = {
     0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -423,13 +405,5 @@ out:
 
     return ret;
 }
-
-#if !defined(MBEDTLS_DEPRECATED_REMOVED)
-void mbedtls_sha1_finish( mbedtls_sha1_context *ctx,
-                          unsigned char output[20] )
-{
-    mbedtls_sha1_finish( ctx, output );
-}
-#endif
 
 #endif /* MBEDTLS_SHA1_C && MBEDTLS_SHA1_ALT */
