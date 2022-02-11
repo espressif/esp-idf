@@ -51,13 +51,13 @@ def task_wdt_inner(env, test_name):
         dut.expect_backtrace()
         dut.expect_elf_sha256()
         dut.expect_none('Guru Meditation')
-        test_common(dut, test_name,
-                    expected_backtrace=['panic_abort',
-                                        'esp_system_abort',
-                                        'abort',
-                                        'task_wdt_isr',
-                                        '_xt_lowint1'] +
-                    get_default_backtrace(dut.test_name))
+        if ('gdbstub' in test_name):
+            test_common(dut, test_name, expected_backtrace=[
+                # Backtrace interrupted when abort is called, IDF-842
+                'panic_abort', 'esp_system_abort'
+            ])
+        else:
+            test_common(dut, test_name)
 
 
 def int_wdt_inner(env, test_name):
@@ -103,11 +103,13 @@ def abort_inner(env, test_name):
         dut.expect_backtrace()
         dut.expect_elf_sha256()
         dut.expect_none('Guru Meditation', 'Re-entered core dump')
-        test_common(dut, test_name,
-                    expected_backtrace=['panic_abort',
-                                        'esp_system_abort',
-                                        'abort'] +
-                    get_default_backtrace(dut.test_name))
+        if ('gdbstub' in test_name):
+            test_common(dut, test_name, expected_backtrace=[
+                # Backtrace interrupted when abort is called, IDF-842
+                'panic_abort', 'esp_system_abort'
+            ])
+        else:
+            test_common(dut, test_name)
 
 
 def abort_cached_disabled_inner(env, test_name):
@@ -185,9 +187,10 @@ def ub_inner(env, test_name):
         dut.expect_backtrace()
         dut.expect_elf_sha256()
         dut.expect_none('Guru Meditation', 'Re-entered core dump')
-        test_common(dut, test_name,
-                    expected_backtrace=['panic_abort',
-                                        'esp_system_abort',
-                                        '__ubsan_default_handler',
-                                        '__ubsan_handle_out_of_bounds'] +
-                    get_default_backtrace(dut.test_name))
+        if ('gdbstub' in test_name):
+            test_common(dut, test_name, expected_backtrace=[
+                # Backtrace interrupted when abort is called, IDF-842
+                'panic_abort', 'esp_system_abort'
+            ])
+        else:
+            test_common(dut, test_name)
