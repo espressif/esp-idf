@@ -542,7 +542,6 @@ def test_examples_protocol_advanced_https_ota_example_nimble_gatts(env, extra_da
 
     dut1.expect('Starting Advanced OTA example', timeout=30)
     print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + bin_name))
-    dut1.expect('GAP procedure initiated: advertise', timeout=30)
     print('Started GAP advertising.')
 
     dut1.write('https://' + host_ip + ':' + str(server_port) + '/' + bin_name)
