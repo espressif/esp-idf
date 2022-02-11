@@ -549,14 +549,14 @@ typedef enum {
 
 static void print_counters(void)
 {
-    int64_t frc = esp_system_get_time();
+    int64_t high_res_time = esp_system_get_time();
     int64_t rtc = esp_rtc_get_time_us();
     uint64_t boot_time = esp_time_impl_get_boot_time();
-    printf("\tFRC %lld (us)\n", frc);
+    printf("\tHigh-res time %lld (us)\n", high_res_time);
     printf("\tRTC %lld (us)\n", rtc);
     printf("\tBOOT %lld (us)\n", boot_time);
     printf("\ts_microseconds_offset %lld (us)\n", s_microseconds_offset);
-    printf("delta RTC - FRC counters %lld (us)\n", rtc - frc);
+    printf("delta RTC - high-res time counters %lld (us)\n", rtc - high_res_time);
 }
 
 static void set_initial_condition(type_reboot_t type_reboot, int error_time)
@@ -575,7 +575,7 @@ static void set_initial_condition(type_reboot_t type_reboot, int error_time)
 
     print_counters();
 
-    printf("FRC counter increased to %d (s)\n", error_time);
+    printf("High res counter increased to %d (s)\n", error_time);
     esp_timer_private_advance(error_time * 1000000ULL);
 
     print_counters();
@@ -590,7 +590,7 @@ static void set_initial_condition(type_reboot_t type_reboot, int error_time)
 
     if (type_reboot == TYPE_REBOOT_ABORT) {
         printf("Update boot time based on diff\n");
-        esp_sync_counters_rtc_and_frc();
+        esp_sync_timekeeping_timers();
         print_counters();
         printf("reboot as abort\n");
         abort();
@@ -628,7 +628,7 @@ static void check_time(void)
     TEST_ASSERT_LESS_OR_EQUAL(latency_before_run_ut, dt);
 }
 
-TEST_CASE_MULTIPLE_STAGES("Timestamp after abort is correct in case RTC & FRC have + big error", "[newlib][reset=abort,SW_CPU_RESET]", set_timestamp1, check_time);
-TEST_CASE_MULTIPLE_STAGES("Timestamp after restart is correct in case RTC & FRC have + big error", "[newlib][reset=SW_CPU_RESET]", set_timestamp2, check_time);
-TEST_CASE_MULTIPLE_STAGES("Timestamp after restart is correct in case RTC & FRC have - big error", "[newlib][reset=SW_CPU_RESET]", set_timestamp3, check_time);
+TEST_CASE_MULTIPLE_STAGES("Timestamp after abort is correct in case RTC & High-res timer have + big error", "[newlib][reset=abort,SW_CPU_RESET]", set_timestamp1, check_time);
+TEST_CASE_MULTIPLE_STAGES("Timestamp after restart is correct in case RTC & High-res timer have + big error", "[newlib][reset=SW_CPU_RESET]", set_timestamp2, check_time);
+TEST_CASE_MULTIPLE_STAGES("Timestamp after restart is correct in case RTC & High-res timer have - big error", "[newlib][reset=SW_CPU_RESET]", set_timestamp3, check_time);
 #endif // CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER && CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER

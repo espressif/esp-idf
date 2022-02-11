@@ -41,7 +41,7 @@ void esp_timer_impl_init_system_time(void)
 {
     s_correction_us = esp_rtc_get_time_us() - g_startup_time - esp_timer_impl_get_time();
 #if defined(CONFIG_ESP_TIME_FUNCS_USE_ESP_TIMER) && defined(CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER)
-    esp_err_t err = esp_register_shutdown_handler(esp_sync_counters_rtc_and_frc);
+    esp_err_t err = esp_register_shutdown_handler(esp_sync_timekeeping_timers);
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "Register shutdown handler failed, err = 0x%x", err);
     }

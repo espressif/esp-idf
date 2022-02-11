@@ -36,11 +36,11 @@ Once time is synchronized, ESP32 will perform timekeeping using built-in timers.
 
 - RTC clock is used to maintain accurate time when chip is in deep sleep mode
 
-- FRC1 timer is used to provide time at microsecond accuracy when ESP32 is running.
+- High-resolution timer is used to provide time at microsecond accuracy when ESP32 is running.
 
 Timekeeping using RTC timer is demonstrated in this example by going into deep sleep mode. After wake up, ESP32 will print current time without connecting to WiFi.
 
-To use this functionality, make sure "Timers used for gettimeofday function" option in "ESP32-specific config" menu of menuconfig is set to "RTC and FRC1" or "RTC".
+To use this functionality, make sure "Timers used for gettimeofday function" option in "ESP32-specific config" menu of menuconfig is set to "RTC and high-resolution timer" or "RTC".
 
 ## Working with time
 
@@ -89,14 +89,14 @@ This example can use 3 time synchronization method:
 ## Adjtime()
 `int adjtime(const struct timeval *delta, struct timeval *outdelta)`
 
-`adjtime()` is a libc function that is called automatically in "smooth" time update mode, but can also be called from custom time synchronization code. 
+`adjtime()` is a libc function that is called automatically in "smooth" time update mode, but can also be called from custom time synchronization code.
 If the time error is less than 35 minutes then `adjtime` function will start smooth adjusting otherwise the return value is -1.
 
 This function speeds up or slows down the system clock in order to make a gradual adjustment. This ensures that the calendar time reported by the system clock is always monotonically increasing, which might not happen if you simply set the clock. If adjusting the system clock by `adjtime()` is already done during the second call `adjtime()`, and the delta of the second call is not NULL, the earlier tuning is stopped, but the already completed part of the adjustment is not canceled.
 
-The delta argument specifies a relative adjustment to be made to the clock time. If negative, the system clock is slowed down for a while until it has lost this much elapsed time. If positive, the system clock is speeded up for a while. 
+The delta argument specifies a relative adjustment to be made to the clock time. If negative, the system clock is slowed down for a while until it has lost this much elapsed time. If positive, the system clock is speeded up for a while.
 
-If the olddelta argument is not a null pointer, the adjtime function returns information about any previous time adjustment that has not yet completed. 
+If the olddelta argument is not a null pointer, the adjtime function returns information about any previous time adjustment that has not yet completed.
 
 The return value is 0 on success and -1 on failure.
 

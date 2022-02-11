@@ -1242,7 +1242,6 @@ components/newlib/abort.c
 components/newlib/assert.c
 components/newlib/platform_include/assert.h
 components/newlib/platform_include/errno.h
-components/newlib/platform_include/esp_newlib.h
 components/newlib/platform_include/net/if.h
 components/newlib/platform_include/pthread.h
 components/newlib/platform_include/sys/dirent.h
@@ -1426,7 +1425,6 @@ components/soc/esp32/include/soc/emac_ext_struct.h
 components/soc/esp32/include/soc/emac_mac_struct.h
 components/soc/esp32/include/soc/fe_reg.h
 components/soc/esp32/include/soc/flash_encryption_reg.h
-components/soc/esp32/include/soc/frc_timer_reg.h
 components/soc/esp32/include/soc/gpio_pins.h
 components/soc/esp32/include/soc/gpio_reg.h
 components/soc/esp32/include/soc/gpio_sd_reg.h
@@ -1641,7 +1639,6 @@ components/soc/esp32s2/include/soc/efuse_reg.h
 components/soc/esp32s2/include/soc/efuse_struct.h
 components/soc/esp32s2/include/soc/extmem_reg.h
 components/soc/esp32s2/include/soc/fe_reg.h
-components/soc/esp32s2/include/soc/frc_timer_reg.h
 components/soc/esp32s2/include/soc/gpio_pins.h
 components/soc/esp32s2/include/soc/gpio_reg.h
 components/soc/esp32s2/include/soc/gpio_sd_reg.h

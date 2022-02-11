@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,8 +27,7 @@
  * used for simple callback functions, which do not take longer than a few
  * microseconds to run.
  *
- * Implementation note: on the ESP32, esp_timer APIs use the "legacy" FRC2
- * timer. Timer callbacks are called from a task running on the PRO CPU.
+ * Timer callbacks are called from a task running on the PRO CPU.
  */
 
 #include <stdint.h>

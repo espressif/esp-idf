@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -368,7 +368,7 @@ static void trigger_deepsleep(void)
     // Save start time. Deep sleep.
     start = esp_rtc_get_time_us();
     esp_sleep_enable_timer_wakeup(1000);
-    // In function esp_deep_sleep_start() uses function esp_sync_counters_rtc_and_frc()
+    // In function esp_deep_sleep_start() uses function esp_sync_timekeeping_timers()
     // to prevent a negative time after wake up.
     esp_deep_sleep_start();
 }
@@ -388,7 +388,7 @@ static void check_time_deepsleep_1(void)
     start = esp_rtc_get_time_us();
 
     esp_sleep_enable_timer_wakeup(1000);
-    // In function esp_deep_sleep_start() uses function esp_sync_counters_rtc_and_frc()
+    // In function esp_deep_sleep_start() uses function esp_sync_timekeeping_timers()
     // to prevent a negative time after wake up.
     esp_deep_sleep_start();
 }

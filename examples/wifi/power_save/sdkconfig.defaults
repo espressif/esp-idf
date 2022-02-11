@@ -4,8 +4,6 @@ CONFIG_ESP32_DEFAULT_CPU_FREQ_80=y
 CONFIG_PM_ENABLE=y
 # Enable tickless idle mode
 CONFIG_FREERTOS_USE_TICKLESS_IDLE=y
-# Use RTC timer as reference
-CONFIG_PM_USE_RTC_TIMER_REF=y
 # Put related source code in IRAM
 CONFIG_PM_SLP_IRAM_OPT=y
 CONFIG_PM_RTOS_IDLE_OPT=y
