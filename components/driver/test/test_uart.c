@@ -244,8 +244,9 @@ TEST_CASE("uart read write test", "[uart]")
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
-        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .flow_ctrl = UART_HW_FLOWCTRL_CTS_RTS,
         .source_clk = UART_SCLK_APB,
+        .rx_flow_ctrl_thresh = 120
     };
     TEST_ESP_OK(uart_driver_install(uart_num, BUF_SIZE * 2, 0, 20, NULL, 0));
     TEST_ESP_OK(uart_param_config(uart_num, &uart_config));
@@ -256,22 +257,38 @@ TEST_CASE("uart read write test", "[uart]")
     TEST_ESP_OK(uart_flush_input(uart_num));
 
     xTaskCreate(uart_write_task, "uart_write_task", 2048 * 4, (void *)uart_num, UNITY_FREERTOS_PRIORITY - 1, NULL);
-    int len_tmp = 0;
-    int rd_len = 1024;
     for (int i = 0; i < 1024; i++) {
-        rd_len = 1024;
+        int bytes_remaining = 1024;
         memset(rd_data, 0, 1024);
-        while (rd_len) {
-            len_tmp = uart_read_bytes(uart_num, rd_data + 1024 - rd_len, rd_len, (TickType_t)1000);
-            if (len_tmp < 0) {
+        while (bytes_remaining) {
+            int bytes_received = uart_read_bytes(uart_num, rd_data + 1024 - bytes_remaining, bytes_remaining, (TickType_t)1000);
+            if (bytes_received < 0) {
                 TEST_FAIL_MESSAGE("read timeout, uart read write test fail");
             }
-            rd_len -= len_tmp;
+            bytes_remaining -= bytes_received;
         }
-        TEST_ASSERT_EQUAL_HEX8_MESSAGE((i & 0xff), rd_data[0], "uart data header check error index 0");
-        TEST_ASSERT_EQUAL_HEX8_MESSAGE((~i) & 0xff, rd_data[1023], "uart data header check error index 1023");
+        int check_fail_cnt = 0;
+        if (rd_data[0] != (i & 0xff)) {
+            printf("packet %d index check error at offset 0, expected 0x%02x\n", i, i);
+            ++check_fail_cnt;
+        }
+        if (rd_data[1023] != ((~i) & 0xff)) {
+            printf("packet %d index check error at offset 1023, expected 0x%02x\n", i, ((~i) & 0xff));
+            ++check_fail_cnt;
+        }
         for (int j = 1; j < 1023; j++) {
-            TEST_ASSERT_EQUAL_HEX8_MESSAGE(j & 0xff, rd_data[j], "uart data check error");
+            if (rd_data[j] != (j & 0xff)) {
+                printf("data mismatch in packet %d offset %d, expected 0x%02x got 0x%02x\n", i, j, (j & 0xff), rd_data[j]);
+                ++check_fail_cnt;
+            }
+            if (check_fail_cnt > 10) {
+                printf("(further checks skipped)\n");
+                break;
+            }
+        }
+        if (check_fail_cnt > 0) {
+            ESP_LOG_BUFFER_HEX("rd_data", rd_data, 1024);
+            TEST_FAIL();
         }
     }
     uart_wait_tx_done(uart_num, (TickType_t)portMAX_DELAY);
