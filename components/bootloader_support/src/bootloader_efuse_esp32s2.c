@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,8 +12,7 @@
 uint8_t bootloader_common_get_chip_revision(void)
 {
     // should return the same value as esp_efuse_get_chip_ver()
-    /* No other revisions for ESP32-S2 */
-    return 0;
+    return REG_GET_FIELD(EFUSE_RD_MAC_SPI_SYS_3_REG, EFUSE_WAFER_VERSION);
 }
 
 uint32_t bootloader_common_get_chip_ver_pkg(void)
