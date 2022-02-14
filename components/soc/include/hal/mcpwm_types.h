@@ -57,14 +57,14 @@ typedef enum {
  */
 typedef enum {
     MCPWM_DEADTIME_BYPASS = 0,          /*!<Bypass the deadtime*/
-    MCPWM_BYPASS_RED,                   /*!<MCPWMXA = no change, MCPWMXB = falling edge delay*/
-    MCPWM_BYPASS_FED,                   /*!<MCPWMXA = rising edge delay, MCPWMXB = no change*/
-    MCPWM_ACTIVE_HIGH_MODE,             /*!<MCPWMXA = rising edge delay,  MCPWMXB = falling edge delay*/
-    MCPWM_ACTIVE_LOW_MODE,              /*!<MCPWMXA = compliment of rising edge delay,  MCPWMXB = compliment of falling edge delay*/
-    MCPWM_ACTIVE_HIGH_COMPLIMENT_MODE,  /*!<MCPWMXA = rising edge delay,  MCPWMXB = compliment of falling edge delay*/
-    MCPWM_ACTIVE_LOW_COMPLIMENT_MODE,   /*!<MCPWMXA = compliment of rising edge delay,  MCPWMXB = falling edge delay*/
-    MCPWM_ACTIVE_RED_FED_FROM_PWMXA,    /*!<MCPWMXA = MCPWMXB = rising edge delay as well as falling edge delay, generated from MCPWMXA*/
-    MCPWM_ACTIVE_RED_FED_FROM_PWMXB,    /*!<MCPWMXA = MCPWMXB = rising edge delay as well as falling edge delay, generated from MCPWMXB*/
+    MCPWM_BYPASS_RED,                   /*!<MCPWMXA Out = MCPWMXA In with no delay, MCPWMXB Out = MCPWMXA In with falling edge delay*/
+    MCPWM_BYPASS_FED,                   /*!<MCPWMXA Out = MCPWMXA In with rising edge delay, MCPWMXB Out = MCPWMXB In with no delay*/
+    MCPWM_ACTIVE_HIGH_MODE,             /*!<MCPWMXA Out = MCPWMXA In with rising edge delay,  MCPWMXB Out = MCPWMXA In with falling edge delay*/
+    MCPWM_ACTIVE_LOW_MODE,              /*!<MCPWMXA Out = MCPWMXA In with compliment of rising edge delay,  MCPWMXB Out = MCPWMXA In with compliment of falling edge delay*/
+    MCPWM_ACTIVE_HIGH_COMPLIMENT_MODE,  /*!<MCPWMXA Out = MCPWMXA In with rising edge delay,  MCPWMXB = MCPWMXA In with compliment of falling edge delay*/
+    MCPWM_ACTIVE_LOW_COMPLIMENT_MODE,   /*!<MCPWMXA Out = MCPWMXA In with compliment of rising edge delay,  MCPWMXB Out = MCPWMXA In with falling edge delay*/
+    MCPWM_ACTIVE_RED_FED_FROM_PWMXA,    /*!<MCPWMXA Out = MCPWMXB Out = MCPWMXA In with rising edge delay as well as falling edge delay*/
+    MCPWM_ACTIVE_RED_FED_FROM_PWMXB,    /*!<MCPWMXA Out = MCPWMXB Out = MCPWMXB In with rising edge delay as well as falling edge delay*/
     MCPWM_DEADTIME_TYPE_MAX,
 } mcpwm_deadtime_type_t;
 
