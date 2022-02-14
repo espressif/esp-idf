@@ -119,7 +119,23 @@
 #define SOC_GDMA_PSRAM_MIN_ALIGN   (16) // Minimal alignment for PSRAM transaction
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
-#include "gpio_caps.h"
+// ESP32-S3 has 1 GPIO peripheral
+#define SOC_GPIO_PORT           (1U)
+#define SOC_GPIO_PIN_COUNT      (49)
+
+// On ESP32-S3, Digital IOs have their own registers to control pullup/down/capability, independent with RTC registers.
+#define SOC_GPIO_SUPPORT_RTC_INDEPENDENT (1)
+// Force hold is a new function of ESP32-S3
+#define SOC_GPIO_SUPPORT_FORCE_HOLD      (1)
+
+// 0~48 except from 22~25 are valid
+#define SOC_GPIO_VALID_GPIO_MASK         (0x1FFFFFFFFFFFFULL & ~(0ULL | BIT22 | BIT23 | BIT24 | BIT25))
+// No GPIO is input only
+#define SOC_GPIO_VALID_OUTPUT_GPIO_MASK  (SOC_GPIO_VALID_GPIO_MASK)
+
+// Support to configure slept status
+#define SOC_GPIO_SUPPORT_SLP_SWITCH  (1)
+
 
 /*-------------------------- Dedicated GPIO CAPS -----------------------------*/
 #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
@@ -213,7 +229,10 @@
 #define SOC_RTC_CNTL_TAGMEM_PD_DMA_ADDR_ALIGN   (SOC_RTC_CNTL_TAGMEM_PD_DMA_BUS_WIDTH >> 3)
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
-#include "rtc_io_caps.h"
+#define SOC_RTCIO_PIN_COUNT   22
+#define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED 1
+#define SOC_RTCIO_HOLD_SUPPORTED 1
+#define SOC_RTCIO_WAKE_SUPPORTED 1
 
 /*-------------------------- SIGMA DELTA CAPS --------------------------------*/
 #define SOC_SIGMADELTA_NUM         (1) // 1 sigma-delta peripheral
