@@ -28,6 +28,14 @@ menu "ESP NETIF Adapter"
             help
                 Dummy implementation of esp-netif functionality which connects driver transmit
                 to receive function. This option is for testing purpose only
+
+        config ESP_NETIF_TCPIP_LWIP_ORIG
+            bool "LwIP-orig"
+            depends on !LWIP_PPP_SUPPORT && !LWIP_IPV4_NAPT
+            help
+                This choice sets the original, vanilla-lwIP as the TCP/IP stack.
+                Warning: Current implementation does not support PPP and NAPT features
+
     endchoice
 
     config ESP_NETIF_L2_TAP

@@ -8,7 +8,7 @@
 #include "esp_netif_lwip_internal.h"
 #include "esp_netif_lwip_ppp.h"
 
-#ifdef CONFIG_ESP_NETIF_TCPIP_LWIP
+#if defined(CONFIG_ESP_NETIF_TCPIP_LWIP) || defined(CONFIG_ESP_NETIF_TCPIP_LWIP_ORIG)
 
 #include "netif/wlanif.h"
 #include "netif/ethernetif.h"

@@ -46,7 +46,6 @@ entries:
     etharp:etharp_output_to_arp_index (noflash_text)
     etharp:etharp_output (noflash_text)
     ip4_addr:ip4_addr_isbroadcast_u32 (noflash_text)
-    ip4:ip4_route_src_hook (noflash_text)
     ip4:ip4_route_src (noflash_text)
     ip4:ip4_route (noflash_text)
     ip4:ip4_input (noflash_text)

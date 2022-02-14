@@ -30,6 +30,7 @@
  *
  */
 
+#include "esp_cpp_sockets.h"
 #include "lwip/sockets.h"
 /*
 	SOMAXCONN is expected to be found in this header too,

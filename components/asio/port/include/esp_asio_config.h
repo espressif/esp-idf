@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,8 +21,7 @@
 //
 // LWIP compatibility inet and address macros/functions
 //
-# define LWIP_COMPAT_SOCKET_INET 1
-# define LWIP_COMPAT_SOCKET_ADDR 1
+# include "esp_cpp_sockets.h"
 
 //
 // Specific ASIO feature flags

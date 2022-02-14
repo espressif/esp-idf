@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,6 +40,11 @@ static esp_err_t eth_input_to_netif(esp_eth_handle_t eth_handle, uint8_t *buffer
     return esp_netif_receive((esp_netif_t *)priv, buffer, length, NULL);
 }
 
+static void eth_l2_free(void *h, void* buffer)
+{
+    free(buffer);
+}
+
 static esp_err_t esp_eth_post_attach(esp_netif_t *esp_netif, void *args)
 {
     uint8_t eth_mac[6];
@@ -52,7 +57,7 @@ static esp_err_t esp_eth_post_attach(esp_netif_t *esp_netif, void *args)
     esp_netif_driver_ifconfig_t driver_ifconfig = {
         .handle =  netif_glue->eth_driver,
         .transmit = esp_eth_transmit,
-        .driver_free_rx_buffer = NULL
+        .driver_free_rx_buffer = eth_l2_free
     };
 
     ESP_ERROR_CHECK(esp_netif_set_driver_config(esp_netif, &driver_ifconfig));

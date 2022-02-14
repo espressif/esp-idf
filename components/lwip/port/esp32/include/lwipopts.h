@@ -16,15 +16,17 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/select.h>
-#include "netif/dhcp_state.h"
-#include "sntp/sntp_get_set_time.h"
+#include <sys/poll.h>
 #ifdef __linux__
 #include "esp32_mock.h"
 #else
 #include "esp_task.h"
 #include "esp_random.h"
 #endif // __linux__
-
+#include "sdkconfig.h"
+#include "netif/dhcp_state.h"
+#include "sntp/sntp_get_set_time.h"
+#include "sockets_ext.h"
 
 /*
    -----------------------------------------------
@@ -589,6 +591,18 @@
 #define LWIP_NETIF_STATUS_CALLBACK      0
 #endif
 
+#if defined(CONFIG_ESP_NETIF_TCPIP_LWIP_ORIG) || defined(CONFIG_ESP_NETIF_TCPIP_LWIP)
+/**
+ * LWIP_NETIF_EXT_STATUS_CALLBACK==1: Support an extended callback function
+ * for several netif related event that supports multiple subscribers.
+ *
+ * This ext-callback is used by ESP-NETIF with lwip-orig (upstream version)
+ * to provide netif related events on IP4/IP6 address/status changes
+ */
+#define LWIP_NETIF_EXT_STATUS_CALLBACK  1
+#endif
+
+
 /**
  * LWIP_NETIF_TX_SINGLE_PBUF: if this is set to 1, lwIP *tries* to put all data
  * to be sent into one single pbuf. This is for compatibility with DMA-enabled
@@ -1111,6 +1125,11 @@
 #endif
 #define LWIP_HOOK_FILENAME              "lwip_default_hooks.h"
 #define LWIP_HOOK_IP4_ROUTE_SRC         ip4_route_src_hook
+#define LWIP_HOOK_SOCKETS_GETSOCKOPT(s, sock, level, optname, optval, optlen, err)    \
+        lwip_getsockopt_impl_ext(sock, level, optname, optval, optlen, err)?(done_socket(sock), true): false
+
+#define LWIP_HOOK_SOCKETS_SETSOCKOPT(s, sock, level, optname, optval, optlen, err)    \
+        lwip_setsockopt_impl_ext(sock, level, optname, optval, optlen, err)?(done_socket(sock), true): false
 
 /*
    ---------------------------------------

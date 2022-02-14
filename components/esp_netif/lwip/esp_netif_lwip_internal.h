@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,7 @@
 #include "lwip/netif.h"
 #include "dhcpserver/dhcpserver.h"
 
-#ifdef CONFIG_ESP_NETIF_TCPIP_LWIP
+#if defined(CONFIG_ESP_NETIF_TCPIP_LWIP) || defined(CONFIG_ESP_NETIF_TCPIP_LWIP_ORIG)
 
 struct esp_netif_netstack_lwip_vanilla_config {
     err_t (*init_fn)(struct netif*);

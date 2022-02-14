@@ -475,7 +475,7 @@ components/esp_local_ctrl/src/esp_local_ctrl_transport_ble.c
 components/esp_netif/include/esp_netif_ppp.h
 components/esp_netif/include/esp_netif_slip.h
 components/esp_netif/loopback/esp_netif_loopback.c
-components/esp_netif/lwip/esp_netif_lwip_ppp.h
+components/esp_netif/lwip/esp_netif_lwip_ppp.c
 components/esp_netif/lwip/esp_netif_lwip_slip.c
 components/esp_netif/lwip/esp_netif_lwip_slip.h
 components/esp_netif/private_include/esp_netif_private.h
@@ -984,7 +984,6 @@ components/lwip/port/esp32/netif/dhcp_state.c
 components/lwip/port/esp32/netif/ethernetif.c
 components/lwip/port/esp32/netif/wlanif.c
 components/lwip/port/esp32/no_vfs_syscalls.c
-components/lwip/port/esp32/vfs_lwip.c
 components/lwip/test_afl_host/dhcp_di.h
 components/lwip/test_afl_host/dhcpserver_di.h
 components/lwip/test_afl_host/dns_di.h
