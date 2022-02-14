@@ -150,7 +150,7 @@
 设置开发环境
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* :ref:`get-started-get-prerequisites` （:doc:`Windows <windows-setup>` 、:doc:`Linux <linux-setup>` 和 :doc:`macOS <macos-setup>`）
+* :ref:`get-started-get-prerequisites` （:doc:`Windows <windows-setup>` 、:doc:`Linux <linux-macos-setup>` 和 :doc:`macOS <linux-macos-setup>`）
 * :ref:`get-started-get-esp-idf`
 * :ref:`get-started-set-up-tools`
 * :ref:`get-started-set-up-env`
@@ -177,9 +177,9 @@
     :hidden:
 
     Windows <windows-setup>
-    Linux <linux-setup>
-    macOS <macos-setup>
-
+    macOS <linux-macos-setup>
+    Linux <linux-macos-setup>
+    
 +-------------------+-------------------+-------------------+
 | |windows-logo|    | |linux-logo|      | |macos-logo|      |
 +-------------------+-------------------+-------------------+
@@ -190,14 +190,14 @@
     :target: ../get-started/windows-setup.html
 
 .. |linux-logo| image:: ../../_static/linux-logo.png
-    :target: ../get-started/linux-setup.html
+    :target: ../get-started/linux-macos-setup.html
 
 .. |macos-logo| image:: ../../_static/macos-logo.png
-    :target: ../get-started/macos-setup.html
+    :target: ../get-started/linux-macos-setup.html
 
 .. _Windows: ../get-started/windows-setup.html
-.. _Linux: ../get-started/linux-setup.html
-.. _macOS: ../get-started/macos-setup.html
+.. _Linux: ../get-started/linux-macos-setup.html
+.. _macOS: ../get-started/linux-macos-setup.html
 
 .. note::
 
@@ -230,7 +230,7 @@ Windows 操作系统
 
 请前往 :doc:`/versions`，查看 ESP-IDF 不同版本的具体适用场景。
 
-除了使用 ESP-IDF 工具安装器，您也可以参考 :ref:`指南 <get-esp-idf-windows-command-line>` 手动下载 ESP-IDF。
+除了使用 ESP-IDF 工具安装器，您也可以参考 :ref:`指南 <get-started-windows-tools-installer>` 手动下载 ESP-IDF。
 
 .. _get-started-set-up-tools:
 
@@ -800,6 +800,13 @@ Windows 操作系统
 更新 ESP-IDF
 ================
 
+.. toctree::
+    :hidden:
+
+    Windows Installer <windows-setup>
+    Linux <linux-macos-setup>
+    macOS <linux-macos-setup>
+
 乐鑫会不时推出更新版本的 ESP-IDF，修复 bug 或提供新的功能。因此，您在使用时，也应注意更新您本地的版本。最简单的方法是：直接删除您本地的 ``esp-idf`` 文件夹，然后按照 :ref:`get-started-get-esp-idf` 中的指示，重新完成克隆。
 
 此外，您可以仅更新变更部分。具体方式，请前往 :ref:`更新 <updating>` 章节查看。
@@ -818,7 +825,6 @@ Windows 操作系统
     eclipse-setup
     vscode-setup
     ../api-guides/tools/idf-monitor
-    toolchain-setup-scratch
 
 .. _Stable version: https://docs.espressif.com/projects/esp-idf/zh_CN/stable/
 .. _Releases page: https://github.com/espressif/esp-idf/releases

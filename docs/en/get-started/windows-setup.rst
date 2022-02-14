@@ -24,17 +24,27 @@ For this Getting Started we're going to use the Command Prompt, but after ESP-ID
 ESP-IDF Tools Installer
 =======================
 
-The easiest way to install ESP-IDF's prerequisites is to download one of ESP-IDF Tools Installers from this URL: https://dl.espressif.com/dl/esp-idf/?idf=4.4
+The easiest way to install ESP-IDF's prerequisites is to download one of ESP-IDF Tools Installers.
+
++-------------------+--------------------------------+
+| |download-logo|   | `Windows Installer Download`_  | 
++-------------------+--------------------------------+
+
+.. |download-logo| image:: ../../_static/logo_windows_install.png
+    :target: https://dl.espressif.com/dl/esp-idf/?idf=4.4
+
+.. _Windows Installer Download: https://dl.espressif.com/dl/esp-idf/?idf=4.4
+
 
 What is the usecase for Online and Offline Installer
-----------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Online Installer is very small and allows the installation of all available releases of ESP-IDF. The installer will download only necessary dependencies including `Git For Windows`_  during the installation process. The installer stores downloaded files in the cache directory ``%userprofile%\.espressif``
 
 Offline Installer does not require any network connection. The installer contains all required dependencies including `Git For Windows`_ .
 
 Components of the installation
-------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The installer deploys the following components:
 
@@ -47,7 +57,7 @@ The installer deploys the following components:
 The installer also allows reusing the existing directory with ESP-IDF. The recommended directory is ``%userprofile%\Desktop\esp-idf`` where ``%userprofile%`` is your home directory.
 
 Launching ESP-IDF Environment
------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 At the end of the installation process you can check out option ``Run ESP-IDF PowerShell Environment`` or ``Run ESP-IDF Command Prompt (cmd.exe)``. The installer will launch ESP-IDF environment in selected prompt.
 
@@ -96,10 +106,10 @@ Note that this shortcut is specific to the ESP-IDF directory selected in the ESP
 
 2. Alternatively, run ``cmd.exe``, then change to the ESP-IDF directory you wish to use, and run ``export.bat``. Note that unlike the previous option, this way requires Python and Git to be present in ``PATH``. If you get errors related to Python or Git not being found, use the first option.
 
-Next Steps
-==========
+First Steps on ESP-IDF
+======================
 
-If the ESP-IDF Tools Installer has finished successfully, then the development environment setup is complete. Proceed directly to :ref:`get-started-start-project`.
+.. include:: start-project.rst
 
 Related Documents
 =================
@@ -110,8 +120,12 @@ For advanced users who want to customize the install process:
     :maxdepth: 1
 
     windows-setup-update
+    establish-serial-connection
+    eclipse-setup
+    vscode-setup
+    ../api-guides/tools/idf-monitor
 
-
+.. _MSYS2: https://www.msys2.org/
 .. _CMake: https://cmake.org/download/
 .. _Ninja: https://ninja-build.org/
 .. _Python: https://www.python.org/downloads/windows/
