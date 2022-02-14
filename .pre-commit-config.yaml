@@ -111,6 +111,14 @@ repos:
         language: python
         files: \.(py|c|h|cpp|hpp|ld|s|S)$
         require_serial: true
+      - id: check-requirement-files
+        name: Check requirement files
+        entry: tools/ci/check_requirement_files.py
+        additional_dependencies:
+          - 'jsonschema'
+        language: python
+        files: 'tools/requirements.+|tools/requirements/.+'
+        pass_filenames: false
       - id: check-tools-files-patterns
         name: Check tools dir files patterns
         entry: tools/ci/check_tools_files_patterns.py
