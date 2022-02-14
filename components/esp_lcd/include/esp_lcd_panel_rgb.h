@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,7 +64,7 @@ typedef struct {
         unsigned int hsync_idle_low: 1;  /*!< The hsync signal is low in IDLE state */
         unsigned int vsync_idle_low: 1;  /*!< The vsync signal is low in IDLE state */
         unsigned int de_idle_high: 1;    /*!< The de signal is high in IDLE state */
-        unsigned int pclk_active_neg: 1; /*!< The display will write data lines when there's a falling edge on PCLK */
+        unsigned int pclk_active_neg: 1; /*!< Whether the display data is clocked out at the falling edge of PCLK */
         unsigned int pclk_idle_high: 1;  /*!< The PCLK stays at high level in IDLE phase */
     } flags;
 } esp_lcd_rgb_timing_t;
@@ -92,6 +92,8 @@ typedef struct {
     lcd_clock_source_t clk_src;   /*!< Clock source for the RGB LCD peripheral */
     esp_lcd_rgb_timing_t timings; /*!< RGB timing parameters */
     size_t data_width;            /*!< Number of data lines */
+    size_t sram_trans_align;      /*!< Alignment for framebuffer that allocated in SRAM */
+    size_t psram_trans_align;     /*!< Alignment for framebuffer that allocated in PSRAM */
     int hsync_gpio_num;           /*!< GPIO used for HSYNC signal */
     int vsync_gpio_num;           /*!< GPIO used for VSYNC signal */
     int de_gpio_num;              /*!< GPIO used for DE signal, set to -1 if it's not used */
