@@ -117,6 +117,21 @@ menu "ESP System Settings"
             pull-up, you do not need to select this option, otherwise, you
             should enable this option.
 
+    menu "RTC Clock Config"
+        # This is used for configure the RTC clock.
+        config RTC_CLOCK_BBPLL_POWER_ON_WITH_USB
+            bool "Keep BBPLL clock always work"
+            depends on ESP_CONSOLE_USB_SERIAL_JTAG || ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+            default y
+            help
+                When the chip goes sleep or software reset, the clock source would change to XTAL
+                and switch off the BBPLL clock for saving power. However, this might make the
+                USB_SERIAL_JTAG down which depends on BBPLL as its unique clock source.
+                Therefore, this is used for keeping bbpll clock always on when USB_SERIAL_JTAG PORT is using.
+                If you want to use USB_SERIAL_JTAG under sw_reset case or sleep-wakeup case, you shoule select
+                this option. But be aware that this might increase the power consumption.
+    endmenu
+
     menu "Memory protection"
 
         config ESP_SYSTEM_MEMPROT_FEATURE
