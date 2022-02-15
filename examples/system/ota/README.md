@@ -158,4 +158,17 @@ $ python example_test.py build 8070
 Starting HTTPS server at "https://:8070"
 192.168.10.106 - - [02/Mar/2021 14:32:26] "GET /simple_ota.bin HTTP/1.1" 200 -
 ```
-* Publish the firmware image on a public server (e.g. github.com) and copy its root certificate to the `server_certs` directory as `ca_cert.pem`. (The certificate can be downloaded using the `s_client` openssl command if the host includes the root certificate in the chain, e.g. `openssl s_client -showcerts -connect github.com:443 </dev/null`)
+* Publish the firmware image on a public server (e.g. github.com) and copy its root certificate to the `server_certs` directory as `ca_cert.pem`. The certificate can be downloaded using the `s_client` openssl command as shown below:
+
+```
+echo "" | openssl s_client -showcerts -connect raw.githubusercontent.com:443 | sed -n "1,/Root/d; /BEGIN/,/END/p" | openssl x509 -outform PEM >ca_cert.pem
+```
+
+Please note that URL used here is `raw.githubusercontent.com`. This URL allows raw access to files hosted on github.com repository. Additionally, command above copies last certificate from chain of certs as the CA root cert of server.
+
+---
+**NOTE**
+
+For examples using certificate bundle approach (e.g., `simple_ota_example`), it already has most common root certificates and hence there is no need to add any additional certs.
+
+---
