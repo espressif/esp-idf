@@ -78,8 +78,8 @@ typedef struct {
     uint32_t (* _rand)(void);
     void (* _dport_access_stall_other_cpu_start_wrap)(void);
     void (* _dport_access_stall_other_cpu_end_wrap)(void);
-    int32_t (* _phy_rf_deinit)(uint32_t module);
-    void (* _phy_load_cal_and_init)(uint32_t module);
+    void (* _phy_disable)(void);
+    void (* _phy_enable)(void);
 #if CONFIG_IDF_TARGET_ESP32
     void (* _phy_common_clock_enable)(void);
     void (* _phy_common_clock_disable)(void);
@@ -126,10 +126,8 @@ typedef struct {
     void * (* _wifi_zalloc)(size_t size);
     void * (* _wifi_create_queue)(int32_t queue_len, int32_t item_size);
     void (* _wifi_delete_queue)(void * queue);
-    int32_t (* _modem_sleep_enter)(uint32_t module);
-    int32_t (* _modem_sleep_exit)(uint32_t module);
-    int32_t (* _modem_sleep_register)(uint32_t module);
-    int32_t (* _modem_sleep_deregister)(uint32_t module);
+    int (* _coex_init)(void);
+    void (* _coex_deinit)(void);
     uint32_t (* _coex_status_get)(void);
     void (* _coex_condition_set)(uint32_t type, bool dissatisfy);
     int32_t (* _coex_wifi_request)(uint32_t event, uint32_t latency, uint32_t duration);
