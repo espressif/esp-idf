@@ -144,7 +144,7 @@ scan_tests:
     - .pre_check_base_template
     - .before_script_pytest
     - .rules:build:target_test
-  image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
+  image: $TARGET_TEST_ENV_IMAGE
   tags:
     - assign_test
   artifacts:

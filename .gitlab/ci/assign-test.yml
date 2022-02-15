@@ -1,5 +1,5 @@
 .assign_test_template:
-  image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
+  image: $TARGET_TEST_ENV_IMAGE
   stage: assign_test
   tags:
     - assign_test
@@ -108,7 +108,7 @@ assign_integration_test:
 update_test_cases:
   extends: .rules:ref:master-schedule
   stage: assign_test
-  image: $CI_DOCKER_REGISTRY/ubuntu-test-env
+  image: $TARGET_TEST_ENV_IMAGE
   tags:
     - deploy_test
   needs:
