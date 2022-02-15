@@ -115,6 +115,7 @@ components/esp_rom/include/esp32s2/rom/rtc.h
 components/esp_rom/include/esp32s2/rom/efuse.h
 components/esp_rom/include/esp32s3/rom/rtc.h
 components/esp_rom/include/esp32h2/rom/rtc.h
+components/esp_rom/include/esp32c2/rom/rtc.h
 components/esp32/include/esp32/dport_access.h
 components/esp32/include/rom/sha.h
 components/esp32/include/rom/secure_boot.h
