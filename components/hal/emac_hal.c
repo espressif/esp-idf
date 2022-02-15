@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -265,7 +265,7 @@ void emac_hal_enable_flow_ctrl(emac_hal_context_t *hal, bool enable)
     }
 }
 
-void emac_hal_init_dma_default(emac_hal_context_t *hal)
+void emac_hal_init_dma_default(emac_hal_context_t *hal, emac_hal_dma_config_t *hal_config)
 {
     /* DMAOMR Configuration */
     /* Enable Dropping of TCP/IP Checksum Error Frames */
@@ -294,11 +294,10 @@ void emac_hal_init_dma_default(emac_hal_context_t *hal)
     emac_ll_mixed_burst_enable(hal->dma_regs, true);
     /* Enable Address Aligned Beates */
     emac_ll_addr_align_enable(hal->dma_regs, true);
-    /* Use Separate PBL */
-    emac_ll_use_separate_pbl_enable(hal->dma_regs, true);
+    /* Don't use Separate PBL */
+    emac_ll_use_separate_pbl_enable(hal->dma_regs, false);
     /* Set Rx/Tx DMA Burst Length */
-    emac_ll_set_rx_dma_pbl(hal->dma_regs, EMAC_LL_DMA_BURST_LENGTH_32BEAT);
-    emac_ll_set_prog_burst_len(hal->dma_regs, EMAC_LL_DMA_BURST_LENGTH_32BEAT);
+    emac_ll_set_prog_burst_len(hal->dma_regs, hal_config->dma_burst_len);
     /* Enable Enhanced Descriptor,8 Words(32 Bytes) */
     emac_ll_enhance_desc_enable(hal->dma_regs, true);
     /* Specifies the number of word to skip between two unchained descriptors (Ring mode) */
