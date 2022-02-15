@@ -2524,7 +2524,6 @@ examples/protocols/https_server/simple/main/main.c
 examples/protocols/https_server/wss_server/main/keep_alive.c
 examples/protocols/https_server/wss_server/main/keep_alive.h
 examples/protocols/https_server/wss_server/main/wss_server_example.c
-examples/protocols/https_server/wss_server/wss_server_example_test.py
 examples/protocols/https_x509_bundle/example_test.py
 examples/protocols/https_x509_bundle/main/https_x509_bundle_example_main.c
 examples/protocols/icmp_echo/example_test.py
