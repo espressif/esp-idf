@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: CC0-1.0
  */
 
 #include "soc/soc_caps.h"
@@ -88,7 +88,7 @@ void usb_lib_task(void *arg)
 void test_install_cdc_driver(void)
 {
     // Create a task that will handle USB library events
-    TEST_ASSERT_EQUAL(pdTRUE, xTaskCreate(usb_lib_task, "usb_lib", 4*4096, xTaskGetCurrentTaskHandle(), 10, NULL));
+    TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(usb_lib_task, "usb_lib", 4*4096, xTaskGetCurrentTaskHandle(), 10, NULL, 0));
     ulTaskNotifyTake(false, 1000);
 
     printf("Installing CDC-ACM driver\n");

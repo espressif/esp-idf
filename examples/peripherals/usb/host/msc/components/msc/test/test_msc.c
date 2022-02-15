@@ -2,7 +2,7 @@
 /*
  * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: CC0-1.0
  */
 
 #include "unity.h"
@@ -198,7 +198,7 @@ static void msc_setup(void)
     };
     ESP_OK_ASSERT( usb_host_install(&host_config) );
 
-    task_created = xTaskCreate(handle_usb_events, "usb_events", 2048, NULL, 2, NULL);
+    task_created = xTaskCreatePinnedToCore(handle_usb_events, "usb_events", 2048, NULL, 2, NULL, 0);
     TEST_ASSERT(task_created);
 
     const msc_host_driver_config_t msc_config = {
