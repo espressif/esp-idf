@@ -28,6 +28,8 @@
 #include "esp32s2/rom/efuse.h"
 #include "esp32s2/rom/secure_boot.h"
 
+#include "esp_flash_encrypt.h"
+
 static const char *TAG = "secure_boot_v2";
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
