@@ -33,7 +33,7 @@
 static const char *TAG = "esp.emac";
 
 #define PHY_OPERATION_TIMEOUT_US (1000)
-#define MAC_STOP_TIMEOUT_MS (100)
+#define MAC_STOP_TIMEOUT_US (250)
 #define FLOW_CONTROL_LOW_WATER_MARK (CONFIG_ETH_DMA_RX_BUFFER_NUM / 3)
 #define FLOW_CONTROL_HIGH_WATER_MARK (FLOW_CONTROL_LOW_WATER_MARK * 2)
 
@@ -66,6 +66,8 @@ typedef struct {
 
 static esp_err_t esp_emac_alloc_driver_obj(const eth_mac_config_t *config, emac_esp32_t **emac_out_hdl, void **out_descriptors);
 static void esp_emac_free_driver_obj(emac_esp32_t *emac, void *descriptors);
+static esp_err_t emac_esp32_start(esp_eth_mac_t *mac);
+static esp_err_t emac_esp32_stop(esp_eth_mac_t *mac);
 
 static esp_err_t emac_esp32_set_mediator(esp_eth_mac_t *mac, esp_eth_mediator_t *eth)
 {
@@ -152,11 +154,11 @@ static esp_err_t emac_esp32_set_link(esp_eth_mac_t *mac, eth_link_t link)
     switch (link) {
     case ETH_LINK_UP:
         ESP_GOTO_ON_ERROR(esp_intr_enable(emac->intr_hdl), err, TAG, "enable interrupt failed");
-        emac_hal_start(&emac->hal);
+        emac_esp32_start(mac);
         break;
     case ETH_LINK_DOWN:
         ESP_GOTO_ON_ERROR(esp_intr_disable(emac->intr_hdl), err, TAG, "disable interrupt failed");
-        emac_hal_stop(&emac->hal);
+        emac_esp32_stop(mac);
         break;
     default:
         ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "unknown link status");
@@ -389,9 +391,9 @@ static esp_err_t emac_esp32_stop(esp_eth_mac_t *mac)
         if ((ret = emac_hal_stop(&emac->hal)) == ESP_OK) {
             break;
         }
-        to += 20;
-        vTaskDelay(pdMS_TO_TICKS(20));
-    } while (to < MAC_STOP_TIMEOUT_MS);
+        to += 25;
+        esp_rom_delay_us(25);
+    } while (to < MAC_STOP_TIMEOUT_US);
     return ret;
 }
 

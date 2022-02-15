@@ -342,6 +342,11 @@ static inline uint32_t emac_ll_transmit_frame_ctrl_status(emac_mac_dev_t *mac_re
     return mac_regs->emacdebug.mactfcs;
 }
 
+static inline uint32_t emac_ll_receive_read_ctrl_state(emac_mac_dev_t *mac_regs)
+{
+    return mac_regs->emacdebug.mtlrfrcs;
+}
+
 /* emacmiidata */
 static inline void emac_ll_set_phy_data(emac_mac_dev_t *mac_regs, uint32_t data)
 {

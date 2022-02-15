@@ -169,6 +169,7 @@ before_script:
     - retry_failed git clone --depth 1 --branch $PYTEST_EMBEDDED_TAG https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/idf/pytest-embedded.git
     - cd pytest-embedded && bash foreach.sh install
     - pip install pytest-rerunfailures
+    - pip install scapy
     - cd $IDF_PATH
 
 default:
