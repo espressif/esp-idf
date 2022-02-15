@@ -451,7 +451,7 @@ static BOOLEAN btc_av_state_opening_handler(btc_sm_event_t event, void *p_data)
             av_state = BTC_AV_STATE_OPENED;
         } else {
             BTC_TRACE_WARNING("BTA_AV_OPEN_EVT::FAILED status: %d\n", p_bta_data->open.status);
-            
+
             conn_stat = ESP_A2D_CONNECTION_STATE_DISCONNECTED;
             av_state = BTC_AV_STATE_IDLE;
         }
@@ -681,6 +681,9 @@ static BOOLEAN btc_av_state_opened_handler(btc_sm_event_t event, void *p_data)
             /* pending start flag will be cleared when exit current state */
         }
 #endif /* BTC_AV_SRC_INCLUDED */
+        /* wait for audio path to open */
+        btc_a2dp_control_datapath_ctrl(BTC_AV_DATAPATH_OPEN_EVT);
+
         btc_sm_change_state(btc_av_cb.sm_handle, BTC_AV_STATE_STARTED);
 
     } break;
@@ -1470,7 +1473,7 @@ void btc_a2dp_call_handler(btc_msg_t *msg)
     }
     case BTC_AV_SINK_API_DISCONNECT_EVT: {
         CHECK_BTAV_INIT();
-        btc_av_disconn_req_t disconn_req;   
+        btc_av_disconn_req_t disconn_req;
         memcpy(&disconn_req.target_bda, &arg->disconn, sizeof(bt_bdaddr_t));
         btc_sm_dispatch(btc_av_cb.sm_handle, BTC_AV_DISCONNECT_REQ_EVT, &disconn_req);
         break;
@@ -1507,10 +1510,6 @@ void btc_a2dp_call_handler(btc_msg_t *msg)
 #endif /* BTC_AV_SRC_INCLUDED */
     case BTC_AV_API_MEDIA_CTRL_EVT: {
         btc_a2dp_control_media_ctrl(arg->ctrl);
-        break;
-    }
-    case BTC_AV_DATAPATH_CTRL_EVT: {
-        btc_a2dp_control_datapath_ctrl(arg->dp_evt);
         break;
     }
     case BTC_AV_CONNECT_REQ_EVT:
