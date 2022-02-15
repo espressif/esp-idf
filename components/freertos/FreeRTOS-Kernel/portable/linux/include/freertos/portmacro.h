@@ -1,6 +1,13 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #pragma once
 
 #include "esp_attr.h"
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
