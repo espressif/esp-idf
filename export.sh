@@ -87,6 +87,9 @@ __main() {
     echo "Detecting the Python interpreter"
     . "${IDF_PATH}/tools/detect_python.sh"
 
+    echo "Checking Python compatibility"
+    "$ESP_PYTHON" "${IDF_PATH}/tools/python_version_checker.py"
+
     __verbose "Adding ESP-IDF tools to PATH..."
     # Call idf_tools.py to export tool paths
     export IDF_TOOLS_EXPORT_CMD=${IDF_PATH}/export.sh

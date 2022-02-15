@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+#
 # SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -37,3 +39,7 @@ def check():  # type: () -> None
                 _ver_to_str(OLDEST_PYTHON_SUPPORTED), _ver_to_str(sys.version_info[:3])
             )
         )
+
+
+if __name__ == '__main__':
+    check()

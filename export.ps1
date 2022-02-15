@@ -6,6 +6,9 @@ $IDF_PATH = $PSScriptRoot
 Write-Output "Setting IDF_PATH: $IDF_PATH"
 $env:IDF_PATH = $IDF_PATH
 
+Write-Output "Checking Python compatibility"
+python $IDF_PATH/tools/python_version_checker.py
+
 Write-Output "Adding ESP-IDF tools to PATH..."
 $OLD_PATH = $env:PATH.split($S) | Select-Object -Unique # array without duplicates
 # using idf_tools.py to get $envars_array to set

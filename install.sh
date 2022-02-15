@@ -10,6 +10,9 @@ export IDF_PATH
 echo "Detecting the Python interpreter"
 . "${IDF_PATH}/tools/detect_python.sh"
 
+echo "Checking Python compatibility"
+"${ESP_PYTHON}" "${IDF_PATH}/tools/python_version_checker.py"
+
 TARGETS=`"${ESP_PYTHON}" "${IDF_PATH}/tools/install_util.py" extract targets "$@"`
 
 echo "Installing ESP-IDF tools"

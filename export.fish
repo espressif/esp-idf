@@ -11,6 +11,9 @@ function __main
     echo "Detecting the Python interpreter"
     source "$IDF_PATH"/tools/detect_python.fish
 
+    echo "Checking Python compatibility"
+    "$ESP_PYTHON" "$IDF_PATH"/tools/python_version_checker.py
+
     echo "Adding ESP-IDF tools to PATH..."
     # Call idf_tools.py to export tool paths
     set -x IDF_TOOLS_EXPORT_CMD "$IDF_PATH"/export.fish
