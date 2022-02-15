@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 // RMT driver unit test is based on extended NEC protocol
 // Please don't use channel number: SOC_RMT_CHANNELS_NUM - 1
 #include <stdio.h>
@@ -12,7 +17,7 @@
 #include "test_utils.h"
 
 // CI ONLY: Don't connect any other signals to this GPIO
-#define RMT_DATA_IO (12) // bind signal RMT_SIG_OUT0_IDX and RMT_SIG_IN0_IDX on the same GPIO
+#define RMT_DATA_IO (0) // bind signal RMT_SIG_OUT0_IDX and RMT_SIG_IN0_IDX on the same GPIO
 
 #define RMT_TESTBENCH_FLAGS_ALWAYS_ON (1<<0)
 #define RMT_TESTBENCH_FLAGS_CARRIER_ON (1<<1)
