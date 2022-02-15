@@ -85,7 +85,6 @@ api-reference/storage/sdmmc
 api-reference/storage/mass_mfg
 api-reference/storage/index
 api-reference/peripherals/adc
-api-reference/peripherals/gpio
 api-reference/peripherals/sdspi_host
 api-reference/peripherals/spi_slave
 api-reference/peripherals/lcd
