@@ -1342,7 +1342,7 @@ BaseType_t xQueueGiveMutexRecursive( QueueHandle_t xMutex ) PRIVILEGED_FUNCTION;
  * or semaphores contained in the set is in a state where a queue read or
  * semaphore take operation would be successful.
  *
- * Note 1:  See the documentation on http://wwwFreeRTOS.org/RTOS-queue-sets.html
+ * Note 1:  See the documentation on http://www.FreeRTOS.org/RTOS-queue-sets.html
  * for reasons why queue sets are very rarely needed in practice as there are
  * simpler methods of blocking on multiple objects.
  *
@@ -1431,7 +1431,7 @@ BaseType_t xQueueRemoveFromSet( QueueSetMemberHandle_t xQueueOrSemaphore, QueueS
  * See FreeRTOS/Source/Demo/Common/Minimal/QueueSet.c for an example using this
  * function.
  *
- * Note 1:  See the documentation on http://wwwFreeRTOS.org/RTOS-queue-sets.html
+ * Note 1:  See the documentation on http://www.FreeRTOS.org/RTOS-queue-sets.html
  * for reasons why queue sets are very rarely needed in practice as there are
  * simpler methods of blocking on multiple objects.
  *
