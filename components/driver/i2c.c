@@ -1342,7 +1342,9 @@ static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num)
             p_i2c->cmd_idx = 0;
             if (i2c_cmd_is_single_byte(cmd) || cmd->total_bytes == cmd->bytes_used) {
                 p_i2c->cmd_link.head = p_i2c->cmd_link.head->next;
-                p_i2c->cmd_link.head->cmd.bytes_used = 0;
+                if(p_i2c->cmd_link.head) {
+                    p_i2c->cmd_link.head->cmd.bytes_used = 0;
+                }
             }
             p_i2c->status = I2C_STATUS_WRITE;
             break;
