@@ -55,25 +55,28 @@ if(CONFIG_SOC_SDMMC_HOST_SUPPORTED)
     list(APPEND srcs "sdmmc_transaction.c" "sdmmc_host.c")
 endif()
 
+if(CONFIG_SOC_I2S_SUPPORTED)
+    list(APPEND srcs "i2s.c")
+endif()
+
+if(CONFIG_SOC_TWAI_SUPPORTED)
+    list(APPEND srcs "twai.c")
+endif()
 
 if(${target} STREQUAL "esp32")
     list(APPEND srcs "dac_common.c"
                      "sdio_slave.c"
-                     "i2s.c"
                      "touch_sensor_common.c"
                      "esp32/touch_sensor.c"
                      "esp32/adc.c"
                      "adc_deprecated.c"
-                     "esp32/dac.c"
-                     "twai.c")
+                     "esp32/dac.c")
 endif()
 
 if(IDF_TARGET STREQUAL "esp32s2")
     list(APPEND srcs "dac_common.c"
                      "spi_slave_hd.c"
                      "touch_sensor_common.c"
-                     "i2s.c"
-                     "twai.c"
                      "esp32s2/rtc_tempsensor.c"
                      "esp32s2/touch_sensor.c"
                      "esp32s2/adc.c"
@@ -86,25 +89,19 @@ if(${target} STREQUAL "esp32s3")
     list(APPEND srcs "usb_serial_jtag.c"
                      "spi_slave_hd.c"
                      "touch_sensor_common.c"
-                     "esp32s3/touch_sensor.c"
-                     "i2s.c"
-                     "twai.c")
+                     "esp32s3/touch_sensor.c")
 endif()
 
 if(IDF_TARGET STREQUAL "esp32c3")
     list(APPEND srcs "spi_slave_hd.c"
                      "usb_serial_jtag.c"
-                     "i2s.c"
                      "esp32c3/adc2_init_cal.c"
-                     "esp32c3/rtc_tempsensor.c"
-                     "twai.c")
+                     "esp32c3/rtc_tempsensor.c")
 endif()
 
 if(IDF_TARGET STREQUAL "esp32h2")
     list(APPEND srcs "spi_slave_hd.c"
-                     "i2s.c"
-                     "esp32h2/rtc_tempsensor.c"
-                     "twai.c")
+                     "esp32h2/rtc_tempsensor.c")
 endif()
 
 if(IDF_TARGET STREQUAL "esp32c2")

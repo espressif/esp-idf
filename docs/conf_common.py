@@ -90,6 +90,12 @@ XTENSA_DOCS = ['api-guides/hlinterrupts.rst',
 
 RISCV_DOCS = []  # type: list[str]
 
+TWAI_DOCS = ['api-reference/peripherals/twai.rst']
+
+SIGMADELTA_DOCS = ['api-reference/peripherals/sigmadelta.rst']
+
+I2S_DOCS = ['api-reference/peripherals/i2s.rst']
+
 ESP32_DOCS = ['api-guides/ulp_instruction_set.rst',
               'api-reference/system/himem.rst',
               'api-guides/romconsole.rst',
@@ -142,6 +148,9 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'CONFIG_IDF_TARGET_ARCH_XTENSA':XTENSA_DOCS,
                             'CONFIG_IDF_TARGET_ARCH_RISCV':RISCV_DOCS,
                             'SOC_TEMP_SENSOR_SUPPORTED':TEMP_SENSOR_DOCS,
+                            'SOC_TWAI_SUPPORTED':TWAI_DOCS,
+                            'SOC_I2S_SUPPORTED':I2S_DOCS,
+                            'SOC_SIGMADELTA_SUPPORTED':SIGMADELTA_DOCS,
                             'esp32':ESP32_DOCS,
                             'esp32s2':ESP32S2_DOCS,
                             'esp32s3':ESP32S3_DOCS,
