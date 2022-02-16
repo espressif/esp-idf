@@ -178,7 +178,7 @@ class Monitor:
                 pass
             normal_print('\n')
 
-    def serial_write(self, *args, **kwargs):  # type: ignore
+    def serial_write(self, *args, **kwargs) -> None:  # type: ignore
         raise NotImplementedError
 
     def check_gdb_stub_and_run(self, line: bytes) -> None:
@@ -237,7 +237,7 @@ class SerialMonitor(Monitor):
             self.gdb_helper.gdb_exit = False
         self.serial_handler.start_cmd_sent = False
 
-    def serial_write(self, *args, **kwargs):  # type: ignore
+    def serial_write(self, *args, **kwargs) -> None:  # type: ignore
         self.serial: serial.Serial
         try:
             self.serial.write(*args, **kwargs)
@@ -268,7 +268,7 @@ class LinuxMonitor(Monitor):
         self.console_reader.start()
         self.serial_reader.start()
 
-    def serial_write(self, *args, **kwargs):  # type: ignore
+    def serial_write(self, *args, **kwargs) -> None:  # type: ignore
         self.serial.stdin.write(*args, **kwargs)
 
     def check_gdb_stub_and_run(self, line: bytes) -> None:
