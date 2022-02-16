@@ -1,16 +1,8 @@
-// Copyright 2019-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -22,6 +14,7 @@
 #include "hal/adc_ll.h"
 #include "esp32c3/esp_efuse_rtc_calib.h"
 #include "esp_adc_cal.h"
+#include "../esp_adc_cal_internal.h"
 
 
 #define ADC_CALIB_CHECK(cond, err_msg, ret) do {\
@@ -36,10 +29,40 @@ const static char LOG_TAG[] = "adc_calib";
 
 /* ------------------------ Characterization Constants ---------------------- */
 
-// coeff_a and coeff_b are actually floats
-// they are scaled to put them into uint32_t so that the headers do not have to be changed
+// coeff_a is actually a float number
+// it is scaled to put them into uint32_t so that the headers do not have to be changed
 static const int coeff_a_scaling = 65536;
-static const int coeff_b_scaling = 1024;
+
+/**
+ * @note Error Calculation
+ * Coefficients for calculating the reading voltage error.
+ * Four sets of coefficients for atten0 ~ atten3 respectively.
+ *
+ * For each item, first element is the Coefficient, second element is the Multiple. (Coefficient / Multiple) is the real coefficient.
+ *
+ * @note {0,0} stands for unused item
+ * @note In case of the overflow, these coeffcients are recorded as Absolute Value
+ * @note For atten0 ~ 2, error = (K0 * X^0) + (K1 * X^1) + (K2 * X^2); For atten3, error = (K0 * X^0) + (K1 * X^1)  + (K2 * X^2) + (K3 * X^3) + (K4 * X^4);
+ * @note Above formula is rewritten from the original documentation, please note that the coefficients are re-ordered.
+ * @note ADC1 and ADC2 use same coeffients
+ */
+const static uint64_t adc_error_coef_atten[4][5][2] = {
+                                                        {{225966470500043, 1e15}, {7265418501948, 1e16}, {109410402681, 1e16}, {0, 0}, {0, 0}},                         //atten0
+                                                        {{4229623392600516, 1e16}, {731527490903, 1e16}, {88166562521, 1e16}, {0, 0}, {0, 0}},                          //atten1
+                                                        {{1017859239236435, 1e15}, {97159265299153, 1e16}, {149794028038, 1e16}, {0, 0}, {0, 0}},                       //atten2
+                                                        {{14912262772850453, 1e16}, {228549975564099, 1e16}, {356391935717, 1e16}, {179964582, 1e16}, {42046, 1e16}}    //atten3
+                                                       };
+/**
+ * Term sign
+ * @note ADC1 and ADC2 use same coeffients
+ */
+const static int32_t adc_error_sign[4][5] = {
+                                                {-1, -1, 1,  0,  0}, //atten0
+                                                { 1, -1, 1,  0,  0}, //atten1
+                                                {-1, -1, 1,  0,  0}, //atten2
+                                                {-1, -1, 1, -1,  1}  //atten3
+                                             };
+
 /* -------------------- Characterization Helper Data Types ------------------ */
 typedef struct {
     uint32_t voltage;
@@ -53,9 +76,9 @@ typedef struct {
     union {
         adc_calib_data_ver1 ver1;
     } efuse_data;
-} adc_calib_parsed_info;
+} adc_calib_parsed_info_t;
 
-static esp_err_t prepare_calib_data_for(int version_num, adc_unit_t adc_num, adc_atten_t atten, adc_calib_parsed_info *parsed_data_storage)
+static esp_err_t prepare_calib_data_for(int version_num, adc_unit_t adc_num, adc_atten_t atten, adc_calib_parsed_info_t *parsed_data_storage)
 {
     assert(version_num == 1);
     esp_err_t ret;
@@ -79,7 +102,7 @@ static esp_err_t prepare_calib_data_for(int version_num, adc_unit_t adc_num, adc
  * Estimate the (assumed) linear relationship btwn the measured raw value and the voltage
  * with the previously done measurement when the chip was manufactured.
  */
-static void calculate_characterization_coefficients(const adc_calib_parsed_info *parsed_data, esp_adc_cal_characteristics_t *chars)
+static void calculate_characterization_coefficients(const adc_calib_parsed_info_t *parsed_data, esp_adc_cal_characteristics_t *chars)
 {
     ESP_LOGD(LOG_TAG, "Calib V1, Cal Voltage = %d, Digi out = %d\n", parsed_data->efuse_data.ver1.voltage, parsed_data->efuse_data.ver1.digi);
 
@@ -108,7 +131,7 @@ esp_adc_cal_value_t esp_adc_cal_characterize(adc_unit_t adc_num,
         esp_adc_cal_characteristics_t *chars)
 {
     esp_err_t ret;
-    adc_calib_parsed_info efuse_parsed_data = {0};
+    adc_calib_parsed_info_t efuse_parsed_data = {0};
     // Check parameters
     ADC_CALIB_CHECK(adc_num == ADC_UNIT_1 || adc_num == ADC_UNIT_2, "Invalid unit num", ESP_ADC_CAL_VAL_NOT_SUPPORTED);
     ADC_CALIB_CHECK(chars != NULL, "Invalid characteristic", ESP_ADC_CAL_VAL_NOT_SUPPORTED);
@@ -140,31 +163,17 @@ esp_adc_cal_value_t esp_adc_cal_characterize(adc_unit_t adc_num,
 
 uint32_t esp_adc_cal_raw_to_voltage(uint32_t adc_reading, const esp_adc_cal_characteristics_t *chars)
 {
-    ADC_CALIB_CHECK(chars != NULL, "No characteristic input.", ESP_ERR_INVALID_ARG);
+    assert(chars != NULL);
 
-    return adc_reading * chars->coeff_a / coeff_a_scaling + chars->coeff_b / coeff_b_scaling;
-}
+    int32_t error = 0;
+    uint64_t v_cali_1 = adc_reading * chars->coeff_a / coeff_a_scaling;
+    esp_adc_error_calc_param_t param = {
+        .v_cali_input = v_cali_1,
+        .term_num = (chars->atten == 3) ? 5 : 3,
+        .coeff = &adc_error_coef_atten,
+        .sign = &adc_error_sign,
+    };
+    error = esp_adc_cal_get_reading_error(&param, chars->atten);
 
-esp_err_t esp_adc_cal_get_voltage(adc_channel_t channel,
-                                  const esp_adc_cal_characteristics_t *chars,
-                                  uint32_t *voltage)
-{
-    // Check parameters
-    ADC_CALIB_CHECK(chars != NULL, "No characteristic input.", ESP_ERR_INVALID_ARG);
-    ADC_CALIB_CHECK(voltage != NULL, "No output buffer.", ESP_ERR_INVALID_ARG);
-
-    int adc_reading;
-    if (chars->adc_num == ADC_UNIT_1) {
-        //Check if channel is valid on ADC1
-        ADC_CALIB_CHECK((adc1_channel_t)channel < ADC1_CHANNEL_MAX, "Invalid channel", ESP_ERR_INVALID_ARG);
-        adc_reading = adc1_get_raw(channel);
-    } else {
-        //Check if channel is valid on ADC2
-        ADC_CALIB_CHECK((adc2_channel_t)channel < ADC2_CHANNEL_MAX, "Invalid channel", ESP_ERR_INVALID_ARG);
-        if (adc2_get_raw(channel, chars->bit_width, &adc_reading) != ESP_OK) {
-            return ESP_ERR_TIMEOUT;     //Timed out waiting for ADC2
-        }
-    }
-    *voltage = esp_adc_cal_raw_to_voltage((uint32_t)adc_reading, chars);
-    return ESP_OK;
+    return (int32_t)v_cali_1 - error;
 }
