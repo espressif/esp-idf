@@ -343,6 +343,12 @@ test_app_test_002:
     - ESP32
     - Example_WIFI
 
+test_app_test_eth:
+  extends: .test_app_esp32_template
+  tags:
+    - ESP32
+    - Example_EthKitV1
+
 test_app_test_003:
   extends: .test_app_esp32_template
   tags:
