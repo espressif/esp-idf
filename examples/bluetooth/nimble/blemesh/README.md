@@ -6,35 +6,38 @@
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
 This example implements Bluetooth Mesh node that supports On/Off and Level models.
-
 It has suport for both Advertising Bearer and GATT Bearer.
 
 For more information on NimBLE MESH, please visit [NimBLE_MESH](https://mynewt.apache.org/latest/network/mesh/index.html#bluetooth-mesh).
 
 It uses ESP32's Bluetooth controller and NimBLE stack based BLE host.
-
 This example can be starting step to get basic understanding on how to build BLE MESH node.
-
 To test this demo, any BLE mesh provisioner app can be used.
 
 
-## How to use example
+## How to Use Example
+
+Before project configuration and build, be sure to set the correct chip target using:
+
+```bash
+idf.py set-target <chip_name>
+```
 
 ### Configure the project
 
-```
+Open the project configuration menu: 
+
+```bash
 idf.py menuconfig
 ```
 
-* Select 'Enable BLE mesh functionality' under 'Component config > Bluetooth > Enable NimBLE host stack'.
+* Select `Enable BLE mesh functionality` under `Component config --> Bluetooth --> Enable NimBLE host stack`.
 
 ### Build and Flash
 
 Build the project and flash it to the board, then run monitor tool to view serial output:
 
-```
-idf.py -p PORT flash monitor
-```
+`idf.py -p PORT flash monitor`
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 
@@ -86,5 +89,8 @@ I (11885) NimBLE_MESH: Local node provisioned, primary address 0x0002
 
 GAP procedure initiated: advertise; disc_mode=2 adv_channel_map=0 own_addr_type=1 adv_filter_policy=0 adv_itvl_min=1600 adv_itvl_max=1920
 GAP procedure initiated: stop advertising.
-
 ```
+
+## Troubleshooting
+
+For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
