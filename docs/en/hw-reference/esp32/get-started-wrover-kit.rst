@@ -363,6 +363,11 @@ Now to Development
 
 Please proceed to :doc:`../../get-started/index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an example project onto your board.
 
+The application examples that use some hardware specific to your ESP-WROVER-KIT can be found below.
+
+* On-board LCD example: :example:`peripherals/spi_master/lcd`
+* SD card slot example: :example:`storage/sd_card`
+* Camera connector example: https://github.com/espressif/esp32-camera
 
 Related Documents
 -----------------
