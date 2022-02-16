@@ -207,6 +207,15 @@ void wpabuf_free(struct wpabuf *buf)
 }
 
 
+void wpabuf_clear_free(struct wpabuf *buf)
+{
+	if (buf) {
+		os_memset(wpabuf_mhead(buf), 0, wpabuf_len(buf));
+		wpabuf_free(buf);
+	}
+}
+
+
 void * wpabuf_put(struct wpabuf *buf, size_t len)
 {
 	void *tmp = wpabuf_mhead_u8(buf) + wpabuf_len(buf);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,6 +42,15 @@
 
 #define DATA_MUTEX_TAKE() xSemaphoreTakeRecursive(s_wpa2_data_lock,portMAX_DELAY)
 #define DATA_MUTEX_GIVE() xSemaphoreGiveRecursive(s_wpa2_data_lock)
+
+//length of the string "fast_provisioning={0/1/2} "
+#define FAST_PROVISIONING_CONFIG_STR_LEN 20
+//length of the string "fast_max_pac_list_len=(int < 100) "
+#define FAST_MAX_PAC_LIST_CONFIG_STR_LEN 25
+//length of the string "fast_pac_format=binary"
+#define FAST_PAC_FORMAT_STR_LEN 22
+//Total
+#define PHASE1_PARAM_STRING_LEN FAST_PROVISIONING_CONFIG_STR_LEN + FAST_MAX_PAC_LIST_CONFIG_STR_LEN + FAST_PAC_FORMAT_STR_LEN
 
 static void *s_wpa2_data_lock = NULL;
 
@@ -978,6 +987,9 @@ void esp_wifi_sta_wpa2_ent_clear_cert_key(void)
     g_wpa_private_key_len = 0;
     g_wpa_private_key_passwd = NULL;
     g_wpa_private_key_passwd_len = 0;
+    os_free(g_wpa_pac_file);
+    g_wpa_pac_file = NULL;
+    g_wpa_pac_file_len = 0;
 }
 
 esp_err_t esp_wifi_sta_wpa2_ent_set_ca_cert(const unsigned char *ca_cert, int ca_cert_len)
@@ -1174,4 +1186,58 @@ esp_err_t esp_wifi_sta_wpa2_set_suiteb_192bit_certification(bool enable)
 #else
     return ESP_FAIL;
 #endif
+}
+
+esp_err_t esp_wifi_sta_wpa2_ent_set_pac_file(const unsigned char *pac_file, int pac_file_len)
+{
+    if (pac_file && pac_file_len > -1) {
+        if (pac_file_len < 512) { // The file contains less than 1 pac and is to be rewritten later
+            g_wpa_pac_file = (u8 *)os_zalloc(512);
+            if (g_wpa_pac_file == NULL) {
+                return ESP_ERR_NO_MEM;
+            }
+            g_wpa_pac_file_len = 0;
+        } else { // The file contains pac data
+            g_wpa_pac_file = (u8 *)os_zalloc(pac_file_len);
+            if (g_wpa_pac_file == NULL) {
+                return ESP_ERR_NO_MEM;
+            }
+            os_memcpy(g_wpa_pac_file, pac_file, pac_file_len);
+            g_wpa_pac_file_len = pac_file_len;
+        }
+    } else {
+        return ESP_FAIL;
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t esp_wifi_sta_wpa2_ent_set_fast_phase1_params(esp_eap_fast_config config)
+{
+    char config_for_supplicant[PHASE1_PARAM_STRING_LEN] = "";
+    if ((config.fast_provisioning > -1) && (config.fast_provisioning <= 2)) {
+        os_sprintf((char *) &config_for_supplicant, "fast_provisioning=%d ", config.fast_provisioning);
+    } else {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (config.fast_max_pac_list_len && config.fast_max_pac_list_len < 100) {
+        os_sprintf((char *) &config_for_supplicant + strlen(config_for_supplicant), "fast_max_pac_list_len=%d ", config.fast_max_pac_list_len);
+    } else if (config.fast_max_pac_list_len >= 100) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (config.fast_pac_format_binary) {
+        os_strcat((char *) &config_for_supplicant, (const char *) "fast_pac_format=binary");
+    }
+
+    // Free the old buffer if it already exists
+    if (g_wpa_phase1_options != NULL) {
+        os_free(g_wpa_phase1_options);
+    }
+    g_wpa_phase1_options = (char *)os_zalloc(sizeof(config_for_supplicant));
+    if (g_wpa_phase1_options == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+    os_memcpy(g_wpa_phase1_options, &config_for_supplicant, sizeof(config_for_supplicant));
+    return ESP_OK;
+
 }
