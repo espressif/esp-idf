@@ -109,6 +109,7 @@ tools/ldgen/test/test_output_commands.py
 tools/mass_mfg/mfg_gen.py
 tools/mkdfu.py
 tools/mkuf2.py
+tools/python_version_checker.py
 tools/set-submodules-to-github.sh
 tools/test_apps/system/no_embedded_paths/check_for_file_paths.py
 tools/test_idf_monitor/run_test_idf_monitor.py
