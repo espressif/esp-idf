@@ -1375,16 +1375,18 @@ static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num)
 //Check whether read or write buffer in cmd_link is internal.
 static bool is_cmd_link_buffer_internal(const i2c_cmd_link_t *link)
 {
-    const i2c_cmd_link_t *cmd_link = link;
-    while (cmd_link != NULL)  {
-        if (cmd_link->cmd.hw_cmd.op_code == I2C_LL_CMD_WRITE || cmd_link->cmd.hw_cmd.op_code == I2C_LL_CMD_READ) {
-            if (cmd_link->cmd.data != NULL && !esp_ptr_internal(cmd_link->cmd.data)) {
-                return false;
-            }
-        }
-        cmd_link = cmd_link->next;
+    bool is_internal = true;
+    for (const i2c_cmd_link_t *cmd_link = link;
+         cmd_link != NULL && is_internal;
+         cmd_link = cmd_link->next)
+    {
+        /* A command node has a valid pointer if it is a read command or a write command with more than one byte. */
+        const bool data_pointer = (cmd_link->cmd.hw_cmd.op_code == I2C_LL_CMD_WRITE && !i2c_cmd_is_single_byte(&cmd_link->cmd))
+                                || cmd_link->cmd.hw_cmd.op_code == I2C_LL_CMD_READ;
+        /* Check if the (non-NULL) pointer points to internal memory. */
+        is_internal &= !data_pointer || cmd_link->cmd.data == NULL || esp_ptr_internal(cmd_link->cmd.data);
     }
-    return true;
+    return is_internal;
 }
 #endif
 
@@ -1398,11 +1400,10 @@ esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, 
 #if CONFIG_SPIRAM_USE_MALLOC
     //If the i2c read or write buffer is not in internal RAM, we will return ESP_FAIL
     //to avoid the ISR handler function crashing when the cache is disabled.
-    if ((p_i2c_obj[i2c_num]->intr_alloc_flags & ESP_INTR_FLAG_IRAM)) {
-        if (!is_cmd_link_buffer_internal(((const i2c_cmd_desc_t *)cmd_handle)->head) ) {
-            ESP_LOGE(I2C_TAG, I2C_PSRAM_BUFFER_WARN_STR);
-            return ESP_ERR_INVALID_ARG;
-        }
+    if ( (p_i2c_obj[i2c_num]->intr_alloc_flags & ESP_INTR_FLAG_IRAM) &&
+         !is_cmd_link_buffer_internal(((const i2c_cmd_desc_t *)cmd_handle)->head) ) {
+        ESP_LOGE(I2C_TAG, I2C_PSRAM_BUFFER_WARN_STR);
+        return ESP_ERR_INVALID_ARG;
     }
 #endif
     // Sometimes when the FSM get stuck, the ACK_ERR interrupt will occur endlessly until we reset the FSM and clear bus.
