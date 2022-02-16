@@ -79,7 +79,7 @@ esp_err_t spi_hal_cal_clock_conf(const spi_hal_timing_param_t *timing_param, int
     spi_hal_timing_conf_t temp_conf;
 
     int clk_src_freq_hz = timing_param->clk_src_hz;
-    HAL_ASSERT((clk_src_freq_hz == 80 * 1000 * 1000) || (clk_src_freq_hz == 40 * 1000 * 1000));
+    HAL_ASSERT((clk_src_freq_hz == 80 * 1000 * 1000) || (clk_src_freq_hz == 40 * 1000 * 1000) || (clk_src_freq_hz == 48 * 1000 * 1000));
     int eff_clk_n = spi_ll_master_cal_clock(clk_src_freq_hz, timing_param->expected_freq, timing_param->duty_cycle, &temp_conf.clock_reg);
 
     //When the speed is too fast, we may need to use dummy cycles to compensate the reading.

@@ -89,7 +89,6 @@
 #define SOC_MPI_SUPPORTED           1
 #define SOC_SHA_SUPPORTED           1
 
-
 /*-------------------------- ADC CAPS ----------------------------------------*/
 /**
  * TO BE REMOVED

@@ -10,29 +10,14 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <string.h>
-
+#include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
-
-#include "lwip/sockets.h"
-#include "lwip/dns.h"
-#include "lwip/netdb.h"
-#include "lwip/igmp.h"
-
-#include "esp_wifi.h"
-#include "esp_system.h"
-#include "esp_event.h"
-#include "nvs_flash.h"
-#include "soc/rtc_periph.h"
 #include "driver/spi_master.h"
-#include "esp_log.h"
-#include "esp_spi_flash.h"
-
 #include "driver/gpio.h"
-#include "esp_intr_alloc.h"
-
+#include "esp_timer.h"
 
 /*
 SPI sender (master) example.
@@ -57,7 +42,7 @@ Pins in use. The SPI Master can use the GPIO mux, so feel free to change these i
 #define GPIO_SCLK 15
 #define GPIO_CS 14
 
-#elif CONFIG_IDF_TARGET_ESP32C3
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32H2
 #define GPIO_HANDSHAKE 3
 #define GPIO_MOSI 7
 #define GPIO_MISO 2
@@ -93,16 +78,20 @@ static void IRAM_ATTR gpio_handshake_isr_handler(void* arg)
 {
     //Sometimes due to interference or ringing or something, we get two irqs after eachother. This is solved by
     //looking at the time between interrupts and refusing any interrupt too close to another one.
-    static uint32_t lasthandshaketime;
-    uint32_t currtime=esp_cpu_get_ccount();
-    uint32_t diff=currtime-lasthandshaketime;
-    if (diff<240000) return; //ignore everything <1ms after an earlier irq
-    lasthandshaketime=currtime;
+    static uint32_t lasthandshaketime_us;
+    uint32_t currtime_us = esp_timer_get_time();
+    uint32_t diff = currtime_us - lasthandshaketime_us;
+    if (diff < 1000) {
+        return; //ignore everything <1ms after an earlier irq
+    }
+    lasthandshaketime_us = currtime_us;
 
     //Give the semaphore.
-    BaseType_t mustYield=false;
+    BaseType_t mustYield = false;
     xSemaphoreGiveFromISR(rdySem, &mustYield);
-    if (mustYield) portYIELD_FROM_ISR();
+    if (mustYield) {
+        portYIELD_FROM_ISR();
+    }
 }
 
 //Main application
