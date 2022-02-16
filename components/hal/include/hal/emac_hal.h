@@ -212,8 +212,22 @@ uint32_t emac_hal_get_phy_data(emac_hal_context_t *hal);
 
 void emac_hal_set_address(emac_hal_context_t *hal, uint8_t *mac_addr);
 
+/**
+ * @brief Starts EMAC Transmission & Reception
+ *
+ * @param hal EMAC HAL context infostructure
+ */
 void emac_hal_start(emac_hal_context_t *hal);
 
+/**
+ * @brief Stops EMAC Transmission & Reception
+ *
+ * @param hal EMAC HAL context infostructure
+ * @return
+ *     - ESP_OK: succeed
+  *    - ESP_ERR_INVALID_STATE: previous frame transmission is not completed. When this error occurs,
+  *      wait and reapeat the EMAC stop again.
+ */
 esp_err_t emac_hal_stop(emac_hal_context_t *hal);
 
 uint32_t emac_hal_get_tx_desc_owner(emac_hal_context_t *hal);
