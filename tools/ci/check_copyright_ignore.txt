@@ -451,8 +451,6 @@ components/esp_eth/src/w5500.h
 components/esp_eth/test/test_emac.c
 components/esp_eth/test_apps/component_ut_test.py
 components/esp_eth/test_apps/main/esp_eth_test.c
-components/esp_event/default_event_loop.c
-components/esp_event/esp_event.c
 components/esp_event/esp_event_private.c
 components/esp_event/event_loop_legacy.c
 components/esp_event/event_send.c
