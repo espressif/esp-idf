@@ -527,7 +527,7 @@ UT_006:
 
 UT_007:
   extends: .unit_test_esp32_template
-  parallel: 4
+  parallel: 5
   tags:
     - ESP32_IDF
     - UT_T1_1
