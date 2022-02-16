@@ -8,6 +8,10 @@
 #include "mdns_private.h"
 #include "mdns_networking.h"
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
+#include "freertos/semphr.h"
 #include <string.h>
 #include <sys/param.h>
 
