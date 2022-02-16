@@ -22,11 +22,8 @@ else()
             "stack_check.c"
             "task_wdt.c"
             "ubsan.c"
-            "xt_wdt.c")
-
-    if(NOT (${target} STREQUAL "esp32c3") AND NOT (${target} STREQUAL "esp32h2"))
-        list(APPEND srcs  "dbg_stubs.c")
-    endif()
+            "xt_wdt.c"
+            "debug_stubs.c")
 
     if(CONFIG_ESP_SYSTEM_USE_EH_FRAME)
         list(APPEND srcs "eh_frame_parser.c")

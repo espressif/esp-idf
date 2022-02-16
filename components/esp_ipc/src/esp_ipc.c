@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stddef.h>
 #include <stdlib.h>
@@ -65,6 +57,8 @@ static void IRAM_ATTR ipc_task(void* arg)
         if (s_gcov_func) {
             (*s_gcov_func)(s_gcov_func_arg);
             s_gcov_func = NULL;
+            /* we can not interfer with IPC calls so no need for further processing */
+            continue;
         }
 #endif
         if (s_func[cpuid]) {
@@ -171,14 +165,35 @@ esp_err_t esp_ipc_call_blocking(uint32_t cpu_id, esp_ipc_func_t func, void* arg)
 #if CONFIG_APPTRACE_GCOV_ENABLE
 esp_err_t esp_ipc_start_gcov_from_isr(uint32_t cpu_id, esp_ipc_func_t func, void* arg)
 {
+    portBASE_TYPE ret = pdFALSE;
+
     if (xTaskGetSchedulerState() != taskSCHEDULER_RUNNING) {
         return ESP_ERR_INVALID_STATE;
     }
+
+    /* Lock IPC to avoid interferring with normal IPC calls, e.g.
+       avoid situation when esp_ipc_start_gcov_from_isr() is called from IRQ
+       in the middle of IPC call between `s_func` and `s_func_arg` modification. See esp_ipc_call_and_wait() */
+#ifdef CONFIG_ESP_IPC_USES_CALLERS_PRIORITY
+    ret = xSemaphoreTakeFromISR(s_ipc_mutex[cpu_id], NULL);
+#else
+    ret = xSemaphoreTakeFromISR(s_ipc_mutex[0], NULL);
+#endif
+    if (ret != pdTRUE) {
+        return ESP_ERR_TIMEOUT;
+    }
+
     s_gcov_func = func;
     s_gcov_func_arg = arg;
-    xSemaphoreGiveFromISR(s_ipc_sem[cpu_id], NULL);
+    ret = xSemaphoreGiveFromISR(s_ipc_sem[cpu_id], NULL);
 
-    return ESP_OK;
+#ifdef CONFIG_ESP_IPC_USES_CALLERS_PRIORITY
+    xSemaphoreGiveFromISR(s_ipc_mutex[cpu_id], NULL);
+#else
+    xSemaphoreGiveFromISR(s_ipc_mutex[0], NULL);
+#endif
+
+    return ret == pdTRUE ? ESP_OK : ESP_FAIL;
 }
 #endif // CONFIG_APPTRACE_GCOV_ENABLE
 

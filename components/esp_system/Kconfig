@@ -474,7 +474,7 @@ menu "ESP System Settings"
             is triggered.
 
     config ESP_DEBUG_STUBS_ENABLE
-        bool
+        bool "OpenOCD debug stubs"
         default COMPILER_OPTIMIZATION_LEVEL_DEBUG
         depends on !ESP32_TRAX && !ESP32S2_TRAX && !ESP32S3_TRAX
         help
