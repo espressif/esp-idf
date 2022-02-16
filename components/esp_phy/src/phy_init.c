@@ -21,6 +21,7 @@
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
+#include "endian.h"
 #include "phy.h"
 #include "phy_init_data.h"
 #include "esp_coexist_internal.h"
@@ -703,7 +704,7 @@ static esp_err_t phy_crc_check_init_data(uint8_t* init_data, const uint8_t* chec
 {
     uint32_t crc_data = 0;
     crc_data = esp_rom_crc32_le(crc_data, init_data, init_data_length);
-    uint32_t crc_size_conversion = htonl(crc_data);
+    uint32_t crc_size_conversion = htobe32(crc_data);
 
     if (crc_size_conversion != *(uint32_t*)(checksum)) {
         return ESP_FAIL;
