@@ -18,6 +18,8 @@
 #include "esp_modbus_master.h"  // for public interface defines
 #include "esp_modbus_callbacks.h"   // for callback functions
 
+static const char TAG[] __attribute__((unused)) = "MB_CONTROLLER_MASTER";
+
 // This file implements public API for Modbus master controller.
 // These functions are wrappers for interface functions of the controller
 static mb_master_interface_t* master_interface_ptr = NULL;

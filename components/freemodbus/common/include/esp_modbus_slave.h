@@ -28,6 +28,12 @@
 extern "C" {
 #endif
 
+#define MB_SLAVE_CHECK(a, err_code, format, ...) MB_RETURN_ON_FALSE(a, err_code, TAG, format __VA_OPT__(,) __VA_ARGS__)
+
+#define MB_SLAVE_ASSERT(con) do { \
+        if (!(con)) { ESP_LOGE(TAG, "assert errno:%d, errno_str: !(%s)", errno, strerror(errno)); assert(0 && #con); } \
+    } while (0)
+
 /**
  * @brief Parameter access event information type
  */
