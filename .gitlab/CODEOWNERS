@@ -121,7 +121,6 @@
 /components/mqtt/                     @esp-idf-codeowners/network
 /components/newlib/                   @esp-idf-codeowners/system @esp-idf-codeowners/tools
 /components/nvs_flash/                @esp-idf-codeowners/storage
-/components/openssl/                  @esp-idf-codeowners/network
 /components/openthread/               @esp-idf-codeowners/ieee802154
 /components/partition_table/          @esp-idf-codeowners/system
 /components/perfmon/                  @esp-idf-codeowners/tools
