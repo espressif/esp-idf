@@ -647,6 +647,7 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
     ble_config->gatt_db_count   = populate_gatt_db(&ble_config->gatt_db);
 
     ble_config->ble_bonding = config->ble_bonding;
+    ble_config->ble_sm_sc   = config->ble_sm_sc;
 
     if (ble_config->gatt_db_count == -1) {
         ESP_LOGE(TAG, "Invalid GATT database count");

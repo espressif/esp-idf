@@ -121,8 +121,10 @@ typedef struct {
     simple_ble_cb_t *connect_fn;
     /** MTU set callback */
     simple_ble_cb_t *set_mtu_fn;
-    /* BLE bonding */
-     unsigned ble_bonding:1;
+    /** BLE bonding */
+    unsigned ble_bonding:1;
+    /** BLE Secure Connection flag */
+    unsigned ble_sm_sc:1;
 } simple_ble_cfg_t;
 
 static simple_ble_cfg_t *ble_cfg_p;
@@ -492,7 +494,7 @@ static int simple_ble_start(const simple_ble_cfg_t *cfg)
     ble_hs_cfg.sm_io_cap = BLE_SM_IO_CAP_NO_IO; /* Just Works */
     ble_hs_cfg.sm_bonding = cfg->ble_bonding;
     ble_hs_cfg.sm_mitm = 1;
-    ble_hs_cfg.sm_sc = 1; /* Enable secure connection by default */
+    ble_hs_cfg.sm_sc = cfg->ble_sm_sc;
 
     /* Distribute LTK and IRK */
     ble_hs_cfg.sm_our_key_dist = BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID;
@@ -636,9 +638,13 @@ ble_gatt_add_characteristics(struct ble_gatt_chr_def *characteristics, int idx)
     memcpy(&temp_uuid128_name.value[12], &protoble_internal->g_nu_lookup[idx].uuid, 2);
 
     (characteristics + idx)->flags = BLE_GATT_CHR_F_READ |
-                                     BLE_GATT_CHR_F_WRITE |
-                                     BLE_GATT_CHR_F_READ_ENC |
-                                     BLE_GATT_CHR_F_WRITE_ENC;
+                                     BLE_GATT_CHR_F_WRITE ;
+
+#if defined(CONFIG_WIFI_PROV_BLE_FORCE_ENCRYPTION)
+    (characteristics + idx)->flags |= BLE_GATT_CHR_F_READ_ENC |
+                                      BLE_GATT_CHR_F_WRITE_ENC;
+#endif
+
     (characteristics + idx)->access_cb = gatt_svr_chr_access;
 
     /* Out of 128 bit UUID, 16 bits from g_nu_lookup table. Currently
@@ -909,6 +915,7 @@ esp_err_t protocomm_ble_start(protocomm_t *pc, const protocomm_ble_config_t *con
 
     ble_config->device_name     = protocomm_ble_device_name;
     ble_config->ble_bonding     = config->ble_bonding;
+    ble_config->ble_sm_sc       = config->ble_sm_sc;
 
     if (populate_gatt_db(&ble_config->gatt_db, config) != 0) {
         ESP_LOGE(TAG, "Error populating GATT Database");
