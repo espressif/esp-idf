@@ -90,7 +90,7 @@ bool heap_caps_match(const heap_t *heap, uint32_t caps)
 
 
 /*
-This function should not be called directly as it does not 
+This function should not be called directly as it does not
 check for failure / call heap_caps_alloc_failed()
 */
 IRAM_ATTR static void *heap_caps_malloc_base( size_t size, uint32_t caps)
@@ -239,7 +239,7 @@ IRAM_ATTR void *heap_caps_realloc_default( void *ptr, size_t size )
             //We needed to allocate memory, but we didn't. Try again while being less picky.
             r=heap_caps_realloc_base( ptr, size, MALLOC_CAP_DEFAULT);
         }
-	
+
         // allocation failure?
         if (r==NULL && size>0){
             heap_caps_alloc_failed(size, MALLOC_CAP_DEFAULT, __func__);
@@ -341,7 +341,7 @@ IRAM_ATTR void heap_caps_free( void *ptr)
 }
 
 /*
-This function should not be called directly as it does not 
+This function should not be called directly as it does not
 check for failure / call heap_caps_alloc_failed()
 */
 IRAM_ATTR static void *heap_caps_realloc_base( void *ptr, size_t size, uint32_t caps)
