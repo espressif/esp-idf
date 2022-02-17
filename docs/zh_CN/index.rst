@@ -6,7 +6,7 @@ ESP-IDF 编程指南
 
     .. warning::
 
-        The function API documentation is excluded from the preview. Add docs_full label to the MR to generate the complete documentation.
+        快速预览中不包括 API 函数文档。如需生成完整的文档，请在 MR 中添加 docs_full 标签。
 
 这里是乐鑫 IoT 开发框架 (`esp-idf <https://github.com/espressif/esp-idf>`_) 的文档中心。ESP-IDF 是 `ESP32、ESP32-S 和 ESP32-C <https://www.espressif.com/en/products/hardware/socs>`_ 系列芯片的官方开发框架。
 
@@ -53,17 +53,18 @@ ESP-IDF 编程指南
 .. toctree::
    :hidden:
 
-   快速入门 <get-started/index>
-   API 参考 <api-reference/index>
-   H/W 参考 <hw-reference/index>
-   API 指南 <api-guides/index>
-   ESP-IDF 5.0 迁移指南 <migration-guides/index>
-   Libraries and Frameworks <libraries-and-frameworks/index>
-   贡献代码 <contribute/index>
-   版本 <versions>
-   相关资源 <resources>
-   版权 <COPYRIGHT>
-   关于 <about>
-   Languages/语言 <languages>
+   get-started/index
+   get-started/start-project
+   api-reference/index
+   hw-reference/index
+   api-guides/index
+   migration-guides/index
+   libraries-and-frameworks/index
+   contribute/index
+   versions
+   resources
+   COPYRIGHT
+   about
+   languages
 
 * :ref:`genindex`

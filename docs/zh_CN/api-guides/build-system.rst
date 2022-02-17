@@ -83,7 +83,7 @@ idf.py
 
 要实现实现 shell `自动补全 <https://click.palletsprojects.com/shell-completion/>`_，请先确保您安装了 Python 3.5 以及 `click <https://click.palletsprojects.com/>`_ 7.1 及以上版本（:ref:`请参考这里 <get-started-get-prerequisites>`)。
 
-使用 ``export`` 命令来启用 ``idf.py`` 的自动补全功能（:ref:`请参考这里 <get-started-export>`）。按 TAB 键可实现自动补全。输入 “idf.py -” 后按 TAB 键可自动补全选项。
+使用 ``export`` 命令来启用 ``idf.py`` 的自动补全功能（:ref:`请参考这里 <get-started-set-up-env>`）。按 TAB 键可实现自动补全。输入 “idf.py -” 后按 TAB 键可自动补全选项。
 
 未来我们也会支持 PowerShell 的自动补全功能。
 
