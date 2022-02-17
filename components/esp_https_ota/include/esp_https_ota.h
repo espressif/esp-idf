@@ -1,21 +1,14 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
 #include <esp_http_client.h>
 #include <bootloader_common.h>
+#include <sdkconfig.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,6 +16,17 @@ extern "C" {
 
 typedef void *esp_https_ota_handle_t;
 typedef esp_err_t(*http_client_init_cb_t)(esp_http_client_handle_t);
+
+#if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+typedef struct {
+    const char *data_in;    /*!< Pointer to data to be decrypted */
+    size_t data_in_len;     /*!< Input data length */
+    char *data_out;         /*!< Pointer to data decrypted using callback, this will be freed after data is written to flash */
+    size_t data_out_len;    /*!< Output data length */
+} decrypt_cb_arg_t;
+
+typedef esp_err_t(*decrypt_cb_t)(decrypt_cb_arg_t *args);
+#endif // CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
 
 /**
  * @brief ESP HTTPS OTA configuration
@@ -33,6 +37,9 @@ typedef struct {
     bool bulk_flash_erase;                         /*!< Erase entire flash partition during initialization. By default flash partition is erased during write operation and in chunk of 4K sector size */
     bool partial_http_download;                    /*!< Enable Firmware image to be downloaded over multiple HTTP requests */
     int max_http_request_size;                     /*!< Maximum request size for partial HTTP download */
+#if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+    decrypt_cb_t decrypt_cb;                       /*!< Callback for external decryption layer */
+#endif
 } esp_https_ota_config_t;
 
 #define ESP_ERR_HTTPS_OTA_BASE            (0x9000)
@@ -108,6 +115,7 @@ esp_err_t esp_https_ota_begin(esp_https_ota_config_t *ota_config, esp_https_ota_
  *    - ESP_OK: OTA update was successful
  *    - ESP_FAIL: OTA update failed
  *    - ESP_ERR_INVALID_ARG: Invalid argument
+ *    - ESP_ERR_INVALID_VERSION: Invalid chip revision in image header
  *    - ESP_ERR_OTA_VALIDATE_FAILED: Invalid app image
  *    - ESP_ERR_NO_MEM: Cannot allocate memory for OTA operation.
  *    - ESP_ERR_FLASH_OP_TIMEOUT or ESP_ERR_FLASH_OP_FAIL: Flash write failed.
@@ -181,6 +189,7 @@ esp_err_t esp_https_ota_abort(esp_https_ota_handle_t https_ota_handle);
  *
  * @return
  *    - ESP_ERR_INVALID_ARG: Invalid arguments
+ *    - ESP_ERR_INVALID_STATE: Invalid state to call this API. esp_https_ota_begin() not called yet.
  *    - ESP_FAIL: Failed to read image descriptor
  *    - ESP_OK: Successfully read image descriptor
  */

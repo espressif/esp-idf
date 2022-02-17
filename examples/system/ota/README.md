@@ -146,7 +146,7 @@ Running a local https server might be tricky in some cases (due to self signed c
 * Run a plain HTTP server to test the connection. (Note that using a plain http is **not secure** and should only be used for testing)
     - Execute `python -m http.server 8070` in the directory with the firmware image
     - Use http://<host-ip>:8070/<firmware-name> as the firmware upgrade URL
-    - Enable *Allow HTTP for OTA* (`CONFIG_OTA_ALLOW_HTTP`) in `Component config -> ESP HTTPS OTA` so the URI without TLS is accepted
+    - Enable *Allow HTTP for OTA* (`CONFIG_ESP_HTTPS_OTA_ALLOW_HTTP`) in `Component config -> ESP HTTPS OTA` so the URI without TLS is accepted
 * Start the https server using [example_test](simple_ota_example/example_test.py) with two or more parameters: `example_test.py <BIN_DIR> <PORT> [CERT_DIR]`, where:
     - `<BIN_DIR>` is a directory containing the image and by default also the certificate and key files:`ca_cert.pem` and `ca_key.pem`
     - `<PORT>` is the server's port, here `8070`
