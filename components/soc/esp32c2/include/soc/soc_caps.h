@@ -85,18 +85,6 @@
 
 #define SOC_CPU_WATCHPOINT_SIZE         0x80000000 // bytes
 
-/*-------------------------- DIGITAL SIGNATURE CAPS ----------------------------------------*/
-/** The maximum length of a Digital Signature in bits. */
-#define SOC_DS_SIGNATURE_MAX_BIT_LEN (3072)
-
-/** Initialization vector (IV) length for the RSA key parameter message digest (MD) in bytes. */
-#define SOC_DS_KEY_PARAM_MD_IV_LENGTH (16)
-
-
-/** Maximum wait time for DS parameter decryption key. If overdue, then key error.
-    See TRM DS chapter for more details */
-#define SOC_DS_KEY_CHECK_MAX_WAIT_US (1100)
-
 /*-------------------------- GDMA CAPS -------------------------------------*/
 #define SOC_GDMA_GROUPS                 (1U) // Number of GDMA groups
 #define SOC_GDMA_PAIRS_PER_GROUP        (1U) // Number of GDMA pairs in each group
@@ -187,10 +175,6 @@
 #define SOC_SHA_SUPPORT_SHA1            (1)
 #define SOC_SHA_SUPPORT_SHA224          (1)
 #define SOC_SHA_SUPPORT_SHA256          (1)
-
-/*-------------------------- SIGMA DELTA CAPS --------------------------------*/
-#define SOC_SIGMADELTA_NUM         (1U) // 1 sigma-delta peripheral
-#define SOC_SIGMADELTA_CHANNEL_NUM (4)  // 4 channels
 
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_PERIPH_NUM          2

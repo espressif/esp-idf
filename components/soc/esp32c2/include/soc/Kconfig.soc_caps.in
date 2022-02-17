@@ -159,18 +159,6 @@ config SOC_CPU_WATCHPOINT_SIZE
     hex
     default 0x80000000
 
-config SOC_DS_SIGNATURE_MAX_BIT_LEN
-    int
-    default 3072
-
-config SOC_DS_KEY_PARAM_MD_IV_LENGTH
-    int
-    default 16
-
-config SOC_DS_KEY_CHECK_MAX_WAIT_US
-    int
-    default 1100
-
 config SOC_GDMA_GROUPS
     int
     default 1
@@ -326,14 +314,6 @@ config SOC_SHA_SUPPORT_SHA224
 config SOC_SHA_SUPPORT_SHA256
     bool
     default y
-
-config SOC_SIGMADELTA_NUM
-    int
-    default 1
-
-config SOC_SIGMADELTA_CHANNEL_NUM
-    int
-    default 4
 
 config SOC_SPI_PERIPH_NUM
     int
