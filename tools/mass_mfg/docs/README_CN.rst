@@ -10,9 +10,9 @@
 
 注意，该程序仅创建用于量产的二进制映像，您需要使用以下工具将映像烧录到设备上：
 
-- esptool.py
-- Flash 下载工具（仅适用于 Windows）
-- 直接烧录程序
+- `esptool.py`_。
+- `Flash 下载工具`_ （仅适用于 Windows）。下载后解压，然后按照 doc 文件夹中的说明操作。
+- 使用定制的生产工具直接烧录程序。
 
 
 准备工作
@@ -21,10 +21,10 @@
 **该程序需要用到分区公用程序。** 
 
 * 操作系统要求：
-    -   Linux、MacOS 或 Windows（标准版） 
+    -   Linux、macOS 或 Windows（标准版） 
 
 * 安装依赖包：
-    -   Python： https://www.python.org/downloads/。 
+    -   `Python <https://www.python.org/downloads/>`_。 
 
 .. note:: 
 
@@ -50,7 +50,7 @@
 CSV 配置文件
 ----------------------
 
-CSV 配置文件中包含设备待烧录的配置信息，定义了待烧录的配置项。例如定义 ``firmware_key`` (``key``) 的 ``type`` 为 ``data``，``encoding`` 为 ``hex2bin``。 
+CSV 配置文件中包含设备待烧录的配置信息，定义了待烧录的配置项。
   
 配置文件中数据格式如下（`REPEAT` 标签可选）::
 
@@ -69,10 +69,12 @@ CSV 配置文件中包含设备待烧录的配置信息，定义了待烧录的�
 
 CSV 配置文件示例如下::  
 
+
     app,namespace,
     firmware_key,data,hex2bin
     serial_no,data,string,REPEAT <-- "serial_no" 被标记为 "REPEAT"
     device_no,data,i32
+
 
 .. note:: 
 
@@ -84,14 +86,12 @@ CSV 配置文件示例如下::
 主 CSV 文件
 ---------------------
 
-主 CSV 文件中包含设备待烧录的详细信息，文件中每行均对应一个设备实体。主 CSV 文件中的 ``key`` 应首先在 CSV 配置文件中定义。
+主 CSV 文件中包含设备待烧录的详细信息，文件中每行均对应一个设备实体。
   
 主 CSV 文件的数据格式如下:: 
 
     key1,key2,key3,.....
-    value1,value2,value3,.... <-- 对应一个设备实体
-    value4,value5,value6,.... <-- 对应一个设备实体
-    value7,value8,value9,.... <-- 对应一个设备实体
+    value1,value2,value3,....
 
 .. note:: 文件中键 (``key``) 名应始终置于文件首行。从配置文件中获取的键，在此文件中的排列顺序应与其在配置文件中的排列顺序相同。主 CSV 文件同时可以包含其它列（键），这些列将被视为元数据，而不会编译进最终二进制文件。
 
@@ -106,10 +106,10 @@ CSV 配置文件示例如下::
 
 主 CSV 文件示例如下:: 
 
-    id,firmware_key,serial_no,device_no 
-    1,1a2b3c4d5e6faabb,A1,101 <-- 对应一个设备实体（在 CSV 配置文件中标记为 `REPEAT` 的键，除第一个条目外，其他均为空）
-    2,1a2b3c4d5e6fccdd,,102   <-- 对应一个设备实体
-    3,1a2b3c4d5e6feeff,,103   <-- 对应一个设备实体 
+	id,firmware_key,serial_no,device_no
+	1,1a2b3c4d5e6faabb,A1,101
+	2,1a2b3c4d5e6fccdd,,102
+	3,1a2b3c4d5e6feeff,,103
 
 .. note:: 如果出现 `REPEAT` 标签，则会在相同目录下生成一个新的主 CSV 文件用作主输入文件，并在每行为带有 `REPEAT` 标签的键插入键值。
 
@@ -123,6 +123,7 @@ CSV 配置文件示例如下::
     key2,type2,encoding2,value2
 
 此步骤将为每一设备生成一个中间 CSV 文件。
+
 
 运行量产程序
 -------------------
@@ -236,7 +237,8 @@ CSV 配置文件示例如下::
 +-------------------+----------------------------------------------+
 | --outdir OUTDIR   | 输出目录，用于存储创建的文件（默认当前目录） |
 +-------------------+----------------------------------------------+
-    
+
+
 运行以下命令仅生成加密密钥::
 
     python mfg_gen.py generate-key
@@ -254,3 +256,5 @@ CSV 配置文件示例如下::
 - ``csv/`` 存储生成的中间 CSV 文件
 - ``keys/`` 存储加密密钥（创建工厂加密映像时会用到）
 
+.. _esptool.py: https://github.com/espressif/esptool/#readme
+.. _Flash 下载工具: https://www.espressif.com/en/support/download/other-tools?keys=flash+download+tools
