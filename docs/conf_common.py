@@ -107,7 +107,7 @@ ESP32_DOCS = ['api-guides/ulp_instruction_set.rst',
               'api-guides/RF_calibration.rst'] + FTDI_JTAG_DOCS
 
 ESP32S2_DOCS = ['hw-reference/esp32s2/**',
-                'api-guides/ulps2_instruction_set.rst',
+                'api-guides/ulp_extended_instruction_set.rst',
                 'api-guides/usb-console.rst',
                 'api-reference/peripherals/ds.rst',
                 'api-reference/peripherals/spi_slave_hd.rst',
@@ -117,6 +117,7 @@ ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-guides/RF_calibration.rst'] + FTDI_JTAG_DOCS
 
 ESP32S3_DOCS = ['hw-reference/esp32s3/**',
+                'api-guides/ulp_extended_instruction_set.rst',
                 'api-reference/system/ipc.rst',
                 'api-guides/flash_psram_config.rst',
                 'api-guides/RF_calibration.rst']

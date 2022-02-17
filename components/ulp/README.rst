@@ -1,7 +1,7 @@
 Programming ULP FSM coprocessor using C macros (legacy)
 =======================================================
 
-In addition to the existing binutils port for the ESP32 ULP coprocessor, it is possible to generate programs for the ULP by embedding assembly-like macros into an ESP32 application. Here is an example how this can be done::
+In addition to the existing binutils port for the {IDF_TARGET_NAME} ULP coprocessor, it is possible to generate programs for the ULP by embedding assembly-like macros into an {IDF_TARGET_NAME} application. Here is an example how this can be done::
 
     const ulp_insn_t program[] = {
         I_MOVI(R3, 16),         // R3 <- 16
@@ -65,7 +65,6 @@ Header File
 
 .. list::
 
-    :component_file:`ulp/ulp_fsm/include/ulp_fsm_common.h`
     :esp32: - :component_file:`ulp/ulp_fsm/include/esp32/ulp.h`
     :esp32s2: - :component_file:`ulp/ulp_fsm/include/esp32s2/ulp.h`
     :esp32s3: - :component_file:`ulp/ulp_fsm/include/esp32s3/ulp.h`
@@ -103,11 +102,39 @@ ULP coprocessor instruction defines
 .. doxygendefine:: I_HALT
 .. doxygendefine:: I_END
 .. doxygendefine:: I_ST
+.. only:: esp32s2 or esp32s3
+
+    .. doxygendefine:: I_ST_MANUAL
+    .. doxygendefine:: I_STL
+    .. doxygendefine:: I_STH
+    .. doxygendefine:: I_ST32
+    .. doxygendefine:: I_STL_LABEL
+    .. doxygendefine:: I_STH_LABEL
+    .. doxygendefine:: I_ST_AUTO
+    .. doxygendefine:: I_STO
+    .. doxygendefine:: I_STI
+    .. doxygendefine:: I_STI_LABEL
+    .. doxygendefine:: I_STI32
+
 .. doxygendefine:: I_LD
+.. only:: esp32s2 or esp32s3
+
+    .. doxygendefine:: I_LD_MANUAL
+    .. doxygendefine:: I_LDL
+    .. doxygendefine:: I_LDH
+
 .. doxygendefine:: I_WR_REG
 .. doxygendefine:: I_RD_REG
 .. doxygendefine:: I_BL
-.. doxygendefine:: I_BGE
+.. only:: esp32
+
+    .. doxygendefine:: I_BGE
+
+.. only:: esp32s2 or esp32s3
+
+    .. doxygendefine:: I_BG
+    .. doxygendefine:: I_BE
+
 .. doxygendefine:: I_BXR
 .. doxygendefine:: I_BXI
 .. doxygendefine:: I_BXZR
@@ -130,7 +157,15 @@ ULP coprocessor instruction defines
 .. doxygendefine:: I_RSHI
 .. doxygendefine:: M_LABEL
 .. doxygendefine:: M_BL
-.. doxygendefine:: M_BGE
+.. only:: esp32
+
+    .. doxygendefine:: M_BGE
+
+.. only:: esp32s2 or esp32s3
+
+    .. doxygendefine:: M_BG
+    .. doxygendefine:: M_BE
+
 .. doxygendefine:: M_BX
 .. doxygendefine:: M_BXZ
 .. doxygendefine:: M_BXF

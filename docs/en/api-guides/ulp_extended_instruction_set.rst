@@ -1,9 +1,9 @@
-ESP32-S2 ULP coprocessor instruction set
+{IDF_TARGET_NAME} ULP coprocessor instruction set
 ========================================
 
-This document provides details about the instructions used by ESP32-S2 ULP coprocessor assembler.
+This document provides details about the instructions used by {IDF_TARGET_NAME} ULP coprocessor assembler.
 
-ULP coprocessor has 4 16-bit general purpose registers, labeled R0, R1, R2, R3. It also has an 8-bit counter register (stage_cnt) which can be used to implement loops. Stage count regiter is accessed using special instructions.
+ULP coprocessor has 4 16-bit general purpose registers, labeled R0, R1, R2, R3. It also has an 8-bit counter register (stage_cnt) which can be used to implement loops. Stage count register is accessed using special instructions.
 
 ULP coprocessor can access 8k bytes of RTC_SLOW_MEM memory region. Memory is addressed in 32-bit word units. It can also access peripheral registers in RTC_CNTL, RTC_IO, and SENS peripherals.
 
@@ -14,55 +14,56 @@ The instruction syntax is case insensitive. Upper and lower case letters can be 
 
 Note about addressing
 ---------------------
-ESP32-S2 ULP coprocessor's JUMP, ST, LD instructions which take register as an argument (jump address, store/load base address) expect the argument to be expressed in 32-bit words.
+{IDF_TARGET_NAME} ULP coprocessor's ``JUMP``, ``ST``, ``LD`` family of instructions expect the address argument to be expressed in the following way depending on the type of address argument used:
 
-Consider the following example program::
+- When the address argument is presented as a label then the instruction expects the address to be expressed as 32-bit words.
 
-  entry:
-          NOP
-          NOP
-          NOP
-          NOP
-  loop:
-          MOVE R1, loop
-          JUMP R1
+  Consider the following example program::
 
-When this program is assembled and linked, address of label ``loop`` will be equal to 16 (expressed in bytes). However `JUMP` instruction expects the address stored in register to be expressed in 32-bit words. To account for this common use case, assembler will convert the address of label `loop` from bytes to words, when generating ``MOVE`` instruction, so the code generated code will be equivalent to::
+    entry:
+            NOP
+            NOP
+            NOP
+            NOP
+    loop:
+            MOVE R1, loop
+            JUMP R1
 
-  0000    NOP
-  0004    NOP
-  0008    NOP
-  000c    NOP
-  0010    MOVE R1, 4
-  0014    JUMP R1
+  When this program is assembled and linked, address of label ``loop`` will be equal to 16 (expressed in bytes). However `JUMP` instruction expects the address stored in register ``R1`` to be expressed in 32-bit words. To account for this common use case, the assembler will convert the address of label `loop` from bytes to words, when generating the ``MOVE`` instruction. Hence, the code generated code will be equivalent to::
 
-The other case is when the argument of ``MOVE`` instruction is not a label but a constant. In this case assembler will use the value as is, without any conversion::
+    0000    NOP
+    0004    NOP
+    0008    NOP
+    000c    NOP
+    0010    MOVE R1, 4
+    0014    JUMP R1
 
-          .set        val, 0x10
-          MOVE        R1, val
+- The other case is when the argument of ``MOVE`` instruction is not a label but a constant. In this case assembler will **use the value as is**, without any conversion::
 
-In this case, value loaded into R1 will be ``0x10``.
+            .set        val, 0x10
+            MOVE        R1, val
 
-Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the following code::
+  In this case, value loaded into ``R1`` will be ``0x10``.
 
-          .global array
-  array:  .long 0
-          .long 0
-          .long 0
-          .long 0
+  Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the following code::
 
-          MOVE R1, array
-          MOVE R2, 0x1234
-          ST R2, R1, 0      // write value of R2 into the first array element,
-                            // i.e. array[0]
+            .global array
+    array:  .long 0
+            .long 0
+            .long 0
+            .long 0
 
-          ST R2, R1, 4      // write value of R2 into the second array element
-                            // (4 byte offset), i.e. array[1]
+            MOVE R1, array
+            MOVE R2, 0x1234
+            ST R2, R1, 0      // write value of R2 into the first array element,
+                              // i.e. array[0]
 
-          ADD R1, R1, 2     // this increments address by 2 words (8 bytes)
-          ST R2, R1, 0      // write value of R2 into the third array element,
-                            // i.e. array[2]
+            ST R2, R1, 4      // write value of R2 into the second array element
+                              // (4 byte offset), i.e. array[1]
 
+            ADD R1, R1, 2     // this increments address by 2 words (8 bytes)
+            ST R2, R1, 0      // write value of R2 into the third array element,
+                              // i.e. array[2]
 
 Note about instruction execution time
 -------------------------------------
@@ -85,12 +86,12 @@ Instruction fetch time is:
 Note that when accessing RTC memories and RTC registers, ULP coprocessor has lower priority than the main CPUs. This means that ULP coprocessor execution may be suspended while the main CPUs access same memory region as the ULP.
 
 
-Difference between ESP32 ULP and ESP32-S2 ULP Instruction sets
+Difference between ESP32 ULP and {IDF_TARGET_NAME} ULP Instruction sets
 --------------------------------------------------------------
 
-Compare to the ESP32 ULP coprocessor, the ESP-S2 ULP coprocessor has extended instruction set. The ESP32-S2 ULP is not binary compatible with ESP32 ULP, 
-but the assembled program that was written for the ESP32 ULP will also work on the ESP32-S2 ULP after rebuild.
-The list of the new instructions that was added to the ESP32-S2 ULP is: LDL, LDH, STO, ST32, STI32.
+Compared to the ESP32 ULP coprocessor, the {IDF_TARGET_NAME} ULP coprocessor has an extended instruction set. The {IDF_TARGET_NAME} ULP is not binary compatible with ESP32 ULP,
+but the assembled program that was written for the ESP32 ULP will also work on the {IDF_TARGET_NAME} ULP after rebuild.
+The list of the new instructions that was added to the {IDF_TARGET_NAME} ULP is: LDL, LDH, STO, ST32, STI32.
 The detailed description of these commands please see below.
 
 

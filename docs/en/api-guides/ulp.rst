@@ -13,7 +13,8 @@ ULP Coprocessor programming
    :maxdepth: 1
 
    :esp32: Instruction set reference for ESP32 ULP <ulp_instruction_set>
-   :esp32s2: Instruction set reference for ESP32-S2 ULP <ulps2_instruction_set>
+   :esp32s2: Instruction set reference for ESP32-S2 ULP <ulp_extended_instruction_set>
+   :esp32s3: Instruction set reference for ESP32-S3 ULP <ulp_extended_instruction_set>
    Programming using macros (legacy) <ulp_macros>
 
 

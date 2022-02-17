@@ -1,12 +1,13 @@
-if(IDF_TARGET STREQUAL "esp32")
-    set(src_dirs ${IDF_TARGET})
-    set(ulp_sources "ulp/test_jumps_esp32.S")
-elseif(IDF_TARGET STREQUAL "esp32s2" OR IDF_TARGET STREQUAL "esp32s3")
-    if(CONFIG_ULP_COPROC_TYPE_RISCV)
-        set(src_dirs "ulp_riscv")
-        set(ulp_sources "ulp_riscv/ulp/test_main.c")
-    endif()
-    #TODO: Add ULP-FSM Test case for esp32s2 and esp32s3
+if(CONFIG_ULP_COPROC_TYPE_FSM)
+
+    set(src_dirs "ulp_fsm")
+    set(ulp_sources "ulp_fsm/ulp/test_jumps.S")
+
+elseif(CONFIG_ULP_COPROC_TYPE_RISCV)
+
+    set(src_dirs "ulp_riscv")
+    set(ulp_sources "ulp_riscv/ulp/test_main.c")
+
 endif()
 
 idf_component_register(SRC_DIRS ${src_dirs}

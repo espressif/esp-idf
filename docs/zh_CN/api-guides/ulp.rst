@@ -7,7 +7,8 @@ ULP 协处理器编程
    :maxdepth: 1
 
     :esp32: ESP32 ULP 指令集参考 <ulp_instruction_set>
-    :esp32s2: ESP32-S2 ULP 指令集参考 <ulps2_instruction_set>
+    :esp32s2: ESP32-S2 ULP 指令集参考 <ulp_extended_instruction_set>
+    :esp32s3: ESP32-S3 ULP 指令集参考 <ulp_extended_instruction_set>
     使用宏进行编程（遗留） <ulp_macros>
 
 
