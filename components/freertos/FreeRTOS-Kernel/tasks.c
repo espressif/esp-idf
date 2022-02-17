@@ -58,7 +58,9 @@
 #define taskEXIT_CRITICAL_ISR( )        portEXIT_CRITICAL_ISR( taskCRITICAL_MUX )
 #undef _REENT_INIT_PTR
 #define _REENT_INIT_PTR                 esp_reent_init
-#endif
+extern void esp_vApplicationTickHook(void);
+extern void esp_vApplicationIdleHook(void);
+#endif //ESP_PLATFORM
 
 /* Lint e9021, e961 and e750 are suppressed as a MISRA exception justified
  * because the MPU ports require MPU_WRAPPERS_INCLUDED_FROM_API_FILE to be defined
@@ -3101,10 +3103,7 @@ BaseType_t xTaskIncrementTick( void )
         #if ( configUSE_TICK_HOOK == 1 )
         vApplicationTickHook();
         #endif /* configUSE_TICK_HOOK */
-        #if ( CONFIG_FREERTOS_LEGACY_HOOKS == 1 )
         esp_vApplicationTickHook();
-        #endif /* CONFIG_FREERTOS_LEGACY_HOOKS */
-
         if (xPortGetCoreID() != 0 )
         {
             return pdTRUE;
@@ -3980,12 +3979,11 @@ static portTASK_FUNCTION( prvIdleTask, pvParameters )
                 vApplicationIdleHook();
             }
         #endif /* configUSE_IDLE_HOOK */
-        #if ( CONFIG_FREERTOS_LEGACY_HOOKS == 1 )
-        {
-            /* Call the esp-idf hook system */
-            esp_vApplicationIdleHook();
-        }
-        #endif /* CONFIG_FREERTOS_LEGACY_HOOKS */
+
+#ifdef ESP_PLATFORM
+        /* Call the esp-idf idle hook system */
+        esp_vApplicationIdleHook();
+#endif // ESP_PLATFORM
 
         /* This conditional compilation should use inequality to 0, not equality
          * to 1.  This is to ensure portSUPPRESS_TICKS_AND_SLEEP() is called when

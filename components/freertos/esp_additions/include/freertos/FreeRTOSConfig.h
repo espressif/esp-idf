@@ -140,8 +140,8 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 
 // ------------------------ Hooks --------------------------
 
-#define configUSE_IDLE_HOOK                             1
-#define configUSE_TICK_HOOK                             1
+#define configUSE_IDLE_HOOK                             CONFIG_FREERTOS_USE_IDLE_HOOK
+#define configUSE_TICK_HOOK                             CONFIG_FREERTOS_USE_TICK_HOOK
 #if CONFIG_FREERTOS_CHECK_STACKOVERFLOW_NONE
 #define configCHECK_FOR_STACK_OVERFLOW                  0
 #elif CONFIG_FREERTOS_CHECK_STACKOVERFLOW_PTRVAL

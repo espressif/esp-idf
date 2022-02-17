@@ -363,9 +363,6 @@ static inline bool IRAM_ATTR xPortCanYield(void);
 
 // ------------------- Hook Functions ----------------------
 
-extern void esp_vApplicationIdleHook(void);     /* Required by tasks.c */
-extern void esp_vApplicationTickHook(void);     /* Required by tasks.c */
-
 /**
  * @brief Hook function called on entry to tickless idle
  *
@@ -542,11 +539,6 @@ extern void _frxt_setup_switch( void );     //Defined in portasm.S
 #define portYIELD_WITHIN_API() esp_crosscore_int_send_yield(xPortGetCoreID())
 
 // ------------------- Hook Functions ----------------------
-
-#ifndef CONFIG_FREERTOS_LEGACY_HOOKS
-#define vApplicationIdleHook esp_vApplicationIdleHook
-#define vApplicationTickHook esp_vApplicationTickHook
-#endif /* !CONFIG_FREERTOS_LEGACY_HOOKS */
 
 #define portSUPPRESS_TICKS_AND_SLEEP(idleTime) vApplicationSleep(idleTime)
 
