@@ -1,7 +1,7 @@
 ## Introduction
 This test uses [american fuzzy lop](http://lcamtuf.coredump.cx/afl/) to mangle real mdns packets and look for exceptions caused by the parser.
 
-A few actual packets are collected and exported as bins in the ```in``` folder, which is then passed as input to AFL when testing. The setup procedure for the test includes all possible services and scenarios that could be used with the given input packets.The output of the parser before fuzzing can be found in [input_packets.txt](input_packets.txt)
+A few actual packets are collected and exported as bins in the `in` folder, which is then passed as input to AFL when testing. The setup procedure for the test includes all possible services and scenarios that could be used with the given input packets.The output of the parser before fuzzing can be found in [input_packets.txt](input_packets.txt)
 
 ## Building and running the tests using AFL
 To build and run the tests using AFL(afl-clang-fast) instrumentation
@@ -14,6 +14,7 @@ make fuzz
 (Please note you have to install AFL instrumentation first, check `Installing AFL` section)
 
 ## Building the tests using GCC INSTR(off)
+
 To build the tests without AFL instrumentations and instead of that use GCC compiler(In this case it will only check for compilation issues and will not run AFL tests).
 
 ```bash
@@ -21,8 +22,10 @@ cd $IDF_PATH/components/mdns/test_afl_host
 make INSTR=off
 ```
 
+Note, that this setup is useful if we want to reproduce issues reported by fuzzer tests executed in the CI, or to simulate how the packet parser treats the input packets on the host machine.
+
 ## Installing AFL
-To run the test yourself, you need to dounload the [latest afl archive](http://lcamtuf.coredump.cx/afl/releases/afl-latest.tgz) and extract it to a folder on your computer.
+To run the test yourself, you need to download the [latest afl archive](http://lcamtuf.coredump.cx/afl/releases/afl-latest.tgz) and extract it to a folder on your computer.
 
 The rest of the document will refer to that folder as ```PATH_TO_AFL```.
 

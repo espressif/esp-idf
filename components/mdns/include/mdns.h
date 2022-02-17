@@ -11,7 +11,6 @@ extern "C" {
 #endif
 
 #include <esp_netif.h>
-#include "esp_event.h"
 
 #define MDNS_TYPE_A                 0x0001
 #define MDNS_TYPE_PTR               0x000C
@@ -716,18 +715,6 @@ esp_err_t mdns_query_a(const char * host_name, uint32_t timeout, esp_ip4_addr_t 
  */
 esp_err_t mdns_query_aaaa(const char * host_name, uint32_t timeout, esp_ip6_addr_t * addr);
 #endif
-
-/**
- * @brief   System event handler
- *          This method controls the service state on all active interfaces and applications are required
- *          to call it from the system event handler for normal operation of mDNS service.
- *
- * Please note that hostname must not contain domain name, as mDNS uses '.local' domain.
- *
- * @param  ctx          The system event context
- * @param  event        The system event
- */
-esp_err_t mdns_handle_system_event(void *ctx, system_event_t *event) __attribute__((deprecated));
 
 #ifdef __cplusplus
 }

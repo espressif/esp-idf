@@ -4,16 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "mdns.h"
-#include "mdns_private.h"
-#include "mdns_networking.h"
-#include "esp_log.h"
+#include <string.h>
+#include <sys/param.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
-#include <string.h>
-#include <sys/param.h>
+#include "esp_log.h"
+#include "esp_event.h"
+#include "mdns.h"
+#include "mdns_private.h"
+#include "mdns_networking.h"
 
 #ifdef MDNS_ENABLE_DEBUG
 void mdns_debug_packet(const uint8_t * data, size_t len);
@@ -4874,12 +4875,6 @@ static esp_err_t _mdns_service_task_stop(void)
 /*
  * Public Methods
  * */
-
-esp_err_t mdns_handle_system_event(void *ctx, system_event_t *event)
-{
-    /* no-op, kept for compatibility */
-    return ESP_OK;
-}
 
 static void event_handler(void* arg, esp_event_base_t event_base,
                      int32_t event_id, void* event_data)

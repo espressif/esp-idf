@@ -8,6 +8,9 @@
 
 // Skip these include files
 #define ESP_MDNS_NETWORKING_H_
+#define INC_FREERTOS_H
+#define QUEUE_H
+#define SEMAPHORE_H
 #define _TCPIP_ADAPTER_H_
 #define _ESP_TASK_H_
 
