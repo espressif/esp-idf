@@ -3,7 +3,6 @@ components/app_update/otatool.py
 components/efuse/efuse_table_gen.py
 components/efuse/test_efuse_host/efuse_tests.py
 components/esp_wifi/test_md5/test_md5.sh
-components/espcoredump/espcoredump.py
 components/espcoredump/test/test_espcoredump.py
 components/espcoredump/test/test_espcoredump.sh
 components/espcoredump/test_apps/build_espcoredump.sh

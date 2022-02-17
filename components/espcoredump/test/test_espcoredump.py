@@ -1,36 +1,20 @@
 #!/usr/bin/env python
 #
-# Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 
 import os
-import sys
 import unittest
 
 try:
-    from corefile.elf import ESPCoreDumpElfFile
-    from corefile.loader import ESPCoreDumpFileLoader, ESPCoreDumpLoaderError
+    from esp_coredump.corefile import ESPCoreDumpLoaderError
+    from esp_coredump.corefile.elf import ESPCoreDumpElfFile
+    from esp_coredump.corefile.loader import ESPCoreDumpFileLoader
 except ImportError:
-    idf_path = os.getenv('IDF_PATH')
-    if idf_path:
-        sys.path.insert(0, os.path.join(idf_path, 'components', 'espcoredump'))
-    else:
-        sys.path.insert(0, '..')
-    from corefile.elf import ESPCoreDumpElfFile
-    from corefile.loader import ESPCoreDumpFileLoader, ESPCoreDumpLoaderError
+    raise ModuleNotFoundError('No module named "esp_coredump" please install esp_coredump by running '
+                              '"python -m pip install esp-coredump"')
 
-SUPPORTED_TARGET = ['esp32', 'esp32s2', 'esp32c3']
+SUPPORTED_TARGET = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3']
 
 
 class TestESPCoreDumpElfFile(unittest.TestCase):

@@ -8,15 +8,12 @@ cryptography
 pyparsing
 pyelftools
 idf-component-manager
+esp-coredump
 
 # esptool dependencies (see components/esptool_py/esptool/setup.py)
 reedsolo
 bitstring
 ecdsa
-
-# espcoredump dependencies
-construct
-pygdbmi
 
 # kconfig and menuconfig dependencies
 kconfiglib

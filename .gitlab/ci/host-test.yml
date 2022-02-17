@@ -185,6 +185,7 @@ test_idf_monitor:
       - tools/test_idf_monitor/outputs/*
     expire_in: 1 week
   script:
+    - eval $($IDF_PATH/tools/idf_tools.py export)
     - cd ${IDF_PATH}/tools/test_idf_monitor
     - ./run_test_idf_monitor.py
 
@@ -276,6 +277,7 @@ test_espcoredump:
     # install CMake version specified in tools.json
     SETUP_TOOLS_LIST: "all"
   script:
+    - eval $($IDF_PATH/tools/idf_tools.py export)
     - retry_failed git clone ${IDF_COREDUMP_ELF_REPO} -b $IDF_COREDUMP_ELF_TAG
     - cd ${IDF_PATH}/components/espcoredump/test/
     - ./test_espcoredump.sh ${CI_PROJECT_DIR}/idf-coredump-elf
