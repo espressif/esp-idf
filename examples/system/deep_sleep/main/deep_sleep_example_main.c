@@ -24,6 +24,10 @@
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/ulp.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/ulp.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/ulp.h"
 #endif
 
 #if SOC_TOUCH_SENSOR_NUM > 0

@@ -61,7 +61,13 @@ esp_err_t ulp_run(uint32_t entry_point)
     SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_SLEEP_FOLW_8M);
     // enable ULP timer
     SET_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
-#elif defined(CONFIG_IDF_TARGET_ESP32S2) || defined(CONFIG_IDF_TARGET_ESP32S3)
+#else
+
+    /* Reset COCPU when power on. */
+    SET_PERI_REG_MASK(RTC_CNTL_ULP_CP_CTRL_REG, RTC_CNTL_ULP_CP_RESET);
+    esp_rom_delay_us(20);
+    CLEAR_PERI_REG_MASK(RTC_CNTL_ULP_CP_CTRL_REG, RTC_CNTL_ULP_CP_RESET);
+
     // disable ULP timer
     CLEAR_PERI_REG_MASK(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
     // wait for at least 1 RTC_SLOW_CLK cycle
@@ -73,8 +79,10 @@ esp_err_t ulp_run(uint32_t entry_point)
     SET_PERI_REG_MASK(RTC_CNTL_ULP_CP_CTRL_REG ,RTC_CNTL_ULP_CP_CLK_FO);
     // ULP FSM sends the DONE signal.
     CLEAR_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_DONE_FORCE);
-    /* Set the number of cycles of ULP_TIMER sleep, the wait time required to start ULP */
-    REG_SET_FIELD(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_TIMER_SLP_CYCLE, 100);
+#if CONFIG_IDF_TARGET_ESP32S3
+    /* Set the CLKGATE_EN signal on esp32s3 */
+    SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_CLKGATE_EN);
+#endif
     /* Clear interrupt COCPU status */
     REG_WRITE(RTC_CNTL_INT_CLR_REG, RTC_CNTL_COCPU_INT_CLR | RTC_CNTL_COCPU_TRAP_INT_CLR | RTC_CNTL_ULP_CP_INT_CLR);
     // 1: start with timer. wait ULP_TIMER cnt timer.
@@ -168,4 +176,22 @@ esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us)
     REG_SET_FIELD(RTC_CNTL_ULP_CP_TIMER_1_REG, RTC_CNTL_ULP_CP_TIMER_SLP_CYCLE, ((uint32_t)period_cycles));
 #endif
     return ESP_OK;
+}
+
+void ulp_timer_stop(void)
+{
+#if CONFIG_IDF_TARGET_ESP32
+    CLEAR_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
+#else
+    CLEAR_PERI_REG_MASK(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
+#endif
+}
+
+void ulp_timer_resume(void)
+{
+#if CONFIG_IDF_TARGET_ESP32
+    SET_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
+#else
+    SET_PERI_REG_MASK(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
+#endif
 }
