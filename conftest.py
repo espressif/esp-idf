@@ -152,10 +152,15 @@ def pytest_collection_modifyitems(config: Config, items: List[Function]) -> None
     if not target:
         return
 
+    # sort by file path and callspec.config
+    # implement like this since this is a limitation of pytest, couldn't get fixture values while collecting
+    # https://github.com/pytest-dev/pytest/discussions/9689
     def _get_param_config(_item: Function) -> str:
         if hasattr(_item, 'callspec'):
             return _item.callspec.params.get('config', DEFAULT_SDKCONFIG)  # type: ignore
         return DEFAULT_SDKCONFIG
+
+    items.sort(key=lambda x: (os.path.dirname(x.path), _get_param_config(x)))
 
     # add markers for special markers
     for item in items:
