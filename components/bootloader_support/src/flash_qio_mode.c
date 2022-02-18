@@ -88,6 +88,7 @@ const static qio_info_t chip_data[] = {
     { "WinBond",     0xEF,   0x4000, 0xFF00,    read_status_16b_rdsr_rdsr2, write_status_16b_wrsr,      9 },
     { "GD",          0xC8,   0x6000, 0xFF00,    read_status_16b_rdsr_rdsr2, write_status_16b_wrsr,      9 },
     { "XM25QU64A",   0x20,   0x3817, 0xFFFF,    read_status_8b_xmc25qu64a,  write_status_8b_xmc25qu64a, 6 },
+    { "TH",          0xcd,   0x6000, 0xFF00,    read_status_16b_rdsr_rdsr2, write_status_16b_wrsr,      9 },
 
     /* Final entry is default entry, if no other IDs have matched.
 
