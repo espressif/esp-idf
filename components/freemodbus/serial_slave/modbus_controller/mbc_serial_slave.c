@@ -29,6 +29,7 @@
 
 // Shared pointer to interface structure
 static mb_slave_interface_t* mbs_interface_ptr = NULL;
+static const char *TAG = "MB_CONTROLLER_SLAVE";
 
 // Modbus task function
 static void modbus_slave_task(void *pvParameters)
