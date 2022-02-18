@@ -4,7 +4,7 @@ High-Level Interrupts
 .. toctree::
    :maxdepth: 1
 
-The Xtensa architecture has support for 32 interrupts, divided over 8 levels, plus an assortment of exceptions. On the {IDF_TARGET_NAME}, the interrupt mux allows most interrupt sources to be routed to these interrupts using the :doc:`interrupt allocator <../api-reference/system/intr_alloc>`. Normally, interrupts will be written in C, but ESP-IDF allows high-level interrupts to be written in assembly as well, allowing for very low interrupt latencies.
+The Xtensa architecture has support for 32 interrupts, divided over 7 levels (levels 1 to 7, with 7 being an NMI), plus an assortment of exceptions. On the {IDF_TARGET_NAME}, the interrupt mux allows most interrupt sources to be routed to these interrupts using the :doc:`interrupt allocator <../api-reference/system/intr_alloc>`. Normally, interrupts will be written in C, but ESP-IDF allows high-level interrupts to be written in assembly as well, resulting in very low interrupt latencies.
 
 Interrupt Levels
 ----------------
@@ -60,37 +60,35 @@ For a real-life example, see the :component_file:`esp_system/port/soc/{IDF_TARGE
 Notes
 -----
 
- - Do not call C code from a high-level interrupt; because these interrupts still run in critical sections, this can cause crashes.
-   (The panic handler interrupt does call normal C code, but this is OK because there is no intention of returning to the normal code
-   flow afterwards.)
+ - Do not call C code from a high-level interrupt; as these interrupts are run from a critical section, this can cause the target to crash.
+   Note that although the panic handler interrupt does call normal C code, this exception is allowed due to the fact that this handler never returns (i.e., the application will not continue to run after the panic handler).
+   so breaking C code execution flow is not a problem.
 
    .. only:: esp32
 
-       And if :ref:`CONFIG_BTDM_CTRL_HLI` is enabled, it does call normal C code in high-level interrupt, but this is OK becase we add some protection for it.
+       When :ref:`CONFIG_BTDM_CTRL_HLI` is enabled, C code is also called from a high-level interrupt, this is possible thanks to some additional protection added to it.
 
- - Make sure your assembly code gets linked in. If the interrupt handler symbol is the only symbol the rest of the code uses from this
-   file, the linker will take the default ISR instead and not link the assembly file into the final project. To get around this, in the
-   assembly file, define a symbol, like this::
+ - Make sure your assembly code gets linked in. Indeed, as the free-to-use symbols are declared as weak, the linker may discard the file containing the symbol. This will 
+   happen if the only symbol defined, or used, from the user file is the ``xt_*`` free-to-use symbol. To avoid this, in the assembly file containing the ``xt_*`` symbol,
+   define another symbol, like::
 
             .global ld_include_my_isr_file
        ld_include_my_isr_file:
 
+    Here it is called ``ld_include_my_isr_file`` but can have any name, as long as it is not defined anywhere else in the project.
 
-The symbol is called ``ld_include_my_isr_file`` here but can have any arbitrary name not defined anywhere else.
+    Then, in the component ``CMakeLists.txt``, add this name as an unresolved symbol to the ld command line arguments::
 
-Then, in the component CMakeLists.txt, add this file as an unresolved symbol to the ld command line arguments::
+        target_link_libraries(${COMPONENT_TARGET} "-u ld_include_my_isr_file")
 
-   target_link_libraries(${COMPONENT_TARGET} "-u ld_include_my_isr_file")
+    This should cause the linker to always include the file defining ``ld_include_my_isr_file``, causing the ISR to always be linked in.
+
+This should cause the linker to always include a file defining ``ld_include_my_isr_file``, causing the ISR to always be linked in.
+ - High-level interrupts can be routed and handled using :cpp:func:`esp_intr_alloc` and associated functions. The handler and handler arguments
+   to :cpp:func:`esp_intr_alloc` must be NULL, however.
+
+ - In theory, medium priority interrupts could also be handled in this way. ESP-IDF does not support this yet.
 
 If using the legacy Make build system, add the following to component.mk, instead::
 
    COMPONENT_ADD_LDFLAGS := -u ld_include_my_isr_file
-
-
-This should cause the linker to always include a file defining ``ld_include_my_isr_file``, causing the ISR to always be linked in.
-
- - High-level interrupts can be routed and handled using esp_intr_alloc and associated functions. The handler and handler arguments
-   to esp_intr_alloc must be NULL, however.
-
- - In theory, medium priority interrupts could also be handled in this way. For now, ESP-IDF does not support this.
-
