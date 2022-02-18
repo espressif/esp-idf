@@ -29,6 +29,7 @@ from pytest_embedded.utils import find_by_suffix
 
 SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3']
 PREVIEW_TARGETS = ['linux', 'esp32h2', 'esp32c2']
+DEFAULT_SDKCONFIG = 'default'
 
 
 ##################
@@ -57,7 +58,7 @@ def item_marker_names(item: Item) -> List[str]:
 ############
 @pytest.fixture
 def config(request: FixtureRequest) -> str:
-    return getattr(request, 'param', None) or request.config.getoption('config', 'default')  # type: ignore
+    return getattr(request, 'param', None) or DEFAULT_SDKCONFIG
 
 
 @pytest.fixture
@@ -67,7 +68,9 @@ def test_case_name(request: FixtureRequest, target: str, config: str) -> str:
 
 @pytest.fixture
 @parse_configuration
-def build_dir(request: FixtureRequest, app_path: str, target: Optional[str], config: Optional[str]) -> str:
+def build_dir(
+    request: FixtureRequest, app_path: str, target: Optional[str], config: Optional[str]
+) -> str:
     """
     Check local build dir with the following priority:
 
@@ -85,8 +88,10 @@ def build_dir(request: FixtureRequest, app_path: str, target: Optional[str], con
     Returns:
         valid build directory
     """
-    param_or_cli: str = getattr(request, 'param', None) or request.config.option.__dict__.get('build_dir')
-    if param_or_cli is not None:  # respect the parametrize and the cli
+    param_or_cli: str = getattr(
+        request, 'param', None
+    ) or request.config.option.__dict__.get('build_dir')
+    if param_or_cli is not None:  # respect the param and the cli
         return param_or_cli
 
     check_dirs = []
@@ -104,16 +109,21 @@ def build_dir(request: FixtureRequest, app_path: str, target: Optional[str], con
             logging.info(f'find valid binary path: {binary_path}')
             return check_dir
 
-        logging.warning(f'checking binary path: {binary_path}... missing... try another place')
+        logging.warning(
+            f'checking binary path: {binary_path}... missing... try another place'
+        )
 
     recommend_place = check_dirs[0]
     logging.error(
-        f'no build dir valid. Please build the binary via "idf.py -B {recommend_place} build" and run pytest again')
+        f'no build dir valid. Please build the binary via "idf.py -B {recommend_place} build" and run pytest again'
+    )
     sys.exit(1)
 
 
 @pytest.fixture(autouse=True)
-def junit_properties(test_case_name: str, record_xml_attribute: Callable[[str, object], None]) -> None:
+def junit_properties(
+    test_case_name: str, record_xml_attribute: Callable[[str, object], None]
+) -> None:
     """
     This fixture is autoused and will modify the junit report test case name to <target>.<config>.<case_name>
     """
@@ -123,11 +133,24 @@ def junit_properties(test_case_name: str, record_xml_attribute: Callable[[str, o
 ##################
 # Hook functions #
 ##################
+def pytest_addoption(parser: pytest.Parser) -> None:
+    base_group = parser.getgroup('idf')
+    base_group.addoption(
+        '--sdkconfig',
+        help='sdkconfig postfix, like sdkconfig.ci.<config>. (Default: None, which would build all found apps)',
+    )
+
+
 @pytest.hookimpl(tryfirst=True)
-def pytest_collection_modifyitems(config: Config, items: List[Item]) -> None:
+def pytest_collection_modifyitems(config: Config, items: List[Function]) -> None:
     target = config.getoption('target', None)  # use the `build` dir
     if not target:
         return
+
+    def _get_param_config(_item: Function) -> str:
+        if hasattr(_item, 'callspec'):
+            return _item.callspec.params.get('config', DEFAULT_SDKCONFIG)  # type: ignore
+        return DEFAULT_SDKCONFIG
 
     # add markers for special markers
     for item in items:
@@ -143,6 +166,14 @@ def pytest_collection_modifyitems(config: Config, items: List[Item]) -> None:
 
     # filter all the test cases with "--target"
     items[:] = [item for item in items if target in item_marker_names(item)]
+
+    # filter all the test cases with cli option "config"
+    if config.getoption('sdkconfig'):
+        items[:] = [
+            item
+            for item in items
+            if _get_param_config(item) == config.getoption('sdkconfig')
+        ]
 
 
 @pytest.hookimpl(trylast=True)
@@ -166,5 +197,7 @@ def pytest_runtest_teardown(item: Function) -> None:
         for case in testcases:
             case.attrib['name'] = format_case_id(target, config, case.attrib['name'])
             if 'file' in case.attrib:
-                case.attrib['file'] = case.attrib['file'].replace('/IDF/', '')  # our unity test framework
+                case.attrib['file'] = case.attrib['file'].replace(
+                    '/IDF/', ''
+                )  # our unity test framework
         xml.write(junit)
