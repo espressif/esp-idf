@@ -754,7 +754,7 @@ static inline void i2s_ll_rx_set_pdm_dsr(i2s_dev_t *hw, i2s_pdm_dsr_t dsr)
  */
 static inline void i2s_ll_rx_get_pdm_dsr(i2s_dev_t *hw, i2s_pdm_dsr_t *dsr)
 {
-    *dsr = hw->pdm_conf.rx_sinc_dsr_16_en;
+    *dsr = (i2s_pdm_dsr_t)hw->pdm_conf.rx_sinc_dsr_16_en;
 }
 
 /**

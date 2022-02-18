@@ -6,6 +6,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "esp_err.h"
 #include "soc/soc_caps.h"
 #include "hal/dma_types.h"
@@ -382,3 +386,7 @@ uint32_t adc_hal_self_calibration(adc_ll_num_t adc_n, adc_channel_t channel, adc
  * @prarm adc_n ADC unit.
  */
 #define adc_hal_rtc_output_invert(adc_n, inv_en) adc_ll_rtc_output_invert(adc_n, inv_en)
+
+#ifdef __cplusplus
+}
+#endif
