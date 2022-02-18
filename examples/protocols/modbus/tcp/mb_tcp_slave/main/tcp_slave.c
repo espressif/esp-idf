@@ -8,7 +8,6 @@
 #include "esp_err.h"
 #include "sdkconfig.h"
 #include "esp_log.h"
-
 #include "esp_system.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
@@ -47,13 +46,7 @@
                                                 | MB_EVENT_COILS_WR)
 #define MB_READ_WRITE_MASK                  (MB_READ_MASK | MB_WRITE_MASK)
 
-#define SLAVE_TAG "SLAVE_TEST"
-
-#define SLAVE_CHECK(a, ret_val, str, ...) \
-    if (!(a)) { \
-        ESP_LOGE(SLAVE_TAG, "%s(%u): " str, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
-        return (ret_val); \
-    }
+static const char *TAG = "SLAVE_TEST";
 
 static portMUX_TYPE param_lock = portMUX_INITIALIZER_UNLOCKED;
 
@@ -167,8 +160,8 @@ static void slave_operation_func(void *arg)
 {
     mb_param_info_t reg_info; // keeps the Modbus registers access information
 
-    ESP_LOGI(SLAVE_TAG, "Modbus slave stack initialized.");
-    ESP_LOGI(SLAVE_TAG, "Start modbus test...");
+    ESP_LOGI(TAG, "Modbus slave stack initialized.");
+    ESP_LOGI(TAG, "Start modbus test...");
     // The cycle below will be terminated when parameter holding_data0
     // incremented each access cycle reaches the CHAN_DATA_MAX_VAL value.
     for(;holding_reg_params.holding_data0 < MB_CHAN_DATA_MAX_VAL;) {
@@ -179,7 +172,7 @@ static void slave_operation_func(void *arg)
         if(event & (MB_EVENT_HOLDING_REG_WR | MB_EVENT_HOLDING_REG_RD)) {
             // Get parameter information from parameter queue
             ESP_ERROR_CHECK(mbc_slave_get_param_info(&reg_info, MB_PAR_INFO_GET_TOUT));
-            ESP_LOGI(SLAVE_TAG, "HOLDING %s (%u us), ADDR:%u, TYPE:%u, INST_ADDR:0x%.4x, SIZE:%u",
+            ESP_LOGI(TAG, "HOLDING %s (%u us), ADDR:%u, TYPE:%u, INST_ADDR:0x%.4x, SIZE:%u",
                     rw_str,
                     (uint32_t)reg_info.time_stamp,
                     (uint32_t)reg_info.mb_offset,
@@ -197,7 +190,7 @@ static void slave_operation_func(void *arg)
             }
         } else if (event & MB_EVENT_INPUT_REG_RD) {
             ESP_ERROR_CHECK(mbc_slave_get_param_info(&reg_info, MB_PAR_INFO_GET_TOUT));
-            ESP_LOGI(SLAVE_TAG, "INPUT READ (%u us), ADDR:%u, TYPE:%u, INST_ADDR:0x%.4x, SIZE:%u",
+            ESP_LOGI(TAG, "INPUT READ (%u us), ADDR:%u, TYPE:%u, INST_ADDR:0x%.4x, SIZE:%u",
                     (uint32_t)reg_info.time_stamp,
                     (uint32_t)reg_info.mb_offset,
                     (uint32_t)reg_info.type,
@@ -205,7 +198,7 @@ static void slave_operation_func(void *arg)
                     (uint32_t)reg_info.size);
         } else if (event & MB_EVENT_DISCRETE_RD) {
             ESP_ERROR_CHECK(mbc_slave_get_param_info(&reg_info, MB_PAR_INFO_GET_TOUT));
-            ESP_LOGI(SLAVE_TAG, "DISCRETE READ (%u us): ADDR:%u, TYPE:%u, INST_ADDR:0x%.4x, SIZE:%u",
+            ESP_LOGI(TAG, "DISCRETE READ (%u us): ADDR:%u, TYPE:%u, INST_ADDR:0x%.4x, SIZE:%u",
                                 (uint32_t)reg_info.time_stamp,
                                 (uint32_t)reg_info.mb_offset,
                                 (uint32_t)reg_info.type,
@@ -213,7 +206,7 @@ static void slave_operation_func(void *arg)
                                 (uint32_t)reg_info.size);
         } else if (event & (MB_EVENT_COILS_RD | MB_EVENT_COILS_WR)) {
             ESP_ERROR_CHECK(mbc_slave_get_param_info(&reg_info, MB_PAR_INFO_GET_TOUT));
-            ESP_LOGI(SLAVE_TAG, "COILS %s (%u us), ADDR:%u, TYPE:%u, INST_ADDR:0x%.4x, SIZE:%u",
+            ESP_LOGI(TAG, "COILS %s (%u us), ADDR:%u, TYPE:%u, INST_ADDR:0x%.4x, SIZE:%u",
                                 rw_str,
                                 (uint32_t)reg_info.time_stamp,
                                 (uint32_t)reg_info.mb_offset,
@@ -224,7 +217,7 @@ static void slave_operation_func(void *arg)
         }
     }
     // Destroy of Modbus controller on alarm
-    ESP_LOGI(SLAVE_TAG,"Modbus controller destroyed.");
+    ESP_LOGI(TAG,"Modbus controller destroyed.");
     vTaskDelay(100);
 }
 
@@ -235,15 +228,18 @@ static esp_err_t init_services(void)
       ESP_ERROR_CHECK(nvs_flash_erase());
       result = nvs_flash_init();
     }
-    SLAVE_CHECK((result == ESP_OK), ESP_ERR_INVALID_STATE,
+    MB_RETURN_ON_FALSE((result == ESP_OK), ESP_ERR_INVALID_STATE,
+                            TAG,
                             "nvs_flash_init fail, returns(0x%x).",
                             (uint32_t)result);
     result = esp_netif_init();
-    SLAVE_CHECK((result == ESP_OK), ESP_ERR_INVALID_STATE,
+    MB_RETURN_ON_FALSE((result == ESP_OK), ESP_ERR_INVALID_STATE,
+                            TAG,
                             "esp_netif_init fail, returns(0x%x).",
                             (uint32_t)result);
     result = esp_event_loop_create_default();
-    SLAVE_CHECK((result == ESP_OK), ESP_ERR_INVALID_STATE,
+    MB_RETURN_ON_FALSE((result == ESP_OK), ESP_ERR_INVALID_STATE,
+                            TAG,
                             "esp_event_loop_create_default fail, returns(0x%x).",
                             (uint32_t)result);
 #if CONFIG_MB_MDNS_IP_RESOLVER
@@ -254,12 +250,14 @@ static esp_err_t init_services(void)
     // Read "Establishing Wi-Fi or Ethernet Connection" section in
     // examples/protocols/README.md for more information about this function.
     result = example_connect();
-    SLAVE_CHECK((result == ESP_OK), ESP_ERR_INVALID_STATE,
+    MB_RETURN_ON_FALSE((result == ESP_OK), ESP_ERR_INVALID_STATE,
+                                TAG,
                                 "example_connect fail, returns(0x%x).",
                                 (uint32_t)result);
 #if CONFIG_EXAMPLE_CONNECT_WIFI
     result = esp_wifi_set_ps(WIFI_PS_NONE);
-    SLAVE_CHECK((result == ESP_OK), ESP_ERR_INVALID_STATE,
+    MB_RETURN_ON_FALSE((result == ESP_OK), ESP_ERR_INVALID_STATE,
+                                   TAG,
                                    "esp_wifi_set_ps fail, returns(0x%x).",
                                    (uint32_t)result);
 #endif
@@ -271,19 +269,23 @@ static esp_err_t destroy_services(void)
     esp_err_t err = ESP_OK;
 
     err = example_disconnect();
-    SLAVE_CHECK((err == ESP_OK), ESP_ERR_INVALID_STATE,
+    MB_RETURN_ON_FALSE((err == ESP_OK), ESP_ERR_INVALID_STATE,
+                                   TAG,
                                    "example_disconnect fail, returns(0x%x).",
                                    (uint32_t)err);
     err = esp_event_loop_delete_default();
-    SLAVE_CHECK((err == ESP_OK), ESP_ERR_INVALID_STATE,
+    MB_RETURN_ON_FALSE((err == ESP_OK), ESP_ERR_INVALID_STATE,
+                                       TAG,
                                        "esp_event_loop_delete_default fail, returns(0x%x).",
                                        (uint32_t)err);
     err = esp_netif_deinit();
-    SLAVE_CHECK((err == ESP_OK || err == ESP_ERR_NOT_SUPPORTED), ESP_ERR_INVALID_STATE,
+    MB_RETURN_ON_FALSE((err == ESP_OK || err == ESP_ERR_NOT_SUPPORTED), ESP_ERR_INVALID_STATE,
+                                        TAG,
                                         "esp_netif_deinit fail, returns(0x%x).",
                                         (uint32_t)err);
     err = nvs_flash_deinit();
-    SLAVE_CHECK((err == ESP_OK), ESP_ERR_INVALID_STATE,
+    MB_RETURN_ON_FALSE((err == ESP_OK), ESP_ERR_INVALID_STATE,
+                                TAG,
                                 "nvs_flash_deinit fail, returns(0x%x).",
                                 (uint32_t)err);
 #if CONFIG_MB_MDNS_IP_RESOLVER
@@ -301,7 +303,8 @@ static esp_err_t slave_init(mb_communication_info_t* comm_info)
 
     // Initialization of Modbus controller
     esp_err_t err = mbc_slave_init_tcp(&slave_handler);
-    SLAVE_CHECK((err == ESP_OK && slave_handler != NULL), ESP_ERR_INVALID_STATE,
+    MB_RETURN_ON_FALSE((err == ESP_OK && slave_handler != NULL), ESP_ERR_INVALID_STATE,
+                                TAG,
                                 "mb controller initialization fail.");
 
     comm_info->ip_addr = NULL; // Bind to any address
@@ -309,7 +312,8 @@ static esp_err_t slave_init(mb_communication_info_t* comm_info)
 
     // Setup communication parameters and start stack
     err = mbc_slave_setup((void*)comm_info);
-    SLAVE_CHECK((err == ESP_OK), ESP_ERR_INVALID_STATE,
+    MB_RETURN_ON_FALSE((err == ESP_OK), ESP_ERR_INVALID_STATE,
+                                        TAG,
                                         "mbc_slave_setup fail, returns(0x%x).",
                                         (uint32_t)err);
 
@@ -324,7 +328,8 @@ static esp_err_t slave_init(mb_communication_info_t* comm_info)
     reg_area.address = (void*)&holding_reg_params.holding_data0; // Set pointer to storage instance
     reg_area.size = sizeof(float) << 2; // Set the size of register storage instance
     err = mbc_slave_set_descriptor(reg_area);
-    SLAVE_CHECK((err == ESP_OK), ESP_ERR_INVALID_STATE,
+    MB_RETURN_ON_FALSE((err == ESP_OK), ESP_ERR_INVALID_STATE,
+                                    TAG,
                                     "mbc_slave_set_descriptor fail, returns(0x%x).",
                                     (uint32_t)err);
 
@@ -333,7 +338,8 @@ static esp_err_t slave_init(mb_communication_info_t* comm_info)
     reg_area.address = (void*)&holding_reg_params.holding_data4; // Set pointer to storage instance
     reg_area.size = sizeof(float) << 2; // Set the size of register storage instance
     err = mbc_slave_set_descriptor(reg_area);
-    SLAVE_CHECK((err == ESP_OK), ESP_ERR_INVALID_STATE,
+    MB_RETURN_ON_FALSE((err == ESP_OK), ESP_ERR_INVALID_STATE,
+                                    TAG,
                                     "mbc_slave_set_descriptor fail, returns(0x%x).",
                                     (uint32_t)err);
 
@@ -343,7 +349,8 @@ static esp_err_t slave_init(mb_communication_info_t* comm_info)
     reg_area.address = (void*)&input_reg_params.input_data0;
     reg_area.size = sizeof(float) << 2;
     err = mbc_slave_set_descriptor(reg_area);
-    SLAVE_CHECK((err == ESP_OK), ESP_ERR_INVALID_STATE,
+    MB_RETURN_ON_FALSE((err == ESP_OK), ESP_ERR_INVALID_STATE,
+                                        TAG,
                                         "mbc_slave_set_descriptor fail, returns(0x%x).",
                                         (uint32_t)err);
     reg_area.type = MB_PARAM_INPUT;
@@ -351,7 +358,8 @@ static esp_err_t slave_init(mb_communication_info_t* comm_info)
     reg_area.address = (void*)&input_reg_params.input_data4;
     reg_area.size = sizeof(float) << 2;
     err = mbc_slave_set_descriptor(reg_area);
-    SLAVE_CHECK((err == ESP_OK), ESP_ERR_INVALID_STATE,
+    MB_RETURN_ON_FALSE((err == ESP_OK), ESP_ERR_INVALID_STATE,
+                                        TAG,
                                         "mbc_slave_set_descriptor fail, returns(0x%x).",
                                         (uint32_t)err);
 
@@ -361,7 +369,8 @@ static esp_err_t slave_init(mb_communication_info_t* comm_info)
     reg_area.address = (void*)&coil_reg_params;
     reg_area.size = sizeof(coil_reg_params);
     err = mbc_slave_set_descriptor(reg_area);
-    SLAVE_CHECK((err == ESP_OK), ESP_ERR_INVALID_STATE,
+    MB_RETURN_ON_FALSE((err == ESP_OK), ESP_ERR_INVALID_STATE,
+                                    TAG,
                                     "mbc_slave_set_descriptor fail, returns(0x%x).",
                                     (uint32_t)err);
 
@@ -371,7 +380,8 @@ static esp_err_t slave_init(mb_communication_info_t* comm_info)
     reg_area.address = (void*)&discrete_reg_params;
     reg_area.size = sizeof(discrete_reg_params);
     err = mbc_slave_set_descriptor(reg_area);
-    SLAVE_CHECK((err == ESP_OK), ESP_ERR_INVALID_STATE,
+    MB_RETURN_ON_FALSE((err == ESP_OK), ESP_ERR_INVALID_STATE,
+                                    TAG,
                                     "mbc_slave_set_descriptor fail, returns(0x%x).",
                                     (uint32_t)err);
 
@@ -380,7 +390,8 @@ static esp_err_t slave_init(mb_communication_info_t* comm_info)
 
     // Starts of modbus controller and stack
     err = mbc_slave_start();
-    SLAVE_CHECK((err == ESP_OK), ESP_ERR_INVALID_STATE,
+    MB_RETURN_ON_FALSE((err == ESP_OK), ESP_ERR_INVALID_STATE,
+                                        TAG,
                                         "mbc_slave_start fail, returns(0x%x).",
                                         (uint32_t)err);
     vTaskDelay(5);
@@ -390,7 +401,8 @@ static esp_err_t slave_init(mb_communication_info_t* comm_info)
 static esp_err_t slave_destroy(void)
 {
     esp_err_t err = mbc_slave_destroy();
-    SLAVE_CHECK((err == ESP_OK), ESP_ERR_INVALID_STATE,
+    MB_RETURN_ON_FALSE((err == ESP_OK), ESP_ERR_INVALID_STATE,
+                                TAG,
                                 "mbc_slave_destroy fail, returns(0x%x).",
                                 (uint32_t)err);
     return err;
@@ -405,7 +417,7 @@ void app_main(void)
     ESP_ERROR_CHECK(init_services());
 
     // Set UART log level
-    esp_log_level_set(SLAVE_TAG, ESP_LOG_INFO);
+    esp_log_level_set(TAG, ESP_LOG_INFO);
 
     mb_communication_info_t comm_info = { 0 };
 

@@ -12,9 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #ifndef _MB_CONTROLLER_MASTER_H
 #define _MB_CONTROLLER_MASTER_H
 
+#include <sys/queue.h>              // for list
 #include "freertos/FreeRTOS.h"      // for task creation and queue access
 #include "freertos/task.h"          // for task api access
 #include "freertos/event_groups.h"  // for event groups
@@ -27,18 +29,6 @@
 #include "esp_modbus_callbacks.h"
 
 /* ----------------------- Defines ------------------------------------------*/
-
-#define MB_MASTER_TAG "MB_CONTROLLER_MASTER"
-
-#define MB_MASTER_CHECK(a, ret_val, str, ...) \
-    if (!(a)) { \
-        ESP_LOGE(MB_MASTER_TAG, "%s(%u): " str, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
-        return (ret_val); \
-    }
-
-#define MB_MASTER_ASSERT(con) do { \
-        if (!(con)) { ESP_LOGE(MB_MASTER_TAG, "assert errno:%d, errno_str: !(%s)", errno, strerror(errno)); assert(0 && #con); } \
-    } while (0)
 
 /**
  * @brief Request mode for parameter to use in data dictionary
@@ -59,6 +49,19 @@ typedef struct {
     uart_parity_t parity;                   /*!< Modbus UART parity settings */
 } mb_master_comm_info_t;
 
+#if MB_MASTER_TCP_ENABLED
+/**
+ * @brief Modbus slave addr list item for the master
+ */
+typedef struct mb_slave_addr_entry_s{
+    uint16_t index;                             /*!< Index of the slave address */
+    const char* ip_address;                     /*!< IP address string of the slave */
+    uint8_t slave_addr;                         /*!< Short slave address */
+    void* p_data;                               /*!< pointer to data structure */
+    LIST_ENTRY(mb_slave_addr_entry_s) entries;  /*!< The slave address entry */
+} mb_slave_addr_entry_t;
+#endif
+
 /**
  * @brief Modbus controller handler structure
  */
@@ -71,6 +74,10 @@ typedef struct {
     EventGroupHandle_t mbm_event_group;                 /*!< Modbus controller event group */
     const mb_parameter_descriptor_t* mbm_param_descriptor_table; /*!< Modbus controller parameter description table */
     size_t mbm_param_descriptor_size;                   /*!< Modbus controller parameter description table size*/
+#if MB_MASTER_TCP_ENABLED
+    LIST_HEAD(mbm_slave_addr_info_, mb_slave_addr_entry_s) mbm_slave_list; /*!< Slave address information list */
+    uint16_t mbm_slave_list_count;
+#endif
 } mb_master_options_t;
 
 typedef esp_err_t (*iface_get_cid_info)(uint16_t, const mb_parameter_descriptor_t**); /*!< Interface get_cid_info method */
