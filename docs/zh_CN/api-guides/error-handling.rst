@@ -16,7 +16,7 @@
 
 -  不可恢复（严重）的错误：
 
-   -  断言失败（使用 ``assert`` 宏或者其它类似方法）或者直接调用 ``abort()`` 函数造成的错误
+   -  断言失败（使用 ``assert`` 宏或者其它类似方法，可参考 :ref:`assertions`）或者直接调用 ``abort()`` 函数造成的错误
    -  CPU 异常：访问受保护的内存区域、非法指令等
    -  系统级检查：看门狗超时、缓存访问错误、堆栈溢出、堆栈粉碎、堆栈损坏等
 
@@ -32,6 +32,7 @@ ESP-IDF 中大多数函数会返回 :cpp:type:`esp_err_t` 类型的错误码， 
 在 ESP-IDF 中，许多头文件都会使用预处理器，定义可能出现的错误代码。这些错误代码通常均以 ``ESP_ERR_`` 前缀开头，一些常见错误（比如内存不足、超时、无效参数等）的错误代码则已经在 ``esp_err.h`` 文件中定义好了。此外，ESP-IDF 中的各种组件 (component) 也都可以针对具体情况，自行定义更多错误代码。
 
 完整错误代码列表，请见 :doc:`错误代码参考 <../api-reference/error-codes>` 中查看完整的错误列表。
+
 
 错误码到错误消息
 ----------------
@@ -49,9 +50,7 @@ ESP-IDF 中大多数函数会返回 :cpp:type:`esp_err_t` 类型的错误码， 
 
 宏 :cpp:func:`ESP_ERROR_CHECK` 的功能和 ``assert`` 类似，不同之处在于：这个宏会检查 :cpp:type:`esp_err_t` 的值，而非判断 ``bool`` 条件。如果传给 :cpp:func:`ESP_ERROR_CHECK` 的参数不等于 :c:macro:`ESP_OK` ，则会在控制台上打印错误消息，然后调用 ``abort()`` 函数。
 
-错误消息通常如下所示：
-
-.. code:: bash
+错误消息通常如下所示::
 
    ESP_ERROR_CHECK failed: esp_err_t 0x107 (ESP_ERR_TIMEOUT) at 0x400d1fdf
 
@@ -61,13 +60,14 @@ ESP-IDF 中大多数函数会返回 :cpp:type:`esp_err_t` 类型的错误码， 
 
    Backtrace: 0x40086e7c:0x3ffb4ff0 0x40087328:0x3ffb5010 0x400d1fdf:0x3ffb5030 0x400d0816:0x3ffb5050
 
+.. note:: 如果使用 :doc:`IDF 监视器 <tools/idf-monitor>`，则最后一行回溯结果中的地址将会被自动解析为相应的文件名和行号。
+
 -  第一行打印错误代码的十六进制表示，及该错误在源代码中的标识符。这个标识符取决于 :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP` 选项的设定。最后，第一行还会打印程序中该错误发生的具体位置。
 
 -  下面几行显示了程序中调用 :cpp:func:`ESP_ERROR_CHECK` 宏的具体位置，以及传递给该宏的参数。
 
 -  最后一行打印回溯结果。对于所有不可恢复错误，这里在应急处理程序中打印的内容都是一样的。更多有关回溯结果的详细信息，请参阅 :doc:`不可恢复错误 <fatal-errors>` 。
 
-.. note:: 如果使用 :doc:`IDF monitor <tools/idf-monitor>`, 则最后一行回溯结果中的地址将会被替换为相应的文件名和行号。
 
 .. _esp-error-check-without-abort-macro:
 
@@ -144,9 +144,7 @@ ESP-IDF 中大多数函数会返回 :cpp:type:`esp_err_t` 类型的错误码， 
 	- 尝试删除该驱动，然后重新进行“初始化”；
 	- 采用其他带外机制，修改导致错误发生的条件（例如，对一直没有响应的外设进行复位等）。
 
-   示例：
-
-   .. code:: c
+   示例::
 
       esp_err_t err;
       do {
@@ -159,9 +157,7 @@ ESP-IDF 中大多数函数会返回 :cpp:type:`esp_err_t` 类型的错误码， 
 
 2. 将错误传递回调用程序。在某些中间件组件中，采用此类处理模式代表函数必须以相同的错误码退出，这样才能确保所有分配的资源都能得到释放。
 
-   示例：
-
-   .. code:: c
+   示例::
 
       sdmmc_card_t* card = calloc(1, sizeof(sdmmc_card_t));
       if (card == NULL) {
@@ -179,11 +175,10 @@ ESP-IDF 中大多数函数会返回 :cpp:type:`esp_err_t` 类型的错误码， 
 3. 转为不可恢复错误，比如使用 ``ESP_ERROR_CHECK``。详情请见 `ESP_ERROR_CHECK 宏 <#esp-error-check-macro>`_ 章节。
 
    对于中间件组件而言，通常并不希望在发生错误时中止应用程序。不过，有时在应用程序级别，这种做法是可以接受的。
+
    在 ESP-IDF 的示例代码中，很多都会使用 ``ESP_ERROR_CHECK`` 来处理各种 API 引发的错误，虽然这不是应用程序的最佳做法，但可以让示例代码看起来更加简洁。
 
-   示例：
-
-   .. code:: c
+   示例::
 
       ESP_ERROR_CHECK(spi_bus_initialize(host, bus_config, dma_chan));
 
@@ -193,6 +188,8 @@ C++ 异常
 
 默认情况下，ESP-IDF 会禁用对 C++ 异常的支持，但是可以通过 :ref:`CONFIG_COMPILER_CXX_EXCEPTIONS` 选项启用。
 
-通常情况下，启用异常处理会让应用程序的二进制文件增加几 kB。此外，启用该功能时还应为异常事故池预留一定内存。当应用程序无法从堆中分配异常对象时，就可以使用这个池中的内存。该内存池的大小可以通过 :ref:`CONFIG_COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE` 来设定。
+通常情况下，启用异常处理会让应用程序的二进制文件增加几 KB。此外，启用该功能时还应为异常事故池预留一定内存。当应用程序无法从堆中分配异常对象时，就可以使用这个池中的内存。该内存池的大小可以通过 :ref:`CONFIG_COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE` 来设定。
 
 如果 C++ 程序抛出了异常，但是程序中并没有 ``catch`` 代码块来捕获该异常，那么程序的运行就会被 ``abort`` 函数中止，然后打印回溯信息。有关回溯的更多信息，请参阅 :doc:`不可恢复错误 <fatal-errors>` 。
+
+C++ 异常处理示例，请参考 :example:`cxx/exceptions`。

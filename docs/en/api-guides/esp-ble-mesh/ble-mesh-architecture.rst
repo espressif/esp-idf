@@ -52,6 +52,7 @@ ESP-BLE-MESH architecture includes five key parts:
   - Based on ESP-BLE-MESH protocol stack and ``Mesh Models``.
   - By calling API and handling Event, ``Applications`` interact with ``Mesh Networking`` and ``Mesh Provisioning`` in ESP-BLE-MESH protocol stack, as well as a series of Models provided by ``Mesh Models``.
 
+
 1.1 Mesh Protocol Stack
 -----------------------
 
