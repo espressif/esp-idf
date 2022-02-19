@@ -579,14 +579,14 @@ UT_046:
 
 UT_047:
   extends: .unit_test_s2_template
-  parallel: 5
+  parallel: 6
   tags:
     - ESP32S2_IDF
     - UT_T1_1
 
 UT_C3:
   extends: .unit_test_c3_template
-  parallel: 30
+  parallel: 31
   tags:
     - ESP32C3_IDF
     - UT_T1_1
