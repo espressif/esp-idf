@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "inttypes.h"
 #include "unity.h"
 #include "esp_attr.h"
