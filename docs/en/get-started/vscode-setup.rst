@@ -31,6 +31,6 @@ Supported Features
 Bugs & Feature Requests
 =======================
 
-If you face an issue with certain feature of VS Code or VS Code in general we recommend you ask your question in the `forum <http://esp32.com/viewforum.php?f=40>`_, or open a `GithHb Issue <https://github.com/espressif/vscode-esp-idf-extension/issues/new/choose>`_ for our dev teams to review.
+If you face an issue with certain feature of VS Code or VS Code in general we recommend you ask your question in the `forum <http://esp32.com/viewforum.php?f=40>`_, or open a `GitHub Issue <https://github.com/espressif/vscode-esp-idf-extension/issues/new/choose>`_ for our dev teams to review.
 
 We also welcome new feature requests. Most of the features we have today are a result of people asking for them to be implemented. To improve certain aspects of the extension, `raise your feature request on GitHub <http://github.com/espressif/vscode-esp-idf-extension/issues/new/choose>`_.
