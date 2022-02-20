@@ -1346,14 +1346,6 @@ components/openssl/test/test_openssl.c
 components/openthread/include/esp_openthread.h
 components/openthread/include/esp_openthread_lock.h
 components/openthread/include/esp_openthread_netif_glue.h
-components/partition_table/check_sizes.py
-components/partition_table/gen_empty_partition.py
-components/partition_table/gen_esp32part.py
-components/partition_table/parttool.py
-components/partition_table/test/test_partition.c
-components/partition_table/test_gen_esp32part_host/check_sizes_test.py
-components/partition_table/test_gen_esp32part_host/gen_esp32part_tests.py
-components/partition_table/test_gen_esp32part_host/test_utils.py
 components/protocomm/include/common/protocomm.h
 components/protocomm/include/security/protocomm_security.h
 components/protocomm/include/security/protocomm_security0.h
