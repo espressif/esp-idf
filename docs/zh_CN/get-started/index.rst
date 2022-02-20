@@ -166,3 +166,5 @@ IDE
 
    Windows <windows-setup>
    Manual <linux-macos-setup>
+
+.. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/

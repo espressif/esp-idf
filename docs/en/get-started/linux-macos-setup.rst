@@ -235,8 +235,6 @@ Related Documents
     vscode-setup
     ../api-guides/tools/idf-monitor
 
-.. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/
-.. _Releases page: https://github.com/espressif/esp-idf/releases
 .. _AUR: https://wiki.archlinux.org/index.php/Arch_User_Repository
 .. _First Steps on ESP-IDF: ../get-started/first-steps.html
 .. _cmake: https://cmake.org/
