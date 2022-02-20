@@ -114,13 +114,6 @@ menu "mbedTLS"
             "MBEDTLS_SSL_IN_CONTENT_LEN", so to save more heap, users can set
             the options to be an appropriate value.
 
-    config MBEDTLS_DYNAMIC_FREE_PEER_CERT
-        bool "Free SSL peer certificate after its usage"
-        default n
-        depends on MBEDTLS_DYNAMIC_BUFFER
-        help
-            Free peer certificate after its usage in handshake process.
-
     config MBEDTLS_DYNAMIC_FREE_CONFIG_DATA
         bool "Free private key and DHM data after its usage"
         default n
@@ -178,7 +171,17 @@ menu "mbedTLS"
         default 3 if MBEDTLS_DEBUG_LEVEL_DEBUG
         default 4 if MBEDTLS_DEBUG_LEVEL_VERBOSE
 
-    menu "mbedTLS v2.28.x related"
+    menu "mbedTLS v3.x related"
+
+        config MBEDTLS_SSL_PROTO_TLS1_3
+            bool "Support TLS 1.3 protocol"
+            depends on MBEDTLS_TLS_ENABLED
+            default n
+
+        config MBEDTLS_SSL_TLS1_3_COMPATIBILITY_MODE
+            bool "Enable TLS 1.3 middlebox compatibility mode"
+            depends on MBEDTLS_SSL_PROTO_TLS1_3
+            default y
 
         config MBEDTLS_SSL_VARIABLE_BUFFER_LENGTH
             bool "Variable SSL buffer length"
