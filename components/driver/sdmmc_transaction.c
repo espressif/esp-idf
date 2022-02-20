@@ -404,7 +404,9 @@ static esp_err_t process_events(sdmmc_event_t evt, sdmmc_command_t* cmd,
             case SDMMC_SENDING_CMD:
                 if (mask_check_and_clear(&evt.sdmmc_status, SDMMC_CMD_ERR_MASK)) {
                     process_command_response(orig_evt.sdmmc_status, cmd);
-                    break;      // Need to wait for the CMD_DONE interrupt
+                    // In addition to the error interrupt, CMD_DONE will also be
+                    // reported. It may occur immediately (in the same sdmmc_event_t) or
+                    // be delayed until the next interrupt.
                 }
                 if (mask_check_and_clear(&evt.sdmmc_status, SDMMC_INTMASK_CMD_DONE)) {
                     process_command_response(orig_evt.sdmmc_status, cmd);
