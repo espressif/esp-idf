@@ -16,7 +16,7 @@
 #include "mbedtls/x509_crt.h"
 #include <mbedtls/entropy.h>
 #include <mbedtls/ctr_drbg.h>
-#include "mbedtls/library/entropy_poll.h"
+#include "entropy_poll.h"
 #include "freertos/FreeRTOS.h"
 #include "unity.h"
 #include "test_utils.h"

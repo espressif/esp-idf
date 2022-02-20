@@ -36,7 +36,7 @@ which are undefined if the following flag is not defined */
 #include <mbedtls/ecdh.h>
 #include <mbedtls/error.h>
 #include <mbedtls/constant_time.h>
-#include <mbedtls/library/ssl_misc.h>
+#include <ssl_misc.h>
 #include <mbedtls/constant_time.h>
 
 #include <protocomm_security.h>
