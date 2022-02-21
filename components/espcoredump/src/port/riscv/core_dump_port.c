@@ -381,4 +381,74 @@ uint32_t esp_core_dump_get_extra_info(void **info)
     return size;
 }
 
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
+
+void esp_core_dump_summary_parse_extra_info(esp_core_dump_summary_t *summary, void *ei_data)
+{
+    riscv_extra_info_t *ei = (riscv_extra_info_t *)ei_data;
+    summary->exc_tcb = ei->crashed_task_tcb;
+    ESP_COREDUMP_LOGD("Crash TCB 0x%x", summary->exc_tcb);
+}
+
+void esp_core_dump_summary_parse_exc_regs(esp_core_dump_summary_t *summary, void *stack_data)
+{
+    int i;
+    long *a_reg;
+    RvExcFrame *stack = (RvExcFrame *)stack_data;
+    summary->exc_pc = stack->mepc;
+    ESP_COREDUMP_LOGD("Crashing PC 0x%x", summary->exc_pc);
+
+    summary->ex_info.mstatus = stack->mstatus;
+    summary->ex_info.mtvec = stack->mtvec;
+    summary->ex_info.mcause = stack->mcause;
+    summary->ex_info.mtval = stack->mtval;
+    summary->ex_info.ra = stack->ra;
+    summary->ex_info.sp = stack->sp;
+    ESP_COREDUMP_LOGD("mstatus:0x%x mtvec:0x%x mcause:0x%x mval:0x%x RA: 0x%x SP: 0x%x",
+                       stack->mstatus, stack->mtvec, stack->mcause, stack->mtval, stack->ra, stack->sp);
+    a_reg = &stack->a0;
+    for (i = 0; i < 8; i++) {
+        summary->ex_info.exc_a[i] = a_reg[i];
+        ESP_COREDUMP_LOGD("A[%d] 0x%x", i, summary->ex_info.exc_a[i]);
+    }
+}
+
+void esp_core_dump_summary_parse_backtrace_info(esp_core_dump_bt_info_t *bt_info, const void *vaddr,
+                                                const void *paddr, uint32_t stack_size)
+{
+    if (!vaddr || !paddr || !bt_info) {
+        bt_info->dump_size = 0;
+        return;
+    }
+
+    /* Check whether the stack is a fake stack created during coredump generation
+     * If its a fake stack, we don't have any actual stack dump
+     */
+    if (vaddr >= COREDUMP_FAKE_STACK_START && vaddr < COREDUMP_FAKE_STACK_LIMIT) {
+        bt_info->dump_size = 0;
+        return;
+    }
+
+    /* Top of the stack consists of the context registers saved after crash,
+     * extract the value of stack pointer (SP) at the time of crash
+     */
+    RvExcFrame *stack = (RvExcFrame *) paddr;
+    uint32_t *sp = (uint32_t *)stack->sp;
+
+    /* vaddr is actual stack address when crash occurred. However that stack is now saved
+     * in the flash at a different location. Hence, we need to adjust the offset
+     * to point to correct data in the flash */
+    int offset = (uint32_t)stack - (uint32_t)vaddr;
+
+    // Skip the context saved register frame
+    uint32_t regframe_size = (uint32_t)sp - (uint32_t)vaddr;
+
+    uint32_t dump_size = MIN(stack_size - regframe_size, CONFIG_ESP_COREDUMP_SUMMARY_STACKDUMP_SIZE);
+
+    memcpy(&bt_info->stackdump[0], (uint8_t *)sp + offset, dump_size);
+    bt_info->dump_size = dump_size;
+}
+
+#endif /* #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF */
+
 #endif

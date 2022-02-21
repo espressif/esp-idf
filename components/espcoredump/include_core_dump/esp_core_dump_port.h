@@ -24,12 +24,14 @@
  * both Xtensa and RISC-V architecture.
  */
 
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "soc/cpu.h"
 #include "esp_debug_helpers.h"
 #include "esp_app_format.h"
 #include "esp_core_dump_types.h"
 #include "esp_core_dump_port_impl.h"
+#include "esp_core_dump.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -163,6 +165,36 @@ void esp_core_dump_port_set_crashed_tcb(uint32_t handle);
  * @return Size, in bytes, of the extra information.
  */
 uint32_t esp_core_dump_get_extra_info(void **info);
+
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
+
+/**
+ * @brief Parse extra information into summary
+ *
+ * @param summary Pointer to core dump summary structure
+ * @param ei_data Pointer to data of EXTRA_INFO note read from flash
+ */
+void esp_core_dump_summary_parse_extra_info(esp_core_dump_summary_t *summary, void *ei_data);
+
+/**
+ * @brief Parse exception registers into summary
+ *
+ * @param summary Pointer to core dump summary structure
+ * @param stack_data Pointer to data of crashed task's stack read from flash
+ */
+void esp_core_dump_summary_parse_exc_regs(esp_core_dump_summary_t *summary, void *stack_data);
+
+/**
+ * @brief Parse backtrace into bt_info
+ *
+ * @param bt_info Pointer to store backtrace info
+ * @param vaddr Pointer to crashed task's stack vaddr
+ * @param paddr Pointe to crashed task's stack paddr
+ * @param stack_size Stack size
+ */
+void esp_core_dump_summary_parse_backtrace_info(esp_core_dump_bt_info_t *bt_info, const void *vaddr,
+                                                const void *paddr, uint32_t stack_size);
+#endif /* CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF */
 
 #ifdef __cplusplus
 }

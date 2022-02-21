@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /**
  * @file
@@ -26,6 +18,7 @@
 #include "esp_rom_sys.h"
 #include "esp_core_dump_common.h"
 #include "esp_core_dump_port.h"
+#include "esp_debug_helpers.h"
 
 const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_port";
 
@@ -471,5 +464,100 @@ uint32_t esp_core_dump_get_extra_info(void **info)
     }
     return sizeof(s_extra_info);
 }
+
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
+
+void esp_core_dump_summary_parse_extra_info(esp_core_dump_summary_t *summary, void *ei_data)
+{
+    int i;
+    xtensa_extra_info_t *ei = (xtensa_extra_info_t *) ei_data;
+    summary->exc_tcb = ei->crashed_task_tcb;
+    summary->ex_info.exc_vaddr = ei->excvaddr.reg_val;
+    summary->ex_info.exc_cause = ei->exccause.reg_val;
+    ESP_COREDUMP_LOGD("Crash TCB 0x%x", summary->exc_tcb);
+    ESP_COREDUMP_LOGD("excvaddr 0x%x", summary->ex_info.exc_vaddr);
+    ESP_COREDUMP_LOGD("exccause 0x%x", summary->ex_info.exc_cause);
+
+    memset(summary->ex_info.epcx, 0, sizeof(summary->ex_info.epcx));
+    summary->ex_info.epcx_reg_bits = 0;
+    for (i = 0; i < COREDUMP_EXTRA_REG_NUM; i++ ) {
+        if (ei->extra_regs[i].reg_index >= EPC_1
+            && ei->extra_regs[i].reg_index < (EPC_1 + XCHAL_NUM_INTLEVELS)) {
+            summary->ex_info.epcx[ei->extra_regs[i].reg_index - EPC_1] = ei->extra_regs[i].reg_val;
+            summary->ex_info.epcx_reg_bits |= (1 << (ei->extra_regs[i].reg_index - EPC_1));
+        }
+    }
+}
+
+void esp_core_dump_summary_parse_exc_regs(esp_core_dump_summary_t *summary, void *stack_data)
+{
+    int i;
+    long *a_reg;
+    XtExcFrame *stack = (XtExcFrame *) stack_data;
+    summary->exc_pc = esp_cpu_process_stack_pc(stack->pc);
+    ESP_COREDUMP_LOGD("Crashing PC 0x%x", summary->exc_pc);
+
+    a_reg = &stack->a0;
+    for (i = 0; i < 16; i++) {
+        summary->ex_info.exc_a[i] = a_reg[i];
+        ESP_COREDUMP_LOGD("A[%d] 0x%x", i, summary->ex_info.exc_a[i]);
+    }
+}
+
+void esp_core_dump_summary_parse_backtrace_info(esp_core_dump_bt_info_t *bt_info, const void *vaddr,
+                                                const void *paddr, uint32_t stack_size)
+{
+    if (!vaddr || !paddr || !bt_info) {
+        return;
+    }
+
+    int offset;
+    bool corrupted;
+    esp_backtrace_frame_t frame;
+    XtExcFrame *stack = (XtExcFrame *) paddr;
+    int max_depth = (int) (sizeof(bt_info->bt) / sizeof(bt_info->bt[0]));
+    int index = 0;
+
+    frame.pc = stack->pc;
+    frame.sp = stack->a1;
+    frame.next_pc = stack->a0;
+
+    corrupted = !(esp_stack_ptr_is_sane(frame.sp) &&
+                (esp_ptr_executable((void *)esp_cpu_process_stack_pc(frame.pc)) ||
+                stack->exccause == EXCCAUSE_INSTR_PROHIBITED)); /* Ignore the first corrupted PC in case of InstrFetchProhibited */
+
+    /* vaddr is actual stack address when crash occurred. However that stack is now saved
+     * in the flash at a different location. Hence for each SP, we need to adjust the offset
+     * to point to next frame in the flash */
+    offset = (uint32_t) stack - (uint32_t) vaddr;
+
+    ESP_COREDUMP_LOGD("Crash Backtrace");
+    bt_info->bt[index] = esp_cpu_process_stack_pc(frame.pc);
+    ESP_COREDUMP_LOGD(" 0x%x", bt_info->bt[index]);
+    index++;
+
+    while (max_depth-- > 0 && frame.next_pc && !corrupted) {
+        /* Check if the Stack Pointer is in valid address range */
+        if (!((uint32_t)frame.sp >= (uint32_t)vaddr &&
+            ((uint32_t)frame.sp <= (uint32_t)vaddr + stack_size))) {
+            corrupted = true;
+            break;
+        }
+        /* Adjusting the SP to address in flash than in actual RAM */
+        frame.sp += offset;
+        if (!esp_backtrace_get_next_frame(&frame)) {
+            corrupted = true;
+        }
+        if (corrupted == false) {
+            bt_info->bt[index] = esp_cpu_process_stack_pc(frame.pc);
+            ESP_COREDUMP_LOGD(" 0x%x", bt_info->bt[index]);
+            index++;
+        }
+    }
+    bt_info->depth = index;
+    bt_info->corrupted = corrupted;
+}
+
+#endif /* #if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF */
 
 #endif

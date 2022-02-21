@@ -14,13 +14,35 @@
 #ifndef ESP_CORE_DUMP_H_
 #define ESP_CORE_DUMP_H_
 
+#include "sdkconfig.h"
 #include <stddef.h>
 #include "esp_err.h"
 #include "esp_private/panic_internal.h"
+#include "esp_core_dump_summary_port.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define APP_ELF_SHA256_SZ (CONFIG_APP_RETRIEVE_LEN_ELF_SHA + 1)
+
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
+
+/**
+ * @brief Core dump summary, Most meaningful contents of the core dump
+ *        are accommodated in this structure
+ */
+typedef struct {
+    uint32_t exc_tcb;                           /*!< TCB pointer to the task causing exception */
+    char exc_task[16];                          /*!< Name of the task that caused exception */
+    uint32_t exc_pc;                            /*!< Program counter for exception */
+    esp_core_dump_bt_info_t exc_bt_info;        /*!< Backtrace information for task causing exception */
+    uint32_t core_dump_version;                 /*!< Core dump version */
+    uint8_t app_elf_sha256[APP_ELF_SHA256_SZ];  /*!< Crashing application's SHA256 sum as a string */
+    esp_core_dump_summary_extra_info_t ex_info; /*!< Architecture specific extra data */
+} esp_core_dump_summary_t;
+
+#endif /* CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF */
 
 /**************************************************************************************/
 /******************************** EXCEPTION MODE API **********************************/
@@ -110,6 +132,32 @@ esp_err_t esp_core_dump_image_get(size_t* out_addr, size_t *out_size);
  * @return ESP_OK on success, otherwise \see esp_err_t
  */
 esp_err_t esp_core_dump_image_erase(void);
+
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
+
+/**
+ * @brief  Get the summary of a core dump.
+ *
+ * @param  summary   Summary of the core dump
+ *
+ * @return ESP_OK on success, otherwise \see esp_err_t
+ *
+ * @note  This function works only if coredump is stored in flash and in ELF format
+ *
+ * Example usage:
+ * @code{c}
+ *  esp_core_dump_summary_t *summary = malloc(sizeof(esp_core_dump_summary_t));
+ *  if (summary) {
+ *      if (esp_core_dump_get_summary(summary) == ESP_OK) {
+ *          // Do stuff
+ *      }
+ *  }
+ *  free(summary);
+ * @endcode
+ */
+esp_err_t esp_core_dump_get_summary(esp_core_dump_summary_t *summary);
+
+#endif /* CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH && CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF */
 
 #ifdef __cplusplus
 }

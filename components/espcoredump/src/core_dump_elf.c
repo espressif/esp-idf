@@ -15,6 +15,8 @@
 #include "esp_attr.h"
 #include "esp_partition.h"
 #include "esp_ota_ops.h"
+#include "esp_spi_flash.h"
+#include "esp_flash_encrypt.h"
 #include "sdkconfig.h"
 #include "core_dump_checksum.h"
 #include "core_dump_elf.h"
@@ -643,5 +645,136 @@ esp_err_t esp_core_dump_write_elf(core_dump_write_config_t *write_cfg)
     }
     return err;
 }
+
+#if CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
+
+/* Below are the helper function to parse the core dump ELF stored in flash */
+
+static esp_err_t elf_core_dump_image_mmap(spi_flash_mmap_handle_t* core_data_handle, const void **map_addr)
+{
+    size_t out_size;
+    assert (core_data_handle);
+    assert(map_addr);
+
+    /* Find the partition that could potentially contain a (previous) core dump. */
+    const esp_partition_t *core_part = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
+                                                                ESP_PARTITION_SUBTYPE_DATA_COREDUMP,
+                                                                NULL);
+    if (!core_part) {
+        ESP_COREDUMP_LOGE("Core dump partition not found!");
+        return ESP_ERR_NOT_FOUND;
+    }
+    if (core_part->size < sizeof(uint32_t)) {
+        ESP_COREDUMP_LOGE("Core dump partition too small!");
+        return ESP_ERR_INVALID_SIZE;
+    }
+    /* Data read from the mmapped core dump partition will be garbage if flash
+     * encryption is enabled in hardware and core dump partition is not encrypted
+     */
+    if (esp_flash_encryption_enabled() && !core_part->encrypted) {
+        ESP_COREDUMP_LOGE("Flash encryption enabled in hardware and core dump partition is not encrypted!");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    /* Read the size of the core dump file from the partition */
+    esp_err_t ret = esp_partition_read(core_part, 0, &out_size, sizeof(uint32_t));
+    if (ret != ESP_OK) {
+        ESP_COREDUMP_LOGE("Failed to read core dump data size");
+        return ret;
+    }
+    /* map the full core dump parition, including the checksum. */
+    return esp_partition_mmap(core_part, 0, out_size, SPI_FLASH_MMAP_DATA,
+                              map_addr, core_data_handle);
+}
+
+static void elf_parse_version_info(esp_core_dump_summary_t *summary, void *data)
+{
+    core_dump_elf_version_info_t *version = (core_dump_elf_version_info_t *)data;
+    summary->core_dump_version = version->version;
+    memcpy(summary->app_elf_sha256, version->app_elf_sha256, ELF_APP_SHA256_SIZE);
+    ESP_COREDUMP_LOGD("Core dump version 0x%x", summary->core_dump_version);
+    ESP_COREDUMP_LOGD("App ELF SHA2 %s", (char *)summary->app_elf_sha256);
+}
+
+static void elf_parse_exc_task_name(esp_core_dump_summary_t *summary, void *tcb_data)
+{
+    StaticTask_t *tcb = (StaticTask_t *) tcb_data;
+    /* An ugly way to get the task name. We could possibly use pcTaskGetTaskName here.
+     * But that has assumption that TCB pointer can be used as TaskHandle. So let's
+     * keep it this way. */
+    memset(summary->exc_task, 0, sizeof(summary->exc_task));
+    strlcpy(summary->exc_task, (char *)tcb->ucDummy7, sizeof(summary->exc_task));
+    ESP_COREDUMP_LOGD("Crashing task %s", summary->exc_task);
+}
+
+esp_err_t esp_core_dump_get_summary(esp_core_dump_summary_t *summary)
+{
+    int i;
+    elf_phdr *ph;
+    elf_note *note;
+    const void *map_addr;
+    size_t consumed_note_sz;
+    spi_flash_mmap_handle_t core_data_handle;
+
+    if (!summary) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    esp_err_t err = elf_core_dump_image_mmap(&core_data_handle, &map_addr);
+    if (err != ESP_OK) {
+        return err;
+    }
+    uint8_t *ptr = (uint8_t *) map_addr + sizeof(core_dump_header_t);
+    elfhdr *eh = (elfhdr *)ptr;
+
+    ESP_COREDUMP_LOGD("ELF ident %02x %c %c %c", eh->e_ident[0], eh->e_ident[1], eh->e_ident[2], eh->e_ident[3]);
+    ESP_COREDUMP_LOGD("Ph_num %d offset %x", eh->e_phnum, eh->e_phoff);
+
+    for (i = 0; i < eh->e_phnum; i++) {
+        ph = (elf_phdr *)((ptr + i * sizeof(*ph)) + eh->e_phoff);
+        ESP_COREDUMP_LOGD("PHDR type %d off %x vaddr %x paddr %x filesz %x memsz %x flags %x align %x",
+                          ph->p_type, ph->p_offset, ph->p_vaddr, ph->p_paddr, ph->p_filesz, ph->p_memsz,
+                          ph->p_flags, ph->p_align);
+        if (ph->p_type == PT_NOTE) {
+            consumed_note_sz = 0;
+            while(consumed_note_sz < ph->p_memsz) {
+                note = (elf_note *)(ptr + ph->p_offset + consumed_note_sz);
+                char *nm = (char *)(ptr + ph->p_offset + consumed_note_sz + sizeof(elf_note));
+                ESP_COREDUMP_LOGD("Note NameSZ %x DescSZ %x Type %x name %s", note->n_namesz,
+                                  note->n_descsz, note->n_type, nm);
+                if (strncmp(nm, "EXTRA_INFO", note->n_namesz) == 0 ) {
+                    esp_core_dump_summary_parse_extra_info(summary, (void *)(nm + note->n_namesz));
+                }
+                if (strncmp(nm, "ESP_CORE_DUMP_INFO", note->n_namesz) == 0 ) {
+                    elf_parse_version_info(summary, (void *)(nm + note->n_namesz));
+                }
+                consumed_note_sz += note->n_namesz + note->n_descsz + sizeof(elf_note);
+                ALIGN(4, consumed_note_sz);
+            }
+        }
+    }
+    /* Following code assumes that task stack segment follows the TCB segment for the respective task.
+     * In general ELF does not impose any restrictions on segments' order so this can be changed without impacting core dump version.
+     * More universal and flexible way would be to retrieve stack start address from crashed task TCB segment and then look for the stack segment with that address.
+     */
+    int flag = 0;
+    for (i = 0; i < eh->e_phnum; i++) {
+        ph = (elf_phdr *)((ptr + i * sizeof(*ph)) + eh->e_phoff);
+        if (ph->p_type == PT_LOAD) {
+            if (flag) {
+                esp_core_dump_summary_parse_exc_regs(summary, (void *)(ptr + ph->p_offset));
+                esp_core_dump_summary_parse_backtrace_info(&summary->exc_bt_info, (void *) ph->p_vaddr,
+                                                           (void *)(ptr + ph->p_offset), ph->p_memsz);
+                break;
+            }
+            if (ph->p_vaddr == summary->exc_tcb) {
+                elf_parse_exc_task_name(summary, (void *)(ptr + ph->p_offset));
+                flag = 1;
+            }
+        }
+    }
+    spi_flash_munmap(core_data_handle);
+    return ESP_OK;
+}
+
+#endif // CONFIG_ESP_COREDUMP_ENABLE_TO_FLASH
 
 #endif //CONFIG_ESP_COREDUMP_DATA_FORMAT_ELF
