@@ -89,6 +89,13 @@ systemview:
     - BSD-3-Clause
   license_for_new_files: Apache-2.0
 
+spiffs:
+  include:
+    - 'components/spiffs/include/'
+  allowed_licenses:
+    - MIT
+    - Apache-2.0
+
 # files matching this section do not perform the check
 # file patterns starting with ! are negated, meaning files matching them won't match the section.
 ignore:
