@@ -227,9 +227,14 @@ ESP-NETIF programmer's manual
 
 Please refer to the example section for basic initialization of default interfaces:
 
+
 - WiFi Station: :example_file:`wifi/getting_started/station/main/station_example_main.c`
-- WiFi Access Point: :example_file:`wifi/getting_started/softAP/main/softap_example_main.c`
+
 - Ethernet: :example_file:`ethernet/basic/main/ethernet_example_main.c`
+
+.. only:: CONFIG_ESP_WIFI_SOFTAP_SUPPORT
+
+    - WiFi Access Point: :example_file:`wifi/getting_started/softAP/main/softap_example_main.c`
 
 For more specific cases please consult this guide: :doc:`/api-reference/network/esp_netif_driver`.
 
@@ -237,16 +242,23 @@ For more specific cases please consult this guide: :doc:`/api-reference/network/
 WiFi default initialization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The initialization code as well as registering event handlers for default interfaces, such as softAP and station, are provided in two separate APIs to facilitate simple startup code for most applications:
+The initialization code as well as registering event handlers for default interfaces, such as softAP and station, are provided in separate APIs to facilitate simple startup code for most applications:
 
-* :cpp:func:`esp_netif_create_default_wifi_ap()`
 * :cpp:func:`esp_netif_create_default_wifi_sta()`
+
+.. only:: CONFIG_ESP_WIFI_SOFTAP_SUPPORT
+
+    * :cpp:func:`esp_netif_create_default_wifi_ap()`
 
 Please note that these functions return the ``esp_netif`` handle, i.e. a pointer to a network interface object allocated and configured with default settings, which as a consequence, means that:
 
 * The created object has to be destroyed if a network de-initialization is provided by an application using :cpp:func:`esp_netif_destroy_default_wifi()`.
+
 * These *default* interfaces must not be created multiple times, unless the created handle is deleted using :cpp:func:`esp_netif_destroy()`.
-* When using Wifi in ``AP+STA`` mode, both these interfaces has to be created.
+
+.. only:: CONFIG_ESP_WIFI_SOFTAP_SUPPORT
+
+    * When using Wifi in ``AP+STA`` mode, both these interfaces has to be created.
 
 
 API Reference
