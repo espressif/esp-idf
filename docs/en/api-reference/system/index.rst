@@ -14,7 +14,7 @@ System API
     POSIX Threads Support <pthread>
     Event Loop Library <esp_event>
     FreeRTOS <freertos>
-    FreeRTOS Additions <freertos_additions>
+    FreeRTOS Supplemental Features <freertos_additions>
     Heap Memory Allocation <mem_alloc>
     Heap Memory Debugging <heap_debug>
     High Resolution Timer <esp_timer>

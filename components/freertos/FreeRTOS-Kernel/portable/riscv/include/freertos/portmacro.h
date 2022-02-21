@@ -273,9 +273,6 @@ static inline bool IRAM_ATTR xPortCanYield(void);
 
 // ------------------- Hook Functions ----------------------
 
-extern void esp_vApplicationIdleHook(void);
-extern void esp_vApplicationTickHook(void);
-
 /**
  * @brief Hook function called on entry to tickless idle
  *
@@ -411,10 +408,6 @@ static inline BaseType_t IRAM_ATTR xPortGetCoreID(void)
 
 // ------------------- Hook Functions ----------------------
 
-#ifndef CONFIG_FREERTOS_LEGACY_HOOKS
-#define vApplicationIdleHook    esp_vApplicationIdleHook
-#define vApplicationTickHook    esp_vApplicationTickHook
-#endif /* !CONFIG_FREERTOS_LEGACY_HOOKS */
 #define portSUPPRESS_TICKS_AND_SLEEP(idleTime) vApplicationSleep(idleTime)
 
 // ------------------- Run Time Stats ----------------------

@@ -156,14 +156,6 @@ extern void vPortClearInterruptMask(int);
 extern void vPortEnterCritical(void);
 extern void vPortExitCritical(void);
 
-extern void esp_vApplicationIdleHook(void);
-extern void esp_vApplicationTickHook(void);
-
-#ifndef CONFIG_FREERTOS_LEGACY_HOOKS
-#define vApplicationIdleHook esp_vApplicationIdleHook
-#define vApplicationTickHook esp_vApplicationTickHook
-#endif /* !CONFIG_FREERTOS_LEGACY_HOOKS */
-
 /* Task function macros as described on the FreeRTOS.org WEB site. */
 #define portTASK_FUNCTION_PROTO(vFunction, pvParameters) void vFunction(void* pvParameters)
 #define portTASK_FUNCTION(vFunction, pvParameters) void vFunction(void* pvParameters)

@@ -1,11 +1,12 @@
-FreeRTOS Additions
-==================
+FreeRTOS Supplemental Features
+==============================
 
-This document describes the additional features added to ESP-IDF FreeRTOS. This document is split into the following parts:
+ESP-IDF uses a modified version of FreeRTOS v10.4.3 that contains significant changes for SMP compatibility (see :doc:`ESP-IDF FreeRTOS SMP Changes<../../api-guides/freertos-smp>`). However, in addition to ESP-IDF FreeRTOS, various features are also provided by ESP-IDF to supplement the features offered by FreeRTOS.
+
+This document describes these supplemental features added to ESP-IDF. This document is split into the following sections:
 
 .. contents:: Contents
     :depth: 2
-
 
 .. ---------------------------------------------------- Overview -------------------------------------------------------
 
@@ -15,7 +16,7 @@ Overview
 ESP-IDF FreeRTOS is modified version of based on the Xtensa port of FreeRTOS v10.4.3 with significant modifications for SMP compatibility (see :doc:`ESP-IDF FreeRTOS SMP Changes<../../api-guides/freertos-smp>`). However, various new features specific to ESP-IDF FreeRTOS have been added. The features are as follows:
 
 - **Ring buffers**: Ring buffers provide a FIFO buffer that can accept entries of arbitrary lengths.
-- **Hooks**: ESP-IDF FreeRTOS hooks provides support for registering extra Idle and Tick hooks at run time. Moreover, the hooks can be asymmetric among both CPUs.
+- **ESP-IDF Tick and Idle Hooks**: ESP-IDF provides multiple custom tick interrupt hooks and idle task hooks that are more numerous and more flexible when compared to FreeRTOS tick and idle hooks.
 - **Thread Local Storage Pointer (TLSP) Deletion Callbacks**: TLSP Deletion callbacks are run automatically when a task is deleted, thus allowing users to clean up their TLSPs automatically.
 - **Component Specific Properties**: Currently added only one component specific property ``ORIG_INCLUDE_PATH``.
 
@@ -375,40 +376,43 @@ However, in between iterations of acquiring the semaphore, there is a **gap in t
 This side effect will not affect ring buffer performance drastically given if the number of tasks using the ring buffer simultaneously is low, and the ring buffer is not operating near maximum capacity.
 
 
-.. ------------------------------------------------------ Hooks --------------------------------------------------------
+.. ------------------------------------------- ESP-IDF Tick and Idle Hooks ---------------------------------------------
 
-Hooks
------
+ESP-IDF Tick and Idle Hooks
+---------------------------
 
-FreeRTOS consists of Idle Hooks and Tick Hooks which allow for application specific functionality to be added to the Idle Task and Tick Interrupt. ESP-IDF provides its own Idle and Tick Hook API in addition to the hooks provided by vanilla FreeRTOS. ESP-IDF hooks have the added benefit of being run time configurable and asymmetrical.
+FreeRTOS allows applications to provide a tick hook and an idle hook at compile time:
 
-Vanilla FreeRTOS Hooks
-^^^^^^^^^^^^^^^^^^^^^^
+- FreeRTOS tick hook can be enabled via the :ref:`CONFIG_FREERTOS_USE_TICK_HOOK` option. The application must provide the ``void vApplicationTickHook( void )`` callback.
+- FreeRTOS idle hook can be enabled via the :ref:`CONFIG_FREERTOS_USE_IDLE_HOOK` option. The application must provide the ``void vApplicationIdleHook( void )`` callback.
 
-Idle and Tick Hooks in vanilla FreeRTOS are implemented by the user defining the functions ``vApplicationIdleHook()`` and  ``vApplicationTickHook()`` respectively somewhere in the application. Vanilla FreeRTOS will run the user defined Idle Hook and Tick Hook on every iteration of the Idle Task and Tick Interrupt respectively.
+However, the FreeRTOS tick hook and idle hook have the following draw backs:
 
-Vanilla FreeRTOS hooks are referred to as **Legacy Hooks** in ESP-IDF FreeRTOS. To enable legacy hooks, :ref:`CONFIG_FREERTOS_LEGACY_HOOKS` should be enabled in :doc:`project configuration menu </api-reference/kconfig>`.
+- The FreeRTOS hooks are registered at compile time
+- Only one of each hook can be registered
+- On multi-core targets, the FreeRTOS hooks are symmetric, meaning each CPU's tick interrupt and idle tasks ends up calling the same hook.
 
-.. only:: not CONFIG_FREERTOS_UNICORE
+Therefore, ESP-IDF tick and idle hooks are provided to supplement the features of FreeRTOS tick and idle hooks. The ESP-IDF hooks have the following features:
 
-    Due to vanilla FreeRTOS being designed for single core, ``vApplicationIdleHook()`` and ``vApplicationTickHook()`` can only be defined once. However, the {IDF_TARGET_NAME} is dual-core in nature, therefore same Idle Hook and Tick Hook are used for both cores (in other words, the hooks are symmetrical for both cores).
+- The hooks can be registered and deregistered at run-time
+- Multiple hooks can be registered (with a maximum of 8 hooks of each type per CPU)
+- On multi-core targets, the hooks can be asymmetric, meaning different hooks can be registered to each CPU
 
-ESP-IDF Idle and Tick Hooks
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ESP-IDF hooks can be registered and deregistered using the following API:
 
-For some use-cases it may be necessary for the Idle Tasks or Tick Interrupts to execute multiple hooks that are configurable at run time.
+- For tick hooks:
 
-.. only:: not CONFIG_FREERTOS_UNICORE
+    - Register using :cpp:func:`esp_register_freertos_tick_hook` or :cpp:func:`esp_register_freertos_tick_hook_for_cpu`
+    - Deregister using :cpp:func:`esp_deregister_freertos_tick_hook` or :cpp:func:`esp_deregister_freertos_tick_hook_for_cpu`
 
-    Furthermore, due to the dual-core nature of the {IDF_TARGET_NAME}, it may be necessary for some applications to have separate hooks for each core.
+- For idle hooks:
 
-Therefore, ESP-IDF provides its own hooks API in addition to the legacy hooks provided by vanilla FreeRTOS.
-
-The ESP-IDF tick and idle hooks are registered at run time. Each tick hook and idle hook must be registered to a specific CPU. When the idle task runs or a tick interrupt occurs on a particular CPU, the CPU will run each of its registered idle hook and tick hook in turn.
+    - Register using :cpp:func:`esp_register_freertos_idle_hook` or :cpp:func:`esp_register_freertos_idle_hook_for_cpu`
+    - Deregister using :cpp:func:`esp_deregister_freertos_idle_hook` or :cpp:func:`esp_deregister_freertos_idle_hook_for_cpu`
 
 .. note::
-    Tick interrupt stays active whilst cache is disabled and hence ``vApplicationTickHook()`` (legacy case) or ESP-IDF tick hooks must be placed in internal RAM. Please refer to the :ref:`SPI flash API documentation <iram-safe-interrupt-handlers>` for more details.
 
+    The tick interrupt stays active while the cache is disabled, therefore any tick hook (FreeRTOS or ESP-IDF) functions must be placed in internal RAM. Please refer to the :ref:`SPI flash API documentation <iram-safe-interrupt-handlers>` for more details.
 
 .. -------------------------------------------------- TLSP Callback ----------------------------------------------------
 

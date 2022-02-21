@@ -197,15 +197,25 @@ menu "FreeRTOS"
             The interrupt handlers have their own stack. The size of the stack can be defined here.
             Each processor has its own stack, so the total size occupied will be twice this.
 
-    config FREERTOS_LEGACY_HOOKS
-        bool "Use FreeRTOS legacy hooks"
+    config FREERTOS_USE_IDLE_HOOK
+        bool "Use FreeRTOS idle hook"
         default n
         help
-            FreeRTOS offers a number of hooks/callback functions that are called when a timer
-            tick happens, the idle thread runs etc. esp-idf replaces these by runtime registerable
-            hooks using the esp_register_freertos_xxx_hook system, but for legacy reasons the old
-            hooks can also still be enabled. Please enable this only if you have code that for some
-            reason can't be migrated to the esp_register_freertos_xxx_hook system.
+            - If enabled, configUSE_IDLE_HOOK will be defined as 1 in FreeRTOS.
+            - The application must provide the hook function ``void vApplicationIdleHook( void );``
+            - ``vApplicationIdleHook()`` is called from FreeRTOS idle task(s)
+            - The FreeRTOS idle hook is NOT the same as the ESP-IDF Idle Hook, but both can be enabled
+              simultaneously.
+
+    config FREERTOS_USE_TICK_HOOK
+        bool "Use FreeRTOS tick hook"
+        default n
+        help
+            - If enabled, configUSE_TICK_HOOK will be defined as 1 in FreeRTOS.
+            - The application must provide the hook function ``void vApplicationTickHook( void );``
+            - ``vApplicationTickHook()`` is called from FreeRTOS's tick handling function ``xTaskIncrementTick()``
+            - The FreeRTOS tick hook is NOT the same as the ESP-IDF Tick Interrupt Hook, but both can be enabled
+              simultaneously.
 
     config FREERTOS_MAX_TASK_NAME_LEN
         int "Maximum task name length"
