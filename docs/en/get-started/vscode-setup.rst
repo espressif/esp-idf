@@ -11,7 +11,7 @@ Quick Install Guide
 
 The recommended way to install the ESP-IDF Visual Studio Code Extension is by downloading it from `VS Code Marketplace <https://marketplace.visualstudio.com/items?itemName=espressif.esp-idf-extension>`_ or following `Quick Installation Guide <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_.
 
-Review the _`tutorials <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/toc.md>`_ for the ESP-IDF Visual Studio Code Extension to learn how to use all of the features.
+Review the `tutorials <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/toc.md>`_ for the ESP-IDF Visual Studio Code Extension to learn how to use all of the features.
 
 Supported Features
 ==================
@@ -20,13 +20,13 @@ Supported Features
 * **Build**, with one-click build and multi-target build, you can easily build and deploy your applications.
 * **Flash**, with both UART and JTAG flash out-of-the-box.
 * **Monitoring**, comes with a built-in terminal, you can trigger IDF Monitor Commands from within VS Code as you are used to in traditional terminals.
-* _`Debugging <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/debugging.md>`_, with out-of-the-box hardware debugging and also support for postmortem debugging like coredumps, you can analyze the bugs with convenience.
+* **Debugging**, with out-of-the-box hardware `debugging <https://github.com/espressif/vscode-esp-idf-extension/blob/master`_
 * **GUI Menu Config**, provides a simplified UI for configuring your chip.
 * **App & Heap Tracing**, provides support for collecting traces from your application, and a simplified UI for analyzing them.
 * **System View Tracing Viewer**, aims to read and display the *.svdat* files into the trace UI (we also support multiple core tracing views).
 * **IDF Size Analysis Overview** presents a UI for binary size analysis.
-* `Rainmaker Cloud <https://rainmaker.espressif.com/>`_, we have inbuilt Rainmaker Cloud support where you can edit/read the state of your connected IoT devices easily.
-* **Code Coverage**, we have inbuilt code coverage support which has color highlights showing which line have been covered. We also render the existing HTML report directly inside the IDE.
+* **Rainmaker Cloud**, inbuilt Rainmaker Cloud support where you can edit/read the state of your connected IoT devices easily. For more information see the `ESP Rainmaker <https://rainmaker.espressif.com/>`_ page.
+* **Code Coverage**, inbuilt code coverage support with color highlights showing which lines have been covered. The HTML report redners directly inside the IDE.
 
 Bugs & Feature Requests
 =======================
