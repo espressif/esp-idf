@@ -1007,6 +1007,7 @@
 #define ESP_LWIP_SELECT                 1
 #define ESP_LWIP_LOCK                   1
 #define ESP_THREAD_PROTECTION           1
+#define ESP_IP_FORWARD                  1
 
 #ifdef CONFIG_LWIP_IPV6_AUTOCONFIG
 #define ESP_IPV6_AUTOCONFIG             CONFIG_LWIP_IPV6_AUTOCONFIG
