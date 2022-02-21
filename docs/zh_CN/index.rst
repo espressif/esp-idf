@@ -53,7 +53,6 @@ ESP-IDF 编程指南
    :hidden:
 
    get-started/index
-   get-started/start-project
    api-reference/index
    hw-reference/index
    api-guides/index

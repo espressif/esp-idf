@@ -19,7 +19,7 @@
 
 * 您可以在 `ESP IoT Solution <https://github.com/espressif/esp-iot-solution>`_ 库中找到基于 ESP-IDF 的 `解决方案 <https://github.com/espressif/esp-iot-solution#solutions>`_、`应用实例 <https://github.com/espressif/esp-iot-solution#esp32-iot-example-list>`_、`组件和驱动 <https://github.com/espressif/esp-iot-solution#components>`_ 等内容。多数文档均提供中英文版本。
 
-* 通过 Arduino 平台开发应用，请参考 `ESP32 Wi-Fi 芯片的 Arduino 内核 <https://github.com/espressif/arduino-esp32#readme>`_。
+* 通过 Arduino 平台开发应用，请参考 `ESP32、ESP32-S2 和 ESP32-C3 芯片的 Arduino 内核 <https://github.com/espressif/arduino-esp32#readme>`_。
 
 * 关于 ESP32 的书籍列表，请查看 `乐鑫 <https://www.espressif.com/zh-hans/support/iot-college/books-new>`_ 网站。
 
