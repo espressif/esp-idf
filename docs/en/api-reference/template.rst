@@ -81,7 +81,7 @@ API Reference
 
        For example see :idf_file:`docs/en/api-reference/network/esp_wifi.rst`
 
-    1. Optionally, rather that using ``*.inc`` files, you may want to describe API in you own way. See :idf_file:`docs/en/api-guides/ulp.rst` for example.
+    1. Optionally, rather that using ``*.inc`` files, you may want to describe API in you own way. See :idf_file:`docs/en/api-reference/storage/fatfs.rst` for example.
 
        Below is the list of common ``.. doxygen...::`` directives:
 

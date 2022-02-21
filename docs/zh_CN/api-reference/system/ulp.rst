@@ -6,9 +6,7 @@ ULP 协处理器编程
 .. toctree::
    :maxdepth: 1
 
-    :esp32: ESP32 ULP 指令集参考 <ulp_instruction_set>
-    :esp32s2: ESP32-S2 ULP 指令集参考 <ulp_extended_instruction_set>
-    :esp32s3: ESP32-S3 ULP 指令集参考 <ulp_extended_instruction_set>
+    {IDF_TARGET_NAME} ULP 指令集参考 <ulp_instruction_set>
     使用宏进行编程（遗留） <ulp_macros>
 
 
@@ -19,7 +17,7 @@ ULP（Ultra Low Power 超低功耗）协处理器是一种简单的有限状态�
 
 ULP 协处理器代码是用汇编语言编写的，并使用 `binutils-esp32ulp 工具链`_ 进行编译。
 
-如果你已经按照 :doc:`快速入门指南 <../../get-started/index>` 中的介绍安装好了 ESP-IDF 及其 CMake 构建系统，那么 ULP 工具链已经被默认安装到了你的开发环境中。
+如果你已经按照 :doc:`快速入门指南 <../../../get-started/index>` 中的介绍安装好了 ESP-IDF 及其 CMake 构建系统，那么 ULP 工具链已经被默认安装到了你的开发环境中。
 
 编译 ULP 代码
 -------------
@@ -156,12 +154,12 @@ ULP 协处理器代码是用汇编语言编写的，并使用 `binutils-esp32ulp
     如果想禁用定时器（有效防止 ULP 程序再次运行），可在 ULP 代码或主程序中清除 ``RTC_CNTL_STATE0_REG`` 寄存器中的 ``RTC_CNTL_ULP_CP_SLP_TIMER_EN`` 位。
 
 
-.. only:: esp32s2
+.. only:: esp32s2 or esp32s3
 
-    ESP32-S2 ULP 程序流
-    --------------------
+    {IDF_TARGET_NAME} ULP 程序流
+    ----------------------------
 
-    ESP32-S2 ULP 协处理器由定时器启动，调用 ``ulp_run`` 则可启动此定时器。定时器为 RTC_SLOW_CLK 的 Tick 事件计数（默认情况下，Tick 由内部 90 KHz RC 振荡器生成）。使用 ``RTC_CNTL_ULP_CP_TIMER_1_REG`` 寄存器设置 Tick 数值。
+    {IDF_TARGET_NAME} ULP 协处理器由定时器启动，调用 ``ulp_run`` 则可启动此定时器。定时器为 RTC_SLOW_CLK 的 Tick 事件计数（默认情况下，Tick 由内部 90 KHz RC 振荡器生成）。使用 ``RTC_CNTL_ULP_CP_TIMER_1_REG`` 寄存器设置 Tick 数值。
 
     此应用程序可以调用 ``ulp_set_wakeup_period`` 函数来设置 ULP 定时器周期值。
 

@@ -914,7 +914,7 @@ Overview
     .. list::
 
         - In deep sleep
-        :SOC_ULP_SUPPORTED: - The :doc:`Ultra Low Power co-processor <../../api-guides/ulp>` is running
+        :SOC_ULP_SUPPORTED: - The :doc:`Ultra Low Power co-processor <../../api-reference/system/ulp>` is running
         - Analog functions such as ADC/DAC/etc are in use.
 
 Application Example

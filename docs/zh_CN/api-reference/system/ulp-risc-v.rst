@@ -13,7 +13,7 @@ ULP-RISC-V 协处理器是 ULP 的一种变体，用于 ESP32-S2。与 ULP 类�
 
 ULP-RISC-V 协处理器代码以 C 语言编写（也可能是汇编语言），使用基于 GCC 的 RISC-V 工具链进行编译。
 
-如果你已依照 :doc:`快速入门指南 <../../get-started/index>` 中的介绍安装好了 ESP-IDF 及其 CMake 构建系统，那么 ULP-RISC-V 工具链已经被默认安装到了你的开发环境中。
+如果你已依照 :doc:`快速入门指南 <../../../get-started/index>` 中的介绍安装好了 ESP-IDF 及其 CMake 构建系统，那么 ULP-RISC-V 工具链已经被默认安装到了你的开发环境中。
 
 .. note: 在早期版本的ESP-IDF中，RISC-V工具链具有不同的名称：`riscv-none-embed-gcc`。
 
