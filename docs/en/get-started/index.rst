@@ -166,3 +166,5 @@ If you already have the ESP-IDF installed and not using IDE, you can build your 
 
    Windows <windows-setup>
    Manual <linux-macos-setup>
+
+.. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/
