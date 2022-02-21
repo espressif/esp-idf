@@ -1,14 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #include "esp_err.h"
 #include "soc/soc_caps.h"
@@ -30,6 +26,10 @@ extern "C" {
 #if CONFIG_IDF_TARGET_ESP32
 //ADC utilises I2S0 DMA on ESP32
 #include "hal/i2s_ll.h"
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 #if SOC_GDMA_SUPPORTED
