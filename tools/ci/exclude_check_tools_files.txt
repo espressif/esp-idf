@@ -5,6 +5,7 @@ tools/ci/check_*.py
 tools/ci/check_*.txt
 tools/ci/check_*.sh
 tools/ci/check_copyright_config.yaml
+tools/ci/get_all_test_results.py
 tools/gdb_panic_server.py
 tools/check_term.py
 tools/check_python_dependencies.py
