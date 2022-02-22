@@ -50,8 +50,12 @@ static void hexdump(const uint32_t* src, size_t count) {
 
 TEST_CASE("ULP FSM addition test", "[ulp]")
 {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#pragma GCC diagnostic ignored "-Warray-bounds"
     /* Clear the RTC_SLOW_MEM region for the ULP co-processor binary to be loaded */
     memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
+#pragma GCC diagnostic pop
 
     /* ULP co-processor program to add data in 2 memory locations using ULP macros */
     const ulp_insn_t program[] = {
@@ -84,8 +88,12 @@ TEST_CASE("ULP FSM subtraction and branch test", "[ulp]")
 {
     assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#pragma GCC diagnostic ignored "-Warray-bounds"
     /* Clear the RTC_SLOW_MEM region for the ULP co-processor binary to be loaded */
     memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
+#pragma GCC diagnostic pop
 
     /* ULP co-processor program to perform subtractions and branch to a label */
     const ulp_insn_t program[] = {
@@ -155,8 +163,12 @@ TEST_CASE("ULP FSM light-sleep wakeup test", "[ulp]")
 {
     assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#pragma GCC diagnostic ignored "-Warray-bounds"
     /* Clear the RTC_SLOW_MEM region for the ULP co-processor binary to be loaded */
     memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
+#pragma GCC diagnostic pop
 
     /* ULP co-processor program to perform some activities and wakeup the main CPU from deep-sleep */
     const ulp_insn_t program[] = {
@@ -197,8 +209,12 @@ TEST_CASE("ULP FSM deep-sleep wakeup test", "[ulp][reset=SW_CPU_RESET][ignore]")
 {
     assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#pragma GCC diagnostic ignored "-Warray-bounds"
     /* Clearout the RTC_SLOW_MEM region for the ULP co-processor binary to be loaded */
     memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
+#pragma GCC diagnostic pop
 
     /* ULP co-processor program to perform some activities and wakeup the main CPU from deep-sleep */
     const ulp_insn_t program[] = {
@@ -239,8 +255,12 @@ TEST_CASE("ULP FSM can write and read peripheral registers", "[ulp]")
     /* Clear ULP timer */
     CLEAR_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#pragma GCC diagnostic ignored "-Warray-bounds"
     /* Clear the RTC_SLOW_MEM region for the ULP co-processor binary to be loaded */
     memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
+#pragma GCC diagnostic pop
 
     /* ULP co-processor program to read from and write to peripheral registers */
     const ulp_insn_t program[] = {
@@ -288,8 +308,12 @@ TEST_CASE("ULP FSM I_WR_REG instruction test", "[ulp]")
 {
     assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#pragma GCC diagnostic ignored "-Warray-bounds"
     /* Clear the RTC_SLOW_MEM region for the ULP co-processor binary to be loaded */
     memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
+#pragma GCC diagnostic pop
 
     /* Define the test set */
     typedef struct {
@@ -354,8 +378,12 @@ TEST_CASE("ULP FSM controls RTC_IO", "[ulp][ignore]")
 {
     assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#pragma GCC diagnostic ignored "-Warray-bounds"
     /* Clear the RTC_SLOW_MEM region for the ULP co-processor binary to be loaded */
     memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
+#pragma GCC diagnostic pop
 
     /* ULP co-processor program to toggle LED */
     const ulp_insn_t program[] = {
@@ -416,12 +444,20 @@ TEST_CASE("ULP FSM power consumption in deep sleep", "[ulp][ignore]")
 {
     assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 4 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#pragma GCC diagnostic ignored "-Warray-bounds"
     /* Clear the RTC_SLOW_MEM region for the ULP co-processor binary to be loaded */
     memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
+#pragma GCC diagnostic pop
 
     /* Put the ULP coprocessor in halt state */
     ulp_insn_t insn = I_HALT();
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#pragma GCC diagnostic ignored "-Warray-bounds"
     memcpy(&RTC_SLOW_MEM[0], &insn, sizeof(insn));
+#pragma GCC diagnostic pop
 
     /* Set ULP timer */
     ulp_set_wakeup_period(0, 0x8000);
@@ -442,8 +478,12 @@ TEST_CASE("ULP FSM timer setting", "[ulp]")
 {
     assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 32 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#pragma GCC diagnostic ignored "-Warray-bounds"
     /* Clear the RTC_SLOW_MEM region for the ULP co-processor binary to be loaded */
     memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
+#pragma GCC diagnostic pop
 
     /*
      * Run a simple ULP program which increments the counter, for one second.
@@ -503,8 +543,12 @@ TEST_CASE("ULP FSM can use temperature sensor (TSENS) in deep sleep", "[ulp][ign
 {
     assert(CONFIG_ULP_COPROC_RESERVE_MEM >= 260 && "this test needs ULP_COPROC_RESERVE_MEM option set in menuconfig");
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#pragma GCC diagnostic ignored "-Warray-bounds"
     /* Clear the RTC_SLOW_MEM region for the ULP co-processor binary to be loaded */
     memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
+#pragma GCC diagnostic pop
 
     // Allow TSENS to be controlled by the ULP
     SET_PERI_REG_BITS(SENS_SAR_TSENS_CTRL_REG, SENS_TSENS_CLK_DIV, 10, SENS_TSENS_CLK_DIV_S);
@@ -571,8 +615,12 @@ TEST_CASE("ULP FSM can use ADC in deep sleep", "[ulp][ignore]")
     const int channel = 0;
     const int atten = 0;
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#pragma GCC diagnostic ignored "-Warray-bounds"
     /* Clear the RTC_SLOW_MEM region for the ULP co-processor binary to be loaded */
     memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
+#pragma GCC diagnostic pop
 
 #if defined(CONFIG_IDF_TARGET_ESP32)
     // Configure SAR ADCn resolution
