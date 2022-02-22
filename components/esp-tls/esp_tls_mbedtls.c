@@ -114,6 +114,14 @@ esp_err_t esp_create_mbedtls_handle(const char *hostname, size_t hostlen, const 
     mbedtls_esp_enable_debug_log(&tls->conf, CONFIG_MBEDTLS_DEBUG_LEVEL);
 #endif
 
+#ifdef CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
+    // NOTE: Mbed TLS currently supports only client-side config with TLS 1.3
+    if (tls->role != ESP_TLS_SERVER) {
+        mbedtls_ssl_conf_min_version(&tls->conf, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_4);
+        mbedtls_ssl_conf_max_version(&tls->conf, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_4);
+    }
+#endif
+
     if ((ret = mbedtls_ssl_setup(&tls->ssl, &tls->conf)) != 0) {
         ESP_LOGE(TAG, "mbedtls_ssl_setup returned -0x%04X", -ret);
         mbedtls_print_error_msg(ret);
