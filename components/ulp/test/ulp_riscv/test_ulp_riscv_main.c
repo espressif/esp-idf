@@ -77,7 +77,7 @@ TEST_CASE("ULP-RISC-V and main CPU are able to exchange data", "[ulp]")
     while (ulp_command_resp != RISCV_READ_WRITE_TEST)
         ;
     gettimeofday(&end, NULL);
-    printf("Response time %ld ms\n", (end.tv_sec - start.tv_sec) * 1000 + (end.tv_usec - start.tv_usec) / 1000);
+    printf("Response time %jd ms\n", ((intmax_t)end.tv_sec - (intmax_t)start.tv_sec) * 1000 + (end.tv_usec - start.tv_usec) / 1000);
 
     /* Verify test data */
     TEST_ASSERT(ulp_command_resp == RISCV_READ_WRITE_TEST);
@@ -113,7 +113,7 @@ TEST_CASE("ULP-RISC-V is able to wakeup main CPU from light sleep", "[ulp]")
     while (ulp_command_resp != RISCV_LIGHT_SLEEP_WAKEUP_TEST)
         ;
     gettimeofday(&end, NULL);
-    printf("Response time %ld ms\n", (end.tv_sec - start.tv_sec) * 1000 + (end.tv_usec - start.tv_usec) / 1000);
+    printf("Response time %jd ms\n", ((intmax_t)end.tv_sec - (intmax_t)start.tv_sec) * 1000 + (end.tv_usec - start.tv_usec) / 1000);
 
     /* Verify test data */
     TEST_ASSERT(ulp_command_resp == RISCV_LIGHT_SLEEP_WAKEUP_TEST);
