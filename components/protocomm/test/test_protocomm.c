@@ -370,6 +370,7 @@ static esp_err_t test_sec_endpoint(session_t *session)
     uint8_t *outbuf = NULL;
 
     mbedtls_ecdh_init(&session->ctx_client);
+    mbedtls_ecdh_setup(&session->ctx_client, MBEDTLS_ECP_DP_CURVE25519);
     mbedtls_ctr_drbg_init(&session->ctr_drbg);
 
     mbedtls_entropy_init(&session->entropy);

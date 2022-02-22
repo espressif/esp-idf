@@ -8,6 +8,9 @@
 #include "esp_heap_caps.h"
 #include "unity.h"
 #include "memory_checks.h"
+#ifdef CONFIG_HEAP_TRACING
+#include "esp_heap_trace.h"
+#endif
 
 static size_t before_free_8bit;
 static size_t before_free_32bit;

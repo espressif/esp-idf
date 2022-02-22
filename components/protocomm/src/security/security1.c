@@ -223,6 +223,7 @@ static esp_err_t handle_session_command0(session_t *cur_session,
     }
 
     mbedtls_ecdh_init(ctx_server);
+    mbedtls_ecdh_setup(ctx_server, MBEDTLS_ECP_DP_CURVE25519);
     mbedtls_ctr_drbg_init(ctr_drbg);
     mbedtls_entropy_init(entropy);
 

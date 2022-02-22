@@ -82,11 +82,11 @@ TEST_CASE("mbedtls GCM stream test", "[aes-gcm]")
     memset(key, 0x56, 16);
 
     // allocate internal memory
-    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    uint8_t *ciphertext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
     uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
     uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
 
-    TEST_ASSERT_NOT_NULL(chipertext);
+    TEST_ASSERT_NOT_NULL(ciphertext);
     TEST_ASSERT_NOT_NULL(plaintext);
     TEST_ASSERT_NOT_NULL(decryptedtext);
 
@@ -96,44 +96,47 @@ TEST_CASE("mbedtls GCM stream test", "[aes-gcm]")
         */
     for (int bytes_to_process = 16; bytes_to_process < SZ; bytes_to_process = bytes_to_process + 16) {
         memset(nonce, 0x89, 16);
-        memset(chipertext, 0x0, SZ);
+        memset(ciphertext, 0x0, SZ);
         memset(decryptedtext, 0x0, SZ);
         memset(tag, 0x0, 16);
 
         mbedtls_gcm_init(&ctx);
         mbedtls_gcm_setkey(&ctx, cipher, key, 128);
         mbedtls_gcm_starts( &ctx, MBEDTLS_AES_ENCRYPT, nonce, sizeof(nonce) );
+        mbedtls_gcm_update_ad( &ctx, NULL, 0 );
 
         // Encrypt
         for (int idx = 0; idx < SZ; idx = idx + bytes_to_process) {
             // Limit length of last call to avoid exceeding buffer size
             size_t length = (idx + bytes_to_process > SZ) ? (SZ - idx) : bytes_to_process;
-            mbedtls_gcm_update(&ctx, plaintext + idx, length, chipertext + idx, 0, NULL);
+            mbedtls_gcm_update(&ctx, plaintext + idx, length, ciphertext + idx, 0, NULL);
         }
         size_t olen;
         mbedtls_gcm_finish( &ctx, NULL, 0, &olen, tag, sizeof(tag) );
-        TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher, chipertext, SZ);
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher, ciphertext, SZ);
         TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_tag, tag, sizeof(tag));
 
         // Decrypt
         memset(nonce, 0x89, 16);
         mbedtls_gcm_free( &ctx );
+
         mbedtls_gcm_init(&ctx);
         mbedtls_gcm_setkey(&ctx, cipher, key, 128);
         mbedtls_gcm_starts( &ctx, MBEDTLS_AES_DECRYPT, nonce, sizeof(nonce));
+        mbedtls_gcm_update_ad( &ctx, NULL, 0 );
 
         for (int idx = 0; idx < SZ; idx = idx + bytes_to_process) {
             // Limit length of last call to avoid exceeding buffer size
 
             size_t length = (idx + bytes_to_process > SZ) ? (SZ - idx) : bytes_to_process;
-            mbedtls_gcm_update(&ctx, chipertext + idx, length, decryptedtext + idx, 0, NULL);
+            mbedtls_gcm_update(&ctx, ciphertext + idx, length, decryptedtext + idx, 0, NULL);
         }
         mbedtls_gcm_finish( &ctx, NULL, 0, &olen, tag, sizeof(tag) );
         TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
         mbedtls_gcm_free( &ctx );
     }
     free(plaintext);
-    free(chipertext);
+    free(ciphertext);
     free(decryptedtext);
 }
 
@@ -157,7 +160,7 @@ typedef struct  {
 
 typedef struct {
     const uint8_t *expected_tag;
-    const uint8_t *ciphertext_last_block; // Last block of the chipertext
+    const uint8_t *ciphertext_last_block; // Last block of the ciphertext
 } aes_gcm_test_expected_res_t;
 
 

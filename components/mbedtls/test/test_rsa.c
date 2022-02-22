@@ -421,12 +421,15 @@ static void print_rsa_details(mbedtls_rsa_context *rsa)
 }
 #endif
 
+// TODO: IDF-4708
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP32S2, ESP32S3, ESP32C3)
 TEST_CASE("test performance RSA key operations", "[bignum]")
 {
     for (int keysize = 2048; keysize <= SOC_RSA_MAX_BIT_LEN; keysize += 1024) {
         rsa_key_operations(keysize, true, false, false);
     }
 }
+#endif
 
 TEST_CASE("test RSA-3072 calculations", "[bignum]")
 {
