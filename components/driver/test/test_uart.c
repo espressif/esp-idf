@@ -476,6 +476,10 @@ static void uart_test_custom_isr_core0(void* param) {
     TEST_ESP_OK(uart_param_config(uart_echo, &uart_config));
     TEST_ESP_OK(uart_set_pin(uart_echo, uart_tx, uart_rx, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
 
+    /* Prevent the custom ISR handler from being called if UART_INTR_BRK_DET interrupt occurs.
+     * It shall only be called for TX interrupts. */
+    uart_disable_intr_mask(uart_echo, UART_INTR_BRK_DET);
+
     /* Unregister the default ISR setup by the function call above */
     TEST_ESP_OK(uart_isr_free(uart_echo));
     TEST_ESP_OK(uart_isr_register(uart_echo, uart_custom_isr, NULL, intr_alloc_flags, &handle));
@@ -518,7 +522,7 @@ TEST_CASE("uart can register and free custom ISRs", "[uart]")
                                              5,
                                              &task_handle,
                                              0);
-    TEST_ASSERT(ret)
+    TEST_ASSERT(ret);
     TEST_ASSERT(xTaskNotifyWait(0, 0, NULL, 1000 / portTICK_PERIOD_MS));
     (void) task_handle;
 #else
