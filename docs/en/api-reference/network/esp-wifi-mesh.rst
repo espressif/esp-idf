@@ -65,7 +65,7 @@ LwIP & ESP-WIFI-MESH
 
 The application can access the ESP-WIFI-MESH stack directly without having to go through the LwIP stack. The LwIP stack is only required by the root node to transmit/receive data to/from an external IP network. However, since every node can potentially become the root node (due to automatic root node selection), each node must still initialize the LwIP stack.
 
-**Each node is required to initialize LwIP by calling** :cpp:func:`esp_netif_init`. In order to prevent non-root node access to LwIP, the application should not create or register any network interfaces using esp_netif APIs.
+**Each node that could become root is required to initialize LwIP by calling** :cpp:func:`esp_netif_init`. In order to prevent non-root node access to LwIP, the application should not create or register any network interfaces using esp_netif APIs.
 
 
     ESP-WIFI-MESH requires a root node to be connected with a router. Therefore, in the event that a node becomes the root, **the corresponding handler must start the DHCP client service and immediately obtain an IP address**. Doing so will allow other nodes to begin transmitting/receiving packets to/from the external IP network. However, this step is unnecessary if static IP settings are used.

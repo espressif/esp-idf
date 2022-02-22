@@ -60,7 +60,8 @@
  *
  *  In present implementation, applications are able to access mesh stack directly without having to go through LwIP stack.
  *  Applications use esp_mesh_send() and esp_mesh_recv() to send and receive messages over the mesh network.
- *  In mesh stack design, normal devices don't require LwIP stack.
+ *  In mesh stack design, normal devices don't require LwIP stack, but if any of these devices could be promoted to a root node in runtime,
+ *  (due to automatic or manual topology reconfiguration) the TCP/IP stack should be initialized (for the root code to access external IP network)
  *
  *  Over the mesh network, only the root is able to access external IP network.
  *  In application mesh event handler, once a device becomes a root, start DHCP client immediately whether DHCP is chosen.
