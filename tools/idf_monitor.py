@@ -1075,19 +1075,22 @@ def main():
 
     args = parser.parse_args()
 
+    # The port name is changed in cases described in the following lines. Use a local argument and
+    # avoid the modification of args.port.
+    port = args.port
+
     # GDB uses CreateFile to open COM port, which requires the COM name to be r'\\.\COMx' if the COM
     # number is larger than 10
-    if os.name == 'nt' and args.port.startswith('COM'):
-        args.port = args.port.replace('COM', r'\\.\COM')
+    if os.name == 'nt' and port.startswith('COM'):
+        port = port.replace('COM', r'\\.\COM')
         yellow_print('--- WARNING: GDB cannot open serial ports accessed as COMx')
-        yellow_print('--- Using %s instead...' % args.port)
-    elif args.port.startswith('/dev/tty.') and sys.platform == 'darwin':
-        args.port = args.port.replace('/dev/tty.', '/dev/cu.')
+        yellow_print('--- Using %s instead...' % port)
+    elif port.startswith('/dev/tty.') and sys.platform == 'darwin':
+        port = port.replace('/dev/tty.', '/dev/cu.')
         yellow_print('--- WARNING: Serial ports accessed as /dev/tty.* will hang gdb if launched.')
-        yellow_print('--- Using %s instead...' % args.port)
+        yellow_print('--- Using %s instead...' % port)
 
-    serial_instance = serial.serial_for_url(args.port, args.baud,
-                                            do_not_open=True)
+    serial_instance = serial.serial_for_url(port, args.baud, do_not_open=True)
     serial_instance.dtr = False
     serial_instance.rts = False
 
@@ -1104,8 +1107,10 @@ def main():
     except KeyError:
         pass  # not running a make jobserver
 
-    # Pass the actual used port to callee of idf_monitor (e.g. make) through `ESPPORT` environment
-    # variable
+    # Pass the actual used port to callee of idf_monitor (e.g. idf.py/cmake) through `ESPPORT` environment
+    # variable.
+    # Note that the port must be original port argument without any replacement done in IDF Monitor (idf.py
+    # has a check for this).
     # To make sure the key as well as the value are str type, by the requirements of subprocess
     espport_key = str('ESPPORT')
     espport_val = str(args.port)
