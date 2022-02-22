@@ -2735,7 +2735,6 @@ tools/gdb_panic_server.py
 tools/gen_esp_err_to_name.py
 tools/idf_monitor_base/chip_specific_config.py
 tools/idf_monitor_base/console_reader.py
-tools/idf_monitor_base/constants.py
 tools/idf_monitor_base/coredump.py
 tools/idf_monitor_base/exceptions.py
 tools/idf_monitor_base/gdbhelper.py

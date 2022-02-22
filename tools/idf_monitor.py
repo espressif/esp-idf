@@ -216,10 +216,14 @@ class Monitor:
             # generates an event which will result in the finishing of
             # the last line. This is fix for handling lines sent
             # without EOL.
+            # finalizing the line when coredump is in progress causes decoding issues
+            # the espcoredump loader uses empty line as a sign for end-of-coredump
+            # line is finalized only for non coredump data
         elif event_tag == TAG_SERIAL_FLUSH:
             self.serial_handler.handle_serial_input(data, self.console_parser, self.coredump,
                                                     self.gdb_helper, self._line_matcher,
-                                                    self.check_gdb_stub_and_run, finalize_line=True)
+                                                    self.check_gdb_stub_and_run,
+                                                    finalize_line=not self.coredump.in_progress)
         else:
             raise RuntimeError('Bad event data %r' % ((event_tag, data),))
 
