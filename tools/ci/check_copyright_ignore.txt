@@ -651,7 +651,6 @@ components/esp_rom/include/esp32s2/rom/md5_hash.h
 components/esp_rom/include/esp32s2/rom/miniz.h
 components/esp_rom/include/esp32s2/rom/opi_flash.h
 components/esp_rom/include/esp32s2/rom/rsa_pss.h
-components/esp_rom/include/esp32s2/rom/rtc.h
 components/esp_rom/include/esp32s2/rom/sha.h
 components/esp_rom/include/esp32s2/rom/uart.h
 components/esp_rom/include/esp32s2/rom/usb/cdc_acm.h
