@@ -422,7 +422,8 @@ static esp_err_t send_get_inflight_desc(sdio_slave_context_t *hal, void **out_ar
 static esp_err_t send_get_unsent_desc(sdio_slave_context_t *hal, void **out_arg, uint32_t *out_return_cnt)
 {
     esp_err_t ret;
-    sdio_slave_hal_send_desc_t *head, *tail;
+    sdio_slave_hal_send_desc_t *head = NULL;
+    sdio_slave_hal_send_desc_t *tail = NULL;
     ret = sdio_ringbuf_recv(&(hal->send_desc_queue), (uint8_t **) &head, (uint8_t **) &tail, RINGBUF_GET_ONE);
 
     if (ret == ESP_OK) {
