@@ -402,7 +402,7 @@ void test_fatfs_stat(const char* filename, const char* root_dir)
     struct tm mtm;
     localtime_r(&mtime, &mtm);
     printf("File time: %s", asctime(&mtm));
-    TEST_ASSERT(abs(mtime - t) < 2);    // fatfs library stores time with 2 second precision
+    TEST_ASSERT(llabs(mtime - t) < 2);    // fatfs library stores time with 2 second precision
 
     TEST_ASSERT(st.st_mode & S_IFREG);
     TEST_ASSERT_FALSE(st.st_mode & S_IFDIR);

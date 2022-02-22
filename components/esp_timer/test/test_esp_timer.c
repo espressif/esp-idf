@@ -433,7 +433,7 @@ static void timer_test_monotonic_values_task(void* arg) {
         /* Allow some difference due to rtos tick interrupting task between
          * getting 'hs_now' and 'now'.
          */
-        if (abs(diff) > 100) {
+        if (llabs(diff) > 100) {
             error_repeat_cnt++;
             state->error_cnt++;
         } else {
@@ -444,7 +444,7 @@ static void timer_test_monotonic_values_task(void* arg) {
             state->pass = false;
         }
         state->avg_diff += diff;
-        state->max_error = MAX(state->max_error, abs(diff));
+        state->max_error = MAX(state->max_error, llabs(diff));
         state->test_cnt++;
     }
     state->avg_diff /= state->test_cnt;
