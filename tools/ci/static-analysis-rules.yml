@@ -15,7 +15,6 @@ skip:
   - "components/bt/host/nimble/nimble"
   - "components/bt/lib"
   - "components/cmock/CMock"
-  - "components/coap"
   - "components/esp_phy/lib"
   - "components/esp_wifi/lib"
   - "components/esp_wifi/lib_esp32"

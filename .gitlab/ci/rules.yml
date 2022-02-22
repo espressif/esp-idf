@@ -168,8 +168,6 @@
   - "components/cmock/CMock"
   - "components/cmock/CMock/vendor/c_exception"
   - "components/cmock/CMock/vendor/unity"
-  - "components/coap/libcoap"
-  - "components/coap/libcoap/ext/tinydtls"
   - "components/esp_phy/lib"
   - "components/esp_wifi/lib"
   - "components/esptool_py/esptool"
