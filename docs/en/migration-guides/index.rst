@@ -11,5 +11,6 @@ ESP-IDF 5.0 Migration Guides
     FreeRTOS <freertos>
     Peripherals <peripherals>
     Removed or deprecated components <removed-components>
+    Storage <storage>
     System <system>
     Tools <tools>

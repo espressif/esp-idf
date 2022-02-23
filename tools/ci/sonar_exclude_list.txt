@@ -17,3 +17,6 @@ components/wpa_supplicant/include/**
 # HTTP Parser code
 components/http_parser/*.c
 components/http_parser/*.h
+
+# FATFS upstream code
+components/fatfs/src/**
