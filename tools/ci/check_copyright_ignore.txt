@@ -406,9 +406,6 @@ components/bt/host/bluedroid/stack/smp/smp_keys.c
 components/bt/host/bluedroid/stack/smp/smp_l2c.c
 components/bt/host/bluedroid/stack/smp/smp_main.c
 components/bt/host/bluedroid/stack/smp/smp_utils.c
-components/coap/port/include/coap3/coap.h
-components/coap/port/include/coap_config.h
-components/coap/port/include/coap_config_posix.h
 components/console/argtable3/argtable3.c
 components/console/argtable3/argtable3.h
 components/console/linenoise/linenoise.c
