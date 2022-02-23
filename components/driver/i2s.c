@@ -1002,7 +1002,7 @@ static esp_err_t i2s_calculate_adc_dac_clock(int i2s_num, i2s_hal_clock_cfg_t *c
     /* Set I2S bit clock */
     clk_cfg->bclk = p_i2s[i2s_num]->hal_cfg.sample_rate * I2S_LL_AD_BCK_FACTOR;
     /* Set I2S bit clock default division */
-    clk_cfg->bclk_div = I2S_LL_AD_BCK_FACTOR * 16;
+    clk_cfg->bclk_div = p_i2s[i2s_num]->hal_cfg.chan_bits;
     /* If fixed_mclk and use_apll are set, use fixed_mclk as mclk frequency, otherwise calculate by mclk = sample_rate * multiple */
     clk_cfg->mclk = (p_i2s[i2s_num]->use_apll && p_i2s[i2s_num]->fixed_mclk) ?
                     p_i2s[i2s_num]->fixed_mclk : clk_cfg->bclk * clk_cfg->bclk_div;
