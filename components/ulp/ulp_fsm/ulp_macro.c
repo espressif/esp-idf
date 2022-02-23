@@ -12,7 +12,7 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_log.h"
-#include "esp32/ulp.h"
+#include "ulp.h"
 #include "ulp_common.h"
 
 #include "soc/soc.h"

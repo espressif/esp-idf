@@ -55,3 +55,21 @@ esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us)
 #endif
     return ESP_OK;
 }
+
+void ulp_timer_stop(void)
+{
+#if CONFIG_IDF_TARGET_ESP32
+    CLEAR_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
+#else
+    CLEAR_PERI_REG_MASK(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
+#endif
+}
+
+void ulp_timer_resume(void)
+{
+#if CONFIG_IDF_TARGET_ESP32
+    SET_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
+#else
+    SET_PERI_REG_MASK(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
+#endif
+}
