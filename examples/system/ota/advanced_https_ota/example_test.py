@@ -300,7 +300,7 @@ def test_examples_protocol_advanced_https_ota_example_random(env, extra_data):
 
     print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + random_bin_name))
     dut1.write('https://' + host_ip + ':' + str(server_port) + '/' + random_bin_name)
-    dut1.expect('esp_ota_ops: OTA image has invalid magic byte', timeout=10)
+    dut1.expect(re.compile(r'esp_https_ota: Mismatch chip id, expected 0, found \d'), timeout=10)
     os.remove(binary_file)
     thread1.terminate()
 
