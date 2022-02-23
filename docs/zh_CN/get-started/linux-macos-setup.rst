@@ -125,7 +125,7 @@ ESP-IDF 将下载至 ``~/esp/esp-idf``。
 第三步：设置工具
 =================================
 
-除了 ESP-IDF 本身，您还需要安装 ESP-IDF 使用的各种工具，比如编译器、调试器、Python 包等。
+除了 ESP-IDF 本身，您还需要为支持 {IDF_TARGET_NAME} 的项目安装 ESP-IDF 使用的各种工具，比如编译器、调试器、Python 包等。
 
 .. code-block:: bash
 
@@ -139,9 +139,34 @@ ESP-IDF 将下载至 ``~/esp/esp-idf``。
     cd ~/esp/esp-idf
     ./install.fish {IDF_TARGET_PATH_NAME}
 
-.. note::
-    通过一次性指定多个目标，可为多个目标芯片同时安装工具，如运行 ``./install.sh esp32,esp32c3,esp32s3``。
-    通过运行 ``./install.sh`` 或 ``./install.sh all`` 可一次性为所有支持的目标芯片安装工具。
+上述命令仅仅为 {IDF_TARGET_NAME} 安装所需工具。如果需要为多个目标芯片开发项目，则可以一次性指定多个目标，如下所示::
+
+.. code-block:: bash
+
+    cd ~/esp/esp-idf
+    ./install.sh esp32,esp32s2
+
+或使用 Fish shell：
+
+.. code-block:: fish
+
+    cd ~/esp/esp-idf
+    ./install.fish esp32,esp32s2
+
+如果需要一次性为所有支持的目标芯片安装工具，可以运行如下命令：
+
+.. code-block:: bash
+
+    cd ~/esp/esp-idf
+    ./install.sh all
+
+或使用 Fish shell：
+
+.. code-block:: fish
+
+    cd ~/esp/esp-idf
+    ./install.fish all
+
 
 下载工具备选方案
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
