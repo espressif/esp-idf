@@ -6,20 +6,25 @@
 .. toctree::
    :maxdepth: 2
 
-   Bluetooth Controller && VHCI <controller_vhci>
-   Bluetooth Common <bt_common>
-   Bluetooth LE <bt_le>
-   :SOC_CLASSIC_BT_SUPPORTED: Bluetooth Classic <classic_bt>
-   NimBLE <nimble/index>
-   ESP-BLE-MESH <esp-ble-mesh>
+   bt_common
+   bt_le
+   :SOC_CLASSIC_BT_SUPPORTED: classic_bt
+   controller_vhci
+   esp-ble-mesh
+   nimble/index
+
+ESP-IDF 目前支持两个主机堆栈。基于 Bluedroid 的堆栈（默认）支持传统蓝牙和 BLE，而基于 Apache NimBLE 的堆栈仅支持 BLE。用户可参考如下信息进行选择：
+
+* 对于同时涉及传统蓝牙和 BLE 的用例，应该选用 Bluedroid。
+* 对于仅涉及 BLE 的用例，建议选用 NimBLE。在代码占用和运行时，NimBLE 对内存的要求较低，因此适用于此类场景。
 
 .. only:: esp32
 
-   请点击下方链接，查看 ESP32 蓝牙架构：
+    请点击下方链接，查看 ESP32 蓝牙架构：
 
-   `ESP32 蓝牙架构 (PDF) <http://espressif.com/sites/default/files/documentation/esp32_bluetooth_architecture_cn.pdf>`_
+      * `ESP32 蓝牙架构 (PDF) <http://espressif.com/sites/default/files/documentation/esp32_bluetooth_architecture_cn.pdf>`_
 
-蓝牙 API 的示例代码存放于 ESP-IDF :example:`bluetooth/bluedroid` 示例目录下，请查看。
+蓝牙 API 的示例代码存放于 ESP-IDF 示例项目的 :example:`bluetooth/bluedroid` 目录下。
 
 下面的示例给出了详细介绍：
 
