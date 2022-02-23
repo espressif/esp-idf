@@ -670,8 +670,9 @@ static void http_native_request(void)
 static void http_partial_download(void)
 {
     esp_http_client_config_t config = {
-        .url = "http://jigsaw.w3.org/HTTP/TE/foo.txt",
+        .url = "https://dl.espressif.com/dl/esp-idf/ci/esp_http_client_demo.txt",
         .event_handler = _http_event_handler,
+        .crt_bundle_attach = esp_crt_bundle_attach,
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
 
