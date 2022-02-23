@@ -63,6 +63,7 @@
   patterns:
     - build_components
     - build_system
+    - build_target_test
   included_in:
     - "build:{0}"
     - build:target_test

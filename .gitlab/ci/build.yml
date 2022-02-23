@@ -93,6 +93,20 @@ build_pytest_components_esp32c3:
   script:
     - run_cmd python tools/ci/build_pytest_apps.py components --target esp32c3 --size-info $SIZE_INFO_LOCATION -vv
 
+build_pytest_test_apps_esp32:
+  extends:
+    - .build_pytest_template
+    - .rules:build:custom_test-esp32
+  script:
+    - run_cmd python tools/ci/build_pytest_apps.py tools/test_apps --target esp32 --size-info $SIZE_INFO_LOCATION -vv
+
+build_pytest_test_apps_esp32s2:
+  extends:
+    - .build_pytest_template
+    - .rules:build:custom_test-esp32s2
+  script:
+    - run_cmd python tools/ci/build_pytest_apps.py tools/test_apps --target esp32s2 --size-info $SIZE_INFO_LOCATION -vv
+
 build_non_test_components_apps:
   extends:
     - .build_template
