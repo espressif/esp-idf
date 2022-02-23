@@ -5,4 +5,4 @@
 
 # embed files from the "certs" directory as binary data symbols
 # in the app
-COMPONENT_EMBED_TXTFILES := howsmyssl_com_root_cert.pem
+COMPONENT_EMBED_TXTFILES := howsmyssl_com_root_cert.pem dl_espressif_com_root_cert.pem
