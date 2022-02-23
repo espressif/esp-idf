@@ -141,9 +141,9 @@
 #define SD_DATA2_GPIO_NUM 9
 #define SD_DATA3_GPIO_NUM 10
 
-#define MAX_RTC_GPIO_NUM 0
-#define MAX_PAD_GPIO_NUM 22
-#define MAX_GPIO_NUM    22
+#define MAX_RTC_GPIO_NUM 5
+#define MAX_PAD_GPIO_NUM 21
+#define MAX_GPIO_NUM    25
 
 #define REG_IO_MUX_BASE DR_REG_IO_MUX_BASE
 #define PIN_CTRL                          (REG_IO_MUX_BASE +0x00)

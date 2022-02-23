@@ -39,12 +39,12 @@
 #define TEST_GPIO_EXT_IN_IO         20  // default input GPIO
 #define TEST_GPIO_OUTPUT_PIN        12
 #define TEST_GPIO_INPUT_ONLY_PIN    46
-#define TEST_GPIO_OUTPUT_MAX        GPIO_NUM_47
+#define TEST_GPIO_OUTPUT_MAX        GPIO_NUM_MAX
 #elif CONFIG_IDF_TARGET_ESP32C3
 #define TEST_GPIO_EXT_OUT_IO        2  // default output GPIO
 #define TEST_GPIO_EXT_IN_IO         3  // default input GPIO
 #define TEST_GPIO_OUTPUT_PIN        1
-#define TEST_GPIO_OUTPUT_MAX        GPIO_NUM_21
+#define TEST_GPIO_OUTPUT_MAX        GPIO_NUM_MAX
 #endif
 
 // define public test io on all boards(esp32, esp32s2, esp32s3, esp32c3)
@@ -744,11 +744,11 @@ static void gpio_isr_handler(void* arg)
  */
 TEST_CASE("GPIO ISR service test", "[gpio][ignore]")
 {
-    static gpio_isr_param_t io9_param = {
+    gpio_isr_param_t io9_param = {
         .gpio_num =  TEST_IO_9,
         .isr_cnt = 0,
     };
-    static gpio_isr_param_t io10_param = {
+    gpio_isr_param_t io10_param = {
         .gpio_num =  TEST_IO_10,
         .isr_cnt = 0,
     };
