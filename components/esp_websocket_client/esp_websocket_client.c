@@ -161,6 +161,21 @@ static esp_err_t esp_websocket_client_abort_connection(esp_websocket_client_hand
     return ESP_OK;
 }
 
+static esp_err_t esp_websocket_client_error_connection(esp_websocket_client_handle_t client)
+{
+    ESP_WS_CLIENT_STATE_CHECK(TAG, client, return ESP_FAIL);
+    esp_transport_close(client->transport);
+
+    if (client->config->auto_reconnect) {
+        client->wait_timeout_ms = WEBSOCKET_RECONNECT_TIMEOUT_MS;
+        client->reconnect_tick_ms = _tick_get_ms();
+        ESP_LOGI(TAG, "Reconnect after %d ms", client->wait_timeout_ms);
+    }
+    client->state = WEBSOCKET_STATE_WAIT_TIMEOUT;
+    esp_websocket_client_dispatch_event(client, WEBSOCKET_EVENT_ERROR, NULL, 0);
+    return ESP_OK;
+}
+
 static esp_err_t esp_websocket_client_set_config(esp_websocket_client_handle_t client, const esp_websocket_client_config_t *config)
 {
     websocket_config_storage_t *cfg = client->config;
@@ -613,12 +628,13 @@ static void esp_websocket_client_task(void *pv)
                     client->run = false;
                     break;
                 }
-                if (esp_transport_connect(client->transport,
-                                          client->config->host,
-                                          client->config->port,
-                                          client->config->network_timeout_ms) < 0) {
-                    ESP_LOGE(TAG, "Error transport connect");
-                    esp_websocket_client_abort_connection(client);
+                int result = esp_transport_connect(client->transport,
+                                                   client->config->host,
+                                                   client->config->port,
+                                                   client->config->network_timeout_ms);
+                if (result < 0) {
+                    ESP_LOGE(TAG, "Error transport connect %i", result);
+                    esp_websocket_client_error_connection(client);
                     break;
                 }
                 ESP_LOGD(TAG, "Transport connected to %s://%s:%d", client->config->scheme, client->config->host, client->config->port);
