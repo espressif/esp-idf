@@ -1,5 +1,6 @@
 #include "test_utils.h"
 #include "mdns.h"
+#include "esp_event.h"
 #include "unity.h"
 
 
