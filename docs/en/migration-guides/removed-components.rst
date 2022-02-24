@@ -8,6 +8,7 @@ Following components are removed from ESP-IDF and moved to `IDF Component Regist
 * `jsmn <https://components.espressif.com/component/espressif/jsmn>`_
 * `esp_modem <https://components.espressif.com/component/espressif/esp_modem>`_
 * `nghttp <https://components.espressif.com/component/espressif/nghttp>`_
+* `esp_websocket_client <https://components.espressif.com/component/espressif/esp_websocket_client>`_
 
 .. note:: Please note that http parser functionality which was previously part of ``nghttp`` component is now part of :component:`http_parser <http_parser>` component.
 
