@@ -214,7 +214,7 @@ void multi_heap_free_impl(multi_heap_handle_t heap, void *p)
         return;
     }
 
-    assert_valid_block(heap, p);
+    assert_valid_block(heap, block_from_ptr(p));
 
     multi_heap_internal_lock(heap);
     heap->free_bytes += tlsf_block_size(p);
@@ -231,7 +231,7 @@ void *multi_heap_realloc_impl(multi_heap_handle_t heap, void *p, size_t size)
         return multi_heap_malloc_impl(heap, size);
     }
 
-    assert_valid_block(heap, p);
+    assert_valid_block(heap, block_from_ptr(p));
 
     if (heap == NULL) {
         return NULL;
