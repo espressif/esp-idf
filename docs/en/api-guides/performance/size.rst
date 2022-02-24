@@ -401,11 +401,6 @@ The help text for each option has some more information.
 
    Not every combination of mbedTLS compile-time config is tested in ESP-IDF. If you find a combination that fails to compile or function as expected, please report the details on GitHub.
 
-FreeModBus
-@@@@@@@@@@
-
-If using Modbus, enable or disable :ref:`CONFIG_FMB_COMM_MODE_TCP_EN`, :ref:`CONFIG_FMB_COMM_MODE_RTU_EN`, :ref:`CONFIG_FMB_COMM_MODE_ASCII_EN` as applicable for the necessary functionality.
-
 VFS
 @@@
 
