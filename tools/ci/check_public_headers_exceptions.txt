@@ -6,8 +6,11 @@ components/xtensa/esp32/include/xtensa/config/
 
 components/newlib/platform_include/
 
+components/freertos/esp_additions/include/freertos_tasks_c_additions.h
 components/freertos/FreeRTOS-Kernel/include/freertos/
 components/freertos/FreeRTOS-Kernel/portable/xtensa/include/freertos/
+components/freertos/FreeRTOS-Kernel-SMP/include/freertos/
+components/freertos/FreeRTOS-Kernel-SMP/portable/xtensa/include/freertos/
 
 
 components/log/include/esp_log_internal.h

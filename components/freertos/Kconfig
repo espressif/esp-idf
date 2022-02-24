@@ -1,5 +1,13 @@
 menu "FreeRTOS"
 
+    config FREERTOS_SMP
+        bool "Run the SMP FreeRTOS kernel instead (FEATURE UNDER DEVELOPMENT)"
+        depends on IDF_TARGET_ESP32
+        default  "n"
+        help
+            This will cause the FreeRTOS component to compile with the SMP FreeRTOS kernel instead.
+            THIS FEATURE IS UNDER ACTIVE DEVELOPMENT, users use this at their own risk.
+
     config FREERTOS_UNICORE
         bool "Run FreeRTOS only on first core"
         default "y" if IDF_TARGET_ESP32S2
