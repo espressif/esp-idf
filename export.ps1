@@ -75,6 +75,16 @@ Write-Output "Checking if Python packages are up to date..."
 Start-Process -Wait -NoNewWindow -FilePath "python" -Args "`"$IDF_PATH/tools/idf_tools.py`" check-python-dependencies"
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE } # if error
 
+$uninstall = python $IDF_PATH/tools/idf_tools.py uninstall --dry-run
+
+if (![string]::IsNullOrEmpty($uninstall)){
+    Write-Output ""
+    Write-Output "Detected installed tools that are not currently used by active ESP-IDF version."
+    Write-Output "$uninstall"
+    Write-Output "For free up even more space, remove installation packages of those tools. Use option 'python.exe $IDF_PATH\tools\idf_tools.py uninstall --remove-archives'."
+    Write-Output ""
+}
+
 Write-Output "
 Done! You can now compile ESP-IDF projects.
 Go to the project directory and run:

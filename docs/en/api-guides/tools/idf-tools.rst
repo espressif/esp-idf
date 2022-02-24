@@ -108,6 +108,11 @@ Any mirror server can be used provided the URL matches the ``github.com`` downlo
 
 * ``check-python-dependencies``: Checks if all required Python packages are installed. Packages from ``${IDF_PATH}/tools/requirements/requirements.*.txt`` files selected by the feature list of ``idf-env.json`` are checked with the package versions specified in the ``espidf.constraints.*.txt`` file. The constraint file will be downloaded from https://dl.espressif.com if this step hasn't been done already in the last day.
 
+* ``uninstall``: Print and remove tools, that are currently not used by active ESP-IDF version.
+
+  - ``--dry-run`` Print installed unused tools.
+  - ``--remove-archives`` Additionally remove all older versions of previously downloaded installation packages.
+  
 .. _idf-tools-install:
 
 Install scripts
