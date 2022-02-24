@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,10 @@
 #if CONFIG_IDF_TARGET_ESP32
 //ADC utilises I2S0 DMA on ESP32
 #include "hal/i2s_ll.h"
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 #if SOC_GDMA_SUPPORTED
@@ -382,3 +386,7 @@ uint32_t adc_hal_self_calibration(adc_ll_num_t adc_n, adc_channel_t channel, adc
  * @prarm adc_n ADC unit.
  */
 #define adc_hal_rtc_output_invert(adc_n, inv_en) adc_ll_rtc_output_invert(adc_n, inv_en)
+
+#ifdef __cplusplus
+}
+#endif
