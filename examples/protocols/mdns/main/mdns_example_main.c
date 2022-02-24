@@ -22,7 +22,7 @@
 
 
 #define EXAMPLE_MDNS_INSTANCE CONFIG_MDNS_INSTANCE
-#define EXAMPLE_BUTTON_GPIO     0
+#define EXAMPLE_BUTTON_GPIO   CONFIG_MDNS_BUTTON_GPIO
 
 static const char * TAG = "mdns-test";
 static char * generate_hostname(void);
@@ -174,7 +174,6 @@ static void query_mdns_hosts_async(const char * host_name)
     ESP_LOGI(TAG, "Query both A and AAA: %s.local", host_name);
 
     mdns_search_once_t *s_a = mdns_query_async_new(host_name, NULL, NULL, MDNS_TYPE_A, 1000, 1, NULL);
-    mdns_query_async_delete(s_a);
     mdns_search_once_t *s_aaaa = mdns_query_async_new(host_name, NULL, NULL, MDNS_TYPE_AAAA, 1000, 1, NULL);
     while (s_a || s_aaaa) {
         if (s_a && check_and_print_result(s_a)) {
@@ -187,6 +186,7 @@ static void query_mdns_hosts_async(const char * host_name)
             mdns_query_async_delete(s_aaaa);
             s_aaaa = NULL;
         }
+        vTaskDelay(50 / portTICK_PERIOD_MS);
     }
 }
 

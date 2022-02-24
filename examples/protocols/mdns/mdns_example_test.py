@@ -91,6 +91,7 @@ def mdns_server(esp_host):
                     console_log('Received query: {} '.format(dns.__repr__()))
                     sock.sendto(get_dns_answer_to_mdns_lwip(TESTER_NAME_LWIP, dns.id), addr)
             if len(dns.an) > 0 and dns.an[0].type == dpkt.dns.DNS_A:
+                console_log('Received answer from {}'.format(dns.an[0].name))
                 if dns.an[0].name == esp_host + u'.local':
                     console_log('Received answer to esp32-mdns query: {}'.format(dns.__repr__()))
                     esp_answered.set()
@@ -113,7 +114,7 @@ def test_examples_protocol_mdns(env, extra_data):
       3. check the mdns name is accessible
       4. check DUT output if mdns advertized host is resolved
     """
-    dut1 = env.get_dut('mdns-test', 'examples/protocols/mdns', dut_class=ttfw_idf.ESP32DUT)
+    dut1 = env.get_dut('mdns-test', 'examples/protocols/mdns', dut_class=ttfw_idf.ESP32DUT, app_config_name='eth_kit')
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, 'mdns_test.bin')
     bin_size = os.path.getsize(binary_file)

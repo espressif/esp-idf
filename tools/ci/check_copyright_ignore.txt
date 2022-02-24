@@ -1213,7 +1213,6 @@ components/mdns/test_afl_fuzz_host/esp_netif_mock.c
 components/mdns/test_afl_fuzz_host/mdns_di.h
 components/mdns/test_afl_fuzz_host/mdns_mock.h
 components/mdns/test_afl_fuzz_host/sdkconfig.h
-components/mdns/test_afl_fuzz_host/test.c
 components/mqtt/host_test/main/test_mqtt_client.cpp
 components/mqtt/host_test/mocks/include/freertos/FreeRTOSConfig.h
 components/mqtt/host_test/mocks/include/freertos/portmacro.h

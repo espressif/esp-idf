@@ -40,6 +40,10 @@ CFLAGS=-g -Wno-unused-value -Wno-missing-declarations -Wno-pointer-bool-conversi
 
 
 MDNS_C_DEPENDENCY_INJECTION=-include mdns_di.h
+ifeq ($(MDNS_NO_SERVICES),on)
+    CFLAGS+=-DMDNS_NO_SERVICES
+endif
+
 ifeq ($(INSTR),off)
     CC=gcc
     CFLAGS+=-DINSTR_IS_OFF
