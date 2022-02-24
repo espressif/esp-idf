@@ -1634,7 +1634,6 @@ components/spi_flash/test/test_out_of_bounds_write.c
 components/spi_flash/test/test_partition_ext.c
 components/spi_flash/test/test_partitions.c
 components/spi_flash/test/test_spi_flash.c
-components/tcp_transport/include/esp_transport.h
 components/tcp_transport/include/esp_transport_ssl.h
 components/tcp_transport/include/esp_transport_tcp.h
 components/tcp_transport/include/esp_transport_ws.h
