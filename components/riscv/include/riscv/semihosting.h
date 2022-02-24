@@ -10,6 +10,53 @@
 extern "C" {
 #endif
 
+
+/* ESP custom semihosting calls numbers */
+
+/**
+ * @brief Initialize apptrace data at host side
+ *
+ * @param addr    address of apptrace control data block
+ * @return        return 0 on sucess or non-zero error code
+ */
+#define ESP_SEMIHOSTING_SYS_APPTRACE_INIT    0x64
+
+/**
+ * @brief Initialize debug stubs table at host side
+ *
+ * @param addr    address of debug stubs table
+ * @return        return 0 on sucess or non-zero error code
+ */
+#define ESP_SEMIHOSTING_SYS_DBG_STUBS_INIT   0x65
+
+/**
+ * @brief Set/clear breakpoint
+ *
+ * @param set     if true set breakpoint, otherwise clear it
+ * @param id      breakpoint ID
+ * @param addr    address to set breakpoint at. Ignored if `set` is false.
+ * @return        return 0 on sucess or non-zero error code
+ */
+#define ESP_SEMIHOSTING_SYS_BREAKPOINT_SET   0x66
+
+/**
+ * @brief Set/clear watchpoint
+ *
+ * @param set     if true set watchpoint, otherwise clear it
+ * @param id      watchpoint ID
+ * @param addr    address to set watchpoint at. Ignored if `set` is false.
+ * @param size    size of watchpoint. Ignored if `set` is false.
+ * @param flags   watchpoint flags, see description below. Ignored if `set` is false.
+ * @return        return 0 on sucess or non-zero error code
+ */
+#define ESP_SEMIHOSTING_SYS_WATCHPOINT_SET   0x67
+
+/* bit values for `flags` argument of ESP_SEMIHOSTING_SYS_WATCHPOINT_SET call. Can be ORed. */
+/* watch for 'reads' at `addr` */
+#define ESP_SEMIHOSTING_WP_FLG_RD   (1UL << 0)
+/* watch for 'writes' at `addr` */
+#define ESP_SEMIHOSTING_WP_FLG_WR   (1UL << 1)
+
 /**
  * @brief Perform semihosting call
  *
