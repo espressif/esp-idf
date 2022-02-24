@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,7 @@
  *
  * @deprecated This function is deprecated. Call portSET_INTERRUPT_MASK_FROM_ISR() instead
  */
-static inline __attribute__((deprecated)) UBaseType_t portENTER_CRITICAL_NESTED(void) {
+static inline __attribute__((always_inline, deprecated)) UBaseType_t portENTER_CRITICAL_NESTED(void) {
     return portSET_INTERRUPT_MASK_FROM_ISR();
 }
 
@@ -28,7 +28,7 @@ static inline __attribute__((deprecated)) UBaseType_t portENTER_CRITICAL_NESTED(
  *
  * @deprecated This function is deprecated. Call portCLEAR_INTERRUPT_MASK_FROM_ISR() instead
  */
-static inline void __attribute__((deprecated)) portEXIT_CRITICAL_NESTED(UBaseType_t prev_level)
+static inline void __attribute__((always_inline, deprecated)) portEXIT_CRITICAL_NESTED(UBaseType_t prev_level)
 {
     portCLEAR_INTERRUPT_MASK_FROM_ISR(prev_level);
 }
@@ -43,7 +43,7 @@ static inline void __attribute__((deprecated)) portEXIT_CRITICAL_NESTED(UBaseTyp
  * @deprecated This function is deprecated. Call spinlock_initialize() instead
  * @param[in] mux Spinlock
  */
-static inline void __attribute__((deprecated)) __attribute__((always_inline)) vPortCPUInitializeMutex(portMUX_TYPE *mux)
+static inline void __attribute__((always_inline, deprecated)) vPortCPUInitializeMutex(portMUX_TYPE *mux)
 {
     spinlock_initialize(mux);
 }
@@ -56,7 +56,7 @@ static inline void __attribute__((deprecated)) __attribute__((always_inline)) vP
  * @deprecated This function is deprecated. Call spinlock_acquire() instead
  * @param[in] mux Spinlock
  */
-static inline void __attribute__((deprecated)) __attribute__((always_inline)) vPortCPUAcquireMutex(portMUX_TYPE *mux)
+static inline void __attribute__((always_inline, deprecated)) vPortCPUAcquireMutex(portMUX_TYPE *mux)
 {
     spinlock_acquire(mux, portMUX_NO_TIMEOUT);
 }

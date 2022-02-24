@@ -108,7 +108,7 @@
   Please change this when the tcb structure is changed
 */
 #define TASKTCB_XCOREID_OFFSET (0x38+configMAX_TASK_NAME_LEN+3)&~3
-.extern pxCurrentTCB
+.extern pxCurrentTCBs
 
 /*
 --------------------------------------------------------------------------------
@@ -924,10 +924,10 @@ _xt_coproc_exc:
     /* FPU operations are incompatible with non-pinned tasks. If we have a FPU operation
        here, to keep the entire thing from crashing, it's better to pin the task to whatever
        core we're running on now. */
-    movi    a2, pxCurrentTCB
+    movi    a2, pxCurrentTCBs
     getcoreid a3
     addx4     a2,  a3, a2
-    l32i    a2, a2, 0                       /* a2 = start of pxCurrentTCB[cpuid] */
+    l32i    a2, a2, 0                       /* a2 = start of pxCurrentTCBs[cpuid] */
     addi    a2, a2, TASKTCB_XCOREID_OFFSET  /* offset to xCoreID in tcb struct */
     s32i    a3, a2, 0                       /* store current cpuid */
 

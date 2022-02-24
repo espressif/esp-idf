@@ -1,94 +1,323 @@
 /*
- * SPDX-FileCopyrightText: 2017 Amazon.com, Inc. or its affiliates
- * SPDX-FileCopyrightText: 2015-2019 Cadence Design Systems, Inc.
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: MIT
- *
- * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
- */
-/*
- * FreeRTOS Kernel V10.4.3
- * Copyright (C) 2017 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of
- * this software and associated documentation files (the "Software"), to deal in
- * the Software without restriction, including without limitation the rights to
- * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- * the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software. If you wish to use our Amazon
- * FreeRTOS name, please do so in a fair use way that does not cause confusion.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- *
- * https://www.FreeRTOS.org
- * https://github.com/FreeRTOS
- *
- * 1 tab == 4 spaces!
- */
-
-/*
- * Copyright (c) 2015-2019 Cadence Design Systems, Inc.
- *
- * Permission is hereby granted, free of charge, to any person obtaining
- * a copy of this software and associated documentation files (the
- * "Software"), to deal in the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
- *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
- * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
- * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
- * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
- * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "sdkconfig.h"
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
-#include <xtensa/config/core.h>
-#include <xtensa/xtensa_context.h>
-#include "soc/soc_caps.h"
-#include "esp_private/crosscore_int.h"
+#include "FreeRTOS.h"
+#include "task.h"   //For vApplicationStackOverflowHook
+#include "portmacro.h"
+#include "spinlock.h"
+#include "xt_instr_macros.h"
+#include "xtensa/xtensa_context.h"
+#include "xtensa/corebits.h"
+#include "xtensa/config/core.h"
+#include "xtensa/config/core-isa.h"
+#include "xtensa/xtruntime.h"
+#include "esp_heap_caps.h"
 #include "esp_system.h"
+#include "esp_task.h"
 #include "esp_log.h"
-#include "esp_int_wdt.h"
-#ifdef CONFIG_APPTRACE_ENABLE
-#include "esp_app_trace.h"    /* Required for esp_apptrace_init. [refactor-todo] */
-#endif
-#include "FreeRTOS.h"        /* This pulls in portmacro.h */
-#include "task.h"            /* Required for TaskHandle_t, tskNO_AFFINITY, and vTaskStartScheduler */
-#include "port_systick.h"
 #include "esp_cpu.h"
+#include "esp_rom_sys.h"
+#include "esp_int_wdt.h"
+#include "esp_task_wdt.h"
+#include "esp_heap_caps_init.h"
+#include "esp_private/startup_internal.h"   /* Required by g_spiram_ok. [refactor-todo] for g_spiram_ok */
+#include "esp32/spiram.h"                   /* Required by esp_spiram_reserve_dma_pool() */
+#ifdef CONFIG_APPTRACE_ENABLE
+#include "esp_app_trace.h"
+#endif
+#ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+#include "esp_gdbstub.h"                    /* Required by esp_gdbstub_init() */
+#endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 
-_Static_assert(tskNO_AFFINITY == CONFIG_FREERTOS_NO_AFFINITY, "incorrect tskNO_AFFINITY value");
+/*
+OS state variables
+*/
+volatile unsigned port_xSchedulerRunning[portNUM_PROCESSORS] = {0};
+unsigned int port_interruptNesting[portNUM_PROCESSORS] = {0};  // Interrupt nesting level. Increased/decreased in portasm.c, _frxt_int_enter/_frxt_int_exit
+//FreeRTOS SMP Locks
+portMUX_TYPE port_xTaskLock = portMUX_INITIALIZER_UNLOCKED;
+portMUX_TYPE port_xISRLock = portMUX_INITIALIZER_UNLOCKED;
 
-
-/* ---------------------------------------------------- Variables ------------------------------------------------------
- *
+/* ------------------------------------------------ IDF Compatibility --------------------------------------------------
+ * - These need to be defined for IDF to compile
  * ------------------------------------------------------------------------------------------------------------------ */
 
-static const char *TAG = "cpu_start"; /* [refactor-todo]: might be appropriate to change in the future, but for now maintain the same log output */
-extern volatile int port_xSchedulerRunning[portNUM_PROCESSORS];
-unsigned port_interruptNesting[portNUM_PROCESSORS] = {0};  // Interrupt nesting level. Increased/decreased in portasm.c, _frxt_int_enter/_frxt_int_exit
-BaseType_t port_uxCriticalNesting[portNUM_PROCESSORS] = {0};
-BaseType_t port_uxOldInterruptState[portNUM_PROCESSORS] = {0};
+// --------------------- Interrupts ------------------------
 
+BaseType_t IRAM_ATTR xPortInterruptedFromISRContext(void)
+{
+    return (port_interruptNesting[xPortGetCoreID()] != 0);
+}
+
+// ------------------ Critical Sections --------------------
+
+/*
+Variables used by IDF critical sections only (SMP tracks critical nesting inside TCB now)
+[refactor-todo] Figure out how IDF critical sections will be merged with SMP FreeRTOS critical sections
+*/
+BaseType_t port_uxCriticalNestingIDF[portNUM_PROCESSORS] = {0};
+BaseType_t port_uxCriticalOldInterruptStateIDF[portNUM_PROCESSORS] = {0};
+
+BaseType_t xPortEnterCriticalTimeout(portMUX_TYPE *lock, BaseType_t timeout)
+{
+    /* Interrupts may already be disabled (if this function is called in nested
+     * manner). However, there's no atomic operation that will allow us to check,
+     * thus we have to disable interrupts again anyways.
+     *
+     * However, if this is call is NOT nested (i.e., the first call to enter a
+     * critical section), we will save the previous interrupt level so that the
+     * saved level can be restored on the last call to exit the critical.
+     */
+    BaseType_t xOldInterruptLevel = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL);
+    if (!spinlock_acquire(lock, timeout)) {
+        //Timed out attempting to get spinlock. Restore previous interrupt level and return
+        XTOS_RESTORE_JUST_INTLEVEL((int) xOldInterruptLevel);
+        return pdFAIL;
+    }
+    //Spinlock acquired. Increment the IDF critical nesting count.
+    BaseType_t coreID = xPortGetCoreID();
+    BaseType_t newNesting = port_uxCriticalNestingIDF[coreID] + 1;
+    port_uxCriticalNestingIDF[coreID] = newNesting;
+    //If this is the first entry to a critical section. Save the old interrupt level.
+    if ( newNesting == 1 ) {
+        port_uxCriticalOldInterruptStateIDF[coreID] = xOldInterruptLevel;
+    }
+    return pdPASS;
+
+}
+
+void vPortExitCriticalIDF(portMUX_TYPE *lock)
+{
+    /* This function may be called in a nested manner. Therefore, we only need
+     * to reenable interrupts if this is the last call to exit the critical. We
+     * can use the nesting count to determine whether this is the last exit call.
+     */
+    spinlock_release(lock);
+    BaseType_t coreID = xPortGetCoreID();
+    BaseType_t nesting = port_uxCriticalNestingIDF[coreID];
+    if (nesting > 0) {
+        nesting--;
+        port_uxCriticalNestingIDF[coreID] = nesting;
+        //This is the last exit call, restore the saved interrupt level
+        if ( nesting == 0 ) {
+            XTOS_RESTORE_JUST_INTLEVEL((int) port_uxCriticalOldInterruptStateIDF[coreID]);
+        }
+    }
+}
+
+/*
+In case any IDF libs called the port critical functions directly instead of through the macros.
+Just inline call the IDF versions
+*/
+void vPortEnterCritical(portMUX_TYPE *lock)
+{
+    vPortEnterCriticalIDF(lock);
+}
+
+void vPortExitCritical(portMUX_TYPE *lock)
+{
+    vPortExitCriticalIDF(lock);
+}
+
+// ----------------------- System --------------------------
+
+#define STACK_WATCH_POINT_NUMBER (SOC_CPU_WATCHPOINTS_NUM - 1)
+
+void vPortSetStackWatchpoint( void *pxStackStart )
+{
+    //Set watchpoint 1 to watch the last 32 bytes of the stack.
+    //Unfortunately, the Xtensa watchpoints can't set a watchpoint on a random [base - base+n] region because
+    //the size works by masking off the lowest address bits. For that reason, we futz a bit and watch the lowest 32
+    //bytes of the stack we can actually watch. In general, this can cause the watchpoint to be triggered at most
+    //28 bytes early. The value 32 is chosen because it's larger than the stack canary, which in FreeRTOS is 20 bytes.
+    //This way, we make sure we trigger before/when the stack canary is corrupted, not after.
+    int addr = (int)pxStackStart;
+    addr = (addr + 31) & (~31);
+    esp_cpu_set_watchpoint(STACK_WATCH_POINT_NUMBER, (char *)addr, 32, ESP_CPU_WATCHPOINT_STORE);
+}
+
+// ---------------------- Tick Timer -----------------------
+
+extern void _frxt_tick_timer_init(void);
+extern void _xt_tick_divisor_init(void);
+
+/**
+ * @brief Initialize CCONT timer to generate the tick interrupt
+ *
+ */
+void vPortSetupTimer(void)
+{
+    /* Init the tick divisor value */
+    _xt_tick_divisor_init();
+
+    _frxt_tick_timer_init();
+}
+
+// --------------------- App Start-up ----------------------
+
+static const char *TAG = "cpu_start";
+
+extern void app_main(void);
+
+static void main_task(void* args)
+{
+#if !CONFIG_FREERTOS_UNICORE
+    // Wait for FreeRTOS initialization to finish on APP CPU, before replacing its startup stack
+    while (port_xSchedulerRunning[1] == 0) {
+        ;
+    }
+#endif
+
+    // [refactor-todo] check if there is a way to move the following block to esp_system startup
+    heap_caps_enable_nonos_stack_heaps();
+
+    // Now we have startup stack RAM available for heap, enable any DMA pool memory
+#if CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL
+    if (g_spiram_ok) {
+        esp_err_t r = esp_spiram_reserve_dma_pool(CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL);
+        if (r != ESP_OK) {
+            ESP_EARLY_LOGE(TAG, "Could not reserve internal/DMA pool (error 0x%x)", r);
+            abort();
+        }
+    }
+#endif
+
+    //Initialize task wdt if configured to do so
+#ifdef CONFIG_ESP_TASK_WDT_PANIC
+    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, true));
+#elif CONFIG_ESP_TASK_WDT
+    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, false));
+#endif
+
+    //Add IDLE 0 to task wdt
+#ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0
+    TaskHandle_t idle_0 = xTaskGetIdleTaskHandleForCPU(0);
+    if(idle_0 != NULL){
+        ESP_ERROR_CHECK(esp_task_wdt_add(idle_0));
+    }
+#endif
+    //Add IDLE 1 to task wdt
+#ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1
+    TaskHandle_t idle_1 = xTaskGetIdleTaskHandleForCPU(1);
+    if(idle_1 != NULL){
+        ESP_ERROR_CHECK(esp_task_wdt_add(idle_1));
+    }
+#endif
+
+    app_main();
+    vTaskDelete(NULL);
+}
+
+void esp_startup_start_app_common(void)
+{
+#if CONFIG_ESP_INT_WDT
+    esp_int_wdt_init();
+    //Initialize the interrupt watch dog for CPU0.
+    esp_int_wdt_cpu_init();
+#endif
+
+    esp_crosscore_int_init();
+
+#ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+    esp_gdbstub_init();
+#endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+
+    TaskHandle_t main_task_hdl;
+    portDISABLE_INTERRUPTS();
+    portBASE_TYPE res = xTaskCreatePinnedToCore(main_task, "main",
+                                                ESP_TASK_MAIN_STACK, NULL,
+                                                ESP_TASK_MAIN_PRIO, &main_task_hdl, ESP_TASK_MAIN_CORE);
+#if ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
+    //We only need to set affinity when using dual core with affinities supported
+    vTaskCoreAffinitySet(main_task_hdl, 1 << 1);
+#endif
+    portENABLE_INTERRUPTS();
+    assert(res == pdTRUE);
+    (void)res;
+}
+
+void esp_startup_start_app_other_cores(void)
+{
+    // For now, we only support up to two core: 0 and 1.
+    if (xPortGetCoreID() >= 2) {
+        abort();
+    }
+
+    // Wait for FreeRTOS initialization to finish on PRO CPU
+    while (port_xSchedulerRunning[0] == 0) {
+        ;
+    }
+
+#if CONFIG_APPTRACE_ENABLE
+    // [refactor-todo] move to esp_system initialization
+    esp_err_t err = esp_apptrace_init();
+    assert(err == ESP_OK && "Failed to init apptrace module on APP CPU!");
+#endif
+
+#if CONFIG_ESP_INT_WDT
+    //Initialize the interrupt watch dog for CPU1.
+    esp_int_wdt_cpu_init();
+#endif
+
+    esp_crosscore_int_init();
+
+    ESP_EARLY_LOGI(TAG, "Starting scheduler on APP CPU.");
+    xPortStartScheduler();
+    abort(); /* Only get to here if FreeRTOS somehow very broken */
+}
+
+void esp_startup_start_app(void)
+{
+#if !CONFIG_ESP_INT_WDT
+#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+    assert(!soc_has_cache_lock_bug() && "ESP32 Rev 3 + Dual Core + PSRAM requires INT WDT enabled in project config!");
+#endif
+#endif
+
+    esp_startup_start_app_common();
+
+    ESP_EARLY_LOGI(TAG, "Starting scheduler on PRO CPU.");
+    vTaskStartScheduler();
+}
+
+
+/* ---------------------------------------------- Port Implementations -------------------------------------------------
+ * Implementations of Porting Interface functions
+ * ------------------------------------------------------------------------------------------------------------------ */
+
+// --------------------- Interrupts ------------------------
+
+BaseType_t xPortCheckIfInISR(void)
+{
+    //Disable interrupts so that reading port_interruptNesting is atomic
+    BaseType_t ret;
+    unsigned int prev_int_level = portDISABLE_INTERRUPTS();
+    ret = (port_interruptNesting[xPortGetCoreID()] != 0) ? pdTRUE : pdFALSE;
+    portRESTORE_INTERRUPTS(prev_int_level);
+    return ret;
+}
+
+// ------------------ Critical Sections --------------------
+
+void vPortTakeLock( portMUX_TYPE *lock )
+{
+    spinlock_acquire( lock, portMUX_NO_TIMEOUT);
+}
+
+void vPortReleaseLock( portMUX_TYPE *lock )
+{
+    spinlock_release( lock );
+}
+
+// ---------------------- Yielding -------------------------
+
+// ----------------------- System --------------------------
 
 /* ------------------------------------------------ FreeRTOS Portable --------------------------------------------------
  * - Provides implementation for functions required by FreeRTOS
@@ -97,7 +326,6 @@ BaseType_t port_uxOldInterruptState[portNUM_PROCESSORS] = {0};
 
 // ----------------- Scheduler Start/End -------------------
 
-/* Defined in xtensa_context.S */
 extern void _xt_coproc_init(void);
 
 BaseType_t xPortStartScheduler( void )
@@ -124,10 +352,80 @@ BaseType_t xPortStartScheduler( void )
 
 void vPortEndScheduler( void )
 {
-    /* It is unlikely that the Xtensa port will get stopped.  If required simply
-    disable the tick interrupt here. */
-    abort();
+    ;
 }
+
+// ----------------------- Memory --------------------------
+
+#define FREERTOS_SMP_MALLOC_CAPS    (MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT)
+
+void *pvPortMalloc( size_t xSize )
+{
+    return heap_caps_malloc(xSize, FREERTOS_SMP_MALLOC_CAPS);
+}
+
+void vPortFree( void * pv )
+{
+    heap_caps_free(pv);
+}
+
+void vPortInitialiseBlocks( void )
+{
+    ;   //Does nothing, heap is initialized separately in ESP-IDF
+}
+
+size_t xPortGetFreeHeapSize( void )
+{
+    return esp_get_free_heap_size();
+}
+
+#if( configSTACK_ALLOCATION_FROM_SEPARATE_HEAP == 1 )
+void *pvPortMallocStack( size_t xSize )
+{
+    return NULL;
+}
+
+void vPortFreeStack( void *pv )
+{
+
+}
+#endif
+
+#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
+void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer,
+                                   StackType_t **ppxIdleTaskStackBuffer,
+                                   uint32_t *pulIdleTaskStackSize )
+{
+    StaticTask_t *pxTCBBufferTemp;
+    StackType_t *pxStackBufferTemp;
+    //Allocate TCB and stack buffer in internal memory
+    pxTCBBufferTemp = pvPortMalloc(sizeof(StaticTask_t));
+    pxStackBufferTemp = pvPortMalloc(CONFIG_FREERTOS_IDLE_TASK_STACKSIZE);
+    assert(pxTCBBufferTemp != NULL);
+    assert(pxStackBufferTemp != NULL);
+    //Write back pointers
+    *ppxIdleTaskTCBBuffer = pxTCBBufferTemp;
+    *ppxIdleTaskStackBuffer = pxStackBufferTemp;
+    *pulIdleTaskStackSize = CONFIG_FREERTOS_IDLE_TASK_STACKSIZE;
+}
+
+void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer,
+                                    StackType_t **ppxTimerTaskStackBuffer,
+                                    uint32_t *pulTimerTaskStackSize )
+{
+    StaticTask_t *pxTCBBufferTemp;
+    StackType_t *pxStackBufferTemp;
+    //Allocate TCB and stack buffer in internal memory
+    pxTCBBufferTemp = pvPortMalloc(sizeof(StaticTask_t));
+    pxStackBufferTemp = pvPortMalloc(configTIMER_TASK_STACK_DEPTH);
+    assert(pxTCBBufferTemp != NULL);
+    assert(pxStackBufferTemp != NULL);
+    //Write back pointers
+    *ppxTimerTaskTCBBuffer = pxTCBBufferTemp;
+    *ppxTimerTaskStackBuffer = pxStackBufferTemp;
+    *pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
+}
+#endif //( configSUPPORT_STATIC_ALLOCATION == 1 )
 
 // ------------------------ Stack --------------------------
 
@@ -146,10 +444,17 @@ static void vPortTaskWrapper(TaskFunction_t pxCode, void *pvParameters)
 }
 #endif
 
-#if portUSING_MPU_WRAPPERS
-StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t pxCode, void *pvParameters, BaseType_t xRunPrivileged )
+#if ( portHAS_STACK_OVERFLOW_CHECKING == 1 )
+StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
+                                        StackType_t * pxEndOfStack,
+                                        TaskFunction_t pxCode,
+                                        void * pvParameters,
+                                        BaseType_t xRunPrivileged )
 #else
-StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t pxCode, void *pvParameters )
+StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
+                                     TaskFunction_t pxCode,
+                                     void * pvParameters,
+                                     BaseType_t xRunPrivileged )
 #endif
 {
     StackType_t *sp, *tp;
@@ -254,115 +559,37 @@ StackType_t *pxPortInitialiseStack( StackType_t *pxTopOfStack, TaskFunction_t px
     return sp;
 }
 
+// -------------------- Tick Handler -----------------------
 
+extern void esp_vApplicationIdleHook(void);
+extern void esp_vApplicationTickHook(void);
 
-/* ---------------------------------------------- Port Implementations -------------------------------------------------
- *
- * ------------------------------------------------------------------------------------------------------------------ */
-
-// --------------------- Interrupts ------------------------
-
-BaseType_t xPortInIsrContext(void)
+BaseType_t xPortSysTickHandler(void)
 {
-    unsigned int irqStatus;
+    portbenchmarkIntLatency();
+    traceISR_ENTER(SYSTICK_INTR_ID);
     BaseType_t ret;
-    irqStatus = portSET_INTERRUPT_MASK_FROM_ISR();
-    ret = (port_interruptNesting[xPortGetCoreID()] != 0);
-    portCLEAR_INTERRUPT_MASK_FROM_ISR(irqStatus);
-    return ret;
-}
-
-void vPortAssertIfInISR(void)
-{
-    configASSERT(xPortInIsrContext());
-}
-
-BaseType_t IRAM_ATTR xPortInterruptedFromISRContext(void)
-{
-    return (port_interruptNesting[xPortGetCoreID()] != 0);
-}
-
-// ------------------ Critical Sections --------------------
-
-BaseType_t __attribute__((optimize("-O3"))) xPortEnterCriticalTimeout(portMUX_TYPE *mux, BaseType_t timeout)
-{
-    /* Interrupts may already be disabled (if this function is called in nested
-     * manner). However, there's no atomic operation that will allow us to check,
-     * thus we have to disable interrupts again anyways.
-     *
-     * However, if this is call is NOT nested (i.e., the first call to enter a
-     * critical section), we will save the previous interrupt level so that the
-     * saved level can be restored on the last call to exit the critical.
-     */
-    BaseType_t xOldInterruptLevel = portSET_INTERRUPT_MASK_FROM_ISR();
-    if (!spinlock_acquire(mux, timeout)) {
-        //Timed out attempting to get spinlock. Restore previous interrupt level and return
-        portCLEAR_INTERRUPT_MASK_FROM_ISR(xOldInterruptLevel);
-        return pdFAIL;
-    }
-    //Spinlock acquired. Increment the critical nesting count.
-    BaseType_t coreID = xPortGetCoreID();
-    BaseType_t newNesting = port_uxCriticalNesting[coreID] + 1;
-    port_uxCriticalNesting[coreID] = newNesting;
-    //If this is the first entry to a critical section. Save the old interrupt level.
-    if ( newNesting == 1 ) {
-        port_uxOldInterruptState[coreID] = xOldInterruptLevel;
-    }
-    return pdPASS;
-}
-
-void __attribute__((optimize("-O3"))) vPortExitCritical(portMUX_TYPE *mux)
-{
-    /* This function may be called in a nested manner. Therefore, we only need
-     * to reenable interrupts if this is the last call to exit the critical. We
-     * can use the nesting count to determine whether this is the last exit call.
-     */
-    spinlock_release(mux);
-    BaseType_t coreID = xPortGetCoreID();
-    BaseType_t nesting = port_uxCriticalNesting[coreID];
-
-    if (nesting > 0) {
-        nesting--;
-        port_uxCriticalNesting[coreID] = nesting;
-        //This is the last exit call, restore the saved interrupt level
-        if ( nesting == 0 ) {
-            portCLEAR_INTERRUPT_MASK_FROM_ISR(port_uxOldInterruptState[coreID]);
-        }
-    }
-}
-
-BaseType_t xPortEnterCriticalTimeoutCompliance(portMUX_TYPE *mux, BaseType_t timeout)
-{
-    BaseType_t ret;
-    if (!xPortInIsrContext()) {
-        ret = xPortEnterCriticalTimeout(mux, timeout);
+    if (portGET_CORE_ID() == 0) {
+        //Only Core 0 calls xTaskIncrementTick();
+        ret = xTaskIncrementTick();
     } else {
-        esp_rom_printf("port*_CRITICAL called from ISR context. Aborting!\n");
-        abort();
-        ret = pdFAIL;
+        //Manually call the IDF tick hooks
+        esp_vApplicationTickHook();
+        ret = pdFALSE;
+    }
+    if(ret != pdFALSE) {
+        portYIELD_FROM_ISR();
+    } else {
+        traceISR_EXIT();
     }
     return ret;
-}
-
-void vPortExitCriticalCompliance(portMUX_TYPE *mux)
-{
-    if (!xPortInIsrContext()) {
-        vPortExitCritical(mux);
-    } else {
-        esp_rom_printf("port*_CRITICAL called from ISR context. Aborting!\n");
-        abort();
-    }
-}
-
-// ---------------------- Yielding -------------------------
-
-void vPortYieldOtherCore( BaseType_t coreid )
-{
-    esp_crosscore_int_send_yield( coreid );
 }
 
 // ------------------- Hook Functions ----------------------
 
+#include <stdlib.h>
+
+#if ( configCHECK_FOR_STACK_OVERFLOW > 0 )
 void  __attribute__((weak)) vApplicationStackOverflowHook( TaskHandle_t xTask, char *pcTaskName )
 {
 #define ERR_STR1 "***ERROR*** A stack overflow in task "
@@ -377,30 +604,28 @@ void  __attribute__((weak)) vApplicationStackOverflowHook( TaskHandle_t xTask, c
     }
     esp_system_abort(buf);
 }
+#endif
 
-// ----------------------- System --------------------------
-
-uint32_t xPortGetTickRateHz(void)
+#if  (  configUSE_TICK_HOOK > 0 )
+void vApplicationTickHook( void )
 {
-    return (uint32_t)configTICK_RATE_HZ;
+    esp_vApplicationTickHook();
 }
+#endif
 
-
-#define STACK_WATCH_AREA_SIZE 32
-#define STACK_WATCH_POINT_NUMBER (SOC_CPU_WATCHPOINTS_NUM - 1)
-
-void vPortSetStackWatchpoint( void *pxStackStart )
+#if ( configUSE_IDLE_HOOK == 1 )
+void vApplicationIdleHook( void )
 {
-    //Set watchpoint 1 to watch the last 32 bytes of the stack.
-    //Unfortunately, the Xtensa watchpoints can't set a watchpoint on a random [base - base+n] region because
-    //the size works by masking off the lowest address bits. For that reason, we futz a bit and watch the lowest 32
-    //bytes of the stack we can actually watch. In general, this can cause the watchpoint to be triggered at most
-    //28 bytes early. The value 32 is chosen because it's larger than the stack canary, which in FreeRTOS is 20 bytes.
-    //This way, we make sure we trigger before/when the stack canary is corrupted, not after.
-    int addr = (int)pxStackStart;
-    addr = (addr + 31) & (~31);
-    esp_cpu_set_watchpoint(STACK_WATCH_POINT_NUMBER, (char *)addr, 32, ESP_CPU_WATCHPOINT_STORE);
+    esp_vApplicationIdleHook();
 }
+#endif
+
+#if ( configUSE_MINIMAL_IDLE_HOOK == 1 )
+void vApplicationMinimalIdleHook( void )
+{
+    esp_vApplicationIdleHook();
+}
+#endif
 
 /* ---------------------------------------------- Misc Implementations -------------------------------------------------
  *
@@ -432,53 +657,3 @@ void vPortReleaseTaskMPUSettings( xMPU_SETTINGS *xMPUSettings )
     _xt_coproc_release( xMPUSettings->coproc_area );
 }
 #endif /* portUSING_MPU_WRAPPERS */
-
-// --------------------- App Start-up ----------------------
-
-#if !CONFIG_FREERTOS_UNICORE
-void esp_startup_start_app_other_cores(void)
-{
-    // For now, we only support up to two core: 0 and 1.
-    if (xPortGetCoreID() >= 2) {
-        abort();
-    }
-
-    // Wait for FreeRTOS initialization to finish on PRO CPU
-    while (port_xSchedulerRunning[0] == 0) {
-        ;
-    }
-
-#if CONFIG_APPTRACE_ENABLE
-    // [refactor-todo] move to esp_system initialization
-    esp_err_t err = esp_apptrace_init();
-    assert(err == ESP_OK && "Failed to init apptrace module on APP CPU!");
-#endif
-
-#if CONFIG_ESP_INT_WDT
-    //Initialize the interrupt watch dog for CPU1.
-    esp_int_wdt_cpu_init();
-#endif
-
-    esp_crosscore_int_init();
-
-    ESP_EARLY_LOGI(TAG, "Starting scheduler on APP CPU.");
-    xPortStartScheduler();
-    abort(); /* Only get to here if FreeRTOS somehow very broken */
-}
-#endif // !CONFIG_FREERTOS_UNICORE
-
-extern void esp_startup_start_app_common(void);
-
-void esp_startup_start_app(void)
-{
-#if !CONFIG_ESP_INT_WDT
-#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
-    assert(!soc_has_cache_lock_bug() && "ESP32 Rev 3 + Dual Core + PSRAM requires INT WDT enabled in project config!");
-#endif
-#endif
-
-    esp_startup_start_app_common();
-
-    ESP_LOGI(TAG, "Starting scheduler on PRO CPU.");
-    vTaskStartScheduler();
-}

@@ -34,7 +34,7 @@
 #define TOPOFSTACK_OFFS                 0x00    /* StackType_t *pxTopOfStack */
 #define CP_TOPOFSTACK_OFFS              0x04    /* xMPU_SETTINGS.coproc_area */
 
-.extern pxCurrentTCB
+.extern pxCurrentTCBs
 
 /*
 *******************************************************************************
@@ -125,11 +125,11 @@ _frxt_int_enter:
     s32i    a2,  a3, 0                  /* save nesting count              */
     bnei    a2,  1, .Lnested            /* !=0 before incr, so nested      */
 
-    movi    a2,  pxCurrentTCB
+    movi    a2,  pxCurrentTCBs
     addx4   a2,  a4, a2
     l32i    a2,  a2, 0                  /* a2 = current TCB                */
     beqz    a2,  1f
-    s32i    a1,  a2, TOPOFSTACK_OFFS    /* pxCurrentTCB->pxTopOfStack = SP */
+    s32i    a1,  a2, TOPOFSTACK_OFFS    /* pxCurrentTCBs->pxTopOfStack = SP */
     movi    a1,  port_IntStack+configISR_STACK_SIZE   /* a1 = top of intr stack for CPU 0  */
     movi    a2,  configISR_STACK_SIZE   /* add configISR_STACK_SIZE * cpu_num to arrive at top of stack for cpu_num */
     mull    a2,  a4, a2
@@ -198,11 +198,11 @@ _frxt_int_exit:
     #endif
     #endif
 
-    movi    a2,  pxCurrentTCB
+    movi    a2,  pxCurrentTCBs
     addx4   a2,  a4, a2
     l32i    a2,  a2, 0                  /* a2 = current TCB                */
     beqz    a2,  1f                     /* no task ? go to dispatcher      */
-    l32i    a1,  a2, TOPOFSTACK_OFFS    /* SP = pxCurrentTCB->pxTopOfStack */
+    l32i    a1,  a2, TOPOFSTACK_OFFS    /* SP = pxCurrentTCBs->pxTopOfStack */
 
     movi    a2,  port_switch_flag       /* address of switch flag          */
     addx4   a2,  a4, a2                 /* point to flag for this cpu      */
@@ -410,7 +410,7 @@ _frxt_tick_timer_init:
 * If restoring a task that was preempted, restores all state including the task's CPENABLE.
 *
 * Entry:
-*   pxCurrentTCB  points to the TCB of the task to suspend,
+*   pxCurrentTCBs  points to the TCB of the task to suspend,
 *   Because it is tail-called without a true function entrypoint, it needs no 'entry' instruction.
 *
 * Exit:
@@ -424,15 +424,18 @@ _frxt_tick_timer_init:
     .align  4
 _frxt_dispatch:
 
+    /* vTaskSwitchContext(xCoreID) now expects xCoreID as an argument, so the assembly calls below have been modified */
     #ifdef __XTENSA_CALL0_ABI__
+    getcoreid   a2              // vTaskSwitchContext requires xCoreID as the first argument
     call0   vTaskSwitchContext  // Get next TCB to resume
-    movi    a2, pxCurrentTCB
-    getcoreid a3
+    getcoreid a3                // Get xCoreID again because a2 wasn't preserved over the call
+    movi    a2, pxCurrentTCBs
     addx4   a2,  a3, a2
     #else
+    getcoreid   a6              // vTaskSwitchContext requires xCoreID as the first argument
     call4   vTaskSwitchContext  // Get next TCB to resume
-    movi    a2, pxCurrentTCB
-    getcoreid a3
+    movi    a2, pxCurrentTCBs
+    getcoreid a3                // Get xCoreID again because a6 wasn't preserved over the call
     addx4   a2,  a3, a2
     #endif
     l32i    a3,  a2, 0
@@ -471,7 +474,7 @@ _frxt_dispatch:
 
     #if XCHAL_CP_NUM > 0
     /* Restore CPENABLE from task's co-processor save area. */
-    movi    a3, pxCurrentTCB            /* cp_state =                       */
+    movi    a3, pxCurrentTCBs            /* cp_state =                       */
     getcoreid a2
     addx4   a3,  a2, a3
     l32i    a3, a3, 0
@@ -512,7 +515,7 @@ _frxt_dispatch:
 * then tail-calls the dispatcher _frxt_dispatch() to perform the actual context switch
 *
 * At Entry:
-*   pxCurrentTCB  points to the TCB of the task to suspend
+*   pxCurrentTCBs  points to the TCB of the task to suspend
 *   Callable from C (obeys ABI conventions on entry).
 *
 * Does not return to caller.
@@ -560,17 +563,17 @@ vPortYield:
     call0   _xt_coproc_savecs
     #endif
 
-    movi    a2,  pxCurrentTCB
+    movi    a2,  pxCurrentTCBs
     getcoreid a3
     addx4   a2,  a3, a2
-    l32i    a2,  a2, 0                  /* a2 = pxCurrentTCB                */
+    l32i    a2,  a2, 0                  /* a2 = pxCurrentTCBs                */
     movi    a3,  0
     s32i    a3,  sp, XT_SOL_EXIT        /* 0 to flag as solicited frame     */
-    s32i    sp,  a2, TOPOFSTACK_OFFS    /* pxCurrentTCB->pxTopOfStack = SP  */
+    s32i    sp,  a2, TOPOFSTACK_OFFS    /* pxCurrentTCBs->pxTopOfStack = SP  */
 
     #if XCHAL_CP_NUM > 0
     /* Clear CPENABLE, also in task's co-processor state save area. */
-    l32i    a2,  a2, CP_TOPOFSTACK_OFFS /* a2 = pxCurrentTCB->cp_state      */
+    l32i    a2,  a2, CP_TOPOFSTACK_OFFS /* a2 = pxCurrentTCBs->cp_state      */
     movi    a3,  0
     wsr     a3,  CPENABLE
     beqz    a2,  1f
@@ -592,8 +595,8 @@ vPortYield:
 * _frxt_dispatch() to perform the actual context switch.
 *
 * At Entry:
-*   Interrupted task context has been saved in an interrupt stack frame at pxCurrentTCB->pxTopOfStack.
-*   pxCurrentTCB  points to the TCB of the task to suspend,
+*   Interrupted task context has been saved in an interrupt stack frame at pxCurrentTCBs->pxTopOfStack.
+*   pxCurrentTCBs  points to the TCB of the task to suspend,
 *   Callable from C (obeys ABI conventions on entry).
 *
 * At Exit:
@@ -611,7 +614,7 @@ vPortYieldFromInt:
 
     #if XCHAL_CP_NUM > 0
     /* Save CPENABLE in task's co-processor save area, and clear CPENABLE.  */
-    movi    a3, pxCurrentTCB            /* cp_state =                       */
+    movi    a3, pxCurrentTCBs            /* cp_state =                       */
     getcoreid a2
     addx4   a3,  a2, a3
     l32i    a3, a3, 0
@@ -665,9 +668,9 @@ _frxt_task_coproc_state:
     l32i    a15, a15, 0
     bnez    a15, 1f
 
-    movi    a15, pxCurrentTCB
+    movi    a15, pxCurrentTCBs
     addx4   a15, a3, a15
-    l32i    a15, a15, 0                 /* && pxCurrentTCB != 0) {                 */
+    l32i    a15, a15, 0                 /* && pxCurrentTCBs != 0) {                 */
 
     beqz    a15, 2f
     l32i    a15, a15, CP_TOPOFSTACK_OFFS
