@@ -105,7 +105,7 @@ menu "Driver configurations"
         config TWAI_ERRATA_FIX_BUS_OFF_REC
             bool "Add SW workaround for REC change during bus-off"
             depends on IDF_TARGET_ESP32
-            default n
+            default y
             help
                 When the bus-off condition is reached, the REC should be reset to 0 and frozen (via LOM) by the
                 driver's ISR. However on the ESP32, there is an edge case where the REC will increase before the
@@ -117,7 +117,7 @@ menu "Driver configurations"
         config TWAI_ERRATA_FIX_TX_INTR_LOST
             bool "Add SW workaround for TX interrupt lost errata"
             depends on IDF_TARGET_ESP32
-            default n
+            default y
             help
                 On the ESP32, when a transmit interrupt occurs, and interrupt register is read on the same APB clock
                 cycle, the transmit interrupt could be lost. Enabling this option will add a workaround that checks the
@@ -126,7 +126,7 @@ menu "Driver configurations"
         config TWAI_ERRATA_FIX_RX_FRAME_INVALID
             bool "Add SW workaround for invalid RX frame errata"
             depends on IDF_TARGET_ESP32
-            default n
+            default y
             help
                 On the ESP32, when receiving a data or remote frame, if a bus error occurs in the data or CRC field,
                 the data of the next received frame could be invalid. Enabling this option will add a workaround that
@@ -137,7 +137,7 @@ menu "Driver configurations"
         config TWAI_ERRATA_FIX_RX_FIFO_CORRUPT
             bool "Add SW workaround for RX FIFO corruption errata"
             depends on IDF_TARGET_ESP32
-            default n
+            default y
             help
                 On the ESP32, when the RX FIFO overruns and the RX message counter maxes out at 64 messages, the entire
                 RX FIFO is no longer recoverable. Enabling this option will add a workaround that resets the peripheral
