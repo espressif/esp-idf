@@ -1,40 +1,21 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <stdio.h>
 #include <string.h>
 #include "unity.h"
-#include "test_utils.h"
 #include "esp_lcd_panel_rgb.h"
 #include "esp_lcd_panel_ops.h"
-#include "soc/soc_caps.h"
+#include "esp_system.h"
+#include "test_rgb_board.h"
 
-#define TEST_LCD_H_RES         (480)
-#define TEST_LCD_V_RES         (272)
+void test_app_include_rgb_lcd(void)
+{
+}
 
-#define TEST_LCD_VSYNC_GPIO    (48)
-#define TEST_LCD_HSYNC_GPIO    (47)
-#define TEST_LCD_DE_GPIO       (45)
-#define TEST_LCD_PCLK_GPIO     (21)
-#define TEST_LCD_DATA0_GPIO    (3)  // B0
-#define TEST_LCD_DATA1_GPIO    (4)  // B1
-#define TEST_LCD_DATA2_GPIO    (5)  // B2
-#define TEST_LCD_DATA3_GPIO    (6)  // B3
-#define TEST_LCD_DATA4_GPIO    (7)  // B4
-#define TEST_LCD_DATA5_GPIO    (8)  // G0
-#define TEST_LCD_DATA6_GPIO    (9)  // G1
-#define TEST_LCD_DATA7_GPIO    (10) // G2
-#define TEST_LCD_DATA8_GPIO    (11) // G3
-#define TEST_LCD_DATA9_GPIO    (12) // G4
-#define TEST_LCD_DATA10_GPIO   (13) // G5
-#define TEST_LCD_DATA11_GPIO   (14) // R0
-#define TEST_LCD_DATA12_GPIO   (15) // R1
-#define TEST_LCD_DATA13_GPIO   (16) // R2
-#define TEST_LCD_DATA14_GPIO   (17) // R3
-#define TEST_LCD_DATA15_GPIO   (18) // R4
-#define TEST_LCD_DISP_EN_GPIO  (39)
-
-#if SOC_LCD_RGB_SUPPORTED
-// RGB driver consumes a huge memory to save frame buffer, only test it with PSRAM enabled
-#if CONFIG_SPIRAM_USE_MALLOC
-TEST_CASE("lcd rgb lcd panel", "[lcd]")
+TEST_CASE("lcd_rgb_lcd_panel", "[lcd]")
 {
 #define TEST_IMG_SIZE (100 * 100 * sizeof(uint16_t))
     uint8_t *img = malloc(TEST_IMG_SIZE);
@@ -43,6 +24,8 @@ TEST_CASE("lcd rgb lcd panel", "[lcd]")
     esp_lcd_panel_handle_t panel_handle = NULL;
     esp_lcd_rgb_panel_config_t panel_config = {
         .data_width = 16,
+        .psram_trans_align = 64,
+        .clk_src = LCD_CLK_SRC_PLL160M,
         .disp_gpio_num = TEST_LCD_DISP_EN_GPIO,
         .pclk_gpio_num = TEST_LCD_PCLK_GPIO,
         .vsync_gpio_num = TEST_LCD_VSYNC_GPIO,
@@ -67,17 +50,18 @@ TEST_CASE("lcd rgb lcd panel", "[lcd]")
             TEST_LCD_DATA15_GPIO,
         },
         .timings = {
-            .pclk_hz = 12000000,
+            .pclk_hz = TEST_LCD_PIXEL_CLOCK_HZ,
             .h_res = TEST_LCD_H_RES,
             .v_res = TEST_LCD_V_RES,
-            .hsync_back_porch = 43,
-            .hsync_front_porch = 2,
-            .hsync_pulse_width = 1,
-            .vsync_back_porch = 12,
-            .vsync_front_porch = 1,
+            .hsync_back_porch = 68,
+            .hsync_front_porch = 20,
+            .hsync_pulse_width = 5,
+            .vsync_back_porch = 18,
+            .vsync_front_porch = 4,
             .vsync_pulse_width = 1,
+            .flags.pclk_active_neg = 1, // RGB data is clocked out on falling edge
         },
-        .flags.fb_in_psram = 1,
+        .flags.fb_in_psram = 1, // allocate frame buffer in PSRAM
     };
     // Test stream mode and one-off mode
     for (int i = 0; i < 2; i++) {
@@ -99,6 +83,3 @@ TEST_CASE("lcd rgb lcd panel", "[lcd]")
     free(img);
 #undef TEST_IMG_SIZE
 }
-
-#endif // CONFIG_SPIRAM_USE_MALLOC
-#endif // SOC_LCD_RGB_SUPPORTED

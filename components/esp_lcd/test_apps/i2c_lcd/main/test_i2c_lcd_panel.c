@@ -1,24 +1,24 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <stdio.h>
 #include <string.h>
-#include "sdkconfig.h"
 #include "unity.h"
-#include "test_utils.h"
 #include "driver/i2c.h"
 #include "driver/gpio.h"
 #include "esp_lcd_panel_io.h"
 #include "esp_lcd_panel_vendor.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_system.h"
+#include "test_i2c_board.h"
 
-#define TEST_LCD_H_RES          (128)
-#define TEST_LCD_V_RES          (64)
-#define TEST_I2C_SDA_GPIO       (3)
-#define TEST_I2C_SCL_GPIO       (4)
-#define TEST_I2C_HOST_ID        (0)
-#define TEST_I2C_DEV_ADDR       (0x3C)
-#define TEST_LCD_PIXEL_CLOCK_HZ (400 * 1000)
+void test_app_include_i2c_lcd(void)
+{
+}
 
-TEST_CASE("lcd panel with i2c interface (ssd1306)", "[lcd]")
+TEST_CASE("lcd_panel_with_i2c_interface_(ssd1306)", "[lcd]")
 {
     const uint8_t pattern[][16] = {{
             0x00, 0x7E, 0x42, 0x42, 0x42, 0x42, 0x7E, 0x00,

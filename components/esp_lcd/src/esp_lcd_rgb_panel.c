@@ -16,8 +16,6 @@
 #include "freertos/semphr.h"
 #include "esp_attr.h"
 #include "esp_check.h"
-#include "esp_intr_alloc.h"
-#include "esp_heap_caps.h"
 #include "esp_pm.h"
 #include "esp_lcd_panel_interface.h"
 #include "esp_lcd_panel_rgb.h"
@@ -107,7 +105,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
         num_dma_nodes++;
     }
     // DMA descriptors must be placed in internal SRAM (requested by DMA)
-    rgb_panel = heap_caps_calloc(1, sizeof(esp_rgb_panel_t) + num_dma_nodes * sizeof(dma_descriptor_t), MALLOC_CAP_DMA);
+    rgb_panel = heap_caps_calloc(1, sizeof(esp_rgb_panel_t) + num_dma_nodes * sizeof(dma_descriptor_t), MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
     ESP_GOTO_ON_FALSE(rgb_panel, ESP_ERR_NO_MEM, err, TAG, "no mem for rgb panel");
     rgb_panel->num_dma_nodes = num_dma_nodes;
     rgb_panel->panel_id = -1;
@@ -150,7 +148,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     ret = lcd_rgb_panel_select_periph_clock(rgb_panel, rgb_panel_config->clk_src);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "select periph clock failed");
     // install interrupt service, (LCD peripheral shares the interrupt source with Camera by different mask)
-    int isr_flags = ESP_INTR_FLAG_SHARED;
+    int isr_flags = LCD_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED;
     ret = esp_intr_alloc_intrstatus(lcd_periph_signals.panels[panel_id].irq_id, isr_flags,
                                     (uint32_t)lcd_ll_get_interrupt_status_reg(rgb_panel->hal.dev),
                                     LCD_LL_EVENT_VSYNC_END, lcd_default_isr_handler, rgb_panel, &rgb_panel->intr);
@@ -284,6 +282,8 @@ static esp_err_t rgb_panel_init(esp_lcd_panel_t *panel)
     lcd_ll_enable_auto_next_frame(rgb_panel->hal.dev, rgb_panel->flags.stream_mode);
     // trigger interrupt on the end of frame
     lcd_ll_enable_interrupt(rgb_panel->hal.dev, LCD_LL_EVENT_VSYNC_END, true);
+    // enable intr
+    esp_intr_enable(rgb_panel->intr);
     ESP_LOGD(TAG, "rgb panel(%d) start, pclk=%uHz", rgb_panel->panel_id, rgb_panel->timings.pclk_hz);
 err:
     return ret;
