@@ -117,4 +117,16 @@ typedef void (* TaskFunction_t)( void * );
 #define pdBIG_ENDIAN                      pdFREERTOS_BIG_ENDIAN
 
 
+/* ------------------------------------------------ IDF Compatibility --------------------------------------------------
+ *
+ * ------------------------------------------------------------------------------------------------------------------ */
+
+#ifdef ESP_PLATFORM
+
+#ifndef pdTICKS_TO_MS
+    #define pdTICKS_TO_MS( xTicks )   ( ( TickType_t ) ( ( uint64_t ) ( xTicks ) * 1000 / configTICK_RATE_HZ ) )
+#endif
+
+#endif // ESP_PLATFORM
+
 #endif /* PROJDEFS_H */

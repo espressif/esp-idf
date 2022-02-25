@@ -39,6 +39,12 @@
 #include "timers.h"
 #include "stack_macros.h"
 
+#ifdef ESP_PLATFORM
+#include "esp_newlib.h"             /* required for esp_reent_init() in tasks.c */
+#undef _REENT_INIT_PTR
+#define _REENT_INIT_PTR                 esp_reent_init
+#endif
+
 /* Lint e9021, e961 and e750 are suppressed as a MISRA exception justified
  * because the MPU ports require MPU_WRAPPERS_INCLUDED_FROM_API_FILE to be defined
  * for the header files above, but not in this file, in order to generate the
@@ -280,6 +286,11 @@ typedef struct tskTaskControlBlock       /* The old naming convention is used to
 
     #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 )
         void * pvThreadLocalStoragePointers[ configNUM_THREAD_LOCAL_STORAGE_POINTERS ];
+        #ifdef ESP_PLATFORM
+        #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
+            TlsDeleteCallbackFunction_t pvThreadLocalStoragePointersDelCallback[ configNUM_THREAD_LOCAL_STORAGE_POINTERS ];
+        #endif
+        #endif //ESP_PLATFORM
     #endif
 
     #if ( configGENERATE_RUN_TIME_STATS == 1 )
@@ -823,7 +834,7 @@ static void prvYieldForTask( TCB_t * pxTCB,
         BaseType_t xTaskScheduled = pdFALSE;
         BaseType_t xDecrementTopPriority = pdTRUE;
 
-        #if ( configUSE_CORE_AFFINITY == 1 )
+        #if ( ( configNUM_CORES > 1 ) && ( configUSE_CORE_AFFINITY == 1 ) )
             TCB_t * pxPreviousTCB = NULL;
         #endif
         #if ( ( configRUN_MULTIPLE_PRIORITIES == 0 ) && ( configNUM_CORES > 1 ) )
@@ -899,7 +910,7 @@ static void prvYieldForTask( TCB_t * pxTCB,
                         {
                             /* If the task is not being executed by any core swap it in */
                             pxCurrentTCBs[ xCoreID ]->xTaskRunState = taskTASK_NOT_RUNNING;
-                            #if ( configUSE_CORE_AFFINITY == 1 )
+                            #if ( ( configNUM_CORES > 1 ) && ( configUSE_CORE_AFFINITY == 1 ) )
                                 pxPreviousTCB = pxCurrentTCBs[ xCoreID ];
                             #endif
                             pxTCB->xTaskRunState = ( TaskRunning_t ) xCoreID;
@@ -1458,6 +1469,11 @@ static void prvInitialiseNewTask( TaskFunction_t pxTaskCode,
     #if ( configNUM_THREAD_LOCAL_STORAGE_POINTERS != 0 )
         {
             memset( ( void * ) &( pxNewTCB->pvThreadLocalStoragePointers[ 0 ] ), 0x00, sizeof( pxNewTCB->pvThreadLocalStoragePointers ) );
+            #ifdef ESP_PLATFORM
+            #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
+                memset ( (void * ) &( pxNewTCB->pvThreadLocalStoragePointersDelCallback[0] ), 0x00, sizeof( pxNewTCB->pvThreadLocalStoragePointersDelCallback ) );
+            #endif
+            #endif //ESP_PLATFORM
         }
     #endif
 
@@ -2744,6 +2760,13 @@ static BaseType_t prvCreateIdleTasks( void )
                 #endif
             }
         #endif /* configSUPPORT_STATIC_ALLOCATION */
+
+#ifdef ESP_PLATFORM
+        #if ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
+        //Don't forget to pin the created IDLE tasks
+        vTaskCoreAffinitySet(xIdleTaskHandle[ xCoreID ], (1 << xCoreID) );
+        #endif
+#endif
     }
 
     return xReturn;
@@ -2785,7 +2808,9 @@ void vTaskStartScheduler( void )
                  * structure specific to the task that will run first.
                  * See the third party link http://www.nadler.com/embedded/newlibAndFreeRTOS.html
                  * for additional information. */
+#ifndef ESP_PLATFORM
                 _impure_ptr = &( pxCurrentTCB->xNewLib_reent );
+#endif
             }
         #endif /* configUSE_NEWLIB_REENTRANT */
 
@@ -3876,7 +3901,9 @@ void vTaskSwitchContext( BaseType_t xCoreID )
                      * structure specific to this task.
                      * See the third party link http://www.nadler.com/embedded/newlibAndFreeRTOS.html
                      * for additional information. */
+#ifndef ESP_PLATFORM
                     _impure_ptr = &( pxCurrentTCB->xNewLib_reent );
+#endif
                 }
             #endif /* configUSE_NEWLIB_REENTRANT */
         }
@@ -4833,6 +4860,18 @@ static void prvCheckTasksWaitingTermination( void )
 
     static void prvDeleteTCB( TCB_t * pxTCB )
     {
+        #ifdef ESP_PLATFORM
+        #if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
+            for( int x = 0; x < configNUM_THREAD_LOCAL_STORAGE_POINTERS; x++ )
+            {
+                if (pxTCB->pvThreadLocalStoragePointersDelCallback[ x ] != NULL)    //If del cb is set
+                {
+                    pxTCB->pvThreadLocalStoragePointersDelCallback[ x ](x, pxTCB->pvThreadLocalStoragePointers[ x ]);   //Call del cb
+                }
+            }
+        #endif
+        #endif //ESP_PLATFORM
+
         /* This call is required specifically for the TriCore port.  It must be
          * above the vPortFree() calls.  The call is also used by ports/demos that
          * want to allocate and clean RAM statically. */
@@ -4922,7 +4961,7 @@ static void prvResetNextTaskUnblockTime( void )
         return xReturn;
     }
 
-    TaskHandle_t xTaskGetCurrentTaskHandleCPU( UBaseType_t xCoreID )
+    TaskHandle_t xTaskGetCurrentTaskHandleCPU( BaseType_t xCoreID )
     {
         TaskHandle_t xReturn = NULL;
 
@@ -6354,3 +6393,149 @@ static void prvAddCurrentTaskToDelayedList( TickType_t xTicksToWait,
     #endif
 
 #endif /* if ( configINCLUDE_FREERTOS_TASK_C_ADDITIONS_H == 1 ) */
+
+/* ------------------------------------------------ IDF Compatibility --------------------------------------------------
+ *
+ * ------------------------------------------------------------------------------------------------------------------ */
+
+#ifdef ESP_PLATFORM
+
+BaseType_t xTaskCreatePinnedToCore( TaskFunction_t pvTaskCode,
+                                    const char * const pcName,
+                                    const uint32_t usStackDepth,
+                                    void * const pvParameters,
+                                    UBaseType_t uxPriority,
+                                    TaskHandle_t * const pvCreatedTask,
+                                    const BaseType_t xCoreID)
+{
+    BaseType_t ret;
+#if ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
+    /*
+    If we are using multiple cores and core affinity, we need to create the task then set the core affinity of that
+    task. We do this with interrupts disabled to prevent the task from being scehduled immediately after
+    xTaskCreate().
+    */
+    portDISABLE_INTERRUPTS();
+    TaskHandle_t xTaskHandleTemp;
+    ret = xTaskCreate(pvTaskCode, pcName, usStackDepth, pvParameters, uxPriority, &xTaskHandleTemp);
+    if (ret == pdPASS) {
+        UBaseType_t uxCoreAffinityMask;
+        if (xCoreID == tskNO_AFFINITY) {
+            uxCoreAffinityMask = tskNO_AFFINITY;
+        } else {
+            uxCoreAffinityMask = (1 << xCoreID);
+        }
+        vTaskCoreAffinitySet(xTaskHandleTemp, uxCoreAffinityMask);
+        if (pvCreatedTask != NULL) {
+            *pvCreatedTask = xTaskHandleTemp;
+        }
+    }
+    portENABLE_INTERRUPTS();
+#else /* if ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 ) */
+    //No need to set the affinity. Just create the task
+    ret = xTaskCreate(pvTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pvCreatedTask);
+#endif /* if ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 ) */
+    return ret;
+}
+
+#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
+TaskHandle_t xTaskCreateStaticPinnedToCore( TaskFunction_t pxTaskCode,
+                                            const char * const pcName,
+                                            const uint32_t ulStackDepth,
+                                            void * const pvParameters,
+                                            UBaseType_t uxPriority,
+                                            StackType_t * const puxStackBuffer,
+                                            StaticTask_t * const pxTaskBuffer,
+                                            const BaseType_t xCoreID)
+{
+    TaskHandle_t xTaskHandleTemp;
+#if ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
+    /*
+    If we are using multiple cores and core affinity, we need to create the task then set the core affinity of that
+    task. We do this with interrupts disabled to prevent the task from being scehduled immediately after
+    xTaskCreate().
+    */
+    portDISABLE_INTERRUPTS();
+    xTaskHandleTemp = xTaskCreateStatic(pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, puxStackBuffer, pxTaskBuffer);
+    if (xTaskHandleTemp != NULL) {
+        UBaseType_t uxCoreAffinityMask;
+        if (xCoreID == tskNO_AFFINITY) {
+            uxCoreAffinityMask = tskNO_AFFINITY;
+        } else {
+            uxCoreAffinityMask = (1 << xCoreID);
+        }
+        vTaskCoreAffinitySet(xTaskHandleTemp, uxCoreAffinityMask);
+    }
+    portENABLE_INTERRUPTS();
+#else /* if ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 ) */
+    xTaskHandleTemp = xTaskCreateStatic(pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, puxStackBuffer, pxTaskBuffer);
+#endif /* if ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 ) */
+    return xTaskHandleTemp;
+}
+#endif /* configSUPPORT_STATIC_ALLOCATION */
+
+#if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
+    void vTaskSetThreadLocalStoragePointerAndDelCallback( TaskHandle_t xTaskToSet, BaseType_t xIndex, void *pvValue , TlsDeleteCallbackFunction_t xDelCallback)
+    {
+        //Set the local storage pointer first
+        vTaskSetThreadLocalStoragePointer(xTaskToSet, xIndex, pvValue);
+        //Set the deletion callback
+        TCB_t * pxTCB;
+        pxTCB = prvGetTCBFromHandle( xTaskToSet );
+        pxTCB->pvThreadLocalStoragePointersDelCallback[ xIndex ] = xDelCallback;
+    }
+#endif
+
+TaskHandle_t xTaskGetCurrentTaskHandleForCPU( BaseType_t cpuid )
+{
+    TaskHandle_t xTaskHandleTemp;
+    assert(cpuid >= 0 && cpuid < configNUM_CORES);
+    taskENTER_CRITICAL();
+    xTaskHandleTemp = (TaskHandle_t) pxCurrentTCBs[cpuid];
+    taskEXIT_CRITICAL();
+    return xTaskHandleTemp;
+}
+
+TaskHandle_t xTaskGetIdleTaskHandleForCPU( BaseType_t cpuid )
+{
+    assert(cpuid >= 0 && cpuid < configNUM_CORES);
+    return (TaskHandle_t) xIdleTaskHandle[cpuid];
+}
+
+BaseType_t xTaskGetAffinity( TaskHandle_t xTask )
+{
+    taskENTER_CRITICAL();
+    UBaseType_t uxCoreAffinityMask;
+#if ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
+    TCB_t *pxTCB = prvGetTCBFromHandle( xTask );
+    uxCoreAffinityMask = pxTCB->uxCoreAffinityMask;
+#else
+    uxCoreAffinityMask = tskNO_AFFINITY;
+#endif
+    taskEXIT_CRITICAL();
+    BaseType_t ret;
+    if (uxCoreAffinityMask == tskNO_AFFINITY) {
+        ret = tskNO_AFFINITY;
+    } else {
+        int index_plus_one = __builtin_ffs(uxCoreAffinityMask);
+        assert(index_plus_one >= 1);
+        ret = index_plus_one - 1;
+    }
+    return ret;
+}
+
+#if ( configUSE_NEWLIB_REENTRANT == 1 )
+//Return global reent struct if FreeRTOS isn't running,
+struct _reent* __getreent(void) {
+    //No lock needed because if this changes, we won't be running anymore.
+    TCB_t *currTask=xTaskGetCurrentTaskHandle();
+    if (currTask==NULL) {
+        //No task running. Return global struct.
+        return _GLOBAL_REENT;
+    } else {
+        //We have a task; return its reentrant struct.
+        return &currTask->xNewLib_reent;
+    }
+}
+#endif
+#endif //ESP_PLATFORM

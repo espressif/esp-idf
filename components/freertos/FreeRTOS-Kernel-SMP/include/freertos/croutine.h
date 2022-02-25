@@ -65,7 +65,7 @@ typedef struct corCoRoutineControlBlock
  *                               crCOROUTINE_CODE pxCoRoutineCode,
  *                               UBaseType_t uxPriority,
  *                               UBaseType_t uxIndex
- *                             ); 
+ *                             );
  * </pre>
  *
  * Create a new co-routine and add it to the list of co-routines that are

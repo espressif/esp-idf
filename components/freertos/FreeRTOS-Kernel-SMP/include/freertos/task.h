@@ -3147,7 +3147,7 @@ TaskHandle_t xTaskGetCurrentTaskHandle( void ) PRIVILEGED_FUNCTION;
 /*
  * Return the handle of the task running on specified core.
  */
-TaskHandle_t xTaskGetCurrentTaskHandleCPU( UBaseType_t xCoreID ) PRIVILEGED_FUNCTION;
+TaskHandle_t xTaskGetCurrentTaskHandleCPU( BaseType_t xCoreID ) PRIVILEGED_FUNCTION;
 
 /*
  * Shortcut used by the queue implementation to prevent unnecessary call to
@@ -3239,6 +3239,92 @@ void vTaskInternalSetTimeOutState( TimeOut_t * const pxTimeOut ) PRIVILEGED_FUNC
  * For SMP this is not defined by the port.
  */
 void vTaskYieldWithinAPI( void );
+
+/* ------------------------------------------------ IDF Compatibility --------------------------------------------------
+ *
+ * ------------------------------------------------------------------------------------------------------------------ */
+
+#ifdef ESP_PLATFORM
+BaseType_t xTaskCreatePinnedToCore( TaskFunction_t pvTaskCode,
+                                    const char * const pcName,
+                                    const uint32_t usStackDepth,
+                                    void * const pvParameters,
+                                    UBaseType_t uxPriority,
+                                    TaskHandle_t * const pvCreatedTask,
+                                    const BaseType_t xCoreID);
+
+#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
+TaskHandle_t xTaskCreateStaticPinnedToCore( TaskFunction_t pxTaskCode,
+                                            const char * const pcName,     /*lint !e971 Unqualified char types are allowed for          strings and single characters only. */
+                                            const uint32_t ulStackDepth,
+                                            void * const pvParameters,
+                                            UBaseType_t uxPriority,
+                                            StackType_t * const puxStackBuffer,
+                                            StaticTask_t * const pxTaskBuffer,
+                                            const BaseType_t xCoreID ) PRIVILEGED_FUNCTION;
+#endif /* configSUPPORT_STATIC_ALLOCATION */
+
+#if ( configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS )
+
+    /**
+     * Prototype of local storage pointer deletion callback.
+     */
+    typedef void (*TlsDeleteCallbackFunction_t)( int, void * );
+
+    /**
+     * Set local storage pointer and deletion callback.
+     *
+     * Each task contains an array of pointers that is dimensioned by the
+     * configNUM_THREAD_LOCAL_STORAGE_POINTERS setting in FreeRTOSConfig.h.
+     * The kernel does not use the pointers itself, so the application writer
+     * can use the pointers for any purpose they wish.
+     *
+     * Local storage pointers set for a task can reference dynamically
+     * allocated resources. This function is similar to
+     * vTaskSetThreadLocalStoragePointer, but provides a way to release
+     * these resources when the task gets deleted. For each pointer,
+     * a callback function can be set. This function will be called
+     * when task is deleted, with the local storage pointer index
+     * and value as arguments.
+     *
+     * @param xTaskToSet  Task to set thread local storage pointer for
+     * @param xIndex The index of the pointer to set, from 0 to
+     *               configNUM_THREAD_LOCAL_STORAGE_POINTERS - 1.
+     * @param pvValue  Pointer value to set.
+     * @param pvDelCallback  Function to call to dispose of the local
+     *                       storage pointer when the task is deleted.
+     */
+    void vTaskSetThreadLocalStoragePointerAndDelCallback( TaskHandle_t xTaskToSet, BaseType_t xIndex, void *pvValue, TlsDeleteCallbackFunction_t pvDelCallback);
+#endif
+
+/*
+ * Return the handle of the task running on a certain CPU. Because of
+ * the nature of SMP processing, there is no guarantee that this
+ * value will still be valid on return and should only be used for
+ * debugging purposes.
+ */
+TaskHandle_t xTaskGetCurrentTaskHandleForCPU( BaseType_t cpuid );
+
+/**
+ * Get the handle of idle task for the given CPU.
+ *
+ * xTaskGetIdleTaskHandleForCPU() is only available if
+ * INCLUDE_xTaskGetIdleTaskHandle is set to 1 in FreeRTOSConfig.h.
+ *
+ * @param cpuid The CPU to get the handle for
+ *
+ * @return Idle task handle of a given cpu. It is not valid to call
+ * xTaskGetIdleTaskHandleForCPU() before the scheduler has been started.
+ */
+TaskHandle_t xTaskGetIdleTaskHandleForCPU( BaseType_t cpuid );
+
+/*
+ * Get the current core affinity of a task
+ */
+BaseType_t xTaskGetAffinity( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
+
+
+#endif //ESP_PLATFORM
 
 /* *INDENT-OFF* */
 #ifdef __cplusplus
