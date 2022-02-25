@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,10 +28,12 @@ extern "C" {
 #define CMD_RDID       0x9F
 #define CMD_WRSR       0x01
 #define CMD_WRSR2      0x31 /* Not all SPI flash uses this command */
+#define CMD_WRSR3      0x11 /* Not all SPI flash uses this command */
 #define CMD_WREN       0x06
 #define CMD_WRDI       0x04
 #define CMD_RDSR       0x05
 #define CMD_RDSR2      0x35 /* Not all SPI flash uses this command */
+#define CMD_RDSR3      0x15 /* Not all SPI flash uses this command */
 #define CMD_OTPEN      0x3A /* Enable OTP mode, not all SPI flash uses this command */
 #define CMD_RDSFDP     0x5A /* Read the SFDP of the flash */
 #define CMD_WRAP       0x77 /* Set burst with wrap command */

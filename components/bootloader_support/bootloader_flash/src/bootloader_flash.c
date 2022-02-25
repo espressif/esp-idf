@@ -509,7 +509,7 @@ esp_err_t IRAM_ATTR __attribute__((weak)) bootloader_flash_unlock(void)
     return err;
 }
 
-IRAM_ATTR static uint32_t bootloader_flash_execute_command_common(
+IRAM_ATTR uint32_t bootloader_flash_execute_command_common(
     uint8_t command,
     uint32_t addr_len, uint32_t address,
     uint8_t dummy_len,

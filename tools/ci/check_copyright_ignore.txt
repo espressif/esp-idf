@@ -1688,7 +1688,6 @@ components/spi_flash/include/esp_flash_spi_init.h
 components/spi_flash/include/esp_spi_flash.h
 components/spi_flash/include/esp_spi_flash_counters.h
 components/spi_flash/include/memspi_host_driver.h
-components/spi_flash/include/spi_flash/spi_flash_defs.h
 components/spi_flash/include/spi_flash_chip_boya.h
 components/spi_flash/include/spi_flash_chip_driver.h
 components/spi_flash/include/spi_flash_chip_gd.h

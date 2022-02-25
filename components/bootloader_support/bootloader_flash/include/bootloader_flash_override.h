@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
+#include <stdint.h>
 #include "esp_err.h"
 #include "esp_attr.h"
 
@@ -41,6 +42,13 @@ unsigned bootloader_read_status_8b_rdsr(void);
 unsigned bootloader_read_status_8b_rdsr2(void);
 
 /**
+ * @brief Read 8 bit status (third byte) using RDSR3 command
+ *
+ * @return Value of SR3
+ */
+unsigned bootloader_read_status_8b_rdsr3(void);
+
+/**
  * @brief Read 16 bit status using RDSR & RDSR2 (low and high bytes)
  *
  * @return Value of SR2#SR1.
@@ -56,6 +64,11 @@ void bootloader_write_status_8b_wrsr(unsigned new_status);
  * @brief Write 8 bit status (second byte) using WRSR2.
  */
 void bootloader_write_status_8b_wrsr2(unsigned new_status);
+
+/**
+ * @brief Write 8 bit status (third byte) using WRSR3.
+ */
+void bootloader_write_status_8b_wrsr3(unsigned new_status);
 
 /**
  * @brief Write 16 bit status using WRSR, (both write SR1 and SR2)
