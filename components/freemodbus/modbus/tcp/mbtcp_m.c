@@ -86,11 +86,15 @@ eMBMasterTCPDoInit( USHORT ucTCPPort )
 void
 eMBMasterTCPStart( void )
 {
+    ESP_LOGD(MB_PORT_TAG, "TCP Master port enable.");
+    vMBMasterTCPPortEnable( );
 }
 
 void
 eMBMasterTCPStop( void )
 {
+    ESP_LOGD(MB_PORT_TAG, "TCP Master port disable.");
+    vMBMasterTCPPortDisable( );
 }
 
 eMBErrorCode

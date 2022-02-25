@@ -88,7 +88,6 @@ static esp_err_t mbc_tcp_slave_start(void)
     eMBPortProto proto = (mbs_opts->mbs_comm.ip_mode == MB_MODE_TCP) ? MB_PROTO_TCP : MB_PROTO_UDP;
     eMBPortIpVer ip_ver = (mbs_opts->mbs_comm.ip_addr_type == MB_IPV4) ? MB_PORT_IPV4 : MB_PORT_IPV6;
     vMBTCPPortSlaveSetNetOpt(mbs_opts->mbs_comm.ip_netif_ptr, ip_ver, proto, (char*)mbs_opts->mbs_comm.ip_addr);
-    vMBTCPPortSlaveStartServerTask();
 
     status = eMBEnable();
     MB_SLAVE_CHECK((status == MB_ENOERR), ESP_ERR_INVALID_STATE,

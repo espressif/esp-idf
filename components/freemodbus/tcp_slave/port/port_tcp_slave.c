@@ -182,11 +182,6 @@ void vMBTCPPortSlaveSetNetOpt(void* pvNetIf, eMBPortIpVer xIpVersion, eMBPortPro
     xConfig.pcBindAddr = pcBindAddrStr;
 }
 
-void vMBTCPPortSlaveStartServerTask(void)
-{
-    vTaskResume(xConfig.xMbTcpTaskHandle);
-}
-
 static int xMBTCPPortAcceptConnection(int xListenSockId, char** pcIPAddr)
 {
     MB_PORT_CHECK(pcIPAddr, -1, "Wrong IP address pointer.");
@@ -640,6 +635,11 @@ vMBTCPPortClose( )
     // Release resources for the event queue.
     vMBPortEventClose( );
     vTaskDelete(xConfig.xMbTcpTaskHandle);
+}
+
+void vMBTCPPortEnable( void )
+{
+    vTaskResume(xConfig.xMbTcpTaskHandle);
 }
 
 void
