@@ -539,14 +539,12 @@ IRAM_ATTR uint32_t bootloader_flash_execute_command_common(
     SPIFLASH.addr = address;
 #endif
     //dummy phase
+    uint32_t total_dummy = dummy_len;
     if (miso_len > 0) {
-        uint32_t total_dummy = dummy_len + g_rom_spiflash_dummy_len_plus[1];
-        SPIFLASH.user.usr_dummy = total_dummy > 0;
-        SPIFLASH.user1.usr_dummy_cyclelen = total_dummy - 1;
-    } else {
-        SPIFLASH.user.usr_dummy = 0;
-        SPIFLASH.user1.usr_dummy_cyclelen = 0;
+        total_dummy += g_rom_spiflash_dummy_len_plus[1];
     }
+    SPIFLASH.user.usr_dummy = total_dummy > 0;
+    SPIFLASH.user1.usr_dummy_cyclelen = total_dummy - 1;
     //output data
     SPIFLASH.user.usr_mosi = mosi_len > 0;
 #if CONFIG_IDF_TARGET_ESP32
