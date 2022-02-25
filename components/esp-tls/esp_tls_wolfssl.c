@@ -168,7 +168,13 @@ exit:
 static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t *cfg, esp_tls_t *tls)
 {
     int ret = WOLFSSL_FAILURE;
-    tls->priv_ctx = (void *)wolfSSL_CTX_new(wolfTLSv1_2_client_method());
+
+    #ifdef WOLFSSL_TLS13
+        tls->priv_ctx = (void *)wolfSSL_CTX_new(wolfTLSv1_3_client_method());
+    #else
+        tls->priv_ctx = (void *)wolfSSL_CTX_new(wolfTLSv1_2_client_method());
+    #endif
+
     if (!tls->priv_ctx) {
         ESP_LOGE(TAG, "Set wolfSSL ctx failed");
         ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_WOLFSSL, ret);
@@ -310,7 +316,13 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
 static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
 {
     int ret = WOLFSSL_FAILURE;
-    tls->priv_ctx = (void *)wolfSSL_CTX_new(wolfTLSv1_2_server_method());
+
+    #ifdef WOLFSSL_TLS13
+        tls->priv_ctx = (void *)wolfSSL_CTX_new(wolfTLSv1_3_server_method());
+    #else
+        tls->priv_ctx = (void *)wolfSSL_CTX_new(wolfTLSv1_2_server_method());
+    #endif
+    
     if (!tls->priv_ctx) {
         ESP_LOGE(TAG, "Set wolfSSL ctx failed");
         return ESP_ERR_WOLFSSL_CTX_SETUP_FAILED;
