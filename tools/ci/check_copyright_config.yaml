@@ -104,6 +104,14 @@ spiffs:
     - MIT
     - Apache-2.0
 
+sdmmc:
+  include:
+    - 'components/driver/include/driver/'
+    - 'components/sdmmc/'
+  allowed_licenses:
+    - Apache-2.0
+    - ISC
+
 # files matching this section do not perform the check
 # file patterns starting with ! are negated, meaning files matching them won't match the section.
 ignore:
