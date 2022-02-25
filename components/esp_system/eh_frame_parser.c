@@ -681,13 +681,13 @@ static uint32_t esp_eh_frame_initialize_state(const uint8_t* cie, ExecutionFrame
     /* Next field is a null-terminated UTF-8 string. Ignore it, look for the end. */
     while((c = *cie_data++) != 0);
 
-    /* Field alignement factor shall be 1. It is encoded in ULEB128. */
+    /* Field alignment factor shall be 1. It is encoded in ULEB128. */
     const uint32_t code_align = decode_leb128(cie_data, false, &size);
     assert(code_align == 1);
     /* Jump to the next field */
     cie_data += size;
 
-    /* Same goes for data alignement factor. Shall be equal to -4. */
+    /* Same goes for data alignment factor. Shall be equal to -4. */
     const int32_t data_align = decode_leb128(cie_data, true, &size);
     cie_data += size;
     assert(data_align == -4);
