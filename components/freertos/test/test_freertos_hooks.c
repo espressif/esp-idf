@@ -4,6 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
+
+#ifndef CONFIG_FREERTOS_SMP
+/*
+Note: We disable this test when using the FreeRTOS SMP kernel as the port will already provide
+a definition for vApplicationTickHook(). Thus this test cannot be run.
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include "freertos/FreeRTOS.h"
@@ -84,3 +91,4 @@ TEST_CASE("static task cleanup hook is called based on config", "[freertos]")
 }
 
 #endif // CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
+#endif // CONFIG_FREERTOS_SMP

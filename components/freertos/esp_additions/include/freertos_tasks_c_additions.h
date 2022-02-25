@@ -50,7 +50,11 @@
 
 	List_t* pxListGetReadyPendingTask ( UBaseType_t idx )
 	{
+#ifdef CONFIG_FREERTOS_SMP
+		return &( xPendingReadyList );
+#else
 		return &( xPendingReadyList[idx] );
+#endif
 	}
 
 	List_t* pxGetDelayedTaskList ( void ) {

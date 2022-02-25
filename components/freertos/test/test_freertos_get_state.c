@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "sdkconfig.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include "freertos/FreeRTOS.h"
@@ -17,7 +23,12 @@ void test_task_get_state(void* arg)
     //Current task should return eRunning
     TEST_ASSERT(eTaskGetState(xTaskGetCurrentTaskHandle()) == eRunning);
     //Idle task of current core should return eReady
+#ifdef CONFIG_FREERTOS_SMP
+    TaskHandle_t *idle_handle_list = xTaskGetIdleTaskHandle();
+    TEST_ASSERT_EQUAL(eReady, eTaskGetState(idle_handle_list[xPortGetCoreID()]));
+#else
     TEST_ASSERT(eTaskGetState(xTaskGetIdleTaskHandle()) == eReady);
+#endif
     //Blocked Task should return eBlocked
     TEST_ASSERT(eTaskGetState(blocked_task_handle) == eBlocked);
     //Suspended Task should return eSuspended
