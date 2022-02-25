@@ -86,12 +86,15 @@ eMBTCPDoInit( USHORT ucTCPPort )
 void
 eMBTCPStart( void )
 {
+    ESP_LOGD(MB_PORT_TAG, "TCP Slave port enable.");
+    vMBTCPPortEnable( );
 }
 
 void
 eMBTCPStop( void )
 {
     /* Make sure that no more clients are connected. */
+    ESP_LOGD(MB_PORT_TAG, "TCP Slave port disable.");
     vMBTCPPortDisable( );
 }
 
