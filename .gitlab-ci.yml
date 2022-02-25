@@ -87,8 +87,12 @@ variables:
   CI_PYTHON_CONSTRAINT_FILE: "espidf.constraints.v5.0.txt"
 
 cache:
+  key: pip-cache
   paths:
     - .cache/pip
+  # pull only for most of the use cases since it's cache dir.
+  # Only set "pull-push" policy for "scan_test" since it would **possibly** install all pypi packages
+  policy: pull
 
 .setup_tools_unless_target_test: &setup_tools_unless_target_test |
   if [[ -n "$IDF_DONT_USE_MIRRORS" ]]; then
