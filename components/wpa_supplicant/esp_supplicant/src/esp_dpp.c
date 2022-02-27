@@ -562,17 +562,13 @@ esp_supp_dpp_bootstrap_gen(const char *chan_list, enum dpp_bootstrap_type type,
     if (key) {
         params->key_len = strlen(key);
         if (params->key_len) {
-            char prefix[] = "30310201010420";
-            char postfix[] = "a00a06082a8648ce3d030107";
-
-            params->key = os_zalloc(params->key_len +
-                                    sizeof(prefix) + sizeof(postfix));
+            params->key = os_zalloc(params->key_len + 1);
             if (!params->key) {
                 os_free(command);
                 ret = ESP_ERR_NO_MEM;
                 goto fail;
             }
-            sprintf(params->key, "%s%s%s", prefix, key, postfix);
+            os_strncpy(params->key, key, params->key_len);
         }
     }
 
