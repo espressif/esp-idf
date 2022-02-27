@@ -22,6 +22,21 @@ The following table shows ESP-IDF support of Espressif SoCs where ![alt text][pr
 
 Espressif SoCs released before 2016 (ESP8266 and ESP8285) are supported by [RTOS SDK](https://github.com/espressif/ESP8266_RTOS_SDK) instead.
 
+# ESP-IDF Release Support Schedule
+
+Each ESP-IDF major and minor release (V4.1, V4.2, etc) is supported for 30 months after the initial stable release date.
+
+|Release | Support Begins | Maintenance Begins | End of Life |
+|:---|:---|:---|:---|
+|v3.3 | 09/2019 | 09/2020 | 03/2022|
+|v4.0 | 02/2020 | 02/2021 | 08/2022|
+|v4.1 | 08/2020 | 08/2021 | 02/2023|
+|v4.2 | 12/2020 | 12/2021 | 06/2023|
+|v4.3 | 06/2021 | 06/2022 | 12/2023|
+|v4.4 | 01/2022 | 01/2023 | 07/2024|
+
+The latest support policy for ESP-IDF can be found at https://github.com/espressif/esp-idf/blob/master/SUPPORT_POLICY.md
+
 # Developing With ESP-IDF
 
 ## Setting Up ESP-IDF
