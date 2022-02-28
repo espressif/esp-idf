@@ -104,6 +104,7 @@
         FLASH_ECC_EN,                     EFUSE_BLK0,  140,    1,     Enables ECC in Flash boot mode
         FORCE_SEND_RESUME,                EFUSE_BLK0,  141,    1,     Force ROM code to send a resume command during SPI boot
         SECURE_VERSION,                   EFUSE_BLK0,  142,   16,     Secure version for anti-rollback
+        ERR_RST_ENABLE,                   EFUSE_BLK0,  159,    1,     Use BLOCK0 to check error record registers, 0 - without check.
 
     # EFUSE_RD_REPEAT_DATA4_REG #
 
