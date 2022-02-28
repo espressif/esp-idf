@@ -35,6 +35,10 @@
 #include "crypto.h"
 #include "mbedtls/esp_config.h"
 
+#ifdef MBEDTLS_ARC4_C
+#include "mbedtls/arc4.h"
+#endif
+
 static int digest_vector(mbedtls_md_type_t md_type, size_t num_elem,
 			 const u8 *addr[], const size_t *len, u8 *mac)
 {

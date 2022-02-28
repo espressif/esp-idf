@@ -24,7 +24,6 @@
 #include "mbedtls/asn1write.h"
 #include "mbedtls/error.h"
 #include "mbedtls/oid.h"
-#include "mbedtls/private_access.h"
 
 #define ECP_PRV_DER_MAX_BYTES   29 + 3 * MBEDTLS_ECP_MAX_BYTES
 
@@ -440,12 +439,26 @@ int crypto_ec_point_cmp(const struct crypto_ec *e,
 	return mbedtls_ecp_point_cmp((const mbedtls_ecp_point *) a,
 			(const mbedtls_ecp_point *) b);
 }
+
 int crypto_key_compare(struct crypto_key *key1, struct crypto_key *key2)
 {
-	if (mbedtls_pk_check_pair((mbedtls_pk_context *)key1, (mbedtls_pk_context *)key2, NULL, NULL) < 0)
-		return 0;
+	int ret = 0;
+	mbedtls_entropy_context entropy;
+	mbedtls_ctr_drbg_context ctr_drbg;
 
-	return 1;
+	mbedtls_entropy_init(&entropy);
+	mbedtls_ctr_drbg_init(&ctr_drbg);
+
+	MBEDTLS_MPI_CHK(mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0));
+	if (mbedtls_pk_check_pair((mbedtls_pk_context *)key1, (mbedtls_pk_context *)key2, mbedtls_ctr_drbg_random, &ctr_drbg) < 0) {
+		goto cleanup;
+	}
+
+	ret = 1;
+cleanup:
+	mbedtls_ctr_drbg_free(&ctr_drbg);
+	mbedtls_entropy_free(&entropy);
+	return ret;
 }
 
 void crypto_debug_print_point(const char *title, struct crypto_ec *e,
