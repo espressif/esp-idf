@@ -155,6 +155,7 @@ vector<uint8_t> I2CMaster::sync_transfer(I2CAddress i2c_addr,
     return composed_transfer.do_transfer(i2c_num, i2c_addr)[0];
 }
 
+#if CONFIG_SOC_I2C_SUPPORT_SLAVE
 I2CSlave::I2CSlave(I2CNumber i2c_number,
         SCL_GPIO scl_gpio,
         SDA_GPIO sda_gpio,
@@ -191,6 +192,7 @@ int I2CSlave::read_raw(uint8_t *buffer, size_t buffer_len, chrono::milliseconds 
 {
     return i2c_slave_read_buffer(i2c_num.get_value(), buffer, buffer_len, (TickType_t) timeout.count() / portTICK_PERIOD_MS);
 }
+#endif // CONFIG_SOC_I2C_SUPPORT_SLAVE
 
 I2CWrite::I2CWrite(const vector<uint8_t> &bytes, chrono::milliseconds driver_timeout)
     : I2CTransfer<void>(driver_timeout), bytes(bytes)

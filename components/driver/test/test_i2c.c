@@ -25,6 +25,7 @@
 #include "hal/gpio_hal.h"
 #include "hal/uart_ll.h"
 
+#if SOC_I2C_SUPPORT_SLAVE // i2c test can't work without slave
 
 #define DATA_LENGTH          512  /*!<Data buffer length for test buffer*/
 #define RW_TEST_LENGTH       129  /*!<Data length for r/w test, any value from 0-DATA_LENGTH*/
@@ -723,3 +724,5 @@ TEST_CASE("I2C SCL freq test (local test)", "[i2c][ignore]")
 }
 
 #endif // TEMPORARY_DISABLED_FOR_TARGETS(ESP32S3, ESP32C3)
+
+#endif // SOC_I2C_SUPPORT_SLAVE

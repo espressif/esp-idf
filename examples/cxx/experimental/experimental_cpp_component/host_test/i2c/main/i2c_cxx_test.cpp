@@ -376,6 +376,7 @@ TEST_CASE("I2CMaster syncronous transfer (read and write)")
     }
 }
 
+#if SOC_I2C_SUPPORT_SLAVE
 TEST_CASE("I2CSlave parameter configuration fails")
 {
     CMockFixture fix;
@@ -458,3 +459,4 @@ TEST_CASE("I2CSlave read calls driver functions correctly")
         CHECK(read_buffer[i] == WRITE_BUFFER[i]);
     }
 }
+#endif // SOC_I2C_SUPPORT_SLAVE

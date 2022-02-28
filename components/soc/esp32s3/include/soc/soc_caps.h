@@ -128,6 +128,7 @@
 #define SOC_I2C_NUM            (2)
 
 #define SOC_I2C_FIFO_LEN       (32) /*!< I2C hardware FIFO depth */
+#define SOC_I2C_SUPPORT_SLAVE       (1)
 
 //ESP32-S3 support hardware FSM reset
 #define SOC_I2C_SUPPORT_HW_FSM_RST  (1)

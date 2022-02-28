@@ -3,7 +3,7 @@ Inter-Integrated Circuit (I2C)
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_I2C_NUM:default="2", esp32c3="1", esp32h2="1", esp328684="1"}
+{IDF_TARGET_I2C_NUM:default="2", esp32c3="1", esp32h2="1", esp32c2="1"}
 
 Overview
 --------
@@ -20,21 +20,30 @@ Driver Features
 I2C driver governs communications of devices over the I2C bus. The driver supports the following features:
 
 - Reading and writing bytes in Master mode
-- Slave mode
+
+.. only:: SOC_I2C_SUPPORT_SLAVE
+
+    - Slave mode
+
 - Reading and writing to registers which are in turn read/written by the master
 
 
 Driver Usage
 ------------
 
+{IDF_TARGET_I2C_ROLE:default="master or slave", esp32c2="master"}
+
 The following sections describe typical steps of configuring and operating the I2C driver:
 
-1. :ref:`i2c-api-configure-driver` - set the initialization parameters (master or slave mode, GPIO pins for SDA and SCL, clock speed, etc.)
-2. :ref:`i2c-api-install-driver`- activate the driver on one of the two I2C controllers as a master or slave
-3. Depending on whether you configure the driver for a master or slave, choose the appropriate item
+1. :ref:`i2c-api-configure-driver` - set the initialization parameters ({IDF_TARGET_I2C_ROLE} mode, GPIO pins for SDA and SCL, clock speed, etc.)
+2. :ref:`i2c-api-install-driver`- activate the driver on one of the two I2C controllers as a {IDF_TARGET_I2C_ROLE}
+3. Depending on whether you configure the driver for a {IDF_TARGET_I2C_ROLE}, choose the appropriate item
 
-   a) :ref:`i2c-api-master-mode` - handle communications (master)
-   b) :ref:`i2c-api-slave-mode` - respond to messages from the master (slave)
+    a) :ref:`i2c-api-master-mode` - handle communications (master)
+
+    .. only:: SOC_I2C_SUPPORT_SLAVE
+
+        b) :ref:`i2c-api-slave-mode` - respond to messages from the master (slave)
 
 4. :ref:`i2c-api-interrupt-handling` - configure and service I2C interrupts
 5. :ref:`i2c-api-customized-configuration` - adjust default I2C communication parameters (timings, bit order, etc.)
@@ -49,17 +58,20 @@ Configuration
 
 To establish I2C communication, start by configuring the driver. This is done by setting the parameters of the structure :cpp:type:`i2c_config_t`:
 
-- Set I2C **mode of operation** - slave or master from :cpp:type:`i2c_mode_t`
+- Set I2C **mode of operation** - {IDF_TARGET_I2C_ROLE} from :cpp:type:`i2c_mode_t`
 - Configure **communication pins**
 
     - Assign GPIO pins for SDA and SCL signals
     - Set whether to enable {IDF_TARGET_NAME}'s internal pull-ups
 
 - (Master only) Set I2C **clock speed**
-- (Slave only) Configure the following
 
-    * Whether to enable **10 bit address mode**
-    * Define **slave address**
+.. only:: SOC_I2C_SUPPORT_SLAVE
+
+    - (Slave only) Configure the following
+
+        * Whether to enable **10 bit address mode**
+        * Define **slave address**
 
 After that, initialize the configuration for a given I2C port. For this, call the function :cpp:func:`i2c_param_config` and pass to it the port number and the structure :cpp:type:`i2c_config_t`.
 
@@ -78,20 +90,22 @@ Configuration example (master):
         // .clk_flags = 0,          /*!< Optional, you can use I2C_SCLK_SRC_FLAG_* flags to choose i2c source clock here. */
     };
 
-Configuration example (slave):
+.. only:: SOC_I2C_SUPPORT_SLAVE
 
-.. code-block:: c
+    Configuration example (slave):
 
-    int i2c_slave_port = I2C_SLAVE_NUM;
-    i2c_config_t conf_slave = {
-        .sda_io_num = I2C_SLAVE_SDA_IO,          // select GPIO specific to your project
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_io_num = I2C_SLAVE_SCL_IO,          // select GPIO specific to your project
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
-        .mode = I2C_MODE_SLAVE,
-        .slave.addr_10bit_en = 0,
-        .slave.slave_addr = ESP_SLAVE_ADDR,      // address of your project
-    };
+    .. code-block:: c
+
+        int i2c_slave_port = I2C_SLAVE_NUM;
+        i2c_config_t conf_slave = {
+            .sda_io_num = I2C_SLAVE_SDA_IO,          // select GPIO specific to your project
+            .sda_pullup_en = GPIO_PULLUP_ENABLE,
+            .scl_io_num = I2C_SLAVE_SCL_IO,          // select GPIO specific to your project
+            .scl_pullup_en = GPIO_PULLUP_ENABLE,
+            .mode = I2C_MODE_SLAVE,
+            .slave.addr_10bit_en = 0,
+            .slave.slave_addr = ESP_SLAVE_ADDR,      // address of your project
+        };
 
 At this stage, :cpp:func:`i2c_param_config` also sets a few other I2C configuration parameters to default values that are defined by the I2C specification. For more details on the values and how to modify them, see :ref:`i2c-api-customized-configuration`.
 
@@ -200,8 +214,12 @@ Install Driver
 After the I2C driver is configured, install it by calling the function :cpp:func:`i2c_driver_install` with the following parameters:
 
 - Port number, one of the two port numbers from :cpp:type:`i2c_port_t`
-- Master or slave, selected from :cpp:type:`i2c_mode_t`
-- (Slave only) Size of buffers to allocate for sending and receiving data. As I2C is a master-centric bus, data can only go from the slave to the master at the master's request. Therefore, the slave will usually have a send buffer where the slave application writes data. The data remains in the send buffer to be read by the master at the master's own discretion.
+- {IDF_TARGET_I2C_ROLE}, selected from :cpp:type:`i2c_mode_t`
+
+.. only:: SOC_I2C_SUPPORT_SLAVE
+
+    - (Slave only) Size of buffers to allocate for sending and receiving data. As I2C is a master-centric bus, data can only go from the slave to the master at the master's request. Therefore, the slave will usually have a send buffer where the slave application writes data. The data remains in the send buffer to be read by the master at the master's own discretion.
+
 - Flags for allocating the interrupt (see ESP_INTR_FLAG_* values in :component_file:`esp_hw_support/include/esp_intr_alloc.h`)
 
 .. _i2c-api-master-mode:
@@ -278,27 +296,32 @@ Likewise, the command link to read from the slave looks as follows:
     i2c_master_write_byte(cmd, (ESP_SLAVE_ADDR << 1) | I2C_MASTER_READ, ACK_EN);
 
 
-.. _i2c-api-slave-mode:
+.. only:: SOC_I2C_SUPPORT_SLAVE
 
-Communication as Slave
-^^^^^^^^^^^^^^^^^^^^^^
+    .. _i2c-api-slave-mode:
 
-After installing the I2C driver, {IDF_TARGET_NAME} is ready to communicate with other I2C devices.
+    Communication as Slave
+    ^^^^^^^^^^^^^^^^^^^^^^
 
-The API provides the following functions for slaves
+    After installing the I2C driver, {IDF_TARGET_NAME} is ready to communicate with other I2C devices.
 
-- :cpp:func:`i2c_slave_read_buffer`
+    The API provides the following functions for slaves
 
-    Whenever the master writes data to the slave, the slave will automatically store it in the receive buffer. This allows the slave application to call the function :cpp:func:`i2c_slave_read_buffer` at its own discretion. This function also has a parameter to specify block time if no data is in the receive buffer. This will allow the slave application to wait with a specified timeout for data to arrive to the buffer.
+    - :cpp:func:`i2c_slave_read_buffer`
 
-- :cpp:func:`i2c_slave_write_buffer`
+        Whenever the master writes data to the slave, the slave will automatically store it in the receive buffer. This allows the slave application to call the function :cpp:func:`i2c_slave_read_buffer` at its own discretion. This function also has a parameter to specify block time if no data is in the receive buffer. This will allow the slave application to wait with a specified timeout for data to arrive to the buffer.
 
-    The send buffer is used to store all the data that the slave wants to send to the master in FIFO order. The data stays there until the master requests for it. The function :cpp:func:`i2c_slave_write_buffer` has a parameter to specify block time if the send buffer is full. This will allow the slave application to wait with a specified timeout for the adequate amount of space to become available in the send buffer.
+    - :cpp:func:`i2c_slave_write_buffer`
 
-A code example showing how to use these functions can be found in :example:`peripherals/i2c`.
+        The send buffer is used to store all the data that the slave wants to send to the master in FIFO order. The data stays there until the master requests for it. The function :cpp:func:`i2c_slave_write_buffer` has a parameter to specify block time if the send buffer is full. This will allow the slave application to wait with a specified timeout for the adequate amount of space to become available in the send buffer.
 
+    A code example showing how to use these functions can be found in :example:`peripherals/i2c`.
 
-.. _i2c-api-interrupt-handling:
+    .. _i2c-api-interrupt-handling:
+
+.. only:: not SOC_I2C_SUPPORT_SLAVE
+
+    .. _i2c-api-interrupt-handling:
 
 Interrupt Handling
 ^^^^^^^^^^^^^^^^^^
@@ -369,7 +392,7 @@ Before calling :cpp:func:`i2c_driver_delete` to remove i2c driver, please make s
 Application Example
 -------------------
 
-I2C master and slave example: :example:`peripherals/i2c`.
+I2C examples: :example:`peripherals/i2c`.
 
 
 API Reference
