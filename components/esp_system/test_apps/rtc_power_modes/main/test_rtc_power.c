@@ -16,6 +16,7 @@
 #include "soc/soc_caps.h"
 #include "driver/ledc.h"
 #include "soc/rtc.h"
+#include "esp_private/esp_sleep_internal.h"
 
 static const char TAG[] = "rtc_power";
 
@@ -30,8 +31,7 @@ TEST_CASE("Power Test: Deepsleep (with ADC/TSEN in monitor)", "[pm]")
 {
     rtc_dig_clk8m_disable();    //This is workaround for bootloader not disable 8M as digital clock source
 
-    extern void rtc_sleep_enable_adc_tesn_monitor(bool);
-    rtc_sleep_enable_adc_tesn_monitor(true);
+    esp_sleep_enable_adc_tsens_monitor(true);
     test_deepsleep();
 }
 
@@ -108,8 +108,8 @@ TEST_CASE("Power Test: Lightsleep (with ADC/TSEN in monitor)", "[pm]")
 {
     rtc_dig_clk8m_disable();    //This is workaround for bootloader not disable 8M as digital clock source
 
-    extern void rtc_sleep_enable_adc_tesn_monitor(bool);
-    rtc_sleep_enable_adc_tesn_monitor(true);
+    extern void esp_sleep_enable_adc_tsens_monitor(bool);
+    esp_sleep_enable_adc_tsens_monitor(true);
     test_lightsleep();
 }
 

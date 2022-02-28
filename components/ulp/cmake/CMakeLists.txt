@@ -71,8 +71,9 @@ add_custom_target(${ULP_APP_NAME}_ld_script
 if(ULP_COCPU_IS_RISCV)
     #risc-v ulp uses extra files for building:
     list(APPEND ULP_S_SOURCES
-        "${IDF_PATH}/components/ulp/ulp_riscv/start.S"
-        "${IDF_PATH}/components/ulp/ulp_riscv/ulp_riscv_utils.c")
+        "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/start.S"
+        "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_adc.c"
+        "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/ulp_riscv_utils.c")
 
     #dummy loop to force pre-processed linker file generation:
     foreach(ulp_s_source ${ULP_S_SOURCES})
@@ -95,7 +96,9 @@ if(ULP_COCPU_IS_RISCV)
     list(APPEND EXTRA_LINKER_ARGS "-Wl,--gc-sections")
     list(APPEND EXTRA_LINKER_ARGS "-Wl,-Map=\"${CMAKE_CURRENT_BINARY_DIR}/${ULP_APP_NAME}.map\"")
     #Makes the csr utillies for riscv visible:
-    target_include_directories(${ULP_APP_NAME} PRIVATE "${IDF_PATH}/components/ulp/ulp_riscv/include")
+    target_include_directories(${ULP_APP_NAME} PRIVATE "${IDF_PATH}/components/ulp/ulp_riscv/ulp_core/include")
+    target_link_libraries(${ULP_APP_NAME} "-T \"${IDF_PATH}/components/ulp/ld/${IDF_TARGET}.periperals.ld\"")
+    target_compile_definitions(${ULP_APP_NAME} PRIVATE IS_ULP_COCPU)
 
 else()
 

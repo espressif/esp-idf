@@ -1,8 +1,3 @@
-if(IDF_TARGET STREQUAL "esp32s2" OR IDF_TARGET STREQUAL "esp32s3")
-    #Disabled for now due to RTC bug IDF-4801
-    return()
-endif()
-
 if(NOT CONFIG_ULP_COPROC_TYPE_FSM AND NOT CONFIG_ULP_COPROC_TYPE_RISCV)
     # Nothing to test if no co-processor enabled
     return()
