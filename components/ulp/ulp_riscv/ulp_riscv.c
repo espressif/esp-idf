@@ -20,8 +20,32 @@
 #include "ulp_common.h"
 #include "esp_rom_sys.h"
 
-esp_err_t ulp_riscv_run(void)
+static esp_err_t ulp_riscv_config_wakeup_source(ulp_riscv_wakeup_source_t wakeup_source)
 {
+    esp_err_t ret = ESP_OK;
+
+    switch (wakeup_source) {
+        case ULP_RISCV_WAKEUP_SOURCE_TIMER:
+            /* start ULP_TIMER */
+            CLEAR_PERI_REG_MASK(RTC_CNTL_ULP_CP_CTRL_REG, RTC_CNTL_ULP_CP_FORCE_START_TOP);
+            SET_PERI_REG_MASK(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
+            break;
+
+        case ULP_RISCV_WAKEUP_SOURCE_GPIO:
+            SET_PERI_REG_MASK(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_GPIO_WAKEUP_ENA);
+            break;
+
+        default:
+            ret = ESP_ERR_INVALID_ARG;
+    }
+
+    return ret;
+}
+
+esp_err_t ulp_riscv_config_and_run(ulp_riscv_cfg_t* cfg)
+{
+    esp_err_t ret = ESP_OK;
+
 #if CONFIG_IDF_TARGET_ESP32S2
     /* Reset COCPU when power on. */
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_SHUT_RESET_EN);
@@ -42,11 +66,8 @@ esp_err_t ulp_riscv_run(void)
     /* Select ULP-RISC-V to send the DONE signal. */
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_DONE_FORCE);
 
-    /* start ULP_TIMER */
-    CLEAR_PERI_REG_MASK(RTC_CNTL_ULP_CP_CTRL_REG, RTC_CNTL_ULP_CP_FORCE_START_TOP);
-    SET_PERI_REG_MASK(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
+    ret = ulp_riscv_config_wakeup_source(cfg->wakeup_source);
 
-    return ESP_OK;
 #elif CONFIG_IDF_TARGET_ESP32S3
     /* Reset COCPU when power on. */
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_CLK_FO);
@@ -73,9 +94,7 @@ esp_err_t ulp_riscv_run(void)
     /* Set the CLKGATE_EN signal */
     SET_PERI_REG_MASK(RTC_CNTL_COCPU_CTRL_REG, RTC_CNTL_COCPU_CLKGATE_EN);
 
-    /* start ULP_TIMER */
-    CLEAR_PERI_REG_MASK(RTC_CNTL_ULP_CP_CTRL_REG, RTC_CNTL_ULP_CP_FORCE_START_TOP);
-    SET_PERI_REG_MASK(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
+    ret = ulp_riscv_config_wakeup_source(cfg->wakeup_source);
 
     /* Select RISC-V as the ULP_TIMER trigger target
      * Selecting the RISC-V as the Coprocessor at the end is a workaround
@@ -87,8 +106,16 @@ esp_err_t ulp_riscv_run(void)
     esp_rom_delay_us(20);
     REG_WRITE(RTC_CNTL_INT_CLR_REG, RTC_CNTL_COCPU_INT_CLR | RTC_CNTL_COCPU_TRAP_INT_CLR | RTC_CNTL_ULP_CP_INT_CLR);
 
-    return ESP_OK;
+
 #endif
+
+    return ret;
+}
+
+esp_err_t ulp_riscv_run(void)
+{
+    ulp_riscv_cfg_t cfg = ULP_RISCV_DEFAULT_CONFIG();
+    return ulp_riscv_config_and_run(&cfg);
 }
 
 void ulp_riscv_timer_stop(void)

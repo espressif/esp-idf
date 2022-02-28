@@ -53,3 +53,8 @@ void ulp_riscv_timer_resume(void)
 {
     SET_PERI_REG_MASK(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
 }
+
+void ulp_riscv_gpio_wakeup_clear(void)
+{
+    SET_PERI_REG_MASK(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_GPIO_WAKEUP_CLR);
+}
