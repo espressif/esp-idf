@@ -125,7 +125,7 @@ Consult :doc:`/versions` for information about which ESP-IDF version to use in a
 Step 3. Set up the tools
 ========================
 
-Aside from the ESP-IDF, you also need to install the tools used by ESP-IDF, such as the compiler, debugger, Python packages, etc.
+Aside from the ESP-IDF, you also need to install the tools used by ESP-IDF, such as the compiler, debugger, Python packages, etc, for projects supporting {IDF_TARGET_NAME}.
 
 .. code-block:: bash
 
@@ -139,9 +139,34 @@ or with Fish shell
     cd ~/esp/esp-idf
     ./install.fish {IDF_TARGET_PATH_NAME}
 
-.. note::
-    To install tools for multiple targets you can specify those targets at once. For example: ``./install.sh esp32,esp32c3,esp32s3``.
-    To install tools for all supported targets, run the script without specifying targets ``./install.sh`` or use ``./install.sh all``.
+The above commands install tools for {IDF_TARGET_NAME} only. If you intend to develop projects for more chip targets then you should list all of them and run for example:
+
+.. code-block:: bash
+
+    cd ~/esp/esp-idf
+    ./install.sh esp32,esp32s2
+
+or with Fish shell
+
+.. code-block:: fish
+
+    cd ~/esp/esp-idf
+    ./install.fish esp32,esp32s2
+
+In order to install tools for all supported targets please run the following command:
+
+.. code-block:: bash
+
+    cd ~/esp/esp-idf
+    ./install.sh all
+
+or with Fish shell
+
+.. code-block:: fish
+
+    cd ~/esp/esp-idf
+    ./install.fish all
+
 
 Alternative File Downloads
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
