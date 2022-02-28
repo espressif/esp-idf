@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 
-// md5_digest_table 357feb63f27b95519accb97200d894a7
+// md5_digest_table 6614a99de35023cf9ba3849a2b80e9e7
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -90,6 +90,7 @@ extern const esp_efuse_desc_t* ESP_EFUSE_ENABLE_SECURITY_DOWNLOAD[];
 extern const esp_efuse_desc_t* ESP_EFUSE_UART_PRINT_CONTROL[];
 extern const esp_efuse_desc_t* ESP_EFUSE_FORCE_SEND_RESUME[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SECURE_VERSION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ERR_RST_ENABLE[];
 extern const esp_efuse_desc_t* ESP_EFUSE_MAC_FACTORY[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_CLK[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SPI_PAD_CONFIG_Q_D1[];
