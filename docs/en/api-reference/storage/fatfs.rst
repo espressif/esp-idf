@@ -111,7 +111,8 @@ If you prefer generating partition without wear levelling support you can use ``
 
 ``fatfs_create_spiflash_image`` respectively ``fatfs_create_rawflash_image`` must be called from project's CMakeLists.txt.
 
-If you decided because of any reason to use ``fatfs_create_rawflash_image`` (without wear levelling support) beware that it supports mounting only in read-only mode in the device.
+If you decided because of any reason to use ``fatfs_create_rawflash_image`` (without wear levelling support), beware that it supports mounting only in read-only mode in the device.
+
 
 The arguments of the function are as follows:
 

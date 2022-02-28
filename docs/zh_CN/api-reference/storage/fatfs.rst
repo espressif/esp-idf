@@ -95,7 +95,7 @@ FatFs 分区生成器
 
 该脚本是建立在分区生成器的基础上 (:component_file:`fatfsgen.py<fatfs/fatfsgen.py>`)，目前除了可以生成分区外，也可以初始化磨损均衡。
 
-当前支持短文件名和 FAT12。未来计划实现长文件名以及 FAT16。
+当前支持短文件名、FAT12 和 FAT16。未来计划实现对长文件名的支持。
 
 
 构建系统中使用 FatFs 分区生成器
@@ -112,6 +112,7 @@ FatFs 分区生成器
 ``fatfs_create_spiflash_image`` 以及 ``fatfs_create_rawflash_image`` 必须从项目的 CMakeLists.txt 中调用。
 
 如果您决定使用 ``fatfs_create_rawflash_image`` （不支持磨损均衡），请注意它支持在设备中以只读模式安装。
+
 
 该函数的参数如下：
 
