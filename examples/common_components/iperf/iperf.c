@@ -500,9 +500,6 @@ esp_err_t iperf_start(iperf_cfg_t *cfg)
         s_iperf_ctrl.buffer = NULL;
         return ESP_FAIL;
     }
-
-    //ret = xTaskCreatePinnedToCore(dummy_task, "dummy_task", 1024, NULL, IPERF_TRAFFIC_TASK_PRIORITY+1, NULL, portNUM_PROCESSORS - 1);
-
     return ESP_OK;
 }
 

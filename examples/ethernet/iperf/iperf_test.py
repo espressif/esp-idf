@@ -24,6 +24,8 @@ except ImportError:
     # Only used for type annotations
     pass
 
+NO_BANDWIDTH_LIMIT = -1  # iperf send bandwith is not limited
+
 
 class IperfTestUtilityEth(IperfUtility.IperfTestUtility):
     """ iperf test implementation """
@@ -46,7 +48,7 @@ class IperfTestUtilityEth(IperfUtility.IperfTestUtility):
         self.dut.write('ethernet start')
         time.sleep(10)
         self.dut.write('ethernet info')
-        dut_ip = self.dut.expect(re.compile(r'ETHIP: ([\d.]+)'))[0]
+        dut_ip = self.dut.expect(re.compile(r'ETHIP: (\d+[.]\d+[.]\d+[.]\d+)'))[0]
         rssi = 0
         return dut_ip, rssi
 
@@ -78,7 +80,10 @@ def test_ethernet_throughput_basic(env, _):  # type: (Any, Any) -> None
 
     # 3. run test for TCP Tx, Rx and UDP Tx, Rx
 
-    test_utility.run_all_cases(0)
+    test_utility.run_test('tcp', 'tx', 0, NO_BANDWIDTH_LIMIT)
+    test_utility.run_test('tcp', 'rx', 0, NO_BANDWIDTH_LIMIT)
+    test_utility.run_test('udp', 'tx', 0, 80)
+    test_utility.run_test('udp', 'rx', 0, NO_BANDWIDTH_LIMIT)
 
     # 4. log performance and compare with pass standard
     performance_items = []
