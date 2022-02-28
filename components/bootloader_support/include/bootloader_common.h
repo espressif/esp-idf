@@ -227,7 +227,7 @@ esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hd
  */
 void bootloader_common_vddsdio_configure(void);
 
-#if defined( CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP ) || defined( CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC )
+#ifdef CONFIG_BOOTLOADER_RESERVE_RTC
 /**
  * @brief Returns partition from rtc_retain_mem
  *

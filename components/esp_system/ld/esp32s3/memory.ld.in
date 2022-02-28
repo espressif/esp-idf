@@ -14,12 +14,31 @@
 #include "sdkconfig.h"
 #include "ld.common"
 
+#ifdef CONFIG_BOOTLOADER_RESERVE_RTC
 #ifdef CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC
-#define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE + CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE)
-#elif defined(CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP)
-#define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_RESERVE_RTC_SIZE)
+#define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_SYSTEM_RESERVE_RTC_SIZE + CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE)
 #else
-#define ESP_BOOTLOADER_RESERVE_RTC 0
+#define ESP_BOOTLOADER_RESERVE_RTC (CONFIG_BOOTLOADER_SYSTEM_RESERVE_RTC_SIZE)
+#endif
+
+#ifdef CONFIG_BOOTLOADER_RESERVE_RTC_BLOCK_SLOW
+#define ESP_BOOTLOADER_RESERVE_RTC_SLOW ESP_BOOTLOADER_RESERVE_RTC
+#else
+#define ESP_BOOTLOADER_RESERVE_RTC_FAST ESP_BOOTLOADER_RESERVE_RTC
+#endif
+#endif // CONFIG_BOOTLOADER_RESERVE_RTC
+
+#ifndef ESP_BOOTLOADER_RESERVE_RTC_SLOW
+#define ESP_BOOTLOADER_RESERVE_RTC_SLOW 0
+#endif
+
+#ifndef ESP_BOOTLOADER_RESERVE_RTC_FAST
+#define ESP_BOOTLOADER_RESERVE_RTC_FAST 0
+#endif
+
+#if CONFIG_ULP_COPROC_ENABLED
+ASSERT(((CONFIG_ULP_COPROC_RESERVE_MEM + ESP_BOOTLOADER_RESERVE_RTC_SLOW) <= 0x2000),
+          "RTC Slow Memory does not fit.")
 #endif
 
 /*
@@ -98,12 +117,12 @@ MEMORY
   /**
    * RTC fast memory (executable). Persists over deep sleep.
    */
-  rtc_iram_seg(RWX) :                org = 0x600fe000, len = 0x2000 - ESP_BOOTLOADER_RESERVE_RTC
+  rtc_iram_seg(RWX) :                org = 0x600fe000, len = 0x2000 - ESP_BOOTLOADER_RESERVE_RTC_FAST
 
   /**
    * RTC fast memory (same block as above), viewed from data bus
    */
-  rtc_data_seg(RW) :                 org = 0x600fe000, len = 0x2000 - ESP_BOOTLOADER_RESERVE_RTC
+  rtc_data_seg(RW) :                 org = 0x600fe000, len = 0x2000 - ESP_BOOTLOADER_RESERVE_RTC_FAST
 
   /**
    * RTC slow memory (data accessible). Persists over deep sleep.
@@ -111,9 +130,9 @@ MEMORY
    */
 #if CONFIG_ULP_COPROC_ENABLED
   rtc_slow_seg(RW)  :                org = 0x50000000 + CONFIG_ULP_COPROC_RESERVE_MEM,
-                                     len = 0x2000 - CONFIG_ULP_COPROC_RESERVE_MEM
+                                     len = 0x2000 - CONFIG_ULP_COPROC_RESERVE_MEM - ESP_BOOTLOADER_RESERVE_RTC_SLOW
 #else
-  rtc_slow_seg(RW)  :                org = 0x50000000 , len = 0x2000
+  rtc_slow_seg(RW)  :                org = 0x50000000 , len = 0x2000 - ESP_BOOTLOADER_RESERVE_RTC_SLOW
 #endif // CONFIG_ULP_COPROC_ENABLED
 }
 

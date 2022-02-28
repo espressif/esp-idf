@@ -130,9 +130,13 @@ esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t 
     return ESP_OK;
 }
 
-#if defined( CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP ) || defined( CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC )
+#ifdef CONFIG_BOOTLOADER_RESERVE_RTC
 
+#ifdef CONFIG_BOOTLOADER_RESERVE_RTC_BLOCK_SLOW
+#define RTC_RETAIN_MEM_ADDR (SOC_RTC_DATA_HIGH - sizeof(rtc_retain_mem_t))
+#else
 #define RTC_RETAIN_MEM_ADDR (SOC_RTC_DRAM_HIGH - sizeof(rtc_retain_mem_t))
+#endif
 
 rtc_retain_mem_t *const rtc_retain_mem = (rtc_retain_mem_t *)RTC_RETAIN_MEM_ADDR;
 
@@ -202,4 +206,4 @@ rtc_retain_mem_t* bootloader_common_get_rtc_retain_mem(void)
 {
     return rtc_retain_mem;
 }
-#endif // defined( CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP ) || defined( CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC )
+#endif // CONFIG_BOOTLOADER_RESERVE_RTC

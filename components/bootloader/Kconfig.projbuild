@@ -355,38 +355,55 @@ menu "Bootloader config"
             Consider selecting "Skip image validation from power on reset" instead. However, if boot time
             is the only important factor then it can be enabled.
 
-    config BOOTLOADER_RESERVE_RTC_SIZE
+    config BOOTLOADER_SYSTEM_RESERVE_RTC_SIZE
         hex
         default 0x10 if BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP || BOOTLOADER_CUSTOM_RESERVE_RTC
         default 0
         help
-            Reserve RTC FAST memory for Skip image validation. This option in bytes.
-            This option reserves an area in the RTC FAST memory (access only PRO_CPU).
-            Used to save the addresses of the selected application.
-            When a wakeup occurs (from Deep sleep), the bootloader retrieves it and
-            loads the application without validation.
+            RTC memory required to be reserved for the implementation of rtc_retain_mem_t, including boot
+            partition and crc.
 
     config BOOTLOADER_CUSTOM_RESERVE_RTC
-        bool "Reserve RTC FAST memory for custom purposes"
+        bool "Reserve RTC memory for custom purposes"
         default n
         help
-            This option allows the customer to place data in the RTC FAST memory,
-            this area remains valid when rebooted, except for power loss.
-            This memory is located at a fixed address and is available
-            for both the bootloader and the application.
-            (The application and bootoloader must be compiled with the same option).
-            The RTC FAST memory has access only through PRO_CPU.
+            This option reserves RTC memory for custom purposes.
+            This area (rtc_retain_mem_t) remains valid when rebooted, except for power loss.
+            This memory is located at a fixed address and is available for both the
+            bootloader and the application.
+            The application and bootloader must be compiled with the same configuration.
 
     config BOOTLOADER_CUSTOM_RESERVE_RTC_SIZE
         hex "Size in bytes for custom purposes"
-        range 0 0x10
+        range 0 0x1000
         default 0
         depends on BOOTLOADER_CUSTOM_RESERVE_RTC
         help
-            This option reserves in RTC FAST memory the area for custom purposes.
-            If you want to create your own bootloader and save more information
-            in this area of memory, you can increase it. It must be a multiple of 4 bytes.
-            This area (rtc_retain_mem_t) is reserved and has access from the bootloader and an application.
+            Specify the size of additional memory to be reserved in rtc_retain_mem_t.
+            It must be a multiple of 4 bytes.
+
+    config BOOTLOADER_RESERVE_RTC
+        bool
+        default y if BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP || BOOTLOADER_CUSTOM_RESERVE_RTC
+        default n
+
+    choice BOOTLOADER_RESERVE_RTC_BLOCK
+        bool "Reserved RTC Memory Block"
+        default BOOTLOADER_RESERVE_RTC_BLOCK_FAST
+        depends on BOOTLOADER_RESERVE_RTC
+        help
+            Specify the RTC memory block in which to reserve an area for rtc_retain_mem_t.
+            RTC FAST memory has access only through PRO_CPU.
+
+        config BOOTLOADER_RESERVE_RTC_BLOCK_FAST
+            bool "Fast"
+            depends on SOC_RTC_FAST_MEM_SUPPORTED
+
+        config BOOTLOADER_RESERVE_RTC_BLOCK_SLOW
+            bool "Slow"
+            depends on SOC_RTC_SLOW_MEM_SUPPORTED
+
+    endchoice
 
     config BOOTLOADER_FLASH_XMC_SUPPORT
         bool "Enable the support for flash chips of XMC (READ HELP FIRST)"
