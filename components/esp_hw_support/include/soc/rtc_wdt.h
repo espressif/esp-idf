@@ -45,7 +45,7 @@ without description where were CPUs when it happened.
 #include "soc/rtc_periph.h"
 #include "esp_err.h"
 
-#if SOC_RTC_WDT_SUPPORTED
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
 
 #ifdef __cplusplus
 extern "C"
@@ -191,4 +191,4 @@ bool rtc_wdt_is_on(void);
 }
 #endif
 
-#endif // SOC_CAPS_RTC_WDT
+#endif // CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2

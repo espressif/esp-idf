@@ -9,7 +9,7 @@
 #include "soc/rtc.h"
 #include "hal/efuse_ll.h"
 
-#if SOC_RTC_WDT_SUPPORTED
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
 
 bool rtc_wdt_get_protect_status(void)
 {
@@ -147,4 +147,4 @@ bool rtc_wdt_is_on(void)
     return (REG_GET_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_EN) != 0) || (REG_GET_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN) != 0);
 }
 
-#endif // SOC_RTC_WDT_SUPPORTED
+#endif // CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
