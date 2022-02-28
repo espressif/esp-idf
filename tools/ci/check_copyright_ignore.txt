@@ -709,7 +709,6 @@ components/esp_serial_slave_link/include/esp_serial_slave_link/essl_spi.h
 components/esp_serial_slave_link/include/essl_spi/esp32c3_defs.h
 components/esp_serial_slave_link/include/essl_spi/esp32s2_defs.h
 components/esp_serial_slave_link/include/essl_spi/esp32s3_defs.h
-components/esp_system/eh_frame_parser.c
 components/esp_system/esp_err.c
 components/esp_system/freertos_hooks.c
 components/esp_system/include/eh_frame_parser.h
