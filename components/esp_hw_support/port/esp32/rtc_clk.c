@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,13 +11,13 @@
 #include "esp32/rom/ets_sys.h" // for ets_update_cpu_frequency
 #include "esp32/rom/rtc.h"
 #include "esp_rom_gpio.h"
-#include "esp_efuse.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
 #include "soc/sens_periph.h"
 #include "soc/soc_caps.h"
 #include "soc/dport_reg.h"
-#include "soc/efuse_periph.h"
+#include "hal/efuse_ll.h"
+#include "hal/efuse_hal.h"
 #include "soc/syscon_reg.h"
 #include "soc/gpio_struct.h"
 #include "hal/cpu_hal.h"
@@ -83,7 +83,7 @@
  *
  * There is a record in efuse which indicates the proper voltage for these two cases.
  */
-#define RTC_CNTL_DBIAS_HP_VOLT         (RTC_CNTL_DBIAS_1V25 - (REG_GET_FIELD(EFUSE_BLK0_RDATA5_REG, EFUSE_RD_VOL_LEVEL_HP_INV)))
+#define RTC_CNTL_DBIAS_HP_VOLT         (RTC_CNTL_DBIAS_1V25 - efuse_ll_get_vol_level_hp_inv())
 #ifdef CONFIG_ESPTOOLPY_FLASHFREQ_80M
 #define DIG_DBIAS_80M_160M  RTC_CNTL_DBIAS_HP_VOLT
 #else
@@ -123,7 +123,7 @@ static void rtc_clk_32k_enable_common(int dac, int dres, int dbias)
     REG_SET_FIELD(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_DBIAS_XTAL_32K, dbias);
 
 #ifdef CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT
-    uint8_t chip_ver = esp_efuse_get_chip_ver();
+    uint8_t chip_ver = efuse_hal_get_chip_revision();
     // version0 and version1 need provide additional current to external XTAL.
     if(chip_ver == 0 || chip_ver == 1) {
         /* TOUCH sensor can provide additional current to external XTAL.
@@ -139,7 +139,7 @@ static void rtc_clk_32k_enable_common(int dac, int dres, int dbias)
         SET_PERI_REG_MASK(RTC_IO_TOUCH_PAD9_REG, RTC_IO_TOUCH_PAD9_XPD_M);
     }
 #elif defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT_V2
-    uint8_t chip_ver = esp_efuse_get_chip_ver();
+    uint8_t chip_ver = efuse_hal_get_chip_revision();
     if(chip_ver == 0 || chip_ver == 1) {
         /* TOUCH sensor can provide additional current to external XTAL.
         In some case, X32N and X32P PAD don't have enough drive capability to start XTAL */
@@ -173,13 +173,13 @@ void rtc_clk_32k_enable(bool enable)
         CLEAR_PERI_REG_MASK(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_X32N_MUX_SEL | RTC_IO_X32P_MUX_SEL);
 
 #ifdef CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT
-        uint8_t chip_ver = esp_efuse_get_chip_ver();
+        uint8_t chip_ver = efuse_hal_get_chip_revision();
         if(chip_ver == 0 || chip_ver == 1) {
             /* Power down TOUCH */
             CLEAR_PERI_REG_MASK(RTC_IO_TOUCH_PAD9_REG, RTC_IO_TOUCH_PAD9_XPD_M);
         }
 #elif defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT_V2
-        uint8_t chip_ver = esp_efuse_get_chip_ver();
+        uint8_t chip_ver = efuse_hal_get_chip_revision();
         if(chip_ver == 0 || chip_ver == 1) {
             /* Power down TOUCH */
             CLEAR_PERI_REG_MASK(RTC_IO_TOUCH_CFG_REG, RTC_IO_TOUCH_XPD_BIAS_M);
@@ -344,7 +344,7 @@ uint32_t rtc_clk_apll_coeff_calc(uint32_t freq, uint32_t *_o_div, uint32_t *_sdm
 void rtc_clk_apll_coeff_set(uint32_t o_div, uint32_t sdm0, uint32_t sdm1, uint32_t sdm2)
 {
     uint8_t sdm_stop_val_2 = APLL_SDM_STOP_VAL_2_REV1;
-    uint32_t is_rev0 = (GET_PERI_REG_BITS2(EFUSE_BLK0_RDATA3_REG, 1, 15) == 0);
+    uint32_t is_rev0 = (efuse_ll_get_chip_ver_rev1() == 0);
     if (is_rev0) {
         sdm0 = 0;
         sdm1 = 0;

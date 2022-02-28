@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
 #include "soc/dport_reg.h"
-#include "soc/efuse_periph.h"
+#include "hal/efuse_ll.h"
 #include "soc/gpio_periph.h"
 
 
@@ -110,20 +110,19 @@ rtc_vddsdio_config_t rtc_vddsdio_get_config(void)
         result.tieh = (sdio_conf_reg & RTC_CNTL_SDIO_TIEH_M) >> RTC_CNTL_SDIO_TIEH_S;
         return result;
     }
-    uint32_t efuse_reg = REG_READ(EFUSE_BLK0_RDATA4_REG);
-    if (efuse_reg & EFUSE_RD_SDIO_FORCE) {
+    if (efuse_ll_get_sdio_force()) {
         // Get configuration from EFUSE
         result.force = 0;
-        result.enable = (efuse_reg & EFUSE_RD_XPD_SDIO_REG_M) >> EFUSE_RD_XPD_SDIO_REG_S;
-        result.tieh = (efuse_reg & EFUSE_RD_SDIO_TIEH_M) >> EFUSE_RD_SDIO_TIEH_S;
+        result.enable = efuse_ll_get_xpd_sdio();
+        result.tieh = efuse_ll_get_sdio_tieh();
         //DREFH/M/L eFuse are used for EFUSE_ADC_VREF instead. Therefore tuning
         //will only be available on older chips that don't have EFUSE_ADC_VREF
-        if(REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG ,EFUSE_RD_BLK3_PART_RESERVE) == 0){
+        if(efuse_ll_get_blk3_part_reserve() == 0){
             //BLK3_PART_RESERVE indicates the presence of EFUSE_ADC_VREF
             // in this case, DREFH/M/L are also set from EFUSE
-            result.drefh = (efuse_reg & EFUSE_RD_SDIO_DREFH_M) >> EFUSE_RD_SDIO_DREFH_S;
-            result.drefm = (efuse_reg & EFUSE_RD_SDIO_DREFM_M) >> EFUSE_RD_SDIO_DREFM_S;
-            result.drefl = (efuse_reg & EFUSE_RD_SDIO_DREFL_M) >> EFUSE_RD_SDIO_DREFL_S;
+            result.drefh = efuse_ll_get_sdio_drefh();
+            result.drefm = efuse_ll_get_sdio_drefm();
+            result.drefl = efuse_ll_get_sdio_drefl();
         }
         return result;
     }

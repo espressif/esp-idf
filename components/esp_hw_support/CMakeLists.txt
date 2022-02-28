@@ -2,9 +2,6 @@ idf_build_get_property(target IDF_TARGET)
 
 set(requires soc)
 set(priv_requires efuse bootloader_support spi_flash)
-if(${target} STREQUAL "esp32")
-     list(APPEND requires efuse)
-endif()
 
 set(srcs "compare_set.c" "cpu_util.c")
 if(NOT BOOTLOADER_BUILD)

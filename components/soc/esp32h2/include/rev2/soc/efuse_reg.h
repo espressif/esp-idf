@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -591,20 +591,30 @@ extern "C" {
  *  BLOCK1 data register $n.
  */
 #define EFUSE_RD_MAC_SPI_SYS_3_REG (DR_REG_EFUSE_BASE + 0x50)
-/** EFUSE_SPI_PAD_CONF_2 : RO; bitpos: [17:0]; default: 0;
- *  Stores the second part of SPI_PAD_CONF.
- */
-#define EFUSE_SPI_PAD_CONF_2    0x0003FFFFU
-#define EFUSE_SPI_PAD_CONF_2_M  (EFUSE_SPI_PAD_CONF_2_V << EFUSE_SPI_PAD_CONF_2_S)
-#define EFUSE_SPI_PAD_CONF_2_V  0x0003FFFFU
+/* EFUSE_SYS_DATA_PART0_0 : RO ;bitpos:[31:24] ;default: 8'h0 ; */
+/*description: Stores the fist 8 bits of the zeroth part of system data.*/
+#define EFUSE_SYS_DATA_PART0_0  0x000000FF
+#define EFUSE_SYS_DATA_PART0_0_M  ((EFUSE_SYS_DATA_PART0_0_V)<<(EFUSE_SYS_DATA_PART0_0_S))
+#define EFUSE_SYS_DATA_PART0_0_V  0xFF
+#define EFUSE_SYS_DATA_PART0_0_S  25
+/* EFUSE_PKG_VERSION : RO ;bitpos:[23:21] ;default: 3'h0 ; */
+/*description: Package version 0:ESP32-H2 */
+#define EFUSE_PKG_VERSION  0x00000007
+#define EFUSE_PKG_VERSION_M  ((EFUSE_PKG_VERSION_V)<<(EFUSE_PKG_VERSION_S))
+#define EFUSE_PKG_VERSION_V  0x7
+#define EFUSE_PKG_VERSION_S  21
+/* EFUSE_WAFER_VERSION : RO ;bitpos:[20:18] ;default: 3'h0 ; */
+/*description: WAFER version 0:A */
+#define EFUSE_WAFER_VERSION  0x00000007
+#define EFUSE_WAFER_VERSION_M  ((EFUSE_WAFER_VERSION_V)<<(EFUSE_WAFER_VERSION_S))
+#define EFUSE_WAFER_VERSION_V  0x7
+#define EFUSE_WAFER_VERSION_S  18
+/* EFUSE_SPI_PAD_CONF_2 : RO ;bitpos:[17:0] ;default: 18'h0 ; */
+/*description: Stores the second part of SPI_PAD_CONF.*/
+#define EFUSE_SPI_PAD_CONF_2  0x0003FFFF
+#define EFUSE_SPI_PAD_CONF_2_M  ((EFUSE_SPI_PAD_CONF_2_V)<<(EFUSE_SPI_PAD_CONF_2_S))
+#define EFUSE_SPI_PAD_CONF_2_V  0x3FFFF
 #define EFUSE_SPI_PAD_CONF_2_S  0
-/** EFUSE_SYS_DATA_PART0_0 : RO; bitpos: [31:18]; default: 0;
- *  Stores the fist 14 bits of the zeroth part of system data.
- */
-#define EFUSE_SYS_DATA_PART0_0    0x00003FFFU
-#define EFUSE_SYS_DATA_PART0_0_M  (EFUSE_SYS_DATA_PART0_0_V << EFUSE_SYS_DATA_PART0_0_S)
-#define EFUSE_SYS_DATA_PART0_0_V  0x00003FFFU
-#define EFUSE_SYS_DATA_PART0_0_S  18
 
 /** EFUSE_RD_MAC_SPI_SYS_4_REG register
  *  BLOCK1 data register $n.
@@ -2075,6 +2085,9 @@ extern "C" {
 #define EFUSE_CLK_EN_M  (EFUSE_CLK_EN_V << EFUSE_CLK_EN_S)
 #define EFUSE_CLK_EN_V  0x00000001U
 #define EFUSE_CLK_EN_S  16
+
+#define EFUSE_WRITE_OP_CODE 0x5a5a
+#define EFUSE_READ_OP_CODE 0x5aa5
 
 /** EFUSE_CONF_REG register
  *  eFuse operation mode configuraiton register

@@ -2,7 +2,9 @@ idf_build_get_property(target IDF_TARGET)
 
 set(srcs "wdt_hal_iram.c"
          "mpu_hal.c"
-         "cpu_hal.c")
+         "cpu_hal.c"
+         "efuse_hal.c"
+         "${target}/efuse_hal.c")
 
 set(includes "${target}/include" "include" "platform_port/include")
 
@@ -158,7 +160,7 @@ endif()
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
                        PRIV_INCLUDE_DIRS ${priv_include}
-                       REQUIRES soc
+                       REQUIRES soc esp_rom
                        PRIV_REQUIRES ${target}
                        LDFRAGMENTS linker.lf)
 

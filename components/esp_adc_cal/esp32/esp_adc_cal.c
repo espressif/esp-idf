@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include "esp_types.h"
 #include "driver/adc.h"
-#include "soc/efuse_periph.h"
+#include "hal/efuse_ll.h"
 #include "esp_err.h"
 #include "esp_check.h"
 #include "assert.h"
@@ -45,14 +45,10 @@
 #define VREF_FORMAT             0
 
 /* ------------------------------ eFuse Access ----------------------------- */
-#define BLK3_RESERVED_REG               EFUSE_BLK0_RDATA3_REG
-
-#define VREF_REG                        EFUSE_BLK0_RDATA4_REG
 #define VREF_MASK                       0x1F
 #define VREF_STEP_SIZE                  7
 #define VREF_OFFSET                     1100
 
-#define TP_REG                          EFUSE_BLK3_RDATA3_REG
 #define TP_LOW1_OFFSET                  278
 #define TP_LOW2_OFFSET                  421
 #define TP_LOW_MASK                     0x7F
@@ -100,24 +96,20 @@ static const uint32_t lut_adc2_high[LUT_POINTS] = {2657, 2698, 2738, 2774, 2807,
 static bool check_efuse_vref(void)
 {
     //Check if Vref is burned in eFuse
-    return (REG_GET_FIELD(VREF_REG, EFUSE_RD_ADC_VREF) != 0) ? true : false;
+    return (efuse_ll_get_adc_vref() != 0) ? true : false;
 }
 
 static bool check_efuse_tp(void)
 {
     //Check if Two Point values are burned in eFuse
-    if (CHECK_BLK3_FLAG && (REG_GET_FIELD(BLK3_RESERVED_REG, EFUSE_RD_BLK3_PART_RESERVE) == 0)) {
+    if (CHECK_BLK3_FLAG && (efuse_ll_get_blk3_part_reserve() == 0)) {
         return false;
     }
     //All TP cal values must be non zero
-    if ((REG_GET_FIELD(TP_REG, EFUSE_RD_ADC1_TP_LOW) != 0) &&
-        (REG_GET_FIELD(TP_REG, EFUSE_RD_ADC2_TP_LOW) != 0) &&
-        (REG_GET_FIELD(TP_REG, EFUSE_RD_ADC1_TP_HIGH) != 0) &&
-        (REG_GET_FIELD(TP_REG, EFUSE_RD_ADC2_TP_HIGH) != 0)) {
-        return true;
-    } else {
-        return false;
-    }
+    return efuse_ll_get_adc1_tp_low() &&
+           efuse_ll_get_adc2_tp_low() &&
+           efuse_ll_get_adc1_tp_high() &&
+           efuse_ll_get_adc2_tp_high();
 }
 
 static inline int decode_bits(uint32_t bits, uint32_t mask, bool is_twos_compl)
@@ -141,7 +133,7 @@ static uint32_t read_efuse_vref(void)
 {
     //eFuse stores deviation from ideal reference voltage
     uint32_t ret = VREF_OFFSET;       //Ideal vref
-    uint32_t bits = REG_GET_FIELD(VREF_REG, EFUSE_ADC_VREF);
+    uint32_t bits = efuse_ll_get_adc_vref();
     ret += decode_bits(bits, VREF_MASK, VREF_FORMAT) * VREF_STEP_SIZE;
     return ret;     //ADC Vref in mV
 }
@@ -154,10 +146,10 @@ static uint32_t read_efuse_tp_low(adc_unit_t adc_num)
 
     if (adc_num == ADC_UNIT_1) {
         ret = TP_LOW1_OFFSET;
-        bits = REG_GET_FIELD(TP_REG, EFUSE_RD_ADC1_TP_LOW);
+        bits = efuse_ll_get_adc1_tp_low();
     } else {
         ret = TP_LOW2_OFFSET;
-        bits = REG_GET_FIELD(TP_REG, EFUSE_RD_ADC2_TP_LOW);
+        bits = efuse_ll_get_adc2_tp_low();
     }
     ret += decode_bits(bits, TP_LOW_MASK, true) * TP_STEP_SIZE;
     return ret;     //Reading of ADC at 150mV
@@ -171,10 +163,10 @@ static uint32_t read_efuse_tp_high(adc_unit_t adc_num)
 
     if (adc_num == ADC_UNIT_1) {
         ret = TP_HIGH1_OFFSET;
-        bits = REG_GET_FIELD(TP_REG, EFUSE_RD_ADC1_TP_HIGH);
+        bits = efuse_ll_get_adc1_tp_high();
     } else {
         ret = TP_HIGH2_OFFSET;
-        bits = REG_GET_FIELD(TP_REG, EFUSE_RD_ADC2_TP_HIGH);
+        bits = efuse_ll_get_adc2_tp_high();
     }
     ret += decode_bits(bits, TP_HIGH_MASK, true) * TP_STEP_SIZE;
     return ret;     //Reading of ADC at 850mV

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -185,7 +185,9 @@ typedef volatile struct efuse_dev_s {
     union {
         struct {
             uint32_t spi_pad_conf_2:  18;                        /*Stores the second part of SPI_PAD_CONF.*/
-            uint32_t sys_data_part0_0:14;                        /*Stores the fist 14 bits of the zeroth part of system data.*/
+            uint32_t wafer_version:    3;
+            uint32_t pkg_version:      3;
+            uint32_t sys_data_part0_0: 8;                        /*Stores the fist 14 bits of the zeroth part of system data.*/
         };
         uint32_t val;
     } rd_mac_spi_sys_3;
