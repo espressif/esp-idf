@@ -796,10 +796,10 @@ The detailed description of all instructions is presented below:
   Conditions *LE* and *GE* are implemented in the assembler using two **JUMPR** instructions::
 
     // JUMPR target, threshold, LE is implemented as:
-    
+
              JUMPR target, threshold, EQ
              JUMPR target, threshold, LT
- 
+
     // JUMPR target, threshold, GE is implemented as:
 
              JUMPR target, threshold, EQ
