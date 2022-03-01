@@ -6,10 +6,6 @@
 
 #pragma once
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdbool.h>
 #include <stdint.h>
 #include "esp_err.h"
@@ -18,6 +14,10 @@ extern "C" {
 #include "freertos/FreeRTOS.h"
 #include "freertos/ringbuf.h"
 #include "hal/rmt_types.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define RMT_CHANNEL_FLAGS_AWARE_DFS (1 << 0) /*!< Channel can work during APB clock scaling */
 #define RMT_CHANNEL_FLAGS_INVERT_SIG (1 << 1) /*!< Invert RMT signal */
@@ -46,6 +46,117 @@ typedef struct {
         uint32_t val; /*!< Equivelent unsigned value for the RMT item */
     };
 } rmt_item32_t;
+
+/**
+ * @brief RMT hardware memory layout
+ */
+typedef struct {
+    struct {
+        volatile rmt_item32_t data32[SOC_RMT_MEM_WORDS_PER_CHANNEL];
+    } chan[SOC_RMT_CHANNELS_PER_GROUP];
+} rmt_mem_t;
+
+/**
+* @brief RMT channel ID
+*
+*/
+typedef enum {
+    RMT_CHANNEL_0,  /*!< RMT channel number 0 */
+    RMT_CHANNEL_1,  /*!< RMT channel number 1 */
+    RMT_CHANNEL_2,  /*!< RMT channel number 2 */
+    RMT_CHANNEL_3,  /*!< RMT channel number 3 */
+#if SOC_RMT_CHANNELS_PER_GROUP > 4
+    RMT_CHANNEL_4,  /*!< RMT channel number 4 */
+    RMT_CHANNEL_5,  /*!< RMT channel number 5 */
+    RMT_CHANNEL_6,  /*!< RMT channel number 6 */
+    RMT_CHANNEL_7,  /*!< RMT channel number 7 */
+#endif
+    RMT_CHANNEL_MAX /*!< Number of RMT channels */
+} rmt_channel_t;
+
+/**
+ * @brief RMT Internal Memory Owner
+ *
+ */
+typedef enum {
+    RMT_MEM_OWNER_TX, /*!< RMT RX mode, RMT transmitter owns the memory block*/
+    RMT_MEM_OWNER_RX, /*!< RMT RX mode, RMT receiver owns the memory block*/
+    RMT_MEM_OWNER_MAX,
+} rmt_mem_owner_t;
+
+/**
+ * @brief Clock Source of RMT Channel
+ *
+ */
+typedef enum {
+#if SOC_RMT_SUPPORT_REF_TICK
+    RMT_BASECLK_REF = 0, /*!< RMT source clock is REF_TICK, 1MHz by default */
+#endif
+    RMT_BASECLK_APB = 1, /*!< RMT source clock is APB CLK, 80Mhz by default */
+#if SOC_RMT_SUPPORT_XTAL
+    RMT_BASECLK_XTAL = 3, /*!< RMT source clock is XTAL clock, 40Mhz by default */
+#endif
+    RMT_BASECLK_MAX,
+} rmt_source_clk_t;
+
+/**
+ * @brief RMT Data Mode
+ *
+ * @note We highly recommended to use MEM mode not FIFO mode since there will be some gotcha in FIFO mode.
+ *
+ */
+typedef enum {
+    RMT_DATA_MODE_FIFO, /*<! RMT memory access in FIFO mode */
+    RMT_DATA_MODE_MEM,  /*<! RMT memory access in memory mode */
+    RMT_DATA_MODE_MAX,
+} rmt_data_mode_t;
+
+/**
+ * @brief RMT Channel Working Mode (TX or RX)
+ *
+ */
+typedef enum {
+    RMT_MODE_TX, /*!< RMT TX mode */
+    RMT_MODE_RX, /*!< RMT RX mode */
+    RMT_MODE_MAX
+} rmt_mode_t;
+
+/**
+ * @brief RMT Idle Level
+ *
+ */
+typedef enum {
+    RMT_IDLE_LEVEL_LOW,  /*!< RMT TX idle level: low Level */
+    RMT_IDLE_LEVEL_HIGH, /*!< RMT TX idle level: high Level */
+    RMT_IDLE_LEVEL_MAX,
+} rmt_idle_level_t;
+
+/**
+ * @brief RMT Carrier Level
+ *
+ */
+typedef enum {
+    RMT_CARRIER_LEVEL_LOW,  /*!< RMT carrier wave is modulated for low Level output */
+    RMT_CARRIER_LEVEL_HIGH, /*!< RMT carrier wave is modulated for high Level output */
+    RMT_CARRIER_LEVEL_MAX
+} rmt_carrier_level_t;
+
+/**
+ * @brief RMT Channel Status
+ *
+ */
+typedef enum {
+    RMT_CHANNEL_UNINIT, /*!< RMT channel uninitialized */
+    RMT_CHANNEL_IDLE,   /*!< RMT channel status idle */
+    RMT_CHANNEL_BUSY,   /*!< RMT channel status busy */
+} rmt_channel_status_t;
+
+/**
+* @brief Data struct of RMT channel status
+*/
+typedef struct {
+    rmt_channel_status_t status[RMT_CHANNEL_MAX]; /*!< Store the current status of each channel */
+} rmt_channel_status_result_t;
 
 /**
 * @brief Data struct of RMT TX configure parameters
@@ -888,7 +999,7 @@ esp_err_t rmt_set_tx_loop_count(rmt_channel_t channel, uint32_t count);
  * - When the loop auto-stop feature is enabled will halt RMT transmission after the loop count reaches a certain threshold
  * - When disabled, the RMT transmission continue indefinitely until halted by the users
  *
- * @note The auto-stop feature is implemented in hardware on particular targets (i.e. those with SOC_RMT_SUPPORT_TX_LOOP_AUTOSTOP defined).
+ * @note The auto-stop feature is implemented in hardware on particular targets (i.e. those with SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP defined).
  *       Otherwise, the auto-stop feature is implemented in software via the interrupt.
  *
  * @param channel RMT channel
@@ -899,50 +1010,6 @@ esp_err_t rmt_set_tx_loop_count(rmt_channel_t channel, uint32_t count);
  */
 esp_err_t rmt_enable_tx_loop_autostop(rmt_channel_t channel, bool en);
 #endif // SOC_RMT_SUPPORT_TX_LOOP_COUNT
-
-/**
-* @brief Reset RMT TX/RX memory index.
-*
-* @param channel RMT channel
-*
-* @return
-*     - ESP_ERR_INVALID_ARG Parameter error
-*     - ESP_OK Success
-*/
-esp_err_t rmt_memory_rw_rst(rmt_channel_t channel)
-__attribute__((deprecated("use rmt_tx_memory_reset or rmt_rx_memory_reset instead")));
-
-/**
-* @brief Set mask value to RMT interrupt enable register.
-*
-* @param mask Bit mask to set to the register
-*
-*/
-void rmt_set_intr_enable_mask(uint32_t mask)
-__attribute__((deprecated("interrupt should be handled by driver")));
-
-/**
-* @brief Clear mask value to RMT interrupt enable register.
-*
-* @param mask Bit mask to clear the register
-*
-*/
-void rmt_clr_intr_enable_mask(uint32_t mask)
-__attribute__((deprecated("interrupt should be handled by driver")));
-
-/**
-* @brief Set RMT pin
-*
-* @param channel RMT channel
-* @param mode TX or RX mode for RMT
-* @param gpio_num GPIO number to transmit or receive the signal.
-*
-* @return
-*     - ESP_ERR_INVALID_ARG Parameter error
-*     - ESP_OK Success
-*/
-esp_err_t rmt_set_pin(rmt_channel_t channel, rmt_mode_t mode, gpio_num_t gpio_num)
-__attribute__((deprecated("use rmt_set_gpio instead")));
 
 #ifdef __cplusplus
 }
