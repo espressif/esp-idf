@@ -178,10 +178,10 @@ typedef union {
          *  The value of RD_DIS.
          */
         uint32_t rd_dis:7;
-        /** dis_rtc_ram_boot : RO; bitpos: [7]; default: 0;
-         *  The value of DIS_RTC_RAM_BOOT.
+        /** rpt4_reserved5 : RO; bitpos: [7]; default: 0;
+         *  Reserved.
          */
-        uint32_t dis_rtc_ram_boot:1;
+        uint32_t rpt4_reserved5:1;
         /** dis_icache : RO; bitpos: [8]; default: 0;
          *  The value of DIS_ICACHE.
          */
@@ -202,10 +202,10 @@ typedef union {
          *  The value of DIS_FORCE_DOWNLOAD.
          */
         uint32_t dis_force_download:1;
-        /** dis_usb : RO; bitpos: [13]; default: 0;
-         *  The value of DIS_USB.
+        /** rpt4_reserved6 : RO; bitpos: [13]; default: 0;
+         *  Reserved.
          */
-        uint32_t dis_usb:1;
+        uint32_t rpt4_reserved6:1;
         /** dis_twai : RO; bitpos: [14]; default: 0;
          *  The value of DIS_TWAI.
          */
@@ -361,10 +361,10 @@ typedef union {
          *  The value of UART_PRINT_CHANNEL.
          */
         uint32_t uart_print_channel:1;
-        /** flash_ecc_mode : RO; bitpos: [3]; default: 0;
-         *  The value of FLASH_ECC_MODE.
+        /** rpt4_reserved8 : RO; bitpos: [3]; default: 0;
+         *  Reserved.
          */
-        uint32_t flash_ecc_mode:1;
+        uint32_t rpt4_reserved8:1;
         /** dis_usb_download_mode : RO; bitpos: [4]; default: 0;
          *  The value of DIS_USB_DOWNLOAD_MODE.
          */
@@ -377,22 +377,10 @@ typedef union {
          *  The value of UART_PRINT_CONTROL.
          */
         uint32_t uart_print_control:2;
-        /** pin_power_selection : RO; bitpos: [8]; default: 0;
-         *  The value of PIN_POWER_SELECTION.
+        /** rpt4_reserved7 : RO; bitpos: [12:8]; default: 0;
+         *  Reserved.
          */
-        uint32_t pin_power_selection:1;
-        /** flash_type : RO; bitpos: [9]; default: 0;
-         *  The value of FLASH_TYPE.
-         */
-        uint32_t flash_type:1;
-        /** flash_page_size : RO; bitpos: [11:10]; default: 0;
-         *  The value of FLASH_PAGE_SIZE.
-         */
-        uint32_t flash_page_size:2;
-        /** flash_ecc_en : RO; bitpos: [12]; default: 0;
-         *  The value of FLASH_ECC_EN.
-         */
-        uint32_t flash_ecc_en:1;
+        uint32_t rpt4_reserved7:5;
         /** force_send_resume : RO; bitpos: [13]; default: 0;
          *  The value of FORCE_SEND_RESUME.
          */
@@ -1453,10 +1441,10 @@ typedef union {
          *  If any bit in RD_DIS is 1, then it indicates a programming error.
          */
         uint32_t rd_dis_err:7;
-        /** dis_rtc_ram_boot_err : RO; bitpos: [7]; default: 0;
-         *  If DIS_RTC_RAM_BOOT is 1, then it indicates a programming error.
+        /** rpt4_reserved5_err : RO; bitpos: [7]; default: 0;
+         *  Reserved.
          */
-        uint32_t dis_rtc_ram_boot_err:1;
+        uint32_t rpt4_reserved5_err:1;
         /** dis_icache_err : RO; bitpos: [8]; default: 0;
          *  If DIS_ICACHE is 1, then it indicates a programming error.
          */
@@ -1477,10 +1465,10 @@ typedef union {
          *  If DIS_FORCE_DOWNLOAD is 1, then it indicates a programming error.
          */
         uint32_t dis_force_download_err:1;
-        /** dis_usb_err : RO; bitpos: [13]; default: 0;
-         *  If DIS_USB is 1, then it indicates a programming error.
+        /** rpt4_reserved6_err : RO; bitpos: [13]; default: 0;
+         *  Reserved.
          */
-        uint32_t dis_usb_err:1;
+        uint32_t rpt4_reserved6_err:1;
         /** dis_twai_err : RO; bitpos: [14]; default: 0;
          *  If DIS_TWAI is 1, then it indicates a programming error.
          */
@@ -1636,10 +1624,10 @@ typedef union {
          *  If UART_PRINT_CHANNEL is 1, then it indicates a programming error.
          */
         uint32_t uart_print_channel_err:1;
-        /** flash_ecc_mode_err : RO; bitpos: [3]; default: 0;
-         *  If FLASH_ECC_MODE is 1, then it indicates a programming error.
+        /** rpt4_reserved8_err : RO; bitpos: [3]; default: 0;
+         *  Reserved.
          */
-        uint32_t flash_ecc_mode_err:1;
+        uint32_t rpt4_reserved8_err:1;
         /** dis_usb_download_mode_err : RO; bitpos: [4]; default: 0;
          *  If DIS_USB_DOWNLOAD_MODE is 1, then it indicates a programming error.
          */
@@ -1652,22 +1640,10 @@ typedef union {
          *  If any bit in UART_PRINT_CONTROL is 1, then it indicates a programming error.
          */
         uint32_t uart_print_control_err:2;
-        /** pin_power_selection_err : RO; bitpos: [8]; default: 0;
-         *  If PIN_POWER_SELECTION is 1, then it indicates a programming error.
+        /** rpt4_reserved7 : RO; bitpos: [12:8]; default: 0;
+         *  Reserved.
          */
-        uint32_t pin_power_selection_err:1;
-        /** flash_type_err : RO; bitpos: [9]; default: 0;
-         *  If FLASH_TYPE is 1, then it indicates a programming error.
-         */
-        uint32_t flash_type_err:1;
-        /** flash_page_size_err : RO; bitpos: [11:10]; default: 0;
-         *  If any bits in FLASH_PAGE_SIZE is 1, then it indicates a programming error.
-         */
-        uint32_t flash_page_size_err:2;
-        /** flash_ecc_en_err : RO; bitpos: [12]; default: 0;
-         *  If FLASH_ECC_EN_ERR is 1, then it indicates a programming error.
-         */
-        uint32_t flash_ecc_en_err:1;
+        uint32_t rpt4_reserved7:5;
         /** force_send_resume_err : RO; bitpos: [13]; default: 0;
          *  If FORCE_SEND_RESUME is 1, then it indicates a programming error.
          */

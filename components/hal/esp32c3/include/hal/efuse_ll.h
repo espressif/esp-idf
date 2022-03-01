@@ -30,11 +30,6 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_wdt_delay_sel
     return EFUSE.rd_repeat_data1.wdt_delay_sel;
 }
 
-__attribute__((always_inline)) static inline uint32_t efuse_ll_get_flash_type(void)
-{
-    return EFUSE.rd_repeat_data3.flash_type;
-}
-
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_mac0(void)
 {
     return EFUSE.rd_mac_spi_sys_0;
