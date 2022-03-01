@@ -5,6 +5,8 @@ if(IDF_TARGET STREQUAL "esp32c2")
     return()
 endif()
 
+set(srcs "src/phy_override.c" "src/lib_printf.c")
+
 if(CONFIG_APP_NO_BLOBS)
     set(link_binary_libs 0)
     set(ldfragments)
@@ -14,11 +16,10 @@ else()
 endif()
 
 if(IDF_TARGET STREQUAL "esp32h2")
-    set(srcs "src/phy_init_esp32hxx.c")
+    list(APPEND srcs "src/phy_init_esp32hxx.c")
 else()
-    set(srcs "src/phy_init.c")
+    list(APPEND srcs "src/phy_init.c")
 endif()
-    list(APPEND srcs "src/lib_printf.c")
 
 idf_build_get_property(build_dir BUILD_DIR)
 
@@ -29,22 +30,22 @@ if(CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN)
 endif()
 
 if(CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN_EMBED)
-    idf_component_register(SRCS "${srcs}"
-                        INCLUDE_DIRS "include" "${idf_target}/include"
-                        PRIV_REQUIRES nvs_flash efuse
-                        LDFRAGMENTS "${ldfragments}"
-                        EMBED_FILES "${build_dir}/phy_multiple_init_data.bin"
-                        )
-else()
-    idf_component_register(SRCS "${srcs}"
-                        INCLUDE_DIRS "include" "${idf_target}/include"
-                        PRIV_REQUIRES nvs_flash efuse
-                        LDFRAGMENTS "${ldfragments}"
-                        )
+    set(embed_files "${build_dir}/phy_multiple_init_data.bin")
 endif()
+
+# [refactor-todo]: requires "driver" component for periph_ctrl header file
+idf_component_register(SRCS "${srcs}"
+                    INCLUDE_DIRS "include" "${idf_target}/include"
+                    PRIV_REQUIRES nvs_flash driver efuse
+                    LDFRAGMENTS "${ldfragments}"
+                    EMBED_FILES  ${embed_files}
+                    )
 
 set(target_name "${idf_target}")
 target_link_libraries(${COMPONENT_LIB} PUBLIC "-L \"${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}\"")
+
+# Override functions in PHY lib with the functions in 'phy_override.c'
+target_link_libraries(${COMPONENT_LIB} INTERFACE "-u include_esp_phy_override")
 
 if(link_binary_libs)
     target_link_libraries(${COMPONENT_LIB} PUBLIC phy)
