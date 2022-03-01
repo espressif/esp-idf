@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
-#
-# SPDX-License-Identifier: Apache-2.0
 #
 # 'idf.py' is a top-level config/build command line tool for ESP-IDF
 #
