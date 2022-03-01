@@ -233,11 +233,13 @@ class LinkingSections(object):
             split_name = section.split('.')
             if len(split_name) > 1:
                 # If the section has a memory type, update the type and try to display the type properly
-                assert len(split_name) == 3 and split_name[0] == '', 'Unexpected section name'
+                assert split_name[0] == '', 'Unexpected section name "{}"'.format(section)
                 memory_name = '.iram' if 'iram' in split_name[1] else\
                               '.dram' if 'dram' in split_name[1] else\
                               '.flash' if 'flash' in split_name[1] else\
                               '.' + split_name[1]
+                if len(split_name) < 3:
+                    split_name.append('')   # in order to avoid failures in the following lines
                 display_name_list[i] = 'DRAM .' + split_name[2] if 'dram' in split_name[1] else\
                                        'IRAM' + split_name[1].replace('iram', '') + ' .' + split_name[2] if 'iram' in split_name[1] else\
                                        'Flash .' + split_name[2] if 'flash' in split_name[1] else\
