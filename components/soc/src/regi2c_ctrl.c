@@ -48,3 +48,13 @@ void IRAM_ATTR regi2c_ctrl_write_reg_mask(uint8_t block, uint8_t host_id, uint8_
     i2c_write_reg_mask_raw(block, host_id, reg_add, msb, lsb, data);
     portEXIT_CRITICAL_SAFE(&mux);
 }
+
+void IRAM_ATTR regi2c_enter_critical(void)
+{
+    portENTER_CRITICAL_SAFE(&mux);
+}
+
+void IRAM_ATTR regi2c_exit_critical(void)
+{
+    portEXIT_CRITICAL_SAFE(&mux);
+}
