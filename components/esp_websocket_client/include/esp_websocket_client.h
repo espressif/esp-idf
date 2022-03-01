@@ -239,6 +239,25 @@ esp_err_t esp_websocket_client_close_with_code(esp_websocket_client_handle_t cli
 bool esp_websocket_client_is_connected(esp_websocket_client_handle_t client);
 
 /**
+ * @brief      Get the ping interval sec for client.
+ *
+ * @param[in]  client             The client
+ *
+ * @return     The ping interval in sec
+ */
+size_t esp_websocket_client_get_ping_interval_sec(esp_websocket_client_handle_t client);
+
+/**
+ * @brief      Set new ping interval sec for client.
+ *
+ * @param[in]  client             The client
+ * @param[in]  ping_interval_sec  The new interval
+ *
+ * @return     esp_err_t
+ */
+esp_err_t esp_websocket_client_set_ping_interval_sec(esp_websocket_client_handle_t client, size_t ping_interval_sec);
+
+/**
  * @brief Register the Websocket Events
  *
  * @param client            The client handle

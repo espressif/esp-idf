@@ -899,6 +899,37 @@ bool esp_websocket_client_is_connected(esp_websocket_client_handle_t client)
     return client->state == WEBSOCKET_STATE_CONNECTED;
 }
 
+size_t esp_websocket_client_get_ping_interval_sec(esp_websocket_client_handle_t client)
+{
+    if (client == NULL) {
+        ESP_LOGW(TAG, "invalid client");
+        return 0;
+    }
+
+    if (client->config == NULL) {
+        ESP_LOGW(TAG, "no config available to change the ping interval for");
+        return 0;
+    }
+
+    return client->config->ping_interval_sec;
+}
+
+esp_err_t esp_websocket_client_set_ping_interval_sec(esp_websocket_client_handle_t client, size_t ping_interval_sec)
+{
+    if (client == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (client->config == NULL) {
+        ESP_LOGW(TAG, "no config available to change the ping interval for");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    client->config->ping_interval_sec = ping_interval_sec == 0 ? WEBSOCKET_PING_INTERVAL_SEC : ping_interval_sec;
+
+    return ESP_OK;
+}
+
 esp_err_t esp_websocket_register_events(esp_websocket_client_handle_t client,
                                         esp_websocket_event_id_t event,
                                         esp_event_handler_t event_handler,
