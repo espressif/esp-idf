@@ -173,13 +173,15 @@ class LinkingSections(object):
         '''
 
         def get_memory_name(split_name: List) -> Tuple[str, str]:
-            memory_name = f'.{split_name[1]}'
+            memory_name = '.{}'.format(split_name[1])
             display_name = section
             for seg_name in ['iram','dram','flash']:
                 if seg_name in split_name[1]:
-                    memory_name = f'.{seg_name}'
+                    memory_name = '.{}'.format(seg_name)
                     seg_name = seg_name.upper() if seg_name != 'flash' else seg_name.capitalize()
-                    display_name = seg_name + ('' if seg_name != 'IRAM' else split_name[1].replace('iram', '')) + f' .{split_name[2]}'
+                    display_name = ''.join([seg_name,
+                                            split_name[1].replace('iram', '') if seg_name == 'IRAM' else '',
+                                            ' .{}'.format(split_name[2]) if len(split_name) > 2 else ''])
             return memory_name, display_name
 
         ordered_name_list = sorted(section_name_list)
@@ -198,7 +200,7 @@ class LinkingSections(object):
             split_name = section.split('.')
             if len(split_name) > 1:
                 # If the section has a memory type, update the type and try to display the type properly
-                assert len(split_name) == 3 and split_name[0] == '', 'Unexpected section name'
+                assert split_name[0] == '', 'Unexpected section name "{}"'.format(section)
                 memory_name, display_name_list[i] = get_memory_name(split_name)
                 continue
 
