@@ -460,8 +460,8 @@ config SOC_PCNT_THRES_POINT_PER_UNIT
     default 2
 
 config SOC_RMT_GROUPS
-    bool
-    default y
+    int
+    default 1
 
 config SOC_RMT_TX_CANDIDATES_PER_GROUP
     int
@@ -487,11 +487,15 @@ config SOC_RMT_SUPPORT_RX_DEMODULATION
     bool
     default y
 
+config SOC_RMT_SUPPORT_TX_ASYNC_STOP
+    bool
+    default y
+
 config SOC_RMT_SUPPORT_TX_LOOP_COUNT
     bool
     default y
 
-config SOC_RMT_SUPPORT_TX_LOOP_AUTOSTOP
+config SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP
     bool
     default y
 
@@ -499,7 +503,15 @@ config SOC_RMT_SUPPORT_TX_SYNCHRO
     bool
     default y
 
+config SOC_RMT_SUPPORT_TX_CARRIER_ALWAYS_ON
+    bool
+    default y
+
 config SOC_RMT_SUPPORT_XTAL
+    bool
+    default y
+
+config SOC_RMT_SUPPORT_DMA
     bool
     default y
 
