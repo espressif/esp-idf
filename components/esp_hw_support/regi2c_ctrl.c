@@ -42,6 +42,16 @@ void IRAM_ATTR regi2c_ctrl_write_reg_mask(uint8_t block, uint8_t host_id, uint8_
     portEXIT_CRITICAL_SAFE(&mux);
 }
 
+void IRAM_ATTR regi2c_enter_critical(void)
+{
+    portENTER_CRITICAL_SAFE(&mux);
+}
+
+void IRAM_ATTR regi2c_exit_critical(void)
+{
+    portEXIT_CRITICAL_SAFE(&mux);
+}
+
 /**
  * Restore regi2c analog calibration related configuration registers.
  * This is a workaround, and is fixed on later chips
