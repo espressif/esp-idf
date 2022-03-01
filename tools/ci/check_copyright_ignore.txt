@@ -728,7 +728,6 @@ components/espcoredump/include_core_dump/port/xtensa/esp_core_dump_port_impl.h
 components/espcoredump/src/core_dump_binary.c
 components/espcoredump/src/core_dump_flash.c
 components/espcoredump/src/core_dump_uart.c
-components/espcoredump/src/port/riscv/core_dump_port.c
 components/espcoredump/test_apps/main/test_core_dump.c
 components/fatfs/diskio/diskio.c
 components/fatfs/diskio/diskio_impl.h
