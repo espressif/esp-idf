@@ -2337,6 +2337,7 @@ examples/protocols/asio/asio_chat/main/asio_chat.cpp
 examples/protocols/asio/asio_chat/main/chat_message.hpp
 examples/protocols/asio/asio_chat/main/client.hpp
 examples/protocols/asio/asio_chat/main/server.hpp
+examples/protocols/asio/socks4/main/socks4.hpp
 examples/protocols/asio/ssl_client_server/example_test.py
 examples/protocols/asio/ssl_client_server/main/asio_ssl_main.cpp
 examples/protocols/asio/tcp_echo_server/asio_tcp_server_test.py

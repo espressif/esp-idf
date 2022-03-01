@@ -3,7 +3,8 @@
  *
  * SPDX-License-Identifier: CC0-1.0
  *
- *  ASIO HTTP request example
+ *
+ *  ASIO Socks4 example
 */
 
 #include <string>
@@ -13,11 +14,12 @@
 #include <system_error>
 #include <utility>
 #include "esp_log.h"
+#include "socks4.hpp"
 #include "nvs_flash.h"
 #include "esp_event.h"
 #include "protocol_examples_common.h"
 
-constexpr auto TAG = "async_request";
+constexpr auto TAG = "asio_socks4";
 using asio::ip::tcp;
 
 namespace {
@@ -153,7 +155,63 @@ private:
     tcp::socket socket;
 };
 
-}  // namespace
+}
+
+namespace Socks {
+
+struct ConnectionData {
+    ConnectionData(socks4::request::command_type cmd, const asio::ip::tcp::endpoint &endpoint,
+                   const std::string &user_id) : request(cmd, endpoint, user_id) {};
+    socks4::request request;
+    socks4::reply reply;
+};
+
+template<class CompletionToken>
+void async_connect(asio::io_context &context, std::string proxy, std::string proxy_port, std::string host, std::string port, CompletionToken &&completion_handler)
+{
+    /*
+     * The first step is to resolve the address of the proxy we want to connect to.
+     * The AddressResolution itself is injected to the completion handler.
+     */
+    // Resolve proxy
+    std::make_shared<AddressResolution>(context)->resolve(proxy, proxy_port,
+    [&context, host, port, completion_handler](std::shared_ptr<AddressResolution> resolver, tcp::resolver::results_type proxy_resolution) {
+        // We also need to resolve the target host address
+        resolver->resolve(host, port, [&context, proxy_resolution, completion_handler](std::shared_ptr<AddressResolution> resolver, tcp::resolver::results_type host_resolution) {
+            // Make connection with the proxy
+            ESP_LOGI(TAG, "Startig Proxy Connection");
+            std::make_shared<Connection>(context)->start(proxy_resolution,
+            [resolver, host_resolution, completion_handler](std::shared_ptr<Connection> connection) {
+                auto connect_data = std::make_shared<ConnectionData>(socks4::request::connect, *host_resolution, "");
+            ESP_LOGI(TAG, "Sending Request to proxy for host connection.");
+                connection->write_async(connect_data->request.buffers(), [connection, connect_data, completion_handler](std::error_code error, std::size_t bytes_received) {
+                    if (error) {
+                        ESP_LOGE(TAG, "Proxy request write error: %s", error.message().c_str());
+                        return;
+                    }
+                    connection->read_async(connect_data->reply.buffers(), [connection, connect_data, completion_handler](std::error_code error, std::size_t bytes_received) {
+                        if (error) {
+
+                            ESP_LOGE(TAG, "Proxy response read error: %s", error.message().c_str());
+                            return;
+                        }
+                        if (!connect_data->reply.success()) {
+                            ESP_LOGE(TAG, "Proxy error: %#x", connect_data->reply.status());
+                        }
+                        completion_handler(connection);
+
+                    });
+
+                });
+
+            });
+
+        });
+    });
+
+}
+} // namespace Socks
+
 namespace Http {
 enum class Method { GET };
 
@@ -311,40 +369,6 @@ private:
     std::array<asio::const_buffer, 2> send_data;
     std::shared_ptr<Connection> connection;
 };
-
-/** @brief Execute a fully async HTTP request
- *
- * @tparam completion_handler
- * @param  ctx io context
- * @param  request
- *
- * @note :  We build this function as a simpler interface to compose the operations of connecting to
- *          the address and running the HTTP session. The Http::Session class is injected to the completion handler
- *          for further use.
- */
-template<class CompletionToken>
-void request_async(asio::io_context &context, const Request &request, CompletionToken &&completion_handler)
-{
-    /*
-     * The first step is to resolve the address we want to connect to.
-     * The AddressResolution itself is injected to the completion handler.
-     *
-     * This shared_ptr is destroyed by the end of the scope. Pay attention that this is a non blocking function
-     * the lifetime of the object is extended by the resolve call
-     */
-    std::make_shared<AddressResolution>(context)->resolve(request.host(), request.service_port(),
-    [&context, &request, completion_handler](std::shared_ptr<AddressResolution> resolver, tcp::resolver::results_type results) {
-        /* After resolution we create a Connection.
-        *  The completion handler gets a shared_ptr<Connection> to receive the connection, once the
-        *  connection process is complete.
-        */
-        std::make_shared<Connection>(context)->start(results,
-        [&request, completion_handler](std::shared_ptr<Connection> connection) {
-            // Now we create a HTTP::Session and inject the necessary connection.
-            std::make_shared<Session>(connection)->send_request(request, completion_handler);
-        });
-    });
-}
 }// namespace Http
 
 extern "C" void app_main(void)
@@ -354,13 +378,13 @@ extern "C" void app_main(void)
 
     asio::io_context io_context;
     Http::Request request(Http::Method::GET, "www.httpbin.org", "80", "/get");
-    Http::request_async(io_context, request, [](std::shared_ptr<Http::Session> session, Http::Response response) {
-        /*
-         * We only print the response here but could reuse session for other requests.
-         */
-        response.print();
+    Socks::async_connect(io_context, CONFIG_EXAMPLE_PROXY_ADDRESS, CONFIG_EXAMPLE_PROXY_PORT, request.host(), request.service_port(),
+    [&request](std::shared_ptr<Connection> connection) {
+        // Now we create a HTTP::Session and inject the necessary connection.
+        std::make_shared<Http::Session>(connection)->send_request(request, [](std::shared_ptr<Http::Session> session, Http::Response response) {
+            response.print();
+        });
     });
-
     // io_context.run will block until all the tasks on the context are done.
     io_context.run();
     ESP_LOGI(TAG, "Context run done");
