@@ -1,10 +1,10 @@
-ULP-RISC-V Coprocessor programming
+ULP RISC-V Coprocessor programming
 ==================================
 :link_to_translation:`zh_CN:[中文]`
 
-The ULP RISC-V coprocessor is a variant of the ULP present in {IDF_TARGET_NAME}. Similar to ULP FSM, ULP RISC-V coprocessor can perform tasks such as sensor readings while the main CPU stays in low power modes. The main difference between ULP FSM and ULP RISC-V is that the later can be programmed in C using standard GNU tools. The ULP RISC-V coprocessor can access the RTC_SLOW_MEM memory region, and registers in RTC_CNTL, RTC_IO, and SARADC peripherals. The RISC-V processor is a 32-bit, fixed point machine. Its instruction set is based on RV32IMC which includes hardware multiplication and division, and compressed code.
+The ULP RISC-V coprocessor is a variant of the ULP present in {IDF_TARGET_NAME}. Similar to ULP FSM, the ULP RISC-V coprocessor can perform tasks such as sensor readings while the main CPU stays in low power modes. The main difference between ULP FSM and ULP RISC-V is that the latter can be programmed in C using standard GNU tools. The ULP RISC-V coprocessor can access the RTC_SLOW_MEM memory region, and registers in RTC_CNTL, RTC_IO, and SARADC peripherals. The RISC-V processor is a 32-bit fixed point machine. Its instruction set is based on RV32IMC which includes hardware multiplication and division, and compressed code.
 
-Installing the ULP-RISC-V Toolchain
+Installing the ULP RISC-V Toolchain
 -----------------------------------
 
 The ULP RISC-V coprocessor code is written in C (assembly is also possible) and compiled using the RISC-V toolchain based on GCC.
@@ -18,9 +18,9 @@ Compiling the ULP RISC-V Code
 
 To compile the ULP RISC-V code as part of the component, the following steps must be taken:
 
-1. The ULP RISC-V code, written in C or assembly (must use the `.S` extension), must be placed in a separate directory inside the component directory, for instance `ulp/`.
+1. The ULP RISC-V code, written in C or assembly (must use the `.S` extension), must be placed in a separate directory inside the component directory, for instance, `ulp/`.
 
-.. note: When registering the component (via ``idf_component_register``), this directory should not be added to the ``SRC_DIRS`` argument as it is currently done for the ULP FSM. See the step below for how to properly add ULP source files
+.. note: When registering the component (via ``idf_component_register``), this directory should not be added to the ``SRC_DIRS`` argument as it is currently done for the ULP FSM. See the step below for how to properly add ULP source files.
 
 2. Call ``ulp_embed_binary`` from the component CMakeLists.txt after registration. For example::
 
@@ -33,13 +33,9 @@ To compile the ULP RISC-V code as part of the component, the following steps mus
 
     ulp_embed_binary(${ulp_app_name} "${ulp_sources}" "${ulp_exp_dep_srcs}")
 
- The first argument to ``ulp_embed_binary`` specifies the ULP binary name. The name specified here will also be used by other generated artifacts
- such as the ELF file, map file, header file and linker export file. The second argument specifies the ULP source files.
- Finally, the third argument specifies the list of component source files which include the header file to be generated.
- This list is needed to build the dependencies correctly and ensure that the generated header file will be created before any of these files are compiled.
- See section below for the concept of generated header files for ULP applications.
+ The first argument to ``ulp_embed_binary`` specifies the ULP binary name. The name specified here will also be used by other generated artifacts such as the ELF file, map file, header file and linker export file. The second argument specifies the ULP source files.  Finally, the third argument specifies the list of component source files which include the header file to be generated. This list is needed to build the dependencies correctly and ensure that the generated header file will be created before any of these files are compiled. See the section below for the concept of generated header files for ULP applications.
 
-3. Build the application as usual (e.g. `idf.py app`)
+3. Build the application as usual (e.g. `idf.py app`).
 
    Inside, the build system will take the following steps to build ULP program:
 
@@ -47,22 +43,22 @@ To compile the ULP RISC-V code as part of the component, the following steps mus
 
    2. **Run the linker script template through the C preprocessor.** The template is located in ``components/ulp/ld`` directory.
 
-   4. **Link the object files into an output ELF file** (``ulp_app_name.elf``). The Map file (``ulp_app_name.map``) generated at this stage may be useful for debugging purposes.
+   3. **Link the object files into an output ELF file** (``ulp_app_name.elf``). The Map file (``ulp_app_name.map``) generated at this stage may be useful for debugging purposes.
 
-   5. **Dump the contents of the ELF file into a binary** (``ulp_app_name.bin``) which can then be embedded into the application.
+   4. **Dump the contents of the ELF file into a binary** (``ulp_app_name.bin``) which can then be embedded into the application.
 
-   6. **Generate a list of global symbols** (``ulp_app_name.sym``) in the ELF file using ``riscv32-esp-elf-nm``.
+   5. **Generate a list of global symbols** (``ulp_app_name.sym``) in the ELF file using ``riscv32-esp-elf-nm``.
 
-   7. **Create an LD export script and header file** (``ulp_app_name.ld`` and ``ulp_app_name.h``) containing the symbols from ``ulp_app_name.sym``. This is done using the ``esp32ulp_mapgen.py`` utility.
+   6. **Create an LD export script and a header file** (``ulp_app_name.ld`` and ``ulp_app_name.h``) containing the symbols from ``ulp_app_name.sym``. This is done using the ``esp32ulp_mapgen.py`` utility.
 
-   8. **Add the generated binary to the list of binary files** to be embedded into the application.
+   7. **Add the generated binary to the list of binary files** to be embedded into the application.
 
 Accessing the ULP RISC-V Program Variables
 ------------------------------------------
 
 Global symbols defined in the ULP RISC-V program may be used inside the main program.
 
-For example, the ULP RISC-V program may define a variable ``measurement_count`` which will define the number of ADC measurements the program needs to make before waking up the chip from deep sleep
+For example, the ULP RISC-V program may define a variable ``measurement_count`` which will define the number of ADC measurements the program needs to make before waking up the chip from deep sleep.
 
 .. code-block:: c
 
@@ -78,7 +74,7 @@ For example, the ULP RISC-V program may define a variable ``measurement_count`` 
 
 The main program can access the global ULP RISC-V program variables as the build system makes this possible by generating the ``${ULP_APP_NAME}.h`` and ``${ULP_APP_NAME}.ld`` files which define the global symbols present in the ULP RISC-V program. Each global symbol defined in the ULP RISC-V program is included in these files and are prefixed with ``ulp_``.
 
-The header file contains the declaration of the symbol
+The header file contains the declaration of the symbol:
 
 .. code-block:: c
 
@@ -105,9 +101,9 @@ Starting the ULP RISC-V Program
 
 To run a ULP RISC-V program, the main application needs to load the ULP program into RTC memory using the :cpp:func:`ulp_riscv_load_binary` function, and then start it using the :cpp:func:`ulp_riscv_run` function.
 
-Note that `CONFIG_ULP_COPROC_ENABLED` and `CONFIG_ULP_COPROC_TYPE_RISCV` options must be enabled in menuconfig to work with ULP RISC-V. To reserve memory for the ULP, "RTC slow memory reserved for coprocessor" option must be set to a value big enough to store ULP RISC-V code and data. If the application components contain multiple ULP programs, then the size of the RTC memory must be sufficient to hold the largest one.
+Note that `CONFIG_ULP_COPROC_ENABLED` and `CONFIG_ULP_COPROC_TYPE_RISCV` options must be enabled in menuconfig to work with ULP RISC-V. To reserve memory for the ULP, the ``RTC slow memory reserved for coprocessor`` option must be set to a value big enough to store ULP RISC-V code and data. If the application components contain multiple ULP programs, then the size of the RTC memory must be sufficient to hold the largest one.
 
-Each ULP RISC-V program is embedded into the ESP-IDF application as a binary blob. The application can reference this blob and load it in the following way (suppose ULP_APP_NAME was defined to ``ulp_app_name``)
+Each ULP RISC-V program is embedded into the ESP-IDF application as a binary blob. The application can reference this blob and load it in the following way (suppose ULP_APP_NAME was defined to ``ulp_app_name``):
 
 .. code-block:: c
 
@@ -119,7 +115,7 @@ Each ULP RISC-V program is embedded into the ESP-IDF application as a binary blo
             (bin_end - bin_start)) );
     }
 
-Once the program is loaded into RTC memory, the application can start it by calling the :cpp:func:`ulp_riscv_run` function
+Once the program is loaded into RTC memory, the application can start it by calling the :cpp:func:`ulp_riscv_run` function:
 
 .. code-block:: c
 
