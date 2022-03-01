@@ -322,7 +322,10 @@ def load_sections(map_file: TextIO) -> Dict:
     RE_FULL_LINE = re.compile(r'\s*(?P<sym_name>\S*) +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+)\s*(?P<file>.*)$')
 
     # Extract archive and object_file from the file_info field
-    RE_FILE = re.compile(r'((?P<archive>[^ ]+\.a)?\(?(?P<object_file>[^ ]+\.(o|obj))\)?)')
+    # The object file extention (.obj or .o) is optional including the dot. This is necessary for some third-party
+    # libraries. Since the dot is optional and the search gready the parsing of the object name must stop at ). Hence
+    # the [^ )] part of the regex.
+    RE_FILE = re.compile(r'((?P<archive>[^ ]+\.a)?\(?(?P<object_file>[^ )]+(\.(o|obj))?)\)?)')
 
     def dump_src_line(src: Dict) -> str:
         return '%s(%s) addr: 0x%08x, size: 0x%x+%d' % (src['sym_name'], src['file'], src['address'], src['size'], src['fill'])
@@ -393,7 +396,7 @@ def load_sections(map_file: TextIO) -> Dict:
 
             # Extract archive and file information
             match_arch_and_file = RE_FILE.match(match_line.group('file'))
-            assert match_arch_and_file
+            assert match_arch_and_file, 'Archive and file information not found for "{}"'.format(match_line.group('file'))
 
             archive = match_arch_and_file.group('archive')
             if archive is None:
