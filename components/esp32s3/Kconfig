@@ -1,31 +1,6 @@
 menu "ESP32S3-Specific"
     visible if IDF_TARGET_ESP32S3
 
-    choice ESP32S3_DEFAULT_CPU_FREQ_MHZ
-        prompt "CPU frequency"
-        default ESP32S3_DEFAULT_CPU_FREQ_40 if IDF_ENV_FPGA
-        default ESP32S3_DEFAULT_CPU_FREQ_160 if !IDF_ENV_FPGA
-        help
-            CPU frequency to be set on application startup.
-
-        config ESP32S3_DEFAULT_CPU_FREQ_40
-            bool "40 MHz"
-            depends on IDF_ENV_FPGA
-        config ESP32S3_DEFAULT_CPU_FREQ_80
-            bool "80 MHz"
-        config ESP32S3_DEFAULT_CPU_FREQ_160
-            bool "160 MHz"
-        config ESP32S3_DEFAULT_CPU_FREQ_240
-            bool "240 MHz"
-    endchoice
-
-    config ESP32S3_DEFAULT_CPU_FREQ_MHZ
-        int
-        default 40 if ESP32S3_DEFAULT_CPU_FREQ_40
-        default 80 if ESP32S3_DEFAULT_CPU_FREQ_80
-        default 160 if ESP32S3_DEFAULT_CPU_FREQ_160
-        default 240 if ESP32S3_DEFAULT_CPU_FREQ_240
-
     menu "Cache config"
 
         choice ESP32S3_INSTRUCTION_CACHE_SIZE
@@ -309,82 +284,7 @@ menu "ESP32S3-Specific"
         default 0x8000 if ESP32S3_MEMMAP_TRACEMEM && ESP32S3_MEMMAP_TRACEMEM_TWOBANKS
         default 0x4000 if ESP32S3_MEMMAP_TRACEMEM && !ESP32S3_MEMMAP_TRACEMEM_TWOBANKS
         default 0x0
-    choice ESP32S3_TIME_SYSCALL
-        prompt "Timers used for gettimeofday function"
-        default ESP32S3_TIME_SYSCALL_USE_RTC_SYSTIMER
-        help
-            This setting defines which hardware timers are used to
-            implement 'gettimeofday' and 'time' functions in C library.
 
-            - If both high-resolution and RTC timers are used, timekeeping will
-              continue in deep sleep. Time will be reported at 1 microsecond
-              resolution. This is the default, and the recommended option.
-            - If only high-resolution timer is used, gettimeofday will
-              provide time at microsecond resolution.
-              Time will not be preserved when going into deep sleep mode.
-            - If only RTC timer is used, timekeeping will continue in
-              deep sleep, but time will be measured at 6.(6) microsecond
-              resolution. Also the gettimeofday function itself may take
-              longer to run.
-            - If no timers are used, gettimeofday and time functions
-              return -1 and set errno to ENOSYS.
-            - When RTC is used for timekeeping, two RTC_STORE registers are
-              used to keep time in deep sleep mode.
-
-        config ESP32S3_TIME_SYSCALL_USE_RTC_SYSTIMER
-            bool "RTC and high-resolution timer"
-            select ESP_TIME_FUNCS_USE_RTC_TIMER
-            select ESP_TIME_FUNCS_USE_ESP_TIMER
-        config ESP32S3_TIME_SYSCALL_USE_RTC
-            bool "RTC"
-            select ESP_TIME_FUNCS_USE_RTC_TIMER
-        config ESP32S3_TIME_SYSCALL_USE_SYSTIMER
-            bool "High-resolution timer"
-            select ESP_TIME_FUNCS_USE_ESP_TIMER
-        config ESP32S3_TIME_SYSCALL_USE_NONE
-            bool "None"
-            select ESP_TIME_FUNCS_USE_NONE
-    endchoice
-
-    choice ESP32S3_RTC_CLK_SRC
-        prompt "RTC clock source"
-        default ESP32S3_RTC_CLK_SRC_INT_RC
-        help
-            Choose which clock is used as RTC clock source.
-
-        config ESP32S3_RTC_CLK_SRC_INT_RC
-            bool "Internal 150kHz RC oscillator"
-        config ESP32S3_RTC_CLK_SRC_EXT_CRYS
-            bool "External 32kHz crystal"
-            select ESP_SYSTEM_RTC_EXT_XTAL
-        config ESP32S3_RTC_CLK_SRC_EXT_OSC
-            bool "External 32kHz oscillator at 32K_XP pin"
-            select ESP_SYSTEM_RTC_EXT_OSC
-        config ESP32S3_RTC_CLK_SRC_INT_8MD256
-            bool "Internal 8MHz oscillator, divided by 256 (~32kHz)"
-    endchoice
-
-    config ESP32S3_RTC_CLK_CAL_CYCLES
-        int "Number of cycles for RTC_SLOW_CLK calibration"
-        default 3000 if ESP32S3_RTC_CLK_SRC_EXT_CRYS || ESP32S3_RTC_CLK_SRC_EXT_OSC || ESP32S3_RTC_CLK_SRC_INT_8MD256
-        default 1024 if ESP32S3_RTC_CLK_SRC_INT_RC
-        range 0 27000 if ESP32S3_RTC_CLK_SRC_EXT_CRYS || ESP32S3_RTC_CLK_SRC_EXT_OSC || ESP32S3_RTC_CLK_SRC_INT_8MD256
-        range 0 32766 if ESP32S3_RTC_CLK_SRC_INT_RC
-        help
-            When the startup code initializes RTC_SLOW_CLK, it can perform
-            calibration by comparing the RTC_SLOW_CLK frequency with main XTAL
-            frequency. This option sets the number of RTC_SLOW_CLK cycles measured
-            by the calibration routine. Higher numbers increase calibration
-            precision, which may be important for applications which spend a lot of
-            time in deep sleep. Lower numbers reduce startup time.
-
-            When this option is set to 0, clock calibration will not be performed at
-            startup, and approximate clock frequencies will be assumed:
-
-            - 150000 Hz if internal RC oscillator is used as clock source. For this use value 1024.
-            - 32768 Hz if the 32k crystal oscillator is used. For this use value 3000 or more.
-              In case more value will help improve the definition of the launch of the crystal.
-              If the crystal could not start, it will be switched to internal RC.
 
     config ESP32S3_DEEP_SLEEP_WAKEUP_DELAY
         int "Extra delay in deep sleep wake stub (in us)"
@@ -403,14 +303,6 @@ menu "ESP32S3-Specific"
 
             If you are seeing "flash read err, 1000" message printed to the
             console after deep sleep reset, try increasing this value.
-
-    config ESP32S3_NO_BLOBS
-        bool "No Binary Blobs"
-        depends on !BT_ENABLED
-        default n
-        help
-            If enabled, this disables the linking of binary libraries in the application build. Note
-            that after enabling this Wi-Fi/Bluetooth will not work.
 
     config ESP32S3_RTCDATA_IN_FAST_MEM
         bool "Place RTC_DATA_ATTR and RTC_RODATA_ATTR variables into RTC fast memory segment"

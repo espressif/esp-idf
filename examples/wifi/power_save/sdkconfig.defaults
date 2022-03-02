@@ -1,5 +1,5 @@
 # Use lower CPU frequency
-CONFIG_ESP32_DEFAULT_CPU_FREQ_80=y
+CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_80=y
 # Enable support for power management
 CONFIG_PM_ENABLE=y
 # Enable tickless idle mode

@@ -126,9 +126,9 @@ static void bootloader_reset_mmu(void)
 static esp_err_t bootloader_check_rated_cpu_clock(void)
 {
     int rated_freq = bootloader_clock_get_rated_freq_mhz();
-    if (rated_freq < CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ) {
+    if (rated_freq < CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ) {
         ESP_LOGE(TAG, "Chip CPU frequency rated for %dMHz, configured for %dMHz. Modify CPU frequency in menuconfig",
-                 rated_freq, CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ);
+                 rated_freq, CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ);
         return ESP_FAIL;
     }
     return ESP_OK;

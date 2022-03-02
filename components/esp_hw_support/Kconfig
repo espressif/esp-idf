@@ -36,10 +36,10 @@ menu "Hardware Settings"
 
         config ESP_SLEEP_GPIO_RESET_WORKAROUND
             bool "light sleep GPIO reset workaround"
-            default y if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+            default y if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
             select PM_SLP_DISABLE_GPIO if FREERTOS_USE_TICKLESS_IDLE
             help
-                esp32c3 and esp32s3 will reset at wake-up if GPIO is received a small electrostatic
+                esp32c2, esp32c3 and esp32s3 will reset at wake-up if GPIO is received a small electrostatic
                 pulse during light sleep, with specific condition
 
                 - GPIO needs to be configured as input-mode only
@@ -72,6 +72,8 @@ menu "Hardware Settings"
     endmenu
 
     menu "RTC Clock Config"
+        orsource "./port/$IDF_TARGET/Kconfig.rtc"
+
         # This is used for configure the RTC clock.
         config RTC_CLOCK_BBPLL_POWER_ON_WITH_USB
             bool "Keep BBPLL clock always work"
@@ -94,4 +96,8 @@ menu "Hardware Settings"
                 Place peripheral control functions (e.g. periph_module_reset) into IRAM,
                 so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
     endmenu
+
+    # Insert chip-specific HW config
+    orsource "./port/$IDF_TARGET/Kconfig.hw_support"
+
 endmenu

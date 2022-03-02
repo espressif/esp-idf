@@ -79,24 +79,18 @@
 #if CONFIG_IDF_TARGET_ESP32
 /* Minimal divider at which REF_CLK_FREQ can be obtained */
 #define REF_CLK_DIV_MIN 10
-#define DEFAULT_CPU_FREQ CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ
 #elif CONFIG_IDF_TARGET_ESP32S2
 /* Minimal divider at which REF_CLK_FREQ can be obtained */
 #define REF_CLK_DIV_MIN 2
-#define DEFAULT_CPU_FREQ CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ
 #elif CONFIG_IDF_TARGET_ESP32S3
 /* Minimal divider at which REF_CLK_FREQ can be obtained */
 #define REF_CLK_DIV_MIN 2
-#define DEFAULT_CPU_FREQ CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ
 #elif CONFIG_IDF_TARGET_ESP32C3
 #define REF_CLK_DIV_MIN 2
-#define DEFAULT_CPU_FREQ CONFIG_ESP32C3_DEFAULT_CPU_FREQ_MHZ
 #elif CONFIG_IDF_TARGET_ESP32H2
 #define REF_CLK_DIV_MIN 2
-#define DEFAULT_CPU_FREQ CONFIG_ESP32H2_DEFAULT_CPU_FREQ_MHZ
 #elif CONFIG_IDF_TARGET_ESP32C2
 #define REF_CLK_DIV_MIN 2
-#define DEFAULT_CPU_FREQ CONFIG_ESP32C2_DEFAULT_CPU_FREQ_MHZ
 #endif
 
 #ifdef CONFIG_PM_PROFILING
@@ -760,7 +754,7 @@ void esp_pm_impl_init(void)
      * This will be modified later by a call to esp_pm_configure.
      */
     rtc_cpu_freq_config_t default_config;
-    if (!rtc_clk_cpu_freq_mhz_to_config(DEFAULT_CPU_FREQ, &default_config)) {
+    if (!rtc_clk_cpu_freq_mhz_to_config(CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ, &default_config)) {
         assert(false && "unsupported frequency");
     }
     for (size_t i = 0; i < PM_MODE_COUNT; ++i) {
@@ -782,7 +776,7 @@ void esp_pm_impl_init(void)
 #elif CONFIG_IDF_TARGET_ESP32C2
     esp_pm_config_esp32c2_t cfg = {
 #endif
-        .max_freq_mhz = DEFAULT_CPU_FREQ,
+        .max_freq_mhz = CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,
         .min_freq_mhz = xtal_freq_mhz,
     };
 

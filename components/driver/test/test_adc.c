@@ -285,20 +285,11 @@ TEST_CASE("test_adc_single", "[adc][ignore][manual]")
 /********************************************************************************
  *      ADC Speed Related Tests
  ********************************************************************************/
-#ifdef CONFIG_IDF_TARGET_ESP32
-#define CPU_FREQ_MHZ                    CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ
-#elif CONFIG_IDF_TARGET_ESP32S2
-#define CPU_FREQ_MHZ                    CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ
-#elif CONFIG_IDF_TARGET_ESP32S3
-#define CPU_FREQ_MHZ                    CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ
-#elif CONFIG_IDF_TARGET_ESP32C3
-#define CPU_FREQ_MHZ                    CONFIG_ESP32C3_DEFAULT_CPU_FREQ_MHZ
-#endif
 
 #define RECORD_TIME_PREPARE() uint32_t __t1, __t2
 #define RECORD_TIME_START()             do {__t1 = esp_cpu_get_ccount();}while(0)
 #define RECORD_TIME_END(p_time)         do{__t2 = esp_cpu_get_ccount(); *p_time = (__t2-__t1);}while(0)
-#define GET_US_BY_CCOUNT(t)             ((double)t/CPU_FREQ_MHZ)
+#define GET_US_BY_CCOUNT(t)             ((double)t/CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ)
 
 
 //ADC Channels
@@ -367,7 +358,7 @@ static IRAM_ATTR NOINLINE_ATTR uint32_t get_cali_time_in_ccount(uint32_t adc_raw
 
 TEST_CASE("test_adc_single_cali_time", "[adc][ignore][manual]")
 {
-    ESP_LOGI(TAG, "CPU FREQ is %dMHz", CPU_FREQ_MHZ);
+    ESP_LOGI(TAG, "CPU FREQ is %dMHz", CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ);
     uint32_t adc1_time_record[4][TIMES_PER_ATTEN] = {};
     uint32_t adc2_time_record[4][TIMES_PER_ATTEN] = {};
     int adc1_raw = 0;

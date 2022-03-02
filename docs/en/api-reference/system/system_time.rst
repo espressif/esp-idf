@@ -22,7 +22,7 @@ The settings for the system time source are as follows:
 - High-resolution timer
 - None
 
-It is recommended to stick to the default setting which provides maximum accuracy. If you want to choose a different timer, configure :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_TIME_SYSCALL` in project configuration.
+It is recommended to stick to the default setting which provides maximum accuracy. If you want to choose a different timer, configure :ref:`CONFIG_NEWLIB_TIME_SYSCALL` in project configuration.
 
 
 RTC Clock Source
@@ -38,7 +38,7 @@ The RTC timer has the following clock sources:
 
 - ``Internal 8.5MHz oscillator, divided by 256 (~33kHz)``: Provides better frequency stability than the ``internal {IDF_TARGET_RTC_CLK_FRE} RC oscillator`` at the expense of higher (by 5 uA) deep sleep current consumption. It also does not require external components.
 
-The choice depends on your requirements for system time accuracy and power consumption in sleep modes. To modify the RTC clock source, set :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_RTC_CLK_SRC` in project configuration.
+The choice depends on your requirements for system time accuracy and power consumption in sleep modes. To modify the RTC clock source, set :ref:`CONFIG_RTC_CLK_SRC` in project configuration.
 
 More details on wiring requirements for the ``External 32kHz crystal`` and ``External 32kHz oscillator at 32K_XN pin`` sources can be found in Section *Crystal Oscillator* of {IDF_TARGET_HARDWARE_DESIGN_URL}.
 

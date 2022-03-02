@@ -1,0 +1,27 @@
+choice ESP32C3_REV_MIN
+    prompt "Minimum Supported ESP32-C3 Revision"
+    default ESP32C3_REV_MIN_3
+    help
+        Minimum revision that ESP-IDF would support.
+
+        Only supporting higher chip revisions can reduce binary size.
+
+    config ESP32C3_REV_MIN_0
+        bool "Rev 0"
+    config ESP32C3_REV_MIN_1
+        bool "Rev 1"
+    config ESP32C3_REV_MIN_2
+        bool "Rev 2"
+    config ESP32C3_REV_MIN_3
+        bool "Rev 3"
+    config ESP32C3_REV_MIN_4
+        bool "Rev 4"
+endchoice
+
+config ESP32C3_REV_MIN
+    int
+    default 0 if ESP32C3_REV_MIN_0
+    default 1 if ESP32C3_REV_MIN_1
+    default 2 if ESP32C3_REV_MIN_2
+    default 3 if ESP32C3_REV_MIN_3
+    default 4 if ESP32C3_REV_MIN_4

@@ -1,5 +1,7 @@
 
 menu "ESP System Settings"
+    # Insert chip-specific cpu config
+    rsource "./port/soc/$IDF_TARGET/Kconfig.cpu"
 
     choice ESP_SYSTEM_PANIC
         prompt "Panic handler behaviour"
@@ -48,7 +50,7 @@ menu "ESP System Settings"
 
     config ESP_SYSTEM_RTC_EXT_XTAL
         # This is a High Layer Kconfig option, invisible, can be selected by other Kconfig option
-        # e.g. It will be selected on when ESP32_RTC_CLK_SRC_EXT_CRYS is on
+        # e.g. It will be selected on when RTC_CLK_SRC_EXT_CRYS is on
         bool
         default n
 

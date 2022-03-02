@@ -100,7 +100,7 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 #if configUSE_TICKLESS_IDLE
 #define configEXPECTED_IDLE_TIME_BEFORE_SLEEP           CONFIG_FREERTOS_IDLE_TIME_BEFORE_SLEEP
 #endif //configUSE_TICKLESS_IDLE
-#define configCPU_CLOCK_HZ                              (CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ * 1000000)
+#define configCPU_CLOCK_HZ                              (CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ * 1000000)
 #define configTICK_RATE_HZ                              CONFIG_FREERTOS_HZ
 #define configMAX_PRIORITIES                            ( 25 )  //This has impact on speed of search for highest priority
 #define configMINIMAL_STACK_SIZE                        ( 768 + configSTACK_OVERHEAD_TOTAL )

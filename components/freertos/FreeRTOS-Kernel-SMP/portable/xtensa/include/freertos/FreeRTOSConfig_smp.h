@@ -128,7 +128,7 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 #define configUSE_PREEMPTION                            1
 #define configUSE_TASK_PREEMPTION_DISABLE               1
 #define configUSE_TICKLESS_IDLE                         0
-#define configCPU_CLOCK_HZ                              (CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ * 1000000)
+#define configCPU_CLOCK_HZ                              (CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ * 1000000)
 #define configTICK_RATE_HZ                              CONFIG_FREERTOS_HZ
 #define configMAX_PRIORITIES                            ( 25 )  //This has impact on speed of search for highest priority
 #define configMINIMAL_STACK_SIZE                        ( 768 + configSTACK_OVERHEAD_TOTAL )

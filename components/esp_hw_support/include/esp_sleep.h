@@ -107,7 +107,7 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source);
  *       ext0 wakeup source is used.
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_NOT_SUPPORTED if additional current by touch (CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT) is enabled.
+ *      - ESP_ERR_NOT_SUPPORTED if additional current by touch (CONFIG_RTC_EXT_CRYST_ADDIT_CURRENT) is enabled.
  *      - ESP_ERR_INVALID_STATE if ULP co-processor is not enabled or if wakeup triggers conflict
  */
 esp_err_t esp_sleep_enable_ulp_wakeup(void);
@@ -138,7 +138,7 @@ esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us);
  *
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_NOT_SUPPORTED if additional current by touch (CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT) is enabled.
+ *      - ESP_ERR_NOT_SUPPORTED if additional current by touch (CONFIG_RTC_EXT_CRYST_ADDIT_CURRENT) is enabled.
  *      - ESP_ERR_INVALID_STATE if wakeup triggers conflict
  */
 esp_err_t esp_sleep_enable_touchpad_wakeup(void);
