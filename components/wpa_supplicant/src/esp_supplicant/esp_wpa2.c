@@ -412,7 +412,8 @@ int eap_sm_process_request(struct eap_sm *sm, struct wpabuf *reqData)
         return ESP_FAIL;
     }
 
-    if (ehdr->identifier == sm->current_identifier) {
+    if (ehdr->identifier == sm->current_identifier &&
+        sm->lastRespData != NULL) {
         /*Retransmit*/
         resp = sm->lastRespData;
         goto send_resp;
@@ -486,7 +487,10 @@ build_nak:
 send_resp:
     if (resp == NULL) {
         wpa_printf(MSG_ERROR, "Response build fail, return.");
-        return ESP_FAIL;
+        wpabuf_free(sm->lastRespData);
+        sm->lastRespData = resp;
+        wpa2_set_eap_state(WPA2_ENT_EAP_STATE_FAIL);
+        return WPA2_ENT_EAP_STATE_FAIL;
     }
     ret = eap_sm_send_eapol(sm, resp);
     if (ret == ESP_OK) {
