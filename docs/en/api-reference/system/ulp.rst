@@ -3,7 +3,7 @@ ULP Coprocessor programming
 
 :link_to_translation:`zh_CN:[中文]`
 
-The ULP (Ultra Low Power) coprocessor is a simple FSM (Finite State Machine) which is designed to perform measurements using the ADC, temperature sensor, and external I2C sensors, while the main processors are in deep sleep mode. The ULP coprocessor can access the RTC_SLOW_MEM memory region, and registers in the RTC_CNTL, RTC_IO, and SARADC peripherals. The ULP coprocessor uses fixed-width 32-bit instructions, 32-bit memory addressing, and has 4 general-purpose 16-bit registers. This coprocessor is referred to as `ULP FSM` in ESP-IDF.
+The Ultra Low Power (ULP) coprocessor is a simple finite state machine (FSM) which is designed to perform measurements using the ADC, temperature sensor, and external I2C sensors, while the main processors are in deep sleep mode. The ULP coprocessor can access the RTC_SLOW_MEM memory region, and registers in the RTC_CNTL, RTC_IO, and SARADC peripherals. The ULP coprocessor uses fixed-width 32-bit instructions, 32-bit memory addressing, and has 4 general-purpose 16-bit registers. This coprocessor is referred to as `ULP FSM` in ESP-IDF.
 
 .. only:: esp32s2 or esp32s3
 
@@ -18,8 +18,8 @@ If you have already set up ESP-IDF with CMake build system according to the :doc
 
 Programming ULP FSM
 -------------------
-The ULP FSM can be programmed using the supported instruction set. Alternatively, the ULP FSM coprocessor can also be programmed using C Macros on the main CPU.
-Theses two methods are described in the following section:
+
+The ULP FSM can be programmed using the supported instruction set. Alternatively, the ULP FSM coprocessor can also be programmed using C Macros on the main CPU. Theses two methods are described in the following section:
 
 .. toctree::
    :maxdepth: 1
@@ -32,7 +32,7 @@ Compiling the ULP Code
 
 To compile the ULP FSM code as part of the component, the following steps must be taken:
 
-1. The ULP FSM code, written in assembly, must be added to one or more files with `.S` extension. These files must be placed into a separate directory inside the component directory, for instance `ulp/`.
+1. The ULP FSM code, written in assembly, must be added to one or more files with `.S` extension. These files must be placed into a separate directory inside the component directory, for instance, `ulp/`.
 
 .. note: When registering the component (via ``idf_component_register``), this directory should not be added to the ``SRC_DIRS`` argument. The logic behind this is that the ESP-IDF build system will compile files found in ``SRC_DIRS`` based on their extensions. For ``.S`` files, ``{IDF_TARGET_TOOLCHAIN_PREFIX}-as`` assembler is used. This is not desirable for ULP FSM assembly files, so the easiest way to achieve the distinction is by placing ULP FSM assembly files into a separate directory. The ULP FSM assembly source files should also **not** be added to ``SRCS`` for the same reason. See the step below for how to properly add ULP FSM assembly source files.
 
@@ -47,9 +47,9 @@ To compile the ULP FSM code as part of the component, the following steps must b
 
     ulp_embed_binary(${ulp_app_name} "${ulp_s_sources}" "${ulp_exp_dep_srcs}")
 
-The first argument to ``ulp_embed_binary`` specifies the ULP FSM binary name. The name specified here will also be used by other generated artifacts such as the ELF file, map file, header file and linker export file. The second argument specifies the ULP FSM assembly source files. Finally, the third argument specifies the list of component source files which include the header file to be generated. This list is needed to build the dependencies correctly and ensure that the generated header file will be created before any of these files are compiled. See section below for the concept of generated header files for ULP applications.
+The first argument to ``ulp_embed_binary`` specifies the ULP FSM binary name. The name specified here will also be used by other generated artifacts such as the ELF file, map file, header file and linker export file. The second argument specifies the ULP FSM assembly source files. Finally, the third argument specifies the list of component source files which include the header file to be generated. This list is needed to build the dependencies correctly and ensure that the generated header file will be created before any of these files are compiled. See the section below for the concept of generated header files for ULP applications.
 
-3. Build the application as usual (e.g. `idf.py app`)
+3. Build the application as usual (e.g. `idf.py app`).
 
    Inside, the build system will take the following steps to build ULP FSM program:
 
@@ -65,7 +65,7 @@ The first argument to ``ulp_embed_binary`` specifies the ULP FSM binary name. Th
 
    6. **Generate a list of global symbols** (``ulp_app_name.sym``) in the ELF file using ``esp32ulp-elf-nm``.
 
-   7. **Create an LD export script and header file** (``ulp_app_name.ld`` and ``ulp_app_name.h``) containing the symbols from ``ulp_app_name.sym``. This is done using the ``esp32ulp_mapgen.py`` utility.
+   7. **Create an LD export script and a header file** (``ulp_app_name.ld`` and ``ulp_app_name.h``) containing the symbols from ``ulp_app_name.sym``. This is done using the ``esp32ulp_mapgen.py`` utility.
 
    8. **Add the generated binary to the list of binary files** to be embedded into the application.
 
@@ -106,16 +106,16 @@ To access the ULP program variables from the main program, the generated header 
 
 .. only:: esp32
 
-    Note that the ULP FSM program can only use the lower 16 bits of each 32-bit word in RTC memory, because the registers are 16-bit, and there is no instruction to load from the high part of the word.
-    Likewise, the ULP store instruction writes register values into the lower 16 bits of the 32-bit word in RTC memory. The upper 16 bits are written with a value which depends on the address of the store instruction, thus when reading variables written by the ULP coprocessor, the main application needs to mask the upper 16 bits, e.g.::
-    printf("Last measurement value: %d\n", ulp_last_measurement & UINT16_MAX);
+    Note that the ULP FSM program can only use the lower 16 bits of each 32-bit word in RTC memory, because the registers are 16-bit, and there is no instruction to load from the high part of the word. Likewise, the ULP store instruction writes register values into the lower 16 bits of the 32-bit word in RTC memory. The upper 16 bits are written with a value which depends on the address of the store instruction, thus when reading variables written by the ULP coprocessor, the main application needs to mask the upper 16 bits, e.g.::
+
+        printf("Last measurement value: %d\n", ulp_last_measurement & UINT16_MAX);
 
 Starting the ULP FSM Program
 ----------------------------
 
 To run a ULP FSM program, the main application needs to load the ULP program into RTC memory using the :cpp:func:`ulp_load_binary` function, and then start it using the :cpp:func:`ulp_run` function.
 
-Note that "Enable Ultra Low Power (ULP) Coprocessor" option must be enabled in menuconfig to work with ULP. To select the type of ULP to be used, the "ULP Co-processor type" option must be set. To reserve memory for the ULP, "RTC slow memory reserved for coprocessor" option must be set to a value sufficient enough to store ULP code and data. If the application components contain multiple ULP programs, then the size of the RTC memory must be sufficient to hold the largest one.
+Note that the ``Enable Ultra Low Power (ULP) Coprocessor`` option must be enabled in menuconfig to work with ULP. To select the type of ULP to be used, the ``ULP Co-processor type`` option must be set. To reserve memory for the ULP, the ``RTC slow memory reserved for coprocessor`` option must be set to a value big enough to store ULP code and data. If the application components contain multiple ULP programs, then the size of the RTC memory must be sufficient to hold the largest one.
 
 Each ULP program is embedded into the ESP-IDF application as a binary blob. The application can reference this blob and load it in the following way (suppose ULP_APP_NAME was defined to ``ulp_app_name``)::
 
