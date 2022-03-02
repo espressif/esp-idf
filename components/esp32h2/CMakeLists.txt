@@ -6,7 +6,7 @@ endif()
 if(NOT BOOTLOADER_BUILD)
     # [refactor-todo] propagate these requirements for compatibility
     # remove in the future
-    set(legacy_reqs driver efuse soc)
+    set(legacy_reqs efuse soc)
 endif()
 
 idf_component_register(REQUIRES riscv "${legacy_reqs}"

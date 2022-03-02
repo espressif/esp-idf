@@ -18,6 +18,10 @@ if(NOT BOOTLOADER_BUILD)
     if(NOT CONFIG_IDF_TARGET_ESP32 AND NOT CONFIG_IDF_TARGET_ESP32S2)
         list(APPEND srcs "sleep_retention.c")
     endif()
+
+    # [refactor-todo]: requires "driver" for GPIO and RTC  (by sleep_gpio and sleep_modes)
+    list(APPEND priv_requires driver)
+
 else()
     # Requires "_esp_error_check_failed()" function
     list(APPEND priv_requires "esp_system")
