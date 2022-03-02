@@ -652,10 +652,11 @@ static uint32_t get_power_down_flags(void)
     }
 
     const char* option_str[] = {"OFF", "ON", "AUTO(OFF)" /* Auto works as OFF */};
-    ESP_LOGD(TAG, "RTC_PERIPH: %s, RTC_SLOW_MEM: %s, RTC_FAST_MEM: %s",
-            option_str[s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH]],
-            option_str[s_config.pd_options[ESP_PD_DOMAIN_RTC_SLOW_MEM]],
-            option_str[s_config.pd_options[ESP_PD_DOMAIN_RTC_FAST_MEM]]);
+    /* This function is called from a critical section, log with ESP_EARLY_LOGD. */
+    ESP_EARLY_LOGD(TAG, "RTC_PERIPH: %s, RTC_SLOW_MEM: %s, RTC_FAST_MEM: %s",
+                   option_str[s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH]],
+                   option_str[s_config.pd_options[ESP_PD_DOMAIN_RTC_SLOW_MEM]],
+                   option_str[s_config.pd_options[ESP_PD_DOMAIN_RTC_FAST_MEM]]);
 
     // Prepare flags based on the selected options
     uint32_t pd_flags = 0;
