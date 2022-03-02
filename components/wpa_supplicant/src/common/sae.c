@@ -65,6 +65,7 @@ int sae_set_group(struct sae_data *sae, int group)
 		tmp->prime_len = tmp->dh->prime_len;
 		if (tmp->prime_len > SAE_MAX_PRIME_LEN) {
 			sae_clear_data(sae);
+			os_free(tmp);
 			return ESP_FAIL;
 		}
 
@@ -72,6 +73,7 @@ int sae_set_group(struct sae_data *sae, int group)
 							tmp->prime_len);
 		if (tmp->prime_buf == NULL) {
 			sae_clear_data(sae);
+			os_free(tmp);
 			return ESP_FAIL;
 		}
 		tmp->prime = tmp->prime_buf;
@@ -80,6 +82,7 @@ int sae_set_group(struct sae_data *sae, int group)
 							tmp->dh->order_len);
 		if (tmp->order_buf == NULL) {
 			sae_clear_data(sae);
+			os_free(tmp);
 			return ESP_FAIL;
 		}
 		tmp->order = tmp->order_buf;
@@ -90,6 +93,7 @@ int sae_set_group(struct sae_data *sae, int group)
 	/* Unsupported group */
 	wpa_printf(MSG_DEBUG,
 		   "SAE: Group %d not supported by the crypto library", group);
+        os_free(tmp);
 	return ESP_FAIL;
 }
 
