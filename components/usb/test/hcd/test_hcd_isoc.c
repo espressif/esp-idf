@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -155,7 +155,7 @@ TEST_CASE("Test HCD isochronous pipe sudden disconnect", "[hcd][ignore]")
     }
     //Add a short delay to let the transfers run for a bit
     esp_rom_delay_us(POST_ENQUEUE_DELAY_US);
-    test_usb_force_conn_state(false, 0);
+    test_usb_set_phy_state(false, 0);
     //Disconnect event should have occurred. Handle the port event
     test_hcd_expect_port_event(port_hdl, HCD_PORT_EVENT_DISCONNECTION);
     TEST_ASSERT_EQUAL(HCD_PORT_EVENT_DISCONNECTION, hcd_port_handle_event(port_hdl));

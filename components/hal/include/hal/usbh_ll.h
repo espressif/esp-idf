@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,6 @@ extern "C" {
 #include <stdint.h>
 #include <stdbool.h>
 #include "soc/usbh_struct.h"
-#include "soc/usb_wrap_struct.h"
 #include "hal/usb_types_private.h"
 #include "hal/misc.h"
 
@@ -153,25 +152,6 @@ typedef struct {
     uint8_t *buffer;
 } usbh_ll_dma_qtd_t;
 
-/* -----------------------------------------------------------------------------
------------------------------- USB Wrap Registers ------------------------------
------------------------------------------------------------------------------ */
-
-/**
- * @brief Configures the internal PHY to operate as HOST
- *
- * @param hw Start address of the USB Wrap registers
- */
-static inline void usbh_ll_internal_phy_conf(usb_wrap_dev_t *hw)
-{
-    //Enable internal PHY
-    hw->otg_conf.pad_enable = 1;
-    hw->otg_conf.phy_sel = 0;
-    //Set pulldowns on D+ and D-
-    hw->otg_conf.pad_pull_override = 1;
-    hw->otg_conf.dp_pulldown = 1;
-    hw->otg_conf.dm_pulldown = 1;
-}
 
 /* -----------------------------------------------------------------------------
 ------------------------------- Global Registers -------------------------------
@@ -431,7 +411,7 @@ static inline void usbh_ll_hcfg_set_fsls_pclk_sel(usbh_dev_t *hw)
 /**
  * @brief Sets some default values to HCFG to operate in Host mode with scatter/gather DMA
  *
- * @param hw Start address of the USB Wrap registers
+ * @param hw Start address of the DWC_OTG registers
  * @param speed Speed to initialize the host port at
  */
 static inline void usbh_ll_hcfg_set_defaults(usbh_dev_t *hw, usb_priv_speed_t speed)

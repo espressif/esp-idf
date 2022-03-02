@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,6 +72,16 @@ typedef struct {
     };
 } usb_host_client_event_msg_t;
 
+// ------------------------ Info ---------------------------
+
+/**
+ * @brief Current information about the USB Host Library obtained via usb_host_lib_info()
+ */
+typedef struct {
+    int num_devices;    /**< Current number of connected (and enumerated) devices */
+    int num_clients;    /**< Current number of registered clients */
+} usb_host_lib_info_t;
+
 // ---------------------- Callbacks ------------------------
 
 /**
@@ -91,7 +101,11 @@ typedef void (*usb_host_client_event_cb_t)(const usb_host_client_event_msg_t *ev
  * Configuration structure of the USB Host Library. Provided in the usb_host_install() function
  */
 typedef struct {
-    int intr_flags;                     /**< Interrupt flags for the underlying ISR used by the USB Host stack */
+    bool skip_phy_setup;        /**< If set, the USB Host Library will not configure the USB PHY thus allowing the user
+                                     to manually configure the USB PHY before calling usb_host_install(). Users should
+                                     set this if they want to use an external USB PHY. Otherwise, the USB Host Library
+                                     will automatically configure the internal USB PHY */
+    int intr_flags;             /**< Interrupt flags for the underlying ISR used by the USB Host stack */
 } usb_host_config_t;
 
 /**
@@ -118,6 +132,9 @@ typedef struct {
  * - This function should only once to install the USB Host Library
  * - This function should be called before any other USB Host Library functions are called
  *
+ * @note If skip_phy_setup is set in the install configuration, the user is responsible for ensuring that the underlying
+ *       Host Controller is enabled and the USB PHY (internal or external) is already setup before this function is
+ *       called.
  * @param[in] config USB Host Library configuration
  * @return esp_err_t
  */
@@ -131,6 +148,8 @@ esp_err_t usb_host_install(const usb_host_config_t *config);
  * - All devices must have been freed by calling usb_host_device_free_all() and receiving the
  *   USB_HOST_LIB_EVENT_FLAGS_ALL_FREE event flag
  *
+ * @note If skip_phy_setup was set when the Host Library was installed, the user is responsible for disabling the
+ *       underlying Host Controller and USB PHY (internal or external).
  * @return esp_err_t
  */
 esp_err_t usb_host_uninstall(void);
@@ -140,10 +159,11 @@ esp_err_t usb_host_uninstall(void);
  *
  * - This function handles all of the USB Host Library's processing and should be called repeatedly in a loop
  * - Check event_flags_ret to see if an flags are set indicating particular USB Host Library events
+ * - This function should never be called by multiple threads simultaneously
  *
  * @note This function can block
  * @param[in] timeout_ticks Timeout in ticks to wait for an event to occur
- * @param[out] event_flags_ret Event flags that indicate what USB Host Library event occurred
+ * @param[out] event_flags_ret Event flags that indicate what USB Host Library event occurred.
  * @return esp_err_t
  */
 esp_err_t usb_host_lib_handle_events(TickType_t timeout_ticks, uint32_t *event_flags_ret);
@@ -156,6 +176,14 @@ esp_err_t usb_host_lib_handle_events(TickType_t timeout_ticks, uint32_t *event_f
  * @return esp_err_t
  */
 esp_err_t usb_host_lib_unblock(void);
+
+/**
+ * @brief Get current information about the USB Host Library
+ *
+ * @param[out] info_ret USB Host Library Information
+ * @return esp_err_t
+ */
+esp_err_t usb_host_lib_info(usb_host_lib_info_t *info_ret);
 
 // ------------------------------------------------ Client Functions ---------------------------------------------------
 
@@ -186,6 +214,7 @@ esp_err_t usb_host_client_deregister(usb_host_client_handle_t client_hdl);
  * @brief USB Host Library client processing function
  *
  * - This function handles all of a client's processing and should be called repeatedly in a loop
+ * - For a particular client, this function should never be called by multiple threads simultaneously
  *
  * @note This function can block
  * @param[in] client_hdl Client handle
@@ -256,8 +285,7 @@ esp_err_t usb_host_device_free_all(void);
  *
  * - This function fills an empty list with the address of connected devices
  * - The Device addresses can then used in usb_host_device_open()
- * - If there are more devices than the list_len, this function will only fill
- *   up to list_len number of devices.
+ * - If there are more devices than the list_len, this function will only fill up to list_len number of devices.
  *
  * @param[in] list_len Length of the empty list
  * @param[inout] dev_addr_list Empty list to be filled

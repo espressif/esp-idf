@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,8 +14,6 @@
 #include "usb/usb_types_ch9.h"
 #include "esp_check.h"
 #include "usb/usb_host.h"
-
-static const char *TAG = "usb_helper";
 
 // ---------------------------------------- Configuration Descriptor Parsing -------------------------------------------
 
@@ -171,7 +169,7 @@ const usb_ep_desc_t *usb_parse_endpoint_descriptor_by_address(const usb_config_d
     return ep_desc;
 }
 
-// ------------------------------------------ Descriptor printing  ---------------------------------------------
+// ----------------------------------------------- Descriptor Printing -------------------------------------------------
 
 static void print_ep_desc(const usb_ep_desc_t *ep_desc)
 {
@@ -232,8 +230,12 @@ static void usbh_print_cfg_desc(const usb_config_desc_t *cfg_desc)
     printf("bMaxPower %dmA\n", cfg_desc->bMaxPower * 2);
 }
 
-static void print_device_descriptor(const usb_device_desc_t *devc_desc)
+void usb_print_device_descriptor(const usb_device_desc_t *devc_desc)
 {
+    if (devc_desc == NULL) {
+        return;
+    }
+
     printf("*** Device descriptor ***\n");
     printf("bLength %d\n", devc_desc->bLength);
     printf("bDescriptorType %d\n", devc_desc->bDescriptorType);
@@ -251,8 +253,12 @@ static void print_device_descriptor(const usb_device_desc_t *devc_desc)
     printf("bNumConfigurations %d\n", devc_desc->bNumConfigurations);
 }
 
-static void print_config_descriptor(const usb_config_desc_t *cfg_desc, print_class_descriptor_cb class_specific_cb)
+void usb_print_config_descriptor(const usb_config_desc_t *cfg_desc, print_class_descriptor_cb class_specific_cb)
 {
+    if (cfg_desc == NULL) {
+        return;
+    }
+
     int offset = 0;
     uint16_t wTotalLength = cfg_desc->wTotalLength;
     const usb_standard_desc_t *next_desc = (const usb_standard_desc_t *)cfg_desc;
@@ -280,22 +286,21 @@ static void print_config_descriptor(const usb_config_desc_t *cfg_desc, print_cla
     } while (next_desc != NULL);
 }
 
-esp_err_t usb_print_descriptors(usb_device_handle_t device, print_class_descriptor_cb class_specific_cb)
+void usb_print_string_descriptor(const usb_str_desc_t *str_desc)
 {
-    if (device == NULL) {
-        return ESP_ERR_INVALID_ARG;
+    if (str_desc == NULL) {
+        return;
     }
 
-    const usb_config_desc_t *config_desc;
-    const usb_device_desc_t *device_desc;
-
-    ESP_RETURN_ON_ERROR( usb_host_get_device_descriptor(device, &device_desc), TAG, "Failed to get devices descriptor" );
-    ESP_RETURN_ON_ERROR( usb_host_get_active_config_descriptor(device, &config_desc), TAG, "Failed to get config descriptor" );
-
-    print_device_descriptor(device_desc);
-    print_config_descriptor(config_desc, class_specific_cb);
-
-    return ESP_OK;
+    for (int i = 0; i < str_desc->bLength/2; i++) {
+        /*
+        USB String descriptors of UTF-16.
+        Right now We just skip any character larger than 0xFF to stay in BMP Basic Latin and Latin-1 Supplement range.
+        */
+        if (str_desc->wData[i] > 0xFF) {
+            continue;
+        }
+        printf("%c", (char)str_desc->wData[i]);
+    }
+    printf("\n");
 }
-
-// ------------------------------------------------------ Misc ---------------------------------------------------------

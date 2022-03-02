@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,6 +62,8 @@ typedef struct phy_context_t *usb_phy_handle_t;    /**< USB PHY context handle *
 /**
  * @brief Initialize a new USB PHY
  *        Configure at least PHY source.
+ *
+ * This function will enable the OTG Controller
  *
  * @param[in] config USB PHY configurtion struct
  * @param[out] handle_ret USB PHY context handle
