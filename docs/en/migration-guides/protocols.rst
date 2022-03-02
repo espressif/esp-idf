@@ -72,3 +72,12 @@ Names of variables holding different certs in :cpp:type:`httpd_ssl_config_t` str
     * :cpp:member:`servercert_len` variable inherits role of :cpp:member:`cacert_len` variable
     * :cpp:member:`cacert_pem` variable inherits role of :cpp:member:`client_verify_cert_pem` variable
     * :cpp:member:`cacert_len` variable inherits role of :cpp:member:`client_verify_cert_len` variable
+
+
+ESP HTTPS OTA
+--------------
+
+Breaking Changes (Summary)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- The function :cpp:func:`esp_https_ota()` now requires pointer to :cpp:type:`esp_https_ota_config_t` as argument instead of pointer to :cpp:type:`esp_http_client_config_t`.

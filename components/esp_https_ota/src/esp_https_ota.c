@@ -191,13 +191,13 @@ static esp_err_t _ota_write(esp_https_ota_t *https_ota_handle, const void *buffe
     return err;
 }
 
-static bool is_server_verification_enabled(esp_https_ota_config_t *ota_config) {
+static bool is_server_verification_enabled(const esp_https_ota_config_t *ota_config) {
     return  (ota_config->http_config->cert_pem
             || ota_config->http_config->use_global_ca_store
             || ota_config->http_config->crt_bundle_attach != NULL);
 }
 
-esp_err_t esp_https_ota_begin(esp_https_ota_config_t *ota_config, esp_https_ota_handle_t *handle)
+esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_https_ota_handle_t *handle)
 {
     esp_err_t err;
 
@@ -648,19 +648,15 @@ int esp_https_ota_get_image_size(esp_https_ota_handle_t https_ota_handle)
     return handle->image_length;
 }
 
-esp_err_t esp_https_ota(const esp_http_client_config_t *config)
+esp_err_t esp_https_ota(const esp_https_ota_config_t *ota_config)
 {
-    if (!config) {
-        ESP_LOGE(TAG, "esp_http_client config not found");
+    if (ota_config == NULL || ota_config->http_config == NULL) {
+        ESP_LOGE(TAG, "esp_https_ota: Invalid argument");
         return ESP_ERR_INVALID_ARG;
     }
 
-    esp_https_ota_config_t ota_config = {
-        .http_config = config,
-    };
-
     esp_https_ota_handle_t https_ota_handle = NULL;
-    esp_err_t err = esp_https_ota_begin(&ota_config, &https_ota_handle);
+    esp_err_t err = esp_https_ota_begin(ota_config, &https_ota_handle);
     if (https_ota_handle == NULL) {
         return ESP_FAIL;
     }
