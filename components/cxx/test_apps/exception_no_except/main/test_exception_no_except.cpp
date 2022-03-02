@@ -20,7 +20,11 @@ extern "C" void tearDown()
 TEST_CASE("std::out_of_range exception when -fno-exceptions", "[cxx][reset=abort,SW_CPU_RESET]")
 {
     std::vector<int> v(10);
+// suppress warning because of this test
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Warray-bounds"
     v.at(20) = 42;
+#pragma GCC diagnostic pop
     TEST_FAIL_MESSAGE("Unreachable because we are aborted on the line above");
 }
 
