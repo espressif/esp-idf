@@ -1843,7 +1843,6 @@ components/wifi_provisioning/src/scheme_console.c
 components/wifi_provisioning/src/wifi_config.c
 components/wifi_provisioning/src/wifi_provisioning_priv.h
 components/wifi_provisioning/src/wifi_scan.c
-components/wpa_supplicant/esp_supplicant/include/esp_dpp.h
 components/wpa_supplicant/esp_supplicant/include/esp_rrm.h
 components/wpa_supplicant/esp_supplicant/include/esp_wps.h
 components/wpa_supplicant/esp_supplicant/src/esp_dpp_i.h

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,7 @@
 #include "esp_wifi.h"
 #include "common/ieee802_11_defs.h"
 
+#ifdef CONFIG_DPP
 static void *s_dpp_task_hdl = NULL;
 static void *s_dpp_evt_queue = NULL;
 static void *s_dpp_api_lock = NULL;
@@ -680,3 +681,4 @@ void esp_supp_dpp_deinit(void)
     dpp_global_deinit(s_dpp_ctx.dpp_global);
     esp_dpp_post_evt(SIG_DPP_DEL_TASK, 0);
 }
+#endif
