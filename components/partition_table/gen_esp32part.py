@@ -84,11 +84,8 @@ def get_subtype_as_int(ptype, subtype):
 
 ALIGNMENT = {
     APP_TYPE: 0x10000,
-    DATA_TYPE: 0x4,
+    DATA_TYPE: 0x1000,
 }
-
-
-STRICT_DATA_ALIGNMENT = 0x1000
 
 
 def get_alignment_for_type(ptype):
@@ -400,11 +397,6 @@ class PartitionDefinition(object):
         align = get_alignment_for_type(self.type)
         if self.offset % align:
             raise ValidationError(self, 'Offset 0x%x is not aligned to 0x%x' % (self.offset, align))
-        # The alignment requirement for non-app partition is 4 bytes, but it should be 4 kB.
-        # Print a warning for now, make it an error in IDF 5.0 (IDF-3742).
-        if self.type != APP_TYPE and self.offset % STRICT_DATA_ALIGNMENT:
-            critical('WARNING: Partition %s not aligned to 0x%x.'
-                     'This is deprecated and will be considered an error in the future release.' % (self.name, STRICT_DATA_ALIGNMENT))
         if self.size % align and secure and self.type == APP_TYPE:
             raise ValidationError(self, 'Size 0x%x is not aligned to 0x%x' % (self.size, align))
         if self.size is None:
