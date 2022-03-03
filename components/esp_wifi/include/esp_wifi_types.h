@@ -215,7 +215,7 @@ typedef enum {
 
 /** Configuration structure for Protected Management Frame */
 typedef struct {
-    bool capable;            /**< Device will always connect in PMF mode if other device also advertizes PMF capability. */
+    bool capable;            /**< Deprecated variable. Device will always connect in PMF mode if other device also advertizes PMF capability. */
     bool required;           /**< Advertizes that Protected Management Frame is required. Device will not associate to non-PMF capable devices. */
 } wifi_pmf_config_t;
 
