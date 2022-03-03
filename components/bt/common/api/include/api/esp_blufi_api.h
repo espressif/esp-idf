@@ -74,6 +74,7 @@ typedef enum {
     ESP_BLUFI_READ_PARAM_ERROR,
     ESP_BLUFI_MAKE_PUBLIC_ERROR,
     ESP_BLUFI_DATA_FORMAT_ERROR,
+    ESP_BLUFI_CALC_MD5_ERROR,
 } esp_blufi_error_state_t;
 
 /**

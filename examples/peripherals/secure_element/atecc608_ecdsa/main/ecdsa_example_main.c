@@ -1,25 +1,15 @@
-/**
+/*
  * atecc608a_ecdsa example
  *
- * Original Copyright (C) 2006-2016, ARM Limited, All Rights Reserved, Apache 2.0 License.
- * Additions Copyright (C) Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD, Apache 2.0 License.
+ * SPDX-FileCopyrightText: 2006-2016 ARM Limited, All Rights Reserved
  *
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-FileContributor: 2015-2021 Espressif Systems (Shanghai) CO LTD
  */
 
 /* This is mbedtls boilerplate for library configuration */
-#include "mbedtls/config.h"
+#include "mbedtls/mbedtls_config.h"
 
 /* System Includes*/
 #include <stdio.h>
@@ -146,7 +136,7 @@ static int atca_ecdsa_test(void)
 #endif
 
     ESP_LOGI(TAG, " Generating ECDSA Signature...");
-    ret = mbedtls_pk_sign(&pkey, MBEDTLS_MD_SHA256, hash, 0, buf, &olen,
+    ret = mbedtls_pk_sign(&pkey, MBEDTLS_MD_SHA256, hash, 0, buf, MBEDTLS_MPI_MAX_SIZE, &olen,
         mbedtls_ctr_drbg_random, &ctr_drbg);
     if (ret != 0) {
         ESP_LOGI(TAG, " failed ! mbedtls_pk_sign returned -0x%04x", -ret);

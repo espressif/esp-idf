@@ -14,21 +14,21 @@ static const char *TAG = "SSL Server";
 
 static int manage_resource(mbedtls_ssl_context *ssl, bool add)
 {
-    int state = add ? ssl->state : ssl->state - 1;
+    int state = add ? ssl->MBEDTLS_PRIVATE(state) : ssl->MBEDTLS_PRIVATE(state) - 1;
 
-    if (ssl->state == MBEDTLS_SSL_HANDSHAKE_OVER || ssl->handshake == NULL) {
+    if (ssl->MBEDTLS_PRIVATE(state) == MBEDTLS_SSL_HANDSHAKE_OVER || ssl->MBEDTLS_PRIVATE(handshake) == NULL) {
         return 0;
     }
 
     if (!add) {
-        if (!ssl->out_left) {
+        if (!ssl->MBEDTLS_PRIVATE(out_left)) {
             CHECK_OK(esp_mbedtls_free_tx_buffer(ssl));
         }
     }
 
     switch (state) {
         case MBEDTLS_SSL_HELLO_REQUEST:
-            ssl->major_ver = MBEDTLS_SSL_MAJOR_VERSION_3;
+            ssl->MBEDTLS_PRIVATE(major_ver) = MBEDTLS_SSL_MAJOR_VERSION_3;
             break;
         case MBEDTLS_SSL_CLIENT_HELLO:
             if (add) {
@@ -49,7 +49,7 @@ static int manage_resource(mbedtls_ssl_context *ssl, bool add)
         case MBEDTLS_SSL_SERVER_CERTIFICATE:
             if (add) {
                 size_t buffer_len = 3;
-                mbedtls_ssl_key_cert *key_cert = ssl->conf->key_cert;
+                mbedtls_ssl_key_cert *key_cert = ssl->MBEDTLS_PRIVATE(conf)->MBEDTLS_PRIVATE(key_cert);
 
                 while (key_cert && key_cert->cert) {
                     size_t num;

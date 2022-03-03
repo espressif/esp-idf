@@ -7,7 +7,6 @@
 /*
  * mbedTLS SHA unit tests
  */
-
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -72,19 +71,19 @@ TEST_CASE("mbedtls SHA interleaving", "[mbedtls]")
     mbedtls_sha256_init(&sha256_ctx);
     mbedtls_sha512_init(&sha512_ctx);
 
-    TEST_ASSERT_EQUAL(0, mbedtls_sha1_starts_ret(&sha1_ctx));
-    TEST_ASSERT_EQUAL(0, mbedtls_sha256_starts_ret(&sha256_ctx, false));
-    TEST_ASSERT_EQUAL(0, mbedtls_sha512_starts_ret(&sha512_ctx, false));
+    TEST_ASSERT_EQUAL(0, mbedtls_sha1_starts(&sha1_ctx));
+    TEST_ASSERT_EQUAL(0, mbedtls_sha256_starts(&sha256_ctx, false));
+    TEST_ASSERT_EQUAL(0, mbedtls_sha512_starts(&sha512_ctx, false));
 
     for (int i = 0; i < 10; i++) {
-        TEST_ASSERT_EQUAL(0, mbedtls_sha1_update_ret(&sha1_ctx, one_hundred_as, 100));
-        TEST_ASSERT_EQUAL(0, mbedtls_sha256_update_ret(&sha256_ctx, one_hundred_as, 100));
-        TEST_ASSERT_EQUAL(0, mbedtls_sha512_update_ret(&sha512_ctx, one_hundred_bs, 100));
+        TEST_ASSERT_EQUAL(0, mbedtls_sha1_update(&sha1_ctx, one_hundred_as, 100));
+        TEST_ASSERT_EQUAL(0, mbedtls_sha256_update(&sha256_ctx, one_hundred_as, 100));
+        TEST_ASSERT_EQUAL(0, mbedtls_sha512_update(&sha512_ctx, one_hundred_bs, 100));
     }
 
-    TEST_ASSERT_EQUAL(0, mbedtls_sha1_finish_ret(&sha1_ctx, sha1));
-    TEST_ASSERT_EQUAL(0, mbedtls_sha256_finish_ret(&sha256_ctx, sha256));
-    TEST_ASSERT_EQUAL(0, mbedtls_sha512_finish_ret(&sha512_ctx, sha512));
+    TEST_ASSERT_EQUAL(0, mbedtls_sha1_finish(&sha1_ctx, sha1));
+    TEST_ASSERT_EQUAL(0, mbedtls_sha256_finish(&sha256_ctx, sha256));
+    TEST_ASSERT_EQUAL(0, mbedtls_sha512_finish(&sha512_ctx, sha512));
 
     mbedtls_sha1_free(&sha1_ctx);
     mbedtls_sha256_free(&sha256_ctx);
@@ -103,11 +102,11 @@ static void tskRunSHA1Test(void *pvParameters)
 
     for (int i = 0; i < 1000; i++) {
         mbedtls_sha1_init(&sha1_ctx);
-        TEST_ASSERT_EQUAL(0, mbedtls_sha1_starts_ret(&sha1_ctx));
+        TEST_ASSERT_EQUAL(0, mbedtls_sha1_starts(&sha1_ctx));
         for (int j = 0; j < 10; j++) {
-            TEST_ASSERT_EQUAL(0, mbedtls_sha1_update_ret(&sha1_ctx, (unsigned char *)one_hundred_as, 100));
+            TEST_ASSERT_EQUAL(0, mbedtls_sha1_update(&sha1_ctx, (unsigned char *)one_hundred_as, 100));
         }
-        TEST_ASSERT_EQUAL(0, mbedtls_sha1_finish_ret(&sha1_ctx, sha1));
+        TEST_ASSERT_EQUAL(0, mbedtls_sha1_finish(&sha1_ctx, sha1));
         mbedtls_sha1_free(&sha1_ctx);
         TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha1_thousand_as, sha1, 20, "SHA1 calculation");
     }
@@ -122,11 +121,11 @@ static void tskRunSHA256Test(void *pvParameters)
 
     for (int i = 0; i < 1000; i++) {
         mbedtls_sha256_init(&sha256_ctx);
-        TEST_ASSERT_EQUAL(0, mbedtls_sha256_starts_ret(&sha256_ctx, false));
+        TEST_ASSERT_EQUAL(0, mbedtls_sha256_starts(&sha256_ctx, false));
         for (int j = 0; j < 10; j++) {
-            TEST_ASSERT_EQUAL(0, mbedtls_sha256_update_ret(&sha256_ctx, (unsigned char *)one_hundred_bs, 100));
+            TEST_ASSERT_EQUAL(0, mbedtls_sha256_update(&sha256_ctx, (unsigned char *)one_hundred_bs, 100));
         }
-        TEST_ASSERT_EQUAL(0, mbedtls_sha256_finish_ret(&sha256_ctx, sha256));
+        TEST_ASSERT_EQUAL(0, mbedtls_sha256_finish(&sha256_ctx, sha256));
         mbedtls_sha256_free(&sha256_ctx);
         TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha256_thousand_bs, sha256, 32, "SHA256 calculation");
     }
@@ -204,23 +203,23 @@ TEST_CASE("mbedtls SHA512 clone", "[mbedtls]")
     unsigned char sha512[64];
 
     mbedtls_sha512_init(&ctx);
-    TEST_ASSERT_EQUAL(0, mbedtls_sha512_starts_ret(&ctx, false));
+    TEST_ASSERT_EQUAL(0, mbedtls_sha512_starts(&ctx, false));
     for (int i = 0; i < 5; i++) {
-        TEST_ASSERT_EQUAL(0, mbedtls_sha512_update_ret(&ctx, one_hundred_bs, 100));
+        TEST_ASSERT_EQUAL(0, mbedtls_sha512_update(&ctx, one_hundred_bs, 100));
     }
 
     mbedtls_sha512_init(&clone);
     mbedtls_sha512_clone(&clone, &ctx);
     for (int i = 0; i < 5; i++) {
-        TEST_ASSERT_EQUAL(0, mbedtls_sha512_update_ret(&ctx, one_hundred_bs, 100));
-        TEST_ASSERT_EQUAL(0, mbedtls_sha512_update_ret(&clone, one_hundred_bs, 100));
+        TEST_ASSERT_EQUAL(0, mbedtls_sha512_update(&ctx, one_hundred_bs, 100));
+        TEST_ASSERT_EQUAL(0, mbedtls_sha512_update(&clone, one_hundred_bs, 100));
     }
-    TEST_ASSERT_EQUAL(0, mbedtls_sha512_finish_ret(&ctx, sha512));
+    TEST_ASSERT_EQUAL(0, mbedtls_sha512_finish(&ctx, sha512));
     mbedtls_sha512_free(&ctx);
 
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha512_thousand_bs, sha512, 64, "SHA512 original calculation");
 
-    TEST_ASSERT_EQUAL(0, mbedtls_sha512_finish_ret(&clone, sha512));
+    TEST_ASSERT_EQUAL(0, mbedtls_sha512_finish(&clone, sha512));
     mbedtls_sha512_free(&clone);
 
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha512_thousand_bs, sha512, 64, "SHA512 cloned calculation");
@@ -234,24 +233,24 @@ TEST_CASE("mbedtls SHA384 clone", "[mbedtls][")
     unsigned char sha384[48];
 
     mbedtls_sha512_init(&ctx);
-    TEST_ASSERT_EQUAL(0, mbedtls_sha512_starts_ret(&ctx, true));
+    TEST_ASSERT_EQUAL(0, mbedtls_sha512_starts(&ctx, true));
     for (int i = 0; i < 5; i++) {
-        TEST_ASSERT_EQUAL(0, mbedtls_sha512_update_ret(&ctx, one_hundred_bs, 100));
+        TEST_ASSERT_EQUAL(0, mbedtls_sha512_update(&ctx, one_hundred_bs, 100));
     }
 
     mbedtls_sha512_init(&clone);
     mbedtls_sha512_clone(&clone, &ctx);
 
     for (int i = 0; i < 5; i++) {
-        TEST_ASSERT_EQUAL(0, mbedtls_sha512_update_ret(&ctx, one_hundred_bs, 100));
-        TEST_ASSERT_EQUAL(0, mbedtls_sha512_update_ret(&clone, one_hundred_bs, 100));
+        TEST_ASSERT_EQUAL(0, mbedtls_sha512_update(&ctx, one_hundred_bs, 100));
+        TEST_ASSERT_EQUAL(0, mbedtls_sha512_update(&clone, one_hundred_bs, 100));
     }
-    TEST_ASSERT_EQUAL(0, mbedtls_sha512_finish_ret(&ctx, sha384));
+    TEST_ASSERT_EQUAL(0, mbedtls_sha512_finish(&ctx, sha384));
     mbedtls_sha512_free(&ctx);
 
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha384_thousand_bs, sha384, 48, "SHA512 original calculation");
 
-    TEST_ASSERT_EQUAL(0, mbedtls_sha512_finish_ret(&clone, sha384));
+    TEST_ASSERT_EQUAL(0, mbedtls_sha512_finish(&clone, sha384));
     mbedtls_sha512_free(&clone);
 
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha384_thousand_bs, sha384, 48, "SHA512 cloned calculation");
@@ -265,23 +264,23 @@ TEST_CASE("mbedtls SHA256 clone", "[mbedtls]")
     unsigned char sha256[64];
 
     mbedtls_sha256_init(&ctx);
-    TEST_ASSERT_EQUAL(0, mbedtls_sha256_starts_ret(&ctx, false));
+    TEST_ASSERT_EQUAL(0, mbedtls_sha256_starts(&ctx, false));
     for (int i = 0; i < 5; i++) {
-        TEST_ASSERT_EQUAL(0, mbedtls_sha256_update_ret(&ctx, one_hundred_as, 100));
+        TEST_ASSERT_EQUAL(0, mbedtls_sha256_update(&ctx, one_hundred_as, 100));
     }
 
     mbedtls_sha256_init(&clone);
     mbedtls_sha256_clone(&clone, &ctx);
     for (int i = 0; i < 5; i++) {
-        TEST_ASSERT_EQUAL(0, mbedtls_sha256_update_ret(&ctx, one_hundred_as, 100));
-        TEST_ASSERT_EQUAL(0, mbedtls_sha256_update_ret(&clone, one_hundred_as, 100));
+        TEST_ASSERT_EQUAL(0, mbedtls_sha256_update(&ctx, one_hundred_as, 100));
+        TEST_ASSERT_EQUAL(0, mbedtls_sha256_update(&clone, one_hundred_as, 100));
     }
-    TEST_ASSERT_EQUAL(0, mbedtls_sha256_finish_ret(&ctx, sha256));
+    TEST_ASSERT_EQUAL(0, mbedtls_sha256_finish(&ctx, sha256));
     mbedtls_sha256_free(&ctx);
 
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha256_thousand_as, sha256, 32, "SHA256 original calculation");
 
-    TEST_ASSERT_EQUAL(0, mbedtls_sha256_finish_ret(&clone, sha256));
+    TEST_ASSERT_EQUAL(0, mbedtls_sha256_finish(&clone, sha256));
     mbedtls_sha256_free(&clone);
 
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha256_thousand_as, sha256, 32, "SHA256 cloned calculation");
@@ -299,10 +298,10 @@ static void tskFinaliseSha(void *v_param)
     finalise_sha_param_t *param = (finalise_sha_param_t *)v_param;
 
     for (int i = 0; i < 5; i++) {
-        TEST_ASSERT_EQUAL(0, mbedtls_sha256_update_ret(&param->ctx, one_hundred_as, 100));
+        TEST_ASSERT_EQUAL(0, mbedtls_sha256_update(&param->ctx, one_hundred_as, 100));
     }
 
-    param->ret = mbedtls_sha256_finish_ret(&param->ctx, param->result);
+    param->ret = mbedtls_sha256_finish(&param->ctx, param->result);
     mbedtls_sha256_free(&param->ctx);
 
     param->done = true;
@@ -315,9 +314,9 @@ TEST_CASE("mbedtls SHA session passed between tasks", "[mbedtls]")
     finalise_sha_param_t param = { 0 };
 
     mbedtls_sha256_init(&param.ctx);
-    TEST_ASSERT_EQUAL(0, mbedtls_sha256_starts_ret(&param.ctx, false));
+    TEST_ASSERT_EQUAL(0, mbedtls_sha256_starts(&param.ctx, false));
     for (int i = 0; i < 5; i++) {
-        TEST_ASSERT_EQUAL(0, mbedtls_sha256_update_ret(&param.ctx, one_hundred_as, 100));
+        TEST_ASSERT_EQUAL(0, mbedtls_sha256_update(&param.ctx, one_hundred_as, 100));
     }
 
     // pass the SHA context off to a different task
@@ -387,9 +386,9 @@ TEST_CASE("mbedtls SHA, input in flash", "[mbedtls]")
 
     mbedtls_sha256_init(&sha256_ctx);
 
-    TEST_ASSERT_EQUAL(0, mbedtls_sha256_starts_ret(&sha256_ctx, false));
-    TEST_ASSERT_EQUAL(0, mbedtls_sha256_update_ret(&sha256_ctx, test_vector, sizeof(test_vector)));
-    TEST_ASSERT_EQUAL(0, mbedtls_sha256_finish_ret(&sha256_ctx, sha256));
+    TEST_ASSERT_EQUAL(0, mbedtls_sha256_starts(&sha256_ctx, false));
+    TEST_ASSERT_EQUAL(0, mbedtls_sha256_update(&sha256_ctx, test_vector, sizeof(test_vector)));
+    TEST_ASSERT_EQUAL(0, mbedtls_sha256_finish(&sha256_ctx, sha256));
     mbedtls_sha256_free(&sha256_ctx);
 
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(test_vector_digest, sha256, 32, "SHA256 calculation");
@@ -467,14 +466,14 @@ TEST_CASE("mbedtls SHA512/t", "[mbedtls]")
         for (int j = 0; j < 2; j++) {
             k = i * 2 + j;
             mbedtls_sha512_init(&sha512_ctx);
-            TEST_ASSERT_EQUAL(0, mbedtls_sha512_starts_ret(&sha512_ctx, false));
+            TEST_ASSERT_EQUAL(0, mbedtls_sha512_starts(&sha512_ctx, false));
             esp_sha512_set_mode(&sha512_ctx, sha512T_algo[i]);
             if (i > 1) {
                 k = (i - 2) * 2 + j;
                 esp_sha512_set_t(&sha512_ctx, sha512T_t_len[i]);
             }
-            TEST_ASSERT_EQUAL(0, mbedtls_sha512_update_ret(&sha512_ctx, sha512T_test_buf[j], sha512T_test_buflen[j]));
-            TEST_ASSERT_EQUAL(0, mbedtls_sha512_finish_ret(&sha512_ctx, sha512));
+            TEST_ASSERT_EQUAL(0, mbedtls_sha512_update(&sha512_ctx, sha512T_test_buf[j], sha512T_test_buflen[j]));
+            TEST_ASSERT_EQUAL(0, mbedtls_sha512_finish(&sha512_ctx, sha512));
             mbedtls_sha512_free(&sha512_ctx);
 
             TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha512_test_sum[k], sha512, sha512T_t_len[i] / 8, "SHA512t calculation");
@@ -498,11 +497,11 @@ TEST_CASE("mbedtls SHA256 PSRAM DMA", "[mbedtls]")
     memset(buf, 0x54, CALL_SZ);
 
     mbedtls_sha256_init(&sha256_ctx);
-    TEST_ASSERT_EQUAL(0, mbedtls_sha256_starts_ret(&sha256_ctx, false));
+    TEST_ASSERT_EQUAL(0, mbedtls_sha256_starts(&sha256_ctx, false));
     for (int c = 0; c < CALLS; c++) {
-        TEST_ASSERT_EQUAL(0, mbedtls_sha256_update_ret(&sha256_ctx, buf, CALL_SZ));
+        TEST_ASSERT_EQUAL(0, mbedtls_sha256_update(&sha256_ctx, buf, CALL_SZ));
     }
-    TEST_ASSERT_EQUAL(0, mbedtls_sha256_finish_ret(&sha256_ctx, sha256));
+    TEST_ASSERT_EQUAL(0, mbedtls_sha256_finish(&sha256_ctx, sha256));
 
     free(buf);
     mbedtls_sha256_free(&sha256_ctx);

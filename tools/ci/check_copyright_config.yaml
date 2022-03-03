@@ -75,6 +75,13 @@ lwip_component:
     - BSD-3-Clause
   license_for_new_files: Apache-2.0
 
+asio_component:
+  include:
+    - 'components/asio/port/**'
+  allowed_licenses:
+    - Apache-2.0
+    - BSL-1.0
+
 freertos_component:
   include:
     - 'components/freertos/**'

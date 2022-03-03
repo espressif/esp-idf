@@ -8,10 +8,11 @@ if(NOT BOOTLOADER_BUILD)
 endif()
 
 idf_component_register(SRCS "esp_crt_bundle/esp_crt_bundle.c"
-    INCLUDE_DIRS "port/include" "mbedtls/include" "esp_crt_bundle/include"
+    INCLUDE_DIRS "port/include" "mbedtls/include" "esp_crt_bundle/include" "./mbedtls/library"
     REQUIRES lwip
     PRIV_REQUIRES "${priv_requires}"
     )
+
 
 if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
     set(bundle_name "x509_crt_bundle")
@@ -88,7 +89,8 @@ endif()
 set(mbedtls_targets mbedtls mbedcrypto mbedx509)
 
 set(mbedtls_target_sources "${COMPONENT_DIR}/port/mbedtls_debug.c"
-                           "${COMPONENT_DIR}/port/net_sockets.c")
+                           "${COMPONENT_DIR}/port/net_sockets.c"
+                           "${COMPONENT_DIR}/port/certs.c")
 
 if(CONFIG_MBEDTLS_DYNAMIC_BUFFER)
 set(mbedtls_target_sources ${mbedtls_target_sources}

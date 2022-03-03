@@ -1,5 +1,5 @@
 //
-// SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+// SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 //
 // SPDX-License-Identifier: BSL-1.0
 //
@@ -141,7 +141,7 @@ private:
         int ret = 0;
         mbedtls_ssl_set_bio(&impl_.ssl_, bio_.first.get(), bio_write, bio_read, nullptr);
 
-        while (impl_.ssl_.state != MBEDTLS_SSL_HANDSHAKE_OVER) {
+        while (impl_.ssl_.MBEDTLS_PRIVATE(state) != MBEDTLS_SSL_HANDSHAKE_OVER) {
             ret = mbedtls_ssl_handshake_step(&impl_.ssl_);
 
             if (ret != 0) {
@@ -189,7 +189,7 @@ private:
 
         bool before_handshake() const
         {
-            return ssl_.state == 0;
+            return ssl_.MBEDTLS_PRIVATE(state) == 0;
         }
 
         int write(const void *buffer, int len)
@@ -246,7 +246,7 @@ private:
                     return false;
                 }
                 ret = mbedtls_pk_parse_key(&pk_key_, ctx->data(container::PRIVKEY), ctx->size(container::PRIVKEY),
-                                           nullptr, 0);
+                                           nullptr, 0, mbedtls_ctr_drbg_random, &ctr_drbg_);
                 if (ret < 0) {
                     print_error("mbedtls_pk_parse_keyfile", ret);
                     return false;

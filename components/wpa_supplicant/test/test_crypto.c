@@ -1,16 +1,8 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
@@ -328,10 +320,10 @@ TEST_CASE("Test crypto lib bignum apis", "[wpa_crypto]")
  */
 static inline void ecp_mpi_load( mbedtls_mpi *X, const mbedtls_mpi_uint *p, size_t len )
 {
-    X->s = 1;
-    X->n = len / sizeof( mbedtls_mpi_uint );
-    X->p = os_zalloc(len);
-    memcpy(X->p, (void *)p, len);
+    X->MBEDTLS_PRIVATE(s) = 1;
+    X->MBEDTLS_PRIVATE(n) = len / sizeof( mbedtls_mpi_uint );
+    X->MBEDTLS_PRIVATE(p) = os_zalloc(len);
+    memcpy(X->MBEDTLS_PRIVATE(p), (void *)p, len);
 }
 
 
@@ -399,10 +391,10 @@ TEST_CASE("Test crypto lib ECC apis", "[wpa_crypto]")
         mbedtls_mpi_init( &num );
         mbedtls_mpi_lset( &num, 3 );
 
-        ecp_mpi_load(& ((mbedtls_ecp_point *)p)->X, secp256r1_gx, sizeof(secp256r1_gx));
-        ecp_mpi_load(& ((mbedtls_ecp_point *)p)->Y, secp256r1_gy, sizeof(secp256r1_gy));
+        ecp_mpi_load(& ((mbedtls_ecp_point *)p)->MBEDTLS_PRIVATE(X), secp256r1_gx, sizeof(secp256r1_gx));
+        ecp_mpi_load(& ((mbedtls_ecp_point *)p)->MBEDTLS_PRIVATE(Y), secp256r1_gy, sizeof(secp256r1_gy));
 
-        mbedtls_mpi_lset((&((mbedtls_ecp_point *)p)->Z), 1);
+        mbedtls_mpi_lset((&((mbedtls_ecp_point *)p)->MBEDTLS_PRIVATE(Z)), 1);
 
         TEST_ASSERT(crypto_ec_point_mul(e, p, (crypto_bignum *) &num, q) == 0); //q = 3p
 
@@ -438,10 +430,10 @@ TEST_CASE("Test crypto lib ECC apis", "[wpa_crypto]")
         mbedtls_mpi_init( &num );
         mbedtls_mpi_lset( &num, 100 );
 
-        ecp_mpi_load(& ((mbedtls_ecp_point *)p)->X, secp256r1_gx, sizeof(secp256r1_gx));
-        ecp_mpi_load(& ((mbedtls_ecp_point *)p)->Y, secp256r1_gy, sizeof(secp256r1_gy));
+        ecp_mpi_load(& ((mbedtls_ecp_point *)p)->MBEDTLS_PRIVATE(X), secp256r1_gx, sizeof(secp256r1_gx));
+        ecp_mpi_load(& ((mbedtls_ecp_point *)p)->MBEDTLS_PRIVATE(Y), secp256r1_gy, sizeof(secp256r1_gy));
 
-        mbedtls_mpi_lset((&((mbedtls_ecp_point *)p)->Z), 1);
+        mbedtls_mpi_lset((&((mbedtls_ecp_point *)p)->MBEDTLS_PRIVATE(Z)), 1);
 
         TEST_ASSERT(crypto_ec_point_mul(e, p, (crypto_bignum *) &num, q) == 0);
         TEST_ASSERT(crypto_ec_point_mul(e, p, (crypto_bignum *) &num, r) == 0);
@@ -474,10 +466,10 @@ TEST_CASE("Test crypto lib ECC apis", "[wpa_crypto]")
         mbedtls_mpi_init( &num );
         mbedtls_mpi_lset( &num, 50 );
 
-        ecp_mpi_load(& ((mbedtls_ecp_point *)p)->X, secp256r1_gx, sizeof(secp256r1_gx));
-        ecp_mpi_load(& ((mbedtls_ecp_point *)p)->Y, secp256r1_gy, sizeof(secp256r1_gy));
+        ecp_mpi_load(& ((mbedtls_ecp_point *)p)->MBEDTLS_PRIVATE(X), secp256r1_gx, sizeof(secp256r1_gx));
+        ecp_mpi_load(& ((mbedtls_ecp_point *)p)->MBEDTLS_PRIVATE(Y), secp256r1_gy, sizeof(secp256r1_gy));
 
-        mbedtls_mpi_lset((&((mbedtls_ecp_point *)p)->Z), 1);
+        mbedtls_mpi_lset((&((mbedtls_ecp_point *)p)->MBEDTLS_PRIVATE(Z)), 1);
 
         /* Generator should always be on the curve*/
         TEST_ASSERT(crypto_ec_point_is_on_curve(e, p));
@@ -512,21 +504,21 @@ TEST_CASE("Test crypto lib ECC apis", "[wpa_crypto]")
         mbedtls_mpi_init( &num );
         mbedtls_mpi_lset( &num, 50 );
 
-        ecp_mpi_load(& ((mbedtls_ecp_point *)p)->X, secp256r1_gx, sizeof(secp256r1_gx));
-        ecp_mpi_load(& ((mbedtls_ecp_point *)p)->Y, secp256r1_gy, sizeof(secp256r1_gy));
+        ecp_mpi_load(& ((mbedtls_ecp_point *)p)->MBEDTLS_PRIVATE(X), secp256r1_gx, sizeof(secp256r1_gx));
+        ecp_mpi_load(& ((mbedtls_ecp_point *)p)->MBEDTLS_PRIVATE(Y), secp256r1_gy, sizeof(secp256r1_gy));
 
-        mbedtls_mpi_lset((&((mbedtls_ecp_point *)p)->Z), 1);
+        mbedtls_mpi_lset((&((mbedtls_ecp_point *)p)->MBEDTLS_PRIVATE(Z)), 1);
 
-        mbedtls_mpi_copy(&((mbedtls_ecp_point *)q)->X, &((mbedtls_ecp_point *)p)->X);
-        mbedtls_mpi_copy(&((mbedtls_ecp_point *)r)->X, &((mbedtls_ecp_point *)p)->X);
+        mbedtls_mpi_copy(&((mbedtls_ecp_point *)q)->MBEDTLS_PRIVATE(X), &((mbedtls_ecp_point *)p)->MBEDTLS_PRIVATE(X));
+        mbedtls_mpi_copy(&((mbedtls_ecp_point *)r)->MBEDTLS_PRIVATE(X), &((mbedtls_ecp_point *)p)->MBEDTLS_PRIVATE(X));
 
-        mbedtls_mpi_lset((&((mbedtls_ecp_point *)q)->Z), 1);
-        mbedtls_mpi_lset((&((mbedtls_ecp_point *)r)->Z), 1);
+        mbedtls_mpi_lset((&((mbedtls_ecp_point *)q)->MBEDTLS_PRIVATE(Z)), 1);
+        mbedtls_mpi_lset((&((mbedtls_ecp_point *)r)->MBEDTLS_PRIVATE(Z)), 1);
 
-        TEST_ASSERT(crypto_ec_point_solve_y_coord(e, q, (crypto_bignum *) & ((mbedtls_ecp_point *)q)->X, 0) == 0);
+        TEST_ASSERT(crypto_ec_point_solve_y_coord(e, q, (crypto_bignum *) & ((mbedtls_ecp_point *)q)->MBEDTLS_PRIVATE(X), 0) == 0);
         TEST_ASSERT(crypto_ec_point_is_on_curve(e, q));
 
-        TEST_ASSERT(crypto_ec_point_solve_y_coord(e, r, (crypto_bignum *) & ((mbedtls_ecp_point *)q)->X, 1) == 0);
+        TEST_ASSERT(crypto_ec_point_solve_y_coord(e, r, (crypto_bignum *) & ((mbedtls_ecp_point *)q)->MBEDTLS_PRIVATE(X), 1) == 0);
         TEST_ASSERT(crypto_ec_point_is_on_curve(e, r));
 
         TEST_ASSERT((crypto_ec_point_cmp(e, p, q) == 0) || (crypto_ec_point_cmp(e, p, r) == 0));
