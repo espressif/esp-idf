@@ -45,10 +45,7 @@ static void test_phy_rtc_init(void)
     }
     TEST_ESP_OK(ret);
 
-#ifdef SOC_BT_SUPPORTED
-    esp_phy_load_cal_and_init(PHY_BT_MODULE);
-#endif
-    esp_phy_load_cal_and_init(PHY_WIFI_MODULE);
+    esp_phy_enable();
 
     //must run here, not blocking in above code
     TEST_ASSERT(1);

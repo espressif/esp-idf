@@ -10,3 +10,7 @@
 #define SOC_BT_SUPPORTED 1
 #define SOC_SDIO_SLAVE_SUPPORTED    1
 #define SOC_CAN_SUPPORTED 1
+
+/*--------------- PHY REGISTER AND MEMORY SIZE CAPS --------------------------*/
+#define SOC_PHY_DIG_REGS_MEM_SIZE       (21*4)
+

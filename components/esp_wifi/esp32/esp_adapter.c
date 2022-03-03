@@ -38,6 +38,8 @@
 #include "esp_private/wifi_os_adapter.h"
 #include "esp_private/wifi.h"
 #include "esp_phy_init.h"
+#include "soc/dport_reg.h"
+#include "soc/syscon_reg.h"
 #include "driver/periph_ctrl.h"
 #include "nvs.h"
 #include "os.h"
@@ -408,6 +410,22 @@ static void IRAM_ATTR timer_arm_us_wrapper(void *ptimer, uint32_t us, bool repea
     ets_timer_arm_us(ptimer, us, repeat);
 }
 
+static void wifi_reset_mac_wrapper(void)
+{
+    DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, DPORT_MAC_RST);
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, DPORT_MAC_RST);
+}
+
+static void wifi_clock_enable_wrapper(void)
+{
+    periph_module_enable(PERIPH_WIFI_MODULE);
+}
+
+static void wifi_clock_disable_wrapper(void)
+{
+    periph_module_disable(PERIPH_WIFI_MODULE);
+}
+
 static int get_time_wrapper(void *t)
 {
     return os_get_time(t);
@@ -435,6 +453,22 @@ static void * IRAM_ATTR zalloc_internal_wrapper(size_t size)
         memset(ptr, 0, size);
     }
     return ptr;
+}
+
+static int coex_init_wrapper(void)
+{
+#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
+    return coex_init();
+#else
+    return 0;
+#endif
+}
+
+static void coex_deinit_wrapper(void)
+{
+#if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
+    coex_deinit();
+#endif
 }
 
 static uint32_t coex_status_get_wrapper(void)
@@ -600,8 +634,8 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._rand = esp_random,
     ._dport_access_stall_other_cpu_start_wrap = s_esp_dport_access_stall_other_cpu_start,
     ._dport_access_stall_other_cpu_end_wrap = s_esp_dport_access_stall_other_cpu_end,
-    ._phy_rf_deinit = esp_phy_rf_deinit,
-    ._phy_load_cal_and_init = esp_phy_load_cal_and_init,
+    ._phy_disable = esp_phy_disable,
+    ._phy_enable = esp_phy_enable,
     ._phy_common_clock_enable = esp_phy_common_clock_enable,
     ._phy_common_clock_disable = esp_phy_common_clock_disable,
     ._read_mac = esp_read_mac,
@@ -610,8 +644,9 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._timer_done = timer_done_wrapper,
     ._timer_setfn = timer_setfn_wrapper,
     ._timer_arm_us = timer_arm_us_wrapper,
-    ._periph_module_enable = periph_module_enable,
-    ._periph_module_disable = periph_module_disable,
+    ._wifi_reset_mac = wifi_reset_mac_wrapper,
+    ._wifi_clock_enable = wifi_clock_enable_wrapper,
+    ._wifi_clock_disable = wifi_clock_disable_wrapper,
     ._esp_timer_get_time = esp_timer_get_time,
     ._nvs_set_i8 = nvs_set_i8,
     ._nvs_get_i8 = nvs_get_i8,
@@ -641,10 +676,8 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._wifi_zalloc = wifi_zalloc_wrapper,
     ._wifi_create_queue = wifi_create_queue_wrapper,
     ._wifi_delete_queue = wifi_delete_queue_wrapper,
-    ._modem_sleep_enter = esp_modem_sleep_enter,
-    ._modem_sleep_exit = esp_modem_sleep_exit,
-    ._modem_sleep_register = esp_modem_sleep_register,
-    ._modem_sleep_deregister = esp_modem_sleep_deregister,
+    ._coex_init = coex_init_wrapper,
+    ._coex_deinit = coex_deinit_wrapper,
     ._coex_status_get = coex_status_get_wrapper,
     ._coex_condition_set = coex_condition_set_wrapper,
     ._coex_wifi_request = coex_wifi_request_wrapper,

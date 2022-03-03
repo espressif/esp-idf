@@ -77,8 +77,8 @@ typedef struct {
     uint32_t (* _rand)(void);
     void (* _dport_access_stall_other_cpu_start_wrap)(void);
     void (* _dport_access_stall_other_cpu_end_wrap)(void);
-    int32_t (* _phy_rf_deinit)(uint32_t module);
-    void (* _phy_load_cal_and_init)(uint32_t module);
+    void (* _phy_disable)(void);
+    void (* _phy_enable)(void);
     void (* _phy_common_clock_enable)(void);
     void (* _phy_common_clock_disable)(void);
     int32_t (* _read_mac)(uint8_t* mac, uint32_t type);
@@ -87,8 +87,9 @@ typedef struct {
     void (* _timer_done)(void *ptimer);
     void (* _timer_setfn)(void *ptimer, void *pfunction, void *parg);
     void (* _timer_arm_us)(void *ptimer, uint32_t us, bool repeat);
-    void (* _periph_module_enable)(uint32_t periph);
-    void (* _periph_module_disable)(uint32_t periph);
+    void (* _wifi_reset_mac)(void);
+    void (* _wifi_clock_enable)(void);
+    void (* _wifi_clock_disable)(void);
     int64_t (* _esp_timer_get_time)(void);
     int32_t (* _nvs_set_i8)(uint32_t handle, const char* key, int8_t value);
     int32_t (* _nvs_get_i8)(uint32_t handle, const char* key, int8_t* out_value);
@@ -118,10 +119,8 @@ typedef struct {
     void * (* _wifi_zalloc)(size_t size);
     void * (* _wifi_create_queue)(int32_t queue_len, int32_t item_size);
     void (* _wifi_delete_queue)(void * queue);
-    int32_t (* _modem_sleep_enter)(uint32_t module);
-    int32_t (* _modem_sleep_exit)(uint32_t module);
-    int32_t (* _modem_sleep_register)(uint32_t module);
-    int32_t (* _modem_sleep_deregister)(uint32_t module);
+    int (* _coex_init)(void);
+    void (* _coex_deinit)(void);
     uint32_t (* _coex_status_get)(void);
     void (* _coex_condition_set)(uint32_t type, bool dissatisfy);
     int32_t (* _coex_wifi_request)(uint32_t event, uint32_t latency, uint32_t duration);
