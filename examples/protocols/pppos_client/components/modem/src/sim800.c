@@ -194,9 +194,9 @@ static esp_err_t sim800_handle_cops(modem_dce_t *dce, const char *line)
         size_t len = strlen(line);
         char *line_copy = malloc(len + 1);
         strcpy(line_copy, line);
-        /* +COPS: <mode>[, <format>[, <oper>]] */
+        /* +COPS: <mode>[, <format>[, <oper>[, <Act>]]] */
         char *str_ptr = NULL;
-        char *p[3];
+        char *p[5];
         uint8_t i = 0;
         /* strtok will broke string by replacing delimiter with '\0' */
         p[i] = strtok_r(line_copy, ",", &str_ptr);
@@ -210,6 +210,9 @@ static esp_err_t sim800_handle_cops(modem_dce_t *dce, const char *line)
                 strip_cr_lf_tail(dce->oper, len);
                 err = ESP_OK;
             }
+        }
+        if (i >= 4) {
+            dce->act = (uint8_t)strtol(p[3], NULL, 0);
         }
         free(line_copy);
     }
@@ -415,14 +418,15 @@ err:
 /**
  * @brief Get Operator's name
  *
- * @param sim800_dce sim800 object
+ * @param dce Modem DCE object
  * @return esp_err_t
  *      - ESP_OK on success
  *      - ESP_FAIL on error
  */
-static esp_err_t sim800_get_operator_name(sim800_modem_dce_t *sim800_dce)
+static esp_err_t sim800_get_operator_name(modem_dce_t *dce)
 {
-    modem_dte_t *dte = sim800_dce->parent.dte;
+    modem_dte_t *dte = dce->dte;
+    sim800_modem_dce_t *sim800_dce = __containerof(dce, sim800_modem_dce_t, parent);
     sim800_dce->parent.handle_line = sim800_handle_cops;
     DCE_CHECK(dte->send_cmd(dte, "AT+COPS?\r", MODEM_COMMAND_TIMEOUT_OPERATOR) == ESP_OK, "send command failed", err);
     DCE_CHECK(sim800_dce->parent.state == MODEM_STATE_SUCCESS, "get network operator failed", err);
@@ -469,6 +473,7 @@ modem_dce_t *sim800_init(modem_dte_t *dte)
     sim800_dce->parent.hang_up = esp_modem_dce_hang_up;
     sim800_dce->parent.get_signal_quality = sim800_get_signal_quality;
     sim800_dce->parent.get_battery_status = sim800_get_battery_status;
+    sim800_dce->parent.get_operator_name = sim800_get_operator_name;
     sim800_dce->parent.set_working_mode = sim800_set_working_mode;
     sim800_dce->parent.power_down = sim800_power_down;
     sim800_dce->parent.deinit = sim800_deinit;
@@ -483,7 +488,7 @@ modem_dce_t *sim800_init(modem_dte_t *dte)
     /* Get IMSI number */
     DCE_CHECK(sim800_get_imsi_number(sim800_dce) == ESP_OK, "get imsi failed", err_io);
     /* Get operator name */
-    DCE_CHECK(sim800_get_operator_name(sim800_dce) == ESP_OK, "get operator name failed", err_io);
+    DCE_CHECK(sim800_get_operator_name(&(sim800_dce->parent)) == ESP_OK, "get operator name failed", err_io);
     return &(sim800_dce->parent);
 err_io:
     free(sim800_dce);

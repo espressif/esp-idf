@@ -193,9 +193,9 @@ static esp_err_t bg96_handle_cops(modem_dce_t *dce, const char *line)
         size_t len = strlen(line);
         char *line_copy = malloc(len + 1);
         strcpy(line_copy, line);
-        /* +COPS: <mode>[, <format>[, <oper>]] */
+        /* +COPS: <mode>[, <format>[, <oper>[, <Act>]]] */
         char *str_ptr = NULL;
-        char *p[3];
+        char *p[5];
         uint8_t i = 0;
         /* strtok will broke string by replacing delimiter with '\0' */
         p[i] = strtok_r(line_copy, ",", &str_ptr);
@@ -209,6 +209,9 @@ static esp_err_t bg96_handle_cops(modem_dce_t *dce, const char *line)
                 strip_cr_lf_tail(dce->oper, len);
                 err = ESP_OK;
             }
+        }
+        if (i >= 4) {
+            dce->act = (uint8_t)strtol(p[3], NULL, 0);
         }
         free(line_copy);
     }
@@ -416,14 +419,15 @@ err:
 /**
  * @brief Get Operator's name
  *
- * @param bg96_dce bg96 object
+ * @param dce Modem DCE object
  * @return esp_err_t
  *      - ESP_OK on success
  *      - ESP_FAIL on error
  */
-static esp_err_t bg96_get_operator_name(bg96_modem_dce_t *bg96_dce)
+static esp_err_t bg96_get_operator_name(modem_dce_t *dce)
 {
-    modem_dte_t *dte = bg96_dce->parent.dte;
+    modem_dte_t *dte = dce->dte;
+    bg96_modem_dce_t *bg96_dce = __containerof(dce, bg96_modem_dce_t, parent);
     bg96_dce->parent.handle_line = bg96_handle_cops;
     DCE_CHECK(dte->send_cmd(dte, "AT+COPS?\r", MODEM_COMMAND_TIMEOUT_OPERATOR) == ESP_OK, "send command failed", err);
     DCE_CHECK(bg96_dce->parent.state == MODEM_STATE_SUCCESS, "get network operator failed", err);
@@ -470,6 +474,7 @@ modem_dce_t *bg96_init(modem_dte_t *dte)
     bg96_dce->parent.hang_up = esp_modem_dce_hang_up;
     bg96_dce->parent.get_signal_quality = bg96_get_signal_quality;
     bg96_dce->parent.get_battery_status = bg96_get_battery_status;
+    bg96_dce->parent.get_operator_name = bg96_get_operator_name;
     bg96_dce->parent.set_working_mode = bg96_set_working_mode;
     bg96_dce->parent.power_down = bg96_power_down;
     bg96_dce->parent.deinit = bg96_deinit;
@@ -484,7 +489,7 @@ modem_dce_t *bg96_init(modem_dte_t *dte)
     /* Get IMSI number */
     DCE_CHECK(bg96_get_imsi_number(bg96_dce) == ESP_OK, "get imsi failed", err_io);
     /* Get operator name */
-    DCE_CHECK(bg96_get_operator_name(bg96_dce) == ESP_OK, "get operator name failed", err_io);
+    DCE_CHECK(bg96_get_operator_name(&(bg96_dce->parent)) == ESP_OK, "get operator name failed", err_io);
     return &(bg96_dce->parent);
 err_io:
     free(bg96_dce);
