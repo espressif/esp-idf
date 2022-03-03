@@ -52,19 +52,25 @@ void app_main(void)
     // Modify slot_config.gpio_cd and slot_config.gpio_wp if your board has these signals.
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
 
-    // To use 1-line SD mode, change this to 1:
+    // Set bus width to use:
+#ifdef CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_4
     slot_config.width = 4;
+#else
+    slot_config.width = 1;
+#endif
 
     // On chips where the GPIOs used for SD card can be configured, set them in
     // the slot_config structure:
-#ifdef SOC_SDMMC_USE_GPIO_MATRIX
-    slot_config.clk = GPIO_NUM_14;
-    slot_config.cmd = GPIO_NUM_15;
-    slot_config.d0 = GPIO_NUM_2;
-    slot_config.d1 = GPIO_NUM_4;
-    slot_config.d2 = GPIO_NUM_12;
-    slot_config.d3 = GPIO_NUM_13;
-#endif
+#ifdef CONFIG_SOC_SDMMC_USE_GPIO_MATRIX
+    slot_config.clk = CONFIG_EXAMPLE_PIN_CLK;
+    slot_config.cmd = CONFIG_EXAMPLE_PIN_CMD;
+    slot_config.d0 = CONFIG_EXAMPLE_PIN_D0;
+#ifdef CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_4
+    slot_config.d1 = CONFIG_EXAMPLE_PIN_D1;
+    slot_config.d2 = CONFIG_EXAMPLE_PIN_D2;
+    slot_config.d3 = CONFIG_EXAMPLE_PIN_D3;
+#endif  // CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_4
+#endif  // CONFIG_SOC_SDMMC_USE_GPIO_MATRIX
 
     // Enable internal pullups on enabled pins. The internal pullups
     // are insufficient however, please make sure 10k external pullups are
