@@ -109,8 +109,6 @@ static portMUX_TYPE s_switch_lock = portMUX_INITIALIZER_UNLOCKED;
 static pm_mode_t s_mode = PM_MODE_CPU_MAX;
 /* True when switch is in progress */
 static volatile bool s_is_switching;
-/* When switch is in progress, this is the mode we are switching into */
-static pm_mode_t s_new_mode = PM_MODE_CPU_MAX;
 /* Number of times each mode was locked */
 static size_t s_mode_lock_counts[PM_MODE_COUNT];
 /* Bit mask of locked modes. BIT(i) is set iff s_mode_lock_counts[i] > 0. */
@@ -395,7 +393,7 @@ void IRAM_ATTR esp_pm_impl_switch_mode(pm_mode_t mode,
 #endif // WITH_PROFILING
     }
     portEXIT_CRITICAL_SAFE(&s_switch_lock);
-    if (need_switch && new_mode != s_mode) {
+    if (need_switch) {
         do_switch(new_mode);
     }
 }
@@ -470,10 +468,6 @@ static void IRAM_ATTR do_switch(pm_mode_t new_mode)
         if (!s_is_switching) {
             break;
         }
-        if (s_new_mode <= new_mode) {
-            portEXIT_CRITICAL_ISR(&s_switch_lock);
-            return;
-        }
 #if __XTENSA__
         if (s_need_update_ccompare[core_id]) {
             s_need_update_ccompare[core_id] = false;
@@ -481,7 +475,10 @@ static void IRAM_ATTR do_switch(pm_mode_t new_mode)
 #endif
         portEXIT_CRITICAL_ISR(&s_switch_lock);
     } while (true);
-    s_new_mode = new_mode;
+    if (new_mode == s_mode) {
+        portEXIT_CRITICAL_ISR(&s_switch_lock);
+        return;
+    }
     s_is_switching = true;
     bool config_changed = s_config_changed;
     s_config_changed = false;
