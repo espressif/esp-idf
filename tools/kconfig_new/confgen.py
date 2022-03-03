@@ -158,9 +158,13 @@ class DeprecatedOptions(object):
 
     def append_header(self, config, path_output):
         def _opt_defined(opt):
-            if not opt.visibility:
-                return False
-            return not (opt.orig_type in (kconfiglib.BOOL, kconfiglib.TRISTATE) and opt.str_value == 'n')
+            if opt.orig_type in (kconfiglib.BOOL, kconfiglib.TRISTATE) and opt.str_value != 'n':
+                opt_defined = True
+            elif opt.orig_type in (kconfiglib.INT, kconfiglib.STRING, kconfiglib.HEX) and opt.str_value != '':
+                opt_defined = True
+            else:
+                opt_defined = False
+            return opt_defined
 
         if len(self.r_dic) > 0:
             with open(path_output, 'a') as f_o:
