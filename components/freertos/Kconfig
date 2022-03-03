@@ -439,7 +439,7 @@ menu "FreeRTOS"
     config FREERTOS_DEBUG_OCDAWARE
         bool
         help
-            Hidden option, gets selected by CONFIG_ESPxx_DEBUG_OCDAWARE
+            Hidden option, gets selected by CONFIG_ESP_DEBUG_OCDAWARE
 
     config FREERTOS_FPU_IN_ISR
         bool "Allow use of float inside Level 1 ISR (EXPERIMENTAL)"

@@ -71,7 +71,7 @@ Subsequent behavior of the panic handler can be set using :ref:`CONFIG_ESP_SYSTE
 
 The behavior of the panic handler is affected by two other configuration options.
 
-- If :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_DEBUG_OCDAWARE` is enabled (which is the default), the panic handler will detect whether a JTAG debugger is connected. If it is, execution will be halted and control will be passed to the debugger. In this case, registers and backtrace are not dumped to the console, and GDBStub / Core Dump functions are not used.
+- If :ref:`CONFIG_ESP_DEBUG_OCDAWARE` is enabled (which is the default), the panic handler will detect whether a JTAG debugger is connected. If it is, execution will be halted and control will be passed to the debugger. In this case, registers and backtrace are not dumped to the console, and GDBStub / Core Dump functions are not used.
 
 - If the :doc:`Core Dump <core_dump>` feature is enabled, then the system state (task stacks and registers) will be dumped to either Flash or UART, for later analysis.
 
@@ -402,7 +402,7 @@ Other Fatal Errors
 Brownout
 ^^^^^^^^
 
-{IDF_TARGET_NAME} has a built-in brownout detector, which is enabled by default. The brownout detector can trigger a system reset if the supply voltage goes below a safe level. The brownout detector can be configured using :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_BROWNOUT_DET` and :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_BROWNOUT_DET_LVL_SEL` options.
+{IDF_TARGET_NAME} has a built-in brownout detector, which is enabled by default. The brownout detector can trigger a system reset if the supply voltage goes below a safe level. The brownout detector can be configured using :ref:`CONFIG_ESP_BROWNOUT_DET` and :ref:`CONFIG_ESP_BROWNOUT_DET_LVL_SEL` options.
 
 When the brownout detector triggers, the following message is printed::
 

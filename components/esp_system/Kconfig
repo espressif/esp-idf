@@ -482,6 +482,14 @@ menu "ESP System Settings"
             Debug stubs are used by OpenOCD to execute pre-compiled onboard code
             which does some useful debugging stuff, e.g. GCOV data dump.
 
+    config ESP_DEBUG_OCDAWARE
+        bool "Make exception and panic handlers JTAG/OCD aware"
+        default y
+        select FREERTOS_DEBUG_OCDAWARE
+        help
+            The FreeRTOS panic and unhandled exception handers can detect a JTAG OCD debugger and
+            instead of panicking, have the debugger stop on the offending instruction.
+
     choice ESP_SYSTEM_CHECK_INT_LEVEL
         prompt "Interrupt level to use for Interrupt Watchdog and other system checks"
         default ESP_SYSTEM_CHECK_INT_LEVEL_4
@@ -500,6 +508,9 @@ menu "ESP System Settings"
             help
                 Using level 4 interrupt for Interrupt Watchdog and other system checks.
     endchoice
+
+    # Insert chip-specific system config
+    rsource "./port/soc/$IDF_TARGET/Kconfig.system"
 
 endmenu  # ESP System Settings
 

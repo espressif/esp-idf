@@ -194,6 +194,13 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 If enabled, all date, time, and path information would be eliminated. A .gdbinit file would be create
                 automatically. (or will be append if you have one already)
 
+        config APP_NO_BLOBS
+            bool "No Binary Blobs"
+            default n
+            help
+                If enabled, this disables the linking of binary libraries in the application build. Note
+                that after enabling this Wi-Fi/Bluetooth will not work.
+
     endmenu # Build type
 
     source "$COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE"
