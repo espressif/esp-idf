@@ -4,13 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-
 #include <stdlib.h>
 #include <string.h>
 #include <sys/cdefs.h>
 #include <sys/param.h>
 #include <sys/queue.h>
+#include "sdkconfig.h"
+#if CONFIG_LCD_ENABLE_DEBUG_LOG
+// The local log level must be defined before including esp_log.h
+// Set the maximum log level for this source file
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+#endif
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -28,7 +32,6 @@
 #include "esp_private/gdma.h"
 #include "driver/gpio.h"
 #include "esp_private/periph_ctrl.h"
-#if SOC_LCDCAM_SUPPORTED
 #include "esp_lcd_common.h"
 #include "soc/lcd_periph.h"
 #include "hal/lcd_ll.h"
@@ -119,6 +122,9 @@ struct lcd_panel_io_i80_t {
 
 esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lcd_i80_bus_handle_t *ret_bus)
 {
+#if CONFIG_LCD_ENABLE_DEBUG_LOG
+    esp_log_level_set(TAG, ESP_LOG_DEBUG);
+#endif
     esp_err_t ret = ESP_OK;
     esp_lcd_i80_bus_t *bus = NULL;
     ESP_GOTO_ON_FALSE(bus_config && ret_bus, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
@@ -659,5 +665,3 @@ IRAM_ATTR static void lcd_default_isr_handler(void *args)
         portYIELD_FROM_ISR();
     }
 }
-
-#endif // SOC_LCDCAM_SUPPORTED

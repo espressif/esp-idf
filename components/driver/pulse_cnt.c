@@ -605,9 +605,6 @@ esp_err_t pcnt_channel_set_level_action(pcnt_channel_handle_t chan, pcnt_channel
 
 static pcnt_group_t *pcnt_acquire_group_handle(int group_id)
 {
-#if CONFIG_PCNT_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
     bool new_group = false;
     pcnt_group_t *group = NULL;
 
@@ -705,6 +702,9 @@ IRAM_ATTR static void pcnt_default_isr(void *args)
 __attribute__((constructor))
 static void check_pulse_cnt_driver_conflict(void)
 {
+#if CONFIG_PCNT_ENABLE_DEBUG_LOG
+    esp_log_level_set(TAG, ESP_LOG_DEBUG);
+#endif
     extern int pcnt_driver_init_count;
     pcnt_driver_init_count++;
     if (pcnt_driver_init_count > 1) {

@@ -341,9 +341,6 @@ esp_err_t gptimer_stop(gptimer_handle_t timer)
 
 static gptimer_group_t *gptimer_acquire_group_handle(int group_id)
 {
-#if CONFIG_GPTIMER_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
     bool new_group = false;
     gptimer_group_t *group = NULL;
 
@@ -494,6 +491,9 @@ esp_err_t gptimer_get_pm_lock(gptimer_handle_t timer, esp_pm_lock_handle_t *ret_
 __attribute__((constructor))
 static void check_gptimer_driver_conflict(void)
 {
+#if CONFIG_GPTIMER_ENABLE_DEBUG_LOG
+    esp_log_level_set(TAG, ESP_LOG_DEBUG);
+#endif
     extern int timer_group_driver_init_count;
     timer_group_driver_init_count++;
     if (timer_group_driver_init_count > 1) {

@@ -6,5 +6,11 @@ menu "LCD and Touch Panel"
             help
                 LCD driver allocates an internal buffer to transform the data into a proper format, because of
                 the endian order mismatch. This option is to set the size of the buffer, in bytes.
+        config LCD_ENABLE_DEBUG_LOG
+            bool "Enable debug log"
+            default n
+            help
+                Wether to enable the debug log message for LCD driver.
+                Note that, this option only controls the LCD driver log, won't affect other drivers.
     endmenu
 endmenu

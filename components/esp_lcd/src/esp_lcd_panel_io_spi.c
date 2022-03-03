@@ -1,14 +1,18 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-
 #include <stdlib.h>
 #include <string.h>
 #include <sys/cdefs.h>
+#include "sdkconfig.h"
+#if CONFIG_LCD_ENABLE_DEBUG_LOG
+// The local log level must be defined before including esp_log.h
+// Set the maximum log level for this source file
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+#endif
 #include "esp_lcd_panel_io_interface.h"
 #include "esp_lcd_panel_io.h"
 #include "driver/spi_master.h"
@@ -53,6 +57,9 @@ typedef struct {
 
 esp_err_t esp_lcd_new_panel_io_spi(esp_lcd_spi_bus_handle_t bus, const esp_lcd_panel_io_spi_config_t *io_config, esp_lcd_panel_io_handle_t *ret_io)
 {
+#if CONFIG_LCD_ENABLE_DEBUG_LOG
+    esp_log_level_set(TAG, ESP_LOG_DEBUG);
+#endif
     esp_err_t ret = ESP_OK;
     esp_lcd_panel_io_spi_t *spi_panel_io = NULL;
     ESP_GOTO_ON_FALSE(bus && io_config && ret_io, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
