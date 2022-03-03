@@ -55,7 +55,7 @@ static esp_err_t lcd_i80_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_c
 static esp_err_t lcd_i80_bus_configure_gpio(esp_lcd_i80_bus_handle_t bus, const esp_lcd_i80_bus_config_t *bus_config);
 static void lcd_i80_switch_devices(lcd_panel_io_i80_t *cur_device, lcd_panel_io_i80_t *next_device);
 static void lcd_start_transaction(esp_lcd_i80_bus_t *bus, lcd_i80_trans_descriptor_t *trans_desc);
-static IRAM_ATTR void lcd_default_isr_handler(void *args);
+static void lcd_default_isr_handler(void *args);
 
 struct esp_lcd_i80_bus_t {
     int bus_id;            // Bus ID, index from 0
@@ -153,7 +153,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     ESP_GOTO_ON_ERROR(ret, err, TAG, "select periph clock %d failed", bus_config->clk_src);
     // install interrupt service, (LCD peripheral shares the same interrupt source with Camera peripheral with different mask)
     // interrupt is disabled by default
-    int isr_flags = LCD_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED;
+    int isr_flags = LCD_I80_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED;
     ret = esp_intr_alloc_intrstatus(lcd_periph_signals.buses[bus_id].irq_id, isr_flags,
                                     (uint32_t)lcd_ll_get_interrupt_status_reg(bus->hal.dev),
                                     LCD_LL_EVENT_TRANS_DONE, lcd_default_isr_handler, bus, &bus->intr);
@@ -250,7 +250,7 @@ esp_err_t esp_lcd_new_panel_io_i80(esp_lcd_i80_bus_handle_t bus, const esp_lcd_p
     uint32_t pclk_prescale = bus->resolution_hz / io_config->pclk_hz;
     ESP_GOTO_ON_FALSE(pclk_prescale > 0 && pclk_prescale <= LCD_LL_CLOCK_PRESCALE_MAX, ESP_ERR_NOT_SUPPORTED, err, TAG,
                       "prescaler can't satisfy PCLK clock %u", io_config->pclk_hz);
-    i80_device = heap_caps_calloc(1, sizeof(lcd_panel_io_i80_t) + io_config->trans_queue_depth * sizeof(lcd_i80_trans_descriptor_t), LCD_MEM_ALLOC_CAPS);
+    i80_device = heap_caps_calloc(1, sizeof(lcd_panel_io_i80_t) + io_config->trans_queue_depth * sizeof(lcd_i80_trans_descriptor_t), LCD_I80_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(i80_device, ESP_ERR_NO_MEM, err, TAG, "no mem for i80 panel io");
     // create two queues for i80 device
     i80_device->trans_queue = xQueueCreate(io_config->trans_queue_depth, sizeof(lcd_i80_trans_descriptor_t *));
@@ -393,9 +393,8 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     // switch devices if necessary
     lcd_i80_switch_devices(cur_device, next_device);
     // set data format
-    lcd_ll_swap_data_byte_order(bus->hal.dev, false);
-    lcd_ll_reverse_data_bit_order(bus->hal.dev, false);
-    lcd_ll_reverse_data_8bits_order(bus->hal.dev, next_device->lcd_param_bits > bus->bus_width);
+    lcd_ll_reverse_bit_order(bus->hal.dev, false);
+    lcd_ll_swap_byte_order(bus->hal.dev, bus->bus_width, next_device->lcd_param_bits > bus->bus_width);
     bus->cur_trans = NULL;
     bus->cur_device = next_device;
     // package a transaction
@@ -643,9 +642,8 @@ IRAM_ATTR static void lcd_default_isr_handler(void *args)
                 // switch devices if necessary
                 lcd_i80_switch_devices(cur_device, next_device);
                 // only reverse data bit/bytes for color data
-                lcd_ll_reverse_data_bit_order(bus->hal.dev, next_device->flags.reverse_color_bits);
-                lcd_ll_swap_data_byte_order(bus->hal.dev, next_device->flags.swap_color_bytes);
-                lcd_ll_reverse_data_8bits_order(bus->hal.dev, false);
+                lcd_ll_reverse_bit_order(bus->hal.dev, next_device->flags.reverse_color_bits);
+                lcd_ll_swap_byte_order(bus->hal.dev, bus->bus_width, next_device->flags.swap_color_bytes);
                 bus->cur_trans = trans_desc;
                 bus->cur_device = next_device;
                 // mount data to DMA links
