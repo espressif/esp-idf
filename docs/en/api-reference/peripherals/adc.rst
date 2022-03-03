@@ -185,7 +185,7 @@ Single Read mode ADC example can be found in :example:`peripherals/adc/single_re
 
 .. only:: SOC_ULP_SUPPORTED
 
-    This API provides convenient way to configure ADC1 for reading from :doc:`ULP <../../api-guides/ulp>`. To do so, call function :cpp:func:`adc1_ulp_enable` and then set precision and attenuation as discussed above.
+    This API provides convenient way to configure ADC1 for reading from :doc:`ULP <../../api-reference/system/ulp>`. To do so, call function :cpp:func:`adc1_ulp_enable` and then set precision and attenuation as discussed above.
 
 .. only:: esp32 or esp32s2
 

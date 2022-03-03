@@ -33,6 +33,8 @@ System API
     system_time
     :SOC_ASYNC_MEMCPY_SUPPORTED: async_memcpy
     :esp32: himem
+    :SOC_ULP_SUPPORTED: ulp
+    :SOC_RISCV_COPROC_SUPPORTED: ulp-risc-v
     wdts
     
 

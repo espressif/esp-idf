@@ -36,8 +36,6 @@ API 指南
    :SOC_SPIRAM_SUPPORTED: external-ram
    thread-local-storage
    tools/index
-   :SOC_ULP_SUPPORTED: ulp
-   :SOC_RISCV_COPROC_SUPPORTED: ulp-risc-v
    unit-tests
    linux-host-testing
    :SOC_USB_OTG_SUPPORTED: usb-otg-console
