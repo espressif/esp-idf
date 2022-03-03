@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * SPDX-FileContributor: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
  */
 /*
  * FreeModbus Libary: A portable Modbus implementation for Modbus ASCII/RTU.
@@ -229,6 +229,8 @@ BOOL            xMBTCPPortInit( USHORT usTCPPort );
 
 void            vMBTCPPortClose( void );
 
+void            vMBTCPPortEnable( void );
+
 void            vMBTCPPortDisable( void );
 
 BOOL            xMBTCPPortGetRequest( UCHAR **ppucMBTCPFrame, USHORT * usTCPLength );
@@ -241,6 +243,8 @@ BOOL            xMBTCPPortSendResponse( UCHAR *pucMBTCPFrame, USHORT usTCPLength
 BOOL            xMBMasterTCPPortInit( USHORT usTCPPort );
 
 void            vMBMasterTCPPortClose( void );
+
+void            vMBMasterTCPPortEnable( void );
 
 void            vMBMasterTCPPortDisable( void );
 

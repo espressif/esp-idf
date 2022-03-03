@@ -101,13 +101,6 @@ typedef struct {
  */
 void vMBTCPPortSlaveSetNetOpt(void* pvNetIf, eMBPortIpVer xIpVersion, eMBPortProto xProto, CHAR* pcBindAddr);
 
-/**
- * Resume TCP Slave processing task
- *
- * @return None
- */
-void vMBTCPPortSlaveStartServerTask(void);
-
 #ifdef __cplusplus
 PR_END_EXTERN_C
 #endif
