@@ -61,6 +61,13 @@ endif()
 set(ENABLE_TESTING CACHE BOOL OFF)
 set(ENABLE_PROGRAMS CACHE BOOL OFF)
 
+# Use pre-generated source files in mbedtls repository
+set(GEN_FILES CACHE BOOL OFF)
+
+# Make sure mbedtls finds the same Python interpreter as IDF uses
+idf_build_get_property(python PYTHON)
+set(Python3_EXECUTABLE ${python})
+
 # Needed to for include_next includes to work from within mbedtls
 include_directories("${COMPONENT_DIR}/port/include")
 
