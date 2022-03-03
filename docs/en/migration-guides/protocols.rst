@@ -57,3 +57,18 @@ The Diffie-Hellman Key Exchange modes have now been disabled by default due to s
 - ``MBEDTLS_KEY_EXCHANGE_DHE_RSA``  : Support for cipher suites with the prefix ``TLS-DHE-RSA-WITH-``
 
 .. note:: During the initial step of the handshake (i.e. ``client_hello``), the server selects a cipher from the list that the client publishes. As the DHE_PSK/DHE_RSA ciphers have now been disabled by the above change, the server would fall back to an alternative cipher; if in a rare case, it does not support any other cipher, the handshake would fail. To retrieve the list of ciphers supported by the server, one must attempt to connect with the server with a specific cipher from the client-side. Few utilities can help do this, e.g. ``sslscan``.
+
+
+ESP HTTPS SERVER
+-----------------
+
+Breaking Changes (Summary)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Names of variables holding different certs in :cpp:type:`httpd_ssl_config_t` structure have been updated.
+
+.. list::
+    * :cpp:member:`servercert` variable inherits role of :cpp:member:`cacert_pem` variable.
+    * :cpp:member:`servercert_len` variable inherits role of :cpp:member:`cacert_len` variable
+    * :cpp:member:`cacert_pem` variable inherits role of :cpp:member:`client_verify_cert_pem` variable
+    * :cpp:member:`cacert_len` variable inherits role of :cpp:member:`client_verify_cert_len` variable
