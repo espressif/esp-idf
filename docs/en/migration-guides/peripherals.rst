@@ -115,3 +115,10 @@ I2C
     - ``rmt_set_intr_enable_mask`` and ``rmt_clr_intr_enable_mask`` are removed, as the interrupt is handled by the driver, user doesn't need to take care of it.
     - ``rmt_set_pin`` is removed, as ``rmt_set_gpio`` can do the same thing.
     - ``rmt_memory_rw_rst`` is removed, user can use ``rmt_tx_memory_reset`` and ``rmt_rx_memory_reset`` for TX and RX channel respectively.
+
+.. only:: SOC_LCD_RGB_SUPPORTED
+
+    RGB LCD Driver
+    --------------
+
+    - The `pclk_active_neg` in the RGB timing configuration structure :cpp:type:`esp_lcd_rgb_timing_t` has been changed into `pclk_active_pos`. This was made to change the default PCLK sample moment to **falling** edge. From user side, you don't need to explicitly assign `pclk_active_neg = true` anymore.

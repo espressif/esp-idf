@@ -59,12 +59,12 @@ typedef struct {
     unsigned int hsync_front_porch; /*!< Horizontal front porch, number of PCLK between the end of active data and the next hsync */
     unsigned int vsync_pulse_width; /*!< Vertical sync width, unit: number of lines */
     unsigned int vsync_back_porch;  /*!< Vertical back porch, number of invalid lines between vsync and start of frame */
-    unsigned int vsync_front_porch; /*!< Vertical front porch, number of invalid lines between then end of frame and the next vsync */
+    unsigned int vsync_front_porch; /*!< Vertical front porch, number of invalid lines between the end of frame and the next vsync */
     struct {
         unsigned int hsync_idle_low: 1;  /*!< The hsync signal is low in IDLE state */
         unsigned int vsync_idle_low: 1;  /*!< The vsync signal is low in IDLE state */
         unsigned int de_idle_high: 1;    /*!< The de signal is high in IDLE state */
-        unsigned int pclk_active_neg: 1; /*!< Whether the display data is clocked out at the falling edge of PCLK */
+        unsigned int pclk_active_pos: 1; /*!< Whether the display data is clocked out on the rising edge of PCLK */
         unsigned int pclk_idle_high: 1;  /*!< The PCLK stays at high level in IDLE phase */
     } flags;
 } esp_lcd_rgb_timing_t;
