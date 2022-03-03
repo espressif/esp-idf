@@ -97,7 +97,6 @@ api-reference/peripherals/i2c
 api-reference/peripherals/dedic_gpio
 api-reference/peripherals/spi_master
 api-reference/peripherals/index
-api-reference/peripherals/uart
 api-reference/kconfig
 api-reference/network/esp_openthread
 api-reference/network/esp_eth

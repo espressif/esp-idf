@@ -199,9 +199,8 @@ static void uart_module_enable(uart_port_t uart_num)
     if (uart_context[uart_num].hw_enabled != true) {
         periph_module_enable(uart_periph_signal[uart_num].module);
         if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM) {
-            // Workaround for ESP32C3: enable core reset
-            // before enabling uart module clock
-            // to prevent uart output garbage value.
+            // Workaround for ESP32C3/S3: enable core reset before enabling uart module clock to prevent uart output
+            // garbage value.
 #if SOC_UART_REQUIRE_CORE_RESET
             uart_hal_set_reset_core(&(uart_context[uart_num].hal), true);
             periph_module_reset(uart_periph_signal[uart_num].module);

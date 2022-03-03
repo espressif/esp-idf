@@ -977,7 +977,6 @@ components/hal/include/hal/systimer_types.h
 components/hal/include/hal/touch_sensor_hal.h
 components/hal/include/hal/twai_hal.h
 components/hal/include/hal/twai_types.h
-components/hal/include/hal/uart_hal.h
 components/hal/include/hal/uart_types.h
 components/hal/include/hal/uhci_types.h
 components/hal/include/hal/usb_hal.h
@@ -1466,7 +1465,6 @@ components/soc/esp32h2/include/soc/syscon_struct.h
 components/soc/esp32h2/include/soc/system_reg.h
 components/soc/esp32h2/include/soc/system_struct.h
 components/soc/esp32h2/include/soc/twai_struct.h
-components/soc/esp32h2/include/soc/uart_channel.h
 components/soc/esp32h2/include/soc/uart_pins.h
 components/soc/esp32h2/include/soc/usb_serial_jtag_reg.h
 components/soc/esp32h2/include/soc/usb_serial_jtag_struct.h
@@ -2278,7 +2276,6 @@ examples/peripherals/twai/twai_network/twai_network_slave/main/twai_network_exam
 examples/peripherals/twai/twai_self_test/example_test.py
 examples/peripherals/twai/twai_self_test/main/twai_self_test_example_main.c
 examples/peripherals/uart/nmea0183_parser/main/nmea_parser.c
-examples/peripherals/uart/nmea0183_parser/main/nmea_parser.h
 examples/peripherals/uart/nmea0183_parser/main/nmea_parser_example_main.c
 examples/peripherals/uart/uart_async_rxtxtasks/main/uart_async_rxtxtasks_main.c
 examples/peripherals/uart/uart_echo/main/uart_echo_example_main.c

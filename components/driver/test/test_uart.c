@@ -16,8 +16,8 @@
 #define UART_TAG         "Uart"
 #define UART_NUM1        (UART_NUM_1)
 #define BUF_SIZE         (100)
-#define UART1_RX_PIN     (22)
-#define UART1_TX_PIN     (23)
+#define UART1_RX_PIN     (5)
+#define UART1_TX_PIN     (4)
 #define UART_BAUD_11520  (11520)
 #define UART_BAUD_115200 (115200)
 #define TOLERANCE        (0.02)    //baud rate error tolerance 2%.
@@ -378,8 +378,8 @@ TEST_CASE("uart int state restored after flush", "[uart]")
 
     const uart_port_t uart_echo = UART_NUM_1;
     const int uart_tx_signal = U1TXD_OUT_IDX;
-    const int uart_tx = 4;
-    const int uart_rx = 5;
+    const int uart_tx = UART1_TX_PIN;
+    const int uart_rx = UART1_RX_PIN;
     const int buf_size = 256;
     const int intr_alloc_flags = 0;
 
