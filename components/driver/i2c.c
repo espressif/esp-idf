@@ -215,6 +215,12 @@ static i2c_obj_t *p_i2c_obj[I2C_NUM_MAX] = {0};
 static void i2c_isr_handler_default(void *arg);
 static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num);
 static esp_err_t IRAM_ATTR i2c_hw_fsm_reset(i2c_port_t i2c_num);
+static int i2c_cmd_alive_interval[I2C_NUM_MAX] = { I2C_CMD_ALIVE_INTERVAL_TICK, I2C_CMD_ALIVE_INTERVAL_TICK };
+
+void i2c_set_alive_interval(i2c_port_t i2c_num, int interval)
+{
+	i2c_cmd_alive_interval[i2c_num] = interval;
+}
 
 static void i2c_hw_disable(i2c_port_t i2c_num)
 {
@@ -1477,11 +1483,11 @@ esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, 
     while (1) {
         TickType_t wait_time = xTaskGetTickCount();
         if (wait_time - ticks_start > ticks_to_wait) { // out of time
-            wait_time = I2C_CMD_ALIVE_INTERVAL_TICK;
+            wait_time =  i2c_cmd_alive_interval[i2c_num];
         } else {
             wait_time = ticks_to_wait - (wait_time - ticks_start);
-            if (wait_time < I2C_CMD_ALIVE_INTERVAL_TICK) {
-                wait_time = I2C_CMD_ALIVE_INTERVAL_TICK;
+            if (wait_time <  i2c_cmd_alive_interval[i2c_num] ){
+                wait_time =  i2c_cmd_alive_interval[i2c_num];
             }
         }
         // In master mode, since we don't have an interrupt to detective bus error or FSM state, what we do here is to make
