@@ -1,7 +1,7 @@
 # Set usual component variables
 set(COMPONENT_SRCS "ulp_riscv_gpio_intr_example_main.c")
 set(COMPONENT_ADD_INCLUDEDIRS "")
-set(COMPONENT_REQUIRES ulp)
+set(COMPONENT_REQUIRES ulp driver)
 
 register_component()
 
