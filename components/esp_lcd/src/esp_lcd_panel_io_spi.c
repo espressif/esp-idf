@@ -254,7 +254,7 @@ static esp_err_t panel_io_spi_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     ESP_GOTO_ON_ERROR(ret, err, TAG, "spi transmit (polling) command failed");
 
     // split to chunks if required:
-    // the SPI bus has a maximum transaction size determined by SPI_USR_MOSI_DBITLEN's bit width
+    // the SPI bus has a maximum transaction size determined by SPI_LL_DATA_MAX_BIT_LEN
     do {
         size_t chunk_size = color_size;
 

@@ -124,6 +124,7 @@ void app_main(void)
             .vsync_back_porch = 8,
             .vsync_front_porch = 4,
             .vsync_pulse_width = 1,
+            .flags.pclk_active_neg = true,
         },
         .flags.fb_in_psram = 1, // allocate frame buffer in PSRAM
     };
