@@ -29,7 +29,7 @@ from _pytest.python import Function
 from _pytest.reports import TestReport
 from _pytest.runner import CallInfo
 from _pytest.terminal import TerminalReporter
-from pytest_embedded.plugin import parse_configuration
+from pytest_embedded.plugin import apply_count, parse_configuration
 from pytest_embedded.utils import find_by_suffix
 
 SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3']
@@ -62,6 +62,7 @@ def item_marker_names(item: Item) -> List[str]:
 # Fixtures #
 ############
 @pytest.fixture
+@parse_configuration
 def config(request: FixtureRequest) -> str:
     return getattr(request, 'param', None) or DEFAULT_SDKCONFIG
 
@@ -77,9 +78,9 @@ def test_case_name(request: FixtureRequest, target: str, config: str) -> str:
 
 
 @pytest.fixture
-@parse_configuration
+@apply_count
 def build_dir(
-    request: FixtureRequest, app_path: str, target: Optional[str], config: Optional[str]
+    app_path: str, target: Optional[str], config: Optional[str]
 ) -> str:
     """
     Check local build dir with the following priority:
@@ -90,7 +91,6 @@ def build_dir(
     4. build
 
     Args:
-        request: pytest fixture
         app_path: app path
         target: target
         config: config
@@ -98,11 +98,6 @@ def build_dir(
     Returns:
         valid build directory
     """
-    param_or_cli: str = getattr(request, 'param', None) or request.config.getoption(
-        'build_dir'
-    )
-    if param_or_cli is not None:  # respect the param and the cli
-        return param_or_cli
 
     check_dirs = []
     if target is not None and config is not None:
@@ -131,6 +126,7 @@ def build_dir(
 
 
 @pytest.fixture(autouse=True)
+@apply_count
 def junit_properties(
     test_case_name: str, record_xml_attribute: Callable[[str, object], None]
 ) -> None:
