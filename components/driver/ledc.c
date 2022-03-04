@@ -638,6 +638,7 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
             );
     /*set LEDC signal in gpio matrix*/
     gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
+    gpio_set_level(gpio_num, output_invert);
     gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
     esp_rom_gpio_connect_out_signal(gpio_num, ledc_periph_signal[speed_mode].sig_out0_idx + ledc_channel, output_invert, 0);
 
