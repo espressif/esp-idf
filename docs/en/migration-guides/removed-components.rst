@@ -13,7 +13,7 @@ Following components are removed from ESP-IDF and moved to `IDF Component Regist
 
 * `sh2lib <https://components.espressif.com/component/espressif/sh2lib>`_
 * `expat <https://components.espressif.com/component/espressif/expat>`_
-* `coap <https://components.espressif.com/components/espressif/coap>`_
+* `coap <https://components.espressif.com/component/espressif/coap>`_
 
 These components can be installed using ``idf.py add-dependency`` command.
 
