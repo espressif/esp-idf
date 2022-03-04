@@ -1,21 +1,13 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#pragma once
 
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-#ifndef _SOC_PCNT_REG_H_
-#define _SOC_PCNT_REG_H_
+#include <stdint.h>
+#include "soc/soc.h"
 
-
-#include "soc.h"
 #define PCNT_U0_CONF0_REG          (DR_REG_PCNT_BASE + 0x0000)
 /* PCNT_CH1_LCTRL_MODE_U0 : R/W ;bitpos:[31:30] ;default: 2'd0 ; */
 /*description: This register is used to control the mode of channel1's low control
@@ -1517,8 +1509,3 @@
 #define PCNT_DATE_M  ((PCNT_DATE_V)<<(PCNT_DATE_S))
 #define PCNT_DATE_V  0xFFFFFFFF
 #define PCNT_DATE_S  0
-
-
-
-
-#endif /*_SOC_PCNT_REG_H_ */

@@ -30,8 +30,7 @@ The previous Kconfig option `RTCIO_SUPPORT_RTC_GPIO_DESC` has been removed, thus
 Timer Group Driver
 ------------------
 
-Timer Group driver has been redesigned into :doc:`GPTimer <../api-reference/peripherals/gptimer>`, which aims to unify and simplify the usage of general purpose timer.
-Although it's recommended to use the the new driver APIs, the legacy driver is till available in the previous include path ``driver/timer.h``. However, by default, including ``driver/timer.h`` will bring a build warning like "legacy timer group driver is deprecated, please migrate to driver/gptimer.h". The warning can be suppressed by the Kconfig option :ref:`CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN`.
+Timer Group driver has been redesigned into :doc:`GPTimer <../api-reference/peripherals/gptimer>`, which aims to unify and simplify the usage of general purpose timer. Although it's recommended to use the the new driver APIs, the legacy driver is till available in the previous include path ``driver/timer.h``. However, by default, including ``driver/timer.h`` will bring a build warning like `legacy timer group driver is deprecated, please migrate to driver/gptimer.h`. The warning can be suppressed by the Kconfig option :ref:`CONFIG_GPTIMER_SUPPRESS_DEPRECATE_WARN`.
 
 The major breaking changes in concept and usage are listed as follows:
 
@@ -55,11 +54,45 @@ Breaking Changes in Usage
 -  Alarm will always be re-enabled by the driver if :cpp:member:`auto_reload_on_alarm` is set to true.
 
 UART
-~~~~
+----
 
 - :cpp:member:`uart_isr_register` and :cpp:member:`uart_isr_free` have been removed as the UART interrupt handling is closely related to the driver implementation.
 
 I2C
-~~~~
+---
 
 - :cpp:member:`i2c_isr_register` and :cpp:member:`i2c_isr_free` have been removed as the I2C interrupt handling is closely related to the driver implementation.
+
+.. only:: SOC_PCNT_SUPPORTED
+
+    Pulse Counter Driver
+    --------------------
+
+    Pulse counter driver has been redesigned (see :doc:`PCNT <../api-reference/peripherals/pcnt>`), which aims to unify and simplify the usage of PCNT peripheral. Although it's recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/pcnt.h``. However, by default, including ``driver/pcnt.h`` will bring a build warning like `legacy pcnt driver is deprecated, please migrate to use driver/pulse_cnt.h`. The warning can be suppressed by the Kconfig option :ref:`CONFIG_PCNT_SUPPRESS_DEPRECATE_WARN`.
+
+    The major breaking changes in concept and usage are listed as follows:
+
+    Breaking Changes in Concepts
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    - ``pcnt_port_t``, ``pcnt_unit_t`` and ``pcnt_channel_t`` which used to identify the hardware unit and channel are removed from user's code. In the new driver, PCNT unit is represented by :cpp:type:`pcnt_unit_handle_t`, likewise, PCNT channel is represented by :cpp:type:`pcnt_channel_handle_t`. Both of them are opaque pointers.
+    - ``pcnt_evt_type_t`` is not used any more, they have been replaced by a universal **Watch Point Event**. In the event callback :cpp:type:`pcnt_watch_cb_t`, it's still possible to distinguish different watch points from :cpp:type:`pcnt_watch_event_data_t`.
+    - ``pcnt_count_mode_t`` is replaced by :cpp:type:`pcnt_channel_edge_action_t`, and ``pcnt_ctrl_mode_t`` is replaced by :cpp:type:`pcnt_channel_level_action_t`.
+
+    Breaking Changes in Usage
+    ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    - In the legacy driver, the PCNT unit configuration and channel configuration were combined into a single function: ``pcnt_unit_config``. Now this is split into two factory APIs: :cpp:func:`pcnt_new_unit` and :cpp:func:`pcnt_new_channel`. Only the count range is necessary for initializing a PCNT unit. GPIO number assignment has been moved to :cpp:func:`pcnt_new_channel`. High/Low control mode and positive/negative edge count mode are set by stand-alone functions: :cpp:func:`pcnt_channel_set_edge_action` and :cpp:func:`pcnt_channel_set_level_action`.
+    - ``pcnt_get_counter_value`` is replaced by :cpp:func:`pcnt_unit_get_count`.
+    - ``pcnt_counter_pause`` is replaced by :cpp:func:`pcnt_unit_stop`.
+    - ``pcnt_counter_resume`` is replaced by :cpp:func:`pcnt_unit_start`.
+    - ``pcnt_counter_clear`` is replaced by :cpp:func:`pcnt_unit_clear_count`.
+    - ``pcnt_intr_enable`` and ``pcnt_intr_disable`` are removed. In the new driver, the interrupt is enabled by registering event callbacks :cpp:func:`pcnt_unit_register_event_callbacks`.
+    - ``pcnt_event_enable`` and ``pcnt_event_disable`` are removed. In the new driver, the PCNT events are enabled/disabled by adding/removing watch points :cpp:func:`pcnt_unit_add_watch_point`, :cpp:func:`pcnt_unit_remove_watch_point`.
+    - ``pcnt_set_event_value`` is removed. In the new driver, event value is also set when adding watch point by :cpp:func:`pcnt_unit_add_watch_point`.
+    - ``pcnt_get_event_value`` and ``pcnt_get_event_status`` are removed. In the new driver, these information are provided by event callback :cpp:type:`pcnt_watch_cb_t` in the :cpp:type:`pcnt_watch_event_data_t`.
+    - ``pcnt_isr_register`` and ``pcnt_isr_unregister`` are removed. Register of the ISR handler from user code is no longer permitted. Users should register event callbacks instead by calling :cpp:func:`pcnt_unit_register_event_callbacks`.
+    - ``pcnt_set_pin`` is removed and the new driver no longer allows the switching of the GPIO at runtime. If you want to change to other GPIOs, please delete the existing PCNT channel by :cpp:func:`pcnt_del_channel` and reinstall with the new GPIO number by :cpp:func:`pcnt_new_channel`.
+    - ``pcnt_filter_enable``, ``pcnt_filter_disable``, and ``pcnt_set_filter_value`` are replaced by :cpp:func:`pcnt_unit_set_glitch_filter`. Meanwhile, ``pcnt_get_filter_value`` has been removed.
+    - ``pcnt_set_mode`` is replaced by :cpp:func:`pcnt_channel_set_edge_action` and :cpp:func:`pcnt_channel_set_level_action`.
+    - ``pcnt_isr_service_install``, ``pcnt_isr_service_uninstall``, ``pcnt_isr_handler_add`` and ``pcnt_isr_handler_remove`` are replaced by :cpp:func:`pcnt_unit_register_event_callbacks`. The default ISR handler is lazy installed in the new driver.

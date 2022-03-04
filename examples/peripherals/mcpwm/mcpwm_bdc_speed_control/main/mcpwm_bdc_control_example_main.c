@@ -9,8 +9,8 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "driver/gptimer.h"
+#include "driver/pulse_cnt.h"
 #include "driver/mcpwm.h"
-#include "rotary_encoder.h"
 #include "pid_ctrl.h"
 #include "esp_console.h"
 #include "argtable3/argtable3.h"
@@ -23,7 +23,9 @@
 #define BDC_MCPWM_GENA_GPIO_NUM       7
 #define BDC_MCPWM_GENB_GPIO_NUM       15
 #define BDC_MCPWM_FREQ_HZ             1500
-#define BDC_ENCODER_PCNT_UNIT         0
+
+#define BDC_ENCODER_PCNT_HIGH_LIMIT   100
+#define BDC_ENCODER_PCNT_LOW_LIMIT    -100
 #define BDC_ENCODER_PHASEA_GPIO_NUM   36
 #define BDC_ENCODER_PHASEB_GPIO_NUM   35
 
@@ -45,7 +47,8 @@ static int expect_pulses = 300;
 static int real_pulses;
 
 typedef struct {
-    rotary_encoder_t *encoder;
+    pcnt_unit_handle_t hall_pcnt_encoder;
+    int accumu_count;
     QueueHandle_t pid_feedback_queue;
 } motor_control_timer_context_t;
 
@@ -53,6 +56,13 @@ typedef struct {
     QueueHandle_t pid_feedback_queue;
     pid_ctrl_block_handle_t pid_ctrl;
 } motor_control_task_context_t;
+
+static bool example_pcnt_on_reach(pcnt_unit_handle_t unit, pcnt_watch_event_data_t *edata, void *user_ctx)
+{
+    motor_control_timer_context_t *ctx = (motor_control_timer_context_t *)user_ctx;
+    ctx->accumu_count += edata->watch_point_value;
+    return false;
+}
 
 static void brushed_motor_set_duty(float duty_cycle)
 {
@@ -75,9 +85,12 @@ static bool motor_ctrl_timer_cb(gptimer_handle_t timer, const gptimer_alarm_even
     static int last_pulse_count = 0;
     BaseType_t high_task_awoken = pdFALSE;
     motor_control_timer_context_t *user_ctx = (motor_control_timer_context_t *)arg;
-    rotary_encoder_t *encoder = user_ctx->encoder;
+    pcnt_unit_handle_t pcnt_unit = user_ctx->hall_pcnt_encoder;
 
-    int cur_pulse_count = encoder->get_counter_value(encoder);
+    int cur_pulse_count = 0;
+    pcnt_unit_get_count(pcnt_unit, &cur_pulse_count);
+    cur_pulse_count += user_ctx->accumu_count;
+
     int delta = cur_pulse_count - last_pulse_count;
     last_pulse_count = cur_pulse_count;
     xQueueSendFromISR(user_ctx->pid_feedback_queue, &delta, &high_task_awoken);
@@ -143,6 +156,8 @@ static void register_pid_console_command(void)
 
 void app_main(void)
 {
+    static motor_control_timer_context_t my_timer_ctx = {};
+
     QueueHandle_t pid_fb_queue = xQueueCreate(BDC_PID_FEEDBACK_QUEUE_LEN, sizeof(int));
     assert(pid_fb_queue);
 
@@ -160,15 +175,40 @@ void app_main(void)
     ESP_ERROR_CHECK(mcpwm_init(BDC_MCPWM_UNIT, BDC_MCPWM_TIMER, &pwm_config));
 
     printf("init and start rotary encoder\r\n");
-    rotary_encoder_config_t config = {
-        .dev = (rotary_encoder_dev_t)BDC_ENCODER_PCNT_UNIT,
-        .phase_a_gpio_num = BDC_ENCODER_PHASEA_GPIO_NUM,
-        .phase_b_gpio_num = BDC_ENCODER_PHASEB_GPIO_NUM,
+    pcnt_unit_config_t unit_config = {
+        .high_limit = BDC_ENCODER_PCNT_HIGH_LIMIT,
+        .low_limit = BDC_ENCODER_PCNT_LOW_LIMIT,
     };
-    rotary_encoder_t *speed_encoder = NULL;
-    ESP_ERROR_CHECK(rotary_encoder_new_ec11(&config, &speed_encoder));
-    ESP_ERROR_CHECK(speed_encoder->set_glitch_filter(speed_encoder, 1));
-    ESP_ERROR_CHECK(speed_encoder->start(speed_encoder));
+    pcnt_unit_handle_t pcnt_unit = NULL;
+    ESP_ERROR_CHECK(pcnt_new_unit(&unit_config, &pcnt_unit));
+    pcnt_glitch_filter_config_t filter_config = {
+        .max_glitch_ns = 1000,
+    };
+    ESP_ERROR_CHECK(pcnt_unit_set_glitch_filter(pcnt_unit, &filter_config));
+    pcnt_chan_config_t chan_a_config = {
+        .edge_gpio_num = BDC_ENCODER_PHASEA_GPIO_NUM,
+        .level_gpio_num = BDC_ENCODER_PHASEB_GPIO_NUM,
+    };
+    pcnt_channel_handle_t pcnt_chan_a = NULL;
+    ESP_ERROR_CHECK(pcnt_new_channel(pcnt_unit, &chan_a_config, &pcnt_chan_a));
+    pcnt_chan_config_t chan_b_config = {
+        .edge_gpio_num = BDC_ENCODER_PHASEB_GPIO_NUM,
+        .level_gpio_num = BDC_ENCODER_PHASEA_GPIO_NUM,
+    };
+    pcnt_channel_handle_t pcnt_chan_b = NULL;
+    ESP_ERROR_CHECK(pcnt_new_channel(pcnt_unit, &chan_b_config, &pcnt_chan_b));
+    ESP_ERROR_CHECK(pcnt_channel_set_edge_action(pcnt_chan_a, PCNT_CHANNEL_EDGE_ACTION_DECREASE, PCNT_CHANNEL_EDGE_ACTION_INCREASE));
+    ESP_ERROR_CHECK(pcnt_channel_set_level_action(pcnt_chan_a, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_INVERSE));
+    ESP_ERROR_CHECK(pcnt_channel_set_edge_action(pcnt_chan_b, PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_EDGE_ACTION_DECREASE));
+    ESP_ERROR_CHECK(pcnt_channel_set_level_action(pcnt_chan_b, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_INVERSE));
+    ESP_ERROR_CHECK(pcnt_unit_add_watch_point(pcnt_unit, BDC_ENCODER_PCNT_HIGH_LIMIT));
+    ESP_ERROR_CHECK(pcnt_unit_add_watch_point(pcnt_unit, BDC_ENCODER_PCNT_LOW_LIMIT));
+    pcnt_event_callbacks_t pcnt_cbs = {
+        .on_reach = example_pcnt_on_reach,
+    };
+    ESP_ERROR_CHECK(pcnt_unit_register_event_callbacks(pcnt_unit, &pcnt_cbs, &my_timer_ctx));
+    ESP_ERROR_CHECK(pcnt_unit_clear_count(pcnt_unit));
+    ESP_ERROR_CHECK(pcnt_unit_start(pcnt_unit));
 
     printf("init PID control block\r\n");
     pid_ctrl_block_handle_t pid_ctrl;
@@ -193,13 +233,12 @@ void app_main(void)
     xTaskCreate(bdc_ctrl_task, "bdc_ctrl_task", 4096, &my_ctrl_task_ctx, 5, NULL);
 
     printf("start motor control timer\r\n");
-    static motor_control_timer_context_t my_timer_ctx = {};
     my_timer_ctx.pid_feedback_queue = pid_fb_queue;
-    my_timer_ctx.encoder = speed_encoder;
-    gptimer_event_callbacks_t cbs = {
+    my_timer_ctx.hall_pcnt_encoder = pcnt_unit;
+    gptimer_event_callbacks_t gptimer_cbs = {
         .on_alarm = motor_ctrl_timer_cb,
     };
-    ESP_ERROR_CHECK(gptimer_register_event_callbacks(gptimer, &cbs, &my_timer_ctx));
+    ESP_ERROR_CHECK(gptimer_register_event_callbacks(gptimer, &gptimer_cbs, &my_timer_ctx));
     gptimer_alarm_config_t alarm_config = {
         .reload_count = 0,
         .alarm_count = BDC_PID_CALCULATION_PERIOD_US,

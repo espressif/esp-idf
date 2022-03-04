@@ -22,7 +22,7 @@ menu "Driver configurations"
     endmenu  # ADC Configuration
 
     menu "MCPWM configuration"
-
+        depends on SOC_MCPWM_SUPPORTED
         config MCPWM_ISR_IN_IRAM
             bool "Place MCPWM ISR function into IRAM"
             default n
@@ -32,7 +32,6 @@ menu "Driver configurations"
 
                 Note that if this option is selected, all user registered ISR callbacks should never
                 try to use cache as well. (with IRAM_ATTR)
-
     endmenu # MCPWM Configuration
 
     menu "SPI configuration"
@@ -158,8 +157,6 @@ menu "Driver configurations"
     endmenu # UART Configuration
 
     menu "GPIO Configuration"
-        visible if IDF_TARGET_ESP32
-
         config GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
             bool "Support light sleep GPIO pullup/pulldown configuration for ESP32"
             depends on IDF_TARGET_ESP32
@@ -168,10 +165,10 @@ menu "Driver configurations"
                 pullup/pulldown mode in sleep.
                 If this option is selected, chip will automatically emulate the behaviour of switching,
                 and about 450B of source codes would be placed into IRAM.
-
     endmenu # GPIO Configuration
 
     menu "GDMA Configuration"
+        depends on SOC_GDMA_SUPPORTED
         config GDMA_CTRL_FUNC_IN_IRAM
             bool "Place GDMA control functions into IRAM"
             default n
@@ -202,17 +199,56 @@ menu "Driver configurations"
             bool "GPTimer ISR IRAM-Safe"
             default n
             help
-                This will ensure the GPTimer interrupt handle is IRAM-Safe, allow to avoid flash
-                cache misses, and also be able to run whilst the cache is disabled.
-                (e.g. SPI Flash write)
+                Ensure the GPTimer interrupt is IRAM-Safe by allowing the interrupt handler to be
+                executable when the cache is disabled (e.g. SPI Flash write).
 
         config GPTIMER_SUPPRESS_DEPRECATE_WARN
-            bool "Suppress leagcy driver deprecated warning"
+            bool "Suppress legacy driver deprecated warning"
             default n
             help
                 Wether to suppress the deprecation warnings when using legacy timer group driver (driver/timer.h).
                 If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
                 you can enable this option.
+
+        config GPTIMER_ENABLE_DEBUG_LOG
+            bool "Enable debug log"
+            default n
+            help
+                Wether to enable the debug log message for GPTimer driver.
+                Note that, this option only controls the GPTimer driver log, won't affect other drivers.
     endmenu # GPTimer Configuration
+
+    menu "PCNT Configuration"
+        depends on SOC_PCNT_SUPPORTED
+        config PCNT_CTRL_FUNC_IN_IRAM
+            bool "Place PCNT control functions into IRAM"
+            default n
+            help
+                Place PCNT control functions (like start/stop) into IRAM,
+                so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
+                Enabling this option can improve driver performance as well.
+
+        config PCNT_ISR_IRAM_SAFE
+            bool "PCNT ISR IRAM-Safe"
+            default n
+            help
+                Ensure the PCNT interrupt is IRAM-Safe by allowing the interrupt handler to be
+                executable when the cache is disabled (e.g. SPI Flash write).
+
+        config PCNT_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
+            default n
+            help
+                Wether to suppress the deprecation warnings when using legacy PCNT driver (driver/pcnt.h).
+                If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
+                you can enable this option.
+
+        config PCNT_ENABLE_DEBUG_LOG
+            bool "Enable debug log"
+            default n
+            help
+                Wether to enable the debug log message for PCNT driver.
+                Note that, this option only controls the PCNT driver log, won't affect other drivers.
+    endmenu # PCNT Configuration
 
 endmenu  # Driver configurations

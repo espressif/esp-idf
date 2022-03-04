@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,12 +15,10 @@
 #include "soc/rtc.h"
 #if SOC_MCPWM_SUPPORTED
 #include "soc/mcpwm_periph.h"
-#include "driver/pcnt.h"
+#include "driver/pulse_cnt.h"
 #include "driver/mcpwm.h"
 #include "driver/gpio.h"
 
-#define TEST_PWMA_PCNT_UNIT (0)
-#define TEST_PWMB_PCNT_UNIT (1)
 #define TEST_PWMA_GPIO (2)
 #define TEST_PWMB_GPIO (4)
 #define TEST_FAULT_GPIO (21)
@@ -40,6 +38,11 @@ const static mcpwm_sync_signal_t sync_sig_array[] = {MCPWM_SELECT_GPIO_SYNC0, MC
 const static mcpwm_io_signals_t sync_io_sig_array[] = {MCPWM_SYNC_0, MCPWM_SYNC_1, MCPWM_SYNC_2};
 const static mcpwm_capture_signal_t cap_sig_array[] = {MCPWM_SELECT_CAP0, MCPWM_SELECT_CAP1, MCPWM_SELECT_CAP2};
 const static mcpwm_io_signals_t cap_io_sig_array[] = {MCPWM_CAP_0, MCPWM_CAP_1, MCPWM_CAP_2};
+
+static pcnt_unit_handle_t pcnt_unit_a;
+static pcnt_channel_handle_t pcnt_chan_a;
+static pcnt_unit_handle_t pcnt_unit_b;
+static pcnt_channel_handle_t pcnt_chan_b;
 
 // This GPIO init function is almost the same to public API `mcpwm_gpio_init()`, except that
 // this function will configure all MCPWM GPIOs into output and input capable
@@ -75,26 +78,9 @@ static esp_err_t test_mcpwm_gpio_init(mcpwm_unit_t mcpwm_num, mcpwm_io_signals_t
 static void mcpwm_setup_testbench(mcpwm_unit_t group, mcpwm_timer_t timer, uint32_t pwm_freq, float pwm_duty,
                                   unsigned long int group_resolution, unsigned long int timer_resolution)
 {
-    // PWMA <--> PCNT UNIT0
-    pcnt_config_t pcnt_config = {
-        .pulse_gpio_num = TEST_PWMA_GPIO,
-        .ctrl_gpio_num = -1,       // don't care level signal
-        .channel = PCNT_CHANNEL_0,
-        .unit = TEST_PWMA_PCNT_UNIT,
-        .pos_mode = PCNT_COUNT_INC,
-        .neg_mode = PCNT_COUNT_DIS,
-        .lctrl_mode = PCNT_MODE_KEEP,
-        .hctrl_mode = PCNT_MODE_KEEP,
-        .counter_h_lim = 10000,
-        .counter_l_lim = -10000,
-    };
-    TEST_ESP_OK(pcnt_unit_config(&pcnt_config));
     mcpwm_io_signals_t mcpwm_a = pwma[timer];
     TEST_ESP_OK(test_mcpwm_gpio_init(group, mcpwm_a, TEST_PWMA_GPIO));
-    // PWMB <--> PCNT UNIT1
-    pcnt_config.pulse_gpio_num = TEST_PWMB_GPIO;
-    pcnt_config.unit = TEST_PWMB_PCNT_UNIT;
-    TEST_ESP_OK(pcnt_unit_config(&pcnt_config));
+
     mcpwm_io_signals_t mcpwm_b = pwmb[timer];
     TEST_ESP_OK(test_mcpwm_gpio_init(group, mcpwm_b, TEST_PWMB_GPIO));
 
@@ -111,14 +97,53 @@ static void mcpwm_setup_testbench(mcpwm_unit_t group, mcpwm_timer_t timer, uint3
     TEST_ESP_OK(mcpwm_init(group, timer, &pwm_config));
 }
 
-static uint32_t mcpwm_pcnt_get_pulse_number(pcnt_unit_t pwm_pcnt_unit, int capture_window_ms)
+static void pcnt_setup_testbench(void)
 {
-    int16_t count_value = 0;
-    TEST_ESP_OK(pcnt_counter_pause(pwm_pcnt_unit));
-    TEST_ESP_OK(pcnt_counter_clear(pwm_pcnt_unit));
-    TEST_ESP_OK(pcnt_counter_resume(pwm_pcnt_unit));
+    // PWMA <--> PCNT UNIT0
+    pcnt_unit_config_t unit_a_config = {
+        .high_limit = 10000,
+        .low_limit = -10000,
+    };
+    TEST_ESP_OK(pcnt_new_unit(&unit_a_config, &pcnt_unit_a));
+    pcnt_chan_config_t chan_a_config = {
+        .edge_gpio_num = TEST_PWMA_GPIO,
+        .level_gpio_num = -1, // don't care level signal
+    };
+    TEST_ESP_OK(pcnt_new_channel(pcnt_unit_a, &chan_a_config, &pcnt_chan_a));
+    TEST_ESP_OK(pcnt_channel_set_edge_action(pcnt_chan_a, PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_EDGE_ACTION_HOLD));
+    TEST_ESP_OK(pcnt_channel_set_level_action(pcnt_chan_a, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_KEEP));
+
+    // PWMB <--> PCNT UNIT1
+    pcnt_unit_config_t unit_b_config = {
+        .high_limit = 10000,
+        .low_limit = -10000,
+    };
+    TEST_ESP_OK(pcnt_new_unit(&unit_b_config, &pcnt_unit_b));
+    pcnt_chan_config_t chan_b_config = {
+        .edge_gpio_num = TEST_PWMB_GPIO,
+        .level_gpio_num = -1, // don't care level signal
+    };
+    TEST_ESP_OK(pcnt_new_channel(pcnt_unit_b, &chan_b_config, &pcnt_chan_b));
+    TEST_ESP_OK(pcnt_channel_set_edge_action(pcnt_chan_b, PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_EDGE_ACTION_HOLD));
+    TEST_ESP_OK(pcnt_channel_set_level_action(pcnt_chan_b, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_KEEP));
+}
+
+static void pcnt_tear_testbench(void)
+{
+    TEST_ESP_OK(pcnt_del_channel(pcnt_chan_a));
+    TEST_ESP_OK(pcnt_del_channel(pcnt_chan_b));
+    TEST_ESP_OK(pcnt_del_unit(pcnt_unit_a));
+    TEST_ESP_OK(pcnt_del_unit(pcnt_unit_b));
+}
+
+static uint32_t pcnt_get_pulse_number(pcnt_unit_handle_t pwm_pcnt_unit, int capture_window_ms)
+{
+    int count_value = 0;
+    TEST_ESP_OK(pcnt_unit_clear_count(pwm_pcnt_unit));
+    TEST_ESP_OK(pcnt_unit_start(pwm_pcnt_unit));
     usleep(capture_window_ms * 1000);
-    TEST_ESP_OK(pcnt_get_counter_value(pwm_pcnt_unit, &count_value));
+    TEST_ESP_OK(pcnt_unit_stop(pwm_pcnt_unit));
+    TEST_ESP_OK(pcnt_unit_get_count(pwm_pcnt_unit, &count_value));
     printf("count value: %d\r\n", count_value);
     return (uint32_t)count_value;
 }
@@ -163,24 +188,26 @@ static void mcpwm_start_stop_test(mcpwm_unit_t unit, mcpwm_timer_t timer)
 {
     uint32_t pulse_number = 0;
 
+    pcnt_setup_testbench();
     mcpwm_setup_testbench(unit, timer, 1000, 50.0, MCPWM_TEST_GROUP_CLK_HZ, MCPWM_TEST_TIMER_CLK_HZ); // Period: 1000us, 1ms
     // count the pulse number within 100ms
-    pulse_number = mcpwm_pcnt_get_pulse_number(TEST_PWMA_PCNT_UNIT, 100);
+    pulse_number = pcnt_get_pulse_number(pcnt_unit_a, 100);
     TEST_ASSERT_INT_WITHIN(2, 100, pulse_number);
-    pulse_number = mcpwm_pcnt_get_pulse_number(TEST_PWMB_PCNT_UNIT, 100);
+    pulse_number = pcnt_get_pulse_number(pcnt_unit_b, 100);
     TEST_ASSERT_INT_WITHIN(2, 100, pulse_number);
 
     TEST_ESP_OK(mcpwm_set_frequency(unit, timer, 100));
-    pulse_number = mcpwm_pcnt_get_pulse_number(TEST_PWMB_PCNT_UNIT, 100);
+    pulse_number = pcnt_get_pulse_number(pcnt_unit_b, 100);
     TEST_ASSERT_INT_WITHIN(2, 10, pulse_number);
 
     // stop timer, then no pwm pulse should be generating
     TEST_ESP_OK(mcpwm_stop(unit, timer));
     usleep(10000); // wait until timer stopped
-    pulse_number = mcpwm_pcnt_get_pulse_number(TEST_PWMA_PCNT_UNIT, 100);
+    pulse_number = pcnt_get_pulse_number(pcnt_unit_a, 100);
     TEST_ASSERT_INT_WITHIN(2, 0, pulse_number);
-    pulse_number = mcpwm_pcnt_get_pulse_number(TEST_PWMB_PCNT_UNIT, 100);
+    pulse_number = pcnt_get_pulse_number(pcnt_unit_b, 100);
     TEST_ASSERT_INT_WITHIN(2, 0, pulse_number);
+    pcnt_tear_testbench();
 }
 
 TEST_CASE("MCPWM start and stop test", "[mcpwm]")
@@ -229,6 +256,7 @@ static void mcpwm_carrier_test(mcpwm_unit_t unit, mcpwm_timer_t timer, mcpwm_car
 {
     uint32_t pulse_number = 0;
 
+    pcnt_setup_testbench();
     mcpwm_setup_testbench(unit, timer, 1000, 50.0, MCPWM_TEST_GROUP_CLK_HZ, MCPWM_TEST_TIMER_CLK_HZ);
     mcpwm_set_signal_high(unit, timer, MCPWM_GEN_A);
     mcpwm_set_signal_high(unit, timer, MCPWM_GEN_B);
@@ -239,14 +267,15 @@ static void mcpwm_carrier_test(mcpwm_unit_t unit, mcpwm_timer_t timer, mcpwm_car
     TEST_ESP_OK(mcpwm_carrier_oneshot_mode_enable(unit, timer, os_width));
     vTaskDelay(pdMS_TO_TICKS(100));
 
-    pulse_number = mcpwm_pcnt_get_pulse_number(TEST_PWMA_PCNT_UNIT, 10);
+    pulse_number = pcnt_get_pulse_number(pcnt_unit_a, 10);
     TEST_ASSERT_INT_WITHIN(50, 2500, pulse_number);
     usleep(10000);
-    pulse_number = mcpwm_pcnt_get_pulse_number(TEST_PWMB_PCNT_UNIT, 10);
+    pulse_number = pcnt_get_pulse_number(pcnt_unit_b, 10);
     TEST_ASSERT_INT_WITHIN(50, 2500, pulse_number);
 
     TEST_ESP_OK(mcpwm_carrier_disable(unit, timer));
     TEST_ESP_OK(mcpwm_stop(unit, timer));
+    pcnt_tear_testbench();
 }
 
 TEST_CASE("MCPWM carrier test", "[mcpwm]")
@@ -382,32 +411,36 @@ TEST_CASE("MCPWM timer GPIO sync test", "[mcpwm]")
     }
 }
 
-static void mcpwm_swsync_test(mcpwm_unit_t unit) {
+// used only in this area but need to be reset every time. mutex is not needed
+// store timestamps captured from ISR callback
+static uint64_t cap_timestamp[3];
+// control the start of capture to avoid unstable data
+static volatile bool log_cap;
+
+// cb function, to update capture value
+// only log when channel1 comes at first, then channel2, and do not log further more.
+static bool test_mcpwm_capture_callback(mcpwm_unit_t mcpwm, mcpwm_capture_channel_id_t cap_channel, const cap_event_data_t *edata,
+                                        void *user_data)
+{
+    if (log_cap && (cap_timestamp[1] == 0 || cap_timestamp[2] == 0)) {
+        if (cap_channel == MCPWM_SELECT_CAP1 && cap_timestamp[1] == 0) {
+            cap_timestamp[1] = edata->cap_value;
+        }
+        if (cap_channel == MCPWM_SELECT_CAP2 && cap_timestamp[1] != 0) {
+            cap_timestamp[2] = edata->cap_value;
+        }
+    }
+    return false;
+}
+
+static void mcpwm_swsync_test(mcpwm_unit_t unit)
+{
     const uint32_t test_sync_phase = 20;
-    // used only in this area but need to be reset every time. mutex is not needed
-    // store timestamps captured from ISR callback
-    static uint64_t cap_timestamp[3];
+
     cap_timestamp[0] = 0;
     cap_timestamp[1] = 0;
     cap_timestamp[2] = 0;
-    // control the start of capture to avoid unstable data
-    static volatile bool log_cap;
     log_cap = false;
-
-    // cb function, to update capture value
-    // only log when channel1 comes at first, then channel2, and do not log further more.
-    bool capture_callback(mcpwm_unit_t mcpwm, mcpwm_capture_channel_id_t cap_channel, const cap_event_data_t *edata,
-                          void *user_data) {
-        if (log_cap && (cap_timestamp[1] == 0 || cap_timestamp[2] == 0)) {
-            if (cap_channel == MCPWM_SELECT_CAP1 && cap_timestamp[1] == 0) {
-                cap_timestamp[1] = edata->cap_value;
-            }
-            if (cap_channel == MCPWM_SELECT_CAP2 && cap_timestamp[1] != 0) {
-                cap_timestamp[2] = edata->cap_value;
-            }
-        }
-        return false;
-    }
 
     // configure all timer output 10% PWM
     for (int i = 0; i < 3; ++i) {
@@ -420,7 +453,7 @@ static void mcpwm_swsync_test(mcpwm_unit_t unit) {
     mcpwm_capture_config_t conf = {
         .cap_edge = MCPWM_POS_EDGE,
         .cap_prescale = 1,
-        .capture_cb = capture_callback,
+        .capture_cb = test_mcpwm_capture_callback,
         .user_data = NULL,
     };
     TEST_ESP_OK(test_mcpwm_gpio_init(unit, MCPWM_CAP_0, TEST_SYNC_GPIO_0));
@@ -477,7 +510,8 @@ typedef struct {
     TaskHandle_t task_hdl;
 } test_capture_callback_data_t;
 
-static bool test_mcpwm_intr_handler(mcpwm_unit_t mcpwm, mcpwm_capture_channel_id_t cap_sig, const cap_event_data_t *edata, void *arg) {
+static bool test_mcpwm_intr_handler(mcpwm_unit_t mcpwm, mcpwm_capture_channel_id_t cap_sig, const cap_event_data_t *edata, void *arg)
+{
     BaseType_t high_task_wakeup = pdFALSE;
     test_capture_callback_data_t *cb_data = (test_capture_callback_data_t *)arg;
     vTaskNotifyGiveFromISR(cb_data->task_hdl, &high_task_wakeup);
@@ -497,10 +531,10 @@ static void mcpwm_capture_test(mcpwm_unit_t unit, mcpwm_capture_signal_t cap_cha
 
     TEST_ESP_OK(test_mcpwm_gpio_init(unit, cap_io, TEST_CAP_GPIO));
     mcpwm_capture_config_t conf = {
-            .cap_edge = MCPWM_POS_EDGE,
-            .cap_prescale = 1,
-            .capture_cb = test_mcpwm_intr_handler,
-            .user_data = &callback_data
+        .cap_edge = MCPWM_POS_EDGE,
+        .cap_prescale = 1,
+        .capture_cb = test_mcpwm_intr_handler,
+        .user_data = &callback_data
     };
     TEST_ESP_OK(mcpwm_capture_enable_channel(unit, cap_channel, &conf));
     // generate an posage

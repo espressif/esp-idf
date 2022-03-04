@@ -3,24 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-/**
- * this case is used for test PCNT
- * prepare job for test environment UT_T1_PCNT:
- * We use internal signals instead of external wiring, but please keep the following IO connections, or connect nothing to prevent the signal from being disturbed.
- *  1. prepare one ESP-WROOM-32 board and connect it to PC.
- *  2. connect GPIO21 with GPIO4
- *  3. GPIO5 connect to 3.3v
- *  4. GPIO19 connect to GND
- *  5. logic analyzer will help too if possible
- *
- * the GPIO18 is the pulse producer, the GPIO4 is the input GPIO
- */
+
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "soc/soc_caps.h"
-#if SOC_PCNT_SUPPORTED
 #include "driver/gpio.h"
 #include "driver/pcnt.h"
 #include "driver/ledc.h"
@@ -317,7 +305,7 @@ static void count_mode_test(gpio_num_t ctl_io)
 }
 
 // test PCNT basic configuration
-TEST_CASE("PCNT test config", "[pcnt]")
+TEST_CASE("PCNT_test_config", "[pcnt]")
 {
     pcnt_config_t pcnt_config = {
         .pulse_gpio_num = PCNT_INPUT_IO,
@@ -380,7 +368,7 @@ TEST_CASE("PCNT test config", "[pcnt]")
  * 2. resume counter
  * 3. clear counter
  * 4. check the counter value*/
-TEST_CASE("PCNT basic function test", "[pcnt]")
+TEST_CASE("PCNT_basic_function_test", "[pcnt]")
 {
     int16_t test_counter;
     int16_t time = 0;
@@ -469,7 +457,7 @@ TEST_CASE("PCNT basic function test", "[pcnt]")
  *   4. PCNT_EVT_H_LIM
  *   5. PCNT_EVT_L_LIM
  * */
-TEST_CASE("PCNT interrupt method test(control IO is high)", "[pcnt][timeout=120]")
+TEST_CASE("PCNT_interrupt_method_test_control_IO_high", "[pcnt][timeout=120]")
 {
     pcnt_config_t config = {
         .pulse_gpio_num = PCNT_INPUT_IO,
@@ -569,7 +557,7 @@ TEST_CASE("PCNT interrupt method test(control IO is high)", "[pcnt][timeout=120]
     vQueueDelete(pcnt_evt_queue);
 }
 
-TEST_CASE("PCNT interrupt method test(control IO is low)", "[pcnt][timeout=120]")
+TEST_CASE("PCNT_interrupt_method_test_control_IO_low", "[pcnt][timeout=120]")
 {
     pcnt_config_t config = {
         .pulse_gpio_num = PCNT_INPUT_IO,
@@ -671,7 +659,7 @@ TEST_CASE("PCNT interrupt method test(control IO is low)", "[pcnt][timeout=120]"
     vQueueDelete(pcnt_evt_queue);
 }
 
-TEST_CASE("PCNT counting mode test", "[pcnt]")
+TEST_CASE("PCNT_counting_mode_test", "[pcnt]")
 {
     printf("PCNT mode test for positive count\n");
     count_mode_test(PCNT_CTRL_VCC_IO);
@@ -679,4 +667,6 @@ TEST_CASE("PCNT counting mode test", "[pcnt]")
     count_mode_test(PCNT_CTRL_GND_IO);
 }
 
-#endif // #if SOC_PCNT_SUPPORTED
+void test_app_include_legacy_pcnt(void)
+{
+}
