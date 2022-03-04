@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "regi2c_ctrl.h"
+#include "esp_attr.h"
 #include <stdint.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
@@ -40,3 +41,27 @@ void IRAM_ATTR regi2c_ctrl_write_reg_mask(uint8_t block, uint8_t host_id, uint8_
     i2c_write_reg_mask_raw(block, host_id, reg_add, msb, lsb, data);
     portEXIT_CRITICAL_ISR(&mux);
 }
+
+/**
+ * Restore regi2c analog calibration related configuration registers.
+ * This is a workaround, and is fixed on later chips
+ */
+#if REGI2C_ANA_CALI_PD_WORKAROUND
+
+static DRAM_ATTR uint8_t reg_val[REGI2C_ANA_CALI_BYTE_NUM];
+
+void IRAM_ATTR regi2c_analog_cali_reg_read(void)
+{
+    for (int i = 0; i < REGI2C_ANA_CALI_PD_WORKAROUND; i++) {
+        reg_val[i] = regi2c_ctrl_read_reg(I2C_SAR_ADC, I2C_SAR_ADC_HOSTID, i);
+    }
+}
+
+void IRAM_ATTR regi2c_analog_cali_reg_write(void)
+{
+    for (int i = 0; i < REGI2C_ANA_CALI_PD_WORKAROUND; i++) {
+        regi2c_ctrl_write_reg(I2C_SAR_ADC, I2C_SAR_ADC_HOSTID, i, reg_val[i]);
+    }
+}
+
+#endif   //#if ADC_CALI_PD_WORKAROUND
