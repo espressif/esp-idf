@@ -615,29 +615,35 @@ esp_err_t uart_disable_tx_intr(uart_port_t uart_num)
 
 esp_err_t uart_enable_tx_intr(uart_port_t uart_num, int enable, int thresh)
 {
-    if (enable == 0) {
-        return uart_disable_tx_intr(uart_num);
-    }
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
     UART_CHECK((thresh < SOC_UART_FIFO_LEN), "empty intr threshold error", ESP_FAIL);
-    uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_TXFIFO_EMPTY);
-    UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
-    uart_hal_set_txfifo_empty_thr(&(uart_context[uart_num].hal), thresh);
-    uart_hal_ena_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TXFIFO_EMPTY);
-    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
+    if (enable == 0) {
+        UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
+        uart_hal_disable_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TXFIFO_EMPTY);
+        UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
+    } else {
+        uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_TXFIFO_EMPTY);
+        UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
+        uart_hal_set_txfifo_empty_thr(&(uart_context[uart_num].hal), thresh);
+        uart_hal_ena_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TXFIFO_EMPTY);
+        UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
+    }
     return ESP_OK;
 }
 
 esp_err_t uart_isr_register(uart_port_t uart_num, void (*fn)(void *), void *arg, int intr_alloc_flags,  uart_isr_handle_t *handle)
 {
     int ret;
+    uart_isr_handle_t rethandle;
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_FAIL);
-    UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
-    ret = esp_intr_alloc(uart_periph_signal[uart_num].irq, intr_alloc_flags, fn, arg, handle);
+    ret = esp_intr_alloc(uart_periph_signal[uart_num].irq, intr_alloc_flags, fn, arg, &rethandle);
     if (ret == ESP_OK) {
-        p_uart_obj[uart_num]->intr_handle = *handle;
+        p_uart_obj[uart_num]->intr_handle = rethandle;
+
+        if (handle != NULL) {
+            *handle = rethandle;
+        }
     }
-    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     return ret;
 }
 
