@@ -21,7 +21,6 @@
 #include "hal/cpu_hal.h"
 #include "regi2c_ctrl.h"
 #include "soc_log.h"
-#include "sdkconfig.h"
 #include "rtc_clk_common.h"
 #include "esp_rom_uart.h"
 #include "soc/efuse_reg.h"

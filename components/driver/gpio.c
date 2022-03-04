@@ -561,7 +561,8 @@ esp_err_t gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
         }
 #endif
         portENTER_CRITICAL(&gpio_context.gpio_spinlock);
-        gpio_hal_wakeup_enable(gpio_context.gpio_hal, gpio_num, intr_type);
+        gpio_hal_set_intr_type(gpio_context.gpio_hal, gpio_num, intr_type);
+        gpio_hal_wakeup_enable(gpio_context.gpio_hal, gpio_num);
 #if SOC_GPIO_SUPPORT_SLP_SWITCH && CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND
         gpio_hal_sleep_sel_dis(gpio_context.gpio_hal, gpio_num);
 #endif
@@ -696,7 +697,7 @@ esp_err_t gpio_force_hold_all()
     rtc_gpio_force_hold_all();
 #endif
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
-    gpio_hal_force_hold_all(gpio_context.gpio_hal);
+    gpio_hal_force_hold_all();
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
     return ESP_OK;
 }

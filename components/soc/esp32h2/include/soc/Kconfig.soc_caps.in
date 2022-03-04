@@ -213,7 +213,7 @@ config SOC_GPIO_PORT
 
 config SOC_GPIO_PIN_COUNT
     int
-    default 22
+    default 41
 
 config SOC_GPIO_SUPPORTS_RTC_INDEPENDENT
     bool
