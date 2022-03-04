@@ -1,16 +1,8 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -58,12 +50,12 @@ static void test_setup(size_t max_files)
         }
     }
 
-    TEST_ESP_OK(esp_vfs_fat_rawflash_mount("/spiflash", "flash_test", &mount_config));
+    TEST_ESP_OK(esp_vfs_fat_spiflash_mount_ro("/spiflash", "flash_test", &mount_config));
 }
 
 static void test_teardown(void)
 {
-    TEST_ESP_OK(esp_vfs_fat_rawflash_unmount("/spiflash","flash_test"));
+    TEST_ESP_OK(esp_vfs_fat_spiflash_unmount_ro("/spiflash","flash_test"));
 }
 
 TEST_CASE("(raw) can read file", "[fatfs]")

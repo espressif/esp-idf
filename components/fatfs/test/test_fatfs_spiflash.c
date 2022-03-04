@@ -31,12 +31,12 @@ static void test_setup(void)
         .max_files = 5
     };
 
-    TEST_ESP_OK(esp_vfs_fat_spiflash_mount("/spiflash", NULL, &mount_config, &s_test_wl_handle));
+    TEST_ESP_OK(esp_vfs_fat_spiflash_mount_rw_wl("/spiflash", NULL, &mount_config, &s_test_wl_handle));
 }
 
 static void test_teardown(void)
 {
-    TEST_ESP_OK(esp_vfs_fat_spiflash_unmount("/spiflash", s_test_wl_handle));
+    TEST_ESP_OK(esp_vfs_fat_spiflash_unmount_rw_wl("/spiflash", s_test_wl_handle));
 }
 
 TEST_CASE("(WL) can format partition", "[fatfs][wear_levelling]")
@@ -84,9 +84,9 @@ TEST_CASE("(WL) can open maximum number of files", "[fatfs][wear_levelling]")
         .format_if_mount_failed = true,
         .max_files = max_files
     };
-    TEST_ESP_OK(esp_vfs_fat_spiflash_mount("/spiflash", NULL, &mount_config, &s_test_wl_handle));
+    TEST_ESP_OK(esp_vfs_fat_spiflash_mount_rw_wl("/spiflash", NULL, &mount_config, &s_test_wl_handle));
     test_fatfs_open_max_files("/spiflash/f", max_files);
-    TEST_ESP_OK(esp_vfs_fat_spiflash_unmount("/spiflash", s_test_wl_handle));
+    TEST_ESP_OK(esp_vfs_fat_spiflash_unmount_rw_wl("/spiflash", s_test_wl_handle));
 }
 
 TEST_CASE("(WL) overwrite and append file", "[fatfs][wear_levelling]")

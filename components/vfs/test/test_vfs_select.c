@@ -583,7 +583,7 @@ TEST_CASE("select() works with concurrent mount", "[vfs][fatfs]")
     start_select_task(&param);
     vTaskDelay(10 / portTICK_PERIOD_MS); //make sure the task has started and waits in select()
 
-    TEST_ESP_OK(esp_vfs_fat_spiflash_mount("/spiflash", NULL, &mount_config, &test_wl_handle));
+    TEST_ESP_OK(esp_vfs_fat_spiflash_mount_rw_wl("/spiflash", NULL, &mount_config, &test_wl_handle));
 
     TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(param.sem, 1500 / portTICK_PERIOD_MS));
 
@@ -596,7 +596,7 @@ TEST_CASE("select() works with concurrent mount", "[vfs][fatfs]")
     start_select_task(&param);
     vTaskDelay(10 / portTICK_PERIOD_MS); //make sure the task has started and waits in select()
 
-    TEST_ESP_OK(esp_vfs_fat_spiflash_unmount("/spiflash", test_wl_handle));
+    TEST_ESP_OK(esp_vfs_fat_spiflash_unmount_rw_wl("/spiflash", test_wl_handle));
 
     TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(param.sem, 1500 / portTICK_PERIOD_MS));
 

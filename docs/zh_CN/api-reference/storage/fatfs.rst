@@ -66,10 +66,10 @@ FatFs 与 VFS 和 SD 卡配合使用
 FatFs 与 VFS 配合使用（只读模式下）
 --------------------------------------
 
-头文件 :component_file:`fatfs/vfs/esp_vfs_fat.h` 也定义了两个便捷函数 :cpp:func:`esp_vfs_fat_rawflash_mount` 和 :cpp:func:`esp_vfs_fat_rawflash_unmount`。上述两个函数分别对 FAT 只读分区执行步骤 1-3 和步骤 7-9。有些数据分区仅在工厂配置时写入一次，之后在整个硬件生命周期内都不会再有任何改动。利用上述两个函数处理这种数据分区非常方便。
+头文件 :component_file:`fatfs/vfs/esp_vfs_fat.h` 也定义了两个便捷函数 :cpp:func:`esp_vfs_fat_spiflash_mount_ro` 和 :cpp:func:`esp_vfs_fat_spiflash_unmount_ro`。上述两个函数分别对 FAT 只读分区执行步骤 1-3 和步骤 7-9。有些数据分区仅在工厂配置时写入一次，之后在整个硬件生命周期内都不会再有任何改动。利用上述两个函数处理这种数据分区非常方便。
 
-.. doxygenfunction:: esp_vfs_fat_rawflash_mount
-.. doxygenfunction:: esp_vfs_fat_rawflash_unmount
+.. doxygenfunction:: esp_vfs_fat_spiflash_mount_ro
+.. doxygenfunction:: esp_vfs_fat_spiflash_unmount_ro
 
 
 FatFs 磁盘 I/O 层

@@ -755,11 +755,9 @@ components/fatfs/src/ff.h
 components/fatfs/src/ffconf.h
 components/fatfs/src/ffsystem.c
 components/fatfs/src/ffunicode.c
-components/fatfs/test/test_fatfs_rawflash.c
 components/fatfs/test_fatfs_host/main.cpp
 components/fatfs/test_fatfs_host/sdkconfig/sdkconfig.h
 components/fatfs/test_fatfs_host/test_fatfs.cpp
-components/fatfs/vfs/esp_vfs_fat.h
 components/fatfs/vfs/vfs_fat_internal.h
 components/freertos/FreeRTOS-Kernel-SMP/croutine.c
 components/freertos/FreeRTOS-Kernel-SMP/event_groups.c
@@ -1680,8 +1678,6 @@ components/usb/test/hcd/test_hcd_ctrl.c
 components/vfs/include/esp_vfs_common.h
 components/vfs/include/esp_vfs_eventfd.h
 components/vfs/include/esp_vfs_semihost.h
-components/vfs/test/test_vfs_access.c
-components/vfs/test/test_vfs_append.c
 components/vfs/test/test_vfs_lwip.c
 components/vfs/test/test_vfs_paths.c
 components/vfs/test/test_vfs_uart.c
