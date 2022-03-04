@@ -2293,9 +2293,6 @@ examples/protocols/http_server/captive_portal/example_test.py
 examples/protocols/http_server/captive_portal/main/dns_server.c
 examples/protocols/http_server/captive_portal/main/include/dns_server.h
 examples/protocols/http_server/captive_portal/main/main.c
-examples/protocols/http_server/file_serving/http_server_file_serving_test.py
-examples/protocols/http_server/file_serving/main/file_server.c
-examples/protocols/http_server/file_serving/main/main.c
 examples/protocols/http_server/persistent_sockets/http_server_persistence_test.py
 examples/protocols/http_server/persistent_sockets/main/main.c
 examples/protocols/http_server/restful_server/main/esp_rest_main.c
