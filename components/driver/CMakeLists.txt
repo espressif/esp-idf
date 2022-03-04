@@ -19,7 +19,10 @@ set(srcs
     "spi_bus_lock.c"
     "uart.c")
 
-set(includes "include" "${target}/include" "deprecated")
+set(includes "include" "deprecated")
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${target}/include")
+    list(APPEND includes "${target}/include")
+endif()
 
 if(CONFIG_SOC_ADC_SUPPORTED)
     list(APPEND srcs
@@ -59,6 +62,11 @@ if(CONFIG_SOC_I2S_SUPPORTED)
     list(APPEND srcs "i2s.c")
 endif()
 
+if(CONFIG_SOC_TEMP_SENSOR_SUPPORTED)
+    list(APPEND srcs "temperature_sensor.c"
+                     "rtc_temperature_legacy.c")
+endif()
+
 if(CONFIG_SOC_TWAI_SUPPORTED)
     list(APPEND srcs "twai.c")
 endif()
@@ -77,7 +85,6 @@ if(IDF_TARGET STREQUAL "esp32s2")
     list(APPEND srcs "dac_common.c"
                      "spi_slave_hd.c"
                      "touch_sensor_common.c"
-                     "esp32s2/rtc_tempsensor.c"
                      "esp32s2/touch_sensor.c"
                      "esp32s2/adc.c"
                      "adc_deprecated.c"
@@ -95,13 +102,11 @@ endif()
 if(IDF_TARGET STREQUAL "esp32c3")
     list(APPEND srcs "spi_slave_hd.c"
                      "usb_serial_jtag.c"
-                     "esp32c3/adc2_init_cal.c"
-                     "esp32c3/rtc_tempsensor.c")
+                     "esp32c3/adc2_init_cal.c")
 endif()
 
 if(IDF_TARGET STREQUAL "esp32h2")
-    list(APPEND srcs "spi_slave_hd.c"
-                     "esp32h2/rtc_tempsensor.c")
+    list(APPEND srcs "spi_slave_hd.c")
 endif()
 
 if(IDF_TARGET STREQUAL "esp32c2")
