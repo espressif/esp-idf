@@ -104,6 +104,7 @@ The following peripherals work normally even when the APB frequency is changing:
 - **LEDC**: if REF_TICK is used as a clock source. See :cpp:func:`ledc_timer_config` function.
 - **RMT**: if REF_TICK or XTAL is used as a clock source. See `flags` member of :cpp:class:`rmt_config_t` and macro `RMT_CHANNEL_FLAGS_AWARE_DFS`.
 - **GPTimer**: if APB is used as the clock source. See :c:member:`clk_src` member of :c:type:`gptimer_config_t`.
+- **TSENS**: XTAL or RTC_8M is used as a clock source. So, APB frequency changing will not influence it.
 
 Currently, the following peripheral drivers are aware of DFS and will use the ``ESP_PM_APB_FREQ_MAX`` lock for the duration of the transaction:
 
