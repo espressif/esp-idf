@@ -34,6 +34,9 @@ def test_examples_protocol_esp_http_client(env, extra_data):
     # content-len for chunked encoding is typically -1, could be a positive length in some cases
     dut1.expect(re.compile(r'HTTP Stream reader Status = 200, content_length = (\d)'))
     dut1.expect(re.compile(r'Last esp error code: 0x8001'))
+    dut1.expect(re.compile(r'HTTP Status = 206, content_length = (\d)'))
+    dut1.expect(re.compile(r'HTTP Status = 206, content_length = 10'))
+    dut1.expect(re.compile(r'HTTP Status = 206, content_length = 10'))
     dut1.expect('Finish http example')
 
     # test mbedtls dynamic resource
@@ -60,6 +63,9 @@ def test_examples_protocol_esp_http_client(env, extra_data):
     # content-len for chunked encoding is typically -1, could be a positive length in some cases
     dut1.expect(re.compile(r'HTTP Stream reader Status = 200, content_length = (\d)'))
     dut1.expect(re.compile(r'Last esp error code: 0x8001'))
+    dut1.expect(re.compile(r'HTTP Status = 206, content_length = (\d)'))
+    dut1.expect(re.compile(r'HTTP Status = 206, content_length = 10'))
+    dut1.expect(re.compile(r'HTTP Status = 206, content_length = 10'))
     dut1.expect('Finish http example')
 
 
