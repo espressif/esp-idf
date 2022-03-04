@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2019-2022 Espressif Systems (Shanghai) CO LTD
  */
 #include "esp_err.h"
 #include "esp_log.h"
