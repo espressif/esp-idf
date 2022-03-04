@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -214,6 +214,7 @@ static esp_err_t panel_io_spi_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     spi_transaction_t *spi_trans = NULL;
     lcd_spi_trans_descriptor_t *lcd_trans = NULL;
     esp_lcd_panel_io_spi_t *spi_panel_io = __containerof(io, esp_lcd_panel_io_spi_t, base);
+    size_t next_trans = 0;
 
     // before issue a polling transaction, need to wait queued transactions finished
     for (size_t i = 0; i < spi_panel_io->num_trans_inflight; i++) {
@@ -239,18 +240,55 @@ static esp_err_t panel_io_spi_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     ret = spi_device_polling_transmit(spi_panel_io->spi_dev, &lcd_trans->base);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "spi transmit (polling) command failed");
 
-    // sending LCD color data
-    lcd_trans->flags.trans_is_color = 1;
-    lcd_trans->flags.dc_gpio_level = spi_panel_io->flags.dc_data_level; // set D/C line to data mode
-    lcd_trans->base.length = color_size * 8; // transaction length is in bits
-    lcd_trans->base.tx_buffer = color;
-    if (spi_panel_io->flags.dc_as_cmd_phase) { // encoding DC value to SPI command phase when necessary
-        lcd_trans->base.cmd = spi_panel_io->flags.dc_data_level;
+    // split to chunks if required:
+    // the SPI bus has a maximum transaction size determined by SPI_USR_MOSI_DBITLEN's bit width
+    do {
+        size_t chunk_size = color_size;
+
+        if (spi_panel_io->num_trans_inflight >= spi_panel_io->queue_size) {
+            // transaction pool has used up, recycle one transaction
+            ret = spi_device_get_trans_result(spi_panel_io->spi_dev, &spi_trans, portMAX_DELAY);
+            ESP_GOTO_ON_ERROR(ret, err, TAG, "recycle spi transactions failed");
+            spi_panel_io->num_trans_inflight--;
+        }
+
+        // get the next available transaction
+        lcd_trans = &spi_panel_io->trans_pool[next_trans];
+        next_trans = (next_trans + 1) % spi_panel_io->queue_size;
+        memset(lcd_trans, 0, sizeof(lcd_spi_trans_descriptor_t));
+
+        // MOSI_DBITLEN holds the size minus 1, so we can actually fit 1 additional byte,
+        // hence each chunk can have up to (SPI_MS_DATA_BITLEN_V + 1) bytes
+        if (chunk_size > (SPI_MS_DATA_BITLEN_V + 1) / 8) {
+            // cap the transfer size to the maximum supported by the bus
+            chunk_size = (SPI_MS_DATA_BITLEN_V + 1) / 8;
+        } else {
+            // mark as sending LCD color data only at the last round to avoid premature completion callback
+            lcd_trans->flags.trans_is_color = 1;
+        }
+
+        lcd_trans->base.user = spi_panel_io;
+        lcd_trans->flags.dc_gpio_level = spi_panel_io->flags.dc_data_level; // set D/C line to data mode
+        lcd_trans->base.length = chunk_size * 8; // transaction length is in bits
+        lcd_trans->base.tx_buffer = color;
+        if (spi_panel_io->flags.dc_as_cmd_phase) { // encoding DC value to SPI command phase when necessary
+            lcd_trans->base.cmd = spi_panel_io->flags.dc_data_level;
+        }
+        if (spi_panel_io->flags.octal_mode) {
+            // use 8 lines for transmitting command, address and data
+            lcd_trans->base.flags |= (SPI_TRANS_MULTILINE_CMD | SPI_TRANS_MULTILINE_ADDR | SPI_TRANS_MODE_OCT);
+        }
+
+        // color data is usually large, using queue+blocking mode
+        ret = spi_device_queue_trans(spi_panel_io->spi_dev, &lcd_trans->base, portMAX_DELAY);
+        ESP_GOTO_ON_ERROR(ret, err, TAG, "spi transmit (queue) color failed");
+        spi_panel_io->num_trans_inflight++;
+
+        // move on to the next chunk
+        color = (const uint8_t *)color + chunk_size;
+        color_size -= chunk_size;
     }
-    // color data is usually large, using queue+blocking mode
-    ret = spi_device_queue_trans(spi_panel_io->spi_dev, &lcd_trans->base, portMAX_DELAY);
-    ESP_GOTO_ON_ERROR(ret, err, TAG, "spi transmit (queue) color failed");
-    spi_panel_io->num_trans_inflight++;
+    while (color_size > 0); // continue while we have remaining data to transmit
 
 err:
     return ret;
