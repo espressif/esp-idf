@@ -97,8 +97,22 @@ typedef struct {
     i2s_channel_fmt_t       channel_format;             /*!< I2S channel format.*/
     i2s_comm_format_t       communication_format;       /*!< I2S communication format */
     int                     intr_alloc_flags;           /*!< Flags used to allocate the interrupt. One or multiple (ORred) ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info */
-    int                     dma_buf_count;              /*!< I2S DMA Buffer Count */
-    int                     dma_buf_len;                /*!< I2S DMA Buffer Length */
+    int                     dma_buf_count;              /**< The total number of DMA buffers to receive/transmit data.
+                                                          * A descriptor includes some information such as buffer address,
+                                                          * the address of the next descriptor, and the buffer length.
+                                                          * Since one descriptor points to one buffer, therefore, 'dma_desc_num' can be interpreted as the total number of DMA buffers used to store data from DMA interrupt.
+                                                          * Notice that these buffers are internal to'i2s_read' and descriptors are created automatically inside of the I2S driver.
+                                                          * Users only need to set the buffer number while the length is derived from the parameter described below.
+                                                          */
+    int                     dma_buf_len;                /**< Number of frames in a DMA buffer.
+                                                          *  A frame means the data of all channels in a WS cycle.
+                                                          *  The real_dma_buf_size = dma_buf_len * chan_num * bits_per_chan / 8.
+                                                          *  For example, if two channels in stereo mode (i.e., 'channel_format' is set to 'I2S_CHANNEL_FMT_RIGHT_LEFT') are active,
+                                                          *  and each channel transfers 32 bits (i.e., 'bits_per_sample' is set to 'I2S_BITS_PER_CHAN_32BIT'),
+                                                          *  then the total number of bytes of a frame is 'channel_format' * 'bits_per_sample' = 2 * 32 / 8 = 8 bytes.
+                                                          *  We assume that the current 'dma_buf_len' is 100, then the real length of the DMA buffer is 8 * 100 = 800 bytes.
+                                                          *  Note that the length of an internal real DMA buffer shouldn't be greater than 4092.
+                                                          */
     bool                    use_apll;                   /*!< I2S using APLL as main I2S clock, enable it to get accurate clock */
     bool                    tx_desc_auto_clear;         /*!< I2S auto clear tx descriptor if there is underflow condition (helps in avoiding noise in case of data unavailability) */
     int                     fixed_mclk;                 /*!< I2S using fixed MCLK output. If use_apll = true and fixed_mclk > 0, then the clock output for i2s is fixed and equal to the fixed_mclk value. If fixed_mclk set, mclk_multiple won't take effect */
