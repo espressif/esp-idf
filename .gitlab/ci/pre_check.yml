@@ -146,7 +146,7 @@ scan_tests:
     - .rules:build:target_test
   image: $TARGET_TEST_ENV_IMAGE
   tags:
-    - assign_test
+    - scan_test  # since this job is used for uploading the cache, the runner tags should be unique
   artifacts:
     paths:
       - $EXAMPLE_TEST_OUTPUT_DIR
