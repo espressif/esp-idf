@@ -502,7 +502,27 @@ esp_err_t IRAM_ATTR esp_flash_set_protected_region(esp_flash_t *chip, const esp_
     return spiflash_end(chip, err);
 }
 
-esp_err_t IRAM_ATTR esp_flash_read(esp_flash_t *chip, void *buffer, uint32_t address, uint32_t length)
+static esp_err_t NOINLINE_ATTR IRAM_ATTR flash_read_core(esp_flash_t *chip, void* buffer_to_read, uint32_t address, uint32_t length_to_read, bool *out_read_success)
+{
+    esp_err_t err = ESP_OK;
+    bool read_success = false;
+
+    read_success = false;
+    err = spiflash_start(chip);
+
+    if (err == ESP_OK) {
+        err = chip->chip_drv->read(chip, buffer_to_read, address, length_to_read);
+    }
+    if (err == ESP_OK) {
+        read_success = true;
+    }
+
+    err = spiflash_end(chip, err);
+    *out_read_success = read_success;
+    return err;
+}
+
+esp_err_t esp_flash_read(esp_flash_t *chip, void *buffer, uint32_t address, uint32_t length)
 {
     if (length == 0) {
         return ESP_OK;
@@ -543,28 +563,17 @@ esp_err_t IRAM_ATTR esp_flash_read(esp_flash_t *chip, void *buffer, uint32_t add
     esp_err_t err = ESP_OK;
 
     do {
-        err = spiflash_start(chip);
-        if (err != ESP_OK) {
-            break;
-        }
         //if required (dma buffer allocated), read to the buffer instead of the original buffer
         uint8_t* buffer_to_read = (temp_buffer)? temp_buffer : buffer;
 
         // Length we will read this iteration is either the chunk size or the remaining length, whichever is smaller
         size_t length_to_read = MIN(read_chunk_size, length);
 
-        if (err == ESP_OK) {
-            err = chip->chip_drv->read(chip, buffer_to_read, address, length_to_read);
-        }
-        if (err != ESP_OK) {
-            spiflash_end(chip, err);
-            break;
-        }
-        //even if this is failed, the data is still valid, copy before quit
-        err = spiflash_end(chip, err);
+        bool read_success;
+        err = flash_read_core(chip, buffer_to_read, address, length_to_read, &read_success);
 
         //copy back to the original buffer
-        if (temp_buffer) {
+        if (read_success && temp_buffer) {
             memcpy(buffer, temp_buffer, length_to_read);
         }
         address += length_to_read;
@@ -576,7 +585,28 @@ esp_err_t IRAM_ATTR esp_flash_read(esp_flash_t *chip, void *buffer, uint32_t add
     return err;
 }
 
-esp_err_t IRAM_ATTR esp_flash_write(esp_flash_t *chip, const void *buffer, uint32_t address, uint32_t length)
+// This function disable the cache, but when returning from this function, the cache should be enabled.
+static esp_err_t IRAM_ATTR NOINLINE_ATTR flash_write_core(esp_flash_t *chip,
+    const void* write_buf, uint32_t write_addr, uint32_t write_len,
+    uint32_t address, uint32_t length, bool final)
+{
+    bool bus_acquire = false;   //controls whether the flash_end_flush_cache() needs to disable the cache again.
+
+    esp_err_t err = spiflash_start(chip);
+
+    if (err == ESP_OK) {
+        bus_acquire = true;
+        err = chip->chip_drv->write(chip, write_buf, write_addr, write_len);
+    }
+
+    if (bus_acquire) {
+        //on IDF v4.2, the flush is done in chip driver layer. Call spiflash_end() here.
+        err = spiflash_end(chip, err);
+    }
+    return err;
+}
+
+esp_err_t esp_flash_write(esp_flash_t *chip, const void *buffer, uint32_t address, uint32_t length)
 {
     if (length == 0) {
         return ESP_OK;
@@ -595,31 +625,32 @@ esp_err_t IRAM_ATTR esp_flash_write(esp_flash_t *chip, const void *buffer, uint3
        by artificially cutting into MAX_WRITE_CHUNK parts (in an OS
        environment, this prevents writing from causing interrupt or higher priority task
        starvation.) */
+    uint32_t write_addr = address;
+    uint32_t len_remain = length;
     do {
         uint32_t write_len;
         const void *write_buf;
         uint32_t temp_buf[8];
         if (direct_write) {
-            write_len = MIN(length, MAX_WRITE_CHUNK);
+            write_len = MIN(len_remain, MAX_WRITE_CHUNK);
             write_buf = buffer;
         } else {
-            write_len = MIN(length, sizeof(temp_buf));
+            write_len = MIN(len_remain, sizeof(temp_buf));
             memcpy(temp_buf, buffer, write_len);
             write_buf = temp_buf;
         }
 
-        err = spiflash_start(chip);
-        if (err != ESP_OK) {
-            return err;
+        bool final = (len_remain == write_len);
+        //This function ensures cache enabled when returned
+        err = flash_write_core(chip, write_buf, write_addr, write_len, address, length, final);
+        if (err != ESP_OK || final) {
+            break;
         }
 
-        err = chip->chip_drv->write(chip, write_buf, address, write_len);
-
-        address += write_len;
+        len_remain -= write_len;
+        assert(len_remain < length);
+        write_addr += write_len;
         buffer = (void *)((intptr_t)buffer + write_len);
-        length -= write_len;
-
-        err = spiflash_end(chip, err);
     } while (err == ESP_OK && length > 0);
     return err;
 }
