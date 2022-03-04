@@ -1,12 +1,15 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "soc/efuse_periph.h"
 #include "soc/rtc_wdt.h"
 #include "soc/rtc.h"
+#include "hal/efuse_ll.h"
 
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
 
 bool rtc_wdt_get_protect_status(void)
 {
@@ -65,22 +68,33 @@ void rtc_wdt_feed(void)
     }
 }
 
+static uint32_t get_addr_reg(rtc_wdt_stage_t stage)
+{
+    uint32_t reg;
+    if (stage == RTC_WDT_STAGE0) {
+        reg = RTC_CNTL_WDTCONFIG1_REG;
+    } else if (stage == RTC_WDT_STAGE1) {
+        reg = RTC_CNTL_WDTCONFIG2_REG;
+    } else if (stage == RTC_WDT_STAGE2) {
+        reg = RTC_CNTL_WDTCONFIG3_REG;
+    } else {
+    	reg = RTC_CNTL_WDTCONFIG4_REG;
+    }
+    return reg;
+}
+
 esp_err_t rtc_wdt_set_time(rtc_wdt_stage_t stage, unsigned int timeout_ms)
 {
     if (stage > 3) {
         return ESP_ERR_INVALID_ARG;
     }
     uint32_t timeout = (uint32_t) ((uint64_t) rtc_clk_slow_freq_get_hz() * timeout_ms / 1000);
+#if !CONFIG_IDF_TARGET_ESP32
     if (stage == RTC_WDT_STAGE0) {
-        WRITE_PERI_REG(RTC_CNTL_WDTCONFIG1_REG, timeout);
-    } else if (stage == RTC_WDT_STAGE1) {
-        WRITE_PERI_REG(RTC_CNTL_WDTCONFIG2_REG, timeout);
-    } else if (stage == RTC_WDT_STAGE2) {
-        WRITE_PERI_REG(RTC_CNTL_WDTCONFIG3_REG, timeout);
-    } else {
-        WRITE_PERI_REG(RTC_CNTL_WDTCONFIG4_REG, timeout);
+        timeout = timeout >> (1 + efuse_ll_get_wdt_delay_sel());
     }
-
+#endif
+    WRITE_PERI_REG(get_addr_reg(stage), timeout);
     return ESP_OK;
 }
 
@@ -90,16 +104,7 @@ esp_err_t rtc_wdt_get_timeout(rtc_wdt_stage_t stage, unsigned int* timeout_ms)
         return ESP_ERR_INVALID_ARG;
     }
     uint32_t time_tick;
-    if (stage == RTC_WDT_STAGE0) {
-        time_tick = READ_PERI_REG(RTC_CNTL_WDTCONFIG1_REG);
-    } else if (stage == RTC_WDT_STAGE1) {
-        time_tick = READ_PERI_REG(RTC_CNTL_WDTCONFIG2_REG);
-    } else if (stage == RTC_WDT_STAGE2) {
-        time_tick = READ_PERI_REG(RTC_CNTL_WDTCONFIG3_REG);
-    } else {
-        time_tick = READ_PERI_REG(RTC_CNTL_WDTCONFIG4_REG);
-    }
-
+    time_tick = READ_PERI_REG(get_addr_reg(stage));
     *timeout_ms = time_tick * 1000 / rtc_clk_slow_freq_get_hz();
 
     return ESP_OK;
@@ -141,3 +146,5 @@ bool rtc_wdt_is_on(void)
 {
     return (REG_GET_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_EN) != 0) || (REG_GET_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN) != 0);
 }
+
+#endif // CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2

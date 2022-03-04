@@ -9,7 +9,7 @@ entries:
     rtc_pm (noflash_text)
     rtc_sleep (noflash_text)
     rtc_time (noflash_text)
-    if IDF_TARGET_ESP32C3 = n && IDF_TARGET_ESP32H2 = n && IDF_TARGET_ESP32C2 = n:
+    if IDF_TARGET_ESP32 = y || IDF_TARGET_ESP32S2 = y:
         rtc_wdt (noflash_text)
     if IDF_TARGET_ESP32S3 = y:
         if SPIRAM_MODE_QUAD = y:
