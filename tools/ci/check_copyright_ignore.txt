@@ -886,7 +886,6 @@ components/hal/esp32s2/brownout_hal.c
 components/hal/esp32s2/cp_dma_hal.c
 components/hal/esp32s2/include/hal/adc_hal_conf.h
 components/hal/esp32s2/include/hal/aes_ll.h
-components/hal/esp32s2/include/hal/clk_gate_ll.h
 components/hal/esp32s2/include/hal/cp_dma_hal.h
 components/hal/esp32s2/include/hal/cp_dma_ll.h
 components/hal/esp32s2/include/hal/cpu_ll.h

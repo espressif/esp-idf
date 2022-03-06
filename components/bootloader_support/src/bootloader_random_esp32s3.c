@@ -74,6 +74,7 @@ void bootloader_random_enable(void)
     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, 0);
 }
 
+//TODO: IDF-4714
 void bootloader_random_disable(void)
 {
     /* Restore internal I2C bus state */
@@ -82,13 +83,19 @@ void bootloader_random_disable(void)
     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_RTC_ADDR, 0);
     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, 0);
 
-    /* Restore SARADC to default mode */
-    CLEAR_PERI_REG_MASK(SENS_SAR_MEAS1_MUX_REG, SENS_SAR1_DIG_FORCE);
-    SET_PERI_REG_MASK(SYSTEM_PERIP_CLK_EN0_REG, SYSTEM_APB_SARADC_CLK_EN);
-    REG_SET_FIELD(SENS_SAR_POWER_XPD_SAR_REG, SENS_FORCE_XPD_SAR, 0);
-    CLEAR_PERI_REG_MASK(APB_SARADC_CTRL2_REG, APB_SARADC_TIMER_EN);
+    //Stop SAR ADC clock
     CLEAR_PERI_REG_MASK(SENS_SAR_PERI_CLK_GATE_CONF_REG, SENS_SARADC_CLK_EN);
+    //Power off SAR ADC
+    REG_SET_FIELD(SENS_SAR_POWER_XPD_SAR_REG, SENS_FORCE_XPD_SAR, 0);
+    //return to ADC RTC controller
+    CLEAR_PERI_REG_MASK(SENS_SAR_MEAS1_MUX_REG, SENS_SAR1_DIG_FORCE);
+    //Invalidate ADC digital trigger timer
+    CLEAR_PERI_REG_MASK(APB_SARADC_CTRL2_REG, APB_SARADC_TIMER_EN);
+
+    //Disable ADC digital part
     CLEAR_PERI_REG_MASK(SYSTEM_PERIP_CLK_EN0_REG, SYSTEM_APB_SARADC_CLK_EN);
+    //Hold reset bit for ADC digital part
+    SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG, SYSTEM_APB_SARADC_RST);
 
     /* Note: the 8M CLK entropy source continues running even after this function is called,
        but as mentioned above it's better to enable Wi-Fi or BT or call bootloader_random_enable()
