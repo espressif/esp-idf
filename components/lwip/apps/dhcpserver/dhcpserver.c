@@ -111,8 +111,7 @@ static void dhcps_tmr(void* arg);
 
 dhcps_t *dhcps_new(void)
 {
-    dhcps_t *dhcps = mem_malloc(sizeof(dhcps_t));
-    memset(dhcps , 0x00 , sizeof(dhcps_t));
+    dhcps_t *dhcps = mem_calloc(1, sizeof(dhcps_t));
 
     if (dhcps == NULL) {
         return NULL;
@@ -126,7 +125,7 @@ dhcps_t *dhcps_new(void)
 #endif
     dhcps->plist = NULL;
     dhcps->renew = false;
-    dhcps->dhcps_lease_time = DHCPS_LEASE_TIME_DEF;  //minute
+    dhcps->dhcps_lease_time = DHCPS_LEASE_TIME_DEF;
     dhcps->dhcps_offer = 0xFF;
     dhcps->dhcps_dns = 0x00;
     dhcps->dhcps_pcb = NULL;
@@ -926,14 +925,12 @@ static s16_t parse_msg(dhcps_t *dhcps, struct dhcps_msg *m, u16_t len)
             pdhcps_pool = NULL;
             pnode = NULL;
         } else {
-            pdhcps_pool = (struct dhcps_pool *)mem_malloc(sizeof(struct dhcps_pool));
-            memset(pdhcps_pool , 0x00 , sizeof(struct dhcps_pool));
+            pdhcps_pool = (struct dhcps_pool *)mem_calloc(1, sizeof(struct dhcps_pool));
 
             pdhcps_pool->ip.addr = dhcps->client_address.addr;
             memcpy(pdhcps_pool->mac, m->chaddr, sizeof(pdhcps_pool->mac));
             pdhcps_pool->lease_timer = lease_timer;
-            pnode = (list_node *)mem_malloc(sizeof(list_node));
-            memset(pnode , 0x00 , sizeof(list_node));
+            pnode = (list_node *)mem_calloc(1, sizeof(list_node));
 
             pnode->pnode = pdhcps_pool;
             pnode->pnext = NULL;
@@ -1033,13 +1030,12 @@ static void handle_dhcp(void *arg,
         malloc_len = p->tot_len;
     }
 
-    pmsg_dhcps = (struct dhcps_msg *)mem_malloc(malloc_len);
+    pmsg_dhcps = (struct dhcps_msg *)mem_calloc(1, malloc_len);
     if (NULL == pmsg_dhcps) {
         pbuf_free(p);
         return;
     }
 
-    memset(pmsg_dhcps , 0x00 , malloc_len);
     p_dhcps_msg = (u8_t *)pmsg_dhcps;
     tlen = p->tot_len;
     data = p->payload;

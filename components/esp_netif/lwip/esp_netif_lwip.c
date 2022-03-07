@@ -552,6 +552,11 @@ esp_netif_t *esp_netif_new(const esp_netif_config_t *esp_netif_config)
     // Create DHCP server structure
     if (esp_netif_config->base->flags & ESP_NETIF_DHCP_SERVER) {
         esp_netif->dhcps = dhcps_new();
+        if (esp_netif->dhcps == NULL) {
+            ESP_LOGE(TAG, "Failed to create dhcp server handle");
+            esp_netif_destroy(esp_netif);
+            return NULL;
+        }
     }
 #endif
 

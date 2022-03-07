@@ -114,6 +114,7 @@ TEST_CASE("localhost ping test", "[lwip]")
 TEST_CASE("dhcp server init/deinit", "[lwip][leaks=0]")
 {
     dhcps_t *dhcps = dhcps_new();
+    TEST_ASSERT_NOT_NULL(dhcps);
     ip4_addr_t ip = { .addr = IPADDR_ANY };
     TEST_ASSERT(dhcps_start(dhcps, NULL, ip) == ERR_ARG);
     TEST_ASSERT(dhcps_stop(dhcps, NULL) == ERR_ARG);
