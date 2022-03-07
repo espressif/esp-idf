@@ -233,11 +233,13 @@ class LinkingSections(object):
             split_name = section.split('.')
             if len(split_name) > 1:
                 # If the section has a memory type, update the type and try to display the type properly
-                assert len(split_name) == 3 and split_name[0] == '', 'Unexpected section name'
+                assert split_name[0] == '', 'Unexpected section name "{}"'.format(section)
                 memory_name = '.iram' if 'iram' in split_name[1] else\
                               '.dram' if 'dram' in split_name[1] else\
                               '.flash' if 'flash' in split_name[1] else\
                               '.' + split_name[1]
+                if len(split_name) < 3:
+                    split_name.append('')   # in order to avoid failures in the following lines
                 display_name_list[i] = 'DRAM .' + split_name[2] if 'dram' in split_name[1] else\
                                        'IRAM' + split_name[1].replace('iram', '') + ' .' + split_name[2] if 'iram' in split_name[1] else\
                                        'Flash .' + split_name[2] if 'flash' in split_name[1] else\
@@ -358,7 +360,10 @@ def load_sections(map_file):  # type: (TextIO) -> Dict
     RE_FULL_LINE = re.compile(r'\s*(?P<sym_name>\S*) +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+)\s*(?P<file>.*)$')
 
     # Extract archive and object_file from the file_info field
-    RE_FILE = re.compile(r'((?P<archive>[^ ]+\.a)?\(?(?P<object_file>[^ ]+\.(o|obj))\)?)')
+    # The object file extention (.obj or .o) is optional including the dot. This is necessary for some third-party
+    # libraries. Since the dot is optional and the search gready the parsing of the object name must stop at ). Hence
+    # the [^ )] part of the regex.
+    RE_FILE = re.compile(r'((?P<archive>[^ ]+\.a)?\(?(?P<object_file>[^ )]+(\.(o|obj))?)\)?)')
 
     def dump_src_line(src):  # type: (Dict) -> str
         return '%s(%s) addr: 0x%08x, size: 0x%x+%d' % (src['sym_name'], src['file'], src['address'], src['size'], src['fill'])
@@ -429,7 +434,7 @@ def load_sections(map_file):  # type: (TextIO) -> Dict
 
             # Extract archive and file information
             n = RE_FILE.match(m.group('file'))
-            assert n
+            assert n, 'Archive and file information not found for "{}"'.format(m.group('file'))
 
             archive = n.group('archive')
             if archive is None:
