@@ -39,6 +39,12 @@
 #include "hal/lcd_hal.h"
 #include "hal/lcd_ll.h"
 
+#if CONFIG_LCD_RGB_ISR_IRAM_SAFE
+#define LCD_RGB_INTR_ALLOC_FLAGS     (ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED)
+#else
+#define LCD_RGB_INTR_ALLOC_FLAGS     ESP_INTR_FLAG_INTRDISABLED
+#endif
+
 static const char *TAG = "lcd_panel.rgb";
 
 typedef struct esp_rgb_panel_t esp_rgb_panel_t;
@@ -100,6 +106,16 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     ESP_GOTO_ON_FALSE(rgb_panel_config && ret_panel, ESP_ERR_INVALID_ARG, err, TAG, "invalid parameter");
     ESP_GOTO_ON_FALSE(rgb_panel_config->data_width == 16, ESP_ERR_NOT_SUPPORTED, err, TAG,
                       "unsupported data width %d", rgb_panel_config->data_width);
+
+#if CONFIG_LCD_RGB_ISR_IRAM_SAFE
+    if (rgb_panel_config->on_frame_trans_done) {
+        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(rgb_panel_config->on_frame_trans_done), ESP_ERR_INVALID_ARG, TAG, "on_frame_trans_done callback not in IRAM");
+    }
+    if (rgb_panel_config->user_ctx) {
+        ESP_RETURN_ON_FALSE(esp_ptr_internal(rgb_panel_config->user_ctx), ESP_ERR_INVALID_ARG, TAG, "user context not in internal RAM");
+    }
+#endif
+
     // calculate the number of DMA descriptors
     size_t fb_size = rgb_panel_config->timings.h_res * rgb_panel_config->timings.v_res * rgb_panel_config->data_width / 8;
     size_t num_dma_nodes = fb_size / DMA_DESCRIPTOR_BUFFER_MAX_SIZE;
@@ -147,7 +163,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     ret = lcd_rgb_panel_select_periph_clock(rgb_panel, rgb_panel_config->clk_src);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "select periph clock failed");
     // install interrupt service, (LCD peripheral shares the interrupt source with Camera by different mask)
-    int isr_flags = LCD_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED;
+    int isr_flags = LCD_RGB_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED;
     ret = esp_intr_alloc_intrstatus(lcd_periph_signals.panels[panel_id].irq_id, isr_flags,
                                     (uint32_t)lcd_ll_get_interrupt_status_reg(rgb_panel->hal.dev),
                                     LCD_LL_EVENT_VSYNC_END, lcd_default_isr_handler, rgb_panel, &rgb_panel->intr);

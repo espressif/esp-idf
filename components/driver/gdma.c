@@ -26,13 +26,17 @@
 
 static const char *TAG = "gdma";
 
-#if CONFIG_GDMA_ISR_IRAM_SAFE
-#define GDMA_INTR_ALLOC_FLAGS  (ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED)
+#if CONFIG_GDMA_ISR_IRAM_SAFE || CONFIG_GDMA_CTRL_FUNC_IN_IRAM
 #define GDMA_MEM_ALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
-#define GDMA_INTR_ALLOC_FLAGS  ESP_INTR_FLAG_INTRDISABLED
 #define GDMA_MEM_ALLOC_CAPS    MALLOC_CAP_DEFAULT
-#endif  // CONFIG_GDMA_ISR_IRAM_SAFE
+#endif
+
+#if CONFIG_GDMA_ISR_IRAM_SAFE
+#define GDMA_INTR_ALLOC_FLAGS  (ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED)
+#else
+#define GDMA_INTR_ALLOC_FLAGS  ESP_INTR_FLAG_INTRDISABLED
+#endif
 
 #define GDMA_INVALID_PERIPH_TRIG  (0x3F)
 #define SEARCH_REQUEST_RX_CHANNEL (1 << 0)
@@ -385,9 +389,7 @@ esp_err_t gdma_register_tx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
         ESP_GOTO_ON_FALSE(esp_ptr_in_iram(cbs->on_trans_eof), ESP_ERR_INVALID_ARG, err, TAG, "on_trans_eof not in IRAM");
     }
     if (user_data) {
-        ESP_GOTO_ON_FALSE(esp_ptr_in_dram(user_data) ||
-                          esp_ptr_in_diram_dram(user_data) ||
-                          esp_ptr_in_rtc_dram_fast(user_data), ESP_ERR_INVALID_ARG, err, TAG, "user context not in DRAM");
+        ESP_GOTO_ON_FALSE(esp_ptr_internal(user_data), ESP_ERR_INVALID_ARG, err, TAG, "user context not in internal RAM");
     }
 #endif // CONFIG_GDMA_ISR_IRAM_SAFE
 
@@ -423,9 +425,7 @@ esp_err_t gdma_register_rx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
         ESP_GOTO_ON_FALSE(esp_ptr_in_iram(cbs->on_recv_eof), ESP_ERR_INVALID_ARG, err, TAG, "on_recv_eof not in IRAM");
     }
     if (user_data) {
-        ESP_GOTO_ON_FALSE(esp_ptr_in_dram(user_data) ||
-                          esp_ptr_in_diram_dram(user_data) ||
-                          esp_ptr_in_rtc_dram_fast(user_data), ESP_ERR_INVALID_ARG, err, TAG, "user context not in DRAM");
+        ESP_GOTO_ON_FALSE(esp_ptr_internal(user_data), ESP_ERR_INVALID_ARG, err, TAG, "user context not in internal RAM");
     }
 #endif // CONFIG_GDMA_ISR_IRAM_SAFE
 

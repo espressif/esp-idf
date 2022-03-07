@@ -31,13 +31,17 @@
 
 // If ISR handler is allowed to run whilst cache is disabled,
 // Make sure all the code and related variables used by the handler are in the SRAM
-#if CONFIG_GPTIMER_ISR_IRAM_SAFE
-#define GPTIMER_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED)
+#if CONFIG_GPTIMER_ISR_IRAM_SAFE || CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM
 #define GPTIMER_MEM_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
-#define GPTIMER_INTR_ALLOC_FLAGS    ESP_INTR_FLAG_INTRDISABLED
 #define GPTIMER_MEM_ALLOC_CAPS      MALLOC_CAP_DEFAULT
-#endif //CONFIG_GPTIMER_ISR_IRAM_SAFE
+#endif
+
+#if CONFIG_GPTIMER_ISR_IRAM_SAFE
+#define GPTIMER_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED)
+#else
+#define GPTIMER_INTR_ALLOC_FLAGS    ESP_INTR_FLAG_INTRDISABLED
+#endif
 
 #define GPTIMER_PM_LOCK_NAME_LEN_MAX 16
 
@@ -240,9 +244,7 @@ esp_err_t gptimer_register_event_callbacks(gptimer_handle_t timer, const gptimer
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_alarm), ESP_ERR_INVALID_ARG, TAG, "on_alarm callback not in IRAM");
     }
     if (user_data) {
-        ESP_RETURN_ON_FALSE(esp_ptr_in_dram(user_data) ||
-                            esp_ptr_in_diram_dram(user_data) ||
-                            esp_ptr_in_rtc_dram_fast(user_data), ESP_ERR_INVALID_ARG, TAG, "user context not in DRAM");
+        ESP_RETURN_ON_FALSE(esp_ptr_internal(user_data), ESP_ERR_INVALID_ARG, TAG, "user context not in internal RAM");
     }
 #endif
 
