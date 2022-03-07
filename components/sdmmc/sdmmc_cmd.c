@@ -501,6 +501,151 @@ esp_err_t sdmmc_read_sectors_dma(sdmmc_card_t* card, void* dst,
     return ESP_OK;
 }
 
+esp_err_t sdmmc_erase_sectors(sdmmc_card_t* card, size_t start_sector,
+        size_t sector_count, sdmmc_erase_arg_t arg)
+{
+    if (start_sector + sector_count > card->csd.capacity) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    if (arg == SDMMC_ERASE_ARG) {
+        arg = card->is_mmc ? SDMMC_MMC_TRIM_ARG : SDMMC_SD_ERASE_ARG;
+    } else {
+        arg = card->is_mmc ? SDMMC_MMC_DISCARD_ARG : SDMMC_SD_DISCARD_ARG;
+    }
+    /*
+     * validate the CMD38 argument against card supported features
+     */
+    if ((arg == SDMMC_MMC_TRIM_ARG) && (sdmmc_can_trim(card) != ESP_OK)) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    if (((arg == SDMMC_MMC_DISCARD_ARG) || (arg == SDMMC_SD_DISCARD_ARG)) &&
+            ((sdmmc_can_discard(card) != ESP_OK) || host_is_spi(card))) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    /* default as block unit address */
+    size_t addr_unit_mult = 1;
+
+    if (!(card->ocr & SD_OCR_SDHC_CAP)) {
+        addr_unit_mult = card->csd.sector_size;
+    }
+
+    /* prepare command to set the start address */
+    sdmmc_command_t cmd = {
+            .flags = SCF_CMD_AC | SCF_RSP_R1 | SCF_WAIT_BUSY,
+            .opcode = card->is_mmc ? MMC_ERASE_GROUP_START :
+                    SD_ERASE_GROUP_START,
+            .arg = (start_sector * addr_unit_mult),
+    };
+
+    esp_err_t err = sdmmc_send_cmd(card, &cmd);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s: sdmmc_send_cmd returned 0x%x", __func__, err);
+        return err;
+    }
+
+    /* prepare command to set the end address */
+    cmd.opcode = card->is_mmc ? MMC_ERASE_GROUP_END : SD_ERASE_GROUP_END;
+    cmd.arg = ((start_sector + (sector_count - 1)) * addr_unit_mult);
+
+    err = sdmmc_send_cmd(card, &cmd);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s: sdmmc_send_cmd returned 0x%x", __func__, err);
+        return err;
+    }
+
+    /* issue erase command */
+    memset((void *)&cmd, 0 , sizeof(sdmmc_command_t));
+    cmd.flags = SCF_CMD_AC | SCF_RSP_R1B | SCF_WAIT_BUSY;
+    cmd.opcode = MMC_ERASE;
+    cmd.arg = arg;
+    // TODO: best way, application to compute timeout value. For this card
+    // structure should have a place holder for erase_timeout.
+    cmd.timeout_ms = (SDMMC_ERASE_BLOCK_TIMEOUT_MS + sector_count);
+
+    err = sdmmc_send_cmd(card, &cmd);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s: sdmmc_send_cmd returned 0x%x", __func__, err);
+        return err;
+    }
+    return ESP_OK;
+}
+
+esp_err_t sdmmc_can_discard(sdmmc_card_t* card)
+{
+    if ((card->is_mmc) && (card->ext_csd.rev >= EXT_CSD_REV_1_6)) {
+         return ESP_OK;
+    }
+    // SD card
+    if (!host_is_spi(card) && (card->ssr.discard_support == 1)) {
+        return ESP_OK;
+    }
+    return ESP_FAIL;
+}
+
+esp_err_t sdmmc_can_trim(sdmmc_card_t* card)
+{
+    if ((card->is_mmc) && (card->ext_csd.sec_feature & EXT_CSD_SEC_GB_CL_EN)) {
+        return ESP_OK;
+    }
+    return ESP_FAIL;
+}
+
+esp_err_t sdmmc_mmc_can_sanitize(sdmmc_card_t* card)
+{
+    if ((card->is_mmc) && (card->ext_csd.sec_feature & EXT_CSD_SEC_SANITIZE)) {
+        return ESP_OK;
+    }
+    return ESP_FAIL;
+}
+
+esp_err_t sdmmc_mmc_sanitize(sdmmc_card_t* card, uint32_t timeout_ms)
+{
+    esp_err_t err;
+    uint8_t index = EXT_CSD_SANITIZE_START;
+    uint8_t set = EXT_CSD_CMD_SET_NORMAL;
+    uint8_t value = 0x01;
+
+    if (sdmmc_mmc_can_sanitize(card) != ESP_OK) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    /*
+     * A Sanitize operation is initiated by writing a value to the extended
+     * CSD[165] SANITIZE_START. While the device is performing the sanitize
+     * operation, the busy line is asserted.
+     * SWITCH command is used to write the EXT_CSD register.
+     */
+    sdmmc_command_t cmd = {
+            .opcode = MMC_SWITCH,
+            .arg = (MMC_SWITCH_MODE_WRITE_BYTE << 24) | (index << 16) | (value << 8) | set,
+            .flags = SCF_RSP_R1B | SCF_CMD_AC | SCF_WAIT_BUSY,
+            .timeout_ms = timeout_ms,
+    };
+    err = sdmmc_send_cmd(card, &cmd);
+    if (err == ESP_OK) {
+        //check response bit to see that switch was accepted
+        if (MMC_R1(cmd.response) & MMC_R1_SWITCH_ERROR) {
+            err = ESP_ERR_INVALID_RESPONSE;
+        }
+    }
+    return err;
+}
+
+esp_err_t sdmmc_full_erase(sdmmc_card_t* card)
+{
+    sdmmc_erase_arg_t arg = SDMMC_SD_ERASE_ARG; // erase by default for SD card
+    esp_err_t err;
+    if (card->is_mmc) {
+        arg = sdmmc_mmc_can_sanitize(card) == ESP_OK ? SDMMC_MMC_DISCARD_ARG: SDMMC_MMC_TRIM_ARG;
+    }
+    err = sdmmc_erase_sectors(card, 0,  card->csd.capacity, arg);
+    if ((err == ESP_OK) && (arg == SDMMC_MMC_DISCARD_ARG)) {
+        return sdmmc_mmc_sanitize(card, SDMMC_ERASE_BLOCK_TIMEOUT_MS + card->csd.capacity);
+    }
+    return err;
+}
+
 esp_err_t sdmmc_get_status(sdmmc_card_t* card)
 {
     uint32_t stat;
