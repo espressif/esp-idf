@@ -801,7 +801,7 @@ void crypto_debug_print_ec_key(const char *title, struct crypto_key *key)
 	mbedtls_ecp_keypair *ecp = mbedtls_pk_ec( *pkey );
 	u8 x[32], y[32], d[32];
 	wpa_printf(MSG_ERROR, "curve: %s\n",
-			mbedtls_ecp_curve_info_from_grp_id( ecp->grp.id )->name );
+			mbedtls_ecp_curve_info_from_grp_id( ecp->MBEDTLS_PRIVATE(grp).id )->name );
 	int len = mbedtls_mpi_size((mbedtls_mpi *)crypto_ec_get_prime((struct crypto_ec *)crypto_ec_get_group_from_key(key)));
 
 	wpa_printf(MSG_ERROR, "prime len is %d\n", len);
