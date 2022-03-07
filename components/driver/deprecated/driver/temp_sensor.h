@@ -8,31 +8,15 @@
 
 #include <stdint.h>
 #include "esp_err.h"
+#include "driver/temp_sensor_types_legacy.h"
+
+#if !CONFIG_TEMP_SENSOR_SUPPRESS_DEPRECATE_WARN
+#warning "legacy temperature sensor driver is deprecated, please migrate to driver/temperature_sensor.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-typedef enum {
-    TSENS_DAC_L0 = 0, /*!< offset = -2, measure range: 50℃ ~ 125℃, error < 3℃. */
-    TSENS_DAC_L1,     /*!< offset = -1, measure range: 20℃ ~ 100℃, error < 2℃. */
-    TSENS_DAC_L2,     /*!< offset =  0, measure range:-10℃ ~  80℃, error < 1℃. */
-    TSENS_DAC_L3,     /*!< offset =  1, measure range:-30℃ ~  50℃, error < 2℃. */
-    TSENS_DAC_L4,     /*!< offset =  2, measure range:-40℃ ~  20℃, error < 3℃. */
-    TSENS_DAC_MAX,
-    TSENS_DAC_DEFAULT = TSENS_DAC_L2,
-} temp_sensor_dac_offset_t;
-
-/**
- * @brief Configuration for temperature sensor reading
- */
-typedef struct {
-    temp_sensor_dac_offset_t dac_offset;    /*!< The temperature measurement range is configured with a built-in temperature offset DAC. */
-    uint8_t clk_div;                        /*!< Default: 6 */
-} temp_sensor_config_t;
-
-#define TSENS_CONFIG_DEFAULT() {.dac_offset = TSENS_DAC_L2, \
-                                .clk_div = 6}
 
 /**
  * @brief Set parameter of temperature sensor.
@@ -54,7 +38,7 @@ esp_err_t temp_sensor_get_config(temp_sensor_config_t *tsens);
  * @brief Start temperature sensor measure.
  * @return
  *     - ESP_OK Success
- *     - ESP_ERR_INVALID_ARG
+ *     - ESP_ERR_INVALID_STATE if temperature sensor is started already.
  */
 esp_err_t temp_sensor_start(void);
 
@@ -62,6 +46,7 @@ esp_err_t temp_sensor_start(void);
  * @brief Stop temperature sensor measure.
  * @return
  *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_STATE if temperature sensor is stopped already.
  */
 esp_err_t temp_sensor_stop(void);
 

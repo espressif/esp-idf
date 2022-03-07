@@ -59,6 +59,7 @@
 #define SOC_I2S_SUPPORTED               1
 #define SOC_RMT_SUPPORTED               1
 #define SOC_SIGMADELTA_SUPPORTED        1
+#define SOC_TEMP_SENSOR_SUPPORTED           1
 
 /*-------------------------- SOC CAPS ----------------------------------------*/
 #define SOC_APPCPU_HAS_CLOCK_GATING_BUG (1)
@@ -369,3 +370,6 @@
 #define SOC_SDMMC_NUM_SLOTS        2
 /* Indicates that there is an option to use XTAL clock instead of PLL for SDMMC */
 #define SOC_SDMMC_SUPPORT_XTAL_CLOCK    1
+
+/*-------------------------- Temperature Sensor CAPS -------------------------------------*/
+#define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)

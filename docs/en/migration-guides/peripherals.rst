@@ -96,3 +96,13 @@ I2C
     - ``pcnt_filter_enable``, ``pcnt_filter_disable``, and ``pcnt_set_filter_value`` are replaced by :cpp:func:`pcnt_unit_set_glitch_filter`. Meanwhile, ``pcnt_get_filter_value`` has been removed.
     - ``pcnt_set_mode`` is replaced by :cpp:func:`pcnt_channel_set_edge_action` and :cpp:func:`pcnt_channel_set_level_action`.
     - ``pcnt_isr_service_install``, ``pcnt_isr_service_uninstall``, ``pcnt_isr_handler_add`` and ``pcnt_isr_handler_remove`` are replaced by :cpp:func:`pcnt_unit_register_event_callbacks`. The default ISR handler is lazy installed in the new driver.
+
+.. only:: SOC_TEMP_SENSOR_SUPPORTED
+
+    Temperature Sensor Driver
+    -------------------------
+
+    1. Old API header ``temp_sensor.h`` has been redesigned as ``temperature_sensor.h``, it is recommended to use the new driver and the old driver is not allowed to be used at the same time.
+    2. Although it's recommended to use the new driver APIs, the legacy driver is still available in the previous include path ``driver/temp_sensor.h``. However, by default, including ``driver/temp_sensor.h`` will bring a build warning like "legacy temperature sensor driver is deprecated, please migrate to driver/temperature_sensor.h". The warning can be suppressed by enabling the menuconfig option :ref:`CONFIG_TEMP_SENSOR_SUPPRESS_DEPRECATE_WARN`.
+    3. Configuration contents has been changed. In old version, user need to configure the ``clk_div`` and ``dac_offset``. While in new version, user only need to choose ``tsens_range``
+    4. The process of using temperature sensor has been changed. In old version, user can use ``config->start->read_celsius`` to get value. In the new version, user must install the temperature sensor driver firstly, by ``temperature_sensor_install`` and uninstall it when finished. For more information, you can refer to :doc:`Temperature Sensor <../api-reference/peripherals/temp_sensor>` .

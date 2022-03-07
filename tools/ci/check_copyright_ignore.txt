@@ -838,7 +838,6 @@ components/hal/esp32c3/brownout_hal.c
 components/hal/esp32c3/hmac_hal.c
 components/hal/esp32c3/include/hal/adc_hal_conf.h
 components/hal/esp32c3/include/hal/aes_ll.h
-components/hal/esp32c3/include/hal/clk_gate_ll.h
 components/hal/esp32c3/include/hal/ds_ll.h
 components/hal/esp32c3/include/hal/gpspi_flash_ll.h
 components/hal/esp32c3/include/hal/hmac_hal.h
@@ -862,7 +861,6 @@ components/hal/esp32h2/brownout_hal.c
 components/hal/esp32h2/hmac_hal.c
 components/hal/esp32h2/include/hal/adc_hal_conf.h
 components/hal/esp32h2/include/hal/aes_ll.h
-components/hal/esp32h2/include/hal/clk_gate_ll.h
 components/hal/esp32h2/include/hal/ds_ll.h
 components/hal/esp32h2/include/hal/gpspi_flash_ll.h
 components/hal/esp32h2/include/hal/hmac_hal.h
@@ -2231,7 +2229,6 @@ examples/peripherals/spi_slave_hd/append_mode/master/main/app_main.c
 examples/peripherals/spi_slave_hd/append_mode/slave/main/app_main.c
 examples/peripherals/spi_slave_hd/segment_mode/seg_master/main/app_main.c
 examples/peripherals/spi_slave_hd/segment_mode/seg_slave/main/app_main.c
-examples/peripherals/temp_sensor/main/temp_sensor_main.c
 examples/peripherals/touch_element/touch_button/main/touch_button_example_main.c
 examples/peripherals/touch_element/touch_element_waterproof/main/waterproof_example_main.c
 examples/peripherals/touch_element/touch_elements_combination/main/touch_elements_example_main.c

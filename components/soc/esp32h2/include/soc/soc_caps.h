@@ -320,3 +320,7 @@
 #define SOC_PM_SUPPORT_CPU_PD           (1)
 
 #define SOC_PM_SUPPORT_BT_PD            (1)
+
+/*-------------------------- Temperature Sensor CAPS -------------------------------------*/
+#define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)
+#define SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL                (1)

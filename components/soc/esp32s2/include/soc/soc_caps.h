@@ -359,3 +359,6 @@
 #define SOC_COEX_HW_PTI                 (1)
 /* ---------------------------- Compatibility ------------------------------- */
 // No contents
+
+/*-------------------------- Temperature Sensor CAPS -------------------------------------*/
+#define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)
