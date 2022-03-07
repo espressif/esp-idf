@@ -201,6 +201,9 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
         // no-op for esp32s2
     }
 
+    extern void regi2c_analog_cali_reg_read(void);
+    regi2c_analog_cali_reg_read();
+
     if (deep_sleep) {
         if (s_config.wakeup_triggers & RTC_TOUCH_TRIG_EN) {
             touch_wakeup_prepare();
@@ -250,6 +253,9 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 
     // Restore CPU frequency
     rtc_clk_cpu_freq_set_config(&cpu_freq_config);
+
+    extern void regi2c_analog_cali_reg_write(void);
+    regi2c_analog_cali_reg_write();
 
     // re-enable UART output
     resume_uarts();

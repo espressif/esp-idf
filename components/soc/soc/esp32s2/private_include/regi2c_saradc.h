@@ -81,3 +81,10 @@
 #define I2C_SARADC_TSENS_DAC 0x6
 #define I2C_SARADC_TSENS_DAC_MSB 3
 #define I2C_SARADC_TSENS_DAC_LSB 0
+
+
+/**
+ * Restore regi2c analog calibration related configuration registers.
+ * This is a workaround, and is fixed on later chips
+ */
+#define REGI2C_ANA_CALI_BYTE_NUM         8
