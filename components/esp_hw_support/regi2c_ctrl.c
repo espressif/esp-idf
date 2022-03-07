@@ -52,14 +52,14 @@ static DRAM_ATTR uint8_t reg_val[REGI2C_ANA_CALI_BYTE_NUM];
 
 void IRAM_ATTR regi2c_analog_cali_reg_read(void)
 {
-    for (int i = 0; i < REGI2C_ANA_CALI_PD_WORKAROUND; i++) {
+    for (int i = 0; i < REGI2C_ANA_CALI_BYTE_NUM; i++) {
         reg_val[i] = regi2c_ctrl_read_reg(I2C_SAR_ADC, I2C_SAR_ADC_HOSTID, i);
     }
 }
 
 void IRAM_ATTR regi2c_analog_cali_reg_write(void)
 {
-    for (int i = 0; i < REGI2C_ANA_CALI_PD_WORKAROUND; i++) {
+    for (int i = 0; i < REGI2C_ANA_CALI_BYTE_NUM; i++) {
         regi2c_ctrl_write_reg(I2C_SAR_ADC, I2C_SAR_ADC_HOSTID, i, reg_val[i]);
     }
 }
