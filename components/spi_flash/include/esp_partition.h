@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef __ESP_PARTITION_H__
 #define __ESP_PARTITION_H__
@@ -21,7 +13,6 @@
 #include "esp_err.h"
 #include "esp_flash.h"
 #include "esp_spi_flash.h"
-
 
 #ifdef __cplusplus
 extern "C" {
@@ -206,7 +197,7 @@ void esp_partition_iterator_release(esp_partition_iterator_t iterator);
  * - If partition not found, returns NULL.
  * - If found, returns a pointer to the esp_partition_t structure in flash. This pointer is always valid for the lifetime of the application.
  */
-const esp_partition_t *esp_partition_verify(const esp_partition_t *partition);
+const esp_partition_t* esp_partition_verify(const esp_partition_t* partition);
 
 /**
  * @brief Read data from the partition
@@ -382,7 +373,7 @@ esp_err_t esp_partition_mmap(const esp_partition_t* partition, size_t offset, si
  *          - ESP_ERR_IMAGE_INVALID: App partition doesn't contain a valid app image.
  *          - ESP_FAIL: An allocation error occurred.
  */
-esp_err_t esp_partition_get_sha256(const esp_partition_t *partition, uint8_t *sha_256);
+esp_err_t esp_partition_get_sha256(const esp_partition_t* partition, uint8_t* sha_256);
 
 /**
  * @brief Check for the identity of two partitions by SHA-256 digest.
@@ -394,7 +385,7 @@ esp_err_t esp_partition_get_sha256(const esp_partition_t *partition, uint8_t *sh
  *         - True:  In case of the two firmware is equal.
  *         - False: Otherwise
  */
-bool esp_partition_check_identity(const esp_partition_t *partition_1, const esp_partition_t *partition_2);
+bool esp_partition_check_identity(const esp_partition_t* partition_1, const esp_partition_t* partition_2);
 
 /**
  * @brief Register a partition on an external flash chip
@@ -418,8 +409,8 @@ bool esp_partition_check_identity(const esp_partition_t *partition_1, const esp_
  *      - ESP_ERR_INVALID_SIZE if the partition doesn't fit into the flash chip size
  */
 esp_err_t esp_partition_register_external(esp_flash_t* flash_chip, size_t offset, size_t size,
-                                     const char* label, esp_partition_type_t type, esp_partition_subtype_t subtype,
-                                     const esp_partition_t** out_partition);
+                                          const char* label, esp_partition_type_t type, esp_partition_subtype_t subtype,
+                                          const esp_partition_t** out_partition);
 
 /**
  * @brief Deregister the partition previously registered using esp_partition_register_external
@@ -436,6 +427,5 @@ esp_err_t esp_partition_deregister_external(const esp_partition_t* partition);
 #ifdef __cplusplus
 }
 #endif
-
 
 #endif /* __ESP_PARTITION_H__ */
