@@ -361,11 +361,11 @@ static esp_err_t read_header(esp_https_ota_t *handle)
         data_read = esp_http_client_read(handle->http_client,
                                           (handle->ota_upgrade_buf + bytes_read),
                                           data_read_size);
-        /*
-         * As esp_http_client_read doesn't return negative error code if select fails, we rely on
-         * `errno` to check for underlying transport connectivity closure if any
-         */
-        if (errno == ENOTCONN || errno == ECONNRESET || errno == ECONNABORTED || data_read < 0) {
+        if (data_read < 0) {
+            if (data_read == -ESP_ERR_HTTP_EAGAIN) {
+                ESP_LOGD(TAG, "ESP_ERR_HTTP_EAGAIN invoked: Call timed out before data was ready");
+                continue;
+            }
             ESP_LOGE(TAG, "Connection closed, errno = %d", errno);
             break;
         }
@@ -491,19 +491,9 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
                  *  esp_http_client_is_complete_data_received is added to check whether
                  *  complete image is received.
                  */
-                bool is_recv_complete = esp_http_client_is_complete_data_received(handle->http_client);
-                /*
-                 * As esp_http_client_read doesn't return negative error code if select fails, we rely on
-                 * `errno` to check for underlying transport connectivity closure if any.
-                 * Incase the complete data has not been received but the server has sent
-                 * an ENOTCONN or ECONNRESET, failure is returned. We close with success
-                 * if complete data has been received.
-                 */
-                if ((errno == ENOTCONN || errno == ECONNRESET || errno == ECONNABORTED) && !is_recv_complete) {
-                    ESP_LOGE(TAG, "Connection closed, errno = %d", errno);
+                if (!esp_http_client_is_complete_data_received(handle->http_client)) {
+                    ESP_LOGE(TAG, "Connection closed before complete data was received!");
                     return ESP_FAIL;
-                } else if (!is_recv_complete) {
-                    return ESP_ERR_HTTPS_OTA_IN_PROGRESS;
                 }
                 ESP_LOGD(TAG, "Connection closed");
             } else if (data_read > 0) {
@@ -523,6 +513,10 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
 #endif // CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
                 return _ota_write(handle, data_buf, data_len);
             } else {
+                if (data_read == -ESP_ERR_HTTP_EAGAIN) {
+                    ESP_LOGD(TAG, "ESP_ERR_HTTP_EAGAIN invoked: Call timed out before data was ready");
+                    return ESP_ERR_HTTPS_OTA_IN_PROGRESS;
+                }
                 ESP_LOGE(TAG, "data read %d, errno %d", data_read, errno);
                 return ESP_FAIL;
             }
