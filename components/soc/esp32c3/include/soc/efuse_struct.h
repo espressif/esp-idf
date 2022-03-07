@@ -75,7 +75,8 @@ typedef volatile struct efuse_dev_s {
             uint32_t rpt4_reserved7:           5;                /*Reserved (used for four backups method).*/
             uint32_t force_send_resume:        1;                /*Set this bit to force ROM code to send a resume command during SPI boot.*/
             uint32_t secure_version:          16;                /*Secure version (used by ESP-IDF anti-rollback feature).*/
-            uint32_t rpt4_reserved1:           2;                /*Reserved (used for four backups method).*/
+            uint32_t rpt4_reserved1:           1;                /*Reserved (used for four backups method).*/
+            uint32_t err_rst_enable:           1;                /*Use BLOCK0 to check error record registers, 0 - without check.*/
         };
         uint32_t val;
     } pgm_data4;
@@ -156,7 +157,8 @@ typedef volatile struct efuse_dev_s {
             uint32_t rpt4_reserved7:           5;                /*Reserved.*/
             uint32_t force_send_resume:        1;                /*The value of FORCE_SEND_RESUME.*/
             uint32_t secure_version:          16;                /*The value of SECURE_VERSION.*/
-            uint32_t rpt4_reserved1:           2;                /*Reserved.*/
+            uint32_t rpt4_reserved1:           1;                /*Reserved.*/
+            uint32_t err_rst_enable:           1;                /*Use BLOCK0 to check error record registers, 0 - without check.*/
         };
         uint32_t val;
     } rd_repeat_data3;
@@ -323,7 +325,8 @@ typedef volatile struct efuse_dev_s {
             uint32_t rpt4_reserved7_err:           5;            /*Reserved*/
             uint32_t force_send_resume_err:        1;            /*If FORCE_SEND_RESUME is 1  then it indicates a programming error.*/
             uint32_t secure_version_err:          16;            /*If any bit in SECURE_VERSION is 1  then it indicates a programming error.*/
-            uint32_t rpt4_reserved1_err:           2;            /*Reserved.*/
+            uint32_t rpt4_reserved1_err:           1;            /*Reserved.*/
+            uint32_t err_rst_enable_err:           1;            /*Use BLOCK0 to check error record registers, 0 - without check.*/
         };
         uint32_t val;
     } rd_repeat_err3;

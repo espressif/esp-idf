@@ -429,18 +429,18 @@ apping gpio10 when both reg_dis_usb_jtag and reg_dis_pad_jtag are equal to 0..*/
 #define EFUSE_KEY_PURPOSE_2_S  0
 
 #define EFUSE_RD_REPEAT_DATA3_REG          (DR_REG_EFUSE_BASE + 0x3C)
-/* EFUSE_RPT4_RESERVED1 : RO ;bitpos:[31] ;default: 1'h0 ; */
-/*description: Reserved (used for four backups method)..*/
-#define EFUSE_RPT4_RESERVED1    (BIT(31))
-#define EFUSE_RPT4_RESERVED1_M  (BIT(31))
+/* EFUSE_ERR_RST_ENABLE : RO ;bitpos:[31] ;default: 1'h0 ; */
+/*description: Use BLOCK0 to check error record registers, 0 - without check.*/
+#define EFUSE_ERR_RST_ENABLE  (BIT(31))
+#define EFUSE_ERR_RST_ENABLE_M  (BIT(31))
+#define EFUSE_ERR_RST_ENABLE_V  0x1
+#define EFUSE_ERR_RST_ENABLE_S  31
+/* EFUSE_RPT4_RESERVED1 : RO ;bitpos:[30] ;default: 1'h0 ; */
+/*description: Reserved (used for four backups method).*/
+#define EFUSE_RPT4_RESERVED1  (BIT(30))
+#define EFUSE_RPT4_RESERVED1_M  (BIT(30))
 #define EFUSE_RPT4_RESERVED1_V  0x1
-#define EFUSE_RPT4_RESERVED1_S  31
-/* EFUSE_POWERGLITCH_EN : RO ;bitpos:[30] ;default: 1'b0 ; */
-/*description: Set this bit to enable power glitch function..*/
-#define EFUSE_POWERGLITCH_EN    (BIT(30))
-#define EFUSE_POWERGLITCH_EN_M  (BIT(30))
-#define EFUSE_POWERGLITCH_EN_V  0x1
-#define EFUSE_POWERGLITCH_EN_S  30
+#define EFUSE_RPT4_RESERVED1_S  30
 /* EFUSE_SECURE_VERSION : RO ;bitpos:[29:14] ;default: 16'h0 ; */
 /*description: Secure version (used by ESP-IDF anti-rollback feature)..*/
 #define EFUSE_SECURE_VERSION    0x0000FFFF
@@ -1473,18 +1473,18 @@ apping gpio10 when both reg_dis_usb_jtag and reg_dis_pad_jtag are equal to 0..*/
 #define EFUSE_KEY_PURPOSE_2_ERR_S  0
 
 #define EFUSE_RD_REPEAT_ERR3_REG          (DR_REG_EFUSE_BASE + 0x188)
-/* EFUSE_RPT4_RESERVED1_ERR : RO ;bitpos:[31] ;default: 1'h0 ; */
-/*description: Reserved..*/
-#define EFUSE_RPT4_RESERVED1_ERR    (BIT(31))
-#define EFUSE_RPT4_RESERVED1_ERR_M  (BIT(31))
+/* EFUSE_ERR_RST_ENABLE_ERR : RO ;bitpos:[31] ;default: 1'h0 ; */
+/*description: Use BLOCK0 to check error record registers, 0 - without check.*/
+#define EFUSE_ERR_RST_ENABLE_ERR  (BIT(31))
+#define EFUSE_ERR_RST_ENABLE_ERR_M  (BIT(31))
+#define EFUSE_ERR_RST_ENABLE_ERR_V  0x1
+#define EFUSE_ERR_RST_ENABLE_ERR_S  31
+/* EFUSE_RPT4_RESERVED1_ERR : RO ;bitpos:[30] ;default: 1'h0 ; */
+/*description: Reserved.*/
+#define EFUSE_RPT4_RESERVED1_ERR  (BIT(30))
+#define EFUSE_RPT4_RESERVED1_ERR_M  (BIT(30))
 #define EFUSE_RPT4_RESERVED1_ERR_V  0x1
-#define EFUSE_RPT4_RESERVED1_ERR_S  31
-/* EFUSE_POWERGLITCH_EN_ERR : RO ;bitpos:[30] ;default: 1'b0 ; */
-/*description: .*/
-#define EFUSE_POWERGLITCH_EN_ERR    (BIT(30))
-#define EFUSE_POWERGLITCH_EN_ERR_M  (BIT(30))
-#define EFUSE_POWERGLITCH_EN_ERR_V  0x1
-#define EFUSE_POWERGLITCH_EN_ERR_S  30
+#define EFUSE_RPT4_RESERVED1_ERR_S  30
 /* EFUSE_SECURE_VERSION_ERR : RO ;bitpos:[29:14] ;default: 16'h0 ; */
 /*description: If any bits in this filed are 1, then it indicates a programming error..*/
 #define EFUSE_SECURE_VERSION_ERR    0x0000FFFF

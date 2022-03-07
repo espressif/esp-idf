@@ -1,16 +1,8 @@
-// Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef _SOC_EFUSE_STRUCT_H_
 #define _SOC_EFUSE_STRUCT_H_
 
@@ -113,8 +105,8 @@ typedef volatile struct efuse_dev_s {
             uint32_t reg_flash_ecc_en              :    1;  /*Set 1 to enable ECC for flash boot.*/
             uint32_t reg_force_send_resume         :    1;  /*Set this bit to force ROM code to send a resume command during SPI boot.*/
             uint32_t reg_secure_version            :    16;  /*Secure version (used by ESP-IDF anti-rollback feature).*/
-            uint32_t reg_powerglitch_en            :    1;  /*Set this bit to enable power glitch function.*/
             uint32_t reg_rpt4_reserved1            :    1;  /*Reserved (used for four backups method).*/
+            uint32_t reg_err_rst_enable            :    1;  /*Use BLOCK0 to check error record registers, 0 - without check.*/
         };
         uint32_t val;
     } rd_repeat_data3;
@@ -295,8 +287,8 @@ typedef volatile struct efuse_dev_s {
             uint32_t reg_flash_ecc_en_err          :    1;  /*If any bits in this filed are 1, then it indicates a programming error.*/
             uint32_t reg_force_send_resume_err     :    1;  /*If any bits in this filed are 1, then it indicates a programming error.*/
             uint32_t reg_secure_version_err        :    16;  /*If any bits in this filed are 1, then it indicates a programming error.*/
-            uint32_t reg_powerglitch_en_err        :    1;
             uint32_t reg_rpt4_reserved1_err        :    1;  /*Reserved.*/
+            uint32_t reg_err_rst_enable_err        :    1;  /*Use BLOCK0 to check error record registers, 0 - without check.*/
         };
         uint32_t val;
     } rd_repeat_err3;

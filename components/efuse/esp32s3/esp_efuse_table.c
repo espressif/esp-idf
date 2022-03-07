@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 9444b887379d924049af42806ca71d45
+// md5_digest_table 9ad4ee9f762f38e72cc539962367b6a2
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -349,6 +349,10 @@ static const esp_efuse_desc_t FORCE_SEND_RESUME[] = {
 
 static const esp_efuse_desc_t SECURE_VERSION[] = {
     {EFUSE_BLK0, 142, 16}, 	 // Secure version for anti-rollback,
+};
+
+static const esp_efuse_desc_t ERR_RST_ENABLE[] = {
+    {EFUSE_BLK0, 159, 1}, 	 // Use BLOCK0 to check error record registers,
 };
 
 static const esp_efuse_desc_t MAC_FACTORY[] = {
@@ -953,6 +957,11 @@ const esp_efuse_desc_t* ESP_EFUSE_FORCE_SEND_RESUME[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_SECURE_VERSION[] = {
     &SECURE_VERSION[0],    		// Secure version for anti-rollback
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ERR_RST_ENABLE[] = {
+    &ERR_RST_ENABLE[0],    		// Use BLOCK0 to check error record registers
     NULL
 };
 

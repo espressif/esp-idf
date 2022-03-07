@@ -256,11 +256,17 @@ extern "C" {
 #define EFUSE_KEY_PURPOSE_2_S  0
 
 #define EFUSE_PGM_DATA4_REG          (DR_REG_EFUSE_BASE + 0x010)
-/* EFUSE_RPT4_RESERVED1 : RO ;bitpos:[31:30] ;default: 2'h0 ; */
+/* EFUSE_ERR_RST_ENABLE : RO ;bitpos:[31] ;default: 1'h0 ; */
+/*description: Use BLOCK0 to check error record registers, 0 - without check.*/
+#define EFUSE_ERR_RST_ENABLE  (BIT(31))
+#define EFUSE_ERR_RST_ENABLE_M  (BIT(31))
+#define EFUSE_ERR_RST_ENABLE_V  0x1
+#define EFUSE_ERR_RST_ENABLE_S  31
+/* EFUSE_RPT4_RESERVED1 : RO ;bitpos:[30] ;default: 1'h0 ; */
 /*description: Reserved (used for four backups method).*/
-#define EFUSE_RPT4_RESERVED1  0x00000003
-#define EFUSE_RPT4_RESERVED1_M  ((EFUSE_RPT4_RESERVED1_V)<<(EFUSE_RPT4_RESERVED1_S))
-#define EFUSE_RPT4_RESERVED1_V  0x3
+#define EFUSE_RPT4_RESERVED1  (BIT(30))
+#define EFUSE_RPT4_RESERVED1_M  (BIT(30))
+#define EFUSE_RPT4_RESERVED1_V  0x1
 #define EFUSE_RPT4_RESERVED1_S  30
 /* EFUSE_SECURE_VERSION : R/W ;bitpos:[29:14] ;default: 16'h0 ; */
 /*description: Secure version (used by ESP-IDF anti-rollback feature).*/
@@ -609,11 +615,17 @@ extern "C" {
 #define EFUSE_KEY_PURPOSE_2_S  0
 
 #define EFUSE_RD_REPEAT_DATA3_REG          (DR_REG_EFUSE_BASE + 0x03C)
-/* EFUSE_RPT4_RESERVED1 : RO ;bitpos:[31:30] ;default: 2'h0 ; */
+/* EFUSE_ERR_RST_ENABLE : RO ;bitpos:[31] ;default: 1'h0 ; */
+/*description: Use BLOCK0 to check error record registers, 0 - without check.*/
+#define EFUSE_ERR_RST_ENABLE  (BIT(31))
+#define EFUSE_ERR_RST_ENABLE_M  (BIT(31))
+#define EFUSE_ERR_RST_ENABLE_V  0x1
+#define EFUSE_ERR_RST_ENABLE_S  31
+/* EFUSE_RPT4_RESERVED1 : RO ;bitpos:[30] ;default: 1'h0 ; */
 /*description: Reserved.*/
-#define EFUSE_RPT4_RESERVED1  0x00000003
-#define EFUSE_RPT4_RESERVED1_M  ((EFUSE_RPT4_RESERVED1_V)<<(EFUSE_RPT4_RESERVED1_S))
-#define EFUSE_RPT4_RESERVED1_V  0x3
+#define EFUSE_RPT4_RESERVED1  (BIT(30))
+#define EFUSE_RPT4_RESERVED1_M  (BIT(30))
+#define EFUSE_RPT4_RESERVED1_V  0x1
 #define EFUSE_RPT4_RESERVED1_S  30
 /* EFUSE_SECURE_VERSION : RO ;bitpos:[29:14] ;default: 16'h0 ; */
 /*description: The value of SECURE_VERSION.*/
@@ -1561,11 +1573,17 @@ extern "C" {
 #define EFUSE_KEY_PURPOSE_2_ERR_S  0
 
 #define EFUSE_RD_REPEAT_ERR3_REG          (DR_REG_EFUSE_BASE + 0x188)
-/* EFUSE_RPT4_RESERVED1_ERR : RO ;bitpos:[31:30] ;default: 2'h0 ; */
+/* EFUSE_ERR_RST_ENABLE_ERR : RO ;bitpos:[31] ;default: 1'h0 ; */
+/*description: Use BLOCK0 to check error record registers, 0 - without check.*/
+#define EFUSE_ERR_RST_ENABLE_ERR  (BIT(31))
+#define EFUSE_ERR_RST_ENABLE_ERR_M  (BIT(31))
+#define EFUSE_ERR_RST_ENABLE_ERR_V  0x1
+#define EFUSE_ERR_RST_ENABLE_ERR_S  31
+/* EFUSE_RPT4_RESERVED1_ERR : RO ;bitpos:[30] ;default: 1'h0 ; */
 /*description: Reserved.*/
-#define EFUSE_RPT4_RESERVED1_ERR  0x00000003
-#define EFUSE_RPT4_RESERVED1_ERR_M  ((EFUSE_RPT4_RESERVED1_ERR_V)<<(EFUSE_RPT4_RESERVED1_ERR_S))
-#define EFUSE_RPT4_RESERVED1_ERR_V  0x3
+#define EFUSE_RPT4_RESERVED1_ERR  (BIT(30))
+#define EFUSE_RPT4_RESERVED1_ERR_M  (BIT(30))
+#define EFUSE_RPT4_RESERVED1_ERR_V  0x1
 #define EFUSE_RPT4_RESERVED1_ERR_S  30
 /* EFUSE_SECURE_VERSION_ERR : RO ;bitpos:[29:14] ;default: 16'h0 ; */
 /*description: If any bit in SECURE_VERSION is 1  then it indicates a programming error.*/
