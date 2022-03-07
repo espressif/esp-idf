@@ -143,6 +143,13 @@ TEST_CASE("(SD) can truncate", "[fatfs][sd][test_env=UT_T1_SDMODE][timeout=60]")
     test_teardown();
 }
 
+TEST_CASE("(SD) can ftruncate", "[fatfs][sd][test_env=UT_T1_SDMODE][timeout=60]")
+{
+    test_setup();
+    test_fatfs_ftruncate_file("/sdcard/ftrunc.txt");
+    test_teardown();
+}
+
 TEST_CASE("(SD) stat returns correct values", "[fatfs][test_env=UT_T1_SDMODE][timeout=60]")
 {
     test_setup();
