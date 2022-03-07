@@ -12,7 +12,7 @@
 #include "test_utils.h"             // unity_send_signal
 #include "driver/uart.h"            // for the uart driver access
 #include "esp_log.h"
-#include "esp_system.h"             // for uint32_t esp_random()
+#include "esp_random.h"             // for uint32_t esp_random()
 
 #define UART_TAG         "Uart"
 #define UART_NUM1        (UART_NUM_1)

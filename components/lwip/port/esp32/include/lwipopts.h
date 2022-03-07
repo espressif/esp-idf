@@ -15,7 +15,7 @@
 #include <sys/types.h>
 #include <sys/select.h>
 #include "esp_task.h"
-#include "esp_system.h"
+#include "esp_random.h"
 #include "sdkconfig.h"
 #include "netif/dhcp_state.h"
 #include "sntp/sntp_get_set_time.h"

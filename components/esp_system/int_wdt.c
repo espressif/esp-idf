@@ -16,6 +16,7 @@
 #include "esp_intr_alloc.h"
 #include "esp_attr.h"
 #include "esp_log.h"
+#include "esp_chip_info.h"
 #include "esp_freertos_hooks.h"
 #include "soc/timer_periph.h"
 #include "esp_private/periph_ctrl.h"

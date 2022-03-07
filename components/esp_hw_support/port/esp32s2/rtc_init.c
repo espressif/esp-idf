@@ -15,7 +15,7 @@
 #include "soc/extmem_reg.h"
 #include "regi2c_ulp.h"
 #include "regi2c_ctrl.h"
-#include "soc_log.h"
+#include "esp_hw_log.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 
@@ -276,7 +276,7 @@ static void calibrate_ocode(void)
         if (odone_flag && bg_odone_flag)
             break;
         if (cycle1 >= timeout_cycle) {
-            SOC_LOGW(TAG, "o_code calibration fail");
+            ESP_HW_LOGW(TAG, "o_code calibration fail");
             break;
         }
     }

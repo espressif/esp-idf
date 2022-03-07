@@ -25,7 +25,7 @@ we add more types of external RAM memory, this can be made into a more intellige
 #include "esp_heap_caps_init.h"
 #include "soc/soc_memory_layout.h"
 #include "soc/dport_reg.h"
-#include "esp32/himem.h"
+#include "esp_himem.h"
 #include "esp32/rom/cache.h"
 
 #if CONFIG_FREERTOS_UNICORE

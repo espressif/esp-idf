@@ -12,7 +12,7 @@
 
 #include "string.h"
 #include "unity.h"
-#include "esp_system.h"
+#include "esp_mac.h"
 #include "esp_event.h"
 #include "esp_wifi.h"
 #include "esp_wifi_types.h"

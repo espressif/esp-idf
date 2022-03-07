@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdio.h>
-#include "esp_system.h"
+#include "esp_random.h"
 #include "esp_log.h"
 #include "WL_Flash.h"
 #include <stdlib.h>

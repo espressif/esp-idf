@@ -18,7 +18,7 @@
 #include "driver/ledc.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
-#include "soc/clk_ctrl_os.h"
+#include "clk_ctrl_os.h"
 #include "esp_private/periph_ctrl.h"
 
 static __attribute__((unused)) const char *LEDC_TAG = "ledc";

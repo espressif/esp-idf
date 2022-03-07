@@ -21,6 +21,7 @@
 #include "esp_err.h"
 #include "esp_wifi.h"
 #include "esp_console.h"
+#include "esp_mac.h"
 
 typedef struct {
     struct arg_str *ssid;

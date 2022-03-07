@@ -232,6 +232,21 @@ static inline void cpu_ll_write_dedic_gpio_mask(uint32_t mask, uint32_t value)
     RV_CLEAR_CSR(CSR_GPIO_OUT_USER, mask & ~(value));
 }
 
+static inline void cpu_ll_compare_and_set_native(volatile uint32_t *addr, uint32_t compare, uint32_t *set)
+{
+    uint32_t old_value;
+    unsigned old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
+
+    old_value = *addr;
+    if (old_value == compare) {
+        *addr = *set;
+    }
+
+    RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
+
+    *set = old_value;
+}
+
 #ifdef __cplusplus
 }
 #endif

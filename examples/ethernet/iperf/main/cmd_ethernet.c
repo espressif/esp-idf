@@ -15,6 +15,7 @@
 #include "esp_console.h"
 #include "esp_event.h"
 #include "esp_eth.h"
+#include "esp_mac.h"
 #include "driver/gpio.h"
 #include "argtable3/argtable3.h"
 #include "iperf.h"

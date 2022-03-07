@@ -17,6 +17,7 @@
 #include "esp_event_legacy.h"
 #include "esp_wifi_types.h"
 #include "esp_netif.h"
+#include "esp_mac.h"
 #if CONFIG_ETH_ENABLED
 #include "esp_eth.h"
 #endif

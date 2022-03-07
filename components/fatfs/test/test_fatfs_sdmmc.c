@@ -12,7 +12,7 @@
 #include <sys/unistd.h>
 #include "unity.h"
 #include "esp_log.h"
-#include "esp_system.h"
+#include "esp_random.h"
 #include "esp_vfs.h"
 #include "esp_vfs_fat.h"
 #include "freertos/FreeRTOS.h"

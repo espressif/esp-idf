@@ -1,9 +1,16 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #pragma once
+
+#include "sdkconfig.h"
+
+#if !CONFIG_IDF_TARGET_ESP32
+#error esp_himem is only supported on ESP32
+#else
 
 #include <stddef.h>
 #include "esp_err.h"
@@ -141,3 +148,5 @@ size_t esp_himem_reserved_area_size(void);
 #ifdef __cplusplus
 }
 #endif
+
+#endif // !CONFIG_IDF_TARGET_ESP32

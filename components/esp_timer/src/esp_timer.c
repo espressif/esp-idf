@@ -15,7 +15,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "soc/spinlock.h"
 #include "esp_timer.h"
 #include "esp_timer_impl.h"
 

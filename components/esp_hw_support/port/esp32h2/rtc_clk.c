@@ -21,7 +21,7 @@
 #include "soc/syscon_reg.h"
 #include "soc/system_reg.h"
 #include "regi2c_ctrl.h"
-#include "soc_log.h"
+#include "esp_hw_log.h"
 #include "rtc_clk_common.h"
 #include "esp_rom_sys.h"
 
@@ -166,7 +166,7 @@ void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
     } else {
         div_ref = 0;
         div5_0 = 1;
-        SOC_LOGE(TAG, "invalid pll frequency");
+        ESP_HW_LOGE(TAG, "invalid pll frequency");
     }
 
     REGI2C_WRITE_MASK(I2C_BBPLL, I2C_BBPLL_OC_REF_DIV, div_ref);
@@ -187,7 +187,7 @@ static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
     if (RTC_PLL_FREQ_96M % cpu_freq_mhz == 0) {
         div = RTC_PLL_FREQ_96M / cpu_freq_mhz;
     } else {
-        SOC_LOGE(TAG, "invalid frequency");
+        ESP_HW_LOGE(TAG, "invalid frequency");
         abort();
     }
     rtc_clk_cpu_freq_set(DPORT_SOC_CLK_SEL_PLL, div - 1);
@@ -272,7 +272,7 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config)
         break;
     }
     default: {
-        SOC_LOGE(TAG, "unsupported frequency configuration");
+        ESP_HW_LOGE(TAG, "unsupported frequency configuration");
         abort();
     }
     }
@@ -328,7 +328,7 @@ rtc_xtal_freq_t rtc_clk_xtal_freq_get(void)
 {
     uint32_t xtal_freq_reg = READ_PERI_REG(RTC_XTAL_FREQ_REG);
     if (!clk_val_is_valid(xtal_freq_reg)) {
-        SOC_LOGW(TAG, "invalid RTC_XTAL_FREQ_REG value: 0x%08x", xtal_freq_reg);
+        ESP_HW_LOGW(TAG, "invalid RTC_XTAL_FREQ_REG value: 0x%08x", xtal_freq_reg);
         return RTC_XTAL_FREQ_32M;
     }
     return reg_val_to_clk_val(xtal_freq_reg);
@@ -443,7 +443,7 @@ uint32_t root_clk_slt(uint32_t source)
         rtc_clk_bbpll_disable();
         break;
     default:
-        SOC_LOGE(TAG, "unsupported source clk configuration");
+        ESP_HW_LOGE(TAG, "unsupported source clk configuration");
         root_clk_freq_mhz = RTC_XTAL_FREQ_32M;
         rtc_clk_bbpll_disable();
         source = 0;

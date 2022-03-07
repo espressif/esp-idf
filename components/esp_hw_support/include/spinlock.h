@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include <stdbool.h>
 #include "sdkconfig.h"
 #include "hal/cpu_hal.h"
-#include "soc/compare_set.h"
+#include "compare_set.h"
 
 #if __XTENSA__
 #include "xtensa/xtruntime.h"
