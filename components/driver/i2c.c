@@ -390,7 +390,7 @@ err:
         if (p_i2c_obj[i2c_num]->cmd_mux) {
             vSemaphoreDelete(p_i2c_obj[i2c_num]->cmd_mux);
         }
-#if SOC_I2C_SUPPORT_SALVE
+#if SOC_I2C_SUPPORT_SLAVE
         if (p_i2c_obj[i2c_num]->slv_rx_mux) {
             vSemaphoreDelete(p_i2c_obj[i2c_num]->slv_rx_mux);
         }
