@@ -54,9 +54,8 @@ struct MasterFixture {
     vector<uint8_t> data;
 };
 
-#if SOC_I2C_SUPPORT_SALVE
 // TODO The I2C driver tests are disabled, so disable them here, too. Probably due to no runners.
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP8684)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C2)
 
 static void i2c_slave_read_raw_byte(void)
 {
@@ -259,5 +258,4 @@ TEST_CASE_MULTIPLE_DEVICES("I2CMaster Composed transfer", "[cxx i2c][test_env=UT
         i2c_master_composed_trans, i2c_slave_composed_trans);
 
 #endif  //TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
-#endif // SOC_I2C_SUPPORT_SALVE
 #endif // __cpp_exceptions

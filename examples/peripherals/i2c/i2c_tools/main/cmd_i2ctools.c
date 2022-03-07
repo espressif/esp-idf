@@ -31,7 +31,7 @@ static const char *TAG = "cmd_i2ctools";
 #if CONFIG_IDF_TARGET_ESP32S3
 static gpio_num_t i2c_gpio_sda = 1;
 static gpio_num_t i2c_gpio_scl = 2;
-#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP8684
+#elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
 static gpio_num_t i2c_gpio_sda = 5;
 static gpio_num_t i2c_gpio_scl = 6;
 #else
