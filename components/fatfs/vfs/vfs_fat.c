@@ -89,6 +89,7 @@ static int vfs_fat_mkdir(void* ctx, const char* name, mode_t mode);
 static int vfs_fat_rmdir(void* ctx, const char* name);
 static int vfs_fat_access(void* ctx, const char *path, int amode);
 static int vfs_fat_truncate(void* ctx, const char *path, off_t length);
+static int vfs_fat_ftruncate(void* ctx, int fd, off_t length);
 static int vfs_fat_utime(void* ctx, const char *path, const struct utimbuf *times);
 #endif // CONFIG_VFS_SUPPORT_DIR
 
@@ -154,6 +155,7 @@ esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive, siz
         .rmdir_p = &vfs_fat_rmdir,
         .access_p = &vfs_fat_access,
         .truncate_p = &vfs_fat_truncate,
+        .ftruncate_p = &vfs_fat_ftruncate,
         .utime_p = &vfs_fat_utime,
 #endif // CONFIG_VFS_SUPPORT_DIR
     };
@@ -957,6 +959,59 @@ close:
 
 out:
     free(file);
+    return ret;
+}
+
+static int vfs_fat_ftruncate(void* ctx, int fd, off_t length)
+{
+    FRESULT res;
+    FIL* file = NULL;
+
+    int ret = 0;
+
+    vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
+
+    if (length < 0) {
+        errno = EINVAL;
+        ret = -1;
+        return ret;
+    }
+
+    _lock_acquire(&fat_ctx->lock);
+    file = &fat_ctx->files[fd];
+    if (file == NULL) {
+        ESP_LOGD(TAG, "ftruncate NULL file pointer");
+        errno = EINVAL;
+        ret = -1;
+        goto out;
+    }
+
+    long sz = f_size(file);
+    if (sz < length) {
+        ESP_LOGD(TAG, "ftruncate does not support extending size");
+        errno = EPERM;
+        ret = -1;
+        goto out;
+    }
+
+    res = f_lseek(file, length);
+    if (res != FR_OK) {
+        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+        errno = fresult_to_errno(res);
+        ret = -1;
+        goto out;
+    }
+
+    res = f_truncate(file);
+
+    if (res != FR_OK) {
+        ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
+        errno = fresult_to_errno(res);
+        ret = -1;
+    }
+
+out:
+    _lock_release(&fat_ctx->lock);
     return ret;
 }
 

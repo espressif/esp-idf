@@ -787,6 +787,20 @@ int esp_vfs_truncate(const char *path, off_t length)
     return ret;
 }
 
+int esp_vfs_ftruncate(int fd, off_t length)
+{
+    const vfs_entry_t* vfs = get_vfs_for_fd(fd);
+    int local_fd = get_local_fd(vfs, fd);
+    struct _reent* r = __getreent();
+    if (vfs == NULL || local_fd < 0) {
+        __errno_r(r) = EBADF;
+        return -1;
+    }
+    int ret;
+    CHECK_AND_CALL(ret, r, vfs, ftruncate, local_fd, length);
+    return ret;
+}
+
 #endif // CONFIG_VFS_SUPPORT_DIR
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
@@ -1251,6 +1265,8 @@ int _rename_r(struct _reent *r, const char *src, const char *dst)
     __attribute__((alias("esp_vfs_rename")));
 int truncate(const char *path, off_t length)
     __attribute__((alias("esp_vfs_truncate")));
+int ftruncate(int fd, off_t length)
+    __attribute__((alias("esp_vfs_ftruncate")));
 int access(const char *path, int amode)
     __attribute__((alias("esp_vfs_access")));
 int utime(const char *path, const struct utimbuf *times)
