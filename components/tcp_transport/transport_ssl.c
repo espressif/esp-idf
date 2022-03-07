@@ -174,6 +174,8 @@ static int base_poll_read(esp_transport_handle_t t, int timeout_ms)
         esp_transport_capture_errno(t, sock_errno);
         ESP_LOGE(TAG, "poll_read select error %d, errno = %s, fd = %d", sock_errno, strerror(sock_errno), ssl->sockfd);
         ret = -1;
+    } else if (ret == 0) {
+        ESP_LOGD(TAG, "poll_read: select - Timeout before any socket was ready!");
     }
     return ret;
 }
@@ -197,6 +199,8 @@ static int base_poll_write(esp_transport_handle_t t, int timeout_ms)
         esp_transport_capture_errno(t, sock_errno);
         ESP_LOGE(TAG, "poll_write select error %d, errno = %s, fd = %d", sock_errno, strerror(sock_errno), ssl->sockfd);
         ret = -1;
+    } else if (ret == 0) {
+        ESP_LOGD(TAG, "poll_write: select - Timeout before any socket was ready!");
     }
     return ret;
 }
@@ -242,51 +246,64 @@ static int tcp_write(esp_transport_handle_t t, const char *buffer, int len, int 
 
 static int ssl_read(esp_transport_handle_t t, char *buffer, int len, int timeout_ms)
 {
-    int poll;
     transport_esp_tls_t *ssl = ssl_get_context_data(t);
 
-    if ((poll = esp_transport_poll_read(t, timeout_ms)) <= 0) {
-        return poll;
+    int poll = esp_transport_poll_read(t, timeout_ms);
+    if (poll == -1) {
+        return ERR_TCP_TRANSPORT_CONNECTION_FAILED;
     }
+    if (poll == 0) {
+        return ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT;
+    }
+
     int ret = esp_tls_conn_read(ssl->tls, (unsigned char *)buffer, len);
     if (ret < 0) {
         ESP_LOGE(TAG, "esp_tls_conn_read error, errno=%s", strerror(errno));
+        if (ret == ESP_TLS_ERR_SSL_WANT_READ || ret == ESP_TLS_ERR_SSL_TIMEOUT) {
+            ret = ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT;
+        }
+
         esp_tls_error_handle_t esp_tls_error_handle;
         if (esp_tls_get_error_handle(ssl->tls, &esp_tls_error_handle) == ESP_OK) {
             esp_transport_set_errors(t, esp_tls_error_handle);
         } else {
             ESP_LOGE(TAG, "Error in obtaining the error handle");
         }
-    }
-    if (ret == 0) {
+    } else if (ret == 0) {
         if (poll > 0) {
             // no error, socket reads 0 while previously detected as readable -> connection has been closed cleanly
             capture_tcp_transport_error(t, ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN);
         }
-        ret = -1;
+        ret = ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN;
     }
     return ret;
 }
 
 static int tcp_read(esp_transport_handle_t t, char *buffer, int len, int timeout_ms)
 {
-    int poll;
     transport_esp_tls_t *ssl = ssl_get_context_data(t);
 
-    if ((poll = esp_transport_poll_read(t, timeout_ms)) <= 0) {
-        return poll;
+    int poll = esp_transport_poll_read(t, timeout_ms);
+    if (poll == -1) {
+        return ERR_TCP_TRANSPORT_CONNECTION_FAILED;
     }
+    if (poll == 0) {
+        return ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT;
+    }
+
     int ret = recv(ssl->sockfd, (unsigned char *)buffer, len, 0);
     if (ret < 0) {
         ESP_LOGE(TAG, "tcp_read error, errno=%s", strerror(errno));
         esp_transport_capture_errno(t, errno);
-    }
-    if (ret == 0) {
+        if (errno == EAGAIN) {
+            ret = ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT;
+        }
+    } else if (ret == 0) {
         if (poll > 0) {
             // no error, socket reads 0 while previously detected as readable -> connection has been closed cleanly
             capture_tcp_transport_error(t, ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN);
         }
-        ret = -1;
+        ret = ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN;
     }
     return ret;
 }

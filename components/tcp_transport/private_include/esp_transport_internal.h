@@ -46,18 +46,6 @@ struct esp_transport_item_t {
 };
 
 /**
- * @brief Internal error types for TCP connection issues not covered in socket's errno
- */
-enum tcp_transport_errors {
-    ERR_TCP_TRANSPORT_CONNECTION_TIMEOUT,
-    ERR_TCP_TRANSPORT_CANNOT_RESOLVE_HOSTNAME,
-    ERR_TCP_TRANSPORT_CONNECTION_CLOSED_BY_FIN,
-    ERR_TCP_TRANSPORT_CONNECTION_FAILED,
-    ERR_TCP_TRANSPORT_SETOPT_FAILED,
-    ERR_TCP_TRANSPORT_NO_MEM,
-};
-
-/**
  * @brief      Captures internal tcp connection error
  *
  * This is internally translated to esp-tls return codes of esp_err_t type, since the esp-tls
@@ -67,7 +55,7 @@ enum tcp_transport_errors {
  * @param[in] error Internal tcp-transport's error
  *
  */
-void capture_tcp_transport_error(esp_transport_handle_t t, enum tcp_transport_errors error);
+void capture_tcp_transport_error(esp_transport_handle_t t, enum esp_tcp_transport_err_t error);
 
 /**
  * @brief Returns underlying socket for the supplied transport handle
