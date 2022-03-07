@@ -436,22 +436,25 @@ esp_err_t emac_hal_stop(emac_hal_context_t *hal)
 
     /* Stop DMA transmission */
     opm.start_stop_transmission_command = 0;
-    /* Stop DMA reception */
-    opm.start_stop_rx = 0;
-
     hal->dma_regs->dmaoperation_mode = opm;
-
     if (hal->mac_regs->emacdebug.mactfcs != 0x0) {
         /* Previous transmit in progress */
         return ESP_ERR_INVALID_STATE;
     }
+    /* Disable transmit state machine of the MAC for transmission on the MII */
+    cfg.tx = 0;
+    hal->mac_regs->gmacconfig = cfg;
 
     /* Disable receive state machine of the MAC for reception from the MII */
     cfg.rx = 0;
-    /* Disable transmit state machine of the MAC for transmission on the MII */
-    cfg.tx = 0;
-
     hal->mac_regs->gmacconfig = cfg;
+    if (hal->mac_regs->emacdebug.mtlrfrcs != 0x0) {
+        /* Previous receive copy in progress */
+        return ESP_ERR_INVALID_STATE;
+    }
+    /* Stop DMA reception */
+    opm.start_stop_rx = 0;
+    hal->dma_regs->dmaoperation_mode = opm;
 
     /* Disable Ethernet MAC and DMA Interrupt */
     hal->dma_regs->dmain_en.val = 0x0;
