@@ -184,6 +184,8 @@ void emac_hal_reset_desc_chain(emac_hal_context_t *hal)
 
     /* init tx chain */
     for (int i = 0; i < CONFIG_ETH_DMA_TX_BUFFER_NUM; i++) {
+        /* Set Own bit of the Tx descriptor Status: CPU */
+        hal->tx_desc[i].TDES0.Own = 0;
         /* Set Second Address Chained bit */
         hal->tx_desc[i].TDES0.SecondAddressChained = 1;
         hal->tx_desc[i].TDES1.TransmitBuffer1Size = CONFIG_ETH_DMA_BUFFER_SIZE;
@@ -427,27 +429,37 @@ void emac_hal_start(emac_hal_context_t *hal)
     hal->dma_regs->dmastatus.val = 0xFFFFFFFF;
 }
 
-void emac_hal_stop(emac_hal_context_t *hal)
+esp_err_t emac_hal_stop(emac_hal_context_t *hal)
 {
     typeof(hal->dma_regs->dmaoperation_mode) opm = hal->dma_regs->dmaoperation_mode;
     typeof(hal->mac_regs->gmacconfig) cfg = hal->mac_regs->gmacconfig;
 
-    /* Flush Transmit FIFO */
-    opm.flush_tx_fifo = 1;
     /* Stop DMA transmission */
     opm.start_stop_transmission_command = 0;
-    /* Stop DMA reception */
-    opm.start_stop_rx = 0;
-    /* Disable receive state machine of the MAC for reception from the MII */
-    cfg.rx = 0;
+    hal->dma_regs->dmaoperation_mode = opm;
+    if (hal->mac_regs->emacdebug.mactfcs != 0x0) {
+        /* Previous transmit in progress */
+        return ESP_ERR_INVALID_STATE;
+    }
     /* Disable transmit state machine of the MAC for transmission on the MII */
     cfg.tx = 0;
-
-    hal->dma_regs->dmaoperation_mode = opm;
     hal->mac_regs->gmacconfig = cfg;
+
+    /* Disable receive state machine of the MAC for reception from the MII */
+    cfg.rx = 0;
+    hal->mac_regs->gmacconfig = cfg;
+    if (hal->mac_regs->emacdebug.mtlrfrcs != 0x0) {
+        /* Previous receive copy in progress */
+        return ESP_ERR_INVALID_STATE;
+    }
+    /* Stop DMA reception */
+    opm.start_stop_rx = 0;
+    hal->dma_regs->dmaoperation_mode = opm;
 
     /* Disable Ethernet MAC and DMA Interrupt */
     hal->dma_regs->dmain_en.val = 0x0;
+
+    return ESP_OK;
 }
 
 uint32_t emac_hal_get_tx_desc_owner(emac_hal_context_t *hal)
