@@ -1,8 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
+#include "freertos/semphr.h"
 
 #include "esp_dpp_i.h"
 #include "esp_dpp.h"
@@ -12,6 +17,7 @@
 #include "esp_wifi.h"
 #include "common/ieee802_11_defs.h"
 
+#ifdef CONFIG_DPP
 static void *s_dpp_task_hdl = NULL;
 static void *s_dpp_evt_queue = NULL;
 static void *s_dpp_api_lock = NULL;
@@ -184,7 +190,6 @@ static int esp_dpp_handle_config_obj(struct dpp_authentication *auth,
             os_memcpy(wifi_cfg->sta.password, conf->passphrase,
                       sizeof(wifi_cfg->sta.password));
         if (conf->akm == DPP_AKM_PSK_SAE) {
-            wifi_cfg->sta.pmf_cfg.capable = true;
             wifi_cfg->sta.pmf_cfg.required = true;
         }
     }
@@ -675,3 +680,4 @@ void esp_supp_dpp_deinit(void)
     dpp_global_deinit(s_dpp_ctx.dpp_global);
     esp_dpp_post_evt(SIG_DPP_DEL_TASK, 0);
 }
+#endif

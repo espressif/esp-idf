@@ -53,7 +53,9 @@
 /.pre-commit-config.yaml              @esp-idf-codeowners/ci
 /.readthedocs.yml                     @esp-idf-codeowners/docs
 /CMakeLists.txt                       @esp-idf-codeowners/build-config
+/CONTRIBUTING.rst                     @esp-idf-codeowners/docs
 /Kconfig                              @esp-idf-codeowners/build-config
+/README*.md                           @esp-idf-codeowners/docs
 /add_path.sh                          @esp-idf-codeowners/tools
 /conftest.py                          @esp-idf-codeowners/ci
 /export.*                             @esp-idf-codeowners/tools
@@ -71,7 +73,6 @@
 /components/bootloader_support/bootloader_flash/    @esp-idf-codeowners/peripherals
 /components/bt/                       @esp-idf-codeowners/bluetooth
 /components/cmock/                    @esp-idf-codeowners/system
-/components/coap/                     @esp-idf-codeowners/app-utilities
 /components/console/                  @esp-idf-codeowners/system @esp-idf-codeowners/app-utilities
 /components/cxx/                      @esp-idf-codeowners/system
 /components/driver/                   @esp-idf-codeowners/peripherals
@@ -121,7 +122,6 @@
 /components/mqtt/                     @esp-idf-codeowners/network
 /components/newlib/                   @esp-idf-codeowners/system @esp-idf-codeowners/tools
 /components/nvs_flash/                @esp-idf-codeowners/storage
-/components/openssl/                  @esp-idf-codeowners/network
 /components/openthread/               @esp-idf-codeowners/ieee802154
 /components/partition_table/          @esp-idf-codeowners/system
 /components/perfmon/                  @esp-idf-codeowners/tools
@@ -157,6 +157,8 @@
 /docs/**/security/                      @esp-idf-codeowners/security
 /docs/**/migration-guides/              @esp-idf-codeowners/docs @esp-idf-codeowners/all-maintainers
 
+/examples/README.md           @esp-idf-codeowners/docs @esp-idf-codeowners/ci
+/examples/**/*.py             @esp-idf-codeowners/ci @esp-idf-codeowners/tools
 /examples/bluetooth/          @esp-idf-codeowners/bluetooth
 /examples/build_system/       @esp-idf-codeowners/build-config
 /examples/common_components/  @esp-idf-codeowners/system
@@ -175,8 +177,6 @@
 /examples/wifi/               @esp-idf-codeowners/wifi
 /examples/zigbee/             @esp-idf-codeowners/ieee802154
 
-/examples/**/*.py             @esp-idf-codeowners/ci @esp-idf-codeowners/tools
-
 /tools/                       @esp-idf-codeowners/tools
 /tools/*_apps.py              @esp-idf-codeowners/ci
 /tools/ble/                   @esp-idf-codeowners/app-utilities
@@ -190,6 +190,7 @@
 /tools/ldgen/                 @esp-idf-codeowners/build-config
 /tools/mass_mfg/              @esp-idf-codeowners/app-utilities
 /tools/mocks/                 @esp-idf-codeowners/system
+/tools/test_apps/README.md    @esp-idf-codeowners/docs @esp-idf-codeowners/ci
 
 ## Note: owners here should be the same as the owners for the same example subdir, above
 /tools/test_apps/build_system/       @esp-idf-codeowners/build-config
@@ -201,9 +202,9 @@
 
 /tools/unit-test-app/         @esp-idf-codeowners/system @esp-idf-codeowners/tools
 
-requirements.*.txt              @esp-idf-codeowners/tools
-
 # sort-order-reset
+
+/components/**/test_apps/**/*.py     @esp-idf-codeowners/ci @esp-idf-codeowners/tools
 
 # ignore lists
 /tools/ci/check_copyright_config.yaml                   @esp-idf-codeowners/all-maintainers

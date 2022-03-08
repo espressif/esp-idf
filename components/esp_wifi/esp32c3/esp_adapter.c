@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,7 +20,8 @@
 #include "riscv/interrupt.h"
 #include "riscv/riscv_interrupts.h"
 #include "esp_types.h"
-#include "esp_system.h"
+#include "esp_random.h"
+#include "esp_mac.h"
 #include "esp_task.h"
 #include "esp_intr_alloc.h"
 #include "esp_attr.h"
@@ -42,6 +43,7 @@
 #include "esp_smartconfig.h"
 #include "esp_coexist_internal.h"
 #include "esp_coexist_adapter.h"
+#include "esp32c3/rom/ets_sys.h"
 
 #define TAG "esp_adapter"
 

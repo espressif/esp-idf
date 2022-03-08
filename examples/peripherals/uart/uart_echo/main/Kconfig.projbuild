@@ -4,8 +4,8 @@ menu "Echo Example Configuration"
         int "UART port number"
         range 0 2 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3
         default 2 if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S3
-        range 0 1 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3
-        default 1 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3
+        range 0 1 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32H2
+        default 1 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32H2
         help
             UART communication port number for the example.
             See UART documentation for available port numbers.
@@ -19,10 +19,12 @@ menu "Echo Example Configuration"
 
     config EXAMPLE_UART_RXD
         int "UART RXD pin number"
-        range 0 34 if IDF_TARGET_ESP32
-        range 0 46 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+        range 0 39 if IDF_TARGET_ESP32
+        range 0 46 if IDF_TARGET_ESP32S2
         range 0 19 if IDF_TARGET_ESP32C3
-        range 0 47 if IDF_TARGET_ESP32S3
+        range 0 48 if IDF_TARGET_ESP32S3
+        range 0 18 if IDF_TARGET_ESP32C2
+        range 0 25 if IDF_TARGET_ESP32H2
         default 5
         help
             GPIO number for UART RX pin. See UART documentation for more information
@@ -30,10 +32,12 @@ menu "Echo Example Configuration"
 
     config EXAMPLE_UART_TXD
         int "UART TXD pin number"
-        range 0 34 if IDF_TARGET_ESP32
-        range 0 46 if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+        range 0 33 if IDF_TARGET_ESP32
+        range 0 45 if IDF_TARGET_ESP32S2
         range 0 19 if IDF_TARGET_ESP32C3
-        range 0 47 if IDF_TARGET_ESP32S3
+        range 0 48 if IDF_TARGET_ESP32S3
+        range 0 18 if IDF_TARGET_ESP32C2
+        range 0 25 if IDF_TARGET_ESP32H2
         default 4
         help
             GPIO number for UART TX pin. See UART documentation for more information

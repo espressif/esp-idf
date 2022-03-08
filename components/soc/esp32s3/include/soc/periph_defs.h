@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -51,6 +51,7 @@ typedef enum {
     PERIPH_GDMA_MODULE,
     PERIPH_DEDIC_GPIO_MODULE,
     PERIPH_SARADC_MODULE,
+    PERIPH_TEMPSENSOR_MODULE,
     PERIPH_MODULE_MAX
 } periph_module_t;
 

@@ -176,16 +176,31 @@ _panic_handler:
     bgeu  a1, t0, _call_panic_handler
     sw    a1, RV_STK_MCAUSE(sp)
     /* exception_from_panic never returns */
-    j panic_from_exception
+    jal panic_from_exception
+    /* We arrive here if the exception handler has returned. */
+    j _return_from_exception
+
 _call_panic_handler:
     /* Remove highest bit from mcause (a1) register and save it in the
      * structure */
     not   t0, t0
     and   a1, a1, t0
     sw    a1, RV_STK_MCAUSE(sp)
-    /* exception_from_isr never returns */
-    j panic_from_isr
-    .size  panic_from_isr, .-panic_from_isr
+    jal panic_from_isr
+
+    /* We arrive here if the exception handler has returned. This means that
+     * the exception was handled, and the execution flow should resume.
+     * Restore the registers and return from the exception.
+     */
+_return_from_exception:
+    restore_mepc
+    /* MTVEC and SP are assumed to be unmodified.
+     * MSTATUS, MHARTID, MTVAL are read-only and not restored.
+     */
+    lw gp,  RV_STK_GP(sp)
+    restore_general_regs RV_STK_FRMSZ
+    mret
+    .size  _panic_handler, .-_panic_handler
 
     /* This is the interrupt handler.
      * It saves the registers on the stack,
@@ -200,6 +215,17 @@ _interrupt_handler:
      * the interrupt happened. */
     save_general_regs
     save_mepc
+
+    /* Though it is not necessary we save GP and SP here.
+     * SP is necessary to help GDB to properly unwind
+     * the backtrace of threads preempted by interrupts (OS tick etc.).
+     * GP is saved just to have its proper value in GDB. */
+    /* As gp register is not saved by the macro, save it here */
+    sw    gp, RV_STK_GP(sp)
+    /* Same goes for the SP value before trapping */
+    addi  t0, sp, CONTEXT_SIZE /* restore sp with the value when interrupt happened */
+    /* Save SP */
+    sw    t0, RV_STK_SP(sp)
 
     /* Before doing anythig preserve the stack pointer */
     /* It will be saved in current TCB, if needed */

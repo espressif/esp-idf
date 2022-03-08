@@ -1,16 +1,8 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdlib.h>
 #include <string.h>
@@ -823,7 +815,7 @@ esp_err_t esp_event_handler_instance_unregister_with(esp_event_loop_handle_t eve
 }
 
 esp_err_t esp_event_post_to(esp_event_loop_handle_t event_loop, esp_event_base_t event_base, int32_t event_id,
-                            void* event_data, size_t event_data_size, TickType_t ticks_to_wait)
+                            const void* event_data, size_t event_data_size, TickType_t ticks_to_wait)
 {
     assert(event_loop);
 
@@ -900,7 +892,7 @@ esp_err_t esp_event_post_to(esp_event_loop_handle_t event_loop, esp_event_base_t
 
 #if CONFIG_ESP_EVENT_POST_FROM_ISR
 esp_err_t esp_event_isr_post_to(esp_event_loop_handle_t event_loop, esp_event_base_t event_base, int32_t event_id,
-                            void* event_data, size_t event_data_size, BaseType_t* task_unblocked)
+                            const void* event_data, size_t event_data_size, BaseType_t* task_unblocked)
 {
     assert(event_loop);
 

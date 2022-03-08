@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  *
@@ -12,7 +12,7 @@
 
 #include "string.h"
 #include "unity.h"
-#include "esp_system.h"
+#include "esp_mac.h"
 #include "esp_event.h"
 #include "esp_wifi.h"
 #include "esp_wifi_types.h"
@@ -299,7 +299,7 @@ static void wifi_connect_by_bssid(uint8_t *bssid)
     TEST_ESP_OK(esp_wifi_set_config(WIFI_IF_STA, &w_config));
     TEST_ESP_OK(esp_wifi_connect());
     ESP_LOGI(TAG, "called esp_wifi_connect()");
-    bits = xEventGroupWaitBits(wifi_events, GOT_IP_EVENT, 1, 0, 7000/portTICK_RATE_MS);
+    bits = xEventGroupWaitBits(wifi_events, GOT_IP_EVENT, 1, 0, 7000/portTICK_PERIOD_MS);
     TEST_ASSERT(bits == GOT_IP_EVENT);
 }
 
@@ -321,7 +321,7 @@ static void test_wifi_connection_sta(void)
 
     unity_send_signal("STA connected");
 
-    bits = xEventGroupWaitBits(wifi_events, DISCONNECT_EVENT, 1, 0, 60000 / portTICK_RATE_MS);
+    bits = xEventGroupWaitBits(wifi_events, DISCONNECT_EVENT, 1, 0, 60000 / portTICK_PERIOD_MS);
     // disconnect event not triggered
     printf("wait finish\n");
     TEST_ASSERT(bits == 0);

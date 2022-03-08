@@ -29,7 +29,7 @@
 #include "esp_private/gdma.h"
 #endif
 
-#include "soc/clk_ctrl_os.h"
+#include "clk_ctrl_os.h"
 #include "esp_intr_alloc.h"
 #include "esp_err.h"
 #include "esp_check.h"
@@ -70,7 +70,7 @@ typedef struct {
     volatile int rw_pos;
     volatile void *curr_ptr;
     SemaphoreHandle_t mux;
-    xQueueHandle queue;
+    QueueHandle_t queue;
     lldesc_t **desc;
 } i2s_dma_t;
 
@@ -983,9 +983,9 @@ static esp_err_t i2s_calculate_adc_dac_clock(int i2s_num, i2s_hal_clock_cfg_t *c
     ESP_RETURN_ON_FALSE(p_i2s[i2s_num]->hal_cfg.mode & (I2S_MODE_DAC_BUILT_IN | I2S_MODE_ADC_BUILT_IN), ESP_ERR_INVALID_ARG, TAG, "current mode is not built-in ADC/DAC");
 
     /* Set I2S bit clock */
-    clk_cfg->bclk = p_i2s[i2s_num]->hal_cfg.sample_rate * I2S_LL_AD_BCK_FACTOR * 2;
+    clk_cfg->bclk = p_i2s[i2s_num]->hal_cfg.sample_rate * I2S_LL_AD_BCK_FACTOR;
     /* Set I2S bit clock default division */
-    clk_cfg->bclk_div = I2S_LL_AD_BCK_FACTOR;
+    clk_cfg->bclk_div = p_i2s[i2s_num]->hal_cfg.chan_bits;
     /* If fixed_mclk and use_apll are set, use fixed_mclk as mclk frequency, otherwise calculate by mclk = sample_rate * multiple */
     clk_cfg->mclk = (p_i2s[i2s_num]->use_apll && p_i2s[i2s_num]->fixed_mclk) ?
                     p_i2s[i2s_num]->fixed_mclk : clk_cfg->bclk * clk_cfg->bclk_div;
@@ -1196,7 +1196,7 @@ static esp_err_t i2s_calculate_clock(i2s_port_t i2s_num, i2s_hal_clock_cfg_t *cl
 static uint32_t i2s_get_max_channel_num(i2s_channel_t chan_mask)
 {
     uint32_t max_chan = 0;
-    uint32_t channel = chan_mask & 0xFFFF;
+    uint32_t channel = chan_mask >> 16;
     for (int i = 0; channel && i < 16; i++, channel >>= 1) {
         if (channel & 0x01) {
             max_chan = i + 1;
@@ -1229,7 +1229,7 @@ static uint32_t i2s_get_active_channel_num(const i2s_hal_config_t *hal_cfg)
 #if SOC_I2S_SUPPORTS_TDM
     case I2S_CHANNEL_FMT_MULTIPLE: {
         uint32_t num = 0;
-        uint32_t chan_mask = hal_cfg->chan_mask & 0xFFFF;
+        uint32_t chan_mask = hal_cfg->chan_mask >> 16;
         for (int i = 0; chan_mask && i < 16; i++, chan_mask >>= 1) {
             if (chan_mask & 0x01) {
                 num++;
@@ -1549,18 +1549,32 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
     ESP_RETURN_ON_FALSE(p_i2s[i2s_num], ESP_ERR_INVALID_ARG, TAG, "I2S%d has not installed yet", i2s_num);
 
     i2s_hal_config_t *cfg = &p_i2s[i2s_num]->hal_cfg;
+
+    /* Stop I2S */
+    i2s_stop(i2s_num);
+
     /* If not the first time, update configuration */
     if (p_i2s[i2s_num]->last_buf_size) {
         cfg->sample_rate = rate;
         cfg->sample_bits = bits_cfg & 0xFFFF;
         cfg->chan_bits = (bits_cfg >> 16) > cfg->sample_bits ? (bits_cfg >> 16) : cfg->sample_bits;
 #if SOC_I2S_SUPPORTS_TDM
-        cfg->chan_mask = ch;
-        cfg->chan_fmt = ch == I2S_CHANNEL_MONO ? I2S_CHANNEL_FMT_ONLY_RIGHT : cfg->chan_fmt;
-        cfg->active_chan   = i2s_get_active_channel_num(cfg);
-        uint32_t max_channel = i2s_get_max_channel_num(cfg->chan_mask);
-        /* If total channel is smaller than max actived channel number then set it to the max active channel number */
-        cfg->total_chan = p_i2s[i2s_num]->hal_cfg.total_chan < max_channel ? max_channel : p_i2s[i2s_num]->hal_cfg.total_chan;
+        /* The total channel once set during installation is not allowed to change mode
+         * Thus the input channel mask should within this max channel number */
+        ESP_RETURN_ON_FALSE(cfg->total_chan >= i2s_get_max_channel_num(ch), ESP_ERR_INVALID_ARG, TAG,
+                            "The max channel number can't be greater than CH%d\n", cfg->total_chan - 1);
+        if (ch & I2S_CHANNEL_MONO) {
+            cfg->chan_fmt = I2S_CHANNEL_FMT_ONLY_RIGHT; // i.e. mono
+            cfg->chan_mask = I2S_TDM_ACTIVE_CH0; // Only activate one channel in mono
+        } else {
+            if (cfg->total_chan == 2) { // For standard 2 channel mode
+                cfg->chan_fmt = I2S_CHANNEL_FMT_RIGHT_LEFT;
+                cfg->chan_mask = I2S_TDM_ACTIVE_CH0 | I2S_TDM_ACTIVE_CH1;
+            } else if (cfg->total_chan > 2) { // For TDM multiple channel mode
+                cfg->chan_fmt = I2S_CHANNEL_FMT_MULTIPLE;
+                cfg->chan_mask = ch & 0xFFFF0000;
+            }
+        }
 #else
         /* Default */
         cfg->chan_fmt = ch == I2S_CHANNEL_MONO ? I2S_CHANNEL_FMT_ONLY_RIGHT : cfg->chan_fmt;
@@ -1568,12 +1582,12 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
         cfg->total_chan = 2;
 #endif
         if (cfg->mode & I2S_MODE_TX) {
-            xSemaphoreTake(p_i2s[i2s_num]->tx->mux, (portTickType)portMAX_DELAY);
+            xSemaphoreTake(p_i2s[i2s_num]->tx->mux, (TickType_t)portMAX_DELAY);
             i2s_hal_tx_set_channel_style(&(p_i2s[i2s_num]->hal), cfg);
             xSemaphoreGive(p_i2s[i2s_num]->tx->mux);
         }
         if (cfg->mode & I2S_MODE_RX) {
-            xSemaphoreTake(p_i2s[i2s_num]->rx->mux, (portTickType)portMAX_DELAY);
+            xSemaphoreTake(p_i2s[i2s_num]->rx->mux, (TickType_t)portMAX_DELAY);
             i2s_hal_rx_set_channel_style(&(p_i2s[i2s_num]->hal), cfg);
             xSemaphoreGive(p_i2s[i2s_num]->rx->mux);
         }
@@ -1583,9 +1597,6 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
     /* Check the validity of sample bits */
     ESP_RETURN_ON_FALSE((data_bits % 8 == 0), ESP_ERR_INVALID_ARG, TAG, "Invalid bits per sample");
     ESP_RETURN_ON_FALSE((data_bits <= I2S_BITS_PER_SAMPLE_32BIT), ESP_ERR_INVALID_ARG, TAG, "Invalid bits per sample");
-
-    /* Stop I2S */
-    i2s_stop(i2s_num);
 
     i2s_hal_clock_cfg_t clk_cfg;
     /* To get sclk, mclk, mclk_div bclk and bclk_div */
@@ -1598,7 +1609,7 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
     if (cfg->mode & I2S_MODE_TX) {
         ESP_RETURN_ON_FALSE(p_i2s[i2s_num]->tx, ESP_ERR_INVALID_ARG, TAG, "I2S TX DMA object has not initialized yet");
         /* Waiting for transmit finish */
-        xSemaphoreTake(p_i2s[i2s_num]->tx->mux, (portTickType)portMAX_DELAY);
+        xSemaphoreTake(p_i2s[i2s_num]->tx->mux, (TickType_t)portMAX_DELAY);
         i2s_tx_set_clk_and_channel(i2s_num, &clk_cfg);
         /* If buffer size changed, the DMA buffer need realloc */
         if (need_realloc) {
@@ -1618,7 +1629,7 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, uint32_t bits_cfg, i2s_
     if (cfg->mode & I2S_MODE_RX) {
         ESP_RETURN_ON_FALSE(p_i2s[i2s_num]->rx, ESP_ERR_INVALID_ARG, TAG, "I2S TX DMA object has not initialized yet");
         /* Waiting for receive finish */
-        xSemaphoreTake(p_i2s[i2s_num]->rx->mux, (portTickType)portMAX_DELAY);
+        xSemaphoreTake(p_i2s[i2s_num]->rx->mux, (TickType_t)portMAX_DELAY);
         i2s_rx_set_clk_and_channel(i2s_num, &clk_cfg);
         /* If buffer size changed, the DMA buffer need realloc */
         if (need_realloc) {
@@ -1762,8 +1773,8 @@ static esp_err_t i2s_driver_init(i2s_port_t i2s_num, const i2s_config_t *i2s_con
         p_i2s[i2s_num]->hal_cfg.total_chan = 2;
         break;
     case I2S_CHANNEL_FMT_MULTIPLE:
-        ESP_RETURN_ON_FALSE(i2s_config->chan_mask, ESP_ERR_INVALID_ARG, TAG, "i2s all channel are disabled");
-        p_i2s[i2s_num]->hal_cfg.chan_mask = i2s_config->chan_mask;
+        ESP_RETURN_ON_FALSE((i2s_config->chan_mask >> 16), ESP_ERR_INVALID_ARG, TAG, "i2s all channel are disabled");
+        p_i2s[i2s_num]->hal_cfg.chan_mask = i2s_config->chan_mask & 0xFFFF0000;
         /* Get the max actived channel number */
         uint32_t max_channel = i2s_get_max_channel_num(p_i2s[i2s_num]->hal_cfg.chan_mask);
         /* If total channel is smaller than max actived channel number then set it to the max active channel number */
@@ -2012,7 +2023,7 @@ esp_err_t i2s_write(i2s_port_t i2s_num, const void *src, size_t size, size_t *by
     *bytes_written = 0;
     ESP_RETURN_ON_FALSE((i2s_num < I2S_NUM_MAX), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
     ESP_RETURN_ON_FALSE((p_i2s[i2s_num]->tx), ESP_ERR_INVALID_ARG, TAG, "TX mode is not enabled");
-    xSemaphoreTake(p_i2s[i2s_num]->tx->mux, (portTickType)portMAX_DELAY);
+    xSemaphoreTake(p_i2s[i2s_num]->tx->mux, (TickType_t)portMAX_DELAY);
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_acquire(p_i2s[i2s_num]->pm_lock);
 #endif
@@ -2094,7 +2105,7 @@ esp_err_t i2s_write_expand(i2s_port_t i2s_num, const void *src, size_t size, siz
     src_bytes = src_bits / 8;
     aim_bytes = aim_bits / 8;
     zero_bytes = aim_bytes - src_bytes;
-    xSemaphoreTake(p_i2s[i2s_num]->tx->mux, (portTickType)portMAX_DELAY);
+    xSemaphoreTake(p_i2s[i2s_num]->tx->mux, (TickType_t)portMAX_DELAY);
     size = size * aim_bytes / src_bytes;
     ESP_LOGD(TAG, "aim_bytes %d src_bytes %d size %d", aim_bytes, src_bytes, size);
     while (size > 0) {
@@ -2148,7 +2159,7 @@ esp_err_t i2s_read(i2s_port_t i2s_num, void *dest, size_t size, size_t *bytes_re
     dest_byte = (char *)dest;
     ESP_RETURN_ON_FALSE((i2s_num < I2S_NUM_MAX), ESP_ERR_INVALID_ARG, TAG, "i2s_num error");
     ESP_RETURN_ON_FALSE((p_i2s[i2s_num]->rx), ESP_ERR_INVALID_ARG, TAG, "RX mode is not enabled");
-    xSemaphoreTake(p_i2s[i2s_num]->rx->mux, (portTickType)portMAX_DELAY);
+    xSemaphoreTake(p_i2s[i2s_num]->rx->mux, (TickType_t)portMAX_DELAY);
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_acquire(p_i2s[i2s_num]->pm_lock);
 #endif

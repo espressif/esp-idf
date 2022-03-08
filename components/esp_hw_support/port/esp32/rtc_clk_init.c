@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,7 @@
 #include "soc/syscon_reg.h"
 #include "hal/cpu_hal.h"
 #include "regi2c_ctrl.h"
-#include "soc_log.h"
+#include "esp_hw_log.h"
 #include "sdkconfig.h"
 #include "rtc_clk_common.h"
 
@@ -79,7 +79,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
             /* Not set yet, estimate XTAL frequency based on RTC_FAST_CLK */
             xtal_freq = rtc_clk_xtal_freq_estimate();
             if (xtal_freq == RTC_XTAL_FREQ_AUTO) {
-                SOC_LOGW(TAG, "Can't estimate XTAL frequency, assuming 26MHz");
+                ESP_HW_LOGW(TAG, "Can't estimate XTAL frequency, assuming 26MHz");
                 xtal_freq = RTC_XTAL_FREQ_26M;
             }
         }
@@ -91,7 +91,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
 
         rtc_xtal_freq_t est_xtal_freq = rtc_clk_xtal_freq_estimate();
         if (est_xtal_freq != xtal_freq) {
-            SOC_LOGW(TAG, "Possibly invalid CONFIG_ESP32_XTAL_FREQ setting (%dMHz). Detected %d MHz.",
+            ESP_HW_LOGW(TAG, "Possibly invalid CONFIG_ESP32_XTAL_FREQ setting (%dMHz). Detected %d MHz.",
                     xtal_freq, est_xtal_freq);
         }
     }
@@ -106,7 +106,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
 
     bool res = rtc_clk_cpu_freq_mhz_to_config(cfg.cpu_freq_mhz, &new_config);
     if (!res) {
-        SOC_LOGE(TAG, "invalid CPU frequency value");
+        ESP_HW_LOGE(TAG, "invalid CPU frequency value");
         abort();
     }
     rtc_clk_cpu_freq_set_config(&new_config);
@@ -154,15 +154,15 @@ static rtc_xtal_freq_t rtc_clk_xtal_freq_estimate(void)
         case 21 ... 31:
             return RTC_XTAL_FREQ_26M;
         case 32 ... 33:
-            SOC_LOGW(TAG, "Potentially bogus XTAL frequency: %d MHz, guessing 26 MHz", freq_mhz);
+            ESP_HW_LOGW(TAG, "Potentially bogus XTAL frequency: %d MHz, guessing 26 MHz", freq_mhz);
             return RTC_XTAL_FREQ_26M;
         case 34 ... 35:
-            SOC_LOGW(TAG, "Potentially bogus XTAL frequency: %d MHz, guessing 40 MHz", freq_mhz);
+            ESP_HW_LOGW(TAG, "Potentially bogus XTAL frequency: %d MHz, guessing 40 MHz", freq_mhz);
             return RTC_XTAL_FREQ_40M;
         case 36 ... 45:
             return RTC_XTAL_FREQ_40M;
         default:
-            SOC_LOGW(TAG, "Bogus XTAL frequency: %d MHz", freq_mhz);
+            ESP_HW_LOGW(TAG, "Bogus XTAL frequency: %d MHz", freq_mhz);
             return RTC_XTAL_FREQ_AUTO;
     }
     /* Restore 8M and 8md256 clocks to original state */

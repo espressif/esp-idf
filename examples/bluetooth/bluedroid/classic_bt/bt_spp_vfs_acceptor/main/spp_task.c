@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -19,8 +19,8 @@ static void spp_task_task_handler(void *arg);
 static bool spp_task_send_msg(spp_task_msg_t *msg);
 static void spp_task_work_dispatched(spp_task_msg_t *msg);
 
-static xQueueHandle spp_task_task_queue = NULL;
-static xTaskHandle spp_task_task_handle = NULL;
+static QueueHandle_t spp_task_task_queue = NULL;
+static TaskHandle_t spp_task_task_handle = NULL;
 
 bool spp_task_work_dispatch(spp_task_cb_t p_cback, uint16_t event, void *p_params, int param_len, spp_task_copy_cb_t p_copy_cback)
 {
@@ -55,7 +55,7 @@ static bool spp_task_send_msg(spp_task_msg_t *msg)
         return false;
     }
 
-    if (xQueueSend(spp_task_task_queue, msg, 10 / portTICK_RATE_MS) != pdTRUE) {
+    if (xQueueSend(spp_task_task_queue, msg, 10 / portTICK_PERIOD_MS) != pdTRUE) {
         ESP_LOGE(SPP_TASK_TAG, "%s xQueue send failed", __func__);
         return false;
     }
@@ -73,7 +73,7 @@ static void spp_task_task_handler(void *arg)
 {
     spp_task_msg_t msg;
     for (;;) {
-        if (pdTRUE == xQueueReceive(spp_task_task_queue, &msg, (portTickType)portMAX_DELAY)) {
+        if (pdTRUE == xQueueReceive(spp_task_task_queue, &msg, (TickType_t)portMAX_DELAY)) {
             ESP_LOGD(SPP_TASK_TAG, "%s, sig 0x%x, 0x%x", __func__, msg.sig, msg.event);
             switch (msg.sig) {
             case SPP_TASK_SIG_WORK_DISPATCH:

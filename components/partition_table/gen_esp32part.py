@@ -7,19 +7,9 @@
 # See https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/partition-tables.html
 # for explanation of partition table structure and uses.
 #
-# Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http:#www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
 from __future__ import division, print_function, unicode_literals
 
 import argparse
@@ -260,6 +250,17 @@ class PartitionTable(list):
         except IndexError:
             return 0  # empty table!
         return last.offset + last.size
+
+    def verify_size_fits(self, flash_size_bytes: int) -> None:
+        """ Check that partition table fits into the given flash size.
+            Raises InputError otherwise.
+        """
+        table_size = self.flash_size()
+        if flash_size_bytes < table_size:
+            mb = 1024 * 1024
+            raise InputError('Partitions tables occupies %.1fMB of flash (%d bytes) which does not fit in configured '
+                             "flash size %dMB. Change the flash size in menuconfig under the 'Serial Flasher Config' menu." %
+                             (table_size / mb, table_size, flash_size_bytes / mb))
 
     @classmethod
     def from_binary(cls, b):
@@ -505,7 +506,7 @@ def main():
     parser = argparse.ArgumentParser(description='ESP32 partition table utility')
 
     parser.add_argument('--flash-size', help='Optional flash size limit, checks partition table fits in flash',
-                        nargs='?', choices=['1MB', '2MB', '4MB', '8MB', '16MB'])
+                        nargs='?', choices=['1MB', '2MB', '4MB', '8MB', '16MB', '32MB', '64MB', '128MB'])
     parser.add_argument('--disable-md5sum', help='Disable md5 checksum for the partition table', default=False, action='store_true')
     parser.add_argument('--no-verify', help="Don't verify partition table fields", action='store_true')
     parser.add_argument('--verify', '-v', help='Verify partition table fields (deprecated, this behaviour is '
@@ -531,12 +532,7 @@ def main():
 
     if args.flash_size:
         size_mb = int(args.flash_size.replace('MB', ''))
-        size = size_mb * 1024 * 1024  # flash memory uses honest megabytes!
-        table_size = table.flash_size()
-        if size < table_size:
-            raise InputError("Partitions defined in '%s' occupy %.1fMB of flash (%d bytes) which does not fit in configured "
-                             "flash size %dMB. Change the flash size in menuconfig under the 'Serial Flasher Config' menu." %
-                             (args.input.name, table_size / 1024.0 / 1024.0, table_size, size_mb))
+        table.verify_size_fits(size_mb * 1024 * 1024)
 
     # Make sure that the output directory is created
     output_dir = os.path.abspath(os.path.dirname(args.output))

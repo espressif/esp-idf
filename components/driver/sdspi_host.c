@@ -75,6 +75,8 @@ static esp_err_t start_command_default(slot_info_t *slot, int flags, sdspi_hw_cm
 
 static esp_err_t shift_cmd_response(sdspi_hw_cmd_t *cmd, int sent_bytes);
 
+static esp_err_t poll_busy(slot_info_t *slot, int timeout_ms, bool polling);
+
 /// A few helper functions
 
 /// Map handle to pointer of slot information
@@ -435,6 +437,8 @@ esp_err_t sdspi_host_start_command(sdspi_dev_handle_t handle, sdspi_hw_cmd_t *cm
     ESP_LOGV(TAG, "%s: slot=%i, CMD%d, arg=0x%08x flags=0x%x, data=%p, data_size=%i crc=0x%02x",
              __func__, handle, cmd_index, cmd_arg, flags, data, data_size, cmd->crc7);
 
+    spi_device_acquire_bus(slot->spi_handle, portMAX_DELAY);
+    poll_busy(slot, 40, true);
 
     // For CMD0, clock out 80 cycles to help the card enter idle state,
     // *before* CS is asserted.
@@ -444,7 +448,6 @@ esp_err_t sdspi_host_start_command(sdspi_dev_handle_t handle, sdspi_hw_cmd_t *cm
     // actual transaction
     esp_err_t ret = ESP_OK;
 
-    spi_device_acquire_bus(slot->spi_handle, portMAX_DELAY);
     cs_low(slot);
     if (flags & SDSPI_CMD_FLAG_DATA) {
         const bool multi_block = flags & SDSPI_CMD_FLAG_MULTI_BLK;

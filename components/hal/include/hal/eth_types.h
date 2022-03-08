@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,3 +49,15 @@ typedef enum {
     ETH_CHECKSUM_SW, /*!< Ethernet checksum calculate by software */
     ETH_CHECKSUM_HW  /*!< Ethernet checksum calculate by hardware */
 } eth_checksum_t;
+
+/**
+* @brief Internal ethernet EMAC's DMA available burst sizes
+*/
+typedef enum {
+    ETH_DMA_BURST_LEN_32,
+    ETH_DMA_BURST_LEN_16,
+    ETH_DMA_BURST_LEN_8,
+    ETH_DMA_BURST_LEN_4,
+    ETH_DMA_BURST_LEN_2,
+    ETH_DMA_BURST_LEN_1,
+} eth_mac_dma_burst_len_t;

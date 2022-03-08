@@ -10,6 +10,8 @@ ESP-IDF 5.0 Migration Guides
     Ethernet <ethernet>
     FreeRTOS <freertos>
     Peripherals <peripherals>
+    Protocols <protocols>
     Removed or deprecated components <removed-components>
+    Storage <storage>
     System <system>
     Tools <tools>

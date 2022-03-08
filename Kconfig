@@ -91,7 +91,6 @@ mainmenu "Espressif IoT Development Framework Configuration"
         default "y" if IDF_TARGET="esp32c2"
         select FREERTOS_UNICORE
         select IDF_TARGET_ARCH_RISCV
-        select ESPTOOLPY_NO_STUB  # remove if ESPTOOL-303
 
     config IDF_TARGET_LINUX
         bool
@@ -194,6 +193,13 @@ mainmenu "Espressif IoT Development Framework Configuration"
             help
                 If enabled, all date, time, and path information would be eliminated. A .gdbinit file would be create
                 automatically. (or will be append if you have one already)
+
+        config APP_NO_BLOBS
+            bool "No Binary Blobs"
+            default n
+            help
+                If enabled, this disables the linking of binary libraries in the application build. Note
+                that after enabling this Wi-Fi/Bluetooth will not work.
 
     endmenu # Build type
 

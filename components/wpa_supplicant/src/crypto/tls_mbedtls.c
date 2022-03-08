@@ -12,7 +12,15 @@
 #include "crypto/md5.h"
 #include "crypto/sha256.h"
 #include "crypto/sha384.h"
-#include "mbedtls/ssl_internal.h"
+
+/* ToDo - Remove this once appropriate solution is available.
+We need to define this for the file as ssl_misc.h uses private structures from mbedtls,
+which are undefined if the following flag is not defined */
+/* Many APIs in the file make use of this flag instead of `MBEDTLS_PRIVATE` */
+/* ToDo - Replace them with proper getter-setter once they are added */
+#define MBEDTLS_ALLOW_PRIVATE_ACCESS
+
+#include "ssl_misc.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/entropy.h"
 #include "mbedtls/debug.h"
@@ -26,6 +34,8 @@
 #define TLS_RANDOM_LEN 32
 #define TLS_MASTER_SECRET_LEN 48
 #define MAX_CIPHERSUITE 32
+
+
 
 /* Throw a compilation error if basic requirements in mbedtls are not enabled */
 #if !defined(MBEDTLS_SSL_TLS_C)
@@ -63,7 +73,9 @@ typedef struct tls_context {
 struct tls_connection {
 	tls_context_t *tls;
 	struct tls_data tls_io_data;
+	unsigned char master_secret[TLS_MASTER_SECRET_LEN];
 	unsigned char randbytes[2 * TLS_RANDOM_LEN];
+        mbedtls_tls_prf_types tls_prf_type;
 	mbedtls_md_type_t mac;
 };
 
@@ -107,21 +119,18 @@ static int tls_mbedtls_read(void *ctx, unsigned char *buf, size_t len)
 	struct tls_connection *conn = (struct tls_connection *)ctx;
 	struct tls_data *data = &conn->tls_io_data;
 	struct wpabuf *local_buf;
-	size_t data_len = len;
 
-	if (data->in_data == NULL) {
+	if (data->in_data == NULL || len > wpabuf_len(data->in_data)) {
+		/* We don't have suffient buffer available for read */
+		wpa_printf(MSG_INFO, "len=%zu not available in input", len);
 		return MBEDTLS_ERR_SSL_WANT_READ;
 	}
 
-	if (len > wpabuf_len(data->in_data)) {
-		wpa_printf(MSG_ERROR, "don't have suffient data\n");
-		data_len = wpabuf_len(data->in_data);
-	}
-
-	os_memcpy(buf, wpabuf_head(data->in_data), data_len);
+	os_memcpy(buf, wpabuf_head(data->in_data), len);
 	/* adjust buffer */
 	if (len < wpabuf_len(data->in_data)) {
-		local_buf = wpabuf_alloc_copy(wpabuf_head(data->in_data) + len,
+		/* TODO optimize this operation */
+		local_buf = wpabuf_alloc_copy(wpabuf_mhead_u8(data->in_data) + len,
 					      wpabuf_len(data->in_data) - len);
 		wpabuf_free(data->in_data);
 		data->in_data = local_buf;
@@ -130,7 +139,7 @@ static int tls_mbedtls_read(void *ctx, unsigned char *buf, size_t len)
 		data->in_data = NULL;
 	}
 
-	return data_len;
+	return len;
 }
 
 static int set_pki_context(tls_context_t *tls, const struct tls_connection_params *cfg)
@@ -154,7 +163,7 @@ static int set_pki_context(tls_context_t *tls, const struct tls_connection_param
 
 	ret = mbedtls_pk_parse_key(&tls->clientkey, cfg->private_key_blob, cfg->private_key_blob_len,
 				   (const unsigned char *)cfg->private_key_passwd,
-				   cfg->private_key_passwd ? os_strlen(cfg->private_key_passwd) : 0);
+				   cfg->private_key_passwd ? os_strlen(cfg->private_key_passwd) : 0, mbedtls_ctr_drbg_random, &tls->ctr_drbg);
 	if (ret < 0) {
 		wpa_printf(MSG_ERROR, "mbedtls_pk_parse_keyfile returned -0x%x", -ret);
 		return ret;
@@ -518,7 +527,24 @@ static int set_client_config(const struct tls_connection_params *cfg, tls_contex
 	return 0;
 }
 
-static int tls_create_mbedtls_handle(const struct tls_connection_params *params,
+static void  tls_key_derivation(void *ctx,
+				mbedtls_ssl_key_export_type secret_type,
+				const unsigned char *secret,
+				size_t secret_len,
+				const unsigned char client_random[TLS_RANDOM_LEN],
+				const unsigned char server_random[TLS_RANDOM_LEN],
+				mbedtls_tls_prf_types tls_prf_type)
+{
+	struct tls_connection *conn = (struct tls_connection *)ctx;
+
+	os_memcpy(conn->master_secret, secret, sizeof(conn->master_secret));
+	os_memcpy(conn->randbytes, client_random, TLS_RANDOM_LEN);
+	os_memcpy(conn->randbytes + 32, server_random, TLS_RANDOM_LEN);
+	conn->tls_prf_type = tls_prf_type;
+}
+
+static int tls_create_mbedtls_handle(struct tls_connection *conn,
+				     const struct tls_connection_params *params,
 				     tls_context_t *tls)
 {
 	int ret;
@@ -551,6 +577,7 @@ static int tls_create_mbedtls_handle(const struct tls_connection_params *params,
 		wpa_printf(MSG_ERROR, "mbedtls_ssl_setup returned -0x%x", -ret);
 		goto exit;
 	}
+	mbedtls_ssl_set_export_keys_cb(&tls->ssl, tls_key_derivation, conn);
 #if defined(MBEDTLS_SSL_CBC_RECORD_SPLITTING)
 	/* Disable BEAST attack countermeasures for Windows 2008 interoperability */
 	mbedtls_ssl_conf_cbc_record_splitting(&tls->conf, MBEDTLS_SSL_CBC_RECORD_SPLITTING_DISABLED);
@@ -612,7 +639,7 @@ int tls_connection_established(void *tls_ctx, struct tls_connection *conn)
 {
 	mbedtls_ssl_context *ssl = &conn->tls->ssl;
 
-	if (ssl->state == MBEDTLS_SSL_HANDSHAKE_OVER) {
+	if (ssl->MBEDTLS_PRIVATE(state) == MBEDTLS_SSL_HANDSHAKE_OVER) {
 		return 1;
 	}
 
@@ -640,6 +667,7 @@ struct wpabuf * tls_connection_handshake(void *tls_ctx,
 {
 	tls_context_t *tls = conn->tls;
 	int ret = 0;
+	struct wpabuf *resp;
 
 	/* data freed by sender */
 	conn->tls_io_data.out_data = NULL;
@@ -648,11 +676,11 @@ struct wpabuf * tls_connection_handshake(void *tls_ctx,
 	}
 
 	/* Multiple reads */
-	while (tls->ssl.state != MBEDTLS_SSL_HANDSHAKE_OVER) {
-		if (tls->ssl.state == MBEDTLS_SSL_CLIENT_CERTIFICATE) {
+	while (tls->ssl.MBEDTLS_PRIVATE(state) != MBEDTLS_SSL_HANDSHAKE_OVER) {
+		if (tls->ssl.MBEDTLS_PRIVATE(state) == MBEDTLS_SSL_CLIENT_CERTIFICATE) {
 			/* Read random data before session completes, not present after handshake */
-			if (tls->ssl.handshake) {
-				os_memcpy(conn->randbytes, tls->ssl.handshake->randbytes,
+			if (tls->ssl.MBEDTLS_PRIVATE(handshake)) {
+				os_memcpy(conn->randbytes, tls->ssl.MBEDTLS_PRIVATE(handshake)->randbytes,
 					  TLS_RANDOM_LEN * 2);
 				conn->mac = tls->ssl.handshake->ciphersuite_info->mac;
 			}
@@ -674,7 +702,9 @@ struct wpabuf * tls_connection_handshake(void *tls_ctx,
 	}
 
 end:
-	return conn->tls_io_data.out_data;
+	resp = conn->tls_io_data.out_data;
+	conn->tls_io_data.out_data = NULL;
+	return resp;
 }
 
 struct wpabuf * tls_connection_server_handshake(void *tls_ctx,
@@ -691,10 +721,12 @@ struct wpabuf * tls_connection_encrypt(void *tls_ctx,
 				       struct tls_connection *conn,
 				       const struct wpabuf *in_data)
 {
+	struct wpabuf *resp;
+	size_t ret;
+
 	/* Reset dangling pointer */
 	conn->tls_io_data.out_data = NULL;
-
-	ssize_t ret = mbedtls_ssl_write(&conn->tls->ssl,
+	ret = mbedtls_ssl_write(&conn->tls->ssl,
 			(unsigned char*) wpabuf_head(in_data),  wpabuf_len(in_data));
 
 	if (ret < wpabuf_len(in_data)) {
@@ -702,34 +734,57 @@ struct wpabuf * tls_connection_encrypt(void *tls_ctx,
 			   __func__, __LINE__);
 	}
 
-	return conn->tls_io_data.out_data;
+	resp = conn->tls_io_data.out_data;
+	conn->tls_io_data.out_data = NULL;
+	return resp;
 }
 
 
-struct wpabuf * tls_connection_decrypt(void *tls_ctx,
-		struct tls_connection *conn,
-		const struct wpabuf *in_data)
+struct wpabuf *tls_connection_decrypt(void *tls_ctx,
+				      struct tls_connection *conn,
+				      const struct wpabuf *in_data)
 {
-	unsigned char buf[1200];
+#define MAX_PHASE2_BUFFER 1536
+	struct wpabuf *out = NULL;
 	int ret;
-	conn->tls_io_data.in_data = wpabuf_dup(in_data);
-	ret = mbedtls_ssl_read(&conn->tls->ssl, buf, 1200);
-	if (ret < 0) {
-		wpa_printf(MSG_ERROR, "%s:%d, not able to write whole data",
-				__func__, __LINE__);
+	unsigned char *buf = os_malloc(MAX_PHASE2_BUFFER);
+
+	if (!buf) {
 		return NULL;
 	}
+	/* Reset dangling output buffer before setting data, data was freed by caller */
+	conn->tls_io_data.out_data = NULL;
 
-	struct wpabuf *out = wpabuf_alloc_copy(buf, ret);
+	conn->tls_io_data.in_data = wpabuf_dup(in_data);
+
+	if (!conn->tls_io_data.in_data) {
+		goto cleanup;
+	}
+	ret = mbedtls_ssl_read(&conn->tls->ssl, buf, MAX_PHASE2_BUFFER);
+	if (ret < 0) {
+		wpa_printf(MSG_ERROR, "%s:%d, not able to read data",
+				__func__, __LINE__);
+		goto cleanup;
+	}
+	out = wpabuf_alloc_copy(buf, ret);
+cleanup:
+	/* there may be some error written in output buffer */
+	if (conn->tls_io_data.out_data) {
+		os_free(conn->tls_io_data.out_data);
+		conn->tls_io_data.out_data = NULL;
+	}
+
+	os_free(buf);
 
 	return out;
+#undef MAX_PHASE2_BUFFER
 }
 
 
 int tls_connection_resumed(void *tls_ctx, struct tls_connection *conn)
 {
-	if (conn && conn->tls && conn->tls->ssl.handshake) {
-		return conn->tls->ssl.handshake->resume;
+	if (conn && conn->tls && conn->tls->ssl.MBEDTLS_PRIVATE(handshake)) {
+		return conn->tls->ssl.MBEDTLS_PRIVATE(handshake)->resume;
 	}
 
 	return 0;
@@ -827,7 +882,7 @@ int tls_connection_set_params(void *tls_ctx, struct tls_connection *conn,
 		goto err;
 	}
 
-	ret = tls_create_mbedtls_handle(params, tls);
+	ret = tls_create_mbedtls_handle(conn, params, tls);
 	if (ret < 0) {
 		wpa_printf(MSG_ERROR, "failed to create ssl handle");
 		goto err;
@@ -865,12 +920,12 @@ static int tls_connection_prf(void *tls_ctx, struct tls_connection *conn,
 	u8 seed[2 * TLS_RANDOM_LEN];
 	mbedtls_ssl_context *ssl = &conn->tls->ssl;
 
-	if (!ssl || !ssl->transform) {
+	if (!ssl) {
 		wpa_printf(MSG_ERROR, "TLS: %s, session ingo is null", __func__);
 		return -1;
 	}
-	if (ssl->state != MBEDTLS_SSL_HANDSHAKE_OVER) {
-		wpa_printf(MSG_ERROR, "TLS: %s, incorrect tls state=%d", __func__, ssl->state);
+	if (ssl->MBEDTLS_PRIVATE(state) != MBEDTLS_SSL_HANDSHAKE_OVER) {
+		wpa_printf(MSG_ERROR, "TLS: %s, incorrect tls state=%d", __func__, ssl->MBEDTLS_PRIVATE(state));
 		return -1;
 	}
 
@@ -882,18 +937,10 @@ static int tls_connection_prf(void *tls_ctx, struct tls_connection *conn,
 	}
 
 	wpa_hexdump_key(MSG_MSGDUMP, "random", seed, 2 * TLS_RANDOM_LEN);
-	wpa_hexdump_key(MSG_MSGDUMP, "master", ssl->session->master, TLS_MASTER_SECRET_LEN);
+	wpa_hexdump_key(MSG_MSGDUMP, "master", ssl->MBEDTLS_PRIVATE(session)->MBEDTLS_PRIVATE(master), TLS_MASTER_SECRET_LEN);
 
-	if (conn->mac == MBEDTLS_MD_SHA384) {
-		ret = tls_prf_sha384(ssl->session->master, TLS_MASTER_SECRET_LEN,
+	ret = mbedtls_ssl_tls_prf(conn->tls_prf_type, conn->master_secret, TLS_MASTER_SECRET_LEN,
 				label, seed, 2 * TLS_RANDOM_LEN, out, out_len);
-	} else if (conn->mac == MBEDTLS_MD_SHA256) {
-		ret = tls_prf_sha256(ssl->session->master, TLS_MASTER_SECRET_LEN,
-				label, seed, 2 * TLS_RANDOM_LEN, out, out_len);
-	} else {
-		ret = tls_prf_sha1_md5(ssl->session->master, TLS_MASTER_SECRET_LEN,
-				label, seed, 2 * TLS_RANDOM_LEN, out, out_len);
-	}
 
 	if (ret < 0) {
 		wpa_printf(MSG_ERROR, "prf failed, ret=%d\n", ret);
@@ -944,14 +991,14 @@ int tls_connection_get_random(void *tls_ctx, struct tls_connection *conn,
 	mbedtls_ssl_context *ssl = &conn->tls->ssl;
 
 	os_memset(data, 0, sizeof(*data));
-	if (ssl->state == MBEDTLS_SSL_CLIENT_HELLO) {
+	if (ssl->MBEDTLS_PRIVATE(state) == MBEDTLS_SSL_CLIENT_HELLO) {
 		return -1;
 	}
 
 	data->client_random = conn->randbytes;
 	data->client_random_len = TLS_RANDOM_LEN;
 
-	if (ssl->state != MBEDTLS_SSL_SERVER_HELLO) {
+	if (ssl->MBEDTLS_PRIVATE(state) != MBEDTLS_SSL_SERVER_HELLO) {
 		data->server_random = conn->randbytes + TLS_RANDOM_LEN;
 		data->server_random_len = TLS_RANDOM_LEN;
 	}

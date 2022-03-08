@@ -1,2 +1,2 @@
 INPUT += \
-         $(PROJECT_PATH)/components/driver/esp32c3/include/driver/temp_sensor.h
+         $(PROJECT_PATH)/components/driver/include/driver/temperature_sensor.h \

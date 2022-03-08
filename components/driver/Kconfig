@@ -22,7 +22,7 @@ menu "Driver configurations"
     endmenu  # ADC Configuration
 
     menu "MCPWM configuration"
-
+        depends on SOC_MCPWM_SUPPORTED
         config MCPWM_ISR_IN_IRAM
             bool "Place MCPWM ISR function into IRAM"
             default n
@@ -32,7 +32,6 @@ menu "Driver configurations"
 
                 Note that if this option is selected, all user registered ISR callbacks should never
                 try to use cache as well. (with IRAM_ATTR)
-
     endmenu # MCPWM Configuration
 
     menu "SPI configuration"
@@ -105,7 +104,7 @@ menu "Driver configurations"
         config TWAI_ERRATA_FIX_BUS_OFF_REC
             bool "Add SW workaround for REC change during bus-off"
             depends on IDF_TARGET_ESP32
-            default n
+            default y
             help
                 When the bus-off condition is reached, the REC should be reset to 0 and frozen (via LOM) by the
                 driver's ISR. However on the ESP32, there is an edge case where the REC will increase before the
@@ -117,7 +116,7 @@ menu "Driver configurations"
         config TWAI_ERRATA_FIX_TX_INTR_LOST
             bool "Add SW workaround for TX interrupt lost errata"
             depends on IDF_TARGET_ESP32
-            default n
+            default y
             help
                 On the ESP32, when a transmit interrupt occurs, and interrupt register is read on the same APB clock
                 cycle, the transmit interrupt could be lost. Enabling this option will add a workaround that checks the
@@ -126,7 +125,7 @@ menu "Driver configurations"
         config TWAI_ERRATA_FIX_RX_FRAME_INVALID
             bool "Add SW workaround for invalid RX frame errata"
             depends on IDF_TARGET_ESP32
-            default n
+            default y
             help
                 On the ESP32, when receiving a data or remote frame, if a bus error occurs in the data or CRC field,
                 the data of the next received frame could be invalid. Enabling this option will add a workaround that
@@ -137,7 +136,7 @@ menu "Driver configurations"
         config TWAI_ERRATA_FIX_RX_FIFO_CORRUPT
             bool "Add SW workaround for RX FIFO corruption errata"
             depends on IDF_TARGET_ESP32
-            default n
+            default y
             help
                 On the ESP32, when the RX FIFO overruns and the RX message counter maxes out at 64 messages, the entire
                 RX FIFO is no longer recoverable. Enabling this option will add a workaround that resets the peripheral
@@ -145,6 +144,26 @@ menu "Driver configurations"
                 bus during the reset, the message will be lost.
 
     endmenu # TWAI Configuration
+
+    menu "Temperature sensor Configuration"
+        visible if SOC_TEMP_SENSOR_SUPPORTED
+
+        config TEMP_SENSOR_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
+            default n
+            help
+                Wether to suppress the deprecation warnings when using legacy temperature sensor driver
+                (driver/temp_sensor.h). If you want to continue using the legacy driver,
+                and don't want to see related deprecation warnings, you can enable this option.
+
+        config TEMP_SENSOR_ENABLE_DEBUG_LOG
+            bool "Enable debug log"
+            default n
+            help
+                Wether to enable the debug log message for temperature sensor driver.
+                Note that, this option only controls the temperature sensor driver log, won't affect other drivers.
+
+    endmenu # TEMP_SENSOR Configuration
 
     menu "UART configuration"
 
@@ -158,8 +177,6 @@ menu "Driver configurations"
     endmenu # UART Configuration
 
     menu "GPIO Configuration"
-        visible if IDF_TARGET_ESP32
-
         config GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL
             bool "Support light sleep GPIO pullup/pulldown configuration for ESP32"
             depends on IDF_TARGET_ESP32
@@ -168,10 +185,10 @@ menu "Driver configurations"
                 pullup/pulldown mode in sleep.
                 If this option is selected, chip will automatically emulate the behaviour of switching,
                 and about 450B of source codes would be placed into IRAM.
-
     endmenu # GPIO Configuration
 
     menu "GDMA Configuration"
+        depends on SOC_GDMA_SUPPORTED
         config GDMA_CTRL_FUNC_IN_IRAM
             bool "Place GDMA control functions into IRAM"
             default n
@@ -202,17 +219,56 @@ menu "Driver configurations"
             bool "GPTimer ISR IRAM-Safe"
             default n
             help
-                This will ensure the GPTimer interrupt handle is IRAM-Safe, allow to avoid flash
-                cache misses, and also be able to run whilst the cache is disabled.
-                (e.g. SPI Flash write)
+                Ensure the GPTimer interrupt is IRAM-Safe by allowing the interrupt handler to be
+                executable when the cache is disabled (e.g. SPI Flash write).
 
         config GPTIMER_SUPPRESS_DEPRECATE_WARN
-            bool "Suppress leagcy driver deprecated warning"
+            bool "Suppress legacy driver deprecated warning"
             default n
             help
                 Wether to suppress the deprecation warnings when using legacy timer group driver (driver/timer.h).
                 If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
                 you can enable this option.
+
+        config GPTIMER_ENABLE_DEBUG_LOG
+            bool "Enable debug log"
+            default n
+            help
+                Wether to enable the debug log message for GPTimer driver.
+                Note that, this option only controls the GPTimer driver log, won't affect other drivers.
     endmenu # GPTimer Configuration
+
+    menu "PCNT Configuration"
+        depends on SOC_PCNT_SUPPORTED
+        config PCNT_CTRL_FUNC_IN_IRAM
+            bool "Place PCNT control functions into IRAM"
+            default n
+            help
+                Place PCNT control functions (like start/stop) into IRAM,
+                so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
+                Enabling this option can improve driver performance as well.
+
+        config PCNT_ISR_IRAM_SAFE
+            bool "PCNT ISR IRAM-Safe"
+            default n
+            help
+                Ensure the PCNT interrupt is IRAM-Safe by allowing the interrupt handler to be
+                executable when the cache is disabled (e.g. SPI Flash write).
+
+        config PCNT_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
+            default n
+            help
+                Wether to suppress the deprecation warnings when using legacy PCNT driver (driver/pcnt.h).
+                If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
+                you can enable this option.
+
+        config PCNT_ENABLE_DEBUG_LOG
+            bool "Enable debug log"
+            default n
+            help
+                Wether to enable the debug log message for PCNT driver.
+                Note that, this option only controls the PCNT driver log, won't affect other drivers.
+    endmenu # PCNT Configuration
 
 endmenu  # Driver configurations

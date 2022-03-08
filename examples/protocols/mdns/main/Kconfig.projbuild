@@ -1,5 +1,12 @@
 menu "Example Configuration"
 
+    config MDNS_GPIO_RANGE_MAX
+        int
+        default 33 if IDF_TARGET_ESP32
+        default 46 if IDF_TARGET_ESP32S2
+        default 19 if IDF_TARGET_ESP32C3
+        default 48 if IDF_TARGET_ESP32S3
+
     config MDNS_HOSTNAME
         string "mDNS Hostname"
         default "esp32-mdns"
@@ -33,5 +40,12 @@ menu "Example Configuration"
         help
             If enabled, a portion of MAC address is added to the hostname, this is used
             for evaluation of tests in CI
+
+    config MDNS_BUTTON_GPIO
+        int "Button GPIO to trigger querries"
+        range 0 MDNS_GPIO_RANGE_MAX
+        default 0
+        help
+            Set the GPIO number used as mDNS test button
 
 endmenu

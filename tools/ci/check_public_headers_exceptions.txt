@@ -45,11 +45,10 @@ components/wpa_supplicant/include/
 components/wpa_supplicant/port/
 components/wpa_supplicant/esp_supplicant/include/
 
+components/mbedtls/mbedtls/
 components/mbedtls/port/include/
-components/mbedtls/mbedtls/include/mbedtls/
-components/mbedtls/mbedtls/include/psa/
-
-components/coap/
+components/mbedtls/port/dynamic/esp_mbedtls_dynamic_impl.h
+components/mbedtls/test/
 
 components/esp-tls/private_include/
 
@@ -115,6 +114,7 @@ components/esp_rom/include/esp32s2/rom/rtc.h
 components/esp_rom/include/esp32s2/rom/efuse.h
 components/esp_rom/include/esp32s3/rom/rtc.h
 components/esp_rom/include/esp32h2/rom/rtc.h
+components/esp_rom/include/esp32c2/rom/rtc.h
 components/esp32/include/esp32/dport_access.h
 components/esp32/include/rom/sha.h
 components/esp32/include/rom/secure_boot.h

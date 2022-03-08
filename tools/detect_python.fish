@@ -2,24 +2,22 @@
 #
 # This is a port of detect_python.sh. More information are provided there.
 
-set -x ESP_PYTHON python
+set OLDEST_PYTHON_SUPPORTED_MAJOR 3
+set OLDEST_PYTHON_SUPPORTED_MINOR 7
 
-for p_cmd in python python3;
+for p_cmd in python3 python python3.7 python3.8 python3.9 python3.10 python3.11 python3.12;
+    $p_cmd --version >/dev/null 2>&1; or continue
     echo "Checking \"$p_cmd\" ..."
 
-    set res ($p_cmd -c "import sys; print(sys.version_info.major)")
-    if [ "$res" = "3" ]
-        set -x ESP_PYTHON $p_cmd
-        break
-    end
+    $p_cmd -c "import sys; exit(1) if sys.version_info.major < int(\"$OLDEST_PYTHON_SUPPORTED_MAJOR\") else exit(0);"; or continue
+    $p_cmd -c "import sys; exit(1) if sys.version_info.minor < int(\"$OLDEST_PYTHON_SUPPORTED_MINOR\") else exit(0);"; or continue
+
+    set ESP_PYTHON $p_cmd
+    break
 end
+
+test -n "$ESP_PYTHON"; or echo "Python $OLDEST_PYTHON_SUPPORTED_MAJOR.$OLDEST_PYTHON_SUPPORTED_MINOR+ is not installed! Please see the documentation for how to install it."
+test -n "$ESP_PYTHON"; or exit 1
 
 $ESP_PYTHON --version
-if [ $status -ne 0 ]
-    echo "\"$ESP_PYTHON\" is not installed! Please see the documentation for how to install it."
-    # The following exit skips the rest of this file but won't exit fish where the script was sourced. This is not a
-    # fatal issue.
-    exit 1
-end
-
-echo "\"$ESP_PYTHON\" has been detected"
+echo "$ESP_PYTHON has been detected"

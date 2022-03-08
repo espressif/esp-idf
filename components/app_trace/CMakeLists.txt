@@ -47,7 +47,8 @@ endif()
 idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS "${include_dirs}"
                        PRIV_INCLUDE_DIRS "${priv_include_dirs}"
-                       PRIV_REQUIRES soc
+                       # Requires "driver" for GPTimer in "SEGGER_SYSVIEW_Config_FreeRTOS.c"
+                       PRIV_REQUIRES soc driver
                        LDFRAGMENTS linker.lf)
 
 # disable --coverage for this component, as it is used as transport

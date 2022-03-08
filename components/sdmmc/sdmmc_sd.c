@@ -80,6 +80,43 @@ esp_err_t sdmmc_init_sd_scr(sdmmc_card_t* card)
     return ESP_OK;
 }
 
+esp_err_t sdmmc_init_sd_ssr(sdmmc_card_t* card)
+{
+    esp_err_t err = ESP_OK;
+    /* Get the contents of SSR register: SD additional information
+     * ACMD13 to read 512byte SD status information
+     */
+    uint32_t* sd_ssr = heap_caps_calloc(1, SD_SSR_SIZE, MALLOC_CAP_DMA);
+    if (!sd_ssr) {
+        ESP_LOGE(TAG, "%s: could not allocate sd_ssr", __func__);
+        return ESP_ERR_NO_MEM;
+    }
+
+    sdmmc_command_t cmd = {
+        .data = sd_ssr,
+        .datalen = SD_SSR_SIZE,
+        .blklen = SD_SSR_SIZE,
+        .opcode = MMC_SEND_STATUS,
+        .arg = 0,
+        .flags = SCF_CMD_ADTC | SCF_RSP_R1 | SCF_CMD_READ
+    };
+
+    // read SD status register
+    err = sdmmc_send_app_cmd(card, &cmd);
+    if (err != ESP_OK) {
+        free(sd_ssr);
+        ESP_LOGE(TAG, "%s: sdmmc_send_cmd returned 0x%x", __func__, err);
+        return err;
+    }
+
+    err = sdmmc_decode_ssr(sd_ssr, &card->ssr);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s: error sdmmc_decode_scr returned 0x%x", __func__, err);
+    }
+    free(sd_ssr);
+    return err;
+}
+
 esp_err_t sdmmc_init_sd_bus_width(sdmmc_card_t* card)
 {
     int width = 1;
@@ -265,7 +302,7 @@ esp_err_t sdmmc_check_scr(sdmmc_card_t* card)
      * and compare the result with the previous one. Use this simple check as
      * an indicator of potential signal integrity issues.
      */
-    sdmmc_scr_t scr_tmp;
+    sdmmc_scr_t scr_tmp = { 0 };
     esp_err_t err = sdmmc_send_cmd_send_scr(card, &scr_tmp);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "%s: send_scr returned 0x%x", __func__, err);
@@ -345,6 +382,23 @@ esp_err_t sdmmc_decode_scr(uint32_t *raw_scr, sdmmc_scr_t* out_scr)
         return ESP_ERR_NOT_SUPPORTED;
     }
     out_scr->sd_spec = SCR_SD_SPEC(resp);
+    out_scr->erase_mem_state = SCR_DATA_STAT_AFTER_ERASE(resp);
     out_scr->bus_width = SCR_SD_BUS_WIDTHS(resp);
+    return ESP_OK;
+}
+
+esp_err_t sdmmc_decode_ssr(uint32_t *raw_ssr, sdmmc_ssr_t* out_ssr)
+{
+    uint32_t ssr[(SD_SSR_SIZE/sizeof(uint32_t))] = { 0 };
+    size_t j = (SD_SSR_SIZE/sizeof(uint32_t) - 1);
+
+    for(size_t i = 0; i < (SD_SSR_SIZE/sizeof(uint32_t)); i++) {
+        ssr[j - i] = __builtin_bswap32(raw_ssr[i]);
+    }
+
+    out_ssr->cur_bus_width = SSR_DAT_BUS_WIDTH(ssr);
+    out_ssr->discard_support = SSR_DISCARD_SUPPORT(ssr);
+    out_ssr->fule_support = SSR_FULE_SUPPORT(ssr);
+
     return ESP_OK;
 }

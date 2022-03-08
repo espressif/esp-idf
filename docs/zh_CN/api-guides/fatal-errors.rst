@@ -71,7 +71,7 @@
 
 紧急处理程序的行为还受到另外两个配置项的影响：
 
-- 如果使能了 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_DEBUG_OCDAWARE` （默认），紧急处理程序会检测 {IDF_TARGET_NAME} 是否已经连接 JTAG 调试器。如果检测成功，程序会暂停运行，并将控制权交给调试器。在这种情况下，寄存器和回溯不会被打印到控制台，并且也不会使用 GDB Stub 和 Core Dump 的功能。
+- 如果使能了 :ref:`CONFIG_ESP_DEBUG_OCDAWARE` （默认），紧急处理程序会检测 {IDF_TARGET_NAME} 是否已经连接 JTAG 调试器。如果检测成功，程序会暂停运行，并将控制权交给调试器。在这种情况下，寄存器和回溯不会被打印到控制台，并且也不会使用 GDB Stub 和 Core Dump 的功能。
 
 - 如果使能了 :doc:`内核转储 <core_dump>` 功能，系统状态（任务堆栈和寄存器）会被转储到 flash 或者 UART 以供后续分析。
 
@@ -400,7 +400,7 @@ Interrupt wdt timeout on CPU0 / CPU1
 掉电
 ^^^^
 
-{IDF_TARGET_NAME} 内部集成掉电检测电路，并且会默认启用。如果电源电压低于安全值，掉电检测器可以触发系统复位。掉电检测器可以使用 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_BROWNOUT_DET` 和 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_BROWNOUT_DET_LVL_SEL` 这两个选项进行设置。
+{IDF_TARGET_NAME} 内部集成掉电检测电路，并且会默认启用。如果电源电压低于安全值，掉电检测器可以触发系统复位。掉电检测器可以使用 :ref:`CONFIG_ESP_BROWNOUT_DET` 和 :ref:`CONFIG_ESP_BROWNOUT_DET_LVL_SEL` 这两个选项进行设置。
 
 当掉电检测器被触发时，会打印如下信息::
 

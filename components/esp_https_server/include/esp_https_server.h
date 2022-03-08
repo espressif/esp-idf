@@ -50,21 +50,17 @@ struct httpd_ssl_config {
      */
     httpd_config_t httpd;
 
-    /** CA certificate (here it is treated as server cert)
-     * Todo: Fix this change in release/v5.0 as it would be a breaking change
-     * i.e. Rename the nomenclature of variables holding different certs in https_server component as well as example
-     * 1)The cacert variable should hold the CA which is used to authenticate clients (should inherit current role of client_verify_cert_pem var)
-     * 2)There should be another variable servercert which whould hold servers own certificate (should inherit current role of cacert var) */
+    /** Server certificate */
+    const uint8_t *servercert;
+
+    /** Server certificate byte length */
+    size_t servercert_len;
+
+    /** CA certificate ((CA used to sign clients, or client cert itself) */
     const uint8_t *cacert_pem;
 
     /** CA certificate byte length */
     size_t cacert_len;
-
-    /** Client verify authority certificate (CA used to sign clients, or client cert itself */
-    const uint8_t *client_verify_cert_pem;
-
-    /** Client verify authority cert len */
-    size_t client_verify_cert_len;
 
     /** Private key */
     const uint8_t *prvtkey_pem;
@@ -123,10 +119,10 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
         .close_fn = NULL,                         \
         .uri_match_fn = NULL                      \
     },                                            \
+    .servercert = NULL,                           \
+    .servercert_len = 0,                          \
     .cacert_pem = NULL,                           \
     .cacert_len = 0,                              \
-    .client_verify_cert_pem = NULL,               \
-    .client_verify_cert_len = 0,                  \
     .prvtkey_pem = NULL,                          \
     .prvtkey_len = 0,                             \
     .transport_mode = HTTPD_SSL_TRANSPORT_SECURE, \

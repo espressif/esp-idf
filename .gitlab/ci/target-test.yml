@@ -1,5 +1,7 @@
 .pytest_template:
+  image: $TARGET_TEST_ENV_IMAGE
   stage: target_test
+  timeout: 1 hour
   extends: .before_script_pytest
   artifacts:
     when: always
@@ -8,6 +10,7 @@
       - /tmp/pytest-embedded/
     reports:
       junit: XUNIT_RESULT.xml
+    expire_in: 1 week
   script:
     - pytest $TEST_DIR --target $TARGET -m $ENV_MARKER --junitxml=XUNIT_RESULT.xml
 
@@ -151,6 +154,19 @@ component_ut_pytest_esp32s3_generic:
     - ESP32S3
     - COMPONENT_UT_GENERIC
 
+component_ut_pytest_esp32s3_octal_psram:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s3
+  needs:
+    - build_pytest_components_esp32s3
+  variables:
+    TARGET: esp32s3
+    ENV_MARKER: octal_psram
+  tags:
+    - ESP32S3
+    - MSPI_F8R8
+
 component_ut_pytest_esp32c3_generic:
   extends:
     - .pytest_components_dir_template
@@ -164,6 +180,39 @@ component_ut_pytest_esp32c3_generic:
     - ESP32C3
     - COMPONENT_UT_GENERIC
 
+.pytest_test_apps_dir_template:
+  extends: .pytest_template
+  variables:
+    TEST_DIR: tools/test_apps
+
+test_app_test_pytest_esp32_generic:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32
+  needs:
+    - build_pytest_test_apps_esp32
+  variables:
+    TARGET: esp32
+    ENV_MARKER: generic
+    SETUP_TOOLS: "1"  # need gdb
+  tags:
+    - ESP32
+    - Example_GENERIC
+
+test_app_test_pytest_esp32s2_generic:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32s2
+  needs:
+    - build_pytest_test_apps_esp32s2
+  variables:
+    TARGET: esp32s2
+    ENV_MARKER: generic
+    SETUP_TOOLS: "1"  # need gdb
+  tags:
+    - ESP32S2
+    - Example_GENERIC
+
 # for parallel jobs, CI_JOB_NAME will be "job_name index/total" (for example, "IT_001 1/2")
 # we need to convert to pattern "job_name_index.yml"
 .define_config_file_name: &define_config_file_name |
@@ -173,6 +222,8 @@ component_ut_pytest_esp32c3_generic:
 
 .target_test_job_template:
   stage: target_test
+  timeout: 1 hour
+  image: $TARGET_TEST_ENV_IMAGE
   artifacts:
     when: always
     paths:
@@ -180,9 +231,9 @@ component_ut_pytest_esp32c3_generic:
       - $LOG_PATH
     exclude:
       - .git/**/*
-    expire_in: 1 week
     reports:
       junit: $LOG_PATH/*/XUNIT_RESULT.xml
+    expire_in: 1 week
   variables:
     TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
     LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
@@ -303,7 +354,6 @@ example_test_esp32_WIFI_OTA:
 
 example_test_002:
   extends: .example_test_esp32_template
-  image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - ESP32
     - Example_ShieldBox_Basic
@@ -342,7 +392,6 @@ example_test_006:
   extends:
     - .example_test_esp32_template
     - .rules:labels:iperf_stress_test
-  image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - ESP32
     - Example_ShieldBox
@@ -535,12 +584,9 @@ test_app_test_005:
 
 test_app_test_esp32_generic:
   extends: .test_app_esp32_template
-  parallel: 5
   tags:
     - ESP32
     - Example_GENERIC
-  variables:
-    SETUP_TOOLS: "1"
 
 test_app_test_flash_psram_f4r4:
   extends: .test_app_esp32s3_template
@@ -646,13 +692,6 @@ UT_008:
     - UT_T1_GPIO
     - psram
 
-UT_012:
-  extends: .unit_test_esp32_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_LEDC
-    - psram
-
 UT_014:
   extends: .unit_test_esp32_template
   tags:
@@ -735,13 +774,6 @@ UT_036:
     - ESP32_IDF
     - UT_T1_PSRAMV0
     - psram
-
-# ToDo: re-enable this job when ESP32-S2 LEDC runner installed
-# UT_037:
-#   extends: .unit_test_esp32s2_template
-#   tags:
-#     - ESP32S2_IDF
-#     - UT_T1_LEDC
 
 UT_038:
   extends: .unit_test_esp32s2_template

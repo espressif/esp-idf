@@ -1,0 +1,37 @@
+name: Check pre-commit rules
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+jobs:
+  pre_commit_check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Fetch head and base refs
+        # This is necessary for pre-commit to check the changes in the PR branch
+        run: |
+          git fetch origin ${{ github.base_ref }}:base_ref
+          git fetch origin pull/${{ github.event.pull_request.number }}/head:pr_ref
+      - name: Set up Python environment
+        uses: actions/setup-python@master
+        with:
+          python-version: v3.7
+      - name: Install python packages
+        run: |
+          pip install pre-commit
+          pre-commit install-hooks
+      - name: Run pre-commit and check for any changes
+        run: |
+          echo "Commits being checked:"
+          git log --oneline --no-decorate base_ref..pr_ref
+          echo ""
+          if ! pre-commit run --from-ref base_ref --to-ref pr_ref --show-diff-on-failure ; then
+            echo ""
+            echo "::notice::It looks like the commits in this PR have been made without having pre-commit hooks installed."
+            echo "::notice::Please see https://docs.espressif.com/projects/esp-idf/en/latest/esp32/contribute/install-pre-commit-hook.html for instructions."
+            echo ""
+            exit 1
+          fi

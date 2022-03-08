@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,7 @@
 #include "esp_rom_sys.h"
 #include "soc/rtc.h"
 #include "soc/timer_periph.h"
-#include "soc_log.h"
+#include "esp_hw_log.h"
 
 #define MHZ (1000000)
 
@@ -69,7 +69,7 @@ static uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cyc
     }
     const uint32_t us_timer_max =  TIMG_RTC_CALI_VALUE / (uint32_t) xtal_freq;
     if (us_time_estimate >= us_timer_max) {
-        SOC_LOGE(TAG, "slowclk_cycles value too large, possible overflow");
+        ESP_HW_LOGE(TAG, "slowclk_cycles value too large, possible overflow");
         return 0;
     }
     /* Start calibration */

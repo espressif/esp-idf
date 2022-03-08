@@ -241,6 +241,10 @@ static esp_err_t IRAM_ATTR iperf_run_tcp_server(void)
 
     socket_recv(client_socket, listen_addr, IPERF_TRANS_TYPE_TCP);
 exit:
+    if (client_socket != -1) {
+        close(client_socket);
+    }
+
     if (listen_socket != -1) {
         shutdown(listen_socket, 0);
         close(listen_socket);

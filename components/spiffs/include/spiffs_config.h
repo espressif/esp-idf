@@ -1,4 +1,9 @@
 /*
+ * SPDX-FileCopyrightText: 2013-2017 Peter Andersson (pelleplutt1976<at>gmail.com)
+ *
+ * SPDX-License-Identifier: MIT
+ */
+/*
  * spiffs_config.h
  *
  *  Created on: Jul 3, 2013

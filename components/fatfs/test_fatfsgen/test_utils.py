@@ -1,7 +1,11 @@
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import os
+import sys
 from typing import Any, Dict, Union
+
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+import fatfsgen  # noqa E402  # pylint: disable=C0413
 
 CFG = dict(
     sector_size=4096,
@@ -33,3 +37,8 @@ def generate_test_dir_2() -> None:
         file.write('thisistest\n')
     with open(os.path.join(CFG['test_dir2'], 'testfile'), 'w') as file:
         file.write('ahoj\n')
+
+
+def fill_sector(fatfs: fatfsgen.FATFS) -> None:
+    for i in range(CFG['sector_size'] // CFG['entry_size']):
+        fatfs.create_file(f'A{str(i).upper()}', path_from_root=['TESTFOLD'])

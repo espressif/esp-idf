@@ -244,7 +244,7 @@ void app_main(void)
     /* Enable touch sensor clock. Work mode is "timer trigger". */
     touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER);
     touch_pad_fsm_start();
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
 
     /* set touchpad wakeup threshold */
     uint32_t touch_value, wake_threshold;

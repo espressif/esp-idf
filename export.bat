@@ -17,6 +17,9 @@ if not "%MISSING_REQUIREMENTS%" == "" goto :__error_missing_requirements
 set IDF_PATH=%~dp0
 set IDF_PATH=%IDF_PATH:~0,-1%
 
+echo Checking Python compatibility
+python.exe "%IDF_PATH%\tools\python_version_checker.py"
+
 set "IDF_TOOLS_PY_PATH=%IDF_PATH%\tools\idf_tools.py"
 set "IDF_TOOLS_JSON_PATH=%IDF_PATH%\tools\tools.json"
 set "IDF_TOOLS_EXPORT_CMD=%IDF_PATH%\export.bat"
@@ -53,6 +56,11 @@ echo Checking if Python packages are up to date...
 python.exe "%IDF_PATH%\tools\idf_tools.py" check-python-dependencies
 if %errorlevel% neq 0 goto :__end
 
+python.exe "%IDF_PATH%\tools\idf_tools.py" uninstall --dry-run > UNINSTALL_OUTPUT
+SET /p UNINSTALL=<UNINSTALL_OUTPUT
+DEL UNINSTALL_OUTPUT
+if NOT "%UNINSTALL%"=="" call :__uninstall_message
+
 echo.
 echo Done! You can now compile ESP-IDF projects.
 echo Go to the project directory and run:
@@ -80,6 +88,13 @@ goto :__end
     echo For more details please visit our website: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/windows-setup.html
     goto :__end
 
+:__uninstall_message
+    echo.
+    echo Detected installed tools that are not currently used by active ESP-IDF version.
+    echo %UNINSTALL%
+    echo For free up even more space, remove installation packages of those tools. Use option 'python.exe %IDF_PATH%\tools\idf_tools.py uninstall --remove-archives'.
+    echo.
+
 :__end
 :: Clean up
 if not "%IDF_TOOLS_EXPORTS_FILE%"=="" (
@@ -93,3 +108,4 @@ set IDF_TOOLS_JSON_PATH=
 set OLD_PATH=
 set PATH_ADDITIONS=
 set MISSING_REQUIREMENTS=
+set UNINSTALL=

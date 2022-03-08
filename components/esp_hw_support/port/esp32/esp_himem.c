@@ -9,7 +9,7 @@
 #include "esp32/spiram.h"
 #include "esp32/rom/cache.h"
 #include "sdkconfig.h"
-#include "esp32/himem.h"
+#include "esp_himem.h"
 #include "soc/soc.h"
 #include "esp_log.h"
 #include "esp_check.h"

@@ -992,6 +992,7 @@ typedef struct {
     volatile efuse_date_reg_t date;
 } efuse_dev_t;
 
+extern efuse_dev_t EFUSE;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(efuse_dev_t) == 0x200, "Invalid size of efuse_dev_t structure");

@@ -83,14 +83,6 @@ config SOC_MPU_REGION_WO_SUPPORTED
     bool
     default n
 
-config SOC_PCNT_PORT_NUM
-    bool
-    default y
-
-config SOC_PCNT_UNIT_NUM
-    int
-    default 4
-
 config SOC_RTCIO_PIN_COUNT
     int
     default 22
@@ -195,6 +187,10 @@ config SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
     bool
     default y
 
+config SOC_EFUSE_KEY_PURPOSE_FIELD
+    bool
+    default y
+
 config SOC_SDMMC_HOST_SUPPORTED
     bool
     default y
@@ -236,6 +232,10 @@ config SOC_RMT_SUPPORTED
     default y
 
 config SOC_SIGMADELTA_SUPPORTED
+    bool
+    default y
+
+config SOC_TEMP_SENSOR_SUPPORTED
     bool
     default y
 
@@ -350,6 +350,10 @@ config SOC_I2C_NUM
 config SOC_I2C_FIFO_LEN
     int
     default 32
+
+config SOC_I2C_SUPPORT_SLAVE
+    bool
+    default y
 
 config SOC_I2C_SUPPORT_HW_FSM_RST
     bool
@@ -663,11 +667,35 @@ config SOC_TOUCH_PAD_MEASURE_WAIT_MAX
     hex
     default 0xFF
 
+config SOC_UART_NUM
+    int
+    default 3
+
+config SOC_UART_FIFO_LEN
+    int
+    default 128
+
+config SOC_UART_BITRATE_MAX
+    int
+    default 5000000
+
+config SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
+    bool
+    default y
+
+config SOC_UART_SUPPORT_WAKEUP_INT
+    bool
+    default y
+
 config SOC_UART_SUPPORT_RTC_CLK
     bool
     default y
 
 config SOC_UART_SUPPORT_XTAL_CLK
+    bool
+    default y
+
+config SOC_UART_REQUIRE_CORE_RESET
     bool
     default y
 
@@ -831,6 +859,10 @@ config SOC_SDMMC_SUPPORT_XTAL_CLOCK
     bool
     default y
 
+config SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC
+    bool
+    default y
+
 config SOC_TWAI_BRP_MIN
     int
     default 2
@@ -840,21 +872,5 @@ config SOC_TWAI_BRP_MAX
     default 16384
 
 config SOC_TWAI_SUPPORTS_RX_STATUS
-    bool
-    default y
-
-config SOC_UART_FIFO_LEN
-    int
-    default 128
-
-config SOC_UART_BITRATE_MAX
-    int
-    default 5000000
-
-config SOC_UART_NUM
-    int
-    default 3
-
-config SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
     bool
     default y

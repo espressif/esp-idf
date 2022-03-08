@@ -48,20 +48,45 @@ typedef enum {
     UART_INTR_RS485_FRM_ERR    = (0x1 << 16),
     UART_INTR_RS485_CLASH      = (0x1 << 17),
     UART_INTR_CMD_CHAR_DET     = (0x1 << 18),
+    UART_INTR_WAKEUP           = (0x1 << 19),
 } uart_intr_t;
 
-static inline void uart_ll_reset_core(uart_dev_t *hw) {
-    hw->clk_conf.rst_core = 1;
-    hw->clk_conf.rst_core = 0;
+/**
+ * @brief  Configure the UART core reset.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  core_rst_en True to enable the core reset, otherwise set it false.
+ *
+ * @return None.
+ */
+static inline void uart_ll_set_reset_core(uart_dev_t *hw, bool core_rst_en)
+{
+    hw->clk_conf.rst_core = core_rst_en;
 }
 
-static inline void uart_ll_sclk_enable(uart_dev_t *hw) {
+/**
+ * @brief  Enable the UART clock.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ *
+ * @return None.
+ */
+static inline void uart_ll_sclk_enable(uart_dev_t *hw)
+{
     hw->clk_conf.sclk_en = 1;
     hw->clk_conf.rx_sclk_en = 1;
     hw->clk_conf.tx_sclk_en = 1;
 }
 
-static inline void uart_ll_sclk_disable(uart_dev_t *hw) {
+/**
+ * @brief  Disable the UART clock.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ *
+ * @return None.
+ */
+static inline void uart_ll_sclk_disable(uart_dev_t *hw)
+{
     hw->clk_conf.sclk_en = 0;
     hw->clk_conf.rx_sclk_en = 0;
     hw->clk_conf.tx_sclk_en = 0;

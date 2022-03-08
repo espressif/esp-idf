@@ -26,12 +26,6 @@
   - "tools/ci/python_packages/tiny_test_fw/**/*"
   - "tools/ci/python_packages/ttfw_idf/**/*"
 
-  - "tools/ci/find_apps_build_apps.sh"
-  - "tools/ci/build_pytest_apps.py"
-  - "tools/build_apps.py"
-  - "tools/find_apps.py"
-  - "tools/find_build_apps/**/*"
-
   - "tools/esp_prov/**/*"
   - "examples/**/*"
 
@@ -43,10 +37,19 @@
   - "components/**/*"
   - "examples/cxx/experimental/experimental_cpp_component/*"
 
+.patterns-build_target_test: &patterns-build_target_test
+  - "tools/ci/find_apps_build_apps.sh"
+  - "tools/build_apps.py"
+  - "tools/find_apps.py"
+  - "tools/find_build_apps/**/*"
+
+  - "tools/ci/build_pytest_apps.py"
+
 .patterns-build_system: &patterns-build_system
   - "tools/cmake/**/*"
   - "tools/kconfig_new/**/*"
   - "tools/tools.json"
+  - "tools/requirements.json"
   - "tools/ci/test_build_system*.sh"
 
 .patterns-custom_test: &patterns-custom_test
@@ -127,6 +130,10 @@
   - "tools/test_idf_tools/**/*"
   - "tools/install_util.py"
 
+  - "tools/requirements/*"
+  - "tools/requirements.json"
+  - "tools/requirements_schema.json"
+
   - "tools/mkdfu.py"
   - "tools/test_mkdfu/**/*"
 
@@ -161,8 +168,6 @@
   - "components/cmock/CMock"
   - "components/cmock/CMock/vendor/c_exception"
   - "components/cmock/CMock/vendor/unity"
-  - "components/coap/libcoap"
-  - "components/coap/libcoap/ext/tinydtls"
   - "components/esp_phy/lib"
   - "components/esp_wifi/lib"
   - "components/esptool_py/esptool"
@@ -433,6 +438,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-build_target_test
+    - <<: *if-dev-push
       changes: *patterns-component_ut
 
 .rules:build:component_ut-esp32:
@@ -450,6 +457,8 @@
       changes: *patterns-build_components
     - <<: *if-dev-push
       changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-build_target_test
     - <<: *if-dev-push
       changes: *patterns-component_ut
 
@@ -469,6 +478,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-build_target_test
+    - <<: *if-dev-push
       changes: *patterns-component_ut
 
 .rules:build:component_ut-esp32c3:
@@ -486,6 +497,8 @@
       changes: *patterns-build_components
     - <<: *if-dev-push
       changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-build_target_test
     - <<: *if-dev-push
       changes: *patterns-component_ut
 
@@ -505,6 +518,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-build_target_test
+    - <<: *if-dev-push
       changes: *patterns-component_ut
 
 .rules:build:component_ut-esp32s2:
@@ -523,6 +538,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-build_target_test
+    - <<: *if-dev-push
       changes: *patterns-component_ut
 
 .rules:build:component_ut-esp32s3:
@@ -540,6 +557,8 @@
       changes: *patterns-build_components
     - <<: *if-dev-push
       changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-build_target_test
     - <<: *if-dev-push
       changes: *patterns-component_ut
 
@@ -563,6 +582,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-build_target_test
+    - <<: *if-dev-push
       changes: *patterns-custom_test
 
 .rules:build:custom_test-esp32:
@@ -580,6 +601,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-build_target_test
+    - <<: *if-dev-push
       changes: *patterns-custom_test
 
 .rules:build:custom_test-esp32c2:
@@ -595,6 +618,8 @@
       changes: *patterns-build_components
     - <<: *if-dev-push
       changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-build_target_test
     - <<: *if-dev-push
       changes: *patterns-custom_test
 
@@ -612,6 +637,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-build_target_test
+    - <<: *if-dev-push
       changes: *patterns-custom_test
 
 .rules:build:custom_test-esp32h2:
@@ -627,6 +654,8 @@
       changes: *patterns-build_components
     - <<: *if-dev-push
       changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-build_target_test
     - <<: *if-dev-push
       changes: *patterns-custom_test
 
@@ -644,6 +673,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-build_target_test
+    - <<: *if-dev-push
       changes: *patterns-custom_test
 
 .rules:build:custom_test-esp32s3:
@@ -659,6 +690,8 @@
       changes: *patterns-build_components
     - <<: *if-dev-push
       changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-build_target_test
     - <<: *if-dev-push
       changes: *patterns-custom_test
 
@@ -694,6 +727,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-build_target_test
+    - <<: *if-dev-push
       changes: *patterns-example_test
 
 .rules:build:example_test-esp32:
@@ -713,6 +748,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-build_target_test
+    - <<: *if-dev-push
       changes: *patterns-example_test
 
 .rules:build:example_test-esp32c2:
@@ -730,6 +767,8 @@
       changes: *patterns-build_components
     - <<: *if-dev-push
       changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-build_target_test
     - <<: *if-dev-push
       changes: *patterns-example_test
 
@@ -749,6 +788,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-build_target_test
+    - <<: *if-dev-push
       changes: *patterns-example_test
 
 .rules:build:example_test-esp32h2:
@@ -766,6 +807,8 @@
       changes: *patterns-build_components
     - <<: *if-dev-push
       changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-build_target_test
     - <<: *if-dev-push
       changes: *patterns-example_test
 
@@ -785,6 +828,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-build_target_test
+    - <<: *if-dev-push
       changes: *patterns-example_test
 
 .rules:build:example_test-esp32s3:
@@ -802,6 +847,8 @@
       changes: *patterns-build_components
     - <<: *if-dev-push
       changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-build_target_test
     - <<: *if-dev-push
       changes: *patterns-example_test
 
@@ -876,6 +923,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-build_target_test
+    - <<: *if-dev-push
       changes: *patterns-component_ut
     - <<: *if-dev-push
       changes: *patterns-custom_test
@@ -905,6 +954,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-build_target_test
+    - <<: *if-dev-push
       changes: *patterns-unit_test
 
 .rules:build:unit_test-esp32:
@@ -920,6 +971,8 @@
       changes: *patterns-build_components
     - <<: *if-dev-push
       changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-build_target_test
     - <<: *if-dev-push
       changes: *patterns-unit_test
 
@@ -937,6 +990,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-build_target_test
+    - <<: *if-dev-push
       changes: *patterns-unit_test
 
 .rules:build:unit_test-esp32c3:
@@ -952,6 +1007,8 @@
       changes: *patterns-build_components
     - <<: *if-dev-push
       changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-build_target_test
     - <<: *if-dev-push
       changes: *patterns-unit_test
 
@@ -969,6 +1026,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-build_target_test
+    - <<: *if-dev-push
       changes: *patterns-unit_test
 
 .rules:build:unit_test-esp32s2:
@@ -985,6 +1044,8 @@
     - <<: *if-dev-push
       changes: *patterns-build_system
     - <<: *if-dev-push
+      changes: *patterns-build_target_test
+    - <<: *if-dev-push
       changes: *patterns-unit_test
 
 .rules:build:unit_test-esp32s3:
@@ -1000,6 +1061,8 @@
       changes: *patterns-build_components
     - <<: *if-dev-push
       changes: *patterns-build_system
+    - <<: *if-dev-push
+      changes: *patterns-build_target_test
     - <<: *if-dev-push
       changes: *patterns-unit_test
 

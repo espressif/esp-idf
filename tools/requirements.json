@@ -1,0 +1,17 @@
+{
+    "version": 1,
+    "features": [
+        {
+            "name": "core",
+            "description": "Core packages necessary for ESP-IDF",
+            "optional": false,
+            "requirement_path": "tools/requirements/requirements.core.txt"
+        },
+        {
+            "name": "gdbgui",
+            "description": "Packages for supporting debugging from web browser",
+            "optional": true,
+            "requirement_path": "tools/requirements/requirements.gdbgui.txt"
+        }
+    ]
+}

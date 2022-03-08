@@ -11,19 +11,6 @@
 #include <stdarg.h>
 #include "sdkconfig.h"
 #include "esp_rom_sys.h"
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rom/ets_sys.h" // will be removed in idf v5.0
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/ets_sys.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/ets_sys.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/ets_sys.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/ets_sys.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/rom/ets_sys.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -298,7 +285,6 @@ void esp_log_writev(esp_log_level_t level, const char* tag, const char* format, 
 
 /// macro to output logs in startup code, before heap allocator and syscalls have been initialized.
 /// Log at ``ESP_LOG_ERROR`` level. @see ``printf``,``ESP_LOGE``,``ESP_DRAM_LOGE``
-#define portGET_ARGUMENT_COUNT_INNER(zero, one, count, ...) count
 
 /**
  * In the future, we want to switch to C++20. We also want to become compatible with clang.

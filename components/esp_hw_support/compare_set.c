@@ -1,10 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "soc/compare_set.h"
-#include "soc/spinlock.h"
+#include "compare_set.h"
+#include "spinlock.h"
 #include "soc/soc_caps.h"
 
 #if __XTENSA__ && SOC_SPIRAM_SUPPORTED

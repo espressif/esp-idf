@@ -5,21 +5,20 @@ Application Protocols
 .. toctree::
     :maxdepth: 1
 
-    ASIO <asio>
-    ESP-MQTT <mqtt>
-    ESP-TLS <esp_tls>
-    OpenSSL APIs <openssl_apis>
-    HTTP Client <esp_http_client>
-    HTTP Server <esp_http_server>
-    HTTPS Server <esp_https_server>
-    ICMP Echo <icmp_echo>
-    Local Control <esp_local_ctrl>
-    mDNS <mdns>
-    Modbus <modbus>
-    Websocket Client <esp_websocket_client>
-    ESP Serial Slave Link <esp_serial_slave_link>
-    Certificate Bundle <esp_crt_bundle>
-
+    asio
+    modbus
+    mqtt
+    esp_tls
+    esp_http_client
+    esp_local_ctrl
+    esp_serial_slave_link
+    esp_websocket_client
+    esp_crt_bundle
+    esp_http_server
+    esp_https_server
+    icmp_echo
+    mdns
+    
 Code examples for this API section are provided in the :example:`protocols` directory of ESP-IDF examples.
 
 

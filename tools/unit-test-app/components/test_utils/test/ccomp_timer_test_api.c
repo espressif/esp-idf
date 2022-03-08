@@ -123,7 +123,7 @@ TEST_CASE("getting the time works", "[test_utils][ccomp_timer]")
     int64_t t_2 = esp_timer_get_time() - start;
 
     // The times should at least be in the same ballpark (at least within 10%)
-    float diff = (abs(t_1 - t_2)) / ((float)t_2);
+    float diff = (llabs(t_1 - t_2)) / ((float)t_2);
     TEST_ASSERT(diff <= 10.0f);
 
     // Since the timer was already stopped, test that ccomp_timer_get_time

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +18,6 @@
 
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
-#include "esp_debug_helpers.h"
 #include "esp_app_format.h"
 #include "esp_core_dump_types.h"
 #include "esp_core_dump_port_impl.h"

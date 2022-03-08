@@ -2,9 +2,19 @@ idf_build_get_property(target IDF_TARGET)
 
 set(srcs "wdt_hal_iram.c"
          "mpu_hal.c"
-         "cpu_hal.c")
+         "cpu_hal.c"
+         "efuse_hal.c"
+         "${target}/efuse_hal.c")
 
 set(includes "${target}/include" "include" "platform_port/include")
+
+if(target STREQUAL "esp32h2")
+    if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1)
+        list(APPEND includes "${target}/include/rev1")
+    elseif(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2)
+        list(APPEND includes "${target}/include/rev2")
+    endif()
+endif()
 
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs
@@ -158,7 +168,7 @@ endif()
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${includes}
                        PRIV_INCLUDE_DIRS ${priv_include}
-                       REQUIRES soc
+                       REQUIRES soc esp_rom
                        PRIV_REQUIRES ${target}
                        LDFRAGMENTS linker.lf)
 

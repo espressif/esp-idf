@@ -33,8 +33,10 @@
 #define SOC_WIFI_SUPPORTED              0 // Enable during bringup, IDF-3905
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
-#define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 3
-#define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS 1
+#define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 1
+#define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS 0
+#define SOC_EFUSE_KEY_PURPOSE_FIELD     0
+#define SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK 1
 #define SOC_RTC_FAST_MEM_SUPPORTED      0
 #define SOC_RTC_SLOW_MEM_SUPPORTED      0
 #define SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY             0
@@ -83,18 +85,6 @@
 
 #define SOC_CPU_WATCHPOINT_SIZE         0x80000000 // bytes
 
-/*-------------------------- DIGITAL SIGNATURE CAPS ----------------------------------------*/
-/** The maximum length of a Digital Signature in bits. */
-#define SOC_DS_SIGNATURE_MAX_BIT_LEN (3072)
-
-/** Initialization vector (IV) length for the RSA key parameter message digest (MD) in bytes. */
-#define SOC_DS_KEY_PARAM_MD_IV_LENGTH (16)
-
-
-/** Maximum wait time for DS parameter decryption key. If overdue, then key error.
-    See TRM DS chapter for more details */
-#define SOC_DS_KEY_CHECK_MAX_WAIT_US (1100)
-
 /*-------------------------- GDMA CAPS -------------------------------------*/
 #define SOC_GDMA_GROUPS                 (1U) // Number of GDMA groups
 #define SOC_GDMA_PAIRS_PER_GROUP        (1U) // Number of GDMA pairs in each group
@@ -126,7 +116,7 @@
 #define SOC_DEDIC_PERIPH_ALWAYS_ENABLE  (1) /*!< The dedicated GPIO (a.k.a. fast GPIO) is featured by some customized CPU instructions, which is always enabled */
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
-// TODO IDF-3918
+// ESP32-C2 has 1 I2C
 #define SOC_I2C_NUM                 (1U)
 
 #define SOC_I2C_FIFO_LEN            (32) /*!< I2C hardware FIFO depth */
@@ -186,10 +176,6 @@
 #define SOC_SHA_SUPPORT_SHA224          (1)
 #define SOC_SHA_SUPPORT_SHA256          (1)
 
-/*-------------------------- SIGMA DELTA CAPS --------------------------------*/
-#define SOC_SIGMADELTA_NUM         (1U) // 1 sigma-delta peripheral
-#define SOC_SIGMADELTA_CHANNEL_NUM (4)  // 4 channels
-
 /*-------------------------- SPI CAPS ----------------------------------------*/
 #define SOC_SPI_PERIPH_NUM          2
 #define SOC_SPI_PERIPH_CS_NUM(i)    6
@@ -248,7 +234,7 @@
 #define SOC_UART_NUM                (2)
 #define SOC_UART_FIFO_LEN           (128)      /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX        (5000000)  /*!< Max bit rate supported by UART */
-
+#define SOC_UART_SUPPORT_WAKEUP_INT (1)         /*!< Support UART wakeup interrupt */
 #define SOC_UART_SUPPORT_RTC_CLK    (1)
 #define SOC_UART_SUPPORT_XTAL_CLK   (1)
 

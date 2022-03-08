@@ -144,6 +144,9 @@ static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_f
     int spics_out = spi_periph_signal[config->host_id].spics_out[cs_id];
     int spics_func = spi_periph_signal[config->host_id].func;
     uint32_t iomux_reg = GPIO_PIN_MUX_REG[cs_io_num];
+    gpio_hal_context_t gpio_hal = {
+        .dev = GPIO_HAL_GET_HW(GPIO_PORT_0)
+    };
 
     //To avoid the panic caused by flash data line conflicts during cs line
     //initialization, disable the cache temporarily
@@ -152,16 +155,8 @@ static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_f
     if (use_iomux) {
         gpio_hal_iomux_func_sel(iomux_reg, spics_func);
     } else {
-#if SOC_GPIO_PIN_COUNT <= 32
-        GPIO.enable_w1ts.val = (0x1 << cs_io_num);
-#else
-        if (cs_io_num < 32) {
-            GPIO.enable_w1ts = (0x1 << cs_io_num);
-        } else {
-            GPIO.enable1_w1ts.data = (0x1 << (cs_io_num - 32));
-        }
-#endif
-        GPIO.pin[cs_io_num].pad_driver = 0;
+        gpio_hal_output_enable(&gpio_hal, cs_io_num);
+        gpio_hal_od_disable(&gpio_hal, cs_io_num);
         esp_rom_gpio_connect_out_signal(cs_io_num, spics_out, false, false);
         if (cs_id == 0) {
             esp_rom_gpio_connect_in_signal(cs_io_num, spics_in, false);

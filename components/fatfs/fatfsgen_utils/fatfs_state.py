@@ -1,16 +1,17 @@
-# SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+
+from textwrap import dedent
+
+from .exceptions import InconsistentFATAttributes
+from .utils import (FAT12, FAT12_MAX_CLUSTERS, FAT16, FAT16_MAX_CLUSTERS, get_fatfs_type, get_non_data_sectors_cnt,
+                    number_of_clusters)
 
 
 class FATFSState:
     """
     The class represents the state and the configuration of the FATFS.
     """
-    FAT12_MAX_CLUSTERS = 4085
-    FAT16_MAX_CLUSTERS = 65525
-    FAT12 = 12
-    FAT16 = 16
-    FAT32 = 32
 
     def __init__(self,
                  entry_size: int,
@@ -28,7 +29,10 @@ class FATFSState:
                  num_heads: int,
                  hidden_sectors: int,
                  file_sys_type: str,
+                 explicit_fat_type: int = None,
                  long_names_enabled: bool = False):
+
+        self._explicit_fat_type = explicit_fat_type
         self._binary_image: bytearray = bytearray(b'')
         self.fat_tables_cnt: int = fat_tables_cnt
         self.oem_name: str = oem_name
@@ -46,6 +50,11 @@ class FATFSState:
         self.size: int = size
         self.sectors_per_fat_cnt: int = sectors_per_fat
         self.sectors_per_cluster: int = sectors_per_cluster
+
+        if self.clusters in (FAT12_MAX_CLUSTERS, FAT16_MAX_CLUSTERS):
+            print('WARNING: It is not recommended to create FATFS with bounding '
+                  f'count of clusters: {FAT12_MAX_CLUSTERS} or {FAT16_MAX_CLUSTERS}')
+        self.check_fat_type()
 
     @property
     def binary_image(self) -> bytearray:
@@ -68,28 +77,36 @@ class FATFSState:
 
     @property
     def non_data_sectors(self) -> int:
-        return self.reserved_sectors_cnt + self.sectors_per_fat_cnt + self.root_dir_sectors_cnt
+        return get_non_data_sectors_cnt(self.reserved_sectors_cnt, self.sectors_per_fat_cnt,  # type: ignore
+                                        self.root_dir_sectors_cnt)
 
     @property
     def data_region_start(self) -> int:
         return self.non_data_sectors * self.sector_size
 
     @property
-    def max_clusters(self) -> int:
-        return self.data_sectors // self.sectors_per_cluster
+    def clusters(self) -> int:
+        return number_of_clusters(self.data_sectors, self.sectors_per_cluster)  # type: ignore
 
     @property
     def root_directory_start(self) -> int:
         return (self.reserved_sectors_cnt + self.sectors_per_fat_cnt) * self.sector_size
 
+    def check_fat_type(self) -> None:
+        _type = self.fatfs_type
+        if self._explicit_fat_type is not None and self._explicit_fat_type != _type:
+            raise InconsistentFATAttributes(dedent(
+                f"""FAT type you specified is inconsistent with other attributes of the system.
+                    The specified FATFS type: FAT{self._explicit_fat_type}
+                    The actual FATFS type: FAT{_type}"""))
+        if _type not in (FAT12, FAT16):
+            raise NotImplementedError('FAT32 is currently not supported.')
+
     @property
     def fatfs_type(self) -> int:
-        if self.max_clusters < FATFSState.FAT12_MAX_CLUSTERS:
-            return FATFSState.FAT12
-        elif self.max_clusters < FATFSState.FAT16_MAX_CLUSTERS:
-            return FATFSState.FAT16
-        # fat is FAT.FAT32, not supported now
-        raise NotImplementedError('FAT32 is currently not supported.')
+        # variable typed_fatfs_type must be explicitly typed to avoid mypy error
+        typed_fatfs_type: int = get_fatfs_type(self.clusters)
+        return typed_fatfs_type
 
     @property
     def entries_root_count(self) -> int:

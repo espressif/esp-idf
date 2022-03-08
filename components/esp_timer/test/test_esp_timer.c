@@ -17,45 +17,11 @@
 
 #define SEC  (1000000)
 
-#if CONFIG_ESP_TIMER_IMPL_FRC2
-#include "soc/frc_timer_reg.h"
-#endif
 
 #ifdef CONFIG_ESP_TIMER_PROFILING
 #define WITH_PROFILING 1
 #endif
 
-#ifdef CONFIG_ESP_TIMER_IMPL_FRC2
-extern uint32_t esp_timer_impl_get_overflow_val(void);
-extern void esp_timer_impl_set_overflow_val(uint32_t overflow_val);
-
-static uint32_t s_old_overflow_val;
-
-static void setup_overflow(void)
-{
-    s_old_overflow_val = esp_timer_impl_get_overflow_val();
-    /* Overflow every 0.1 sec.
-     * Chosen so that it is 0 modulo s_timer_ticks_per_us (which is 80),
-     * to prevent roundoff error on each overflow.
-     */
-    esp_timer_impl_set_overflow_val(8000000);
-}
-
-static void teardown_overflow(void)
-{
-    esp_timer_impl_set_overflow_val(s_old_overflow_val);
-}
-#else
-
-static void setup_overflow(void)
-{
-}
-
-static void teardown_overflow(void)
-{
-}
-
-#endif // CONFIG_ESP_TIMER_IMPL_FRC2
 
 static void dummy_cb(void* arg)
 {
@@ -68,7 +34,6 @@ TEST_CASE("esp_timer orders timers correctly", "[esp_timer]")
     const size_t num_timers = sizeof(timeouts)/sizeof(timeouts[0]);
     esp_timer_handle_t handles[num_timers];
     char* names[num_timers];
-    setup_overflow();
     for (size_t i = 0; i < num_timers; ++i) {
         asprintf(&names[i], "timer%d", i);
         esp_timer_create_args_t args = {
@@ -78,7 +43,6 @@ TEST_CASE("esp_timer orders timers correctly", "[esp_timer]")
         TEST_ESP_OK(esp_timer_create(&args, &handles[i]));
         TEST_ESP_OK(esp_timer_start_once(handles[i], timeouts[i] * 100));
     }
-    teardown_overflow();
     char* stream_str[1024];
     FILE* stream = fmemopen(stream_str, sizeof(stream_str), "r+");
     TEST_ESP_OK(esp_timer_dump(stream));
@@ -139,7 +103,6 @@ static void set_alarm_task(void* arg)
 TEST_CASE("esp_timer_impl_set_alarm stress test", "[esp_timer]")
 {
     SemaphoreHandle_t done = xSemaphoreCreateCounting(portNUM_PROCESSORS, 0);
-    setup_overflow();
     xTaskCreatePinnedToCore(&set_alarm_task, "set_alarm_0", 4096, done, UNITY_FREERTOS_PRIORITY, NULL, 0);
 #if portNUM_PROCESSORS == 2
     xTaskCreatePinnedToCore(&set_alarm_task, "set_alarm_1", 4096, done, UNITY_FREERTOS_PRIORITY, NULL, 1);
@@ -149,7 +112,6 @@ TEST_CASE("esp_timer_impl_set_alarm stress test", "[esp_timer]")
 #if portNUM_PROCESSORS == 2
     TEST_ASSERT(xSemaphoreTake(done, test_time_sec * 2 * 1000 / portTICK_PERIOD_MS));
 #endif
-    teardown_overflow();
     vSemaphoreDelete(done);
 }
 
@@ -174,7 +136,6 @@ TEST_CASE("esp_timer produces correct delay", "[esp_timer]")
     const size_t delays_count = sizeof(delays_ms)/sizeof(delays_ms[0]);
 
     ref_clock_init();
-    setup_overflow();
     for (size_t i = 0; i < delays_count; ++i) {
         t_end = 0;
         int64_t t_start = ref_clock_get();
@@ -188,7 +149,6 @@ TEST_CASE("esp_timer produces correct delay", "[esp_timer]")
 
         TEST_ASSERT_INT32_WITHIN(portTICK_PERIOD_MS, delays_ms[i], ms_diff);
     }
-    teardown_overflow();
     ref_clock_deinit();
 
     TEST_ESP_OK( esp_timer_dump(stdout) );
@@ -236,7 +196,6 @@ TEST_CASE("periodic esp_timer produces correct delays", "[esp_timer]")
     };
     TEST_ESP_OK(esp_timer_create(&create_args, &timer1));
     ref_clock_init();
-    setup_overflow();
     args.timer = timer1;
     args.t_start = ref_clock_get();
     args.done = xSemaphoreCreateBinary();
@@ -248,7 +207,6 @@ TEST_CASE("periodic esp_timer produces correct delays", "[esp_timer]")
     for (size_t i = 0; i < NUM_INTERVALS; ++i) {
         TEST_ASSERT_INT32_WITHIN(portTICK_PERIOD_MS, (i + 1) * delay_ms, args.intervals[i]);
     }
-    teardown_overflow();
     ref_clock_deinit();
     TEST_ESP_OK( esp_timer_dump(stdout) );
 
@@ -405,7 +363,6 @@ TEST_CASE("esp_timer for very short intervals", "[esp_timer]")
     esp_timer_handle_t timer1, timer2;
     ESP_ERROR_CHECK( esp_timer_create(&timer_args, &timer1) );
     ESP_ERROR_CHECK( esp_timer_create(&timer_args, &timer2) );
-    setup_overflow();
     const int timeout_ms = 10;
     for (int timeout_delta_us = -150; timeout_delta_us < 150; timeout_delta_us++) {
         printf("delta=%d", timeout_delta_us);
@@ -418,7 +375,6 @@ TEST_CASE("esp_timer for very short intervals", "[esp_timer]")
         TEST_ESP_ERR(ESP_ERR_INVALID_STATE, esp_timer_stop(timer2));
     }
 
-    teardown_overflow();
     vSemaphoreDelete(semaphore);
     TEST_ESP_OK(esp_timer_delete(timer1));
     TEST_ESP_OK(esp_timer_delete(timer2));
@@ -499,7 +455,6 @@ static void timer_test_monotonic_values_task(void* arg) {
 TEST_CASE("esp_timer_get_time returns monotonic values", "[esp_timer]")
 {
     ref_clock_init();
-    setup_overflow();
 
     test_monotonic_values_state_t states[portNUM_PROCESSORS] = {0};
     SemaphoreHandle_t done = xSemaphoreCreateCounting(portNUM_PROCESSORS, 0);
@@ -517,7 +472,6 @@ TEST_CASE("esp_timer_get_time returns monotonic values", "[esp_timer]")
     }
 
     vSemaphoreDelete(done);
-    teardown_overflow();
     ref_clock_deinit();
 
     for (int i = 0; i < portNUM_PROCESSORS; ++i) {
@@ -716,7 +670,6 @@ TEST_CASE("Can start/stop timer from ISR context", "[esp_timer]")
 #if !defined(CONFIG_FREERTOS_UNICORE) && defined(CONFIG_ESP32_DPORT_WORKAROUND)
 
 #include "soc/dport_reg.h"
-#include "soc/frc_timer_reg.h"
 static bool task_stop;
 static bool time_jumped;
 
@@ -846,9 +799,6 @@ TEST_CASE("esp_timer_impl_set_alarm and using start_once do not lead that the Sy
 
 TEST_CASE("Test case when esp_timer_impl_set_alarm needs set timer < now_time", "[esp_timer]")
 {
-#ifdef CONFIG_ESP_TIMER_IMPL_FRC2
-    REG_WRITE(FRC_TIMER_LOAD_REG(1), 0);
-#endif
     esp_timer_impl_advance(50331648); // 0xefffffff/80 = 50331647
 
     esp_rom_delay_us(2);
@@ -859,27 +809,12 @@ TEST_CASE("Test case when esp_timer_impl_set_alarm needs set timer < now_time", 
     uint64_t count_reg = esp_timer_impl_get_counter_reg();
     portENABLE_INTERRUPTS();
 
-#ifdef CONFIG_ESP_TIMER_IMPL_FRC2
-    const uint32_t offset = 80 * 2; // s_timer_ticks_per_us
-#else
     const uint32_t offset = 2;
-#endif
 
     printf("alarm_reg = 0x%llx, count_reg 0x%llx\n", alarm_reg, count_reg);
     TEST_ASSERT(alarm_reg <= (count_reg + offset));
 }
 
-#ifdef CONFIG_ESP_TIMER_IMPL_FRC2
-TEST_CASE("Test esp_timer_impl_set_alarm when the counter is near an overflow value", "[esp_timer]")
-{
-    for (int i = 0; i < 1024; ++i) {
-        uint32_t count_reg = 0xeffffe00 + i;
-        REG_WRITE(FRC_TIMER_LOAD_REG(1), count_reg);
-        printf("%d) count_reg = 0x%x\n", i, count_reg);
-        esp_timer_impl_set_alarm(1); // timestamp is expired
-    }
-}
-#endif
 
 static void timer_callback5(void* arg)
 {

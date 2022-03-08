@@ -1,34 +1,41 @@
-/*******************************************************************************
-// Copyright (c) 2003-2015 Cadence Design Systems, Inc.
-//
-// Permission is hereby granted, free of charge, to any person obtaining
-// a copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to
-// permit persons to whom the Software is furnished to do so, subject to
-// the following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
-// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-// TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-// SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
---------------------------------------------------------------------------------
+/*
+ * SPDX-FileCopyrightText: 2015-2019 Cadence Design Systems, Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ */
+/*
+ * Copyright (c) 2015-2019 Cadence Design Systems, Inc.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 
-  Configuration-specific information for Xtensa build. This file must be
-  included in FreeRTOSConfig.h to properly set up the config-dependent
-  parameters correctly.
-
-  NOTE: To enable thread-safe C library support, XT_USE_THREAD_SAFE_CLIB must
-  be defined to be > 0 somewhere above or on the command line.
-
-*******************************************************************************/
+/*
+ * Configuration-specific information for Xtensa build. This file must be
+ * included in FreeRTOSConfig.h to properly set up the config-dependent
+ * parameters correctly.
+ *
+ * NOTE: To enable thread-safe C library support, XT_USE_THREAD_SAFE_CLIB must
+ * be defined to be > 0 somewhere above or on the command line.
+ */
 
 #ifndef XTENSA_CONFIG_H
 #define XTENSA_CONFIG_H
@@ -104,7 +111,43 @@ extern "C" {
   #define STK_INTEXC_EXTRA          0
 #endif
 
-#define XT_CLIB_CONTEXT_AREA_SIZE         0
+/* Check C library thread safety support and compute size of C library save area.
+   For the supported libraries, we enable thread safety by default, and this can
+   be overridden from the compiler/make command line. */
+#if (XSHAL_CLIB == XTHAL_CLIB_NEWLIB) || (XSHAL_CLIB == XTHAL_CLIB_XCLIB)
+  #ifndef XT_USE_THREAD_SAFE_CLIB
+    #define XT_USE_THREAD_SAFE_CLIB         1
+  #endif
+#else
+  #define XT_USE_THREAD_SAFE_CLIB           0
+#endif
+
+#if XT_USE_THREAD_SAFE_CLIB > 0u
+  #if XSHAL_CLIB == XTHAL_CLIB_XCLIB
+    #define XT_HAVE_THREAD_SAFE_CLIB        1
+    #if !defined __ASSEMBLER__
+      #include <sys/reent.h>
+      #define XT_CLIB_CONTEXT_AREA_SIZE     ((sizeof(struct _reent) + 15) + (-16))
+      #define XT_CLIB_GLOBAL_PTR            _reent_ptr
+      #define _REENT_INIT_PTR               _init_reent
+      #define _impure_ptr                   _reent_ptr
+
+      void _reclaim_reent(void * ptr);
+    #endif
+  #elif XSHAL_CLIB == XTHAL_CLIB_NEWLIB
+    #define XT_HAVE_THREAD_SAFE_CLIB        1
+    #if !defined __ASSEMBLER__
+      #include <sys/reent.h>
+      #define XT_CLIB_CONTEXT_AREA_SIZE     ((sizeof(struct _reent) + 15) + (-16))
+      #define XT_CLIB_GLOBAL_PTR            _impure_ptr
+    #endif
+  #else
+    #define XT_HAVE_THREAD_SAFE_CLIB        0
+    #error The selected C runtime library is not thread safe.
+  #endif
+#else
+  #define XT_CLIB_CONTEXT_AREA_SIZE         0
+#endif
 
 /*------------------------------------------------------------------------------
   Extra size -- interrupt frame plus coprocessor save area plus hook space.
@@ -134,8 +177,8 @@ extern "C" {
 #define XT_STACK_MIN_SIZE         ((XT_XTRA_SIZE + XT_USER_SIZE) / sizeof(unsigned char))
 
 /* OS overhead with and without C library thread context. */
-#define XT_STACK_EXTRA            (XT_XTRA_SIZE)
-#define XT_STACK_EXTRA_CLIB       (XT_XTRA_SIZE + XT_CLIB_CONTEXT_AREA_SIZE)
+#define XT_STACK_EXTRA              (XT_XTRA_SIZE)
+#define XT_STACK_EXTRA_CLIB         (XT_XTRA_SIZE + XT_CLIB_CONTEXT_AREA_SIZE)
 
 
 #ifdef __cplusplus

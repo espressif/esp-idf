@@ -23,6 +23,15 @@
 
 #pragma once
 
+#ifdef __has_include
+#  if __has_include("sdkconfig.h")
+#   include "sdkconfig.h"
+#  else
+#   warning Chip version cannot be determined. Default chip to ESP32H2_BETA_VERSION_1.
+#   define CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1     1
+#  endif
+#endif
+
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 #define SOC_CPU_CORES_NUM               1
 #define SOC_ADC_SUPPORTED               1
@@ -36,6 +45,7 @@
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
 #define SOC_SUPPORTS_SECURE_DL_MODE         1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   3
+#define SOC_EFUSE_KEY_PURPOSE_FIELD         1
 #define SOC_ICACHE_ACCESS_RODATA_SUPPORTED  1
 #define SOC_TEMP_SENSOR_SUPPORTED           1
 #define SOC_RTC_FAST_MEM_SUPPORTED          1
@@ -109,21 +119,29 @@
 #define SOC_GDMA_TX_RX_SHARE_INTERRUPT  (1)  // TX and RX channel in the same pair will share the same interrupt source number
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
-// ESP32-C3 has 1 GPIO peripheral
+// ESP32-H2 has 1 GPIO peripheral
 #define SOC_GPIO_PORT               (1U)
-#define SOC_GPIO_PIN_COUNT          (22)
+#if CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1
+#define SOC_GPIO_PIN_COUNT          (41)
+#elif CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2
+#define SOC_GPIO_PIN_COUNT          (26)
+#endif
 
 // Target has no full RTC IO subsystem, so GPIO is 100% "independent" of RTC
-// On ESP32-C3, Digital IOs have their own registers to control pullup/down capability, independent of RTC registers.
+// On ESP32-H2, Digital IOs have their own registers to control pullup/down capability, independent of RTC registers.
 #define SOC_GPIO_SUPPORTS_RTC_INDEPENDENT       (1)
-// Force hold is a new function of ESP32-C3
+// Force hold is a new function of ESP32-H2
 #define SOC_GPIO_SUPPORT_FORCE_HOLD         (1)
-// GPIO0~5 on ESP32C3 can support chip deep sleep wakeup
+// GPIO0~5 on ESP32H2Beta1 / GPIO7~12 on ESP32H2Beta2 can support chip deep sleep wakeup
 #define SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP   (1)
 
-#define SOC_GPIO_VALID_GPIO_MASK        ((1U<<SOC_GPIO_PIN_COUNT) - 1)
+#define SOC_GPIO_VALID_GPIO_MASK        ((1ULL<<SOC_GPIO_PIN_COUNT) - 1)
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK SOC_GPIO_VALID_GPIO_MASK
+#if CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1
 #define SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK        (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5)
+#elif CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2
+#define SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK        (0ULL | BIT7 | BIT8 | BIT9 | BIT10 | BIT11 | BIT12)
+#endif
 
 // Support to configure sleep status
 #define SOC_GPIO_SUPPORT_SLP_SWITCH  (1)
@@ -138,6 +156,7 @@
 #define SOC_I2C_NUM                 (1U)
 
 #define SOC_I2C_FIFO_LEN            (32) /*!< I2C hardware FIFO depth */
+#define SOC_I2C_SUPPORT_SLAVE       (1)
 
 #define SOC_I2C_SUPPORT_HW_FSM_RST  (1)
 #define SOC_I2C_SUPPORT_HW_CLR_BUS  (1)
@@ -186,7 +205,7 @@
 #define SOC_RTC_CNTL_CPU_PD_RETENTION_MEM_SIZE  (SOC_RTC_CNTL_CPU_PD_REG_FILE_NUM * (SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH >> 3))
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
-/* No dedicated RTCIO subsystem on ESP32-C3. RTC functions are still supported
+/* No dedicated RTCIO subsystem on ESP32-H2. RTC functions are still supported
  * for hold, wake & 32kHz crystal functions - via rtc_cntl_reg */
 #define SOC_RTCIO_PIN_COUNT    (0U)
 
@@ -265,7 +284,7 @@
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (2)
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
-#define SOC_TOUCH_SENSOR_NUM            (0)    /*! No touch sensors on ESP32-C3 */
+#define SOC_TOUCH_SENSOR_NUM            (0)    /*! No touch sensors on ESP32-H2 */
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_BRP_MIN                2
@@ -280,7 +299,7 @@
 #define SOC_UART_NUM                (2)
 #define SOC_UART_FIFO_LEN           (128)      /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX        (5000000)  /*!< Max bit rate supported by UART */
-
+#define SOC_UART_SUPPORT_WAKEUP_INT (1)        /*!< Support UART wakeup interrupt */
 #define SOC_UART_SUPPORT_RTC_CLK    (1)
 #define SOC_UART_SUPPORT_XTAL_CLK   (1)
 
@@ -301,3 +320,7 @@
 #define SOC_PM_SUPPORT_CPU_PD           (1)
 
 #define SOC_PM_SUPPORT_BT_PD            (1)
+
+/*-------------------------- Temperature Sensor CAPS -------------------------------------*/
+#define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)
+#define SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL                (1)

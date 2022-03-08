@@ -7,7 +7,7 @@
 /*******************************************************************************
  * NOTICE
  * The hal is not public api, don't use in application code.
- * See readme.md in soc/include/hal/readme.md
+ * See readme.md in hal/include/hal/readme.md
  ******************************************************************************/
 
 // The LL layer for ESP32-C3 GPIO register operations
@@ -200,7 +200,7 @@ static inline void gpio_ll_output_disable(gpio_dev_t *hw, gpio_num_t gpio_num)
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number
   */
-static inline void gpio_ll_output_enable(gpio_dev_t *hw, gpio_num_t gpio_num)
+static inline __attribute__((always_inline)) void gpio_ll_output_enable(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
     hw->enable_w1ts.enable_w1ts = (0x1 << gpio_num);
 }
@@ -211,7 +211,7 @@ static inline void gpio_ll_output_enable(gpio_dev_t *hw, gpio_num_t gpio_num)
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number
   */
-static inline void gpio_ll_od_disable(gpio_dev_t *hw, gpio_num_t gpio_num)
+static inline __attribute__((always_inline)) void gpio_ll_od_disable(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
     hw->pin[gpio_num].pad_driver = 0;
 }
@@ -265,11 +265,9 @@ static inline int gpio_ll_get_level(gpio_dev_t *hw, gpio_num_t gpio_num)
  *
  * @param hw Peripheral GPIO hardware instance address.
  * @param gpio_num GPIO number.
- * @param intr_type GPIO wake-up type. Only GPIO_INTR_LOW_LEVEL or GPIO_INTR_HIGH_LEVEL can be used.
  */
-static inline void gpio_ll_wakeup_enable(gpio_dev_t *hw, gpio_num_t gpio_num, gpio_int_type_t intr_type)
+static inline void gpio_ll_wakeup_enable(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
-    hw->pin[gpio_num].int_type = intr_type;
     hw->pin[gpio_num].wakeup_enable = 0x1;
 }
 
@@ -378,7 +376,7 @@ static inline void gpio_ll_iomux_in(gpio_dev_t *hw, uint32_t gpio, uint32_t sign
  * @param  pin_name Pin name to configure
  * @param  func Function to assign to the pin
  */
-static inline void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
+static inline __attribute__((always_inline)) void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
 {
     // Disable USB Serial JTAG if pins 18 or pins 19 needs to select an IOMUX function
     if (pin_name == IO_MUX_GPIO18_REG || pin_name == IO_MUX_GPIO19_REG) {
@@ -403,13 +401,21 @@ static inline void gpio_ll_iomux_out(gpio_dev_t *hw, uint8_t gpio_num, int func,
     gpio_ll_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_num], func);
 }
 
-static inline void gpio_ll_force_hold_all(gpio_dev_t *hw)
+/**
+  * @brief Force hold digital and rtc gpio pad.
+  * @note GPIO force hold, whether the chip in sleep mode or wakeup mode.
+  */
+static inline void gpio_ll_force_hold_all(void)
 {
     CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_UNHOLD);
     SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_HOLD);
     SET_PERI_REG_MASK(RTC_CNTL_PWC_REG, RTC_CNTL_PAD_FORCE_HOLD_M);
 }
 
+/**
+  * @brief Force unhold digital and rtc gpio pad.
+  * @note GPIO force unhold, whether the chip in sleep mode or wakeup mode.
+  */
 static inline void gpio_ll_force_unhold_all(void)
 {
     CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_HOLD);

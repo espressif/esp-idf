@@ -66,7 +66,7 @@ static void echo_task(void *arg)
 
     while (1) {
         // Read data from the UART
-        int len = uart_read_bytes(ECHO_UART_PORT_NUM, data, (BUF_SIZE - 1), 20 / portTICK_RATE_MS);
+        int len = uart_read_bytes(ECHO_UART_PORT_NUM, data, (BUF_SIZE - 1), 20 / portTICK_PERIOD_MS);
         // Write data back to the UART
         uart_write_bytes(ECHO_UART_PORT_NUM, (const char *) data, len);
         if (len) {

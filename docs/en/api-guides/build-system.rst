@@ -31,7 +31,7 @@ Concepts
 
 - "components" are modular pieces of standalone code which are compiled into static libraries (.a files) and linked into an app. Some are provided by ESP-IDF itself, others may be sourced from other places.
 
-- "Target" is the hardware for which an application is built. A full list of supported targets in your version if ESP-IDF can be seen by running `idf.py --list-targets`.
+- "Target" is the hardware for which an application is built. A full list of supported targets in your version of ESP-IDF can be seen by running `idf.py --list-targets`.
 
 Some things are not part of the project:
 
@@ -82,7 +82,7 @@ The command ``idf.py`` supports `shell autocompletion <https://click.palletsproj
 
 In order to make `shell autocompletion <https://click.palletsprojects.com/shell-completion/>`_ supported, please make sure you have at least Python 3.5 and `click <https://click.palletsprojects.com/>`_ 7.1 or newer (:ref:`see also <get-started-get-prerequisites>`).
 
-To enable autocompletion for ``idf.py`` use the ``export`` command (:ref:`see this <get-started-export>`). Autocompletion is initiated by pressing the TAB key. Type "idf.py -" and press the TAB key to autocomplete options.
+To enable autocompletion for ``idf.py`` use the ``export`` command (:ref:`see this <get-started-set-up-env>`). Autocompletion is initiated by pressing the TAB key. Type "idf.py -" and press the TAB key to autocomplete options.
 
 The autocomplete support for PowerShell is planned in the future.
 
@@ -192,7 +192,7 @@ For more detailed information about integrating ESP-IDF with CMake into an IDE, 
 Setting up the Python Interpreter
 ---------------------------------
 
-ESP-IDF works well with all supported Python versions. It should work out-of-box even if you have a legacy system where the default ``python`` interpreter is still Python 2.7, however, it is advised to switch to Python 3 if possible.
+ESP-IDF works well with Python version 3.7+.
 
 ``idf.py`` and other Python scripts will run with the default Python interpreter, i.e. ``python``. You can switch to a different one like ``python3 $IDF_PATH/tools/idf.py ...``, or you can set up a shell alias or another script to simplify the command.
 
@@ -627,6 +627,8 @@ Main component requirements
 
 The component named ``main`` is special because it automatically requires all other components in the build. So it's not necessary to pass ``REQUIRES`` or ``PRIV_REQUIRES`` to this component. See :ref:`renaming main <rename-main>` for a description of what needs to be changed if no longer using the ``main`` component.
 
+.. _component-common-requirements:
+
 Common component requirements
 -----------------------------
 
@@ -1060,7 +1062,7 @@ The subproject is inserted as an external project from the top-level project, by
 Selecting the Target
 ====================
 
-ESP-IDF supports multiple targets (chips). A full list of supported targets in your version if ESP-IDF can be seen by running `idf.py --list-targets`.
+ESP-IDF supports multiple targets (chips). A full list of supported targets in your version of ESP-IDF can be seen by running `idf.py --list-targets`.
 
 To select the target before building the project, use ``idf.py set-target <target>`` command, for example::
 

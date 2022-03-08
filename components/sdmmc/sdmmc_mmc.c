@@ -91,6 +91,11 @@ esp_err_t sdmmc_init_mmc_read_ext_csd(sdmmc_card_t* card)
         card->csd.capacity = sectors;
     }
 
+    /* erased state of a bit, if 1 byte value read is 0xFF else 0x00 */
+    card->ext_csd.erase_mem_state = ext_csd[EXT_CSD_ERASED_MEM_CONT];
+    card->ext_csd.rev = ext_csd[EXT_CSD_REV];
+    card->ext_csd.sec_feature = ext_csd[EXT_CSD_SEC_FEATURE_SUPPORT];
+
 out:
     free(ext_csd);
     return err;
@@ -224,8 +229,9 @@ esp_err_t sdmmc_mmc_switch(sdmmc_card_t* card, uint8_t set, uint8_t index, uint8
     esp_err_t err = sdmmc_send_cmd(card, &cmd);
     if (err == ESP_OK) {
         //check response bit to see that switch was accepted
-        if (MMC_R1(cmd.response) & MMC_R1_SWITCH_ERROR)
+        if (MMC_R1(cmd.response) & MMC_R1_SWITCH_ERROR) {
             err = ESP_ERR_INVALID_RESPONSE;
+        }
     }
 
     return err;

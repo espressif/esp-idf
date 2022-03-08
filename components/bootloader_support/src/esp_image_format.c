@@ -921,6 +921,12 @@ int esp_image_get_flash_size(esp_image_flash_size_t app_flash_size)
         return 8 * 1024 * 1024;
     case ESP_IMAGE_FLASH_SIZE_16MB:
         return 16 * 1024 * 1024;
+    case ESP_IMAGE_FLASH_SIZE_32MB:
+        return 32 * 1024 * 1024;
+    case ESP_IMAGE_FLASH_SIZE_64MB:
+        return 64 * 1024 * 1024;
+    case ESP_IMAGE_FLASH_SIZE_128MB:
+        return 128 * 1024 * 1024;
     default:
         return 0;
     }

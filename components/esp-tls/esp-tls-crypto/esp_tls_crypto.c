@@ -25,7 +25,7 @@ static int esp_crypto_sha1_mbedtls( const unsigned char *input,
                                     size_t ilen,
                                     unsigned char output[20])
 {
-    int ret = mbedtls_sha1_ret(input, ilen, output);
+    int ret = mbedtls_sha1(input, ilen, output);
     if (ret != 0) {
         ESP_LOGE(TAG, "Error in calculating sha1 sum , Returned 0x%02X", ret);
     }

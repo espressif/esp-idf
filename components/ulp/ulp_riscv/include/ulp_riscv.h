@@ -15,8 +15,32 @@
 extern "C" {
 #endif
 
+typedef enum {
+    ULP_RISCV_WAKEUP_SOURCE_TIMER,
+    ULP_RISCV_WAKEUP_SOURCE_GPIO,
+} ulp_riscv_wakeup_source_t;
+
+typedef struct {
+    ulp_riscv_wakeup_source_t wakeup_source;
+} ulp_riscv_cfg_t;
+
+#define ULP_RISCV_DEFAULT_CONFIG()                      \
+    {                                                   \
+        .wakeup_source = ULP_RISCV_WAKEUP_SOURCE_TIMER, \
+    }
+
 /**
- * @brief Run the program loaded into RTC memory
+ * @brief Configure the ULP and run the program loaded into RTC memory
+ *
+ * @param cfg pointer to the config struct
+ * @return  ESP_OK on success
+ */
+esp_err_t ulp_riscv_config_and_run(ulp_riscv_cfg_t* cfg);
+
+/**
+ * @brief Configure the ULP with default settings
+ *        and run the program loaded into RTC memory
+ *
  * @return  ESP_OK on success
  */
 esp_err_t ulp_riscv_run(void);

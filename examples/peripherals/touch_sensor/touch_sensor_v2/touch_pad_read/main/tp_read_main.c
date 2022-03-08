@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -40,7 +40,7 @@ static void tp_example_read_task(void *pvParameter)
     uint32_t touch_value;
 
     /* Wait touch sensor init done */
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     printf("Touch Sensor read, the output format is: \nTouchpad num:[raw data]\n\n");
 
     while (1) {

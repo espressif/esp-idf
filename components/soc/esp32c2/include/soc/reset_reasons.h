@@ -38,8 +38,9 @@ typedef enum {
     RESET_REASON_SYS_BROWN_OUT   = 0x0F, // VDD voltage is not stable and resets the digital core
     RESET_REASON_SYS_RTC_WDT     = 0x10, // RTC watch dog resets digital core and rtc module
     RESET_REASON_SYS_SUPER_WDT   = 0x12, // Super watch dog resets the digital core and rtc module
+    RESET_REASON_SYS_CLK_GLITCH  = 0x13, // Glitch on clock resets the digital core and rtc module
     RESET_REASON_CORE_EFUSE_CRC  = 0x14, // eFuse CRC error resets the digital core
-    RESET_REASON_JTAG_RESET = 0x18,
+    RESET_REASON_CPU0_JTAG       = 0x18, // JTAG resets the CPU 0
 } soc_reset_reason_t;
 
 

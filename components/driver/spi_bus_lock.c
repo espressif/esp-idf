@@ -164,7 +164,7 @@ typedef struct spi_bus_lock_t spi_bus_lock_t;
 #define REQUEST_BIT(mask)   ((mask) << REQ_SHIFT)
 #define PENDING_BIT(mask)   ((mask) << PENDING_SHIFT)
 #define DEV_MASK(id)        (LOCK_BIT(1<<id) | PENDING_BIT(1<<id) | REQUEST_BIT(1<<id))
-#define ID_DEV_MASK(mask)   (ffs(mask) - 1)
+#define ID_DEV_MASK(mask)   (__builtin_ffs(mask) - 1)
 
 #define REQ_MASK            BIT1_MASK(REQ_SHIFT+MAX_DEV_NUM, REQ_SHIFT)
 #define PEND_MASK           BIT1_MASK(PENDING_SHIFT+MAX_DEV_NUM, PENDING_SHIFT)

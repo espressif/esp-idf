@@ -18,3 +18,8 @@ entries:
         gdma: gdma_stop (noflash)
         gdma: gdma_append (noflash)
         gdma: gdma_reset (noflash)
+    if PCNT_CTRL_FUNC_IN_IRAM = y:
+        pulse_cnt: pcnt_unit_start (noflash)
+        pulse_cnt: pcnt_unit_stop (noflash)
+        pulse_cnt: pcnt_unit_clear_count (noflash)
+        pulse_cnt: pcnt_unit_get_count (noflash)

@@ -222,15 +222,16 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
 
         ESP_LOGI(TAG, "Verifying with RSA-PSS...");
 
-        const mbedtls_mpi N = { .s = 1,
-                                .n = sizeof(trusted_block->key.n)/sizeof(mbedtls_mpi_uint),
-                                .p = (void *)trusted_block->key.n,
+        const mbedtls_mpi N = { .MBEDTLS_PRIVATE(s) = 1,
+                                .MBEDTLS_PRIVATE(n) = sizeof(trusted_block->key.n)/sizeof(mbedtls_mpi_uint),
+                                .MBEDTLS_PRIVATE(p) = (void *)trusted_block->key.n,
         };
-        const mbedtls_mpi e = { .s = 1,
-                                .n = sizeof(trusted_block->key.e)/sizeof(mbedtls_mpi_uint), // 1
-                                .p = (void *)&trusted_block->key.e,
+        const mbedtls_mpi e = { .MBEDTLS_PRIVATE(s) = 1,
+                                .MBEDTLS_PRIVATE(n) = sizeof(trusted_block->key.e)/sizeof(mbedtls_mpi_uint), // 1
+                                .MBEDTLS_PRIVATE(p) = (void *)&trusted_block->key.e,
         };
-        mbedtls_rsa_init(&pk, MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA256);
+        mbedtls_rsa_init(&pk);
+        mbedtls_rsa_set_padding(&pk,MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA256);
         ret = mbedtls_rsa_import(&pk, &N, NULL, NULL, NULL, &e);
         if (ret != 0) {
             ESP_LOGE(TAG, "Failed mbedtls_rsa_import, err: %d", ret);
@@ -260,8 +261,7 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
             goto exit_inner;
         }
 
-        ret = mbedtls_rsa_rsassa_pss_verify( &pk, mbedtls_ctr_drbg_random, &ctr_drbg, MBEDTLS_RSA_PUBLIC, MBEDTLS_MD_SHA256, ESP_SECURE_BOOT_DIGEST_LEN,
-                                            image_digest, sig_be);
+        ret = mbedtls_rsa_rsassa_pss_verify( &pk, MBEDTLS_MD_SHA256, ESP_SECURE_BOOT_DIGEST_LEN, image_digest, sig_be);
         if (ret != 0) {
             ESP_LOGE(TAG, "Failed mbedtls_rsa_rsassa_pss_verify, err: %d", ret);
         } else {

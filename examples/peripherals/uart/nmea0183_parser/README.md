@@ -25,7 +25,7 @@ To run this example, you need an ESP32, ESP32-S or ESP32-C series dev board (e.g
 
 #### Pin Assignment:
 
-**Note:** The following pin assignments are used by default which can be changed in `nmea_parser_config_t` structure.
+**Note:** GPIO5 is used by default as the RX pin, you can change it by `idf.py menuconfig` > `Example Configuration` > `NMEA_PARSER_UART_RXD`.
 
 | ESP                        | GPS             |
 | -------------------------- | --------------- |

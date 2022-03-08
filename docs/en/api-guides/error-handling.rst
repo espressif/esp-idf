@@ -68,6 +68,7 @@ Error message will typically look like this::
 
 - Finally, backtrace is printed. This is part of panic handler output common to all fatal errors. See :doc:`Fatal Errors <fatal-errors>` for more information about the backtrace.
 
+
 .. _esp-error-check-without-abort-macro:
 
 ``ESP_ERROR_CHECK_WITHOUT_ABORT`` macro
@@ -137,7 +138,11 @@ Some examples::
 Error handling patterns
 -----------------------
 
-1. Attempt to recover. Depending on the situation, this might mean to retry the call after some time, or attempt to de-initialize the driver and re-initialize it again, or fix the error condition using an out-of-band mechanism (e.g reset an external peripheral which is not responding).
+1. Attempt to recover. Depending on the situation, we may try the following methods:
+
+   - retry the call after some time;
+   - attempt to de-initialize the driver and re-initialize it again;
+   - fix the error condition using an out-of-band mechanism (e.g reset an external peripheral which is not responding).
 
    Example::
 
@@ -169,7 +174,7 @@ Error handling patterns
 
 3. Convert into unrecoverable error, for example using ``ESP_ERROR_CHECK``. See `ESP_ERROR_CHECK macro`_ section for details.
 
-   Terminating the application in case of an error is usually undesirable behaviour for middleware components, but is sometimes acceptable at application level.
+   Terminating the application in case of an error is usually undesirable behavior for middleware components, but is sometimes acceptable at application level.
 
    Many ESP-IDF examples use ``ESP_ERROR_CHECK`` to handle errors from various APIs. This is not the best practice for applications, and is done to make example code more concise.
 
@@ -183,9 +188,8 @@ C++ Exceptions
 
 Support for C++ Exceptions in ESP-IDF is disabled by default, but can be enabled using :ref:`CONFIG_COMPILER_CXX_EXCEPTIONS` option.
 
-Enabling exception handling normally increases application binary size by a few kB. Additionally it may be necessary to reserve some amount of RAM for exception emergency pool. Memory from this pool will be used if it is not possible to allocate exception object from the heap. Amount of memory in the emergency pool can be set using :ref:`CONFIG_COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE` variable.
+Enabling exception handling normally increases application binary size by a few KB. Additionally it may be necessary to reserve some amount of RAM for exception emergency pool. Memory from this pool will be used if it is not possible to allocate exception object from the heap. Amount of memory in the emergency pool can be set using :ref:`CONFIG_COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE` variable.
 
 If an exception is thrown, but there is no ``catch`` block, the program will be terminated by ``abort`` function, and backtrace will be printed. See :doc:`Fatal Errors <fatal-errors>` for more information about backtraces.
 
 See :example:`cxx/exceptions` for an example of C++ exception handling.
-

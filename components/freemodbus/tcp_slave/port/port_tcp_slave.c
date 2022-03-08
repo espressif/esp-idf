@@ -87,19 +87,19 @@ static void vxMBTCPPortMStoTimeVal(USHORT usTimeoutMs, struct timeval *pxTimeout
     pxTimeout->tv_usec = (usTimeoutMs - (pxTimeout->tv_sec * 1000)) * 1000;
 }
 
-static xQueueHandle xMBTCPPortRespQueueCreate(void)
+static QueueHandle_t xMBTCPPortRespQueueCreate(void)
 {
-    xQueueHandle xRespQueueHandle = xQueueCreate(2, sizeof(void*));
+    QueueHandle_t xRespQueueHandle = xQueueCreate(2, sizeof(void*));
     MB_PORT_CHECK((xRespQueueHandle != NULL), NULL, "TCP respond queue creation failure.");
     return xRespQueueHandle;
 }
 
-static void vMBTCPPortRespQueueDelete(xQueueHandle xRespQueueHandle)
+static void vMBTCPPortRespQueueDelete(QueueHandle_t xRespQueueHandle)
 {
     vQueueDelete(xRespQueueHandle);
 }
 
-static void* vxMBTCPPortRespQueueRecv(xQueueHandle xRespQueueHandle)
+static void* vxMBTCPPortRespQueueRecv(QueueHandle_t xRespQueueHandle)
 {
     void* pvResp = NULL;
     MB_PORT_CHECK(xRespQueueHandle != NULL, NULL, "Response queue is not initialized.");
@@ -111,7 +111,7 @@ static void* vxMBTCPPortRespQueueRecv(xQueueHandle xRespQueueHandle)
     return pvResp;
 }
 
-static BOOL vxMBTCPPortRespQueueSend(xQueueHandle xRespQueueHandle, void* pvResp)
+static BOOL vxMBTCPPortRespQueueSend(QueueHandle_t xRespQueueHandle, void* pvResp)
 {
     MB_PORT_CHECK(xRespQueueHandle != NULL, FALSE, "Response queue is not initialized.");
     BaseType_t xStatus = xQueueSend(xConfig.xRespQueueHandle,
@@ -175,11 +175,6 @@ void vMBTCPPortSlaveSetNetOpt(void* pvNetIf, eMBPortIpVer xIpVersion, eMBPortPro
     xConfig.eMbProto = xProto;
     xConfig.xIpVer = xIpVersion;
     xConfig.pcBindAddr = pcBindAddrStr;
-}
-
-void vMBTCPPortSlaveStartServerTask(void)
-{
-    vTaskResume(xConfig.xMbTcpTaskHandle);
 }
 
 static int xMBTCPPortAcceptConnection(int xListenSockId, char** pcIPAddr)
@@ -656,6 +651,11 @@ vMBTCPPortClose( )
     vMBPortEventClose( );
 }
 
+void vMBTCPPortEnable( void )
+{
+    vTaskResume(xConfig.xMbTcpTaskHandle);
+}
+
 void
 vMBTCPPortDisable( void )
 {
@@ -668,6 +668,7 @@ vMBTCPPortDisable( void )
             xConfig.pxMbClientInfo[i] = NULL;
         }
     }
+    free(xConfig.pxMbClientInfo);
     close(xListenSock);
     xListenSock = -1;
     vMBTCPPortRespQueueDelete(xConfig.xRespQueueHandle);

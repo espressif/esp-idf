@@ -101,10 +101,18 @@ static esp_err_t check_and_generate_encryption_keys(void)
         return ESP_ERR_INVALID_STATE;
     }
 #else
+#ifdef CONFIG_SECURE_FLASH_ENCRYPTION_AES64
+    enum { BLOCKS_NEEDED = 1 };
+    esp_efuse_purpose_t purposes[BLOCKS_NEEDED] = {
+        ESP_EFUSE_KEY_PURPOSE_XTS_AES_64_KEY,
+    };
+    key_size = 16;
+#else
     enum { BLOCKS_NEEDED = 1 };
     esp_efuse_purpose_t purposes[BLOCKS_NEEDED] = {
         ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY,
     };
+#endif // CONFIG_SECURE_FLASH_ENCRYPTION_AES64
 #endif // CONFIG_SECURE_FLASH_ENCRYPTION_AES256
 #endif // CONFIG_IDF_TARGET_ESP32
 

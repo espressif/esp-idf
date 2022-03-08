@@ -1,16 +1,8 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <string.h>
@@ -64,7 +56,7 @@ static ssize_t hex2bin(const char *hexstr, uint8_t *bytes)
 static bool stopped(void)
 {
     uint32_t flag = 0;
-    xTaskNotifyWait(0, 0, &flag, (TickType_t) 10/portTICK_RATE_MS);
+    xTaskNotifyWait(0, 0, &flag, (TickType_t) 10/portTICK_PERIOD_MS);
     return (flag != 0);
 }
 
@@ -93,7 +85,7 @@ static void protocomm_console_task(void *arg)
         memset(linebuf, 0, sizeof(linebuf));
         i = 0;
         do {
-            ret = xQueueReceive(uart_queue, (void * )&event, (TickType_t) 10/portTICK_RATE_MS);
+            ret = xQueueReceive(uart_queue, (void * )&event, (TickType_t) 10/portTICK_PERIOD_MS);
             if (ret != pdPASS) {
                 if (stopped()) {
                     break;

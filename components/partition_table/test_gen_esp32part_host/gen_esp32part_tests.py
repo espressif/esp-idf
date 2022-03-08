@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 from __future__ import division, print_function
 
 import csv
@@ -466,6 +468,14 @@ ota_1,             0,  ota_1,          , 1M,
 
         finally:
             sys.stderr = sys.__stderr__
+
+    def test_size_error(self):
+        csv_txt = """
+factory, app, factory, 0x10000, 20M
+        """
+        with self.assertRaisesRegex(gen_esp32part.InputError, r'does not fit'):
+            t = gen_esp32part.PartitionTable.from_csv(csv_txt)
+            t.verify_size_fits(16 * 1024 * 1024)
 
 
 class PartToolTests(Py23TestCase):

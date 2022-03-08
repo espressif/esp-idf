@@ -6,12 +6,11 @@
 
 #include "esp_efuse_utility.h"
 #include "soc/efuse_periph.h"
-#include "esp_private/esp_clk.h"
+#include "hal/efuse_hal.h"
 #include "esp_log.h"
 #include "assert.h"
 #include "sdkconfig.h"
 #include <sys/param.h>
-#include "esp32s3/rom/efuse.h"
 
 static const char *TAG = "efuse";
 
@@ -51,45 +50,22 @@ const esp_efuse_range_addr_t range_write_addr_blocks[] = {
     {(uint32_t) &write_mass_blocks[EFUSE_BLK10][0], (uint32_t) &write_mass_blocks[EFUSE_BLK10][7]},
 };
 
+#ifndef CONFIG_EFUSE_VIRTUAL
 // Update Efuse timing configuration
 static esp_err_t esp_efuse_set_timing(void)
 {
-    REG_SET_FIELD(EFUSE_WR_TIM_CONF2_REG, EFUSE_PWR_OFF_NUM, 0x190);
+    // efuse clock is fixed.
+    // An argument (0) is for compatibility and will be ignored.
+    efuse_hal_set_timing(0);
     return ESP_OK;
-}
-
-static void efuse_read(void)
-{
-    esp_efuse_set_timing();
-    REG_WRITE(EFUSE_CONF_REG, EFUSE_READ_OP_CODE);
-    REG_WRITE(EFUSE_CMD_REG, EFUSE_READ_CMD);
-
-    while (REG_GET_BIT(EFUSE_CMD_REG, EFUSE_READ_CMD) != 0) { }
-    /*Due to a hardware error, we have to read READ_CMD again to make sure the efuse clock is normal*/
-    while (REG_GET_BIT(EFUSE_CMD_REG, EFUSE_READ_CMD) != 0) { }
-}
-
-#ifndef CONFIG_EFUSE_VIRTUAL
-static void efuse_program(esp_efuse_block_t block)
-{
-    esp_efuse_set_timing();
-
-    REG_WRITE(EFUSE_CONF_REG, EFUSE_WRITE_OP_CODE);
-
-    REG_WRITE(EFUSE_CMD_REG, ((block << EFUSE_BLK_NUM_S) & EFUSE_BLK_NUM_M) | EFUSE_PGM_CMD);
-
-    while (REG_GET_BIT(EFUSE_CMD_REG, EFUSE_PGM_CMD) != 0) { };
-
-    ets_efuse_clear_program_registers();
-    efuse_read();
 }
 #endif // ifndef CONFIG_EFUSE_VIRTUAL
 
 // Efuse read operation: copies data from physical efuses to efuse read registers.
 void esp_efuse_utility_clear_program_registers(void)
 {
-    efuse_read();
-    ets_efuse_clear_program_registers();
+    efuse_hal_read();
+    efuse_hal_clear_program_registers();
 }
 
 // Burn values written to the efuse write registers
@@ -117,12 +93,12 @@ void esp_efuse_utility_burn_chip(void)
                 if (REG_READ(addr_wr_block) != 0) {
                     if (esp_efuse_get_coding_scheme(num_block) == EFUSE_CODING_SCHEME_RS) {
                         uint8_t block_rs[12];
-                        ets_efuse_rs_calculate((void *)range_write_addr_blocks[num_block].start, block_rs);
+                        efuse_hal_rs_calculate((void *)range_write_addr_blocks[num_block].start, block_rs);
                         memcpy((void *)EFUSE_PGM_CHECK_VALUE0_REG, block_rs, sizeof(block_rs));
                     }
                     int data_len = (range_write_addr_blocks[num_block].end - range_write_addr_blocks[num_block].start) + sizeof(uint32_t);
                     memcpy((void *)EFUSE_PGM_DATA0_REG, (void *)range_write_addr_blocks[num_block].start, data_len);
-                    efuse_program(num_block);
+                    efuse_hal_program(num_block);
                     break;
                 }
             }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -88,7 +88,7 @@ static void write_char_crash(char c)
 
 TEST_CASE("Test backtrace with a ROM function", "[reset_reason][reset=StoreProhibited,SW_CPU_RESET]")
 {
-    ets_install_putc1(&write_char_crash);
+    esp_rom_install_channel_putc(1, write_char_crash);
     esp_rom_printf("foo");
 }
 

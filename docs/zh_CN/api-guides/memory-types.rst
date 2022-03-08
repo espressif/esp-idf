@@ -156,7 +156,7 @@ DROM（数据存储在 flash 中）
     RTC Slow memory（RTC 慢速存储器）
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    从 RTC 存储器运行的代码中使用的全局和静态变量必须放入 RTC Slow memory 中。例如 :doc:`深度睡眠 <deep-sleep-stub>` 变量可以放在 RTC Slow memory 中，而不是 RTC FAST memory，或者也可以放入由 :doc:`/api-guides/ulp` 访问的代码和变量。
+    从 RTC 存储器运行的代码中使用的全局和静态变量必须放入 RTC Slow memory 中。例如 :doc:`深度睡眠 <deep-sleep-stub>` 变量可以放在 RTC Slow memory 中，而不是 RTC FAST memory，或者也可以放入由 :doc:`/api-reference/system/ulp` 访问的代码和变量。
 
     ``RTC_NOINIT_ATTR`` 属性宏可以用来将数据放入 RTC Slow memory。放入此类型存储器的值从深度睡眠模式中醒来后会保持值不变。
 

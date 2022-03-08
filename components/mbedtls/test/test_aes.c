@@ -1477,7 +1477,7 @@ TEST_CASE("mbedtls AES external flash tests", "[aes]")
 #if CONFIG_ESP_SYSTEM_RTC_FAST_MEM_AS_HEAP_DEPCHECK
 
 RTC_FAST_ATTR uint8_t rtc_stack[4096];
-static xSemaphoreHandle done_sem;
+static SemaphoreHandle_t done_sem;
 
 static void aes_ctr_stream_test_task(void *pv)
 {

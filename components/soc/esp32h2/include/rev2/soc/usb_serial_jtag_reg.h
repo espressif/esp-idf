@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@ extern "C" {
 /** USB_SERIAL_JTAG_EP1_REG register
  *  FIFO access for the CDC-ACM data IN and OUT endpoints.
  */
-#define USB_SERIAL_JTAG_EP1_REG (DR_REG_USB_DEVICE_BASE + 0x0)
+#define USB_SERIAL_JTAG_EP1_REG (DR_REG_USB_SERIAL_JTAG_BASE + 0x0)
 /** USB_SERIAL_JTAG_RDWR_BYTE : R/W; bitpos: [7:0]; default: 0;
  *  Write and read byte data to/from UART Tx/Rx FIFO through this field. When
  *  USB_SERIAL_JTAG_SERIAL_IN_EMPTY_INT is set, then user can write data (up to 64
@@ -30,7 +30,7 @@ extern "C" {
 /** USB_SERIAL_JTAG_EP1_CONF_REG register
  *  Configuration and control registers for the CDC-ACM FIFOs.
  */
-#define USB_SERIAL_JTAG_EP1_CONF_REG (DR_REG_USB_DEVICE_BASE + 0x4)
+#define USB_SERIAL_JTAG_EP1_CONF_REG (DR_REG_USB_SERIAL_JTAG_BASE + 0x4)
 /** USB_SERIAL_JTAG_WR_DONE : WT; bitpos: [0]; default: 0;
  *  Set this bit to indicate writing byte data to UART Tx FIFO is done.
  */
@@ -58,7 +58,7 @@ extern "C" {
 /** USB_SERIAL_JTAG_INT_RAW_REG register
  *  Interrupt raw status register.
  */
-#define USB_SERIAL_JTAG_INT_RAW_REG (DR_REG_USB_DEVICE_BASE + 0x8)
+#define USB_SERIAL_JTAG_INT_RAW_REG (DR_REG_USB_SERIAL_JTAG_BASE + 0x8)
 /** USB_SERIAL_JTAG_JTAG_IN_FLUSH_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  The raw interrupt bit turns to high level when flush cmd is received for IN
  *  endpoint 2 of JTAG.
@@ -152,7 +152,7 @@ extern "C" {
 /** USB_SERIAL_JTAG_INT_ST_REG register
  *  Interrupt status register.
  */
-#define USB_SERIAL_JTAG_INT_ST_REG (DR_REG_USB_DEVICE_BASE + 0xc)
+#define USB_SERIAL_JTAG_INT_ST_REG (DR_REG_USB_SERIAL_JTAG_BASE + 0xc)
 /** USB_SERIAL_JTAG_JTAG_IN_FLUSH_INT_ST : RO; bitpos: [0]; default: 0;
  *  The raw interrupt status bit for the USB_SERIAL_JTAG_JTAG_IN_FLUSH_INT interrupt.
  */
@@ -245,7 +245,7 @@ extern "C" {
 /** USB_SERIAL_JTAG_INT_ENA_REG register
  *  Interrupt enable status register.
  */
-#define USB_SERIAL_JTAG_INT_ENA_REG (DR_REG_USB_DEVICE_BASE + 0x10)
+#define USB_SERIAL_JTAG_INT_ENA_REG (DR_REG_USB_SERIAL_JTAG_BASE + 0x10)
 /** USB_SERIAL_JTAG_JTAG_IN_FLUSH_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  The interrupt enable bit for the USB_SERIAL_JTAG_JTAG_IN_FLUSH_INT interrupt.
  */
@@ -334,7 +334,7 @@ extern "C" {
 /** USB_SERIAL_JTAG_INT_CLR_REG register
  *  Interrupt clear status register.
  */
-#define USB_SERIAL_JTAG_INT_CLR_REG (DR_REG_USB_DEVICE_BASE + 0x14)
+#define USB_SERIAL_JTAG_INT_CLR_REG (DR_REG_USB_SERIAL_JTAG_BASE + 0x14)
 /** USB_SERIAL_JTAG_JTAG_IN_FLUSH_INT_CLR : WT; bitpos: [0]; default: 0;
  *  Set this bit to clear the USB_SERIAL_JTAG_JTAG_IN_FLUSH_INT interrupt.
  */
@@ -423,7 +423,7 @@ extern "C" {
 /** USB_SERIAL_JTAG_CONF0_REG register
  *  PHY hardware configuration.
  */
-#define USB_SERIAL_JTAG_CONF0_REG (DR_REG_USB_DEVICE_BASE + 0x18)
+#define USB_SERIAL_JTAG_CONF0_REG (DR_REG_USB_SERIAL_JTAG_BASE + 0x18)
 /** USB_SERIAL_JTAG_PHY_SEL : R/W; bitpos: [0]; default: 0;
  *  Select internal/external PHY
  */
@@ -534,7 +534,7 @@ extern "C" {
 /** USB_SERIAL_JTAG_TEST_REG register
  *  Registers used for debugging the PHY.
  */
-#define USB_SERIAL_JTAG_TEST_REG (DR_REG_USB_DEVICE_BASE + 0x1c)
+#define USB_SERIAL_JTAG_TEST_REG (DR_REG_USB_SERIAL_JTAG_BASE + 0x1c)
 /** USB_SERIAL_JTAG_TEST_ENABLE : R/W; bitpos: [0]; default: 0;
  *  Enable test of the USB pad
  */
@@ -588,7 +588,7 @@ extern "C" {
 /** USB_SERIAL_JTAG_JFIFO_ST_REG register
  *  JTAG FIFO status and control registers.
  */
-#define USB_SERIAL_JTAG_JFIFO_ST_REG (DR_REG_USB_DEVICE_BASE + 0x20)
+#define USB_SERIAL_JTAG_JFIFO_ST_REG (DR_REG_USB_SERIAL_JTAG_BASE + 0x20)
 /** USB_SERIAL_JTAG_IN_FIFO_CNT : RO; bitpos: [1:0]; default: 0;
  *  JTAT in fifo counter.
  */
@@ -649,7 +649,7 @@ extern "C" {
 /** USB_SERIAL_JTAG_FRAM_NUM_REG register
  *  Last received SOF frame index register.
  */
-#define USB_SERIAL_JTAG_FRAM_NUM_REG (DR_REG_USB_DEVICE_BASE + 0x24)
+#define USB_SERIAL_JTAG_FRAM_NUM_REG (DR_REG_USB_SERIAL_JTAG_BASE + 0x24)
 /** USB_SERIAL_JTAG_SOF_FRAME_INDEX : RO; bitpos: [10:0]; default: 0;
  *  Frame index of received SOF frame.
  */
@@ -661,7 +661,7 @@ extern "C" {
 /** USB_SERIAL_JTAG_IN_EP0_ST_REG register
  *  Control IN endpoint status information.
  */
-#define USB_SERIAL_JTAG_IN_EP0_ST_REG (DR_REG_USB_DEVICE_BASE + 0x28)
+#define USB_SERIAL_JTAG_IN_EP0_ST_REG (DR_REG_USB_SERIAL_JTAG_BASE + 0x28)
 /** USB_SERIAL_JTAG_IN_EP0_STATE : RO; bitpos: [1:0]; default: 1;
  *  State of IN Endpoint 0.
  */
@@ -687,7 +687,7 @@ extern "C" {
 /** USB_SERIAL_JTAG_IN_EP1_ST_REG register
  *  CDC-ACM IN endpoint status information.
  */
-#define USB_SERIAL_JTAG_IN_EP1_ST_REG (DR_REG_USB_DEVICE_BASE + 0x2c)
+#define USB_SERIAL_JTAG_IN_EP1_ST_REG (DR_REG_USB_SERIAL_JTAG_BASE + 0x2c)
 /** USB_SERIAL_JTAG_IN_EP1_STATE : RO; bitpos: [1:0]; default: 1;
  *  State of IN Endpoint 1.
  */
@@ -713,7 +713,7 @@ extern "C" {
 /** USB_SERIAL_JTAG_IN_EP2_ST_REG register
  *  CDC-ACM interrupt IN endpoint status information.
  */
-#define USB_SERIAL_JTAG_IN_EP2_ST_REG (DR_REG_USB_DEVICE_BASE + 0x30)
+#define USB_SERIAL_JTAG_IN_EP2_ST_REG (DR_REG_USB_SERIAL_JTAG_BASE + 0x30)
 /** USB_SERIAL_JTAG_IN_EP2_STATE : RO; bitpos: [1:0]; default: 1;
  *  State of IN Endpoint 2.
  */
@@ -739,7 +739,7 @@ extern "C" {
 /** USB_SERIAL_JTAG_IN_EP3_ST_REG register
  *  JTAG IN endpoint status information.
  */
-#define USB_SERIAL_JTAG_IN_EP3_ST_REG (DR_REG_USB_DEVICE_BASE + 0x34)
+#define USB_SERIAL_JTAG_IN_EP3_ST_REG (DR_REG_USB_SERIAL_JTAG_BASE + 0x34)
 /** USB_SERIAL_JTAG_IN_EP3_STATE : RO; bitpos: [1:0]; default: 1;
  *  State of IN Endpoint 3.
  */
@@ -765,7 +765,7 @@ extern "C" {
 /** USB_SERIAL_JTAG_OUT_EP0_ST_REG register
  *  Control OUT endpoint status information.
  */
-#define USB_SERIAL_JTAG_OUT_EP0_ST_REG (DR_REG_USB_DEVICE_BASE + 0x38)
+#define USB_SERIAL_JTAG_OUT_EP0_ST_REG (DR_REG_USB_SERIAL_JTAG_BASE + 0x38)
 /** USB_SERIAL_JTAG_OUT_EP0_STATE : RO; bitpos: [1:0]; default: 0;
  *  State of OUT Endpoint 0.
  */
@@ -792,7 +792,7 @@ extern "C" {
 /** USB_SERIAL_JTAG_OUT_EP1_ST_REG register
  *  CDC-ACM OUT endpoint status information.
  */
-#define USB_SERIAL_JTAG_OUT_EP1_ST_REG (DR_REG_USB_DEVICE_BASE + 0x3c)
+#define USB_SERIAL_JTAG_OUT_EP1_ST_REG (DR_REG_USB_SERIAL_JTAG_BASE + 0x3c)
 /** USB_SERIAL_JTAG_OUT_EP1_STATE : RO; bitpos: [1:0]; default: 0;
  *  State of OUT Endpoint 1.
  */
@@ -826,7 +826,7 @@ extern "C" {
 /** USB_SERIAL_JTAG_OUT_EP2_ST_REG register
  *  JTAG OUT endpoint status information.
  */
-#define USB_SERIAL_JTAG_OUT_EP2_ST_REG (DR_REG_USB_DEVICE_BASE + 0x40)
+#define USB_SERIAL_JTAG_OUT_EP2_ST_REG (DR_REG_USB_SERIAL_JTAG_BASE + 0x40)
 /** USB_SERIAL_JTAG_OUT_EP2_STATE : RO; bitpos: [1:0]; default: 0;
  *  State of OUT Endpoint 2.
  */
@@ -853,7 +853,7 @@ extern "C" {
 /** USB_SERIAL_JTAG_MISC_CONF_REG register
  *  Clock enable control
  */
-#define USB_SERIAL_JTAG_MISC_CONF_REG (DR_REG_USB_DEVICE_BASE + 0x44)
+#define USB_SERIAL_JTAG_MISC_CONF_REG (DR_REG_USB_SERIAL_JTAG_BASE + 0x44)
 /** USB_SERIAL_JTAG_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  1'h1: Force clock on for register. 1'h0: Support clock only when application writes
  *  registers.
@@ -866,7 +866,7 @@ extern "C" {
 /** USB_SERIAL_JTAG_MEM_CONF_REG register
  *  Memory power control
  */
-#define USB_SERIAL_JTAG_MEM_CONF_REG (DR_REG_USB_DEVICE_BASE + 0x48)
+#define USB_SERIAL_JTAG_MEM_CONF_REG (DR_REG_USB_SERIAL_JTAG_BASE + 0x48)
 /** USB_SERIAL_JTAG_USB_MEM_PD : R/W; bitpos: [0]; default: 0;
  *  1: power down usb memory.
  */
@@ -885,7 +885,7 @@ extern "C" {
 /** USB_SERIAL_JTAG_DATE_REG register
  *  Date register
  */
-#define USB_SERIAL_JTAG_DATE_REG (DR_REG_USB_DEVICE_BASE + 0x80)
+#define USB_SERIAL_JTAG_DATE_REG (DR_REG_USB_SERIAL_JTAG_BASE + 0x80)
 /** USB_SERIAL_JTAG_DATE : R/W; bitpos: [31:0]; default: 34607505;
  *  register version.
  */

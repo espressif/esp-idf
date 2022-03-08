@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,7 +22,7 @@
 #include "soc/system_reg.h"
 #include "esp_rom_sys.h"
 #include "regi2c_ctrl.h"
-#include "soc_log.h"
+#include "esp_hw_log.h"
 #include "rtc_clk_common.h"
 #include "hal/usb_serial_jtag_ll.h"
 #include "sdkconfig.h"
@@ -304,7 +304,7 @@ static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
         dbias = DIG_DBIAS_240M;
         per_conf = DPORT_CPUPERIOD_SEL_240;
     } else {
-        SOC_LOGE(TAG, "invalid frequency");
+        ESP_HW_LOGE(TAG, "invalid frequency");
     }
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_EXT_DIG_DREG, dbias);
     wait_dig_dbias_valid(2);
@@ -416,7 +416,7 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config)
             div = 2;
             freq_mhz = 240;
         } else {
-            SOC_LOGE(TAG, "unsupported frequency configuration");
+            ESP_HW_LOGE(TAG, "unsupported frequency configuration");
             return;
         }
         break;
@@ -428,7 +428,7 @@ void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config)
         freq_mhz = source_freq_mhz;
         break;
     default:
-        SOC_LOGE(TAG, "unsupported frequency configuration");
+        ESP_HW_LOGE(TAG, "unsupported frequency configuration");
         return;
     }
     *out_config = (rtc_cpu_freq_config_t) {
@@ -500,7 +500,7 @@ rtc_xtal_freq_t rtc_clk_xtal_freq_get(void)
 {
     uint32_t xtal_freq_reg = READ_PERI_REG(RTC_XTAL_FREQ_REG);
     if (!clk_val_is_valid(xtal_freq_reg)) {
-        SOC_LOGW(TAG, "invalid RTC_XTAL_FREQ_REG value: 0x%08x", xtal_freq_reg);
+        ESP_HW_LOGW(TAG, "invalid RTC_XTAL_FREQ_REG value: 0x%08x", xtal_freq_reg);
         return RTC_XTAL_FREQ_40M;
     }
     return reg_val_to_clk_val(xtal_freq_reg);

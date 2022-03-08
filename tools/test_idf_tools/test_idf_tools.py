@@ -92,6 +92,7 @@ class TestUsage(unittest.TestCase):
 
         print('Using IDF_TOOLS_PATH={}'.format(cls.temp_tools_dir))
         os.environ['IDF_TOOLS_PATH'] = cls.temp_tools_dir
+        cls.idf_env_json = os.path.join(cls.temp_tools_dir, 'idf-env.json')
 
     @classmethod
     def tearDownClass(cls):
@@ -104,8 +105,8 @@ class TestUsage(unittest.TestCase):
         if os.path.isdir(os.path.join(self.temp_tools_dir, 'tools')):
             shutil.rmtree(os.path.join(self.temp_tools_dir, 'tools'))
 
-        if os.path.isfile(os.path.join(self.temp_tools_dir, 'idf-env.json')):
-            os.remove(os.path.join(self.temp_tools_dir, 'idf-env.json'))
+        if os.path.isfile(self.idf_env_json):
+            os.remove(self.idf_env_json)
 
     def assert_tool_installed(self, output, tool, tool_version, tool_archive_name=None):
         if tool_archive_name is None:
@@ -313,6 +314,23 @@ class TestUsage(unittest.TestCase):
                       (self.temp_tools_dir, ESP32S2ULP_VERSION), output)
         self.assertNotIn('%s/tools/xtensa-esp32s2-elf/%s/xtensa-esp32s2-elf/bin' %
                          (self.temp_tools_dir, XTENSA_ESP32S2_ELF_VERSION), output)
+
+    def test_uninstall_option(self):
+        self.run_idf_tools_with_action(['install', '--targets=esp32,esp32c3'])
+        output = self.run_idf_tools_with_action(['uninstall', '--dry-run'])
+        self.assertEqual(output, '')
+
+        with open(self.idf_env_json, 'r') as idf_env_file:
+            idf_env_json = json.load(idf_env_file)
+        idf_env_json['idfInstalled'][idf_env_json['idfSelectedId']]['targets'].remove('esp32')
+        with open(self.idf_env_json, 'w') as w:
+            json.dump(idf_env_json, w)
+
+        output = self.run_idf_tools_with_action(['uninstall'])
+        self.assertIn(XTENSA_ESP32_ELF, output)
+        self.assertIn(ESP32ULP, output)
+        output = self.run_idf_tools_with_action(['uninstall', '--dry-run'])
+        self.assertEqual(output, '')
 
 
 class TestMaintainer(unittest.TestCase):

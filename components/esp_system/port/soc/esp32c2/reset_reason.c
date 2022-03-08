@@ -5,24 +5,23 @@
  */
 
 #include "esp_system.h"
-#include "esp32c2/rom/rtc.h"
+#include "esp_rom_sys.h"
 #include "esp_private/system_internal.h"
 #include "soc/rtc_periph.h"
 #include "esp32c2/rom/rtc.h"
-#include "esp_rom_sys.h"
 
 static void esp_reset_reason_clear_hint(void);
 
 static esp_reset_reason_t s_reset_reason;
 
-static esp_reset_reason_t get_reset_reason(RESET_REASON rtc_reset_reason, esp_reset_reason_t reset_reason_hint)
+static esp_reset_reason_t get_reset_reason(soc_reset_reason_t rtc_reset_reason, esp_reset_reason_t reset_reason_hint)
 {
     switch (rtc_reset_reason) {
-    case POWERON_RESET:
+    case RESET_REASON_CHIP_POWER_ON:
         return ESP_RST_POWERON;
 
-    case RTC_SW_CPU_RESET:
-    case RTC_SW_SYS_RESET:
+    case RESET_REASON_CPU0_SW:
+    case RESET_REASON_CORE_SW:
         if (reset_reason_hint == ESP_RST_PANIC ||
                 reset_reason_hint == ESP_RST_BROWNOUT ||
                 reset_reason_hint == ESP_RST_TASK_WDT ||
@@ -31,26 +30,22 @@ static esp_reset_reason_t get_reset_reason(RESET_REASON rtc_reset_reason, esp_re
         }
         return ESP_RST_SW;
 
-    case DEEPSLEEP_RESET:
+    case RESET_REASON_CORE_DEEP_SLEEP:
         return ESP_RST_DEEPSLEEP;
 
-    case TG0WDT_SYS_RESET:
+    case RESET_REASON_CORE_MWDT0:
         return ESP_RST_TASK_WDT;
 
-    case TG1WDT_SYS_RESET:
-        return ESP_RST_INT_WDT;
-
-    case RTCWDT_SYS_RESET:
-    case RTCWDT_RTC_RESET:
-    case SUPER_WDT_RESET:
-    case RTCWDT_CPU_RESET:  /* unused */
-    case TG0WDT_CPU_RESET:   /* unused */
+    case RESET_REASON_CORE_RTC_WDT:
+    case RESET_REASON_SYS_RTC_WDT:
+    case RESET_REASON_SYS_SUPER_WDT:
+    case RESET_REASON_CPU0_RTC_WDT:
+    case RESET_REASON_CPU0_MWDT0:
         return ESP_RST_WDT;
 
-    case RTCWDT_BROWN_OUT_RESET:
+    case RESET_REASON_SYS_BROWN_OUT:
         return ESP_RST_BROWNOUT;
 
-    case INTRUSION_RESET: /* unused */
     default:
         return ESP_RST_UNKNOWN;
     }
@@ -59,8 +54,7 @@ static esp_reset_reason_t get_reset_reason(RESET_REASON rtc_reset_reason, esp_re
 static void __attribute__((constructor)) esp_reset_reason_init(void)
 {
     esp_reset_reason_t hint = esp_reset_reason_get_hint();
-    s_reset_reason = get_reset_reason(esp_rom_get_reset_reason(PRO_CPU_NUM),
-                                      hint);
+    s_reset_reason = get_reset_reason(esp_rom_get_reset_reason(PRO_CPU_NUM), hint);
     if (hint != ESP_RST_UNKNOWN) {
         esp_reset_reason_clear_hint();
     }

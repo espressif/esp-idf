@@ -51,32 +51,14 @@ menu "High resolution timer (esp_timer)"
             The ISR dispatch can be used, in some cases, when a callback is very simple
             or need a lower-latency.
 
-    choice ESP_TIMER_IMPL
-        prompt "Hardware timer to use for esp_timer"
-        default ESP_TIMER_IMPL_TG0_LAC if IDF_TARGET_ESP32
-        default ESP_TIMER_IMPL_SYSTIMER
-        help
-            esp_timer APIs can be implemented using different hardware timers.
+    config ESP_TIMER_IMPL_TG0_LAC
+        bool
+        default y
+        depends on IDF_TARGET_ESP32
 
-            - "FRC2 (legacy)" implementation has been used in ESP-IDF v2.x - v4.1.
-
-            - "LAC timer of Timer Group 0" implementation is simpler, and has smaller
-              run time overhead because software handling of timer overflow is not needed.
-
-            - "SYSTIMER" implementation is similar to "LAC timer of Timer Group 0" but for non ESP32 chips.
-
-        config ESP_TIMER_IMPL_FRC2
-            bool "FRC2 (legacy) timer"
-            depends on IDF_TARGET_ESP32
-
-        config ESP_TIMER_IMPL_TG0_LAC
-            bool "LAC timer of Timer Group 0"
-            depends on IDF_TARGET_ESP32
-
-        config ESP_TIMER_IMPL_SYSTIMER
-            bool "SYSTIMER"
-            depends on !IDF_TARGET_ESP32
-
-    endchoice
+    config ESP_TIMER_IMPL_SYSTIMER
+        bool
+        default y
+        depends on !IDF_TARGET_ESP32
 
 endmenu # esp_timer

@@ -12,6 +12,7 @@
 #include "esp_rom_efuse.h"
 #include "sdkconfig.h"
 #include "esp_rom_crc.h"
+#include "hal/efuse_ll.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/efuse.h"
@@ -67,20 +68,20 @@ static inline bool esp_secure_boot_enabled(void)
 #if CONFIG_IDF_TARGET_ESP32
     #ifdef CONFIG_SECURE_BOOT_V1_ENABLED
         #ifndef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
-            return REG_READ(EFUSE_BLK0_RDATA6_REG) & EFUSE_RD_ABS_DONE_0;
+            return efuse_ll_get_secure_boot_v1_en();
         #else
             return esp_efuse_read_field_bit(ESP_EFUSE_ABS_DONE_0);
         #endif
     #elif CONFIG_SECURE_BOOT_V2_ENABLED
         #ifndef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
-            return ets_use_secure_boot_v2();
+            return efuse_ll_get_secure_boot_v2_en();
         #else
             return esp_efuse_read_field_bit(ESP_EFUSE_ABS_DONE_1);
         #endif
     #endif
 #else
     #ifndef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
-        return esp_rom_efuse_is_secure_boot_enabled();
+        return efuse_ll_get_secure_boot_v2_en();
     #else
         return esp_efuse_read_field_bit(ESP_EFUSE_SECURE_BOOT_EN);
     #endif

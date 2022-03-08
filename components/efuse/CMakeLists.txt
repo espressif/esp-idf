@@ -13,14 +13,20 @@ if(EXISTS "${COMPONENT_DIR}/${target}")
     add_prefix(srcs "${target}/" ${EFUSE_SOC_SRCS})
 endif()
 
+if(CONFIG_SOC_EFUSE_KEY_PURPOSE_FIELD)
+    set(type "with_key_purposes")
+else()
+    if(CONFIG_SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK)
+        set(type "without_key_purposes/one_key_block")
+    else()
+        set(type "without_key_purposes/three_key_blocks")
+    endif()
+endif()
+
 list(APPEND srcs "src/esp_efuse_api.c"
                  "src/esp_efuse_fields.c"
-                 "src/esp_efuse_utility.c")
-if("esp32" STREQUAL "${target}")
-    list(APPEND srcs "src/esp_efuse_api_key_esp32.c")
-else()
-    list(APPEND srcs "src/esp_efuse_api_key_esp32xx.c")
-endif()
+                 "src/esp_efuse_utility.c"
+                 "src/efuse_controller/keys/${type}/esp_efuse_api_key.c")
 
 idf_component_register(SRCS "${srcs}"
                     PRIV_REQUIRES bootloader_support soc spi_flash

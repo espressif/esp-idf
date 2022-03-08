@@ -198,14 +198,11 @@ INPUT = \
     $(PROJECT_PATH)/components/ulp/ulp_common/include/ulp_common.h \
     $(PROJECT_PATH)/components/ulp/ulp_fsm/include/ulp_fsm_common.h \
     $(PROJECT_PATH)/components/ulp/ulp_riscv/include/ulp_riscv.h \
-    $(PROJECT_PATH)/components/ulp/ulp_riscv/include/ulp_riscv_utils.h \
     $(PROJECT_PATH)/components/app_trace/include/esp_app_trace.h \
     $(PROJECT_PATH)/components/app_trace/include/esp_sysview_trace.h \
     $(PROJECT_PATH)/components/esp_pm/include/esp_pm.h \
     $(PROJECT_PATH)/components/esp_pm/include/$(IDF_TARGET)/pm.h \
     $(PROJECT_PATH)/components/esp_timer/include/esp_timer.h \
-    $(PROJECT_PATH)/components/esp_event/include/esp_event.h \
-    $(PROJECT_PATH)/components/esp_event/include/esp_event_base.h \
     $(PROJECT_PATH)/components/efuse/include/esp_efuse.h \
     $(PROJECT_PATH)/components/bootloader_support/include/esp_app_format.h \
     $(PROJECT_PATH)/components/pthread/include/esp_pthread.h \
@@ -219,7 +216,6 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_ringbuf/include/freertos/ringbuf.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_err.h \
     $(PROJECT_PATH)/components/esp_common/include/esp_check.h \
-    $(PROJECT_PATH)/components/esp_system/include/esp_system.h \
     $(PROJECT_PATH)/components/freemodbus/common/include/esp_modbus_common.h \
     $(PROJECT_PATH)/components/freemodbus/common/include/esp_modbus_slave.h \
     $(PROJECT_PATH)/components/freemodbus/common/include/esp_modbus_master.h \

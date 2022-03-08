@@ -87,6 +87,9 @@ __main() {
     echo "Detecting the Python interpreter"
     . "${IDF_PATH}/tools/detect_python.sh"
 
+    echo "Checking Python compatibility"
+    "$ESP_PYTHON" "${IDF_PATH}/tools/python_version_checker.py"
+
     __verbose "Adding ESP-IDF tools to PATH..."
     # Call idf_tools.py to export tool paths
     export IDF_TOOLS_EXPORT_CMD=${IDF_PATH}/export.sh
@@ -129,6 +132,15 @@ __main() {
         __verbose "  ${PATH}"
     fi
 
+    uninstall=$("$ESP_PYTHON" "${IDF_PATH}/tools/idf_tools.py" uninstall --dry-run) || return 1
+    if [ -n "$uninstall" ]
+    then
+        __verbose ""
+        __verbose "Detected installed tools that are not currently used by active ESP-IDF version."
+        __verbose "${uninstall}"
+        __verbose "For free up even more space, remove installation packages of those tools. Use option '${ESP_PYTHON} ${IDF_PATH}/tools/idf_tools.py uninstall --remove-archives'."
+        __verbose ""
+    fi
 
     __verbose "Done! You can now compile ESP-IDF projects."
     __verbose "Go to the project directory and run:"
@@ -148,6 +160,7 @@ __cleanup() {
     unset SOURCE_ZSH
     unset SOURCE_BASH
     unset WARNING_MSG
+    unset uninstall
 
     unset __realpath
     unset __main

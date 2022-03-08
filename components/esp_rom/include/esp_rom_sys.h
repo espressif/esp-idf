@@ -1,16 +1,8 @@
-// Copyright 2010-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 #include "sdkconfig.h"
@@ -59,6 +51,28 @@ void esp_rom_install_uart_printf(void);
  * @return Reset reason code (see in soc/reset_reasons.h)
  */
 soc_reset_reason_t esp_rom_get_reset_reason(int cpu_no);
+
+/**
+ * @brief Route peripheral interrupt sources to CPU's interrupt port by matrix
+ *
+ * Usually there're 4 steps to use an interrupt:
+ * 1. Route peripheral interrupt source to CPU. e.g.  esp_rom_route_intr_matrix(0, ETS_WIFI_MAC_INTR_SOURCE, ETS_WMAC_INUM)
+ * 2. Set interrupt handler for CPU
+ * 3. Enable CPU interupt
+ * 4. Enable peripheral interrupt
+ *
+ * @param cpu_core The CPU number, which the peripheral interupt will inform to
+ * @param periph_intr_id The peripheral interrupt source number
+ * @param cpu_intr_num The CPU interrupt number
+ */
+void esp_rom_route_intr_matrix(int cpu_core, uint32_t periph_intr_id, uint32_t cpu_intr_num);
+
+/**
+ * @brief Get the real CPU ticks per us
+ *
+ * @return CPU ticks per us
+ */
+uint32_t esp_rom_get_cpu_ticks_per_us(void);
 
 #ifdef __cplusplus
 }

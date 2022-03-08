@@ -47,6 +47,7 @@
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 3
 #define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS 1
+#define SOC_EFUSE_KEY_PURPOSE_FIELD       1
 #define SOC_SDMMC_HOST_SUPPORTED          1
 #define SOC_FLASH_ENCRYPTION_XTS_AES      1
 #define SOC_RTC_FAST_MEM_SUPPORTED        1
@@ -58,6 +59,7 @@
 #define SOC_I2S_SUPPORTED               1
 #define SOC_RMT_SUPPORTED               1
 #define SOC_SIGMADELTA_SUPPORTED        1
+#define SOC_TEMP_SENSOR_SUPPORTED           1
 
 /*-------------------------- SOC CAPS ----------------------------------------*/
 #define SOC_APPCPU_HAS_CLOCK_GATING_BUG (1)
@@ -127,6 +129,7 @@
 #define SOC_I2C_NUM            (2)
 
 #define SOC_I2C_FIFO_LEN       (32) /*!< I2C hardware FIFO depth */
+#define SOC_I2C_SUPPORT_SLAVE       (1)
 
 //ESP32-S3 support hardware FSM reset
 #define SOC_I2C_SUPPORT_HW_FSM_RST  (1)
@@ -263,10 +266,16 @@
 #include "twai_caps.h"
 
 /*-------------------------- UART CAPS ---------------------------------------*/
-#include "uart_caps.h"
-
+// ESP32-S3 has 3 UARTs
+#define SOC_UART_NUM                (3)
+#define SOC_UART_FIFO_LEN           (128)      /*!< The UART hardware FIFO length */
+#define SOC_UART_BITRATE_MAX        (5000000)  /*!< Max bit rate supported by UART */
+// UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
+#define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
+#define SOC_UART_SUPPORT_WAKEUP_INT (1)        /*!< Support UART wakeup interrupt */
 #define SOC_UART_SUPPORT_RTC_CLK    (1)     /*!< Support RTC clock as the clock source */
 #define SOC_UART_SUPPORT_XTAL_CLK   (1)     /*!< Support XTAL clock as the clock source */
+#define SOC_UART_REQUIRE_CORE_RESET (1)
 
 /*-------------------------- USB CAPS ----------------------------------------*/
 #define SOC_USB_PERIPH_NUM 1
@@ -361,3 +370,6 @@
 #define SOC_SDMMC_NUM_SLOTS        2
 /* Indicates that there is an option to use XTAL clock instead of PLL for SDMMC */
 #define SOC_SDMMC_SUPPORT_XTAL_CLOCK    1
+
+/*-------------------------- Temperature Sensor CAPS -------------------------------------*/
+#define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)

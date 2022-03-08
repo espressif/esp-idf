@@ -1,17 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /**
  * @file
  * @brief Checksum interface implemetation
@@ -74,7 +65,7 @@ void esp_core_dump_checksum_init(core_dump_checksum_ctx** out_ctx)
         s_checksum_context.crc = 0;
 #elif CONFIG_ESP_COREDUMP_CHECKSUM_SHA256
         mbedtls_sha256_init(&s_checksum_context.ctx);
-        (void)mbedtls_sha256_starts_ret(&s_checksum_context.ctx, 0);
+        (void)mbedtls_sha256_starts(&s_checksum_context.ctx, 0);
 #endif
         s_checksum_context.total_bytes_checksum = 0;
 
@@ -95,7 +86,7 @@ void esp_core_dump_checksum_update(core_dump_checksum_ctx* cks_ctx, void* data, 
         // set software mode of SHA calculation
         cks_ctx->ctx.mode = ESP_MBEDTLS_SHA256_SOFTWARE;
 #endif
-        (void)mbedtls_sha256_update_ret(&cks_ctx->ctx, data, data_len);
+        (void)mbedtls_sha256_update(&cks_ctx->ctx, data, data_len);
 #endif
         // keep counter of cashed bytes
         cks_ctx->total_bytes_checksum += data_len;
@@ -120,7 +111,7 @@ uint32_t esp_core_dump_checksum_finish(core_dump_checksum_ctx* cks_ctx, core_dum
 
 #elif CONFIG_ESP_COREDUMP_CHECKSUM_SHA256
     if (chs_ptr != NULL) {
-        (void)mbedtls_sha256_finish_ret(&cks_ctx->ctx, (uint8_t*)&cks_ctx->sha_output);
+        (void)mbedtls_sha256_finish(&cks_ctx->ctx, (uint8_t*)&cks_ctx->sha_output);
         *chs_ptr = &cks_ctx->sha_output[0];
         mbedtls_sha256_free(&cks_ctx->ctx);
     }

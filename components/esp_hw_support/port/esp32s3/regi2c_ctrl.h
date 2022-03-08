@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -80,6 +80,15 @@ void regi2c_ctrl_write_reg_mask(uint8_t block, uint8_t host_id, uint8_t reg_add,
 #define REGI2C_READ(block, reg_add) \
       regi2c_ctrl_read_reg(block, block##_HOSTID,  reg_add)
 
+
+/**
+ * Restore regi2c analog calibration related configuration registers.
+ * This is a workaround, and is fixed on later chips
+ */
+#if REGI2C_ANA_CALI_PD_WORKAROUND
+void regi2c_analog_cali_reg_read(void);
+void regi2c_analog_cali_reg_write(void);
+#endif   //#if ADC_CALI_PD_WORKAROUND
 
 #ifdef __cplusplus
 }

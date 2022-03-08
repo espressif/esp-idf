@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
@@ -68,6 +60,8 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         return SYSTEM_CRYPTO_HMAC_CLK_EN;
     case PERIPH_DS_MODULE:
         return SYSTEM_CRYPTO_DS_CLK_EN;
+    case PERIPH_TEMPSENSOR_MODULE:
+        return SYSTEM_TSENS_CLK_EN;
     default:
         return 0;
     }
@@ -111,6 +105,8 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return SYSTEM_TWAI_RST;
     case PERIPH_HMAC_MODULE:
         return SYSTEM_CRYPTO_HMAC_RST;
+    case PERIPH_TEMPSENSOR_MODULE:
+        return SYSTEM_TSENS_RST;
     case PERIPH_AES_MODULE:
         if (enable == true) {
             // Clear reset on digital signature, otherwise AES unit is held in reset also.
@@ -151,6 +147,7 @@ static uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
     case PERIPH_RSA_MODULE:
     case PERIPH_SHA_MODULE:
     case PERIPH_GDMA_MODULE:
+    case PERIPH_TEMPSENSOR_MODULE:
         return SYSTEM_PERIP_CLK_EN1_REG;
     default:
         return SYSTEM_PERIP_CLK_EN0_REG;
@@ -166,6 +163,7 @@ static uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
     case PERIPH_RSA_MODULE:
     case PERIPH_SHA_MODULE:
     case PERIPH_GDMA_MODULE:
+    case PERIPH_TEMPSENSOR_MODULE:
         return SYSTEM_PERIP_RST_EN1_REG;
     default:
         return SYSTEM_PERIP_RST_EN0_REG;

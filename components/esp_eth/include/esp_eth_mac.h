@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #pragma once
 
 #include <stdbool.h>
@@ -374,11 +366,7 @@ typedef struct {
     uint32_t sw_reset_timeout_ms;        /*!< Software reset timeout value (Unit: ms) */
     uint32_t rx_task_stack_size;         /*!< Stack size of the receive task */
     uint32_t rx_task_prio;               /*!< Priority of the receive task */
-    int smi_mdc_gpio_num;                /*!< SMI MDC GPIO number, set to -1 could bypass the SMI GPIO configuration */
-    int smi_mdio_gpio_num;               /*!< SMI MDIO GPIO number, set to -1 could bypass the SMI GPIO configuration */
     uint32_t flags;                      /*!< Flags that specify extra capability for mac driver */
-    eth_data_interface_t interface;      /*!< EMAC Data interface to PHY (MII/RMII) */
-    eth_mac_clock_config_t clock_config; /*!< EMAC Interface clock configuration */
 } eth_mac_config_t;
 
 #define ETH_MAC_FLAG_WORK_WITH_CACHE_DISABLE (1 << 0) /*!< MAC driver can work when cache is disabled */
@@ -393,21 +381,42 @@ typedef struct {
         .sw_reset_timeout_ms = 100,                       \
         .rx_task_stack_size = 2048,                       \
         .rx_task_prio = 15,                               \
-        .smi_mdc_gpio_num = 23,                           \
-        .smi_mdio_gpio_num = 18,                          \
         .flags = 0,                                       \
-        .interface = EMAC_DATA_INTERFACE_RMII,            \
-        .clock_config =                                   \
-        {                                                 \
-            .rmii =                                       \
-            {                                             \
-                .clock_mode = EMAC_CLK_DEFAULT,           \
-                .clock_gpio = EMAC_CLK_IN_GPIO            \
-            }                                             \
-        }                                                 \
     }
 
 #if CONFIG_ETH_USE_ESP32_EMAC
+/**
+* @brief EMAC specific configuration
+*
+*/
+typedef struct {
+    int smi_mdc_gpio_num;                   /*!< SMI MDC GPIO number, set to -1 could bypass the SMI GPIO configuration */
+    int smi_mdio_gpio_num;                  /*!< SMI MDIO GPIO number, set to -1 could bypass the SMI GPIO configuration */
+    eth_data_interface_t interface;         /*!< EMAC Data interface to PHY (MII/RMII) */
+    eth_mac_clock_config_t clock_config;    /*!< EMAC Interface clock configuration */
+    eth_mac_dma_burst_len_t dma_burst_len;  /*!< EMAC DMA burst length for both Tx and Rx */
+} eth_esp32_emac_config_t;
+
+/**
+ * @brief Default ESP32's EMAC specific configuration
+ *
+ */
+#define ETH_ESP32_EMAC_DEFAULT_CONFIG()               \
+    {                                                 \
+        .smi_mdc_gpio_num = 23,                       \
+        .smi_mdio_gpio_num = 18,                      \
+        .interface = EMAC_DATA_INTERFACE_RMII,        \
+        .clock_config =                               \
+        {                                             \
+            .rmii =                                   \
+            {                                         \
+                .clock_mode = EMAC_CLK_DEFAULT,       \
+                .clock_gpio = EMAC_CLK_IN_GPIO        \
+            }                                         \
+        },                                            \
+        .dma_burst_len = ETH_DMA_BURST_LEN_32         \
+    }
+
 /**
 * @brief Create ESP32 Ethernet MAC instance
 *
@@ -417,7 +426,7 @@ typedef struct {
 *      - instance: create MAC instance successfully
 *      - NULL: create MAC instance failed because some error occurred
 */
-esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config);
+esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_esp32_emac_config_t *esp32_config, const eth_mac_config_t *config);
 #endif // CONFIG_ETH_USE_ESP32_EMAC
 
 #if CONFIG_ETH_SPI_ETHERNET_DM9051

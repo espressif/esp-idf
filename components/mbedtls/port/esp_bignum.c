@@ -1,24 +1,12 @@
-/**
- * \brief  Multi-precision integer library, ESP32 hardware accelerated parts
+/*
+ * Multi-precision integer library
+ * ESP-IDF hardware accelerated parts based on mbedTLS implementation
  *
- *  based on mbedTLS implementation
+ * SPDX-FileCopyrightText: The Mbed TLS Contributors
  *
- *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
- *  Additions Copyright (C) 2016, Espressif Systems (Shanghai) PTE Ltd
- *  SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0
  *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
  */
 #include <stdio.h>
 #include <string.h>
@@ -150,8 +138,8 @@ static inline size_t bits_to_words(size_t bits)
 #if defined(MBEDTLS_MPI_EXP_MOD_ALT) || defined(MBEDTLS_MPI_EXP_MOD_ALT_FALLBACK)
 static size_t mpi_words(const mbedtls_mpi *mpi)
 {
-    for (size_t i = mpi->n; i > 0; i--) {
-        if (mpi->p[i - 1] != 0) {
+    for (size_t i = mpi->MBEDTLS_PRIVATE(n); i > 0; i--) {
+        if (mpi->MBEDTLS_PRIVATE(p[i - 1]) != 0) {
             return i;
         }
     }
@@ -174,7 +162,7 @@ static mbedtls_mpi_uint modular_inverse(const mbedtls_mpi *M)
     uint64_t t = 1;
     uint64_t two_2_i_minus_1 = 2;   /* 2^(i-1) */
     uint64_t two_2_i = 4;           /* 2^i */
-    uint64_t N = M->p[0];
+    uint64_t N = M->MBEDTLS_PRIVATE(p[0]);
 
     for (i = 2; i <= 32; i++) {
         if ((mbedtls_mpi_uint) N * t % two_2_i >= two_2_i_minus_1) {
@@ -252,7 +240,7 @@ int esp_mpi_mul_mpi_mod(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi 
     MBEDTLS_MPI_CHK(mbedtls_mpi_grow(Z, z_words));
 
     esp_mpi_read_result_hw_op(Z, z_words);
-    Z->s = X->s * Y->s;
+    Z->MBEDTLS_PRIVATE(s) = X->MBEDTLS_PRIVATE(s) * Y->MBEDTLS_PRIVATE(s);
 
 cleanup:
     mbedtls_mpi_free(&Rinv);
@@ -270,11 +258,11 @@ cleanup:
 static size_t mbedtls_mpi_msb( const mbedtls_mpi *X )
 {
     int i, j;
-    if (X != NULL && X->n != 0) {
-        for (i = X->n - 1; i >= 0; i--) {
-            if (X->p[i] != 0) {
+    if (X != NULL && X->MBEDTLS_PRIVATE(n) != 0) {
+        for (i = X->MBEDTLS_PRIVATE(n) - 1; i >= 0; i--) {
+            if (X->MBEDTLS_PRIVATE(p[i]) != 0) {
                 for (j = biL - 1; j >= 0; j--) {
-                    if ((X->p[i] & (1 << j)) != 0) {
+                    if ((X->MBEDTLS_PRIVATE(p[i]) & (1 << j)) != 0) {
                         return (i * biL) + j;
                     }
                 }
@@ -374,7 +362,7 @@ static int esp_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_
         return MBEDTLS_ERR_MPI_NOT_ACCEPTABLE;
     }
 
-    if (mbedtls_mpi_cmp_int(M, 0) <= 0 || (M->p[0] & 1) == 0) {
+    if (mbedtls_mpi_cmp_int(M, 0) <= 0 || (M->MBEDTLS_PRIVATE(p[0]) & 1) == 0) {
         return MBEDTLS_ERR_MPI_BAD_INPUT_DATA;
     }
 
@@ -394,7 +382,7 @@ static int esp_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_
     } else {
         Rinv = _Rinv;
     }
-    if (Rinv->p == NULL) {
+    if (Rinv->MBEDTLS_PRIVATE(p) == NULL) {
         MBEDTLS_MPI_CHK(calculate_rinv(Rinv, M, num_words));
     }
 
@@ -435,11 +423,11 @@ static int esp_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_
 #endif
 
     // Compensate for negative X
-    if (X->s == -1 && (Y->p[0] & 1) != 0) {
-        Z->s = -1;
+    if (X->MBEDTLS_PRIVATE(s) == -1 && (Y->MBEDTLS_PRIVATE(p[0]) & 1) != 0) {
+        Z->MBEDTLS_PRIVATE(s) = -1;
         MBEDTLS_MPI_CHK(mbedtls_mpi_add_mpi(Z, M, Z));
     } else {
-        Z->s = 1;
+        Z->MBEDTLS_PRIVATE(s) = 1;
     }
 
 cleanup:
@@ -504,12 +492,12 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
     }
     if (x_bits == 1) {
         ret = mbedtls_mpi_copy(Z, Y);
-        Z->s *= X->s;
+        Z->MBEDTLS_PRIVATE(s) *= X->MBEDTLS_PRIVATE(s);
         return ret;
     }
     if (y_bits == 1) {
         ret = mbedtls_mpi_copy(Z, X);
-        Z->s *= Y->s;
+        Z->MBEDTLS_PRIVATE(s) *= Y->MBEDTLS_PRIVATE(s);
         return ret;
     }
 
@@ -548,7 +536,7 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
 
     esp_mpi_disable_hardware_hw_op();
 
-    Z->s = X->s * Y->s;
+    Z->MBEDTLS_PRIVATE(s) = X->MBEDTLS_PRIVATE(s) * Y->MBEDTLS_PRIVATE(s);
 
 cleanup:
     return ret;
@@ -559,9 +547,9 @@ int mbedtls_mpi_mul_int( mbedtls_mpi *X, const mbedtls_mpi *A, mbedtls_mpi_uint 
     mbedtls_mpi _B;
     mbedtls_mpi_uint p[1];
 
-    _B.s = 1;
-    _B.n = 1;
-    _B.p = p;
+    _B.MBEDTLS_PRIVATE(s) = 1;
+    _B.MBEDTLS_PRIVATE(n) = 1;
+    _B.MBEDTLS_PRIVATE(p) = p;
     p[0] = b;
 
     return( mbedtls_mpi_mul_mpi( X, A, &_B ) );
@@ -592,15 +580,15 @@ static int mpi_mult_mpi_overlong(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbe
     const size_t words_slice = y_words / 2;
     /* Yp holds lower bits of Y (declared to reuse Y's array contents to save on copying) */
     const mbedtls_mpi Yp = {
-        .p = Y->p,
-        .n = words_slice,
-        .s = Y->s
+        .MBEDTLS_PRIVATE(p) = Y->MBEDTLS_PRIVATE(p),
+        .MBEDTLS_PRIVATE(n) = words_slice,
+        .MBEDTLS_PRIVATE(s) = Y->MBEDTLS_PRIVATE(s)
     };
     /* Ypp holds upper bits of Y, right shifted (also reuses Y's array contents) */
     const mbedtls_mpi Ypp = {
-        .p = Y->p + words_slice,
-        .n = y_words - words_slice,
-        .s = Y->s
+        .MBEDTLS_PRIVATE(p) = Y->MBEDTLS_PRIVATE(p) + words_slice,
+        .MBEDTLS_PRIVATE(n) = y_words - words_slice,
+        .MBEDTLS_PRIVATE(s) = Y->MBEDTLS_PRIVATE(s)
     };
     mbedtls_mpi_init(&Ztemp);
 
@@ -651,7 +639,7 @@ static int mpi_mult_mpi_failover_mod_mult( mbedtls_mpi *Z, const mbedtls_mpi *X,
     MBEDTLS_MPI_CHK( mbedtls_mpi_grow(Z, hw_words) );
     esp_mpi_read_result_hw_op(Z, hw_words);
 
-    Z->s = X->s * Y->s;
+    Z->MBEDTLS_PRIVATE(s) = X->MBEDTLS_PRIVATE(s) * Y->MBEDTLS_PRIVATE(s);
 cleanup:
     esp_mpi_disable_hardware_hw_op();
     return ret;

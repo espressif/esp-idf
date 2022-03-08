@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2015-2017 SEGGER Microcontroller GmbH & Co. KG
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 /*********************************************************************
 *                SEGGER Microcontroller GmbH & Co. KG                *
 *                        The Embedded Experts                        *
@@ -76,9 +81,6 @@ Notes:
 *
 **********************************************************************
 */
-#ifndef portSTACK_GROWTH
-  #define portSTACK_GROWTH              ( -1 )
-#endif
 
 #define SYSVIEW_FREERTOS_MAX_NOF_TASKS  CONFIG_APPTRACE_SV_MAX_TASKS
 

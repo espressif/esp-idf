@@ -13,6 +13,7 @@
 
 #include "esp_netif.h"
 #include "esp_netif_private.h"
+#include "esp_random.h"
 
 #if CONFIG_ESP_NETIF_TCPIP_LWIP
 

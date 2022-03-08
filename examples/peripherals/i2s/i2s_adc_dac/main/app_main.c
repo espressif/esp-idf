@@ -279,7 +279,7 @@ void adc_read_task(void* arg)
         uint32_t voltage;
         esp_adc_cal_get_voltage(ADC1_TEST_CHANNEL, &characteristics, &voltage);
         ESP_LOGI(TAG, "%d mV", voltage);
-        vTaskDelay(200 / portTICK_RATE_MS);
+        vTaskDelay(200 / portTICK_PERIOD_MS);
     }
 }
 

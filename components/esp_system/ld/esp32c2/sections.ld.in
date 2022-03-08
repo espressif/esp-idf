@@ -135,16 +135,16 @@ SECTIONS
 
   /**
    * This dummy section represents the .flash.text section but in default_rodata_seg.
-   * Thus, it must have its alignement and (at least) its size.
+   * Thus, it must have its alignment and (at least) its size.
    */
   .flash_rodata_dummy (NOLOAD):
   {
     _flash_rodata_dummy_start = .;
-    /* Start at the same alignement constraint than .flash.text */
+    /* Start at the same alignment constraint than .flash.text */
     . = ALIGN(ALIGNOF(.flash.text));
     /* Create an empty gap as big as .flash.text section */
     . = . + SIZEOF(.flash.text);
-    /* Prepare the alignement of the section above. Few bytes (0x20) must be
+    /* Prepare the alignment of the section above. Few bytes (0x20) must be
      * added for the mapping header. */
     . = ALIGN(0x10000) + 0x20;
     _rodata_reserved_start = .;

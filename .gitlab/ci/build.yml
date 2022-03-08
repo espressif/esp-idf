@@ -21,7 +21,7 @@
     - job: fast_template_app
       artifacts: false
   variables:
-    PYTHON_VER: 3.6.13
+    PYTHON_VER: 3.7.10
   artifacts:
     paths:
       - "**/build*/size.json"
@@ -42,63 +42,80 @@ build_pytest_examples_esp32:
     - .build_pytest_template
     - .rules:build:example_test-esp32
   script:
-    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir examples --target esp32 --size-info $SIZE_INFO_LOCATION -vv
+    - run_cmd python tools/ci/build_pytest_apps.py examples --target esp32 --size-info $SIZE_INFO_LOCATION -vv
 
 build_pytest_examples_esp32s2:
   extends:
     - .build_pytest_template
     - .rules:build:example_test-esp32s2
   script:
-    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir examples --target esp32s2 --size-info $SIZE_INFO_LOCATION -vv
+    - run_cmd python tools/ci/build_pytest_apps.py examples --target esp32s2 --size-info $SIZE_INFO_LOCATION -vv
 
 build_pytest_examples_esp32s3:
   extends:
     - .build_pytest_template
     - .rules:build:example_test-esp32s3
   script:
-    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir examples --target esp32s3 --size-info $SIZE_INFO_LOCATION -vv
+    - run_cmd python tools/ci/build_pytest_apps.py examples --target esp32s3 --size-info $SIZE_INFO_LOCATION -vv
 
 build_pytest_examples_esp32c3:
   extends:
     - .build_pytest_template
     - .rules:build:example_test-esp32c3
   script:
-    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir examples --target esp32c3 --size-info $SIZE_INFO_LOCATION -vv
+    - run_cmd python tools/ci/build_pytest_apps.py examples --target esp32c3 --size-info $SIZE_INFO_LOCATION -vv
 
 build_pytest_components_esp32:
   extends:
     - .build_pytest_template
     - .rules:build:component_ut-esp32
   script:
-    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir components --target esp32 --size-info $SIZE_INFO_LOCATION -vv
+    - run_cmd python tools/ci/build_pytest_apps.py components --target esp32 --size-info $SIZE_INFO_LOCATION -vv
 
 build_pytest_components_esp32s2:
   extends:
     - .build_pytest_template
     - .rules:build:component_ut-esp32s2
   script:
-    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir components --target esp32s2 --size-info $SIZE_INFO_LOCATION -vv
+    - run_cmd python tools/ci/build_pytest_apps.py components --target esp32s2 --size-info $SIZE_INFO_LOCATION -vv
 
 build_pytest_components_esp32s3:
   extends:
     - .build_pytest_template
     - .rules:build:component_ut-esp32s3
   script:
-    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir components --target esp32s3 --size-info $SIZE_INFO_LOCATION -vv
-
-build_pytest_components_esp32c2:
-  extends:
-    - .build_pytest_template
-    - .rules:build:component_ut-esp32c2
-  script:
-    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir components --target esp32c2 --size-info $SIZE_INFO_LOCATION -vv
+    - run_cmd python tools/ci/build_pytest_apps.py components --target esp32s3 --size-info $SIZE_INFO_LOCATION -vv
 
 build_pytest_components_esp32c3:
   extends:
     - .build_pytest_template
     - .rules:build:component_ut-esp32c3
   script:
-    - python tools/ci/build_pytest_apps.py --all-pytest-apps --under-dir components --target esp32c3 --size-info $SIZE_INFO_LOCATION -vv
+    - run_cmd python tools/ci/build_pytest_apps.py components --target esp32c3 --size-info $SIZE_INFO_LOCATION -vv
+
+build_pytest_test_apps_esp32:
+  extends:
+    - .build_pytest_template
+    - .rules:build:custom_test-esp32
+  script:
+    - run_cmd python tools/ci/build_pytest_apps.py tools/test_apps --target esp32 --size-info $SIZE_INFO_LOCATION -vv
+
+build_pytest_test_apps_esp32s2:
+  extends:
+    - .build_pytest_template
+    - .rules:build:custom_test-esp32s2
+  script:
+    - run_cmd python tools/ci/build_pytest_apps.py tools/test_apps --target esp32s2 --size-info $SIZE_INFO_LOCATION -vv
+
+build_non_test_components_apps:
+  extends:
+    - .build_template
+    - .build_test_apps_template
+    - .rules:build:component_ut
+  variables:
+    IDF_TARGET: all
+    TEST_PREFIX: component_ut
+    TEST_RELATIVE_DIR: component_ut
 
 .build_template_app_template:
   extends: .build_template
@@ -114,6 +131,7 @@ build_pytest_components_esp32c3:
       - log_template_app/*
       - size_info.txt
       - build_template_app/**/size.json
+    expire_in: 1 week
   script:
     # Set the variable for 'esp-idf-template' testing
     - ESP_IDF_TEMPLATE_GIT=${ESP_IDF_TEMPLATE_GIT:-"https://github.com/espressif/esp-idf-template.git"}
@@ -199,7 +217,7 @@ build_ssc_esp32s3:
     OUTPUT_PATH: ${CI_PROJECT_DIR}/tools/unit-test-app/output
     BUILD_SYSTEM: "cmake"
     TEST_TYPE: "unit_test"
-    PYTHON_VER: 3.6.13
+    PYTHON_VER: 3.7.10
     LDGEN_CHECK_MAPPING: 1
   script:
     - ${IDF_PATH}/tools/ci/find_apps_build_apps.sh
@@ -257,7 +275,7 @@ build_esp_idf_tests_cmake_esp32c2:
     TEST_TYPE: example_test
     LOG_PATH: ${CI_PROJECT_DIR}/log_${TEST_PREFIX}
     BUILD_PATH: ${CI_PROJECT_DIR}/build_${TEST_PREFIX}
-    PYTHON_VER: 3.6.13
+    PYTHON_VER: 3.7.10
     LDGEN_CHECK_MAPPING: 1
   script:
     # it's not possible to build 100% out-of-tree and have the "artifacts"
@@ -289,7 +307,7 @@ build_examples_cmake_esp32:
   extends:
     - .build_examples_cmake_template
     - .rules:build:example_test-esp32
-  parallel: 10
+  parallel: 12
   variables:
     IDF_TARGET: esp32
 
@@ -337,7 +355,7 @@ build_test_apps_esp32:
   extends:
     - .build_test_apps_template
     - .rules:build:custom_test-esp32
-  parallel: 8
+  parallel: 2
   variables:
     IDF_TARGET: esp32
 
@@ -345,7 +363,7 @@ build_test_apps_esp32s2:
   extends:
     - .build_test_apps_template
     - .rules:build:custom_test-esp32s2
-  parallel: 8
+  parallel: 2
   variables:
     IDF_TARGET: esp32s2
 
@@ -353,7 +371,7 @@ build_test_apps_esp32s3:
   extends:
     - .build_test_apps_template
     - .rules:build:custom_test-esp32s3
-  parallel: 8
+  parallel: 2
   variables:
     IDF_TARGET: esp32s3
 
@@ -361,7 +379,7 @@ build_test_apps_esp32c3:
   extends:
     - .build_test_apps_template
     - .rules:build:custom_test-esp32c3
-  parallel: 8
+  parallel: 2
   variables:
     IDF_TARGET: esp32c3
 
@@ -369,7 +387,6 @@ build_test_apps_esp32c2:
   extends:
     - .build_test_apps_template
     - .rules:build:custom_test-esp32c2
-  parallel: 8
   variables:
     IDF_TARGET: esp32c2
 

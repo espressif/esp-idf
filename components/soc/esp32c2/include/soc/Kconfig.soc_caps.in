@@ -36,10 +36,18 @@ config SOC_SUPPORTS_SECURE_DL_MODE
     default y
 
 config SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS
-    int
-    default 3
+    bool
+    default y
 
 config SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
+    bool
+    default n
+
+config SOC_EFUSE_KEY_PURPOSE_FIELD
+    bool
+    default n
+
+config SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
     bool
     default y
 
@@ -150,18 +158,6 @@ config SOC_CPU_HAS_FLEXIBLE_INTC
 config SOC_CPU_WATCHPOINT_SIZE
     hex
     default 0x80000000
-
-config SOC_DS_SIGNATURE_MAX_BIT_LEN
-    int
-    default 3072
-
-config SOC_DS_KEY_PARAM_MD_IV_LENGTH
-    int
-    default 16
-
-config SOC_DS_KEY_CHECK_MAX_WAIT_US
-    int
-    default 1100
 
 config SOC_GDMA_GROUPS
     int
@@ -319,14 +315,6 @@ config SOC_SHA_SUPPORT_SHA256
     bool
     default y
 
-config SOC_SIGMADELTA_NUM
-    int
-    default 1
-
-config SOC_SIGMADELTA_CHANNEL_NUM
-    int
-    default 4
-
 config SOC_SPI_PERIPH_NUM
     int
     default 2
@@ -458,6 +446,10 @@ config SOC_UART_FIFO_LEN
 config SOC_UART_BITRATE_MAX
     int
     default 5000000
+
+config SOC_UART_SUPPORT_WAKEUP_INT
+    bool
+    default y
 
 config SOC_UART_SUPPORT_RTC_CLK
     bool

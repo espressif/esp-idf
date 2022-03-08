@@ -1,12 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
 #include "sdkconfig.h"
 #include "esp_rom_efuse.h"
-#include "esp_system.h"
+#include "esp_mac.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 

@@ -11,6 +11,9 @@ function __main
     echo "Detecting the Python interpreter"
     source "$IDF_PATH"/tools/detect_python.fish
 
+    echo "Checking Python compatibility"
+    "$ESP_PYTHON" "$IDF_PATH"/tools/python_version_checker.py
+
     echo "Adding ESP-IDF tools to PATH..."
     # Call idf_tools.py to export tool paths
     set -x IDF_TOOLS_EXPORT_CMD "$IDF_PATH"/export.fish
@@ -44,6 +47,15 @@ function __main
         echo "All paths are already set."
     end
 
+    set uninstall ("$ESP_PYTHON" "$IDF_PATH"/tools/idf_tools.py uninstall --dry-run) || return 1
+    if test -n "$uninstall"
+        echo ""
+        echo "Detected installed tools that are not currently used by active ESP-IDF version."
+        echo "$uninstall"
+        echo "For free up even more space, remove installation packages of those tools. Use option '$ESP_PYTHON $IDF_PATH/tools/idf_tools.py uninstall --remove-archives'."
+        echo ""
+    end
+
     # Clean up
     set -e added_path_variables
     set -e cmd
@@ -54,6 +66,7 @@ function __main
     set -e IDF_ADD_PATHS_EXTRAS
     set -e idf_exports
     set -e ESP_PYTHON
+    set -e uninstall
 
     # Not unsetting IDF_PYTHON_ENV_PATH, it can be used by IDF build system
     # to check whether we are using a private Python environment

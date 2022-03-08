@@ -16,7 +16,7 @@
 #include "soc/efuse_periph.h"
 #include "hal/cpu_hal.h"
 #include "regi2c_ctrl.h"
-#include "soc_log.h"
+#include "esp_hw_log.h"
 #include "sdkconfig.h"
 #include "rtc_clk_common.h"
 #include "esp_rom_uart.h"
@@ -58,7 +58,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     uint32_t freq_before = old_config.freq_mhz;
     bool res = rtc_clk_cpu_freq_mhz_to_config(cfg.cpu_freq_mhz, &new_config);
     if (!res) {
-        SOC_LOGE(TAG, "invalid CPU frequency value");
+        ESP_HW_LOGE(TAG, "invalid CPU frequency value");
         abort();
     }
     rtc_clk_cpu_freq_set_config(&new_config);

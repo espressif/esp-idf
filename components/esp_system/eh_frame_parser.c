@@ -1,17 +1,8 @@
-
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /**
  * @file DWARF Exception Frames parser
@@ -25,7 +16,7 @@
  * http://dwarfstd.org/Download.php
  */
 
-#include "eh_frame_parser.h"
+#include "esp_private/eh_frame_parser.h"
 #include "esp_private/panic_internal.h"
 #include <string.h>
 
@@ -681,13 +672,13 @@ static uint32_t esp_eh_frame_initialize_state(const uint8_t* cie, ExecutionFrame
     /* Next field is a null-terminated UTF-8 string. Ignore it, look for the end. */
     while((c = *cie_data++) != 0);
 
-    /* Field alignement factor shall be 1. It is encoded in ULEB128. */
+    /* Field alignment factor shall be 1. It is encoded in ULEB128. */
     const uint32_t code_align = decode_leb128(cie_data, false, &size);
     assert(code_align == 1);
     /* Jump to the next field */
     cie_data += size;
 
-    /* Same goes for data alignement factor. Shall be equal to -4. */
+    /* Same goes for data alignment factor. Shall be equal to -4. */
     const int32_t data_align = decode_leb128(cie_data, true, &size);
     cie_data += size;
     assert(data_align == -4);

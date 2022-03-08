@@ -70,6 +70,15 @@
 #define TEST_GPIO_OUTPUT_MAX            GPIO_NUM_MAX
 #define TEST_GPIO_INPUT_LEVEL_HIGH_PIN  10
 #define TEST_GPIO_INPUT_LEVEL_LOW_PIN   1
+#elif CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2
+#define TEST_GPIO_EXT_OUT_IO            6  // default output GPIO
+#define TEST_GPIO_EXT_IN_IO             7  // default input GPIO
+#define TEST_GPIO_OUTPUT_PIN            1
+#define TEST_GPIO_OUTPUT_MAX            GPIO_NUM_MAX
+#define TEST_GPIO_USB_DM_IO             24  // USB D- GPIO
+#define TEST_GPIO_USB_DP_IO             25  // USB D+ GPIO
+#define TEST_GPIO_INPUT_LEVEL_HIGH_PIN  9
+#define TEST_GPIO_INPUT_LEVEL_LOW_PIN   1
 #endif
 
 // If there is any input-only pin, enable input-only pin part of some tests.
@@ -113,7 +122,7 @@ __attribute__((unused)) static void gpio_isr_edge_handler(void *arg)
     edge_intr_times++;
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2, ESP32H2)
 //No runners
 // level interrupt event with "gpio_intr_disable"
 static void gpio_isr_level_handler(void *arg)
@@ -138,7 +147,7 @@ static void gpio_isr_level_handler2(void *arg)
     esp_rom_printf("GPIO[%d] intr, val: %d, level_intr_times = %d\n", TEST_GPIO_EXT_OUT_IO, gpio_get_level(TEST_GPIO_EXT_OUT_IO), level_intr_times);
     esp_rom_printf("GPIO[%d] intr, val: %d, level_intr_times = %d\n", gpio_num, gpio_get_level(gpio_num), level_intr_times);
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2, ESP32H2)
 
 #if !WAKE_UP_IGNORE
 // get result of waking up or not
@@ -161,7 +170,7 @@ static void trigger_wake_up(void *arg)
     gpio_install_isr_service(0);
     gpio_isr_handler_add(TEST_GPIO_EXT_OUT_IO, gpio_isr_level_handler, (void *) TEST_GPIO_EXT_IN_IO);
     gpio_set_level(TEST_GPIO_EXT_OUT_IO, 1);
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
 }
 #endif //!WAKE_UP_IGNORE
 
@@ -171,7 +180,7 @@ static void prompt_to_continue(const char *str)
     char sign[5] = {0};
     while (strlen(sign) == 0) {
         /* Flush anything already in the RX buffer */
-        while (esp_rom_uart_rx_one_char((uint8_t *) sign) == ETS_OK) {
+        while (esp_rom_uart_rx_one_char((uint8_t *) sign) == 0) {
         }
         /* Read line */
         esp_rom_uart_rx_string((uint8_t *) sign, sizeof(sign) - 1);
@@ -223,7 +232,7 @@ TEST_CASE("GPIO config parameters test", "[gpio]")
 #endif // SOC_HAS_INPUT_ONLY_PIN
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2, ESP32H2)
 //No runners
 TEST_CASE("GPIO rising edge interrupt test", "[gpio][test_env=UT_T1_GPIO]")
 {
@@ -244,7 +253,7 @@ TEST_CASE("GPIO rising edge interrupt test", "[gpio][test_env=UT_T1_GPIO]")
     gpio_isr_handler_add(TEST_GPIO_EXT_IN_IO, gpio_isr_edge_handler, (void *)TEST_GPIO_EXT_IN_IO);
     TEST_ESP_OK(gpio_set_level(TEST_GPIO_EXT_OUT_IO, 1));
     TEST_ASSERT_EQUAL_INT(edge_intr_times, 1);
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     gpio_isr_handler_remove(TEST_GPIO_EXT_IN_IO);
     gpio_uninstall_isr_service();
 }
@@ -265,9 +274,9 @@ TEST_CASE("GPIO falling edge interrupt test", "[gpio][test_env=UT_T1_GPIO]")
     gpio_install_isr_service(0);
     gpio_isr_handler_add(TEST_GPIO_EXT_IN_IO, gpio_isr_edge_handler, (void *) TEST_GPIO_EXT_IN_IO);
     gpio_set_level(TEST_GPIO_EXT_OUT_IO, 0);
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT(edge_intr_times, 1);
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     gpio_isr_handler_remove(TEST_GPIO_EXT_IN_IO);
     gpio_uninstall_isr_service();
 }
@@ -295,9 +304,9 @@ TEST_CASE("GPIO both rising and falling edge interrupt test", "[gpio][test_env=U
         if (level > 10) {
             break;
         }
-        vTaskDelay(100 / portTICK_RATE_MS);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
     }
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     // for falling rdge in GPIO_INTR_ANYEDGE
     while (1) {
         level = level - 1;
@@ -305,11 +314,11 @@ TEST_CASE("GPIO both rising and falling edge interrupt test", "[gpio][test_env=U
         if (level < 0) {
             break;
         }
-        vTaskDelay(100 / portTICK_RATE_MS);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
     }
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT(edge_intr_times, 2);
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     gpio_isr_handler_remove(TEST_GPIO_EXT_IN_IO);
     gpio_uninstall_isr_service();
 }
@@ -330,7 +339,7 @@ TEST_CASE("GPIO input high level trigger, cut the interrupt source exit interrup
     gpio_install_isr_service(0);
     gpio_isr_handler_add(TEST_GPIO_EXT_IN_IO, gpio_isr_level_handler2, (void *) TEST_GPIO_EXT_IN_IO);
     gpio_set_level(TEST_GPIO_EXT_OUT_IO, 1);
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT_MESSAGE(level_intr_times, 1, "go into high-level interrupt more than once with cur interrupt source way");
     gpio_isr_handler_remove(TEST_GPIO_EXT_IN_IO);
     gpio_uninstall_isr_service();
@@ -354,7 +363,7 @@ TEST_CASE("GPIO low level interrupt test", "[gpio][test_env=UT_T1_GPIO]")
     gpio_isr_handler_add(TEST_GPIO_EXT_IN_IO, gpio_isr_level_handler, (void *) TEST_GPIO_EXT_IN_IO);
     gpio_set_level(TEST_GPIO_EXT_OUT_IO, 0);
     printf("get level:%d\n", gpio_get_level(TEST_GPIO_EXT_IN_IO));
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT_MESSAGE(disable_intr_times, 1, "go into low-level interrupt more than once with disable way");
     gpio_isr_handler_remove(TEST_GPIO_EXT_IN_IO);
     gpio_uninstall_isr_service();
@@ -376,10 +385,10 @@ TEST_CASE("GPIO multi-level interrupt test, to cut the interrupt source exit int
     gpio_install_isr_service(0);
     gpio_isr_handler_add(TEST_GPIO_EXT_IN_IO, gpio_isr_level_handler2, (void *) TEST_GPIO_EXT_IN_IO);
     gpio_set_level(TEST_GPIO_EXT_OUT_IO, 1);
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT_MESSAGE(level_intr_times, 1, "go into high-level interrupt more than once with cur interrupt source way");
     gpio_set_level(TEST_GPIO_EXT_OUT_IO, 1);
-    vTaskDelay(200 / portTICK_RATE_MS);
+    vTaskDelay(200 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT_MESSAGE(level_intr_times, 2, "go into high-level interrupt more than once with cur interrupt source way");
     gpio_isr_handler_remove(TEST_GPIO_EXT_IN_IO);
     gpio_uninstall_isr_service();
@@ -406,7 +415,7 @@ TEST_CASE("GPIO enable and disable interrupt test", "[gpio][test_env=UT_T1_GPIO]
     TEST_ASSERT_EQUAL_INT_MESSAGE(disable_intr_times, 1, "go into high-level interrupt more than once with disable way");
 
     // not install service now
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ESP_OK(gpio_intr_disable(TEST_GPIO_EXT_IN_IO));
     TEST_ESP_OK(gpio_set_level(TEST_GPIO_EXT_OUT_IO, 1));
     TEST_ASSERT_EQUAL_INT_MESSAGE(disable_intr_times, 1, "disable interrupt does not work, still go into interrupt!");
@@ -415,7 +424,7 @@ TEST_CASE("GPIO enable and disable interrupt test", "[gpio][test_env=UT_T1_GPIO]
     TEST_ASSERT(gpio_isr_handler_add(TEST_GPIO_EXT_IN_IO, gpio_isr_level_handler, (void *) TEST_GPIO_EXT_IN_IO) == ESP_ERR_INVALID_STATE);
     TEST_ASSERT(gpio_isr_handler_remove(TEST_GPIO_EXT_IN_IO) == ESP_ERR_INVALID_STATE);
 }
-#endif //DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
+#endif //DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2, ESP32H2)
 
 #if !CONFIG_FREERTOS_UNICORE
 static void install_isr_service_task(void *arg)
@@ -442,9 +451,9 @@ TEST_CASE("GPIO interrupt on other CPUs test", "[gpio]")
         TEST_ESP_OK(gpio_set_level(TEST_GPIO_EXT_OUT_IO, 0));
         xTaskCreatePinnedToCore(install_isr_service_task, "install_isr_service_task", 2048, (void *) TEST_GPIO_EXT_OUT_IO, 1, &gpio_task_handle, cpu_num);
 
-        vTaskDelay(200 / portTICK_RATE_MS);
+        vTaskDelay(200 / portTICK_PERIOD_MS);
         TEST_ESP_OK(gpio_set_level(TEST_GPIO_EXT_OUT_IO, 1));
-        vTaskDelay(100 / portTICK_RATE_MS);
+        vTaskDelay(100 / portTICK_PERIOD_MS);
         TEST_ASSERT_EQUAL_INT(edge_intr_times, 1);
         gpio_isr_handler_remove(TEST_GPIO_EXT_OUT_IO);
         gpio_uninstall_isr_service();
@@ -473,7 +482,7 @@ TEST_CASE("GPIO set gpio output level test", "[gpio][ignore][UT_T1_GPIO]")
     gpio_set_level(TEST_GPIO_EXT_OUT_IO, 0);
     // tested voltage is around 0v
     TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(TEST_GPIO_EXT_IN_IO), 0, "get level error! the level should be low!");
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     gpio_set_level(TEST_GPIO_EXT_OUT_IO, 1);
     // tested voltage is around 3.3v
     TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(TEST_GPIO_EXT_IN_IO), 1, "get level error! the level should be high!");
@@ -514,20 +523,20 @@ TEST_CASE("GPIO io pull up/down function", "[gpio]")
     gpio_config(&io_conf);
     gpio_set_direction(TEST_GPIO_EXT_IN_IO, GPIO_MODE_INPUT);
     TEST_ESP_OK(gpio_pullup_en(TEST_GPIO_EXT_IN_IO));  // pull up first
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(TEST_GPIO_EXT_IN_IO), 1, "gpio_pullup_en error, it can't pull up");
     TEST_ESP_OK(gpio_pulldown_dis(TEST_GPIO_EXT_IN_IO)); //can't be pull down
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(TEST_GPIO_EXT_IN_IO), 1, "gpio_pulldown_dis error, it can pull down");
     TEST_ESP_OK(gpio_pulldown_en(TEST_GPIO_EXT_IN_IO)); // can be pull down now
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(TEST_GPIO_EXT_IN_IO), 0, "gpio_pulldown_en error, it can't pull down");
     TEST_ESP_OK(gpio_pullup_dis(TEST_GPIO_EXT_IN_IO)); // can't be pull up
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(TEST_GPIO_EXT_IN_IO), 0, "gpio_pullup_dis error, it can pull up");
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2, ESP32H2)
 //No runners
 TEST_CASE("GPIO output and input mode test", "[gpio][test_env=UT_T1_GPIO]")
 {
@@ -601,7 +610,7 @@ TEST_CASE("GPIO repeate call service and isr has no memory leak test", "[gpio][t
     }
     TEST_ASSERT_INT32_WITHIN(size, esp_get_free_heap_size(), 100);
 }
-#endif //DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3)
+#endif //DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2, ESP32H2)
 
 #if !WAKE_UP_IGNORE
 //this function development is not completed yet, set it ignored
@@ -609,13 +618,13 @@ TEST_CASE("GPIO wake up enable and disenable test", "[gpio][ignore]")
 {
     xTaskCreate(sleep_wake_up, "sleep_wake_up", 4096, NULL, 5, NULL);
     xTaskCreate(trigger_wake_up, "trigger_wake_up", 4096, NULL, 5, NULL);
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ASSERT_TRUE(wake_up_result);
 
     wake_up_result = false;
     TEST_ESP_OK(gpio_wakeup_disable(TEST_GPIO_EXT_IN_IO));
     gpio_set_level(TEST_GPIO_EXT_OUT_IO, 1);
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ASSERT_FALSE(wake_up_result);
 }
 #endif // !WAKE_UP_IGNORE
@@ -757,19 +766,19 @@ TEST_CASE("GPIO Enable/Disable interrupt on multiple cores", "[gpio][ignore]")
     TEST_ESP_OK(gpio_set_level(TEST_IO_9, 0));
     TEST_ESP_OK(gpio_install_isr_service(0));
     TEST_ESP_OK(gpio_isr_handler_add(TEST_IO_9, gpio_isr_edge_handler, (void *) TEST_IO_9));
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ESP_OK(gpio_set_level(TEST_IO_9, 1));
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ESP_OK(gpio_set_level(TEST_IO_9, 0));
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ESP_OK(gpio_intr_disable(TEST_IO_9));
     TEST_ASSERT(edge_intr_times == 1);
     xTaskCreatePinnedToCore(gpio_enable_task, "gpio_enable_task", 1024 * 4, (void *)TEST_IO_9, 8, NULL, (xPortGetCoreID() == 0));
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     TEST_ESP_OK(gpio_set_level(TEST_IO_9, 1));
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ESP_OK(gpio_set_level(TEST_IO_9, 0));
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ESP_OK(gpio_intr_disable(TEST_IO_9));
     TEST_ESP_OK(gpio_isr_handler_remove(TEST_IO_9));
     gpio_uninstall_isr_service();
@@ -824,31 +833,31 @@ TEST_CASE("GPIO ISR service test", "[gpio][ignore]")
     TEST_ESP_OK(gpio_isr_handler_add(TEST_IO_9, gpio_isr_handler, (void *)&io9_param));
     TEST_ESP_OK(gpio_isr_handler_add(TEST_IO_10, gpio_isr_handler, (void *)&io10_param));
     printf("Triggering the interrupt of GPIO9\n");
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
     //Rising edge
     TEST_ESP_OK(gpio_set_level(TEST_IO_9, 1));
     printf("Disable the interrupt of GPIO9\n");
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     //Disable GPIO9 interrupt, GPIO18 will not respond to the next falling edge interrupt.
     TEST_ESP_OK(gpio_intr_disable(TEST_IO_9));
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     //Falling edge
     TEST_ESP_OK(gpio_set_level(TEST_IO_9, 0));
 
     printf("Triggering the interrupt of GPIO10\n");
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ESP_OK(gpio_set_level(TEST_IO_10, 1));
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     //Falling edge
     TEST_ESP_OK(gpio_set_level(TEST_IO_10, 0));
-    vTaskDelay(100 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_PERIOD_MS);
     TEST_ESP_OK(gpio_isr_handler_remove(TEST_IO_9));
     TEST_ESP_OK(gpio_isr_handler_remove(TEST_IO_10));
     gpio_uninstall_isr_service();
     TEST_ASSERT((io9_param.isr_cnt == 1) && (io10_param.isr_cnt == 1));
 }
 
-#if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+#if SOC_USB_SERIAL_JTAG_SUPPORTED
 TEST_CASE("GPIO input and output of USB pins test", "[gpio]")
 {
     const int test_pins[] = {TEST_GPIO_USB_DP_IO, TEST_GPIO_USB_DM_IO};
@@ -868,21 +877,21 @@ TEST_CASE("GPIO input and output of USB pins test", "[gpio]")
         // tested voltage is around 0v
         esp_rom_delay_us(10);
         TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(pin), 0, "get level error! the level should be low!");
-        vTaskDelay(1000 / portTICK_RATE_MS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
         gpio_set_level(pin, 1);
         esp_rom_delay_us(10);
         // tested voltage is around 3.3v
         TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(pin), 1, "get level error! the level should be high!");
-        vTaskDelay(1000 / portTICK_RATE_MS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
         gpio_set_level(pin, 0);
         esp_rom_delay_us(10);
         // tested voltage is around 0v
         TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(pin), 0, "get level error! the level should be low!");
-        vTaskDelay(1000 / portTICK_RATE_MS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
         gpio_set_level(pin, 1);
         esp_rom_delay_us(10);
         // tested voltage is around 3.3v
         TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(pin), 1, "get level error! the level should be high!");
     }
 }
-#endif //CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3
+#endif //SOC_USB_SERIAL_JTAG_SUPPORTED

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -112,6 +112,14 @@ esp_err_t esp_create_mbedtls_handle(const char *hostname, size_t hostlen, const 
 
 #ifdef CONFIG_MBEDTLS_DEBUG
     mbedtls_esp_enable_debug_log(&tls->conf, CONFIG_MBEDTLS_DEBUG_LEVEL);
+#endif
+
+#ifdef CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
+    // NOTE: Mbed TLS currently supports only client-side config with TLS 1.3
+    if (tls->role != ESP_TLS_SERVER) {
+        mbedtls_ssl_conf_min_version(&tls->conf, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_4);
+        mbedtls_ssl_conf_max_version(&tls->conf, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_4);
+    }
 #endif
 
     if ((ret = mbedtls_ssl_setup(&tls->ssl, &tls->conf)) != 0) {
@@ -365,7 +373,8 @@ static esp_err_t set_pki_context(esp_tls_t *tls, const esp_tls_pki_t *pki)
 #endif
         if (pki->privkey_pem_buf != NULL) {
             ret = mbedtls_pk_parse_key(pki->pk_key, pki->privkey_pem_buf, pki->privkey_pem_bytes,
-                                       pki->privkey_password, pki->privkey_password_len);
+                                       pki->privkey_password, pki->privkey_password_len,
+                                       mbedtls_ctr_drbg_random, &tls->ctr_drbg);
         } else {
             return ESP_ERR_INVALID_ARG;
         }
@@ -906,7 +915,7 @@ static esp_err_t esp_mbedtls_init_pk_ctx_for_ds(const void *pki)
     int ret = -1;
     /* initialize the mbedtls pk context with rsa context */
     mbedtls_rsa_context rsakey;
-    mbedtls_rsa_init(&rsakey, MBEDTLS_RSA_PKCS_V15, 0);
+    mbedtls_rsa_init(&rsakey);
     if ((ret = mbedtls_pk_setup_rsa_alt(((const esp_tls_pki_t*)pki)->pk_key, &rsakey, NULL, esp_ds_rsa_sign,
                                         esp_ds_get_keylen )) != 0) {
         ESP_LOGE(TAG, "Error in mbedtls_pk_setup_rsa_alt, returned -0x%04X", -ret);

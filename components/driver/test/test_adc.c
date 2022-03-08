@@ -9,19 +9,13 @@
 #include <string.h>
 #include "esp_log.h"
 #include "test_utils.h"
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
-// TODO: Support ADC IDF-3908
 #include "esp_adc_cal.h"
-#include "driver/adc.h"
+#include "driver/adc_common.h"
 
-static const char *TAG = "ADC";
+__attribute__((unused)) static const char *TAG = "ADC";
 
-
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP32S2, ESP32S3, ESP32C3)   //TODO: IDF-3160
-//API only supported for C3 now.
-
-#include "esp_adc_cal.h"
-#include "esp_log.h"
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP32S2, ESP32S3, ESP32C3, ESP32C2)
+//TODO: IDF-3160
 
 #define TEST_COUNT      4096
 #define MAX_ARRAY_SIZE  4096
@@ -282,12 +276,10 @@ TEST_CASE("test_adc_single", "[adc][ignore][manual]")
     }
 }
 
-#endif  //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP32S2, ESP32S3)
+#endif  //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP32S2, ESP32S3, ESP32C3, ESP32C2)
 
 
-
-
-
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2) //TODO IDF-3908
 
 /********************************************************************************
  *      ADC Speed Related Tests
@@ -400,4 +392,222 @@ TEST_CASE("test_adc_single_cali_time", "[adc][ignore][manual]")
     }
 }
 
-#endif //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2)
+
+/********************************************************************************
+ *      ADC Single with Light Sleep
+ ********************************************************************************/
+#include <inttypes.h>
+#include "esp_sleep.h"
+#include "regi2c_ctrl.h"
+
+//ADC Channels
+#if CONFIG_IDF_TARGET_ESP32
+#define ADC1_SLEEP_TEST_CHAN          ADC1_CHANNEL_6
+#define ADC2_SLEEP_TEST_CHAN          ADC2_CHANNEL_0
+static const char *TAG_CH[2][10] = {{"ADC1_CH6"}, {"ADC2_CH0"}};
+#else
+#define ADC1_SLEEP_TEST_CHAN          ADC1_CHANNEL_2
+#define ADC2_SLEEP_TEST_CHAN          ADC2_CHANNEL_0
+static const char *TAG_CH[2][10] = {{"ADC1_CH2"}, {"ADC2_CH0"}};
+#endif
+
+//ADC Attenuation
+#define ADC_SLEEP_TEST_ATTEN           ADC_ATTEN_DB_6
+
+//ADC Calibration
+#if CONFIG_IDF_TARGET_ESP32
+#define ADC_SLEEP_TEST_CALI_SCHEME     ESP_ADC_CAL_VAL_EFUSE_VREF
+#elif CONFIG_IDF_TARGET_ESP32S2
+#define ADC_SLEEP_TEST_CALI_SCHEME     ESP_ADC_CAL_VAL_EFUSE_TP
+#elif CONFIG_IDF_TARGET_ESP32C3
+#define ADC_SLEEP_TEST_CALI_SCHEME     ESP_ADC_CAL_VAL_EFUSE_TP
+#elif CONFIG_IDF_TARGET_ESP32S3
+#define ADC_SLEEP_TEST_CALI_SCHEME     ESP_ADC_CAL_VAL_EFUSE_TP_FIT
+#endif
+
+static esp_adc_cal_characteristics_t adc1_chars;
+static esp_adc_cal_characteristics_t adc2_chars;
+
+
+static bool adc_calibration_init(void)
+{
+    esp_err_t ret;
+    bool cali_enable = false;
+
+    ret = esp_adc_cal_check_efuse(ADC_SLEEP_TEST_CALI_SCHEME);
+    if (ret == ESP_ERR_NOT_SUPPORTED) {
+        ESP_LOGW(TAG, "Calibration scheme not supported, skip software calibration");
+    } else if (ret == ESP_ERR_INVALID_VERSION) {
+        ESP_LOGW(TAG, "eFuse not burnt, skip software calibration");
+    } else if (ret == ESP_OK) {
+        cali_enable = true;
+        esp_adc_cal_characterize(ADC_UNIT_1, ADC_SLEEP_TEST_ATTEN, ADC_WIDTH_BIT_DEFAULT, 0, &adc1_chars);
+        esp_adc_cal_characterize(ADC_UNIT_2, ADC_SLEEP_TEST_ATTEN, ADC_WIDTH_BIT_DEFAULT, 0, &adc2_chars);
+    } else {
+        ESP_LOGE(TAG, "Invalid arg");
+    }
+
+    return cali_enable;
+}
+
+#define TEST_REGI2C_ANA_CALI_BYTE_NUM   8
+
+TEST_CASE("test ADC1 Single Read with Light Sleep", "[adc][manul][ignore]")
+{
+    //ADC1 config
+    TEST_ESP_OK(adc1_config_width(ADC_WIDTH_BIT_DEFAULT));
+    TEST_ESP_OK(adc1_config_channel_atten(ADC1_SLEEP_TEST_CHAN, ADC_SLEEP_TEST_ATTEN));
+
+    //ADC config calibration
+    bool cali_en = adc_calibration_init();
+
+    int raw_expected = 0;
+    uint32_t cali_expected = 0;
+    uint8_t regi2c_cali_val_before[TEST_REGI2C_ANA_CALI_BYTE_NUM] = {};
+
+    int raw_after_sleep = 0;
+    uint32_t cali_after_sleep = 0;
+    uint8_t regi2c_cali_val_after[TEST_REGI2C_ANA_CALI_BYTE_NUM] = {};
+
+    //---------------------------------Before Sleep-----------------------------------//
+    ESP_LOGI("Before", "Light Sleep");
+
+    //Read
+    raw_expected = adc1_get_raw(ADC1_SLEEP_TEST_CHAN);
+    if (cali_en) {
+        cali_expected = esp_adc_cal_raw_to_voltage(raw_expected, &adc1_chars);
+    }
+
+#if REGI2C_ANA_CALI_PD_WORKAROUND
+    //Print regi2c
+    for (int i = 0; i < TEST_REGI2C_ANA_CALI_BYTE_NUM; i++) {
+        regi2c_cali_val_before[i] = regi2c_ctrl_read_reg(I2C_SAR_ADC, I2C_SAR_ADC_HOSTID, i);
+        printf("regi2c cali val is 0x%x", regi2c_cali_val_before[i]);
+    }
+    printf("\n");
+#endif
+
+    //Print result
+    ESP_LOGI(TAG_CH[0][0], "ADC1 raw data: %d", raw_expected);
+    if (cali_en) {
+        ESP_LOGI(TAG_CH[0][0], "ADC1 cali data: %d", cali_expected);
+    }
+
+    //---------------------------------After Sleep-----------------------------------//
+    ESP_LOGI("After", "Light Sleep");
+    esp_sleep_enable_timer_wakeup(30 * 1000);
+    esp_light_sleep_start();
+    ESP_LOGI(TAG, "Wakeup from light sleep.");
+
+#if REGI2C_ANA_CALI_PD_WORKAROUND
+    //Print regi2c
+    for (int i = 0; i < TEST_REGI2C_ANA_CALI_BYTE_NUM; i++) {
+        regi2c_cali_val_after[i] = regi2c_ctrl_read_reg(I2C_SAR_ADC, I2C_SAR_ADC_HOSTID, i);
+        printf("regi2c cali val is 0x%x", regi2c_cali_val_after[i]);
+    }
+    printf("\n");
+#endif
+
+    //Read
+    raw_after_sleep = adc1_get_raw(ADC1_SLEEP_TEST_CHAN);
+    if (cali_en) {
+        cali_after_sleep = esp_adc_cal_raw_to_voltage(raw_after_sleep, &adc1_chars);
+    }
+
+    //Print result
+    ESP_LOGI(TAG_CH[0][0], "after light sleep, ADC1 cali data: %d", raw_after_sleep);
+    if (cali_en) {
+        ESP_LOGI(TAG_CH[0][0], "after light sleep, ADC1 cali data: %d", cali_after_sleep);
+    }
+
+    //Compare
+    int32_t raw_diff = raw_expected - raw_after_sleep;
+    IDF_LOG_PERFORMANCE("ADC1 raw diff after sleep", "%d", raw_diff);
+    if (cali_en) {
+        int32_t cali_diff = cali_expected - cali_after_sleep;
+        IDF_LOG_PERFORMANCE("ADC1 cali diff after sleep", "%d mV", cali_diff);
+    }
+
+    for (int i = 0; i < TEST_REGI2C_ANA_CALI_BYTE_NUM; i++) {
+        TEST_ASSERT_EQUAL(regi2c_cali_val_before[i], regi2c_cali_val_after[i]);
+    }
+}
+
+TEST_CASE("test ADC2 Single Read with Light Sleep", "[adc][manul][ignore]")
+{
+    //ADC2 config
+    ESP_ERROR_CHECK(adc2_config_channel_atten(ADC2_SLEEP_TEST_CHAN, ADC_SLEEP_TEST_ATTEN));
+    //ADC config calibration
+    bool cali_en = adc_calibration_init();
+
+    int raw_expected = 0;
+    uint32_t cali_expected = 0;
+    uint8_t regi2c_cali_val_before[TEST_REGI2C_ANA_CALI_BYTE_NUM] = {};
+
+    int raw_after_sleep = 0;
+    uint32_t cali_after_sleep = 0;
+    uint8_t regi2c_cali_val_after[TEST_REGI2C_ANA_CALI_BYTE_NUM] = {};
+
+    //---------------------------------Before Sleep-----------------------------------//
+    ESP_LOGI("Before", "Light Sleep");
+
+    //Read
+    TEST_ESP_OK(adc2_get_raw(ADC2_SLEEP_TEST_CHAN, ADC_WIDTH_BIT_DEFAULT, &raw_expected));
+    if (cali_en) {
+        cali_expected = esp_adc_cal_raw_to_voltage(raw_expected, &adc2_chars);
+    }
+
+#if REGI2C_ANA_CALI_PD_WORKAROUND
+    //Print regi2c
+    for (int i = 0; i < TEST_REGI2C_ANA_CALI_BYTE_NUM; i++) {
+        regi2c_cali_val_before[i] = regi2c_ctrl_read_reg(I2C_SAR_ADC, I2C_SAR_ADC_HOSTID, i);
+        printf("regi2c cali val is 0x%x", regi2c_cali_val_before[i]);
+    }
+    printf("\n");
+#endif
+
+    //Print result
+    ESP_LOGI(TAG_CH[1][0], "ADC2 raw data: %d", raw_expected);
+    if (cali_en) {
+        ESP_LOGI(TAG_CH[1][0], "ADC2 cali data: %d", cali_expected);
+    }
+
+    //---------------------------------After Sleep-----------------------------------//
+    ESP_LOGI("After", "Light Sleep");
+    esp_sleep_enable_timer_wakeup(30 * 1000);
+    esp_light_sleep_start();
+    ESP_LOGI(TAG, "Wakeup from light sleep.");
+
+#if REGI2C_ANA_CALI_PD_WORKAROUND
+    //Print regi2c
+    for (int i = 0; i < TEST_REGI2C_ANA_CALI_BYTE_NUM; i++) {
+        regi2c_cali_val_after[i] = regi2c_ctrl_read_reg(I2C_SAR_ADC, I2C_SAR_ADC_HOSTID, i);
+        printf("regi2c cali val is 0x%x", regi2c_cali_val_after[i]);
+    }
+    printf("\n");
+#endif
+
+    //Read
+    TEST_ESP_OK(adc2_get_raw(ADC2_SLEEP_TEST_CHAN, ADC_WIDTH_BIT_DEFAULT, &raw_after_sleep));
+    if (cali_en) {
+        cali_after_sleep += esp_adc_cal_raw_to_voltage(raw_after_sleep, &adc2_chars);
+    }
+
+    //Print result
+    ESP_LOGI(TAG_CH[1][0], "after light sleep, ADC2 cali data: %d", raw_after_sleep);
+    if (cali_en) {
+        ESP_LOGI(TAG_CH[1][0], "after light sleep, ADC2 cali data: %d", cali_after_sleep);
+    }
+
+    //Compare
+    int32_t raw_diff = raw_expected - raw_after_sleep;
+    IDF_LOG_PERFORMANCE("ADC2 raw diff after sleep", "%d", raw_diff);
+    if (cali_en) {
+        int32_t cali_diff = cali_expected - cali_after_sleep;
+        IDF_LOG_PERFORMANCE("ADC2 cali diff after sleep", "%d mV", cali_diff);
+    }
+    for (int i = 0; i < TEST_REGI2C_ANA_CALI_BYTE_NUM; i++) {
+        TEST_ASSERT_EQUAL(regi2c_cali_val_before[i], regi2c_cali_val_after[i]);
+    }
+}
+#endif   //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32C2) //TODO IDF-3908

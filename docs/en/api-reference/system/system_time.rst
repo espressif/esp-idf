@@ -135,7 +135,7 @@ Once these steps are completed, call the standard C library function ``localtime
 
 ESP-IDF uses 32-bit ``time_t`` type by default. To address Y2K38 issue, you may need to use 64-bit ``time_t`` type when building the application.
 
-Currently this requires building the cross-compiler toolchain from scratch. See the instructions for building the toolchain in :doc:`/get-started/linux-setup-scratch`. To enable 64-bit ``time_t`` support in the toolchain, you need to remove the ``--enable-newlib-long-time_t`` option from the ``crosstool-NG/samples/xtensa-esp32-elf/crosstool.config`` file before building the toolchain.
+Currently this requires building the cross-compiler toolchain from scratch. See the instructions for building the toolchain in :doc:`/get-started/linux-macos-setup`. To enable 64-bit ``time_t`` support in the toolchain, you need to remove the ``--enable-newlib-long-time_t`` option from the ``crosstool-NG/samples/xtensa-esp32-elf/crosstool.config`` file before building the toolchain.
 
 If you need to make the program compatible with both 32-bit and 64-bit ``time_t``, you may use the following methods:
 

@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * SPDX-FileContributor: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
  */
 /*
  * FreeModbus Libary: A portable Modbus implementation for Modbus ASCII/RTU.
@@ -93,11 +93,15 @@ eMBMasterTCPDoInit( USHORT ucTCPPort )
 void
 eMBMasterTCPStart( void )
 {
+    ESP_LOGD(MB_PORT_TAG, "TCP Master port enable.");
+    vMBMasterTCPPortEnable( );
 }
 
 void
 eMBMasterTCPStop( void )
 {
+    ESP_LOGD(MB_PORT_TAG, "TCP Master port disable.");
+    vMBMasterTCPPortDisable( );
 }
 
 eMBErrorCode

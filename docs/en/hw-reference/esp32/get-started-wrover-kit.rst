@@ -83,8 +83,8 @@ The table below provides description in the following manner:
 
     * - Key Component
       - Description
-    * - FT2232
-      - The FT2232 chip serves as a multi-protocol USB-to-serial bridge which can be programmed and controlled via USB to provide communication with ESP32. FT2232 also features USB-to-JTAG interface which is available on channel A of the chip, while USB-to-serial is on channel B. The FT2232 chip enhances user-friendliness in terms of application development and debugging. See `ESP-WROVER-KIT V4.1 schematic`_.
+    * - FT2232HL
+      - The FT2232HL chip serves as a multi-protocol USB-to-serial bridge which can be programmed and controlled via USB to provide communication with ESP32. FT2232HL also features USB-to-JTAG interface which is available on channel A of the chip, while USB-to-serial is on channel B. The FT2232HL chip enhances user-friendliness in terms of application development and debugging. See `ESP-WROVER-KIT V4.1 schematic`_.
     * - 32.768 kHz
       - External precision 32.768 kHz crystal oscillator serves as a clock with low-power consumption while the chip is in Deep-sleep mode.
     * - 0R
@@ -92,15 +92,15 @@ The table below provides description in the following manner:
     * - ESP32-WROVER-E module
       - This ESP32 module features 64-Mbit PSRAM for flexible extended storage and data processing capabilities.
     * - Diagnostic LEDs
-      - Four red LEDs connected to the GPIO pins of FT2232. Intended for future use.
+      - Four red LEDs connected to the GPIO pins of FT2232HL. Intended for future use.
     * - UART
-      - Serial port. The serial TX/RX signals of FT2232 and ESP32 are broken out to the inward and outward sides of JP2 respectively. By default, these pairs of pins are connected with jumpers. To use ESP32's serial interface, remove the jumpers and connect another external serial device to the respective pins.
+      - Serial port. The serial TX/RX signals of FT2232HL and ESP32 are broken out to the inward and outward sides of JP2 respectively. By default, these pairs of pins are connected with jumpers. To use ESP32's serial interface, remove the jumpers and connect another external serial device to the respective pins.
     * - SPI
       - By default, ESP32 uses its SPI interface to access flash and PSRAM memory inside the module. Use these pins to connect ESP32 to another SPI device. In this case, an extra chip select (CS) signal is needed. Please note that the voltage of this interface is 3.3 V.
     * - CTS/RTS
       - Serial port flow control signals: the pins are not connected to the circuitry by default. To enable them, short the respective pins of JP14 with jumpers.
     * - JTAG
-      - JTAG interface. JTAG signals of FT2232 and ESP32 are broken out to the inward and outward sides of JP2 respectively. By default, these pairs of pins are disconnected. To enable JTAG, short the respective pins with jumpers as shown in Section `Setup Options`_.
+      - JTAG interface. JTAG signals of FT2232HL and ESP32 are broken out to the inward and outward sides of JP2 respectively. By default, these pairs of pins are disconnected. To enable JTAG, short the respective pins with jumpers as shown in Section `Setup Options`_.
     * - USB Port
       - USB interface. Power supply for the board as well as the communication interface between a computer and the board.
     * - EN Button
@@ -116,7 +116,7 @@ The table below provides description in the following manner:
     * - 5V Power On LED
       - This red LED turns on when power is supplied to the board, either from **USB** or **5V Input**.
     * - LDO
-      - NCP1117(1A). 5V-to-3.3V LDO. NCP1117 can provide a maximum current of 1A. The LDO on the board has a fixed output voltage. Although, the user can install an LDO with adjustable output voltage. For details, please refer to `ESP-WROVER-KIT V4.1 schematic`_.
+      - NCP1117(1A). 5V-to-3.3V LDO. NCP1117 can provide a maximum current of 1A. The LDO on the board has a fixed output voltage, but the user can install an LDO with adjustable output voltage. For details, please refer to `ESP-WROVER-KIT V4.1 schematic`_.
     * - Camera Connector
       - Camera interface, a standard OV7670 camera module.
     * - RGB LED
@@ -126,7 +126,7 @@ The table below provides description in the following manner:
     * - microSD Card Slot
       - Useful for developing applications that access microSD card for data storage and retrieval.
     * - LCD 
-      - Support for mounting and interfacing a 3.2” SPI (standard 4-wire Serial Peripheral Interface) LCD, as shown on figure :ref:`get-started-esp-wrover-kit-v4.1-board-back`.
+      - Support for mounting and interfacing a 3.2” SPI (standard 4-wire Serial Peripheral Interface) LCD, as shown in figure :ref:`get-started-esp-wrover-kit-v4.1-board-back`.
 
 
 
@@ -164,11 +164,11 @@ There are three jumper blocks available to set up the board functionality. The m
 Allocation of ESP32 Pins
 ------------------------
 
-Some pins / terminals of ESP32 are allocated for use with the onboard or external hardware. If that hardware is not used, e.g., nothing is plugged into the Camera (JP4) header, then these GPIOs can be used for other purposes.
+Some pins or terminals of ESP32 are allocated for use with the onboard or external hardware. If that hardware is not used, e.g., nothing is plugged into the Camera (JP4) header, then these GPIOs can be used for other purposes.
 
 Some of the pins, such as GPIO0 or GPIO2, have multiple functions and some of them are shared among onboard and external peripheral devices. Certain combinations of peripherals cannot work together. For example, it is not possible to do JTAG debugging of an application that is using SD card, because several pins are shared by JTAG and the SD card slot.
 
-In other cases, peripherals can coexist under certain conditions. This is applicable to, for example, LCD screen and SD card that share only a single pin GPIO21. This pin is used to provide D/C (Data / Control) signal for the LCD as well as the Card Detect signal read from the SD card slot. If the card detect functionality is not essential, then it may be disabled by removing R167, so both LCD and SD may operate together.
+In other cases, peripherals can coexist under certain conditions. This is applicable to, for example, LCD screen and SD card that share only a single pin GPIO21. This pin is used to provide D/C (Data/Control) signal for the LCD as well as the Card Detect signal read from the SD card slot. If the card detect functionality is not essential, then it may be disabled by removing R167, so both LCD and SD may operate together.
 
 For more details on which pins are shared among which peripherals, please refer to the table in the next section.
 
@@ -269,7 +269,7 @@ Legend:
 
 .. note::
 
-    Since GPIO32 and GPIO33 are connected to the oscillator by default, they are not connected to the JP1 I/O connector to maintain signal integrity. This allocation may be changed from the oscillator to JP1 by desoldering the zero-ohm resistors from positions R11 / R23 and re-soldering them to positions R12 / R24.
+    Since GPIO32 and GPIO33 are connected to the oscillator by default, they are not connected to the JP1 I/O connector to maintain signal integrity. This allocation may be changed from the oscillator to JP1 by desoldering the zero-ohm resistors from positions R11 or R23 and re-soldering them to positions R12 or R24.
 
 
 .. _get-started-esp-wrover-kit-v4.1-spi-flash-header:
@@ -415,7 +415,7 @@ Power up from USB port    Enable UART communication
 
 Do not install any other jumpers.
 
-Turn the **Power Switch** to ON, the **5V Power On LED** should light up.
+Turn the **Power Switch** to ON, and the **5V Power On LED** should light up.
 
 Now to Development
 ^^^^^^^^^^^^^^^^^^

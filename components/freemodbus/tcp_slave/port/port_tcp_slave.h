@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  *
- * SPDX-FileContributor: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
  */
 /*
  * FreeModbus Libary: ESP32 TCP Port
@@ -76,7 +76,7 @@ typedef struct {
 
 typedef struct {
     TaskHandle_t xMbTcpTaskHandle;      /*!< Server task handle */
-    xQueueHandle xRespQueueHandle;      /*!< Response queue handle */
+    QueueHandle_t xRespQueueHandle;      /*!< Response queue handle */
     MbClientInfo_t* pxCurClientInfo;    /*!< Current client info */
     MbClientInfo_t** pxMbClientInfo;    /*!< Pointers to information about connected clients */
     USHORT usPort;                      /*!< TCP/UDP port number */
@@ -100,13 +100,6 @@ typedef struct {
  * @return error code
  */
 void vMBTCPPortSlaveSetNetOpt(void* pvNetIf, eMBPortIpVer xIpVersion, eMBPortProto xProto, CHAR* pcBindAddr);
-
-/**
- * Resume TCP Slave processing task
- *
- * @return None
- */
-void vMBTCPPortSlaveStartServerTask(void);
 
 #ifdef __cplusplus
 PR_END_EXTERN_C

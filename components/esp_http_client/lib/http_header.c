@@ -10,6 +10,7 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include "esp_log.h"
 #include "esp_check.h"
 #include "http_header.h"

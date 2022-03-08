@@ -1,7 +1,7 @@
 /*
  * BLE Combined Advertising and Scanning Example.
  *
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -439,7 +439,7 @@ void app_main(void)
             }
             ESP_LOGI(TAG, "BLE Advertise, cmd_sent: %d", cmd_cnt);
         }
-        vTaskDelay(1000 / portTICK_RATE_MS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
     xTaskCreatePinnedToCore(&hci_evt_process, "hci_evt_process", 2048, NULL, 6, NULL, 0);
 }

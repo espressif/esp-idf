@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,6 @@
 #include "soc/system_reg.h"
 #include "soc/syscon_reg.h"
 #include "regi2c_ctrl.h"
-#include "soc_log.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "i2c_pmu.h"

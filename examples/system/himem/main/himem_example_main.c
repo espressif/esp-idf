@@ -17,7 +17,7 @@
 #include "esp_heap_caps.h"
 #include "esp32/spiram.h"
 #include "sdkconfig.h"
-#include "esp32/himem.h"
+#include "esp_himem.h"
 
 
 //Fill memory with pseudo-random data generated from the given seed.

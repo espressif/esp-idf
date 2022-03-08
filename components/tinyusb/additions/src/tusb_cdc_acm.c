@@ -22,7 +22,7 @@ typedef struct {
     bool initialized;
     size_t rx_unread_buf_sz;
     RingbufHandle_t rx_unread_buf;
-    xSemaphoreHandle ringbuf_read_mux;
+    SemaphoreHandle_t ringbuf_read_mux;
     uint8_t *rx_tfbuf;
     tusb_cdcacm_callback_t callback_rx;
     tusb_cdcacm_callback_t callback_rx_wanted_char;

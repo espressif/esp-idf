@@ -12,6 +12,7 @@
 #include "soc/rtc.h"
 #include "soc/soc_caps.h"
 #include "esp_rom_caps.h"
+#include "esp_rom_sys.h"
 #include "esp_private/esp_clk.h"
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -23,7 +24,6 @@
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/rtc.h"
 #include "esp32s3/rtc.h"
-#include "esp32s3/rom/ets_sys.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/rtc.h"
 #include "esp32c3/rtc.h"
@@ -53,7 +53,7 @@ static RTC_DATA_ATTR uint64_t s_esp_rtc_time_us = 0, s_rtc_last_ticks = 0;
 inline static int IRAM_ATTR s_get_cpu_freq_mhz(void)
 {
 #if ESP_ROM_GET_CLK_FREQ
-    return ets_get_cpu_frequency();
+    return esp_rom_get_cpu_ticks_per_us();
 #else
     return g_ticks_per_us_pro;
 #endif

@@ -1,4 +1,11 @@
 /*
+ * SPDX-FileCopyrightText: 2020 Amazon.com, Inc. or its affiliates
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ */
+/*
  * FreeRTOS Kernel V10.4.3
  * Copyright (C) 2019 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
@@ -35,15 +42,15 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include "soc/spinlock.h"
+#include "spinlock.h"
 #include "soc/interrupt_core0_reg.h"
+#include "esp_macro.h"
 #include "esp_attr.h"
 #include "esp_rom_sys.h"
 #include "esp_timer.h"              /* required for FreeRTOS run time stats */
 #include "esp_heap_caps.h"
 #include "esp_system.h"             /* required by esp_get_...() functions in portable.h. [refactor-todo] Update portable.h */
 #include "esp_newlib.h"
-#include "portbenchmark.h"
 
 /* [refactor-todo] These includes are not directly used in this file. They are kept into to prevent a breaking change. Remove these. */
 #include <limits.h>
@@ -51,8 +58,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
 
 /* --------------------------------------------------- Port Types ------------------------------------------------------
  * - Port specific types.
@@ -268,9 +273,6 @@ static inline bool IRAM_ATTR xPortCanYield(void);
 
 // ------------------- Hook Functions ----------------------
 
-extern void esp_vApplicationIdleHook(void);
-extern void esp_vApplicationTickHook(void);
-
 /**
  * @brief Hook function called on entry to tickless idle
  *
@@ -377,7 +379,24 @@ static inline BaseType_t IRAM_ATTR xPortGetCoreID(void)
 // ---------------------- Yielding -------------------------
 
 #define portYIELD() vPortYield()
-#define portYIELD_FROM_ISR() vPortYieldFromISR()
+#define portYIELD_FROM_ISR_NO_ARG() vPortYieldFromISR()
+#define portYIELD_FROM_ISR_ARG(xHigherPriorityTaskWoken) ({ \
+    if (xHigherPriorityTaskWoken == pdTRUE) { \
+        vPortYieldFromISR(); \
+    } \
+})
+/**
+ * @note    The macro below could be used when passing a single argument, or without any argument,
+ *          it was developed to support both usages of portYIELD inside of an ISR. Any other usage form
+ *          might result in undesired behavior
+ */
+#if defined(__cplusplus) && (__cplusplus >  201703L)
+#define portYIELD_FROM_ISR(...) CHOOSE_MACRO_VA_ARG(_0 __VA_OPT__(,) ##__VA_ARGS__, portYIELD_FROM_ISR_ARG, portYIELD_FROM_ISR_NO_ARG)(__VA_ARGS__)
+#else
+#define portYIELD_FROM_ISR(...) CHOOSE_MACRO_VA_ARG(_0, ##__VA_ARGS__, portYIELD_FROM_ISR_ARG, portYIELD_FROM_ISR_NO_ARG)(__VA_ARGS__)
+#endif
+
+
 #define portEND_SWITCHING_ISR(xSwitchRequired) if(xSwitchRequired) vPortYield()
 /* Yielding within an API call (when interrupts are off), means the yield should be delayed
    until interrupts are re-enabled.
@@ -389,10 +408,6 @@ static inline BaseType_t IRAM_ATTR xPortGetCoreID(void)
 
 // ------------------- Hook Functions ----------------------
 
-#ifndef CONFIG_FREERTOS_LEGACY_HOOKS
-#define vApplicationIdleHook    esp_vApplicationIdleHook
-#define vApplicationTickHook    esp_vApplicationTickHook
-#endif /* !CONFIG_FREERTOS_LEGACY_HOOKS */
 #define portSUPPRESS_TICKS_AND_SLEEP(idleTime) vApplicationSleep(idleTime)
 
 // ------------------- Run Time Stats ----------------------
@@ -476,7 +491,22 @@ bool xPortcheckValidStackMem(const void *ptr);
 #define portVALID_TCB_MEM(ptr) xPortCheckValidTCBMem(ptr)
 #define portVALID_STACK_MEM(ptr) xPortcheckValidStackMem(ptr)
 
+// --------------------- App-Trace -------------------------
 
+#if CONFIG_APPTRACE_SV_ENABLE
+extern int xPortSwitchFlag;
+#define os_task_switch_is_pended(_cpu_) (xPortSwitchFlag)
+#else
+#define os_task_switch_is_pended(_cpu_) (false)
+#endif
+
+// --------------------- Debugging -------------------------
+
+#if CONFIG_FREERTOS_ASSERT_ON_UNTESTED_FUNCTION
+#define UNTESTED_FUNCTION() { esp_rom_printf("Untested FreeRTOS function %s\r\n", __FUNCTION__); configASSERT(false); } while(0)
+#else
+#define UNTESTED_FUNCTION()
+#endif
 
 /* ---------------------------------------------------- Deprecate ------------------------------------------------------
  * - Pull in header containing deprecated macros here

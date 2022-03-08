@@ -9,6 +9,13 @@ from typing import List, Optional, Tuple
 
 from construct import Int16ul
 
+FAT12_MAX_CLUSTERS: int = 4085
+FAT16_MAX_CLUSTERS: int = 65525
+FAT12: int = 12
+FAT16: int = 16
+FAT32: int = 32
+BYTES_PER_DIRECTORY_ENTRY = 32
+
 
 def crc32(input_values: List[int], crc: int) -> int:
     """
@@ -16,6 +23,22 @@ def crc32(input_values: List[int], crc: int) -> int:
     crc32   0x104C11DB7 True        4294967295 (UINT32_MAX)     0xFFFFFFFF
     """
     return binascii.crc32(bytearray(input_values), crc)
+
+
+def number_of_clusters(number_of_sectors: int, sectors_per_cluster: int) -> int:
+    return number_of_sectors // sectors_per_cluster
+
+
+def get_non_data_sectors_cnt(reserved_sectors_cnt: int, sectors_per_fat_cnt: int, root_dir_sectors_cnt: int) -> int:
+    return reserved_sectors_cnt + sectors_per_fat_cnt + root_dir_sectors_cnt
+
+
+def get_fatfs_type(clusters_count: int) -> int:
+    if clusters_count < FAT12_MAX_CLUSTERS:
+        return FAT12
+    if clusters_count < FAT16_MAX_CLUSTERS:
+        return FAT16
+    return FAT32
 
 
 def required_clusters_count(cluster_size: int, content: bytes) -> int:
@@ -88,8 +111,35 @@ def get_args_for_partition_generator(desc: str) -> argparse.Namespace:
                         help='Size of the partition in bytes')
     parser.add_argument('--sector_size',
                         default=4096,
+                        type=int,
+                        choices=[512, 1024, 2048, 4096],
                         help='Size of the partition in bytes')
+    parser.add_argument('--sectors_per_cluster',
+                        default=1,
+                        type=int,
+                        choices=[1, 2, 4, 8, 16, 32, 64, 128],
+                        help='Number of sectors per cluster')
+    parser.add_argument('--root_entry_count',
+                        default=512,
+                        help='Number of entries in the root directory')
+    parser.add_argument('--fat_type',
+                        default=0,
+                        type=int,
+                        choices=[12, 16, 0],
+                        help="""
+                        Type of fat. Select 12 for fat12, 16 for fat16. Don't set, or set to 0 for automatic
+                        calculation using cluster size and partition size.
+                        """)
+
     args = parser.parse_args()
+    if args.fat_type == 0:
+        args.fat_type = None
+    args.partition_size = int(str(args.partition_size), 0)
     if not os.path.isdir(args.input_directory):
         raise NotADirectoryError(f'The target directory `{args.input_directory}` does not exist!')
     return args
+
+
+def read_filesystem(path: str) -> bytearray:
+    with open(path, 'rb') as fs_file:
+        return bytearray(fs_file.read())

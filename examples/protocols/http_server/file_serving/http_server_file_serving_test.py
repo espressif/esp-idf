@@ -1,18 +1,7 @@
 #!/usr/bin/env python
 #
-# Copyright 2021 Espressif Systems (Shanghai) CO LTD
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
 
 import hashlib
 import http.client
@@ -26,9 +15,9 @@ from tiny_test_fw import Utility
 
 
 @ttfw_idf.idf_example_test(env_tag='Example_WIFI_Protocols')
-def test_examples_protocol_http_server_file_serving(env, extra_data):  # type: (tiny_test_fw.Env.Env, None) -> None # pylint: disable=unused-argument
+def test_examples_protocol_http_server_file_serving(env, _):  # type: (tiny_test_fw.Env.Env, None) -> None
     # Acquire DUT
-    dut1 = env.get_dut('http file_serving', 'examples/protocols/http_server/file_serving', dut_class=ttfw_idf.ESP32DUT)
+    dut1 = env.get_dut('http file_serving', 'examples/protocols/http_server/file_serving', dut_class=ttfw_idf.ESP32DUT, app_config_name='spiffs')
 
     # Get binary file
     binary_file = os.path.join(dut1.app.binary_path, 'file_server.bin')
@@ -41,11 +30,11 @@ def test_examples_protocol_http_server_file_serving(env, extra_data):  # type: (
     Utility.console_log('Starting http file serving simple test app')
     dut1.start_app()
 
+    dut1.expect('Initializing SPIFFS', timeout=30)
     # Parse IP address of STA
     Utility.console_log('Waiting to connect with AP')
     got_ip = dut1.expect(re.compile(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)'), timeout=30)[0]
     # Expected logs
-    dut1.expect('Initializing SPIFFS', timeout=30)
     got_port = dut1.expect(re.compile(r"Starting HTTP Server on port: '(\d+)'"), timeout=30)[0]
     Utility.console_log('Got IP   : ' + got_ip)
     Utility.console_log('Got Port : ' + got_port)
@@ -91,7 +80,7 @@ def test_examples_protocol_http_server_file_serving(env, extra_data):  # type: (
     Utility.console_log("\nTesting the upload of \"already existing\" file on the file server")
     client.postreq(conn, '/upload/' + str(upload_file_name), data=None)
     try:
-        dut1.expect('File already exists : /spiffs/' + str(upload_file_name), timeout=10)
+        dut1.expect('File already exists : /data/' + str(upload_file_name), timeout=10)
     except Exception:
         Utility.console_log('Failed the test for uploading existing file on the file server')
         raise
@@ -136,7 +125,7 @@ def test_examples_protocol_http_server_file_serving(env, extra_data):  # type: (
     download_data = client.getreq(conn, '/' + str(upload_file_name))
 
     try:
-        dut1.expect('Failed to stat file : /spiffs/' + str(upload_file_name), timeout=10)
+        dut1.expect('Failed to stat file : /data/' + str(upload_file_name), timeout=10)
     except Exception:
         Utility.console_log('Failed the test to download non existing file from the file server')
         raise
@@ -144,4 +133,4 @@ def test_examples_protocol_http_server_file_serving(env, extra_data):  # type: (
 
 
 if __name__ == '__main__':
-    test_examples_protocol_http_server_file_serving()  # pylint: disable=no-value-for-parameter
+    test_examples_protocol_http_server_file_serving()

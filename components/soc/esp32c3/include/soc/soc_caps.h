@@ -42,6 +42,7 @@
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   3
 #define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS   1
+#define SOC_EFUSE_KEY_PURPOSE_FIELD         1
 #define SOC_ICACHE_ACCESS_RODATA_SUPPORTED  1
 #define SOC_RTC_FAST_MEM_SUPPORTED        1
 #define SOC_RTC_SLOW_MEM_SUPPORTED        0
@@ -144,6 +145,7 @@
 #define SOC_I2C_NUM                 (1U)
 
 #define SOC_I2C_FIFO_LEN            (32) /*!< I2C hardware FIFO depth */
+#define SOC_I2C_SUPPORT_SLAVE       (1)
 
 #define SOC_I2C_SUPPORT_HW_FSM_RST  (1)
 #define SOC_I2C_SUPPORT_HW_CLR_BUS  (1)
@@ -289,6 +291,7 @@
 
 #define SOC_UART_SUPPORT_RTC_CLK    (1)
 #define SOC_UART_SUPPORT_XTAL_CLK   (1)
+#define SOC_UART_SUPPORT_WAKEUP_INT (1)         /*!< Support UART wakeup interrupt */
 #define SOC_UART_REQUIRE_CORE_RESET (1)
 
 // UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
@@ -317,3 +320,7 @@
 #define SOC_PM_SUPPORT_WIFI_PD          (1)
 
 #define SOC_PM_SUPPORT_BT_PD            (1)
+
+/*-------------------------- Temperature Sensor CAPS -------------------------------------*/
+#define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)
+#define SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL                (1)

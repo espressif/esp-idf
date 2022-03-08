@@ -6,16 +6,16 @@
 .. toctree::
    :maxdepth: 1
 
-   FAT 文件系统 <fatfs>
-   量产程序 <mass_mfg.rst>
-   非易失性存储库 <nvs_flash>
-   NVS 分区生成程序 <nvs_partition_gen.rst>
-   SD/SDIO/MMC 驱动程序 <sdmmc>
-   SPI Flash API <spi_flash>
-   SPIFFS 文件系统 <spiffs>
-   虚拟文件系统组件 <vfs>
-   磨损均衡 API <wear-levelling>
+   fatfs
+   mass_mfg.rst
+   nvs_flash
+   nvs_partition_gen.rst
+   sdmmc
+   spi_flash
+   spiffs
+   vfs
+   wear-levelling
 
 
 
-此部分 API 代码示例详见 ESP-IDF 项下 :example:`storage` 目录。
+此部分 API 代码示例存放在 ESP-IDF 示例项目的 :example:`storage` 目录下。

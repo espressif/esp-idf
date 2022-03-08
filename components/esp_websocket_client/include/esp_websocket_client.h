@@ -92,6 +92,8 @@ typedef struct {
     int                         keep_alive_idle;            /*!< Keep-alive idle time. Default is 5 (second) */
     int                         keep_alive_interval;        /*!< Keep-alive interval time. Default is 5 (second) */
     int                         keep_alive_count;           /*!< Keep-alive packet retry send count. Default is 3 counts */
+    int                         reconnect_timeout_ms;       /*!< Reconnect after this value in miliseconds if disable_auto_reconnect is not enabled (defaults to 10s) */
+    int                         network_timeout_ms;         /*!< Abort network operation if it is not completed after this value, in milliseconds (defaults to 10s) */
     size_t                      ping_interval_sec;          /*!< Websocket ping interval, defaults to 10 seconds if not set */
     struct ifreq                *if_name;                   /*!< The name of interface for data to go through. Use the default interface without setting */
 } esp_websocket_client_config_t;

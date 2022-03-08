@@ -20,7 +20,6 @@ static const char *TAG = "esp32_eth_test";
 #define ETH_STOP_BIT BIT(1)
 #define ETH_CONNECT_BIT BIT(2)
 #define ETH_GOT_IP_BIT BIT(3)
-#define ETH_DOWNLOAD_END_BIT BIT(4)
 
 #define ETH_START_TIMEOUT_MS (10000)
 #define ETH_CONNECT_TIMEOUT_MS (40000)
@@ -98,7 +97,8 @@ TEST_CASE("esp32 ethernet io test", "[ethernet][test_env=UT_T2_Ethernet]")
 {
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
     mac_config.flags = ETH_MAC_FLAG_PIN_TO_CORE; // pin to core
-    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
+    eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
     // auto detect PHY address
     phy_config.phy_addr = ESP_ETH_PHY_ADDR_AUTO;
@@ -132,7 +132,8 @@ TEST_CASE("esp32 ethernet speed/duplex/autonegotiation", "[ethernet][test_env=UT
     TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
     mac_config.flags = ETH_MAC_FLAG_PIN_TO_CORE; // pin to core
-    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
+    eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
     // auto detect PHY address
     phy_config.phy_addr = ESP_ETH_PHY_ADDR_AUTO;
@@ -311,7 +312,8 @@ TEST_CASE("esp32 ethernet event test", "[ethernet][test_env=UT_T2_Ethernet]")
     TEST_ESP_OK(esp_event_loop_create_default());
     TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
-    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
+    eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
     esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);
     esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
@@ -351,7 +353,8 @@ TEST_CASE("esp32 ethernet dhcp test", "[ethernet][test_env=UT_T2_Ethernet]")
     esp_netif_t *eth_netif = esp_netif_new(&netif_cfg);
 
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
-    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
+    eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
     esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);
     esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
@@ -398,7 +401,8 @@ TEST_CASE("esp32 ethernet start/stop stress test", "[ethernet][test_env=UT_T2_Et
     esp_netif_t *eth_netif = esp_netif_new(&netif_cfg);
 
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
-    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
+    eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
     esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);
     esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
@@ -468,9 +472,8 @@ esp_err_t http_event_handle(esp_http_client_event_t *evt)
     return ESP_OK;
 }
 
-static void eth_download_task(void *param)
+static void eth_start_download(void)
 {
-    EventGroupHandle_t eth_event_group = (EventGroupHandle_t)param;
     esp_rom_md5_init(&md5_context);
     esp_http_client_config_t config = {
         .url = "https://dl.espressif.com/dl/misc/2MB.bin",
@@ -483,8 +486,6 @@ static void eth_download_task(void *param)
     TEST_ESP_OK(esp_http_client_perform(client));
     TEST_ESP_OK(esp_http_client_cleanup(client));
     esp_rom_md5_final(digest, &md5_context);
-    xEventGroupSetBits(eth_event_group, ETH_DOWNLOAD_END_BIT);
-    vTaskDelete(NULL);
 }
 
 TEST_CASE("esp32 ethernet download test", "[ethernet][test_env=UT_T2_Ethernet][timeout=240]")
@@ -499,7 +500,8 @@ TEST_CASE("esp32 ethernet download test", "[ethernet][test_env=UT_T2_Ethernet][t
     esp_netif_t *eth_netif = esp_netif_new(&netif_cfg);
 
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
-    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
+    eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
+    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
     esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);
     esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
@@ -518,10 +520,7 @@ TEST_CASE("esp32 ethernet download test", "[ethernet][test_env=UT_T2_Ethernet][t
     bits = xEventGroupWaitBits(eth_event_group, ETH_GOT_IP_BIT, true, true, pdMS_TO_TICKS(ETH_GET_IP_TIMEOUT_MS));
     TEST_ASSERT((bits & ETH_GOT_IP_BIT) == ETH_GOT_IP_BIT);
 
-    xTaskCreate(eth_download_task, "eth_dl", 4096, eth_event_group, tskIDLE_PRIORITY + 2, NULL);
-    /* wait for download end */
-    bits = xEventGroupWaitBits(eth_event_group, ETH_DOWNLOAD_END_BIT, true, true, pdMS_TO_TICKS(ETH_DOWNLOAD_END_TIMEOUT_MS));
-    TEST_ASSERT_EQUAL(ETH_DOWNLOAD_END_BIT, bits & ETH_DOWNLOAD_END_BIT);
+    eth_start_download();
     // check MD5 digest
     // MD5: df61db8564d145bbe67112aa8ecdccd8
     uint8_t expect_digest[16] = {223, 97, 219, 133, 100, 209, 69, 187, 230, 113, 18, 170, 142, 205, 204, 216};

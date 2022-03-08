@@ -104,10 +104,15 @@ Any mirror server can be used provided the URL matches the ``github.com`` downlo
 
 * ``check``: For each tool, checks whether the tool is available in the system path and in ``IDF_TOOLS_PATH``.
 
-* ``install-python-env``: Create a Python virtual environment in the ``${IDF_TOOLS_PATH}/python_env`` directory and install there the required Python packages. An optional ``--features`` argument allows one to specify a comma-separated list of features. For each feature a requirements file must exist. For example, feature ``XY`` is a valid feature if ``${IDF_PATH}/requirements.XY.txt`` is an existing file with a list of Python packages to be installed. There is one mandatory ``core`` feature ensuring core functionality of ESP-IDF (build, flash, monitor, debug in console). There can be an arbitrary number of optional features. The selected list of features is stored in ``idf-env.json``. The requirement files contain a list of the desired Python packages to be installed and ``espidf.constraints.*.txt`` downloaded from https://dl.espressif.com and stored in ``${IDF_TOOLS_PATH}`` the package version requirements for a given ESP-IDF version.
+* ``install-python-env``: Create a Python virtual environment in the ``${IDF_TOOLS_PATH}/python_env`` directory and install there the required Python packages. An optional ``--features`` argument allows one to specify a comma-separated list of features. For each feature a requirements file must exist. For example, feature ``XY`` is a valid feature if ``${IDF_PATH}/tools/requirements/requirements.XY.txt`` is an existing file with a list of Python packages to be installed. There is one mandatory ``core`` feature ensuring core functionality of ESP-IDF (build, flash, monitor, debug in console). There can be an arbitrary number of optional features. The selected list of features is stored in ``idf-env.json``. The requirement files contain a list of the desired Python packages to be installed and ``espidf.constraints.*.txt`` downloaded from https://dl.espressif.com and stored in ``${IDF_TOOLS_PATH}`` the package version requirements for a given ESP-IDF version.
 
-* ``check-python-dependencies``: Checks if all required Python packages are installed. Packages from ``${IDF_PATH}/requirements.*.txt`` files selected by the feature list of ``idf-env.json`` are checked with the package versions specified in the ``espidf.constraints.*.txt`` file. The constraint file will be downloaded from https://dl.espressif.com if this step hasn't been done already in the last day.
+* ``check-python-dependencies``: Checks if all required Python packages are installed. Packages from ``${IDF_PATH}/tools/requirements/requirements.*.txt`` files selected by the feature list of ``idf-env.json`` are checked with the package versions specified in the ``espidf.constraints.*.txt`` file. The constraint file will be downloaded from https://dl.espressif.com if this step hasn't been done already in the last day.
 
+* ``uninstall``: Print and remove tools, that are currently not used by active ESP-IDF version.
+
+  - ``--dry-run`` Print installed unused tools.
+  - ``--remove-archives`` Additionally remove all older versions of previously downloaded installation packages.
+  
 .. _idf-tools-install:
 
 Install scripts

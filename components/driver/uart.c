@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,11 +47,20 @@ static const char *UART_TAG = "uart";
 #define UART_PATTERN_DET_QLEN_DEFAULT   (10)
 #define UART_MIN_WAKEUP_THRESH          (UART_LL_MIN_WAKEUP_THRESH)
 
+#if SOC_UART_SUPPORT_WAKEUP_INT
+#define UART_INTR_CONFIG_FLAG ((UART_INTR_RXFIFO_FULL) \
+                            | (UART_INTR_RXFIFO_TOUT) \
+                            | (UART_INTR_RXFIFO_OVF) \
+                            | (UART_INTR_BRK_DET) \
+                            | (UART_INTR_PARITY_ERR)) \
+                            | (UART_INTR_WAKEUP)
+#else
 #define UART_INTR_CONFIG_FLAG ((UART_INTR_RXFIFO_FULL) \
                             | (UART_INTR_RXFIFO_TOUT) \
                             | (UART_INTR_RXFIFO_OVF) \
                             | (UART_INTR_BRK_DET) \
                             | (UART_INTR_PARITY_ERR))
+#endif
 
 #define UART_ENTER_CRITICAL_ISR(mux)    portENTER_CRITICAL_ISR(mux)
 #define UART_EXIT_CRITICAL_ISR(mux)     portEXIT_CRITICAL_ISR(mux)
@@ -190,9 +199,8 @@ static void uart_module_enable(uart_port_t uart_num)
     if (uart_context[uart_num].hw_enabled != true) {
         periph_module_enable(uart_periph_signal[uart_num].module);
         if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM) {
-            // Workaround for ESP32C3: enable core reset
-            // before enabling uart module clock
-            // to prevent uart output garbage value.
+            // Workaround for ESP32C3/S3: enable core reset before enabling uart module clock to prevent uart output
+            // garbage value.
 #if SOC_UART_REQUIRE_CORE_RESET
             uart_hal_set_reset_core(&(uart_context[uart_num].hal), true);
             periph_module_reset(uart_periph_signal[uart_num].module);
@@ -1058,7 +1066,14 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                 uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_TX_DONE);
                 xSemaphoreGiveFromISR(p_uart_obj[uart_num]->tx_done_sem, &HPTaskAwoken);
             }
-        } else {
+        }
+    #if SOC_UART_SUPPORT_WAKEUP_INT
+        else if (uart_intr_status & UART_INTR_WAKEUP) {
+            uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_WAKEUP);
+            uart_event.type = UART_WAKEUP;
+        }
+    #endif
+        else {
             uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), uart_intr_status); /*simply clear all other intr status*/
             uart_event.type = UART_EVENT_MAX;
         }
@@ -1082,9 +1097,9 @@ esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait)
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_FAIL, UART_TAG, "uart_num error");
     ESP_RETURN_ON_FALSE((p_uart_obj[uart_num]), ESP_FAIL, UART_TAG, "uart driver error");
     BaseType_t res;
-    portTickType ticks_start = xTaskGetTickCount();
+    TickType_t ticks_start = xTaskGetTickCount();
     //Take tx_mux
-    res = xSemaphoreTake(p_uart_obj[uart_num]->tx_mux, (portTickType)ticks_to_wait);
+    res = xSemaphoreTake(p_uart_obj[uart_num]->tx_mux, (TickType_t)ticks_to_wait);
     if (res == pdFALSE) {
         return ESP_ERR_TIMEOUT;
     }
@@ -1104,7 +1119,7 @@ esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait)
         ticks_to_wait = ticks_to_wait - (ticks_end - ticks_start);
     }
     //take 2nd tx_done_sem, wait given from ISR
-    res = xSemaphoreTake(p_uart_obj[uart_num]->tx_done_sem, (portTickType)ticks_to_wait);
+    res = xSemaphoreTake(p_uart_obj[uart_num]->tx_done_sem, (TickType_t)ticks_to_wait);
     if (res == pdFALSE) {
         // The TX_DONE interrupt will be disabled in ISR
         xSemaphoreGive(p_uart_obj[uart_num]->tx_mux);
@@ -1123,7 +1138,7 @@ int uart_tx_chars(uart_port_t uart_num, const char *buffer, uint32_t len)
         return 0;
     }
     int tx_len = 0;
-    xSemaphoreTake(p_uart_obj[uart_num]->tx_mux, (portTickType)portMAX_DELAY);
+    xSemaphoreTake(p_uart_obj[uart_num]->tx_mux, (TickType_t)portMAX_DELAY);
     if (UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)) {
         UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
         uart_hal_set_rts(&(uart_context[uart_num].hal), 0);
@@ -1143,7 +1158,7 @@ static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool 
     size_t original_size = size;
 
     //lock for uart_tx
-    xSemaphoreTake(p_uart_obj[uart_num]->tx_mux, (portTickType)portMAX_DELAY);
+    xSemaphoreTake(p_uart_obj[uart_num]->tx_mux, (TickType_t)portMAX_DELAY);
     p_uart_obj[uart_num]->coll_det_flg = false;
     if (p_uart_obj[uart_num]->tx_buf_size > 0) {
         size_t max_size = xRingbufferGetMaxItemSize(p_uart_obj[uart_num]->tx_ring_buf);
@@ -1167,7 +1182,7 @@ static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool 
     } else {
         while (size) {
             //semaphore for tx_fifo available
-            if (pdTRUE == xSemaphoreTake(p_uart_obj[uart_num]->tx_fifo_sem, (portTickType)portMAX_DELAY)) {
+            if (pdTRUE == xSemaphoreTake(p_uart_obj[uart_num]->tx_fifo_sem, (TickType_t)portMAX_DELAY)) {
                 uint32_t sent = 0;
                 if (UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)) {
                     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
@@ -1190,7 +1205,7 @@ static int uart_tx_all(uart_port_t uart_num, const char *src, size_t size, bool 
             uart_hal_tx_break(&(uart_context[uart_num].hal), brk_len);
             uart_hal_ena_intr_mask(&(uart_context[uart_num].hal), UART_INTR_TX_BRK_DONE);
             UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
-            xSemaphoreTake(p_uart_obj[uart_num]->tx_brk_sem, (portTickType)portMAX_DELAY);
+            xSemaphoreTake(p_uart_obj[uart_num]->tx_brk_sem, (TickType_t)portMAX_DELAY);
         }
         xSemaphoreGive(p_uart_obj[uart_num]->tx_fifo_sem);
     }
@@ -1243,12 +1258,12 @@ int uart_read_bytes(uart_port_t uart_num, void *buf, uint32_t length, TickType_t
     size_t size;
     size_t copy_len = 0;
     int len_tmp;
-    if (xSemaphoreTake(p_uart_obj[uart_num]->rx_mux, (portTickType)ticks_to_wait) != pdTRUE) {
+    if (xSemaphoreTake(p_uart_obj[uart_num]->rx_mux, (TickType_t)ticks_to_wait) != pdTRUE) {
         return -1;
     }
     while (length) {
         if (p_uart_obj[uart_num]->rx_cur_remain == 0) {
-            data = (uint8_t *) xRingbufferReceive(p_uart_obj[uart_num]->rx_ring_buf, &size, (portTickType) ticks_to_wait);
+            data = (uint8_t *) xRingbufferReceive(p_uart_obj[uart_num]->rx_ring_buf, &size, (TickType_t) ticks_to_wait);
             if (data) {
                 p_uart_obj[uart_num]->rx_head_ptr = data;
                 p_uart_obj[uart_num]->rx_ptr = data;
@@ -1314,7 +1329,7 @@ esp_err_t uart_flush_input(uart_port_t uart_num)
     size_t size;
 
     //rx sem protect the ring buffer read related functions
-    xSemaphoreTake(p_uart->rx_mux, (portTickType)portMAX_DELAY);
+    xSemaphoreTake(p_uart->rx_mux, (TickType_t)portMAX_DELAY);
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_disable_intr_mask(&(uart_context[uart_num].hal), UART_INTR_RXFIFO_FULL | UART_INTR_RXFIFO_TOUT);
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
@@ -1329,7 +1344,7 @@ esp_err_t uart_flush_input(uart_port_t uart_num)
             p_uart->rx_cur_remain = 0;
             p_uart->rx_head_ptr = NULL;
         }
-        data = (uint8_t*) xRingbufferReceive(p_uart->rx_ring_buf, &size, (portTickType) 0);
+        data = (uint8_t*) xRingbufferReceive(p_uart->rx_ring_buf, &size, (TickType_t) 0);
         if(data == NULL) {
             bool error = false;
             UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));

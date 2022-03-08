@@ -3,7 +3,7 @@ I2C 驱动程序
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_I2C_NUM:default="2", esp32c3="1", esp32h2="1", esp328684="1"}
+{IDF_TARGET_I2C_NUM:default="2", esp32c3="1", esp32h2="1", esp32c2="1"}
 
 概述
 ---------

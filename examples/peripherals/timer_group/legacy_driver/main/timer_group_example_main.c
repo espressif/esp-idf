@@ -27,7 +27,7 @@ typedef struct {
  * @brief Timer user data, will be pass to timer alarm callback
  */
 typedef struct {
-    xQueueHandle user_queue;
+    QueueHandle_t user_queue;
     int timer_group;
     int timer_idx;
     int alarm_value;

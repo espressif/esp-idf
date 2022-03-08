@@ -44,7 +44,7 @@ On top of it the driver implements:
 - Customization of USB descriptors
 - Serial device support
 - Redirecting of standard streams through the Serial device
-- Encapsulated driver's task servicing the TinyuSB
+- Encapsulated driver's task servicing the TinyUSB
 
 
 

@@ -12,7 +12,7 @@ WAITING_FOR_GPIO_STR = re.compile(r'Waiting for GPIO\d to go high...')
 WAKEUP_INTERVAL_MS = 2000
 
 
-@ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32', 'esp32c3'])
+@ttfw_idf.idf_example_test(env_tag='Example_GENERIC', target=['esp32', 'esp32s2', 'esp32c3', 'esp32s3'])
 def test_examples_system_light_sleep(env, extra_data):
     dut = env.get_dut('light_sleep_example', 'examples/system/light_sleep')
     dut.start_app()
@@ -32,7 +32,7 @@ def test_examples_system_light_sleep(env, extra_data):
     groups = dut.expect(EXIT_SLEEP_REGEX)
     print('Got second sleep period, wakeup from {}, slept for {}'.format(groups[0], groups[2]))
     # sleep time error should be less than 1ms
-    assert(groups[0] == 'timer' and int(groups[2]) == WAKEUP_INTERVAL_MS)
+    assert(groups[0] == 'timer' and int(groups[2]) >= WAKEUP_INTERVAL_MS - 1 and int(groups[2]) <= WAKEUP_INTERVAL_MS + 1)
 
     # this time we'll test gpio wakeup
     dut.expect(ENTERING_SLEEP_STR)
@@ -49,8 +49,17 @@ def test_examples_system_light_sleep(env, extra_data):
     dut.port_inst.setDTR(False)
     dut.expect(ENTERING_SLEEP_STR)
     print('Went to sleep again')
+
+    # Write 'U' to uart, 'U' in ascii is 0x55 which contains 8 edges in total
+    dut.write('U')
+    time.sleep(1)
     groups = dut.expect(EXIT_SLEEP_REGEX)
-    assert(groups[0] == 'timer' and int(groups[2]) == WAKEUP_INTERVAL_MS)
+    print('Got third sleep period, wakeup from {}, slept for {}'.format(groups[0], groups[2]))
+    assert(groups[0] == 'uart' and int(groups[2]) < WAKEUP_INTERVAL_MS)
+    print('Went to sleep again')
+
+    groups = dut.expect(EXIT_SLEEP_REGEX)
+    assert(groups[0] == 'timer' and int(groups[2]) >= WAKEUP_INTERVAL_MS - 1 and int(groups[2]) <= WAKEUP_INTERVAL_MS + 1)
     print('Woke up from timer again')
 
 

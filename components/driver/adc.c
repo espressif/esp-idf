@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -284,8 +284,10 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
     };
     adc_hal_context_config(&s_adc_digi_ctx->hal, &config);
 
-    //enable SARADC module clock
+    //enable ADC digital part
     periph_module_enable(PERIPH_SARADC_MODULE);
+    //reset ADC digital part
+    periph_module_reset(PERIPH_SARADC_MODULE);
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
     adc_hal_calibration_init(ADC_NUM_1);
@@ -479,7 +481,7 @@ esp_err_t adc_digi_read_bytes(uint8_t *buf, uint32_t length_max, uint32_t *out_l
     uint8_t *data = NULL;
     size_t size = 0;
 
-    ticks_to_wait = timeout_ms / portTICK_RATE_MS;
+    ticks_to_wait = timeout_ms / portTICK_PERIOD_MS;
     if (timeout_ms == ADC_MAX_DELAY) {
         ticks_to_wait = portMAX_DELAY;
     }

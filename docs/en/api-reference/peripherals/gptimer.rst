@@ -20,25 +20,19 @@ Functional Overview
 The following sections of this document cover the typical steps to install and operate a timer:
 
 -  `Resource Allocation <#resource-allocation>`__ - covers which parameters should be set up to get a timer handle and how to recycle the resources when GPTimer finishes working.
-
 -  `Set and Get count value <#set-and-get-count-value>`__ - covers how to force the timer counting from a start point and how to get the count value at anytime.
-
 -  `Set Up Alarm Action <#set-up-alarm-action>`__ - covers the parameters that should be set up to enable the alarm event.
-
 -  `Register Event Callbacks <#register-event-callbacks>`__ - covers how to hook user specific code to the alarm event callback function.
-
 -  `Start and Stop timer <#start-and-stop-timer>`__ - shows some typical use cases that start the timer with different alarm behavior.
-
 -  `Power Management <#power-management>`__ - describes how different source clock selections can affect power consumption.
-
 -  `IRAM Safe <#iram-safe>`__ - describes tips on how to make the timer interrupt and IO control functions work better along with a disabled cache.
-
 -  `Thread Safety <#thread-safety>`__ - lists which APIs are guaranteed to be thread safe by the driver.
+-  `Kconfig options <#kconfig-options>`__ - lists the supported Kconfig options that can be used to make a different effect on driver behavior.
 
 Resource Allocation
 ^^^^^^^^^^^^^^^^^^^
 
-Different ESP chip might have different number of independent timer groups, and within each group, there could also be several independent timers. Refer to the datasheet to find out how many hardware timers exist (usually described in the "General Purpose Timer" chapter).
+Different ESP chip might have different number of independent timer groups, and within each group, there could also be several independent timers. Please refer to the [`TRM <{IDF_TARGET_TRM_EN_URL}#timg>`__] to find out how many hardware timers exist.
 
 From driver's point of view, a GPTimer instance is represented by :cpp:type:`gptimer_handle_t`. The driver behind will manage all available hardware resources in a pool, so that users don't need to care about which timer and which group it belongs to.
 
@@ -94,7 +88,7 @@ To make the alarm configurations take effect, one should call :cpp:func:`gptimer
 
 .. note::
 
-    * If an alarm value is set and the timer has already crossed this value, the alarm will be triggered immediately.
+    If an alarm value is set and the timer has already crossed this value, the alarm will be triggered immediately.
 
 Register Event Callbacks
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -239,7 +233,7 @@ Alarm value can be updated dynamically inside the ISR handler callback, by chang
 Power Management
 ^^^^^^^^^^^^^^^^
 
-When power management is enabled (i.e. ``CONFIG_PM_ENABLE`` is on), the system will adjust the APB frequency before going into light sleep, thus potentially changing the period of a GPTimer's counting step and leading to inaccurate time keeping.
+When power management is enabled (i.e. :ref:`CONFIG_PM_ENABLE` is on), the system will adjust the APB frequency before going into light sleep, thus potentially changing the period of a GPTimer's counting step and leading to inaccurate time keeping.
 
 However, the driver can prevent the system from changing APB frequency by acquiring a power management lock of type :c:member:`ESP_PM_APB_FREQ_MAX`. Whenever the driver creates a GPTimer instance that has selected :c:member:`GPTIMER_CLK_SRC_APB` as its clock source, the driver will guarantee that the power management lock is acquired when the timer is started by :cpp:func:`gptimer_start`. Likewise, the driver releases the lock when :cpp:func:`gptimer_stop` is called for that timer. This requires that the :cpp:func:`gptimer_start` and :cpp:func:`gptimer_stop` should appear in pairs.
 
@@ -272,10 +266,17 @@ Thread Safety
 The factory function :cpp:func:`gptimer_new_timer` is guaranteed to be thread safe by the driver, which means, user can call it from different RTOS tasks without protection by extra locks.
 Other functions that take the :cpp:type:`gptimer_handle_t` as the first positional parameter, are not thread safe. The lifecycle of the gptimer handle is maintained by the user. So user should avoid calling them concurrently. If it has to, then one should introduce another mutex to prevent the gptimer handle being accessed concurrently.
 
+Kconfig Options
+^^^^^^^^^^^^^^^
+
+- :ref:`CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` controls where to place the GPTimer control functions (IRAM or Flash), see `IRAM Safe <#iram-safe>`__ for more information.
+- :ref:`CONFIG_GPTIMER_ISR_IRAM_SAFE` controls whether the default ISR handler can work when cache is disabled, see `IRAM Safe <#iram-safe>`__ for more information.
+- :ref:`CONFIG_GPTIMER_ENABLE_DEBUG_LOG` is used to enabled the debug log output. Enable this option will increase the firmware binary size.
+
 Application Examples
 --------------------
 
-Typical use cases of GPTimer are listed in the example: :example:`peripherals/timer_group/gptimer`.
+* Typical use cases of GPTimer are listed in the example: :example:`peripherals/timer_group/gptimer`.
 
 API Reference
 -------------

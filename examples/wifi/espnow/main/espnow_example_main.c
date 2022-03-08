@@ -24,7 +24,7 @@
 #include "esp_netif.h"
 #include "esp_wifi.h"
 #include "esp_log.h"
-#include "esp_system.h"
+#include "esp_mac.h"
 #include "esp_now.h"
 #include "esp_crc.h"
 #include "espnow_example.h"
@@ -33,7 +33,7 @@
 
 static const char *TAG = "espnow_example";
 
-static xQueueHandle s_example_espnow_queue;
+static QueueHandle_t s_example_espnow_queue;
 
 static uint8_t s_example_broadcast_mac[ESP_NOW_ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 static uint16_t s_example_espnow_seq[EXAMPLE_ESPNOW_DATA_MAX] = { 0, 0 };
@@ -153,7 +153,7 @@ static void example_espnow_task(void *pvParameter)
     bool is_broadcast = false;
     int ret;
 
-    vTaskDelay(5000 / portTICK_RATE_MS);
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
     ESP_LOGI(TAG, "Start sending broadcast data");
 
     /* Start sending broadcast ESPNOW data. */
@@ -188,7 +188,7 @@ static void example_espnow_task(void *pvParameter)
 
                 /* Delay a while before sending the next data. */
                 if (send_param->delay > 0) {
-                    vTaskDelay(send_param->delay/portTICK_RATE_MS);
+                    vTaskDelay(send_param->delay/portTICK_PERIOD_MS);
                 }
 
                 ESP_LOGI(TAG, "send data to "MACSTR"", MAC2STR(send_cb->mac_addr));

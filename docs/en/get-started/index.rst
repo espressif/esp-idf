@@ -2,13 +2,6 @@
 Get Started
 ***********
 
-{IDF_TARGET_CORE_NUM:default="2", esp32s2="1", esp32c3="1"}
-
-{IDF_TARGET_FEATURES:default="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32="WiFi/BT/BLE, silicon revision 1, 2MB external flash", esp32s2="WiFi, silicon revision 0, 2MB external flash", esp32s3="This is esp32s3 chip with 2 CPU core(s), WiFi/BLE, silicon revision 0, 2MB external flash", esp32c3="WiFi/BLE, silicon revision 0, 2MB external flash"}
-
-{IDF_TARGET_HEAP_SIZE:default="298968", esp32="298968", esp32s2="253900", esp32s3="390684", esp32c3="337332"}
-
-
 :link_to_translation:`zh_CN:[中文]`
 
 .. Please keep README.md in sync with these instructions.
@@ -62,41 +55,19 @@ Powered by 40 nm technology, {IDF_TARGET_NAME} provides a robust, highly integra
 
 Espressif provides basic hardware and software resources to help application developers realize their ideas using the {IDF_TARGET_NAME} series hardware. The software development framework by Espressif is intended for development of Internet-of-Things (IoT) applications with Wi-Fi, Bluetooth, power management and several other system features.
 
-
 What You Need
 =============
 
-Hardware:
+Hardware
+~~~~~~~~
 
-* An **{IDF_TARGET_NAME}** board
-* **USB cable** - USB A / micro USB B
-* **Computer** running Windows, Linux, or macOS
+* An **{IDF_TARGET_NAME}** board.
+* **USB cable** - USB A / micro USB B.
+* **Computer** running Windows, Linux, or macOS.
 
-Software:
+.. note:: Currently, some of the development boards are using USB Type C connectors. Be sure you have the correct cable to connect your board!
 
-You have a choice to either download and install the following software manually
-
-    * **Toolchain** to compile code for {IDF_TARGET_NAME}
-    * **Build tools** - CMake and Ninja to build a full **Application** for {IDF_TARGET_NAME}
-    * **ESP-IDF** that essentially contains API (software libraries and source code) for {IDF_TARGET_NAME} and scripts to operate the **Toolchain**
-
-**or** get through the onboarding process using the following official plugins for integrated development environments (IDE) described in separate documents
-
-    * `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin>`_ (`installation link <https://github.com/espressif/idf-eclipse-plugin#installing-idf-plugin-using-update-site-url>`_)
-    * `VS Code Extension <https://github.com/espressif/vscode-esp-idf-extension>`_ (`setup <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_)
-
-.. figure:: ../../_static/what-you-need.png
-    :align: center
-    :alt: Development of applications for {IDF_TARGET_NAME}
-    :figclass: align-center
-
-    Development of applications for {IDF_TARGET_NAME}
-
-
-Development Board Overviews
-===========================
-
-If you have one of {IDF_TARGET_NAME} development boards listed below, you can click on the link to learn more about its hardware.
+If you have one of {IDF_TARGET_NAME} official development boards listed below, you can click on the link to learn more about the hardware.
 
 .. only:: esp32
 
@@ -139,686 +110,61 @@ If you have one of {IDF_TARGET_NAME} development boards listed below, you can cl
         ESP32-S3-DevKitC-1 <../hw-reference/esp32s3/user-guide-devkitc-1>
         ESP32-S3-DevKitM-1 <../hw-reference/esp32s3/user-guide-devkitm-1>
 
-
-.. _get-started-step-by-step:
-
-Installation Step by Step
-=========================
-
-This is a detailed roadmap to walk you through the installation process.
-
-Setting up Development Environment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-* :ref:`get-started-get-prerequisites` for :doc:`Windows <windows-setup>`, :doc:`Linux <linux-setup>`, or :doc:`macOS <macos-setup>`
-* :ref:`get-started-get-esp-idf`
-* :ref:`get-started-set-up-tools`
-* :ref:`get-started-set-up-env`
-
-Creating Your First Project
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-* :ref:`get-started-start-project`
-* :ref:`get-started-connect`
-* :ref:`get-started-configure`
-* :ref:`get-started-build`
-* :ref:`get-started-flash`
-* :ref:`get-started-build-monitor`
-
-
 .. _get-started-get-prerequisites:
 
-Step 1. Install prerequisites
-=============================
+Software
+~~~~~~~~
 
-Some tools need to be installed on the computer before proceeding to the next steps. Follow the links below for the instructions for your OS:
+To start using ESP-IDF on **{IDF_TARGET_NAME}** you'll need the following software installed:
 
-.. toctree::
-    :hidden:
+    * **Toolchain** to compile code for {IDF_TARGET_NAME}
+    * **Build tools** - CMake and Ninja to build a full **Application** for {IDF_TARGET_NAME}
+    * **ESP-IDF** that essentially contains API (software libraries and source code) for {IDF_TARGET_NAME} and scripts to operate the **Toolchain**
 
-    Windows <windows-setup>
-    Linux <linux-setup>
-    macOS <macos-setup>
-
-+-------------------+-------------------+-------------------+
-| |windows-logo|    | |linux-logo|      | |macos-logo|      |
-+-------------------+-------------------+-------------------+
-| `Windows`_        | `Linux`_          | `Mac OS`_         |
-+-------------------+-------------------+-------------------+
-
-.. |windows-logo| image:: ../../_static/windows-logo.png
-    :target: ../get-started/windows-setup.html
-
-.. |linux-logo| image:: ../../_static/linux-logo.png
-    :target: ../get-started/linux-setup.html
-
-.. |macos-logo| image:: ../../_static/macos-logo.png
-    :target: ../get-started/macos-setup.html
-
-.. _Windows: ../get-started/windows-setup.html
-.. _Linux: ../get-started/linux-setup.html
-.. _Mac OS: ../get-started/macos-setup.html
-
-.. note::
-
-    This guide uses the directory ``~/esp`` on Linux and macOS or ``%userprofile%\esp`` on Windows as an installation folder for ESP-IDF. You can use any directory, but you will need to adjust paths for the commands respectively. Keep in mind that ESP-IDF does not support spaces in paths.
-
-.. _get-started-get-esp-idf:
-
-Step 2. Get ESP-IDF
-===================
-
-To build applications for the {IDF_TARGET_NAME}, you need the software libraries provided by Espressif in `ESP-IDF repository <https://github.com/espressif/esp-idf>`_.
-
-To get ESP-IDF, navigate to your installation directory and clone the repository with ``git clone``, following instructions below specific to your operating system.
-
-Linux and macOS
-~~~~~~~~~~~~~~~
-
-Open Terminal, and run the following commands:
-
-.. include-build-file:: inc/git-clone-bash.inc
-
-ESP-IDF will be downloaded into ``~/esp/esp-idf``.
-
-Consult :doc:`/versions` for information about which ESP-IDF version to use in a given situation.
-
-Windows
-~~~~~~~
-
-In addition to installing the tools, :ref:`get-started-windows-tools-installer` for Windows introduced in Step 1 can also download a copy of ESP-IDF.
-
-Consult :doc:`/versions` for information about which ESP-IDF version to use in a given situation.
-
-If you wish to download ESP-IDF without the help of ESP-IDF Tools Installer, refer to these :ref:`instructions <get-esp-idf-windows-command-line>`.
-
-.. _get-started-set-up-tools:
-
-Step 3. Set up the tools
-========================
-
-Aside from the ESP-IDF, you also need to install the tools used by ESP-IDF, such as the compiler, debugger, Python packages, etc.
-
-Windows
-~~~~~~~
-
-:ref:`get-started-windows-tools-installer` for Windows introduced in Step 1 installs all the required tools.
-
-If you want to install the tools without the help of ESP-IDF Tools Installer, open the Command Prompt and follow these steps:
-
-.. code-block:: batch
-
-    cd %userprofile%\esp\esp-idf
-    install.bat {IDF_TARGET_PATH_NAME}
-
-or with Windows PowerShell
-
-.. code-block:: powershell
-
-    cd ~/esp/esp-idf
-    ./install.ps1 {IDF_TARGET_PATH_NAME}
-
-Linux and macOS
-~~~~~~~~~~~~~~~
-
-.. code-block:: bash
-
-    cd ~/esp/esp-idf
-    ./install.sh {IDF_TARGET_PATH_NAME}
-
-or with Fish shell
-
-.. code-block:: fish
-
-    cd ~/esp/esp-idf
-    ./install.fish {IDF_TARGET_PATH_NAME}
-
-.. note::
-    To install tools for multiple targets you can specify those targets at once. For example: ``./install.sh esp32,esp32c3,esp32s3``.
-    To install tools for all supported targets, run the script without specifying targets ``./install.sh`` or use ``./install.sh all``.
-
-Alternative File Downloads
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The tools installer downloads a number of files attached to GitHub Releases. If accessing GitHub is slow then it is possible to set an environment variable to prefer Espressif's download server for GitHub asset downloads.
-
-.. note:: This setting only controls individual tools downloaded from GitHub releases, it doesn't change the URLs used to access any Git repositories.
-
-Windows
--------
-
-To prefer the Espressif download server when running the ESP-IDF Tools Installer, mark the **Use Espressif download mirror instead of GitHub** in the screen **Select Components** section **Optimization**.
-
-Linux and macOS
----------------
-
-To prefer the Espressif download server when installing tools, use the following sequence of commands when running ``install.sh``:
-
-.. code-block:: bash
-
-    cd ~/esp/esp-idf
-    export IDF_GITHUB_ASSETS="dl.espressif.com/github_assets"
-    ./install.sh
-
-Customizing the tools installation path
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The scripts introduced in this step install compilation tools required by ESP-IDF inside the user home directory: ``$HOME/.espressif`` on Linux and macOS, ``%USERPROFILE%\.espressif`` on Windows. If you wish to install the tools into a different directory, set the environment variable ``IDF_TOOLS_PATH`` before running the installation scripts. Make sure that your user account has sufficient permissions to read and write this path.
-
-If changing the ``IDF_TOOLS_PATH``, make sure it is set to the same value every time the Install script (``install.bat``, ``install.ps1`` or ``install.sh``) and an Export script (``export.bat``, ``export.ps1`` or ``export.sh``) are executed.
-
-.. _get-started-set-up-env:
-
-
-Step 4. Set up the environment variables
-========================================
-
-The installed tools are not yet added to the PATH environment variable. To make the tools usable from the command line, some environment variables must be set. ESP-IDF provides another script which does that.
-
-Windows
-~~~~~~~
-
-:ref:`get-started-windows-tools-installer` for Windows creates an "ESP-IDF Command Prompt" shortcut in the Start Menu. This shortcut opens the Command Prompt and sets up all the required environment variables. You can open this shortcut and proceed to the next step.
-
-Alternatively, if you want to use ESP-IDF in an existing Command Prompt window, you can run:
-
-.. code-block:: batch
-
-    %userprofile%\esp\esp-idf\export.bat
-
-or with Windows PowerShell
-
-.. code-block:: powershell
-
-    .$HOME/esp/esp-idf/export.ps1
-
-.. _get-started-export:
-
-Linux and macOS
-~~~~~~~~~~~~~~~
-
-In the terminal where you are going to use ESP-IDF, run:
-
-.. code-block:: bash
-
-    . $HOME/esp/esp-idf/export.sh
-
-or for fish (supported only since fish version 3.0.0):
-
-.. code-block:: bash
-
-    . $HOME/esp/esp-idf/export.fish
-
-Note the space between the leading dot and the path!
-
-If you plan to use esp-idf frequently, you can create an alias for executing ``export.sh``:
-
-1.  Copy and paste the following command to your shell's profile (``.profile``, ``.bashrc``, ``.zprofile``, etc.)
-
-    .. code-block:: bash
-
-        alias get_idf='. $HOME/esp/esp-idf/export.sh'
-
-2.  Refresh the configuration by restarting the terminal session or by running ``source [path to profile]``, for example, ``source ~/.bashrc``.
-
-Now you can run ``get_idf`` to set up or refresh the esp-idf environment in any terminal session.
-
-Technically, you can add ``export.sh`` to your shell's profile directly; however, it is not recommended. Doing so activates IDF virtual environment in every terminal session (including those where IDF is not needed), defeating the purpose of the virtual environment and likely affecting other software.
-
-.. _get-started-start-project:
-
-Step 5. Start a Project
-=======================
-
-Now you are ready to prepare your application for {IDF_TARGET_NAME}. You can start with :example:`get-started/hello_world` project from :idf:`examples` directory in IDF.
-
-Copy the project :example:`get-started/hello_world` to ``~/esp`` directory:
-
-Linux and macOS
-~~~~~~~~~~~~~~~
-
-.. code-block:: bash
-
-    cd ~/esp
-    cp -r $IDF_PATH/examples/get-started/hello_world .
-
-Windows
-~~~~~~~
-
-.. code-block:: batch
-
-    cd %userprofile%\esp
-    xcopy /e /i %IDF_PATH%\examples\get-started\hello_world hello_world
-
-There is a range of example projects in the :idf:`examples` directory in ESP-IDF. You can copy any project in the same way as presented above and run it. It is also possible to build examples in-place, without copying them first.
-
-.. important::
-
-    The ESP-IDF build system does not support spaces in the paths to either ESP-IDF or to projects.
-
-.. _get-started-connect:
-
-Step 6. Connect Your Device
-===========================
-
-Now connect your {IDF_TARGET_NAME} board to the computer and check under what serial port the board is visible.
-
-Serial ports have the following patterns in their names:
-
-- **Windows**: names like ``COM1``
-- **Linux**: starting with ``/dev/tty``
-- **macOS**: starting with ``/dev/cu.``
-
-If you are not sure how to check the serial port name, please refer to :doc:`establish-serial-connection` for full details.
-
-.. note::
-
-    Keep the port name handy as you will need it in the next steps.
-
-
-.. _get-started-configure:
-
-Step 7. Configure
-=================
-
-Navigate to your ``hello_world`` directory from :ref:`get-started-start-project`, set {IDF_TARGET_NAME} chip as the target and run the project configuration utility ``menuconfig``.
-
-Linux and macOS
-~~~~~~~~~~~~~~~
-
-.. code-block:: bash
-
-    cd ~/esp/hello_world
-    idf.py set-target {IDF_TARGET_PATH_NAME}
-    idf.py menuconfig
-
-Windows
-~~~~~~~
-
-.. code-block:: batch
-
-    cd %userprofile%\esp\hello_world
-    idf.py set-target {IDF_TARGET_PATH_NAME}
-    idf.py menuconfig
-
-Setting the target with ``idf.py set-target {IDF_TARGET_PATH_NAME}`` should be done once, after opening a new project. If the project contains some existing builds and configuration, they will be cleared and initialized. The target may be saved in environment variable to skip this step at all. See :ref:`selecting-idf-target` for additional information.
-
-If the previous steps have been done correctly, the following menu appears:
-
-.. figure:: ../../_static/project-configuration.png
+.. figure:: ../../_static/what-you-need.png
     :align: center
-    :alt: Project configuration - Home window
+    :alt: Development of applications for {IDF_TARGET_NAME}
     :figclass: align-center
 
-    Project configuration - Home window
+.. _get-started-step-by-step:
+.. _get-started-how-to-get-esp-idf:
 
-You are using this menu to set up project specific variables, e.g. Wi-Fi network name and password, the processor speed, etc. Setting up the project with menuconfig may be skipped for "hello_word". This example will run with default configuration.
+Installation
+============
 
-.. only:: esp32
+To install all the required software, we offer some different ways to facilitate this task. Choose from one of the available options.
 
-    .. attention::
+IDE
+~~~
 
-        If you use ESP32-DevKitC board with the **ESP32-SOLO-1** module, or ESP32-DevKitM-1 board with the **ESP32-MIN1-1(1U)** module, enable single core mode (:ref:`CONFIG_FREERTOS_UNICORE`) in menuconfig before flashing examples.
-
-.. note::
-
-    The colors of the menu could be different in your terminal. You can change the appearance with the option ``--style``. Please run ``idf.py menuconfig --help`` for further information.
-
-.. _get-started-build:
-
-Step 8. Build the Project
-=========================
-
-Build the project by running:
-
-.. code-block:: batch
-
-    idf.py build
-
-This command will compile the application and all ESP-IDF components, then it will generate the bootloader, partition table, and application binaries.
-
-.. code-block:: none
-
-   $ idf.py build
-   Running cmake in directory /path/to/hello_world/build
-   Executing "cmake -G Ninja --warn-uninitialized /path/to/hello_world"...
-   Warn about uninitialized values.
-   -- Found Git: /usr/bin/git (found version "2.17.0")
-   -- Building empty aws_iot component due to configuration
-   -- Component names: ...
-   -- Component paths: ...
-
-   ... (more lines of build system output)
-
-   [527/527] Generating hello_world.bin
-   esptool.py v2.3.1
-
-   Project build complete. To flash, run this command:
-   ../../../components/esptool_py/esptool/esptool.py -p (PORT) -b 921600 write_flash --flash_mode dio --flash_size detect --flash_freq 40m 0x10000 build/hello_world.bin  build 0x1000 build/bootloader/bootloader.bin 0x8000 build/partition_table/partition-table.bin
-   or run 'idf.py -p PORT flash'
-
-If there are no errors, the build will finish by generating the firmware binary .bin files.
-
-
-.. _get-started-flash:
-
-Step 9. Flash onto the Device
-=============================
-
-Flash the binaries that you just built (bootloader.bin, partition-table.bin and hello_world.bin) onto your {IDF_TARGET_NAME} board by running:
-
-.. code-block:: bash
-
-    idf.py -p PORT [-b BAUD] flash
-
-Replace PORT with your {IDF_TARGET_NAME} board's serial port name from :ref:`get-started-connect`.
-
-You can also change the flasher baud rate by replacing BAUD with the baud rate you need. The default baud rate is ``460800``.
-
-For more information on idf.py arguments, see :ref:`idf.py`.
-
-.. note::
-
-    The option ``flash`` automatically builds and flashes the project, so running ``idf.py build`` is not necessary.
-
-
-Encountered Issues While Flashing?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-{IDF_TARGET_STRAP_GPIO:default="GPIO0", esp32="GPIO0", esp32s2="GPIO0", esp32s3="GPIO0", esp32c3="GPIO9"}
-
-If you run the given command and see errors such as "Failed to connect", there might be several reasons for this. One of the reasons might be issues encountered by ``esptool.py``, the utility that is called by the build system to reset the chip, interact with the ROM bootloader, and flash firmware. One simple solution to try is manual reset described below, and if it does not help you can find more details about possible issues in `Troubleshooting <https://docs.espressif.com/projects/esptool/en/latest/troubleshooting.html#bootloader-won-t-respond>`_.
-
-``esptool.py`` resets {IDF_TARGET_NAME} automatically by asserting DTR and RTS control lines of the USB to serial converter chip, i.e., FTDI or CP210x (for more information, see :doc:`establish-serial-connection`). The DTR and RTS control lines are in turn connected to ``{IDF_TARGET_STRAP_GPIO}`` and ``CHIP_PU`` (EN) pins of {IDF_TARGET_NAME}, thus changes in the voltage levels of DTR and RTS will boot {IDF_TARGET_NAME} into Firmware Download mode. As an example, check the `schematic <https://dl.espressif.com/dl/schematics/esp32_devkitc_v4-sch-20180607a.pdf>`_ for the ESP32 DevKitC development board.
-
-In general, you should have no problems with the official esp-idf development boards. However, ``esptool.py`` is not able to reset your hardware automatically in the following cases:
-
-- Your hardware does not have the DTR and RTS lines connected to ``{IDF_TARGET_STRAP_GPIO}`` and ``CHIP_PU``
-- The DTR and RTS lines are configured differently
-- There are no such serial control lines at all
-
-Depending on the kind of hardware you have, it may also be possible to manually put your {IDF_TARGET_NAME} board into Firmware Download mode (reset).
-
-- For development boards produced by Espressif, this information can be found in the respective getting started guides or user guides. For example, to manually reset an esp-idf development board, hold down the **Boot** button (``{IDF_TARGET_STRAP_GPIO}``) and press the **EN** button (``CHIP_PU``).
-- For other types of hardware, try pulling ``{IDF_TARGET_STRAP_GPIO}`` down.
-
-
-Normal Operation
-~~~~~~~~~~~~~~~~
-
-When flashing, you will see the output log similar to the following:
-
-.. only:: esp32
-
-    .. code-block:: none
-
-        ...
-        esptool.py --chip esp32 -p /dev/ttyUSB0 -b 460800 --before=default_reset --after=hard_reset write_flash --flash_mode dio --flash_freq 40m --flash_size 2MB 0x8000 partition_table/partition-table.bin 0x1000 bootloader/bootloader.bin 0x10000 hello_world.bin
-        esptool.py v3.0-dev
-        Serial port /dev/ttyUSB0
-        Connecting........_
-        Chip is ESP32D0WDQ6 (revision 0)
-        Features: WiFi, BT, Dual Core, Coding Scheme None
-        Crystal is 40MHz
-        MAC: 24:0a:c4:05:b9:14
-        Uploading stub...
-        Running stub...
-        Stub running...
-        Changing baud rate to 460800
-        Changed.
-        Configuring flash size...
-        Compressed 3072 bytes to 103...
-        Writing at 0x00008000... (100 %)
-        Wrote 3072 bytes (103 compressed) at 0x00008000 in 0.0 seconds (effective 5962.8 kbit/s)...
-        Hash of data verified.
-        Compressed 26096 bytes to 15408...
-        Writing at 0x00001000... (100 %)
-        Wrote 26096 bytes (15408 compressed) at 0x00001000 in 0.4 seconds (effective 546.7 kbit/s)...
-        Hash of data verified.
-        Compressed 147104 bytes to 77364...
-        Writing at 0x00010000... (20 %)
-        Writing at 0x00014000... (40 %)
-        Writing at 0x00018000... (60 %)
-        Writing at 0x0001c000... (80 %)
-        Writing at 0x00020000... (100 %)
-        Wrote 147104 bytes (77364 compressed) at 0x00010000 in 1.9 seconds (effective 615.5 kbit/s)...
-        Hash of data verified.
-
-        Leaving...
-        Hard resetting via RTS pin...
-        Done
-
-.. only:: esp32s2
-
-    .. code-block:: none
-
-        ...
-        esptool.py --chip esp32s2 -p /dev/ttyUSB0 -b 460800 --before=default_reset --after=hard_reset write_flash --flash_mode dio --flash_freq 40m --flash_size 2MB 0x8000 partition_table/partition-table.bin 0x1000 bootloader/bootloader.bin 0x10000 hello_world.bin
-        esptool.py v3.0-dev
-        Serial port /dev/ttyUSB0
-        Connecting....
-        Chip is ESP32-S2
-        Features: WiFi
-        Crystal is 40MHz
-        MAC: 18:fe:34:72:50:e3
-        Uploading stub...
-        Running stub...
-        Stub running...
-        Changing baud rate to 460800
-        Changed.
-        Configuring flash size...
-        Compressed 3072 bytes to 103...
-        Writing at 0x00008000... (100 %)
-        Wrote 3072 bytes (103 compressed) at 0x00008000 in 0.0 seconds (effective 3851.6 kbit/s)...
-        Hash of data verified.
-        Compressed 22592 bytes to 13483...
-        Writing at 0x00001000... (100 %)
-        Wrote 22592 bytes (13483 compressed) at 0x00001000 in 0.3 seconds (effective 595.1 kbit/s)...
-        Hash of data verified.
-        Compressed 140048 bytes to 70298...
-        Writing at 0x00010000... (20 %)
-        Writing at 0x00014000... (40 %)
-        Writing at 0x00018000... (60 %)
-        Writing at 0x0001c000... (80 %)
-        Writing at 0x00020000... (100 %)
-        Wrote 140048 bytes (70298 compressed) at 0x00010000 in 1.7 seconds (effective 662.5 kbit/s)...
-        Hash of data verified.
-
-        Leaving...
-        Hard resetting via RTS pin...
-        Done
-
-.. only:: esp32s3
-
-    .. code-block:: none
-
-        ...
-        esptool.py esp32s3 -p /dev/ttyUSB0 -b 460800 --before=default_reset --after=hard_reset write_flash --flash_mode dio --flash_freq 80m --flash_size 2MB 0x0 bootloader/bootloader.bin 0x10000 hello_world.bin 0x8000 partition_table/partition-table.bin
-        esptool.py v3.2-dev
-        Serial port /dev/ttyUSB0
-        Connecting....
-        Chip is ESP32-S3
-        Features: WiFi, BLE
-        Crystal is 40MHz
-        MAC: 7c:df:a1:e0:00:64
-        Uploading stub...
-        Running stub...
-        Stub running...
-        Changing baud rate to 460800
-        Changed.
-        Configuring flash size...
-        Flash will be erased from 0x00000000 to 0x00004fff...
-        Flash will be erased from 0x00010000 to 0x00039fff...
-        Flash will be erased from 0x00008000 to 0x00008fff...
-        Compressed 18896 bytes to 11758...
-        Writing at 0x00000000... (100 %)
-        Wrote 18896 bytes (11758 compressed) at 0x00000000 in 0.5 seconds (effective 279.9 kbit/s)...
-        Hash of data verified.
-        Compressed 168208 bytes to 88178...
-        Writing at 0x00010000... (16 %)
-        Writing at 0x0001a80f... (33 %)
-        Writing at 0x000201f1... (50 %)
-        Writing at 0x00025dcf... (66 %)
-        Writing at 0x0002d0be... (83 %)
-        Writing at 0x00036c07... (100 %)
-        Wrote 168208 bytes (88178 compressed) at 0x00010000 in 2.4 seconds (effective 569.2 kbit/s)...
-        Hash of data verified.
-        Compressed 3072 bytes to 103...
-        Writing at 0x00008000... (100 %)
-        Wrote 3072 bytes (103 compressed) at 0x00008000 in 0.1 seconds (effective 478.9 kbit/s)...
-        Hash of data verified.
-
-        Leaving...
-        Hard resetting via RTS pin...
-        Done
-
-
-.. only:: esp32c3
-
-    .. code-block:: none
-
-        ...
-        esptool.py --chip esp32c3 -p /dev/ttyUSB0 -b 460800 --before=default_reset --after=hard_reset write_flash --flash_mode dio --flash_freq 80m --flash_size 2MB 0x8000 partition_table/partition-table.bin 0x0 bootloader/bootloader.bin 0x10000 hello_world.bin
-        esptool.py v3.0
-        Serial port /dev/ttyUSB0
-        Connecting....
-        Chip is ESP32-C3
-        Features: Wi-Fi
-        Crystal is 40MHz
-        MAC: 7c:df:a1:40:02:a4
-        Uploading stub...
-        Running stub...
-        Stub running...
-        Changing baud rate to 460800
-        Changed.
-        Configuring flash size...
-        Compressed 3072 bytes to 103...
-        Writing at 0x00008000... (100 %)
-        Wrote 3072 bytes (103 compressed) at 0x00008000 in 0.0 seconds (effective 4238.1 kbit/s)...
-        Hash of data verified.
-        Compressed 18960 bytes to 11311...
-        Writing at 0x00000000... (100 %)
-        Wrote 18960 bytes (11311 compressed) at 0x00000000 in 0.3 seconds (effective 584.9 kbit/s)...
-        Hash of data verified.
-        Compressed 145520 bytes to 71984...
-        Writing at 0x00010000... (20 %)
-        Writing at 0x00014000... (40 %)
-        Writing at 0x00018000... (60 %)
-        Writing at 0x0001c000... (80 %)
-        Writing at 0x00020000... (100 %)
-        Wrote 145520 bytes (71984 compressed) at 0x00010000 in 2.3 seconds (effective 504.4 kbit/s)...
-        Hash of data verified.
-
-        Leaving...
-        Hard resetting via RTS pin...
-        Done
-
-
-If there are no issues by the end of the flash process, the board will reboot and start up the “hello_world” application.
-
-If you'd like to use the Eclipse or VS Code IDE instead of running ``idf.py``, check out the :doc:`Eclipse guide <eclipse-setup>`, :doc:`VS Code guide <vscode-setup>`.
-
-
-.. _get-started-build-monitor:
-
-Step 10. Monitor
-================
-
-To check if "hello_world" is indeed running, type ``idf.py -p PORT monitor`` (Do not forget to replace PORT with your serial port name).
-
-This command launches the :doc:`IDF Monitor <../api-guides/tools/idf-monitor>` application::
-
-    $ idf.py -p /dev/ttyUSB0 monitor
-    Running idf_monitor in directory [...]/esp/hello_world/build
-    Executing "python [...]/esp-idf/tools/idf_monitor.py -b 115200 [...]/esp/hello_world/build/hello_world.elf"...
-    --- idf_monitor on /dev/ttyUSB0 115200 ---
-    --- Quit: Ctrl+] | Menu: Ctrl+T | Help: Ctrl+T followed by Ctrl+H ---
-    ets Jun  8 2016 00:22:57
-
-    rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
-    ets Jun  8 2016 00:22:57
-    ...
-
-After startup and diagnostic logs scroll up, you should see "Hello world!" printed out by the application.
-
-.. code-block:: none
-
-    	...
-    	Hello world!
-    	Restarting in 10 seconds...
-    	This is {IDF_TARGET_PATH_NAME} chip with {IDF_TARGET_CORE_NUM} CPU core(s), {IDF_TARGET_FEATURES}
-	Minimum free heap size: {IDF_TARGET_HEAP_SIZE} bytes
-    	Restarting in 9 seconds...
-    	Restarting in 8 seconds...
-    	Restarting in 7 seconds...
-
-To exit IDF monitor use the shortcut ``Ctrl+]``.
-
-.. only:: esp32
-
-    If IDF monitor fails shortly after the upload, or, if instead of the messages above, you see random garbage similar to what is given below, your board is likely using a 26 MHz crystal. Most development board designs use 40 MHz, so ESP-IDF uses this frequency as a default value.
-
-    .. figure:: ../../_static/get-started-garbled-output.png
-        :align: center
-        :alt: Garbled output
-        :figclass: align-center
-
-    If you have such a problem, do the following:
-
-    1. Exit the monitor.
-    2. Go back to :ref:`menuconfig <get-started-configure>`.
-    3. Go to Component config --> ESP32-specific --> Main XTAL frequency, then change :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` to 26 MHz.
-    4. After that, :ref:`build and flash <get-started-flash>` the application again.
-
-.. note::
-
-    You can combine building, flashing and monitoring into one step by running::
-
-       idf.py -p PORT flash monitor
-
-.. only:: esp32s3
-
-    .. note::
-
-        If a board with Octal Flash resets before the second-stage bootloader, please refer to :ref:`Octal Flash Error Handling <flash-psram-error>`
-
-See also:
-
-- :doc:`IDF Monitor <../api-guides/tools/idf-monitor>` for handy shortcuts and more details on using IDF monitor.
-- :ref:`idf.py` for a full reference of ``idf.py`` commands and options.
-
-**That's all that you need to get started with {IDF_TARGET_NAME}!**
-
-Now you are ready to try some other :idf:`examples`, or go straight to developing your own applications.
-
-.. important::
-
-    Some of examples do not support {IDF_TARGET_NAME} because required hardware is not included in {IDF_TARGET_NAME} so it cannot be supported.
-
-    If building an example, please check the README file for the ``Supported Targets`` table. If this is present including {IDF_TARGET_NAME} target, or the table does not exist at all, the example will work on {IDF_TARGET_NAME}.
-
-
-Updating ESP-IDF
-================
-
-You should update ESP-IDF from time to time, as newer versions fix bugs and provide new features. The simplest way to do the update is to delete the existing ``esp-idf`` folder and clone it again, as if performing the initial installation described in :ref:`get-started-get-esp-idf`.
-
-Another solution is to update only what has changed. :ref:`The update procedure depends on the version of ESP-IDF you are using <updating>`.
-
-After updating ESP-IDF, execute the Install script again, in case the new ESP-IDF version requires different versions of tools. See instructions at :ref:`get-started-set-up-tools`.
-
-Once the new tools are installed, update the environment using the Export script. See instructions at :ref:`get-started-set-up-env`.
-
-Related Documents
-=================
+.. note:: We highly recommend installing the ESP-IDF through your favorite IDE.
 
 .. toctree::
     :maxdepth: 1
 
-    establish-serial-connection
-    eclipse-setup
-    vscode-setup
-    ../api-guides/tools/idf-monitor
-    toolchain-setup-scratch
+    Eclipse Plugin <../get-started/eclipse-setup>
+    VSCode Extension <../get-started/vscode-setup>
+
+Manual Installation
+~~~~~~~~~~~~~~~~~~~
+
+For the manual procedure, please select according to your operating system.
+
+.. toctree::
+    :maxdepth: 1
+
+    Windows Installer <../get-started/windows-setup>
+    Linux and macOS <../get-started/linux-macos-setup>
+
+Build Your First Project
+========================
+
+If you already have the ESP-IDF installed and not using IDE, you can build your first project from the command line following :ref:`get-started-first-steps`.
+
+.. toctree::
+   :hidden:
+
+   Windows <windows-setup>
+   Manual <linux-macos-setup>
 
 .. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/
-.. _Releases page: https://github.com/espressif/esp-idf/releases

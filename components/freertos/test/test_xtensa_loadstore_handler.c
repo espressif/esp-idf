@@ -1,4 +1,10 @@
 /*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
  Test for LoadStore exception handlers. This test performs unaligned load and store in 32bit aligned addresses
 */
 
@@ -6,7 +12,7 @@
 #include <stdio.h>
 #include <esp_heap_caps.h>
 #include "sdkconfig.h"
-#include "esp_system.h"
+#include "esp_random.h"
 #include "unity.h"
 
 #if CONFIG_IDF_TARGET_ARCH_XTENSA

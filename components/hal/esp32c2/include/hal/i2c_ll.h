@@ -7,8 +7,11 @@
 // The LL layer for I2C register operations
 
 #pragma once
+
+#include "hal/misc.h"
 #include "soc/i2c_periph.h"
 #include "soc/soc_caps.h"
+#include "soc/i2c_struct.h"
 #include "hal/i2c_types.h"
 #include "soc/rtc_cntl_reg.h"
 #include "esp_rom_sys.h"
@@ -79,10 +82,6 @@ typedef struct {
 #define I2C_LL_MASTER_TX_INT          (I2C_NACK_INT_ENA_M|I2C_TIME_OUT_INT_ENA_M|I2C_TRANS_COMPLETE_INT_ENA_M|I2C_ARBITRATION_LOST_INT_ENA_M|I2C_END_DETECT_INT_ENA_M)
 // I2C master RX interrupt bitmap
 #define I2C_LL_MASTER_RX_INT          (I2C_TIME_OUT_INT_ENA_M|I2C_TRANS_COMPLETE_INT_ENA_M|I2C_ARBITRATION_LOST_INT_ENA_M|I2C_END_DETECT_INT_ENA_M)
-// I2C slave TX interrupt bitmap
-#define I2C_LL_SLAVE_TX_INT           (I2C_TXFIFO_WM_INT_ENA_M)
-// I2C slave RX interrupt bitmap
-#define I2C_LL_SLAVE_RX_INT           (I2C_RXFIFO_WM_INT_ENA_M | I2C_TRANS_COMPLETE_INT_ENA_M)
 // I2C source clock
 #define I2C_LL_CLK_SRC_FREQ(src_clk)  (((src_clk) == I2C_SCLK_RTC) ? 20*1000*1000 : 40*1000*1000); // Another clock is XTAL clock
 // delay time after rtc_clk swiching on
@@ -104,7 +103,24 @@ typedef struct {
  */
 static inline void i2c_ll_cal_bus_clk(uint32_t source_clk, uint32_t bus_freq, i2c_clk_cal_t *clk_cal)
 {
-    abort(); //TODO: I2C support IDF-3918
+    uint32_t clkm_div = source_clk / (bus_freq * 1024) +1;
+    uint32_t sclk_freq = source_clk / clkm_div;
+    uint32_t half_cycle = sclk_freq / bus_freq / 2;
+    //SCL
+    clk_cal->clkm_div = clkm_div;
+    clk_cal->scl_low = half_cycle;
+    // default, scl_wait_high < scl_high
+    int scl_wait_high = (bus_freq <= 50000) ? 0 : (half_cycle / 8); // compensate the time when freq > 50K
+    clk_cal->scl_wait_high = scl_wait_high;
+    clk_cal->scl_high = half_cycle - scl_wait_high;
+    clk_cal->sda_hold = half_cycle / 4;
+    // scl_wait_high < sda_sample <= scl_high
+    clk_cal->sda_sample = half_cycle / 2;
+    clk_cal->setup = half_cycle;
+    clk_cal->hold = half_cycle;
+    //default we set the timeout value to about 10 bus cycles
+    // log(20*half_cycle)/log(2) = log(half_cycle)/log(2) +  log(20)/log(2)
+    clk_cal->tout = (int)(sizeof(half_cycle) * 8 - __builtin_clz(5 * half_cycle)) + 2;
 }
 
 /**
@@ -116,7 +132,7 @@ static inline void i2c_ll_cal_bus_clk(uint32_t source_clk, uint32_t bus_freq, i2
  */
 static inline void i2c_ll_update(i2c_dev_t *hw)
 {
-    abort(); //TODO: I2C support IDF-3918
+    hw->ctr.conf_upgate = 1;
 }
 
 /**
@@ -129,7 +145,21 @@ static inline void i2c_ll_update(i2c_dev_t *hw)
  */
 static inline void i2c_ll_set_bus_timing(i2c_dev_t *hw, i2c_clk_cal_t *bus_cfg)
 {
-    abort(); //TODO: I2C support IDF-3918
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->clk_conf, sclk_div_num, bus_cfg->clkm_div - 1);
+    //scl period
+    hw->scl_low_period.scl_low_period = bus_cfg->scl_low - 1;
+    hw->scl_high_period.scl_high_period = bus_cfg->scl_high;
+    //sda sample
+    hw->sda_hold.sda_hold_time = bus_cfg->sda_hold;
+    hw->sda_sample.sda_sample_time = bus_cfg->sda_sample;
+    //setup
+    hw->scl_rstart_setup.scl_rstart_setup_time = bus_cfg->setup;
+    hw->scl_stop_setup.scl_stop_setup_time = bus_cfg->setup;
+    //hold
+    hw->scl_start_hold.scl_start_hold_time = bus_cfg->hold - 1;
+    hw->scl_stop_hold.scl_stop_hold_time = bus_cfg->hold;
+    hw->to.time_out_value = bus_cfg->tout;
+    hw->to.time_out_en = 1;
 }
 
 /**
@@ -141,7 +171,8 @@ static inline void i2c_ll_set_bus_timing(i2c_dev_t *hw, i2c_clk_cal_t *bus_cfg)
  */
 static inline void i2c_ll_txfifo_rst(i2c_dev_t *hw)
 {
-    abort(); //TODO: I2C support IDF-3918
+    hw->fifo_conf.tx_fifo_rst = 1;
+    hw->fifo_conf.tx_fifo_rst = 0;
 }
 
 /**
@@ -153,7 +184,8 @@ static inline void i2c_ll_txfifo_rst(i2c_dev_t *hw)
  */
 static inline void i2c_ll_rxfifo_rst(i2c_dev_t *hw)
 {
-    abort(); //TODO: I2C support IDF-3918
+    hw->fifo_conf.rx_fifo_rst = 1;
+    hw->fifo_conf.rx_fifo_rst = 0;
 }
 
 /**
@@ -167,7 +199,9 @@ static inline void i2c_ll_rxfifo_rst(i2c_dev_t *hw)
  */
 static inline void i2c_ll_set_scl_timing(i2c_dev_t *hw, int hight_period, int low_period)
 {
-    abort(); //TODO: I2C support IDF-3918
+    hw->scl_low_period.scl_low_period = low_period - 1;
+    hw->scl_high_period.scl_high_period = hight_period - 10;
+    hw->scl_high_period.scl_wait_high_period = hight_period - hw->scl_high_period.scl_high_period;
 }
 
 /**
@@ -180,7 +214,7 @@ static inline void i2c_ll_set_scl_timing(i2c_dev_t *hw, int hight_period, int lo
  */
 static inline void i2c_ll_clr_intsts_mask(i2c_dev_t *hw, uint32_t mask)
 {
-    abort(); //TODO: I2C support IDF-3918
+    hw->int_clr.val = mask;
 }
 
 /**
@@ -193,7 +227,7 @@ static inline void i2c_ll_clr_intsts_mask(i2c_dev_t *hw, uint32_t mask)
  */
 static inline void i2c_ll_enable_intr_mask(i2c_dev_t *hw, uint32_t mask)
 {
-    abort(); //TODO: I2C support IDF-3918
+    hw->int_ena.val |= mask;
 }
 
 /**
@@ -206,7 +240,7 @@ static inline void i2c_ll_enable_intr_mask(i2c_dev_t *hw, uint32_t mask)
  */
 static inline void i2c_ll_disable_intr_mask(i2c_dev_t *hw, uint32_t mask)
 {
-    abort(); //TODO: I2C support IDF-3918
+    hw->int_ena.val &= (~mask);
 }
 
 /**
@@ -218,7 +252,7 @@ static inline void i2c_ll_disable_intr_mask(i2c_dev_t *hw, uint32_t mask)
  */
 static inline uint32_t i2c_ll_get_intsts_mask(i2c_dev_t *hw)
 {
-    abort(); //TODO: I2C support IDF-3918
+    return hw->int_status.val;
 }
 
 /**
@@ -231,7 +265,7 @@ static inline uint32_t i2c_ll_get_intsts_mask(i2c_dev_t *hw)
  */
 static inline void i2c_ll_set_fifo_mode(i2c_dev_t *hw, bool fifo_mode_en)
 {
-    abort(); //TODO: I2C support IDF-3918
+    hw->fifo_conf.nonfifo_en = fifo_mode_en ? 0 : 1;
 }
 
 /**
@@ -244,21 +278,7 @@ static inline void i2c_ll_set_fifo_mode(i2c_dev_t *hw, bool fifo_mode_en)
  */
 static inline void i2c_ll_set_tout(i2c_dev_t *hw, int tout)
 {
-    abort(); //TODO: I2C support IDF-3918
-}
-
-/**
- * @brief  Configure I2C slave address
- *
- * @param  hw Beginning address of the peripheral registers
- * @param  slave_addr I2C slave address needs to be set
- * @param  addr_10bit_en Set true to enable 10-bit slave address mode, set false to enable 7-bit address mode
- *
- * @return None
- */
-static inline void i2c_ll_set_slave_addr(i2c_dev_t *hw, uint16_t slave_addr, bool addr_10bit_en)
-{
-    abort(); //TODO: I2C support IDF-3918
+    hw->to.time_out_value = tout;
 }
 
 /**
@@ -272,7 +292,7 @@ static inline void i2c_ll_set_slave_addr(i2c_dev_t *hw, uint16_t slave_addr, boo
  */
 static inline void i2c_ll_write_cmd_reg(i2c_dev_t *hw, i2c_hw_cmd_t cmd, int cmd_idx)
 {
-    abort(); //TODO: I2C support IDF-3918
+    hw->command[cmd_idx].val = cmd.val;
 }
 
 /**
@@ -286,7 +306,8 @@ static inline void i2c_ll_write_cmd_reg(i2c_dev_t *hw, i2c_hw_cmd_t cmd, int cmd
  */
 static inline void i2c_ll_set_start_timing(i2c_dev_t *hw, int start_setup, int start_hold)
 {
-    abort(); //TODO: I2C support IDF-3918
+    hw->scl_rstart_setup.scl_rstart_setup_time = start_setup;
+    hw->scl_start_hold.scl_start_hold_time = start_hold - 1;
 }
 
 /**
@@ -300,7 +321,8 @@ static inline void i2c_ll_set_start_timing(i2c_dev_t *hw, int start_setup, int s
  */
 static inline void i2c_ll_set_stop_timing(i2c_dev_t *hw, int stop_setup, int stop_hold)
 {
-    abort(); //TODO: I2C support IDF-3918
+    hw->scl_stop_setup.scl_stop_setup_time = stop_setup;
+    hw->scl_stop_hold.scl_stop_hold_time = stop_hold;
 }
 
 /**
@@ -314,7 +336,8 @@ static inline void i2c_ll_set_stop_timing(i2c_dev_t *hw, int stop_setup, int sto
  */
 static inline void i2c_ll_set_sda_timing(i2c_dev_t *hw, int sda_sample, int sda_hold)
 {
-    abort(); //TODO: I2C support IDF-3918
+    hw->sda_hold.sda_hold_time = sda_hold;
+    hw->sda_sample.sda_sample_time = sda_sample;
 }
 
 /**
@@ -327,7 +350,7 @@ static inline void i2c_ll_set_sda_timing(i2c_dev_t *hw, int sda_sample, int sda_
  */
 static inline void i2c_ll_set_txfifo_empty_thr(i2c_dev_t *hw, uint8_t empty_thr)
 {
-    abort(); //TODO: I2C support IDF-3918
+    hw->fifo_conf.txfifo_wm_thrhd = empty_thr;
 }
 
 /**
@@ -340,7 +363,7 @@ static inline void i2c_ll_set_txfifo_empty_thr(i2c_dev_t *hw, uint8_t empty_thr)
  */
 static inline void i2c_ll_set_rxfifo_full_thr(i2c_dev_t *hw, uint8_t full_thr)
 {
-    abort(); //TODO: I2C support IDF-3918
+    hw->fifo_conf.rxfifo_wm_thrhd = full_thr;
 }
 
 /**
@@ -354,7 +377,8 @@ static inline void i2c_ll_set_rxfifo_full_thr(i2c_dev_t *hw, uint8_t full_thr)
  */
 static inline void i2c_ll_set_data_mode(i2c_dev_t *hw, i2c_trans_mode_t tx_mode, i2c_trans_mode_t rx_mode)
 {
-    abort(); //TODO: I2C support IDF-3918
+    hw->ctr.tx_lsb_first = tx_mode;
+    hw->ctr.rx_lsb_first = rx_mode;
 }
 
 /**
@@ -368,7 +392,8 @@ static inline void i2c_ll_set_data_mode(i2c_dev_t *hw, i2c_trans_mode_t tx_mode,
  */
 static inline void i2c_ll_get_data_mode(i2c_dev_t *hw, i2c_trans_mode_t *tx_mode, i2c_trans_mode_t *rx_mode)
 {
-    abort(); //TODO: I2C support IDF-3918
+    *tx_mode = hw->ctr.tx_lsb_first;
+    *rx_mode = hw->ctr.rx_lsb_first;
 }
 
 /**
@@ -382,7 +407,8 @@ static inline void i2c_ll_get_data_mode(i2c_dev_t *hw, i2c_trans_mode_t *tx_mode
  */
 static inline void i2c_ll_get_sda_timing(i2c_dev_t *hw, int *sda_sample, int *sda_hold)
 {
-    abort(); //TODO: I2C support IDF-3918
+    *sda_hold = hw->sda_hold.sda_hold_time;
+    *sda_sample = hw->sda_sample.sda_sample_time;
 }
 
 /**
@@ -394,7 +420,7 @@ static inline void i2c_ll_get_sda_timing(i2c_dev_t *hw, int *sda_sample, int *sd
  */
 static inline uint32_t i2c_ll_get_hw_version(i2c_dev_t *hw)
 {
-    abort(); //TODO: I2C support IDF-3918
+    return hw->date.date;
 }
 
 /**
@@ -406,7 +432,7 @@ static inline uint32_t i2c_ll_get_hw_version(i2c_dev_t *hw)
  */
 static inline bool i2c_ll_is_bus_busy(i2c_dev_t *hw)
 {
-    abort(); //TODO: I2C support IDF-3918
+    return hw->sr.bus_busy;
 }
 
 /**
@@ -418,7 +444,7 @@ static inline bool i2c_ll_is_bus_busy(i2c_dev_t *hw)
  */
 static inline bool i2c_ll_is_master_mode(i2c_dev_t *hw)
 {
-    abort(); //TODO: I2C support IDF-3918
+    return hw->ctr.ms_mode;
 }
 
 /**
@@ -430,7 +456,7 @@ static inline bool i2c_ll_is_master_mode(i2c_dev_t *hw)
  */
 static inline uint32_t i2c_ll_get_rxfifo_cnt(i2c_dev_t *hw)
 {
-    abort(); //TODO: I2C support IDF-3918
+    return hw->sr.rxfifo_cnt;
 }
 
 /**
@@ -442,7 +468,7 @@ static inline uint32_t i2c_ll_get_rxfifo_cnt(i2c_dev_t *hw)
  */
 static inline uint32_t i2c_ll_get_txfifo_len(i2c_dev_t *hw)
 {
-    abort(); //TODO: I2C support IDF-3918
+    return SOC_I2C_FIFO_LEN - hw->sr.txfifo_cnt;
 }
 
 /**
@@ -454,7 +480,7 @@ static inline uint32_t i2c_ll_get_txfifo_len(i2c_dev_t *hw)
  */
 static inline uint32_t i2c_ll_get_tout(i2c_dev_t *hw)
 {
-    abort(); //TODO: I2C support IDF-3918
+    return hw->to.time_out_value;
 }
 
 /**
@@ -466,7 +492,7 @@ static inline uint32_t i2c_ll_get_tout(i2c_dev_t *hw)
  */
 static inline void i2c_ll_trans_start(i2c_dev_t *hw)
 {
-    abort(); //TODO: I2C support IDF-3918
+    hw->ctr.trans_start = 1;
 }
 
 /**
@@ -480,7 +506,8 @@ static inline void i2c_ll_trans_start(i2c_dev_t *hw)
  */
 static inline void i2c_ll_get_start_timing(i2c_dev_t *hw, int *setup_time, int *hold_time)
 {
-    abort(); //TODO: I2C support IDF-3918
+    *setup_time = hw->scl_rstart_setup.scl_rstart_setup_time;
+    *hold_time = hw->scl_start_hold.scl_start_hold_time + 1;
 }
 
 /**
@@ -494,7 +521,8 @@ static inline void i2c_ll_get_start_timing(i2c_dev_t *hw, int *setup_time, int *
  */
 static inline void i2c_ll_get_stop_timing(i2c_dev_t *hw, int *setup_time, int *hold_time)
 {
-    abort(); //TODO: I2C support IDF-3918
+    *setup_time = hw->scl_stop_setup.scl_stop_setup_time;
+    *hold_time = hw->scl_stop_hold.scl_stop_hold_time;
 }
 
 /**
@@ -508,7 +536,8 @@ static inline void i2c_ll_get_stop_timing(i2c_dev_t *hw, int *setup_time, int *h
  */
 static inline void i2c_ll_get_scl_timing(i2c_dev_t *hw, int *high_period, int *low_period)
 {
-    abort(); //TODO: I2C support IDF-3918
+    *high_period = hw->scl_high_period.scl_high_period + hw->scl_high_period.scl_wait_high_period;
+    *low_period = hw->scl_low_period.scl_low_period + 1;
 }
 
 /**
@@ -522,7 +551,9 @@ static inline void i2c_ll_get_scl_timing(i2c_dev_t *hw, int *high_period, int *l
  */
 static inline void i2c_ll_write_txfifo(i2c_dev_t *hw, uint8_t *ptr, uint8_t len)
 {
-    abort(); //TODO: I2C support IDF-3918
+    for (int i = 0; i< len; i++) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->data, fifo_rdata, ptr[i]);
+    }
 }
 
 /**
@@ -536,7 +567,9 @@ static inline void i2c_ll_write_txfifo(i2c_dev_t *hw, uint8_t *ptr, uint8_t len)
  */
 static inline void i2c_ll_read_rxfifo(i2c_dev_t *hw, uint8_t *ptr, uint8_t len)
 {
-    abort(); //TODO: I2C support IDF-3918
+    for(int i = 0; i < len; i++) {
+        ptr[i] = HAL_FORCE_READ_U32_REG_FIELD(hw->data, fifo_rdata);
+    }
 }
 
 /**
@@ -550,7 +583,15 @@ static inline void i2c_ll_read_rxfifo(i2c_dev_t *hw, uint8_t *ptr, uint8_t len)
  */
 static inline void i2c_ll_set_filter(i2c_dev_t *hw, uint8_t filter_num)
 {
-    abort(); //TODO: I2C support IDF-3918
+    if (filter_num > 0) {
+        hw->filter_cfg.scl_filter_thres = filter_num;
+        hw->filter_cfg.sda_filter_thres = filter_num;
+        hw->filter_cfg.scl_filter_en = 1;
+        hw->filter_cfg.sda_filter_en = 1;
+    } else {
+        hw->filter_cfg.scl_filter_en = 0;
+        hw->filter_cfg.sda_filter_en = 0;
+    }
 }
 
 /**
@@ -562,7 +603,7 @@ static inline void i2c_ll_set_filter(i2c_dev_t *hw, uint8_t filter_num)
  */
 static inline uint8_t i2c_ll_get_filter(i2c_dev_t *hw)
 {
-    abort(); //TODO: I2C support IDF-3918
+    return hw->filter_cfg.scl_filter_thres;
 }
 
 /**
@@ -574,7 +615,8 @@ static inline uint8_t i2c_ll_get_filter(i2c_dev_t *hw)
  */
 static inline void i2c_ll_master_enable_tx_it(i2c_dev_t *hw)
 {
-    abort(); //TODO: I2C support IDF-3918
+    hw->int_clr.val = ~0;
+    hw->int_ena.val =  I2C_LL_MASTER_TX_INT;
 }
 
 /**
@@ -586,7 +628,8 @@ static inline void i2c_ll_master_enable_tx_it(i2c_dev_t *hw)
  */
 static inline void i2c_ll_master_enable_rx_it(i2c_dev_t *hw)
 {
-    abort(); //TODO: I2C support IDF-3918
+    hw->int_clr.val = ~0;
+    hw->int_ena.val = I2C_LL_MASTER_RX_INT;
 }
 
 /**
@@ -598,7 +641,7 @@ static inline void i2c_ll_master_enable_rx_it(i2c_dev_t *hw)
  */
 static inline void i2c_ll_master_disable_tx_it(i2c_dev_t *hw)
 {
-    abort(); //TODO: I2C support IDF-3918
+    hw->int_ena.val &= (~I2C_LL_MASTER_TX_INT);
 }
 
 /**
@@ -610,7 +653,7 @@ static inline void i2c_ll_master_disable_tx_it(i2c_dev_t *hw)
  */
 static inline void i2c_ll_master_disable_rx_it(i2c_dev_t *hw)
 {
-    abort(); //TODO: I2C support IDF-3918
+    hw->int_ena.val &= (~I2C_LL_MASTER_RX_INT);
 }
 
 /**
@@ -622,7 +665,7 @@ static inline void i2c_ll_master_disable_rx_it(i2c_dev_t *hw)
  */
 static inline void i2c_ll_master_clr_tx_it(i2c_dev_t *hw)
 {
-    abort(); //TODO: I2C support IDF-3918
+    hw->int_clr.val = I2C_LL_MASTER_TX_INT;
 }
 
 /**
@@ -634,79 +677,7 @@ static inline void i2c_ll_master_clr_tx_it(i2c_dev_t *hw)
  */
 static inline void i2c_ll_master_clr_rx_it(i2c_dev_t *hw)
 {
-    abort(); //TODO: I2C support IDF-3918
-}
-
-/**
- * @brief
- *
- * @param  hw Beginning address of the peripheral registers
- *
- * @return None
- */
-static inline void i2c_ll_slave_enable_tx_it(i2c_dev_t *hw)
-{
-    abort(); //TODO: I2C support IDF-3918
-}
-
-/**
- * @brief Enable I2C slave RX interrupt
- *
- * @param  hw Beginning address of the peripheral registers
- *
- * @return None
- */
-static inline void i2c_ll_slave_enable_rx_it(i2c_dev_t *hw)
-{
-    abort(); //TODO: I2C support IDF-3918
-}
-
-/**
- * @brief Disable I2C slave TX interrupt
- *
- * @param  hw Beginning address of the peripheral registers
- *
- * @return None
- */
-static inline void i2c_ll_slave_disable_tx_it(i2c_dev_t *hw)
-{
-    abort(); //TODO: I2C support IDF-3918
-}
-
-/**
- * @brief  Disable I2C slave RX interrupt
- *
- * @param  hw Beginning address of the peripheral registers
- *
- * @return None
- */
-static inline void i2c_ll_slave_disable_rx_it(i2c_dev_t *hw)
-{
-    abort(); //TODO: I2C support IDF-3918
-}
-
-/**
- * @brief  Clear I2C slave TX interrupt status register
- *
- * @param  hw Beginning address of the peripheral registers
- *
- * @return None
- */
-static inline void i2c_ll_slave_clr_tx_it(i2c_dev_t *hw)
-{
-    abort(); //TODO: I2C support IDF-3918
-}
-
-/**
- * @brief Clear I2C slave RX interrupt status register.
- *
- * @param  hw Beginning address of the peripheral registers
- *
- * @return None
- */
-static inline void i2c_ll_slave_clr_rx_it(i2c_dev_t *hw)
-{
-    abort(); //TODO: I2C support IDF-3918
+    hw->int_clr.val = I2C_LL_MASTER_RX_INT;
 }
 
 /**
@@ -718,7 +689,7 @@ static inline void i2c_ll_slave_clr_rx_it(i2c_dev_t *hw)
  */
 static inline void i2c_ll_master_fsm_rst(i2c_dev_t *hw)
 {
-    abort(); //TODO: I2C support IDF-3918
+    hw->ctr.fsm_rst = 1;
 }
 
 /**
@@ -733,7 +704,13 @@ static inline void i2c_ll_master_fsm_rst(i2c_dev_t *hw)
  */
 static inline void i2c_ll_master_clr_bus(i2c_dev_t *hw)
 {
-    abort(); //TODO: I2C support IDF-3918
+    hw->scl_sp_conf.scl_rst_slv_num = 9;
+    hw->scl_sp_conf.scl_rst_slv_en = 1;
+    hw->ctr.conf_upgate = 1;
+    // hardward will clear scl_rst_slv_en after sending SCL pulses,
+    // and we should set conf_upgate bit to synchronize register value.
+    while (hw->scl_sp_conf.scl_rst_slv_en);
+    hw->ctr.conf_upgate = 1;
 }
 
 /**
@@ -746,7 +723,13 @@ static inline void i2c_ll_master_clr_bus(i2c_dev_t *hw)
  */
 static inline void i2c_ll_set_source_clk(i2c_dev_t *hw, i2c_sclk_t src_clk)
 {
-    abort(); //TODO: I2C support IDF-3918
+    // rtc_clk needs to switch on.
+    if (src_clk == I2C_SCLK_RTC) {
+        SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN_M);
+        esp_rom_delay_us(DELAY_RTC_CLK_SWITCH); // TODO: IDF-4535
+    }
+    // src_clk : (1) for RTC_CLK, (0) for XTAL
+    hw->clk_conf.sclk_sel = (src_clk == I2C_SCLK_RTC) ? 1 : 0;
 }
 
 /**
@@ -759,20 +742,20 @@ static inline void i2c_ll_set_source_clk(i2c_dev_t *hw, i2c_sclk_t src_clk)
  */
 static inline void i2c_ll_master_get_event(i2c_dev_t *hw, i2c_intr_event_t *event)
 {
-    abort(); //TODO: I2C support IDF-3918
-}
-
-/**
- * @brief  Get I2C slave interrupt event
- *
- * @param  hw Beginning address of the peripheral registers
- * @param  event Pointer to accept the interrupt event
- *
- * @return None
- */
-static inline void i2c_ll_slave_get_event(i2c_dev_t *hw, i2c_intr_event_t *event)
-{
-    abort(); //TODO: I2C support IDF-3918
+    i2c_int_status_reg_t int_sts = hw->int_status;
+    if (int_sts.arbitration_lost_int_st) {
+        *event = I2C_INTR_EVENT_ARBIT_LOST;
+    } else if (int_sts.nack_int_st) {
+        *event = I2C_INTR_EVENT_NACK;
+    } else if (int_sts.time_out_int_st) {
+        *event = I2C_INTR_EVENT_TOUT;
+    } else if (int_sts.end_detect_int_st) {
+        *event = I2C_INTR_EVENT_END_DET;
+    } else if (int_sts.trans_complete_int_st) {
+        *event = I2C_INTR_EVENT_TRANS_DONE;
+    } else {
+        *event = I2C_INTR_EVENT_ERR;
+    }
 }
 
 /**
@@ -784,19 +767,13 @@ static inline void i2c_ll_slave_get_event(i2c_dev_t *hw, i2c_intr_event_t *event
  */
 static inline void i2c_ll_master_init(i2c_dev_t *hw)
 {
-    abort(); //TODO: I2C support IDF-3918
-}
-
-/**
- * @brief  Init I2C slave
- *
- * @param  hw Beginning address of the peripheral registers
- *
- * @return None
- */
-static inline void i2c_ll_slave_init(i2c_dev_t *hw)
-{
-    abort(); //TODO: I2C support IDF-3918
+    typeof(hw->ctr) ctrl_reg;
+    ctrl_reg.val = 0;
+    ctrl_reg.ms_mode = 1;
+    ctrl_reg.clk_en = 1;
+    ctrl_reg.sda_force_out = 1;
+    ctrl_reg.scl_force_out = 1;
+    hw->ctr.val = ctrl_reg.val;
 }
 
 #ifdef __cplusplus

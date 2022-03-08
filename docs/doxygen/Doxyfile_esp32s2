@@ -2,9 +2,9 @@ INPUT += \
          $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/dac_channel.h \
          $(PROJECT_PATH)/components/driver/$(IDF_TARGET)/include/driver/dac.h \
          $(PROJECT_PATH)/components/hal/include/hal/pcnt_types.h \
-         $(PROJECT_PATH)/components/driver/include/driver/pcnt.h \
+         $(PROJECT_PATH)/components/driver/include/driver/pulse_cnt.h \
          $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/rtc_io_channel.h \
-         $(PROJECT_PATH)/components/driver/esp32s2/include/driver/temp_sensor.h \
+         $(PROJECT_PATH)/components/driver/include/driver/temperature_sensor.h \
          $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/touch_sensor_channel.h \
          $(PROJECT_PATH)/components/driver/$(IDF_TARGET)/include/driver/touch_sensor.h \
          $(PROJECT_PATH)/components/esp_hw_support/include/soc/esp32s2/esp_ds.h \

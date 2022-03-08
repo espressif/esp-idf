@@ -171,7 +171,7 @@ sys_sem_signal_isr(sys_sem_t *sem)
  * @brief Wait for a semaphore to be signaled
  *
  * @param sem pointer of the semaphore
- * @param timeout if zero, will wait infinitely, or will wait for milliseconds specify by this argument
+ * @param timeout if zero, will wait infinitely, or will wait at least for milliseconds specified by this argument
  * @return SYS_ARCH_TIMEOUT when timeout, 0 otherwise
  */
 u32_t
@@ -184,7 +184,13 @@ sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
     ret = xSemaphoreTake(*sem, portMAX_DELAY);
     LWIP_ASSERT("taking semaphore failed", ret == pdTRUE);
   } else {
-    TickType_t timeout_ticks = timeout / portTICK_RATE_MS;
+    /* Round up the number of ticks.
+     * Not only we need to round up the number of ticks, but we also need to add 1.
+     * Indeed, this function shall wait for AT LEAST timeout, but on FreeRTOS,
+     * if we specify a timeout of 1 tick to `xSemaphoreTake`, it will take AT MOST
+     * 1 tick before triggering a timeout. Thus, we need to pass 2 ticks as a timeout
+     * to `xSemaphoreTake`. */
+    TickType_t timeout_ticks = ((timeout + portTICK_PERIOD_MS - 1) / portTICK_PERIOD_MS) + 1;
     ret = xSemaphoreTake(*sem, timeout_ticks);
     if (ret == errQUEUE_EMPTY) {
       /* timed out */
@@ -326,7 +332,7 @@ sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
     ret = xQueueReceive((*mbox)->os_mbox, &(*msg), portMAX_DELAY);
     LWIP_ASSERT("mbox fetch failed", ret == pdTRUE);
   } else {
-    TickType_t timeout_ticks = timeout / portTICK_RATE_MS;
+    TickType_t timeout_ticks = timeout / portTICK_PERIOD_MS;
     ret = xQueueReceive((*mbox)->os_mbox, &(*msg), timeout_ticks);
     if (ret == errQUEUE_EMPTY) {
       /* timed out */

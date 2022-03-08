@@ -57,6 +57,7 @@
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   3
 #define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS   1
+#define SOC_EFUSE_KEY_PURPOSE_FIELD         1
 #define SOC_ICACHE_ACCESS_RODATA_SUPPORTED  1
 #define SOC_TEMP_SENSOR_SUPPORTED           1
 #define SOC_CACHE_SUPPORT_WRAP              1
@@ -144,6 +145,7 @@
 #define SOC_I2C_NUM            (2)
 
 #define SOC_I2C_FIFO_LEN       (32) /*!< I2C hardware FIFO depth */
+#define SOC_I2C_SUPPORT_SLAVE       (1)
 
 //ESP32-S2 support hardware FSM reset
 #define SOC_I2C_SUPPORT_HW_FSM_RST  (1)
@@ -202,7 +204,6 @@
 #define SOC_RMT_RX_CANDIDATES_PER_GROUP (4)  /*!< Number of channels that capable of Receive in each group */
 #define SOC_RMT_CHANNELS_PER_GROUP      (4)  /*!< Total 4 channels */
 #define SOC_RMT_MEM_WORDS_PER_CHANNEL   (64) /*!< Each channel owns 64 words memory (1 word = 4 Bytes) */
-#define SOC_RMT_SUPPORT_RX_PINGPONG     (1)  /*!< Support Ping-Pong mode on RX path */
 #define SOC_RMT_SUPPORT_RX_DEMODULATION (1)  /*!< Support signal demodulation on RX path (i.e. remove carrier) */
 #define SOC_RMT_SUPPORT_TX_LOOP_COUNT   (1)  /*!< Support transmiting specified number of cycles in loop mode */
 #define SOC_RMT_SUPPORT_TX_SYNCHRO      (1)  /*!< Support coordinate a group of TX channels to start simultaneously */
@@ -276,6 +277,7 @@
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-S2 has 2 UART.
 #define SOC_UART_NUM                (2)
+#define SOC_UART_SUPPORT_WAKEUP_INT (1)         /*!< Support UART wakeup interrupt */
 #define SOC_UART_SUPPORT_REF_TICK   (1)         /*!< Support REF_TICK as the clock source */
 #define SOC_UART_FIFO_LEN           (128)       /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX        (5000000)   /*!< Max bit rate supported by UART */
@@ -357,3 +359,6 @@
 #define SOC_COEX_HW_PTI                 (1)
 /* ---------------------------- Compatibility ------------------------------- */
 // No contents
+
+/*-------------------------- Temperature Sensor CAPS -------------------------------------*/
+#define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)

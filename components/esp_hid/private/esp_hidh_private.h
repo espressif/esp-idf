@@ -1,16 +1,8 @@
-// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _ESP_HIDH_PRIVATE_H_
 #define _ESP_HIDH_PRIVATE_H_
@@ -74,8 +66,8 @@ struct esp_hidh_dev_s {
     void                    *tmp;
     size_t                  tmp_len;
 
-    xSemaphoreHandle        semaphore;
-    xSemaphoreHandle        mutex;
+    SemaphoreHandle_t        semaphore;
+    SemaphoreHandle_t        mutex;
 
     esp_err_t               (*close)        (esp_hidh_dev_t *dev);
     esp_err_t               (*report_write) (esp_hidh_dev_t *dev, size_t map_index, size_t report_id, int report_type, uint8_t *data, size_t len);

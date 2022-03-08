@@ -81,17 +81,24 @@ FTDI_JTAG_DOCS = ['api-guides/jtag-debugging/configure-ft2232h-jtag.rst']
 USB_SERIAL_JTAG_DOCS = ['api-guides/jtag-debugging/configure-builtin-jtag.rst',
                         'api-guides/usb-serial-jtag-console.rst']
 
-ULP_DOCS = ['api-guides/ulp.rst', 'api-guides/ulp_macros.rst']
+ULP_DOCS = ['api-reference/system/ulp.rst',
+            'api-reference/system/ulp_macros.rst',
+            'api-reference/system/ulp_instruction_set.rst']
 
-RISCV_COPROC_DOCS = ['api-guides/ulp-risc-v.rst',]
+RISCV_COPROC_DOCS = ['api-reference/system/ulp-risc-v.rst',]
 
 XTENSA_DOCS = ['api-guides/hlinterrupts.rst',
                'api-reference/system/perfmon.rst']
 
 RISCV_DOCS = []  # type: list[str]
 
-ESP32_DOCS = ['api-guides/ulp_instruction_set.rst',
-              'api-reference/system/himem.rst',
+TWAI_DOCS = ['api-reference/peripherals/twai.rst']
+
+SIGMADELTA_DOCS = ['api-reference/peripherals/sigmadelta.rst']
+
+I2S_DOCS = ['api-reference/peripherals/i2s.rst']
+
+ESP32_DOCS = ['api-reference/system/himem.rst',
               'api-guides/romconsole.rst',
               'api-reference/system/ipc.rst',
               'security/secure-boot-v1.rst',
@@ -101,7 +108,6 @@ ESP32_DOCS = ['api-guides/ulp_instruction_set.rst',
               'api-guides/RF_calibration.rst'] + FTDI_JTAG_DOCS
 
 ESP32S2_DOCS = ['hw-reference/esp32s2/**',
-                'api-guides/ulps2_instruction_set.rst',
                 'api-guides/usb-console.rst',
                 'api-reference/peripherals/ds.rst',
                 'api-reference/peripherals/spi_slave_hd.rst',
@@ -142,6 +148,9 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'CONFIG_IDF_TARGET_ARCH_XTENSA':XTENSA_DOCS,
                             'CONFIG_IDF_TARGET_ARCH_RISCV':RISCV_DOCS,
                             'SOC_TEMP_SENSOR_SUPPORTED':TEMP_SENSOR_DOCS,
+                            'SOC_TWAI_SUPPORTED':TWAI_DOCS,
+                            'SOC_I2S_SUPPORTED':I2S_DOCS,
+                            'SOC_SIGMADELTA_SUPPORTED':SIGMADELTA_DOCS,
                             'esp32':ESP32_DOCS,
                             'esp32s2':ESP32S2_DOCS,
                             'esp32s3':ESP32S3_DOCS,

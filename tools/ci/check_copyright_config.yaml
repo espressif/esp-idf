@@ -52,6 +52,7 @@ examples_and_unit_tests:
    - 'examples/'
    - 'components/**/test/**'
    - 'components/**/test_apps/**'
+   - 'tools/test_apps/**'
   allowed_licenses:
   - Apache-2.0
   - Unlicense
@@ -73,6 +74,43 @@ lwip_component:
     - Apache-2.0
     - BSD-3-Clause
   license_for_new_files: Apache-2.0
+
+asio_component:
+  include:
+    - 'components/asio/port/**'
+  allowed_licenses:
+    - Apache-2.0
+    - BSL-1.0
+
+freertos_component:
+  include:
+    - 'components/freertos/**'
+  allowed_licenses:
+    - Apache-2.0    #Files added to the freertos added by us
+    - MIT           #FreeRTOS sources and port files
+
+systemview:
+  include:
+    - 'components/app_trace/sys_view'
+  allowed_licenses:
+    - Apache-2.0
+    - BSD-3-Clause
+  license_for_new_files: Apache-2.0
+
+spiffs:
+  include:
+    - 'components/spiffs/include/'
+  allowed_licenses:
+    - MIT
+    - Apache-2.0
+
+sdmmc:
+  include:
+    - 'components/driver/include/driver/'
+    - 'components/sdmmc/'
+  allowed_licenses:
+    - Apache-2.0
+    - ISC
 
 # files matching this section do not perform the check
 # file patterns starting with ! are negated, meaning files matching them won't match the section.

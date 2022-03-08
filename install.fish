@@ -7,6 +7,9 @@ set -x IDF_PATH $basedir
 echo "Detecting the Python interpreter"
 source "$IDF_PATH"/tools/detect_python.fish
 
+echo "Checking Python compatibility"
+"$ESP_PYTHON" "$IDF_PATH"/tools/python_version_checker.py
+
 set TARGETS ("$ESP_PYTHON" "$IDF_PATH"/tools/install_util.py extract targets $argv) || exit 1
 
 echo "Installing ESP-IDF tools"

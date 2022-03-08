@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,7 @@
 #include "esp_check.h"
 #include "esp_eth.h"
 #include "esp_pm.h"
-#include "esp_system.h"
+#include "esp_mac.h"
 #include "esp_heap_caps.h"
 #include "esp_intr_alloc.h"
 #include "esp_private/esp_clk.h"
@@ -24,7 +24,7 @@
 #include "hal/emac_hal.h"
 #include "hal/gpio_hal.h"
 #include "soc/soc.h"
-#include "soc/clk_ctrl_os.h"
+#include "clk_ctrl_os.h"
 #include "sdkconfig.h"
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
@@ -33,7 +33,7 @@
 static const char *TAG = "esp.emac";
 
 #define PHY_OPERATION_TIMEOUT_US (1000)
-#define MAC_STOP_TIMEOUT_MS (100)
+#define MAC_STOP_TIMEOUT_US (250)
 #define FLOW_CONTROL_LOW_WATER_MARK (CONFIG_ETH_DMA_RX_BUFFER_NUM / 3)
 #define FLOW_CONTROL_HIGH_WATER_MARK (FLOW_CONTROL_LOW_WATER_MARK * 2)
 
@@ -61,10 +61,13 @@ typedef struct {
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;
 #endif
+    eth_mac_dma_burst_len_t dma_burst_len;
 } emac_esp32_t;
 
 static esp_err_t esp_emac_alloc_driver_obj(const eth_mac_config_t *config, emac_esp32_t **emac_out_hdl, void **out_descriptors);
 static void esp_emac_free_driver_obj(emac_esp32_t *emac, void *descriptors);
+static esp_err_t emac_esp32_start(esp_eth_mac_t *mac);
+static esp_err_t emac_esp32_stop(esp_eth_mac_t *mac);
 
 static esp_err_t emac_esp32_set_mediator(esp_eth_mac_t *mac, esp_eth_mediator_t *eth)
 {
@@ -151,11 +154,11 @@ static esp_err_t emac_esp32_set_link(esp_eth_mac_t *mac, eth_link_t link)
     switch (link) {
     case ETH_LINK_UP:
         ESP_GOTO_ON_ERROR(esp_intr_enable(emac->intr_hdl), err, TAG, "enable interrupt failed");
-        emac_hal_start(&emac->hal);
+        emac_esp32_start(mac);
         break;
     case ETH_LINK_DOWN:
         ESP_GOTO_ON_ERROR(esp_intr_disable(emac->intr_hdl), err, TAG, "disable interrupt failed");
-        emac_hal_stop(&emac->hal);
+        emac_esp32_stop(mac);
         break;
     default:
         ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "unknown link status");
@@ -311,7 +314,7 @@ static esp_err_t emac_config_apll_clock(void)
         ESP_LOGW(TAG, "APLL is occupied already, it is working at %d Hz", real_freq);
     }
     // If the difference of real APLL frequency is not within 50 ppm, i.e. 2500 Hz, the APLL is unavailable
-    ESP_RETURN_ON_FALSE(abs(real_freq - expt_freq) <= 2500,
+    ESP_RETURN_ON_FALSE(abs((int)real_freq - (int)expt_freq) <= 2500,
                          ESP_ERR_INVALID_STATE, TAG, "The APLL is working at an unusable frequency");
 
     return ESP_OK;
@@ -342,8 +345,9 @@ static esp_err_t emac_esp32_init(esp_eth_mac_t *mac)
     emac_hal_reset_desc_chain(&emac->hal);
     /* init mac registers by default */
     emac_hal_init_mac_default(&emac->hal);
-    /* init dma registers by default */
-    emac_hal_init_dma_default(&emac->hal);
+    /* init dma registers with selected EMAC-DMA configuration */
+    emac_hal_dma_config_t dma_config = { .dma_burst_len = emac->dma_burst_len };
+    emac_hal_init_dma_default(&emac->hal, &dma_config);
     /* get emac address from efuse */
     ESP_GOTO_ON_ERROR(esp_read_mac(emac->addr, ESP_MAC_ETH), err, TAG, "fetch ethernet mac address failed");
     /* set MAC address to emac register */
@@ -387,9 +391,9 @@ static esp_err_t emac_esp32_stop(esp_eth_mac_t *mac)
         if ((ret = emac_hal_stop(&emac->hal)) == ESP_OK) {
             break;
         }
-        to += 20;
-        vTaskDelay(pdMS_TO_TICKS(20));
-    } while (to < MAC_STOP_TIMEOUT_MS);
+        to += 25;
+        esp_rom_delay_us(25);
+    } while (to < MAC_STOP_TIMEOUT_US);
     return ret;
 }
 
@@ -497,12 +501,12 @@ err:
     return ret;
 }
 
-static esp_err_t esp_emac_config_data_interface(const eth_mac_config_t *config, emac_esp32_t *emac)
+static esp_err_t esp_emac_config_data_interface(const eth_esp32_emac_config_t *esp32_emac_config, emac_esp32_t *emac)
 {
     esp_err_t ret = ESP_OK;
-    switch (config->interface) {
+    switch (esp32_emac_config->interface) {
     case EMAC_DATA_INTERFACE_MII:
-        emac->clock_config = config->clock_config;
+        emac->clock_config = esp32_emac_config->clock_config;
         /* MII interface GPIO initialization */
         emac_hal_iomux_init_mii();
         /* Enable MII clock */
@@ -510,7 +514,7 @@ static esp_err_t esp_emac_config_data_interface(const eth_mac_config_t *config, 
         break;
     case EMAC_DATA_INTERFACE_RMII:
         // by default, the clock mode is selected at compile time (by Kconfig)
-        if (config->clock_config.rmii.clock_mode == EMAC_CLK_DEFAULT) {
+        if (esp32_emac_config->clock_config.rmii.clock_mode == EMAC_CLK_DEFAULT) {
 #if CONFIG_ETH_RMII_CLK_INPUT
 #if CONFIG_ETH_RMII_CLK_IN_GPIO == 0
             emac->clock_config.rmii.clock_mode = EMAC_CLK_EXT_IN;
@@ -529,7 +533,7 @@ static esp_err_t esp_emac_config_data_interface(const eth_mac_config_t *config, 
 #error "Unsupported RMII clock mode"
 #endif
         } else {
-            emac->clock_config = config->clock_config;
+            emac->clock_config = esp32_emac_config->clock_config;
         }
         /* RMII interface GPIO initialization */
         emac_hal_iomux_init_rmii();
@@ -559,13 +563,13 @@ static esp_err_t esp_emac_config_data_interface(const eth_mac_config_t *config, 
         }
         break;
     default:
-        ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "invalid EMAC Data Interface:%d", config->interface);
+        ESP_GOTO_ON_FALSE(false, ESP_ERR_INVALID_ARG, err, TAG, "invalid EMAC Data Interface:%d", esp32_emac_config->interface);
     }
 err:
     return ret;
 }
 
-esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config)
+esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_esp32_emac_config_t *esp32_config, const eth_mac_config_t *config)
 {
     esp_err_t ret_code = ESP_OK;
     esp_eth_mac_t *ret = NULL;
@@ -588,12 +592,13 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config)
                                   emac_isr_default_handler, &emac->hal, &(emac->intr_hdl));
     }
     ESP_GOTO_ON_FALSE(ret_code == ESP_OK, NULL, err, TAG, "alloc emac interrupt failed");
-    ret_code = esp_emac_config_data_interface(config, emac);
+    ret_code = esp_emac_config_data_interface(esp32_config, emac);
     ESP_GOTO_ON_FALSE(ret_code == ESP_OK, NULL, err_interf, TAG, "config emac interface failed");
 
+    emac->dma_burst_len = esp32_config->dma_burst_len;
     emac->sw_reset_timeout_ms = config->sw_reset_timeout_ms;
-    emac->smi_mdc_gpio_num = config->smi_mdc_gpio_num;
-    emac->smi_mdio_gpio_num = config->smi_mdio_gpio_num;
+    emac->smi_mdc_gpio_num = esp32_config->smi_mdc_gpio_num;
+    emac->smi_mdio_gpio_num = esp32_config->smi_mdio_gpio_num;
     emac->flow_control_high_water_mark = FLOW_CONTROL_HIGH_WATER_MARK;
     emac->flow_control_low_water_mark = FLOW_CONTROL_LOW_WATER_MARK;
     emac->use_apll = false;

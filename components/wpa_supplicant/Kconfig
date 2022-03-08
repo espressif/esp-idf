@@ -52,8 +52,8 @@ menu "Supplicant"
             rigorously. Disabling this add the workaorunds with various APs.
             Enabling this may cause inter operability issues with some APs.
 
-    menuconfig WPA_11KV_SUPPORT
-        bool "Enable 802.11k, 802.11v APIs handling in supplicant"
+    config WPA_11KV_SUPPORT
+        bool "Enable 802.11k, 802.11v APIs handling"
         default n
         help
             Select this option to enable 802.11k 802.11v APIs(RRM and BTM support).
@@ -68,7 +68,7 @@ menu "Supplicant"
             and on the radio environment. Current implementation adds beacon report,
             link measurement, neighbor report.
 
-    menuconfig WPA_SCAN_CACHE
+    config WPA_SCAN_CACHE
         bool "Keep scan results in cache"
         depends on WPA_11KV_SUPPORT
         default n
@@ -76,10 +76,19 @@ menu "Supplicant"
             Keep scan results in cache, if not enabled, those
             will be flushed immediately.
 
-    menuconfig WPA_MBO_SUPPORT
-        bool "Enable MBO support in supplicant"
-        depends on WPA_11KV_SUPPORT
+    config WPA_MBO_SUPPORT
+        bool "Enable MBO support"
         default n
+        select WPA_11KV_SUPPORT
+        select WPA_SCAN_CACHE
         help
             Select this option to enable WiFi Multiband operation certification support.
+
+    config WPA_DPP_SUPPORT
+        bool "Enable DPP support"
+        default n
+        select WPA_MBEDTLS_CRYPTO
+        help
+            Select this option to enable WiFi Easy Connect Support.
+
 endmenu

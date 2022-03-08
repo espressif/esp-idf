@@ -1,6 +1,14 @@
 /*
+ * SPDX-FileCopyrightText: 2017 Amazon.com, Inc. or its affiliates
+ * SPDX-FileCopyrightText: 2015-2019 Cadence Design Systems, Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ *
+ * SPDX-FileContributor: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ */
+/*
  * FreeRTOS Kernel V10.4.3
- * Copyright (C) 2019 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * Copyright (C) 2017 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -10,7 +18,8 @@
  * subject to the following conditions:
  *
  * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
+ * copies or substantial portions of the Software. If you wish to use our Amazon
+ * FreeRTOS name, please do so in a fair use way that does not cause confusion.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
@@ -19,10 +28,33 @@
  * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
- * http://www.FreeRTOS.org
- * http://aws.amazon.com/freertos
+ * https://www.FreeRTOS.org
+ * https://github.com/FreeRTOS
  *
  * 1 tab == 4 spaces!
+ */
+
+/*
+ * Copyright (c) 2015-2019 Cadence Design Systems, Inc.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 #ifndef PORTMACRO_H
@@ -39,9 +71,10 @@
 #include <xtensa/hal.h>             /* required for xthal_get_ccount. [refactor-todo] use cpu_hal instead */
 #include <xtensa/xtruntime.h>       /* required for XTOS_SET_INTLEVEL. [refactor-todo] add common intr functions to esp_hw_support */
 #include "xt_instr_macros.h"
-#include "soc/spinlock.h"
+#include "spinlock.h"
 #include "hal/cpu_hal.h"
 #include "esp_private/crosscore_int.h"
+#include "esp_macro.h"
 #include "esp_attr.h"
 #include "esp_timer.h"              /* required for esp_timer_get_time. [refactor-todo] make this common between archs */
 #include "esp_newlib.h"             /* required for esp_reent_init() in tasks.c */
@@ -58,7 +91,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
 
 /* --------------------------------------------------- Port Types ------------------------------------------------------
@@ -308,15 +340,6 @@ static inline void __attribute__((always_inline)) vPortExitCriticalSafe(portMUX_
 void vPortYield( void );
 
 /**
- * @brief
- *
- * @note [refactor-todo] Refactor this to avoid va_args
- * @param argc
- * @param ... Variable arguments to allow for IDF prototype without arguments, and vanilla version WITH argument
- */
-void vPortEvaluateYieldFromISR(int argc, ...);
-
-/**
  * @brief Yields the other core
  *
  * - Send an interrupt to another core in order to make the task running on it yield for a higher-priority task.
@@ -339,9 +362,6 @@ void vPortYieldOtherCore(BaseType_t coreid);
 static inline bool IRAM_ATTR xPortCanYield(void);
 
 // ------------------- Hook Functions ----------------------
-
-extern void esp_vApplicationIdleHook(void);     /* Required by tasks.c */
-extern void esp_vApplicationTickHook(void);     /* Required by tasks.c */
 
 /**
  * @brief Hook function called on entry to tickless idle
@@ -485,17 +505,28 @@ static inline void __attribute__((always_inline)) uxPortCompareSetExtram(volatil
 
 #define portYIELD() vPortYield()
 
+extern void _frxt_setup_switch( void );     //Defined in portasm.S
+
+#define portYIELD_FROM_ISR_NO_ARG() ({ \
+    traceISR_EXIT_TO_SCHEDULER(); \
+    _frxt_setup_switch(); \
+})
+#define portYIELD_FROM_ISR_ARG(xHigherPriorityTaskWoken) ({ \
+    if (xHigherPriorityTaskWoken == pdTRUE) { \
+        traceISR_EXIT_TO_SCHEDULER(); \
+        _frxt_setup_switch(); \
+    } \
+})
+
 /**
  * @note    The macro below could be used when passing a single argument, or without any argument,
  *          it was developed to support both usages of portYIELD inside of an ISR. Any other usage form
  *          might result in undesired behavior
- *
- * @note [refactor-todo] Refactor this to avoid va_args
  */
 #if defined(__cplusplus) && (__cplusplus >  201703L)
-#define portYIELD_FROM_ISR(...) vPortEvaluateYieldFromISR(portGET_ARGUMENT_COUNT(__VA_ARGS__) __VA_OPT__(,) __VA_ARGS__)
+#define portYIELD_FROM_ISR(...) CHOOSE_MACRO_VA_ARG(_0 __VA_OPT__(,) ##__VA_ARGS__, portYIELD_FROM_ISR_ARG, portYIELD_FROM_ISR_NO_ARG)(__VA_ARGS__)
 #else
-#define portYIELD_FROM_ISR(...) vPortEvaluateYieldFromISR(portGET_ARGUMENT_COUNT(__VA_ARGS__), ##__VA_ARGS__)
+#define portYIELD_FROM_ISR(...) CHOOSE_MACRO_VA_ARG(_0, ##__VA_ARGS__, portYIELD_FROM_ISR_ARG, portYIELD_FROM_ISR_NO_ARG)(__VA_ARGS__)
 #endif
 
 /* Yielding within an API call (when interrupts are off), means the yield should be delayed
@@ -508,11 +539,6 @@ static inline void __attribute__((always_inline)) uxPortCompareSetExtram(volatil
 #define portYIELD_WITHIN_API() esp_crosscore_int_send_yield(xPortGetCoreID())
 
 // ------------------- Hook Functions ----------------------
-
-#ifndef CONFIG_FREERTOS_LEGACY_HOOKS
-#define vApplicationIdleHook esp_vApplicationIdleHook
-#define vApplicationTickHook esp_vApplicationTickHook
-#endif /* !CONFIG_FREERTOS_LEGACY_HOOKS */
 
 #define portSUPPRESS_TICKS_AND_SLEEP(idleTime) vApplicationSleep(idleTime)
 
@@ -554,14 +580,14 @@ static inline void __attribute__((always_inline)) uxPortCompareSetExtram(volatil
 
 // --------------------- Interrupts ------------------------
 
-static inline UBaseType_t xPortSetInterruptMaskFromISR(void)
+static inline UBaseType_t __attribute__((always_inline)) xPortSetInterruptMaskFromISR(void)
 {
     UBaseType_t prev_int_level = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL);
     portbenchmarkINTERRUPT_DISABLE();
     return prev_int_level;
 }
 
-static inline void vPortClearInterruptMaskFromISR(UBaseType_t prev_level)
+static inline void __attribute__((always_inline)) vPortClearInterruptMaskFromISR(UBaseType_t prev_level)
 {
     portbenchmarkINTERRUPT_RESTORE(prev_level);
     XTOS_RESTORE_JUST_INTLEVEL((int) prev_level);
@@ -691,28 +717,6 @@ void vPortStoreTaskMPUSettings( xMPU_SETTINGS *xMPUSettings, const struct xMEMOR
 void vPortReleaseTaskMPUSettings( xMPU_SETTINGS *xMPUSettings );
 #endif
 
-// -------------------- VA_ARGS Yield ----------------------
-
-/**
- * Macro to count number of arguments of a __VA_ARGS__ used to support portYIELD_FROM_ISR with,
- * or without arguments. The macro counts only 0 or 1 arguments.
- *
- * In the future, we want to switch to C++20. We also want to become compatible with clang.
- * Hence, we provide two versions of the following macros which are using variadic arguments.
- * The first one is using the GNU extension ##__VA_ARGS__. The second one is using the C++20 feature __VA_OPT__(,).
- * This allows users to compile their code with standard C++20 enabled instead of the GNU extension.
- * Below C++20, we haven't found any good alternative to using ##__VA_ARGS__.
- */
-#if defined(__cplusplus) && (__cplusplus >  201703L)
-#define portGET_ARGUMENT_COUNT(...) portGET_ARGUMENT_COUNT_INNER(0 __VA_OPT__(,) __VA_ARGS__,1,0)
-#else
-#define portGET_ARGUMENT_COUNT(...) portGET_ARGUMENT_COUNT_INNER(0, ##__VA_ARGS__,1,0)
-#endif
-#define portGET_ARGUMENT_COUNT_INNER(zero, one, count, ...) count
-
-_Static_assert(portGET_ARGUMENT_COUNT() == 0, "portGET_ARGUMENT_COUNT() result does not match for 0 arguments");
-_Static_assert(portGET_ARGUMENT_COUNT(1) == 1, "portGET_ARGUMENT_COUNT() result does not match for 1 argument");
-
 // -------------------- Heap Related -----------------------
 
 /**
@@ -740,7 +744,22 @@ bool xPortcheckValidStackMem(const void *ptr);
 #define portVALID_TCB_MEM(ptr) xPortCheckValidTCBMem(ptr)
 #define portVALID_STACK_MEM(ptr) xPortcheckValidStackMem(ptr)
 
+// --------------------- App-Trace -------------------------
 
+#if CONFIG_APPTRACE_SV_ENABLE
+extern uint32_t port_switch_flag[];
+#define os_task_switch_is_pended(_cpu_) (port_switch_flag[_cpu_])
+#else
+#define os_task_switch_is_pended(_cpu_) (false)
+#endif
+
+// --------------------- Debugging -------------------------
+
+#if CONFIG_FREERTOS_ASSERT_ON_UNTESTED_FUNCTION
+#define UNTESTED_FUNCTION() { esp_rom_printf("Untested FreeRTOS function %s\r\n", __FUNCTION__); configASSERT(false); } while(0)
+#else
+#define UNTESTED_FUNCTION()
+#endif
 
 /* ---------------------------------------------------- Deprecate ------------------------------------------------------
  * - Pull in header containing deprecated macros here

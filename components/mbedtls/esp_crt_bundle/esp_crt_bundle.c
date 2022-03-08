@@ -1,18 +1,8 @@
-// Copyright 2018-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-
+/*
+ * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <string.h>
 #include <esp_system.h>
 #include "esp_crt_bundle.h"
@@ -60,21 +50,21 @@ static int esp_crt_check_signature(mbedtls_x509_crt *child, const uint8_t *pub_k
 
 
     // Fast check to avoid expensive computations when not necessary
-    if (!mbedtls_pk_can_do(&parent.pk, child->sig_pk)) {
+    if (!mbedtls_pk_can_do(&parent.pk, child->MBEDTLS_PRIVATE(sig_pk))) {
         ESP_LOGE(TAG, "Simple compare failed");
         ret = -1;
         goto cleanup;
     }
 
-    md_info = mbedtls_md_info_from_type(child->sig_md);
+    md_info = mbedtls_md_info_from_type(child->MBEDTLS_PRIVATE(sig_md));
     if ( (ret = mbedtls_md( md_info, child->tbs.p, child->tbs.len, hash )) != 0 ) {
         ESP_LOGE(TAG, "Internal mbedTLS error %X", ret);
         goto cleanup;
     }
 
-    if ( (ret = mbedtls_pk_verify_ext( child->sig_pk, child->sig_opts, &parent.pk,
-                                       child->sig_md, hash, mbedtls_md_get_size( md_info ),
-                                       child->sig.p, child->sig.len )) != 0 ) {
+    if ( (ret = mbedtls_pk_verify_ext( child->MBEDTLS_PRIVATE(sig_pk), child->MBEDTLS_PRIVATE(sig_opts), &parent.pk,
+                                       child->MBEDTLS_PRIVATE(sig_md), hash, mbedtls_md_get_size( md_info ),
+                                       child->MBEDTLS_PRIVATE(sig).p, child->MBEDTLS_PRIVATE(sig).len )) != 0 ) {
 
         ESP_LOGE(TAG, "PK verify failed with error %X", ret);
         goto cleanup;

@@ -1,11 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdio.h>
 #include <string.h>
-#include "esp_system.h"
+#include "esp_mac.h"
 #include "nvs_flash.h"
 #include "esp_event.h"
 #include "esp_netif.h"
@@ -28,7 +28,7 @@ static void get_string(char *line, size_t size)
             line[count] = c;
             ++count;
         }
-        vTaskDelay(50 / portTICK_PERIOD_MS);
+        vTaskDelay(20 / portTICK_PERIOD_MS);
     }
 }
 
@@ -92,8 +92,6 @@ static void initialise_mdns(void)
 
 void app_main(void)
 {
-    char line[256];
-
     ESP_LOGI(TAG, "[APP] Free memory: %d bytes", esp_get_free_heap_size());
     ESP_LOGI(TAG, "[APP] IDF version: %s", esp_get_idf_version());
 
@@ -110,6 +108,8 @@ void app_main(void)
     ESP_ERROR_CHECK(example_connect());
 
     while (1) {
+        char line[256];
+
         get_string(line, sizeof(line));
         mdns_test(line);
         continue;

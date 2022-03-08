@@ -12,7 +12,7 @@
 #include "esp_err.h"
 
 #include "esp_log.h"
-#include "esp_system.h"
+#include "esp_chip_info.h"
 
 #include "esp_efuse.h"
 #include "esp_private/cache_err_int.h"
@@ -72,11 +72,10 @@
 #include "hal/gpio_hal.h"
 #include "hal/wdt_hal.h"
 #include "soc/rtc.h"
-#include "soc/efuse_reg.h"
+#include "hal/efuse_ll.h"
 #include "soc/periph_defs.h"
 #include "esp_cpu.h"
 #include "soc/rtc.h"
-#include "soc/spinlock.h"
 
 #if CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX || CONFIG_ESP32S3_TRAX
 #include "esp_private/trax.h"
@@ -138,7 +137,7 @@ static void core_intr_matrix_clear(void)
     uint32_t core_id = cpu_hal_get_core_id();
 
     for (int i = 0; i < ETS_MAX_INTR_SOURCE; i++) {
-        intr_matrix_set(core_id, i, ETS_INVALID_INUM);
+        esp_rom_route_intr_matrix(core_id, i, ETS_INVALID_INUM);
     }
 }
 
@@ -363,7 +362,7 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif // CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
 
 #if CONFIG_ESPTOOLPY_OCT_FLASH
-    bool efuse_opflash_en = REG_GET_FIELD(EFUSE_RD_REPEAT_DATA3_REG, EFUSE_FLASH_TYPE);
+    bool efuse_opflash_en = efuse_ll_get_flash_type();
     if (!efuse_opflash_en) {
         ESP_EARLY_LOGE(TAG, "Octal Flash option selected, but EFUSE not configured!");
         abort();

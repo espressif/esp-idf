@@ -84,7 +84,7 @@ Pins in use. The SPI Master can use the GPIO mux, so feel free to change these i
 
 
 //The semaphore indicating the slave is ready to receive stuff.
-static xQueueHandle rdySem;
+static QueueHandle_t rdySem;
 
 /*
 This ISR is called when the handshake line goes high.

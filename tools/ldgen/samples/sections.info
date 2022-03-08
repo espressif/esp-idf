@@ -800,7 +800,7 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
  19 .literal.__getreent 00000008  00000000  00000000  000001f8  2**2
                   CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
- 20 .literal.pcTaskGetTaskName 0000001c  00000000  00000000  00000200  2**2
+ 20 .literal.pcTaskGetName 0000001c  00000000  00000000  00000200  2**2
                   CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
  21 .literal.pvTaskGetThreadLocalStoragePointer 00000004  00000000  00000000  0000021c  2**2
                   CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
@@ -946,7 +946,7 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
  92 .text.__getreent 00000019  00000000  00000000  000013f8  2**2
                   CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
- 93 .text.pcTaskGetTaskName 0000002d  00000000  00000000  00001414  2**2
+ 93 .text.pcTaskGetName 0000002d  00000000  00000000  00001414  2**2
                   CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
  94 .text.pvTaskGetThreadLocalStoragePointer 0000001e  00000000  00000000  00001444  2**2
                   CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
@@ -1263,7 +1263,7 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
  38 .text.xTimerGetExpiryTime 00000022  00000000  00000000  00000754  2**2
                   CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
- 39 .text.pcTimerGetTimerName 00000007  00000000  00000000  00000778  2**2
+ 39 .text.pcTimerGetName 00000007  00000000  00000000  00000778  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
  40 .text.xTimerIsTimerActive 00000024  00000000  00000000  00000780  2**2
                   CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
