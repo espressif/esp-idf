@@ -11,11 +11,14 @@
 #include <sys/cdefs.h>
 #include "esp_lcd_panel_io_interface.h"
 #include "esp_lcd_panel_io.h"
+#include "hal/spi_ll.h"
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_lcd_common.h"
+
+#define LCD_SPI_MAX_DATA_SIZE (SPI_LL_DATA_MAX_BIT_LEN / 8)
 
 static const char *TAG = "lcd_panel.io.spi";
 
@@ -29,7 +32,7 @@ typedef struct {
     spi_transaction_t base;
     struct {
         unsigned int dc_gpio_level: 1;
-        unsigned int trans_is_color: 1;
+        unsigned int en_trans_done_cb: 1;
     } flags;
 } lcd_spi_trans_descriptor_t;
 
@@ -214,7 +217,6 @@ static esp_err_t panel_io_spi_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     spi_transaction_t *spi_trans = NULL;
     lcd_spi_trans_descriptor_t *lcd_trans = NULL;
     esp_lcd_panel_io_spi_t *spi_panel_io = __containerof(io, esp_lcd_panel_io_spi_t, base);
-    size_t next_trans = 0;
 
     // before issue a polling transaction, need to wait queued transactions finished
     for (size_t i = 0; i < spi_panel_io->num_trans_inflight; i++) {
@@ -245,26 +247,25 @@ static esp_err_t panel_io_spi_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     do {
         size_t chunk_size = color_size;
 
-        if (spi_panel_io->num_trans_inflight >= spi_panel_io->queue_size) {
+        if (spi_panel_io->num_trans_inflight < spi_panel_io->queue_size) {
+            // get the next available transaction
+            lcd_trans = &spi_panel_io->trans_pool[spi_panel_io->num_trans_inflight];
+        } else {
             // transaction pool has used up, recycle one transaction
             ret = spi_device_get_trans_result(spi_panel_io->spi_dev, &spi_trans, portMAX_DELAY);
             ESP_GOTO_ON_ERROR(ret, err, TAG, "recycle spi transactions failed");
+            lcd_trans = __containerof(spi_trans, lcd_spi_trans_descriptor_t, base);
             spi_panel_io->num_trans_inflight--;
         }
-
-        // get the next available transaction
-        lcd_trans = &spi_panel_io->trans_pool[next_trans];
-        next_trans = (next_trans + 1) % spi_panel_io->queue_size;
         memset(lcd_trans, 0, sizeof(lcd_spi_trans_descriptor_t));
 
-        // MOSI_DBITLEN holds the size minus 1, so we can actually fit 1 additional byte,
-        // hence each chunk can have up to (SPI_MS_DATA_BITLEN_V + 1) bytes
-        if (chunk_size > (SPI_MS_DATA_BITLEN_V + 1) / 8) {
+        // SPI per-transfer size has its limitation, if the color buffer is too big, we need to split it into multiple trunks
+        if (chunk_size > LCD_SPI_MAX_DATA_SIZE) {
             // cap the transfer size to the maximum supported by the bus
-            chunk_size = (SPI_MS_DATA_BITLEN_V + 1) / 8;
+            chunk_size = LCD_SPI_MAX_DATA_SIZE;
         } else {
-            // mark as sending LCD color data only at the last round to avoid premature completion callback
-            lcd_trans->flags.trans_is_color = 1;
+            // mark en_trans_done_cb only at the last round to avoid premature completion callback
+            lcd_trans->flags.en_trans_done_cb = 1;
         }
 
         lcd_trans->base.user = spi_panel_io;
@@ -287,8 +288,7 @@ static esp_err_t panel_io_spi_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
         // move on to the next chunk
         color = (const uint8_t *)color + chunk_size;
         color_size -= chunk_size;
-    }
-    while (color_size > 0); // continue while we have remaining data to transmit
+    } while (color_size > 0); // continue while we have remaining data to transmit
 
 err:
     return ret;
@@ -307,7 +307,7 @@ static void lcd_spi_post_trans_color_cb(spi_transaction_t *trans)
 {
     esp_lcd_panel_io_spi_t *spi_panel_io = trans->user;
     lcd_spi_trans_descriptor_t *lcd_trans = __containerof(trans, lcd_spi_trans_descriptor_t, base);
-    if (lcd_trans->flags.trans_is_color) {
+    if (lcd_trans->flags.en_trans_done_cb) {
         if (spi_panel_io->on_color_trans_done) {
             spi_panel_io->on_color_trans_done(&spi_panel_io->base, NULL, spi_panel_io->user_ctx);
         }

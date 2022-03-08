@@ -827,7 +827,6 @@ components/hal/esp32/include/hal/sigmadelta_ll.h
 components/hal/esp32/include/hal/soc_ll.h
 components/hal/esp32/include/hal/spi_flash_encrypted_ll.h
 components/hal/esp32/include/hal/spi_flash_ll.h
-components/hal/esp32/include/hal/spi_ll.h
 components/hal/esp32/include/hal/touch_sensor_hal.h
 components/hal/esp32/include/hal/touch_sensor_ll.h
 components/hal/esp32/include/hal/trace_ll.h
@@ -877,7 +876,6 @@ components/hal/esp32h2/include/hal/sigmadelta_ll.h
 components/hal/esp32h2/include/hal/soc_ll.h
 components/hal/esp32h2/include/hal/spi_flash_encrypted_ll.h
 components/hal/esp32h2/include/hal/spi_flash_ll.h
-components/hal/esp32h2/include/hal/spi_ll.h
 components/hal/esp32h2/include/hal/spimem_flash_ll.h
 components/hal/esp32h2/include/hal/twai_ll.h
 components/hal/esp32h2/include/hal/uhci_ll.h

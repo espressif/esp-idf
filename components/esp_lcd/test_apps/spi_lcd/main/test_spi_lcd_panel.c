@@ -71,9 +71,10 @@ void test_spi_lcd_common_initialize(esp_lcd_panel_io_handle_t *io_handle, esp_lc
     TEST_ESP_OK(esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)TEST_SPI_HOST_ID, &io_config, io_handle));
 }
 
+#define TEST_IMG_SIZE (200 * 200 * sizeof(uint16_t))
+
 static void lcd_panel_test(esp_lcd_panel_io_handle_t io_handle, esp_lcd_panel_handle_t panel_handle)
 {
-#define TEST_IMG_SIZE (100 * 100 * sizeof(uint16_t))
     uint8_t *img = heap_caps_malloc(TEST_IMG_SIZE, MALLOC_CAP_DMA);
     TEST_ASSERT_NOT_NULL(img);
 
@@ -87,10 +88,10 @@ static void lcd_panel_test(esp_lcd_panel_io_handle_t io_handle, esp_lcd_panel_ha
 
     for (int i = 0; i < 200; i++) {
         uint8_t color_byte = esp_random() & 0xFF;
-        int x_start = esp_random() % (TEST_LCD_H_RES - 100);
-        int y_start = esp_random() % (TEST_LCD_V_RES - 100);
+        int x_start = esp_random() % (TEST_LCD_H_RES - 200);
+        int y_start = esp_random() % (TEST_LCD_V_RES - 200);
         memset(img, color_byte, TEST_IMG_SIZE);
-        esp_lcd_panel_draw_bitmap(panel_handle, x_start, y_start, x_start + 100, y_start + 100, img);
+        esp_lcd_panel_draw_bitmap(panel_handle, x_start, y_start, x_start + 200, y_start + 200, img);
     }
     // turn off screen
     esp_lcd_panel_disp_off(panel_handle, true);
@@ -99,7 +100,6 @@ static void lcd_panel_test(esp_lcd_panel_io_handle_t io_handle, esp_lcd_panel_ha
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST_ID));
     TEST_ESP_OK(gpio_reset_pin(TEST_LCD_BK_LIGHT_GPIO));
     free(img);
-#undef TEST_IMG_SIZE
 }
 
 TEST_CASE("lcd_panel_spi_io_test", "[lcd]")
