@@ -284,8 +284,10 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
     };
     adc_hal_context_config(&s_adc_digi_ctx->hal, &config);
 
-    //enable SARADC module clock
+    //enable ADC digital part
     periph_module_enable(PERIPH_SARADC_MODULE);
+    //reset ADC digital part
+    periph_module_reset(PERIPH_SARADC_MODULE);
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
     adc_hal_calibration_init(ADC_NUM_1);
