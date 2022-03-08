@@ -94,11 +94,13 @@ void app_main(void)
              derived_mac_addr[0], derived_mac_addr[1], derived_mac_addr[2],
              derived_mac_addr[3], derived_mac_addr[4], derived_mac_addr[5]);
 
+#if CONFIG_ESP_MAC_ADDR_UNIVERSE_BT
     //Get MAC address for Bluetooth
     ESP_ERROR_CHECK(esp_read_mac(derived_mac_addr, ESP_MAC_BT));
     ESP_LOGI("BT MAC", "0x%x, 0x%x, 0x%x, 0x%x, 0x%x, 0x%x",
              derived_mac_addr[0], derived_mac_addr[1], derived_mac_addr[2],
              derived_mac_addr[3], derived_mac_addr[4], derived_mac_addr[5]);
+#endif //SOC_BT_SUPPORTED
 
     //Get MAC address for Ethernet
     ESP_ERROR_CHECK(esp_read_mac(derived_mac_addr, ESP_MAC_ETH));
