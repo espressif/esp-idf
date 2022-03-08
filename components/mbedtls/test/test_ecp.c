@@ -10,7 +10,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <esp_system.h>
+#include <esp_random.h>
 
 /* ToDo - Remove this once appropriate solution is available.
 We need to define this for the file as ssl_misc.h uses private structures from mbedtls,
