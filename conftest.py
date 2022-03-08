@@ -22,6 +22,7 @@ from typing import Callable, List, Optional
 import pytest
 from _pytest.config import Config
 from _pytest.fixtures import FixtureRequest
+from _pytest.main import Session
 from _pytest.nodes import Item
 from _pytest.python import Function
 from pytest_embedded.plugin import parse_configuration
@@ -95,7 +96,7 @@ def build_dir(
     """
     param_or_cli: str = getattr(
         request, 'param', None
-    ) or request.config.option.__dict__.get('build_dir')
+    ) or request.config.getoption('build_dir')
     if param_or_cli is not None:  # respect the param and the cli
         return param_or_cli
 
@@ -144,6 +145,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         '--sdkconfig',
         help='sdkconfig postfix, like sdkconfig.ci.<config>. (Default: None, which would build all found apps)',
     )
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_sessionstart(session: Session) -> None:
+    if session.config.option.target:
+        session.config.option.target = session.config.getoption('target').lower()
 
 
 @pytest.hookimpl(tryfirst=True)
