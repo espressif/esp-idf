@@ -559,27 +559,9 @@ esp_supp_dpp_bootstrap_gen(const char *chan_list, enum dpp_bootstrap_type type,
         }
     }
 
-    if (key) {
-        params->key_len = strlen(key);
-        if (params->key_len) {
-            char prefix[] = "30310201010420";
-            char postfix[] = "a00a06082a8648ce3d030107";
-
-            params->key = os_zalloc(params->key_len +
-                                    sizeof(prefix) + sizeof(postfix));
-            if (!params->key) {
-                os_free(command);
-                ret = ESP_ERR_NO_MEM;
-                goto fail;
-            }
-            sprintf(params->key, "%s%s%s", prefix, key, postfix);
-        }
-    }
-
     sprintf(command, "type=qrcode mac=" MACSTR "%s%s%s%s%s",
             MAC2STR(params->mac), uri_chan_list,
-            params->key_len ? "key=" : "",
-            params->key_len ? params->key : "",
+            key ? "key=" : "", key ? key : "",
             params->info_len ? " info=" : "",
             params->info_len ? params->info : "");
 
@@ -589,10 +571,6 @@ esp_supp_dpp_bootstrap_gen(const char *chan_list, enum dpp_bootstrap_type type,
         if (params->info) {
             os_free(params->info);
             params->info = NULL;
-        }
-        if (params->key) {
-            os_free(params->key);
-            params->key = NULL;
         }
         goto fail;
     }
@@ -666,10 +644,6 @@ void esp_supp_dpp_deinit(void)
     if (params->info) {
         os_free(params->info);
         params->info = NULL;
-    }
-    if (params->key) {
-        os_free(params->key);
-        params->key = NULL;
     }
 
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_ACTION_TX_STATUS,

@@ -36,6 +36,8 @@
 #define EXAMPLE_DPP_DEVICE_INFO      0
 #endif
 
+#define CURVE_SEC256R1_PKEY_HEX_DIGITS     64
+
 static const char *TAG = "wifi dpp-enrollee";
 wifi_config_t s_dpp_wifi_config;
 
@@ -104,6 +106,40 @@ void dpp_enrollee_event_cb(esp_supp_dpp_event_t event, void *data)
     }
 }
 
+esp_err_t dpp_enrollee_bootstrap(void)
+{
+    esp_err_t ret;
+    size_t pkey_len = strlen(EXAMPLE_DPP_BOOTSTRAPPING_KEY);
+    char *key = NULL;
+
+    if (pkey_len) {
+        /* Currently only NIST P-256 curve is supported, add prefix/postfix accordingly */
+        char prefix[] = "30310201010420";
+        char postfix[] = "a00a06082a8648ce3d030107";
+
+        if (pkey_len != CURVE_SEC256R1_PKEY_HEX_DIGITS) {
+            ESP_LOGI(TAG, "Invalid key length! Private key needs to be 32 bytes (or 64 hex digits) long");
+            return ESP_FAIL;
+        }
+
+        key = malloc(sizeof(prefix) + pkey_len + sizeof(postfix));
+        if (!key) {
+            ESP_LOGI(TAG, "Failed to allocate for bootstrapping key");
+            return ESP_ERR_NO_MEM;
+        }
+        sprintf(key, "%s%s%s", prefix, EXAMPLE_DPP_BOOTSTRAPPING_KEY, postfix);
+    }
+
+    /* Currently only supported method is QR Code */
+    ret = esp_supp_dpp_bootstrap_gen(EXAMPLE_DPP_LISTEN_CHANNEL_LIST, DPP_BOOTSTRAP_QR_CODE,
+                                     key, EXAMPLE_DPP_DEVICE_INFO);
+
+    if (key)
+        free(key);
+
+    return ret;
+}
+
 void dpp_enrollee_init(void)
 {
     s_dpp_event_group = xEventGroupCreate();
@@ -120,10 +156,7 @@ void dpp_enrollee_init(void)
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
     ESP_ERROR_CHECK(esp_supp_dpp_init(dpp_enrollee_event_cb));
-    /* Currently only supported method is QR Code */
-    ESP_ERROR_CHECK(esp_supp_dpp_bootstrap_gen(EXAMPLE_DPP_LISTEN_CHANNEL_LIST, DPP_BOOTSTRAP_QR_CODE,
-                    EXAMPLE_DPP_BOOTSTRAPPING_KEY, EXAMPLE_DPP_DEVICE_INFO));
-
+    ESP_ERROR_CHECK(dpp_enrollee_bootstrap());
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_start());
 
