@@ -272,6 +272,27 @@ This code example is taken from :idf_file:`pytest_esp_eth.py <components/esp_eth
 
 This flaky marker means that if the test function failed, the test case would rerun for a maximum of 3 times with 5 seconds delay.
 
+Mark Known Failure Cases
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Sometimes a test couldn't pass for the following reasons:
+
+- Has a bug
+- Success ratio too low because of environment issue, such as network issue. Retry couldn't help
+
+Now you may mark this test case with marker `xfail <https://docs.pytest.org/en/latest/how-to/skipping.html#xfail-mark-test-functions-as-expected-to-fail>`__ with a user-friendly readable reason.
+
+This code example is taken from :idf_file:`pytest_panic.py <tools/test_apps/system/panic/pytest_panic.py>`
+
+.. code:: python
+
+
+   @pytest.mark.xfail('config.getvalue("target") == "esp32s2"', reason='raised IllegalInstruction instead')
+   def test_cache_error(dut: PanicTestDut, config: str, test_func_name: str) -> None:
+
+This marker means that if the test would be a known failure one on esp32s2.
+
+
 Run the Tests in CI
 -------------------
 
@@ -367,6 +388,44 @@ Add New Markers
 We’re using two types of custom markers, target markers which indicate that the test cases should support this target, and env markers which indicate that the test case should be assigned to runners with these tags in CI.
 
 You can add new markers by adding one line under the ``${IDF_PATH}/pytest.ini`` ``markers =`` section. The grammar should be: ``<marker_name>: <marker_description>``
+
+Generate JUnit Report
+~~~~~~~~~~~~~~~~~~~~~
+
+You can call pytest with ``--junitxml <filepath>`` to generate the JUnit report. In ESP-IDF, the test case name would be unified as "<target>.<config>.<function_name>". 
+
+Skip Auto Flash Binary
+~~~~~~~~~~~~~~~~~~~~~~
+
+Skipping auto-flash binary everytime would be useful when you're debugging your test script.
+
+You can call pytest with ``--skip-autoflash y`` to achieve it.
+
+Record Statistics
+~~~~~~~~~~~~~~~~~
+
+Sometimes you may need to record some statistics while running the tests, like the performance test statistics.
+
+You can use `record_xml_attribute <https://docs.pytest.org/en/latest/how-to/output.html?highlight=junit#record-xml-attribute>`__ fixture in your test script, and the statistics would be recorded as attributes in the JUnit report.
+
+Logging System
+~~~~~~~~~~~~~~
+
+Sometimes you may need to add some extra logging lines while running the test cases.
+
+You can use `python logging module <https://docs.python.org/3/library/logging.html>`__ to achieve this.
+
+Known Limitations and Workarounds
+---------------------------------
+
+Avoid Using ``Thread`` for Performance Test
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``pytest-embedded`` is using some threads internally to help gather all stdout to the pexpect process. Due to the limitation of `Global Interpreter Lock <https://en.wikipedia.org/wiki/Global_interpreter_lock>`__, if you're using threads to do performance tests, these threads would block each other and there would be great performance loss.
+
+**workaround**
+
+Use `Process <https://docs.python.org/3/library/multiprocessing.html#the-process-class>`__ instead, the APIs should be almost the same as ``Thread``.
 
 Further Readings
 ----------------
