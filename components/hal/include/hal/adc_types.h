@@ -17,11 +17,8 @@
  * @note  For ADC digital controller (DMA mode), ESP32 doesn't support `ADC_UNIT_2`, `ADC_UNIT_BOTH`, `ADC_UNIT_ALTER`.
  */
 typedef enum {
-    ADC_UNIT_1 = 1,          /*!< SAR ADC 1. */
-    ADC_UNIT_2 = 2,          /*!< SAR ADC 2. */
-    ADC_UNIT_BOTH = 3,       /*!< SAR ADC 1 and 2. */
-    ADC_UNIT_ALTER = 7,      /*!< SAR ADC 1 and 2 alternative mode. */
-    ADC_UNIT_MAX,
+    ADC_UNIT_1,          /*!< SAR ADC 1. */
+    ADC_UNIT_2,          /*!< SAR ADC 2. */
 } adc_unit_t;
 
 /**

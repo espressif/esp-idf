@@ -15,6 +15,7 @@
 #include "driver/rtc_io.h"
 #include "hal/adc_ll.h"
 #include "hal/adc_types.h"
+#include "hal/adc_hal_conf.h"
 #ifdef CONFIG_PM_ENABLE
 #include "esp_pm.h"
 #endif
@@ -66,7 +67,13 @@ esp_pm_lock_handle_t adc_digi_arbiter_lock = NULL;
 esp_err_t adc_digi_init(void)
 {
     ADC_ENTER_CRITICAL();
-    adc_hal_init();
+    adc_ll_digi_set_fsm_time(ADC_HAL_FSM_RSTB_WAIT_DEFAULT, ADC_HAL_FSM_START_WAIT_DEFAULT,
+                             ADC_HAL_FSM_STANDBY_WAIT_DEFAULT);
+    adc_ll_set_sample_cycle(ADC_HAL_SAMPLE_CYCLE_DEFAULT);
+    adc_hal_pwdet_set_cct(ADC_HAL_PWDET_CCT_DEFAULT);
+    adc_ll_digi_output_invert(ADC_UNIT_1, ADC_HAL_DIGI_DATA_INVERT_DEFAULT(ADC_UNIT_1));
+    adc_ll_digi_output_invert(ADC_UNIT_2, ADC_HAL_DIGI_DATA_INVERT_DEFAULT(ADC_UNIT_2));
+    adc_ll_digi_set_clk_div(ADC_HAL_DIGI_SAR_CLK_DIV_DEFAULT);
     ADC_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -92,17 +99,17 @@ static inline void adc_ll_digi_set_output_format(bool data_sel)
     SYSCON.saradc_ctrl.data_sar_sel = data_sel;
 }
 
-static inline void adc_ll_digi_prepare_pattern_table(adc_ll_num_t adc_n, uint32_t pattern_index, adc_digi_pattern_table_t pattern)
+static inline void adc_ll_digi_prepare_pattern_table(adc_unit_t adc_n, uint32_t pattern_index, adc_digi_pattern_table_t pattern)
 {
     uint32_t tab;
     uint8_t index = pattern_index / 4;
     uint8_t offset = (pattern_index % 4) * 8;
-    if (adc_n == ADC_NUM_1) {
+    if (adc_n == ADC_UNIT_1) {
         tab = SYSCON.saradc_sar1_patt_tab[index];   // Read old register value
         tab &= (~(0xFF000000 >> offset));           // clear old data
         tab |= ((uint32_t)pattern.val << 24) >> offset; // Fill in the new data
         SYSCON.saradc_sar1_patt_tab[index] = tab;   // Write back
-    } else { // adc_n == ADC_NUM_2
+    } else { // adc_n == ADC_UNIT_2
         tab = SYSCON.saradc_sar2_patt_tab[index];   // Read old register value
         tab &= (~(0xFF000000 >> offset));           // clear old data
         tab |= ((uint32_t)pattern.val << 24) >> offset; // Fill in the new data
@@ -131,22 +138,22 @@ void adc_digi_controller_reg_set(const adc_digi_config_t *cfg)
     }
 
     if (cfg->conv_mode & ADC_CONV_SINGLE_UNIT_1) {
-        adc_ll_set_controller(ADC_NUM_1, ADC_LL_CTRL_DIG);
+        adc_ll_set_controller(ADC_UNIT_1, ADC_LL_CTRL_DIG);
         if (cfg->adc1_pattern_len) {
-            adc_ll_digi_clear_pattern_table(ADC_NUM_1);
-            adc_ll_digi_set_pattern_table_len(ADC_NUM_1, cfg->adc1_pattern_len);
+            adc_ll_digi_clear_pattern_table(ADC_UNIT_1);
+            adc_ll_digi_set_pattern_table_len(ADC_UNIT_1, cfg->adc1_pattern_len);
             for (uint32_t i = 0; i < cfg->adc1_pattern_len; i++) {
-                adc_ll_digi_prepare_pattern_table(ADC_NUM_1, i, cfg->adc1_pattern[i]);
+                adc_ll_digi_prepare_pattern_table(ADC_UNIT_1, i, cfg->adc1_pattern[i]);
             }
         }
     }
     if (cfg->conv_mode & ADC_CONV_SINGLE_UNIT_2) {
-        adc_ll_set_controller(ADC_NUM_2, ADC_LL_CTRL_DIG);
+        adc_ll_set_controller(ADC_UNIT_2, ADC_LL_CTRL_DIG);
         if (cfg->adc2_pattern_len) {
-            adc_ll_digi_clear_pattern_table(ADC_NUM_2);
-            adc_ll_digi_set_pattern_table_len(ADC_NUM_2, cfg->adc2_pattern_len);
+            adc_ll_digi_clear_pattern_table(ADC_UNIT_2);
+            adc_ll_digi_set_pattern_table_len(ADC_UNIT_2, cfg->adc2_pattern_len);
             for (uint32_t i = 0; i < cfg->adc2_pattern_len; i++) {
-                adc_ll_digi_prepare_pattern_table(ADC_NUM_2, i, cfg->adc2_pattern[i]);
+                adc_ll_digi_prepare_pattern_table(ADC_UNIT_2, i, cfg->adc2_pattern[i]);
             }
         }
     }
@@ -181,13 +188,13 @@ esp_err_t adc_set_i2s_data_source(adc_i2s_source_t src)
 extern esp_err_t adc_common_gpio_init(adc_unit_t adc_unit, adc_channel_t channel);
 esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel)
 {
-    if (adc_unit & ADC_UNIT_1) {
-        ADC_CHECK((SOC_ADC_SUPPORT_DMA_MODE(ADC_NUM_1)), "ADC1 not support DMA for now.", ESP_ERR_INVALID_ARG);
-        ADC_CHANNEL_CHECK(ADC_NUM_1, channel);
-    }
-    if (adc_unit & ADC_UNIT_2) {
-        ADC_CHECK((SOC_ADC_SUPPORT_DMA_MODE(ADC_NUM_2)), "ADC2 not support DMA for now.", ESP_ERR_INVALID_ARG);
-        ADC_CHANNEL_CHECK(ADC_NUM_2, channel);
+    if (adc_unit == ADC_UNIT_1) {
+        ADC_CHECK((SOC_ADC_SUPPORT_DMA_MODE(ADC_UNIT_1)), "ADC1 not support DMA for now.", ESP_ERR_INVALID_ARG);
+        ADC_CHANNEL_CHECK(ADC_UNIT_1, channel);
+    } else if (adc_unit == ADC_UNIT_2) {
+        //ADC2 does not support DMA mode
+        ADC_CHECK((SOC_ADC_SUPPORT_DMA_MODE(ADC_UNIT_2)), "ADC2 not support DMA for now.", ESP_ERR_INVALID_ARG);
+        ADC_CHANNEL_CHECK(ADC_UNIT_2, channel);
     }
 
     adc_digi_pattern_table_t adc1_pattern[1];
@@ -196,17 +203,16 @@ esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel)
         .conv_limit_en = ADC_MEAS_NUM_LIM_DEFAULT,
         .conv_limit_num = ADC_MAX_MEAS_NUM_DEFAULT,
         .format = DIG_ADC_OUTPUT_FORMAT_DEFUALT,
-        .conv_mode = (adc_digi_convert_mode_t)adc_unit,
+        .conv_mode = ADC_CONV_SINGLE_UNIT_1,
     };
 
-    if (adc_unit & ADC_UNIT_1) {
+    if (adc_unit == ADC_UNIT_1) {
         adc1_pattern[0].atten = DIG_ADC_ATTEN_DEFUALT;
         adc1_pattern[0].bit_width = DIG_ADC_BIT_WIDTH_DEFUALT;
         adc1_pattern[0].channel = channel;
         dig_cfg.adc1_pattern_len = 1;
         dig_cfg.adc1_pattern = adc1_pattern;
-    }
-    if (adc_unit & ADC_UNIT_2) {
+    } else if (adc_unit == ADC_UNIT_2) {
         adc2_pattern[0].atten = DIG_ADC_ATTEN_DEFUALT;
         adc2_pattern[0].bit_width = DIG_ADC_BIT_WIDTH_DEFUALT;
         adc2_pattern[0].channel = channel;
@@ -215,7 +221,13 @@ esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel)
     }
     adc_common_gpio_init(adc_unit, channel);
     ADC_ENTER_CRITICAL();
-    adc_hal_init();
+    adc_ll_digi_set_fsm_time(ADC_HAL_FSM_RSTB_WAIT_DEFAULT, ADC_HAL_FSM_START_WAIT_DEFAULT,
+                             ADC_HAL_FSM_STANDBY_WAIT_DEFAULT);
+    adc_ll_set_sample_cycle(ADC_HAL_SAMPLE_CYCLE_DEFAULT);
+    adc_hal_pwdet_set_cct(ADC_HAL_PWDET_CCT_DEFAULT);
+    adc_ll_digi_output_invert(ADC_UNIT_1, ADC_HAL_DIGI_DATA_INVERT_DEFAULT(ADC_UNIT_1));
+    adc_ll_digi_output_invert(ADC_UNIT_2, ADC_HAL_DIGI_DATA_INVERT_DEFAULT(ADC_UNIT_2));
+    adc_ll_digi_set_clk_div(ADC_HAL_DIGI_SAR_CLK_DIV_DEFAULT);
     adc_digi_controller_reg_set(&dig_cfg);
     ADC_EXIT_CRITICAL();
 
@@ -230,7 +242,7 @@ esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel)
 ---------------------------------------------------------------*/
 esp_err_t adc_arbiter_config(adc_unit_t adc_unit, adc_arbiter_t *config)
 {
-    if (adc_unit & ADC_UNIT_1) {
+    if (adc_unit == ADC_UNIT_1) {
         return ESP_ERR_NOT_SUPPORTED;
     }
     ADC_ENTER_CRITICAL();
@@ -245,16 +257,16 @@ esp_err_t adc_arbiter_config(adc_unit_t adc_unit, adc_arbiter_t *config)
  * @param adc_n ADC unit.
  * @param intr Interrupt bitmask.
  */
-static inline void adc_ll_digi_intr_enable(adc_ll_num_t adc_n, adc_digi_intr_t intr)
+static inline void adc_ll_digi_intr_enable(adc_unit_t adc_n, adc_digi_intr_t intr)
 {
-    if (adc_n == ADC_NUM_1) {
+    if (adc_n == ADC_UNIT_1) {
         if (intr & ADC_DIGI_INTR_MASK_MONITOR) {
             APB_SARADC.int_ena.adc1_thres = 1;
         }
         if (intr & ADC_DIGI_INTR_MASK_MEAS_DONE) {
             APB_SARADC.int_ena.adc1_done = 1;
         }
-    } else { // adc_n == ADC_NUM_2
+    } else { // adc_n == ADC_UNIT_2
         if (intr & ADC_DIGI_INTR_MASK_MONITOR) {
             APB_SARADC.int_ena.adc2_thres = 1;
         }
@@ -267,11 +279,10 @@ static inline void adc_ll_digi_intr_enable(adc_ll_num_t adc_n, adc_digi_intr_t i
 esp_err_t adc_digi_intr_enable(adc_unit_t adc_unit, adc_digi_intr_t intr_mask)
 {
     ADC_ENTER_CRITICAL();
-    if (adc_unit & ADC_UNIT_1) {
-        adc_ll_digi_intr_enable(ADC_NUM_1, intr_mask);
-    }
-    if (adc_unit & ADC_UNIT_2) {
-        adc_ll_digi_intr_enable(ADC_NUM_2, intr_mask);
+    if (adc_unit == ADC_UNIT_1) {
+        adc_ll_digi_intr_enable(ADC_UNIT_1, intr_mask);
+    } else if (adc_unit == ADC_UNIT_2) {
+        adc_ll_digi_intr_enable(ADC_UNIT_2, intr_mask);
     }
     ADC_EXIT_CRITICAL();
     return ESP_OK;
@@ -283,16 +294,16 @@ esp_err_t adc_digi_intr_enable(adc_unit_t adc_unit, adc_digi_intr_t intr_mask)
  * @param adc_n ADC unit.
  * @param intr Interrupt bitmask.
  */
-static inline void adc_ll_digi_intr_disable(adc_ll_num_t adc_n, adc_digi_intr_t intr)
+static inline void adc_ll_digi_intr_disable(adc_unit_t adc_n, adc_digi_intr_t intr)
 {
-    if (adc_n == ADC_NUM_1) {
+    if (adc_n == ADC_UNIT_1) {
         if (intr & ADC_DIGI_INTR_MASK_MONITOR) {
             APB_SARADC.int_ena.adc1_thres = 0;
         }
         if (intr & ADC_DIGI_INTR_MASK_MEAS_DONE) {
             APB_SARADC.int_ena.adc1_done = 0;
         }
-    } else { // adc_n == ADC_NUM_2
+    } else { // adc_n == ADC_UNIT_2
         if (intr & ADC_DIGI_INTR_MASK_MONITOR) {
             APB_SARADC.int_ena.adc2_thres = 0;
         }
@@ -305,11 +316,10 @@ static inline void adc_ll_digi_intr_disable(adc_ll_num_t adc_n, adc_digi_intr_t 
 esp_err_t adc_digi_intr_disable(adc_unit_t adc_unit, adc_digi_intr_t intr_mask)
 {
     ADC_ENTER_CRITICAL();
-    if (adc_unit & ADC_UNIT_1) {
-        adc_ll_digi_intr_disable(ADC_NUM_1, intr_mask);
-    }
-    if (adc_unit & ADC_UNIT_2) {
-        adc_ll_digi_intr_disable(ADC_NUM_2, intr_mask);
+    if (adc_unit == ADC_UNIT_1) {
+        adc_ll_digi_intr_disable(ADC_UNIT_1, intr_mask);
+    } else if (adc_unit == ADC_UNIT_2) {
+        adc_ll_digi_intr_disable(ADC_UNIT_2, intr_mask);
     }
     ADC_EXIT_CRITICAL();
     return ESP_OK;
@@ -321,16 +331,16 @@ esp_err_t adc_digi_intr_disable(adc_unit_t adc_unit, adc_digi_intr_t intr_mask)
  * @param adc_n ADC unit.
  * @param intr Interrupt bitmask.
  */
-static inline void adc_ll_digi_intr_clear(adc_ll_num_t adc_n, adc_digi_intr_t intr)
+static inline void adc_ll_digi_intr_clear(adc_unit_t adc_n, adc_digi_intr_t intr)
 {
-    if (adc_n == ADC_NUM_1) {
+    if (adc_n == ADC_UNIT_1) {
         if (intr & ADC_DIGI_INTR_MASK_MONITOR) {
             APB_SARADC.int_clr.adc1_thres = 1;
         }
         if (intr & ADC_DIGI_INTR_MASK_MEAS_DONE) {
             APB_SARADC.int_clr.adc1_done = 1;
         }
-    } else { // adc_n == ADC_NUM_2
+    } else { // adc_n == ADC_UNIT_2
         if (intr & ADC_DIGI_INTR_MASK_MONITOR) {
             APB_SARADC.int_clr.adc2_thres = 1;
         }
@@ -343,11 +353,10 @@ static inline void adc_ll_digi_intr_clear(adc_ll_num_t adc_n, adc_digi_intr_t in
 esp_err_t adc_digi_intr_clear(adc_unit_t adc_unit, adc_digi_intr_t intr_mask)
 {
     ADC_ENTER_CRITICAL();
-    if (adc_unit & ADC_UNIT_1) {
-        adc_ll_digi_intr_clear(ADC_NUM_1, intr_mask);
-    }
-    if (adc_unit & ADC_UNIT_2) {
-        adc_ll_digi_intr_clear(ADC_NUM_2, intr_mask);
+    if (adc_unit == ADC_UNIT_1) {
+        adc_ll_digi_intr_clear(ADC_UNIT_1, intr_mask);
+    } else if (adc_unit == ADC_UNIT_2) {
+        adc_ll_digi_intr_clear(ADC_UNIT_2, intr_mask);
     }
     ADC_EXIT_CRITICAL();
 
@@ -361,19 +370,19 @@ esp_err_t adc_digi_intr_clear(adc_unit_t adc_unit, adc_digi_intr_t intr_mask)
  * @return
  *     - intr Interrupt bitmask.
  */
-static inline uint32_t adc_ll_digi_get_intr_status(adc_ll_num_t adc_n)
+static inline uint32_t adc_ll_digi_get_intr_status(adc_unit_t adc_n)
 {
     uint32_t int_st = APB_SARADC.int_st.val;
     uint32_t ret_msk = 0;
 
-    if (adc_n == ADC_NUM_1) {
+    if (adc_n == ADC_UNIT_1) {
         if (int_st & APB_SARADC_ADC1_DONE_INT_ST_M) {
             ret_msk |= ADC_DIGI_INTR_MASK_MEAS_DONE;
         }
         if (int_st & APB_SARADC_ADC1_THRES_INT_ST) {
             ret_msk |= ADC_DIGI_INTR_MASK_MONITOR;
         }
-    } else { // adc_n == ADC_NUM_2
+    } else { // adc_n == ADC_UNIT_2
         if (int_st & APB_SARADC_ADC2_DONE_INT_ST_M) {
             ret_msk |= ADC_DIGI_INTR_MASK_MEAS_DONE;
         }
@@ -389,11 +398,10 @@ uint32_t adc_digi_intr_get_status(adc_unit_t adc_unit)
 {
     uint32_t ret = 0;
     ADC_ENTER_CRITICAL();
-    if (adc_unit & ADC_UNIT_1) {
-        ret = adc_ll_digi_get_intr_status(ADC_NUM_1);
-    }
-    if (adc_unit & ADC_UNIT_2) {
-        ret = adc_ll_digi_get_intr_status(ADC_NUM_2);
+    if (adc_unit == ADC_UNIT_1) {
+        ret = adc_ll_digi_get_intr_status(ADC_UNIT_1);
+    } else if (adc_unit == ADC_UNIT_2) {
+        ret = adc_ll_digi_get_intr_status(ADC_UNIT_2);
     }
     ADC_EXIT_CRITICAL();
     return ret;
@@ -430,12 +438,18 @@ esp_err_t adc_digi_init(void)
 {
     adc_arbiter_t config = ADC_ARBITER_CONFIG_DEFAULT();
     ADC_ENTER_CRITICAL();
-    adc_hal_init();
+    adc_ll_digi_set_fsm_time(ADC_HAL_FSM_RSTB_WAIT_DEFAULT, ADC_HAL_FSM_START_WAIT_DEFAULT,
+                             ADC_HAL_FSM_STANDBY_WAIT_DEFAULT);
+    adc_ll_set_sample_cycle(ADC_HAL_SAMPLE_CYCLE_DEFAULT);
+    adc_hal_pwdet_set_cct(ADC_HAL_PWDET_CCT_DEFAULT);
+    adc_ll_digi_output_invert(ADC_UNIT_1, ADC_HAL_DIGI_DATA_INVERT_DEFAULT(ADC_UNIT_1));
+    adc_ll_digi_output_invert(ADC_UNIT_2, ADC_HAL_DIGI_DATA_INVERT_DEFAULT(ADC_UNIT_2));
+    adc_ll_digi_set_clk_div(ADC_HAL_DIGI_SAR_CLK_DIV_DEFAULT);
     adc_hal_arbiter_config(&config);
     ADC_EXIT_CRITICAL();
 
-    adc_hal_calibration_init(ADC_NUM_1);
-    adc_hal_calibration_init(ADC_NUM_2);
+    adc_hal_calibration_init(ADC_UNIT_1);
+    adc_hal_calibration_init(ADC_UNIT_2);
 
     return ESP_OK;
 }
@@ -465,8 +479,8 @@ esp_err_t adc_digi_reset(void)
 {
     ADC_ENTER_CRITICAL();
     adc_ll_digi_reset();
-    adc_ll_digi_clear_pattern_table(ADC_NUM_1);
-    adc_ll_digi_clear_pattern_table(ADC_NUM_2);
+    adc_ll_digi_clear_pattern_table(ADC_UNIT_1);
+    adc_ll_digi_clear_pattern_table(ADC_UNIT_2);
     ADC_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -481,17 +495,17 @@ static inline void adc_ll_digi_set_output_format(adc_digi_output_format_t format
     APB_SARADC.ctrl.data_sar_sel = format;
 }
 
-static inline void adc_ll_digi_prepare_pattern_table(adc_ll_num_t adc_n, uint32_t pattern_index, adc_digi_pattern_table_t pattern)
+static inline void adc_ll_digi_prepare_pattern_table(adc_unit_t adc_n, uint32_t pattern_index, adc_digi_pattern_table_t pattern)
 {
     uint32_t tab;
     uint8_t index = pattern_index / 4;
     uint8_t offset = (pattern_index % 4) * 8;
-    if (adc_n == ADC_NUM_1) {
+    if (adc_n == ADC_UNIT_1) {
         tab = APB_SARADC.sar1_patt_tab[index];  // Read old register value
         tab &= (~(0xFF000000 >> offset));       // clear old data
         tab |= ((uint32_t)pattern.val << 24) >> offset; // Fill in the new data
         APB_SARADC.sar1_patt_tab[index] = tab;  // Write back
-    } else { // adc_n == ADC_NUM_2
+    } else { // adc_n == ADC_UNIT_2
         tab = APB_SARADC.sar2_patt_tab[index];  // Read old register value
         tab &= (~(0xFF000000 >> offset));       // clear old data
         tab |= ((uint32_t)pattern.val << 24) >> offset; // Fill in the new data
@@ -521,27 +535,27 @@ static void adc_digi_controller_reg_set(const adc_digi_config_t *cfg)
 
     if (cfg->conv_mode & ADC_CONV_SINGLE_UNIT_1) {
         if (cfg->adc1_pattern_len) {
-            adc_ll_digi_clear_pattern_table(ADC_NUM_1);
-            adc_ll_digi_set_pattern_table_len(ADC_NUM_1, cfg->adc1_pattern_len);
+            adc_ll_digi_clear_pattern_table(ADC_UNIT_1);
+            adc_ll_digi_set_pattern_table_len(ADC_UNIT_1, cfg->adc1_pattern_len);
             for (uint32_t i = 0; i < cfg->adc1_pattern_len; i++) {
-                adc_ll_digi_prepare_pattern_table(ADC_NUM_1, i, cfg->adc1_pattern[i]);
+                adc_ll_digi_prepare_pattern_table(ADC_UNIT_1, i, cfg->adc1_pattern[i]);
             }
         }
     }
     if (cfg->conv_mode & ADC_CONV_SINGLE_UNIT_2) {
         if (cfg->adc2_pattern_len) {
-            adc_ll_digi_clear_pattern_table(ADC_NUM_2);
-            adc_ll_digi_set_pattern_table_len(ADC_NUM_2, cfg->adc2_pattern_len);
+            adc_ll_digi_clear_pattern_table(ADC_UNIT_2);
+            adc_ll_digi_set_pattern_table_len(ADC_UNIT_2, cfg->adc2_pattern_len);
             for (uint32_t i = 0; i < cfg->adc2_pattern_len; i++) {
-                adc_ll_digi_prepare_pattern_table(ADC_NUM_2, i, cfg->adc2_pattern[i]);
+                adc_ll_digi_prepare_pattern_table(ADC_UNIT_2, i, cfg->adc2_pattern[i]);
             }
         }
     }
     if (cfg->conv_mode & ADC_CONV_SINGLE_UNIT_1) {
-        adc_ll_set_controller(ADC_NUM_1, ADC_LL_CTRL_DIG);
+        adc_ll_set_controller(ADC_UNIT_1, ADC_LL_CTRL_DIG);
     }
     if (cfg->conv_mode & ADC_CONV_SINGLE_UNIT_2) {
-        adc_ll_set_controller(ADC_NUM_2, ADC_LL_CTRL_ARB);
+        adc_ll_set_controller(ADC_UNIT_2, ADC_LL_CTRL_ARB);
     }
     adc_ll_digi_set_output_format(cfg->format);
     if (cfg->conv_limit_en) {
@@ -577,12 +591,12 @@ esp_err_t adc_digi_controller_config(const adc_digi_config_t *config)
 
     if (config->conv_mode & ADC_CONV_SINGLE_UNIT_1) {
         for (int i = 0; i < config->adc1_pattern_len; i++) {
-            adc_cal_offset(ADC_NUM_1, config->adc1_pattern[i].channel, config->adc1_pattern[i].atten);
+            adc_cal_offset(ADC_UNIT_1, config->adc1_pattern[i].channel, config->adc1_pattern[i].atten);
         }
     }
     if (config->conv_mode & ADC_CONV_SINGLE_UNIT_2) {
         for (int i = 0; i < config->adc2_pattern_len; i++) {
-            adc_cal_offset(ADC_NUM_2, config->adc2_pattern[i].channel, config->adc2_pattern[i].atten);
+            adc_cal_offset(ADC_UNIT_2, config->adc2_pattern[i].channel, config->adc2_pattern[i].atten);
         }
     }
 
@@ -604,17 +618,17 @@ esp_err_t adc_gpio_init(adc_unit_t adc_unit, adc_channel_t channel)
 {
     gpio_num_t gpio_num = 0;
     //If called with `ADC_UNIT_BOTH (ADC_UNIT_1 | ADC_UNIT_2)`, both if blocks will be run
-    if (adc_unit & ADC_UNIT_1) {
-        ADC_CHANNEL_CHECK(ADC_NUM_1, channel);
-        gpio_num = ADC_GET_IO_NUM(ADC_NUM_1, channel);
+    if (adc_unit == ADC_UNIT_1) {
+        ADC_CHANNEL_CHECK(ADC_UNIT_1, channel);
+        gpio_num = ADC_GET_IO_NUM(ADC_UNIT_1, channel);
         ADC_CHECK_RET(rtc_gpio_init(gpio_num));
         ADC_CHECK_RET(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED));
         ADC_CHECK_RET(rtc_gpio_pulldown_dis(gpio_num));
         ADC_CHECK_RET(rtc_gpio_pullup_dis(gpio_num));
     }
-    if (adc_unit & ADC_UNIT_2) {
-        ADC_CHANNEL_CHECK(ADC_NUM_2, channel);
-        gpio_num = ADC_GET_IO_NUM(ADC_NUM_2, channel);
+    if (adc_unit == ADC_UNIT_2) {
+        ADC_CHANNEL_CHECK(ADC_UNIT_2, channel);
+        gpio_num = ADC_GET_IO_NUM(ADC_UNIT_2, channel);
         ADC_CHECK_RET(rtc_gpio_init(gpio_num));
         ADC_CHECK_RET(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED));
         ADC_CHECK_RET(rtc_gpio_pulldown_dis(gpio_num));

@@ -819,7 +819,6 @@ components/hal/dac_hal.c
 components/hal/ds_hal.c
 components/hal/esp32/brownout_hal.c
 components/hal/esp32/gpio_hal_workaround.c
-components/hal/esp32/include/hal/adc_hal_conf.h
 components/hal/esp32/include/hal/aes_ll.h
 components/hal/esp32/include/hal/can_hal.h
 components/hal/esp32/include/hal/can_ll.h
@@ -846,7 +845,6 @@ components/hal/esp32/include/hal/uart_ll.h
 components/hal/esp32/interrupt_descriptor_table.c
 components/hal/esp32/touch_sensor_hal.c
 components/hal/esp32c3/hmac_hal.c
-components/hal/esp32c3/include/hal/adc_hal_conf.h
 components/hal/esp32c3/include/hal/aes_ll.h
 components/hal/esp32c3/include/hal/ds_ll.h
 components/hal/esp32c3/include/hal/gpspi_flash_ll.h
@@ -868,7 +866,6 @@ components/hal/esp32c3/include/hal/uhci_ll.h
 components/hal/esp32c3/include/hal/usb_serial_jtag_ll.h
 components/hal/esp32c3/rtc_cntl_hal.c
 components/hal/esp32h2/hmac_hal.c
-components/hal/esp32h2/include/hal/adc_hal_conf.h
 components/hal/esp32h2/include/hal/aes_ll.h
 components/hal/esp32h2/include/hal/ds_ll.h
 components/hal/esp32h2/include/hal/gpspi_flash_ll.h
@@ -889,7 +886,6 @@ components/hal/esp32h2/include/hal/uhci_ll.h
 components/hal/esp32h2/include/hal/uhci_types.h
 components/hal/esp32h2/include/hal/usb_serial_jtag_ll.h
 components/hal/esp32s2/cp_dma_hal.c
-components/hal/esp32s2/include/hal/adc_hal_conf.h
 components/hal/esp32s2/include/hal/aes_ll.h
 components/hal/esp32s2/include/hal/cp_dma_hal.h
 components/hal/esp32s2/include/hal/cp_dma_ll.h
@@ -919,7 +915,6 @@ components/hal/esp32s2/include/hal/twai_ll.h
 components/hal/esp32s2/include/hal/usb_ll.h
 components/hal/esp32s2/interrupt_descriptor_table.c
 components/hal/esp32s2/touch_sensor_hal.c
-components/hal/esp32s3/include/hal/adc_hal_conf.h
 components/hal/esp32s3/include/hal/aes_ll.h
 components/hal/esp32s3/include/hal/gpspi_flash_ll.h
 components/hal/esp32s3/include/hal/i2c_ll.h
@@ -1272,7 +1267,6 @@ components/soc/esp32/adc_periph.c
 components/soc/esp32/dac_periph.c
 components/soc/esp32/gpio_periph.c
 components/soc/esp32/i2c_periph.c
-components/soc/esp32/include/soc/adc_channel.h
 components/soc/esp32/include/soc/apb_ctrl_reg.h
 components/soc/esp32/include/soc/apb_ctrl_struct.h
 components/soc/esp32/include/soc/bb_reg.h
@@ -1350,7 +1344,6 @@ components/soc/esp32c3/adc_periph.c
 components/soc/esp32c3/gpio_periph.c
 components/soc/esp32c3/i2c_bbpll.h
 components/soc/esp32c3/i2c_periph.c
-components/soc/esp32c3/include/soc/adc_channel.h
 components/soc/esp32c3/include/soc/apb_ctrl_reg.h
 components/soc/esp32c3/include/soc/apb_ctrl_struct.h
 components/soc/esp32c3/include/soc/apb_saradc_reg.h
@@ -1408,10 +1401,8 @@ components/soc/esp32c3/ledc_periph.c
 components/soc/esp32c3/sigmadelta_periph.c
 components/soc/esp32c3/spi_periph.c
 components/soc/esp32c3/uart_periph.c
-components/soc/esp32h2/adc_periph.c
 components/soc/esp32h2/gdma_periph.c
 components/soc/esp32h2/i2c_periph.c
-components/soc/esp32h2/include/soc/adc_channel.h
 components/soc/esp32h2/include/soc/apb_ctrl_reg.h
 components/soc/esp32h2/include/soc/apb_ctrl_struct.h
 components/soc/esp32h2/include/soc/apb_saradc_reg.h
@@ -1458,7 +1449,6 @@ components/soc/esp32s2/adc_periph.c
 components/soc/esp32s2/dac_periph.c
 components/soc/esp32s2/dedic_gpio_periph.c
 components/soc/esp32s2/i2c_periph.c
-components/soc/esp32s2/include/soc/adc_channel.h
 components/soc/esp32s2/include/soc/apb_ctrl_reg.h
 components/soc/esp32s2/include/soc/apb_ctrl_struct.h
 components/soc/esp32s2/include/soc/apb_saradc_reg.h
@@ -1541,7 +1531,6 @@ components/soc/esp32s2/usb_periph.c
 components/soc/esp32s3/dedic_gpio_periph.c
 components/soc/esp32s3/gpio_periph.c
 components/soc/esp32s3/i2c_periph.c
-components/soc/esp32s3/include/soc/adc_channel.h
 components/soc/esp32s3/include/soc/apb_ctrl_reg.h
 components/soc/esp32s3/include/soc/apb_ctrl_struct.h
 components/soc/esp32s3/include/soc/apb_saradc_reg.h
