@@ -146,7 +146,7 @@ menu "Driver configurations"
     endmenu # TWAI Configuration
 
     menu "Temperature sensor Configuration"
-        visible if SOC_TEMP_SENSOR_SUPPORTED
+        depends on SOC_TEMP_SENSOR_SUPPORTED
 
         config TEMP_SENSOR_SUPPRESS_DEPRECATE_WARN
             bool "Suppress legacy driver deprecated warning"

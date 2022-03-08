@@ -31,9 +31,15 @@ typedef struct {
     temperature_sensor_clk_src_t clk_src;  // the clock source of the temperature sensor.
 } temperature_sensor_config_t;
 
-#define TEMPERAUTRE_SENSOR_CONFIG_DEFAULT(min, max) {.range_min = min, \
-                                                     .range_max = max, \
-                                                    }
+/**
+ * @brief temperature_sensor_config_t default constructure
+ */
+#define TEMPERAUTRE_SENSOR_CONFIG_DEFAULT(min, max)    \
+    {                                                  \
+        .range_min = min,                              \
+        .range_max = max,                              \
+        .clk_src = TEMPERATURE_SENSOR_CLK_SRC_DEFAULT, \
+    }
 
 /**
  * @brief Install temperature sensor driver

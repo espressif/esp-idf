@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "sdkconfig.h"
 #include "esp_err.h"
 #include "driver/temp_sensor_types_legacy.h"
 

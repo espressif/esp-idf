@@ -54,12 +54,12 @@ static temp_sensor_ll_attribute_t *s_tsens_attribute_copy;
 
 static int inline accuracy_compare(const void *p1, const void *p2)
 {
-    return ((*(temp_sensor_ll_attribute_t*)p1).error_max < (*(temp_sensor_ll_attribute_t*)p2).error_max) ? -1 : 1;
+    return ((*(temp_sensor_ll_attribute_t *)p1).error_max < (*(temp_sensor_ll_attribute_t *)p2).error_max) ? -1 : 1;
 }
 
 static esp_err_t temperature_sensor_attribute_table_sort(void)
 {
-    s_tsens_attribute_copy = (temp_sensor_ll_attribute_t*)heap_caps_malloc(sizeof(temp_sensor_ll_attributes), MALLOC_CAP_DEFAULT);
+    s_tsens_attribute_copy = (temp_sensor_ll_attribute_t *)heap_caps_malloc(sizeof(temp_sensor_ll_attributes), MALLOC_CAP_DEFAULT);
     ESP_RETURN_ON_FALSE(s_tsens_attribute_copy != NULL, ESP_ERR_NO_MEM, TAG, "No space for s_tsens_attribute_copy");
     for (int i = 0 ; i < TEMPERATURE_SENSOR_LL_RANGE_NUM; i++) {
         s_tsens_attribute_copy[i] = temp_sensor_ll_attributes[i];
@@ -90,7 +90,7 @@ esp_err_t temperature_sensor_install(const temperature_sensor_config_t *tsens_co
     ESP_RETURN_ON_FALSE((tsens_config && ret_tsens), ESP_ERR_INVALID_ARG, TAG, "Invalid argument");
     ESP_RETURN_ON_FALSE((s_tsens_attribute_copy == NULL), ESP_ERR_INVALID_STATE, TAG, "Already installed");
     temperature_sensor_handle_t tsens;
-    tsens = (temperature_sensor_obj_t*) heap_caps_calloc(1, sizeof(temperature_sensor_obj_t), MALLOC_CAP_DEFAULT);
+    tsens = (temperature_sensor_obj_t *) heap_caps_calloc(1, sizeof(temperature_sensor_obj_t), MALLOC_CAP_DEFAULT);
     ESP_GOTO_ON_FALSE(tsens != NULL, ESP_ERR_NO_MEM, err, TAG, "install fail...");
     tsens->clk_src = tsens_config->clk_src;
 
@@ -197,4 +197,18 @@ esp_err_t temperature_sensor_get_celsius(temperature_sensor_handle_t tsens, floa
         return ESP_ERR_INVALID_STATE;
     }
     return ESP_OK;
+}
+
+/**
+ * @brief This function will be called during start up, to check the new temperature driver is not running along with the legacy temp sensor driver
+ */
+__attribute__((constructor))
+static void check_temperature_driver_conflict(void)
+{
+    extern int temp_sensor_driver_init_count;
+    temp_sensor_driver_init_count++;
+    if (temp_sensor_driver_init_count > 1) {
+        ESP_EARLY_LOGE(TAG, "CONFLICT! The temperature driver can't work along with the legacy temp sensor driver");
+        abort();
+    }
 }
