@@ -81,8 +81,13 @@ void IRAM_ATTR esp_restart(void)
         }
     }
 
+#ifdef CONFIG_FREERTOS_SMP
+    //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+    vTaskPreemptionDisable(NULL);
+#else
     // Disable scheduler on this core.
     vTaskSuspendAll();
+#endif // CONFIG_FREERTOS_SMP
 
     bool digital_reset_needed = false;
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE

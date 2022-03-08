@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* Tests for FreeRTOS task suspend & resume */
 #include <stdio.h>
 #include <string.h>
@@ -196,11 +201,21 @@ static bool suspend_both_cpus;
 
 static void IRAM_ATTR suspend_scheduler_while_block_set(void *arg)
 {
+#ifdef CONFIG_FREERTOS_SMP
+    //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+    vTaskPreemptionDisable(NULL);
+#else
     vTaskSuspendAll();
+#endif // CONFIG_FREERTOS_SMP
 
     while (block) { };
     esp_rom_delay_us(1);
+#ifdef CONFIG_FREERTOS_SMP
+    //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+    vTaskPreemptionEnable(NULL);
+#else
     xTaskResumeAll();
+#endif // CONFIG_FREERTOS_SMP
 }
 
 static void IRAM_ATTR suspend_scheduler_on_both_cpus(void)
@@ -210,13 +225,23 @@ static void IRAM_ATTR suspend_scheduler_on_both_cpus(void)
         TEST_ESP_OK(esp_ipc_call((xPortGetCoreID() == 0) ? 1 : 0, &suspend_scheduler_while_block_set, NULL));
     }
 
+#ifdef CONFIG_FREERTOS_SMP
+    //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+    vTaskPreemptionDisable(NULL);
+#else
     vTaskSuspendAll();
+#endif // CONFIG_FREERTOS_SMP
 }
 
 static void IRAM_ATTR resume_scheduler_on_both_cpus(void)
 {
     block = false;
+#ifdef CONFIG_FREERTOS_SMP
+    //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+    vTaskPreemptionEnable(NULL);
+#else
     xTaskResumeAll();
+#endif // CONFIG_FREERTOS_SMP
 }
 
 static const int waiting_ms = 2000;
