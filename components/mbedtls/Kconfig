@@ -414,6 +414,22 @@ menu "mbedTLS"
             SHA hardware acceleration is faster than software in some situations but
             slower in others. You should benchmark to find the best setting for you.
 
+    config MBEDTLS_HARDWARE_ECC
+        bool "Enable hardware ECC acceleration"
+        default y
+        depends on SOC_ECC_SUPPORTED
+        help
+            Enable hardware accelerated ECC point multiplication and point verification for points
+            on curve SECP192R1 and SECP256R1 in mbedTLS
+
+    config MBEDTLS_ECC_OTHER_CURVES_SOFT_FALLBACK
+        bool "Fallback to software implementation for curves not supported in hardware"
+        depends on MBEDTLS_HARDWARE_ECC
+        default y
+        help
+            Fallback to software implementation of ECC point multiplication and point verification
+            for curves not supported in hardware.
+
     config MBEDTLS_ROM_MD5
         bool "Use MD5 implementation in ROM"
         default y

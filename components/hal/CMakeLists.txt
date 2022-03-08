@@ -156,6 +156,7 @@ if(NOT BOOTLOADER_BUILD)
 
     if(${target} STREQUAL "esp32c2")
         list(APPEND srcs
+              "ecc_hal.c"
               "gdma_hal.c"
               "spi_flash_hal_gpspi.c"
               "spi_slave_hd_hal.c"

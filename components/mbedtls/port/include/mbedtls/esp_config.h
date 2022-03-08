@@ -178,6 +178,25 @@
 #define MBEDTLS_ECDSA_VERIFY_ALT
 #endif
 
+#ifdef CONFIG_MBEDTLS_HARDWARE_ECC
+#ifdef CONFIG_MBEDTLS_ECC_OTHER_CURVES_SOFT_FALLBACK
+    /* Use hardware accelerator for SECP192R1 and SECP256R1 curves,
+     * software implementation for rest of the curves
+     */
+    #define MBEDTLS_ECP_MUL_ALT_SOFT_FALLBACK
+    #define MBEDTLS_ECP_VERIFY_ALT_SOFT_FALLBACK
+#else
+    /* Only hardware accelerator support */
+    #define MBEDTLS_ECP_MUL_ALT
+    #define MBEDTLS_ECP_VERIFY_ALT
+#endif
+
+#else
+#undef MBEDTLS_ECP_MUL_ALT
+#undef MBEDTLS_ECP_MUL_ALT_SOFT_FALLBACK
+#undef MBEDTLS_ECP_VERIFY_ALT
+#undef MBEDTLS_ECP_VERIFY_ALT_SOFT_FALLBACK
+#endif
 /**
  * \def MBEDTLS_ENTROPY_HARDWARE_ALT
  *
