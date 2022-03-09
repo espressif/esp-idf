@@ -20,6 +20,7 @@
 #include "freertos/ringbuf.h"
 #include "soc/soc_memory_layout.h"
 #include "soc/rmt_periph.h"
+#include "soc/rmt_struct.h"
 #include "soc/rtc.h"
 #include "hal/rmt_hal.h"
 #include "hal/rmt_ll.h"
@@ -97,8 +98,7 @@ typedef struct {
 } rmt_obj_t;
 
 static rmt_contex_t rmt_contex = {
-    .hal.regs = RMT_LL_HW_BASE,
-    .hal.mem = RMT_LL_MEM_BASE,
+    .hal.regs = &RMT,
     .rmt_spinlock = portMUX_INITIALIZER_UNLOCKED,
     .rmt_driver_intr_handle = NULL,
     .rmt_tx_end_callback = {
@@ -116,6 +116,9 @@ static uint32_t s_rmt_source_clock_hz[RMT_CHANNEL_MAX];
 #else
 static uint32_t s_rmt_source_clock_hz;
 #endif
+
+// RMTMEM address is declared in <target>.peripherals.ld
+extern rmt_mem_t RMTMEM;
 
 //Enable RMT module
 static void rmt_module_enable(void)
@@ -240,7 +243,7 @@ esp_err_t rmt_get_mem_pd(rmt_channel_t channel, bool *pd_en)
 {
     ESP_RETURN_ON_FALSE(channel < RMT_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
     RMT_ENTER_CRITICAL();
-    *pd_en = rmt_ll_is_mem_power_down(rmt_contex.hal.regs);
+    *pd_en = rmt_ll_is_mem_powered_down(rmt_contex.hal.regs);
     RMT_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -252,16 +255,16 @@ esp_err_t rmt_tx_start(rmt_channel_t channel, bool tx_idx_rst)
     if (tx_idx_rst) {
         rmt_ll_tx_reset_pointer(rmt_contex.hal.regs, channel);
     }
-    rmt_ll_clear_tx_end_interrupt(rmt_contex.hal.regs, channel);
+    rmt_ll_clear_interrupt_status(rmt_contex.hal.regs, RMT_LL_EVENT_TX_DONE(channel));
     // enable tx end interrupt in non-loop mode
-    if (!rmt_ll_is_tx_loop_enabled(rmt_contex.hal.regs, channel)) {
-        rmt_ll_enable_tx_end_interrupt(rmt_contex.hal.regs, channel, true);
+    if (!rmt_ll_tx_is_loop_enabled(rmt_contex.hal.regs, channel)) {
+        rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_TX_DONE(channel), true);
     } else {
 #if SOC_RMT_SUPPORT_TX_LOOP_COUNT
-        rmt_ll_tx_reset_loop(rmt_contex.hal.regs, channel);
+        rmt_ll_tx_reset_loop_count(rmt_contex.hal.regs, channel);
         rmt_ll_tx_enable_loop_count(rmt_contex.hal.regs, channel, true);
-        rmt_ll_clear_tx_loop_interrupt(rmt_contex.hal.regs, channel);
-        rmt_ll_enable_tx_loop_interrupt(rmt_contex.hal.regs, channel, true);
+        rmt_ll_clear_interrupt_status(rmt_contex.hal.regs, RMT_LL_EVENT_TX_LOOP_END(channel));
+        rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_TX_LOOP_END(channel), true);
 #endif
     }
     rmt_ll_tx_start(rmt_contex.hal.regs, channel);
@@ -273,11 +276,36 @@ esp_err_t rmt_tx_stop(rmt_channel_t channel)
 {
     ESP_RETURN_ON_FALSE(RMT_IS_TX_CHANNEL(channel), ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
     RMT_ENTER_CRITICAL();
+#if SOC_RMT_SUPPORT_TX_ASYNC_STOP
     rmt_ll_tx_stop(rmt_contex.hal.regs, channel);
+#else
+    // write ending marker to stop the TX channel
+    RMTMEM.chan[channel].data32[0].val = 0;
+#endif
     rmt_ll_tx_reset_pointer(rmt_contex.hal.regs, channel);
     RMT_EXIT_CRITICAL();
     return ESP_OK;
 }
+
+#if SOC_RMT_SUPPORT_RX_PINGPONG
+esp_err_t rmt_set_rx_thr_intr_en(rmt_channel_t channel, bool en, uint16_t evt_thresh)
+{
+    ESP_RETURN_ON_FALSE(RMT_IS_RX_CHANNEL(channel) && channel < RMT_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
+    if (en) {
+        uint32_t item_block_len = rmt_ll_rx_get_mem_blocks(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel)) * RMT_MEM_ITEM_NUM;
+        ESP_RETURN_ON_FALSE(evt_thresh <= item_block_len, ESP_ERR_INVALID_ARG, TAG, "RMT EVT THRESH ERR");
+        RMT_ENTER_CRITICAL();
+        rmt_ll_rx_set_limit(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel), evt_thresh);
+        rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_RX_THRES(RMT_DECODE_RX_CHANNEL(channel)), true);
+        RMT_EXIT_CRITICAL();
+    } else {
+        RMT_ENTER_CRITICAL();
+        rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_RX_THRES(RMT_DECODE_RX_CHANNEL(channel)), false);
+        RMT_EXIT_CRITICAL();
+    }
+    return ESP_OK;
+}
+#endif
 
 esp_err_t rmt_rx_start(rmt_channel_t channel, bool rx_idx_rst)
 {
@@ -287,8 +315,8 @@ esp_err_t rmt_rx_start(rmt_channel_t channel, bool rx_idx_rst)
     if (rx_idx_rst) {
         rmt_ll_rx_reset_pointer(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel));
     }
-    rmt_ll_clear_rx_end_interrupt(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel));
-    rmt_ll_enable_rx_end_interrupt(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel), true);
+    rmt_ll_clear_interrupt_status(rmt_contex.hal.regs, RMT_LL_EVENT_RX_DONE(RMT_DECODE_RX_CHANNEL(channel)));
+    rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_RX_DONE(RMT_DECODE_RX_CHANNEL(channel)), true);
 
 #if SOC_RMT_SUPPORT_RX_PINGPONG
     const uint32_t item_block_len = rmt_ll_rx_get_mem_blocks(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel)) * RMT_MEM_ITEM_NUM;
@@ -306,11 +334,11 @@ esp_err_t rmt_rx_stop(rmt_channel_t channel)
 {
     ESP_RETURN_ON_FALSE(RMT_IS_RX_CHANNEL(channel) && channel < RMT_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
     RMT_ENTER_CRITICAL();
-    rmt_ll_enable_rx_end_interrupt(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel), false);
+    rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_RX_DONE(RMT_DECODE_RX_CHANNEL(channel)), false);
     rmt_ll_rx_enable(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel), false);
     rmt_ll_rx_reset_pointer(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel));
 #if SOC_RMT_SUPPORT_RX_PINGPONG
-    rmt_ll_enable_rx_thres_interrupt(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel), false);
+    rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_RX_THRES(RMT_DECODE_RX_CHANNEL(channel)), false);
 #endif
     RMT_EXIT_CRITICAL();
     return ESP_OK;
@@ -367,7 +395,7 @@ esp_err_t rmt_get_tx_loop_mode(rmt_channel_t channel, bool *loop_en)
 {
     ESP_RETURN_ON_FALSE(RMT_IS_TX_CHANNEL(channel), ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
     RMT_ENTER_CRITICAL();
-    *loop_en = rmt_ll_is_tx_loop_enabled(rmt_contex.hal.regs, channel);
+    *loop_en = rmt_ll_tx_is_loop_enabled(rmt_contex.hal.regs, channel);
     RMT_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -386,8 +414,27 @@ esp_err_t rmt_set_source_clk(rmt_channel_t channel, rmt_source_clk_t base_clk)
 {
     ESP_RETURN_ON_FALSE(channel < RMT_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
     ESP_RETURN_ON_FALSE(base_clk < RMT_BASECLK_MAX, ESP_ERR_INVALID_ARG, TAG, RMT_BASECLK_ERROR_STR);
+    rmt_clock_source_t rmt_clk_src = RMT_CLK_SRC_APB;
     RMT_ENTER_CRITICAL();
-    rmt_ll_set_group_clock_src(rmt_contex.hal.regs, channel, base_clk, 0, 0, 0);
+    // the clock type might be different to the one used in LL driver, so simply do a translation here
+    switch (base_clk) {
+    case RMT_BASECLK_APB:
+        rmt_clk_src = RMT_CLK_SRC_APB;
+        break;
+#if SOC_RMT_SUPPORT_REF_TICK
+    case RMT_BASECLK_REF:
+        rmt_clk_src = RMT_CLK_SRC_REFTICK;
+        break;
+#endif
+#if SOC_RMT_SUPPORT_XTAL
+    case RMT_BASECLK_XTAL:
+        rmt_clk_src = RMT_CLK_SRC_XTAL;
+        break;
+#endif
+    default:
+        break;
+    }
+    rmt_ll_set_group_clock_src(rmt_contex.hal.regs, channel, rmt_clk_src, 1, 0, 0);
     RMT_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -397,6 +444,23 @@ esp_err_t rmt_get_source_clk(rmt_channel_t channel, rmt_source_clk_t *src_clk)
     ESP_RETURN_ON_FALSE(channel < RMT_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
     RMT_ENTER_CRITICAL();
     *src_clk = (rmt_source_clk_t)rmt_ll_get_group_clock_src(rmt_contex.hal.regs, channel);
+    switch (rmt_ll_get_group_clock_src(rmt_contex.hal.regs, channel)) {
+    case RMT_CLK_SRC_APB:
+        *src_clk = RMT_BASECLK_APB;
+        break;
+#if SOC_RMT_SUPPORT_REF_TICK
+    case RMT_CLK_SRC_REFTICK:
+        *src_clk = RMT_BASECLK_REF;
+        break;
+#endif
+#if SOC_RMT_SUPPORT_XTAL
+    case RMT_CLK_SRC_XTAL:
+        *src_clk = RMT_BASECLK_XTAL;
+        break;
+#endif
+    default:
+        break;
+    }
     RMT_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -406,8 +470,7 @@ esp_err_t rmt_set_idle_level(rmt_channel_t channel, bool idle_out_en, rmt_idle_l
     ESP_RETURN_ON_FALSE(channel < RMT_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
     ESP_RETURN_ON_FALSE(level < RMT_IDLE_LEVEL_MAX, ESP_ERR_INVALID_ARG, TAG, "RMT IDLE LEVEL ERR");
     RMT_ENTER_CRITICAL();
-    rmt_ll_tx_enable_idle(rmt_contex.hal.regs, channel, idle_out_en);
-    rmt_ll_tx_set_idle_level(rmt_contex.hal.regs, channel, level);
+    rmt_ll_tx_fix_idle_level(rmt_contex.hal.regs, channel, level, idle_out_en);
     RMT_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -416,7 +479,7 @@ esp_err_t rmt_get_idle_level(rmt_channel_t channel, bool *idle_out_en, rmt_idle_
 {
     ESP_RETURN_ON_FALSE(channel < RMT_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
     RMT_ENTER_CRITICAL();
-    *idle_out_en = rmt_ll_is_tx_idle_enabled(rmt_contex.hal.regs, channel);
+    *idle_out_en = rmt_ll_tx_is_idle_enabled(rmt_contex.hal.regs, channel);
     *level = rmt_ll_tx_get_idle_level(rmt_contex.hal.regs, channel);
     RMT_EXIT_CRITICAL();
     return ESP_OK;
@@ -427,65 +490,31 @@ esp_err_t rmt_get_status(rmt_channel_t channel, uint32_t *status)
     ESP_RETURN_ON_FALSE(channel < RMT_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
     RMT_ENTER_CRITICAL();
     if (RMT_IS_RX_CHANNEL(channel)) {
-        *status = rmt_ll_rx_get_channel_status(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel));
+        *status = rmt_ll_rx_get_status_word(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel));
     } else {
-        *status = rmt_ll_tx_get_channel_status(rmt_contex.hal.regs, channel);
+        *status = rmt_ll_tx_get_status_word(rmt_contex.hal.regs, channel);
     }
     RMT_EXIT_CRITICAL();
     return ESP_OK;
-}
-
-void rmt_set_intr_enable_mask(uint32_t mask)
-{
-    RMT_ENTER_CRITICAL();
-    rmt_ll_enable_interrupt(rmt_contex.hal.regs, mask, true);
-    RMT_EXIT_CRITICAL();
-}
-
-void rmt_clr_intr_enable_mask(uint32_t mask)
-{
-    RMT_ENTER_CRITICAL();
-    rmt_ll_enable_interrupt(rmt_contex.hal.regs, mask, false);
-    RMT_EXIT_CRITICAL();
 }
 
 esp_err_t rmt_set_rx_intr_en(rmt_channel_t channel, bool en)
 {
     ESP_RETURN_ON_FALSE(RMT_IS_RX_CHANNEL(channel) && channel < RMT_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
     RMT_ENTER_CRITICAL();
-    rmt_ll_enable_rx_end_interrupt(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel), en);
+    rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_RX_DONE(RMT_DECODE_RX_CHANNEL(channel)), en);
     RMT_EXIT_CRITICAL();
     return ESP_OK;
 }
-
-#if SOC_RMT_SUPPORT_RX_PINGPONG
-esp_err_t rmt_set_rx_thr_intr_en(rmt_channel_t channel, bool en, uint16_t evt_thresh)
-{
-    ESP_RETURN_ON_FALSE(RMT_IS_RX_CHANNEL(channel) && channel < RMT_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
-    if (en) {
-        uint32_t item_block_len = rmt_ll_rx_get_mem_blocks(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel)) * RMT_MEM_ITEM_NUM;
-        ESP_RETURN_ON_FALSE(evt_thresh <= item_block_len, ESP_ERR_INVALID_ARG, TAG, "RMT EVT THRESH ERR");
-        RMT_ENTER_CRITICAL();
-        rmt_ll_rx_set_limit(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel), evt_thresh);
-        rmt_ll_enable_rx_thres_interrupt(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel), true);
-        RMT_EXIT_CRITICAL();
-    } else {
-        RMT_ENTER_CRITICAL();
-        rmt_ll_enable_rx_thres_interrupt(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel), false);
-        RMT_EXIT_CRITICAL();
-    }
-    return ESP_OK;
-}
-#endif
 
 esp_err_t rmt_set_err_intr_en(rmt_channel_t channel, bool en)
 {
     ESP_RETURN_ON_FALSE(channel < RMT_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
     RMT_ENTER_CRITICAL();
     if (RMT_IS_RX_CHANNEL(channel)) {
-        rmt_ll_enable_rx_err_interrupt(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel), en);
+        rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_RX_ERROR(RMT_DECODE_RX_CHANNEL(channel)), en);
     } else {
-        rmt_ll_enable_tx_err_interrupt(rmt_contex.hal.regs, channel, en);
+        rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_TX_ERROR(channel), en);
     }
     RMT_EXIT_CRITICAL();
     return ESP_OK;
@@ -495,7 +524,7 @@ esp_err_t rmt_set_tx_intr_en(rmt_channel_t channel, bool en)
 {
     ESP_RETURN_ON_FALSE(RMT_IS_TX_CHANNEL(channel), ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
     RMT_ENTER_CRITICAL();
-    rmt_ll_enable_tx_end_interrupt(rmt_contex.hal.regs, channel, en);
+    rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_TX_DONE(channel), en);
     RMT_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -508,11 +537,11 @@ esp_err_t rmt_set_tx_thr_intr_en(rmt_channel_t channel, bool en, uint16_t evt_th
         ESP_RETURN_ON_FALSE(evt_thresh <= item_block_len, ESP_ERR_INVALID_ARG, TAG, "RMT EVT THRESH ERR");
         RMT_ENTER_CRITICAL();
         rmt_ll_tx_set_limit(rmt_contex.hal.regs, channel, evt_thresh);
-        rmt_ll_enable_tx_thres_interrupt(rmt_contex.hal.regs, channel, true);
+        rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_TX_THRES(channel), true);
         RMT_EXIT_CRITICAL();
     } else {
         RMT_ENTER_CRITICAL();
-        rmt_ll_enable_tx_thres_interrupt(rmt_contex.hal.regs, channel, false);
+        rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_TX_THRES(channel), false);
         RMT_EXIT_CRITICAL();
     }
     return ESP_OK;
@@ -536,12 +565,6 @@ esp_err_t rmt_set_gpio(rmt_channel_t channel, rmt_mode_t mode, gpio_num_t gpio_n
         esp_rom_gpio_connect_in_signal(gpio_num, rmt_periph_signals.groups[0].channels[channel].rx_sig, invert_signal);
     }
     return ESP_OK;
-}
-
-esp_err_t rmt_set_pin(rmt_channel_t channel, rmt_mode_t mode, gpio_num_t gpio_num)
-{
-    // only for backword compatibility
-    return rmt_set_gpio(channel, mode, gpio_num, false);
 }
 
 static bool rmt_is_channel_number_valid(rmt_channel_t channel, uint8_t mode)
@@ -574,22 +597,22 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
     }
 
     RMT_ENTER_CRITICAL();
-    rmt_ll_enable_mem_access(dev, true);
+    rmt_ll_enable_mem_access_nonfifo(dev, true);
 
     if (rmt_param->flags & RMT_CHANNEL_FLAGS_AWARE_DFS) {
 #if SOC_RMT_SUPPORT_XTAL
         // clock src: XTAL_CLK
         rmt_source_clk_hz = rtc_clk_xtal_freq_get() * 1000000;
-        rmt_ll_set_group_clock_src(dev, channel, RMT_BASECLK_XTAL, 0, 0, 0);
+        rmt_ll_set_group_clock_src(dev, channel, RMT_CLK_SRC_XTAL, 1, 0, 0);
 #elif SOC_RMT_SUPPORT_REF_TICK
         // clock src: REF_CLK
         rmt_source_clk_hz = REF_CLK_FREQ;
-        rmt_ll_set_group_clock_src(dev, channel, RMT_BASECLK_REF, 0, 0, 0);
+        rmt_ll_set_group_clock_src(dev, channel, RMT_CLK_SRC_REFTICK, 1, 0, 0);
 #endif
     } else {
         // clock src: APB_CLK
         rmt_source_clk_hz = APB_CLK_FREQ;
-        rmt_ll_set_group_clock_src(dev, channel, RMT_BASECLK_APB, 0, 0, 0);
+        rmt_ll_set_group_clock_src(dev, channel, RMT_CLK_SRC_APB, 1, 0, 0);
     }
     RMT_EXIT_CRITICAL();
 
@@ -619,10 +642,9 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
         }
 #endif
         /* always enable tx ping-pong */
-        rmt_ll_tx_enable_pingpong(dev, channel, true);
+        rmt_ll_tx_enable_wrap(dev, channel, true);
         /*Set idle level */
-        rmt_ll_tx_enable_idle(dev, channel, rmt_param->tx_config.idle_output_en);
-        rmt_ll_tx_set_idle_level(dev, channel, idle_level);
+        rmt_ll_tx_fix_idle_level(dev, channel, idle_level, rmt_param->tx_config.idle_output_en);
         /*Set carrier*/
         rmt_ll_tx_enable_carrier_modulation(dev, channel, carrier_en);
         if (carrier_en) {
@@ -634,7 +656,6 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
             rmt_ll_tx_set_carrier_high_low_ticks(dev, channel, duty_h, duty_l);
         } else {
             rmt_ll_tx_set_carrier_level(dev, channel, 0);
-            rmt_ll_tx_set_carrier_high_low_ticks(dev, channel, 0, 0);
         }
         RMT_EXIT_CRITICAL();
 
@@ -648,7 +669,7 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
         rmt_ll_rx_set_channel_clock_div(dev, RMT_DECODE_RX_CHANNEL(channel), clk_div);
         rmt_ll_rx_set_mem_blocks(dev, RMT_DECODE_RX_CHANNEL(channel), mem_cnt);
         rmt_ll_rx_reset_pointer(dev, RMT_DECODE_RX_CHANNEL(channel));
-        rmt_ll_rx_set_mem_owner(dev, RMT_DECODE_RX_CHANNEL(channel), RMT_MEM_OWNER_HW);
+        rmt_ll_rx_set_mem_owner(dev, RMT_DECODE_RX_CHANNEL(channel), RMT_LL_MEM_OWNER_HW);
         /*Set idle threshold*/
         rmt_ll_rx_set_idle_thres(dev, RMT_DECODE_RX_CHANNEL(channel), threshold);
         /* Set RX filter */
@@ -657,7 +678,7 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
 
 #if SOC_RMT_SUPPORT_RX_PINGPONG
         /* always enable rx ping-pong */
-        rmt_ll_rx_enable_pingpong(dev, RMT_DECODE_RX_CHANNEL(channel), true);
+        rmt_ll_rx_enable_wrap(dev, RMT_DECODE_RX_CHANNEL(channel), true);
 #endif
 
 #if SOC_RMT_SUPPORT_RX_DEMODULATION
@@ -692,9 +713,11 @@ esp_err_t rmt_config(const rmt_config_t *rmt_param)
 static void IRAM_ATTR rmt_fill_memory(rmt_channel_t channel, const rmt_item32_t *item,
                                       uint16_t item_num, uint16_t mem_offset)
 {
-    RMT_ENTER_CRITICAL();
-    rmt_ll_write_memory(rmt_contex.hal.mem, channel, item, item_num, mem_offset);
-    RMT_EXIT_CRITICAL();
+    volatile uint32_t *to = (volatile uint32_t *)&RMTMEM.chan[channel].data32[mem_offset].val;
+    uint32_t *from = (uint32_t *)item;
+    while (item_num--) {
+        *to++ = *from++;
+    }
 }
 
 esp_err_t rmt_fill_tx_items(rmt_channel_t channel, const rmt_item32_t *item, uint16_t item_num, uint16_t mem_offset)
@@ -766,7 +789,7 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
                 rmt_contex.rmt_tx_end_callback.function(channel, rmt_contex.rmt_tx_end_callback.arg);
             }
         }
-        rmt_ll_clear_tx_end_interrupt(hal->regs, channel);
+        rmt_ll_clear_interrupt_status(hal->regs, RMT_LL_EVENT_TX_DONE(channel));
     }
 
     // Tx thres interrupt
@@ -801,11 +824,11 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
                 p_rmt->tx_len_rem -= p_rmt->tx_sub_len;
             } else if (len_rem == 0) {
                 rmt_item32_t stop_data = {0};
-                rmt_ll_write_memory(rmt_contex.hal.mem, channel, &stop_data, 1, p_rmt->tx_offset);
+                rmt_fill_memory(channel, &stop_data, 1, p_rmt->tx_offset);
             } else {
                 rmt_fill_memory(channel, pdata, len_rem, p_rmt->tx_offset);
                 rmt_item32_t stop_data = {0};
-                rmt_ll_write_memory(rmt_contex.hal.mem, channel, &stop_data, 1, p_rmt->tx_offset + len_rem);
+                rmt_fill_memory(channel, &stop_data, 1, p_rmt->tx_offset + len_rem);
                 p_rmt->tx_data += len_rem;
                 p_rmt->tx_len_rem -= len_rem;
             }
@@ -815,7 +838,7 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
                 p_rmt->tx_offset = 0;
             }
         }
-        rmt_ll_clear_tx_thres_interrupt(hal->regs, channel);
+        rmt_ll_clear_interrupt_status(hal->regs, RMT_LL_EVENT_TX_THRES(channel));
     }
 
     // Rx end interrupt
@@ -827,7 +850,7 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
         if (p_rmt) {
             rmt_ll_rx_enable(rmt_contex.hal.regs, channel, false);
             int item_len = rmt_rx_get_mem_len_in_isr(channel);
-            rmt_ll_rx_set_mem_owner(rmt_contex.hal.regs, channel, RMT_MEM_OWNER_SW);
+            rmt_ll_rx_set_mem_owner(rmt_contex.hal.regs, channel, RMT_LL_MEM_OWNER_SW);
             if (p_rmt->rx_buf) {
                 addr = (rmt_item32_t *)RMTMEM.chan[RMT_ENCODE_RX_CHANNEL(channel)].data32;
 #if SOC_RMT_SUPPORT_RX_PINGPONG
@@ -853,10 +876,10 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
             memset((void *)p_rmt->rx_item_buf, 0, p_rmt->rx_item_buf_size);
 #endif
             rmt_ll_rx_reset_pointer(rmt_contex.hal.regs, channel);
-            rmt_ll_rx_set_mem_owner(rmt_contex.hal.regs, channel, RMT_MEM_OWNER_HW);
+            rmt_ll_rx_set_mem_owner(rmt_contex.hal.regs, channel, RMT_LL_MEM_OWNER_HW);
             rmt_ll_rx_enable(rmt_contex.hal.regs, channel, true);
         }
-        rmt_ll_clear_rx_end_interrupt(hal->regs, channel);
+        rmt_ll_clear_interrupt_status(hal->regs, RMT_LL_EVENT_RX_DONE(channel));
     }
 
 #if SOC_RMT_SUPPORT_RX_PINGPONG
@@ -870,9 +893,9 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
         int rx_thres_lim = rmt_ll_rx_get_limit(rmt_contex.hal.regs, channel);
         int item_len = (p_rmt->rx_item_start_idx == 0) ? rx_thres_lim : (mem_item_size - rx_thres_lim);
         if ((p_rmt->rx_item_len + item_len) < (p_rmt->rx_item_buf_size / 4)) {
-            rmt_ll_rx_set_mem_owner(rmt_contex.hal.regs, channel, RMT_MEM_OWNER_SW);
+            rmt_ll_rx_set_mem_owner(rmt_contex.hal.regs, channel, RMT_LL_MEM_OWNER_SW);
             memcpy((void *)(p_rmt->rx_item_buf + p_rmt->rx_item_len), (void *)(RMTMEM.chan[RMT_ENCODE_RX_CHANNEL(channel)].data32 + p_rmt->rx_item_start_idx), item_len * 4);
-            rmt_ll_rx_set_mem_owner(rmt_contex.hal.regs, channel, RMT_MEM_OWNER_HW);
+            rmt_ll_rx_set_mem_owner(rmt_contex.hal.regs, channel, RMT_LL_MEM_OWNER_HW);
             p_rmt->rx_item_len += item_len;
             p_rmt->rx_item_start_idx += item_len;
             if (p_rmt->rx_item_start_idx >= mem_item_size) {
@@ -881,7 +904,7 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
         } else {
             ESP_EARLY_LOGE(TAG, "---RX buffer too small: %d", sizeof(p_rmt->rx_item_buf));
         }
-        rmt_ll_clear_rx_thres_interrupt(hal->regs, channel);
+        rmt_ll_clear_interrupt_status(hal->regs, RMT_LL_EVENT_RX_THRES(channel));
     }
 #endif
 
@@ -894,7 +917,7 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
         rmt_obj_t *p_rmt = p_rmt_obj[channel];
         if (p_rmt) {
             if (p_rmt->loop_autostop) {
-#ifndef SOC_RMT_SUPPORT_TX_LOOP_AUTOSTOP
+#ifndef SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP
                 // hardware doesn't support automatically stop output so driver should stop output here (possibility already overshotted several us)
                 rmt_ll_tx_stop(rmt_contex.hal.regs, channel);
                 rmt_ll_tx_reset_pointer(rmt_contex.hal.regs, channel);
@@ -905,7 +928,7 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
                 rmt_contex.rmt_tx_end_callback.function(channel,  rmt_contex.rmt_tx_end_callback.arg);
             }
         }
-        rmt_ll_clear_tx_loop_interrupt(hal->regs, channel);
+        rmt_ll_clear_interrupt_status(hal->regs, RMT_LL_EVENT_TX_LOOP_END(channel));
     }
 #endif
 
@@ -919,9 +942,9 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
             // Reset the receiver's write/read addresses to prevent endless err interrupts.
             rmt_ll_rx_reset_pointer(rmt_contex.hal.regs, channel);
             ESP_EARLY_LOGD(TAG, "RMT RX channel %d error", channel);
-            ESP_EARLY_LOGD(TAG, "status: 0x%08x", rmt_ll_rx_get_channel_status(rmt_contex.hal.regs, channel));
+            ESP_EARLY_LOGD(TAG, "status: 0x%08x", rmt_ll_rx_get_status_word(rmt_contex.hal.regs, channel));
         }
-        rmt_ll_clear_rx_err_interrupt(hal->regs, channel);
+        rmt_ll_clear_interrupt_status(hal->regs, RMT_LL_EVENT_RX_ERROR(channel));
     }
 
     // TX Err interrupt
@@ -934,9 +957,9 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
             // Reset the transmitter's write/read addresses to prevent endless err interrupts.
             rmt_ll_tx_reset_pointer(rmt_contex.hal.regs, channel);
             ESP_EARLY_LOGD(TAG, "RMT TX channel %d error", channel);
-            ESP_EARLY_LOGD(TAG, "status: 0x%08x", rmt_ll_tx_get_channel_status(rmt_contex.hal.regs, channel));
+            ESP_EARLY_LOGD(TAG, "status: 0x%08x", rmt_ll_tx_get_status_word(rmt_contex.hal.regs, channel));
         }
-        rmt_ll_clear_tx_err_interrupt(hal->regs, channel);
+        rmt_ll_clear_interrupt_status(hal->regs, RMT_LL_EVENT_TX_ERROR(channel));
     }
 
     if (HPTaskAwoken == pdTRUE) {
@@ -960,15 +983,13 @@ esp_err_t rmt_driver_uninstall(rmt_channel_t channel)
     RMT_ENTER_CRITICAL();
     // check channel's working mode
     if (p_rmt_obj[channel]->rx_buf) {
-        rmt_ll_enable_rx_end_interrupt(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel), 0);
-        rmt_ll_enable_rx_err_interrupt(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel), 0);
+        rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_RX_DONE(RMT_DECODE_RX_CHANNEL(channel)), false);
+        rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_RX_ERROR(RMT_DECODE_RX_CHANNEL(channel)), false);
 #if SOC_RMT_SUPPORT_RX_PINGPONG
-        rmt_ll_enable_rx_thres_interrupt(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel), 0);
+        rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_RX_THRES(RMT_DECODE_RX_CHANNEL(channel)), false);
 #endif
     } else {
-        rmt_ll_enable_tx_end_interrupt(rmt_contex.hal.regs, channel, 0);
-        rmt_ll_enable_tx_err_interrupt(rmt_contex.hal.regs, channel, 0);
-        rmt_ll_enable_tx_thres_interrupt(rmt_contex.hal.regs, channel, false);
+        rmt_ll_enable_interrupt(rmt_contex.hal.regs, RMT_LL_EVENT_TX_DONE(channel) | RMT_LL_EVENT_TX_ERROR(channel) | RMT_LL_EVENT_TX_THRES(channel), false);
     }
     RMT_EXIT_CRITICAL();
 
@@ -1141,14 +1162,14 @@ esp_err_t rmt_write_items(rmt_channel_t channel, const rmt_item32_t *rmt_item, i
     } else {
         rmt_fill_memory(channel, rmt_item, len_rem, 0);
         rmt_item32_t stop_data = {0};
-        rmt_ll_write_memory(rmt_contex.hal.mem, channel, &stop_data, 1, len_rem);
+        rmt_fill_memory(channel, &stop_data, 1, len_rem);
         p_rmt->tx_len_rem = 0;
     }
     rmt_tx_start(channel, true);
     p_rmt->wait_done = wait_tx_done;
     if (wait_tx_done) {
         // wait loop done
-        if (rmt_ll_is_tx_loop_enabled(rmt_contex.hal.regs, channel)) {
+        if (rmt_ll_tx_is_loop_enabled(rmt_contex.hal.regs, channel)) {
 #if SOC_RMT_SUPPORT_TX_LOOP_COUNT
             xSemaphoreTake(p_rmt->tx_sem, portMAX_DELAY);
             xSemaphoreGive(p_rmt->tx_sem);
@@ -1277,7 +1298,7 @@ esp_err_t rmt_write_sample(rmt_channel_t channel, const uint8_t *src, size_t src
         p_rmt->translator = true;
     } else {
         rmt_item32_t stop_data = {0};
-        rmt_ll_write_memory(rmt_contex.hal.mem, channel, &stop_data, 1, p_rmt->tx_len_rem);
+        rmt_fill_memory(channel, &stop_data, 1, p_rmt->tx_len_rem);
         p_rmt->tx_len_rem = 0;
         p_rmt->sample_cur = NULL;
         p_rmt->translator = false;
@@ -1337,7 +1358,7 @@ esp_err_t rmt_add_channel_to_group(rmt_channel_t channel)
     RMT_ENTER_CRITICAL();
     rmt_ll_tx_enable_sync(rmt_contex.hal.regs, true);
     rmt_contex.synchro_channel_mask |= (1 << channel);
-    rmt_ll_tx_add_to_sync_group(rmt_contex.hal.regs, channel);
+    rmt_ll_tx_sync_group_add_channels(rmt_contex.hal.regs, 1 << channel);
     rmt_ll_tx_reset_channels_clock_div(rmt_contex.hal.regs, rmt_contex.synchro_channel_mask);
     RMT_EXIT_CRITICAL();
     return ESP_OK;
@@ -1348,7 +1369,7 @@ esp_err_t rmt_remove_channel_from_group(rmt_channel_t channel)
     ESP_RETURN_ON_FALSE(RMT_IS_TX_CHANNEL(channel), ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
     RMT_ENTER_CRITICAL();
     rmt_contex.synchro_channel_mask &= ~(1 << channel);
-    rmt_ll_tx_remove_from_sync_group(rmt_contex.hal.regs, channel);
+    rmt_ll_tx_sync_group_remove_channels(rmt_contex.hal.regs, 1 << channel);
     if (rmt_contex.synchro_channel_mask == 0) {
         rmt_ll_tx_enable_sync(rmt_contex.hal.regs, false);
     }
@@ -1357,24 +1378,11 @@ esp_err_t rmt_remove_channel_from_group(rmt_channel_t channel)
 }
 #endif
 
-esp_err_t rmt_memory_rw_rst(rmt_channel_t channel)
-{
-    ESP_RETURN_ON_FALSE(channel < RMT_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
-    RMT_ENTER_CRITICAL();
-    if (RMT_IS_RX_CHANNEL(channel)) {
-        rmt_ll_rx_reset_pointer(rmt_contex.hal.regs, RMT_DECODE_RX_CHANNEL(channel));
-    } else {
-        rmt_ll_tx_reset_pointer(rmt_contex.hal.regs, channel);
-    }
-    RMT_EXIT_CRITICAL();
-    return ESP_OK;
-}
-
 #if SOC_RMT_SUPPORT_TX_LOOP_COUNT
 esp_err_t rmt_set_tx_loop_count(rmt_channel_t channel, uint32_t count)
 {
     ESP_RETURN_ON_FALSE(RMT_IS_TX_CHANNEL(channel), ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
-    ESP_RETURN_ON_FALSE(count <= RMT_LL_MAX_LOOP_COUNT, ESP_ERR_INVALID_ARG, TAG, "Invalid count value");
+    ESP_RETURN_ON_FALSE(count <= RMT_LL_MAX_LOOP_COUNT_PER_BATCH, ESP_ERR_INVALID_ARG, TAG, "Invalid count value");
     RMT_ENTER_CRITICAL();
     rmt_ll_tx_set_loop_count(rmt_contex.hal.regs, channel, count);
     RMT_EXIT_CRITICAL();
@@ -1385,7 +1393,7 @@ esp_err_t rmt_enable_tx_loop_autostop(rmt_channel_t channel, bool en)
 {
     ESP_RETURN_ON_FALSE(RMT_IS_TX_CHANNEL(channel), ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
     p_rmt_obj[channel]->loop_autostop = en;
-#if SOC_RMT_SUPPORT_TX_LOOP_AUTOSTOP
+#if SOC_RMT_SUPPORT_TX_LOOP_AUTO_STOP
     RMT_ENTER_CRITICAL();
     rmt_ll_tx_enable_loop_autostop(rmt_contex.hal.regs, channel, en);
     RMT_EXIT_CRITICAL();

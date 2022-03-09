@@ -164,7 +164,7 @@ TEST_CASE("RMT miscellaneous functions", "[rmt]")
 #endif
 
 
-    TEST_ESP_OK(rmt_set_tx_carrier(channel, 0, 1, 0, 1));
+    TEST_ESP_OK(rmt_set_tx_carrier(channel, 0, 10, 10, 1));
     TEST_ESP_OK(rmt_set_idle_level(channel, 1, 0));
 
     rmt_clean_testbench(channel, -1);
