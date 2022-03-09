@@ -185,7 +185,7 @@ static const unsigned char sha256_padding[64] = {
 /*
  * SHA-256 final digest
  */
-int mbedtls_sha256_finish( mbedtls_sha256_context *ctx, unsigned char output[32] )
+int mbedtls_sha256_finish( mbedtls_sha256_context *ctx, unsigned char *output )
 {
     int ret;
     uint32_t last, padn;
