@@ -6,6 +6,7 @@
 
 #include "utils/includes.h"
 #include "utils/common.h"
+#include "utils/eloop.h"
 #include "rsn_supp/wpa.h"
 #include "rsn_supp/wpa_i.h"
 #include "common/eapol_common.h"
@@ -260,6 +261,7 @@ int esp_supplicant_init(void)
 
     esp_wifi_register_wpa3_cb(wpa_cb);
     ret = esp_supplicant_common_init(wpa_cb);
+    eloop_init();
 
     if (ret != 0) {
         return ret;
@@ -277,5 +279,6 @@ int esp_supplicant_init(void)
 int esp_supplicant_deinit(void)
 {
     esp_supplicant_common_deinit();
+    eloop_destroy();
     return esp_wifi_unregister_wpa_cb_internal();
 }
