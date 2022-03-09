@@ -2334,8 +2334,6 @@ examples/protocols/sockets/udp_multicast/main/udp_multicast_example_main.c
 examples/protocols/sockets/udp_server/example_test.py
 examples/protocols/sockets/udp_server/main/udp_server.c
 examples/protocols/static_ip/main/static_ip_example_main.c
-examples/protocols/websocket/example_test.py
-examples/protocols/websocket/main/websocket_example.c
 examples/provisioning/wifi_prov_mgr/main/app_main.c
 examples/provisioning/wifi_prov_mgr/wifi_prov_mgr_test.py
 examples/security/flash_encryption/example_test.py

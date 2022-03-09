@@ -100,7 +100,6 @@
 /components/esp_system/               @esp-idf-codeowners/system
 /components/esp_timer/                @esp-idf-codeowners/system
 /components/esp-tls/                  @esp-idf-codeowners/app-utilities
-/components/esp_websocket_client/     @esp-idf-codeowners/network
 /components/esp_wifi/                 @esp-idf-codeowners/wifi
 /components/espcoredump/              @esp-idf-codeowners/tools
 /components/esptool_py/               @esp-idf-codeowners/tools
