@@ -798,11 +798,11 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
     uint32_t instruction_use_spiram = 0;
     uint32_t rodata_use_spiram = 0;
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
-    extern uint32_t esp_spiram_instruction_access_enabled();
+    extern uint32_t esp_spiram_instruction_access_enabled(void);
     instruction_use_spiram = esp_spiram_instruction_access_enabled();
 #endif
 #if CONFIG_SPIRAM_RODATA
-    extern uint32_t esp_spiram_rodata_access_enabled();
+    extern uint32_t esp_spiram_rodata_access_enabled(void);
     rodata_use_spiram = esp_spiram_rodata_access_enabled();
 #endif
 
