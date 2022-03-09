@@ -24,3 +24,5 @@ entries:
         systimer_hal (noflash)
     if GPTIMER_CTRL_FUNC_IN_IRAM = y:
         timer_hal_iram (noflash)
+    if GPIO_CTRL_FUNC_IN_IRAM = y:
+        gpio_hal: gpio_hal_intr_disable (noflash)

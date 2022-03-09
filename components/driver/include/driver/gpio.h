@@ -94,6 +94,8 @@ esp_err_t gpio_intr_enable(gpio_num_t gpio_num);
 /**
  * @brief  Disable GPIO module interrupt signal
  *
+ * @note This function is allowed to be executed when Cache is disabled within ISR context, by enabling `CONFIG_GPIO_CTRL_FUNC_IN_IRAM`
+ *
  * @param  gpio_num GPIO number. If you want to disable the interrupt of e.g. GPIO16, gpio_num should be GPIO_NUM_16 (16);
  *
  * @return
@@ -105,6 +107,8 @@ esp_err_t gpio_intr_disable(gpio_num_t gpio_num);
 
 /**
  * @brief  GPIO set output level
+ *
+ * @note This function is allowed to be executed when Cache is disabled within ISR context, by enabling `CONFIG_GPIO_CTRL_FUNC_IN_IRAM`
  *
  * @param  gpio_num GPIO number. If you want to set the output level of e.g. GPIO16, gpio_num should be GPIO_NUM_16 (16);
  * @param  level Output level. 0: low ; 1: high

@@ -580,7 +580,6 @@ components/esp_rom/include/esp32h2/rom/digital_signature.h
 components/esp_rom/include/esp32h2/rom/efuse.h
 components/esp_rom/include/esp32h2/rom/esp_flash.h
 components/esp_rom/include/esp32h2/rom/ets_sys.h
-components/esp_rom/include/esp32h2/rom/gpio.h
 components/esp_rom/include/esp32h2/rom/hmac.h
 components/esp_rom/include/esp32h2/rom/libc_stubs.h
 components/esp_rom/include/esp32h2/rom/lldesc.h
@@ -906,7 +905,6 @@ components/hal/esp32s3/include/hal/uhci_ll.h
 components/hal/esp32s3/include/hal/usb_ll.h
 components/hal/esp32s3/include/hal/usb_serial_jtag_ll.h
 components/hal/esp32s3/interrupt_descriptor_table.c
-components/hal/gpio_hal.c
 components/hal/include/hal/aes_hal.h
 components/hal/include/hal/aes_types.h
 components/hal/include/hal/brownout_hal.h
@@ -1384,7 +1382,6 @@ components/soc/esp32h2/include/soc/efuse_reg.h
 components/soc/esp32h2/include/soc/efuse_struct.h
 components/soc/esp32h2/include/soc/extmem_reg.h
 components/soc/esp32h2/include/soc/fe_reg.h
-components/soc/esp32h2/include/soc/gpio_pins.h
 components/soc/esp32h2/include/soc/gpio_sd_reg.h
 components/soc/esp32h2/include/soc/gpio_sd_struct.h
 components/soc/esp32h2/include/soc/hwcrypto_reg.h

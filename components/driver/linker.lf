@@ -23,3 +23,6 @@ entries:
         pulse_cnt: pcnt_unit_stop (noflash)
         pulse_cnt: pcnt_unit_clear_count (noflash)
         pulse_cnt: pcnt_unit_get_count (noflash)
+    if GPIO_CTRL_FUNC_IN_IRAM = y:
+        gpio: gpio_set_level (noflash)
+        gpio: gpio_intr_disable (noflash)
