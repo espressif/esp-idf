@@ -172,10 +172,10 @@ menu "mbedTLS"
         default 4 if MBEDTLS_DEBUG_LEVEL_VERBOSE
 
     menu "mbedTLS v3.x related"
-
+        # NOTE: MBEDTLS_DYNAMIC_BUFFER feature is not supported with TLS 1.3 yet. Ref: IDF-4762
         config MBEDTLS_SSL_PROTO_TLS1_3
             bool "Support TLS 1.3 protocol"
-            depends on MBEDTLS_TLS_ENABLED
+            depends on MBEDTLS_TLS_ENABLED && MBEDTLS_SSL_KEEP_PEER_CERTIFICATE && !MBEDTLS_DYNAMIC_BUFFER
             select MBEDTLS_HKDF_C
             default n
 

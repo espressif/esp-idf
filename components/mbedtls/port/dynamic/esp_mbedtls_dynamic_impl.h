@@ -8,6 +8,7 @@
 
 #include <stddef.h>
 #include <string.h>
+#include <stdbool.h>
 /* ToDo - Remove this once appropriate solution is available.
 We need to define this for the file as ssl_misc.h uses private structures from mbedtls,
 which are undefined if the following flag is not defined */
