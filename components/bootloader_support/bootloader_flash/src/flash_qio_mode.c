@@ -165,6 +165,11 @@ unsigned bootloader_read_status_8b_rdsr2(void)
     return bootloader_execute_flash_command(CMD_RDSR2, 0, 0, 8);
 }
 
+unsigned bootloader_read_status_8b_rdsr3(void)
+{
+    return bootloader_execute_flash_command(CMD_RDSR3, 0, 0, 8);
+}
+
 unsigned bootloader_read_status_16b_rdsr_rdsr2(void)
 {
     return bootloader_execute_flash_command(CMD_RDSR, 0, 0, 8) | (bootloader_execute_flash_command(CMD_RDSR2, 0, 0, 8) << 8);
@@ -178,6 +183,11 @@ void bootloader_write_status_8b_wrsr(unsigned new_status)
 void bootloader_write_status_8b_wrsr2(unsigned new_status)
 {
     bootloader_execute_flash_command(CMD_WRSR2, new_status, 8, 0);
+}
+
+void bootloader_write_status_8b_wrsr3(unsigned new_status)
+{
+    bootloader_execute_flash_command(CMD_WRSR3, new_status, 8, 0);
 }
 
 void bootloader_write_status_16b_wrsr(unsigned new_status)
