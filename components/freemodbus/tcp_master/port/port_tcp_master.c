@@ -248,11 +248,6 @@ void vMBTCPPortMasterSetNetOpt(void* pvNetIf, eMBPortIpVer xIpVersion, eMBPortPr
     xMbPortConfig.eMbIpVer = xIpVersion;
 }
 
-void vMBTCPPortMasterTaskStart(void)
-{
-    vTaskResume(xMbPortConfig.xMbTcpTaskHandle);
-}
-
 // Function returns time left for response processing according to response timeout
 static int64_t xMBTCPPortMasterGetRespTimeLeft(MbSlaveInfo_t* pxInfo)
 {
@@ -890,23 +885,13 @@ extern void vMBMasterPortEventClose(void);
 extern void vMBMasterPortTimerClose(void);
 
 void
-vMBMasterTCPPortDisable(void)
+vMBMasterTCPPortEnable(void)
 {
-    for (USHORT ucCnt = 0; ucCnt < MB_TCP_PORT_MAX_CONN; ucCnt++) {
-        MbSlaveInfo_t* pxInfo = xMbPortConfig.pxMbSlaveInfo[ucCnt];
-        if (pxInfo) {
-            xMBTCPPortMasterCloseConnection(pxInfo);
-            if (pxInfo->pucRcvBuf) {
-                free(pxInfo->pucRcvBuf);
-            }
-            free(pxInfo);
-            xMbPortConfig.pxMbSlaveInfo[ucCnt] = NULL;
-        }
-    }
+    vTaskResume(xMbPortConfig.xMbTcpTaskHandle);
 }
 
 void
-vMBMasterTCPPortClose(void)
+vMBMasterTCPPortDisable(void)
 {
     // Try to exit the task gracefully, so select could release its internal callbacks
     // that were allocated on the stack of the task we're going to delete
@@ -920,8 +905,23 @@ vMBMasterTCPPortClose(void)
         vSemaphoreDelete(xShutdownSemaphore);
         xShutdownSemaphore = NULL;
     }
-    vMBMasterTCPPortDisable();
+    for (USHORT ucCnt = 0; ucCnt < MB_TCP_PORT_MAX_CONN; ucCnt++) {
+        MbSlaveInfo_t* pxInfo = xMbPortConfig.pxMbSlaveInfo[ucCnt];
+        if (pxInfo) {
+            xMBTCPPortMasterCloseConnection(pxInfo);
+            if (pxInfo->pucRcvBuf) {
+                free(pxInfo->pucRcvBuf);
+            }
+            free(pxInfo);
+            xMbPortConfig.pxMbSlaveInfo[ucCnt] = NULL;
+        }
+    }
     free(xMbPortConfig.pxMbSlaveInfo);
+}
+
+void
+vMBMasterTCPPortClose(void)
+{
     vQueueDelete(xMbPortConfig.xConnectQueue);
     vMBMasterPortTimerClose();
     // Release resources for the event queue.
