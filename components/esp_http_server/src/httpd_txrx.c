@@ -381,7 +381,7 @@ esp_err_t httpd_resp_send_err(httpd_req_t *req, httpd_err_code_t error, const ch
     switch (error) {
         case HTTPD_501_METHOD_NOT_IMPLEMENTED:
             status = "501 Method Not Implemented";
-            msg    = "Server does not support this operation";
+            msg    = "Server does not support this method";
             break;
         case HTTPD_505_VERSION_NOT_SUPPORTED:
             status = "505 Version Not Supported";
@@ -389,7 +389,7 @@ esp_err_t httpd_resp_send_err(httpd_req_t *req, httpd_err_code_t error, const ch
             break;
         case HTTPD_400_BAD_REQUEST:
             status = "400 Bad Request";
-            msg    = "Bad request syntax or unsupported method";
+            msg    = "Bad request syntax";
             break;
         case HTTPD_401_UNAUTHORIZED:
             status = "401 Unauthorized";
@@ -421,7 +421,7 @@ esp_err_t httpd_resp_send_err(httpd_req_t *req, httpd_err_code_t error, const ch
             break;
         case HTTPD_431_REQ_HDR_FIELDS_TOO_LARGE:
             status = "431 Request Header Fields Too Large";
-            msg    = "Header fields are too long for server to interpret";
+            msg    = "Header fields are too long";
             break;
         case HTTPD_500_INTERNAL_SERVER_ERROR:
         default:
