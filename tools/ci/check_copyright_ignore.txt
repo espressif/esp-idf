@@ -1,5 +1,4 @@
 components/bootloader/subproject/main/bootloader_hooks.h
-components/bootloader/subproject/main/bootloader_start.c
 components/bt/common/osi/alarm.c
 components/bt/common/osi/allocator.c
 components/bt/common/osi/buffer.c

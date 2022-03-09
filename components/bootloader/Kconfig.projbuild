@@ -185,6 +185,20 @@ menu "Bootloader config"
             (factory or OTA[x]).
             Note that GPIO34-39 do not have an internal pullup and an external one must be provided.
 
+    choice BOOTLOADER_APP_TEST_PIN_LEVEL
+        bool "App test GPIO level"
+        depends on BOOTLOADER_APP_TEST
+        default BOOTLOADER_APP_TEST_PIN_LOW
+        help
+            Pin level for app test, can be triggered on low or high.
+
+        config BOOTLOADER_APP_TEST_PIN_LOW
+            bool "Enter test app on GPIO low"
+
+        config BOOTLOADER_APP_TEST_PIN_HIGH
+            bool "Enter test app on GPIO high"
+    endchoice
+
     config BOOTLOADER_HOLD_TIME_GPIO
         int "Hold time of GPIO for reset/test mode (seconds)"
         depends on BOOTLOADER_FACTORY_RESET || BOOTLOADER_APP_TEST
