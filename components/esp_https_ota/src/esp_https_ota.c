@@ -382,6 +382,12 @@ static esp_err_t read_header(esp_https_ota_t *handle)
 
 esp_err_t esp_https_ota_get_img_desc(esp_https_ota_handle_t https_ota_handle, esp_app_desc_t *new_app_info)
 {
+#if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
+    // This API is not supported in case firmware image is encrypted in nature.
+    // It is recommended to retrieve image description through decryption callback in application layer.
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+
     esp_https_ota_t *handle = (esp_https_ota_t *)https_ota_handle;
     if (handle == NULL || new_app_info == NULL)  {
         ESP_LOGE(TAG, "esp_https_ota_read_img_desc: Invalid argument");
