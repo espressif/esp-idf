@@ -567,7 +567,7 @@ static inline void gpio_ll_iomux_in(gpio_dev_t *hw, uint32_t gpio, uint32_t sign
  * @param  pin_name Pin name to configure
  * @param  func Function to assign to the pin
  */
-static inline void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
+static inline __attribute__((always_inline)) void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
 {
     PIN_FUNC_SELECT(pin_name, func);
 }
