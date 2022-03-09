@@ -139,13 +139,6 @@ BOOL xMBTCPPortMasterWaitEvent(EventGroupHandle_t xEventHandle, EventBits_t xEve
  */
 void vMBTCPPortMasterSetNetOpt(void* pvNetIf, eMBPortIpVer xIpVersion, eMBPortProto xProto);
 
-/**
- * Resume TCP/UDP Master processing task
- *
- * @return None
- */
-void vMBTCPPortMasterTaskStart(void);
-
 #ifdef __cplusplus
 PR_END_EXTERN_C
 #endif

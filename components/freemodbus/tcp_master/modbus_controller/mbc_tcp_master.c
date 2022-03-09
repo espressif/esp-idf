@@ -165,7 +165,10 @@ static esp_err_t mbc_tcp_master_start(void)
     eMBPortProto proto = (comm_info->ip_mode == MB_MODE_TCP) ? MB_PROTO_TCP : MB_PROTO_UDP;
     eMBPortIpVer ip_ver = (comm_info->ip_addr_type == MB_IPV4) ? MB_PORT_IPV4 : MB_PORT_IPV6;
     vMBTCPPortMasterSetNetOpt(comm_info->ip_netif_ptr, ip_ver, proto);
-    vMBTCPPortMasterTaskStart();
+
+    status = eMBMasterEnable();
+    MB_MASTER_CHECK((status == MB_ENOERR), ESP_ERR_INVALID_STATE,
+                    "mb stack set slave ID failure, eMBMasterEnable() returned (0x%x).", (uint32_t)status);
 
     // Add slave IP address for each slave to initialize connection
     mb_slave_addr_entry_t *p_slave_info;
@@ -178,18 +181,13 @@ static esp_err_t mbc_tcp_master_start(void)
     // Add end of list condition
     (void)xMBTCPPortMasterAddSlaveIp(0xFF, NULL, 0xFF);
 
-    status = eMBMasterEnable();
-    MB_MASTER_CHECK((status == MB_ENOERR), ESP_ERR_INVALID_STATE,
-            "mb stack set slave ID failure, eMBMasterEnable() returned (0x%x).", (uint32_t)status);
-
 
     // Wait for connection done event
     bool start = (bool)xMBTCPPortMasterWaitEvent(mbm_opts->mbm_event_group,
-                                                    (EventBits_t)MB_EVENT_STACK_STARTED, MB_TCP_CONNECTION_TOUT);
+                                                 (EventBits_t)MB_EVENT_STACK_STARTED, MB_TCP_CONNECTION_TOUT);
     MB_MASTER_CHECK((start), ESP_ERR_INVALID_STATE,
-                            "mb stack could not connect to slaves for %d seconds.",
-                            CONFIG_FMB_TCP_CONNECTION_TOUT_SEC);
-
+                    "mb stack could not connect to slaves for %d seconds.",
+                    CONFIG_FMB_TCP_CONNECTION_TOUT_SEC);
     return ESP_OK;
 }
 
@@ -206,10 +204,10 @@ static esp_err_t mbc_tcp_master_destroy(void)
     MB_MASTER_CHECK((mb_error == MB_ENOERR), ESP_ERR_INVALID_STATE, "mb stack disable failure.");
     mb_error = eMBMasterClose();
     MB_MASTER_CHECK((mb_error == MB_ENOERR), ESP_ERR_INVALID_STATE,
-            "mb stack close failure returned (0x%x).", (uint32_t)mb_error);
+                    "mb stack close failure returned (0x%x).", (uint32_t)mb_error);
     // Stop polling by clearing correspondent bit in the event group
     xEventGroupClearBits(mbm_opts->mbm_event_group,
-                                    (EventBits_t)MB_EVENT_STACK_STARTED);
+                         (EventBits_t)MB_EVENT_STACK_STARTED);
     (void)vTaskDelete(mbm_opts->mbm_task_handle);
     mbm_opts->mbm_task_handle = NULL;
     (void)vEventGroupDelete(mbm_opts->mbm_event_group);
@@ -282,52 +280,52 @@ static esp_err_t mbc_tcp_master_send_request(mb_param_request_t* request, void* 
     // Calls appropriate request function to send request and waits response
     switch(mb_command)
     {
-        case MB_FUNC_READ_COILS:
-            mb_error = eMBMasterReqReadCoils((UCHAR)mb_slave_addr, (USHORT)mb_offset,
-                                               (USHORT)mb_size , (LONG)MB_RESPONSE_TIMEOUT );
-            break;
-        case MB_FUNC_WRITE_SINGLE_COIL:
-            mb_error = eMBMasterReqWriteCoil((UCHAR)mb_slave_addr, (USHORT)mb_offset,
-                                                *(USHORT*)data_ptr, (LONG)MB_RESPONSE_TIMEOUT );
-            break;
-        case MB_FUNC_WRITE_MULTIPLE_COILS:
-            mb_error = eMBMasterReqWriteMultipleCoils((UCHAR)mb_slave_addr, (USHORT)mb_offset,
-                                                            (USHORT)mb_size, (UCHAR*)data_ptr,
-                                                            (LONG)MB_RESPONSE_TIMEOUT);
-            break;
-        case MB_FUNC_READ_DISCRETE_INPUTS:
-            mb_error = eMBMasterReqReadDiscreteInputs((UCHAR)mb_slave_addr, (USHORT)mb_offset,
-                                                        (USHORT)mb_size, (LONG)MB_RESPONSE_TIMEOUT );
-            break;
-        case MB_FUNC_READ_HOLDING_REGISTER:
-            mb_error = eMBMasterReqReadHoldingRegister((UCHAR)mb_slave_addr, (USHORT)mb_offset,
-                                                            (USHORT)mb_size, (LONG)MB_RESPONSE_TIMEOUT );
-            break;
-        case MB_FUNC_WRITE_REGISTER:
-            mb_error = eMBMasterReqWriteHoldingRegister( (UCHAR)mb_slave_addr, (USHORT)mb_offset,
-                                                            *(USHORT*)data_ptr, (LONG)MB_RESPONSE_TIMEOUT );
-            break;
+    case MB_FUNC_READ_COILS:
+        mb_error = eMBMasterReqReadCoils((UCHAR)mb_slave_addr, (USHORT)mb_offset,
+                                         (USHORT)mb_size, (LONG)MB_RESPONSE_TIMEOUT);
+        break;
+    case MB_FUNC_WRITE_SINGLE_COIL:
+        mb_error = eMBMasterReqWriteCoil((UCHAR)mb_slave_addr, (USHORT)mb_offset,
+                                         *(USHORT *)data_ptr, (LONG)MB_RESPONSE_TIMEOUT);
+        break;
+    case MB_FUNC_WRITE_MULTIPLE_COILS:
+        mb_error = eMBMasterReqWriteMultipleCoils((UCHAR)mb_slave_addr, (USHORT)mb_offset,
+                                                  (USHORT)mb_size, (UCHAR *)data_ptr,
+                                                  (LONG)MB_RESPONSE_TIMEOUT);
+        break;
+    case MB_FUNC_READ_DISCRETE_INPUTS:
+        mb_error = eMBMasterReqReadDiscreteInputs((UCHAR)mb_slave_addr, (USHORT)mb_offset,
+                                                  (USHORT)mb_size, (LONG)MB_RESPONSE_TIMEOUT);
+        break;
+    case MB_FUNC_READ_HOLDING_REGISTER:
+        mb_error = eMBMasterReqReadHoldingRegister((UCHAR)mb_slave_addr, (USHORT)mb_offset,
+                                                   (USHORT)mb_size, (LONG)MB_RESPONSE_TIMEOUT);
+        break;
+    case MB_FUNC_WRITE_REGISTER:
+        mb_error = eMBMasterReqWriteHoldingRegister((UCHAR)mb_slave_addr, (USHORT)mb_offset,
+                                                    *(USHORT *)data_ptr, (LONG)MB_RESPONSE_TIMEOUT);
+        break;
 
-        case MB_FUNC_WRITE_MULTIPLE_REGISTERS:
-            mb_error = eMBMasterReqWriteMultipleHoldingRegister( (UCHAR)mb_slave_addr,
-                                                                    (USHORT)mb_offset, (USHORT)mb_size,
-                                                                    (USHORT*)data_ptr, (LONG)MB_RESPONSE_TIMEOUT );
-            break;
-        case MB_FUNC_READWRITE_MULTIPLE_REGISTERS:
-            mb_error = eMBMasterReqReadWriteMultipleHoldingRegister( (UCHAR)mb_slave_addr, (USHORT)mb_offset,
-                                                                       (USHORT)mb_size, (USHORT*)data_ptr,
-                                                                       (USHORT)mb_offset, (USHORT)mb_size,
-                                                                       (LONG)MB_RESPONSE_TIMEOUT );
-            break;
-        case MB_FUNC_READ_INPUT_REGISTER:
-            mb_error = eMBMasterReqReadInputRegister( (UCHAR)mb_slave_addr, (USHORT)mb_offset,
-                                                        (USHORT)mb_size, (LONG) MB_RESPONSE_TIMEOUT );
-            break;
-        default:
-            ESP_LOGE(TAG, "%s: Incorrect function in request (%u) ",
-                                                    __FUNCTION__, mb_command);
-            mb_error = MB_MRE_NO_REG;
-            break;
+    case MB_FUNC_WRITE_MULTIPLE_REGISTERS:
+        mb_error = eMBMasterReqWriteMultipleHoldingRegister((UCHAR)mb_slave_addr,
+                                                            (USHORT)mb_offset, (USHORT)mb_size,
+                                                            (USHORT *)data_ptr, (LONG)MB_RESPONSE_TIMEOUT);
+        break;
+    case MB_FUNC_READWRITE_MULTIPLE_REGISTERS:
+        mb_error = eMBMasterReqReadWriteMultipleHoldingRegister((UCHAR)mb_slave_addr, (USHORT)mb_offset,
+                                                                (USHORT)mb_size, (USHORT *)data_ptr,
+                                                                (USHORT)mb_offset, (USHORT)mb_size,
+                                                                (LONG)MB_RESPONSE_TIMEOUT);
+        break;
+    case MB_FUNC_READ_INPUT_REGISTER:
+        mb_error = eMBMasterReqReadInputRegister((UCHAR)mb_slave_addr, (USHORT)mb_offset,
+                                                 (USHORT)mb_size, (LONG)MB_RESPONSE_TIMEOUT);
+        break;
+    default:
+        ESP_LOGE(TAG, "%s: Incorrect function in request (%u) ",
+                 __FUNCTION__, mb_command);
+        mb_error = MB_MRE_NO_REG;
+        break;
     }
 
     // Propagate the Modbus errors to higher level
@@ -463,7 +461,7 @@ static esp_err_t mbc_tcp_master_set_request(char* name, mb_param_mode_t mode, mb
             continue; // The length of strings is different then check next record in the table
         }
         // Compare the name of parameter with parameter key from table
-        uint8_t comp_result = memcmp((const char*)name, (const char*)reg_ptr->param_key, (size_t)param_key_len);
+        int comp_result = memcmp((const void*)name, (const void*)reg_ptr->param_key, (size_t)param_key_len);
         if (comp_result == 0) {
             // The correct line is found in the table and reg_ptr points to the found parameter description
             request->slave_addr = reg_ptr->mb_slave_addr;
@@ -510,12 +508,12 @@ static esp_err_t mbc_tcp_master_get_parameter(uint16_t cid, char* name, uint8_t*
                     error = ESP_ERR_INVALID_STATE;
                 } else {
                     ESP_LOGD(TAG, "%s: Good response for get cid(%u) = %s",
-                                                        __FUNCTION__, (unsigned)reg_info.cid, (char*)esp_err_to_name(error));
+                             __FUNCTION__, (unsigned)reg_info.cid, (char*)esp_err_to_name(error));
                 }
             }
         } else {
             ESP_LOGD(TAG, "%s: Bad response to get cid(%u) = %s",
-                                            __FUNCTION__, reg_info.cid, (char*)esp_err_to_name(error));
+                     __FUNCTION__, reg_info.cid, (char*)esp_err_to_name(error));
             error = ESP_ERR_INVALID_RESPONSE;
         }
         free(pdata);
@@ -523,7 +521,7 @@ static esp_err_t mbc_tcp_master_get_parameter(uint16_t cid, char* name, uint8_t*
         *type = reg_info.param_type;
     } else {
         ESP_LOGE(TAG, "%s: The cid(%u) not found in the data dictionary.",
-                                                    __FUNCTION__, reg_info.cid);
+                 __FUNCTION__, reg_info.cid);
         error = ESP_ERR_INVALID_ARG;
     }
     return error;
@@ -549,7 +547,7 @@ static esp_err_t mbc_tcp_master_set_parameter(uint16_t cid, char* name, uint8_t*
         }
         // Transfer value of characteristic into parameter buffer
         error = mbc_tcp_master_set_param_data((void*)pdata, (void*)value,
-                                                reg_info.param_type, reg_info.param_size);
+                                              reg_info.param_type, reg_info.param_size);
         if (error != ESP_OK) {
             ESP_LOGE(TAG, "fail to set parameter data.");
             free(pdata);
@@ -588,8 +586,7 @@ static esp_err_t mbc_tcp_master_set_parameter(uint16_t cid, char* name, uint8_t*
  * @return result
  */
 // Callback function for reading of MB Input Registers
-eMBErrorCode eMBRegInputCBTcpMaster(UCHAR * pucRegBuffer, USHORT usAddress,
-                                USHORT usNRegs)
+eMBErrorCode eMBRegInputCBTcpMaster(UCHAR* pucRegBuffer, USHORT usAddress, USHORT usNRegs)
 {
     MB_MASTER_ASSERT(mbm_interface_ptr != NULL);
     mb_master_options_t* mbm_opts = &mbm_interface_ptr->opts;
@@ -624,36 +621,40 @@ eMBErrorCode eMBRegInputCBTcpMaster(UCHAR * pucRegBuffer, USHORT usAddress,
  */
 // Callback function for reading of MB Holding Registers
 // Executed by stack when request to read/write holding registers is received
-eMBErrorCode eMBRegHoldingCBTcpMaster(UCHAR * pucRegBuffer, USHORT usAddress,
-        USHORT usNRegs, eMBRegisterMode eMode)
+eMBErrorCode eMBRegHoldingCBTcpMaster(UCHAR *pucRegBuffer, USHORT usAddress,
+                                      USHORT usNRegs, eMBRegisterMode eMode)
 {
     MB_MASTER_ASSERT(mbm_interface_ptr != NULL);
-    mb_master_options_t* mbm_opts = &mbm_interface_ptr->opts;
+    mb_master_options_t *mbm_opts = &mbm_interface_ptr->opts;
     MB_MASTER_ASSERT(pucRegBuffer != NULL);
     USHORT usRegHoldingNregs = (USHORT)mbm_opts->mbm_reg_buffer_size;
-    UCHAR* pucHoldingBuffer = (UCHAR*)mbm_opts->mbm_reg_buffer_ptr;
+    UCHAR *pucHoldingBuffer = (UCHAR *)mbm_opts->mbm_reg_buffer_ptr;
     eMBErrorCode eStatus = MB_ENOERR;
     USHORT usRegs = usNRegs;
     // Check input and configuration parameters for correctness
-    if ((pucHoldingBuffer != NULL)
-            && (usRegHoldingNregs == usNRegs)
-            && (usNRegs >= 1)) {
-        switch (eMode) {
-            case MB_REG_WRITE:
-                while (usRegs > 0) {
-                    _XFER_2_RD(pucRegBuffer, pucHoldingBuffer);
-                    usRegs -= 1;
-                };
-                break;
-            case MB_REG_READ:
-                while (usRegs > 0) {
-                    _XFER_2_WR(pucHoldingBuffer, pucRegBuffer);
-                    pucHoldingBuffer += 2;
-                    usRegs -= 1;
-                };
-                break;
+    if ((pucHoldingBuffer != NULL) && (usRegHoldingNregs == usNRegs) && (usNRegs >= 1))
+    {
+        switch (eMode)
+        {
+        case MB_REG_WRITE:
+            while (usRegs > 0)
+            {
+                _XFER_2_RD(pucRegBuffer, pucHoldingBuffer);
+                usRegs -= 1;
+            };
+            break;
+        case MB_REG_READ:
+            while (usRegs > 0)
+            {
+                _XFER_2_WR(pucHoldingBuffer, pucRegBuffer);
+                pucHoldingBuffer += 2;
+                usRegs -= 1;
+            };
+            break;
         }
-    } else {
+    }
+    else
+    {
         eStatus = MB_ENOREG;
     }
     return eStatus;
@@ -670,8 +671,8 @@ eMBErrorCode eMBRegHoldingCBTcpMaster(UCHAR * pucRegBuffer, USHORT usAddress,
  * @return result
  */
 // Callback function for reading of MB Coils Registers
-eMBErrorCode eMBRegCoilsCBTcpMaster(UCHAR* pucRegBuffer, USHORT usAddress,
-        USHORT usNCoils, eMBRegisterMode eMode)
+eMBErrorCode eMBRegCoilsCBTcpMaster(UCHAR *pucRegBuffer, USHORT usAddress,
+                                    USHORT usNCoils, eMBRegisterMode eMode)
 {
     MB_MASTER_ASSERT(mbm_interface_ptr != NULL);
     mb_master_options_t* mbm_opts = &mbm_interface_ptr->opts;
@@ -722,7 +723,7 @@ eMBErrorCode eMBRegCoilsCBTcpMaster(UCHAR* pucRegBuffer, USHORT usAddress,
  */
 // Callback function for reading of MB Discrete Input Registers
 eMBErrorCode eMBRegDiscreteCBTcpMaster(UCHAR * pucRegBuffer, USHORT usAddress,
-                            USHORT usNDiscrete)
+                                       USHORT usNDiscrete)
 {
     MB_MASTER_ASSERT(mbm_interface_ptr != NULL);
     mb_master_options_t* mbm_opts = &mbm_interface_ptr->opts;
@@ -785,14 +786,14 @@ esp_err_t mbc_tcp_master_create(void** handler)
     status = xTaskCreate((void*)&modbus_tcp_master_task,
                             "modbus_tcp_master_task",
                             MB_CONTROLLER_STACK_SIZE,
-                            NULL,                       // No parameters
+                            NULL, // No parameters
                             MB_CONTROLLER_PRIORITY,
                             &mbm_opts->mbm_task_handle);
     if (status != pdPASS) {
         vTaskDelete(mbm_opts->mbm_task_handle);
         MB_MASTER_CHECK((status == pdPASS), ESP_ERR_NO_MEM,
-                "mb controller task creation error, xTaskCreate() returns (0x%x).",
-                (uint32_t)status);
+                        "mb controller task creation error, xTaskCreate() returns (0x%x).",
+                        (uint32_t)status);
     }
     MB_MASTER_ASSERT(mbm_opts->mbm_task_handle != NULL); // The task is created but handle is incorrect
 
