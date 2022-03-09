@@ -32,11 +32,9 @@ See https://idf.espressif.com/ for links to detailed instructions on how to set 
 
 ### Non-GitHub forks
 
-ESP-IDF uses relative locations as its submodules URLs ([.gitmodules](.gitmodules)). So they link to GitHub.
-If ESP-IDF is forked to a Git repository which is not on GitHub, you will need to run the script
-[tools/set-submodules-to-github.sh](tools/set-submodules-to-github.sh) after git clone.
-The script sets absolute URLs for all submodules, allowing `git submodule update --init --recursive` to complete.
-If cloning ESP-IDF from GitHub, this step is not needed.
+ESP-IDF uses relative locations as its submodules URLs ([.gitmodules](.gitmodules)). So they link to GitHub. If ESP-IDF is forked to a Git repository which is not on GitHub, you will need to run the script [tools/set-submodules-to-github.sh](tools/set-submodules-to-github.sh) after git clone.
+
+The script sets absolute URLs for all submodules, allowing `git submodule update --init --recursive` to complete. If cloning ESP-IDF from GitHub, this step is not needed.
 
 ## Finding a Project
 
