@@ -1,11 +1,17 @@
 
 # Encrypted Binary OTA
 
-This example demonstrates OTA updates with pre-encrypted binary using `esp_encrypted_img` component's APIs and tool. Pre encrypted firmware binary must be hosted on OTA update server. This firmware will be fetched and then decrypted on device before being flashed. This allows firmware to remain `confidential` on the OTA update channel irrespective of underlying transport (e.g., non-TLS).
+This example demonstrates OTA updates with pre-encrypted binary using `esp_encrypted_img` component's APIs and tool.
+
+Pre-encrypted firmware binary must be hosted on OTA update server.
+This firmware will be fetched and then decrypted on device before being flashed.
+This allows firmware to remain `confidential` on the OTA update channel irrespective of underlying transport (e.g., non-TLS).
 
 ## ESP Encrypted Image Abstraction Layer
 
-This example uses `esp_encrypted_img` component hosted at https://github.com/espressif/idf-extra-components/blob/master/esp_encrypted_img through component manager. Please refer to its documentation [here](https://github.com/espressif/idf-extra-components/blob/master/esp_encrypted_img/README.md) for more details
+This example uses `esp_encrypted_img` component hosted at [idf-extra-components/esp_encrypted_img](https://github.com/espressif/idf-extra-components/blob/master/esp_encrypted_img) and available though the [IDF component manager](https://components.espressif.com/component/espressif/esp_encrypted_img).
+
+Please refer to its documentation [here](https://github.com/espressif/idf-extra-components/blob/master/esp_encrypted_img/README.md) for more details.
 
 
 ## How to use the example
