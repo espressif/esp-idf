@@ -170,8 +170,13 @@ extern void vTaskExitCritical( void );
 #define portENTER_CRITICAL_SMP()                    vTaskEnterCritical();
 #define portEXIT_CRITICAL_SMP()                     vTaskExitCritical();
 
-#define portENTER_CRITICAL(...)                     CHOOSE_MACRO_VA_ARG(_0, ##__VA_ARGS__, portENTER_CRITICAL_IDF, portENTER_CRITICAL_SMP)(__VA_ARGS__)
-#define portEXIT_CRITICAL(...)                      CHOOSE_MACRO_VA_ARG(_0, ##__VA_ARGS__, portEXIT_CRITICAL_IDF, portEXIT_CRITICAL_SMP)(__VA_ARGS__)
+#if defined(__cplusplus) && (__cplusplus >  201703L)
+#define portENTER_CRITICAL(...)                     CHOOSE_MACRO_VA_ARG(portENTER_CRITICAL_IDF, portENTER_CRITICAL_SMP __VA_OPT__(,) __VA_ARGS__)(__VA_ARGS__)
+#define portEXIT_CRITICAL(...)                      CHOOSE_MACRO_VA_ARG(portEXIT_CRITICAL_IDF, portEXIT_CRITICAL_SMP __VA_OPT__(,) __VA_ARGS__)(__VA_ARGS__)
+#else
+#define portENTER_CRITICAL(...)                     CHOOSE_MACRO_VA_ARG(portENTER_CRITICAL_IDF, portENTER_CRITICAL_SMP, ##__VA_ARGS__)(__VA_ARGS__)
+#define portEXIT_CRITICAL(...)                      CHOOSE_MACRO_VA_ARG(portEXIT_CRITICAL_IDF, portEXIT_CRITICAL_SMP, ##__VA_ARGS__)(__VA_ARGS__)
+#endif
 
 #define portSET_INTERRUPT_MASK_FROM_ISR() ({ \
     unsigned int cur_level; \
@@ -188,7 +193,11 @@ extern void vTaskExitCritical( void );
 // ---------------------- Yielding -------------------------
 
 #define portYIELD()                                 vPortYield()
-#define portYIELD_FROM_ISR(...)                     CHOOSE_MACRO_VA_ARG(_0, ##__VA_ARGS__, portYIELD_FROM_ISR_CHECK, portYIELD_FROM_ISR_NO_CHECK)(__VA_ARGS__)
+#if defined(__cplusplus) && (__cplusplus >  201703L)
+#define portYIELD_FROM_ISR(...)                     CHOOSE_MACRO_VA_ARG(portYIELD_FROM_ISR_CHECK, portYIELD_FROM_ISR_NO_CHECK __VA_OPT__(,) __VA_ARGS__)(__VA_ARGS__)
+#else
+#define portYIELD_FROM_ISR(...)                     CHOOSE_MACRO_VA_ARG(portYIELD_FROM_ISR_CHECK, portYIELD_FROM_ISR_NO_CHECK, ##__VA_ARGS__)(__VA_ARGS__)
+#endif
 #define portYIELD_CORE(x)                           vPortYieldCore(x)
 
 // ----------------------- System --------------------------
