@@ -28,6 +28,7 @@
 #ifdef EAP_PEER_METHOD
 #include "eap_peer/eap_methods.h"
 #endif
+#include "eap_peer/eap_noob.h"
 
 #include "esp_wifi_driver.h"
 #include "esp_private/wifi.h"
@@ -381,6 +382,7 @@ int eap_sm_process_request(struct eap_sm *sm, struct wpabuf *reqData)
     } else {
         m = eap_peer_get_eap_method(reqVendor, reqVendorMethod);
         if (m == NULL) {
+            wpa_printf(MSG_DEBUG, "EAP: no EAP method associated with vendor %u method %u.", reqVendor, reqVendorMethod);
             goto build_nak;
         }
 
@@ -1193,3 +1195,63 @@ esp_err_t esp_wifi_sta_wpa2_use_default_cert_bundle(bool use_default_bundle)
     return ESP_FAIL;
 #endif
 }
+
+esp_err_t esp_wifi_sta_wpa2_ent_eap_noob_set_initial_association(void)
+{
+    g_wpa_eap_noob_state.active = true;
+    g_wpa_eap_noob_state.persistent = false;
+    g_wpa_eap_noob_state.noob_state = 0;
+    g_wpa_eap_noob_state.ephemeral_state = (struct eap_noob_ephemeral_state_info *)os_zalloc(sizeof(struct eap_noob_ephemeral_state_info));
+    g_wpa_eap_noob_state.supported_dir = EAP_NOOB_OOB_DIRECTION_SERVER_TO_PEER;
+    if (g_wpa_eap_noob_state.ephemeral_state == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    return ESP_OK;
+}
+esp_err_t esp_wifi_sta_wpa2_ent_eap_noob_set_persistent_association(char *peer_id, int version, int cryptosuite, int cryptosuite_prev, char *nai, u8 *kz, u8 *kz_prev)
+{
+    return ESP_OK;
+}
+
+eap_noob_oob_msg_t *esp_wifi_sta_wpa2_ent_eap_noob_generate_oob_message(void)
+{
+    return eap_noob_generate_oob_msg();
+}
+
+esp_err_t esp_wifi_sta_wpa2_ent_eap_noob_receive_oob_message(u8 *noob, u8 *hoob)
+{
+    eap_noob_oob_msg_t *oobmsg = os_zalloc(sizeof(eap_noob_oob_msg_t));
+    memcpy(oobmsg->noob, noob, 16);
+    memcpy(oobmsg->hoob, hoob, 16);
+    if (eap_noob_receive_oob_msg(oobmsg)) {
+        return ESP_OK;
+    }
+    os_free(oobmsg);
+    return ESP_FAIL;
+}
+
+
+esp_err_t esp_wifi_sta_wpa2_ent_eap_noob_set_oob_dir(unsigned char oob_dir)
+{
+    g_wpa_eap_noob_state.supported_dir = oob_dir;
+    return ESP_OK;
+}
+
+
+char *esp_wifi_sta_wpa2_ent_eap_noob_get_peerid(void)
+{
+    return g_wpa_eap_noob_state.peer_id;
+}
+bool esp_wifi_sta_wpa2_ent_eap_noob_oob_pending(void)
+{
+    if (g_wpa_eap_noob_state.noob_state != EAP_NOOB_STATE_WAITING_FOR_OOB) {
+        return false;
+    }
+    if (g_wpa_eap_noob_state.ephemeral_state == NULL) {
+        return false;
+    }
+
+    return g_wpa_eap_noob_state.ephemeral_state->oobMessages == NULL;
+}
+
