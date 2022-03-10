@@ -1,2 +1,2 @@
 dependencies:
-  espressif/coap: ">=4.3.0"
+  espressif/coap: "^4.3.0"

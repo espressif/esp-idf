@@ -4,7 +4,7 @@ dependencies:
 
   # Defining a dependency from the registry:
   # https://components.espressif.com/component/example/cmp
-  example/cmp: ">=3.3.3"
+  example/cmp: "^3.3.3"
 
   # # Other ways to define dependencies
   #

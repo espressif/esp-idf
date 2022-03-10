@@ -1,3 +1,3 @@
 ## IDF Component Manager Manifest File
 dependencies:
-  espressif/cbor: "==0.5.4"
+  espressif/cbor: "^0.5.4"
