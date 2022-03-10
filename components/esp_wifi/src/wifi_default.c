@@ -391,7 +391,7 @@ esp_err_t esp_netif_create_default_wifi_mesh_netifs(esp_netif_t **p_netif_sta, e
     ESP_ERROR_CHECK(esp_netif_attach_wifi_ap(netif_ap));
     ESP_ERROR_CHECK(esp_wifi_set_default_wifi_ap_handlers());
 
-    // ...and stop DHCP server to be compatible with former tcpip_adapter (to keep the ESP_NETIF_DHCP_STOPPED state)
+    // ...and stop DHCP server to keep the ESP_NETIF_DHCP_STOPPED state
     ESP_ERROR_CHECK(esp_netif_dhcps_stop(netif_ap));
 
     // Create "almost" default station, but with un-flagged DHCP client

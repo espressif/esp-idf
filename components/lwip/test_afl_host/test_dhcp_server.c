@@ -1,9 +1,9 @@
 #include "no_warn_host.h"
 #include "lwip/pbuf.h"
 #include "lwip/udp.h"
-#include "tcpip_adapter.h"
 #include <string.h>
 #include <stdio.h>
+#include "dhcpserver/dhcpserver.h"
 
 const ip_addr_t ip_addr_any;
 ip4_addr_t server_ip;

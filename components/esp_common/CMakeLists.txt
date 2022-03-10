@@ -28,7 +28,6 @@ set(optional_reqs ulp
                     lwip
                     spi_flash
                     wpa_supplicant
-                    tcpip_adapter
                     esp_serial_slave_link
                     esp_netif
                     soc

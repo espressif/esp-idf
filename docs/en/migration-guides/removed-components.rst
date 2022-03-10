@@ -24,4 +24,8 @@ To install libsodium component with the latest version compatible to X.Y accordi
 
 To find out which versions of each component are available, open https://components.espressif.com, search for the component by its name and check the versions listed on the component page.
 
+Following components are removed since they were deprecated in IDF v4.x
+
+* ``tcpip_adapter`` Please use the :doc:`ESP-NETIF </api-reference/network/esp_netif>` component instead; you can follow the `Migration guide to ESP-NETIF<tcpip-adapter>`
+
 .. note:: OpenSSL-API component is no longer supported. It is not available in the IDF Component Registry, either. Please use :doc:`ESP-TLS </api-reference/protocols/esp_tls>` or :component:`mbedtls` API directly.

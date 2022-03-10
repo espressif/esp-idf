@@ -18,15 +18,6 @@
 #include "esp_eth_netif_glue.h"
 #endif
 
-//
-// Note: tcpip_adapter legacy API has to be included by default to provide full compatibility
-//  for applications that used tcpip_adapter API without explicit inclusion of tcpip_adapter.h
-//
-#ifdef CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
-#define _ESP_NETIF_SUPPRESS_LEGACY_WARNING_
-#include "tcpip_adapter.h"
-#undef _ESP_NETIF_SUPPRESS_LEGACY_WARNING_
-#endif // CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
 
 #ifdef __cplusplus
 extern "C" {

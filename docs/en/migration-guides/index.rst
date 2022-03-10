@@ -5,13 +5,14 @@ ESP-IDF 5.0 Migration Guides
 .. toctree::
     :maxdepth: 1
 
-    Build System <build-system>
-    Environment Setup on Windows <windows-env>
-    Ethernet <ethernet>
-    FreeRTOS <freertos>
-    Peripherals <peripherals>
-    Protocols <protocols>
-    Removed or deprecated components <removed-components>
-    Storage <storage>
-    System <system>
-    Tools <tools>
+    build-system
+    windows-env
+    ethernet
+    freertos
+    peripherals
+    protocols
+    removed-components
+    storage
+    system
+    tools
+    tcpip-adapter

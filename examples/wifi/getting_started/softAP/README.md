@@ -45,7 +45,7 @@ I (917) wifi softAP: wifi_init_softap finished.SSID:myssid password:mypassword
 I (26457) wifi: n:1 0, o:1 0, ap:1 1, sta:255 255, prof:1
 I (26457) wifi: station: 70:ef:00:43:96:67 join, AID=1, bg, 20
 I (26467) wifi softAP: station:70:ef:00:43:96:67 join, AID=1
-I (27657) tcpip_adapter: softAP assign IP to station,IP is: 192.168.4.2
+I (27657) esp_netif_lwip: DHCP server assigned IP to a station, IP is: 192.168.4.2
 ```
 
 ## Troubleshooting

@@ -219,12 +219,6 @@ esp_err_t esp_eth_driver_install(const esp_eth_config_t *config, esp_eth_handle_
     ESP_LOGD(TAG, "new ethernet driver @%p", eth_driver);
     *out_hdl = eth_driver;
 
-    // for backward compatible to 4.0, and will get removed in 5.0
-#if CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
-    extern esp_err_t tcpip_adapter_compat_start_eth(void *eth_driver);
-    tcpip_adapter_compat_start_eth(eth_driver);
-#endif
-
     return ESP_OK;
 err:
     if (eth_driver) {
