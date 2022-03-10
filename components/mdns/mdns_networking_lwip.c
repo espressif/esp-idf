@@ -134,7 +134,7 @@ static void _udp_recv(void *arg, struct udp_pcb *upcb, struct pbuf *pb, const ip
             continue;
         }
 
-        packet->tcpip_if = MDNS_IF_MAX;
+        packet->tcpip_if = MDNS_MAX_INTERFACES;
         packet->pb = this_pb;
         packet->src_port = rport;
 #if CONFIG_LWIP_IPV6
@@ -164,7 +164,7 @@ static void _udp_recv(void *arg, struct udp_pcb *upcb, struct pbuf *pb, const ip
         //lwip does not return the proper pcb if you have more than one for the same multicast address (but different interfaces)
         struct netif * netif = NULL;
         struct udp_pcb * pcb = NULL;
-        for (i=0; i<MDNS_IF_MAX; i++) {
+        for (i=0; i<MDNS_MAX_INTERFACES; i++) {
             pcb = _mdns_server->interfaces[i].pcbs[packet->ip_protocol].pcb;
             netif = esp_netif_get_netif_impl(_mdns_get_esp_netif(i));
             if (pcb && netif && netif == ip_current_input_netif ()) {
@@ -198,7 +198,7 @@ static void _udp_recv(void *arg, struct udp_pcb *upcb, struct pbuf *pb, const ip
  */
 static bool _udp_pcb_is_in_use(void){
     int i, p;
-    for (i=0; i<MDNS_IF_MAX; i++) {
+    for (i=0; i<MDNS_MAX_INTERFACES; i++) {
         for (p=0; p<MDNS_IP_PROTOCOL_MAX; p++) {
             if(_mdns_server->interfaces[i].pcbs[p].pcb){
                 return true;

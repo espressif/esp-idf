@@ -83,9 +83,6 @@ static void initialise_mdns(void)
     free(hostname);
 }
 
-/* these strings match tcpip_adapter_if_t enumeration */
-static const char * if_str[] = {"STA", "AP", "ETH", "MAX"};
-
 /* these strings match mdns_ip_protocol_t enumeration */
 static const char * ip_protocol_str[] = {"V4", "V6", "MAX"};
 
@@ -95,7 +92,7 @@ static void mdns_print_results(mdns_result_t *results)
     mdns_ip_addr_t *a = NULL;
     int i = 1, t;
     while (r) {
-        printf("%d: Interface: %s, Type: %s, TTL: %u\n", i++, if_str[r->tcpip_if], ip_protocol_str[r->ip_protocol],
+        printf("%d: Interface: %s, Type: %s, TTL: %u\n", i++, esp_netif_get_ifkey(r->esp_netif), ip_protocol_str[r->ip_protocol],
                r->ttl);
         if (r->instance_name) {
             printf("  PTR : %s.%s.%s\n", r->instance_name, r->service_type, r->proto);
@@ -269,6 +266,18 @@ void app_main(void)
      */
     ESP_ERROR_CHECK(example_connect());
 
+#if defined(CONFIG_MDNS_ADD_CUSTOM_NETIF) && !defined(CONFIG_MDNS_PREDEF_NETIF_STA) && !defined(CONFIG_MDNS_PREDEF_NETIF_ETH)
+    /* Demonstration of adding a custom netif to mdns service, but we're adding the default example one,
+     * so we must disable all predefined interfaces (PREDEF_NETIF_STA, AP and ETH) first
+     */
+    ESP_ERROR_CHECK(mdns_register_netif(EXAMPLE_INTERFACE));
+    /* It is not enough to just register the interface, we have to enable is manually.
+     * This is typically performed in "GOT_IP" event handler, but we call it here directly
+     * since the `EXAMPLE_INTERFACE` netif is connected already, to keep the example simple.
+     */
+    ESP_ERROR_CHECK(mdns_netif_action(EXAMPLE_INTERFACE, MDNS_EVENT_ENABLE_IP4));
+    ESP_ERROR_CHECK(mdns_netif_action(EXAMPLE_INTERFACE, MDNS_EVENT_ANNOUNCE_IP4));
+#endif
     initialise_button();
     xTaskCreate(&mdns_example_task, "mdns_example_task", 2048, NULL, 5, NULL);
 }
