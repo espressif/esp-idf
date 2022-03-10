@@ -429,7 +429,6 @@ components/esp_eth/src/esp_eth_phy.c
 components/esp_eth/src/ksz8851.h
 components/esp_eth/src/openeth.h
 components/esp_eth/src/w5500.h
-components/esp_eth/test/test_emac.c
 components/esp_eth/test_apps/component_ut_test.py
 components/esp_eth/test_apps/main/esp_eth_test.c
 components/esp_event/esp_event_private.c
@@ -441,7 +440,6 @@ components/esp_event/include/esp_event_base.h
 components/esp_event/include/esp_event_loop.h
 components/esp_event/private_include/esp_event_internal.h
 components/esp_event/private_include/esp_event_private.h
-components/esp_event/test/test_default_loop.c
 components/esp_event/test/test_event.c
 components/esp_gdbstub/esp32/gdbstub_target_config.h
 components/esp_gdbstub/esp32c3/gdbstub_target_config.h
@@ -485,14 +483,12 @@ components/esp_local_ctrl/src/esp_local_ctrl_handler.c
 components/esp_local_ctrl/src/esp_local_ctrl_priv.h
 components/esp_local_ctrl/src/esp_local_ctrl_transport_ble.c
 components/esp_local_ctrl/src/esp_local_ctrl_transport_httpd.c
-components/esp_netif/esp_netif_handlers.c
 components/esp_netif/include/esp_netif_net_stack.h
 components/esp_netif/include/esp_netif_ppp.h
 components/esp_netif/include/esp_netif_slip.h
 components/esp_netif/include/esp_netif_sta_list.h
 components/esp_netif/loopback/esp_netif_loopback.c
 components/esp_netif/lwip/esp_netif_lwip_defaults.c
-components/esp_netif/lwip/esp_netif_lwip_ppp.c
 components/esp_netif/lwip/esp_netif_lwip_ppp.h
 components/esp_netif/lwip/esp_netif_lwip_slip.c
 components/esp_netif/lwip/esp_netif_lwip_slip.h
@@ -739,7 +735,6 @@ components/esp_wifi/include/esp_private/esp_wifi_private.h
 components/esp_wifi/include/esp_private/esp_wifi_types_private.h
 components/esp_wifi/include/esp_private/wifi_types.h
 components/esp_wifi/include/esp_smartconfig.h
-components/esp_wifi/include/esp_wifi_default.h
 components/esp_wifi/include/esp_wifi_netif.h
 components/esp_wifi/include/smartconfig_ack.h
 components/esp_wifi/src/lib_printf.c
@@ -1758,7 +1753,6 @@ components/vfs/test/test_vfs_append.c
 components/vfs/test/test_vfs_lwip.c
 components/vfs/test/test_vfs_paths.c
 components/vfs/test/test_vfs_uart.c
-components/wifi_provisioning/include/wifi_provisioning/manager.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_ble.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_console.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h
@@ -2165,7 +2159,6 @@ examples/mesh/ip_internal_network/main/mqtt_app.c
 examples/mesh/manual_networking/main/include/mesh_light.h
 examples/mesh/manual_networking/main/mesh_light.c
 examples/mesh/manual_networking/main/mesh_main.c
-examples/network/network_tests/main/net_suite.c
 examples/network/network_tests/main/stdinout.c
 examples/network/network_tests/main/stdinout.h
 examples/network/simple_sniffer/components/pcap/pcap.c

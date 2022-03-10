@@ -34,7 +34,7 @@
  *
  * The event task is a daemon task, which receives events from WiFi driver or from other subsystem, such
  * as TCPIP stack, event task will call the default callback function on receiving the event. For example,
- * on receiving event SYSTEM_EVENT_STA_CONNECTED, it will call tcpip_adapter_start() to start the DHCP
+ * on receiving event WIFI_EVENT_STA_CONNECTED, it will call esp_netif API to start the DHCP
  * client in it's default handler.
  *
  * Application can register it's own event callback function by API esp_event_init, then the application callback
@@ -87,7 +87,6 @@ extern "C" {
  * @brief WiFi stack configuration parameters passed to esp_wifi_init call.
  */
 typedef struct {
-    system_event_handler_t event_handler;          /**< WiFi event handler */
     wifi_osi_funcs_t*      osi_funcs;              /**< WiFi OS functions */
     wpa_crypto_funcs_t     wpa_crypto_funcs;       /**< WiFi station crypto functions when connect */
     int                    static_rx_buf_num;      /**< WiFi static RX buffer number */
@@ -206,7 +205,6 @@ extern uint64_t g_wifi_feature_caps;
 #define CONFIG_FEATURE_FTM_RESPONDER_BIT (1<<3)
 
 #define WIFI_INIT_CONFIG_DEFAULT() { \
-    .event_handler = &esp_event_send_internal, \
     .osi_funcs = &g_wifi_osi_funcs, \
     .wpa_crypto_funcs = g_wifi_default_wpa_crypto_funcs, \
     .static_rx_buf_num = CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM,\

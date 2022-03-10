@@ -773,7 +773,7 @@ static void esp_netif_dhcps_cb(uint8_t ip[4], uint8_t mac[6])
     ESP_LOGI(TAG, "DHCP server assigned IP to a station, IP is: " IPSTR, IP2STR(&evt.ip));
     ESP_LOGD(TAG, "Client's MAC: %x:%x:%x:%x:%x:%x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
-    int ret = esp_event_send_internal(IP_EVENT, IP_EVENT_AP_STAIPASSIGNED, &evt, sizeof(evt), 0);
+    int ret = esp_event_post(IP_EVENT, IP_EVENT_AP_STAIPASSIGNED, &evt, sizeof(evt), 0);
     if (ESP_OK != ret) {
         ESP_LOGE(TAG, "dhcps cb: failed to post IP_EVENT_AP_STAIPASSIGNED (%x)", ret);
     }
@@ -1073,7 +1073,7 @@ static void esp_netif_dhcpc_cb(struct netif *netif)
             memcpy(&evt.ip_info, ip_info, sizeof(esp_netif_ip_info_t));
             memcpy(ip_info_old, ip_info, sizeof(esp_netif_ip_info_t));
             ESP_LOGD(TAG, "if%p ip changed=%d", esp_netif, evt.ip_changed);
-            ret = esp_event_send_internal(IP_EVENT, evt_id, &evt, sizeof(evt), 0);
+            ret = esp_event_post(IP_EVENT, evt_id, &evt, sizeof(evt), 0);
             if (ESP_OK != ret) {
                 ESP_LOGE(TAG, "dhcpc cb: failed to post got ip event (%x)", ret);
             }
@@ -1112,7 +1112,7 @@ static void esp_netif_ip_lost_timer(void *arg)
         ESP_LOGD(TAG, "if%p ip lost tmr: raise ip lost event", esp_netif);
         memset(esp_netif->ip_info_old, 0, sizeof(esp_netif_ip_info_t));
         if (esp_netif->lost_ip_event) {
-            ret = esp_event_send_internal(IP_EVENT, esp_netif->lost_ip_event,
+            ret = esp_event_post(IP_EVENT, esp_netif->lost_ip_event,
                                           &evt, sizeof(evt), 0);
             if (ESP_OK != ret) {
                 ESP_LOGE(TAG, "ip lost timer: failed to post lost ip event (%x)", ret);
@@ -1578,7 +1578,7 @@ static esp_err_t esp_netif_set_ip_info_api(esp_netif_api_msg_t *msg)
 
                 memcpy(&evt.ip_info, ip_info, sizeof(esp_netif_ip_info_t));
                 memcpy(esp_netif->ip_info_old, ip_info, sizeof(esp_netif_ip_info_t));
-                ret = esp_event_send_internal(IP_EVENT, evt_id, &evt, sizeof(evt), 0);
+                ret = esp_event_post(IP_EVENT, evt_id, &evt, sizeof(evt), 0);
                 if (ESP_OK != ret) {
                     ESP_LOGE(TAG, "set ip info: failed to post got ip event (%x)", ret);
                 }
@@ -1750,7 +1750,7 @@ static void esp_netif_nd6_cb(struct netif *p_netif, uint8_t ip_index)
 #endif /* LWIP_IPV6_SCOPES */
 
     memcpy(&evt.ip6_info, &ip6_info, sizeof(esp_netif_ip6_info_t));
-    int ret = esp_event_send_internal(IP_EVENT, IP_EVENT_GOT_IP6, &evt, sizeof(evt), 0);
+    int ret = esp_event_post(IP_EVENT, IP_EVENT_GOT_IP6, &evt, sizeof(evt), 0);
     if (ESP_OK != ret) {
         ESP_LOGE(TAG, "nd6 cb: failed to post IP_EVENT_GOT_IP6 (%x)", ret);
     }
@@ -2132,7 +2132,7 @@ static esp_err_t esp_netif_add_ip6_address_api(esp_netif_api_msg_t *msg)
                              addr->preferred ? IP6_ADDR_PREFERRED : IP6_ADDR_DEPRECATED);
     ip_event_got_ip6_t evt = {.esp_netif = msg->esp_netif, .if_index = -1, .ip_index = index};
     evt.ip6_info.ip = addr->addr;
-    ESP_RETURN_ON_ERROR(esp_event_send_internal(IP_EVENT, IP_EVENT_GOT_IP6, &evt, sizeof(evt), 0), TAG,
+    ESP_RETURN_ON_ERROR(esp_event_post(IP_EVENT, IP_EVENT_GOT_IP6, &evt, sizeof(evt), 0), TAG,
                         "Failed to post IP_EVENT_GOT_IP6");
     return error;
 }

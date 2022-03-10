@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <string.h>
 #include "esp_netif.h"
@@ -77,8 +69,8 @@ void esp_netif_action_connected(void *esp_netif, esp_event_base_t base, int32_t 
             memcpy(&evt.ip_info, &ip, sizeof(esp_netif_ip_info_t));
             esp_netif_set_old_ip_info(esp_netif, &ip);
 
-            ESP_NETIF_CALL_CHECK("esp_event_send_internal in esp_netif_action_connected",
-                    esp_event_send_internal(IP_EVENT, esp_netif_get_event_id(esp_netif, ESP_NETIF_IP_EVENT_GOT_IP) ,
+            ESP_NETIF_CALL_CHECK("esp_event_post in esp_netif_action_connected",
+                    esp_event_post(IP_EVENT, esp_netif_get_event_id(esp_netif, ESP_NETIF_IP_EVENT_GOT_IP) ,
                                                     &evt, sizeof(evt), 0), ESP_OK);
             ESP_LOGD(TAG, "static ip: ip changed=%d", evt.ip_changed);
         } else {
