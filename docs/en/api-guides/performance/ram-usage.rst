@@ -102,7 +102,7 @@ There are some ESP-IDF configuration options that can reduce heap usage at runti
    - lwIP documentation has a section to configure :ref:`lwip-ram-usage`.
    :SOC_WIFI_SUPPORTED: - :ref:`wifi-buffer-usage` describes options to either reduce numbers of "static" buffers or reduce the maximum number of "dynamic" buffers in use, in order to minimize memory usage at possible cost of performance. Note that "static" Wi-Fi buffers are still allocated from heap when Wi-Fi is initialized and will be freed if Wi-Fi is deinitialized.
    :esp32: - The Ethernet driver allocates DMA buffers for the internal Ethernet MAC when it is initialized - configuration options are :ref:`CONFIG_ETH_DMA_BUFFER_SIZE`, :ref:`CONFIG_ETH_DMA_RX_BUFFER_NUM`, :ref:`CONFIG_ETH_DMA_TX_BUFFER_NUM`.
-   - mbedTLS TLS session memory usage can be minimized by enabling the ESP-IDF feature :ref:`CONFIG_MBEDTLS_DYNAMIC_BUFFER`.
+   - Several Mbed TLS configuration options can be used to reduce heap memory usage. See the :ref:`Mbed TLS <reducing_ram_usage_mbedtls>` docs for details.
    :esp32: - In single core mode only, it's possible to use IRAM as byte accessible memory (added to the regular heap) by enabling :ref:`CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY`. Note that this option carries a performance penalty and the risk of security issues caused by executable data. If this option is enabled then it's possible to set other options to prefer certain buffers be allocated from this memory: :ref:`mbedTLS <CONFIG_MBEDTLS_MEM_ALLOC_MODE>`, :ref:`NimBLE <CONFIG_BT_NIMBLE_MEM_ALLOC_MODE>`.
    :esp32: - Reduce :ref:`CONFIG_BTDM_CTRL_BLE_MAX_CONN` if using BLE.
    :esp32: - Reduce :ref:`CONFIG_BTDM_CTRL_BR_EDR_MAX_ACL_CONN` if using Bluetooth Classic.
