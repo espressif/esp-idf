@@ -449,7 +449,12 @@ menu "Security features"
         bool
         default y
         # RSA secure boot is supported in ESP32 revision >= ECO3
-        depends on ESP32_REV_MIN >= 3 || SOC_SECURE_BOOT_V2_RSA
+        depends on (IDF_TARGET_ESP32 && ESP32_REV_MIN >= 3) || SOC_SECURE_BOOT_V2_RSA
+
+    config SECURE_BOOT_V2_ECC_SUPPORTED
+        bool
+        default y
+        depends on SOC_SECURE_BOOT_V2_ECC
 
     config SECURE_BOOT_V1_SUPPORTED
         bool
@@ -461,6 +466,13 @@ menu "Security features"
         default y
         depends on ESP32_REV_MIN >= 3
 
+    config SECURE_BOOT_V2_ECDSA_ENABLED
+        bool
+        default y if SECURE_BOOT_V2_ENABLED && SECURE_BOOT_V2_ECC_SUPPORTED
+
+    config SECURE_BOOT_V2_RSA_ENABLED
+        bool
+        default y if SECURE_BOOT_V2_ENABLED && SECURE_BOOT_V2_RSA_SUPPORTED
 
     config SECURE_SIGNED_APPS_NO_SECURE_BOOT
         bool "Require signed app images"
@@ -477,21 +489,26 @@ menu "Security features"
         bool "App Signing Scheme"
         depends on SECURE_BOOT || SECURE_SIGNED_APPS_NO_SECURE_BOOT
         default SECURE_SIGNED_APPS_ECDSA_SCHEME if SECURE_BOOT_V1_ENABLED
-        default SECURE_SIGNED_APPS_RSA_SCHEME if SECURE_BOOT_V2_ENABLED
+        default SECURE_SIGNED_APPS_RSA_SCHEME if SECURE_BOOT_V2_RSA_SUPPORTED
+        default SECURE_SIGNED_APPS_ECDSA_V2_SCHEME if SECURE_BOOT_V2_ECC_SUPPORTED
         help
             Select the Secure App signing scheme. Depends on the Chip Revision.
-            There are two options:
-            1. ECDSA based secure boot scheme. (Only choice for Secure Boot V1)
-            Supported in ESP32 and ESP32-ECO3.
-            2. The RSA based secure boot scheme. (Only choice for Secure Boot V2)
-            Supported in ESP32-ECO3 (ESP32 Chip Revision 3 onwards), ESP32-S2, ESP32-C3, ESP32-S3.
+            There are two secure boot versions:
+
+            1. Secure boot V1
+                - Legacy custom secure boot scheme. Supported in ESP32 SoC.
+
+            2. Secure boot V2
+                - RSA based secure boot scheme.
+                  Supported in ESP32-ECO3 (ESP32 Chip Revision 3 onwards), ESP32-S2, ESP32-C3, ESP32-S3 SoCs.
+
+                - ECDSA based secure boot scheme. Supported in ESP32-C2 SoC.
 
         config SECURE_SIGNED_APPS_ECDSA_SCHEME
             bool "ECDSA"
             depends on SECURE_BOOT_V1_SUPPORTED && (SECURE_SIGNED_APPS_NO_SECURE_BOOT || SECURE_BOOT_V1_ENABLED)
             help
                 Embeds the ECDSA public key in the bootloader and signs the application with an ECDSA key.
-
                 Refer to the documentation before enabling.
 
         config SECURE_SIGNED_APPS_RSA_SCHEME
@@ -500,6 +517,38 @@ menu "Security features"
             help
                 Appends the RSA-3072 based Signature block to the application.
                 Refer to <Secure Boot Version 2 documentation link> before enabling.
+
+        config SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+            bool "ECDSA (V2)"
+            depends on SECURE_BOOT_V2_ECC_SUPPORTED && (SECURE_SIGNED_APPS_NO_SECURE_BOOT || SECURE_BOOT_V2_ENABLED)
+            help
+                For Secure boot V2 (e.g., ESP32-C2 SoC), appends ECDSA based signature block to the application.
+                Refer to documentation before enabling.
+
+    endchoice
+
+    choice SECURE_BOOT_ECDSA_KEY_LEN_SIZE
+        bool "ECDSA key size"
+        depends on SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+        default SECURE_BOOT_ECDSA_KEY_LEN_256_BITS
+        help
+            Select the ECDSA key size. Two key sizes are supported
+
+            - 192 bit key using NISTP192 curve
+            - 256 bit key using NISTP256 curve (Recommended)
+
+            The advantage of using 256 bit key is the extra randomness which makes it difficult to be
+            bruteforced compared to 192 bit key.
+            At present, both key sizes are practically implausible to bruteforce.
+
+        config SECURE_BOOT_ECDSA_KEY_LEN_192_BITS
+            bool "Using ECC curve NISTP192"
+            depends on SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+
+        config SECURE_BOOT_ECDSA_KEY_LEN_256_BITS
+            bool "Using ECC curve NISTP256 (Recommended)"
+            depends on SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+
     endchoice
 
     config SECURE_SIGNED_ON_BOOT_NO_SECURE_BOOT
@@ -549,10 +598,16 @@ menu "Security features"
         depends on SECURE_BOOT
         help
             Select the Secure Boot Version. Depends on the Chip Revision.
-            Secure Boot V2 is the new RSA based secure boot scheme.
-            Supported in ESP32-ECO3 (ESP32 Chip Revision 3 onwards), ESP32-S2, ESP32-C3 ECO3.
-            Secure Boot V1 is the AES based secure boot scheme.
-            Supported in ESP32 and ESP32-ECO3.
+            Secure Boot V2 is the new RSA / ECDSA based secure boot scheme.
+
+                - RSA based scheme is supported in ESP32 (Revision 3 onwards), ESP32-S2, ESP32-C3 (ECO3), ESP32-S3.
+                - ECDSA based scheme is supported in ESP32-C2 SoC.
+
+            Please note that, RSA or ECDSA secure boot is property of specific SoC based on its HW design, supported
+            crypto accelerators, die-size, cost and similar parameters. Please note that RSA scheme has requirement
+            for bigger key sizes but at the same time it is comparatively faster than ECDSA verification.
+
+            Secure Boot V1 is the AES based (custom) secure boot scheme supported in ESP32 SoC.
 
         config SECURE_BOOT_V1_ENABLED
             bool "Enable Secure Boot version 1"
@@ -563,7 +618,7 @@ menu "Security features"
 
         config SECURE_BOOT_V2_ENABLED
             bool "Enable Secure Boot version 2"
-            depends on SECURE_BOOT_V2_RSA_SUPPORTED
+            depends on SECURE_BOOT_V2_RSA_SUPPORTED || SECURE_BOOT_V2_ECC_SUPPORTED
             help
                 Build a bootloader which enables Secure Boot version 2 on first boot.
                 Refer to Secure Boot V2 section of the ESP-IDF Programmer's Guide for this version before enabling.

@@ -17,7 +17,7 @@
 
 // Secure boot V2 for bootloader.
 
-#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME && CONFIG_SECURE_BOOT_V2_ENABLED
+#if CONFIG_SECURE_BOOT_V2_ENABLED
 
 static const char* TAG = "secure_boot_v2";
 
@@ -45,7 +45,7 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
         return ESP_FAIL;
     }
 
-    err = esp_secure_boot_verify_rsa_signature_block(sig_block, digest, verified_digest);
+    err = esp_secure_boot_verify_sbv2_signature_block(sig_block, digest, verified_digest);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Secure Boot V2 verification failed.");
     }
@@ -83,7 +83,7 @@ static esp_err_t get_secure_boot_key_digests(esp_image_sig_public_key_digests_t 
     if (err == ESP_OK) {
         for (unsigned i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
             if (trusted_keys.key_digests[i] != NULL) {
-                memcpy(public_key_digests->key_digests[i], (uint8_t *)trusted_keys.key_digests[i], ESP_SECURE_BOOT_DIGEST_LEN);
+                memcpy(public_key_digests->key_digests[i], (uint8_t *)trusted_keys.key_digests[i], ESP_SECURE_BOOT_KEY_DIGEST_LEN);
                 public_key_digests->num_digests++;
             }
         }
@@ -101,7 +101,7 @@ static esp_err_t get_secure_boot_key_digests(esp_image_sig_public_key_digests_t 
 
 // if CONFIG_SECURE_BOOT_V2_ENABLED==y and key digests from eFuse are missing, then it is the first boot,
 // trusted.key_digests are filled from app sig_block.
-esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest)
+esp_err_t esp_secure_boot_verify_sbv2_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest)
 {
     esp_image_sig_public_key_digests_t trusted = {0};
     bool efuse_keys_are_not_set = false;
@@ -125,7 +125,11 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
                     // if efuse key digests are not in eFuse yet due to it is the first boot
                     // then use digests from app to skip error in ets_secure_boot_verify_signature().
                     bootloader_sha256_handle_t sig_block_sha = bootloader_sha256_start();
+#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
                     bootloader_sha256_data(sig_block_sha, &sig_block->block[i].key, sizeof(sig_block->block[i].key));
+#elif CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+                    bootloader_sha256_data(sig_block_sha, &sig_block->block[i].ecdsa.key, sizeof(sig_block->block[i].ecdsa.key));
+#endif
                     bootloader_sha256_finish(sig_block_sha, trusted.key_digests[i]);
                 }
             }
@@ -133,19 +137,27 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
         ESP_FAULT_ASSERT(!esp_secure_boot_enabled());
     }
 
+#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
     ESP_LOGI(TAG, "Verifying with RSA-PSS...");
-#if SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS == 1
+#else
+    ESP_LOGI(TAG, "Verifying with ECDSA...");
+#endif
+
+#if CONFIG_IDF_TARGET_ESP32
     int sb_result = ets_secure_boot_verify_signature(sig_block, image_digest, trusted.key_digests[0], verified_digest);
 #else
     ets_secure_boot_key_digests_t trusted_key_digests = {0};
     for (unsigned i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
         trusted_key_digests.key_digests[i] = &trusted.key_digests[i];
     }
+
     // Key revocation happens in ROM bootloader.
     // Do NOT allow key revocation while verifying application
     trusted_key_digests.allow_key_revoke = false;
+
     int sb_result = ets_secure_boot_verify_signature(sig_block, image_digest, &trusted_key_digests, verified_digest);
-#endif
+#endif // CONFIG_IDF_TARGET_ESP32
+
     if (sb_result != SB_SUCCESS) {
         ESP_LOGE(TAG, "Secure Boot V2 verification failed.");
         return ESP_ERR_IMAGE_INVALID;
@@ -154,4 +166,13 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
         return ESP_OK;
     }
 }
-#endif // CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME && CONFIG_SECURE_BOOT_V2_ENABLED
+
+#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
+// To maintain backward compatibility
+esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest)
+{
+    return esp_secure_boot_verify_sbv2_signature_block(sig_block, image_digest, verified_digest);
+}
+#endif
+
+#endif // CONFIG_SECURE_BOOT_V2_ENABLED

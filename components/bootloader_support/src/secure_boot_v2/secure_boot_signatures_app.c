@@ -22,13 +22,15 @@
 #include "esp_ota_ops.h"
 #include "esp_efuse.h"
 
+#include "secure_boot_signature_priv.h"
+
 // Secure boot V2 for app
 
 _Static_assert(SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS == SECURE_BOOT_NUM_BLOCKS,
                "Parts of this code rely on the max number of signatures appended to an image"
                "being the same as the max number of trusted keys.");
 
-#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME || CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
+#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME || CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME || CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
 
 static const char *TAG = "secure_boot_v2";
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
@@ -76,7 +78,11 @@ esp_err_t esp_secure_boot_get_signature_blocks_for_running_app(bool digest_publi
             if (validate_signature_block(&block) == ESP_OK) {
                 if (digest_public_keys) {
                     bootloader_sha256_handle_t sig_block_sha = bootloader_sha256_start();
+#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
                     bootloader_sha256_data(sig_block_sha, &block.key, sizeof(block.key));
+#elif CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+                    bootloader_sha256_data(sig_block_sha, &block.ecdsa.key, sizeof(block.ecdsa.key));
+#endif
                     bootloader_sha256_finish(sig_block_sha, public_key_digests->key_digests[i]);
                 }
                 public_key_digests->num_digests++;
@@ -106,7 +112,7 @@ static esp_err_t get_secure_boot_key_digests(esp_image_sig_public_key_digests_t 
     if (esp_secure_boot_read_key_digests(&efuse_trusted) == ESP_OK) {
         for (unsigned i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
             if (efuse_trusted.key_digests[i] != NULL) {
-                memcpy(public_key_digests->key_digests[i], (uint8_t *)efuse_trusted.key_digests[i], ESP_SECURE_BOOT_DIGEST_LEN);
+                memcpy(public_key_digests->key_digests[i], (uint8_t *)efuse_trusted.key_digests[i], ESP_SECURE_BOOT_KEY_DIGEST_LEN);
                 public_key_digests->num_digests++;
             }
         }
@@ -120,8 +126,8 @@ static esp_err_t get_secure_boot_key_digests(esp_image_sig_public_key_digests_t 
 
 esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 {
-    uint8_t digest[ESP_SECURE_BOOT_DIGEST_LEN] = {0};
-    uint8_t verified_digest[ESP_SECURE_BOOT_DIGEST_LEN] = {0};
+    uint8_t digest[ESP_SECURE_BOOT_KEY_DIGEST_LEN] = {0};
+    uint8_t verified_digest[ESP_SECURE_BOOT_KEY_DIGEST_LEN] = {0};
 
     /* Rounding off length to the upper 4k boundary */
     uint32_t padded_length = ALIGN_UP(length, FLASH_SECTOR_SIZE);
@@ -139,7 +145,7 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
         return ESP_FAIL;
     }
 
-    err = esp_secure_boot_verify_rsa_signature_block(sig_block, digest, verified_digest);
+    err = esp_secure_boot_verify_sbv2_signature_block(sig_block, digest, verified_digest);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Secure Boot V2 verification failed.");
     }
@@ -150,13 +156,13 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 // This verify function is called only from app, during ota update.
 // This function is compiled in case when CONFIG_SECURE_BOOT_V2_ENABLED==y or CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT==y.
 // if CONFIG_SECURE_BOOT_V2_ENABLED==y and key digests from eFuse are missing, then FAIL (eFuse blocks should be set).
-esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest)
+esp_err_t esp_secure_boot_verify_sbv2_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest)
 {
     bool any_trusted_key = false;
 
     /* Note: in IDF verification we don't add any fault injection resistance, as we don't expect this to be called
         during boot-time verification. */
-    memset(verified_digest, 0, ESP_SECURE_BOOT_DIGEST_LEN);
+    memset(verified_digest, 0, ESP_SECURE_BOOT_KEY_DIGEST_LEN);
 
     esp_image_sig_public_key_digests_t trusted = {0};
 
@@ -165,26 +171,7 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
         return ESP_FAIL;
     }
 
-
     int ret = 0;
-    mbedtls_rsa_context pk;
-    mbedtls_entropy_context entropy;
-    mbedtls_ctr_drbg_context ctr_drbg;
-    const unsigned rsa_key_size = sizeof(sig_block->block[0].signature);
-    unsigned char *sig_be = calloc(1, rsa_key_size);
-    unsigned char *buf = calloc(1, rsa_key_size);
-    if (sig_be == NULL || buf == NULL) {
-        return ESP_ERR_NO_MEM;
-    }
-
-    mbedtls_entropy_init(&entropy);
-    mbedtls_ctr_drbg_init(&ctr_drbg);
-    ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned -0x%04x\n", ret);
-        goto exit_outer;
-    }
-
 #ifdef CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
     const unsigned secure_boot_num_blocks = 1;
 #else
@@ -202,12 +189,17 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
 
         /* Generate the SHA of the public key components in the signature block */
         bootloader_sha256_handle_t sig_block_sha = bootloader_sha256_start();
+#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
         bootloader_sha256_data(sig_block_sha, &app_blk->key, sizeof(app_blk->key));
+#elif CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+        bootloader_sha256_data(sig_block_sha, &app_blk->ecdsa.key, sizeof(app_blk->ecdsa.key));
+#endif
+
         bootloader_sha256_finish(sig_block_sha, app_blk_digest);
 
         /* Check if the key is one we trust */
         for (unsigned trusted_key_idx = 0; trusted_key_idx < secure_boot_num_blocks; trusted_key_idx++) {
-            if (memcmp(app_blk_digest, trusted.key_digests[trusted_key_idx], ESP_SECURE_BOOT_DIGEST_LEN) == 0) {
+            if (memcmp(app_blk_digest, trusted.key_digests[trusted_key_idx], ESP_SECURE_BOOT_KEY_DIGEST_LEN) == 0) {
                 ESP_LOGI(TAG, "#%d app key digest == #%d trusted key digest", app_blk_idx, trusted_key_idx);
                 trusted_block = app_blk;
                 any_trusted_key = true;
@@ -220,63 +212,26 @@ esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signa
             continue; // Skip the signature blocks with no trusted digest
         }
 
+#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
         ESP_LOGI(TAG, "Verifying with RSA-PSS...");
-
-        const mbedtls_mpi N = { .MBEDTLS_PRIVATE(s) = 1,
-                                .MBEDTLS_PRIVATE(n) = sizeof(trusted_block->key.n)/sizeof(mbedtls_mpi_uint),
-                                .MBEDTLS_PRIVATE(p) = (void *)trusted_block->key.n,
-        };
-        const mbedtls_mpi e = { .MBEDTLS_PRIVATE(s) = 1,
-                                .MBEDTLS_PRIVATE(n) = sizeof(trusted_block->key.e)/sizeof(mbedtls_mpi_uint), // 1
-                                .MBEDTLS_PRIVATE(p) = (void *)&trusted_block->key.e,
-        };
-        mbedtls_rsa_init(&pk);
-        mbedtls_rsa_set_padding(&pk,MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA256);
-        ret = mbedtls_rsa_import(&pk, &N, NULL, NULL, NULL, &e);
-        if (ret != 0) {
-            ESP_LOGE(TAG, "Failed mbedtls_rsa_import, err: %d", ret);
-            goto exit_inner;
-        }
-
-        ret = mbedtls_rsa_complete(&pk);
-        if (ret != 0) {
-            ESP_LOGE(TAG, "Failed mbedtls_rsa_complete, err: %d", ret);
-            goto exit_inner;
-        }
-
-        ret = mbedtls_rsa_check_pubkey(&pk);
-        if (ret != 0) {
-            ESP_LOGI(TAG, "Key is not an RSA key -%0x", -ret);
-            goto exit_inner;
-        }
-
-        /* Signature needs to be byte swapped into BE representation */
-        for (int j = 0; j < rsa_key_size; j++) {
-            sig_be[rsa_key_size - j - 1] = trusted_block->signature[j];
-        }
-
-        ret = mbedtls_rsa_public( &pk, sig_be, buf);
-        if (ret != 0) {
-            ESP_LOGE(TAG, "mbedtls_rsa_public failed, err: %d", ret);
-            goto exit_inner;
-        }
-
-        ret = mbedtls_rsa_rsassa_pss_verify( &pk, MBEDTLS_MD_SHA256, ESP_SECURE_BOOT_DIGEST_LEN, image_digest, sig_be);
-        if (ret != 0) {
-            ESP_LOGE(TAG, "Failed mbedtls_rsa_rsassa_pss_verify, err: %d", ret);
-        } else {
-            ESP_LOGI(TAG, "Signature verified successfully!");
-        }
-exit_inner:
-        mbedtls_rsa_free(&pk);
+        ret = verify_rsa_signature_block(sig_block, image_digest, trusted_block);
+#elif CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+        ESP_LOGI(TAG, "Verifying with ECDSA...");
+        ret = verify_ecdsa_signature_block(sig_block, image_digest, trusted_block);
+#endif
         if (ret == 0) {
             break;
         }
     }
-
- exit_outer:
-    free(sig_be);
-    free(buf);
     return (ret != 0 || any_trusted_key == false) ? ESP_ERR_IMAGE_INVALID: ESP_OK;
 }
-#endif // CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME || CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
+
+#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
+// To maintain backward compatibility
+esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest)
+{
+    return esp_secure_boot_verify_sbv2_signature_block(sig_block, image_digest, verified_digest);
+}
+#endif
+
+#endif // CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME || CONFIG_SECURE_SIGNED_APPS_ECDSA_V2_SCHEME || CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
