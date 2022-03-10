@@ -2502,7 +2502,6 @@ tools/ci/python_packages/tiny_test_fw/DUT.py
 tools/ci/python_packages/tiny_test_fw/Env.py
 tools/ci/python_packages/tiny_test_fw/EnvConfig.py
 tools/ci/python_packages/tiny_test_fw/TinyFW.py
-tools/ci/python_packages/tiny_test_fw/Utility/CIAssignTest.py
 tools/ci/python_packages/tiny_test_fw/Utility/CaseConfig.py
 tools/ci/python_packages/tiny_test_fw/Utility/GitlabCIJob.py
 tools/ci/python_packages/tiny_test_fw/Utility/TestCase.py

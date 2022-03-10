@@ -3,6 +3,7 @@
   stage: target_test
   timeout: 1 hour
   extends: .before_script_pytest
+  tags: [$TARGET, $ENV_MARKER]
   artifacts:
     when: always
     paths:
@@ -26,11 +27,8 @@ example_test_pytest_esp32_generic:
   needs:
     - build_pytest_examples_esp32
   variables:
-    TARGET: esp32
+    TARGET: ESP32
     ENV_MARKER: generic
-  tags: # in gitlab 14.1 or later, we can use `parallel: matrix` with the `tags` keyword. https://docs.gitlab.com/ee/ci/jobs/job_control.html#run-a-matrix-of-parallel-trigger-jobs
-    - ESP32
-    - Example_GENERIC
 
 example_test_pytest_esp32s2_generic:
   extends:
@@ -39,11 +37,8 @@ example_test_pytest_esp32s2_generic:
   needs:
     - build_pytest_examples_esp32s2
   variables:
-    TARGET: esp32s2
+    TARGET: ESP32S2
     ENV_MARKER: generic
-  tags:
-    - ESP32S2
-    - Example_GENERIC
 
 example_test_pytest_esp32s3_generic:
   extends:
@@ -52,11 +47,8 @@ example_test_pytest_esp32s3_generic:
   needs:
     - build_pytest_examples_esp32s3
   variables:
-    TARGET: esp32s3
+    TARGET: ESP32S3
     ENV_MARKER: generic
-  tags:
-    - ESP32S3
-    - Example_GENERIC
 
 example_test_pytest_esp32c3_generic:
   extends:
@@ -65,11 +57,8 @@ example_test_pytest_esp32c3_generic:
   needs:
     - build_pytest_examples_esp32c3
   variables:
-    TARGET: esp32c3
+    TARGET: ESP32C3
     ENV_MARKER: generic
-  tags:
-    - ESP32C3
-    - Example_GENERIC
 
 example_test_pytest_esp32c3_flash_suspend:
   extends:
@@ -78,11 +67,8 @@ example_test_pytest_esp32c3_flash_suspend:
   needs:
     - build_pytest_examples_esp32c3
   variables:
-    TARGET: esp32c3
+    TARGET: ESP32C3
     ENV_MARKER: flash_suspend
-  tags:
-    - ESP32C3_IDF
-    - UT_T1_Flash_Suspend
 
 .pytest_components_dir_template:
   extends: .pytest_template
@@ -96,11 +82,8 @@ component_ut_pytest_esp32_generic:
   needs:
     - build_pytest_components_esp32
   variables:
-    TARGET: esp32
+    TARGET: ESP32
     ENV_MARKER: generic
-  tags:
-    - ESP32
-    - COMPONENT_UT_GENERIC
 
 component_ut_pytest_esp32_ip101:
   extends:
@@ -109,11 +92,8 @@ component_ut_pytest_esp32_ip101:
   needs:
     - build_pytest_components_esp32
   variables:
-    TARGET: esp32
+    TARGET: ESP32
     ENV_MARKER: ip101
-  tags:
-    - ESP32
-    - COMPONENT_UT_IP101
 
 component_ut_pytest_esp32_lan8720:
   extends:
@@ -122,11 +102,8 @@ component_ut_pytest_esp32_lan8720:
   needs:
     - build_pytest_components_esp32
   variables:
-    TARGET: esp32
+    TARGET: ESP32
     ENV_MARKER: lan8720
-  tags:
-    - ESP32
-    - COMPONENT_UT_LAN8720
 
 component_ut_pytest_esp32s2_generic:
   extends:
@@ -135,11 +112,8 @@ component_ut_pytest_esp32s2_generic:
   needs:
     - build_pytest_components_esp32s2
   variables:
-    TARGET: esp32s2
+    TARGET: ESP32S2
     ENV_MARKER: generic
-  tags:
-    - ESP32S2
-    - COMPONENT_UT_GENERIC
 
 component_ut_pytest_esp32s3_generic:
   extends:
@@ -148,11 +122,8 @@ component_ut_pytest_esp32s3_generic:
   needs:
     - build_pytest_components_esp32s3
   variables:
-    TARGET: esp32s3
+    TARGET: ESP32S3
     ENV_MARKER: generic
-  tags:
-    - ESP32S3
-    - COMPONENT_UT_GENERIC
 
 component_ut_pytest_esp32s3_octal_psram:
   extends:
@@ -161,11 +132,8 @@ component_ut_pytest_esp32s3_octal_psram:
   needs:
     - build_pytest_components_esp32s3
   variables:
-    TARGET: esp32s3
+    TARGET: ESP32S3
     ENV_MARKER: octal_psram
-  tags:
-    - ESP32S3
-    - MSPI_F8R8
 
 component_ut_pytest_esp32c3_generic:
   extends:
@@ -174,11 +142,8 @@ component_ut_pytest_esp32c3_generic:
   needs:
     - build_pytest_components_esp32c3
   variables:
-    TARGET: esp32c3
+    TARGET: ESP32C3
     ENV_MARKER: generic
-  tags:
-    - ESP32C3
-    - COMPONENT_UT_GENERIC
 
 .pytest_test_apps_dir_template:
   extends: .pytest_template
@@ -192,12 +157,9 @@ test_app_test_pytest_esp32_generic:
   needs:
     - build_pytest_test_apps_esp32
   variables:
-    TARGET: esp32
+    TARGET: ESP32
     ENV_MARKER: generic
     SETUP_TOOLS: "1"  # need gdb
-  tags:
-    - ESP32
-    - Example_GENERIC
 
 test_app_test_pytest_esp32s2_generic:
   extends:
@@ -206,12 +168,29 @@ test_app_test_pytest_esp32s2_generic:
   needs:
     - build_pytest_test_apps_esp32s2
   variables:
-    TARGET: esp32s2
+    TARGET: ESP32S2
     ENV_MARKER: generic
     SETUP_TOOLS: "1"  # need gdb
-  tags:
-    - ESP32S2
-    - Example_GENERIC
+
+test_app_test_pytest_esp32s3_generic:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32s3
+  needs:
+    - build_pytest_test_apps_esp32s3
+  variables:
+    TARGET: ESP32S3
+    ENV_MARKER: generic
+
+test_app_test_pytest_esp32c3_generic:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32c3
+  needs:
+    - build_pytest_test_apps_esp32c3
+  variables:
+    TARGET: ESP32C3
+    ENV_MARKER: generic
 
 # for parallel jobs, CI_JOB_NAME will be "job_name index/total" (for example, "IT_001 1/2")
 # we need to convert to pattern "job_name_index.yml"
