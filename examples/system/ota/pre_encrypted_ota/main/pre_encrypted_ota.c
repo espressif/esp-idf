@@ -31,15 +31,15 @@
 #endif
 
 static const char *TAG = "pre_encrypted_ota_example";
-extern const uint8_t server_cert_pem_start[] asm("_binary_ca_cert_pem_start");
-extern const uint8_t server_cert_pem_end[] asm("_binary_ca_cert_pem_end");
+extern const char server_cert_pem_start[] asm("_binary_ca_cert_pem_start");
+extern const char server_cert_pem_end[] asm("_binary_ca_cert_pem_end");
 
-extern const uint8_t rsa_private_pem_start[] asm("_binary_private_pem_start");
-extern const uint8_t rsa_private_pem_end[]   asm("_binary_private_pem_end");
+extern const char rsa_private_pem_start[] asm("_binary_private_pem_start");
+extern const char rsa_private_pem_end[]   asm("_binary_private_pem_end");
 
 #define OTA_URL_SIZE 256
 
-static esp_decrypt_handle_t *ctx;
+static esp_decrypt_handle_t decrypt_handle;
 
 static esp_err_t _decrypt_cb(decrypt_cb_arg_t *args)
 {
@@ -47,7 +47,7 @@ static esp_err_t _decrypt_cb(decrypt_cb_arg_t *args)
     pre_enc_decrypt_arg_t pargs = {};
     pargs.data_in = (char *) args->data_in;
     pargs.data_in_len = args->data_in_len;
-    err = esp_encrypted_img_decrypt_data(ctx, &pargs);
+    err = esp_encrypted_img_decrypt_data(decrypt_handle, &pargs);
     if (err != ESP_OK && err != ESP_ERR_NOT_FINISHED) {
         return err;
     }
@@ -68,15 +68,15 @@ void pre_encrypted_ota_task(void *pvParameter)
     esp_err_t ota_finish_err = ESP_OK;
     esp_http_client_config_t config = {
         .url = CONFIG_EXAMPLE_FIRMWARE_UPGRADE_URL,
-        .cert_pem = (char *)server_cert_pem_start,
+        .cert_pem = server_cert_pem_start,
         .timeout_ms = CONFIG_EXAMPLE_OTA_RECV_TIMEOUT,
         .keep_alive_enable = true,
     };
     esp_decrypt_cfg_t cfg = {};
-    cfg.rsa_pub_key = (char *)rsa_private_pem_start;
+    cfg.rsa_pub_key = rsa_private_pem_start;
     cfg.rsa_pub_key_len = rsa_private_pem_end - rsa_private_pem_start;
-    ctx = esp_encrypted_img_decrypt_start(&cfg);
-    if (ctx == NULL) {
+    decrypt_handle = esp_encrypted_img_decrypt_start(&cfg);
+    if (!decrypt_handle) {
         ESP_LOGE(TAG, "OTA upgrade failed");
         vTaskDelete(NULL);
     }
@@ -126,11 +126,11 @@ void pre_encrypted_ota_task(void *pvParameter)
         ESP_LOGD(TAG, "Image bytes read: %d", esp_https_ota_get_image_len_read(https_ota_handle));
     }
 
-    if (esp_https_ota_is_complete_data_received(https_ota_handle) != true) {
+    if (!esp_https_ota_is_complete_data_received(https_ota_handle)) {
         // the OTA image was not completely received and user can customise the response to this situation.
         ESP_LOGE(TAG, "Complete data was not received.");
     } else {
-        err = esp_encrypted_img_decrypt_end(ctx);
+        err = esp_encrypted_img_decrypt_end(decrypt_handle);
         if (err != ESP_OK) {
             goto ota_end;
         }
