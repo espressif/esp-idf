@@ -59,6 +59,7 @@
 #define SOC_I2S_SUPPORTED               1
 #define SOC_RMT_SUPPORTED               1
 #define SOC_SIGMADELTA_SUPPORTED        1
+#define SOC_SUPPORT_COEXISTENCE         1
 #define SOC_TEMP_SENSOR_SUPPORTED           1
 
 /*-------------------------- SOC CAPS ----------------------------------------*/
