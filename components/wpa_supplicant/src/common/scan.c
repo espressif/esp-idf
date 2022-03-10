@@ -36,6 +36,10 @@ void wpa_supplicant_req_scan(struct wpa_supplicant *wpa_s, int sec, int usec)
 		wpa_dbg(wpa_s, MSG_DEBUG, "Already scanning - Return");
 		return;
 	}
+	if (!wpa_s->current_bss) {
+		wpa_dbg(wpa_s, MSG_INFO, "Current BSS is null - Return");
+		return;
+	}
 	params = os_zalloc(sizeof(*params));
 
 	if (!params) {
