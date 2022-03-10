@@ -29,6 +29,7 @@
 #define HFP_VERSION_1_1         0x0101
 #define HFP_VERSION_1_5         0x0105
 #define HFP_VERSION_1_6         0x0106
+#define HFP_VERSION_1_7         0x0107
 
 /* RFCOMM MTU SIZE */
 #define BTA_HF_CLIENT_MTU       256
