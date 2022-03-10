@@ -41,7 +41,7 @@ extern const uint8_t rsa_private_pem_end[]   asm("_binary_private_pem_end");
 
 static esp_decrypt_handle_t *ctx;
 
-static esp_err_t _decrypt_cb(decrypt_cb_arg_t *args)
+static esp_err_t _decrypt_cb(decrypt_cb_arg_t *args, void *user_ctx)
 {
     esp_err_t err;
     pre_enc_decrypt_arg_t pargs = {};
@@ -106,6 +106,7 @@ void pre_encrypted_ota_task(void *pvParameter)
         .max_http_request_size = CONFIG_EXAMPLE_HTTP_REQUEST_SIZE,
 #endif
         .decrypt_cb = _decrypt_cb,
+        .decrypt_user_ctx = NULL
     };
 
     esp_https_ota_handle_t https_ota_handle = NULL;
