@@ -109,7 +109,6 @@ static inline bool ctx_uses_abspath(const vfs_semihost_ctx_t* ctx)
         } \
     } while(0)
 
-#if __XTENSA__
 static esp_err_t vfs_semihost_drvinfo(vfs_semihost_ctx_t *ctx)
 {
     FAIL_IF_NO_DEBUGGER();
@@ -121,7 +120,6 @@ static esp_err_t vfs_semihost_drvinfo(vfs_semihost_ctx_t *ctx)
     }
     return ESP_OK;
 }
-#endif // __XTENSA__
 
 static int vfs_semihost_open(void* ctx, const char* path, int flags, int mode)
 {
@@ -160,20 +158,6 @@ static int vfs_semihost_open(void* ctx, const char* path, int flags, int mode)
 #endif // __XTENSA__
         } else {
             host_path = (char *)path;
-            /* For Xtensa targets in OpenOCD there is additional logic related to
-             * semihosting paths handling that isn't there for other targets.
-             * When ESP_SEMIHOST_BASEDIR OpenOCD variable is not set, OpenOCD will
-             * by default prepend '.' to the path passed from the target.
-             * By contrast, for RISC-V there is no such logic and the path will be
-             * used as is, no matter whether it is absolute or relative.
-             * See esp_xtensa_semihosting_get_file_name in esp_xtensa_semihosting.c
-             * for details.
-             */
-#ifndef __XTENSA__
-            if (*host_path == '/') {
-                ++host_path;
-            }
-#endif // !__XTENSA__
         }
         /* everything is ready: syscall and cleanup */
         ret_fd = semihosting_open(host_path, o_mode, mode);
@@ -250,13 +234,11 @@ esp_err_t esp_vfs_semihost_register(const char* base_path, const char* host_path
     ESP_LOGD(TAG, "Register semihosting driver %d %p", i, &s_semhost_ctx[i]);
 
     esp_err_t err;
-#if __XTENSA__
     /* Check for older OpenOCD versions */
     err = vfs_semihost_drvinfo(&s_semhost_ctx[i]); // define semihosting version
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Incompatible OpenOCD version detected. Please follow the getting started guides to install the required version.");
     }
-#endif // __XTENSA__
 
     err = esp_vfs_register(base_path, &vfs, &s_semhost_ctx[i]);
     if (err != ESP_OK) {
