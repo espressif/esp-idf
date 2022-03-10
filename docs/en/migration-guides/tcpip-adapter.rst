@@ -3,7 +3,7 @@ TCP/IP Adapter Migration Guide
 
 :link_to_translation:`zh_CN:[中文]`
 
-TCP/IP Adapter was a network interface abstraction component used in IDF prior to v4.1. This page outlines migration from tcpip_adapter API to its successor :doc:`/api-reference/network/esp_netif`.
+TCP/IP Adapter was a network interface abstraction component used in ESP-IDF prior to v4.1. This page outlines migration from tcpip_adapter API to its successor :doc:`/api-reference/network/esp_netif`.
 
 
 Updating network connection code
