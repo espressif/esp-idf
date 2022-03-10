@@ -33,6 +33,10 @@
 **  Constants and data types
 *****************************************************************************/
 
+/* Hands-Free unit(HF) version */
+#define HFP_HF_VERSION_1_6             0x0106       /* v1.6 */
+#define HFP_HF_VERSION_1_7             0x0107       /* v1.7 */
+
 /* HFP peer (AG) features*/
 #define BTA_HF_CLIENT_PEER_FEAT_3WAY   0x00000001  /* Three-way calling */
 #define BTA_HF_CLIENT_PEER_FEAT_ECNR   0x00000002  /* Echo cancellation and/or noise reduction */
@@ -44,6 +48,9 @@
 #define BTA_HF_CLIENT_PEER_ECC         0x00000080  /* Enhanced Call Control */
 #define BTA_HF_CLIENT_PEER_EXTERR      0x00000100  /* Extended error codes */
 #define BTA_HF_CLIENT_PEER_CODEC       0x00000200  /* Codec Negotiation */
+/* HFP 1.7+ */
+#define BTA_HF_CLIENT_PEER_HF_IND      0x00000400  /* HF Indicators */
+#define BTA_HF_CLIENT_PEER_ESCO_S4     0x00000800  /* eSCO S4 Setting Supported */
 
 typedef UINT16 tBTA_HF_CLIENT_PEER_FEAT;
 
@@ -56,6 +63,8 @@ typedef UINT16 tBTA_HF_CLIENT_PEER_FEAT;
 #define BTA_HF_CLIENT_FEAT_ECS         0x00000020  /* Enhanced Call Status */
 #define BTA_HF_CLIENT_FEAT_ECC         0x00000040  /* Enhanced Call Control */
 #define BTA_HF_CLIENT_FEAT_CODEC       0x00000080  /* Codec Negotiation */
+#define BTA_HF_CLIENT_FEAT_HF_IND      0x00000100  /* HF indicators */
+#define BTA_HF_CLIENT_FEAT_ESCO_S4     0x00000200  /* eSCO S4 Setting Supported */
 
 /* HFP HF extended call handling - masks not related to any spec */
 #define BTA_HF_CLIENT_CHLD_REL          0x00000001  /* 0  Release waiting call or held calls */
