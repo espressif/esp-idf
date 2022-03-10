@@ -67,6 +67,26 @@
 #undef MBEDTLS_HAVE_TIME_DATE
 #endif
 
+
+/**
+ * \def MBEDTLS_PLATFORM_TIME_ALT
+ *
+ * mbed TLS will provide a function "mbedtls_platform_set_time()"
+ * that allows you to set an alternative time function pointer.
+ *
+ * All these define require MBEDTLS_PLATFORM_C to be defined!
+ *
+ * \warning MBEDTLS_PLATFORM_TIME_ALT cannot be defined at the same time as
+ * MBEDTLS_PLATFORM_TIME_MACRO!
+ *
+ * Requires: MBEDTLS_PLATFORM_TIME_ALT requires MBEDTLS_HAVE_TIME
+ */
+#ifdef CONFIG_MBEDTLS_PLATFORM_TIME_ALT
+#define MBEDTLS_PLATFORM_TIME_ALT
+#else
+#undef MBEDTLS_PLATFORM_TIME_ALT
+#endif
+
 /**
  * \def MBEDTLS_PLATFORM_MEMORY
  *
