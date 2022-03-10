@@ -15,7 +15,7 @@
 #include "xtensa/config/specreg.h"
 #include "xt_instr_macros.h"
 #include "portbenchmark.h"
-#include "esp_macro.h"
+#include "esp_macros.h"
 #include "hal/cpu_hal.h"
 #include "esp_private/crosscore_int.h"
 
