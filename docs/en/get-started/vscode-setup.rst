@@ -20,7 +20,7 @@ Supported Features
 * **Build**, with one-click build and multi-target build, you can easily build and deploy your applications.
 * **Flash**, with both UART and JTAG flash out-of-the-box.
 * **Monitoring**, comes with a built-in terminal, you can trigger IDF Monitor Commands from within VS Code as you are used to in traditional terminals.
-* **Debugging**, with out-of-the-box hardware `debugging <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/debugging.md>`_
+* **Debugging**, with out-of-the-box hardware `debugging <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/debugging.md>`_.
 * **GUI Menu Config**, provides a simplified UI for configuring your chip.
 * **App & Heap Tracing**, provides support for collecting traces from your application, and a simplified UI for analyzing them.
 * **System View Tracing Viewer**, aims to read and display the *.svdat* files into the trace UI (we also support multiple core tracing views).
