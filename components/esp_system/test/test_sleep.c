@@ -82,6 +82,8 @@ TEST_CASE("wake up from light sleep using timer", "[deepsleep]")
     TEST_ASSERT_INT32_WITHIN(500, 2000, (int) dt);
 }
 
+//NOTE: Explained in IDF-1445 | MR !14996
+#if !(CONFIG_SPIRAM_SUPPORT) || (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL >= 16384)
 static void test_light_sleep(void* arg)
 {
     vTaskDelay(2);
@@ -137,7 +139,7 @@ TEST_CASE("light sleep stress test with periodic esp_timer", "[deepsleep]")
     esp_timer_stop(timer);
     esp_timer_delete(timer);
 }
-
+#endif // !(CONFIG_SPIRAM_SUPPORT) || (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL >= 16384)
 
 #if defined(CONFIG_ESP_SYSTEM_RTC_EXT_XTAL)
 #define MAX_SLEEP_TIME_ERROR_US 200
