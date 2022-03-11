@@ -28,26 +28,28 @@ typedef struct {
     uint8_t data[];
 } __attribute__((__packed__)) emac_frame_t;
 
+static void eth_event_handler(void *arg, esp_event_base_t event_base,
+                                int32_t event_id, void *event_data){
+    EventGroupHandle_t eth_event_group = (EventGroupHandle_t)arg;
+    switch (event_id) {
+    case ETHERNET_EVENT_CONNECTED:
+        xEventGroupSetBits(eth_event_group, ETH_CONNECT_BIT);
+        break;
+    case ETHERNET_EVENT_DISCONNECTED:
+        break;
+    case ETHERNET_EVENT_START:
+        xEventGroupSetBits(eth_event_group, ETH_START_BIT);
+    break;
+    case ETHERNET_EVENT_STOP:
+        xEventGroupSetBits(eth_event_group, ETH_STOP_BIT);
+        break;
+    default:
+        break;
+    }
+}
+
 TEST_CASE("start_and_stop", "[esp_eth]")
 {
-    void eth_event_handler(void *arg, esp_event_base_t event_base,
-                                  int32_t event_id, void *event_data){
-        EventGroupHandle_t eth_event_group = (EventGroupHandle_t)arg;
-        switch (event_id) {
-        case ETHERNET_EVENT_CONNECTED:
-            xEventGroupSetBits(eth_event_group, ETH_CONNECT_BIT);
-            break;
-        case ETHERNET_EVENT_START:
-            xEventGroupSetBits(eth_event_group, ETH_START_BIT);
-        break;
-        case ETHERNET_EVENT_STOP:
-            xEventGroupSetBits(eth_event_group, ETH_STOP_BIT);
-            break;
-        default:
-            break;
-        }
-    }
-
     EventGroupHandle_t eth_event_group = xEventGroupCreate();
     TEST_ASSERT(eth_event_group != NULL);
 
@@ -88,20 +90,8 @@ TEST_CASE("start_and_stop", "[esp_eth]")
 
 TEST_CASE("get_set_mac", "[esp_eth]")
 {
-    void eth_event_handler(void *arg, esp_event_base_t event_base,
-                                  int32_t event_id, void *event_data){
-        SemaphoreHandle_t mutex = (SemaphoreHandle_t)arg;
-        switch (event_id) {
-        case ETHERNET_EVENT_CONNECTED:
-            xSemaphoreGive(mutex);
-            break;
-        default:
-            break;
-        }
-    }
-
-    SemaphoreHandle_t mutex = xSemaphoreCreateBinary();
-    TEST_ASSERT_NOT_NULL(mutex);
+    EventGroupHandle_t eth_event_group = xEventGroupCreate();
+    TEST_ASSERT(eth_event_group != NULL);
 
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();  // apply default MAC configuration
     eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
@@ -119,10 +109,12 @@ TEST_CASE("get_set_mac", "[esp_eth]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_eth_driver_install(&config, &eth_handle)); // install driver
     TEST_ASSERT_NOT_NULL(eth_handle);
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_create_default());
-    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, mutex));
+    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
     TEST_ASSERT_EQUAL(ESP_OK, esp_eth_start(eth_handle)); // start Ethernet driver state machine
 
-    TEST_ASSERT(xSemaphoreTake(mutex, pdMS_TO_TICKS(3000)));
+    EventBits_t bits = 0;
+    bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(3000));
+    TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
 
     uint8_t mac_addr[6] = {};
     TEST_ASSERT_EQUAL(ESP_OK, mac->get_addr(mac, mac_addr));
@@ -138,24 +130,13 @@ TEST_CASE("get_set_mac", "[esp_eth]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_eth_driver_uninstall(eth_handle));
     phy->del(phy);
     mac->del(mac);
-    vSemaphoreDelete(mutex);
+    vEventGroupDelete(eth_event_group);
 }
 
 TEST_CASE("ethernet_broadcast_transmit", "[esp_eth]")
 {
-    void eth_event_handler(void *arg, esp_event_base_t event_base,
-                                  int32_t event_id, void *event_data){
-        SemaphoreHandle_t mutex = (SemaphoreHandle_t)arg;
-        switch (event_id) {
-        case ETHERNET_EVENT_CONNECTED:
-            xSemaphoreGive(mutex);
-            break;
-        default:
-            break;
-        }
-    }
-    SemaphoreHandle_t mutex = xSemaphoreCreateBinary();
-    TEST_ASSERT_NOT_NULL(mutex);
+    EventGroupHandle_t eth_event_group = xEventGroupCreate();
+    TEST_ASSERT(eth_event_group != NULL);
 
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();  // apply default MAC configuration
     eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
@@ -173,10 +154,12 @@ TEST_CASE("ethernet_broadcast_transmit", "[esp_eth]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_eth_driver_install(&config, &eth_handle)); // install driver
     TEST_ASSERT_NOT_NULL(eth_handle);
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_create_default());
-    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, mutex));
+    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
     TEST_ASSERT_EQUAL(ESP_OK, esp_eth_start(eth_handle)); // start Ethernet driver state machine
 
-    TEST_ASSERT(xSemaphoreTake(mutex, pdMS_TO_TICKS(3000)));
+    EventBits_t bits = 0;
+    bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(3000));
+    TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
     // even if PHY (IP101) indicates autonegotiation done and link up, it sometimes may miss few packets after atonego reset, hence wait a bit
     vTaskDelay(pdMS_TO_TICKS(100));
 
@@ -196,7 +179,7 @@ TEST_CASE("ethernet_broadcast_transmit", "[esp_eth]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_eth_driver_uninstall(eth_handle));
     phy->del(phy);
     mac->del(mac);
-    vSemaphoreDelete(mutex);
+    vEventGroupDelete(eth_event_group);
 }
 
 static uint8_t local_mac_addr[6] = {};
@@ -209,18 +192,22 @@ esp_err_t l2_packet_txrx_test_cb(esp_eth_handle_t hdl, uint8_t *buffer, uint32_t
         // check content
         for (int i = 0; i < (length - ETH_HEADER_LEN); ++i) {
             if (pkt->data[i] != (i & 0xff)) {
+                printf("payload mismatch\n");
                 return ESP_OK;
             }
         }
         if (memcmp(pkt->dest, "\xff\xff\xff\xff\xff\xff", 6) == 0) {
+            printf("broadcast received...\n");
             xEventGroupSetBits(eth_event_group, ETH_BROADCAST_RECV_BIT);
-        }
-        if (pkt->dest[0] & 0x1) {
+        } else if (pkt->dest[0] & 0x1) {
+            printf("multicast received...\n");
             xEventGroupSetBits(eth_event_group, ETH_MULTICAST_RECV_BIT);
-        }
-        if (memcmp(pkt->dest, local_mac_addr, 6) == 0) {
+        } else if (memcmp(pkt->dest, local_mac_addr, 6) == 0) {
+            printf("unicast received...\n");
             xEventGroupSetBits(eth_event_group, ETH_UNICAST_RECV_BIT);
         }
+    } else {
+        printf("unexpected frame (protocol: 0x%x, length: %u)\n", pkt->proto, length);
     }
     return ESP_OK;
 };
@@ -257,7 +244,7 @@ TEST_CASE("recv_pkt", "[esp_eth]")
 
     EventBits_t bits = 0;
     bits = xEventGroupWaitBits(eth_event_group, ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT,
-                               true, true, pdMS_TO_TICKS(3000));
+                               true, true, pdMS_TO_TICKS(5000));
     TEST_ASSERT((bits & (ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT)) ==
                                  (ETH_BROADCAST_RECV_BIT | ETH_MULTICAST_RECV_BIT | ETH_UNICAST_RECV_BIT));
 
@@ -275,51 +262,31 @@ typedef struct
     int rx_pkt_cnt;
 } recv_info_t;
 
-TEST_CASE("start_stop_stress_test", "[esp_eth]")
+static esp_err_t eth_recv_cb(esp_eth_handle_t hdl, uint8_t *buffer, uint32_t length, void *priv)
 {
-    void eth_event_handler(void *arg, esp_event_base_t event_base,
-                              int32_t event_id, void *event_data)
-    {
-        EventGroupHandle_t eth_event_group = (EventGroupHandle_t)arg;
-        switch (event_id) {
-        case ETHERNET_EVENT_CONNECTED:
-            xEventGroupSetBits(eth_event_group, ETH_CONNECT_BIT);
+    emac_frame_t *pkt = (emac_frame_t *)buffer;
+    recv_info_t *recv_info = (recv_info_t *)priv;
+
+    if (pkt->proto == 0x2222) {
+        switch (pkt->data[0])
+        {
+        case POKE_RESP:
+            xSemaphoreGive(recv_info->mutex);
             break;
-        case ETHERNET_EVENT_DISCONNECTED:
-            break;
-        case ETHERNET_EVENT_START:
-            xEventGroupSetBits(eth_event_group, ETH_START_BIT);
-            break;
-        case ETHERNET_EVENT_STOP:
-            xEventGroupSetBits(eth_event_group, ETH_STOP_BIT);
+
+        case DUMMY_TRAFFIC:
+            (recv_info->rx_pkt_cnt)++;
             break;
         default:
             break;
         }
     }
-    esp_err_t eth_recv_cb(esp_eth_handle_t hdl, uint8_t *buffer, uint32_t length, void *priv)
-    {
-        emac_frame_t *pkt = (emac_frame_t *)buffer;
-        recv_info_t *recv_info = (recv_info_t *)priv;
+    free(buffer);
+    return ESP_OK;
+}
 
-        if (pkt->proto == 0x2222) {
-            switch (pkt->data[0])
-            {
-            case POKE_RESP:
-                xSemaphoreGive(recv_info->mutex);
-                break;
-
-            case DUMMY_TRAFFIC:
-                (recv_info->rx_pkt_cnt)++;
-                break;
-            default:
-                break;
-            }
-        }
-        free(buffer);
-        return ESP_OK;
-    }
-
+TEST_CASE("start_stop_stress_test", "[esp_eth]")
+{
     recv_info_t recv_info;
     recv_info.mutex = xSemaphoreCreateBinary();
     TEST_ASSERT_NOT_NULL(recv_info.mutex);
