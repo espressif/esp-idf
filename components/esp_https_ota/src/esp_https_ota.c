@@ -45,6 +45,7 @@ struct esp_https_ota_handle {
     bool partial_http_download;
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
     decrypt_cb_t decrypt_cb;
+    void *decrypt_user_ctx;
 #endif
 };
 
@@ -153,7 +154,7 @@ static void _http_cleanup(esp_http_client_handle_t client)
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
 static esp_err_t esp_https_ota_decrypt_cb(esp_https_ota_t *handle, decrypt_cb_arg_t *args)
 {
-    esp_err_t ret = handle->decrypt_cb(args);
+    esp_err_t ret = handle->decrypt_cb(args, handle->decrypt_user_ctx);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Decrypt callback failed %d", ret);
         return ret;
@@ -310,6 +311,7 @@ esp_err_t esp_https_ota_begin(esp_https_ota_config_t *ota_config, esp_https_ota_
         goto http_cleanup;
     }
     https_ota_handle->decrypt_cb = ota_config->decrypt_cb;
+    https_ota_handle->decrypt_user_ctx = ota_config->decrypt_user_ctx;
 #endif
     https_ota_handle->ota_upgrade_buf_size = alloc_size;
     https_ota_handle->bulk_flash_erase = ota_config->bulk_flash_erase;

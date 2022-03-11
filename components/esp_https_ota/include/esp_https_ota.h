@@ -25,7 +25,7 @@ typedef struct {
     size_t data_out_len;    /*!< Output data length */
 } decrypt_cb_arg_t;
 
-typedef esp_err_t(*decrypt_cb_t)(decrypt_cb_arg_t *args);
+typedef esp_err_t(*decrypt_cb_t)(decrypt_cb_arg_t *args, void *user_ctx);
 #endif // CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
 
 /**
@@ -39,6 +39,7 @@ typedef struct {
     int max_http_request_size;                     /*!< Maximum request size for partial HTTP download */
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
     decrypt_cb_t decrypt_cb;                       /*!< Callback for external decryption layer */
+    void *decrypt_user_ctx;                        /*!< User context for external decryption layer */
 #endif
 } esp_https_ota_config_t;
 
