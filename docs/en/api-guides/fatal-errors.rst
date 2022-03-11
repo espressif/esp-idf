@@ -463,7 +463,7 @@ Enabling UBSAN
 
 UBSAN is disabled by default. It can be enabled at file, component, or project level by adding the ``-fsanitize=undefined`` compiler option in the build system.
 
-When enabling UBSAN for code which uses the SOC hardware register header files (``soc/xxx_reg.h``), it is recommended to disable shift-base sanitizer using ``-fno-sanitize=shift-base`` option. This is due to the fact that ESP-IDF register header files currently contain patterns which cause false positives for this specific sanitizer option.
+When enabling UBSAN for code which uses the SoC hardware register header files (``soc/xxx_reg.h``), it is recommended to disable shift-base sanitizer using ``-fno-sanitize=shift-base`` option. This is due to the fact that ESP-IDF register header files currently contain patterns which cause false positives for this specific sanitizer option.
 
 To enable UBSAN at project level, add the following code at the end of the project's ``CMakeLists.txt`` file::
 

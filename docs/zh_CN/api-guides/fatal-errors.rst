@@ -12,14 +12,17 @@
 - CPU 异常：|CPU_EXCEPTIONS_LIST|
 - 系统级检查错误：
 
-  - :doc:`中断看门狗 <../api-reference/system/wdts>` 超时
-  - :doc:`任务看门狗 <../api-reference/system/wdts>` 超时（只有开启 :ref:`CONFIG_ESP_TASK_WDT_PANIC` 后才会触发严重错误）
-  - 高速缓存访问错误
-  - 掉电检测事件
-  - 堆栈溢出
-  - Stack 粉碎保护检查
-  - Heap 完整性检查
-  - 未定义行为清理器（UBSAN）检查
+  .. list::
+
+     - :doc:`中断看门狗 <../api-reference/system/wdts>` 超时
+     - :doc:`任务看门狗 <../api-reference/system/wdts>` 超时（只有开启 :ref:`CONFIG_ESP_TASK_WDT_PANIC` 后才会触发严重错误）
+     - 高速缓存访问错误
+     :CONFIG_ESP_SYSTEM_MEMPROT_FEATURE: - 内存保护故障
+     - 掉电检测事件
+     - 堆栈溢出
+     - 堆栈粉碎保护检查
+     - 堆完整性检查
+     - 未定义行为清理器（UBSAN）检查
 
 - 使用 ``assert``、``configASSERT`` 等类似的宏断言失败。
 
@@ -28,7 +31,7 @@
 紧急处理程序
 ------------
 
-:ref:`Overview` 中列举的所有错误都会由 *紧急处理程序（Panic Handler）* 负责处理。
+:ref:`Overview` 中列举的所有错误都会由 *紧急处理程序 (Panic Handler)* 负责处理。
 
 紧急处理程序首先会将出错原因打印到控制台，例如 CPU 异常的错误信息通常会类似于
 
@@ -60,17 +63,21 @@
 
 - 调用 GDB Stub（``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB``）
 
-  启动 GDB 服务器，通过控制台 UART 接口与 GDB 进行通信。详细信息请参阅 :ref:`GDB-Stub`。
+  启动 GDB 服务器，通过控制台 UART 接口与 GDB 进行通信。该选项只提供只读调试或者事后调试，详细信息请参阅 `GDB Stub`_。
 
+- 调用动态 GDB Stub (``ESP_SYSTEM_GDBSTUB_RUNTIME``)
+
+  启动 GDB 服务器，通过控制台 UART 接口与 GDB 进行通信。该选项允许用户在程序运行时对其进行调试、设置断点和改变其执行方式等，详细信息请参阅 `GDB Stub`_。
+  
 紧急处理程序的行为还受到另外两个配置项的影响：
 
 - 如果使能了 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_DEBUG_OCDAWARE` （默认），紧急处理程序会检测 {IDF_TARGET_NAME} 是否已经连接 JTAG 调试器。如果检测成功，程序会暂停运行，并将控制权交给调试器。在这种情况下，寄存器和回溯不会被打印到控制台，并且也不会使用 GDB Stub 和 Core Dump 的功能。
 
-- 如果使能了 :doc:`内核转储 <core_dump>` 功能，系统状态（任务堆栈和寄存器）会被转储到 Flash 或者 UART 以供后续分析。
+- 如果使能了 :doc:`内核转储 <core_dump>` 功能，系统状态（任务堆栈和寄存器）会被转储到 flash 或者 UART 以供后续分析。
 
-- 如果 :ref:`CONFIG_ESP_PANIC_HANDLER_IRAM` 被禁用（默认情况下禁用），紧急处理程序的代码会放置在 Flash 而不是 IRAM 中。这意味着，如果 ESP-IDF 在 Flash 高速缓存禁用时崩溃，在运行 GDB Stub 和内核转储之前紧急处理程序会自动重新使能 Flash 高速缓存。如果 Flash 高速缓存也崩溃了，这样做会增加一些小风险。
+- 如果 :ref:`CONFIG_ESP_PANIC_HANDLER_IRAM` 被禁用（默认情况下禁用），紧急处理程序的代码会放置在 flash 而不是 IRAM 中。这意味着，如果 ESP-IDF 在 flash 高速缓存禁用时崩溃，在运行 GDB Stub 和内核转储之前紧急处理程序会自动重新使能 flash 高速缓存。如果 flash 高速缓存也崩溃了，这样做会增加一些小风险。
 
-  如果使能了该选项，紧急处理程序的代码（包括所需的 UART 函数）会放置在 IRAM 中。当禁用 Flash 高速缓存（如写入 SPI flash）时或触发异常导致 Flash 高速缓存崩溃时，可用此选项调试一些复杂的崩溃问题。
+  如果使能了该选项，紧急处理程序的代码（包括所需的 UART 函数）会放置在 IRAM 中，导致 SRAM 中的可用内存空间变小。当禁用 flash 高速缓存（如写入 SPI flash）时或触发异常导致 flash 高速缓存崩溃时，可用此选项调试一些复杂的崩溃问题。
 
 下图展示了紧急处理程序的行为：
 
@@ -154,7 +161,7 @@
 
 仅会打印异常帧中 CPU 寄存器的值，即引发 CPU 异常或者其它严重错误时刻的值。
 
-紧急处理程序如果是因 abort() 而调用，则不会打印寄存器转储。
+紧急处理程序如果是因 ``abort()`` 而调用，则不会打印寄存器转储。
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
@@ -162,7 +169,7 @@
 
     回溯行包含了当前任务中每个堆栈帧的 PC:SP 对（PC 是程序计数器，SP 是堆栈指针）。如果在 ISR 中发生了严重错误，回溯会同时包括被中断任务的 PC:SP 对，以及 ISR 中的 PC:SP 对。
 
-如果使用了 :doc:`IDF 监视器 <tools/idf-monitor>`，该工具会将程序计数器的值转换为对应的代码位置（函数名，文件名，行号），并加以注释
+如果使用了 :doc:`IDF 监视器 <tools/idf-monitor>`，该工具会将程序计数器的值转换为对应的代码位置（函数名，文件名，行号），并加以注释：
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
@@ -293,18 +300,18 @@ Guru Meditation 错误
 
 - FreeRTOS 中的任务函数已返回。在 FreeRTOS 中，如果想终止任务函数，需要调用 :cpp:func:`vTaskDelete` 函数释放当前任务的资源，而不是直接返回。
 
-- 无法从 SPI Flash 中加载下一条指令，这通常发生在：
+- 无法从 SPI flash 中读取下一条指令，这通常发生在：
 
-  - 应用程序将 SPI Flash 的引脚重新配置为其它功能（如 GPIO，UART 等等）。有关 SPI Flash 引脚的详细信息，请参阅硬件设计指南和芯片/模组的数据手册。
+  - 应用程序将 SPI flash 的管脚重新配置为其它功能（如 GPIO、UART 等等）。有关 SPI flash 管脚的详细信息，请参阅硬件设计指南和芯片/模组的数据手册。
 
-  - 某些外部设备意外连接到 SPI Flash 的引脚上，干扰了 {IDF_TARGET_NAME} 和 SPI Flash 之间的通信。
+  - 某些外部设备意外连接到 SPI flash 的管脚上，干扰了 {IDF_TARGET_NAME} 和 SPI flash 之间的通信。
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
     InstrFetchProhibited
     ^^^^^^^^^^^^^^^^^^^^
 
-    此 CPU 异常表示 CPU 无法加载指令，因为指令的地址不在 IRAM 或者 IROM 中的有效区域中。
+    此 CPU 异常表示 CPU 无法读取指令，因为指令的地址不在 IRAM 或者 IROM 中的有效区域中。
 
     通常这意味着代码中调用了并不指向有效代码块的函数指针。这种情况下，可以查看 ``PC`` （程序计数器）寄存器的值并做进一步判断：若为 0 或者其它非法值（即只要不是 ``0x4xxxxxxx`` 的情况），则证实确实是该原因。
 
@@ -321,16 +328,16 @@ Guru Meditation 错误
     LoadStoreAlignment
     ^^^^^^^^^^^^^^^^^^
 
-    应用程序尝试读取/写入的内存位置不符合加载/存储指令对字节对齐大小的要求，例如，32 位加载指令只能访问 4 字节对齐的内存地址，而 16 位加载指令只能访问 2 字节对齐的内存地址。
+    应用程序尝试读取/写入的内存位置不符合加载/存储指令对字节对齐大小的要求，例如，32 位读取指令只能访问 4 字节对齐的内存地址，而 16 位写入指令只能访问 2 字节对齐的内存地址。
 
     LoadStoreError
     ^^^^^^^^^^^^^^
 
     这类异常通常发生于以下几种场合:
 
-    - 应用程序尝试从仅支持 32 位加载/存储的内存区域执行 8 位或 16 位加载/存储操作，例如，解引用一个指向指令内存区域（比如 IRAM 或者 IROM）的 char* 指针就会触发这个错误。
+    - 应用程序尝试从仅支持 32 位读取/写入的内存区域执行 8 位或 16 位加载/存储操作，例如，解引用一个指向指令内存区域（比如 IRAM 或者 IROM）的 char* 指针就会触发这个错误。
 
-    - 应用程序尝试保存数据到只读的内存区域（比如 IROM 或者 DROM）也会触发这个错误。
+    - 应用程序尝试写入数据到只读的内存区域（比如 IROM 或者 DROM）也会触发这个错误。
 
     Unhandled debug exception
     ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -339,7 +346,7 @@ Guru Meditation 错误
 
         Debug exception reason: Stack canary watchpoint triggered (task_name)
 
-    此错误表示应用程序写入的位置越过了 ``task_name`` 任务堆栈的末尾，请注意，并非每次堆栈溢出都会触发此错误。任务有可能会绕过堆栈金丝雀（stack canary）的位置访问堆栈，在这种情况下，监视点就不会被触发。
+    此错误表示应用程序写入的位置越过了 ``task_name`` 任务堆栈的末尾，请注意，并非每次堆栈溢出都会触发此错误。任务有可能会绕过堆栈金丝雀（stack canary）的位置访问内存，在这种情况下，监视点就不会被触发。
 
 .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
     
@@ -371,12 +378,26 @@ Interrupt wdt timeout on CPU0 / CPU1
 |CACHE_ERR_MSG|
 ^^^^^^^^^^^^^^^
 
-在某些情况下，ESP-IDF 会暂时禁止通过高速缓存访问外部 SPI Flash 和 SPI RAM，例如在使用 spi_flash API 读取/写入/擦除/映射 SPI Flash 的时候。在这些情况下，任务会被挂起，并且未使用 ``ESP_INTR_FLAG_IRAM`` 注册的中断处理程序会被禁用。请确保任何使用此标志注册的中断处理程序所访问的代码和数据分别位于 IRAM 和 DRAM 中。更多详细信息请参阅 :ref:`SPI Flash API 文档 <iram-safe-interrupt-handlers>`。
+在某些情况下，ESP-IDF 会暂时禁止通过高速缓存访问外部 SPI flash 和 SPI RAM，例如在使用 spi_flash API 读取/写入/擦除/映射 SPI flash 的时候。在这些情况下，任务会被挂起，并且未使用 ``ESP_INTR_FLAG_IRAM`` 注册的中断处理程序会被禁用。请确保任何使用此标志注册的中断处理程序所访问的代码和数据分别位于 IRAM 和 DRAM 中。更多详细信息请参阅 :ref:`SPI flash API 文档 <iram-safe-interrupt-handlers>`。
 
-其它严重错误
+.. only:: CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+
+    Memory protection fault
+    ^^^^^^^^^^^^^^^^^^^^^^^
+
+    ESP-IDF 中使用 {IDF_TARGET_NAME} 的权限控制功能来防止以下类型的内存访问：
+
+    * 程序加载后向指令 RAM 写入代码
+    * 从数据 RAM （用于堆、静态 .data 和 .bss 区域）执行代码
+
+    该类操作对于大多数程序来说并不必要，禁止此类操作往往使软件漏洞更难被利用。依赖动态加载或自修改代码的应用程序可以使用 :ref:`CONFIG_ESP_SYSTEM_MEMPROT_FEATURE` 选项来禁用此项保护。
+
+    发生故障时，紧急处理程序会报告故障的地址和引起故障的内存访问的类型。
+
+其他严重错误
 ------------
 
-欠压
+掉电
 ^^^^
 
 {IDF_TARGET_NAME} 内部集成掉电检测电路，并且会默认启用。如果电源电压低于安全值，掉电检测器可以触发系统复位。掉电检测器可以使用 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_BROWNOUT_DET` 和 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_BROWNOUT_DET_LVL_SEL` 这两个选项进行设置。
@@ -389,7 +410,7 @@ Interrupt wdt timeout on CPU0 / CPU1
 
 请注意，如果电源电压快速下降，则只能在控制台上看到部分打印信息。
 
-Heap 不完整
+堆不完整
 ^^^^^^^^^^^
 
 ESP-IDF 堆的实现包含许多运行时的堆结构检查，可以在 menuconfig 中开启额外的检查（“Heap Poisoning”）。如果其中的某项检查失败，则会打印类似如下信息::
@@ -400,10 +421,10 @@ ESP-IDF 堆的实现包含许多运行时的堆结构检查，可以在 menuconf
 
 更多详细信息，请查阅 :doc:`堆内存调试 <../api-reference/system/heap_debug>` 文档。
 
-Stack 粉碎
+堆栈粉碎
 ^^^^^^^^^^
 
-Stack 粉碎保护（基于 GCC ``-fstack-protector*`` 标志）可以通过 ESP-IDF 中的 :ref:`CONFIG_COMPILER_STACK_CHECK_MODE` 选项来开启。如果检测到 Stack 粉碎，则会打印类似如下的信息::
+堆栈粉碎保护（基于 GCC ``-fstack-protector*`` 标志）可以通过 ESP-IDF 中的 :ref:`CONFIG_COMPILER_STACK_CHECK_MODE` 选项来开启。如果检测到堆栈粉碎，则会打印类似如下的信息::
 
     Stack smashing protect failure!
 
@@ -412,7 +433,7 @@ Stack 粉碎保护（基于 GCC ``-fstack-protector*`` 标志）可以通过 ESP
     Backtrace: 0x4008e6c0:0x3ffc1780 0x4008e8b7:0x3ffc17a0 0x400d2138:0x3ffc17c0 0x400e79d5:0x3ffc17e0 0x400e79a7:0x3ffc1840 0x400e79df:0x3ffc18a0 0x400e2235:0x3ffc18c0 0x400e1916:0x3ffc18f0 0x400e19cd:0x3ffc1910 0x400e1a11:0x3ffc1930 0x400e1bb2:0x3ffc1950 0x400d2c44:0x3ffc1a80
     0
 
-回溯信息会指明发生 Stack 粉碎的函数，建议检查函数中是否有代码访问局部数组时发生了越界。
+回溯信息会指明发生堆栈粉碎的函数，建议检查函数中是否有代码访问局部数组时发生了越界。
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
@@ -442,7 +463,7 @@ Stack 粉碎保护（基于 GCC ``-fstack-protector*`` 标志）可以通过 ESP
 
 默认情况下未启用 UBSAN。可以通过在构建系统中添加编译器选项 ``-fsanitize=undefined`` 在文件、组件或项目级别上使能 UBSAN。
 
-在对使用硬件寄存器头文件（``soc/xxx_reg.h``）的代码使能 UBSAN 时，建议使用 ``-fno-sanitize=shift-base`` 选项禁用移位基数清理器。这是由于 ESP-IDF 寄存器头文件目前包含的模式会对这个特定的清理器选项造成误报。
+在对使用 SoC 硬件寄存器头文件（``soc/xxx_reg.h``）的代码使能 UBSAN 时，建议使用 ``-fno-sanitize=shift-base`` 选项禁用移位基数清理器。这是由于 ESP-IDF 寄存器头文件目前包含的模式会对这个特定的清理器选项造成误报。
 
 要在项目级使能 UBSAN，请在项目 CMakeLists.txt 文件的末尾添加以下内容::
 
