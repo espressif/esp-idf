@@ -74,7 +74,7 @@
 #include "spinlock.h"
 #include "hal/cpu_hal.h"
 #include "esp_private/crosscore_int.h"
-#include "esp_macro.h"
+#include "esp_macros.h"
 #include "esp_attr.h"
 #include "esp_timer.h"              /* required for esp_timer_get_time. [refactor-todo] make this common between archs */
 #include "esp_newlib.h"             /* required for esp_reent_init() in tasks.c */
