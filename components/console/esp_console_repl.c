@@ -368,6 +368,8 @@ static esp_err_t esp_console_common_init(esp_console_repl_com_t *repl_com)
     esp_console_config_t console_config = ESP_CONSOLE_CONFIG_DEFAULT();
 #if CONFIG_LOG_COLORS
     console_config.hint_color = atoi(LOG_COLOR_CYAN);
+#else
+    console_config.hint_color = -1;
 #endif
     ret = esp_console_init(&console_config);
     if (ret != ESP_OK) {
