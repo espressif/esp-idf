@@ -13,7 +13,7 @@ void test_app_include_rtc_temp_driver(void)
 {
 }
 
-TEST_CASE("Temperature_lagecy_workflow_test", "[hw_timer]")
+TEST_CASE("Temperature_legacy_workflow_test", "[hw_timer]")
 {
     printf("Initializing Temperature sensor\n");
     float tsens_out;
@@ -36,7 +36,7 @@ TEST_CASE("Temperature_lagecy_workflow_test", "[hw_timer]")
     TEST_ESP_OK(temp_sensor_stop());
 }
 
-TEST_CASE("Temperature lagecy double start error cause test", "[temperatere_sensor]")
+TEST_CASE("Temperature legacy double start error cause test", "[temperature_sensor]")
 {
     printf("Initializing Temperature sensor\n");
     temp_sensor_config_t temp_sensor = TSENS_CONFIG_DEFAULT();
@@ -46,7 +46,7 @@ TEST_CASE("Temperature lagecy double start error cause test", "[temperatere_sens
     TEST_ESP_OK(temp_sensor_stop());
 }
 
-TEST_CASE("Temperature lagecy double Start-Stop test", "[temperature_sensor]")
+TEST_CASE("Temperature legacy double Start-Stop test", "[temperature_sensor]")
 {
     printf("Initializing Temperature sensor\n");
     float tsens_out;
