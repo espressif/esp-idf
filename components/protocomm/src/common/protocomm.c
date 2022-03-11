@@ -232,7 +232,7 @@ esp_err_t protocomm_req_handle(protocomm_t *pc, const char *ep_name, uint32_t se
             /* Encrypt response to be sent back */
             uint8_t *enc_resp = (uint8_t *) malloc(plaintext_resp_len);
             if (!enc_resp) {
-                ESP_LOGE(TAG, "Failed to allocate encrypt buf len %d", inlen);
+                ESP_LOGE(TAG, "Failed to allocate encrypt buf len %d", plaintext_resp_len);
                 free(plaintext_resp);
                 return ESP_ERR_NO_MEM;
             }
