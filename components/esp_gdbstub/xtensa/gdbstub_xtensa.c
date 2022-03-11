@@ -117,7 +117,7 @@ void esp_gdbstub_tcb_to_regfile(TaskHandle_t tcb, esp_gdbstub_gdb_regfile_t *dst
 int esp_gdbstub_get_signal(const esp_gdbstub_frame_t *frame)
 {
     const char exccause_to_signal[] = {4, 31, 11, 11, 2, 6, 8, 0, 6, 7, 0, 0, 7, 7, 7, 7};
-    if (frame->exccause > sizeof(exccause_to_signal)) {
+    if (frame->exccause >= sizeof(exccause_to_signal)) {
         return 11;
     }
     return (int) exccause_to_signal[frame->exccause];
