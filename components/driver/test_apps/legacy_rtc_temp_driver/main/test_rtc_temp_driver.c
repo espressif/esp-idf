@@ -36,7 +36,7 @@ TEST_CASE("Temperature_lagecy_workflow_test", "[hw_timer]")
     TEST_ESP_OK(temp_sensor_stop());
 }
 
-TEST_CASE("Double start error cause test", "[temperatere_sensor]")
+TEST_CASE("Temperature lagecy double start error cause test", "[temperatere_sensor]")
 {
     printf("Initializing Temperature sensor\n");
     temp_sensor_config_t temp_sensor = TSENS_CONFIG_DEFAULT();
@@ -46,7 +46,7 @@ TEST_CASE("Double start error cause test", "[temperatere_sensor]")
     TEST_ESP_OK(temp_sensor_stop());
 }
 
-TEST_CASE("Double Start-Stop test", "[temperature_sensor]")
+TEST_CASE("Temperature lagecy double Start-Stop test", "[temperature_sensor]")
 {
     printf("Initializing Temperature sensor\n");
     float tsens_out;

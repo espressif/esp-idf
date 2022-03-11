@@ -12,7 +12,7 @@ from pytest_embedded import Dut
     'history',
     'nohistory',
 ], indirect=True)
-def test_console_advanced(config: str, dut: Dut) -> None:
+def test_console_basic(config: str, dut: Dut) -> None:
     if config == 'history':
         dut.expect('Command history enabled')
     elif config == 'nohistory':

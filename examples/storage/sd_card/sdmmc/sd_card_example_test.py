@@ -5,7 +5,7 @@ from tiny_test_fw import Utility
 
 
 @ttfw_idf.idf_example_test(env_tag='UT_T1_SDMODE')
-def test_examples_sd_card(env, extra_data):  # type: (ttfw_idf.Env.Env, None ) -> None
+def test_examples_sd_card_sdmmc(env, extra_data):  # type: (ttfw_idf.Env.Env, None ) -> None
 
     dut = env.get_dut('sd_card', 'examples/storage/sd_card/sdmmc')
     dut.start_app()
@@ -33,4 +33,4 @@ def test_examples_sd_card(env, extra_data):  # type: (ttfw_idf.Env.Env, None ) -
 
 
 if __name__ == '__main__':
-    test_examples_sd_card()
+    test_examples_sd_card_sdmmc()
