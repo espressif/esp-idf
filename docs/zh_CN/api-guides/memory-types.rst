@@ -1,37 +1,110 @@
 .. _memory-layout:
 
-应用程序的内存布局
+存储器类型
 ------------------
 
-{IDF_TARGET_NAME} 芯片具有灵活的内存映射功能，本小节将介绍 ESP-IDF 默认使用这些功能的方式。
+{IDF_TARGET_NAME} 芯片具有不同类型的存储器和灵活的存储器映射特性，本小节将介绍 ESP-IDF 默认如何使用这些功能。
 
-ESP-IDF 应用程序的代码可以放在以下内存区域之一。
+ESP-IDF 区分了指令总线（IRAM、IROM、RTC FAST memory）和数据总线 (DRAM、DROM)。指令存储器是可执行的，只能通过 4 字节对齐字读取或写入。数据存储器不可执行，可以通过单独的字节操作访问。有关总线的更多信息，请参阅 *{IDF_TARGET_NAME} 技术参考手册* > *系统和存储器* [`PDF <{IDF_TARGET_TRM_CN_URL}#sysmem>`__]。
+
+.. _dram:
+
+DRAM（数据 RAM）
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+非常量静态数据（.data 段）和零初始化数据（.bss 段）由链接器放入内部 SRAM 作为数据存储。此区域中的剩余空间可在程序运行时用作堆。
+
+.. only:: esp32 or esp32s2
+
+   通过应用 ``EXT_RAM_ATTR`` 宏，零初始化数据也可以放入外部 RAM。使用这个宏需要启用 :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`。详情请见 :ref:`external_ram_config_bss`。
+
+.. only:: esp32
+
+   如果使用蓝牙堆栈，内部 DRAM 区域的可用大小将减少 64 KB（由于起始地址移动到 ``0x3FFC0000``）。如果使用内存跟踪功能，该区域的长度还会减少 16 KB 或 32 KB。由于 ROM 引起的一些内存碎片问题，不可能将所有可用的 DRAM 用于静态分配，但是剩余的 DRAM 在运行时仍可用作堆。
+
+.. only:: not esp32
+
+   .. note::
+
+    静态分配的 DRAM 的最大值也会因编译应用程序的 :ref:`iram` 大小而减小。运行时可用的堆内存会因应用程序的总静态 IRAM 和 DRAM 使用而减少。
+
+常量数据也可能被放入 DRAM，例如当它被用于 non-flash-safe ISR 时（具体请参考 :ref:`how-to-place-code-in-iram`）。
+
+"noinit" DRAM
+=============
+
+可以将 ``__NOINIT_ATTR`` 宏用作属性，从而将数据放入 ``.noinit`` 部分。放入该部分的值在启动时不会被初始化，在软件重启后也会保持值不变。
+
+.. only:: esp32
+
+   通过使用 ``EXT_RAM_NOINIT_ATTR`` 宏，noinit 数据也可以放入外部 RAM 中。为此，需要启用 :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY`，可参考 :ref:`external_ram_config_noinit`。如果没有启用 :ref:`CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY`， ``EXT_RAM_NOINIT_ATTR`` 会和 ``__NOINIT_ATTR`` 一样，将数据放入内部 RAM 的 ``.noinit`` 部分。
+
+示例::
+
+    __NOINIT_ATTR uint32_t noinit_data;
 
 .. _iram:
 
 IRAM（指令 RAM）
 ~~~~~~~~~~~~~~~~
 
-ESP-IDF 将内部 SRAM0 区域（在技术参考手册中有定义）的一部分分配为指令 RAM。除了开始的 64kB 用作 PRO CPU 和 APP CPU 的高速缓存外，剩余内存区域（从 ``0x40080000`` 至 ``0x400A0000`` ）被用来存储应用程序中部分需要在 RAM 中运行的代码。
+.. only:: esp32
 
-一些 ESP-IDF 的组件和 WiFi 协议栈的部分代码通过链接脚本文件被存放到了这块内存区域。
+    ESP-IDF 将内部 SRAM0 的部分区域分配为指令 RAM。可在 *{IDF_TARGET_NAME} 技术参考手册* > *系统和存储器* > *内部存储器* [`PDF <{IDF_TARGET_TRM_CN_URL}#sysmem>`__] 中查看 IRAM 区域的定义。该内存中第一个 64 KB 块用于 PRO 和 APP MMU 缓存，其余部分（即从 ``0x40080000`` 到 ``0x400A0000``）用于存储需要从 RAM 运行的应用程序部分。
 
-如果一些应用程序的代码需要放在 IRAM 中运行，可以使用 ``IRAM_ATTR`` 宏定义进行声明。
+.. only:: esp32s2
 
-.. code:: c
+    ESP-IDF 将内部 SRAM 的部分区域分配为指令 RAM。可在 *{IDF_TARGET_NAME} 技术参考手册* > *系统和存储器* > *内部存储器* [`PDF <{IDF_TARGET_TRM_CN_URL}#sysmem>`__] 中查看 IRAM 区域的定义。该内存中第一个块（最多 32 KB）用于 MMU 缓存，其余部分用于存储需要从 RAM 运行的应用程序部分。一些 ESP-IDF 的组件和 WiFi 协议栈的部分代码通过链接脚本文件被存放到了这块内存区域。
 
-   #include "esp_attr.h"
+.. only:: not esp32
 
-   void IRAM_ATTR gpio_isr_handler(void* arg)
-   {
-       // ...
-   }
+    .. note:: 内部 SRAM 中不用于指令 RAM 的部分都会作为 :ref:`dram` 供静态数据和动态分配（堆）使用。
+    
+何时需要将代码放入 IRAM
+======================================
 
-下面列举了应用程序中可能或者应该放入 IRAM 中运行例子。
+以下情况时应将部分应用程序放入 IRAM：
 
--  当注册中断处理程序的时候设置了 ``ESP_INTR_FLAG_IRAM`` ，那么中断处理程序就必须要放在 IRAM 中运行。这种情况下，ISR 只能调用存放在 IRAM 或者 ROM 中的函数。 *注意* ：目前所有 FreeRTOS 的 API 都已经存放到了 IRAM 中，所以在中断中调用 FreeRTOS 的中断专属 API 是安全的。如果将 ISR 放在 IRAM 中运行，那么必须使用宏定义 ``DRAM_ATTR`` 将该 ISR 用到所有常量数据和调用的函数（包括但不限于 ``const char`` 数组）放入 DRAM 中。
+- 如果在注册中断处理程序时使用了 ``ESP_INTR_FLAG_IRAM``，则中断处理程序必须要放入 IRAM。更多信息可参考 :ref:`iram-safe-interrupt-handlers`。
 
--  可以将一些时间关键的代码放在 IRAM 中，这样可以缩减从 Flash 加载代码所消耗的时间。{IDF_TARGET_NAME} 是通过 32kB 的高速缓存来从外部 Flash 中读取代码和数据的，将函数放在 IRAM 中运行可以减少由高速缓存未命中引起的时间延迟。
+- 可将一些时序关键代码放入 IRAM，以减少从 flash 中加载代码造成的相关损失。{IDF_TARGET_NAME} 通过 MMU 缓存从 flash 中读取代码和数据。在某些情况下，将函数放入 IRAM 可以减少由缓存未命中造成的延迟，从而显著提高函数的性能。
+
+.. _how-to-place-code-in-iram:
+
+如何将代码放入 IRAM
+=====================================
+
+借助链接器脚本，一些代码会被自动放入 IRAM 区域中。
+
+如果需要将某些特定的应用程序代码放入 IRAM，可以使用 :doc:`linker-script-generation` 功能并在组件中添加链接器脚本片段文件，在该片段文件中，可以给整个目标源文件或其中的个别函数打上 ``noflash`` 标签。更多信息可参考 :doc:`linker-script-generation`。
+
+或者，也可以通过使用 ``IRAM_ATTR`` 宏在源代码中指定需要放入 IRAM 的代码::
+
+	#include "esp_attr.h"
+
+	void IRAM_ATTR gpio_isr_handler(void* arg)
+	{
+		// ...
+	}
+
+放入 IRAM 后可能会导致 IRAM 安全中断处理程序出现问题：
+
+* ``IRAM_ATTR`` 函数中的字符串或常量可能没有自动放入 RAM 中，这时可以使用 ``DRAM_ATTR`` 属性进行标记，或者也可以使用链接器脚本方法将它们自动放入 RAM 中。
+
+  .. code-block:: c
+
+    void IRAM_ATTR gpio_isr_handler(void* arg)
+    {
+       const static DRAM_ATTR uint8_t INDEX_DATA[] = { 45, 33, 12, 0 };
+       const static char *MSG = DRAM_STR("I am a string stored in RAM");
+    }
+
+注意，具体哪些数据需要被标记为 ``DRAM_ATTR`` 可能很难确定。如果没有被标记为 ``DRAM_ATTR``，某些变量或表达式有时会被编译器别为常量（即使它们没有被标记为 ``const``）并将其放入 flash 中。
+
+
+* GCC 的优化会自动生成跳转表或 switch/case 查找表，并将这些表放在 flash 中。IDF 默认在编译所有文件时使用 ``-fno-jump-tables -fno-tree-switch-conversion`` 标志来避免这种情况。
+
+可以为不需要放置在 IRAM 中的单个源文件重新启用跳转表优化。关于如何在编译单个源文件时添加 ``-fno-jump-tables -fno-tree-switch-conversion`` 选项，请参考 :ref:`component_build_control`。
 
 
 .. _irom:
@@ -39,105 +112,96 @@ ESP-IDF 将内部 SRAM0 区域（在技术参考手册中有定义）的一部�
 IROM（代码从 Flash 中运行）
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-如果一个函数没有被显式地声明放在 IRAM 或者 RTC 内存中，则将其置于 Flash 中。Flash 技术参考手册中介绍了 Flash MMU 允许代码从 Flash 执行的机制。ESP-IDF 将从 Flash 中执行的代码放在 ``0x400D0000 — 0x40400000`` 区域的开始，在启动阶段，二级引导程序会初始化 Flash MMU，将代码在 Flash 中的位置映射到这个区域的开头。对这个区域的访问会被透明地缓存到 ``0x40070000 — 0x40080000`` 范围内的两个 32kB 的块中。
+如果一个函数没有被显式地声明放在 IRAM 或者 RTC 存储器中，则它会放在 flash 中。允许从 flash 中执行代码的 Flash MMU 机制可参考 {IDF_TARGET_NAME} 技术参考手册* > *存储器管理和保护单元 (MMU, MPU)* [`PDF <{IDF_TARGET_TRM_CN_URL}#mpummu>`__]。由于 IRAM 空间有限，应用程序的大部分二进制代码都需要放入 IROM 中。
 
-请注意，使用 Window ABI ``CALLx`` 指令可能无法访问 ``0x40000000 — 0x40400000`` 区域以外的代码，所以要特别留意应用程序是否使用了 ``0x40400000 — 0x40800000`` 或者 ``0x40800000 — 0x40C00000`` 区域，ESP-IDF 默认不会使用这两个区域。
+在 :doc:`启动 <startup>` 过程中，从 IRAM 中运行的引导加载程序配置 MMU flash 缓存，将应用程序的指令代码区域映射到指令空间。通过 MMU 访问的 flash 使用一些内部 SRAM 进行缓存，访问缓存的 flash 数据与访问其他类型的内部存储器一样快。
 
-RTC 快速内存
-~~~~~~~~~~~~
+RTC FAST memory（RTC 快速存储器）
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-从深度睡眠模式唤醒后必须要运行的代码要放在 RTC 内存中，更多信息请查阅文档 :doc:`深度睡眠 <deep-sleep-stub>`。
+RTC FAST memory 的同一区域既可以作为指令存储器也可以作为数据存储器进行访问。从深度睡眠模式唤醒后必须要运行的代码要放在 RTC 存储器中，更多信息请查阅文档 :doc:`深度睡眠 <deep-sleep-stub>`。
 
-.. _dram:
+.. only:: esp32
 
-DRAM（数据 RAM）
-~~~~~~~~~~~~~~~~
+     RTC FAST memory 只可以被 PRO CPU 访问。
 
-链接器将非常量静态数据和零初始化数据放入 ``0x3FFB0000 — 0x3FFF0000`` 这 256kB 的区域。注意，如果使用蓝牙堆栈，此区域会减少 64kB（通过将起始地址移至 ``0x3FFC0000`` ）。如果使用了内存跟踪的功能，该区域的长度还要减少 16kB 或者 32kB。放置静态数据后，留在此区域中的剩余空间都用作运行时堆。
+     在单核模式下，除非禁用 :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` 选项，否则剩余的 RTC FAST memory 会被添加到堆中。该部分内存可以和 :ref:`DRAM` 互换使用，但是访问速度稍慢，且不具备 DMA 功能。
 
-常量数据也可以放在 DRAM 中，例如，用在 ISR 中的常量数据（参见上面 IRAM 部分的介绍），为此需要使用 ``DRAM_ATTR`` 宏来声明。
+.. only:: not esp32s2
 
-.. code:: c
-
-   DRAM_ATTR const char[] format_string = "%p %x";
-   char buffer[64];
-   sprintf(buffer, format_string, ptr, val);
-
-毋庸置疑，不建议在 ISR 中使用 ``printf`` 和其余输出函数。出于调试的目的，可以在 ISR 中使用 ``ESP_EARLY_LOGx`` 来输出日志，不过要确保将 ``TAG`` 和格式字符串都放在了 ``DRAM`` 中。
-
-宏 ``__NOINIT_ATTR`` 可以用来声明将数据放在 ``.noinit`` 段中，放在此段中的数据不会在启动时被初始化，并且在软件重启后会保留原来的值。
-
-例子：
-
-.. code:: c
-
-   __NOINIT_ATTR uint32_t noinit_data;
+     除非禁用 :ref:`CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP` 选项，否则剩余的 RTC FAST memory 会被添加到堆中。该部分内存可以和 :ref:`DRAM` 互换使用，但是访问速度稍慢一点。
 
 .. _drom:
 
-DROM（数据存储在 Flash 中）
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+DROM（数据存储在 flash 中）
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-默认情况下，链接器将常量数据放入一个 4MB 区域 (``0x3F400000 — 0x3F800000``) ，该区域用于通过 Flash MMU 和高速缓存来访问外部 Flash。一种特例情况是，字面量会被编译器嵌入到应用程序代码中。
+.. highlight:: c
 
-RTC 慢速内存
-~~~~~~~~~~~~
+默认情况下，链接器将常量数据放入一个映射到 MMU flash 缓存的区域中。这与 :ref:`irom` 部分相同，但此处用于只读数据而不是可执行代码。
 
-从 RTC 内存运行的代码（例如深度睡眠模块的代码）使用的全局和静态变量必须要放在 RTC 慢速内存中。更多详细说明请查看文档 :doc:`深度睡眠 <deep-sleep-stub>` 。
+唯一没有默认放入 DROM 的常量数据是被编译器嵌入到应用程序代码中的字面常量。这些被放置在周围函数的可执行指令中。
 
-宏 ``RTC_NOINIT_ATTR`` 用来声明将数据放入 RTC 慢速内存中，该数据在深度睡眠唤醒后将保持不变。
+``DRAM_ATTR`` 属性可以用来强制将常量从 DRAM 放入 :ref:`dram` 部分（见上文）。
 
-例子：
+.. only:: SOC_RTC_SLOW_MEM_SUPPORTED
 
-.. code:: c
+    RTC Slow memory（RTC 慢速存储器）
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-   RTC_NOINIT_ATTR uint32_t rtc_noinit_data;
+    从 RTC 存储器运行的代码中使用的全局和静态变量必须放入 RTC Slow memory 中。例如 :doc:`深度睡眠 <deep-sleep-stub>` 变量可以放在 RTC Slow memory 中，而不是 RTC FAST memory，或者也可以放入由 :doc:`/api-guides/ulp` 访问的代码和变量。
 
-DMA 能力要求
-------------
+    ``RTC_NOINIT_ATTR`` 属性宏可以用来将数据放入 RTC Slow memory。放入此类型存储器的值从深度睡眠模式中醒来后会保持值不变。
+    
+    示例::    
+    
+            RTC_NOINIT_ATTR uint32_t rtc_noinit_data;    
+    
+具备 DMA 功能
+^^^^^^^^^^^^^^^^^^^
 
-大多数的 DMA 控制器（比如 SPI，SDMMC 等）都要求发送/接收缓冲区放在 DRAM 中，并且按字对齐。我们建议将 DMA 缓冲区放在静态变量中而不是堆栈中。使用 ``DMA_ATTR`` 宏可以声明该全局/本地的静态变量具备 DMA 能力，例如：
+.. highlight:: c
 
-.. code:: c
+大多数的 DMA 控制器（比如 SPI、sdmmc 等）都要求发送/接收缓冲区放在 DRAM 中，并且按字对齐。我们建议将 DMA 缓冲区放在静态变量而不是堆栈中。使用 ``DMA_ATTR`` 宏可以声明该全局/本地的静态变量具备 DMA 功能，例如::
 
-   DMA_ATTR uint8_t buffer[]="I want to send something";
+    DMA_ATTR uint8_t buffer[]="I want to send something";
 
-   void app_main()
-   {
-       // 初始化代码...
-       spi_transaction_t temp = {
-           .tx_buffer = buffer,
-           .length = 8*sizeof(buffer),
-       };
-       spi_device_transmit( spi, &temp );
-       // 其他程序
-   }
+    void app_main()
+    {
+        // 初始化代码
+        spi_transaction_t temp = {
+            .tx_buffer = buffer,
+            .length = 8 * sizeof(buffer),
+        };
+        spi_device_transmit(spi, &temp);
+        // 其它程序
+    }
 
-或者：
+或者::
 
-.. code:: c
+    void app_main()
+    {
+        DMA_ATTR static uint8_t buffer[] = "I want to send something";
+        // 初始化代码
+        spi_transaction_t temp = {
+            .tx_buffer = buffer,
+            .length = 8 * sizeof(buffer),
+        };
+        spi_device_transmit(spi, &temp);
+        // 其它程序
+    }
 
-   void app_main()
-   {
-       DMA_ATTR static uint8_t buffer[]="I want to send something";
-       // 初始化代码...
-       spi_transaction_t temp = {
-           .tx_buffer = buffer,
-           .length = 8*sizeof(buffer),
-       };
-       spi_device_transmit( spi, &temp );
-       // 其他程序
-   }
+也可以通过使用 :ref:`MALLOC_CAP_DMA <dma-capable-memory>` 标志来动态分配具备 DMA 能力的内存缓冲区。
 
-在堆栈中放置 DMA 缓冲区仍然是允许的，但是你必须记住：
+在堆栈中放置 DMA 缓冲区
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+可以在堆栈中放置 DMA 缓冲区，但建议尽量避免。如果实在有需要的话，请注意以下几点：
 
 .. list::
 
-   :SOC_SPIRAM_SUPPORTED:- 如果堆栈在 pSRAM 中，切勿尝试这么做，因为堆栈在 pSRAM 中的话就要按照 :doc:`片外SRAM <external-ram>` 文档介绍的步骤来操作（至少要在 ``menuconfig`` 中使能 ``SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY`` ），所以请确保你的任务不在 PSRAM 中。
-
-   - 在函数中使用 ``WORD_ALIGNED_ATTR`` 宏来修饰变量，将其放在适当的位置上，比如：
-
-      .. code:: c
+    :SOC_SPIRAM_SUPPORTED: - 如果堆栈在 PSRAM 中，则不建议将 DRAM 缓冲区放在堆栈上。如果任务堆栈在 PSRAM 中，则必须执行 :doc:`external-ram` 中描述的几个步骤。
+    - 在函数中使用 ``WORD_ALIGNED_ATTR`` 宏来修饰变量，将其放在适当的位置上，比如::
 
          void app_main()
          {

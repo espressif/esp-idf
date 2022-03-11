@@ -3,6 +3,12 @@ ULP 协处理器编程
 
 :link_to_translation:`en:[English]`
 
+.. only:: esp32s3
+
+    .. warning::
+
+        此功能不适用于 v4.4 版本。
+
 .. toctree::
    :maxdepth: 1
 

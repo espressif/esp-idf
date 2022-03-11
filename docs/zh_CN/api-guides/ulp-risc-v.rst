@@ -2,11 +2,18 @@ ULP-RISC-V 协处理器编程
 ==================================
 :link_to_translation:`en:[English]`
 
+.. only:: esp32s3
+
+    .. warning::
+
+        此功能不适用于 v4.4 版本。
+
+
 .. toctree::
    :maxdepth: 1
 
 
-ULP-RISC-V 协处理器是 ULP 的一种变体，用于 ESP32-S2。与 ULP 类似，ULP-RISC-V 协处理器可以在主处理器处于低功耗模式时执行传感器读数等任务。与 ULP-FSM 的主要区别在于，ULP-RISC-V 可以使用标准 GNU 工具、以 C 语言进行编程。ULP-RISC-V 可以访问 RTC_SLOW_MEM 内存区域及 RTC_CNTL、RTC_IO、SARADC 等外设的寄存器。RISC-V 处理器是一种 32 位定点处理器，指令集基于 RV32IMC，包括硬件乘除法和压缩指令。
+ULP-RISC-V 协处理器是 ULP 的一种变体，用于 ESP32-S2。与 ULP 类似，ULP-RISC-V 协处理器可以在主处理器处于低功耗模式时执行传感器读数等任务。与 ULP-FSM 不同，ULP-RISC-V 可以通过标准 GNU 工具使用 C 语言进行编程。ULP-RISC-V 可以访问 RTC_SLOW_MEM 内存区域及 RTC_CNTL、RTC_IO、SARADC 等外设的寄存器。RISC-V 处理器是一种 32 位定点处理器，指令集基于 RV32IMC，包括硬件乘除法和压缩指令。
 
 安装 ULP-RISC-V 工具链
 -----------------------------------
@@ -70,7 +77,7 @@ ULP-RISC-V 协处理器代码以 C 语言编写（也可能是汇编语言），
 
 .. code-block:: c
 
-    volatile int measurement_count; 
+    volatile int measurement_count;
 
     int some_function()
     {
