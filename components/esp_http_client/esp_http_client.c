@@ -234,6 +234,10 @@ static int http_on_header_value(http_parser *parser, const char *at, size_t leng
         return 0;
     }
     if (strcasecmp(client->current_header_key, "Location") == 0) {
+        if (client->location != NULL) {
+            free(client->location);
+            client->location = NULL;
+        }
         http_utils_append_string(&client->location, at, length);
     } else if (strcasecmp(client->current_header_key, "Transfer-Encoding") == 0
                && memcmp(at, "chunked", length) == 0) {
