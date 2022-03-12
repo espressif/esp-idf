@@ -44,6 +44,13 @@ function(fatfs_create_partition_image partition base_dir)
         set(fatfs_sector_size 4096)
     endif()
 
+    if("${CONFIG_FATFS_LFN_NONE}")
+        set(fatfs_long_names_option)
+    elseif("${CONFIG_FATFS_LFN_HEAP}")
+        set(fatfs_long_names_option --long_name_support)
+    elseif("${CONFIG_FATFS_LFN_STACK}")
+        set(fatfs_long_names_option --long_name_support)
+    endif()
 
     if("${CONFIG_FATFS_AUTO_TYPE}")
         set(fatfs_explicit_type 0)
@@ -63,13 +70,13 @@ function(fatfs_create_partition_image partition base_dir)
         # contents of the base dir changing.
         add_custom_target(fatfs_${partition}_bin ALL
             COMMAND ${fatfsgen_py} ${base_dir_full_path}
+            ${fatfs_long_names_option}
             --partition_size ${size}
             --output_file ${image_file}
             --sector_size "${fatfs_sector_size}"
             --sectors_per_cluster "${sectors_per_cluster}"
             --fat_type "${fatfs_explicit_type}"
             )
-
         set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY
             ADDITIONAL_MAKE_CLEAN_FILES
             ${image_file})

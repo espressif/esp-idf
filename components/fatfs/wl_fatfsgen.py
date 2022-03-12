@@ -7,7 +7,7 @@ from typing import List, Optional
 from construct import Const, Int32ul, Struct
 from fatfsgen import FATFS
 from fatfsgen_utils.exceptions import WLNotInitialized
-from fatfsgen_utils.utils import crc32, generate_4bytes_random, get_args_for_partition_generator
+from fatfsgen_utils.utils import UINT32_MAX, crc32, generate_4bytes_random, get_args_for_partition_generator
 
 
 class WLFATFS:
@@ -18,7 +18,6 @@ class WLFATFS:
     WL_STATE_RECORD_SIZE = 16
     WL_STATE_HEADER_SIZE = 64
     WL_STATE_COPY_COUNT = 2
-    UINT32_MAX = 4294967295
     WL_SECTOR_SIZE = 0x1000
 
     WL_STATE_T_DATA = Struct(
@@ -136,7 +135,7 @@ class WLFATFS:
             )
         )
 
-        crc = crc32(list(wl_config_data), WLFATFS.UINT32_MAX)
+        crc = crc32(list(wl_config_data), UINT32_MAX)
         wl_config_crc = Int32ul.build(crc)
 
         # adding three 4 byte zeros to align the structure
@@ -157,7 +156,7 @@ class WLFATFS:
                 device_id=self._device_id or generate_4bytes_random(),
             )
         )
-        crc = crc32(list(wl_state_data), WLFATFS.UINT32_MAX)
+        crc = crc32(list(wl_state_data), UINT32_MAX)
         wl_state_crc = Int32ul.build(crc)
         wl_state = wl_state_data + wl_state_crc
         self.fatfs_binary_image += WLFATFS.WL_STATE_COPY_COUNT * (
@@ -194,7 +193,8 @@ if __name__ == '__main__':
                        sectors_per_cluster=args.sectors_per_cluster,
                        size=args.partition_size,
                        root_entry_count=args.root_entry_count,
-                       explicit_fat_type=args.fat_type)
+                       explicit_fat_type=args.fat_type,
+                       long_names_enabled=args.long_name_support)
 
     wl_fatfs.wl_generate(args.input_directory)
     wl_fatfs.init_wl()
