@@ -10,7 +10,8 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/apb_saradc_reg.h"
 #include "soc/system_reg.h"
-#include "regi2c_ctrl.h"
+#include "esp_private/regi2c_ctrl.h"
+#include "regi2c_saradc.h"
 
 void bootloader_random_enable(void)
 {

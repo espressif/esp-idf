@@ -17,7 +17,8 @@ else()
                         "patches/esp_rom_sys.c"
                         "patches/esp_rom_uart.c"
                         "patches/esp_rom_spiflash.c"
-                        "patches/esp_rom_tjpgd.c")
+                        "patches/esp_rom_tjpgd.c"
+                        "patches/esp_rom_regi2c.c")
     list(APPEND private_required_comp soc hal)
 endif()
 

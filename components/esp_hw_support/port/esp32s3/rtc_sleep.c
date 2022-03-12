@@ -18,6 +18,7 @@
 #include "soc/fe_reg.h"
 #include "soc/rtc.h"
 #include "regi2c_ctrl.h"
+#include "regi2c_dig_reg.h"
 #include "soc/rtc.h"
 
 #define RTC_CNTL_MEM_FOLW_CPU (RTC_CNTL_SLOWMEM_FOLW_CPU | RTC_CNTL_FASTMEM_FOLW_CPU)

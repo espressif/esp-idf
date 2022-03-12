@@ -13,7 +13,7 @@
 #include "esp_log.h"
 #include "soc/io_mux_reg.h"
 #include "soc/apb_saradc_reg.h"
-#include "regi2c_ctrl.h"
+#include "esp_private/regi2c_ctrl.h"
 #include "hal/adc_ll.h"
 
 #ifndef BOOTLOADER_BUILD

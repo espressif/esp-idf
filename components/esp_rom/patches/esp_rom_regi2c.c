@@ -1,13 +1,16 @@
 /*
- * SPDX-FileCopyrightText: 2019-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "soc/soc.h"
+#include <stdlib.h>
+#include "esp_bit_defs.h"
 #include "soc/syscon_reg.h"
-#include "regi2c_ctrl.h"
-#include "regi2c_brownout.h"
+#include "esp_rom_caps.h"
+#include "sdkconfig.h"
+
+#if CONFIG_IDF_TARGET_ESP32S2
 
 #define I2C_RTC_WIFI_CLK_EN (SYSCON_WIFI_CLK_EN_REG)
 
@@ -79,6 +82,11 @@
 
 #define I2C_RTC_MAGIC_DEFAULT (0x1c40)
 
+#define I2C_BOD     0x61
+#define I2C_BBPLL   0x66
+#define I2C_SAR_ADC 0X69
+#define I2C_APLL    0X6D
+
 static void i2c_rtc_enable_block(uint8_t block)
 {
     REG_SET_FIELD(I2C_RTC_CONFIG0, I2C_RTC_MAGIC_CTRL, I2C_RTC_MAGIC_DEFAULT);
@@ -100,7 +108,7 @@ static void i2c_rtc_enable_block(uint8_t block)
     }
 }
 
-uint8_t i2c_rtc_read_reg(uint8_t block, uint8_t host_id, uint8_t reg_add)
+uint8_t esp_rom_regi2c_read(uint8_t block, uint8_t host_id, uint8_t reg_add)
 {
     i2c_rtc_enable_block(block);
 
@@ -111,7 +119,7 @@ uint8_t i2c_rtc_read_reg(uint8_t block, uint8_t host_id, uint8_t reg_add)
     return REG_GET_FIELD(I2C_RTC_CONFIG2, I2C_RTC_DATA);
 }
 
-uint8_t i2c_rtc_read_reg_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb)
+uint8_t esp_rom_regi2c_read_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb)
 {
     assert(msb - lsb < 8);
     i2c_rtc_enable_block(block);
@@ -124,7 +132,7 @@ uint8_t i2c_rtc_read_reg_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, u
     return (uint8_t)((data >> lsb) & (~(0xFFFFFFFF << (msb - lsb + 1))));
 }
 
-void i2c_rtc_write_reg(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t data)
+void esp_rom_regi2c_write(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t data)
 {
     i2c_rtc_enable_block(block);
 
@@ -136,7 +144,7 @@ void i2c_rtc_write_reg(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t 
     while (REG_GET_BIT(I2C_RTC_CONFIG2, I2C_RTC_BUSY));
 }
 
-void i2c_rtc_write_reg_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb, uint8_t data)
+void esp_rom_regi2c_write_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb, uint8_t data)
 {
     assert(msb - lsb < 8);
     i2c_rtc_enable_block(block);
@@ -157,3 +165,4 @@ void i2c_rtc_write_reg_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uin
     REG_WRITE(I2C_RTC_CONFIG2, temp);
     while (REG_GET_BIT(I2C_RTC_CONFIG2, I2C_RTC_BUSY));
 }
+#endif //CONFIG_IDF_TARGET_ESP32S2

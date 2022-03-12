@@ -7,7 +7,6 @@
 
 #include <stdio.h>
 #include <stdbool.h>
-#include "regi2c_ctrl.h"
 
 #include "soc/adc_periph.h"
 #include "hal/adc_types.h"
@@ -17,6 +16,9 @@
 #include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_cntl_reg.h"
 #include "hal/misc.h"
+
+#include "esp_private/regi2c_ctrl.h"
+#include "regi2c_saradc.h"
 
 #ifdef __cplusplus
 extern "C" {

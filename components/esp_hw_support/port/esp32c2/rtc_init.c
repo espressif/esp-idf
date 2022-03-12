@@ -15,6 +15,8 @@
 #include "soc/extmem_reg.h"
 #include "soc/system_reg.h"
 #include "regi2c_ctrl.h"
+#include "regi2c_dig_reg.h"
+#include "regi2c_lp_bias.h"
 #include "esp_hw_log.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"

@@ -48,3 +48,8 @@ PROVIDE ( esp_rom_get_cpu_ticks_per_us = ets_get_cpu_frequency );
 
 PROVIDE ( esp_rom_spiflash_set_bp = esp_rom_spiflash_lock );
 PROVIDE ( esp_rom_spiflash_write_enable = SPI_write_enable);
+
+PROVIDE ( esp_rom_regi2c_read = rom_i2c_readReg );
+PROVIDE ( esp_rom_regi2c_read_mask = rom_i2c_readReg_Mask );
+PROVIDE ( esp_rom_regi2c_write = rom_i2c_writeReg );
+PROVIDE ( esp_rom_regi2c_write_mask = rom_i2c_writeReg_Mask );
