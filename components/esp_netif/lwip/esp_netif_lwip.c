@@ -92,6 +92,7 @@ typedef enum esp_netif_action {
     ESP_NETIF_UNDEF,
     ESP_NETIF_STARTED,
     ESP_NETIF_STOPPED,
+    ESP_NETIF_SET_DEFAULT,
 } esp_netif_action_t;
 
 //
@@ -103,6 +104,7 @@ static const char *TAG = "esp_netif_lwip";
 
 static bool tcpip_initialized = false;
 static esp_netif_t *s_last_default_esp_netif = NULL;
+static bool s_is_last_default_esp_netif_overridden = false;
 
 #if !LWIP_TCPIP_CORE_LOCKING
 static sys_sem_t api_sync_sem = NULL;
@@ -140,7 +142,7 @@ static inline esp_err_t esp_netif_lwip_ipc_call(esp_netif_api_fn fn, esp_netif_t
             .api_fn = fn
     };
 #if !LWIP_TCPIP_CORE_LOCKING
-    if (g_lwip_task != xTaskGetCurrentTaskHandle()) {
+    if (tcpip_initialized && g_lwip_task != xTaskGetCurrentTaskHandle()) {
         ESP_LOGD(TAG, "check: remote, if=%p fn=%p\n", netif, fn);
         sys_arch_sem_wait(&api_lock_sem, 0);
         tcpip_send_msg_wait_sem((tcpip_callback_fn)esp_netif_api_cb, &msg, &api_sync_sem);
@@ -176,7 +178,7 @@ static esp_netif_t* esp_netif_is_active(esp_netif_t *arg)
  *
  * @note: This function must be called from lwip thread
  */
-static void esp_netif_set_default_netif(esp_netif_t *esp_netif)
+static void esp_netif_set_default_netif_internal(esp_netif_t *esp_netif)
 {
     if (_IS_NETIF_POINT2POINT_TYPE(esp_netif, PPP_LWIP_NETIF)) {
 #if CONFIG_PPP_SUPPORT
@@ -199,17 +201,31 @@ static esp_err_t esp_netif_update_default_netif_lwip(esp_netif_api_msg_t *msg)
 
     ESP_LOGD(TAG, "%s %p", __func__, esp_netif);
 
+    if (s_is_last_default_esp_netif_overridden && action != ESP_NETIF_SET_DEFAULT) {
+        // check if manually configured default interface hasn't been destroyed
+        s_last_default_esp_netif = esp_netif_is_active(s_last_default_esp_netif);
+        if (s_last_default_esp_netif != NULL) {
+            return ESP_OK; // still valid -> don't update default netif
+        }
+        // invalid -> reset the manual override and perform auto update
+        s_is_last_default_esp_netif_overridden = false;
+    }
     switch (action) {
+        case ESP_NETIF_SET_DEFAULT:
+            s_last_default_esp_netif = esp_netif;
+            s_is_last_default_esp_netif_overridden = true;
+            esp_netif_set_default_netif_internal(s_last_default_esp_netif);
+        break;
         case ESP_NETIF_STARTED:
         {
             // check if previously default interface hasn't been destroyed in the meantime
             s_last_default_esp_netif = esp_netif_is_active(s_last_default_esp_netif);
             if (s_last_default_esp_netif && esp_netif_is_netif_up(s_last_default_esp_netif)
                 && (s_last_default_esp_netif->route_prio > esp_netif->route_prio)) {
-                esp_netif_set_default_netif(s_last_default_esp_netif);
+                esp_netif_set_default_netif_internal(s_last_default_esp_netif);
             } else if (esp_netif_is_netif_up(esp_netif)) {
                 s_last_default_esp_netif = esp_netif;
-                esp_netif_set_default_netif(s_last_default_esp_netif);
+                esp_netif_set_default_netif_internal(s_last_default_esp_netif);
             }
         }
         break;
@@ -235,7 +251,7 @@ static esp_err_t esp_netif_update_default_netif_lwip(esp_netif_api_msg_t *msg)
             }
             esp_netif_list_unlock();
             if (s_last_default_esp_netif && esp_netif_is_netif_up(s_last_default_esp_netif)) {
-                esp_netif_set_default_netif(s_last_default_esp_netif);
+                esp_netif_set_default_netif_internal(s_last_default_esp_netif);
             }
         }
         break;
@@ -252,6 +268,11 @@ static esp_err_t esp_netif_update_default_netif_lwip(esp_netif_api_msg_t *msg)
 static esp_err_t esp_netif_update_default_netif(esp_netif_t *esp_netif, esp_netif_action_t action)
 {
     return esp_netif_lwip_ipc_call(esp_netif_update_default_netif_lwip, esp_netif, (void*)action);
+}
+
+esp_err_t esp_netif_set_default_netif(esp_netif_t *esp_netif)
+{
+    return esp_netif_update_default_netif(esp_netif, ESP_NETIF_SET_DEFAULT);
 }
 
 void esp_netif_set_ip4_addr(esp_ip4_addr_t *addr, uint8_t a, uint8_t b, uint8_t c, uint8_t d)
@@ -605,10 +626,7 @@ void esp_netif_destroy(esp_netif_t *esp_netif)
 #if CONFIG_ESP_NETIF_L2_TAP
         vSemaphoreDelete(esp_netif->transmit_mutex);
 #endif // CONFIG_ESP_NETIF_L2_TAP
-        if (s_last_default_esp_netif == esp_netif) {
-            // clear last default netif if it happens to be this just destroyed interface
-            s_last_default_esp_netif = NULL;
-        }
+        esp_netif_update_default_netif(esp_netif, ESP_NETIF_STOPPED);
         free(esp_netif);
     }
 }
