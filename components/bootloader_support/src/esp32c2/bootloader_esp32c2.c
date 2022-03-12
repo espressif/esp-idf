@@ -25,7 +25,6 @@
 #include "soc/io_mux_reg.h"
 #include "soc/system_reg.h"
 #include "esp32c2/rom/efuse.h"
-#include "esp32c2/rom/cache.h"
 #include "esp32c2/rom/ets_sys.h"
 #include "esp32c2/rom/rtc.h"
 #include "bootloader_common.h"
@@ -37,6 +36,9 @@
 #include "bootloader_console.h"
 #include "bootloader_flash_priv.h"
 #include "esp_efuse.h"
+#include "hal/mmu_hal.h"
+#include "hal/cache_hal.h"
+#include "hal/mmu_ll.h"
 
 static const char *TAG = "boot.esp32c2";
 
@@ -65,16 +67,6 @@ void IRAM_ATTR bootloader_configure_spi_pins(int drv)
     }
 }
 
-static void bootloader_reset_mmu(void)
-{
-    Cache_Suspend_ICache();
-    Cache_Invalidate_ICache_All();
-    Cache_MMU_Init();
-
-    REG_CLR_BIT(EXTMEM_ICACHE_CTRL1_REG, EXTMEM_ICACHE_SHUT_IBUS);
-    REG_CLR_BIT(EXTMEM_ICACHE_CTRL1_REG, EXTMEM_ICACHE_SHUT_DBUS);
-}
-
 static void update_flash_config(const esp_image_header_t *bootloader_hdr)
 {
     uint32_t size;
@@ -97,10 +89,10 @@ static void update_flash_config(const esp_image_header_t *bootloader_hdr)
     default:
         size = 2;
     }
-    uint32_t autoload = Cache_Suspend_ICache();
+    cache_hal_disable(CACHE_TYPE_ALL);
     // Set flash chip size
     esp_rom_spiflash_config_param(rom_spiflash_legacy_data->chip.device_id, size * 0x100000, 0x10000, 0x1000, 0x100, 0xffff);    // TODO: set mode
-    Cache_Resume_ICache(autoload);
+    cache_hal_enable(CACHE_TYPE_ALL);
 }
 
 static void print_flash_info(const esp_image_header_t *bootloader_hdr)
@@ -171,10 +163,10 @@ static void print_flash_info(const esp_image_header_t *bootloader_hdr)
 
 static void bootloader_print_mmu_page_size(void)
 {
-    int page_mode = MMU_Get_Page_Mode();
-    int size = (page_mode == 0 ? 16 :
-                page_mode == 1 ? 32 :
-                page_mode == 2 ? 64 : 0);
+    mmu_page_size_t page_size = mmu_ll_get_page_size(0);
+    int size = (page_size == MMU_PAGE_16KB ? 16 :
+                page_size == MMU_PAGE_32KB ? 32 :
+                page_size == MMU_PAGE_64KB ? 64 : 0);
     ESP_LOGI(TAG, "MMU Page Size  : %dK", size);
 }
 
@@ -272,8 +264,10 @@ esp_err_t bootloader_init(void)
     esp_efuse_init_virtual_mode_in_ram();
 #endif
 #endif
-    // reset MMU
-    bootloader_reset_mmu();
+    //init cache hal
+    cache_hal_init();
+    //reset mmu
+    mmu_hal_init();
     // config clock
     bootloader_clock_configure();
     // initialize console, from now on, we can use esp_log

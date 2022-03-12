@@ -34,25 +34,25 @@
 #include "esp32s2/rom/cache.h"
 #include "esp_private/mmu_psram.h"
 #include "soc/extmem_reg.h"
-#include "soc/cache_memory.h"
+#include "soc/ext_mem_defs.h"
 #include "soc/mmu.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/cache.h"
 #include "esp32s3/spiram.h"
 #include "soc/extmem_reg.h"
-#include "soc/cache_memory.h"
+#include "soc/ext_mem_defs.h"
 #include "soc/mmu.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/cache.h"
-#include "soc/cache_memory.h"
+#include "soc/ext_mem_defs.h"
 #include "soc/mmu.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/cache.h"
-#include "soc/cache_memory.h"
+#include "soc/ext_mem_defs.h"
 #include "soc/mmu.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rom/cache.h"
-#include "soc/cache_memory.h"
+#include "soc/ext_mem_defs.h"
 #include "soc/mmu.h"
 #endif
 

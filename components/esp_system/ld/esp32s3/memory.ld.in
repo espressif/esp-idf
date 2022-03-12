@@ -26,7 +26,7 @@
  * 40370000 <- IRAM/Icache -> 40378000 <- D/IRAM (I) -> 403E0000
  *                            3FC88000 <- D/IRAM (D) -> 3FCF0000 <- DRAM/DCache -> 3FD00000
  *
- * Startup code uses the IRAM from 0x403BA000 to 0x403E0000, which is not available for static
+ * Startup code uses the IRAM from 0x403B9000 to 0x403E0000, which is not available for static
  * memory, but can only be used after app starts.
  *
  * D cache use the memory from high address, so when it's configured to 16K/32K, the region
@@ -36,7 +36,7 @@
 
 #define SRAM_IRAM_START     0x40370000
 #define SRAM_DIRAM_I_START  0x40378000
-#define SRAM_IRAM_END       0x403BA000
+#define SRAM_IRAM_END       0x403B9000
 #define I_D_SRAM_OFFSET     (SRAM_DIRAM_I_START - SRAM_DRAM_START)
 
 #define SRAM_DRAM_START     0x3FC88000

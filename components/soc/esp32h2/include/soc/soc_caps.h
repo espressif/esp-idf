@@ -46,7 +46,6 @@
 #define SOC_SUPPORTS_SECURE_DL_MODE         1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   3
 #define SOC_EFUSE_KEY_PURPOSE_FIELD         1
-#define SOC_ICACHE_ACCESS_RODATA_SUPPORTED  1
 #define SOC_TEMP_SENSOR_SUPPORTED           1
 #define SOC_RTC_FAST_MEM_SUPPORTED          1
 #define SOC_RTC_SLOW_MEM_SUPPORTED          0
@@ -94,6 +93,9 @@
 
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #define SOC_BROWNOUT_RESET_SUPPORTED 1
+
+/*-------------------------- CACHE CAPS --------------------------------------*/
+#define SOC_SHARED_IDCACHE_SUPPORTED            1   //Shared Cache for both instructions and data
 
 /*-------------------------- CPU CAPS ----------------------------------------*/
 #define SOC_CPU_BREAKPOINTS_NUM         8

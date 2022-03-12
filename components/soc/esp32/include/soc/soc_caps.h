@@ -121,6 +121,9 @@
 #define SOC_BROWNOUT_RESET_SUPPORTED 1
 #endif
 
+/*-------------------------- CACHE CAPS --------------------------------------*/
+#define SOC_SHARED_IDCACHE_SUPPORTED            1   //Shared Cache for both instructions and data
+
 /*-------------------------- CPU CAPS ----------------------------------------*/
 #define SOC_CPU_BREAKPOINTS_NUM         2
 #define SOC_CPU_WATCHPOINTS_NUM         2

@@ -95,12 +95,6 @@ typedef enum {
     CACHE_FREEZE_ACK_ERROR  = 1,        /*!< in this mode, cache ack wrong data to CPU and trigger an error if a cache miss happens */
 } cache_freeze_mode_t;
 
-typedef enum {
-    CACHE_PAGE_16KB = 0,
-    CACHE_PAGE_32KB,
-    CACHE_PAGE_64KB,
-} mmu_page_mode_t;
-
 struct cache_mode {
     uint32_t cache_size;                /*!< cache size in byte */
     uint16_t cache_line_size;           /*!< cache line size in byte */
@@ -607,24 +601,6 @@ void Cache_Set_Default_Mode(void);
   * @return None
   */
 void Cache_Enable_Defalut_ICache_Mode(void);
-
-/**
-  * @brief Set mmu page mode.
-  *
-  * @param mmu_page_mode_t
-  *
-  * @return None
-  */
-void MMU_Set_Page_Mode(mmu_page_mode_t pg_mode);
-
-/**
-  * @brief Get mmu page mode.
-  *
-  * @param None
-  *
-  * @return page mode
-  */
-mmu_page_mode_t MMU_Get_Page_Mode(void);
 
 /**
   * @brief Enable freeze for ICache.

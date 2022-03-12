@@ -22,6 +22,20 @@ extern "C" {
 #define FLASH_BLOCK_SIZE 	0x10000
 #define MMAP_ALIGNED_MASK 	0x0000FFFF
 
+//This will be replaced with a kconfig, TODO: IDF-3821
+#define MMU_PAGE_SIZE                   0x10000
+#define MMU_FLASH_MASK                  (~(MMU_PAGE_SIZE - 1))
+/**
+ * MMU mapping must always be in the unit of a MMU_PAGE_SIZE
+ * This macro is a helper for you to get needed page nums to be mapped. e.g.:
+ * Let's say MMU_PAGE_SIZE is 64KB.
+ * - v_start = 0x4200_0004
+ * - size = 4 * 64KB
+ *
+ * You should map from 0x4200_0000, then map 5 pages.
+ */
+#define GET_REQUIRED_MMU_PAGES(size, v_start)    ((size + (v_start - (v_start & MMU_FLASH_MASK)) + MMU_PAGE_SIZE - 1) / MMU_PAGE_SIZE)
+
 /* SPI commands (actual on-wire commands not SPI controller bitmasks)
    Suitable for use with the bootloader_execute_flash_command static function.
 */
@@ -134,23 +148,6 @@ esp_err_t bootloader_flash_erase_sector(size_t sector);
  * @return esp_err_t
  */
 esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size);
-
-/* Cache MMU block size */
-#define MMU_BLOCK_SIZE    0x10000
-
-/* Cache MMU address mask (MMU tables ignore bits which are zero) */
-#define MMU_FLASH_MASK    (~(MMU_BLOCK_SIZE - 1))
-
-/**
- * @brief Calculate the number of cache pages to map
- * @param size  size of data to map
- * @param vaddr  virtual address where data will be mapped
- * @return number of cache MMU pages required to do the mapping
- */
-static inline uint32_t bootloader_cache_pages_to_map(uint32_t size, uint32_t vaddr)
-{
-    return (size + (vaddr - (vaddr & MMU_FLASH_MASK)) + MMU_BLOCK_SIZE - 1) / MMU_BLOCK_SIZE;
-}
 
 /**
  * @brief Execute a user command on the flash

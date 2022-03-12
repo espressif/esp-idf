@@ -79,10 +79,6 @@ config SOC_EFUSE_KEY_PURPOSE_FIELD
     bool
     default y
 
-config SOC_ICACHE_ACCESS_RODATA_SUPPORTED
-    bool
-    default y
-
 config SOC_TEMP_SENSOR_SUPPORTED
     bool
     default y

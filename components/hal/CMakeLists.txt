@@ -4,9 +4,14 @@ set(srcs "wdt_hal_iram.c"
          "mpu_hal.c"
          "cpu_hal.c"
          "efuse_hal.c"
-         "${target}/efuse_hal.c")
+         "${target}/efuse_hal.c"
+         "mmu_hal.c")
 
 set(includes "${target}/include" "include" "platform_port/include")
+
+if(NOT ${target} STREQUAL "esp32")
+    list(APPEND srcs "cache_hal.c")
+endif()
 
 if(target STREQUAL "esp32h2")
     if(CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1)
