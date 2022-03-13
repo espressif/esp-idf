@@ -90,9 +90,11 @@ extern "C" {
 #define ESP_SEMIHOSTING_SYS_LINK                    0x114
 #define ESP_SEMIHOSTING_SYS_UNLINK                  0x115
 
-/*  Semihosting version bumped to 2.
-    In this version, memory based approach implemented as defined in the ARM standard.
-    Also user defined syscall numbers enumerated between 0x100-0x1FF
+/*  Semihosting version bumped to 2. Changelog;
+    1 - Memory based approach with 2 registers implemented as defined in the ARM standard.
+    2 - User defined syscall numbers located between 0x100-0x1FF
+    3 - The break instruction operands updated to (1, 14)
+    4 - Absolute path support is dropped
 */
 #define SEMIHOSTING_DRV_VERSION 2
 
