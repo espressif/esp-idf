@@ -1643,7 +1643,6 @@ components/unity/unity_runner.c
 components/usb/test/hcd/test_hcd_ctrl.c
 components/vfs/include/esp_vfs_common.h
 components/vfs/include/esp_vfs_eventfd.h
-components/vfs/include/esp_vfs_semihost.h
 components/vfs/test/test_vfs_lwip.c
 components/vfs/test/test_vfs_paths.c
 components/vfs/test/test_vfs_uart.c
