@@ -53,9 +53,9 @@ typedef struct {
  * reads image data from HTTP stream and writes it to OTA partition and
  * finishes HTTPS OTA Firmware upgrade operation.
  * This API supports URL redirection, but if CA cert of URLs differ then it
- * should be appended to `cert_pem` member of `config`.
+ * should be appended to `cert_pem` member of `ota_config->http_config`.
  *
- * @param[in]  config       pointer to esp_http_client_config_t structure.
+ * @param[in]  ota_config       pointer to esp_https_ota_config_t structure.
  *
  * @note     This API handles the entire OTA operation, so if this API is being used
  *           then no other APIs from `esp_https_ota` component should be called.
@@ -72,7 +72,7 @@ typedef struct {
  *    - ESP_ERR_FLASH_OP_TIMEOUT or ESP_ERR_FLASH_OP_FAIL: Flash write failed.
  *    - For other return codes, refer OTA documentation in esp-idf's app_update component.
  */
-esp_err_t esp_https_ota(const esp_http_client_config_t *config);
+esp_err_t esp_https_ota(const esp_https_ota_config_t *ota_config);
 
 /**
  * @brief    Start HTTPS OTA Firmware upgrade
@@ -99,7 +99,7 @@ esp_err_t esp_https_ota(const esp_http_client_config_t *config);
  *    - For other return codes, refer documentation in app_update component and esp_http_client
  *      component in esp-idf.
  */
-esp_err_t esp_https_ota_begin(esp_https_ota_config_t *ota_config, esp_https_ota_handle_t *handle);
+esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_https_ota_handle_t *handle);
 
 /**
  * @brief    Read image data from HTTP stream and write it to OTA partition

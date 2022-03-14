@@ -20,7 +20,10 @@ Application Example
                 .url = CONFIG_FIRMWARE_UPGRADE_URL,
                 .cert_pem = (char *)server_cert_pem_start,
             };
-            esp_err_t ret = esp_https_ota(&config);
+            esp_https_ota_config_t ota_config = {
+                .http_config = &config,
+            };
+            esp_err_t ret = esp_https_ota(&ota_config);
             if (ret == ESP_OK) {
                 esp_restart();
             } else {
@@ -46,6 +49,21 @@ Signature Verification
 ----------------------
 
 For additional security, signature of OTA firmware images can be verified. For that, refer :ref:`secure-ota-updates`
+
+Advanced APIs
+-------------
+
+``esp_https_ota`` also provides advanced APIs which can be used if more information and control is needed during the OTA process.
+
+Example that uses advanced ESP_HTTPS_OTA APIs: :example:`system/ota/advanced_https_ota`.
+
+
+OTA Upgrades with Pre-Encrypted Firmware
+----------------------------------------
+
+To perform OTA upgrades with Pre-Encrypted Firmware, please enable :ref:`CONFIG_ESP_HTTPS_OTA_DECRYPT_CB` in component menuconfig.
+
+Example that performs OTA upgrade with Pre-Encrypted Firmware: :example:`system/ota/pre_encrypted_ota`.
 
 API Reference
 -------------
