@@ -5,22 +5,30 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "unity.h"
 #include "esp_lcd_panel_rgb.h"
 #include "esp_lcd_panel_ops.h"
 #include "esp_random.h"
+#include "esp_attr.h"
+#include "nvs_flash.h"
 #include "test_rgb_board.h"
+
+#if CONFIG_LCD_RGB_ISR_IRAM_SAFE
+#define TEST_LCD_CALLBACK_ATTR IRAM_ATTR
+#else
+#define TEST_LCD_CALLBACK_ATTR
+#endif // CONFIG_LCD_RGB_ISR_IRAM_SAFE
+
+#define TEST_IMG_SIZE (100 * 100 * sizeof(uint16_t))
 
 void test_app_include_rgb_lcd(void)
 {
 }
 
-TEST_CASE("lcd_rgb_lcd_panel", "[lcd]")
+static esp_lcd_panel_handle_t test_rgb_panel_initialization(bool stream_mode, esp_lcd_rgb_panel_frame_trans_done_cb_t cb, void *user_data)
 {
-#define TEST_IMG_SIZE (100 * 100 * sizeof(uint16_t))
-    uint8_t *img = malloc(TEST_IMG_SIZE);
-    TEST_ASSERT_NOT_NULL(img);
-
     esp_lcd_panel_handle_t panel_handle = NULL;
     esp_lcd_rgb_panel_config_t panel_config = {
         .data_width = 16,
@@ -59,27 +67,117 @@ TEST_CASE("lcd_rgb_lcd_panel", "[lcd]")
             .vsync_back_porch = 18,
             .vsync_front_porch = 4,
             .vsync_pulse_width = 1,
-            .flags.pclk_active_neg = 1, // RGB data is clocked out on falling edge
         },
+        .on_frame_trans_done = cb,
+        .user_ctx = user_data,
         .flags.fb_in_psram = 1, // allocate frame buffer in PSRAM
+        .flags.relax_on_idle = !stream_mode,
     };
-    // Test stream mode and one-off mode
-    for (int i = 0; i < 2; i++) {
-        panel_config.flags.relax_on_idle = i;
-        TEST_ESP_OK(esp_lcd_new_rgb_panel(&panel_config, &panel_handle));
-        TEST_ESP_OK(esp_lcd_panel_reset(panel_handle));
-        TEST_ESP_OK(esp_lcd_panel_init(panel_handle));
 
-        for (int i = 0; i < 200; i++) {
-            uint8_t color_byte = esp_random() & 0xFF;
-            int x_start = esp_random() % (TEST_LCD_H_RES - 100);
-            int y_start = esp_random() % (TEST_LCD_V_RES - 100);
-            memset(img, color_byte, TEST_IMG_SIZE);
-            esp_lcd_panel_draw_bitmap(panel_handle, x_start, y_start, x_start + 100, y_start + 100, img);
-        }
+    TEST_ESP_OK(esp_lcd_new_rgb_panel(&panel_config, &panel_handle));
+    TEST_ESP_OK(esp_lcd_panel_reset(panel_handle));
+    TEST_ESP_OK(esp_lcd_panel_init(panel_handle));
 
-        TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
-    }
-    free(img);
-#undef TEST_IMG_SIZE
+    return panel_handle;
 }
+
+TEST_CASE("lcd_rgb_panel_stream_mode", "[lcd]")
+{
+    uint8_t *img = malloc(TEST_IMG_SIZE);
+    TEST_ASSERT_NOT_NULL(img);
+
+    printf("initialize RGB panel with stream mode\r\n");
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(true, NULL, NULL);
+    printf("flush random color block\r\n");
+    for (int i = 0; i < 200; i++) {
+        uint8_t color_byte = esp_random() & 0xFF;
+        int x_start = esp_random() % (TEST_LCD_H_RES - 100);
+        int y_start = esp_random() % (TEST_LCD_V_RES - 100);
+        memset(img, color_byte, TEST_IMG_SIZE);
+        esp_lcd_panel_draw_bitmap(panel_handle, x_start, y_start, x_start + 100, y_start + 100, img);
+    }
+    printf("delete RGB panel\r\n");
+    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
+    free(img);
+}
+
+TEST_LCD_CALLBACK_ATTR static bool test_rgb_panel_trans_done(esp_lcd_panel_handle_t panel, esp_lcd_rgb_panel_event_data_t *edata, void *user_ctx)
+{
+    TaskHandle_t task_to_notify = (TaskHandle_t)user_ctx;
+    BaseType_t high_task_wakeup;
+    vTaskNotifyGiveFromISR(task_to_notify, &high_task_wakeup);
+    return high_task_wakeup == pdTRUE;
+}
+
+TEST_CASE("lcd_rgb_panel_one_shot_mode", "[lcd]")
+{
+    uint8_t *img = malloc(TEST_IMG_SIZE);
+    TEST_ASSERT_NOT_NULL(img);
+    TaskHandle_t cur_task = xTaskGetCurrentTaskHandle();
+
+    printf("initialize RGB panel with ont-shot mode\r\n");
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(false, test_rgb_panel_trans_done, cur_task);
+    printf("flush random color block\r\n");
+    for (int i = 0; i < 200; i++) {
+        uint8_t color_byte = esp_random() & 0xFF;
+        int x_start = esp_random() % (TEST_LCD_H_RES - 100);
+        int y_start = esp_random() % (TEST_LCD_V_RES - 100);
+        memset(img, color_byte, TEST_IMG_SIZE);
+        esp_lcd_panel_draw_bitmap(panel_handle, x_start, y_start, x_start + 100, y_start + 100, img);
+        // wait for flush done
+        TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
+    }
+
+    printf("delete RGB panel\r\n");
+    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
+    free(img);
+}
+
+#if CONFIG_LCD_RGB_ISR_IRAM_SAFE
+TEST_CASE("lcd_rgb_panel_with_nvs_read_write", "[lcd]")
+{
+    uint8_t *img = malloc(TEST_IMG_SIZE);
+    TEST_ASSERT_NOT_NULL(img);
+
+    printf("initialize RGB panel with stream mode\r\n");
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(true, NULL, NULL);
+    printf("flush one clock block to the LCD\r\n");
+    uint8_t color_byte = esp_random() & 0xFF;
+    int x_start = esp_random() % (TEST_LCD_H_RES - 100);
+    int y_start = esp_random() % (TEST_LCD_V_RES - 100);
+    memset(img, color_byte, TEST_IMG_SIZE);
+    esp_lcd_panel_draw_bitmap(panel_handle, x_start, y_start, x_start + 100, y_start + 100, img);
+    printf("The LCD driver should keep flushing the color block in the background (as it's in stream mode)\r\n");
+
+    // read/write the SPI Flash by NVS APIs, the LCD driver should stay work
+    printf("initialize NVS flash\r\n");
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        // NVS partition was truncated and needs to be erased
+        TEST_ESP_OK(nvs_flash_erase());
+        // Retry nvs_flash_init
+        err = nvs_flash_init();
+    }
+    TEST_ESP_OK(err);
+    printf("open NVS storage\r\n");
+    nvs_handle_t my_handle;
+    TEST_ESP_OK(nvs_open("storage", NVS_READWRITE, &my_handle));
+    TEST_ESP_OK(nvs_erase_all(my_handle));
+    int test_count;
+    for (int i = 0; i < 50; i++) {
+        printf("write %d to NVS partition\r\n", i);
+        TEST_ESP_OK(nvs_set_i32(my_handle, "test_count", i));
+        TEST_ESP_OK(nvs_commit(my_handle));
+        TEST_ESP_OK(nvs_get_i32(my_handle, "test_count", &test_count));
+        TEST_ASSERT_EQUAL(i, test_count);
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
+    printf("close NVS storage\r\n");
+    nvs_close(my_handle);
+    TEST_ESP_OK(nvs_flash_deinit());
+
+    printf("delete RGB panel\r\n");
+    TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
+    free(img);
+}
+#endif // CONFIG_LCD_RGB_ISR_IRAM_SAFE

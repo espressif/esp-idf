@@ -260,8 +260,8 @@ config SOC_LCD_I80_SUPPORTED
     default y
 
 config SOC_LCD_I80_BUSES
-    bool
-    default y
+    int
+    default 2
 
 config SOC_LCD_I80_BUS_WIDTH
     int
