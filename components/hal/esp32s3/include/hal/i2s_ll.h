@@ -34,9 +34,9 @@ extern "C" {
 
 /* I2S clock configuration structure */
 typedef struct {
-    uint16_t mclk_div; // I2S module clock devider, Fmclk = Fsclk /(mclk_div+b/a)
+    uint16_t mclk_div; // I2S module clock divider, Fmclk = Fsclk /(mclk_div+b/a)
     uint16_t a;
-    uint16_t b;        // The decimal part of module clock devider, the decimal is: b/a
+    uint16_t b;        // The decimal part of module clock divider, the decimal is: b/a
 } i2s_ll_mclk_div_t;
 
 /**
@@ -104,7 +104,7 @@ static inline void i2s_ll_rx_disable_clock(i2s_dev_t *hw)
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_mclk_use_tx_clk(i2s_dev_t *hw)
+static inline void i2s_ll_mclk_bind_to_tx_clk(i2s_dev_t *hw)
 {
     hw->rx_clkm_conf.mclk_sel = 0;
 }
@@ -114,7 +114,7 @@ static inline void i2s_ll_mclk_use_tx_clk(i2s_dev_t *hw)
  *
  * @param hw Peripheral I2S hardware instance address.
  */
-static inline void i2s_ll_mclk_use_rx_clk(i2s_dev_t *hw)
+static inline void i2s_ll_mclk_bind_to_rx_clk(i2s_dev_t *hw)
 {
     hw->rx_clkm_conf.mclk_sel = 1;
 }
@@ -221,31 +221,65 @@ static inline void i2s_ll_tx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
 }
 
 /**
- * @brief Configure I2S TX clock devider
+ * @brief Configure I2S TX module clock divider
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param set Pointer to I2S clock devider configuration paramater
+ * @param sclk system clock, 0 means use apll
+ * @param mclk module clock
+ * @param mclk_div integer part of the division from sclk to mclk
  */
-static inline void i2s_ll_tx_set_clk(i2s_dev_t *hw, i2s_ll_mclk_div_t *set)
+static inline void i2s_ll_tx_set_mclk(i2s_dev_t *hw, uint32_t sclk, uint32_t mclk, uint32_t mclk_div)
 {
-    if (set->a == 0 || set->b == 0) {
+    int ma = 0;
+    int mb = 0;
+    int denominator = 1;
+    int numerator = 0;
+
+    uint32_t freq_diff = abs(sclk - mclk * mclk_div);
+    if (!freq_diff) {
+        goto finish;
+    }
+    float decimal = freq_diff / (float)mclk;
+    // Carry bit if the decimal is greater than 1.0 - 1.0 / (63.0 * 2) = 125.0 / 126.0
+    if (decimal > 125.0 / 126.0) {
+        mclk_div++;
+        goto finish;
+    }
+    uint32_t min = ~0;
+    for (int a = 2; a <= I2S_LL_MCLK_DIVIDER_MAX; a++) {
+        int b = (int)(a * (freq_diff / (double)mclk) + 0.5);
+        ma = freq_diff * a;
+        mb = mclk * b;
+        if (ma == mb) {
+            denominator = a;
+            numerator = b;
+            goto finish;
+        }
+        if (abs((mb - ma)) < min) {
+            denominator = a;
+            numerator = b;
+            min = abs(mb - ma);
+        }
+    }
+finish:
+    if (denominator == 0 || numerator == 0) {
         hw->tx_clkm_div_conf.tx_clkm_div_x = 0;
         hw->tx_clkm_div_conf.tx_clkm_div_y = 0;
         hw->tx_clkm_div_conf.tx_clkm_div_z = 0;
     } else {
-        if (set->b > set->a / 2) {
-            hw->tx_clkm_div_conf.tx_clkm_div_x = set->a / (set->a - set->b) - 1;
-            hw->tx_clkm_div_conf.tx_clkm_div_y = set->a % (set->a - set->b);
-            hw->tx_clkm_div_conf.tx_clkm_div_z = set->a - set->b;
+        if (numerator > denominator / 2) {
+            hw->tx_clkm_div_conf.tx_clkm_div_x = denominator / (denominator - numerator) - 1;
+            hw->tx_clkm_div_conf.tx_clkm_div_y = denominator % (denominator - numerator);
+            hw->tx_clkm_div_conf.tx_clkm_div_z = denominator - numerator;
             hw->tx_clkm_div_conf.tx_clkm_div_yn1 = 1;
         } else {
-            hw->tx_clkm_div_conf.tx_clkm_div_x = set->a / set->b - 1;
-            hw->tx_clkm_div_conf.tx_clkm_div_y = set->a % set->b + 1;
-            hw->tx_clkm_div_conf.tx_clkm_div_z = set->b;
+            hw->tx_clkm_div_conf.tx_clkm_div_x = denominator / numerator - 1;
+            hw->tx_clkm_div_conf.tx_clkm_div_y = denominator % numerator + 1;
+            hw->tx_clkm_div_conf.tx_clkm_div_z = numerator;
             hw->tx_clkm_div_conf.tx_clkm_div_yn1 = 0;
         }
     }
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->tx_clkm_conf, tx_clkm_div_num, set->mclk_div);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->tx_clkm_conf, tx_clkm_div_num, mclk_div);
 }
 
 /**
@@ -260,31 +294,66 @@ static inline void i2s_ll_rx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
 }
 
 /**
- * @brief Configure I2S RX clock devider
+ * @brief Configure I2S RX module clock divider
+ * @note mclk on ESP32 is shared by both TX and RX channel
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param set Pointer to I2S clock devider configuration paramater
+ * @param sclk system clock, 0 means use apll
+ * @param mclk module clock
+ * @param mclk_div integer part of the division from sclk to mclk
  */
-static inline void i2s_ll_rx_set_clk(i2s_dev_t *hw, i2s_ll_mclk_div_t *set)
+static inline void i2s_ll_rx_set_mclk(i2s_dev_t *hw, uint32_t sclk, uint32_t mclk, uint32_t mclk_div)
 {
-    if (set->a == 0 || set->b == 0) {
+    int ma = 0;
+    int mb = 0;
+    int denominator = 1;
+    int numerator = 0;
+
+    uint32_t freq_diff = abs(sclk - mclk * mclk_div);
+    if (!freq_diff) {
+        goto finish;
+    }
+    float decimal = freq_diff / (float)mclk;
+    // Carry bit if the decimal is greater than 1.0 - 1.0 / (63.0 * 2) = 125.0 / 126.0
+    if (decimal > 125.0 / 126.0) {
+        mclk_div++;
+        goto finish;
+    }
+    uint32_t min = ~0;
+    for (int a = 2; a <= I2S_LL_MCLK_DIVIDER_MAX; a++) {
+        int b = (int)(a * (freq_diff / (double)mclk) + 0.5);
+        ma = freq_diff * a;
+        mb = mclk * b;
+        if (ma == mb) {
+            denominator = a;
+            numerator = b;
+            goto finish;
+        }
+        if (abs((mb - ma)) < min) {
+            denominator = a;
+            numerator = b;
+            min = abs(mb - ma);
+        }
+    }
+finish:
+    if (denominator == 0 || numerator == 0) {
         hw->rx_clkm_div_conf.rx_clkm_div_x = 0;
         hw->rx_clkm_div_conf.rx_clkm_div_y = 0;
         hw->rx_clkm_div_conf.rx_clkm_div_z = 0;
     } else {
-        if (set->b > set->a / 2) {
-            hw->rx_clkm_div_conf.rx_clkm_div_x = set->a / (set->a - set->b) - 1;
-            hw->rx_clkm_div_conf.rx_clkm_div_y = set->a % (set->a - set->b);
-            hw->rx_clkm_div_conf.rx_clkm_div_z = set->a - set->b;
+        if (numerator > denominator / 2) {
+            hw->rx_clkm_div_conf.rx_clkm_div_x = denominator / (denominator - numerator) - 1;
+            hw->rx_clkm_div_conf.rx_clkm_div_y = denominator % (denominator - numerator);
+            hw->rx_clkm_div_conf.rx_clkm_div_z = denominator - numerator;
             hw->rx_clkm_div_conf.rx_clkm_div_yn1 = 1;
         } else {
-            hw->rx_clkm_div_conf.rx_clkm_div_x = set->a / set->b - 1;
-            hw->rx_clkm_div_conf.rx_clkm_div_y = set->a % set->b + 1;
-            hw->rx_clkm_div_conf.rx_clkm_div_z = set->b;
+            hw->rx_clkm_div_conf.rx_clkm_div_x = denominator / numerator - 1;
+            hw->rx_clkm_div_conf.rx_clkm_div_y = denominator % numerator + 1;
+            hw->rx_clkm_div_conf.rx_clkm_div_z = numerator;
             hw->rx_clkm_div_conf.rx_clkm_div_yn1 = 0;
         }
     }
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->rx_clkm_conf, rx_clkm_div_num, set->mclk_div);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->rx_clkm_conf, rx_clkm_div_num, mclk_div);
 }
 
 /**
@@ -507,29 +576,71 @@ static inline void i2s_ll_rx_set_ws_idle_pol(i2s_dev_t *hw, bool ws_pol_level)
 }
 
 /**
+ * @brief Enable I2S TX TDM mode
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ */
+static inline void i2s_ll_tx_enable_tdm(i2s_dev_t *hw)
+{
+    hw->tx_conf.tx_pdm_en = false;
+    hw->tx_conf.tx_tdm_en = true;
+    hw->tx_pcm2pdm_conf.pcm2pdm_conv_en = false;
+}
+
+/**
+ * @brief Enable I2S RX TDM mode
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ */
+static inline void i2s_ll_rx_enable_tdm(i2s_dev_t *hw)
+{
+    hw->rx_conf.rx_pdm_en = false;
+    hw->rx_conf.rx_tdm_en = true;
+    hw->rx_conf.rx_pdm2pcm_en = false;
+}
+
+/**
+ * @brief Enable I2S TX STD mode
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ */
+static inline void i2s_ll_tx_enable_std(i2s_dev_t *hw)
+{
+    i2s_ll_tx_enable_tdm(hw);
+}
+
+/**
+ * @brief Enable I2S RX STD mode
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ */
+static inline void i2s_ll_rx_enable_std(i2s_dev_t *hw)
+{
+    i2s_ll_rx_enable_tdm(hw);
+}
+
+/**
  * @brief Enable TX PDM mode.
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param pdm_enable Set true to TX enable PDM mode
  */
-static inline void i2s_ll_tx_enable_pdm(i2s_dev_t *hw, bool pdm_enable)
+static inline void i2s_ll_tx_enable_pdm(i2s_dev_t *hw)
 {
-    hw->tx_conf.tx_pdm_en = pdm_enable;
-    hw->tx_conf.tx_tdm_en = !pdm_enable;
-    hw->tx_pcm2pdm_conf.pcm2pdm_conv_en = pdm_enable;
+    hw->tx_conf.tx_pdm_en = true;
+    hw->tx_conf.tx_tdm_en = false;
+    hw->tx_pcm2pdm_conf.pcm2pdm_conv_en = true;
 }
 
 /**
  * @brief Enable RX PDM mode.
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param pdm_enable Set true to RX enable PDM mode
  */
-static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw, bool pdm_enable)
+static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw)
 {
-    hw->rx_conf.rx_pdm_en = pdm_enable;
-    hw->rx_conf.rx_tdm_en = !pdm_enable;
-    hw->rx_conf.rx_pdm2pcm_en = pdm_enable;
+    hw->rx_conf.rx_pdm_en = true;
+    hw->rx_conf.rx_tdm_en = false;
+    hw->rx_conf.rx_pdm2pcm_en = true;
 }
 
 /**

@@ -174,11 +174,15 @@
 /*-------------------------- I2S CAPS ----------------------------------------*/
 // ESP32 has 2 I2S
 #define SOC_I2S_NUM                 (2U)
-#define SOC_I2S_SUPPORTS_APLL       (1) // ESP32 support APLL
+#define SOC_I2S_HW_VERSION_1        (1)
+#define SOC_I2S_SUPPORTS_APLL       (1)
+#define SOC_I2S_SUPPORTS_PDM        (1)
 #define SOC_I2S_SUPPORTS_PDM_TX     (1)
 #define SOC_I2S_SUPPORTS_PDM_RX     (1)
-#define SOC_I2S_SUPPORTS_ADC        (1) // ESP32 support ADC and DAC
+#define SOC_I2S_SUPPORTS_ADC_DAC    (1)
+#define SOC_I2S_SUPPORTS_ADC        (1)
 #define SOC_I2S_SUPPORTS_DAC        (1)
+#define SOC_I2S_SUPPORTS_LCD_CAMERA (1)
 
 #define SOC_I2S_TRANS_SIZE_ALIGN_WORD (1) // I2S DMA transfer size must be aligned to word
 #define SOC_I2S_LCD_I80_VARIANT       (1) // I2S has a special LCD mode that can generate Intel 8080 TX timing
