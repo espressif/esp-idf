@@ -3,13 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 /**
  * About test environment UT_T1_GPIO:
  * Please connect TEST_GPIO_EXT_OUT_IO and TEST_GPIO_EXT_IN_IO
  */
 #include <stdio.h>
 #include <string.h>
-
 #include "esp_system.h"
 #include "esp_sleep.h"
 #include "unity.h"
@@ -87,6 +87,10 @@
 // define public test io on all boards
 #define TEST_IO_9 GPIO_NUM_9
 #define TEST_IO_10 GPIO_NUM_10
+
+void test_app_include_gpio(void)
+{
+}
 
 static volatile int disable_intr_times = 0;  // use this to calculate how many times it go into interrupt
 static volatile int level_intr_times = 0;  // use this to get how many times the level interrupt happened
@@ -201,7 +205,7 @@ static void drive_capability_set_get(gpio_num_t num, gpio_drive_cap_t capability
 
 
 // test the basic configuration function with right parameters and error parameters
-TEST_CASE("GPIO config parameters test", "[gpio]")
+TEST_CASE("GPIO_config_parameters_test", "[gpio]")
 {
     //error param test
     //ESP32 test 41 bit, ESP32-S2 test 48 bit, ESP32-S3 test 50 bit
@@ -234,7 +238,7 @@ TEST_CASE("GPIO config parameters test", "[gpio]")
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2, ESP32H2)
 //No runners
-TEST_CASE("GPIO rising edge interrupt test", "[gpio][test_env=UT_T1_GPIO]")
+TEST_CASE("GPIO_rising_edge_interrupt_test", "[gpio][test_env=UT_T1_GPIO]")
 {
     edge_intr_times = 0;  // set it as 0 prepare to test
     //init input and output gpio
@@ -258,7 +262,7 @@ TEST_CASE("GPIO rising edge interrupt test", "[gpio][test_env=UT_T1_GPIO]")
     gpio_uninstall_isr_service();
 }
 
-TEST_CASE("GPIO falling edge interrupt test", "[gpio][test_env=UT_T1_GPIO]")
+TEST_CASE("GPIO_falling_edge_interrupt_test", "[gpio][test_env=UT_T1_GPIO]")
 {
     edge_intr_times = 0;
     gpio_config_t output_io = init_io(TEST_GPIO_EXT_OUT_IO);
@@ -281,7 +285,7 @@ TEST_CASE("GPIO falling edge interrupt test", "[gpio][test_env=UT_T1_GPIO]")
     gpio_uninstall_isr_service();
 }
 
-TEST_CASE("GPIO both rising and falling edge interrupt test", "[gpio][test_env=UT_T1_GPIO]")
+TEST_CASE("GPIO_both_rising_and_falling_edge_interrupt_test", "[gpio][test_env=UT_T1_GPIO]")
 {
     edge_intr_times = 0;
     gpio_config_t output_io = init_io(TEST_GPIO_EXT_OUT_IO);
@@ -323,7 +327,7 @@ TEST_CASE("GPIO both rising and falling edge interrupt test", "[gpio][test_env=U
     gpio_uninstall_isr_service();
 }
 
-TEST_CASE("GPIO input high level trigger, cut the interrupt source exit interrupt test", "[gpio][test_env=UT_T1_GPIO]")
+TEST_CASE("GPIO_input_high_level_trigger_cut_the_interrupt_source_exit_interrupt_test", "[gpio][test_env=UT_T1_GPIO]")
 {
     level_intr_times = 0;
     gpio_config_t output_io = init_io(TEST_GPIO_EXT_OUT_IO);
@@ -346,7 +350,7 @@ TEST_CASE("GPIO input high level trigger, cut the interrupt source exit interrup
 
 }
 
-TEST_CASE("GPIO low level interrupt test", "[gpio][test_env=UT_T1_GPIO]")
+TEST_CASE("GPIO_low_level_interrupt_test", "[gpio][test_env=UT_T1_GPIO]")
 {
     disable_intr_times = 0;
     gpio_config_t output_io = init_io(TEST_GPIO_EXT_OUT_IO);
@@ -369,7 +373,7 @@ TEST_CASE("GPIO low level interrupt test", "[gpio][test_env=UT_T1_GPIO]")
     gpio_uninstall_isr_service();
 }
 
-TEST_CASE("GPIO multi-level interrupt test, to cut the interrupt source exit interrupt ", "[gpio][test_env=UT_T1_GPIO]")
+TEST_CASE("GPIO_multi-level_interrupt_test_to_cut_the_interrupt_source_exit_interrupt", "[gpio][test_env=UT_T1_GPIO]")
 {
     level_intr_times = 0;
     gpio_config_t output_io = init_io(TEST_GPIO_EXT_OUT_IO);
@@ -394,7 +398,7 @@ TEST_CASE("GPIO multi-level interrupt test, to cut the interrupt source exit int
     gpio_uninstall_isr_service();
 }
 
-TEST_CASE("GPIO enable and disable interrupt test", "[gpio][test_env=UT_T1_GPIO]")
+TEST_CASE("GPIO_enable_and_disable_interrupt_test", "[gpio][test_env=UT_T1_GPIO]")
 {
     disable_intr_times = 0;
     gpio_config_t output_io = init_io(TEST_GPIO_EXT_OUT_IO);
@@ -437,7 +441,7 @@ static void install_isr_service_task(void *arg)
     vTaskSuspend(NULL);
 }
 
-TEST_CASE("GPIO interrupt on other CPUs test", "[gpio]")
+TEST_CASE("GPIO_interrupt_on_other_CPUs_test", "[gpio]")
 {
     TaskHandle_t gpio_task_handle;
     gpio_config_t input_output_io = init_io(TEST_GPIO_EXT_OUT_IO);
@@ -465,7 +469,7 @@ TEST_CASE("GPIO interrupt on other CPUs test", "[gpio]")
 // ESP32 Connect GPIO18 with GPIO19, ESP32-S2 Connect GPIO17 with GPIO21,
 // ESP32-S3 Connect GPIO17 with GPIO21, ESP32C3 Connect GPIO2 with GPIO3
 // use multimeter to test the voltage, so it is ignored in CI
-TEST_CASE("GPIO set gpio output level test", "[gpio][ignore][UT_T1_GPIO]")
+TEST_CASE("GPIO_set_gpio_output_level_test", "[gpio][ignore][UT_T1_GPIO]")
 {
     gpio_config_t io_conf;
     io_conf.intr_type = GPIO_INTR_DISABLE;
@@ -498,7 +502,7 @@ TEST_CASE("GPIO set gpio output level test", "[gpio][ignore][UT_T1_GPIO]")
 
 // TEST_GPIO_INPUT_LEVEL_HIGH_PIN connects to 3.3v pin, TEST_GPIO_INPUT_LEVEL_LOW_PIN connects to the GND pin
 // use multimeter to test the voltage, so it is ignored in CI
-TEST_CASE("GPIO get input level test", "[gpio][ignore]")
+TEST_CASE("GPIO_get_input_level_test", "[gpio][ignore]")
 {
     gpio_num_t num1 = TEST_GPIO_INPUT_LEVEL_HIGH_PIN;
     int level1 = gpio_get_level(num1);
@@ -513,7 +517,7 @@ TEST_CASE("GPIO get input level test", "[gpio][ignore]")
     //when case finish, get the result from multimeter, the TEST_GPIO_INPUT_LEVEL_HIGH_PIN is 3.3v, the TEST_GPIO_INPUT_LEVEL_LOW_PIN is 0.00v
 }
 
-TEST_CASE("GPIO io pull up/down function", "[gpio]")
+TEST_CASE("GPIO_io_pull_up/down_function", "[gpio]")
 {
     // First, ensure that the output IO will not affect the level
     gpio_config_t  io_conf = init_io(TEST_GPIO_EXT_OUT_IO);
@@ -538,7 +542,7 @@ TEST_CASE("GPIO io pull up/down function", "[gpio]")
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S3, ESP32C3, ESP32C2, ESP32H2)
 //No runners
-TEST_CASE("GPIO output and input mode test", "[gpio][test_env=UT_T1_GPIO]")
+TEST_CASE("GPIO_output_and_input_mode_test", "[gpio][test_env=UT_T1_GPIO]")
 {
     //ESP32 connect io18 and io19, ESP32-S2 connect io17 and io21, ESP32-S3 connect io17 and io21, ESP32C3 Connect GPIO2 with GPIO3
     gpio_config_t output_io = init_io(TEST_GPIO_EXT_OUT_IO);
@@ -587,7 +591,7 @@ TEST_CASE("GPIO output and input mode test", "[gpio][test_env=UT_T1_GPIO]")
     TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(TEST_GPIO_EXT_IN_IO), !level, "direction set error, it can't output");
 }
 
-TEST_CASE("GPIO repeate call service and isr has no memory leak test", "[gpio][test_env=UT_T1_GPIO][timeout=90]")
+TEST_CASE("GPIO_repeat_call_service_and_isr_has_no_memory_leak_test", "[gpio][test_env=UT_T1_GPIO][timeout=90]")
 {
     gpio_config_t output_io = init_io(TEST_GPIO_EXT_OUT_IO);
     gpio_config_t input_io = init_io(TEST_GPIO_EXT_IN_IO);
@@ -614,7 +618,7 @@ TEST_CASE("GPIO repeate call service and isr has no memory leak test", "[gpio][t
 
 #if !WAKE_UP_IGNORE
 //this function development is not completed yet, set it ignored
-TEST_CASE("GPIO wake up enable and disenable test", "[gpio][ignore]")
+TEST_CASE("GPIO_wake_up_enable_and_disable_test", "[gpio][ignore]")
 {
     xTaskCreate(sleep_wake_up, "sleep_wake_up", 4096, NULL, 5, NULL);
     xTaskCreate(trigger_wake_up, "trigger_wake_up", 4096, NULL, 5, NULL);
@@ -631,7 +635,7 @@ TEST_CASE("GPIO wake up enable and disenable test", "[gpio][ignore]")
 
 // this case need the resistance to pull up the voltage or pull down the voltage
 // ignored because the voltage needs to be tested with multimeter
-TEST_CASE("GPIO verify only the gpio with input ability can be set pull/down", "[gpio][ignore]")
+TEST_CASE("GPIO_verify_only_the_gpio_with_input_ability_can_be_set_pull/down", "[gpio][ignore]")
 {
     gpio_config_t  output_io = init_io(TEST_GPIO_EXT_OUT_IO);
     gpio_config_t  input_io = init_io(TEST_GPIO_EXT_IN_IO);
@@ -710,9 +714,7 @@ TEST_CASE("GPIO verify only the gpio with input ability can be set pull/down", "
  *
  * all of these cases should be ignored that it will not run in CI
  */
-
-// drive capability test
-TEST_CASE("GPIO drive capability test", "[gpio][ignore]")
+TEST_CASE("GPIO_drive_capability_test", "[gpio][ignore]")
 {
     printf("weak capability test! please view the current change!\n");
     drive_capability_set_get(TEST_GPIO_EXT_OUT_IO, GPIO_DRIVE_CAP_0);
@@ -754,7 +756,7 @@ void gpio_enable_task(void *param)
  *     2. Trigger the GPIO9 interrupt and check if the interrupt responds correctly.
  *
  */
-TEST_CASE("GPIO Enable/Disable interrupt on multiple cores", "[gpio][ignore]")
+TEST_CASE("GPIO_enable/disable_interrupt_on_multiple_cores", "[gpio][ignore]")
 {
     gpio_config_t io_conf;
     io_conf.intr_type = GPIO_INTR_NEGEDGE;
@@ -808,7 +810,7 @@ static void gpio_isr_handler(void *arg)
  *     4. Trigger GPIO10(ESP32, ESP32C3)/GPIO21(ESP32-S2) interrupt.
  * If the bug is not fixed, you will see, in the step 4, the interrupt of GPIO9 will also respond.
  */
-TEST_CASE("GPIO ISR service test", "[gpio][ignore]")
+TEST_CASE("GPIO_ISR_service_test", "[gpio][ignore]")
 {
     gpio_isr_param_t io9_param = {
         .gpio_num =  TEST_IO_9,
@@ -858,7 +860,7 @@ TEST_CASE("GPIO ISR service test", "[gpio][ignore]")
 }
 
 #if SOC_USB_SERIAL_JTAG_SUPPORTED
-TEST_CASE("GPIO input and output of USB pins test", "[gpio]")
+TEST_CASE("GPIO_input_and_output_of_USB_pins_test", "[gpio]")
 {
     const int test_pins[] = {TEST_GPIO_USB_DP_IO, TEST_GPIO_USB_DM_IO};
     gpio_config_t io_conf = {

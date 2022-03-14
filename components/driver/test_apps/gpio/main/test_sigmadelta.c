@@ -3,16 +3,18 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
-#include "test_utils.h"
 #include "soc/soc_caps.h"
-#if SOC_SIGMADELTA_SUPPORTED
 #include "driver/sigmadelta.h"
 
+void test_app_include_sigmadelta(void)
+{
+}
 
-TEST_CASE("SigmaDelta config test", "[sigma_delta]")
+TEST_CASE("SigmaDelta_config_test", "[sigma_delta]")
 {
     sigmadelta_config_t sigmadelta_cfg = {
         .sigmadelta_prescale = 80,
@@ -30,7 +32,7 @@ TEST_CASE("SigmaDelta config test", "[sigma_delta]")
 
 // connect GPIO4 with LED positive pin, and the GND pin connect LED negative pin
 // logic analyzer help also to see the wave form(more standard and accurate)
-TEST_CASE("SigmaDelta pin, duty, prescale set", "[sigma_delta][ignore]")
+TEST_CASE("SigmaDelta_pin_duty_prescale_set", "[sigma_delta][ignore]")
 {
     sigmadelta_config_t sigmadelta_cfg = {
         .channel = 0,
@@ -66,5 +68,3 @@ TEST_CASE("SigmaDelta pin, duty, prescale set", "[sigma_delta][ignore]")
     TEST_ESP_OK(sigmadelta_set_pin(sigmadelta_cfg.channel, 5));
     vTaskDelay(3000 / portTICK_PERIOD_MS);
 }
-
-#endif // SOC_SIGMADELTA_SUPPORTED
