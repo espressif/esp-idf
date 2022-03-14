@@ -80,7 +80,7 @@ static spi_flash_requirement_t spi_flash_hpm_chip_hpm_requirement_check_with_cmd
     /* The flash listed here should enter the HPM with command 0xA3 */
     case 0xC84016:
     case 0xC84017:
-        if (freq_mhz >= 80) {
+        if (freq_mhz > 80) {
             chip_cap = SPI_FLASH_HPM_NEEDED;
         }
         break;
@@ -124,12 +124,9 @@ static esp_err_t spi_flash_high_performance_check_hpf_bit_5(void)
  */
 static esp_err_t spi_flash_hpm_probe_chip_with_dummy(uint32_t flash_id)
 {
-    ESP_EARLY_LOGW(HPM_TAG, "Enter HPM by reconfiguring dummy has not been fully tested");
     esp_err_t ret = ESP_OK;
     switch (flash_id) {
     /* The flash listed here should enter the HPM by adjusting dummy cycles */
-    case 0x204017:
-        break;
     default:
         ret = ESP_ERR_NOT_FOUND;
         break;
@@ -240,7 +237,9 @@ esp_err_t spi_flash_enable_high_performance_mode(void)
     chip_hpm = chip;
 
     if (ret != ESP_OK) {
-        ESP_EARLY_LOGE(HPM_TAG, "Flash high performance mode hasn't been supported");
+#if (FLASH_FREQUENCY == 120)
+            ESP_EARLY_LOGW(HPM_TAG, "Flash high performance mode hasn't been supported");
+#endif
         return ret;
     }
 

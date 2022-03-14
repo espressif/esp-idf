@@ -173,7 +173,7 @@ unsigned bootloader_read_status_8b_rdsr3(void)
     return bootloader_execute_flash_command(CMD_RDSR3, 0, 0, 8);
 }
 
-static unsigned read_status_16b_rdsr_rdsr2(void)
+unsigned bootloader_read_status_16b_rdsr_rdsr2(void)
 {
     return bootloader_execute_flash_command(CMD_RDSR, 0, 0, 8) | (bootloader_execute_flash_command(CMD_RDSR2, 0, 0, 8) << 8);
 }
