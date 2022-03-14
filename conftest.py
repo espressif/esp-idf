@@ -17,7 +17,8 @@ import logging
 import os
 import sys
 import xml.etree.ElementTree as ET
-from typing import Callable, List, Optional
+from fnmatch import fnmatch
+from typing import Callable, List, Optional, Tuple
 
 import pytest
 from _pytest.config import Config
@@ -25,6 +26,9 @@ from _pytest.fixtures import FixtureRequest
 from _pytest.main import Session
 from _pytest.nodes import Item
 from _pytest.python import Function
+from _pytest.reports import TestReport
+from _pytest.runner import CallInfo
+from _pytest.terminal import TerminalReporter
 from pytest_embedded.plugin import parse_configuration
 from pytest_embedded.utils import find_by_suffix
 
@@ -94,9 +98,9 @@ def build_dir(
     Returns:
         valid build directory
     """
-    param_or_cli: str = getattr(
-        request, 'param', None
-    ) or request.config.getoption('build_dir')
+    param_or_cli: str = getattr(request, 'param', None) or request.config.getoption(
+        'build_dir'
+    )
     if param_or_cli is not None:  # respect the param and the cli
         return param_or_cli
 
@@ -145,6 +149,9 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         '--sdkconfig',
         help='sdkconfig postfix, like sdkconfig.ci.<config>. (Default: None, which would build all found apps)',
     )
+    base_group.addoption(
+        '--known-failure-cases-file', help='known failure cases file path'
+    )
 
 
 _idf_pytest_embedded_key = pytest.StashKey['IdfPytestEmbedded']
@@ -154,6 +161,7 @@ def pytest_configure(config: Config) -> None:
     config.stash[_idf_pytest_embedded_key] = IdfPytestEmbedded(
         target=config.getoption('target'),
         sdkconfig=config.getoption('sdkconfig'),
+        known_failure_cases_file=config.getoption('known_failure_cases_file'),
     )
     config.pluginmanager.register(config.stash[_idf_pytest_embedded_key])
 
@@ -166,11 +174,50 @@ def pytest_unconfigure(config: Config) -> None:
 
 
 class IdfPytestEmbedded:
-
-    def __init__(self, target: Optional[str] = None, sdkconfig: Optional[str] = None):
+    def __init__(
+        self,
+        target: Optional[str] = None,
+        sdkconfig: Optional[str] = None,
+        known_failure_cases_file: Optional[str] = None,
+    ):
         # CLI options to filter the test cases
         self.target = target
         self.sdkconfig = sdkconfig
+        self.known_failure_patterns = self._parse_known_failure_cases_file(
+            known_failure_cases_file
+        )
+
+        self._failed_cases: List[
+            Tuple[str, bool]
+        ] = []  # (test_case_name, is_known_failure_cases)
+
+    @property
+    def failed_cases(self) -> List[str]:
+        return [case for case, is_known in self._failed_cases if not is_known]
+
+    @property
+    def known_failure_cases(self) -> List[str]:
+        return [case for case, is_known in self._failed_cases if is_known]
+
+    @staticmethod
+    def _parse_known_failure_cases_file(
+        known_failure_cases_file: Optional[str] = None,
+    ) -> List[str]:
+        if not known_failure_cases_file or not os.path.isfile(known_failure_cases_file):
+            return []
+
+        patterns = []
+        with open(known_failure_cases_file) as fr:
+            for line in fr.readlines():
+                if not line:
+                    continue
+                if not line.strip():
+                    continue
+                without_comments = line.split('#')[0].strip()
+                if without_comments:
+                    patterns.append(without_comments)
+
+        return patterns
 
     @pytest.hookimpl(tryfirst=True)
     def pytest_sessionstart(self, session: Session) -> None:
@@ -204,15 +251,37 @@ class IdfPytestEmbedded:
 
         # filter all the test cases with "--target"
         if self.target:
-            items[:] = [item for item in items if self.target in item_marker_names(item)]
+            items[:] = [
+                item for item in items if self.target in item_marker_names(item)
+            ]
 
         # filter all the test cases with cli option "config"
         if self.sdkconfig:
             items[:] = [
-                item
-                for item in items
-                if _get_param_config(item) == self.sdkconfig
+                item for item in items if _get_param_config(item) == self.sdkconfig
             ]
+
+    def pytest_runtest_makereport(
+        self, item: Function, call: CallInfo[None]
+    ) -> Optional[TestReport]:
+        if call.when == 'setup':
+            return None
+
+        report = TestReport.from_item_and_call(item, call)
+        if report.outcome == 'failed':
+            test_case_name = item.funcargs.get('test_case_name', '')
+            is_known_failure = self._is_known_failure(test_case_name)
+            self._failed_cases.append((test_case_name, is_known_failure))
+
+        return report
+
+    def _is_known_failure(self, case_id: str) -> bool:
+        for pattern in self.known_failure_patterns:
+            if case_id == pattern:
+                return True
+            if fnmatch(case_id, pattern):
+                return True
+        return False
 
     @pytest.hookimpl(trylast=True)
     def pytest_runtest_teardown(self, item: Function) -> None:
@@ -233,9 +302,24 @@ class IdfPytestEmbedded:
             xml = ET.parse(junit)
             testcases = xml.findall('.//testcase')
             for case in testcases:
-                case.attrib['name'] = format_case_id(target, config, case.attrib['name'])
+                case.attrib['name'] = format_case_id(
+                    target, config, case.attrib['name']
+                )
                 if 'file' in case.attrib:
                     case.attrib['file'] = case.attrib['file'].replace(
                         '/IDF/', ''
                     )  # our unity test framework
             xml.write(junit)
+
+    def pytest_sessionfinish(self, session: Session, exitstatus: int) -> None:
+        if exitstatus != 0 and self.known_failure_cases and not self.failed_cases:
+            session.exitstatus = 0
+
+    def pytest_terminal_summary(self, terminalreporter: TerminalReporter) -> None:
+        if self.known_failure_cases:
+            terminalreporter.section('Known failure cases', bold=True, yellow=True)
+            terminalreporter.line('\n'.join(self.known_failure_cases))
+
+        if self.failed_cases:
+            terminalreporter.section('Failed cases', bold=True, red=True)
+            terminalreporter.line('\n'.join(self.failed_cases))
