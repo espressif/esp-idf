@@ -138,6 +138,17 @@ def action_extensions(base_actions, project_path):
                     task.action_args['encrypted'] = True
                     break
 
+    def ota_targets(target_name, ctx, args):
+        """
+        Execute the target build system to build target 'target_name'.
+        Additionally set global variables for baud and port.
+        Calls ensure_build_directory() which will run cmake to generate a build
+        directory (with the specified generator) as needed.
+        """
+        args.port = args.port or _get_default_serial_port(args)
+        ensure_build_directory(args, ctx.info_name)
+        run_target(target_name, args, {'ESPBAUD': str(args.baud), 'ESPPORT': args.port})
+
     baud_rate = {
         'names': ['-b', '--baud'],
         'help': 'Baud rate for flashing.',
@@ -154,19 +165,20 @@ def action_extensions(base_actions, project_path):
         'default': None,
     }
 
+    BAUD_AND_PORT = [baud_rate, port]
     serial_actions = {
         'global_action_callbacks': [global_callback],
         'actions': {
             'flash': {
                 'callback': flash,
                 'help': 'Flash the project.',
-                'options': global_options + [baud_rate, port],
+                'options': global_options + BAUD_AND_PORT,
                 'order_dependencies': ['all', 'erase_flash'],
             },
             'erase_flash': {
                 'callback': erase_flash,
                 'help': 'Erase entire flash chip.',
-                'options': [baud_rate, port],
+                'options': BAUD_AND_PORT,
             },
             'monitor': {
                 'callback':
@@ -218,19 +230,19 @@ def action_extensions(base_actions, project_path):
             'partition_table-flash': {
                 'callback': flash,
                 'help': 'Flash partition table only.',
-                'options': [baud_rate, port],
+                'options': BAUD_AND_PORT,
                 'order_dependencies': ['partition_table', 'erase_flash'],
             },
             'bootloader-flash': {
                 'callback': flash,
                 'help': 'Flash bootloader only.',
-                'options': [baud_rate, port],
+                'options': BAUD_AND_PORT,
                 'order_dependencies': ['bootloader', 'erase_flash'],
             },
             'app-flash': {
                 'callback': flash,
                 'help': 'Flash the app only.',
-                'options': [baud_rate, port],
+                'options': BAUD_AND_PORT,
                 'order_dependencies': ['app', 'erase_flash'],
             },
             'encrypted-app-flash': {
@@ -242,6 +254,16 @@ def action_extensions(base_actions, project_path):
                 'callback': flash,
                 'help': 'Flash the encrypted project.',
                 'order_dependencies': ['all', 'erase_flash'],
+            },
+            'erase_otadata': {
+                'callback': ota_targets,
+                'help': 'Erase otadata partition.',
+                'options': global_options + BAUD_AND_PORT,
+            },
+            'read_otadata': {
+                'callback': ota_targets,
+                'help': 'Read otadata partition.',
+                'options': global_options + BAUD_AND_PORT,
             },
         },
     }
