@@ -589,7 +589,7 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
     uint32_t rmt_source_clk_hz;
 
     ESP_RETURN_ON_FALSE(rmt_is_channel_number_valid(channel, mode), ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
-    ESP_RETURN_ON_FALSE(mem_cnt + channel <= 8 && mem_cnt > 0, ESP_ERR_INVALID_ARG, TAG, RMT_MEM_CNT_ERROR_STR);
+    ESP_RETURN_ON_FALSE(mem_cnt + channel <= SOC_RMT_CHANNELS_PER_GROUP && mem_cnt > 0, ESP_ERR_INVALID_ARG, TAG, RMT_MEM_CNT_ERROR_STR);
     ESP_RETURN_ON_FALSE(clk_div > 0, ESP_ERR_INVALID_ARG, TAG, RMT_CLK_DIV_ERROR_STR);
 
     if (mode == RMT_MODE_TX) {
@@ -726,7 +726,6 @@ esp_err_t rmt_fill_tx_items(rmt_channel_t channel, const rmt_item32_t *item, uin
     ESP_RETURN_ON_FALSE(item, ESP_ERR_INVALID_ARG, TAG, RMT_ADDR_ERROR_STR);
     ESP_RETURN_ON_FALSE(item_num > 0, ESP_ERR_INVALID_ARG, TAG, RMT_DRIVER_LENGTH_ERROR_STR);
 
-    /*Each block has 64 x 32 bits of data*/
     uint8_t mem_cnt = rmt_ll_tx_get_mem_blocks(rmt_contex.hal.regs, channel);
     ESP_RETURN_ON_FALSE(mem_cnt * RMT_MEM_ITEM_NUM >= item_num, ESP_ERR_INVALID_ARG, TAG, RMT_WR_MEM_OVF_ERROR_STR);
     rmt_fill_memory(channel, item, item_num, mem_offset);
@@ -744,22 +743,6 @@ esp_err_t rmt_isr_register(void (*fn)(void *), void *arg, int intr_alloc_flags, 
 esp_err_t rmt_isr_deregister(rmt_isr_handle_t handle)
 {
     return esp_intr_free(handle);
-}
-
-static int IRAM_ATTR rmt_rx_get_mem_len_in_isr(rmt_channel_t channel)
-{
-    int block_num = rmt_ll_rx_get_mem_blocks(rmt_contex.hal.regs, channel);
-    int item_block_len = block_num * RMT_MEM_ITEM_NUM;
-    volatile rmt_item32_t *data = (rmt_item32_t *)RMTMEM.chan[RMT_ENCODE_RX_CHANNEL(channel)].data32;
-    int idx;
-    for (idx = 0; idx < item_block_len; idx++) {
-        if (data[idx].duration0 == 0) {
-            return idx;
-        } else if (data[idx].duration1 == 0) {
-            return idx + 1;
-        }
-    }
-    return idx;
 }
 
 static void IRAM_ATTR rmt_driver_isr_default(void *arg)
@@ -849,7 +832,7 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
         rmt_obj_t *p_rmt = p_rmt_obj[RMT_ENCODE_RX_CHANNEL(channel)];
         if (p_rmt) {
             rmt_ll_rx_enable(rmt_contex.hal.regs, channel, false);
-            int item_len = rmt_rx_get_mem_len_in_isr(channel);
+            int item_len = rmt_ll_rx_get_memory_writer_offset(rmt_contex.hal.regs, channel);
             rmt_ll_rx_set_mem_owner(rmt_contex.hal.regs, channel, RMT_LL_MEM_OWNER_SW);
             if (p_rmt->rx_buf) {
                 addr = (rmt_item32_t *)RMTMEM.chan[RMT_ENCODE_RX_CHANNEL(channel)].data32;
@@ -1135,6 +1118,8 @@ esp_err_t rmt_write_items(rmt_channel_t channel, const rmt_item32_t *rmt_item, i
     ESP_RETURN_ON_FALSE(p_rmt_obj[channel], ESP_FAIL, TAG, RMT_DRIVER_ERROR_STR);
     ESP_RETURN_ON_FALSE(rmt_item, ESP_FAIL, TAG, RMT_ADDR_ERROR_STR);
     ESP_RETURN_ON_FALSE(item_num > 0, ESP_ERR_INVALID_ARG, TAG, RMT_DRIVER_LENGTH_ERROR_STR);
+    uint32_t mem_blocks = rmt_ll_tx_get_mem_blocks(rmt_contex.hal.regs, channel);
+    ESP_RETURN_ON_FALSE(mem_blocks + channel <= SOC_RMT_CHANNELS_PER_GROUP, ESP_ERR_INVALID_STATE, TAG, RMT_MEM_CNT_ERROR_STR);
 #if CONFIG_SPIRAM_USE_MALLOC
     if (p_rmt_obj[channel]->intr_alloc_flags & ESP_INTR_FLAG_IRAM) {
         if (!esp_ptr_internal(rmt_item)) {
@@ -1144,9 +1129,8 @@ esp_err_t rmt_write_items(rmt_channel_t channel, const rmt_item32_t *rmt_item, i
     }
 #endif
     rmt_obj_t *p_rmt = p_rmt_obj[channel];
-    int block_num = rmt_ll_tx_get_mem_blocks(rmt_contex.hal.regs, channel);
-    int item_block_len = block_num * RMT_MEM_ITEM_NUM;
-    int item_sub_len = block_num * RMT_MEM_ITEM_NUM / 2;
+    int item_block_len = mem_blocks * RMT_MEM_ITEM_NUM;
+    int item_sub_len = mem_blocks * RMT_MEM_ITEM_NUM / 2;
     int len_rem = item_num;
     xSemaphoreTake(p_rmt->tx_sem, portMAX_DELAY);
     // fill the memory block first
@@ -1222,8 +1206,9 @@ esp_err_t rmt_translator_init(rmt_channel_t channel, sample_to_rmt_t fn)
     ESP_RETURN_ON_FALSE(fn, ESP_ERR_INVALID_ARG, TAG, RMT_TRANSLATOR_NULL_STR);
     ESP_RETURN_ON_FALSE(RMT_IS_TX_CHANNEL(channel), ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
     ESP_RETURN_ON_FALSE(p_rmt_obj[channel], ESP_FAIL, TAG, RMT_DRIVER_ERROR_STR);
-    const uint32_t block_size = rmt_ll_tx_get_mem_blocks(rmt_contex.hal.regs, channel) *
-                                RMT_MEM_ITEM_NUM * sizeof(rmt_item32_t);
+    uint32_t mem_blocks = rmt_ll_tx_get_mem_blocks(rmt_contex.hal.regs, channel);
+    ESP_RETURN_ON_FALSE(mem_blocks + channel <= SOC_RMT_CHANNELS_PER_GROUP, ESP_ERR_INVALID_STATE, TAG, RMT_MEM_CNT_ERROR_STR);
+    const uint32_t block_size = mem_blocks * RMT_MEM_ITEM_NUM * sizeof(rmt_item32_t);
     if (p_rmt_obj[channel]->tx_buf == NULL) {
 #if !CONFIG_SPIRAM_USE_MALLOC
         p_rmt_obj[channel]->tx_buf = (rmt_item32_t *)malloc(block_size);
@@ -1273,6 +1258,8 @@ esp_err_t rmt_write_sample(rmt_channel_t channel, const uint8_t *src, size_t src
     ESP_RETURN_ON_FALSE(RMT_IS_TX_CHANNEL(channel), ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
     ESP_RETURN_ON_FALSE(p_rmt_obj[channel], ESP_FAIL, TAG, RMT_DRIVER_ERROR_STR);
     ESP_RETURN_ON_FALSE(p_rmt_obj[channel]->sample_to_rmt, ESP_FAIL, TAG, RMT_TRANSLATOR_UNINIT_STR);
+    uint32_t mem_blocks = rmt_ll_tx_get_mem_blocks(rmt_contex.hal.regs, channel);
+    ESP_RETURN_ON_FALSE(mem_blocks + channel <= SOC_RMT_CHANNELS_PER_GROUP, ESP_ERR_INVALID_STATE, TAG, RMT_MEM_CNT_ERROR_STR);
 #if CONFIG_SPIRAM_USE_MALLOC
     if (p_rmt_obj[channel]->intr_alloc_flags & ESP_INTR_FLAG_IRAM) {
         if (!esp_ptr_internal(src)) {
@@ -1283,7 +1270,7 @@ esp_err_t rmt_write_sample(rmt_channel_t channel, const uint8_t *src, size_t src
 #endif
     size_t translated_size = 0;
     rmt_obj_t *p_rmt = p_rmt_obj[channel];
-    const uint32_t item_block_len = rmt_ll_tx_get_mem_blocks(rmt_contex.hal.regs, channel) * RMT_MEM_ITEM_NUM;
+    const uint32_t item_block_len = mem_blocks * RMT_MEM_ITEM_NUM;
     const uint32_t item_sub_len = item_block_len / 2;
     xSemaphoreTake(p_rmt->tx_sem, portMAX_DELAY);
     p_rmt->sample_to_rmt((void *)src, p_rmt->tx_buf, src_size, item_block_len, &translated_size, &p_rmt->tx_len_rem);

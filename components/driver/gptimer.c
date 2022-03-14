@@ -428,7 +428,7 @@ static esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_sou
     timer_ll_set_clock_prescale(timer->hal.dev, timer_id, prescale);
     timer->resolution_hz = counter_src_hz / prescale; // this is the real resolution
     if (timer->resolution_hz != resolution_hz) {
-        ESP_LOGW(TAG, "resolution lost, expect %ul, real %ul", resolution_hz, timer->resolution_hz);
+        ESP_LOGW(TAG, "resolution lost, expect %u, real %u", resolution_hz, timer->resolution_hz);
     }
     return ret;
 }

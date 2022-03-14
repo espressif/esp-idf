@@ -370,6 +370,9 @@ static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg)
     //Grab next transaction
     r = xQueueReceiveFromISR(host->trans_queue, &trans, &do_yield);
     if (r) {
+        // sanity check
+        assert(trans);
+
         //enable the interrupt again if there is packet to send
         esp_intr_enable(host->intr);
 
