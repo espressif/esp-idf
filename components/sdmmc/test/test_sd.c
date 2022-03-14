@@ -24,6 +24,8 @@
 #include "esp_heap_caps.h"
 #include "esp_rom_gpio.h"
 #include "test_utils.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/gpio_reg.h"
 

@@ -20,7 +20,7 @@
 #include "sdkconfig.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
-#include "test_utils.h"
+#include "unity_test_utils.h"
 
 
 #define WAKE_UP_IGNORE 1  // gpio_wakeup function development is not completed yet, set it deprecated.
@@ -457,7 +457,7 @@ TEST_CASE("GPIO interrupt on other CPUs test", "[gpio]")
         TEST_ASSERT_EQUAL_INT(edge_intr_times, 1);
         gpio_isr_handler_remove(TEST_GPIO_EXT_OUT_IO);
         gpio_uninstall_isr_service();
-        test_utils_task_delete(gpio_task_handle);
+        unity_utils_task_delete(gpio_task_handle);
     }
 }
 #endif //!CONFIG_FREERTOS_UNICORE

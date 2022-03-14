@@ -11,6 +11,7 @@
 #include "test_utils.h"
 #include "esp_adc_cal.h"
 #include "driver/adc_common.h"
+#include "esp_cpu.h"
 
 __attribute__((unused)) static const char *TAG = "ADC";
 

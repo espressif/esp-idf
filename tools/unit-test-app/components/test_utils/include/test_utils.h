@@ -11,8 +11,6 @@
 #include <stdint.h>
 #include <esp_partition.h>
 #include "sdkconfig.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include "unity.h"
 #include "soc/soc_caps.h"
 /* include performance pass standards header file */
@@ -236,14 +234,6 @@ test_utils_exhaust_memory_rec test_utils_exhaust_memory(uint32_t caps, size_t li
  * @param rec Result previously returned from test_utils_exhaust_memory()
  */
 void test_utils_free_exhausted_memory(test_utils_exhaust_memory_rec rec);
-
-
-/**
- * @brief Delete task ensuring dynamic memory (for stack, tcb etc.) gets freed up immediately
- *
- * @param[in] thandle    Handle of task to be deleted (should not be NULL or self handle)
- */
-void test_utils_task_delete(TaskHandle_t thandle);
 
 #ifdef __cplusplus
 }
