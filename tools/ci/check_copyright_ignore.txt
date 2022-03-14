@@ -672,7 +672,6 @@ components/esp_rom/test/test_miniz.c
 components/esp_rom/test/test_tjpgd.c
 components/esp_serial_slave_link/essl.c
 components/esp_serial_slave_link/essl_internal.h
-components/esp_serial_slave_link/essl_sdio.c
 components/esp_serial_slave_link/include/esp_serial_slave_link/essl.h
 components/esp_serial_slave_link/include/esp_serial_slave_link/essl_sdio.h
 components/esp_serial_slave_link/include/esp_serial_slave_link/essl_spi.h
