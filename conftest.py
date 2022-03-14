@@ -147,74 +147,95 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     )
 
 
-@pytest.hookimpl(tryfirst=True)
-def pytest_sessionstart(session: Session) -> None:
-    if session.config.option.target:
-        session.config.option.target = session.config.getoption('target').lower()
+_idf_pytest_embedded_key = pytest.StashKey['IdfPytestEmbedded']
 
 
-@pytest.hookimpl(tryfirst=True)
-def pytest_collection_modifyitems(config: Config, items: List[Function]) -> None:
-    target = config.getoption('target', None)  # use the `build` dir
-    if not target:
-        return
-
-    # sort by file path and callspec.config
-    # implement like this since this is a limitation of pytest, couldn't get fixture values while collecting
-    # https://github.com/pytest-dev/pytest/discussions/9689
-    def _get_param_config(_item: Function) -> str:
-        if hasattr(_item, 'callspec'):
-            return _item.callspec.params.get('config', DEFAULT_SDKCONFIG)  # type: ignore
-        return DEFAULT_SDKCONFIG
-
-    items.sort(key=lambda x: (os.path.dirname(x.path), _get_param_config(x)))
-
-    # add markers for special markers
-    for item in items:
-        if 'supported_targets' in item_marker_names(item):
-            for _target in SUPPORTED_TARGETS:
-                item.add_marker(_target)
-        if 'preview_targets' in item_marker_names(item):
-            for _target in PREVIEW_TARGETS:
-                item.add_marker(_target)
-        if 'all_targets' in item_marker_names(item):
-            for _target in [*SUPPORTED_TARGETS, *PREVIEW_TARGETS]:
-                item.add_marker(_target)
-
-    # filter all the test cases with "--target"
-    items[:] = [item for item in items if target in item_marker_names(item)]
-
-    # filter all the test cases with cli option "config"
-    if config.getoption('sdkconfig'):
-        items[:] = [
-            item
-            for item in items
-            if _get_param_config(item) == config.getoption('sdkconfig')
-        ]
+def pytest_configure(config: Config) -> None:
+    config.stash[_idf_pytest_embedded_key] = IdfPytestEmbedded(
+        target=config.getoption('target'),
+        sdkconfig=config.getoption('sdkconfig'),
+    )
+    config.pluginmanager.register(config.stash[_idf_pytest_embedded_key])
 
 
-@pytest.hookimpl(trylast=True)
-def pytest_runtest_teardown(item: Function) -> None:
-    """
-    Format the test case generated junit reports
-    """
-    tempdir = item.funcargs.get('test_case_tempdir')
-    if not tempdir:
-        return
+def pytest_unconfigure(config: Config) -> None:
+    _pytest_embedded = config.stash.get(_idf_pytest_embedded_key, None)
+    if _pytest_embedded:
+        del config.stash[_idf_pytest_embedded_key]
+        config.pluginmanager.unregister(_pytest_embedded)
 
-    junits = find_by_suffix('.xml', tempdir)
-    if not junits:
-        return
 
-    target = item.funcargs['target']
-    config = item.funcargs['config']
-    for junit in junits:
-        xml = ET.parse(junit)
-        testcases = xml.findall('.//testcase')
-        for case in testcases:
-            case.attrib['name'] = format_case_id(target, config, case.attrib['name'])
-            if 'file' in case.attrib:
-                case.attrib['file'] = case.attrib['file'].replace(
-                    '/IDF/', ''
-                )  # our unity test framework
-        xml.write(junit)
+class IdfPytestEmbedded:
+
+    def __init__(self, target: Optional[str] = None, sdkconfig: Optional[str] = None):
+        # CLI options to filter the test cases
+        self.target = target
+        self.sdkconfig = sdkconfig
+
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_sessionstart(self, session: Session) -> None:
+        if self.target:
+            self.target = self.target.lower()
+            session.config.option.target = self.target
+
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_collection_modifyitems(self, items: List[Function]) -> None:
+        # sort by file path and callspec.config
+        # implement like this since this is a limitation of pytest, couldn't get fixture values while collecting
+        # https://github.com/pytest-dev/pytest/discussions/9689
+        def _get_param_config(_item: Function) -> str:
+            if hasattr(_item, 'callspec'):
+                return _item.callspec.params.get('config', DEFAULT_SDKCONFIG)  # type: ignore
+            return DEFAULT_SDKCONFIG
+
+        items.sort(key=lambda x: (os.path.dirname(x.path), _get_param_config(x)))
+
+        # add markers for special markers
+        for item in items:
+            if 'supported_targets' in item_marker_names(item):
+                for _target in SUPPORTED_TARGETS:
+                    item.add_marker(_target)
+            if 'preview_targets' in item_marker_names(item):
+                for _target in PREVIEW_TARGETS:
+                    item.add_marker(_target)
+            if 'all_targets' in item_marker_names(item):
+                for _target in [*SUPPORTED_TARGETS, *PREVIEW_TARGETS]:
+                    item.add_marker(_target)
+
+        # filter all the test cases with "--target"
+        if self.target:
+            items[:] = [item for item in items if self.target in item_marker_names(item)]
+
+        # filter all the test cases with cli option "config"
+        if self.sdkconfig:
+            items[:] = [
+                item
+                for item in items
+                if _get_param_config(item) == self.sdkconfig
+            ]
+
+    @pytest.hookimpl(trylast=True)
+    def pytest_runtest_teardown(self, item: Function) -> None:
+        """
+        Format the test case generated junit reports
+        """
+        tempdir = item.funcargs.get('test_case_tempdir')
+        if not tempdir:
+            return
+
+        junits = find_by_suffix('.xml', tempdir)
+        if not junits:
+            return
+
+        target = item.funcargs['target']
+        config = item.funcargs['config']
+        for junit in junits:
+            xml = ET.parse(junit)
+            testcases = xml.findall('.//testcase')
+            for case in testcases:
+                case.attrib['name'] = format_case_id(target, config, case.attrib['name'])
+                if 'file' in case.attrib:
+                    case.attrib['file'] = case.attrib['file'].replace(
+                        '/IDF/', ''
+                    )  # our unity test framework
+            xml.write(junit)
