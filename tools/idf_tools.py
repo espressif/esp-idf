@@ -1199,9 +1199,10 @@ def deactivate_statement(args):  # type: (list[str]) -> None
     if 'sha' in idf_env_json['idfInstalled']:
         try:
             idf_env_json['idfInstalled'].pop('sha')
+            if idf_env_json['idfPreviousId'] == 'sha':
+                idf_env_json['idfPreviousId'] = ''
             if idf_env_json['idfSelectedId'] == 'sha':
                 idf_env_json['idfSelectedId'] = active_repo_id()
-                idf_env_json['idfPreviousId'] = ''
                 return
         finally:
             save_idf_env(idf_env_json)
