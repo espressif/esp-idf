@@ -323,9 +323,12 @@ static esp_err_t panel_io_i80_del(esp_lcd_panel_io_t *io)
     lcd_panel_io_i80_t *i80_device = __containerof(io, lcd_panel_io_i80_t, base);
     esp_lcd_i80_bus_t *bus = i80_device->bus;
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
+    size_t num_trans_inflight = i80_device->num_trans_inflight;
     // wait all pending transaction to finish
-    for (size_t i = 0; i < i80_device->num_trans_inflight; i++) {
-        xQueueReceive(i80_device->done_queue, &trans_desc, portMAX_DELAY);
+    for (size_t i = 0; i < num_trans_inflight; i++) {
+        ESP_RETURN_ON_FALSE(xQueueReceive(i80_device->done_queue, &trans_desc, portMAX_DELAY) == pdTRUE,
+                            ESP_FAIL, TAG, "recycle inflight transactions failed");
+        i80_device->num_trans_inflight--;
     }
     // remove from device list
     portENTER_CRITICAL(&bus->spinlock);
@@ -466,12 +469,13 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
     assert(param_size <= (bus->num_dma_nodes * DMA_DESCRIPTOR_BUFFER_MAX_SIZE) && "parameter bytes too long, enlarge max_transfer_bytes");
     assert(param_size <= CONFIG_LCD_PANEL_IO_FORMAT_BUF_SIZE && "format buffer too small, increase CONFIG_LCD_PANEL_IO_FORMAT_BUF_SIZE");
-
+    size_t num_trans_inflight = next_device->num_trans_inflight;
     // before issue a polling transaction, need to wait queued transactions finished
-    for (size_t i = 0; i < next_device->num_trans_inflight; i++) {
-        xQueueReceive(next_device->done_queue, &trans_desc, portMAX_DELAY);
+    for (size_t i = 0; i < num_trans_inflight; i++) {
+        ESP_RETURN_ON_FALSE(xQueueReceive(next_device->done_queue, &trans_desc, portMAX_DELAY) == pdTRUE,
+                            ESP_FAIL, TAG, "recycle inflight transactions failed");
+        next_device->num_trans_inflight--;
     }
-    next_device->num_trans_inflight = 0;
 
     i2s_ll_clear_intr_status(bus->hal.dev, I2S_LL_EVENT_TX_EOF);
     // switch devices if necessary
@@ -530,12 +534,13 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     lcd_panel_io_i80_t *cur_device = bus->cur_device;
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
     assert(color_size <= (bus->num_dma_nodes * DMA_DESCRIPTOR_BUFFER_MAX_SIZE) && "color bytes too long, enlarge max_transfer_bytes");
-
+    size_t num_trans_inflight = next_device->num_trans_inflight;
     // before issue a polling transaction, need to wait queued transactions finished
-    for (size_t i = 0; i < next_device->num_trans_inflight; i++) {
-        xQueueReceive(next_device->done_queue, &trans_desc, portMAX_DELAY);
+    for (size_t i = 0; i < num_trans_inflight; i++) {
+        ESP_RETURN_ON_FALSE(xQueueReceive(next_device->done_queue, &trans_desc, portMAX_DELAY) == pdTRUE,
+                            ESP_FAIL, TAG, "recycle inflight transactions failed");
+        next_device->num_trans_inflight--;
     }
-    next_device->num_trans_inflight = 0;
 
     i2s_ll_clear_intr_status(bus->hal.dev, I2S_LL_EVENT_TX_EOF);
     // switch devices if necessary
@@ -730,6 +735,8 @@ static IRAM_ATTR void lcd_default_isr_handler(void *args)
                 if (high_task_woken == pdTRUE) {
                     need_yield = true;
                 }
+                // sanity check
+                assert(trans_desc);
                 // only clear the interrupt status when we're sure there still remains transaction to handle
                 i2s_ll_clear_intr_status(bus->hal.dev, I2S_LL_EVENT_TX_EOF);
                 // switch devices if necessary

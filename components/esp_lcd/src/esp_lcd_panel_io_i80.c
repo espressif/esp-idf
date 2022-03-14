@@ -315,8 +315,11 @@ static esp_err_t panel_io_i80_del(esp_lcd_panel_io_t *io)
     esp_lcd_i80_bus_t *bus = i80_device->bus;
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
     // wait all pending transaction to finish
-    for (size_t i = 0; i < i80_device->num_trans_inflight; i++) {
-        xQueueReceive(i80_device->done_queue, &trans_desc, portMAX_DELAY);
+    size_t num_trans_inflight = i80_device->num_trans_inflight;
+    for (size_t i = 0; i < num_trans_inflight; i++) {
+        ESP_RETURN_ON_FALSE(xQueueReceive(i80_device->done_queue, &trans_desc, portMAX_DELAY) == pdTRUE,
+                            ESP_FAIL, TAG, "recycle inflight transactions failed");
+        i80_device->num_trans_inflight--;
     }
     // remove from device list
     portENTER_CRITICAL(&bus->spinlock);
@@ -383,10 +386,12 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     i80_lcd_prepare_cmd_buffer(bus, next_device, &lcd_cmd);
     uint32_t param_len = i80_lcd_prepare_param_buffer(bus, next_device, param, param_size);
     // wait all pending transaction in the queue to finish
-    for (size_t i = 0; i < next_device->num_trans_inflight; i++) {
-        xQueueReceive(next_device->done_queue, &trans_desc, portMAX_DELAY);
+    size_t num_trans_inflight = next_device->num_trans_inflight;
+    for (size_t i = 0; i < num_trans_inflight; i++) {
+        ESP_RETURN_ON_FALSE( xQueueReceive(next_device->done_queue, &trans_desc, portMAX_DELAY) == pdTRUE,
+                             ESP_FAIL, TAG, "recycle inflight transactions failed");
+        next_device->num_trans_inflight--;
     }
-    next_device->num_trans_inflight = 0;
 
     uint32_t intr_status = lcd_ll_get_interrupt_status(bus->hal.dev);
     lcd_ll_clear_interrupt_status(bus->hal.dev, intr_status);
@@ -437,7 +442,8 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
         trans_desc = &i80_device->trans_pool[i80_device->num_trans_inflight];
     } else {
         // transaction pool has used up, recycle one from done_queue
-        xQueueReceive(i80_device->done_queue, &trans_desc, portMAX_DELAY);
+        ESP_RETURN_ON_FALSE(xQueueReceive(i80_device->done_queue, &trans_desc, portMAX_DELAY) == pdTRUE,
+                            ESP_FAIL, TAG, "recycle inflight transactions failed");
         i80_device->num_trans_inflight--;
     }
     trans_desc->i80_device = i80_device;
@@ -640,6 +646,8 @@ IRAM_ATTR static void lcd_default_isr_handler(void *args)
                 if (high_task_woken == pdTRUE) {
                     need_yield = true;
                 }
+                // sanity check
+                assert(trans_desc);
                 // only clear the interrupt status when we're sure there still remains transaction to handle
                 lcd_ll_clear_interrupt_status(bus->hal.dev, intr_status);
                 // switch devices if necessary

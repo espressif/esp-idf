@@ -124,9 +124,11 @@ static esp_err_t panel_io_spi_del(esp_lcd_panel_io_t *io)
     esp_lcd_panel_io_spi_t *spi_panel_io = __containerof(io, esp_lcd_panel_io_spi_t, base);
 
     // wait all pending transaction to finish
-    for (size_t i = 0; i < spi_panel_io->num_trans_inflight; i++) {
+    size_t num_trans_inflight = spi_panel_io->num_trans_inflight;
+    for (size_t i = 0; i < num_trans_inflight; i++) {
         ret = spi_device_get_trans_result(spi_panel_io->spi_dev, &spi_trans, portMAX_DELAY);
         ESP_GOTO_ON_ERROR(ret, err, TAG, "recycle spi transactions failed");
+        spi_panel_io->num_trans_inflight--;
     }
     spi_bus_remove_device(spi_panel_io->spi_dev);
     if (spi_panel_io->dc_gpio_num >= 0) {
@@ -175,11 +177,12 @@ static esp_err_t panel_io_spi_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     esp_lcd_panel_io_spi_t *spi_panel_io = __containerof(io, esp_lcd_panel_io_spi_t, base);
 
     // before issue a polling transaction, need to wait queued transactions finished
-    for (size_t i = 0; i < spi_panel_io->num_trans_inflight; i++) {
+    size_t num_trans_inflight = spi_panel_io->num_trans_inflight;
+    for (size_t i = 0; i < num_trans_inflight; i++) {
         ret = spi_device_get_trans_result(spi_panel_io->spi_dev, &spi_trans, portMAX_DELAY);
         ESP_GOTO_ON_ERROR(ret, err, TAG, "recycle spi transactions failed");
+        spi_panel_io->num_trans_inflight--;
     }
-    spi_panel_io->num_trans_inflight = 0;
     lcd_trans = &spi_panel_io->trans_pool[0];
     memset(lcd_trans, 0, sizeof(lcd_spi_trans_descriptor_t));
     spi_lcd_prepare_cmd_buffer(spi_panel_io, &lcd_cmd);
@@ -223,11 +226,12 @@ static esp_err_t panel_io_spi_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     esp_lcd_panel_io_spi_t *spi_panel_io = __containerof(io, esp_lcd_panel_io_spi_t, base);
 
     // before issue a polling transaction, need to wait queued transactions finished
-    for (size_t i = 0; i < spi_panel_io->num_trans_inflight; i++) {
+    size_t num_trans_inflight = spi_panel_io->num_trans_inflight;
+    for (size_t i = 0; i < num_trans_inflight; i++) {
         ret = spi_device_get_trans_result(spi_panel_io->spi_dev, &spi_trans, portMAX_DELAY);
         ESP_GOTO_ON_ERROR(ret, err, TAG, "recycle spi transactions failed");
+        spi_panel_io->num_trans_inflight--;
     }
-    spi_panel_io->num_trans_inflight = 0;
     lcd_trans = &spi_panel_io->trans_pool[0];
     memset(lcd_trans, 0, sizeof(lcd_spi_trans_descriptor_t));
     spi_lcd_prepare_cmd_buffer(spi_panel_io, &lcd_cmd);
