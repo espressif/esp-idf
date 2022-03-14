@@ -143,7 +143,7 @@ typedef struct {
     uint8_t (* _coex_schm_curr_period_get)(void);
     void * (* _coex_schm_curr_phase_get)(void);
     int (* _coex_register_start_cb)(int (* cb)(void));
-#if CONFIG_IDF_TARGET_ESP32C6
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA
     void (* _regdma_link_set_write_wait_content)(void *, uint32_t, uint32_t);
     void * (* _sleep_retention_find_link_by_id)(int);
     int (* _sleep_retention_entries_create)(const void *, int, int, int);

@@ -360,6 +360,20 @@ esp_err_t esp_sleep_enable_wifi_wakeup(void);
 esp_err_t esp_sleep_disable_wifi_wakeup(void);
 
 /**
+ * @brief Enable beacon wakeup by WiFi MAC, it will wake up the system into modem state
+ * @return
+ *      - ESP_OK on success
+ */
+esp_err_t esp_sleep_enable_wifi_beacon_wakeup(void);
+
+/**
+ * @brief Disable beacon wakeup by WiFi MAC
+ * @return
+ *      - ESP_OK on success
+ */
+esp_err_t esp_sleep_disable_wifi_beacon_wakeup(void);
+
+/**
  * @brief Get the bit mask of GPIOs which caused wakeup (ext1)
  *
  * If wakeup was caused by another source, this function will return 0.

@@ -77,7 +77,7 @@ uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t pd_flags, uint32_t slowclk_pe
      *                     |<--      PMU guard time, also the maximum time for the SOC     -->|
      *                     |                           wake-up delay                          |
      */
-#if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_AUTO_BEACON_ENABLE
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
     const int rf_on_protect_time_us = mc->hp.regdma_rf_on_work_time_us;
     const int total_hw_wait_time_us = lp_hw_wait_time_us + hp_hw_wait_time_us + mc->hp.clock_domain_sync_time_us;
 #else
@@ -234,6 +234,11 @@ static void pmu_sleep_param_init(pmu_context_t *ctx, const pmu_sleep_param_confi
     pmu_ll_set_modem_wait_target_cycle(ctx->hal->dev, param->hp_sys.modem_wakeup_wait_cycle);
     pmu_ll_set_xtal_stable_wait_cycle(ctx->hal->dev, param->hp_lp.xtal_stable_wait_slow_clk_cycle);
     pmu_ll_set_pll_stable_wait_cycle(ctx->hal->dev, param->hp_sys.pll_stable_wait_cycle);
+}
+
+bool pmu_sleep_pll_already_enabled(void)
+{
+    return (pmu_ll_get_sysclk_sleep_select_state(PMU_instance()->hal->dev) != 0);
 }
 
 void pmu_sleep_init(const pmu_sleep_config_t *config, bool dslp)

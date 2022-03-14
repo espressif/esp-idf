@@ -25,6 +25,10 @@
 #include "driver/rtc_io.h"
 #include "hal/rtc_io_hal.h"
 
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+#include "esp_private/pm_impl.h"
+#endif
+
 #if SOC_LP_AON_SUPPORTED
 #include "hal/lp_aon_hal.h"
 #else
@@ -52,6 +56,7 @@
 #include "esp_rom_sys.h"
 #include "esp_private/brownout.h"
 #include "esp_private/sleep_cpu.h"
+#include "esp_private/sleep_modem.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/esp_task_wdt.h"
 
@@ -66,10 +71,8 @@
 #include "esp_private/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/rtc.h"
-#include "esp_private/sleep_modem.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/rtc.h"
-#include "esp_private/sleep_modem.h"
 #elif CONFIG_IDF_TARGET_ESP32H4
 #include "esp32h4/rom/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
@@ -80,7 +83,6 @@
 #include "esp_private/esp_pmu.h"
 #include "esp_private/sleep_sys_periph.h"
 #include "esp_private/sleep_clock.h"
-#include "esp_private/sleep_modem.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/rtc.h"
 #include "esp32h2/rom/cache.h"
@@ -524,7 +526,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
         /* Light sleep, enable sleep reject for faster return from this function,
          * in case the wakeup is already triggerred.
          */
-        reject_triggers = s_config.wakeup_triggers & RTC_SLEEP_REJECT_MASK;
+        reject_triggers = (s_config.wakeup_triggers & RTC_SLEEP_REJECT_MASK) | sleep_modem_reject_triggers();
     }
 
     //Append some flags in addition to power domains
@@ -613,7 +615,14 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t mo
     }
 
     // Restore CPU frequency
-    rtc_clk_cpu_freq_set_config(&cpu_freq_config);
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+    if (pmu_sleep_pll_already_enabled()) {
+        rtc_clk_cpu_freq_to_pll_and_pll_lock_release(esp_pm_impl_get_cpu_freq(PM_MODE_CPU_MAX));
+    } else
+#endif
+    {
+        rtc_clk_cpu_freq_set_config(&cpu_freq_config);
+    }
 
     if (!deep_sleep) {
         s_config.ccount_ticks_record = esp_cpu_get_cycle_count();
@@ -1331,6 +1340,26 @@ esp_err_t esp_sleep_disable_wifi_wakeup(void)
 #endif
 }
 
+esp_err_t esp_sleep_enable_wifi_beacon_wakeup(void)
+{
+#if SOC_PM_SUPPORT_BEACON_WAKEUP
+    s_config.wakeup_triggers |= PMU_WIFI_BEACON_WAKEUP_EN;
+    return ESP_OK;
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+}
+
+esp_err_t esp_sleep_disable_wifi_beacon_wakeup(void)
+{
+#if SOC_PM_SUPPORT_BEACON_WAKEUP
+    s_config.wakeup_triggers &= (~PMU_WIFI_BEACON_WAKEUP_EN);
+    return ESP_OK;
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+}
+
 esp_err_t esp_sleep_enable_bt_wakeup(void)
 {
 #if SOC_PM_SUPPORT_BT_WAKEUP
@@ -1507,6 +1536,11 @@ static uint32_t get_power_down_flags(void)
     }
 #endif
 
+/**
+ * The modules in the CPU and modem power domains still depend on the top power domain.
+ * To be safe, the CPU and Modem power domains must also be powered off and saved when
+ * the TOP is powered off.
+ */
 #if SOC_PM_SUPPORT_TOP_PD
     if (!cpu_domain_pd_allowed() || !clock_domain_pd_allowed() ||
         !peripheral_domain_pd_allowed() || !modem_domain_pd_allowed()) {

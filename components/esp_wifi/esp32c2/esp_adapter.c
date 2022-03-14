@@ -295,20 +295,6 @@ static void wifi_reset_mac_wrapper(void)
     periph_module_reset(PERIPH_WIFI_MODULE);
 }
 
-static void IRAM_ATTR wifi_rtc_enable_iso_wrapper(void)
-{
-#if CONFIG_MAC_BB_PD
-    esp_mac_bb_power_down();
-#endif
-}
-
-static void IRAM_ATTR wifi_rtc_disable_iso_wrapper(void)
-{
-#if CONFIG_MAC_BB_PD
-    esp_mac_bb_power_up();
-#endif
-}
-
 static void wifi_clock_enable_wrapper(void)
 {
     wifi_module_enable();
@@ -603,8 +589,8 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._wifi_reset_mac = wifi_reset_mac_wrapper,
     ._wifi_clock_enable = wifi_clock_enable_wrapper,
     ._wifi_clock_disable = wifi_clock_disable_wrapper,
-    ._wifi_rtc_enable_iso = wifi_rtc_enable_iso_wrapper,
-    ._wifi_rtc_disable_iso = wifi_rtc_disable_iso_wrapper,
+    ._wifi_rtc_enable_iso = esp_empty_wrapper,
+    ._wifi_rtc_disable_iso = esp_empty_wrapper,
     ._esp_timer_get_time = esp_timer_get_time,
     ._nvs_set_i8 = nvs_set_i8,
     ._nvs_get_i8 = nvs_get_i8,

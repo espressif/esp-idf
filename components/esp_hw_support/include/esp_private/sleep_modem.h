@@ -38,6 +38,33 @@ void mac_bb_power_up_cb_execute(void);
 
 #endif // CONFIG_MAC_BB_PD
 
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE
+
+/**
+ * @brief Get WiFi modem state
+ *
+ * @return true or false for WiFi modem state is enabled or disabled
+ */
+bool sleep_modem_wifi_modem_state_enabled(void);
+
+#endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE */
+
+/**
+ * @brief Whether to allow the Modem or TOP power domain to be powered off.
+ *
+ * In light sleep mode, only when the system can provide enough memory
+ * for modem (WiFi, Bluetooth, IEEE802.15.4) retention, the Modem or TOP
+ * power domain can be powered off.
+ */
+bool modem_domain_pd_allowed(void);
+
+/**
+ * @brief Get the reject trigger signal of Modem system
+ *
+ * @return the reject trigger signal of Modem system.
+ */
+uint32_t sleep_modem_reject_triggers(void);
+
 #ifdef __cplusplus
 }
 #endif

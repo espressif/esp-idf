@@ -123,8 +123,11 @@ esp_err_t esp_wifi_deinit(void)
     esp_pm_unregister_skip_light_sleep_callback(esp_wifi_internal_is_tsf_active);
     esp_pm_unregister_inform_out_light_sleep_overhead_callback(esp_wifi_internal_update_light_sleep_wake_ahead_time);
     esp_sleep_disable_wifi_wakeup();
-#endif
-#endif
+# if CONFIG_ESP_WIFI_AUTO_BEACON_ENABLE
+    esp_sleep_disable_wifi_beacon_wakeup();
+# endif
+#endif /* SOC_WIFI_HW_TSF */
+#endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
 #if CONFIG_MAC_BB_PD
     esp_unregister_mac_bb_pd_callback(pm_mac_sleep);
     esp_unregister_mac_bb_pu_callback(pm_mac_wakeup);
@@ -236,11 +239,14 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
         return ret;
     }
     esp_sleep_enable_wifi_wakeup();
+# if CONFIG_ESP_WIFI_AUTO_BEACON_ENABLE
+    esp_sleep_enable_wifi_beacon_wakeup();
+# endif
 #if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
     coex_wifi_register_update_lpclk_callback(esp_wifi_update_tsf_tick_interval);
 #endif
-#endif
-#endif
+#endif /* SOC_WIFI_HW_TSF */
+#endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
 
 #if CONFIG_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
     coex_init();

@@ -338,6 +338,13 @@ menu "Wi-Fi"
         help
             WiFi module can be compiled without SoftAP to save code size.
 
+    config ESP_WIFI_AUTO_BEACON_ENABLE
+        bool "WiFi modem automatically receives the beacon"
+        default n
+        depends on ESP_PHY_MAC_BB_PD
+        help
+            The wifi modem automatically receives the beacon frame during light sleep.
+
     config ESP_WIFI_SLP_BEACON_LOST_OPT
         bool "Wifi sleep optimize when beacon lost"
         help

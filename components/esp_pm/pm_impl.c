@@ -292,6 +292,11 @@ esp_err_t esp_pm_configure(const void* vconfig)
     }
 #endif
 
+#if CONFIG_ESP_WIFI_AUTO_BEACON_ENABLE
+    extern int esp_wifi_internal_mac_sleep_configure(bool, bool);
+    esp_wifi_internal_mac_sleep_configure(config->light_sleep_enable, true);
+#endif
+
 #if CONFIG_PM_SLP_DEFAULT_PARAMS_OPT
     if (config->light_sleep_enable) {
         esp_pm_light_sleep_default_params_config(min_freq_mhz, max_freq_mhz);

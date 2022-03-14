@@ -38,8 +38,15 @@
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
+#elif CONFIG_IDF_TARGET_ESP32C6
+#include "esp_private/sleep_modem.h"
+#include "esp_private/esp_pau.h"
 #endif
 #include "hal/efuse_hal.h"
+
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA
+#include "esp_private/sleep_retention.h"
+#endif
 
 #if CONFIG_IDF_TARGET_ESP32
 extern wifi_mac_time_update_cb_t s_wifi_mac_time_update_cb;
@@ -56,18 +63,8 @@ static DRAM_ATTR struct {
 } s_wifi_bt_pd_controller = { .count = 0 };
 #endif
 
-/* Indicate PHY is calibrated or not */
-static bool s_is_phy_calibrated = false;
-
-static bool s_is_phy_reg_stored = false;
-
 /* Reference count of enabling PHY */
 static uint8_t s_phy_access_ref = 0;
-
-#if CONFIG_MAC_BB_PD
-/* Reference of powering down MAC and BB */
-static bool s_mac_bb_pu = true;
-#endif
 
 #if CONFIG_IDF_TARGET_ESP32
 /* time stamp updated when the PHY/RF is turned on */
@@ -77,15 +74,17 @@ static int64_t s_phy_rf_en_ts = 0;
 /* PHY spinlock for libphy.a */
 static DRAM_ATTR portMUX_TYPE s_phy_int_mux = portMUX_INITIALIZER_UNLOCKED;
 
+/* Indicate PHY is calibrated or not */
+static bool s_is_phy_calibrated = false;
+
+#if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
+/* Indicate PHY regs is stored or not */
+static bool s_is_phy_reg_stored = false;
 /* Memory to store PHY digital registers */
 static uint32_t* s_phy_digital_regs_mem = NULL;
 static uint8_t s_phy_modem_init_ref = 0;
+#endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
 
-#if CONFIG_MAC_BB_PD
-uint32_t* s_mac_bb_pd_mem = NULL;
-/* Reference count of MAC BB backup memory */
-static uint8_t s_macbb_backup_mem_ref = 0;
-#endif
 
 #if CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN
 #if CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN_EMBED
@@ -212,6 +211,7 @@ IRAM_ATTR void esp_phy_common_clock_disable(void)
     wifi_bt_common_module_disable();
 }
 
+#if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
 static inline void phy_digital_regs_store(void)
 {
     if (s_phy_digital_regs_mem != NULL) {
@@ -226,6 +226,7 @@ static inline void phy_digital_regs_load(void)
         phy_dig_reg_backup(false, s_phy_digital_regs_mem);
     }
 }
+#endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
 
 void esp_phy_enable(void)
 {
@@ -245,8 +246,22 @@ void esp_phy_enable(void)
             s_is_phy_calibrated = true;
         }
         else {
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+            extern bool pm_mac_modem_rf_already_enabled(void);
+            if (!pm_mac_modem_rf_already_enabled()) {
+                if (sleep_modem_wifi_modem_state_enabled()) {
+                    pau_regdma_trigger_modem_link_restore();
+                } else {
+                    phy_wakeup_init();
+                }
+            }
+#else
             phy_wakeup_init();
+#endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP */
+
+#if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
             phy_digital_regs_load();
+#endif
         }
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -264,13 +279,22 @@ void esp_phy_disable(void)
 
     s_phy_access_ref--;
     if (s_phy_access_ref == 0) {
+#if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
         phy_digital_regs_store();
-        // Disable PHY and RF.
-        phy_close_rf();
-#if !CONFIG_IDF_TARGET_ESP32
-        // Disable PHY temperature sensor
-        phy_xpd_tsens();
 #endif
+#if SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+        if (sleep_modem_wifi_modem_state_enabled()) {
+            pau_regdma_trigger_modem_link_backup();
+        } else
+#endif /* SOC_PM_SUPPORT_PMU_MODEM_STATE && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP */
+        {
+            // Disable PHY and RF.
+            phy_close_rf();
+#if !CONFIG_IDF_TARGET_ESP32
+            // Disable PHY temperature sensor
+            phy_xpd_tsens();
+#endif
+        }
 #if CONFIG_IDF_TARGET_ESP32
         // Update WiFi MAC time before disalbe WiFi/BT common peripheral clock
         phy_update_wifi_mac_time(true, esp_timer_get_time());
@@ -312,19 +336,19 @@ void esp_wifi_bt_power_domain_off(void)
 
 void esp_phy_modem_init(void)
 {
+#if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
     _lock_acquire(&s_phy_access_lock);
-
     s_phy_modem_init_ref++;
     if (s_phy_digital_regs_mem == NULL) {
         s_phy_digital_regs_mem = (uint32_t *)heap_caps_malloc(SOC_PHY_DIG_REGS_MEM_SIZE, MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
     }
-
     _lock_release(&s_phy_access_lock);
-
+#endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
 }
 
 void esp_phy_modem_deinit(void)
 {
+#if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
     _lock_acquire(&s_phy_access_lock);
 
     s_phy_modem_init_ref--;
@@ -341,50 +365,76 @@ void esp_phy_modem_deinit(void)
     }
 
     _lock_release(&s_phy_access_lock);
+#endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
 }
 
 #if CONFIG_MAC_BB_PD
+#if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
+static uint32_t* s_mac_bb_pd_mem = NULL;
+/* Reference count of MAC BB backup memory */
+static uint8_t s_macbb_backup_mem_ref = 0;
+/* Reference of powering down MAC and BB */
+static bool s_mac_bb_pu = true;
+#endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
+
 void esp_mac_bb_pd_mem_init(void)
 {
+#if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
     _lock_acquire(&s_phy_access_lock);
-
     s_macbb_backup_mem_ref++;
     if (s_mac_bb_pd_mem == NULL) {
         s_mac_bb_pd_mem = (uint32_t *)heap_caps_malloc(SOC_MAC_BB_PD_MEM_SIZE, MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
     }
-
     _lock_release(&s_phy_access_lock);
+#elif SOC_PM_MODEM_RETENTION_BY_REGDMA
+    const static sleep_retention_entries_config_t bb_regs_retention[] = {
+        [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b00, 0x600a7000, 0x600a7000, 121, 0, 0), .owner = BIT(0) | BIT(1) }, /* AGC */
+        [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b01, 0x600a7400, 0x600a7400, 14,  0, 0), .owner = BIT(0) | BIT(1) }, /* TX */
+        [2] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b02, 0x600a7800, 0x600a7800, 136, 0, 0), .owner = BIT(0) | BIT(1) }, /* NRX */
+        [3] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b03, 0x600a7c00, 0x600a7c00, 53,  0, 0), .owner = BIT(0) | BIT(1) }, /* BB */
+        [4] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b05, 0x600a0000, 0x600a0000, 58,  0, 0), .owner = BIT(0) | BIT(1) }  /* FE COEX */
+    };
+    esp_err_t err = sleep_retention_entries_create(bb_regs_retention, ARRAY_SIZE(bb_regs_retention), 3, SLEEP_RETENTION_MODULE_WIFI_BB);
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG, "failed to allocate memory for WiFi baseband retention");
+    }
+#endif
 }
 
 void esp_mac_bb_pd_mem_deinit(void)
 {
+#if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
     _lock_acquire(&s_phy_access_lock);
-
     s_macbb_backup_mem_ref--;
     if (s_macbb_backup_mem_ref == 0) {
         free(s_mac_bb_pd_mem);
         s_mac_bb_pd_mem = NULL;
     }
-
     _lock_release(&s_phy_access_lock);
+#elif SOC_PM_MODEM_RETENTION_BY_REGDMA
+    sleep_retention_entries_destroy(SLEEP_RETENTION_MODULE_WIFI_BB);
+#endif
 }
 
 IRAM_ATTR void esp_mac_bb_power_up(void)
 {
+    esp_wifi_bt_power_domain_on();
+#if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
     if (s_mac_bb_pd_mem == NULL) {
         return;
     }
-    esp_wifi_bt_power_domain_on();
     if (!s_mac_bb_pu) {
         esp_phy_common_clock_enable();
         phy_freq_mem_backup(false, s_mac_bb_pd_mem);
         esp_phy_common_clock_disable();
         s_mac_bb_pu = true;
     }
+#endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
 }
 
 IRAM_ATTR void esp_mac_bb_power_down(void)
 {
+#if SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
     if (s_mac_bb_pd_mem == NULL) {
         return;
     }
@@ -394,9 +444,10 @@ IRAM_ATTR void esp_mac_bb_power_down(void)
         esp_phy_common_clock_disable();
         s_mac_bb_pu = false;
     }
+#endif // SOC_PM_MODEM_RETENTION_BY_BACKUPDMA
     esp_wifi_bt_power_domain_off();
 }
-#endif
+#endif // CONFIG_MAC_BB_PD
 
 // PHY init data handling functions
 #if CONFIG_ESP_PHY_INIT_DATA_IN_PARTITION
