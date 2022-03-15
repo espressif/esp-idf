@@ -137,7 +137,7 @@ static void* s_exc_frame = NULL;
 
 inline void esp_core_dump_write(panic_info_t *info, core_dump_write_config_t *write_cfg)
 {
-#ifndef CONFIG_ESP_ENABLE_COREDUMP_TO_NONE
+#ifndef CONFIG_ESP_COREDUMP_ENABLE_TO_NONE
     esp_err_t err = ESP_ERR_NOT_SUPPORTED;
     s_exc_frame = (void*) info->frame;
 

@@ -525,14 +525,14 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
 #endif
 
     if (icache_wrap_enable) {
-#if CONFIG_ESP32S2_INSTRUCTION_CACHE_LINE_16B || CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_16B || CONFIG_ESP32C3_INSTRUCTION_CACHE_LINE_16B || CONFIG_ESP32H2_INSTRUCTION_CACHE_LINE_16B || CONFIG_ESP32C2_INSTRUCTION_CACHE_LINE_16B
+#if CONFIG_ESP32S2_INSTRUCTION_CACHE_LINE_16B || CONFIG_ESP32S3_INSTRUCTION_CACHE_LINE_16B
         icache_wrap_size = 16;
 #else
         icache_wrap_size = 32;
 #endif
     }
     if (dcache_wrap_enable) {
-#if CONFIG_ESP32S2_DATA_CACHE_LINE_16B || CONFIG_ESP32S3_DATA_CACHE_LINE_16B || CONFIG_ESP32C3_INSTRUCTION_CACHE_LINE_16B || CONFIG_ESP32H2_INSTRUCTION_CACHE_LINE_16B || CONFIG_ESP32C2_INSTRUCTION_CACHE_LINE_16B
+#if CONFIG_ESP32S2_DATA_CACHE_LINE_16B || CONFIG_ESP32S3_DATA_CACHE_LINE_16B
         dcache_wrap_size = 16;
 #else
         dcache_wrap_size = 32;
@@ -562,18 +562,12 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
             spiram_wrap_sizes[1] = dcache_wrap_size;
             flash_wrap_sizes[1] = dcache_wrap_size;
         }
-#ifdef CONFIG_EXT_RODATA_SUPPORT
-        spiram_wrap_sizes[1] = dcache_wrap_size;
-#endif
     } else {
         if (drom0_in_icache) {
             flash_wrap_sizes[0] = icache_wrap_size;
         } else {
             flash_wrap_sizes[1] = dcache_wrap_size;
         }
-#ifdef CONFIG_EXT_RODATA_SUPPORT
-        flash_wrap_sizes[1] = dcache_wrap_size;
-#endif
     }
 #ifdef CONFIG_ESP32S2_SPIRAM_SUPPORT
     spiram_wrap_sizes[1] = dcache_wrap_size;
@@ -817,18 +811,12 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
         } else {
             spiram_wrap_sizes[1] = dcache_wrap_size;
         }
-#ifdef CONFIG_EXT_RODATA_SUPPORT
-        spiram_wrap_sizes[1] = dcache_wrap_size;
-#endif
     } else {
         if (drom0_in_icache) {
             flash_wrap_sizes[0] = icache_wrap_size;
         } else {
             flash_wrap_sizes[1] = dcache_wrap_size;
         }
-#ifdef CONFIG_EXT_RODATA_SUPPORT
-        flash_wrap_sizes[1] = dcache_wrap_size;
-#endif
     }
 #ifdef CONFIG_ESP32S3_SPIRAM_SUPPORT
     spiram_wrap_sizes[1] = dcache_wrap_size;

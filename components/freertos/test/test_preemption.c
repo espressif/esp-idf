@@ -1,4 +1,9 @@
 /*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/*
  Unit tests for FreeRTOS preemption
 */
 
@@ -72,7 +77,7 @@ TEST_CASE("Yield from lower priority task, same CPU", "[freertos]")
 }
 
 
-#if (portNUM_PROCESSORS == 2) && !CONFIG_FREERTOS_TASK_FUNCTIONS_INTO_FLASH
+#if (portNUM_PROCESSORS == 2) && !CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH
 TEST_CASE("Yield from lower priority task, other CPU", "[freertos]")
 {
     uint32_t trigger_ccount, yield_ccount, now_ccount, delta;
