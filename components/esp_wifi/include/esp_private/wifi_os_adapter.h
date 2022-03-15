@@ -22,8 +22,6 @@ extern "C" {
 #define OSI_QUEUE_SEND_BACK          1
 #define OSI_QUEUE_SEND_OVERWRITE     2
 
-typedef int(* coex_start_wifi_cb_t)(void);
-
 typedef struct {
     int32_t _version;
     bool (* _env_is_chip)(void);
@@ -146,7 +144,7 @@ typedef struct {
     void * (* _coex_schm_curr_phase_get)(void);
     int (* _coex_schm_curr_phase_idx_set)(int idx);
     int (* _coex_schm_curr_phase_idx_get)(void);
-    int (* _coex_register_start_cb)(coex_start_wifi_cb_t cb);
+    int (* _coex_register_start_cb)(int (* cb)(void));
     int32_t _magic;
 } wifi_osi_funcs_t;
 
