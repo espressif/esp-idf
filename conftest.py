@@ -17,7 +17,8 @@ import logging
 import os
 import sys
 import xml.etree.ElementTree as ET
-from typing import Callable, List, Optional
+from fnmatch import fnmatch
+from typing import Callable, List, Optional, Tuple
 
 import pytest
 from _pytest.config import Config
@@ -25,6 +26,9 @@ from _pytest.fixtures import FixtureRequest
 from _pytest.main import Session
 from _pytest.nodes import Item
 from _pytest.python import Function
+from _pytest.reports import TestReport
+from _pytest.runner import CallInfo
+from _pytest.terminal import TerminalReporter
 from pytest_embedded.plugin import parse_configuration
 from pytest_embedded.utils import find_by_suffix
 
@@ -94,9 +98,9 @@ def build_dir(
     Returns:
         valid build directory
     """
-    param_or_cli: str = getattr(
-        request, 'param', None
-    ) or request.config.getoption('build_dir')
+    param_or_cli: str = getattr(request, 'param', None) or request.config.getoption(
+        'build_dir'
+    )
     if param_or_cli is not None:  # respect the param and the cli
         return param_or_cli
 
@@ -145,76 +149,177 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         '--sdkconfig',
         help='sdkconfig postfix, like sdkconfig.ci.<config>. (Default: None, which would build all found apps)',
     )
+    base_group.addoption(
+        '--known-failure-cases-file', help='known failure cases file path'
+    )
 
 
-@pytest.hookimpl(tryfirst=True)
-def pytest_sessionstart(session: Session) -> None:
-    if session.config.option.target:
-        session.config.option.target = session.config.getoption('target').lower()
+_idf_pytest_embedded_key = pytest.StashKey['IdfPytestEmbedded']
 
 
-@pytest.hookimpl(tryfirst=True)
-def pytest_collection_modifyitems(config: Config, items: List[Function]) -> None:
-    target = config.getoption('target', None)  # use the `build` dir
-    if not target:
-        return
-
-    # sort by file path and callspec.config
-    # implement like this since this is a limitation of pytest, couldn't get fixture values while collecting
-    # https://github.com/pytest-dev/pytest/discussions/9689
-    def _get_param_config(_item: Function) -> str:
-        if hasattr(_item, 'callspec'):
-            return _item.callspec.params.get('config', DEFAULT_SDKCONFIG)  # type: ignore
-        return DEFAULT_SDKCONFIG
-
-    items.sort(key=lambda x: (os.path.dirname(x.path), _get_param_config(x)))
-
-    # add markers for special markers
-    for item in items:
-        if 'supported_targets' in item_marker_names(item):
-            for _target in SUPPORTED_TARGETS:
-                item.add_marker(_target)
-        if 'preview_targets' in item_marker_names(item):
-            for _target in PREVIEW_TARGETS:
-                item.add_marker(_target)
-        if 'all_targets' in item_marker_names(item):
-            for _target in [*SUPPORTED_TARGETS, *PREVIEW_TARGETS]:
-                item.add_marker(_target)
-
-    # filter all the test cases with "--target"
-    items[:] = [item for item in items if target in item_marker_names(item)]
-
-    # filter all the test cases with cli option "config"
-    if config.getoption('sdkconfig'):
-        items[:] = [
-            item
-            for item in items
-            if _get_param_config(item) == config.getoption('sdkconfig')
-        ]
+def pytest_configure(config: Config) -> None:
+    config.stash[_idf_pytest_embedded_key] = IdfPytestEmbedded(
+        target=config.getoption('target'),
+        sdkconfig=config.getoption('sdkconfig'),
+        known_failure_cases_file=config.getoption('known_failure_cases_file'),
+    )
+    config.pluginmanager.register(config.stash[_idf_pytest_embedded_key])
 
 
-@pytest.hookimpl(trylast=True)
-def pytest_runtest_teardown(item: Function) -> None:
-    """
-    Format the test case generated junit reports
-    """
-    tempdir = item.funcargs.get('test_case_tempdir')
-    if not tempdir:
-        return
+def pytest_unconfigure(config: Config) -> None:
+    _pytest_embedded = config.stash.get(_idf_pytest_embedded_key, None)
+    if _pytest_embedded:
+        del config.stash[_idf_pytest_embedded_key]
+        config.pluginmanager.unregister(_pytest_embedded)
 
-    junits = find_by_suffix('.xml', tempdir)
-    if not junits:
-        return
 
-    target = item.funcargs['target']
-    config = item.funcargs['config']
-    for junit in junits:
-        xml = ET.parse(junit)
-        testcases = xml.findall('.//testcase')
-        for case in testcases:
-            case.attrib['name'] = format_case_id(target, config, case.attrib['name'])
-            if 'file' in case.attrib:
-                case.attrib['file'] = case.attrib['file'].replace(
-                    '/IDF/', ''
-                )  # our unity test framework
-        xml.write(junit)
+class IdfPytestEmbedded:
+    def __init__(
+        self,
+        target: Optional[str] = None,
+        sdkconfig: Optional[str] = None,
+        known_failure_cases_file: Optional[str] = None,
+    ):
+        # CLI options to filter the test cases
+        self.target = target
+        self.sdkconfig = sdkconfig
+        self.known_failure_patterns = self._parse_known_failure_cases_file(
+            known_failure_cases_file
+        )
+
+        self._failed_cases: List[
+            Tuple[str, bool]
+        ] = []  # (test_case_name, is_known_failure_cases)
+
+    @property
+    def failed_cases(self) -> List[str]:
+        return [case for case, is_known in self._failed_cases if not is_known]
+
+    @property
+    def known_failure_cases(self) -> List[str]:
+        return [case for case, is_known in self._failed_cases if is_known]
+
+    @staticmethod
+    def _parse_known_failure_cases_file(
+        known_failure_cases_file: Optional[str] = None,
+    ) -> List[str]:
+        if not known_failure_cases_file or not os.path.isfile(known_failure_cases_file):
+            return []
+
+        patterns = []
+        with open(known_failure_cases_file) as fr:
+            for line in fr.readlines():
+                if not line:
+                    continue
+                if not line.strip():
+                    continue
+                without_comments = line.split('#')[0].strip()
+                if without_comments:
+                    patterns.append(without_comments)
+
+        return patterns
+
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_sessionstart(self, session: Session) -> None:
+        if self.target:
+            self.target = self.target.lower()
+            session.config.option.target = self.target
+
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_collection_modifyitems(self, items: List[Function]) -> None:
+        # sort by file path and callspec.config
+        # implement like this since this is a limitation of pytest, couldn't get fixture values while collecting
+        # https://github.com/pytest-dev/pytest/discussions/9689
+        def _get_param_config(_item: Function) -> str:
+            if hasattr(_item, 'callspec'):
+                return _item.callspec.params.get('config', DEFAULT_SDKCONFIG)  # type: ignore
+            return DEFAULT_SDKCONFIG
+
+        items.sort(key=lambda x: (os.path.dirname(x.path), _get_param_config(x)))
+
+        # add markers for special markers
+        for item in items:
+            if 'supported_targets' in item_marker_names(item):
+                for _target in SUPPORTED_TARGETS:
+                    item.add_marker(_target)
+            if 'preview_targets' in item_marker_names(item):
+                for _target in PREVIEW_TARGETS:
+                    item.add_marker(_target)
+            if 'all_targets' in item_marker_names(item):
+                for _target in [*SUPPORTED_TARGETS, *PREVIEW_TARGETS]:
+                    item.add_marker(_target)
+
+        # filter all the test cases with "--target"
+        if self.target:
+            items[:] = [
+                item for item in items if self.target in item_marker_names(item)
+            ]
+
+        # filter all the test cases with cli option "config"
+        if self.sdkconfig:
+            items[:] = [
+                item for item in items if _get_param_config(item) == self.sdkconfig
+            ]
+
+    def pytest_runtest_makereport(
+        self, item: Function, call: CallInfo[None]
+    ) -> Optional[TestReport]:
+        if call.when == 'setup':
+            return None
+
+        report = TestReport.from_item_and_call(item, call)
+        if report.outcome == 'failed':
+            test_case_name = item.funcargs.get('test_case_name', '')
+            is_known_failure = self._is_known_failure(test_case_name)
+            self._failed_cases.append((test_case_name, is_known_failure))
+
+        return report
+
+    def _is_known_failure(self, case_id: str) -> bool:
+        for pattern in self.known_failure_patterns:
+            if case_id == pattern:
+                return True
+            if fnmatch(case_id, pattern):
+                return True
+        return False
+
+    @pytest.hookimpl(trylast=True)
+    def pytest_runtest_teardown(self, item: Function) -> None:
+        """
+        Format the test case generated junit reports
+        """
+        tempdir = item.funcargs.get('test_case_tempdir')
+        if not tempdir:
+            return
+
+        junits = find_by_suffix('.xml', tempdir)
+        if not junits:
+            return
+
+        target = item.funcargs['target']
+        config = item.funcargs['config']
+        for junit in junits:
+            xml = ET.parse(junit)
+            testcases = xml.findall('.//testcase')
+            for case in testcases:
+                case.attrib['name'] = format_case_id(
+                    target, config, case.attrib['name']
+                )
+                if 'file' in case.attrib:
+                    case.attrib['file'] = case.attrib['file'].replace(
+                        '/IDF/', ''
+                    )  # our unity test framework
+            xml.write(junit)
+
+    def pytest_sessionfinish(self, session: Session, exitstatus: int) -> None:
+        if exitstatus != 0 and self.known_failure_cases and not self.failed_cases:
+            session.exitstatus = 0
+
+    def pytest_terminal_summary(self, terminalreporter: TerminalReporter) -> None:
+        if self.known_failure_cases:
+            terminalreporter.section('Known failure cases', bold=True, yellow=True)
+            terminalreporter.line('\n'.join(self.known_failure_cases))
+
+        if self.failed_cases:
+            terminalreporter.section('Failed cases', bold=True, red=True)
+            terminalreporter.line('\n'.join(self.failed_cases))
