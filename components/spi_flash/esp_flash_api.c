@@ -598,14 +598,14 @@ esp_err_t IRAM_ATTR esp_flash_write(esp_flash_t *chip, const void *buffer, uint3
     do {
         uint32_t write_len;
         const void *write_buf;
+        uint32_t temp_buf[8];
         if (direct_write) {
             write_len = MIN(length, MAX_WRITE_CHUNK);
             write_buf = buffer;
         } else {
-            uint32_t buf[8];
-            write_len = MIN(length, sizeof(buf));
-            memcpy(buf, buffer, write_len);
-            write_buf = buf;
+            write_len = MIN(length, sizeof(temp_buf));
+            memcpy(temp_buf, buffer, write_len);
+            write_buf = temp_buf;
         }
 
         err = spiflash_start(chip);
