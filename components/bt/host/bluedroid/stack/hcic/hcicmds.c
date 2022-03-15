@@ -191,6 +191,7 @@ BOOLEAN btsnd_hcic_disconnect (UINT16 handle, UINT8 reason)
     UINT8_TO_STREAM  (pp, reason);
 
     btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID, p);
+    HCI_TRACE_WARNING("hci cmd send: disconnect: hdl 0x%x, rsn:0x%x", handle, reason);
     return (TRUE);
 }
 
@@ -776,6 +777,8 @@ BOOLEAN btsnd_hcic_sniff_mode (UINT16 handle, UINT16 max_sniff_period,
     UINT16_TO_STREAM (pp, sniff_timeout);
 
     btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID,  p);
+    HCI_TRACE_WARNING("hci cmd send: sniff: hdl 0x%x, intv(%d %d)",
+                    handle, min_sniff_period, max_sniff_period);
     return (TRUE);
 }
 
@@ -799,6 +802,7 @@ BOOLEAN btsnd_hcic_exit_sniff_mode (UINT16 handle)
     UINT16_TO_STREAM (pp, handle);
 
     btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID,  p);
+    HCI_TRACE_WARNING("hci cmd send: unsniff: hdl 0x%x", handle);
     return TRUE;
 }
 
