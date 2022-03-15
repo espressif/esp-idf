@@ -146,12 +146,18 @@ void initialise_wifi(void)
     ESP_ERROR_CHECK(esp_wifi_start() );
 
 #if CONFIG_EXTERNAL_COEX_ENABLE
+#if SOC_EXTERNAL_COEX_ADVANCE
+    uint32_t in_pin0  = 1;
+    uint32_t in_pin1  = 2;
+    uint32_t out_pin0 = 3;
+    ESP_ERROR_CHECK( esp_external_coex_leader_role_set_gpio_pin(EXTERN_COEX_WIRE_3, in_pin0, in_pin1, out_pin0) );
+#else
     esp_external_coex_gpio_set_t gpio_pin;
     gpio_pin.in_pin0  = 1;
     gpio_pin.in_pin1  = 2;
     gpio_pin.out_pin0 = 3;
-
     ESP_ERROR_CHECK( esp_enable_extern_coex_gpio_pin(EXTERN_COEX_WIRE_3, gpio_pin) );
+#endif
 #endif
 
     initialized = true;

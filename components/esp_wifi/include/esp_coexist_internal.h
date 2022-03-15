@@ -226,6 +226,28 @@ esp_err_t esp_coex_adapter_register(coex_adapter_funcs_t *funcs);
 
 #if CONFIG_EXTERNAL_COEX_ENABLE
 /**
+  * @brief     Force RX Anttena only in external coex situation.
+  */
+extern void phy_coex_force_rx_ant(void);
+
+/**
+  * @brief     Dismiss RX Anttena only in external coex situation.
+  */
+extern void phy_coex_dismiss_rx_ant(void);
+
+/**
+  * @brief     Set external coexistence advanced informations, like working mode and grant mode in which level.
+  *
+  * @param     outpti1    Only for slave mode, external coex output priority in level1.
+  * @param     output2    Only for slave mode, external coex output priority in level2.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  */
+esp_err_t esp_coex_external_params(esp_external_coex_advance_t coex_info,
+         uint32_t out_pti1, uint32_t out_pti2);
+
+/**
   * @brief     Set external coexistence pti level and enable it.
   *
   * @param     level1    external coex low pti
