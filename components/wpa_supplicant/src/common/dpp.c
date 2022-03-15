@@ -851,7 +851,7 @@ static int dpp_derive_k1(const u8 *Mx, size_t Mx_len, u8 *k1,
 
 	/* HKDF-Expand(PRK, info, L) */
 	res = dpp_hkdf_expand(hash_len, prk, hash_len, info, k1, hash_len);
-	os_memset(prk, 0, hash_len);
+	forced_memzero(prk, hash_len);
 	if (res < 0)
 		return -1;
 
@@ -880,7 +880,7 @@ static int dpp_derive_k2(const u8 *Nx, size_t Nx_len, u8 *k2,
 
 	/* HKDF-Expand(PRK, info, L) */
 	res = dpp_hkdf_expand(hash_len, prk, hash_len, info, k2, hash_len);
-	os_memset(prk, 0, hash_len);
+	forced_memzero(prk, hash_len);
 	if (res < 0)
 		return -1;
 
@@ -939,7 +939,7 @@ static int dpp_derive_ke(struct dpp_authentication *auth, u8 *ke,
 
 	/* HKDF-Expand(PRK, info, L) */
 	res = dpp_hkdf_expand(hash_len, prk, hash_len, info_ke, ke, hash_len);
-	os_memset(prk, 0, hash_len);
+	forced_memzero(prk, hash_len);
 	if (res < 0)
 		return -1;
 
@@ -3936,7 +3936,7 @@ static void dpp_build_legacy_cred_params(struct wpabuf *buf,
 		wpa_snprintf_hex(psk, sizeof(psk),
 				 conf->psk, sizeof(conf->psk));
 		json_add_string(buf, "psk_hex", psk);
-	    os_memset(psk, 0, sizeof(psk));
+		forced_memzero(psk, sizeof(psk));
 	}
 }
 
@@ -4108,6 +4108,8 @@ skip_groups:
 		goto fail;
 
 	signature = os_malloc(2 * curve->prime_len);
+	if (!signature)
+		goto fail;
 	if (dpp_bn2bin_pad(r, signature, curve->prime_len) < 0 ||
 			dpp_bn2bin_pad(s, signature + curve->prime_len,
 				curve->prime_len) < 0)
@@ -5726,7 +5728,7 @@ static int dpp_derive_pmk(const u8 *Nx, size_t Nx_len, u8 *pmk,
 
 	/* HKDF-Expand(PRK, info, L) */
 	res = dpp_hkdf_expand(hash_len, prk, hash_len, info, pmk, hash_len);
-	os_memset(prk, 0, hash_len);
+	forced_memzero(prk, hash_len);
 	if (res < 0)
 		return -1;
 
@@ -5931,7 +5933,7 @@ dpp_peer_intro(struct dpp_introduction *intro, const char *own_connector,
 fail:
 	if (ret != DPP_STATUS_OK)
 		os_memset(intro, 0, sizeof(*intro));
-	os_memset(Nx, 0, sizeof(Nx));
+	forced_memzero(Nx, sizeof(Nx));
 	os_free(own_conn);
 	os_free(signed_connector);
 	os_free(info.payload);
