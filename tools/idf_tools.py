@@ -62,8 +62,9 @@ except RuntimeError as e:
     print(e)
     raise SystemExit(1)
 
-from typing import IO, Any, Callable, Dict, List, Optional, Set, Tuple, Union  # noqa: F401
+from typing import IO, Any, Callable, Dict, Iterator, List, Optional, Set, Tuple, Union  # noqa: F401
 from urllib.error import ContentTooShortError
+from urllib.parse import urljoin, urlparse
 from urllib.request import urlopen
 # the following is only for typing annotation
 from urllib.response import addinfourl  # noqa: F401
@@ -116,9 +117,11 @@ PLATFORM_FROM_NAME = {
     PLATFORM_WIN32: PLATFORM_WIN32,
     'Windows-i686': PLATFORM_WIN32,
     'Windows-x86': PLATFORM_WIN32,
+    'i686-w64-mingw32': PLATFORM_WIN32,
     PLATFORM_WIN64: PLATFORM_WIN64,
     'Windows-x86_64': PLATFORM_WIN64,
     'Windows-AMD64': PLATFORM_WIN64,
+    'x86_64-w64-mingw32': PLATFORM_WIN64,
     # macOS
     PLATFORM_MACOS: PLATFORM_MACOS,
     'osx': PLATFORM_MACOS,
@@ -131,18 +134,24 @@ PLATFORM_FROM_NAME = {
     'linux64': PLATFORM_LINUX64,
     'Linux-x86_64': PLATFORM_LINUX64,
     'FreeBSD-amd64': PLATFORM_LINUX64,
+    'x86_64-linux-gnu': PLATFORM_LINUX64,
     PLATFORM_LINUX32: PLATFORM_LINUX32,
     'linux32': PLATFORM_LINUX32,
     'Linux-i686': PLATFORM_LINUX32,
     'FreeBSD-i386': PLATFORM_LINUX32,
+    'i586-linux-gnu': PLATFORM_LINUX32,
+    # armhf must be before armel to avoid mismatching
+    PLATFORM_LINUX_ARMHF: PLATFORM_LINUX_ARMHF,
+    'arm-linux-gnueabihf': PLATFORM_LINUX_ARMHF,
     PLATFORM_LINUX_ARM32: PLATFORM_LINUX_ARM32,
     'Linux-arm': PLATFORM_LINUX_ARM32,
     'Linux-armv7l': PLATFORM_LINUX_ARM32,
-    PLATFORM_LINUX_ARMHF: PLATFORM_LINUX_ARMHF,
+    'arm-linux-gnueabi': PLATFORM_LINUX_ARM32,
     PLATFORM_LINUX_ARM64: PLATFORM_LINUX_ARM64,
     'Linux-arm64': PLATFORM_LINUX_ARM64,
     'Linux-aarch64': PLATFORM_LINUX_ARM64,
     'Linux-armv8l': PLATFORM_LINUX_ARM64,
+    'aarch64': PLATFORM_LINUX_ARM64,
 }
 
 UNKNOWN_PLATFORM = 'unknown'
@@ -531,7 +540,7 @@ class IDFTool(object):
         # type: (str, str, str, str, str, List[str], str, List[str], Optional[str], int) -> None
         self.name = name
         self.description = description
-        self.versions = OrderedDict()  # type: Dict[str, IDFToolVersion]
+        self.drop_versions()
         self.version_in_path = None  # type: Optional[str]
         self.versions_installed = []  # type: List[str]
         if version_regex_replace is None:
@@ -556,6 +565,9 @@ class IDFTool(object):
             override_dict = override.copy()
             del override_dict['platforms']
             self._current_options = self._current_options._replace(**override_dict)  # type: ignore
+
+    def drop_versions(self):  # type: () -> None
+        self.versions = OrderedDict()  # type: Dict[str, IDFToolVersion]
 
     def add_version(self, version):  # type: (IDFToolVersion) -> None
         assert(type(version) is IDFToolVersion)
@@ -1992,6 +2004,76 @@ def action_check_python_dependencies(args):  # type: ignore
         raise SystemExit(1)
 
 
+class ChecksumCalculator():
+    """
+    A class used to get size/checksum/basename of local artifact files.
+    """
+    def __init__(self, files):  # type: (list[str]) -> None
+        self.files = files
+
+    def __iter__(self):  # type: () -> Iterator[Tuple[int, str, str]]
+        for f in self.files:
+            yield (*get_file_size_sha256(f), os.path.basename(f))
+
+
+class ChecksumParsingError(RuntimeError):
+    pass
+
+
+class ChecksumFileParser():
+    """
+    A class used to get size/sha256/filename of artifact using checksum-file with format:
+        # <artifact-filename>: <size> bytes
+        <sha256sum-string> *<artifact-filename>
+        ... (2 lines for every artifact) ...
+    """
+    def __init__(self, tool_name, url):  # type: (str, str) -> None
+        self.tool_name = tool_name
+
+        sha256_file_tmp = os.path.join(global_idf_tools_path or '', 'tools', 'add-version.sha256.tmp')
+        sha256_file = os.path.abspath(url)
+
+        # download sha256 file if URL presented
+        if urlparse(url).scheme:
+            sha256_file = sha256_file_tmp
+            download(url, sha256_file)
+
+        with open(sha256_file, 'r') as f:
+            self.checksum = f.read().splitlines()
+
+        # remove temp file
+        if os.path.isfile(sha256_file_tmp):
+            os.remove(sha256_file_tmp)
+
+    def parseLine(self, regex, line):  # type: (str, str) -> str
+        match = re.search(regex, line)
+        if not match:
+            raise ChecksumParsingError(f'Can not parse line "{line}" with regex "{regex}"')
+        return match.group(1)
+
+    # parse checksum file with formatting used by crosstool-ng, gdb, ... releases
+    # e.g. https://github.com/espressif/crosstool-NG/releases/download/esp-2021r2/crosstool-NG-esp-2021r2-checksum.sha256
+    def __iter__(self):  # type: () -> Iterator[Tuple[int, str, str]]
+        try:
+            for bytes_str, hash_str in zip(self.checksum[0::2], self.checksum[1::2]):
+                bytes_filename = self.parseLine(r'^# (\S*):', bytes_str)
+                hash_filename = self.parseLine(r'^\S* \*(\S*)', hash_str)
+                if hash_filename != bytes_filename:
+                    fatal('filename in hash-line and in bytes-line are not the same')
+                    raise SystemExit(1)
+                # crosstool-ng checksum file contains info about few tools
+                # e.g.: "xtensa-esp32-elf", "xtensa-esp32s2-elf"
+                # filter records for file by tool_name to avoid mismatch
+                if not hash_filename.startswith(self.tool_name):
+                    continue
+                size = self.parseLine(r'^# \S*: (\d*) bytes', bytes_str)
+                sha256 = self.parseLine(r'^(\S*) ', hash_str)
+                yield int(size), sha256, hash_filename
+        except (TypeError, AttributeError) as err:
+            fatal(f'Error while parsing, check checksum file ({err})')
+            raise SystemExit(1)
+
+
 def action_add_version(args):  # type: ignore
     tools_info = load_tools_info()
     tool_name = args.tool
@@ -2002,14 +2084,18 @@ def action_add_version(args):  # type: ignore
                            TODO_MESSAGE, TODO_MESSAGE, [TODO_MESSAGE], TODO_MESSAGE)
         tools_info[tool_name] = tool_obj
     version = args.version
+    version_status = IDFToolVersion.STATUS_SUPPORTED
+    if args.override and len(tool_obj.versions):
+        tool_obj.drop_versions()
+        version_status = IDFToolVersion.STATUS_RECOMMENDED
     version_obj = tool_obj.versions.get(version)
-    if version not in tool_obj.versions:
+    if not version_obj:
         info('Creating new version {}'.format(version))
-        version_obj = IDFToolVersion(version, IDFToolVersion.STATUS_SUPPORTED)
+        version_obj = IDFToolVersion(version, version_status)
         tool_obj.versions[version] = version_obj
     url_prefix = args.url_prefix or 'https://%s/' % TODO_MESSAGE
-    for file_path in args.files:
-        file_name = os.path.basename(file_path)
+    checksum_info = ChecksumFileParser(tool_name, args.checksum_file) if args.checksum_file else ChecksumCalculator(args.artifact_file)
+    for file_size, file_sha256, file_name in checksum_info:
         # Guess which platform this file is for
         found_platform = None
         for platform_alias, platform_id in PLATFORM_FROM_NAME.items():
@@ -2019,9 +2105,7 @@ def action_add_version(args):  # type: ignore
         if found_platform is None:
             info('Could not guess platform for file {}'.format(file_name))
             found_platform = TODO_MESSAGE
-        # Get file size and calculate the SHA256
-        file_size, file_sha256 = get_file_size_sha256(file_path)
-        url = url_prefix + file_name
+        url = urljoin(url_prefix, file_name)
         info('Adding download for platform {}'.format(found_platform))
         info('    size:   {}'.format(file_size))
         info('    SHA256: {}'.format(file_sha256))
@@ -2283,7 +2367,10 @@ def main(argv):  # type: (list[str]) -> None
         add_version.add_argument('--tool', help='Tool name to set add a version for', required=True)
         add_version.add_argument('--version', help='Version identifier', required=True)
         add_version.add_argument('--url-prefix', help='String to prepend to file names to obtain download URLs')
-        add_version.add_argument('files', help='File names of the download artifacts', nargs='*')
+        add_version.add_argument('--override', action='store_true', help='Override tool versions with new data')
+        add_version_files_group = add_version.add_mutually_exclusive_group(required=True)
+        add_version_files_group.add_argument('--checksum-file', help='URL or path to local file with checksum/size for artifacts')
+        add_version_files_group.add_argument('--artifact-file', help='File names of the download artifacts', nargs='*')
 
         rewrite = subparsers.add_parser('rewrite', help='Load tools.json, validate, and save the result back into JSON')
         rewrite.add_argument('--output', help='Save new tools.json into this file')
