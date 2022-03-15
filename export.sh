@@ -49,41 +49,36 @@ __main() {
         return 1
     fi
 
+    # If using bash or zsh, try to guess IDF_PATH from script location.
+    self_path=""
+    # shellcheck disable=SC2128  # ignore array expansion warning
+    if [ -n "${BASH_SOURCE-}" ]
+    then
+        self_path="${BASH_SOURCE}"
+    elif [ -n "${ZSH_VERSION-}" ]
+    then
+        self_path="${(%):-%x}"
+    else
+        echo "Could not detect IDF_PATH. Please set it before sourcing this script:"
+        echo "  export IDF_PATH=(add path here)"
+        return 1
+    fi
+
+    script_dir=$(__script_dir)
+
     if [ -z "${IDF_PATH}" ]
     then
         # IDF_PATH not set in the environment.
-        # If using bash or zsh, try to guess IDF_PATH from script location.
-        self_path=""
-
-        # shellcheck disable=SC2128  # ignore array expansion warning
-        if [ -n "${BASH_SOURCE-}" ]
-        then
-            self_path="${BASH_SOURCE}"
-        elif [ -n "${ZSH_VERSION-}" ]
-        then
-            self_path="${(%):-%x}"
-        else
-            echo "Could not detect IDF_PATH. Please set it before sourcing this script:"
-            echo "  export IDF_PATH=(add path here)"
-            return 1
-        fi
-
-        script_dir=$(__script_dir)
         export IDF_PATH="${script_dir}"
         echo "Setting IDF_PATH to '${IDF_PATH}'"
     else
         # IDF_PATH came from the environment, check if the path is valid
-        script_dir=$(__script_dir)
         if [ ! "${IDF_PATH}" = "${script_dir}" ]
         then
+            # Change IDF_PATH is important when there are 2 ESP-IDF versions in different directories.
+            # Sourcing this script without change, would cause sourcing wrong export script.
             echo "Resetting IDF_PATH from '${IDF_PATH}' to '${script_dir}' "
             export IDF_PATH="${script_dir}"
-        fi
-        if [ ! -d "${IDF_PATH}" ]
-        then
-            echo "IDF_PATH is set to '${IDF_PATH}', but it is not a valid directory."
-            echo "If you have set IDF_PATH manually, check if the path is correct."
-            return 1
         fi
         # Check if this path looks like an IDF directory
         if [ ! -f "${IDF_PATH}/tools/idf.py" ] || [ ! -f "${IDF_PATH}/tools/idf_tools.py" ]

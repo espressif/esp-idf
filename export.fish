@@ -16,6 +16,8 @@ function __main
         set script_dir $pwd
     end
     if test "$IDF_PATH" != "$script_dir"
+        # Change IDF_PATH is important when there are 2 ESP-IDF versions in different directories.
+        # Sourcing this script without change, would cause sourcing wrong export script.
         echo "Resetting IDF_PATH from '$IDF_PATH' to '$script_dir'"
         set IDF_PATH "$script_dir"
     end
