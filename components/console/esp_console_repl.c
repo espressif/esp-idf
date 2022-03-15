@@ -223,17 +223,21 @@ esp_err_t esp_console_new_repl_uart(const esp_console_dev_uart_config_t *dev_con
     esp_vfs_dev_uart_port_set_tx_line_endings(dev_config->channel, ESP_LINE_ENDINGS_CRLF);
 
     /* Configure UART. Note that REF_TICK/XTAL is used so that the baud rate remains
-     * correct while APB frequency is changing in light sleep mode.
+     * correct while APB frequency is changing in light sleep mode if power management is enabled.
      */
     const uart_config_t uart_config = {
         .baud_rate = dev_config->baud_rate,
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
+#if defined(CONFIG_PM_ENABLE)
 #if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
         .source_clk = UART_SCLK_REF_TICK,
 #else
         .source_clk = UART_SCLK_XTAL,
+#endif
+#else
+        .source_clk = UART_SCLK_APB,
 #endif
     };
 
