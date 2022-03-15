@@ -151,6 +151,10 @@ config SOC_BT_SUPPORTED
     bool
     default y
 
+config SOC_BLUEDROID_SUPPORTED
+    bool
+    default y
+
 config SOC_USB_OTG_SUPPORTED
     bool
     default y

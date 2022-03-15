@@ -35,6 +35,10 @@ config SOC_BT_SUPPORTED
     bool
     default y
 
+config SOC_BLUEDROID_SUPPORTED
+    bool
+    default y
+
 config SOC_CLASSIC_BT_SUPPORTED
     bool
     default y

@@ -38,6 +38,7 @@
 #define SOC_ULP_SUPPORTED               1
 #define SOC_RISCV_COPROC_SUPPORTED      1
 #define SOC_BT_SUPPORTED                1
+#define SOC_BLUEDROID_SUPPORTED         1
 #define SOC_USB_OTG_SUPPORTED           1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
 #define SOC_CCOMP_TIMER_SUPPORTED       1
