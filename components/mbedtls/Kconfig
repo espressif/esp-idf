@@ -465,6 +465,15 @@ menu "mbedTLS"
             the rest of the firmware doesn't call any standard timekeeeping
             functions.
 
+    config MBEDTLS_PLATFORM_TIME_ALT
+        bool "Enable mbedtls time support: platform-specific"
+        depends on MBEDTLS_HAVE_TIME
+        default n
+        help
+            Enabling this config will provide users with a function
+            "mbedtls_platform_set_time()" that allows to set an alternative
+            time function pointer.
+
     config MBEDTLS_HAVE_TIME_DATE
         bool "Enable mbedtls certificate expiry check"
         depends on MBEDTLS_HAVE_TIME
