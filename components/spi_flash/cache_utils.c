@@ -622,7 +622,7 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
         return ESP_FAIL;
     }
 
-#ifdef CONFIG_FLASHMODE_QIO
+#ifdef CONFIG_ESPTOOLPY_FLASHMODE_QIO
     flash_support_wrap = true;
     extern bool spi_flash_support_wrap_size(uint32_t wrap_size);
     if (!spi_flash_support_wrap_size(flash_wrap_size)) {
@@ -876,7 +876,7 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable
         return ESP_FAIL;
     }
 
-#ifdef CONFIG_FLASHMODE_QIO
+#ifdef CONFIG_ESPTOOLPY_FLASHMODE_QIO
     flash_support_wrap = true;
     extern bool spi_flash_support_wrap_size(uint32_t wrap_size);
     if (!spi_flash_support_wrap_size(flash_wrap_size)) {
@@ -944,7 +944,7 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable)
         flash_wrap_size = 32;
     }
 
-#ifdef CONFIG_FLASHMODE_QIO
+#ifdef CONFIG_ESPTOOLPY_FLASHMODE_QIO
     flash_support_wrap = true;
     extern bool spi_flash_support_wrap_size(uint32_t wrap_size);
     if (!spi_flash_support_wrap_size(flash_wrap_size)) {
@@ -953,7 +953,7 @@ esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable)
     }
 #else
     ESP_EARLY_LOGW(TAG, "Flash is not in QIO mode, do not support wrap.");
-#endif // CONFIG_FLASHMODE_QIO
+#endif // CONFIG_ESPTOOLPY_FLASHMODE_QIO
 
     extern esp_err_t spi_flash_enable_wrap(uint32_t wrap_size);
     if (flash_support_wrap && flash_wrap_size > 0) {

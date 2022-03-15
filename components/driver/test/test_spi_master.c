@@ -1300,7 +1300,7 @@ TEST_CASE_MULTIPLE_DEVICES("SPI Master: FD, DMA, Master Single Direction Test", 
 #endif  //#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32)    //TODO: IDF-3494
 
 //NOTE: Explained in IDF-1445 | MR !14996
-#if !(CONFIG_SPIRAM_SUPPORT) || (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL >= 16384)
+#if !(CONFIG_SPIRAM) || (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL >= 16384)
 /********************************************************************************
  *      Test SPI transaction interval
  ********************************************************************************/
@@ -1457,4 +1457,4 @@ TEST_CASE("spi_speed", "[spi]")
     master_free_device_bus(spi);
 }
 #endif // CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
-#endif // !(CONFIG_SPIRAM_SUPPORT) || (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL >= 16384)
+#endif // !(CONFIG_SPIRAM) || (CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL >= 16384)

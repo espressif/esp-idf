@@ -34,13 +34,13 @@
 #include "esp_rom_sys.h"
 #include "esp_rom_caps.h"
 
-#ifdef CONFIG_ESP_CONSOLE_UART_NONE
+#ifdef CONFIG_ESP_CONSOLE_NONE
 void bootloader_console_init(void)
 {
     esp_rom_install_channel_putc(1, NULL);
     esp_rom_install_channel_putc(2, NULL);
 }
-#endif // CONFIG_ESP_CONSOLE_UART_NONE
+#endif // CONFIG_ESP_CONSOLE_NONE
 
 #ifdef CONFIG_ESP_CONSOLE_UART
 void bootloader_console_init(void)
