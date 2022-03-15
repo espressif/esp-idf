@@ -69,7 +69,7 @@ typedef struct {
 
 static spi_slave_t *spihost[SOC_SPI_PERIPH_NUM];
 
-static void IRAM_ATTR spi_intr(void *arg);
+static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg);
 
 static inline bool is_valid_host(spi_host_device_t host)
 {
@@ -83,19 +83,19 @@ static inline bool is_valid_host(spi_host_device_t host)
 #endif
 }
 
-static inline bool bus_is_iomux(spi_slave_t *host)
+static inline bool SPI_SLAVE_ISR_ATTR bus_is_iomux(spi_slave_t *host)
 {
     return host->flags&SPICOMMON_BUSFLAG_IOMUX_PINS;
 }
 
-static void freeze_cs(spi_slave_t *host)
+static void SPI_SLAVE_ISR_ATTR freeze_cs(spi_slave_t *host)
 {
     esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, spi_periph_signal[host->id].spics_in, false);
 }
 
 // Use this function instead of cs_initial to avoid overwrite the output config
 // This is used in test by internal gpio matrix connections
-static inline void restore_cs(spi_slave_t *host)
+static inline void SPI_SLAVE_ISR_ATTR restore_cs(spi_slave_t *host)
 {
     if (bus_is_iomux(host)) {
         gpio_iomux_in(host->cfg.spics_io_num, spi_periph_signal[host->id].spics_in);
