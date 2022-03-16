@@ -55,7 +55,7 @@ def test_deep_sleep(dut: Dut) -> None:
 
     sleep_time = time.time() - start_sleep
     logging.info('Host measured sleep time at {:.2f}s'.format(sleep_time))
-    assert 19 < sleep_time < 22  # note: high tolerance as measuring time on the host may have some timing skew
+    assert 18 < sleep_time < 22  # note: high tolerance as measuring time on the host may have some timing skew
 
     # This line indicates that the CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP option set in sdkconfig.defaults
     # has correctly allowed skipping verification on wakeup
