@@ -23,30 +23,6 @@ config SOC_CPU_HAS_FPU
     bool
     default y
 
-config SOC_GPIO_PORT
-    int
-    default 1
-
-config SOC_GPIO_PIN_COUNT
-    int
-    default 49
-
-config SOC_GPIO_SUPPORT_RTC_INDEPENDENT
-    bool
-    default y
-
-config SOC_GPIO_SUPPORT_FORCE_HOLD
-    bool
-    default y
-
-config SOC_GPIO_VALID_GPIO_MASK
-    hex
-    default 0x1FFFFFFFFFFFF
-
-config SOC_GPIO_SUPPORT_SLP_SWITCH
-    bool
-    default y
-
 config SOC_LEDC_SUPPORT_XTAL_CLOCK
     bool
     default y
@@ -82,22 +58,6 @@ config SOC_MPU_REGION_RO_SUPPORTED
 config SOC_MPU_REGION_WO_SUPPORTED
     bool
     default n
-
-config SOC_RTCIO_PIN_COUNT
-    int
-    default 22
-
-config SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
-    bool
-    default y
-
-config SOC_RTCIO_HOLD_SUPPORTED
-    bool
-    default y
-
-config SOC_RTCIO_WAKE_SUPPORTED
-    bool
-    default y
 
 config SOC_ADC_SUPPORTED
     bool
@@ -339,6 +299,30 @@ config SOC_GDMA_PSRAM_MIN_ALIGN
     int
     default 16
 
+config SOC_GPIO_PORT
+    int
+    default 1
+
+config SOC_GPIO_PIN_COUNT
+    int
+    default 49
+
+config SOC_GPIO_SUPPORT_RTC_INDEPENDENT
+    bool
+    default y
+
+config SOC_GPIO_SUPPORT_FORCE_HOLD
+    bool
+    default y
+
+config SOC_GPIO_VALID_GPIO_MASK
+    hex
+    default 0x1FFFFFFFFFFFF
+
+config SOC_GPIO_SUPPORT_SLP_SWITCH
+    bool
+    default y
+
 config SOC_DEDIC_GPIO_OUT_CHANNELS_NUM
     int
     default 8
@@ -558,6 +542,22 @@ config SOC_RTC_CNTL_CPU_PD_REG_FILE_NUM
 config SOC_RTC_CNTL_TAGMEM_PD_DMA_BUS_WIDTH
     int
     default 128
+
+config SOC_RTCIO_PIN_COUNT
+    int
+    default 22
+
+config SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+    bool
+    default y
+
+config SOC_RTCIO_HOLD_SUPPORTED
+    bool
+    default y
+
+config SOC_RTCIO_WAKE_SUPPORTED
+    bool
+    default y
 
 config SOC_SIGMADELTA_NUM
     bool
