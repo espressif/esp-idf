@@ -766,7 +766,7 @@ menu "ESP32-specific"
         depends on ESP32_USE_FIXED_STATIC_RAM_SIZE
         help
             RAM size dedicated for static variables (.data & .bss sections).
-            Please note that the actual length will be reduced by BT_RESERVE_DRAM if Bluetooth
+            Please note that the actual length will be reduced by BTDM_RESERVE_DRAM if Bluetooth
             controller is enabled.
 
     config ESP32_DPORT_DIS_INTERRUPT_LVL
