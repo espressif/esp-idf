@@ -25,31 +25,12 @@ An attacker can use eavesdropping and packet injection to send spoofed (de)authe
 
 PMF provides protection against these attacks by encrypting unicast management frames and providing integrity checks for broadcast management frames. These include deauthentication, disassociation and robust management frames. It also provides Secure Association (SA) teardown mechanism to prevent spoofed association/authentication frames from disconnecting already connected clients.
 
-API & Usage
-+++++++++++
+There are 3 types of PMF configuration modes on both Station and AP side -
+ - PMF Optional
+ - PMF Required
+ - PMF Disabled
 
-:cpp:func:`esp_wifi_set_config` can be used to configure PMF mode by setting appropriate flags in `pmf_cfg` parameter. Currently, PMF is supported only in Station mode.
-While setting up a Station, configure PMF using two flags ``capable`` and ``required`` like below.
-
-   .. code-block:: c
-
-    wifi_config_t wifi_config = {
-        .sta = {
-             .ssid = EXAMPLE_WIFI_SSID,
-             .password = EXAMPLE_WIFI_PASSWORD,
-             .pmf_cfg = {
-                .capable = true,
-                .required = false
-             }
-        }
-    };
-
-{IDF_TARGET_NAME} supports three modes of PMF by combination of these two flags -
- - PMF Optional : ``.capable = true, .required = false``
- - PMF Required : ``.capable = true, .required = true``
- - PMF Disabled : ``.capable = false, .required = false``
-
- Depending on what AP side PMF Mode is, the resulting connnection will behave differently. The table below summarises all possible outcomes -
+Depending on the PMF configuration on Station and AP side, the resulting connection will behave differently. Below table summarises all possible outcomes.
 
 +--------------+------------------------+---------------------------+
 | STA Setting  | AP Setting             |  Outcome                  |
@@ -67,7 +48,27 @@ While setting up a Station, configure PMF using two flags ``capable`` and ``requ
 | PMF Disabled |  PMF Required          | AP refuses Connection     |
 +--------------+------------------------+---------------------------+
 
-PMF Optional Mode, which is shown in the example of ``wifi_confit_t``, is suggested to be used in all Station configurations. This is to take the additional security benefit of PMF whenever possible without breaking connections with legacy AP's.
+API & Usage
++++++++++++
+
+{IDF_TARGET_NAME} supports PMF only in Station mode. Station defaults to PMF Optional mode and disabling PMF is not possible. For even higher security, PMF required mode can be enabled by setting the ``required`` flag in `pmf_cfg` while using the :cpp:func:`esp_wifi_set_config` API. This will result in Station only connecting to a PMF enabled AP and rejecting all other AP's. An example of this configuration is given below.
+
+   .. code-block:: c
+
+    wifi_config_t wifi_config = {
+        .sta = {
+             .ssid = EXAMPLE_WIFI_SSID,
+             .password = EXAMPLE_WIFI_PASSWORD,
+             .pmf_cfg = {
+                .required = true
+             }
+        }
+    };
+
+.. attention::
+
+    ``capable`` flag in `pmf_cfg` is deprecated and set to true internally. This is to take the additional security benefit of PMF whenever possible.
+
 
 WPA3-Personal
 -------------

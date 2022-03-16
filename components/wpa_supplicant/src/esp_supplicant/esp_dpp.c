@@ -178,7 +178,6 @@ static int esp_dpp_handle_config_obj(struct dpp_authentication *auth,
             os_memcpy(wifi_cfg->sta.password, conf->passphrase,
                       sizeof(wifi_cfg->sta.password));
         if (conf->akm == DPP_AKM_PSK_SAE) {
-            wifi_cfg->sta.pmf_cfg.capable = true;
             wifi_cfg->sta.pmf_cfg.required = true;
         }
     }
