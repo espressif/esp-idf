@@ -47,6 +47,10 @@ static void bt_av_playback_changed(void);
 static void bt_av_play_pos_changed(void);
 /* notification event handler */
 static void bt_av_notify_evt_handler(uint8_t event_id, esp_avrc_rn_param_t *event_parameter);
+/* installation for i2s */
+static void bt_i2s_driver_install(void);
+/* uninstallation for i2s */
+static void bt_i2s_driver_uninstall(void);
 /* set volume by remote controller */
 static void volume_set_by_controller(uint8_t volume);
 /* set volume by local host */
@@ -149,6 +153,46 @@ static void bt_av_notify_evt_handler(uint8_t event_id, esp_avrc_rn_param_t *even
     }
 }
 
+void bt_i2s_driver_install(void)
+{
+    /* I2S configuration parameters */
+    i2s_config_t i2s_config = {
+#ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
+        .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN,
+#else
+        .mode = I2S_MODE_MASTER | I2S_MODE_TX,              /* only TX */
+#endif
+        .sample_rate = 44100,
+        .bits_per_sample = 16,
+        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,       /* 2-channels */
+        .communication_format = I2S_COMM_FORMAT_STAND_MSB,
+        .dma_buf_count = 6,
+        .dma_buf_len = 60,
+        .intr_alloc_flags = 0,                              /* default interrupt priority */
+        .tx_desc_auto_clear = true                          /* auto clear tx descriptor on underflow */
+    };
+
+    /* enable I2S */
+    i2s_driver_install(0, &i2s_config, 0, NULL);
+#ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
+    i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
+    i2s_set_pin(0, NULL);
+#else
+    i2s_pin_config_t pin_config = {
+        .bck_io_num = CONFIG_EXAMPLE_I2S_BCK_PIN,
+        .ws_io_num = CONFIG_EXAMPLE_I2S_LRCK_PIN,
+        .data_out_num = CONFIG_EXAMPLE_I2S_DATA_PIN,
+        .data_in_num = -1                                   /* not used */
+    };
+    i2s_set_pin(0, &pin_config);
+#endif
+}
+
+void bt_i2s_driver_uninstall(void)
+{
+    i2s_driver_uninstall(0);
+}
+
 static void volume_set_by_controller(uint8_t volume)
 {
     ESP_LOGI(BT_RC_TG_TAG, "Volume is set by remote controller to: %d%%", (uint32_t)volume * 100 / 0x7f);
@@ -203,9 +247,12 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
         if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_DISCONNECTED) {
             esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
             bt_i2s_task_shut_down();
+            bt_i2s_driver_uninstall();
         } else if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_CONNECTED){
             esp_bt_gap_set_scan_mode(ESP_BT_NON_CONNECTABLE, ESP_BT_NON_DISCOVERABLE);
             bt_i2s_task_start_up();
+        } else if (a2d->conn_stat.state == ESP_A2D_CONNECTION_STATE_CONNECTING) {
+            bt_i2s_driver_install();
         }
         break;
     }
