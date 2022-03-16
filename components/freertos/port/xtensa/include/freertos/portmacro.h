@@ -105,7 +105,7 @@ typedef unsigned portBASE_TYPE	UBaseType_t;
 // Cleaner solution allows nested interrupts disabling and restoring via local registers or stack.
 // They can be called from interrupts too.
 // WARNING: Only applies to current CPU. See notes above.
-static inline unsigned portENTER_CRITICAL_NESTED(void) {
+static inline unsigned __attribute__((always_inline)) portENTER_CRITICAL_NESTED(void) {
 	unsigned state = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL);
 	portbenchmarkINTERRUPT_DISABLE();
 	return state;
