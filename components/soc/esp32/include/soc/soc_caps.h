@@ -39,7 +39,7 @@
 #ifdef __has_include
 #  if __has_include("sdkconfig.h")
 #    include "sdkconfig.h"
-#    define SOC_CAPS_ECO_VER    CONFIG_ESP32_REV_MIN
+#    define SOC_CAPS_ECO_VER    CONFIG_ESP32_REV_MIN_FULL
 #  endif
 #endif
 
@@ -58,7 +58,7 @@
 #endif
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
-#define SOC_CAPS_ECO_VER_MAX        3
+#define SOC_CAPS_ECO_VER_MAX        301
 
 #define SOC_MCPWM_SUPPORTED         1
 #define SOC_SDMMC_HOST_SUPPORTED    1
@@ -93,7 +93,7 @@
 #define SOC_RTC_SLOW_CLOCK_SUPPORT_8MD256       (1)
 
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
-#if SOC_CAPS_ECO_VER >= 1
+#if SOC_CAPS_ECO_VER >= 100
 #define SOC_BROWNOUT_RESET_SUPPORTED 1
 #endif
 
@@ -223,7 +223,7 @@
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_BRP_MIN                        2
-#if SOC_CAPS_ECO_VER >= 2
+#if SOC_CAPS_ECO_VER >= 200
 #  define SOC_TWAI_BRP_MAX              256
 #  define SOC_TWAI_BRP_DIV_SUPPORTED    1
 #  define SOC_TWAI_BRP_DIV_THRESH       128
