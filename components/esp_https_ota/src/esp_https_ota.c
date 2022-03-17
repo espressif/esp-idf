@@ -41,12 +41,29 @@ struct esp_https_ota_handle {
 
 typedef struct esp_https_ota_handle esp_https_ota_t;
 
+static bool redirection_required(int status_code)
+{
+    switch (status_code) {
+        case HttpStatus_MovedPermanently:
+        case HttpStatus_Found:
+        case HttpStatus_SeeOther:
+        case HttpStatus_TemporaryRedirect:
+        case HttpStatus_PermanentRedirect:
+            return true;
+        default:
+            return false;
+    }
+    return false;
+}
+
 static bool process_again(int status_code)
 {
     switch (status_code) {
         case HttpStatus_MovedPermanently:
         case HttpStatus_Found:
+        case HttpStatus_SeeOther:
         case HttpStatus_TemporaryRedirect:
+        case HttpStatus_PermanentRedirect:
         case HttpStatus_Unauthorized:
             return true;
         default:
@@ -58,7 +75,7 @@ static bool process_again(int status_code)
 static esp_err_t _http_handle_response_code(esp_http_client_handle_t http_client, int status_code)
 {
     esp_err_t err;
-    if (status_code == HttpStatus_MovedPermanently || status_code == HttpStatus_Found || status_code == HttpStatus_TemporaryRedirect) {
+    if (redirection_required(status_code)) {
         err = esp_http_client_set_redirection(http_client);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "URL redirection Failed");
