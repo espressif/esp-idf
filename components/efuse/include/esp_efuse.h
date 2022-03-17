@@ -46,7 +46,7 @@ typedef enum {
     ESP_EFUSE_ROM_LOG_ALWAYS_OFF    /**< Disable ROM logging permanently */
 } esp_efuse_rom_log_scheme_t;
 
-#if CONFIG_ESP32_REV_MIN_3 || !CONFIG_IDF_TARGET_ESP32
+#if CONFIG_ESP32_REV_MIN_FULL >= 300 || !CONFIG_IDF_TARGET_ESP32
 /**
  * @brief Pointers to the trusted key digests.
  *
@@ -742,7 +742,7 @@ esp_err_t esp_efuse_write_key(esp_efuse_block_t block, esp_efuse_purpose_t purpo
 esp_err_t esp_efuse_write_keys(const esp_efuse_purpose_t purposes[], uint8_t keys[][32], unsigned number_of_keys);
 
 
-#if CONFIG_ESP32_REV_MIN_3 || !CONFIG_IDF_TARGET_ESP32
+#if CONFIG_ESP32_REV_MIN_FULL >= 300 || !CONFIG_IDF_TARGET_ESP32
 /**
  * @brief Read key digests from efuse. Any revoked/missing digests will be marked as NULL
  *

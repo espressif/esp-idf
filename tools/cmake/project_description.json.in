@@ -10,6 +10,8 @@
     "git_revision":       "${IDF_VER}",
     "target":             "${CONFIG_IDF_TARGET}",
     "rev":                "${CONFIG_ESP32_REV_MIN}",
+    "min_rev":            "${CONFIG_ESP_REV_MIN_FULL}",
+    "max_rev":            "${CONFIG_ESP_REV_MAX_FULL}",
     "phy_data_partition": "${CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION}",
     "monitor_baud" :      "${CONFIG_ESPTOOLPY_MONITOR_BAUD}",
     "monitor_toolprefix": "${_CMAKE_TOOLCHAIN_PREFIX}",

@@ -6,6 +6,7 @@
 #include "sdkconfig.h"
 #include "soc/soc.h"
 #include "soc/rtc.h"
+#include "soc/chip_revision.h"
 #include "hal/efuse_hal.h"
 #include "soc/rtc_cntl_reg.h"
 #if CONFIG_IDF_TARGET_ESP32
@@ -32,7 +33,7 @@ __attribute__((weak)) void bootloader_clock_configure(void)
      * document). For rev. 0, switch to 240 instead if it has been enabled
      * previously.
      */
-    if (efuse_hal_get_major_chip_version() == 0 &&
+    if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 100) &&
             clk_ll_cpu_get_freq_mhz_from_pll() == CLK_LL_PLL_240M_FREQ_MHZ) {
         cpu_freq_mhz = 240;
     }

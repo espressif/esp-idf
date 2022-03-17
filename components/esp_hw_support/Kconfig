@@ -1,4 +1,10 @@
 menu "Hardware Settings"
+
+    menu "Chip revision"
+        # Insert chip-specific HW config
+        orsource "./port/$IDF_TARGET/Kconfig.hw_support"
+    endmenu
+
     orsource "./port/$IDF_TARGET/Kconfig.spiram"
 
     menu "MAC Config"
@@ -180,9 +186,6 @@ menu "Hardware Settings"
             default 0x8000 if MMU_PAGE_SIZE_32KB
             default 0x10000 if MMU_PAGE_SIZE_64KB
     endmenu
-
-    # Insert chip-specific HW config
-    orsource "./port/$IDF_TARGET/Kconfig.hw_support"
 
     menu "GDMA Configuration"
         depends on SOC_GDMA_SUPPORTED

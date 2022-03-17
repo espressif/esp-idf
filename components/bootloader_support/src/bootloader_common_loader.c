@@ -17,7 +17,9 @@
 #include "soc/gpio_periph.h"
 #include "soc/rtc.h"
 #include "soc/efuse_reg.h"
+#include "soc/chip_revision.h"
 #include "hal/efuse_hal.h"
+#include "hal/efuse_ll.h"
 #include "hal/gpio_ll.h"
 #include "esp_image_format.h"
 #include "bootloader_sha.h"
@@ -25,6 +27,7 @@
 #include "bootloader_flash_priv.h"
 
 #define ESP_PARTITION_HASH_LEN 32 /* SHA-256 digest length */
+#define IS_MAX_REV_SET(max_chip_rev_full) (((max_chip_rev_full) != 65535) && ((max_chip_rev_full) != 0))
 
 static const char* TAG = "boot_comm";
 
@@ -61,27 +64,31 @@ esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hd
     if (chip_id != img_hdr->chip_id) {
         ESP_LOGE(TAG, "mismatch chip ID, expected %d, found %d", chip_id, img_hdr->chip_id);
         err = ESP_FAIL;
-    }
-
+    } else {
 #ifndef CONFIG_IDF_ENV_FPGA
-#if defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32S2) || defined(CONFIG_IDF_TARGET_ESP32C2) || defined(CONFIG_IDF_TARGET_ESP32H2)
-    uint8_t revision = efuse_hal_get_major_chip_version();
-    // min_chip_rev keeps the MAJOR wafer version for these chips
-#else
-    uint8_t revision = efuse_hal_get_minor_chip_version();
-    // min_chip_rev keeps the MINOR wafer version for these chips
-#endif
-    if (revision < img_hdr->min_chip_rev) {
-        /* To fix this error, please update mininum supported chip revision from configuration,
-         * located in TARGET (e.g. ESP32) specific options under "Component config" menu */
-        ESP_LOGE(TAG, "This chip is revision %d but the application is configured for minimum revision %d. Can't run.", revision, img_hdr->min_chip_rev);
-        err = ESP_FAIL;
-    } else if (revision != img_hdr->min_chip_rev) {
-#ifdef BOOTLOADER_BUILD
-        ESP_LOGI(TAG, "chip revision: %d, min. %s chip revision: %d", revision, type == ESP_IMAGE_BOOTLOADER ? "bootloader" : "application", img_hdr->min_chip_rev);
-#endif
-    }
+        unsigned revision = efuse_hal_chip_revision();
+        unsigned int major_rev = revision / 100;
+        unsigned int minor_rev = revision % 100;
+        unsigned min_rev = img_hdr->min_chip_rev_full;
+        if (type == ESP_IMAGE_BOOTLOADER || type == ESP_IMAGE_APPLICATION) {
+            if (!ESP_CHIP_REV_ABOVE(revision, min_rev)) {
+                ESP_LOGE(TAG, "Image requires chip rev >= v%d.%d, but chip is v%d.%d",
+                         min_rev / 100, min_rev % 100,
+                         major_rev, minor_rev);
+                err = ESP_FAIL;
+            }
+        }
+        if (type == ESP_IMAGE_APPLICATION) {
+            unsigned max_rev = img_hdr->max_chip_rev_full;
+            if ((IS_MAX_REV_SET(max_rev) && (revision > max_rev) && !efuse_ll_get_disable_wafer_version_major())) {
+                ESP_LOGE(TAG, "Image requires chip rev <= v%d.%d, but chip is v%d.%d",
+                         max_rev / 100, max_rev % 100,
+                         major_rev, minor_rev);
+                err = ESP_FAIL;
+            }
+        }
 #endif // CONFIG_IDF_ENV_FPGA
+    }
 
     return err;
 }
