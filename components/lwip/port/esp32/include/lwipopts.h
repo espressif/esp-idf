@@ -1392,4 +1392,17 @@
 #endif
 #endif
 
+/**
+ * If CONFIG_ALLOC_MEMORY_IN_SPIRAM_FIRST is enabled, Try to
+ * allocate memory for lwip in SPIRAM firstly. If failed, try to allocate
+ * internal memory then.
+ */
+#if CONFIG_WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST
+#define mem_clib_malloc(size)    heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL)
+#define mem_clib_calloc(n, size) heap_caps_calloc_prefer(n, size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL)
+#else /* !CONFIG_WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST */
+#define mem_clib_malloc malloc
+#define mem_clib_calloc calloc
+#endif /* CONFIG_WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST */
+
 #endif /* LWIP_HDR_ESP_LWIPOPTS_H */
