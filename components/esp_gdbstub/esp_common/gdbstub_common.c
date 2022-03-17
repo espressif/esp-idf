@@ -1,22 +1,16 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "soc/uart_periph.h"
 #include "soc/gpio_periph.h"
 #include "esp_gdbstub_common.h"
 #include "sdkconfig.h"
 #include "hal/uart_ll.h"
+#include "freertos/FreeRTOS.h"
+#include "xtensa/config/specreg.h"
 
 #define UART_NUM CONFIG_ESP_CONSOLE_UART_NUM
 
@@ -70,7 +64,10 @@ void esp_gdbstub_putchar(int c)
 
 void esp_gdbstub_flush()
 {
-    //not needed for uart
+    // wait until some data in transmition
+    while (false == uart_ll_is_tx_idle(gdb_uart))
+    {
+    }
 }
 
 int esp_gdbstub_getfifo()
@@ -86,9 +83,6 @@ int esp_gdbstub_getfifo()
         uart_ll_read_rxfifo(gdb_uart, &data, 1);
         if (data == 0x3) {
             doDebug = 1; //Check if any of the chars is Ctrl+C. Throw away rest.
-        }
-        if (data == '+') {
-            doDebug = 1; //Check if any of the chars is '+'. Throw away rest.
         }
         fifolen--;
     }

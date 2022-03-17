@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,8 @@
 #include "soc/soc_memory_layout.h"
 #include "xtensa/config/specreg.h"
 #include "sdkconfig.h"
+#include "esp_ipc_isr.h"
+#include "esp_private/crosscore_int.h"
 
 #if !XCHAL_HAVE_WINDOWED
 #warning "gdbstub_xtensa: revisit the implementation for Call0 ABI"
@@ -121,4 +123,97 @@ int esp_gdbstub_get_signal(const esp_gdbstub_frame_t *frame)
         return 11;
     }
     return (int) exccause_to_signal[frame->exccause];
+}
+
+/** @brief Init dport for GDB
+ * Init dport for iterprocessor communications
+ * */
+void esp_gdbstub_init_dports(void)
+{
+}
+
+#if CONFIG_IDF_TARGET_ARCH_XTENSA && (!CONFIG_FREERTOS_UNICORE) && CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+static bool stall_started = false;
+#endif
+
+/** @brief GDB stall other CPU
+ * GDB stall other CPU
+ * */
+void esp_gdbstub_stall_other_cpus_start()
+{
+#if CONFIG_IDF_TARGET_ARCH_XTENSA && (!CONFIG_FREERTOS_UNICORE) && CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+    if (stall_started == false) {
+        esp_ipc_isr_stall_other_cpu();
+        stall_started = true;
+    }
+#endif
+}
+
+/** @brief GDB end stall other CPU
+ * GDB end stall other CPU
+ * */
+void esp_gdbstub_stall_other_cpus_end()
+{
+#if CONFIG_IDF_TARGET_ARCH_XTENSA && (!CONFIG_FREERTOS_UNICORE) && CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+    if (stall_started == true) {
+        esp_ipc_isr_release_other_cpu();
+        stall_started = false;
+    }
+#endif
+}
+
+/** @brief GDB clear step
+ * GDB clear step registers
+ * */
+void esp_gdbstub_clear_step(void)
+{
+    WSR(ICOUNT, 0);
+    WSR(ICOUNTLEVEL, 0);
+}
+
+/** @brief GDB do step
+ * GDB do one step
+ * */
+void esp_gdbstub_do_step(void)
+{
+    // We have gdbstub uart interrupt, and if we will call step, with ICOUNTLEVEL=2 or higher, from uart interrupt, the
+    // application will hang because it will try to step uart interrupt. That's why we have to set ICOUNTLEVEL=1
+    // If we will stop by the breakpoint inside interrupt, we will handle this interrupt with ICOUNTLEVEL=ps.intlevel+1
+
+    uint32_t level = s_scratch.regfile.ps;
+    level &= 0x7;
+    level += 1;
+
+    WSR(ICOUNTLEVEL, level);
+    WSR(ICOUNT, -2);
+}
+
+/** @brief GDB trigger other CPU
+ * GDB trigger other CPU
+ * */
+void esp_gdbstub_trigger_cpu(void)
+{
+#if !CONFIG_FREERTOS_UNICORE
+    if (0 == cpu_hal_get_core_id()) {
+        esp_crosscore_int_send_gdb_call(1);
+    } else {
+        esp_crosscore_int_send_gdb_call(0);
+    }
+#endif
+}
+
+/** @brief GDB set register in frame
+ * Set register in frame with address to value
+ *
+ * */
+void esp_gdbstub_set_register(esp_gdbstub_frame_t *frame, uint32_t reg_index, uint32_t value)
+{
+    switch (reg_index) {
+    case 0:
+        frame->pc = value;
+        break;
+    default:
+        (&frame->a0)[reg_index - 1] = value;
+        break;
+    }
 }

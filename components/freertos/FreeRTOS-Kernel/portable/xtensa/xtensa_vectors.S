@@ -443,7 +443,7 @@ Debug Exception.
     .global     xt_debugexception
 _DebugExceptionVector:
     wsr     a0, EXCSAVE+XCHAL_DEBUGLEVEL    /* preserve a0 */
-    call0   xt_debugexception            /* load exception handler */
+    J   xt_debugexception            /* load exception handler */
 
     .end        literal_prefix
 

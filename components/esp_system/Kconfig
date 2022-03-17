@@ -34,11 +34,10 @@ menu "ESP System Settings"
 
         config ESP_SYSTEM_GDBSTUB_RUNTIME
             bool "GDBStub at runtime"
-            select FREERTOS_UNICORE
             select ESP_GDBSTUB_ENABLED
+            depends on !IDF_TARGET_ESP32C2
             help
                 Invoke gdbstub on the serial port, allowing for gdb to attach to it and to do a debug on runtime.
-                This feature will switch system to single core mode.
     endchoice
 
     config ESP_SYSTEM_SINGLE_CORE_MODE

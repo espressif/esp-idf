@@ -1,18 +1,25 @@
-#include "freertos/xtensa_rtos.h"
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-// ------------------------------------------------
-    .section .iram1,"ax"
+    #include "freertos/xtensa_rtos.h"
 
-	.global gdbstub_handle_uart_int
-	.global _xt_gdbstub_int
-	.align	4
+    .section .iram1, "ax"
+
+    .global gdbstub_handle_uart_int
+    .global _xt_gdbstub_int
+    .align  4
 
 _xt_gdbstub_int:
 
     /* Allocate exception frame and save minimal context. */
     mov     a0, sp
     addi    sp, sp, -XT_STK_FRMSZ
-    s32i    a0, sp, XT_STK_A1
+    s32i    a0, sp, XT_STK_EXIT
+    s32i    a0, sp, XT_STK_A0
+
     #if XCHAL_HAVE_WINDOWED
     s32e    a0, sp, -12                     /* for debug backtrace */
     #endif
@@ -20,8 +27,6 @@ _xt_gdbstub_int:
     s32i    a0, sp, XT_STK_PS
     rsr     a0, EPC_1                       /* save interruptee's PC */
     s32i    a0, sp, XT_STK_PC
-    rsr     a0, EXCSAVE_1                   /* save interruptee's a0 */
-    s32i    a0, sp, XT_STK_A0
     #if XCHAL_HAVE_WINDOWED
     s32e    a0, sp, -16                     /* for debug backtrace */
     #endif
@@ -34,7 +39,20 @@ _xt_gdbstub_int:
     rsr     a0, EXCVADDR
     s32i    a0, sp, XT_STK_EXCVADDR
 
-    mov     a6,sp
+
+    /* _xt_context_save seems to save the current a0, but we need the interuptees a0. Fix this. */
+    rsr     a0, EXCSAVE_1                   /* save interruptee's a0 */
+
+    s32i    a0, sp, XT_STK_A0
+
+    /* Save context pointer as input parameter */
+    rsr  a6, excsave1
+
+    rsr     a3, EPS
+    s32i    a3, sp, XT_STK_PS   // store PS to the ps place
     movi    a3, gdbstub_handle_uart_int
     callx0  a3
+
+    l32i    a0, sp, XT_STK_EXIT
+    addi    sp, sp, XT_STK_FRMSZ
     ret

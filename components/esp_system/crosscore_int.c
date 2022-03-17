@@ -14,6 +14,10 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
 
+#if CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+#include "esp_gdbstub.h"
+#endif
+
 #if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
 #include "soc/dport_reg.h"
 #elif CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C2
@@ -22,6 +26,7 @@
 
 #define REASON_YIELD            BIT(0)
 #define REASON_FREQ_SWITCH      BIT(1)
+#define REASON_GDB_CALL         BIT(3)
 
 #if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP32C2
 #define REASON_PRINT_BACKTRACE  BIT(2)
@@ -79,6 +84,11 @@ static void IRAM_ATTR esp_crosscore_isr(void *arg) {
          * to allow DFS features without the extra latency of the ISR hook.
          */
     }
+#if CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+    if (my_reason_val & REASON_GDB_CALL) {
+        update_breakpoints();
+    }
+#endif // !CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 #if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32C2 // IDF-2986
     if (my_reason_val & REASON_PRINT_BACKTRACE) {
         esp_backtrace_print(100);
@@ -139,6 +149,11 @@ void IRAM_ATTR esp_crosscore_int_send_yield(int core_id)
 void IRAM_ATTR esp_crosscore_int_send_freq_switch(int core_id)
 {
     esp_crosscore_int_send(core_id, REASON_FREQ_SWITCH);
+}
+
+void IRAM_ATTR esp_crosscore_int_send_gdb_call(int core_id)
+{
+    esp_crosscore_int_send(core_id, REASON_GDB_CALL);
 }
 
 #if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !IDF_TARGET_ESP32C2

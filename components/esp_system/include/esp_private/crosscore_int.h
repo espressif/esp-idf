@@ -48,6 +48,7 @@ void esp_crosscore_int_send_yield(int core_id);
  */
 void esp_crosscore_int_send_freq_switch(int core_id);
 
+void esp_crosscore_int_send_gdb_call(int core_id);
 
 #if !CONFIG_IDF_TARGET_ESP32C3 && !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32C2
 /**
