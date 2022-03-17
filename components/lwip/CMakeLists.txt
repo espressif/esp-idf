@@ -42,7 +42,7 @@ set(srcs
     "lwip/src/core/ipv4/icmp.c"
     "lwip/src/core/ipv4/igmp.c"
     "lwip/src/core/ipv4/ip4.c"
-    "lwip/src/core/ipv4/ip4_napt.c"
+    #"lwip/src/core/ipv4/ip4_napt.c"
     "lwip/src/core/ipv4/ip4_addr.c"
     "lwip/src/core/ipv4/ip4_frag.c"
     "lwip/src/core/ipv6/dhcp6.c"

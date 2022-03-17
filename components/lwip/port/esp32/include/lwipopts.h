@@ -1384,4 +1384,12 @@
 #endif /* CONFIG_LWIP_DHCPS */
 
 
+#if LWIP_NETCONN_SEM_PER_THREAD
+#if ESP_THREAD_SAFE
+#define LWIP_NETCONN_THREAD_SEM_GET() sys_thread_sem_get()
+#define LWIP_NETCONN_THREAD_SEM_ALLOC() sys_thread_sem_init()
+#define LWIP_NETCONN_THREAD_SEM_FREE() sys_thread_sem_deinit()
+#endif
+#endif
+
 #endif /* LWIP_HDR_ESP_LWIPOPTS_H */
