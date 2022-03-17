@@ -64,6 +64,9 @@ typedef UINT8 tBTA_AV_STATUS;
 /* Internal features */
 #define BTA_AV_FEAT_NO_SCO_SSPD 0x8000  /* Do not suspend av streaming as to AG events(SCO or Call) */
 
+/* Protocol service capabilities mask*/
+#define BTA_AV_PSC_DEALY_RPT    (1<<0)  /* Delay Report */
+
 typedef UINT16 tBTA_AV_FEAT;
 
 /* AV channel values */
@@ -247,8 +250,11 @@ typedef UINT8 tBTA_AV_ERR;
 #define BTA_AV_RC_FEAT_EVT      19      /* remote control channel peer supported features update */
 #define BTA_AV_MEDIA_SINK_CFG_EVT    20      /* command to configure codec */
 #define BTA_AV_MEDIA_DATA_EVT   21      /* sending data to Media Task */
+#define BTA_AV_SET_DELAY_VALUE_EVT   22      /* set delay reporting value */
+#define BTA_AV_GET_DELAY_VALUE_EVT   23      /* get delay reporting value */
+#define BTA_AV_SNK_PSC_CFG_EVT  24      /* Protocol service capabilities. */
 /* Max BTA event */
-#define BTA_AV_MAX_EVT          22
+#define BTA_AV_MAX_EVT          25
 
 
 /* function types for call-out functions */
@@ -461,6 +467,17 @@ typedef struct {
     tBTA_AV_HNDL    hndl;       /* Handle associated with the stream that rejected the connection. */
 } tBTA_AV_REJECT;
 
+/* data associated with BTA_AV_SET_DELAY_VALUE_EVT/BTA_AV_GET_DELAY_VALUE_EVT */
+typedef struct {
+    tBTA_AV_STATUS  status;
+    UINT16          delay_value;
+} tBTA_AV_DELAY;
+
+/* data associated with BTA_AV_SNK_PSC_CFG_EVT */
+typedef struct {
+    UINT16          psc_mask;
+} tBTA_AV_SNK_PSC_CFG;
+
 
 /* union of data associated with AV callback */
 typedef union {
@@ -484,6 +501,8 @@ typedef union {
     tBTA_AV_META_MSG    meta_msg;
     tBTA_AV_REJECT      reject;
     tBTA_AV_RC_FEAT     rc_feat;
+    tBTA_AV_DELAY       delay;
+    tBTA_AV_SNK_PSC_CFG psc;
 } tBTA_AV;
 
 /* union of data associated with AV Media callback */
@@ -722,6 +741,28 @@ void BTA_AvProtectReq(tBTA_AV_HNDL hndl, UINT8 *p_data, UINT16 len);
 *******************************************************************************/
 void BTA_AvProtectRsp(tBTA_AV_HNDL hndl, UINT8 error_code, UINT8 *p_data,
                       UINT16 len);
+
+/*******************************************************************************
+**
+** Function         BTA_SetDelayValue
+**
+** Description      Set delay report value
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_SetDelayValue(UINT16 delay_value);
+
+/*******************************************************************************
+**
+** Function         BTA_GetDelayValue
+**
+** Description      Get delay report value
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_GetDelayValue(void);
 
 /*******************************************************************************
 **

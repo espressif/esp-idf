@@ -80,6 +80,8 @@ enum {
 #define AVDT_CLOSE_INT          1
 #define AVDT_OPEN_ACP           2
 #define AVDT_OPEN_INT           3
+#define AVDT_CONF_ACP           4
+#define AVDT_CONF_INT           5
 
 /* states for avdt_scb_verify */
 #define AVDT_VERIFY_OPEN        0
@@ -108,6 +110,9 @@ enum {
 
 /* scb transport channel disconnect timeout value */
 #define AVDT_SCB_TC_DISC_TOUT   10
+
+/* scb transport delay reporting command timeout value */
+#define AVDT_SCB_TC_DELAY_RPT_TOUT    5
 
 /* maximum number of command retransmissions */
 #ifndef AVDT_RET_MAX
@@ -276,6 +281,9 @@ enum {
     AVDT_SCB_TC_TIMER,
     AVDT_SCB_CLR_VARS,
     AVDT_SCB_DEALLOC,
+    AVDT_SCB_HDL_DELAY_RPT_TOUT,
+    AVDT_SCB_INIT_OPEN_REQ_EVT,
+    AVDT_SCB_SEND_DELAY_REPORT_CMD_EVT,
     AVDT_SCB_NUM_ACTIONS
 };
 
@@ -330,7 +338,8 @@ enum {
     AVDT_SCB_TC_CLOSE_EVT,
     AVDT_SCB_TC_CONG_EVT,
     AVDT_SCB_TC_DATA_EVT,
-    AVDT_SCB_CC_CLOSE_EVT
+    AVDT_SCB_CC_CLOSE_EVT,
+    AVDT_SCB_DELAY_RPT_RSP_TOUT_EVT
 };
 
 /* adaption layer number of stream routing table entries */
@@ -550,6 +559,7 @@ typedef struct {
     tAVDT_SCB_ACTION    *p_scb_act;             /* pointer to SCB action functions */
     tAVDT_CTRL_CBACK    *p_conn_cback;          /* connection callback function */
     UINT8               trace_level;            /* trace level */
+    UINT16              delay_value;            /* delay reporting value */
 } tAVDT_CB;
 
 
@@ -674,6 +684,9 @@ extern void avdt_scb_clr_pkt(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data);
 extern void avdt_scb_tc_timer(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data);
 extern void avdt_scb_clr_vars(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data);
 extern void avdt_scb_queue_frags(tAVDT_SCB *p_scb, UINT8 **pp_data, UINT32 *p_data_len, fixed_queue_t *pq);
+extern void avdt_scb_hdl_delay_rpt_tout(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data);
+extern void avdt_scb_init_open_req(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data);
+extern void avdt_scb_send_delay_report_cmd(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data);
 
 /* msg function declarations */
 extern BOOLEAN avdt_msg_send(tAVDT_CCB *p_ccb, BT_HDR *p_msg);

@@ -52,8 +52,9 @@ enum {
     /* these events are handled by the AV stream state machine */
     BTA_AV_API_OPEN_EVT,
     BTA_AV_API_CLOSE_EVT,
-    BTA_AV_AP_START_EVT,        /* the following 2 events must be in the same order as the *API_*EVT */
+    BTA_AV_AP_START_EVT,        /* the following 3 events must be in the same order as the *API_*EVT */
     BTA_AV_AP_STOP_EVT,
+    BTA_AV_AP_SET_DELAY_VALUE_EVT,
     BTA_AV_API_RECONFIG_EVT,
     BTA_AV_API_PROTECT_REQ_EVT,
     BTA_AV_API_PROTECT_RSP_EVT,
@@ -99,12 +100,15 @@ enum {
     BTA_AV_DEREG_COMP_EVT,
 #if (BTA_AV_SINK_INCLUDED == TRUE)
     BTA_AV_API_SINK_ENABLE_EVT,
+    // add
+    BTA_AV_API_GET_DELAY_VALUE_EVT,
 #endif
 #if (AVDT_REPORTING == TRUE)
     BTA_AV_AVDT_RPT_CONN_EVT,
 #endif
-    BTA_AV_API_START_EVT,       /* the following 2 events must be in the same order as the *AP_*EVT */
-    BTA_AV_API_STOP_EVT
+    BTA_AV_API_START_EVT,       /* the following 3 events must be in the same order as the *AP_*EVT */
+    BTA_AV_API_STOP_EVT,
+    BTA_AV_API_SET_DELAY_VALUE_EVT,
 };
 
 /* events for AV control block state machine */
@@ -116,13 +120,13 @@ enum {
 
 /* events that do not go through state machine */
 #define BTA_AV_FIRST_NSM_EVT    BTA_AV_API_ENABLE_EVT
-#define BTA_AV_LAST_NSM_EVT     BTA_AV_API_STOP_EVT
+#define BTA_AV_LAST_NSM_EVT     BTA_AV_API_SET_DELAY_VALUE_EVT
 
 /* API events passed to both SSMs (by bta_av_api_to_ssm) */
 #define BTA_AV_FIRST_A2S_API_EVT    BTA_AV_API_START_EVT
 #define BTA_AV_FIRST_A2S_SSM_EVT    BTA_AV_AP_START_EVT
 
-#define BTA_AV_LAST_EVT             BTA_AV_API_STOP_EVT
+#define BTA_AV_LAST_EVT             BTA_AV_API_SET_DELAY_VALUE_EVT
 
 /* maximum number of SEPS in stream discovery results */
 #define BTA_AV_NUM_SEPS         32
@@ -333,6 +337,16 @@ typedef struct {
     tBTA_AV_DATA_CBACK  *p_app_data_cback; /* Application callback for media packets */
 } tBTA_AV_SEP;
 
+/* data type for BTA_AV_API_SET_DELAY_VALUE_EVT */
+typedef struct {
+    BT_HDR              hdr;
+    UINT16              delay_value;
+} tBTA_AV_API_SET_DELAY_VALUE;
+
+/* data type for BTA_AV_API_GET_DELAY_VALUE_EVT */
+typedef struct {
+    BT_HDR              hdr;
+} tBTA_AV_API_GET_DELAY_VALUE;
 
 /* initiator/acceptor role for adaption */
 #define BTA_AV_ROLE_AD_INT          0x00       /* initiator */
@@ -366,6 +380,8 @@ typedef union {
     tBTA_AV_ROLE_RES        role_res;
     tBTA_AV_SDP_RES         sdp_res;
     tBTA_AV_API_META_RSP    api_meta_rsp;
+    tBTA_AV_API_SET_DELAY_VALUE api_set_delay_vlaue;
+    tBTA_AV_API_GET_DELAY_VALUE api_get_delay_value;
 } tBTA_AV_DATA;
 
 typedef void (tBTA_AV_VDP_DATA_ACT)(void *p_scb);
@@ -682,6 +698,7 @@ extern void bta_av_role_res (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data);
 extern void bta_av_delay_co (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data);
 extern void bta_av_open_at_inc (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data);
 extern void bta_av_open_fail_sdp (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data);
+extern void bta_av_set_delay_value (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data);
 
 /* ssm action functions - vdp specific */
 extern void bta_av_do_disc_vdp (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data);

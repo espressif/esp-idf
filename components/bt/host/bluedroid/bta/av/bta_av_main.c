@@ -35,6 +35,7 @@
 #include "stack/l2c_api.h"
 #include "stack/l2cdefs.h"
 #include "bta/bta_av_co.h"
+#include "stack/a2d_api.h"
 #if( defined BTA_AR_INCLUDED ) && (BTA_AR_INCLUDED == TRUE)
 #include "bta/bta_ar_api.h"
 #endif
@@ -152,6 +153,7 @@ static void bta_av_api_enable(tBTA_AV_DATA *p_data);
 static void bta_av_api_register(tBTA_AV_DATA *p_data);
 #if (BTA_AV_SINK_INCLUDED == TRUE)
 static void bta_av_api_sink_enable(tBTA_AV_DATA *p_data);
+static void bta_av_api_get_delay_value(tBTA_AV_DATA *p_data);
 #endif
 static void bta_av_ci_data(tBTA_AV_DATA *p_data);
 #if (AVDT_REPORTING == TRUE)
@@ -179,12 +181,14 @@ const tBTA_AV_NSM_ACT bta_av_nsm_act[] = {
     bta_av_dereg_comp,      /* BTA_AV_DEREG_COMP_EVT */
 #if (BTA_AV_SINK_INCLUDED == TRUE)
     bta_av_api_sink_enable, /* BTA_AV_API_SINK_ENABLE_EVT */
+    bta_av_api_get_delay_value, /* BTA_AV_API_GET_DELAY_VALUE_EVT */
 #endif
 #if (AVDT_REPORTING == TRUE)
     bta_av_rpc_conn,        /* BTA_AV_AVDT_RPT_CONN_EVT */
 #endif
     bta_av_api_to_ssm,      /* BTA_AV_API_START_EVT */
     bta_av_api_to_ssm,      /* BTA_AV_API_STOP_EVT */
+    bta_av_api_to_ssm,      /* BTA_AV_API_SET_DELAY_VALUE_EVT */
 };
 
 /*****************************************************************************
@@ -488,6 +492,27 @@ static void bta_av_api_sink_enable(tBTA_AV_DATA *p_data)
         }
     }
 }
+
+/*******************************************************************************
+**
+** Function         bta_av_api_get_delay_value
+**
+** Description      Get delay reporting value
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+static void bta_av_api_get_delay_value(tBTA_AV_DATA *p_data)
+{
+    UNUSED(p_data);
+    tBTA_AV_DELAY delay;
+
+    delay.delay_value = AVDT_GetDelayValue();
+
+    /* call callback with get delay value event */
+    (*bta_av_cb.p_cback)(BTA_AV_GET_DELAY_VALUE_EVT, (tBTA_AV *)&delay);
+}
 #endif
 /*******************************************************************************
 **
@@ -625,6 +650,8 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
 #endif
             if (bta_av_cb.features & BTA_AV_FEAT_DELAY_RPT) {
                 cs.cfg.psc_mask |= AVDT_PSC_DELAY_RPT;
+                a2d_set_avdt_sdp_ver(AVDT_VERSION_SYNC);
+                a2d_set_a2dp_sdp_ver(A2D_VERSION_SYC);
             }
 
             /* keep the configuration in the stream control block */
@@ -1259,6 +1286,7 @@ char *bta_av_evt_code(UINT16 evt_code)
     case BTA_AV_API_CLOSE_EVT: return "API_CLOSE";
     case BTA_AV_AP_START_EVT: return "AP_START";
     case BTA_AV_AP_STOP_EVT: return "AP_STOP";
+    case BTA_AV_AP_SET_DELAY_VALUE_EVT: return "AP_SET_DELAY_VALUE";
     case BTA_AV_API_RECONFIG_EVT: return "API_RECONFIG";
     case BTA_AV_API_PROTECT_REQ_EVT: return "API_PROTECT_REQ";
     case BTA_AV_API_PROTECT_RSP_EVT: return "API_PROTECT_RSP";
@@ -1303,12 +1331,14 @@ char *bta_av_evt_code(UINT16 evt_code)
     case BTA_AV_DEREG_COMP_EVT: return "DEREG_COMP";
 #if (BTA_AV_SINK_INCLUDED == TRUE)
     case BTA_AV_API_SINK_ENABLE_EVT: return "SINK_ENABLE";
+    case BTA_AV_API_GET_DELAY_VALUE_EVT: return "GET_DELAY_VALUE";
 #endif
 #if (AVDT_REPORTING == TRUE)
     case BTA_AV_AVDT_RPT_CONN_EVT: return "RPT_CONN";
 #endif
     case BTA_AV_API_START_EVT: return "API_START";
     case BTA_AV_API_STOP_EVT: return "API_STOP";
+    case BTA_AV_API_SET_DELAY_VALUE_EVT: return "API_SET_DELAY_VALUE";
     default:             return "unknown";
     }
 }

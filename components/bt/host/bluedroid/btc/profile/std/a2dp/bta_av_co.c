@@ -979,6 +979,7 @@ void bta_av_co_audio_drop(tBTA_AV_HNDL hndl)
  *******************************************************************************/
 void bta_av_co_audio_delay(tBTA_AV_HNDL hndl, UINT16 delay)
 {
+    // todo
     FUNC_TRACE();
 
     APPL_TRACE_ERROR("bta_av_co_audio_delay handle: x%x, delay:0x%x", hndl, delay);

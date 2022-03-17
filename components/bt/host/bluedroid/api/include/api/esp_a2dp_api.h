@@ -23,6 +23,12 @@ extern "C" {
 
 typedef uint8_t esp_a2d_mct_t;
 
+/**
+ * @brief Protocol service capabilities. This value is a mask.
+ */
+#define ESP_A2D_PSC_DELAY_RPT          (1<<0)  /*!< Delay Report */
+typedef uint16_t esp_a2d_psc_t;
+
 /** A2DP media codec capabilities union
  */
 typedef struct {
@@ -82,6 +88,12 @@ typedef enum {
     ESP_A2D_INIT_SUCCESS                       /*!< A2DP profile deinit successful event */
 } esp_a2d_init_state_t;
 
+/// Bluetooth A2DP set delay report value states
+typedef enum {
+    ESP_A2D_SET_SUCCESS = 0,                /*!< A2DP profile set delay report value successful */
+    ESP_A2D_SET_INVALID_PARAMS              /*!< A2DP profile set delay report value is invalid parameter */
+} esp_a2d_set_delay_value_state_t;
+
 /// A2DP callback events
 typedef enum {
     ESP_A2D_CONNECTION_STATE_EVT = 0,          /*!< connection state changed event */
@@ -89,6 +101,10 @@ typedef enum {
     ESP_A2D_AUDIO_CFG_EVT,                     /*!< audio codec is configured, only used for A2DP SINK */
     ESP_A2D_MEDIA_CTRL_ACK_EVT,                /*!< acknowledge event in response to media control commands */
     ESP_A2D_PROF_STATE_EVT,                    /*!< indicate a2dp init&deinit complete */
+    ESP_A2D_SNK_PSC_CFG_EVT,                   /*!< protocol service capabilities configured，only used for A2DP SINK */
+    ESP_A2D_SNK_SET_DELAY_VALUE_EVT,           /*!< indicate a2dp sink set delay report value complete,  only used for A2DP SINK */
+    ESP_A2D_SNK_GET_DELAY_VALUE_EVT,           /*!< indicate a2dp sink get delay report value complete,  only used for A2DP SINK */
+    ESP_A2D_REPORT_SNK_DELAY_VALUE_EVT,        /*!< report delay value,  only used for A2DP SRC */
 } esp_a2d_cb_event_t;
 
 /// A2DP state callback parameters
@@ -125,12 +141,36 @@ typedef union {
         esp_a2d_media_ctrl_t cmd;              /*!< media control commands to acknowledge */
         esp_a2d_media_ctrl_ack_t status;       /*!< acknowledgement to media control commands */
     } media_ctrl_stat;                         /*!< status in acknowledgement to media control commands */
+
     /**
      * @brief ESP_A2D_PROF_STATE_EVT
      */
     struct a2d_prof_stat_param {
         esp_a2d_init_state_t init_state;       /*!< a2dp profile state param */
     } a2d_prof_stat;                           /*!< status to indicate a2d prof init or deinit */
+
+    /**
+     * @brief ESP_A2D_SNK_PSC_CFG_EVT
+     */
+    struct a2d_psc_cfg_param {
+        esp_a2d_psc_t psc_mask;                /*!< protocol service capabilities configured */
+    } a2d_psc_cfg_stat;                        /*!< status to indicate protocol service capabilities configured */
+
+    /**
+     * @brief ESP_A2D_SNK_SET_DELAY_VALUE_EVT
+     */
+    struct a2d_set_stat_param {
+        esp_a2d_set_delay_value_state_t set_state;       /*!< a2dp profile state param */
+        uint16_t delay_value;                            /*!< delay report value */
+    } a2d_set_delay_value_stat;                          /*!< A2DP sink set delay report value status */
+
+    /**
+     * @brief ESP_A2D_SNK_GET_DELAY_VALUE_EVT
+     */
+    struct a2d_get_stat_param {
+        uint16_t delay_value;                  /*!< delay report value */
+    } a2d_get_delay_value_stat;                /*!< A2DP sink get delay report value status */
+
 } esp_a2d_cb_param_t;
 
 /**
@@ -260,6 +300,36 @@ esp_err_t esp_a2d_sink_connect(esp_bd_addr_t remote_bda);
  *
  */
 esp_err_t esp_a2d_sink_disconnect(esp_bd_addr_t remote_bda);
+
+/**
+ *
+ * @brief           Set delay reporting value. The delay value of sink is caused by buffering (including
+ *                  protocol stack and application layer), decoding and rendering. The default delay
+ *                  value is 120ms, if the set value is less than 120ms, the setting will fail. This API
+ *                  must be called after esp_a2d_sink_init() and before esp_a2d_sink_deinit().
+ *
+ * @param[in]       delay_value: reporting value is in 1/10 millisecond
+ *
+ * @return
+ *                  - ESP_OK: delay value is sent to lower layer successfully
+ *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_FAIL: others
+ *
+ */
+esp_err_t esp_a2d_sink_set_delay_value(uint16_t delay_value);
+
+/**
+ *
+ * @brief           Get delay reporting value. This API must be called after
+ *                  esp_a2d_sink_init() and before esp_a2d_sink_deinit().
+ *
+ * @return
+ *                  - ESP_OK: if the request is sent successfully
+ *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_FAIL: others
+ *
+ */
+esp_err_t esp_a2d_sink_get_delay_value(void);
 
 
 /**
