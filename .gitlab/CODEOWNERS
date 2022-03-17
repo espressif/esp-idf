@@ -167,6 +167,7 @@
 /examples/network/            @esp-idf-codeowners/network @esp-idf-codeowners/wifi
 /examples/openthread/         @esp-idf-codeowners/ieee802154
 /examples/peripherals/        @esp-idf-codeowners/peripherals
+/examples/peripherals/usb/    @esp-idf-codeowners/peripherals @esp-idf-codeowners/peripherals/usb
 /examples/protocols/          @esp-idf-codeowners/network @esp-idf-codeowners/app-utilities
 /examples/provisioning/       @esp-idf-codeowners/app-utilities
 /examples/security/           @esp-idf-codeowners/security
