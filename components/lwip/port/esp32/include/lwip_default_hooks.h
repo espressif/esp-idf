@@ -53,6 +53,9 @@ int lwip_hook_ip6_input(struct pbuf *p, struct netif *inp);
 #define LWIP_HOOK_IP6_INPUT lwip_hook_ip6_input
 #endif /* CONFIG_LWIP_HOOK_IP6_INPUT_CUSTIOM... */
 
+struct netif *
+ip4_route_src_hook(const ip4_addr_t *src,const ip4_addr_t *dest);
+
 #ifdef __cplusplus
 }
 #endif
