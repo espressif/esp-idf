@@ -32,8 +32,6 @@
 #define SOC_TWAI_SUPPORTED              1
 #define SOC_BT_SUPPORTED                1
 #define SOC_BLUEDROID_SUPPORTED		1
-#define SOC_DIG_SIGN_SUPPORTED          1
-#define SOC_HMAC_SUPPORTED              1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
 #define SOC_TEMP_SENSOR_SUPPORTED       1
@@ -51,6 +49,11 @@
 #define SOC_RMT_SUPPORTED               1
 #define SOC_SIGMADELTA_SUPPORTED        1
 #define SOC_SUPPORT_COEXISTENCE         1
+#define SOC_AES_SUPPORTED               1
+#define SOC_MPI_SUPPORTED               1
+#define SOC_SHA_SUPPORTED               1
+#define SOC_HMAC_SUPPORTED              1
+#define SOC_DIG_SIGN_SUPPORTED          1
 
 /*-------------------------- AES CAPS -----------------------------------------*/
 #define SOC_AES_SUPPORT_DMA     (1)

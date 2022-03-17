@@ -127,14 +127,6 @@ config SOC_CCOMP_TIMER_SUPPORTED
     bool
     default y
 
-config SOC_DIG_SIGN_SUPPORTED
-    bool
-    default y
-
-config SOC_HMAC_SUPPORTED
-    bool
-    default y
-
 config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
     default y
@@ -204,6 +196,26 @@ config SOC_SUPPORT_COEXISTENCE
     default y
 
 config SOC_TEMP_SENSOR_SUPPORTED
+    bool
+    default y
+
+config SOC_AES_SUPPORTED
+    bool
+    default y
+
+config SOC_MPI_SUPPORTED
+    bool
+    default y
+
+config SOC_SHA_SUPPORTED
+    bool
+    default y
+
+config SOC_HMAC_SUPPORTED
+    bool
+    default y
+
+config SOC_DIG_SIGN_SUPPORTED
     bool
     default y
 

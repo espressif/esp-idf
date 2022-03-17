@@ -35,14 +35,6 @@ config SOC_ESP_NIMBLE_CONTROLLER
     bool
     default y
 
-config SOC_DIG_SIGN_SUPPORTED
-    bool
-    default y
-
-config SOC_HMAC_SUPPORTED
-    bool
-    default y
-
 config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
     default y
@@ -90,6 +82,30 @@ config SOC_RMT_SUPPORTED
 config SOC_SIGMADELTA_SUPPORTED
     bool
     default y
+
+config SOC_AES_SUPPORTED
+    bool
+    default y
+
+config SOC_MPI_SUPPORTED
+    bool
+    default y
+
+config SOC_SHA_SUPPORTED
+    bool
+    default y
+
+config SOC_HMAC_SUPPORTED
+    bool
+    default y
+
+config SOC_DIG_SIGN_SUPPORTED
+    bool
+    default y
+
+config SOC_ECC_SUPPORTED
+    bool
+    default n
 
 config SOC_AES_SUPPORT_DMA
     bool

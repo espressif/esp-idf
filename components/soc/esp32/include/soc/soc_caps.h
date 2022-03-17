@@ -85,6 +85,9 @@
 #define SOC_RMT_SUPPORTED           1
 #define SOC_SIGMADELTA_SUPPORTED    1
 #define SOC_SUPPORT_COEXISTENCE     1
+#define SOC_AES_SUPPORTED           1
+#define SOC_MPI_SUPPORTED           1
+#define SOC_SHA_SUPPORTED           1
 
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
