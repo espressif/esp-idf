@@ -8,7 +8,7 @@ The behaviour of the example is:
 
 * Listens to specified multicast addresses (one IPV4 and/or one IPV6).
 * Print any UDP packets received as ASCII text.
-* If no packets are received it will periodicially (after 2.5 seconds) send its own plaintext packet(s) to the multicast address(es).
+* If no packets are received it will periodically (after 2.5 seconds) send its own plaintext packet(s) to the multicast address(es).
 
 ## Configuration
 
