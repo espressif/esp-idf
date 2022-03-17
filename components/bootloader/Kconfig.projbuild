@@ -501,7 +501,7 @@ menu "Security features"
     config SECURE_BOOT
         bool "Enable hardware Secure Boot in bootloader (READ DOCS FIRST)"
         default n
-        depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || ESP32C3_REV_MIN_3 || IDF_TARGET_ESP32S3
+        depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || ESP32C3_REV_MIN >= 3 || IDF_TARGET_ESP32S3
         select ESPTOOLPY_NO_STUB if !IDF_TARGET_ESP32 && !IDF_TARGET_ESP32S2
         help
             Build a bootloader which enables Secure Boot on first boot.
