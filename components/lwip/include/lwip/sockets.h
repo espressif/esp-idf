@@ -5,9 +5,8 @@
  */
 #pragma once
 
-#include "sys/poll.h"
-#include "lwip/sockets.h"
-#include "netdb.h"
+#include_next "lwip/sockets.h"
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -15,44 +14,6 @@ extern "C" {
 
 #if defined(CONFIG_ESP_NETIF_TCPIP_LWIP_ORIG) || defined(CONFIG_ESP_NETIF_TCPIP_LWIP)
 
-// lwIP's socket API is mostly implemented as macros,
-// but ASIO uses the same symbols in different namespaces, where macros wouldn't work.
-// Here we have to undefined the symbols for ASIO build and declare as standard functions
-#undef getaddrinfo
-#undef gethostbyname_r
-#undef gethostbyname
-#undef freeaddrinfo
-#undef accept
-#undef bind
-#undef shutdown
-#undef getpeername
-#undef getsockname
-#undef setsockopt
-#undef setsockopt
-#undef getsockopt
-#undef closesocket
-#undef connect
-#undef listen
-#undef recvmsg
-#undef recv
-#undef recvfrom
-#undef sendmsg
-#undef send
-#undef sendto
-#undef socket
-#undef inet_ntop
-#undef inet_pton
-#undef poll
-#undef select
-
-static inline int gethostbyname_r(const char *name, struct hostent *ret, char *buf, size_t buflen, struct hostent **result, int *h_errnop)
-{ return lwip_gethostbyname_r(name, ret, buf, buflen, result, h_errnop); }
-static inline struct hostent *gethostbyname(const char *name)
-{ return lwip_gethostbyname(name); }
-static inline void freeaddrinfo(struct addrinfo *ai)
-{ lwip_freeaddrinfo(ai); }
-static inline int getaddrinfo(const char *nodename, const char *servname, const struct addrinfo *hints, struct addrinfo **res)
-{ return lwip_getaddrinfo(nodename, servname, hints, res); }
 static inline int accept(int s,struct sockaddr *addr,socklen_t *addrlen)
 { return lwip_accept(s,addr,addrlen); }
 static inline int bind(int s,const struct sockaddr *name, socklen_t namelen)
@@ -91,6 +52,7 @@ static inline const char *inet_ntop(int af, const void *src, char *dst, socklen_
 { return lwip_inet_ntop(af, src, dst, size);  }
 static inline int inet_pton(int af, const char *src, void *dst)
 { return lwip_inet_pton(af, src, dst); }
+
 #endif // CONFIG_ESP_NETIF_TCPIP_LWIP_ORIG || CONFIG_ESP_NETIF_TCPIP_LWIP
 
 #ifdef __cplusplus

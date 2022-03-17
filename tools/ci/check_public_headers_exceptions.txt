@@ -143,5 +143,6 @@ components/openssl/include/openssl/ssl.h
 components/ulp/include/ulp_common.h
 components/ulp/include/esp32s2/ulp_riscv.h
 components/lwip/include/apps/sntp/sntp.h
+components/lwip/include/lwip/sockets.h
 components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h

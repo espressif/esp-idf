@@ -19,9 +19,9 @@
 # endif   // CONFIG_COMPILER_RTTI
 
 //
-// LWIP compatibility inet and address macros/functions
+// Use system sockets
 //
-# include "esp_cpp_sockets.h"
+# include "sys/socket.h"
 
 //
 // Specific ASIO feature flags

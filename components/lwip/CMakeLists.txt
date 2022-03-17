@@ -1,4 +1,5 @@
 set(include_dirs
+    include
     include/apps
     include/apps/sntp
     lwip/src/include
