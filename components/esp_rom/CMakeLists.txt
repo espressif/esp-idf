@@ -171,7 +171,7 @@ else() # Regular app build
             endif()
         endif()
 
-        if(CONFIG_ESP32C3_REV_MIN_3)
+        if(CONFIG_ESP32C3_REV_MIN_3 OR CONFIG_ESP32C3_REV_MIN_4)
             rom_linker_script("eco3")
         endif()
 
