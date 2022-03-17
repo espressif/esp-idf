@@ -79,8 +79,15 @@ typedef struct {
                                 * pin and sets this field to 0xEE=disabled) */
     uint8_t spi_pin_drv[3];     /*!< Drive settings for the SPI flash pins (read by ROM bootloader) */
     esp_chip_id_t chip_id;      /*!< Chip identification number */
-    uint8_t min_chip_rev;       /*!< Minimum chip revision supported by image */
-    uint8_t reserved[8];       /*!< Reserved bytes in additional header space, currently unused */
+    uint8_t min_chip_rev;       /*!< Minimal chip revision supported by image
+                                 * After the Major and Minor revision eFuses were introduced into the chips, this field is no longer used.
+                                 * But for compatibility reasons, we keep this field and the data in it.
+                                 * Use min_chip_rev_full instead.
+                                 * The software interprets this as a Major version for most of the chips and as a Minor version for the ESP32-C3.
+                                 */
+    uint16_t min_chip_rev_full; /*!< Minimal chip revision supported by image, in format: major * 100 + minor */
+    uint16_t max_chip_rev_full; /*!< Maximal chip revision supported by image, in format: major * 100 + minor */
+    uint8_t reserved[4];        /*!< Reserved bytes in additional header space, currently unused */
     uint8_t hash_appended;      /*!< If 1, a SHA256 digest "simple hash" (of the entire image) is appended after the checksum.
                                  * Included in image length. This digest
                                  * is separate to secure boot and only used for detecting corruption.

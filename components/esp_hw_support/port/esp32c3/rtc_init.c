@@ -317,7 +317,7 @@ static void set_rtc_dig_dbias()
     3. a reasonable rtc_dbias can be calculated by a certion formula.
     */
     uint32_t rtc_dbias = 28, dig_dbias = 28;
-    uint8_t chip_version = efuse_hal_get_minor_chip_version();
+    unsigned chip_version = efuse_hal_chip_revision();
     if (chip_version >= 3) {
         dig_dbias = get_dig_dbias_by_efuse(chip_version);
         if (dig_dbias != 0) {
