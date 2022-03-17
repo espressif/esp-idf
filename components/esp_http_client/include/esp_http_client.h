@@ -149,7 +149,9 @@ typedef enum {
     HttpStatus_MultipleChoices   = 300,
     HttpStatus_MovedPermanently  = 301,
     HttpStatus_Found             = 302,
+    HttpStatus_SeeOther          = 303,
     HttpStatus_TemporaryRedirect = 307,
+    HttpStatus_PermanentRedirect = 308,
 
     /* 4xx - Client Error */
     HttpStatus_BadRequest        = 400,
