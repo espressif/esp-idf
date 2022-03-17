@@ -347,7 +347,7 @@ menu "mbedTLS"
     config MBEDTLS_HARDWARE_AES
         bool "Enable hardware AES acceleration"
         default y
-        depends on !SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST && !IDF_TARGET_ESP32C2
+        depends on !SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST && SOC_AES_SUPPORTED
         help
             Enable hardware accelerated AES encryption & decryption.
 
@@ -366,7 +366,7 @@ menu "mbedTLS"
 
     config MBEDTLS_HARDWARE_GCM
         bool "Enable partially hardware accelerated GCM"
-        depends on IDF_TARGET_ESP32S2 && MBEDTLS_HARDWARE_AES
+        depends on SOC_AES_SUPPORT_GCM && MBEDTLS_HARDWARE_AES
         default y
         help
             Enable partially hardware accelerated GCM. GHASH calculation is still done
@@ -379,7 +379,7 @@ menu "mbedTLS"
     config MBEDTLS_HARDWARE_MPI
         bool "Enable hardware MPI (bignum) acceleration"
         default y
-        depends on !SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST && !IDF_TARGET_ESP32C2
+        depends on !SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST && SOC_MPI_SUPPORTED
         help
             Enable hardware accelerated multiple precision integer operations.
 
@@ -1001,7 +1001,7 @@ menu "mbedTLS"
     config MBEDTLS_LARGE_KEY_SOFTWARE_MPI
         bool "Fallback to software implementation for larger MPI values"
         depends on MBEDTLS_HARDWARE_MPI
-        default y if IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32C2  # HW max 3072 bits
+        default y if SOC_RSA_MAX_BIT_LEN <= 3072 # HW max 3072 bits
         default n
         help
             Fallback to software implementation for RSA key lengths
