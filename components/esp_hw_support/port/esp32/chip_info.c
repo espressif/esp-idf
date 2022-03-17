@@ -7,6 +7,7 @@
 #include <string.h>
 #include "esp_chip_info.h"
 #include "soc/soc.h"
+#include "soc/chip_revision.h"
 #include "soc/efuse_reg.h"
 #include "hal/efuse_ll.h"
 #include "hal/efuse_hal.h"
@@ -42,6 +43,7 @@ void esp_chip_info(esp_chip_info_t* out_info)
 #if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
 inline bool soc_has_cache_lock_bug(void)
 {
-    return (efuse_hal_get_major_chip_version() == 3);
+    unsigned rev = efuse_hal_chip_revision();
+    return ESP_CHIP_REV_ABOVE(rev, 300);
 }
 #endif

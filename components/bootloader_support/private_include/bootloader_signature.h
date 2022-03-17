@@ -25,7 +25,7 @@
 #include "esp32c6/rom/secure_boot.h"
 #endif
 
-#if !CONFIG_IDF_TARGET_ESP32 || CONFIG_ESP32_REV_MIN_3
+#if !CONFIG_IDF_TARGET_ESP32 || CONFIG_ESP32_REV_MIN_FULL >= 300
 
 /** @brief Verify the secure boot signature block for Secure Boot V2.
  *

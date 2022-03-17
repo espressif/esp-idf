@@ -13,6 +13,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "soc/efuse_periph.h"
+#include "soc/chip_revision.h"
 #include "hal/efuse_hal.h"
 #include "bootloader_random.h"
 #include "sys/param.h"
@@ -41,9 +42,9 @@ void esp_efuse_disable_basic_rom_console(void)
 
 esp_err_t esp_efuse_disable_rom_download_mode(void)
 {
-#ifndef CONFIG_ESP32_REV_MIN_3
+#if CONFIG_ESP32_REV_MIN_FULL < 300
     /* Check if we support this revision at all */
-    if (efuse_hal_get_major_chip_version() < 3) {
+    if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 300)) {
         return ESP_ERR_NOT_SUPPORTED;
     }
 #endif

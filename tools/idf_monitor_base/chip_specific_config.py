@@ -27,7 +27,7 @@ conf = {
             'enter_boot_set': 1.3,
             'enter_boot_unset': 0.45,
         },
-        1: {
+        100: {
             'reset': 0.2,
             'enter_boot_set': 0.1,
             'enter_boot_unset': 0.05,

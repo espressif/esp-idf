@@ -21,11 +21,11 @@
 #define INT_WDT_PANIC       "Interrupt wdt timeout on CPU0"
 #define INT_WDT             "TG1WDT_SYS_RESET"
 #define RTC_WDT             "RTCWDT_RTC_RESET"
-#ifdef CONFIG_ESP32_REV_MIN_3
+#if CONFIG_ESP32_REV_MIN_FULL >= 300
 #define BROWNOUT            "RTCWDT_BROWN_OUT_RESET"
 #else
 #define BROWNOUT            "SW_CPU_RESET"
-#endif // CONFIG_ESP32_REV_MIN_3
+#endif // CONFIG_ESP32_REV_MIN_FULL >= 300
 #define STORE_ERROR         "StoreProhibited"
 
 #elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
