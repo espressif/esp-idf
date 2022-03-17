@@ -363,6 +363,8 @@ Enabling Nano formatting also reduces the stack usage of each function that call
 
 .. _Newlib README file: https://sourceware.org/newlib/README
 
+.. _minimizing_binary_mbedtls:
+
 mbedTLS features
 @@@@@@@@@@@@@@@@
 
@@ -375,12 +377,13 @@ These include:
 - :ref:`CONFIG_MBEDTLS_SHA512_C`
 - :ref:`CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS`
 - :ref:`CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS`
+- :ref:`CONFIG_MBEDTLS_SSL_CONTEXT_SERIALIZATION`
 - :ref:`CONFIG_MBEDTLS_SSL_ALPN`
+- :ref:`CONFIG_MBEDTLS_SSL_RENEGOTIATION`
 - :ref:`CONFIG_MBEDTLS_CCM_C`
 - :ref:`CONFIG_MBEDTLS_GCM_C`
 - :ref:`CONFIG_MBEDTLS_ECP_C` (Alternatively: Leave this option enabled but disable some of the elliptic curves listed in the sub-menu.)
-- :ref:`CONFIG_MBEDTLS_SSL_RENEGOTIATION`
-- Change :ref:`CONFIG_MBEDTLS_TLS_MODE` if both Server & Client are not needed
+- Change :ref:`CONFIG_MBEDTLS_TLS_MODE` if both server & client functionalities are not needed
 - Consider disabling some ciphersuites listed in the "TLS Key Exchange Methods" sub-menu (i.e. :ref:`CONFIG_MBEDTLS_KEY_EXCHANGE_RSA`)
 
 The help text for each option has some more information.

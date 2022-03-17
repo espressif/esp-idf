@@ -17,6 +17,7 @@ Application Protocols
     esp_https_server
     icmp_echo
     mdns
+    mbedtls
     
 Code examples for this API section are provided in the :example:`protocols` directory of ESP-IDF examples.
 

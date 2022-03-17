@@ -17,6 +17,7 @@
     esp_https_server
     icmp_echo
     mdns
+    mbedtls
 
 此 API 部分的示例代码存放在 ESP-IDF 示例项目的 :example:`protocols` 目录下。
 
