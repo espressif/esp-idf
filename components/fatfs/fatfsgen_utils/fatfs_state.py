@@ -29,6 +29,7 @@ class FATFSState:
                  num_heads: int,
                  hidden_sectors: int,
                  file_sys_type: str,
+                 use_default_datetime: bool,
                  explicit_fat_type: int = None,
                  long_names_enabled: bool = False):
 
@@ -50,6 +51,7 @@ class FATFSState:
         self.size: int = size
         self.sectors_per_fat_cnt: int = sectors_per_fat
         self.sectors_per_cluster: int = sectors_per_cluster
+        self.use_default_datetime: bool = use_default_datetime
 
         if self.clusters in (FAT12_MAX_CLUSTERS, FAT16_MAX_CLUSTERS):
             print('WARNING: It is not recommended to create FATFS with bounding '

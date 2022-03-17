@@ -7,7 +7,8 @@ from construct import Const, Int8ul, Int16ul, Int32ul, PaddedString, Struct
 
 from .exceptions import LowerCaseException, TooLongNameException
 from .fatfs_state import FATFSState
-from .utils import MAX_EXT_SIZE, MAX_NAME_SIZE, is_valid_fatfs_name, pad_string
+from .utils import (DATETIME, FATFS_INCEPTION, MAX_EXT_SIZE, MAX_NAME_SIZE, SHORT_NAMES_ENCODING, build_date_entry,
+                    build_time_entry, is_valid_fatfs_name, pad_string)
 
 
 class Entry:
@@ -36,18 +37,22 @@ class Entry:
     SHORT_ENTRY: int = -1
     SHORT_ENTRY_LN: int = 0
 
+    # The 1st January 1980 00:00:00
+    DEFAULT_DATE: DATETIME = (FATFS_INCEPTION.year, FATFS_INCEPTION.month, FATFS_INCEPTION.day)
+    DEFAULT_TIME: DATETIME = (FATFS_INCEPTION.hour, FATFS_INCEPTION.minute, FATFS_INCEPTION.second)
+
     ENTRY_FORMAT_SHORT_NAME = Struct(
-        'DIR_Name' / PaddedString(MAX_NAME_SIZE, 'utf-8'),
-        'DIR_Name_ext' / PaddedString(MAX_EXT_SIZE, 'utf-8'),
+        'DIR_Name' / PaddedString(MAX_NAME_SIZE, SHORT_NAMES_ENCODING),
+        'DIR_Name_ext' / PaddedString(MAX_EXT_SIZE, SHORT_NAMES_ENCODING),
         'DIR_Attr' / Int8ul,
         'DIR_NTRes' / Const(b'\x00'),
-        'DIR_CrtTimeTenth' / Const(b'\x00'),
-        'DIR_CrtTime' / Const(b'\x00\x00'),
-        'DIR_CrtDate' / Const(b'\x21\x00'),
-        'DIR_LstAccDate' / Const(b'\x00\x00'),
+        'DIR_CrtTimeTenth' / Const(b'\x00'),    # ignored by esp-idf fatfs library
+        'DIR_CrtTime' / Int16ul,                # ignored by esp-idf fatfs library
+        'DIR_CrtDate' / Int16ul,                # ignored by esp-idf fatfs library
+        'DIR_LstAccDate' / Int16ul,             # must be same as DIR_WrtDate
         'DIR_FstClusHI' / Const(b'\x00\x00'),
-        'DIR_WrtTime' / Const(b'\x00\x00'),
-        'DIR_WrtDate' / Const(b'\x21\x00'),
+        'DIR_WrtTime' / Int16ul,
+        'DIR_WrtDate' / Int16ul,
         'DIR_FstClusLO' / Int16ul,
         'DIR_FileSize' / Int32ul,
     )
@@ -117,6 +122,8 @@ class Entry:
                        entity_type: int,
                        entity_extension: str = '',
                        size: int = 0,
+                       date: DATETIME = DEFAULT_DATE,
+                       time: DATETIME = DEFAULT_TIME,
                        lfn_order: int = SHORT_ENTRY,
                        lfn_names: Optional[List[bytes]] = None,
                        lfn_checksum_: int = 0,
@@ -126,6 +133,8 @@ class Entry:
         :param entity_name: name recorded in the entry
         :param entity_extension: extension recorded in the entry
         :param size: size of the content of the file
+        :param date: denotes year (actual year minus 1980), month number day of the month (minimal valid is (0, 1, 1))
+        :param time: denotes hour, minute and second with granularity 2 seconds (sec // 2)
         :param entity_type: type of the entity (file [0x20] or directory [0x10])
         :param lfn_order: if long names support is enabled, defines order in long names entries sequence (-1 for short)
         :param lfn_names: if the entry is dedicated for long names the lfn_names contains
@@ -137,10 +146,16 @@ class Entry:
 
         :raises LowerCaseException: In case when long_names_enabled is set to False and filename exceeds 8 chars
         for name or 3 chars for extension the exception is raised
+        :raises TooLongNameException: When long_names_enabled is set to False and name doesn't fit to 8.3 filename
+        an exception is raised
         """
         valid_full_name: bool = is_valid_fatfs_name(entity_name) and is_valid_fatfs_name(entity_extension)
         if not (valid_full_name or lfn_order >= 0):
             raise LowerCaseException('Lower case is not supported in short name entry, use upper case.')
+
+        if self.fatfs_state.use_default_datetime:
+            date = self.DEFAULT_DATE
+            time = self.DEFAULT_TIME
 
         # clean entry before allocation
         self._clean_entry()
@@ -154,17 +169,25 @@ class Entry:
             raise TooLongNameException(
                 'Maximal length of the object name is {} characters and {} characters for extension!'.format(
                     MAX_NAME_SIZE, MAX_EXT_SIZE
-                ))
+                )
+            )
 
         start_address = self.entry_address
         end_address = start_address + self.fatfs_state.entry_size
         if lfn_order in (self.SHORT_ENTRY, self.SHORT_ENTRY_LN):
+            date_entry_: int = build_date_entry(*date)
+            time_entry: int = build_time_entry(*time)
             self.fatfs_state.binary_image[start_address: end_address] = self._build_entry(
                 DIR_Name=pad_string(object_name, size=MAX_NAME_SIZE),
                 DIR_Name_ext=pad_string(object_extension, size=MAX_EXT_SIZE),
                 DIR_Attr=entity_type,
                 DIR_FstClusLO=first_cluster_id,
-                DIR_FileSize=size
+                DIR_FileSize=size,
+                DIR_CrtDate=date_entry_,  # ignored by esp-idf fatfs library
+                DIR_LstAccDate=date_entry_,  # must be same as DIR_WrtDate
+                DIR_WrtDate=date_entry_,
+                DIR_CrtTime=time_entry,  # ignored by esp-idf fatfs library
+                DIR_WrtTime=time_entry
             )
         else:
             assert lfn_names is not None

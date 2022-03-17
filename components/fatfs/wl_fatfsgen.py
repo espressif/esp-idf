@@ -60,6 +60,7 @@ class WLFATFS:
                  sec_per_track: int = 0x3f,
                  volume_label: str = 'Espressif',
                  file_sys_type: str = 'FAT',
+                 use_default_datetime: bool = True,
                  version: int = 2,
                  temp_buff_size: int = 32,
                  update_rate: int = 16,
@@ -101,6 +102,7 @@ class WLFATFS:
             long_names_enabled=long_names_enabled,
             entry_size=entry_size,
             num_heads=num_heads,
+            use_default_datetime=use_default_datetime,
             oem_name=oem_name,
             sec_per_track=sec_per_track,
             volume_label=volume_label,
@@ -194,7 +196,8 @@ if __name__ == '__main__':
                        size=args.partition_size,
                        root_entry_count=args.root_entry_count,
                        explicit_fat_type=args.fat_type,
-                       long_names_enabled=args.long_name_support)
+                       long_names_enabled=args.long_name_support,
+                       use_default_datetime=args.use_default_datetime)
 
     wl_fatfs.wl_generate(args.input_directory)
     wl_fatfs.init_wl()

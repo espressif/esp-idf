@@ -5,9 +5,10 @@ import argparse
 import binascii
 import os
 import uuid
+from datetime import datetime
 from typing import List, Optional, Tuple
 
-from construct import Int16ul
+from construct import BitsInteger, BitStruct, Int16ul
 
 FAT12_MAX_CLUSTERS: int = 4085
 FAT16_MAX_CLUSTERS: int = 65525
@@ -18,9 +19,12 @@ BYTES_PER_DIRECTORY_ENTRY: int = 32
 UINT32_MAX: int = (1 << 32) - 1
 MAX_NAME_SIZE: int = 8
 MAX_EXT_SIZE: int = 3
+DATETIME = Tuple[int, int, int]
+FATFS_INCEPTION: datetime = datetime(1980, 1, 1, 0, 0, 0, 0)
 
 # long names are encoded to two bytes in utf-16
 LONG_NAMES_ENCODING: str = 'utf-16'
+SHORT_NAMES_ENCODING: str = 'utf-8'
 
 
 def crc32(input_values: List[int], crc: int) -> int:
@@ -99,7 +103,7 @@ def is_valid_fatfs_name(string: str) -> bool:
     return string == string.upper()
 
 
-def split_by_half_byte_12_bit_little_endian(value: int) -> Tuple[int, int, int]:
+def split_by_half_byte_12_bit_little_endian(value: int) -> DATETIME:
     value_as_bytes: bytes = Int16ul.build(value)
     return value_as_bytes[0] & 0x0f, value_as_bytes[0] >> 4, value_as_bytes[1] & 0x0f
 
@@ -159,6 +163,10 @@ def get_args_for_partition_generator(desc: str) -> argparse.Namespace:
     parser.add_argument('--long_name_support',
                         action='store_true',
                         help='Set flag to enable long names support.')
+    parser.add_argument('--use_default_datetime',
+                        action='store_true',
+                        help='For test purposes. If the flag is set the files are created with '
+                             'the default timestamp that is the 1st of January 1980')
     parser.add_argument('--fat_type',
                         default=0,
                         type=int,
@@ -180,3 +188,45 @@ def get_args_for_partition_generator(desc: str) -> argparse.Namespace:
 def read_filesystem(path: str) -> bytearray:
     with open(path, 'rb') as fs_file:
         return bytearray(fs_file.read())
+
+
+DATE_ENTRY = BitStruct(
+    'year' / BitsInteger(7),
+    'month' / BitsInteger(4),
+    'day' / BitsInteger(5))
+
+TIME_ENTRY = BitStruct(
+    'hour' / BitsInteger(5),
+    'minute' / BitsInteger(6),
+    'second' / BitsInteger(5),
+)
+
+
+def build_date_entry(year: int, mon: int, mday: int) -> int:
+    """
+    :param year: denotes year starting from 1980 (0 ~ 1980, 1 ~ 1981, etc), valid values are 1980 + 0..127 inclusive
+    thus theoretically 1980 - 2107
+    :param mon: denotes number of month of year in common order (1 ~ January, 2 ~ February, etc.),
+    valid values: 1..12 inclusive
+    :param mday: denotes number of day in month, valid values are 1..31 inclusive
+
+    :returns: 16 bit integer number (7 bits for year, 4 bits for month and 5 bits for day of the month)
+    """
+    assert year in range(1980, 2107)
+    assert mon in range(1, 13)
+    assert mday in range(1, 32)
+    return int.from_bytes(DATE_ENTRY.build(dict(year=year - 1980, month=mon, day=mday)), 'big')
+
+
+def build_time_entry(hour: int, minute: int, sec: int) -> int:
+    """
+    :param hour: denotes number of hour, valid values are 0..23 inclusive
+    :param minute: denotes minutes, valid range 0..59 inclusive
+    :param sec: denotes seconds with granularity 2 seconds (e.g. 1 ~ 2, 29 ~ 58), valid range 0..29 inclusive
+
+    :returns: 16 bit integer number (5 bits for hour, 6 bits for minute and 5 bits for second)
+    """
+    assert hour in range(0, 23)
+    assert minute in range(0, 60)
+    assert sec in range(0, 60)
+    return int.from_bytes(TIME_ENTRY.build(dict(hour=hour, minute=minute, second=sec // 2)), 'big')
