@@ -11,6 +11,10 @@
 
 #if defined(CONFIG_ESP_NETIF_TCPIP_LWIP_ORIG) || defined(CONFIG_ESP_NETIF_TCPIP_LWIP)
 
+#if PPP_SUPPORT
+typedef struct ppp_pcb_s ppp_pcb;
+#endif
+
 /**
  * @brief Sets one extended lwip netif callbacks for all esp-netif
  */
@@ -27,6 +31,10 @@ static inline void dhcp_set_cb(struct netif *netif, void (*cb)(struct netif*)) {
 static inline void nd6_set_cb(struct netif *netif, void (*cb)(struct netif *netif, u8_t ip_index)) { }
 
 void dns_clear_servers(bool keep_fallback);
+
+#if PPP_SUPPORT && PPP_AUTH_SUPPORT
+void pppapi_set_auth(ppp_pcb *pcb, u8_t authtype, const char *user, const char *passwd);
+#endif
 
 #if ESP_GRATUITOUS_ARP
 

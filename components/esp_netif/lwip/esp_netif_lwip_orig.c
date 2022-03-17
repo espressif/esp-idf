@@ -61,6 +61,29 @@ void dns_clear_servers(bool keep_fallback)
         dns_setserver(numdns, NULL);
     }
 }
+#if PPP_SUPPORT && PPP_AUTH_SUPPORT
+typedef struct {
+    struct tcpip_api_call_data call;
+    ppp_pcb *ppp;
+    u8_t authtype;
+    const char *user;
+    const char *passwd;
+} set_auth_msg_t;
+
+static err_t pppapi_do_ppp_set_auth(struct tcpip_api_call_data *m)
+{
+    set_auth_msg_t *msg = (set_auth_msg_t *)m;
+    ppp_set_auth(msg->ppp, msg->authtype, msg->user, msg->passwd);
+    return ERR_OK;
+}
+
+void pppapi_set_auth(ppp_pcb *pcb, u8_t authtype, const char *user, const char *passwd)
+{
+    set_auth_msg_t msg = { .ppp = pcb, .authtype = authtype, .user = user, .passwd = passwd};
+    tcpip_api_call(pppapi_do_ppp_set_auth, &msg.call);
+}
+
+#endif // PPP_SUPPORT && PPP_AUTH_SUPPORT
 
 #ifdef CONFIG_LWIP_GARP_TMR_INTERVAL
 void netif_send_garp(void *arg)
