@@ -357,8 +357,8 @@ compare_scan_neighbor_results(struct wpa_supplicant *wpa_s, os_time_t age_secs,
 			    os_time_expired(&now, &target->last_update,
 					       age_secs)) {
 				wpa_printf(MSG_DEBUG,
-					   "Candidate BSS is more than %ld seconds old",
-					   age_secs);
+					   "Candidate BSS is more than %jd seconds old",
+					   (intmax_t)age_secs);
 				continue;
 			}
 		}

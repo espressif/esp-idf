@@ -621,7 +621,7 @@ static void check_time(void)
     int latency_before_run_ut = 1 + (esp_rtc_get_time_us() - s_time_in_reboot) / 1000000;
     struct timeval tv;
     gettimeofday(&tv, NULL);
-    printf("timestamp %ld (s)\n", tv.tv_sec);
+    printf("timestamp %jd (s)\n", (intmax_t)tv.tv_sec);
     int dt = tv.tv_sec - s_saved_time;
     printf("delta timestamp = %d (s)\n", dt);
     TEST_ASSERT_GREATER_OR_EQUAL(0, dt);
