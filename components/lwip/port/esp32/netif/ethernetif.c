@@ -52,21 +52,11 @@
 #include "esp_netif.h"
 #include "esp_netif_net_stack.h"
 #include "esp_compiler.h"
+#include "netif/esp_pbuf_ref.h"
 
 /* Define those to better describe your network interface. */
 #define IFNAME0 'e'
 #define IFNAME1 'n'
-
-/**
- * @brief Free resources allocated in L2 layer
- *
- * @param buf memory alloc in L2 layer
- * @note this function is also the callback when invoke pbuf_free
- */
-static void ethernet_free_rx_buf_l2(struct netif *netif, void *buf)
-{
-    free(buf);
-}
 
 /**
  * In this function, the hardware should be initialized.
@@ -120,11 +110,6 @@ static err_t ethernet_low_level_output(struct netif *netif, struct pbuf *p)
         LWIP_DEBUGF(PBUF_DEBUG, ("low_level_output: pbuf is a list, application may has bug"));
         q = pbuf_alloc(PBUF_RAW_TX, p->tot_len, PBUF_RAM);
         if (q != NULL) {
-#if ESP_LWIP
-            /* This pbuf RAM was not allocated on layer2, no extra free operation needed in pbuf_free */
-            q->l2_owner = NULL;
-            q->l2_buf = NULL;
-#endif
             pbuf_copy(q, p);
         } else {
             return ERR_MEM;
@@ -149,33 +134,30 @@ static err_t ethernet_low_level_output(struct netif *netif, struct pbuf *p)
  * interface. Then the type of the received packet is determined and
  * the appropriate input function is called.
  *
- * @param netif lwip network interface structure for this ethernetif
+ * @param h lwip network interface structure (struct netif) for this ethernetif
  * @param buffer ethernet buffer
  * @param len length of buffer
+ * @param l2_buff Placeholder for a separate L2 buffer. Unused for ethernet interface
  */
-void ethernetif_input(void *h, void *buffer, size_t len, void *eb)
+void ethernetif_input(void *h, void *buffer, size_t len, void *l2_buff)
 {
     struct netif *netif = h;
+    esp_netif_t *esp_netif = esp_netif_get_handle_from_netif_impl(netif);
     struct pbuf *p;
 
     if (unlikely(buffer == NULL || !netif_is_up(netif))) {
         if (buffer) {
-            ethernet_free_rx_buf_l2(netif, buffer);
+            esp_netif_free_rx_buffer(esp_netif, buffer);
         }
         return;
     }
 
-    /* acquire new pbuf, type: PBUF_REF */
-    p = pbuf_alloc(PBUF_RAW, len, PBUF_REF);
+    /* allocate custom pbuf to hold  */
+    p = esp_pbuf_allocate(esp_netif, buffer, len, buffer);
     if (p == NULL) {
-        ethernet_free_rx_buf_l2(netif, buffer);
+        esp_netif_free_rx_buffer(esp_netif, buffer);
         return;
     }
-    p->payload = buffer;
-#if ESP_LWIP
-    p->l2_owner = netif;
-    p->l2_buf = buffer;
-#endif
     /* full packet send to tcpip_thread to process */
     if (unlikely(netif->input(p, netif) != ERR_OK)) {
         LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
@@ -228,7 +210,6 @@ err_t ethernetif_init(struct netif *netif)
     netif->output_ip6 = ethip6_output;
 #endif /* LWIP_IPV6 */
     netif->linkoutput = ethernet_low_level_output;
-    netif->l2_buffer_free_notify = ethernet_free_rx_buf_l2;
 
     ethernet_low_level_init(netif);
 

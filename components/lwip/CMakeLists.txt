@@ -86,7 +86,8 @@ set(srcs
     "port/esp32/debug/lwip_debug.c"
     "port/esp32/freertos/sys_arch.c"
     "port/esp32/sockets_ext.c"
-    "port/esp32/netif/wlanif.c")
+    "port/esp32/netif/wlanif.c"
+    "port/esp32/netif/esp_pbuf_ref.c")
 
 if(CONFIG_LWIP_PPP_SUPPORT)
     list(APPEND srcs

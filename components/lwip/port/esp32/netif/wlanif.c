@@ -1,6 +1,6 @@
 /**
  * @file
- * Ethernet Interface Skeleton
+ * Ethernet Interface Skeleton used for WiFi
  *
  */
 
@@ -53,27 +53,14 @@
 #include "esp_netif.h"
 #include "esp_netif_net_stack.h"
 #include "esp_compiler.h"
-
-#ifndef CONFIG_LWIP_L2_TO_L3_COPY
-/**
- * @brief Free resources allocated in L2 layer
- *
- * @param buf memory alloc in L2 layer
- * @note this function is also the callback when invoke pbuf_free
- */
-static void lwip_netif_wifi_free_rx_buffer(struct netif *netif, void *buf)
-{
-    esp_netif_t *esp_netif = esp_netif_get_handle_from_netif_impl(netif);
-    esp_netif_free_rx_buffer(esp_netif, buf);
-}
-#endif
+#include "netif/esp_pbuf_ref.h"
 
 /**
  * In this function, the hardware should be initialized.
- * Called from ethernetif_init().
+ * Called from wlanif_input().
  *
  * @param netif the already initialized lwip network interface structure
- *        for this ethernetif
+ *        for this wlanif
  */
 static void
 low_level_init(struct netif *netif)
@@ -102,9 +89,6 @@ low_level_init(struct netif *netif)
 #endif
 #endif
 
-#ifndef CONFIG_LWIP_L2_TO_L3_COPY
-    netif->l2_buffer_free_notify = lwip_netif_wifi_free_rx_buffer;
-#endif
 }
 
 /**
@@ -112,14 +96,14 @@ low_level_init(struct netif *netif)
  * contained in the pbuf that is passed to the function. This pbuf
  * might be chained.
  *
- * @param netif the lwip network interface structure for this ethernetif
+ * @param netif the lwip network interface structure for this wlanif
  * @param p the MAC packet to send (e.g. IP packet including MAC addresses and type)
  * @return ERR_OK if the packet could be sent
  *         an err_t value if the packet couldn't be sent
  *
  * @note Returning ERR_MEM here if a DMA queue of your MAC is full can lead to
  *       strange results. You might consider waiting for space in the DMA queue
- *       to become availale since the stack doesn't retry to send a packet
+ *       to become available since the stack doesn't retry to send a packet
  *       dropped because of memory failure (except for the TCP timers).
  */
 static err_t
@@ -140,7 +124,6 @@ low_level_output(struct netif *netif, struct pbuf *p)
     LWIP_DEBUGF(PBUF_DEBUG, ("low_level_output: pbuf is a list, application may has bug"));
     q = pbuf_alloc(PBUF_RAW_TX, p->tot_len, PBUF_RAM);
     if (q != NULL) {
-      q->l2_owner = NULL;
       pbuf_copy(q, p);
     } else {
       return ERR_MEM;
@@ -168,18 +151,21 @@ low_level_output(struct netif *netif, struct pbuf *p)
  * interface. Then the type of the received packet is determined and
  * the appropriate input function is called.
  *
- * @param netif the lwip network interface structure for this ethernetif
+ * @param h lwip network interface structure (struct netif) for this ethernetif
+ * @param buffer wlan buffer
+ * @param len length of buffer
+ * @param l2_buff wlan's L2 buffer pointer
  */
 void
-wlanif_input(void *h, void *buffer, size_t len, void* eb)
+wlanif_input(void *h, void *buffer, size_t len, void* l2_buff)
 {
   struct netif * netif = h;
   esp_netif_t *esp_netif = esp_netif_get_handle_from_netif_impl(netif);
   struct pbuf *p;
 
   if(unlikely(!buffer || !netif_is_up(netif))) {
-    if (eb) {
-      esp_netif_free_rx_buffer(esp_netif, eb);
+    if (l2_buff) {
+      esp_netif_free_rx_buffer(esp_netif, l2_buff);
     }
     return;
   }
@@ -187,26 +173,23 @@ wlanif_input(void *h, void *buffer, size_t len, void* eb)
 #ifdef CONFIG_LWIP_L2_TO_L3_COPY
   p = pbuf_alloc(PBUF_RAW, len, PBUF_RAM);
   if (p == NULL) {
-      esp_netif_free_rx_buffer(esp_netif, eb);
+    esp_netif_free_rx_buffer(esp_netif, l2_buff);
     return;
   }
-  p->l2_owner = NULL;
   memcpy(p->payload, buffer, len);
-  esp_netif_free_rx_buffer(esp_netif, eb);
+  esp_netif_free_rx_buffer(esp_netif, l2_buff);
 #else
-  p = pbuf_alloc(PBUF_RAW, len, PBUF_REF);
-  if (p == NULL){
-    esp_netif_free_rx_buffer(esp_netif, eb);
+  p = esp_pbuf_allocate(esp_netif, buffer, len, l2_buff);
+  if (p == NULL) {
+    esp_netif_free_rx_buffer(esp_netif, l2_buff);
     return;
   }
-  p->payload = buffer;
-  p->l2_owner = netif;
-  p->l2_buf = eb;
-#endif /* CONFIG_LWIP_L2_TO_L3_COPY */
+
+#endif
 
   /* full packet send to tcpip_thread to process */
   if (unlikely(netif->input(p, netif) != ERR_OK)) {
-    LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
+    LWIP_DEBUGF(NETIF_DEBUG, ("wlanif_input: IP input error\n"));
     pbuf_free(p);
   }
 
@@ -219,7 +202,7 @@ wlanif_input(void *h, void *buffer, size_t len, void* eb)
  *
  * This function should be passed as a parameter to netif_add().
  *
- * @param netif the lwip network interface structure for this ethernetif
+ * @param netif the lwip network interface structure for this wlanif
  * @return ERR_OK if the loopif is initialized
  *         ERR_MEM if private data couldn't be allocated
  *         any other err_t on error
