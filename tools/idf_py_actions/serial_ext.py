@@ -211,14 +211,15 @@ def action_extensions(base_actions, project_path):
             },
             'erase-flash': {
                 'callback': erase_flash,
-                'help': 'Erase entire flash chip. Deprecated alias: "erase_flash"',
+                'help': 'Erase entire flash chip.',
                 'options': BAUD_AND_PORT,
             },
             'erase_flash': {
                 'callback': erase_flash,
                 'deprecated': {
-                    'removed': 'v5.0',
-                    'message': 'Please use "erase-flash" instead.',
+                    'since': 'v4.4',
+                    'removed': 'next major release',
+                    'message': 'Have you wanted to run "erase-flash" instead?',
                 },
                 'hidden': True,
                 'help': 'Erase entire flash chip.',
@@ -283,13 +284,6 @@ def action_extensions(base_actions, project_path):
             },
             'partition-table-flash': {
                 'callback': flash,
-                'help': 'Flash partition table only. Deprecated alias: "partition_table-flash".',
-                'options': BAUD_AND_PORT,
-                'order_dependencies': ['partition-table', 'erase-flash'],
-            },
-            'partition_table-flash': {
-                'callback': flash,
-                'hidden': True,
                 'help': 'Flash partition table only.',
                 'options': BAUD_AND_PORT,
                 'order_dependencies': ['partition-table', 'erase-flash'],
@@ -316,26 +310,14 @@ def action_extensions(base_actions, project_path):
                 'help': 'Flash the encrypted project.',
                 'order_dependencies': ['all', 'erase-flash'],
             },
-            'erase_otadata': {
-                'callback': ota_targets,
-                'hidden': True,
-                'help': 'Erase otadata partition.',
-                'options': global_options + BAUD_AND_PORT,
-            },
             'erase-otadata': {
                 'callback': ota_targets,
-                'help': 'Erase otadata partition. Deprecated alias: "erase_otadata".',
-                'options': global_options + BAUD_AND_PORT,
-            },
-            'read_otadata': {
-                'callback': ota_targets,
-                'hidden': True,
-                'help': 'Read otadata partition.',
+                'help': 'Erase otadata partition.',
                 'options': global_options + BAUD_AND_PORT,
             },
             'read-otadata': {
                 'callback': ota_targets,
-                'help': 'Read otadata partition. Deprecated alias: "read_otadata".',
+                'help': 'Read otadata partition.',
                 'options': global_options + BAUD_AND_PORT,
             },
         },

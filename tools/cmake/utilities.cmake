@@ -358,9 +358,9 @@ endfunction()
 # Creates an alias for exising target and shows deprectation warning
 function(add_deprecated_target_alias old_target new_target)
     add_custom_target(${old_target}
-        COMMAND ${CMAKE_COMMAND} -E echo
-        "Warning: Command \"${old_target}\" is deprecated and will be removed in the next major release. \
-        Please use \"${new_target}\" instead."
+     # `COMMAND` is important to print the `COMMENT` message at the end of the target action.
+        COMMAND ${CMAKE_COMMAND} -E echo ""
+        COMMENT "Warning: command \"${old_target}\" is deprecated. Have you wanted to run \"${new_target}\" instead?"
     )
     add_dependencies(${old_target} ${new_target})
 endfunction()

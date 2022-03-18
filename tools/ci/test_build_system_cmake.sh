@@ -958,11 +958,11 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     cd ${TESTDIR}/template
     # click warning
     idf.py post_debug &> tmp.log
-    grep "Warning: Command \"post_debug\" is deprecated and will be removed in v5.0." tmp.log || failure "Missing deprecation warning with command \"post_debug\""
+    grep "Error: Command \"post_debug\" is deprecated since v4.4 and was removed in v5.0." tmp.log || failure "Missing deprecation warning with command \"post_debug\""
     rm tmp.log
     # cmake warning
     idf.py efuse_common_table &> tmp.log
-    grep "Warning: Command efuse_common_table is deprecated and will be removed in the next major release." tmp.log || failure "Missing deprecation warning with command \"efuse_common_table\""
+    grep "Have you wanted to run \"efuse-common-table\" instead?" tmp.log || failure "Missing deprecation warning with command \"efuse_common_table\""
     rm tmp.log
 
     print_status "Save-defconfig checks"
