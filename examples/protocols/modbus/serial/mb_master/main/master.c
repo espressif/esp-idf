@@ -288,14 +288,14 @@ static esp_err_t master_init(void)
     // Set UART pin numbers
     err = uart_set_pin(MB_PORT_NUM, CONFIG_MB_UART_TXD, CONFIG_MB_UART_RXD,
                               CONFIG_MB_UART_RTS, UART_PIN_NO_CHANGE);
+    MASTER_CHECK((err == ESP_OK), ESP_ERR_INVALID_STATE,
+                 "mb serial set pin failure, uart_set_pin() returned (0x%x).", (uint32_t)err);
 
     err = mbc_master_start();
     MASTER_CHECK((err == ESP_OK), ESP_ERR_INVALID_STATE,
                             "mb controller start fail, returns(0x%x).",
                             (uint32_t)err);
 
-    MASTER_CHECK((err == ESP_OK), ESP_ERR_INVALID_STATE,
-            "mb serial set pin failure, uart_set_pin() returned (0x%x).", (uint32_t)err);
     // Set driver mode to Half Duplex
     err = uart_set_mode(MB_PORT_NUM, UART_MODE_RS485_HALF_DUPLEX);
     MASTER_CHECK((err == ESP_OK), ESP_ERR_INVALID_STATE,
