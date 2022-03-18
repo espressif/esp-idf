@@ -60,6 +60,9 @@ The Diffie-Hellman Key Exchange modes have now been disabled by default due to s
 
 .. note:: During the initial step of the handshake (i.e. ``client_hello``), the server selects a cipher from the list that the client publishes. As the DHE_PSK/DHE_RSA ciphers have now been disabled by the above change, the server would fall back to an alternative cipher; if in a rare case, it does not support any other cipher, the handshake would fail. To retrieve the list of ciphers supported by the server, one must attempt to connect with the server with a specific cipher from the client-side. Few utilities can help do this, e.g. ``sslscan``.
 
+Remove certs module from X509 library
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+`mbedtls/certs.h` header is no longer available in mbedtls 3.1, most applications can safely remove it from the list of includes.
 
 ESP HTTPS SERVER
 -----------------
