@@ -97,6 +97,13 @@
   - "tools/ci/python_packages/tiny_test_fw/**/*"
   - "tools/ci/integration_test/**/*"
 
+  - "components/bt/controller/lib_esp32"
+  - "components/bt/controller/lib_esp32c3_family"
+  - "components/bt/controller/lib_esp32h2/esp32h2-bt-lib"
+  - "components/bt/host/nimble/nimble"
+  - "components/esp_wifi/lib"
+  - "components/esp_phy/lib"
+
 .patterns-host_test: &patterns-host_test
   - ".gitlab/ci/host-test.yml"
 
