@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <fcntl.h>
 #include <sys/time.h>
 #include <sys/unistd.h>
 #include "unity.h"
@@ -171,6 +172,111 @@ void test_spiffs_rename(const char* filename_prefix)
     TEST_ASSERT_EQUAL(0, fseek(fdst, 0, SEEK_END));
     TEST_ASSERT_EQUAL(4000, ftell(fdst));
     TEST_ASSERT_EQUAL(0, fclose(fdst));
+}
+
+void test_spiffs_truncate(const char *filename)
+{
+    int read = 0;
+    int truncated_len = 0;
+
+    const char input[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    char output[sizeof(input)];
+
+    test_spiffs_create_file_with_text(filename, input);
+
+    // Extending file beyond size is not supported
+    TEST_ASSERT_EQUAL(-1, truncate(filename, strlen(input) + 1));
+    TEST_ASSERT_EQUAL(-1, truncate(filename, -1));
+
+    // Truncating should succeed
+    const char truncated_1[] = "ABCDEFGHIJ";
+    truncated_len = strlen(truncated_1);
+    TEST_ASSERT_EQUAL(0, truncate(filename, truncated_len));
+
+
+    FILE* f = fopen(filename, "rb");
+    TEST_ASSERT_NOT_NULL(f);
+    memset(output, 0, sizeof(output));
+    read = fread(output, 1, sizeof(output), f);
+    TEST_ASSERT_EQUAL(truncated_len, read);
+    TEST_ASSERT_EQUAL_STRING_LEN(truncated_1, output, truncated_len);
+    TEST_ASSERT_EQUAL(0, fclose(f));
+
+    // Once truncated, the new file size should be the basis
+    // whether truncation should succeed or not
+    TEST_ASSERT_EQUAL(-1, truncate(filename, truncated_len + 1));
+    TEST_ASSERT_EQUAL(-1, truncate(filename, strlen(input)));
+    TEST_ASSERT_EQUAL(-1, truncate(filename, strlen(input) + 1));
+    TEST_ASSERT_EQUAL(-1, truncate(filename, -1));
+
+
+    // Truncating a truncated file should succeed
+    const char truncated_2[] = "ABCDE";
+    truncated_len = strlen(truncated_2);
+    TEST_ASSERT_EQUAL(0, truncate(filename, truncated_len));
+
+    f = fopen(filename, "rb");
+    TEST_ASSERT_NOT_NULL(f);
+    memset(output, 0, sizeof(output));
+    read = fread(output, 1, sizeof(output), f);
+    TEST_ASSERT_EQUAL(truncated_len, read);
+    TEST_ASSERT_EQUAL_STRING_LEN(truncated_2, output, truncated_len);
+    TEST_ASSERT_EQUAL(0, fclose(f));
+}
+
+void test_spiffs_ftruncate(const char *filename)
+{
+    int truncated_len = 0;
+
+    const char input[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    char output[sizeof(input)];
+
+    int fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC);
+    TEST_ASSERT_NOT_EQUAL(-1, fd);
+
+    TEST_ASSERT_EQUAL(strlen(input), write(fd, input, strlen(input)));
+
+    // Extending file beyond size is not supported
+    TEST_ASSERT_EQUAL(-1, ftruncate(fd, strlen(input) + 1));
+    TEST_ASSERT_EQUAL(-1, ftruncate(fd, -1));
+
+    // Truncating should succeed
+    const char truncated_1[] = "ABCDEFGHIJ";
+    truncated_len = strlen(truncated_1);
+    TEST_ASSERT_EQUAL(0, ftruncate(fd, truncated_len));
+    TEST_ASSERT_EQUAL(0, close(fd));
+
+    fd = open(filename, O_RDONLY);
+    TEST_ASSERT_NOT_EQUAL(-1, fd);
+    memset(output, 0, sizeof(output));
+    TEST_ASSERT_EQUAL(truncated_len, read(fd, output, sizeof(output)));
+    TEST_ASSERT_EQUAL_STRING_LEN(truncated_1, output, truncated_len);
+    TEST_ASSERT_EQUAL(0, close(fd));
+
+    // further truncate the file
+    fd = open(filename, O_WRONLY);
+    TEST_ASSERT_NOT_EQUAL(-1, fd);
+    // Once truncated, the new file size should be the basis
+    // whether truncation should succeed or not
+    TEST_ASSERT_EQUAL(-1, ftruncate(fd, truncated_len + 1));
+    TEST_ASSERT_EQUAL(-1, ftruncate(fd, strlen(input)));
+    TEST_ASSERT_EQUAL(-1, ftruncate(fd, strlen(input) + 1));
+    TEST_ASSERT_EQUAL(-1, ftruncate(fd, -1));
+
+    // Truncating a truncated file should succeed
+    const char truncated_2[] = "ABCDE";
+    truncated_len = strlen(truncated_2);
+
+    TEST_ASSERT_EQUAL(0, ftruncate(fd, truncated_len));
+    TEST_ASSERT_EQUAL(0, close(fd));
+
+    // open file for reading and validate the content
+    fd = open(filename, O_RDONLY);
+    TEST_ASSERT_NOT_EQUAL(-1, fd);
+    memset(output, 0, sizeof(output));
+    TEST_ASSERT_EQUAL(truncated_len, read(fd, output, sizeof(output)));
+    TEST_ASSERT_EQUAL_STRING_LEN(truncated_2, output, truncated_len);
+    TEST_ASSERT_EQUAL(0, close(fd));
 }
 
 void test_spiffs_can_opendir(const char* path)
@@ -579,6 +685,20 @@ TEST_CASE("rename moves a file", "[spiffs]")
 {
     test_setup();
     test_spiffs_rename("/spiffs/move");
+    test_teardown();
+}
+
+TEST_CASE("truncate a file", "[spiffs]")
+{
+    test_setup();
+    test_spiffs_truncate("/spiffs/truncate.txt");
+    test_teardown();
+}
+
+TEST_CASE("ftruncate a file", "[spiffs]")
+{
+    test_setup();
+    test_spiffs_ftruncate("/spiffs/ftrunc.txt");
     test_teardown();
 }
 
