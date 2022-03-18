@@ -44,12 +44,6 @@
 #define SOC_SHA_SUPPORTED               1
 #define SOC_ECC_SUPPORTED               1
 
-/*-------------------------- AES CAPS -----------------------------------------*/
-#define SOC_AES_SUPPORT_DMA     (1)
-
-/* Has a centralized DMA, which is shared with all peripherals */
-#define SOC_AES_GDMA            (1)
-
 /*-------------------------- ADC CAPS -------------------------------*/
 /*!< SAR ADC Module*/
 #define SOC_ADC_DIG_CTRL_SUPPORTED              1

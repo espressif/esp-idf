@@ -75,14 +75,6 @@ config SOC_ECC_SUPPORTED
     bool
     default y
 
-config SOC_AES_SUPPORT_DMA
-    bool
-    default y
-
-config SOC_AES_GDMA
-    bool
-    default y
-
 config SOC_ADC_DIG_CTRL_SUPPORTED
     bool
     default y
