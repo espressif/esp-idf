@@ -28,11 +28,6 @@ extern "C" {
 #define ADC_LL_CLKM_DIV_B_DEFAULT   1
 #define ADC_LL_CLKM_DIV_A_DEFAULT   0
 
-typedef enum {
-    ADC_NUM_1 = 0,          /*!< SAR ADC 1 */
-    ADC_NUM_2 = 1,          /*!< SAR ADC 2 */
-    ADC_NUM_MAX,
-} adc_ll_num_t;
 
 typedef enum {
     ADC_POWER_BY_FSM,   /*!< ADC XPD controled by FSM. Used for polling mode */
@@ -190,7 +185,7 @@ static inline void adc_ll_digi_set_convert_mode(adc_ll_digi_convert_mode_t mode)
  * @param adc_n ADC unit.
  * @param patt_len Items range: 1 ~ 8.
  */
-static inline void adc_ll_digi_set_pattern_table_len(adc_ll_num_t adc_n, uint32_t patt_len)
+static inline void adc_ll_digi_set_pattern_table_len(adc_unit_t adc_n, uint32_t patt_len)
 {
     abort();  //TODO IDF-3908
     // APB_SARADC.ctrl.sar_patt_len = patt_len - 1;
@@ -206,7 +201,7 @@ static inline void adc_ll_digi_set_pattern_table_len(adc_ll_num_t adc_n, uint32_
  * @param pattern_index Items index. Range: 0 ~ 7.
  * @param pattern Stored conversion rules.
  */
-static inline void adc_ll_digi_set_pattern_table(adc_ll_num_t adc_n, uint32_t pattern_index, adc_digi_pattern_config_t table)
+static inline void adc_ll_digi_set_pattern_table(adc_unit_t adc_n, uint32_t pattern_index, adc_digi_pattern_config_t table)
 {
     abort();  //TODO IDF-3908
     // uint32_t tab;
@@ -226,7 +221,7 @@ static inline void adc_ll_digi_set_pattern_table(adc_ll_num_t adc_n, uint32_t pa
  *
  * @param adc_n ADC unit.
  */
-static inline void adc_ll_digi_clear_pattern_table(adc_ll_num_t adc_n)
+static inline void adc_ll_digi_clear_pattern_table(adc_unit_t adc_n)
 {
     abort();  //TODO IDF-3908
     // APB_SARADC.ctrl.sar_patt_p_clear = 1;
@@ -251,12 +246,12 @@ static inline void adc_ll_digi_set_arbiter_stable_cycle(uint32_t cycle)
  * @param adc_n ADC unit.
  * @param inv_en data invert or not.
  */
-static inline void adc_ll_digi_output_invert(adc_ll_num_t adc_n, bool inv_en)
+static inline void adc_ll_digi_output_invert(adc_unit_t adc_n, bool inv_en)
 {
     abort();  //TODO IDF-3908
-    // if (adc_n == ADC_NUM_1) {
+    // if (adc_n == ADC_UNIT_1) {
     //     APB_SARADC.ctrl2.sar1_inv = inv_en;   // Enable / Disable ADC data invert
-    // } else { // adc_n == ADC_NUM_2
+    // } else { // adc_n == ADC_UNIT_2
     //     APB_SARADC.ctrl2.sar2_inv = inv_en;   // Enable / Disable ADC data invert
     // }
 }
@@ -338,7 +333,7 @@ static inline void adc_ll_digi_controller_clk_disable(void)
  *
  * @param adc_n ADC unit.
  */
-static inline void adc_ll_digi_filter_reset(adc_ll_num_t adc_n)
+static inline void adc_ll_digi_filter_reset(adc_unit_t adc_n)
 {
     abort();  //TODO IDF-3908
     // APB_SARADC.filter_ctrl0.filter_reset = 1;
@@ -519,10 +514,10 @@ static inline uint32_t adc_ll_pwdet_get_cct(void)
  *        -  0: The data is correct to use.
  *        - -1: The data is invalid.
  */
-static inline adc_ll_rtc_raw_data_t adc_ll_analysis_raw_data(adc_ll_num_t adc_n, int raw_data)
+static inline adc_ll_rtc_raw_data_t adc_ll_analysis_raw_data(adc_unit_t adc_n, int raw_data)
 {
     abort();  //TODO IDF-3908
-    // if (adc_n == ADC_NUM_1) {
+    // if (adc_n == ADC_UNIT_1) {
     //     return ADC_RTC_DATA_OK;
     // }
 
@@ -559,7 +554,7 @@ static inline void adc_ll_set_power_manage(adc_ll_power_t manage)
     // }
 }
 
-static inline void adc_ll_set_controller(adc_ll_num_t adc_n, adc_ll_controller_t ctrl)
+static inline void adc_ll_set_controller(adc_unit_t adc_n, adc_ll_controller_t ctrl)
 {
     //Not used on ESP32-C2
 }
@@ -637,10 +632,10 @@ static inline void adc_ll_set_arbiter_priority(uint8_t pri_rtc, uint8_t pri_dig,
 /**
  * @brief Set common calibration configuration. Should be shared with other parts (PWDET).
  */
-static inline void adc_ll_calibration_init(adc_ll_num_t adc_n)
+static inline void adc_ll_calibration_init(adc_unit_t adc_n)
 {
     abort();  //TODO IDF-3908
-    // if (adc_n == ADC_NUM_1) {
+    // if (adc_n == ADC_UNIT_1) {
     //     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_DREF_ADDR, 1);
     // } else {
     //     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_DREF_ADDR, 1);
@@ -657,11 +652,11 @@ static inline void adc_ll_calibration_init(adc_ll_num_t adc_n)
  * @param internal_gnd true:  Disconnect from the IO port and use the internal GND as the calibration voltage.
  *                     false: Use IO external voltage as calibration voltage.
  */
-static inline void adc_ll_calibration_prepare(adc_ll_num_t adc_n, adc_channel_t channel, bool internal_gnd)
+static inline void adc_ll_calibration_prepare(adc_unit_t adc_n, adc_channel_t channel, bool internal_gnd)
 {
     abort();  //TODO IDF-3908
     // /* Enable/disable internal connect GND (for calibration). */
-    // if (adc_n == ADC_NUM_1) {
+    // if (adc_n == ADC_UNIT_1) {
     //     if (internal_gnd) {
     //         REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 1);
     //     } else {
@@ -681,10 +676,10 @@ static inline void adc_ll_calibration_prepare(adc_ll_num_t adc_n, adc_channel_t 
  *
  * @param adc_n ADC index number.
  */
-static inline void adc_ll_calibration_finish(adc_ll_num_t adc_n)
+static inline void adc_ll_calibration_finish(adc_unit_t adc_n)
 {
     abort();  //TODO IDF-3908
-    // if (adc_n == ADC_NUM_1) {
+    // if (adc_n == ADC_UNIT_1) {
     //     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 0);
     // } else {
     //     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_ENCAL_GND_ADDR, 0);
@@ -698,12 +693,12 @@ static inline void adc_ll_calibration_finish(adc_ll_num_t adc_n)
  *
  * @param adc_n ADC index number.
  */
-static inline void adc_ll_set_calibration_param(adc_ll_num_t adc_n, uint32_t param)
+static inline void adc_ll_set_calibration_param(adc_unit_t adc_n, uint32_t param)
 {
     abort();  //TODO IDF-3908
     // uint8_t msb = param >> 8;
     // uint8_t lsb = param & 0xFF;
-    // if (adc_n == ADC_NUM_1) {
+    // if (adc_n == ADC_UNIT_1) {
     //     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_HIGH_ADDR, msb);
     //     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_LOW_ADDR, lsb);
     // } else {
@@ -724,7 +719,7 @@ static inline void adc_ll_set_calibration_param(adc_ll_num_t adc_n, uint32_t par
  *  @param[in]  channel ADC1 channel number
  *  @param[in]  en Enable/disable the reference voltage output
  */
-static inline void adc_ll_vref_output(adc_ll_num_t adc, adc_channel_t channel, bool en)
+static inline void adc_ll_vref_output(adc_unit_t adc, adc_channel_t channel, bool en)
 {
     abort();  //TODO IDF-3908
     // if (en) {
@@ -740,7 +735,7 @@ static inline void adc_ll_vref_output(adc_ll_num_t adc, adc_channel_t channel, b
     //     APB_SARADC.onetime_sample.adc1_onetime_sample = 1;
     //     APB_SARADC.onetime_sample.onetime_channel = channel;
     //     SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_PU);
-    //     if (adc == ADC_NUM_1) {
+    //     if (adc == ADC_UNIT_1) {
     //         /* Config test mux to route v_ref to ADC1 Channels */
     //         REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC1_ENCAL_REF_ADDR, 1);
     //         REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, 1);
@@ -784,7 +779,7 @@ static inline void adc_ll_onetime_start(bool val)
     // APB_SARADC.onetime_sample.onetime_start = val;
 }
 
-static inline void adc_ll_onetime_set_channel(adc_ll_num_t unit, adc_channel_t channel)
+static inline void adc_ll_onetime_set_channel(adc_unit_t unit, adc_channel_t channel)
 {
     abort();  //TODO IDF-3908
     // APB_SARADC.onetime_sample.onetime_channel = ((unit << 3) | channel);
@@ -826,10 +821,10 @@ static inline bool adc_ll_intr_get_status(adc_ll_intr_t mask)
     // return (APB_SARADC.int_st.val & mask);
 }
 
-static inline void adc_ll_onetime_sample_enable(adc_ll_num_t adc_n, bool enable)
+static inline void adc_ll_onetime_sample_enable(adc_unit_t adc_n, bool enable)
 {
     abort();  //TODO IDF-3908
-    // if (adc_n == ADC_NUM_1) {
+    // if (adc_n == ADC_UNIT_1) {
     //     APB_SARADC.onetime_sample.adc1_onetime_sample = enable;
     // } else {
     //     APB_SARADC.onetime_sample.adc2_onetime_sample = enable;

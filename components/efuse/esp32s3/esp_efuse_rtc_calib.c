@@ -9,13 +9,7 @@
 #include "esp_log.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
-
-//Don't introduce new dependency of ADC, keep these macro same as ADC related definations
-#define ADC_ATTEN_MAX    4
-#define ADC_NUM_MAX      2
-#define ADC_NUM_1        0
-#define ADC_NUM_2        1
-
+#include "hal/adc_types.h"
 
 int esp_efuse_rtc_calib_get_ver(void)
 {
@@ -34,14 +28,14 @@ uint32_t esp_efuse_rtc_calib_get_init_code(int version, uint32_t adc_unit, int a
 {
     assert(version == 1);
     assert(atten < 4);
-    assert(adc_unit < ADC_NUM_MAX);
+    assert(adc_unit <= ADC_UNIT_2);
 
     const esp_efuse_desc_t **desc[8] = {ESP_EFUSE_ADC1_INIT_CODE_ATTEN0, ESP_EFUSE_ADC1_INIT_CODE_ATTEN1, ESP_EFUSE_ADC1_INIT_CODE_ATTEN2, ESP_EFUSE_ADC1_INIT_CODE_ATTEN3,
                                         ESP_EFUSE_ADC2_INIT_CODE_ATTEN0, ESP_EFUSE_ADC2_INIT_CODE_ATTEN1, ESP_EFUSE_ADC2_INIT_CODE_ATTEN2, ESP_EFUSE_ADC2_INIT_CODE_ATTEN3};
     int efuse_icode_bits = 0;
     uint32_t adc_icode[4] = {};
     uint32_t adc_icode_diff[4] = {};
-    uint8_t desc_index = (adc_unit == ADC_NUM_1) ? 0 : 4;
+    uint8_t desc_index = (adc_unit == ADC_UNIT_1) ? 0 : 4;
 
     for (int diff_index = 0; diff_index < 4; diff_index++) {
         efuse_icode_bits = esp_efuse_get_field_size(desc[desc_index]);
@@ -50,7 +44,7 @@ uint32_t esp_efuse_rtc_calib_get_init_code(int version, uint32_t adc_unit, int a
     }
 
     //Version 1 logic for calculating ADC ICode based on EFUSE burnt value
-    if (adc_unit == ADC_NUM_1) {
+    if (adc_unit == ADC_UNIT_1) {
         adc_icode[0] = adc_icode_diff[0] + 1850;
         adc_icode[1] = adc_icode_diff[1] + adc_icode[0] + 90;
         adc_icode[2] = adc_icode_diff[2] + adc_icode[1];
@@ -69,7 +63,7 @@ esp_err_t esp_efuse_rtc_calib_get_cal_voltage(int version, uint32_t adc_unit, in
 {
     assert(version == 1);
     assert(atten < 4);
-    assert(adc_unit < ADC_NUM_MAX);
+    assert(adc_unit <= ADC_UNIT_2);
 
     int efuse_vol_bits = 0;
     uint32_t adc_vol_diff[8] = {};
@@ -91,7 +85,7 @@ esp_err_t esp_efuse_rtc_calib_get_cal_voltage(int version, uint32_t adc_unit, in
     adc2_vol[1] = adc1_vol[1] - adc_vol_diff[5] + 10;
     adc2_vol[0] = adc1_vol[0] - adc_vol_diff[4] + 40;
 
-    *out_digi = (adc_unit == ADC_NUM_1) ? adc1_vol[atten] : adc2_vol[atten];
+    *out_digi = (adc_unit == ADC_UNIT_1) ? adc1_vol[atten] : adc2_vol[atten];
     *out_vol_mv = 850;
 
     return ESP_OK;

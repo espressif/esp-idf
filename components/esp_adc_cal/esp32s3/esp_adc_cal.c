@@ -93,7 +93,7 @@ static esp_err_t get_reference_point(int version_num, adc_unit_t adc_num, adc_at
 
     uint32_t voltage = 0;
     uint32_t digi = 0;
-    ret = esp_efuse_rtc_calib_get_cal_voltage(version_num, ((adc_num == ADC_UNIT_1) ? 0 : 1), atten, &digi, &voltage);
+    ret = esp_efuse_rtc_calib_get_cal_voltage(version_num, adc_num, atten, &digi, &voltage);
     assert(ret == ESP_OK);
     calib_info->ref_data.ver1.voltage = voltage;
     calib_info->ref_data.ver1.digi = digi;

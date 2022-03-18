@@ -11,6 +11,7 @@
 #include "hal/dma_types.h"
 #include "hal/adc_types.h"
 #include "hal/adc_ll.h"
+#include "hal/adc_hal_common.h"
 #include "esp_err.h"
 
 #if SOC_GDMA_SUPPORTED
@@ -43,13 +44,6 @@ extern "C" {
 //For ADC module, each conversion contains 4 bytes
 #define ADC_HAL_DATA_LEN_PER_CONV 4
 
-typedef enum adc_hal_work_mode_t {
-    ADC_HAL_ULP_MODE,
-    ADC_HAL_SINGLE_READ_MODE,
-    ADC_HAL_CONTINUOUS_READ_MODE,
-    ADC_HAL_PWDET_MODE
-} adc_hal_work_mode_t;
-
 /**
  * @brief Enum for DMA descriptor status
  */
@@ -62,17 +56,17 @@ typedef enum adc_hal_dma_desc_status_t {
 /**
  * @brief Configuration of the HAL
  */
-typedef struct adc_hal_config_t {
+typedef struct adc_hal_dma_config_t {
     void                *dev;               ///< DMA peripheral address
     uint32_t            desc_max_num;       ///< Number of the descriptors linked once
     uint32_t            dma_chan;           ///< DMA channel to be used
     uint32_t            eof_num;            ///< Bytes between 2 in_suc_eof interrupts
-} adc_hal_config_t;
+} adc_hal_dma_config_t;
 
 /**
  * @brief Context of the HAL
  */
-typedef struct adc_hal_context_t {
+typedef struct adc_hal_dma_ctx_t {
     /**< this needs to be malloced by the driver layer first */
     dma_descriptor_t    *rx_desc;           ///< DMA descriptors
 
@@ -80,12 +74,12 @@ typedef struct adc_hal_context_t {
     dma_descriptor_t    desc_dummy_head;    ///< Dummy DMA descriptor for ``cur_desc_ptr`` to start
     dma_descriptor_t    *cur_desc_ptr;      ///< Pointer to the current descriptor
 
-    /**< these need to be configured by `adc_hal_config_t` via driver layer*/
+    /**< these need to be configured by `adc_hal_dma_config_t` via driver layer*/
     void                *dev;               ///< DMA address
     uint32_t            desc_max_num;       ///< Number of the descriptors linked once
     uint32_t            dma_chan;           ///< DMA channel to be used
     uint32_t            eof_num;            ///< Words between 2 in_suc_eof interrupts
-} adc_hal_context_t;
+} adc_hal_dma_ctx_t;
 
 typedef struct adc_hal_digi_ctrlr_cfg_t {
     bool                        conv_limit_en;      //1: adc conversion will stop when `conv_limit_num` reaches. 0: won't stop. NOTE: esp32 should always be set to 1.
@@ -107,8 +101,6 @@ typedef struct adc_hal_digi_ctrlr_cfg_t {
  * @prarm manage Set ADC power status.
  */
 #define adc_hal_set_power_manage(manage) adc_ll_set_power_manage(manage)
-
-void adc_hal_set_controller(adc_ll_num_t unit, adc_hal_work_mode_t work_mode);
 
 #if SOC_ADC_ARBITER_SUPPORTED
 //No ADC2 controller arbiter on ESP32
@@ -163,16 +155,18 @@ void adc_hal_arbiter_config(adc_arbiter_t *config);
                     Digital controller setting
 ---------------------------------------------------------------*/
 /**
- * ADC module initialization.
+ * @brief Initialize the HW
+ *
+ * @param hal Context of the HAL
  */
-void adc_hal_init(void);
+void adc_hal_digi_init(adc_hal_dma_ctx_t *hal);
 
 /**
  * Digital controller deinitialization.
  *
  * @param hal Context of the HAL
  */
-void adc_hal_digi_deinit(adc_hal_context_t *hal);
+void adc_hal_digi_deinit(adc_hal_dma_ctx_t *hal);
 
 /**
  * @brief Initialize the hal context
@@ -180,14 +174,7 @@ void adc_hal_digi_deinit(adc_hal_context_t *hal);
  * @param hal    Context of the HAL
  * @param config Configuration of the HAL
  */
-void adc_hal_context_config(adc_hal_context_t *hal, const adc_hal_config_t *config);
-
-/**
- * @brief Initialize the HW
- *
- * @param hal Context of the HAL
- */
-void adc_hal_digi_init(adc_hal_context_t *hal);
+void adc_hal_dma_ctx_config(adc_hal_dma_ctx_t *hal, const adc_hal_dma_config_t *config);
 
 /**
  * Setting the digital controller.
@@ -195,15 +182,15 @@ void adc_hal_digi_init(adc_hal_context_t *hal);
  * @param hal    Context of the HAL
  * @param cfg    Pointer to digital controller paramter.
  */
-void adc_hal_digi_controller_config(adc_hal_context_t *hal, const adc_hal_digi_ctrlr_cfg_t *cfg);
+void adc_hal_digi_controller_config(adc_hal_dma_ctx_t *hal, const adc_hal_digi_ctrlr_cfg_t *cfg);
 
 /**
  * @brief Start Conversion
  *
  * @param hal Context of the HAL
- * @param data_buf Pointer to the data buffer, the length should be multiple of ``desc_max_num`` and ``eof_num`` in ``adc_hal_context_t``
+ * @param data_buf Pointer to the data buffer, the length should be multiple of ``desc_max_num`` and ``eof_num`` in ``adc_hal_dma_ctx_t``
  */
-void adc_hal_digi_start(adc_hal_context_t *hal, uint8_t *data_buf);
+void adc_hal_digi_start(adc_hal_dma_ctx_t *hal, uint8_t *data_buf);
 
 #if !SOC_GDMA_SUPPORTED
 /**
@@ -213,7 +200,7 @@ void adc_hal_digi_start(adc_hal_context_t *hal, uint8_t *data_buf);
  *
  * @return DMA descriptor address
  */
-intptr_t adc_hal_get_desc_addr(adc_hal_context_t *hal);
+intptr_t adc_hal_get_desc_addr(adc_hal_dma_ctx_t *hal);
 
 /**
  * @brief Check the hardware interrupt event
@@ -223,7 +210,7 @@ intptr_t adc_hal_get_desc_addr(adc_hal_context_t *hal);
  *
  * @return True: the event is triggered. False: the event is not triggered yet.
  */
-bool adc_hal_check_event(adc_hal_context_t *hal, uint32_t mask);
+bool adc_hal_check_event(adc_hal_dma_ctx_t *hal, uint32_t mask);
 #endif
 
 /**
@@ -235,7 +222,7 @@ bool adc_hal_check_event(adc_hal_context_t *hal, uint32_t mask);
  *
  * @return                   See ``adc_hal_dma_desc_status_t``
  */
-adc_hal_dma_desc_status_t adc_hal_get_reading_result(adc_hal_context_t *hal, const intptr_t eof_desc_addr, dma_descriptor_t **cur_desc);
+adc_hal_dma_desc_status_t adc_hal_get_reading_result(adc_hal_dma_ctx_t *hal, const intptr_t eof_desc_addr, dma_descriptor_t **cur_desc);
 
 /**
  * @brief Clear interrupt
@@ -243,7 +230,7 @@ adc_hal_dma_desc_status_t adc_hal_get_reading_result(adc_hal_context_t *hal, con
  * @param hal  Context of the HAL
  * @param mask mask of the interrupt
  */
-void adc_hal_digi_clr_intr(adc_hal_context_t *hal, uint32_t mask);
+void adc_hal_digi_clr_intr(adc_hal_dma_ctx_t *hal, uint32_t mask);
 
 /**
  * @brief Enable interrupt
@@ -251,14 +238,14 @@ void adc_hal_digi_clr_intr(adc_hal_context_t *hal, uint32_t mask);
  * @param hal  Context of the HAL
  * @param mask mask of the interrupt
  */
-void adc_hal_digi_dis_intr(adc_hal_context_t *hal, uint32_t mask);
+void adc_hal_digi_dis_intr(adc_hal_dma_ctx_t *hal, uint32_t mask);
 
 /**
  * @brief Stop conversion
  *
  * @param hal Context of the HAL
  */
-void adc_hal_digi_stop(adc_hal_context_t *hal);
+void adc_hal_digi_stop(adc_hal_dma_ctx_t *hal);
 
 
 /*---------------------------------------------------------------
@@ -326,7 +313,7 @@ void adc_hal_digi_stop(adc_hal_context_t *hal);
  *      - ESP_OK:                The value is valid.
  *      - ESP_ERR_INVALID_STATE: The value is invalid.
  */
-esp_err_t adc_hal_convert(adc_ll_num_t adc_n, int channel, int *out_raw);
+esp_err_t adc_hal_convert(adc_unit_t adc_n, int channel, int *out_raw);
 
 /*---------------------------------------------------------------
                     ADC calibration setting
@@ -338,7 +325,7 @@ esp_err_t adc_hal_convert(adc_ll_num_t adc_n, int channel, int *out_raw);
  *
  * @param adc_n ADC index numer
  */
-void adc_hal_calibration_init(adc_ll_num_t adc_n);
+void adc_hal_calibration_init(adc_unit_t adc_n);
 
 /**
  * Set the calibration result (initial data) to ADC.
@@ -348,7 +335,7 @@ void adc_hal_calibration_init(adc_ll_num_t adc_n);
  * @param adc_n ADC index number.
  * @param param the calibration parameter to configure
  */
-void adc_hal_set_calibration_param(adc_ll_num_t adc_n, uint32_t param);
+void adc_hal_set_calibration_param(adc_unit_t adc_n, uint32_t param);
 
 /**
  * Calibrate the ADC using internal connections.
@@ -364,7 +351,7 @@ void adc_hal_set_calibration_param(adc_ll_num_t adc_n, uint32_t param);
  * @return
  *      - The calibration result (initial data) to ADC, use `adc_hal_set_calibration_param` to set.
  */
-uint32_t adc_hal_self_calibration(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten, bool internal_gnd);
+uint32_t adc_hal_self_calibration(adc_unit_t adc_n, adc_channel_t channel, adc_atten_t atten, bool internal_gnd);
 
 #endif //SOC_ADC_CALIBRATION_V1_SUPPORTED
 

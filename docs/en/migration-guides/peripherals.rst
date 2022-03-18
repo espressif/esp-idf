@@ -20,7 +20,8 @@ To make the API clearer, we renamed the function ``esp_rom_spiflash_lock`` to ``
 ADC
 ---
 
-Previous `driver/adc2_wifi_private.h` has been moved to `esp_private/adc2_wifi.h`.
+- Previous `driver/adc2_wifi_private.h` has been moved to `esp_private/adc2_wifi.h`.
+- Enums `ADC_UNIT_BOTH`, `ADC_UNIT_ALTER` and `ADC_UNIT_MAX` in ``adc_unit_t`` are removed.
 
 GPIO
 ----

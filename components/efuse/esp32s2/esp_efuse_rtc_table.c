@@ -9,6 +9,7 @@
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
 #include "esp_log.h"
+#include "hal/adc_types.h"
 #include "soc/soc_caps.h"
 
 #define RTC_TBL_LOG_TAG "efuse_rtc_table"
@@ -96,6 +97,7 @@ int esp_efuse_rtc_table_read_calib_version(void)
 
 int esp_efuse_rtc_table_get_tag(int version, int adc_num, int atten, int extra_params)
 {
+    int index = (adc_num == ADC_UNIT_1) ? 0 : 1;
     int param_offset; // used to index which (adc_num, atten) array to use.
     if (version == 1 && extra_params == RTCCALIB_V1_PARAM_VLOW) { // Volage LOW, Version 1
         param_offset = RTCCALIB_V1_ADCREADINGLOW_OFFSET;
@@ -109,8 +111,8 @@ int esp_efuse_rtc_table_get_tag(int version, int adc_num, int atten, int extra_p
         return -1;
     }
 
-    int result = param_offset + (adc_num - 1) * RTCCALIB_ESP32S2_ATTENCOUNT + atten;
-    ESP_EARLY_LOGV(RTC_TBL_LOG_TAG, "V%d ADC%d ATTEN%d PARAM%d -> %d", version, adc_num, atten, extra_params, result);
+    int result = param_offset + index * RTCCALIB_ESP32S2_ATTENCOUNT + atten;
+    ESP_EARLY_LOGV(RTC_TBL_LOG_TAG, "V%d ADC%d ATTEN%d PARAM%d -> %d", version, adc_num + 1, atten, extra_params, result);
     return result;
 }
 
