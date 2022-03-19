@@ -36,6 +36,14 @@ __script_dir(){
     echo "$script_dir"
 }
 
+__is_dir_esp_idf(){
+    if [ ! -f "$1/tools/idf.py" ] || [ ! -f "$1/tools/idf_tools.py" ]
+    then
+        # Echo command here is not used for printing to the terminal, but as non-empty return value from function.
+        echo "THIS DIRECTORY IS NOT ESP-IDF"
+    fi
+}
+
 __main() {
     # The file doesn't have executable permissions, so this shouldn't really happen.
     # Doing this in case someone tries to chmod +x it and execute...
@@ -58,22 +66,28 @@ __main() {
     elif [ -n "${ZSH_VERSION-}" ]
     then
         self_path="${(%):-%x}"
-    else
-        echo "Could not detect IDF_PATH. Please set it before sourcing this script:"
-        echo "  export IDF_PATH=(add path here)"
-        return 1
     fi
 
     script_dir=$(__script_dir)
+    # Since sh or dash shells can't detect script_dir correctly, check if script_dir looks like an IDF directory
+    is_script_dir_esp_idf=$(__is_dir_esp_idf ${script_dir})
 
     if [ -z "${IDF_PATH}" ]
     then
         # IDF_PATH not set in the environment.
+
+        if [ -n "${is_script_dir_esp_idf}" ]
+        then
+            echo "Could not detect IDF_PATH. Please set it before sourcing this script:"
+            echo "  export IDF_PATH=(add path here)"
+            return 1
+        fi
         export IDF_PATH="${script_dir}"
         echo "Setting IDF_PATH to '${IDF_PATH}'"
     else
         # IDF_PATH came from the environment, check if the path is valid
-        if [ ! "${IDF_PATH}" = "${script_dir}" ]
+        # Set IDF_PATH to script_dir, if script_dir looks like an IDF directory
+        if [ ! "${IDF_PATH}" = "${script_dir}" ] && [ -z "${is_script_dir_esp_idf}" ]
         then
             # Change IDF_PATH is important when there are 2 ESP-IDF versions in different directories.
             # Sourcing this script without change, would cause sourcing wrong export script.
@@ -81,7 +95,8 @@ __main() {
             export IDF_PATH="${script_dir}"
         fi
         # Check if this path looks like an IDF directory
-        if [ ! -f "${IDF_PATH}/tools/idf.py" ] || [ ! -f "${IDF_PATH}/tools/idf_tools.py" ]
+        is_idf_path_esp_idf=$(__is_dir_esp_idf ${IDF_PATH})
+        if [ -n "${is_idf_path_esp_idf}" ]
         then
             echo "IDF_PATH is set to '${IDF_PATH}', but it doesn't look like an ESP-IDF directory."
             echo "If you have set IDF_PATH manually, check if the path is correct."
@@ -175,12 +190,15 @@ __cleanup() {
     unset SOURCE_BASH
     unset WARNING_MSG
     unset uninstall
+    unset is_idf_path_esp_idf
+    unset is_script_dir_esp_idf
 
     unset __realpath
     unset __main
     unset __verbose
     unset __enable_autocomplete
     unset __cleanup
+    unset __is_dir_esp_idf
 
     # Not unsetting IDF_PYTHON_ENV_PATH, it can be used by IDF build system
     # to check whether we are using a private Python environment
