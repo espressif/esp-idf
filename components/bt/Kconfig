@@ -1,5 +1,5 @@
 menu "Bluetooth"
-    visible if (IDF_TARGET_ESP32 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
+    visible if SOC_BT_SUPPORTED
 
     config BT_ENABLED
         bool "Bluetooth"
@@ -21,7 +21,7 @@ menu "Bluetooth"
 
     choice BT_HOST
         prompt "Bluetooth Host"
-        depends on BT_ENABLED && (BTDM_CTRL_HCI_MODE_VHCI || BT_CTRL_HCI_MODE_VHCI)
+        depends on BT_ENABLED
         default BT_BLUEDROID_ENABLED
         help
             This helps to choose Bluetooth host stack
@@ -47,7 +47,7 @@ menu "Bluetooth"
     endchoice
 
     menu "Bluedroid Options"
-        depends on BT_BLUEDROID_ENABLED
+        depends on BT_BLUEDROID_ENABLED && SOC_BLUEDROID_SUPPORTED
 
         source "$IDF_PATH/components/bt/host/bluedroid/Kconfig.in"
     endmenu

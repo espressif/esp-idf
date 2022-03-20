@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
+#include <stdint.h>
 #include <esp_err.h>
 #include <esp_spi_flash.h> /* including in bootloader for error values */
 #include "sdkconfig.h"

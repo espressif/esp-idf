@@ -211,6 +211,56 @@ Notes:
 #define apiID_VEVENTGROUPDELETE                   (72u)
 #define apiID_UXEVENTGROUPGETNUMBER               (73u)
 
+#ifdef CONFIG_FREERTOS_SMP
+/*
+FreeRTOS SMP has diverged from ESP-IDF FreeRTOS source quite a bit, thus Sysview is out of sync. For now, we just
+define away all of the tracing macros.
+*/
+#define traceTASK_NOTIFY_TAKE( uxIndexToWait )
+#define traceTASK_DELAY()
+#define traceTASK_DELAY_UNTIL( xTimeToWake )
+#define traceTASK_DELETE( pxTCB )
+#define traceTASK_NOTIFY_GIVE_FROM_ISR( uxIndexToNotify )
+#define traceTASK_PRIORITY_INHERIT( pxTCB, uxPriority )
+#define traceTASK_RESUME( pxTCB )
+#define traceINCREASE_TICK_COUNT( xTicksToJump )
+#define traceTASK_SUSPEND( pxTCB )
+#define traceTASK_PRIORITY_DISINHERIT( pxTCB, uxBasePriority )
+#define traceTASK_RESUME_FROM_ISR( pxTCB )
+#define traceTASK_NOTIFY( uxIndexToNotify )
+#define traceTASK_NOTIFY_FROM_ISR( uxIndexToNotify )
+#define traceTASK_NOTIFY_WAIT( uxIndexToWait )
+#define traceQUEUE_CREATE( pxNewQueue )
+#define traceQUEUE_DELETE( pxQueue )
+#define traceQUEUE_PEEK( pxQueue )
+#define traceQUEUE_PEEK_FROM_ISR( pxQueue )
+#define traceQUEUE_PEEK_FROM_ISR_FAILED( pxQueue )
+#define traceQUEUE_RECEIVE( pxQueue )
+#define traceQUEUE_RECEIVE_FAILED( pxQueue )
+#define traceQUEUE_SEMAPHORE_RECEIVE( pxQueue )
+#define traceQUEUE_RECEIVE_FROM_ISR( pxQueue )
+#define traceQUEUE_RECEIVE_FROM_ISR_FAILED( pxQueue )
+#define traceQUEUE_REGISTRY_ADD( xQueue, pcQueueName )
+#define traceQUEUE_SEND( pxQueue )
+#define traceQUEUE_SEND_FAILED( pxQueue )
+#define traceQUEUE_SEND_FROM_ISR( pxQueue )
+#define traceQUEUE_SEND_FROM_ISR_FAILED( pxQueue )
+#define traceQUEUE_GIVE_FROM_ISR( pxQueue )
+#define traceQUEUE_GIVE_FROM_ISR_FAILED( pxQueue )
+#define traceTASK_CREATE(pxNewTCB)
+#define traceTASK_PRIORITY_SET(pxTask, uxNewPriority)
+#define traceTASK_SWITCHED_IN()
+#define traceMOVED_TASK_TO_READY_STATE(pxTCB)
+#define traceREADDED_TASK_TO_READY_STATE(pxTCB)
+#define traceMOVED_TASK_TO_DELAYED_LIST()
+#define traceMOVED_TASK_TO_OVERFLOW_DELAYED_LIST()
+#define traceMOVED_TASK_TO_SUSPENDED_LIST(pxTCB)
+#define traceISR_EXIT_TO_SCHEDULER()
+#define traceISR_EXIT()
+#define traceISR_ENTER(_n_)
+
+#else // CONFIG_FREERTOS_SMP
+
 #define traceTASK_NOTIFY_TAKE( uxIndexToWait )                        SEGGER_SYSVIEW_RecordU32x2(apiFastID_OFFSET + apiID_ULTASKNOTIFYTAKE, xClearCountOnExit, xTicksToWait)
 #define traceTASK_DELAY()                                             SEGGER_SYSVIEW_RecordU32(apiFastID_OFFSET + apiID_VTASKDELAY, xTicksToDelay)
 #define traceTASK_DELAY_UNTIL()                                       SEGGER_SYSVIEW_RecordVoid(apiFastID_OFFSET + apiID_VTASKDELAYUNTIL)
@@ -315,6 +365,7 @@ Notes:
 #define traceISR_EXIT()                             SEGGER_SYSVIEW_RecordExitISR()
 #define traceISR_ENTER(_n_)                         SEGGER_SYSVIEW_RecordEnterISR(_n_)
 
+#endif // CONFIG_FREERTOS_SMP
 
 /*********************************************************************
 *

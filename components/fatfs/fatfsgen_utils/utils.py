@@ -14,7 +14,13 @@ FAT16_MAX_CLUSTERS: int = 65525
 FAT12: int = 12
 FAT16: int = 16
 FAT32: int = 32
-BYTES_PER_DIRECTORY_ENTRY = 32
+BYTES_PER_DIRECTORY_ENTRY: int = 32
+UINT32_MAX: int = (1 << 32) - 1
+MAX_NAME_SIZE: int = 8
+MAX_EXT_SIZE: int = 3
+
+# long names are encoded to two bytes in utf-16
+LONG_NAMES_ENCODING: str = 'utf-16'
 
 
 def crc32(input_values: List[int], crc: int) -> int:
@@ -36,7 +42,7 @@ def get_non_data_sectors_cnt(reserved_sectors_cnt: int, sectors_per_fat_cnt: int
 def get_fatfs_type(clusters_count: int) -> int:
     if clusters_count < FAT12_MAX_CLUSTERS:
         return FAT12
-    if clusters_count < FAT16_MAX_CLUSTERS:
+    if clusters_count <= FAT16_MAX_CLUSTERS:
         return FAT16
     return FAT32
 
@@ -55,6 +61,35 @@ def pad_string(content: str, size: Optional[int] = None, pad: int = 0x20) -> str
     return content.ljust(size or len(content), chr(pad))[:size]
 
 
+def build_lfn_short_entry_name(name: str, extension: str, order: int) -> str:
+    return '{}{}'.format(pad_string(content=name[:MAX_NAME_SIZE - 2] + '~' + chr(order), size=MAX_NAME_SIZE),
+                         pad_string(extension[:MAX_EXT_SIZE], size=MAX_EXT_SIZE))
+
+
+def lfn_checksum(short_entry_name: str) -> int:
+    """
+    Function defined by FAT specification. Computes checksum out of name in the short file name entry.
+    """
+    checksum_result = 0
+    for i in range(MAX_NAME_SIZE + MAX_EXT_SIZE):
+        # operation is a right rotation on 8 bits (Python equivalent for unsigned char in C)
+        checksum_result = (0x80 if checksum_result & 1 else 0x00) + (checksum_result >> 1) + ord(short_entry_name[i])
+        checksum_result &= 0xff
+    return checksum_result
+
+
+def convert_to_utf16_and_pad(content: str,
+                             expected_size: int,
+                             pad: bytes = b'\xff',
+                             terminator: bytes = b'\x00\x00') -> bytes:
+    # we need to get rid of the Byte order mark 0xfeff or 0xfffe, fatfs does not use it
+    bom_utf16: bytes = b'\xfe\xff'
+    encoded_content_utf16: bytes = content.encode(LONG_NAMES_ENCODING)[len(bom_utf16):]
+    terminated_encoded_content_utf16: bytes = (encoded_content_utf16 + terminator) if (2 * expected_size > len(
+        encoded_content_utf16) > 0) else encoded_content_utf16
+    return terminated_encoded_content_utf16.ljust(2 * expected_size, pad)
+
+
 def split_to_name_and_extension(full_name: str) -> Tuple[str, str]:
     name, extension = os.path.splitext(full_name)
     return name, extension.replace('.', '')
@@ -65,7 +100,7 @@ def is_valid_fatfs_name(string: str) -> bool:
 
 
 def split_by_half_byte_12_bit_little_endian(value: int) -> Tuple[int, int, int]:
-    value_as_bytes = Int16ul.build(value)
+    value_as_bytes: bytes = Int16ul.build(value)
     return value_as_bytes[0] & 0x0f, value_as_bytes[0] >> 4, value_as_bytes[1] & 0x0f
 
 
@@ -91,7 +126,7 @@ def clean_second_half_byte(bytes_array: bytearray, address: int) -> None:
 
 def split_content_into_sectors(content: bytes, sector_size: int) -> List[bytes]:
     result = []
-    clusters_cnt = required_clusters_count(cluster_size=sector_size, content=content)
+    clusters_cnt: int = required_clusters_count(cluster_size=sector_size, content=content)
 
     for i in range(clusters_cnt):
         result.append(content[sector_size * i:(i + 1) * sector_size])
@@ -99,8 +134,7 @@ def split_content_into_sectors(content: bytes, sector_size: int) -> List[bytes]:
 
 
 def get_args_for_partition_generator(desc: str) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description=desc)
+    parser: argparse.ArgumentParser = argparse.ArgumentParser(description=desc)
     parser.add_argument('input_directory',
                         help='Path to the directory that will be encoded into fatfs image')
     parser.add_argument('--output_file',
@@ -122,6 +156,9 @@ def get_args_for_partition_generator(desc: str) -> argparse.Namespace:
     parser.add_argument('--root_entry_count',
                         default=512,
                         help='Number of entries in the root directory')
+    parser.add_argument('--long_name_support',
+                        action='store_true',
+                        help='Set flag to enable long names support.')
     parser.add_argument('--fat_type',
                         default=0,
                         type=int,

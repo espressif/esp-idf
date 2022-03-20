@@ -46,35 +46,37 @@ deploy_test_result:
     - .deploy_job_template
     - .before_script_minimal
     - .rules:ref:master-schedule-always
-  image: $CI_DOCKER_REGISTRY/bot-env
+  image: $CI_DOCKER_REGISTRY/bot-env:1
+  dependencies: []
   tags:
     - deploy_test
   artifacts:
     when: always
     paths:
       - ${CI_PROJECT_DIR}/test-management/*.log
-      # save all test logs as artifacts, make it easier to track errors
-      - ${CI_PROJECT_DIR}/TEST_LOGS
-    expire_in: 1 mos
+    expire_in: 1 week
   variables:
-    UNIT_TEST_CASE_FILE: "${CI_PROJECT_DIR}/components/idf_test/unit_test/TestCaseAll.yml"
     BOT_ACCOUNT_CONFIG_FILE: "${CI_PROJECT_DIR}/test-management/Config/Account.local.yml"
-    TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
-    AUTO_TEST_SCRIPT_PATH: "${CI_PROJECT_DIR}/auto_test_script"
+    TEST_RESULTS_PATH: "${CI_PROJECT_DIR}/TEST_RESULTS"
   script:
     - add_gitlab_ssh_keys
-    - export GIT_SHA=$(echo ${PIPELINE_COMMIT_SHA} | cut -c 1-8)
-    - export REV_COUNT=$(git rev-list --count ${PIPELINE_COMMIT_SHA} --)
+    - export GIT_SHA=$(echo ${CI_COMMIT_SHA} | cut -c 1-8)
+    - export REV_COUNT=$(git rev-list --count ${GIT_SHA} --)
     - export SUMMARY="IDF CI test result for $GIT_SHA (r${REV_COUNT})"
-    # artifacts of job update_test_cases creates test-management folder
-    # we need to remove it so we can clone test-management folder again
-    - rm -rf test-management
+    # Download test result
+    - export PYTHONPATH="$IDF_PATH/tools:$IDF_PATH/tools/ci/python_packages:$PYTHONPATH"
+    - python3 ${IDF_PATH}/tools/ci/get_all_test_results.py --path ${TEST_RESULTS_PATH} --include_retried
+    - if [[ -z $(find ${TEST_RESULTS_PATH} -name "*.xml") ]]; then exit 0; fi
+    # Clone test-management repo
     - retry_failed git clone $TEST_MANAGEMENT_REPO
     - python3 $CHECKOUT_REF_SCRIPT test-management test-management
     - cd test-management
     - echo $BOT_JIRA_ACCOUNT > ${BOT_ACCOUNT_CONFIG_FILE}
+    # Make sure all requirements are installed
+    - pip3 install -r requirements.txt
+    # Update test cases
+    - python3 ImportTestCase.py $JIRA_TEST_MANAGEMENT_PROJECT from_xml -d ${TEST_RESULTS_PATH} -r $GIT_SHA -l IDFCI
     # update test results
-    - python3 ImportTestResult.py -r "$GIT_SHA (r${REV_COUNT})" -j $JIRA_TEST_MANAGEMENT_PROJECT -s "$SUMMARY" -l CI -p ${CI_PROJECT_DIR}/TEST_LOGS --pipeline_url ${CI_PIPELINE_URL}
+    - python3 ImportTestResult.py -r "$GIT_SHA (r${REV_COUNT})" -j $JIRA_TEST_MANAGEMENT_PROJECT -s "$SUMMARY" -l IDFCI -p ${TEST_RESULTS_PATH} --pipeline_url ${CI_PIPELINE_URL}
   # May need a long time to upload all test results.
-  retry: 2
   timeout: 4 hours

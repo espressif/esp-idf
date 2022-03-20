@@ -127,6 +127,11 @@ TEST_CASE("adc2 work with wifi","[adc]")
     esp_netif_create_default_wifi_sta();
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+
+    /* Restrict the number of buffers to allocate to account for limited memory when running large number of tests */
+    cfg.static_rx_buf_num = 2;
+    cfg.static_tx_buf_num = 2;
+
     TEST_ESP_OK(esp_wifi_init(&cfg));
     wifi_config_t wifi_config = {
         .sta = {

@@ -6,7 +6,7 @@
 #pragma once
 
 #include <stdint.h>
-#include "soc/cache_memory.h"
+#include "soc/ext_mem_defs.h"
 #include "soc/soc.h"
 
 #ifdef __cplusplus
@@ -21,7 +21,7 @@ extern "C" {
 #define SOC_MMU_DROM0_PAGES_START               (CACHE_DROM_MMU_START / sizeof(uint32_t))
 #define SOC_MMU_DROM0_PAGES_END                 (CACHE_DROM_MMU_END / sizeof(uint32_t))
 #define SOC_MMU_INVALID_ENTRY_VAL               MMU_TABLE_INVALID_VAL
-#define SOC_MMU_ADDR_MASK                       MMU_ADDRESS_MASK
+#define SOC_MMU_ADDR_MASK                       MMU_VALID_VAL_MASK
 #define SOC_MMU_PAGE_IN_FLASH(page)             (page) //Always in Flash
 #define SOC_MMU_DPORT_PRO_FLASH_MMU_TABLE       FLASH_MMU_TABLE
 #define SOC_MMU_VADDR1_START_ADDR               IRAM0_CACHE_ADDRESS_LOW

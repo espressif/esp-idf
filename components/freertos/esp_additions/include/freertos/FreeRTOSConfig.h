@@ -17,6 +17,13 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 #include <assert.h>         //For configASSERT()
 #endif /* def __ASSEMBLER__ */
 
+#ifdef CONFIG_FREERTOS_SMP
+
+// Pull in the SMP configuration
+#include "freertos/FreeRTOSConfig_smp.h"
+
+#else // CONFIG_FREERTOS_SMP
+
 // The arch-specific FreeRTOSConfig_arch.h in port/<arch>/include.
 #include "freertos/FreeRTOSConfig_arch.h"
 
@@ -262,5 +269,7 @@ extern void vPortCleanUpTCB ( void *pxTCB );
 
 // backward compatibility for 4.4
 #define xTaskRemoveFromUnorderedEventList vTaskRemoveFromUnorderedEventList
+
+#endif // CONFIG_FREERTOS_SMP
 
 #endif /* FREERTOS_CONFIG_H */

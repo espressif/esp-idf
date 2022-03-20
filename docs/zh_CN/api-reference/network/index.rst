@@ -55,12 +55,9 @@ IP 网络层协议
 .. toctree::
    :hidden:
 
-   tcpip_adapter_migration
    esp_netif_driver
 
 TCP/IP 套接字 API 的示例代码存放在 ESP-IDF 示例项目的 :example:`protocols/sockets` 目录下。
-
-目前已不再使用 TCP/IP 适配器（旧式网络接口库），请参考 :doc:`/api-reference/network/tcpip_adapter_migration` 来更新现有的 IDF 应用程序。
 
 应用层协议 
 ===========

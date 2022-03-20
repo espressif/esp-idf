@@ -234,6 +234,9 @@ static esp_partition_iterator_opaque_t *iterator_create(esp_partition_type_t typ
 {
     esp_partition_iterator_opaque_t *it =
         (esp_partition_iterator_opaque_t *) malloc(sizeof(esp_partition_iterator_opaque_t));
+    if (it == NULL) {
+        return NULL;
+    }
     it->type = type;
     it->subtype = subtype;
     it->label = label;
@@ -256,6 +259,9 @@ esp_partition_iterator_t esp_partition_find(esp_partition_type_t type,
     // create an iterator pointing to the start of the list
     // (next item will be the first one)
     esp_partition_iterator_t it = iterator_create(type, subtype, label);
+    if (it == NULL) {
+        return NULL;
+    }
     // advance iterator to the next item which matches constraints
     it = esp_partition_next(it);
     // if nothing found, it == NULL and iterator has been released

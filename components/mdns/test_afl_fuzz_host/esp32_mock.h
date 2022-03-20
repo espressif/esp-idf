@@ -11,7 +11,6 @@
 #define INC_FREERTOS_H
 #define QUEUE_H
 #define SEMAPHORE_H
-#define _TCPIP_ADAPTER_H_
 #define _ESP_TASK_H_
 
 #ifdef USE_BSD_STRING
@@ -92,14 +91,6 @@ extern const char * WIFI_EVENT;
 extern const char * IP_EVENT;
 extern const char * ETH_EVENT;
 
-/* status of DHCP client or DHCP server */
-typedef enum {
-    TCPIP_ADAPTER_DHCP_INIT = 0,    /**< DHCP client/server in initial state */
-    TCPIP_ADAPTER_DHCP_STARTED,     /**< DHCP client/server already been started */
-    TCPIP_ADAPTER_DHCP_STOPPED,     /**< DHCP client/server already been stopped */
-    TCPIP_ADAPTER_DHCP_STATUS_MAX
-} tcpip_adapter_dhcp_status_t;
-
 struct udp_pcb {
     uint8_t dummy;
 };
@@ -113,23 +104,6 @@ struct ip6_addr {
   uint32_t addr[4];
 };
 typedef struct ip6_addr ip6_addr_t;
-
-typedef struct {
-    ip4_addr_t ip;
-    ip4_addr_t netmask;
-    ip4_addr_t gw;
-} tcpip_adapter_ip_info_t;
-
-typedef enum {
-    TCPIP_ADAPTER_IF_STA = 0,     /**< ESP32 station interface */
-    TCPIP_ADAPTER_IF_AP,          /**< ESP32 soft-AP interface */
-    TCPIP_ADAPTER_IF_ETH,         /**< ESP32 ethernet interface */
-    TCPIP_ADAPTER_IF_MAX
-} tcpip_adapter_if_t;
-
-typedef struct {
-    ip6_addr_t ip;
-} tcpip_adapter_ip6_info_t;
 
 typedef void* system_event_t;
 

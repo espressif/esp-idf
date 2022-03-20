@@ -1,12 +1,11 @@
-/**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+/*
+ * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
-#include <stdint.h>
-#include "soc/soc.h"
+#include "soc.h"
 
 #ifdef __cplusplus
 extern "C" {

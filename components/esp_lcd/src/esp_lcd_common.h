@@ -19,8 +19,8 @@
 extern "C" {
 #endif
 
-#define LCD_INTR_ALLOC_FLAGS     ESP_INTR_FLAG_INTRDISABLED
-#define LCD_MEM_ALLOC_CAPS       MALLOC_CAP_DEFAULT
+#define LCD_I80_INTR_ALLOC_FLAGS     ESP_INTR_FLAG_INTRDISABLED
+#define LCD_I80_MEM_ALLOC_CAPS       MALLOC_CAP_DEFAULT
 
 #define LCD_PERIPH_CLOCK_PRE_SCALE (2) // This is the minimum divider that can be applied to LCD peripheral
 

@@ -1,5 +1,4 @@
 components/bootloader/subproject/main/bootloader_hooks.h
-components/bootloader/subproject/main/bootloader_start.c
 components/bt/common/osi/alarm.c
 components/bt/common/osi/allocator.c
 components/bt/common/osi/buffer.c
@@ -429,7 +428,6 @@ components/esp_eth/src/esp_eth_phy.c
 components/esp_eth/src/ksz8851.h
 components/esp_eth/src/openeth.h
 components/esp_eth/src/w5500.h
-components/esp_eth/test/test_emac.c
 components/esp_eth/test_apps/component_ut_test.py
 components/esp_eth/test_apps/main/esp_eth_test.c
 components/esp_event/esp_event_private.c
@@ -441,19 +439,13 @@ components/esp_event/include/esp_event_base.h
 components/esp_event/include/esp_event_loop.h
 components/esp_event/private_include/esp_event_internal.h
 components/esp_event/private_include/esp_event_private.h
-components/esp_event/test/test_default_loop.c
 components/esp_event/test/test_event.c
 components/esp_gdbstub/esp32/gdbstub_target_config.h
 components/esp_gdbstub/esp32c3/gdbstub_target_config.h
 components/esp_gdbstub/esp32h2/gdbstub_target_config.h
 components/esp_gdbstub/esp32s2/gdbstub_target_config.h
 components/esp_gdbstub/esp32s3/gdbstub_target_config.h
-components/esp_gdbstub/esp_common/gdbstub_common.c
-components/esp_gdbstub/include/esp_gdbstub.h
-components/esp_gdbstub/private_include/esp_gdbstub_common.h
-components/esp_gdbstub/riscv/esp_gdbstub_arch.h
 components/esp_gdbstub/src/packet.c
-components/esp_gdbstub/xtensa/esp_gdbstub_arch.h
 components/esp_hid/include/esp_hid_common.h
 components/esp_hid/include/esp_hidd.h
 components/esp_hid/include/esp_hidd_gatts.h
@@ -485,18 +477,13 @@ components/esp_local_ctrl/src/esp_local_ctrl_handler.c
 components/esp_local_ctrl/src/esp_local_ctrl_priv.h
 components/esp_local_ctrl/src/esp_local_ctrl_transport_ble.c
 components/esp_local_ctrl/src/esp_local_ctrl_transport_httpd.c
-components/esp_netif/esp_netif_handlers.c
-components/esp_netif/include/esp_netif_net_stack.h
 components/esp_netif/include/esp_netif_ppp.h
 components/esp_netif/include/esp_netif_slip.h
-components/esp_netif/include/esp_netif_sta_list.h
 components/esp_netif/loopback/esp_netif_loopback.c
 components/esp_netif/lwip/esp_netif_lwip_defaults.c
-components/esp_netif/lwip/esp_netif_lwip_ppp.c
 components/esp_netif/lwip/esp_netif_lwip_ppp.h
 components/esp_netif/lwip/esp_netif_lwip_slip.c
 components/esp_netif/lwip/esp_netif_lwip_slip.h
-components/esp_netif/lwip/esp_netif_sta_list.c
 components/esp_netif/private_include/esp_netif_private.h
 components/esp_netif/test/test_esp_netif.c
 components/esp_netif/test_apps/component_ut_test.py
@@ -732,14 +719,12 @@ components/esp_timer/test/test_esp_timer.c
 components/esp_timer/test/test_esp_timer_light_sleep.c
 components/esp_timer/test/test_ets_timer.c
 components/esp_wifi/include/esp_coexist_adapter.h
-components/esp_wifi/include/esp_mesh.h
 components/esp_wifi/include/esp_mesh_internal.h
 components/esp_wifi/include/esp_now.h
 components/esp_wifi/include/esp_private/esp_wifi_private.h
 components/esp_wifi/include/esp_private/esp_wifi_types_private.h
 components/esp_wifi/include/esp_private/wifi_types.h
 components/esp_wifi/include/esp_smartconfig.h
-components/esp_wifi/include/esp_wifi_default.h
 components/esp_wifi/include/esp_wifi_netif.h
 components/esp_wifi/include/smartconfig_ack.h
 components/esp_wifi/src/lib_printf.c
@@ -789,13 +774,37 @@ components/fatfs/src/ff.h
 components/fatfs/src/ffconf.h
 components/fatfs/src/ffsystem.c
 components/fatfs/src/ffunicode.c
-components/fatfs/test/test_fatfs_common.c
 components/fatfs/test/test_fatfs_rawflash.c
 components/fatfs/test_fatfs_host/main.cpp
 components/fatfs/test_fatfs_host/sdkconfig/sdkconfig.h
 components/fatfs/test_fatfs_host/test_fatfs.cpp
 components/fatfs/vfs/esp_vfs_fat.h
 components/fatfs/vfs/vfs_fat_internal.h
+components/freertos/FreeRTOS-Kernel-SMP/croutine.c
+components/freertos/FreeRTOS-Kernel-SMP/event_groups.c
+components/freertos/FreeRTOS-Kernel-SMP/include/freertos/FreeRTOS.h
+components/freertos/FreeRTOS-Kernel-SMP/include/freertos/StackMacros.h
+components/freertos/FreeRTOS-Kernel-SMP/include/freertos/atomic.h
+components/freertos/FreeRTOS-Kernel-SMP/include/freertos/croutine.h
+components/freertos/FreeRTOS-Kernel-SMP/include/freertos/deprecated_definitions.h
+components/freertos/FreeRTOS-Kernel-SMP/include/freertos/event_groups.h
+components/freertos/FreeRTOS-Kernel-SMP/include/freertos/list.h
+components/freertos/FreeRTOS-Kernel-SMP/include/freertos/message_buffer.h
+components/freertos/FreeRTOS-Kernel-SMP/include/freertos/mpu_prototypes.h
+components/freertos/FreeRTOS-Kernel-SMP/include/freertos/mpu_wrappers.h
+components/freertos/FreeRTOS-Kernel-SMP/include/freertos/portable.h
+components/freertos/FreeRTOS-Kernel-SMP/include/freertos/projdefs.h
+components/freertos/FreeRTOS-Kernel-SMP/include/freertos/queue.h
+components/freertos/FreeRTOS-Kernel-SMP/include/freertos/semphr.h
+components/freertos/FreeRTOS-Kernel-SMP/include/freertos/stack_macros.h
+components/freertos/FreeRTOS-Kernel-SMP/include/freertos/stream_buffer.h
+components/freertos/FreeRTOS-Kernel-SMP/include/freertos/task.h
+components/freertos/FreeRTOS-Kernel-SMP/include/freertos/timers.h
+components/freertos/FreeRTOS-Kernel-SMP/list.c
+components/freertos/FreeRTOS-Kernel-SMP/queue.c
+components/freertos/FreeRTOS-Kernel-SMP/stream_buffer.c
+components/freertos/FreeRTOS-Kernel-SMP/tasks.c
+components/freertos/FreeRTOS-Kernel-SMP/timers.c
 components/hal/aes_hal.c
 components/hal/cpu_hal.c
 components/hal/dac_hal.c
@@ -820,7 +829,6 @@ components/hal/esp32/include/hal/sigmadelta_ll.h
 components/hal/esp32/include/hal/soc_ll.h
 components/hal/esp32/include/hal/spi_flash_encrypted_ll.h
 components/hal/esp32/include/hal/spi_flash_ll.h
-components/hal/esp32/include/hal/spi_ll.h
 components/hal/esp32/include/hal/touch_sensor_hal.h
 components/hal/esp32/include/hal/touch_sensor_ll.h
 components/hal/esp32/include/hal/trace_ll.h
@@ -828,7 +836,6 @@ components/hal/esp32/include/hal/twai_ll.h
 components/hal/esp32/include/hal/uart_ll.h
 components/hal/esp32/interrupt_descriptor_table.c
 components/hal/esp32/touch_sensor_hal.c
-components/hal/esp32c3/brownout_hal.c
 components/hal/esp32c3/hmac_hal.c
 components/hal/esp32c3/include/hal/adc_hal_conf.h
 components/hal/esp32c3/include/hal/aes_ll.h
@@ -851,7 +858,6 @@ components/hal/esp32c3/include/hal/twai_ll.h
 components/hal/esp32c3/include/hal/uhci_ll.h
 components/hal/esp32c3/include/hal/usb_serial_jtag_ll.h
 components/hal/esp32c3/rtc_cntl_hal.c
-components/hal/esp32h2/brownout_hal.c
 components/hal/esp32h2/hmac_hal.c
 components/hal/esp32h2/include/hal/adc_hal_conf.h
 components/hal/esp32h2/include/hal/aes_ll.h
@@ -860,7 +866,6 @@ components/hal/esp32h2/include/hal/gpspi_flash_ll.h
 components/hal/esp32h2/include/hal/hmac_hal.h
 components/hal/esp32h2/include/hal/hmac_ll.h
 components/hal/esp32h2/include/hal/interrupt_controller_ll.h
-components/hal/esp32h2/include/hal/memprot_ll.h
 components/hal/esp32h2/include/hal/mpu_ll.h
 components/hal/esp32h2/include/hal/rtc_cntl_ll.h
 components/hal/esp32h2/include/hal/sha_ll.h
@@ -868,13 +873,11 @@ components/hal/esp32h2/include/hal/sigmadelta_ll.h
 components/hal/esp32h2/include/hal/soc_ll.h
 components/hal/esp32h2/include/hal/spi_flash_encrypted_ll.h
 components/hal/esp32h2/include/hal/spi_flash_ll.h
-components/hal/esp32h2/include/hal/spi_ll.h
 components/hal/esp32h2/include/hal/spimem_flash_ll.h
 components/hal/esp32h2/include/hal/twai_ll.h
 components/hal/esp32h2/include/hal/uhci_ll.h
 components/hal/esp32h2/include/hal/uhci_types.h
 components/hal/esp32h2/include/hal/usb_serial_jtag_ll.h
-components/hal/esp32s2/brownout_hal.c
 components/hal/esp32s2/cp_dma_hal.c
 components/hal/esp32s2/include/hal/adc_hal_conf.h
 components/hal/esp32s2/include/hal/aes_ll.h
@@ -906,7 +909,6 @@ components/hal/esp32s2/include/hal/twai_ll.h
 components/hal/esp32s2/include/hal/usb_ll.h
 components/hal/esp32s2/interrupt_descriptor_table.c
 components/hal/esp32s2/touch_sensor_hal.c
-components/hal/esp32s3/brownout_hal.c
 components/hal/esp32s3/include/hal/adc_hal_conf.h
 components/hal/esp32s3/include/hal/aes_ll.h
 components/hal/esp32s3/include/hal/gpspi_flash_ll.h
@@ -944,7 +946,6 @@ components/hal/include/hal/mcpwm_hal.h
 components/hal/include/hal/mcpwm_types.h
 components/hal/include/hal/mpu_hal.h
 components/hal/include/hal/mpu_types.h
-components/hal/include/hal/rmt_types.h
 components/hal/include/hal/rtc_io_types.h
 components/hal/include/hal/sdio_slave_hal.h
 components/hal/include/hal/sdio_slave_ll.h
@@ -1115,7 +1116,6 @@ components/mdns/host_test/components/freertos_linux/queue_unique_ptr.cpp
 components/mdns/host_test/components/freertos_linux/queue_unique_ptr.hpp
 components/mdns/host_test/main/main.c
 components/mdns/include/mdns_console.h
-components/mdns/mdns_console.c
 components/mdns/mdns_networking_lwip.c
 components/mdns/private_include/mdns_networking.h
 components/mdns/test/test_mdns.c
@@ -1233,7 +1233,6 @@ components/protocomm/python/constants_pb2.py
 components/protocomm/python/sec0_pb2.py
 components/protocomm/python/sec1_pb2.py
 components/protocomm/python/session_pb2.py
-components/protocomm/src/common/protocomm.c
 components/protocomm/src/common/protocomm_priv.h
 components/protocomm/src/security/security0.c
 components/pthread/pthread_cond_var.c
@@ -1299,7 +1298,6 @@ components/soc/esp32/include/soc/mmu.h
 components/soc/esp32/include/soc/nrx_reg.h
 components/soc/esp32/include/soc/pid.h
 components/soc/esp32/include/soc/reset_reasons.h
-components/soc/esp32/include/soc/rmt_reg.h
 components/soc/esp32/include/soc/rtc_cntl_reg.h
 components/soc/esp32/include/soc/rtc_cntl_struct.h
 components/soc/esp32/include/soc/rtc_i2c_reg.h
@@ -1332,7 +1330,6 @@ components/soc/esp32/include/soc/wdev_reg.h
 components/soc/esp32/interrupts.c
 components/soc/esp32/ledc_periph.c
 components/soc/esp32/mcpwm_periph.c
-components/soc/esp32/rmt_periph.c
 components/soc/esp32/sdio_slave_periph.c
 components/soc/esp32/sdmmc_periph.c
 components/soc/esp32/sigmadelta_periph.c
@@ -1367,10 +1364,8 @@ components/soc/esp32c3/include/soc/i2c_struct.h
 components/soc/esp32c3/include/soc/interrupt_core0_reg.h
 components/soc/esp32c3/include/soc/interrupt_reg.h
 components/soc/esp32c3/include/soc/ledc_reg.h
-components/soc/esp32c3/include/soc/mmu.h
 components/soc/esp32c3/include/soc/nrx_reg.h
 components/soc/esp32c3/include/soc/reset_reasons.h
-components/soc/esp32c3/include/soc/rmt_reg.h
 components/soc/esp32c3/include/soc/rtc_cntl_reg.h
 components/soc/esp32c3/include/soc/rtc_cntl_struct.h
 components/soc/esp32c3/include/soc/rtc_i2c_reg.h
@@ -1400,7 +1395,6 @@ components/soc/esp32c3/include/soc/usb_serial_jtag_struct.h
 components/soc/esp32c3/include/soc/wdev_reg.h
 components/soc/esp32c3/interrupts.c
 components/soc/esp32c3/ledc_periph.c
-components/soc/esp32c3/rmt_periph.c
 components/soc/esp32c3/sigmadelta_periph.c
 components/soc/esp32c3/spi_periph.c
 components/soc/esp32c3/uart_periph.c
@@ -1426,7 +1420,6 @@ components/soc/esp32h2/include/soc/gpio_sd_struct.h
 components/soc/esp32h2/include/soc/hwcrypto_reg.h
 components/soc/esp32h2/include/soc/interrupt_reg.h
 components/soc/esp32h2/include/soc/ledc_reg.h
-components/soc/esp32h2/include/soc/mmu.h
 components/soc/esp32h2/include/soc/nrx_reg.h
 components/soc/esp32h2/include/soc/rtc_caps.h
 components/soc/esp32h2/include/soc/rtc_i2c_reg.h
@@ -1448,7 +1441,6 @@ components/soc/esp32h2/include/soc/usb_serial_jtag_reg.h
 components/soc/esp32h2/include/soc/usb_serial_jtag_struct.h
 components/soc/esp32h2/include/soc/wdev_reg.h
 components/soc/esp32h2/ledc_periph.c
-components/soc/esp32h2/rmt_periph.c
 components/soc/esp32h2/sigmadelta_periph.c
 components/soc/esp32h2/spi_periph.c
 components/soc/esp32h2/uart_periph.c
@@ -1487,7 +1479,6 @@ components/soc/esp32s2/include/soc/interrupt_reg.h
 components/soc/esp32s2/include/soc/ledc_reg.h
 components/soc/esp32s2/include/soc/ledc_struct.h
 components/soc/esp32s2/include/soc/memprot_defs.h
-components/soc/esp32s2/include/soc/mmu.h
 components/soc/esp32s2/include/soc/nrx_reg.h
 components/soc/esp32s2/include/soc/reset_reasons.h
 components/soc/esp32s2/include/soc/rtc_cntl_reg.h
@@ -1532,7 +1523,6 @@ components/soc/esp32s2/include/soc/usbh_struct.h
 components/soc/esp32s2/include/soc/wdev_reg.h
 components/soc/esp32s2/interrupts.c
 components/soc/esp32s2/ledc_periph.c
-components/soc/esp32s2/rmt_periph.c
 components/soc/esp32s2/sigmadelta_periph.c
 components/soc/esp32s2/spi_periph.c
 components/soc/esp32s2/touch_sensor_periph.c
@@ -1576,13 +1566,11 @@ components/soc/esp32s3/include/soc/interrupt_reg.h
 components/soc/esp32s3/include/soc/interrupt_struct.h
 components/soc/esp32s3/include/soc/ledc_reg.h
 components/soc/esp32s3/include/soc/ledc_struct.h
-components/soc/esp32s3/include/soc/mmu.h
 components/soc/esp32s3/include/soc/mpu_caps.h
 components/soc/esp32s3/include/soc/nrx_reg.h
 components/soc/esp32s3/include/soc/peri_backup_reg.h
 components/soc/esp32s3/include/soc/peri_backup_struct.h
 components/soc/esp32s3/include/soc/reset_reasons.h
-components/soc/esp32s3/include/soc/rmt_reg.h
 components/soc/esp32s3/include/soc/rtc_gpio_channel.h
 components/soc/esp32s3/include/soc/rtc_i2c_reg.h
 components/soc/esp32s3/include/soc/rtc_i2c_struct.h
@@ -1632,7 +1620,6 @@ components/soc/esp32s3/include/soc/world_controller_struct.h
 components/soc/esp32s3/interrupts.c
 components/soc/esp32s3/ledc_periph.c
 components/soc/esp32s3/mcpwm_periph.c
-components/soc/esp32s3/rmt_periph.c
 components/soc/esp32s3/rtc_io_periph.c
 components/soc/esp32s3/sdio_slave_periph.c
 components/soc/esp32s3/sdmmc_periph.c
@@ -1651,7 +1638,6 @@ components/soc/include/soc/i2c_periph.h
 components/soc/include/soc/interrupts.h
 components/soc/include/soc/ledc_periph.h
 components/soc/include/soc/mcpwm_periph.h
-components/soc/include/soc/rmt_periph.h
 components/soc/include/soc/rtc_cntl_periph.h
 components/soc/include/soc/rtc_periph.h
 components/soc/include/soc/sdio_slave_periph.h
@@ -1674,7 +1660,6 @@ components/spi_flash/include/esp_flash_spi_init.h
 components/spi_flash/include/esp_spi_flash.h
 components/spi_flash/include/esp_spi_flash_counters.h
 components/spi_flash/include/memspi_host_driver.h
-components/spi_flash/include/spi_flash/spi_flash_defs.h
 components/spi_flash/include/spi_flash_chip_boya.h
 components/spi_flash/include/spi_flash_chip_driver.h
 components/spi_flash/include/spi_flash_chip_gd.h
@@ -1712,9 +1697,6 @@ components/tcp_transport/test/test_transport_basic.c
 components/tcp_transport/test/test_transport_connect.c
 components/tcp_transport/test/test_transport_fixtures.c
 components/tcp_transport/transport_utils.c
-components/tcpip_adapter/include/tcpip_adapter.h
-components/tcpip_adapter/include/tcpip_adapter_compatible/tcpip_adapter_compat.h
-components/tcpip_adapter/include/tcpip_adapter_types.h
 components/tinyusb/additions/include/tusb_config.h
 components/touch_element/include/touch_element/touch_button.h
 components/touch_element/include/touch_element/touch_element.h
@@ -1745,7 +1727,6 @@ components/vfs/test/test_vfs_append.c
 components/vfs/test/test_vfs_lwip.c
 components/vfs/test/test_vfs_paths.c
 components/vfs/test/test_vfs_uart.c
-components/wifi_provisioning/include/wifi_provisioning/manager.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_ble.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_console.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h
@@ -2001,7 +1982,6 @@ components/xtensa/esp32s3/include/xtensa/config/tie-asm.h
 components/xtensa/esp32s3/include/xtensa/config/tie.h
 components/xtensa/include/eri.h
 components/xtensa/include/esp_private/panic_reason.h
-components/xtensa/include/xt_instr_macros.h
 components/xtensa/include/xt_trax.h
 components/xtensa/include/xtensa-debug-module.h
 components/xtensa/include/xtensa/cacheasm.h
@@ -2153,7 +2133,6 @@ examples/mesh/ip_internal_network/main/mqtt_app.c
 examples/mesh/manual_networking/main/include/mesh_light.h
 examples/mesh/manual_networking/main/mesh_light.c
 examples/mesh/manual_networking/main/mesh_main.c
-examples/network/network_tests/main/net_suite.c
 examples/network/network_tests/main/stdinout.c
 examples/network/network_tests/main/stdinout.h
 examples/network/simple_sniffer/components/pcap/pcap.c
@@ -2321,8 +2300,6 @@ examples/protocols/sockets/udp_multicast/main/udp_multicast_example_main.c
 examples/protocols/sockets/udp_server/example_test.py
 examples/protocols/sockets/udp_server/main/udp_server.c
 examples/protocols/static_ip/main/static_ip_example_main.c
-examples/protocols/websocket/example_test.py
-examples/protocols/websocket/main/websocket_example.c
 examples/provisioning/wifi_prov_mgr/main/app_main.c
 examples/provisioning/wifi_prov_mgr/wifi_prov_mgr_test.py
 examples/security/flash_encryption/example_test.py
@@ -2488,7 +2465,6 @@ tools/ci/deploy_docs.py
 tools/ci/envsubst.py
 tools/ci/python_packages/gitlab_api.py
 tools/ci/python_packages/idf_http_server_test/adder.py
-tools/ci/python_packages/idf_http_server_test/client.py
 tools/ci/python_packages/idf_http_server_test/test.py
 tools/ci/python_packages/idf_iperf_test_util/Attenuator.py
 tools/ci/python_packages/idf_iperf_test_util/IperfUtility.py
@@ -2500,7 +2476,6 @@ tools/ci/python_packages/tiny_test_fw/DUT.py
 tools/ci/python_packages/tiny_test_fw/Env.py
 tools/ci/python_packages/tiny_test_fw/EnvConfig.py
 tools/ci/python_packages/tiny_test_fw/TinyFW.py
-tools/ci/python_packages/tiny_test_fw/Utility/CIAssignTest.py
 tools/ci/python_packages/tiny_test_fw/Utility/CaseConfig.py
 tools/ci/python_packages/tiny_test_fw/Utility/GitlabCIJob.py
 tools/ci/python_packages/tiny_test_fw/Utility/TestCase.py
@@ -2541,7 +2516,6 @@ tools/find_build_apps/__init__.py
 tools/find_build_apps/cmake.py
 tools/find_build_apps/common.py
 tools/gdb_panic_server.py
-tools/gen_esp_err_to_name.py
 tools/idf_monitor_base/chip_specific_config.py
 tools/idf_monitor_base/console_reader.py
 tools/idf_monitor_base/coredump.py

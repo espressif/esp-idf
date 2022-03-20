@@ -20,7 +20,7 @@ API 指南
    event-handling
    fatal-errors
    ../security/flash-encryption
-   :esp32s3: flash_psram_config 
+   :esp32s3: flash_psram_config
    hardware-abstraction
    :CONFIG_IDF_TARGET_ARCH_XTENSA: hlinterrupts
    jtag-debugging/index
@@ -42,3 +42,4 @@ API 指南
    :SOC_USB_SERIAL_JTAG_SUPPORTED: usb-serial-jtag-console
    :SOC_WIFI_SUPPORTED: wifi
    :SOC_WIFI_SUPPORTED: wifi-security
+   :SOC_SUPPORT_COEXISTENCE: coexist

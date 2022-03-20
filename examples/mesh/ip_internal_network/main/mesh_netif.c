@@ -13,6 +13,7 @@
 #include "esp_mesh.h"
 #include "esp_mac.h"
 #include "lwip/lwip_napt.h"
+#include "dhcpserver/dhcpserver.h"
 #include "esp_wifi_netif.h"
 #include "mesh_netif.h"
 

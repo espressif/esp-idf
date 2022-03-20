@@ -20,7 +20,7 @@ Functional Overview
 
 Description of the PCNT functionality is broken down into the following sections:
 
--  `Resource Allocation <#resource-allocation>`__ covers how to allocate PCNT units and channels with properly set of configurations. It also covers how to recycle the resources when they finished working.
+-  `Resource Allocation <#resource-allocation>`__ - covers how to allocate PCNT units and channels with properly set of configurations. It also covers how to recycle the resources when they finished working.
 
 -  `Set Up Channel Actions <#set-up-channel-actions>`__ - covers how to configure the PCNT channel to behave on different signal edges and levels.
 -  `Watch Points <#watch-points>`__ - describes how to configure PCNT watch points (i.e., tell PCNT unit to trigger an event when the count reaches a certain value).
@@ -230,7 +230,7 @@ Thread Safety
 ^^^^^^^^^^^^^
 
 The factory function :cpp:func:`pcnt_new_unit`  and :cpp:func:`pcnt_new_channel` are guaranteed to be thread safe by the driver, which means, user can call them from different RTOS tasks without protection by extra locks.
-Other functions that take the :cpp:type:`pcnt_unit_handle_t` and :cpp:type:`pcnt_channel_handle_t` as the first positional parameter, are not thread safe. The lifecycle of the PCNT unit and channel handle is maintained by the user. So user should avoid calling them concurrently. If it has to, another mutex should be added to prevent the them being accessed concurrently.
+Other functions that take the :cpp:type:`pcnt_unit_handle_t` and :cpp:type:`pcnt_channel_handle_t` as the first positional parameter, are not thread safe. The lifecycle of the PCNT unit and channel handle is maintained by the user. So user should avoid calling them concurrently. If it has to, another mutex should be added to prevent them being accessed concurrently.
 
 Kconfig Options
 ^^^^^^^^^^^^^^^

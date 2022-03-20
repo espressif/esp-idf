@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,10 +47,37 @@ void esp_gdbstub_tcb_to_regfile(TaskHandle_t tcb, esp_gdbstub_gdb_regfile_t *dst
 
 int esp_gdbstub_get_signal(const esp_gdbstub_frame_t *frame)
 {
-      return 5; // SIGTRAP, see IDF-2490
+    return 5; // SIGTRAP, see IDF-2490
 }
 
-void _xt_gdbstub_int(void * frame)
+void _xt_gdbstub_int(void *frame)
 {
+}
 
+void esp_gdbstub_init_dports()
+{
+}
+
+void esp_gdbstub_stall_other_cpus_start()
+{
+}
+
+void esp_gdbstub_stall_other_cpus_end()
+{
+}
+
+void esp_gdbstub_clear_step()
+{
+}
+
+void esp_gdbstub_do_step()
+{
+}
+
+void esp_gdbstub_trigger_cpu(void)
+{
+}
+
+void esp_gdbstub_set_register(esp_gdbstub_frame_t *frame, uint32_t reg_index, uint32_t value)
+{
 }

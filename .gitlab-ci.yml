@@ -73,7 +73,7 @@ variables:
   TEST_ENV_CONFIG_REPO: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/qa/ci-test-runner-configs.git"
   CI_AUTO_TEST_SCRIPT_REPO_URL: "https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/qa/auto_test_script.git"
   CI_AUTO_TEST_SCRIPT_REPO_BRANCH: "ci/v4.1"
-  PYTEST_EMBEDDED_TAG: "v0.6.0rc0"
+  PYTEST_EMBEDDED_VERSION: "0.6.0"
 
   # cache python dependencies
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
@@ -169,11 +169,11 @@ before_script:
     - fetch_submodules
     - *download_test_python_contraint_file
     - $IDF_PATH/tools/idf_tools.py install-python-env
-    - cd /tmp
-    - retry_failed git clone --depth 1 --branch $PYTEST_EMBEDDED_TAG https://gitlab-ci-token:${BOT_TOKEN}@${CI_SERVER_HOST}:${CI_SERVER_PORT}/idf/pytest-embedded.git
-    - cd pytest-embedded && bash foreach.sh install
-    - pip install pytest-rerunfailures
-    - pip install scapy
+    - pip install
+      "pytest-embedded-serial-esp~=$PYTEST_EMBEDDED_VERSION"
+      "pytest-embedded-idf~=$PYTEST_EMBEDDED_VERSION"
+      pytest-rerunfailures
+      scapy
     - cd $IDF_PATH
 
 default:

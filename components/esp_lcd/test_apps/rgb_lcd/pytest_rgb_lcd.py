@@ -10,6 +10,7 @@ from pytest_embedded import Dut
 @pytest.mark.parametrize(
     'config',
     [
+        'iram_safe',
         'release',
     ],
     indirect=True,

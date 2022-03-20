@@ -48,7 +48,7 @@ TEST_CASE("Double install error cause test", "[temperature_sensor]")
     TEST_ESP_OK(temperature_sensor_uninstall(temp_handle));
 }
 
-TEST_CASE("Double start error cause test", "[temperatere_sensor]")
+TEST_CASE("Double start error cause test", "[temperature_sensor]")
 {
     printf("Initializing Temperature sensor\n");
     temperature_sensor_config_t temp_sensor = TEMPERAUTRE_SENSOR_CONFIG_DEFAULT(10, 50);

@@ -36,15 +36,21 @@
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
 
+#if !CONFIG_IDF_TARGET_ESP32
+#error "RMT+PCNT timestamp workaround is only for ESP32"
+#endif
+
 #define REF_CLOCK_RMT_CHANNEL  0  // RMT channel 0
 #define REF_CLOCK_GPIO         21 // GPIO used to combine RMT out signal with PCNT input signal
 #define REF_CLOCK_PRESCALER_MS 30 // PCNT high threshold interrupt fired every 30ms
-
 
 static rmt_hal_context_t s_rmt_hal;
 static pcnt_unit_handle_t s_pcnt_unit;
 static pcnt_channel_handle_t s_pcnt_chan;
 static volatile uint32_t s_milliseconds;
+
+// RMTMEM address is declared in <target>.peripherals.ld
+extern rmt_mem_t RMTMEM;
 
 static bool on_reach_watch_point(pcnt_unit_handle_t unit, pcnt_watch_event_data_t *edata, void *user_ctx)
 {
@@ -94,18 +100,17 @@ void ref_clock_init(void)
         .level1 = 0
     };
 
-    rmt_ll_enable_drive_clock(s_rmt_hal.regs, true);
-    rmt_ll_set_group_clock_src(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, RMT_BASECLK_REF, 0, 0, 0); // select REF_TICK (1MHz)
-    rmt_hal_tx_set_channel_clock(&s_rmt_hal, REF_CLOCK_RMT_CHANNEL, 1000000, 1000000); // counter clock: 1MHz
-    rmt_ll_tx_enable_idle(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, true); // enable idle output
-    rmt_ll_tx_set_idle_level(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 1); // idle level: 1
+    rmt_ll_enable_periph_clock(s_rmt_hal.regs, true);
+    rmt_ll_set_group_clock_src(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, RMT_CLK_SRC_REFTICK, 1, 1, 0); // select REF_TICK (1MHz)
+    rmt_ll_tx_set_channel_clock_div(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 1); // channel clock = REF_TICK / 1 = 1MHz
+    rmt_ll_tx_fix_idle_level(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 1, true); // enable idle output, idle level: 1
     rmt_ll_tx_enable_carrier_modulation(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, true);
-    rmt_hal_set_carrier_clock(&s_rmt_hal, REF_CLOCK_RMT_CHANNEL, 1000000, 500000, 0.5); // set carrier to 500KHz
+    rmt_ll_tx_set_carrier_high_low_ticks(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 1, 1);  // set carrier to 1MHz / (1+1) = 500KHz, 50% duty cycle
     rmt_ll_tx_set_carrier_level(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 1);
-    rmt_ll_enable_mem_access(s_rmt_hal.regs, true);
+    rmt_ll_enable_mem_access_nonfifo(s_rmt_hal.regs, true);
     rmt_ll_tx_reset_pointer(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL);
     rmt_ll_tx_set_mem_blocks(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 1);
-    rmt_ll_write_memory(s_rmt_hal.mem, REF_CLOCK_RMT_CHANNEL, &data, 1, 0);
+    RMTMEM.chan[REF_CLOCK_RMT_CHANNEL].data32[0] = data;
     rmt_ll_tx_enable_loop(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, false);
     rmt_ll_tx_start(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL);
 

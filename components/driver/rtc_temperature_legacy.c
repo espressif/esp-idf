@@ -11,7 +11,8 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "soc/rtc_cntl_reg.h"
-#include "regi2c_ctrl.h"
+#include "esp_private/regi2c_ctrl.h"
+#include "regi2c_saradc.h"
 #include "esp_log.h"
 #include "esp_efuse_rtc_calib.h"
 #include "hal/temperature_sensor_ll.h"
@@ -149,4 +150,19 @@ esp_err_t temp_sensor_read_celsius(float *celsius)
         return ESP_ERR_INVALID_STATE;
     }
     return ESP_OK;
+}
+
+/**
+ * @brief This function will be called during start up, to check that this legacy temp sensor driver is not running along with the new driver
+ */
+__attribute__((constructor))
+static void check_legacy_temp_sensor_driver_conflict(void)
+{
+    extern int temp_sensor_driver_init_count;
+    temp_sensor_driver_init_count++;
+    if (temp_sensor_driver_init_count > 1) {
+        ESP_EARLY_LOGE(TAG, "CONFLICT! The legacy temp sensor driver can't work along with the new temperature driver");
+        abort();
+    }
+    ESP_EARLY_LOGW(TAG, "legacy temp sensor driver is deprecated, please migrate to use driver/temperature_sensor.h");
 }

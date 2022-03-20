@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -68,7 +68,7 @@ void esp_startup_start_app_common(void)
 
     esp_crosscore_int_init();
 
-#ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+#if CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME && !CONFIG_IDF_TARGET_ESP8684
     esp_gdbstub_init();
 #endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 

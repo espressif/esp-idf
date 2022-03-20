@@ -1,16 +1,8 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <stdbool.h>
 #include "esp_log.h"
 #include "bootloader_init.h"
@@ -110,7 +102,11 @@ static int selected_boot_partition(const bootloader_state_t *bs)
 #endif
         // TEST firmware.
 #ifdef CONFIG_BOOTLOADER_APP_TEST
-        if (bootloader_common_check_long_hold_gpio(CONFIG_BOOTLOADER_NUM_PIN_APP_TEST, CONFIG_BOOTLOADER_HOLD_TIME_GPIO) == 1) {
+        bool app_test_level = false;
+#if CONFIG_BOOTLOADER_APP_TEST_PIN_HIGH
+        app_test_level = true;
+#endif
+        if (bootloader_common_check_long_hold_gpio_level(CONFIG_BOOTLOADER_NUM_PIN_APP_TEST, CONFIG_BOOTLOADER_HOLD_TIME_GPIO, app_test_level) == GPIO_LONG_HOLD) {
             ESP_LOGI(TAG, "Detect a boot condition of the test firmware");
             if (bs->test.offset != 0) {
                 boot_index = TEST_APP_INDEX;

@@ -1,16 +1,16 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef _SOC_RMT_REG_H_
-#define _SOC_RMT_REG_H_
+#pragma once
 
-#include "soc/soc.h"
+#include "soc.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 #define RMT_CH0DATA_REG          (DR_REG_RMT_BASE + 0x0000)
 
 #define RMT_CH1DATA_REG          (DR_REG_RMT_BASE + 0x0004)
@@ -1130,7 +1130,3 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-
-
-
-#endif /*_SOC_RMT_REG_H_ */

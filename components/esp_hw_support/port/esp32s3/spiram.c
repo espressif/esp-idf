@@ -25,7 +25,7 @@ we add more types of external RAM memory, this can be made into a more intellige
 #include "soc/soc_memory_layout.h"
 #include "soc/dport_reg.h"
 #include "esp32s3/rom/cache.h"
-#include "soc/cache_memory.h"
+#include "soc/ext_mem_defs.h"
 #include "soc/extmem_reg.h"
 
 /**
@@ -34,6 +34,8 @@ we add more types of external RAM memory, this can be made into a more intellige
  */
 
 #define PSRAM_MODE PSRAM_VADDR_MODE_NORMAL
+
+#define MMU_PAGE_SIZE    0x10000
 
 #if CONFIG_SPIRAM
 
@@ -174,7 +176,7 @@ void instruction_flash_page_info_init(void)
     uint32_t instr_page_cnt = ((uint32_t)&_instruction_reserved_end - SOC_IROM_LOW + MMU_PAGE_SIZE - 1) / MMU_PAGE_SIZE;
 
     instr_start_page = *(volatile uint32_t *)(DR_REG_MMU_TABLE + CACHE_IROM_MMU_START);
-    instr_start_page &= MMU_ADDRESS_MASK;
+    instr_start_page &= MMU_VALID_VAL_MASK;
     instr_end_page = instr_start_page + instr_page_cnt - 1;
 }
 
@@ -200,7 +202,7 @@ void rodata_flash_page_info_init(void)
     uint32_t rodata_page_cnt = ((uint32_t)&_rodata_reserved_end - ((uint32_t)&_rodata_reserved_start & ~ (MMU_PAGE_SIZE - 1)) + MMU_PAGE_SIZE - 1) / MMU_PAGE_SIZE;
 
     rodata_start_page = *(volatile uint32_t *)(DR_REG_MMU_TABLE + CACHE_DROM_MMU_START);
-    rodata_start_page &= MMU_ADDRESS_MASK;
+    rodata_start_page &= MMU_VALID_VAL_MASK;
     rodata_end_page = rodata_start_page + rodata_page_cnt - 1;
 }
 

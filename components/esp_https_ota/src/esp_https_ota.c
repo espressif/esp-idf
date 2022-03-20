@@ -45,6 +45,7 @@ struct esp_https_ota_handle {
     bool partial_http_download;
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
     decrypt_cb_t decrypt_cb;
+    void *decrypt_user_ctx;
 #endif
 };
 
@@ -153,7 +154,7 @@ static void _http_cleanup(esp_http_client_handle_t client)
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
 static esp_err_t esp_https_ota_decrypt_cb(esp_https_ota_t *handle, decrypt_cb_arg_t *args)
 {
-    esp_err_t ret = handle->decrypt_cb(args);
+    esp_err_t ret = handle->decrypt_cb(args, handle->decrypt_user_ctx);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Decrypt callback failed %d", ret);
         return ret;
@@ -190,13 +191,13 @@ static esp_err_t _ota_write(esp_https_ota_t *https_ota_handle, const void *buffe
     return err;
 }
 
-static bool is_server_verification_enabled(esp_https_ota_config_t *ota_config) {
+static bool is_server_verification_enabled(const esp_https_ota_config_t *ota_config) {
     return  (ota_config->http_config->cert_pem
             || ota_config->http_config->use_global_ca_store
             || ota_config->http_config->crt_bundle_attach != NULL);
 }
 
-esp_err_t esp_https_ota_begin(esp_https_ota_config_t *ota_config, esp_https_ota_handle_t *handle)
+esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_https_ota_handle_t *handle)
 {
     esp_err_t err;
 
@@ -310,6 +311,7 @@ esp_err_t esp_https_ota_begin(esp_https_ota_config_t *ota_config, esp_https_ota_
         goto http_cleanup;
     }
     https_ota_handle->decrypt_cb = ota_config->decrypt_cb;
+    https_ota_handle->decrypt_user_ctx = ota_config->decrypt_user_ctx;
 #endif
     https_ota_handle->ota_upgrade_buf_size = alloc_size;
     https_ota_handle->bulk_flash_erase = ota_config->bulk_flash_erase;
@@ -646,19 +648,15 @@ int esp_https_ota_get_image_size(esp_https_ota_handle_t https_ota_handle)
     return handle->image_length;
 }
 
-esp_err_t esp_https_ota(const esp_http_client_config_t *config)
+esp_err_t esp_https_ota(const esp_https_ota_config_t *ota_config)
 {
-    if (!config) {
-        ESP_LOGE(TAG, "esp_http_client config not found");
+    if (ota_config == NULL || ota_config->http_config == NULL) {
+        ESP_LOGE(TAG, "esp_https_ota: Invalid argument");
         return ESP_ERR_INVALID_ARG;
     }
 
-    esp_https_ota_config_t ota_config = {
-        .http_config = config,
-    };
-
     esp_https_ota_handle_t https_ota_handle = NULL;
-    esp_err_t err = esp_https_ota_begin(&ota_config, &https_ota_handle);
+    esp_err_t err = esp_https_ota_begin(ota_config, &https_ota_handle);
     if (https_ota_handle == NULL) {
         return ESP_FAIL;
     }

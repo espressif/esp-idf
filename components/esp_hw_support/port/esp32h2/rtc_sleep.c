@@ -19,6 +19,8 @@
 #include "esp32h2/rom/ets_sys.h"
 #include "esp32h2/rom/rtc.h"
 #include "regi2c_ctrl.h"
+#include "regi2c_bias.h"
+#include "regi2c_ulp.h"
 #include "esp_efuse.h"
 #include "i2c_pmu.h"
 #include "esp_hw_log.h"

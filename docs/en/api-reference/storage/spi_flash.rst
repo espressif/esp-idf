@@ -27,6 +27,9 @@ Encrypted reads and writes use the old implementation, even if :ref:`CONFIG_SPI_
 Support for Features of Flash Chips
 -----------------------------------
 
+Quad/Dual mode chips
+^^^^^^^^^^^^^^^^^^^^
+
 Flash features of different vendors are operated in different ways and need special support. The fast/slow read and Dual mode (DOUT/DIO) of almost all 24-bits address flash chips are supported, because they don't need any vendor-specific commands.
 
 Quad mode (QIO/QOUT) is supported on following chip types:
@@ -39,18 +42,33 @@ Quad mode (QIO/QOUT) is supported on following chip types:
 6. XMC
 7. BOYA
 
+Optional Features
+^^^^^^^^^^^^^^^^^
+
+.. toctree::
+    :hidden:
+
+    spi_flash_optional_feature
+
+There are some features that are not supported by all flash models, or not supported by all Espressif chips. These features include:
+
 .. only:: esp32s3
 
-    Octal mode (OPI) are supported on following chip types:
+    -  OPI flash - means that flash supports octal mode.
 
-    1. MXIC
+-  32-bit address flash - usually means that the flash has higher capacity (equal to or larger than 16MB) that needs longer address to access.
 
-    To know how to configure menuconfig for a board with different Flash and PSRAM, please refer to the :ref:`SPI Flash and External SPI RAM Configuration <flash-psram-configuration>`
+.. only:: esp32s3
 
-The 32-bit address range of following chip type is supported:
+    -  High performance mode (HPM) - means that flash works under high frequency which is higher than 80MHz.
 
-1. W25Q256
-2. GD25Q256
+-  Flash unique ID - means that flash supports its unique 64-bits ID.
+
+.. only:: esp32c3
+
+    -  Suspend & Resume - means that flash can accept suspend/resume command during its writing/erasing. The {IDF_TARGET_NAME} may keep the cache on when the flash is being written/erased and suspend it to read its contents randomly.
+
+If you want to use these features, you need to ensure {IDF_TARGET_NAME} supports this feature, and ALL the flash chips in your product have this feature. For more details, refer :doc:`spi_flash_optional_feature`.
 
 Users can also customize their own flash chip driver, see :doc:`spi_flash_override_driver` for more details.
 
@@ -169,7 +187,7 @@ The ``esp_flash_t`` structure holds chip data as well as three important parts o
 
 1. The host driver, which provides the hardware support to access the chip;
 2. The chip driver, which provides compatibility service to different chips;
-3. The OS functions, provides support of some OS functions (e.g. lock, delay) in different stages (1st/2st boot, or the app).
+3. The OS functions, provide support of some OS functions (e.g. lock, delay) in different stages (1st/2nd boot, or the app).
 
 Host driver
 ^^^^^^^^^^^

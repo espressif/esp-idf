@@ -381,7 +381,7 @@ esp_err_t httpd_resp_send_err(httpd_req_t *req, httpd_err_code_t error, const ch
     switch (error) {
         case HTTPD_501_METHOD_NOT_IMPLEMENTED:
             status = "501 Method Not Implemented";
-            msg    = "Request method is not supported by server";
+            msg    = "Server does not support this method";
             break;
         case HTTPD_505_VERSION_NOT_SUPPORTED:
             status = "505 Version Not Supported";
@@ -389,23 +389,23 @@ esp_err_t httpd_resp_send_err(httpd_req_t *req, httpd_err_code_t error, const ch
             break;
         case HTTPD_400_BAD_REQUEST:
             status = "400 Bad Request";
-            msg    = "Server unable to understand request due to invalid syntax";
+            msg    = "Bad request syntax";
             break;
         case HTTPD_401_UNAUTHORIZED:
             status = "401 Unauthorized";
-            msg    = "Server known the client's identify and it must authenticate itself to get he requested response";
+            msg    = "No permission -- see authorization schemes";
             break;
         case HTTPD_403_FORBIDDEN:
             status = "403 Forbidden";
-            msg    = "Server is refusing to give the requested resource to the client";
+            msg    = "Request forbidden -- authorization will not help";
             break;
         case HTTPD_404_NOT_FOUND:
             status = "404 Not Found";
-            msg    = "This URI does not exist";
+            msg    = "Nothing matches the given URI";
             break;
         case HTTPD_405_METHOD_NOT_ALLOWED:
             status = "405 Method Not Allowed";
-            msg    = "Request method for this URI is not handled by server";
+            msg    = "Specified method is invalid for this resource";
             break;
         case HTTPD_408_REQ_TIMEOUT:
             status = "408 Request Timeout";
@@ -413,15 +413,15 @@ esp_err_t httpd_resp_send_err(httpd_req_t *req, httpd_err_code_t error, const ch
             break;
         case HTTPD_414_URI_TOO_LONG:
             status = "414 URI Too Long";
-            msg    = "URI is too long for server to interpret";
+            msg    = "URI is too long";
             break;
         case HTTPD_411_LENGTH_REQUIRED:
             status = "411 Length Required";
-            msg    = "Chunked encoding not supported by server";
+            msg    = "Client must specify Content-Length";
             break;
         case HTTPD_431_REQ_HDR_FIELDS_TOO_LARGE:
             status = "431 Request Header Fields Too Large";
-            msg    = "Header fields are too long for server to interpret";
+            msg    = "Header fields are too long";
             break;
         case HTTPD_500_INTERNAL_SERVER_ERROR:
         default:

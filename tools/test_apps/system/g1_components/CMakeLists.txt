@@ -82,8 +82,6 @@ set(extra_components_which_shouldnt_be_included
     # pthread is required by esp_system (for initialization only, can be made a weak dependency)
     #   and cxx. See also [refactor-todo] about cxx, can it work without pthread?
     pthread
-    # tcpip_adapter is a dependency of esp_netif and lwip, both of which should be removed
-    tcpip_adapter
     # vfs is a dependency of lwip. It can be made conditional, while lwip is still a common component.
     vfs
     # wpa_supplicant is a dependency of esp_wifi, which is to be removed from G1-only build

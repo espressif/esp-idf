@@ -9,9 +9,10 @@
 #include "esp_private/mmu_psram.h"
 #include "esp32s2/rom/cache.h"
 #include "esp32s2/rom/ets_sys.h"
-#include "soc/cache_memory.h"
+#include "soc/ext_mem_defs.h"
 #include "soc/extmem_reg.h"
 
+#define MMU_PAGE_SIZE    0x10000
 #define MMU_PAGE_TO_BYTES(page_id)      ((page_id) * MMU_PAGE_SIZE)
 #define BYTES_TO_MMU_PAGE(bytes)        ((bytes) / MMU_PAGE_SIZE)
 
@@ -74,10 +75,10 @@ esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size
     REG_CLR_BIT(EXTMEM_PRO_DCACHE_CTRL1_REG, EXTMEM_PRO_DCACHE_MASK_DRAM0);
 
     uint32_t instr_page_cnt = ((uint32_t)&_instruction_reserved_end - (uint32_t)&_instruction_reserved_start + MMU_PAGE_SIZE - 1) / MMU_PAGE_SIZE;
-    uint32_t instr_mmu_offset = ((uint32_t)&_instruction_reserved_start & BUS_ADDR_MASK) / MMU_PAGE_SIZE;
+    uint32_t instr_mmu_offset = ((uint32_t)&_instruction_reserved_start & MMU_VADDR_MASK) / MMU_PAGE_SIZE;
 
     instr_start_page = ((volatile uint32_t *)(DR_REG_MMU_TABLE + PRO_CACHE_IBUS0_MMU_START))[instr_mmu_offset];
-    instr_start_page &= MMU_ADDRESS_MASK;
+    instr_start_page &= MMU_VALID_VAL_MASK;
     instr_end_page = instr_start_page + instr_page_cnt - 1;
     instr_flash2spiram_offs = instr_start_page - page_id;
     ESP_EARLY_LOGV(TAG, "Instructions from flash page%d copy to SPIRAM page%d, Offset: %d", instr_start_page, page_id, instr_flash2spiram_offs);
@@ -128,10 +129,10 @@ esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_si
     REG_CLR_BIT(EXTMEM_PRO_DCACHE_CTRL1_REG, EXTMEM_PRO_DCACHE_MASK_DRAM0);
 
     uint32_t rodata_page_cnt = ((uint32_t)&_rodata_reserved_end - (uint32_t)&_rodata_reserved_start + MMU_PAGE_SIZE - 1) / MMU_PAGE_SIZE;
-    uint32_t rodata_mmu_offset = ((uint32_t)&_rodata_reserved_start & BUS_ADDR_MASK) / MMU_PAGE_SIZE;
+    uint32_t rodata_mmu_offset = ((uint32_t)&_rodata_reserved_start & MMU_VADDR_MASK) / MMU_PAGE_SIZE;
 
     rodata_start_page = ((volatile uint32_t *)(DR_REG_MMU_TABLE + PRO_CACHE_IBUS2_MMU_START))[rodata_mmu_offset];
-    rodata_start_page &= MMU_ADDRESS_MASK;
+    rodata_start_page &= MMU_VALID_VAL_MASK;
     rodata_end_page = rodata_start_page + rodata_page_cnt - 1;
     rodata_flash2spiram_offs = rodata_start_page - page_id;
     ESP_EARLY_LOGV(TAG, "Rodata from flash page%d copy to SPIRAM page%d, Offset: %d", rodata_start_page, page_id, rodata_flash2spiram_offs);

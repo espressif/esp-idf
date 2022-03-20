@@ -18,15 +18,6 @@
 #include "esp_eth_netif_glue.h"
 #endif
 
-//
-// Note: tcpip_adapter legacy API has to be included by default to provide full compatibility
-//  for applications that used tcpip_adapter API without explicit inclusion of tcpip_adapter.h
-//
-#ifdef CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
-#define _ESP_NETIF_SUPPRESS_LEGACY_WARNING_
-#include "tcpip_adapter.h"
-#undef _ESP_NETIF_SUPPRESS_LEGACY_WARNING_
-#endif // CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
 
 #ifdef __cplusplus
 extern "C" {
@@ -358,6 +349,18 @@ void esp_netif_action_add_ip6_address(void *esp_netif, esp_event_base_t base, in
  * @param data
  */
 void esp_netif_action_remove_ip6_address(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data);
+
+/**
+ * @brief Manual configuration of the default netif
+ *
+ * This API overrides the automatic configuration of the default interface based on the route_prio
+ * If the selected netif is set default using this API, no other interface could be set-default disregarding
+ * its route_prio number (unless the selected netif gets destroyed)
+ *
+ * @param[in] esp_netif Handle to esp-netif instance
+ * @return ESP_OK on success
+ */
+esp_err_t esp_netif_set_default_netif(esp_netif_t *esp_netif);
 
 /**
  * @}

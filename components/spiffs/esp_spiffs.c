@@ -667,7 +667,8 @@ static int vfs_spiffs_readdir_r(void* ctx, DIR* pdir, struct dirent* entry,
     }
     entry->d_ino = 0;
     entry->d_type = out.type;
-    snprintf(entry->d_name, SPIFFS_OBJ_NAME_LEN, "%s", item_name);
+    strncpy(entry->d_name, item_name, SPIFFS_OBJ_NAME_LEN);
+    entry->d_name[SPIFFS_OBJ_NAME_LEN - 1] = '\0';
     dir->offset++;
     *out_dirent = entry;
     return 0;

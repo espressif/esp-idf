@@ -3,7 +3,7 @@
 
 ## Overview
 
-This example demonstrates basic usage of `Ethernet driver` together with `tcpip_adapter`. The work flow of the example could be as follows:
+This example demonstrates basic usage of `Ethernet driver` together with `esp_netif`. The work flow of the example could be as follows:
 
 1. Install Ethernet driver
 2. Send DHCP requests and wait for a DHCP lease
@@ -58,7 +58,7 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 I (394) eth_example: Ethernet Started
 I (3934) eth_example: Ethernet Link Up
 I (3934) eth_example: Ethernet HW Addr 30:ae:a4:c6:87:5b
-I (5864) tcpip_adapter: eth ip: 192.168.2.151, mask: 255.255.255.0, gw: 192.168.2.2
+I (5864) esp_netif_handlers: eth ip: 192.168.2.151, mask: 255.255.255.0, gw: 192.168.2.2
 I (5864) eth_example: Ethernet Got IP Address
 I (5864) eth_example: ~~~~~~~~~~~
 I (5864) eth_example: ETHIP:192.168.2.151

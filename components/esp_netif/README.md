@@ -74,7 +74,7 @@ Overall application interaction with communication media and network stack
                 network stack are passed to the IO driver
       - calls esp_netif_receive to pass incoming data to network stack
 
-###  C) ESP-NETIF, former tcpip_adapter
+###  C) ESP-NETIF
 * init API (new, configure)
 * IO API: for passing data between IO driver and network stack
 * event/action API (esp-netif lifecycle management)

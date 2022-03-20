@@ -44,7 +44,7 @@
 #include <stdio.h>
 #include "spinlock.h"
 #include "soc/interrupt_core0_reg.h"
-#include "esp_macro.h"
+#include "esp_macros.h"
 #include "esp_attr.h"
 #include "esp_rom_sys.h"
 #include "esp_timer.h"              /* required for FreeRTOS run time stats */
@@ -391,9 +391,9 @@ static inline BaseType_t IRAM_ATTR xPortGetCoreID(void)
  *          might result in undesired behavior
  */
 #if defined(__cplusplus) && (__cplusplus >  201703L)
-#define portYIELD_FROM_ISR(...) CHOOSE_MACRO_VA_ARG(_0 __VA_OPT__(,) ##__VA_ARGS__, portYIELD_FROM_ISR_ARG, portYIELD_FROM_ISR_NO_ARG)(__VA_ARGS__)
+#define portYIELD_FROM_ISR(...) CHOOSE_MACRO_VA_ARG(portYIELD_FROM_ISR_ARG, portYIELD_FROM_ISR_NO_ARG __VA_OPT__(,) __VA_ARGS__)(__VA_ARGS__)
 #else
-#define portYIELD_FROM_ISR(...) CHOOSE_MACRO_VA_ARG(_0, ##__VA_ARGS__, portYIELD_FROM_ISR_ARG, portYIELD_FROM_ISR_NO_ARG)(__VA_ARGS__)
+#define portYIELD_FROM_ISR(...) CHOOSE_MACRO_VA_ARG(portYIELD_FROM_ISR_ARG, portYIELD_FROM_ISR_NO_ARG, ##__VA_ARGS__)(__VA_ARGS__)
 #endif
 
 

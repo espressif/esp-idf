@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "soc/cache_memory.h"
+#include "soc/ext_mem_defs.h"
 #include "soc/memprot_defs.h"
 #include "hal/memprot_types.h"
 

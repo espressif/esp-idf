@@ -120,7 +120,6 @@ menu "ESP-MQTT Configurations"
 
     config MQTT_TASK_CORE_SELECTION_ENABLED
         bool "Enable MQTT task core selection"
-        default false
         help
             This will enable core selection
 

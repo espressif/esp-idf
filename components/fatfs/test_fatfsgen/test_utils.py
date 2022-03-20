@@ -39,6 +39,6 @@ def generate_test_dir_2() -> None:
         file.write('ahoj\n')
 
 
-def fill_sector(fatfs: fatfsgen.FATFS) -> None:
+def fill_sector(fatfs: fatfsgen.FATFS, file_prefix: str = 'A') -> None:
     for i in range(CFG['sector_size'] // CFG['entry_size']):
-        fatfs.create_file(f'A{str(i).upper()}', path_from_root=['TESTFOLD'])
+        fatfs.create_file(f'{file_prefix}{str(i).upper()}', path_from_root=['TESTFOLD'])

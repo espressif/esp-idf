@@ -172,10 +172,10 @@ menu "mbedTLS"
         default 4 if MBEDTLS_DEBUG_LEVEL_VERBOSE
 
     menu "mbedTLS v3.x related"
-
+        # NOTE: MBEDTLS_DYNAMIC_BUFFER feature is not supported with TLS 1.3 yet. Ref: IDF-4762
         config MBEDTLS_SSL_PROTO_TLS1_3
             bool "Support TLS 1.3 protocol"
-            depends on MBEDTLS_TLS_ENABLED
+            depends on MBEDTLS_TLS_ENABLED && MBEDTLS_SSL_KEEP_PEER_CERTIFICATE && !MBEDTLS_DYNAMIC_BUFFER
             select MBEDTLS_HKDF_C
             default n
 
@@ -414,6 +414,22 @@ menu "mbedTLS"
             SHA hardware acceleration is faster than software in some situations but
             slower in others. You should benchmark to find the best setting for you.
 
+    config MBEDTLS_HARDWARE_ECC
+        bool "Enable hardware ECC acceleration"
+        default y
+        depends on SOC_ECC_SUPPORTED
+        help
+            Enable hardware accelerated ECC point multiplication and point verification for points
+            on curve SECP192R1 and SECP256R1 in mbedTLS
+
+    config MBEDTLS_ECC_OTHER_CURVES_SOFT_FALLBACK
+        bool "Fallback to software implementation for curves not supported in hardware"
+        depends on MBEDTLS_HARDWARE_ECC
+        default y
+        help
+            Fallback to software implementation of ECC point multiplication and point verification
+            for curves not supported in hardware.
+
     config MBEDTLS_ROM_MD5
         bool "Use MD5 implementation in ROM"
         default y
@@ -448,6 +464,15 @@ menu "mbedTLS"
             Disabling this option will save some firmware size, particularly if
             the rest of the firmware doesn't call any standard timekeeeping
             functions.
+
+    config MBEDTLS_PLATFORM_TIME_ALT
+        bool "Enable mbedtls time support: platform-specific"
+        depends on MBEDTLS_HAVE_TIME
+        default n
+        help
+            Enabling this config will provide users with a function
+            "mbedtls_platform_set_time()" that allows to set an alternative
+            time function pointer.
 
     config MBEDTLS_HAVE_TIME_DATE
         bool "Enable mbedtls certificate expiry check"

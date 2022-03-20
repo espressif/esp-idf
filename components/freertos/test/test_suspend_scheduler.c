@@ -1,4 +1,10 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 /* Tests for FreeRTOS scheduler suspend & resume all tasks */
+#include "sdkconfig.h"
 #include <stdio.h>
 
 #include "freertos/FreeRTOS.h"
@@ -90,7 +96,12 @@ TEST_CASE("Scheduler disabled can handle a pending context switch on resume", "[
     TEST_ASSERT(isr_count > 10);
 
     for (int i = 0; i < 20; i++) {
+#ifdef CONFIG_FREERTOS_SMP
+        //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+        vTaskPreemptionDisable(NULL);
+#else
         vTaskSuspendAll();
+#endif // CONFIG_FREERTOS_SMP
         esp_intr_noniram_disable();
 
         unsigned no_sched_task = count_config.counter;
@@ -107,7 +118,12 @@ TEST_CASE("Scheduler disabled can handle a pending context switch on resume", "[
         // will preempt and count at least one more item
         esp_intr_noniram_enable();
         esp_intr_enable(intr_handle);
+#ifdef CONFIG_FREERTOS_SMP
+        //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+        vTaskPreemptionEnable(NULL);
+#else
         xTaskResumeAll();
+#endif // CONFIG_FREERTOS_SMP
 
         TEST_ASSERT_NOT_EQUAL(count_config.counter, no_sched_task);
     }
@@ -152,7 +168,12 @@ TEST_CASE("Scheduler disabled can wake multiple tasks on resume", "[freertos]")
     }
 
     /* Suspend scheduler on this CPU */
+#ifdef CONFIG_FREERTOS_SMP
+    //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+    vTaskPreemptionDisable(NULL);
+#else
     vTaskSuspendAll();
+#endif // CONFIG_FREERTOS_SMP
 
     /* Give all the semaphores once. This will wake tasks immediately on the other
        CPU, but they are deferred here until the scheduler resumes.
@@ -174,7 +195,12 @@ TEST_CASE("Scheduler disabled can wake multiple tasks on resume", "[freertos]")
     }
 
     /* Resume scheduler */
+#ifdef CONFIG_FREERTOS_SMP
+    //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+    vTaskPreemptionEnable(NULL);
+#else
     xTaskResumeAll();
+#endif // CONFIG_FREERTOS_SMP
 
     /* Now the tasks on both CPUs should have been woken once and counted once. */
     for (int p = 0; p < portNUM_PROCESSORS; p++) {
@@ -197,12 +223,22 @@ TEST_CASE("Scheduler disabled can wake multiple tasks on resume", "[freertos]")
 static volatile bool sched_suspended;
 static void suspend_scheduler_5ms_task_fn(void *ignore)
 {
+#ifdef CONFIG_FREERTOS_SMP
+    //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+    vTaskPreemptionDisable(NULL);
+#else
     vTaskSuspendAll();
+#endif // CONFIG_FREERTOS_SMP
     sched_suspended = true;
     for (int i = 0; i < 5; i++) {
         esp_rom_delay_us(1000);
     }
+#ifdef CONFIG_FREERTOS_SMP
+    //Note: Scheduler suspension behavior changed in FreeRTOS SMP
+    vTaskPreemptionEnable(NULL);
+#else
     xTaskResumeAll();
+#endif // CONFIG_FREERTOS_SMP
     sched_suspended = false;
     vTaskDelete(NULL);
 }

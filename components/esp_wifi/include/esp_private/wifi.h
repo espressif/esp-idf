@@ -6,7 +6,7 @@
 
 /*
  * All the APIs declared here are internal only APIs, it can only be used by
- * espressif internal modules, such as SSC, LWIP, TCPIP adapter etc, espressif
+ * espressif internal modules, such as SSC, LWIP, esp-netif etc, espressif
  * customers are not recommended to use them.
  *
  * If someone really want to use specified APIs declared in here, please contact

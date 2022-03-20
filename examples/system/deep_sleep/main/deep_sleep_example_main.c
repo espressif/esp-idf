@@ -48,13 +48,13 @@ static RTC_DATA_ATTR struct timeval sleep_enter_time;
 /*
  * Offset (in 32-bit words) in RTC Slow memory where the data is placed
  * by the ULP coprocessor. It can be chosen to be any value greater or equal
- * to ULP program size, and less than the CONFIG_ESP32_ULP_COPROC_RESERVE_MEM/4 - 6,
+ * to ULP program size, and less than the CONFIG_ULP_COPROC_RESERVE_MEM/4 - 6,
  * where 6 is the number of words used by the ULP coprocessor.
  */
 #define ULP_DATA_OFFSET     36
 
-_Static_assert(ULP_DATA_OFFSET < CONFIG_ESP32_ULP_COPROC_RESERVE_MEM/4 - 6,
-        "ULP_DATA_OFFSET is set too high, or CONFIG_ESP32_ULP_COPROC_RESERVE_MEM is not sufficient");
+_Static_assert(ULP_DATA_OFFSET < CONFIG_ULP_COPROC_RESERVE_MEM/4 - 6,
+        "ULP_DATA_OFFSET is set too high, or CONFIG_ULP_COPROC_RESERVE_MEM is not sufficient");
 
 /**
  * @brief Start ULP temperature monitoring program
@@ -103,6 +103,12 @@ void app_main(void)
     int sleep_time_ms = (now.tv_sec - sleep_enter_time.tv_sec) * 1000 + (now.tv_usec - sleep_enter_time.tv_usec) / 1000;
 
     switch (esp_sleep_get_wakeup_cause()) {
+#if CONFIG_EXAMPLE_EXT0_WAKEUP
+        case ESP_SLEEP_WAKEUP_EXT0: {
+            printf("Wake up from ext0\n");
+            break;
+        }
+#endif // CONFIG_EXAMPLE_EXT0_WAKEUP
 #ifdef CONFIG_EXAMPLE_EXT1_WAKEUP
         case ESP_SLEEP_WAKEUP_EXT1: {
             uint64_t wakeup_pin_mask = esp_sleep_get_ext1_wakeup_status();
@@ -174,6 +180,18 @@ void app_main(void)
     printf("Enabling timer wakeup, %ds\n", wakeup_time_sec);
     esp_sleep_enable_timer_wakeup(wakeup_time_sec * 1000000);
 
+#if CONFIG_EXAMPLE_EXT0_WAKEUP
+    const int ext_wakeup_pin_0 = 3;
+
+    printf("Enabling EXT0 wakeup on pin GPIO%d\n", ext_wakeup_pin_0);
+    esp_sleep_enable_ext0_wakeup(ext_wakeup_pin_0, 1);
+
+    // Configure pullup/downs via RTCIO to tie wakeup pins to inactive level during deepsleep.
+    // EXT0 resides in the same power domain (RTC_PERIPH) as the RTC IO pullup/downs.
+    // No need to keep that power domain explicitly, unlike EXT1.
+    rtc_gpio_pullup_dis(ext_wakeup_pin_0);
+    rtc_gpio_pulldown_en(ext_wakeup_pin_0);
+#endif // CONFIG_EXAMPLE_EXT0_WAKEUP
 #ifdef CONFIG_EXAMPLE_EXT1_WAKEUP
     const int ext_wakeup_pin_1 = 2;
     const uint64_t ext_wakeup_pin_1_mask = 1ULL << ext_wakeup_pin_1;
@@ -182,6 +200,17 @@ void app_main(void)
 
     printf("Enabling EXT1 wakeup on pins GPIO%d, GPIO%d\n", ext_wakeup_pin_1, ext_wakeup_pin_2);
     esp_sleep_enable_ext1_wakeup(ext_wakeup_pin_1_mask | ext_wakeup_pin_2_mask, ESP_EXT1_WAKEUP_ANY_HIGH);
+
+    /* If there are no external pull-up/downs, tie wakeup pins to inactive level with internal pull-up/downs via RTC IO
+     * during deepsleep. However, RTC IO relies on the RTC_PERIPH power domain. Keeping this power domain on will
+     * increase some power comsumption. */
+#  if CONFIG_EXAMPLE_EXT1_USE_INTERNAL_PULLUPS
+    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
+    rtc_gpio_pullup_dis(ext_wakeup_pin_1);
+    rtc_gpio_pulldown_en(ext_wakeup_pin_1);
+    rtc_gpio_pullup_dis(ext_wakeup_pin_2);
+    rtc_gpio_pulldown_en(ext_wakeup_pin_2);
+#  endif //CONFIG_EXAMPLE_EXT1_USE_INTERNAL_PULLUPS
 #endif // CONFIG_EXAMPLE_EXT1_WAKEUP
 
 #ifdef CONFIG_EXAMPLE_GPIO_WAKEUP
@@ -344,7 +373,7 @@ static void start_ulp_temperature_monitoring(void)
     CLEAR_PERI_REG_MASK(SENS_SAR_TSENS_CTRL_REG, SENS_TSENS_POWER_UP_FORCE);
 
     // Clear the part of RTC_SLOW_MEM reserved for the ULP. Makes debugging easier.
-    memset(RTC_SLOW_MEM, 0, CONFIG_ESP32_ULP_COPROC_RESERVE_MEM);
+    memset(RTC_SLOW_MEM, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
 
     // The first word of memory (at data offset) is used to store the initial temperature (T0)
     // Zero it out here, then ULP will update it on the first run.

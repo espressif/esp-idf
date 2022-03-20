@@ -182,6 +182,11 @@ if(CONFIG_MBEDTLS_HARDWARE_GCM)
     target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/aes/esp_aes_gcm.c")
 endif()
 
+if(CONFIG_MBEDTLS_HARDWARE_ECC)
+    target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/ecc/esp_ecc.c"
+                                       "${COMPONENT_DIR}/port/ecc/ecc_alt.c")
+endif()
+
 if(CONFIG_MBEDTLS_ROM_MD5)
     target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/md/esp_md.c")
 endif()

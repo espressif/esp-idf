@@ -42,7 +42,7 @@ Otherwise, one way to measure performance is to augment the code to take timing 
 
         uint64_t end = esp_timer_get_time();
 
-        printf("%u iterations took %ull milliseconds (%ull microseconds per invocation)\n",
+        printf("%u iterations took %llu milliseconds (%llu microseconds per invocation)\n",
                MEASUREMENTS, (end - start)/1000, (end - start)/MEASUREMENTS);
     }
 

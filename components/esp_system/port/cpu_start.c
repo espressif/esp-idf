@@ -41,24 +41,20 @@
 #include "esp32s3/dport_access.h"
 #include "esp_memprot.h"
 #include "soc/assist_debug_reg.h"
-#include "soc/cache_memory.h"
 #include "soc/system_reg.h"
 #include "esp32s3/rom/opi_flash.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rtc.h"
 #include "esp32c3/rom/cache.h"
-#include "soc/cache_memory.h"
 #include "esp_memprot.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rtc.h"
 #include "esp32h2/rom/cache.h"
-#include "soc/cache_memory.h"
 #include "esp_memprot.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rtc.h"
 #include "esp32c2/rom/cache.h"
 #include "esp32c2/rom/rtc.h"
-#include "soc/cache_memory.h"
 #include "esp32c2/memprot.h"
 #endif
 
@@ -99,6 +95,11 @@
 #define ROM_LOG_MODE ESP_EFUSE_ROM_LOG_ON_GPIO_HIGH
 #endif
 
+//This will be replaced with a kconfig, TODO: IDF-3821
+//Besides, the MMU setting will be abstracted later. So actually we don't need this define in the future
+#define MMU_PAGE_SIZE    0x10000
+//This dependency will be removed in the future
+#include "soc/ext_mem_defs.h"
 
 #include "esp_private/startup_internal.h"
 #include "esp_private/system_internal.h"
@@ -155,10 +156,10 @@ void IRAM_ATTR call_start_cpu1(void)
 
     bootloader_init_mem();
 
-#if CONFIG_ESP_CONSOLE_UART_NONE
+#if CONFIG_ESP_CONSOLE_NONE
     esp_rom_install_channel_putc(1, NULL);
     esp_rom_install_channel_putc(2, NULL);
-#else // CONFIG_ESP_CONSOLE_UART_NONE
+#else // CONFIG_ESP_CONSOLE_NONE
     esp_rom_install_uart_printf();
     esp_rom_uart_set_as_console(CONFIG_ESP_CONSOLE_UART_NUM);
 #endif

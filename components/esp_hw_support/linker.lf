@@ -2,8 +2,6 @@
 archive: libesp_hw_support.a
 entries:
     cpu_util (noflash_text)
-    if IDF_TARGET_ESP32S2 = y:
-        regi2c_ctrl (noflash)
     rtc_clk (noflash)
     rtc_init:rtc_vddsdio_set_config (noflash)
     rtc_pm (noflash_text)

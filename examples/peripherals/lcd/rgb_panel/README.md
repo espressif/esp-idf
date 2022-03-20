@@ -83,6 +83,6 @@ I (741) example: Display LVGL Scatter Chart
   * The frame buffer of RGB panel is located in ESP side (unlike other controller based LCDs, where the frame buffer is located in external chip). As the frame buffer usually consumes much RAM (depends on the LCD resolution and color depth), we recommend to put the frame buffer into PSRAM (like what we do in this example). However, putting frame buffer in PSRAM will limit the PCLK to around 12MHz (due to the bandwidth of PSRAM).
 * LCD screen drift
   * Slow down the PCLK frequency
-  * Adjust other timing parameters like PCLK clock edge (by `pclk_active_neg`), sync porches like HBP (by `hsync_back_porch`) according to your LCD spec
+  * Adjust other timing parameters like PCLK clock edge (by `pclk_active_pos`), sync porches like HBP (by `hsync_back_porch`) according to your LCD spec
 
 For any technical queries, please open an [issue] (https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.

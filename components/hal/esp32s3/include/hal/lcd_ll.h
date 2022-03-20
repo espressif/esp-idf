@@ -207,6 +207,7 @@ static inline void lcd_ll_start(lcd_cam_dev_t *dev)
  *
  * @param dev LCD register base address
  */
+__attribute__((always_inline))
 static inline void lcd_ll_stop(lcd_cam_dev_t *dev)
 {
     dev->lcd_user.lcd_start = 0;
@@ -230,34 +231,32 @@ static inline void lcd_ll_reset(lcd_cam_dev_t *dev)
  * @param en True to reverse, False to not reverse
  */
 __attribute__((always_inline))
-static inline void lcd_ll_reverse_data_bit_order(lcd_cam_dev_t *dev, bool en)
+static inline void lcd_ll_reverse_bit_order(lcd_cam_dev_t *dev, bool en)
 {
     // whether to change LCD_DATA_out[N:0] to LCD_DATA_out[0:N]
     dev->lcd_user.lcd_bit_order = en;
 }
 
 /**
- * @brief Whether to swap data byte order, i.e. data[15:0] -> data[7:0][15:8]
+ * @brief Whether to swap adjacent two bytes
  *
  * @param dev LCD register base address
+ * @param width Bus width
  * @param en True to swap the byte order, False to not swap
  */
 __attribute__((always_inline))
-static inline void lcd_ll_swap_data_byte_order(lcd_cam_dev_t *dev, bool en)
+static inline void lcd_ll_swap_byte_order(lcd_cam_dev_t *dev, uint32_t width, bool en)
 {
-    dev->lcd_user.lcd_byte_order = en;
-}
-
-/**
- * @brief Whether to reverse the 8bits order
- *
- * @param dev LCD register base address
- * @param en True to reverse, False to not reverse
- */
-__attribute__((always_inline))
-static inline void lcd_ll_reverse_data_8bits_order(lcd_cam_dev_t *dev, bool en)
-{
-    dev->lcd_user.lcd_8bits_order = en;
+    HAL_ASSERT(width == 8 || width == 16);
+    if (width == 8) {
+        // {B0}{B1}{B2}{B3} => {B1}{B0}{B3}{B2}
+        dev->lcd_user.lcd_8bits_order = en;
+        dev->lcd_user.lcd_byte_order = 0;
+    } else if (width == 16) {
+        // {B1,B0},{B3,B2} => {B0,B1}{B2,B3}
+        dev->lcd_user.lcd_byte_order = en;
+        dev->lcd_user.lcd_8bits_order = 0;
+    }
 }
 
 /**
@@ -265,6 +264,7 @@ static inline void lcd_ll_reverse_data_8bits_order(lcd_cam_dev_t *dev, bool en)
  *
  * @param dev LCD register base address
  */
+__attribute__((always_inline))
 static inline void lcd_ll_fifo_reset(lcd_cam_dev_t *dev)
 {
     dev->lcd_misc.lcd_afifo_reset = 1; // self clear

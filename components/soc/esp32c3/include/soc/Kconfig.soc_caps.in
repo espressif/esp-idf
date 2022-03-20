@@ -27,6 +27,10 @@ config SOC_BT_SUPPORTED
     bool
     default y
 
+config SOC_BLUEDROID_SUPPORTED
+    bool
+    default y
+
 config SOC_DIG_SIGN_SUPPORTED
     bool
     default y
@@ -75,10 +79,6 @@ config SOC_EFUSE_KEY_PURPOSE_FIELD
     bool
     default y
 
-config SOC_ICACHE_ACCESS_RODATA_SUPPORTED
-    bool
-    default y
-
 config SOC_RTC_FAST_MEM_SUPPORTED
     bool
     default y
@@ -100,6 +100,10 @@ config SOC_RMT_SUPPORTED
     default y
 
 config SOC_SIGMADELTA_SUPPORTED
+    bool
+    default y
+
+config SOC_SUPPORT_COEXISTENCE
     bool
     default y
 
@@ -184,6 +188,10 @@ config SOC_APB_BACKUP_DMA
     default y
 
 config SOC_BROWNOUT_RESET_SUPPORTED
+    bool
+    default y
+
+config SOC_SHARED_IDCACHE_SUPPORTED
     bool
     default y
 
@@ -379,11 +387,19 @@ config SOC_RMT_SUPPORT_RX_DEMODULATION
     bool
     default y
 
+config SOC_RMT_SUPPORT_TX_ASYNC_STOP
+    bool
+    default y
+
 config SOC_RMT_SUPPORT_TX_LOOP_COUNT
     bool
     default y
 
 config SOC_RMT_SUPPORT_TX_SYNCHRO
+    bool
+    default y
+
+config SOC_RMT_SUPPORT_TX_CARRIER_ALWAYS_ON
     bool
     default y
 

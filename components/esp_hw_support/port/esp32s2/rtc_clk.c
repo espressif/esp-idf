@@ -21,10 +21,13 @@
 #include "soc/efuse_reg.h"
 #include "soc/syscon_reg.h"
 #include "esp_rom_sys.h"
-#include "regi2c_ctrl.h"
 #include "esp_hw_log.h"
 #include "rtc_clk_common.h"
 #include "sdkconfig.h"
+
+#include "regi2c_ctrl.h"
+#include "regi2c_apll.h"
+#include "regi2c_bbpll.h"
 
 static const char *TAG = "rtc_clk";
 

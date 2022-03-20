@@ -37,7 +37,6 @@ INPUT = \
     $(PROJECT_PATH)/components/wpa_supplicant/esp_supplicant/include/esp_dpp.h \
     $(PROJECT_PATH)/components/esp_event/include/esp_event.h \
     $(PROJECT_PATH)/components/esp_event/include/esp_event_base.h \
-    $(PROJECT_PATH)/components/esp_event/include/esp_event_legacy.h \
     $(PROJECT_PATH)/components/bt/include/esp32/include/esp_bt.h \
     $(PROJECT_PATH)/components/bt/common/api/include/api/esp_blufi_api.h \
     $(PROJECT_PATH)/components/bt/host/bluedroid/api/include/api/esp_bt_defs.h \
@@ -122,7 +121,6 @@ INPUT = \
     $(PROJECT_PATH)/components/lwip/include/apps/esp_sntp.h \
     $(PROJECT_PATH)/components/mdns/include/mdns.h \
     $(PROJECT_PATH)/components/esp_http_client/include/esp_http_client.h \
-    $(PROJECT_PATH)/components/esp_websocket_client/include/esp_websocket_client.h \
     $(PROJECT_PATH)/components/esp_http_server/include/esp_http_server.h \
     $(PROJECT_PATH)/components/esp_https_server/include/esp_https_server.h \
     $(PROJECT_PATH)/components/esp_local_ctrl/include/esp_local_ctrl.h \
@@ -184,7 +182,6 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_crc.h \
     $(PROJECT_PATH)/components/esp_hw_support/include/esp_mac.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_freertos_hooks.h \
-    $(PROJECT_PATH)/components/esp_system/include/esp_ipc.h \
     $(PROJECT_PATH)/components/esp_system/include/esp_expression_with_stack.h \
     $(PROJECT_PATH)/components/app_update/include/esp_ota_ops.h \
     $(PROJECT_PATH)/components/esp_https_ota/include/esp_https_ota.h \

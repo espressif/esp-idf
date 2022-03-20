@@ -8,9 +8,6 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include "esp32/rom/ets_sys.h" // for ets_update_cpu_frequency
-#include "esp32/rom/rtc.h"
-#include "esp_rom_gpio.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
 #include "soc/sens_periph.h"
@@ -22,11 +19,18 @@
 #include "soc/gpio_struct.h"
 #include "hal/cpu_hal.h"
 #include "hal/gpio_ll.h"
-#include "esp_rom_sys.h"
-#include "regi2c_ctrl.h"
 #include "esp_hw_log.h"
 #include "sdkconfig.h"
 #include "rtc_clk_common.h"
+
+#include "esp_rom_sys.h"
+#include "esp_rom_gpio.h"
+#include "esp32/rom/ets_sys.h" // for ets_update_cpu_frequency
+#include "esp32/rom/rtc.h"
+
+#include "regi2c_ctrl.h"
+#include "regi2c_apll.h"
+#include "regi2c_bbpll.h"
 
 /* Frequency of the 8M oscillator is 8.5MHz +/- 5%, at the default DCAP setting */
 #define RTC_FAST_CLK_FREQ_8M        8500000

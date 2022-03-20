@@ -206,7 +206,7 @@ def test_check_mode(dut=None, mode_str=None, value=None):
 
 
 @ttfw_idf.idf_example_test(env_tag='Example_Modbus_TCP', target=['esp32'])
-def test_modbus_communication(env, comm_mode):
+def test_modbus_tcp_communication(env, comm_mode):
     global logger
 
     rel_project_path = os.path.join('examples', 'protocols', 'modbus', 'tcp')
@@ -305,4 +305,4 @@ def test_modbus_communication(env, comm_mode):
 
 
 if __name__ == '__main__':
-    test_modbus_communication()
+    test_modbus_tcp_communication()

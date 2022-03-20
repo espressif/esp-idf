@@ -24,7 +24,6 @@
 #include "esp_rom_efuse.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_spiflash.h"
-#include "esp32s3/rom/cache.h"
 #include "esp32s3/rom/rtc.h"
 
 #include "bootloader_common.h"
@@ -36,6 +35,8 @@
 #include "bootloader_flash_priv.h"
 #include "bootloader_soc.h"
 #include "esp_efuse.h"
+#include "hal/mmu_hal.h"
+#include "hal/cache_hal.h"
 
 
 static const char *TAG = "boot.esp32s3";
@@ -72,18 +73,6 @@ void IRAM_ATTR bootloader_configure_spi_pins(int drv)
     }
 }
 
-static void bootloader_reset_mmu(void)
-{
-    Cache_Suspend_DCache();
-    Cache_Invalidate_DCache_All();
-    Cache_MMU_Init();
-
-    REG_CLR_BIT(EXTMEM_ICACHE_CTRL1_REG, EXTMEM_ICACHE_SHUT_CORE0_BUS);
-#if !CONFIG_FREERTOS_UNICORE
-    REG_CLR_BIT(EXTMEM_ICACHE_CTRL1_REG, EXTMEM_ICACHE_SHUT_CORE1_BUS);
-#endif
-}
-
 static void update_flash_config(const esp_image_header_t *bootloader_hdr)
 {
     uint32_t size;
@@ -115,12 +104,13 @@ static void update_flash_config(const esp_image_header_t *bootloader_hdr)
     default:
         size = 2;
     }
-    uint32_t autoload = Cache_Suspend_DCache();
+
+    cache_hal_disable(CACHE_TYPE_ALL);
     // Set flash chip size
     esp_rom_spiflash_config_param(g_rom_flashchip.device_id, size * 0x100000, 0x10000, 0x1000, 0x100, 0xffff);
     // TODO: set mode
     // TODO: set frequency
-    Cache_Resume_DCache(autoload);
+    cache_hal_enable(CACHE_TYPE_ALL);
 }
 
 static void print_flash_info(const esp_image_header_t *bootloader_hdr)
@@ -346,8 +336,10 @@ esp_err_t bootloader_init(void)
     esp_efuse_init_virtual_mode_in_ram();
 #endif
 #endif
-    // reset MMU
-    bootloader_reset_mmu();
+    //init cache hal
+    cache_hal_init();
+    //reset mmu
+    mmu_hal_init();
     // config clock
     bootloader_clock_configure();
     // initialize console, from now on, we can use esp_log

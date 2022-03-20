@@ -175,6 +175,10 @@ menu "ESP32S3-Specific"
     menu "SPI RAM config"
         depends on ESP32S3_SPIRAM_SUPPORT
 
+        config SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+            bool
+            default "y"
+
         choice SPIRAM_MODE
             prompt "Mode (QUAD/OCT) of SPI RAM chip in use"
             default SPIRAM_MODE_QUAD

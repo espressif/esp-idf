@@ -42,37 +42,36 @@ class FATFS:
         assert (root_entry_count * BYTES_PER_DIRECTORY_ENTRY) % sector_size == 0
         assert ((root_entry_count * BYTES_PER_DIRECTORY_ENTRY) // sector_size) % 2 == 0
 
-        root_dir_sectors_cnt = (root_entry_count * BYTES_PER_DIRECTORY_ENTRY) // sector_size
+        root_dir_sectors_cnt: int = (root_entry_count * BYTES_PER_DIRECTORY_ENTRY) // sector_size
 
-        self.state = FATFSState(entry_size=entry_size,
-                                sector_size=sector_size,
-                                explicit_fat_type=explicit_fat_type,
-                                reserved_sectors_cnt=reserved_sectors_cnt,
-                                root_dir_sectors_cnt=root_dir_sectors_cnt,
-                                size=size,
-                                file_sys_type=file_sys_type,
-                                num_heads=num_heads,
-                                fat_tables_cnt=fat_tables_cnt,
-                                sectors_per_fat=sectors_per_fat,
-                                sectors_per_cluster=sectors_per_cluster,
-                                media_type=media_type,
-                                hidden_sectors=hidden_sectors,
-                                sec_per_track=sec_per_track,
-                                long_names_enabled=long_names_enabled,
-                                volume_label=volume_label,
-                                oem_name=oem_name)
-        binary_image = bytearray(
+        self.state: FATFSState = FATFSState(entry_size=entry_size,
+                                            sector_size=sector_size,
+                                            explicit_fat_type=explicit_fat_type,
+                                            reserved_sectors_cnt=reserved_sectors_cnt,
+                                            root_dir_sectors_cnt=root_dir_sectors_cnt,
+                                            size=size,
+                                            file_sys_type=file_sys_type,
+                                            num_heads=num_heads,
+                                            fat_tables_cnt=fat_tables_cnt,
+                                            sectors_per_fat=sectors_per_fat,
+                                            sectors_per_cluster=sectors_per_cluster,
+                                            media_type=media_type,
+                                            hidden_sectors=hidden_sectors,
+                                            sec_per_track=sec_per_track,
+                                            long_names_enabled=long_names_enabled,
+                                            volume_label=volume_label,
+                                            oem_name=oem_name)
+        binary_image: bytes = bytearray(
             read_filesystem(binary_image_path) if binary_image_path else self.create_empty_fatfs())
         self.state.binary_image = binary_image
 
-        self.fat = FAT(fatfs_state=self.state,
-                       reserved_sectors_cnt=self.state.reserved_sectors_cnt)
+        self.fat: FAT = FAT(fatfs_state=self.state, reserved_sectors_cnt=self.state.reserved_sectors_cnt)
 
-        self.root_directory = Directory(name='A',  # the name is not important, must be string
-                                        size=self.state.root_dir_sectors_cnt * self.state.sector_size,
-                                        fat=self.fat,
-                                        cluster=self.fat.clusters[1],
-                                        fatfs_state=self.state)
+        self.root_directory: Directory = Directory(name='A',  # the name is not important, must be string
+                                                   size=self.state.root_dir_sectors_cnt * self.state.sector_size,
+                                                   fat=self.fat,
+                                                   cluster=self.fat.clusters[1],
+                                                   fatfs_state=self.state)
         self.root_directory.init_directory()
 
     def create_file(self, name: str, extension: str = '', path_from_root: Optional[List[str]] = None) -> None:
@@ -171,7 +170,8 @@ def main() -> None:
                   sectors_per_cluster=args.sectors_per_cluster,
                   size=args.partition_size,
                   root_entry_count=args.root_entry_count,
-                  explicit_fat_type=args.fat_type)
+                  explicit_fat_type=args.fat_type,
+                  long_names_enabled=args.long_name_support)
 
     fatfs.generate(args.input_directory)
     fatfs.write_filesystem(args.output_file)

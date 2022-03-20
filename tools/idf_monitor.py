@@ -160,7 +160,7 @@ class Monitor:
                 try:
                     self._main_loop()
                 except KeyboardInterrupt:
-                    yellow_print('To exit from IDF monitor please use \"Ctrl+]\"')
+                    yellow_print('To exit from IDF monitor please use \"Ctrl+]\". Alternatively, you can use Ctrl-T Ctrl-X to exit.')
                     self.serial_write(codecs.encode(CTRL_C))
         except SerialStopException:
             normal_print('Stopping condition has been received\n')

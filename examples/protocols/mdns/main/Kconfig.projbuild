@@ -48,4 +48,13 @@ menu "Example Configuration"
         help
             Set the GPIO number used as mDNS test button
 
+    config MDNS_ADD_CUSTOM_NETIF
+        bool "Add user netif to mdns service"
+        default n
+        help
+            If enabled, we try to add a custom netif to mdns service.
+            Note that for using with common connection example code, we have to disable
+            all predefined interfaces in mdns component setup (since we're adding one
+            of the default interfaces)
+
 endmenu

@@ -137,11 +137,17 @@ External RAM use has the following restrictions:
 
  * External RAM uses the same cache region as the external flash. This means that frequently accessed variables in external RAM can be read and modified almost as quickly as in internal ram. However, when accessing large chunks of data (>32 KB), the cache can be insufficient, and speeds will fall back to the access speed of the external RAM. Moreover, accessing large chunks of data can "push out" cached flash, possibly making the execution of code slower afterwards.
 
- * In general, external RAM cannot be used as task stack memory. Due to this, :cpp:func:`xTaskCreate` and similar functions will always allocate internal memory for stack and task TCBs, and functions such as :cpp:func:`xTaskCreateStatic` will check if the buffers passed are internal.
+ * In general, external RAM will not be used as task stack memory. :cpp:func:`xTaskCreate` and similar functions will always allocate internal memory for stack and task TCBs.
 
 .. only:: esp32
 
     The option :ref:`CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY` can be used to place task stacks into external memory. In these cases :cpp:func:`xTaskCreateStatic` must be used to specify a task stack buffer allocated from external memory, otherwise task stacks will still be allocated from internal memory.
+
+
+.. only:: not esp32
+
+    :cpp:func:`xTaskCreateStatic` can be used to explicitly place task stacks into external memory.
+
 
 Failure to initialize
 =====================

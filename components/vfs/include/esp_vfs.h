@@ -196,6 +196,10 @@ typedef struct
         int (*truncate)(const char *path, off_t length);                                            /*!< truncate without context pointer */
     };
     union {
+        int (*ftruncate_p)(void* ctx, int fd, off_t length);                                        /*!< ftruncate with context pointer */
+        int (*ftruncate)(int fd, off_t length);                                                     /*!< ftruncate without context pointer */
+    };
+    union {
         int (*utime_p)(void* ctx, const char *path, const struct utimbuf *times);                   /*!< utime with context pointer */
         int (*utime)(const char *path, const struct utimbuf *times);                                /*!< utime without context pointer */
     };

@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 #include <stdio.h>
 #include <string.h>
 #include "freertos/FreeRTOS.h"
@@ -6,6 +11,7 @@
 #include "unity.h"
 #include "test_utils.h"
 #include "esp_event.h"
+#include "esp_netif.h"
 #include "esp_eth.h"
 #include "esp_log.h"
 #include "esp_http_client.h"

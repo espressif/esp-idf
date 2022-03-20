@@ -4,18 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "regi2c_ctrl.h"
+
 #include "esp_attr.h"
 #include <stdint.h>
-#include <freertos/FreeRTOS.h>
-#include <freertos/semphr.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
+#include "regi2c_ctrl.h"
 
 static portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 
 uint8_t IRAM_ATTR regi2c_ctrl_read_reg(uint8_t block, uint8_t host_id, uint8_t reg_add)
 {
     portENTER_CRITICAL_ISR(&mux);
-    uint8_t value = i2c_read_reg_raw(block, host_id, reg_add);
+    uint8_t value = regi2c_read_reg_raw(block, host_id, reg_add);
     portEXIT_CRITICAL_ISR(&mux);
     return value;
 }
@@ -23,7 +24,7 @@ uint8_t IRAM_ATTR regi2c_ctrl_read_reg(uint8_t block, uint8_t host_id, uint8_t r
 uint8_t IRAM_ATTR regi2c_ctrl_read_reg_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb)
 {
     portENTER_CRITICAL_ISR(&mux);
-    uint8_t value = i2c_read_reg_mask_raw(block, host_id, reg_add, msb, lsb);
+    uint8_t value = regi2c_read_reg_mask_raw(block, host_id, reg_add, msb, lsb);
     portEXIT_CRITICAL_ISR(&mux);
     return value;
 }
@@ -31,14 +32,14 @@ uint8_t IRAM_ATTR regi2c_ctrl_read_reg_mask(uint8_t block, uint8_t host_id, uint
 void IRAM_ATTR regi2c_ctrl_write_reg(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t data)
 {
     portENTER_CRITICAL_ISR(&mux);
-    i2c_write_reg_raw(block, host_id, reg_add, data);
+    regi2c_write_reg_raw(block, host_id, reg_add, data);
     portEXIT_CRITICAL_ISR(&mux);
 }
 
 void IRAM_ATTR regi2c_ctrl_write_reg_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb, uint8_t data)
 {
     portENTER_CRITICAL_ISR(&mux);
-    i2c_write_reg_mask_raw(block, host_id, reg_add, msb, lsb, data);
+    regi2c_write_reg_mask_raw(block, host_id, reg_add, msb, lsb, data);
     portEXIT_CRITICAL_ISR(&mux);
 }
 
@@ -47,6 +48,7 @@ void IRAM_ATTR regi2c_ctrl_write_reg_mask(uint8_t block, uint8_t host_id, uint8_
  * This is a workaround, and is fixed on later chips
  */
 #if REGI2C_ANA_CALI_PD_WORKAROUND
+#include "regi2c_saradc.h"
 
 static DRAM_ATTR uint8_t reg_val[REGI2C_ANA_CALI_BYTE_NUM];
 

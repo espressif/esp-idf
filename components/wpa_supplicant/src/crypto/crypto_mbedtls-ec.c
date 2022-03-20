@@ -689,18 +689,26 @@ int crypto_ec_get_curve_id(const struct crypto_ec_group *group)
 int crypto_ecdh(struct crypto_key *key_own, struct crypto_key *key_peer,
 		u8 *secret, size_t *secret_len)
 {
-	mbedtls_ecdh_context *ctx;
+	mbedtls_ecdh_context *ctx = NULL;
 	mbedtls_pk_context *own = (mbedtls_pk_context *)key_own;
 	mbedtls_pk_context *peer = (mbedtls_pk_context *)key_peer;
-
+	mbedtls_entropy_context entropy;
+	mbedtls_ctr_drbg_context ctr_drbg;
 	int ret = -1;
+
+	mbedtls_entropy_init(&entropy);
+	mbedtls_ctr_drbg_init(&ctr_drbg);
+
+	if (mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0) < 0) {
+		goto fail;
+	}
 
 	*secret_len = 0;
 	ctx = os_malloc(sizeof(*ctx));
 	if (!ctx) {
 		wpa_printf(MSG_ERROR, "DPP: EVP_PKEY_CTX_new failed: %s",
 				__func__);
-		return -1;
+		goto fail;
 	}
 
 	mbedtls_ecdh_init(ctx);
@@ -721,7 +729,8 @@ int crypto_ecdh(struct crypto_key *key_own, struct crypto_key *key_peer,
 		goto fail;
 	}
 
-	if (mbedtls_ecdh_calc_secret(ctx, secret_len, secret, DPP_MAX_SHARED_SECRET_LEN, NULL, NULL) < 0) {
+	if (mbedtls_ecdh_calc_secret(ctx, secret_len, secret, DPP_MAX_SHARED_SECRET_LEN,
+				     mbedtls_ctr_drbg_random, &ctr_drbg) < 0) {
 		wpa_printf(MSG_ERROR, "failed to calculate secret\n");
 		goto fail;
 	}
@@ -734,8 +743,12 @@ int crypto_ecdh(struct crypto_key *key_own, struct crypto_key *key_peer,
 	ret = 0;
 
 fail:
-	mbedtls_ecdh_free(ctx);
-	os_free(ctx);
+	mbedtls_ctr_drbg_free(&ctr_drbg);
+	mbedtls_entropy_free(&entropy);
+	if (ctx) {
+		mbedtls_ecdh_free(ctx);
+		os_free(ctx);
+	}
 	return ret;
 }
 

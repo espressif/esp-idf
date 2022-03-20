@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 
-from typing import Optional
+from typing import Dict, Optional
 
 from construct import Int16ul
 
@@ -14,20 +14,20 @@ class Cluster:
     """
     class Cluster handles values in FAT table and allocates sectors in data region.
     """
-    RESERVED_BLOCK_ID = 0
-    ROOT_BLOCK_ID = 1
-    ALLOCATED_BLOCK_FAT12 = 0xFFF
-    ALLOCATED_BLOCK_FAT16 = 0xFFFF
+    RESERVED_BLOCK_ID: int = 0
+    ROOT_BLOCK_ID: int = 1
+    ALLOCATED_BLOCK_FAT12: int = 0xFFF
+    ALLOCATED_BLOCK_FAT16: int = 0xFFFF
     ALLOCATED_BLOCK_SWITCH = {FAT12: ALLOCATED_BLOCK_FAT12, FAT16: ALLOCATED_BLOCK_FAT16}
-    INITIAL_BLOCK_SWITCH = {FAT12: 0xFF8, FAT16: 0xFFF8}
+    INITIAL_BLOCK_SWITCH: Dict[int, int] = {FAT12: 0xFF8, FAT16: 0xFFF8}
 
     def __init__(self,
                  cluster_id: int,
                  fatfs_state: FATFSState,
                  is_empty: bool = True) -> None:
 
-        self.id = cluster_id
-        self.fatfs_state = fatfs_state
+        self.id: int = cluster_id
+        self.fatfs_state: FATFSState = fatfs_state
 
         self._next_cluster = None  # type: Optional[Cluster]
         if self.id == Cluster.RESERVED_BLOCK_ID:
@@ -35,7 +35,7 @@ class Cluster:
             self.set_in_fat(self.INITIAL_BLOCK_SWITCH[self.fatfs_state.fatfs_type])
             return
 
-        self.cluster_data_address = self._compute_cluster_data_address()
+        self.cluster_data_address: int = self._compute_cluster_data_address()
         self.is_empty = is_empty
 
         assert self.cluster_data_address or self.is_empty

@@ -5,8 +5,7 @@ import contextlib
 import logging
 import os
 import socket
-from collections.abc import Callable
-from threading import Thread
+from multiprocessing import Pipe, Process, connection
 from typing import Iterator
 
 import pytest
@@ -68,13 +67,13 @@ def recv_resp_poke(i: int) -> None:
             raise e
 
 
-def traffic_gen(mac: str, enabled: Callable) -> None:
+def traffic_gen(mac: str, pipe_rcv:connection.Connection) -> None:
     with configure_eth_if() as so:
         payload = bytes.fromhex('ff')    # DUMMY_TRAFFIC code
         payload += bytes(1485)
         eth_frame = Ether(dst=mac, src=so.getsockname()[4], type=0x2222) / raw(payload)
         try:
-            while enabled() == 1:
+            while pipe_rcv.poll() is not True:
                 so.send(raw(eth_frame))
         except Exception as e:
             raise e
@@ -124,15 +123,15 @@ def actual_test(dut: Dut) -> None:
         recv_resp_poke(tx_i)
 
     # Start/stop under heavy Rx traffic
-    traffic_en = 1
-    thread = Thread(target=traffic_gen, args=(res.group(2), lambda:traffic_en, ))
-    thread.start()
+    pipe_rcv, pipe_send = Pipe(False)
+    tx_proc = Process(target=traffic_gen, args=(res.group(2), pipe_rcv, ))
+    tx_proc.start()
     try:
         for rx_i in range(10):
             recv_resp_poke(rx_i)
     finally:
-        traffic_en = 0
-        thread.join()
+        pipe_send.send(0)
+        tx_proc.join()
     dut.expect_unity_test_output()
 
 

@@ -6,7 +6,7 @@ ESP-IDF 是乐鑫官方推出的物联网开发框架，支持 Windows、Linux �
 
 # ESP-IDF 与乐鑫芯片
 
-下表总结了乐鑫芯片在 ESP-IDF 各版本中的支持状态，其中 ![alt text][supported] 代表已支持，![alt text][preview] 代表目前处于预览支持状态。在预览支持阶段，因为新芯片尚未完全添加到构建系统目录，所以一些重要的内容（如文档和技术规格书等）可能会缺失。请确保使用与芯片相匹配的 ESP-IDF 版本。
+下表总结了乐鑫芯片在 ESP-IDF 各版本中的支持状态，其中 ![alt text][supported] 代表已支持，![alt text][preview] 代表目前处于预览支持状态。预览支持状态通常有时间限制，而且仅适用于测试版芯片。请确保使用与芯片相匹配的 ESP-IDF 版本。
 
 |    芯片     |         v3.3           |           v4.1         |          v4.2          |         v4.3           |          v4.4          |          v5.0          |                                                            |
 |:----------- |:---------------------: | :---------------------:| :---------------------:| :---------------------:| :---------------------:| :---------------------:|:---------------------------------------------------------- |
@@ -32,11 +32,9 @@ ESP-IDF 是乐鑫官方推出的物联网开发框架，支持 Windows、Linux �
 
 ### 非 GitHub 分叉的 ESP-IDF 项目
 
-ESP-IDF 中的子模块采用相对路径（[详见 .gitmodules 文件](.gitmodules)），所以它们会指向 GitHub。
-如果 ESP-IDF 被分叉到的仓库不在 GitHub 上，那么你需要在克隆结束后运行该脚本 [tools/set-submodules-to-github.sh](tools/set-submodules-to-github.sh)。
+ESP-IDF 中的子模块采用相对路径（[详见 .gitmodules 文件](.gitmodules)），所以它们会指向 GitHub。 如果 ESP-IDF 被分叉到的仓库不在 GitHub 上，那么你需要在克隆结束后运行该脚本 [tools/set-submodules-to-github.sh](tools/set-submodules-to-github.sh)。
 
-这个脚本会为所有的子模块设置绝对路径，接着可以通过 `git submodule update --init --recursive` 完成子模块的更新。
-如果 ESP-IDF 是从 GitHub 上克隆得到，则不需要此步骤。
+这个脚本会为所有的子模块设置绝对路径，接着可以通过 `git submodule update --init --recursive` 完成子模块的更新。如果 ESP-IDF 是从 GitHub 上克隆得到，则不需要此步骤。
 
 ## 寻找项目
 
