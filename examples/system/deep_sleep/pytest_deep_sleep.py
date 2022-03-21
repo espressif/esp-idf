@@ -11,7 +11,7 @@ touch_wake_up_support = ['esp32', 'esp32s2']
 
 CONFIGS = [
     pytest.param('esp32_singlecore', marks=[pytest.mark.esp32]),
-    pytest.param('generic', marks=[pytest.mark.supported_targets]),
+    pytest.param('generic', marks=[pytest.mark.esp32, pytest.mark.esp32c3]),  # Disabled for now: IDF-4801
 ]
 
 
