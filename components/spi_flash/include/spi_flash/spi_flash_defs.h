@@ -19,8 +19,10 @@
 #define CMD_WRDI       0x04
 #define CMD_RDSR       0x05
 #define CMD_RDSR2      0x35 /* Not all SPI flash uses this command */
-#define CMD_RDSCUR     0x2B /* on specific(MXIC) board, read security register */
-#define CMD_RDFR       0x48 /* on specific(ISSI) board, read function register */
+#define CMD_RDSCUR     0x2B /* MXIC-specific, read security register */
+#define CMD_8READ      0xEC /* MXIC-specific, 8 I/O read */
+#define CMD_8DTRD      0xEE /* MXIC-specific, 8 I/O DTR read */
+#define CMD_RDFR       0x48 /* ISSI-specific, read function register */
 
 #define CMD_FASTRD_QIO      0xEB
 #define CMD_FASTRD_QIO_4B   0xEC
