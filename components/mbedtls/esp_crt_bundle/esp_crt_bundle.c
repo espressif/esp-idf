@@ -7,7 +7,6 @@
 #include <esp_system.h>
 #include "esp_crt_bundle.h"
 #include "esp_log.h"
-#include "esp_err.h"
 
 #define BUNDLE_HEADER_OFFSET 2
 #define CRT_HEADER_OFFSET 4
