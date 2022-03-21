@@ -821,7 +821,9 @@ static esp_err_t esp_http_check_response(esp_http_client_handle_t client)
     switch (client->response->status_code) {
         case HttpStatus_MovedPermanently:
         case HttpStatus_Found:
+        case HttpStatus_SeeOther:
         case HttpStatus_TemporaryRedirect:
+        case HttpStatus_PermanentRedirect:
             if (client->disable_auto_redirect) {
                 http_dispatch_event(client, HTTP_EVENT_REDIRECT, NULL, 0);
             }
