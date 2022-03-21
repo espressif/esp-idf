@@ -3278,12 +3278,13 @@ void vTaskYieldWithinAPI( void );
  * ------------------------------------------------------------------------------------------------------------------ */
 
 #ifdef ESP_PLATFORM
-BaseType_t xTaskCreatePinnedToCore( TaskFunction_t pvTaskCode,
+
+BaseType_t xTaskCreatePinnedToCore( TaskFunction_t pxTaskCode,
                                     const char * const pcName,
                                     const uint32_t usStackDepth,
                                     void * const pvParameters,
                                     UBaseType_t uxPriority,
-                                    TaskHandle_t * const pvCreatedTask,
+                                    TaskHandle_t * const pxCreatedTask,
                                     const BaseType_t xCoreID);
 
 #if ( configSUPPORT_STATIC_ALLOCATION == 1 )

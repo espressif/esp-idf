@@ -6475,41 +6475,31 @@ static void prvAddCurrentTaskToDelayedList( TickType_t xTicksToWait,
 
 #ifdef ESP_PLATFORM
 
-BaseType_t xTaskCreatePinnedToCore( TaskFunction_t pvTaskCode,
+BaseType_t xTaskCreatePinnedToCore( TaskFunction_t pxTaskCode,
                                     const char * const pcName,
                                     const uint32_t usStackDepth,
                                     void * const pvParameters,
                                     UBaseType_t uxPriority,
-                                    TaskHandle_t * const pvCreatedTask,
+                                    TaskHandle_t * const pxCreatedTask,
                                     const BaseType_t xCoreID)
 {
     BaseType_t ret;
-#if ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
-    /*
-    If we are using multiple cores and core affinity, we need to create the task then set the core affinity of that
-    task. We do this with interrupts disabled to prevent the task from being scehduled immediately after
-    xTaskCreate().
-    */
-    portDISABLE_INTERRUPTS();
-    TaskHandle_t xTaskHandleTemp;
-    ret = xTaskCreate(pvTaskCode, pcName, usStackDepth, pvParameters, uxPriority, &xTaskHandleTemp);
-    if (ret == pdPASS) {
-        UBaseType_t uxCoreAffinityMask;
-        if (xCoreID == tskNO_AFFINITY) {
-            uxCoreAffinityMask = tskNO_AFFINITY;
-        } else {
-            uxCoreAffinityMask = (1 << xCoreID);
+    #if ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUM_CORES > 1 ) )
+        {
+            // Convert xCoreID into an affinity mask
+            UBaseType_t uxCoreAffinityMask;
+            if (xCoreID == tskNO_AFFINITY) {
+                uxCoreAffinityMask = tskNO_AFFINITY;
+            } else {
+                uxCoreAffinityMask = (1 << xCoreID);
+            }
+            ret = xTaskCreateAffinitySet(pxTaskCode, pcName, usStackDepth, pvParameters, uxPriority, uxCoreAffinityMask, pxCreatedTask);
         }
-        vTaskCoreAffinitySet(xTaskHandleTemp, uxCoreAffinityMask);
-        if (pvCreatedTask != NULL) {
-            *pvCreatedTask = xTaskHandleTemp;
+    #else /* ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUM_CORES > 1 ) ) */
+        {
+            ret = xTaskCreate(pxTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pxCreatedTask);
         }
-    }
-    portENABLE_INTERRUPTS();
-#else /* if ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 ) */
-    //No need to set the affinity. Just create the task
-    ret = xTaskCreate(pvTaskCode, pcName, usStackDepth, pvParameters, uxPriority, pvCreatedTask);
-#endif /* if ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 ) */
+    #endif /* ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUM_CORES > 1 ) ) */
     return ret;
 }
 
@@ -6523,29 +6513,24 @@ TaskHandle_t xTaskCreateStaticPinnedToCore( TaskFunction_t pxTaskCode,
                                             StaticTask_t * const pxTaskBuffer,
                                             const BaseType_t xCoreID)
 {
-    TaskHandle_t xTaskHandleTemp;
-#if ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
-    /*
-    If we are using multiple cores and core affinity, we need to create the task then set the core affinity of that
-    task. We do this with interrupts disabled to prevent the task from being scehduled immediately after
-    xTaskCreate().
-    */
-    portDISABLE_INTERRUPTS();
-    xTaskHandleTemp = xTaskCreateStatic(pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, puxStackBuffer, pxTaskBuffer);
-    if (xTaskHandleTemp != NULL) {
-        UBaseType_t uxCoreAffinityMask;
-        if (xCoreID == tskNO_AFFINITY) {
-            uxCoreAffinityMask = tskNO_AFFINITY;
-        } else {
-            uxCoreAffinityMask = (1 << xCoreID);
+    BaseType_t ret;
+    #if ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUM_CORES > 1 ) )
+        {
+            // Convert xCoreID into an affinity mask
+            UBaseType_t uxCoreAffinityMask;
+            if (xCoreID == tskNO_AFFINITY) {
+                uxCoreAffinityMask = tskNO_AFFINITY;
+            } else {
+                uxCoreAffinityMask = (1 << xCoreID);
+            }
+            ret = xTaskCreateStaticAffinitySet(pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, puxStackBuffer, pxTaskBuffer, uxCoreAffinityMask);
         }
-        vTaskCoreAffinitySet(xTaskHandleTemp, uxCoreAffinityMask);
-    }
-    portENABLE_INTERRUPTS();
-#else /* if ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 ) */
-    xTaskHandleTemp = xTaskCreateStatic(pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, puxStackBuffer, pxTaskBuffer);
-#endif /* if ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 ) */
-    return xTaskHandleTemp;
+    #else /* ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUM_CORES > 1 ) ) */
+        {
+            ret = xTaskCreateStatic(pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, puxStackBuffer, pxTaskBuffer);
+        }
+    #endif /* ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUM_CORES > 1 ) ) */
+    return ret;
 }
 #endif /* configSUPPORT_STATIC_ALLOCATION */
 
