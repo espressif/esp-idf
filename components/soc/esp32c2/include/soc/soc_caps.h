@@ -41,7 +41,7 @@
 #define SOC_RTC_SLOW_MEM_SUPPORTED      0
 #define SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY             0
 #define SOC_FLASH_ENCRYPTION_XTS_AES    1
-#define SOC_SHA_SUPPORTED               1
+#define SOC_SHA_SUPPORTED               0 // This will be enabled with IDF-3830
 #define SOC_ECC_SUPPORTED               1
 
 /*-------------------------- ADC CAPS -------------------------------*/

@@ -69,7 +69,7 @@ config SOC_FLASH_ENCRYPTION_XTS_AES
 
 config SOC_SHA_SUPPORTED
     bool
-    default y
+    default n
 
 config SOC_ECC_SUPPORTED
     bool
