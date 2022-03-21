@@ -1,3 +1,8 @@
+if(IDF_TARGET STREQUAL "esp32s2" OR IDF_TARGET STREQUAL "esp32s3")
+    #Disabled for now due to RTC bug IDF-4801
+    return()
+endif()
+
 if(CONFIG_ULP_COPROC_TYPE_FSM)
 
     set(src_dirs "ulp_fsm")
