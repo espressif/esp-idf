@@ -1061,7 +1061,6 @@ components/lwip/test_afl_host/test_dhcp_client.c
 components/lwip/test_afl_host/test_dhcp_server.c
 components/lwip/test_afl_host/test_dns.c
 components/lwip/weekend_test/net_suite_test.py
-components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h
 components/mbedtls/esp_crt_bundle/test_gen_crt_bundle/test_gen_crt_bundle.py
 components/mbedtls/port/aes/block/esp_aes.c
 components/mbedtls/port/aes/dma/esp_aes.c
