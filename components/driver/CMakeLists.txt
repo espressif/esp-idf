@@ -3,7 +3,6 @@ idf_build_get_property(target IDF_TARGET)
 set(srcs
     "gpio.c"
     "gptimer.c"
-    "timer_legacy.c"
     "i2c.c"
     "ledc.c"
     "legacy_new_driver_coexist.c"
@@ -18,6 +17,9 @@ set(srcs
     "spi_slave.c"
     "spi_bus_lock.c"
     "uart.c")
+
+# deprecated source files
+list(APPEND srcs "deprecated/timer_legacy.c")
 
 set(includes "include" "deprecated")
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${target}/include")
@@ -51,7 +53,7 @@ if(CONFIG_SOC_RMT_SUPPORTED)
 endif()
 
 if(CONFIG_SOC_PCNT_SUPPORTED)
-    list(APPEND srcs "pcnt_legacy.c" "pulse_cnt.c")
+    list(APPEND srcs "pulse_cnt.c" "deprecated/pcnt_legacy.c")
 endif()
 
 if(CONFIG_SOC_SDMMC_HOST_SUPPORTED)
@@ -64,7 +66,7 @@ endif()
 
 if(CONFIG_SOC_TEMP_SENSOR_SUPPORTED)
     list(APPEND srcs "temperature_sensor.c"
-                     "rtc_temperature_legacy.c")
+                     "deprecated/rtc_temperature_legacy.c")
 endif()
 
 if(CONFIG_SOC_TWAI_SUPPORTED)
