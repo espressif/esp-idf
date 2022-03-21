@@ -1071,6 +1071,20 @@ static void prvYieldForTask( TCB_t * pxTCB,
                                     UBaseType_t uxPriority,
                                     StackType_t * const puxStackBuffer,
                                     StaticTask_t * const pxTaskBuffer )
+    #if ( ( configNUM_CORES > 1 ) && ( configUSE_CORE_AFFINITY == 1 ) )
+        {
+            return xTaskCreateStaticAffinitySet(pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, puxStackBuffer, pxTaskBuffer, tskNO_AFFINITY);
+        }
+
+        TaskHandle_t xTaskCreateStaticAffinitySet( TaskFunction_t pxTaskCode,
+                                                   const char * const pcName,   /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+                                                   const uint32_t ulStackDepth,
+                                                   void * const pvParameters,
+                                                   UBaseType_t uxPriority,
+                                                   StackType_t * const puxStackBuffer,
+                                                   StaticTask_t * const pxTaskBuffer,
+                                                   UBaseType_t uxCoreAffinityMask )
+    #endif /* ( configNUM_CORES > 1 ) && ( configUSE_CORE_AFFINITY == 1 ) */
     {
         TCB_t * pxNewTCB;
         TaskHandle_t xReturn;
@@ -1105,6 +1119,14 @@ static void prvYieldForTask( TCB_t * pxTCB,
             #endif /* tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE */
 
             prvInitialiseNewTask( pxTaskCode, pcName, ulStackDepth, pvParameters, uxPriority, &xReturn, pxNewTCB, NULL );
+
+            #if ( ( configNUM_CORES > 1 ) && ( configUSE_CORE_AFFINITY == 1 ) )
+                {
+                    /* Set the task's affinity before scheduling it */
+                    pxNewTCB->uxCoreAffinityMask = uxCoreAffinityMask;
+                }
+            #endif
+
             prvAddNewTaskToReadyList( pxNewTCB );
         }
         else
@@ -1122,6 +1144,15 @@ static void prvYieldForTask( TCB_t * pxTCB,
 
     BaseType_t xTaskCreateRestrictedStatic( const TaskParameters_t * const pxTaskDefinition,
                                             TaskHandle_t * pxCreatedTask )
+    #if ( ( configNUM_CORES > 1 ) && ( configUSE_CORE_AFFINITY == 1 ) )
+        {
+            return xTaskCreateRestrictedStaticAffinitySet( pxTaskDefinition, tskNO_AFFINITY, pxCreatedTask );
+        }
+
+        BaseType_t xTaskCreateRestrictedStaticAffinitySet( const TaskParameters_t * const pxTaskDefinition,
+                                                           UBaseType_t uxCoreAffinityMask,
+                                                           TaskHandle_t * pxCreatedTask )
+    #endif /* ( configNUM_CORES > 1 ) && ( configUSE_CORE_AFFINITY == 1 ) */
     {
         TCB_t * pxNewTCB;
         BaseType_t xReturn = errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY;
@@ -1155,6 +1186,13 @@ static void prvYieldForTask( TCB_t * pxTCB,
                                   pxCreatedTask, pxNewTCB,
                                   pxTaskDefinition->xRegions );
 
+            #if ( ( configNUM_CORES > 1 ) && ( configUSE_CORE_AFFINITY == 1 ) )
+                {
+                    /* Set the task's affinity before scheduling it */
+                    pxNewTCB->uxCoreAffinityMask = uxCoreAffinityMask;
+                }
+            #endif
+
             prvAddNewTaskToReadyList( pxNewTCB );
             xReturn = pdPASS;
         }
@@ -1169,6 +1207,15 @@ static void prvYieldForTask( TCB_t * pxTCB,
 
     BaseType_t xTaskCreateRestricted( const TaskParameters_t * const pxTaskDefinition,
                                       TaskHandle_t * pxCreatedTask )
+    #if ( ( configNUM_CORES > 1 ) && ( configUSE_CORE_AFFINITY == 1 ) )
+        {
+            return xTaskCreateRestrictedAffinitySet( pxTaskDefinition, tskNO_AFFINITY, pxCreatedTask );
+        }
+
+        BaseType_t xTaskCreateRestrictedAffinitySet( const TaskParameters_t * const pxTaskDefinition,
+                                                     UBaseType_t uxCoreAffinityMask,
+                                                     TaskHandle_t * pxCreatedTask )
+    #endif /* ( configNUM_CORES > 1 ) && ( configUSE_CORE_AFFINITY == 1 ) */
     {
         TCB_t * pxNewTCB;
         BaseType_t xReturn = errCOULD_NOT_ALLOCATE_REQUIRED_MEMORY;
@@ -1204,6 +1251,13 @@ static void prvYieldForTask( TCB_t * pxTCB,
                                       pxCreatedTask, pxNewTCB,
                                       pxTaskDefinition->xRegions );
 
+                #if ( ( configNUM_CORES > 1 ) && ( configUSE_CORE_AFFINITY == 1 ) )
+                    {
+                        /* Set the task's affinity before scheduling it */
+                        pxNewTCB->uxCoreAffinityMask = uxCoreAffinityMask;
+                    }
+                #endif
+
                 prvAddNewTaskToReadyList( pxNewTCB );
                 xReturn = pdPASS;
             }
@@ -1223,6 +1277,19 @@ static void prvYieldForTask( TCB_t * pxTCB,
                             void * const pvParameters,
                             UBaseType_t uxPriority,
                             TaskHandle_t * const pxCreatedTask )
+    #if ( ( configNUM_CORES > 1 ) && ( configUSE_CORE_AFFINITY == 1 ) )
+        {
+            return xTaskCreateAffinitySet(pxTaskCode, pcName, usStackDepth, pvParameters, uxPriority, tskNO_AFFINITY, pxCreatedTask);
+        }
+
+        BaseType_t xTaskCreateAffinitySet( TaskFunction_t pxTaskCode,
+                                           const char * const pcName,     /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+                                           const configSTACK_DEPTH_TYPE usStackDepth,
+                                           void * const pvParameters,
+                                           UBaseType_t uxPriority,
+                                           UBaseType_t uxCoreAffinityMask,
+                                           TaskHandle_t * const pxCreatedTask )
+    #endif /* ( configNUM_CORES > 1 ) && ( configUSE_CORE_AFFINITY == 1 ) */
     {
         TCB_t * pxNewTCB;
         BaseType_t xReturn;
@@ -1294,6 +1361,14 @@ static void prvYieldForTask( TCB_t * pxTCB,
             #endif /* tskSTATIC_AND_DYNAMIC_ALLOCATION_POSSIBLE */
 
             prvInitialiseNewTask( pxTaskCode, pcName, ( uint32_t ) usStackDepth, pvParameters, uxPriority, pxCreatedTask, pxNewTCB, NULL );
+
+            #if ( ( configNUM_CORES > 1 ) && ( configUSE_CORE_AFFINITY == 1 ) )
+                {
+                    /* Set the task's affinity before scheduling it */
+                    pxNewTCB->uxCoreAffinityMask = uxCoreAffinityMask;
+                }
+            #endif
+
             prvAddNewTaskToReadyList( pxNewTCB );
             xReturn = pdPASS;
         }

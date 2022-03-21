@@ -380,6 +380,16 @@ typedef enum
                             TaskHandle_t * const pxCreatedTask ) PRIVILEGED_FUNCTION;
 #endif
 
+#if ( ( configSUPPORT_DYNAMIC_ALLOCATION == 1 ) && ( configNUM_CORES > 1 ) && ( configUSE_CORE_AFFINITY == 1 ) )
+    BaseType_t xTaskCreateAffinitySet( TaskFunction_t pxTaskCode,
+                                       const char * const pcName,     /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+                                       const configSTACK_DEPTH_TYPE usStackDepth,
+                                       void * const pvParameters,
+                                       UBaseType_t uxPriority,
+                                       UBaseType_t uxCoreAffinityMask,
+                                       TaskHandle_t * const pxCreatedTask ) PRIVILEGED_FUNCTION;
+#endif
+
 /**
  * task. h
  * <pre>
@@ -498,6 +508,17 @@ typedef enum
                                     StaticTask_t * const pxTaskBuffer ) PRIVILEGED_FUNCTION;
 #endif /* configSUPPORT_STATIC_ALLOCATION */
 
+#if ( ( configSUPPORT_STATIC_ALLOCATION == 1 ) && ( configNUM_CORES > 1 ) && ( configUSE_CORE_AFFINITY == 1 ) )
+    TaskHandle_t xTaskCreateStaticAffinitySet( TaskFunction_t pxTaskCode,
+                                               const char * const pcName,     /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+                                               const uint32_t ulStackDepth,
+                                               void * const pvParameters,
+                                               UBaseType_t uxPriority,
+                                               StackType_t * const puxStackBuffer,
+                                               StaticTask_t * const pxTaskBuffer,
+                                               UBaseType_t uxCoreAffinityMask ) PRIVILEGED_FUNCTION;
+#endif
+
 /**
  * task. h
  * <pre>
@@ -574,6 +595,12 @@ typedef enum
 #if ( portUSING_MPU_WRAPPERS == 1 )
     BaseType_t xTaskCreateRestricted( const TaskParameters_t * const pxTaskDefinition,
                                       TaskHandle_t * pxCreatedTask ) PRIVILEGED_FUNCTION;
+#endif
+
+#if ( ( portUSING_MPU_WRAPPERS == 1 ) && ( configNUM_CORES > 1 ) && ( configUSE_CORE_AFFINITY == 1 ) )
+    BaseType_t xTaskCreateRestrictedAffinitySet( const TaskParameters_t * const pxTaskDefinition,
+                                                 UBaseType_t uxCoreAffinityMask,
+                                                 TaskHandle_t * pxCreatedTask ) PRIVILEGED_FUNCTION;
 #endif
 
 /**
@@ -664,6 +691,12 @@ typedef enum
 #if ( ( portUSING_MPU_WRAPPERS == 1 ) && ( configSUPPORT_STATIC_ALLOCATION == 1 ) )
     BaseType_t xTaskCreateRestrictedStatic( const TaskParameters_t * const pxTaskDefinition,
                                             TaskHandle_t * pxCreatedTask ) PRIVILEGED_FUNCTION;
+#endif
+
+#if ( ( portUSING_MPU_WRAPPERS == 1 ) && ( configSUPPORT_STATIC_ALLOCATION == 1 ) && ( configNUM_CORES > 1 ) && ( configUSE_CORE_AFFINITY == 1 ) )
+    BaseType_t xTaskCreateRestrictedStaticAffinitySet( const TaskParameters_t * const pxTaskDefinition,
+                                                       UBaseType_t uxCoreAffinityMask,
+                                                       TaskHandle_t * pxCreatedTask ) PRIVILEGED_FUNCTION;
 #endif
 
 /**
