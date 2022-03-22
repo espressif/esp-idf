@@ -22,6 +22,7 @@
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 #include "esp_partition.h"
+#include "esp_random.h"
 #include "esp_rom_sys.h"
 
 const char* spiffs_test_hello_str = "Hello, World!\n";
@@ -828,3 +829,85 @@ TEST_CASE("utime() works well", "[spiffs]")
     test_teardown();
 }
 #endif // CONFIG_SPIFFS_USE_MTIME
+
+static void test_spiffs_rw_speed(const char* filename, void* buf, size_t buf_size, size_t file_size, bool is_write)
+{
+    const size_t buf_count = file_size / buf_size;
+
+    FILE* f = fopen(filename, (is_write) ? "wb" : "rb");
+    TEST_ASSERT_NOT_NULL(f);
+
+    struct timeval tv_start;
+    gettimeofday(&tv_start, NULL);
+    for (size_t n = 0; n < buf_count; ++n) {
+        if (is_write) {
+            TEST_ASSERT_EQUAL(buf_size, write(fileno(f), buf, buf_size));
+        } else {
+            if (read(fileno(f), buf, buf_size) != buf_size) {
+                printf("reading at n=%d, eof=%d", n, feof(f));
+                TEST_FAIL();
+            }
+        }
+    }
+
+    struct timeval tv_end;
+    gettimeofday(&tv_end, NULL);
+
+    TEST_ASSERT_EQUAL(0, fclose(f));
+
+    float t_s = tv_end.tv_sec - tv_start.tv_sec + 1e-6f * (tv_end.tv_usec - tv_start.tv_usec);
+    printf("%s %d bytes (block size %d) in %.3fms (%.3f MB/s)\n",
+            (is_write)?"Wrote":"Read", file_size, buf_size, t_s * 1e3,
+                    file_size / (1024.0f * 1024.0f * t_s));
+}
+
+TEST_CASE("write/read speed test", "[spiffs][timeout=60]")
+{
+    /* Erase partition before running the test to get consistent results */
+    const esp_partition_t* part = get_test_data_partition();
+    esp_partition_erase_range(part, 0, part->size);
+
+    test_setup();
+
+    const size_t buf_size = 16 * 1024;
+    uint32_t* buf = (uint32_t*) calloc(1, buf_size);
+    esp_fill_random(buf, buf_size);
+    const size_t file_size = 256 * 1024;
+    const char* file = "/spiffs/256k.bin";
+
+    test_spiffs_rw_speed(file, buf, 4 * 1024, file_size, true);
+    TEST_ASSERT_EQUAL(0, unlink(file));
+    TEST_ESP_OK(esp_spiffs_gc(spiffs_test_partition_label, file_size));
+
+    test_spiffs_rw_speed(file, buf, 8 * 1024, file_size, true);
+    TEST_ASSERT_EQUAL(0, unlink(file));
+    TEST_ESP_OK(esp_spiffs_gc(spiffs_test_partition_label, file_size));
+
+    test_spiffs_rw_speed(file, buf, 16 * 1024, file_size, true);
+
+    test_spiffs_rw_speed(file, buf, 4 * 1024, file_size, false);
+    test_spiffs_rw_speed(file, buf, 8 * 1024, file_size, false);
+    test_spiffs_rw_speed(file, buf, 16 * 1024, file_size, false);
+    TEST_ASSERT_EQUAL(0, unlink(file));
+    TEST_ESP_OK(esp_spiffs_gc(spiffs_test_partition_label, file_size));
+
+    free(buf);
+    test_teardown();
+}
+
+TEST_CASE("SPIFFS garbage-collect", "[spiffs][timeout=60]")
+{
+    // should fail until the partition is initialized
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, esp_spiffs_gc(spiffs_test_partition_label, 4096));
+
+    test_setup();
+
+    // reclaiming one block should be possible
+    TEST_ESP_OK(esp_spiffs_gc(spiffs_test_partition_label, 4096));
+
+    // shouldn't be possible to reclaim more than the partition size
+    const esp_partition_t* part = get_test_data_partition();
+    TEST_ESP_ERR(ESP_ERR_NOT_FINISHED, esp_spiffs_gc(spiffs_test_partition_label, part->size * 2));
+
+    test_teardown();
+}
