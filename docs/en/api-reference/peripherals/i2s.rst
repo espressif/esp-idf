@@ -350,61 +350,48 @@ Example for general usage:
 Application Notes
 ^^^^^^^^^^^^^^^^^
 
-The following information might be helpful if you are using a sample rate of more than 48 kHz or are suffering data loss:
-
-In order to accomodate different application requirements, some aspects of DMA are made public via the ``dma_desc_num`` and ``dma_frame_num`` parameters. The following section provides a description of these two fields:
-
-- ``dma_desc_num``: The total number of descriptors used by I2S DMA to receive/transmit data. A descriptor includes information such as buffer address, the address of the next descriptor, and the buffer length. As each descriptor points to one buffer,  ``dma_desc_num`` can be interpreted as the total number of DMA buffers used to store data in the DMA interrupt. Note that these buffers are internal to :cpp:func:`i2s_read` and descriptors are created automatically inside the I2S driver. Users only need to configure the number of buffers while their size is derived from the parameter described below.
-- ``dma_frame_num``: The number of frames for one-time sampling. In this context, "frame" refers to the data from all channels in a single WS cycle. For example, if two channels in stereo mode (i.e., ``channel_format`` is set to ``I2S_CHANNEL_FMT_RIGHT_LEFT``) are active, and each channel transfers 32 bits (i.e., ``bits_per_sample`` is set to ``I2S_BITS_PER_CHAN_32BIT``),  the total number of bytes in a frame is ``channel_format`` * ``bits_per_sample`` = 2 * 32 / 8 = 8 bytes. Assuming the current value of ``dma_frame_num`` is 100,  the length of the DMA buffer is 8 * 100 = 800 bytes. Note that the length of an internal DMA buffer shouldn't be greater than 4092.
-
-When the data received fills the DMA buffer, a receive interrupt is triggered, and an internal message queue transports this buffer to :cpp:func:`i2s_read`. The main task of :cpp:func:`i2s_read` is to copy the data from the DMA buffer into the buffer provided by the user. Since the internal DMA buffer is not necessarily equal to the size of the user buffer, there are two cases:
-
-- If the size of internal DMA buffers is smaller than the user buffer, :cpp:func:`i2s_read` will consume several DMA buffers to fill up the user provided buffer. If the message queue of DMA buffers is not long enough, :cpp:func:`i2s_read` will  block on the receive message queue until it receives enough data. Estimate the time :cpp:func:`i2s_read` blocks by the formula block_time (sec) = (user_buffer_size) / (sample_rate * channel_num * channel_bytes). If we place :cpp:func:`i2s_read` in a ``while``-loop  with other functions we also need to consider the time the loop execution is blocked by the other functions before :cpp:func:`i2s_read` is executed again. Do not exceed max_wait_time (sec) = ((``dma_desc_num`` - 1) * dma_buffer_size) / (sample_rate), otherwise the internal message queue will overflow and in consequence some data will be lost.
-- If the DMA buffer size is greater than the user buffer, :cpp:func:`i2s_read`  needs to be called repeatedly in order to consume all available data. ``max_wait_time`` may be exceeded, and the message queue is likely to overflow. This makes it quite risky to use a small user buffer to receive data.
-
-Here are a some tips to optimize data throughput:
-
-1. Increasing ``dma_frame_num`` may help to reduce the I2S DMA interrupt frequency;
-2. Increasing ``dma_desc_num`` may help prolong max_wait_time leaving more time for other functions in the :cpp:func:`i2s_read` loop:
-
-    .. code-block:: c
-
-        while (1) {
-            ... // Other operations (e.g. Waiting on a semaphore)
-            i2s_read(I2S_NUM, user_given_buffer, user_given_buffer_size, &i2s_bytes_read, 100);
-            ... // Other operations (e.g. Sending the data to another thread. Avoid any data processing here.)
-        }
-
-3. Increasing the size of :cpp:func:`i2s_read`'s internal buffer may help increase max_wait_time. When processing I2S data (like storing the data to an SD card) in another thread, the time spent in the processing thread for one loop should not exceed  max_wait_time, otherwise data will be lost. The longer the processing of the samples take, the larger :cpp:func:`i2s_read`'s internal buffers need to be.
-4. Allocating at least two user buffers can improve the efficiency of reads. One buffer can continue to receive data while the other is being processed. This requires us to ensure the buffer reading data is not being processed in another thread. We can use a semaphore or another lock to avoid overwriting the data during processing;
-
-    .. code-block:: c
-
-        uint8_t **user_given_buffers = (uint8_t **)calloc(buffer_num, sizeof(uint8_t *));
-        // Don't forget to check if user_given_buffers is NULL here
-        for (int i = 0; i < buffer_num; i++) {
-            user_given_buffers[i] = (uint8_t *)calloc(user_given_buffer_size, sizeof(uint8_t));
-            // Don't forget to check if user_given_buffers[i] is NULL here
-        }
-        int cnt = 0;
-        while (1) {
-            ... // Other operations (e.g. Waiting on a semaphore)
-            i2s_read(I2S_NUM, user_given_buffer[cnt], user_given_buffer_size, &i2s_bytes_read, 100);
-            ... // Other operations (e.g. Sending the data to another thread. Avoid any data processing here.)
-            cnt++;
-            cnt %= buffer_num;
-        }
-
-5. Increasing the priority of the thread calling :cpp:func:`i2s_read` may help the data in the message queue to be copied more quickly.
-
-To check whether data is lost, you can provide an event queue handler to the driver during installation:
+For the applications that need a high frequency sample rate, sometimes the massive throughput of receiving data may cause data lost. Users can receive data loss event by the event queue, it will trigger an ``I2S_EVENT_RX_Q_OVF`` event.:
 
     .. code-block:: c
 
         QueueHandle_t evt_que;
         i2s_driver_install(i2s_num, &i2s_config, 10, &evt_que);
+        ...
+        i2s_event_t evt;
+        xQueueReceive(evt_que, &evt, portMAX_DELAY);
+        if (evt.type == I2S_EVENT_RX_Q_OVF) {
+            printf("RX data dropped\n");
+        }
 
-Data loss will trigger an ``I2S_EVENT_RX_Q_OVF`` event.
+Please follow these steps to calculate the parameters that can prevent data lost:
+
+1. Determine the interrupt interval. Generally, when data lost happened, the interval should be the bigger the better, it can help to reduce the interrupt times, i.e., ``dma_frame_num`` should be as big as possible while the DMA buffer size won't exceed its maximum value 4092. The relationships are::
+
+    interrupt_interval(unit: sec) = dma_frame_num / sample_rate
+    dma_buffer_size = dma_frame_num * channel_num * data_bit_width / 8 <= 4092
+
+2. Determine the ``dma_desc_num``. The ``dma_desc_num`` is decided by the max time of ``i2s_read`` polling cycle, all the data should be stored between two ``i2s_read``. This cycle can be measured by a timer or an outputting gpio signal. The relationship should be::
+
+    dma_desc_num > polling_cycle / interrupt_interval
+
+3. Determine the receiving buffer size. The receiving buffer that offered by user in ``i2s_read`` should be able to take all the data in all dma buffers, that means it should be bigger than the total size of all the dma buffers::
+
+    recv_buffer_size > dma_desc_num * dma_buffer_size
+
+For example, if there is a I2S application::
+
+    sample_rate = 144000 Hz
+    data_bit_width = 32 bits
+    channel_num = 2
+    polling_cycle = 10ms
+
+Then we need to calculate ``dma_frame_num``, ``dma_desc_num`` and ``recv_buf_size`` according to the known values::
+
+    dma_frame_num * channel_num * data_bit_width / 8 = dma_buffer_size <= 4092
+    dma_frame_num <= 511
+    interrupt_interval = dma_frame_num / sample_rate = 511 / 144000 = 0.003549 s = 3.549 ms
+    dma_desc_num > polling_cycle / interrupt_interval = cell(10 / 3.549) = cell(2.818) = 3
+    recv_buffer_size > dma_desc_num * dma_buffer_size = 3 * 4092 = 12276 bytes
 
 
 API Reference
