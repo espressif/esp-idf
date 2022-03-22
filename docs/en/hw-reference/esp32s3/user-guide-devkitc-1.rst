@@ -6,14 +6,13 @@ ESP32-S3-DevKitC-1
 
 This user guide will help you get started with ESP32-S3-DevKitC-1 and will also provide more in-depth information.
 
-The ESP32-S3-DevKitC-1 is an entry-level development board equipped with either ESP32-S3-WROOM-1 or ESP32-S3-WROOM-1U, a general-purpose Wi-Fi + Bluetooth® LE MCU module that integrates complete Wi-Fi and Bluetooth LE functions.
+The ESP32-S3-DevKitC-1 is an entry-level development board equipped with ESP32-S3-WROOM-1, ESP32-S3-WROOM-1U, or ESP32-S3-WROOM-2, a general-purpose Wi-Fi + Bluetooth® LE MCU module that integrates complete Wi-Fi and Bluetooth LE functions.
 
 Most of the I/O pins on the module are broken out to the pin headers on both sides of this board for easy interfacing. Developers can either connect peripherals with jumper wires or mount ESP32-S3-DevKitC-1 on a breadboard.
 
 .. figure:: ../../../_static/esp32-s3-devkitc-1-v1-isometric.png
     :align: center
     :alt: ESP32-S3-DevKitC-1 with ESP32-S3-WROOM-1 Module
-    :figclass: align-center
 
     ESP32-S3-DevKitC-1 with ESP32-S3-WROOM-1 Module
 
@@ -37,10 +36,9 @@ Description of Components
 
 .. _user-guide-s3-devkitc-1-v1-board-front:
 
-.. figure:: ../../../_static/ESP32-S3-DevKitC-1_v1-annotated-photo.png
+.. figure:: ../../../_static/ESP32-S3-DevKitC-1_v2-annotated-photo.png
     :align: center
     :alt: ESP32-S3-DevKitC-1 - front
-    :figclass: align-center
 
     ESP32-S3-DevKitC-1 - front
 
@@ -52,8 +50,8 @@ The key components of the board are described in a counter-clockwise direction.
 
    * - Key Component
      - Description
-   * - ESP32-S3-WROOM-1/1U
-     - ESP32-S3-WROOM-1 and ESP32-S3-WROOM-1U are two powerful, generic Wi-Fi + Bluetooth LE MCU modules that have a rich set of peripherals. They provide acceleration for neural network computing and signal processing workloads. ESP32-S3-WROOM-1 comes with a PCB antenna. ESP32-S3-WROOM-1U comes with an external antenna connector.
+   * - ESP32-S3-WROOM-1/1U/2
+     - ESP32-S3-WROOM-1, ESP32-S3-WROOM-1U, and ESP32-S3-WROOM-2 are powerful, generic Wi-Fi + Bluetooth LE MCU modules that have a rich set of peripherals. They provide acceleration for neural network computing and signal processing workloads. ESP32-S3-WROOM-1 and ESP32-S3-WROOM-2 comes with a PCB antenna. ESP32-S3-WROOM-1U comes with an external antenna connector.
    * - 5 V to 3.3 V LDO
      - Power regulator that converts a 5 V supply into a 3.3 V output.
    * - Pin Headers
@@ -72,6 +70,10 @@ The key components of the board are described in a counter-clockwise direction.
      - Addressable RGB LED, driven by GPIO48.
    * - 3.3 V Power On LED
      - Turns on when the USB power is connected to the board.
+
+.. note::
+
+    For boards with ESP32-S3-WROOM-2 modules, the pins GPIO35, GPIO36 and GPIO37 are used for the internal communication between ESP32-S3 and SPI flash/PSRAM memory, thus not availablt for external use.
 
 
 Start Application Development
@@ -107,7 +109,66 @@ Please proceed to :doc:`../../get-started/index`, where Section :ref:`get-starte
 Contents and Packaging
 -----------------------
 
-Retail orders
+Ordering Information
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The development board has a variety of variants to choose from, as shown in the table below.
+
+.. list-table::
+   :widths: 28 29 19 17 15
+   :header-rows: 1
+
+   * - Ordering Code
+     - Module Integrated
+     - Flash
+     - PSRAM
+     - SPI Voltage
+   * - ESP32-S3-DevKitC-1-N8
+     - ESP32-S3-WROOM-1-N8
+     - 8 MB QD
+     - —
+     - 3.3 V
+   * - ESP32-S3-DevKitC-1-N8R2
+     - ESP32-S3-WROOM-1-N8R2
+     - 8 MB QD
+     - 2 MB QD
+     - 3.3 V
+   * - ESP32-S3-DevKitC-1-N8R8
+     - ESP32-S3-WROOM-1-N8R8
+     - 8 MB QD
+     - 8 MB OT
+     - 3.3 V
+   * - ESP32-S3-DevKitC-1-N16R8V
+     - ESP32-S3-WROOM-2-N16R8V
+     - 16 MB OT
+     - 8 MB OT
+     - 1.8 V
+   * - ESP32-S3-DevKitC-1-N32R8V
+     - ESP32-S3-WROOM-2-N32R8V
+     - 32 MB OT
+     - 8 MB OT
+     - 1.8 V
+   * - ESP32-S3-DevKitC-1U-N8
+     - ESP32-S3-WROOM-1U-N8
+     - 8 MB QD
+     - —
+     - 3.3 V
+   * - ESP32-S3-DevKitC-1U-N8R2
+     - ESP32-S3-WROOM-1U-N8R2
+     - 8 MB QD
+     - 2 MB QD
+     - 3.3 V
+   * - ESP32-S3-DevKitC-1U-N8R8
+     - ESP32-S3-WROOM-1U-N8R8
+     - 8 MB QD
+     - 8 MB OT
+     - 3.3 V
+
+.. note::
+
+  In the table above, QD stands for Quad SPI and OT stands for Octal SPI.
+
+Retail Orders
 ^^^^^^^^^^^^^
 
 If you order a few samples, each board comes in an individual package in either antistatic bag or any packaging depending on your retailer.
@@ -134,11 +195,10 @@ Block Diagram
 
 The block diagram below shows the components of ESP32-S3-DevKitC-1 and their interconnections.
 
-.. figure:: ../../../_static/ESP32-S3-DevKitC-1_v1_SystemBlock.png
+.. figure:: ../../../_static/ESP32-S3-DevKitC-1_v2-SystemBlock.png
     :align: center
     :scale: 70%
     :alt: ESP32-S3-DevKitC-1 (click to enlarge)
-    :figclass: align-center
 
     ESP32-S3-DevKitC-1 (click to enlarge)
 
@@ -236,7 +296,6 @@ Pin Layout
     :align: center
     :scale: 50%
     :alt: ESP32-S3-DevKitC-1 (click to enlarge)
-    :figclass: align-center
 
     ESP32-S3-DevKitC-1 Pin Layout (click to enlarge)
 
@@ -252,6 +311,7 @@ Related Documents
 
 - `ESP32-S3 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-s3_datasheet_en.pdf>`_ (PDF)
 - `ESP32-S3-WROOM-1 & ESP32-S3-WROOM-1U Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-1_wroom-1u_datasheet_en.pdf>`_ (PDF)
+- `ESP32-S3-WROOM-2 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-2_datasheet_en.pdf>`_ (PDF)
 - `ESP32-S3-DevKitC-1 Schematic <https://dl.espressif.com/dl/SCH_ESP32-S3-DEVKITC-1_V1_20210312C.pdf>`_ (PDF)
 - `ESP32-S3-DevKitC-1 PCB layout <https://dl.espressif.com/dl/PCB_ESP32-S3-DevKitC-1_V1_20210312CB.pdf>`_ (PDF)
 - `ESP32-S3-DevKitC-1 Dimensions <https://dl.espressif.com/dl/DXF_ESP32-S3-DevKitC-1_V1_20210312CB.pdf>`_ (PDF)
