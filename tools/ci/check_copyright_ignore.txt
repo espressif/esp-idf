@@ -667,7 +667,6 @@ components/esp_rom/test/test_miniz.c
 components/esp_rom/test/test_tjpgd.c
 components/esp_serial_slave_link/essl.c
 components/esp_serial_slave_link/essl_internal.h
-components/esp_serial_slave_link/essl_sdio.c
 components/esp_serial_slave_link/include/esp_serial_slave_link/essl.h
 components/esp_serial_slave_link/include/esp_serial_slave_link/essl_sdio.h
 components/esp_serial_slave_link/include/esp_serial_slave_link/essl_spi.h
@@ -827,14 +826,12 @@ components/hal/esp32/include/hal/sha_ll.h
 components/hal/esp32/include/hal/sigmadelta_ll.h
 components/hal/esp32/include/hal/soc_ll.h
 components/hal/esp32/include/hal/spi_flash_encrypted_ll.h
-components/hal/esp32/include/hal/spi_flash_ll.h
 components/hal/esp32/include/hal/touch_sensor_hal.h
 components/hal/esp32/include/hal/touch_sensor_ll.h
 components/hal/esp32/include/hal/trace_ll.h
 components/hal/esp32/include/hal/twai_ll.h
 components/hal/esp32/include/hal/uart_ll.h
 components/hal/esp32/interrupt_descriptor_table.c
-components/hal/esp32/touch_sensor_hal.c
 components/hal/esp32c3/hmac_hal.c
 components/hal/esp32c3/include/hal/aes_ll.h
 components/hal/esp32c3/include/hal/ds_ll.h
