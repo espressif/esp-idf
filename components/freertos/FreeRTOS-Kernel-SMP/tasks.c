@@ -6513,7 +6513,7 @@ TaskHandle_t xTaskCreateStaticPinnedToCore( TaskFunction_t pxTaskCode,
                                             StaticTask_t * const pxTaskBuffer,
                                             const BaseType_t xCoreID)
 {
-    BaseType_t ret;
+    TaskHandle_t ret;
     #if ( ( configUSE_CORE_AFFINITY == 1 ) && ( configNUM_CORES > 1 ) )
         {
             // Convert xCoreID into an affinity mask
