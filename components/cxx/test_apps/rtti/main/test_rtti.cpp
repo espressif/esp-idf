@@ -1,12 +1,40 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdexcept>
 #include <typeinfo>
 #include "unity.h"
+#include "memory_checks.h"
 
-#ifdef CONFIG_COMPILER_CXX_RTTI
+/* Note: When first exception (in system) is thrown this test produces memory leaks report (~300 bytes):
+   - 8 bytes are allocated by __cxa_get_globals() to keep __cxa_eh_globals
+   - 16 bytes are allocated by pthread_setspecific() which is called by __cxa_get_globals() to init TLS var for __cxa_eh_globals
+   - 88 bytes are allocated by pthread_setspecific() to init internal lock
+   - some more memory...
+   */
+#if CONFIG_IDF_TARGET_ESP32
+#define LEAKS (300)
+#elif CONFIG_IDF_TARGET_ESP32S2
+#define LEAKS (800)
+#elif CONFIG_IDF_TARGET_ESP32C3
+#define LEAKS (700)
+#else
+#error "unknown target in CXX tests, can't set leaks threshold"
+#endif
+
+extern "C" void setUp()
+{
+    test_utils_set_leak_level(0, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL);
+    test_utils_record_free_mem();
+}
+
+extern "C" void tearDown()
+{
+    size_t leak_level = test_utils_get_leak_level(ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL);
+    test_utils_finish_and_evaluate_leaks(leak_level, leak_level);
+}
 
 using namespace std;
 
@@ -67,9 +95,9 @@ TEST_CASE("typeid of function works", "[cxx]")
     TEST_ASSERT_EQUAL(typeid(dummy_function1).hash_code(), typeid(dummy_function2).hash_code());
 }
 
-#ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
 TEST_CASE("unsuccessful dynamic cast on reference throws exception", "[cxx]")
 {
+    test_utils_set_leak_level(LEAKS, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL);
     bool thrown = false;
     DerivedA derived_a;
     Base &base = derived_a;
@@ -96,5 +124,8 @@ TEST_CASE("typeid on nullptr throws bad_typeid", "[cxx]")
     TEST_ASSERT(thrown);
 }
 
-#endif // CONFIG_COMPILER_CXX_EXCEPTIONS
-#endif // CONFIG_COMPILER_CXX_RTTI
+extern "C" void app_main(void)
+{
+    printf("CXX RTTI TEST\n");
+    unity_run_menu();
+}
