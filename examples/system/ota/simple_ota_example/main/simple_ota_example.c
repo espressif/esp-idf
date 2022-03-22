@@ -125,7 +125,7 @@ void simple_ota_example_task(void *pvParameter)
         .http_config = &config,
     };
     ESP_LOGI(TAG, "Attempting to download update from %s", config.url);
-    esp_err_t ret = esp_https_ota(&ota_config);
+    esp_err_t ret = esp_https_ota(ota_config.http_config);
     if (ret == ESP_OK) {
         esp_restart();
     } else {
