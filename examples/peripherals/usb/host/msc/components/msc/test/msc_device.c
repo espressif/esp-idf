@@ -50,7 +50,7 @@ static const char *TAG = "msc_example";
 
 
 /**** Kconfig driven Descriptor ****/
-tusb_desc_device_t device_descriptor = {
+static const tusb_desc_device_t device_descriptor = {
     .bLength = sizeof(device_descriptor),
     .bDescriptorType = TUSB_DESC_DEVICE,
     .bcdUSB = 0x0200,
@@ -67,12 +67,20 @@ tusb_desc_device_t device_descriptor = {
     .bNumConfigurations = 0x01
 };
 
+const uint16_t msc_desc_config_len = TUD_CONFIG_DESC_LEN + CFG_TUD_MSC * TUD_MSC_DESC_LEN;
+static const uint8_t msc_desc_configuration[] = {
+    TUD_CONFIG_DESCRIPTOR(1, 4, 0, msc_desc_config_len, TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
+    TUD_MSC_DESCRIPTOR(0, 5, 1, 0x80 | 1, 64),
+};
+
+
 void device_app(void)
 {
     ESP_LOGI(TAG, "USB initialization");
 
     tinyusb_config_t tusb_cfg = {
-        .descriptor = &device_descriptor
+        .device_descriptor = &device_descriptor,
+        .configuration_descriptor = msc_desc_configuration
     };
 
     ESP_ERROR_CHECK(tinyusb_driver_install(&tusb_cfg));
@@ -82,7 +90,6 @@ void device_app(void)
         vTaskDelay(100);
     }
 }
-
 
 // whether host does safe-eject
 static bool ejected = false;
@@ -108,7 +115,7 @@ uint8_t msc_disk[DISK_BLOCK_NUM][DISK_BLOCK_SIZE] = {
 
         // Zero up to 2 last bytes of FAT magic code
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 'F', 'A', 'T', '3', '2', ' ', ' ', ' ', 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -292,4 +299,4 @@ int32_t tud_msc_scsi_cb (uint8_t lun, uint8_t const scsi_cmd[16], void *buffer, 
     return resplen;
 }
 
-#endif
+#endif /* SOC_USB_OTG_SUPPORTED */

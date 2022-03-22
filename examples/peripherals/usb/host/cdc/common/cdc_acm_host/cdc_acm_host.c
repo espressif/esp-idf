@@ -648,7 +648,7 @@ static esp_err_t cdc_acm_find_intf_and_ep_desc(cdc_dev_t *cdc_dev, uint8_t intf_
                 // IAD with correct interface number was found: Check Class/Subclass codes, save Interface indexes
                 assert(iad_desc->bInterfaceCount == 2);
                 assert(iad_desc->bFunctionClass == USB_CLASS_COMM);
-                assert(iad_desc->bFunctionSubClass == CDC_SUBCLASS_ACM);
+                assert(iad_desc->bFunctionSubClass == USB_CDC_SUBCLASS_ACM);
                 notif_intf_idx = iad_desc->bFirstInterface;
                 data_intf_idx = iad_desc->bFirstInterface + 1;
                 interface_found = true;
@@ -673,7 +673,7 @@ static esp_err_t cdc_acm_find_intf_and_ep_desc(cdc_dev_t *cdc_dev, uint8_t intf_
         const usb_standard_desc_t *cdc_desc = (usb_standard_desc_t *)cdc_dev->notif.intf_desc;
         do {
             cdc_desc = usb_parse_next_descriptor(cdc_desc, config_desc->wTotalLength, &desc_offset);
-            if ((cdc_desc == NULL) || (cdc_desc->bDescriptorType != ((USB_CLASS_COMM << 4) | USB_W_VALUE_DT_INTERFACE)))
+            if ((cdc_desc == NULL) || (cdc_desc->bDescriptorType != ((USB_CLASS_COMM << 4) | USB_B_DESCRIPTOR_TYPE_INTERFACE )))
                 break; // We found all CDC specific descriptors
             cdc_dev->num_cdc_intf_desc++;
             cdc_dev->cdc_intf_desc =
@@ -727,7 +727,7 @@ esp_err_t cdc_acm_host_open(uint16_t vid, uint16_t pid, uint8_t interface_idx, c
 
     // Check whether found Interfaces are really CDC-ACM
     assert(cdc_dev->notif.intf_desc->bInterfaceClass == USB_CLASS_COMM);
-    assert(cdc_dev->notif.intf_desc->bInterfaceSubClass == CDC_SUBCLASS_ACM);
+    assert(cdc_dev->notif.intf_desc->bInterfaceSubClass == USB_CDC_SUBCLASS_ACM);
     assert(cdc_dev->notif.intf_desc->bNumEndpoints == 1);
     assert(cdc_dev->data.intf_desc->bInterfaceClass == USB_CLASS_CDC_DATA);
     assert(cdc_dev->data.intf_desc->bNumEndpoints == 2);
@@ -844,46 +844,66 @@ esp_err_t cdc_acm_host_close(cdc_acm_dev_hdl_t cdc_hdl)
     return ESP_OK;
 }
 
+/**
+ * @brief Print CDC specific descriptor in human readable form
+ *
+ * This is a callback function that is called from USB Host library,
+ * when it wants to print full configuration descriptor to stdout.
+ *
+ * @param[in] _desc CDC specific descriptor
+ */
+static void cdc_acm_print_desc(const usb_standard_desc_t *_desc)
+{
+    if (_desc->bDescriptorType != ((USB_CLASS_COMM << 4) | USB_B_DESCRIPTOR_TYPE_INTERFACE ))
+    {
+        // Quietly return in case that this descriptor is not CDC interface descriptor
+        return;
+    }
+
+    switch (((cdc_header_desc_t *)_desc)->bDescriptorSubtype) {
+    case USB_CDC_DESC_SUBTYPE_HEADER: {
+        cdc_header_desc_t *desc = (cdc_header_desc_t *)_desc;
+        printf("\t*** CDC Header Descriptor ***\n");
+        printf("\tbcdCDC: %d.%d0\n", ((desc->bcdCDC >> 8) & 0xF), ((desc->bcdCDC >> 4) & 0xF));
+        break;
+    }
+    case USB_CDC_DESC_SUBTYPE_CALL: {
+        cdc_acm_call_desc_t *desc = (cdc_acm_call_desc_t *)_desc;
+        printf("\t*** CDC Call Descriptor ***\n");
+        printf("\tbmCapabilities: 0x%02X\n", desc->bmCapabilities.val);
+        printf("\tbDataInterface: %d\n", desc->bDataInterface);
+        break;
+    }
+    case USB_CDC_DESC_SUBTYPE_ACM: {
+        cdc_acm_acm_desc_t *desc = (cdc_acm_acm_desc_t *)_desc;
+        printf("\t*** CDC ACM Descriptor ***\n");
+        printf("\tbmCapabilities: 0x%02X\n", desc->bmCapabilities.val);
+        break;
+    }
+    case USB_CDC_DESC_SUBTYPE_UNION: {
+        cdc_union_desc_t *desc = (cdc_union_desc_t *)_desc;
+        printf("\t*** CDC Union Descriptor ***\n");
+        printf("\tbControlInterface: %d\n", desc->bControlInterface);
+        printf("\tbSubordinateInterface[0]: %d\n", desc->bSubordinateInterface[0]);
+        break;
+    }
+    default:
+        ESP_LOGW(TAG, "Unsupported CDC specific descriptor");
+        break;
+    }
+}
+
 void cdc_acm_host_desc_print(cdc_acm_dev_hdl_t cdc_hdl)
 {
     assert(cdc_hdl);
     cdc_dev_t *cdc_dev = (cdc_dev_t *)cdc_hdl;
 
-    ESP_RETURN_ON_FALSE(cdc_dev->num_cdc_intf_desc > 0,, TAG, "No CDC-ACM specific descriptors found");
-
-    for (int i = 0; i < cdc_dev->num_cdc_intf_desc; i++) {
-        switch (((cdc_header_desc_t *)cdc_dev->cdc_intf_desc[i])->bDescriptorSubtype) {
-        case CDC_DESC_SUBTYPE_HEADER: {
-            cdc_header_desc_t *desc = (cdc_header_desc_t *)cdc_dev->cdc_intf_desc[i];
-            printf("CDC Header Descriptor:\n");
-            printf("\tbcdCDC: %d.%d0\n", ((desc->bcdCDC >> 8) & 0xF), ((desc->bcdCDC >> 4) & 0xF));
-            break;
-        }
-        case CDC_DESC_SUBTYPE_CALL: {
-            cdc_acm_call_desc_t *desc = (cdc_acm_call_desc_t *)cdc_dev->cdc_intf_desc[i];
-            printf("CDC Call Descriptor:\n");
-            printf("\tbmCapabilities: 0x%02X\n", desc->bmCapabilities.val);
-            printf("\tbDataInterface: %d\n", desc->bDataInterface);
-            break;
-        }
-        case CDC_DESC_SUBTYPE_ACM: {
-            cdc_acm_acm_desc_t *desc = (cdc_acm_acm_desc_t *)cdc_dev->cdc_intf_desc[i];
-            printf("CDC ACM Descriptor:\n");
-            printf("\tbmCapabilities: 0x%02X\n", desc->bmCapabilities.val);
-            break;
-        }
-        case CDC_DESC_SUBTYPE_UNION: {
-            cdc_union_desc_t *desc = (cdc_union_desc_t *)cdc_dev->cdc_intf_desc[i];
-            printf("CDC Union Descriptor:\n");
-            printf("\tbControlInterface: %d\n", desc->bControlInterface);
-            printf("\tbSubordinateInterface[0]: %d\n", desc->bSubordinateInterface[0]);
-            break;
-        }
-        default:
-            ESP_LOGW(TAG, "Unsupported CDC specific descriptor");
-            break;
-        }
-    }
+    const usb_device_desc_t *device_desc;
+    const usb_config_desc_t *config_desc;
+    ESP_ERROR_CHECK_WITHOUT_ABORT(usb_host_get_device_descriptor(cdc_dev->dev_hdl, &device_desc));
+    ESP_ERROR_CHECK_WITHOUT_ABORT(usb_host_get_active_config_descriptor(cdc_dev->dev_hdl, &config_desc));
+    usb_print_device_descriptor(device_desc);
+    usb_print_config_descriptor(config_desc, cdc_acm_print_desc);
 }
 
 /**
@@ -949,7 +969,7 @@ static void notif_xfer_cb(usb_transfer_t *transfer)
     if (cdc_acm_is_transfer_completed(transfer)) {
         cdc_notification_t *notif = (cdc_notification_t *)transfer->data_buffer;
         switch (notif->bNotificationCode) {
-        case CDC_NOTIF_NETWORK_CONNECTION: {
+        case USB_CDC_NOTIF_NETWORK_CONNECTION: {
             if (cdc_dev->notif.cb) {
                 const cdc_acm_host_dev_event_data_t net_conn_event = {
                     .type = CDC_ACM_HOST_NETWORK_CONNECTION,
@@ -959,7 +979,7 @@ static void notif_xfer_cb(usb_transfer_t *transfer)
             }
             break;
         }
-        case CDC_NOTIF_SERIAL_STATE: {
+        case USB_CDC_NOTIF_SERIAL_STATE: {
             cdc_dev->serial_state.val = *((uint16_t *)notif->Data);
             if (cdc_dev->notif.cb) {
                 const cdc_acm_host_dev_event_data_t serial_state_event = {
@@ -970,7 +990,7 @@ static void notif_xfer_cb(usb_transfer_t *transfer)
             }
             break;
         }
-        case CDC_NOTIF_RESPONSE_AVAILABLE: // Encapsulated commands not implemented - fallthrough
+        case USB_CDC_NOTIF_RESPONSE_AVAILABLE: // Encapsulated commands not implemented - fallthrough
         default:
             ESP_LOGW("CDC_ACM", "Unsupported notification type 0x%02X", notif->bNotificationCode);
             ESP_LOG_BUFFER_HEX("CDC_ACM", transfer->data_buffer, transfer->actual_num_bytes);
@@ -1063,7 +1083,7 @@ esp_err_t cdc_acm_host_line_coding_get(cdc_acm_dev_hdl_t cdc_hdl, cdc_acm_line_c
     CDC_ACM_CHECK(cdc_hdl && line_coding, ESP_ERR_INVALID_ARG);
 
     ESP_RETURN_ON_ERROR(
-        send_cdc_request((cdc_dev_t *)cdc_hdl, true, CDC_REQ_GET_LINE_CODING, (uint8_t *)line_coding, sizeof(cdc_acm_line_coding_t), 0),
+        send_cdc_request((cdc_dev_t *)cdc_hdl, true, USB_CDC_REQ_GET_LINE_CODING, (uint8_t *)line_coding, sizeof(cdc_acm_line_coding_t), 0),
         TAG,);
     ESP_LOGD(TAG, "Line Get: Rate: %d, Stop bits: %d, Parity: %d, Databits: %d", line_coding->dwDTERate,
              line_coding->bCharFormat, line_coding->bParityType, line_coding->bDataBits);
@@ -1075,7 +1095,7 @@ esp_err_t cdc_acm_host_line_coding_set(cdc_acm_dev_hdl_t cdc_hdl, const cdc_acm_
     CDC_ACM_CHECK(cdc_hdl && line_coding, ESP_ERR_INVALID_ARG);
 
     ESP_RETURN_ON_ERROR(
-        send_cdc_request((cdc_dev_t *)cdc_hdl, false, CDC_REQ_SET_LINE_CODING, (uint8_t *)line_coding, sizeof(cdc_acm_line_coding_t), 0),
+        send_cdc_request((cdc_dev_t *)cdc_hdl, false, USB_CDC_REQ_SET_LINE_CODING, (uint8_t *)line_coding, sizeof(cdc_acm_line_coding_t), 0),
         TAG,);
     ESP_LOGD(TAG, "Line Set: Rate: %d, Stop bits: %d, Parity: %d, Databits: %d", line_coding->dwDTERate,
              line_coding->bCharFormat, line_coding->bParityType, line_coding->bDataBits);
@@ -1089,7 +1109,7 @@ esp_err_t cdc_acm_host_set_control_line_state(cdc_acm_dev_hdl_t cdc_hdl, bool dt
     const uint16_t ctrl_bitmap = (uint16_t)dtr | ((uint16_t)rts << 1);
 
     ESP_RETURN_ON_ERROR(
-        send_cdc_request((cdc_dev_t *)cdc_hdl, false, CDC_REQ_SET_CONTROL_LINE_STATE, NULL, 0, ctrl_bitmap),
+        send_cdc_request((cdc_dev_t *)cdc_hdl, false, USB_CDC_REQ_SET_CONTROL_LINE_STATE, NULL, 0, ctrl_bitmap),
         TAG,);
     ESP_LOGD(TAG, "Control Line Set: DTR: %d, RTS: %d", dtr, rts);
     return ESP_OK;
@@ -1100,7 +1120,7 @@ esp_err_t cdc_acm_host_send_break(cdc_acm_dev_hdl_t cdc_hdl, uint16_t duration_m
     CDC_ACM_CHECK(cdc_hdl, ESP_ERR_INVALID_ARG);
 
     ESP_RETURN_ON_ERROR(
-        send_cdc_request((cdc_dev_t *)cdc_hdl, false, CDC_REQ_SEND_BREAK, NULL, 0, duration_ms),
+        send_cdc_request((cdc_dev_t *)cdc_hdl, false, USB_CDC_REQ_SEND_BREAK, NULL, 0, duration_ms),
         TAG,);
 
     // Block until break is deasserted
