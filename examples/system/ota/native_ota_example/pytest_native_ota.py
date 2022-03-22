@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Unlicense OR CC0-1.0
 import http.server
 import multiprocessing
 import os
@@ -6,6 +8,7 @@ import socket
 import ssl
 import struct
 import subprocess
+from typing import Callable, Tuple
 
 import pexpect
 import pytest
@@ -62,15 +65,16 @@ server_key = '-----BEGIN PRIVATE KEY-----\n'\
              '-----END PRIVATE KEY-----\n'
 
 
-def get_my_ip():
+def get_my_ip() -> str:
     s1 = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s1.connect(('8.8.8.8', 80))
+    my_ip = ''
     my_ip = s1.getsockname()[0]
     s1.close()
     return my_ip
 
 
-def get_server_status(host_ip, port):
+def get_server_status(host_ip: str, port: int) -> bool:
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_status = sock.connect_ex((host_ip, port))
     sock.close()
@@ -79,12 +83,12 @@ def get_server_status(host_ip, port):
     return False
 
 
-def create_file(server_file, file_data):
+def create_file(server_file: str, file_data: str) -> None:
     with open(server_file, 'w+') as file:
         file.write(file_data)
 
 
-def get_ca_cert(ota_image_dir):
+def get_ca_cert(ota_image_dir: str) -> Tuple[str, str]:
     os.chdir(ota_image_dir)
     server_file = os.path.join(ota_image_dir, 'server_cert.pem')
     create_file(server_file, server_cert)
@@ -94,12 +98,12 @@ def get_ca_cert(ota_image_dir):
     return server_file, key_file
 
 
-def https_request_handler():
+def https_request_handler() -> Callable[...,http.server.BaseHTTPRequestHandler]:
     """
     Returns a request handler class that handles broken pipe exception
     """
     class RequestHandler(http.server.SimpleHTTPRequestHandler):
-        def finish(self):
+        def finish(self) -> None:
             try:
                 if not self.wfile.closed:
                     self.wfile.flush()
@@ -108,7 +112,7 @@ def https_request_handler():
                 pass
             self.rfile.close()
 
-        def handle(self):
+        def handle(self) -> None:
             try:
                 http.server.BaseHTTPRequestHandler.handle(self)
             except socket.error:
@@ -117,7 +121,7 @@ def https_request_handler():
     return RequestHandler
 
 
-def start_https_server(ota_image_dir, server_ip, server_port):
+def start_https_server(ota_image_dir: str, server_ip: str, server_port: int) -> None:
     server_file, key_file = get_ca_cert(ota_image_dir)
     requestHandler = https_request_handler()
     httpd = http.server.HTTPServer((server_ip, server_port), requestHandler)
@@ -128,7 +132,7 @@ def start_https_server(ota_image_dir, server_ip, server_port):
     httpd.serve_forever()
 
 
-def start_chunked_server(ota_image_dir, server_port):
+def start_chunked_server(ota_image_dir: str, server_port: int) -> subprocess.Popen:
     server_file, key_file = get_ca_cert(ota_image_dir)
     chunked_server = subprocess.Popen(['openssl', 's_server', '-WWW', '-key', key_file, '-cert', server_file, '-port', str(server_port)])
     return chunked_server
@@ -162,8 +166,8 @@ def test_examples_protocol_native_ota_example(dut: Dut) -> None:
             ip_address = dut.expect(r' (sta|eth) ip: ([^,]+),', timeout=30)
             print('Connected to AP with IP: {}'.format(ip_address))
         except pexpect.exceptions.TIMEOUT:
-            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
             thread1.terminate()
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
         dut.expect('Starting OTA example', timeout=30)
 
         print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + bin_name))
@@ -210,8 +214,8 @@ def test_examples_protocol_native_ota_example_truncated_bin(dut: Dut) -> None:
         ip_address = dut.expect(r' (sta|eth) ip: ([^,]+),', timeout=30)
         print('Connected to AP with IP: {}'.format(ip_address))
     except pexpect.exceptions.TIMEOUT:
-        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
         thread1.terminate()
+        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
     dut.expect('Starting OTA example', timeout=30)
 
     print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + truncated_bin_name))
@@ -259,8 +263,8 @@ def test_examples_protocol_native_ota_example_truncated_header(dut: Dut) -> None
         ip_address = dut.expect(r' (sta|eth) ip: ([^,]+),', timeout=30)
         print('Connected to AP with IP: {}'.format(ip_address))
     except pexpect.exceptions.TIMEOUT:
-        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
         thread1.terminate()
+        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
     dut.expect('Starting OTA example', timeout=30)
 
     print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + truncated_bin_name))
@@ -307,8 +311,8 @@ def test_examples_protocol_native_ota_example_random(dut: Dut) -> None:
         ip_address = dut.expect(r' (sta|eth) ip: ([^,]+),', timeout=30)
         print('Connected to AP with IP: {}'.format(ip_address))
     except pexpect.exceptions.TIMEOUT:
-        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
         thread1.terminate()
+        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
     dut.expect('Starting OTA example', timeout=30)
 
     print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + random_bin_name))
