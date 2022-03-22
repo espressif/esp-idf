@@ -10,7 +10,6 @@ set(srcs "cpu_util_esp32c2.c"
 
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "../async_memcpy_impl_gdma.c"
-                     "esp_crypto_lock.c"
                      "dport_access.c")
 endif()
 

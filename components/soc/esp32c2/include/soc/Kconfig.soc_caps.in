@@ -31,10 +31,6 @@ config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
     default y
 
-config SOC_ECC_SUPPORTED
-    bool
-    default y
-
 config SOC_SUPPORTS_SECURE_DL_MODE
     bool
     default y
@@ -71,11 +67,11 @@ config SOC_FLASH_ENCRYPTION_XTS_AES
     bool
     default y
 
-config SOC_AES_SUPPORT_DMA
+config SOC_SHA_SUPPORTED
     bool
-    default y
+    default n
 
-config SOC_AES_GDMA
+config SOC_ECC_SUPPORTED
     bool
     default y
 

@@ -42,8 +42,6 @@
 #define SOC_USB_OTG_SUPPORTED           1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
 #define SOC_CCOMP_TIMER_SUPPORTED       1
-#define SOC_DIG_SIGN_SUPPORTED          1
-#define SOC_HMAC_SUPPORTED              1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
 #define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 3
@@ -62,6 +60,12 @@
 #define SOC_SIGMADELTA_SUPPORTED        1
 #define SOC_SUPPORT_COEXISTENCE         1
 #define SOC_TEMP_SENSOR_SUPPORTED           1
+#define SOC_AES_SUPPORTED               1
+#define SOC_MPI_SUPPORTED               1
+#define SOC_SHA_SUPPORTED               1
+#define SOC_HMAC_SUPPORTED              1
+#define SOC_DIG_SIGN_SUPPORTED          1
+
 
 /*-------------------------- SOC CAPS ----------------------------------------*/
 #define SOC_APPCPU_HAS_CLOCK_GATING_BUG (1)

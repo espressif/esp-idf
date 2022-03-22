@@ -110,32 +110,42 @@ endif()
 target_sources(mbedtls PRIVATE ${mbedtls_target_sources})
 
 # Choose perihperal type
-if(CONFIG_IDF_TARGET_ESP32)
-    set(SHA_PERIPHERAL_TYPE "parallel_engine")
-    set(AES_PERIPHERAL_TYPE "block")
-else()
-    set(SHA_PERIPHERAL_TYPE "dma")
-    set(AES_PERIPHERAL_TYPE "dma")
+
+if(CONFIG_SOC_SHA_SUPPORTED)
+    if(CONFIG_SOC_SHA_SUPPORT_DMA)
+        set(SHA_PERIPHERAL_TYPE "dma")
+    else()
+        set(SHA_PERIPHERAL_TYPE "parallel_engine")
+    endif()
+endif()
+
+if(CONFIG_SOC_AES_SUPPORTED)
+    if(CONFIG_SOC_AES_SUPPORT_DMA)
+        set(AES_PERIPHERAL_TYPE "dma")
+    else()
+        set(AES_PERIPHERAL_TYPE "block")
+    endif()
 endif()
 
 if(SHA_PERIPHERAL_TYPE STREQUAL "dma")
     target_include_directories(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/sha/dma/include")
 
-    if(CONFIG_IDF_TARGET_ESP32S2)
+    if(NOT CONFIG_SOC_SHA_GDMA)
         set(SHA_DMA_SRCS "${COMPONENT_DIR}/port/sha/dma/esp_sha_crypto_dma_impl.c")
     else()
-        set(SHA_DMA_SRCS "${COMPONENT_DIR}/port/sha/dma/esp_sha_gdma_impl.c"
-                         "${COMPONENT_DIR}/port/crypto_shared_gdma/esp_crypto_shared_gdma.c")
+        set(SHA_DMA_SRCS "${COMPONENT_DIR}/port/sha/dma/esp_sha_gdma_impl.c")
+
     endif()
     target_sources(mbedcrypto PRIVATE  "${SHA_DMA_SRCS}")
 endif()
 
 if(AES_PERIPHERAL_TYPE STREQUAL "dma")
 
-    if(CONFIG_IDF_TARGET_ESP32S2)
+    if(NOT CONFIG_SOC_AES_GDMA)
         set(AES_DMA_SRCS "${COMPONENT_DIR}/port/aes/dma/esp_aes_crypto_dma_impl.c")
     else()
-        set(AES_DMA_SRCS "${COMPONENT_DIR}/port/aes/dma/esp_aes_gdma_impl.c")
+        set(AES_DMA_SRCS "${COMPONENT_DIR}/port/aes/dma/esp_aes_gdma_impl.c"
+                         "${COMPONENT_DIR}/port/crypto_shared_gdma/esp_crypto_shared_gdma.c")
     endif()
 
     target_include_directories(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/aes/dma/include")
@@ -146,11 +156,18 @@ target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_hardware.c"
                                   "${COMPONENT_DIR}/port/esp_mem.c"
                                   "${COMPONENT_DIR}/port/esp_timing.c"
                                   "${COMPONENT_DIR}/port/sha/esp_sha.c"
-                                  "${COMPONENT_DIR}/port/aes/esp_aes_xts.c"
+)
+
+if(CONFIG_SOC_AES_SUPPORTED)
+    target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/aes/esp_aes_xts.c"
                                   "${COMPONENT_DIR}/port/aes/esp_aes_common.c"
                                   "${COMPONENT_DIR}/port/aes/${AES_PERIPHERAL_TYPE}/esp_aes.c"
-                                  "${COMPONENT_DIR}/port/sha/${SHA_PERIPHERAL_TYPE}/sha.c"
-)
+    )
+endif()
+
+if(CONFIG_SOC_SHA_SUPPORTED)
+    target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/sha/${SHA_PERIPHERAL_TYPE}/sha.c")
+endif()
 
 # CONFIG_ESP_TLS_USE_DS_PERIPHERAL can be enabled only for the supported targets.
 if(CONFIG_ESP_TLS_USE_DS_PERIPHERAL)
