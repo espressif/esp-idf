@@ -51,6 +51,10 @@ PSRAM
 - `esp_spiram_get_chip_size` has been deleted.
 - `esp_spiram_get_size` has been moved to `esp_private/spiram_private.h`
 
+ESP Common
+----------
+
+- `EXT_RAM_ATTR` is deprecated. Use this new macro `EXT_RAM_BSS_ATTR` to put .bss on PSRAM.
 
 ESP System
 ----------

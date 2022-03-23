@@ -16,9 +16,9 @@ DRAM (Data RAM)
 
 Non-constant static data (.data) and zero-initialized data (.bss) is placed by the linker into Internal SRAM as data memory. The remaining space in this region is used for the runtime heap.
 
-.. only:: esp32 or esp32s2
+.. only:: SOC_SPIRAM_SUPPORTED
 
-   By applying the ``EXT_RAM_ATTR`` macro, zero-initialized data can also be placed into external RAM. To use this macro, the :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` needs to be enabled. See :ref:`external_ram_config_bss`.
+   By applying the ``EXT_RAM_BSS_ATTR`` macro, zero-initialized data can also be placed into external RAM. To use this macro, the :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` needs to be enabled. See :ref:`external_ram_config_bss`.
 
 .. only:: esp32
 
