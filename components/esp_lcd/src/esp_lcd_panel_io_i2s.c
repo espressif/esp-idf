@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,7 +54,7 @@ static esp_err_t i2s_lcd_init_dma_link(esp_lcd_i80_bus_handle_t bus);
 static esp_err_t i2s_lcd_configure_gpio(esp_lcd_i80_bus_handle_t bus, const esp_lcd_i80_bus_config_t *bus_config);
 static void i2s_lcd_trigger_quick_trans_done_event(esp_lcd_i80_bus_handle_t bus);
 static void lcd_i80_switch_devices(lcd_panel_io_i80_t *cur_device, lcd_panel_io_i80_t *next_device);
-static IRAM_ATTR void lcd_default_isr_handler(void *args);
+static void lcd_default_isr_handler(void *args);
 
 struct esp_lcd_i80_bus_t {
     int bus_id;            // Bus ID, index from 0
@@ -143,9 +143,16 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     bus->format_buffer = heap_caps_calloc(1, CONFIG_LCD_PANEL_IO_FORMAT_BUF_SIZE, MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA);
 #endif // SOC_I2S_TRANS_SIZE_ALIGN_WORD
     ESP_GOTO_ON_FALSE(bus->format_buffer, ESP_ERR_NO_MEM, err, TAG, "no mem for format buffer");
-    // I2S0 has the LCD mode, but the LCD mode can't work with other modes at the same time, we need to register the driver object to the I2S platform
-    ESP_GOTO_ON_ERROR(i2s_priv_register_object(bus, 0), err, TAG, "register to I2S platform failed");
-    bus->bus_id = 0;
+    // LCD mode can't work with other modes at the same time, we need to register the driver object to the I2S platform
+    int bus_id = -1;
+    for (int i = 0; i < SOC_LCD_I80_BUSES; i++) {
+        if (i2s_priv_register_object(bus, i) == ESP_OK) {
+            bus_id = i;
+            break;
+        }
+    }
+    ESP_GOTO_ON_FALSE(bus_id != -1, ESP_ERR_NOT_FOUND, err, TAG, "no free i80 bus slot");
+    bus->bus_id = bus_id;
     // initialize HAL layer
     i2s_hal_init(&bus->hal, bus->bus_id);
     // set peripheral clock resolution
@@ -157,7 +164,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     i2s_ll_tx_reset_fifo(bus->hal.dev);
     // install interrupt service, (I2S LCD mode only uses the "TX Unit", which leaves "RX Unit" for other purpose)
     // So the interrupt should also be able to share with other functionality
-    int isr_flags = ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED;
+    int isr_flags = LCD_I80_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED;
     ret = esp_intr_alloc_intrstatus(lcd_periph_signals.buses[bus->bus_id].irq_id, isr_flags,
                                     (uint32_t)i2s_ll_get_intr_status_reg(bus->hal.dev),
                                     I2S_LL_EVENT_TX_EOF, lcd_default_isr_handler, bus, &bus->intr);
@@ -251,7 +258,7 @@ esp_err_t esp_lcd_new_panel_io_i80(esp_lcd_i80_bus_handle_t bus, const esp_lcd_p
     uint32_t pclk_prescale = bus->resolution_hz / 2 / io_config->pclk_hz;
     ESP_GOTO_ON_FALSE(pclk_prescale > 0 && pclk_prescale <= I2S_LL_BCK_MAX_PRESCALE, ESP_ERR_NOT_SUPPORTED, err, TAG,
                       "prescaler can't satisfy PCLK clock %u", io_config->pclk_hz);
-    i80_device = calloc(1, sizeof(lcd_panel_io_i80_t) + io_config->trans_queue_depth * sizeof(lcd_i80_trans_descriptor_t));
+    i80_device = heap_caps_calloc(1, sizeof(lcd_panel_io_i80_t) + io_config->trans_queue_depth * sizeof(lcd_i80_trans_descriptor_t), LCD_I80_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(i80_device, ESP_ERR_NO_MEM, err, TAG, "no mem for i80 panel io");
     // create two queues for i80 device
     i80_device->trans_queue = xQueueCreate(io_config->trans_queue_depth, sizeof(lcd_i80_trans_descriptor_t *));
@@ -310,9 +317,12 @@ static esp_err_t panel_io_i80_del(esp_lcd_panel_io_t *io)
     lcd_panel_io_i80_t *i80_device = __containerof(io, lcd_panel_io_i80_t, base);
     esp_lcd_i80_bus_t *bus = i80_device->bus;
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
+    size_t num_trans_inflight = i80_device->num_trans_inflight;
     // wait all pending transaction to finish
-    for (size_t i = 0; i < i80_device->num_trans_inflight; i++) {
-        xQueueReceive(i80_device->done_queue, &trans_desc, portMAX_DELAY);
+    for (size_t i = 0; i < num_trans_inflight; i++) {
+        ESP_RETURN_ON_FALSE(xQueueReceive(i80_device->done_queue, &trans_desc, portMAX_DELAY) == pdTRUE,
+                            ESP_FAIL, TAG, "recycle inflight transactions failed");
+        i80_device->num_trans_inflight--;
     }
     // remove from device list
     portENTER_CRITICAL(&bus->spinlock);
@@ -453,12 +463,13 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
     assert(param_size <= (bus->num_dma_nodes * DMA_DESCRIPTOR_BUFFER_MAX_SIZE) && "parameter bytes too long, enlarge max_transfer_bytes");
     assert(param_size <= CONFIG_LCD_PANEL_IO_FORMAT_BUF_SIZE && "format buffer too small, increase CONFIG_LCD_PANEL_IO_FORMAT_BUF_SIZE");
-
+    size_t num_trans_inflight = next_device->num_trans_inflight;
     // before issue a polling transaction, need to wait queued transactions finished
-    for (size_t i = 0; i < next_device->num_trans_inflight; i++) {
-        xQueueReceive(next_device->done_queue, &trans_desc, portMAX_DELAY);
+    for (size_t i = 0; i < num_trans_inflight; i++) {
+        ESP_RETURN_ON_FALSE(xQueueReceive(next_device->done_queue, &trans_desc, portMAX_DELAY) == pdTRUE,
+                            ESP_FAIL, TAG, "recycle inflight transactions failed");
+        next_device->num_trans_inflight--;
     }
-    next_device->num_trans_inflight = 0;
 
     i2s_ll_clear_intr_status(bus->hal.dev, I2S_LL_EVENT_TX_EOF);
     // switch devices if necessary
@@ -517,12 +528,13 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     lcd_panel_io_i80_t *cur_device = bus->cur_device;
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
     assert(color_size <= (bus->num_dma_nodes * DMA_DESCRIPTOR_BUFFER_MAX_SIZE) && "color bytes too long, enlarge max_transfer_bytes");
-
+    size_t num_trans_inflight = next_device->num_trans_inflight;
     // before issue a polling transaction, need to wait queued transactions finished
-    for (size_t i = 0; i < next_device->num_trans_inflight; i++) {
-        xQueueReceive(next_device->done_queue, &trans_desc, portMAX_DELAY);
+    for (size_t i = 0; i < num_trans_inflight; i++) {
+        ESP_RETURN_ON_FALSE(xQueueReceive(next_device->done_queue, &trans_desc, portMAX_DELAY) == pdTRUE,
+                            ESP_FAIL, TAG, "recycle inflight transactions failed");
+        next_device->num_trans_inflight--;
     }
-    next_device->num_trans_inflight = 0;
 
     i2s_ll_clear_intr_status(bus->hal.dev, I2S_LL_EVENT_TX_EOF);
     // switch devices if necessary
@@ -717,6 +729,8 @@ static IRAM_ATTR void lcd_default_isr_handler(void *args)
                 if (high_task_woken == pdTRUE) {
                     need_yield = true;
                 }
+                // sanity check
+                assert(trans_desc);
                 // only clear the interrupt status when we're sure there still remains transaction to handle
                 i2s_ll_clear_intr_status(bus->hal.dev, I2S_LL_EVENT_TX_EOF);
                 // switch devices if necessary
