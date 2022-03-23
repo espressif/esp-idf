@@ -20,6 +20,8 @@
 #include "ulp_common.h"
 #include "esp_rom_sys.h"
 
+__attribute__((unused)) static const char* TAG = "ulp-riscv";
+
 static esp_err_t ulp_riscv_config_wakeup_source(ulp_riscv_wakeup_source_t wakeup_source)
 {
     esp_err_t ret = ESP_OK;
@@ -45,6 +47,12 @@ static esp_err_t ulp_riscv_config_wakeup_source(ulp_riscv_wakeup_source_t wakeup
 esp_err_t ulp_riscv_config_and_run(ulp_riscv_cfg_t* cfg)
 {
     esp_err_t ret = ESP_OK;
+
+#if CONFIG_IDF_TARGET_ESP32S3
+    ESP_LOGE(TAG, "ULP temporarily unsupported on ESP32-S3, running sleep + ULP risks causing permanent damage to chip");
+    abort();
+// Fix in-progress: DIG-160
+#endif //CONFIG_IDF_TARGET_ESP32S3
 
 #if CONFIG_IDF_TARGET_ESP32S2
     /* Reset COCPU when power on. */
