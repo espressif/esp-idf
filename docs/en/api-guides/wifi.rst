@@ -5,8 +5,9 @@ Wi-Fi Driver
 
 {IDF_TARGET_NAME} Wi-Fi Feature List
 ------------------------------------
-- Support Station-only mode, AP-only mode, Station/AP-coexistence mode
-- Support IEEE 802.11B, IEEE 802.11G, IEEE 802.11N and APIs to configure the protocol mode
+- Support 4 virtual WiFi interfaces, which are STA, AP, Sniffer and reserved. 
+- Support station-only mode, AP-only mode, station/AP-coexistence mode
+- Support IEEE 802.11b, IEEE 802.11g, IEEE 802.11n, and APIs to configure the protocol mode
 - Support WPA/WPA2/WPA3/WPA2-Enterprise and WPS
 - Support AMPDU, HT40, QoS and other key features
 - Support Modem-sleep
@@ -1132,12 +1133,16 @@ Currently, the IDF supports the following protocol modes:
      - Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B) to set the station/AP to 802.11b-only mode.
    * - 802.11bg
      - Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G) to set the station/AP to 802.11bg mode.
+   * - 802.11g
+     - Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G) and esp_wifi_config_11b_rate(ifx, true) to set the station/AP to 802.11g mode.
    * - 802.11bgn
      - Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B| WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N) to set the station/ AP to BGN mode.
+   * - 802.11gn
+     - Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N) and esp_wifi_config_11b_rate(ifx, true) to set the station/AP to 802.11gn mode.
    * - 802.11 BGNLR
-     - Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B| WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_LR) to set the station/AP to BGN and the Espressif-specific mode.
+     - Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B| WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_LR) to set the station/AP to BGN and the LR mode.
    * - 802.11 LR
-     - Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_LR) to set the station/AP only to the Espressif-specific mode.
+     - Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_LR) to set the station/AP only to the LR mode.
 
        **This mode is an Espressif-patented mode which can achieve a one-kilometer line of sight range. Please, make sure both the station and the AP are connected to an ESP device.**
 
@@ -1199,7 +1204,7 @@ The reception sensitivity of LR has about 4 dB gain than the traditional 802.11B
 LR Throughput
 *************************
 
-The LR rate has very limited throughput because the raw PHY data rate LR is 1/2 Mbits and 1/4 Mbits.
+The LR rate has very limited throughput, because the raw PHY data rate are 1/2 Mbps and 1/4 Mbps.
 
 When to Use LR
 *************************
@@ -1537,8 +1542,9 @@ Preconditions of Using :cpp:func:`esp_wifi_80211_tx`
 Data rate
 +++++++++++++++++++++++++++++++++++++++++++++++
 
- - If there is no Wi-Fi connection, the data rate is 1 Mbps.
- - If there is Wi-Fi connection and the packet is from station to AP or from AP to station, the data rate is same as the Wi-Fi connection. Otherwise the data rate is 1 Mbps.
+ - The default data rate is 1 Mbps.
+ - Can set any rate through :cpp:func:`esp_wifi_config_80211_tx_rate()` API.
+ - Can set any bandwidth through :cpp:func:`esp_wifi_set_bandwidth()` API.
 
 Side-Effects to Avoid in Different Scenarios
 +++++++++++++++++++++++++++++++++++++++++++++++++++++
