@@ -303,7 +303,15 @@ config SOC_I2S_NUM
     bool
     default y
 
+config SOC_I2S_HW_VERSION_2
+    bool
+    default y
+
 config SOC_I2S_SUPPORTS_PCM
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PDM
     bool
     default y
 

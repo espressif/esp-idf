@@ -243,7 +243,15 @@ config SOC_I2S_NUM
     int
     default 2
 
+config SOC_I2S_HW_VERSION_1
+    bool
+    default y
+
 config SOC_I2S_SUPPORTS_APLL
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PDM
     bool
     default y
 
@@ -255,11 +263,19 @@ config SOC_I2S_SUPPORTS_PDM_RX
     bool
     default y
 
+config SOC_I2S_SUPPORTS_ADC_DAC
+    bool
+    default y
+
 config SOC_I2S_SUPPORTS_ADC
     bool
     default y
 
 config SOC_I2S_SUPPORTS_DAC
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_LCD_CAMERA
     bool
     default y
 

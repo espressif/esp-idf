@@ -604,12 +604,7 @@ static esp_err_t i2s_lcd_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_c
         ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "unsupported clock source: %d", src);
         break;
     }
-    i2s_ll_mclk_div_t clk_cal_config = {
-        .mclk_div = LCD_PERIPH_CLOCK_PRE_SCALE,
-        .a = 1,
-        .b = 0,
-    };
-    i2s_ll_tx_set_clk(bus->hal.dev, &clk_cal_config);
+    i2s_ll_set_raw_mclk_div(bus->hal.dev, LCD_PERIPH_CLOCK_PRE_SCALE, 1, 0);
     return ret;
 }
 

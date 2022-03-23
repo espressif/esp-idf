@@ -163,7 +163,9 @@
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
 #define SOC_I2S_NUM                 (2)
+#define SOC_I2S_HW_VERSION_2        (1)
 #define SOC_I2S_SUPPORTS_PCM        (1)
+#define SOC_I2S_SUPPORTS_PDM        (1)
 #define SOC_I2S_SUPPORTS_PDM_TX     (1)
 #define SOC_I2S_SUPPORTS_PDM_RX     (1)
 #define SOC_I2S_SUPPORTS_PDM_CODEC  (1)
