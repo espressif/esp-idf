@@ -64,8 +64,13 @@ When ``esp_now_deinit()`` is called, all of the information of paired devices wi
 Add Paired Device
 -----------------
 
-Call ``esp_now_add_peer()`` to add the device to the paired device list before you send data to this device. The maximum number of paired devices is twenty. If security is enabled, the LMK must be set. You can send ESP-NOW data via both the Station and the SoftAP interface. 
-Make sure that the interface is enabled before sending ESP-NOW data. A device with a broadcast MAC address must be added before sending broadcast data. The range of the channel of paired devices is from 0 to 14. If the channel is set to 0, data will be sent on the current channel. Otherwise, the channel must be set as the channel that the local device is on.
+Call ``esp_now_add_peer()`` to add the device to the paired device list before you send data to this device. If security is enabled, the LMK must be set. You can send ESP-NOW data via both the Station and the SoftAP interface. Make sure that the interface is enabled before sending ESP-NOW data. 
+
+.. only:: esp32 or esp32s2
+
+    The maximum number of paired devices is 20, and the paired encryption devices are no more than 16, the default is 6. 
+    
+A device with a broadcast MAC address must be added before sending broadcast data. The range of the channel of paired devices is from 0 to 14. If the channel is set to 0, data will be sent on the current channel. Otherwise, the channel must be set as the channel that the local device is on.
 
 Send ESP-NOW Data
 -----------------

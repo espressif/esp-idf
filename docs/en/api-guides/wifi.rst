@@ -3,10 +3,11 @@ Wi-Fi Driver
 
 {IDF_TARGET_NAME} Wi-Fi Feature List
 ------------------------------------
-- Support Station-only mode, AP-only mode, Station/AP-coexistence mode
-- Support IEEE-802.11B, IEEE-802.11G, IEEE802.11N and APIs to configure the protocol mode
+- Support 4 virtual WiFi interfaces, which are 4 STA, AP, Sniffer and reserved. 
+- Support station-only mode, AP-only mode, station/AP-coexistence mode
+- Support IEEE 802.11b, IEEE 802.11g, IEEE 802.11n, and APIs to configure the protocol mode
 - Support WPA/WPA2/WPA2-Enterprise and WPS
-- Support AMPDU, HT40, QoS and other key features
+- Support AMPDU, HT40, QoS, and other key features
 - Support Modem-sleep
 - Support an Espressif-specific protocol which, in turn, supports up to **1 km** of data traffic
 - Up to 20 MBit/sec TCP throughput and 30 MBit/sec UDP throughput over the air
@@ -1193,6 +1194,7 @@ API esp_wifi_set_config() can be used to configure the AP. The table below descr
 Wi-Fi Protocol Mode
 +++++++++++++++++++++++++
 
+<<<<<<< HEAD
 Currently, the IDF supports the following protocol modes:
 
 +--------------------+------------------------------------------------------------+
@@ -1213,11 +1215,11 @@ Currently, the IDF supports the following protocol modes:
 +--------------------+------------------------------------------------------------+
 | 802.11 BGNLR       | Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B|         |
 |                    | WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_LR)      |
-|                    | to set the station/AP to BGN and the                       |
-|                    | Espressif-specific mode.                                   |
+|                    | to set the station/AP to BGN and the LR mode.              |
+|                    |                                                            |
 +--------------------+------------------------------------------------------------+
 | 802.11 LR          | Call esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_LR) to set   |
-|                    | the station/AP only to the Espressif-specific mode.        |
+|                    | the station/AP only to the LR  mode.                       |
 |                    |                                                            |
 |                    | **This mode is an Espressif-patented mode which can achieve|
 |                    | a one-kilometer line of sight range. Please, make sure both|
@@ -1281,7 +1283,7 @@ The reception sensitivity of LR has about 4 dB gain than the traditional 802.11 
 LR Throughput
 *************************
 
-The LR rate has very limited throughput because the raw PHY data rate LR is 1/2 Mbits and 1/4 Mbits.
+The LR rate has very limited throughput, because the raw PHY data rates are 1/2 Mbps and 1/4 Mbps.
 
 When to Use LR
 *************************
