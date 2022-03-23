@@ -1,8 +1,4 @@
 /*
- Driver bits for PSRAM chips (at the moment only the ESP-PSRAM32 chip).
-*/
-
-/*
  * SPDX-FileCopyrightText: 2013-2021 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -35,8 +31,6 @@
 #include "driver/spi_common.h"
 #include "esp_private/periph_ctrl.h"
 #include "bootloader_common.h"
-
-#if CONFIG_SPIRAM_MODE_QUAD
 #include "soc/rtc.h"
 #include "esp_private/spi_flash_os.h"
 
@@ -409,6 +403,10 @@ static void config_psram_spi_phases(void)
  *-------------------------------------------------------------------------------*/
 esp_err_t psram_get_physical_size(uint32_t *out_size_bytes)
 {
+    if (!out_size_bytes) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     *out_size_bytes = s_psram_size;
     return (s_psram_size ? ESP_OK : ESP_ERR_INVALID_STATE);
 }
@@ -421,7 +419,10 @@ esp_err_t psram_get_physical_size(uint32_t *out_size_bytes)
  */
 esp_err_t psram_get_available_size(uint32_t *out_size_bytes)
 {
+    if (!out_size_bytes) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     *out_size_bytes = s_psram_size;
     return (s_psram_size ? ESP_OK : ESP_ERR_INVALID_STATE);
 }
-#endif // CONFIG_SPIRAM

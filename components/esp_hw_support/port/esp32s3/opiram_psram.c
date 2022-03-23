@@ -25,8 +25,6 @@
 #include "driver/gpio.h"
 #include "driver/spi_common.h"
 #include "esp_private/periph_ctrl.h"
-
-#if CONFIG_SPIRAM_MODE_OCT
 #include "soc/rtc.h"
 #include "esp_private/spi_flash_os.h"
 
@@ -383,6 +381,10 @@ static void s_config_psram_spi_phases(void)
  *-------------------------------------------------------------------------------*/
 esp_err_t psram_get_physical_size(uint32_t *out_size_bytes)
 {
+    if (!out_size_bytes) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     *out_size_bytes = s_psram_size;
     return (s_psram_size ? ESP_OK : ESP_ERR_INVALID_STATE);
 }
@@ -393,6 +395,10 @@ esp_err_t psram_get_physical_size(uint32_t *out_size_bytes)
  */
 esp_err_t psram_get_available_size(uint32_t *out_size_bytes)
 {
+    if (!out_size_bytes) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
 #if CONFIG_SPIRAM_ECC_ENABLE
     *out_size_bytes = s_psram_size * 15 / 16;
 #else
@@ -400,5 +406,3 @@ esp_err_t psram_get_available_size(uint32_t *out_size_bytes)
 #endif
     return (s_psram_size ? ESP_OK : ESP_ERR_INVALID_STATE);
 }
-
-#endif  //#if CONFIG_SPIRAM_MODE_OCT

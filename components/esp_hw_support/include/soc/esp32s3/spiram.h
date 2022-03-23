@@ -5,8 +5,7 @@
  */
 
 
-#ifndef __ESP_SPIRAM_H
-#define __ESP_SPIRAM_H
+#pragma once
 
 #include <stddef.h>
 #include <stdint.h>
@@ -25,41 +24,9 @@ extern "C" {
 esp_err_t esp_spiram_init(void);
 
 /**
- * @brief Configure Cache/MMU for access to external SPI RAM.
- *
- * Normally this function is called from cpu_start, if CONFIG_SPIRAM_BOOT_INIT
- * option is enabled. Applications which need to enable SPI RAM at run time
- * can disable CONFIG_SPIRAM_BOOT_INIT, and call this function later.
- *
- * @attention this function must be called with flash cache disabled.
- */
-void esp_spiram_init_cache(void);
-
-
-/**
- * @brief Memory test for SPI RAM. Should be called after SPI RAM is initialized and
- * (in case of a dual-core system) the app CPU is online. This test overwrites the
- * memory with crap, so do not call after e.g. the heap allocator has stored important
- * stuff in SPI RAM.
- *
- * @return true on success, false on failed memory test
- */
-bool esp_spiram_test(void);
-
-
-/**
  * @brief Add the initialized SPI RAM to the heap allocator.
  */
 esp_err_t esp_spiram_add_to_heapalloc(void);
-
-/**
- * @brief Get the available physical size of the attached SPI RAM chip
- *
- * @note If ECC is enabled, the available physical size would be smaller than the physical size. See `CONFIG_SPIRAM_ECC_ENABLE`
- *
- * @return Size in bytes, or 0 if no external RAM chip support compiled in.
- */
-size_t esp_spiram_get_size(void);
 
 /**
  * @brief Force a writeback of the data in the SPI RAM cache. This is to be called whenever
@@ -159,6 +126,4 @@ int rodata_flash2spiram_offset(void);
 
 #ifdef __cplusplus
 }
-#endif
-
 #endif

@@ -9,15 +9,15 @@
 #include "esp_err.h"
 #include "sdkconfig.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define PSRAM_SIZE_2MB                  (2 * 1024 * 1024)
 #define PSRAM_SIZE_4MB                  (4 * 1024 * 1024)
 #define PSRAM_SIZE_8MB                  (8 * 1024 * 1024)
 #define PSRAM_SIZE_16MB                 (16 * 1024 * 1024)
 #define PSRAM_SIZE_32MB                 (32 * 1024 * 1024)
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef enum {
     PSRAM_CACHE_S80M = 1,

@@ -116,7 +116,7 @@ TEST_CASE_MULTIPLE_STAGES("Spiram test noinit memory", "[spiram]", write_spiram_
 
 
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
-#define TEST_BSS_NUM    256
+#define TEST_BSS_NUM    (256 * 1024)
 static EXT_RAM_ATTR uint32_t s_bss_buffer[TEST_BSS_NUM];
 
 TEST_CASE("Test variables placed in external .bss segment", "[ld]")

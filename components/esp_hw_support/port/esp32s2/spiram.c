@@ -19,6 +19,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/xtensa_api.h"
 #include "esp_heap_caps_init.h"
+#include "esp_private/spiram_private.h"
 #include "esp32s2/spiram.h"
 #include "esp_private/mmu_psram.h"
 #include "spiram_psram.h"
@@ -44,47 +45,48 @@ extern uint8_t _ext_ram_bss_end;
 #endif //#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
 
 //These variables are in bytes
-static uint32_t s_allocable_vaddr_start;
-static uint32_t s_allocable_vaddr_end;
+static intptr_t s_allocable_vaddr_start;
+static intptr_t s_allocable_vaddr_end;
+static intptr_t s_mapped_vaddr_start;
+static intptr_t s_mapped_vaddr_end;
 
-static bool spiram_inited=false;
+static bool s_spiram_inited;
 static const char* TAG = "spiram";
 
-bool esp_spiram_test(uint32_t v_start, uint32_t size);
+static bool esp_spiram_test(uint32_t v_start, uint32_t size);
 
 
 esp_err_t esp_spiram_init(void)
 {
-    esp_err_t r;
-    r = psram_enable(PSRAM_SPEED, PSRAM_MODE);
-    if (r != ESP_OK) {
+    assert(!s_spiram_inited);
+    esp_err_t ret;
+    ret = psram_enable(PSRAM_SPEED, PSRAM_MODE);
+    if (ret != ESP_OK) {
 #if CONFIG_SPIRAM_IGNORE_NOTFOUND
         ESP_EARLY_LOGE(TAG, "SPI RAM enabled but initialization failed. Bailing out.");
 #endif
-        return r;
+        return ret;
     }
+    s_spiram_inited = true;
 
-    spiram_inited = true;
+    uint32_t psram_physical_size = 0;
+    ret = psram_get_physical_size(&psram_physical_size);
+    assert(ret == ESP_OK);
 
-    //TODO IDF-4380
-    size_t spiram_size = esp_spiram_get_size();
 #if (CONFIG_SPIRAM_SIZE != -1)
-    if (spiram_size != CONFIG_SPIRAM_SIZE) {
-        ESP_EARLY_LOGE(TAG, "Expected %dKiB chip but found %dKiB chip. Bailing out..", CONFIG_SPIRAM_SIZE/1024, spiram_size/1024);
+    if (psram_physical_size != CONFIG_SPIRAM_SIZE) {
+        ESP_EARLY_LOGE(TAG, "Expected %dMB chip but found %dMB chip. Bailing out..", CONFIG_SPIRAM_SIZE / 1024 / 1024, psram_physical_size / 1024 / 1024);
         return ESP_ERR_INVALID_SIZE;
     }
 #endif
+    ESP_EARLY_LOGI(TAG, "Found %dMBit SPI RAM device", psram_physical_size / (1024 * 1024));
+    ESP_EARLY_LOGI(TAG, "Speed: %dMHz", CONFIG_SPIRAM_SPEED);
 
-    ESP_EARLY_LOGI(TAG, "Found %dMBit SPI RAM device",
-                                          (spiram_size*8)/(1024*1024));
-    ESP_EARLY_LOGI(TAG, "SPI RAM mode: %s", PSRAM_SPEED == PSRAM_CACHE_S40M ? "sram 40m" : \
-                                          PSRAM_SPEED == PSRAM_CACHE_S80M ? "sram 80m" : "sram 20m");
-    ESP_EARLY_LOGI(TAG, "PSRAM initialized, cache is in %s mode.", \
-                                          (PSRAM_MODE==PSRAM_VADDR_MODE_EVENODD)?"even/odd (2-core)": \
-                                          (PSRAM_MODE==PSRAM_VADDR_MODE_LOWHIGH)?"low/high (2-core)": \
-                                          (PSRAM_MODE==PSRAM_VADDR_MODE_NORMAL)?"normal (1-core)":"ERROR");
+    uint32_t psram_available_size = 0;
+    ret = psram_get_available_size(&psram_available_size);
+    assert(ret == ESP_OK);
 
-    uint32_t psram_available_size = spiram_size;
+    __attribute__((unused)) uint32_t total_available_size = psram_available_size;
     /**
      * `start_page` is the psram physical address in MMU page size.
      * MMU page size on ESP32S2 is 64KB
@@ -99,8 +101,8 @@ esp_err_t esp_spiram_init(void)
 
     //------------------------------------Copy Flash .text to PSRAM-------------------------------------//
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
-    r = mmu_config_psram_text_segment(start_page, spiram_size, &used_page);
-    if (r != ESP_OK) {
+    ret = mmu_config_psram_text_segment(start_page, total_available_size, &used_page);
+    if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "No enough psram memory for instructon!");
         abort();
     }
@@ -111,8 +113,8 @@ esp_err_t esp_spiram_init(void)
 
     //------------------------------------Copy Flash .rodata to PSRAM-------------------------------------//
 #if CONFIG_SPIRAM_RODATA
-    r = mmu_config_psram_rodata_segment(start_page, spiram_size, &used_page);
-    if (r != ESP_OK) {
+    ret = mmu_config_psram_rodata_segment(start_page, total_available_size, &used_page);
+    if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "No enough psram memory for rodata!");
         abort();
     }
@@ -121,10 +123,10 @@ esp_err_t esp_spiram_init(void)
     ESP_EARLY_LOGV(TAG, "after copy .rodata, used page is %d, start_page is %d, psram_available_size is %d B", used_page, start_page, psram_available_size);
 #endif  //#if CONFIG_SPIRAM_RODATA
 
-    //Map the PSRAM physical range to MMU
+    //----------------------------------Map the PSRAM physical range to MMU-----------------------------//
     static DRAM_ATTR uint32_t vaddr_start = 0;
     mmu_map_psram(MMU_PAGE_TO_BYTES(start_page), MMU_PAGE_TO_BYTES(start_page) + psram_available_size, &vaddr_start);
-    if (r != ESP_OK) {
+    if (ret != ESP_OK) {
         ESP_EARLY_LOGE(TAG, "MMU PSRAM mapping wrong!");
         abort();
     }
@@ -141,6 +143,8 @@ esp_err_t esp_spiram_init(void)
     /*------------------------------------------------------------------------------
     * After mapping, we DON'T care about the PSRAM PHYSICAL ADDRESSS ANYMORE!
     *----------------------------------------------------------------------------*/
+    s_mapped_vaddr_start = vaddr_start;
+    s_mapped_vaddr_end = vaddr_start + psram_available_size;
     s_allocable_vaddr_start = vaddr_start;
     s_allocable_vaddr_end = vaddr_start + psram_available_size;
 
@@ -157,35 +161,58 @@ esp_err_t esp_spiram_init(void)
     return ESP_OK;
 }
 
+/**
+ * Add the PSRAM available region to heap allocator. Heap allocator knows the capabilities of this type of memory,
+ * so there's no need to explicitly specify them.
+ */
 esp_err_t esp_spiram_add_to_heapalloc(void)
 {
-    return heap_caps_add_region(s_allocable_vaddr_start, s_allocable_vaddr_end - 1);
+    ESP_EARLY_LOGI(TAG, "Adding pool of %dK of external SPI memory to heap allocator", (s_allocable_vaddr_end - s_allocable_vaddr_start) / 1024);
+    return heap_caps_add_region(s_allocable_vaddr_start, s_allocable_vaddr_end);
 }
 
-static uint8_t *dma_heap;
-
-esp_err_t esp_spiram_reserve_dma_pool(size_t size) {
-    if (size==0) return ESP_OK; //no-op
-    ESP_EARLY_LOGI(TAG, "Reserving pool of %dK of internal memory for DMA/internal allocations", size/1024);
-    dma_heap=heap_caps_malloc(size, MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
-    if (!dma_heap) return ESP_ERR_NO_MEM;
-    uint32_t caps[]={MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL, 0, MALLOC_CAP_8BIT|MALLOC_CAP_32BIT};
-    return heap_caps_add_region_with_caps(caps, (intptr_t) dma_heap, (intptr_t) dma_heap+size-1);
-}
-
-//TODO IDF-4380
-size_t esp_spiram_get_size(void)
+esp_err_t IRAM_ATTR esp_spiram_get_mapped_range(intptr_t *out_vstart, intptr_t *out_vend)
 {
-    if (!spiram_inited) {
-        ESP_EARLY_LOGE(TAG, "SPI RAM not initialized");
-        abort();
+    if (!out_vstart || !out_vend) {
+        return ESP_ERR_INVALID_ARG;
     }
 
-    psram_size_t size=psram_get_size();
-    if (size==PSRAM_SIZE_16MBITS) return 2*1024*1024;
-    if (size==PSRAM_SIZE_32MBITS) return 4*1024*1024;
-    if (size==PSRAM_SIZE_64MBITS) return 8*1024*1024;
-    return CONFIG_SPIRAM_SIZE;
+    if (!s_spiram_inited) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    *out_vstart = s_mapped_vaddr_start;
+    *out_vend = s_mapped_vaddr_end;
+    return ESP_OK;
+}
+
+esp_err_t esp_spiram_get_alloced_range(intptr_t *out_vstart, intptr_t *out_vend)
+{
+    if (!out_vstart || !out_vend) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (!s_spiram_inited) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    *out_vstart = s_allocable_vaddr_start;
+    *out_vend = s_allocable_vaddr_end;
+    return ESP_OK;
+}
+
+esp_err_t esp_spiram_reserve_dma_pool(size_t size)
+{
+    if (size == 0) {
+        return ESP_OK; //no-op
+    }
+    ESP_EARLY_LOGI(TAG, "Reserving pool of %dK of internal memory for DMA/internal allocations", size/1024);
+    uint8_t *dma_heap = heap_caps_malloc(size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    if (!dma_heap) {
+        return ESP_ERR_NO_MEM;
+    }
+    uint32_t caps[] = {MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL, 0, MALLOC_CAP_8BIT | MALLOC_CAP_32BIT};
+    return heap_caps_add_region_with_caps(caps, (intptr_t) dma_heap, (intptr_t) dma_heap + size);
 }
 
 /*
@@ -206,7 +233,7 @@ void IRAM_ATTR esp_spiram_writeback_cache(void)
  */
 bool esp_spiram_is_initialized(void)
 {
-    return spiram_inited;
+    return s_spiram_inited;
 }
 
 uint8_t esp_spiram_get_cs_io(void)
@@ -219,7 +246,7 @@ uint8_t esp_spiram_get_cs_io(void)
  true when RAM seems OK, false when test fails. WARNING: Do not run this before the 2nd cpu has been
  initialized (in a two-core system) or after the heap allocator has taken ownership of the memory.
 */
-bool esp_spiram_test(uint32_t v_start, uint32_t size)
+static bool esp_spiram_test(uint32_t v_start, uint32_t size)
 {
     volatile int *spiram = (volatile int *)v_start;
 

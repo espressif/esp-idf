@@ -17,6 +17,7 @@ we add more types of external RAM memory, this can be made into a more intellige
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp32/spiram.h"
+#include "esp_private/spiram_private.h"
 #include "spiram_psram.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -54,6 +55,12 @@ extern uint8_t _ext_ram_bss_start, _ext_ram_bss_end;
 #if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
 extern uint8_t _ext_ram_noinit_start, _ext_ram_noinit_end;
 #endif
+
+//These variables are in bytes
+static intptr_t s_allocable_vaddr_start;
+static intptr_t s_allocable_vaddr_end;
+static intptr_t s_mapped_vaddr_start;
+static intptr_t s_mapped_vaddr_end;
 
 static bool spiram_inited=false;
 
@@ -132,6 +139,9 @@ void IRAM_ATTR esp_spiram_init_cache(void)
     DPORT_CLEAR_PERI_REG_MASK(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MASK_DRAM1);
     cache_sram_mmu_set(1, 0, SOC_EXTRAM_DATA_LOW, 0, 32, (size / 1024 / 32));
 #endif
+
+    s_mapped_vaddr_start = (intptr_t)SOC_EXTRAM_DATA_LOW;
+    s_mapped_vaddr_end = s_mapped_vaddr_start + size;
 }
 
 esp_spiram_size_t esp_spiram_get_chip_size(void)
@@ -155,6 +165,7 @@ esp_spiram_size_t esp_spiram_get_chip_size(void)
 
 esp_err_t esp_spiram_init(void)
 {
+    assert(!spiram_inited);
     esp_err_t r;
     r = psram_enable(PSRAM_SPEED, PSRAM_MODE);
     if (r != ESP_OK) {
@@ -189,20 +200,50 @@ esp_err_t esp_spiram_add_to_heapalloc(void)
 {
     //Add entire external RAM region to heap allocator. Heap allocator knows the capabilities of this type of memory, so there's
     //no need to explicitly specify them.
-    intptr_t mallocable_ram_start = (intptr_t)SOC_EXTRAM_DATA_LOW;
+    s_allocable_vaddr_start = (intptr_t)SOC_EXTRAM_DATA_LOW;
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
-    if (mallocable_ram_start < (intptr_t)&_ext_ram_bss_end) {
-        mallocable_ram_start = (intptr_t)&_ext_ram_bss_end;
+    if (s_allocable_vaddr_start < (intptr_t)&_ext_ram_bss_end) {
+        s_allocable_vaddr_start = (intptr_t)&_ext_ram_bss_end;
     }
 #endif
 #if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
-    if (mallocable_ram_start < (intptr_t)&_ext_ram_noinit_end) {
-        mallocable_ram_start = (intptr_t)&_ext_ram_noinit_end;
+    if (s_allocable_vaddr_start < (intptr_t)&_ext_ram_noinit_end) {
+        s_allocable_vaddr_start = (intptr_t)&_ext_ram_noinit_end;
     }
 #endif
-    intptr_t mallocable_ram_end = (intptr_t)SOC_EXTRAM_DATA_LOW + spiram_size_usable_for_malloc() - 1;
-    ESP_EARLY_LOGI(TAG, "Adding pool of %dK of external SPI memory to heap allocator", (mallocable_ram_end - mallocable_ram_start)/1024);
-    return heap_caps_add_region(mallocable_ram_start, mallocable_ram_end);
+    s_allocable_vaddr_end = (intptr_t)SOC_EXTRAM_DATA_LOW + spiram_size_usable_for_malloc() - 1;
+    ESP_EARLY_LOGI(TAG, "Adding pool of %dK of external SPI memory to heap allocator", (s_allocable_vaddr_end - s_allocable_vaddr_start)/1024);
+    return heap_caps_add_region(s_allocable_vaddr_start, s_allocable_vaddr_end);
+}
+
+esp_err_t IRAM_ATTR esp_spiram_get_mapped_range(intptr_t *out_vstart, intptr_t *out_vend)
+{
+    if (!out_vstart || !out_vend) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (!spiram_inited) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    *out_vstart = s_mapped_vaddr_start;
+    *out_vend = s_mapped_vaddr_end;
+    return ESP_OK;
+}
+
+esp_err_t esp_spiram_get_alloced_range(intptr_t *out_vstart, intptr_t *out_vend)
+{
+    if (!out_vstart || !out_vend) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (!spiram_inited) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    *out_vstart = s_allocable_vaddr_start;
+    *out_vend = s_allocable_vaddr_end;
+    return ESP_OK;
 }
 
 

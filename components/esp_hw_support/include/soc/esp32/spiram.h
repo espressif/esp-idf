@@ -17,20 +17,7 @@
 extern "C" {
 #endif
 
-typedef enum {
-    ESP_SPIRAM_SIZE_16MBITS = 0,   /*!< SPI RAM size is 16 MBits */
-    ESP_SPIRAM_SIZE_32MBITS = 1,   /*!< SPI RAM size is 32 MBits */
-    ESP_SPIRAM_SIZE_64MBITS = 2,   /*!< SPI RAM size is 64 MBits */
-    ESP_SPIRAM_SIZE_INVALID,       /*!< SPI RAM size is invalid */
-} esp_spiram_size_t;
-
-/**
- * @brief get SPI RAM size
- * @return
- *     - ESP_SPIRAM_SIZE_INVALID if SPI RAM not enabled or not valid
- *     - SPI RAM size
- */
-esp_spiram_size_t esp_spiram_get_chip_size(void);
+//TODO: IDF-4382, unify `target/spiram.h`, update migration guide as well
 
 /**
  * @brief Initialize spiram interface/hardware. Normally called from cpu_start.c.
@@ -66,15 +53,6 @@ bool esp_spiram_test(void);
  * @brief Add the initialized SPI RAM to the heap allocator.
  */
 esp_err_t esp_spiram_add_to_heapalloc(void);
-
-
-/**
- * @brief Get the size of the attached SPI RAM chip selected in menuconfig
- *
- * @return Size in bytes, or 0 if no external RAM chip support compiled in.
- */
-size_t esp_spiram_get_size(void);
-
 
 /**
  * @brief Force a writeback of the data in the SPI RAM cache. This is to be called whenever

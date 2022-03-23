@@ -116,7 +116,7 @@ static esp_err_t esp_sleep_tagmem_pd_low_init(bool enable)
             uint32_t data_size = (uint32_t)(_rodata_reserved_end - _rodata_start);
 #else
             uint32_t data_start = SOC_DROM_LOW;
-            uint32_t data_size = (SOC_EXTRAM_DATA_HIGH-SOC_EXTRAM_DATA_LOW) + (SOC_DROM_HIGH-SOC_DROM_LOW);
+            uint32_t data_size = SOC_EXTRAM_DATA_SIZE;
 #endif
             ESP_LOGI(TAG, "Code start at %08x, total %.2f KiB, data start at %08x, total %.2f KiB",
                     code_start, (float)code_size/1024, data_start, (float)data_size/1024);

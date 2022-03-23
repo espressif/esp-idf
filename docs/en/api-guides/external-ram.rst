@@ -129,8 +129,8 @@ External RAM use has the following restrictions:
 
  * When flash cache is disabled (for example, if the flash is being written to), the external RAM also becomes inaccessible; any reads from or writes to it will lead to an illegal cache access exception. This is also the reason why ESP-IDF does not by default allocate any task stacks in external RAM (see below).
 
-  * External RAM cannot be used as a place to store DMA transaction descriptors or as a buffer for a DMA transfer to read from or write into. Therefore when External RAM is enabled, any buffers that will be used in combination with DMA must be allocated using ``heap_caps_malloc(size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL)`` and can be freed using a standard ``free()`` call. 
-  
+  * External RAM cannot be used as a place to store DMA transaction descriptors or as a buffer for a DMA transfer to read from or write into. Therefore when External RAM is enabled, any buffer that will be used in combination with DMA must be allocated using ``heap_caps_malloc(size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL)`` and can be freed using a standard ``free()`` call.
+
   .. only:: SOC_PSRAM_DMA_CAPABLE
 
     Note, although {IDF_TARGET_NAME} has hardware support for DMA to/from external RAM, this is not yet supported in ESP-IDF.

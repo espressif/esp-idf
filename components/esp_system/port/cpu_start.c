@@ -389,11 +389,9 @@ void IRAM_ATTR call_start_cpu0(void)
     bootloader_init_mem();
 #if CONFIG_SPIRAM_BOOT_INIT
     if (esp_spiram_init() != ESP_OK) {
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
         ESP_EARLY_LOGE(TAG, "Failed to init external RAM, needed for external .bss segment");
         abort();
-#endif
 #endif
 
 #if CONFIG_SPIRAM_IGNORE_NOTFOUND
@@ -405,11 +403,11 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
     }
     //TODO: IDF-4382
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3
+#if CONFIG_IDF_TARGET_ESP32
     if (g_spiram_ok) {
         esp_spiram_init_cache();
     }
-#endif  //#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3, //TODO: IDF-4382
+#endif  //#if CONFIG_IDF_TARGET_ESP32, //TODO: IDF-4382
 #endif
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
@@ -439,7 +437,7 @@ void IRAM_ATTR call_start_cpu0(void)
 
 #if CONFIG_SPIRAM_MEMTEST
     //TODO: IDF-4382
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3
+#if CONFIG_IDF_TARGET_ESP32
     if (g_spiram_ok) {
         bool ext_ram_ok = esp_spiram_test();
         if (!ext_ram_ok) {
@@ -447,7 +445,7 @@ void IRAM_ATTR call_start_cpu0(void)
             abort();
         }
     }
-#endif  //CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S3, //TODO: IDF-4382
+#endif  //CONFIG_IDF_TARGET_ESP32, //TODO: IDF-4382
 #endif  //CONFIG_SPIRAM_MEMTEST
 
     //TODO: IDF-4382

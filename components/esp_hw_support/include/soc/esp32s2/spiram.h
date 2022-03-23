@@ -30,13 +30,6 @@ esp_err_t esp_spiram_init(void);
 esp_err_t esp_spiram_add_to_heapalloc(void);
 
 /**
- * @brief Get the size of the attached SPI RAM chip selected in menuconfig
- *
- * @return Size in bytes, or 0 if no external RAM chip support compiled in.
- */
-size_t esp_spiram_get_size(void);
-
-/**
  * @brief Force a writeback of the data in the SPI RAM cache. This is to be called whenever
  * cache is disabled, because disabling cache on the ESP32 discards the data in the SPI
  * RAM cache.
