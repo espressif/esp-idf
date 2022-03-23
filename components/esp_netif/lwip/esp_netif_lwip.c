@@ -38,7 +38,7 @@
 #include "esp_netif_lwip_slip.h"
 #include "dhcpserver/dhcpserver.h"
 #include "dhcpserver/dhcpserver_options.h"
-
+#include "netif/dhcp_state.h"
 #include "esp_event.h"
 #include "esp_log.h"
 
@@ -987,6 +987,9 @@ void esp_netif_internal_dhcpc_cb(struct netif *netif)
             if (ESP_OK != ret) {
                 ESP_LOGE(TAG, "dhcpc cb: failed to post got ip event (%x)", ret);
             }
+#ifdef CONFIG_LWIP_DHCP_RESTORE_LAST_IP
+            dhcp_ip_addr_store(netif);
+#endif /* CONFIG_LWIP_DHCP_RESTORE_LAST_IP */
         } else {
             ESP_LOGD(TAG, "if%p ip unchanged", esp_netif);
         }
@@ -1089,7 +1092,9 @@ static esp_err_t esp_netif_dhcpc_stop_api(esp_netif_api_msg_t *msg)
     ESP_LOGD(TAG, "dhcp client stop successfully");
     esp_netif->dhcpc_status = ESP_NETIF_DHCP_STOPPED;
 
-    LWIP_DHCP_IP_ADDR_ERASE(esp_netif);
+#ifdef CONFIG_LWIP_DHCP_RESTORE_LAST_IP
+    dhcp_ip_addr_erase(esp_netif->lwip_netif);
+#endif /* CONFIG_LWIP_DHCP_RESTORE_LAST_IP */
 
     return ESP_OK;
 }

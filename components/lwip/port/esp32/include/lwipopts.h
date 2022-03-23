@@ -24,7 +24,6 @@
 #include "esp_random.h"
 #endif // __linux__
 #include "sdkconfig.h"
-#include "netif/dhcp_state.h"
 #include "sntp/sntp_get_set_time.h"
 #include "sockets_ext.h"
 
@@ -304,13 +303,19 @@
  * is restored after reset/power-up.
  */
 #ifdef CONFIG_LWIP_DHCP_RESTORE_LAST_IP
-#define LWIP_DHCP_IP_ADDR_RESTORE()     dhcp_ip_addr_restore(netif)
-#define LWIP_DHCP_IP_ADDR_STORE()       dhcp_ip_addr_store(netif)
-#define LWIP_DHCP_IP_ADDR_ERASE(esp_netif)       dhcp_ip_addr_erase(esp_netif)
+/*
+ * Make the post-init hook check if we could restore the previously bound address
+ * - if yes reset the state to bound and mark result as ERR_OK (which skips discovery state)
+ * - if no, return false to continue normally to the discovery state
+ */
+#define LWIP_HOOK_DHCP_POST_INIT(netif, result) \
+    (dhcp_ip_addr_restore(netif) ? ( dhcp_set_state(dhcp, DHCP_STATE_BOUND), \
+                                     dhcp_network_changed(netif), \
+                                     (result) = ERR_OK , \
+        true ) : \
+        false)
 #else
-#define LWIP_DHCP_IP_ADDR_RESTORE()     0
-#define LWIP_DHCP_IP_ADDR_STORE()
-#define LWIP_DHCP_IP_ADDR_ERASE(esp_netif)
+#define LWIP_HOOK_DHCP_PRE_DISCOVERY(netif, result) (false)
 #endif /* CONFIG_LWIP_DHCP_RESTORE_LAST_IP */
 
 /**

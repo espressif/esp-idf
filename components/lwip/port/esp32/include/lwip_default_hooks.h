@@ -4,12 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _LWIP_DEFAULT_HOOKS_H_
-#define _LWIP_DEFAULT_HOOKS_H_
+#ifndef LWIP_ESP_DEFAULT_HOOKS_H_
+#define LWIP_ESP_DEFAULT_HOOKS_H_
 #include "lwip/ip_addr.h"
 #include "lwip/arch.h"
 #include "lwip/err.h"
 #include "lwip/pbuf.h"
+#include "netif/dhcp_state.h"
 
 #ifdef ESP_IDF_LWIP_HOOK_FILENAME
 #include ESP_IDF_LWIP_HOOK_FILENAME
@@ -60,4 +61,4 @@ ip4_route_src_hook(const ip4_addr_t *src,const ip4_addr_t *dest);
 }
 #endif
 
-#endif /* _LWIP_DEFAULT_HOOKS_H_ */
+#endif /* LWIP_ESP_DEFAULT_HOOKS_H_ */

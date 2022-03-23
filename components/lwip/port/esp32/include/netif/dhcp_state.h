@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef LWIP_ESP_DHCP_STATE_H
+#define LWIP_ESP_DHCP_STATE_H
 
-#ifndef _DHCP_STATE_H_
-#define _DHCP_STATE_H_
+#include <stdbool.h>
+#include "lwip/netif.h"
 
 #include <stdbool.h>
 
@@ -14,14 +16,14 @@
 extern "C" {
 #endif
 
-bool dhcp_ip_addr_restore(void *netif);
+bool dhcp_ip_addr_restore(struct netif *netif);
 
-void dhcp_ip_addr_store(void *netif);
+void dhcp_ip_addr_store(struct netif *netif);
 
-void dhcp_ip_addr_erase(void *esp_netif);
+void dhcp_ip_addr_erase(struct netif *netif);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /*  _DHCP_STATE_H_ */
+#endif /*  LWIP_ESP_DHCP_STATE_H */
