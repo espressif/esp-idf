@@ -227,7 +227,6 @@ menu "ESP System Settings"
             depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3)  && !TINY_USB
         config ESP_CONSOLE_USB_SERIAL_JTAG
             bool "USB Serial/JTAG Controller"
-            select ESPTOOLPY_NO_STUB if IDF_TARGET_ESP32S3  #ESPTOOL-251
             select ESPTOOLPY_NO_STUB if IDF_TARGET_ESP32C3  #ESPTOOL-252
             depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
         config ESP_CONSOLE_UART_CUSTOM
