@@ -4,6 +4,7 @@
 
 {IDF_TARGET_NAME} Wi-Fi 功能列表
 ------------------------------------
+- 支持 4 个虚拟接口，即STA、AP、Sniffer 和 reserved。
 - 支持仅 station 模式、仅 AP 模式、station/AP 共存模式
 - 支持使用 IEEE 802.11B、IEEE 802.11G、IEEE 802.11N 和 API 配置协议模式
 - 支持 WPA/WPA2/WPA2-企业版和 WPS
@@ -1091,35 +1092,36 @@ API esp_wifi_set_config() 可用于配置 AP。下表详细介绍了各个字段
 Wi-Fi 协议模式
 +++++++++++++++++++++++++
 
-目前，IDF 支持以下协议模式：
+目前，ESP-IDF 支持以下协议模式：
 
-+--------------+------------------------------------------------------------------------------------------------------------------+
-| 协议模式     | 描述                                                                                                             |
-+--------------+------------------------------------------------------------------------------------------------------------------+
-| 802.11b      | 调用函数 :cpp:func:`esp_wifi_set_protocol` (ifx, WIFI_PROTOCOL_11B)，将                                          |
-|              | station/AP 设置为仅 802.11b 模式。                                                                               |
-+--------------+------------------------------------------------------------------------------------------------------------------+
-| 802.11bg     | 调用函数 :cpp:func:`esp_wifi_set_protocol` (ifx, WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G)，将 station/AP 设置为      |
-|              | 802.11bg 模式。                                                                                                  |
-+--------------+------------------------------------------------------------------------------------------------------------------+
-| 802.11bgn    | 调用函数 :cpp:func:`esp_wifi_set_protocol` (ifx, WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N)，将      |
-|              | station/AP 设置为 802.11bgn 模式。                                                                               |
-+--------------+------------------------------------------------------------------------------------------------------------------+
-| 802.11 BGNLR | 调用函数 :cpp:func:`esp_wifi_set_protocol`                                                                       |
-|              | (ifx, WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_LR)，将 station/AP 设置为 802.11bgn    |
-|              | 和乐鑫专属模式。                                                                                                 |
-+--------------+------------------------------------------------------------------------------------------------------------------+
-| 802.11 LR    | 调用函数 :cpp:func:`esp_wifi_set_protocol` (ifx, WIFI_PROTOCOL_LR)，将                                           |
-|              | station/AP 设置为仅乐鑫专属模式。                                                                                |
-|              |                                                                                                                  |
-|              | **此模式是乐鑫的专利模式，可以达到 1 公里视线范围。请确保                                                        |
-|              | station 和 AP 同时连接至 ESP 设备。**                                                                            |
-+--------------+------------------------------------------------------------------------------------------------------------------+
+.. list-table::
+   :header-rows: 1
+   :widths: 15 55
 
-远程 (LR)
+   * - 协议模式
+     - 描述
+   * - 802.11b
+     - 调用函数 esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B)，将 station/AP 设置为仅 802.11b 模式。
+   * - 802.11bg
+     - 调用函数 esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G)，将 station/AP 设置为 802.11bg 模式。
+   * - 802.11g
+     - 调用函数 esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G) 和 esp_wifi_config_11b_rate(ifx, true)，将 station/AP 设置为 802.11g 模式。
+   * - 802.11bgn
+     - 调用函数 esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N)，将 station/AP 设置为 802.11bgn 模式。
+   * - 802.11gn
+     - 调用函数 esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N) 和 esp_wifi_config_11b_rate(ifx, true)，将 station/AP 设置为 802.11gn 模式。
+   * - 802.11 BGNLR
+     - 调用函数 esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_LR)，将 station/AP 设置为 802.11bgn 和 LR 模式。
+   * - 802.11 LR
+     - 调用函数 esp_wifi_set_protocol(ifx, WIFI_PROTOCOL_LR)，将 station/AP 设置为 LR 模式。
+
+       **此模式是乐鑫的专利模式，可以达到 1 公里视线范围。请确保 station 和 AP 同时连接至 ESP 设备。**
+
+
+长距离 (LR)
 +++++++++++++++++++++++++
 
-远程 (LR) 模式是乐鑫的一项专利 Wi-Fi 模式，可达到 1 公里视线范围。与传统 802.11b 模式相比，接收灵敏度更高，抗干扰能力更强，传输距离更长。
+长距离 (LR) 模式是乐鑫的一项专利 Wi-Fi 模式，可达到 1 公里视线范围。与传统 802.11b 模式相比，接收灵敏度更高，抗干扰能力更强，传输距离更长。
 
 LR 兼容性
 *************************
@@ -1174,7 +1176,7 @@ LR 的接收灵敏度比传统的 802.11B 模式高 4 dB，理论上，传输距
 LR 吞吐量
 *************************
 
-因为原始 PHY 数据传输速率为 1×2 Mbit 和 1/4 Mbit，LR 的吞吐量有限。
+因为原始 PHY 数据传输速率为 1/2 Mbps 和 1/4 Mbps，LR 的吞吐量有限。
 
 何时使用 LR
 *************************
@@ -1453,8 +1455,9 @@ Wi-Fi 80211 数据包发送
 传输速率
 +++++++++++++++++++++++++++++
 
- - 如果没有 Wi-Fi 连接，传输速率为 1 Mbps。
- - 如果有 WiFi 连接，且数据包是从 station 到 AP 或从 AP 到 station，则传输速率与 Wi-Fi 连接相同。否则，传输速率为 1 Mbps。
+ - 默认传输速率为 1 Mbps。
+ - 可以通过函数 :cpp:func:`esp_wifi_config_80211_tx_rate()` 设置任意速率。
+ - 可以通过函数 :cpp:func:`esp_wifi_set_bandwidth()` 设置任意带宽。
 
 在不同情况下需要避免的副作用
 +++++++++++++++++++++++++++++++++++++++++++++++++++++
