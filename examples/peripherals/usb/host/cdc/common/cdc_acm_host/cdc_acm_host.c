@@ -548,7 +548,7 @@ static esp_err_t cdc_acm_transfers_allocate(cdc_dev_t *cdc_dev, const usb_ep_des
 {
     esp_err_t ret;
 
-    // 1. Setup notification and control transfers if they are supported
+    // 1. Setup notification transfer if it is supported
     if (notif_ep_desc) {
         ESP_GOTO_ON_ERROR(
             usb_host_transfer_alloc(USB_EP_DESC_GET_MPS(notif_ep_desc), 0, &cdc_dev->notif.xfer),
@@ -558,24 +558,25 @@ static esp_err_t cdc_acm_transfers_allocate(cdc_dev_t *cdc_dev, const usb_ep_des
         cdc_dev->notif.xfer->callback = notif_xfer_cb;
         cdc_dev->notif.xfer->context = cdc_dev;
         cdc_dev->notif.xfer->num_bytes = USB_EP_DESC_GET_MPS(notif_ep_desc);
-
-        usb_device_info_t dev_info;
-        ESP_ERROR_CHECK(usb_host_device_info(cdc_dev->dev_hdl, &dev_info));
-        ESP_GOTO_ON_ERROR(
-            usb_host_transfer_alloc(dev_info.bMaxPacketSize0, 0, &cdc_dev->ctrl_transfer),
-            err, TAG,);
-        cdc_dev->ctrl_transfer->timeout_ms = 1000;
-        cdc_dev->ctrl_transfer->bEndpointAddress = 0;
-        cdc_dev->ctrl_transfer->device_handle = cdc_dev->dev_hdl;
-        cdc_dev->ctrl_transfer->context = cdc_dev;
-        cdc_dev->ctrl_transfer->callback = out_xfer_cb;
-        cdc_dev->ctrl_transfer->context = xSemaphoreCreateBinary();
-        ESP_GOTO_ON_FALSE(cdc_dev->ctrl_transfer->context, ESP_ERR_NO_MEM, err, TAG,);
-        cdc_dev->ctrl_mux = xSemaphoreCreateMutex();
-        ESP_GOTO_ON_FALSE(cdc_dev->ctrl_mux, ESP_ERR_NO_MEM, err, TAG,);
     }
 
-    // 2. Setup IN data transfer
+    // 2. Setup control transfer
+    usb_device_info_t dev_info;
+    ESP_ERROR_CHECK(usb_host_device_info(cdc_dev->dev_hdl, &dev_info));
+    ESP_GOTO_ON_ERROR(
+        usb_host_transfer_alloc(dev_info.bMaxPacketSize0, 0, &cdc_dev->ctrl_transfer),
+        err, TAG,);
+    cdc_dev->ctrl_transfer->timeout_ms = 1000;
+    cdc_dev->ctrl_transfer->bEndpointAddress = 0;
+    cdc_dev->ctrl_transfer->device_handle = cdc_dev->dev_hdl;
+    cdc_dev->ctrl_transfer->context = cdc_dev;
+    cdc_dev->ctrl_transfer->callback = out_xfer_cb;
+    cdc_dev->ctrl_transfer->context = xSemaphoreCreateBinary();
+    ESP_GOTO_ON_FALSE(cdc_dev->ctrl_transfer->context, ESP_ERR_NO_MEM, err, TAG,);
+    cdc_dev->ctrl_mux = xSemaphoreCreateMutex();
+    ESP_GOTO_ON_FALSE(cdc_dev->ctrl_mux, ESP_ERR_NO_MEM, err, TAG,);
+
+    // 3. Setup IN data transfer
     ESP_GOTO_ON_ERROR(
         usb_host_transfer_alloc(USB_EP_DESC_GET_MPS(in_ep_desc), 0, &cdc_dev->data.in_xfer),
         err, TAG,
@@ -587,7 +588,7 @@ static esp_err_t cdc_acm_transfers_allocate(cdc_dev_t *cdc_dev, const usb_ep_des
     cdc_dev->data.in_xfer->device_handle = cdc_dev->dev_hdl;
     cdc_dev->data.in_xfer->context = cdc_dev;
 
-    // 3. Setup OUT bulk transfer (if it is required (out_buf_len > 0))
+    // 4. Setup OUT bulk transfer (if it is required (out_buf_len > 0))
     if (out_buf_len != 0) {
         ESP_GOTO_ON_ERROR(
             usb_host_transfer_alloc(out_buf_len, 0, &cdc_dev->data.out_xfer),
@@ -771,8 +772,10 @@ esp_err_t cdc_acm_host_open_vendor_specific(uint16_t vid, uint16_t pid, uint8_t 
     int desc_offset;
     ESP_ERROR_CHECK(usb_host_get_active_config_descriptor(cdc_dev->dev_hdl, &config_desc));
     cdc_dev->data.intf_desc = usb_parse_interface_descriptor(config_desc, interface_num, 0, &desc_offset);
+    ESP_GOTO_ON_FALSE(
+        cdc_dev->data.intf_desc,
+        ESP_ERR_NOT_FOUND, err, TAG, "Required interfece no %d was not found.", interface_num);
     const int temp_offset = desc_offset; // Save this offset for later
-    assert(cdc_dev->data.intf_desc);
 
     // The interface can have 2-3 endpoints. 2 for data and 1 optional for notifications
     const usb_ep_desc_t *in_ep = NULL;
@@ -1080,7 +1083,7 @@ unblock:
 
 esp_err_t cdc_acm_host_line_coding_get(cdc_acm_dev_hdl_t cdc_hdl, cdc_acm_line_coding_t *line_coding)
 {
-    CDC_ACM_CHECK(cdc_hdl && line_coding, ESP_ERR_INVALID_ARG);
+    CDC_ACM_CHECK(line_coding, ESP_ERR_INVALID_ARG);
 
     ESP_RETURN_ON_ERROR(
         send_cdc_request((cdc_dev_t *)cdc_hdl, true, USB_CDC_REQ_GET_LINE_CODING, (uint8_t *)line_coding, sizeof(cdc_acm_line_coding_t), 0),
@@ -1092,7 +1095,7 @@ esp_err_t cdc_acm_host_line_coding_get(cdc_acm_dev_hdl_t cdc_hdl, cdc_acm_line_c
 
 esp_err_t cdc_acm_host_line_coding_set(cdc_acm_dev_hdl_t cdc_hdl, const cdc_acm_line_coding_t *line_coding)
 {
-    CDC_ACM_CHECK(cdc_hdl && line_coding, ESP_ERR_INVALID_ARG);
+    CDC_ACM_CHECK(line_coding, ESP_ERR_INVALID_ARG);
 
     ESP_RETURN_ON_ERROR(
         send_cdc_request((cdc_dev_t *)cdc_hdl, false, USB_CDC_REQ_SET_LINE_CODING, (uint8_t *)line_coding, sizeof(cdc_acm_line_coding_t), 0),
@@ -1104,8 +1107,6 @@ esp_err_t cdc_acm_host_line_coding_set(cdc_acm_dev_hdl_t cdc_hdl, const cdc_acm_
 
 esp_err_t cdc_acm_host_set_control_line_state(cdc_acm_dev_hdl_t cdc_hdl, bool dtr, bool rts)
 {
-    CDC_ACM_CHECK(cdc_hdl, ESP_ERR_INVALID_ARG);
-
     const uint16_t ctrl_bitmap = (uint16_t)dtr | ((uint16_t)rts << 1);
 
     ESP_RETURN_ON_ERROR(
@@ -1117,8 +1118,6 @@ esp_err_t cdc_acm_host_set_control_line_state(cdc_acm_dev_hdl_t cdc_hdl, bool dt
 
 esp_err_t cdc_acm_host_send_break(cdc_acm_dev_hdl_t cdc_hdl, uint16_t duration_ms)
 {
-    CDC_ACM_CHECK(cdc_hdl, ESP_ERR_INVALID_ARG);
-
     ESP_RETURN_ON_ERROR(
         send_cdc_request((cdc_dev_t *)cdc_hdl, false, USB_CDC_REQ_SEND_BREAK, NULL, 0, duration_ms),
         TAG,);
@@ -1128,37 +1127,42 @@ esp_err_t cdc_acm_host_send_break(cdc_acm_dev_hdl_t cdc_hdl, uint16_t duration_m
     return ESP_OK;
 }
 
-static esp_err_t send_cdc_request(cdc_dev_t *cdc_dev, bool in_transfer, cdc_request_code_t request, uint8_t *data, uint16_t data_len, uint16_t value)
+esp_err_t cdc_acm_host_send_custom_request(cdc_acm_dev_hdl_t cdc_hdl, uint8_t bmRequestType, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, uint16_t wLength, uint8_t *data)
 {
+    CDC_ACM_CHECK(cdc_hdl, ESP_ERR_INVALID_ARG);
+    cdc_dev_t *cdc_dev = (cdc_dev_t *)cdc_hdl;
+    if (wLength > 0) {
+        CDC_ACM_CHECK(data, ESP_ERR_INVALID_ARG);
+    }
+    CDC_ACM_CHECK(cdc_dev->ctrl_transfer->data_buffer_size >= wLength, ESP_ERR_INVALID_SIZE);
+
     esp_err_t ret;
-    CDC_ACM_CHECK(cdc_dev->ctrl_transfer, ESP_ERR_NOT_SUPPORTED);
-    CDC_ACM_CHECK(cdc_dev->ctrl_transfer->data_buffer_size >= data_len, ESP_ERR_INVALID_SIZE);
 
     // Take Mutex and fill the CTRL request
-    BaseType_t taken = xSemaphoreTake(cdc_dev->ctrl_mux, pdMS_TO_TICKS(1000));
+    BaseType_t taken = xSemaphoreTake(cdc_dev->ctrl_mux, pdMS_TO_TICKS(5000));
     if (!taken) {
         return ESP_ERR_TIMEOUT;
     }
     usb_setup_packet_t *req = (usb_setup_packet_t *)(cdc_dev->ctrl_transfer->data_buffer);
     uint8_t *start_of_data = (uint8_t *)req + sizeof(usb_setup_packet_t);
-    req->bmRequestType = USB_BM_REQUEST_TYPE_DIR_OUT | USB_BM_REQUEST_TYPE_TYPE_CLASS | USB_BM_REQUEST_TYPE_RECIP_INTERFACE;
-    req->bRequest = request;
-    req->wValue = value;
-    req->wIndex = cdc_dev->notif.intf_desc->bInterfaceNumber;
-    req->wLength = data_len;
+    req->bmRequestType = bmRequestType;
+    req->bRequest = bRequest;
+    req->wValue = wValue;
+    req->wIndex = wIndex;
+    req->wLength = wLength;
 
-    if (in_transfer) {
-        req->bmRequestType |= USB_BM_REQUEST_TYPE_DIR_IN;
-    } else {
-        memcpy(start_of_data, data, data_len);
+    // For IN transfers we must transfer data ownership to CDC driver
+    const bool in_transfer = bmRequestType & USB_BM_REQUEST_TYPE_DIR_IN;
+    if (!in_transfer) {
+        memcpy(start_of_data, data, wLength);
     }
 
-    cdc_dev->ctrl_transfer->num_bytes = data_len + sizeof(usb_setup_packet_t);
+    cdc_dev->ctrl_transfer->num_bytes = wLength + sizeof(usb_setup_packet_t);
     ESP_GOTO_ON_ERROR(
         usb_host_transfer_submit_control(p_cdc_acm_obj->cdc_acm_client_hdl, cdc_dev->ctrl_transfer),
         unblock, TAG, "CTRL transfer failed");
 
-    taken = xSemaphoreTake((SemaphoreHandle_t)cdc_dev->ctrl_transfer->context, pdMS_TO_TICKS(1000)); // This is a fixed timeout. Every CDC device should be able to respond to CTRL transfer in 1 second
+    taken = xSemaphoreTake((SemaphoreHandle_t)cdc_dev->ctrl_transfer->context, pdMS_TO_TICKS(5000)); // This is a fixed timeout. Every CDC device should be able to respond to CTRL transfer in 5 seconds
     if (!taken) {
         // Transfer was not finished, error in USB LIB. Reset the endpoint
         cdc_acm_reset_transfer_endpoint(cdc_dev->dev_hdl, cdc_dev->ctrl_transfer);
@@ -1169,14 +1173,29 @@ static esp_err_t send_cdc_request(cdc_dev_t *cdc_dev, bool in_transfer, cdc_requ
     ESP_GOTO_ON_FALSE(cdc_dev->ctrl_transfer->status == USB_TRANSFER_STATUS_COMPLETED, ESP_ERR_INVALID_RESPONSE, unblock, TAG, "Control transfer error");
     ESP_GOTO_ON_FALSE(cdc_dev->ctrl_transfer->actual_num_bytes == cdc_dev->ctrl_transfer->num_bytes, ESP_ERR_INVALID_RESPONSE, unblock, TAG, "Incorrect number of bytes transferred");
 
+    // For OUT transfers, we must transfer data ownership to user
     if (in_transfer) {
-        memcpy(data, start_of_data, data_len);
+        memcpy(data, start_of_data, wLength);
     }
     ret = ESP_OK;
 
 unblock:
     xSemaphoreGive(cdc_dev->ctrl_mux);
     return ret;
+}
+
+static esp_err_t send_cdc_request(cdc_dev_t *cdc_dev, bool in_transfer, cdc_request_code_t request, uint8_t *data, uint16_t data_len, uint16_t value)
+{
+    CDC_ACM_CHECK(cdc_dev, ESP_ERR_INVALID_ARG);
+    CDC_ACM_CHECK(cdc_dev->notif.intf_desc, ESP_ERR_NOT_SUPPORTED);
+
+    uint8_t req_type = USB_BM_REQUEST_TYPE_TYPE_CLASS | USB_BM_REQUEST_TYPE_RECIP_INTERFACE;
+    if (in_transfer) {
+        req_type |= USB_BM_REQUEST_TYPE_DIR_IN;
+    } else {
+        req_type |= USB_BM_REQUEST_TYPE_DIR_OUT;
+    }
+    return cdc_acm_host_send_custom_request((cdc_acm_dev_hdl_t) cdc_dev, req_type, request, value, cdc_dev->notif.intf_desc->bInterfaceNumber, data_len, data);
 }
 
 esp_err_t cdc_acm_host_protocols_get(cdc_acm_dev_hdl_t cdc_hdl, cdc_comm_protocol_t *comm, cdc_data_protocol_t *data)

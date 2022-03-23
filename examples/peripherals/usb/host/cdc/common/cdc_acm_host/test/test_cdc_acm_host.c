@@ -373,11 +373,39 @@ TEST_CASE("error_handling", "[cdc_acm]")
     vTaskDelay(20);
 }
 
+TEST_CASE("custom_command", "[cdc_acm]")
+{
+    test_install_cdc_driver();
+
+    // Open device with only CTRL endpoint (endpoint no 0)
+    cdc_acm_dev_hdl_t cdc_dev;
+    const cdc_acm_host_device_config_t dev_config = {
+        .connection_timeout_ms = 500,
+        .out_buffer_size = 0,
+        .event_cb = notif_cb,
+        .data_cb = NULL
+    };
+
+    TEST_ASSERT_EQUAL(ESP_OK, cdc_acm_host_open(0x303A, 0x4002, 0, &dev_config, &cdc_dev));
+    TEST_ASSERT_NOT_NULL(cdc_dev);
+
+    // Corresponds to command: Set Control Line State, DTR on, RTS off
+    TEST_ASSERT_EQUAL(ESP_OK, cdc_acm_host_send_custom_request(cdc_dev, 0x21, 34, 1, 0, 0, NULL));
+
+    // Clean-up
+    TEST_ASSERT_EQUAL(ESP_OK, cdc_acm_host_close(cdc_dev));
+    TEST_ASSERT_EQUAL(ESP_OK, cdc_acm_host_uninstall());
+    vTaskDelay(20);
+}
+
 /* Following test case implements dual CDC-ACM USB device that can be used as mock device for CDC-ACM Host tests */
 void run_usb_dual_cdc_device(void);
 TEST_CASE("mock_device_app", "[cdc_acm_device][ignore]")
 {
     run_usb_dual_cdc_device();
+    while (1) {
+        vTaskDelay(10);
+    }
 }
 
 #endif

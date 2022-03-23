@@ -238,6 +238,24 @@ void cdc_acm_host_desc_print(cdc_acm_dev_hdl_t cdc_hdl);
  */
 esp_err_t cdc_acm_host_protocols_get(cdc_acm_dev_hdl_t cdc_hdl, cdc_comm_protocol_t *comm, cdc_data_protocol_t *data);
 
+/**
+ * @brief Send command to CTRL endpoint
+ *
+ * Sends Control transfer as described in USB specification chapter 9.
+ * This function can be used by device drivers that use custom/vendor specific commands.
+ * These commands can either extend or replace commands defined in USB CDC-PSTN specification rev. 1.2.
+ *
+ * @param        cdc_hdl       CDC handle obtained from cdc_acm_host_open()
+ * @param[in]    bmRequestType Field of USB control request
+ * @param[in]    bRequest      Field of USB control request
+ * @param[in]    wValue        Field of USB control request
+ * @param[in]    wIndex        Field of USB control request
+ * @param[in]    wLength       Field of USB control request
+ * @param[inout] data          Field of USB control request
+ * @return esp_err_t
+ */
+esp_err_t cdc_acm_host_send_custom_request(cdc_acm_dev_hdl_t cdc_hdl, uint8_t bmRequestType, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, uint16_t wLength, uint8_t *data);
+
 #ifdef __cplusplus
 }
 class CdcAcmDevice
@@ -292,6 +310,11 @@ public:
     inline esp_err_t send_break(uint16_t duration_ms)
     {
         return cdc_acm_host_send_break(this->cdc_hdl, duration_ms);
+    }
+
+    inline esp_err_t send_custom_request(uint8_t bmRequestType, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, uint16_t wLength, uint8_t *data)
+    {
+        return cdc_acm_host_send_custom_request(this->cdc_hdl, bmRequestType, bRequest, wValue, wIndex, wLength, data);
     }
 
 private:
