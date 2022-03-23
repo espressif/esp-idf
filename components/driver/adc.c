@@ -109,12 +109,12 @@ uint32_t adc_get_calibration_offset(adc_unit_t adc_n, adc_channel_t chan, adc_at
                    ADC Continuous Read Mode (via DMA)
 ---------------------------------------------------------------*/
 //Function to address transaction
-static IRAM_ATTR bool s_adc_dma_intr(adc_digi_context_t *adc_digi_ctx);
+static bool s_adc_dma_intr(adc_digi_context_t *adc_digi_ctx);
 
 #if SOC_GDMA_SUPPORTED
-static IRAM_ATTR bool adc_dma_in_suc_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
+static bool adc_dma_in_suc_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
 #else
-static IRAM_ATTR void adc_dma_intr_handler(void *arg);
+static void adc_dma_intr_handler(void *arg);
 #endif
 
 static int8_t adc_digi_get_io_num(adc_unit_t adc_unit, uint8_t adc_channel)

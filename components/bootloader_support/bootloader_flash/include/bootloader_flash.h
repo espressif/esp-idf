@@ -47,7 +47,7 @@ esp_err_t bootloader_flash_xmc_startup(void);
   *
   * @note This can be overridden because it's attribute weak.
   */
-esp_err_t IRAM_ATTR __attribute__((weak)) bootloader_flash_unlock(void);
+esp_err_t  __attribute__((weak)) bootloader_flash_unlock(void);
 
 
 #ifdef __cplusplus

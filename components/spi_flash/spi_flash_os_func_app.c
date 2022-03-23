@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,10 +52,10 @@ typedef struct {
     uint32_t released_since_us;    // Time since last end() (implicit yield)
 } spi1_app_func_arg_t;
 
-static inline IRAM_ATTR void on_spi1_released(spi1_app_func_arg_t* ctx);
-static inline IRAM_ATTR void on_spi1_acquired(spi1_app_func_arg_t* ctx);
-static inline IRAM_ATTR void on_spi1_yielded(spi1_app_func_arg_t* ctx);
-static inline IRAM_ATTR bool on_spi1_check_yield(spi1_app_func_arg_t* ctx);
+static inline void on_spi1_released(spi1_app_func_arg_t* ctx);
+static inline void on_spi1_acquired(spi1_app_func_arg_t* ctx);
+static inline void on_spi1_yielded(spi1_app_func_arg_t* ctx);
+static inline bool on_spi1_check_yield(spi1_app_func_arg_t* ctx);
 
 IRAM_ATTR static void cache_enable(void* arg)
 {

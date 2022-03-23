@@ -269,7 +269,7 @@ void vPortYieldOtherCore(BaseType_t coreid);
  * @return true Core can yield
  * @return false Core cannot yield
  */
-static inline bool IRAM_ATTR xPortCanYield(void);
+static inline bool xPortCanYield(void);
 
 // ------------------- Hook Functions ----------------------
 

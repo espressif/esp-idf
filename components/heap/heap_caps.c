@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,7 @@
 
 
 // forward declaration
-IRAM_ATTR static void *heap_caps_realloc_base( void *ptr, size_t size, uint32_t caps);
+static void *heap_caps_realloc_base( void *ptr, size_t size, uint32_t caps);
 
 /*
 This file, combined with a region allocator that supports multiple heaps, solves the problem that the ESP32 has RAM

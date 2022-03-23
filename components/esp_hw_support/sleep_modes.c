@@ -358,7 +358,7 @@ inline static void IRAM_ATTR misc_modules_wake_prepare(void)
 #endif
 }
 
-inline static uint32_t IRAM_ATTR call_rtc_sleep_start(uint32_t reject_triggers, uint32_t lslp_mem_inf_fpu);
+inline static uint32_t call_rtc_sleep_start(uint32_t reject_triggers, uint32_t lslp_mem_inf_fpu);
 
 static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 {

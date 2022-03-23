@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -69,7 +69,7 @@ typedef struct {
 
 static spi_slave_t *spihost[SOC_SPI_PERIPH_NUM];
 
-static void SPI_SLAVE_ISR_ATTR spi_intr(void *arg);
+static void spi_intr(void *arg);
 
 static inline bool is_valid_host(spi_host_device_t host)
 {
