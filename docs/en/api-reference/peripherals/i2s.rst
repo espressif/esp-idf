@@ -57,13 +57,13 @@ Functional Overview
 Installing the Driver
 ^^^^^^^^^^^^^^^^^^^^^
 
-Install the I2S driver by calling the function :cpp:func`i2s_driver_install` and passing the following arguments:
+Install the I2S driver by calling the function :cpp:func:`i2s_driver_install` and passing the following arguments:
 
 - Port number
-- The structure :cpp:type:`i2s_config_t` with defined communication parameters
+- The initialized :cpp:type:`i2s_config_t` struct defining the communication parameters
 - Event queue size and handle
 
-Once :cpp:func`i2s_driver_install` returns ``ESP_OK``, it means I2S has started.
+An ``ESP_OK`` return value from :cpp:func:`i2s_driver_install` indictes I2S has started.
 
 Configuration example:
 
@@ -86,7 +86,7 @@ Configuration example:
             .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1  // Interrupt level 1, default 0
         };
 
-        i2s_driver_install(I2S_NUM, &i2s_config, 0, NULL);
+        i2s_driver_install(i2s_num, &i2s_config, 0, NULL);
 
 .. only:: SOC_I2S_SUPPORTS_TDM
 
@@ -106,15 +106,15 @@ Configuration example:
             .bits_per_chan = I2S_BITS_PER_SAMPLE_16BIT
         };
 
-        i2s_driver_install(I2S_NUM, &i2s_config, 0, NULL);
+        i2s_driver_install(i2s_num, &i2s_config, 0, NULL);
 
 Setting Communication Pins
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Once the driver is installed, configure physical GPIO pins to which signals will be routed. For this, call the function :cpp:func`i2s_set_pin` and pass the following arguments to it:
+Once the driver is installed, configure the physical GPIO pins to which the I2S signals will be routed. This is accomplished by calling the function :cpp:func:`i2s_set_pin` with the following arguments:
 
 - Port number
-- The structure :cpp:type:`i2s_pin_config_t` defining the GPIO pin numbers to which the driver should route the MCK, BCK, WS, DATA out, and DATA in signals. If you want to keep a currently allocated pin number for a specific signal, or if this signal is unused, then pass the macro :c:macro:`I2S_PIN_NO_CHANGE`. See the example below.
+- The structure :cpp:type:`i2s_pin_config_t` which defines the GPIO pin numbers for the MCK, BCK, WS, DATA out, and DATA in signals. To keep a current pin allocatopm pin for a specific signal, or to indicate an unused signal,  pass the macro :c:macro:`I2S_PIN_NO_CHANGE`. See the example below.
 
 .. note::
 
@@ -130,54 +130,54 @@ Once the driver is installed, configure physical GPIO pins to which signals will
         .data_in_num = I2S_PIN_NO_CHANGE
     };
 
-    i2s_set_pin(i2s_num, &pin_config);
+    i2s_set_pin(I2S_NUM, &pin_config);
 
 Running I2S Communication
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To perform a transmission:
+To send data:
 
 - Prepare the data for sending
 - Call the function :cpp:func:`i2s_write` and pass the data buffer address and data length to it
 
-The function will write the data to the DMA Tx buffer, and then the data will be transmitted automatically.
+The function will write the data to the DMA Tx buffer, and the data will be transmitted automatically by the I2S peripheral.
 
 .. code-block:: c
 
     i2s_write(I2S_NUM, samples_data, ((bits+8)/16)*SAMPLE_PER_CYCLE*4, &i2s_bytes_write, 100);
 
-To retrieve received data, use the function :cpp:func:`i2s_read`. It will retrieve the data from the DMA Rx buffer, once the data is received by the I2S controller.
+To retrieve received data, use the function :cpp:func:`i2s_read`. It will retrieve the data from the DMA Rx buffer once the data is received by the I2S peripheral.
 
 .. code-block:: c
 
     i2s_read(I2S_NUM, data_recv, ((bits+8)/16)*SAMPLE_PER_CYCLE*4, &i2s_bytes_read, 100);
 
-You can temporarily stop the I2S driver by calling the function :cpp:func:`i2s_stop`, which will disable the I2S Tx/Rx units until the function :cpp:func:`i2s_start` is called. If the function :cpp:func`i2s_driver_install` is used, the driver will start up automatically eliminating the need to call :cpp:func:`i2s_start`.
+You can temporarily halt the I2S driver by calling  :cpp:func:`i2s_stop`, which disables the I2S Tx/Rx units until   :cpp:func:`i2s_start` is called. The driver automatically starts the I2S peripheral after :cpp:func:`i2s_driver_install` is called,  eliminating the need to call :cpp:func:`i2s_start`.
 
 
 Deleting the Driver
 ^^^^^^^^^^^^^^^^^^^
 
-If the established communication is no longer required, the driver can be removed to free allocated resources by calling :cpp:func:`i2s_driver_uninstall`.
+Once I2S communication is no longer required, the driver can be removed to free allocated resources by calling :cpp:func:`i2s_driver_uninstall`.
 
 
 Application Example
 -------------------
 
-A code example for the I2S driver can be found in the directory :example:`peripherals/i2s`.
+Code examples for the I2S driver can be found in the directory :example:`peripherals/i2s`.
 
 .. only:: SOC_I2S_SUPPORTS_ADC or SOC_I2S_SUPPORTS_DAC
 
-    In addition, there are two short configuration examples for the I2S driver.
+    Additionally, there are two short configuration examples for the I2S driver.
 
 .. only:: not SOC_I2S_SUPPORTS_ADC or SOC_I2S_SUPPORTS_DAC
 
-    In addition, there is a short configuration examples for the I2S driver.
+    Additionally, there is a short configuration examples for the I2S driver.
 
 I2S configuration
 ^^^^^^^^^^^^^^^^^
 
-Example for general usage.
+Example for general usage:
 
 .. only:: not SOC_I2S_SUPPORTS_TDM
 
@@ -265,7 +265,7 @@ Example for general usage.
 
         i2s_driver_uninstall(i2s_num); //stop & destroy i2s driver
 
-    I2S on {IDF_TARGET_NAME} support TDM mode, up to 16 channels are available in TDM mode. If you want to use TDM mode, set field ``channel_format`` of :cpp:type:`i2s_config_t` to ``I2S_CHANNEL_FMT_MULTIPLE``. Then enable the channels by setting ``chan_mask`` using masks in :cpp:type:`i2s_channel_t`, the number of active channels and total channels will be calculate automatically. Also you can set a particular total channel number for it, but it shouldn't be smaller than the largest channel you use.
+    I2S on {IDF_TARGET_NAME} support TDM mode, up to 16 channels are available in TDM mode. If you want to use TDM mode, set field ``channel_format`` of :cpp:type:`i2s_config_t` to ``I2S_CHANNEL_FMT_MULTIPLE``. Then enable the channels by setting ``chan_mask`` using masks in :cpp:type:`i2s_channel_t`, the number of active channels and total channels will be calculate automatically. You can also set a particular total channel number for it, but it shouldn't be smaller than the largest channel you use.
 
     If active channels are discrete, the inactive channels within total channels will be filled by a constant automatically. But if ``skip_msk`` is enabled, these inactive channels will be skiped.
 
@@ -350,61 +350,48 @@ Example for general usage.
 Application Notes
 ^^^^^^^^^^^^^^^^^
 
-If you are using a high sample rate like more than 48 kHz or see the data being lost, the following information might help.
-
-Considering different applications have different requirements, ``dma_desc_num`` and ``dma_frame_num`` are made public. Here is the detailed explanation to these two fields:
-
-- ``dma_desc_num``: The total number of descriptors used by I2S DMA to receive/transmit data. A descriptor includes some information such as buffer address, the address of the next descriptor, and the buffer length. Since one descriptor points to one buffer, therefore, ``dma_desc_num`` can be interpreted as the total number of DMA buffers used to store data from DMA interrupt. Notice that these buffers are internal to :cpp:func:`i2s_read` and descriptors are created automatically inside of the I2S driver. Users only need to set the buffer number while the length is derived from the parameter described below.
-- ``dma_frame_num``: The number of frames for one-time sampling. The frame here means the total data from all the channels in one WS cycle. For example, if two channels in stereo mode (i.e., ``channel_format`` is set to ``I2S_CHANNEL_FMT_RIGHT_LEFT``) are active, and each channel transfers 32 bits (i.e., ``bits_per_sample`` is set to ``I2S_BITS_PER_CHAN_32BIT``), then the total number of bytes of a frame is ``channel_format`` * ``bits_per_sample`` = 2 * 32 / 8 = 8 bytes. For example, we assume that the current ``dma_frame_num`` is 100, then the length of the DMA buffer is 8 * 100 = 800 bytes. Note that the length of an internal DMA buffer shouldn't be greater than 4092.
-
-When the data received by DMA reach the size of internal DMA buffer, a receive interrupt is triggered, and an internal message queue will transport this buffer to :cpp:func:`i2s_read`. The main task of :cpp:func:`i2s_read` is to copy the data in the internal DMA buffer into the user given buffer. Since the internal DMA buffer is usually not equal to the user given buffer size, there are two cases:
-
-- If the size of internal DMA buffers is smaller than the user given buffer size, :cpp:func:`i2s_read` will consume several internal DMA buffers to fill up the user given buffer. If the message queue of DMA buffer is not long enough, :cpp:func:`i2s_read` will be blocked on receive message queue untill getting enough data. You can estimate the time :cpp:func:`i2s_read` function is blocked by the formula block_time (sec) = (given_bufer_size) / (sample_rate * channel_num * channel_bytes). If we place :cpp:func:`i2s_read` in a ``while`` together with other functions we should also consider the time the loop execution is blocked by the other functions before :cpp:func:`i2s_read` is executed again. It is not allowed to exceed the max_wait_time (sec) = ((``dma_desc_num`` - 1) * dma_buffer_size) / (sample_rate), otherwise the internal message queue will overflow and in consequence some data will be lost.
-- If the DMA buffer size is greater than the user given buffer size, it means :cpp:func:`i2s_read` would need to be called in a loop several times to take all the data, the max_wait_time may be exceeded, and the message queue overflow is likely to happen. Therefore it is quite risky to use a small user buffer for data receiving.
-
-Here are a couple of tips when the sample rate is high:
-
-1. Increasing ``dma_frame_num`` can help to reduce the I2S DMA interrupt frequency;
-2. Increasing ``dma_desc_num`` can help to alow a longer max_wait_time to be spent by the other functions in the loop conatining :cpp:func:`i2s_read` ;
-
-    .. code-block:: c
-
-        while (1) {
-            ... // Other operations (e.g. Waiting on a semaphore)
-            i2s_read(I2S_NUM, user_given_buffer, user_given_buffer_size, &i2s_bytes_read, 100);
-            ... // Other operations (e.g. Sending the data to another thread. Avoid any data processing here.)
-        }
-
-3. Increasing the size of the buffer internal to :cpp:func:`i2s_read` can help to increase the max_wait_time. When you process I2S data (like storing the data to an SD card) in another thread, the time spent in processing thread for one loop should not exceed the max_wait_time otherwise some data will be lost. So if the processing of the received data received is rather slow, please allow :cpp:func:`i2s_read` a big internal buffer for storing the read data;
-4. Allocating at least two user given buffers can improve the data receipt efficiency. One buffer can continue to receive data while the other one is under processing. But we have to guarantee the buffer that is going to read data is not under processing in the other thread. We can use a semaphore or another lock to avoid overwriting the data in the buffer while it is still under processing;
-
-    .. code-block:: c
-
-        uint8_t **user_given_buffers = (uint8_t **)calloc(buffer_num, sizeof(uint8_t *));
-        // Don't forget to check if user_given_buffers is NULL here
-        for (int i = 0; i < buffer_num; i++) {
-            user_given_buffers[i] = (uint8_t *)calloc(user_given_buffer_size, sizeof(uint8_t));
-            // Don't forget to check if user_given_buffers[i] is NULL here
-        }
-        int cnt = 0;
-        while (1) {
-            ... // Other operations (e.g. Waiting on a semaphore)
-            i2s_read(I2S_NUM, user_given_buffer[cnt], user_given_buffer_size, &i2s_bytes_read, 100);
-            ... // Other operations (e.g. Sending the data to another thread. Avoid any data processing here.)
-            cnt++;
-            cnt %= buffer_num;
-        }
-
-5. Increasing the priority of the thread that contains :cpp:func:`i2s_read` can help the data in the message queue to be taken more timely.
-
-To check whether there are data lost, you can offer an event queue handler to the driver during installation:
+For the applications that need a high frequency sample rate, sometimes the massive throughput of receiving data may cause data lost. Users can receive data loss event by the event queue, it will trigger an ``I2S_EVENT_RX_Q_OVF`` event.:
 
     .. code-block:: c
 
         QueueHandle_t evt_que;
         i2s_driver_install(i2s_num, &i2s_config, 10, &evt_que);
+        ...
+        i2s_event_t evt;
+        xQueueReceive(evt_que, &evt, portMAX_DELAY);
+        if (evt.type == I2S_EVENT_RX_Q_OVF) {
+            printf("RX data dropped\n");
+        }
 
-You will receive ``I2S_EVENT_RX_Q_OVF`` event when there are data lost.
+Please follow these steps to calculate the parameters that can prevent data lost:
+
+1. Determine the interrupt interval. Generally, when data lost happened, the interval should be the bigger the better, it can help to reduce the interrupt times, i.e., ``dma_frame_num`` should be as big as possible while the DMA buffer size won't exceed its maximum value 4092. The relationships are::
+
+    interrupt_interval(unit: sec) = dma_frame_num / sample_rate
+    dma_buffer_size = dma_frame_num * channel_num * data_bit_width / 8 <= 4092
+
+2. Determine the ``dma_desc_num``. The ``dma_desc_num`` is decided by the max time of ``i2s_read`` polling cycle, all the data should be stored between two ``i2s_read``. This cycle can be measured by a timer or an outputting gpio signal. The relationship should be::
+
+    dma_desc_num > polling_cycle / interrupt_interval
+
+3. Determine the receiving buffer size. The receiving buffer that offered by user in ``i2s_read`` should be able to take all the data in all dma buffers, that means it should be bigger than the total size of all the dma buffers::
+
+    recv_buffer_size > dma_desc_num * dma_buffer_size
+
+For example, if there is a I2S application::
+
+    sample_rate = 144000 Hz
+    data_bit_width = 32 bits
+    channel_num = 2
+    polling_cycle = 10ms
+
+Then we need to calculate ``dma_frame_num``, ``dma_desc_num`` and ``recv_buf_size`` according to the known values::
+
+    dma_frame_num * channel_num * data_bit_width / 8 = dma_buffer_size <= 4092
+    dma_frame_num <= 511
+    interrupt_interval = dma_frame_num / sample_rate = 511 / 144000 = 0.003549 s = 3.549 ms
+    dma_desc_num > polling_cycle / interrupt_interval = cell(10 / 3.549) = cell(2.818) = 3
+    recv_buffer_size > dma_desc_num * dma_buffer_size = 3 * 4092 = 12276 bytes
 
 
 API Reference
