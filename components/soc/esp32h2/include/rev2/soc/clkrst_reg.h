@@ -1,8 +1,9 @@
-/**
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+/*
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0
  */
+
 #pragma once
 
 #include <stdint.h>
@@ -121,6 +122,13 @@ extern "C" {
 #define SYSTEM_COEX_LPCLK_DIV_M  (SYSTEM_COEX_LPCLK_DIV_V << SYSTEM_COEX_LPCLK_DIV_S)
 #define SYSTEM_COEX_LPCLK_DIV_V  0x000003FFU
 #define SYSTEM_COEX_LPCLK_DIV_S  6
+/** SYSTEM_BT_DFM_CLK_INV_PHASE : R/W; bitpos: [17:16]; default: 0;
+ *  Need add description
+ */
+#define SYSTEM_BT_DFM_CLK_INV_PHASE    0x00000003U
+#define SYSTEM_BT_DFM_CLK_INV_PHASE_M  (SYSTEM_BT_DFM_CLK_INV_PHASE_V << SYSTEM_BT_DFM_CLK_INV_PHASE_S)
+#define SYSTEM_BT_DFM_CLK_INV_PHASE_V  0x00000003U
+#define SYSTEM_BT_DFM_CLK_INV_PHASE_S  16
 
 /** SYSTEM_CLK_OUT_EN_REG register
  *  register description
@@ -355,6 +363,13 @@ extern "C" {
 #define SYSTEM_DATA_DUMP_CLK_EN_M  (SYSTEM_DATA_DUMP_CLK_EN_V << SYSTEM_DATA_DUMP_CLK_EN_S)
 #define SYSTEM_DATA_DUMP_CLK_EN_V  0x00000001U
 #define SYSTEM_DATA_DUMP_CLK_EN_S  21
+/** SYSTEM_BT_DFM_CLK_EN : R/W; bitpos: [22]; default: 0;
+ *  Need add description
+ */
+#define SYSTEM_BT_DFM_CLK_EN    (BIT(22))
+#define SYSTEM_BT_DFM_CLK_EN_M  (SYSTEM_BT_DFM_CLK_EN_V << SYSTEM_BT_DFM_CLK_EN_S)
+#define SYSTEM_BT_DFM_CLK_EN_V  0x00000001U
+#define SYSTEM_BT_DFM_CLK_EN_S  22
 
 /** SYSTEM_MODEM_RST_EN_REG register
  *  register description
@@ -1261,7 +1276,7 @@ extern "C" {
  *  register description
  */
 #define SYSTEM_DATE_REG (DR_REG_SYSTEM_BASE + 0x38)
-/** SYSTEM_DATE : R/W; bitpos: [27:0]; default: 34640435;
+/** SYSTEM_DATE : R/W; bitpos: [27:0]; default: 34672962;
  *  Need add description
  */
 #define SYSTEM_DATE    0x0FFFFFFFU
