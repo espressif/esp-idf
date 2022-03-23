@@ -986,7 +986,6 @@ components/hal/twai_hal_iram.c
 components/hal/uart_hal.c
 components/hal/uart_hal_iram.c
 components/hal/usb_hal.c
-components/heap/heap_caps_init.c
 components/heap/heap_private.h
 components/heap/heap_task_info.c
 components/heap/heap_tlsf.c
