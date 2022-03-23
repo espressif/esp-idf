@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,7 +34,11 @@ static inline void lcd_ll_enable_clock(lcd_cam_dev_t *dev, bool en)
 static inline void lcd_ll_set_group_clock_src(lcd_cam_dev_t *dev, lcd_clock_source_t src, int div_num, int div_a, int div_b)
 {
     // lcd_clk = module_clock_src / (div_num + div_b / div_a)
-    HAL_ASSERT(div_num >= 2);
+    HAL_ASSERT(div_num >= 2 && div_num <= 256);
+    // dic_num == 0 means 256 divider in hardware
+    if (div_num >= 256) {
+        div_num = 0;
+    }
     HAL_FORCE_MODIFY_U32_REG_FIELD(dev->lcd_clock, lcd_clkm_div_num, div_num);
     dev->lcd_clock.lcd_clkm_div_a = div_a;
     dev->lcd_clock.lcd_clkm_div_b = div_b;
@@ -42,10 +46,15 @@ static inline void lcd_ll_set_group_clock_src(lcd_cam_dev_t *dev, lcd_clock_sour
     case LCD_CLK_SRC_PLL160M:
         dev->lcd_clock.lcd_clk_sel = 3;
         break;
+    case LCD_CLK_SRC_PLL240M:
+        dev->lcd_clock.lcd_clk_sel = 2;
+        break;
     case LCD_CLK_SRC_XTAL:
         dev->lcd_clock.lcd_clk_sel = 1;
         break;
     default:
+        // disble LCD clock source
+        dev->lcd_clock.lcd_clk_sel = 0;
         HAL_ASSERT(false && "unsupported clock source");
         break;
     }
@@ -60,7 +69,6 @@ static inline void lcd_ll_set_clock_idle_level(lcd_cam_dev_t *dev, bool level)
 __attribute__((always_inline))
 static inline void lcd_ll_set_pixel_clock_edge(lcd_cam_dev_t *dev, bool active_on_neg)
 {
-    dev->lcd_clock.lcd_clk_equ_sysclk = 0; // if we want to pixel_clk == lcd_clk, just make clkcnt = 0
     dev->lcd_clock.lcd_ck_out_edge = active_on_neg;
 }
 
@@ -68,7 +76,15 @@ __attribute__((always_inline))
 static inline void lcd_ll_set_pixel_clock_prescale(lcd_cam_dev_t *dev, uint32_t prescale)
 {
     // Formula: pixel_clk = lcd_clk / (1 + clkcnt_n)
-    dev->lcd_clock.lcd_clkcnt_n = prescale - 1;
+    // clkcnt_n can't be zero
+    uint32_t scale = 1;
+    if (prescale == 1) {
+        dev->lcd_clock.lcd_clk_equ_sysclk = 1;
+    } else {
+        dev->lcd_clock.lcd_clk_equ_sysclk = 0;
+        scale = prescale - 1;
+    }
+    dev->lcd_clock.lcd_clkcnt_n = scale;
 }
 
 static inline void lcd_ll_enable_rgb_yuv_convert(lcd_cam_dev_t *dev, bool en)
@@ -97,12 +113,8 @@ static inline void lcd_ll_set_blank_cycles(lcd_cam_dev_t *dev, uint32_t fk_cycle
 
 static inline void lcd_ll_set_data_width(lcd_cam_dev_t *dev, uint32_t width)
 {
+    HAL_ASSERT(width == 8 || width == 16);
     dev->lcd_user.lcd_2byte_en = (width == 16);
-}
-
-static inline uint32_t lcd_ll_get_data_width(lcd_cam_dev_t *dev)
-{
-    return dev->lcd_user.lcd_2byte_en ? 16 : 8;
 }
 
 static inline void lcd_ll_enable_output_always_on(lcd_cam_dev_t *dev, bool en)
@@ -117,6 +129,7 @@ static inline void lcd_ll_start(lcd_cam_dev_t *dev)
     dev->lcd_user.lcd_start = 1;
 }
 
+__attribute__((always_inline))
 static inline void lcd_ll_stop(lcd_cam_dev_t *dev)
 {
     dev->lcd_user.lcd_start = 0;
@@ -125,33 +138,35 @@ static inline void lcd_ll_stop(lcd_cam_dev_t *dev)
 
 static inline void lcd_ll_reset(lcd_cam_dev_t *dev)
 {
-    dev->lcd_user.lcd_reset = 1;
-    dev->lcd_user.lcd_reset = 0;
+    dev->lcd_user.lcd_reset = 1; // self clear
 }
 
 __attribute__((always_inline))
-static inline void lcd_ll_reverse_data_bit_order(lcd_cam_dev_t *dev, bool en)
+static inline void lcd_ll_reverse_bit_order(lcd_cam_dev_t *dev, bool en)
 {
     // whether to change LCD_DATA_out[N:0] to LCD_DATA_out[0:N]
     dev->lcd_user.lcd_bit_order = en;
 }
 
 __attribute__((always_inline))
-static inline void lcd_ll_reverse_data_byte_order(lcd_cam_dev_t *dev, bool en)
+static inline void lcd_ll_swap_byte_order(lcd_cam_dev_t *dev, uint32_t width, bool en)
 {
-    dev->lcd_user.lcd_byte_order = en;
+    HAL_ASSERT(width == 8 || width == 16);
+    if (width == 8) {
+        // {B0}{B1}{B2}{B3} => {B1}{B0}{B3}{B2}
+        dev->lcd_user.lcd_8bits_order = en;
+        dev->lcd_user.lcd_byte_order = 0;
+    } else if (width == 16) {
+        // {B1,B0},{B3,B2} => {B0,B1}{B2,B3}
+        dev->lcd_user.lcd_byte_order = en;
+        dev->lcd_user.lcd_8bits_order = 0;
+    }
 }
 
 __attribute__((always_inline))
-static inline void lcd_ll_reverse_data_8bits_order(lcd_cam_dev_t *dev, bool en)
-{
-    dev->lcd_user.lcd_8bits_order = en;
-}
-
 static inline void lcd_ll_fifo_reset(lcd_cam_dev_t *dev)
 {
-    dev->lcd_misc.lcd_afifo_reset = 1;
-    dev->lcd_misc.lcd_afifo_reset = 0;
+    dev->lcd_misc.lcd_afifo_reset = 1; // self clear
 }
 
 __attribute__((always_inline))
@@ -171,6 +186,7 @@ static inline void lcd_ll_set_dc_delay_ticks(lcd_cam_dev_t *dev, uint32_t delay)
 __attribute__((always_inline))
 static inline void lcd_ll_set_command(lcd_cam_dev_t *dev, uint32_t data_width, uint32_t command)
 {
+    HAL_ASSERT(data_width == 8 || data_width == 16);
     // if command phase has two cycles, in the first cycle, command[15:0] is sent out via lcd_data_out[15:0]
     // in the second cycle, command[31:16] is sent out via lcd_data_out[15:0]
     if (data_width == 8) {

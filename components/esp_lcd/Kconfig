@@ -6,5 +6,16 @@ menu "LCD and Touch Panel"
             help
                 LCD driver allocates an internal buffer to transform the data into a proper format, because of
                 the endian order mismatch. This option is to set the size of the buffer, in bytes.
+
+        config LCD_RGB_ISR_IRAM_SAFE
+            depends on IDF_TARGET_ESP32S3
+            bool "RGB LCD ISR IRAM-Safe"
+            default n
+            select GDMA_CTRL_FUNC_IN_IRAM # need to restart GDMA in the LCD ISR
+            help
+                Ensure the LCD interrupt is IRAM-Safe by allowing the interrupt handler to be
+                executable when the cache is disabled (e.g. SPI Flash write).
+                If you want the LCD driver to keep flushing the screen even when cache ops disabled,
+                you can enable this option. Note, this will also increase the IRAM usage.
     endmenu
 endmenu
