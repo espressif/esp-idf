@@ -334,6 +334,30 @@
  */
 #define ESP_DHCP_DISABLE_VENDOR_CLASS_IDENTIFIER       CONFIG_LWIP_DHCP_DISABLE_VENDOR_CLASS_ID
 
+#define DHCP_DEFINE_CUSTOM_TIMEOUTS     1
+#define DHCP_COARSE_TIMER_SECS          (1)
+#define DHCP_NEXT_TIMEOUT_THRESHOLD     (3)
+/* Since for embedded devices it's not that hard to miss a discover packet, so lower
+ * the discover retry backoff time from (2,4,8,16,32,60,60)s to (500m,1,2,4,8,15,15)s.
+ */
+#define DHCP_REQUEST_TIMEOUT_SEQUENCE(tries)   (( (tries) < 6 ? 1 << (tries) : 60) * 250)
+
+static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
+{
+    uint32_t timeout = lease;
+    if (timeout == 0) {
+        timeout = min;
+    }
+    return timeout;
+}
+
+#define DHCP_CALC_TIMEOUT_FROM_OFFERED_T0_LEASE(dhcp)  \
+        timeout_from_offered((dhcp)->offered_t0_lease, 120)
+#define DHCP_CALC_TIMEOUT_FROM_OFFERED_T1_RENEW(dhcp)  \
+        timeout_from_offered((dhcp)->offered_t1_renew, (dhcp)->t0_timeout>>1 /* 50% */ )
+#define DHCP_CALC_TIMEOUT_FROM_OFFERED_T2_REBIND(dhcp) \
+        timeout_from_offered((dhcp)->offered_t2_rebind, ((dhcp)->t0_timeout/8)*7 /* 87.5% */ )
+
 /*
    ------------------------------------
    ---------- AUTOIP options ----------
