@@ -728,18 +728,6 @@ components/esp_wifi/src/lib_printf.c
 components/esp_wifi/src/mesh_event.c
 components/esp_wifi/src/smartconfig.c
 components/esp_wifi/test/test_wifi_init.c
-components/espcoredump/corefile/__init__.py
-components/espcoredump/corefile/_parse_soc_header.py
-components/espcoredump/corefile/elf.py
-components/espcoredump/corefile/gdb.py
-components/espcoredump/corefile/loader.py
-components/espcoredump/corefile/riscv.py
-components/espcoredump/corefile/soc_headers/esp32.py
-components/espcoredump/corefile/soc_headers/esp32c3.py
-components/espcoredump/corefile/soc_headers/esp32s2.py
-components/espcoredump/corefile/soc_headers/esp32s3.py
-components/espcoredump/corefile/xtensa.py
-components/espcoredump/espcoredump.py
 components/espcoredump/include/esp_core_dump.h
 components/espcoredump/include/port/riscv/esp_core_dump_summary_port.h
 components/espcoredump/include/port/xtensa/esp_core_dump_summary_port.h
@@ -754,7 +742,6 @@ components/espcoredump/src/core_dump_binary.c
 components/espcoredump/src/core_dump_flash.c
 components/espcoredump/src/core_dump_uart.c
 components/espcoredump/src/port/riscv/core_dump_port.c
-components/espcoredump/test/test_espcoredump.py
 components/espcoredump/test_apps/main/test_core_dump.c
 components/fatfs/diskio/diskio.c
 components/fatfs/diskio/diskio_impl.h
@@ -2582,7 +2569,6 @@ tools/test_apps/system/panic/test_panic_util/test_panic_util.py
 tools/test_apps/system/startup/app_test.py
 tools/test_apps/system/startup/main/test_startup_main.c
 tools/test_idf_monitor/dummy.c
-tools/test_idf_monitor/run_test_idf_monitor.py
 tools/test_idf_py/extra_path/some_ext.py
 tools/test_idf_py/idf_ext.py
 tools/test_idf_py/test_idf_extensions/test_ext/__init__.py
