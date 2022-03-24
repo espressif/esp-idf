@@ -20,8 +20,7 @@ static __attribute__((constructor)) void adc2_init_code_calibration(void)
 {
     const adc_unit_t adc_n = ADC_UNIT_2;
     const adc_atten_t atten = ADC_ATTEN_DB_11;
-    const adc_channel_t channel = 0;
-    adc_cal_offset(adc_n, channel, atten);
+    adc_cal_offset(adc_n, atten);
 }
 
 /** Don't call `adc2_cal_include` in user code. */

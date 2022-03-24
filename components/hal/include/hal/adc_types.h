@@ -12,43 +12,37 @@
 #include "esp_attr.h"
 
 /**
- * @brief ADC unit enumeration.
- *
- * @note  For ADC digital controller (DMA mode), ESP32 doesn't support `ADC_UNIT_2`, `ADC_UNIT_BOTH`, `ADC_UNIT_ALTER`.
+ * @brief ADC unit
  */
 typedef enum {
-    ADC_UNIT_1,          /*!< SAR ADC 1. */
-    ADC_UNIT_2,          /*!< SAR ADC 2. */
+    ADC_UNIT_1,        ///< SAR ADC 1
+    ADC_UNIT_2,        ///< SAR ADC 2
 } adc_unit_t;
 
 /**
- * @brief ADC channels handle. See ``adc1_channel_t``, ``adc2_channel_t``.
- *
- * @note  For ESP32 ADC1, don't use `ADC_CHANNEL_8`, `ADC_CHANNEL_9`. See ``adc1_channel_t``.
+ * @brief ADC channels
  */
 typedef enum {
-    ADC_CHANNEL_0 = 0, /*!< ADC channel */
-    ADC_CHANNEL_1,     /*!< ADC channel */
-    ADC_CHANNEL_2,     /*!< ADC channel */
-    ADC_CHANNEL_3,     /*!< ADC channel */
-    ADC_CHANNEL_4,     /*!< ADC channel */
-    ADC_CHANNEL_5,     /*!< ADC channel */
-    ADC_CHANNEL_6,     /*!< ADC channel */
-    ADC_CHANNEL_7,     /*!< ADC channel */
-    ADC_CHANNEL_8,     /*!< ADC channel */
-    ADC_CHANNEL_9,     /*!< ADC channel */
-    ADC_CHANNEL_MAX,
+    ADC_CHANNEL_0,     ///< ADC channel
+    ADC_CHANNEL_1,     ///< ADC channel
+    ADC_CHANNEL_2,     ///< ADC channel
+    ADC_CHANNEL_3,     ///< ADC channel
+    ADC_CHANNEL_4,     ///< ADC channel
+    ADC_CHANNEL_5,     ///< ADC channel
+    ADC_CHANNEL_6,     ///< ADC channel
+    ADC_CHANNEL_7,     ///< ADC channel
+    ADC_CHANNEL_8,     ///< ADC channel
+    ADC_CHANNEL_9,     ///< ADC channel
 } adc_channel_t;
 
 /**
  * @brief ADC attenuation parameter. Different parameters determine the range of the ADC. See ``adc1_config_channel_atten``.
  */
 typedef enum {
-    ADC_ATTEN_DB_0   = 0,  /*!<No input attenumation, ADC can measure up to approx. 800 mV. */
-    ADC_ATTEN_DB_2_5 = 1,  /*!<The input voltage of ADC will be attenuated extending the range of measurement by about 2.5 dB (1.33 x) */
-    ADC_ATTEN_DB_6   = 2,  /*!<The input voltage of ADC will be attenuated extending the range of measurement by about 6 dB (2 x) */
-    ADC_ATTEN_DB_11  = 3,  /*!<The input voltage of ADC will be attenuated extending the range of measurement by about 11 dB (3.55 x) */
-    ADC_ATTEN_MAX,
+    ADC_ATTEN_DB_0   = 0,  ///<No input attenumation, ADC can measure up to approx. 800 mV
+    ADC_ATTEN_DB_2_5 = 1,  ///<The input voltage of ADC will be attenuated extending the range of measurement by about 2.5 dB (1.33 x)
+    ADC_ATTEN_DB_6   = 2,  ///<The input voltage of ADC will be attenuated extending the range of measurement by about 6 dB (2 x)
+    ADC_ATTEN_DB_11  = 3,  ///<The input voltage of ADC will be attenuated extending the range of measurement by about 11 dB (3.55 x)
 } adc_atten_t;
 
 /**
@@ -61,13 +55,22 @@ typedef enum {
     ADC_WIDTH_BIT_10 = 1, /*!< ADC capture width is 10Bit. */
     ADC_WIDTH_BIT_11 = 2, /*!< ADC capture width is 11Bit. */
     ADC_WIDTH_BIT_12 = 3, /*!< ADC capture width is 12Bit. */
-#elif SOC_ADC_MAX_BITWIDTH == 12
+#elif SOC_ADC_RTC_MAX_BITWIDTH == 12
     ADC_WIDTH_BIT_12 = 3, /*!< ADC capture width is 12Bit. */
-#elif SOC_ADC_MAX_BITWIDTH == 13
+#elif SOC_ADC_RTC_MAX_BITWIDTH == 13
     ADC_WIDTH_BIT_13 = 4, /*!< ADC capture width is 13Bit. */
 #endif
     ADC_WIDTH_MAX,
 } adc_bits_width_t;
+
+typedef enum {
+    ADC_BITWIDTH_9  = 9,      ///< ADC output width is 9Bit
+    ADC_BITWIDTH_10 = 10,     ///< ADC output width is 10Bit
+    ADC_BITWIDTH_11 = 11,     ///< ADC output width is 11Bit
+    ADC_BITWIDTH_12 = 12,     ///< ADC output width is 12Bit
+    ADC_BITWIDTH_13 = 13,     ///< ADC output width is 13Bit
+    ADC_BITWIDTH_DEFAULT = ADC_BITWIDTH_13,     ///< Default ADC output bits, max supported width will be selected
+} adc_bitwidth_t;
 
 /**
  * @brief ADC digital controller (DMA mode) work mode.
@@ -170,47 +173,6 @@ typedef struct {
 } adc_digi_output_data_t;
 #endif
 
-
-#if SOC_ADC_ARBITER_SUPPORTED
-/*---------------------------------------------------------------
-                    Arbiter
----------------------------------------------------------------*/
-/**
- * @brief ADC arbiter work mode option.
- *
- * @note ESP32-S2: Only ADC2 support arbiter.
- */
-typedef enum {
-    ADC_ARB_MODE_SHIELD,/*!<Force shield arbiter, Select the highest priority controller to work. */
-    ADC_ARB_MODE_FIX,   /*!<Fixed priority switch controller mode. */
-    ADC_ARB_MODE_LOOP,  /*!<Loop priority switch controller mode. Each controller has the same priority,
-                            and the arbiter will switch to the next controller after the measurement is completed. */
-} adc_arbiter_mode_t;
-
-/**
- * @brief ADC arbiter work mode and priority setting.
- *
- * @note ESP32-S2: Only ADC2 support arbiter.
- */
-typedef struct {
-    adc_arbiter_mode_t mode; /*!<Refer to ``adc_arbiter_mode_t``. Note: only support ADC2. */
-    uint8_t rtc_pri;        /*!<RTC controller priority. Range: 0 ~ 2. */
-    uint8_t dig_pri;        /*!<Digital controller priority. Range: 0 ~ 2. */
-    uint8_t pwdet_pri;      /*!<Wi-Fi controller priority. Range: 0 ~ 2. */
-} adc_arbiter_t;
-
-/**
- * @brief ADC arbiter default configuration.
- *
- * @note ESP32S2: Only ADC2 supports (needs) an arbiter.
- */
-#define ADC_ARBITER_CONFIG_DEFAULT() { \
-    .mode = ADC_ARB_MODE_FIX, \
-    .rtc_pri = 1, \
-    .dig_pri = 0, \
-    .pwdet_pri = 2, \
-}
-#endif  //#if SOC_ADC_ARBITER_SUPPORTED
 
 #if SOC_ADC_FILTER_SUPPORTED
 /*---------------------------------------------------------------

@@ -10,6 +10,8 @@
 #include "hal/misc.h"
 #include "soc/adc_periph.h"
 #include "hal/adc_types.h"
+#include "hal/adc_types_private.h"
+#include "hal/assert.h"
 #include "soc/apb_saradc_struct.h"
 #include "soc/sens_struct.h"
 #include "soc/apb_saradc_reg.h"
@@ -22,10 +24,12 @@
 extern "C" {
 #endif
 
-//To be checked if ESP32S2 has the 5M freq limit
-#define ADC_LL_CLKM_DIV_NUM_DEFAULT 15
-#define ADC_LL_CLKM_DIV_B_DEFAULT   1
-#define ADC_LL_CLKM_DIV_A_DEFAULT   0
+#define ADC_LL_CLKM_DIV_NUM_DEFAULT       15
+#define ADC_LL_CLKM_DIV_B_DEFAULT         1
+#define ADC_LL_CLKM_DIV_A_DEFAULT         0
+
+#define ADC_LL_EVENT_ADC1_ONESHOT_DONE    (1 << 0)
+#define ADC_LL_EVENT_ADC2_ONESHOT_DONE    (1 << 1)
 
 typedef enum {
     ADC_POWER_BY_FSM,   /*!< ADC XPD controled by FSM. Used for polling mode */
@@ -588,9 +592,10 @@ static inline void adc_ll_set_sar_clk_div(adc_unit_t adc_n, uint32_t div)
  * @prarm adc_n ADC unit.
  * @prarm bits Output data bits width option.
  */
-static inline void adc_ll_rtc_set_output_format(adc_unit_t adc_n, adc_bits_width_t bits)
+static inline void adc_oneshot_ll_set_output_bits(adc_unit_t adc_n, adc_bitwidth_t bits)
 {
-    return;
+    //ESP32S2 only supports 13bit, leave here for compatibility
+    HAL_ASSERT(bits == ADC_BITWIDTH_13);
 }
 
 /**
@@ -601,7 +606,7 @@ static inline void adc_ll_rtc_set_output_format(adc_unit_t adc_n, adc_bits_width
  * @param adc_n ADC unit.
  * @param channel ADC channel number for each ADCn.
  */
-static inline void adc_ll_rtc_enable_channel(adc_unit_t adc_n, int channel)
+static inline void adc_oneshot_ll_set_channel(adc_unit_t adc_n, int channel)
 {
     if (adc_n == ADC_UNIT_1) {
         SENS.sar_meas1_ctrl2.sar1_en_pad = (1 << channel); //only one channel is selected.
@@ -618,7 +623,7 @@ static inline void adc_ll_rtc_enable_channel(adc_unit_t adc_n, int channel)
  * @param adc_n ADC unit.
  * @param channel ADC channel number for each ADCn.
  */
-static inline void adc_ll_rtc_disable_channel(adc_unit_t adc_n)
+static inline void adc_oneshot_ll_disable_channel(adc_unit_t adc_n)
 {
     if (adc_n == ADC_UNIT_1) {
         SENS.sar_meas1_ctrl2.sar1_en_pad = 0; //only one channel is selected.
@@ -633,9 +638,8 @@ static inline void adc_ll_rtc_disable_channel(adc_unit_t adc_n)
  * @note It may be block to wait conversion idle for ADC1.
  *
  * @param adc_n ADC unit.
- * @param channel ADC channel number for each ADCn.
  */
-static inline void adc_ll_rtc_start_convert(adc_unit_t adc_n, int channel)
+static inline void adc_oneshot_ll_start(adc_unit_t adc_n)
 {
     if (adc_n == ADC_UNIT_1) {
         while (HAL_FORCE_READ_U32_REG_FIELD(SENS.sar_slave_addr1, meas_status) != 0) {}
@@ -648,20 +652,33 @@ static inline void adc_ll_rtc_start_convert(adc_unit_t adc_n, int channel)
 }
 
 /**
- * Check the conversion done flag for each ADCn for RTC controller.
+ * Clear the event for each ADCn for Oneshot mode
  *
- * @param adc_n ADC unit.
+ * @param event ADC event
+ */
+static inline void adc_oneshot_ll_clear_event(uint32_t event)
+{
+    //For compatibility
+}
+
+/**
+ * Check the event for each ADCn for Oneshot mode
+ *
+ * @param event ADC event
+ *
  * @return
  *      -true  : The conversion process is finish.
  *      -false : The conversion process is not finish.
  */
-static inline bool adc_ll_rtc_convert_is_done(adc_unit_t adc_n)
+static inline bool adc_oneshot_ll_get_event(uint32_t event)
 {
     bool ret = true;
-    if (adc_n == ADC_UNIT_1) {
+    if (event == ADC_LL_EVENT_ADC1_ONESHOT_DONE) {
         ret = (bool)SENS.sar_meas1_ctrl2.meas1_done_sar;
-    } else { // adc_n == ADC_UNIT_2
+    } else if (event == ADC_LL_EVENT_ADC2_ONESHOT_DONE) {
         ret = (bool)SENS.sar_meas2_ctrl2.meas2_done_sar;
+    } else {
+        HAL_ASSERT(false);
     }
     return ret;
 }
@@ -673,9 +690,9 @@ static inline bool adc_ll_rtc_convert_is_done(adc_unit_t adc_n)
  * @return
  *      - Converted value.
  */
-static inline int adc_ll_rtc_get_convert_value(adc_unit_t adc_n)
+static inline uint32_t adc_oneshot_ll_get_raw_result(adc_unit_t adc_n)
 {
-    int ret_val = 0;
+    uint32_t ret_val = 0;
     if (adc_n == ADC_UNIT_1) {
         ret_val = HAL_FORCE_READ_U32_REG_FIELD(SENS.sar_meas1_ctrl2, meas1_data_sar);
     } else { // adc_n == ADC_UNIT_2
@@ -685,12 +702,36 @@ static inline int adc_ll_rtc_get_convert_value(adc_unit_t adc_n)
 }
 
 /**
+ * Analyze whether the obtained raw data is correct.
+ * ADC2 can use arbiter. The arbitration result can be judged by the flag bit in the original data.
+ *
+ * @param adc_n ADC unit.
+ * @param raw   ADC raw data input (convert value).
+ * @return
+ *      - true: raw data is valid
+ *      - false: raw data is invalid
+ */
+static inline bool adc_oneshot_ll_raw_check_valid(adc_unit_t adc_n, uint32_t raw)
+{
+    if (adc_n == ADC_UNIT_1) {
+        return true;
+    }
+    adc_ll_rtc_output_data_t *temp = (adc_ll_rtc_output_data_t *)&raw;
+    if (temp->flag == 0) {
+        return true;
+    } else {
+        //Could be ADC_LL_RTC_CTRL_UNSELECTED, ADC_LL_RTC_CTRL_BREAK or ADC_LL_RTC_DATA_FAIL
+        return false;
+    }
+}
+
+/**
  * ADC module RTC output data invert or not.
  *
  * @param adc_n ADC unit.
  * @param inv_en data invert or not.
  */
-static inline void adc_ll_rtc_output_invert(adc_unit_t adc_n, bool inv_en)
+static inline void adc_oneshot_ll_output_invert(adc_unit_t adc_n, bool inv_en)
 {
     if (adc_n == ADC_UNIT_1) {
         SENS.sar_reader1_ctrl.sar1_data_inv = inv_en;   // Enable / Disable ADC data invert
@@ -752,36 +793,6 @@ static inline void adc_ll_rtc_set_arbiter_stable_cycle(uint32_t cycle)
 }
 
 /**
- * Analyze whether the obtained raw data is correct.
- * ADC2 can use arbiter. The arbitration result can be judged by the flag bit in the original data.
- *
- * @param adc_n ADC unit.
- * @param raw_data ADC raw data input (convert value).
- * @return
- *      - 0: The data is correct to use.
- *      - 1: The data is invalid. The current controller is not enabled by the arbiter.
- *      - 2: The data is invalid. The current controller process was interrupted by a higher priority controller.
- *      - -1: The data is error.
- */
-static inline adc_ll_rtc_raw_data_t adc_ll_rtc_analysis_raw_data(adc_unit_t adc_n, uint16_t raw_data)
-{
-    /* ADC1 don't need check data */
-    if (adc_n == ADC_UNIT_1) {
-        return ADC_RTC_DATA_OK;
-    }
-    adc_ll_rtc_output_data_t *temp = (adc_ll_rtc_output_data_t *)&raw_data;
-    if (temp->flag == 0) {
-        return ADC_RTC_DATA_OK;
-    } else if (temp->flag == 1) {
-        return ADC_RTC_CTRL_UNSELECTED;
-    } else if (temp->flag == 2) {
-        return ADC_RTC_CTRL_BREAK;
-    } else {
-        return ADC_RTC_DATA_FAIL;
-    }
-}
-
-/**
  * Set the attenuation of a particular channel on ADCn.
  *
  * @note For any given channel, this function must be called before the first time conversion.
@@ -814,7 +825,7 @@ static inline adc_ll_rtc_raw_data_t adc_ll_rtc_analysis_raw_data(adc_unit_t adc_
  * @param channel ADCn channel number.
  * @param atten The attenuation option.
  */
-static inline void adc_ll_set_atten(adc_unit_t adc_n, adc_channel_t channel, adc_atten_t atten)
+static inline void adc_oneshot_ll_set_atten(adc_unit_t adc_n, adc_channel_t channel, adc_atten_t atten)
 {
     if (adc_n == ADC_UNIT_1) {
         SENS.sar_atten1 = ( SENS.sar_atten1 & ~(0x3 << (channel * 2)) ) | ((atten & 0x3) << (channel * 2));
@@ -837,6 +848,25 @@ static inline adc_atten_t adc_ll_get_atten(adc_unit_t adc_n, adc_channel_t chann
     } else {
         return (adc_atten_t)((SENS.sar_atten2 >> (channel * 2)) & 0x3);
     }
+}
+
+/**
+ * Enable oneshot conversion trigger
+ *
+ * @param adc_n  Not used, for compatibility
+ */
+static inline void adc_oneshot_ll_enable(adc_unit_t adc_n)
+{
+    (void)adc_n;
+    //For compatibility
+}
+
+/**
+ * Disable oneshot conversion trigger for all the ADC units
+ */
+static inline void adc_oneshot_ll_disable_all_unit(void)
+{
+    //For compatibility
 }
 
 /*---------------------------------------------------------------
@@ -1027,11 +1057,10 @@ static inline void adc_ll_calibration_init(adc_unit_t adc_n)
  * @note  Different ADC units and different attenuation options use different calibration data (initial data).
  *
  * @param adc_n ADC index number.
- * @param channel adc channel number.
  * @param internal_gnd true:  Disconnect from the IO port and use the internal GND as the calibration voltage.
  *                     false: Use IO external voltage as calibration voltage.
  */
-static inline void adc_ll_calibration_prepare(adc_unit_t adc_n, adc_channel_t channel, bool internal_gnd)
+static inline void adc_ll_calibration_prepare(adc_unit_t adc_n, bool internal_gnd)
 {
     /* Should be called before writing I2C registers. */
     CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PD_M);

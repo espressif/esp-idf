@@ -11,6 +11,7 @@
 
 #include "soc/adc_periph.h"
 #include "hal/adc_types.h"
+#include "hal/adc_types_private.h"
 #include "soc/apb_saradc_struct.h"
 #include "soc/apb_saradc_reg.h"
 #include "soc/rtc_cntl_struct.h"
@@ -27,6 +28,9 @@ extern "C" {
 #define ADC_LL_CLKM_DIV_NUM_DEFAULT 15
 #define ADC_LL_CLKM_DIV_B_DEFAULT   1
 #define ADC_LL_CLKM_DIV_A_DEFAULT   0
+
+#define ADC_LL_EVENT_ADC1_ONESHOT_DONE    BIT(31)
+#define ADC_LL_EVENT_ADC2_ONESHOT_DONE    BIT(30)
 
 typedef enum {
     ADC_POWER_BY_FSM,   /*!< ADC XPD controled by FSM. Used for polling mode */
@@ -690,73 +694,189 @@ static inline void adc_ll_vref_output(adc_unit_t adc, adc_channel_t channel, boo
                     Single Read
 ---------------------------------------------------------------*/
 /**
- * Trigger single read
+ * Set adc output data format for oneshot mode
+ *
+ * @note ESP32C3 Oneshot mode only supports 12bit.
+ * @param adc_n ADC unit.
+ * @param bits  Output data bits width option.
+ */
+static inline void adc_oneshot_ll_set_output_bits(adc_unit_t adc_n, adc_bitwidth_t bits)
+{
+    abort();  //TODO IDF-3908
+    // //ESP32C3 only supports 12bit, leave here for compatibility
+    // HAL_ASSERT(bits == ADC_BITWIDTH_12);
+}
+
+/**
+ * Enable adc channel to start convert.
+ *
+ * @note Only one channel can be selected for measurement.
+ *
+ * @param adc_n   ADC unit.
+ * @param channel ADC channel number for each ADCn.
+ */
+static inline void adc_oneshot_ll_set_channel(adc_unit_t adc_n, adc_channel_t channel)
+{
+    abort();  //TODO IDF-3908
+    // APB_SARADC.onetime_sample.onetime_channel = ((adc_n << 3) | channel);
+}
+
+/**
+ * Disable adc channel to start convert.
+ *
+ * @note Only one channel can be selected in once measurement.
+ *
+ * @param adc_n ADC unit.
+ */
+static inline void adc_oneshot_ll_disable_channel(adc_unit_t adc_n)
+{
+    abort();  //TODO IDF-3908
+    // if (adc_n == ADC_UNIT_1) {
+    //     APB_SARADC.onetime_sample.onetime_channel = ((adc_n << 3) | 0xF);
+    // } else { // adc_n == ADC_UNIT_2
+    //     APB_SARADC.onetime_sample.onetime_channel = ((adc_n << 3) | 0x1);
+    // }
+}
+
+/**
+ * Start oneshot conversion by software
  *
  * @param val Usage: set to 1 to start the ADC conversion. The step signal should at least keep 3 ADC digital controller clock cycle,
  *            otherwise the step signal may not be captured by the ADC digital controller when its frequency is slow.
  *            This hardware limitation will be removed in future versions.
  */
-static inline void adc_ll_onetime_start(bool val)
+static inline void adc_oneshot_ll_start(bool val)
 {
-    APB_SARADC.onetime_sample.onetime_start = val;
+    abort();  //TODO IDF-3908
+    // APB_SARADC.onetime_sample.onetime_start = val;
 }
 
-static inline void adc_ll_onetime_set_channel(adc_unit_t unit, adc_channel_t channel)
+/**
+ * Clear the event for each ADCn for Oneshot mode
+ *
+ * @param event ADC event
+ */
+static inline void adc_oneshot_ll_clear_event(uint32_t event_mask)
 {
-    APB_SARADC.onetime_sample.onetime_channel = ((unit << 3) | channel);
+    abort();  //TODO IDF-3908
+    // APB_SARADC.int_clr.val |= event_mask;
 }
 
-static inline void adc_ll_onetime_set_atten(adc_atten_t atten)
+/**
+ * Check the event for each ADCn for Oneshot mode
+ *
+ * @param event ADC event
+ *
+ * @return
+ *      -true  : The conversion process is finish.
+ *      -false : The conversion process is not finish.
+ */
+static inline bool adc_oneshot_ll_get_event(uint32_t event_mask)
 {
-    APB_SARADC.onetime_sample.onetime_atten = atten;
+    abort();  //TODO IDF-3908
+    // return (APB_SARADC.int_raw.val & event_mask);
 }
 
-static inline void adc_ll_intr_enable(adc_ll_intr_t mask)
+/**
+ * Get the converted value for each ADCn for RTC controller.
+ *
+ * @param adc_n ADC unit.
+ * @return
+ *      - Converted value.
+ */
+static inline uint32_t adc_oneshot_ll_get_raw_result(adc_unit_t adc_n)
 {
-    APB_SARADC.int_ena.val |= mask;
+    abort();  //TODO IDF-3908
+    // uint32_t ret_val = 0;
+    // if (adc_n == ADC_UNIT_1) {
+    //     ret_val = APB_SARADC.apb_saradc1_data_status.adc1_data & 0xfff;
+    // } else { // adc_n == ADC_UNIT_2
+    //     ret_val = APB_SARADC.apb_saradc2_data_status.adc2_data & 0xfff;
+    // }
+    // return ret_val;
 }
 
-static inline void adc_ll_intr_disable(adc_ll_intr_t mask)
+/**
+ * Analyze whether the obtained raw data is correct.
+ * ADC2 can use arbiter. The arbitration result is stored in the channel information of the returned data.
+ *
+ * @param adc_n    ADC unit.
+ * @param raw_data ADC raw data input (convert value).
+ * @return
+ *        - 1: The data is correct to use.
+ *        - 0: The data is invalid.
+ */
+static inline bool adc_oneshot_ll_raw_check_valid(adc_unit_t adc_n, uint32_t raw_data)
 {
-    APB_SARADC.int_ena.val &= ~mask;
+    abort();  //TODO IDF-3908
+    // if (adc_n == ADC_UNIT_1) {
+    //     return true;
+    // }
+
+    // //The raw data API returns value without channel information. Read value directly from the register
+    // if (((APB_SARADC.apb_saradc2_data_status.adc2_data >> 13) & 0xF) > 9) {
+    //     return false;
+    // }
+
+    // return true;
 }
 
-static inline void adc_ll_intr_clear(adc_ll_intr_t mask)
+/**
+ * ADC module RTC output data invert or not.
+ *
+ * @param adc_n ADC unit.
+ * @param inv_en data invert or not.
+ */
+static inline void adc_oneshot_ll_output_invert(adc_unit_t adc_n, bool inv_en)
 {
-    APB_SARADC.int_clr.val |= mask;
+    abort();  //TODO IDF-3908
+    // (void)adc_n;
+    // (void)inv_en;
+    // //For compatibility
 }
 
-static inline bool adc_ll_intr_get_raw(adc_ll_intr_t mask)
+/**
+ * Enable oneshot conversion trigger
+ *
+ * @param adc_n  ADC unit
+ */
+static inline void adc_oneshot_ll_enable(adc_unit_t adc_n)
 {
-    return (APB_SARADC.int_raw.val & mask);
+    abort();  //TODO IDF-3908
+    // if (adc_n == ADC_UNIT_1) {
+    //     APB_SARADC.onetime_sample.adc1_onetime_sample = 1;
+    // } else {
+    //     APB_SARADC.onetime_sample.adc2_onetime_sample = 1;
+    // }
 }
 
-static inline bool adc_ll_intr_get_status(adc_ll_intr_t mask)
+/**
+ * Disable oneshot conversion trigger for all the ADC units
+ */
+static inline void adc_oneshot_ll_disable_all_unit(void)
 {
-    return (APB_SARADC.int_st.val & mask);
+    abort();  //TODO IDF-3908
+    // APB_SARADC.onetime_sample.adc1_onetime_sample = 0;
+    // APB_SARADC.onetime_sample.adc2_onetime_sample = 0;
 }
 
-static inline void adc_ll_onetime_sample_enable(adc_unit_t adc_n, bool enable)
+/**
+ * Set attenuation
+ *
+ * @note Attenuation is for all channels
+ *
+ * @param adc_n   ADC unit
+ * @param channel ADC channel
+ * @param atten   ADC attenuation
+ */
+static inline void adc_oneshot_ll_set_atten(adc_unit_t adc_n, adc_channel_t channel, adc_atten_t atten)
 {
-    if (adc_n == ADC_UNIT_1) {
-        APB_SARADC.onetime_sample.adc1_onetime_sample = enable;
-    } else {
-        APB_SARADC.onetime_sample.adc2_onetime_sample = enable;
-    }
+    abort();  //TODO IDF-3908
+    // (void)adc_n;
+    // (void)channel;
+    // // Attenuation is for all channels, unit and channel are for compatibility
+    // APB_SARADC.onetime_sample.onetime_atten = atten;
 }
-
-static inline uint32_t adc_ll_adc1_read(void)
-{
-    //On ESP32H2, valid data width is 12-bit
-    return (APB_SARADC.apb_saradc1_data_status.adc1_data & 0xfff);
-}
-
-static inline uint32_t adc_ll_adc2_read(void)
-{
-    //On ESP32H2, valid data width is 12-bit
-    return (APB_SARADC.apb_saradc2_data_status.adc2_data & 0xfff);
-}
-
 #ifdef __cplusplus
 }
 #endif

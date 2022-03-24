@@ -64,11 +64,11 @@ esp_err_t adc_digi_filter_get_config(adc_digi_filter_idx_t idx, adc_digi_filter_
     ADC_ENTER_CRITICAL();
     if (idx == ADC_DIGI_FILTER_IDX0) {
         config->adc_unit = ADC_UNIT_1;
-        config->channel = ADC_CHANNEL_MAX;
+        config->channel = SOC_ADC_CHANNEL_NUM(0);
         adc_ll_digi_filter_get_factor(ADC_UNIT_1, &config->mode);
     } else if (idx == ADC_DIGI_FILTER_IDX1) {
         config->adc_unit = ADC_UNIT_2;
-        config->channel = ADC_CHANNEL_MAX;
+        config->channel = SOC_ADC_CHANNEL_NUM(1);
         adc_ll_digi_filter_get_factor(ADC_UNIT_2, &config->mode);
     }
     ADC_EXIT_CRITICAL();

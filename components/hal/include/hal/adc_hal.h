@@ -102,22 +102,6 @@ typedef struct adc_hal_digi_ctrlr_cfg_t {
  */
 #define adc_hal_set_power_manage(manage) adc_ll_set_power_manage(manage)
 
-#if SOC_ADC_ARBITER_SUPPORTED
-//No ADC2 controller arbiter on ESP32
-/**
- * Config ADC2 module arbiter.
- * The arbiter is to improve the use efficiency of ADC2. After the control right is robbed by the high priority,
- * the low priority controller will read the invalid ADC2 data, and the validity of the data can be judged by the flag bit in the data.
- *
- * @note Only ADC2 support arbiter.
- * @note The arbiter's working clock is APB_CLK. When the APB_CLK clock drops below 8 MHz, the arbiter must be in shield mode.
- * @note Default priority: Wi-Fi > RTC > Digital;
- *
- * @param config Refer to ``adc_arbiter_t``.
- */
-void adc_hal_arbiter_config(adc_arbiter_t *config);
-#endif  //#if SOC_ADC_ARBITER_SUPPORTED
-
 /*---------------------------------------------------------------
                     PWDET(Power detect) controller setting
 ---------------------------------------------------------------*/
@@ -251,55 +235,6 @@ void adc_hal_digi_stop(adc_hal_dma_ctx_t *hal);
 /*---------------------------------------------------------------
                     ADC Single Read
 ---------------------------------------------------------------*/
-#if SOC_ADC_RTC_CTRL_SUPPORTED
-/**
- * Set the attenuation of a particular channel on ADCn.
- *
- * @note For any given channel, this function must be called before the first time conversion.
- *
- * The default ADC full-scale voltage is 1.1V. To read higher voltages (up to the pin maximum voltage,
- * usually 3.3V) requires setting >0dB signal attenuation for that ADC channel.
- *
- * When VDD_A is 3.3V:
- *
- * - 0dB attenuaton (ADC_ATTEN_DB_0) gives full-scale voltage 1.1V
- * - 2.5dB attenuation (ADC_ATTEN_DB_2_5) gives full-scale voltage 1.5V
- * - 6dB attenuation (ADC_ATTEN_DB_6) gives full-scale voltage 2.2V
- * - 11dB attenuation (ADC_ATTEN_DB_11) gives full-scale voltage 3.9V (see note below)
- *
- * @note The full-scale voltage is the voltage corresponding to a maximum reading (depending on ADC1 configured
- * bit width, this value is: 4095 for 12-bits, 2047 for 11-bits, 1023 for 10-bits, 511 for 9 bits.)
- *
- * @note At 11dB attenuation the maximum voltage is limited by VDD_A, not the full scale voltage.
- *
- * Due to ADC characteristics, most accurate results are obtained within the following approximate voltage ranges:
- *
- * - 0dB attenuaton (ADC_ATTEN_DB_0) between 100 and 950mV
- * - 2.5dB attenuation (ADC_ATTEN_DB_2_5) between 100 and 1250mV
- * - 6dB attenuation (ADC_ATTEN_DB_6) between 150 to 1750mV
- * - 11dB attenuation (ADC_ATTEN_DB_11) between 150 to 2450mV
- *
- * For maximum accuracy, use the ADC calibration APIs and measure voltages within these recommended ranges.
- *
- * @param adc_n   ADC unit.
- * @param channel ADCn channel number.
- * @param atten   ADC attenuation. See ``adc_atten_t``
- */
-#define adc_hal_set_atten(adc_n, channel, atten) adc_ll_set_atten(adc_n, channel, atten)
-
-#else // #if !SOC_ADC_RTC_CTRL_SUPPORTED
-/**
- * Set the attenuation for ADC to single read
- *
- * @note All ADC units and channels will share the setting. So PLEASE DO save your attenuations and reset them by calling this API again in your driver
- *
- * @param adc_n    Not used, leave here for chip version compatibility
- * @param channel  Not used, leave here for chip version compatibility
- * @param atten    ADC attenuation. See ``adc_atten_t``
- */
-#define adc_hal_set_atten(adc_n, channel, atten) adc_ll_onetime_set_atten(atten)
-#endif  //#if SOC_ADC_RTC_CTRL_SUPPORTED
-
 /**
  * Start an ADC conversion and get the converted value.
  *
@@ -314,65 +249,6 @@ void adc_hal_digi_stop(adc_hal_dma_ctx_t *hal);
  *      - ESP_ERR_INVALID_STATE: The value is invalid.
  */
 esp_err_t adc_hal_convert(adc_unit_t adc_n, int channel, int *out_raw);
-
-/*---------------------------------------------------------------
-                    ADC calibration setting
----------------------------------------------------------------*/
-#if SOC_ADC_CALIBRATION_V1_SUPPORTED
-
-/**
- * @brief Initialize default parameter for the calibration block.
- *
- * @param adc_n ADC index numer
- */
-void adc_hal_calibration_init(adc_unit_t adc_n);
-
-/**
- * Set the calibration result (initial data) to ADC.
- *
- * @note  Different ADC units and different attenuation options use different calibration data (initial data).
- *
- * @param adc_n ADC index number.
- * @param param the calibration parameter to configure
- */
-void adc_hal_set_calibration_param(adc_unit_t adc_n, uint32_t param);
-
-/**
- * Calibrate the ADC using internal connections.
- *
- * @note  Different ADC units and different attenuation options use different calibration data (initial data).
- *
- * @param adc_n ADC index number.
- * @param channel adc channel number.
- * @param atten The attenuation for the channel
- * @param internal_gnd true:  Disconnect from the IO port and use the internal GND as the calibration voltage.
- *                     false: Use IO external voltage as calibration voltage.
- *
- * @return
- *      - The calibration result (initial data) to ADC, use `adc_hal_set_calibration_param` to set.
- */
-uint32_t adc_hal_self_calibration(adc_unit_t adc_n, adc_channel_t channel, adc_atten_t atten, bool internal_gnd);
-
-#endif //SOC_ADC_CALIBRATION_V1_SUPPORTED
-
-
-/*---------------------------------------------------------------
-                    RTC controller setting
----------------------------------------------------------------*/
-/**
- * Set adc output data format for RTC controller.
- *
- * @prarm adc_n ADC unit.
- * @prarm bits Output data bits width option.
- */
-#define adc_hal_rtc_set_output_format(adc_n, bits) adc_ll_rtc_set_output_format(adc_n, bits)
-
-/**
- * ADC module output data invert or not.
- *
- * @prarm adc_n ADC unit.
- */
-#define adc_hal_rtc_output_invert(adc_n, inv_en) adc_ll_rtc_output_invert(adc_n, inv_en)
 
 #ifdef __cplusplus
 }

@@ -35,8 +35,11 @@ ENUM type ``esp_flash_speed_t`` has been deprecated. From now on, you can direct
 ADC
 ---
 
-- Previous `driver/adc2_wifi_private.h` has been moved to `esp_private/adc2_wifi.h`.
-- Enums `ADC_UNIT_BOTH`, `ADC_UNIT_ALTER` and `ADC_UNIT_MAX` in ``adc_unit_t`` are removed.
+- Previous ``driver/adc2_wifi_private.h`` has been moved to ``esp_private/adc2_wifi.h``.
+- Enums ``ADC_UNIT_BOTH``, ``ADC_UNIT_ALTER`` and ``ADC_UNIT_MAX`` in ``adc_unit_t`` are removed.
+- Enum ``ADC_CHANNEL_MAX`` in ``adc_channel_t`` are removed. Some channels are not supported on some chips, driver will give a dynamic error if an unsupported channels are used.
+- Enum ``ADC_ATTEN_MAX`` is removed. Some attenuations are not supported on some chips, driver will give a dynamic error if an unsupported attenuation is used.
+- Enum ``ADC_CONV_UNIT_MAX`` is removed. Some convert mode are not supported on some chips, driver will give a dynamic error if an unsupported convert mode is used.
 
 GPIO
 ----

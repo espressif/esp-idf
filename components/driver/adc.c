@@ -102,7 +102,7 @@ extern esp_pm_lock_handle_t adc_digi_arbiter_lock;
 #endif  //CONFIG_PM_ENABLE
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
-uint32_t adc_get_calibration_offset(adc_unit_t adc_n, adc_channel_t chan, adc_atten_t atten);
+uint32_t adc_get_calibration_offset(adc_unit_t adc_n, adc_atten_t atten);
 #endif
 
 /*---------------------------------------------------------------
@@ -385,11 +385,11 @@ esp_err_t adc_digi_start(void)
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
         if (s_adc_digi_ctx->use_adc1) {
-            uint32_t cal_val = adc_get_calibration_offset(ADC_UNIT_1, ADC_CHANNEL_MAX, s_adc_digi_ctx->adc1_atten);
+            uint32_t cal_val = adc_get_calibration_offset(ADC_UNIT_1, s_adc_digi_ctx->adc1_atten);
             adc_hal_set_calibration_param(ADC_UNIT_1, cal_val);
         }
         if (s_adc_digi_ctx->use_adc2) {
-            uint32_t cal_val = adc_get_calibration_offset(ADC_UNIT_2, ADC_CHANNEL_MAX, s_adc_digi_ctx->adc2_atten);
+            uint32_t cal_val = adc_get_calibration_offset(ADC_UNIT_2, s_adc_digi_ctx->adc2_atten);
             adc_hal_set_calibration_param(ADC_UNIT_2, cal_val);
         }
 #endif  //#if SOC_ADC_CALIBRATION_V1_SUPPORTED
@@ -679,7 +679,7 @@ esp_err_t adc1_config_width(adc_bits_width_t width_bit)
 esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
 {
     ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(ADC_UNIT_1), ESP_ERR_INVALID_ARG, ADC_TAG, "ADC1 channel error");
-    ESP_RETURN_ON_FALSE((atten < ADC_ATTEN_MAX), ESP_ERR_INVALID_ARG, ADC_TAG, "ADC Atten Err");
+    ESP_RETURN_ON_FALSE((atten < SOC_ADC_ATTEN_NUM), ESP_ERR_INVALID_ARG, ADC_TAG, "ADC Atten Err");
 
     esp_err_t ret = ESP_OK;
     s_atten1_single[channel] = atten;
@@ -700,11 +700,11 @@ int adc1_get_raw(adc1_channel_t channel)
     SAR_ADC1_LOCK_ACQUIRE();
 
     adc_atten_t atten = s_atten1_single[channel];
-    uint32_t cal_val = adc_get_calibration_offset(ADC_UNIT_1, channel, atten);
+    uint32_t cal_val = adc_get_calibration_offset(ADC_UNIT_1, atten);
     adc_hal_set_calibration_param(ADC_UNIT_1, cal_val);
 
     ADC_REG_LOCK_ENTER();
-    adc_hal_set_atten(ADC_UNIT_2, channel, atten);
+    adc_oneshot_ll_set_atten(ADC_UNIT_2, channel, atten);
     adc_hal_convert(ADC_UNIT_1, channel, &raw_out);
     ADC_REG_LOCK_EXIT();
 
@@ -748,11 +748,11 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     adc_hal_arbiter_config(&config);
 
     adc_atten_t atten = s_atten2_single[channel];
-    uint32_t cal_val = adc_get_calibration_offset(ADC_UNIT_2, channel, atten);
+    uint32_t cal_val = adc_get_calibration_offset(ADC_UNIT_2, atten);
     adc_hal_set_calibration_param(ADC_UNIT_2, cal_val);
 
     ADC_REG_LOCK_ENTER();
-    adc_hal_set_atten(ADC_UNIT_2, channel, atten);
+    adc_oneshot_ll_set_atten(ADC_UNIT_2, channel, atten);
     ret = adc_hal_convert(ADC_UNIT_2, channel, raw_out);
     ADC_REG_LOCK_EXIT();
 
@@ -837,13 +837,13 @@ static inline uint32_t esp_efuse_rtc_calib_get_init_code(int version, uint32_t a
 }
 #endif
 
-static uint16_t s_adc_cali_param[SOC_ADC_PERIPH_NUM][ADC_ATTEN_MAX] = {};
+static uint16_t s_adc_cali_param[SOC_ADC_PERIPH_NUM][SOC_ADC_ATTEN_NUM] = {};
 
 //NOTE: according to calibration version, different types of lock may be taken during the process:
 //  1. Semaphore when reading efuse
 //  2. Lock (Spinlock, or Mutex) if we actually do ADC calibration in the future
 //This function shoudn't be called inside critical section or ISR
-uint32_t adc_get_calibration_offset(adc_unit_t adc_n, adc_channel_t channel, adc_atten_t atten)
+uint32_t adc_get_calibration_offset(adc_unit_t adc_n, adc_atten_t atten)
 {
     if (s_adc_cali_param[adc_n][atten]) {
         ESP_LOGV(ADC_TAG, "Use calibrated val ADC%d atten=%d: %04X", adc_n, atten, s_adc_cali_param[adc_n][atten]);
@@ -863,7 +863,7 @@ uint32_t adc_get_calibration_offset(adc_unit_t adc_n, adc_channel_t channel, adc
         adc_power_acquire();
         ADC_ENTER_CRITICAL();
         const bool internal_gnd = true;
-        init_code = adc_hal_self_calibration(adc_n, channel, atten, internal_gnd);
+        init_code = adc_hal_self_calibration(adc_n, atten, internal_gnd);
         ADC_EXIT_CRITICAL();
         adc_power_release();
     }
@@ -875,10 +875,10 @@ uint32_t adc_get_calibration_offset(adc_unit_t adc_n, adc_channel_t channel, adc
 }
 
 // Internal function to calibrate PWDET for WiFi
-esp_err_t adc_cal_offset(adc_unit_t adc_n, adc_channel_t channel, adc_atten_t atten)
+esp_err_t adc_cal_offset(adc_unit_t adc_n, adc_atten_t atten)
 {
     adc_hal_calibration_init(adc_n);
-    uint32_t cal_val = adc_get_calibration_offset(adc_n, channel, atten);
+    uint32_t cal_val = adc_get_calibration_offset(adc_n, atten);
     ADC_ENTER_CRITICAL();
     adc_hal_set_calibration_param(adc_n, cal_val);
     ADC_EXIT_CRITICAL();
