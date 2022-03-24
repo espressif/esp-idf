@@ -254,6 +254,7 @@ menu "Wi-Fi"
     config ESP_WIFI_SLP_IRAM_OPT
         bool "WiFi SLP IRAM speed optimization"
         select PM_SLP_DEFAULT_PARAMS_OPT
+        select PERIPH_CTRL_FUNC_IN_IRAM
         help
             Select this option to place called Wi-Fi library TBTT process and receive beacon functions in IRAM.
             Some functions can be put in IRAM either by ESP32_WIFI_IRAM_OPT and ESP32_WIFI_RX_IRAM_OPT, or this one.

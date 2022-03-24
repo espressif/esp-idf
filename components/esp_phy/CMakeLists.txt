@@ -28,18 +28,17 @@ if(CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN)
     endif()
 endif()
 
-# [refactor-todo]: requires "driver" component for periph_ctrl header file
 if(CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN_EMBED)
     idf_component_register(SRCS "${srcs}"
                         INCLUDE_DIRS "include" "${idf_target}/include"
-                        PRIV_REQUIRES nvs_flash driver
+                        PRIV_REQUIRES nvs_flash
                         LDFRAGMENTS "${ldfragments}"
                         EMBED_FILES "${build_dir}/phy_multiple_init_data.bin"
                         )
 else()
     idf_component_register(SRCS "${srcs}"
                         INCLUDE_DIRS "include" "${idf_target}/include"
-                        PRIV_REQUIRES nvs_flash driver
+                        PRIV_REQUIRES nvs_flash
                         LDFRAGMENTS "${ldfragments}"
                         )
 endif()

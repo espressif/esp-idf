@@ -16,3 +16,7 @@ entries:
             opiram_psram (noflash)
     if IDF_TARGET_ESP32S2 = y:
         mmu_psram (noflash)
+    if PERIPH_CTRL_FUNC_IN_IRAM = y:
+        periph_ctrl: periph_module_reset (noflash)
+        periph_ctrl: wifi_module_enable (noflash)
+        periph_ctrl: wifi_module_disable (noflash)

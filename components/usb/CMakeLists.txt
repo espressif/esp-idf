@@ -4,8 +4,7 @@ set(priv_include)
 # As CONFIG_USB_OTG_SUPPORTED comes from Kconfig, it is not evaluated yet
 # when components are being registered.
 # Thus, always add the (private) requirements, regardless of Kconfig
-# [refactor-todo]: requires "driver" because "periph_ctrl.h" is used in "hcd.c"
-set(priv_require hal driver)
+set(priv_require driver) # usb_phy driver relies on gpio driver API
 
 if(CONFIG_USB_OTG_SUPPORTED)
     list(APPEND srcs "hcd.c"
