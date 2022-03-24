@@ -367,7 +367,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 {
 #if CONFIG_IDF_TARGET_ESP32S3
     if (esp_no_sleep) {
-        ESP_LOGE(TAG, "Sleep cannot be used with Touch/ULP for now.");
+        ESP_EARLY_LOGE(TAG, "Sleep cannot be used with Touch/ULP for now.");
         abort();
     }
 #endif //CONFIG_IDF_TARGET_ESP32S3
