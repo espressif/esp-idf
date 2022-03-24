@@ -613,19 +613,24 @@ void vApplicationTickHook( void )
 }
 #endif
 
-#if ( configUSE_IDLE_HOOK == 1 )
-void vApplicationIdleHook( void )
+#if CONFIG_FREERTOS_USE_MINIMAL_IDLE_HOOK
+/*
+By default, the port uses vApplicationMinimalIdleHook() to run IDF style idle
+hooks. However, users may also want to provide their own vApplicationMinimalIdleHook().
+In this case, we use to -Wl,--wrap option to wrap the user provided vApplicationMinimalIdleHook()
+*/
+extern void __real_vApplicationMinimalIdleHook( void );
+void __wrap_vApplicationMinimalIdleHook( void )
 {
-    esp_vApplicationIdleHook();
+    esp_vApplicationIdleHook(); //Run IDF style hooks
+    __real_vApplicationMinimalIdleHook(); //Call the user provided vApplicationMinimalIdleHook()
 }
-#endif
-
-#if ( configUSE_MINIMAL_IDLE_HOOK == 1 )
+#else // CONFIG_FREERTOS_USE_MINIMAL_IDLE_HOOK
 void vApplicationMinimalIdleHook( void )
 {
-    esp_vApplicationIdleHook();
+    esp_vApplicationIdleHook(); //Run IDF style hooks
 }
-#endif
+#endif // CONFIG_FREERTOS_USE_MINIMAL_IDLE_HOOK
 
 /* ---------------------------------------------- Misc Implementations -------------------------------------------------
  *

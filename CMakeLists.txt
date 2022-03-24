@@ -206,6 +206,12 @@ else()
     list(APPEND link_options "-Wl,--gc-sections")
 endif()
 
+# SMP FreeRTOS user provided minimal idle hook. This allows the user to provide
+# their own copy of vApplicationMinimalIdleHook()
+if(CONFIG_FREERTOS_USE_MINIMAL_IDLE_HOOK)
+    list(APPEND link_options "-Wl,--wrap=vApplicationMinimalIdleHook")
+endif()
+
 # Placing jump tables in flash would cause issues with code that required
 # to be placed in IRAM
 list(APPEND compile_options "-fno-jump-tables")

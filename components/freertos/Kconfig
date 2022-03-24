@@ -215,6 +215,14 @@ menu "FreeRTOS"
             - The FreeRTOS idle hook is NOT the same as the ESP-IDF Idle Hook, but both can be enabled
               simultaneously.
 
+    config FREERTOS_USE_MINIMAL_IDLE_HOOK
+        bool "Use FreeRTOS minimal idle hook"
+        depends on FREERTOS_SMP
+        default n
+        help
+            - The application must provide the hook function ``void vApplicationMinimalIdleHook( void );``
+            - ``vApplicationMinimalIdleHook()`` is called from FreeRTOS idle task(s)
+
     config FREERTOS_USE_TICK_HOOK
         bool "Use FreeRTOS tick hook"
         default n
