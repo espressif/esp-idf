@@ -285,12 +285,6 @@ extern uint32_t port_switch_flag[];
 
 // ---------------------- Features -------------------------
 
-#ifdef CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT
-#define configENABLE_TASK_SNAPSHOT                      1
-#else
-#define configENABLE_TASK_SNAPSHOT                      0
-#endif
-
 /* These currently aren't required, but could be useful additions in the future */
 #if 0
 #ifndef configIDLE_TASK_STACK_SIZE
