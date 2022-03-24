@@ -192,7 +192,7 @@ static bool notify_lvgl_ready_to_flush(esp_lcd_panel_io_handle_t panel_io, esp_l
     return false;
 }
 
-static void lvgl_gui_test(esp_lcd_panel_io_handle_t io_handle, esp_lcd_panel_handle_t panel_handle, lv_disp_t **disp)
+static void lvgl_gui_test(esp_lcd_panel_io_handle_t io_handle, esp_lcd_panel_handle_t panel_handle, lv_disp_t **disp, bool invert_color)
 {
     // initialize LVGL graphics library
     lv_init();
@@ -200,7 +200,7 @@ static void lvgl_gui_test(esp_lcd_panel_io_handle_t io_handle, esp_lcd_panel_han
     gpio_set_level(TEST_LCD_BK_LIGHT_GPIO, 0);
     esp_lcd_panel_reset(panel_handle);
     esp_lcd_panel_init(panel_handle);
-    esp_lcd_panel_invert_color(panel_handle, true);
+    esp_lcd_panel_invert_color(panel_handle, invert_color);
     // the gap is LCD panel specific, even panels with the same driver IC, can have different gap value
     esp_lcd_panel_set_gap(panel_handle, 0, 20);
     // turn on backlight
@@ -222,7 +222,7 @@ TEST_CASE("lvgl gui with 8-line spi interface (st7789)", "[lcd][lvgl][ignore]")
         .bits_per_pixel = 16,
     };
     TEST_ESP_OK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
-    lvgl_gui_test(io_handle, panel_handle, &disp);
+    lvgl_gui_test(io_handle, panel_handle, &disp, true);
 }
 
 TEST_CASE("lvgl gui with 8-line spi interface (nt35510)", "[lcd][lvgl][ignore]")
@@ -237,7 +237,7 @@ TEST_CASE("lvgl gui with 8-line spi interface (nt35510)", "[lcd][lvgl][ignore]")
         .bits_per_pixel = 16,
     };
     TEST_ESP_OK(esp_lcd_new_panel_nt35510(io_handle, &panel_config, &panel_handle));
-    lvgl_gui_test(io_handle, panel_handle, &disp);
+    lvgl_gui_test(io_handle, panel_handle, &disp, true);
 }
 #endif // SOC_SPI_SUPPORT_OCT
 
@@ -253,7 +253,22 @@ TEST_CASE("lvgl gui with 1-line spi interface (st7789)", "[lcd][lvgl][ignore]")
         .bits_per_pixel = 16,
     };
     TEST_ESP_OK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
-    lvgl_gui_test(io_handle, panel_handle, &disp);
+    lvgl_gui_test(io_handle, panel_handle, &disp, true);
+}
+
+TEST_CASE("lvgl gui with 1-line spi interface (st7796s)", "[lcd][lvgl][ignore]")
+{
+    lv_disp_t *disp = NULL;
+    esp_lcd_panel_io_handle_t io_handle = NULL;
+    esp_lcd_panel_handle_t panel_handle = NULL;
+    lcd_initialize_spi(&io_handle, notify_lvgl_ready_to_flush, &disp, 8, 8, false);
+    esp_lcd_panel_dev_config_t panel_config = {
+        .reset_gpio_num = TEST_LCD_RST_GPIO,
+        .color_space = ESP_LCD_COLOR_SPACE_BGR,
+        .bits_per_pixel = 16,
+    };
+    TEST_ESP_OK(esp_lcd_new_panel_st7796s(io_handle, &panel_config, &panel_handle));
+    lvgl_gui_test(io_handle, panel_handle, &disp, false);
 }
 
 #endif // CONFIG_LV_USE_USER_DATA
