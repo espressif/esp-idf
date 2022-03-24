@@ -162,6 +162,7 @@ esp_err_t heap_caps_add_region(intptr_t start, intptr_t end)
     return ESP_ERR_NOT_FOUND;
 }
 
+/* This API is used for internal test purpose and hence its not marked as static */
 bool heap_caps_check_add_region_allowed(intptr_t heap_start, intptr_t heap_end, intptr_t start, intptr_t end)
 {
     /*
