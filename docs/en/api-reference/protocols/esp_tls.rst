@@ -8,7 +8,9 @@ The ESP-TLS component provides a simplified API interface for accessing the comm
 It supports common scenarios like CA certification validation, SNI, ALPN negotiation, non-blocking connection among others.
 All the configuration can be specified in the ``esp_tls_cfg_t`` data structure. Once done, TLS communication can be conducted using the following APIs:
 
-    * :cpp:func:`esp_tls_conn_new`: for opening a new TLS connection.
+    * :cpp:func:`esp_tls_init`: for initializing the TLS connection handle.
+    * :cpp:func:`esp_tls_conn_new_sync`: for opening a new blocking TLS connection.
+    * :cpp:func:`esp_tls_conn_new_async`: for opening a new non-blocking TLS connection.
     * :cpp:func:`esp_tls_conn_read`: for reading from the connection.
     * :cpp:func:`esp_tls_conn_write`: for writing into the connection.
     * :cpp:func:`esp_tls_conn_destroy`: for freeing up the connection.
