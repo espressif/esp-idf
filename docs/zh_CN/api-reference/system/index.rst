@@ -24,6 +24,7 @@ System API
     intr_alloc
     log
     system
+    soc_caps
     ota
     :CONFIG_IDF_TARGET_ARCH_XTENSA: perfmon
     power_management

@@ -153,7 +153,7 @@ Knowledge about the regions of memory in the chip comes from the "soc" component
 
 Each contiguous region of memory contains its own memory heap. The heaps are created using the `multi_heap <API Reference - Multi Heap API>`_ functionality. multi_heap allows any contiguous region of memory to be used as a heap.
 
-The heap capabilities allocator uses knowledge of the memory regions to initialize each individual heap. Allocation functions in the heap capabilities API will find the most appropriate heap for the allocation (based on desired capabilities, available space, and preferences for each region's use) and then calling :cpp:func:`multi_heap_malloc` or :cpp:func:`multi_heap_calloc` for the heap situated in that particular region.
+The heap capabilities allocator uses knowledge of the memory regions to initialize each individual heap. Allocation functions in the heap capabilities API will find the most appropriate heap for the allocation (based on desired capabilities, available space, and preferences for each region's use) and then calling :cpp:func:`multi_heap_malloc` for the heap situated in that particular region.
 
 Calling ``free()`` involves finding the particular heap corresponding to the freed address, and then calling :cpp:func:`multi_heap_free` on that particular multi_heap instance.
 

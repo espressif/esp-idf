@@ -48,7 +48,7 @@ This feature is enabled by default, but can be disabled to reduce application bi
 ``ESP_ERROR_CHECK`` macro
 -------------------------
 
-:cpp:func:`ESP_ERROR_CHECK` macro serves similar purpose as ``assert``, except that it checks :cpp:type:`esp_err_t` value rather than a ``bool`` condition. If the argument of :cpp:func:`ESP_ERROR_CHECK` is not equal :c:macro:`ESP_OK`, then an error message is printed on the console, and ``abort()`` is called.
+:c:macro:`ESP_ERROR_CHECK` macro serves similar purpose as ``assert``, except that it checks :cpp:type:`esp_err_t` value rather than a ``bool`` condition. If the argument of :c:macro:`ESP_ERROR_CHECK` is not equal :c:macro:`ESP_OK`, then an error message is printed on the console, and ``abort()`` is called.
 
 Error message will typically look like this::
 
@@ -64,7 +64,7 @@ Error message will typically look like this::
 
 - The first line mentions the error code as a hexadecimal value, and the identifier used for this error in source code. The latter depends on :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP` option being set. Address in the program where error has occured is printed as well.
 
-- Subsequent lines show the location in the program where :cpp:func:`ESP_ERROR_CHECK` macro was called, and the expression which was passed to the macro as an argument.
+- Subsequent lines show the location in the program where :c:macro:`ESP_ERROR_CHECK` macro was called, and the expression which was passed to the macro as an argument.
 
 - Finally, backtrace is printed. This is part of panic handler output common to all fatal errors. See :doc:`Fatal Errors <fatal-errors>` for more information about the backtrace.
 
@@ -74,35 +74,35 @@ Error message will typically look like this::
 ``ESP_ERROR_CHECK_WITHOUT_ABORT`` macro
 ---------------------------------------
 
-:cpp:func:`ESP_ERROR_CHECK_WITHOUT_ABORT` macro serves similar purpose as ``ESP_ERROR_CHECK``, except that it won't call ``abort()``.
+:c:macro:`ESP_ERROR_CHECK_WITHOUT_ABORT` macro serves similar purpose as ``ESP_ERROR_CHECK``, except that it won't call ``abort()``.
 
 .. _esp-return-on-error-macro:
 
 ``ESP_RETURN_ON_ERROR`` macro
 -----------------------------
 
-:cpp:func:`ESP_RETURN_ON_ERROR` macro checks the error code, if the error code is not equal :c:macro:`ESP_OK`, it prints the message and returns.
+:c:macro:`ESP_RETURN_ON_ERROR` macro checks the error code, if the error code is not equal :c:macro:`ESP_OK`, it prints the message and returns.
 
 .. _esp-goto-on-error-macro:
 
 ``ESP_GOTO_ON_ERROR`` macro
 ---------------------------
 
-:cpp:func:`ESP_GOTO_ON_ERROR` macro checks the error code, if the error code is not equal :c:macro:`ESP_OK`, it prints the message, sets the local variable `ret` to the code, and then exits by jumping to `goto_tag`.
+:c:macro:`ESP_GOTO_ON_ERROR` macro checks the error code, if the error code is not equal :c:macro:`ESP_OK`, it prints the message, sets the local variable `ret` to the code, and then exits by jumping to `goto_tag`.
 
 .. _esp-return-on-false-macro:
 
 ``ESP_RETURN_ON_FALSE`` macro
 -----------------------------
 
-:cpp:func:`ESP_RETURN_ON_FALSE` macro checks the condition, if the condition is not equal `true`, it prints the message and returns with the supplied `err_code`.
+:c:macro:`ESP_RETURN_ON_FALSE` macro checks the condition, if the condition is not equal `true`, it prints the message and returns with the supplied `err_code`.
 
 .. _esp-goto-on-false-macro:
 
 ``ESP_GOTO_ON_FALSE`` macro
 ---------------------------
 
-:cpp:func:`ESP_GOTO_ON_FALSE` macro checks the condition, if the condition is not equal `true`, it prints the message, sets the local variable `ret` to the supplied `err_code`, and then exits by jumping to `goto_tag`.
+:c:macro:`ESP_GOTO_ON_FALSE` macro checks the condition, if the condition is not equal `true`, it prints the message, sets the local variable `ret` to the supplied `err_code`, and then exits by jumping to `goto_tag`.
 
 .. _check_macros_examples:
 

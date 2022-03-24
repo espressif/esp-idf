@@ -26,7 +26,7 @@ This event loop implementation is started using :cpp:func:`esp_event_loop_init` 
     {
     }
 
-Both the pointer to event handler function, and an arbitrary context pointer are passed to :cpp:func:`esp_event_loop_init`. 
+Both the pointer to event handler function, and an arbitrary context pointer are passed to :cpp:func:`esp_event_loop_init`.
 
 When Wi-Fi, Ethernet, or IP stack generate an event, this event is sent to a high-priority ``event`` task via a queue. Application-provided event handler function is called in the context of this task. Event task stack size and event queue size can be adjusted using :ref:`CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE` and :ref:`CONFIG_ESP_SYSTEM_EVENT_QUEUE_SIZE` options, respectively.
 
@@ -139,11 +139,11 @@ Various modules of the Bluetooth stack deliver events to applications via dedica
 
 * BLE GAP: :cpp:func:`esp_ble_gap_register_callback`, :cpp:type:`esp_gap_ble_cb_event_t`, :cpp:type:`esp_ble_gap_cb_param_t`.
 * BT GAP: :cpp:func:`esp_bt_gap_register_callback`, :cpp:type:`esp_bt_gap_cb_event_t`, :cpp:type:`esp_bt_gap_cb_param_t`.
-* GATTC: :cpp:func:`esp_ble_gattc_register_callback`, :cpp:type:`esp_bt_gattc_cb_event_t`, :cpp:type:`esp_bt_gattc_cb_param_t`.
-* GATTS: :cpp:func:`esp_ble_gatts_register_callback`, :cpp:type:`esp_bt_gatts_cb_event_t`, :cpp:type:`esp_bt_gatts_cb_param_t`.
+* GATTC: :cpp:func:`esp_ble_gattc_register_callback`, :cpp:type:`esp_ble_gattc_cb_event_t`, :cpp:type:`esp_ble_gattc_cb_param_t`.
+* GATTS: :cpp:func:`esp_ble_gatts_register_callback`, :cpp:type:`esp_ble_gatts_cb_event_t`, :cpp:type:`esp_ble_gatts_cb_param_t`.
 * SPP: :cpp:func:`esp_spp_register_callback`, :cpp:type:`esp_spp_cb_event_t`, :cpp:type:`esp_spp_cb_param_t`.
 * Blufi: :cpp:func:`esp_blufi_register_callbacks`, :cpp:type:`esp_blufi_cb_event_t`, :cpp:type:`esp_blufi_cb_param_t`.
 * A2DP: :cpp:func:`esp_a2d_register_callback`, :cpp:type:`esp_a2d_cb_event_t`, :cpp:type:`esp_a2d_cb_param_t`.
 * AVRC: :cpp:func:`esp_avrc_ct_register_callback`, :cpp:type:`esp_avrc_ct_cb_event_t`, :cpp:type:`esp_avrc_ct_cb_param_t`.
 * HFP Client: :cpp:func:`esp_hf_client_register_callback`, :cpp:type:`esp_hf_client_cb_event_t`, :cpp:type:`esp_hf_client_cb_param_t`.
-* HFP AG: :cpp:func:`esp_hf_ag_register_callback`, :cpp:type:`esp_hf_ag_cb_event_t`, :cpp:type:`esp_hf_ag_cb_param_t`.
+* HFP AG: :cpp:func:`esp_bt_hf_register_callback`, :cpp:type:`esp_hf_cb_event_t`, :cpp:type:`esp_hf_cb_param_t`.

@@ -377,4 +377,5 @@ esptool includes a useful tool for reading/writing {IDF_TARGET_NAME} eFuse bits 
    .. include:: inc/espefuse_summary_{IDF_TARGET_NAME}.rst
 
 
-.. include-build-file:: inc/esp_efuse.inc
+.. include-build-file:: inc/components/efuse/{IDF_TARGET_PATH_NAME}/include/esp_efuse.inc
+.. include-build-file:: inc/components/efuse/include/esp_efuse.inc

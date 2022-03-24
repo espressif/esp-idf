@@ -24,6 +24,7 @@ System API
     intr_alloc
     log
     system
+    soc_caps
     ota
     :CONFIG_IDF_TARGET_ARCH_XTENSA: perfmon
     power_management
@@ -36,6 +37,7 @@ System API
     :SOC_ULP_SUPPORTED: ulp
     :SOC_RISCV_COPROC_SUPPORTED: ulp-risc-v
     wdts
-    
+
+
 
 Code examples for this API section are provided in the :example:`system` directory of ESP-IDF examples.

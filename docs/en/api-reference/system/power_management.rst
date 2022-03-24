@@ -100,10 +100,10 @@ When DFS is enabled, the APB frequency can be changed multiple times within a si
 
 The following peripherals work normally even when the APB frequency is changing:
 
-- **UART**: if REF_TICK is used as a clock source. See `use_ref_tick` member of :cpp:class:`uart_config_t`.
+- **UART**: if REF_TICK is used as a clock source. See cpp:member:`uart_config_t::use_ref_tick`.
 - **LEDC**: if REF_TICK is used as a clock source. See :cpp:func:`ledc_timer_config` function.
-- **RMT**: if REF_TICK or XTAL is used as a clock source. See `flags` member of :cpp:class:`rmt_config_t` and macro `RMT_CHANNEL_FLAGS_AWARE_DFS`.
-- **GPTimer**: if APB is used as the clock source. See :c:member:`clk_src` member of :c:type:`gptimer_config_t`.
+- **RMT**: if REF_TICK or XTAL is used as a clock source. See :cpp:member:`rmt_config_t::flags` and macro `RMT_CHANNEL_FLAGS_AWARE_DFS`.
+- **GPTimer**: if APB is used as the clock source. See :cpp:member:`gptimer_config_t::clk_src`.
 - **TSENS**: XTAL or RTC_8M is used as a clock source. So, APB frequency changing will not influence it.
 
 Currently, the following peripheral drivers are aware of DFS and will use the ``ESP_PM_APB_FREQ_MAX`` lock for the duration of the transaction:

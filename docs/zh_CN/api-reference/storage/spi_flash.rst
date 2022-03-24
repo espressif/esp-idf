@@ -99,7 +99,7 @@ SPI Flash 访问 API
 - :cpp:func:`esp_flash_write`：将数据从 RAM 写入到 flash；
 - :cpp:func:`esp_flash_erase_region`：擦除 flash 中指定区域的数据；
 - :cpp:func:`esp_flash_erase_chip`：擦除整个 flash；
-- :cpp:func:`esp_flash_get_chip_size`：返回 menuconfig 中设置的 flash 芯片容量（以字节为单位）。
+- :cpp:func:`spi_flash_get_chip_size`：返回 menuconfig 中设置的 flash 芯片容量（以字节为单位）。
 
 一般来说，请尽量避免对主 SPI flash 芯片直接使用原始 SPI flash 函数，如需对主 SPI flash 芯片进行操作，请使用 :ref:`分区专用函数 <flash-partition-apis>`。
 
@@ -108,7 +108,7 @@ SPI Flash 容量
 
 SPI flash 容量存储于引导程序镜像头部（烧录偏移量为 0x1000）的一个字段。
 
-默认情况下，引导程序写入 flash 时，esptool.py 将引导程序写入 flash 时，会自动检测 SPI flash 容量，同时使用正确容量更新引导程序的头部。您也可以在工程配置中设置 :envvar:`CONFIG_ESPTOOLPY_FLASHSIZE`，生成固定的 flash 容量。
+默认情况下，引导程序写入 flash 时，esptool.py 将引导程序写入 flash 时，会自动检测 SPI flash 容量，同时使用正确容量更新引导程序的头部。您也可以在工程配置中设置 :ref:`CONFIG_ESPTOOLPY_FLASHSIZE`，生成固定的 flash 容量。
 
 如需在运行时覆盖已配置的 flash 容量，请配置 ``g_rom_flashchip`` 结构中的 ``chip_size``。``esp_flash_*`` 函数使用此容量（于软件和 ROM 中）进行边界检查。
 
@@ -261,7 +261,9 @@ SPI Flash API 参考
 
 .. include-build-file:: inc/esp_flash_spi_init.inc
 .. include-build-file:: inc/esp_flash.inc
+.. include-build-file:: inc/esp_spi_flash.inc
 .. include-build-file:: inc/spi_flash_types.inc
+.. include-build-file:: inc/esp_flash_err.inc
 
 .. _api-reference-partition-table:
 

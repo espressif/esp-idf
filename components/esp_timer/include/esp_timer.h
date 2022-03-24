@@ -273,7 +273,7 @@ esp_err_t esp_timer_get_expiry_time(esp_timer_handle_t timer, uint64_t *expiry);
  */
 esp_err_t esp_timer_dump(FILE* stream);
 
-#ifdef CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
+#if CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD || defined __DOXYGEN__
 /**
  * @brief Requests a context switch from a timer callback function.
  *
@@ -281,7 +281,7 @@ esp_err_t esp_timer_dump(FILE* stream);
  * The context switch will be called after all ISR dispatch timers have been processed.
  */
 void esp_timer_isr_dispatch_need_yield(void);
-#endif // CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
+#endif // CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD || defined __DOXYGEN__
 
 /**
  * @brief Returns status of a timer, active or not

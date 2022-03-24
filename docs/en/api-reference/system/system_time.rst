@@ -114,7 +114,7 @@ To start synchronization via SNTP, just call the following three functions.
     sntp_setservername(0, "pool.ntp.org");
     sntp_init();
 
-An application with this initialization code will periodically synchronize the time. The time synchronization period is determined by :envvar:`CONFIG_LWIP_SNTP_UPDATE_DELAY` (default value is one hour). To modify the variable, set :ref:`CONFIG_LWIP_SNTP_UPDATE_DELAY` in project configuration.
+An application with this initialization code will periodically synchronize the time. The time synchronization period is determined by :ref:`CONFIG_LWIP_SNTP_UPDATE_DELAY` (default value is one hour). To modify the variable, set :ref:`CONFIG_LWIP_SNTP_UPDATE_DELAY` in project configuration.
 
 A code example that demonstrates the implementation of time synchronization based on the lwIP SNTP library is provided in :example:`protocols/sntp` directory.
 

@@ -318,7 +318,6 @@
 #define SOC_SHA_SUPPORT_SHA224          (1)
 #define SOC_SHA_SUPPORT_SHA256          (1)
 #define SOC_SHA_SUPPORT_SHA384          (1)
-#define SOC_SHA_SUPPORT_SHA256          (1)
 #define SOC_SHA_SUPPORT_SHA512          (1)
 #define SOC_SHA_SUPPORT_SHA512_224      (1)
 #define SOC_SHA_SUPPORT_SHA512_256      (1)

@@ -48,7 +48,7 @@ ESP-IDF 中大多数函数会返回 :cpp:type:`esp_err_t` 类型的错误码， 
 ``ESP_ERROR_CHECK`` 宏
 ----------------------
 
-宏 :cpp:func:`ESP_ERROR_CHECK` 的功能和 ``assert`` 类似，不同之处在于：这个宏会检查 :cpp:type:`esp_err_t` 的值，而非判断 ``bool`` 条件。如果传给 :cpp:func:`ESP_ERROR_CHECK` 的参数不等于 :c:macro:`ESP_OK` ，则会在控制台上打印错误消息，然后调用 ``abort()`` 函数。
+宏 :c:macro:`ESP_ERROR_CHECK` 的功能和 ``assert`` 类似，不同之处在于：这个宏会检查 :cpp:type:`esp_err_t` 的值，而非判断 ``bool`` 条件。如果传给 :c:macro:`ESP_ERROR_CHECK` 的参数不等于 :c:macro:`ESP_OK` ，则会在控制台上打印错误消息，然后调用 ``abort()`` 函数。
 
 错误消息通常如下所示::
 
@@ -64,7 +64,7 @@ ESP-IDF 中大多数函数会返回 :cpp:type:`esp_err_t` 类型的错误码， 
 
 -  第一行打印错误代码的十六进制表示，及该错误在源代码中的标识符。这个标识符取决于 :ref:`CONFIG_ESP_ERR_TO_NAME_LOOKUP` 选项的设定。最后，第一行还会打印程序中该错误发生的具体位置。
 
--  下面几行显示了程序中调用 :cpp:func:`ESP_ERROR_CHECK` 宏的具体位置，以及传递给该宏的参数。
+-  下面几行显示了程序中调用 :c:macro:`ESP_ERROR_CHECK` 宏的具体位置，以及传递给该宏的参数。
 
 -  最后一行打印回溯结果。对于所有不可恢复错误，这里在应急处理程序中打印的内容都是一样的。更多有关回溯结果的详细信息，请参阅 :doc:`不可恢复错误 <fatal-errors>` 。
 
@@ -74,35 +74,35 @@ ESP-IDF 中大多数函数会返回 :cpp:type:`esp_err_t` 类型的错误码， 
 ``ESP_ERROR_CHECK_WITHOUT_ABORT`` 宏
 ------------------------------------
 
-宏 :cpp:func:`ESP_ERROR_CHECK_WITHOUT_ABORT` 的功能和 ``ESP_ERROR_CHECK`` 类似, 不同之处在于它不会调用 ``abort()``.
+宏 :c:macro:`ESP_ERROR_CHECK_WITHOUT_ABORT` 的功能和 ``ESP_ERROR_CHECK`` 类似, 不同之处在于它不会调用 ``abort()``.
 
 .. _esp-return-on-error-macro:
 
 ``ESP_RETURN_ON_ERROR`` 宏
 --------------------------
 
-宏 :cpp:func:`ESP_RETURN_ON_ERROR` 用于错误码检查, 如果错误码不等于 :c:macro:`ESP_OK`, 该宏会打印错误信息，并使原函数立刻返回。
+宏 :c:macro:`ESP_RETURN_ON_ERROR` 用于错误码检查, 如果错误码不等于 :c:macro:`ESP_OK`, 该宏会打印错误信息，并使原函数立刻返回。
 
 .. _esp-goto-on-error-macro:
 
 ``ESP_GOTO_ON_ERROR`` 宏
 ------------------------
 
-宏 :cpp:func:`ESP_GOTO_ON_ERROR` 用于错误码检查, 如果错误码不等于 :c:macro:`ESP_OK`, 该宏会打印错误信息，将局部变量 `ret` 赋值为该错误码, 并使原函数跳转至给定的 `goto_tag`.
+宏 :c:macro:`ESP_GOTO_ON_ERROR` 用于错误码检查, 如果错误码不等于 :c:macro:`ESP_OK`, 该宏会打印错误信息，将局部变量 `ret` 赋值为该错误码, 并使原函数跳转至给定的 `goto_tag`.
 
 .. _esp-return-on-false-macro:
 
 ``ESP_RETURN_ON_FALSE`` 宏
 --------------------------
 
-宏 :cpp:func:`ESP_RETURN_ON_FALSE` 用于条件检查, 如果给定条件不等于 `true`, 该宏会打印错误信息，并使原函数立刻返回，返回值为给定的 `err_code`.
+宏 :c:macro:`ESP_RETURN_ON_FALSE` 用于条件检查, 如果给定条件不等于 `true`, 该宏会打印错误信息，并使原函数立刻返回，返回值为给定的 `err_code`.
 
 .. _esp-goto-on-false-macro:
 
 ``ESP_GOTO_ON_FALSE`` 宏
 ------------------------
 
-宏 :cpp:func:`ESP_GOTO_ON_FALSE` 用于条件检查, 如果给定条件不等于 `true`, 该宏会打印错误信息，将局部变量 `ret` 赋值为给定的 `err_code`, 并使原函数跳转至给定的 `goto_tag`.
+宏 :c:macro:`ESP_GOTO_ON_FALSE` 用于条件检查, 如果给定条件不等于 `true`, 该宏会打印错误信息，将局部变量 `ret` 赋值为给定的 `err_code`, 并使原函数跳转至给定的 `goto_tag`.
 
 .. _check_macros_examples:
 
