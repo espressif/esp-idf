@@ -492,7 +492,7 @@ ESP-IDF 中 Gcov 和 Gcovr 应用
 
 在构建一个有源代码覆盖的项目之前，请通过运行 ``idf.py menuconfig`` 启用以下项目配置选项。
 
-- 通过 :ref:`CONFIG_APPTRACE_DESTINATION` 选项选择 *Trace Memory* 来启用应用程序跟踪模块。
+- 通过 :ref:`CONFIG_APPTRACE_DESTINATION1` 选项选择 *Trace Memory* 来启用应用程序跟踪模块。
 - 通过 :ref:`CONFIG_APPTRACE_GCOV_ENABLE` 选项启用 Gcov 主机。
 
 .. _app_trace-gcov-dumping-data:

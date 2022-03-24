@@ -57,11 +57,6 @@ const static char *TAG = "esp_apptrace";
 
 static esp_apptrace_riscv_ctrl_block_t s_tracing_ctrl[portNUM_PROCESSORS];
 
-esp_apptrace_hw_t *esp_apptrace_uart_hw_get(int num, void **data)
-{
-    return NULL;
-}
-
 esp_apptrace_hw_t *esp_apptrace_jtag_hw_get(void **data)
 {
 #if CONFIG_APPTRACE_DEST_JTAG

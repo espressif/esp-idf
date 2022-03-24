@@ -1,7 +1,7 @@
 menu "Application Level Tracing"
 
-    choice APPTRACE_DESTINATION
-        prompt "Data Destination"
+    choice APPTRACE_DESTINATION1
+        prompt "Data Destination 1"
         default APPTRACE_DEST_NONE
         help
             Select destination for application trace: JTAG or none (to disable).
@@ -15,6 +15,124 @@ menu "Application Level Tracing"
         config APPTRACE_DEST_NONE
             bool "None"
     endchoice
+
+    config APPTRACE_DEST_UART
+        bool
+
+    config APPTRACE_DEST_UART_NOUSB
+        bool
+
+    choice APPTRACE_DESTINATION2
+        prompt "Data Destination 2"
+        default APPTRACE_DEST_UART_NONE
+        help
+            Select destination for application trace: UART(XX) or none (to disable).
+
+        config APPTRACE_DEST_UART0
+            bool "UART0"
+            select APPTRACE_ENABLE
+            select APPTRACE_DEST_UART
+            select APPTRACE_DEST_UART_NOUSB
+            depends on (ESP_CONSOLE_UART_NUM !=0)
+
+        config APPTRACE_DEST_UART1
+            bool "UART1"
+            select APPTRACE_ENABLE
+            select APPTRACE_DEST_UART
+            select APPTRACE_DEST_UART_NOUSB
+            depends on (ESP_CONSOLE_UART_NUM !=1)
+
+        config APPTRACE_DEST_UART2
+            bool "UART2"
+            select APPTRACE_ENABLE
+            select APPTRACE_DEST_UART
+            select APPTRACE_DEST_UART_NOUSB
+            depends on (ESP_CONSOLE_UART_NUM !=2) && !IDF_TARGET_ESP32C3 && !IDF_TARGET_ESP32S2 && !IDF_TARGET_ESP32H2
+
+        config APPTRACE_DEST_USB_CDC
+            bool "USB_CDC"
+            select APPTRACE_ENABLE
+            select APPTRACE_DEST_UART
+            depends on !ESP_CONSOLE_USB_CDC && (IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3) && !USB_ENABLED
+
+        config APPTRACE_DEST_UART_NONE
+            bool "None"
+    endchoice
+
+    config APPTRACE_UART_TX_GPIO
+        int "UART TX on GPIO#"
+        depends on APPTRACE_DEST_UART_NOUSB
+        range 0 46
+        default 12 if IDF_TARGET_ESP32
+        default 12 if IDF_TARGET_ESP32C3
+        default 12
+        help
+            This GPIO is used for UART TX pin.
+
+    config APPTRACE_UART_RX_GPIO
+        int "UART RX on GPIO#"
+        depends on APPTRACE_DEST_UART_NOUSB
+        range 0 46
+        default 13 if IDF_TARGET_ESP32
+        default 13 if IDF_TARGET_ESP32C3
+        default 13
+        help
+            This GPIO is used for UART RX pin.
+
+    config APPTRACE_UART_BAUDRATE
+        int
+        prompt "UART baud rate" if APPTRACE_DEST_UART
+        depends on APPTRACE_DEST_UART
+        default 1000000
+        range 1200 8000000
+        range 1200 1000000
+        help
+            This baud rate is used for UART.
+
+            The app's maximum baud rate depends on the UART clock source. If Power Management is disabled,
+            the UART clock source is the APB clock and all baud rates in the available range will be sufficiently
+            accurate. If Power Management is enabled, REF_TICK clock source is used so the baud rate is divided
+            from 1MHz. Baud rates above 1Mbps are not possible and values between 500Kbps and 1Mbps may not be
+            accurate.
+
+    config APPTRACE_UART_RX_BUFF_SIZE
+        int
+        prompt "UART RX ring buffer size" if APPTRACE_DEST_UART
+        depends on APPTRACE_DEST_UART
+        default 128
+        range 64 32768
+        help
+            Size of the UART input ring buffer.
+            This size related to the baudrate, system tick frequency and amount of data to transfer.
+            The data placed to this buffer before sent out to the interface.
+
+    config APPTRACE_UART_TX_BUFF_SIZE
+        int
+        prompt "UART TX ring buffer size" if APPTRACE_DEST_UART
+        depends on APPTRACE_DEST_UART
+        default 4096
+        range 2048 32768
+        help
+            Size of the UART output ring buffer.
+            This size related to the baudrate, system tick frequency and amount of data to transfer.
+
+    config APPTRACE_UART_TX_MSG_SIZE
+        int
+        prompt "UART TX message size" if APPTRACE_DEST_UART
+        depends on APPTRACE_DEST_UART
+        default 128
+        range 64 32768
+        help
+            Maximum size of the single message to transfer.
+
+    config APPTRACE_UART_TASK_PRIO
+        int
+        prompt "UART Task Priority" if APPTRACE_DEST_UART
+        default 1
+        range 1 32
+        help
+            UART task priority. In case of high events rate,
+            this parameter could be changed up to (configMAX_PRIORITIES-1).
 
     config APPTRACE_DEST_TRAX
         bool
@@ -89,6 +207,47 @@ menu "Application Level Tracing"
             default n
             help
                 Enables supporrt for SEGGER SystemView tracing functionality.
+
+        choice APPTRACE_SV_DEST
+            prompt "SystemView destination"
+            depends on APPTRACE_SV_ENABLE
+            default APPTRACE_SV_DEST_JTAG
+            help
+                SystemView witt transfer data trough defined interface.
+
+            config APPTRACE_SV_DEST_JTAG
+                bool "Data destination JTAG"
+                depends on  !PM_ENABLE && !APPTRACE_DEST_NONE
+                help
+                    Send SEGGER SystemView events through JTAG interface.
+
+            config APPTRACE_SV_DEST_UART
+                bool "Data destination UART"
+                depends on APPTRACE_DEST_UART
+                help
+                    Send SEGGER SystemView events through UART interface.
+
+        endchoice
+
+        choice APPTRACE_SV_CPU
+            prompt "CPU to trace"
+            depends on APPTRACE_SV_DEST_UART && !FREERTOS_UNICORE
+            default APPTRACE_SV_DEST_CPU_0
+            help
+                Define the CPU to trace by SystemView.
+
+            config APPTRACE_SV_DEST_CPU_0
+                bool "CPU0"
+                help
+                    Send SEGGER SystemView events for Pro CPU.
+
+            config APPTRACE_SV_DEST_CPU_1
+                bool "CPU1"
+                help
+                    Send SEGGER SystemView events for App CPU.
+
+        endchoice
+
 
         choice APPTRACE_SV_TS_SOURCE
             prompt "Timer to use as timestamp source"
