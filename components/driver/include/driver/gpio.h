@@ -24,9 +24,11 @@ extern "C" {
 
 #define GPIO_PIN_COUNT                      (SOC_GPIO_PIN_COUNT)
 /// Check whether it is a valid GPIO number
-#define GPIO_IS_VALID_GPIO(gpio_num)        (((1ULL << (gpio_num)) & SOC_GPIO_VALID_GPIO_MASK) != 0)
+#define GPIO_IS_VALID_GPIO(gpio_num)        ((gpio_num >= 0) && \
+                                              (((1ULL << (gpio_num)) & SOC_GPIO_VALID_GPIO_MASK) != 0))
 /// Check whether it can be a valid GPIO number of output mode
-#define GPIO_IS_VALID_OUTPUT_GPIO(gpio_num) (((1ULL << (gpio_num)) & SOC_GPIO_VALID_OUTPUT_GPIO_MASK) != 0)
+#define GPIO_IS_VALID_OUTPUT_GPIO(gpio_num) ((gpio_num >= 0) && \
+                                              (((1ULL << (gpio_num)) & SOC_GPIO_VALID_OUTPUT_GPIO_MASK) != 0))
 
 
 typedef intr_handle_t gpio_isr_handle_t;

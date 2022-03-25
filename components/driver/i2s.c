@@ -1210,12 +1210,12 @@ static void i2s_mode_identify(i2s_port_t i2s_num, const i2s_config_t *i2s_config
 static esp_err_t i2s_config_transfer(i2s_port_t i2s_num, const i2s_config_t *i2s_config)
 {
     /* Convert legacy configuration into general part of slot and clock configuration */
-    i2s_slot_config_t slot_cfg;
+    i2s_slot_config_t slot_cfg = {};
     slot_cfg.mode = p_i2s[i2s_num]->mode;
     slot_cfg.data_bit_width = i2s_config->bits_per_sample;
     slot_cfg.slot_bit_width = (int)i2s_config->bits_per_chan < (int)i2s_config->bits_per_sample ?
                                 i2s_config->bits_per_sample : i2s_config->bits_per_chan;
-    i2s_clk_config_t clk_cfg;
+    i2s_clk_config_t clk_cfg = {};
     clk_cfg.sample_rate_hz = i2s_config->sample_rate;
     clk_cfg.mclk_multiple = i2s_config->mclk_multiple == 0 ? I2S_MCLK_MULTIPLE_256 : i2s_config->mclk_multiple;
     clk_cfg.clk_src = I2S_CLK_D2CLK;

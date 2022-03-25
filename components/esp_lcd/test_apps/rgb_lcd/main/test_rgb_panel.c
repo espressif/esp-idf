@@ -134,13 +134,22 @@ TEST_CASE("lcd_rgb_panel_one_shot_mode", "[lcd]")
 }
 
 #if CONFIG_LCD_RGB_ISR_IRAM_SAFE
+TEST_LCD_CALLBACK_ATTR static bool test_rgb_panel_count_in_callback(esp_lcd_panel_handle_t panel, esp_lcd_rgb_panel_event_data_t *edata, void *user_ctx)
+{
+    uint32_t *count = (uint32_t *)user_ctx;
+    *count = *count + 1;
+    return false;
+}
+
 TEST_CASE("lcd_rgb_panel_with_nvs_read_write", "[lcd]")
 {
     uint8_t *img = malloc(TEST_IMG_SIZE);
     TEST_ASSERT_NOT_NULL(img);
 
+    uint32_t callback_calls = 0;
+
     printf("initialize RGB panel with stream mode\r\n");
-    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(true, NULL, NULL);
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(true, test_rgb_panel_count_in_callback, &callback_calls);
     printf("flush one clock block to the LCD\r\n");
     uint8_t color_byte = esp_random() & 0xFF;
     int x_start = esp_random() % (TEST_LCD_H_RES - 100);
@@ -175,6 +184,8 @@ TEST_CASE("lcd_rgb_panel_with_nvs_read_write", "[lcd]")
     printf("close NVS storage\r\n");
     nvs_close(my_handle);
     TEST_ESP_OK(nvs_flash_deinit());
+
+    TEST_ASSERT(callback_calls > 50);
 
     printf("delete RGB panel\r\n");
     TEST_ESP_OK(esp_lcd_panel_del(panel_handle));

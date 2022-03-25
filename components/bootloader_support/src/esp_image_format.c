@@ -789,7 +789,7 @@ static esp_err_t process_checksum(bootloader_sha256_handle_t sha_handle, uint32_
     length = length - unpadded_length;
 
     // Verify checksum
-    WORD_ALIGNED_ATTR uint8_t buf[16];
+    WORD_ALIGNED_ATTR uint8_t buf[16] = {0};
     if (!skip_check_checksum || sha_handle != NULL) {
         CHECK_ERR(bootloader_flash_read(data->start_addr + unpadded_length, buf, length, true));
     }

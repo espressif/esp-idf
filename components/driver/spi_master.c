@@ -649,6 +649,8 @@ static void SPI_MASTER_ISR_ATTR spi_intr(void *arg)
             // We stay in the ISR to deal with those transactions of desired device, otherwise nothing will be done, check whether we need to resume some other tasks, or just quit the ISR
             resume_task = spi_bus_lock_bg_check_dev_acq(lock, &desired_dev);
         }
+        // sanity check
+        assert(desired_dev);
 
         if (!resume_task) {
             bool dev_has_req = spi_bus_lock_bg_check_dev_req(desired_dev);
@@ -733,7 +735,8 @@ static SPI_MASTER_ISR_ATTR void uninstall_priv_desc(spi_trans_priv_t* trans_buf)
         free((void *)trans_buf->buffer_to_send); //force free, ignore const
     }
     // copy data from temporary DMA-capable buffer back to IRAM buffer and free the temporary one.
-    if ((void *)trans_buf->buffer_to_rcv != &trans_desc->rx_data[0] &&
+    if (trans_buf->buffer_to_rcv &&
+        (void *)trans_buf->buffer_to_rcv != &trans_desc->rx_data[0] &&
         trans_buf->buffer_to_rcv != trans_desc->rx_buffer) { // NOLINT(clang-analyzer-unix.Malloc)
         if (trans_desc->flags & SPI_TRANS_USE_RXDATA) {
             memcpy((uint8_t *) & trans_desc->rx_data[0], trans_buf->buffer_to_rcv, (trans_desc->rxlength + 7) / 8);

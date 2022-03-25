@@ -64,7 +64,7 @@ typedef struct {
         unsigned int hsync_idle_low: 1;  /*!< The hsync signal is low in IDLE state */
         unsigned int vsync_idle_low: 1;  /*!< The vsync signal is low in IDLE state */
         unsigned int de_idle_high: 1;    /*!< The de signal is high in IDLE state */
-        unsigned int pclk_active_pos: 1; /*!< Whether the display data is clocked out on the rising edge of PCLK */
+        unsigned int pclk_active_neg: 1; /*!< Whether the display data is clocked out on the falling edge of PCLK */
         unsigned int pclk_idle_high: 1;  /*!< The PCLK stays at high level in IDLE phase */
     } flags;
 } esp_lcd_rgb_timing_t;

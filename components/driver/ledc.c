@@ -597,7 +597,7 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
 {
     LEDC_ARG_CHECK(ledc_conf, "ledc_conf");
     uint32_t speed_mode = ledc_conf->speed_mode;
-    uint32_t gpio_num = ledc_conf->gpio_num;
+    int gpio_num = ledc_conf->gpio_num;
     uint32_t ledc_channel = ledc_conf->channel;
     uint32_t timer_select = ledc_conf->timer_sel;
     uint32_t intr_type = ledc_conf->intr_type;

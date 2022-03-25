@@ -690,7 +690,9 @@ esp_err_t spicommon_bus_free_io_cfg(const spi_bus_config_t *bus_cfg)
     };
     for (int i = 0; i < sizeof(pin_array)/sizeof(int); i ++) {
         const int io = pin_array[i];
-        if (io >= 0 && GPIO_IS_VALID_GPIO(io)) gpio_reset_pin(io);
+        if (GPIO_IS_VALID_GPIO(io)) {
+            gpio_reset_pin(io);
+        }
     }
     return ESP_OK;
 }
@@ -717,7 +719,7 @@ void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_num, 
 
 void spicommon_cs_free_io(int cs_gpio_num)
 {
-    assert(cs_gpio_num>=0 && GPIO_IS_VALID_GPIO(cs_gpio_num));
+    assert(GPIO_IS_VALID_GPIO(cs_gpio_num));
     gpio_reset_pin(cs_gpio_num);
 }
 
