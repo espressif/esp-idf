@@ -35,11 +35,7 @@ static const char *TAG = "clk";
  */
 #define SLOW_CLK_CAL_CYCLES     CONFIG_ESP32S3_RTC_CLK_CAL_CYCLES
 
-#ifdef CONFIG_ESP32S3_RTC_XTAL_CAL_RETRY
-#define RTC_XTAL_CAL_RETRY CONFIG_ESP32S3_RTC_XTAL_CAL_RETRY
-#else
 #define RTC_XTAL_CAL_RETRY 1
-#endif
 
 /* Lower threshold for a reasonably-looking calibration value for a 32k XTAL.
  * The ideal value (assuming 32768 Hz frequency) is 1000000/32768*(2**19) = 16*10^6.

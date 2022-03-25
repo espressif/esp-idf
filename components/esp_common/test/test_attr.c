@@ -57,8 +57,7 @@ TEST_CASE("Attributes place variables into correct sections", "[ld]")
 
 #if CONFIG_ESP32_RTCDATA_IN_FAST_MEM   || \
     CONFIG_ESP32S2_RTCDATA_IN_FAST_MEM || \
-    CONFIG_ESP32S3_RTCDATA_IN_FAST_MEM || \
-    CONFIG_ESP32C3_RTCDATA_IN_FAST_MEM
+    CONFIG_ESP32S3_RTCDATA_IN_FAST_MEM
     TEST_ASSERT(data_in_segment(&s_rtc_data, (int*) SOC_RTC_DRAM_LOW, (int*) SOC_RTC_DRAM_HIGH));
     TEST_ASSERT(data_in_segment(&s_rtc_rodata, (int*) SOC_RTC_DRAM_LOW, (int*) SOC_RTC_DRAM_HIGH));
     TEST_ASSERT(data_in_segment(&s_rtc_noinit, (int*) SOC_RTC_DRAM_LOW, (int*) SOC_RTC_DRAM_HIGH));

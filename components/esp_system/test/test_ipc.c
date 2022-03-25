@@ -129,6 +129,6 @@ TEST_CASE("Test multiple ipc_calls", "[ipc]")
         }
     }
 }
-#endif /* CONFIG_ESP_IPC_USE_CALLERS_PRIORITY */
+#endif /* CONFIG_ESP_IPC_USES_CALLERS_PRIORITY */
 
 #endif /* !CONFIG_FREERTOS_UNICORE */

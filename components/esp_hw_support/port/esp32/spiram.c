@@ -31,11 +31,7 @@ we add more types of external RAM memory, this can be made into a more intellige
 #if CONFIG_FREERTOS_UNICORE
 #define PSRAM_MODE PSRAM_VADDR_MODE_NORMAL
 #else
-#if CONFIG_MEMMAP_SPIRAM_CACHE_EVENODD
-#define PSRAM_MODE PSRAM_VADDR_MODE_EVENODD
-#else
 #define PSRAM_MODE PSRAM_VADDR_MODE_LOWHIGH
-#endif
 #endif
 
 #if CONFIG_SPIRAM
