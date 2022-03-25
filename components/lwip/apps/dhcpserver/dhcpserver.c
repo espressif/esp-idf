@@ -17,7 +17,7 @@
 #include "dhcpserver/dhcpserver.h"
 #include "dhcpserver/dhcpserver_options.h"
 
-#if ESP_DHCP
+#if ESP_DHCPS
 
 #define BOOTP_BROADCAST 0x8000
 
@@ -1419,4 +1419,4 @@ err_t dhcps_dns_getserver(dhcps_t *dhcps, ip4_addr_t *dnsserver)
     }
     return ERR_ARG;
 }
-#endif // ESP_DHCP
+#endif // ESP_DHCPS
