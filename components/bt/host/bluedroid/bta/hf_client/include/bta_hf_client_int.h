@@ -117,7 +117,7 @@ typedef struct {
     UINT8           uint8_val;
     UINT32          uint32_val1;
     UINT32          uint32_val2;
-    char            str[BTA_HF_CLIENT_NUMBER_LEN + 1];
+    char            str[BTA_HF_CLIENT_MAX_LEN + 1];
 } tBTA_HF_CLIENT_DATA_VAL;
 
 /* union of all event datatypes */

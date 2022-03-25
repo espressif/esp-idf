@@ -156,6 +156,8 @@ typedef UINT8 tBTA_HF_CLIENT_IND_TYPE;
 
 typedef UINT8 tBTA_HF_CLIENT_AT_CMD_TYPE;
 
+#define BTA_HF_CLIENT_MAX_LEN 32
+
 /* data associated with most non-AT events */
 /* placeholder, if not needed should be removed*/
 typedef struct {
