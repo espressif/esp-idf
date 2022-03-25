@@ -5,6 +5,8 @@
  */
 
 #include "lwip_default_hooks.h"
+#include "lwip/prot/dhcp.h"
+#include "lwip/dhcp.h"
 
 #define __weak __attribute__((weak))
 
@@ -100,3 +102,27 @@ ip4_route_src_hook(const ip4_addr_t *src,const ip4_addr_t *dest)
 }
 #endif
 #endif /* LWIP_HOOK_IP4_ROUTE_SRC */
+
+void dhcp_parse_extra_opts(struct dhcp *dhcp, uint8_t state, uint8_t option, uint8_t len, struct pbuf* p, uint16_t offset)
+{
+    if ((option == DHCP_OPTION_MTU) &&
+       (state == DHCP_STATE_REBOOTING || state == DHCP_STATE_REBINDING ||
+        state == DHCP_STATE_RENEWING  || state == DHCP_STATE_REQUESTING)) {
+        u32_t mtu = 0;
+        struct netif *netif;
+        LWIP_ERROR("dhcp_parse_extra_opts(): MTU option's len != 2", len == 2, return;);
+        LWIP_ERROR("dhcp_parse_extra_opts(): extracting MTU option failed",
+                   pbuf_copy_partial(p, &mtu, 2, offset) == 2, return;);
+        mtu = lwip_htons((u16_t)mtu);
+        NETIF_FOREACH(netif) {
+            /* find the netif related to this dhcp */
+            if (dhcp == netif_dhcp_data(netif)) {
+                if (mtu < netif->mtu) {
+                    netif->mtu = mtu;
+                    LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("dhcp_parse_extra_opts(): Negotiated netif MTU is %d\n", netif->mtu));
+                }
+                return;
+            }
+        }
+    } /* DHCP_OPTION_MTU */
+}

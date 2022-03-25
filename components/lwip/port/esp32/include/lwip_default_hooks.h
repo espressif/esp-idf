@@ -57,6 +57,9 @@ int lwip_hook_ip6_input(struct pbuf *p, struct netif *inp);
 struct netif *
 ip4_route_src_hook(const ip4_addr_t *src,const ip4_addr_t *dest);
 
+struct dhcp;
+void dhcp_parse_extra_opts(struct dhcp *dhcp, uint8_t state, uint8_t option, uint8_t len, struct pbuf* p, uint16_t offset);
+
 #ifdef __cplusplus
 }
 #endif

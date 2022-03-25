@@ -358,6 +358,11 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define DHCP_CALC_TIMEOUT_FROM_OFFERED_T2_REBIND(dhcp) \
         timeout_from_offered((dhcp)->offered_t2_rebind, ((dhcp)->t0_timeout/8)*7 /* 87.5% */ )
 
+#define LWIP_HOOK_DHCP_PARSE_OPTION(netif, dhcp, state, msg, msg_type, option, len, pbuf, offset)   \
+        do {    LWIP_UNUSED_ARG(msg);                                           \
+                dhcp_parse_extra_opts(dhcp, state, option, len, pbuf, offset);  \
+            } while(0)
+
 /*
    ------------------------------------
    ---------- AUTOIP options ----------
