@@ -83,7 +83,7 @@ extern "C" {
 
 /* Core voltage needs to be increased in two cases:
  * 1. running at 240 MHz
- * 2. running with 80MHz Flash frequency
+ * 2. running with 80MHz or 120M Flash frequency
  */
 #if CONFIG_ESPTOOLPY_FLASHFREQ_80M || CONFIG_ESPTOOLPY_FLASHFREQ_120M
 #define DIG_DBIAS_80M_160M  RTC_CNTL_DBIAS_1V25

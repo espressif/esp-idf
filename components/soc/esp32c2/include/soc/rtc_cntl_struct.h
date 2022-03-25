@@ -273,7 +273,7 @@ typedef volatile struct rtc_cntl_dev_s{
             uint32_t ck8m_force_pu                 :    1;  /*CK8M force power up*/
             uint32_t xtal_global_force_gating      :    1;  /*Need add desc*/
             uint32_t xtal_global_force_nogating    :    1;  /*Need add desc*/
-            uint32_t fast_clk_rtc_sel              :    1;  /*fast_clk_rtc sel. 0: XTAL div 4*/
+            uint32_t fast_clk_rtc_sel              :    1;  /*fast_clk_rtc sel. 0: XTAL div 2*/
             uint32_t ana_clk_rtc_sel               :    2;  /*Need add desc*/
         };
         uint32_t val;

@@ -12,7 +12,7 @@
 #include "soc/soc_caps.h"
 #include "hal/gpio_hal.h"
 #include "esp_rom_gpio.h"
-#include "soc/rtc.h"
+#include "esp_private/esp_clk.h"
 #if SOC_MCPWM_SUPPORTED
 #include "soc/mcpwm_periph.h"
 #include "driver/pulse_cnt.h"
@@ -484,7 +484,7 @@ static void mcpwm_swsync_test(mcpwm_unit_t unit)
 
     vTaskDelay(pdMS_TO_TICKS(100));
 
-    uint32_t delta_timestamp_us = (cap_timestamp[2] - cap_timestamp[1]) * 1000000 / rtc_clk_apb_freq_get();
+    uint32_t delta_timestamp_us = (cap_timestamp[2] - cap_timestamp[1]) * 1000000 / esp_clk_apb_freq();
     uint32_t expected_phase_us = 1000000 / mcpwm_get_frequency(unit, MCPWM_TIMER_0) * test_sync_phase / 1000;
     // accept +-2 error
     TEST_ASSERT_UINT32_WITHIN(2, expected_phase_us, delta_timestamp_us);

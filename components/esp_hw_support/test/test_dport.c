@@ -163,7 +163,7 @@ TEST_CASE("access DPORT and APB at same time (Freq CPU and APB = 80 MHz)", "[esp
 
 TEST_CASE("access DPORT and APB at same time (Freq CPU and APB = 40 MHz (XTAL))", "[esp32]")
 {
-    run_tasks_with_change_freq_cpu((int) rtc_clk_xtal_freq_get());
+    run_tasks_with_change_freq_cpu(esp_clk_xtal_freq() / MHZ);
 }
 
 static uint32_t stall_other_cpu_counter;

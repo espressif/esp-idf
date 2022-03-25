@@ -15,7 +15,7 @@
 #include "hal/timer_ll.h"
 #include "hal/check.h"
 #include "soc/timer_periph.h"
-#include "soc/rtc.h"
+#include "esp_private/esp_clk.h"
 #include "soc/timer_group_reg.h"
 #include "esp_private/periph_ctrl.h"
 
@@ -78,11 +78,11 @@ esp_err_t timer_get_counter_time_sec(timer_group_t group_num, timer_idx_t timer_
     uint32_t div = p_timer_obj[group_num][timer_num]->divider;
     switch (p_timer_obj[group_num][timer_num]->clk_src) {
     case GPTIMER_CLK_SRC_APB:
-        *time = (double)timer_val * div / rtc_clk_apb_freq_get();
+        *time = (double)timer_val * div / esp_clk_apb_freq();
         break;
 #if SOC_TIMER_GROUP_SUPPORT_XTAL
     case GPTIMER_CLK_SRC_XTAL:
-        *time = (double)timer_val * div / ((int)rtc_clk_xtal_freq_get() * MHZ);
+        *time = (double)timer_val * div / esp_clk_xtal_freq();
         break;
 #endif
     default:

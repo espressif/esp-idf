@@ -19,7 +19,6 @@
 
 #define ANA_I2C_SAR_FORCE_PD BIT(18)
 #define ANA_I2C_BBPLL_M      BIT(17) /* Clear to enable BBPLL */
-#define ANA_I2C_APLL_M       BIT(14) /* Clear to enable APLL */
 
 
 #define ANA_CONFIG2_REG  0x6000E048
