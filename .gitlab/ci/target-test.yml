@@ -312,7 +312,7 @@ example_test_001B_V3:
 
 example_test_001C:
   extends: .example_test_esp32_template
-  parallel: 4
+  parallel: 2
   tags:
     - ESP32
     - Example_GENERIC
@@ -466,7 +466,7 @@ example_test_017:
 
 example_test_C3_GENERIC:
   extends: .example_test_esp32c3_template
-  parallel: 3
+  parallel: 2
   tags:
     - ESP32C3
     - Example_GENERIC
@@ -488,12 +488,6 @@ example_test_ESP32_SDSPI:
   tags:
     - ESP32
     - UT_T1_SPIMODE
-
-example_test_S3_GENERIC:
-  extends: .example_test_esp32s3_template
-  tags:
-    - ESP32S3
-    - Example_GENERIC
 
 example_test_ESP32S2_SDSPI:
   extends: .example_test_esp32s2_template
