@@ -299,13 +299,6 @@ extern uint32_t port_switch_flag[];
 #else
 #define configCHECK_MUTEX_GIVEN_BY_OWNER                0
 #endif
-
-#ifndef __ASSEMBLER__
-#if CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
-extern void vPortCleanUpTCB ( void *pxTCB );
-#define portCLEAN_UP_TCB( pxTCB )                       vPortCleanUpTCB( pxTCB )
-#endif
-#endif
 #endif //0
 
 // -------------------- Compatibility ----------------------

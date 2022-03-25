@@ -554,6 +554,31 @@ StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
     return sp;
 }
 
+// -------------------- Co-Processor -----------------------
+#if XCHAL_CP_NUM > 0
+
+void _xt_coproc_release(volatile void *coproc_sa_base, BaseType_t xCoreID);
+
+void vPortCleanUpCoprocArea( void * pxTCB )
+{
+    StackType_t * coproc_area;
+    BaseType_t xCoreID;
+
+    /* Calculate the coproc save area in the stack from the TCB base */
+    coproc_area = ( StackType_t * ) ( ( uint32_t ) ( pxTCB + offset_pxEndOfStack ));
+    coproc_area = ( StackType_t * ) ( ( ( portPOINTER_SIZE_TYPE ) coproc_area ) & ( ~( ( portPOINTER_SIZE_TYPE ) portBYTE_ALIGNMENT_MASK ) ) );
+    coproc_area = ( StackType_t * ) ( ( ( uint32_t ) coproc_area - XT_CP_SIZE ) & ~0xf );
+
+    /* Extract core ID from the affinity mask */
+    xCoreID = __builtin_ffs( * ( UBaseType_t * ) ( pxTCB + offset_uxCoreAffinityMask ) );
+    assert( xCoreID >= 1 );
+    xCoreID -= 1;
+
+    /* If task has live floating point registers somewhere, release them */
+    _xt_coproc_release( coproc_area, xCoreID );
+}
+#endif /* XCHAL_CP_NUM > 0 */
+
 // -------------------- Tick Handler -----------------------
 
 extern void esp_vApplicationIdleHook(void);
@@ -626,3 +651,17 @@ void vApplicationMinimalIdleHook( void )
     esp_vApplicationIdleHook(); //Run IDF style hooks
 }
 #endif // CONFIG_FREERTOS_USE_MINIMAL_IDLE_HOOK
+
+/*
+ * Hook function called during prvDeleteTCB() to cleanup any
+ * user defined static memory areas in the TCB.
+ * Currently, this hook function is used by the port to cleanup
+ * the Co-processor save area for targets that support co-processors.
+ */
+void vPortCleanUpTCB ( void *pxTCB )
+{
+#if XCHAL_CP_NUM > 0
+    /* Cleanup coproc save area */
+    vPortCleanUpCoprocArea( pxTCB );
+#endif /* XCHAL_CP_NUM > 0 */
+}

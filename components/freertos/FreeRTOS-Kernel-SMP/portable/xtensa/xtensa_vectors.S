@@ -854,8 +854,24 @@ _xt_coproc_mask:
 _xt_coproc_owner_sa:
     .space  (XCHAL_CP_MAX * portNUM_PROCESSORS) << 2
 
-    .section .iram1,"ax"
+/* Spinlock per core for accessing _xt_coproc_owner_sa array
+ *
+ * 0 = Spinlock available
+ * 1 = Spinlock taken
+ *
+ * The lock provides mutual exclusion for accessing the _xt_coproc_owner_sa array.
+ * This array can be modified by both _xt_coproc_exc and _xt_coproc_release routines
+ * simultaneously owing to the fact that the FreeRTOS SMP Kernel allows cross-core
+ * task deletion. Therefore, the same memory location in the owner save-area array
+ * could be modified at the same time.
+ */
+    .global _xt_coproc_owner_sa_lock
+    .type   _xt_coproc_owner_sa_lock,@object
+    .align  16                      /* minimize crossing cache boundaries */
+_xt_coproc_owner_sa_lock:
+    .space  (portNUM_PROCESSORS) << 2
 
+    .section .iram1,"ax"
 
     .align  4
 .L_goto_invalid:
@@ -905,6 +921,23 @@ _xt_coproc_exc:
     s32i    a3,  sp, XT_STK_A3
     s32i    a4,  sp, XT_STK_A4
     s32i    a15, sp, XT_STK_A15
+
+    /* Aquire spinlock before proceeding with the exception handler.
+     * (Refer _xt_coproc_release for competing routine for the lock.)
+     *
+     * [refactor-todo]: The spinlock aquire/release routine can be
+     * refactored in to a macro later if the need arises to use it
+     * at more than one place in the port assembler files.
+     */
+.L_spinlock_loop:
+    movi        a2, _xt_coproc_owner_sa_lock    /* a2 = base address of lock variable */
+    getcoreid   a0                              /* get the core ID in a0 to calculate the offset of the lock variable */
+    addx4       a2, a0, a2                      /* a2 = address of desired lock variable */
+    movi        a0, 0                           /* a0 = 0 */
+    wsr         a0, scompare1                   /* scompare1 = a0 :- Expect the spinlock to be free (value = 0) */
+    movi        a0, 1                           /* a0 = 1 :- Write 1 to take the spinlock */
+    s32c1i      a0, a2, 0                       /* if (lock == scompare1) {tmp = lock; lock = a0; a0 = tmp} else {a0 = lock} */
+    bnez        a0, .L_spinlock_loop            /* if (a0 != 0) {loop} :- Keep spinning until the spinlock is available */
 
     /* Get co-processor state save area of new owner thread. */
     call0   XT_RTOS_CP_STATE                /* a15 = new owner's save area */
@@ -1034,6 +1067,14 @@ locking.
     /* Restore interruptee's saved registers. */
     /* Can omit rsync for wsr.CPENABLE here because _xt_user_exit does it. */
 .L_xt_coproc_done:
+
+    /* Release spinlock */
+    movi        a2, _xt_coproc_owner_sa_lock    /* a2 = base address of the lock variable */
+    getcoreid   a0                              /* a0 = core ID to calculate the offset of the lock variable */
+    addx4       a2, a0, a2                      /* a2 = address of the lock variable */
+    movi        a0, 0                           /* a0 = 0 */
+    s32ri       a0, a2, 0                       /* a2 = a0 :- Write 0 to release the lock */
+
     l32i    a15, sp, XT_STK_A15
     l32i    a5,  sp, XT_STK_A5
     l32i    a4,  sp, XT_STK_A4
@@ -1061,6 +1102,14 @@ locking.
 
     /* Co-processor exception occurred outside a thread (not supported). */
 .L_xt_coproc_invalid:
+
+    /* Release spinlock */
+    movi        a2, _xt_coproc_owner_sa_lock    /* a2 = base address of the lock variable */
+    getcoreid   a0                              /* a0 = core ID to calculate the offset of the lock variable */
+    addx4       a2, a0, a2                      /* a2 = address of the lock variable */
+    movi        a0, 0                           /* a0 = 0 */
+    s32ri       a0, a2, 0                       /* a2 = a0 :- Write 0 to release the lock */
+
     movi    a0,PANIC_RSN_COPROCEXCEPTION
     wsr     a0,EXCCAUSE
     call0   _xt_panic                       /* not in a thread (invalid) */
