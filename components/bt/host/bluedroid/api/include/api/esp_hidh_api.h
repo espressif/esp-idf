@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -27,7 +27,7 @@ typedef enum {
     ESP_HIDH_CONN_STATE_CONNECTING,              /*!< connecting state */
     ESP_HIDH_CONN_STATE_DISCONNECTED,            /*!< disconnected state */
     ESP_HIDH_CONN_STATE_DISCONNECTING,           /*!< disconnecting state */
-    ESP_HIDH_CONN_STATE_UNKNOWN                  /*!< unknown state(initial state) */
+    ESP_HIDH_CONN_STATE_UNKNOWN                  /*!< unknown state (initial state) */
 } esp_hidh_connection_state_t;
 
 /**
@@ -38,7 +38,7 @@ typedef enum {
     ESP_HIDH_HS_HID_NOT_READY,  /*!< handshake error: device not ready */
     ESP_HIDH_HS_INVALID_RPT_ID, /*!< handshake error: invalid report ID */
     ESP_HIDH_HS_TRANS_NOT_SPT,  /*!< handshake error: HID device does not support the request */
-    ESP_HIDH_HS_INVALID_PARAM,  /*!< handshake error: parameter value is out of range or inappropriate */
+    ESP_HIDH_HS_INVALID_PARAM,  /*!< handshake error: parameter value does not meet the expected criteria of called function or API */
     ESP_HIDH_HS_ERROR,          /*!< handshake error: HID device could not identify the error condition */
     ESP_HIDH_ERR,               /*!< general ESP HID Host error */
     ESP_HIDH_ERR_SDP,           /*!< SDP error */
@@ -79,23 +79,23 @@ typedef enum {
  * @brief HID host callback function events
  */
 typedef enum {
-    ESP_HIDH_INIT_EVT = 0,  /*!< When HID host is initialized, the event comes */
-    ESP_HIDH_DEINIT_EVT,    /*!< When HID host is deinitialized, the event comes */
-    ESP_HIDH_OPEN_EVT,      /*!< When HID host connection opened, the event comes */
-    ESP_HIDH_CLOSE_EVT,     /*!< When HID host connection closed, the event comes */
-    ESP_HIDH_GET_RPT_EVT,   /*!< When Get_Report command is called, the event comes */
-    ESP_HIDH_SET_RPT_EVT,   /*!< When Set_Report command is called, the event comes */
-    ESP_HIDH_GET_PROTO_EVT, /*!< When Get_Protocol command is called, the event comes */
-    ESP_HIDH_SET_PROTO_EVT, /*!< When Set_Protocol command is called, the event comes */
-    ESP_HIDH_GET_IDLE_EVT,  /*!< When Get_Idle command is called, the event comes */
-    ESP_HIDH_SET_IDLE_EVT,  /*!< When Set_Idle command is called, the event comes */
-    ESP_HIDH_GET_DSCP_EVT,  /*!< When HIDH is initialized, the event comes */
-    ESP_HIDH_ADD_DEV_EVT,   /*!< When a device is added, the event comes */
-    ESP_HIDH_RMV_DEV_EVT,   /*!< When a device is removed, the event comes */
-    ESP_HIDH_VC_UNPLUG_EVT, /*!< When virtually unplugged, the event comes */
-    ESP_HIDH_DATA_EVT,      /*!< When send data on interrupt channel, the event comes */
-    ESP_HIDH_DATA_IND_EVT,  /*!< When receive data on interrupt channel, the event comes */
-    ESP_HIDH_SET_INFO_EVT   /*!< When set the HID device descriptor, the event comes */
+    ESP_HIDH_INIT_EVT = 0,  /*!< when HID host is initialized, the event comes */
+    ESP_HIDH_DEINIT_EVT,    /*!< when HID host is deinitialized, the event comes */
+    ESP_HIDH_OPEN_EVT,      /*!< when HID host connection opened, the event comes */
+    ESP_HIDH_CLOSE_EVT,     /*!< when HID host connection closed, the event comes */
+    ESP_HIDH_GET_RPT_EVT,   /*!< when Get_Report command is called, the event comes */
+    ESP_HIDH_SET_RPT_EVT,   /*!< when Set_Report command is called, the event comes */
+    ESP_HIDH_GET_PROTO_EVT, /*!< when Get_Protocol command is called, the event comes */
+    ESP_HIDH_SET_PROTO_EVT, /*!< when Set_Protocol command is called, the event comes */
+    ESP_HIDH_GET_IDLE_EVT,  /*!< when Get_Idle command is called, the event comes */
+    ESP_HIDH_SET_IDLE_EVT,  /*!< when Set_Idle command is called, the event comes */
+    ESP_HIDH_GET_DSCP_EVT,  /*!< when HIDH is initialized, the event comes */
+    ESP_HIDH_ADD_DEV_EVT,   /*!< when a device is added, the event comes */
+    ESP_HIDH_RMV_DEV_EVT,   /*!< when a device is removed, the event comes */
+    ESP_HIDH_VC_UNPLUG_EVT, /*!< when virtually unplugged, the event comes */
+    ESP_HIDH_DATA_EVT,      /*!< when send data on interrupt channel, the event comes */
+    ESP_HIDH_DATA_IND_EVT,  /*!< when receive data on interrupt channel, the event comes */
+    ESP_HIDH_SET_INFO_EVT   /*!< when set the HID device descriptor, the event comes */
 } esp_hidh_cb_event_t;
 
 /**
@@ -105,14 +105,6 @@ typedef enum {
     ESP_HIDH_DEV_ATTR_VIRTUAL_CABLE = 0x0001,           /*!< whether Virtual Cables is supported */
     ESP_HIDH_DEV_ATTR_NORMALLY_CONNECTABLE = 0x0002,    /*!< whether device is in Page Scan mode when there is no active connection */
     ESP_HIDH_DEV_ATTR_RECONNECT_INITIATE = 0x0004,      /*!< whether the HID device inititates the reconnection process */
-    ESP_HIDH_DEV_ATTR_SDP_DISABLE = 0x0008,             /*!< whether connections to the SDP channel and control or interrupt
-                                                             channel are mutually exclusive */
-    ESP_HIDH_DEV_ATTR_BATTERY_POWER = 0x0010,           /*!< whether HID device is battery-powered */
-    ESP_HIDH_DEV_ATTR_REMOTE_AWAKE = 0x0020,            /*!< whether the HID device is designed to be capable to provide wake-up
-                                                             signal to host */
-    ESP_HIDH_DEV_ATTR_SUPERVISION_TIMEOUT = 0x0040,     /*!< recommended supvervision timeout value in slots */
-    ESP_HIDH_DEV_ATTR_SSR_MAX_LATENCY = 0x0080,         /*!< maximum latency for Sniff Subrate request */
-    ESP_HIDH_DEV_ATTR_SSR_MIN_TIMEOUT = 0x0100,         /*!< minimum timeout for Sniff Subrate request */
 } esp_hidh_dev_attr_t;
 
 /**
@@ -136,9 +128,9 @@ typedef struct {
     int vendor_id;                            /*!< Device ID information: vendor ID */
     int product_id;                           /*!< Device ID information: product ID */
     int version;                              /*!< Device ID information: version */
-    uint8_t ctry_code;                        /*!< SDP attrbutes of HID devices: HID country code */
-    int dl_len;                               /*!< SDP attrbutes of HID devices: size of device report descriptor size */
-    uint8_t dsc_list[BTHH_MAX_DSC_LEN];       /*!< SDP attrbutes of HID devices: device report descriptor */
+    uint8_t ctry_code;                        /*!< SDP attrbutes of HID devices: HID country code (https://www.usb.org/sites/default/files/hid1_11.pdf) */
+    int dl_len;                               /*!< SDP attrbutes of HID devices: HID device descriptor length */
+    uint8_t dsc_list[BTHH_MAX_DSC_LEN];       /*!< SDP attrbutes of HID devices: HID device descriptor definition */
 } esp_hidh_hid_info_t;
 
 /**
@@ -289,8 +281,8 @@ typedef union {
         uint16_t vendor_id;       /*!< Vendor ID */
         uint16_t product_id;      /*!< Product ID */
         uint16_t version;         /*!< Version */
-        uint16_t ssr_max_latency; /*!< SSR max latency */
-        uint16_t ssr_min_tout;    /*!< SSR min timeout */
+        uint16_t ssr_max_latency; /*!< SSR max latency in slots */
+        uint16_t ssr_min_tout;    /*!< SSR min timeout in slots */
         uint8_t ctry_code;        /*!< Country Code */
         uint16_t dl_len;          /*!< Device descriptor length */
         uint8_t *dsc_list;        /*!< Device descriptor pointer */
@@ -346,7 +338,7 @@ esp_err_t esp_bt_hid_host_init(void);
 esp_err_t esp_bt_hid_host_deinit(void);
 
 /**
- * @brief       Connect to hid device. When the operation is complete the callback
+ * @brief       Connect to HID device. When the operation is complete the callback
  *              function will be called with ESP_HIDH_OPEN_EVT.
  *
  * @param[in]   bd_addr:  Remote device bluetooth device address.
@@ -357,7 +349,7 @@ esp_err_t esp_bt_hid_host_deinit(void);
 esp_err_t esp_bt_hid_host_connect(esp_bd_addr_t bd_addr);
 
 /**
- * @brief       Disconnect from hid device. When the operation is complete the callback
+ * @brief       Disconnect from HID device. When the operation is complete the callback
  *              function will be called with ESP_HIDH_CLOSE_EVT.
  *
  * @param[in]   bd_addr:  Remote device bluetooth device address.
