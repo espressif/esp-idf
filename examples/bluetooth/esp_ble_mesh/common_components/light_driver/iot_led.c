@@ -14,6 +14,7 @@
 #include "soc/ledc_struct.h"
 #include "driver/gptimer.h"
 #include "driver/ledc.h"
+#include "esp_attr.h"
 #include "iot_led.h"
 #include "esp_log.h"
 
