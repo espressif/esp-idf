@@ -180,14 +180,7 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
 
     REG_SET_FIELD(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_XTL_FORCE_PU, cfg.xtal_fpu);
 
-    if (REG_GET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_ANA_CLK_RTC_SEL) == RTC_SLOW_FREQ_8MD256) {
-        REG_SET_BIT(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_FORCE_PU);
-    } else {
-        REG_CLR_BIT(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_FORCE_PU);
-    }
-    //Keep the RTC8M_CLK on in light_sleep mode if the ledc low-speed channel is clocked by RTC8M_CLK.
-    if (!cfg.int_8m_pd_en && GET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN_M)) {
-        REG_CLR_BIT(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_FORCE_PD);
+    if (!cfg.int_8m_pd_en) {
         REG_SET_BIT(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_FORCE_PU);
     } else {
         REG_CLR_BIT(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_FORCE_PU);
