@@ -75,6 +75,7 @@
 
 /*!< RTC */
 #define SOC_ADC_MAX_BITWIDTH                    (13)
+#define SOC_RTC_SLOW_CLOCK_SUPPORT_8MD256       (1)
 
 /*!< Calibration */
 #define SOC_ADC_CALIBRATION_V1_SUPPORTED        (1) /*!< support HW offset calibration version 1*/

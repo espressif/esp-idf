@@ -508,6 +508,11 @@ void rtc_dig_clk8m_disable(void)
     esp_rom_delay_us(DELAY_RTC_CLK_SWITCH);
 }
 
+bool rtc_dig_8m_enabled(void)
+{
+    return GET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN_M);
+}
+
 static bool rtc_clk_set_bbpll_always_on(void)
 {
     /* We just keep the rtc bbpll clock on just under the case that
