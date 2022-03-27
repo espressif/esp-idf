@@ -175,3 +175,4 @@ API Reference
 -------------
 
 .. include-build-file:: inc/esp_tls.inc
+.. include-build-file:: inc/esp_tls_errors.inc

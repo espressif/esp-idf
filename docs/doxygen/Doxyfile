@@ -116,6 +116,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_netif/include/esp_netif.h \
     $(PROJECT_PATH)/components/esp_netif/include/esp_netif_net_stack.h \
     $(PROJECT_PATH)/components/esp-tls/esp_tls.h \
+    $(PROJECT_PATH)/components/esp-tls/esp_tls_errors.h \
     $(PROJECT_PATH)/components/mqtt/esp-mqtt/include/mqtt_client.h \
     $(PROJECT_PATH)/components/lwip/include/apps/ping/ping_sock.h \
     $(PROJECT_PATH)/components/lwip/include/apps/esp_sntp.h \

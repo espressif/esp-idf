@@ -48,6 +48,8 @@ If using mbedTLS directly then the bundle may be activated by directly calling t
     esp_crt_bundle_attach(&conf);
 
 
+.. _updating_bundle:
+
 Generating the List of Root Certificates
 ----------------------------------------
 The list of root certificates comes from Mozilla's NSS root certificate store, which can be found `here <https://wiki.mozilla.org/CA/Included_Certificates>`_
@@ -57,12 +59,12 @@ Another alternative would be to download the finished list directly from the cur
 The common certificates bundle were made by selecting the authorities with a market share of more than 1 % from w3tech's `SSL Survey <https://w3techs.com/technologies/overview/ssl_certificate/all>`_.
 These authorities were then used to pick the names of the certificates for the filter list, `cmn_crt_authorities.csv`, from `this list <https://ccadb-public.secure.force.com/mozilla/IncludedCACertificateReportPEMCSV>`_ provided by Mozilla.
 
-.. _updating_bundle:
+
 
 Updating the Certificate Bundle
 -------------------------------
 
-The bundle is embedded into the app and can be updated along with the app by an OTA update. If you want to include a more up-to-date bundle than the bundle currently included in IDF, then the certificate list can be downloaded from Mozilla as described in :ref:`updating_bundle`.
+The bundle is embedded into the app and can be updated along with the app by an OTA update. If you want to include a more up-to-date bundle than the bundle currently included in ESP-IDF, then the certificate list can be downloaded from Mozilla as described in :ref:`updating_bundle`.
 
 
 
