@@ -244,6 +244,9 @@ class IdfPytestEmbedded:
             if 'all_targets' in item_marker_names(item):
                 for _target in [*SUPPORTED_TARGETS, *PREVIEW_TARGETS]:
                     item.add_marker(_target)
+            # FIXME: temporarily modify the s3 runner tag "generic" to "s3_generic" due to the deep sleep bug
+            if 'generic' in item_marker_names(item) and 'esp32s3' in item_marker_names(item):
+                item.add_marker('generic_s3_fixme')
 
         # filter all the test cases with "--target"
         if self.target:

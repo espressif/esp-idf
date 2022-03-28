@@ -41,16 +41,15 @@ example_test_pytest_esp32s2_generic:
     TARGET: ESP32S2
     ENV_MARKER: generic
 
-# Temporary disabled until S3 runners are added, IDFCI-1171
-# example_test_pytest_esp32s3_generic:
-#   extends:
-#     - .pytest_examples_dir_template
-#     - .rules:test:example_test-esp32s3
-#   needs:
-#     - build_pytest_examples_esp32s3
-#   variables:
-#     TARGET: ESP32S3
-#     ENV_MARKER: generic
+example_test_pytest_esp32s3_generic:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32s3
+  needs:
+    - build_pytest_examples_esp32s3
+  variables:
+    TARGET: ESP32S3
+    ENV_MARKER: generic_s3_fixme
 
 example_test_pytest_esp32c3_generic:
   extends:
@@ -127,16 +126,15 @@ component_ut_pytest_esp32s2_generic:
     TARGET: ESP32S2
     ENV_MARKER: generic
 
-# Temporary disabled until S3 runners are added, IDFCI-1171
-# component_ut_pytest_esp32s3_generic:
-#   extends:
-#     - .pytest_components_dir_template
-#     - .rules:test:component_ut-esp32s3
-#   needs:
-#     - build_pytest_components_esp32s3
-#   variables:
-#     TARGET: ESP32S3
-#     ENV_MARKER: generic
+component_ut_pytest_esp32s3_generic:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32s3
+  needs:
+    - build_pytest_components_esp32s3
+  variables:
+    TARGET: ESP32S3
+    ENV_MARKER: generic_s3_fixme
 
 component_ut_pytest_esp32s3_octal_psram:
   extends:
@@ -185,16 +183,15 @@ test_app_test_pytest_esp32s2_generic:
     ENV_MARKER: generic
     SETUP_TOOLS: "1"  # need gdb
 
-# Temporary disabled until S3 runners are added, IDFCI-1171
-# test_app_test_pytest_esp32s3_generic:
-#   extends:
-#     - .pytest_test_apps_dir_template
-#     - .rules:test:custom_test-esp32s3
-#   needs:
-#     - build_pytest_test_apps_esp32s3
-#   variables:
-#     TARGET: ESP32S3
-#     ENV_MARKER: generic
+test_app_test_pytest_esp32s3_generic:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32s3
+  needs:
+    - build_pytest_test_apps_esp32s3
+  variables:
+    TARGET: ESP32S3
+    ENV_MARKER: generic_s3_fixme
 
 test_app_test_pytest_esp32c3_generic:
   extends:
@@ -325,7 +322,7 @@ example_test_001B_V3:
 
 example_test_001C:
   extends: .example_test_esp32_template
-  parallel: 4
+  parallel: 2
   tags:
     - ESP32
     - Example_GENERIC
@@ -479,7 +476,7 @@ example_test_017:
 
 example_test_C3_GENERIC:
   extends: .example_test_esp32c3_template
-  parallel: 3
+  parallel: 2
   tags:
     - ESP32C3
     - Example_GENERIC
@@ -501,13 +498,6 @@ example_test_ESP32_SDSPI:
   tags:
     - ESP32
     - UT_T1_SPIMODE
-
-# Temporary disabled until S3 runners are added, IDFCI-1171
-# example_test_S3_GENERIC:
-#   extends: .example_test_esp32s3_template
-#   tags:
-#     - ESP32S3
-#     - Example_GENERIC
 
 example_test_ESP32S2_SDSPI:
   extends: .example_test_esp32s2_template
@@ -883,13 +873,12 @@ UT_C3_SDSPI:
     - ESP32C3_IDF
     - UT_T1_SPIMODE
 
-# Temporary disabled until S3 runners are added, IDFCI-1171
-# UT_S3:
-#   extends: .unit_test_esp32s3_template
-#   parallel: 44
-#   tags:
-#     - ESP32S3_IDF
-#     - UT_T1_1
+UT_S3:
+  extends: .unit_test_esp32s3_template
+  parallel: 44
+  tags:
+    - ESP32S3_IDF
+    - UT_T1_1
 
 UT_S3_SPI_DUAL:
   extends: .unit_test_esp32s3_template

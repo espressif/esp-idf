@@ -312,21 +312,11 @@ class AssignTest(object):
             console_log('\t{}'.format(job['name']), 'O')
 
         # failures
-        real_failure_group = []
         if failed_to_assign:
-            for group in failed_to_assign:
-                if ('ESP32S3_IDF' in group.filters.values()  # for example_test and custom_test
-                        or ['ESP32S3_IDF'] in group.filters.values()):  # for unit_test
-                    console_log('Bypassing Tag "ESP32S3_IDF" missing jobs for now!!!', 'O')  # FIXME
-                    continue
-
-                real_failure_group.append(group)
-
-        if real_failure_group:
             console_log('Too many test cases vs jobs to run. '
                         'Please increase parallel count in .gitlab/ci/target-test.yml '
                         'for jobs with specific tags:', 'R')
-            failed_group_count = self._count_groups_by_keys(real_failure_group)
+            failed_group_count = self._count_groups_by_keys(failed_to_assign)
             for tags in failed_group_count:
                 console_log('\t{}: {}'.format(tags, failed_group_count[tags]), 'R')
             raise RuntimeError('Failed to assign test case to CI jobs')
