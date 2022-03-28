@@ -72,6 +72,16 @@ example_test_pytest_esp32c3_flash_suspend:
     TARGET: ESP32C3
     ENV_MARKER: flash_suspend
 
+example_test_pytest_esp32_ethernet_ota:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_esp32
+  variables:
+    TARGET: ESP32
+    ENV_MARKER: ethernet_ota
+
 .pytest_components_dir_template:
   extends: .pytest_template
   variables:
