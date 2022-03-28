@@ -49,8 +49,10 @@ typedef struct {
     simple_ble_cb_t *connect_fn;
     /** MTU set callback */
     simple_ble_cb_t *set_mtu_fn;
-    /* BLE bonding */
-     unsigned ble_bonding:1;
+    /** BLE bonding */
+    unsigned ble_bonding:1;
+    /** BLE Secure Connection flag */
+    unsigned ble_sm_sc:1;
 } simple_ble_cfg_t;
 
 
