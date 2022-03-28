@@ -357,8 +357,17 @@ inline static void IRAM_ATTR misc_modules_wake_prepare(void)
 
 inline static uint32_t IRAM_ATTR call_rtc_sleep_start(uint32_t reject_triggers, uint32_t lslp_mem_inf_fpu);
 
+//TODO: IDF-4813
+bool esp_no_sleep = false;
+
 static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 {
+#if CONFIG_IDF_TARGET_ESP32S3
+    if (esp_no_sleep) {
+        ESP_EARLY_LOGE(TAG, "Sleep cannot be used with Touch/ULP for now.");
+        abort();
+    }
+#endif //CONFIG_IDF_TARGET_ESP32S3
     // Stop UART output so that output is not lost due to APB frequency change.
     // For light sleep, suspend UART output — it will resume after wakeup.
     // For deep sleep, wait for the contents of UART FIFO to be sent.
