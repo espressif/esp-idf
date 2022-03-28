@@ -268,7 +268,9 @@
       "supported_targets": [
         "esp32s2",
         "esp32s3",
-        "esp32c3"
+        "esp32c3",
+        "esp32h2",
+        "esp32c2"
       ],
       "version_cmd": [
         "riscv32-esp-elf-gcc",
