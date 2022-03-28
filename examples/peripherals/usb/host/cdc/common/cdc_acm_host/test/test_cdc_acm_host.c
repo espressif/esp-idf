@@ -130,6 +130,19 @@ static void notif_cb(cdc_acm_dev_hdl_t cdc_hdl, const cdc_acm_host_dev_event_dat
     }
 }
 
+static bool new_dev_cb_called = false;
+static void new_dev_cb(usb_device_handle_t usb_dev) {
+    new_dev_cb_called = true;
+    const usb_config_desc_t *config_desc;
+    const usb_device_desc_t *device_desc;
+
+    // Get descriptors
+    TEST_ASSERT_EQUAL(ESP_OK, usb_host_get_device_descriptor(usb_dev, &device_desc));
+    TEST_ASSERT_EQUAL(ESP_OK, usb_host_get_active_config_descriptor(usb_dev, &config_desc));
+
+    printf("New device connected. VID = 0x%04X PID = %04X\n", device_desc->idVendor, device_desc->idProduct);
+}
+
 /* Basic test to check CDC communication:
  * open/read/write/close device
  * CDC-ACM specific commands: set/get_line_coding, set_control_line_state */
@@ -394,6 +407,29 @@ TEST_CASE("custom_command", "[cdc_acm]")
 
     // Clean-up
     TEST_ASSERT_EQUAL(ESP_OK, cdc_acm_host_close(cdc_dev));
+    TEST_ASSERT_EQUAL(ESP_OK, cdc_acm_host_uninstall());
+    vTaskDelay(20);
+}
+
+TEST_CASE("new_device_connection", "[cdc_acm]")
+{
+    // Create a task that will handle USB library events
+    TEST_ASSERT_EQUAL(pdTRUE, xTaskCreatePinnedToCore(usb_lib_task, "usb_lib", 4*4096, xTaskGetCurrentTaskHandle(), 10, NULL, 0));
+    ulTaskNotifyTake(false, 1000);
+
+    printf("Installing CDC-ACM driver\n");
+    const cdc_acm_host_driver_config_t driver_config = {
+        .driver_task_priority = 11,
+        .driver_task_stack_size = 2048,
+        .xCoreID = 0,
+        .new_dev_cb = new_dev_cb,
+    };
+    TEST_ASSERT_EQUAL(ESP_OK, cdc_acm_host_install(&driver_config));
+
+    vTaskDelay(80);
+    TEST_ASSERT_TRUE_MESSAGE(new_dev_cb_called, "New device callback was not called\n");
+
+    // Clean-up
     TEST_ASSERT_EQUAL(ESP_OK, cdc_acm_host_uninstall());
     vTaskDelay(20);
 }

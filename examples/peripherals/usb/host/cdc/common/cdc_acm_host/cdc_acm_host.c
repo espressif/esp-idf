@@ -53,6 +53,7 @@ typedef struct {
     usb_host_client_handle_t cdc_acm_client_hdl;        /*!< USB Host handle reused for all CDC-ACM devices in the system */
     SemaphoreHandle_t open_close_mutex;
     EventGroupHandle_t event_group;
+    cdc_acm_new_dev_callback_t new_dev_cb;
     SLIST_HEAD(list_dev, cdc_dev_s) cdc_devices_list;   /*!< List of open pseudo devices */
 } cdc_acm_obj_t;
 
@@ -66,7 +67,8 @@ static cdc_acm_obj_t *p_cdc_acm_obj = NULL;
 static const cdc_acm_host_driver_config_t cdc_acm_driver_config_default = {
     .driver_task_stack_size = 4096,
     .driver_task_priority = 10,
-    .xCoreID = 0
+    .xCoreID = 0,
+    .new_dev_cb = NULL,
 };
 
 /**
@@ -429,6 +431,7 @@ esp_err_t cdc_acm_host_install(const cdc_acm_host_driver_config_t *driver_config
     cdc_acm_obj->event_group = event_group;
     cdc_acm_obj->open_close_mutex = mutex;
     cdc_acm_obj->cdc_acm_client_hdl = usb_client;
+    cdc_acm_obj->new_dev_cb = driver_config->new_dev_cb;
 
     // Between 1st call of this function and following section, another task might try to install this driver:
     // Make sure that there is only one instance of this driver in the system
@@ -1018,6 +1021,16 @@ static void usb_event_cb(const usb_host_client_event_msg_t *event_msg, void *arg
     switch (event_msg->event) {
     case USB_HOST_CLIENT_EVENT_NEW_DEV:
         ESP_LOGD(TAG, "New device connected");
+        if (p_cdc_acm_obj->new_dev_cb) {
+            usb_device_handle_t new_dev;
+            if (usb_host_device_open(p_cdc_acm_obj->cdc_acm_client_hdl, event_msg->new_dev.address, &new_dev) != ESP_OK) {
+                ESP_LOGW(TAG, "Couldn't open the new device");
+                break;
+            }
+            assert(new_dev);
+            p_cdc_acm_obj->new_dev_cb(new_dev);
+            usb_host_device_close(p_cdc_acm_obj->cdc_acm_client_hdl, new_dev);
+        }
         break;
     case USB_HOST_CLIENT_EVENT_DEV_GONE: {
         ESP_LOGD(TAG, "Device suddenly disconnected");

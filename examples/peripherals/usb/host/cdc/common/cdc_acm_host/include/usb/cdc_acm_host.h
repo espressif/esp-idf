@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include "usb/usb_host.h"
 #include "usb_types_cdc.h"
 #include "esp_err.h"
 
@@ -70,6 +71,16 @@ typedef struct {
 } cdc_acm_host_dev_event_data_t;
 
 /**
+ * @brief New USB device callback
+ *
+ * Provides already opened usb_dev, that will be closed after this callback returns.
+ * This is useful for peeking device's descriptors, e.g. peeking VID/PID and loading proper driver.
+ *
+ * @attention This callback is called from USB Host context, so the CDC device can't be opened here.
+ */
+typedef void (*cdc_acm_new_dev_callback_t)(usb_device_handle_t usb_dev);
+
+/**
  * @brief Data receive callback type
  */
 typedef void (*cdc_acm_data_callback_t)(uint8_t* data, size_t data_len, void *user_arg);
@@ -88,6 +99,7 @@ typedef struct {
     size_t driver_task_stack_size;         /**< Stack size of the driver's task */
     unsigned driver_task_priority;         /**< Priority of the driver's task */
     int  xCoreID;                          /**< Core affinity of the driver's task */
+    cdc_acm_new_dev_callback_t new_dev_cb; /**< New USB device connected callback. Can be NULL. */
 } cdc_acm_host_driver_config_t;
 
 /**
