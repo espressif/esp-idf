@@ -58,7 +58,15 @@ struct netif *
 ip4_route_src_hook(const ip4_addr_t *src,const ip4_addr_t *dest);
 
 struct dhcp;
+struct netif;
+struct dhcp_msg;
 void dhcp_parse_extra_opts(struct dhcp *dhcp, uint8_t state, uint8_t option, uint8_t len, struct pbuf* p, uint16_t offset);
+
+void dhcp_append_extra_opts(struct netif *netif, uint8_t state, struct dhcp_msg *msg_out, uint16_t *options_out_len);
+
+int dhcp_set_vendor_class_identifier(uint8_t len, const char * str);
+int dhcp_get_vendor_specific_information(uint8_t len, char * str);
+void dhcp_free_vendor_class_identifier(void);
 
 #ifdef __cplusplus
 }

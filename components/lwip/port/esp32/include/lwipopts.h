@@ -363,6 +363,9 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
                 dhcp_parse_extra_opts(dhcp, state, option, len, pbuf, offset);  \
             } while(0)
 
+#define LWIP_HOOK_DHCP_APPEND_OPTIONS(netif, dhcp, state, msg, msg_type, options_len_ptr) \
+        dhcp_append_extra_opts(netif, state, msg, options_len_ptr);
+
 /*
    ------------------------------------
    ---------- AUTOIP options ----------
