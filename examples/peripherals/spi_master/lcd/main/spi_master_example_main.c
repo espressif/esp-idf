@@ -184,7 +184,7 @@ DRAM_ATTR static const lcd_init_cmd_t ili_init_cmds[]={
  * mode for higher speed. The overhead of interrupt transactions is more than
  * just waiting for the transaction to complete.
  */
-void lcd_cmd(spi_device_handle_t spi, const uint8_t cmd)
+void lcd_cmd(spi_device_handle_t spi, const uint8_t cmd, bool keep_cs_active)
 {
     esp_err_t ret;
     spi_transaction_t t;
@@ -192,6 +192,9 @@ void lcd_cmd(spi_device_handle_t spi, const uint8_t cmd)
     t.length=8;                     //Command is 8 bits
     t.tx_buffer=&cmd;               //The data is the cmd itself
     t.user=(void*)0;                //D/C needs to be set to 0
+    if (keep_cs_active) {
+      t.flags = SPI_TRANS_CS_KEEP_ACTIVE;   //Keep CS active after data transfer
+    }
     ret=spi_device_polling_transmit(spi, &t);  //Transmit!
     assert(ret==ESP_OK);            //Should have had no issues.
 }
@@ -226,8 +229,11 @@ void lcd_spi_pre_transfer_callback(spi_transaction_t *t)
 
 uint32_t lcd_get_id(spi_device_handle_t spi)
 {
+    // When using SPI_TRANS_CS_KEEP_ACTIVE, bus must be locked/acquired
+    spi_device_acquire_bus(spi, portMAX_DELAY);
+
     //get_id cmd
-    lcd_cmd(spi, 0x04);
+    lcd_cmd(spi, 0x04, true);
 
     spi_transaction_t t;
     memset(&t, 0, sizeof(t));
@@ -237,6 +243,9 @@ uint32_t lcd_get_id(spi_device_handle_t spi)
 
     esp_err_t ret = spi_device_polling_transmit(spi, &t);
     assert( ret == ESP_OK );
+
+    // Release bus
+    spi_device_release_bus(spi);
 
     return *(uint32_t*)t.rx_data;
 }
@@ -293,7 +302,7 @@ void lcd_init(spi_device_handle_t spi)
 
     //Send all the commands
     while (lcd_init_cmds[cmd].databytes!=0xff) {
-        lcd_cmd(spi, lcd_init_cmds[cmd].cmd);
+        lcd_cmd(spi, lcd_init_cmds[cmd].cmd, false);
         lcd_data(spi, lcd_init_cmds[cmd].data, lcd_init_cmds[cmd].databytes&0x1F);
         if (lcd_init_cmds[cmd].databytes&0x80) {
             vTaskDelay(100 / portTICK_PERIOD_MS);
