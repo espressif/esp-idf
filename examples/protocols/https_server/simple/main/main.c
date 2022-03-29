@@ -41,12 +41,20 @@ static esp_err_t root_get_handler(httpd_req_t *req)
  * whenever a new SSL connection is created
  *
  * Can also be used to other information like Socket FD, Connection state, etc.
+ *
+ * NOTE: This callback will not be able to obtain the client certificate if the
+ * following config `Set minimum Certificate Verification mode to Optional` is
+ * not enabled (enabled by default in this example).
+ *
+ * The config option is found here - Component config → ESP-TLS
+ *
  */
 void https_server_user_callback(esp_https_server_user_cb_arg_t *user_cb)
 {
     ESP_LOGI(TAG, "Session Created!");
-    const mbedtls_x509_crt *cert;
+    ESP_LOGI(TAG, "Socket FD: %d", user_cb->tls->sockfd);
 
+    const mbedtls_x509_crt *cert;
     const size_t buf_size = 1024;
     char *buf = calloc(buf_size, sizeof(char));
     if (buf == NULL) {
@@ -54,9 +62,13 @@ void https_server_user_callback(esp_https_server_user_cb_arg_t *user_cb)
         return;
     }
 
+    mbedtls_x509_crt_info((char *) buf, buf_size - 1, "    ", &user_cb->tls->servercert);
+    ESP_LOGI(TAG, "Server certificate info:\n%s", buf);
+    memset(buf, 0x00, buf_size);
+
     cert = mbedtls_ssl_get_peer_cert(&user_cb->tls->ssl);
     if (cert != NULL) {
-        mbedtls_x509_crt_info((char *) buf, buf_size - 1, "      ", cert);
+        mbedtls_x509_crt_info((char *) buf, buf_size - 1, "    ", cert);
         ESP_LOGI(TAG, "Peer certificate info:\n%s", buf);
     } else {
         ESP_LOGW(TAG, "Could not obtain the peer certificate!");
@@ -91,9 +103,9 @@ static httpd_handle_t start_webserver(void)
     conf.prvtkey_pem = prvtkey_pem_start;
     conf.prvtkey_len = prvtkey_pem_end - prvtkey_pem_start;
 
-    #if CONFIG_EXAMPLE_ENABLE_HTTPS_USER_CALLBACK
+#if CONFIG_EXAMPLE_ENABLE_HTTPS_USER_CALLBACK
     conf.user_cb = https_server_user_callback;
-    #endif
+#endif
     esp_err_t ret = httpd_ssl_start(&server, &conf);
     if (ESP_OK != ret) {
         ESP_LOGI(TAG, "Error starting server!");
