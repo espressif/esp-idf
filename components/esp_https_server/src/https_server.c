@@ -181,6 +181,7 @@ static httpd_ssl_ctx_t *create_secure_context(const struct httpd_ssl_config *con
 
     ssl_ctx->tls_cfg = cfg;
     ssl_ctx->user_cb = config->user_cb;
+
 /* cacert = CA which signs client cert, or client cert itself */
     if(config->cacert_pem != NULL) {
         cfg->cacert_buf = (unsigned char *)malloc(config->cacert_len);
@@ -193,6 +194,7 @@ static httpd_ssl_ctx_t *create_secure_context(const struct httpd_ssl_config *con
         memcpy((char *)cfg->cacert_buf, config->cacert_pem, config->cacert_len);
         cfg->cacert_bytes = config->cacert_len;
     }
+
 /* servercert = cert of server itself */
     cfg->servercert_buf = (unsigned char *)malloc(config->servercert_len);
     if (!cfg->servercert_buf) {
@@ -205,15 +207,20 @@ static httpd_ssl_ctx_t *create_secure_context(const struct httpd_ssl_config *con
     memcpy((char *)cfg->servercert_buf, config->servercert, config->servercert_len);
     cfg->servercert_bytes = config->servercert_len;
 
-    cfg->serverkey_buf = (unsigned char *)malloc(config->prvtkey_len);
-    if (!cfg->serverkey_buf) {
-        ESP_LOGE(TAG, "Could not allocate memory");
-        free((void *)cfg->servercert_buf);
-        free((void *)cfg->cacert_buf);
-        free(cfg);
-        free(ssl_ctx);
-        return NULL;
+    /* Pass on secure element boolean */
+    cfg->use_secure_element = config->use_secure_element;
+    if (!cfg->use_secure_element) {
+        cfg->serverkey_buf = (unsigned char *)malloc(config->prvtkey_len);
+        if (!cfg->serverkey_buf) {
+            ESP_LOGE(TAG, "Could not allocate memory");
+            free((void *)cfg->servercert_buf);
+            free((void *)cfg->cacert_buf);
+            free(cfg);
+            free(ssl_ctx);
+            return NULL;
+        }
     }
+
     memcpy((char *)cfg->serverkey_buf, config->prvtkey_pem, config->prvtkey_len);
     cfg->serverkey_bytes = config->prvtkey_len;
 

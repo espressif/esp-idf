@@ -80,6 +80,9 @@ struct httpd_ssl_config {
     /** Enable tls session tickets */
     bool session_tickets;
 
+    /** Enable secure element for server session */
+    bool use_secure_element;
+
     /** User callback for esp_https_server */
     esp_https_server_user_cb *user_cb;
 };

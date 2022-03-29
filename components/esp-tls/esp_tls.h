@@ -251,6 +251,10 @@ typedef struct esp_tls_cfg_server {
     unsigned int serverkey_password_len;        /*!< String length of the password pointed to by
                                                      serverkey_password */
 
+    bool use_secure_element;                    /*!< Enable this option to use secure element or
+                                                 atecc608a chip ( Integrated with ESP32-WROOM-32SE ) */
+
+
 #if defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
     esp_tls_server_session_ticket_ctx_t * ticket_ctx; /*!< Session ticket generation context.
                                                     You have to call esp_tls_cfg_server_session_tickets_init
