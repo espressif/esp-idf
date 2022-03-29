@@ -300,12 +300,9 @@ Refer to :component_file:`cmock/CMock/docs/CMock_Summary.md` for more details on
 
 Requirements
 ^^^^^^^^^^^^
-The following requirements are necessary to generate the mocks:
+The Linux target is the only target where mocking currently works. The following requirements are necessary to generate the mocks:
 
-.. list::
-    - Installed ESP-IDF with all its requirements
-    - ``ruby``
-    - On the Linux target, which is the only target where mocking currently works, ``libbsd`` is required, too
+.. include:: inc/linux-host-requirements.rst
 
 Mock a Component
 ^^^^^^^^^^^^^^^^
