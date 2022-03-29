@@ -1342,7 +1342,8 @@ Set a specified *component*'s :ref:`component property<cmake-component-propertie
                          [EMBED_FILES file1 file2 ...]
                          [EMBED_TXTFILES file1 file2 ...]
                          [KCONFIG kconfig]
-                         [KCONFIG_PROJBUILD kconfig_projbuild])
+                         [KCONFIG_PROJBUILD kconfig_projbuild]
+                         [WHOLE_ARCHIVE])
 
 Register a component to the build system. Much like the ``project()`` CMake command, this should be called from the component's CMakeLists.txt directly (not through a function or macro) and is recommended to be called before any other command. Here are some guidelines on what commands can **not** be called before ``idf_component_register``:
 
@@ -1364,6 +1365,7 @@ The arguments for ``idf_component_register`` include:
   - REQUIRED_IDF_TARGETS - specify the only target the component supports
   - KCONFIG - override the default Kconfig file
   - KCONFIG_PROJBUILD - override the default Kconfig.projbuild file
+  - WHOLE_ARCHIVE - if specified, the component library is surrounded by ``-Wl,--whole-archive``, ``-Wl,--no-whole-archive`` when linked. This has the same effect as setting ``WHOLE_ARCHIVE`` component property.
 
 The following are used for :ref:`embedding data into the component<cmake_embed_data>`, and is considered as source files when determining if a component is config-only. This means that even if the component does not specify source files, a static library is still created internally for the component if it specifies either:
 
@@ -1399,6 +1401,7 @@ These are properties that describe a component. Values of component properties c
 - REQUIRED_IDF_TARGETS - list of targets the component supports; set from ``idf_component_register`` EMBED_TXTFILES argument
 - REQUIRES - list of public component dependencies; set from ``idf_component_register`` REQUIRES argument
 - SRCS - list of component source files; set from SRCS or SRC_DIRS/EXCLUDE_SRCS argument of ``idf_component_register``
+- WHOLE_ARCHIVE - if this property is set to ``TRUE`` (or any boolean "true" CMake value: 1, ``ON``, ``YES``, ``Y``), the component library is surrounded by ``-Wl,--whole-archive``, ``-Wl,--no-whole-archive`` when linked. This can be used to force the linker to include every object file into the executable, even if the object file doesn't resolve any references from the rest of the application. This is commonly used when a component contains plugins or modules which rely on link-time registration. This property is ``FALSE`` by default. It can be set to ``TRUE`` from the component CMakeLists.txt file.
 
 .. _cmake-file-globbing:
 
