@@ -18,9 +18,6 @@
 extern "C" {
 #endif
 
-#define strlcpy(a, b, c)
-#define strlcat(a, b, c)
-
 #define heap_caps_malloc(a, b)  NULL
 #define MALLOC_CAP_INTERNAL     0
 #define MALLOC_CAP_8BIT         0
