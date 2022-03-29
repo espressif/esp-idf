@@ -22,9 +22,20 @@ typedef enum {
 } httpd_ssl_transport_mode_t;
 
 /**
+ * @brief Indicates the state at which the user callback is executed,
+ *        i.e at session creation or session close
+ */
+typedef enum {
+    HTTPD_SSL_USER_CB_SESS_CREATE,
+    HTTPD_SSL_USER_CB_SESS_CLOSE
+} httpd_ssl_user_cb_state_t;
+
+/**
  * @brief Callback data struct, contains the ESP-TLS connection handle
+ * and the connection state at which the callback is executed
  */
 typedef struct esp_https_server_user_cb_arg {
+    httpd_ssl_user_cb_state_t user_cb_state;
     const esp_tls_t *tls;
 } esp_https_server_user_cb_arg_t;
 

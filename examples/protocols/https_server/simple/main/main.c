@@ -36,9 +36,32 @@ static esp_err_t root_get_handler(httpd_req_t *req)
 }
 
 #if CONFIG_EXAMPLE_ENABLE_HTTPS_USER_CALLBACK
+
+void print_peer_cert_info(const mbedtls_ssl_context *ssl)
+{
+    const mbedtls_x509_crt *cert;
+    const size_t buf_size = 1024;
+    char *buf = calloc(buf_size, sizeof(char));
+    if (buf == NULL) {
+        ESP_LOGE(TAG, "Out of memory - Callback execution failed!");
+        return;
+    }
+
+    // Logging the peer certificate info
+    cert = mbedtls_ssl_get_peer_cert(ssl);
+    if (cert != NULL) {
+        mbedtls_x509_crt_info((char *) buf, buf_size - 1, "    ", cert);
+        ESP_LOGI(TAG, "Peer certificate info:\n%s", buf);
+    } else {
+        ESP_LOGW(TAG, "Could not obtain the peer certificate!");
+    }
+
+    free(buf);
+}
+
 /**
  * Example callback function to get the certificate of connected clients,
- * whenever a new SSL connection is created
+ * whenever a new SSL connection is created and closed
  *
  * Can also be used to other information like Socket FD, Connection state, etc.
  *
@@ -51,30 +74,28 @@ static esp_err_t root_get_handler(httpd_req_t *req)
  */
 void https_server_user_callback(esp_https_server_user_cb_arg_t *user_cb)
 {
-    ESP_LOGI(TAG, "Session Created!");
-    ESP_LOGI(TAG, "Socket FD: %d", user_cb->tls->sockfd);
+    ESP_LOGI(TAG, "User callback invoked!");
 
-    const mbedtls_x509_crt *cert;
-    const size_t buf_size = 1024;
-    char *buf = calloc(buf_size, sizeof(char));
-    if (buf == NULL) {
-        ESP_LOGE(TAG, "Out of memory - Callback execution failed!");
-        return;
+    switch(user_cb->user_cb_state) {
+        case HTTPD_SSL_USER_CB_SESS_CREATE:
+            ESP_LOGD(TAG, "At session creation");
+
+            // Logging the socket FD
+            ESP_LOGI(TAG, "Socket FD: %d", user_cb->tls->sockfd);
+
+            // Logging the current ciphersuite
+            ESP_LOGI(TAG, "Current Ciphersuite: %s", mbedtls_ssl_get_ciphersuite(&user_cb->tls->ssl));
+            break;
+        case HTTPD_SSL_USER_CB_SESS_CLOSE:
+            ESP_LOGD(TAG, "At session close");
+
+            // Logging the peer certificate
+            print_peer_cert_info(&user_cb->tls->ssl);
+            break;
+        default:
+            ESP_LOGE(TAG, "Illegal state!");
+            return;
     }
-
-    mbedtls_x509_crt_info((char *) buf, buf_size - 1, "    ", &user_cb->tls->servercert);
-    ESP_LOGI(TAG, "Server certificate info:\n%s", buf);
-    memset(buf, 0x00, buf_size);
-
-    cert = mbedtls_ssl_get_peer_cert(&user_cb->tls->ssl);
-    if (cert != NULL) {
-        mbedtls_x509_crt_info((char *) buf, buf_size - 1, "    ", cert);
-        ESP_LOGI(TAG, "Peer certificate info:\n%s", buf);
-    } else {
-        ESP_LOGW(TAG, "Could not obtain the peer certificate!");
-    }
-
-    free(buf);
 }
 #endif
 
