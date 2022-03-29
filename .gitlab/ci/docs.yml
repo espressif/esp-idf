@@ -158,7 +158,6 @@ build_docs_pdf:
   tags:
     - deploy
     - shiny
-  dependencies: []
   script:
     - add_doc_server_ssh_keys $DOCS_DEPLOY_PRIVATEKEY $DOCS_DEPLOY_SERVER $DOCS_DEPLOY_SERVER_USER
     - export GIT_VER=$(git describe --always ${PIPELINE_COMMIT_SHA} --)
@@ -174,10 +173,13 @@ deploy_docs_preview:
     - <<: *if-label-docs
     - <<: *if-dev-push
       changes: *patterns-docs-preview
-  dependencies:
-    - build_docs_html_fast
-    - build_docs_html_full
-    - build_docs_pdf
+  needs:
+    - job: build_docs_html_fast
+      optional: true
+    - job: build_docs_html_full
+      optional: true
+    - job: build_docs_pdf
+      optional: true
   variables:
     TYPE: "preview"
     # older branches use DOCS_DEPLOY_KEY, DOCS_SERVER, DOCS_SERVER_USER, DOCS_PATH for preview server so we keep these names for 'preview'
