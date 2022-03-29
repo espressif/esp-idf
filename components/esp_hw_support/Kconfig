@@ -85,4 +85,13 @@ menu "Hardware Settings"
                 If you want to use USB_SERIAL_JTAG under sw_reset case or sleep-wakeup case, you shoule select
                 this option. But be aware that this might increase the power consumption.
     endmenu
+
+    menu "Peripheral Control"
+        config PERIPH_CTRL_FUNC_IN_IRAM
+            bool "Place peripheral control functions into IRAM"
+            default n
+            help
+                Place peripheral control functions (e.g. periph_module_reset) into IRAM,
+                so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
+    endmenu
 endmenu

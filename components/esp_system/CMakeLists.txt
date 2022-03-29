@@ -41,7 +41,6 @@ else()
                                     # should be removable once using component init functions
                                     # link-time registration is used.
                                     # [refactor-todo] requires "driver" for headers:
-                                    # - periph_ctrl.h
                                     # - rtc_cntl.h
                                     # - spi_common_internal.h
                                     pthread bootloader_support efuse driver

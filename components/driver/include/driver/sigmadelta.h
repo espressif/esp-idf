@@ -6,7 +6,8 @@
 
 #pragma once
 
-#include "esp_types.h"
+#include <stdint.h>
+#include "esp_err.h"
 #include "driver/gpio.h"
 #include "hal/sigmadelta_types.h"
 
@@ -18,10 +19,10 @@ extern "C" {
  * @brief Sigma-delta configure struct
  */
 typedef struct {
-    sigmadelta_channel_t channel;    /*!< Sigma-delta channel number */
-    int8_t sigmadelta_duty;          /*!< Sigma-delta duty, duty ranges from -128 to 127. */
-    uint8_t sigmadelta_prescale;     /*!< Sigma-delta prescale, prescale ranges from 0 to 255. */
-    uint8_t  sigmadelta_gpio;        /*!< Sigma-delta output io number, refer to gpio.h for more details. */
+    sigmadelta_channel_t channel; /*!< Sigma-delta channel number */
+    int8_t sigmadelta_duty;       /*!< Sigma-delta duty, duty ranges from -128 to 127. */
+    uint8_t sigmadelta_prescale;  /*!< Sigma-delta prescale, prescale ranges from 0 to 255. */
+    gpio_num_t sigmadelta_gpio;   /*!< Sigma-delta output io number, refer to gpio.h for more details. */
 } sigmadelta_config_t;
 
 /**

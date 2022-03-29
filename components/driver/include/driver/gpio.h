@@ -10,11 +10,7 @@
 #include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
-#if !CONFIG_IDF_TARGET_LINUX
-#include "esp_attr.h"
-#include "esp_types.h"
 #include "soc/soc_caps.h"
-#endif // !CONFIG_IDF_TARGET_LINUX
 #include "hal/gpio_types.h"
 #include "esp_rom_gpio.h"
 
