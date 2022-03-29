@@ -419,7 +419,7 @@ To have better control of the calling sequence of functions, send mixed transact
     | QUADHD   | 4    | 21   |
     +----------+------+------+
 
-    * Only the first Device attached to the bus can use the CS0 pin.
+    \* Only the first Device attached to the bus can use the CS0 pin.
 
 
 .. _speed_considerations:
