@@ -94,7 +94,7 @@
   - "components/**/*"
 
 .patterns-integration_test: &patterns-integration_test
-  - "tools/ci/python_packages/tiny_test_fw/**/*"
+  - "tools/ci/python_packages/gitlab_api.py"
   - "tools/ci/integration_test/**/*"
 
   - "components/bt/controller/lib_esp32"
