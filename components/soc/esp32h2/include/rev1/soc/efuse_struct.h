@@ -167,7 +167,12 @@ typedef volatile struct efuse_dev_s {
         };
         uint32_t val;
     } rd_repeat_data4;
-    uint32_t rd_mac_spi_sys_0;                                   /*BLOCK1 data register $n.*/
+    union {
+        struct {
+            uint32_t mac_0;
+        };
+        uint32_t val;
+    } rd_mac_spi_sys_0;                                          /*BLOCK1 data register $n.*/
     union {
         struct {
             uint32_t mac_1:         16;                          /*Stores the high 16 bits of MAC address.*/

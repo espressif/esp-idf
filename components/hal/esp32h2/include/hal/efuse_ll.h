@@ -10,7 +10,7 @@
 #include <stdbool.h>
 #include "soc/efuse_periph.h"
 #include "hal/assert.h"
-#include "esp32c3/rom/efuse.h"
+#include "esp32h2/rom/efuse.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,7 +32,7 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_wdt_delay_sel
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_mac0(void)
 {
-    return EFUSE.rd_mac_spi_sys_0;
+    return EFUSE.rd_mac_spi_sys_0.mac_0;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_mac1(void)

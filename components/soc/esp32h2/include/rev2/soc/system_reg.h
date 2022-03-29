@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -356,17 +356,17 @@ extern "C" {
 #define SYSTEM_MEM_VT_SEL_V  0x00000003U
 #define SYSTEM_MEM_VT_SEL_S  22
 
-/** SYSTEM_SYSTEM_REG_DATE_REG register
+/** SYSTEM_REG_DATE_REG register
  *  register description
  */
-#define SYSTEM_SYSTEM_REG_DATE_REG (DR_REG_SYSTEM_BASE + 0xffc)
-/** SYSTEM_SYSTEM_REG_DATE : R/W; bitpos: [27:0]; default: 34615872;
+#define SYSTEM_REG_DATE_REG (DR_REG_SYSTEM_BASE + 0xffc)
+/** SYSTEM_REG_DATE : R/W; bitpos: [27:0]; default: 34615872;
  *  Need add description
  */
-#define SYSTEM_SYSTEM_REG_DATE    0x0FFFFFFFU
-#define SYSTEM_SYSTEM_REG_DATE_M  (SYSTEM_SYSTEM_REG_DATE_V << SYSTEM_SYSTEM_REG_DATE_S)
-#define SYSTEM_SYSTEM_REG_DATE_V  0x0FFFFFFFU
-#define SYSTEM_SYSTEM_REG_DATE_S  0
+#define SYSTEM_REG_DATE    0x0FFFFFFFU
+#define SYSTEM_REG_DATE_M  (SYSTEM_REG_DATE_V << SYSTEM_REG_DATE_S)
+#define SYSTEM_REG_DATE_V  0x0FFFFFFFU
+#define SYSTEM_REG_DATE_S  0
 
 #ifdef __cplusplus
 }
