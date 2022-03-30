@@ -20,6 +20,7 @@
 #include "esp32/rom/rtc.h"
 #include "esp32/rom/uart.h"
 #include "esp32/rom/gpio.h"
+#include "esp_efuse.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
 #include "soc/sens_periph.h"
@@ -57,7 +58,7 @@
 #define APLL_CAL_DELAY_2            0x3f
 #define APLL_CAL_DELAY_3            0x1f
 
-#define XTAL_32K_DAC_VAL    3
+#define XTAL_32K_DAC_VAL    1
 #define XTAL_32K_DRES_VAL   3
 #define XTAL_32K_DBIAS_VAL  0
 
@@ -126,20 +127,42 @@ static void rtc_clk_32k_enable_common(int dac, int dres, int dbias)
     REG_SET_FIELD(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_DBIAS_XTAL_32K, dbias);
 
 #ifdef CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT
-    /* TOUCH sensor can provide additional current to external XTAL.
-       In some case, X32N and X32P PAD don't have enough drive capability to start XTAL */
-    SET_PERI_REG_MASK(RTC_IO_TOUCH_CFG_REG, RTC_IO_TOUCH_XPD_BIAS_M);
-    /* Tie PAD Touch8 to VDD
-       NOTE: TOUCH8 and TOUCH9 register settings are reversed except for DAC, so we set RTC_IO_TOUCH_PAD9_REG here instead
-    */
-    SET_PERI_REG_MASK(RTC_IO_TOUCH_PAD9_REG, RTC_IO_TOUCH_PAD9_TIE_OPT_M);
-    /* Set the current used to compensate TOUCH PAD8 */
-    SET_PERI_REG_BITS(RTC_IO_TOUCH_PAD8_REG, RTC_IO_TOUCH_PAD8_DAC, 4, RTC_IO_TOUCH_PAD8_DAC_S);
-    /* Power up TOUCH8
-       So the Touch DAC start to drive some current from VDD to TOUCH8(which is also XTAL-N)
-     */
-    SET_PERI_REG_MASK(RTC_IO_TOUCH_PAD9_REG, RTC_IO_TOUCH_PAD9_XPD_M);
-#endif // CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT
+    uint8_t chip_ver = esp_efuse_get_chip_ver();
+    // version0 and version1 need provide additional current to external XTAL.
+    if(chip_ver == 0 || chip_ver == 1) {
+        /* TOUCH sensor can provide additional current to external XTAL.
+        In some case, X32N and X32P PAD don't have enough drive capability to start XTAL */
+        SET_PERI_REG_MASK(RTC_IO_TOUCH_CFG_REG, RTC_IO_TOUCH_XPD_BIAS_M);
+        /* Tie PAD Touch8 to VDD
+        NOTE: TOUCH8 and TOUCH9 register settings are reversed except for DAC, so we set RTC_IO_TOUCH_PAD9_REG here instead*/
+        SET_PERI_REG_MASK(RTC_IO_TOUCH_PAD9_REG, RTC_IO_TOUCH_PAD9_TIE_OPT_M);
+        /* Set the current used to compensate TOUCH PAD8 */
+        SET_PERI_REG_BITS(RTC_IO_TOUCH_PAD8_REG, RTC_IO_TOUCH_PAD8_DAC, 4, RTC_IO_TOUCH_PAD8_DAC_S);
+        /* Power up TOUCH8
+        So the Touch DAC start to drive some current from VDD to TOUCH8(which is also XTAL-N)*/
+        SET_PERI_REG_MASK(RTC_IO_TOUCH_PAD9_REG, RTC_IO_TOUCH_PAD9_XPD_M);
+    }
+#elif defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT_V2
+    uint8_t chip_ver = esp_efuse_get_chip_ver();
+    if(chip_ver == 0 || chip_ver == 1) {
+        /* TOUCH sensor can provide additional current to external XTAL.
+        In some case, X32N and X32P PAD don't have enough drive capability to start XTAL */
+        SET_PERI_REG_MASK(RTC_IO_TOUCH_CFG_REG, RTC_IO_TOUCH_XPD_BIAS_M);
+        SET_PERI_REG_BITS(RTC_IO_TOUCH_CFG_REG, RTC_IO_TOUCH_DCUR, 3, RTC_IO_TOUCH_DCUR_S);
+        CLEAR_PERI_REG_MASK(SENS_SAR_TOUCH_CTRL2_REG, SENS_TOUCH_START_FSM_EN_M);
+        /* Tie PAD Touch8 to VDD
+        NOTE: TOUCH8 and TOUCH9 register settings are reversed except for DAC, so we set RTC_IO_TOUCH_PAD9_REG here instead
+        */
+        SET_PERI_REG_MASK(RTC_IO_TOUCH_PAD9_REG, RTC_IO_TOUCH_PAD9_TIE_OPT_M);
+        /* Set the current used to compensate TOUCH PAD8 */
+        SET_PERI_REG_BITS(RTC_IO_TOUCH_PAD8_REG, RTC_IO_TOUCH_PAD8_DAC, 1, RTC_IO_TOUCH_PAD8_DAC_S);
+        /* Power up TOUCH8
+        So the Touch DAC start to drive some current from VDD to TOUCH8(which is also XTAL-N)
+        */
+        SET_PERI_REG_MASK(RTC_IO_TOUCH_PAD9_REG, RTC_IO_TOUCH_PAD9_XPD_M);
+        CLEAR_PERI_REG_MASK(RTC_IO_TOUCH_PAD9_REG, RTC_IO_TOUCH_PAD9_START_M);
+    }
+#endif
     /* Power up external xtal */
     SET_PERI_REG_MASK(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_XPD_XTAL_32K_M);
 }
@@ -154,9 +177,21 @@ void rtc_clk_32k_enable(bool enable)
         CLEAR_PERI_REG_MASK(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_X32N_MUX_SEL | RTC_IO_X32P_MUX_SEL);
 
 #ifdef CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT
-        /* Power down TOUCH */
-        CLEAR_PERI_REG_MASK(RTC_IO_TOUCH_PAD9_REG, RTC_IO_TOUCH_PAD9_XPD_M);
-#endif // CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT
+        uint8_t chip_ver = esp_efuse_get_chip_ver();
+        if(chip_ver == 0 || chip_ver == 1) {
+            /* Power down TOUCH */
+            CLEAR_PERI_REG_MASK(RTC_IO_TOUCH_PAD9_REG, RTC_IO_TOUCH_PAD9_XPD_M);
+        }
+#elif defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT_V2
+        uint8_t chip_ver = esp_efuse_get_chip_ver();
+        if(chip_ver == 0 || chip_ver == 1) {
+            /* Power down TOUCH */
+            CLEAR_PERI_REG_MASK(RTC_IO_TOUCH_CFG_REG, RTC_IO_TOUCH_XPD_BIAS_M);
+            SET_PERI_REG_BITS(RTC_IO_TOUCH_CFG_REG, RTC_IO_TOUCH_DCUR, 0, RTC_IO_TOUCH_DCUR_S);
+            CLEAR_PERI_REG_MASK(RTC_IO_TOUCH_PAD9_REG, RTC_IO_TOUCH_PAD9_XPD_M);
+            SET_PERI_REG_MASK(SENS_SAR_TOUCH_CTRL2_REG, SENS_TOUCH_START_FSM_EN_M);
+        }
+#endif
     }
 }
 

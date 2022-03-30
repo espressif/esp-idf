@@ -289,6 +289,10 @@ esp_err_t touch_pad_config(touch_pad_t touch_num, uint16_t threshold)
 
 esp_err_t touch_pad_init(void)
 {
+#ifdef CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT_V2
+    ESP_LOGE(TOUCH_TAG, "Touch Pad can't work because it provides current to external XTAL");
+    return ESP_ERR_NOT_SUPPORTED;
+#endif // CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT_V2
     if (rtc_touch_mux == NULL) {
         rtc_touch_mux = xSemaphoreCreateMutex();
     }

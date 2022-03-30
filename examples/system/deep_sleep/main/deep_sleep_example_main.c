@@ -159,7 +159,7 @@ void app_main(void)
 #if CONFIG_IDF_TARGET_ESP32
     // Initialize touch pad peripheral.
     // The default fsm mode is software trigger mode.
-    touch_pad_init();
+    ESP_ERROR_CHECK(touch_pad_init());
     // If use touch pad wake up, should set touch sensor FSM mode at 'TOUCH_FSM_MODE_TIMER'.
     touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER);
     // Set reference voltage for charging/discharging
