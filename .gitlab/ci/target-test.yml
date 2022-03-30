@@ -875,7 +875,7 @@ UT_C3_SDSPI:
 
 UT_S3:
   extends: .unit_test_esp32s3_template
-  parallel: 44
+  parallel: 32
   tags:
     - ESP32S3_IDF
     - UT_T1_1
