@@ -141,10 +141,12 @@ def test_examples_protocol_https_server_simple(env, extra_data):  # type: (tiny_
     resp = conn.getresponse()
     dut1.expect('performing session handshake')
     got_resp = resp.read().decode('utf-8')
-    # Close the connection
     if got_resp != success_response:
         Utility.console_log('Response obtained does not match with correct response')
         raise RuntimeError('Failed to test SSL connection')
+
+    # Close the connection
+    conn.close()
 
     Utility.console_log('Checking user callback: Obtaining client certificate...')
 
@@ -158,7 +160,6 @@ def test_examples_protocol_https_server_simple(env, extra_data):  # type: (tiny_
 
     Utility.console_log('Correct response obtained')
     Utility.console_log('SSL connection test successful\nClosing the connection')
-    conn.close()
 
 
 if __name__ == '__main__':

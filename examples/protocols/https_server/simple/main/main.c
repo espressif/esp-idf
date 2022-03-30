@@ -37,7 +37,7 @@ static esp_err_t root_get_handler(httpd_req_t *req)
 
 #if CONFIG_EXAMPLE_ENABLE_HTTPS_USER_CALLBACK
 
-void print_peer_cert_info(const mbedtls_ssl_context *ssl)
+static void print_peer_cert_info(const mbedtls_ssl_context *ssl)
 {
     const mbedtls_x509_crt *cert;
     const size_t buf_size = 1024;
@@ -72,7 +72,7 @@ void print_peer_cert_info(const mbedtls_ssl_context *ssl)
  * The config option is found here - Component config → ESP-TLS
  *
  */
-void https_server_user_callback(esp_https_server_user_cb_arg_t *user_cb)
+static void https_server_user_callback(esp_https_server_user_cb_arg_t *user_cb)
 {
     ESP_LOGI(TAG, "User callback invoked!");
 
