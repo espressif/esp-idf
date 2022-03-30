@@ -63,6 +63,7 @@ api-guides/ulp_macros.rst                       api-reference/system/ulp_macros.
 api-guides/ulp-risc-v.rst                       api-reference/system/ulp-risc-v.rst
 
 api-reference/network/tcpip_adapter             migration-guides/tcpip-adapter
+api-reference/system/system                     api-reference/system/misc_system_api
 
 # The 'secure boot' guides are now 'secure boot v1' guides
 security/secure-boot                           security/secure-boot-v1
