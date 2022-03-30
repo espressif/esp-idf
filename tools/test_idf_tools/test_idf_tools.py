@@ -5,6 +5,7 @@
 
 import json
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -112,13 +113,13 @@ class TestUsage(unittest.TestCase):
         if tool_archive_name is None:
             tool_archive_name = tool
         self.assertIn('Installing %s@' % tool + tool_version, output)
-        self.assertIn('Downloading %s' % tool_archive_name, output)
+        self.assertRegex(output, re.compile(rf'Downloading \S+/{tool_archive_name}'))
 
     def assert_tool_not_installed(self, output, tool, tool_version, tool_archive_name=None):
         if tool_archive_name is None:
             tool_archive_name = tool
         self.assertNotIn('Installing %s@' % tool + tool_version, output)
-        self.assertNotIn('Downloading %s' % tool_archive_name, output)
+        self.assertNotRegex(output, re.compile(rf'Downloading \S+/{tool_archive_name}'))
 
     def run_idf_tools_with_action(self, action):
         output_stream = StringIO()
@@ -153,7 +154,7 @@ class TestUsage(unittest.TestCase):
         self.assert_tool_installed(output, XTENSA_ESP32S3_ELF, XTENSA_ESP32S3_ELF_VERSION)
         self.assert_tool_installed(output, ESP32ULP, ESP32ULP_VERSION, ESP32ULP_ARCHIVE)
         self.assert_tool_installed(output, ESP32S2ULP, ESP32S2ULP_VERSION, ESP32S2ULP_ARCHIVE)
-        self.assertIn('to ' + os.path.join(self.temp_tools_dir, 'dist'), output)
+        self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
         output = self.run_idf_tools_with_action(['check'])
@@ -191,7 +192,7 @@ class TestUsage(unittest.TestCase):
         self.assert_tool_not_installed(output, XTENSA_ESP32S2_ELF, XTENSA_ESP32S2_ELF_VERSION)
         self.assert_tool_not_installed(output, XTENSA_ESP32S3_ELF, XTENSA_ESP32S3_ELF_VERSION)
         self.assert_tool_not_installed(output, ESP32S2ULP, ESP32S2ULP_VERSION, ESP32S2ULP_ARCHIVE)
-        self.assertIn('to ' + os.path.join(self.temp_tools_dir, 'dist'), output)
+        self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
         output = self.run_idf_tools_with_action(['check'])
@@ -225,7 +226,7 @@ class TestUsage(unittest.TestCase):
         self.assert_tool_not_installed(output, XTENSA_ESP32S3_ELF, XTENSA_ESP32S3_ELF_VERSION)
         self.assert_tool_not_installed(output, ESP32ULP, ESP32ULP_VERSION, ESP32ULP_ARCHIVE)
         self.assert_tool_not_installed(output, ESP32S2ULP, ESP32S2ULP_VERSION, ESP32S2ULP_ARCHIVE)
-        self.assertIn('to ' + os.path.join(self.temp_tools_dir, 'dist'), output)
+        self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
         output = self.run_idf_tools_with_action(['check'])
@@ -258,7 +259,7 @@ class TestUsage(unittest.TestCase):
         self.assert_tool_not_installed(output, XTENSA_ESP32S3_ELF, XTENSA_ESP32S3_ELF_VERSION)
         self.assert_tool_not_installed(output, ESP32ULP, ESP32ULP_VERSION, ESP32ULP_ARCHIVE)
         self.assert_tool_installed(output, ESP32S2ULP, ESP32S2ULP_VERSION, ESP32S2ULP_ARCHIVE)
-        self.assertIn('to ' + os.path.join(self.temp_tools_dir, 'dist'), output)
+        self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
         output = self.run_idf_tools_with_action(['check'])
@@ -292,7 +293,7 @@ class TestUsage(unittest.TestCase):
         self.assert_tool_not_installed(output, XTENSA_ESP32S2_ELF, XTENSA_ESP32S2_ELF_VERSION)
         self.assert_tool_not_installed(output, ESP32ULP, ESP32ULP_VERSION, ESP32ULP_ARCHIVE)
         self.assert_tool_installed(output, ESP32S2ULP, ESP32S2ULP_VERSION, ESP32S2ULP_ARCHIVE)
-        self.assertIn('to ' + os.path.join(self.temp_tools_dir, 'dist'), output)
+        self.assertIn('Destination: {}'.format(os.path.join(self.temp_tools_dir, 'dist')), output)
         self.assertEqual(required_tools_installed, output.count('Done'))
 
         output = self.run_idf_tools_with_action(['check'])

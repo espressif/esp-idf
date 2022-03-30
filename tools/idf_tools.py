@@ -365,7 +365,8 @@ def urlretrieve_ctx(url, filename, reporthook=None, data=None, context=None):
 
 
 def download(url, destination):  # type: (str, str) -> None
-    info('Downloading {} to {}'.format(os.path.basename(url), destination))
+    info(f'Downloading {url}')
+    info(f'Destination: {destination}')
     try:
         ctx = None
         # For dl.espressif.com, add the ISRG x1 root certificate.
