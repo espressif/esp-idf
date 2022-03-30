@@ -321,7 +321,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     const spi_bus_attr_t* bus_attr = host->bus_attr;
     SPI_CHECK(dev_config->spics_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(dev_config->spics_io_num), "spics pin invalid", ESP_ERR_INVALID_ARG);
     uint32_t apb_clk_freq_hz = rtc_clk_apb_freq_get();
-    assert((apb_clk_freq_hz == 80 * 1000 * 1000) || (apb_clk_freq_hz == 40 * 1000 * 1000));
+    assert((apb_clk_freq_hz == 80 * 1000 * 1000) || (apb_clk_freq_hz == 40 * 1000 * 1000) || (apb_clk_freq_hz == 48 * 1000 * 1000));
     SPI_CHECK((dev_config->clock_speed_hz > 0) && (dev_config->clock_speed_hz <= apb_clk_freq_hz) , "invalid sclk speed", ESP_ERR_INVALID_ARG);
 #ifdef CONFIG_IDF_TARGET_ESP32
     //The hardware looks like it would support this, but actually setting cs_ena_pretrans when transferring in full

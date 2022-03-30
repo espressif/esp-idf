@@ -86,16 +86,13 @@ api-reference/storage/mass_mfg
 api-reference/storage/index
 api-reference/peripherals/adc
 api-reference/peripherals/sdspi_host
-api-reference/peripherals/spi_slave
 api-reference/peripherals/lcd
 api-reference/peripherals/secure_element
 api-reference/peripherals/ledc
 api-reference/peripherals/temp_sensor
-api-reference/peripherals/spi_features
 api-reference/peripherals/spi_slave_hd
 api-reference/peripherals/i2c
 api-reference/peripherals/dedic_gpio
-api-reference/peripherals/spi_master
 api-reference/peripherals/index
 api-reference/kconfig
 api-reference/network/esp_openthread

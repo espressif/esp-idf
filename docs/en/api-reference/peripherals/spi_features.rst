@@ -28,7 +28,7 @@ do transactions on the bus should wait until the BG to be successfully disabled.
       There are quite a few limitations when using SPI Master driver on the SPI1 bus, see
       :ref:`spi_master_on_spi1_bus`.
 
-  .. only:: esp32s2
+  .. only:: not esp32
 
       The SPI Master driver hasn't supported SPI1 bus. Only SPI Flash driver can attach to the bus.
 

@@ -1053,7 +1053,7 @@ TEST_CASE("SPI master hd dma TX without RX test", "[spi]")
     spi_device_handle_t spi;
     spi_device_interface_config_t dev_cfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
     dev_cfg.flags = SPI_DEVICE_HALFDUPLEX;
-    dev_cfg.clock_speed_hz = 4 * 1000 * 1000;
+    dev_cfg.clock_speed_hz = 1 * 1000 * 1000;
     TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, &spi));
 
     spi_slave_interface_config_t slave_cfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
