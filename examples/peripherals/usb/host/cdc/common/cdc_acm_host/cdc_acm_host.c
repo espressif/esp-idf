@@ -946,7 +946,7 @@ static bool cdc_acm_is_transfer_completed(usb_transfer_t *transfer)
                 .type = CDC_ACM_HOST_ERROR,
                 .data.error = (int) transfer->status
             };
-            cdc_dev->notif.cb((cdc_acm_dev_hdl_t) cdc_dev, &error_event, cdc_dev->cb_arg);
+            cdc_dev->notif.cb(&error_event, cdc_dev->cb_arg);
         }
     }
     return completed;
@@ -981,7 +981,7 @@ static void notif_xfer_cb(usb_transfer_t *transfer)
                     .type = CDC_ACM_HOST_NETWORK_CONNECTION,
                     .data.network_connected = (bool) notif->wValue
                 };
-                cdc_dev->notif.cb((cdc_acm_dev_hdl_t) cdc_dev, &net_conn_event, cdc_dev->cb_arg);
+                cdc_dev->notif.cb(&net_conn_event, cdc_dev->cb_arg);
             }
             break;
         }
@@ -992,7 +992,7 @@ static void notif_xfer_cb(usb_transfer_t *transfer)
                     .type = CDC_ACM_HOST_SERIAL_STATE,
                     .data.serial_state = cdc_dev->serial_state
                 };
-                cdc_dev->notif.cb((cdc_acm_dev_hdl_t) cdc_dev, &serial_state_event, cdc_dev->cb_arg);
+                cdc_dev->notif.cb(&serial_state_event, cdc_dev->cb_arg);
             }
             break;
         }
@@ -1043,8 +1043,9 @@ static void usb_event_cb(const usb_host_client_event_msg_t *event_msg, void *arg
                 // The suddenly disconnected device was opened by this driver: inform user about this
                 const cdc_acm_host_dev_event_data_t disconn_event = {
                     .type = CDC_ACM_HOST_DEVICE_DISCONNECTED,
+                    .data.cdc_hdl = (cdc_acm_dev_hdl_t) cdc_dev,
                 };
-                cdc_dev->notif.cb((cdc_acm_dev_hdl_t) cdc_dev, &disconn_event, cdc_dev->cb_arg);
+                cdc_dev->notif.cb(&disconn_event, cdc_dev->cb_arg);
             }
         }
         break;

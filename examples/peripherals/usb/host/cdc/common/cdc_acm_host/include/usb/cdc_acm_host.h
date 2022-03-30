@@ -64,9 +64,10 @@ typedef enum {
 typedef struct {
     cdc_acm_host_dev_event_t type;
     union {
-        int error;                         // Error code from USB Host
-        cdc_acm_uart_state_t serial_state; // Serial (UART) state
-        bool network_connected;            // Network connection event
+        int error;                         //!< Error code from USB Host
+        cdc_acm_uart_state_t serial_state; //!< Serial (UART) state
+        bool network_connected;            //!< Network connection event
+        cdc_acm_dev_hdl_t cdc_hdl;         //!< Disconnection event
     } data;
 } cdc_acm_host_dev_event_data_t;
 
@@ -87,9 +88,9 @@ typedef void (*cdc_acm_data_callback_t)(uint8_t* data, size_t data_len, void *us
 
 /**
  * @brief Device event callback type
- * @see cdc_acm_host_dev_event_t
+ * @see cdc_acm_host_dev_event_data_t
  */
-typedef void (*cdc_acm_host_dev_callback_t)(cdc_acm_dev_hdl_t cdc_hdl, const cdc_acm_host_dev_event_data_t *event, void *user_ctx);
+typedef void (*cdc_acm_host_dev_callback_t)(const cdc_acm_host_dev_event_data_t *event, void *user_ctx);
 
 /**
  * @brief Configuration structure of USB Host CDC-ACM driver
@@ -298,10 +299,13 @@ public:
         return cdc_acm_host_open_vendor_specific(vid, pid, interface_idx, dev_config, &this->cdc_hdl);
     }
 
-    inline void close()
+    inline esp_err_t close()
     {
-        cdc_acm_host_close(this->cdc_hdl);
-        this->cdc_hdl = NULL;
+        esp_err_t err = cdc_acm_host_close(this->cdc_hdl);
+        if (err == ESP_OK) {
+            this->cdc_hdl = NULL;
+        }
+        return err;
     }
 
     inline esp_err_t line_coding_get(cdc_acm_line_coding_t *line_coding)

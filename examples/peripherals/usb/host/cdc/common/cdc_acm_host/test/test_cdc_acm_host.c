@@ -110,7 +110,7 @@ static void handle_rx2(uint8_t *data, size_t data_len, void *arg)
     TEST_ASSERT_EQUAL_STRING_LEN(data, arg, data_len);
 }
 
-static void notif_cb(cdc_acm_dev_hdl_t cdc_hdl, const cdc_acm_host_dev_event_data_t *event, void *user_ctx)
+static void notif_cb(const cdc_acm_host_dev_event_data_t *event, void *user_ctx)
 {
     switch (event->type) {
     case CDC_ACM_HOST_ERROR:
@@ -122,7 +122,7 @@ static void notif_cb(cdc_acm_dev_hdl_t cdc_hdl, const cdc_acm_host_dev_event_dat
         break;
     case CDC_ACM_HOST_DEVICE_DISCONNECTED:
         printf("Disconnection event\n");
-        TEST_ASSERT_EQUAL(ESP_OK, cdc_acm_host_close(cdc_hdl));
+        TEST_ASSERT_EQUAL(ESP_OK, cdc_acm_host_close(event->data.cdc_hdl));
         xTaskNotifyGive(user_ctx);
         break;
     default:
