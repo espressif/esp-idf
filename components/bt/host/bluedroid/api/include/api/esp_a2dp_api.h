@@ -171,6 +171,13 @@ typedef union {
         uint16_t delay_value;                  /*!< delay report value */
     } a2d_get_delay_value_stat;                /*!< A2DP sink get delay report value status */
 
+    /**
+     * @brief ESP_A2D_REPORT_SNK_DELAY_VALUE_EVT
+     */
+    struct a2d_report_delay_stat_param {
+        uint16_t delay_value;                  /*!< delay report value */
+    } a2d_report_delay_value_stat;             /*!< A2DP source received sink report value status */
+
 } esp_a2d_cb_param_t;
 
 /**

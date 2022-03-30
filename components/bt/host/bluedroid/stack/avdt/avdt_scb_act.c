@@ -872,12 +872,14 @@ void avdt_scb_init_open_req(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
     tAVDT_EVT_HDR   single;
     UNUSED(p_data);
 
-    if (!(p_scb->curr_cfg.psc_mask & AVDT_PSC_DELAY_RPT)) {
-        /* initiate open */
-        single.seid = p_scb->peer_seid;
-        avdt_scb_event(p_scb, AVDT_SCB_API_OPEN_REQ_EVT, (tAVDT_SCB_EVT *) &single);
-    } else {
-        btu_start_timer(&p_scb->timer_entry, BTU_TTYPE_AVDT_SCB_DELAY_RPT, AVDT_SCB_TC_DELAY_RPT_TOUT);
+    if (p_scb->p_ccb != NULL && p_scb->role == AVDT_CONF_INT) {
+        if (!(p_scb->curr_cfg.psc_mask & AVDT_PSC_DELAY_RPT)) {
+            /* initiate open */
+            single.seid = p_scb->peer_seid;
+            avdt_scb_event(p_scb, AVDT_SCB_API_OPEN_REQ_EVT, (tAVDT_SCB_EVT *) &single);
+        } else {
+            btu_start_timer(&p_scb->timer_entry, BTU_TTYPE_AVDT_SCB_DELAY_RPT, AVDT_SCB_TC_DELAY_RPT_TOUT);
+        }
     }
 }
 
@@ -1080,12 +1082,17 @@ void avdt_scb_hdl_delay_rpt_cmd (tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
                               (tAVDT_CTRL *) &p_data->msg.hdr);
 
     if (p_scb->p_ccb) {
-        avdt_msg_send_rsp(p_scb->p_ccb, AVDT_SIG_DELAY_RPT, &p_data->msg);
-        if(p_scb->role == AVDT_CONF_INT) {
-            btu_stop_timer(&p_scb->timer_entry);
-            /* initiate open */
-            single.seid = p_scb->peer_seid;
-            avdt_scb_event(p_scb, AVDT_SCB_API_OPEN_REQ_EVT, (tAVDT_SCB_EVT *) &single);
+        if (p_scb->cs.cfg.psc_mask & AVDT_PSC_DELAY_RPT) {
+            avdt_msg_send_rsp(p_scb->p_ccb, AVDT_SIG_DELAY_RPT, &p_data->msg);
+            if(p_scb->role == AVDT_CONF_INT) {
+                btu_stop_timer(&p_scb->timer_entry);
+                /* initiate open */
+                single.seid = p_scb->peer_seid;
+                avdt_scb_event(p_scb, AVDT_SCB_API_OPEN_REQ_EVT, (tAVDT_SCB_EVT *) &single);
+            }
+        } else {
+            p_data->msg.hdr.err_code = AVDT_ERR_NSC;
+            avdt_msg_send_rej(p_scb->p_ccb, AVDT_SIG_DELAY_RPT, &p_data->msg);
         }
     } else {
         avdt_scb_rej_not_in_use(p_scb, p_data);
