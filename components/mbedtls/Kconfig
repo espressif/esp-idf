@@ -323,6 +323,12 @@ menu "mbedTLS"
             help
                 Name of the custom certificate directory or file. This path is evaluated
                 relative to the project root directory.
+
+        config MBEDTLS_CERTIFICATE_BUNDLE_MAX_CERTS
+            int "Maximum no of certificates allowed in certificate bundle"
+            default 200
+            depends on MBEDTLS_CERTIFICATE_BUNDLE
+
     endmenu
 
     config MBEDTLS_ECP_RESTARTABLE
