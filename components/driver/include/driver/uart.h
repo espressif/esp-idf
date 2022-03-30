@@ -19,6 +19,7 @@ extern "C" {
 #include "freertos/queue.h"
 #include "freertos/ringbuf.h"
 #include "hal/uart_types.h"
+#include "hal/uart_hal.h"
 
 // Valid UART port number
 #define UART_NUM_0             (0) /*!< UART port 0 */
@@ -75,6 +76,12 @@ typedef struct {
 } uart_event_t;
 
 typedef intr_handle_t uart_isr_handle_t;
+
+typedef struct {
+    uart_hal_context_t hal;        /*!< UART hal context*/
+    portMUX_TYPE spinlock;
+    bool hw_enabled;
+} uart_context_t;
 
 /**
  * @brief Install UART driver and set the UART to the default configuration.

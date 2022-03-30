@@ -14,7 +14,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/ringbuf.h"
-#include "hal/uart_hal.h"
 #include "hal/gpio_hal.h"
 #include "soc/uart_periph.h"
 #include "soc/rtc_cntl_reg.h"
@@ -147,15 +146,9 @@ typedef struct {
 #endif
 } uart_obj_t;
 
-typedef struct {
-    uart_hal_context_t hal;        /*!< UART hal context*/
-    portMUX_TYPE spinlock;
-    bool hw_enabled;
-} uart_context_t;
-
 static uart_obj_t *p_uart_obj[UART_NUM_MAX] = {0};
 
-static uart_context_t uart_context[UART_NUM_MAX] = {
+uart_context_t uart_context[UART_NUM_MAX] = {
     UART_CONTEX_INIT_DEF(UART_NUM_0),
     UART_CONTEX_INIT_DEF(UART_NUM_1),
 #if UART_NUM_MAX > 2
