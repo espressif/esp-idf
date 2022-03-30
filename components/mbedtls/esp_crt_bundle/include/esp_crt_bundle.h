@@ -45,13 +45,19 @@ void esp_crt_bundle_detach(mbedtls_ssl_config *conf);
 /**
  * @brief      Set the default certificate bundle used for verification
  *
- * Overrides the default certificate bundle. In most use cases the bundle should be
+ * Overrides the default certificate bundle only in case of successful initialization. In most use cases the bundle should be
  * set through menuconfig. The bundle needs to be sorted by subject name since binary search is
  * used to find certificates.
  *
  * @param[in]  x509_bundle     A pointer to the certificate bundle.
+ *
+ * @param[in]  bundle_size     Size of the certificate bundle in bytes.
+ *
+ * @return
+ *             - ESP_OK  if adding certificates was successful.
+ *             - Other   if an error occured or an action must be taken by the calling process.
  */
-void esp_crt_bundle_set(const uint8_t *x509_bundle);
+esp_err_t esp_crt_bundle_set(const uint8_t *x509_bundle, size_t bundle_size);
 
 
 #ifdef __cplusplus
