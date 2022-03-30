@@ -109,7 +109,7 @@ component_ut_pytest_esp32_ip101:
 component_ut_pytest_esp32_lan8720:
   extends:
     - .pytest_components_dir_template
-    - .rules:test:component_ut-esp32
+    - .rules:labels-protected:lan8720  # FIXME: IDFCI-1176
   needs:
     - build_pytest_components_esp32
   variables:
