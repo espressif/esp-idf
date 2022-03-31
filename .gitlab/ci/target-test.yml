@@ -81,6 +81,16 @@ example_test_pytest_esp32_ethernet_ota:
     TARGET: ESP32
     ENV_MARKER: ethernet_ota
 
+example_test_pytest_esp32_ethernet_ip101:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_esp32
+  variables:
+    TARGET: ESP32
+    ENV_MARKER: ip101
+
 .pytest_components_dir_template:
   extends: .pytest_template
   variables:

@@ -78,6 +78,15 @@ esp_netif_t *get_example_netif(void);
  */
 esp_netif_t *get_example_netif_from_desc(const char *desc);
 
+#ifdef CONFIG_EXAMPLE_CONNECT_ETHERNET
+/**
+ * @brief Get the example Ethernet driver handle
+ *
+ * @return esp_eth_handle_t
+ */
+esp_eth_handle_t get_example_eth_handle(void);
+#endif // CONFIG_EXAMPLE_CONNECT_ETHERNET
+
 #ifdef __cplusplus
 }
 #endif
