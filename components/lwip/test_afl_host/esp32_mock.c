@@ -301,3 +301,11 @@ uint32_t esp_random(void)
     // Preparation for injecting favorable random numbers
     return g_random_numbers[g_random_numbers_cnt++ % 8];
 }
+
+void dhcp_parse_extra_opts(struct dhcp *dhcp, uint8_t state, uint8_t option, uint8_t len, struct pbuf* p, uint16_t offset)
+{
+}
+
+void dhcp_append_extra_opts(struct netif *netif, uint8_t state, struct dhcp_msg *msg_out, uint16_t *options_out_len)
+{
+}

@@ -27,6 +27,10 @@
 #include "sntp/sntp_get_set_time.h"
 #include "sockets_ext.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
    -----------------------------------------------
    ---------- Platform specific locking ----------
@@ -1443,5 +1447,9 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 #define mem_clib_malloc malloc
 #define mem_clib_calloc calloc
 #endif /* CONFIG_WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LWIP_HDR_ESP_LWIPOPTS_H */
