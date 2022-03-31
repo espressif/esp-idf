@@ -64,6 +64,10 @@ Remove certs module from X509 library
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 `mbedtls/certs.h` header is no longer available in mbedtls 3.1, most applications can safely remove it from the list of includes.
 
+Breaking change for "esp_crt_bundle_set" API
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+:cpp:func:`esp_crt_bundle_set()` API now requires one additional argument named ``bundle_size``. The return type of the API has also been changed to :cpp:type:`esp_err_t` from ``void``.
+
 ESP HTTPS SERVER
 -----------------
 
