@@ -73,10 +73,10 @@ Breaking Changes (Summary)
 Names of variables holding different certs in :cpp:type:`httpd_ssl_config_t` structure have been updated.
 
 .. list::
-    * :cpp:member:`servercert` variable inherits role of :cpp:member:`cacert_pem` variable.
-    * :cpp:member:`servercert_len` variable inherits role of :cpp:member:`cacert_len` variable
-    * :cpp:member:`cacert_pem` variable inherits role of :cpp:member:`client_verify_cert_pem` variable
-    * :cpp:member:`cacert_len` variable inherits role of :cpp:member:`client_verify_cert_len` variable
+    * :cpp:member:`httpd_ssl_config::servercert` variable inherits role of `cacert_pem` variable.
+    * :cpp:member:`httpd_ssl_config::servercert_len` variable inherits role of `cacert_len` variable
+    * :cpp:member:`httpd_ssl_config::cacert_pem` variable inherits role of `client_verify_cert_pem` variable
+    * :cpp:member:`httpd_ssl_config::cacert_len` variable inherits role of `client_verify_cert_len` variable
 
 
 ESP HTTPS OTA

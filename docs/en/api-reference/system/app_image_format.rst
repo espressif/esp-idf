@@ -11,7 +11,7 @@ An application image consists of the following structures:
  * offset for 2 Segment = offset for 1 Segment + length of 1 Segment + sizeof(:cpp:type:`esp_image_segment_header_t`).
  * ...
 
-The count of each segment is defined in the ``segment_count`` field that is stored in :cpp:type:`esp_image_header_t`. The count cannot be more than :cpp:type:`ESP_IMAGE_MAX_SEGMENTS`.
+The count of each segment is defined in the ``segment_count`` field that is stored in :cpp:type:`esp_image_header_t`. The count cannot be more than :c:macro:`ESP_IMAGE_MAX_SEGMENTS`.
 
 To get the list of your image segments, please run the following command:
 

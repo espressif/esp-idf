@@ -87,7 +87,7 @@ typedef esp_sleep_source_t esp_sleep_wakeup_cause_t;
  * defined as parameter of the function.
  *
  * @note This function does not modify wake up configuration in RTC.
- *       It will be performed in esp_sleep_start function.
+ *       It will be performed in esp_deep_sleep_start/esp_light_sleep_start function.
  *
  * See docs/sleep-modes.rst for details.
  *
@@ -177,7 +177,8 @@ bool esp_sleep_is_valid_wakeup_gpio(gpio_num_t gpio_num);
  * into the state given by level argument, the chip will be woken up.
  *
  * @note This function does not modify pin configuration. The pin is
- *       configured in esp_sleep_start, immediately before entering sleep mode.
+ *       configured in esp_deep_sleep_start/esp_light_sleep_start,
+ *       immediately before entering sleep mode.
  *
  * @note In revisions 0 and 1 of the ESP32, ext0 wakeup source
  *       can not be used together with touch or ULP wakeup sources.
@@ -204,8 +205,8 @@ esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
  * the chip will be woken up.
  *
  * @note This function does not modify pin configuration. The pins are
- *       configured in esp_sleep_start, immediately before
- *       entering sleep mode.
+ *       configured in esp_deep_sleep_start/esp_light_sleep_start,
+ *       immediately before entering sleep mode.
  *
  * @note Internal pullups and pulldowns don't work when RTC peripherals are
  *       shut down. In this case, external resistors need to be added.
@@ -234,12 +235,12 @@ esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t mask, esp_sleep_ext1_wakeup_mode
  * This function enables an IO pin to wake up the chip from deep sleep.
  *
  * @note This function does not modify pin configuration. The pins are
- *       configured in esp_sleep_start, immediately before
- *       entering sleep mode.
+ *       configured in esp_deep_sleep_start/esp_light_sleep_start,
+ *       immediately before entering sleep mode.
  *
  * @note You don't need to care to pull-up or pull-down before using this
- *       function, because this will be done in esp_sleep_start based on
- *       param mask you give. BTW, when you use low level to wake up the
+ *       function, because this will be done in esp_deep_sleep_start/esp_light_sleep_start
+ *       based on param mask you give. BTW, when you use low level to wake up the
  *       chip, we strongly recommand you to add external registors (pull-up).
  *
  * @param gpio_pin_mask  Bit mask of GPIO numbers which will cause wakeup. Only GPIOs

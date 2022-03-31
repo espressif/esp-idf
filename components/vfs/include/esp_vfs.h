@@ -234,7 +234,7 @@ typedef struct
         int (*tcsendbreak)(int fd, int duration);                                                   /*!< tcsendbreak without context pointer */
     };
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
-#ifdef CONFIG_VFS_SUPPORT_SELECT
+#if CONFIG_VFS_SUPPORT_SELECT || defined __DOXYGEN__
     /** start_select is called for setting up synchronous I/O multiplexing of the desired file descriptors in the given VFS */
     esp_err_t (*start_select)(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, esp_vfs_select_sem_t sem, void **end_select_args);
     /** socket select function for socket FDs with the functionality of POSIX select(); this should be set only for the socket VFS */
@@ -247,7 +247,7 @@ typedef struct
     void* (*get_socket_select_semaphore)(void);
     /** get_socket_select_semaphore returns semaphore allocated in the socket driver; set only for the socket driver */
     esp_err_t (*end_select)(void *end_select_args);
-#endif // CONFIG_VFS_SUPPORT_SELECT
+#endif // CONFIG_VFS_SUPPORT_SELECT || defined __DOXYGEN__
 } esp_vfs_t;
 
 /**

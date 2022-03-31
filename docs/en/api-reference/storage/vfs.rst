@@ -140,7 +140,7 @@ A socket VFS driver needs to be registered with the following functions defined:
 Please see :component_file:`lwip/port/esp32/vfs_lwip.c` for a reference socket driver implementation using LWIP.
 
 .. note::
-    If you use :cpp:func:`select` for socket file descriptors only then you can disable the :envvar:`CONFIG_VFS_SUPPORT_SELECT` option to reduce the code size and improve performance.
+    If you use :cpp:func:`select` for socket file descriptors only then you can disable the :ref:`CONFIG_VFS_SUPPORT_SELECT` option to reduce the code size and improve performance.
     You should not change the socket driver during an active :cpp:func:`select` call or you might experience some undefined behavior.
 
 Paths

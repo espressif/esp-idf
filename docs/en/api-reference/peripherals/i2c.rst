@@ -335,7 +335,7 @@ Customized Configuration
 
 As mentioned at the end of Section :ref:`i2c-api-configure-driver`, when the function :cpp:func:`i2c_param_config` initializes the driver configuration for an I2C port, it also sets several I2C communication parameters to default values defined in the `I2C specification <https://www.nxp.com/docs/en/user-guide/UM10204.pdf>`_. Some other related parameters are pre-configured in registers of the I2C controller.
 
-All these parameters can be changed to user-defined values by calling dedicated functions given in the table below. Please note that the timing values are defined in APB clock cycles. The frequency of APB is specified in :cpp:type:`I2C_APB_CLK_FREQ`.
+All these parameters can be changed to user-defined values by calling dedicated functions given in the table below. Please note that the timing values are defined in APB clock cycles. The frequency of APB is specified in :c:macro:`I2C_APB_CLK_FREQ`.
 
 .. list-table:: Other Configurable I2C Communication Parameters
    :widths: 65 35

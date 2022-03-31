@@ -39,8 +39,8 @@ KSZ8041/81 and LAN8720 Drivers were updated to support more devices (generations
 
 As a result, the specific "chip number" functions calls were replaced by generic ones as follows:
 
-* :cpp:func:`esp_eth_phy_new_ksz8041` and :cpp:func:`esp_eth_phy_new_ksz8081` were removed, use :cpp:func:`esp_eth_phy_new_ksz80xx` instead
-* :cpp:func:`esp_eth_phy_new_lan8720` was removed, use :cpp:func:`esp_eth_phy_new_lan87xx` instead
+* `esp_eth_phy_new_ksz8041` and `esp_eth_phy_new_ksz8081` were removed, use :cpp:func:`esp_eth_phy_new_ksz80xx` instead
+* `esp_eth_phy_new_lan8720` was removed, use :cpp:func:`esp_eth_phy_new_lan87xx` instead
 
 
 ESP NETIF Glue Event Handlers

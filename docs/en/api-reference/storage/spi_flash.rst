@@ -99,7 +99,7 @@ This is the set of API functions for working with data in flash:
 - :cpp:func:`esp_flash_write` writes data from RAM to flash
 - :cpp:func:`esp_flash_erase_region` erases specific region of flash
 - :cpp:func:`esp_flash_erase_chip` erases the whole flash
-- :cpp:func:`esp_flash_get_chip_size` returns flash chip size, in bytes, as configured in menuconfig
+- :cpp:func:`spi_flash_get_chip_size` returns flash chip size, in bytes, as configured in menuconfig
 
 Generally, try to avoid using the raw SPI flash functions to the "main" SPI flash chip in favour of :ref:`partition-specific functions <flash-partition-apis>`.
 
@@ -108,7 +108,7 @@ SPI Flash Size
 
 The SPI flash size is configured by writing a field in the software bootloader image header, flashed at offset 0x1000.
 
-By default, the SPI flash size is detected by esptool.py when this bootloader is written to flash, and the header is updated with the correct size. Alternatively, it is possible to generate a fixed flash size by setting :envvar:`CONFIG_ESPTOOLPY_FLASHSIZE` in project configuration.
+By default, the SPI flash size is detected by esptool.py when this bootloader is written to flash, and the header is updated with the correct size. Alternatively, it is possible to generate a fixed flash size by setting :ref:`CONFIG_ESPTOOLPY_FLASHSIZE` in project configuration.
 
 If it is necessary to override the configured flash size at runtime, it is possible to set the ``chip_size`` member of the ``g_rom_flashchip`` structure. This size is used by ``esp_flash_*`` functions (in both software & ROM) to check the bounds.
 
@@ -228,7 +228,7 @@ The delay is used by some long operations which requires the master to wait or p
 
 The top API wraps these the chip driver and OS functions into an entire component, and also provides some argument checking.
 
-OS functions can also help to avoid a watchdog timeout when erasing large flash areas. During this time, the CPU is occupied with the flash erasing task. This stops other tasks from being executed. Among these tasks is the idle task to feed the watchdog timer (WDT). If the configuration option :ref:`CONFIG_ESP_TASK_WDT_PANIC` is selected and the flash operation time is longer than the watchdog timeout period, the system will reboot. 
+OS functions can also help to avoid a watchdog timeout when erasing large flash areas. During this time, the CPU is occupied with the flash erasing task. This stops other tasks from being executed. Among these tasks is the idle task to feed the watchdog timer (WDT). If the configuration option :ref:`CONFIG_ESP_TASK_WDT_PANIC` is selected and the flash operation time is longer than the watchdog timeout period, the system will reboot.
 
 It's pretty hard to totally eliminate this risk, because the erasing time varies with different flash chips, making it hard to be compatible in flash drivers. Therefore, users need to pay attention to it. Please use the following guidelines:
 
@@ -273,7 +273,9 @@ API Reference - SPI Flash
 
 .. include-build-file:: inc/esp_flash_spi_init.inc
 .. include-build-file:: inc/esp_flash.inc
+.. include-build-file:: inc/esp_spi_flash.inc
 .. include-build-file:: inc/spi_flash_types.inc
+.. include-build-file:: inc/esp_flash_err.inc
 
 .. _api-reference-partition-table:
 

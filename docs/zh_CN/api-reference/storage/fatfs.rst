@@ -56,6 +56,7 @@ FatFs 与 VFS 和 SD 卡配合使用
 便捷函数 :cpp:func:`esp_vfs_fat_sdmmc_unmount` 用于卸载文件系统并释放从 :cpp:func:`esp_vfs_fat_sdmmc_mount` 函数获取的资源。
 
 .. doxygenfunction:: esp_vfs_fat_sdmmc_mount
+.. doxygenfunction:: esp_vfs_fat_sdmmc_unmount
 .. doxygenfunction:: esp_vfs_fat_sdspi_mount
 .. doxygenstruct:: esp_vfs_fat_mount_config_t
     :members:

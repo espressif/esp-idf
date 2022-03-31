@@ -78,7 +78,7 @@ This wakeup mode doesn't require RTC peripherals or RTC memories to be powered o
 
     RTC IO module contains logic to trigger wakeup when one of RTC GPIOs is set to a predefined logic level. RTC IO is part of RTC peripherals power domain, so RTC peripherals will be kept powered on during deep sleep if this wakeup source is requested.
 
-    Because RTC IO module is enabled in this mode, internal pullup or pulldown resistors can also be used. They need to be configured by the application using :cpp:func:`rtc_gpio_pullup_en` and :cpp:func:`rtc_gpio_pulldown_en` functions, before calling :cpp:func:`esp_sleep_start`.
+    Because RTC IO module is enabled in this mode, internal pullup or pulldown resistors can also be used. They need to be configured by the application using :cpp:func:`rtc_gpio_pullup_en` and :cpp:func:`rtc_gpio_pulldown_en` functions, before calling :cpp:func:`esp_deep_sleep_start`.
 
     .. only:: esp32
 
@@ -136,7 +136,7 @@ This wakeup mode doesn't require RTC peripherals or RTC memories to be powered o
 
     .. warning::
         Before entering light sleep mode, check if any GPIO pin to be driven is part of the {IDF_TARGET_SPI_POWER_DOMAIN} power domain. If so, this power domain must be configured to remain ON during sleep.
-        
+
         For example, on ESP32-WROOM-32 board, GPIO16 and GPIO17 are linked to {IDF_TARGET_SPI_POWER_DOMAIN} power domain. If they are configured to remain high during
         light sleep, the power domain should be configured to remain powered ON. This can be done with :cpp:func:`esp_sleep_pd_config()`::
 
@@ -195,10 +195,10 @@ Some {IDF_TARGET_NAME} IOs have internal pullups or pulldowns, which are enabled
 .. only:: esp32c3
 
     In deep sleep mode:
-        - digital GPIOs (GPIO6 ~ 21) are in a high impedance state. 
+        - digital GPIOs (GPIO6 ~ 21) are in a high impedance state.
         - RTC GPIOs (GPIO0 ~ 5) can be in the following states, depending on their hold function enabled or not:
             - if the hold function is not enabled, RTC GPIOs will be in a high impedance state.
-            - if the hold function is enabled, RTC GPIOs will retain the pin state latched at that hold moment. 
+            - if the hold function is enabled, RTC GPIOs will retain the pin state latched at that hold moment.
 
 UART output handling
 --------------------

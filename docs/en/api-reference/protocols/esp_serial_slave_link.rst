@@ -153,7 +153,7 @@ TX FIFO
    receive data from the master. This is optional. The master will poll `tx_buffer_num` when it try
    to send packets to the slave, until the slave has enough buffer or timeout.
 
-2. Call :cpp:func:`essl_send_paket` to send data to the slave.
+2. Call :cpp:func:`essl_send_packet` to send data to the slave.
 
 RX FIFO
 ^^^^^^^

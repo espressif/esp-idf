@@ -56,6 +56,7 @@ The header file :component_file:`fatfs/vfs/esp_vfs_fat.h` defines convenience fu
 The convenience function :cpp:func:`esp_vfs_fat_sdmmc_unmount` unmounts the filesystem and releases the resources acquired by :cpp:func:`esp_vfs_fat_sdmmc_mount`.
 
 .. doxygenfunction:: esp_vfs_fat_sdmmc_mount
+.. doxygenfunction:: esp_vfs_fat_sdmmc_unmount
 .. doxygenfunction:: esp_vfs_fat_sdspi_mount
 .. doxygenstruct:: esp_vfs_fat_mount_config_t
     :members:
