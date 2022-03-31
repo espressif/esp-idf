@@ -1132,7 +1132,7 @@ void btc_spp_cb_handler(btc_msg_t *msg)
                 // if rx still has data, delay free slot
                 if (slot->close_alarm == NULL && slot->rx.queue && fixed_queue_length(slot->rx.queue) > 0) {
                     tBTA_JV *p_arg = NULL;
-                    if ((p_arg = malloc(sizeof(tBTA_JV))) == NULL) {
+                    if ((p_arg = osi_malloc(sizeof(tBTA_JV))) == NULL) {
                         param.close.status = ESP_SPP_NO_RESOURCE;
                         osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
                         BTC_TRACE_ERROR("%s unable to malloc slot close_alarm arg!", __func__);
