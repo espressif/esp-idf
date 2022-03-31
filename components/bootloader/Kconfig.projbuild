@@ -437,15 +437,21 @@ menu "Security features"
         select MBEDTLS_ECDSA_C
         depends on SECURE_SIGNED_ON_BOOT || SECURE_SIGNED_ON_UPDATE
 
-    config SECURE_BOOT_SUPPORTS_RSA
+    config SECURE_BOOT_V2_RSA_SUPPORTED
         bool
         default y
-        depends on ESP32_REV_MIN_3 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+        # RSA secure boot is supported in ESP32 revision >= ECO3
+        depends on ESP32_REV_MIN >= 3 || SOC_SECURE_BOOT_V2_RSA
 
-    config SECURE_TARGET_HAS_SECURE_ROM_DL_MODE
+    config SECURE_BOOT_V1_SUPPORTED
         bool
         default y
-        depends on IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
+        depends on SOC_SECURE_BOOT_V1
+
+    config SECURE_BOOT_V2_PREFERRED
+        bool
+        default y
+        depends on ESP32_REV_MIN >= 3
 
 
     config SECURE_SIGNED_APPS_NO_SECURE_BOOT
@@ -474,7 +480,7 @@ menu "Security features"
 
         config SECURE_SIGNED_APPS_ECDSA_SCHEME
             bool "ECDSA"
-            depends on IDF_TARGET_ESP32 && (SECURE_SIGNED_APPS_NO_SECURE_BOOT || SECURE_BOOT_V1_ENABLED)
+            depends on SECURE_BOOT_V1_SUPPORTED && (SECURE_SIGNED_APPS_NO_SECURE_BOOT || SECURE_BOOT_V1_ENABLED)
             help
                 Embeds the ECDSA public key in the bootloader and signs the application with an ECDSA key.
 
@@ -482,7 +488,7 @@ menu "Security features"
 
         config SECURE_SIGNED_APPS_RSA_SCHEME
             bool "RSA"
-            depends on SECURE_BOOT_SUPPORTS_RSA && (SECURE_SIGNED_APPS_NO_SECURE_BOOT || SECURE_BOOT_V2_ENABLED)
+            depends on SECURE_BOOT_V2_RSA_SUPPORTED && (SECURE_SIGNED_APPS_NO_SECURE_BOOT || SECURE_BOOT_V2_ENABLED)
             help
                 Appends the RSA-3072 based Signature block to the application.
                 Refer to <Secure Boot Version 2 documentation link> before enabling.
@@ -517,7 +523,8 @@ menu "Security features"
     config SECURE_BOOT
         bool "Enable hardware Secure Boot in bootloader (READ DOCS FIRST)"
         default n
-        depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || ESP32C3_REV_MIN >= 3 || IDF_TARGET_ESP32S3
+        # Secure boot is not supported for ESP32-C3 revision < ECO3
+        depends on SOC_SECURE_BOOT_SUPPORTED && !(IDF_TARGET_ESP32C3 && ESP32C3_REV_MIN < 3)
         select ESPTOOLPY_NO_STUB if !IDF_TARGET_ESP32 && !IDF_TARGET_ESP32S2
         help
             Build a bootloader which enables Secure Boot on first boot.
@@ -530,7 +537,7 @@ menu "Security features"
 
     choice SECURE_BOOT_VERSION
         bool "Select secure boot version"
-        default SECURE_BOOT_V2_ENABLED if ESP32_REV_MIN_3
+        default SECURE_BOOT_V2_ENABLED if SECURE_BOOT_V2_PREFERRED
         depends on SECURE_BOOT
         help
             Select the Secure Boot Version. Depends on the Chip Revision.
@@ -541,14 +548,14 @@ menu "Security features"
 
         config SECURE_BOOT_V1_ENABLED
             bool "Enable Secure Boot version 1"
-            depends on IDF_TARGET_ESP32
+            depends on SECURE_BOOT_V1_SUPPORTED
             help
                 Build a bootloader which enables secure boot version 1 on first boot.
                 Refer to the Secure Boot section of the ESP-IDF Programmer's Guide for this version before enabling.
 
         config SECURE_BOOT_V2_ENABLED
             bool "Enable Secure Boot version 2"
-            depends on SECURE_BOOT_SUPPORTS_RSA
+            depends on SECURE_BOOT_V2_RSA_SUPPORTED
             help
                 Build a bootloader which enables Secure Boot version 2 on first boot.
                 Refer to Secure Boot V2 section of the ESP-IDF Programmer's Guide for this version before enabling.
@@ -632,7 +639,7 @@ menu "Security features"
 
     config SECURE_BOOT_ENABLE_AGGRESSIVE_KEY_REVOKE
         bool "Enable Aggressive key revoke strategy"
-        depends on SECURE_BOOT && (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3)
+        depends on SECURE_BOOT && SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY
         default N
         help
             If this option is set, ROM bootloader will revoke the public key digest burned in efuse block
@@ -697,7 +704,7 @@ menu "Security features"
     choice SECURE_FLASH_ENCRYPTION_KEYSIZE
         bool "Size of generated AES-XTS key"
         default SECURE_FLASH_ENCRYPTION_AES128
-        depends on (IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C2) && SECURE_FLASH_ENC_ENABLED
+        depends on SOC_FLASH_ENCRYPTION_XTS_AES_256 && SECURE_FLASH_ENC_ENABLED
         help
             Size of generated AES-XTS key.
 
@@ -709,11 +716,9 @@ menu "Security features"
 
         config SECURE_FLASH_ENCRYPTION_AES128
             bool "AES-128 (256-bit key)"
-            depends on !IDF_TARGET_ESP32C2 # TODO: IDF-3899
 
         config SECURE_FLASH_ENCRYPTION_AES256
             bool "AES-256 (512-bit key)"
-            depends on !IDF_TARGET_ESP32C2 # TODO: IDF-3899
     endchoice
 
     choice SECURE_FLASH_ENCRYPTION_MODE
@@ -813,7 +818,7 @@ menu "Security features"
 
         config SECURE_BOOT_ALLOW_UNUSED_DIGEST_SLOTS
             bool "Leave unused digest slots available (not revoke)"
-            depends on SECURE_BOOT_INSECURE && !IDF_TARGET_ESP32
+            depends on SECURE_BOOT_INSECURE && SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
             default N
             help
                 If not set (default), during startup in the app all unused digest slots will be revoked.
@@ -882,7 +887,7 @@ menu "Security features"
 
     config SECURE_ROM_DL_MODE_ENABLED
         bool
-        default y if SECURE_TARGET_HAS_SECURE_ROM_DL_MODE && !SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
+        default y if SOC_SUPPORTS_SECURE_DL_MODE && !SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
 
     choice SECURE_UART_ROM_DL_MODE
         bool "UART ROM download mode"
@@ -908,7 +913,7 @@ menu "Security features"
 
         config SECURE_ENABLE_SECURE_ROM_DL_MODE
             bool "UART ROM download mode (Permanently switch to Secure mode (recommended))"
-            depends on SECURE_TARGET_HAS_SECURE_ROM_DL_MODE
+            depends on SOC_SUPPORTS_SECURE_DL_MODE
             select ESPTOOLPY_NO_STUB
             help
                 If set, during startup the app will burn an eFuse bit to permanently switch the UART ROM
