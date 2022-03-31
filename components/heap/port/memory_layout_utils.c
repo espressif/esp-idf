@@ -17,6 +17,7 @@
 #define ROM_HAS_LAYOUT_TABLE 1
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/rom_layout.h"
+#define ROM_HAS_LAYOUT_TABLE 1
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rom/rom_layout.h"
 #define ROM_HAS_LAYOUT_TABLE 1
