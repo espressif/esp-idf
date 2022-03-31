@@ -14,11 +14,6 @@
 #include "hal/efuse_ll.h"
 #include "sdkconfig.h"
 
-#ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
-#include "esp_efuse.h"
-#include "esp_efuse_table.h"
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -44,28 +39,7 @@ typedef enum {
  *
  * @return true if flash encryption is enabled.
  */
-static inline /** @cond */ IRAM_ATTR /** @endcond */ bool esp_flash_encryption_enabled(void)
-{
-    uint32_t flash_crypt_cnt = 0;
-#ifndef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
-    flash_crypt_cnt = efuse_ll_get_flash_crypt_cnt();
-#else
-#if CONFIG_IDF_TARGET_ESP32
-    esp_efuse_read_field_blob(ESP_EFUSE_FLASH_CRYPT_CNT, &flash_crypt_cnt, ESP_EFUSE_FLASH_CRYPT_CNT[0]->bit_count);
-#else
-    esp_efuse_read_field_blob(ESP_EFUSE_SPI_BOOT_CRYPT_CNT, &flash_crypt_cnt, ESP_EFUSE_SPI_BOOT_CRYPT_CNT[0]->bit_count);
-#endif
-#endif
-    /* __builtin_parity is in flash, so we calculate parity inline */
-    bool enabled = false;
-    while (flash_crypt_cnt) {
-        if (flash_crypt_cnt & 1) {
-            enabled = !enabled;
-        }
-        flash_crypt_cnt >>= 1;
-    }
-    return enabled;
-}
+bool esp_flash_encryption_enabled(void);
 
 /* @brief Update on-device flash encryption
  *
