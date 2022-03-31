@@ -8,12 +8,14 @@ if($args.count -eq 0){
     $TARGETS = $args[0] -join ','
 }
 Write-Output "Installing ESP-IDF tools"
-Start-Process -Wait -NoNewWindow -FilePath "python" -Args "$IDF_PATH/tools/idf_tools.py install --targets=${TARGETS}"
-if ($LASTEXITCODE -ne 0)  { exit $LASTEXITCODE } # if error
+$proces_tools = Start-Process -Wait -PassThru -NoNewWindow -FilePath "python" -Args "$IDF_PATH/tools/idf_tools.py install --targets=${TARGETS}"
+$exit_code_tools = $proces_tools.ExitCode
+if ($exit_code_tools -ne 0) { exit $exit_code_tools }  # if error
 
 Write-Output "Setting up Python environment"
-Start-Process -Wait  -NoNewWindow -FilePath "python" -Args "$IDF_PATH/tools/idf_tools.py install-python-env"
-if ($LASTEXITCODE -ne 0)  { exit $LASTEXITCODE} # if error
+$proces_py_env = Start-Process -Wait -PassThru  -NoNewWindow -FilePath "python" -Args "$IDF_PATH/tools/idf_tools.py install-python-env --features=${FEATURES}"
+$exit_code_py_env = $proces_py_env.ExitCode
+if ($exit_code_py_env -ne 0) { exit $exit_code_py_env } # if error
 
 
 Write-Output "
