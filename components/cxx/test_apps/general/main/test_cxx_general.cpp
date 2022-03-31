@@ -11,18 +11,17 @@
 #include "freertos/semphr.h"
 #include "esp_log.h"
 #include "unity.h"
-#include "memory_checks.h"
+#include "unity_test_utils.h"
 
 extern "C" void setUp()
 {
-    test_utils_set_leak_level(0, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL);
-    test_utils_record_free_mem();
+    unity_utils_set_leak_level(0);
+    unity_utils_record_free_mem();
 }
 
 extern "C" void tearDown()
 {
-    size_t leak_level = test_utils_get_leak_level(ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL);
-    test_utils_finish_and_evaluate_leaks(leak_level, leak_level);
+    unity_utils_evaluate_leaks();
 }
 
 static const char* TAG = "cxx";
@@ -45,7 +44,7 @@ static int non_pod_test_helper(int new_val)
 // Will fail if run twice
 TEST_CASE("can use static initializers for non-POD types", "[restart_init]")
 {
-    test_utils_set_leak_level(300, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL);
+    unity_utils_set_leak_level(300);
     TEST_ASSERT_EQUAL(42, non_pod_test_helper(1));
     TEST_ASSERT_EQUAL(1, non_pod_test_helper(0));
 }
@@ -99,7 +98,7 @@ static int start_slow_init_task(int id, int affinity)
 
 TEST_CASE("static initialization guards work as expected", "[misc]")
 {
-    test_utils_set_leak_level(300, ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_GENERAL);
+    unity_utils_set_leak_level(300);
     s_slow_init_sem = xSemaphoreCreateCounting(10, 0);
     TEST_ASSERT_NOT_NULL(s_slow_init_sem);
     int task_count = 0;
