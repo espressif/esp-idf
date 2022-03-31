@@ -23,6 +23,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -205,82 +206,80 @@ public class WiFiScanActivity extends AppCompatActivity {
 
     private void askForNetwork(final String ssid, final int authMode) {
 
-        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
         LayoutInflater inflater = this.getLayoutInflater();
         final View dialogView = inflater.inflate(R.layout.dialog_wifi_network, null);
-        builder.setView(dialogView);
-
         final EditText etSsid = dialogView.findViewById(R.id.et_ssid);
         final EditText etPassword = dialogView.findViewById(R.id.et_password);
 
-        if (ssid.equals(getString(R.string.join_other_network))) {
-
-            builder.setTitle(R.string.dialog_title_network_info);
-
-        } else {
-
-            builder.setTitle(ssid);
+        String title = getString(R.string.join_other_network);
+        if (!ssid.equals(title)) {
+            title = ssid;
             etSsid.setVisibility(View.GONE);
         }
 
-        builder.setPositiveButton(R.string.btn_provision, new DialogInterface.OnClickListener() {
+        final AlertDialog alertDialog = new AlertDialog.Builder(this)
+                .setView(dialogView)
+                .setTitle(title)
+                .setPositiveButton(R.string.btn_provision, null)
+                .setNegativeButton(R.string.btn_cancel, null)
+                .create();
 
+        alertDialog.setOnShowListener(new DialogInterface.OnShowListener() {
             @Override
-            public void onClick(DialogInterface dialog, int which) {
+            public void onShow(DialogInterface dialog) {
 
-                String password = etPassword.getText().toString();
+                Button buttonPositive = ((AlertDialog) dialog).getButton(DialogInterface.BUTTON_POSITIVE);
+                buttonPositive.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        String password = etPassword.getText().toString();
 
-                if (ssid.equals(getString(R.string.join_other_network))) {
+                        if (ssid.equals(getString(R.string.join_other_network))) {
 
-                    String networkName = etSsid.getText().toString();
+                            String networkName = etSsid.getText().toString();
 
-                    if (TextUtils.isEmpty(networkName)) {
+                            if (TextUtils.isEmpty(networkName)) {
+                                etSsid.setError(getString(R.string.error_ssid_empty));
 
-                        etSsid.setError(getString(R.string.error_ssid_empty));
-
-                    } else {
-
-                        dialog.dismiss();
-                        goForProvisioning(networkName, password);
-                    }
-
-                } else {
-
-                    if (TextUtils.isEmpty(password)) {
-
-                        if (authMode != ESPConstants.WIFI_OPEN) {
-
-                            TextInputLayout passwordLayout = dialogView.findViewById(R.id.layout_password);
-                            passwordLayout.setError(getString(R.string.error_password_empty));
+                            } else {
+                                dialog.dismiss();
+                                goForProvisioning(networkName, password);
+                            }
 
                         } else {
 
-                            dialog.dismiss();
-                            goForProvisioning(ssid, password);
-                        }
+                            if (TextUtils.isEmpty(password)) {
 
-                    } else {
+                                if (authMode != ESPConstants.WIFI_OPEN) {
+                                    TextInputLayout passwordLayout = dialogView.findViewById(R.id.layout_password);
+                                    passwordLayout.setError(getString(R.string.error_password_empty));
 
-                        if (authMode == ESPConstants.WIFI_OPEN) {
-                            password = "";
+                                } else {
+                                    dialog.dismiss();
+                                    goForProvisioning(ssid, password);
+                                }
+
+                            } else {
+
+                                if (authMode == ESPConstants.WIFI_OPEN) {
+                                    password = "";
+                                }
+                                dialog.dismiss();
+                                goForProvisioning(ssid, password);
+                            }
                         }
-                        dialog.dismiss();
-                        goForProvisioning(ssid, password);
                     }
-                }
+                });
+                Button buttonNegative = ((AlertDialog) dialog).getButton(DialogInterface.BUTTON_NEGATIVE);
+                buttonNegative.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        dialog.dismiss();
+                    }
+                });
             }
         });
 
-        builder.setNegativeButton(R.string.btn_cancel, new DialogInterface.OnClickListener() {
-
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-
-                dialog.dismiss();
-            }
-        });
-
-        AlertDialog alertDialog = builder.create();
         alertDialog.show();
     }
 
