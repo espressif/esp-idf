@@ -78,7 +78,6 @@
 #define SOC_CPU_CORES_NUM           2
 #define SOC_ULP_SUPPORTED           1
 #define SOC_CCOMP_TIMER_SUPPORTED   1
-#define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 1
 #define SOC_RTC_FAST_MEM_SUPPORTED        1
 #define SOC_RTC_SLOW_MEM_SUPPORTED        1
 #define SOC_I2S_SUPPORTED           1
@@ -88,6 +87,8 @@
 #define SOC_AES_SUPPORTED           1
 #define SOC_MPI_SUPPORTED           1
 #define SOC_SHA_SUPPORTED           1
+#define SOC_FLASH_ENC_SUPPORTED     1
+#define SOC_SECURE_BOOT_SUPPORTED   1
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
 /**
@@ -318,6 +319,15 @@
 #define SOC_AES_SUPPORT_AES_128 (1)
 #define SOC_AES_SUPPORT_AES_192 (1)
 #define SOC_AES_SUPPORT_AES_256 (1)
+
+/*-------------------------- Secure Boot CAPS----------------------------*/
+/*
+ * ESP32 ECO3 revision also supports `SOC_SECURE_BOOT_V2_RSA` but for that we will need selected ECO
+ * version from `Kconfig`, which is not possible while generating `Kconfig.soc_caps.in` from this header.
+ * Hence, for now we are handling this special capability in bootloader "security" configuration itself.
+ */
+#define SOC_SECURE_BOOT_V1                  1
+#define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   1
 
 /*-------------------------- Flash Encryption CAPS----------------------------*/
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (32)
