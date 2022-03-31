@@ -16,7 +16,7 @@
 #include "esp_private/crosscore_int.h"
 #include "esp_private/startup_internal.h"    /* Required by g_spiram_ok. [refactor-todo] for g_spiram_ok */
 #include "esp_log.h"
-#include "soc/soc_memory_types.h"
+#include "esp_memory_utils.h"
 #include "soc/dport_access.h"
 #include "sdkconfig.h"
 

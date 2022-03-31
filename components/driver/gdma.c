@@ -20,7 +20,7 @@
 #include "hal/gdma_hal.h"
 #include "hal/gdma_ll.h"
 #include "soc/gdma_periph.h"
-#include "soc/soc_memory_types.h"
+#include "esp_memory_utils.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/gdma.h"
 

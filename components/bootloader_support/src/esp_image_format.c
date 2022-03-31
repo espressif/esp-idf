@@ -18,7 +18,7 @@
 #include "bootloader_util.h"
 #include "bootloader_common.h"
 #include "esp_rom_sys.h"
-#include "soc/soc_memory_types.h"
+#include "bootloader_memory_utils.h"
 #include "soc/soc_caps.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/secure_boot.h"

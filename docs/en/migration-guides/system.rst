@@ -55,6 +55,7 @@ SOC dependency
 
 - Public API headers who are listed in the Doxyfiles won't expose unstable and unnecessary soc header files like ``soc/soc.h``, ``soc/rtc.h``. That means, the user has to explicitly include them in their code if these "missing" header files are still wanted.
 - Kconfig option ``LEGACY_INCLUDE_COMMON_HEADERS`` is also removed.
+- The header file ``soc/soc_memory_types.h`` has been deprecated. Users should use the ``esp_memory_utils.h`` instead. Including `soc/soc_memory_types.h` will bring a build warning like `soc_memory_types.h is deprecated, please migrate to esp_memory_utils.h`
 
 APP Trace
 ---------
@@ -65,4 +66,3 @@ ESP Timer
 ---------
 
 Removed the FRC2 based legacy implementation of esp_timer available on ESP32. The simpler and more efficient implementation based on the LAC timer is now the only option.
-

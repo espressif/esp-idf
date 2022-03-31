@@ -8,7 +8,7 @@
 #include "esp_attr.h"
 #include "esp_heap_caps.h"
 #include "esp_spi_flash.h"
-#include "soc/soc_memory_types.h"
+#include "esp_memory_utils.h"
 #include <stdlib.h>
 #include <sys/param.h>
 

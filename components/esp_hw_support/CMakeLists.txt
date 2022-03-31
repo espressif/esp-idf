@@ -1,9 +1,9 @@
 idf_build_get_property(target IDF_TARGET)
 
-set(requires soc)
-set(priv_requires efuse bootloader_support spi_flash)
+set(requires soc bootloader_support)
+set(priv_requires efuse spi_flash)
 
-set(srcs "compare_set.c" "cpu_util.c")
+set(srcs "compare_set.c" "cpu_util.c" "esp_memory_utils.c")
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "esp_async_memcpy.c"
                      "esp_clk.c"

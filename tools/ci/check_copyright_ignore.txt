@@ -926,7 +926,6 @@ components/hal/include/hal/sha_hal.h
 components/hal/include/hal/sigmadelta_hal.h
 components/hal/include/hal/soc_hal.h
 components/hal/include/hal/spi_flash_encrypt_hal.h
-components/hal/include/hal/spi_flash_hal.h
 components/hal/include/hal/spi_flash_types.h
 components/hal/include/hal/spi_slave_hal.h
 components/hal/include/hal/spi_slave_hd_hal.h
@@ -977,7 +976,6 @@ components/heap/heap_trace_standalone.c
 components/heap/include/esp_heap_task_info.h
 components/heap/include/esp_heap_trace.h
 components/heap/include/heap_memory_layout.h
-components/heap/include/soc/soc_memory_layout.h
 components/heap/multi_heap_config.h
 components/heap/multi_heap_internal.h
 components/heap/multi_heap_poisoning.c
