@@ -59,14 +59,6 @@ config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
     default y
 
-config SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS
-    int
-    default 3
-
-config SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
-    bool
-    default y
-
 config SOC_EFUSE_KEY_PURPOSE_FIELD
     bool
     default y
@@ -76,14 +68,6 @@ config SOC_TEMP_SENSOR_SUPPORTED
     default y
 
 config SOC_CACHE_SUPPORT_WRAP
-    bool
-    default y
-
-config SOC_FLASH_ENCRYPTION_XTS_AES
-    bool
-    default y
-
-config SOC_FLASH_ENCRYPTION_XTS_AES_256
     bool
     default y
 
@@ -100,10 +84,6 @@ config SOC_PSRAM_DMA_CAPABLE
     default y
 
 config SOC_XT_WDT_SUPPORTED
-    bool
-    default y
-
-config SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY
     bool
     default y
 
@@ -140,6 +120,14 @@ config SOC_HMAC_SUPPORTED
     default y
 
 config SOC_DIG_SIGN_SUPPORTED
+    bool
+    default y
+
+config SOC_FLASH_ENC_SUPPORTED
+    bool
+    default y
+
+config SOC_SECURE_BOOT_SUPPORTED
     bool
     default y
 
@@ -707,9 +695,37 @@ config SOC_AES_SUPPORT_GCM
     bool
     default y
 
+config SOC_SECURE_BOOT_V2_RSA
+    bool
+    default y
+
+config SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS
+    int
+    default 3
+
+config SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
+    bool
+    default y
+
+config SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY
+    bool
+    default y
+
 config SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX
     int
     default 64
+
+config SOC_FLASH_ENCRYPTION_XTS_AES
+    bool
+    default y
+
+config SOC_FLASH_ENCRYPTION_XTS_AES_128
+    bool
+    default y
+
+config SOC_FLASH_ENCRYPTION_XTS_AES_256
+    bool
+    default y
 
 config SOC_AES_CRYPTO_DMA
     bool

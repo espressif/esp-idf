@@ -75,10 +75,6 @@ config SOC_CCOMP_TIMER_SUPPORTED
     bool
     default y
 
-config SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS
-    bool
-    default y
-
 config SOC_RTC_FAST_MEM_SUPPORTED
     bool
     default y
@@ -112,6 +108,14 @@ config SOC_MPI_SUPPORTED
     default y
 
 config SOC_SHA_SUPPORTED
+    bool
+    default y
+
+config SOC_FLASH_ENC_SUPPORTED
+    bool
+    default y
+
+config SOC_SECURE_BOOT_SUPPORTED
     bool
     default y
 
@@ -568,6 +572,14 @@ config SOC_AES_SUPPORT_AES_192
     default y
 
 config SOC_AES_SUPPORT_AES_256
+    bool
+    default y
+
+config SOC_SECURE_BOOT_V1
+    bool
+    default y
+
+config SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS
     bool
     default y
 

@@ -33,16 +33,15 @@
 #define SOC_WIFI_SUPPORTED              0 // Enable during bringup, IDF-3905
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
-#define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 1
-#define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS 0
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     0
 #define SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK 1
 #define SOC_RTC_FAST_MEM_SUPPORTED      0
 #define SOC_RTC_SLOW_MEM_SUPPORTED      0
-#define SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY             0
-#define SOC_FLASH_ENCRYPTION_XTS_AES    1
+
 #define SOC_SHA_SUPPORTED               0 // This will be enabled with IDF-3830
 #define SOC_ECC_SUPPORTED               1
+#define SOC_FLASH_ENC_SUPPORTED         1
+#define SOC_SECURE_BOOT_SUPPORTED       1
 
 /*-------------------------- ADC CAPS -------------------------------*/
 /*!< SAR ADC Module*/
@@ -224,8 +223,14 @@
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_NUM            (0U)    /*! No touch sensors on ESP32-C2 */
 
+/*-------------------------- Secure Boot CAPS----------------------------*/
+#define SOC_SECURE_BOOT_V2_ECC              1
+#define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   1
+
 /*-------------------------- Flash Encryption CAPS----------------------------*/
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (32)
+#define SOC_FLASH_ENCRYPTION_XTS_AES            1
+#define SOC_FLASH_ENCRYPTION_XTS_AES_128        0        // This will be enabled with IDF-3899
 
 /*-------------------------- UART CAPS ---------------------------------------*/
 // ESP32-C2 has 2 UARTs

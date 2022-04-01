@@ -135,14 +135,6 @@ config SOC_SUPPORTS_SECURE_DL_MODE
     bool
     default y
 
-config SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS
-    int
-    default 3
-
-config SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
-    bool
-    default y
-
 config SOC_EFUSE_KEY_PURPOSE_FIELD
     bool
     default y
@@ -151,23 +143,11 @@ config SOC_SDMMC_HOST_SUPPORTED
     bool
     default y
 
-config SOC_FLASH_ENCRYPTION_XTS_AES
-    bool
-    default y
-
 config SOC_RTC_FAST_MEM_SUPPORTED
     bool
     default y
 
 config SOC_RTC_SLOW_MEM_SUPPORTED
-    bool
-    default y
-
-config SOC_FLASH_ENCRYPTION_XTS_AES_256
-    bool
-    default y
-
-config SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY
     bool
     default y
 
@@ -216,6 +196,14 @@ config SOC_HMAC_SUPPORTED
     default y
 
 config SOC_DIG_SIGN_SUPPORTED
+    bool
+    default y
+
+config SOC_FLASH_ENC_SUPPORTED
+    bool
+    default y
+
+config SOC_SECURE_BOOT_SUPPORTED
     bool
     default y
 
@@ -839,9 +827,37 @@ config SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY
     bool
     default y
 
+config SOC_SECURE_BOOT_V2_RSA
+    bool
+    default y
+
+config SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS
+    int
+    default 3
+
+config SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
+    bool
+    default y
+
+config SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY
+    bool
+    default y
+
 config SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX
     int
     default 64
+
+config SOC_FLASH_ENCRYPTION_XTS_AES
+    bool
+    default y
+
+config SOC_FLASH_ENCRYPTION_XTS_AES_128
+    bool
+    default y
+
+config SOC_FLASH_ENCRYPTION_XTS_AES_256
+    bool
+    default y
 
 config SOC_WIFI_HW_TSF
     bool

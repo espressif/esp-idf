@@ -44,15 +44,10 @@
 #define SOC_CCOMP_TIMER_SUPPORTED       1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_SUPPORTS_SECURE_DL_MODE     1
-#define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS 3
-#define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS 1
 #define SOC_EFUSE_KEY_PURPOSE_FIELD       1
 #define SOC_SDMMC_HOST_SUPPORTED          1
-#define SOC_FLASH_ENCRYPTION_XTS_AES      1
 #define SOC_RTC_FAST_MEM_SUPPORTED        1
 #define SOC_RTC_SLOW_MEM_SUPPORTED        1
-#define SOC_FLASH_ENCRYPTION_XTS_AES_256  1
-#define SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY             1
 #define SOC_PSRAM_DMA_CAPABLE             1
 #define SOC_XT_WDT_SUPPORTED              1
 #define SOC_I2S_SUPPORTED               1
@@ -65,6 +60,8 @@
 #define SOC_SHA_SUPPORTED               1
 #define SOC_HMAC_SUPPORTED              1
 #define SOC_DIG_SIGN_SUPPORTED          1
+#define SOC_FLASH_ENC_SUPPORTED         1
+#define SOC_SECURE_BOOT_SUPPORTED       1
 
 
 /*-------------------------- SOC CAPS ----------------------------------------*/
@@ -364,10 +361,17 @@
 
 #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1)
 
+/*-------------------------- Secure Boot CAPS----------------------------*/
+#define SOC_SECURE_BOOT_V2_RSA              1
+#define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   3
+#define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS   1
+#define SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY  1
 
 /*-------------------------- Flash Encryption CAPS----------------------------*/
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (64)
-
+#define SOC_FLASH_ENCRYPTION_XTS_AES        1
+#define SOC_FLASH_ENCRYPTION_XTS_AES_128    1
+#define SOC_FLASH_ENCRYPTION_XTS_AES_256    1
 
 /*-------------------------- WI-FI HARDWARE TSF CAPS -------------------------------*/
 #define SOC_WIFI_HW_TSF                 (1)

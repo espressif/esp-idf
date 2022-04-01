@@ -53,18 +53,13 @@
 #define SOC_ULP_SUPPORTED               1
 #define SOC_CCOMP_TIMER_SUPPORTED       1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
-#define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   3
-#define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS   1
 #define SOC_EFUSE_KEY_PURPOSE_FIELD         1
 #define SOC_TEMP_SENSOR_SUPPORTED           1
 #define SOC_CACHE_SUPPORT_WRAP              1
-#define SOC_FLASH_ENCRYPTION_XTS_AES        1
-#define SOC_FLASH_ENCRYPTION_XTS_AES_256    1
 #define SOC_RTC_FAST_MEM_SUPPORTED      1
 #define SOC_RTC_SLOW_MEM_SUPPORTED      1
 #define SOC_PSRAM_DMA_CAPABLE               1
 #define SOC_XT_WDT_SUPPORTED                1
-#define SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY             1
 #define SOC_I2S_SUPPORTED               1
 #define SOC_RMT_SUPPORTED               1
 #define SOC_SIGMADELTA_SUPPORTED        1
@@ -74,6 +69,8 @@
 #define SOC_SHA_SUPPORTED               1
 #define SOC_HMAC_SUPPORTED              1
 #define SOC_DIG_SIGN_SUPPORTED          1
+#define SOC_FLASH_ENC_SUPPORTED         1
+#define SOC_SECURE_BOOT_SUPPORTED       1
 
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
@@ -332,8 +329,17 @@
 #define SOC_AES_SUPPORT_DMA     (1)
 #define SOC_AES_SUPPORT_GCM     (1)
 
+/*-------------------------- Secure Boot CAPS----------------------------*/
+#define SOC_SECURE_BOOT_V2_RSA              1
+#define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   3
+#define SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS   1
+#define SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY  1
+
 /*-------------------------- Flash Encryption CAPS----------------------------*/
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (64)
+#define SOC_FLASH_ENCRYPTION_XTS_AES        1
+#define SOC_FLASH_ENCRYPTION_XTS_AES_128    1
+#define SOC_FLASH_ENCRYPTION_XTS_AES_256    1
 
 /* Has "crypto DMA", which is shared with SHA */
 #define SOC_AES_CRYPTO_DMA      (1)
