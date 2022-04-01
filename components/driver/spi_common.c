@@ -567,6 +567,10 @@ const spi_bus_attr_t* spi_bus_get_attr(spi_host_device_t host_id)
 
 esp_err_t spi_bus_free(spi_host_device_t host_id)
 {
+    if (bus_ctx[host_id] == NULL) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
     esp_err_t err = ESP_OK;
     spicommon_bus_context_t* ctx = bus_ctx[host_id];
     spi_bus_attr_t* bus_attr = &ctx->bus_attr;
