@@ -176,6 +176,8 @@ before_script:
       scapy
       google-api-python-client
     - cd $IDF_PATH
+    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
+    - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
 
 default:
   retry:

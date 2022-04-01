@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifndef _ROM_GPIO_H_
 #define _ROM_GPIO_H_
@@ -20,6 +12,7 @@
 
 #include "esp_attr.h"
 #include "soc/gpio_reg.h"
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,8 +32,13 @@ extern "C" {
 #define GPIO_ID_PIN(n)                  (GPIO_ID_PIN0+(n))
 #define GPIO_PIN_ADDR(i)                (GPIO_PIN0_REG + i*4)
 
+#if CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_1
 #define GPIO_FUNC_IN_HIGH               0x38
 #define GPIO_FUNC_IN_LOW                0x3C
+#elif CONFIG_IDF_TARGET_ESP32H2_BETA_VERSION_2
+#define GPIO_FUNC_IN_HIGH               0x1E
+#define GPIO_FUNC_IN_LOW                0x1F
+#endif
 
 #define GPIO_ID_IS_PIN_REGISTER(reg_id) \
     ((reg_id >= GPIO_ID_PIN0) && (reg_id <= GPIO_ID_PIN(GPIO_PIN_COUNT-1)))

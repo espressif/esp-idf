@@ -1,20 +1,25 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "unity.h"
+#include "unity_test_utils.h"
 #include "esp_rom_sys.h"
 #include "soc/soc_caps.h"
 #include "hal/cpu_ll.h"
 #include "driver/gpio.h"
-#if SOC_DEDICATED_GPIO_SUPPORTED
 #include "driver/dedic_gpio.h"
 
-TEST_CASE("Dedicated GPIO bundle install/uninstall", "[dedic_gpio]")
+void test_app_include_dedicated_gpio(void)
+{
+}
+
+TEST_CASE("Dedicated_GPIO_bundle_install/uninstall", "[dedic_gpio]")
 {
     const int test_gpios[SOC_DEDIC_GPIO_OUT_CHANNELS_NUM / 2] = {0};
     const int test2_gpios[SOC_DEDIC_GPIO_OUT_CHANNELS_NUM / 2 + 1] = {0};
@@ -136,12 +141,13 @@ static void test_dedic_gpio_on_specific_core(void *args)
     TEST_ESP_OK(dedic_gpio_del_bundle(bundleB));
 
     xSemaphoreGive(ctx->sem);
-    vTaskDelete(NULL);
+    vTaskSuspend(NULL);
 }
 
-TEST_CASE("Dedicated GPIO run on multiple CPU core", "[dedic_gpio]")
+TEST_CASE("Dedicated_GPIO_run_on_multiple_CPU_cores", "[dedic_gpio]")
 {
     SemaphoreHandle_t sem = xSemaphoreCreateCounting(SOC_CPU_CORES_NUM, 0);
+    TaskHandle_t task_handle[SOC_CPU_CORES_NUM];
 
     for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
         int start_gpio = i * TEST_GPIO_GROUP_SIZE;
@@ -149,13 +155,18 @@ TEST_CASE("Dedicated GPIO run on multiple CPU core", "[dedic_gpio]")
             .sem = sem,
             .gpios = {start_gpio, start_gpio + 1, start_gpio + 2, start_gpio + 3}
         };
-        xTaskCreatePinnedToCore(test_dedic_gpio_on_specific_core, "dedic_gpio_test_tsk", 4096, &isr_ctx, 1, NULL, i);
+        xTaskCreatePinnedToCore(test_dedic_gpio_on_specific_core, "dedic_gpio_test_tsk", 4096, &isr_ctx, 1,
+                                &task_handle[i], i);
     }
 
     for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
         xSemaphoreTake(sem, pdMS_TO_TICKS(1000));
     }
+
     vSemaphoreDelete(sem);
+    for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
+        unity_utils_task_delete(task_handle[i]);
+    }
 }
 
 IRAM_ATTR static void test_dedic_gpio_isr_callback(void *args)
@@ -169,7 +180,7 @@ IRAM_ATTR static void test_dedic_gpio_isr_callback(void *args)
     }
 }
 
-TEST_CASE("Dedicated GPIO interrupt and callback", "[dedic_gpio]")
+TEST_CASE("Dedicated_GPIO_interrupt_and_callback", "[dedic_gpio]")
 {
     SemaphoreHandle_t sem = xSemaphoreCreateBinary();
 
@@ -214,5 +225,3 @@ TEST_CASE("Dedicated GPIO interrupt and callback", "[dedic_gpio]")
     TEST_ESP_OK(dedic_gpio_del_bundle(bundle));
     vSemaphoreDelete(sem);
 }
-
-#endif // #if SOC_DEDICATED_GPIO_SUPPORTED
