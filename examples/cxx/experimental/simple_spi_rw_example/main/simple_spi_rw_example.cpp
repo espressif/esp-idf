@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: CC0
+ * SPDX-License-Identifier: CC0-1.0
  *
  * MPU9250 SPI Sensor C++ Example
  *
@@ -13,6 +13,7 @@
 */
 
 #include <iostream>
+#include <thread>
 #include "spi_host_cxx.hpp"
 
 using namespace std;

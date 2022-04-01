@@ -2054,7 +2054,6 @@ examples/cxx/experimental/esp_event_cxx/main/esp_event_cxx_example.cpp
 examples/cxx/experimental/esp_modem_cxx/main/simple_client.cpp
 examples/cxx/experimental/esp_modem_cxx/main/simple_mqtt_client.cpp
 examples/cxx/experimental/esp_modem_cxx/main/simple_mqtt_client.hpp
-examples/cxx/experimental/esp_mqtt_cxx/components/esp_mqtt_cxx/esp_mqtt_cxx.cpp
 examples/cxx/experimental/esp_mqtt_cxx/components/esp_mqtt_cxx/include/esp_mqtt.hpp
 examples/cxx/experimental/esp_mqtt_cxx/components/esp_mqtt_cxx/include/esp_mqtt_client_config.hpp
 examples/cxx/experimental/esp_mqtt_cxx/ssl/main/mqtt_ssl_example.cpp
@@ -2067,7 +2066,6 @@ examples/cxx/experimental/experimental_cpp_component/esp_timer_cxx.cpp
 examples/cxx/experimental/experimental_cpp_component/host_test/esp_timer/main/esp_timer_test.cpp
 examples/cxx/experimental/experimental_cpp_component/host_test/gpio/main/gpio_cxx_test.cpp
 examples/cxx/experimental/experimental_cpp_component/include/esp_event_api.hpp
-examples/cxx/experimental/experimental_cpp_component/include/esp_event_cxx.hpp
 examples/cxx/experimental/experimental_cpp_component/include/esp_timer_cxx.hpp
 examples/cxx/experimental/experimental_cpp_component/test/test_cxx_exceptions.cpp
 examples/cxx/experimental/experimental_cpp_component/test/test_esp_event_cxx.cpp
