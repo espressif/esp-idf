@@ -1,16 +1,8 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // HAL for SPI Flash (non-IRAM part)
 // The IRAM part is in spi_flash_hal_iram.c, spi_flash_hal_gpspi.c, spi_flash_hal_common.inc.
@@ -93,9 +85,6 @@ static inline int extra_dummy_under_timing_tuning(const spi_flash_hal_config_t *
 
 esp_err_t spi_flash_hal_init(spi_flash_hal_context_t *data_out, const spi_flash_hal_config_t *cfg)
 {
-    if (!esp_ptr_internal(data_out) && cfg->host_id == SPI1_HOST) {
-        return ESP_ERR_INVALID_ARG;
-    }
     if (cfg->cs_num >= SOC_SPI_PERIPH_CS_NUM(cfg->host_id)) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -144,16 +133,16 @@ esp_err_t spi_flash_hal_init(spi_flash_hal_context_t *data_out, const spi_flash_
 
 bool spi_flash_hal_supports_direct_write(spi_flash_host_inst_t *host, const void *p)
 {
-    bool direct_write = ( ((spi_flash_hal_context_t *)host)->spi != spi_flash_ll_get_hw(SPI1_HOST)
-                          || esp_ptr_in_dram(p) );
+    (void)p;
+    bool direct_write = (((spi_flash_hal_context_t *)host)->spi != spi_flash_ll_get_hw(SPI1_HOST));
     return direct_write;
 }
 
 
 bool spi_flash_hal_supports_direct_read(spi_flash_host_inst_t *host, const void *p)
 {
-  //currently the host doesn't support to read through dma, no word-aligned requirements
-    bool direct_read = ( ((spi_flash_hal_context_t *)host)->spi != spi_flash_ll_get_hw(SPI1_HOST)
-                         || esp_ptr_in_dram(p) );
+    (void)p;
+    //currently the host doesn't support to read through dma, no word-aligned requirements
+    bool direct_read = ( ((spi_flash_hal_context_t *)host)->spi != spi_flash_ll_get_hw(SPI1_HOST));
     return direct_read;
 }
