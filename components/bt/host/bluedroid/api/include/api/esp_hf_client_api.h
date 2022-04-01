@@ -17,6 +17,7 @@ extern "C" {
 
 #define ESP_BT_HF_CLIENT_NUMBER_LEN           (32)
 #define ESP_BT_HF_CLIENT_OPERATOR_NAME_LEN    (16)
+#define ESP_BT_HF_AT_SEND_XAPL_LEN            (14)
 
 /// Bluetooth HFP RFCOMM connection and service level connection status
 typedef enum {
@@ -64,6 +65,13 @@ typedef enum {
 #define ESP_HF_CLIENT_CHLD_FEAT_PRIV_X        0x10       /* 2x Request private mode with specified call(put the rest on hold) */
 #define ESP_HF_CLIENT_CHLD_FEAT_MERGE         0x20       /* 3  Add held call to multiparty */
 #define ESP_HF_CLIENT_CHLD_FEAT_MERGE_DETACH  0x40       /* 4  Connect two calls and leave(disconnect from multiparty) */
+
+/* XAPL feature masks*/
+#define ESP_HF_CLIENT_XAPL_FEAT_RESERVED            0x01    /* reserved */
+#define ESP_HF_CLIENT_XAPL_FEAT_BATTERY_REPORT      0x02    /* The accessory supports battery reporting (reserved only for battery operated accessories) */
+#define ESP_HF_CLIENT_XAPL_FEAT_DOCKED              0x04    /* The accessory is docked or powered (reserved only for battery operated accessories). */
+#define ESP_HF_CLIENT_XAPL_FEAT_SIRI_STATUS_REPORT  0x08    /* The accessory supports Siri status reporting */
+#define ESP_HF_CLIENT_XAPL_NR_STATUS_REPORT         0x10    /* the accessory supports noise reduction (NR) status reporting */
 
 /// HF CLIENT callback events
 typedef enum {
@@ -564,6 +572,44 @@ esp_err_t esp_hf_client_retrieve_subscriber_info(void);
  *
  */
 esp_err_t esp_hf_client_send_dtmf(char code);
+
+/**
+ *
+ * @brief           Send command to enable Vendor sepecific feature to indicate battery level
+ *                  and docker status
+ *                  This is Apple-specific commands, but used by most device, including Android and Windows
+ *
+ * @param[in]       information: XAPL vendorID-productID-version, such as "0505-1995-0610"
+ *                               vendorID: A string representation of the hex value of the vendor ID from the manufacturer, without the 0x prefix.
+ *                               productID: A string representation of the hex value of the product ID from the manufacturer, without the 0x prefix.
+ *                               version: The revision of the software
+ *                  features: A base-10 representation of a bit field. such as ESP_HF_CLIENT_XAPL_FEAT_BATTERY_REPORT
+ *
+ * @return
+ *                  - ESP_OK: Feature enable request is sent to lower layer
+ *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_FAIL: others
+ *
+ */
+esp_err_t esp_hf_client_send_xapl(char *information, uint32_t features);
+
+/**
+ *
+ * @brief           Send Battery level and docker status
+ *                  Enable this feature using XAPL command first
+ *                  This is Apple-specific commands, but used by most device, including Android and Windows
+ *
+ *
+ * @param[in]       bat_level: Battery Level: value between 0 and 9
+ *                  docked: Dock State: false = undocked, true = docked
+ *
+ * @return
+ *                  - ESP_OK: battery level is sent to lower layer
+ *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_FAIL: others
+ *
+ */
+esp_err_t esp_hf_client_send_iphoneaccev(uint32_t bat_level, bool docked);
 
 /**
  *

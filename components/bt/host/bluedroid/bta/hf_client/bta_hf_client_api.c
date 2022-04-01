@@ -284,8 +284,13 @@ void BTA_HfClientSendAT(UINT16 handle, tBTA_HF_CLIENT_AT_CMD_TYPE at, UINT32 val
         p_buf->uint32_val2 = val2;
 
         if (str) {
-            strlcpy(p_buf->str, str, BTA_HF_CLIENT_NUMBER_LEN + 1);
-            p_buf->str[BTA_HF_CLIENT_NUMBER_LEN] = '\0';
+            UINT32 str_len = strlen(str);
+            if (str_len > BTA_HF_CLIENT_MAX_LEN) {
+                APPL_TRACE_WARNING("%s, str length(%d) is more than %d, truncate it.", __FUNCTION__, str_len, BTA_HF_CLIENT_MAX_LEN);
+                str_len = BTA_HF_CLIENT_MAX_LEN;
+            }
+
+            strlcpy(p_buf->str, str, str_len + 1);
         } else {
             p_buf->str[0] = '\0';
         }
