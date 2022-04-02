@@ -14,6 +14,7 @@
 
 #include "hal/i2s_types.h"
 #include "hal/gpio_types.h"
+#include "driver/i2s_common.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -140,7 +141,7 @@ extern "C" {
  */
 #define I2S_STD_CLK_DEFAULT_CONFIG(rate) { \
     .sample_rate_hz = rate, \
-    .clk_src = I2S_CLK_160M_PLL, \
+    .clk_src = I2S_CLK_PLL_160M, \
     .mclk_multiple = I2S_MCLK_MULTIPLE_256, \
 }
 

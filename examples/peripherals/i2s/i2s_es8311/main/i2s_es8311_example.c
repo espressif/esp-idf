@@ -8,7 +8,7 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "driver/i2s_controller.h"
+#include "driver/i2s_std.h"
 #include "esp_system.h"
 #include "esp_check.h"
 #include "es8311.h"
@@ -87,21 +87,22 @@ static esp_err_t es8311_codec_init(void)
 
 static esp_err_t i2s_driver_init(void)
 {
-    i2s_gpio_config_t i2s_pin = {
-        .mclk = GPIO_NUM_0,
-        .bclk = GPIO_NUM_4,
-        .ws = GPIO_NUM_5,
-        .dout = GPIO_NUM_18,
-        .din = GPIO_NUM_19
-    };
-    i2s_chan_config_t chan_cfg = I2S_CHANNEL_CONFIG(I2S_ROLE_MASTER, I2S_COMM_MODE_STD, &i2s_pin);
-    chan_cfg.id = I2S_NUM;
+    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM, I2S_ROLE_MASTER);
     ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_handle, &rx_handle));
-    i2s_std_slot_config_t slot_cfg = I2S_STD_PHILIP_SLOT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO);
-    slot_cfg.auto_clear = true;
-    i2s_std_clk_config_t clk_cfg = I2S_STD_CLK_CONFIG(EXAMPLE_SAMPLE_RATE);
-    ESP_ERROR_CHECK(i2s_init_channel(tx_handle, &clk_cfg, &slot_cfg));
-    ESP_ERROR_CHECK(i2s_init_channel(rx_handle, &clk_cfg, &slot_cfg));
+    i2s_std_config_t std_cfg = {
+        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(EXAMPLE_SAMPLE_RATE),
+        .slot_cfg = I2S_STD_PHILIP_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
+        .gpio_cfg = {
+            .mclk = GPIO_NUM_0,
+            .bclk = GPIO_NUM_4,
+            .ws = GPIO_NUM_5,
+            .dout = GPIO_NUM_18,
+            .din = GPIO_NUM_19
+        },
+    };
+
+    ESP_ERROR_CHECK(i2s_init_std_channel(tx_handle, &std_cfg));
+    ESP_ERROR_CHECK(i2s_init_std_channel(rx_handle, &std_cfg));
     ESP_ERROR_CHECK(i2s_start_channel(tx_handle));
     ESP_ERROR_CHECK(i2s_start_channel(rx_handle));
     return ESP_OK;

@@ -25,7 +25,7 @@
 // DAC DMA mode is only supported by the legacy I2S driver, it will be replaced once DAC has its own DMA dirver
 #include "driver/i2s.h"
 #else
-#include "driver/i2s_controller.h"
+#include "driver/i2s_std.h"
 #endif
 
 #include "sys/lock.h"
@@ -173,8 +173,8 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
         #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
             i2s_set_clk(0, sample_rate, 16, 2);
         #else
-            i2s_std_clk_config_t clk_cfg = I2S_STD_CLK_CONFIG(sample_rate);
-            i2s_set_clock(tx_chan, &clk_cfg);
+            i2s_std_clk_config_t clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(sample_rate);
+            i2s_reconfig_clock(tx_chan, &clk_cfg);
         #endif
 
             ESP_LOGI(BT_AV_TAG, "Configure audio player %x-%x-%x-%x",

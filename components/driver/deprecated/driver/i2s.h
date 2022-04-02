@@ -7,7 +7,7 @@
 /**
  * This file is for the backward compatible to the deprecated I2S APIs,
  * The deprecated APIs will no longer supported in the future
- * Please refer to "driver/i2s_controller.h" for the latest I2S driver
+ * Please refer to "driver/i2s_std.h", "driver/i2s_pdm.h" and ""driver/i2s_tdm.h"" for the latest I2S driver
  * Note that only one set of I2S APIs is allowed to be used at the same time
  */
 

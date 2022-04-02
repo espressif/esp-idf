@@ -189,7 +189,7 @@ static void adc_hal_digi_sample_freq_config(adc_hal_dma_ctx_t *hal, uint32_t fre
     adc_ll_digi_controller_clk_div(ADC_LL_CLKM_DIV_NUM_DEFAULT, ADC_LL_CLKM_DIV_B_DEFAULT, ADC_LL_CLKM_DIV_A_DEFAULT);
     adc_ll_digi_clk_sel(0);   //use APB
 #else
-    i2s_ll_rx_clk_set_src(hal->dev, I2S_CLK_160M_PLL);    /*!< Clock from PLL_D2_CLK(160M)*/
+    i2s_ll_rx_clk_set_src(hal->dev, I2S_CLK_PLL_160M);    /*!< Clock from PLL_D2_CLK(160M)*/
     uint32_t bck = I2S_BASE_CLK / (ADC_LL_CLKM_DIV_NUM_DEFAULT + ADC_LL_CLKM_DIV_B_DEFAULT / ADC_LL_CLKM_DIV_A_DEFAULT) / 2 / freq;
     i2s_ll_set_raw_mclk_div(hal->dev, ADC_LL_CLKM_DIV_NUM_DEFAULT, ADC_LL_CLKM_DIV_A_DEFAULT, ADC_LL_CLKM_DIV_B_DEFAULT);
     i2s_ll_rx_set_bck_div_num(hal->dev, bck);

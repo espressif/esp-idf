@@ -18,7 +18,7 @@
 #include "test_i80_board.h"
 
 #if SOC_I2S_LCD_I80_VARIANT
-#include "driver/i2s_controller.h"
+#include "driver/i2s_std.h"
 
 TEST_CASE("i80_and_i2s_driver_co-existence", "[lcd][i2s]")
 {
@@ -44,15 +44,7 @@ TEST_CASE("i80_and_i2s_driver_co-existence", "[lcd][i2s]")
 
 
     i2s_chan_handle_t tx_handle = NULL;
-    i2s_gpio_config_t i2s_pin = {
-        .mclk = I2S_GPIO_UNUSED,
-        .bclk = I2S_GPIO_UNUSED,
-        .ws = I2S_GPIO_UNUSED,
-        .dout = I2S_GPIO_UNUSED,
-        .din = I2S_GPIO_UNUSED
-    };
-    i2s_chan_config_t chan_cfg = I2S_CHANNEL_CONFIG(I2S_ROLE_MASTER, I2S_COMM_MODE_STD, &i2s_pin);
-    chan_cfg.id = 0;
+    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
     // I2S driver won't be installed as the same I2S port has been used by LCD
     TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, i2s_new_channel(&chan_cfg, &tx_handle, NULL));
     TEST_ESP_OK(esp_lcd_del_i80_bus(i80_bus));
@@ -463,7 +455,7 @@ TEST_CASE("lcd_panel_with_i80_interface_(st7789, 8bits)", "[lcd]")
 }
 
 #if SOC_I2S_LCD_I80_VARIANT
-#include "driver/i2s_controller.h"
+#include "driver/i2s_std.h"
 
 TEST_CASE("i80 and i2s driver coexistance", "[lcd][i2s]")
 {
@@ -486,15 +478,7 @@ TEST_CASE("i80 and i2s driver coexistance", "[lcd][i2s]")
     };
     TEST_ESP_OK(esp_lcd_new_i80_bus(&bus_config, &i80_bus));
 
-    i2s_gpio_config_t i2s_pin = {
-        .mclk = 0,
-        .bclk = 15,
-        .ws = 25,
-        .dout = 21,
-        .din = 22
-    };
-    i2s_chan_config_t chan_cfg = I2S_CHANNEL_CONFIG(I2S_ROLE_MASTER, I2S_COMM_MODE_STD, &i2s_pin);
-    chan_cfg.id = I2S_NUM_0;
+    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
     i2s_chan_handle_t tx_handle;
     // I2S driver won't be installed as the same I2S port has been used by LCD
     TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, i2s_new_channel(&chan_cfg, &tx_handle, NULL));

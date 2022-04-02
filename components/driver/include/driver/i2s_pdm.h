@@ -15,6 +15,7 @@
 
 #include "hal/i2s_types.h"
 #include "hal/gpio_types.h"
+#include "driver/i2s_common.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,7 +41,7 @@ extern "C" {
  */
 #define I2S_PDM_RX_CLK_DEFAULT_CONFIG(rate) { \
     .sample_rate_hz = rate, \
-    .clk_src = I2S_CLK_160M_PLL, \
+    .clk_src = I2S_CLK_PLL_160M, \
     .mclk_multiple = I2S_MCLK_MULTIPLE_256, \
     .dn_sample_mode = I2S_PDM_DSR_8S \
 }
@@ -84,6 +85,16 @@ typedef struct
     i2s_pdm_rx_slot_config_t   slot_cfg;
     i2s_pdm_rx_gpio_config_t   gpio_cfg;
 } i2s_pdm_rx_config_t;
+
+
+esp_err_t i2s_init_pdm_rx_channel(i2s_chan_handle_t handle, const i2s_pdm_rx_config_t *pdm_rx_cfg);
+
+esp_err_t i2s_reconfig_pdm_rx_clock(i2s_chan_handle_t handle, const i2s_pdm_rx_clk_config_t *clk_cfg);
+
+esp_err_t i2s_reconfig_pdm_rx_slot(i2s_chan_handle_t handle, const i2s_pdm_rx_slot_config_t *slot_cfg);
+
+esp_err_t i2s_reconfig_pdm_rx_gpio(i2s_chan_handle_t handle, const i2s_pdm_rx_gpio_config_t *gpio_cfg);
+
 
 #endif // SOC_I2S_SUPPORTS_PDM_RX
 
@@ -144,7 +155,7 @@ typedef struct
  */
 #define I2S_PDM_TX_CLK_DEFAULT_CONFIG(rate) { \
     .sample_rate_hz = rate, \
-    .clk_src = I2S_CLK_160M_PLL, \
+    .clk_src = I2S_CLK_PLL_160M, \
     .mclk_multiple = I2S_MCLK_MULTIPLE_256, \
     .up_sample_fp = 960, \
     .up_sample_fs = ((rate) / 100), \
@@ -219,6 +230,13 @@ typedef struct
     i2s_pdm_tx_gpio_config_t   gpio_cfg;
 } i2s_pdm_tx_config_t;
 
+esp_err_t i2s_init_pdm_tx_channel(i2s_chan_handle_t handle, const i2s_pdm_tx_config_t *pdm_tx_cfg);
+
+esp_err_t i2s_reconfig_pdm_tx_clock(i2s_chan_handle_t handle, const i2s_pdm_tx_clk_config_t *clk_cfg);
+
+esp_err_t i2s_reconfig_pdm_tx_slot(i2s_chan_handle_t handle, const i2s_pdm_tx_slot_config_t *slot_cfg);
+
+esp_err_t i2s_reconfig_pdm_tx_gpio(i2s_chan_handle_t handle, const i2s_pdm_tx_gpio_config_t *gpio_cfg);
 
 #endif // SOC_I2S_SUPPORTS_PDM_TX
 

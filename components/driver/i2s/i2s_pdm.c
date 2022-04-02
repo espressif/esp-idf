@@ -30,7 +30,7 @@ static esp_err_t i2s_pdm_tx_calculate_clock(i2s_chan_handle_t handle, const i2s_
     clk_info->bclk_div = 8;
     clk_info->mclk = clk_info->bclk * clk_info->bclk_div;
 #if SOC_I2S_SUPPORTS_APLL
-    clk_info->sclk = clk_cfg->clk_src == I2S_CLK_160M_PLL ? I2S_LL_BASE_CLK : i2s_set_get_apll_freq(clk_info->mclk);
+    clk_info->sclk = clk_cfg->clk_src == I2S_CLK_PLL_160M ? I2S_LL_BASE_CLK : i2s_set_get_apll_freq(clk_info->mclk);
 #else
     clk_info->sclk = I2S_LL_BASE_CLK;
 #endif
@@ -66,19 +66,6 @@ static esp_err_t i2s_pdm_tx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_tx
     }
 #endif //CONFIG_PM_ENABLE
 
-#if SOC_I2S_SUPPORTS_APLL
-    /* Enable APLL and acquire its lock when initializing or clock source changed to APLL */
-    if (clk_cfg->clk_src == I2S_CLK_APLL && (handle->state == I2S_CHAN_STATE_INIT || pdm_tx_cfg->clk_cfg.clk_src == I2S_CLK_160M_PLL)) {
-        periph_rtc_apll_acquire();
-        handle->apll_en = true;
-    }
-    /* Disable APLL and release its lock when clock source is changed to D2CLK */
-    if (clk_cfg->clk_src == I2S_CLK_160M_PLL && pdm_tx_cfg->clk_cfg.clk_src == I2S_CLK_APLL) {
-        periph_rtc_apll_release();
-        handle->apll_en = false;
-    }
-#endif
-
     i2s_hal_clock_info_t clk_info;
     /* Calculate clock parameters */
     ESP_RETURN_ON_ERROR(i2s_pdm_tx_calculate_clock(handle, clk_cfg, &clk_info), TAG, "clock calculate failed");
@@ -90,11 +77,18 @@ static esp_err_t i2s_pdm_tx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_tx
     i2s_hal_set_tx_clock(&handle->parent->hal, &clk_info, clk_cfg->clk_src);
     portEXIT_CRITICAL(&s_i2s.spinlock);
 
+    /* Update the mode info: clock configuration */
+    memcpy(&(pdm_tx_cfg->clk_cfg), clk_cfg, sizeof(i2s_pdm_tx_clk_config_t));
+
     return ret;
 }
 
 static esp_err_t i2s_pdm_tx_set_slot(i2s_chan_handle_t handle, const i2s_pdm_tx_slot_config_t *slot_cfg)
 {
+    /* Update the total slot num and active slot num */
+    handle->total_slot = 2;
+    handle->active_slot = slot_cfg->slot_mode == I2S_SLOT_MODE_MONO ? 1 : 2;
+
     uint32_t buf_size = i2s_get_buf_size(handle, slot_cfg->data_bit_width, handle->dma.frame_num);
     /* The DMA buffer need to re-allocate if the buffer size changed */
     if (handle->dma.buf_size != buf_size) {
@@ -112,9 +106,9 @@ static esp_err_t i2s_pdm_tx_set_slot(i2s_chan_handle_t handle, const i2s_pdm_tx_
     i2s_hal_pdm_set_tx_slot(&(handle->parent->hal), is_slave, (i2s_hal_slot_config_t*)slot_cfg);
     portEXIT_CRITICAL(&s_i2s.spinlock);
 
-    /* Update the total slot num and active slot num */
-    handle->total_slot = 2;
-    handle->active_slot = slot_cfg->slot_mode == I2S_SLOT_MODE_MONO ? 1 : 2;
+    /* Update the mode info: slot configuration */
+    i2s_pdm_tx_config_t *pdm_tx_cfg = (i2s_pdm_tx_config_t *)handle->mode_info;
+    memcpy(&(pdm_tx_cfg->slot_cfg), slot_cfg, sizeof(i2s_pdm_tx_slot_config_t));
 
     return ESP_OK;
 }
@@ -145,6 +139,9 @@ static esp_err_t i2s_pdm_tx_set_gpio(i2s_chan_handle_t handle, const i2s_pdm_tx_
 #if SOC_I2S_HW_VERSION_2
     i2s_ll_mclk_bind_to_tx_clk(handle->parent->hal.dev);
 #endif
+    /* Update the mode info: gpio configuration */
+    i2s_pdm_tx_config_t *pdm_tx_cfg = (i2s_pdm_tx_config_t *)handle->mode_info;
+    memcpy(&(pdm_tx_cfg->gpio_cfg), gpio_cfg, sizeof(i2s_pdm_tx_gpio_config_t));
 
     return ESP_OK;
 }
@@ -159,16 +156,25 @@ esp_err_t i2s_init_pdm_tx_channel(i2s_chan_handle_t handle, const i2s_pdm_tx_con
 
     xSemaphoreTake(handle->mutex, portMAX_DELAY);
     ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_REGISTER, ESP_ERR_INVALID_STATE, err, TAG, "the channel has initialized already");
+    handle->mode = I2S_COMM_MODE_PDM;
+    /* Allocate memory for storing the configurations of PDM tx mode */
+    if (handle->mode_info) {
+        free(handle->mode_info);
+    }
+    handle->mode_info = calloc(1, sizeof(i2s_pdm_tx_config_t));
+    ESP_GOTO_ON_FALSE(handle->mode_info, ESP_ERR_NO_MEM, err, TAG, "no memory for storing the configurations");
     ESP_GOTO_ON_ERROR(i2s_pdm_tx_set_gpio(handle, &pdm_tx_cfg->gpio_cfg), err, TAG, "initialize channel failed while setting gpio pins");
     /* i2s_set_slot should be called before i2s_set_clock while initializing, because clock is relay on the slot */
     ESP_GOTO_ON_ERROR(i2s_pdm_tx_set_slot(handle, &pdm_tx_cfg->slot_cfg), err, TAG, "initialize channel failed while setting slot");
+#if SOC_I2S_SUPPORTS_APLL
+    /* Enable APLL and acquire its lock when the clock source is APLL */
+    if (pdm_tx_cfg->clk_cfg.clk_src == I2S_CLK_APLL) {
+        periph_rtc_apll_acquire();
+        handle->apll_en = true;
+    }
+#endif
     ESP_GOTO_ON_ERROR(i2s_pdm_tx_set_clock(handle, &pdm_tx_cfg->clk_cfg), err, TAG, "initialize channel failed while setting clock");
     ESP_GOTO_ON_ERROR(i2s_init_dma_intr(handle, ESP_INTR_FLAG_LEVEL1), err, TAG, "initialize dma interrupt failed");
-    /* Store the configurations of standard mode */
-    i2s_pdm_tx_config_t *mode_info = calloc(1, sizeof(i2s_pdm_tx_config_t));
-    ESP_GOTO_ON_FALSE(mode_info, ESP_ERR_NO_MEM, err, TAG, "no memory for storing the configurations");
-    memcpy(mode_info, pdm_tx_cfg, sizeof(i2s_pdm_tx_config_t));
-    handle->mode_info = mode_info;
 
     i2s_ll_tx_enable_pdm(handle->parent->hal.dev);
 #if SOC_I2S_HW_VERSION_2
@@ -198,12 +204,22 @@ esp_err_t i2s_reconfig_pdm_tx_clock(i2s_chan_handle_t handle, const i2s_pdm_tx_c
     ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_PDM, ESP_ERR_INVALID_ARG, err, TAG, "this handle is not working in standard moded");
     ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, err, TAG, "invalid state, I2S should be stopped before reconfiguring the clock");
 
+#if SOC_I2S_SUPPORTS_APLL
     i2s_pdm_tx_config_t *pdm_tx_cfg = (i2s_pdm_tx_config_t*)handle->mode_info;
     ESP_GOTO_ON_FALSE(pdm_tx_cfg, ESP_ERR_INVALID_STATE, err, TAG, "initialization not complete");
+    /* Enable APLL and acquire its lock when the clock source is changed to APLL */
+    if (clk_cfg->clk_src == I2S_CLK_APLL && pdm_tx_cfg->clk_cfg.clk_src == I2S_CLK_PLL_160M) {
+        periph_rtc_apll_acquire();
+        handle->apll_en = true;
+    }
+    /* Disable APLL and release its lock when clock source is changed to 160M_PLL */
+    if (clk_cfg->clk_src == I2S_CLK_PLL_160M && pdm_tx_cfg->clk_cfg.clk_src == I2S_CLK_APLL) {
+        periph_rtc_apll_release();
+        handle->apll_en = false;
+    }
+#endif
 
-    ESP_GOTO_ON_ERROR(i2s_pdm_tx_set_clock(handle, &pdm_tx_cfg->clk_cfg), err, TAG, "update clock failed");
-    /* Update the stored clock information  */
-    memcpy(&pdm_tx_cfg->clk_cfg, clk_cfg, sizeof(i2s_pdm_tx_clk_config_t));
+    ESP_GOTO_ON_ERROR(i2s_pdm_tx_set_clock(handle, clk_cfg), err, TAG, "update clock failed");
 
     xSemaphoreGive(handle->mutex);
 
@@ -229,8 +245,6 @@ esp_err_t i2s_reconfig_pdm_tx_slot(i2s_chan_handle_t handle, const i2s_pdm_tx_sl
     ESP_GOTO_ON_FALSE(pdm_tx_cfg, ESP_ERR_INVALID_STATE, err, TAG, "initialization not complete");
 
     ESP_GOTO_ON_ERROR(i2s_pdm_tx_set_slot(handle, slot_cfg), err, TAG, "set i2s standard slot failed");
-    /* Update the stored slot information */
-    memcpy(&pdm_tx_cfg->slot_cfg, slot_cfg, sizeof(i2s_pdm_tx_slot_config_t));
 
     /* If the slot bit width changed, then need to update the clock */
     uint32_t slot_bits = slot_cfg->slot_bit_width == I2S_SLOT_BIT_WIDTH_AUTO ? slot_cfg->data_bit_width : slot_cfg->slot_bit_width;
@@ -258,13 +272,7 @@ esp_err_t i2s_reconfig_pdm_tx_gpio(i2s_chan_handle_t handle, const i2s_pdm_tx_gp
     ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_PDM, ESP_ERR_INVALID_ARG, err, TAG, "This handle is not working in standard moded");
     ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, err, TAG, "Invalid state, I2S should be stopped before reconfiguring the gpio");
 
-    i2s_pdm_tx_config_t *pdm_tx_cfg = (i2s_pdm_tx_config_t*)handle->mode_info;
-    ESP_GOTO_ON_FALSE(pdm_tx_cfg, ESP_ERR_INVALID_STATE, err, TAG, "initialization not complete");
-
     ESP_GOTO_ON_ERROR(i2s_pdm_tx_set_gpio(handle, gpio_cfg), err, TAG, "set i2s standard slot failed");
-
-    /* Update the stored slot information */
-    memcpy(&pdm_tx_cfg->gpio_cfg, gpio_cfg, sizeof(i2s_pdm_tx_gpio_config_t));
     xSemaphoreGive(handle->mutex);
 
     return ESP_OK;
@@ -290,7 +298,7 @@ static esp_err_t i2s_pdm_rx_calculate_clock(i2s_chan_handle_t handle, const i2s_
     clk_info->bclk_div = 8;
     clk_info->mclk = clk_info->bclk * clk_info->bclk_div;
 #if SOC_I2S_SUPPORTS_APLL
-    clk_info->sclk = clk_cfg->clk_src == I2S_CLK_160M_PLL ? I2S_LL_BASE_CLK : i2s_set_get_apll_freq(clk_info->mclk);
+    clk_info->sclk = clk_cfg->clk_src == I2S_CLK_PLL_160M ? I2S_LL_BASE_CLK : i2s_set_get_apll_freq(clk_info->mclk);
 #else
     clk_info->sclk = I2S_LL_BASE_CLK;
 #endif
@@ -325,19 +333,6 @@ static esp_err_t i2s_pdm_rx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_rx
     }
 #endif //CONFIG_PM_ENABLE
 
-#if SOC_I2S_SUPPORTS_APLL
-    /* Enable APLL and acquire its lock when initializing or clock source changed to APLL */
-    if (clk_cfg->clk_src == I2S_CLK_APLL && (handle->state == I2S_CHAN_STATE_INIT || pdm_rx_cfg->clk_cfg.clk_src == I2S_CLK_160M_PLL)) {
-        periph_rtc_apll_acquire();
-        handle->apll_en = true;
-    }
-    /* Disable APLL and release its lock when clock source is changed to D2CLK */
-    if (clk_cfg->clk_src == I2S_CLK_160M_PLL && pdm_rx_cfg->clk_cfg.clk_src == I2S_CLK_APLL) {
-        periph_rtc_apll_release();
-        handle->apll_en = false;
-    }
-#endif
-
     i2s_hal_clock_info_t clk_info;
     /* Calculate clock parameters */
     ESP_RETURN_ON_ERROR(i2s_pdm_rx_calculate_clock(handle, clk_cfg, &clk_info), TAG, "clock calculate failed");
@@ -349,11 +344,18 @@ static esp_err_t i2s_pdm_rx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_rx
     i2s_hal_set_rx_clock(&handle->parent->hal, &clk_info, clk_cfg->clk_src);
     portEXIT_CRITICAL(&s_i2s.spinlock);
 
+    /* Update the mode info: clock configuration */
+    memcpy(&(pdm_rx_cfg->clk_cfg), clk_cfg, sizeof(i2s_pdm_rx_clk_config_t));
+
     return ret;
 }
 
 static esp_err_t i2s_pdm_rx_set_slot(i2s_chan_handle_t handle, const i2s_pdm_rx_slot_config_t *slot_cfg)
 {
+    /* Update the total slot num and active slot num */
+    handle->total_slot = 2;
+    handle->active_slot = slot_cfg->slot_mode == I2S_SLOT_MODE_MONO ? 1 : 2;
+
     uint32_t buf_size = i2s_get_buf_size(handle, slot_cfg->data_bit_width, handle->dma.frame_num);
     /* The DMA buffer need to re-allocate if the buffer size changed */
     if (handle->dma.buf_size != buf_size) {
@@ -371,9 +373,9 @@ static esp_err_t i2s_pdm_rx_set_slot(i2s_chan_handle_t handle, const i2s_pdm_rx_
     i2s_hal_pdm_set_rx_slot(&(handle->parent->hal), is_slave, (i2s_hal_slot_config_t*)slot_cfg);
     portEXIT_CRITICAL(&s_i2s.spinlock);
 
-    /* Update the total slot num and active slot num */
-    handle->total_slot = 2;
-    handle->active_slot = slot_cfg->slot_mode == I2S_SLOT_MODE_MONO ? 1 : 2;
+    /* Update the mode info: slot configuration */
+    i2s_pdm_rx_config_t *pdm_rx_cfg = (i2s_pdm_rx_config_t *)handle->mode_info;
+    memcpy(&(pdm_rx_cfg->slot_cfg), slot_cfg, sizeof(i2s_pdm_rx_slot_config_t));
 
     return ESP_OK;
 }
@@ -403,6 +405,9 @@ static esp_err_t i2s_pdm_rx_set_gpio(i2s_chan_handle_t handle, const i2s_pdm_rx_
 #if SOC_I2S_HW_VERSION_2
     i2s_ll_mclk_bind_to_rx_clk(handle->parent->hal.dev);
 #endif
+    /* Update the mode info: gpio configuration */
+    i2s_pdm_rx_config_t *pdm_rx_cfg = (i2s_pdm_rx_config_t *)handle->mode_info;
+    memcpy(&(pdm_rx_cfg->gpio_cfg), gpio_cfg, sizeof(i2s_pdm_rx_gpio_config_t));
 
     return ESP_OK;
 }
@@ -417,16 +422,25 @@ esp_err_t i2s_init_pdm_rx_channel(i2s_chan_handle_t handle, const i2s_pdm_rx_con
 
     xSemaphoreTake(handle->mutex, portMAX_DELAY);
     ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_REGISTER, ESP_ERR_INVALID_STATE, err, TAG, "the channel has initialized already");
+    handle->mode = I2S_COMM_MODE_PDM;
+    /* Allocate memory for storing the configurations of PDM rx mode */
+    if (handle->mode_info) {
+        free(handle->mode_info);
+    }
+    handle->mode_info = calloc(1, sizeof(i2s_pdm_rx_config_t));
+    ESP_GOTO_ON_FALSE(handle->mode_info, ESP_ERR_NO_MEM, err, TAG, "no memory for storing the configurations");
     ESP_GOTO_ON_ERROR(i2s_pdm_rx_set_gpio(handle, &pdm_rx_cfg->gpio_cfg), err, TAG, "initialize channel failed while setting gpio pins");
     /* i2s_set_slot should be called before i2s_set_clock while initializing, because clock is relay on the slot */
     ESP_GOTO_ON_ERROR(i2s_pdm_rx_set_slot(handle, &pdm_rx_cfg->slot_cfg), err, TAG, "initialize channel failed while setting slot");
+#if SOC_I2S_SUPPORTS_APLL
+    /* Enable APLL and acquire its lock when the clock source is APLL */
+    if (pdm_rx_cfg->clk_cfg.clk_src == I2S_CLK_APLL) {
+        periph_rtc_apll_acquire();
+        handle->apll_en = true;
+    }
+#endif
     ESP_GOTO_ON_ERROR(i2s_pdm_rx_set_clock(handle, &pdm_rx_cfg->clk_cfg), err, TAG, "initialize channel failed while setting clock");
     ESP_GOTO_ON_ERROR(i2s_init_dma_intr(handle, ESP_INTR_FLAG_LEVEL1), err, TAG, "initialize dma interrupt failed");
-    /* Store the configurations of standard mode */
-    i2s_pdm_rx_config_t *mode_info = calloc(1, sizeof(i2s_pdm_rx_config_t));
-    ESP_GOTO_ON_FALSE(mode_info, ESP_ERR_NO_MEM, err, TAG, "no memory for storing the configurations");
-    memcpy(mode_info, pdm_rx_cfg, sizeof(i2s_pdm_rx_config_t));
-    handle->mode_info = mode_info;
 
     i2s_ll_rx_enable_pdm(handle->parent->hal.dev);
 #if SOC_I2S_HW_VERSION_2
@@ -456,12 +470,22 @@ esp_err_t i2s_reconfig_pdm_rx_clock(i2s_chan_handle_t handle, const i2s_pdm_rx_c
     ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_PDM, ESP_ERR_INVALID_ARG, err, TAG, "this handle is not working in standard moded");
     ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, err, TAG, "invalid state, I2S should be stopped before reconfiguring the clock");
 
+#if SOC_I2S_SUPPORTS_APLL
     i2s_pdm_rx_config_t *pdm_rx_cfg = (i2s_pdm_rx_config_t*)handle->mode_info;
     ESP_GOTO_ON_FALSE(pdm_rx_cfg, ESP_ERR_INVALID_STATE, err, TAG, "initialization not complete");
+    /* Enable APLL and acquire its lock when the clock source is changed to APLL */
+    if (clk_cfg->clk_src == I2S_CLK_APLL && pdm_rx_cfg->clk_cfg.clk_src == I2S_CLK_PLL_160M) {
+        periph_rtc_apll_acquire();
+        handle->apll_en = true;
+    }
+    /* Disable APLL and release its lock when clock source is changed to 160M_PLL */
+    if (clk_cfg->clk_src == I2S_CLK_PLL_160M && pdm_rx_cfg->clk_cfg.clk_src == I2S_CLK_APLL) {
+        periph_rtc_apll_release();
+        handle->apll_en = false;
+    }
+#endif
 
-    ESP_GOTO_ON_ERROR(i2s_pdm_rx_set_clock(handle, &pdm_rx_cfg->clk_cfg), err, TAG, "update clock failed");
-    /* Update the stored clock information  */
-    memcpy(&pdm_rx_cfg->clk_cfg, clk_cfg, sizeof(i2s_pdm_rx_clk_config_t));
+    ESP_GOTO_ON_ERROR(i2s_pdm_rx_set_clock(handle, clk_cfg), err, TAG, "update clock failed");
 
     xSemaphoreGive(handle->mutex);
 
@@ -487,8 +511,6 @@ esp_err_t i2s_reconfig_pdm_rx_slot(i2s_chan_handle_t handle, const i2s_pdm_rx_sl
     ESP_GOTO_ON_FALSE(pdm_rx_cfg, ESP_ERR_INVALID_STATE, err, TAG, "initialization not complete");
 
     ESP_GOTO_ON_ERROR(i2s_pdm_rx_set_slot(handle, slot_cfg), err, TAG, "set i2s standard slot failed");
-    /* Update the stored slot information */
-    memcpy(&pdm_rx_cfg->slot_cfg, slot_cfg, sizeof(i2s_pdm_rx_slot_config_t));
 
     /* If the slot bit width changed, then need to update the clock */
     uint32_t slot_bits = slot_cfg->slot_bit_width == I2S_SLOT_BIT_WIDTH_AUTO ? slot_cfg->data_bit_width : slot_cfg->slot_bit_width;
@@ -515,13 +537,7 @@ esp_err_t i2s_reconfig_pdm_rx_gpio(i2s_chan_handle_t handle, const i2s_pdm_rx_gp
     ESP_GOTO_ON_FALSE(handle->mode == I2S_COMM_MODE_PDM, ESP_ERR_INVALID_ARG, err, TAG, "This handle is not working in standard moded");
     ESP_GOTO_ON_FALSE(handle->state == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, err, TAG, "Invalid state, I2S should be stopped before reconfiguring the gpio");
 
-    i2s_pdm_rx_config_t *pdm_rx_cfg = (i2s_pdm_rx_config_t*)handle->mode_info;
-    ESP_GOTO_ON_FALSE(pdm_rx_cfg, ESP_ERR_INVALID_STATE, err, TAG, "initialization not complete");
-
     ESP_GOTO_ON_ERROR(i2s_pdm_rx_set_gpio(handle, gpio_cfg), err, TAG, "set i2s standard slot failed");
-
-    /* Update the stored slot information */
-    memcpy(&pdm_rx_cfg->gpio_cfg, gpio_cfg, sizeof(i2s_pdm_rx_gpio_config_t));
     xSemaphoreGive(handle->mutex);
 
     return ESP_OK;

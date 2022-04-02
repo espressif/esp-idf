@@ -27,11 +27,12 @@ extern "C" {
 /**
  * @brief get default I2S property
  */
-#define I2S_CHANNEL_CONFIG(i2s_role, i2s_mode, pin_config) { \
-    .id = I2S_NUM_AUTO, \
+#define I2S_CHANNEL_DEFAULT_CONFIG(i2s_num, i2s_role) { \
+    .id = i2s_num, \
     .role = i2s_role, \
-    .mode = i2s_mode, \
-    .io = pin_config, \
+    .dma_desc_num = 3, \
+    .dma_frame_num = 500, \
+    .auto_clear = false, \
 }
 
 #define I2S_GPIO_UNUSED         GPIO_NUM_NC         /*!< Used in i2s_gpio_config_t for signals which are not used */
@@ -107,7 +108,7 @@ esp_err_t i2s_del_channel(i2s_chan_handle_t handle);
  *      - ESP_ERR_INVALID_ARG   NULL pointer
  *      - ESP_ERR_INVALID_STATE This channel is not registered
  */
-esp_err_t i2s_init_channel(i2s_chan_handle_t handle, const void *clk_config, const void *slot_config);
+// esp_err_t i2s_init_channel(i2s_chan_handle_t handle, const void *clk_config, const void *slot_config);
 
 /**
  * @brief Reconfigure the I2S clock
@@ -128,7 +129,7 @@ esp_err_t i2s_init_channel(i2s_chan_handle_t handle, const void *clk_config, con
  *      - ESP_ERR_INVALID_ARG   NULL pointer
  *      - ESP_ERR_INVALID_STATE This channel is not initialized
  */
-esp_err_t i2s_set_clock(i2s_chan_handle_t handle, const void *clk_config);
+// esp_err_t i2s_set_clock(i2s_chan_handle_t handle, const void *clk_config);
 
 /**
  * @brief Reconfigure the I2S slot
@@ -148,7 +149,7 @@ esp_err_t i2s_set_clock(i2s_chan_handle_t handle, const void *clk_config);
  *      - ESP_ERR_INVALID_ARG   NULL pointer or unmatched slot configuration type
  *      - ESP_ERR_INVALID_STATE This channel is not initialized
  */
-esp_err_t i2s_set_slot(i2s_chan_handle_t handle, const void *slot_config);
+// esp_err_t i2s_set_slot(i2s_chan_handle_t handle, const void *slot_config);
 
 /**
  * @brief Get I2S event queue handler

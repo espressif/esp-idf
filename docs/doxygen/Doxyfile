@@ -158,11 +158,12 @@ INPUT = \
     $(PROJECT_PATH)/components/hal/include/hal/i2c_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/i2s_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/lcd_types.h \
-    $(PROJECT_PATH)/components/driver/include/driver/i2s_controller.h \
-    $(PROJECT_PATH)/components/hal/include/hal/i2s_std.h \
-    $(PROJECT_PATH)/components/hal/include/hal/i2s_pdm.h \
-    $(PROJECT_PATH)/components/hal/include/hal/i2s_tdm.h \
+    $(PROJECT_PATH)/components/driver/include/driver/i2s_common.h \
+    $(PROJECT_PATH)/components/driver/include/driver/i2s_std.h \
+    $(PROJECT_PATH)/components/driver/include/driver/i2s_pdm.h \
+    $(PROJECT_PATH)/components/driver/include/driver/i2s_tdm.h \
     $(PROJECT_PATH)/components/hal/include/hal/ledc_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/rmt_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/rtc_io_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/sdio_slave_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/sigmadelta_types.h \

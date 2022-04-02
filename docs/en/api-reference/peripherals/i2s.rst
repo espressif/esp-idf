@@ -147,11 +147,11 @@ I2S Clock
 Clock Source
 ^^^^^^^^^^^^
 
-- :cpp:member:`i2s_clock_src_t::I2S_CLK_160M_PLL`: 160 MHz PLL clock.
+- :cpp:member:`i2s_clock_src_t::I2S_CLK_PLL_160M`: 160 MHz PLL clock.
 
 .. only:: SOC_I2S_SUPPORTS_APLL
 
-    - :cpp:member:`i2s_clock_src_t::I2S_CLK_APLL`: Audio PLL clock, more precise than ``I2S_CLK_160M_PLL`` in high sample rate applications. Its frequency is configurable according to the sample rate, but if APLL has been occupied by emac or other channels already, the APLL frequency is not allowed to change, the driver will try to work under this APLL frequency, if this APLL frequency can't meet the requirements of I2S, the clock configuration will fail.
+    - :cpp:member:`i2s_clock_src_t::I2S_CLK_APLL`: Audio PLL clock, more precise than ``I2S_CLK_PLL_160M`` in high sample rate applications. Its frequency is configurable according to the sample rate, but if APLL has been occupied by emac or other channels already, the APLL frequency is not allowed to change, the driver will try to work under this APLL frequency, if this APLL frequency can't meet the requirements of I2S, the clock configuration will fail.
 
 Clock Concepts
 ^^^^^^^^^^^^^^

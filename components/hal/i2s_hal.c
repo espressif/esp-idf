@@ -206,7 +206,7 @@ void i2s_hal_tdm_set_tx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
     i2s_ll_tx_set_sample_bit(hal->dev, slot_bit_width, slot_cfg->data_bit_width);
     i2s_ll_tx_enable_mono_mode(hal->dev, slot_cfg->slot_mode == I2S_SLOT_MODE_MONO);
     i2s_ll_tx_enable_msb_shift(hal->dev, slot_cfg->tdm.bit_shift);
-    if (slot_cfg->tdm.ws_width == I2S_TDM_AUTO_WS_WIDTH) {
+    if (slot_cfg->tdm.ws_width == 0) { // 0: I2S_TDM_AUTO_WS_WIDTH
         i2s_ll_tx_set_ws_width(hal->dev, (total_slot * slot_bit_width) / 2);
     } else {
         i2s_ll_tx_set_ws_width(hal->dev, slot_cfg->tdm.ws_width);
@@ -241,7 +241,7 @@ void i2s_hal_tdm_set_rx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
     i2s_ll_rx_set_sample_bit(hal->dev, slot_bit_width, slot_cfg->data_bit_width);
     i2s_ll_rx_enable_mono_mode(hal->dev, slot_cfg->slot_mode == I2S_SLOT_MODE_MONO);
     i2s_ll_rx_enable_msb_shift(hal->dev, slot_cfg->tdm.bit_shift);
-    if (slot_cfg->tdm.ws_width == I2S_TDM_AUTO_WS_WIDTH) {
+    if (slot_cfg->tdm.ws_width == 0) { // 0: I2S_TDM_AUTO_WS_WIDTH
         i2s_ll_rx_set_ws_width(hal->dev, (total_slot * slot_bit_width) / 2);
     } else {
         i2s_ll_rx_set_ws_width(hal->dev, slot_cfg->tdm.ws_width);

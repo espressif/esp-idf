@@ -593,7 +593,7 @@ static esp_err_t i2s_lcd_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_c
     switch (src) {
     case LCD_CLK_SRC_PLL160M:
         bus->resolution_hz = 160000000 / LCD_PERIPH_CLOCK_PRE_SCALE;
-        i2s_ll_tx_clk_set_src(bus->hal.dev, I2S_CLK_160M_PLL);
+        i2s_ll_tx_clk_set_src(bus->hal.dev, I2S_CLK_PLL_160M);
 #if CONFIG_PM_ENABLE
         ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "i2s_controller_lcd", &bus->pm_lock);
         ESP_RETURN_ON_ERROR(ret, TAG, "create ESP_PM_APB_FREQ_MAX lock failed");

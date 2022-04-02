@@ -180,7 +180,7 @@ static i2s_controller_t *i2s_acquire_controller_obj(int id)
     if (!s_i2s.controller[id]) {
         /* Try to occupy this i2s controller
            if failed, this controller could be occupied by other components */
-        if (i2s_platform_acquire_occupation(id, "i2s_controller") == ESP_OK) {
+        if (i2s_platform_acquire_occupation(id, "i2s_driver") == ESP_OK) {
             i2s_obj = pre_alloc;
             portENTER_CRITICAL(&s_i2s.spinlock);
             s_i2s.controller[id] = i2s_obj;
@@ -556,7 +556,7 @@ esp_err_t i2s_check_set_mclk(i2s_port_t id, gpio_num_t gpio_num)
     }
 #else
     ESP_RETURN_ON_FALSE(GPIO_IS_VALID_GPIO(gpio_num), ESP_ERR_INVALID_ARG, TAG, "mck_io_num invalid");
-    gpio_matrix_out_check_and_set(gpio_num, i2s_periph_signal[id].mck_out_sig, 0, 0);
+    i2s_gpio_check_and_set(gpio_num, i2s_periph_signal[id].mck_out_sig, false);
 #endif
     ESP_LOGI(TAG, "MCLK is pinned to GPIO%d on I2S%d", id, gpio_num);
     return ESP_OK;
@@ -572,7 +572,7 @@ esp_err_t i2s_new_channel(const i2s_chan_config_t *chan_cfg, i2s_chan_handle_t *
     /* Parameter validity check */
     I2S_NULL_POINTER_CHECK(TAG, chan_cfg);
     I2S_NULL_POINTER_CHECK(TAG, tx_handle || rx_handle);
-    ESP_RETURN_ON_FALSE(chan_cfg->id < SOC_I2S_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid I2S port id");
+    ESP_RETURN_ON_FALSE(chan_cfg->id < SOC_I2S_NUM || chan_cfg->id == I2S_NUM_AUTO, ESP_ERR_INVALID_ARG, TAG, "invalid I2S port id");
     ESP_RETURN_ON_FALSE(chan_cfg->dma_desc_num >= 2, ESP_ERR_INVALID_ARG, TAG, "there should be at least 2 DMA buffers");
 
     esp_err_t ret = ESP_OK;
@@ -676,9 +676,9 @@ esp_err_t i2s_del_channel(i2s_chan_handle_t handle)
          * because the clock of some registers are bound to APLL,
          * otherwise, once APLL is disabled, the registers can't be updated anymore */
         if (handle->dir == I2S_DIR_TX) {
-            i2s_ll_tx_clk_set_src(handle->parent->hal.dev, I2S_CLK_160M_PLL);
+            i2s_ll_tx_clk_set_src(handle->parent->hal.dev, I2S_CLK_PLL_160M);
         } else {
-            i2s_ll_rx_clk_set_src(handle->parent->hal.dev, I2S_CLK_160M_PLL);
+            i2s_ll_rx_clk_set_src(handle->parent->hal.dev, I2S_CLK_PLL_160M);
         }
         periph_rtc_apll_release();
     }
@@ -898,7 +898,7 @@ err:
 esp_err_t i2s_clear_dma_buffer(i2s_chan_handle_t handle)
 {
     I2S_NULL_POINTER_CHECK(TAG, handle);
-    ESP_RETURN_ON_FALSE(handle->state > I2S_CHAN_STATE_INIT, ESP_ERR_INVALID_STATE, TAG, "this channel has not initialized yet");
+    ESP_RETURN_ON_FALSE(handle->state >= I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, TAG, "this channel has not initialized yet");
     /* Clear all the DMA buffer */
     for (int desc_num = handle->dma.desc_num; desc_num > 0; desc_num--) {
         memset(handle->dma.bufs[desc_num-1], 0, handle->dma.buf_size);

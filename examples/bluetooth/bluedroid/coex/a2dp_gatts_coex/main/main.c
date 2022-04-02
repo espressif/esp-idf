@@ -39,7 +39,7 @@
 // DAC DMA mode is only supported by the legacy I2S driver, it will be replaced once DAC has its own DMA dirver
 #include "driver/i2s.h"
 #else
-#include "driver/i2s_controller.h"
+#include "driver/i2s_std.h"
 #endif
 
 #include "esp_gap_ble_api.h"
@@ -709,21 +709,22 @@ void app_main(void)
     i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
     i2s_set_pin(0, NULL);
 #else
-    i2s_gpio_config_t i2s_pin = {
-        .mclk = I2S_GPIO_UNUSED,
-        .bclk = CONFIG_EXAMPLE_I2S_BCK_PIN,
-        .ws = CONFIG_EXAMPLE_I2S_LRCK_PIN,
-        .dout = CONFIG_EXAMPLE_I2S_DATA_PIN,
-        .din = I2S_GPIO_UNUSED
+    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
+    chan_cfg.auto_clear = true;
+    i2s_std_config_t std_cfg = {
+        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(44100),
+        .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
+        .gpio_cfg = {
+            .mclk = I2S_GPIO_UNUSED,
+            .bclk = CONFIG_EXAMPLE_I2S_BCK_PIN,
+            .ws = CONFIG_EXAMPLE_I2S_LRCK_PIN,
+            .dout = CONFIG_EXAMPLE_I2S_DATA_PIN,
+            .din = I2S_GPIO_UNUSED,
+        },
     };
-    i2s_chan_config_t chan_cfg = I2S_CHANNEL_CONFIG(I2S_ROLE_MASTER, I2S_COMM_MODE_STD, &i2s_pin);
-    chan_cfg.id = I2S_NUM_0;
-    i2s_std_slot_config_t slot_cfg = I2S_STD_MSB_SLOT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO);
-    slot_cfg.auto_clear = true;
-    i2s_std_clk_config_t clk_cfg = I2S_STD_CLK_CONFIG(44100);
     /* enable I2S */
     i2s_new_channel(&chan_cfg, &tx_chan, NULL);
-    i2s_init_channel(tx_chan, &clk_cfg, &slot_cfg);
+    i2s_init_std_channel(tx_chan, &std_cfg);
     i2s_start_channel(tx_chan);
 #endif
 

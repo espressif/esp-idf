@@ -19,7 +19,7 @@
 // DAC DMA mode is only supported by the legacy I2S driver, it will be replaced once DAC has its own DMA dirver
 #include "driver/i2s.h"
 #else
-#include "driver/i2s_controller.h"
+#include "driver/i2s_std.h"
 #endif
 
 static void bt_app_task_handler(void *arg);

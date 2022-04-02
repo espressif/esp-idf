@@ -29,7 +29,6 @@ extern "C" {
  */
 typedef enum {
     I2S_CHAN_STATE_REGISTER,                /*!< i2s channel is registered (not initialized)  */
-    I2S_CHAN_STATE_INIT,                    /*!< i2s channel is initializing */
     I2S_CHAN_STATE_READY,                   /*!< i2s channel is stopped (initialized) */
     I2S_CHAN_STATE_IDLE,                    /*!< i2s channel is idling (initialized and started) */
     I2S_CHAN_STATE_WRITING,                 /*!< i2s channel is writing (initialized and started) */

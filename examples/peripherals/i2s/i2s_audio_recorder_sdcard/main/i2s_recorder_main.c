@@ -16,7 +16,7 @@
 #include "esp_vfs_fat.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "driver/i2s_controller.h"
+#include "driver/i2s_pdm.h"
 #include "driver/gpio.h"
 #include "driver/spi_common.h"
 #include "sdmmc_cmd.h"
@@ -170,19 +170,18 @@ void record_wav(uint32_t rec_time)
 
 void init_microphone(void)
 {
-    i2s_gpio_config_t i2s_pin = {
-        .mclk = I2S_GPIO_UNUSED,
-        .bclk = I2S_GPIO_UNUSED,
-        .ws = CONFIG_EXAMPLE_I2S_CLK_GPIO,
-        .dout = I2S_GPIO_UNUSED,
-        .din = CONFIG_EXAMPLE_I2S_DATA_GPIO
-    };
-    i2s_chan_config_t chan_cfg = I2S_CHANNEL_CONFIG(I2S_ROLE_MASTER, I2S_COMM_MODE_PDM, &i2s_pin);
-    chan_cfg.id = CONFIG_EXAMPLE_I2S_CH;
+    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(CONFIG_EXAMPLE_I2S_CH, I2S_ROLE_MASTER);
     i2s_new_channel(&chan_cfg, NULL, &rx_handle);
-    i2s_pdm_rx_slot_config_t rx_slot_cfg = I2S_PDM_RX_SLOT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO);
-    i2s_pdm_rx_clk_config_t rx_clk_cfg = I2S_PDM_RX_CLK_CONFIG(CONFIG_EXAMPLE_SAMPLE_RATE);
-    i2s_init_channel(rx_handle, &rx_clk_cfg, &rx_slot_cfg);
+
+    i2s_pdm_rx_config_t pdm_rx_cfg = {
+        .clk_cfg = I2S_PDM_RX_CLK_DEFAULT_CONFIG(CONFIG_EXAMPLE_SAMPLE_RATE),
+        .slot_cfg = I2S_PDM_RX_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
+        .gpio_cfg = {
+            .clk = CONFIG_EXAMPLE_I2S_CLK_GPIO,
+            .din = CONFIG_EXAMPLE_I2S_DATA_GPIO,
+        },
+    };
+    i2s_init_pdm_rx_channel(rx_handle, &pdm_rx_cfg);
     i2s_start_channel(rx_handle);
 }
 

@@ -108,7 +108,7 @@ typedef enum {
 } i2s_mclk_multiple_t;
 
 typedef enum {
-    I2S_CLK_160M_PLL = 0,            /*!< I2S controller clock source PLL_D2_CLK(160M)*/
+    I2S_CLK_PLL_160M = 0,            /*!< I2S controller clock source PLL_D2_CLK(160M)*/
 #if SOC_I2S_SUPPORTS_APLL
     I2S_CLK_APLL,                    /*!< I2S controller clock source APLL*/
 #endif
