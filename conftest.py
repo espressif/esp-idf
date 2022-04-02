@@ -12,11 +12,11 @@
 #
 # This is an experimental feature, and if you found any bug or have any question, please report to
 # https://github.com/espressif/pytest-embedded/issues
-
 import logging
 import os
 import sys
 import xml.etree.ElementTree as ET
+from datetime import datetime
 from fnmatch import fnmatch
 from typing import Callable, List, Optional, Tuple
 
@@ -61,6 +61,19 @@ def item_marker_names(item: Item) -> List[str]:
 ############
 # Fixtures #
 ############
+_TEST_SESSION_TMPDIR = os.path.join(
+    os.path.dirname(__file__),
+    'pytest_embedded_log',
+    datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
+)
+os.makedirs(_TEST_SESSION_TMPDIR, exist_ok=True)
+
+
+@pytest.fixture(scope='session', autouse=True)
+def session_tempdir() -> str:
+    return _TEST_SESSION_TMPDIR
+
+
 @pytest.fixture
 @parse_configuration
 def config(request: FixtureRequest) -> str:
@@ -79,9 +92,7 @@ def test_case_name(request: FixtureRequest, target: str, config: str) -> str:
 
 @pytest.fixture
 @apply_count
-def build_dir(
-    app_path: str, target: Optional[str], config: Optional[str]
-) -> str:
+def build_dir(app_path: str, target: Optional[str], config: Optional[str]) -> str:
     """
     Check local build dir with the following priority:
 
@@ -245,7 +256,9 @@ class IdfPytestEmbedded:
                 for _target in [*SUPPORTED_TARGETS, *PREVIEW_TARGETS]:
                     item.add_marker(_target)
             # FIXME: temporarily modify the s3 runner tag "generic" to "s3_generic" due to the deep sleep bug
-            if 'generic' in item_marker_names(item) and 'esp32s3' in item_marker_names(item):
+            if 'generic' in item_marker_names(item) and 'esp32s3' in item_marker_names(
+                item
+            ):
                 item.add_marker('generic_s3_fixme')
 
         # filter all the test cases with "--target"
