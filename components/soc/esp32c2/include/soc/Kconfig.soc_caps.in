@@ -123,6 +123,10 @@ config SOC_ADC_RTC_MAX_BITWIDTH
     int
     default 12
 
+config SOC_RTC_SLOW_CLOCK_SUPPORT_8MD256
+    bool
+    default y
+
 config SOC_BROWNOUT_RESET_SUPPORTED
     bool
     default y
