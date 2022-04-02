@@ -404,6 +404,11 @@ void rtc_dig_clk8m_disable(void)
     esp_rom_delay_us(DELAY_RTC_CLK_SWITCH);
 }
 
+bool rtc_dig_8m_enabled(void)
+{
+    return GET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_CLK8M_EN_M);
+}
+
 uint32_t read_spll_freq(void)
 {
     return REG_GET_FIELD(SYSTEM_SYSCLK_CONF_REG, SYSTEM_SPLL_FREQ);
