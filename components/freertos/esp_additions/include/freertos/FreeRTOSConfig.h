@@ -246,12 +246,7 @@ Note: Include trace macros here and not above as trace macros are dependent on s
 #ifndef configIDLE_TASK_STACK_SIZE
 #define configIDLE_TASK_STACK_SIZE                      CONFIG_FREERTOS_IDLE_TASK_STACKSIZE
 #endif
-#if CONFIG_FREERTOS_ENABLE_TASK_SNAPSHOT
-#define configENABLE_TASK_SNAPSHOT                      1
-#endif
-#ifndef configENABLE_TASK_SNAPSHOT
-#define configENABLE_TASK_SNAPSHOT                      0
-#endif
+
 #if CONFIG_FREERTOS_CHECK_MUTEX_GIVEN_BY_OWNER
 #define configCHECK_MUTEX_GIVEN_BY_OWNER                1
 #else

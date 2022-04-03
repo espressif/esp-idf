@@ -31,7 +31,6 @@ if(CONFIG_FREERTOS_SMP)
     endif()
 
     list(APPEND srcs
-        "esp_additions/task_snapshot.c"
         "FreeRTOS-Kernel-SMP/croutine.c"
         "FreeRTOS-Kernel-SMP/event_groups.c"
         "FreeRTOS-Kernel-SMP/list.c"
@@ -92,7 +91,6 @@ else()
     endif()
 
     list(APPEND srcs
-        "esp_additions/task_snapshot.c"
         "FreeRTOS-Kernel/portable/port_common.c"
         "FreeRTOS-Kernel/portable/port_systick.c"
         "FreeRTOS-Kernel/croutine.c"
@@ -106,7 +104,8 @@ else()
         "esp_additions/freertos_v8_compat.c")
 
     list(APPEND private_include_dirs
-        "FreeRTOS-Kernel/include/freertos")
+        "FreeRTOS-Kernel/include/freertos"
+        "esp_additions/private_include")    # For #include "tasks_test_access_functions.h
 
     if(CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
         list(APPEND srcs "FreeRTOS-Kernel/portable/xtensa/xtensa_loadstore_handler.S")
