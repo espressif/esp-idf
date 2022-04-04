@@ -223,7 +223,7 @@ class Monitor:
             self.serial_handler.handle_serial_input(data, self.console_parser, self.coredump,
                                                     self.gdb_helper, self._line_matcher,
                                                     self.check_gdb_stub_and_run,
-                                                    finalize_line=not self.coredump.in_progress)
+                                                    finalize_line=not self.coredump or not self.coredump.in_progress)
         else:
             raise RuntimeError('Bad event data %r' % ((event_tag, data),))
 
