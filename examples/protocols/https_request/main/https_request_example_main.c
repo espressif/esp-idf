@@ -5,22 +5,13 @@
  *
  * Adapted from the ssl_client1 example in mbedtls.
  *
- * Original Copyright (C) 2006-2016, ARM Limited, All Rights Reserved, Apache 2.0 License.
- * Additions Copyright (C) Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD, Apache 2.0 License.
+ * SPDX-FileCopyrightText: 2006-2016 ARM Limited, All Rights Reserved
  *
+ * SPDX-License-Identifier: Apache-2.0
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-FileContributor: 2015-2022 Espressif Systems (Shanghai) CO LTD
  */
+
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
@@ -45,7 +36,9 @@
 #include "lwip/dns.h"
 
 #include "esp_tls.h"
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 #include "esp_crt_bundle.h"
+#endif
 #include "time_sync.h"
 
 /* Constants that aren't configurable in menuconfig */
@@ -166,6 +159,7 @@ exit:
     }
 }
 
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 static void https_get_request_using_crt_bundle(void)
 {
     ESP_LOGI(TAG, "https_request using crt bundle");
@@ -174,8 +168,7 @@ static void https_get_request_using_crt_bundle(void)
     };
     https_get_request(cfg, WEB_URL, HOWSMYSSL_REQUEST);
 }
-
-
+#endif // CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 
 static void https_get_request_using_cacert_buf(void)
 {
@@ -255,7 +248,9 @@ static void https_request_task(void *pvparameters)
     https_get_request_using_already_saved_session(server_url);
 #endif
 
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
     https_get_request_using_crt_bundle();
+#endif
     printf("Minimum free heap size: %d bytes\n", esp_get_minimum_free_heap_size());
     https_get_request_using_cacert_buf();
     https_get_request_using_global_ca_store();
