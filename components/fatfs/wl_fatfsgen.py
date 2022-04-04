@@ -5,10 +5,10 @@
 from typing import List, Optional
 
 from construct import Const, Int32ul, Struct
+from fatfs_utils.exceptions import WLNotInitialized
+from fatfs_utils.utils import (FULL_BYTE, UINT32_MAX, FATDefaults, crc32, generate_4bytes_random,
+                               get_args_for_partition_generator)
 from fatfsgen import FATFS
-from fatfsgen_utils.exceptions import WLNotInitialized
-from fatfsgen_utils.utils import (FULL_BYTE, UINT32_MAX, FATDefaults, crc32, generate_4bytes_random,
-                                  get_args_for_partition_generator)
 
 
 class WLFATFS:

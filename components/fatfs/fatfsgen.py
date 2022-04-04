@@ -6,12 +6,12 @@ import os
 from datetime import datetime
 from typing import Any, List, Optional
 
-from fatfsgen_utils.boot_sector import BootSector
-from fatfsgen_utils.fat import FAT
-from fatfsgen_utils.fatfs_state import FATFSState
-from fatfsgen_utils.fs_object import Directory
-from fatfsgen_utils.utils import (BYTES_PER_DIRECTORY_ENTRY, FATFS_INCEPTION, FATDefaults,
-                                  get_args_for_partition_generator, read_filesystem)
+from fatfs_utils.boot_sector import BootSector
+from fatfs_utils.fat import FAT
+from fatfs_utils.fatfs_state import FATFSState
+from fatfs_utils.fs_object import Directory
+from fatfs_utils.utils import (BYTES_PER_DIRECTORY_ENTRY, FATFS_INCEPTION, FATDefaults,
+                               get_args_for_partition_generator, read_filesystem)
 
 
 class FATFS:

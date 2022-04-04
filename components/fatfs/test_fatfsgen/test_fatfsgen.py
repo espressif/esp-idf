@@ -12,11 +12,11 @@ from test_utils import CFG, fill_sector, generate_test_dir_1, generate_test_dir_
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import fatfsgen  # noqa E402  # pylint: disable=C0413
-from fatfsgen_utils.exceptions import InconsistentFATAttributes  # noqa E402  # pylint: disable=C0413
-from fatfsgen_utils.exceptions import TooLongNameException  # noqa E402  # pylint: disable=C0413
-from fatfsgen_utils.exceptions import WriteDirectoryException  # noqa E402  # pylint: disable=C0413
-from fatfsgen_utils.exceptions import LowerCaseException, NoFreeClusterException  # noqa E402  # pylint: disable=C0413
-from fatfsgen_utils.utils import FAT12, read_filesystem  # noqa E402  # pylint: disable=C0413
+from fatfs_utils.exceptions import InconsistentFATAttributes  # noqa E402  # pylint: disable=C0413
+from fatfs_utils.exceptions import TooLongNameException  # noqa E402  # pylint: disable=C0413
+from fatfs_utils.exceptions import WriteDirectoryException  # noqa E402  # pylint: disable=C0413
+from fatfs_utils.exceptions import LowerCaseException, NoFreeClusterException  # noqa E402  # pylint: disable=C0413
+from fatfs_utils.utils import FAT12, read_filesystem  # noqa E402  # pylint: disable=C0413
 
 
 class FatFSGen(unittest.TestCase):

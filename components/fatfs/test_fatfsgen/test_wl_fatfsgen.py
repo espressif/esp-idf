@@ -11,7 +11,7 @@ from test_utils import CFG, generate_test_dir_1, generate_test_dir_2
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 import wl_fatfsgen  # noqa E402  # pylint: disable=C0413
-from fatfsgen_utils.exceptions import WLNotInitialized  # noqa E402  # pylint: disable=C0413
+from fatfs_utils.exceptions import WLNotInitialized  # noqa E402  # pylint: disable=C0413
 
 
 class WLFatFSGen(unittest.TestCase):

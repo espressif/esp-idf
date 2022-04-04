@@ -32,7 +32,6 @@ class FATFSState:
                  use_default_datetime: bool,
                  explicit_fat_type: Optional[int] = None,
                  long_names_enabled: bool = False):
-
         self.boot_sector_state = BootSectorState(oem_name=oem_name,
                                                  sector_size=sector_size,
                                                  sectors_per_cluster=sectors_per_cluster,
@@ -152,7 +151,7 @@ class BootSectorState:
         return non_data_sectors_
 
     @property
-    def start_address(self) -> int:
+    def fat_table_start_address(self) -> int:
         return self.sector_size * self.reserved_sectors_cnt
 
     @property
