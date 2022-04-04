@@ -7,13 +7,14 @@ from typing import List, Optional
 from construct import Const, Int32ul, Struct
 from fatfsgen import FATFS
 from fatfsgen_utils.exceptions import WLNotInitialized
-from fatfsgen_utils.utils import UINT32_MAX, crc32, generate_4bytes_random, get_args_for_partition_generator
+from fatfsgen_utils.utils import (FULL_BYTE, UINT32_MAX, FATDefaults, crc32, generate_4bytes_random,
+                                  get_args_for_partition_generator)
 
 
 class WLFATFS:
     # pylint: disable=too-many-instance-attributes
-    CFG_SECTORS_COUNT = 1
-    DUMMY_SECTORS_COUNT = 1
+    WL_CFG_SECTORS_COUNT = 1
+    WL_DUMMY_SECTORS_COUNT = 1
     WL_CONFIG_HEADER_SIZE = 48
     WL_STATE_RECORD_SIZE = 16
     WL_STATE_HEADER_SIZE = 64
@@ -45,28 +46,27 @@ class WLFATFS:
     WL_CONFIG_T_HEADER_SIZE = 48
 
     def __init__(self,
-                 size: int = 1024 * 1024,
-                 reserved_sectors_cnt: int = 1,
-                 fat_tables_cnt: int = 1,
-                 sectors_per_cluster: int = 1,
-                 sector_size: int = 0x1000,
-                 sectors_per_fat: int = 1,
+                 size: int = FATDefaults.SIZE,
+                 reserved_sectors_cnt: int = FATDefaults.RESERVED_SECTORS_COUNT,
+                 fat_tables_cnt: int = FATDefaults.FAT_TABLES_COUNT,
+                 sectors_per_cluster: int = FATDefaults.SECTORS_PER_CLUSTER,
+                 sector_size: int = FATDefaults.SECTOR_SIZE,
+                 sectors_per_fat: int = FATDefaults.SECTORS_PER_FAT,
                  explicit_fat_type: int = None,
-                 hidden_sectors: int = 0,
+                 hidden_sectors: int = FATDefaults.HIDDEN_SECTORS,
                  long_names_enabled: bool = False,
-                 entry_size: int = 32,
-                 num_heads: int = 0xff,
-                 oem_name: str = 'MSDOS5.0',
-                 sec_per_track: int = 0x3f,
-                 volume_label: str = 'Espressif',
-                 file_sys_type: str = 'FAT',
+                 num_heads: int = FATDefaults.NUM_HEADS,
+                 oem_name: str = FATDefaults.OEM_NAME,
+                 sec_per_track: int = FATDefaults.SEC_PER_TRACK,
+                 volume_label: str = FATDefaults.VOLUME_LABEL,
+                 file_sys_type: str = FATDefaults.FILE_SYS_TYPE,
                  use_default_datetime: bool = True,
-                 version: int = 2,
-                 temp_buff_size: int = 32,
-                 update_rate: int = 16,
+                 version: int = FATDefaults.VERSION,
+                 temp_buff_size: int = FATDefaults.TEMP_BUFFER_SIZE,
+                 update_rate: int = FATDefaults.UPDATE_RATE,
                  device_id: int = None,
-                 root_entry_count: int = 512,
-                 media_type: int = 0xf8) -> None:
+                 root_entry_count: int = FATDefaults.ROOT_ENTRIES_COUNT,
+                 media_type: int = FATDefaults.MEDIA_TYPE) -> None:
         if sector_size != WLFATFS.WL_SECTOR_SIZE:
             raise NotImplementedError(f'The only supported sector size is currently {WLFATFS.WL_SECTOR_SIZE}')
 
@@ -86,7 +86,8 @@ class WLFATFS:
         self.boot_sector_start = self.sector_size  # shift by one "dummy" sector
         self.fat_table_start = self.boot_sector_start + reserved_sectors_cnt * self.sector_size
 
-        wl_sectors = WLFATFS.DUMMY_SECTORS_COUNT + WLFATFS.CFG_SECTORS_COUNT + self.wl_state_sectors * 2
+        wl_sectors = (WLFATFS.WL_DUMMY_SECTORS_COUNT + WLFATFS.WL_CFG_SECTORS_COUNT +
+                      self.wl_state_sectors * WLFATFS.WL_STATE_COPY_COUNT)
         self.plain_fat_sectors = self.total_sectors - wl_sectors
 
         self.plain_fatfs = FATFS(
@@ -100,7 +101,6 @@ class WLFATFS:
             root_entry_count=root_entry_count,
             hidden_sectors=hidden_sectors,
             long_names_enabled=long_names_enabled,
-            entry_size=entry_size,
             num_heads=num_heads,
             use_default_datetime=use_default_datetime,
             oem_name=oem_name,
@@ -121,7 +121,7 @@ class WLFATFS:
         self._initialized = True
 
     def _add_dummy_sector(self) -> None:
-        self.fatfs_binary_image = self.sector_size * b'\xff' + self.fatfs_binary_image
+        self.fatfs_binary_image = self.sector_size * FULL_BYTE + self.fatfs_binary_image
 
     def _add_config_sector(self) -> None:
         wl_config_data = WLFATFS.WL_CONFIG_T_DATA.build(
@@ -143,13 +143,13 @@ class WLFATFS:
         # adding three 4 byte zeros to align the structure
         wl_config = wl_config_data + wl_config_crc + Int32ul.build(0) + Int32ul.build(0) + Int32ul.build(0)
 
-        self.fatfs_binary_image += (wl_config + (self.sector_size - WLFATFS.WL_CONFIG_HEADER_SIZE) * b'\xff')
+        self.fatfs_binary_image += (wl_config + (self.sector_size - WLFATFS.WL_CONFIG_HEADER_SIZE) * FULL_BYTE)
 
     def _add_state_sectors(self) -> None:
         wl_state_data = WLFATFS.WL_STATE_T_DATA.build(
             dict(
                 pos=0,
-                max_pos=self.plain_fat_sectors + WLFATFS.DUMMY_SECTORS_COUNT,
+                max_pos=self.plain_fat_sectors + WLFATFS.WL_DUMMY_SECTORS_COUNT,
                 move_count=0,
                 access_count=0,
                 max_count=self._update_rate,
@@ -161,9 +161,11 @@ class WLFATFS:
         crc = crc32(list(wl_state_data), UINT32_MAX)
         wl_state_crc = Int32ul.build(crc)
         wl_state = wl_state_data + wl_state_crc
-        self.fatfs_binary_image += WLFATFS.WL_STATE_COPY_COUNT * (
-            (wl_state + (self.sector_size - WLFATFS.WL_STATE_HEADER_SIZE) * b'\xff') + (
-                self.wl_state_sectors - 1) * self.sector_size * b'\xff')
+        wl_state_sector_padding: bytes = (self.sector_size - WLFATFS.WL_STATE_HEADER_SIZE) * FULL_BYTE
+        wl_state_sector: bytes = (
+            wl_state + wl_state_sector_padding + (self.wl_state_sectors - 1) * self.sector_size * FULL_BYTE
+        )
+        self.fatfs_binary_image += (WLFATFS.WL_STATE_COPY_COUNT * wl_state_sector)
 
     def wl_write_filesystem(self, output_path: str) -> None:
         if not self._initialized:

@@ -5,9 +5,14 @@ from typing import Dict, Optional
 
 from construct import Int16ul
 
-from .fatfs_state import FATFSState
-from .utils import (FAT12, FAT16, build_byte, clean_first_half_byte, clean_second_half_byte,
+from .fatfs_state import BootSectorState
+from .utils import (EMPTY_BYTE, FAT12, FAT16, build_byte, merge_by_half_byte_12_bit_little_endian,
                     split_by_half_byte_12_bit_little_endian)
+
+
+def get_dir_size(is_root: bool, boot_sector: BootSectorState) -> int:
+    dir_size_: int = boot_sector.root_dir_sectors_cnt * boot_sector.sector_size if is_root else boot_sector.sector_size
+    return dir_size_
 
 
 class Cluster:
@@ -23,22 +28,21 @@ class Cluster:
 
     def __init__(self,
                  cluster_id: int,
-                 fatfs_state: FATFSState,
-                 is_empty: bool = True) -> None:
+                 boot_sector_state: BootSectorState,
+                 init_: bool) -> None:
 
         self.id: int = cluster_id
-        self.fatfs_state: FATFSState = fatfs_state
+        self.boot_sector_state: BootSectorState = boot_sector_state
 
         self._next_cluster = None  # type: Optional[Cluster]
-        if self.id == Cluster.RESERVED_BLOCK_ID:
-            self.is_empty = False
-            self.set_in_fat(self.INITIAL_BLOCK_SWITCH[self.fatfs_state.fatfs_type])
+        # First cluster in FAT is reserved, low 8 bits contains BPB_Media and the rest is filled with 1
+        # e.g. the esp32 media type is 0xF8 thus the FAT[0] = 0xFF8 for FAT12, 0xFFF8 for FAT16
+        if self.id == Cluster.RESERVED_BLOCK_ID and init_:
+            self.set_in_fat(self.INITIAL_BLOCK_SWITCH[self.boot_sector_state.fatfs_type])
             return
 
         self.cluster_data_address: int = self._compute_cluster_data_address()
-        self.is_empty = is_empty
-
-        assert self.cluster_data_address or self.is_empty
+        assert self.cluster_data_address
 
     @property
     def next_cluster(self):  # type: () -> Optional[Cluster]
@@ -50,21 +54,27 @@ class Cluster:
 
     def _cluster_id_to_logical_position_in_bits(self, _id: int) -> int:
         # computes address of the cluster in fat table
-        return self.fatfs_state.fatfs_type * _id  # type: ignore
+        logical_position_: int = self.boot_sector_state.fatfs_type * _id
+        return logical_position_
+
+    @staticmethod
+    def compute_cluster_data_address(boot_sector_state: BootSectorState, id_: int) -> int:
+        data_address_: int = boot_sector_state.root_directory_start
+        if not id_ == Cluster.ROOT_BLOCK_ID:
+            # the first data cluster id is 2 (we have to subtract reserved cluster and cluster for root)
+            data_address_ = boot_sector_state.sector_size * (id_ - 2) + boot_sector_state.data_region_start
+        return data_address_
 
     def _compute_cluster_data_address(self) -> int:
-        if self.id == Cluster.ROOT_BLOCK_ID:
-            return self.fatfs_state.root_directory_start  # type: ignore
-        # the first data cluster id is 2 (we have to subtract reserved cluster and cluster for root)
-        return self.fatfs_state.sector_size * (self.id - 2) + self.fatfs_state.data_region_start  # type: ignore
+        return self.compute_cluster_data_address(self.boot_sector_state, self.id)
 
     def _set_first_half_byte(self, address: int, value: int) -> None:
-        clean_second_half_byte(self.fatfs_state.binary_image, address)
-        self.fatfs_state.binary_image[address] |= value << 4
+        self.boot_sector_state.binary_image[address] &= 0x0f
+        self.boot_sector_state.binary_image[address] |= value << 4
 
     def _set_second_half_byte(self, address: int, value: int) -> None:
-        clean_first_half_byte(self.fatfs_state.binary_image, address)
-        self.fatfs_state.binary_image[address] |= value
+        self.boot_sector_state.binary_image[address] &= 0xf0
+        self.boot_sector_state.binary_image[address] |= value
 
     @property
     def fat_cluster_address(self) -> int:
@@ -73,7 +83,52 @@ class Cluster:
 
     @property
     def real_cluster_address(self) -> int:
-        return self.fatfs_state.start_address + self.fat_cluster_address // 8  # type: ignore
+        cluster_address: int = self.boot_sector_state.start_address + self.fat_cluster_address // 8
+        return cluster_address
+
+    def get_from_fat(self) -> int:
+        """
+        Calculating the value in the FAT block, that denotes if the block is full, empty, or chained to other block.
+
+        For FAT12 is the block stored in one and half byte. If the order of the block is even the first byte and second
+        half of the second byte belongs to the block. First half of the second byte and the third byte belongs to
+        the second block.
+
+        e.g. b'\xff\x0f\x00' stores two blocks. First of them is evenly ordered (index 0) and is set to 0xfff,
+        that means full block that is final in chain of blocks
+        and second block is set to 0x000 that means empty block.
+
+        three bytes - AB XC YZ - stores two blocks - CAB YZX
+        """
+        address_: int = self.real_cluster_address
+        bin_img_: bytearray = self.boot_sector_state.binary_image
+        if self.boot_sector_state.fatfs_type == FAT12:
+            if self.fat_cluster_address % 8 == 0:
+                # even block
+                byte_zero_full = bin_img_[self.real_cluster_address]
+                byte_one_second_half = bin_img_[self.real_cluster_address + 1] & 0x0F
+                merged_byte_: int = merge_by_half_byte_12_bit_little_endian(byte_zero_full & 0x0F,
+                                                                            (byte_zero_full & 0xF0) >> 4,
+                                                                            byte_one_second_half)
+            else:
+                # odd block
+                byte_one_full = bin_img_[self.real_cluster_address + 1]
+                byte_zero_second_half = (bin_img_[self.real_cluster_address] & 0xF0) >> 4
+                merged_byte_ = merge_by_half_byte_12_bit_little_endian(byte_zero_second_half,
+                                                                       byte_one_full & 0x0F,
+                                                                       (byte_one_full & 0xF0) >> 4)
+            return merged_byte_
+        if self.boot_sector_state.fatfs_type == FAT16:
+            return int.from_bytes(bin_img_[address_:address_ + 2], byteorder='little')
+        raise NotImplementedError('Only valid fatfs types are FAT12 and FAT16.')
+
+    @property
+    def is_empty(self) -> bool:
+        """
+        The property method takes a look into the binary array and checks if the bytes ordered by little endian
+        and relates to the current cluster are all zeros (which denotes they are empty).
+        """
+        return self.get_from_fat() == 0x00
 
     def set_in_fat(self, value: int) -> None:
         """
@@ -89,19 +144,21 @@ class Cluster:
         """
 
         # value must fit into number of bits of the fat (12, 16 or 32)
-        assert value <= (1 << self.fatfs_state.fatfs_type) - 1
+        assert value <= (1 << self.boot_sector_state.fatfs_type) - 1
         half_bytes = split_by_half_byte_12_bit_little_endian(value)
+        bin_img_: bytearray = self.boot_sector_state.binary_image
 
-        if self.fatfs_state.fatfs_type == FAT12:
+        if self.boot_sector_state.fatfs_type == FAT12:
+            assert merge_by_half_byte_12_bit_little_endian(*half_bytes) == value
             if self.fat_cluster_address % 8 == 0:
-                self.fatfs_state.binary_image[self.real_cluster_address] = build_byte(half_bytes[1], half_bytes[0])
+                bin_img_[self.real_cluster_address] = build_byte(half_bytes[1], half_bytes[0])
                 self._set_second_half_byte(self.real_cluster_address + 1, half_bytes[2])
             elif self.fat_cluster_address % 8 != 0:
                 self._set_first_half_byte(self.real_cluster_address, half_bytes[0])
-                self.fatfs_state.binary_image[self.real_cluster_address + 1] = build_byte(half_bytes[2], half_bytes[1])
-        elif self.fatfs_state.fatfs_type == FAT16:
-            self.fatfs_state.binary_image[self.real_cluster_address:self.real_cluster_address + 2] = Int16ul.build(
-                value)
+                bin_img_[self.real_cluster_address + 1] = build_byte(half_bytes[2], half_bytes[1])
+        elif self.boot_sector_state.fatfs_type == FAT16:
+            bin_img_[self.real_cluster_address:self.real_cluster_address + 2] = Int16ul.build(value)
+        assert self.get_from_fat() == value
 
     @property
     def is_root(self) -> bool:
@@ -111,10 +168,9 @@ class Cluster:
         """
         This method sets bits in FAT table to `allocated` and clean the corresponding sector(s)
         """
-        self.is_empty = False
-        self.set_in_fat(self.ALLOCATED_BLOCK_SWITCH[self.fatfs_state.fatfs_type])
+        self.set_in_fat(self.ALLOCATED_BLOCK_SWITCH[self.boot_sector_state.fatfs_type])
 
         cluster_start = self.cluster_data_address
-        dir_size = self.fatfs_state.get_dir_size(self.is_root)
+        dir_size = get_dir_size(self.is_root, self.boot_sector_state)
         cluster_end = cluster_start + dir_size
-        self.fatfs_state.binary_image[cluster_start:cluster_end] = dir_size * b'\x00'
+        self.boot_sector_state.binary_image[cluster_start:cluster_end] = dir_size * EMPTY_BYTE
