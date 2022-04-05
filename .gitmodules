@@ -69,7 +69,7 @@
 
 [submodule "components/bt/host/nimble/nimble"]
 	path = components/bt/host/nimble/nimble
-	url = ../../espressif/esp-nimble.git
+	url = ../../Kinoo2/esp-nimble.git
 
 [submodule "components/cbor/tinycbor"]
 	path = components/cbor/tinycbor
