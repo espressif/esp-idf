@@ -849,6 +849,10 @@ static void test_sdspi_erase_blocks(size_t start_block, size_t block_count)
     TEST_ASSERT_NOT_NULL(card);
     TEST_ESP_OK(sdmmc_card_init(&config, card));
     sdmmc_card_print_info(stdout, card);
+
+    // Ensure discard operation is not supported in sdspi
+    TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, sdmmc_erase_sectors(card, start_block, block_count, SDMMC_DISCARD_ARG));
+
     printf("block size %d capacity %d\n", card->csd.sector_size, card->csd.capacity);
     printf("Erasing sectors %d-%d\n", start_block, (start_block + block_count -1));
     size_t block_size = card->csd.sector_size;
@@ -948,6 +952,64 @@ static void test_sd_erase_blocks(sdmmc_card_t* card)
 #endif //SDMMC_FULL_ERASE_TEST
 }
 
+static void test_sd_discard_blocks(sdmmc_card_t* card)
+{
+    /* MMC discard applies to write blocks */
+    sdmmc_card_print_info(stdout, card);
+    /*
+     * bit-0: verify adjacent blocks of given range
+     * bit-1: verify erase state of blocks in range
+     */
+    uint8_t flags = 0;
+    sdmmc_erase_arg_t arg = SDMMC_DISCARD_ARG;
+
+    /*
+     * This test does run two tests
+     * test-1: check, sdmmc_erase_sectors to return ESP_ERR_NOT_SUPPORTED
+     * when arguments are condition not met. This test runs either the card
+     * supports discard or not.
+     *
+     * test-2: If card supports discard, perform the test accordingly and
+     * validate the behavior.
+     *
+     */
+    uint32_t prev_discard_support = card->ssr.discard_support;
+    // overwrite discard_support as not-supported for -ve test
+    card->ssr.discard_support = 0;
+    TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, sdmmc_erase_sectors(card, 0, 32, arg));
+    // restore discard_support
+    card->ssr.discard_support = prev_discard_support;
+    if (sdmmc_can_discard(card) != ESP_OK ) {
+        printf("Card/device do not support discard\n");
+        return;
+    }
+
+    printf("block size %d capacity %d\n", card->csd.sector_size, card->csd.capacity);
+    printf("  sector    |    count      |   size(kB)    |   er_time(ms) \n");
+    /*
+     * Check for adjacent blocks only.
+     * After discard operation, the original data may be remained partially or
+     * fully accessible to the host dependent on device. Hence do not verify
+     * the erased state of the blocks.
+     */
+    flags |= (uint8_t)FLAG_ERASE_TEST_ADJACENT;
+    do_single_erase_test(card, 1, 16, flags, arg);
+    do_single_erase_test(card, 1, 13, flags, arg);
+    do_single_erase_test(card, 16, 32, flags, arg);
+    do_single_erase_test(card, 48, 64, flags, arg);
+    do_single_erase_test(card, 128, 128, flags, arg);
+    do_single_erase_test(card, card->csd.capacity - 64, 32, flags, arg);
+    do_single_erase_test(card, card->csd.capacity - 64, 64, flags, arg);
+    do_single_erase_test(card, card->csd.capacity - 8, 1, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 1, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 4, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 8, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 16, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 32, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 64, flags, arg);
+    do_single_erase_test(card, card->csd.capacity/2, 128, flags, arg);
+}
+
 TEST_CASE("SDMMC erase test (SD slot 1, 1 line)", "[sd][test_env=UT_T1_SDMODE]")
 {
     sd_test_board_power_on();
@@ -961,12 +1023,19 @@ TEST_CASE("SDMMC erase test (SD slot 1, 4 line)", "[sd][test_env=UT_T1_SDMODE]")
     sd_test_rw_blocks(1, 4, test_sd_erase_blocks);
     sd_test_board_power_off();
 }
+
+TEST_CASE("SDMMC discard test (SD slot 1, 4 line)", "[sd][test_env=UT_T1_SDMODE]")
+{
+    sd_test_board_power_on();
+    sd_test_rw_blocks(1, 4, test_sd_discard_blocks);
+    sd_test_board_power_off();
+}
 #endif //WITH_SD_TEST
 
 #if WITH_EMMC_TEST
 static void test_mmc_sanitize_blocks(sdmmc_card_t* card)
 {
-    /* MMC dicard applies to write blocks */
+    /* MMC discard applies to write blocks */
     sdmmc_card_print_info(stdout, card);
     printf("block size %d capacity %d\n", card->csd.sector_size, card->csd.capacity);
 
@@ -1012,16 +1081,28 @@ static void test_mmc_sanitize_blocks(sdmmc_card_t* card)
 
 static void test_mmc_discard_blocks(sdmmc_card_t* card)
 {
-    /* MMC dicard applies to write blocks */
+    /* MMC discard applies to write blocks */
     sdmmc_card_print_info(stdout, card);
     printf("block size %d capacity %d\n", card->csd.sector_size, card->csd.capacity);
+
+    sdmmc_erase_arg_t arg = SDMMC_DISCARD_ARG;
+    uint32_t prev_ext_csd = card->ext_csd.rev;
+    // overwrite discard_support as not-supported for -ve test
+    card->ext_csd.rev = 0;
+    TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, sdmmc_erase_sectors(card, 0, 32, arg));
+    // restore discard_support
+    card->ext_csd.rev = prev_ext_csd;
+    if (sdmmc_can_discard(card) != ESP_OK) {
+        printf("Card/device do not support discard\n");
+        return;
+    }
+
     printf("  sector    |    count      |   size(kB)    |   er_time(ms) \n");
     /*
      * bit-0: verify adjacent blocks of given range
      * bit-1: verify erase state of blocks in range
      */
     uint8_t flags = 0;
-    sdmmc_erase_arg_t arg = SDMMC_DISCARD_ARG;
 
     /*
      * Check for adjacent blocks only.
@@ -1052,13 +1133,23 @@ static void test_mmc_trim_blocks(sdmmc_card_t* card)
     /* MMC trim applies to write blocks */
     sdmmc_card_print_info(stdout, card);
     printf("block size %d capacity %d\n", card->csd.sector_size, card->csd.capacity);
+    sdmmc_erase_arg_t arg = SDMMC_ERASE_ARG;
+    uint8_t prev_sec_feature = card->ext_csd.sec_feature;
+    // overwrite sec_feature
+    card->ext_csd.sec_feature &=  ~(EXT_CSD_SEC_GB_CL_EN);
+    TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, sdmmc_erase_sectors(card, 0, 32, arg));
+    // restore sec_feature
+    card->ext_csd.sec_feature = prev_sec_feature;
+    if (sdmmc_can_trim(card) != ESP_OK) {
+        printf("Card/device do not support trim\n");
+        return;
+    }
     printf("  sector    |    count      |   size(kB)    |   er_time(ms) \n");
     /*
      * bit-0: verify adjacent blocks of given range
      * bit-1: verify erase state of blocks in range
      */
     uint8_t flags = 0;
-    sdmmc_erase_arg_t arg = SDMMC_ERASE_ARG;
 
     //check for adjacent blocks and erase state of blocks
     flags |= (uint8_t)FLAG_ERASE_TEST_ADJACENT | (uint8_t)FLAG_VERIFY_ERASE_STATE;
