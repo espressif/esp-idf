@@ -88,6 +88,8 @@ macro(__component_set_properties)
     __component_set_property(${component_target} EMBED_FILES "${__EMBED_FILES}")
     __component_set_property(${component_target} EMBED_TXTFILES "${__EMBED_TXTFILES}")
     __component_set_property(${component_target} REQUIRED_IDF_TARGETS "${__REQUIRED_IDF_TARGETS}")
+
+    __component_set_property(${component_target} WHOLE_ARCHIVE ${__WHOLE_ARCHIVE})
 endmacro()
 
 #
@@ -417,8 +419,9 @@ endfunction()
 # @param[in, optional] EMBED_TXTFILES (multivalue) list of text files to embed with the component
 # @param[in, optional] KCONFIG (single value) override the default Kconfig
 # @param[in, optional] KCONFIG_PROJBUILD (single value) override the default Kconfig
+# @param[in, optional] WHOLE_ARCHIVE (option) link the component as --whole-archive
 function(idf_component_register)
-    set(options)
+    set(options WHOLE_ARCHIVE)
     set(single_value KCONFIG KCONFIG_PROJBUILD)
     set(multi_value SRCS SRC_DIRS EXCLUDE_SRCS
                     INCLUDE_DIRS PRIV_INCLUDE_DIRS LDFRAGMENTS REQUIRES

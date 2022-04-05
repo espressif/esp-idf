@@ -66,7 +66,7 @@ macro(idf_component_mock)
 endmacro()
 
 macro(idf_component_register)
-    set(options)
+    set(options WHOLE_ARCHIVE)
     set(single_value KCONFIG KCONFIG_PROJBUILD)
     set(multi_value SRCS SRC_DIRS EXCLUDE_SRCS
                     INCLUDE_DIRS PRIV_INCLUDE_DIRS LDFRAGMENTS REQUIRES
