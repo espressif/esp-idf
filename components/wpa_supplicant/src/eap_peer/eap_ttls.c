@@ -1427,7 +1427,7 @@ start:
 	if (data->ssl.tls_v13 && wpabuf_len(in_decrypted) == 1 &&
 	    *wpabuf_head_u8(in_decrypted) == 0) {
 		wpa_printf(MSG_DEBUG,
-			   "EAP-TTLS: ACKing EAP-TLS Commitment Message");
+			   "EAP-TLS: ACKing protected success indication (appl data 0x00)");
 		eap_peer_tls_reset_output(&data->ssl);
 		wpabuf_free(in_decrypted);
 		return 1;

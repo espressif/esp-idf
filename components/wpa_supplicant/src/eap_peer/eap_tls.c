@@ -245,7 +245,8 @@ static struct wpabuf * eap_tls_process(struct eap_sm *sm, void *priv,
 	/* RFC 9190 Section 2.5 */
 	if (res == 2 && data->ssl.tls_v13 && wpabuf_len(resp) == 1 &&
 	    *wpabuf_head_u8(resp) == 0) {
-		wpa_printf(MSG_DEBUG, "EAP-TLS: ACKing Commitment Message");
+		wpa_printf(MSG_DEBUG,
+			   "EAP-TLS: ACKing protected success indication (appl data 0x00)");
 		eap_peer_tls_reset_output(&data->ssl);
 		res = 1;
 	}
