@@ -668,9 +668,9 @@ void arg_print_option(FILE* fp, const char* shortopts, const char* longopts, con
  */
 static void arg_print_gnuswitch_ds(arg_dstr_t ds, struct arg_hdr** table) {
     int tabindex;
-    char* format1 = " -%c";
-    char* format2 = " [-%c";
-    char* suffix = "";
+    const char* format1 = " -%c";
+    const char* format2 = " [-%c";
+    const char* suffix = "";
 
     /* print all mandatory switches that are without argument values */
     for (tabindex = 0; table[tabindex] && !(table[tabindex]->flag & ARG_TERMINATOR); tabindex++) {
