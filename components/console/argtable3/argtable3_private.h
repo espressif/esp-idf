@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2013-2019 Tom G. Huang
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 /*******************************************************************************
  * argtable3_private: Declares private types, constants, and interfaces
  *

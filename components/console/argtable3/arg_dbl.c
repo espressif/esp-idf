@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 1998-2001,2003-2011,2013 Stewart Heitmann
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 /*******************************************************************************
  * arg_dbl: Implements the double command-line option
  *
