@@ -151,6 +151,19 @@ esp_err_t esp_efuse_utility_apply_new_coding_scheme(void);
  */
 void esp_efuse_utility_clear_program_registers(void);
 
+/**
+ * @brief Checks the correctness of burned data in the given block.
+ *
+ * @note Internal use. Do not call it.
+ *
+ * @param[in] block Index of efuse block.
+ * @param[in] r_data_len Block length for reading data in bytes (multiple of 4).
+ *
+ * @return True  - written data are correct.
+ *         False - written data are incorrect.
+ */
+bool esp_efuse_utility_is_correct_written_data(esp_efuse_block_t block, unsigned r_data_len);
+
 #ifdef __cplusplus
 }
 #endif
