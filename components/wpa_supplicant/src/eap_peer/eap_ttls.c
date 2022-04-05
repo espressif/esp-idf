@@ -1423,7 +1423,7 @@ start:
 		goto start;
 	}
 
-	/* draft-ietf-emu-eap-tls13-13 Section 2.5 */
+	/* RFC 9190 Section 2.5 */
 	if (data->ssl.tls_v13 && wpabuf_len(in_decrypted) == 1 &&
 	    *wpabuf_head_u8(in_decrypted) == 0) {
 		wpa_printf(MSG_DEBUG,
