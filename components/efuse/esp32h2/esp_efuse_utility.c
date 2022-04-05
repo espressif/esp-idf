@@ -65,6 +65,27 @@ static esp_err_t esp_efuse_set_timing(void)
 
     return ESP_OK;
 }
+
+static bool efuse_hal_is_coding_error_in_block(unsigned block)
+{
+    if (block == 0) {
+        for (unsigned i = 0; i < 5; i++) {
+            if (REG_READ(EFUSE_RD_REPEAT_ERR0_REG + i * 4)) {
+                return true;
+            }
+        }
+    } else if (block <= 10) {
+        // EFUSE_RD_RS_ERR0_REG: (hi) BLOCK8, BLOCK7, BLOCK6, BLOCK5, BLOCK4, BLOCK3, BLOCK2, BLOCK1 (low)
+        // EFUSE_RD_RS_ERR1_REG:                                                     BLOCK10, BLOCK9
+        uint32_t error_reg = REG_READ(EFUSE_RD_RS_ERR0_REG + (block / 9) * 4);
+        unsigned offset = (block >= 9) ? block - 9 : block - 1;
+        if (((error_reg >> (4 * offset)) & 0x0F) != 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
 #endif // ifndef CONFIG_EFUSE_VIRTUAL
 
 // Efuse read operation: copies data from physical efuses to efuse read registers.
@@ -102,9 +123,47 @@ void esp_efuse_utility_burn_chip(void)
                         ets_efuse_rs_calculate((void *)range_write_addr_blocks[num_block].start, block_rs);
                         memcpy((void *)EFUSE_PGM_CHECK_VALUE0_REG, block_rs, sizeof(block_rs));
                     }
-                    int data_len = (range_write_addr_blocks[num_block].end - range_write_addr_blocks[num_block].start) + sizeof(uint32_t);
+                    unsigned r_data_len = (range_read_addr_blocks[num_block].end - range_read_addr_blocks[num_block].start) + sizeof(uint32_t);
+                    unsigned data_len = (range_write_addr_blocks[num_block].end - range_write_addr_blocks[num_block].start) + sizeof(uint32_t);
                     memcpy((void *)EFUSE_PGM_DATA0_REG, (void *)range_write_addr_blocks[num_block].start, data_len);
-                    ets_efuse_program(num_block);
+
+                    uint32_t backup_write_data[8 + 3]; // 8 words are data and 3 words are RS coding data
+                    memcpy(backup_write_data, (void *)EFUSE_PGM_DATA0_REG, sizeof(backup_write_data));
+                    int repeat_burn_op = 1;
+                    bool correct_written_data;
+                    bool coding_error_before = efuse_hal_is_coding_error_in_block(num_block);
+                    bool coding_error_occurred;
+
+                    do {
+                        ESP_LOGI(TAG, "BURN BLOCK%d", num_block);
+                        ets_efuse_program(num_block); // BURN a block
+
+                        bool coding_error_after;
+                        for (unsigned i = 0; i < 5; i++) {
+                            ets_efuse_read();
+                            coding_error_after = efuse_hal_is_coding_error_in_block(num_block);
+                            if (coding_error_after == true) {
+                                break;
+                            }
+                        }
+                        coding_error_occurred = (coding_error_before != coding_error_after) && coding_error_before == false;
+                        if (coding_error_occurred) {
+                            ESP_LOGE(TAG, "BLOCK%d has an error", num_block);
+                        }
+
+                        correct_written_data = esp_efuse_utility_is_correct_written_data(num_block, r_data_len);
+                        if (!correct_written_data || coding_error_occurred) {
+                            ESP_LOGW(TAG, "BLOCK%d: next retry [%d/3]...", num_block, repeat_burn_op);
+                            memcpy((void *)EFUSE_PGM_DATA0_REG, (void *)backup_write_data, sizeof(backup_write_data));
+                        }
+
+                    } while ((!correct_written_data || coding_error_occurred) && repeat_burn_op++ < 3);
+                    if (!correct_written_data) {
+                        ESP_LOGE(TAG, "Written data are incorrect");
+                    }
+                    if (coding_error_occurred) {
+                        ESP_LOGE(TAG, "Coding error occurred in block");
+                    }
                     break;
                 }
             }

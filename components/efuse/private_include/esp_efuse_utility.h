@@ -189,6 +189,19 @@ void esp_efuse_utility_erase_efuses_in_flash(void);
  */
 uint32_t esp_efuse_utility_get_read_register_address(esp_efuse_block_t block);
 
+/**
+ * @brief Checks the correctness of burned data in the given block.
+ *
+ * @note Internal use. Do not call it.
+ *
+ * @param[in] block Index of efuse block.
+ * @param[in] r_data_len Block length for reading data in bytes (multiple of 4).
+ *
+ * @return True  - written data are correct.
+ *         False - written data are incorrect.
+ */
+bool esp_efuse_utility_is_correct_written_data(esp_efuse_block_t block, unsigned r_data_len);
+
 #ifdef __cplusplus
 }
 #endif
