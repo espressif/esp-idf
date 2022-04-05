@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2013-2019 Tom G. Huang
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 /*******************************************************************************
  * arg_cmd: Provides the sub-command mechanism
  *

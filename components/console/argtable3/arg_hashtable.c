@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2013-2019 Tom G. Huang
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
 /*******************************************************************************
  * arg_hashtable: Implements the hash table utilities
  *
