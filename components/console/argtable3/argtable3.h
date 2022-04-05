@@ -215,7 +215,7 @@ ARG_EXTERN struct arg_date* arg_date0(const char* shortopts, const char* longopt
 ARG_EXTERN struct arg_date* arg_date1(const char* shortopts, const char* longopts, const char* format, const char* datatype, const char* glossary);
 ARG_EXTERN struct arg_date* arg_daten(const char* shortopts, const char* longopts, const char* format, const char* datatype, int mincount, int maxcount, const char* glossary);
 
-ARG_EXTERN struct arg_end* arg_end(int maxerrors);
+ARG_EXTERN struct arg_end* arg_end(int maxcount);
 
 #define ARG_DSTR_STATIC ((arg_dstr_freefn*)0)
 #define ARG_DSTR_VOLATILE ((arg_dstr_freefn*)1)
