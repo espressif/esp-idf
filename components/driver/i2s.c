@@ -811,7 +811,7 @@ static void i2s_dac_set_slot_legacy(void)
     i2s_ll_tx_reset(dev);
     i2s_ll_tx_set_slave_mod(dev, false);
     i2s_ll_tx_set_sample_bit(dev, slot_cfg->slot_bit_width, slot_cfg->data_bit_width);
-    i2s_ll_tx_enable_mono_mode(dev, false); // DAC not work in mono mode
+    i2s_ll_tx_enable_mono_mode(dev, slot_cfg->slot_mode == I2S_SLOT_MODE_MONO);
     i2s_ll_tx_enable_msb_shift(dev, false);
     i2s_ll_tx_set_ws_width(dev, slot_cfg->slot_bit_width);
     i2s_ll_tx_enable_msb_right(dev, false);
@@ -1215,6 +1215,8 @@ static esp_err_t i2s_config_transfer(i2s_port_t i2s_num, const i2s_config_t *i2s
     slot_cfg.data_bit_width = i2s_config->bits_per_sample;
     slot_cfg.slot_bit_width = (int)i2s_config->bits_per_chan < (int)i2s_config->bits_per_sample ?
                                 i2s_config->bits_per_sample : i2s_config->bits_per_chan;
+    slot_cfg.slot_mode = i2s_config->channel_format < I2S_CHANNEL_FMT_ONLY_RIGHT ?
+                         I2S_SLOT_MODE_STEREO : I2S_SLOT_MODE_MONO;
     i2s_clk_config_t clk_cfg = {};
     clk_cfg.sample_rate_hz = i2s_config->sample_rate;
     clk_cfg.mclk_multiple = i2s_config->mclk_multiple == 0 ? I2S_MCLK_MULTIPLE_256 : i2s_config->mclk_multiple;
@@ -1232,10 +1234,16 @@ static esp_err_t i2s_config_transfer(i2s_port_t i2s_num, const i2s_config_t *i2s
         i2s_std_slot_config_t *std_slot = (i2s_std_slot_config_t *)calloc(1, sizeof(i2s_std_slot_config_t));
         ESP_RETURN_ON_FALSE(std_slot, ESP_ERR_NO_MEM, TAG, "no memory for slot configuration struct");
         memcpy(std_slot, &slot_cfg, sizeof(i2s_slot_config_t));
-        std_slot->slot_mode = i2s_config->channel_format < I2S_CHANNEL_FMT_ONLY_RIGHT ?
-                             I2S_SLOT_MODE_STEREO : I2S_SLOT_MODE_MONO;
         std_slot->ws_width = i2s_config->bits_per_sample;
         std_slot->ws_pol = false;
+        if (i2s_config->channel_format == I2S_CHANNEL_FMT_RIGHT_LEFT) {
+            std_slot->slot_sel = I2S_STD_SLOT_LEFT_RIGHT;
+        } else if (i2s_config->channel_format == I2S_CHANNEL_FMT_ALL_LEFT ||
+                   i2s_config->channel_format == I2S_CHANNEL_FMT_ONLY_LEFT) {
+            std_slot->slot_sel = I2S_STD_SLOT_ONLY_LEFT;
+        } else {
+            std_slot->slot_sel = I2S_STD_SLOT_ONLY_RIGHT;
+        }
         if (i2s_config->communication_format == I2S_COMM_FORMAT_STAND_I2S) {
             std_slot->bit_shift = true;
         }
@@ -1268,8 +1276,6 @@ static esp_err_t i2s_config_transfer(i2s_port_t i2s_num, const i2s_config_t *i2s
         i2s_pdm_tx_slot_config_t *pdm_tx_slot = (i2s_pdm_tx_slot_config_t *)calloc(1, sizeof(i2s_pdm_tx_slot_config_t));
         ESP_RETURN_ON_FALSE(pdm_tx_slot, ESP_ERR_NO_MEM, TAG, "no memory for slot configuration struct");
         memcpy(pdm_tx_slot, &slot_cfg, sizeof(i2s_slot_config_t));
-        pdm_tx_slot->slot_mode = i2s_config->channel_format < I2S_CHANNEL_FMT_ONLY_RIGHT ?
-                                 I2S_SLOT_MODE_STEREO : I2S_SLOT_MODE_MONO;
         pdm_tx_slot->sd_prescale = 0;
         pdm_tx_slot->sd_scale = I2S_PDM_SIG_SCALING_MUL_1;
         pdm_tx_slot->hp_scale = I2S_PDM_SIG_SCALING_MUL_1;
@@ -1303,8 +1309,6 @@ static esp_err_t i2s_config_transfer(i2s_port_t i2s_num, const i2s_config_t *i2s
         i2s_pdm_rx_slot_config_t *pdm_rx_slot = (i2s_pdm_rx_slot_config_t *)calloc(1, sizeof(i2s_pdm_rx_slot_config_t));
         ESP_RETURN_ON_FALSE(pdm_rx_slot, ESP_ERR_NO_MEM, TAG, "no memory for slot configuration struct");
         memcpy(pdm_rx_slot, &slot_cfg, sizeof(i2s_slot_config_t));
-        pdm_rx_slot->slot_mode = i2s_config->channel_format < I2S_CHANNEL_FMT_ONLY_RIGHT ?
-                                 I2S_SLOT_MODE_STEREO : I2S_SLOT_MODE_MONO;
         p_i2s[i2s_num]->slot_cfg = pdm_rx_slot;
 
 
@@ -1330,7 +1334,6 @@ static esp_err_t i2s_config_transfer(i2s_port_t i2s_num, const i2s_config_t *i2s
         uint32_t mx_slot = i2s_get_max_channel_num(tdm_slot->slot_mask);
         tdm_slot->total_slot = mx_slot < i2s_config->total_chan ? mx_slot : i2s_config->total_chan;
         tdm_slot->ws_width = I2S_TDM_AUTO_WS_WIDTH;
-        tdm_slot->slot_mode = I2S_SLOT_MODE_STEREO;
         tdm_slot->ws_pol = false;
         if (i2s_config->communication_format == I2S_COMM_FORMAT_STAND_I2S) {
             tdm_slot->bit_shift = true;
@@ -1356,7 +1359,7 @@ static esp_err_t i2s_config_transfer(i2s_port_t i2s_num, const i2s_config_t *i2s
         ESP_RETURN_ON_FALSE(tdm_clk, ESP_ERR_NO_MEM, TAG, "no memory for clock configuration struct");
         memcpy(tdm_clk, &clk_cfg, sizeof(i2s_clk_config_t));
         p_i2s[i2s_num]->clk_cfg = tdm_clk;
-        p_i2s[i2s_num]->active_slot = i2s_get_active_channel_num(tdm_slot->slot_mode);
+        p_i2s[i2s_num]->active_slot = i2s_get_active_channel_num(tdm_slot->slot_mask);
         p_i2s[i2s_num]->total_slot = tdm_slot->total_slot;
         goto finish;
     }

@@ -36,6 +36,15 @@ typedef enum {
 } i2s_slot_mode_t;
 
 /**
+ * @brief I2S slot select in standard mode
+ */
+typedef enum {
+    I2S_STD_SLOT_ONLY_LEFT  = 0x01,         /*!< I2S only transmits or receives left slot */
+    I2S_STD_SLOT_ONLY_RIGHT = 0x02,         /*!< I2S only transmits or receives right slot */
+    I2S_STD_SLOT_LEFT_RIGHT = 0x03,         /*!< I2S only transmits or receives both left and right slot */
+} i2s_std_slot_sel_t;
+
+/**
  * @brief I2S channel direction
  */
 typedef enum {

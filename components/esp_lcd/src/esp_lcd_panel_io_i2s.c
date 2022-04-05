@@ -185,7 +185,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     i2s_ll_tx_bypass_pcm(bus->hal.dev, true);
     i2s_ll_tx_set_slave_mod(bus->hal.dev, false);
     i2s_ll_tx_set_bits_mod(bus->hal.dev, bus_config->bus_width);
-    i2s_ll_tx_set_chan_mod(bus->hal.dev, 1); // mono
+    i2s_ll_tx_select_slot(bus->hal.dev, I2S_STD_SLOT_ONLY_LEFT); // mono
     bus->bus_width = bus_config->bus_width;
     i2s_ll_tx_enable_right_first(bus->hal.dev, true);
 #if SOC_I2S_SUPPORTS_DMA_EQUAL

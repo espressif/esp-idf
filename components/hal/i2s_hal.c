@@ -69,17 +69,13 @@ void i2s_hal_std_set_tx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_sl
     i2s_ll_tx_enable_mono_mode(hal->dev, slot_cfg->slot_mode == I2S_SLOT_MODE_MONO);
     i2s_ll_tx_enable_msb_shift(hal->dev, slot_cfg->bit_shift);
     i2s_ll_tx_set_ws_width(hal->dev, slot_cfg->ws_width);
+    i2s_ll_tx_select_slot(hal->dev, slot_cfg->slot_sel);
 #if SOC_I2S_HW_VERSION_1
     i2s_ll_tx_enable_msb_right(hal->dev, slot_cfg->msb_right);
     i2s_ll_tx_enable_right_first(hal->dev, slot_cfg->ws_pol);
     /* Should always enable fifo */
     i2s_ll_tx_force_enable_fifo_mod(hal->dev, true);
 #elif SOC_I2S_HW_VERSION_2
-    /* There are always 2 slots in std mode */
-    i2s_ll_tx_set_chan_num(hal->dev, 2);
-    /* In mono mode, there only should be one slot enabled, another inactive slot will transmit same data as enabled slot
-     * Otherwise always enable the first two slots */
-    i2s_ll_tx_set_active_chan_mask(hal->dev, (slot_cfg->slot_mode == I2S_SLOT_MODE_MONO) ? 0x01 : 0x03);
     i2s_ll_tx_set_half_sample_bit(hal->dev, slot_bit_width);
     i2s_ll_tx_set_ws_idle_pol(hal->dev, slot_cfg->ws_pol);
     i2s_ll_tx_set_bit_order(hal->dev, slot_cfg->bit_order_lsb);
@@ -99,17 +95,13 @@ void i2s_hal_std_set_rx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_sl
     i2s_ll_rx_enable_mono_mode(hal->dev, slot_cfg->slot_mode == I2S_SLOT_MODE_MONO);
     i2s_ll_rx_enable_msb_shift(hal->dev, slot_cfg->bit_shift);
     i2s_ll_rx_set_ws_width(hal->dev, slot_cfg->ws_width);
+    i2s_ll_rx_select_slot(hal->dev, slot_cfg->slot_sel);
 #if SOC_I2S_HW_VERSION_1
     i2s_ll_rx_enable_msb_right(hal->dev, slot_cfg->msb_right);
     i2s_ll_rx_enable_right_first(hal->dev, slot_cfg->ws_pol);
     /* Should always enable fifo */
     i2s_ll_rx_force_enable_fifo_mod(hal->dev, true);
 #elif SOC_I2S_HW_VERSION_2
-    /* There are always 2 slots in std mode */
-    i2s_ll_rx_set_chan_num(hal->dev, 2);
-    /* In mono mode, there only should be one slot enabled, another inactive slot will transmit same data as enabled slot
-     * Otherwise always enable the first two slots */
-    i2s_ll_rx_set_active_chan_mask(hal->dev, (slot_cfg->slot_mode == I2S_SLOT_MODE_MONO) ? 0x01 : 0x03);
     i2s_ll_rx_set_half_sample_bit(hal->dev, slot_bit_width);
     i2s_ll_rx_set_ws_idle_pol(hal->dev, slot_cfg->ws_pol);
     i2s_ll_rx_set_bit_order(hal->dev, slot_cfg->bit_order_lsb);
