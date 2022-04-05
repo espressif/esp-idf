@@ -869,31 +869,7 @@ void arg_print_glossary(FILE* fp, void** argtable, const char* format) {
  * to right margin. The function does not indent the first line, but
  * only the following ones.
  *
- * Example:
- * arg_print_formatted( fp, 0, 5, "Some text that doesn't fit." )
- * will result in the following output:
- *
- * Some
- * text
- * that
- * doesn'
- * t fit.
- *
- * Too long lines will be wrapped in the middle of a word.
- *
- * arg_print_formatted( fp, 2, 7, "Some text that doesn't fit." )
- * will result in the following output:
- *
- * Some
- *   text
- *   that
- *   doesn'
- *   t fit.
- *
- * As you see, the first line is not indented. This enables output of
- * lines, which start in a line where output already happened.
- *
- * Author: Uli Fouquet
+ * See description of arg_print_formatted below.
  */
 static void arg_print_formatted_ds(arg_dstr_t ds, const unsigned lmargin, const unsigned rmargin, const char* text) {
     const unsigned int textlen = (unsigned int)strlen(text);
@@ -952,6 +928,45 @@ static void arg_print_formatted_ds(arg_dstr_t ds, const unsigned lmargin, const 
             line_end = textlen;
         }
     } /* lines of text */
+}
+
+/**
+ * Print a piece of text formatted, which means in a column with a
+ * left and a right margin. The lines are wrapped at whitspaces next
+ * to right margin. The function does not indent the first line, but
+ * only the following ones.
+ *
+ * Example:
+ * arg_print_formatted( fp, 0, 5, "Some text that doesn't fit." )
+ * will result in the following output:
+ *
+ * Some
+ * text
+ * that
+ * doesn'
+ * t fit.
+ *
+ * Too long lines will be wrapped in the middle of a word.
+ *
+ * arg_print_formatted( fp, 2, 7, "Some text that doesn't fit." )
+ * will result in the following output:
+ *
+ * Some
+ *   text
+ *   that
+ *   doesn'
+ *   t fit.
+ *
+ * As you see, the first line is not indented. This enables output of
+ * lines, which start in a line where output already happened.
+ *
+ * Author: Uli Fouquet
+ */
+void arg_print_formatted(FILE* fp, const unsigned lmargin, const unsigned rmargin, const char* text) {
+    arg_dstr_t ds = arg_dstr_create();
+    arg_print_formatted_ds(ds, lmargin, rmargin, text);
+    fputs(arg_dstr_cstr(ds), fp);
+    arg_dstr_destroy(ds);
 }
 
 /**
