@@ -229,6 +229,7 @@ ARG_EXTERN void arg_print_syntax(FILE* fp, void** argtable, const char* suffix);
 ARG_EXTERN void arg_print_syntaxv(FILE* fp, void** argtable, const char* suffix);
 ARG_EXTERN void arg_print_glossary(FILE* fp, void** argtable, const char* format);
 ARG_EXTERN void arg_print_glossary_gnu(FILE* fp, void** argtable);
+ARG_EXTERN void arg_print_formatted(FILE *fp, const unsigned lmargin, const unsigned rmargin, const char *text);
 ARG_EXTERN void arg_print_errors(FILE* fp, struct arg_end* end, const char* progname);
 ARG_EXTERN void arg_print_option_ds(arg_dstr_t ds, const char* shortopts, const char* longopts, const char* datatype, const char* suffix);
 ARG_EXTERN void arg_print_syntax_ds(arg_dstr_t ds, void** argtable, const char* suffix);
