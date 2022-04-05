@@ -51,7 +51,7 @@ extern "C" {
 #define ARG_CMD_DESCRIPTION_LEN 256
 
 #ifndef ARG_REPLACE_GETOPT
-#define ARG_REPLACE_GETOPT 1 /* use the embedded getopt as the system getopt(3) */
+#define ARG_REPLACE_GETOPT 0 /* ESP-IDF-specific: use newlib-provided getopt instead of the embedded one */
 #endif /* ARG_REPLACE_GETOPT */
 
 /* bit masks for arg_hdr.flag */
