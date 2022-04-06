@@ -102,14 +102,30 @@ static bool efuse_hal_is_coding_error_in_block(unsigned block)
 
 #endif // ifndef CONFIG_EFUSE_VIRTUAL
 
+static void efuse_hal_clear_program_registers(void)
+{
+    for (uint32_t r = EFUSE_BLK0_WDATA0_REG; r <= EFUSE_BLK0_WDATA6_REG; r += 4) {
+        REG_WRITE(r, 0);
+    }
+    for (uint32_t r = EFUSE_BLK1_WDATA0_REG; r <= EFUSE_BLK1_WDATA7_REG; r += 4) {
+        REG_WRITE(r, 0);
+    }
+    for (uint32_t r = EFUSE_BLK2_WDATA0_REG; r <= EFUSE_BLK2_WDATA7_REG; r += 4) {
+        REG_WRITE(r, 0);
+    }
+    for (uint32_t r = EFUSE_BLK3_WDATA0_REG; r <= EFUSE_BLK3_WDATA7_REG; r += 4) {
+        REG_WRITE(r, 0);
+    }
+}
+
 // Efuse read operation: copies data from physical efuses to efuse read registers.
 void esp_efuse_utility_clear_program_registers(void)
 {
-    REG_WRITE(EFUSE_CONF_REG, EFUSE_CONF_READ);
+    efuse_hal_clear_program_registers();
 }
 
 // Burn values written to the efuse write registers
-void esp_efuse_utility_burn_chip(void)
+esp_err_t esp_efuse_utility_burn_chip(void)
 {
 #ifdef CONFIG_EFUSE_VIRTUAL
     ESP_LOGW(TAG, "Virtual efuses enabled: Not really burning eFuses");
@@ -132,6 +148,7 @@ void esp_efuse_utility_burn_chip(void)
             esp_efuse_coding_scheme_t scheme = esp_efuse_get_coding_scheme(num_block);
             for (uint32_t addr_wr_block = range_write_addr_blocks[num_block].start; addr_wr_block <= range_write_addr_blocks[num_block].end; addr_wr_block += 4) {
                 if (REG_READ(addr_wr_block) != 0) {
+                    efuse_hal_clear_program_registers();
                     unsigned w_data_len;
                     unsigned r_data_len;
                     if (scheme == EFUSE_CODING_SCHEME_3_4) {
@@ -178,11 +195,12 @@ void esp_efuse_utility_burn_chip(void)
                         }
 
                     } while ((!correct_written_data || coding_error_occurred) && repeat_burn_op++ < 3);
-                    if (!correct_written_data) {
-                        ESP_LOGE(TAG, "Written data are incorrect");
-                    }
                     if (coding_error_occurred) {
                         ESP_LOGE(TAG, "Coding error occurred in block");
+                    }
+                    if (!correct_written_data) {
+                        ESP_LOGE(TAG, "Written data are incorrect");
+                        return ESP_FAIL;
                     }
                     break;
                 }
@@ -191,6 +209,7 @@ void esp_efuse_utility_burn_chip(void)
     }
 #endif // CONFIG_EFUSE_VIRTUAL
     esp_efuse_utility_reset();
+    return ESP_OK;
 }
 
 esp_err_t esp_efuse_utility_apply_34_encoding(const uint8_t *in_bytes, uint32_t *out_words, size_t in_bytes_len)

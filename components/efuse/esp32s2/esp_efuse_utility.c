@@ -89,7 +89,7 @@ void esp_efuse_utility_clear_program_registers(void)
 }
 
 // Burn values written to the efuse write registers
-void esp_efuse_utility_burn_chip(void)
+esp_err_t esp_efuse_utility_burn_chip(void)
 {
 #ifdef CONFIG_EFUSE_VIRTUAL
     ESP_LOGW(TAG, "Virtual efuses enabled: Not really burning eFuses");
@@ -111,6 +111,7 @@ void esp_efuse_utility_burn_chip(void)
         for (int num_block = EFUSE_BLK_MAX - 1; num_block >= EFUSE_BLK0; num_block--) {
             for (uint32_t addr_wr_block = range_write_addr_blocks[num_block].start; addr_wr_block <= range_write_addr_blocks[num_block].end; addr_wr_block += 4) {
                 if (REG_READ(addr_wr_block) != 0) {
+                    ets_efuse_clear_program_registers();
                     if (esp_efuse_get_coding_scheme(num_block) == EFUSE_CODING_SCHEME_RS) {
                         uint8_t block_rs[12];
                         ets_efuse_rs_calculate((void *)range_write_addr_blocks[num_block].start, block_rs);
@@ -151,11 +152,12 @@ void esp_efuse_utility_burn_chip(void)
                         }
 
                     } while ((!correct_written_data || coding_error_occurred) && repeat_burn_op++ < 3);
-                    if (!correct_written_data) {
-                        ESP_LOGE(TAG, "Written data are incorrect");
-                    }
                     if (coding_error_occurred) {
                         ESP_LOGE(TAG, "Coding error occurred in block");
+                    }
+                    if (!correct_written_data) {
+                        ESP_LOGE(TAG, "Written data are incorrect");
+                        return ESP_FAIL;
                     }
                     break;
                 }
@@ -164,6 +166,7 @@ void esp_efuse_utility_burn_chip(void)
     }
 #endif // CONFIG_EFUSE_VIRTUAL
     esp_efuse_utility_reset();
+    return ESP_OK;
 }
 
 // After esp_efuse_write.. functions EFUSE_BLKx_WDATAx_REG were filled is not coded values.

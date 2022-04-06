@@ -165,11 +165,12 @@ void esp_efuse_utility_reset(void)
 }
 
 // Burn values written to the efuse write registers
-void esp_efuse_utility_burn_efuses(void)
+esp_err_t esp_efuse_utility_burn_efuses(void)
 {
     ++s_burn_counter;
-    esp_efuse_utility_burn_chip();
+    esp_err_t err = esp_efuse_utility_burn_chip();
     ++s_burn_counter;
+    return err;
 }
 
 // Erase the virt_blocks array.
