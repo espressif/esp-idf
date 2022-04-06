@@ -7,8 +7,16 @@ if(NOT BOOTLOADER_BUILD)
     list(APPEND priv_requires esp_pm)
 endif()
 
-idf_component_register(SRCS "esp_crt_bundle/esp_crt_bundle.c"
-    INCLUDE_DIRS "port/include" "mbedtls/include" "esp_crt_bundle/include" "./mbedtls/library"
+set(mbedtls_srcs "")
+set(mbedtls_include_dirs "port/include" "mbedtls/include" "./mbedtls/library")
+
+if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
+    list(APPEND mbedtls_srcs "esp_crt_bundle/esp_crt_bundle.c")
+    list(APPEND mbedtls_include_dirs "esp_crt_bundle/include")
+endif()
+
+idf_component_register(SRCS "${mbedtls_srcs}"
+    INCLUDE_DIRS "${mbedtls_include_dirs}"
     REQUIRES lwip
     PRIV_REQUIRES "${priv_requires}"
     )
@@ -233,7 +241,14 @@ set_property(TARGET mbedcrypto APPEND PROPERTY LINK_LIBRARIES idf::driver idf::$
 set_property(TARGET mbedcrypto APPEND PROPERTY INTERFACE_LINK_LIBRARIES idf::driver idf::${target})
 
 # Link mbedtls libraries to component library
-target_link_libraries(${COMPONENT_LIB} PUBLIC ${mbedtls_targets})
+if(mbedtls_srcs STREQUAL "")
+    # For no sources in component library we must use "INTERFACE"
+    set(linkage_type INTERFACE)
+else()
+    set(linkage_type PUBLIC)
+endif()
+
+target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${mbedtls_targets})
 
 if(CONFIG_ESP_TLS_USE_DS_PERIPHERAL)
     # Link target (e.g. esp32s2) library to component library
@@ -241,11 +256,11 @@ if(CONFIG_ESP_TLS_USE_DS_PERIPHERAL)
     set_property(TARGET mbedcrypto APPEND PROPERTY INTERFACE_LINK_LIBRARIES $<LINK_ONLY:${target_lib}>)
     # The linker seems to be unable to resolve all the dependencies without increasing this
     set_property(TARGET mbedcrypto APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 6)
-    target_link_libraries(${COMPONENT_LIB} PUBLIC ${target_lib})
+    target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${target_lib})
 endif()
 
 # Link esp-cryptoauthlib to mbedtls
 if(CONFIG_ATCA_MBEDTLS_ECDSA)
     idf_component_get_property(cryptoauthlib esp-cryptoauthlib COMPONENT_LIB)
-    target_link_libraries(${COMPONENT_LIB} PUBLIC ${cryptoauthlib})
+    target_link_libraries(${COMPONENT_LIB} ${linkage_type} ${cryptoauthlib})
 endif()

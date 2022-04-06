@@ -18,7 +18,9 @@
 #include "esp_netif.h"
 #include "protocol_examples_common.h"
 #include "esp_tls.h"
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 #include "esp_crt_bundle.h"
+#endif
 
 #include "esp_http_client.h"
 
@@ -372,6 +374,7 @@ static void http_auth_digest(void)
 }
 #endif
 
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 static void https_with_url(void)
 {
     esp_http_client_config_t config = {
@@ -391,6 +394,7 @@ static void https_with_url(void)
     }
     esp_http_client_cleanup(client);
 }
+#endif // CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 
 static void https_with_hostname_path(void)
 {
@@ -667,6 +671,7 @@ static void http_native_request(void)
     esp_http_client_cleanup(client);
 }
 
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 static void http_partial_download(void)
 {
     esp_http_client_config_t config = {
@@ -711,6 +716,7 @@ static void http_partial_download(void)
 
     esp_http_client_cleanup(client);
 }
+#endif // CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 
 static void http_test_task(void *pvParameters)
 {
@@ -726,7 +732,9 @@ static void http_test_task(void *pvParameters)
     http_relative_redirect();
     http_absolute_redirect();
     http_absolute_redirect_manual();
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
     https_with_url();
+#endif
     https_with_hostname_path();
     http_redirect_to_https();
     http_download_chunk();
@@ -734,7 +742,9 @@ static void http_test_task(void *pvParameters)
     https_async();
     https_with_invalid_url();
     http_native_request();
+#if CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
     http_partial_download();
+#endif
 
     ESP_LOGI(TAG, "Finish http example");
     vTaskDelete(NULL);
