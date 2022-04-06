@@ -28,6 +28,7 @@ struct eap_tls_data {
 	void *ssl_ctx;
 	u8 eap_type;
 	struct wpabuf *pending_resp;
+	bool prot_success_received;
 };
 
 
@@ -249,9 +250,13 @@ static struct wpabuf * eap_tls_process(struct eap_sm *sm, void *priv,
 			   "EAP-TLS: ACKing protected success indication (appl data 0x00)");
 		eap_peer_tls_reset_output(&data->ssl);
 		res = 1;
+		ret->methodState = METHOD_DONE;
+		ret->decision = DECISION_UNCOND_SUCC;
+		data->prot_success_received = true;
 	}
 
-	if (tls_connection_established(data->ssl_ctx, data->ssl.conn))
+	if (tls_connection_established(data->ssl_ctx, data->ssl.conn) &&
+	    (!data->ssl.tls_v13 || data->prot_success_received))
 		eap_tls_success(sm, data, ret);
 
 	if (res == 1) {
