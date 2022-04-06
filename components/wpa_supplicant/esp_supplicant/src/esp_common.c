@@ -214,11 +214,16 @@ static void supplicant_sta_disconn_handler(void* arg, esp_event_base_t event_bas
 					   int32_t event_id, void* event_data)
 {
 	struct wpa_supplicant *wpa_s = &g_wpa_supp;
+	wifi_event_sta_disconnected_t *disconn = event_data;
+
 	wpas_rrm_reset(wpa_s);
 	if (wpa_s->current_bss) {
 		wpa_s->current_bss = NULL;
 	}
-	clear_bssid_flag(wpa_s);
+
+	if (disconn->reason != WIFI_REASON_ROAMING) {
+		clear_bssid_flag(wpa_s);
+	}
 }
 
 static int ieee80211_handle_rx_frm(u8 type, u8 *frame, size_t len, u8 *sender,
@@ -295,7 +300,6 @@ int esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
 
 	wpa_s->type = 0;
 	wpa_s->subtype = 0;
-	wpa_s->type |= (1 << WLAN_FC_STYPE_BEACON) | (1 << WLAN_FC_STYPE_PROBE_RESP);
 	esp_wifi_register_mgmt_frame_internal(wpa_s->type, wpa_s->subtype);
 	wpa_cb->wpa_sta_rx_mgmt = ieee80211_handle_rx_frm;
 	/* Matching is done only for MBO at the moment, this can be extended for other features*/
