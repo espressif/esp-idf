@@ -25,11 +25,9 @@ typedef struct {
     /** Name to be displayed to devices scanning for ESP32 */
     const char *device_name;
     /** Raw advertisement data */
-    uint8_t *raw_adv_data_p;
-    uint8_t raw_adv_data_len;
+    esp_ble_adv_data_t *adv_data_p;
     /** Raw scan response data */
-    uint8_t *raw_scan_rsp_data_p;
-    uint8_t raw_scan_rsp_data_len;
+    esp_ble_adv_data_t *scan_rsp_data_p;
     /** Parameters to configure the nature of advertising */
     esp_ble_adv_params_t adv_params;
     /** Descriptor table which consists of the configuration
