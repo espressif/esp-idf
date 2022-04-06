@@ -276,7 +276,6 @@ int esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
 
 	wpa_s->type = 0;
 	wpa_s->subtype = 0;
-	wpa_s->type |= (1 << WLAN_FC_STYPE_BEACON) | (1 << WLAN_FC_STYPE_PROBE_RESP);
 	esp_wifi_register_mgmt_frame_internal(wpa_s->type, wpa_s->subtype);
 	wpa_cb->wpa_sta_rx_mgmt = ieee80211_handle_rx_frm;
 	return 0;
