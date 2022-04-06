@@ -1233,6 +1233,15 @@
 #endif
 
 /**
+ * DNS_DEBUG: Enable debugging for DNS.
+ */
+#ifdef CONFIG_LWIP_DNS_DEBUG
+#define DNS_DEBUG                       LWIP_DBG_ON
+#else
+#define DNS_DEBUG                       LWIP_DBG_OFF
+#endif
+
+/**
  * MEMP_DEBUG: Enable debugging in memp.c.
  */
 #define MEMP_DEBUG                      LWIP_DBG_OFF
