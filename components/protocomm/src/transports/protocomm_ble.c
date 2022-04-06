@@ -51,8 +51,6 @@ typedef struct _protocomm_ble {
     ssize_t g_nu_lookup_count;
     uint16_t gatt_mtu;
     uint8_t *service_uuid;
-    esp_ble_adv_data_t *adv_data_p;
-    esp_ble_adv_data_t *scan_rsp_data_p;
 } _protocomm_ble_internal_t;
 
 static _protocomm_ble_internal_t *protoble_internal;
