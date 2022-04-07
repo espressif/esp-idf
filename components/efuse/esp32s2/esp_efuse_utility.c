@@ -91,6 +91,7 @@ void esp_efuse_utility_clear_program_registers(void)
 // Burn values written to the efuse write registers
 esp_err_t esp_efuse_utility_burn_chip(void)
 {
+    esp_err_t error = ESP_OK;
 #ifdef CONFIG_EFUSE_VIRTUAL
     ESP_LOGW(TAG, "Virtual efuses enabled: Not really burning eFuses");
     for (int num_block = EFUSE_BLK_MAX - 1; num_block >= EFUSE_BLK0; num_block--) {
@@ -109,64 +110,83 @@ esp_err_t esp_efuse_utility_burn_chip(void)
         // Permanently update values written to the efuse write registers
         // It is necessary to process blocks in the order from MAX-> EFUSE_BLK0, because EFUSE_BLK0 has protection bits for other blocks.
         for (int num_block = EFUSE_BLK_MAX - 1; num_block >= EFUSE_BLK0; num_block--) {
+            bool need_burn_block = false;
             for (uint32_t addr_wr_block = range_write_addr_blocks[num_block].start; addr_wr_block <= range_write_addr_blocks[num_block].end; addr_wr_block += 4) {
                 if (REG_READ(addr_wr_block) != 0) {
-                    ets_efuse_clear_program_registers();
-                    if (esp_efuse_get_coding_scheme(num_block) == EFUSE_CODING_SCHEME_RS) {
-                        uint8_t block_rs[12];
-                        ets_efuse_rs_calculate((void *)range_write_addr_blocks[num_block].start, block_rs);
-                        memcpy((void *)EFUSE_PGM_CHECK_VALUE0_REG, block_rs, sizeof(block_rs));
-                    }
-                    unsigned r_data_len = (range_read_addr_blocks[num_block].end - range_read_addr_blocks[num_block].start) + sizeof(uint32_t);
-                    unsigned data_len = (range_write_addr_blocks[num_block].end - range_write_addr_blocks[num_block].start) + sizeof(uint32_t);
-                    memcpy((void *)EFUSE_PGM_DATA0_REG, (void *)range_write_addr_blocks[num_block].start, data_len);
-
-                    uint32_t backup_write_data[8 + 3]; // 8 words are data and 3 words are RS coding data
-                    memcpy(backup_write_data, (void *)EFUSE_PGM_DATA0_REG, sizeof(backup_write_data));
-                    int repeat_burn_op = 1;
-                    bool correct_written_data;
-                    bool coding_error_before = efuse_hal_is_coding_error_in_block(num_block);
-                    bool coding_error_occurred;
-
-                    do {
-                        ESP_LOGI(TAG, "BURN BLOCK%d", num_block);
-                        ets_efuse_program(num_block); // BURN a block
-
-                        bool coding_error_after;
-                        for (unsigned i = 0; i < 5; i++) {
-                            ets_efuse_read();
-                            coding_error_after = efuse_hal_is_coding_error_in_block(num_block);
-                            if (coding_error_after == true) {
-                                break;
-                            }
-                        }
-                        coding_error_occurred = (coding_error_before != coding_error_after) && coding_error_before == false;
-                        if (coding_error_occurred) {
-                            ESP_LOGE(TAG, "BLOCK%d has an error", num_block);
-                        }
-
-                        correct_written_data = esp_efuse_utility_is_correct_written_data(num_block, r_data_len);
-                        if (!correct_written_data || coding_error_occurred) {
-                            ESP_LOGW(TAG, "BLOCK%d: next retry [%d/3]...", num_block, repeat_burn_op);
-                            memcpy((void *)EFUSE_PGM_DATA0_REG, (void *)backup_write_data, sizeof(backup_write_data));
-                        }
-
-                    } while ((!correct_written_data || coding_error_occurred) && repeat_burn_op++ < 3);
-                    if (coding_error_occurred) {
-                        ESP_LOGE(TAG, "Coding error occurred in block");
-                    }
-                    if (!correct_written_data) {
-                        ESP_LOGE(TAG, "Written data are incorrect");
-                        return ESP_FAIL;
-                    }
+                    need_burn_block = true;
                     break;
                 }
+            }
+            if (!need_burn_block) {
+                continue;
+            }
+            if (error) {
+                // It is done for a use case: BLOCK2 (Flash encryption key) could have an error (incorrect written data)
+                // in this case we can not burn any data into BLOCK0 because it might set read/write protections of BLOCK2.
+                ESP_LOGE(TAG, "BLOCK%d can not be burned because a previous block got an error, skipped.", num_block);
+                continue;
+            }
+            ets_efuse_clear_program_registers();
+            if (esp_efuse_get_coding_scheme(num_block) == EFUSE_CODING_SCHEME_RS) {
+                uint8_t block_rs[12];
+                ets_efuse_rs_calculate((void *)range_write_addr_blocks[num_block].start, block_rs);
+                memcpy((void *)EFUSE_PGM_CHECK_VALUE0_REG, block_rs, sizeof(block_rs));
+            }
+            unsigned r_data_len = (range_read_addr_blocks[num_block].end - range_read_addr_blocks[num_block].start) + sizeof(uint32_t);
+            unsigned data_len = (range_write_addr_blocks[num_block].end - range_write_addr_blocks[num_block].start) + sizeof(uint32_t);
+            memcpy((void *)EFUSE_PGM_DATA0_REG, (void *)range_write_addr_blocks[num_block].start, data_len);
+
+            uint32_t backup_write_data[8 + 3]; // 8 words are data and 3 words are RS coding data
+            memcpy(backup_write_data, (void *)EFUSE_PGM_DATA0_REG, sizeof(backup_write_data));
+            int repeat_burn_op = 1;
+            bool correct_written_data;
+            bool coding_error_before = efuse_hal_is_coding_error_in_block(num_block);
+            if (coding_error_before) {
+                ESP_LOGW(TAG, "BLOCK%d already has a coding error", num_block);
+            }
+            bool coding_error_occurred;
+
+            do {
+                ESP_LOGI(TAG, "BURN BLOCK%d", num_block);
+                ets_efuse_program(num_block); // BURN a block
+
+                bool coding_error_after;
+                for (unsigned i = 0; i < 5; i++) {
+                    ets_efuse_read();
+                    coding_error_after = efuse_hal_is_coding_error_in_block(num_block);
+                    if (coding_error_after == true) {
+                        break;
+                    }
+                }
+                coding_error_occurred = (coding_error_before != coding_error_after) && coding_error_before == false;
+                if (coding_error_occurred) {
+                    ESP_LOGW(TAG, "BLOCK%d got a coding error", num_block);
+                }
+
+                correct_written_data = esp_efuse_utility_is_correct_written_data(num_block, r_data_len);
+                if (!correct_written_data || coding_error_occurred) {
+                    ESP_LOGW(TAG, "BLOCK%d: next retry to fix an error [%d/3]...", num_block, repeat_burn_op);
+                    memcpy((void *)EFUSE_PGM_DATA0_REG, (void *)backup_write_data, sizeof(backup_write_data));
+                }
+
+            } while ((!correct_written_data || coding_error_occurred) && repeat_burn_op++ < 3);
+
+            if (coding_error_occurred) {
+                ESP_LOGW(TAG, "Coding error was not fixed");
+                if (num_block == 0) {
+                    ESP_LOGE(TAG, "BLOCK0 got a coding error, which might be critical for security");
+                    error = ESP_FAIL;
+                }
+            }
+            if (!correct_written_data) {
+                ESP_LOGE(TAG, "Written data are incorrect");
+                error = ESP_FAIL;
             }
         }
     }
 #endif // CONFIG_EFUSE_VIRTUAL
     esp_efuse_utility_reset();
-    return ESP_OK;
+    return error;
 }
 
 // After esp_efuse_write.. functions EFUSE_BLKx_WDATAx_REG were filled is not coded values.

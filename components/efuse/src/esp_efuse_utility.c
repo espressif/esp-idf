@@ -497,7 +497,7 @@ bool esp_efuse_utility_is_correct_written_data(esp_efuse_block_t block, unsigned
         }
     }
     if (!correct_written_data) {
-        ESP_LOGE(TAG, "BURN BLOCK%d - was not successful", block);
+        ESP_LOGE(TAG, "BURN BLOCK%d - ERROR (written bits != read bits)", block);
     }
     return correct_written_data;
 }
