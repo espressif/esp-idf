@@ -508,12 +508,6 @@ extern int xPortSwitchFlag;
 #define UNTESTED_FUNCTION()
 #endif
 
-/* ---------------------------------------------------- Deprecate ------------------------------------------------------
- * - Pull in header containing deprecated macros here
- * ------------------------------------------------------------------------------------------------------------------ */
-
-#include "portmacro_deprecated.h"
-
 #ifdef __cplusplus
 }
 #endif
