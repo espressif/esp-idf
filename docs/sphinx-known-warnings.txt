@@ -70,6 +70,8 @@ If type alias or template alias:
     void() esp_spp_cb_t (esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
     ----^
 
+rmt_encoder.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/peripherals/rmt:line.
+Declaration is '.. cpp:type:: struct rmt_encoder_t rmt_encoder_t'.
 spi_master.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/peripherals/spi_master:line.
 Declaration is '.. cpp:type:: struct spi_transaction_t spi_transaction_t'.
 spi_slave.inc:line: WARNING: Duplicate C++ declaration, also defined at api-reference/peripherals/spi_slave:line.

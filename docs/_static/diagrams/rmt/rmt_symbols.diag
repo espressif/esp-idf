@@ -1,0 +1,16 @@
+packetdiag rmt_symbols {
+    colwidth = 32
+    node_width = 16
+    node_height = 24
+    default_fontsize = 12
+
+    0-14: Period (15)
+    15: L
+    16-30: Period (15)
+    31: L
+    32-95: ... [colheight=2]
+    96-110: Period (15)
+    111: L
+    112-126: Period (15)
+    127: L
+}
