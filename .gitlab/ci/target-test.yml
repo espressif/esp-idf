@@ -31,6 +31,16 @@ example_test_pytest_esp32_generic:
     TARGET: ESP32
     ENV_MARKER: generic
 
+example_test_pytest_esp32_ir_transceiver:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_esp32
+  variables:
+    TARGET: ESP32
+    ENV_MARKER: ir_transceiver
+
 example_test_pytest_esp32s2_generic:
   extends:
     - .pytest_examples_dir_template
@@ -461,12 +471,6 @@ example_test_011:
     - Example_T2_RS485
   variables:
     SETUP_TOOLS: "1"
-
-example_test_012:
-  extends: .example_test_esp32_template
-  tags:
-    - ESP32
-    - Example_RMT_IR_PROTOCOLS
 
 example_test_013:
   extends: .example_test_esp32_template
