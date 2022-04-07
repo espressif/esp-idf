@@ -42,7 +42,8 @@ if(CONFIG_FREERTOS_SMP)
         )
 
     list(APPEND private_include_dirs
-        "FreeRTOS-Kernel-SMP/include/freertos")  # FreeRTOS headers via #include "xxx.h"
+        "FreeRTOS-Kernel-SMP/include/freertos"   # FreeRTOS headers via #include "xxx.h"
+        "esp_additions/private_include")    # For include "freertos_tasks_c_additions.h"
 
     if(CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
         list(APPEND srcs "FreeRTOS-Kernel-SMP/portable/xtensa/xtensa_loadstore_handler.S")
@@ -105,7 +106,7 @@ else()
 
     list(APPEND private_include_dirs
         "FreeRTOS-Kernel/include/freertos"
-        "esp_additions/private_include")    # For #include "tasks_test_access_functions.h
+        "esp_additions/private_include")    # For include "freertos_tasks_c_additions.h"
 
     if(CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
         list(APPEND srcs "FreeRTOS-Kernel/portable/xtensa/xtensa_loadstore_handler.S")
