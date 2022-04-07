@@ -3,13 +3,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
+from datetime import datetime
 from typing import Any, List, Optional
 
 from fatfsgen_utils.fat import FAT
 from fatfsgen_utils.fatfs_parser import FATFSParser
 from fatfsgen_utils.fatfs_state import FATFSState
 from fatfsgen_utils.fs_object import Directory
-from fatfsgen_utils.utils import (BYTES_PER_DIRECTORY_ENTRY, FAT32, generate_4bytes_random,
+from fatfsgen_utils.utils import (BYTES_PER_DIRECTORY_ENTRY, FAT32, FATFS_INCEPTION, generate_4bytes_random,
                                   get_args_for_partition_generator, pad_string, read_filesystem)
 
 
@@ -29,6 +30,7 @@ class FATFS:
                  sectors_per_fat: int = 1,
                  hidden_sectors: int = 0,
                  long_names_enabled: bool = False,
+                 use_default_datetime: bool = True,
                  entry_size: int = 32,
                  num_heads: int = 0xff,
                  oem_name: str = 'MSDOS5.0',
@@ -60,7 +62,8 @@ class FATFS:
                                             sec_per_track=sec_per_track,
                                             long_names_enabled=long_names_enabled,
                                             volume_label=volume_label,
-                                            oem_name=oem_name)
+                                            oem_name=oem_name,
+                                            use_default_datetime=use_default_datetime)
         binary_image: bytes = bytearray(
             read_filesystem(binary_image_path) if binary_image_path else self.create_empty_fatfs())
         self.state.binary_image = binary_image
@@ -74,17 +77,28 @@ class FATFS:
                                                    fatfs_state=self.state)
         self.root_directory.init_directory()
 
-    def create_file(self, name: str, extension: str = '', path_from_root: Optional[List[str]] = None) -> None:
+    def create_file(self, name: str,
+                    extension: str = '',
+                    path_from_root: Optional[List[str]] = None,
+                    object_timestamp_: datetime = FATFS_INCEPTION) -> None:
         # when path_from_root is None the dir is root
-        self.root_directory.new_file(name=name, extension=extension, path_from_root=path_from_root)
+        self.root_directory.new_file(name=name,
+                                     extension=extension,
+                                     path_from_root=path_from_root,
+                                     object_timestamp_=object_timestamp_)
 
-    def create_directory(self, name: str, path_from_root: Optional[List[str]] = None) -> None:
+    def create_directory(self, name: str,
+                         path_from_root: Optional[List[str]] = None,
+                         object_timestamp_: datetime = FATFS_INCEPTION) -> None:
         # when path_from_root is None the dir is root
         parent_dir = self.root_directory
         if path_from_root:
             parent_dir = self.root_directory.recursive_search(path_from_root, self.root_directory)
 
-        self.root_directory.new_directory(name=name, parent=parent_dir, path_from_root=path_from_root)
+        self.root_directory.new_directory(name=name,
+                                          parent=parent_dir,
+                                          path_from_root=path_from_root,
+                                          object_timestamp_=object_timestamp_)
 
     def write_content(self, path_from_root: List[str], content: bytes) -> None:
         """
@@ -140,16 +154,23 @@ class FATFS:
 
         normal_path = os.path.normpath(folder_relative_path)
         split_path = normal_path.split(os.sep)
+        object_timestamp = datetime.fromtimestamp(os.path.getctime(real_path))
+
         if os.path.isfile(real_path):
             with open(real_path, 'rb') as file:
                 content = file.read()
             file_name, extension = os.path.splitext(split_path[-1])
             extension = extension[1:]  # remove the dot from the extension
-            self.create_file(name=file_name, extension=extension, path_from_root=split_path[1:-1] or None)
+            self.create_file(name=file_name,
+                             extension=extension,
+                             path_from_root=split_path[1:-1] or None,
+                             object_timestamp_=object_timestamp)
             self.write_content(split_path[1:], content)
         elif os.path.isdir(real_path):
             if not is_dir:
-                self.create_directory(split_path[-1], split_path[1:-1])
+                self.create_directory(name=split_path[-1],
+                                      path_from_root=split_path[1:-1],
+                                      object_timestamp_=object_timestamp)
 
             # sorting files for better testability
             dir_content = list(sorted(os.listdir(real_path)))
@@ -171,7 +192,8 @@ def main() -> None:
                   size=args.partition_size,
                   root_entry_count=args.root_entry_count,
                   explicit_fat_type=args.fat_type,
-                  long_names_enabled=args.long_name_support)
+                  long_names_enabled=args.long_name_support,
+                  use_default_datetime=args.use_default_datetime)
 
     fatfs.generate(args.input_directory)
     fatfs.write_filesystem(args.output_file)

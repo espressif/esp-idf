@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 from construct import Const, Int8ul, Int16ul, Int32ul, PaddedString, Struct
 
-from .utils import (BYTES_PER_DIRECTORY_ENTRY, get_fatfs_type, get_non_data_sectors_cnt, number_of_clusters,
-                    read_filesystem)
+from .utils import (BYTES_PER_DIRECTORY_ENTRY, SHORT_NAMES_ENCODING, get_fatfs_type, get_non_data_sectors_cnt,
+                    number_of_clusters, read_filesystem)
 
 
 class FATFSParser:
@@ -16,7 +16,7 @@ class FATFSParser:
 
     BOOT_SECTOR_HEADER = Struct(
         'BS_jmpBoot' / Const(b'\xeb\xfe\x90'),
-        'BS_OEMName' / PaddedString(MAX_OEM_NAME_SIZE, 'utf-8'),
+        'BS_OEMName' / PaddedString(MAX_OEM_NAME_SIZE, SHORT_NAMES_ENCODING),
         'BPB_BytsPerSec' / Int16ul,
         'BPB_SecPerClus' / Int8ul,
         'BPB_RsvdSecCnt' / Int16ul,
@@ -33,8 +33,8 @@ class FATFSParser:
         'BS_Reserved1' / Const(b'\x00'),
         'BS_BootSig' / Const(b'\x29'),
         'BS_VolID' / Int32ul,
-        'BS_VolLab' / PaddedString(MAX_VOL_LAB_SIZE, 'utf-8'),
-        'BS_FilSysType' / PaddedString(MAX_FS_TYPE_SIZE, 'utf-8'),
+        'BS_VolLab' / PaddedString(MAX_VOL_LAB_SIZE, SHORT_NAMES_ENCODING),
+        'BS_FilSysType' / PaddedString(MAX_FS_TYPE_SIZE, SHORT_NAMES_ENCODING),
         'BS_EMPTY' / Const(448 * b'\x00'),
         'Signature_word' / Const(b'\x55\xAA')
     )
