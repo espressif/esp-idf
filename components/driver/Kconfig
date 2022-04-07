@@ -279,4 +279,15 @@ menu "Driver configurations"
                 Note that, this option only controls the PCNT driver log, won't affect other drivers.
     endmenu # PCNT Configuration
 
+    menu "RMT Configuration"
+        depends on SOC_RMT_SUPPORTED
+        config RMT_SUPPRESS_DEPRECATE_WARN
+            bool "Suppress legacy driver deprecated warning"
+            default n
+            help
+                Wether to suppress the deprecation warnings when using legacy rmt driver (driver/rmt.h).
+                If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
+                you can enable this option.
+    endmenu # RMT Configuration
+
 endmenu  # Driver configurations

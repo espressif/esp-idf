@@ -13,7 +13,8 @@
 #include "esp_check.h"
 #include "driver/gpio.h"
 #include "esp_private/periph_ctrl.h"
-#include "driver/rmt.h"
+#include "driver/rmt_types_legacy.h"
+#include "driver_ng.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -44,7 +45,7 @@
 #define RMT_TRANSLATOR_UNINIT_STR "RMT translator not init"
 #define RMT_PARAM_ERR_STR "RMT param error"
 
-static const char *TAG = "rmt";
+static const char *TAG = "rmt(legacy)";
 
 // Spinlock for protecting concurrent register-level access only
 #define RMT_ENTER_CRITICAL()  portENTER_CRITICAL_SAFE(&(rmt_contex.rmt_spinlock))
@@ -414,7 +415,7 @@ esp_err_t rmt_set_source_clk(rmt_channel_t channel, rmt_source_clk_t base_clk)
 {
     ESP_RETURN_ON_FALSE(channel < RMT_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
     RMT_ENTER_CRITICAL();
-    // `rmt_clock_source_t` and `rmt_source_clk_t` are binary competible, as the underlying enum entries come from the same `soc_module_clk_t`
+    // `rmt_clock_source_t` and `rmt_source_clk_t` are binary compatible, as the underlying enum entries come from the same `soc_module_clk_t`
     rmt_ll_set_group_clock_src(rmt_contex.hal.regs, channel, (rmt_clock_source_t)base_clk, 1, 0, 0);
     RMT_EXIT_CRITICAL();
     return ESP_OK;
@@ -424,7 +425,7 @@ esp_err_t rmt_get_source_clk(rmt_channel_t channel, rmt_source_clk_t *src_clk)
 {
     ESP_RETURN_ON_FALSE(channel < RMT_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
     RMT_ENTER_CRITICAL();
-    // `rmt_clock_source_t` and `rmt_source_clk_t` are binary competible, as the underlying enum entries come from the same `soc_module_clk_t`
+    // `rmt_clock_source_t` and `rmt_source_clk_t` are binary compatible, as the underlying enum entries come from the same `soc_module_clk_t`
     *src_clk = (rmt_source_clk_t)rmt_ll_get_group_clock_src(rmt_contex.hal.regs, channel);
     RMT_EXIT_CRITICAL();
     return ESP_OK;
@@ -1355,3 +1356,19 @@ esp_err_t rmt_enable_tx_loop_autostop(rmt_channel_t channel, bool en)
     return ESP_OK;
 }
 #endif
+
+/**
+ * @brief This function will be called during start up, to check that this legacy RMT driver is not running along with the new driver
+ */
+__attribute__((constructor))
+static void check_rmt_legacy_driver_conflict(void)
+{
+    // This function was declared as weak here. The new RMT driver has one implementation.
+    // So if the new RMT driver is not linked in, then `rmt_acquire_group_handle()` should be NULL at runtime.
+    extern __attribute__((weak)) void *rmt_acquire_group_handle(int group_id);
+    if ((void *)rmt_acquire_group_handle != NULL) {
+        ESP_EARLY_LOGE(TAG, "CONFLICT! driver_ng is not allowed to be used with the legacy driver");
+        abort();
+    }
+    ESP_EARLY_LOGW(TAG, "legacy driver is deprecated, please migrate to `driver/rmt_tx.h` and/or `driver/rmt_rx.h`");
+}

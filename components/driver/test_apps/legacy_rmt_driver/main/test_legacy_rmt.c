@@ -3,7 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-// RMT driver unit test is based on extended NEC protocol
 
 #include <stdio.h>
 #include <string.h>
@@ -14,10 +13,8 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 #include "unity.h"
-#include "test_utils.h"
 #include "esp_rom_gpio.h"
 
-#if SOC_RMT_SUPPORTED
 #include "ir_tools.h"
 #include "driver/rmt.h"
 
@@ -32,6 +29,7 @@
 #define RMT_TESTBENCH_FLAGS_LOOP_ON (1<<2)
 
 static const char *TAG = "RMT.test";
+
 static ir_builder_t *s_ir_builder = NULL;
 static ir_parser_t *s_ir_parser = NULL;
 
@@ -598,5 +596,3 @@ TEST_CASE("RMT TX loop", "[rmt]")
     rmt_clean_testbench(tx_channel, rx_channel);
 }
 #endif
-
-#endif // SOC_RMT_SUPPORTED

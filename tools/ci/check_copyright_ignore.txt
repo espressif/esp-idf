@@ -2073,11 +2073,6 @@ examples/peripherals/mcpwm/mcpwm_brushed_dc_control/main/mcpwm_brushed_dc_contro
 examples/peripherals/mcpwm/mcpwm_capture_hc_sr04/main/mcpwm_capture_hc_sr04.c
 examples/peripherals/mcpwm/mcpwm_servo_control/main/mcpwm_servo_control_example_main.c
 examples/peripherals/mcpwm/mcpwm_sync_example/main/mcpwm_sync_example.c
-examples/peripherals/rmt/ir_protocols/components/infrared_tools/include/ir_timings.h
-examples/peripherals/rmt/ir_protocols/components/infrared_tools/src/ir_builder_rmt_nec.c
-examples/peripherals/rmt/ir_protocols/components/infrared_tools/src/ir_builder_rmt_rc5.c
-examples/peripherals/rmt/ir_protocols/components/infrared_tools/src/ir_parser_rmt_nec.c
-examples/peripherals/rmt/ir_protocols/components/infrared_tools/src/ir_parser_rmt_rc5.c
 examples/peripherals/rmt/ir_protocols/example_test.py
 examples/peripherals/rmt/ir_protocols/main/ir_protocols_main.c
 examples/peripherals/rmt/led_strip/main/led_strip_main.c
