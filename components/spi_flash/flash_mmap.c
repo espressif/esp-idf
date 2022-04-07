@@ -165,6 +165,8 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(const int *pages, size_t page_count, sp
                          const void** out_ptr, spi_flash_mmap_handle_t* out_handle)
 {
     esp_err_t ret;
+    const void* temp_ptr = *out_ptr = NULL;
+    spi_flash_mmap_handle_t temp_handle = *out_handle = (spi_flash_mmap_handle_t)NULL;
     bool need_flush = false;
     if (!page_count) {
         return ESP_ERR_INVALID_ARG;
@@ -220,8 +222,6 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(const int *pages, size_t page_count, sp
     }
     // checked all the region(s) and haven't found anything?
     if (start == end) {
-        *out_handle = 0;
-        *out_ptr = NULL;
         ret = ESP_ERR_NO_MEM;
     } else {
         // set up mapping using pages
@@ -263,8 +263,8 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(const int *pages, size_t page_count, sp
         new_entry->page = start;
         new_entry->count = page_count;
         new_entry->handle = ++s_mmap_last_handle;
-        *out_handle = new_entry->handle;
-        *out_ptr = (void*) (region_addr + (start - region_begin) * SPI_FLASH_MMU_PAGE_SIZE);
+        temp_handle = new_entry->handle;
+        temp_ptr = (void*) (region_addr + (start - region_begin) * SPI_FLASH_MMU_PAGE_SIZE);
         ret = ESP_OK;
     }
 
@@ -287,9 +287,11 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(const int *pages, size_t page_count, sp
     }
 
     spi_flash_enable_interrupts_caches_and_other_cpu();
-    if (*out_ptr == NULL) {
+    if (temp_ptr == NULL) {
         free(new_entry);
     }
+    *out_ptr = temp_ptr;
+    *out_handle = temp_handle;
     return ret;
 }
 
