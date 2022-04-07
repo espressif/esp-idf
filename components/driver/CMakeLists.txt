@@ -46,7 +46,7 @@ if(CONFIG_SOC_SIGMADELTA_SUPPORTED)
 endif()
 
 if(CONFIG_SOC_RMT_SUPPORTED)
-    list(APPEND srcs "rmt.c")
+    list(APPEND srcs "rmt/rmt_common.c" "rmt/rmt_encoder.c" "rmt/rmt_rx.c" "rmt/rmt_tx.c" "deprecated/rmt_legacy.c")
 endif()
 
 if(CONFIG_SOC_PCNT_SUPPORTED)

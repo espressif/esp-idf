@@ -14,7 +14,6 @@
 #include "driver/gpio.h"
 #include "esp_private/periph_ctrl.h"
 #include "driver/rmt_types_legacy.h"
-#include "driver_ng.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"

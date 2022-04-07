@@ -213,7 +213,7 @@
 #define SOC_RMT_SUPPORT_TX_ASYNC_STOP         1  /*!< Support stop transmission asynchronously */
 #define SOC_RMT_SUPPORT_TX_LOOP_COUNT         1  /*!< Support transmiting specified number of cycles in loop mode */
 #define SOC_RMT_SUPPORT_TX_SYNCHRO            1  /*!< Support coordinate a group of TX channels to start simultaneously */
-#define SOC_RMT_SUPPORT_TX_CARRIER_ALWAYS_ON  1  /*!< TX carrier can be modulated all the time */
+#define SOC_RMT_SUPPORT_TX_CARRIER_DATA_ONLY  1  /*!< TX carrier can be modulated to data phase only */
 #define SOC_RMT_SUPPORT_REF_TICK              1  /*!< Support set REF_TICK as the RMT clock source */
 #define SOC_RMT_SUPPORT_APB                   1  /*!< Support set APB as the RMT clock source */
 #define SOC_RMT_CHANNEL_CLK_INDEPENDENT       1  /*!< Can select different source clock for each channel */

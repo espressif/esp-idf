@@ -35,6 +35,13 @@ typedef struct {
 void rmt_hal_init(rmt_hal_context_t *hal);
 
 /**
+ * @brief Deinitialize the RMT HAL driver
+ *
+ * @param hal: RMT HAL context
+ */
+void rmt_hal_deinit(rmt_hal_context_t *hal);
+
+/**
  * @brief Reset RMT TX Channel
  *
  * @param hal: RMT HAL context
