@@ -11,11 +11,9 @@
 #include <string.h>
 #include "soc/soc_caps.h"
 #include "hal/spi_flash_hal.h"
-#include "hal/log.h"
 
 #define APB_CYCLE_NS   (1000*1000*1000LL/APB_CLK_FREQ)
 
-static const char TAG[] = "FLASH_HAL";
 
 typedef struct {
     int div;
@@ -127,7 +125,6 @@ esp_err_t spi_flash_hal_init(spi_flash_hal_context_t *data_out, const spi_flash_
     }
 #endif
 
-    HAL_LOGD(TAG, "extra_dummy: %d", data_out->extra_dummy);
     return ESP_OK;
 }
 
