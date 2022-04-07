@@ -8,7 +8,7 @@
     when: always
     paths:
       - XUNIT_RESULT.xml
-      - /tmp/pytest-embedded/
+      - pytest_embedded_log/
     reports:
       junit: XUNIT_RESULT.xml
     expire_in: 1 week
