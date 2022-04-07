@@ -2072,10 +2072,6 @@ examples/peripherals/mcpwm/mcpwm_brushed_dc_control/main/mcpwm_brushed_dc_contro
 examples/peripherals/mcpwm/mcpwm_capture_hc_sr04/main/mcpwm_capture_hc_sr04.c
 examples/peripherals/mcpwm/mcpwm_servo_control/main/mcpwm_servo_control_example_main.c
 examples/peripherals/mcpwm/mcpwm_sync_example/main/mcpwm_sync_example.c
-examples/peripherals/rmt/morse_code/main/morse_code_main.c
-examples/peripherals/rmt/musical_buzzer/components/musical_buzzer/include/musical_buzzer.h
-examples/peripherals/rmt/musical_buzzer/components/musical_buzzer/src/musical_buzzer_rmt.c
-examples/peripherals/rmt/musical_buzzer/main/musical_buzzer_example_main.c
 examples/peripherals/sdio/host/main/app_main.c
 examples/peripherals/sdio/sdio_test.py
 examples/peripherals/sdio/slave/main/app_main.c
