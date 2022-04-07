@@ -19,10 +19,6 @@
 #define TEST_ALARM_CALLBACK_ATTR
 #endif // CONFIG_GPTIMER_ISR_IRAM_SAFE
 
-void test_app_include_gptimer(void)
-{
-}
-
 TEST_CASE("gptimer_set_get_raw_count", "[gptimer]")
 {
     gptimer_config_t config = {

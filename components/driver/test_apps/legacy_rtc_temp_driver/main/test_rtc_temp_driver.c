@@ -9,10 +9,6 @@
 #include "unity.h"
 #include "driver/temp_sensor.h"
 
-void test_app_include_rtc_temp_driver(void)
-{
-}
-
 TEST_CASE("Temperature_legacy_workflow_test", "[hw_timer]")
 {
     printf("Initializing Temperature sensor\n");

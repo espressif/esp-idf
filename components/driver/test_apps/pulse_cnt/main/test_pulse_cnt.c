@@ -402,7 +402,3 @@ TEST_CASE("pcnt_zero_cross_mode", "[pcnt]")
     TEST_ESP_OK(pcnt_del_channel(channelB));
     TEST_ESP_OK(pcnt_del_unit(unit));
 }
-
-void test_app_include_pulse_cnt(void)
-{
-}

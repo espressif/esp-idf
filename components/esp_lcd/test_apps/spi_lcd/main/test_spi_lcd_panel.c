@@ -18,10 +18,6 @@
 
 #define TEST_SPI_HOST_ID  SPI2_HOST
 
-void test_app_include_spi_lcd(void)
-{
-}
-
 void test_spi_lcd_common_initialize(esp_lcd_panel_io_handle_t *io_handle, esp_lcd_panel_io_color_trans_done_cb_t on_color_trans_done,
                                     void *user_data, int cmd_bits, int param_bits, bool oct_mode)
 {

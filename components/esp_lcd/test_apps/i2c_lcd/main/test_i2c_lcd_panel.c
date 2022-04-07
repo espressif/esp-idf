@@ -14,10 +14,6 @@
 #include "esp_system.h"
 #include "test_i2c_board.h"
 
-void test_app_include_i2c_lcd(void)
-{
-}
-
 TEST_CASE("lcd_panel_with_i2c_interface_(ssd1306)", "[lcd]")
 {
     const uint8_t pattern[][16] = {{

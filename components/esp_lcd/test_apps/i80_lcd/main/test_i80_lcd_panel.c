@@ -17,10 +17,6 @@
 #include "driver/gpio.h"
 #include "test_i80_board.h"
 
-void test_app_include_i80_lcd(void)
-{
-}
-
 #if SOC_I2S_LCD_I80_VARIANT
 #include "driver/i2s.h"
 

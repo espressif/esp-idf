@@ -1007,7 +1007,3 @@ TEST_CASE("Timer_check_reinitialization_sequence", "[hw_timer]")
     // The pending timer interrupt should not be triggered
     TEST_ASSERT_EQUAL(0, timer_group_get_intr_status_in_isr(TIMER_GROUP_0) & TIMER_INTR_T0);
 }
-
-void test_app_include_legacy_timer(void)
-{
-}

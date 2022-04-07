@@ -9,10 +9,6 @@
 #include "unity.h"
 #include "driver/temperature_sensor.h"
 
-void test_app_include_temperature_sensor(void)
-{
-}
-
 TEST_CASE("Temperature_sensor_driver_workflow_test", "[temperature_sensor]")
 {
     printf("Initializing Temperature sensor\n");

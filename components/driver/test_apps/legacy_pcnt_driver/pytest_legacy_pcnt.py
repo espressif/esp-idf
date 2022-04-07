@@ -16,7 +16,7 @@ from pytest_embedded import Dut
     ],
     indirect=True,
 )
-def test_gptimer(dut: Dut) -> None:
+def test_legacy_pcnt(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('*')
     dut.expect_unity_test_output(timeout=240)
