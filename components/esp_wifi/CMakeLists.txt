@@ -16,25 +16,29 @@ else()
 endif()
 
 idf_component_register(SRCS "src/coexist.c"
-                            "src/lib_printf.c"
-                            "src/mesh_event.c"
-                            "src/phy_init.c"
-                            "src/smartconfig.c"
-                            "src/smartconfig_ack.c"
-                            "src/wifi_init.c"
-                            "src/wifi_default.c"
-                            "src/wifi_netif.c"
-                            "${idf_target}/esp_adapter.c"
-                    INCLUDE_DIRS "include" "${idf_target}/include"
-                    PRIV_REQUIRES wpa_supplicant nvs_flash esp_netif driver ${extra_priv_requires}
-                    REQUIRES esp_event
-                    LDFRAGMENTS "${ldfragments}")
+                        "src/lib_printf.c"
+                        "src/mesh_event.c"
+                        "src/phy_init.c"
+                        "src/smartconfig.c"
+                        "src/smartconfig_ack.c"
+                        "src/wifi_init.c"
+                        "src/wifi_default.c"
+                        "src/wifi_netif.c"
+                        "${idf_target}/esp_adapter.c"
+                        "src/phy_override.c"
+            INCLUDE_DIRS "include" "${idf_target}/include"
+            PRIV_REQUIRES wpa_supplicant nvs_flash esp_netif driver ${extra_priv_requires}
+            REQUIRES esp_event
+            LDFRAGMENTS "${ldfragments}")
 
 idf_build_get_property(build_dir BUILD_DIR)
 
 # ToDo: Rename esp32s2beta to esp32s2 next time update wifi lib
 set(target_name "${idf_target}")
 target_link_libraries(${COMPONENT_LIB} PUBLIC "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}")
+
+# Override functions in PHY lib with the functions in 'phy_override.c'
+target_link_libraries(${COMPONENT_LIB} INTERFACE "-u include_esp_phy_override")
 
 if(link_binary_libs)
     set(phy phy)
@@ -58,7 +62,7 @@ endif()
 if(CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION)
     idf_component_get_property(esp_common_dir esp_common COMPONENT_DIR)
     partition_table_get_partition_info(phy_partition_offset "--partition-type data --partition-subtype phy" "offset")
-    
+
     if(CONFIG_ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN)
         set(phy_init_data_bin "${CMAKE_CURRENT_SOURCE_DIR}/phy_multiple_init_data.bin")
     else()
