@@ -167,7 +167,7 @@ esp_err_t esp_vfs_register_with_id(const esp_vfs_t *vfs, void *ctx, esp_vfs_id_t
 
 esp_err_t esp_vfs_unregister_with_id(esp_vfs_id_t vfs_id)
 {
-    if (vfs_id < 0 || vfs_id >= MAX_FDS || s_vfs[vfs_id] == NULL) {
+    if (vfs_id < 0 || vfs_id >= VFS_MAX_COUNT || s_vfs[vfs_id] == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
     vfs_entry_t* vfs = s_vfs[vfs_id];
