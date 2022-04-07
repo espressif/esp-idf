@@ -5,7 +5,7 @@ Linker Script Generation
 Overview
 --------
 
-There are several :ref:`memory regions<memory-layout>` where code and data can be placed. Code and read-only data are placed by default in flash, writable data in RAM, etc. However, it is sometimes necessary to change these default placements. 
+There are several :ref:`memory regions<memory-layout>` where code and data can be placed. Code and read-only data are placed by default in flash, writable data in RAM, etc. However, it is sometimes necessary to change these default placements.
 
 .. only:: SOC_ULP_SUPPORTED
 
@@ -71,6 +71,7 @@ Placing object files
 """"""""""""""""""""
 
 Suppose the entirety of ``my_src1.o`` is performance-critical, so it is desirable to place it in RAM. On the other hand, the entirety of ``my_src2.o`` contains symbols needed coming out of deep sleep, so it needs to be put under RTC memory.
+
 In the linker fragment file, we can write:
 
 .. code-block:: none
@@ -227,7 +228,7 @@ The three fragment types share a common grammar:
 - type: Corresponds to the fragment type, can either be ``sections``, ``scheme`` or ``mapping``.
 - name: The name of the fragment, should be unique for the specified fragment type.
 - key, value: Contents of the fragment; each fragment type may support different keys and different grammars for the key values.
-   
+
     - For :ref:`sections<ldgen-sections-fragment>` and :ref:`scheme<ldgen-scheme-fragment>`, the only supported key is ``entries``
     - For :ref:`mappings<ldgen-mapping-fragment>`, both ``archive`` and ``entries`` are supported.
 
@@ -431,7 +432,7 @@ Example:
     entries:
         * (noflash)
 
-Aside from the entity and scheme, flags can also be specified in an entry. The following flags are supported (note: <> = argument name, [] = optional): 
+Aside from the entity and scheme, flags can also be specified in an entry. The following flags are supported (note: <> = argument name, [] = optional):
 
 1. ALIGN(<alignment>[, pre, post])
 
@@ -446,7 +447,7 @@ Aside from the entity and scheme, flags can also be specified in an entry. The f
 2. SORT([<sort_by_first>, <sort_by_second>])
 
     Emits ``SORT_BY_NAME``, ``SORT_BY_ALIGNMENT``, ``SORT_BY_INIT_PRIORITY`` or ``SORT`` in the input section description.
-    
+
     Possible values for ``sort_by_first`` and ``sort_by_second`` are: ``name``, ``alignment``, ``init_priority``.
 
     If both ``sort_by_first`` and ``sort_by_second`` are not specified, the input sections are sorted by name. If both are specified, then the nested sorting follows the same rules discussed in https://sourceware.org/binutils/docs/ld/Input-Section-Wildcards.html.
@@ -474,8 +475,8 @@ When adding flags, the specific ``section -> target`` in the scheme needs to be 
     # Notes:
     # A. semicolon after entity-scheme
     # B. comma before section2 -> target2
-    # C. section1 -> target1 and section2 -> target2 should be defined in entries of scheme1 
-    entity1 (scheme1); 
+    # C. section1 -> target1 and section2 -> target2 should be defined in entries of scheme1
+    entity1 (scheme1);
         section1 -> target1 KEEP() ALIGN(4, pre, post),
         section2 -> target2 SURROUND(sym) ALIGN(4, post) SORT()
 
@@ -512,7 +513,7 @@ Note that ALIGN and SURROUND, as mentioned in the flag descriptions, are order s
 On Symbol-Granularity Placements
 """"""""""""""""""""""""""""""""
 
-Symbol granularity placements is possible due to compiler flags ``-ffunction-sections`` and ``-ffdata-sections``. ESP-IDF compiles with these flags by default. 
+Symbol granularity placements is possible due to compiler flags ``-ffunction-sections`` and ``-ffdata-sections``. ESP-IDF compiles with these flags by default.
 If the user opts to remove these flags, then the symbol-granularity placements will not work. Furthermore, even with the presence of these flags, there are still other limitations to keep in mind due to the dependence on the compiler's emitted output sections.
 
 For example, with ``-ffunction-sections``, separate sections are emitted for each function; with section names predictably constructed i.e. ``.text.{func_name}`` and ``.literal.{func_name}``. This is not the case for string literals within the function, as they go to pooled or generated section names.

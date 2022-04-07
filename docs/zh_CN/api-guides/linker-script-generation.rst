@@ -71,6 +71,7 @@
 """"""""""""
 
 假设整个 ``my_src1.o`` 目标文件对性能至关重要，所以最好把该文件放在 RAM 中。另外，``my_src2.o`` 目标文件包含从深度睡眠唤醒所需的符号，因此需要将其存放到 RTC 存储器中。
+
 在链接器片段文件中可以写入以下内容：
 
 .. code-block:: none
@@ -124,6 +125,7 @@
     archive: libmy_component.a
     entries:
         * (rtc)
+
 
 .. _ldgen-conditional-placements :
 
@@ -227,8 +229,8 @@
 - 名称：片段名称，指定片段类型的片段名称应唯一。
 - 键值：片段内容。每个片段类型可支持不同的键值和不同的键值语法。
 
-    - 在 ``段`` 和 ``协议`` 中，仅支持 ``entries`` 键。
-    - 在 ``映射`` 中，键支持 ``archive`` 和 ``entries``。
+    - 在 :ref:`段 <ldgen-sections-fragment>` 和 :ref:`协议 <ldgen-scheme-fragment>` 中，仅支持 ``entries`` 键。
+    - 在 :ref:`映射 <ldgen-mapping-fragment>` 中，支持 ``archive`` 和 ``entries`` 键。
 
 .. note::
 
@@ -445,7 +447,7 @@
 2. SORT([<sort_by_first>, <sort_by_second>])
 
     在输入段描述中输出 ``SORT_BY_NAME``, ``SORT_BY_ALIGNMENT``, ``SORT_BY_INIT_PRIORITY`` 或 ``SORT``。
-    
+
    ``sort_by_first`` 和 ``sort_by_second`` 的值可以是：``name``、``alignment``、``init_priority``。
 
     如果既没指定 ``sort_by_first`` 也没指定 ``sort_by_second``，则输入段会按照名称排序，如果两者都指定了，那么嵌套排序会遵循 https://sourceware.org/binutils/docs/ld/Input-Section-Wildcards.html 中的规则。
@@ -473,8 +475,8 @@
     # 注意
     # A. entity-scheme 后使用分号
     # B. section2 -> target2 前使用逗号
-    # C. 在 scheme1 条目中 定义 section1 -> target1 和 section2 -> target2 
-    entity1 (scheme1); 
+    # C. 在 scheme1 条目中定义 section1 -> target1 和 section2 -> target2
+    entity1 (scheme1);
         section1 -> target1 KEEP() ALIGN(4, pre, post),
         section2 -> target2 SURROUND(sym) ALIGN(4, post) SORT()
 
