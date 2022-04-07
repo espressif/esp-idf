@@ -189,7 +189,11 @@ static void s_set_pin_drive_capability(uint8_t drv)
 
 static void s_flash_init_mxic(esp_rom_spiflash_read_mode_t mode)
 {
-    static const esp_rom_opiflash_def_t opiflash_cmd_def_mxic = OPI_CMD_FORMAT_MXIC();
+#if CONFIG_ESPTOOLPY_FLASH_SAMPLE_MODE_STR
+    static const esp_rom_opiflash_def_t opiflash_cmd_def_mxic = OPI_CMD_FORMAT_MXIC_STR();
+#elif CONFIG_ESPTOOLPY_FLASH_SAMPLE_MODE_DTR
+    static const esp_rom_opiflash_def_t opiflash_cmd_def_mxic = OPI_CMD_FORMAT_MXIC_DTR();
+#endif
     esp_rom_opiflash_legacy_driver_init(&opiflash_cmd_def_mxic);
     esp_rom_spiflash_wait_idle(&g_rom_flashchip);
 
