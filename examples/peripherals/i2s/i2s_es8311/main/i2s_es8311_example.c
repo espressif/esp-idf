@@ -97,14 +97,19 @@ static esp_err_t i2s_driver_init(void)
             .bclk = GPIO_NUM_4,
             .ws = GPIO_NUM_5,
             .dout = GPIO_NUM_18,
-            .din = GPIO_NUM_19
+            .din = GPIO_NUM_19,
+            .invert_flags = {
+                .mclk_inv = false,
+                .bclk_inv = false,
+                .ws_inv = false,
+            },
         },
     };
 
-    ESP_ERROR_CHECK(i2s_init_std_channel(tx_handle, &std_cfg));
-    ESP_ERROR_CHECK(i2s_init_std_channel(rx_handle, &std_cfg));
-    ESP_ERROR_CHECK(i2s_start_channel(tx_handle));
-    ESP_ERROR_CHECK(i2s_start_channel(rx_handle));
+    ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_handle, &std_cfg));
+    ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
+    ESP_ERROR_CHECK(i2s_channel_enable(tx_handle));
+    ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
     return ESP_OK;
 }
 
@@ -113,18 +118,14 @@ static void i2s_music(void *args)
 {
     esp_err_t ret = ESP_OK;
     size_t bytes_write = 0;
-    if (tx_handle == NULL) {
-        ESP_LOGE(TAG, "[music] i2s tx channel has not been registered yet");
-        abort();
-    }
     while (1) {
         /* Write music to earphone */
-        ret = i2s_write_channel(tx_handle, music_pcm_start, music_pcm_end - music_pcm_start, &bytes_write, portMAX_DELAY);
+        ret = i2s_channel_write(tx_handle, music_pcm_start, music_pcm_end - music_pcm_start, &bytes_write, portMAX_DELAY);
         if (ret != ESP_OK) {
-            /* Since we set timeout to 'portMAX_DELAY' in 'i2s_write_channel'
+            /* Since we set timeout to 'portMAX_DELAY' in 'i2s_channel_write'
                so you won't reach here unless you set other timeout value,
                if timeout detected, it means write operation failed. */
-            ESP_LOGE(TAG, "[music] i2s read failed, %s", err_reason[ret == ESP_ERR_TIMEOUT]);
+            ESP_LOGE(TAG, "[music] i2s write failed, %s", err_reason[ret == ESP_ERR_TIMEOUT]);
             abort();
         }
         if (bytes_write > 0) {
@@ -141,10 +142,6 @@ static void i2s_music(void *args)
 #else
 static void i2s_echo(void *args)
 {
-    if (rx_handle == NULL || tx_handle == NULL) {
-        ESP_LOGE(TAG, "[echo] i2s rx or tx channel has not been registered yet");
-        abort();
-    }
     int *mic_data = malloc(EXAMPLE_RECV_BUF_SIZE);
     if (!mic_data) {
         ESP_LOGE(TAG, "[echo] No memory for read data buffer");
@@ -158,13 +155,13 @@ static void i2s_echo(void *args)
     while (1) {
         memset(mic_data, 0, EXAMPLE_RECV_BUF_SIZE);
         /* Read sample data from mic */
-        ret = i2s_read_channel(rx_handle, mic_data, EXAMPLE_RECV_BUF_SIZE, &bytes_read, 100);
+        ret = i2s_channel_read(rx_handle, mic_data, EXAMPLE_RECV_BUF_SIZE, &bytes_read, 1000);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "[echo] i2s read failed, %s", err_reason[ret == ESP_ERR_TIMEOUT]);
             abort();
         }
         /* Write sample data to earphone */
-        ret = i2s_write_channel(tx_handle, mic_data, EXAMPLE_RECV_BUF_SIZE, &bytes_write, 100);
+        ret = i2s_channel_write(tx_handle, mic_data, EXAMPLE_RECV_BUF_SIZE, &bytes_write, 1000);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "[echo] i2s write failed, %s", err_reason[ret == ESP_ERR_TIMEOUT]);
             abort();
@@ -179,15 +176,20 @@ static void i2s_echo(void *args)
 
 void app_main(void)
 {
+    printf("i2s es8311 codec example start\n-----------------------------\n");
     /* Initialize i2s peripheral */
     if (i2s_driver_init() != ESP_OK) {
         ESP_LOGE(TAG, "i2s driver init failed");
         abort();
+    } else {
+        ESP_LOGI(TAG, "i2s driver init success");
     }
     /* Initialize i2c peripheral and config es8311 codec by i2c */
     if (es8311_codec_init() != ESP_OK) {
         ESP_LOGE(TAG, "es8311 codec init failed");
         abort();
+    } else {
+        ESP_LOGI(TAG, "es8311 codec init success");
     }
 #if CONFIG_EXAMPLE_MODE_MUSIC
     /* Play a piece of music in music mode */

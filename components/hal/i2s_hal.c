@@ -20,7 +20,8 @@ static const float cut_off_coef[21][3] = {
     {104, 2, 4}, {92,   4, 4}, {91.5, 2, 7},
     {81,  4, 5}, {77.2, 3, 7}, {69,   5, 5},
     {63,  4, 7}, {58,   5, 6}, {49,   5, 7},
-    {46,  6, 6}, {35.5, 6, 7}, {23.3, 7, 7}};
+    {46,  6, 6}, {35.5, 6, 7}, {23.3, 7, 7}
+};
 #endif
 
 void i2s_hal_init(i2s_hal_context_t *hal, int port_id)
@@ -65,11 +66,14 @@ void i2s_hal_std_set_tx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
     i2s_ll_tx_enable_msb_shift(hal->dev, slot_cfg->std.bit_shift);
     i2s_ll_tx_set_ws_width(hal->dev, slot_cfg->std.ws_width);
 #if SOC_I2S_HW_VERSION_1
+    i2s_ll_tx_select_slot(hal->dev, slot_cfg->std.slot_mask, slot_cfg->std.msb_right);
+    // According to the test, the behavior of tx_msb_right is opposite with TRM, TRM is wrong?
     i2s_ll_tx_enable_msb_right(hal->dev, slot_cfg->std.msb_right);
     i2s_ll_tx_enable_right_first(hal->dev, slot_cfg->std.ws_pol);
     /* Should always enable fifo */
     i2s_ll_tx_force_enable_fifo_mod(hal->dev, true);
 #elif SOC_I2S_HW_VERSION_2
+    i2s_ll_tx_select_slot(hal->dev, slot_cfg->std.slot_mask);
     i2s_ll_tx_set_half_sample_bit(hal->dev, slot_bit_width);
     i2s_ll_tx_set_ws_idle_pol(hal->dev, slot_cfg->std.ws_pol);
     i2s_ll_tx_set_bit_order(hal->dev, slot_cfg->std.bit_order_lsb);
@@ -88,13 +92,14 @@ void i2s_hal_std_set_rx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
     i2s_ll_rx_enable_mono_mode(hal->dev, slot_cfg->slot_mode == I2S_SLOT_MODE_MONO);
     i2s_ll_rx_enable_msb_shift(hal->dev, slot_cfg->std.bit_shift);
     i2s_ll_rx_set_ws_width(hal->dev, slot_cfg->std.ws_width);
-    i2s_ll_rx_select_slot(hal->dev, slot_cfg->std.slot_sel);
 #if SOC_I2S_HW_VERSION_1
+    i2s_ll_rx_select_slot(hal->dev, slot_cfg->std.slot_mask, slot_cfg->std.msb_right);
     i2s_ll_rx_enable_msb_right(hal->dev, slot_cfg->std.msb_right);
     i2s_ll_rx_enable_right_first(hal->dev, slot_cfg->std.ws_pol);
     /* Should always enable fifo */
     i2s_ll_rx_force_enable_fifo_mod(hal->dev, true);
 #elif SOC_I2S_HW_VERSION_2
+    i2s_ll_rx_select_slot(hal->dev, slot_cfg->std.slot_mask);
     i2s_ll_rx_set_half_sample_bit(hal->dev, slot_bit_width);
     i2s_ll_rx_set_ws_idle_pol(hal->dev, slot_cfg->std.ws_pol);
     i2s_ll_rx_set_bit_order(hal->dev, slot_cfg->std.bit_order_lsb);

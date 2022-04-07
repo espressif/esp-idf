@@ -183,9 +183,9 @@ void bt_i2s_driver_install(void)
     };
 
     /* enable I2S */
-    i2s_driver_install(0, &i2s_config, 0, NULL);
-    i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
-    i2s_set_pin(0, NULL);
+    ESP_ERROR_CHECK(i2s_driver_install(0, &i2s_config, 0, NULL));
+    ESP_ERROR_CHECK(i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN));
+    ESP_ERROR_CHECK(i2s_set_pin(0, NULL));
 #else
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
     chan_cfg.auto_clear = true;
@@ -198,12 +198,17 @@ void bt_i2s_driver_install(void)
             .ws = CONFIG_EXAMPLE_I2S_LRCK_PIN,
             .dout = CONFIG_EXAMPLE_I2S_DATA_PIN,
             .din = I2S_GPIO_UNUSED,
+            .invert_flags = {
+                .mclk_inv = false,
+                .bclk_inv = false,
+                .ws_inv = false,
+            },
         },
     };
     /* enable I2S */
-    i2s_new_channel(&chan_cfg, &tx_chan, NULL);
-    i2s_init_std_channel(tx_chan, &std_cfg);
-    i2s_start_channel(tx_chan);
+    ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_chan, NULL));
+    ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_chan, &std_cfg));
+    ESP_ERROR_CHECK(i2s_channel_enable(tx_chan));
 #endif
 }
 
@@ -212,7 +217,8 @@ void bt_i2s_driver_uninstall(void)
 #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
     i2s_driver_uninstall(0);
 #else
-    i2s_del_channel(tx_chan);
+    ESP_ERROR_CHECK(i2s_channel_disable(tx_chan));
+    ESP_ERROR_CHECK(i2s_del_channel(tx_chan));
 #endif
 }
 
@@ -308,7 +314,7 @@ static void bt_av_hdl_a2d_evt(uint16_t event, void *p_param)
             i2s_set_clk(0, sample_rate, 16, 2);
         #else
             i2s_std_clk_config_t clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(sample_rate);
-            i2s_reconfig_std_clock(tx_chan, &clk_cfg);
+            i2s_channel_reconfig_std_clock(tx_chan, &clk_cfg);
         #endif
             ESP_LOGI(BT_AV_TAG, "Configure audio player: %x-%x-%x-%x",
                      a2d->audio_cfg.mcc.cie.sbc[0],

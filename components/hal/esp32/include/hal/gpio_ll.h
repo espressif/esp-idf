@@ -571,6 +571,16 @@ static inline __attribute__((always_inline)) void gpio_ll_iomux_func_sel(uint32_
 }
 
 /**
+ * @brief  Control the pin in the IOMUX
+ *
+ * @param  val Control value
+ */
+static inline __attribute__((always_inline)) void gpio_ll_iomux_pin_ctrl(uint32_t val)
+{
+    WRITE_PERI_REG(PIN_CTRL, val);
+}
+
+/**
   * @brief Set peripheral output to an GPIO pad through the IOMUX.
   *
   * @param hw Peripheral GPIO hardware instance address.

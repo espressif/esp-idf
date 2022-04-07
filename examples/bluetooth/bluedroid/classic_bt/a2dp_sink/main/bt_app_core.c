@@ -110,7 +110,7 @@ static void bt_i2s_task_handler(void *arg)
         #ifdef CONFIG_EXAMPLE_A2DP_SINK_OUTPUT_INTERNAL_DAC
             i2s_write(0, data, item_size, &bytes_written, portMAX_DELAY);
         #else
-            i2s_write_channel(tx_chan, data, item_size, &bytes_written, portMAX_DELAY);
+            i2s_channel_write(tx_chan, data, item_size, &bytes_written, portMAX_DELAY);
         #endif
             vRingbufferReturnItem(s_ringbuf_i2s, (void *)data);
         }

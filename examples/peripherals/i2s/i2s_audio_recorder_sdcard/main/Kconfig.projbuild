@@ -30,12 +30,6 @@ menu "Example Configuration"
 
     menu "I2S MEMS MIC Configuration"
 
-        config EXAMPLE_I2S_CH
-            int "I2S Channel Number"
-            default 0
-            help
-                Set the I2S channel number.
-
         config EXAMPLE_SAMPLE_RATE
             int "Audio Sample Rate"
             default 44100

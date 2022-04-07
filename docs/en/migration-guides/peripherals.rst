@@ -256,62 +256,66 @@ LCD
 
     - All of the dedicated GPIO related LL functionsn in ``cpu_ll.h`` have been moved to ``dedic_gpio_cpu_ll.h`` and renamed.
 
-I2S driver
-----------
+.. only:: SOC_I2S_SUPPORTED
 
-Since the old driver is unable to support all the new features on ESP32-C3 & ESP32-S3, I2S driver is re-designed to make it more compatibile and flexibile to all the communication modes. New APIs are available by including :component_file:`driver/include/driver/i2s_controller.h`. Meanwhile, the old APIs in :component_file:`driver/deprecated/driver/i2s.h` are still supported for backward compatibility. But there will be warnings if you keep using the old APIs in your project, these warnings can be suppressed by the Kconfig option :ref:`CONFIG_I2S_SUPPRESS_DEPRECATE_WARN`. Here is the general overview of the current I2S files:
+    I2S driver
+    ----------
 
-.. figure:: ../../_static/diagrams/i2s/i2s_file_structure.png
-    :align: center
-    :alt: I2S File Structure
+    {I2S_DRIVER_HEADERS:default=":component_file:`driver/include/driver/i2s_std.h`, :component_file:`driver/include/driver/i2s_pdm.h` or :component_file:`driver/include/driver/i2s_tdm.h`", esp32=":component_file:`driver/include/driver/i2s_std.h` or :component_file:`driver/include/driver/i2s_pdm.h`", esp32s2=":component_file:`driver/include/driver/i2s_std.h`"}
 
-Breaking changes in Concepts
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Shortcomings are exposed when supporting all the new features of ESP32-C3 & ESP32-S3 by the old I2S driver, so it is re-designed to make it more compatible and flexible to all the communication modes. New APIs are available by including corresponding mode header files {I2S_DRIVER_HEADERS}. Meanwhile, the old APIs in :component_file:`driver/deprecated/driver/i2s.h` are still supported for backward compatibility. But there will be warnings if you keep using the old APIs in your project, these warnings can be suppressed by the Kconfig option :ref:`CONFIG_I2S_SUPPRESS_DEPRECATE_WARN`. Here is the general overview of the current I2S files:
 
-- The minimum control unit in new I2S driver will be tx/rx channel instead of a whole I2S controller.
+    .. figure:: ../../_static/diagrams/i2s/i2s_file_structure.png
+        :align: center
+        :alt: I2S File Structure
 
-    1. The tx/rx channel in a same I2S controller can be controlled separately, that means they will be initialized, started or stopped separately. Especially for ESP32-C3 and ESP32-S3, tx and rx channels in one controller can be configured to different clocks or modes now, they are able to work in a totally separate way which can help to save the resources of I2S controller. But for ESP32 and ESP32-S2, though their tx/rx can be controlled separately, some hardware resources are still shared by tx and rx, they might affect each other if they are configured to different configurations;
-    2. The channels can be registered to an available I2S controller automatically by choosing :cpp:member:`i2s_port_t::I2S_NUM_AUTO` as I2S port id. The driver will help you to search for the available tx/rx channel. Of cause, you can still choose a specific port for it;
-    3. :c:type:`i2s_chan_handle_t` is the handle that used for identifying the I2S channels. All the APIs will require the channel handle, users need to maintain the channel handles by themselves;
-    4. In order to distinguish tx/rx channel and sound channel, now the word 'channel' is only stand for the tx/rx channel in new driver, meanwhile the sound channel will be called 'slot'.
+    Breaking changes in Concepts
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- I2S communication modes are extracted into three modes.
+    - The minimum control unit in new I2S driver will be tx/rx channel instead of a whole I2S controller.
 
-    1. **Standard mode**: Standard mode always has two slots, it can support Philip, MSB and PCM(short sync) format, please refer to :component_file:`hal/include/hal/i2s_std.h` for details;
-    2. **PDM mode**: PDM mode only support two slots with 16 bits data width, but the configurations of PDM TX and PDM RX are little bit different. For PDM TX, the sample rate can be set by :cpp:member:`i2s_pdm_tx_clk_config_t::sample_rate`, and its clock frequency is depended on the up-sampling configuration. For PDM RX, the sample rate can be set by :cpp:member:`i2s_pdm_rx_clk_config_t::sample_rate`, and its clock frequency is depended on the down-sampling configuration. Please refer to :component_file:`hal/include/hal/i2s_pdm.h` for details;
-    3. **TDM mode**: TDM mode can support upto 16 slots. It can work in Philip, MSB, PCM(short sync) and PCM(long sync) format, please refer to :component_file:`hal/include/hal/i2s_tdm.h` for details;
-    4. When we allocate a new channel in a specific mode, we must initialize this channel by corresponding slot configurations and clock configurations. We strongly recommend to use the helper macros to generate the default configurations, in case the default values will be changed one day.
-    5. Although there are three modes, they still share some general slot and clock configurations which are defined in :component_file:`hal/include/hal/i2s_hal.h`
+        1. The tx/rx channel in a same I2S controller can be controlled separately, that means they will be initialized, started or stopped separately. Especially for ESP32-C3 and ESP32-S3, tx and rx channels in one controller can be configured to different clocks or modes now, they are able to work in a totally separate way which can help to save the resources of I2S controller. But for ESP32 and ESP32-S2, though their tx/rx can be controlled separately, some hardware resources are still shared by tx and rx, they might affect each other if they are configured to different configurations;
+        2. The channels can be registered to an available I2S controller automatically by setting :cpp:enumerator:`i2s_port_t::I2S_NUM_AUTO` as I2S port id. The driver will help you to search for the available tx/rx channel. Of cause, driver can still support to be installed by a specific port;
+        3. :c:type:`i2s_chan_handle_t` is the handle that used for identifying the I2S channels. All the APIs will require the channel handle, users need to maintain the channel handles by themselves;
+        4. In order to distinguish tx/rx channel and sound channel, now the word 'channel' is only stand for the tx/rx channel in new driver, meanwhile the sound channel will be called 'slot'.
 
-- States and state-machine are adopted in the new I2S driver to avoid APIs are called in wrong state.
+    - I2S communication modes are extracted into three modes.
 
-- The slot configurations and clock configurations can be configured separately.
+        1. **Standard mode**: Standard mode always has two slots, it can support Philip, MSB and PCM(short sync) format, please refer to :component_file:`driver/include/driver/i2s_std.h` for details;
+        2. **PDM mode**: PDM mode only support two slots with 16 bits data width, but the configurations of PDM TX and PDM RX are little bit different. For PDM TX, the sample rate can be set by :cpp:member:`i2s_pdm_tx_clk_config_t::sample_rate`, and its clock frequency is depended on the up-sampling configuration. For PDM RX, the sample rate can be set by :cpp:member:`i2s_pdm_rx_clk_config_t::sample_rate`, and its clock frequency is depended on the down-sampling configuration. Please refer to :component_file:`driver/include/driver/i2s_pdm.h` for details;
+        3. **TDM mode**: TDM mode can support upto 16 slots. It can work in Philip, MSB, PCM(short sync) and PCM(long sync) format, please refer to :component_file:`driver/include/driver/i2s_tdm.h` for details;
+        4. When allocating a new channel in a specific mode, must initialize this channel by corresponding function. It is strongly recommended to use the helper macros to generate the default configurations, in case the default values will be changed one day.
 
-    1. Calling :func:`i2s_init_channel` to initialize the slot/clock/gpio_pin configurations;
-    2. Calling :c:func:`i2s_set_slot` can change the slot configurations after initialization;
-    3. Calling :c:func:`i2s_set_clock` can change the clock configurations after initialization.
+    - States and state-machine are adopted in the new I2S driver to avoid APIs called in wrong state.
 
-- ADC and DAC modes are removed. They will only be supported in their own driver and legacy I2S driver.
+    - The slot configurations and clock configurations can be configured separately.
 
-- :c:func:`i2s_write_channel` and :c:func:`i2s_read_channel` can be aborted by :c:func:`i2s_abort_reading_writing` now.
+        1. Calling :cpp:func:`i2s_channel_init_std_mode`, :cpp:func:`i2s_channel_init_pdm_rx_mode`, :cpp:func:`i2s_channel_init_pdm_tx_mode` or :cpp:func:`i2s_channel_init_tdm_mode` to initialize the slot/clock/gpio_pin configurations;
+        2. Calling :cpp:func:`i2s_channel_reconfig_std_slot`, :cpp:func:`i2s_channel_reconfig_pdm_rx_slot`, :cpp:func:`i2s_channel_reconfig_pdm_tx_slot` or :cpp:func:`i2s_channel_reconfig_tdm_slot` can change the slot configurations after initialization;
+        3. Calling :cpp:func:`i2s_channel_reconfig_std_clock`, :cpp:func:`i2s_channel_reconfig_pdm_rx_clock`, :cpp:func:`i2s_channel_reconfig_pdm_tx_clock` or :cpp:func:`i2s_channel_reconfig_tdm_clock` can change the clock configurations after initialization;
+        4. Calling :cpp:func:`i2s_channel_reconfig_std_gpio`, :cpp:func:`i2s_channel_reconfig_pdm_rx_gpio`, :cpp:func:`i2s_channel_reconfig_pdm_tx_gpio` or :cpp:func:`i2s_channel_reconfig_tdm_gpio` can change the gpio configurations after initialization.
 
-Breaking Changes in Usage
-~~~~~~~~~~~~~~~~~~~~~~~~~
+    - ADC and DAC modes are removed. They will only be supported in their own driver and legacy I2S driver.
 
-To use the new I2S driver, please follow these steps:
+    - :cpp:func:`i2s_channel_write` and :cpp:func:`i2s_channel_read` can be aborted by :cpp:func:`i2s_channel_abort_reading_writing` now.
 
-1. Calling :c:func:`i2s_new_channel` to aquire the channel handles. We should specify the GPIO pins, work mode, work role and I2S port in this step. Besides, we need to input the tx or rx handle to acuire the channel handles that generated by the driver. We don't have to input both two tx and rx handles but at least one handle is needed. While we input both two handles, the driver will work in duplex mode, both tx and rx channel will be avaliable on a same port, and they will share the MCLK, BCLK and WS signal, there will be MCLK(optional), BCLK, WS, DATA_IN and DATA_OUT signals in this case. But if we only input tx or rx handle, this channel will only work in simplex mode.
+    Breaking Changes in Usage
+    ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-2. Calling :c:func:`i2s_init_channel` to initialize the channel that specified by the given channel handle. We are supposed to input corresponding slot and clock configurations according to the mode that we set in the first step.
+    To use the new I2S driver, please follow these steps:
 
-3. (Optional) We can acquire the event queue handle by :c:func:`i2s_get_event_queue` if we want to monitor the I2S event.
+    1. Calling :cpp:func:`i2s_new_channel` to aquire the channel handles. We should specify the work role and I2S port in this step. Besides, the tx or rx channel handles will be generated by the driver. Inputting both two tx and rx handles is not necessary but at least one handle is needed. In the case of inputting both two handles, the driver will work at duplex mode, both tx and rx channel will be avaliable on a same port, and they will share the MCLK, BCLK and WS signal. But if only one of the tx or rx handle is inputted, this channel will only work in simplex mode.
 
-4. Calling :c:func:`i2s_start_channel` to start the I2S channel. In the new driver, I2S won't start automatically after installed anymore, we are supposed to know clearly whether the channel has started or not.
+    2. Calling :func:`i2s_channel_init_std_mode`, :func:`i2s_channel_init_pdm_rx_mode`, :func:`i2s_channel_init_pdm_tx_mode` or :func:`i2s_channel_init_tdm_mode` to initialize the channel to the specified mode. Corresponding slot, clock and gpio configurations are needed in this step.
 
-5. Reading or writing data by :c:func:`i2s_read_channel` or :c:func:`i2s_write_channel`. Of cause we can only use rx channel handle in :c:func:`i2s_read_channel` and tx channel handle in :c:func:`i2s_write_channel`.
+    3. (Optional) Calling :cpp:func:`i2s_channel_register_event_callback` to register the ISR event callback functions. I2S events now can be received by the callback function synchronously, instead of from event queue asynchronously.
 
-6. (Optional) We can clear the legacy data in DMA buffer by :c:func:`i2s_clear_dma_buffer`. If we need the driver clear the tx dma buffer automatically, we can set :c:member`auto_clear` in slot configurations.
+    4. Calling :cpp:func:`i2s_channel_enable` to start the hardware of I2S channel. In the new driver, I2S won't start automatically after installed anymore, users are supposed to know clearly whether the channel has started or not.
 
-7. (Optional) We can change the slot and clock configurations after initialized by :c:func:`i2s_set_slot`, :c:func:`i2s_set_clock`, but we have to call :c:func:`i2s_stop_channel` before we update the configurations.
+    5. Reading or writing data by :cpp:func:`i2s_channel_read` or :cpp:func:`i2s_channel_write`. Certainly, only rx channel handle is suppoesd to be inputted in :cpp:func:`i2s_channel_read` and tx channel handle in :cpp:func:`i2s_channel_write`.
 
-8. (Optional) We can delete the i2s channel by calling :c:func:`i2s_del_channel` if we don't need it any more. The related resources will be released if delete function is called.
+    6. (Optional) The slot, clock and gpio configurations can be changed by corresponding 'reconfig' functions, but :cpp:func:`i2s_channel_disable` must be called before updating the configurations.
+
+    7. Calling :cpp:func:`i2s_channel_disable` to stop the hardware of I2S channel.
+
+    8. Calling :cpp:func:`i2s_del_channel` to delete and release the resources of the channel if it is not needed any more, but the channel must be disabled before deleting it.

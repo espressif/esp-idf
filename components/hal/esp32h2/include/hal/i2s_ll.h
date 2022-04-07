@@ -18,7 +18,7 @@
 #include "soc/i2s_periph.h"
 #include "soc/i2s_struct.h"
 #include "hal/i2s_types.h"
-#include "hal/i2s_types_priv.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,7 +28,8 @@ extern "C" {
 
 #define I2S_LL_TDM_CH_MASK             (0xffff)
 #define I2S_LL_PDM_BCK_FACTOR          (64)
-#define I2S_LL_BASE_CLK                (2*APB_CLK_FREQ)
+// [clk_tree] TODO: replace the following switch table by clk_tree API
+#define I2S_LL_BASE_CLK                (96*1000000)
 
 #define I2S_LL_MCLK_DIVIDER_BIT_WIDTH  (9)
 #define I2S_LL_MCLK_DIVIDER_MAX        ((1 << I2S_LL_MCLK_DIVIDER_BIT_WIDTH) - 1)
@@ -201,7 +202,7 @@ static inline void i2s_ll_tx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
  * @brief Set RX source clock
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param src I2S source clock,  ESP32-H2 only support `I2S_CLK_PLL_160M`
+ * @param src I2S source clock, ESP32-H2 only support `I2S_CLK_SRC_PLL_96M` for now
  */
 static inline void i2s_ll_rx_clk_set_src(i2s_dev_t *hw, i2s_clock_src_t src)
 {
@@ -556,21 +557,21 @@ static inline void i2s_ll_rx_set_active_chan_mask(i2s_dev_t *hw, uint32_t chan_m
  * @brief Set I2S tx chan mode
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param slot_sel select slot to send data
+ * @param slot_mask select slot to send data
  */
-static inline void i2s_ll_tx_select_slot(i2s_dev_t *hw, i2s_std_slot_sel_t slot_sel)
+static inline void i2s_ll_tx_select_slot(i2s_dev_t *hw, i2s_std_slot_mask_t slot_mask)
 {
     /* In mono mode, there only should be one slot enabled, another inactive slot will transmit same data as enabled slot
      * Otherwise always enable the first two slots */
     hw->tx_tdm_ctrl.tx_tdm_tot_chan_num = 1;  // tx_tdm_tot_chan_num = 2 slots - 1 = 1
     hw->tx_tdm_ctrl.val &= ~I2S_LL_TDM_CH_MASK;
-    switch (slot_sel)
+    switch (slot_mask)
     {
     case I2S_STD_SLOT_ONLY_LEFT:
-        hw->tx_tdm_ctrl.val |= 0x02;
+        hw->tx_tdm_ctrl.val |= 0x01;
         break;
     case I2S_STD_SLOT_ONLY_RIGHT:
-        hw->tx_tdm_ctrl.val |= 0x01;
+        hw->tx_tdm_ctrl.val |= 0x02;
         break;
     case I2S_STD_SLOT_LEFT_RIGHT:
         hw->tx_tdm_ctrl.val |= 0x03;
@@ -584,21 +585,21 @@ static inline void i2s_ll_tx_select_slot(i2s_dev_t *hw, i2s_std_slot_sel_t slot_
  * @brief Set I2S rx chan mode
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param slot_sel select slot to receive data
+ * @param slot_mask select slot to receive data
  */
-static inline void i2s_ll_rx_select_slot(i2s_dev_t *hw, i2s_std_slot_sel_t slot_sel)
+static inline void i2s_ll_rx_select_slot(i2s_dev_t *hw, i2s_std_slot_mask_t slot_mask)
 {
     /* In mono mode, there only should be one slot enabled, another inactive slot will transmit same data as enabled slot
      * Otherwise always enable the first two slots */
     hw->rx_tdm_ctrl.rx_tdm_tot_chan_num = 1;  // rx_tdm_tot_chan_num = 2 slots - 1 = 1
     hw->rx_tdm_ctrl.val &= ~I2S_LL_TDM_CH_MASK;
-    switch (slot_sel)
+    switch (slot_mask)
     {
     case I2S_STD_SLOT_ONLY_LEFT:
-        hw->rx_tdm_ctrl.val |= 0x02;
+        hw->rx_tdm_ctrl.val |= 0x01;
         break;
     case I2S_STD_SLOT_ONLY_RIGHT:
-        hw->rx_tdm_ctrl.val |= 0x01;
+        hw->rx_tdm_ctrl.val |= 0x02;
         break;
     case I2S_STD_SLOT_LEFT_RIGHT:
         hw->rx_tdm_ctrl.val |= 0x03;

@@ -1,7 +1,7 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: CC0-1.0
  */
 
 #include <stdio.h>
@@ -453,35 +453,3 @@ TEST_CASE("lcd_panel_with_i80_interface_(st7789, 8bits)", "[lcd]")
     free(img);
 #undef TEST_IMG_SIZE
 }
-
-#if SOC_I2S_LCD_I80_VARIANT
-#include "driver/i2s_std.h"
-
-TEST_CASE("i80 and i2s driver coexistance", "[lcd][i2s]")
-{
-    esp_lcd_i80_bus_handle_t i80_bus = NULL;
-    esp_lcd_i80_bus_config_t bus_config = {
-        .dc_gpio_num = TEST_LCD_DC_GPIO,
-        .wr_gpio_num = TEST_LCD_PCLK_GPIO,
-        .data_gpio_nums = {
-            TEST_LCD_DATA0_GPIO,
-            TEST_LCD_DATA1_GPIO,
-            TEST_LCD_DATA2_GPIO,
-            TEST_LCD_DATA3_GPIO,
-            TEST_LCD_DATA4_GPIO,
-            TEST_LCD_DATA5_GPIO,
-            TEST_LCD_DATA6_GPIO,
-            TEST_LCD_DATA7_GPIO,
-        },
-        .bus_width = 8,
-        .max_transfer_bytes = 20,
-    };
-    TEST_ESP_OK(esp_lcd_new_i80_bus(&bus_config, &i80_bus));
-
-    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
-    i2s_chan_handle_t tx_handle;
-    // I2S driver won't be installed as the same I2S port has been used by LCD
-    TEST_ASSERT_EQUAL(ESP_ERR_NOT_FOUND, i2s_new_channel(&chan_cfg, &tx_handle, NULL));
-    TEST_ESP_OK(esp_lcd_del_i80_bus(i80_bus));
-}
-#endif // SOC_I2S_LCD_I80_VARIANT

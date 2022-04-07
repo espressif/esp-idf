@@ -31,10 +31,10 @@ extern "C" {
  * @param mask active slot mask
  */
 #define I2S_TDM_PHILIP_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo, mask) { \
-    .mode = I2S_COMM_MODE_TDM, \
     .data_bit_width = (bits_per_sample), \
     .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
+    .slot_mask = (mask), \
     .ws_width = I2S_TDM_AUTO_WS_WIDTH, \
     .ws_pol = false, \
     .bit_shift = true, \
@@ -42,7 +42,6 @@ extern "C" {
     .big_endian = false, \
     .bit_order_lsb = false, \
     .skip_mask = false, \
-    .slot_mask = (mask), \
     .total_slot = I2S_TDM_AUTO_SLOT_NUM \
 }
 
@@ -53,10 +52,10 @@ extern "C" {
  * @param mask active slot mask
  */
 #define I2S_TDM_MSB_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo, mask) { \
-    .mode = I2S_COMM_MODE_TDM, \
     .data_bit_width = (bits_per_sample), \
     .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
+    .slot_mask = (mask), \
     .ws_width = I2S_TDM_AUTO_WS_WIDTH, \
     .ws_pol = false, \
     .bit_shift = false, \
@@ -64,7 +63,6 @@ extern "C" {
     .big_endian = false, \
     .bit_order_lsb = false, \
     .skip_mask = false ,\
-    .slot_mask = (mask), \
     .total_slot = I2S_TDM_AUTO_SLOT_NUM \
 }
 
@@ -75,10 +73,10 @@ extern "C" {
  * @param mask active slot mask
  */
 #define I2S_TDM_PCM_SHORT_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo, mask) { \
-    .mode = I2S_COMM_MODE_TDM, \
     .data_bit_width = (bits_per_sample), \
     .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
+    .slot_mask = (mask), \
     .ws_width = 1, \
     .ws_pol = true, \
     .bit_shift = true, \
@@ -86,7 +84,6 @@ extern "C" {
     .big_endian = false, \
     .bit_order_lsb = false, \
     .skip_mask = false, \
-    .slot_mask = (mask), \
     .total_slot = I2S_TDM_AUTO_SLOT_NUM \
 }
 
@@ -97,10 +94,10 @@ extern "C" {
  * @param mask active slot mask
  */
 #define I2S_TDM_PCM_LONG_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo, mask) { \
-    .mode = I2S_COMM_MODE_TDM, \
     .data_bit_width = (bits_per_sample), \
     .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
+    .slot_mask = (mask), \
     .ws_width = (bits_per_sample), \
     .ws_pol = true, \
     .bit_shift = true, \
@@ -108,7 +105,6 @@ extern "C" {
     .big_endian = false, \
     .bit_order_lsb = false, \
     .skip_mask = false, \
-    .slot_mask = (mask), \
     .total_slot = I2S_TDM_AUTO_SLOT_NUM \
 }
 
@@ -120,22 +116,22 @@ extern "C" {
  */
 #define I2S_TDM_CLK_DEFAULT_CONFIG(rate) { \
     .sample_rate_hz = rate, \
-    .clk_src = I2S_CLK_PLL_160M, \
+    .clk_src = I2S_CLK_SRC_DEFAULT, \
     .mclk_multiple = I2S_MCLK_MULTIPLE_256, \
 }
 
 /**
- * @breif I2S slot configuration for tdm mode
+ * @brief I2S slot configuration for tdm mode
  */
 typedef struct {
     /* General fields */
-    i2s_comm_mode_t         mode;               /*!< I2S communication mode, this field is for identification (MUST match the communication mode in 'i2s_chan_config_t') */
     i2s_data_bit_width_t    data_bit_width;     /*!< I2S sample data bit width (valid data bits per sample) */
     i2s_slot_bit_width_t    slot_bit_width;     /*!< I2S slot bit width (total bits per slot) */
     i2s_slot_mode_t         slot_mode;          /*!< Set mono or stereo mode with I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO */
 
     /* Particular fields */
-    uint32_t                ws_width;           /*!< WS signal width ((i.e. the number of bclk ticks that ws signal is high)) */
+    i2s_tdm_slot_mask_t     slot_mask;          /*!< Slot mask. Activating slots by setting 1 to corresponding bits. When the activated slots is not consecutive, those data in unactivated slots will be ignored */
+    uint32_t                ws_width;           /*!< WS signal width (i.e. the number of bclk ticks that ws signal is high) */
     bool                    ws_pol;             /*!< WS signal polarity, set true to enable high lever first */
     bool                    bit_shift;          /*!< Set true to enable bit shift in Philip mode */
 
@@ -144,12 +140,11 @@ typedef struct {
     bool                    bit_order_lsb;      /*!< Set true to enable lsb first */
 
     bool                    skip_mask;          /*!< Set true to enable skip mask. If it is enabled, only the data of the enabled channels will be sent, otherwise all data stored in DMA TX buffer will be sent */
-    i2s_tdm_slot_mask_t     slot_mask;          /*!< Slot mask. Activating slots by setting 1 to corresponding bits. When the activated slots is not consecutive, those data in unactivated slots will be ignored */
     uint32_t                total_slot;         /*!< I2S total number of slots. If it is smaller than the biggest activated channel number, it will be set to this number automatically. */
 } i2s_tdm_slot_config_t;
 
 /**
- * @breif I2S clock configuration for tdm mode
+ * @brief I2S clock configuration for tdm mode
  */
 typedef struct {
     /* General fields */
@@ -167,21 +162,87 @@ typedef struct {
     gpio_num_t ws;                 /*!< WS pin, input in slave role, output in master role */
     gpio_num_t dout;               /*!< DATA pin, output */
     gpio_num_t din;                /*!< DATA pin, input */
+    struct {
+        uint32_t   mclk_inv: 1;    /*!< Set 1 to invert the mclk output */
+        uint32_t   bclk_inv: 1;    /*!< Set 1 to invert the bclk input/output */
+        uint32_t   ws_inv: 1;      /*!< Set 1 to invert the ws input/output */
+    } invert_flags;                /*!< GPIO pin invert flags */
 } i2s_tdm_gpio_config_t;
 
+/**
+ * @brief I2S TDM mode major configuration that including clock/slot/gpio configuration
+ */
 typedef struct {
-    i2s_tdm_clk_config_t    clk_cfg;    /*!< TDM mode clock configuration */
-    i2s_tdm_slot_config_t   slot_cfg;   /*!< TDM mode slot configuration */
-    i2s_tdm_gpio_config_t   gpio_cfg;   /*!< TDM mode gpio configuration */
+    i2s_tdm_clk_config_t    clk_cfg;    /*!< TDM mode clock configuration, can be generated by macro I2S_TDM_CLK_DEFAULT_CONFIG */
+    i2s_tdm_slot_config_t   slot_cfg;   /*!< TDM mode slot configuration, can be generated by macros I2S_TDM_[mode]_SLOT_DEFAULT_CONFIG, [mode] can be replaced with PHILIP/MSB/PCM_SHORT/PCM_LONG */
+    i2s_tdm_gpio_config_t   gpio_cfg;   /*!< TDM mode gpio configuration, specified by user */
 } i2s_tdm_config_t;
 
-esp_err_t i2s_init_tdm_channel(i2s_chan_handle_t handle, const i2s_tdm_config_t *std_cfg);
+/**
+ * @brief Initialize i2s channel to TDM mode
+ * @note  Only allowed to be called when the channel state is REGISTERED, (i.e., channel has been allocated, but not initialized)
+ *        and the state will be updated to READY if initialization success, otherwise the state will return to REGISTERED.
+ *
+ * @param[in]   handle      I2S channel handler
+ * @param[in]   tdm_cfg     Configurations for TDM mode, including clock, slot and gpio
+ *                          The clock configuration can be generated by the helper macro `I2S_TDM_CLK_DEFAULT_CONFIG`
+ *                          The slot configuration can be generated by the helper macro `I2S_TDM_PHILIP_SLOT_DEFAULT_CONFIG`,
+ *                          `I2S_TDM_PCM_SHORT_SLOT_DEFAULT_CONFIG`, `I2S_TDM_PCM_LONG_SLOT_DEFAULT_CONFIG` or `I2S_TDM_MSB_SLOT_DEFAULT_CONFIG`
+ *
+ * @return
+ *      - ESP_OK    Initialize successfully
+ *      - ESP_ERR_NO_MEM        No memory for storing the channel information
+ *      - ESP_ERR_INVALID_ARG   NULL pointer or invalid configuration
+ *      - ESP_ERR_INVALID_STATE This channel is not registered
+ */
+esp_err_t i2s_channel_init_tdm_mode(i2s_chan_handle_t handle, const i2s_tdm_config_t *tdm_cfg);
 
-esp_err_t i2s_reconfig_tdm_clock(i2s_chan_handle_t handle, const i2s_tdm_clk_config_t *clk_cfg);
+/**
+ * @brief Reconfigure the I2S clock for TDM mode
+ * @note  Only allowed to be called when the channel state is READY, i.e., channel has been initialized, but not started
+ *        this function won't change the state. 'i2s_channel_disable' should be called before calling this function if i2s has started.
+ * @note  The input channel handle has to be initialized to TDM mode, i.e., 'i2s_channel_init_tdm_mode' has been called before reconfigring
+ *
+ * @param[in]   handle      I2S channel handler
+ * @param[in]   clk_cfg     Standard mode clock configuration, can be generated by `I2S_TDM_CLK_DEFAULT_CONFIG`
+ * @return
+ *      - ESP_OK    Set clock successfully
+ *      - ESP_ERR_INVALID_ARG   NULL pointer, invalid configuration or not TDM mode
+ *      - ESP_ERR_INVALID_STATE This channel is not initialized or not stopped
+ */
+esp_err_t i2s_channel_reconfig_tdm_clock(i2s_chan_handle_t handle, const i2s_tdm_clk_config_t *clk_cfg);
 
-esp_err_t i2s_reconfig_tdm_slot(i2s_chan_handle_t handle, const i2s_tdm_slot_config_t *slot_cfg);
+/**
+ * @brief Reconfigure the I2S slot for TDM mode
+ * @note  Only allowed to be called when the channel state is READY, i.e., channel has been initialized, but not started
+ *        this function won't change the state. 'i2s_channel_disable' should be called before calling this function if i2s has started.
+ * @note  The input channel handle has to be initialized to TDM mode, i.e., 'i2s_channel_init_tdm_mode' has been called before reconfigring
+ *
+ * @param[in]   handle      I2S channel handler
+ * @param[in]   slot_cfg    Standard mode slot configuration, can be generated by `I2S_TDM_PHILIP_SLOT_DEFAULT_CONFIG`,
+ *                          `I2S_TDM_PCM_SHORT_SLOT_DEFAULT_CONFIG`, `I2S_TDM_PCM_LONG_SLOT_DEFAULT_CONFIG` or `I2S_TDM_MSB_SLOT_DEFAULT_CONFIG`.
+ * @return
+ *      - ESP_OK    Set clock successfully
+ *      - ESP_ERR_NO_MEM        No memory for DMA buffer
+ *      - ESP_ERR_INVALID_ARG   NULL pointer, invalid configuration  or not TDM mode
+ *      - ESP_ERR_INVALID_STATE This channel is not initialized or not stopped
+ */
+esp_err_t i2s_channel_reconfig_tdm_slot(i2s_chan_handle_t handle, const i2s_tdm_slot_config_t *slot_cfg);
 
-esp_err_t i2s_reconfig_tdm_gpio(i2s_chan_handle_t handle, const i2s_tdm_gpio_config_t *gpio_cfg);
+/**
+ * @brief Reconfigure the I2S gpio for TDM mode
+ * @note  Only allowed to be called when the channel state is READY, i.e., channel has been initialized, but not started
+ *        this function won't change the state. 'i2s_channel_disable' should be called before calling this function if i2s has started.
+ * @note  The input channel handle has to be initialized to TDM mode, i.e., 'i2s_channel_init_tdm_mode' has been called before reconfigring
+ *
+ * @param[in]   handle      I2S channel handler
+ * @param[in]   gpio_cfg    Standard mode gpio configuration, specified by user
+ * @return
+ *      - ESP_OK    Set clock successfully
+ *      - ESP_ERR_INVALID_ARG   NULL pointer, invalid configuration  or not TDM mode
+ *      - ESP_ERR_INVALID_STATE This channel is not initialized or not stopped
+ */
+esp_err_t i2s_channel_reconfig_tdm_gpio(i2s_chan_handle_t handle, const i2s_tdm_gpio_config_t *gpio_cfg);
 
 
 #ifdef __cplusplus

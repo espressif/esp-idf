@@ -102,11 +102,10 @@ The main function installs I2S to play the audio. A loudspeaker, additional ADC 
         };
 
         /* enable I2S */
-        i2s_driver_install(0, &i2s_config, 0, NULL);
-        i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
-        i2s_set_pin(0, NULL);
+        ESP_ERROR_CHECK(i2s_driver_install(0, &i2s_config, 0, NULL));
+        ESP_ERROR_CHECK(i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN));
+        ESP_ERROR_CHECK(i2s_set_pin(0, NULL));
     #else
-
         i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
         chan_cfg.auto_clear = true;
         i2s_std_config_t std_cfg = {
@@ -118,12 +117,17 @@ The main function installs I2S to play the audio. A loudspeaker, additional ADC 
                 .ws = CONFIG_EXAMPLE_I2S_LRCK_PIN,
                 .dout = CONFIG_EXAMPLE_I2S_DATA_PIN,
                 .din = I2S_GPIO_UNUSED,
+                .invert_flags = {
+                    .mclk_inv = false,
+                    .bclk_inv = false,
+                    .ws_inv = false,
+                },
             },
         };
         /* enable I2S */
-        i2s_new_channel(&chan_cfg, &tx_chan, NULL);
-        i2s_init_std_channel(tx_chan, &std_cfg);
-        i2s_start_channel(tx_chan);
+        ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_chan, NULL));
+        ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_chan, &std_cfg));
+        ESP_ERROR_CHECK(i2s_channel_enable(tx_chan));
     #endif
 ```
 

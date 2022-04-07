@@ -17,7 +17,6 @@
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-#include "soc/i2s_periph.h"
 #include "driver/i2s_types_legacy.h"
 
 #if SOC_I2S_SUPPORTS_ADC
@@ -46,7 +45,7 @@ extern "C" {
  *
  * @param   pin         I2S Pin structure, or NULL to set 2-channel 8-bit internal DAC pin configuration (GPIO25 & GPIO26)
  *
- * Inside the pin configuration structure, set I2S_GPIO_UNUSED for any pin where
+ * Inside the pin configuration structure, set I2S_PIN_NO_CHANGE for any pin where
  * the current configuration should not be changed.
  *
  * @note if *pin is set as NULL, this function will initialize both of the built-in DAC channels by default.

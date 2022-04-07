@@ -110,10 +110,11 @@ typedef enum {
     SOC_MOD_CLK_RTC_FAST,                      /*!< RTC_FAST_CLK can be sourced from XTAL_D2 or RC_FAST by configuring soc_rtc_fast_clk_src_t */
     SOC_MOD_CLK_RTC_SLOW,                      /*!< RTC_SLOW_CLK can be sourced from RC_SLOW, XTAL32K, or RC32K by configuring soc_rtc_slow_clk_src_t */
     // For digital domain: peripherals, WIFI, BLE
-    SOC_MOD_CLK_AHB,                           /*!< AHB_CLK sources from CPU with a configurable divider */
-    SOC_MOD_CLK_XTAL32K,                       /*!< XTAL32K_CLK comes from the external 32kHz crystal, passing a clock gating to the peripherals */
-    SOC_MOD_CLK_RC_FAST,                       /*!< RC_FAST_CLK comes from the internal 8MHz rc oscillator, passing a clock gating to the peripherals */
-    SOC_MOD_CLK_XTAL,                          /*!< XTAL_CLK comes from the external 32MHz crystal */
+    SOC_MOD_CLK_AHB,                           /*< AHB_CLK sources from CPU with a configurable divider */
+    SOC_MOD_CLK_XTAL32K,                       /*< XTAL32K_CLK comes from the external 32kHz crystal, passing a clock gating to the peripherals */
+    SOC_MOD_CLK_RC_FAST,                       /*< RC_FAST_CLK comes from the internal 8MHz rc oscillator, passing a clock gating to the peripherals */
+    SOC_MOD_CLK_XTAL,                          /*< XTAL_CLK comes from the external 32MHz crystal */
+    SOC_MOD_CLK_PLL,                           /*< PLL_CLK is the output of 32MHz crystal oscillator frequency multiplier, 96MHz */
 } soc_module_clk_t;
 
 
@@ -205,6 +206,21 @@ typedef enum {
     UART_SCLK_XTAL = SOC_MOD_CLK_XTAL,   /*!< UART source clock is XTAL */
     UART_SCLK_DEFAULT = SOC_MOD_CLK_AHB, /*!< UART source clock default choice is AHB */
 } soc_periph_uart_clk_src_legacy_t;
+
+///////////////////////////////////////////////////// I2S //////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of
+ */
+#define SOC_I2S_CLKS {SOC_MOD_CLK_PLL}
+
+/**
+ * @brief I2S clock source enum
+ */
+typedef enum {
+    I2S_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL,          /*!< Select SOC_MOD_CLK_PLL as the default source clock  */
+    I2S_CLK_SRC_PLL_96M = SOC_MOD_CLK_PLL,        /*!< Select PLL as the source clock */
+} soc_periph_i2s_clk_src_t;
 
 #ifdef __cplusplus
 }

@@ -60,7 +60,7 @@ endif()
 if(CONFIG_SOC_I2S_SUPPORTED)
     list(APPEND srcs "i2s/i2s_common.c"
                      "i2s/i2s_std.c"
-                     "i2s/i2s_legacy.c")
+                     "deprecated/i2s_legacy.c")
     if(CONFIG_SOC_I2S_SUPPORTS_PDM)
         list(APPEND srcs "i2s/i2s_pdm.c")
     endif()

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #pragma once
 
 #include "hal/i2s_types.h"
+#include "driver/i2s_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -140,6 +141,25 @@ typedef enum {
     I2S_DAC_CHANNEL_MAX      = 0x4,  /*!< I2S built-in DAC mode max index*/
 } i2s_dac_mode_t;
 #endif //SOC_I2S_SUPPORTS_DAC
+
+/**
+ * @brief I2S event queue types
+ */
+typedef enum {
+    I2S_EVENT_DMA_ERROR,   /*!< I2S DMA has no next descriptor for sending or receiving */
+    I2S_EVENT_TX_DONE,     /*!< I2S DMA finished sending one DMA buffer */
+    I2S_EVENT_RX_DONE,     /*!< I2S DMA finished receiving one DMA buffer */
+    I2S_EVENT_TX_Q_OVF,    /*!< I2S DMA sending queue overflowed, the oldest data has been overwritten by the new data in the DMA buffer */
+    I2S_EVENT_RX_Q_OVF,    /*!< I2S DMA receive queue overflowed, the oldest data has been overwritten by the new data in the DMA buffer  */
+} i2s_event_type_t;
+
+/**
+ * @brief Event structure used in I2S event queue
+ */
+typedef struct {
+    i2s_event_type_t    type;   /*!< I2S event type */
+    size_t              size;   /*!< I2S data size for I2S_DATA event*/
+} i2s_event_t;
 
 /**
  * @brief I2S GPIO pins configuration

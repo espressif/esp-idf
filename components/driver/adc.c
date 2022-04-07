@@ -38,6 +38,7 @@
 #include "driver/spi_common_internal.h"
 #elif CONFIG_IDF_TARGET_ESP32
 #include "hal/i2s_types.h"
+#include "driver/i2s_types.h"
 #include "soc/i2s_periph.h"
 #include "esp_private/i2s_platform.h"
 #endif

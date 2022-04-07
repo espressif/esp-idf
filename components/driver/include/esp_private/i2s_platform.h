@@ -10,7 +10,6 @@
 #pragma once
 
 #include "esp_err.h"
-#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,6 +42,14 @@ esp_err_t i2s_platform_acquire_occupation(int id, const char *comp_name);
  *      - ESP_ERR_INVALID_STATE: Specific I2S port is free already
  */
 esp_err_t i2s_platform_release_occupation(int id);
+
+/**
+ * @brief This function is only used for getting DMA buffer offset in `test_i2s_iram.c`
+ *
+ * @return
+ *      - The offset of DMA buffers in the `i2s_chan_handle_t` struct (unit: bytes)
+ */
+size_t i2s_platform_get_dma_buffer_offset(void);
 
 #ifdef __cplusplus
 }

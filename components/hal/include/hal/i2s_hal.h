@@ -34,21 +34,23 @@ typedef struct {
     union {
         /* STD configurations */
         struct {
+            i2s_std_slot_mask_t     slot_mask;          /*!< Select the left, right or both slot */
             uint32_t                ws_width;           /*!< WS signal width (i.e. the number of bclk ticks that ws signal is high) */
             bool                    ws_pol;             /*!< WS signal polarity, set true to enable high lever first */
             bool                    bit_shift;          /*!< Set to enbale bit shift in Philip mode */
-        #if SOC_I2S_HW_VERSION_1    // For esp32/esp32-s2
+#if SOC_I2S_HW_VERSION_1    // For esp32/esp32-s2
             bool                    msb_right;          /*!< Set to place right channel data at the MSB in the FIFO */
-        #else
+#else
             bool                    left_align;         /*!< Set to enable left alignment */
             bool                    big_endian;         /*!< Set to enable big endian */
             bool                    bit_order_lsb;      /*!< Set to enable lsb first */
-        #endif
-        } std;
+#endif
+        } std;                                          /*!< Specific configurations for standard mode */
 
-    #if SOC_I2S_SUPPORTS_TDM
+#if SOC_I2S_SUPPORTS_TDM
         /* TDM configurations */
         struct {
+            i2s_tdm_slot_mask_t     slot_mask;          /*!< Slot mask. Activating slots by setting 1 to corresponding bits. When the activated slots is not consecutive, those data in unactivated slots will be ignored */
             uint32_t                ws_width;           /*!< WS signal width ((i.e. the number of bclk ticks that ws signal is high)) */
             bool                    ws_pol;             /*!< WS signal polarity, set true to enable high lever first */
             bool                    bit_shift;          /*!< Set true to enable bit shift in Philip mode */
@@ -58,12 +60,11 @@ typedef struct {
             bool                    bit_order_lsb;      /*!< Set true to enable lsb first */
 
             bool                    skip_mask;          /*!< Set true to enable skip mask. If it is enabled, only the data of the enabled channels will be sent, otherwise all data stored in DMA TX buffer will be sent */
-            i2s_tdm_slot_mask_t     slot_mask;          /*!< Slot mask. Activating slots by setting 1 to corresponding bits. When the activated slots is not consecutive, those data in unactivated slots will be ignored */
             uint32_t                total_slot;         /*!< I2S total number of slots. If it is smaller than the biggest activated channel number, it will be set to this number automatically. */
-        } tdm;
-    #endif
+        } tdm;                                          /*!< Specific configurations for TDM mode */
+#endif
 
-    #if SOC_I2S_SUPPORTS_PDM_TX
+#if SOC_I2S_SUPPORTS_PDM_TX
         /* PDM TX configurations */
         struct {
             uint32_t                sd_prescale;        /*!< Sigma-delta filter prescale */
@@ -71,15 +72,15 @@ typedef struct {
             i2s_pdm_sig_scale_t     hp_scale;           /*!< High pass filter scaling value */
             i2s_pdm_sig_scale_t     lp_scale;           /*!< Low pass filter scaling value */
             i2s_pdm_sig_scale_t     sinc_scale;         /*!< Sinc filter scaling value */
-        #if SOC_I2S_HW_VERSION_2
+#if SOC_I2S_HW_VERSION_2
             bool                    sd_en;              /*!< Sigma-delta filter enable */
             bool                    hp_en;              /*!< High pass filter enable */
             float                   hp_cut_off_freq_hz; /*!< High pass filter cut-off frequency, range 23.3Hz ~ 185Hz, see cut-off frequency sheet above */
             uint32_t                sd_dither;          /*!< Sigma-delta filter dither */
             uint32_t                sd_dither2;         /*!< Sigma-delta filter dither2 */
-        #endif // SOC_I2S_HW_VERSION_2
-        } pdm_tx;
-    #endif
+#endif // SOC_I2S_HW_VERSION_2
+        } pdm_tx;                                       /*!< Specific configurations for PDM TX mode */
+#endif
     };
 
 } i2s_hal_slot_config_t;
@@ -106,7 +107,7 @@ typedef struct {
  * @brief Init I2S hal context
  *
  * @param hal Context of the HAL layer
- * @param port_id The I2S port number, the max port number is (I2S_NUM_MAX -1)
+ * @param port_id The I2S port number, the max port number is (SOC_I2S_NUM -1)
  */
 void i2s_hal_init(i2s_hal_context_t *hal, int port_id);
 
@@ -139,7 +140,7 @@ void i2s_hal_set_rx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *cl
  * @param is_slave If is slave role
  * @param slot_config General slot configuration pointer, but will specified to i2s standard mode
  */
-void i2s_hal_std_set_tx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_hal_slot_config_t *slot_config);
+void i2s_hal_std_set_tx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_hal_slot_config_t *slot_cfg);
 
 /**
  * @brief Set rx slot to standard mode
@@ -148,7 +149,7 @@ void i2s_hal_std_set_tx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
  * @param is_slave If is slave role
  * @param slot_config General slot configuration pointer, but will specified to i2s standard mode
  */
-void i2s_hal_std_set_rx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_hal_slot_config_t *slot_config);
+void i2s_hal_std_set_rx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_hal_slot_config_t *slot_cfg);
 
 /**
  * @brief Enable tx channel as standard mode
@@ -177,7 +178,7 @@ void i2s_hal_std_enable_rx_channel(i2s_hal_context_t *hal);
  * @param is_slave If is slave role
  * @param slot_config General slot configuration pointer, but will specified to i2s pdm tx mode
  */
-void i2s_hal_pdm_set_tx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_hal_slot_config_t *slot_config);
+void i2s_hal_pdm_set_tx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_hal_slot_config_t *slot_cfg);
 
 /**
  * @brief Enable tx channel as pdm mode
@@ -195,7 +196,7 @@ void i2s_hal_pdm_enable_tx_channel(i2s_hal_context_t *hal);
  * @param is_slave If is slave role
  * @param slot_config General slot configuration pointer, but will specified to i2s pdm rx mode
  */
-void i2s_hal_pdm_set_rx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_hal_slot_config_t *slot_config);
+void i2s_hal_pdm_set_rx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_hal_slot_config_t *slot_cfg);
 
 /**
  * @brief Enable rx channel as pdm mode
@@ -217,7 +218,7 @@ void i2s_hal_pdm_enable_rx_channel(i2s_hal_context_t *hal);
  * @param is_slave If is slave role
  * @param slot_config General slot configuration pointer, but will specified to i2s tdm mode
  */
-void i2s_hal_tdm_set_tx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_hal_slot_config_t *slot_config);
+void i2s_hal_tdm_set_tx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_hal_slot_config_t *slot_cfg);
 
 /**
  * @brief Set rx slot to tdm mode
@@ -226,7 +227,7 @@ void i2s_hal_tdm_set_tx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
  * @param is_slave If is slave role
  * @param slot_config General slot configuration pointer, but will specified to i2s tdm mode
  */
-void i2s_hal_tdm_set_rx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_hal_slot_config_t *slot_config);
+void i2s_hal_tdm_set_rx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_hal_slot_config_t *slot_cfg);
 
 /**
  * @brief Enable tx channel as tdm mode

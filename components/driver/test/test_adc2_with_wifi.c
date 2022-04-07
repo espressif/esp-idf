@@ -257,7 +257,7 @@ static void adc_dma_init(void)
 static void continuous_adc_test(void)
 {
     uint16_t *adcReadBuffer = (uint16_t *)calloc(1024, sizeof(uint16_t));
-    size_t bytesRead;
+    uint32_t bytesRead;
     for (int loop = 0; loop < 10; loop++) {
         for (int level = 0; level <= 1; level++) {
             if (level == 0) {
