@@ -29,14 +29,12 @@ See [Development Boards](https://www.espressif.com/en/products/devkits) for more
 
 ### Configure the Project
 
-Open the project configuration menu (`idf.py menuconfig`). 
+Open the project configuration menu (`idf.py menuconfig`).
 
 In the `Example Configuration` menu:
 
 * Select the LED type in the `Blink LED type` option.
     * Use `GPIO` for regular LED blink.
-    * Use `RMT` for addressable LED blink.
-        * Use `RMT Channel` to select the RMT peripheral channel.
 * Set the GPIO number used for the signal in the `Blink GPIO number` option.
 * Set the blinking period in the `Blink period in ms` option.
 
@@ -50,7 +48,7 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 
 ## Example Output
 
-As you run the example, you will see the LED blinking, according to the previously defined period. For the addressable LED, you can also change the LED color by setting the `pStrip_a->set_pixel(pStrip_a, 0, 16, 16, 16);` (LED Strip, Pixel Number, Red, Green, Blue) with values from 0 to 255 in the `blink.c` file.
+As you run the example, you will see the LED blinking, according to the previously defined period. For the addressable LED, you can also change the LED color by setting the `led_strip_set_pixel(pStrip_a, 0, 16, 16, 16);` (LED Strip, Pixel Number, Red, Green, Blue) with values from 0 to 255 in the `blink.c` file.
 
 ```
 I (315) example: Example configured to blink addressable LED!
