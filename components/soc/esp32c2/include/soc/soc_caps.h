@@ -66,9 +66,6 @@
 /*!< RTC */
 #define SOC_ADC_MAX_BITWIDTH                    (12)
 
-/*-------------------------- APB BACKUP DMA CAPS -------------------------------*/
-#define SOC_APB_BACKUP_DMA              (1)
-
 /*-------------------------- BROWNOUT CAPS -----------------------------------*/
 #define SOC_BROWNOUT_RESET_SUPPORTED 1
 
@@ -231,7 +228,7 @@
 
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_ECC              1
-#define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   1
+#define SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS   (1U)
 
 /*-------------------------- Flash Encryption CAPS----------------------------*/
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (32)
