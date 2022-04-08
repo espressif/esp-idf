@@ -92,10 +92,17 @@ menu "Serial flasher config"
         # On some of the ESP chips, max boot frequency would be equal to (or even lower than) 80m.
         # We currently define this to `80m`.
         default "80m" if ESPTOOLPY_FLASHFREQ_120M
-        default "80m" if ESPTOOLPY_FLASHFREQ_80M
-        default "40m" if ESPTOOLPY_FLASHFREQ_40M
-        default "26m" if ESPTOOLPY_FLASHFREQ_26M
-        default "20m" if ESPTOOLPY_FLASHFREQ_20M
+        # Temporarily support c2 and h2, because not consistent with esptool, will be cleaned up in IDF-4474
+        default "80m" if ESPTOOLPY_FLASHFREQ_80M && !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32H2
+        default "40m" if ESPTOOLPY_FLASHFREQ_40M && !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32H2
+        default "26m" if ESPTOOLPY_FLASHFREQ_26M && !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32H2
+        default "20m" if ESPTOOLPY_FLASHFREQ_20M && !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32H2
+        default "60m" if ESPTOOLPY_FLASHFREQ_80M && IDF_TARGET_ESP32C2
+        default "30m" if ESPTOOLPY_FLASHFREQ_40M && IDF_TARGET_ESP32C2
+        default "15m" if ESPTOOLPY_FLASHFREQ_20M && IDF_TARGET_ESP32C2
+        default "48m" if ESPTOOLPY_FLASHFREQ_80M && IDF_TARGET_ESP32H2
+        default "24m" if ESPTOOLPY_FLASHFREQ_40M && IDF_TARGET_ESP32H2
+        default "12m" if ESPTOOLPY_FLASHFREQ_20M && IDF_TARGET_ESP32H2
 
 
     choice ESPTOOLPY_FLASHSIZE
