@@ -267,10 +267,19 @@ static void apply_repeat_encoding(const uint8_t *in_bytes, uint32_t *out_words, 
 }
 #endif // CONFIG_EFUSE_VIRTUAL
 
+static void read_r_data(esp_efuse_block_t num_block, uint32_t* buf_r_data)
+{
+    int i = 0;
+    for (uint32_t addr_rd_block = range_read_addr_blocks[num_block].start; addr_rd_block <= range_read_addr_blocks[num_block].end; addr_rd_block += 4, ++i) {
+        buf_r_data[i] = esp_efuse_utility_read_reg(num_block, i);
+    }
+}
+
 // This function just checkes that given data for blocks will not rise a coding issue during the burn operation.
 // Encoded data will be set during the burn operation.
 esp_err_t esp_efuse_utility_apply_new_coding_scheme()
 {
+    uint8_t buf_r_data[COUNT_EFUSE_REG_PER_BLOCK * 4];
     // start with EFUSE_BLK1. EFUSE_BLK0 - always uses EFUSE_CODING_SCHEME_NONE.
     for (int num_block = EFUSE_BLK1; num_block < EFUSE_BLK_MAX; num_block++) {
         esp_efuse_coding_scheme_t scheme = esp_efuse_get_coding_scheme(num_block);
@@ -283,8 +292,8 @@ esp_err_t esp_efuse_utility_apply_new_coding_scheme()
                 }
             }
             if (is_write_data) {
+                read_r_data(num_block, (uint32_t*)buf_r_data);
                 uint8_t* buf_w_data = (uint8_t*)range_write_addr_blocks[num_block].start;
-                uint8_t* buf_r_data = (uint8_t*)range_read_addr_blocks[num_block].start;
                 if (scheme == EFUSE_CODING_SCHEME_3_4) {
                     if (*((uint32_t*)buf_w_data + 6) != 0 || *((uint32_t*)buf_w_data + 7) != 0) {
                         return ESP_ERR_CODING;
