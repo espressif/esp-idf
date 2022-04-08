@@ -511,6 +511,7 @@ When using :doc:`IDF Monitor <tools/idf-monitor>`, the backtrace will be decoded
 
 The types of errors reported by UBSAN can be as follows:
 
+
 .. list-table::
   :widths: 40 60
   :header-rows: 1
