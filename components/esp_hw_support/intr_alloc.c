@@ -68,7 +68,7 @@ struct shared_vector_desc_t {
 
 //Pack using bitfields for better memory use
 struct vector_desc_t {
-    int flags: 16;                          //OR of VECDESC_FLAG_* defines
+    int flags: 16;                          //OR of VECDESC_FL_* defines
     unsigned int cpu: 1;
     unsigned int intno: 5;
     int source: 8;                          //Interrupt mux flags, used when not shared
@@ -692,7 +692,7 @@ esp_err_t esp_intr_free(intr_handle_t handle)
         //Theoretically, we could free the vector_desc... not sure if that's worth the few bytes of memory
         //we save.(We can also not use the same exit path for empty shared ints anymore if we delete
         //the desc.) For now, just mark it as free.
-        handle->vector_desc->flags&=!(VECDESC_FL_NONSHARED|VECDESC_FL_RESERVED);
+        handle->vector_desc->flags&=~(VECDESC_FL_NONSHARED|VECDESC_FL_RESERVED|VECDESC_FL_SHARED);
         //Also kill non_iram mask bit.
         non_iram_int_mask[handle->vector_desc->cpu]&=~(1<<(handle->vector_desc->intno));
     }
