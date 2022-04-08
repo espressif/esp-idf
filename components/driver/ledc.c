@@ -26,6 +26,8 @@ static __attribute__((unused)) const char *LEDC_TAG = "ledc";
 #define LEDC_CHECK(a, str, ret_val) ESP_RETURN_ON_FALSE(a, ret_val, LEDC_TAG, "%s", str)
 #define LEDC_ARG_CHECK(a, param) ESP_RETURN_ON_FALSE(a, ESP_ERR_INVALID_ARG, LEDC_TAG, param " argument is invalid")
 
+#define LEDC_CLK_NOT_FOUND  0
+
 typedef enum {
     LEDC_FSM_IDLE,
     LEDC_FSM_HW_FADE,
@@ -74,6 +76,11 @@ static __attribute__((unused)) const char *LEDC_FADE_INIT_ERROR_STR = "LEDC fade
 
 //This value will be calibrated when in use.
 static uint32_t s_ledc_slow_clk_8M = 0;
+
+static const ledc_slow_clk_sel_t s_glb_clks[] = LEDC_LL_GLOBAL_CLOCKS;
+#if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
+static const struct { ledc_clk_src_t clk; uint32_t freq; } s_timer_specific_clks[] = LEDC_LL_TIMER_SPECIFIC_CLOCKS;
+#endif
 
 static void ledc_ls_timer_update(ledc_mode_t speed_mode, ledc_timer_t timer_sel)
 {
@@ -341,52 +348,46 @@ static inline uint32_t ledc_calculate_divisor(uint32_t src_clk_freq, int freq_hz
 
 static inline uint32_t ledc_auto_global_clk_divisor(int freq_hz, uint32_t precision, ledc_slow_clk_sel_t* clk_target)
 {
-    uint32_t div_param = 0;
-    uint32_t i = 0;
+    uint32_t ret = LEDC_CLK_NOT_FOUND;
     uint32_t clk_freq = 0;
+
     /* This function will go through all the following clock sources to look
      * for a valid divisor which generates the requested frequency. */
-    const ledc_slow_clk_sel_t glb_clks[] = LEDC_LL_GLOBAL_CLOCKS;
-
-    for (i = 0; i < DIM(glb_clks); i++) {
+    for (int i = 0; i < DIM(s_glb_clks); i++) {
         /* Before calculating the divisor, we need to have the RTC frequency.
          * If it hasn't been measured yet, try calibrating it now. */
-        if (glb_clks[i] == LEDC_SLOW_CLK_RTC8M && s_ledc_slow_clk_8M == 0 && !ledc_slow_clk_calibrate()) {
+        if (s_glb_clks[i] == LEDC_SLOW_CLK_RTC8M && s_ledc_slow_clk_8M == 0 && !ledc_slow_clk_calibrate()) {
             ESP_LOGD(LEDC_TAG, "Unable to retrieve RTC clock frequency, skipping it\n");
             continue;
         }
 
-        clk_freq = ledc_get_glb_clk_freq(glb_clks[i]);
-        div_param = ledc_calculate_divisor(clk_freq, freq_hz, precision);
+        clk_freq = ledc_get_glb_clk_freq(s_glb_clks[i]);
+        uint32_t div_param = ledc_calculate_divisor(clk_freq, freq_hz, precision);
 
         /* If the divisor is valid, we can return this value. */
         if (!LEDC_IS_DIV_INVALID(div_param)) {
-            *clk_target = glb_clks[i];
+            *clk_target = s_glb_clks[i];
+            ret = div_param;
             break;
         }
     }
 
-    return div_param;
-
+    return ret;
 }
 
 #if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
 static inline uint32_t ledc_auto_timer_specific_clk_divisor(ledc_mode_t speed_mode, int freq_hz, uint32_t precision,
                                                             ledc_clk_src_t* clk_source)
 {
-    uint32_t div_param = 0;
-    uint32_t i = 0;
+    uint32_t ret = LEDC_CLK_NOT_FOUND;
 
-    /* Use an anonymous structure, only this function requires it.
-     * Get the list of the timer-specific clocks, try to find one for the reuested frequency.  */
-    const struct { ledc_clk_src_t clk; uint32_t freq; } specific_clks[] = LEDC_LL_TIMER_SPECIFIC_CLOCKS;
-
-    for (i = 0; i < DIM(specific_clks); i++) {
-        div_param = ledc_calculate_divisor(specific_clks[i].freq, freq_hz, precision);
+    for (int i = 0; i < DIM(s_timer_specific_clks); i++) {
+        uint32_t div_param = ledc_calculate_divisor(s_timer_specific_clks[i].freq, freq_hz, precision);
 
         /* If the divisor is valid, we can return this value. */
         if (!LEDC_IS_DIV_INVALID(div_param)) {
-            *clk_source = specific_clks[i].clk;
+            *clk_source = s_timer_specific_clks[i].clk;
+            ret = div_param;
             break;
         }
     }
@@ -395,17 +396,18 @@ static inline uint32_t ledc_auto_timer_specific_clk_divisor(ledc_mode_t speed_mo
     /* On board that support LEDC high-speed mode, APB clock becomes a timer-
      * specific clock when in high speed mode. Check if it is necessary here
      * to test APB. */
-    if (speed_mode == LEDC_HIGH_SPEED_MODE && i == DIM(specific_clks)) {
+    if (speed_mode == LEDC_HIGH_SPEED_MODE && ret == LEDC_CLK_NOT_FOUND) {
         /* No divider was found yet, try with APB! */
-        div_param = ledc_calculate_divisor(esp_clk_apb_freq(), freq_hz, precision);
+        uint32_t div_param = ledc_calculate_divisor(esp_clk_apb_freq(), freq_hz, precision);
 
         if (!LEDC_IS_DIV_INVALID(div_param)) {
             *clk_source = LEDC_APB_CLK;
+            ret = div_param;
         }
     }
 #endif
 
-    return div_param;
+    return ret;
 }
 #endif
 
@@ -416,27 +418,31 @@ static inline uint32_t ledc_auto_timer_specific_clk_divisor(ledc_mode_t speed_mo
 static uint32_t ledc_auto_clk_divisor(ledc_mode_t speed_mode, int freq_hz, uint32_t precision,
                                       ledc_clk_src_t* clk_source, ledc_slow_clk_sel_t* clk_target)
 {
-    uint32_t div_param = 0;
+    uint32_t ret = LEDC_CLK_NOT_FOUND;
 
 #if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
     /* If the SoC presents timer-specific clock(s), try to achieve the given frequency
      * thanks to it/them.
      * clk_source parameter will returned by this function. */
-    div_param = ledc_auto_timer_specific_clk_divisor(speed_mode, freq_hz, precision, clk_source);
+    uint32_t div_param_timer = ledc_auto_timer_specific_clk_divisor(speed_mode, freq_hz, precision, clk_source);
 
-    if (!LEDC_IS_DIV_INVALID(div_param)) {
+    if (div_param_timer != LEDC_CLK_NOT_FOUND) {
         /* The dividor is valid, no need try any other clock, return directly. */
-        return div_param;
+        ret = div_param_timer;
     }
 #endif
 
     /* On ESP32, only low speed channel can use the global clocks. For other
      * chips, there are no high speed channels. */
-    if (speed_mode == LEDC_LOW_SPEED_MODE) {
-        div_param = ledc_auto_global_clk_divisor(freq_hz, precision, clk_target);
+    if (ret == LEDC_CLK_NOT_FOUND && speed_mode == LEDC_LOW_SPEED_MODE) {
+        uint32_t div_param_global = ledc_auto_global_clk_divisor(freq_hz, precision, clk_target);
+        if (div_param_global != LEDC_CLK_NOT_FOUND) {
+            *clk_source = LEDC_SCLK;
+            ret = div_param_global;
+        }
     }
 
-    return div_param;
+    return ret;
 }
 
 static ledc_slow_clk_sel_t ledc_clk_cfg_to_global_clk(const ledc_clk_cfg_t clk_cfg)
@@ -483,17 +489,16 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
 {
     uint32_t div_param = 0;
     const uint32_t precision = ( 0x1 << duty_resolution );
-    /* This variable represents the timer's mux value. It will be overwritten
-     * if a timer-specific clock is used. */
-    ledc_clk_src_t timer_clk_src = LEDC_SCLK;
-    /* Store the global clock */
+    /* The clock sources are not initialized on purpose. To produce compiler warning if used but the selector functions
+     * don't set them properly. */
+    /* Timer-specific mux. Set to timer-specific clock or LEDC_SCLK if a global clock is used. */
+    ledc_clk_src_t timer_clk_src;
+    /* Global clock mux. Should be set when LEDC_SCLK is used in LOW_SPEED_MODE. Otherwise left uninitialized. */
     ledc_slow_clk_sel_t glb_clk;
-    uint32_t src_clk_freq = 0;
 
     if (clk_cfg == LEDC_AUTO_CLK) {
         /* User hasn't specified the speed, we should try to guess it. */
         div_param = ledc_auto_clk_divisor(speed_mode, freq_hz, precision, &timer_clk_src, &glb_clk);
-
     } else if (clk_cfg == LEDC_USE_RTC8M_CLK) {
         /* User specified source clock(RTC8M_CLK) for low speed channel.
          * Make sure the speed mode is correct. */
@@ -505,14 +510,16 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
             goto error;
         }
 
-        /* We have the RTC clock frequency now. */
-        div_param = ledc_calculate_divisor(s_ledc_slow_clk_8M, freq_hz, precision);
-
         /* Set the global clock source */
+        timer_clk_src = LEDC_SCLK;
         glb_clk =  LEDC_SLOW_CLK_RTC8M;
 
+        /* We have the RTC clock frequency now. */
+        div_param = ledc_calculate_divisor(s_ledc_slow_clk_8M, freq_hz, precision);
+        if (LEDC_IS_DIV_INVALID(div_param)) {
+            div_param = LEDC_CLK_NOT_FOUND;
+        }
     } else {
-
 #if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
         if (LEDC_LL_IS_TIMER_SPECIFIC_CLOCK(speed_mode, clk_cfg)) {
             /* Currently we can convert a timer-specific clock to a source clock that
@@ -523,14 +530,18 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
         } else
 #endif
         {
+            timer_clk_src = LEDC_SCLK;
             glb_clk = ledc_clk_cfg_to_global_clk(clk_cfg);
         }
 
-        src_clk_freq = ledc_get_src_clk_freq(clk_cfg);
+        uint32_t src_clk_freq = ledc_get_src_clk_freq(clk_cfg);
         div_param = ledc_calculate_divisor(src_clk_freq, freq_hz, precision);
+        if (LEDC_IS_DIV_INVALID(div_param)) {
+            div_param = LEDC_CLK_NOT_FOUND;
+        }
     }
 
-    if (LEDC_IS_DIV_INVALID(div_param)) {
+    if (div_param == LEDC_CLK_NOT_FOUND) {
         goto error;
     }
 
@@ -539,26 +550,24 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
              timer_clk_src, (speed_mode == LEDC_LOW_SPEED_MODE ? "slow" : "fast"), div_param);
 
     /* The following block configures the global clock.
-     * Thus, in theory, this only makes sense when the source clock is LEDC_SCLK
-     * and in LOW_SPEED_MODE (as HIGH_SPEED_MODE doesn't present any global clock)
-     *
-     * However, in practice, when the source clock is a timer-specific one (e.g.
-     * REF_TICK) and in LOW_SPEED_MODE, the global clock MUST be set to a
-     * specific one (APB_CLK). Therefore, in such case, the global clock also
-     * needs to be configured. In high-speed mode, this is not necessary.
+     * Thus, in theory, this only makes sense when configuring the LOW_SPEED timer and the source clock is LEDC_SCLK (as
+     * HIGH_SPEED timers won't be clocked by the global clock). However, there are some limitations due to HW design.
      */
     if (speed_mode == LEDC_LOW_SPEED_MODE) {
-        if (timer_clk_src == LEDC_SCLK) {
-            ESP_LOGD(LEDC_TAG, "In slow speed mode, using clock %d", glb_clk);
-        } else {
-#if SOC_LEDC_SUPPORT_APB_CLOCK
+#if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
+        /* On ESP32 and ESP32-S2, when the source clock of LOW_SPEED timer is a timer-specific one (i.e. REF_TICK), the
+         * global clock MUST be set to APB_CLK. For HIGH_SPEED timers, this is not necessary.
+         */
+        if (timer_clk_src != LEDC_SCLK) {
             glb_clk = LEDC_SLOW_CLK_APB;
-#elif SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
-    /* Currently, code shouldn't reach here. timer_clk_src != LEDC_SCLK should only happen on esp32 and esp32s2, and
-     * PLL_DIV starts to replace APB as one of the global clock sources for some new chips. This is for future potential. */
-            glb_clk = LEDC_SLOW_CLK_PLL_DIV;
-#endif
         }
+#else
+        /* On later chips, there is only one type of timer/channel (referred as LOW_SPEED in the code), which can only be
+         * clocked by the global clock. So there's no limitation on the global clock, except that it must be set.
+         */
+        assert(timer_clk_src == LEDC_SCLK);
+#endif
+        ESP_LOGD(LEDC_TAG, "In slow speed mode, global clk set: %d", glb_clk);
 
         portENTER_CRITICAL(&ledc_spinlock);
         ledc_hal_set_slow_clk_sel(&(p_ledc_obj[speed_mode]->ledc_hal), glb_clk);
@@ -571,6 +580,7 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
     /* Reset the timer. */
     ledc_timer_rst(speed_mode, timer_num);
     return ESP_OK;
+
 error:
     ESP_LOGE(LEDC_TAG, "requested frequency and duty resolution can not be achieved, try reducing freq_hz or duty_resolution. div_param=%d",
              (uint32_t ) div_param);
