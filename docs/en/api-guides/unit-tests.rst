@@ -179,7 +179,7 @@ When the build finishes, it will print instructions for flashing the chip. You c
 
 You can also run ``idf.py -T all flash`` or ``idf.py -T xxx flash`` to build and flash. Everything needed will be rebuilt automatically before flashing.
 
-Use menuconfig to set the serial port for flashing.
+Use menuconfig to set the serial port for flashing. For more information, see :idf_file:`tools/unit-test-app/README.md`.
 
 Running Unit Tests
 ------------------
