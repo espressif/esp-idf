@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <math.h>
+#include "sdkconfig.h"
 #include "esp_types.h"
 #include "esp_log.h"
 #include "esp_check.h"
@@ -18,7 +19,6 @@
 #include "hal/temperature_sensor_ll.h"
 #include "driver/temp_sensor_types_legacy.h"
 #include "esp_private/periph_ctrl.h"
-#include "sdkconfig.h"
 
 static const char *TAG = "tsens";
 
@@ -158,11 +158,12 @@ esp_err_t temp_sensor_read_celsius(float *celsius)
 __attribute__((constructor))
 static void check_legacy_temp_sensor_driver_conflict(void)
 {
-    extern int temp_sensor_driver_init_count;
-    temp_sensor_driver_init_count++;
-    if (temp_sensor_driver_init_count > 1) {
-        ESP_EARLY_LOGE(TAG, "CONFLICT! The legacy temp sensor driver can't work along with the new temperature driver");
+    // This function was declared as weak here. temperature_sensor driver has one implementation.
+    // So if temperature_sensor driver is not linked in, then `temperature_sensor_install()` should be NULL at runtime.
+    extern __attribute__((weak)) esp_err_t temperature_sensor_install(const void *tsens_config, void **ret_tsens);
+    if (temperature_sensor_install != NULL) {
+        ESP_EARLY_LOGE(TAG, "CONFLICT! driver_ng is not allowed to be used with the legacy driver");
         abort();
     }
-    ESP_EARLY_LOGW(TAG, "legacy temp sensor driver is deprecated, please migrate to use driver/temperature_sensor.h");
+    ESP_EARLY_LOGW(TAG, "legacy driver is deprecated, please migrate to `driver/temperature_sensor.h`");
 }

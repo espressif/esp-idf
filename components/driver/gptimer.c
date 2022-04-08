@@ -504,20 +504,3 @@ esp_err_t gptimer_get_pm_lock(gptimer_handle_t timer, esp_pm_lock_handle_t *ret_
     *ret_pm_lock = timer->pm_lock;
     return ESP_OK;
 }
-
-/**
- * @brief This function will be called during start up, to check that gptimer driver is not running along with the legacy timer group driver
- */
-__attribute__((constructor))
-static void check_gptimer_driver_conflict(void)
-{
-#if CONFIG_GPTIMER_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
-    extern int timer_group_driver_init_count;
-    timer_group_driver_init_count++;
-    if (timer_group_driver_init_count > 1) {
-        ESP_EARLY_LOGE(TAG, "CONFLICT! The gptimer driver can't work along with the legacy timer group driver");
-        abort();
-    }
-}

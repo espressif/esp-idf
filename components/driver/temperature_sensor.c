@@ -83,10 +83,10 @@ static esp_err_t temperature_sensor_choose_best_range(temperature_sensor_handle_
 
 esp_err_t temperature_sensor_install(const temperature_sensor_config_t *tsens_config, temperature_sensor_handle_t *ret_tsens)
 {
-    esp_err_t ret = ESP_OK;
 #if CONFIG_TEMP_SENSOR_ENABLE_DEBUG_LOG
     esp_log_level_set(TAG, ESP_LOG_DEBUG);
 #endif
+    esp_err_t ret = ESP_OK;
     ESP_RETURN_ON_FALSE((tsens_config && ret_tsens), ESP_ERR_INVALID_ARG, TAG, "Invalid argument");
     ESP_RETURN_ON_FALSE((s_tsens_attribute_copy == NULL), ESP_ERR_INVALID_STATE, TAG, "Already installed");
     temperature_sensor_handle_t tsens;
@@ -197,18 +197,4 @@ esp_err_t temperature_sensor_get_celsius(temperature_sensor_handle_t tsens, floa
         return ESP_ERR_INVALID_STATE;
     }
     return ESP_OK;
-}
-
-/**
- * @brief This function will be called during start up, to check the new temperature driver is not running along with the legacy temp sensor driver
- */
-__attribute__((constructor))
-static void check_temperature_driver_conflict(void)
-{
-    extern int temp_sensor_driver_init_count;
-    temp_sensor_driver_init_count++;
-    if (temp_sensor_driver_init_count > 1) {
-        ESP_EARLY_LOGE(TAG, "CONFLICT! The temperature driver can't work along with the legacy temp sensor driver");
-        abort();
-    }
 }

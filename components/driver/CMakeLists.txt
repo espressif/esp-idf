@@ -5,7 +5,6 @@ set(srcs
     "gptimer.c"
     "i2c.c"
     "ledc.c"
-    "legacy_new_driver_coexist.c"
     "rtc_io.c"
     "rtc_module.c"
     "sdspi_crc.c"

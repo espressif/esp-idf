@@ -480,11 +480,12 @@ esp_err_t IRAM_ATTR timer_spinlock_give(timer_group_t group_num)
 __attribute__((constructor))
 static void check_legacy_timer_driver_conflict(void)
 {
-    extern int timer_group_driver_init_count;
-    timer_group_driver_init_count++;
-    if (timer_group_driver_init_count > 1) {
-        ESP_EARLY_LOGE(TIMER_TAG, "CONFLICT! The legacy timer group driver can't work along with the gptimer driver");
+    // This function was declared as weak here. gptimer driver has one implementation.
+    // So if gptimer driver is not linked in, then `gptimer_new_timer()` should be NULL at runtime.
+    extern __attribute__((weak)) esp_err_t gptimer_new_timer(const void *config, void **ret_timer);
+    if (gptimer_new_timer != NULL) {
+        ESP_EARLY_LOGE(TIMER_TAG, "CONFLICT! driver_ng is not allowed to be used with the legacy driver");
         abort();
     }
-    ESP_EARLY_LOGW(TIMER_TAG, "legacy timer group driver is deprecated, please migrate to use driver/gptimer.h");
+    ESP_EARLY_LOGW(TIMER_TAG, "legacy driver is deprecated, please migrate to `driver/gptimer.h`");
 }

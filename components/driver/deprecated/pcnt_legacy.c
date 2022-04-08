@@ -31,7 +31,7 @@
 #define PCNT_ENTER_CRITICAL(mux)    portENTER_CRITICAL(mux)
 #define PCNT_EXIT_CRITICAL(mux)     portEXIT_CRITICAL(mux)
 
-static const char *TAG = "pcnt";
+static const char *TAG = "pcnt(legacy)";
 
 #define PCNT_CHECK(a, str, ret_val) ESP_RETURN_ON_FALSE(a, ret_val, TAG, "%s", str)
 
@@ -552,11 +552,12 @@ void pcnt_isr_service_uninstall(void)
 __attribute__((constructor))
 static void check_pcnt_driver_conflict(void)
 {
-    extern int pcnt_driver_init_count;
-    pcnt_driver_init_count++;
-    if (pcnt_driver_init_count > 1) {
-        ESP_EARLY_LOGE(TAG, "CONFLICT! The pulse_cnt driver can't work along with the legacy pcnt driver");
+    // This function was declared as weak here. pulse_cnt driver has one implementation.
+    // So if pulse_cnt driver is not linked in, then `pcnt_new_unit` should be NULL at runtime.
+    extern __attribute__((weak)) esp_err_t pcnt_new_unit(const void *config, void **ret_unit);
+    if (pcnt_new_unit != NULL) {
+        ESP_EARLY_LOGE(TAG, "CONFLICT! driver_ng is not allowed to be used with the legacy driver");
         abort();
     }
-    ESP_EARLY_LOGW(TAG, "legacy pcnt driver is deprecated, please migrate to use driver/pulse_cnt.h");
+    ESP_EARLY_LOGW(TAG, "legacy driver is deprecated, please migrate to `driver/pulse_cnt.h`");
 }

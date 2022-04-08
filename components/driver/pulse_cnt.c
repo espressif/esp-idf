@@ -724,20 +724,3 @@ IRAM_ATTR static void pcnt_default_isr(void *args)
         portYIELD_FROM_ISR();
     }
 }
-
-/**
- * @brief This function will be called during start up, to check that pulse_cnt driver is not running along with the legacy pcnt driver
- */
-__attribute__((constructor))
-static void check_pulse_cnt_driver_conflict(void)
-{
-#if CONFIG_PCNT_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
-    extern int pcnt_driver_init_count;
-    pcnt_driver_init_count++;
-    if (pcnt_driver_init_count > 1) {
-        ESP_EARLY_LOGE(TAG, "CONFLICT! The pulse_cnt driver can't work along with the legacy pcnt driver");
-        abort();
-    }
-}
