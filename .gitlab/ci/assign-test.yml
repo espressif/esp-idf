@@ -3,8 +3,6 @@
   stage: assign_test
   tags:
     - assign_test
-  variables:
-    SUBMODULES_TO_FETCH: components/esptool_py/esptool
   artifacts:
     paths:
       - ${TEST_DIR}/test_configs
