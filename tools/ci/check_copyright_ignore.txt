@@ -1096,10 +1096,7 @@ components/nvs_flash/host_test/nvs_page_test/main/nvs_page_test.cpp
 components/nvs_flash/include/nvs_flash.h
 components/nvs_flash/include/nvs_handle.hpp
 components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py
-components/nvs_flash/src/compressed_enum_table.hpp
 components/nvs_flash/src/intrusive_list.h
-components/nvs_flash/src/nvs.hpp
-components/nvs_flash/src/nvs_api.cpp
 components/nvs_flash/src/nvs_cxx_api.cpp
 components/nvs_flash/src/nvs_encrypted_partition.cpp
 components/nvs_flash/src/nvs_encrypted_partition.hpp
@@ -1109,8 +1106,6 @@ components/nvs_flash/src/nvs_handle_simple.cpp
 components/nvs_flash/src/nvs_handle_simple.hpp
 components/nvs_flash/src/nvs_item_hash_list.cpp
 components/nvs_flash/src/nvs_item_hash_list.hpp
-components/nvs_flash/src/nvs_page.hpp
-components/nvs_flash/src/nvs_pagemanager.cpp
 components/nvs_flash/src/nvs_pagemanager.hpp
 components/nvs_flash/src/nvs_partition.cpp
 components/nvs_flash/src/nvs_partition.hpp
@@ -1121,7 +1116,6 @@ components/nvs_flash/src/nvs_platform.hpp
 components/nvs_flash/src/nvs_storage.hpp
 components/nvs_flash/src/nvs_test_api.h
 components/nvs_flash/src/nvs_types.cpp
-components/nvs_flash/src/nvs_types.hpp
 components/nvs_flash/src/partition.hpp
 components/nvs_flash/test/test_nvs.c
 components/nvs_flash/test_nvs_host/esp_error_check_stub.cpp
@@ -1129,7 +1123,6 @@ components/nvs_flash/test_nvs_host/main.cpp
 components/nvs_flash/test_nvs_host/sdkconfig.h
 components/nvs_flash/test_nvs_host/spi_flash_emulation.cpp
 components/nvs_flash/test_nvs_host/spi_flash_emulation.h
-components/nvs_flash/test_nvs_host/test_compressed_enum_table.cpp
 components/nvs_flash/test_nvs_host/test_fixtures.hpp
 components/nvs_flash/test_nvs_host/test_intrusive_list.cpp
 components/nvs_flash/test_nvs_host/test_nvs.cpp
