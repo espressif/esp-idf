@@ -20,4 +20,9 @@ menu "NVS"
             IDF. Hence, if you have any devices where this flag is kept enabled in partition
             table then enabling this config will allow to have same behavior as pre v4.3 IDF.
 
+    config NVS_ASSERT_ERROR_CHECK
+        bool "Use assertions for error checking"
+        default n
+        help
+            This option switches error checking type between assertions (y) or return codes (n).
 endmenu

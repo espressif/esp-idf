@@ -15,7 +15,8 @@ set(srcs "src/nvs_api.cpp"
 
 idf_component_register(SRCS "${srcs}"
                     REQUIRES "spi_flash"
-                    INCLUDE_DIRS "include")
+                    INCLUDE_DIRS "include"
+                    PRIV_INCLUDE_DIRS "private_include")
 
 # If we use the linux target, we need to redirect the crc functions to the linux
 if(${target} STREQUAL "linux")

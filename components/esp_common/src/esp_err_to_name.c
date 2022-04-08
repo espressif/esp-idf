@@ -177,7 +177,8 @@ static const esp_err_msg_t esp_err_msg_table[] = {
                                                                                 and call nvs_flash_init again. */
 #   endif
 #   ifdef      ESP_ERR_NVS_VALUE_TOO_LONG
-    ERR_TBL_IT(ESP_ERR_NVS_VALUE_TOO_LONG),                     /*  4366 0x110e String or blob length is longer than
+    ERR_TBL_IT(ESP_ERR_NVS_VALUE_TOO_LONG),                     /*  4366 0x110e Value doesn't fit into the entry or
+                                                                                string or blob length is longer than
                                                                                 supported by the implementation */
 #   endif
 #   ifdef      ESP_ERR_NVS_PART_NOT_FOUND
