@@ -169,7 +169,7 @@ TEST_CASE("Test Coding Scheme for efuse manager", "[efuse]")
         }
         printf("\n");
 #endif
-        TEST_ASSERT_EQUAL_HEX32_ARRAY(encoded, w_data_after_coding, 8);
+        TEST_ASSERT_EQUAL_HEX32_ARRAY(buf, w_data_after_coding, 8);
     }
     esp_efuse_utility_reset();
     bootloader_random_disable();
@@ -193,7 +193,7 @@ TEST_CASE("Test data does not match the coding scheme", "[efuse]")
     esp_efuse_utility_reset();
 
     for (int i = 0; i < count_useful_reg; ++i) {
-        REG_WRITE(EFUSE_BLK2_WDATA0_REG + i * 4, 0xABCDEF01 + i);
+        TEST_ESP_OK(esp_efuse_utility_write_reg(2, i, 0xABCDEF01 + i));
     }
 
     if (coding_scheme == EFUSE_CODING_SCHEME_NONE) {
