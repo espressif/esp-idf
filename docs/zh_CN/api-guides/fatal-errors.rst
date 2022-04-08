@@ -306,6 +306,8 @@ Guru Meditation 错误
 
   - 某些外部设备意外连接到 SPI flash 的管脚上，干扰了 {IDF_TARGET_NAME} 和 SPI flash 之间的通信。
 
+- 在 C++ 代码中，退出 non-void 函数而无返回值被认为是未定义的行为。启用优化后，编译器通常会忽略此类函数的结尾，导致 |ILLEGAL_INSTR_MSG| 异常。默认情况下，ESP-IDF 构建系统启用 ``-Werror=return-type``，这意味着缺少返回语句会被视为编译时错误。但是，如果应用程序项目禁用了编译器警告，可能就无法检测到该问题，在运行时就会出现 |ILLEGAL_INSTR_MSG| 异常。
+
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
     InstrFetchProhibited
@@ -508,6 +510,7 @@ UBSAN 输出
     0x400db99c: app_main at main.c:56 (discriminator 1)
 
 UBSAN 报告的错误类型为以下几种：
+
 
 .. list-table::
   :widths: 40 60
