@@ -141,6 +141,7 @@ function(__build_init idf_path)
 
     idf_build_set_property(__PREFIX idf)
     idf_build_set_property(__CHECK_PYTHON 1)
+    idf_build_set_property(__ENABLE_COMPONENT_MANAGER 0)
 
     __build_set_default_build_specifications()
 
@@ -421,54 +422,50 @@ macro(idf_build_process target)
     endif()
 
     # Call for component manager to download dependencies for all components
-    idf_build_set_property(IDF_COMPONENT_MANAGER "$ENV{IDF_COMPONENT_MANAGER}")
-    idf_build_get_property(idf_component_manager IDF_COMPONENT_MANAGER)
-    if(idf_component_manager)
-        if(idf_component_manager EQUAL "0")
-            message(VERBOSE "IDF Component manager was explicitly disabled by setting IDF_COMPONENT_MANAGER=0")
-        elseif(idf_component_manager EQUAL "1")
-            set(managed_components_list_file ${build_dir}/managed_components_list.temp.cmake)
-            set(local_components_list_file ${build_dir}/local_components_list.temp.yml)
+    idf_build_get_property(enable_component_manager __ENABLE_COMPONENT_MANAGER)
+    if(enable_component_manager)
+        idf_build_get_property(build_dir BUILD_DIR)
+        set(managed_components_list_file ${build_dir}/managed_components_list.temp.cmake)
+        set(local_components_list_file ${build_dir}/local_components_list.temp.yml)
 
-            set(__contents "components:\n")
-            idf_build_get_property(__component_targets __COMPONENT_TARGETS)
-            foreach(__component_target ${__component_targets})
-                __component_get_property(__component_name ${__component_target} COMPONENT_NAME)
-                __component_get_property(__component_dir ${__component_target} COMPONENT_DIR)
-                set(__contents "${__contents}  - name: \"${__component_name}\"\n    path: \"${__component_dir}\"\n")
-            endforeach()
+        set(__contents "components:\n")
+        idf_build_get_property(__component_targets __COMPONENT_TARGETS)
+        foreach(__component_target ${__component_targets})
+            __component_get_property(__component_name ${__component_target} COMPONENT_NAME)
+            __component_get_property(__component_dir ${__component_target} COMPONENT_DIR)
+            set(__contents "${__contents}  - name: \"${__component_name}\"\n    path: \"${__component_dir}\"\n")
+        endforeach()
 
-            file(WRITE ${local_components_list_file} "${__contents}")
+        file(WRITE ${local_components_list_file} "${__contents}")
 
-            # Call for the component manager to prepare remote dependencies
-            execute_process(COMMAND ${PYTHON}
-                "-m"
-                "idf_component_manager.prepare_components"
-                "--project_dir=${project_dir}"
-                "prepare_dependencies"
-                "--local_components_list_file=${local_components_list_file}"
-                "--managed_components_list_file=${managed_components_list_file}"
-                RESULT_VARIABLE result
-                ERROR_VARIABLE error)
+        # Call for the component manager to prepare remote dependencies
+        idf_build_get_property(python PYTHON)
+        execute_process(COMMAND ${python}
+            "-m"
+            "idf_component_manager.prepare_components"
+            "--project_dir=${project_dir}"
+            "prepare_dependencies"
+            "--local_components_list_file=${local_components_list_file}"
+            "--managed_components_list_file=${managed_components_list_file}"
+            RESULT_VARIABLE result
+            ERROR_VARIABLE error)
 
-            if(NOT result EQUAL 0)
-                message(FATAL_ERROR "${error}")
-            endif()
-
-            include(${managed_components_list_file})
-
-            # Add managed components to list of all components
-            # `managed_components` contains the list of components installed by the component manager
-            # It is defined in the temporary managed_components_list_file file
-            set(__COMPONENTS "${__COMPONENTS};${managed_components}")
-
-            file(REMOVE ${managed_components_list_file})
-            file(REMOVE ${local_components_list_file})
-        else()
-            message(WARNING "IDF_COMPONENT_MANAGER environment variable is set to unknown value "
-                    "\"${idf_component_manager}\". If you want to use component manager set it to 1.")
+        if(NOT result EQUAL 0)
+            message(FATAL_ERROR "${error}")
         endif()
+
+        include(${managed_components_list_file})
+
+        # Add managed components to list of all components
+        # `managed_components` contains the list of components installed by the component manager
+        # It is defined in the temporary managed_components_list_file file
+        set(__COMPONENTS "${__COMPONENTS};${managed_components}")
+
+        file(REMOVE ${managed_components_list_file})
+        file(REMOVE ${local_components_list_file})
     else()
+        message(VERBOSE "IDF Component manager was explicitly disabled by setting IDF_COMPONENT_MANAGER=0")
+
         idf_build_get_property(__component_targets __COMPONENT_TARGETS)
         set(__components_with_manifests "")
         foreach(__component_target ${__component_targets})
