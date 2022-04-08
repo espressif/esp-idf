@@ -134,6 +134,7 @@ esp_err_t pcnt_unit_set_glitch_filter(pcnt_unit_handle_t unit, const pcnt_glitch
  *
  * @note This function will acquire the PM lock when power management is enabled. Also see `pcnt_unit_set_glitch_filter()` for the condition of PM lock installation.
  * @note The number of calls to this function should be equal to the number of calls to `pcnt_unit_stop()`.
+ * @note This function is allowed to run within ISR context
  * @note This function will be placed into IRAM if `CONFIG_PCNT_CTRL_FUNC_IN_IRAM`, so that it's allowed to be executed when Cache is disabled
  *
  * @param[in] unit PCNT unit handle created by `pcnt_new_unit()`
@@ -151,6 +152,7 @@ esp_err_t pcnt_unit_start(pcnt_unit_handle_t unit);
  *       Also see `pcnt_unit_set_glitch_filter()` for the condition of PM lock installation.
  * @note The stop operation won't clear the counter. Also see `pcnt_unit_clear_count()` for how to clear pulse count value.
  * @note The number of calls to this function should be equal to the number of calls to `pcnt_unit_start()`.
+ * @note This function is allowed to run within ISR context
  * @note This function will be placed into IRAM if `CONFIG_PCNT_CTRL_FUNC_IN_IRAM`, so that it is allowed to be executed when Cache is disabled
  *
  * @param[in] unit PCNT unit handle created by `pcnt_new_unit()`
@@ -165,6 +167,7 @@ esp_err_t pcnt_unit_stop(pcnt_unit_handle_t unit);
  * @brief Clear PCNT pulse count value to zero
  *
  * @note It's recommended to call this function after adding a watch point by `pcnt_unit_add_watch_point()`, so that the newly added watch point is effective immediately.
+ * @note This function is allowed to run within ISR context
  * @note This function will be placed into IRAM if `CONFIG_PCNT_CTRL_FUNC_IN_IRAM`, so that it's allowed to be executed when Cache is disabled
  *
  * @param[in] unit PCNT unit handle created by `pcnt_new_unit()`
@@ -178,6 +181,7 @@ esp_err_t pcnt_unit_clear_count(pcnt_unit_handle_t unit);
 /**
  * @brief Get PCNT count value
  *
+ * @note This function is allowed to run within ISR context
  * @note This function will be placed into IRAM if `CONFIG_PCNT_CTRL_FUNC_IN_IRAM`, so that it's allowed to be executed when Cache is disabled
  *
  * @param[in] unit PCNT unit handle created by `pcnt_new_unit()`

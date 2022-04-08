@@ -18,7 +18,7 @@ Typically, a PCNT module can be used in scenarios like:
 Functional Overview
 -------------------
 
-Description of the PCNT functionality is broken down into the following sections:
+Description of the PCNT functionality is divided into into the following sections:
 
 -  `Resource Allocation <#resource-allocation>`__ - covers how to allocate PCNT units and channels with properly set of configurations. It also covers how to recycle the resources when they finished working.
 
@@ -215,7 +215,7 @@ There's a Kconfig option :ref:`CONFIG_PCNT_ISR_IRAM_SAFE` that will:
 
 2. Place all functions that used by the ISR into IRAM [2]_
 
-3. Place driver object into DRAM (in case it's linked to PSRAM by accident)
+3. Place driver object into DRAM (in case it's mapped to PSRAM by accident)
 
 This will allow the interrupt to run while the cache is disabled but will come at the cost of increased IRAM consumption.
 
@@ -230,7 +230,14 @@ Thread Safety
 ^^^^^^^^^^^^^
 
 The factory function :cpp:func:`pcnt_new_unit`  and :cpp:func:`pcnt_new_channel` are guaranteed to be thread safe by the driver, which means, user can call them from different RTOS tasks without protection by extra locks.
-Other functions that take the :cpp:type:`pcnt_unit_handle_t` and :cpp:type:`pcnt_channel_handle_t` as the first positional parameter, are not thread safe. The lifecycle of the PCNT unit and channel handle is maintained by the user. So user should avoid calling them concurrently. If it has to, another mutex should be added to prevent them being accessed concurrently.
+The following functions are allowed to run under ISR context, the driver uses a critical section to prevent them being called concurrently in both task and ISR.
+
+- :cpp:func:`pcnt_unit_start`
+- :cpp:func:`pcnt_unit_stop`
+- :cpp:func:`pcnt_unit_clear_count`
+- :cpp:func:`pcnt_unit_get_count`
+
+Other functions that take the :cpp:type:`pcnt_unit_handle_t` and :cpp:type:`pcnt_channel_handle_t` as the first positional parameter, are not treated as thread safe. Which means the user should avoid calling them from multiple tasks.
 
 Kconfig Options
 ^^^^^^^^^^^^^^^

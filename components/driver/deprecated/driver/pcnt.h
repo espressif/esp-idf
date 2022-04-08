@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <stdint.h>
 #include "sdkconfig.h"
 #include "esp_err.h"
 #include "driver/pcnt_types_legacy.h"
