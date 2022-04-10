@@ -418,6 +418,7 @@ esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
     }
     uint32_t status = 0;
     size_t count = 0;
+    /* SD mode: wait for the card to become idle based on R1 status */
     while (!host_is_spi(card) && !(status & MMC_R1_READY_FOR_DATA)) {
         // TODO: add some timeout here
         err = sdmmc_send_cmd_send_status(card, &status);
@@ -426,6 +427,27 @@ esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
         }
         if (++count % 10 == 0) {
             ESP_LOGV(TAG, "waiting for card to become ready (%d)", count);
+        }
+    }
+    /* SPI mode: although card busy indication is based on the busy token,
+     * SD spec recommends that the host checks the results of programming by sending
+     * SEND_STATUS command. Some of the conditions reported in SEND_STATUS are not
+     * reported via a data error token.
+     */
+    if (host_is_spi(card)) {
+        err = sdmmc_send_cmd_send_status(card, &status);
+        if (err != ESP_OK) {
+            return err;
+        }
+        if (status & SD_SPI_R2_CARD_LOCKED) {
+            ESP_LOGE(TAG, "%s: write failed, card is locked: r2=0x%04x",
+                     __func__, status);
+            return ESP_ERR_INVALID_STATE;
+        }
+        if (status != 0) {
+            ESP_LOGE(TAG, "%s: card status indicates an error after write operation: r2=0x%04x",
+                     __func__, status);
+            return ESP_ERR_INVALID_RESPONSE;
         }
     }
     return ESP_OK;
