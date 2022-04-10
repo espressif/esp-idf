@@ -85,13 +85,14 @@ typedef struct {
 #define SDSPI_CMD_FLAG_DATA     BIT(0)  //!< Command has data transfer
 #define SDSPI_CMD_FLAG_WRITE    BIT(1)  //!< Data is written to the card
 #define SDSPI_CMD_FLAG_RSP_R1   BIT(2)  //!< Response format R1 (1 byte)
-#define SDSPI_CMD_FLAG_RSP_R2   BIT(3)  //!< Response format R2 (2 bytes)
-#define SDSPI_CMD_FLAG_RSP_R3   BIT(4)  //!< Response format R3 (5 bytes)
-#define SDSPI_CMD_FLAG_RSP_R4   BIT(5)  //!< Response format R4 (5 bytes)
-#define SDSPI_CMD_FLAG_RSP_R5   BIT(6)  //!< Response format R5 (2 bytes)
-#define SDSPI_CMD_FLAG_RSP_R7   BIT(7)  //!< Response format R7 (5 bytes)
-#define SDSPI_CMD_FLAG_NORSP    BIT(8)  //!< Don't expect response (used when sending CMD0 first time).
-#define SDSPI_CMD_FLAG_MULTI_BLK BIT(9) //!< For the write multiblock commands, the start token should be different
+#define SDSPI_CMD_FLAG_RSP_R1B  BIT(3)  //!< Response format R1 (1 byte), with busy polling
+#define SDSPI_CMD_FLAG_RSP_R2   BIT(4)  //!< Response format R2 (2 bytes)
+#define SDSPI_CMD_FLAG_RSP_R3   BIT(5)  //!< Response format R3 (5 bytes)
+#define SDSPI_CMD_FLAG_RSP_R4   BIT(6)  //!< Response format R4 (5 bytes)
+#define SDSPI_CMD_FLAG_RSP_R5   BIT(7)  //!< Response format R5 (2 bytes)
+#define SDSPI_CMD_FLAG_RSP_R7   BIT(8)  //!< Response format R7 (5 bytes)
+#define SDSPI_CMD_FLAG_NORSP    BIT(9)  //!< Don't expect response (used when sending CMD0 first time).
+#define SDSPI_CMD_FLAG_MULTI_BLK BIT(10) //!< For the write multiblock commands, the start token should be different
 
 #define SDSPI_MAX_DATA_LEN      512     //!< Max size of single block transfer
 

@@ -482,7 +482,8 @@ static esp_err_t start_command_default(slot_info_t *slot, int flags, sdspi_hw_cm
 {
     size_t cmd_size = SDSPI_CMD_R1_SIZE;
     if ((flags & SDSPI_CMD_FLAG_RSP_R1) ||
-        (flags & SDSPI_CMD_FLAG_NORSP)) {
+        (flags & SDSPI_CMD_FLAG_NORSP) ||
+        (flags & SDSPI_CMD_FLAG_RSP_R1B )) {
         cmd_size = SDSPI_CMD_R1_SIZE;
     } else if (flags & SDSPI_CMD_FLAG_RSP_R2) {
         cmd_size = SDSPI_CMD_R2_SIZE;
@@ -521,6 +522,13 @@ static esp_err_t start_command_default(slot_info_t *slot, int flags, sdspi_hw_cm
     // now shift the response to match the offset of sdspi_hw_cmd_t
     ret = shift_cmd_response(cmd, cmd_size);
     if (ret != ESP_OK) return ESP_ERR_TIMEOUT;
+
+    if (flags & SDSPI_CMD_FLAG_RSP_R1B) {
+        ret = poll_busy(slot, cmd->timeout_ms, no_use_polling);
+        if (ret != ESP_OK) {
+            return ret;
+        }
+    }
 
     return ESP_OK;
 }
@@ -777,7 +785,7 @@ static esp_err_t start_command_read_blocks(slot_info_t *slot, sdspi_hw_cmd_t *cm
         // card to process it
         sdspi_hw_cmd_t stop_cmd;
         make_hw_cmd(MMC_STOP_TRANSMISSION, 0, cmd->timeout_ms, &stop_cmd);
-        ret = start_command_default(slot, SDSPI_CMD_FLAG_RSP_R1, &stop_cmd);
+        ret = start_command_default(slot, SDSPI_CMD_FLAG_RSP_R1B, &stop_cmd);
         if (ret != ESP_OK) {
             return ret;
         }
