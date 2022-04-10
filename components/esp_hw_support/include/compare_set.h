@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_cpu.h"
-#include "soc/soc_memory_types.h"
+#include "esp_memory_utils.h"
 
 #ifdef __cplusplus
 extern "C" {

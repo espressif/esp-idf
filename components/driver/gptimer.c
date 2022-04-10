@@ -25,7 +25,7 @@
 #include "hal/timer_hal.h"
 #include "hal/timer_ll.h"
 #include "soc/timer_periph.h"
-#include "soc/soc_memory_types.h"
+#include "esp_memory_utils.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
 

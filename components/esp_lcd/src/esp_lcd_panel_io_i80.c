@@ -26,7 +26,7 @@
 #include "esp_rom_gpio.h"
 #include "soc/soc_caps.h"
 #include "soc/rtc.h" // for `rtc_clk_xtal_freq_get()`
-#include "soc/soc_memory_types.h"
+#include "esp_memory_utils.h"
 #include "hal/dma_types.h"
 #include "hal/gpio_hal.h"
 #include "esp_private/gdma.h"

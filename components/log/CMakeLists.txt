@@ -7,7 +7,7 @@ if(${target} STREQUAL "linux")
     list(APPEND srcs "log_linux.c")
 else()
     list(APPEND srcs "log_buffers.c")
-    list(APPEND priv_requires soc hal)
+    list(APPEND priv_requires soc hal esp_hw_support)
 endif()
 
 idf_component_register(SRCS ${srcs}

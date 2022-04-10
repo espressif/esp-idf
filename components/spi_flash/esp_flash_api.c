@@ -9,6 +9,7 @@
 #include <sys/param.h>
 #include <string.h>
 
+#include "esp_memory_utils.h"
 #include "spi_flash_chip_driver.h"
 #include "memspi_host_driver.h"
 #include "esp_log.h"
@@ -782,7 +783,11 @@ esp_err_t IRAM_ATTR esp_flash_read(esp_flash_t *chip, void *buffer, uint32_t add
     }
 
     //when the cache is disabled, only the DRAM can be read, check whether we need to receive in another buffer in DRAM.
-    bool direct_read = chip->host->driver->supports_direct_read(chip->host, buffer);
+    bool direct_read = false;
+    //If the buffer is internal already, it's ok to use it directly
+    direct_read |= esp_ptr_in_dram(buffer);
+    //If not, we need to check if the HW support direct write
+    direct_read |= chip->host->driver->supports_direct_read(chip->host, buffer);
     uint8_t* temp_buffer = NULL;
 
     //each time, we at most read this length
@@ -850,7 +855,11 @@ esp_err_t IRAM_ATTR esp_flash_write(esp_flash_t *chip, const void *buffer, uint3
     }
 
     //when the cache is disabled, only the DRAM can be read, check whether we need to copy the data first
-    bool direct_write = chip->host->driver->supports_direct_write(chip->host, buffer);
+    bool direct_write = false;
+    //If the buffer is internal already, it's ok to write it directly
+    direct_write |= esp_ptr_in_dram(buffer);
+    //If not, we need to check if the HW support direct write
+    direct_write |= chip->host->driver->supports_direct_write(chip->host, buffer);
 
     // Indicate whether the bus is acquired by the driver, needs to be released before return
     bool bus_acquired = false;

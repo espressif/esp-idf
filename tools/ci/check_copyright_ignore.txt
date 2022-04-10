@@ -926,8 +926,6 @@ components/hal/include/hal/sha_hal.h
 components/hal/include/hal/sigmadelta_hal.h
 components/hal/include/hal/soc_hal.h
 components/hal/include/hal/spi_flash_encrypt_hal.h
-components/hal/include/hal/spi_flash_hal.h
-components/hal/include/hal/spi_flash_types.h
 components/hal/include/hal/spi_slave_hal.h
 components/hal/include/hal/spi_slave_hd_hal.h
 components/hal/include/hal/systimer_hal.h
@@ -955,7 +953,6 @@ components/hal/sha_hal.c
 components/hal/sigmadelta_hal.c
 components/hal/soc_hal.c
 components/hal/spi_flash_encrypt_hal_iram.c
-components/hal/spi_flash_hal.c
 components/hal/spi_flash_hal_gpspi.c
 components/hal/spi_slave_hal.c
 components/hal/spi_slave_hal_iram.c
@@ -977,7 +974,6 @@ components/heap/heap_trace_standalone.c
 components/heap/include/esp_heap_task_info.h
 components/heap/include/esp_heap_trace.h
 components/heap/include/heap_memory_layout.h
-components/heap/include/soc/soc_memory_layout.h
 components/heap/multi_heap_config.h
 components/heap/multi_heap_internal.h
 components/heap/multi_heap_poisoning.c
@@ -1631,7 +1627,6 @@ components/spi_flash/include/spi_flash_chip_generic.h
 components/spi_flash/include/spi_flash_chip_issi.h
 components/spi_flash/include/spi_flash_chip_mxic.h
 components/spi_flash/include/spi_flash_chip_winbond.h
-components/spi_flash/memspi_host_driver.c
 components/spi_flash/sim/SpiFlash.cpp
 components/spi_flash/sim/flash_mock.cpp
 components/spi_flash/sim/flash_mock_util.c
