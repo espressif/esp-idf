@@ -96,7 +96,7 @@ esp_err_t sdmmc_init_sd_ssr(sdmmc_card_t* card)
         .data = sd_ssr,
         .datalen = SD_SSR_SIZE,
         .blklen = SD_SSR_SIZE,
-        .opcode = MMC_SEND_STATUS,
+        .opcode = SD_APP_SD_STATUS,
         .arg = 0,
         .flags = SCF_CMD_ADTC | SCF_RSP_R1 | SCF_CMD_READ
     };
