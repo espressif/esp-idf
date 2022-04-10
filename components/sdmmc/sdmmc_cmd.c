@@ -347,7 +347,11 @@ esp_err_t sdmmc_send_cmd_send_status(sdmmc_card_t* card, uint32_t* out_status)
         return err;
     }
     if (out_status) {
-        *out_status = MMC_R1(cmd.response);
+        if (host_is_spi(card)) {
+            *out_status = SD_SPI_R2(cmd.response);
+        } else {
+            *out_status = MMC_R1(cmd.response);
+        }
     }
     return ESP_OK;
 }
