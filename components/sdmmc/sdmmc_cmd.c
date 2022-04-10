@@ -600,6 +600,20 @@ esp_err_t sdmmc_erase_sectors(sdmmc_card_t* card, size_t start_sector,
         ESP_LOGE(TAG, "%s: sdmmc_send_cmd returned 0x%x", __func__, err);
         return err;
     }
+
+    if (host_is_spi(card)) {
+        uint32_t status;
+        err = sdmmc_send_cmd_send_status(card, &status);
+        if (err != ESP_OK) {
+            return err;
+        }
+        if (status != 0) {
+            ESP_LOGE(TAG, "%s: card status indicates an error after erase operation: r2=0x%04x",
+                     __func__, status);
+            return ESP_ERR_INVALID_RESPONSE;
+        }
+    }
+
     return ESP_OK;
 }
 

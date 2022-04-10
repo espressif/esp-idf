@@ -869,10 +869,6 @@ static void test_sdspi_erase_blocks(size_t start_block, size_t block_count)
     float time_er = 1e3f * (t_stop_wr.tv_sec - t_start_er.tv_sec) + 1e-3f * (t_stop_wr.tv_usec - t_start_er.tv_usec);
     printf("Erase duration: %.2fms\n", time_er);
 
-    // nominal delay before re-init card
-    vTaskDelay(pdMS_TO_TICKS(1000));
-    // has to re-init card, after erase operation.
-    TEST_ESP_OK(sdmmc_card_init(&config, card));
     printf("Verifying erase state...\n");
     uint8_t erase_mem_byte = 0xFF;
     // ensure all the blocks are erased and are up to after erase state.
