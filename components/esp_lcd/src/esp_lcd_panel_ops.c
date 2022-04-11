@@ -63,3 +63,8 @@ esp_err_t esp_lcd_panel_disp_off(esp_lcd_panel_handle_t panel, bool off)
     ESP_RETURN_ON_FALSE(panel, ESP_ERR_INVALID_ARG, TAG, "invalid panel handle");
     return panel->disp_off(panel, off);
 }
+
+esp_err_t esp_lcd_panel_disp_on_off(esp_lcd_panel_handle_t panel, bool on_off)
+{
+    return esp_lcd_panel_disp_off(panel, !on_off);
+}
