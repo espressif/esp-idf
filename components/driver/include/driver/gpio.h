@@ -498,7 +498,8 @@ esp_err_t gpio_sleep_set_pull_mode(gpio_num_t gpio_num, gpio_pull_mode_t pull);
 
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 
-#define GPIO_IS_DEEP_SLEEP_WAKEUP_VALID_GPIO(gpio_num)        ((gpio_num & ~SOC_GPIO_DEEP_SLEEP_WAKEUP_VALID_GPIO_MASK) == 0)
+#define GPIO_IS_DEEP_SLEEP_WAKEUP_VALID_GPIO(gpio_num)    ((gpio_num >= 0) && \
+                                                          (((1ULL << (gpio_num)) & SOC_GPIO_DEEP_SLEEP_WAKEUP_VALID_GPIO_MASK) != 0))
 
 /**
  * @brief Enable GPIO deep-sleep wake-up function.
