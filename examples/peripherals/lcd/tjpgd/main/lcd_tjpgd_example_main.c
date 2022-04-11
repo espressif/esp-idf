@@ -145,6 +145,9 @@ void app_main(void)
     // Initialize LCD panel
     ESP_ERROR_CHECK(esp_lcd_panel_init(panel_handle));
 
+    // Turn on the screen
+    ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_handle, true));
+
     // Swap x and y axis (Different LCD screens may need different options)
     ESP_ERROR_CHECK(esp_lcd_panel_swap_xy(panel_handle, true));
 

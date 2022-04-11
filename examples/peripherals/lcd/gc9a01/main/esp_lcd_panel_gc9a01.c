@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,7 +27,7 @@ static esp_err_t panel_gc9a01_invert_color(esp_lcd_panel_t *panel, bool invert_c
 static esp_err_t panel_gc9a01_mirror(esp_lcd_panel_t *panel, bool mirror_x, bool mirror_y);
 static esp_err_t panel_gc9a01_swap_xy(esp_lcd_panel_t *panel, bool swap_axes);
 static esp_err_t panel_gc9a01_set_gap(esp_lcd_panel_t *panel, int x_gap, int y_gap);
-static esp_err_t panel_gc9a01_disp_off(esp_lcd_panel_t *panel, bool off);
+static esp_err_t panel_gc9a01_disp_on_off(esp_lcd_panel_t *panel, bool off);
 
 typedef struct {
     esp_lcd_panel_t base;
@@ -93,7 +93,7 @@ esp_err_t esp_lcd_new_panel_gc9a01(const esp_lcd_panel_io_handle_t io, const esp
     gc9a01->base.set_gap = panel_gc9a01_set_gap;
     gc9a01->base.mirror = panel_gc9a01_mirror;
     gc9a01->base.swap_xy = panel_gc9a01_swap_xy;
-    gc9a01->base.disp_off = panel_gc9a01_disp_off;
+    gc9a01->base.disp_on_off = panel_gc9a01_disp_on_off;
     *ret_panel = &(gc9a01->base);
     ESP_LOGD(TAG, "new gc9a01 panel @%p", gc9a01);
 
@@ -217,8 +217,6 @@ static esp_err_t panel_gc9a01_init(esp_lcd_panel_t *panel)
         cmd++;
     }
 
-    // turn on display
-    esp_lcd_panel_io_tx_param(io, LCD_CMD_DISPON, NULL, 0);
     return ESP_OK;
 }
 
@@ -310,15 +308,15 @@ static esp_err_t panel_gc9a01_set_gap(esp_lcd_panel_t *panel, int x_gap, int y_g
     return ESP_OK;
 }
 
-static esp_err_t panel_gc9a01_disp_off(esp_lcd_panel_t *panel, bool off)
+static esp_err_t panel_gc9a01_disp_on_off(esp_lcd_panel_t *panel, bool on_off)
 {
     gc9a01_panel_t *gc9a01 = __containerof(panel, gc9a01_panel_t, base);
     esp_lcd_panel_io_handle_t io = gc9a01->io;
     int command = 0;
-    if (off) {
-        command = LCD_CMD_DISPOFF;
-    } else {
+    if (on_off) {
         command = LCD_CMD_DISPON;
+    } else {
+        command = LCD_CMD_DISPOFF;
     }
     esp_lcd_panel_io_tx_param(io, command, NULL, 0);
     return ESP_OK;

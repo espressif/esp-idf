@@ -33,7 +33,7 @@ static esp_err_t panel_nt35510_invert_color(esp_lcd_panel_t *panel, bool invert_
 static esp_err_t panel_nt35510_mirror(esp_lcd_panel_t *panel, bool mirror_x, bool mirror_y);
 static esp_err_t panel_nt35510_swap_xy(esp_lcd_panel_t *panel, bool swap_axes);
 static esp_err_t panel_nt35510_set_gap(esp_lcd_panel_t *panel, int x_gap, int y_gap);
-static esp_err_t panel_nt35510_disp_off(esp_lcd_panel_t *panel, bool off);
+static esp_err_t panel_nt35510_disp_on_off(esp_lcd_panel_t *panel, bool off);
 
 typedef struct {
     esp_lcd_panel_t base;
@@ -105,7 +105,7 @@ esp_err_t esp_lcd_new_panel_nt35510(const esp_lcd_panel_io_handle_t io, const es
     nt35510->base.set_gap = panel_nt35510_set_gap;
     nt35510->base.mirror = panel_nt35510_mirror;
     nt35510->base.swap_xy = panel_nt35510_swap_xy;
-    nt35510->base.disp_off = panel_nt35510_disp_off;
+    nt35510->base.disp_on_off = panel_nt35510_disp_on_off;
     *ret_panel = &(nt35510->base);
     ESP_LOGD(TAG, "new nt35510 panel @%p", nt35510);
 
@@ -166,8 +166,6 @@ static esp_err_t panel_nt35510_init(esp_lcd_panel_t *panel)
     esp_lcd_panel_io_tx_param(io, LCD_CMD_COLMOD << 8, (uint16_t[]) {
         nt35510->colmod_cal,
     }, 2);
-    // turn on display
-    esp_lcd_panel_io_tx_param(io, LCD_CMD_DISPON << 8, NULL, 0);
 
     return ESP_OK;
 }
@@ -272,15 +270,15 @@ static esp_err_t panel_nt35510_set_gap(esp_lcd_panel_t *panel, int x_gap, int y_
     return ESP_OK;
 }
 
-static esp_err_t panel_nt35510_disp_off(esp_lcd_panel_t *panel, bool off)
+static esp_err_t panel_nt35510_disp_on_off(esp_lcd_panel_t *panel, bool on_off)
 {
     nt35510_panel_t *nt35510 = __containerof(panel, nt35510_panel_t, base);
     esp_lcd_panel_io_handle_t io = nt35510->io;
     int command = 0;
-    if (off) {
-        command = LCD_CMD_DISPOFF;
-    } else {
+    if (on_off) {
         command = LCD_CMD_DISPON;
+    } else {
+        command = LCD_CMD_DISPOFF;
     }
     esp_lcd_panel_io_tx_param(io, command << 8, NULL, 0);
     return ESP_OK;

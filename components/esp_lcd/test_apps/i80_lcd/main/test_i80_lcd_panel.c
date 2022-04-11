@@ -437,6 +437,8 @@ TEST_CASE("lcd_panel_with_i80_interface_(st7789, 8bits)", "[lcd]")
     esp_lcd_panel_invert_color(panel_handle, true);
     // the gap is LCD panel specific, even panels with the same driver IC, can have different gap value
     esp_lcd_panel_set_gap(panel_handle, 0, 20);
+    // turn on display
+    esp_lcd_panel_disp_on_off(panel_handle, true);
     // turn on backlight
     gpio_set_level(TEST_LCD_BK_LIGHT_GPIO, 1);
 
@@ -447,7 +449,8 @@ TEST_CASE("lcd_panel_with_i80_interface_(st7789, 8bits)", "[lcd]")
         memset(img, color_byte, TEST_IMG_SIZE);
         esp_lcd_panel_draw_bitmap(panel_handle, x_start, y_start, x_start + 100, y_start + 100, img);
     }
-    esp_lcd_panel_disp_off(panel_handle, true); // turn off screen
+    // turn off screen
+    esp_lcd_panel_disp_on_off(panel_handle, false);
 
     TEST_ESP_OK(esp_lcd_panel_del(panel_handle));
     TEST_ESP_OK(esp_lcd_panel_io_del(io_handle));
