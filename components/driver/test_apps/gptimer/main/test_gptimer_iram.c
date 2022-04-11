@@ -14,10 +14,6 @@
 #include "esp_spi_flash.h"
 #include "soc/soc_caps.h"
 
-void test_app_include_gptimer_iram(void)
-{
-}
-
 #if CONFIG_GPTIMER_ISR_IRAM_SAFE
 
 typedef struct {

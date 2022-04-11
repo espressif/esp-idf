@@ -10,10 +10,6 @@
 #include "soc/soc_caps.h"
 #include "driver/sigmadelta.h"
 
-void test_app_include_sigmadelta(void)
-{
-}
-
 TEST_CASE("SigmaDelta_config_test", "[sigma_delta]")
 {
     sigmadelta_config_t sigmadelta_cfg = {

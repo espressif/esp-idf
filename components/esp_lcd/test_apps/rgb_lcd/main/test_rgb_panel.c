@@ -23,10 +23,6 @@
 
 #define TEST_IMG_SIZE (100 * 100 * sizeof(uint16_t))
 
-void test_app_include_rgb_lcd(void)
-{
-}
-
 static esp_lcd_panel_handle_t test_rgb_panel_initialization(bool stream_mode, esp_lcd_rgb_panel_frame_trans_done_cb_t cb, void *user_data)
 {
     esp_lcd_panel_handle_t panel_handle = NULL;

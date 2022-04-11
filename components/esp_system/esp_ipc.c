@@ -107,7 +107,7 @@ static void esp_ipc_init(void) __attribute__((constructor));
 
 static void esp_ipc_init(void)
 {
-    char task_name[15];
+    char task_name[configMAX_TASK_NAME_LEN];
 
     for (int i = 0; i < portNUM_PROCESSORS; ++i) {
         snprintf(task_name, sizeof(task_name), "ipc%d", i);

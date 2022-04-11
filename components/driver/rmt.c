@@ -713,8 +713,9 @@ esp_err_t rmt_config(const rmt_config_t *rmt_param)
 static void IRAM_ATTR rmt_fill_memory(rmt_channel_t channel, const rmt_item32_t *item,
                                       uint16_t item_num, uint16_t mem_offset)
 {
-    volatile uint32_t *to = (volatile uint32_t *)&RMTMEM.chan[channel].data32[mem_offset].val;
     uint32_t *from = (uint32_t *)item;
+    volatile uint32_t *to = (volatile uint32_t *)&RMTMEM.chan[channel].data32[0].val;
+    to += mem_offset;
     while (item_num--) {
         *to++ = *from++;
     }

@@ -15,10 +15,6 @@
 #include "driver/gpio.h"
 #include "driver/dedic_gpio.h"
 
-void test_app_include_dedicated_gpio(void)
-{
-}
-
 TEST_CASE("Dedicated_GPIO_bundle_install/uninstall", "[dedic_gpio]")
 {
     const int test_gpios[SOC_DEDIC_GPIO_OUT_CHANNELS_NUM / 2] = {0};

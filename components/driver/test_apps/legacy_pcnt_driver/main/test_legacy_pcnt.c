@@ -666,7 +666,3 @@ TEST_CASE("PCNT_counting_mode_test", "[pcnt]")
     printf("PCNT mode test for negative count\n");
     count_mode_test(PCNT_CTRL_GND_IO);
 }
-
-void test_app_include_legacy_pcnt(void)
-{
-}

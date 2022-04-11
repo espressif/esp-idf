@@ -32,10 +32,6 @@
 #include "esp_spi_flash.h"
 #include "esp_attr.h"
 
-void test_app_include_gpio(void)
-{
-}
-
 // Enable internal routing for the output and input gpio pins
 #define TEST_GPIO_INTERNAL_ROUTING    1
 

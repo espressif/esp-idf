@@ -108,28 +108,17 @@ static pcnt_group_t *pcnt_acquire_group_handle(int group_id);
 static void pcnt_release_group_handle(pcnt_group_t *group);
 static void pcnt_default_isr(void *args);
 
-esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *ret_unit)
+static esp_err_t pcnt_register_to_group(pcnt_unit_t *unit)
 {
-    esp_err_t ret = ESP_OK;
     pcnt_group_t *group = NULL;
-    pcnt_unit_t *unit = NULL;
-    int group_id = -1;
     int unit_id = -1;
-    ESP_GOTO_ON_FALSE(config && ret_unit, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
-    ESP_GOTO_ON_FALSE(config->low_limit < 0 && config->high_limit > 0 && config->low_limit >= PCNT_LL_MIN_LIN && config->high_limit <= PCNT_LL_MAX_LIM,
-                      ESP_ERR_INVALID_ARG, err, TAG, "invalid limit range:[%d,%d]", config->low_limit, config->high_limit);
-
-    unit = heap_caps_calloc(1, sizeof(pcnt_unit_t), PCNT_MEM_ALLOC_CAPS);
-    ESP_GOTO_ON_FALSE(unit, ESP_ERR_NO_MEM, err, TAG, "no mem for unit");
-
-    for (int i = 0; (i < SOC_PCNT_GROUPS) && (unit_id < 0); i++) {
+    for (int i = 0; i < SOC_PCNT_GROUPS; i++) {
         group = pcnt_acquire_group_handle(i);
-        ESP_GOTO_ON_FALSE(group, ESP_ERR_NO_MEM, err, TAG, "no mem for group (%d)", i);
+        ESP_RETURN_ON_FALSE(group, ESP_ERR_NO_MEM, TAG, "no mem for group (%d)", i);
         // loop to search free unit in the group
         portENTER_CRITICAL(&group->spinlock);
         for (int j = 0; j < SOC_PCNT_UNITS_PER_GROUP; j++) {
             if (!group->units[j]) {
-                group_id = i;
                 unit_id = j;
                 group->units[j] = unit;
                 break;
@@ -139,12 +128,63 @@ esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *re
         if (unit_id < 0) {
             pcnt_release_group_handle(group);
             group = NULL;
+        } else {
+            unit->group = group;
+            unit->unit_id = unit_id;
+            break;
         }
     }
+    ESP_RETURN_ON_FALSE(unit_id != -1, ESP_ERR_NOT_FOUND, TAG, "no free unit");
+    return ESP_OK;
+}
 
-    ESP_GOTO_ON_FALSE(unit_id != -1, ESP_ERR_NOT_FOUND, err, TAG, "no free unit");
-    unit->group = group;
-    unit->unit_id = unit_id;
+static void pcnt_unregister_from_group(pcnt_unit_t *unit)
+{
+    pcnt_group_t *group = unit->group;
+    int unit_id = unit->unit_id;
+    portENTER_CRITICAL(&group->spinlock);
+    group->units[unit_id] = NULL;
+    portEXIT_CRITICAL(&group->spinlock);
+    // unit has a reference on group, release it now
+    pcnt_release_group_handle(group);
+}
+
+static esp_err_t pcnt_destory(pcnt_unit_t *unit)
+{
+    if (unit->pm_lock) {
+        // if pcnt_unit_start and pcnt_unit_stop are not called the same number of times, deleting pm_lock will return invalid state
+        // which in return also reflects an invalid state of PCNT driver
+        ESP_RETURN_ON_ERROR(esp_pm_lock_delete(unit->pm_lock), TAG, "delete pm lock failed");
+    }
+    if (unit->intr) {
+        ESP_RETURN_ON_ERROR(esp_intr_free(unit->intr), TAG, "delete interrupt service failed");
+    }
+    if (unit->group) {
+        pcnt_unregister_from_group(unit);
+    }
+    free(unit);
+    return ESP_OK;
+}
+
+esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *ret_unit)
+{
+#if CONFIG_PCNT_ENABLE_DEBUG_LOG
+    esp_log_level_set(TAG, ESP_LOG_DEBUG);
+#endif
+    esp_err_t ret = ESP_OK;
+    pcnt_unit_t *unit = NULL;
+    ESP_GOTO_ON_FALSE(config && ret_unit, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    ESP_GOTO_ON_FALSE(config->low_limit < 0 && config->high_limit > 0 && config->low_limit >= PCNT_LL_MIN_LIN &&
+                      config->high_limit <= PCNT_LL_MAX_LIM, ESP_ERR_INVALID_ARG, err, TAG,
+                      "invalid limit range:[%d,%d]", config->low_limit, config->high_limit);
+
+    unit = heap_caps_calloc(1, sizeof(pcnt_unit_t), PCNT_MEM_ALLOC_CAPS);
+    ESP_GOTO_ON_FALSE(unit, ESP_ERR_NO_MEM, err, TAG, "no mem for unit");
+    // register unit to the group (because one group can have several units)
+    ESP_GOTO_ON_ERROR(pcnt_register_to_group(unit), err, TAG, "register unit failed");
+    pcnt_group_t *group = unit->group;
+    int group_id = group->group_id;
+    int unit_id = unit->unit_id;
 
     // some events are enabled by default, disable them all
     pcnt_ll_disable_all_events(group->hal.dev, unit_id);
@@ -176,19 +216,24 @@ esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *re
 
 err:
     if (unit) {
-        free(unit);
-    }
-    if (group) {
-        pcnt_release_group_handle(group);
+        pcnt_destory(unit);
     }
     return ret;
 }
 
 esp_err_t pcnt_del_unit(pcnt_unit_handle_t unit)
 {
-    pcnt_group_t *group = NULL;
     ESP_RETURN_ON_FALSE(unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(unit->fsm == PCNT_FSM_STOP, ESP_ERR_INVALID_STATE, TAG, "can't delete unit as it's not in stop state");
+    pcnt_group_t *group = unit->group;
+    int group_id = group->group_id;
+    int unit_id = unit->unit_id;
+
+    bool valid_state = true;
+    portENTER_CRITICAL(&unit->spinlock);
+    valid_state = unit->fsm == PCNT_FSM_STOP;
+    portEXIT_CRITICAL(&unit->spinlock);
+    ESP_RETURN_ON_FALSE(valid_state, ESP_ERR_INVALID_STATE, TAG, "can't delete unit as it's not stop yet");
+
     for (int i = 0; i < SOC_PCNT_CHANNELS_PER_UNIT; i++) {
         ESP_RETURN_ON_FALSE(!unit->channels[i], ESP_ERR_INVALID_STATE, TAG, "channel %d still in working", i);
     }
@@ -196,27 +241,10 @@ esp_err_t pcnt_del_unit(pcnt_unit_handle_t unit)
         ESP_RETURN_ON_FALSE(unit->watchers[i].event_id == PCNT_LL_WATCH_EVENT_INVALID, ESP_ERR_INVALID_STATE, TAG,
                             "watch point %d still in working", unit->watchers[i].watch_point_value);
     }
-    group = unit->group;
-    int group_id = group->group_id;
-    int unit_id = unit->unit_id;
 
-    portENTER_CRITICAL(&group->spinlock);
-    group->units[unit_id] = NULL;
-    portEXIT_CRITICAL(&group->spinlock);
-
-    if (unit->intr) {
-        esp_intr_free(unit->intr);
-        ESP_LOGD(TAG, "uninstall interrupt service for unit (%d,%d)", group_id, unit_id);
-    }
-    if (unit->pm_lock) {
-        esp_pm_lock_delete(unit->pm_lock);
-        ESP_LOGD(TAG, "uninstall APB_FREQ_MAX lock for unit (%d,%d)", group_id, unit_id);
-    }
-    free(unit);
     ESP_LOGD(TAG, "del unit (%d,%d)", group_id, unit_id);
-    // unit has a reference on group, release it now
-    pcnt_release_group_handle(group);
-
+    // recycle memory resource
+    ESP_RETURN_ON_ERROR(pcnt_destory(unit), TAG, "destory pcnt unit failed");
     return ESP_OK;
 }
 
@@ -694,22 +722,5 @@ IRAM_ATTR static void pcnt_default_isr(void *args)
     }
     if (need_yield) {
         portYIELD_FROM_ISR();
-    }
-}
-
-/**
- * @brief This function will be called during start up, to check that pulse_cnt driver is not running along with the legacy pcnt driver
- */
-__attribute__((constructor))
-static void check_pulse_cnt_driver_conflict(void)
-{
-#if CONFIG_PCNT_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
-    extern int pcnt_driver_init_count;
-    pcnt_driver_init_count++;
-    if (pcnt_driver_init_count > 1) {
-        ESP_EARLY_LOGE(TAG, "CONFLICT! The pulse_cnt driver can't work along with the legacy pcnt driver");
-        abort();
     }
 }

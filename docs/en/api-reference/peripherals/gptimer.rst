@@ -237,6 +237,8 @@ When power management is enabled (i.e. :ref:`CONFIG_PM_ENABLE` is on), the syste
 
 However, the driver can prevent the system from changing APB frequency by acquiring a power management lock of type :cpp:enumerator:`ESP_PM_APB_FREQ_MAX`. Whenever the driver creates a GPTimer instance that has selected :cpp:enumerator:`GPTIMER_CLK_SRC_APB` as its clock source, the driver will guarantee that the power management lock is acquired when the timer is started by :cpp:func:`gptimer_start`. Likewise, the driver releases the lock when :cpp:func:`gptimer_stop` is called for that timer. This requires that the :cpp:func:`gptimer_start` and :cpp:func:`gptimer_stop` should appear in pairs.
 
+If the gptimer clock source is selected to others like :cpp:enumerator:`GPTIMER_CLK_SRC_XTAL`, then the driver won't install power management lock for it, which is more suitable for a low power application as long as the source clock can still provide sufficient resolution.
+
 IRAM Safe
 ^^^^^^^^^
 
@@ -248,7 +250,7 @@ There's a Kconfig option :ref:`CONFIG_GPTIMER_ISR_IRAM_SAFE` that will:
 
 2. Place all functions that used by the ISR into IRAM [2]_
 
-3. Place driver object into DRAM (in case it's linked to PSRAM by accident)
+3. Place driver object into DRAM (in case it's mapped to PSRAM by accident)
 
 This will allow the interrupt to run while the cache is disabled but will come at the cost of increased IRAM consumption.
 
@@ -264,7 +266,15 @@ Thread Safety
 ^^^^^^^^^^^^^
 
 The factory function :cpp:func:`gptimer_new_timer` is guaranteed to be thread safe by the driver, which means, user can call it from different RTOS tasks without protection by extra locks.
-Other functions that take the :cpp:type:`gptimer_handle_t` as the first positional parameter, are not thread safe. The lifecycle of the gptimer handle is maintained by the user. So user should avoid calling them concurrently. If it has to, then one should introduce another mutex to prevent the gptimer handle being accessed concurrently.
+The following functions are allowed to run under ISR context, the driver uses a critical section to prevent them being called concurrently in both task and ISR.
+
+- :cpp:func:`gptimer_start`
+- :cpp:func:`gptimer_stop`
+- :cpp:func:`gptimer_get_raw_count`
+- :cpp:func:`gptimer_set_raw_count`
+- :cpp:func:`gptimer_set_alarm_action`
+
+Other functions that take the :cpp:type:`gptimer_handle_t` as the first positional parameter, are not treated as thread safe. Which means the user should avoid calling them from multiple tasks.
 
 Kconfig Options
 ^^^^^^^^^^^^^^^
