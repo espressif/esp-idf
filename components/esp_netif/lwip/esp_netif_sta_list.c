@@ -29,7 +29,9 @@ esp_err_t esp_netif_get_sta_list(const wifi_sta_list_t *wifi_sta_list, esp_netif
     netif_sta_list->num = wifi_sta_list->num;
     for (int i = 0; i < wifi_sta_list->num; i++) {
         memcpy(netif_sta_list->sta[i].mac, wifi_sta_list->sta[i].mac, 6);
+#if CONFIG_LWIP_DHCPS
         dhcp_search_ip_on_mac(ap->dhcps, netif_sta_list->sta[i].mac, (ip4_addr_t*)&netif_sta_list->sta[i].ip);
+#endif
     }
 
     return ESP_OK;
