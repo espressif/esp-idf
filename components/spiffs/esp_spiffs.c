@@ -378,6 +378,24 @@ esp_err_t esp_spiffs_format(const char* partition_label)
     return ESP_OK;
 }
 
+esp_err_t esp_spiffs_gc(const char* partition_label, size_t size_to_gc)
+{
+    int index;
+    if (esp_spiffs_by_label(partition_label, &index) != ESP_OK) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    int res = SPIFFS_gc(_efs[index]->fs, size_to_gc);
+    if (res != SPIFFS_OK) {
+        ESP_LOGE(TAG, "SPIFFS_gc failed, %d", res);
+        SPIFFS_clearerr(_efs[index]->fs);
+        if (res == SPIFFS_ERR_FULL) {
+            return ESP_ERR_NOT_FINISHED;
+        }
+        return ESP_FAIL;
+    }
+    return ESP_OK;
+}
+
 esp_err_t esp_vfs_spiffs_register(const esp_vfs_spiffs_conf_t * conf)
 {
     assert(conf->base_path);
