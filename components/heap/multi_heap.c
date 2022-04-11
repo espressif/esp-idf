@@ -368,7 +368,7 @@ void multi_heap_get_info_impl(multi_heap_handle_t heap, multi_heap_info_t *info)
 
     multi_heap_internal_lock(heap);
     tlsf_walk_pool(tlsf_get_pool(heap->heap_data), multi_heap_get_info_tlsf, info);
-    /* TLSF has an overhead per block. Calculate the total amoun of overhead, it shall not be
+    /* TLSF has an overhead per block. Calculate the total amount of overhead, it shall not be
      * part of the allocated bytes */
     overhead = info->allocated_blocks * tlsf_alloc_overhead();
     info->total_allocated_bytes = (heap->pool_size - tlsf_size()) - heap->free_bytes - overhead;
