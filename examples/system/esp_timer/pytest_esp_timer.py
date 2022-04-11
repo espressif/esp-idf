@@ -30,6 +30,13 @@ ONE_SHOT_TIMER_PERIOD = 5000000
 
 @pytest.mark.supported_targets
 @pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'rtc',
+    ],
+    indirect=True
+)
 def test_esp_timer(dut: Dut) -> None:
 
     match = dut.expect(STARTING_TIMERS_REGEX)
