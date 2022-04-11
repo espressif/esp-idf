@@ -1070,6 +1070,7 @@ void btc_spp_cb_handler(btc_msg_t *msg)
                 BT_HDR *p_buf;
                 serial = slot->serial;
                 if ((p_buf = fixed_queue_try_peek_first(slot->tx.queue)) == NULL) {
+                    osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
                     break;
                 }
                 if (p_data->rfc_write.status == BTA_JV_SUCCESS) {
