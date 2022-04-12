@@ -115,7 +115,7 @@ If you have one of {IDF_TARGET_NAME} official development boards listed below, y
 Software
 ~~~~~~~~
 
-To start using ESP-IDF on **{IDF_TARGET_NAME}** you'll need the following software installed:
+To start using ESP-IDF on **{IDF_TARGET_NAME}**, install the following software:
 
     * **Toolchain** to compile code for {IDF_TARGET_NAME}
     * **Build tools** - CMake and Ninja to build a full **Application** for {IDF_TARGET_NAME}
