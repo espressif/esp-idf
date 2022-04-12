@@ -21,6 +21,9 @@
 #include "esp_system.h"
 #include "soc/spi_pins.h"
 
+// h2 and c2 will not support external flash
+#define EXAMPLE_FLASH_FREQ_MHZ      40
+
 static const char *TAG = "example";
 
 // Handle of the wear levelling library instance
@@ -104,7 +107,7 @@ static esp_flash_t* example_init_ext_flash(void)
         .cs_id = 0,
         .cs_io_num = VSPI_IOMUX_PIN_NUM_CS,
         .io_mode = SPI_FLASH_DIO,
-        .speed = ESP_FLASH_40MHZ,
+        .freq_mhz = EXAMPLE_FLASH_FREQ_MHZ,
     };
 
     ESP_LOGI(TAG, "Initializing external SPI Flash");

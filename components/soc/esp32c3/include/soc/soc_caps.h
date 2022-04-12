@@ -270,6 +270,10 @@
 #define SOC_SPI_MEM_SUPPORT_SW_SUSPEND                    (1)
 #define SOC_SPI_MEM_SUPPORT_CHECK_SUS                     (1)
 
+#define SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED         1
+#define SOC_MEMSPI_SRC_FREQ_40M_SUPPORTED         1
+#define SOC_MEMSPI_SRC_FREQ_26M_SUPPORTED         1
+#define SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED         1
 
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/
 #define SOC_SYSTIMER_COUNTER_NUM           (2)  // Number of counter units

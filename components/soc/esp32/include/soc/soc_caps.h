@@ -262,6 +262,11 @@
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE     64
 #define SOC_SPI_MAX_PRE_DIVIDER         8192
 
+// Although ESP32 doesn't has memspi, but keep consistent with following chips.(This means SPI0/1)
+#define SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED         1
+#define SOC_MEMSPI_SRC_FREQ_40M_SUPPORTED         1
+#define SOC_MEMSPI_SRC_FREQ_26M_SUPPORTED         1
+#define SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED         1
 
 
 // Peripheral supports DIO, DOUT, QIO, or QOUT

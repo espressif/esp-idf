@@ -42,13 +42,13 @@ typedef enum {
 } esp_image_spi_mode_t;
 
 /**
- * @brief SPI flash clock frequency
+ * @brief SPI flash clock division factor.
  */
 typedef enum {
-    ESP_IMAGE_SPI_SPEED_40M,        /*!< SPI clock frequency 40 MHz */
-    ESP_IMAGE_SPI_SPEED_26M,        /*!< SPI clock frequency 26 MHz */
-    ESP_IMAGE_SPI_SPEED_20M,        /*!< SPI clock frequency 20 MHz */
-    ESP_IMAGE_SPI_SPEED_80M = 0xF   /*!< SPI clock frequency 80 MHz */
+    ESP_IMAGE_SPI_SPEED_DIV_2,        /*!< The SPI flash clock frequency is divided by 2 of the clock source */
+    ESP_IMAGE_SPI_SPEED_DIV_3,        /*!< The SPI flash clock frequency is divided by 3 of the clock source */
+    ESP_IMAGE_SPI_SPEED_DIV_4,        /*!< The SPI flash clock frequency is divided by 4 of the clock source */
+    ESP_IMAGE_SPI_SPEED_DIV_1 = 0xF   /*!< The SPI flash clock frequency equals to the clock source */
 } esp_image_spi_freq_t;
 
 /**

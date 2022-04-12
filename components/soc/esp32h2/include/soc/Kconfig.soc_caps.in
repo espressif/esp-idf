@@ -539,6 +539,22 @@ config SOC_SPI_MEM_SUPPORT_CHECK_SUS
     bool
     default y
 
+config SOC_MEMSPI_SRC_FREQ_48M_SUPPORTED
+    bool
+    default y
+
+config SOC_MEMSPI_SRC_FREQ_24M_SUPPORTED
+    bool
+    default y
+
+config SOC_MEMSPI_SRC_FREQ_16M_SUPPORTED
+    bool
+    default y
+
+config SOC_MEMSPI_SRC_FREQ_12M_SUPPORTED
+    bool
+    default y
+
 config SOC_SYSTIMER_COUNTER_NUM
     int
     default 2

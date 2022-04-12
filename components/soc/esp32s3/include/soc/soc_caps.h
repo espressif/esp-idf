@@ -262,6 +262,11 @@
 #define SOC_SPI_MAX_PRE_DIVIDER                     16
 #define SOC_SPI_SUPPORT_OCT                         1
 
+#define SOC_MEMSPI_SRC_FREQ_120M         1
+#define SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED          1
+#define SOC_MEMSPI_SRC_FREQ_40M_SUPPORTED          1
+#define SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED          1
+
 /*-------------------------- SPIRAM CAPS ----------------------------------------*/
 #define SOC_SPIRAM_SUPPORTED            1
 

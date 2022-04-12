@@ -17,6 +17,16 @@ Therefore, the common APIs are extracted to ``esp_rom_spiflash.h``. Although it'
 
 To make the API clearer, we renamed the function ``esp_rom_spiflash_lock`` to ``esp_rom_spiflash_set_bp``. We renamed ``esp_rom_spiflash_unlock`` to ``esp_rom_spiflash_clear_bp``.
 
+ENUM type ``esp_flash_speed_t`` has been deprecated. From now on, you can directly parse the real clock frequency value to the flash initialization structure. For example, if you want the flash frequency is 80M, you can write the code like:
+
+.. code:: c
+
+    esp_flash_spi_device_config_t dev_cfg = {
+        // Other members
+        .freq_mhz = 80,
+        // Other members
+    };
+
 ADC
 ---
 

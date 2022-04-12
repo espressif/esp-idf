@@ -41,17 +41,16 @@ void IRAM_ATTR bootloader_flash_clock_config(const esp_image_header_t *pfhdr)
 {
     uint32_t spi_clk_div = 0;
     switch (pfhdr->spi_speed) {
-    // TODO: change MSPI freq, IDF-3831
-    case ESP_IMAGE_SPI_SPEED_80M:
+    case ESP_IMAGE_SPI_SPEED_DIV_1:
         spi_clk_div = 1;
         break;
-    case ESP_IMAGE_SPI_SPEED_40M:
+    case ESP_IMAGE_SPI_SPEED_DIV_2:
         spi_clk_div = 2;
         break;
-    case ESP_IMAGE_SPI_SPEED_26M:
+    case ESP_IMAGE_SPI_SPEED_DIV_3:
         spi_clk_div = 3;
         break;
-    case ESP_IMAGE_SPI_SPEED_20M:
+    case ESP_IMAGE_SPI_SPEED_DIV_4:
         spi_clk_div = 4;
         break;
     default:

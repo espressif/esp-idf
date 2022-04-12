@@ -31,14 +31,7 @@ extern "C" {
 #define gpspi_flash_ll_hw_get_id(dev)   ( ((dev) == (void*)&GPSPI2) ? SPI2_HOST : -1 )
 
 typedef typeof(GPSPI2.clock) gpspi_flash_ll_clock_reg_t;
-
-//Supported clock register values
-#define GPSPI_FLASH_LL_CLKREG_VAL_5MHZ   ((gpspi_flash_ll_clock_reg_t){.val=0x0000F1CF})   ///< Clock set to 5 MHz
-#define GPSPI_FLASH_LL_CLKREG_VAL_10MHZ  ((gpspi_flash_ll_clock_reg_t){.val=0x000070C7})   ///< Clock set to 10 MHz
-#define GPSPI_FLASH_LL_CLKREG_VAL_20MHZ  ((gpspi_flash_ll_clock_reg_t){.val=0x00003043})   ///< Clock set to 20 MHz
-#define GPSPI_FLASH_LL_CLKREG_VAL_26MHZ  ((gpspi_flash_ll_clock_reg_t){.val=0x00002002})   ///< Clock set to 26 MHz
-#define GPSPI_FLASH_LL_CLKREG_VAL_40MHZ  ((gpspi_flash_ll_clock_reg_t){.val=0x00001001})   ///< Clock set to 40 MHz
-#define GPSPI_FLASH_LL_CLKREG_VAL_80MHZ  ((gpspi_flash_ll_clock_reg_t){.val=0x80000000})   ///< Clock set to 80 MHz
+#define GPSPI_FLASH_LL_PERIPHERAL_FREQUENCY_MHZ  (40)
 
 /*------------------------------------------------------------------------------
  * Control
@@ -389,6 +382,25 @@ static inline void gpspi_flash_ll_set_cs_setup(spi_dev_t *dev, uint32_t cs_setup
 {
     dev->user.cs_setup = (cs_setup_time > 0 ? 1 : 0);
     dev->user1.cs_setup_time = cs_setup_time - 1;
+}
+
+/**
+ * Calculate spi_flash clock frequency division parameters for register.
+ *
+ * @param clkdiv frequency division factor
+ *
+ * @return Register setting for the given clock division factor.
+ */
+static inline uint32_t gpspi_flash_ll_calculate_clock_reg(uint8_t clkdiv)
+{
+    uint32_t div_parameter;
+    // See comments of `clock` in `spi_struct.h`
+    if (clkdiv == 1) {
+        div_parameter = (1 << 31);
+    } else {
+        div_parameter = ((clkdiv - 1) | (((clkdiv/2 - 1) & 0xff) << 6 ) | (((clkdiv - 1) & 0xff) << 12));
+    }
+    return div_parameter;
 }
 
 #ifdef __cplusplus

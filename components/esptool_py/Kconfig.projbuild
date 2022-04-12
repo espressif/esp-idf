@@ -68,41 +68,56 @@ menu "Serial flasher config"
 
     choice ESPTOOLPY_FLASHFREQ
         prompt "Flash SPI speed"
-        default ESPTOOLPY_FLASHFREQ_40M if IDF_TARGET_ESP32 || IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32C2
-        default ESPTOOLPY_FLASHFREQ_80M
-        help
-            The SPI flash frequency to be used.
-
+        default ESPTOOLPY_FLASHFREQ_40M if IDF_TARGET_ESP32
+        default ESPTOOLPY_FLASHFREQ_80M if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C3
+        default ESPTOOLPY_FLASHFREQ_60M if IDF_TARGET_ESP32C2
+        default ESPTOOLPY_FLASHFREQ_48M if IDF_TARGET_ESP32H2
         config ESPTOOLPY_FLASHFREQ_120M
-            depends on IDF_TARGET_ESP32S3 && ESPTOOLPY_FLASH_SAMPLE_MODE_STR
             bool "120 MHz"
+            depends on SOC_MEMSPI_SRC_FREQ_120M && ESPTOOLPY_FLASH_SAMPLE_MODE_STR
         config ESPTOOLPY_FLASHFREQ_80M
             bool "80 MHz"
+            depends on SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED
+        config ESPTOOLPY_FLASHFREQ_60M
+            bool "60 MHz"
+            depends on SOC_MEMSPI_SRC_FREQ_60M_SUPPORTED
+        config ESPTOOLPY_FLASHFREQ_48M
+            bool "48 MHz"
+            depends on SOC_MEMSPI_SRC_FREQ_48M_SUPPORTED
         config ESPTOOLPY_FLASHFREQ_40M
             bool "40 MHz"
+            depends on SOC_MEMSPI_SRC_FREQ_40M_SUPPORTED
+        config ESPTOOLPY_FLASHFREQ_30M
+            bool "30 MHz"
+            depends on SOC_MEMSPI_SRC_FREQ_30M_SUPPORTED
         config ESPTOOLPY_FLASHFREQ_26M
             bool "26 MHz"
-            depends on IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32C3
+            depends on SOC_MEMSPI_SRC_FREQ_26M_SUPPORTED
+        config ESPTOOLPY_FLASHFREQ_24M
+            bool "24 MHz"
+            depends on SOC_MEMSPI_SRC_FREQ_24M_SUPPORTED
         config ESPTOOLPY_FLASHFREQ_20M
             bool "20 MHz"
+            depends on SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED
+        config ESPTOOLPY_FLASHFREQ_15M
+            bool "15 MHz"
+            depends on SOC_MEMSPI_SRC_FREQ_15M_SUPPORTED
     endchoice
 
     config ESPTOOLPY_FLASHFREQ
         string
         # On some of the ESP chips, max boot frequency would be equal to (or even lower than) 80m.
         # We currently define this to `80m`.
-        default "80m" if ESPTOOLPY_FLASHFREQ_120M
-        # Temporarily support c2 and h2, because not consistent with esptool, will be cleaned up in IDF-4474
-        default "80m" if ESPTOOLPY_FLASHFREQ_80M && !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32H2
-        default "40m" if ESPTOOLPY_FLASHFREQ_40M && !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32H2
-        default "26m" if ESPTOOLPY_FLASHFREQ_26M && !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32H2
-        default "20m" if ESPTOOLPY_FLASHFREQ_20M && !IDF_TARGET_ESP32C2 && !IDF_TARGET_ESP32H2
-        default "60m" if ESPTOOLPY_FLASHFREQ_80M && IDF_TARGET_ESP32C2
-        default "30m" if ESPTOOLPY_FLASHFREQ_40M && IDF_TARGET_ESP32C2
-        default "15m" if ESPTOOLPY_FLASHFREQ_20M && IDF_TARGET_ESP32C2
-        default "48m" if ESPTOOLPY_FLASHFREQ_80M && IDF_TARGET_ESP32H2
-        default "24m" if ESPTOOLPY_FLASHFREQ_40M && IDF_TARGET_ESP32H2
-        default "12m" if ESPTOOLPY_FLASHFREQ_20M && IDF_TARGET_ESP32H2
+        default '80m' if ESPTOOLPY_FLASHFREQ_120M
+        default '80m' if ESPTOOLPY_FLASHFREQ_80M
+        default '60m' if ESPTOOLPY_FLASHFREQ_60M
+        default '48m' if ESPTOOLPY_FLASHFREQ_48M
+        default '30m' if ESPTOOLPY_FLASHFREQ_30M
+        default '24m' if ESPTOOLPY_FLASHFREQ_24M
+        default '40m' if ESPTOOLPY_FLASHFREQ_40M
+        default '26m' if ESPTOOLPY_FLASHFREQ_26M
+        default '20m' if ESPTOOLPY_FLASHFREQ_20M
+        default '20m' # if no clock can match in bin headers, go with minimal.
 
 
     choice ESPTOOLPY_FLASHSIZE

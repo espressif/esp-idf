@@ -77,3 +77,12 @@ ESP Timer
 ---------
 
 Removed the FRC2 based legacy implementation of esp_timer available on ESP32. The simpler and more efficient implementation based on the LAC timer is now the only option.
+
+ESP image
+---------
+
+Rename the image SPI speed enum definition.
+- Enum ``ESP_IMAGE_SPI_SPEED_80M`` has been renamed to ``ESP_IMAGE_SPI_SPEED_DIV_1``.
+- Enum ``ESP_IMAGE_SPI_SPEED_40M`` has been renamed to ``ESP_IMAGE_SPI_SPEED_DIV_2``.
+- Enum ``ESP_IMAGE_SPI_SPEED_26M`` has been renamed to ``ESP_IMAGE_SPI_SPEED_DIV_3``.
+- Enum ``ESP_IMAGE_SPI_SPEED_20M`` has been renamed to ``ESP_IMAGE_SPI_SPEED_DIV_4``.

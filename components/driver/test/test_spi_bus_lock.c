@@ -32,6 +32,8 @@
 
 #endif
 
+// H2 and C2 will not support external flash.
+#define TEST_FLASH_FREQ_MHZ      5
 
 typedef struct {
     union {
@@ -235,7 +237,7 @@ static void test_bus_lock(bool test_flash)
         .cs_id = 2,
         .cs_io_num = TEST_BUS_PIN_NUM_CS,
         .io_mode = SPI_FLASH_DIO,
-        .speed = ESP_FLASH_5MHZ,
+        .freq_mhz = TEST_FLASH_FREQ_MHZ,
         .input_delay_ns = 0,
     };
 

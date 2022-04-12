@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 /*******************************************************************************
  * NOTICE
@@ -40,16 +32,9 @@ extern "C" {
 #define gpspi_flash_ll_get_hw(host_id)  ( ((host_id)==SPI2_HOST) ? &GPSPI2 : ({abort();(spi_dev_t*)0;}) )
 #define gpspi_flash_ll_hw_get_id(dev)   ( ((dev) == (void*)&GPSPI2) ? SPI2_HOST : -1 )
 
-typedef typeof(GPSPI2.clock) gpspi_flash_ll_clock_reg_t;
+typedef typeof(GPSPI2.clock.val) gpspi_flash_ll_clock_reg_t;
 
-//Supported clock register values
-#define GPSPI_FLASH_LL_CLKREG_VAL_5MHZ   ((gpspi_flash_ll_clock_reg_t){.val=0x0000F1CF})   ///< Clock set to 5 MHz
-#define GPSPI_FLASH_LL_CLKREG_VAL_10MHZ  ((gpspi_flash_ll_clock_reg_t){.val=0x000070C7})   ///< Clock set to 10 MHz
-#define GPSPI_FLASH_LL_CLKREG_VAL_20MHZ  ((gpspi_flash_ll_clock_reg_t){.val=0x00003043})   ///< Clock set to 20 MHz
-#define GPSPI_FLASH_LL_CLKREG_VAL_26MHZ  ((gpspi_flash_ll_clock_reg_t){.val=0x00002002})   ///< Clock set to 26 MHz
-#define GPSPI_FLASH_LL_CLKREG_VAL_40MHZ  ((gpspi_flash_ll_clock_reg_t){.val=0x00001001})   ///< Clock set to 40 MHz
-#define GPSPI_FLASH_LL_CLKREG_VAL_80MHZ  ((gpspi_flash_ll_clock_reg_t){.val=0x80000000})   ///< Clock set to 80 MHz
-
+#define GPSPI_FLASH_LL_PERIPHERAL_FREQUENCY_MHZ  (48)
 /*------------------------------------------------------------------------------
  * Control
  *----------------------------------------------------------------------------*/
@@ -260,7 +245,7 @@ static inline void gpspi_flash_ll_set_read_mode(spi_dev_t *dev, esp_flash_io_mod
  */
 static inline void gpspi_flash_ll_set_clock(spi_dev_t *dev, gpspi_flash_ll_clock_reg_t *clock_val)
 {
-    dev->clock = *clock_val;
+    dev->clock.val = *clock_val;
 }
 
 /**
@@ -398,6 +383,25 @@ static inline void gpspi_flash_ll_set_cs_setup(spi_dev_t *dev, uint32_t cs_setup
 {
     dev->user.cs_setup = (cs_setup_time > 0 ? 1 : 0);
     dev->user1.cs_setup_time = cs_setup_time - 1;
+}
+
+/**
+ * Calculate spi_flash clock frequency division parameters for register.
+ *
+ * @param clkdiv frequency division factor
+ *
+ * @return Register setting for the given clock division factor.
+ */
+static inline uint32_t gpspi_flash_ll_calculate_clock_reg(uint8_t clkdiv)
+{
+    uint32_t div_parameter;
+    // See comments of `clock` in `spi_struct.h`
+    if (clkdiv == 1) {
+        div_parameter = (1 << 31);
+    } else {
+        div_parameter = ((clkdiv - 1) | (((clkdiv/2 - 1) & 0xff) << 6 ) | (((clkdiv - 1) & 0xff) << 12));
+    }
+    return div_parameter;
 }
 
 #ifdef __cplusplus
