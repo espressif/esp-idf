@@ -527,8 +527,8 @@ Imagine there is a ``car`` component, which uses the ``engine`` component, which
                                          - engine.c
                                          - include/ - engine.h
                                - spark_plug/  - CMakeLists.txt
-                                              - plug.c
-                                              - plug.h
+                                              - spark_plug.c
+                                              - spark_plug.h
 
 Car component
 ^^^^^^^^^^^^^
