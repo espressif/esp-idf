@@ -112,6 +112,13 @@ sdmmc:
     - Apache-2.0
     - ISC
 
+argtable3:
+  include:
+    - 'components/console/argtable3/'
+  allowed_licenses:
+    - BSD-3-Clause
+    - Apache-2.0
+
 # files matching this section do not perform the check
 # file patterns starting with ! are negated, meaning files matching them won't match the section.
 ignore:
