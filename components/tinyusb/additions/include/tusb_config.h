@@ -85,6 +85,11 @@ extern "C" {
 // HID buffer size Should be sufficient to hold ID (if any) + Data
 #define CFG_TUD_HID_BUFSIZE         CONFIG_TINYUSB_HID_BUFSIZE
 
+#define CFG_TUD_MIDI_EP_BUFSIZE     64
+#define CFG_TUD_MIDI_EPSIZE         CFG_TUD_MIDI_EP_BUFSIZE
+#define CFG_TUD_MIDI_RX_BUFSIZE     64
+#define CFG_TUD_MIDI_TX_BUFSIZE     64
+
 // Enabled device class driver
 #if defined(CONFIG_TINYUSB_CDC_COUNT)
 #define CFG_TUD_CDC                 CONFIG_TINYUSB_CDC_COUNT
