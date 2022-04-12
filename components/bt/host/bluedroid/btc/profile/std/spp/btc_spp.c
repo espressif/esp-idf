@@ -352,6 +352,20 @@ static void *btc_spp_rfcomm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *u
         }
         new_user_data = (void *)(uintptr_t)slot->id;
         break;
+    case BTA_JV_RFCOMM_CL_INIT_EVT:
+        slot = spp_find_slot_by_id(id);
+        if (!slot) {
+            BTC_TRACE_ERROR("%s unable to find RFCOMM slot, event:%d!", __func__, event);
+            p_data->rfc_cl_init.status = ESP_SPP_FAILURE;
+            break;
+        }
+
+        if (p_data->rfc_cl_init.status == BTA_JV_SUCCESS) {
+            slot->rfc_handle = p_data->rfc_cl_init.handle;
+        } else {
+            spp_free_slot(slot);
+        }
+        break;
     case BTA_JV_RFCOMM_OPEN_EVT:
         slot = spp_find_slot_by_id(id);
         if (!slot) {
@@ -359,7 +373,7 @@ static void *btc_spp_rfcomm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *u
             p_data->rfc_open.status = ESP_SPP_NO_CONNECTION;
             break;
         }
-        slot->connected = TRUE;
+        slot->connected = true;
         slot->rfc_handle = p_data->rfc_open.handle;
         slot->rfc_port_handle = BTA_JvRfcommGetPortHdl(p_data->rfc_open.handle);
         BTA_JvSetPmProfile(p_data->rfc_open.handle, BTA_JV_PM_ID_1, BTA_JV_CONN_OPEN);
@@ -371,7 +385,7 @@ static void *btc_spp_rfcomm_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *u
             p_data->rfc_close.status = ESP_SPP_NO_CONNECTION;
             break;
         }
-        if (slot->connected && p_data->rfc_close.port_status != PORT_LOCAL_CLOSED) {
+        if (slot->rfc_handle && p_data->rfc_close.port_status != PORT_LOCAL_CLOSED) {
             BTA_JvRfcommClose(slot->rfc_handle, NULL, (void *)slot->id);
         }
         p_data->rfc_close.status = BTA_JV_SUCCESS;
@@ -1056,6 +1070,7 @@ void btc_spp_cb_handler(btc_msg_t *msg)
                 BT_HDR *p_buf;
                 serial = slot->serial;
                 if ((p_buf = fixed_queue_try_peek_first(slot->tx.queue)) == NULL) {
+                    osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
                     break;
                 }
                 if (p_data->rfc_write.status == BTA_JV_SUCCESS) {
