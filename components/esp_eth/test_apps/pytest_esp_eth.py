@@ -12,6 +12,8 @@ import pytest
 from pytest_embedded import Dut
 from scapy.all import Ether, raw
 
+ETH_TYPE = 0x2222
+
 
 @contextlib.contextmanager
 def configure_eth_if() -> Iterator[socket.socket]:
@@ -28,7 +30,7 @@ def configure_eth_if() -> Iterator[socket.socket]:
         raise Exception('no network interface found')
     logging.info('Use %s for testing', target_if)
 
-    so = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, 0x2222)
+    so = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(ETH_TYPE))
     so.bind((target_if, 0))
 
     try:
@@ -43,7 +45,7 @@ def send_eth_packet(mac: str) -> None:
         payload = bytearray(1010)
         for i, _ in enumerate(payload):
             payload[i] = i & 0xff
-        eth_frame = Ether(dst=mac, src=so.getsockname()[4], type=0x2222) / raw(payload)
+        eth_frame = Ether(dst=mac, src=so.getsockname()[4], type=ETH_TYPE) / raw(payload)
         try:
             so.send(raw(eth_frame))
         except Exception as e:
@@ -56,7 +58,7 @@ def recv_resp_poke(i: int) -> None:
         try:
             eth_frame = Ether(so.recv(60))
 
-            if eth_frame.type == 0x2222 and eth_frame.load[0] == 0xfa:
+            if eth_frame.type == ETH_TYPE and eth_frame.load[0] == 0xfa:
                 if eth_frame.load[1] != i:
                     raise Exception('Missed Poke Packet')
                 eth_frame.dst = eth_frame.src
@@ -71,7 +73,7 @@ def traffic_gen(mac: str, pipe_rcv:connection.Connection) -> None:
     with configure_eth_if() as so:
         payload = bytes.fromhex('ff')    # DUMMY_TRAFFIC code
         payload += bytes(1485)
-        eth_frame = Ether(dst=mac, src=so.getsockname()[4], type=0x2222) / raw(payload)
+        eth_frame = Ether(dst=mac, src=so.getsockname()[4], type=ETH_TYPE) / raw(payload)
         try:
             while pipe_rcv.poll() is not True:
                 so.send(raw(eth_frame))

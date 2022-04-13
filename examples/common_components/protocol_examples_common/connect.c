@@ -479,11 +479,17 @@ static void eth_stop(void)
     ESP_ERROR_CHECK(esp_eth_stop(s_eth_handle));
     ESP_ERROR_CHECK(esp_eth_del_netif_glue(s_eth_glue));
     ESP_ERROR_CHECK(esp_eth_driver_uninstall(s_eth_handle));
+    s_eth_handle = NULL;
     ESP_ERROR_CHECK(s_phy->del(s_phy));
     ESP_ERROR_CHECK(s_mac->del(s_mac));
 
     esp_netif_destroy(eth_netif);
     s_example_esp_netif = NULL;
+}
+
+esp_eth_handle_t get_example_eth_handle(void)
+{
+    return s_eth_handle;
 }
 
 #endif // CONFIG_EXAMPLE_CONNECT_ETHERNET

@@ -182,6 +182,19 @@ All set configuration options have getter counterpart option to read the current
 | **ENOSPC** - NETIF L2 receive hook is already taken by other function when trying to assign Network Interface to the file descriptor.
 | **ENOSYS** - unsupported operation, passed configuration option does not exists.
 
+fcntl()
+^^^^^^^
+``fcntl()`` is used to manipulate with properties of opened ESP-NETIF L2 TAP file descriptor.
+
+The following commands manipulate the status flags associated with file descriptor:
+
+  * ``F_GETFD`` - the function returns the file descriptor flags, the third argument is ignored.
+  * ``F_SETFD`` - sets the file descriptor flags to the value specified by the third argument. Zero is returned.
+
+| On error, -1 is returned, and ``errno`` is set to indicate the error.
+| **EBADF** - not a valid file descriptor.
+| **ENOSYS** - unsupported command.
+
 read()
 ^^^^^^
 Opened and configured ESP-NETIF L2 TAP file descriptor can be accessed by ``read()`` to get inbound frames. The read operation can be either blocking or non-blocking based on actual state of ``O_NONBLOCK`` file status flag. When the file status flag is set blocking, the read operation waits until a frame is received and context is switched to other task. When the file status flag is set non-blocking, the read operation returns immediately. In such case, either a frame is returned if it was already queued or the function indicates the queue is empty. The number of queued frames associated with one file descriptor is limited by :ref:`CONFIG_ESP_NETIF_L2_TAP_RX_QUEUE_SIZE` Kconfig option. Once the number of queued frames reach configured threshold, the newly arriving frames are dropped until the queue has enough room to accept incoming traffic (Tail Drop queue management).
@@ -229,6 +242,8 @@ Please refer to the example section for basic initialization of default interfac
 - WiFi Station: :example_file:`wifi/getting_started/station/main/station_example_main.c`
 
 - Ethernet: :example_file:`ethernet/basic/main/ethernet_example_main.c`
+
+- L2 TAP: :example_file:`protocols/l2tap/main/l2tap_main.c`
 
 .. only:: CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 
