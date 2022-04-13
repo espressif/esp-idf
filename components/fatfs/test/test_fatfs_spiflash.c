@@ -194,6 +194,13 @@ TEST_CASE("(WL) write/read speed test", "[fatfs][wear_levelling][timeout=60]")
     test_teardown();
 }
 
+TEST_CASE("(WL) can get partition info", "[fatfs][wear_levelling]")
+{
+    test_setup();
+    test_fatfs_info("/spiflash", "/spiflash/test.txt");
+    test_teardown();
+}
+
 /*
  * In FatFs menuconfig, set CONFIG_FATFS_API_ENCODING to UTF-8 and set the
  * Codepage to CP936 (Simplified Chinese) in order to run the following tests.
