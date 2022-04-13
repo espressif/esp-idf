@@ -101,7 +101,7 @@ void app_main(void)
 
     gptimer_handle_t gptimer = NULL;
     gptimer_config_t timer_config = {
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = TIMER_RESOLUTION_HZ,
     };

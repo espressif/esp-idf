@@ -59,7 +59,7 @@ Creating a GPTimer Handle with Resolution of 1MHz
 
    gptimer_handle_t gptimer = NULL;
    gptimer_config_t timer_config = {
-       .clk_src = GPTIMER_CLK_SRC_APB,
+       .clk_src = GPTIMER_CLK_SRC_DEFAULT,
        .direction = GPTIMER_COUNT_UP,
        .resolution_hz = 1 * 1000 * 1000, // 1MHz, 1 tick = 1us
    };

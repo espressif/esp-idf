@@ -44,7 +44,7 @@ typedef struct {
 typedef struct {
     timer_hal_context_t hal;
     timer_isr_func_t timer_isr_fun;
-    gptimer_clock_source_t clk_src;
+    timer_src_clk_t clk_src;
     gptimer_count_direction_t direction;
     uint32_t divider;
     uint64_t alarm_value;
@@ -76,13 +76,26 @@ esp_err_t timer_get_counter_time_sec(timer_group_t group_num, timer_idx_t timer_
     ESP_RETURN_ON_FALSE(p_timer_obj[group_num][timer_num] != NULL, ESP_ERR_INVALID_ARG, TIMER_TAG,  TIMER_NEVER_INIT_ERROR);
     uint64_t timer_val = timer_ll_get_counter_value(p_timer_obj[group_num][timer_num]->hal.dev, timer_num);
     uint32_t div = p_timer_obj[group_num][timer_num]->divider;
+    // [clk_tree] TODO: replace the following switch table by clk_tree API
     switch (p_timer_obj[group_num][timer_num]->clk_src) {
-    case GPTIMER_CLK_SRC_APB:
+#if SOC_TIMER_GROUP_SUPPORT_APB
+    case TIMER_SRC_CLK_APB:
         *time = (double)timer_val * div / esp_clk_apb_freq();
         break;
+#endif
 #if SOC_TIMER_GROUP_SUPPORT_XTAL
-    case GPTIMER_CLK_SRC_XTAL:
+    case TIMER_SRC_CLK_XTAL:
         *time = (double)timer_val * div / esp_clk_xtal_freq();
+        break;
+#endif
+#if SOC_TIMER_GROUP_SUPPORT_AHB
+    case TIMER_SRC_CLK_AHB:
+        *time = (double)timer_val * div / 48 * 1000 * 1000;
+        break;
+#endif
+#if SOC_TIMER_GROUP_SUPPORT_PLL_F40M
+    case TIMER_SRC_CLK_PLL_F40M:
+        *time = (double)timer_val * div / 40 * 1000 * 1000;
         break;
 #endif
     default:
@@ -315,7 +328,9 @@ esp_err_t timer_init(timer_group_t group_num, timer_idx_t timer_num, const timer
     TIMER_ENTER_CRITICAL(&timer_spinlock[group_num]);
     timer_hal_init(hal, group_num, timer_num);
     timer_hal_set_counter_value(hal, 0);
-    timer_ll_set_clock_source(p_timer_obj[group_num][timer_num]->hal.dev, timer_num, config->clk_src);
+    // although `clk_src` is of `timer_src_clk_t` type, but it's binary compatible with `gptimer_clock_source_t`,
+    // as the underlying enum entries come from the same `soc_module_clk_t`
+    timer_ll_set_clock_source(p_timer_obj[group_num][timer_num]->hal.dev, timer_num, (gptimer_clock_source_t)config->clk_src);
     timer_ll_set_clock_prescale(hal->dev, timer_num, config->divider);
     timer_ll_set_count_direction(p_timer_obj[group_num][timer_num]->hal.dev, timer_num, config->counter_dir);
     timer_ll_enable_intr(hal->dev, TIMER_LL_EVENT_ALARM(timer_num), false);
@@ -483,7 +498,7 @@ static void check_legacy_timer_driver_conflict(void)
     // This function was declared as weak here. gptimer driver has one implementation.
     // So if gptimer driver is not linked in, then `gptimer_new_timer()` should be NULL at runtime.
     extern __attribute__((weak)) esp_err_t gptimer_new_timer(const void *config, void **ret_timer);
-    if (gptimer_new_timer != NULL) {
+    if ((void *)gptimer_new_timer != NULL) {
         ESP_EARLY_LOGE(TIMER_TAG, "CONFLICT! driver_ng is not allowed to be used with the legacy driver");
         abort();
     }

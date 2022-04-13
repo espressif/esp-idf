@@ -29,7 +29,7 @@ static esp_lcd_panel_handle_t test_rgb_panel_initialization(bool stream_mode, es
     esp_lcd_rgb_panel_config_t panel_config = {
         .data_width = 16,
         .psram_trans_align = 64,
-        .clk_src = LCD_CLK_SRC_PLL160M,
+        .clk_src = LCD_CLK_SRC_DEFAULT,
         .disp_gpio_num = TEST_LCD_DISP_EN_GPIO,
         .pclk_gpio_num = TEST_LCD_PCLK_GPIO,
         .vsync_gpio_num = TEST_LCD_VSYNC_GPIO,

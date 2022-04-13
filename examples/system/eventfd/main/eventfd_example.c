@@ -46,7 +46,7 @@ static bool eventfd_timer_isr_callback(gptimer_handle_t timer, const gptimer_ala
 static void eventfd_timer_init(void)
 {
     gptimer_config_t timer_config = {
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = TIMER_RESOLUTION,
     };

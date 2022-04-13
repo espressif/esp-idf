@@ -555,7 +555,7 @@ static void check_pcnt_driver_conflict(void)
     // This function was declared as weak here. pulse_cnt driver has one implementation.
     // So if pulse_cnt driver is not linked in, then `pcnt_new_unit` should be NULL at runtime.
     extern __attribute__((weak)) esp_err_t pcnt_new_unit(const void *config, void **ret_unit);
-    if (pcnt_new_unit != NULL) {
+    if ((void *)pcnt_new_unit != NULL) {
         ESP_EARLY_LOGE(TAG, "CONFLICT! driver_ng is not allowed to be used with the legacy driver");
         abort();
     }

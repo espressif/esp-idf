@@ -88,6 +88,7 @@ typedef enum {
  * Naming convention: SOC_MOD_CLK_{<upstream>clock_name}_<attr>
  * {<upstream>clock_name}: APB, (BB)PLL, etc.
  * <attr> - optional: FAST, SLOW, D<divider>, F<freq>
+ * @note enum starts from 1, to save 0 for special purpose
  */
 typedef enum {
     // For CPU domain
@@ -106,27 +107,81 @@ typedef enum {
     SOC_MOD_CLK_XTAL = 11,                     /*< XTAL_CLK comes from the external 40MHz crystal */
 } soc_module_clk_t;
 
+//////////////////////////////////////////////////GPTimer///////////////////////////////////////////////////////////////
 
-// List clock sources available to each peripherial
-// soc_module_clk_src_t enum starts from 1 to save enum = 0 for AUTO selection
+/**
+ * @brief Array initializer for all supported clock sources of GPTimer
+ * The following code can be used to iterate all possible clocks:
+ * @code{c}
+ * soc_periph_gptimer_clk_src_t gptimer_clks[] = (soc_periph_gptimer_clk_src_t)SOC_GPTIMER_CLKS;
+ * for (size_t i = 0; i< sizeof(gptimer_clks) / sizeof(gptimer_clks[0]); i++) {
+ *     soc_periph_gptimer_clk_src_t clk = gptimer_clks[i];
+ *     // Test GPTimer with the clock `clk`
+ * }
+ * @endcode
+ */
+#define SOC_GPTIMER_CLKS {SOC_MOD_CLK_APB, SOC_MOD_CLK_XTAL}
 
+/**
+ * @brief Type of GPTimer clock source
+ */
 typedef enum {
-    GPTIMER_CLK_SRC_APB = SOC_MOD_CLK_APB,                      /*!< Select APB as the source clock */
-    GPTIMER_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,                    /*!< Select XTAL as the source clock */
+    GPTIMER_CLK_SRC_APB = SOC_MOD_CLK_APB,     /*!< Select APB as the source clock */
+    GPTIMER_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,   /*!< Select XTAL as the source clock */
+    GPTIMER_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB, /*!< Select APB as the default choice */
 } soc_periph_gptimer_clk_src_t;
 
+/**
+ * @brief Type of Timer Group clock source, reserved for the legacy timer group driver
+ */
 typedef enum {
-    TEMPERATURE_SENSOR_CLK_SRC_DEFAULT = 0,                     /*!< Use default clock selection */
-    TEMPERATURE_SENSOR_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,         /*!< Select XTAL as the source clock */
-    TEMPERATURE_SENSOR_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,   /*!< Select RC_FAST as the source clock */
-} soc_periph_temperature_sensor_clk_src_t;
+    TIMER_SRC_CLK_APB = SOC_MOD_CLK_APB,     /*!< Timer group clock source is APB */
+    TIMER_SRC_CLK_XTAL = SOC_MOD_CLK_XTAL,   /*!< Timer group clock source is XTAL */
+    TIMER_SRC_CLK_DEFAULT = SOC_MOD_CLK_APB, /*!< Timer group clock source default choice is APB */
+} soc_periph_tg_clk_src_legacy_t;
 
+//////////////////////////////////////////////////RMT///////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of RMT
+ */
+#define SOC_RMT_CLKS {SOC_MOD_CLK_APB, SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_XTAL}
+
+/**
+ * @brief Type of RMT clock source
+ */
 typedef enum {
-    RMT_CLK_SRC_NONE = 0,                                       /*!< No clock source is selected */
-    RMT_CLK_SRC_APB = SOC_MOD_CLK_APB,                          /*!< Select APB as the source clock */
-    RMT_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,                  /*!< Select RC_FAST as the source clock */
-    RMT_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,                        /*!< Select XTAL as the source clock */
+    RMT_CLK_SRC_NONE = 0,                      /*!< No clock source is selected */
+    RMT_CLK_SRC_APB = SOC_MOD_CLK_APB,         /*!< Select APB as the source clock */
+    RMT_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST, /*!< Select RC_FAST as the source clock */
+    RMT_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,       /*!< Select XTAL as the source clock */
+    RMT_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB,     /*!< Select APB as the default choice */
 } soc_periph_rmt_clk_src_t;
+
+/**
+ * @brief Type of RMT clock source, reserved for the legacy RMT driver
+ */
+typedef enum {
+    RMT_BASECLK_APB = SOC_MOD_CLK_APB,     /*!< RMT source clock is APB */
+    RMT_BASECLK_XTAL = SOC_MOD_CLK_XTAL,   /*!< RMT source clock is XTAL */
+    RMT_BASECLK_DEFAULT = SOC_MOD_CLK_APB, /*!< RMT source clock default choice is APB */
+} soc_periph_rmt_clk_src_legacy_t;
+
+//////////////////////////////////////////////////Temp Sensor///////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of Temperature Sensor
+ */
+#define SOC_TEMP_SENSOR_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST}
+
+/**
+ * @brief Type of Temp Sensor clock source
+ */
+typedef enum {
+    TEMPERATURE_SENSOR_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,       /*!< Select XTAL as the source clock */
+    TEMPERATURE_SENSOR_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST, /*!< Select RC_FAST as the source clock */
+    TEMPERATURE_SENSOR_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,    /*!< Select XTAL as the default choice */
+} soc_periph_temperature_sensor_clk_src_t;
 
 #ifdef __cplusplus
 }

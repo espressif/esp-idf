@@ -32,7 +32,7 @@ extern "C" {
 static inline void timer_ll_set_clock_source(timg_dev_t *hw, uint32_t timer_num, gptimer_clock_source_t clk_src)
 {
     switch (clk_src) {
-    case GPTIMER_CLK_SRC_APB:
+    case GPTIMER_CLK_SRC_PLL_F40M:
         hw->hw_timer[timer_num].config.tx_use_xtal = 0;
         break;
     case GPTIMER_CLK_SRC_XTAL:

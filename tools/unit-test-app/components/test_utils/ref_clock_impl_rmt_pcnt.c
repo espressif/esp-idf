@@ -101,7 +101,7 @@ void ref_clock_init(void)
     };
 
     rmt_ll_enable_periph_clock(s_rmt_hal.regs, true);
-    rmt_ll_set_group_clock_src(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, RMT_CLK_SRC_REFTICK, 1, 1, 0); // select REF_TICK (1MHz)
+    rmt_ll_set_group_clock_src(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, RMT_CLK_SRC_APB_F1M, 1, 1, 0); // select REF_TICK (1MHz)
     rmt_ll_tx_set_channel_clock_div(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 1); // channel clock = REF_TICK / 1 = 1MHz
     rmt_ll_tx_fix_idle_level(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, 1, true); // enable idle output, idle level: 1
     rmt_ll_tx_enable_carrier_modulation(s_rmt_hal.regs, REF_CLOCK_RMT_CHANNEL, true);

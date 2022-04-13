@@ -38,7 +38,7 @@ static void timer_test(int flags)
     intr_handle_t inth[SOC_TIMER_GROUP_TOTAL_TIMERS];
 
     gptimer_config_t config = {
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = 1000000,
         .flags.intr_shared = (flags & ESP_INTR_FLAG_SHARED) == ESP_INTR_FLAG_SHARED,

@@ -14,6 +14,7 @@ extern "C" {
 
 /**
  * @brief GPTimer clock source
+ * @note User should select the clock source based on the power and resolution requirement
  */
 typedef soc_periph_gptimer_clk_src_t gptimer_clock_source_t;
 

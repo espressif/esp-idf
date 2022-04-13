@@ -22,7 +22,7 @@
 TEST_CASE("gptimer_set_get_raw_count", "[gptimer]")
 {
     gptimer_config_t config = {
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = 1 * 1000 * 1000,
     };
@@ -59,12 +59,7 @@ TEST_CASE("gptimer_set_get_raw_count", "[gptimer]")
 
 TEST_CASE("gptimer_wallclock_with_various_clock_sources", "[gptimer]")
 {
-    gptimer_clock_source_t test_clk_srcs[] = {
-        GPTIMER_CLK_SRC_APB,
-#if SOC_TIMER_GROUP_SUPPORT_XTAL
-        GPTIMER_CLK_SRC_XTAL,
-#endif // SOC_TIMER_GROUP_SUPPORT_XTAL
-    };
+    gptimer_clock_source_t test_clk_srcs[] = SOC_GPTIMER_CLKS;
 
     // test with various clock sources
     for (size_t i = 0; i < sizeof(test_clk_srcs) / sizeof(test_clk_srcs[0]); i++) {
@@ -136,7 +131,7 @@ TEST_CASE("gptimer_stop_on_alarm", "[gptimer]")
 
     gptimer_config_t timer_config = {
         .resolution_hz = 1 * 1000 * 1000,
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
     };
     gptimer_handle_t timers[SOC_TIMER_GROUP_TOTAL_TIMERS];
@@ -210,7 +205,7 @@ TEST_CASE("gptimer_auto_reload_on_alarm", "[gptimer]")
 
     gptimer_config_t timer_config = {
         .resolution_hz = 1 * 1000 * 1000,
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
     };
     gptimer_handle_t timers[SOC_TIMER_GROUP_TOTAL_TIMERS];
@@ -261,7 +256,7 @@ TEST_CASE("gptimer_one_shot_alarm", "[gptimer]")
 
     gptimer_config_t timer_config = {
         .resolution_hz = 1 * 1000 * 1000,
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
     };
     gptimer_handle_t timers[SOC_TIMER_GROUP_TOTAL_TIMERS];
@@ -324,7 +319,7 @@ TEST_CASE("gptimer_update_alarm_dynamically", "[gptimer]")
 
     gptimer_config_t timer_config = {
         .resolution_hz = 1 * 1000 * 1000,
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
     };
     gptimer_handle_t timers[SOC_TIMER_GROUP_TOTAL_TIMERS];
@@ -386,7 +381,7 @@ TEST_CASE("gptimer_count_down_reload", "[gptimer]")
 
     gptimer_config_t timer_config = {
         .resolution_hz = 1 * 1000 * 1000,
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_DOWN,
     };
     gptimer_handle_t timers[SOC_TIMER_GROUP_TOTAL_TIMERS];
@@ -444,7 +439,7 @@ TEST_CASE("gptimer_overflow", "[gptimer]")
 
     gptimer_config_t timer_config = {
         .resolution_hz = 1 * 1000 * 1000,
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
     };
     gptimer_handle_t timers[SOC_TIMER_GROUP_TOTAL_TIMERS];

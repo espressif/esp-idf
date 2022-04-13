@@ -90,7 +90,7 @@ static inline void rmt_ll_set_group_clock_src(rmt_dev_t *dev, uint32_t channel, 
     case RMT_CLK_SRC_APB:
         dev->conf_ch[channel].conf1.ref_always_on = 1;
         break;
-    case RMT_CLK_SRC_REFTICK:
+    case RMT_CLK_SRC_APB_F1M:
         dev->conf_ch[channel].conf1.ref_always_on = 0;
         break;
     default:
@@ -526,7 +526,7 @@ static inline rmt_clock_source_t rmt_ll_get_group_clock_src(rmt_dev_t *dev, uint
     if (dev->conf_ch[channel].conf1.ref_always_on) {
         return RMT_CLK_SRC_APB;
     }
-    return RMT_CLK_SRC_REFTICK;
+    return RMT_CLK_SRC_APB_F1M;
 }
 
 static inline bool rmt_ll_tx_is_idle_enabled(rmt_dev_t *dev, uint32_t channel)

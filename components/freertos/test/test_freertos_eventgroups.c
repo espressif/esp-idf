@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <stdio.h>
 
 #include "freertos/FreeRTOS.h"
@@ -157,7 +162,7 @@ TEST_CASE("FreeRTOS Event Group ISR", "[freertos]")
     test_clear_bits = false;
     //Setup timer for ISR
     gptimer_config_t config = {
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = 1000000,
     };

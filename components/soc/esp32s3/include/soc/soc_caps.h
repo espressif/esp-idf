@@ -278,6 +278,7 @@
 #define SOC_TIMER_GROUP_TIMERS_PER_GROUP  (2)
 #define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH (54)
 #define SOC_TIMER_GROUP_SUPPORT_XTAL      (1)
+#define SOC_TIMER_GROUP_SUPPORT_APB       (1)
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (4)
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/

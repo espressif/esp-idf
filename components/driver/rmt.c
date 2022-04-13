@@ -413,28 +413,9 @@ esp_err_t rmt_set_rx_filter(rmt_channel_t channel, bool rx_filter_en, uint8_t th
 esp_err_t rmt_set_source_clk(rmt_channel_t channel, rmt_source_clk_t base_clk)
 {
     ESP_RETURN_ON_FALSE(channel < RMT_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
-    ESP_RETURN_ON_FALSE(base_clk < RMT_BASECLK_MAX, ESP_ERR_INVALID_ARG, TAG, RMT_BASECLK_ERROR_STR);
-    rmt_clock_source_t rmt_clk_src = RMT_CLK_SRC_APB;
     RMT_ENTER_CRITICAL();
-    // the clock type might be different to the one used in LL driver, so simply do a translation here
-    switch (base_clk) {
-    case RMT_BASECLK_APB:
-        rmt_clk_src = RMT_CLK_SRC_APB;
-        break;
-#if SOC_RMT_SUPPORT_REF_TICK
-    case RMT_BASECLK_REF:
-        rmt_clk_src = RMT_CLK_SRC_REFTICK;
-        break;
-#endif
-#if SOC_RMT_SUPPORT_XTAL
-    case RMT_BASECLK_XTAL:
-        rmt_clk_src = RMT_CLK_SRC_XTAL;
-        break;
-#endif
-    default:
-        break;
-    }
-    rmt_ll_set_group_clock_src(rmt_contex.hal.regs, channel, rmt_clk_src, 1, 0, 0);
+    // `rmt_clock_source_t` and `rmt_source_clk_t` are binary competible, as the underlying enum entries come from the same `soc_module_clk_t`
+    rmt_ll_set_group_clock_src(rmt_contex.hal.regs, channel, (rmt_clock_source_t)base_clk, 1, 0, 0);
     RMT_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -443,24 +424,8 @@ esp_err_t rmt_get_source_clk(rmt_channel_t channel, rmt_source_clk_t *src_clk)
 {
     ESP_RETURN_ON_FALSE(channel < RMT_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
     RMT_ENTER_CRITICAL();
+    // `rmt_clock_source_t` and `rmt_source_clk_t` are binary competible, as the underlying enum entries come from the same `soc_module_clk_t`
     *src_clk = (rmt_source_clk_t)rmt_ll_get_group_clock_src(rmt_contex.hal.regs, channel);
-    switch (rmt_ll_get_group_clock_src(rmt_contex.hal.regs, channel)) {
-    case RMT_CLK_SRC_APB:
-        *src_clk = RMT_BASECLK_APB;
-        break;
-#if SOC_RMT_SUPPORT_REF_TICK
-    case RMT_CLK_SRC_REFTICK:
-        *src_clk = RMT_BASECLK_REF;
-        break;
-#endif
-#if SOC_RMT_SUPPORT_XTAL
-    case RMT_CLK_SRC_XTAL:
-        *src_clk = RMT_BASECLK_XTAL;
-        break;
-#endif
-    default:
-        break;
-    }
     RMT_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -600,19 +565,20 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
     rmt_ll_enable_mem_access_nonfifo(dev, true);
 
     if (rmt_param->flags & RMT_CHANNEL_FLAGS_AWARE_DFS) {
+        // [clk_tree] TODO: refactor the following code by clk_tree API
 #if SOC_RMT_SUPPORT_XTAL
         // clock src: XTAL_CLK
         rmt_source_clk_hz = esp_clk_xtal_freq();
-        rmt_ll_set_group_clock_src(dev, channel, RMT_CLK_SRC_XTAL, 1, 0, 0);
+        rmt_ll_set_group_clock_src(dev, channel, (rmt_clock_source_t)RMT_BASECLK_XTAL, 1, 0, 0);
 #elif SOC_RMT_SUPPORT_REF_TICK
         // clock src: REF_CLK
         rmt_source_clk_hz = REF_CLK_FREQ;
-        rmt_ll_set_group_clock_src(dev, channel, RMT_CLK_SRC_REFTICK, 1, 0, 0);
+        rmt_ll_set_group_clock_src(dev, channel, (rmt_clock_source_t)RMT_BASECLK_REF, 1, 0, 0);
 #endif
     } else {
-        // clock src: APB_CLK
+        // fallback to use default clock source
         rmt_source_clk_hz = APB_CLK_FREQ;
-        rmt_ll_set_group_clock_src(dev, channel, RMT_CLK_SRC_APB, 1, 0, 0);
+        rmt_ll_set_group_clock_src(dev, channel, (rmt_clock_source_t)RMT_BASECLK_DEFAULT, 1, 0, 0);
     }
     RMT_EXIT_CRITICAL();
 

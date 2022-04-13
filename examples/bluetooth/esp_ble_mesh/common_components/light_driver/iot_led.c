@@ -331,7 +331,7 @@ esp_err_t iot_led_init(ledc_timer_t timer_num, ledc_mode_t speed_mode, uint32_t 
         g_light_config->speed_mode = speed_mode;
 
         gptimer_config_t timer_config = {
-            .clk_src = GPTIMER_CLK_SRC_APB,
+            .clk_src = GPTIMER_CLK_SRC_DEFAULT,
             .direction = GPTIMER_COUNT_UP,
             .resolution_hz = GPTIMER_RESOLUTION_HZ,
         };

@@ -89,7 +89,7 @@ void app_main(void)
     esp_lcd_rgb_panel_config_t panel_config = {
         .data_width = 16, // RGB565 in parallel mode, thus 16bit in width
         .psram_trans_align = 64,
-        .clk_src = LCD_CLK_SRC_PLL160M,
+        .clk_src = LCD_CLK_SRC_DEFAULT,
         .disp_gpio_num = EXAMPLE_PIN_NUM_DISP_EN,
         .pclk_gpio_num = EXAMPLE_PIN_NUM_PCLK,
         .vsync_gpio_num = EXAMPLE_PIN_NUM_VSYNC,

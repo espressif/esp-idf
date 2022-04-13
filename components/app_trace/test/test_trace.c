@@ -156,7 +156,7 @@ static void esp_apptrace_dummy_task(void *p)
 
     for (int i = 0; i < arg->timers_num; i++) {
         gptimer_config_t timer_config = {
-            .clk_src = GPTIMER_CLK_SRC_APB,
+            .clk_src = GPTIMER_CLK_SRC_DEFAULT,
             .direction = GPTIMER_COUNT_UP,
             .resolution_hz = 1000000,
         };
@@ -203,7 +203,7 @@ static void esp_apptrace_test_task(void *p)
 
     for (int i = 0; i < arg->timers_num; i++) {
         gptimer_config_t timer_config = {
-            .clk_src = GPTIMER_CLK_SRC_APB,
+            .clk_src = GPTIMER_CLK_SRC_DEFAULT,
             .direction = GPTIMER_COUNT_UP,
             .resolution_hz = 1000000,
         };
@@ -305,7 +305,7 @@ static uint64_t esp_apptrace_test_ts_get(void)
 static void esp_apptrace_test_ts_init(void)
 {
     gptimer_config_t timer_config = {
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = 10000000,
     };
@@ -791,7 +791,7 @@ TEST_CASE("SysView trace test 1", "[trace][ignore]")
     };
 
     gptimer_config_t timer_config = {
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = 1000000,
     };
@@ -870,7 +870,7 @@ TEST_CASE("SysView trace test 2", "[trace][ignore]")
     };
 
     gptimer_config_t timer_config = {
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = 1000000,
     };
