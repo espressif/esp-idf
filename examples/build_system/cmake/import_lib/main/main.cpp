@@ -28,7 +28,7 @@ extern "C" void app_main(void)
     mount_config.format_if_mount_failed = true;
     mount_config.allocation_unit_size = CONFIG_WL_SECTOR_SIZE;
 
-    esp_err_t err = esp_vfs_fat_spiflash_mount(base_path, "storage", &mount_config, &s_wl_handle);
+    esp_err_t err = esp_vfs_fat_spiflash_mount_rw_wl(base_path, "storage", &mount_config, &s_wl_handle);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to mount FATFS (%s)", esp_err_to_name(err));
         return;

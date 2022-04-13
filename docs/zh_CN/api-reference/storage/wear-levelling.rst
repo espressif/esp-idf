@@ -22,10 +22,10 @@
 函数
 ^^^^^^^^^
 
-.. doxygenfunction:: esp_vfs_fat_spiflash_mount
+.. doxygenfunction:: esp_vfs_fat_spiflash_mount_rw_wl
 .. doxygenstruct:: esp_vfs_fat_mount_config_t
     :members:
-.. doxygenfunction:: esp_vfs_fat_spiflash_unmount
+.. doxygenfunction:: esp_vfs_fat_spiflash_unmount_rw_wl
 
 中层 API 参考
 -----------------------

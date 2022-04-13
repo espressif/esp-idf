@@ -66,10 +66,10 @@ The convenience function :cpp:func:`esp_vfs_fat_sdmmc_unmount` unmounts the file
 Using FatFs with VFS in read-only mode
 --------------------------------------
 
-The header file :component_file:`fatfs/vfs/esp_vfs_fat.h` also defines the convenience functions :cpp:func:`esp_vfs_fat_rawflash_mount` and :cpp:func:`esp_vfs_fat_rawflash_unmount`. These functions perform Steps 1-3 and 7-9 respectively for read-only FAT partitions. These are particularly helpful for data partitions written only once during factory provisioning which will not be changed by production application throughout the lifetime of the hardware.
+The header file :component_file:`fatfs/vfs/esp_vfs_fat.h` also defines the convenience functions :cpp:func:`esp_vfs_fat_spiflash_mount_ro` and :cpp:func:`esp_vfs_fat_spiflash_unmount_ro`. These functions perform Steps 1-3 and 7-9 respectively for read-only FAT partitions. These are particularly helpful for data partitions written only once during factory provisioning which will not be changed by production application throughout the lifetime of the hardware.
 
-.. doxygenfunction:: esp_vfs_fat_rawflash_mount
-.. doxygenfunction:: esp_vfs_fat_rawflash_unmount
+.. doxygenfunction:: esp_vfs_fat_spiflash_mount_ro
+.. doxygenfunction:: esp_vfs_fat_spiflash_unmount_ro
 
 
 FatFS disk IO layer

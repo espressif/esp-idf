@@ -17,8 +17,9 @@
 #include "wear_levelling.h"
 #include "diskio_wl.h"
 
-static const char *TAG = "vfs_fat_spiflash";
-esp_err_t esp_vfs_fat_spiflash_mount(const char* base_path,
+static const char* TAG = "vfs_fat_spiflash";
+
+esp_err_t esp_vfs_fat_spiflash_mount_rw_wl(const char* base_path,
     const char* partition_label,
     const esp_vfs_fat_mount_config_t* mount_config,
     wl_handle_t* wl_handle)
@@ -108,7 +109,7 @@ fail:
     return result;
 }
 
-esp_err_t esp_vfs_fat_spiflash_unmount(const char *base_path, wl_handle_t wl_handle)
+esp_err_t esp_vfs_fat_spiflash_unmount_rw_wl(const char* base_path, wl_handle_t wl_handle)
 {
     BYTE pdrv = ff_diskio_get_pdrv_wl(wl_handle);
     if (pdrv == 0xff) {
@@ -126,7 +127,8 @@ esp_err_t esp_vfs_fat_spiflash_unmount(const char *base_path, wl_handle_t wl_han
     return err;
 }
 
-esp_err_t esp_vfs_fat_rawflash_mount(const char* base_path,
+
+esp_err_t esp_vfs_fat_spiflash_mount_ro(const char* base_path,
     const char* partition_label,
     const esp_vfs_fat_mount_config_t* mount_config)
 {
@@ -178,8 +180,7 @@ fail:
     return result;
 }
 
-
-esp_err_t esp_vfs_fat_rawflash_unmount(const char *base_path, const char* partition_label)
+esp_err_t esp_vfs_fat_spiflash_unmount_ro(const char* base_path, const char* partition_label)
 {
     const esp_partition_t *data_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
             ESP_PARTITION_SUBTYPE_DATA_FAT, partition_label);
@@ -200,3 +201,18 @@ esp_err_t esp_vfs_fat_rawflash_unmount(const char *base_path, const char* partit
     esp_err_t err = esp_vfs_fat_unregister_path(base_path);
     return err;
 }
+
+
+esp_err_t esp_vfs_fat_spiflash_mount(const char* base_path,
+    const char* partition_label,
+    const esp_vfs_fat_mount_config_t* mount_config,
+    wl_handle_t* wl_handle)
+    __attribute__((alias("esp_vfs_fat_spiflash_mount_rw_wl")));
+esp_err_t esp_vfs_fat_spiflash_unmount(const char* base_path, wl_handle_t wl_handle)
+    __attribute__((alias("esp_vfs_fat_spiflash_unmount_rw_wl")));
+esp_err_t esp_vfs_fat_rawflash_mount(const char* base_path,
+    const char* partition_label,
+    const esp_vfs_fat_mount_config_t* mount_config)
+    __attribute__((alias("esp_vfs_fat_spiflash_mount_ro")));
+esp_err_t esp_vfs_fat_rawflash_unmount(const char* base_path, const char* partition_label)
+    __attribute__((alias("esp_vfs_fat_spiflash_unmount_ro")));
