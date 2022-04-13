@@ -29,7 +29,7 @@
 #include "../cache_utils.h"
 #include "soc/soc_memory_layout.h"
 #include "driver/spi_common_internal.h"
-#include "soc/rtc.h"
+#include "esp_private/esp_clk.h"
 
 
 const static char TAG[] = "test_spi";
@@ -93,14 +93,14 @@ TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
     };
     TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
 
-    uint32_t apb_freq_hz = rtc_clk_apb_freq_get();
-    if (apb_freq_hz == (80 * MHZ)) {
+    uint32_t apb_freq_hz = esp_clk_apb_freq();
+    if (apb_freq_hz == (80 * 1000 * 1000)) {
         uint32_t clk_param[TEST_CLK_TIMES][3] = TEST_CLK_PARAM_APB_80;
         for (int i = 0; i < TEST_CLK_TIMES; i++) {
             check_spi_pre_n_for(clk_param[i][0], clk_param[i][1], clk_param[i][2]);
         }
     } else {
-        TEST_ASSERT(apb_freq_hz == (40 * MHZ));
+        TEST_ASSERT(apb_freq_hz == (40 * 1000 * 1000));
         uint32_t clk_param[TEST_CLK_TIMES][3] = TEST_CLK_PARAM_APB_40;
         for (int i = 0; i < TEST_CLK_TIMES; i++) {
             check_spi_pre_n_for(clk_param[i][0], clk_param[i][1], clk_param[i][2]);

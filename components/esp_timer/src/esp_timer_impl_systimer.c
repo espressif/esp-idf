@@ -14,7 +14,7 @@
 #include "esp_compiler.h"
 #include "soc/periph_defs.h"
 #include "soc/soc_caps.h"
-#include "soc/rtc.h"
+#include "esp_private/esp_clk.h"
 #include "freertos/FreeRTOS.h"
 #include "hal/systimer_ll.h"
 #include "hal/systimer_types.h"
@@ -113,7 +113,8 @@ esp_err_t esp_timer_impl_early_init(void)
     systimer_hal_init(&systimer_hal);
 
 #if !SOC_SYSTIMER_FIXED_TICKS_US
-    assert(rtc_clk_xtal_freq_get() == 40 && "update the step for xtal to support other XTAL:APB frequency ratios");
+    assert(esp_clk_xtal_freq() == (40 * 1000000) &&
+            "update the step for xtal to support other XTAL:APB frequency ratios");
     systimer_hal_set_steps_per_tick(&systimer_hal, 0, 2); // for xtal
     systimer_hal_set_steps_per_tick(&systimer_hal, 1, 1); // for pll
 #endif

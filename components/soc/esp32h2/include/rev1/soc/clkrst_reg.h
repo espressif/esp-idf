@@ -27,7 +27,7 @@ extern "C" {
 /* SYSTEM_XTAL_FREQ : RO ;bitpos:[7:0] ;default: 8'h0 ; */
 /*description: */
 #define SYSTEM_CLK_XTAL_FREQ  0x000000FF
-#define SYSTEM_CLK_XTAL_FREQ_M  ((SYSTEM_XTAL_FREQ_V)<<(SYSTEM_XTAL_FREQ_S))
+#define SYSTEM_CLK_XTAL_FREQ_M  ((SYSTEM_CLK_XTAL_FREQ_V)<<(SYSTEM_CLK_XTAL_FREQ_S))
 #define SYSTEM_CLK_XTAL_FREQ_V  0xFF
 #define SYSTEM_CLK_XTAL_FREQ_S  0
 

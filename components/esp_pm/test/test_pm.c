@@ -39,7 +39,7 @@ TEST_CASE("Can dump power management lock stats", "[pm]")
 
 static void switch_freq(int mhz)
 {
-    int xtal_freq = rtc_clk_xtal_freq_get();
+    int xtal_freq_mhz = esp_clk_xtal_freq() / MHZ;
 #if CONFIG_IDF_TARGET_ESP32
     esp_pm_config_esp32_t pm_config = {
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -52,7 +52,7 @@ static void switch_freq(int mhz)
     esp_pm_config_esp32h2_t pm_config = {
 #endif
         .max_freq_mhz = mhz,
-        .min_freq_mhz = MIN(mhz, xtal_freq),
+        .min_freq_mhz = MIN(mhz, xtal_freq_mhz),
     };
     ESP_ERROR_CHECK( esp_pm_configure(&pm_config) );
     printf("Waiting for frequency to be set to %d MHz...\n", mhz);
@@ -86,7 +86,7 @@ TEST_CASE("Can switch frequency using esp_pm_configure", "[pm]")
 static void light_sleep_enable(void)
 {
     int cur_freq_mhz = esp_clk_cpu_freq() / MHZ;
-    int xtal_freq = (int) rtc_clk_xtal_freq_get();
+    int xtal_freq = esp_clk_xtal_freq() / MHZ;
 
 #if CONFIG_IDF_TARGET_ESP32
     esp_pm_config_esp32_t pm_config = {

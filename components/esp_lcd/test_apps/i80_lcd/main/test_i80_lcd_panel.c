@@ -26,6 +26,7 @@ TEST_CASE("i80_and_i2s_driver_co-existence", "[lcd][i2s]")
     esp_lcd_i80_bus_config_t bus_config = {
         .dc_gpio_num = TEST_LCD_DC_GPIO,
         .wr_gpio_num = TEST_LCD_PCLK_GPIO,
+        .clk_src = LCD_CLK_SRC_PLL160M,
         .data_gpio_nums = {
             TEST_LCD_DATA0_GPIO,
             TEST_LCD_DATA1_GPIO,
@@ -63,6 +64,7 @@ TEST_CASE("lcd_i80_device_swap_color_bytes", "[lcd]")
     esp_lcd_i80_bus_config_t bus_config = {
         .dc_gpio_num = TEST_LCD_DC_GPIO,
         .wr_gpio_num = TEST_LCD_PCLK_GPIO,
+        .clk_src = LCD_CLK_SRC_PLL160M,
         .data_gpio_nums = {
             TEST_LCD_DATA0_GPIO,
             TEST_LCD_DATA1_GPIO,
@@ -125,6 +127,7 @@ TEST_CASE("lcd_i80_device_clock_mode", "[lcd]")
     esp_lcd_i80_bus_config_t bus_config = {
         .dc_gpio_num = TEST_LCD_DC_GPIO,
         .wr_gpio_num = TEST_LCD_PCLK_GPIO,
+        .clk_src = LCD_CLK_SRC_PLL160M,
         .data_gpio_nums = {
             TEST_LCD_DATA0_GPIO,
             TEST_LCD_DATA1_GPIO,
@@ -184,6 +187,7 @@ TEST_CASE("lcd_i80_bus_and_device_allocation", "[lcd]")
     esp_lcd_i80_bus_config_t bus_config = {
         .dc_gpio_num = TEST_LCD_DC_GPIO,
         .wr_gpio_num = TEST_LCD_PCLK_GPIO,
+        .clk_src = LCD_CLK_SRC_PLL160M,
         .data_gpio_nums = {
             TEST_LCD_DATA0_GPIO,
             TEST_LCD_DATA1_GPIO,
@@ -228,6 +232,7 @@ TEST_CASE("lcd_i80_bus_exclusively_owned_by_one_device", "[lcd]")
     esp_lcd_i80_bus_config_t bus_config = {
         .dc_gpio_num = TEST_LCD_DC_GPIO,
         .wr_gpio_num = TEST_LCD_PCLK_GPIO,
+        .clk_src = LCD_CLK_SRC_PLL160M,
         .data_gpio_nums = {
             TEST_LCD_DATA0_GPIO,
             TEST_LCD_DATA1_GPIO,
@@ -263,6 +268,7 @@ TEST_CASE("lcd_panel_i80_io_test", "[lcd]")
     esp_lcd_i80_bus_config_t bus_config = {
         .dc_gpio_num = TEST_LCD_DC_GPIO,
         .wr_gpio_num = TEST_LCD_PCLK_GPIO,
+        .clk_src = LCD_CLK_SRC_PLL160M,
         .data_gpio_nums = {
             TEST_LCD_DATA0_GPIO,
             TEST_LCD_DATA1_GPIO,
@@ -385,6 +391,7 @@ TEST_CASE("lcd_panel_with_i80_interface_(st7789, 8bits)", "[lcd]")
     esp_lcd_i80_bus_config_t bus_config = {
         .dc_gpio_num = TEST_LCD_DC_GPIO,
         .wr_gpio_num = TEST_LCD_PCLK_GPIO,
+        .clk_src = LCD_CLK_SRC_PLL160M,
         .data_gpio_nums = {
             TEST_LCD_DATA0_GPIO,
             TEST_LCD_DATA1_GPIO,

@@ -82,7 +82,7 @@ static inline void temperature_sensor_ll_clk_sel(temperature_sensor_clk_src_t cl
         case TEMPERATURE_SENSOR_CLK_SRC_XTAL:
             clk_sel = 1;
             break;
-        case TEMPERATURE_SENSOR_CLK_SRC_FAST_RC:
+        case TEMPERATURE_SENSOR_CLK_SRC_RC_FAST:
             clk_sel = 0;
             break;
         default:

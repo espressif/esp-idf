@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -982,7 +982,7 @@ typedef union {
          */
         uint32_t xtal_global_force_nogating:1;
         /** fast_clk_rtc_sel : R/W; bitpos: [29]; default: 0;
-         *  fast_clk_rtc sel. 0: XTAL div 4, 1: CK8M
+         *  fast_clk_rtc sel. 0: XTAL div 2, 1: CK8M
          */
         uint32_t fast_clk_rtc_sel:1;
         /** ana_clk_rtc_sel : R/W; bitpos: [31:30]; default: 0;

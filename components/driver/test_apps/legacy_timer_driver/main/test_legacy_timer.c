@@ -10,7 +10,7 @@
 #include "esp_system.h"
 #include "unity.h"
 #include "driver/timer.h"
-#include "soc/rtc.h"
+#include "esp_private/esp_clk.h"
 #include "soc/soc_caps.h"
 #include "esp_rom_sys.h"
 
@@ -857,7 +857,7 @@ TEST_CASE("Timer_clock_source", "[hw_timer]")
     // configure clock source as XTAL clock
     all_timer_pause();
     config.clk_src = TIMER_SRC_CLK_XTAL;
-    config.divider = rtc_clk_xtal_freq_get() * 1000000 / TEST_TIMER_RESOLUTION_HZ;
+    config.divider = esp_clk_xtal_freq() / TEST_TIMER_RESOLUTION_HZ;
     all_timer_init(&config, true);
     all_timer_set_alarm_value(1.2 * TEST_TIMER_RESOLUTION_HZ);
 

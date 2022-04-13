@@ -133,7 +133,7 @@ esp_err_t temperature_sensor_start(temperature_sensor_handle_t tsens)
     ESP_RETURN_ON_FALSE((tsens != NULL), ESP_ERR_INVALID_ARG, TAG, "Has not been installed");
     ESP_RETURN_ON_FALSE(tsens->tsens_hw_state == TSENS_HW_STATE_CONFIGURED, ESP_ERR_INVALID_STATE, TAG, "Is already running or has not been configured");
 #if SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC
-    if (tsens->clk_src == TEMPERATURE_SENSOR_CLK_SRC_FAST_RC) {
+    if (tsens->clk_src == TEMPERATURE_SENSOR_CLK_SRC_RC_FAST) {
         periph_rtc_dig_clk8m_enable();
     }
 #endif
@@ -149,7 +149,7 @@ esp_err_t temperature_sensor_stop(temperature_sensor_handle_t tsens)
     ESP_RETURN_ON_FALSE(tsens->tsens_hw_state == TSENS_HW_STATE_STARTED, ESP_ERR_INVALID_STATE, TAG, "Has not been started");
     temperature_sensor_ll_enable(false);
 #if SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC
-    if (tsens->clk_src == TEMPERATURE_SENSOR_CLK_SRC_FAST_RC) {
+    if (tsens->clk_src == TEMPERATURE_SENSOR_CLK_SRC_RC_FAST) {
         periph_rtc_dig_clk8m_disable();
     }
 #endif

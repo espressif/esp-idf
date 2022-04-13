@@ -135,6 +135,7 @@ static rtc_xtal_freq_t rtc_clk_xtal_freq_estimate(void)
 #if CONFIG_IDF_ENV_FPGA
     return RTC_XTAL_FREQ_40M;
 #endif // CONFIG_IDF_ENV_FPGA
+    rtc_xtal_freq_t xtal_freq;
     /* Enable 8M/256 clock if needed */
     const bool clk_8m_enabled = rtc_clk_8m_enabled();
     const bool clk_8md256_enabled = rtc_clk_8md256_enabled();
@@ -151,20 +152,26 @@ static rtc_xtal_freq_t rtc_clk_xtal_freq_estimate(void)
     /* Guess the XTAL type. For now, only 40 and 26MHz are supported.
      */
     switch (freq_mhz) {
-        case 21 ... 31:
-            return RTC_XTAL_FREQ_26M;
-        case 32 ... 33:
-            ESP_HW_LOGW(TAG, "Potentially bogus XTAL frequency: %d MHz, guessing 26 MHz", freq_mhz);
-            return RTC_XTAL_FREQ_26M;
-        case 34 ... 35:
-            ESP_HW_LOGW(TAG, "Potentially bogus XTAL frequency: %d MHz, guessing 40 MHz", freq_mhz);
-            return RTC_XTAL_FREQ_40M;
-        case 36 ... 45:
-            return RTC_XTAL_FREQ_40M;
-        default:
-            ESP_HW_LOGW(TAG, "Bogus XTAL frequency: %d MHz", freq_mhz);
-            return RTC_XTAL_FREQ_AUTO;
+    case 21 ... 31:
+        xtal_freq = RTC_XTAL_FREQ_26M;
+        break;
+    case 32 ... 33:
+        ESP_HW_LOGW(TAG, "Potentially bogus XTAL frequency: %d MHz, guessing 26 MHz", freq_mhz);
+        xtal_freq = RTC_XTAL_FREQ_26M;
+        break;
+    case 34 ... 35:
+        ESP_HW_LOGW(TAG, "Potentially bogus XTAL frequency: %d MHz, guessing 40 MHz", freq_mhz);
+        xtal_freq = RTC_XTAL_FREQ_40M;
+        break;
+    case 36 ... 45:
+        xtal_freq = RTC_XTAL_FREQ_40M;
+        break;
+    default:
+        ESP_HW_LOGW(TAG, "Bogus XTAL frequency: %d MHz", freq_mhz);
+        xtal_freq = RTC_XTAL_FREQ_AUTO;
+        break;
     }
     /* Restore 8M and 8md256 clocks to original state */
     rtc_clk_8m_enable(clk_8m_enabled, clk_8md256_enabled);
+    return xtal_freq;
 }

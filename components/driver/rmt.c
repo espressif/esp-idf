@@ -21,7 +21,7 @@
 #include "soc/soc_memory_layout.h"
 #include "soc/rmt_periph.h"
 #include "soc/rmt_struct.h"
-#include "soc/rtc.h"
+#include "esp_private/esp_clk.h"
 #include "hal/rmt_hal.h"
 #include "hal/rmt_ll.h"
 #include "hal/gpio_hal.h"
@@ -602,7 +602,7 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
     if (rmt_param->flags & RMT_CHANNEL_FLAGS_AWARE_DFS) {
 #if SOC_RMT_SUPPORT_XTAL
         // clock src: XTAL_CLK
-        rmt_source_clk_hz = rtc_clk_xtal_freq_get() * 1000000;
+        rmt_source_clk_hz = esp_clk_xtal_freq();
         rmt_ll_set_group_clock_src(dev, channel, RMT_CLK_SRC_XTAL, 1, 0, 0);
 #elif SOC_RMT_SUPPORT_REF_TICK
         // clock src: REF_CLK

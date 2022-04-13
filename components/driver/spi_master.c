@@ -121,8 +121,8 @@ We have two bits to control the interrupt:
 #include "driver/gpio.h"
 #include "hal/spi_hal.h"
 #include "esp_heap_caps.h"
-//Temporarily include soc/rtc.h, will be replaced by clock tree API
-#include "soc/rtc.h"
+//Temporarily include esp_clk.h, will be replaced by clock tree API
+#include "esp_private/esp_clk.h"
 
 
 typedef struct spi_device_t spi_device_t;
@@ -320,7 +320,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     spi_host_t *host = bus_driver_ctx[host_id];
     const spi_bus_attr_t* bus_attr = host->bus_attr;
     SPI_CHECK(dev_config->spics_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(dev_config->spics_io_num), "spics pin invalid", ESP_ERR_INVALID_ARG);
-    uint32_t apb_clk_freq_hz = rtc_clk_apb_freq_get();
+    uint32_t apb_clk_freq_hz = esp_clk_apb_freq();
     assert((apb_clk_freq_hz == 80 * 1000 * 1000) || (apb_clk_freq_hz == 40 * 1000 * 1000) || (apb_clk_freq_hz == 48 * 1000 * 1000));
     SPI_CHECK((dev_config->clock_speed_hz > 0) && (dev_config->clock_speed_hz <= apb_clk_freq_hz) , "invalid sclk speed", ESP_ERR_INVALID_ARG);
 #ifdef CONFIG_IDF_TARGET_ESP32
@@ -349,7 +349,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     int duty_cycle = (dev_config->duty_cycle_pos==0) ? 128 : dev_config->duty_cycle_pos;
     int use_gpio = !(bus_attr->flags & SPICOMMON_BUSFLAG_IOMUX_PINS);
     spi_hal_timing_param_t timing_param = {
-        .clk_src_hz = rtc_clk_apb_freq_get(),
+        .clk_src_hz = esp_clk_apb_freq(),
         .clk_sel = SPI_CLK_APB,     //Currently, SPI driver only set SPI to APB clock. SPI is not supposed to be used during sleep modes.
         .half_duplex = half_duplex,
         .no_compensate = no_compensate,

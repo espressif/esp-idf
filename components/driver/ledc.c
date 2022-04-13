@@ -11,7 +11,7 @@
 #include "esp_check.h"
 #include "soc/gpio_periph.h"
 #include "soc/ledc_periph.h"
-#include "soc/rtc.h"
+#include "esp_private/esp_clk.h"
 #include "soc/soc_caps.h"
 #include "hal/ledc_hal.h"
 #include "hal/gpio_hal.h"
@@ -120,7 +120,7 @@ static uint32_t ledc_get_src_clk_freq(ledc_clk_cfg_t clk_cfg)
 #endif
 #if SOC_LEDC_SUPPORT_XTAL_CLOCK
     } else if (clk_cfg == LEDC_USE_XTAL_CLK) {
-        src_clk_freq = rtc_clk_xtal_freq_get() * 1000000;
+        src_clk_freq = esp_clk_xtal_freq();
 #endif
     }
     return src_clk_freq;
@@ -140,7 +140,7 @@ static uint32_t ledc_get_glb_clk_freq(ledc_slow_clk_sel_t clk_cfg)
             break;
 #if SOC_LEDC_SUPPORT_XTAL_CLOCK
         case LEDC_SLOW_CLK_XTAL:
-            src_clk_freq = rtc_clk_xtal_freq_get() * 1000000;
+            src_clk_freq = esp_clk_xtal_freq();
             break;
 #endif
     }

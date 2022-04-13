@@ -12,7 +12,7 @@
 #include "esp_pm.h"
 #include "esp_sleep.h"
 #include "esp_private/pm_impl.h"
-#include "soc/rtc.h"
+#include "esp_private/esp_clk.h"
 #include "esp_wpa.h"
 #include "esp_netif.h"
 #include "esp_coexist_internal.h"
@@ -264,8 +264,8 @@ void wifi_apb80m_request(void)
 {
     assert(s_wifi_modem_sleep_lock);
     esp_pm_lock_acquire(s_wifi_modem_sleep_lock);
-    if (rtc_clk_apb_freq_get() != APB_CLK_FREQ) {
-        ESP_LOGE(__func__, "WiFi needs 80MHz APB frequency to work, but got %dHz", rtc_clk_apb_freq_get());
+    if (esp_clk_apb_freq() != APB_CLK_FREQ) {
+        ESP_LOGE(__func__, "WiFi needs 80MHz APB frequency to work, but got %dHz", esp_clk_apb_freq());
     }
 }
 

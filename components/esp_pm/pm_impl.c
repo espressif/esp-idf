@@ -254,7 +254,7 @@ esp_err_t esp_pm_configure(const void* vconfig)
         return ESP_ERR_INVALID_ARG;
     }
 
-    int xtal_freq_mhz = (int) rtc_clk_xtal_freq_get();
+    int xtal_freq_mhz = esp_clk_xtal_freq() / MHZ;
     if (min_freq_mhz < xtal_freq_mhz && min_freq_mhz * MHZ / REF_CLK_FREQ < REF_CLK_DIV_MIN) {
         ESP_LOGW(TAG, "min_freq_mhz should be >= %d", REF_CLK_FREQ * REF_CLK_DIV_MIN / MHZ);
         return ESP_ERR_INVALID_ARG;
@@ -768,7 +768,7 @@ void esp_pm_impl_init(void)
     }
 
 #ifdef CONFIG_PM_DFS_INIT_AUTO
-    int xtal_freq = (int) rtc_clk_xtal_freq_get();
+    int xtal_freq_mhz = esp_clk_xtal_freq() / MHZ;
 #if CONFIG_IDF_TARGET_ESP32
     esp_pm_config_esp32_t cfg = {
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -783,7 +783,7 @@ void esp_pm_impl_init(void)
     esp_pm_config_esp32c2_t cfg = {
 #endif
         .max_freq_mhz = DEFAULT_CPU_FREQ,
-        .min_freq_mhz = xtal_freq,
+        .min_freq_mhz = xtal_freq_mhz,
     };
 
     esp_pm_configure(&cfg);

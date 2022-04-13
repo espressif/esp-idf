@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "soc/clk_tree_defs.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -14,13 +16,7 @@ extern "C" {
  * @brief RMT group clock source
  * @note User should select the clock source based on the power and resolution requirement
  */
-typedef enum {
-    RMT_CLK_SRC_NONE,     /*!< No clock source is selected */
-    RMT_CLK_SRC_REFTICK,  /*!< Select REF_TICK as the source clock */
-    RMT_CLK_SRC_APB,      /*!< Select APB as the source clock */
-    RMT_CLK_SRC_FAST_RC,  /*!< Select internal fast RC oscillator as the source clock */
-    RMT_CLK_SRC_XTAL,     /*!< Select XTAL as the source clock */
-} rmt_clock_source_t;
+typedef soc_periph_rmt_clk_src_t rmt_clock_source_t;
 
 /**
  * @brief The layout of RMT symbol stored in memory, which is decided by the hardware design
