@@ -68,6 +68,10 @@ Breaking change for "esp_crt_bundle_set" API
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 :cpp:func:`esp_crt_bundle_set()` API now requires one additional argument named ``bundle_size``. The return type of the API has also been changed to :cpp:type:`esp_err_t` from ``void``.
 
+Breaking change for "esp_ds_rsa_sign" API
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+:cpp:func:`esp_ds_rsa_sign()` API now requires one less argument. The argument ``mode`` is no longer required.
+
 ESP HTTPS SERVER
 -----------------
 
