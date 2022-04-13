@@ -166,6 +166,52 @@ static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_f
     chip->os_func->end(chip->os_func_data);
 }
 
+static bool use_bus_lock(int host_id)
+{
+    if (host_id != SPI1_HOST) {
+        return true;
+    }
+#if CONFIG_SPI_FLASH_SHARE_SPI1_BUS
+    return true;
+#else
+    return false;
+#endif
+}
+
+static esp_err_t acquire_spi_device(const esp_flash_spi_device_config_t *config, int* out_dev_id, spi_bus_lock_dev_handle_t* out_dev_handle)
+{
+    esp_err_t ret = ESP_OK;
+    int dev_id = -1;
+    spi_bus_lock_dev_handle_t dev_handle = NULL;
+
+    if (use_bus_lock(config->host_id)) {
+        spi_bus_lock_handle_t lock = spi_bus_lock_get_by_id(config->host_id);
+        spi_bus_lock_dev_config_t config = {.flags = SPI_BUS_LOCK_DEV_FLAG_CS_REQUIRED};
+
+        ret = spi_bus_lock_register_dev(lock, &config, &dev_handle);
+        if (ret == ESP_OK) {
+            dev_id = spi_bus_lock_get_dev_id(dev_handle);
+        } else if (ret == ESP_ERR_NOT_SUPPORTED) {
+            ESP_LOGE(TAG, "No free CS.");
+        } else if (ret == ESP_ERR_INVALID_ARG) {
+            ESP_LOGE(TAG, "Bus lock not initialized (check CONFIG_SPI_FLASH_SHARE_SPI1_BUS).");
+        }
+    } else {
+        const bool is_main_flash = (config->host_id == SPI1_HOST && config->cs_id == 0);
+        if (config->cs_id >= SOC_SPI_PERIPH_CS_NUM(config->host_id) || config->cs_id < 0 || is_main_flash) {
+            ESP_LOGE(TAG, "Not valid CS.");
+            ret = ESP_ERR_INVALID_ARG;
+        } else {
+            dev_id = config->cs_id;
+            assert(dev_handle == NULL);
+        }
+    }
+
+    *out_dev_handle = dev_handle;
+    *out_dev_id = dev_id;
+    return ret;
+}
+
 esp_err_t spi_bus_add_flash_device(esp_flash_t **out_chip, const esp_flash_spi_device_config_t *config)
 {
     if (out_chip == NULL) {
@@ -197,25 +243,22 @@ esp_err_t spi_bus_add_flash_device(esp_flash_t **out_chip, const esp_flash_spi_d
         goto fail;
     }
 
-    int dev_id = -1;
-    esp_err_t err = esp_flash_init_os_functions(chip, config->host_id, &dev_id);
-    if (err == ESP_ERR_NOT_SUPPORTED) {
-        ESP_LOGE(TAG, "Init os functions failed! No free CS.");
-    } else if (err == ESP_ERR_INVALID_ARG) {
-        ESP_LOGE(TAG, "Init os functions failed! Bus lock not initialized (check CONFIG_SPI_FLASH_SHARE_SPI1_BUS).");
-    }
+    int dev_id;
+    spi_bus_lock_dev_handle_t dev_handle;
+    esp_err_t err = acquire_spi_device(config, &dev_id, &dev_handle);
     if (err != ESP_OK) {
         ret = err;
         goto fail;
     }
-    // When `CONFIG_SPI_FLASH_SHARE_SPI1_BUS` is not enabled on SPI1 bus, the
-    // `esp_flash_init_os_functions` will not be able to assign a new device ID. In this case, we
-    // use the `cs_id` in the config structure.
-    if (dev_id == -1 && config->host_id == SPI1_HOST) {
-        dev_id = config->cs_id;
-    }
-    assert(dev_id < SOC_SPI_PERIPH_CS_NUM(config->host_id) && dev_id >= 0);
 
+    err = esp_flash_init_os_functions(chip, config->host_id, dev_handle);
+    if (err != ESP_OK) {
+        ret = err;
+        goto fail;
+    }
+
+    //avoid conflicts with main flash
+    assert(config->host_id != SPI1_HOST || dev_id != 0);
     bool use_iomux = spicommon_bus_using_iomux(config->host_id);
     memspi_host_config_t host_cfg = {
         .host_id = config->host_id,
@@ -245,7 +288,12 @@ esp_err_t spi_bus_remove_flash_device(esp_flash_t *chip)
     if (chip==NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    esp_flash_deinit_os_functions(chip);
+
+    spi_bus_lock_dev_handle_t dev_handle = NULL;
+    esp_flash_deinit_os_functions(chip, &dev_handle);
+    if (dev_handle) {
+        spi_bus_lock_unregister_dev(dev_handle);
+    }
     free(chip->host);
     free(chip);
     return ESP_OK;
