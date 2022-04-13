@@ -5,9 +5,6 @@ ARG DEBIAN_FRONTEND=noninteractive
 # We need libpython2.7 due to GDB tools
 RUN : \
   && apt-get update \
-  && apt-get install -y software-properties-common \
-  && add-apt-repository -y ppa:git-core/ppa \
-  && apt-get update \
   && apt-get install -y \
     apt-utils \
     bison \
