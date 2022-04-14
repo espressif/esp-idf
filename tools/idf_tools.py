@@ -1644,7 +1644,7 @@ def get_requirements(new_features):  # type: (str) -> list[str]
 
 def get_constraints(idf_version):  # type: (str) -> str
     constraint_file = 'espidf.constraints.v{}.txt'.format(idf_version)
-    constraint_path = os.path.join(os.path.expanduser(IDF_TOOLS_PATH_DEFAULT), constraint_file)
+    constraint_path = os.path.join(global_idf_tools_path or '', constraint_file)
     constraint_url = '/'.join([IDF_DL_URL, constraint_file])
     temp_path = constraint_path + '.tmp'
 
