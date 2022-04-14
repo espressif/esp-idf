@@ -127,6 +127,16 @@ esp_err_t esp_transport_ws_set_config(esp_transport_handle_t t, const esp_transp
 int esp_transport_ws_send_raw(esp_transport_handle_t t, ws_transport_opcodes_t opcode, const char *b, int len, int timeout_ms);
 
 /**
+ * @brief               Returns websocket fin flag for last received data
+ *
+ * @param t             websocket transport handle
+ *
+ * @return
+ *      - Fin flag as a boolean
+ */
+bool esp_transport_ws_get_fin_flag(esp_transport_handle_t t);
+
+/**
  * @brief               Returns websocket op-code for last received data
  *
  * @param t             websocket transport handle
