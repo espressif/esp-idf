@@ -349,9 +349,7 @@ static void esp_dpp_task(void *pvParameters )
 
     for (;;) {
         if (xQueueReceive(s_dpp_evt_queue, &evt, portMAX_DELAY) == pdTRUE) {
-            if (evt->id < SIG_DPP_MAX) {
-                DPP_API_LOCK();
-            } else {
+            if (evt->id >= SIG_DPP_MAX) {
                 os_free(evt);
                 continue;
             }
@@ -394,7 +392,6 @@ static void esp_dpp_task(void *pvParameters )
             }
 
             os_free(evt);
-            DPP_API_UNLOCK();
 
             if (task_del) {
                 break;
