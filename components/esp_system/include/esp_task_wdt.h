@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_err.h"
@@ -15,30 +16,44 @@ extern "C" {
 #endif
 
 /**
+ * @brief Task Watchdog Timer (TWDT) configuration structure
+ */
+typedef struct {
+    uint32_t timeout_ms;        /**< TWDT timeout duration in milliseconds */
+    uint32_t idle_core_mask;    /**< Mask of the cores who's idle task should be subscribed on initialization */
+    bool trigger_panic;         /**< Trigger panic when timeout occurs */
+} esp_task_wdt_config_t;
+
+/**
+ * @brief Task Watchdog Timer (TWDT) user handle
+ */
+typedef struct esp_task_wdt_user_handle_s * esp_task_wdt_user_handle_t;
+
+/**
  * @brief  Initialize the Task Watchdog Timer (TWDT)
  *
  * This function configures and initializes the TWDT. If the TWDT is already initialized when this function is called,
- * this function will update the TWDT's timeout period and panic configurations instead. After initializing the TWDT,
- * any task can elect to be watched by the TWDT by subscribing to it using esp_task_wdt_add().
+ * this function will update the TWDT's current configuration. This funciton will also subscribe the idle tasks if
+ * configured to do so. For other tasks, users can subscribe them using esp_task_wdt_add() or esp_task_wdt_add_user().
  *
- * @note esp_task_wdt_init() must only be called after the scheduler started
- * @param[in] timeout Timeout period of TWDT in seconds
- * @param[in] panic Flag that controls whether the panic handler will be executed when the TWDT times out
+ * @note esp_task_wdt_init() must only be called after the scheduler is started
+ * @param[in] config Configuration structure
  * @return
  *  - ESP_OK: Initialization was successful
- *  - ESP_ERR_NO_MEM: Initialization failed due insufficient memory
+ *  - Other: Failed to initialize TWDT
  */
-esp_err_t esp_task_wdt_init(uint32_t timeout, bool panic);
+esp_err_t esp_task_wdt_init(const esp_task_wdt_config_t *config);
 
 /**
  * @brief   Deinitialize the Task Watchdog Timer (TWDT)
  *
- * This function will deinitialize the TWDT. Calling this function whilst tasks are still subscribed to the TWDT, or
- * when the TWDT is already deinitialized, will result in an error code being returned.
+ * This function will deinitialize the TWDT, and unsubscribe any idle tasks. Calling this function whilst other tasks
+ * are still subscribed to the TWDT, or when the TWDT is already deinitialized, will result in an error code being
+ * returned.
  *
  * @return
- *      - ESP_OK: TWDT successfully deinitialized
- *      - ESP_ERR_INVALID_STATE: TWDT was never initialized, or tasks are still subscribed
+ *  - ESP_OK: TWDT successfully deinitialized
+ *  - Other: Failed to deinitialize TWDT
  */
 esp_err_t esp_task_wdt_deinit(void);
 
@@ -46,66 +61,94 @@ esp_err_t esp_task_wdt_deinit(void);
  * @brief Subscribe a task to the Task Watchdog Timer (TWDT)
  *
  * This function subscribes a task to the TWDT. Each subscribed task must periodically call esp_task_wdt_reset() to
- * prevent the TWDT from elapsing its timeout period. Failure to do so will result in a TWDT timeout. If the task being
- * subscribed is one of the Idle Tasks, this function will automatically enable esp_task_wdt_reset() to called from the
- * Idle Hook of the Idle Task.
+ * prevent the TWDT from elapsing its timeout period. Failure to do so will result in a TWDT timeout.
  *
- * Calling this function whilst the TWDT is uninitialized or attempting to subscribe an already subscribed task will
- * result in an error code being returned.
- *
- * @param handle Handle of the task. Input NULL to subscribe the current running task to the TWDT
+ * @param task_handle Handle of the task. Input NULL to subscribe the current running task to the TWDT
  * @return
  *  - ESP_OK: Successfully subscribed the task to the TWDT
- *  - ESP_ERR_INVALID_ARG: The task is already subscribed
- *  - ESP_ERR_NO_MEM: Could not subscribe the insufficient memory
- *  - ESP_ERR_INVALID_STATE: TWDT was never initialized
+ *  - Other: Failed to subscribe task
  */
-esp_err_t esp_task_wdt_add(TaskHandle_t handle);
+esp_err_t esp_task_wdt_add(TaskHandle_t task_handle);
+
+/**
+ * @brief Subscribe a user to the Task Watchdog Timer (TWDT)
+ *
+ * This function subscribes a user to the TWDT. A user of the TWDT is usually a function that needs to run
+ * periodically. Each subscribed user must periodically call esp_task_wdt_reset_user() to prevent the TWDT from elapsing
+ * its timeout period. Failure to do so will result in a TWDT timeout.
+ *
+ * @param[in] user_name String to identify the user
+ * @param[out] user_handle_ret Handle of the user
+ * @return
+ *  - ESP_OK: Successfully subscribed the user to the TWDT
+ *  - Other: Failed to subscribe user
+ */
+esp_err_t esp_task_wdt_add_user(const char *user_name, esp_task_wdt_user_handle_t *user_handle_ret);
 
 /**
  * @brief Reset the Task Watchdog Timer (TWDT) on behalf of the currently running task
  *
  * This function will reset the TWDT on behalf of the currently running task. Each subscribed task must periodically
  * call this function to prevent the TWDT from timing out. If one or more subscribed tasks fail to reset the TWDT on
- * their own behalf, a TWDT timeout will occur. If the IDLE tasks have been subscribed to the TWDT, they will
- * automatically call this function from their idle hooks. Calling this function from a task that has not subscribed to
- * the TWDT, or when the TWDT is uninitialized will result in an error code being returned.
+ * their own behalf, a TWDT timeout will occur.
  *
  * @return
  *  - ESP_OK: Successfully reset the TWDT on behalf of the currently running task
- *  - ESP_ERR_NOT_FOUND: The task is not subscribed
- *  - ESP_ERR_INVALID_STATE: TWDT was never initialized
+ *  - Other: Failed to reset
  */
 esp_err_t esp_task_wdt_reset(void);
+
+/**
+ * @brief Reset the Task Watchdog Timer (TWDT) on behalf of a user
+ *
+ * This function will reset the TWDT on behalf of a user. Each subscribed user must periodically call this function to
+ * prevent the TWDT from timing out. If one or more subscribed users fail to reset the TWDT on their own behalf, a TWDT
+ * timeout will occur.
+ *
+ * @param[in] user_handle User handle
+ *  - ESP_OK: Successfully reset the TWDT on behalf of the user
+ *  - Other: Failed to reset
+ */
+esp_err_t esp_task_wdt_reset_user(esp_task_wdt_user_handle_t user_handle);
 
 /**
  * @brief Unsubscribes a task from the Task Watchdog Timer (TWDT)
  *
  * This function will unsubscribe a task from the TWDT. After being unsubscribed, the task should no longer call
- * esp_task_wdt_reset(). If the task is an IDLE task, this function will automatically disable the calling of
- * esp_task_wdt_reset() from the Idle Hook. Calling this function whilst the TWDT is uninitialized or attempting to
- * unsubscribe an already unsubscribed task from the TWDT will result in an error code being returned.
+ * esp_task_wdt_reset().
  *
- * @param[in] handle Handle of the task. Input NULL to unsubscribe the current running task.
+ * @param[in] task_handle Handle of the task. Input NULL to unsubscribe the current running task.
  * @return
  *  - ESP_OK: Successfully unsubscribed the task from the TWDT
- *  - ESP_ERR_NOT_FOUND: The task is not subscribed
- *  - ESP_ERR_INVALID_STATE: TWDT was never initialized
+ *  - Other: Failed to unsubscribe task
  */
-esp_err_t esp_task_wdt_delete(TaskHandle_t handle);
+esp_err_t esp_task_wdt_delete(TaskHandle_t task_handle);
+
+/**
+ * @brief Unsubscribes a user from the Task Watchdog Timer (TWDT)
+ *
+ * This function will unsubscribe a user from the TWDT. After being unsubscribed, the user should no longer call
+ * esp_task_wdt_reset_user().
+ *
+ * @param[in] user_handle User handle
+ * @return
+ *  - ESP_OK: Successfully unsubscribed the user from the TWDT
+ *  - Other: Failed to unsubscribe user
+ */
+esp_err_t esp_task_wdt_delete_user(esp_task_wdt_user_handle_t user_handle);
 
 /**
  * @brief Query whether a task is subscribed to the Task Watchdog Timer (TWDT)
  *
  * This function will query whether a task is currently subscribed to the TWDT, or whether the TWDT is initialized.
  *
- * @param[in] handle Handle of the task. Input NULL to query the current running task.
+ * @param[in] task_handle Handle of the task. Input NULL to query the current running task.
  * @return:
  *  - ESP_OK: The task is currently subscribed to the TWDT
  *  - ESP_ERR_NOT_FOUND: The task is not subscribed
  *  - ESP_ERR_INVALID_STATE: TWDT was never initialized
  */
-esp_err_t esp_task_wdt_status(TaskHandle_t handle);
+esp_err_t esp_task_wdt_status(TaskHandle_t task_handle);
 
 #ifdef __cplusplus
 }

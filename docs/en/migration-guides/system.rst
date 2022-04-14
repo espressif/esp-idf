@@ -86,3 +86,11 @@ Rename the image SPI speed enum definition.
 - Enum ``ESP_IMAGE_SPI_SPEED_40M`` has been renamed to ``ESP_IMAGE_SPI_SPEED_DIV_2``.
 - Enum ``ESP_IMAGE_SPI_SPEED_26M`` has been renamed to ``ESP_IMAGE_SPI_SPEED_DIV_3``.
 - Enum ``ESP_IMAGE_SPI_SPEED_20M`` has been renamed to ``ESP_IMAGE_SPI_SPEED_DIV_4``.
+
+Task Watchdog Timers
+--------------------
+
+- The API for ``esp_task_wdt_init()`` has changed as follows
+
+    - Configuration is now passed as a configuration structure.
+    - The function will now handle subscribing of the idle tasks if configured to do so
