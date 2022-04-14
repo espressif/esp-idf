@@ -311,7 +311,7 @@ config BT_NIMBLE_GAP_DEVICE_NAME_MAX_LEN
 config BT_NIMBLE_ATT_PREFERRED_MTU
     int "Preferred MTU size in octets"
     depends on BT_NIMBLE_ENABLED
-    default 512
+    default 256
     help
         This is the default value of ATT MTU indicated by the device during an ATT MTU exchange.
         This value can be changed using API ble_att_set_preferred_mtu()
@@ -333,7 +333,7 @@ config BT_NIMBLE_ACL_BUF_COUNT
 config BT_NIMBLE_ACL_BUF_SIZE
     int "ACL Buffer size"
     depends on BT_NIMBLE_ENABLED
-    default 251
+    default 255
     help
         This is the maximum size of the data portion of HCI ACL data packets.
         It does not include the HCI data header (of 4 bytes)
