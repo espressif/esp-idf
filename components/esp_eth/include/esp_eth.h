@@ -126,19 +126,22 @@ typedef struct {
 *
 */
 typedef enum {
-    ETH_CMD_G_MAC_ADDR,    /*!< Get MAC address */
-    ETH_CMD_S_MAC_ADDR,    /*!< Set MAC address */
-    ETH_CMD_G_PHY_ADDR,    /*!< Get PHY address */
-    ETH_CMD_S_PHY_ADDR,    /*!< Set PHY address */
-    ETH_CMD_G_AUTONEGO,    /*!< Get PHY Auto Negotiation */
-    ETH_CMD_S_AUTONEGO,    /*!< Set PHY Auto Negotiation */
-    ETH_CMD_G_SPEED,       /*!< Get Speed */
-    ETH_CMD_S_SPEED,       /*!< Set Speed */
-    ETH_CMD_S_PROMISCUOUS, /*!< Set promiscuous mode */
-    ETH_CMD_S_FLOW_CTRL,   /*!< Set flow control */
-    ETH_CMD_G_DUPLEX_MODE, /*!< Get Duplex mode */
-    ETH_CMD_S_DUPLEX_MODE, /*!< Set Duplex mode */
-    ETH_CMD_S_PHY_LOOPBACK,/*!< Set PHY loopback */
+    ETH_CMD_G_MAC_ADDR,               /*!< Get MAC address */
+    ETH_CMD_S_MAC_ADDR,               /*!< Set MAC address */
+    ETH_CMD_G_PHY_ADDR,               /*!< Get PHY address */
+    ETH_CMD_S_PHY_ADDR,               /*!< Set PHY address */
+    ETH_CMD_G_AUTONEGO,               /*!< Get PHY Auto Negotiation */
+    ETH_CMD_S_AUTONEGO,               /*!< Set PHY Auto Negotiation */
+    ETH_CMD_G_SPEED,                  /*!< Get Speed */
+    ETH_CMD_S_SPEED,                  /*!< Set Speed */
+    ETH_CMD_S_PROMISCUOUS,            /*!< Set promiscuous mode */
+    ETH_CMD_S_FLOW_CTRL,              /*!< Set flow control */
+    ETH_CMD_G_DUPLEX_MODE,            /*!< Get Duplex mode */
+    ETH_CMD_S_DUPLEX_MODE,            /*!< Set Duplex mode */
+    ETH_CMD_S_PHY_LOOPBACK,           /*!< Set PHY loopback */
+
+    ETH_CMD_CUSTOM_MAC_CMDS = 0x0FFF, // Offset for start of MAC custom commands
+    ETH_CMD_CUSTOM_PHY_CMDS = 0x1FFF, // Offset for start of PHY custom commands
 } esp_eth_io_cmd_t;
 
 /**
@@ -245,9 +248,25 @@ esp_err_t esp_eth_update_input_path(
 * @return
 *       - ESP_OK: transmit frame buffer successfully
 *       - ESP_ERR_INVALID_ARG: transmit frame buffer failed because of some invalid argument
+*       - ESP_ERR_INVALID_STATE: invalid driver state (e.i. driver is not started)
+*       - ESP_ERR_TIMEOUT: transmit frame buffer failed because HW was not get available in predefined period
 *       - ESP_FAIL: transmit frame buffer failed because some other error occurred
 */
 esp_err_t esp_eth_transmit(esp_eth_handle_t hdl, void *buf, size_t length);
+
+/**
+* @brief Special Transmit with variable number of arguments
+*
+* @param[in] hdl handle of Ethernet driver
+* @param[in] argc number variable arguments
+* @param ... variable arguments
+* @return
+*       - ESP_OK: transmit successfull
+*       - ESP_ERR_INVALID_STATE: invalid driver state (e.i. driver is not started)
+*       - ESP_ERR_TIMEOUT: transmit frame buffer failed because HW was not get available in predefined period
+*       - ESP_FAIL: transmit frame buffer failed because some other error occurred
+*/
+esp_err_t esp_eth_transmit_vargs(esp_eth_handle_t hdl, uint32_t argc, ...);
 
 /**
 * @brief General Receive is deprecated and shall not be accessed from app code,
@@ -285,7 +304,7 @@ esp_err_t esp_eth_receive(esp_eth_handle_t hdl, uint8_t *buf, uint32_t *length) 
 *       - ESP_FAIL: process io command failed because some other error occurred
 *       - ESP_ERR_NOT_SUPPORTED: requested feature is not supported
 *
-* The following IO control commands are supported:
+* The following common IO control commands are supported:
 * @li @c ETH_CMD_S_MAC_ADDR sets Ethernet interface MAC address. @c data argument is pointer to MAC address buffer with expected size of 6 bytes.
 * @li @c ETH_CMD_G_MAC_ADDR gets Ethernet interface MAC address. @c data argument is pointer to a buffer to which MAC address is to be copied. The buffer size must be at least 6 bytes.
 * @li @c ETH_CMD_S_PHY_ADDR sets PHY address in range of <0-31>. @c data argument is pointer to memory of uint32_t datatype from where the configuration option is read.
@@ -303,6 +322,7 @@ esp_err_t esp_eth_receive(esp_eth_handle_t hdl, uint8_t *buf, uint32_t *length) 
 * @li @c ETH_CMD_G_DUPLEX_MODE gets current Ethernet link duplex mode.  @c data argument is pointer to memory of eth_duplex_t datatype to which the duplex mode is to be stored.
 * @li @c ETH_CMD_S_PHY_LOOPBACK sets/resets PHY to/from loopback mode. @c data argument is pointer to memory of bool datatype from which the configuration option is read.
 *
+* @li Note that additional control commands may be available for specific MAC or PHY chips. Please consult specific MAC or PHY documentation or driver code.
 */
 esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data);
 

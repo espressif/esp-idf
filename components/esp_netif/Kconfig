@@ -32,6 +32,7 @@ menu "ESP NETIF Adapter"
 
     config ESP_NETIF_L2_TAP
         bool "Enable netif L2 TAP support"
+        select ETH_TRANSMIT_MUTEX
         help
             A user program can read/write link layer (L2) frames from/to ESP TAP device.
             The ESP TAP device can be currently associated only with Ethernet physical interfaces.
