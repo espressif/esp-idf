@@ -100,6 +100,7 @@ static int write_and_get_response(mbedtls_net_context *sock_fd, unsigned char *b
 
     do {
         len = DATA_SIZE - 1;
+        memset(data, 0, DATA_SIZE);
         ret = mbedtls_net_recv(sock_fd, data, len);
 
         if (ret <= 0) {
@@ -153,6 +154,7 @@ static int write_ssl_and_get_response(mbedtls_ssl_context *ssl, unsigned char *b
 
     do {
         len = DATA_SIZE - 1;
+        memset(data, 0, DATA_SIZE);
         ret = mbedtls_ssl_read(ssl, data, len);
 
         if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
