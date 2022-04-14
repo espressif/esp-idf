@@ -74,6 +74,7 @@
 
 #define START_PAYLOAD_MAX      20
 #define CONT_PAYLOAD_MAX       23
+#define START_LAST_SEG_MAX     2
 
 #define START_LAST_SEG(gpc)    (gpc >> 2)
 #define CONT_SEG_INDEX(gpc)    (gpc >> 2)
@@ -1560,6 +1561,12 @@ static void gen_prov_start(struct prov_rx *rx, struct net_buf_simple *buf)
     if (link.rx.buf->len < 1) {
         BT_ERR("Ignoring zero-length provisioning PDU");
         prov_send_fail_msg(PROV_ERR_NVAL_FMT);
+        return;
+    }
+
+    if (START_LAST_SEG(rx->gpc) > START_LAST_SEG_MAX) {
+        BT_ERR("Invalid SegN 0x%02x", START_LAST_SEG(rx->gpc));
+        prov_send_fail_msg(PROV_ERR_UNEXP_ERR);
         return;
     }
 
