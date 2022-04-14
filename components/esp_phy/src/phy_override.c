@@ -39,12 +39,12 @@ void set_xpd_sar(bool en)
 }
 
 //add spinlock protection
-void phy_i2c_enter_critical(void)
+IRAM_ATTR void phy_i2c_enter_critical(void)
 {
     regi2c_enter_critical();
 }
 
-void phy_i2c_exit_critical(void)
+IRAM_ATTR void phy_i2c_exit_critical(void)
 {
     regi2c_exit_critical();
 }
