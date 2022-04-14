@@ -12,8 +12,10 @@ endif()
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS . esp-tls-crypto
                     PRIV_INCLUDE_DIRS "private_include"
-                    REQUIRES mbedtls
-                    PRIV_REQUIRES lwip http_parser)
+                    # lwip and mbedtls are public requirements becasue esp_tls.h
+                    # includes sys/socket.h and mbedtls header files.
+                    REQUIRES mbedtls lwip
+                    PRIV_REQUIRES http_parser)
 
 if(CONFIG_ESP_TLS_USING_WOLFSSL)
     idf_component_get_property(wolfssl esp-wolfssl COMPONENT_LIB)

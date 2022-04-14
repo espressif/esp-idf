@@ -162,9 +162,8 @@ function(__build_init idf_path)
     else()
         # Set components required by all other components in the build
         #
-        # - lwip is here so that #include <sys/socket.h> works without any special provisions
         # - esp_hw_support is here for backward compatibility
-        set(requires_common cxx newlib freertos esp_hw_support heap log lwip soc hal esp_rom esp_common esp_system)
+        set(requires_common cxx newlib freertos esp_hw_support heap log soc hal esp_rom esp_common esp_system)
         idf_build_set_property(__COMPONENT_REQUIRES_COMMON "${requires_common}")
     endif()
 
