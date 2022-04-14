@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "nvs_storage.hpp"
 
 #ifndef ESP_PLATFORM
@@ -413,17 +405,17 @@ esp_err_t Storage::createOrOpenNamespace(const char* nsName, bool canCreate, uin
             return ESP_ERR_NVS_NOT_ENOUGH_SPACE;
         }
 
-        NamespaceEntry* entry = new (std::nothrow) NamespaceEntry;
-        if (!entry) {
-            return ESP_ERR_NO_MEM;
-        }
-
         auto err = writeItem(Page::NS_INDEX, ItemType::U8, nsName, &ns, sizeof(ns));
         if (err != ESP_OK) {
             return err;
         }
         mNamespaceUsage.set(ns, true);
         nsIndex = ns;
+
+        NamespaceEntry* entry = new (std::nothrow) NamespaceEntry;
+        if (!entry) {
+            return ESP_ERR_NO_MEM;
+        }
 
         entry->mIndex = ns;
         strncpy(entry->mName, nsName, sizeof(entry->mName) - 1);
@@ -729,11 +721,13 @@ esp_err_t Storage::calcEntriesInNamespace(uint8_t nsIndex, size_t& usedEntries)
 void Storage::fillEntryInfo(Item &item, nvs_entry_info_t &info)
 {
     info.type = static_cast<nvs_type_t>(item.datatype);
-    strncpy(info.key, item.key, sizeof(info.key));
+    strncpy(info.key, item.key, sizeof(info.key) - 1);
+    info.key[sizeof(info.key) - 1] = '\0';
 
     for (auto &name : mNamespaces) {
         if(item.nsIndex == name.mIndex) {
-            strncpy(info.namespace_name, name.mName, sizeof(info.namespace_name));
+            strncpy(info.namespace_name, name.mName, sizeof(info.namespace_name) - 1);
+            info.namespace_name[sizeof(info.namespace_name) -1] = '\0';
             break;
         }
     }

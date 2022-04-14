@@ -1,16 +1,8 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include "nvs_page.hpp"
 #if defined(ESP_PLATFORM)
 #include <esp32/rom/crc.h>
@@ -198,6 +190,10 @@ esp_err_t Page::writeItem(uint8_t nsIndex, ItemType datatype, const char* key, c
         return ESP_ERR_NVS_VALUE_TOO_LONG;
     }
 
+    if ((!isVariableLengthType(datatype)) && dataSize > 8) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     size_t totalSize = ENTRY_SIZE;
     size_t entriesCount = 1;
     if (isVariableLengthType(datatype)) {
@@ -242,7 +238,8 @@ esp_err_t Page::writeItem(uint8_t nsIndex, ItemType datatype, const char* key, c
             return err;
         }
 
-        size_t left = dataSize / ENTRY_SIZE * ENTRY_SIZE;
+        size_t rest = dataSize % ENTRY_SIZE;
+        size_t left = dataSize - rest;
         if (left > 0) {
             err = writeEntryData(static_cast<const uint8_t*>(data), left);
             if (err != ESP_OK) {
@@ -250,7 +247,7 @@ esp_err_t Page::writeItem(uint8_t nsIndex, ItemType datatype, const char* key, c
             }
         }
 
-        size_t tail = dataSize - left;
+        size_t tail = rest;
         if (tail > 0) {
             std::fill_n(item.rawData, ENTRY_SIZE, 0xff);
             memcpy(item.rawData, static_cast<const uint8_t*>(data) + left, tail);
