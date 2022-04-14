@@ -482,8 +482,12 @@ static void smtp_client_task(void *pvParameters)
     ret = 0; /* No errors */
 
 exit:
-    mbedtls_ssl_session_reset(&ssl);
     mbedtls_net_free(&server_fd);
+    mbedtls_x509_crt_free(&cacert);
+    mbedtls_ssl_free(&ssl);
+    mbedtls_ssl_config_free(&conf);
+    mbedtls_ctr_drbg_free(&ctr_drbg);
+    mbedtls_entropy_free(&entropy);
 
     if (ret != 0) {
         mbedtls_strerror(ret, buf, 100);
