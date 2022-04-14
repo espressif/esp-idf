@@ -1570,10 +1570,11 @@ def action_install(args):  # type: ignore
     tools_info = load_tools_info()
     tools_spec = args.tools  # type: ignore
     targets = []  # type: list[str]
+    info('Current system platform: {}'.format(CURRENT_PLATFORM))
     # Installing only single tools, no targets are specified.
     if 'required' in tools_spec:
         targets = add_and_save_targets(get_idf_env(), args.targets)
-        info('Selected targets are: {}' .format(', '.join(targets)))
+        info('Selected targets are: {}'.format(', '.join(targets)))
 
     if not tools_spec or 'required' in tools_spec:
         # Installing tools for all ESP_targets required by the operating system.
