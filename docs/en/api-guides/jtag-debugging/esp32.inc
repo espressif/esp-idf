@@ -133,8 +133,6 @@
       - TCK
     * - MTMS / GPIO14
       - TMS
-    * - GND
-      - GND
 
 ---
 
