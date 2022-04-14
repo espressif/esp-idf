@@ -91,6 +91,26 @@ example_test_pytest_esp32_ethernet_ip101:
     TARGET: ESP32
     ENV_MARKER: ip101
 
+example_test_pytest_esp32_flash_encryption:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32
+  needs:
+    - build_pytest_examples_esp32
+  variables:
+    TARGET: ESP32
+    ENV_MARKER: flash_encryption
+
+example_test_pytest_esp32c3_flash_encryption:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c3
+  needs:
+    - build_pytest_examples_esp32c3
+  variables:
+    TARGET: ESP32C3
+    ENV_MARKER: flash_encryption
+
 .pytest_components_dir_template:
   extends: .pytest_template
   variables:
@@ -413,12 +433,6 @@ example_test_007:
     - ESP32
     - Example_I2C_CCS811_SENSOR
 
-example_test_008A:
-  extends: .example_test_esp32_template
-  tags:
-    - ESP32
-    - Example_Flash_Encryption
-
 example_test_008B:
   extends: .example_test_esp32_template
   tags:
@@ -490,12 +504,6 @@ example_test_C3_GENERIC:
   tags:
     - ESP32C3
     - Example_GENERIC
-
-example_test_C3_FLASH_ENC:
-  extends: .example_test_esp32c3_template
-  tags:
-    - ESP32C3
-    - Example_Flash_Encryption
 
 example_test_C3_FLASH_ENC_OTA:
   extends: .example_test_esp32c3_template
