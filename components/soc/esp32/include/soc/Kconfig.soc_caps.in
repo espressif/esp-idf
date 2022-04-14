@@ -307,6 +307,10 @@ config SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
     bool
     default y
 
+config SOC_LEDC_SUPPORT_APB_CLOCK
+    bool
+    default y
+
 config SOC_LEDC_SUPPORT_REF_TICK
     bool
     default y

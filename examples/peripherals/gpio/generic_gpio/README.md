@@ -31,7 +31,7 @@ Before project configuration and build, be sure to set the correct chip target u
 
 ### Hardware Required
 
-* A development board with with any Espressif SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
+* A development board with any Espressif SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
 * A USB cable for Power supply and programming
 * Some jumper wires to connect GPIOs.
 

@@ -198,10 +198,11 @@
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 #define SOC_LEDC_HAS_TIMER_SPECIFIC_MUX  (1)
-#define SOC_LEDC_SUPPORT_REF_TICK    (1)
-#define SOC_LEDC_SUPPORT_HS_MODE     (1)
-#define SOC_LEDC_CHANNEL_NUM         (8)
-#define SOC_LEDC_TIMER_BIT_WIDE_NUM  (20)
+#define SOC_LEDC_SUPPORT_APB_CLOCK       (1)
+#define SOC_LEDC_SUPPORT_REF_TICK        (1)
+#define SOC_LEDC_SUPPORT_HS_MODE         (1)
+#define SOC_LEDC_CHANNEL_NUM             (8)
+#define SOC_LEDC_TIMER_BIT_WIDE_NUM      (20)
 
 /*-------------------------- MCPWM CAPS --------------------------------------*/
 #define SOC_MCPWM_GROUPS                     (2)    ///< 2 MCPWM groups on the chip (i.e., the number of independent MCPWM peripherals)

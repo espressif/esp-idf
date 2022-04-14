@@ -150,9 +150,9 @@ static IRAM_ATTR esp_err_t _iot_set_fade_with_time(ledc_mode_t speed_mode, ledc_
     uint32_t precision = (0x1U << duty_resolution);
 
     if (timer_source_clk == LEDC_APB_CLK) {
-        freq = ((uint64_t)LEDC_APB_CLK_HZ << 8) / precision / clock_divider;
+        freq = ((uint64_t)APB_CLK_FREQ << 8) / precision / clock_divider;
     } else {
-        freq = ((uint64_t)LEDC_REF_CLK_HZ << 8) / precision / clock_divider;
+        freq = ((uint64_t)REF_CLK_FREQ << 8) / precision / clock_divider;
     }
 
     if (duty_delta == 0) {

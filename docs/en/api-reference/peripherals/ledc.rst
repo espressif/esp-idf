@@ -1,6 +1,6 @@
 LED Control (LEDC)
 ==================
-{IDF_TARGET_LEDC_CHAN_NUM:default="8", esp32="16", esp32s2="8", esp32c3="6", esp32s3="8"}
+{IDF_TARGET_LEDC_CHAN_NUM:default="8", esp32="16", esp32s2="8", esp32c3="6", esp32s3="8", esp32c2="6", esp32h2="6"}
 
 :link_to_translation:`zh_CN:[中文]`
 
@@ -127,9 +127,57 @@ The source clock can also limit the PWM frequency. The higher the source clock f
          - 40 MHz
          - Dynamic Frequency Scaling compatible
 
-    .. note::
+.. only:: esp32c2
 
-        For {IDF_TARGET_NAME}, all timers share one clock source. In other words, it is impossible to use different clock sources for different timers.
+    .. list-table:: Characteristics of {IDF_TARGET_NAME} LEDC source clocks
+       :widths: 15 15 30
+       :header-rows: 1
+
+       * - Clock name
+         - Clock freq
+         - Clock capabilities
+       * - PLL_60M_CLK
+         - 60 MHz
+         - /
+       * - RTC20M_CLK
+         - ~20 MHz
+         - Dynamic Frequency Scaling compatible, Light sleep compatible
+       * - XTAL_CLK
+         - 40 MHz
+         - Dynamic Frequency Scaling compatible
+
+.. only:: esp32h2
+
+    .. list-table:: Characteristics of {IDF_TARGET_NAME} LEDC source clocks
+       :widths: 15 15 30
+       :header-rows: 1
+
+       * - Clock name
+         - Clock freq
+         - Clock capabilities
+       * - APB_CLK
+         - 96 MHz
+         - /
+       * - RTC8M_CLK
+         - ~8 MHz
+         - Dynamic Frequency Scaling compatible, Light sleep compatible
+       * - XTAL_CLK
+         - 32 MHz
+         - Dynamic Frequency Scaling compatible
+
+.. note::
+
+    .. only:: not esp32h2
+
+        1. On {IDF_TARGET_NAME}, if RTCxM_CLK is chosen as the LEDC clock source, an internal calibration will be performed to get the exact frequency of the clock. This ensures the accuracy of output PWM signal frequency.
+
+    .. only:: esp32h2
+
+        1. On {IDF_TARGET_NAME}, if RTC8M_CLK is chosen as the LEDC clock source, you may see the frequency of output PWM signal is not very accurate. This is because no internal calibration is performed to get the exact frequency of the clock due to hardware limitation, a theoretic frequency value is used.
+
+    .. only:: not SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
+
+        2. For {IDF_TARGET_NAME}, all timers share one clock source. In other words, it is impossible to use different clock sources for different timers.
 
 
 .. _ledc-api-configure-channel:
