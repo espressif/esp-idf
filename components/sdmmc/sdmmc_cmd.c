@@ -508,20 +508,25 @@ esp_err_t sdmmc_erase_sectors(sdmmc_card_t* card, size_t start_sector,
         return ESP_ERR_INVALID_SIZE;
     }
 
+    uint32_t cmd38_arg;
     if (arg == SDMMC_ERASE_ARG) {
-        arg = card->is_mmc ? SDMMC_MMC_TRIM_ARG : SDMMC_SD_ERASE_ARG;
+        cmd38_arg = card->is_mmc ? SDMMC_MMC_TRIM_ARG : SDMMC_SD_ERASE_ARG;
     } else {
-        arg = card->is_mmc ? SDMMC_MMC_DISCARD_ARG : SDMMC_SD_DISCARD_ARG;
+        cmd38_arg = card->is_mmc ? SDMMC_MMC_DISCARD_ARG : SDMMC_SD_DISCARD_ARG;
     }
-    /*
-     * validate the CMD38 argument against card supported features
-     */
-    if ((arg == SDMMC_MMC_TRIM_ARG) && (sdmmc_can_trim(card) != ESP_OK)) {
-        return ESP_ERR_NOT_SUPPORTED;
-    }
-    if (((arg == SDMMC_MMC_DISCARD_ARG) || (arg == SDMMC_SD_DISCARD_ARG)) &&
-            ((sdmmc_can_discard(card) != ESP_OK) || host_is_spi(card))) {
-        return ESP_ERR_NOT_SUPPORTED;
+
+    /* validate the CMD38 argument against card supported features */
+    if (card->is_mmc) {
+        if ((cmd38_arg == SDMMC_MMC_TRIM_ARG) && (sdmmc_can_trim(card) != ESP_OK)) {
+            return ESP_ERR_NOT_SUPPORTED;
+        }
+        if ((cmd38_arg == SDMMC_MMC_DISCARD_ARG) && (sdmmc_can_discard(card) != ESP_OK)) {
+            return ESP_ERR_NOT_SUPPORTED;
+        }
+    } else { // SD card
+        if ((cmd38_arg == SDMMC_SD_DISCARD_ARG) && (sdmmc_can_discard(card) != ESP_OK)) {
+            return ESP_ERR_NOT_SUPPORTED;
+        }
     }
 
     /* default as block unit address */
@@ -559,7 +564,7 @@ esp_err_t sdmmc_erase_sectors(sdmmc_card_t* card, size_t start_sector,
     memset((void *)&cmd, 0 , sizeof(sdmmc_command_t));
     cmd.flags = SCF_CMD_AC | SCF_RSP_R1B | SCF_WAIT_BUSY;
     cmd.opcode = MMC_ERASE;
-    cmd.arg = arg;
+    cmd.arg = cmd38_arg;
     // TODO: best way, application to compute timeout value. For this card
     // structure should have a place holder for erase_timeout.
     cmd.timeout_ms = (SDMMC_ERASE_BLOCK_TIMEOUT_MS + sector_count);
@@ -578,7 +583,7 @@ esp_err_t sdmmc_can_discard(sdmmc_card_t* card)
          return ESP_OK;
     }
     // SD card
-    if (!host_is_spi(card) && (card->ssr.discard_support == 1)) {
+    if ((!card->is_mmc) && !host_is_spi(card) && (card->ssr.discard_support == 1)) {
         return ESP_OK;
     }
     return ESP_FAIL;
