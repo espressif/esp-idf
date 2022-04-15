@@ -26,6 +26,8 @@ pygdbmi<=0.9.0.2
 # The pygdbmi required max version 0.9.0.2 since 0.9.0.3 is not compatible with latest gdbgui (>=0.13.2.0)
 # A compatible Socket.IO should be used. See https://github.com/miguelgrinberg/python-socketio/issues/578
 python-socketio<5
+jinja2<3.1  # See https://github.com/espressif/esp-idf/issues/8760
+itsdangerous<2.1
 
 kconfiglib==13.7.1
 
