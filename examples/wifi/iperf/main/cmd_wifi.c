@@ -30,6 +30,7 @@ typedef struct {
     struct arg_int *length;
     struct arg_int *interval;
     struct arg_int *time;
+    struct arg_int *bw_limit;
     struct arg_lit *abort;
     struct arg_end *end;
 } wifi_iperf_t;
@@ -402,6 +403,17 @@ static int wifi_cmd_iperf(int argc, char **argv)
         }
     }
 
+    /* iperf -b */
+    if (iperf_args.bw_limit->count == 0) {
+        cfg.bw_lim = IPERF_DEFAULT_NO_BW_LIMIT;
+    } else {
+        cfg.bw_lim = iperf_args.bw_limit->ival[0];
+        if (cfg.bw_lim <= 0) {
+            cfg.bw_lim = IPERF_DEFAULT_NO_BW_LIMIT;
+        }
+    }
+
+
     ESP_LOGI(TAG, "mode=%s-%s sip=%d.%d.%d.%d:%d, dip=%d.%d.%d.%d:%d, interval=%d, time=%d",
              cfg.flag & IPERF_FLAG_TCP ? "tcp" : "udp",
              cfg.flag & IPERF_FLAG_SERVER ? "server" : "client",
@@ -476,6 +488,7 @@ void register_wifi(void)
     iperf_args.length = arg_int0("l", "len", "<length>", "Set read/write buffer size");
     iperf_args.interval = arg_int0("i", "interval", "<interval>", "seconds between periodic bandwidth reports");
     iperf_args.time = arg_int0("t", "time", "<time>", "time in seconds to transmit for (default 10 secs)");
+    iperf_args.bw_limit = arg_int0("b", "bandwidth", "<bandwidth>", "bandwidth to send at in Mbits/sec");
     iperf_args.abort = arg_lit0("a", "abort", "abort running iperf");
     iperf_args.end = arg_end(1);
     const esp_console_cmd_t iperf_cmd = {

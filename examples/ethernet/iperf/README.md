@@ -149,7 +149,7 @@ I (2534456) iperf: want recv=16384
 ## Suggestions of getting higher bandwidth
 
 1. Higher MCU working frequency will get higher bandwidth.
-2. Put frequency invoked function into IRAM via macro `IRAM_ATTR` in code.
+2. Put frequently invoked functions into IRAM via macro `IRAM_ATTR` in code. Note that the lwIP IRAM optimization is already enabled by default.
 3. Priority of iperf task may also have effect.
 
 ## Troubleshooting
