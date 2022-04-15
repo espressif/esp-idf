@@ -229,11 +229,12 @@ ESP-IDF 工具安装器会下载 Github 发布版本中附带的一些工具，�
 .. _get-started-build:
 .. _get-started-configure:
 .. _get-started-connect:
-.. _get-started-first-steps:
+.. _get-started-linux-macos-first-steps:
 
 第五步：开始使用 ESP-IDF 吧
 ========================================
 
+.. include:: linux-macos-start-project.rst
 .. include:: start-project.rst
 
 建议：更新 ESP-IDF

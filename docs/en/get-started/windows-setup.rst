@@ -109,6 +109,9 @@ Note that this shortcut is specific to the ESP-IDF directory selected in the ESP
 First Steps on ESP-IDF
 ======================
 
+.. _get-started-windows-first-steps:
+
+.. include:: windows-start-project.rst
 .. include:: start-project.rst
 
 Related Documents
