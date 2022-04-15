@@ -147,8 +147,7 @@
 #define SOC_I2C_FIFO_LEN       (32) /*!< I2C hardware FIFO depth */
 #define SOC_I2C_SUPPORT_SLAVE       (1)
 
-//ESP32-S2 support hardware FSM reset
-#define SOC_I2C_SUPPORT_HW_FSM_RST  (1)
+// FSM_RST only resets the FSM, not using it. So SOC_I2C_SUPPORT_HW_FSM_RST not defined.
 //ESP32-S2 support hardware clear bus
 #define SOC_I2C_SUPPORT_HW_CLR_BUS  (1)
 
