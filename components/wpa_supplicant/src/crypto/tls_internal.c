@@ -281,13 +281,6 @@ int tls_connection_set_params(void *tls_ctx, struct tls_connection *conn,
 		return -1;
 	}
 
-	if (tlsv1_set_dhparams(cred, params->dh_file, params->dh_blob,
-			       params->dh_blob_len)) {
-		wpa_printf(MSG_INFO, "TLS: Failed to load DH parameters");
-		tlsv1_cred_free(cred);
-		return -1;
-	}
-
 	if (tlsv1_client_set_cred(conn->client, cred) < 0) {
 		tlsv1_cred_free(cred);
 		return -1;
