@@ -14,6 +14,7 @@
 #include "driver/uart.h"
 #include "esp_sleep.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "light_sleep_example.h"
 
 static void light_sleep_task(void *args)

@@ -21,7 +21,7 @@ if(NOT BOOTLOADER_BUILD)
     endif()
 
     # [refactor-todo]: requires "driver" for GPIO and RTC  (by sleep_gpio and sleep_modes)
-    list(APPEND priv_requires driver)
+    list(APPEND priv_requires driver esp_timer)
 
     if(CONFIG_IDF_TARGET_ESP32 OR CONFIG_IDF_TARGET_ESP32S2)
         list(APPEND srcs "rtc_wdt.c")

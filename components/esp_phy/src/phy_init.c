@@ -18,6 +18,7 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "esp_efuse.h"
+#include "esp_timer.h"
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"

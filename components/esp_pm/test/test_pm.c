@@ -6,6 +6,7 @@
 #include "unity.h"
 #include "esp_pm.h"
 #include "esp_sleep.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
