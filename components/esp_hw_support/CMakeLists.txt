@@ -1,7 +1,7 @@
 idf_build_get_property(target IDF_TARGET)
 
-set(requires soc bootloader_support)
-set(priv_requires efuse spi_flash)
+set(requires soc)
+set(priv_requires efuse spi_flash bootloader_support)
 
 set(srcs "compare_set.c" "cpu_util.c" "esp_memory_utils.c")
 if(NOT BOOTLOADER_BUILD)
