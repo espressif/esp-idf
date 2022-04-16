@@ -16,7 +16,8 @@ entries:
     i2c_hal_iram (noflash)
     cpu_hal (noflash)
     soc_hal (noflash)
-    wdt_hal_iram (noflash)
+    if HAL_WDT_HAS_ROM_IMPL = n || HAL_WDT_ROM_IMPL = n:
+        wdt_hal_iram (noflash)
     if TWAI_ISR_IN_IRAM = y:
         twai_hal_iram (noflash)
     if IDF_TARGET_ESP32 = n:

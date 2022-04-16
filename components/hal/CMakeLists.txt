@@ -1,13 +1,16 @@
 idf_build_get_property(target IDF_TARGET)
 
-set(srcs "wdt_hal_iram.c"
-         "mpu_hal.c"
+set(srcs "mpu_hal.c"
          "cpu_hal.c"
          "efuse_hal.c"
          "${target}/efuse_hal.c"
          "mmu_hal.c")
 
 set(includes "${target}/include" "include" "platform_port/include")
+
+if(NOT CONFIG_HAL_WDT_ROM_IMPL)
+    list(APPEND srcs "wdt_hal_iram.c")
+endif()
 
 if(NOT ${target} STREQUAL "esp32")
     list(APPEND srcs "cache_hal.c")
