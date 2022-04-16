@@ -19,6 +19,13 @@ In previous versions of ESP-IDF, some components were always added as public req
 * ``driver``
 * ``efuse``
 * ``esp_timer``
+* ``lwip``
+* ``vfs``
+* ``esp_wifi``
+* ``esp_event``
+* ``esp_netif``
+* ``esp_eth``
+* ``esp_phy``
 
 This means that it was possible to include header files of those components without specifying them as requirements in ``idf_component_register``.
 
