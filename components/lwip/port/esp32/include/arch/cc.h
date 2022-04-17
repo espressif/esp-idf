@@ -79,7 +79,15 @@ typedef int sys_prot_t;
 
 #include <stdio.h>
 
+#ifdef CONFIG_LWIP_DEBUG_ESP_LOG
+// lwip debugs routed to ESP_LOGD
+#include "esp_log.h"
+#define LWIP_ESP_LOG_FUNC(format, ...) ESP_LOG_LEVEL(ESP_LOG_DEBUG, "lwip", format, ##__VA_ARGS__)
+#define LWIP_PLATFORM_DIAG(x) LWIP_ESP_LOG_FUNC x
+#else
+// lwip debugs routed to printf
 #define LWIP_PLATFORM_DIAG(x)   do {printf x;} while(0)
+#endif
 
 #ifdef NDEBUG
 
