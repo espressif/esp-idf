@@ -75,6 +75,7 @@ class Monitor:
         print_filter,  # type: str
         make='make',  # type: str
         encrypted=False,  # type: bool
+        reset=True,  # type: bool
         toolchain_prefix=DEFAULT_TOOLCHAIN_PREFIX,  # type: str
         eol='CRLF',  # type: str
         decode_coredumps=COREDUMP_DECODE_INFO,  # type: str
@@ -109,7 +110,7 @@ class Monitor:
         if isinstance(self, SerialMonitor):
             socket_mode = serial_instance.port.startswith('socket://')
             self.serial = serial_instance
-            self.serial_reader = SerialReader(self.serial, self.event_queue)
+            self.serial_reader = SerialReader(self.serial, self.event_queue, reset)
 
             self.gdb_helper = GDBHelper(toolchain_prefix, websocket_client, self.elf_file, self.serial.port,
                                         self.serial.baudrate) if self.elf_exists else None
@@ -124,7 +125,7 @@ class Monitor:
 
         cls = SerialHandler if self.elf_exists else SerialHandlerNoElf
         self.serial_handler = cls(b'', socket_mode, self.logger, decode_panic, PANIC_IDLE, b'', target,
-                                  False, False, self.serial, encrypted, self.elf_file)
+                                  False, False, self.serial, encrypted, reset, self.elf_file)
 
         self.console_parser = ConsoleParser(eol)
         self.console_reader = ConsoleReader(self.console, self.event_queue, self.cmd_queue, self.console_parser,
@@ -343,6 +344,7 @@ def main() -> None:
                       args.print_filter,
                       args.make,
                       args.encrypted,
+                      not args.no_reset,
                       args.toolchain_prefix,
                       args.eol,
                       args.decode_coredumps,
