@@ -877,6 +877,13 @@ menu "LWIP"
         bool "Enable LWIP Debug"
         default n
 
+    config LWIP_DEBUG_ESP_LOG
+        bool "Route LWIP debugs through ESP_LOG interface"
+        depends on LWIP_DEBUG
+        default n
+        help
+            Enabling this option routes all enabled LWIP debugs through ESP_LOGD.
+
     config LWIP_NETIF_DEBUG
         bool "Enable netif debug messages"
         depends on LWIP_DEBUG
