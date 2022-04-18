@@ -139,6 +139,22 @@ static inline void mmu_ll_write_entry(uint32_t mmu_id, uint32_t entry_id, uint32
 }
 
 /**
+ * Read the raw value from MMU table
+ *
+ * @param mmu_id   MMU ID
+ * @param entry_id MMU entry ID
+ * @param mmu_val  Value to be read from MMU table
+ */
+__attribute__((always_inline))
+static inline uint32_t mmu_ll_read_entry(uint32_t mmu_id, uint32_t entry_id)
+{
+    (void)mmu_id;
+    HAL_ASSERT(entry_id < MMU_ENTRY_NUM);
+
+    return *(uint32_t *)(DR_REG_MMU_TABLE + entry_id * 4);
+}
+
+/**
  * Set MMU table entry as invalid
  *
  * @param mmu_id   MMU ID
@@ -164,6 +180,22 @@ static inline void mmu_ll_unmap_all(uint32_t mmu_id)
     for (int i = 0; i < MMU_ENTRY_NUM; i++) {
         mmu_ll_set_entry_invalid(mmu_id, i);
     }
+}
+
+/**
+ * Get MMU table entry is invalid
+ *
+ * @param mmu_id   MMU ID
+ * @param entry_id MMU entry ID
+ * return ture for MMU entry is invalid, false for valid
+ */
+__attribute__((always_inline))
+static inline bool mmu_ll_get_entry_is_invalid(uint32_t mmu_id, uint32_t entry_id)
+{
+    (void)mmu_id;
+    HAL_ASSERT(entry_id < MMU_ENTRY_NUM);
+
+    return (*(uint32_t *)(DR_REG_MMU_TABLE + entry_id * 4) & MMU_INVALID) ? true : false;
 }
 
 #ifdef __cplusplus
