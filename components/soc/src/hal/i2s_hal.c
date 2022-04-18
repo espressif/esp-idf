@@ -198,7 +198,7 @@ void i2s_hal_config_param(i2s_hal_context_t *hal, const i2s_config_t *i2s_config
         i2s_ll_set_rx_short_sync(hal->dev, 0);
         i2s_ll_set_tx_msb_shift(hal->dev, 1);
         i2s_ll_set_rx_msb_shift(hal->dev, 1);
-        if (i2s_config->communication_format & I2S_COMM_FORMAT_I2S_LSB) {
+        if (i2s_config->communication_format & I2S_COMM_FORMAT_I2S_LSB || i2s_config->communication_format & I2S_COMM_FORMAT_I2S_MSB) {
             if (i2s_config->mode & I2S_MODE_TX) {
                 i2s_ll_set_tx_msb_shift(hal->dev, 0);
             }
@@ -220,7 +220,7 @@ void i2s_hal_config_param(i2s_hal_context_t *hal, const i2s_config_t *i2s_config
             if (i2s_config->mode & I2S_MODE_RX) {
                 i2s_ll_set_rx_short_sync(hal->dev, 1);
             }
-        } 
+        }
     }
 }
 
