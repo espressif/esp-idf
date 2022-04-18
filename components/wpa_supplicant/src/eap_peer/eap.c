@@ -63,6 +63,10 @@ char *g_wpa_phase1_options;
 u8 *g_wpa_pac_file;
 int g_wpa_pac_file_len;
 bool g_wpa_suiteb_certification;
+#ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+bool g_wpa_default_cert_bundle;
+int (*esp_crt_bundle_attach_fn)(void *conf);
+#endif
 
 void eap_peer_config_deinit(struct eap_sm *sm);
 void eap_peer_blob_deinit(struct eap_sm *sm);
@@ -571,9 +575,14 @@ int eap_peer_config_init(
 	}
 
 	if (g_wpa_suiteb_certification) {
-		sm->config.flags = TLS_CONN_SUITEB;
+		sm->config.flags |= TLS_CONN_SUITEB;
 	}
 
+#ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
+	if (g_wpa_default_cert_bundle) {
+		sm->config.flags |= TLS_CONN_USE_DEFAULT_CERT_BUNDLE;
+	}
+#endif
 	/* To be used only for EAP-FAST */
 	if (g_wpa_phase1_options) {
 		sm->config.phase1 = g_wpa_phase1_options;

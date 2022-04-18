@@ -34,6 +34,7 @@ static void * eap_tls_init(struct eap_sm *sm)
 {
 	struct eap_tls_data *data;
 	struct eap_peer_config *config = eap_get_config(sm);
+
 	if (config == NULL ||
 	    config->private_key == 0) {
 		wpa_printf(MSG_INFO, "EAP-TLS: Private key not configured");
