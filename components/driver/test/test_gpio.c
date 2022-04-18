@@ -728,11 +728,11 @@ TEST_CASE("GPIO ISR service test", "[gpio][ignore]")
 {
     const int test_io18 = GPIO_NUM_18;
     const int test_io19 = GPIO_NUM_19;
-    static gpio_isr_param_t io18_param = {
+    gpio_isr_param_t io18_param = {
         .gpio_num =  GPIO_NUM_18,
         .isr_cnt = 0,
     };
-    static gpio_isr_param_t io19_param = {
+    gpio_isr_param_t io19_param = {
         .gpio_num =  GPIO_NUM_19,
         .isr_cnt = 0,
     };

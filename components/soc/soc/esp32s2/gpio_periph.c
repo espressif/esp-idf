@@ -62,7 +62,6 @@ const uint32_t GPIO_PIN_MUX_REG[GPIO_PIN_COUNT] = {
     IO_MUX_GPIO44_REG,
     IO_MUX_GPIO45_REG,
     IO_MUX_GPIO46_REG,
-    0,
 };
 
 const uint32_t GPIO_HOLD_MASK[GPIO_PIN_COUNT] = {
@@ -113,5 +112,4 @@ const uint32_t GPIO_HOLD_MASK[GPIO_PIN_COUNT] = {
     BIT(23),
     BIT(24),
     BIT(25),
-    BIT(26),
 };

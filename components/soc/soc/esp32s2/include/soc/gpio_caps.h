@@ -20,9 +20,9 @@ extern "C" {
 
 // ESP32-S2 has 1 GPIO peripheral
 #define SOC_GPIO_PORT           (1)
-#define GPIO_PIN_COUNT          (48)
+#define GPIO_PIN_COUNT          (47)
 
-// On ESP32 those PADs which have RTC functions must set pullup/down/capability via RTC register. 
+// On ESP32-S2 those PADs which have RTC functions must set pullup/down/capability via RTC register.
 // On ESP32-S2, Digital IOs have their own registers to control pullup/down/capability, independent with RTC registers.
 #define GPIO_SUPPORTS_RTC_INDEPENDENT (1)
 // Force hold is a new function of ESP32-S2
