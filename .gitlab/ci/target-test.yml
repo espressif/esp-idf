@@ -49,7 +49,7 @@ example_test_pytest_esp32s3_generic:
     - build_pytest_examples_esp32s3
   variables:
     TARGET: ESP32S3
-    ENV_MARKER: generic_s3_fixme
+    ENV_MARKER: generic
 
 example_test_pytest_esp32c3_generic:
   extends:
@@ -164,7 +164,7 @@ component_ut_pytest_esp32s3_generic:
     - build_pytest_components_esp32s3
   variables:
     TARGET: ESP32S3
-    ENV_MARKER: generic_s3_fixme
+    ENV_MARKER: generic
 
 component_ut_pytest_esp32s3_octal_psram:
   extends:
@@ -221,7 +221,7 @@ test_app_test_pytest_esp32s3_generic:
     - build_pytest_test_apps_esp32s3
   variables:
     TARGET: ESP32S3
-    ENV_MARKER: generic_s3_fixme
+    ENV_MARKER: generic
 
 test_app_test_pytest_esp32c3_generic:
   extends:
