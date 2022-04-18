@@ -620,7 +620,7 @@ esp_err_t esp_light_sleep_start(void)
 
     s_config.rtc_ticks_at_sleep_start = rtc_time_get();
     uint32_t ccount_at_sleep_start = cpu_ll_get_cycle_count();
-    uint64_t high_res_time_at_start = esp_system_get_time();
+    uint64_t high_res_time_at_start = esp_timer_get_time();
     uint32_t sleep_time_overhead_in = (ccount_at_sleep_start - s_config.ccount_ticks_record) / (esp_clk_cpu_freq() / 1000000ULL);
 
     esp_ipc_isr_stall_other_cpu();
@@ -723,14 +723,14 @@ esp_err_t esp_light_sleep_start(void)
     // System timer has been clock gated for the duration of the sleep, correct for that.
 #ifdef CONFIG_IDF_TARGET_ESP32C3
     /**
-     * On esp32c3, rtc_time_get() is non-blocking, esp_system_get_time() is
+     * On esp32c3, rtc_time_get() is non-blocking, esp_timer_get_time() is
      * blocking, and the measurement data shows that this order is better.
      */
-    uint64_t high_res_time_at_end = esp_system_get_time();
+    uint64_t high_res_time_at_end = esp_timer_get_time();
     uint64_t rtc_ticks_at_end = rtc_time_get();
 #else
     uint64_t rtc_ticks_at_end = rtc_time_get();
-    uint64_t high_res_time_at_end = esp_system_get_time();
+    uint64_t high_res_time_at_end = esp_timer_get_time();
 #endif
 
     uint64_t rtc_time_diff = rtc_time_slowclk_to_us(rtc_ticks_at_end - s_config.rtc_ticks_at_sleep_start, s_config.rtc_clk_cal_period);
