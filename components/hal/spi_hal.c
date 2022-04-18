@@ -24,7 +24,9 @@
 #define spi_dma_ll_set_out_eof_generation(dev, chan, enable)          gdma_ll_tx_set_eof_mode(&GDMA, chan, enable);
 #endif
 
-static const char SPI_HAL_TAG[] = "spi_hal";
+/* The tag may be unused if log level is set to NONE  */
+static const __attribute__((unused)) char SPI_HAL_TAG[] = "spi_hal";
+
 #define SPI_HAL_CHECK(a, str, ret_val, ...) \
     if (!(a)) { \
         HAL_LOGE(SPI_HAL_TAG,"%s(%d): "str, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
