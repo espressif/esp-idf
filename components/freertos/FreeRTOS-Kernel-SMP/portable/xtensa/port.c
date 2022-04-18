@@ -228,16 +228,9 @@ void esp_startup_start_app_common(void)
     esp_gdbstub_init();
 #endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 
-    TaskHandle_t main_task_hdl;
-    portDISABLE_INTERRUPTS();
     portBASE_TYPE res = xTaskCreatePinnedToCore(main_task, "main",
                                                 ESP_TASK_MAIN_STACK, NULL,
-                                                ESP_TASK_MAIN_PRIO, &main_task_hdl, ESP_TASK_MAIN_CORE);
-#if ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
-    //We only need to set affinity when using dual core with affinities supported
-    vTaskCoreAffinitySet(main_task_hdl, 1 << 1);
-#endif
-    portENABLE_INTERRUPTS();
+                                                ESP_TASK_MAIN_PRIO, NULL, ESP_TASK_MAIN_CORE);
     assert(res == pdTRUE);
     (void)res;
 }
