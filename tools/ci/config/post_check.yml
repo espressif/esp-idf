@@ -12,7 +12,9 @@ check_submodule_sync:
     GIT_STRATEGY: clone
     SUBMODULES_TO_FETCH: "none"
     PUBLIC_IDF_URL: "https://github.com/espressif/esp-idf.git"
-  before_script: []
+  before_script:
+    - source tools/ci/utils.sh
+    - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
   after_script: []
   script:
     - git submodule deinit --force .
