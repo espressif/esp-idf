@@ -32,9 +32,34 @@
 #include "sdkconfig.h"
 
 #define TOPOFSTACK_OFFS                 0x00    /* StackType_t *pxTopOfStack */
-#define CP_TOPOFSTACK_OFFS              0x04    /* xMPU_SETTINGS.coproc_area */
 
 .extern pxCurrentTCBs
+.extern offset_pxEndOfStack
+.extern offset_cpsa
+
+/*
+Macro to get a task's coprocessor save area (CPSA) from its TCB
+
+Entry:
+- reg_A contains a pointer to the TCB
+Exit:
+- reg_A contains a pointer to the CPSA
+- reg_B destroyed
+*/
+    .macro get_cpsa_from_tcb reg_A reg_B
+    // Get TCB.pxEndOfStack from reg_A
+    movi    \reg_B, offset_pxEndOfStack     /* Move &offset_pxEndOfStack into reg_B */
+    l32i    \reg_B, \reg_B, 0               /* Load offset_pxEndOfStack into reg_B */
+    add     \reg_A, \reg_A, \reg_B          /* Calculate &pxEndOfStack to reg_A (&TCB + offset_pxEndOfStack) */
+    l32i    \reg_A, \reg_A, 0               /* Load TCB.pxEndOfStack into reg_A */
+    //Offset to start of coproc save area
+    movi    \reg_B, offset_cpsa             /* Move &offset_cpsa into reg_B */
+    l32i    \reg_B, \reg_B, 0               /* Load offset_cpsa into reg_B */
+    sub     \reg_A, \reg_A, \reg_B          /* Subtract offset_cpsa from pxEndOfStack to get to start of CP save area (unaligned) */
+    //Align down start of CP save area to 16 byte boundary
+    movi    \reg_B, ~(0xF)
+    and     \reg_A, \reg_A, \reg_B          /* Align CPSA pointer to 16 bytes */
+    .endm
 
 /*
 *******************************************************************************
@@ -135,22 +160,18 @@ _frxt_int_enter:
     mull    a2,  a4, a2
     add     a1,  a1, a2                 /* for current proc */
 
-    #ifdef CONFIG_FREERTOS_FPU_IN_ISR
-    #if XCHAL_CP_NUM > 0
+    #if CONFIG_FREERTOS_FPU_IN_ISR && XCHAL_CP_NUM > 0
     rsr     a3, CPENABLE                /* Restore thread scope CPENABLE */
     addi    sp, sp,-4                   /* ISR will manage FPU coprocessor by forcing */
     s32i    a3, a1, 0                   /* its trigger */
     #endif
-    #endif
 
 .Lnested:
 1:
-    #ifdef CONFIG_FREERTOS_FPU_IN_ISR
-    #if XCHAL_CP_NUM > 0
+    #if CONFIG_FREERTOS_FPU_IN_ISR && XCHAL_CP_NUM > 0
     movi    a3,  0              /* whilst ISRs pending keep CPENABLE exception active */
     wsr     a3,  CPENABLE
     rsync
-    #endif
     #endif
 
     mov     a0,  a12                    /* restore return addr and return  */
@@ -189,13 +210,11 @@ _frxt_int_exit:
     s32i    a2,  a3, 0                  /* save nesting count              */
     bnez    a2,  .Lnesting              /* !=0 after decr so still nested  */
 
-    #ifdef CONFIG_FREERTOS_FPU_IN_ISR
-    #if XCHAL_CP_NUM > 0
+    #if CONFIG_FREERTOS_FPU_IN_ISR && XCHAL_CP_NUM > 0
     l32i    a3,  sp, 0                  /* Grab last CPENABLE before leave ISR */
     addi    sp,  sp, 4
     wsr     a3, CPENABLE
     rsync                               /* ensure CPENABLE was modified */
-    #endif
     #endif
 
     movi    a2,  pxCurrentTCBs
@@ -474,11 +493,11 @@ _frxt_dispatch:
 
     #if XCHAL_CP_NUM > 0
     /* Restore CPENABLE from task's co-processor save area. */
-    movi    a3, pxCurrentTCBs            /* cp_state =                       */
-    getcoreid a2
-    addx4   a3,  a2, a3
-    l32i    a3, a3, 0
-    l32i    a2, a3, CP_TOPOFSTACK_OFFS     /* StackType_t                       *pxStack; */
+    movi    a2, pxCurrentTCBs           /* cp_state =                       */
+    getcoreid a3
+    addx4   a2, a3, a2
+    l32i    a2, a2, 0
+    get_cpsa_from_tcb a2, a3            /* After this, pointer to CP save area is in a2, a3 is destroyed */
     l16ui   a3, a2, XT_CPENABLE         /* CPENABLE = cp_state->cpenable;   */
     wsr     a3, CPENABLE
     #endif
@@ -573,7 +592,7 @@ vPortYield:
 
     #if XCHAL_CP_NUM > 0
     /* Clear CPENABLE, also in task's co-processor state save area. */
-    l32i    a2,  a2, CP_TOPOFSTACK_OFFS /* a2 = pxCurrentTCBs->cp_state      */
+    get_cpsa_from_tcb a2, a3            /* After this, pointer to CP save area is in a2, a3 is destroyed */
     movi    a3,  0
     wsr     a3,  CPENABLE
     beqz    a2,  1f
@@ -614,12 +633,12 @@ vPortYieldFromInt:
 
     #if XCHAL_CP_NUM > 0
     /* Save CPENABLE in task's co-processor save area, and clear CPENABLE.  */
-    movi    a3, pxCurrentTCBs            /* cp_state =                       */
-    getcoreid a2
-    addx4   a3,  a2, a3
-    l32i    a3, a3, 0
+    movi    a2, pxCurrentTCBs           /* cp_state =                       */
+    getcoreid a3
+    addx4   a2,  a3, a2
+    l32i    a2, a2, 0
 
-    l32i    a2, a3, CP_TOPOFSTACK_OFFS
+    get_cpsa_from_tcb a2, a3            /* After this, pointer to CP save area is in a2, a3 is destroyed */
 
     rsr     a3, CPENABLE
     s16i    a3, a2, XT_CPENABLE         /* cp_state->cpenable = CPENABLE;   */
@@ -673,7 +692,7 @@ _frxt_task_coproc_state:
     l32i    a15, a15, 0                 /* && pxCurrentTCBs != 0) {                 */
 
     beqz    a15, 2f
-    l32i    a15, a15, CP_TOPOFSTACK_OFFS
+    get_cpsa_from_tcb a15, a3           /* After this, pointer to CP save area is in a15, a3 is destroyed */
     ret
 
 1:  movi    a15, 0

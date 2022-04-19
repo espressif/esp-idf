@@ -196,7 +196,7 @@ This file get's pulled into assembly sources. Therefore, some includes need to b
 #elif CONFIG_FREERTOS_CHECK_STACKOVERFLOW_CANARY
 #define configCHECK_FOR_STACK_OVERFLOW                  2
 #endif
-#define configRECORD_STACK_HIGH_ADDRESS                 1
+#define configRECORD_STACK_HIGH_ADDRESS                 1   // This must be set as the port requires TCB.pxEndOfStack
 
 // ------------------- Run-time Stats ----------------------
 

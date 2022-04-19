@@ -437,17 +437,19 @@ static void vPortTaskWrapper(TaskFunction_t pxCode, void *pvParameters)
 }
 #endif
 
+const DRAM_ATTR uint32_t offset_pxEndOfStack = offsetof(StaticTask_t, pxDummy8);
+const DRAM_ATTR uint32_t offset_uxCoreAffinityMask = offsetof(StaticTask_t, uxDummy25);
+const DRAM_ATTR uint32_t offset_cpsa = XT_CP_SIZE;
+
 #if ( portHAS_STACK_OVERFLOW_CHECKING == 1 )
 StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
-                                        StackType_t * pxEndOfStack,
-                                        TaskFunction_t pxCode,
-                                        void * pvParameters,
-                                        BaseType_t xRunPrivileged )
+                                     StackType_t * pxEndOfStack,
+                                     TaskFunction_t pxCode,
+                                     void * pvParameters )
 #else
 StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
                                      TaskFunction_t pxCode,
-                                     void * pvParameters,
-                                     BaseType_t xRunPrivileged )
+                                     void * pvParameters )
 #endif
 {
     StackType_t *sp, *tp;
@@ -624,34 +626,3 @@ void vApplicationMinimalIdleHook( void )
     esp_vApplicationIdleHook(); //Run IDF style hooks
 }
 #endif // CONFIG_FREERTOS_USE_MINIMAL_IDLE_HOOK
-
-/* ---------------------------------------------- Misc Implementations -------------------------------------------------
- *
- * ------------------------------------------------------------------------------------------------------------------ */
-
-// -------------------- Co-Processor -----------------------
-
-/*
- * Used to set coprocessor area in stack. Current hack is to reuse MPU pointer for coprocessor area.
- */
-#if portUSING_MPU_WRAPPERS
-void vPortStoreTaskMPUSettings( xMPU_SETTINGS *xMPUSettings, const struct xMEMORY_REGION *const xRegions, StackType_t *pxBottomOfStack, uint32_t usStackDepth )
-{
-#if XCHAL_CP_NUM > 0
-    xMPUSettings->coproc_area = ( StackType_t * ) ( ( uint32_t ) ( pxBottomOfStack + usStackDepth - 1 ));
-    xMPUSettings->coproc_area = ( StackType_t * ) ( ( ( portPOINTER_SIZE_TYPE ) xMPUSettings->coproc_area ) & ( ~( ( portPOINTER_SIZE_TYPE ) portBYTE_ALIGNMENT_MASK ) ) );
-    xMPUSettings->coproc_area = ( StackType_t * ) ( ( ( uint32_t ) xMPUSettings->coproc_area - XT_CP_SIZE ) & ~0xf );
-
-
-    /* NOTE: we cannot initialize the coprocessor save area here because FreeRTOS is going to
-     * clear the stack area after we return. This is done in pxPortInitialiseStack().
-     */
-#endif
-}
-
-void vPortReleaseTaskMPUSettings( xMPU_SETTINGS *xMPUSettings )
-{
-    /* If task has live floating point registers somewhere, release them */
-    _xt_coproc_release( xMPUSettings->coproc_area );
-}
-#endif /* portUSING_MPU_WRAPPERS */

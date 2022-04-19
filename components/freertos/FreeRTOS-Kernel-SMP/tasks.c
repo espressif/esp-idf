@@ -2835,13 +2835,6 @@ static BaseType_t prvCreateIdleTasks( void )
                 #endif
             }
         #endif /* configSUPPORT_STATIC_ALLOCATION */
-
-#ifdef ESP_PLATFORM
-        #if ( configUSE_CORE_AFFINITY == 1 && configNUM_CORES > 1 )
-        //Don't forget to pin the created IDLE tasks
-        vTaskCoreAffinitySet(xIdleTaskHandle[ xCoreID ], (1 << xCoreID) );
-        #endif
-#endif
     }
 
     return xReturn;

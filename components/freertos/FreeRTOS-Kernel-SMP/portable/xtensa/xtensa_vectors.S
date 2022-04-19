@@ -107,8 +107,8 @@
   Define for workaround: pin no-cpu-affinity tasks to a cpu when fpu is used.
   Please change this when the tcb structure is changed
 */
-#define TASKTCB_XCOREID_OFFSET (0x38+configMAX_TASK_NAME_LEN+3)&~3
 .extern pxCurrentTCBs
+.extern offset_uxCoreAffinityMask
 
 /*
 --------------------------------------------------------------------------------
@@ -908,35 +908,34 @@ _xt_coproc_exc:
 
     /* Get co-processor state save area of new owner thread. */
     call0   XT_RTOS_CP_STATE                /* a15 = new owner's save area */
-
-    #ifndef CONFIG_FREERTOS_FPU_IN_ISR
-    beqz    a15, .L_goto_invalid
+    #if CONFIG_FREERTOS_FPU_IN_ISR
+    beqz    a15, .L_skip_core_pin           /* CP used in ISR, skip task pinning */
+    #else
+    beqz    a15, .L_goto_invalid            /* not in a thread (invalid) */
     #endif
 
-    /*When FPU in ISR is enabled we could deal with zeroed a15 */
+    /* CP operations are incompatible with unpinned tasks. Thus we pin the task
+    to the current running core. */
+    movi    a2, pxCurrentTCBs
+    getcoreid a3                            /* a3 = current core ID */
+    addx4   a2, a3, a2
+    l32i    a2, a2, 0                       /* a2 = start of pxCurrentTCBs[cpuid] */
+    movi    a4, offset_uxCoreAffinityMask
+    l32i    a4, a4, 0                       /* a4 = offset_uxCoreAffinityMask */
+    add     a2, a2, a4                      /* a2 = &TCB.uxCoreAffinityMask */
+    ssl     a3                              /* Use core ID as shift amount */
+    movi    a4, 1
+    sll     a4, a4                          /* a4 = uxCoreAffinityMask = (1 << core ID) */
+    s32i    a4, a2, 0                       /* Store affinity mask to TCB.uxCoreAffinityMask */
+#if CONFIG_FREERTOS_FPU_IN_ISR
+.L_skip_core_pin:
+#endif
 
     /* Enable the co-processor's bit in CPENABLE. */
     movi    a0, _xt_coproc_mask
     rsr     a4, CPENABLE                    /* a4 = CPENABLE */
     addx4   a0, a5, a0                      /* a0 = &_xt_coproc_mask[n] */
     l32i    a0, a0, 0                       /* a0 = (n << 16) | (1 << n) */
-
-    /* FPU operations are incompatible with non-pinned tasks. If we have a FPU operation
-       here, to keep the entire thing from crashing, it's better to pin the task to whatever
-       core we're running on now. */
-    movi    a2, pxCurrentTCBs
-    getcoreid a3
-    addx4     a2,  a3, a2
-    l32i    a2, a2, 0                       /* a2 = start of pxCurrentTCBs[cpuid] */
-    addi    a2, a2, TASKTCB_XCOREID_OFFSET  /* offset to xCoreID in tcb struct */
-    s32i    a3, a2, 0                       /* store current cpuid */
-
-    /* Grab correct xt_coproc_owner_sa for this core */
-    movi    a2, XCHAL_CP_MAX << 2
-    mull    a2, a2, a3                      /* multiply by current processor id */
-    movi    a3, _xt_coproc_owner_sa         /* a3 = base of owner array */
-    add     a3, a3, a2                      /* a3 = owner area needed for this processor */
-
     extui   a2, a0, 0, 16                   /* coprocessor bitmask portion */
     or      a4, a4, a2                      /* a4 = CPENABLE | (1 << n) */
     wsr     a4, CPENABLE
@@ -946,7 +945,12 @@ Keep loading _xt_coproc_owner_sa[n] atomic (=load once, then use that value
 everywhere): _xt_coproc_release assumes it works like this in order not to need
 locking.
 */
-
+    /* Grab correct xt_coproc_owner_sa for this core */
+    getcoreid a3                            /* a3 = current core ID */
+    movi    a2, XCHAL_CP_MAX << 2
+    mull    a2, a2, a3                      /* multiply by current processor id */
+    movi    a3, _xt_coproc_owner_sa         /* a3 = base of owner array */
+    add     a3, a3, a2                      /* a3 = owner area needed for this processor */
 
     /* Get old coprocessor owner thread (save area ptr) and assign new one.  */
     addx4   a3,  a5, a3                      /* a3 = &_xt_coproc_owner_sa[n] */
