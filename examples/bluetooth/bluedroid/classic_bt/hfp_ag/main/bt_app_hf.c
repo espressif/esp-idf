@@ -221,11 +221,14 @@ static void bt_app_send_data_task(void *arg)
             s_us_duration = s_now_enter_time - s_last_enter_time;
             if(s_audio_code == ESP_HF_AUDIO_STATE_CONNECTED_MSBC) {
             // time of a frame is 7.5ms, sample is 120, data is 2 (byte/sample), so a frame is 240 byte (HF_SBC_ENC_RAW_DATA_SIZE)
-                frame_data_num = s_us_duration / (PCM_BLOCK_DURATION_US / WBS_PCM_INPUT_DATA_SIZE);
-                s_last_enter_time += frame_data_num * (PCM_BLOCK_DURATION_US / WBS_PCM_INPUT_DATA_SIZE);
+                frame_data_num = s_us_duration / PCM_BLOCK_DURATION_US * WBS_PCM_INPUT_DATA_SIZE;
+                s_last_enter_time += frame_data_num / WBS_PCM_INPUT_DATA_SIZE * PCM_BLOCK_DURATION_US;
             } else {
-                frame_data_num = s_us_duration / (PCM_BLOCK_DURATION_US / PCM_INPUT_DATA_SIZE);
-                s_last_enter_time += frame_data_num * (PCM_BLOCK_DURATION_US / PCM_INPUT_DATA_SIZE);
+                frame_data_num = s_us_duration / PCM_BLOCK_DURATION_US * PCM_INPUT_DATA_SIZE;
+                s_last_enter_time += frame_data_num / PCM_INPUT_DATA_SIZE * PCM_BLOCK_DURATION_US;
+            }
+            if (frame_data_num == 0) {
+                continue;
             }
             buf = osi_malloc(frame_data_num);
             if (!buf) {
