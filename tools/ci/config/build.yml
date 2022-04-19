@@ -277,7 +277,9 @@ build_docker:
       - schedules
   variables:
     DOCKER_TMP_IMAGE_NAME: "idf_tmp_image"
-  before_script: []
+  before_script:
+    - source tools/ci/utils.sh
+    - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
   script:
     - export LOCAL_CI_REPOSITORY_URL=$CI_REPOSITORY_URL
     - if [ -n "$LOCAL_GITLAB_HTTPS_HOST" ]; then export LOCAL_CI_REPOSITORY_URL="https://gitlab-ci-token:${CI_JOB_TOKEN}@${LOCAL_GITLAB_HTTPS_HOST}/${CI_PROJECT_PATH}"; fi
@@ -302,7 +304,9 @@ build_idf_exe:
       - /^release\/v/
       - /^v\d+\.\d+(\.\d+)?($|-)/
       - schedules
-  before_script: []
+  before_script:
+    - source tools/ci/utils.sh
+    - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
   artifacts:
     paths:
       - tools/windows/idf_exe/build/idf-exe-v*.zip
