@@ -355,8 +355,9 @@ def test_examples_protocol_advanced_https_ota_example_redirect_url(env, extra_da
     """
     dut1 = env.get_dut('advanced_https_ota_example', 'examples/system/ota/advanced_https_ota', dut_class=ttfw_idf.ESP32DUT)
     server_port = 8001
-    # Port to which the request should be redirecetd
+    # Port to which the request should be redirected
     redirection_server_port = 8081
+    redirection_server_port1 = 8082
     # File to be downloaded. This file is generated after compilation
     bin_name = 'advanced_https_ota.bin'
     # check and log bin size
@@ -369,18 +370,22 @@ def test_examples_protocol_advanced_https_ota_example_redirect_url(env, extra_da
         thread1 = multiprocessing.Process(target=start_https_server, args=(dut1.app.binary_path, host_ip, server_port))
         thread1.daemon = True
         thread1.start()
-    thread2 = multiprocessing.Process(target=start_redirect_server, args=(dut1.app.binary_path, host_ip, redirection_server_port, server_port))
+    thread2 = multiprocessing.Process(target=start_redirect_server, args=(dut1.app.binary_path, host_ip, redirection_server_port, redirection_server_port1))
     thread2.daemon = True
     thread2.start()
+    thread3 = multiprocessing.Process(target=start_redirect_server, args=(dut1.app.binary_path, host_ip, redirection_server_port1, server_port))
+    thread3.daemon = True
+    thread3.start()
     dut1.start_app()
     dut1.expect('Loaded app from partition at offset', timeout=30)
     try:
         ip_address = dut1.expect(re.compile(r' (sta|eth) ip: ([^,]+),'), timeout=30)
         print('Connected to AP with IP: {}'.format(ip_address))
     except DUT.ExpectTimeout:
-        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
         thread1.terminate()
         thread2.terminate()
+        thread3.terminate()
+        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
     dut1.expect('Starting Advanced OTA example', timeout=30)
 
     print('writing to device: {}'.format('https://' + host_ip + ':' + str(redirection_server_port) + '/' + bin_name))
@@ -390,6 +395,7 @@ def test_examples_protocol_advanced_https_ota_example_redirect_url(env, extra_da
     dut1.reset()
     thread1.terminate()
     thread2.terminate()
+    thread3.terminate()
 
 
 @ttfw_idf.idf_example_test(env_tag='Example_8Mflash_Ethernet')
