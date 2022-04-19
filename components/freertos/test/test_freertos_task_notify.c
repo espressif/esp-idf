@@ -1,4 +1,9 @@
 /*
+ * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/*
  Test of FreeRTOS task notifications. This test creates a sender and receiver
  task under different core permutations. For each permutation, the sender task
  will test the xTaskNotify(), xTaskNotifyGive(), xTaskNotifyFromISR(), and
@@ -133,7 +138,7 @@ static void install_gptimer_on_core(void *arg)
 {
     int core_id = (int)arg;
     gptimer_config_t timer_config = {
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
     };

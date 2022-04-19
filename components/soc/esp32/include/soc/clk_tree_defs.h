@@ -89,6 +89,7 @@ typedef enum {
  * Naming convention: SOC_MOD_CLK_{<upstream>clock_name}_<attr>
  * {<upstream>clock_name}: APB, APLL, (BB)PLL, etc.
  * <attr> - optional: FAST, SLOW, D<divider>, F<freq>
+ * @note enum starts from 1, to save 0 for special purpose
  */
 typedef enum {
     // For CPU domain
@@ -108,26 +109,86 @@ typedef enum {
 } soc_module_clk_t;
 
 
-// List clock sources available to each peripherial
-// soc_module_clk_src_t enum starts from 1 to save enum = 0 for AUTO selection
+//////////////////////////////////////////////////GPTimer///////////////////////////////////////////////////////////////
 
+/**
+ * @brief Array initializer for all supported clock sources of GPTimer
+ * The following code can be used to iterate all possible clocks:
+ * @code{c}
+ * soc_periph_gptimer_clk_src_t gptimer_clks[] = (soc_periph_gptimer_clk_src_t)SOC_GPTIMER_CLKS;
+ * for (size_t i = 0; i< sizeof(gptimer_clks) / sizeof(gptimer_clks[0]); i++) {
+ *     soc_periph_gptimer_clk_src_t clk = gptimer_clks[i];
+ *     // Test GPTimer with the clock `clk`
+ * }
+ * @endcode
+ */
+#define SOC_GPTIMER_CLKS {SOC_MOD_CLK_APB}
+
+/**
+ * @brief Type of GPTimer clock source
+ */
 typedef enum {
-    GPTIMER_CLK_SRC_APB = SOC_MOD_CLK_APB,                      /*!< Select APB as the source clock */
+    GPTIMER_CLK_SRC_APB = SOC_MOD_CLK_APB,     /*!< Select APB as the source clock */
+    GPTIMER_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB, /*!< Select APB as the default choice */
 } soc_periph_gptimer_clk_src_t;
 
+/**
+ * @brief Type of Timer Group clock source, reserved for the legacy timer group driver
+ */
 typedef enum {
-    LCD_CLK_SRC_PLL160M = SOC_MOD_CLK_PLL_D2,                   /*!< Select PLL_D2 (160MHz) as the source clock */
-    LCD_CLK_SRC_APLL = SOC_MOD_CLK_APLL,                        /*!< Select APLL as the source clock */
-    LCD_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,                        /*!< Select XTAL as the source clock */
+    TIMER_SRC_CLK_APB = SOC_MOD_CLK_APB,     /*!< Timer group source clock is APB */
+    TIMER_SRC_CLK_DEFAULT = SOC_MOD_CLK_APB, /*!< Timer group source clock default choice is APB */
+} soc_periph_tg_clk_src_legacy_t;
+
+//////////////////////////////////////////////////LCD///////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of LCD
+ */
+#define SOC_LCD_CLKS {SOC_MOD_CLK_PLL_D2, SOC_MOD_CLK_APLL, SOC_MOD_CLK_XTAL}
+
+/**
+ * @brief Type of LCD clock source
+ */
+typedef enum {
+    LCD_CLK_SRC_PLL160M = SOC_MOD_CLK_PLL_D2, /*!< Select PLL_D2 (default to 160MHz) as the source clock */
+    LCD_CLK_SRC_APLL = SOC_MOD_CLK_APLL,      /*!< Select APLL as the source clock */
+    LCD_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,      /*!< Select XTAL as the source clock */
+    LCD_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_D2, /*!< Select PLL_D2 (default to 160MHz) as the default choice */
 } soc_periph_lcd_clk_src_t;
 
+//////////////////////////////////////////////////RMT///////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of RMT
+ */
+#define SOC_RMT_CLKS {SOC_MOD_CLK_APB, SOC_MOD_CLK_APB_F1M}
+
+/**
+ * @brief Type of RMT clock source
+ */
 typedef enum {
-    RMT_CLK_SRC_NONE = 0,                                       /*!< No clock source is selected */
-    RMT_CLK_SRC_REFTICK = SOC_MOD_CLK_APB_F1M,                  /*!< Select REF_TICK (1MHz) as the source clock */
-    RMT_CLK_SRC_APB = SOC_MOD_CLK_APB,                          /*!< Select APB as the source clock */
+    RMT_CLK_SRC_NONE = 0,                      /*!< No clock source is selected */
+    RMT_CLK_SRC_APB = SOC_MOD_CLK_APB,         /*!< Select APB as the source clock */
+    RMT_CLK_SRC_APB_F1M = SOC_MOD_CLK_APB_F1M, /*!< Select APB_F1M (a.k.a REF_TICK) as the source clock */
+    RMT_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB,     /*!< Select APB as the default choice */
 } soc_periph_rmt_clk_src_t;
 
-// ESP32 does not support temperature sensor, it is only to pass ci check_public_headers
+/**
+ * @brief Type of RMT clock source, reserved for the legacy RMT driver
+ */
+typedef enum {
+    RMT_BASECLK_APB = SOC_MOD_CLK_APB,     /*!< RMT source clock is APB CLK */
+    RMT_BASECLK_REF = SOC_MOD_CLK_APB_F1M, /*!< RMT source clock is APB_F1M */
+    RMT_BASECLK_DEFAULT = SOC_MOD_CLK_APB, /*!< RMT source clock default choice is APB */
+} soc_periph_rmt_clk_src_legacy_t;
+
+//////////////////////////////////////////////////Temp Sensor///////////////////////////////////////////////////////////
+
+/**
+ * @brief Type of Temp Sensor clock source
+ * @note ESP32 does not support temperature sensor
+ */
 typedef enum {
     TEMPERATURE_SENSOR_SRC_NA,
 } soc_periph_temperature_sensor_clk_src_t;

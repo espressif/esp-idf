@@ -764,7 +764,7 @@ TEST_CASE("Test ring buffer ISR", "[esp_ringbuf]")
 
     //Setup timer for ISR
     gptimer_config_t config = {
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = 1000000,
     };

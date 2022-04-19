@@ -134,7 +134,7 @@ TEST_CASE("Automatic light occurs when tasks are suspended", "[pm]")
      * It will stop working while in light sleep.
      */
     gptimer_config_t config = {
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = 1000000, /* 1 us per tick */
     };

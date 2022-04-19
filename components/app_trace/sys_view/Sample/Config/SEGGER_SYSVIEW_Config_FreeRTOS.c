@@ -197,7 +197,7 @@ static void SEGGER_SYSVIEW_TS_Init(void)
      */
 #if TS_USE_TIMERGROUP
     gptimer_config_t config = {
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = SYSVIEW_TIMESTAMP_FREQ,
     };

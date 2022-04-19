@@ -219,6 +219,7 @@
 #define SOC_TIMER_GROUP_TIMERS_PER_GROUP  (1U)
 #define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH (54)
 #define SOC_TIMER_GROUP_SUPPORT_XTAL      (1)
+#define SOC_TIMER_GROUP_SUPPORT_PLL_F40M  (1)
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (1U)
 
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/

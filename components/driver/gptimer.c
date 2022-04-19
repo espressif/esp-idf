@@ -422,7 +422,9 @@ static esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_sou
     unsigned int counter_src_hz = 0;
     esp_err_t ret = ESP_OK;
     int timer_id = timer->timer_id;
+    // [clk_tree] TODO: replace the following switch table by clk_tree API
     switch (src_clk) {
+#if SOC_TIMER_GROUP_SUPPORT_APB
     case GPTIMER_CLK_SRC_APB:
         counter_src_hz = esp_clk_apb_freq();
 #if CONFIG_PM_ENABLE
@@ -432,11 +434,24 @@ static esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_sou
         ESP_LOGD(TAG, "install APB_FREQ_MAX lock for timer (%d,%d)", timer->group->group_id, timer_id);
 #endif
         break;
+#endif // SOC_TIMER_GROUP_SUPPORT_APB
+#if SOC_TIMER_GROUP_SUPPORT_PLL_F40M
+    case GPTIMER_CLK_SRC_PLL_F40M:
+        // TODO: decide which kind of PM lock we should use for such clock
+        counter_src_hz = 40 * 1000 * 1000;
+        break;
+#endif // SOC_TIMER_GROUP_SUPPORT_PLL_F40M
+#if SOC_TIMER_GROUP_SUPPORT_AHB
+    case GPTIMER_CLK_SRC_AHB:
+        // TODO: decide which kind of PM lock we should use for such clock
+        counter_src_hz = 48 * 1000 * 1000;
+        break;
+#endif // SOC_TIMER_GROUP_SUPPORT_AHB
 #if SOC_TIMER_GROUP_SUPPORT_XTAL
     case GPTIMER_CLK_SRC_XTAL:
         counter_src_hz = esp_clk_xtal_freq();
         break;
-#endif
+#endif // SOC_TIMER_GROUP_SUPPORT_XTAL
     default:
         ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "clock source %d is not support", src_clk);
         break;

@@ -1987,7 +1987,7 @@ TEST_CASE("can post events from interrupt handler", "[event]")
     gptimer_handle_t gptimer = NULL;
     /* Select and initialize basic parameters of the timer */
     gptimer_config_t config = {
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = 1000000, // 1MHz, 1 tick = 1us
     };

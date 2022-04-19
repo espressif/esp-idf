@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include "esp_err.h"
 #include "soc/soc_caps.h"
+#include "soc/clk_tree_defs.h"
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/ringbuf.h"
@@ -88,16 +89,7 @@ typedef enum {
  * @brief Clock Source of RMT Channel
  *
  */
-typedef enum {
-#if SOC_RMT_SUPPORT_REF_TICK
-    RMT_BASECLK_REF = 0, /*!< RMT source clock is REF_TICK, 1MHz by default */
-#endif
-    RMT_BASECLK_APB = 1, /*!< RMT source clock is APB CLK, 80Mhz by default */
-#if SOC_RMT_SUPPORT_XTAL
-    RMT_BASECLK_XTAL = 3, /*!< RMT source clock is XTAL clock, 40Mhz by default */
-#endif
-    RMT_BASECLK_MAX,
-} rmt_source_clk_t;
+typedef soc_periph_rmt_clk_src_legacy_t rmt_source_clk_t;
 
 /**
  * @brief RMT Data Mode

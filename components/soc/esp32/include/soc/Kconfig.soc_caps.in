@@ -499,6 +499,10 @@ config SOC_TIMER_GROUP_TOTAL_TIMERS
     int
     default 4
 
+config SOC_TIMER_GROUP_SUPPORT_APB
+    bool
+    default y
+
 config SOC_TOUCH_VERSION_1
     bool
     default y

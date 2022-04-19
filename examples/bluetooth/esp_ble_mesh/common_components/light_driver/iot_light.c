@@ -223,7 +223,7 @@ light_handle_t iot_light_create(ledc_timer_t timer, ledc_mode_t speed_mode, uint
 
     if (g_hw_timer_started == false) {
         gptimer_config_t timer_config = {
-            .clk_src = GPTIMER_CLK_SRC_APB,
+            .clk_src = GPTIMER_CLK_SRC_DEFAULT,
             .direction = GPTIMER_COUNT_UP,
             .resolution_hz = GPTIMER_RESOLUTION_HZ,
         };

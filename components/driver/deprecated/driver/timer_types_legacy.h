@@ -7,6 +7,7 @@
 #pragma once
 
 #include "soc/soc_caps.h"
+#include "soc/clk_tree_defs.h"
 #include "hal/timer_types.h"
 #include "esp_intr_alloc.h"
 #include "esp_attr.h"
@@ -105,12 +106,7 @@ typedef enum {
 /**
  * @brief Timer group clock source
  */
-typedef enum {
-    TIMER_SRC_CLK_APB = GPTIMER_CLK_SRC_APB,   /*!< Select APB as the source clock*/
-#if SOC_TIMER_GROUP_SUPPORT_XTAL
-    TIMER_SRC_CLK_XTAL = GPTIMER_CLK_SRC_XTAL, /*!< Select XTAL as the source clock*/
-#endif
-} timer_src_clk_t;
+typedef soc_periph_tg_clk_src_legacy_t timer_src_clk_t;
 
 /**
  * @brief Interrupt handler callback function

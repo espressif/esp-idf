@@ -71,7 +71,7 @@ TEST_CASE("Scheduler disabled can handle a pending context switch on resume", "[
                             &counter_task, UNITY_FREERTOS_CPU);
 
     gptimer_config_t timer_config = {
-        .clk_src = GPTIMER_CLK_SRC_APB,
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT,
         .direction = GPTIMER_COUNT_UP,
         .resolution_hz = 1000000, // 1MHz, 1 tick=1us
     };
