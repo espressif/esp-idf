@@ -30,9 +30,9 @@ PROVIDE ( esp_rom_uart_rx_one_char    = uart_rx_one_char );
 PROVIDE ( esp_rom_uart_rx_string      = UartRxString );
 PROVIDE ( esp_rom_uart_putc           = ets_write_char_uart );
 
-PROVIDE ( esp_rom_mbedtls_md5_starts_ret = 0x40002a34 );
-PROVIDE ( esp_rom_mbedtls_md5_update_ret = 0x40002a38 );
-PROVIDE ( esp_rom_mbedtls_md5_finish_ret = 0x40002a3c );
+PROVIDE ( esp_rom_mbedtls_md5_starts_ret = mbedtls_md5_starts_ret );
+PROVIDE ( esp_rom_mbedtls_md5_update_ret = mbedtls_md5_update_ret );
+PROVIDE ( esp_rom_mbedtls_md5_finish_ret = mbedtls_md5_finish_ret );
 
 PROVIDE ( esp_rom_printf   = ets_printf );
 PROVIDE ( esp_rom_delay_us = ets_delay_us );
