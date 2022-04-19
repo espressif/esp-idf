@@ -105,7 +105,6 @@
 /components/esptool_py/               @esp-idf-codeowners/tools
 /components/fatfs/                    @esp-idf-codeowners/storage
 /components/fatfs/**/*.py             @esp-idf-codeowners/tools
-/components/freemodbus/               @esp-idf-codeowners/peripherals
 /components/freertos/                 @esp-idf-codeowners/system
 /components/hal/                      @esp-idf-codeowners/peripherals
 /components/heap/                     @esp-idf-codeowners/system
