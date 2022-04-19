@@ -117,3 +117,55 @@ function retry_failed() {
   fi
   return $exitCode
 }
+
+function internal_pip_install() {
+  project=$1
+  package=$2
+  token_name=${3:-${BOT_TOKEN_NAME}}
+  token=${4:-${BOT_TOKEN}}
+  python=${5:-python}
+
+  $python -m pip install --index-url https://${token_name}:${token}@${GITLAB_HTTPS_HOST}/api/v4/projects/${project}/packages/pypi/simple --force-reinstall --no-deps ${package}
+}
+
+function join_by {
+  local d=${1-} f=${2-}
+  if shift 2; then
+    printf %s "$f" "${@/#/$d}"
+  fi
+}
+
+function is_based_on_commits() {
+  # This function would accept space-separated args as multiple commits.
+  # The return value would be 0 if current HEAD is based on any of the specified commits.
+  #
+  # In our CI, we use environment variable $REQUIRED_ANCESTOR_COMMITS to declare the ancestor commits.
+  # Please remember to set one commit for each release branch.
+
+  commits=$*
+  if [[ -z $commits ]]; then
+    info "Not specifying commits that branches should be based on, skipping check..."
+    return 0
+  fi
+
+  commits_str="$(join_by " or " $commits)" # no doublequotes here, passing array
+
+  info "Checking if current branch is based on $commits_str..."
+  for i in $commits; do
+    if git merge-base --is-ancestor "$i" HEAD >/dev/null 2>&1; then
+      info "Current branch is based on $i"
+      return 0
+    else
+      info "Current branch is not based on $i"
+    fi
+  done
+
+  error "The base commit of your branch is too old."
+  error "The branch should be more recent than either of the following commits:"
+  error "  $commits_str"
+  error "To fix the issue:"
+  error " - If your merge request is 'Draft', or has conflicts with the target branch, rebase it to the latest master or release branch"
+  error " - Otherwise, simply run a new pipeline."
+
+  return 1
+}

@@ -21,6 +21,7 @@
   image: "$CI_DOCKER_REGISTRY/esp-idf-pre-commit:1"
   before_script:
     - source tools/ci/utils.sh
+    - is_based_on_commits $REQUIRED_ANCESTOR_COMMITS
     - export PYTHONPATH="$CI_PROJECT_DIR/tools:$CI_PROJECT_DIR/tools/ci/python_packages:$PYTHONPATH"
 
 check_pre_commit_master_release:
