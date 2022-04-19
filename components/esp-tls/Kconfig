@@ -19,7 +19,6 @@ menu "ESP-TLS"
         select ATCA_MBEDTLS_ECDSA
         select ATCA_MBEDTLS_ECDSA_SIGN
         select ATCA_MBEDTLS_ECDSA_VERIFY
-        default n
         help
             Enable use of Secure Element for ESP-TLS, this enables internal support for
             ATECC608A peripheral on ESPWROOM32SE, which can be used for TLS connection.
@@ -34,24 +33,21 @@ menu "ESP-TLS"
             can only be used when it is appropriately configured for TLS.
             Consult the ESP-TLS documentation in ESP-IDF Programming Guide for more details.
 
+    config ESP_TLS_CLIENT_SESSION_TICKETS
+        bool "Enable client session tickets"
+        depends on ESP_TLS_USING_MBEDTLS && MBEDTLS_CLIENT_SSL_SESSION_TICKETS
+        help
+            Enable session ticket support as specified in RFC5077.
+
     config ESP_TLS_SERVER
         bool "Enable ESP-TLS Server"
-        default n
         help
             Enable support for creating server side SSL/TLS session, available for mbedTLS
             as well as wolfSSL TLS library.
 
-    config ESP_TLS_CLIENT_SESSION_TICKETS
-        bool "Enable client session tickets"
-        depends on ESP_TLS_USING_MBEDTLS && MBEDTLS_CLIENT_SSL_SESSION_TICKETS
-        default n
-        help
-            Enable session ticket support as specified in RFC5077.
-
     config ESP_TLS_SERVER_SESSION_TICKETS
         bool "Enable server session tickets"
         depends on ESP_TLS_SERVER && ESP_TLS_USING_MBEDTLS && MBEDTLS_SERVER_SSL_SESSION_TICKETS
-        default n
         help
             Enable session ticket support as specified in RFC5077
 
@@ -62,6 +58,17 @@ menu "ESP-TLS"
         help
             Sets the session ticket timeout used in the tls server.
 
+    config ESP_TLS_SERVER_MIN_AUTH_MODE_OPTIONAL
+        bool "ESP-TLS Server: Set minimum Certificate Verification mode to Optional"
+        depends on ESP_TLS_SERVER && ESP_TLS_USING_MBEDTLS
+        help
+            When this option is enabled, the peer (here, the client) certificate is checked by the server,
+            however the handshake continues even if verification failed. By default, the
+            peer certificate is not checked and ignored by the server.
+
+            mbedtls_ssl_get_verify_result() can be called after the handshake is complete to
+            retrieve status of verification.
+
     config ESP_TLS_PSK_VERIFICATION
         bool "Enable PSK verification"
         select MBEDTLS_PSK_MODES if ESP_TLS_USING_MBEDTLS
@@ -69,7 +76,6 @@ menu "ESP-TLS"
         select MBEDTLS_KEY_EXCHANGE_DHE_PSK if ESP_TLS_USING_MBEDTLS
         select MBEDTLS_KEY_EXCHANGE_ECDHE_PSK if ESP_TLS_USING_MBEDTLS
         select MBEDTLS_KEY_EXCHANGE_RSA_PSK if ESP_TLS_USING_MBEDTLS
-        default n
         help
             Enable support for pre shared key ciphers, supported for both mbedTLS as well as
             wolfSSL TLS library.
@@ -105,7 +111,6 @@ menu "ESP-TLS"
     config ESP_DEBUG_WOLFSSL
         bool "Enable debug logs for wolfSSL"
         depends on ESP_TLS_USING_WOLFSSL
-        default n
         help
             Enable detailed debug prints for wolfSSL SSL library.
 
