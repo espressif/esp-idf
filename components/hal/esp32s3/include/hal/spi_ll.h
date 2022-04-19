@@ -42,6 +42,8 @@ extern "C" {
 #define SPI_LL_PERIPH_CLK_FREQ (80 * 1000000)
 #define SPI_LL_GET_HW(ID) ((ID)==0? ({abort();NULL;}):((ID)==1? &GPSPI2 : &GPSPI3))
 
+#define SPI_LL_DATA_MAX_BIT_LEN (1 << 18)
+
 /**
  * The data structure holding calculated clock configuration. Since the
  * calculation needs long time, it should be calculated during initialization and

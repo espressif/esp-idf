@@ -1,13 +1,16 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
 #include <stddef.h>
+#include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "hal/dma_types.h"
+#include "esp_intr_alloc.h"
+#include "esp_heap_caps.h"
 #if SOC_LCDCAM_SUPPORTED
 #include "hal/lcd_hal.h"
 #endif
@@ -15,6 +18,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define LCD_I80_INTR_ALLOC_FLAGS     ESP_INTR_FLAG_INTRDISABLED
+#define LCD_I80_MEM_ALLOC_CAPS       MALLOC_CAP_DEFAULT
 
 #define LCD_PERIPH_CLOCK_PRE_SCALE (2) // This is the minimum divider that can be applied to LCD peripheral
 

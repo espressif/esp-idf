@@ -1,0 +1,6 @@
+[mapping:esp_lcd]
+archive: libesp_lcd.a
+entries:
+    if LCD_RGB_ISR_IRAM_SAFE = y:
+        esp_lcd_common: lcd_com_mount_dma_data (noflash)
+        esp_lcd_rgb_panel: lcd_rgb_panel_start_transmission (noflash)
