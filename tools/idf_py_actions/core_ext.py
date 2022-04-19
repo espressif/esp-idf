@@ -451,28 +451,6 @@ def action_extensions(base_actions, project_path):
                 'order_dependencies': ['reconfigure'],
                 'options': global_options,
             },
-            'erase_otadata': {
-                'callback': build_target,
-                'hidden': True,
-                'help': 'Erase otadata partition.',
-                'options': global_options,
-            },
-            'erase-otadata': {
-                'callback': build_target,
-                'help': 'Erase otadata partition. Deprecated alias: "erase_otadata".',
-                'options': global_options,
-            },
-            'read_otadata': {
-                'callback': build_target,
-                'hidden': True,
-                'help': 'Read otadata partition.',
-                'options': global_options,
-            },
-            'read-otadata': {
-                'callback': build_target,
-                'help': 'Read otadata partition. Deprecated alias: "read_otadata".',
-                'options': global_options,
-            },
             'build-system-targets': {
                 'callback': list_build_system_targets,
                 'help': 'Print list of build system targets.',
