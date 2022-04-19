@@ -51,13 +51,13 @@
 #endif
 
 #ifndef BTC_HF_CLIENT_FEATURES
-#define BTC_HF_CLIENT_FEATURES   ( BTA_HF_CLIENT_FEAT_ECNR  | \
-                                    BTA_HF_CLIENT_FEAT_3WAY  | \
-                                    BTA_HF_CLIENT_FEAT_CLI   | \
-                                    BTA_HF_CLIENT_FEAT_VREC  | \
-                                    BTA_HF_CLIENT_FEAT_VOL   | \
-                                    BTA_HF_CLIENT_FEAT_ECS   | \
-                                    BTA_HF_CLIENT_FEAT_ECC   | \
+#define BTC_HF_CLIENT_FEATURES   ( BTA_HF_CLIENT_FEAT_ECNR    | \
+                                    BTA_HF_CLIENT_FEAT_3WAY   | \
+                                    BTA_HF_CLIENT_FEAT_CLI    | \
+                                    BTA_HF_CLIENT_FEAT_VREC   | \
+                                    BTA_HF_CLIENT_FEAT_VOL    | \
+                                    BTA_HF_CLIENT_FEAT_ECS    | \
+                                    BTA_HF_CLIENT_FEAT_ECC    | \
                                     BTA_HF_CLIENT_FEAT_CODEC)
 #endif
 
@@ -66,7 +66,7 @@
 /************************************************************************************
 **  Static variables
 ************************************************************************************/
-const char *btc_hf_client_version = "1.6";
+const int btc_hf_client_version = HFP_HF_VERSION_1_7;
 
 #if HFP_DYNAMIC_MEMORY == FALSE
 static hf_client_local_param_t hf_client_local_param;
@@ -200,7 +200,7 @@ static bt_status_t connect_int( bt_bdaddr_t *bd_addr, uint16_t uuid )
 
 bt_status_t btc_hf_client_connect( bt_bdaddr_t *bd_addr )
 {
-    BTC_TRACE_EVENT("HFP Client version is  %s", btc_hf_client_version);
+    BTC_TRACE_EVENT("HFP Client version is  0x%04x", btc_hf_client_version);
     CHECK_HF_CLIENT_INIT();
     return btc_queue_connect(UUID_SERVCLASS_HF_HANDSFREE, bd_addr, connect_int);
 }
@@ -690,33 +690,36 @@ bt_status_t btc_hf_client_execute_service(BOOLEAN b_enable)
 {
     BTC_TRACE_EVENT("%s enable:%d", __FUNCTION__, b_enable);
 
-     if (b_enable)
-     {
-          /* Enable and register with BTA-HFClient */
-          BTA_HfClientEnable(bte_hf_client_evt);
-          if (strcmp(btc_hf_client_version, "1.6") == 0)
-          {
-              BTC_TRACE_EVENT("Support Codec Nego. %d ", BTC_HF_CLIENT_FEATURES);
-              BTA_HfClientRegister(BTC_HF_CLIENT_SECURITY, BTC_HF_CLIENT_FEATURES,
-                      BTC_HF_CLIENT_SERVICE_NAME);
-          }
-          else
-          {
-              BTC_TRACE_EVENT("No Codec Nego Supported");
-              hf_client_local_param.btc_hf_client_features = BTC_HF_CLIENT_FEATURES;
-              hf_client_local_param.btc_hf_client_features = hf_client_local_param.btc_hf_client_features & (~BTA_HF_CLIENT_FEAT_CODEC);
-              BTC_TRACE_EVENT("hf_client_local_param.btc_hf_client_features is   %d", hf_client_local_param.btc_hf_client_features);
-              BTA_HfClientRegister(BTC_HF_CLIENT_SECURITY, hf_client_local_param.btc_hf_client_features,
-                      BTC_HF_CLIENT_SERVICE_NAME);
-          }
+    if (b_enable)
+    {
+        /* Enable and register with BTA-HFClient */
+        BTA_HfClientEnable(bte_hf_client_evt);
+        hf_client_local_param.btc_hf_client_features = BTC_HF_CLIENT_FEATURES;
+        if (btc_hf_client_version >= HFP_HF_VERSION_1_7)
+        {
+            hf_client_local_param.btc_hf_client_features |= BTA_HF_CLIENT_FEAT_ESCO_S4;
+            BTC_TRACE_EVENT("eSCO S4 Setting Supported");
 
-     }
-     else
-     {
-         BTA_HfClientDeregister(hf_client_local_param.btc_hf_client_cb.handle);
-         BTA_HfClientDisable();
-     }
-     return BT_STATUS_SUCCESS;
+        }
+        else if (btc_hf_client_version >= HFP_HF_VERSION_1_6)
+        {
+            BTC_TRACE_EVENT("No eSCO S4 Setting Supported");
+        }
+        else
+        {
+            BTC_TRACE_EVENT("No Codec Nego Supported");
+            hf_client_local_param.btc_hf_client_features = hf_client_local_param.btc_hf_client_features & (~BTA_HF_CLIENT_FEAT_CODEC);
+        }
+        BTC_TRACE_EVENT("hf_client_local_param.btc_hf_client_features is   %d", hf_client_local_param.btc_hf_client_features);
+        BTA_HfClientRegister(BTC_HF_CLIENT_SECURITY, hf_client_local_param.btc_hf_client_features,
+                    BTC_HF_CLIENT_SERVICE_NAME);
+    }
+    else
+    {
+        BTA_HfClientDeregister(hf_client_local_param.btc_hf_client_cb.handle);
+        BTA_HfClientDisable();
+    }
+    return BT_STATUS_SUCCESS;
 }
 
 static void process_ind_evt(tBTA_HF_CLIENT_IND *ind)

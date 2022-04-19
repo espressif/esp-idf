@@ -18,6 +18,7 @@
  ******************************************************************************/
 
 #include "bta_hf_client_int.h"
+#include "bta/bta_hf_client_api.h"
 #include "common/bt_trace.h"
 #include <string.h>
 #include "common/bt_defs.h"
@@ -33,6 +34,11 @@
                                     BTM_SCO_PKT_TYPES_MASK_NO_3_EV3 | \
                                     BTM_SCO_PKT_TYPES_MASK_NO_2_EV5 | \
                                     BTM_SCO_PKT_TYPES_MASK_NO_3_EV5)
+
+#define BTA_HF_CLIENT_SCO_PARAM_IDX_CVSD      0   /* SCO setting for CVSD     */
+#define BTA_HF_CLIENT_ESCO_PARAM_IDX_CVSD_S3  1   /* eSCO setting for CVSD S3 */
+#define BTA_HF_CLIENT_ESCO_PARAM_IDX_MSBC_T2  2   /* eSCO setting for mSBC T2 */
+#define BTA_HF_CLIENT_ESCO_PARAM_IDX_CVSD_S4  3   /* eSCO setting for CVSD S4 */
 
 static const tBTM_ESCO_PARAMS bta_hf_client_esco_params[] = {
     /* SCO CVSD */
@@ -69,6 +75,19 @@ static const tBTM_ESCO_PARAMS bta_hf_client_esco_params[] = {
         /* Packet Types : EV3 + 2-EV3               */
         .packet_types = (BTM_SCO_PKT_TYPES_MASK_EV3  |
         BTM_SCO_PKT_TYPES_MASK_NO_3_EV3 |
+        BTM_SCO_PKT_TYPES_MASK_NO_2_EV5 |
+        BTM_SCO_PKT_TYPES_MASK_NO_3_EV5),
+        .retrans_effort = BTM_ESCO_RETRANS_QUALITY,
+    },
+    /* HFP 1.7+ */
+    /* ESCO CVSD S4 */
+    {
+        .rx_bw = BTM_64KBITS_RATE,
+        .tx_bw = BTM_64KBITS_RATE,
+        .max_latency = 12,
+        .voice_contfmt = BTM_VOICE_SETTING_CVSD,
+        /* Allow controller to use all types available except 5-slot EDR */
+        .packet_types = (BTM_SCO_LINK_ALL_PKT_MASK |
         BTM_SCO_PKT_TYPES_MASK_NO_2_EV5 |
         BTM_SCO_PKT_TYPES_MASK_NO_3_EV5),
         .retrans_effort = BTM_ESCO_RETRANS_QUALITY,
@@ -178,18 +197,27 @@ static void bta_hf_client_sco_conn_rsp(tBTM_ESCO_CONN_REQ_EVT_DATA *p_data)
 {
     tBTM_ESCO_PARAMS    resp;
     UINT8               hci_status = HCI_SUCCESS;
+    UINT8            index = BTA_HF_CLIENT_ESCO_PARAM_IDX_CVSD_S3;
 #if (BTM_SCO_HCI_INCLUDED == TRUE )
     tBTA_HFP_CODEC_INFO     codec_info = {BTA_HFP_SCO_CODEC_PCM};
     UINT32              pcm_sample_rate;
 #endif
-    APPL_TRACE_DEBUG("%s", __FUNCTION__);
+
+    APPL_TRACE_DEBUG("%s: negotiated codec = %d", __FUNCTION__, bta_hf_client_cb.scb.negotiated_codec);
 
     if (bta_hf_client_cb.scb.sco_state == BTA_HF_CLIENT_SCO_LISTEN_ST) {
         if (p_data->link_type == BTM_LINK_TYPE_SCO) {
-            resp = bta_hf_client_esco_params[0];
+            index = BTA_HF_CLIENT_SCO_PARAM_IDX_CVSD;
         } else {
-            resp = bta_hf_client_esco_params[bta_hf_client_cb.scb.negotiated_codec];
+            if ((bta_hf_client_cb.scb.negotiated_codec == BTM_SCO_CODEC_CVSD) &&
+                 (bta_hf_client_cb.scb.features && BTA_HF_CLIENT_FEAT_ESCO_S4) &&
+                 (bta_hf_client_cb.scb.peer_features && BTA_HF_CLIENT_PEER_ESCO_S4)) {
+                index = BTA_HF_CLIENT_ESCO_PARAM_IDX_CVSD_S4;
+            } else if (bta_hf_client_cb.scb.negotiated_codec == BTM_SCO_CODEC_MSBC) {
+                index = BTA_HF_CLIENT_ESCO_PARAM_IDX_MSBC_T2;
+            }
         }
+        resp = bta_hf_client_esco_params[index];
 
         /* tell sys to stop av if any */
         bta_sys_sco_use(BTA_ID_HS, 1, bta_hf_client_cb.scb.peer_addr);
@@ -350,6 +378,7 @@ static void bta_hf_client_sco_create(BOOLEAN is_orig)
     tBTM_STATUS       status;
     UINT8            *p_bd_addr = NULL;
     tBTM_ESCO_PARAMS params;
+    UINT8            index = BTA_HF_CLIENT_ESCO_PARAM_IDX_CVSD_S3;
 #if (BTM_SCO_HCI_INCLUDED == TRUE )
     tBTM_SCO_ROUTE_TYPE sco_route;
     tBTA_HFP_CODEC_INFO codec_info = {BTA_HFP_SCO_CODEC_PCM};
@@ -364,7 +393,15 @@ static void bta_hf_client_sco_create(BOOLEAN is_orig)
         return;
     }
 
-    params = bta_hf_client_esco_params[1];
+    if (bta_hf_client_cb.scb.negotiated_codec == BTM_SCO_CODEC_CVSD) {
+        if ((bta_hf_client_cb.scb.features && BTA_HF_CLIENT_FEAT_ESCO_S4) &&
+                (bta_hf_client_cb.scb.peer_features && BTA_HF_CLIENT_PEER_ESCO_S4)) {
+            index = BTA_HF_CLIENT_ESCO_PARAM_IDX_CVSD_S4;
+        }
+    } else if (bta_hf_client_cb.scb.negotiated_codec == BTM_SCO_CODEC_MSBC) {
+        index = BTA_HF_CLIENT_ESCO_PARAM_IDX_MSBC_T2;
+    }
+    params = bta_hf_client_esco_params[index];
 
     /* if initiating set current scb and peer bd addr */
     if (is_orig) {
