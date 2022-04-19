@@ -1,53 +1,96 @@
-| Supported Targets | ESP32 | ESP32-S2 | ESP32-C3 |
-| ----------------- | ----- | -------- | -------- |
-
 # Simple HTTP File Server Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-If the SD card option is enabled, you can access files in the SD card by the path `/sdcard` 
+HTTP file server example demonstrates file serving with both upload and download capability, using the `esp_http_server` component of ESP-IDF. This example can use one of the following options for data storage:
 
-HTTP file server example demonstrates file serving with both upload and download capability, using the `esp_http_server` component of ESP-IDF. The following URIs are provided by the server:
+- SPIFFS filesystem in SPI Flash. This option works on any ESP development board without any extra hardware.
+
+- FAT filesystem on an SD card. Both SDSPI and SDMMC drivers are supported. You need a development board with an SD card slot to use this option.
+
+The following URIs are provided by the server:
 
 | URI                  | Method  | Description                                                                               |
 |----------------------|---------|-------------------------------------------------------------------------------------------|
 |`index.html`          | GET     | Redirects to `/`                                                                          |
 |`favicon.ico`         | GET     | Browsers use this path to retrieve page icon which is embedded in flash                   |
-|`/`                   | GET     | Responds with webpage displaying list of files on SPIFFS and form for uploading new files |
-|`/<file path>`        | GET     | For downloading files stored on SPIFFS                                                    |
-|`/upload/<file path>` | POST    | For uploading files on to SPIFFS. Files are sent as body of HTTP post requests            |
-|`/delete/<file path>` | POST    | Command for deleting a file from SPIFFS                                                   |
+|`/`                   | GET     | Responds with webpage displaying list of files on the filesystem and form for uploading new files |
+|`/<file path>`        | GET     | For downloading files stored on the filesystem                                                    |
+|`/upload/<file path>` | POST    | For uploading files on to the filesystem. Files are sent as body of HTTP post requests            |
+|`/delete/<file path>` | POST    | Command for deleting a file from the filesystem                                                   |
 
-File server implementation can be found under `main/file_server.c` which uses SPIFFS for file storage. `main/upload_script.html` has some HTML, JavaScript and Ajax content used for file uploading, which is embedded in the flash image and used as it is when generating the home page of the file server.
+File server implementation can be found under `main/file_server.c`. `main/upload_script.html` has some HTML, JavaScript and Ajax content used for file uploading, which is embedded in the flash image and used as it is when generating the home page of the file server.
 
-## Note
+Note that the default `/index.html` and `/favicon.ico` files can be overridden by uploading files with same name to the filesystem.
 
-`/index.html` and `/favicon.ico` can be overridden by uploading files with same pathname to SPIFFS.
+## How to use the example
 
-## Usage
+### Wi-Fi/Ethernet connection
+```
+idf.py menuconfig
+```
+Open the project configuration menu (`idf.py menuconfig`) to configure Wi-Fi or Ethernet. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../../README.md) for more details.
 
-* Open the project configuration menu (`idf.py menuconfig`) go to `Example Configuration` ->
-    1. WIFI SSID: WIFI network to which your PC is also connected to.
-    2. WIFI Password: WIFI password
+### SD card (optional)
 
-* In order to test the file server demo :
-    1. compile and burn the firmware `idf.py -p PORT flash`
-    2. run `idf.py -p PORT monitor` and note down the IP assigned to your ESP module. The default port is 80
-    3. test the example interactively on a web browser (assuming IP is 192.168.43.130):
-        1. open path `http://192.168.43.130/` or `http://192.168.43.130/index.html` to see an HTML web page with list of files on the server (initially empty)
-        2. use the file upload form on the webpage to select and upload a file to the server
-        3. click a file link to download / open the file on browser (if supported)
-        4. click the delete link visible next to each file entry to delete them
-    4. test the example using curl (assuming IP is 192.168.43.130):
-        1. `myfile.html` is uploaded to `/path/on/device/myfile_copy.html` using `curl -X POST --data-binary @myfile.html 192.168.43.130:80/upload/path/on/device/myfile_copy.html`
-        2. download the uploaded copy back : `curl 192.168.43.130:80/path/on/device/myfile_copy.html > myfile_copy.html`
-        3. compare the copy with the original using `cmp myfile.html myfile_copy.html`
+By default the example uses SPIFFS filesystem in SPI flash for file storage.
 
-* To write to SD card, you need to:
-    1. Select the `Mount the SD card to the filesystem` in the configuration menu (by calling `idf.py menuconfig` and select the `EXAMPLE_MOUNT_SD_CARD` option.
-    2. If you need to format the card while the card fails to be mounted, enable the config option `The card will be formatted if mount has failed` (`EXAMPLE_FORMAT_SDCARD_IF_MOUNT_FAILED`). Be careful, all the data in the card will disappear.
+To use an SD card for file storage instead, open the project configuration menu (`idf.py menuconfig`) and enter "File_serving example menu". Then enable "Use SD card for file storage" (`CONFIG_EXAMPLE_MOUNT_SD_CARD`) option.
 
-    Note: You will have to access the SD card by SPI bus with sdspi driver, if you are using ESP32S2.
+SD cards can be used either over SPI interface (on all ESP chips) or over SDMMC interface (on ESP32 and ESP32-S3). To use SDMMC interface, enable "Use SDMMC host" (`CONFIG_EXAMPLE_USE_SDMMC_HOST`) option. To use SPI interface, disable this option.
+
+GPIO pins used to connect the SD card can be configured for the SPI interface (on all chips), or for SDMMC interface on chips where it uses GPIO matrix (ESP32-S3). This can be done in "SD card pin configuration" submenu.
+
+The example will be able to mount only cards formatted using FAT32 filesystem. If the card is formatted as exFAT or some other filesystem, you have an option to format it in the example code — "Format the card if mount failed" (`CONFIG_EXAMPLE_FORMAT_IF_MOUNT_FAILED`).
+
+For more information on pin configuration for SDMMC and SDSPI, check related examples: [sdmmc](../../../storage/sd_card/sdmmc/README.md), [sdspi](../../../storage/sd_card/sdmmc/README.md).
+
+### Build and Flash
+
+Build the project and flash it to the board, then run monitor tool to view serial output:
+
+```
+idf.py -p PORT flash monitor
+```
+
+(Replace PORT with the name of the serial port to use.)
+
+(To exit the serial monitor, type ``Ctrl-]``.)
+
+See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
+
+### Working with the example
+
+1. Note down the IP assigned to your ESP module. The IP address is logged by the example as follows:
+
+   ```
+   I (5424) example_connect: - IPv4 address: 192.168.1.100
+   I (5424) example_connect: - IPv6 address:    fe80:0000:0000:0000:86f7:03ff:fec0:1620, type: ESP_IP6_ADDR_IS
+   ```
+
+   The following steps assume that IP address 192.168.1.100 was assigned.
+
+2. Test the example interactively in a web browser. The default port is 80. 
+
+    1. Open path http://192.168.1.100/ or http://192.168.1.100/index.html to see an HTML page with list of files on the server. The page will initially be empty.
+    2. Use the file upload form on the webpage to select and upload a file to the server.
+    3. Click a file link to download / open the file on browser (if supported).
+    4. Click the delete link visible next to each file entry to delete them.
+
+3. Test the example using curl:
+
+    1. `myfile.html` can be uploaded to `/path/on/device/myfile_copy.html` using:
+       ```
+       curl -X POST --data-binary @myfile.html 192.168.43.130:80/upload/path/on/device/myfile_copy.html
+       ```
+
+    2. Download the uploaded file back:
+       ```
+       curl 192.168.43.130:80/path/on/device/myfile_copy.html > myfile_copy.html`
+       ```
+
+    3. Compare the copy with the original using `cmp myfile.html myfile_copy.html`
+
 
 ## Note
 
