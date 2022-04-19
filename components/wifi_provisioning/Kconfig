@@ -17,9 +17,26 @@ menu "Wi-Fi Provisioning Manager"
 
     config WIFI_PROV_BLE_BONDING
         bool
-        default n
         prompt "Enable BLE bonding"
         depends on BT_ENABLED
+        default y
         help
             This option is applicable only when provisioning transport is BLE.
+
+    config WIFI_PROV_BLE_SEC_CONN
+        bool
+        prompt "Enable BLE Secure connection flag"
+        depends on  BT_NIMBLE_ENABLED
+        default y
+        help
+            Used to enable Secure connection support when provisioning transport is BLE.
+
+    config WIFI_PROV_BLE_FORCE_ENCRYPTION
+        bool
+        prompt "Force Link Encryption during characteristic Read / Write"
+        depends on BT_NIMBLE_ENABLED
+        default y
+        help
+            Used to enforce link encryption when attempting to read / write characteristic
+
 endmenu

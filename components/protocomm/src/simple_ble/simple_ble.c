@@ -269,11 +269,12 @@ esp_err_t simple_ble_start(simple_ble_cfg_t *cfg)
     ESP_LOGD(TAG, "Free mem at end of simple_ble_init %d", esp_get_free_heap_size());
 
     /* set the security iocap & auth_req & key size & init key response key parameters to the stack*/
-    esp_ble_auth_req_t auth_req;
+    esp_ble_auth_req_t auth_req= ESP_LE_AUTH_REQ_MITM;
     if (cfg->ble_bonding) {
-	auth_req = ESP_LE_AUTH_REQ_SC_MITM_BOND;     //bonding with peer device after authentication
-    } else {
-	auth_req = ESP_LE_AUTH_REQ_SC_MITM;
+	auth_req |= ESP_LE_AUTH_BOND;     //bonding with peer device after authentication
+    }
+    if (cfg->ble_sm_sc) {
+	auth_req |= ESP_LE_AUTH_REQ_SC_ONLY;
     }
     esp_ble_io_cap_t iocap = ESP_IO_CAP_NONE;           //set the IO capability to No output No input
     uint8_t key_size = 16;      //the key size should be 7~16 bytes
