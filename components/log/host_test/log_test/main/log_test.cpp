@@ -193,6 +193,18 @@ TEST_CASE("changing log level")
     CHECK(regex_search(fix.get_print_buffer_string(), test_print) == true);
 }
 
+TEST_CASE("log buffer")
+{
+    PrintFixture fix(ESP_LOG_INFO);
+    const uint8_t buffer[] = {
+        0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+        0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
+    };
+    ESP_LOG_BUFFER_HEX(TEST_TAG, buffer, sizeof(buffer));
+    const std::regex buffer_regex("I \\([0-9]*\\) test: 01 02 03 04 05 06 07 08 11 12 13 14 15 16 17 18", std::regex::ECMAScript);
+    CHECK(regex_search(fix.get_print_buffer_string(), buffer_regex));
+}
+
 TEST_CASE("rom printf")
 {
     PutcFixture fix;
