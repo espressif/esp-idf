@@ -67,7 +67,7 @@ menu "Hardware Abstraction Layer (HAL) and Low Level (LL)"
 
     config HAL_SYSTIMER_HAS_ROM_IMPL
         bool
-        default y if IDF_TARGET_ESP32C2
+        default y if IDF_TARGET_ESP32C2 # TODO: IDF-4917
 
     config HAL_SYSTIMER_ROM_IMPL
         bool "Use systimer HAL implementation in ROM"
@@ -84,7 +84,7 @@ menu "Hardware Abstraction Layer (HAL) and Low Level (LL)"
 
     config HAL_WDT_HAS_ROM_IMPL
         bool
-        default y if IDF_TARGET_ESP32C2
+        default y if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32S3
 
     config HAL_WDT_ROM_IMPL
         bool "Use WDT HAL implementation in ROM"
