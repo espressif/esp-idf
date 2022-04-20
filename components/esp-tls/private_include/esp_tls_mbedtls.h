@@ -6,6 +6,7 @@
 
 #pragma once
 #include "esp_tls.h"
+#include "esp_tls_private.h"
 
 /**
  * Internal Callback API for mbedtls_ssl_read

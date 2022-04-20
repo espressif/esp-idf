@@ -14,6 +14,7 @@
 
 #include <http_parser.h>
 #include "esp_tls_mbedtls.h"
+#include "esp_tls_private.h"
 #include "esp_tls_error_capture_internal.h"
 #include <errno.h>
 #include "esp_log.h"

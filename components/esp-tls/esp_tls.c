@@ -14,6 +14,7 @@
 
 #include <http_parser.h>
 #include "esp_tls.h"
+#include "esp_tls_private.h"
 #include "esp_tls_error_capture_internal.h"
 #include <errno.h>
 static const char *TAG = "esp-tls";
@@ -87,6 +88,18 @@ static ssize_t tcp_read(esp_tls_t *tls, char *data, size_t datalen)
 static ssize_t tcp_write(esp_tls_t *tls, const char *data, size_t datalen)
 {
     return send(tls->sockfd, data, datalen, 0);
+}
+
+ssize_t esp_tls_conn_read(esp_tls_t *tls, void  *data, size_t datalen)
+{
+    return tls->read(tls, (char *)data, datalen);
+
+}
+
+ssize_t esp_tls_conn_write(esp_tls_t *tls, const void  *data, size_t datalen)
+{
+    return tls->write(tls, (char *)data, datalen);
+
 }
 
 /**
@@ -627,6 +640,16 @@ esp_err_t esp_tls_get_and_clear_last_error(esp_tls_error_handle_t h, int *esp_tl
     }
     memset(h, 0, sizeof(esp_tls_last_error_t));
     return last_err;
+}
+
+esp_err_t esp_tls_get_error_handle(esp_tls_t *tls, esp_tls_error_handle_t *error_handle)
+{
+    if (tls == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    *error_handle = tls->error_handle;
+    return ESP_OK;
 }
 
 esp_err_t esp_tls_init_global_ca_store(void)
