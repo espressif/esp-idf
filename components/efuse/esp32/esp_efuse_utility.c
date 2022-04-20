@@ -14,6 +14,8 @@
 
 static const char *TAG = "efuse";
 
+#define ESP_EFUSE_BLOCK_ERROR_BITS(error_reg, block) ((error_reg) & (0x0F << (4 * (block))))
+
 #ifdef CONFIG_EFUSE_VIRTUAL
 extern uint32_t virt_blocks[EFUSE_BLK_MAX][COUNT_EFUSE_REG_PER_BLOCK];
 #endif // CONFIG_EFUSE_VIRTUAL
@@ -82,22 +84,14 @@ __attribute__((always_inline)) static inline bool efuse_ll_get_dec_warnings(unsi
         return false;
     }
     uint32_t error_reg = REG_GET_FIELD(EFUSE_DEC_STATUS_REG, EFUSE_DEC_WARNINGS);
-    if (((error_reg >> (4 * (block - 1))) & 0x0F) != 0) {
-        return true;
-    }
-    return false;
+    return ESP_EFUSE_BLOCK_ERROR_BITS(error_reg, block - 1) != 0;
 }
 
-static bool efuse_hal_is_coding_error_in_block(unsigned block)
+bool efuse_hal_is_coding_error_in_block(unsigned block)
 {
-    if (block > 0) {
-        if (esp_efuse_get_coding_scheme(block) == EFUSE_CODING_SCHEME_3_4) {
-            if (efuse_ll_get_dec_warnings(block)) {
-                return true;
-            }
-        }
-    }
-    return false;
+    return block > 0 &&
+           esp_efuse_get_coding_scheme(block) == EFUSE_CODING_SCHEME_3_4 &&
+           efuse_ll_get_dec_warnings(block);
 }
 
 #endif // ifndef CONFIG_EFUSE_VIRTUAL
@@ -139,7 +133,7 @@ esp_err_t esp_efuse_utility_burn_chip(void)
 #ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
     esp_efuse_utility_write_efuses_to_flash();
 #endif
-#else
+#else // CONFIG_EFUSE_VIRTUAL
     if (esp_efuse_set_timing() != ESP_OK) {
         ESP_LOGE(TAG, "Efuse fields are not burnt");
     } else {
@@ -167,12 +161,12 @@ esp_err_t esp_efuse_utility_burn_chip(void)
             unsigned w_data_len;
             unsigned r_data_len;
             if (scheme == EFUSE_CODING_SCHEME_3_4) {
-                esp_efuse_utility_apply_34_encoding((void *)range_write_addr_blocks[num_block].start, (uint32_t *)start_write_addr[num_block], 24);
-                r_data_len = 24;
+                esp_efuse_utility_apply_34_encoding((void *)range_write_addr_blocks[num_block].start, (uint32_t *)start_write_addr[num_block], ESP_EFUSE_LEN_OF_3_4_SCHEME_BLOCK_IN_BYTES);
+                r_data_len = ESP_EFUSE_LEN_OF_3_4_SCHEME_BLOCK_IN_BYTES;
                 w_data_len = 32;
             } else if (scheme == EFUSE_CODING_SCHEME_REPEAT) {
                 apply_repeat_encoding((void *)range_write_addr_blocks[num_block].start, (uint32_t *)start_write_addr[num_block], 16);
-                r_data_len = 16;
+                r_data_len = ESP_EFUSE_LEN_OF_REPEAT_BLOCK_IN_BYTES;
                 w_data_len = 32;
             } else {
                 r_data_len = (range_read_addr_blocks[num_block].end - range_read_addr_blocks[num_block].start) + sizeof(uint32_t);
@@ -298,7 +292,7 @@ esp_err_t esp_efuse_utility_apply_new_coding_scheme()
                     if (*((uint32_t*)buf_w_data + 6) != 0 || *((uint32_t*)buf_w_data + 7) != 0) {
                         return ESP_ERR_CODING;
                     }
-                    for (int i = 0; i < 24; ++i) {
+                    for (int i = 0; i < ESP_EFUSE_LEN_OF_3_4_SCHEME_BLOCK_IN_BYTES; ++i) {
                         if (buf_w_data[i] != 0) {
                             int st_offset_buf = (i / 6) * 6;
                             // check that place is free.
