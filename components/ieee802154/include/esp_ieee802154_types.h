@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,6 +35,7 @@ typedef enum {
     ESP_IEEE802154_TX_ERR_COEXIST,      /*!< Rejected by coexist system */
     ESP_IEEE802154_TX_ERR_COEXIST_REJ,  /*!< Rejected by coexist system before transmitting frame */
     ESP_IEEE802154_TX_ERR_COEXIST_ACK,  /*!< Rejected by coexist system when receiving ack */
+    ESP_IEEE802154_TX_ERR_SECURITY,     /*!< Invalid security configuration */
 } esp_ieee802154_tx_error_t;
 
 /**
