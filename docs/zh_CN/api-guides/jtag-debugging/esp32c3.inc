@@ -7,7 +7,6 @@
 .. These code blocks can be moved back to the main .rst files, with target-specific
 .. file names being replaced by substitutions.
 
-
 .. run-openocd
 
 ::
@@ -22,21 +21,25 @@
 
 ::
 
-    user-name@computer-name:~/esp/esp-idf$ openocd -f board/esp32s2-kaluga-1.cfg
-    Open On-Chip Debugger  v0.10.0-esp32-20200420 (2020-04-20-16:15)
+    user-name@computer-name:~/esp/esp-idf$ openocd -f board/esp32c3-builtin.cfg
+    Open On-Chip Debugger v0.10.0-esp32-20201202-26-g05a036c2 (2021-03-15-17:18)
     Licensed under GNU GPL v2
     For bug reports, read
-            http://openocd.org/doc/doxygen/bugs.html
-    none separate
-    adapter speed: 20000 kHz
+        http://openocd.org/doc/doxygen/bugs.html
+    Info : only one transport option; autoselect 'jtag'
+    Warn : Transport "jtag" was already selected
     force hard breakpoints
-    Info : ftdi: if you experience problems at higher adapter clocks, try the command "ftdi_tdo_sample_edge falling"
-    Info : clock speed 20000 kHz
-    Info : JTAG tap: esp32s2.cpu0 tap/device found: 0x120034e5 (mfg: 0x272 (Tensilica), part: 0x2003, ver: 0x1)
-    Info : esp32s2: Debug controller was reset (pwrstat=0x5F, after clear 0x0F).
-    Info : esp32s2: Core was reset (pwrstat=0x5F, after clear 0x0F).
+    Info : Listening on port 6666 for tcl connections
+    Info : Listening on port 4444 for telnet connections
+    Info : esp_usb_jtag: Device found. Base speed 40000KHz, div range 1 to 255
+    Info : clock speed 40000 kHz
+    Info : JTAG tap: esp32c3.cpu tap/device found: 0x00005c25 (mfg: 0x612 (Espressif Systems), part: 0x0005, ver: 0x0)
+    Info : datacount=2 progbufsize=16
+    Info : Examined RISC-V core; found 1 harts
+    Info :  hart 0: XLEN=32, misa=0x40101104
+    Info : Listening on port 3333 for gdb connections
 
-.. |run-openocd-cfg-file-err| replace:: ``Can't find board/esp32s2-kaluga-1.cfg``
+.. |run-openocd-cfg-file-err| replace:: ``Can't find board/esp32c3-builtin.cfg``
 
 ---
 
@@ -44,7 +47,7 @@
 
 ::
 
-    openocd -f board/esp32s2-kaluga-1.cfg -c "program_esp filename.bin 0x10000 verify exit"
+    openocd -f board/esp32c3-builtin.cfg -c "program_esp filename.bin 0x10000 verify exit"
 
 ---
 
@@ -52,7 +55,7 @@
 
 .. code-block:: bash
 
-    src/openocd -f board/esp32s2-kaluga-1.cfg
+    src/openocd -f board/esp32c3-builtin.cfg
 
 ---
 
@@ -60,13 +63,13 @@
 
 .. code-block:: batch
 
-    src\openocd -f board/esp32s2-kaluga-1.cfg
+    src\openocd -f board/esp32c3-builtin.cfg
 
 ---
 
 .. idf-py-openocd-default-cfg
 
-.. |idf-py-def-cfg| replace:: ``-f board/esp32s2-kaluga-1.cfg``
+.. |idf-py-def-cfg| replace:: ``-f board/esp32c3-builtin.cfg``
 
 ---
 
@@ -74,26 +77,28 @@
 
 ::
 
-    openocd -f board/esp32s2-kaluga-1.cfg -c "init; halt; esp appimage_offset 0x210000"
+    openocd -f board/esp32c3-builtin.cfg -c "init; halt; esp appimage_offset 0x210000"
 
 ---
 
 .. openocd-cfg-files
 
-.. list-table:: ESP32-S2 相关的 OpenOCD 配置文件
+.. list-table:: ESP32-C3 相关的 OpenOCD 配置文件
     :widths: 25 75
     :header-rows: 1
 
-    * - 名字
+    * - 名称
       - 描述
-    * - ``board/esp32s2-kaluga-1.cfg``
-      - ESP32-S2-Kaluga-1 开发板配置文件，内部已包含 ESP32-S2 目标配置和 JTAG 适配器配置
-    * - ``target/esp32s2.cfg``
-      - ESP32-S2 目标配置文件，可以和某个 ``interface/`` 下的配置文件一同使用
-    * - ``interface/ftdi/esp32s2_kaluga_v1.cfg``
-      - 适用于 ESP32-S2-Kaluga-1 开发板的 JTAG 适配器配置文件
+    * - ``board/esp32c3-builtin.cfg``
+      - 通过内置 USB 连接的 ESP32-C3 系列开发板配置文件，包含 ESP32-C3 目标配置和 JTAG 适配器配置。
+    * - ``board/esp32c3-ftdi.cfg``
+      - 通过与 ESP-Prog 兼容的 FTDI 对 ESP32-C3 调试的配置文件，包括 ESP32-C3 目标配置和 JTAG 适配器配置。
+    * - ``target/esp32c3.cfg``
+      - ESP32-C3 目标配置文件。可以和某个 ``interface/`` 下的配置文件一同使用。
+    * - ``interface/esp_usb_jtag.cfg``
+      - 适用于 ESP32-C3 的 JTAG 适配器配置文件。
     * - ``interface/ftdi/esp32_devkitj_v1.cfg``
-      - 适用于 ESP-Prog 板子的 JTAG 适配器配置文件
+      - 适用于 ESP-Prog 的 JTAG 适配器配置文件。
 
 ---
 
@@ -105,20 +110,23 @@
 
 .. jtag-pins
 
-.. list-table:: ESP32-S2 引脚和 JTAG 接口信号
+.. list-table:: ESP32-C3 管脚和 JTAG 接口信号
     :widths: 25 75
     :header-rows: 1
 
-    * - ESP32-S2 引脚
+    * - ESP32-C3 管脚
       - JTAG 信号
-    * - MTDO / GPIO40
+    * - MTDO / GPIO7
       - TDO
-    * - MTDI / GPIO41
+    * - MTDI / GPIO5
       - TDI
-    * - MTCK / GPIO39
+    * - MTCK / GPIO6
       - TCK
-    * - MTMS / GPIO42
+    * - MTMS / GPIO4
       - TMS
+
+.. |jtag-sel-gpio| replace:: GPIO10
+.. |jtag-gpio-list| replace:: GPIO4-GPIO7
 
 ---
 
@@ -126,7 +134,7 @@
 
 ::
 
-    openocd -l openocd_log.txt -d3 -f board/esp32s2-kaluga-1.cfg
+    openocd -l openocd_log.txt -d3 -f board/esp32c3-builtin.cfg
 
 ---
 
@@ -134,7 +142,7 @@
 
 ::
 
-    openocd -d3 -f board/esp32s2-kaluga-1.cfg 2>&1 | tee openocd.log
+    openocd -d3 -f board/esp32c3-builtin.cfg 2>&1 | tee openocd.log
 
 ---
 
@@ -142,19 +150,19 @@
 
 ::
 
-    xtensa-esp32s2-elf-gdb -ex "set remotelogfile gdb_log.txt" <all other options>
+    riscv32-esp-elf-gdb -ex "set remotelogfile gdb_log.txt" <all other options>
 
 ---
 
 .. devkit-defs
 
-.. |devkit-name| replace:: ESP-S2-Kaluga-1
-.. |devkit-name-with-link| replace:: :doc:`ESP-S2-Kaluga-1 <../../hw-reference/index>`
+.. |devkit-name| replace:: ESP32-C3
+.. |devkit-name-with-link| replace:: :doc:`ESP32-C3 <../../hw-reference/index>`
 
 ---
 
 .. devkit-hw-config
 
-* 开箱即用，ESP32-S2-Kaluga-1 不需要任何其他硬件配置即可进行 JTAG 调试。 但是，如果遇到问题，请检查 “JTAG” DIP 开关的 2～5 号是否在 “ON” 的位置。
+* 开箱即用，ESP32-C3 不需要任何其他硬件配置即可进行 JTAG 调试。
 
 ---

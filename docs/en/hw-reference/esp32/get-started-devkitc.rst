@@ -9,7 +9,7 @@ This guide shows how to start using the ESP32-DevKitC V4 development board.
 What You Need
 -------------
 
-* ESP32-DevKitC V4 board
+* :ref:`ESP32-DevKitC V4 board <get-started-esp32-devkitc-board-front>`
 * USB A / micro USB B cable
 * Computer running Windows, Linux, or macOS
 
@@ -177,13 +177,12 @@ The component C15 may cause the following issues on earlier ESP32-DevKitC V4 boa
 * The board may boot into Download mode
 * If you output clock on GPIO0, C15 may impact the signal
 
-In case these issues occur, please remove the component. The figure below shows C15 highlighted in yellow.
+In case these issues occur, please remove the component. The figure below shows the location of C15 highlighted in yellow.
 
 
 .. figure:: ../../../_static/esp32-devkitc-c15-location.png
     :align: center
     :alt: Location of C15 (colored yellow) on ESP32-DevKitC V4 board
-    :figclass: align-center
     :width: 30%
 
     Location of C15 (yellow) on ESP32-DevKitC V4 board
@@ -211,25 +210,16 @@ Board Dimensions
 Related Documents
 -----------------
 
-* `ESP32-DevKitC V4 schematics`_ (PDF)
-* `ESP32 Datasheet`_ (PDF)
-* `ESP32-WROOM-DA Datasheet`_ (PDF)
-* `ESP32-WROOM-32 Datasheet`_ (PDF)
-* `ESP32-WROOM-32D and ESP32-WROOM-32U Datasheet`_ (PDF)
-* `ESP32-WROVER Datasheet`_ (PDF)
-* `ESP32-WROVER-B Datasheet`_ (PDF)
-* `ESP Product Selector`_ 
+* `ESP32-DevKitC V4 schematics <https://dl.espressif.com/dl/schematics/esp32_devkitc_v4-sch.pdf>`_ (PDF)
+* `ESP32 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF)
+* `ESP32-WROOM-32 Datasheet <https://espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_en.pdf>`_ (PDF)
+* `ESP32-WROOM-32D and ESP32-WROOM-32U Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_en.pdf>`_ (PDF)
+* `ESP32-WROOM-DA Datasheet <https://espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_en.pdf>`_ (PDF)
+* `ESP32-WROVER Datasheet <https://espressif.com/sites/default/files/documentation/esp32-wrover_datasheet_en.pdf>`_ (PDF)
+* `ESP32-WROVER-B Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-b_datasheet_en.pdf>`_ (PDF)
+* `ESP Product Selector <https://products.espressif.com/#/product-selector?names=>`_ 
 
 For further design documentation for the board, please contact us at `sales@espressif.com <sales@espressif.com>`_.
-
-.. _ESP32-DevKitC V4 schematics: https://dl.espressif.com/dl/schematics/esp32_devkitc_v4-sch.pdf
-.. _ESP32 Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf
-.. _ESP32-WROOM-32 Datasheet: https://espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_en.pdf
-.. _ESP32-WROOM-32D and ESP32-WROOM-32U Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_en.pdf
-.. _ESP32-WROVER Datasheet: https://espressif.com/sites/default/files/documentation/esp32-wrover_datasheet_en.pdf
-.. _ESP32-WROVER-B Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-wrover-b_datasheet_en.pdf
-.. _ESP32-WROOM-DA Datasheet: https://www.espressif.com/sites/default/files/documentation/esp32-wroom-da_datasheet_en.pdf
-.. _ESP Product Selector: https://products.espressif.com/#/product-selector?names=
 
 
 .. toctree::
