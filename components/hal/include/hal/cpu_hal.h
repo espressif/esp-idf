@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -69,11 +69,6 @@ extern "C" {
  * Wait for interrupt.
  */
 #define cpu_hal_waiti()                 cpu_ll_waiti()
-
-/**
- * Trigger a syscall.
- */
-#define cpu_hal_syscall(sys_nr, arg1, arg2, arg3, arg4, ret_errno)                 cpu_ll_syscall(sys_nr, arg1, arg2, arg3, arg4, ret_errno)
 
 #if SOC_CPU_BREAKPOINTS_NUM > 0
 
