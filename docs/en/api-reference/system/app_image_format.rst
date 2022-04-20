@@ -15,11 +15,11 @@ The count of each segment is defined in the ``segment_count`` field that is stor
 
 To get the list of your image segments, please run the following command:
 
-::
+.. code-block::
 
    esptool.py --chip {IDF_TARGET_PATH_NAME} image_info build/app.bin
 
-::
+.. code-block::
 
 	esptool.py v2.3.1
 	Image version: 1
@@ -40,9 +40,9 @@ To get the list of your image segments, please run the following command:
 	Segment 13: len 0x00000 load 0x50000004 file_offs 0x00089b74 SOC_RTC_DATA
 	Checksum: e8 (valid)Validation Hash: 407089ca0eae2bbf83b4120979d3354b1c938a49cb7a0c997f240474ef2ec76b (valid)
 
-You can also see the information on segments in the IDF logs while your application is booting:
-
-::
+You can also see the information on segments in the ESP-IDF logs while your application is booting:
+	
+.. code-block::
 
 	I (443) esp_image: segment 0: paddr=0x00020020 vaddr=0x3f400020 size=0x13ce0 ( 81120) map
 	I (489) esp_image: segment 1: paddr=0x00033d08 vaddr=0x3ff80000 size=0x00000 ( 0) load
@@ -80,7 +80,7 @@ The ``DROM`` segment starts with the :cpp:type:`esp_app_desc_t` structure which 
 
  * ``magic_word`` - the magic word for the esp_app_desc structure.
  * ``secure_version`` - see :doc:`Anti-rollback</api-reference/system/ota>`.
- * ``version`` - see :doc:`App version</api-reference/system/system>`. ``*``
+ * ``version`` - see :doc:`App version</api-reference/system/misc_system_api>`. ``*``
  * ``project_name`` is filled from ``PROJECT_NAME``. ``*``
  * ``time`` and ``date`` - compile time and date.
  * ``idf_ver`` - version of ESP-IDF. ``*``
@@ -96,7 +96,7 @@ Adding a Custom Structure to an Application
 Users also have the opportunity to have similar structure with a fixed offset relative to the beginning of the image.
 The following pattern can be used to add a custom structure to your image:
 
-::
+.. code-block::
 
 	const __attribute__((section(".rodata_custom_desc"))) esp_custom_app_desc_t custom_app_desc = { ... }
 
