@@ -67,6 +67,8 @@ void rtc_sleep_init(rtc_sleep_config_t cfg)
         rtc_sleep_pu_config_t pu_cfg = RTC_SLEEP_PU_CONFIG_ALL(1);
         rtc_sleep_pu(pu_cfg);
     }
+    /* mem force pu */
+    SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_LSLP_MEM_FORCE_PU);
     if (cfg.wifi_pd_en) {
         SET_PERI_REG_MASK(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_WIFI_PD_EN);
     } else {
