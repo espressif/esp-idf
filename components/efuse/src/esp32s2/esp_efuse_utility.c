@@ -23,6 +23,8 @@
 
 static const char *TAG = "efuse";
 
+#define ESP_EFUSE_BLOCK_ERROR_BITS(error_reg, block) ((error_reg) & (0x0F << (4 * (block))))
+
 #ifdef CONFIG_EFUSE_VIRTUAL
 extern uint32_t virt_blocks[EFUSE_BLK_MAX][COUNT_EFUSE_REG_PER_BLOCK];
 #endif // CONFIG_EFUSE_VIRTUAL
@@ -78,11 +80,9 @@ static bool efuse_hal_is_coding_error_in_block(unsigned block)
     } else if (block <= 10) {
         // EFUSE_RD_RS_ERR0_REG: (hi) BLOCK8, BLOCK7, BLOCK6, BLOCK5, BLOCK4, BLOCK3, BLOCK2, BLOCK1 (low)
         // EFUSE_RD_RS_ERR1_REG:                                                     BLOCK10, BLOCK9
-        uint32_t error_reg = REG_READ(EFUSE_RD_RS_ERR0_REG + (block / 9) * 4);
-        unsigned offset = (block >= 9) ? block - 9 : block - 1;
-        if (((error_reg >> (4 * offset)) & 0x0F) != 0) {
-            return true;
-        }
+        block--;
+        uint32_t error_reg = REG_READ(EFUSE_RD_RS_ERR0_REG + (block / 8) * 4);
+        return ESP_EFUSE_BLOCK_ERROR_BITS(error_reg, block % 8) != 0;
     }
     return false;
 }
@@ -108,7 +108,7 @@ esp_err_t esp_efuse_utility_burn_efuses(void)
             virt_blocks[num_block][subblock++] |= REG_READ(addr_wr_block);
         }
     }
-#else
+#else // CONFIG_EFUSE_VIRTUAL
     if (esp_efuse_set_timing() != ESP_OK) {
         ESP_LOGE(TAG, "Efuse fields are not burnt");
     } else {

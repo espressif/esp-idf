@@ -18,6 +18,9 @@
 extern "C" {
 #endif
 
+#define ESP_EFUSE_LEN_OF_3_4_SCHEME_BLOCK_IN_BYTES (24)
+#define ESP_EFUSE_LEN_OF_REPEAT_BLOCK_IN_BYTES (16)
+
 #define COUNT_EFUSE_REG_PER_BLOCK 8      /* The number of registers per block. */
 
 #define ESP_EFUSE_SECURE_VERSION_NUM_BLOCK EFUSE_BLK3
