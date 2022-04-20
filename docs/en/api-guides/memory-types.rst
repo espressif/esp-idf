@@ -162,9 +162,7 @@ DMA Capable Requirement
 
 .. highlight:: c
 
-Most peripheral DMA controllers (e.g. SPI, sdmmc, etc.) have requirements that sending/receiving buffers should be placed in DRAM
-and word-aligned. We suggest to place DMA buffers in static variables rather than in the stack. Use macro ``DMA_ATTR``
-to declare global/local static variables like::
+Most peripheral DMA controllers (e.g. SPI, sdmmc, etc.) have requirements that sending/receiving buffers should be placed in DRAM and word-aligned. We suggest to place DMA buffers in static variables rather than in the stack. Use macro ``DMA_ATTR`` to declare global/local static variables like::
 
     DMA_ATTR uint8_t buffer[]="I want to send something";
 
