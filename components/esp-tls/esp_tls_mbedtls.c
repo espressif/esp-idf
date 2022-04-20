@@ -18,6 +18,7 @@
 #include "esp_tls_error_capture_internal.h"
 #include <errno.h>
 #include "esp_log.h"
+#include "esp_check.h"
 
 #ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 #include "esp_crt_bundle.h"
@@ -138,6 +139,15 @@ exit:
     esp_mbedtls_cleanup(tls);
     return esp_ret;
 
+}
+
+void *esp_mbedtls_get_ssl_context(esp_tls_t *tls)
+{
+    if (tls == NULL) {
+        ESP_LOGE(TAG, "Invalid arguments");
+        return NULL;
+    }
+    return (void*)&tls->ssl;
 }
 
 #ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS

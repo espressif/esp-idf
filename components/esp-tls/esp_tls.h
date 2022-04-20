@@ -474,6 +474,17 @@ ssize_t esp_tls_get_bytes_avail(esp_tls_t *tls);
 esp_err_t esp_tls_get_conn_sockfd(esp_tls_t *tls, int *sockfd);
 
 /**
+ * @brief       Returns the ssl context
+ *
+ * @param[in]   tls          handle to esp_tls context
+ *
+ *
+ * @return     - ssl_ctx pointer to ssl context of underlying TLS layer on success
+ *             - NULL  in case of error
+ */
+void *esp_tls_get_ssl_context(esp_tls_t *tls);
+
+/**
  * @brief      Create a global CA store, initially empty.
  *
  * This function should be called if the application wants to use the same CA store for multiple connections.
@@ -554,7 +565,7 @@ esp_err_t esp_tls_get_and_clear_error_type(esp_tls_error_handle_t h, esp_tls_err
  * @return
  *             - ESP_OK             on success and error_handle will be updated with the ESP-TLS error handle.
  *
- *             - ESP_ERR_INVALID_ARG if (tls == NULL)
+ *             - ESP_ERR_INVALID_ARG if (tls == NULL || error_handle == NULL)
  */
 esp_err_t esp_tls_get_error_handle(esp_tls_t *tls, esp_tls_error_handle_t *error_handle);
 

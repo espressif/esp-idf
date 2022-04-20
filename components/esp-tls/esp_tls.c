@@ -40,6 +40,7 @@ static const char *TAG = "esp-tls";
 #define _esp_tls_conn_delete                esp_mbedtls_conn_delete
 #define _esp_tls_net_init                   esp_mbedtls_net_init
 #define _esp_tls_get_client_session         esp_mbedtls_get_client_session
+#define _esp_tls_get_ssl_context            esp_mbedtls_get_ssl_context
 #ifdef CONFIG_ESP_TLS_SERVER
 #define _esp_tls_server_session_create      esp_mbedtls_server_session_create
 #define _esp_tls_server_session_delete      esp_mbedtls_server_session_delete
@@ -66,6 +67,7 @@ static const char *TAG = "esp-tls";
 #define _esp_tls_init_global_ca_store       esp_wolfssl_init_global_ca_store
 #define _esp_tls_set_global_ca_store        esp_wolfssl_set_global_ca_store                 /*!< Callback function for setting global CA store data for TLS/SSL */
 #define _esp_tls_free_global_ca_store       esp_wolfssl_free_global_ca_store                /*!< Callback function for freeing global ca store for TLS/SSL */
+#define _esp_tls_get_ssl_context            esp_wolfssl_get_ssl_context
 #else   /* ESP_TLS_USING_WOLFSSL */
 #error "No TLS stack configured"
 #endif
@@ -616,6 +618,11 @@ ssize_t esp_tls_get_bytes_avail(esp_tls_t *tls)
     return _esp_tls_get_bytes_avail(tls);
 }
 
+void *esp_tls_get_ssl_context(esp_tls_t *tls)
+{
+    return _esp_tls_get_ssl_context(tls);
+}
+
 esp_err_t esp_tls_get_conn_sockfd(esp_tls_t *tls, int *sockfd)
 {
     if (!tls || !sockfd) {
@@ -644,7 +651,7 @@ esp_err_t esp_tls_get_and_clear_last_error(esp_tls_error_handle_t h, int *esp_tl
 
 esp_err_t esp_tls_get_error_handle(esp_tls_t *tls, esp_tls_error_handle_t *error_handle)
 {
-    if (tls == NULL) {
+    if (!tls || !error_handle) {
         return ESP_ERR_INVALID_ARG;
     }
 

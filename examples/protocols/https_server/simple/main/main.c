@@ -36,7 +36,7 @@ static esp_err_t root_get_handler(httpd_req_t *req)
 }
 
 #if CONFIG_EXAMPLE_ENABLE_HTTPS_USER_CALLBACK
-
+#ifdef CONFIG_ESP_TLS_USING_MBEDTLS
 static void print_peer_cert_info(const mbedtls_ssl_context *ssl)
 {
     const mbedtls_x509_crt *cert;
@@ -58,7 +58,7 @@ static void print_peer_cert_info(const mbedtls_ssl_context *ssl)
 
     free(buf);
 }
-
+#endif
 /**
  * Example callback function to get the certificate of connected clients,
  * whenever a new SSL connection is created and closed
@@ -75,22 +75,44 @@ static void print_peer_cert_info(const mbedtls_ssl_context *ssl)
 static void https_server_user_callback(esp_https_server_user_cb_arg_t *user_cb)
 {
     ESP_LOGI(TAG, "User callback invoked!");
-
+#ifdef CONFIG_ESP_TLS_USING_MBEDTLS
+    mbedtls_ssl_context *ssl_ctx = NULL;
+#endif
     switch(user_cb->user_cb_state) {
         case HTTPD_SSL_USER_CB_SESS_CREATE:
             ESP_LOGD(TAG, "At session creation");
 
             // Logging the socket FD
-            ESP_LOGI(TAG, "Socket FD: %d", user_cb->tls->sockfd);
-
+            int sockfd = -1;
+            esp_err_t esp_ret;
+            esp_ret = esp_tls_get_conn_sockfd(user_cb->tls, &sockfd);
+            if (esp_ret != ESP_OK) {
+                ESP_LOGE(TAG, "Error in obtaining the sockfd from tls context");
+                break;
+            }
+            ESP_LOGI(TAG, "Socket FD: %d", sockfd);
+#ifdef CONFIG_ESP_TLS_USING_MBEDTLS
+            ssl_ctx = (mbedtls_ssl_context *) esp_tls_get_ssl_context(user_cb->tls);
+            if (ssl_ctx == NULL) {
+                ESP_LOGE(TAG, "Error in obtaining ssl context");
+                break;
+            }
             // Logging the current ciphersuite
-            ESP_LOGI(TAG, "Current Ciphersuite: %s", mbedtls_ssl_get_ciphersuite(&user_cb->tls->ssl));
+            ESP_LOGI(TAG, "Current Ciphersuite: %s", mbedtls_ssl_get_ciphersuite(ssl_ctx));
+#endif
             break;
+
         case HTTPD_SSL_USER_CB_SESS_CLOSE:
             ESP_LOGD(TAG, "At session close");
-
+#ifdef CONFIG_ESP_TLS_USING_MBEDTLS
             // Logging the peer certificate
-            print_peer_cert_info(&user_cb->tls->ssl);
+            ssl_ctx = (mbedtls_ssl_context *) esp_tls_get_ssl_context(user_cb->tls);
+            if (ssl_ctx == NULL) {
+                ESP_LOGE(TAG, "Error in obtaining ssl context");
+                break;
+            }
+            print_peer_cert_info(ssl_ctx);
+#endif
             break;
         default:
             ESP_LOGE(TAG, "Illegal state!");
