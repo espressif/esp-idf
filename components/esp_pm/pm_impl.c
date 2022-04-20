@@ -831,8 +831,8 @@ void esp_pm_impl_waiti(void)
          * the lock so that vApplicationSleep can attempt to enter light sleep.
          */
         esp_pm_impl_idle_hook();
-        s_skipped_light_sleep[core_id] = false;
     }
+    s_skipped_light_sleep[core_id] = true;
 #else
     cpu_hal_waiti();
 #endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
