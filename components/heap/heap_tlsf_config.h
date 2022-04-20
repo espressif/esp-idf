@@ -87,6 +87,8 @@ enum tlsf_config
 	FL_INDEX_MAX = 23, //Each pool can have up 8MB
 	#elif (TLSF_MAX_POOL_SIZE <= (16 * 1024 * 1024))
 	FL_INDEX_MAX = 24, //Each pool can have up 16MB
+	#elif (TLSF_MAX_POOL_SIZE <= (32 * 1024 * 1024))
+	FL_INDEX_MAX = 25, //Each pool can have up 32MB
 	#else
 	#error "Higher TLSF pool sizes should be added for this new config"
 	#endif

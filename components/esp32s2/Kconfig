@@ -195,9 +195,14 @@ menu "ESP32S2-specific"
                 bool "20Mhz clock speed"
         endchoice
 
+        config SPIRAM_SPEED
+            int
+            default 80 if SPIRAM_SPEED_80M
+            default 40 if SPIRAM_SPEED_40M
+            default 40 if SPIRAM_SPEED_26M
+            default 40 if SPIRAM_SPEED_20M
 
-        # insert non-chip-specific items here NOERROR
-        source "$IDF_PATH/components/esp_hw_support/Kconfig.spiram.common"
+        source "$IDF_PATH/components/esp_hw_support/Kconfig.spiram.common"   #insert non-chip-specific items here
 
     endmenu
 

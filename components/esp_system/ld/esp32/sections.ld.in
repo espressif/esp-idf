@@ -223,7 +223,7 @@ SECTIONS
     _noinit_end = ABSOLUTE(.);
   } > dram0_0_seg
 
-   /* external memory bss, from any global variable with EXT_RAM_ATTR attribute*/
+   /* external memory bss, from any global variable with EXT_RAM_BSS_ATTR attribute*/
   .ext_ram.bss (NOLOAD) :
   {
     _ext_ram_bss_start = ABSOLUTE(.);

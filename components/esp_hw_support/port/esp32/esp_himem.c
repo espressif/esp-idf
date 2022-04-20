@@ -7,6 +7,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp32/spiram.h"
+#include "esp_private/spiram_private.h"
 #include "esp32/rom/cache.h"
 #include "sdkconfig.h"
 #include "esp_himem.h"

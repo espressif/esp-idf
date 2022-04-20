@@ -15,7 +15,7 @@ entries:
             spiram_psram (noflash)
         if SPIRAM_MODE_OCT = y:
             opiram_psram (noflash)
-    if IDF_TARGET_ESP32S2 = y:
+    if IDF_TARGET_ESP32S2 = y && SPIRAM:
         mmu_psram (noflash)
     if PERIPH_CTRL_FUNC_IN_IRAM = y:
         periph_ctrl: periph_module_reset (noflash)

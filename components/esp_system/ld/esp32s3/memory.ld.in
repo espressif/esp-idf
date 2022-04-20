@@ -90,7 +90,7 @@ MEMORY
 
 #if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
   /* Flash mapped constant data */
-  drom0_0_seg (R) :                  org = 0x3C000020, len = 0x800000-0x20
+  drom0_0_seg (R) :                  org = 0x3C000020, len = 0x2000000-0x20
 
   /* (See iram0_2_seg for meaning of 0x20 offset in the above.) */
 #endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
@@ -115,6 +115,11 @@ MEMORY
 #else
   rtc_slow_seg(RW)  :                org = 0x50000000 , len = 0x2000
 #endif // CONFIG_ULP_COPROC_ENABLED
+  /**
+   * `extern_ram_seg` and `drom0_0_seg` share the same bus and the address region.
+   * A dummy section is used to avoid overlap. See `.ext_ram.dummy` in `sections.ld.in`
+   */
+  extern_ram_seg(RWX) :              org = 0x3c000020 , len = 0x2000000-0x20
 }
 
 #if CONFIG_ESP32S3_USE_FIXED_STATIC_RAM_SIZE
