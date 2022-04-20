@@ -582,11 +582,6 @@ static void btc_spp_uninit(void)
         osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
     } while(0);
 
-    if (spp_local_param.tx_event_group) {
-        vEventGroupDelete(spp_local_param.tx_event_group);
-        spp_local_param.tx_event_group = NULL;
-    }
-
     if (ret != ESP_SPP_SUCCESS) {
         esp_spp_cb_param_t param;
         param.uninit.status = ret;
@@ -1256,6 +1251,10 @@ void btc_spp_cb_handler(btc_msg_t *msg)
         param.uninit.status = ESP_SPP_SUCCESS;
         BTA_JvFree();
         osi_mutex_free(&spp_local_param.spp_slot_mutex);
+        if (spp_local_param.tx_event_group) {
+            vEventGroupDelete(spp_local_param.tx_event_group);
+            spp_local_param.tx_event_group = NULL;
+        }
 #if SPP_DYNAMIC_MEMORY == TRUE
         osi_free(spp_local_param_ptr);
         spp_local_param_ptr = NULL;
