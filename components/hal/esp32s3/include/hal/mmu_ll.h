@@ -114,6 +114,21 @@ static inline void mmu_ll_write_entry(uint32_t mmu_id, uint32_t entry_id, uint32
     *(uint32_t *)(DR_REG_MMU_TABLE + entry_id * 4) = mmu_val | target_code | MMU_VALID;
 }
 
+/**
+ * Set MMU table entry as invalid
+ *
+ * @param mmu_id   MMU ID
+ * @param entry_id MMU entry ID
+ */
+__attribute__((always_inline))
+static inline void mmu_ll_set_entry_invalid(uint32_t mmu_id, uint32_t entry_id)
+{
+    (void)mmu_id;
+    HAL_ASSERT(entry_id < MMU_MAX_ENTRY_NUM);
+
+    *(uint32_t *)(DR_REG_MMU_TABLE + entry_id * 4) = MMU_INVALID;
+}
+
 #ifdef __cplusplus
 }
 #endif

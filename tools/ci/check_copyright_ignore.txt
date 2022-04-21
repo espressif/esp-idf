@@ -1242,7 +1242,6 @@ components/soc/esp32/include/soc/i2c_struct.h
 components/soc/esp32/include/soc/io_mux_reg.h
 components/soc/esp32/include/soc/ledc_reg.h
 components/soc/esp32/include/soc/ledc_struct.h
-components/soc/esp32/include/soc/mmu.h
 components/soc/esp32/include/soc/nrx_reg.h
 components/soc/esp32/include/soc/pid.h
 components/soc/esp32/include/soc/reset_reasons.h

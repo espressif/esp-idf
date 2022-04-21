@@ -11,7 +11,8 @@
 #include "soc/ext_mem_defs.h"
 #include "hal/assert.h"
 #include "hal/mmu_types.h"
-
+#include "soc/mmu.h"
+#include "soc/dport_access.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -66,6 +67,31 @@ static inline bool mmu_ll_check_valid_ext_vaddr_region(uint32_t mmu_id, uint32_t
            (ADDRESS_IN_IROM0_CACHE(vaddr_start) && ADDRESS_IN_IROM0_CACHE(vaddr_end)) ||
            (ADDRESS_IN_DRAM1_CACHE(vaddr_start) && ADDRESS_IN_DRAM1_CACHE(vaddr_end)) ||
            (ADDRESS_IN_DROM0_CACHE(vaddr_start) && ADDRESS_IN_DROM0_CACHE(vaddr_end));
+}
+
+/**
+ * Set MMU table entry as invalid
+ *
+ * @param mmu_id   MMU ID
+ * @param entry_id MMU entry ID
+ */
+__attribute__((always_inline))
+static inline void mmu_ll_set_entry_invalid(uint32_t mmu_id, uint32_t entry_id)
+{
+    HAL_ASSERT(entry_id < MMU_MAX_ENTRY_NUM);
+
+    DPORT_INTERRUPT_DISABLE();
+    switch (mmu_id) {
+        case MMU_TABLE_PRO:
+            DPORT_WRITE_PERI_REG((uint32_t)&SOC_MMU_DPORT_PRO_FLASH_MMU_TABLE[entry_id], SOC_MMU_INVALID_ENTRY_VAL);
+            break;
+        case MMU_TABLE_APP:
+            DPORT_WRITE_PERI_REG((uint32_t)&SOC_MMU_DPORT_APP_FLASH_MMU_TABLE[entry_id], SOC_MMU_INVALID_ENTRY_VAL);
+            break;
+        default:
+            HAL_ASSERT(false && "invalid mmu_id");
+    }
+    DPORT_INTERRUPT_RESTORE();
 }
 
 #ifdef __cplusplus
