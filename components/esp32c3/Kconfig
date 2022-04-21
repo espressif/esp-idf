@@ -39,6 +39,8 @@ menu "ESP32C3-Specific"
             bool "Rev 2"
         config ESP32C3_REV_MIN_3
             bool "Rev 3"
+        config ESP32C3_REV_MIN_4
+            bool "Rev 4"
     endchoice
 
     config ESP32C3_REV_MIN
@@ -47,6 +49,7 @@ menu "ESP32C3-Specific"
         default 1 if ESP32C3_REV_MIN_1
         default 2 if ESP32C3_REV_MIN_2
         default 3 if ESP32C3_REV_MIN_3
+        default 4 if ESP32C3_REV_MIN_4
 
     config ESP32C3_DEBUG_OCDAWARE
         bool "Make exception and panic handlers JTAG/OCD aware"
