@@ -27,6 +27,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "soc/soc_caps.h"
+#include "regi2c_ctrl.h"
 #include "driver/rtc_io.h"
 #include "hal/rtc_io_hal.h"
 #include "bootloader_common.h"
@@ -511,6 +512,10 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 #endif
 #endif
 
+#if REGI2C_ANA_CALI_PD_WORKAROUND
+    regi2c_analog_cali_reg_read();
+#endif
+
 #if CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     if (deep_sleep) {
         if (s_config.wakeup_triggers & RTC_TOUCH_TRIG_EN) {
@@ -598,6 +603,10 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 #if CONFIG_MAC_BB_PD
     mac_bb_power_up_cb_execute();
 #endif
+#if REGI2C_ANA_CALI_PD_WORKAROUND
+    regi2c_analog_cali_reg_write();
+#endif
+
     // re-enable UART output
     resume_uarts();
 
