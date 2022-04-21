@@ -439,9 +439,10 @@ static void bta_sdp_search_cback(UINT16 result, void *user_data)
 void bta_sdp_enable(tBTA_SDP_MSG *p_data)
 {
     APPL_TRACE_DEBUG("%s in, sdp_active:%d\n", __func__, bta_sdp_cb.sdp_active);
-    tBTA_SDP_STATUS status = BTA_SDP_SUCCESS;
+    tBTA_SDP bta_sdp;
+    bta_sdp.status = BTA_SDP_SUCCESS;
     bta_sdp_cb.p_dm_cback = p_data->enable.p_cback;
-    bta_sdp_cb.p_dm_cback(BTA_SDP_ENABLE_EVT, (tBTA_SDP *)&status, NULL);
+    bta_sdp_cb.p_dm_cback(BTA_SDP_ENABLE_EVT, (tBTA_SDP *)&bta_sdp, NULL);
 }
 
 /*******************************************************************************
@@ -523,8 +524,11 @@ void bta_sdp_search(tBTA_SDP_MSG *p_data)
 void bta_sdp_create_record(tBTA_SDP_MSG *p_data)
 {
     APPL_TRACE_DEBUG("%s() event: %d\n", __func__, p_data->record.hdr.event);
+    tBTA_SDP bta_sdp;
+    bta_sdp.status = BTA_SDP_SUCCESS;
+    bta_sdp.handle = (int)p_data->record.user_data;
     if (bta_sdp_cb.p_dm_cback) {
-        bta_sdp_cb.p_dm_cback(BTA_SDP_CREATE_RECORD_USER_EVT, NULL, p_data->record.user_data);
+        bta_sdp_cb.p_dm_cback(BTA_SDP_CREATE_RECORD_USER_EVT, &bta_sdp, p_data->record.user_data);
     }
 }
 
@@ -540,8 +544,10 @@ void bta_sdp_create_record(tBTA_SDP_MSG *p_data)
 void bta_sdp_remove_record(tBTA_SDP_MSG *p_data)
 {
     APPL_TRACE_DEBUG("%s() event: %d\n", __func__, p_data->record.hdr.event);
+    tBTA_SDP bta_sdp;
+    bta_sdp.status = BTA_SDP_SUCCESS;
     if (bta_sdp_cb.p_dm_cback) {
-        bta_sdp_cb.p_dm_cback(BTA_SDP_REMOVE_RECORD_USER_EVT, NULL, p_data->record.user_data);
+        bta_sdp_cb.p_dm_cback(BTA_SDP_REMOVE_RECORD_USER_EVT, &bta_sdp, p_data->record.user_data);
     }
 }
 

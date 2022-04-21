@@ -60,6 +60,7 @@ typedef enum {
     BTC_PID_HD,
     BTC_PID_HH,
     BTC_PID_L2CAP,
+    BTC_PID_SDP,
 #if (BTC_HF_INCLUDED == TRUE)
     BTC_PID_HF,
 #endif /* BTC_HF_INCLUDED */
