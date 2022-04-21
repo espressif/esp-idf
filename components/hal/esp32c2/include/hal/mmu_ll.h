@@ -162,6 +162,19 @@ static inline void mmu_ll_set_entry_invalid(uint32_t mmu_id, uint32_t entry_id)
     *(uint32_t *)(DR_REG_MMU_TABLE + entry_id * 4) = MMU_INVALID;
 }
 
+/**
+ * Unmap all the items in the MMU table
+ *
+ * @param mmu_id MMU ID
+ */
+__attribute__((always_inline))
+static inline void mmu_ll_unmap_all(uint32_t mmu_id)
+{
+    for (int i = 0; i < MMU_MAX_ENTRY_NUM; i++) {
+        mmu_ll_set_entry_invalid(mmu_id, i);
+    }
+}
+
 #ifdef __cplusplus
 }
 #endif

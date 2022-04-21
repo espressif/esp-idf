@@ -37,6 +37,12 @@ extern "C" {
 #define ADDRESS_IN_DRAM1_CACHE(vaddr)      ADDRESS_IN_BUS(DRAM1_CACHE, vaddr)
 #define ADDRESS_IN_DROM0_CACHE(vaddr)      ADDRESS_IN_BUS(DROM0_CACHE, vaddr)
 
+/**
+ * Max MMU entry num.
+ * `MMU_MAX_ENTRY_NUM * MMU_PAGE_SIZE` means the max paddr and vaddr region supported by the MMU. e.g.:
+ * 256 * 64KB, means MMU can map 16MB at most
+ */
+#define MMU_MAX_ENTRY_NUM    256
 
 #ifdef __cplusplus
 }

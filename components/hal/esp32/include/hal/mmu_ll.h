@@ -9,10 +9,10 @@
 #pragma once
 
 #include "soc/ext_mem_defs.h"
+#include "soc/dport_reg.h"
+#include "soc/dport_access.h"
 #include "hal/assert.h"
 #include "hal/mmu_types.h"
-#include "soc/mmu.h"
-#include "soc/dport_access.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -82,16 +82,29 @@ static inline void mmu_ll_set_entry_invalid(uint32_t mmu_id, uint32_t entry_id)
 
     DPORT_INTERRUPT_DISABLE();
     switch (mmu_id) {
-        case MMU_TABLE_PRO:
-            DPORT_WRITE_PERI_REG((uint32_t)&SOC_MMU_DPORT_PRO_FLASH_MMU_TABLE[entry_id], SOC_MMU_INVALID_ENTRY_VAL);
+        case 0:
+            DPORT_WRITE_PERI_REG((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[entry_id], DPORT_FLASH_MMU_TABLE_INVALID_VAL);
             break;
-        case MMU_TABLE_APP:
-            DPORT_WRITE_PERI_REG((uint32_t)&SOC_MMU_DPORT_APP_FLASH_MMU_TABLE[entry_id], SOC_MMU_INVALID_ENTRY_VAL);
+        case 1:
+            DPORT_WRITE_PERI_REG((uint32_t)&DPORT_APP_FLASH_MMU_TABLE[entry_id], DPORT_FLASH_MMU_TABLE_INVALID_VAL);
             break;
         default:
             HAL_ASSERT(false && "invalid mmu_id");
     }
     DPORT_INTERRUPT_RESTORE();
+}
+
+/**
+ * Unmap all the items in the MMU table
+ *
+ * @param mmu_id MMU ID
+ */
+__attribute__((always_inline))
+static inline void mmu_ll_unmap_all(uint32_t mmu_id)
+{
+    for (int i = 0; i < MMU_MAX_ENTRY_NUM; i++) {
+        mmu_ll_set_entry_invalid(mmu_id, i);
+    }
 }
 
 #ifdef __cplusplus

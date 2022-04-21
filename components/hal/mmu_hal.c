@@ -30,20 +30,9 @@
 
 void mmu_hal_init(void)
 {
-#if CONFIG_IDF_TARGET_ESP32
-    mmu_init(0);
+    mmu_ll_unmap_all(0);
 #if !CONFIG_FREERTOS_UNICORE
-    /**
-     * The lines which manipulate DPORT_APP_CACHE_MMU_IA_CLR bit are necessary to work around a hardware bug.
-     * See ESP32 Errata 3.1
-     */
-    DPORT_REG_SET_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
-    mmu_init(1);
-    DPORT_REG_CLR_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
-#endif
-
-#else //!esp32
-    Cache_MMU_Init();
+    mmu_ll_unmap_all(1);
 #endif
 }
 
