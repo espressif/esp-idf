@@ -197,6 +197,8 @@
 #define SOC_RMT_SUPPORT_TX_SYNCHRO            1  /*!< Support coordinate a group of TX channels to start simultaneously */
 #define SOC_RMT_SUPPORT_TX_CARRIER_ALWAYS_ON  1  /*!< TX carrier can be modulated all the time */
 #define SOC_RMT_SUPPORT_XTAL                  1  /*!< Support set XTAL clock as the RMT clock source */
+#define SOC_RMT_SUPPORT_APB                   1  /*!< Support set APB as the RMT clock source */
+#define SOC_RMT_SUPPORT_RC_FAST               1  /*!< Support set RC_FAST clock as the RMT clock source */
 
 /*-------------------------- RTC CAPS --------------------------------------*/
 #define SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH       (128)

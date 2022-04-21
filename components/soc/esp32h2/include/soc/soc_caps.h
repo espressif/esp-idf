@@ -40,7 +40,7 @@
 #define SOC_TWAI_SUPPORTED              1
 #define SOC_BT_SUPPORTED                1
 #define SOC_BLUEDROID_SUPPORTED                0
-#define SOC_ESP_NIMBLE_CONTROLLER	1
+#define SOC_ESP_NIMBLE_CONTROLLER   1
 #define SOC_ASYNC_MEMCPY_SUPPORTED      1
 #define SOC_USB_SERIAL_JTAG_SUPPORTED   1
 #define SOC_SUPPORTS_SECURE_DL_MODE         1
@@ -208,6 +208,8 @@
 #define SOC_RMT_SUPPORT_TX_SYNCHRO            1  /*!< Support coordinate a group of TX channels to start simultaneously */
 #define SOC_RMT_SUPPORT_TX_CARRIER_ALWAYS_ON  1  /*!< TX carrier can be modulated all the time */
 #define SOC_RMT_SUPPORT_XTAL                  1  /*!< Support set XTAL clock as the RMT clock source */
+#define SOC_RMT_SUPPORT_AHB                   1  /*!< Support set AHB clock as the RMT clock source */
+#define SOC_RMT_SUPPORT_RC_FAST               1  /*!< Support set RC_FAST clock as the RMT clock source */
 
 /*-------------------------- RTC CAPS --------------------------------------*/
 #define SOC_RTC_CNTL_CPU_PD_DMA_BUS_WIDTH       (128)

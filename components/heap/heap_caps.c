@@ -574,6 +574,7 @@ void heap_caps_dump_all(void)
 size_t heap_caps_get_allocated_size( void *ptr )
 {
     heap_t *heap = find_containing_heap(ptr);
+    assert(heap);
     size_t size = multi_heap_get_allocated_size(heap->heap, ptr);
     return size;
 }

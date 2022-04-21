@@ -431,6 +431,10 @@ config SOC_RMT_SUPPORT_REF_TICK
     bool
     default y
 
+config SOC_RMT_SUPPORT_APB
+    bool
+    default y
+
 config SOC_RMT_CHANNEL_CLK_INDEPENDENT
     bool
     default y
