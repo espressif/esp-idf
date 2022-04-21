@@ -42,6 +42,7 @@
 #define BTA_JV_BUSY                2            /* Temporarily can not handle this request. */
 #define BTA_JV_NO_DATA             3            /* no data. */
 #define BTA_JV_NO_RESOURCE         4            /* No more set pm control block */
+#define BTA_JV_ALREADY_DONE        5            /* already done, repeat the operation */
 
 typedef UINT8 tBTA_JV_STATUS;
 #define BTA_JV_INTERNAL_ERR        (-1) /* internal error. */
@@ -198,6 +199,7 @@ typedef struct {
     tBTA_JV_STATUS  status;     /* Whether the operation succeeded or failed. */
     UINT32          handle;     /* The connection handle */
     BOOLEAN         async;      /* FALSE, if local initiates disconnect */
+    void *          user_data;  /* piggyback caller's private data */
 } tBTA_JV_L2CAP_CLOSE;
 
 /* data associated with BTA_JV_L2CAP_START_EVT */
@@ -428,7 +430,7 @@ typedef void *(tBTA_JV_RFCOMM_CBACK)(tBTA_JV_EVT event, tBTA_JV *p_data, void *u
 
 #if BTA_JV_L2CAP_INCLUDED
 /* JAVA L2CAP interface callback */
-typedef void (tBTA_JV_L2CAP_CBACK)(tBTA_JV_EVT event, tBTA_JV *p_data, void *user_Data);
+typedef void *(tBTA_JV_L2CAP_CBACK)(tBTA_JV_EVT event, tBTA_JV *p_data, void *user_Data);
 #endif /* BTA_JV_L2CAP_INCLUDED */
 
 /* JV configuration structure */
@@ -636,7 +638,7 @@ extern tBTA_JV_STATUS BTA_JvL2capConnect(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
 **                  BTA_JV_FAILURE, otherwise.
 **
 *******************************************************************************/
-extern tBTA_JV_STATUS BTA_JvL2capClose(UINT32 handle);
+extern tBTA_JV_STATUS BTA_JvL2capClose(UINT32 handle, tBTA_JV_L2CAP_CBACK *p_cback, void *user_data);
 
 /*******************************************************************************
 **
@@ -724,12 +726,10 @@ extern tBTA_JV_STATUS BTA_JvL2capStopServer(UINT16 local_psm, void *user_data);
 **                  When the operation is complete, tBTA_JV_L2CAP_CBACK is
 **                  called with BTA_JV_L2CAP_READ_EVT.
 **
-** Returns          BTA_JV_SUCCESS, if the request is being processed.
-**                  BTA_JV_FAILURE, otherwise.
+** Returns          Length of read data.
 **
 *******************************************************************************/
-extern tBTA_JV_STATUS BTA_JvL2capRead(UINT32 handle, UINT32 req_id,
-                                      UINT8 *p_data, UINT16 len);
+extern int BTA_JvL2capRead(UINT32 handle, UINT32 req_id, UINT8 *p_data, UINT16 len);
 
 /*******************************************************************************
 **

@@ -865,30 +865,31 @@ void bta_jv_free_scn(tBTA_JV_MSG *p_data)
             bta_jv_cb.scn[scn - 1] = FALSE;
             BTM_FreeSCN(scn);
         }
+        if (fc->user_data) {
+            user_data = (tBTA_JV_FREE_SCN_USER_DATA *)fc->user_data;
+            evt_data.server_status = user_data->server_status;
+            if (user_data->server_status == BTA_JV_SERVER_RUNNING && find_rfc_pcb((void *)user_data->slot_id, &p_cb, &p_pcb)) {
+                /* if call bta_jv_rfcomm_stop_server successfully, find_rfc_pcb shall return false */
+                evt_data.status = BTA_JV_FAILURE;
+            }
+
+            if (fc->p_cback) {
+                fc->p_cback(BTA_JV_FREE_SCN_EVT, (tBTA_JV *)&evt_data, (void *)user_data);
+            }
+        }
         break;
     }
     case BTA_JV_CONN_TYPE_L2CAP:
         bta_jv_set_free_psm(scn);
+        if (fc->p_cback) {
+            fc->p_cback(BTA_JV_FREE_SCN_EVT, (tBTA_JV *)&evt_data, (void *)user_data);
+        }
         break;
     case BTA_JV_CONN_TYPE_L2CAP_LE:
         // TODO: Not yet implemented...
         break;
     default:
         break;
-    }
-
-    if (fc->user_data)
-    {
-        user_data = (tBTA_JV_FREE_SCN_USER_DATA *)fc->user_data;
-        evt_data.server_status = user_data->server_status;
-        if (user_data->server_status == BTA_JV_SERVER_RUNNING && find_rfc_pcb((void *)user_data->slot_id, &p_cb, &p_pcb)) {
-            /* if call bta_jv_rfcomm_stop_server successfully, find_rfc_pcb shall return false */
-            evt_data.status = BTA_JV_FAILURE;
-        }
-
-        if (fc->p_cback) {
-            fc->p_cback(BTA_JV_FREE_SCN_EVT, (tBTA_JV *)&evt_data, (void *)user_data);
-        }
     }
 }
 static inline tBT_UUID shorten_sdp_uuid(const tBT_UUID *u)
@@ -1271,7 +1272,7 @@ void bta_jv_l2cap_connect(tBTA_JV_MSG *p_data)
     if (cc->has_cfg == TRUE) {
         cfg = cc->cfg;
         if (cfg.fcr_present && cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) {
-            chan_mode_mask = GAP_FCR_CHAN_OPT_ERTM;
+            chan_mode_mask |= GAP_FCR_CHAN_OPT_ERTM;
         }
     }
 
@@ -1331,15 +1332,14 @@ void bta_jv_l2cap_close(tBTA_JV_MSG *p_data)
 {
     tBTA_JV_L2CAP_CLOSE  evt_data;
     tBTA_JV_API_L2CAP_CLOSE *cc = &(p_data->l2cap_close);
-    tBTA_JV_L2CAP_CBACK *p_cback = cc->p_cb->p_cback;
-    void *user_data = cc->p_cb->user_data;
+    void *user_data = cc->user_data;
 
     evt_data.handle = cc->handle;
     evt_data.status = bta_jv_free_l2c_cb(cc->p_cb);
     evt_data.async = FALSE;
 
-    if (p_cback) {
-        p_cback(BTA_JV_L2CAP_CLOSE_EVT, (tBTA_JV *)&evt_data, user_data);
+    if (cc->p_cback) {
+        cc->p_cback(BTA_JV_L2CAP_CLOSE_EVT, (tBTA_JV *)&evt_data, user_data);
     }
 }
 
@@ -1430,7 +1430,7 @@ void bta_jv_l2cap_start_server(tBTA_JV_MSG *p_data)
     if (ls->has_cfg == TRUE) {
         cfg = ls->cfg;
         if (cfg.fcr_present && cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) {
-            chan_mode_mask = GAP_FCR_CHAN_OPT_ERTM;
+            chan_mode_mask |= GAP_FCR_CHAN_OPT_ERTM;
         }
     }
 
@@ -2854,7 +2854,7 @@ void bta_jv_l2cap_connect_le(tBTA_JV_MSG *p_data)
     id = t->id;
     t->init_called = FALSE;
 
-    if (L2CA_ConnectFixedChnl(t->chan, t->remote_addr, BLE_ADDR_UNKNOWN_TYPE)) {
+    if (L2CA_ConnectFixedChnl(t->chan, t->remote_addr, BLE_ADDR_UNKNOWN_TYPE, FALSE)) {
 
         evt.l2c_cl_init.status = BTA_JV_SUCCESS;
         evt.l2c_cl_init.handle = id;

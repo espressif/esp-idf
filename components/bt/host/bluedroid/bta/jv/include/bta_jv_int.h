@@ -213,6 +213,8 @@ typedef struct {
     BT_HDR          hdr;
     UINT32          handle;
     tBTA_JV_L2C_CB  *p_cb;
+    tBTA_JV_L2CAP_CBACK *p_cback;
+    void            *user_data;
 } tBTA_JV_API_L2CAP_CLOSE;
 
 /* data type for BTA_JV_API_L2CAP_READ_EVT */
