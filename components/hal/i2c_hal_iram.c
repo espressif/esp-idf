@@ -47,3 +47,23 @@ void i2c_hal_slave_handle_event(i2c_hal_context_t *hal, i2c_intr_event_t *event)
 {
     i2c_ll_slave_get_event(hal->dev, event);
 }
+
+void i2c_hal_disable_slave_tx_it(i2c_hal_context_t *hal)
+{
+    i2c_ll_slave_disable_tx_it(hal->dev);
+}
+
+void i2c_hal_update_config(i2c_hal_context_t *hal)
+{
+    i2c_ll_update(hal->dev);
+}
+
+void i2c_hal_get_rxfifo_cnt(i2c_hal_context_t *hal, uint32_t *len)
+{
+    *len =  i2c_ll_get_rxfifo_cnt(hal->dev);
+}
+
+void i2c_hal_get_txfifo_cnt(i2c_hal_context_t *hal, uint32_t *len)
+{
+    *len =  i2c_ll_get_txfifo_len(hal->dev);
+}
