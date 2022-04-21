@@ -1222,6 +1222,12 @@ struct ble_hci_vs_rd_static_addr_rp {
 #define BLE_HCI_SET_DATALEN_TX_TIME_MIN     (0x0148)
 #define BLE_HCI_SET_DATALEN_TX_TIME_MAX     (0x4290)
 
+/* --- LE read/write suggested default data length (OCF 0x0023 and 0x0024) */
+#define BLE_HCI_SUGG_DEF_DATALEN_TX_OCTETS_MIN     (0x001b)
+#define BLE_HCI_SUGG_DEF_DATALEN_TX_OCTETS_MAX     (0x00fb)
+#define BLE_HCI_SUGG_DEF_DATALEN_TX_TIME_MIN       (0x0148)
+#define BLE_HCI_SUGG_DEF_DATALEN_TX_TIME_MAX       (0x4290)
+
 /* --- LE read maximum default PHY (OCF 0x0030) */
 #define BLE_HCI_LE_PHY_1M                   (1)
 #define BLE_HCI_LE_PHY_2M                   (2)
