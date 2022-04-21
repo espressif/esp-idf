@@ -16,3 +16,4 @@ ESP-IDF 5.0 Migration Guides
     system
     tools
     tcpip-adapter
+    gcc

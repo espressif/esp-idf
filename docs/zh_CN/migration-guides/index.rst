@@ -16,3 +16,4 @@ ESP-IDF 5.0 迁移指南
     system
     tools
     tcpip-adapter
+    gcc
