@@ -36,6 +36,17 @@
 #include "osi/mutex.h"
 #include "osi/alarm.h"
 #if (defined RFCOMM_INCLUDED && RFCOMM_INCLUDED == TRUE)
+
+static tL2CAP_ERTM_INFO rfc_l2c_etm_opt =
+{
+    L2CAP_FCR_ERTM_MODE,
+    L2CAP_FCR_CHAN_OPT_ERTM|L2CAP_FCR_CHAN_OPT_BASIC,  /* Some devices do not support ERTM */
+    L2CAP_USER_RX_BUF_SIZE,
+    L2CAP_USER_TX_BUF_SIZE,
+    L2CAP_FCR_RX_BUF_SIZE,
+    L2CAP_FCR_TX_BUF_SIZE
+};
+
 /*
 ** Define Callback functions to be called by L2CAP
 */
@@ -117,7 +128,8 @@ void RFCOMM_ConnectInd (BD_ADDR bd_addr, UINT16 lcid, UINT16 psm, UINT8 id)
     }
 
     if (p_mcb == NULL) {
-        L2CA_ConnectRsp (bd_addr, id, lcid, L2CAP_CONN_NO_RESOURCES, 0);
+        // L2CA_ConnectRsp (bd_addr, id, lcid, L2CAP_CONN_NO_RESOURCES, 0);
+        L2CA_ErtmConnectRsp (bd_addr, id, lcid, L2CAP_CONN_NO_RESOURCES, 0, &rfc_l2c_etm_opt);
         return;
     }
     p_mcb->lcid     = lcid;
@@ -178,7 +190,9 @@ void RFCOMM_ConnectCnf (UINT16 lcid, UINT16 result)
             RFCOMM_TRACE_DEBUG ("RFCOMM_ConnectCnf peer gave up pending LCID(0x%x)", p_mcb->pending_lcid);
 
             /* Peer gave up his connection request, make sure cleaning up L2CAP channel */
-            L2CA_ConnectRsp (p_mcb->bd_addr, p_mcb->pending_id, p_mcb->pending_lcid, L2CAP_CONN_NO_RESOURCES, 0);
+            // L2CA_ConnectRsp (p_mcb->bd_addr, p_mcb->pending_id, p_mcb->pending_lcid, L2CAP_CONN_NO_RESOURCES, 0);
+            L2CA_ErtmConnectRsp (p_mcb->bd_addr, p_mcb->pending_id, p_mcb->pending_lcid, L2CAP_CONN_NO_RESOURCES, 0,
+                                    &rfc_l2c_etm_opt);
 
             p_mcb->pending_lcid = 0;
         }

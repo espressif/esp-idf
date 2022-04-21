@@ -1565,6 +1565,31 @@
 #define PORT_CREDIT_RX_LOW          8
 #endif
 
+/* ERTM Tx window size */
+#ifndef RFC_FCR_OPT_TX_WINDOW_SIZE
+#define RFC_FCR_OPT_TX_WINDOW_SIZE  20
+#endif
+
+/* ERTM Maximum transmissions before disconnecting */
+#ifndef RFC_FCR_OPT_MAX_TX_B4_DISCNT
+#define RFC_FCR_OPT_MAX_TX_B4_DISCNT 20
+#endif
+
+/* ERTM Retransmission timeout (2 secs) */
+#ifndef RFC_FCR_OPT_RETX_TOUT
+#define RFC_FCR_OPT_RETX_TOUT        2000
+#endif
+
+/* ERTM Monitor timeout (12 secs) */
+#ifndef RFC_FCR_OPT_MONITOR_TOUT
+#define RFC_FCR_OPT_MONITOR_TOUT     12000
+#endif
+
+/* ERTM ERTM MPS segment size */
+#ifndef RFC_FCR_OPT_MAX_PDU_SIZE
+#define RFC_FCR_OPT_MAX_PDU_SIZE     1010
+#endif
+
 /******************************************************************************
 **
 ** OBEX
