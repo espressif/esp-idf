@@ -58,34 +58,37 @@ typedef enum {
 
 /**
  * @brief CPU_CLK mux inputs, which are the supported clock sources for the CPU_CLK
+ * @note Enum values are matched with the register field values on purpose
  */
 typedef enum {
-    SOC_CPU_CLK_SRC_XTAL,              /*!< Select XTAL_CLK as CPU_CLK source */
-    SOC_CPU_CLK_SRC_PLL,               /*!< Select PLL_CLK as CPU_CLK source (PLL_CLK is the output of 40MHz crystal oscillator frequency multiplier, can be 480MHz or 320MHz) */
-    SOC_CPU_CLK_SRC_RC_FAST,           /*!< Select RC_FAST_CLK as CPU_CLK source */
-    SOC_CPU_CLK_SRC_APLL,              /*!< Select APLL_CLK as CPU_CLK source */
+    SOC_CPU_CLK_SRC_XTAL = 0,              /*!< Select XTAL_CLK as CPU_CLK source */
+    SOC_CPU_CLK_SRC_PLL = 1,               /*!< Select PLL_CLK as CPU_CLK source (PLL_CLK is the output of 40MHz crystal oscillator frequency multiplier, can be 480MHz or 320MHz) */
+    SOC_CPU_CLK_SRC_RC_FAST = 2,           /*!< Select RC_FAST_CLK as CPU_CLK source */
+    SOC_CPU_CLK_SRC_APLL = 3,              /*!< Select APLL_CLK as CPU_CLK source */
 } soc_cpu_clk_src_t;
 
 /**
  * @brief RTC_SLOW_CLK mux inputs, which are the supported clock sources for the RTC_SLOW_CLK
+ * @note Enum values are matched with the register field values on purpose
  */
 typedef enum {
-    SOC_RTC_SLOW_CLK_SRC_RC_SLOW,      /*!< Select RC_SLOW_CLK as RTC_SLOW_CLK source */
-    SOC_RTC_SLOW_CLK_SRC_XTAL32K,      /*!< Select XTAL32K_CLK as RTC_SLOW_CLK source */
-    SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256, /*!< Select RC_FAST_D256_CLK (referred as FOSC_DIV or 8m_d256/8md256 in TRM and reg. description) as RTC_SLOW_CLK source */
+    SOC_RTC_SLOW_CLK_SRC_RC_SLOW = 0,      /*!< Select RC_SLOW_CLK as RTC_SLOW_CLK source */
+    SOC_RTC_SLOW_CLK_SRC_XTAL32K = 1,      /*!< Select XTAL32K_CLK as RTC_SLOW_CLK source */
+    SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256 = 2, /*!< Select RC_FAST_D256_CLK (referred as FOSC_DIV or 8m_d256/8md256 in TRM and reg. description) as RTC_SLOW_CLK source */
 } soc_rtc_slow_clk_src_t;
 
 /**
  * @brief RTC_FAST_CLK mux inputs, which are the supported clock sources for the RTC_FAST_CLK
+ * @note Enum values are matched with the register field values on purpose
  */
 typedef enum {
-    SOC_RTC_FAST_CLK_SRC_XTAL_D4,      /*!< Select XTAL_D4_CLK (may referred as XTAL_CLK_DIV_4) as RTC_FAST_CLK source */
+    SOC_RTC_FAST_CLK_SRC_XTAL_D4 = 0,      /*!< Select XTAL_D4_CLK (may referred as XTAL_CLK_DIV_4) as RTC_FAST_CLK source */
     SOC_RTC_FAST_CLK_SRC_XTAL_DIV = SOC_RTC_FAST_CLK_SRC_XTAL_D4, /*!< Alias name for `SOC_RTC_FAST_CLK_SRC_XTAL_D4` */
-    SOC_RTC_FAST_CLK_SRC_RC_FAST,      /*!< Select RC_FAST_CLK as RTC_FAST_CLK source */
+    SOC_RTC_FAST_CLK_SRC_RC_FAST = 1,      /*!< Select RC_FAST_CLK as RTC_FAST_CLK source */
 } soc_rtc_fast_clk_src_t;
 
 /**
- * @brief Supported clock sources for modules (CPU, peripherials, RTC, etc.)
+ * @brief Supported clock sources for modules (CPU, peripherals, RTC, etc.)
  * Naming convention: SOC_MOD_CLK_{[upstream]clock_name}_[attr]
  * {[upstream]clock_name}: APB, APLL, (BB)PLL, etc.
  * [attr] - optional: FAST, SLOW, D<divider>, F<freq>
@@ -104,7 +107,7 @@ typedef enum {
     SOC_MOD_CLK_RC_FAST = 7,                   /*< RC_FAST_CLK comes from the internal 8MHz rc oscillator, passing a clock gating to the peripherals */
     SOC_MOD_CLK_RC_FAST_D256 = 8,              /*< RC_FAST_D256_CLK is derived from the internal 8MHz rc oscillator, divided by 256, and passing a clock gating to the peripherals */
     SOC_MOD_CLK_XTAL = 9,                      /*< XTAL_CLK comes from the external 40MHz crystal */
-    SOC_MOD_CLK_APB_F1M = 10,                  /*< APB_F1M_CLK (referred as REF_TICK in TRM) is derived from APB, it has a fixed frequency of 1MHz even when APB frequency changes */
+    SOC_MOD_CLK_REF_TICK = 10,                 /*< REF_TICK is derived from XTAL or RC_FAST via a divider, it has a fixed frequency of 1MHz by default */
     SOC_MOD_CLK_APLL = 11,                     /*< APLL is sourced from PLL, and its frequency is configurable through APLL configuration registers */
     SOC_MOD_CLK_TEMP_SENSOR = 12,              /*< TEMP_SENSOR_CLK comes directly from the internal 8MHz rc oscillator */
 } soc_module_clk_t;
@@ -165,25 +168,25 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of RMT
  */
-#define SOC_RMT_CLKS {SOC_MOD_CLK_APB, SOC_MOD_CLK_APB_F1M}
+#define SOC_RMT_CLKS {SOC_MOD_CLK_APB, SOC_MOD_CLK_REF_TICK}
 
 /**
  * @brief Type of RMT clock source
  */
 typedef enum {
-    RMT_CLK_SRC_NONE = 0,                      /*!< No clock source is selected */
-    RMT_CLK_SRC_APB = SOC_MOD_CLK_APB,         /*!< Select APB as the source clock */
-    RMT_CLK_SRC_APB_F1M = SOC_MOD_CLK_APB_F1M, /*!< Select APB_F1M (a.k.a REF_TICK) as the source clock */
-    RMT_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB,     /*!< Select APB as the default choice */
+    RMT_CLK_SRC_NONE = 0,                        /*!< No clock source is selected */
+    RMT_CLK_SRC_APB = SOC_MOD_CLK_APB,           /*!< Select APB as the source clock */
+    RMT_CLK_SRC_REF_TICK = SOC_MOD_CLK_REF_TICK, /*!< Select REF_TICK as the source clock */
+    RMT_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB,       /*!< Select APB as the default choice */
 } soc_periph_rmt_clk_src_t;
 
 /**
  * @brief Type of RMT clock source, reserved for the legacy RMT driver
  */
 typedef enum {
-    RMT_BASECLK_APB = SOC_MOD_CLK_APB,     /*!< RMT source clock is APB CLK */
-    RMT_BASECLK_REF = SOC_MOD_CLK_APB_F1M, /*!< RMT source clock is APB_F1M */
-    RMT_BASECLK_DEFAULT = SOC_MOD_CLK_APB, /*!< RMT source clock default choice is APB */
+    RMT_BASECLK_APB = SOC_MOD_CLK_APB,      /*!< RMT source clock is APB CLK */
+    RMT_BASECLK_REF = SOC_MOD_CLK_REF_TICK, /*!< RMT source clock is REF_TICK */
+    RMT_BASECLK_DEFAULT = SOC_MOD_CLK_APB,  /*!< RMT source clock default choice is APB */
 } soc_periph_rmt_clk_src_legacy_t;
 
 //////////////////////////////////////////////////Temp Sensor///////////////////////////////////////////////////////////
@@ -207,9 +210,9 @@ typedef enum {
  * @brief Type of UART clock source, reserved for the legacy UART driver
  */
 typedef enum {
-    UART_SCLK_APB = SOC_MOD_CLK_APB,          /*!< UART source clock is APB CLK */
-    UART_SCLK_REF_TICK = SOC_MOD_CLK_APB_F1M, /*!< UART source clock is APB_F1M */
-    UART_SCLK_DEFAULT = SOC_MOD_CLK_APB,      /*!< UART source clock default choice is APB */
+    UART_SCLK_APB = SOC_MOD_CLK_APB,           /*!< UART source clock is APB CLK */
+    UART_SCLK_REF_TICK = SOC_MOD_CLK_REF_TICK, /*!< UART source clock is REF_TICK */
+    UART_SCLK_DEFAULT = SOC_MOD_CLK_APB,       /*!< UART source clock default choice is APB */
 } soc_periph_uart_clk_src_legacy_t;
 
 #ifdef __cplusplus

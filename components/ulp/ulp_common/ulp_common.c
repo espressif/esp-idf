@@ -39,13 +39,11 @@ esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us)
     REG_SET_FIELD(SENS_ULP_CP_SLEEP_CYC0_REG + period_index * sizeof(uint32_t),
             SENS_SLEEP_CYCLES_S0, (uint32_t) period_cycles);
 #elif defined(CONFIG_IDF_TARGET_ESP32S2) || defined(CONFIG_IDF_TARGET_ESP32S3)
-    rtc_slow_freq_t slow_clk_freq = rtc_clk_slow_freq_get();
-    rtc_slow_freq_t rtc_slow_freq_x32k = RTC_SLOW_FREQ_32K_XTAL;
-    rtc_slow_freq_t rtc_slow_freq_8MD256 = RTC_SLOW_FREQ_8MD256;
+    soc_rtc_slow_clk_src_t slow_clk_src = rtc_clk_slow_src_get();
     rtc_cal_sel_t cal_clk = RTC_CAL_RTC_MUX;
-    if (slow_clk_freq == (rtc_slow_freq_x32k)) {
+    if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
         cal_clk = RTC_CAL_32K_XTAL;
-    } else if (slow_clk_freq == rtc_slow_freq_8MD256) {
+    } else if (slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256) {
         cal_clk  = RTC_CAL_8MD256;
     }
     uint32_t slow_clk_period = rtc_clk_cal(cal_clk, 100);

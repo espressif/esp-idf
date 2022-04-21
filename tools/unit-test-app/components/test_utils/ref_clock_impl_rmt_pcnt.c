@@ -77,7 +77,7 @@ void ref_clock_init(void)
 
     // Initialize RMT
     rmt_tx_channel_config_t tx_chan_config = {
-        .clk_src = RMT_CLK_SRC_APB_F1M, // REF_TICK clock source
+        .clk_src = RMT_CLK_SRC_REF_TICK, // REF_TICK clock source
         .gpio_num = REF_CLOCK_GPIO,
         .mem_block_symbols = 64,
         .resolution_hz = 10000, // channel resolution doesn't really matter, because we only utilize the carrier

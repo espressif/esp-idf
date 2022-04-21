@@ -396,7 +396,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 
 #if SOC_RTC_SLOW_CLOCK_SUPPORT_8MD256
     //Keep the RTC8M_CLK on if RTC clock is 8MD256.
-    bool rtc_using_8md256 = (rtc_clk_slow_freq_get() == RTC_SLOW_FREQ_8MD256);
+    bool rtc_using_8md256 = (rtc_clk_slow_src_get() == SOC_RTC_SLOW_CLK_SRC_RC_FAST_D256);
 #else
     bool rtc_using_8md256 = false;
 #endif

@@ -10,16 +10,13 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/syscon_reg.h"
 #include "soc/dport_reg.h"
-#include "soc/rtc.h"
 #include "soc/i2s_reg.h"
 #include "soc/timer_group_reg.h"
 #include "soc/bb_reg.h"
 #include "soc/nrx_reg.h"
 #include "soc/fe_reg.h"
-#include "soc/rtc.h"
 #include "regi2c_ctrl.h"
 #include "regi2c_dig_reg.h"
-#include "soc/rtc.h"
 
 #define RTC_CNTL_MEM_FOLW_CPU (RTC_CNTL_SLOWMEM_FOLW_CPU | RTC_CNTL_FASTMEM_FOLW_CPU)
 

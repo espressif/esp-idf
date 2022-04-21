@@ -135,7 +135,7 @@ esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t 
         break;
 #endif // SOC_RMT_SUPPORT_XTAL
 #if SOC_RMT_SUPPORT_REF_TICK
-    case RMT_CLK_SRC_APB_F1M:
+    case RMT_CLK_SRC_REF_TICK:
         periph_src_clk_hz = REF_CLK_FREQ;
         break;
 #endif // SOC_RMT_SUPPORT_REF_TICK
