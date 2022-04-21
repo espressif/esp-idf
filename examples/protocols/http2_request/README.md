@@ -1,3 +1,6 @@
+| Supported Targets | Linux |
+| ----------------- | ----- |
+
 # HTTP/2 Request Example
 
 Establish an HTTP/2 connection with https://http2.github.io

@@ -441,43 +441,8 @@ esp_err_t esp_tls_plain_tcp_connect(const char *host, int hostlen, int port, con
     return tcp_connect(host, hostlen, port, cfg, error_handle, sockfd);
 }
 
-/**
- * @brief      Create a new TLS/SSL connection
- */
-esp_tls_t *esp_tls_conn_new(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg)
-{
-    esp_tls_t *tls = esp_tls_init();
-    if (!tls) {
-        return NULL;
-    }
-    /* esp_tls_conn_new() API establishes connection in a blocking manner thus this loop ensures that esp_tls_conn_new()
-       API returns only after connection is established unless there is an error*/
-    size_t start = xTaskGetTickCount();
-    while (1) {
-        int ret = esp_tls_low_level_conn(hostname, hostlen, port, cfg, tls);
-        if (ret == 1) {
-            return tls;
-        } else if (ret == -1) {
-            esp_tls_conn_destroy(tls);
-            ESP_LOGE(TAG, "Failed to open new connection");
-            return NULL;
-        } else if (ret == 0 && cfg->timeout_ms >= 0) {
-            size_t timeout_ticks = pdMS_TO_TICKS(cfg->timeout_ms);
-            uint32_t expired = xTaskGetTickCount() - start;
-            if (expired >= timeout_ticks) {
-                esp_tls_conn_destroy(tls);
-                ESP_LOGE(TAG, "Failed to open new connection in specified timeout");
-                return NULL;
-            }
-        }
-    }
-    return NULL;
-}
-
 int esp_tls_conn_new_sync(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_t *tls)
 {
-    /* esp_tls_conn_new_sync() is a sync alternative to esp_tls_conn_new_async() with symmetric function prototype
-    it is an alternative to esp_tls_conn_new() which is left for compatibility reasons */
     size_t start = xTaskGetTickCount();
     while (1) {
         int ret = esp_tls_low_level_conn(hostname, hostlen, port, cfg, tls);
@@ -521,9 +486,6 @@ static int get_port(const char *url, struct http_parser_url *u)
     return 0;
 }
 
-/**
- * @brief      Create a new TLS/SSL connection with a given "HTTP" url
- */
 esp_tls_t *esp_tls_conn_http_new(const char *url, const esp_tls_cfg_t *cfg)
 {
     /* Parse URI */
@@ -541,6 +503,21 @@ esp_tls_t *esp_tls_conn_http_new(const char *url, const esp_tls_cfg_t *cfg)
     }
     esp_tls_conn_destroy(tls);
     return NULL;
+}
+
+/**
+ * @brief      Create a new TLS/SSL connection with a given "HTTP" url
+ */
+int esp_tls_conn_http_new_sync(const char *url, const esp_tls_cfg_t *cfg, esp_tls_t *tls)
+{
+    /* Parse URI */
+    struct http_parser_url u;
+    http_parser_url_init(&u);
+    http_parser_parse_url(url, strlen(url), 0, &u);
+
+    /* Connect to host */
+    return esp_tls_conn_new_sync(&url[u.field_data[UF_HOST].off], u.field_data[UF_HOST].len,
+                                  get_port(url, &u), cfg, tls);
 }
 
 /**

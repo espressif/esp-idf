@@ -351,7 +351,6 @@ typedef struct esp_tls {
 
 } esp_tls_t;
 
-
 /**
  * @brief      Create TLS connection
  *
@@ -362,29 +361,21 @@ typedef struct esp_tls {
  */
 esp_tls_t *esp_tls_init(void);
 
-
-
-
 /**
- * @brief      Create a new blocking TLS/SSL connection
- *
- * This function establishes a TLS/SSL connection with the specified host in blocking manner.
+ * @brief      Create a new blocking TLS/SSL connection with a given "HTTP" url
  *
  * Note: This API is present for backward compatibility reasons. Alternative function
- * with the same functionality is `esp_tls_conn_new_sync` (and its asynchronous version
- * `esp_tls_conn_new_async`)
+ * with the same functionality is `esp_tls_conn_http_new_sync` (and its asynchronous version
+ * `esp_tls_conn_http_new_async`)
  *
- * @param[in]  hostname  Hostname of the host.
- * @param[in]  hostlen   Length of hostname.
- * @param[in]  port      Port number of the host.
- * @param[in]  cfg       TLS configuration as esp_tls_cfg_t. If you wish to open
- *                       non-TLS connection, keep this NULL. For TLS connection,
- *                       a pass pointer to esp_tls_cfg_t. At a minimum, this
- *                       structure should be zero-initialized.
- *
+ * @param[in]  url  url of host.
+ * @param[in]  cfg  TLS configuration as esp_tls_cfg_t. If you wish to open
+ *                  non-TLS connection, keep this NULL. For TLS connection,
+ *                  a pass pointer to 'esp_tls_cfg_t'. At a minimum, this
+ *                  structure should be zero-initialized.
  * @return pointer to esp_tls_t, or NULL if connection couldn't be opened.
  */
-esp_tls_t *esp_tls_conn_new(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg)  __attribute__ ((deprecated));
+esp_tls_t *esp_tls_conn_http_new(const char *url, const esp_tls_cfg_t *cfg) __attribute__((deprecated("Please use esp_tls_conn_http_new_sync (or its asynchronous version esp_tls_conn_http_new_async) instead")));
 
 /**
  * @brief      Create a new blocking TLS/SSL connection
@@ -410,16 +401,21 @@ int esp_tls_conn_new_sync(const char *hostname, int hostlen, int port, const esp
 /**
  * @brief      Create a new blocking TLS/SSL connection with a given "HTTP" url
  *
- * The behaviour is same as esp_tls_conn_new() API. However this API accepts host's url.
+ * The behaviour is same as esp_tls_conn_new_sync() API. However this API accepts host's url.
  *
- * @param[in]  url  url of host.
- * @param[in]  cfg  TLS configuration as esp_tls_cfg_t. If you wish to open
- *                  non-TLS connection, keep this NULL. For TLS connection,
- *                  a pass pointer to 'esp_tls_cfg_t'. At a minimum, this
- *                  structure should be zero-initialized.
- * @return pointer to esp_tls_t, or NULL if connection couldn't be opened.
+ * @param[in]  url       url of host.
+ * @param[in]  cfg       TLS configuration as esp_tls_cfg_t. If you wish to open
+ *                       non-TLS connection, keep this NULL. For TLS connection,
+ *                       a pass pointer to 'esp_tls_cfg_t'. At a minimum, this
+ *                       structure should be zero-initialized.
+ * @param[in]  tls       Pointer to esp-tls as esp-tls handle.
+ *
+ * @return
+ *             - -1      If connection establishment fails.
+ *             -  1      If connection establishment is successful.
+ *             -  0      If connection state is in progress.
  */
-esp_tls_t *esp_tls_conn_http_new(const char *url, const esp_tls_cfg_t *cfg);
+int esp_tls_conn_http_new_sync(const char *url, const esp_tls_cfg_t *cfg, esp_tls_t *tls);
 
 /**
  * @brief      Create a new non-blocking TLS/SSL connection
@@ -444,7 +440,7 @@ int esp_tls_conn_new_async(const char *hostname, int hostlen, int port, const es
 /**
  * @brief      Create a new non-blocking TLS/SSL connection with a given "HTTP" url
  *
- * The behaviour is same as esp_tls_conn_new() API. However this API accepts host's url.
+ * The behaviour is same as esp_tls_conn_new_async() API. However this API accepts host's url.
  *
  * @param[in]  url     url of host.
  * @param[in]  cfg     TLS configuration as esp_tls_cfg_t.
@@ -500,17 +496,11 @@ static inline ssize_t esp_tls_conn_read(esp_tls_t *tls, void  *data, size_t data
 }
 
 /**
- * @brief      Compatible version of esp_tls_conn_destroy() to close the TLS/SSL connection
- *
- * @param[in]  tls  pointer to esp-tls as esp-tls handle.
- */
-void esp_tls_conn_delete(esp_tls_t *tls) __attribute__((deprecated("Please use esp_tls_conn_destroy() instead")));
-
-/**
  * @brief      Close the TLS/SSL connection and free any allocated resources.
  *
- * This function should be called to close each tls connection opened with esp_tls_conn_new() or
- * esp_tls_conn_http_new() APIs.
+ * This function should be called to close each tls connection opened with
+ * esp_tls_conn_new_sync() (or esp_tls_conn_http_new_sync()) and
+ * esp_tls_conn_new_async() (or esp_tls_conn_http_new_async()) APIs.
  *
  * @param[in]  tls  pointer to esp-tls as esp-tls handle.
  *
@@ -681,7 +671,7 @@ esp_err_t esp_tls_plain_tcp_connect(const char *host, int hostlen, int port, con
  * @brief Obtain the client session ticket
  *
  * This function should be called when the TLS connection is already established.
- * This can be passed again in the esp_tls_cfg_t structure, to appropriate tls session create (e.g. esp_tls_conn_http_new) API for session resumption.
+ * This can be passed again in the esp_tls_cfg_t structure, to appropriate tls session create (e.g. esp_tls_conn_http_new_sync) API for session resumption.
  *
  * @param[in]  esp_tls context as esp_tls_t
  * @return

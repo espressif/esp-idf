@@ -93,4 +93,23 @@ ESP HTTPS OTA
 Breaking Changes (Summary)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- The function :cpp:func:`esp_https_ota()` now requires pointer to :cpp:type:`esp_https_ota_config_t` as argument instead of pointer to :cpp:type:`esp_http_client_config_t`.
+- The function :cpp:func:`esp_https_ota` now requires pointer to :cpp:type:`esp_https_ota_config_t` as argument instead of pointer to :cpp:type:`esp_http_client_config_t`.
+
+
+ESP-TLS
+--------------
+
+Breaking Changes (Summary)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Following table summarizes the deprecated functions removed and their alternatives to be used from ESP-IDF v5.0 onwards.
+
++-----------------------------------+----------------------------------------+
+| Function                          | Alternative                            |
++===================================+========================================+
+| :cpp:func:`esp_tls_conn_new`      | :cpp:func:`esp_tls_conn_new_sync`      |
++-----------------------------------+----------------------------------------+
+| :cpp:func:`esp_tls_conn_delete`   | :cpp:func:`esp_tls_conn_destroy`       |
++-----------------------------------+----------------------------------------+
+
+- The function :cpp:func:`esp_tls_conn_http_new` has now been termed as deprecated. Please use the alternative function :cpp:func:`esp_tls_conn_http_new_sync` (or its asynchronous :cpp:func:`esp_tls_conn_http_new_async`). Note that the alternatives need an additional parameter :cpp:type:`esp_tls_t` which has to be initialized using the :cpp:func:`esp_tls_init` function.

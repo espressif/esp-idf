@@ -56,16 +56,20 @@ static void https_get_task(void *pvParameters)
 {
     while (1) {
         int conn_count = 0;
-
         ESP_LOGI(TAG, "Connecting to %d URLs", MAX_URLS);
+
         for (int i = 0; i < MAX_URLS; i++) {
             esp_tls_cfg_t cfg = {
                 .crt_bundle_attach = esp_crt_bundle_attach,
             };
 
-            struct esp_tls *tls = esp_tls_conn_http_new(web_urls[i], &cfg);
+            esp_tls_t *tls = esp_tls_init();
+            if (!tls) {
+                ESP_LOGE(TAG, "Failed to allocate esp_tls handle!");
+                goto end;
+            }
 
-            if (tls != NULL) {
+            if (esp_tls_conn_http_new_sync(web_urls[i], &cfg, tls) == 1) {
                 ESP_LOGI(TAG, "Connection established to %s", web_urls[i]);
                 conn_count++;
             } else {
@@ -73,6 +77,7 @@ static void https_get_task(void *pvParameters)
             }
 
             esp_tls_conn_destroy(tls);
+end:
             vTaskDelay(1000 / portTICK_PERIOD_MS);
         }
 
@@ -83,8 +88,8 @@ static void https_get_task(void *pvParameters)
 
 void app_main(void)
 {
-    ESP_ERROR_CHECK( nvs_flash_init() );
-    esp_netif_init();
+    ESP_ERROR_CHECK(nvs_flash_init());
+    ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
