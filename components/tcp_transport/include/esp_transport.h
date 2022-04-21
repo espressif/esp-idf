@@ -24,7 +24,7 @@ typedef struct esp_transport_keepalive {
     int             keep_alive_count;       /*!< Keep-alive packet retry send count */
 } esp_transport_keep_alive_t;
 
-typedef struct esp_transport_internal* esp_transport_list_handle_t;
+typedef struct esp_transport_list_t* esp_transport_list_handle_t;
 typedef struct esp_transport_item_t* esp_transport_handle_t;
 
 typedef int (*connect_func)(esp_transport_handle_t t, const char *host, int port, int timeout_ms);

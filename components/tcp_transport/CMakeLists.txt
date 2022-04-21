@@ -1,7 +1,7 @@
 set(srcs
     "transport.c"
     "transport_ssl.c"
-    "transport_utils.c")
+    "transport_internal.c")
 
 if(CONFIG_WS_TRANSPORT)
 list(APPEND srcs
