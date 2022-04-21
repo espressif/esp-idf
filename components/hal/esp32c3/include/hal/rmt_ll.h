@@ -637,7 +637,19 @@ static inline uint32_t rmt_ll_tx_get_interrupt_status(rmt_dev_t *dev, uint32_t c
  */
 static inline uint32_t rmt_ll_tx_get_interrupt_status_raw(rmt_dev_t *dev, uint32_t channel)
 {
-    return dev->int_raw.val & RMT_LL_EVENT_TX_MASK(channel);
+    return dev->int_raw.val & (RMT_LL_EVENT_TX_MASK(channel) | RMT_LL_EVENT_TX_ERROR(channel));
+}
+
+/**
+ * @brief Get interrupt raw status for RX channel
+ *
+ * @param dev Peripheral instance address
+ * @param channel RMT RX channel number
+ * @return Interrupt raw status
+ */
+static inline uint32_t rmt_ll_rx_get_interrupt_status_raw(rmt_dev_t *dev, uint32_t channel)
+{
+    return dev->int_raw.val & (RMT_LL_EVENT_RX_MASK(channel) | RMT_LL_EVENT_RX_ERROR(channel));
 }
 
 /**

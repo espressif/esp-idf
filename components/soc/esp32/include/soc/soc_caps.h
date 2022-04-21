@@ -68,7 +68,7 @@
 #define SOC_MCPWM_SUPPORTED         1
 #define SOC_SDMMC_HOST_SUPPORTED    1
 #define SOC_BT_SUPPORTED            1
-#define SOC_BLUEDROID_SUPPORTED	    1
+#define SOC_BLUEDROID_SUPPORTED     1
 #define SOC_CLASSIC_BT_SUPPORTED    1
 #define SOC_PCNT_SUPPORTED          1
 #define SOC_WIFI_SUPPORTED          1
@@ -238,6 +238,7 @@
 #define SOC_RMT_CHANNELS_PER_GROUP      8  /*!< Total 8 channels */
 #define SOC_RMT_MEM_WORDS_PER_CHANNEL   64 /*!< Each channel owns 64 words memory */
 #define SOC_RMT_SUPPORT_REF_TICK        1  /*!< Support set REF_TICK as the RMT clock source */
+#define SOC_RMT_SUPPORT_APB             1  /*!< Support set APB as the RMT clock source */
 #define SOC_RMT_CHANNEL_CLK_INDEPENDENT 1  /*!< Can select different source clock for each channel */
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/

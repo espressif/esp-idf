@@ -116,3 +116,9 @@ I2C
     - ``rmt_set_intr_enable_mask`` and ``rmt_clr_intr_enable_mask`` are removed, as the interrupt is handled by the driver, user doesn't need to take care of it.
     - ``rmt_set_pin`` is removed, as ``rmt_set_gpio`` can do the same thing.
     - ``rmt_memory_rw_rst`` is removed, user can use ``rmt_tx_memory_reset`` and ``rmt_rx_memory_reset`` for TX and RX channel respectively.
+
+LCD
+---
+
+- The LCD panel initialization flow is slightly changed. Now the :cpp:func:`esp_lcd_panel_init` won't turn on the display automatically. User needs to call :cpp:func:`esp_lcd_panel_disp_on_off` to manually turn on the display. Note, this is different from turning on backlight. With this breaking change, user can flush a predefined pattern to the screen before turning on the screen. This can help avoid random noise on the screen after a power on reset.
+- :cpp:func:`esp_lcd_panel_disp_off` is deprecated, please use :cpp:func:`esp_lcd_panel_disp_on_off` instead.

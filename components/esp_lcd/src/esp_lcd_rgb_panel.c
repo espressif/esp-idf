@@ -60,7 +60,7 @@ static esp_err_t rgb_panel_invert_color(esp_lcd_panel_t *panel, bool invert_colo
 static esp_err_t rgb_panel_mirror(esp_lcd_panel_t *panel, bool mirror_x, bool mirror_y);
 static esp_err_t rgb_panel_swap_xy(esp_lcd_panel_t *panel, bool swap_axes);
 static esp_err_t rgb_panel_set_gap(esp_lcd_panel_t *panel, int x_gap, int y_gap);
-static esp_err_t rgb_panel_disp_off(esp_lcd_panel_t *panel, bool off);
+static esp_err_t rgb_panel_disp_on_off(esp_lcd_panel_t *panel, bool off);
 static esp_err_t lcd_rgb_panel_select_periph_clock(esp_rgb_panel_t *panel, lcd_clock_source_t clk_src);
 static esp_err_t lcd_rgb_panel_create_trans_link(esp_rgb_panel_t *panel);
 static esp_err_t lcd_rgb_panel_configure_gpio(esp_rgb_panel_t *panel, const esp_lcd_rgb_panel_config_t *panel_config);
@@ -190,7 +190,7 @@ esp_err_t esp_lcd_new_rgb_panel(const esp_lcd_rgb_panel_config_t *rgb_panel_conf
     rgb_panel->base.reset = rgb_panel_reset;
     rgb_panel->base.init = rgb_panel_init;
     rgb_panel->base.draw_bitmap = rgb_panel_draw_bitmap;
-    rgb_panel->base.disp_off = rgb_panel_disp_off;
+    rgb_panel->base.disp_on_off = rgb_panel_disp_on_off;
     rgb_panel->base.invert_color = rgb_panel_invert_color;
     rgb_panel->base.mirror = rgb_panel_mirror;
     rgb_panel->base.swap_xy = rgb_panel_swap_xy;
@@ -374,13 +374,13 @@ static esp_err_t rgb_panel_set_gap(esp_lcd_panel_t *panel, int x_gap, int y_gap)
     return ESP_OK;
 }
 
-static esp_err_t rgb_panel_disp_off(esp_lcd_panel_t *panel, bool off)
+static esp_err_t rgb_panel_disp_on_off(esp_lcd_panel_t *panel, bool on_off)
 {
     esp_rgb_panel_t *rgb_panel = __containerof(panel, esp_rgb_panel_t, base);
     if (rgb_panel->disp_gpio_num < 0) {
         return ESP_ERR_NOT_SUPPORTED;
     }
-    if (off) { // turn off screen
+    if (!on_off) { // turn off screen
         gpio_set_level(rgb_panel->disp_gpio_num, !rgb_panel->flags.disp_en_level);
     } else { // turn on screen
         gpio_set_level(rgb_panel->disp_gpio_num, rgb_panel->flags.disp_en_level);
