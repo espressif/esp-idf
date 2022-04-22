@@ -825,10 +825,10 @@ static int tls_connection_prf(void *tls_ctx, struct tls_connection *conn,
 	wpa_hexdump_key(MSG_MSGDUMP, "random", seed, 2 * TLS_RANDOM_LEN);
 	wpa_hexdump_key(MSG_MSGDUMP, "master", ssl->session->master, TLS_MASTER_SECRET_LEN);
 
-	if (transform->ciphersuite_info->mac == MBEDTLS_MD_SHA384) {
+	if (ssl->transform->ciphersuite_info->mac == MBEDTLS_MD_SHA384) {
 		ret = tls_prf_sha384(ssl->session->master, TLS_MASTER_SECRET_LEN,
 				label, seed, 2 * TLS_RANDOM_LEN, out, out_len);
-	} else if (transform->ciphersuite_info->mac == MBEDTLS_MD_SHA256) {
+	} else if (ssl->transform->ciphersuite_info->mac == MBEDTLS_MD_SHA256) {
 		ret = tls_prf_sha256(ssl->session->master, TLS_MASTER_SECRET_LEN,
 				label, seed, 2 * TLS_RANDOM_LEN, out, out_len);
 	} else {
