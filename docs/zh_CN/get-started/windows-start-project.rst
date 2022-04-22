@@ -1,15 +1,15 @@
 现在您已经具备了使用 ESP-IDF 的所有条件，接下来将介绍如何开始您的第一个工程。
 
-本指南将帮助您完成使用 ESP-IDF 的第一步。按照本指南，您将能使用 {IDF_TARGET_NAME} 开始创建第一个工程，并构建、烧录和监控设备输出。
+本指南将帮助您完成使用 ESP-IDF 的第一步。按照本指南，您将使用 {IDF_TARGET_NAME} 创建第一个工程，并构建、烧录和监控设备输出。
 
 .. note::
 
-    如果您还没有安装 ESP-IDF，请前往 :ref:`get-started-step-by-step` 并按照说明操作，以获得使用本指南所需的所有软件。
+    如果您还未安装 ESP-IDF，请参照 :ref:`get-started-step-by-step` 中的步骤，获取使用本指南所需的所有软件。
 
 开始创建工程
 ================
 
-现在，您可以开始准备开发 {IDF_TARGET_NAME} 应用程序了。您可以从 ESP-IDF 中 :idf:`examples` 目录下的 :example:`get-started/hello_world` 工程开始。
+现在，您可以准备开发 {IDF_TARGET_NAME} 应用程序了。您可以从 ESP-IDF 中 :idf:`examples` 目录下的 :example:`get-started/hello_world` 工程开始。
 
 .. important::
 
@@ -29,9 +29,7 @@
 
 现在，请将您的 {IDF_TARGET_NAME} 开发板连接到 PC，并查看开发板使用的串口。
 
-通常，串口在不同操作系统下显示的名称有所不同：
-
-- **Windows 操作系统：** ``COM1`` 等
+在 Windows 操作系统中，串口名称通常以 ``COM`` 开头。
 
 有关如何查看串口名称的详细信息，请见 :doc:`establish-serial-connection`。
 
@@ -50,18 +48,17 @@
     idf.py set-target {IDF_TARGET_PATH_NAME}
     idf.py menuconfig
 
-打开一个新工程后，应首先使用 ``idf.py set-target {IDF_TARGET_PATH_NAME}`` 设置“目标”芯片。注意，此操作将清除并初始化项目之前的编译和配置（如有）。 您也可以直接将“目标”配置为环境变量（此时可跳过该步骤）。更多信息，请见 :ref:`selecting-idf-target`。
+打开一个新工程后，应首先使用 ``idf.py set-target {IDF_TARGET_PATH_NAME}`` 设置“目标”芯片。注意，此操作将清除并初始化项目之前的编译和配置（如有）。您也可以直接将“目标”配置为环境变量（此时可跳过该步骤）。更多信息，请见 :ref:`selecting-idf-target`。
 
-如果之前的步骤都正确，则会显示下面的菜单：
+正确操作上述步骤后，系统将显示以下菜单：
 
 .. figure:: ../../_static/project-configuration.png
     :align: center
     :alt: 工程配置 — 主窗口
-    :figclass: align-center
 
     工程配置 — 主窗口
 
-您可以通过此菜单设置项目的具体变量，包括 Wi-Fi 网络名称、密码和处理器速度等。``hello_world`` 示例项目会以默认配置运行，因此可以跳过使用 ``menuconfig`` 进行项目配置这一步骤。
+您可以通过此菜单设置项目的具体变量，包括 Wi-Fi 网络名称、密码和处理器速度等。``hello_world`` 示例项目会以默认配置运行，因此在这一项目中，可以跳过使用 ``menuconfig`` 进行项目配置这一步骤。
 
 .. only:: esp32
 
