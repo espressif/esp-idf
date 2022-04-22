@@ -119,7 +119,11 @@ Jump table optimizations can be re-enabled for individual source files that don'
 IROM (code executed from flash)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-If a function is not explicitly placed into :ref:`iram` or RTC memory, it is placed into flash. The mechanism by which Flash MMU is used to allow code execution from flash is described in *{IDF_TARGET_NAME} Technical Reference Manual* > *Memory Management and Protection Units (MMU, MPU)* [`PDF <{IDF_TARGET_TRM_EN_URL}#mpummu>`__]. As IRAM is limited, most of an application's binary code must be placed into IROM instead.
+If a function is not explicitly placed into :ref:`iram` or RTC memory, it is placed into flash. As IRAM is limited, most of an application's binary code must be placed into IROM instead.
+
+.. only:: esp32
+
+    The mechanism by which Flash MMU is used to allow code execution from flash is described in *{IDF_TARGET_NAME} Technical Reference Manual* > *Memory Management and Protection Units (MMU, MPU)* [`PDF <{IDF_TARGET_TRM_EN_URL}#mpummu>`__].
 
 During :doc:`startup`, the bootloader (which runs from IRAM) configures the MMU flash cache to map the app's instruction code region to the instruction space. Flash accessed via the MMU is cached using some internal SRAM and accessing cached flash data is as fast as accessing other types of internal memory.
 
