@@ -341,7 +341,7 @@ static esp_err_t set_ca_cert(esp_tls_t *tls, const unsigned char *cacert, size_t
     mbedtls_x509_crt_init(tls->cacert_ptr);
     int ret = mbedtls_x509_crt_parse(tls->cacert_ptr, cacert, cacert_len);
     if (ret < 0) {
-        ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%04X", -ret);
+        ESP_LOGE(TAG, "mbedtls_x509_crt_parse of CA cert returned -0x%04X", -ret);
         mbedtls_print_error_msg(ret);
         ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
         return ESP_ERR_MBEDTLS_X509_CRT_PARSE_FAILED;
@@ -371,7 +371,7 @@ static esp_err_t set_pki_context(esp_tls_t *tls, const esp_tls_pki_t *pki)
 
         ret = mbedtls_x509_crt_parse(pki->public_cert, pki->publiccert_pem_buf, pki->publiccert_pem_bytes);
         if (ret < 0) {
-            ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%04X", -ret);
+            ESP_LOGE(TAG, "mbedtls_x509_crt_parse of public cert returned -0x%04X", -ret);
             mbedtls_print_error_msg(ret);
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
             return ESP_ERR_MBEDTLS_X509_CRT_PARSE_FAILED;
@@ -868,7 +868,7 @@ esp_err_t esp_mbedtls_set_global_ca_store(const unsigned char *cacert_pem_buf, c
     }
     ret = mbedtls_x509_crt_parse(global_cacert, cacert_pem_buf, cacert_pem_bytes);
     if (ret < 0) {
-        ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%04X", -ret);
+        ESP_LOGE(TAG, "mbedtls_x509_crt_parse of global CA cert returned -0x%04X", -ret);
         mbedtls_print_error_msg(ret);
         mbedtls_x509_crt_free(global_cacert);
         free(global_cacert);
@@ -950,7 +950,7 @@ static esp_err_t esp_set_atecc608a_pki_context(esp_tls_t *tls, const void *pki)
     if(cfg->clientcert_buf != NULL) {
         ret = mbedtls_x509_crt_parse(&tls->clientcert, (const unsigned char*)((esp_tls_pki_t *)pki->publiccert_pem_buf), (esp_tls_pki_t *)pki->publiccert_pem_bytes);
         if (ret < 0) {
-            ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%04X", -ret);
+            ESP_LOGE(TAG, "mbedtls_x509_crt_parse of client cert returned -0x%04X", -ret);
             mbedtls_print_error_msg(ret);
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
             return ESP_ERR_MBEDTLS_X509_CRT_PARSE_FAILED;
