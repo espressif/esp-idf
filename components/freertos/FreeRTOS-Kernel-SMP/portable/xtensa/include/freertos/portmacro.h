@@ -126,6 +126,10 @@ static inline void __attribute__((always_inline)) vPortYieldFromISR( void );
 
 static inline BaseType_t __attribute__((always_inline)) xPortGetCoreID( void );
 
+// ----------------------- TCB Cleanup --------------------------
+
+void vPortCleanUpTCB ( void *pxTCB );
+
 /* ----------------------------------------- FreeRTOS SMP Porting Interface --------------------------------------------
  * - Contains all the mappings of the macros required by FreeRTOS SMP
  * - Must come after forward declare as some porting macros map to declared functions
@@ -214,6 +218,10 @@ extern void vTaskExitCritical( void );
 #ifdef CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
 #define portALT_GET_RUN_TIME_COUNTER_VALUE(x)       ({x = (uint32_t)esp_timer_get_time();})
 #endif
+
+// ------------------- TCB Cleanup ----------------------
+
+#define portCLEAN_UP_TCB( pxTCB )                   vPortCleanUpTCB( pxTCB )
 
 /* --------------------------------------------- Inline Implementations ------------------------------------------------
  * - Implementation of inline functions of the forward declares
