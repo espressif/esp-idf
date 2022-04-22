@@ -160,8 +160,9 @@ esp_err_t httpd_ssl_start(httpd_handle_t *handle, httpd_ssl_config_t *config);
  * Stop the server. Blocks until the server is shut down.
  *
  * @param[in] handle
+ * @return success
  */
-void httpd_ssl_stop(httpd_handle_t handle);
+esp_err_t httpd_ssl_stop(httpd_handle_t handle);
 
 #ifdef __cplusplus
 }
