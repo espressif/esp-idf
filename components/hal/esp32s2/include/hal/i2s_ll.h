@@ -287,7 +287,7 @@ static inline void i2s_ll_tx_set_mclk(i2s_dev_t *hw, uint32_t sclk, uint32_t mcl
     int denominator = 1;
     int numerator = 0;
 
-    uint32_t freq_diff = abs(sclk - mclk * mclk_div);
+    uint32_t freq_diff = abs((int)sclk - (int)(mclk * mclk_div));
     if (!freq_diff) {
         goto finish;
     }
