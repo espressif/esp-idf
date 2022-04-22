@@ -639,6 +639,7 @@ esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
 
     s_dpp_api_lock = xSemaphoreCreateRecursiveMutex();
     if (!s_dpp_api_lock) {
+        esp_supp_dpp_deinit();
         wpa_printf(MSG_ERROR, "DPP: dpp_init: failed to create DPP API lock");
         return ESP_ERR_NO_MEM;
     }
