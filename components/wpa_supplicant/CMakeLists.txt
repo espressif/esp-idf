@@ -159,7 +159,7 @@ endif()
 
 if(CONFIG_WPA_DPP_SUPPORT)
     set(dpp_src "src/common/dpp.c"
-    "esp_supplicant/src/esp_dpp.c")
+    "src/esp_supplicant/esp_dpp.c")
 else()
     set(dpp_src "")
 endif()
