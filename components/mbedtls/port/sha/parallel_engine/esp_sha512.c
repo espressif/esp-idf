@@ -360,7 +360,7 @@ static const unsigned char sha512_padding[128] = {
 /*
  * SHA-512 final digest
  */
-int mbedtls_sha512_finish( mbedtls_sha512_context *ctx, unsigned char output[64] )
+int mbedtls_sha512_finish( mbedtls_sha512_context *ctx, unsigned char *output )
 {
     int ret;
     size_t last, padn;

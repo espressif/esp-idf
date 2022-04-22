@@ -245,12 +245,19 @@ TEST_CASE("mbedtls SHA384 clone", "[mbedtls][")
         TEST_ASSERT_EQUAL(0, mbedtls_sha512_update(&ctx, one_hundred_bs, 100));
         TEST_ASSERT_EQUAL(0, mbedtls_sha512_update(&clone, one_hundred_bs, 100));
     }
+/* intended warning supression: is384 == true */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
     TEST_ASSERT_EQUAL(0, mbedtls_sha512_finish(&ctx, sha384));
+#pragma GCC diagnostic pop
     mbedtls_sha512_free(&ctx);
 
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha384_thousand_bs, sha384, 48, "SHA512 original calculation");
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
     TEST_ASSERT_EQUAL(0, mbedtls_sha512_finish(&clone, sha384));
+#pragma GCC diagnostic pop
     mbedtls_sha512_free(&clone);
 
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha384_thousand_bs, sha384, 48, "SHA512 cloned calculation");
