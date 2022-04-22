@@ -192,6 +192,27 @@ typedef struct {
  * @brief Default configuration for Tx channel
  *
  */
+#if SOC_RMT_SUPPORT_TX_LOOP_COUNT
+#define RMT_DEFAULT_CONFIG_TX(gpio, channel_id)      \
+    {                                                \
+        .rmt_mode = RMT_MODE_TX,                     \
+        .channel = channel_id,                       \
+        .gpio_num = gpio,                            \
+        .clk_div = 80,                               \
+        .mem_block_num = 1,                          \
+        .flags = 0,                                  \
+        .tx_config = {                               \
+            .carrier_freq_hz = 38000,                \
+            .carrier_level = RMT_CARRIER_LEVEL_HIGH, \
+            .idle_level = RMT_IDLE_LEVEL_LOW,        \
+            .carrier_duty_percent = 33,              \
+            .loop_count = 0,                         \
+            .carrier_en = false,                     \
+            .loop_en = false,                        \
+            .idle_output_en = true,                  \
+        }                                            \
+    }
+#else
 #define RMT_DEFAULT_CONFIG_TX(gpio, channel_id)      \
     {                                                \
         .rmt_mode = RMT_MODE_TX,                     \
@@ -210,6 +231,7 @@ typedef struct {
             .idle_output_en = true,                  \
         }                                            \
     }
+#endif
 
 /**
  * @brief Default configuration for RX channel
