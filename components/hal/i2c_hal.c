@@ -144,24 +144,9 @@ bool i2c_hal_is_master_mode(i2c_hal_context_t *hal)
     return i2c_ll_is_master_mode(hal->dev);
 }
 
-void i2c_hal_get_rxfifo_cnt(i2c_hal_context_t *hal, uint32_t *len)
-{
-    *len =  i2c_ll_get_rxfifo_cnt(hal->dev);
-}
-
-void i2c_hal_get_txfifo_cnt(i2c_hal_context_t *hal, uint32_t *len)
-{
-    *len =  i2c_ll_get_txfifo_len(hal->dev);
-}
-
 void i2c_hal_enable_slave_tx_it(i2c_hal_context_t *hal)
 {
     i2c_ll_slave_enable_tx_it(hal->dev);
-}
-
-void i2c_hal_disable_slave_tx_it(i2c_hal_context_t *hal)
-{
-    i2c_ll_slave_disable_tx_it(hal->dev);
 }
 
 void i2c_hal_enable_slave_rx_it(i2c_hal_context_t *hal)
@@ -217,9 +202,4 @@ void i2c_hal_master_init(i2c_hal_context_t *hal, int i2c_num)
     //Reset fifo
     i2c_ll_txfifo_rst(hal->dev);
     i2c_ll_rxfifo_rst(hal->dev);
-}
-
-void i2c_hal_update_config(i2c_hal_context_t *hal)
-{
-    i2c_ll_update(hal->dev);
 }
