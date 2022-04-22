@@ -149,9 +149,7 @@ typedef struct {
     rmt_carrier_level_t carrier_level; /*!< Level of the RMT output, when the carrier is applied */
     rmt_idle_level_t idle_level;       /*!< RMT idle level */
     uint8_t carrier_duty_percent;      /*!< RMT carrier duty (%) */
-#if SOC_RMT_SUPPORT_TX_LOOP_COUNT
-    uint32_t loop_count;               /*!< Maximum loop count */
-#endif
+    uint32_t loop_count;               /*!< Maximum loop count, only take effect for chips that is capable of `SOC_RMT_SUPPORT_TX_LOOP_COUNT` */
     bool carrier_en;                   /*!< RMT carrier enable */
     bool loop_en;                      /*!< Enable sending RMT items in a loop */
     bool idle_output_en;               /*!< RMT idle level output enable */
@@ -205,6 +203,7 @@ typedef struct {
             .carrier_level = RMT_CARRIER_LEVEL_HIGH, \
             .idle_level = RMT_IDLE_LEVEL_LOW,        \
             .carrier_duty_percent = 33,              \
+            .loop_count = 0,                         \
             .carrier_en = false,                     \
             .loop_en = false,                        \
             .idle_output_en = true,                  \
