@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifdef ESP_PLATFORM
 #include "esp_system.h"
@@ -217,6 +209,9 @@ struct crypto_ec_point *crypto_ec_point_from_bin(struct crypto_ec *e,
 	len = mbedtls_mpi_size(&e->group.P);
 
 	pt = os_zalloc(sizeof(mbedtls_ecp_point));
+	if (!pt) {
+		return NULL;
+	}
 	mbedtls_ecp_point_init(pt);
 
 	MBEDTLS_MPI_CHK(mbedtls_mpi_read_binary(&pt->X, val, len));
@@ -490,11 +485,15 @@ struct crypto_key * crypto_ec_set_pubkey_point(const struct crypto_ec_group *gro
 	mbedtls_pk_context *key = (mbedtls_pk_context *)crypto_alloc_key();
 
 	if (!key) {
-		wpa_printf(MSG_ERROR, "%s: memory allocation failed\n", __func__);
+		wpa_printf(MSG_ERROR, "%s: memory allocation failed", __func__);
 		return NULL;
 	}
 
 	point = (mbedtls_ecp_point *)crypto_ec_point_from_bin((struct crypto_ec *)group, buf);
+	if (!point) {
+		wpa_printf(MSG_ERROR, "%s: Point initialization failed", __func__);
+		goto fail;
+	}
 	if (crypto_ec_point_is_at_infinity((struct crypto_ec *)group, (struct crypto_ec_point *)point)) {
 		wpa_printf(MSG_ERROR, "Point is at infinity");
 		goto fail;
@@ -509,30 +508,16 @@ struct crypto_key * crypto_ec_set_pubkey_point(const struct crypto_ec_group *gro
 		wpa_printf(MSG_ERROR, "Invalid key");
 		goto fail;
 	}
-	mbedtls_ecp_keypair *ecp_key = malloc(sizeof (*ecp_key));
-	if (!ecp_key) {
-		wpa_printf(MSG_ERROR, "key allocation failed");
-		goto fail;
-	}
-
-	/* Init keypair */
-	mbedtls_ecp_keypair_init(ecp_key);
-	// TODO Is it needed? check?
-	MBEDTLS_MPI_CHK(mbedtls_ecp_copy(&ecp_key->Q, point));
 
 	/* Assign values */
 	if( ( ret = mbedtls_pk_setup( key,
 					mbedtls_pk_info_from_type(MBEDTLS_PK_ECKEY) ) ) != 0 )
 		goto fail;
 
-	if (key->pk_ctx)
-		os_free(key->pk_ctx);
-	key->pk_ctx = ecp_key;
 	mbedtls_ecp_copy(&mbedtls_pk_ec(*key)->Q, point);
 	mbedtls_ecp_group_load(&mbedtls_pk_ec(*key)->grp, MBEDTLS_ECP_DP_SECP256R1);
 
 	pkey = (struct crypto_key *)key;
-cleanup:
 	crypto_ec_point_deinit((struct crypto_ec_point *)point, 0);
 	return pkey;
 fail:
@@ -566,7 +551,7 @@ int crypto_ec_get_priv_key_der(struct crypto_key *key, unsigned char **key_data,
 	char der_data[ECP_PRV_DER_MAX_BYTES];
 
 	*key_len = mbedtls_pk_write_key_der(pkey, (unsigned char *)der_data, ECP_PRV_DER_MAX_BYTES);
-	if (!*key_len)
+	if (*key_len <= 0)
 		return -1;
 
 	*key_data = os_malloc(*key_len);
@@ -599,12 +584,12 @@ int crypto_ec_get_publickey_buf(struct crypto_key *key, u8 *key_buf, int len)
 	mbedtls_pk_context *pkey = (mbedtls_pk_context *)key;
 	unsigned char buf[MBEDTLS_MPI_MAX_SIZE + 10]; /* tag, length + MPI */
 	unsigned char *c = buf + sizeof(buf );
-	size_t pk_len = 0;
+	int pk_len = 0;
 
 	memset(buf, 0, sizeof(buf) );
 	pk_len = mbedtls_pk_write_pubkey( &c, buf, pkey);
 
-	if (!pk_len)
+	if (pk_len < 0)
 		return -1;
 
 	if (len == 0)
