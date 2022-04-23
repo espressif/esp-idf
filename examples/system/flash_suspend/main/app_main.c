@@ -115,7 +115,7 @@ void app_main(void)
     };
     bool is_flash = true;
     ESP_ERROR_CHECK(gptimer_register_event_callbacks(gptimer, &cbs, &is_flash));
-
+    ESP_ERROR_CHECK(gptimer_enable(gptimer));
     ESP_ERROR_CHECK(gptimer_start(gptimer));
 
     uint32_t erase_time = 0;
@@ -145,5 +145,6 @@ void app_main(void)
     ESP_LOGI(TAG, "During Erase, ISR callback function(in iram) response time:\n\t\t%0.2f us", GET_US_BY_CCOUNT(s_iram_func_t2 - s_t1));
 
     ESP_LOGI(TAG, "Finish");
+    ESP_ERROR_CHECK(gptimer_disable(gptimer));
     ESP_ERROR_CHECK(gptimer_del_timer(gptimer));
 }

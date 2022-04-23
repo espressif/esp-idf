@@ -64,9 +64,9 @@ struct gptimer_group_t {
 };
 
 typedef enum {
-    GPTIMER_FSM_STOP,
-    GPTIMER_FSM_START,
-} gptimer_lifecycle_fsm_t;
+    GPTIMER_FSM_INIT,
+    GPTIMER_FSM_ENABLE,
+} gptimer_fsm_t;
 
 struct gptimer_t {
     gptimer_group_t *group;
@@ -76,7 +76,7 @@ struct gptimer_t {
     unsigned long long alarm_count;
     gptimer_count_direction_t direction;
     timer_hal_context_t hal;
-    gptimer_lifecycle_fsm_t fsm; // access to fsm should be protect by spinlock, as fsm is also accessed from ISR handler
+    gptimer_fsm_t fsm;
     intr_handle_t intr;
     portMUX_TYPE spinlock; // to protect per-timer resources concurent accessed by task and ISR handler
     gptimer_alarm_cb_t on_alarm;
@@ -194,7 +194,7 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
     portEXIT_CRITICAL(&group->spinlock);
     // initialize other members of timer
     timer->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
-    timer->fsm = GPTIMER_FSM_STOP;
+    timer->fsm = GPTIMER_FSM_INIT; // put the timer into init state
     timer->direction = config->direction;
     timer->flags.intr_shared = config->flags.intr_shared;
     ESP_LOGD(TAG, "new gptimer (%d,%d) at %p, resolution=%uHz", group_id, timer_id, timer, timer->resolution_hz);
@@ -211,16 +211,10 @@ err:
 esp_err_t gptimer_del_timer(gptimer_handle_t timer)
 {
     ESP_RETURN_ON_FALSE(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(timer->fsm == GPTIMER_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "timer not in init state");
     gptimer_group_t *group = timer->group;
     int group_id = group->group_id;
     int timer_id = timer->timer_id;
-
-    bool valid_state = true;
-    portENTER_CRITICAL(&timer->spinlock);
-    valid_state = timer->fsm == GPTIMER_FSM_STOP;
-    portEXIT_CRITICAL(&timer->spinlock);
-    ESP_RETURN_ON_FALSE(valid_state, ESP_ERR_INVALID_STATE, TAG, "can't delete timer as it's not stop yet");
-
     ESP_LOGD(TAG, "del timer (%d,%d)", group_id, timer_id);
     // recycle memory resource
     ESP_RETURN_ON_ERROR(gptimer_destory(timer), TAG, "destory gptimer failed");
@@ -251,6 +245,7 @@ esp_err_t gptimer_register_event_callbacks(gptimer_handle_t timer, const gptimer
 {
     gptimer_group_t *group = NULL;
     ESP_RETURN_ON_FALSE(timer && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(timer->fsm == GPTIMER_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "timer not in init state");
     group = timer->group;
     int group_id = group->group_id;
     int timer_id = timer->timer_id;
@@ -314,23 +309,50 @@ esp_err_t gptimer_set_alarm_action(gptimer_handle_t timer, const gptimer_alarm_c
     return ESP_OK;
 }
 
-esp_err_t gptimer_start(gptimer_handle_t timer)
+esp_err_t gptimer_enable(gptimer_handle_t timer)
 {
-    ESP_RETURN_ON_FALSE_ISR(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(timer->fsm == GPTIMER_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "timer not in init state");
 
     // acquire power manager lock
     if (timer->pm_lock) {
-        ESP_RETURN_ON_ERROR_ISR(esp_pm_lock_acquire(timer->pm_lock), TAG, "acquire APB_FREQ_MAX lock failed");
+        ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(timer->pm_lock), TAG, "acquire pm_lock failed");
     }
-    // interrupt interupt service
+    // enable interrupt interupt service
     if (timer->intr) {
-        ESP_RETURN_ON_ERROR_ISR(esp_intr_enable(timer->intr), TAG, "enable interrupt service failed");
+        ESP_RETURN_ON_ERROR(esp_intr_enable(timer->intr), TAG, "enable interrupt service failed");
     }
+
+    timer->fsm = GPTIMER_FSM_ENABLE;
+    return ESP_OK;
+}
+
+esp_err_t gptimer_disable(gptimer_handle_t timer)
+{
+    ESP_RETURN_ON_FALSE(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(timer->fsm == GPTIMER_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "timer not in enable state");
+
+    // disable interrupt service
+    if (timer->intr) {
+        ESP_RETURN_ON_ERROR(esp_intr_disable(timer->intr), TAG, "disable interrupt service failed");
+    }
+    // release power manager lock
+    if (timer->pm_lock) {
+        ESP_RETURN_ON_ERROR(esp_pm_lock_release(timer->pm_lock), TAG, "release pm_lock failed");
+    }
+
+    timer->fsm = GPTIMER_FSM_INIT;
+    return ESP_OK;
+}
+
+esp_err_t gptimer_start(gptimer_handle_t timer)
+{
+    ESP_RETURN_ON_FALSE_ISR(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE_ISR(timer->fsm == GPTIMER_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "timer not enabled yet");
 
     portENTER_CRITICAL_SAFE(&timer->spinlock);
     timer_ll_enable_counter(timer->hal.dev, timer->timer_id, true);
     timer_ll_enable_alarm(timer->hal.dev, timer->timer_id, timer->flags.alarm_en);
-    timer->fsm = GPTIMER_FSM_START;
     portEXIT_CRITICAL_SAFE(&timer->spinlock);
 
     return ESP_OK;
@@ -339,22 +361,13 @@ esp_err_t gptimer_start(gptimer_handle_t timer)
 esp_err_t gptimer_stop(gptimer_handle_t timer)
 {
     ESP_RETURN_ON_FALSE_ISR(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE_ISR(timer->fsm == GPTIMER_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "timer not enabled yet");
 
-    // disable counter, alarm, autoreload
+    // disable counter, alarm, auto-reload
     portENTER_CRITICAL_SAFE(&timer->spinlock);
     timer_ll_enable_counter(timer->hal.dev, timer->timer_id, false);
     timer_ll_enable_alarm(timer->hal.dev, timer->timer_id, false);
-    timer->fsm = GPTIMER_FSM_STOP;
     portEXIT_CRITICAL_SAFE(&timer->spinlock);
-
-    // disable interrupt service
-    if (timer->intr) {
-        ESP_RETURN_ON_ERROR_ISR(esp_intr_disable(timer->intr), TAG, "disable interrupt service failed");
-    }
-    // release power manager lock
-    if (timer->pm_lock) {
-        ESP_RETURN_ON_ERROR_ISR(esp_pm_lock_release(timer->pm_lock), TAG, "release APB_FREQ_MAX lock failed");
-    }
 
     return ESP_OK;
 }

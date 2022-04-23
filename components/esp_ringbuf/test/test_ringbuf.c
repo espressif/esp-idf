@@ -779,12 +779,14 @@ TEST_CASE("Test ring buffer ISR", "[esp_ringbuf]")
     };
     TEST_ESP_OK(gptimer_register_event_callbacks(gptimer, &cbs, NULL));
     TEST_ESP_OK(gptimer_set_alarm_action(gptimer, &alarm_config));
+    TEST_ESP_OK(gptimer_enable(gptimer));
     TEST_ESP_OK(gptimer_start(gptimer));
     //Wait for ISR to complete multiple iterations
     xSemaphoreTake(done_sem, portMAX_DELAY);
 
     //Cleanup
     TEST_ESP_OK(gptimer_stop(gptimer));
+    TEST_ESP_OK(gptimer_disable(gptimer));
     TEST_ESP_OK(gptimer_del_timer(gptimer));
     vSemaphoreDelete(done_sem);
     for (int i = 0; i < NO_OF_RB_TYPES; i++) {

@@ -2002,6 +2002,7 @@ TEST_CASE("can post events from interrupt handler", "[event]")
     };
     TEST_ESP_OK(gptimer_register_event_callbacks(gptimer, &cbs, sem));
     TEST_ESP_OK(gptimer_set_alarm_action(gptimer, &alarm_config));
+    TEST_ESP_OK(gptimer_enable(gptimer));
     TEST_ESP_OK(gptimer_start(gptimer));
 
     TEST_SETUP();
@@ -2012,6 +2013,7 @@ TEST_CASE("can post events from interrupt handler", "[event]")
     xSemaphoreTake(sem, portMAX_DELAY);
 
     TEST_TEARDOWN();
+    TEST_ESP_OK(gptimer_disable(gptimer));
     TEST_ESP_OK(gptimer_del_timer(gptimer));
 }
 

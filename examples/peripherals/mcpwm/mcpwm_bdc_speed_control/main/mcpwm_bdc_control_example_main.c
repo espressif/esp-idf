@@ -245,6 +245,7 @@ void app_main(void)
         .flags.auto_reload_on_alarm = true,
     };
     ESP_ERROR_CHECK(gptimer_set_alarm_action(gptimer, &alarm_config));
+    ESP_ERROR_CHECK(gptimer_enable(gptimer));
     ESP_ERROR_CHECK(gptimer_start(gptimer));
 
     printf("install console command line\r\n");

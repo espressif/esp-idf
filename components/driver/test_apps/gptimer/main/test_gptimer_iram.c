@@ -84,6 +84,7 @@ TEST_CASE("gptimer_iram_interrupt_safe", "[gptimer]")
     };
     TEST_ESP_OK(gptimer_set_alarm_action(gptimer, &alarm_config));
     TEST_ESP_OK(gptimer_register_event_callbacks(gptimer, &cbs, &block_arg));
+    TEST_ESP_OK(gptimer_enable(gptimer));
     TEST_ESP_OK(gptimer_start(gptimer));
 
     xTaskCreatePinnedToCore(flash_read_task, "read_flash", 2048, &read_arg, 3, NULL, portNUM_PROCESSORS - 1);
@@ -93,6 +94,7 @@ TEST_CASE("gptimer_iram_interrupt_safe", "[gptimer]")
     TEST_ASSERT_GREATER_THAN(1000, block_arg.repeat_count);
     // delete gptimer
     TEST_ESP_OK(gptimer_stop(gptimer));
+    TEST_ESP_OK(gptimer_disable(gptimer));
     TEST_ESP_OK(gptimer_del_timer(gptimer));
     vSemaphoreDelete(done_sem);
     free(buf);

@@ -172,6 +172,7 @@ static void esp_apptrace_dummy_task(void *p)
             .on_alarm = arg->timers[i].isr_func,
         };
         TEST_ESP_OK(gptimer_register_event_callbacks(arg->timers[i].gptimer, &cbs, &arg->timers[i]));
+        TEST_ESP_OK(gptimer_enable(arg->timers[i].gptimer));
         TEST_ESP_OK(gptimer_set_alarm_action(arg->timers[i].gptimer, &alarm_config));
         TEST_ESP_OK(gptimer_start(arg->timers[i].gptimer));
     }
@@ -186,6 +187,7 @@ static void esp_apptrace_dummy_task(void *p)
 
     for (int i = 0; i < arg->timers_num; i++) {
         TEST_ESP_OK(gptimer_stop(arg->timers[i].gptimer));
+        TEST_ESP_OK(gptimer_disable(arg->timers[i].gptimer));
         TEST_ESP_OK(gptimer_del_timer(arg->timers[i].gptimer));
     }
     xSemaphoreGive(arg->done);
@@ -219,6 +221,7 @@ static void esp_apptrace_test_task(void *p)
             .on_alarm = arg->timers[i].isr_func,
         };
         TEST_ESP_OK(gptimer_register_event_callbacks(arg->timers[i].gptimer, &cbs, &arg->timers[i]));
+        TEST_ESP_OK(gptimer_enable(arg->timers[i].gptimer));
         TEST_ESP_OK(gptimer_set_alarm_action(arg->timers[i].gptimer, &alarm_config));
         TEST_ESP_OK(gptimer_start(arg->timers[i].gptimer));
     }
@@ -257,6 +260,7 @@ static void esp_apptrace_test_task(void *p)
 
     for (int i = 0; i < arg->timers_num; i++) {
         TEST_ESP_OK(gptimer_stop(arg->timers[i].gptimer));
+        TEST_ESP_OK(gptimer_disable(arg->timers[i].gptimer));
         TEST_ESP_OK(gptimer_del_timer(arg->timers[i].gptimer));
     }
     xSemaphoreGive(arg->done);
@@ -311,12 +315,14 @@ static void esp_apptrace_test_ts_init(void)
     };
     TEST_ESP_OK(gptimer_new_timer(&timer_config, &ts_gptimer));
     ESP_APPTRACE_TEST_LOGI("Use timer %x for TS", ts_gptimer);
+    TEST_ESP_OK(gptimer_enable(ts_gptimer));
     TEST_ESP_OK(gptimer_start(ts_gptimer));
 }
 
 static void esp_apptrace_test_ts_cleanup(void)
 {
     TEST_ESP_OK(gptimer_stop(ts_gptimer));
+    TEST_ESP_OK(gptimer_disable(ts_gptimer));
     TEST_ESP_OK(gptimer_del_timer(ts_gptimer));
     ts_gptimer = NULL;
 }
@@ -729,6 +735,7 @@ static void esp_sysviewtrace_test_task(void *p)
             .on_alarm = esp_sysview_test_timer_isr,
         };
         TEST_ESP_OK(gptimer_register_event_callbacks(arg->timer->gptimer, &cbs, arg->timer));
+        TEST_ESP_OK(gptimer_enable(arg->timer->gptimer));
         TEST_ESP_OK(gptimer_set_alarm_action(arg->timer->gptimer, &alarm_config));
         TEST_ESP_OK(gptimer_start(arg->timer->gptimer));
     }
@@ -814,8 +821,10 @@ TEST_CASE("SysView trace test 1", "[trace][ignore]")
     xSemaphoreTake(arg2.done, portMAX_DELAY);
     vSemaphoreDelete(arg2.done);
     TEST_ESP_OK(gptimer_stop(tim_arg1.gptimer));
+    TEST_ESP_OK(gptimer_disable(tim_arg1.gptimer));
     TEST_ESP_OK(gptimer_del_timer(tim_arg1.gptimer));
     TEST_ESP_OK(gptimer_stop(tim_arg2.gptimer));
+    TEST_ESP_OK(gptimer_disable(tim_arg2.gptimer));
     TEST_ESP_OK(gptimer_del_timer(tim_arg2.gptimer));
 }
 
@@ -907,8 +916,10 @@ TEST_CASE("SysView trace test 2", "[trace][ignore]")
     vSemaphoreDelete(arg4.done);
     vSemaphoreDelete(test_sync);
     TEST_ESP_OK(gptimer_stop(tim_arg1.gptimer));
+    TEST_ESP_OK(gptimer_disable(tim_arg1.gptimer));
     TEST_ESP_OK(gptimer_del_timer(tim_arg1.gptimer));
     TEST_ESP_OK(gptimer_stop(tim_arg2.gptimer));
+    TEST_ESP_OK(gptimer_disable(tim_arg2.gptimer));
     TEST_ESP_OK(gptimer_del_timer(tim_arg2.gptimer));
 }
 #endif // #if CONFIG_APPTRACE_SV_ENABLE == 0

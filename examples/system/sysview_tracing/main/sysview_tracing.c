@@ -120,6 +120,7 @@ static void example_task(void *p)
     };
     ESP_ERROR_CHECK(gptimer_register_event_callbacks(arg->gptimer, &cbs, arg));
     ESP_ERROR_CHECK(gptimer_set_alarm_action(arg->gptimer, &alarm_config));
+    ESP_ERROR_CHECK(gptimer_enable(arg->gptimer));
     ESP_ERROR_CHECK(gptimer_start(arg->gptimer));
     while (1) {
         SYSVIEW_EXAMPLE_WAIT_EVENT_START();
