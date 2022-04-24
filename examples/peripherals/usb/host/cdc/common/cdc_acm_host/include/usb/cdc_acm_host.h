@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include "usb/usb_host.h"
 #include "usb_types_cdc.h"
 #include "esp_err.h"
 
@@ -63,11 +64,22 @@ typedef enum {
 typedef struct {
     cdc_acm_host_dev_event_t type;
     union {
-        int error;                         // Error code from USB Host
-        cdc_acm_uart_state_t serial_state; // Serial (UART) state
-        bool network_connected;            // Network connection event
+        int error;                         //!< Error code from USB Host
+        cdc_acm_uart_state_t serial_state; //!< Serial (UART) state
+        bool network_connected;            //!< Network connection event
+        cdc_acm_dev_hdl_t cdc_hdl;         //!< Disconnection event
     } data;
 } cdc_acm_host_dev_event_data_t;
+
+/**
+ * @brief New USB device callback
+ *
+ * Provides already opened usb_dev, that will be closed after this callback returns.
+ * This is useful for peeking device's descriptors, e.g. peeking VID/PID and loading proper driver.
+ *
+ * @attention This callback is called from USB Host context, so the CDC device can't be opened here.
+ */
+typedef void (*cdc_acm_new_dev_callback_t)(usb_device_handle_t usb_dev);
 
 /**
  * @brief Data receive callback type
@@ -76,9 +88,9 @@ typedef void (*cdc_acm_data_callback_t)(uint8_t* data, size_t data_len, void *us
 
 /**
  * @brief Device event callback type
- * @see cdc_acm_host_dev_event_t
+ * @see cdc_acm_host_dev_event_data_t
  */
-typedef void (*cdc_acm_host_dev_callback_t)(cdc_acm_dev_hdl_t cdc_hdl, const cdc_acm_host_dev_event_data_t *event, void *user_ctx);
+typedef void (*cdc_acm_host_dev_callback_t)(const cdc_acm_host_dev_event_data_t *event, void *user_ctx);
 
 /**
  * @brief Configuration structure of USB Host CDC-ACM driver
@@ -88,6 +100,7 @@ typedef struct {
     size_t driver_task_stack_size;         /**< Stack size of the driver's task */
     unsigned driver_task_priority;         /**< Priority of the driver's task */
     int  xCoreID;                          /**< Core affinity of the driver's task */
+    cdc_acm_new_dev_callback_t new_dev_cb; /**< New USB device connected callback. Can be NULL. */
 } cdc_acm_host_driver_config_t;
 
 /**
@@ -238,6 +251,24 @@ void cdc_acm_host_desc_print(cdc_acm_dev_hdl_t cdc_hdl);
  */
 esp_err_t cdc_acm_host_protocols_get(cdc_acm_dev_hdl_t cdc_hdl, cdc_comm_protocol_t *comm, cdc_data_protocol_t *data);
 
+/**
+ * @brief Send command to CTRL endpoint
+ *
+ * Sends Control transfer as described in USB specification chapter 9.
+ * This function can be used by device drivers that use custom/vendor specific commands.
+ * These commands can either extend or replace commands defined in USB CDC-PSTN specification rev. 1.2.
+ *
+ * @param        cdc_hdl       CDC handle obtained from cdc_acm_host_open()
+ * @param[in]    bmRequestType Field of USB control request
+ * @param[in]    bRequest      Field of USB control request
+ * @param[in]    wValue        Field of USB control request
+ * @param[in]    wIndex        Field of USB control request
+ * @param[in]    wLength       Field of USB control request
+ * @param[inout] data          Field of USB control request
+ * @return esp_err_t
+ */
+esp_err_t cdc_acm_host_send_custom_request(cdc_acm_dev_hdl_t cdc_hdl, uint8_t bmRequestType, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, uint16_t wLength, uint8_t *data);
+
 #ifdef __cplusplus
 }
 class CdcAcmDevice
@@ -268,10 +299,13 @@ public:
         return cdc_acm_host_open_vendor_specific(vid, pid, interface_idx, dev_config, &this->cdc_hdl);
     }
 
-    inline void close()
+    inline esp_err_t close()
     {
-        cdc_acm_host_close(this->cdc_hdl);
-        this->cdc_hdl = NULL;
+        esp_err_t err = cdc_acm_host_close(this->cdc_hdl);
+        if (err == ESP_OK) {
+            this->cdc_hdl = NULL;
+        }
+        return err;
     }
 
     inline esp_err_t line_coding_get(cdc_acm_line_coding_t *line_coding)
@@ -292,6 +326,11 @@ public:
     inline esp_err_t send_break(uint16_t duration_ms)
     {
         return cdc_acm_host_send_break(this->cdc_hdl, duration_ms);
+    }
+
+    inline esp_err_t send_custom_request(uint8_t bmRequestType, uint8_t bRequest, uint16_t wValue, uint16_t wIndex, uint16_t wLength, uint8_t *data)
+    {
+        return cdc_acm_host_send_custom_request(this->cdc_hdl, bmRequestType, bRequest, wValue, wIndex, wLength, data);
     }
 
 private:
