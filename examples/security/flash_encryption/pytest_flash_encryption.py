@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
 from __future__ import print_function
 
 import binascii
@@ -6,7 +9,8 @@ import sys
 from collections import namedtuple
 from io import BytesIO
 
-import ttfw_idf
+import pytest
+from pytest_embedded import Dut
 
 try:
     import espsecure
@@ -25,13 +29,10 @@ except ImportError:
 #   espefuse.py --do-not-confirm -p $ESPPORT burn_efuse FLASH_CRYPT_CONFIG 0xf
 #   espefuse.py --do-not-confirm -p $ESPPORT burn_efuse FLASH_CRYPT_CNT 0x1
 #   espefuse.py --do-not-confirm -p $ESPPORT burn_key flash_encryption key.bin
-@ttfw_idf.idf_example_test(env_tag='Example_Flash_Encryption', target=['esp32', 'esp32c3'])
-def test_examples_security_flash_encryption(env, extra_data):
-    dut = env.get_dut('flash_encryption', 'examples/security/flash_encryption')
-
-    dut.erase_flash()
-    # start test
-    dut.start_app()
+@pytest.mark.esp32
+@pytest.mark.esp32c3
+@pytest.mark.flash_encryption
+def test_examples_security_flash_encryption(dut: Dut) -> None:
     # calculate the expected ciphertext
     flash_addr = dut.app.partition_table['storage']['offset']
     plain_hex_str = '00 01 02 03 04 05 06 07  08 09 0a 0b 0c 0d 0e 0f'
@@ -40,7 +41,7 @@ def test_examples_security_flash_encryption(env, extra_data):
     # espsecure uses the cryptography package for encrypting
     # with aes-xts, but does not allow for a symmetric key
     # so the key for later chips are not all zeros
-    if dut.TARGET == 'esp32':
+    if dut.target == 'esp32':
         key_bytes = b'\x00' * 32
         aes_xts = False
     else:
