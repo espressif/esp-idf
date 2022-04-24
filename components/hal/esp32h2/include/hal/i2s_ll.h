@@ -18,6 +18,7 @@
 #include "soc/i2s_periph.h"
 #include "soc/i2s_struct.h"
 #include "hal/i2s_types.h"
+#include "hal/i2s_types_priv.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -550,6 +551,63 @@ static inline void i2s_ll_rx_set_active_chan_mask(i2s_dev_t *hw, uint32_t chan_m
     tdm_ctrl_reg.val |= chan_mask & I2S_LL_TDM_CH_MASK;
     hw->rx_tdm_ctrl.val = tdm_ctrl_reg.val;
 }
+
+/**
+ * @brief Set I2S tx chan mode
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param slot_sel select slot to send data
+ */
+static inline void i2s_ll_tx_select_slot(i2s_dev_t *hw, i2s_std_slot_sel_t slot_sel)
+{
+    /* In mono mode, there only should be one slot enabled, another inactive slot will transmit same data as enabled slot
+     * Otherwise always enable the first two slots */
+    hw->tx_tdm_ctrl.tx_tdm_tot_chan_num = 1;  // tx_tdm_tot_chan_num = 2 slots - 1 = 1
+    hw->tx_tdm_ctrl.val &= ~I2S_LL_TDM_CH_MASK;
+    switch (slot_sel)
+    {
+    case I2S_STD_SLOT_ONLY_LEFT:
+        hw->tx_tdm_ctrl.val |= 0x02;
+        break;
+    case I2S_STD_SLOT_ONLY_RIGHT:
+        hw->tx_tdm_ctrl.val |= 0x01;
+        break;
+    case I2S_STD_SLOT_LEFT_RIGHT:
+        hw->tx_tdm_ctrl.val |= 0x03;
+        break;
+    default:
+        break;
+    }
+}
+
+/**
+ * @brief Set I2S rx chan mode
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param slot_sel select slot to receive data
+ */
+static inline void i2s_ll_rx_select_slot(i2s_dev_t *hw, i2s_std_slot_sel_t slot_sel)
+{
+    /* In mono mode, there only should be one slot enabled, another inactive slot will transmit same data as enabled slot
+     * Otherwise always enable the first two slots */
+    hw->rx_tdm_ctrl.rx_tdm_tot_chan_num = 1;  // rx_tdm_tot_chan_num = 2 slots - 1 = 1
+    hw->rx_tdm_ctrl.val &= ~I2S_LL_TDM_CH_MASK;
+    switch (slot_sel)
+    {
+    case I2S_STD_SLOT_ONLY_LEFT:
+        hw->rx_tdm_ctrl.val |= 0x02;
+        break;
+    case I2S_STD_SLOT_ONLY_RIGHT:
+        hw->rx_tdm_ctrl.val |= 0x01;
+        break;
+    case I2S_STD_SLOT_LEFT_RIGHT:
+        hw->rx_tdm_ctrl.val |= 0x03;
+        break;
+    default:
+        break;
+    }
+}
+
 
 /**
  * @brief Set TX WS signal pol level

@@ -735,11 +735,48 @@ static inline void i2s_ll_rx_enable_msb_shift(i2s_dev_t *hw, bool msb_shift_enab
  * @brief Set I2S tx chan mode
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param val value to set tx chan mode
+ * @param slot_sel select slot to send data
  */
-static inline void i2s_ll_tx_set_chan_mod(i2s_dev_t *hw, uint32_t val)
+static inline void i2s_ll_tx_select_slot(i2s_dev_t *hw, i2s_std_slot_sel_t slot_sel)
 {
-    hw->conf_chan.tx_chan_mod = val;
+    switch (slot_sel)
+    {
+    case I2S_STD_SLOT_ONLY_LEFT:
+        hw->conf_chan.tx_chan_mod = 1;
+        break;
+    case I2S_STD_SLOT_ONLY_RIGHT:
+        hw->conf_chan.tx_chan_mod = 2;
+        break;
+    case I2S_STD_SLOT_LEFT_RIGHT:
+        hw->conf_chan.tx_chan_mod = 0;
+        break;
+    default:
+        break;
+    }
+}
+
+/**
+ * @brief Set I2S rx chan mode
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param slot_sel select slot to receive data
+ */
+static inline void i2s_ll_rx_select_slot(i2s_dev_t *hw, i2s_std_slot_sel_t slot_sel)
+{
+    switch (slot_sel)
+    {
+    case I2S_STD_SLOT_ONLY_LEFT:
+        hw->conf_chan.rx_chan_mod = 1;
+        break;
+    case I2S_STD_SLOT_ONLY_RIGHT:
+        hw->conf_chan.rx_chan_mod = 2;
+        break;
+    case I2S_STD_SLOT_LEFT_RIGHT:
+        hw->conf_chan.rx_chan_mod = 0;
+        break;
+    default:
+        break;
+    }
 }
 
 /**

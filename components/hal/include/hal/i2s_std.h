@@ -32,6 +32,8 @@ extern "C" {
     .ws_width = bits_per_sample, \
     .ws_pol = false, \
     .bit_shift = true, \
+    .slot_sel = (mono_or_stereo == I2S_SLOT_MODE_MONO) ? \
+                I2S_STD_SLOT_ONLY_LEFT : I2S_STD_SLOT_LEFT_RIGHT, \
     .msb_right = false, \
 }
 
@@ -49,6 +51,8 @@ extern "C" {
     .ws_width = 1, \
     .ws_pol = true, \
     .bit_shift = true, \
+    .slot_sel = (mono_or_stereo == I2S_SLOT_MODE_MONO) ? \
+                I2S_STD_SLOT_ONLY_LEFT : I2S_STD_SLOT_LEFT_RIGHT, \
     .msb_right = false, \
 }
 
@@ -65,6 +69,8 @@ extern "C" {
     .ws_width = bits_per_sample, \
     .ws_pol = false, \
     .bit_shift = false, \
+    .slot_sel = (mono_or_stereo == I2S_SLOT_MODE_MONO) ? \
+                I2S_STD_SLOT_ONLY_LEFT : I2S_STD_SLOT_LEFT_RIGHT, \
     .msb_right = false, \
 }
 
@@ -82,6 +88,8 @@ extern "C" {
     .ws_width = bits_per_sample, \
     .ws_pol = false, \
     .bit_shift = true, \
+    .slot_sel = (mono_or_stereo == I2S_SLOT_MODE_MONO) ? \
+                I2S_STD_SLOT_ONLY_LEFT : I2S_STD_SLOT_LEFT_RIGHT, \
     .left_align = false, \
     .big_endian = false, \
     .bit_order_lsb = false \
@@ -101,6 +109,8 @@ extern "C" {
     .ws_width = 1, \
     .ws_pol = true, \
     .bit_shift = true, \
+    .slot_sel = (mono_or_stereo == I2S_SLOT_MODE_MONO) ? \
+                I2S_STD_SLOT_ONLY_LEFT : I2S_STD_SLOT_LEFT_RIGHT, \
     .left_align = false, \
     .big_endian = false, \
     .bit_order_lsb = false \
@@ -119,6 +129,8 @@ extern "C" {
     .ws_width = bits_per_sample, \
     .ws_pol = false, \
     .bit_shift = false, \
+    .slot_sel = (mono_or_stereo == I2S_SLOT_MODE_MONO) ? \
+                I2S_STD_SLOT_ONLY_LEFT : I2S_STD_SLOT_LEFT_RIGHT, \
     .left_align = false, \
     .big_endian = false, \
     .bit_order_lsb = false \
@@ -151,6 +163,7 @@ typedef struct {
     uint32_t                ws_width;           /*!< WS signal width (i.e. the number of bclk ticks that ws signal is high) */
     bool                    ws_pol;             /*!< WS signal polarity, set true to enable high lever first */
     bool                    bit_shift;          /*!< Set to enbale bit shift in Philip mode */
+    i2s_std_slot_sel_t      slot_sel;           /*!< Select the left, right or both slot */
 #if SOC_I2S_HW_VERSION_1    // For esp32/esp32-s2
     bool                    msb_right;          /*!< Set to place right channel data at the MSB in the FIFO */
 #else
