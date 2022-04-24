@@ -207,6 +207,7 @@ void app_main(void)
         .on_reach = example_pcnt_on_reach,
     };
     ESP_ERROR_CHECK(pcnt_unit_register_event_callbacks(pcnt_unit, &pcnt_cbs, &my_timer_ctx));
+    ESP_ERROR_CHECK(pcnt_unit_enable(pcnt_unit));
     ESP_ERROR_CHECK(pcnt_unit_clear_count(pcnt_unit));
     ESP_ERROR_CHECK(pcnt_unit_start(pcnt_unit));
 
