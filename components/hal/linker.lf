@@ -21,7 +21,8 @@ entries:
         twai_hal_iram (noflash)
     if IDF_TARGET_ESP32 = n:
         spi_flash_hal_gpspi (noflash)
-        systimer_hal (noflash)
+        if HAL_SYSTIMER_HAS_ROM_IMPL = n || HAL_SYSTIMER_ROM_IMPL = n:
+            systimer_hal (noflash)
     if GPTIMER_CTRL_FUNC_IN_IRAM = y:
         timer_hal_iram (noflash)
     if GPIO_CTRL_FUNC_IN_IRAM = y:

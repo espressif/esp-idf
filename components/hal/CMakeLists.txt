@@ -45,6 +45,12 @@ if(NOT BOOTLOADER_BUILD)
         "sha_hal.c"
         "adc_hal.c")
 
+    if(CONFIG_SOC_SYSTIMER_SUPPORTED)
+        if(NOT CONFIG_HAL_SYSTIMER_ROM_IMPL)
+            list(APPEND srcs "systimer_hal.c")
+        endif()
+    endif()
+
     if(${target} STREQUAL "esp32")
         list(APPEND srcs
             "dac_hal.c"
@@ -76,7 +82,6 @@ if(NOT BOOTLOADER_BUILD)
                     "pcnt_hal.c"
                     "spi_flash_hal_gpspi.c"
                     "spi_slave_hd_hal.c"
-                    "systimer_hal.c"
                     "touch_sensor_hal.c"
                     "usb_hal.c"
                     "usb_phy_hal.c"
@@ -104,7 +109,6 @@ if(NOT BOOTLOADER_BUILD)
             "pcnt_hal.c"
             "spi_flash_hal_gpspi.c"
             "spi_slave_hd_hal.c"
-            "systimer_hal.c"
             "touch_sensor_hal.c"
             "usb_hal.c"
             "usb_phy_hal.c"
@@ -129,7 +133,6 @@ if(NOT BOOTLOADER_BUILD)
               "sigmadelta_hal.c"
               "spi_flash_hal_gpspi.c"
               "spi_slave_hd_hal.c"
-              "systimer_hal.c"
               "xt_wdt_hal.c"
               "i2s_hal.c"
               "twai_hal.c"
@@ -149,7 +152,6 @@ if(NOT BOOTLOADER_BUILD)
             "sigmadelta_hal.c"
             "spi_flash_hal_gpspi.c"
             "spi_slave_hd_hal.c"
-            "systimer_hal.c"
             "i2s_hal.c"
             "twai_hal.c"
             "twai_hal_iram.c"
@@ -165,7 +167,6 @@ if(NOT BOOTLOADER_BUILD)
               "gdma_hal.c"
               "spi_flash_hal_gpspi.c"
               "spi_slave_hd_hal.c"
-              "systimer_hal.c"
               "esp32c2/brownout_hal.c"
               "esp32c2/rtc_cntl_hal.c")
     endif()
