@@ -357,7 +357,7 @@ bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t* ou
     uint32_t real_freq_mhz;
 
     uint32_t xtal_freq = RTC_XTAL_FREQ;
-    if (freq_mhz <= xtal_freq) {
+    if (freq_mhz <= xtal_freq && freq_mhz != 0) {
         divider = xtal_freq / freq_mhz;
         real_freq_mhz = (xtal_freq + divider / 2) / divider; /* round */
         if (real_freq_mhz != freq_mhz) {

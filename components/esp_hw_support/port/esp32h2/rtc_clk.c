@@ -212,11 +212,14 @@ bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t *ou
         source_freq_mhz = RTC_PLL_FREQ_96M;
         divider = RTC_PLL_FREQ_96M / freq_mhz;
         rtc_clk_ahb_freq_set(2);
-    } else {
+    } else if (freq_mhz != 0) {
         source = root_clk_get();
         source_freq_mhz = root_clk_slt(source);
         divider = source_freq_mhz / freq_mhz;
         rtc_clk_ahb_freq_set(1);
+    } else {
+        // unsupported frequency
+        return false;
     }
     *out_config = (rtc_cpu_freq_config_t) {
         .source = source,
