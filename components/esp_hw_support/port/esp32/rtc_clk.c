@@ -126,7 +126,7 @@ static void rtc_clk_32k_enable_common(int dac, int dres, int dbias)
     REG_SET_FIELD(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_DRES_XTAL_32K, dres);
     REG_SET_FIELD(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_DBIAS_XTAL_32K, dbias);
 
-#ifdef CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT
+#ifdef CONFIG_RTC_EXT_CRYST_ADDIT_CURRENT
     uint8_t chip_ver = efuse_hal_get_chip_revision();
     // version0 and version1 need provide additional current to external XTAL.
     if(chip_ver == 0 || chip_ver == 1) {
@@ -142,7 +142,7 @@ static void rtc_clk_32k_enable_common(int dac, int dres, int dbias)
         So the Touch DAC start to drive some current from VDD to TOUCH8(which is also XTAL-N)*/
         SET_PERI_REG_MASK(RTC_IO_TOUCH_PAD9_REG, RTC_IO_TOUCH_PAD9_XPD_M);
     }
-#elif defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT_V2
+#elif defined CONFIG_RTC_EXT_CRYST_ADDIT_CURRENT_V2
     uint8_t chip_ver = efuse_hal_get_chip_revision();
     if(chip_ver == 0 || chip_ver == 1) {
         /* TOUCH sensor can provide additional current to external XTAL.
@@ -176,13 +176,13 @@ void rtc_clk_32k_enable(bool enable)
         CLEAR_PERI_REG_MASK(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_XPD_XTAL_32K_M);
         CLEAR_PERI_REG_MASK(RTC_IO_XTAL_32K_PAD_REG, RTC_IO_X32N_MUX_SEL | RTC_IO_X32P_MUX_SEL);
 
-#ifdef CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT
+#ifdef CONFIG_RTC_EXT_CRYST_ADDIT_CURRENT
         uint8_t chip_ver = efuse_hal_get_chip_revision();
         if(chip_ver == 0 || chip_ver == 1) {
             /* Power down TOUCH */
             CLEAR_PERI_REG_MASK(RTC_IO_TOUCH_PAD9_REG, RTC_IO_TOUCH_PAD9_XPD_M);
         }
-#elif defined CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT_V2
+#elif defined CONFIG_RTC_EXT_CRYST_ADDIT_CURRENT_V2
         uint8_t chip_ver = efuse_hal_get_chip_revision();
         if(chip_ver == 0 || chip_ver == 1) {
             /* Power down TOUCH */
@@ -826,7 +826,7 @@ void rtc_clk_apb_freq_update(uint32_t apb_freq)
 uint32_t rtc_clk_apb_freq_get(void)
 {
 #if CONFIG_IDF_ENV_FPGA
-    return CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ * MHZ;
+    return CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ * MHZ;
 #endif // CONFIG_IDF_ENV_FPGA
     uint32_t freq_hz = reg_val_to_clk_val(READ_PERI_REG(RTC_APB_FREQ_REG)) << 12;
     // round to the nearest MHz

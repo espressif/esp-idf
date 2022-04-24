@@ -383,7 +383,7 @@ menu "FreeRTOS"
             help
                 CPU Clock will be used as the clock source for the generation of run
                 time stats. The CPU Clock has a frequency dependent on
-                ESP32_DEFAULT_CPU_FREQ_MHZ and Dynamic Frequency Scaling (DFS).
+                ESP_DEFAULT_CPU_FREQ_MHZ and Dynamic Frequency Scaling (DFS).
                 Therefore the CPU Clock frequency can fluctuate between 80 to 240MHz.
                 Run time stats generated using the CPU Clock represents the number of
                 CPU cycles each task is allocated and DOES NOT reflect the amount of

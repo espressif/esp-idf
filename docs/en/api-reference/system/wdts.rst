@@ -150,7 +150,7 @@ OpenOCD via JTAG.
   Configuration
   @@@@@@@@@@@@@
 
-  When the external 32KHz crystal or oscillator is selected (:ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_RTC_CLK_SRC`) the XTAL32K watchdog can be enabled via the :ref:`CONFIG_ESP_XT_WDT` configuration
+  When the external 32KHz crystal or oscillator is selected (:ref:`CONFIG_RTC_CLK_SRC`) the XTAL32K watchdog can be enabled via the :ref:`CONFIG_ESP_XT_WDT` configuration
   flag. The timeout is configured by setting :ref:`CONFIG_ESP_XT_WDT_TIMEOUT`. The automatic backup clock functionality is enabled via the ref:`CONFIG_ESP_XT_WDT_BACKUP_CLK_ENABLE` configuration.
 
 Interrupt Watchdog API Reference

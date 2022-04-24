@@ -26,21 +26,15 @@
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rtc.h"
-#define TARGET_DEFAULT_CPU_FREQ_MHZ CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rtc.h"
-#define TARGET_DEFAULT_CPU_FREQ_MHZ CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rtc.h"
-#define TARGET_DEFAULT_CPU_FREQ_MHZ CONFIG_ESP32S3_DEFAULT_CPU_FREQ_MHZ
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rtc.h"
-#define TARGET_DEFAULT_CPU_FREQ_MHZ CONFIG_ESP32C3_DEFAULT_CPU_FREQ_MHZ
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rtc.h"
-#define TARGET_DEFAULT_CPU_FREQ_MHZ CONFIG_ESP32H2_DEFAULT_CPU_FREQ_MHZ
 #elif CONFIG_IDF_TARGET_ESP32C2
-#define TARGET_DEFAULT_CPU_FREQ_MHZ CONFIG_ESP32C2_DEFAULT_CPU_FREQ_MHZ
 #endif
 
 #if portNUM_PROCESSORS == 2
@@ -51,7 +45,7 @@ static void time_adc_test_task(void* arg)
     for (int i = 0; i < 200000; ++i) {
         // wait for 20us, reading one of RTC registers
         uint32_t ccount = xthal_get_ccount();
-        while (xthal_get_ccount() - ccount < 20 * TARGET_DEFAULT_CPU_FREQ_MHZ) {
+        while (xthal_get_ccount() - ccount < 20 * CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ) {
             volatile uint32_t val = REG_READ(RTC_CNTL_STATE0_REG);
             (void) val;
         }
@@ -363,7 +357,7 @@ void test_posix_timers_clock (void)
     printf("CONFIG_ESP_TIME_FUNCS_USE_RTC_TIMER    ");
 #endif
 
-#ifdef CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS
+#ifdef CONFIG_RTC_CLK_SRC_EXT_CRYS
     printf("External (crystal) Frequency = %d Hz\n", rtc_clk_slow_freq_get_hz());
 #else
     printf("Internal Frequency = %d Hz\n", rtc_clk_slow_freq_get_hz());

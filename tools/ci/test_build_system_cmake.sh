@@ -488,11 +488,11 @@ function run_tests()
     rm -f sdkconfig.defaults
     rm -f sdkconfig
     echo "CONFIG_PARTITION_TABLE_OFFSET=0x10000" >> sdkconfig.defaults
-    echo "CONFIG_ESP32_DEFAULT_CPU_FREQ_240=y" >> sdkconfig.defaults.esp32
+    echo "CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y" >> sdkconfig.defaults.esp32
     echo "CONFIG_PARTITION_TABLE_TWO_OTA=y" >> sdkconfig
     idf.py reconfigure > /dev/null
     grep "CONFIG_PARTITION_TABLE_OFFSET=0x10000" sdkconfig || failure "The define from sdkconfig.defaults should be into sdkconfig"
-    grep "CONFIG_ESP32_DEFAULT_CPU_FREQ_240=y" sdkconfig || failure "The define from sdkconfig.defaults.esp32 should be into sdkconfig"
+    grep "CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240=y" sdkconfig || failure "The define from sdkconfig.defaults.esp32 should be into sdkconfig"
     grep "CONFIG_PARTITION_TABLE_TWO_OTA=y" sdkconfig || failure "The define from sdkconfig should be into sdkconfig"
     rm sdkconfig sdkconfig.defaults sdkconfig.defaults.esp32
 

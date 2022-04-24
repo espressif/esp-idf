@@ -32,7 +32,7 @@ Dynamic frequency scaling (DFS) and automatic light sleep can be enabled in an a
 - ``light_sleep_enable``: Whether the system should automatically enter light sleep when no locks are acquired (``true``/``false``).
 
 
-  Alternatively, if you enable the option :ref:`CONFIG_PM_DFS_INIT_AUTO` in menuconfig, the maximum CPU frequency will be determined by the :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_DEFAULT_CPU_FREQ_MHZ` setting, and the minimum CPU frequency will be locked to the XTAL frequency.
+  Alternatively, if you enable the option :ref:`CONFIG_PM_DFS_INIT_AUTO` in menuconfig, the maximum CPU frequency will be determined by the :ref:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ` setting, and the minimum CPU frequency will be locked to the XTAL frequency.
 
 .. note::
 
@@ -72,7 +72,7 @@ Power management locks have acquire/release counters. If the lock has been acqui
 {IDF_TARGET_NAME} Power Management Algorithm
 ---------------------------------------
 
-The table below shows how CPU and APB frequencies will be switched if dynamic frequency scaling is enabled. You can specify the maximum CPU frequency with either :cpp:func:`esp_pm_configure` or :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_DEFAULT_CPU_FREQ_MHZ`.
+The table below shows how CPU and APB frequencies will be switched if dynamic frequency scaling is enabled. You can specify the maximum CPU frequency with either :cpp:func:`esp_pm_configure` or :ref:`CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ`.
 
 .. only:: esp32
 

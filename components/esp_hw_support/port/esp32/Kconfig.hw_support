@@ -1,0 +1,24 @@
+choice ESP32_REV_MIN
+    prompt "Minimum Supported ESP32 Revision"
+    default ESP32_REV_MIN_0
+    help
+        Minimum revision that ESP-IDF would support.
+        ESP-IDF performs different strategy on different esp32 revision.
+
+    config ESP32_REV_MIN_0
+        bool "Rev 0"
+    config ESP32_REV_MIN_1
+        bool "Rev 1"
+    config ESP32_REV_MIN_2
+        bool "Rev 2"
+    config ESP32_REV_MIN_3
+        bool "Rev 3"
+        select ESP_INT_WDT if ESP32_ECO3_CACHE_LOCK_FIX
+endchoice
+
+config ESP32_REV_MIN
+    int
+    default 0 if ESP32_REV_MIN_0
+    default 1 if ESP32_REV_MIN_1
+    default 2 if ESP32_REV_MIN_2
+    default 3 if ESP32_REV_MIN_3
