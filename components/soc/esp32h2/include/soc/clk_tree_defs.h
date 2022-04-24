@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-/**
+/*
  ************************ ESP32H2 Root Clock Source ***************************
  * 1) Internal 8MHz RC Oscillator: RC_FAST (usually referred as FOSC or CK8M/CLK8M in TRM and reg. description)
  *
