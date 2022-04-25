@@ -398,7 +398,6 @@ components/bt/host/bluedroid/stack/smp/smp_main.c
 components/bt/host/bluedroid/stack/smp/smp_utils.c
 components/console/linenoise/linenoise.c
 components/console/linenoise/linenoise.h
-components/driver/include/driver/usb_serial_jtag.h
 components/esp32/include/rom/aes.h
 components/esp32/include/rom/bigint.h
 components/esp32/include/rom/cache.h
