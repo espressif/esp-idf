@@ -24,6 +24,9 @@
 #include "esp_err.h"                // for esp_err_t
 #include "esp_modbus_common.h"      // for common defines
 
+
+extern uint32_t mb_master_timeout_;
+
 /**
  * @brief Initialize Modbus controller and stack
  *

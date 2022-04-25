@@ -17,6 +17,7 @@
 #include "mbc_master.h"         // for master interface define
 #include "esp_modbus_master.h"  // for public interface defines
 #include "esp_modbus_callbacks.h"   // for callback functions
+#include "mbc_serial_master.h"  
 
 static const char TAG[] __attribute__((unused)) = "MB_CONTROLLER_MASTER";
 
@@ -153,6 +154,7 @@ esp_err_t mbc_master_set_parameter(uint16_t cid, char* name, uint8_t* value, uin
 esp_err_t mbc_master_setup(void* comm_info)
 {
     esp_err_t error = ESP_OK;
+    mb_master_timeout_ = CONFIG_FMB_MASTER_TIMEOUT_MS_RESPOND;
     MB_MASTER_CHECK((master_interface_ptr != NULL),
                     ESP_ERR_INVALID_STATE,
                     "Master interface is not correctly initialized.");
@@ -243,4 +245,10 @@ eMBErrorCode eMBMasterRegInputCB(UCHAR * pucRegBuffer, USHORT usAddress,
                     "Master interface is not correctly initialized.");
     error = master_interface_ptr->master_reg_cb_input(pucRegBuffer, usAddress, usNRegs);
     return error;
+}
+
+esp_err_t setResponseTimeout(uint32_t timeout){
+    mb_master_timeout_ = timeout;
+    ESP_LOGE(TAG, "Setting timeout response: %u = %u", mb_master_timeout_, timeout);
+    return ESP_OK;
 }

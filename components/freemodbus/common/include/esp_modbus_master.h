@@ -268,6 +268,8 @@ esp_err_t mbc_master_get_parameter(uint16_t cid, char* name, uint8_t* value, uin
 */
 esp_err_t mbc_master_set_parameter(uint16_t cid, char* name, uint8_t* value, uint8_t *type);
 
+esp_err_t setResponseTimeout(uint32_t timeout);
+
 #ifdef __cplusplus
 }
 #endif

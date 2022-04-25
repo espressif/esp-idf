@@ -130,10 +130,14 @@ eMBMasterTCPReceive( UCHAR * pucRcvAddress, UCHAR ** ppucFrame, USHORT * pusLeng
 }
 
 eMBErrorCode
-eMBMasterTCPSend( UCHAR _unused, const UCHAR * pucFrame, USHORT usLength )
+eMBMasterTCPSend( UCHAR ucSlaveAddress, const UCHAR * pucFrame, USHORT usLength )
 {
     eMBErrorCode    eStatus = MB_ENOERR;
+
+    if ( ucSlaveAddress > MB_MASTER_TOTAL_SLAVE_NUM ) return MB_EINVAL;
+
     UCHAR          *pucMBTCPFrame = ( UCHAR * ) pucFrame - MB_TCP_FUNC;
+    pucMBTCPFrame[MB_TCP_UID] = ucSlaveAddress;
     USHORT          usTCPLength = usLength + MB_TCP_FUNC;
 
     /* The MBAP header is already initialized because the caller calls this
@@ -144,6 +148,8 @@ eMBMasterTCPSend( UCHAR _unused, const UCHAR * pucFrame, USHORT usLength )
      */
     pucMBTCPFrame[MB_TCP_LEN] = ( usLength + 1 ) >> 8U;
     pucMBTCPFrame[MB_TCP_LEN + 1] = ( usLength + 1 ) & 0xFF;
+    
+
     if( xMBMasterTCPPortSendResponse( pucMBTCPFrame, usTCPLength ) == FALSE )
     {
         eStatus = MB_EIO;
