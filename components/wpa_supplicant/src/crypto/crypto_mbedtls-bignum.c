@@ -1,16 +1,8 @@
-// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #ifdef ESP_PLATFORM
 #include "esp_system.h"
@@ -65,6 +57,7 @@ int crypto_bignum_to_bin(const struct crypto_bignum *a,
                          u8 *buf, size_t buflen, size_t padlen)
 {
     int num_bytes, offset;
+    int ret;
 
     if (padlen > buflen) {
         return -1;
@@ -82,9 +75,11 @@ int crypto_bignum_to_bin(const struct crypto_bignum *a,
     }
 
     os_memset(buf, 0, offset);
-    mbedtls_mpi_write_binary((mbedtls_mpi *) a, buf + offset, mbedtls_mpi_size((mbedtls_mpi *)a) );
+    MBEDTLS_MPI_CHK(mbedtls_mpi_write_binary((mbedtls_mpi *) a, buf + offset, mbedtls_mpi_size((mbedtls_mpi *)a)));
 
     return num_bytes + offset;
+cleanup:
+    return ret;
 }
 
 

@@ -102,33 +102,29 @@ bool hostap_deinit(void *data)
         return true;
     }
 
-    if (hapd->wpa_auth->wpa_ie != NULL) {
-        os_free(hapd->wpa_auth->wpa_ie);
-    }
-
-    if (hapd->wpa_auth->group != NULL) {
-        os_free(hapd->wpa_auth->group);
-    }
-
     if (hapd->wpa_auth != NULL) {
+        if (hapd->wpa_auth->wpa_ie != NULL) {
+            os_free(hapd->wpa_auth->wpa_ie);
+        }
+
+        if (hapd->wpa_auth->group != NULL) {
+            os_free(hapd->wpa_auth->group);
+        }
         os_free(hapd->wpa_auth);
     }
 
-    if (hapd->conf->ssid.wpa_psk != NULL) {
-        os_free(hapd->conf->ssid.wpa_psk);
-    }
-
-    if (hapd->conf->ssid.wpa_passphrase != NULL) {
-        os_free(hapd->conf->ssid.wpa_passphrase);
-    }
-
     if (hapd->conf != NULL) {
+        if (hapd->conf->ssid.wpa_psk != NULL) {
+            os_free(hapd->conf->ssid.wpa_psk);
+        }
+
+        if (hapd->conf->ssid.wpa_passphrase != NULL) {
+            os_free(hapd->conf->ssid.wpa_passphrase);
+        }
         os_free(hapd->conf);
     }
 
-    if (hapd != NULL) {
-        os_free(hapd);
-    }
+    os_free(hapd);
 
     esp_wifi_unset_appie_internal(WIFI_APPIE_WPA);
 

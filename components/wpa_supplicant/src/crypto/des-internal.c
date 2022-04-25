@@ -419,8 +419,8 @@ void des_encrypt(const u8 *clear, const u8 *key, u8 *cypher)
 	WPA_PUT_BE32(cypher, work[0]);
 	WPA_PUT_BE32(cypher + 4, work[1]);
 
-	os_memset(pkey, 0, sizeof(pkey));
-	os_memset(ek, 0, sizeof(ek));
+	forced_memzero(pkey, sizeof(pkey));
+	forced_memzero(ek, sizeof(ek));
 }
 
 /*

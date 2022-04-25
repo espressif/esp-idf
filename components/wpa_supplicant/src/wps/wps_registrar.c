@@ -1652,7 +1652,7 @@ int wps_build_cred(struct wps_data *wps, struct wpabuf *msg)
 		os_memcpy(wps->cred.key, wps->new_psk, wps->new_psk_len);	// NOLINT(clang-analyzer-unix.Malloc)
 		wps->cred.key_len = wps->new_psk_len;
 	} else if (wps->use_psk_key && wps->wps->psk_set) {
-		char hex[65];
+		char hex[65] = {0};
 		wpa_printf(MSG_DEBUG,  "WPS: Use PSK format for Network Key");
 		os_memcpy(wps->cred.key, hex, 32 * 2);
 		wps->cred.key_len = 32 * 2;

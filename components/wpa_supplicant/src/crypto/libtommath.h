@@ -1657,7 +1657,7 @@ mp_div(mp_int * a, mp_int * b, mp_int * c, mp_int * d)
   }
 	
   /* init our temps */
-  if ((res = mp_init_multi(&ta, &tb, &tq, &q, NULL) != MP_OKAY)) {
+  if ((res = mp_init_multi(&ta, &tb, &tq, &q, NULL)) != MP_OKAY) {
      return res;
   }
 

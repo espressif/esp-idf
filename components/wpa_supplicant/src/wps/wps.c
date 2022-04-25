@@ -71,6 +71,9 @@ int wps_is_selected_pbc_registrar(const struct wpabuf *msg)
 {
     struct wps_parse_attr *attr = (struct wps_parse_attr *)os_zalloc(sizeof(struct wps_parse_attr));
 
+    if (!attr)
+        return 0;
+
     /*
      * In theory, this could also verify that attr.sel_reg_config_methods
      * includes WPS_CONFIG_PUSHBUTTON, but some deployed AP implementations
