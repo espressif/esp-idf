@@ -81,6 +81,11 @@ Receiving ESP-NOW Data
 Call ``esp_now_register_recv_cb`` to register receiving callback function.  Call the receiving callback function when receiving ESP-NOW. The receiving callback function also runs from the Wi-Fi task. So, do not do lengthy operations in the callback function. 
 Instead, post the necessary data to a queue and handle it from a lower priority task.
 
+Config ESP-NOW Rate
+-------------------
+
+Call ``esp_wifi_config_espnow_rate`` to config ESPNOW rate of specified interface. Make sure that the interface is enabled before config rate. This API should be called after ``esp_wifi_start()``.
+
 Application Examples
 --------------------
 
