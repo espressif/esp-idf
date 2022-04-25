@@ -143,7 +143,6 @@ exclude =
         components/bootloader/subproject/components/micro-ecc/micro-ecc,
         components/bt/host/nimble/nimble,
         components/cmock/CMock,
-        components/esptool_py/esptool,
         components/json/cJSON,
         components/mbedtls/mbedtls,
         components/openthread/openthread,

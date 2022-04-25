@@ -3,10 +3,6 @@
 # For Espressif's public projects please use '../../espressif/proj', not a '../proj'
 #
 
-[submodule "components/esptool_py/esptool"]
-	path = components/esptool_py/esptool
-	url = ../../espressif/esptool.git
-
 [submodule "components/bt/controller/lib_esp32"]
 	path = components/bt/controller/lib_esp32
         url = ../../espressif/esp32-bt-lib.git
