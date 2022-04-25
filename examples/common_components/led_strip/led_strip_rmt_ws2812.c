@@ -1,16 +1,8 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <stdlib.h>
 #include <string.h>
 #include <sys/cdefs.h>
@@ -43,6 +35,7 @@ static uint32_t ws2812_t0h_ticks = 0;
 static uint32_t ws2812_t1h_ticks = 0;
 static uint32_t ws2812_t0l_ticks = 0;
 static uint32_t ws2812_t1l_ticks = 0;
+static uint32_t ws2812_reset_ticks = 0;
 
 typedef struct {
     led_strip_t parent;
@@ -73,24 +66,39 @@ static void IRAM_ATTR ws2812_rmt_adapter(const void *src, rmt_item32_t *dest, si
     }
     const rmt_item32_t bit0 = {{{ ws2812_t0h_ticks, 1, ws2812_t0l_ticks, 0 }}}; //Logical 0
     const rmt_item32_t bit1 = {{{ ws2812_t1h_ticks, 1, ws2812_t1l_ticks, 0 }}}; //Logical 1
+
+    const rmt_item32_t reset = {{{ ws2812_reset_ticks, 0, 0, 0 }}}; // Reset signal
+    const rmt_item32_t nop = {{{ 0, 0, 0, 0 }}}; // Null signal
+
     size_t size = 0;
     size_t num = 0;
     uint8_t *psrc = (uint8_t *)src;
     rmt_item32_t *pdest = dest;
-    while (size < src_size && num < wanted_num) {
-        for (int i = 0; i < 8; i++) {
-            // MSB first
-            if (*psrc & (1 << (7 - i))) {
-                pdest->val =  bit1.val;
-            } else {
-                pdest->val =  bit0.val;
-            }
-            num++;
-            pdest++;
+    while (size < (src_size - 1) && num < wanted_num) {
+        // MSB first, so we decremented `i` from 7 to 0.
+        // Note that `i` must be signed (e.g. `int`) for this to work!
+        for (int i = 7; i >= 0; i--) {
+            (pdest++)->val = (*psrc & (1 << i)) ? bit1.val : bit0.val;
         }
+        num += 8;
         size++;
         psrc++;
     }
+    // Send reset signal (LOW for `WS2812_RESET_US` microseconds)
+    // The check of the size is still needed, because `src_size` could be 0.
+    // (Note that the check  could be replaced by `src_size > 0`,
+    // but it is more clear this way.)
+    if (size < src_size && num < wanted_num) {
+        (pdest++)->val =  reset.val; // The first bit is the reset signal
+        // we just sent the first bit, so we start the loop with i = 1
+        for (int i = 1; i < 8; i++) { // complete the byte with 7 NOP signals
+            (pdest++)->val =  nop.val;
+        }
+        num += 8;
+        size++;
+        // we don't need to increment `psrc`, because we no longer use it
+    }
+
     *translated_size = size;
     *item_num = num;
 }
@@ -101,7 +109,7 @@ static esp_err_t ws2812_set_pixel(led_strip_t *strip, uint32_t index, uint32_t r
     ws2812_t *ws2812 = __containerof(strip, ws2812_t, parent);
     STRIP_CHECK(index < ws2812->strip_len, "index out of the maximum number of leds", err, ESP_ERR_INVALID_ARG);
     uint32_t start = index * 3;
-    // In thr order of GRB
+    // In the order of GRB
     ws2812->buffer[start + 0] = green & 0xFF;
     ws2812->buffer[start + 1] = red & 0xFF;
     ws2812->buffer[start + 2] = blue & 0xFF;
@@ -114,7 +122,7 @@ static esp_err_t ws2812_refresh(led_strip_t *strip, uint32_t timeout_ms)
 {
     esp_err_t ret = ESP_OK;
     ws2812_t *ws2812 = __containerof(strip, ws2812_t, parent);
-    STRIP_CHECK(rmt_write_sample(ws2812->rmt_channel, ws2812->buffer, ws2812->strip_len * 3, true) == ESP_OK,
+    STRIP_CHECK(rmt_write_sample(ws2812->rmt_channel, ws2812->buffer, ws2812->strip_len * 3 + 1, true) == ESP_OK,
                 "transmit RMT samples failed", err, ESP_FAIL);
     return rmt_wait_tx_done(ws2812->rmt_channel, pdMS_TO_TICKS(timeout_ms));
 err:
@@ -141,8 +149,8 @@ led_strip_t *led_strip_new_rmt_ws2812(const led_strip_config_t *config)
     led_strip_t *ret = NULL;
     STRIP_CHECK(config, "configuration can't be null", err, NULL);
 
-    // 24 bits per led
-    uint32_t ws2812_size = sizeof(ws2812_t) + config->max_leds * 3;
+    // 24 bits per led + reset
+    uint32_t ws2812_size = sizeof(ws2812_t) + config->max_leds * 3 + 1;
     ws2812_t *ws2812 = calloc(1, ws2812_size);
     STRIP_CHECK(ws2812, "request memory for ws2812 failed", err, NULL);
 
@@ -155,6 +163,7 @@ led_strip_t *led_strip_new_rmt_ws2812(const led_strip_config_t *config)
     ws2812_t0l_ticks = (uint32_t)(ratio * WS2812_T0L_NS);
     ws2812_t1h_ticks = (uint32_t)(ratio * WS2812_T1H_NS);
     ws2812_t1l_ticks = (uint32_t)(ratio * WS2812_T1L_NS);
+    ws2812_reset_ticks = (uint32_t)(ratio * WS2812_RESET_US * 1000);
 
     // set ws2812 to rmt adapter
     rmt_translator_init((rmt_channel_t)config->dev, ws2812_rmt_adapter);

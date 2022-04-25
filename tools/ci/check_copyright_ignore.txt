@@ -1999,7 +1999,6 @@ examples/build_system/cmake/multi_config/main/multi_config_example_main.c
 examples/common_components/iperf/include/iperf.h
 examples/common_components/iperf/iperf.c
 examples/common_components/led_strip/include/led_strip.h
-examples/common_components/led_strip/led_strip_rmt_ws2812.c
 examples/common_components/protocol_examples_common/addr_from_stdin.c
 examples/common_components/protocol_examples_common/connect.c
 examples/common_components/protocol_examples_common/include/addr_from_stdin.h
