@@ -63,7 +63,6 @@ if(NOT BOOTLOADER_BUILD)
                     "usb_hal.c"
                     "usb_phy_hal.c"
                     "xt_wdt_hal.c"
-                    "esp32s2/adc_hal.c"
                     "esp32s2/brownout_hal.c"
                     "esp32s2/cp_dma_hal.c"
                     "esp32s2/touch_sensor_hal.c"
