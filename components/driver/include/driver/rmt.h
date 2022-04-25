@@ -44,7 +44,7 @@ typedef struct {
             uint32_t duration1 : 15; /*!< Duration of level1 */
             uint32_t level1 : 1;     /*!< Level of the second part */
         };
-        uint32_t val; /*!< Equivelent unsigned value for the RMT item */
+        uint32_t val; /*!< Equivalent unsigned value for the RMT item */
     };
 } rmt_item32_t;
 
@@ -494,7 +494,7 @@ esp_err_t rmt_rx_memory_reset(rmt_channel_t channel);
 
 /**
 * @brief Set RMT memory owner.
-* @note Setting memroy is only valid for RX channel.
+* @note Setting memory is only valid for RX channel.
 *
 * @param channel RMT channel
 * @param owner To set when the transmitter or receiver can process the memory of channel.
@@ -863,7 +863,7 @@ esp_err_t rmt_get_ringbuf_handle(rmt_channel_t channel, RingbufHandle_t *buf_han
 /**
 * @brief Init rmt translator and register user callback.
 *        The callback will convert the raw data that needs to be sent to rmt format.
-*        If a channel is initialized more than once, tha user callback will be replaced by the later.
+*        If a channel is initialized more than once, the user callback will be replaced by the later.
 *
 * @param channel RMT channel .
 * @param fn Point to the data conversion function.
@@ -892,7 +892,7 @@ esp_err_t rmt_translator_set_context(rmt_channel_t channel, void *context);
 * @note This API must be invoked in the RMT translator callback function,
 *       and the first argument must be the actual parameter 'item_num' you got in that callback function.
 *
-* @param item_num Address of the memory which contains the number of translated items (It's from driver's internal memroy)
+* @param item_num Address of the memory which contains the number of translated items (It's from driver's internal memory)
 * @param context Returned User context
 *
 * @return
