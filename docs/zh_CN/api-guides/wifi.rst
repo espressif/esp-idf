@@ -61,9 +61,9 @@ Wi-Fi 初始化
 
 **要使用 Wi-Fi API 编写一个强健的应用程序，根本原则便是要时刻检查错误代码并编写相应的错误处理代码。** 一般来说，错误处理代码可用于解决：
 
- - 可恢复错误，您可以编写一个可恢复错误处理代码解决该类错误。例如，当 :cpp:func:`esp_wifi_start` 返回 ESP_ERR_NO_MEM 时，调用可恢复错误处理代码 vTaskDelay 可以获取几微秒的重试时间。
+ - 可恢复错误，您可以编写一个可恢复错误处理代码解决该类错误。例如，当 :cpp:func:`esp_wifi_start()` 返回 ESP_ERR_NO_MEM 时，调用可恢复错误处理代码 vTaskDelay 可以获取几微秒的重试时间。
  - 不可恢复非关键性错误，打印错误代码可以帮助您更好地处理该类错误。
- - 不可恢复关键性错误，可使用 "assert" 语句处理该类错误。例如，如果 :cpp:func:`esp_wifi_set_mode` 返回 ESP_ERR_WIFI_NOT_INIT，该值意为 :cpp:func:`esp_wifi_init` 未成功初始化 Wi-Fi 驱动程序。您可以在应用程序开发阶段非常快速地检测到此类错误。
+ - 不可恢复关键性错误，可使用 "assert" 语句处理该类错误。例如，如果 :cpp:func:`esp_wifi_set_mode()` 返回 ESP_ERR_WIFI_NOT_INIT，该值意为 :cpp:func:`esp_wifi_init()` 未成功初始化 Wi-Fi 驱动程序。您可以在应用程序开发阶段非常快速地检测到此类错误。
 
 在 esp_err.h 中，ESP_ERROR_CHECK 负责检查返回值。这是一个较为常见的错误处理代码，可在应用程序开发阶段作为默认的错误处理代码。但是，我们强烈建议 API 的使用者自己编写错误处理代码。
 
@@ -127,7 +127,7 @@ Wi-Fi 初始化
 
 Wi-Fi 驱动程序可以看作是一个无法感知上层代码（如 TCP/IP 堆栈、应用程序任务、事件任务等）的黑匣子。通常，应用程序任务（代码）负责调用 :doc:`Wi-Fi 驱动程序 APIs <../api-reference/network/esp_wifi>` 来初始化 Wi-Fi，并在必要时处理 Wi-Fi 事件。然后，Wi-Fi 驱动程序接收并处理 API 数据，并在应用程序中插入事件。
 
-Wi-Fi 事件处理是在 :doc:`esp_event 库 <../api-reference/system/esp_event>` 的基础上进行的。Wi-Fi 驱动程序将事件发送至 :ref:`默认事件循环 <esp-event-default-loops>`，应用程序便可以使用 :cpp:func:`esp_event_handler_register` 中的回调函数处理这些事件。除此之外，:doc:`esp_netif 组件 <../api-reference/network/esp_netif>` 也负责处理 Wi-Fi 事件，并产生一系列默认行为。例如，当 Wi-Fi station 连接至一个 AP 时，esp_netif 将自动开启 DHCP 客户端服务（系统默认）。
+Wi-Fi 事件处理是在 :doc:`esp_event 库 <../api-reference/system/esp_event>` 的基础上进行的。Wi-Fi 驱动程序将事件发送至 :ref:`默认事件循环 <esp-event-default-loops>`，应用程序便可以使用 :cpp:func:`esp_event_handler_register()` 中的回调函数处理这些事件。除此之外，:doc:`esp_netif 组件 <../api-reference/network/esp_netif>` 也负责处理 Wi-Fi 事件，并产生一系列默认行为。例如，当 Wi-Fi station 连接至一个 AP 时，esp_netif 将自动开启 DHCP 客户端服务（系统默认）。
 
 {IDF_TARGET_NAME} Wi-Fi 事件描述
 -----------------------------------------
@@ -231,7 +231,7 @@ WIFI_EVENT_AP_STADISCONNECTED
 此事件将在以下情况下发生：
 
   - 应用程序通过调用函数 :cpp:func:`esp_wifi_disconnect()` 或 :cpp:func:`esp_wifi_deauth_sta()` 手动断开 station 连接。
-  - Wi-Fi 驱动程序出于某些原因断开 station 连接，例如：AP 在过去 5 分钟（可通过函数 :cpp:func:`esp_wifi_set_inactive_time` 修改该时间）内未接收到任何数据包等。
+  - Wi-Fi 驱动程序出于某些原因断开 station 连接，例如：AP 在过去 5 分钟（可通过函数 :cpp:func:`esp_wifi_set_inactive_time()` 修改该时间）内未接收到任何数据包等。
   - station 断开与 AP 之间的连接。
 
 发生此事件时，事件任务将不做任何响应，但应用程序的事件回调函数需执行一些操作，例如：关闭与此 station 相关的套接字等。
@@ -309,7 +309,7 @@ WIFI_EVENT_STA_BEACON_TIMEOUT
 ++++++++++++++++++++++++++++++
  - s1.1：主任务通过调用函数 :cpp:func:`esp_netif_init()` 创建一个 LwIP 核心任务，并初始化 LwIP 相关工作。
 
- - s1.2：主任务通过调用函数 :cpp:func:`esp_event_loop_create` 创建一个系统事件任务，并初始化应用程序事件的回调函数。在此情况下，该回调函数唯一的动作就是将事件中继到应用程序任务中。
+ - s1.2：主任务通过调用函数 :cpp:func:`esp_event_loop_create()` 创建一个系统事件任务，并初始化应用程序事件的回调函数。在此情况下，该回调函数唯一的动作就是将事件中继到应用程序任务中。
 
  - s1.3：主任务通过调用函数 :cpp:func:`esp_netif_create_default_wifi_ap()` 或 :cpp:func:`esp_netif_create_default_wifi_sta()` 创建有 TCP/IP 堆栈的默认网络接口实例绑定 station 或 AP。
 
@@ -323,7 +323,7 @@ WIFI_EVENT_STA_BEACON_TIMEOUT
 +++++++++++++++++++++++++++++++
 Wi-Fi 驱动程序初始化成功后，可以进入到配置阶段。该场景下，Wi-Fi 驱动程序处于 station 模式。因此，首先您需调用函数 :cpp:func:`esp_wifi_set_mode` (WIFI_MODE_STA) 将 Wi-Fi 模式配置为 station 模式。可通过调用其它 esp_wifi_set_xxx API 进行更多设置，例如：协议模式、国家代码、带宽等。请参阅 `{IDF_TARGET_NAME} Wi-Fi 配置`_。
 
-一般情况下，我们会在建立 Wi-Fi 连接之前配置 Wi-Fi 驱动程序，但这 **并非** 强制要求。也就是说，只要 Wi-Fi 驱动程序已成功初始化，您可以在任意阶段进行配置。但是，如果您的 Wi-Fi 在建立连接后不需要更改配置，则应先在此阶段完成配置。因为调用配置 API（例如 :cpp:func:`esp_wifi_set_protocol`）将会导致 Wi-Fi 连接断开，为您的操作带来不便。
+一般情况下，我们会在建立 Wi-Fi 连接之前配置 Wi-Fi 驱动程序，但这 **并非** 强制要求。也就是说，只要 Wi-Fi 驱动程序已成功初始化，您可以在任意阶段进行配置。但是，如果您的 Wi-Fi 在建立连接后不需要更改配置，则应先在此阶段完成配置。因为调用配置 API（例如 :cpp:func:`esp_wifi_set_protocol()`）将会导致 Wi-Fi 连接断开，为您的操作带来不便。
 
 如果 menuconfig 已使能 Wi-Fi NVS flash，则不论当前阶段还是后续的 Wi-Fi 配置信息都将被存储至该 flash 中。那么，当主板上电/重新启动时，就不需从头开始配置 Wi-Fi 驱动程序。您只需调用函数 esp_wifi_get_xxx API 获取之前存储的配置信息。当然，如果不想使用之前的配置，您依然可以重新配置 Wi-Fi 驱动程序。
 
@@ -459,7 +459,7 @@ Wi-Fi 驱动程序初始化成功后，可以进入到配置阶段。该场景�
 扫描配置
 +++++++++++++++++
 
-扫描类型与其他扫描属性通过函数 :cpp:func:`esp_wifi_scan_start` 进行配置。下表详细描述了函数 wifi_scan_config_t 各字段信息。
+扫描类型与其他扫描属性通过函数 :cpp:func:`esp_wifi_scan_start()` 进行配置。下表详细描述了函数 wifi_scan_config_t 各字段信息。
 
 .. list-table::
    :header-rows: 1
@@ -491,7 +491,7 @@ Wi-Fi 驱动程序初始化成功后，可以进入到配置阶段。该场景�
 
        如希望提升 Wi-Fi 扫描性能，则可修改上述两个参数。
 
-调用 API :cpp:func:`esp_wifi_set_config` 可全局配置一些扫描属性，请参阅 `station 基本配置`_。
+调用 API :cpp:func:`esp_wifi_set_config()` 可全局配置一些扫描属性，请参阅 `station 基本配置`_。
 
 在所有信道中扫描全部 AP（前端）
 +++++++++++++++++++++++++++++++++++++++++++
@@ -1371,9 +1371,9 @@ Station 睡眠
 
 Modem-sleep 模式包括最小和最大节能模式。在最小节能模式下，每个 DTIM 间隔，station 都将唤醒以接收 beacon。广播数据在 DTIM 之后传输，因此不会丢失。但是，由于 DTIM 间隔长短由 AP 决定，如果该间隔时间设置较短，则省电效果不大。
 
-在最大节能模式下，每个监听间隔，station 都将唤醒以接收 beacon。可以设置该监听间隔长于 AP 的 DTIM 周期。在 DTIM 期间内，station 可能处于睡眠状态，广播数据会丢失。如果监听间隔较长，则可以节省更多电量，但广播数据更容易丢失。连接 AP 前，可以通过调用 API :cpp:func:`esp_wifi_set_config` 配置监听间隔。
+在最大节能模式下，每个监听间隔，station 都将唤醒以接收 beacon。可以设置该监听间隔长于 AP 的 DTIM 周期。在 DTIM 期间内，station 可能处于睡眠状态，广播数据会丢失。如果监听间隔较长，则可以节省更多电量，但广播数据更容易丢失。连接 AP 前，可以通过调用 API :cpp:func:`esp_wifi_set_config()` 配置监听间隔。
 
-调用 :cpp:func:`esp_wifi_init` 后，调用 ``esp_wifi_set_ps(WIFI_PS_MIN_MODEM)`` 可使能 Modem-sleep 最小节能模式。调用 ``esp_wifi_set_ps(WIFI_PS_MAX_MODEM)`` 可使能 Modem-sleep 最大节能模式。station 连接到 AP 时，Modem-sleep 模式将启动。station 与 AP 断开连接时，Modem-sleep 模式将停止。
+调用 :cpp:func:`esp_wifi_init()` 后，调用 ``esp_wifi_set_ps(WIFI_PS_MIN_MODEM)`` 可使能 Modem-sleep 最小节能模式。调用 ``esp_wifi_set_ps(WIFI_PS_MAX_MODEM)`` 可使能 Modem-sleep 最大节能模式。station 连接到 AP 时，Modem-sleep 模式将启动。station 与 AP 断开连接时，Modem-sleep 模式将停止。
 
 调用 ``esp_wifi_set_ps(WIFI_PS_NONE)`` 可以完全禁用 Modem-sleep 模式。禁用会增大功耗，但可以最大限度减少实时接收 Wi-Fi 数据的延迟。使能 Modem-sleep 时，接收 Wi-Fi 数据的延迟时间可能与 DTIM 周期（最小节能模式）或监听间隔（最大节能模式）相同。在 Wi-Fi 与 Bluetooth LE 共存模式下，无法完全禁用 modem-sleep 模式。
 
@@ -1526,19 +1526,19 @@ AP 睡眠
 Wi-Fi 80211 数据包发送
 ---------------------------
 
-:cpp:func:`esp_wifi_80211_tx` API 可用于：
+:cpp:func:`esp_wifi_80211_tx()` API 可用于：
 
  - 发送 beacon、probe request、probe response 和 action 帧。
  - 发送非 QoS 数据帧。
 
 不能用于发送加密或 QoS 帧。
 
-使用 :cpp:func:`esp_wifi_80211_tx` 的前提条件
+使用 :cpp:func:`esp_wifi_80211_tx()` 的前提条件
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
- - Wi-Fi 模式为 Station 模式， AP 模式，或 Station/AP 共存模式。
- - API esp_wifi_set_promiscuous(true) 或 :cpp:func:`esp_wifi_start()`，或者二者都返回 ESP_OK。这是为确保调用函数 :cpp:func:`esp_wifi_80211_tx()` 前，Wi-Fi 硬件已经初始化。对于 {IDF_TARGET_NAME}，esp_wifi_set_promiscuous(true) 和 :cpp:func:`esp_wifi_start()` 都可以触发 Wi-Fi 硬件初始化。
- - 提供正确的 :cpp:func:`esp_wifi_80211_tx` 参数。
+ - Wi-Fi 模式为 station 模式，AP 模式，或 station/AP 共存模式。
+ - API esp_wifi_set_promiscuous(true) 或 :cpp:func:`esp_wifi_start()`，或者二者都返回 ESP_OK。这是为确保在调用函数 :cpp:func:`esp_wifi_80211_tx()` 前，Wi-Fi 硬件已经初始化。对于 {IDF_TARGET_NAME}，esp_wifi_set_promiscuous(true) 和 :cpp:func:`esp_wifi_start()` 都可以触发 Wi-Fi 硬件初始化。
+ - 提供正确的 :cpp:func:`esp_wifi_80211_tx()` 参数。
 
 传输速率
 +++++++++++++++++++++++++++++
@@ -1550,7 +1550,7 @@ Wi-Fi 80211 数据包发送
 在不同情况下需要避免的副作用
 +++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-理论上，如果不考虑 API 对 Wi-Fi 驱动程序或其他 station 或 AP 的副作用，可以通过空中发送一个原始的 802.11 数据包，包括任何目的地址的 MAC、任何源地址的 MAC、任何 BSSID、或任何其他类型的数据包。但是，一个具有强健、有用的应用程序应该避免这种副作用。下表针对如何避免 :cpp:func:`esp_wifi_80211_tx` 的副作用提供了一些提示或建议。
+理论上，如果不考虑 API 对 Wi-Fi 驱动程序或其他 station 或 AP 的副作用，可以通过空中发送一个原始的 802.11 数据包，包括任何目的地址的 MAC、任何源地址的 MAC、任何 BSSID、或任何其他类型的数据包。但是，一个具有强健、有用的应用程序应该避免这种副作用。下表针对如何避免 :cpp:func:`esp_wifi_80211_tx()` 的副作用提供了一些提示或建议。
 
 .. list-table::
    :header-rows: 1
@@ -1717,24 +1717,25 @@ Wi-Fi 信道状态信息
 .. note ::
 
     - 对于 STBC 数据包，每个空时流都提供了 CSI，不会出现 CSD（循环移位延迟）。由于附加链上的每一次循环移位为 -200 ns，因为子载波 0 中没有信道频率响应，在 HT-LTF 和 STBC-HT-LTF 中只记录第一空时流的 CSD 角度。CSD[10:0] 是 11 位，范围从 -pi 到 pi。
-    - 如果调用 API :cpp:func:`esp_wifi_set_csi_config` 没有使能 LLTF、HT-LTF 或 STBC-HT-LTF，则 CSI 数据的总字节数会比表中的少。例如，如果没有使能 LLTF 和 HT-LTF，而使能 STBC-HT-LTF，当接收到上述条件、HT、40 MHz 或 STBC的数据包时，CSI 数据的总字节数为 244（(61+60)*2+2=244，结果对齐为四个字节，最后两个字节无效）。
+
+    - 如果调用 API :cpp:func:`esp_wifi_set_csi_config()` 没有使能 LLTF、HT-LTF 或 STBC-HT-LTF，则 CSI 数据的总字节数会比表中的少。例如，如果没有使能 LLTF 和 HT-LTF，而使能 STBC-HT-LTF，当接收到上述条件、HT、40 MHz 或 STBC 的数据包时，CSI 数据的总字节数为 244（(61+60)*2+2=244，结果对齐为四个字节，最后两个字节无效）。
 
 Wi-Fi 信道状态信息配置
 -------------------------------------------
 
 要使用 Wi-Fi CSI，需要执行以下步骤。
 
-    - 在菜单配置中选择 Wi-Fi CSI。方法是“菜单配置 - > 组件配置 -- > Wi-Fi -- > WiFi CSI（信道状态信息）”。
-    - 调用 API :cpp:func:`esp_wifi_set_csi_rx_cb` 设置 CSI 接收回调函数。
-    - 调用 API :cpp:func:`esp_wifi_set_csi_config` 配置 CSI。
-    - 调用 API :cpp:func:`esp_wifi_set_csi` 使能 CSI。
+    - 在菜单配置中选择 Wi-Fi CSI。方法是“菜单配置 - > 组件配置 -- > Wi-Fi -- > Wi-Fi CSI（信道状态信息）”。
+    - 调用 API :cpp:func:`esp_wifi_set_csi_rx_cb()` 设置 CSI 接收回调函数。
+    - 调用 API :cpp:func:`esp_wifi_set_csi_config()` 配置 CSI。
+    - 调用 API :cpp:func:`esp_wifi_set_csi()` 使能 CSI。
 
-CSI 接收回调函数从 Wi-Fi 任务中运行。因此，不要在回调函数中进行冗长的操作。可以将需要的数据发布到队列中，并从一个较低优先级的任务中处理。由于 station 在断开连接时不会收到任何数据包，只有在连接时才会收到来自 AP 的数据包，因此建议通过调用函数 :cpp:func:`esp_wifi_set_promiscuous()` 使能 Sniffer 模式接收更多 CSI 数据。
+CSI 接收回调函数从 Wi-Fi 任务中运行。因此，不要在回调函数中进行冗长的操作。但是需要将必要的数据发布到队列中，并从一个较低优先级的任务中处理。由于 station 在断开连接时不会收到任何数据包，只有在连接时才会收到来自 AP 的数据包，因此建议通过调用函数 :cpp:func:`esp_wifi_set_promiscuous()` 使能 Sniffer 模式接收更多 CSI 数据。
 
 Wi-Fi HT20/40
 -------------------------
 
-{IDF_TARGET_NAME} 支持 Wi-Fi 带宽 HT20 或 HT40，不支持 HT20/40 共存，调用函数 :cpp:func:`esp_wifi_set_bandwidth` 可改变 station/AP 的默认带宽。{IDF_TARGET_NAME} station 和 AP 的默认带宽为 HT40。
+{IDF_TARGET_NAME} 支持 Wi-Fi 带宽 HT20 或 HT40，不支持 HT20/40 共存，调用函数 :cpp:func:`esp_wifi_set_bandwidth()` 可改变 station/AP 的默认带宽。{IDF_TARGET_NAME} station 和 AP 的默认带宽为 HT40。
 
 Station 模式下，实际带宽首先在 Wi-Fi 连接时协商。只有当 station 和所连 AP 都支持 HT40 时，带宽才为 HT40，否则为 HT20。如果所连的 AP 的带宽发生变化，则在不断开 Wi-Fi 连接的情况下再次协商实际带宽。
 
