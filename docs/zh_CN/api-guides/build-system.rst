@@ -1057,7 +1057,9 @@ Flash 参数
 
 子项目通过 :idf_file:`/components/bootloader/project_include.cmake` 文件作为外部项目插入到项目的顶层，主构建进程会运行子项目的 CMake，包括查找组件（主项目使用的组件的子集），生成引导程序专用的配置文件（从主 ``sdkconfig`` 文件中派生）。
 
-.. _selecting-idf-target:
+..
+  Label removed here because of the conflict with the english docs restructuring.
+  When translating please follow the structure in the english docs.
 
 选择目标芯片
 ====================
