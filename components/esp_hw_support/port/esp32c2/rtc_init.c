@@ -126,16 +126,7 @@ void rtc_vddsdio_set_config(rtc_vddsdio_config_t config)
 
 static void set_ocode_by_efuse(int calib_version)
 {
-#if !CONFIG_IDF_TARGET_ESP32C2 //TODO: Need check for esp32c2
-    assert(calib_version == 1);
-    // use efuse ocode.
-    uint32_t ocode;
-    esp_err_t err = esp_efuse_read_field_blob(ESP_EFUSE_OCODE, &ocode, 8);
-    assert(err == ESP_OK);
-    (void) err;
-    REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_EXT_CODE, ocode);
-    REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_FORCE_CODE, 1);
-#endif
+    // ESP32C2-TODO: IDF-4940
     abort();
 }
 
