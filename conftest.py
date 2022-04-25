@@ -29,7 +29,7 @@ from _pytest.python import Function
 from _pytest.reports import TestReport
 from _pytest.runner import CallInfo
 from _pytest.terminal import TerminalReporter
-from pytest_embedded.plugin import apply_count, parse_configuration
+from pytest_embedded.plugin import multi_dut_argument, multi_dut_fixture
 from pytest_embedded.utils import find_by_suffix
 
 SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2']
@@ -75,7 +75,7 @@ def session_tempdir() -> str:
 
 
 @pytest.fixture
-@parse_configuration
+@multi_dut_argument
 def config(request: FixtureRequest) -> str:
     return getattr(request, 'param', None) or DEFAULT_SDKCONFIG
 
@@ -91,7 +91,7 @@ def test_case_name(request: FixtureRequest, target: str, config: str) -> str:
 
 
 @pytest.fixture
-@apply_count
+@multi_dut_fixture
 def build_dir(app_path: str, target: Optional[str], config: Optional[str]) -> str:
     """
     Check local build dir with the following priority:
@@ -137,7 +137,7 @@ def build_dir(app_path: str, target: Optional[str], config: Optional[str]) -> st
 
 
 @pytest.fixture(autouse=True)
-@apply_count
+@multi_dut_fixture
 def junit_properties(
     test_case_name: str, record_xml_attribute: Callable[[str, object], None]
 ) -> None:
