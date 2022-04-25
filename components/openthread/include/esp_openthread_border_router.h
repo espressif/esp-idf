@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -70,7 +70,7 @@ void esp_openthread_register_rcp_failure_handler(esp_openthread_rcp_failure_hand
  * @brief   Deinitializes the conneciton to RCP.
  *
  */
-void esp_openthread_rcp_deinit();
+void esp_openthread_rcp_deinit(void);
 
 #ifdef __cplusplus
 }
