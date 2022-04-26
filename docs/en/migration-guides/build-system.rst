@@ -11,7 +11,19 @@ Update fragment file grammar
 
 Please follow the :ref:`migrate linker script fragment files grammar<ldgen-migrate-lf-grammar>` chapter for migrating v3.x grammar to the new one.
 
-Component dependencies that shall be explicit
----------------------------------------------
+Specify component requirements explicitly
+-----------------------------------------
 
-In previous versions of ESP-IDF, target components (``components/esp32*``) had a dependency on ``driver`` and ``efuse`` components. Since target components were part of common requirements (:ref:`more info about common requirements <component-common-requirements>`), all components in the project implicitly had a dependency on ``driver`` and ``efuse``. Now that the dependency of target components on these components has been removed, every component depending on ``driver`` or ``efuse`` has to declare this dependency explicitly. This can be done by adding ``REQUIRES <component_name>`` or ``PRIV_REQUIRES <component_name>`` in ``idf_component_register`` call inside component's ``CMakeLists.txt``. See :ref:`Component Requirements` for more information on specifying requirements.
+In previous versions of ESP-IDF, some components were always added as public requirements (dependencies) to every component in the build, in addition to the :ref:`common requirements<component-common-requirements>`:
+
+* ``driver``
+* ``efuse``
+* ``esp_timer``
+
+This means that it was possible to include header files of those components without specifying them as requirements in ``idf_component_register``.
+
+This behavior was caused by transitive dependencies of various common components.
+
+In ESP-IDF v5.0, this behavior is fixed and these components are no longer added as public requirements by default.
+
+Every component depending on one of the components which isn't part of common requirements has to declare this dependency explicitly. This can be done by adding ``REQUIRES <component_name>`` or ``PRIV_REQUIRES <component_name>`` in ``idf_component_register`` call inside component's ``CMakeLists.txt``. See :ref:`Component Requirements` for more information on specifying requirements.

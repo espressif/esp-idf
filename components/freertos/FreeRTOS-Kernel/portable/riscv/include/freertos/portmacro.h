@@ -47,13 +47,17 @@
 #include "esp_macros.h"
 #include "esp_attr.h"
 #include "esp_rom_sys.h"
-#include "esp_timer.h"              /* required for FreeRTOS run time stats */
 #include "esp_heap_caps.h"
 #include "esp_system.h"             /* required by esp_get_...() functions in portable.h. [refactor-todo] Update portable.h */
 #include "esp_newlib.h"
 
 /* [refactor-todo] These includes are not directly used in this file. They are kept into to prevent a breaking change. Remove these. */
 #include <limits.h>
+
+/* [refactor-todo] introduce a port wrapper function to avoid including esp_timer.h into the public header */
+#if CONFIG_FREERTOS_RUN_TIME_STATS_USING_ESP_TIMER
+#include "esp_timer.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {

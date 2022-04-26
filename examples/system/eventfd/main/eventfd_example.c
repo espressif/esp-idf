@@ -16,6 +16,7 @@
 #include "esp_vfs.h"
 #include "esp_vfs_dev.h"
 #include "esp_vfs_eventfd.h"
+#include "esp_timer.h"
 #include "driver/gptimer.h"
 
 #define TIMER_RESOLUTION      1000000 // 1MHz, 1 tick = 1us

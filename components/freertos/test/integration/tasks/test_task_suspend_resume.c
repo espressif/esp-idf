@@ -21,6 +21,7 @@
 #endif
 #include "esp_freertos_hooks.h"
 #include "esp_rom_sys.h"
+#include "esp_timer.h"
 
 /* Counter task counts a target variable forever */
 static void task_count(void *vp_counter)

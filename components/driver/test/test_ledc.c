@@ -23,6 +23,7 @@
 #include "soc/gpio_periph.h"
 #include "soc/io_mux_reg.h"
 #include "esp_system.h"
+#include "esp_timer.h"
 #include "driver/ledc.h"
 #include "hal/ledc_ll.h"
 #include "driver/gpio.h"
