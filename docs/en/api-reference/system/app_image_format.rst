@@ -73,6 +73,8 @@ You can also see the information on segments in the ESP-IDF logs while your appl
  * version word (4 bytes),
  * signature data (64 bytes).
 
+.. _app_image_format_application_description:
+
 Application Description
 -----------------------
 
