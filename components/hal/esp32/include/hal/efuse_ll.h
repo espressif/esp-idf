@@ -15,6 +15,8 @@
 extern "C" {
 #endif
 
+#define ESP_EFUSE_BLOCK_ERROR_BITS(error_reg, block) ((error_reg) & (0x0F << (4 * (block))))
+
 // Always inline these functions even no gcc optimization is applied.
 
 /******************* eFuse fields *************************/
@@ -149,6 +151,15 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_adc1_tp_high(
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_adc2_tp_high(void)
 {
     return REG_GET_FIELD(EFUSE_BLK3_RDATA3_REG, EFUSE_RD_ADC2_TP_HIGH);
+}
+
+__attribute__((always_inline)) static inline bool efuse_ll_get_dec_warnings(unsigned block)
+{
+    if (block == 0 || block > 4) {
+        return false;
+    }
+    uint32_t error_reg = REG_GET_FIELD(EFUSE_DEC_STATUS_REG, EFUSE_DEC_WARNINGS);
+    return ESP_EFUSE_BLOCK_ERROR_BITS(error_reg, block - 1) != 0;
 }
 
 /******************* eFuse control functions *************************/
