@@ -36,7 +36,16 @@
  */
 
 #include "esp_log.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "esp_zb_light.h"
+
+/**
+ * @note Make sure set idf.py menuconfig in zigbee component as zigbee end-device device!
+*/
+#if !defined ZB_ED_ROLE
+#error Define ZB_ED_ROLE in idf.py menuconfig to compile light bulb source code.
+#endif
 
 static bulb_device_ctx_t esp_light_ctx = {
     /* basic cluster attributes data */
@@ -108,8 +117,9 @@ static void bdb_start_top_level_commissioning_cb(zb_uint8_t mode_mask)
  */
 void zboss_signal_handler(zb_bufid_t bufid)
 {
-    zb_uint8_t status = ZB_GET_APP_SIGNAL_STATUS(bufid);
-    zb_zdo_app_signal_type_t sig = zb_get_app_signal(bufid, NULL);
+    zb_zdo_app_signal_hdr_t       *p_sg_p = NULL;
+    zb_zdo_app_signal_type_t       sig    = zb_get_app_signal(bufid, &p_sg_p);
+    zb_ret_t                       status = ZB_GET_APP_SIGNAL_STATUS(bufid);
 
     switch (sig) {
     case ZB_ZDO_SIGNAL_SKIP_STARTUP:
@@ -212,20 +222,13 @@ static void esp_zb_light_cb(zb_bufid_t bufid)
     }
 }
 
-void app_main(void)
+static void zboss_task(void *pvParameters)
 {
-    zb_ret_t       zb_err_code;
-    zb_esp_platform_config_t config = {
-        .radio_config = ZB_ESP_DEFAULT_RADIO_CONFIG(),
-        .host_config = ZB_ESP_DEFAULT_HOST_CONFIG(),
-    };
-
-    ESP_ERROR_CHECK(zb_esp_platform_config(&config));
     /* initialize Zigbee stack */
     ZB_INIT("light_bulb");
-    zb_set_network_router_role(IEEE_CHANNEL_MASK);
-    zb_set_max_children(MAX_CHILDREN);
+    zb_set_network_ed_role(IEEE_CHANNEL_MASK);
     zb_set_nvram_erase_at_start(ERASE_PERSISTENT_CONFIG);
+    zb_set_ed_timeout(ED_AGING_TIMEOUT_64MIN);
     zb_set_keepalive_timeout(ZB_MILLISECONDS_TO_BEACON_INTERVAL(3000));
     /* hardware related and device init */
     light_driver_init(LIGHT_DEFAULT_OFF);
@@ -233,10 +236,19 @@ void app_main(void)
     ZB_ZCL_REGISTER_DEVICE_CB(esp_zb_light_cb);
     /* register light device context (endpoints) */
     ZB_AF_REGISTER_DEVICE_CTX(&esp_zb_light_ctx);
-    zb_err_code = zboss_start_no_autostart();
-    ESP_ERROR_CHECK(zb_err_code);
-
+    ESP_ERROR_CHECK(zboss_start_no_autostart());
     while (1) {
         zboss_main_loop_iteration();
     }
+}
+
+void app_main(void)
+{
+    zb_esp_platform_config_t config = {
+        .radio_config = ZB_ESP_DEFAULT_RADIO_CONFIG(),
+        .host_config = ZB_ESP_DEFAULT_HOST_CONFIG(),
+    };
+    /* load Zigbee light_bulb platform config to initialization */
+    ESP_ERROR_CHECK(zb_esp_platform_config(&config));
+    xTaskCreate(zboss_task, "zboss_main", 4096, NULL, 5, NULL);
 }

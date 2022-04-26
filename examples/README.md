@@ -24,6 +24,7 @@ The examples are grouped into subdirectories by category. Each category director
 - `storage` Examples showing data storage methods using SPI flash, external storage like the SD/MMC interface and flash partitioning.
 - `system` Demonstrates some internal chip features, or debugging & development tools.
 - `wifi` Advanced Wi-Fi features (For network protocol examples, see `protocols` instead.)
+- `Zigbee` Zigbee network and device examples.
 
 In addition to these examples, `commmon_components` directory contains code shared by several examples.
 
