@@ -636,6 +636,15 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
     return err;
 }
 
+static inline bool can_power_down_vddsdio(const uint32_t vddsdio_pd_sleep_duration)
+{
+    return ((s_config.wakeup_triggers == RTC_TIMER_TRIG_EN) && (s_config.sleep_duration > vddsdio_pd_sleep_duration))
+#if CONFIG_ESP_SLEEP_FORCE_POWER_DOWN_FLASH
+        || (!(s_config.wakeup_triggers & RTC_TIMER_TRIG_EN) || (s_config.sleep_duration > vddsdio_pd_sleep_duration))
+#endif
+    ;
+}
+
 esp_err_t esp_light_sleep_start(void)
 {
     s_config.ccount_ticks_record = cpu_ll_get_cycle_count();
@@ -711,7 +720,7 @@ esp_err_t esp_light_sleep_start(void)
                         flash_enable_time_us + LIGHT_SLEEP_MIN_TIME_US + s_config.sleep_time_adjustment
                         + rtc_time_slowclk_to_us(RTC_MODULE_SLEEP_PREPARE_CYCLES, s_config.rtc_clk_cal_period));
 
-        if (s_config.sleep_duration > vddsdio_pd_sleep_duration) {
+        if (can_power_down_vddsdio(vddsdio_pd_sleep_duration)) {
             if (s_config.sleep_time_overhead_out < flash_enable_time_us) {
                 s_config.sleep_time_adjustment += flash_enable_time_us;
             }

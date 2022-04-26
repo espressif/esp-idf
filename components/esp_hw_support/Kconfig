@@ -32,6 +32,30 @@ menu "Hardware Settings"
                 possible to force a power domain to stay ON during light sleep by using esp_sleep_pd_config()
                 function.
 
+        config ESP_SLEEP_FORCE_POWER_DOWN_FLASH
+            bool "Relax the conditions for power down flash"
+            depends on ESP_SLEEP_POWER_DOWN_FLASH
+            default n
+            help
+                Currently in IDF, whether the flash can be powered down depends on whether the RTC timer wakeup source
+                is enabled or not. Only when RTC timer is the only wakeup source and sleep_duration is big enough, we
+                can power down flash. The reason for this logic is:
+
+                If the flash is powered up again(such as wakeup happens) during its power-down period, the flash may
+                not work properly. It means that if we are going to power down the flash, we must power down the flash
+                completely. The power-down process takes time. So, if we can't make sure the sleep time is long enough,
+                then we can't power down the flash.
+
+                Considering that the probability of flash not working properly when powered up again during power-down
+                period is very small(< 1%). And maybe some kind of flash do not have this problem. So provide this configuration
+                item to relax the conditions for power down flash.
+
+                If not enabled, The power-down conditions of flash are strict and absolute safe. If enabled, chip will
+                also power down flash when RTC timer wakeup source is not enabled or sleep_duration is big enough.
+
+                Enabling this configuration item can bring better power consumption performance. But users need to pay
+                attention to the potential risks.
+
         config ESP_SLEEP_RTC_BUS_ISO_WORKAROUND
             bool
             default y if IDF_TARGET_ESP32 || IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
