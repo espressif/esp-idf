@@ -11,6 +11,7 @@
 #include "hal/efuse_hal.h"
 #include "hal/efuse_ll.h"
 
+#define ESP_EFUSE_BLOCK_ERROR_BITS(error_reg, block) ((error_reg) & (0x0F << (4 * (block))))
 
 uint32_t efuse_hal_get_chip_revision(void)
 {
@@ -61,3 +62,22 @@ void efuse_hal_rs_calculate(const void *data, void *rs_values)
 }
 
 /******************* eFuse control functions *************************/
+
+bool efuse_hal_is_coding_error_in_block(unsigned block)
+{
+    if (block == 0) {
+        for (unsigned i = 0; i < 5; i++) {
+            if (REG_READ(EFUSE_RD_REPEAT_ERR0_REG + i * 4)) {
+                return true;
+            }
+        }
+    } else if (block <= 10) {
+        // The order of error in these regs is different only for the C3 chip.
+        // EFUSE_RD_RS_ERR0_REG: (hi) BLOCK7, BLOCK6, BLOCK5, BLOCK4, BLOCK3, BLOCK2, BLOCK1, ------ (low)
+        // EFUSE_RD_RS_ERR1_REG:                                                      BLOCK9, BLOCK8
+        // BLOCK10 is not presented in the error regs.
+        uint32_t error_reg = REG_READ(EFUSE_RD_RS_ERR0_REG + (block / 8) * 4);
+        return ESP_EFUSE_BLOCK_ERROR_BITS(error_reg, block % 8) != 0;
+    }
+    return false;
+}
