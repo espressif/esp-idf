@@ -42,9 +42,6 @@ extern "C" {
 #define BUS_IRAM0_CACHE_SIZE              BUS_SIZE(IRAM0_CACHE)
 #define BUS_DRAM0_CACHE_SIZE              BUS_SIZE(DRAM0_CACHE)
 
-//IDF-3821
-// #define MMU_SIZE                        0x100
-
 #define CACHE_IBUS                      0
 #define CACHE_IBUS_MMU_START            0
 #define CACHE_IBUS_MMU_END              0x100
@@ -95,16 +92,18 @@ extern "C" {
  */
 #define INVALID_PHY_PAGE                0x7f
 /**
- * Max MMU entry num.
- * `MMU_MAX_ENTRY_NUM * MMU_PAGE_SIZE` means the max paddr and vaddr region supported by the MMU. e.g.:
- * 64 * 64KB, means MMU can map 4MB at most
+ * Max MMU available paddr page num.
+ * `MMU_MAX_PADDR_PAGE_NUM * MMU_PAGE_SIZE` means the max paddr address supported by the MMU. e.g.:
+ * 64 * 64KB, means MMU can support 4MB paddr at most
  */
-#define MMU_MAX_ENTRY_NUM    64
+#define MMU_MAX_PADDR_PAGE_NUM    64
 /**
  * This is the mask used for mapping. e.g.:
  * 0x4200_0000 & MMU_VADDR_MASK
  */
 #define MMU_VADDR_MASK ((0x100000 << (MMU_PAGE_MODE)) - 1)
+//MMU entry num
+#define MMU_ENTRY_NUM  64
 
 #define BUS_PMS_MASK  0xffffff
 

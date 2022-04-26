@@ -111,16 +111,19 @@ extern "C" {
  */
 #define MMU_VALID_VAL_MASK 0x3fff
 /**
- * Max MMU entry num.
- * `MMU_MAX_ENTRY_NUM * MMU_PAGE_SIZE` means the max paddr and vaddr region supported by the MMU. e.g.:
- * 16384 * 64KB, means MMU can map 1GB at most
+ * Max MMU available paddr page num.
+ * `MMU_MAX_PADDR_PAGE_NUM * MMU_PAGE_SIZE` means the max paddr address supported by the MMU. e.g.:
+ * 16384 * 64KB, means MMU can support 1GB paddr at most
  */
-#define MMU_MAX_ENTRY_NUM    16384
+#define MMU_MAX_PADDR_PAGE_NUM    16384
 /**
  * This is the mask used for mapping. e.g.:
  * 0x4200_0000 & MMU_VADDR_MASK
  */
 #define MMU_VADDR_MASK  0x3FFFFF
+//MMU entry num
+#define MMU_ENTRY_NUM   384
+
 #define BUS_NUM_MASK  0x3
 
 #define CACHE_MEMORY_BANK_SIZE         8192

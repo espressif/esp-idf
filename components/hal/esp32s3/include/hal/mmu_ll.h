@@ -108,7 +108,7 @@ __attribute__((always_inline))
 static inline void mmu_ll_write_entry(uint32_t mmu_id, uint32_t entry_id, uint32_t mmu_val, mmu_target_t target)
 {
     (void)mmu_id;
-    HAL_ASSERT(entry_id < MMU_MAX_ENTRY_NUM);
+    HAL_ASSERT(entry_id < MMU_ENTRY_NUM);
 
     uint32_t target_code = (target == MMU_TARGET_FLASH0) ? MMU_ACCESS_FLASH : MMU_ACCESS_SPIRAM;
     *(uint32_t *)(DR_REG_MMU_TABLE + entry_id * 4) = mmu_val | target_code | MMU_VALID;
@@ -124,7 +124,7 @@ __attribute__((always_inline))
 static inline void mmu_ll_set_entry_invalid(uint32_t mmu_id, uint32_t entry_id)
 {
     (void)mmu_id;
-    HAL_ASSERT(entry_id < MMU_MAX_ENTRY_NUM);
+    HAL_ASSERT(entry_id < MMU_ENTRY_NUM);
 
     *(uint32_t *)(DR_REG_MMU_TABLE + entry_id * 4) = MMU_INVALID;
 }
@@ -137,7 +137,7 @@ static inline void mmu_ll_set_entry_invalid(uint32_t mmu_id, uint32_t entry_id)
 __attribute__((always_inline))
 static inline void mmu_ll_unmap_all(uint32_t mmu_id)
 {
-    for (int i = 0; i < MMU_MAX_ENTRY_NUM; i++) {
+    for (int i = 0; i < MMU_ENTRY_NUM; i++) {
         mmu_ll_set_entry_invalid(mmu_id, i);
     }
 }
