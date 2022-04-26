@@ -92,6 +92,9 @@ static spp_local_param_t *spp_local_param_ptr;
 #define spp_local_param (*spp_local_param_ptr)
 #endif
 
+static void btc_spp_vfs_register(void);
+static void btc_spp_vfs_unregister(void);
+
 static void spp_osi_free(void *p)
 {
     osi_free(p);
@@ -546,6 +549,9 @@ static void btc_spp_init(btc_spp_args_t *arg)
             ret = ESP_SPP_NO_RESOURCE;
             break;
         }
+        if (arg->init.mode == ESP_SPP_MODE_VFS) {
+            spp_local_param.spp_vfs_id = -1;
+        }
         spp_local_param.spp_mode = arg->init.mode;
         spp_local_param.spp_slot_id = 0;
         spp_local_param.tx_buffer_size = arg->init.tx_buffer_size;
@@ -988,6 +994,12 @@ void btc_spp_call_handler(btc_msg_t *msg)
     case BTC_SPP_ACT_WRITE:
         btc_spp_write(arg);
         break;
+    case BTC_SPP_ACT_VFS_REGISTER:
+        btc_spp_vfs_register();
+        break;
+    case BTC_SPP_ACT_VFS_UNREGISTER:
+        btc_spp_vfs_unregister();
+        break;
     default:
         BTC_TRACE_ERROR("%s: Unhandled event (%d)!\n", __FUNCTION__, msg->act);
         break;
@@ -1305,6 +1317,12 @@ void btc_spp_cb_handler(btc_msg_t *msg)
             vEventGroupDelete(spp_local_param.tx_event_group);
             spp_local_param.tx_event_group = NULL;
         }
+        if (spp_local_param.spp_mode == ESP_SPP_MODE_VFS) {
+            if (spp_local_param.spp_vfs_id != -1) {
+                esp_vfs_unregister_with_id(spp_local_param.spp_vfs_id);
+                spp_local_param.spp_vfs_id = -1;
+            }
+        }
 #if SPP_DYNAMIC_MEMORY == TRUE
         osi_free(spp_local_param_ptr);
         spp_local_param_ptr = NULL;
@@ -1598,30 +1616,65 @@ static ssize_t spp_vfs_read(int fd, void * dst, size_t size)
     return item_size;
 }
 
-esp_err_t btc_spp_vfs_register(void)
+static void btc_spp_vfs_register(void)
 {
-    if (!is_spp_init()) {
-        BTC_TRACE_ERROR("%s SPP have not been init\n", __func__);
-        return ESP_FAIL;
-    }
+    esp_spp_status_t ret = ESP_SPP_SUCCESS;
+    esp_spp_cb_param_t param;
 
-    esp_vfs_t vfs = {
-        .flags = ESP_VFS_FLAG_DEFAULT,
-        .write = spp_vfs_write,
-        .open = NULL,
-        .fstat = NULL,
-        .close = spp_vfs_close,
-        .read = spp_vfs_read,
-        .fcntl = NULL
-    };
+    do {
+        if (!is_spp_init()) {
+            BTC_TRACE_ERROR("%s SPP have not been init\n", __func__);
+            ret = ESP_SPP_NEED_INIT;
+            break;
+        }
 
-    // No FD range is registered here: spp_vfs_id is used to register/unregister
-    // file descriptors
-    if (esp_vfs_register_with_id(&vfs, NULL, &spp_local_param.spp_vfs_id) != ESP_OK) {
-        return ESP_FAIL;
-    }
+        esp_vfs_t vfs = {
+            .flags = ESP_VFS_FLAG_DEFAULT,
+            .write = spp_vfs_write,
+            .open = NULL,
+            .fstat = NULL,
+            .close = spp_vfs_close,
+            .read = spp_vfs_read,
+            .fcntl = NULL
+        };
 
-    return ESP_OK;
+        // No FD range is registered here: spp_vfs_id is used to register/unregister
+        // file descriptors
+        if (esp_vfs_register_with_id(&vfs, NULL, &spp_local_param.spp_vfs_id) != ESP_OK) {
+            ret = ESP_SPP_FAILURE;
+            break;
+        }
+    } while (0);
+
+    param.vfs_register.status = ret;
+    btc_spp_cb_to_app(ESP_SPP_VFS_REGISTER_EVT, &param);
+}
+
+static void btc_spp_vfs_unregister(void)
+{
+    esp_spp_status_t ret = ESP_SPP_SUCCESS;
+    esp_spp_cb_param_t param;
+
+    do {
+        if (!is_spp_init()) {
+            BTC_TRACE_ERROR("%s SPP have not been init\n", __func__);
+            ret = ESP_SPP_NEED_INIT;
+            break;
+        }
+
+        if (spp_local_param.spp_mode == ESP_SPP_MODE_VFS) {
+            if (spp_local_param.spp_vfs_id != -1) {
+                if (esp_vfs_unregister_with_id(spp_local_param.spp_vfs_id) != ESP_OK) {
+                    ret = ESP_SPP_FAILURE;
+                    break;
+                }
+                spp_local_param.spp_vfs_id = -1;
+            }
+        }
+    } while (0);
+
+    param.vfs_unregister.status = ret;
+    btc_spp_cb_to_app(ESP_SPP_VFS_UNREGISTER_EVT, &param);
 }
 
 #endif ///defined BTC_SPP_INCLUDED && BTC_SPP_INCLUDED == TRUE
