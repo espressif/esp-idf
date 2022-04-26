@@ -5,7 +5,6 @@ set(srcs "port/os_xtensa.c"
     "src/ap/wpa_auth_ie.c"
     "src/common/sae.c"
     "src/common/wpa_common.c"
-    "src/common/dpp.c"
     "src/utils/bitfield.c"
     "src/crypto/aes-siv.c"
     "src/crypto/sha256-kdf.c"
@@ -59,8 +58,7 @@ set(esp_srcs "esp_supplicant/src/esp_wpa2.c"
     "esp_supplicant/src/esp_wpa_main.c"
     "esp_supplicant/src/esp_wpas_glue.c"
     "esp_supplicant/src/esp_wps.c"
-    "esp_supplicant/src/esp_wpa3.c"
-    "esp_supplicant/src/esp_dpp.c")
+    "esp_supplicant/src/esp_wpa3.c")
 if(CONFIG_ESP_WIFI_SOFTAP_SUPPORT)
     set(esp_srcs ${esp_srcs} "esp_supplicant/src/esp_hostap.c")
 endif()
@@ -162,13 +160,22 @@ if(CONFIG_WPA_11KV_SUPPORT)
 else()
     set(roaming_src "")
 endif()
+
 if(CONFIG_WPA_MBO_SUPPORT)
     set(mbo_src "src/common/mbo.c")
 else()
     set(mbo_src "")
 endif()
 
-idf_component_register(SRCS "${srcs}" ${esp_srcs} "${tls_src}" "${roaming_src}" "${crypto_src}" "${mbo_src}"
+if(CONFIG_WPA_DPP_SUPPORT)
+    set(dpp_src "src/common/dpp.c"
+    "esp_supplicant/src/esp_dpp.c")
+else()
+    set(dpp_src "")
+endif()
+
+idf_component_register(SRCS "${srcs}" ${esp_srcs} "${tls_src}" "${roaming_src}"
+                            "${crypto_src}" "${mbo_src}" "${dpp_src}"
                     INCLUDE_DIRS include port/include esp_supplicant/include
                     PRIV_INCLUDE_DIRS src src/utils esp_supplicant/src
                     PRIV_REQUIRES mbedtls esp_timer)
@@ -193,7 +200,6 @@ target_compile_definitions(${COMPONENT_LIB} PRIVATE
     CONFIG_ECC
     CONFIG_IEEE80211W
     CONFIG_SHA256
-    CONFIG_DPP
     CONFIG_WNM
     )
 
@@ -218,5 +224,8 @@ endif()
 
 if(CONFIG_WPA_MBO_SUPPORT)
     target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_MBO)
+endif()
+if(CONFIG_WPA_DPP_SUPPORT)
+    target_compile_definitions(${COMPONENT_LIB} PRIVATE CONFIG_DPP)
 endif()
 set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 3)

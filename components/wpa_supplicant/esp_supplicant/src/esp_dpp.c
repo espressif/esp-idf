@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,8 @@
 #include "esp_wifi.h"
 #include "common/ieee802_11_defs.h"
 
-static void *s_dpp_task_hdl = NULL;
+#ifdef CONFIG_DPP
+static TaskHandle_t s_dpp_task_hdl = NULL;
 static void *s_dpp_evt_queue = NULL;
 static void *s_dpp_api_lock = NULL;
 
@@ -34,22 +35,36 @@ struct action_rx_param {
 
 static int esp_dpp_post_evt(uint32_t evt_id, uint32_t data)
 {
-    DPP_API_LOCK();
-
     dpp_event_t *evt = os_zalloc(sizeof(dpp_event_t));
+    int ret = ESP_OK;
+
     if (evt == NULL) {
-        DPP_API_UNLOCK();
-        return ESP_ERR_NO_MEM;
+        ret = ESP_ERR_NO_MEM;
+        goto end;
     }
     evt->id = evt_id;
     evt->data = data;
-    if ( xQueueSend(s_dpp_evt_queue, &evt, 10 / portTICK_PERIOD_MS ) != pdPASS) {
-        DPP_API_UNLOCK();
-        os_free(evt);
-        return ESP_ERR_DPP_FAILURE;
+    if (s_dpp_api_lock) {
+        DPP_API_LOCK();
+    } else {
+        ret = ESP_ERR_DPP_FAILURE;
+        goto end;
     }
-    DPP_API_UNLOCK();
-    return ESP_OK;
+    if (xQueueSend(s_dpp_evt_queue, &evt, 10 / portTICK_PERIOD_MS ) != pdPASS) {
+        DPP_API_UNLOCK();
+        ret = ESP_ERR_DPP_FAILURE;
+        goto end;
+    }
+    if (evt_id != SIG_DPP_DEL_TASK) {
+        DPP_API_UNLOCK();
+    }
+
+    return ret;
+end:
+    if (evt) {
+        os_free(evt);
+    }
+    return ret;
 }
 
 static void esp_dpp_call_cb(esp_supp_dpp_event_t evt, void *data)
@@ -616,7 +631,7 @@ esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t cb)
 
     s_dpp_stop_listening = false;
     s_dpp_evt_queue = xQueueCreate(3, sizeof(dpp_event_t));
-    ret = xTaskCreate(esp_dpp_task, "dppT", DPP_TASK_STACK_SIZE, NULL, 2, s_dpp_task_hdl);
+    ret = xTaskCreate(esp_dpp_task, "dppT", DPP_TASK_STACK_SIZE, NULL, 2, &s_dpp_task_hdl);
     if (ret != pdPASS) {
         wpa_printf(MSG_ERROR, "DPP: failed to create task");
         return ESP_FAIL;
@@ -652,7 +667,12 @@ void esp_supp_dpp_deinit(void)
         params->key = NULL;
     }
 
+    esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_ACTION_TX_STATUS,
+                               &offchan_event_handler);
+    esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_ROC_DONE,
+                               &offchan_event_handler);
     s_dpp_auth_retries = 0;
     dpp_global_deinit(s_dpp_ctx.dpp_global);
     esp_dpp_post_evt(SIG_DPP_DEL_TASK, 0);
 }
+#endif
