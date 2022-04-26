@@ -61,6 +61,11 @@ extern "C" {
 #   define CONFIG_TINYUSB_CUSTOM_CLASS_ENABLED 0
 #endif
 
+#ifndef CONFIG_TINYUSB_CONFIG_POWER_MA
+#   define CONFIG_TINYUSB_CONFIG_POWER_MA 100
+#endif
+
+#define CFG_TUSB_DESC_MAXPOWER      CONFIG_TINYUSB_CONFIG_POWER_MA
 #define CFG_TUSB_RHPORT0_MODE       OPT_MODE_DEVICE | OPT_MODE_FULL_SPEED
 #define CFG_TUSB_OS                 OPT_OS_FREERTOS
 
@@ -91,7 +96,7 @@ extern "C" {
 #define CFG_TUD_MSC_BUFSIZE         CONFIG_TINYUSB_MSC_BUFSIZE
 
 // HID buffer size Should be sufficient to hold ID (if any) + Data
-#define CFG_TUD_HID_BUFSIZE         CONFIG_TINYUSB_HID_BUFSIZE
+#define CFG_TUD_HID_BUFSIZE         64 //CONFIG_TINYUSB_HID_BUFSIZE
 
 // Vendor FIFO size of TX and RX
 // If not configured vendor endpoints will not be buffered
