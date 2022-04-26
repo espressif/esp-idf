@@ -1665,7 +1665,6 @@ components/vfs/test/test_vfs_uart.c
 components/wifi_provisioning/include/wifi_provisioning/scheme_ble.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_console.h
 components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h
-components/wifi_provisioning/include/wifi_provisioning/wifi_config.h
 components/wifi_provisioning/include/wifi_provisioning/wifi_scan.h
 components/wifi_provisioning/proto-c/wifi_config.pb-c.c
 components/wifi_provisioning/proto-c/wifi_config.pb-c.h
