@@ -1,13 +1,6 @@
 HFP CLIENT API
 ==============
 
-Overview
---------
-
-`Instructions`_
-
-.. _Instructions: ../template.html
-
 API Reference
 -------------
 
