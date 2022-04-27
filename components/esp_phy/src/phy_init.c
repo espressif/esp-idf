@@ -349,8 +349,6 @@ IRAM_ATTR void esp_mac_bb_power_down(void)
 
 const esp_phy_init_data_t* esp_phy_get_init_data(void)
 {
-    esp_err_t err = ESP_OK;
-    const esp_partition_t* partition = NULL;
 #if CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN_EMBED
     size_t init_data_store_length = sizeof(phy_init_magic_pre) +
             sizeof(esp_phy_init_data_t) + sizeof(phy_init_magic_post);
@@ -362,7 +360,7 @@ const esp_phy_init_data_t* esp_phy_get_init_data(void)
     memcpy(init_data_store, multi_phy_init_data_bin_start, init_data_store_length);
     ESP_LOGI(TAG, "loading embedded multiple PHY init data");
 #else
-    partition = esp_partition_find_first(
+    const esp_partition_t* partition = esp_partition_find_first(
             ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_PHY, NULL);
     if (partition == NULL) {
         ESP_LOGE(TAG, "PHY data partition not found");
@@ -377,7 +375,7 @@ const esp_phy_init_data_t* esp_phy_get_init_data(void)
         return NULL;
     }
     // read phy data from flash
-    err = esp_partition_read(partition, 0, init_data_store, init_data_store_length);
+    esp_err_t err = esp_partition_read(partition, 0, init_data_store, init_data_store_length);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "failed to read PHY data partition (0x%x)", err);
         free(init_data_store);
@@ -388,6 +386,11 @@ const esp_phy_init_data_t* esp_phy_get_init_data(void)
     if (memcmp(init_data_store, PHY_INIT_MAGIC, sizeof(phy_init_magic_pre)) != 0 ||
         memcmp(init_data_store + init_data_store_length - sizeof(phy_init_magic_post),
                 PHY_INIT_MAGIC, sizeof(phy_init_magic_post)) != 0) {
+#if CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN_EMBED
+        ESP_LOGE(TAG, "failed to validate embedded PHY init data");
+        free(init_data_store);
+        return NULL;
+#else
 #ifndef CONFIG_ESP_PHY_DEFAULT_INIT_IF_INVALID
         ESP_LOGE(TAG, "failed to validate PHY data partition");
         free(init_data_store);
@@ -414,6 +417,7 @@ const esp_phy_init_data_t* esp_phy_get_init_data(void)
             return NULL;
         }
 #endif // CONFIG_ESP_PHY_DEFAULT_INIT_IF_INVALID
+#endif // CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN_EMBED
     }
 #if CONFIG_ESP_PHY_MULTIPLE_INIT_DATA_BIN
     if ((*(init_data_store + (sizeof(phy_init_magic_pre) + PHY_SUPPORT_MULTIPLE_BIN_OFFSET)))) {
@@ -603,7 +607,6 @@ static esp_err_t store_cal_data_to_nvs_handle(nvs_handle_t handle,
 }
 
 #if CONFIG_ESP_PHY_REDUCE_TX_POWER
-// TODO: fix the esp_phy_reduce_tx_power unused warning for esp32s2 - IDF-759
 static void __attribute((unused)) esp_phy_reduce_tx_power(esp_phy_init_data_t* init_data)
 {
     uint8_t i;
