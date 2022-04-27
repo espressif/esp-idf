@@ -30,7 +30,7 @@ static uint32_t get_flash_clock_divider(const spi_flash_hal_config_t *cfg)
     // round down flash frequency to keep it safe.
     int best_div = 0;
     if (clk_source < cfg->freq_mhz) {
-        ESP_LOGE(TAG, "Target frequency %dMHz higher than supported.", cfg->freq_mhz);
+        HAL_LOGE(TAG, "Target frequency %dMHz higher than supported.", cfg->freq_mhz);
         abort();
     }
 #if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32C3

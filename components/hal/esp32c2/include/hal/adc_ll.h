@@ -17,9 +17,15 @@
 #include "hal/misc.h"
 #include "hal/adc_types.h"
 #include "hal/adc_types_private.h"
+#include "esp_rom_regi2c.h"
 
-#include "esp_private/regi2c_ctrl.h"
-#include "regi2c_saradc.h"
+#if __has_include("esp_private/regi2c_ctrl.h")
+    #include "esp_private/regi2c_ctrl.h"
+#else
+    #define REGI2C_WRITE_MASK(block, reg_add, indata) esp_rom_regi2c_write_mask(block, block##_HOSTID,  reg_add,  reg_add##_MSB,  reg_add##_LSB,  indata)
+#endif
+
+#include "soc/regi2c_saradc.h"
 
 #ifdef __cplusplus
 extern "C" {
