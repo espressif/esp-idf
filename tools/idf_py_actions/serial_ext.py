@@ -26,10 +26,8 @@ def action_extensions(base_actions, project_path):
     def _get_default_serial_port(args):
         # Import is done here in order to move it after the check_environment() ensured that pyserial has been installed
         try:
-            import serial.tools.list_ports
-            esptool_path = os.path.join(os.environ['IDF_PATH'], 'components/esptool_py/esptool/')
-            sys.path.insert(0, esptool_path)
             import esptool
+            import serial.tools.list_ports
             ports = list(sorted(p.device for p in serial.tools.list_ports.comports()))
             # high baud rate could cause the failure of creation of the connection
             esp = esptool.get_default_connected_device(serial_list=ports, port=None, connect_attempts=4,
