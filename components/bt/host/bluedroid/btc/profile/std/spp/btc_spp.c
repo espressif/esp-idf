@@ -519,6 +519,7 @@ static void btc_spp_init(btc_spp_args_t *arg)
         }
         if ((spp_local_param.tx_event_group = xEventGroupCreate()) == NULL) {
             BTC_TRACE_ERROR("%s create tx_event_group failed\n", __func__);
+            osi_mutex_free(&spp_local_param.spp_slot_mutex);
             ret = ESP_SPP_NO_RESOURCE;
             break;
         }
