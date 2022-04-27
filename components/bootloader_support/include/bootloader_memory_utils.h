@@ -18,6 +18,8 @@
 extern "C" {
 #endif
 
+/** The content of this file is to be kept in sync with the common section of esp_memory_utils.h **/
+
 /**
  * @brief Check if the pointer is in iram
  *
@@ -146,6 +148,9 @@ inline static void * esp_ptr_diram_iram_to_dram(const void *p) {
     return (void *) ( SOC_DIRAM_DRAM_LOW + ((intptr_t)p - SOC_DIRAM_IRAM_LOW) );
 #endif
 }
+
+/** End of the common section that has to be in sync with esp_memory_utils.h **/
+/** Don't add new functions below **/
 
 #ifdef __cplusplus
 }
