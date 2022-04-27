@@ -519,6 +519,7 @@ static void btc_spp_init(btc_spp_args_t *arg)
         }
         if ((spp_local_param.tx_event_group = xEventGroupCreate()) == NULL) {
             BTC_TRACE_ERROR("%s create tx_event_group failed\n", __func__);
+            osi_mutex_free(&spp_local_param.spp_slot_mutex);
             ret = ESP_SPP_NO_RESOURCE;
             break;
         }
@@ -581,11 +582,6 @@ static void btc_spp_uninit(void)
         BTA_JvDisable((tBTA_JV_RFCOMM_CBACK *)btc_spp_rfcomm_inter_cb);
         osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
     } while(0);
-
-    if (spp_local_param.tx_event_group) {
-        vEventGroupDelete(spp_local_param.tx_event_group);
-        spp_local_param.tx_event_group = NULL;
-    }
 
     if (ret != ESP_SPP_SUCCESS) {
         esp_spp_cb_param_t param;
@@ -1051,7 +1047,7 @@ void btc_spp_cb_handler(btc_msg_t *msg)
         }
         break;
     case BTA_JV_RFCOMM_WRITE_EVT:
-        osi_mutex_lock(&spp_local_param.spp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT); 
+        osi_mutex_lock(&spp_local_param.spp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
         slot = spp_find_slot_by_handle(p_data->rfc_write.handle);
         if (!slot) {
             BTC_TRACE_ERROR("%s unable to find RFCOMM slot!, handle:%d", __func__, p_data->rfc_write.handle);
@@ -1256,6 +1252,10 @@ void btc_spp_cb_handler(btc_msg_t *msg)
         param.uninit.status = ESP_SPP_SUCCESS;
         BTA_JvFree();
         osi_mutex_free(&spp_local_param.spp_slot_mutex);
+        if (spp_local_param.tx_event_group) {
+            vEventGroupDelete(spp_local_param.tx_event_group);
+            spp_local_param.tx_event_group = NULL;
+        }
 #if SPP_DYNAMIC_MEMORY == TRUE
         osi_free(spp_local_param_ptr);
         spp_local_param_ptr = NULL;
