@@ -599,7 +599,7 @@ void IRAM_ATTR call_start_cpu0(void)
     __attribute__((unused)) esp_image_header_t fhdr = {0};
 #ifdef CONFIG_APP_BUILD_TYPE_ELF_RAM
     fhdr.spi_mode = ESP_IMAGE_SPI_MODE_DIO;
-    fhdr.spi_speed = ESP_IMAGE_SPI_SPEED_40M;
+    fhdr.spi_speed = ESP_IMAGE_SPI_SPEED_DIV_2;
     fhdr.spi_size = ESP_IMAGE_FLASH_SIZE_4MB;
 
     extern void esp_rom_spiflash_attach(uint32_t, bool);
