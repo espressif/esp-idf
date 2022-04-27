@@ -94,7 +94,7 @@ repos:
         name: Check type annotations in python files
         entry: tools/ci/check_type_comments.py
         additional_dependencies:
-          - 'mypy==0.800'
+          - 'mypy==0.940'
           - 'mypy-extensions==0.4.3'
         language: python
         types: [python]
