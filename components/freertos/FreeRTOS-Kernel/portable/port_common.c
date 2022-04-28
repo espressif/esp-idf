@@ -18,7 +18,6 @@
 #include "esp_log.h"
 #include "esp_memory_utils.h"
 #include "esp_freertos_hooks.h"
-#include "soc/dport_access.h"
 #include "sdkconfig.h"
 
 #if CONFIG_IDF_TARGET_ESP32

@@ -41,7 +41,7 @@
 #include "esp_smartconfig.h"
 #include "esp_coexist_internal.h"
 #include "esp_coexist_adapter.h"
-#include "esp32/dport_access.h"
+#include "dport_access.h"
 #include "esp_rom_sys.h"
 #include "esp32/rom/ets_sys.h"
 

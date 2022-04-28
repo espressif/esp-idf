@@ -26,7 +26,6 @@
 #include "soc/periph_defs.h"
 #include "hal/cpu_hal.h"
 
-#include "esp32s2/dport_access.h"
 #include "esp_rom_sys.h"
 
 #include "sdkconfig.h"

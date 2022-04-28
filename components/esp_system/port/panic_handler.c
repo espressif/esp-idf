@@ -23,10 +23,6 @@
 #include "sdkconfig.h"
 #include "esp_rom_sys.h"
 
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/dport_access.h"
-#endif
-
 #if CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
 #ifdef CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/memprot.h"

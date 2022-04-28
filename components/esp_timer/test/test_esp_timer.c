@@ -667,9 +667,9 @@ TEST_CASE("Can start/stop timer from ISR context", "[esp_timer]")
     vSemaphoreDelete(sem);
 }
 
-#if !defined(CONFIG_FREERTOS_UNICORE) && defined(CONFIG_ESP32_DPORT_WORKAROUND)
+#if !defined(CONFIG_FREERTOS_UNICORE) && SOC_DPORT_WORKAROUND
 
-#include "soc/dport_reg.h"
+#include "dport_access.h"
 static bool task_stop;
 static bool time_jumped;
 
@@ -795,7 +795,7 @@ TEST_CASE("esp_timer_impl_set_alarm and using start_once do not lead that the Sy
     TEST_ASSERT(time_jumped == false);
 }
 
-#endif // !defined(CONFIG_FREERTOS_UNICORE) && defined(CONFIG_ESP32_DPORT_WORKAROUND)
+#endif // !defined(CONFIG_FREERTOS_UNICORE) && SOC_DPORT_WORKAROUND
 
 TEST_CASE("Test case when esp_timer_impl_set_alarm needs set timer < now_time", "[esp_timer]")
 {

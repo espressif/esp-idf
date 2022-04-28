@@ -58,6 +58,7 @@
 // defined correctly
 #define SOC_BROWNOUT_RESET_SUPPORTED    "Not determined"
 #define SOC_TWAI_BRP_DIV_SUPPORTED      "Not determined"
+#define SOC_DPORT_WORKAROUND            "Not determined"
 #endif
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
@@ -89,6 +90,11 @@
 #define SOC_SHA_SUPPORTED           1
 #define SOC_FLASH_ENC_SUPPORTED     1
 #define SOC_SECURE_BOOT_SUPPORTED   1
+
+#if SOC_CAPS_ECO_VER < 2
+#define SOC_DPORT_WORKAROUND                   1
+#define SOC_DPORT_WORKAROUND_DIS_INTERRUPT_LVL (5U)
+#endif // SOC_CAPS_ECO_VER < 2
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
 /**

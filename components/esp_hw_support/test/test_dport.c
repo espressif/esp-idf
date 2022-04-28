@@ -23,6 +23,7 @@
 #include "hal/uart_types.h"
 #include "hal/uart_ll.h"
 #include "soc/dport_reg.h"
+#include "dport_access.h"
 #include "soc/rtc.h"
 #include "hal/cpu_hal.h"
 #include "esp_intr_alloc.h"
@@ -444,7 +445,7 @@ which is critical for the DPORT pre-read workaround. To fix it we added addition
 */
 static uint32_t IRAM_ATTR test_dport_access_reg_read(uint32_t reg)
 {
-#if defined(BOOTLOADER_BUILD) || !defined(CONFIG_ESP32_DPORT_WORKAROUND) || !defined(ESP_PLATFORM)
+#if defined(BOOTLOADER_BUILD) || defined(CONFIG_FREERTOS_UNICORE) || !SOC_DPORT_WORKAROUND
     return _DPORT_REG_READ(reg);
 #else
     uint32_t apb;
@@ -454,7 +455,7 @@ static uint32_t IRAM_ATTR test_dport_access_reg_read(uint32_t reg)
                   /* "movi %[APB], "XTSTR(0x3ff40078)"\n" */ /* (1) uncomment for reproduce issue */ \
                   "bnez %[APB], kl1\n" /* this branch command helps get good reproducing */ \
                   "kl1:\n"\
-                  "rsil %[LVL], "XTSTR(CONFIG_ESP32_DPORT_DIS_INTERRUPT_LVL)"\n"\
+                  "rsil %[LVL], "XTSTR(SOC_DPORT_WORKAROUND_DIS_INTERRUPT_LVL)"\n"\
                   "movi %[APB], "XTSTR(0x3ff40078)"\n" /* (2) comment for reproduce issue */ \
                   "l32i %[APB], %[APB], 0\n"\
                   "l32i %[REG], %[REG], 0\n"\

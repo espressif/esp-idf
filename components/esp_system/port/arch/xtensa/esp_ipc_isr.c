@@ -11,10 +11,8 @@
 #include "esp_err.h"
 #include "esp_attr.h"
 #include "soc/soc.h"
-#include "soc/dport_access.h"
-#ifdef CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
-#else
+#ifndef CONFIG_IDF_TARGET_ESP32
 #include "soc/periph_defs.h"
 #include "soc/system_reg.h"
 #endif
@@ -156,12 +154,6 @@ void IRAM_ATTR esp_ipc_isr_stall_resume(void)
     s_stall_state = STALL_STATE_RUNNING;
     IPC_ISR_EXIT_CRITICAL();
 }
-
-void esp_dport_access_stall_other_cpu_start(void) __attribute__((alias("esp_ipc_isr_stall_other_cpu")));
-void esp_dport_access_stall_other_cpu_end(void) __attribute__((alias("esp_ipc_isr_release_other_cpu")));
-void esp_dport_access_int_pause(void) __attribute__((alias("esp_ipc_isr_stall_pause")));
-void esp_dport_access_int_abort(void) __attribute__((alias("esp_ipc_isr_stall_abort")));
-void esp_dport_access_int_resume(void) __attribute__((alias("esp_ipc_isr_stall_resume")));
 
 /* End public API functions */
 
