@@ -66,13 +66,13 @@ a15            0x0                 0
 ======================== THREADS INFO =========================
   Id   Target Id          Frame 
 * 1    process 1073451064 0x400d4c01 in recur_func () at ../main/test_core_dump.c:70
-  2    process 1073443948 0x400e7b66 in esp_pm_impl_waiti () at ../../../hal/esp32/include/hal/cpu_ll.h:183
-  3    process 1073445836 0x400e7b66 in esp_pm_impl_waiti () at ../../../hal/esp32/include/hal/cpu_ll.h:183
-  4    process 1073453464 0x4008429c in esp_crosscore_int_send_yield (core_id=0) at /builds/espressif/esp-idf/components/esp_system/crosscore_int.c:144
-  5    process 1073448664 0x4008429c in esp_crosscore_int_send_yield (core_id=0) at /builds/espressif/esp-idf/components/esp_system/crosscore_int.c:144
-  6    process 1073413412 0x4008429c in esp_crosscore_int_send_yield (core_id=0) at /builds/espressif/esp-idf/components/esp_system/crosscore_int.c:144
+  2    process 1073443948 0x400e7b66 in esp_pm_impl_waiti () at /builds/espressif/esp-idf/components/esp_pm/pm_impl.c:840
+  3    process 1073445836 0x400e7b66 in esp_pm_impl_waiti () at /builds/espressif/esp-idf/components/esp_pm/pm_impl.c:840
+  4    process 1073453464 0x4008429c in esp_crosscore_int_send_yield (core_id=0) at /builds/espressif/esp-idf/components/esp_system/crosscore_int.c:145
+  5    process 1073448664 0x4008429c in esp_crosscore_int_send_yield (core_id=0) at /builds/espressif/esp-idf/components/esp_system/crosscore_int.c:145
+  6    process 1073413412 0x4008429c in esp_crosscore_int_send_yield (core_id=0) at /builds/espressif/esp-idf/components/esp_system/crosscore_int.c:145
   7    process 1073437612 0x4000bff0 in ?? ()
-  8    process 1073433164 0x4008429c in esp_crosscore_int_send_yield (core_id=1) at /builds/espressif/esp-idf/components/esp_system/crosscore_int.c:144
+  8    process 1073433164 0x4008429c in esp_crosscore_int_send_yield (core_id=1) at /builds/espressif/esp-idf/components/esp_system/crosscore_int.c:145
 
 ==================== THREAD 1 (TCB: 0x3ffb9038, name: 'unaligned_ptr_t') =====================
 #0  0x400d4c01 in recur_func () at ../main/test_core_dump.c:70
@@ -82,31 +82,31 @@ a15            0x0                 0
 #4  0x40087cfc in vPortTaskWrapper (pxCode=0x400d4c0c <unaligned_ptr_task>, pvParameters=0x0) at /builds/espressif/esp-idf/components/freertos/port/xtensa/port.c:159
 
 ==================== THREAD 2 (TCB: 0x3ffb746c, name: 'IDLE') =====================
-#0  0x400e7b66 in esp_pm_impl_waiti () at ../../../hal/esp32/include/hal/cpu_ll.h:183
+#0  0x400e7b66 in esp_pm_impl_waiti () at /builds/espressif/esp-idf/components/esp_pm/pm_impl.c:840
 #1  0x400d1a42 in esp_vApplicationIdleHook () at /builds/espressif/esp-idf/components/esp_system/freertos_hooks.c:63
 #2  0x40086351 in prvIdleTask (pvParameters=0x0) at /builds/espressif/esp-idf/components/freertos/tasks.c:3959
 #3  0x40087cfc in vPortTaskWrapper (pxCode=0x40086348 <prvIdleTask>, pvParameters=0x0) at /builds/espressif/esp-idf/components/freertos/port/xtensa/port.c:159
 
 ==================== THREAD 3 (TCB: 0x3ffb7bcc, name: 'IDLE') =====================
-#0  0x400e7b66 in esp_pm_impl_waiti () at ../../../hal/esp32/include/hal/cpu_ll.h:183
+#0  0x400e7b66 in esp_pm_impl_waiti () at /builds/espressif/esp-idf/components/esp_pm/pm_impl.c:840
 #1  0x400d1a42 in esp_vApplicationIdleHook () at /builds/espressif/esp-idf/components/esp_system/freertos_hooks.c:63
 #2  0x40086351 in prvIdleTask (pvParameters=0x0) at /builds/espressif/esp-idf/components/freertos/tasks.c:3959
 #3  0x40087cfc in vPortTaskWrapper (pxCode=0x40086348 <prvIdleTask>, pvParameters=0x0) at /builds/espressif/esp-idf/components/freertos/port/xtensa/port.c:159
 
 ==================== THREAD 4 (TCB: 0x3ffb9998, name: 'failed_assert_t') =====================
-#0  0x4008429c in esp_crosscore_int_send_yield (core_id=0) at /builds/espressif/esp-idf/components/esp_system/crosscore_int.c:144
+#0  0x4008429c in esp_crosscore_int_send_yield (core_id=0) at /builds/espressif/esp-idf/components/esp_system/crosscore_int.c:145
 #1  0x400865aa in vTaskDelay (xTicksToDelay=100) at ../../../hal/esp32/include/hal/cpu_ll.h:39
 #2  0x400d4adf in failed_assert_task (pvParameter=0x0) at ../main/test_core_dump.c:89
 #3  0x40087cfc in vPortTaskWrapper (pxCode=0x400d4ad0 <failed_assert_task>, pvParameters=0x0) at /builds/espressif/esp-idf/components/freertos/port/xtensa/port.c:159
 
 ==================== THREAD 5 (TCB: 0x3ffb86d8, name: 'bad_ptr_task') =====================
-#0  0x4008429c in esp_crosscore_int_send_yield (core_id=0) at /builds/espressif/esp-idf/components/esp_system/crosscore_int.c:144
+#0  0x4008429c in esp_crosscore_int_send_yield (core_id=0) at /builds/espressif/esp-idf/components/esp_system/crosscore_int.c:145
 #1  0x400865aa in vTaskDelay (xTicksToDelay=100) at ../../../hal/esp32/include/hal/cpu_ll.h:39
 #2  0x400d4b9f in bad_ptr_task (pvParameter=0x0) at ../main/test_core_dump.c:43
 #3  0x40087cfc in vPortTaskWrapper (pxCode=0x400d4b90 <bad_ptr_task>, pvParameters=0x0) at /builds/espressif/esp-idf/components/freertos/port/xtensa/port.c:159
 
 ==================== THREAD 6 (TCB: 0x3ffafd24, name: 'ipc0') =====================
-#0  0x4008429c in esp_crosscore_int_send_yield (core_id=0) at /builds/espressif/esp-idf/components/esp_system/crosscore_int.c:144
+#0  0x4008429c in esp_crosscore_int_send_yield (core_id=0) at /builds/espressif/esp-idf/components/esp_system/crosscore_int.c:145
 #1  0x40085e55 in xQueueSemaphoreTake (xQueue=0x3ffafccc, xTicksToWait=<optimized out>) at ../../../hal/esp32/include/hal/cpu_ll.h:39
 #2  0x400826f3 in ipc_task (arg=0x0) at /builds/espressif/esp-idf/components/esp_ipc/src/esp_ipc.c:59
 #3  0x40087cfc in vPortTaskWrapper (pxCode=0x400826c8 <ipc_task>, pvParameters=0x0) at /builds/espressif/esp-idf/components/freertos/port/xtensa/port.c:159
@@ -119,7 +119,7 @@ a15            0x0                 0
 #4  0x40087cfc in vPortTaskWrapper (pxCode=0x400d4570 <timer_task>, pvParameters=0x0) at /builds/espressif/esp-idf/components/freertos/port/xtensa/port.c:159
 
 ==================== THREAD 8 (TCB: 0x3ffb4a4c, name: 'ipc1') =====================
-#0  0x4008429c in esp_crosscore_int_send_yield (core_id=1) at /builds/espressif/esp-idf/components/esp_system/crosscore_int.c:144
+#0  0x4008429c in esp_crosscore_int_send_yield (core_id=1) at /builds/espressif/esp-idf/components/esp_system/crosscore_int.c:145
 #1  0x40085e55 in xQueueSemaphoreTake (xQueue=0x3ffaff30, xTicksToWait=<optimized out>) at ../../../hal/esp32/include/hal/cpu_ll.h:39
 #2  0x400826f3 in ipc_task (arg=0x1) at /builds/espressif/esp-idf/components/esp_ipc/src/esp_ipc.c:59
 #3  0x40087cfc in vPortTaskWrapper (pxCode=0x400826c8 <ipc_task>, pvParameters=0x1) at /builds/espressif/esp-idf/components/freertos/port/xtensa/port.c:159
