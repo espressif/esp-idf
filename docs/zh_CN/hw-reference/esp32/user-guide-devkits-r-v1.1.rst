@@ -9,9 +9,9 @@ ESP32-DevKitS(-R)
 ESP32-DevKitS(-R) 包括两款开发板，分别是 ESP32-DevKitS 和 ESP32-DevKitS-R。S 代表弹簧 (spring)，R 代表 WROVER 模组。
 
 +-----------------+-------------------+
-| |ESP32-DevKitS| | |ESP32-DevKitS-R| | 
+| |ESP32-DevKitS| | |ESP32-DevKitS-R| |
 +-----------------+-------------------+
-|  ESP32-DevKitS  |  ESP32-DevKitS-R  | 
+|  ESP32-DevKitS  |  ESP32-DevKitS-R  |
 +-----------------+-------------------+
 
 .. |ESP32-DevKitS| image:: ../../../_static/esp32-devkits-v1.1-layout-isometric-raw.png
@@ -146,14 +146,14 @@ Windows 用户也可以使用 `Flash 下载工具 <https://www.espressif.com/zh-
     :align: center
     :alt: ESP32-DevKitS - 背面
     :figclass: align-center
-    
+
     ESP32-DevKitS 尺寸 - 背面
 
 .. figure:: ../../../_static/esp32-devkits-r-v1.1-dimensions-back.png
     :align: center
     :alt: ESP32-DevKitS-R - 背面
     :figclass: align-center
-    
+
     ESP32-DevKitS-R 尺寸 - 背面
 
 
@@ -263,6 +263,6 @@ R19      CLK               SD_CLK
 - `ESP32-WROOM-32 技术规格书 <https://espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_cn.pdf>`_ (PDF)
 - `ESP32-WROOM-32D & ESP32-WROOM-32U 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_cn.pdf>`_ (PDF)
 - `ESP32-SOLO-1 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-solo-1_datasheet_cn.pdf>`_ (PDF)
-- `ESP32-WROVER 技术规格书 <https://espressif.com/sites/default/files/documentation/esp32-wrover_datasheet_cn.pdf>`_ (PDF)
+- `ESP32-WROVER 技术规格书 <https://espressif.com/sites/default/files/documentation/esp32_wrover_datasheet_cn.pdf>`_ (PDF)
 - `ESP32-WROVER-B 技术规格书 <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-b_datasheet_cn.pdf>`_ (PDF)
 - `乐鑫产品选型工具 <https://products.espressif.com/#/product-selector?names=>`__
