@@ -152,6 +152,7 @@ void rtc_init(rtc_config_t cfg)
 
     REG_WRITE(RTC_CNTL_INT_ENA_REG, 0);
     REG_WRITE(RTC_CNTL_INT_CLR_REG, UINT32_MAX);
+    REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_FORCE_XPD_CK, 1);
 }
 
 rtc_vddsdio_config_t rtc_vddsdio_get_config(void)
