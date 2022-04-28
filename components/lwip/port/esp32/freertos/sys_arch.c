@@ -37,10 +37,15 @@
 #include "lwip/def.h"
 #include "lwip/sys.h"
 #include "lwip/mem.h"
-#include "arch/sys_arch.h"
 #include "lwip/stats.h"
+#include "arch/sys_arch.h"
+#include "arch/vfs_lwip.h"
+#ifdef __linux__
+#include "esp32_mock.h"
+#else // __linux__
 #include "esp_log.h"
 #include "esp_compiler.h"
+#endif // __linux__
 
 static const char* TAG = "lwip_arch";
 
