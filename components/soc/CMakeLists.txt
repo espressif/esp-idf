@@ -53,7 +53,13 @@ if(IDF_TARGET STREQUAL "esp32s2beta")
     list(APPEND srcs "src/hal/spi_flash_hal_gpspi.c")
 endif()
 
+set(priv_requires ${soc_name})
+if(${soc_name} STREQUAL "esp32")
+     # For rtc_clk.c
+     list(APPEND priv_requires efuse)
+endif()
+
 idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS "${include_dirs}"
-                       PRIV_REQUIRES ${soc_name}
+                       PRIV_REQUIRES ${priv_requires}
                        LDFRAGMENTS linker.lf)
