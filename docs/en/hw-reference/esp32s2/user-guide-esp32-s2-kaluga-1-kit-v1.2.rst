@@ -114,7 +114,7 @@ Description of Components
     :scale: 70%
     :alt: ESP32-S2-Kaluga-1 - front
     :figclass: align-center
-    
+
     ESP32-S2-Kaluga-1 - front (click to enlarge)
 
 
@@ -236,7 +236,7 @@ If you order one or several samples of the kit, each ESP32-S2-Kaluga-1 developme
     - Screws (x4)
     - Nuts (x4)
 
-For retail orders, please go to https://www.espressif.com/en/company/contact/buy-a-sample.
+For retail orders, please go to https://www.espressif.com/en/contact-us/get-samples.
 
 
 Wholesale Orders
@@ -296,7 +296,7 @@ If you want to use more than one extension board at the same time, please check 
      - No ready solution for now.
    * - TouchA v1.1 + LCD32 v1.1
      - IO11, IO6
-     - Touch actions cannot be triggered because of the multiplexed pin IO11. ESP-LyraP-LCD32 is also affected because its BK (BLCT) pin is connected to pin IO6. 
+     - Touch actions cannot be triggered because of the multiplexed pin IO11. ESP-LyraP-LCD32 is also affected because its BK (BLCT) pin is connected to pin IO6.
      - Do not initialize IO11 (NETWORK) and IO6 (PHOTO) for your ESP-LyraP-TouchA.
    * - 8311A v1.2 + LCD32 v1.1
      - IO6

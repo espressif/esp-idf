@@ -26,7 +26,7 @@
     Open On-Chip Debugger  v0.10.0-esp32-20210902 (2021-10-05-23:44)
     Licensed under GNU GPL v2
     For bug reports, read
-      http://openocd.org/doc/doxygen/bugs.html
+      https://openocd.org/doc/doxygen/bugs.html
     debug_level: 2
 
     Info : only one transport option; autoselect 'jtag'

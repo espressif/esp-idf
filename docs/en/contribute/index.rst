@@ -6,7 +6,7 @@ We welcome contributions to the esp-idf project!
 How to Contribute
 -----------------
 
-Contributions to esp-idf - fixing bugs, adding features, adding documentation - are welcome. We accept contributions via `Github Pull Requests <https://help.github.com/en/github/collaborating-with-issues-and-pull-requests/about-pull-requests>`_.
+Contributions to esp-idf - fixing bugs, adding features, adding documentation - are welcome. We accept contributions via `Github Pull Requests <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests>`_.
 
 Before Contributing
 -------------------

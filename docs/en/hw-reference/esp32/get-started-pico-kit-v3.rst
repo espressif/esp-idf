@@ -43,7 +43,7 @@ Below is the description of the items identified in the figure starting from the
     :widths: 25 75
     :header-rows: 1
 
-    * - Key Component 
+    * - Key Component
       - Description
     * - ESP32-PICO-D4
       - Standard ESP32-PICO-D4 module soldered to the ESP32-PICO-KIT V3 board. The complete ESP32 system on a chip (ESP32 SoC) has been integrated into the SiP module, requiring only an external antenna with LC matching network, decoupling capacitors, and a pull-up resistor for EN signals to function properly.
@@ -75,5 +75,5 @@ Related Documents
 -----------------
 
 * `ESP32-PICO-KIT V3 schematic <https://dl.espressif.com/dl/schematics/esp32-pico-kit-v3_schematic.pdf>`_ (PDF)
-* `ESP32-PICO-D4 Datasheet <http://espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf>`_ (PDF)
+* `ESP32-PICO-D4 Datasheet <https://espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf>`_ (PDF)
 * :doc:`../../hw-reference/index`

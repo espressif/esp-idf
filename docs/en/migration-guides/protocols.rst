@@ -6,7 +6,7 @@ Migration of Protocol Components to ESP-IDF 5.0
 Mbed TLS
 --------
 
-For ESP-IDF v5.0, `Mbed TLS <https://github.com/ARMmbed/mbedtls>`_ has been updated from v2.x to v3.1.0.
+For ESP-IDF v5.0, `Mbed TLS <https://github.com/Mbed-TLS/mbedtls>`_ has been updated from v2.x to v3.1.0.
 
 The official guide for Mbed TLS to migrate from version 2.x to version 3.0 or greater can be found `here <https://github.com/espressif/mbedtls/blob/9bb5effc3298265f829878825d9bd38478e67514/docs/3.0-migration-guide.md>`__.
 

@@ -1,4 +1,4 @@
-ESP32-PICO-DevKitM-2 
+ESP32-PICO-DevKitM-2
 **********************
 
 :link_to_translation:`en:[English]`
@@ -56,7 +56,7 @@ ESP32-PICO-DevKitM-2 开发板的主要组件、接口及控制方式见下图�
 
 从左上角开始，按顺时针顺序，开发板主要组件的描述见下表。
 
-.. list-table:: 
+.. list-table::
    :widths: 10 25
    :header-rows: 1
 
@@ -69,7 +69,7 @@ ESP32-PICO-DevKitM-2 开发板的主要组件、接口及控制方式见下图�
    * - USB-to-UART
      - CP2102N：单芯片 USB-to-UART 桥接器，数据传输速率可达 3 Mbps。
    * - Micro-B USB 接口
-     - USB 接口。可为开发板供电，或连接 PC 进行 USB 通信。     
+     - USB 接口。可为开发板供电，或连接 PC 进行 USB 通信。
    * - 5V Power On LED
      - 开发板上电后，红色指示灯亮起。更多信息，见 `相关文档`_ 中提供的原理图。
    * - I/O Connector
@@ -106,7 +106,7 @@ ESP32-PICO-DevKitM-2 开发板的主要组件、接口及控制方式见下图�
 
 如购买样品，每个 ESP32-PICO-DevKitM-2 将单独包装。
 
-零售订单，请前往 https://www.espressif.com/en/company/contact/buy-a-sample。
+零售订单，请前往 https://www.espressif.com/en/contact-us/get-samples。
 
 批量订单
 -----------
@@ -153,7 +153,7 @@ ESP32-PICO-DevKitM-2 的主要组件和连接方式如下图所示。
 Header J2
 """"""""""""
 
-.. list-table:: 
+.. list-table::
    :widths: 5 5 5 35
    :header-rows: 1
 
@@ -233,12 +233,12 @@ Header J2
      - VDD33 (3V3)
      - P
      - 3.3 V 供电
-       
+
 
 Header J3
 """""""""""""
 
-.. list-table:: 
+.. list-table::
    :widths: 5 5 5 35
    :header-rows: 1
 
@@ -318,7 +318,7 @@ Header J3
      - EXT_5V (5V)
      - P
      - 5V 供电
-                          
+
 
 .. _get-started-pico-devkitm-2-pin-notes:
 

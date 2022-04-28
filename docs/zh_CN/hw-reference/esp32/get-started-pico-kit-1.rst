@@ -1,4 +1,4 @@
-ESP32-PICO-KIT-1 
+ESP32-PICO-KIT-1
 *****************
 
 :link_to_translation:`en:[English]`
@@ -33,7 +33,7 @@ ESP32-PICO-KIT-1 为用户提供了基于 ESP32 芯片应用开发的硬件，�
     :alt: ESP32-PICO-KIT-1 (click to enlarge)
     :figclass: align-center
 
-    ESP32-PICO-KIT-1 外观图（点击放大） 
+    ESP32-PICO-KIT-1 外观图（点击放大）
 
 本指南包括以下几个章节：
 
@@ -66,7 +66,7 @@ ESP32-PICO-KIT-1 开发板的主要组件、接口及控制方式见下图。
 
 从左上角开始，按顺时针顺序，开发板主要组件的描述见下表。
 
-.. list-table:: 
+.. list-table::
    :widths: 10 25
    :header-rows: 1
 
@@ -79,7 +79,7 @@ ESP32-PICO-KIT-1 开发板的主要组件、接口及控制方式见下图。
    * - USB-to-UART
      - CP2102N：单芯片 USB-to-UART 桥接器，数据传输速率可达 3 Mbps。
    * - Micro-B USB
-     - USB 接口。可为开发板供电，或连接 PC 进行 USB 通信。     
+     - USB 接口。可为开发板供电，或连接 PC 进行 USB 通信。
    * - 5V Power On LED
      - 开发板上电后，红色指示灯亮起。更多信息，见 `相关文档`_ 中提供的原理图。
    * - I/O Connector
@@ -117,7 +117,7 @@ ESP32-PICO-KIT-1 开发板的主要组件、接口及控制方式见下图。
 
 如购买样品，每个 ESP32-PICO-KIT-1 将单独包装。
 
-零售订单，请前往 https://www.espressif.com/en/company/contact/buy-a-sample。
+零售订单，请前往 https://www.espressif.com/en/contact-us/get-samples。
 
 
 批量订单
@@ -165,7 +165,7 @@ ESP32-PICO-KIT-1 的主要组件和连接方式如下图所示。
 Header J2
 """"""""""""
 
-.. list-table:: 
+.. list-table::
    :widths: 5 5 5 35
    :header-rows: 1
 
@@ -245,12 +245,12 @@ Header J2
      - VDD33 (3V3)
      - P
      - 3.3V 供电
-       
+
 
 Header J3
 """""""""
 
-.. list-table:: 
+.. list-table::
    :widths: 5 5 5 35
    :header-rows: 1
 
@@ -329,8 +329,8 @@ Header J3
    * - 18
      - EXT_5V (5V)
      - P
-     - 5V 供电 
-                          
+     - 5V 供电
+
 
 .. _get-started-pico-kit-1-pin-notes:
 
@@ -361,8 +361,8 @@ Header J3
 相关文档
 =========
 
-* `ESP32-PICO-V3 技术规格书 <http://espressif.com/sites/default/files/documentation/esp32-pico-v3_datasheet_cn.pdf>`_ (PDF)
-* `乐鑫产品选型工具 <https://products.espressif.com/#/product-selector?names=>`__ 
+* `ESP32-PICO-V3 技术规格书 <https://espressif.com/sites/default/files/documentation/esp32-pico-v3_datasheet_cn.pdf>`_ (PDF)
+* `乐鑫产品选型工具 <https://products.espressif.com/#/product-selector?names=>`__
 * `ESP32-PICO-KIT-1 原理图 <https://dl.espressif.com/dl/schematics/SCH_ESP32-PICO-KIT-1_V1_0_20200811A.pdf>`_ (PDF)
 * `ESP32-PICO-KIT-1 PCB 布局图 <https://dl.espressif.com/dl/schematics/PCB_ESP32-PICO-KIT-1_V1.0_20200811.pdf>`_ (PDF)
 

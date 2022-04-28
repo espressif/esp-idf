@@ -54,9 +54,9 @@ Generating the List of Root Certificates
 ----------------------------------------
 The list of root certificates comes from Mozilla's NSS root certificate store, which can be found `here <https://wiki.mozilla.org/CA/Included_Certificates>`_
 The list can be downloaded and created by running the script ``mk-ca-bundle.pl`` that is distributed as a part of `curl <https://github.com/curl/curl>`_.
-Another alternative would be to download the finished list directly from the curl website: `CA certificates extracted from Mozilla <https://curl.haxx.se/docs/caextract.html>`_
+Another alternative would be to download the finished list directly from the curl website: `CA certificates extracted from Mozilla <https://curl.se/docs/caextract.html>`_
 
-The common certificates bundle were made by selecting the authorities with a market share of more than 1 % from w3tech's `SSL Survey <https://w3techs.com/technologies/overview/ssl_certificate/all>`_.
+The common certificates bundle were made by selecting the authorities with a market share of more than 1 % from w3tech's `SSL Survey <https://w3techs.com/technologies/overview/ssl_certificate>`_.
 These authorities were then used to pick the names of the certificates for the filter list, `cmn_crt_authorities.csv`, from `this list <https://ccadb-public.secure.force.com/mozilla/IncludedCACertificateReportPEMCSV>`_ provided by Mozilla.
 
 

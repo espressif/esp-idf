@@ -26,7 +26,7 @@
     Open On-Chip Debugger  v0.10.0-esp32-20200420 (2020-04-20-16:15)
     Licensed under GNU GPL v2
     For bug reports, read
-            http://openocd.org/doc/doxygen/bugs.html
+            https://openocd.org/doc/doxygen/bugs.html
     none separate
     adapter speed: 20000 kHz
     force hard breakpoints

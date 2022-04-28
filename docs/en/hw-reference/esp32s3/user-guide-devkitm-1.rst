@@ -111,7 +111,7 @@ Retail Orders
 
 If you order a few samples, each board comes in an individual package in either antistatic bag or any packaging depending on your retailer.
 
-For retail orders, please go to https://www.espressif.com/en/company/contact/buy-a-sample.
+For retail orders, please go to https://www.espressif.com/en/contact-us/get-samples.
 
 
 Wholesale Orders
@@ -135,7 +135,7 @@ The block diagram below shows the components of ESP32-S3-DevKitM-1 and their int
 
 .. figure:: ../../../_static/ESP32-S3-DevKitM-1_v1_SystemBlock.png
     :align: center
-    :scale: 70%    
+    :scale: 70%
     :alt: ESP32-S3-DevKitM-1 (click to enlarge)
     :figclass: align-center
 
@@ -199,9 +199,9 @@ No.  Name  Type   Function
 1    G     G      Ground
 2    RST   I      EN
 3    46    I/O/T  GPIO46
-4    45    I/O/T  GPIO45 
-5    RX    I/O/T  U0RXD, GPIO44, CLK_OUT2 
-6    TX    I/O/T  U0TXD, GPIO43, CLK_OUT1 
+4    45    I/O/T  GPIO45
+5    RX    I/O/T  U0RXD, GPIO44, CLK_OUT2
+6    TX    I/O/T  U0TXD, GPIO43, CLK_OUT1
 7    42    I/O/T  MTMS, GPIO42
 8    41    I/O/T  MTDI, GPIO41, CLK_OUT1
 9    40    I/O/T  MTDO, GPIO40, CLK_OUT2

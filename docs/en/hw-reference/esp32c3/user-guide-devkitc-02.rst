@@ -16,7 +16,7 @@ Most of the I/O pins are broken out to the pin headers on both sides for easy in
     :figclass: align-center
 
     ESP32-C3-DevKitC-02
-    
+
 The document consists of the following major sections:
 
 - `Getting Started`_: Overview of ESP32-C3-DevKitC-02 and hardware/software setup instructions to get started.
@@ -98,7 +98,7 @@ Retail orders
 
 If you order a few samples, each ESP32-C3-DevKitC-02 comes in an individual package in either antistatic bag or any packaging depending on your retailer.
 
-For retail orders, please go to https://www.espressif.com/en/company/contact/buy-a-sample.
+For retail orders, please go to https://www.espressif.com/en/contact-us/get-samples.
 
 
 Wholesale Orders
@@ -152,12 +152,12 @@ No.  Name  Type [1]_    Function
 3    3V3   P           3.3 V power supply
 4    RST   I           CHIP_PU
 5    G     G           Ground
-6    4     I/O/T       GPIO4, ADC1_CH4, FSPIHD, MTMS 
+6    4     I/O/T       GPIO4, ADC1_CH4, FSPIHD, MTMS
 7    5     I/O/T       GPIO5, ADC2_CH0, FSPIWP, MTDI
 8    6     I/O/T       GPIO6, FSPICLK, MTCK
 9    7     I/O/T       GPIO7, FSPID, MTDO
 10   G     G           Ground
-11   8     I/O/T       GPIO8 [2]_, RGB LED 
+11   8     I/O/T       GPIO8 [2]_, RGB LED
 12   9     I/O/T       GPIO9 [2]_
 13   5V    P           5 V power supply
 14   5V    P           5 V power supply
@@ -170,18 +170,18 @@ J3
 No.  Name  Type [1]_   Function
 ===  ====  ==========  ====================================
 1    G     G           Ground
-2    0     I/O/T       GPIO0, ADC1_CH0, XTAL_32K_P 
-3    1     I/O/T       GPIO1, ADC1_CH1, XTAL_32K_N 
-4    2     I/O/T       GPIO2 [2]_, ADC1_CH2, FSPIQ 
-5    3     I/O/T       GPIO3, ADC1_CH3 
+2    0     I/O/T       GPIO0, ADC1_CH0, XTAL_32K_P
+3    1     I/O/T       GPIO1, ADC1_CH1, XTAL_32K_N
+4    2     I/O/T       GPIO2 [2]_, ADC1_CH2, FSPIQ
+5    3     I/O/T       GPIO3, ADC1_CH3
 6    G     G           Ground
-7    10    I/O/T       GPIO10, FSPICS0 
+7    10    I/O/T       GPIO10, FSPICS0
 8    G     G           Ground
-9    RX    I/O/T       GPIO20, U0RXD 
-10   TX    I/O/T       GPIO21, U0TXD 
+9    RX    I/O/T       GPIO20, U0RXD
+10   TX    I/O/T       GPIO21, U0TXD
 11   G     G           Ground
-12   18    I/O/T       GPIO18 
-13   19    I/O/T       GPIO19 
+12   18    I/O/T       GPIO18
+13   19    I/O/T       GPIO19
 14   G     G           Ground
 15   G     G           Ground
 ===  ====  ==========  ====================================
@@ -207,7 +207,7 @@ No previous versions available.
 Related Documents
 =================
 * `Build Secure and Cost-effective Connected Devices with ESP32-C3 <http://c3.espressif.com/>`_
-* `ESP32-C3 Datasheet`_ (PDF) 
+* `ESP32-C3 Datasheet`_ (PDF)
 * `ESP32-C3-WROOM-02 Datasheet`_ (PDF)
 * `ESP32-C3-DevKitC-02 Schematic`_ (PDF)
 * `ESP32-C3-DevKitC-02 PCB Layout <https://dl.espressif.com/dl/schematics/PCB_ESP32-C3-DevKitC-02_V1_1_20210121AA.pdf>`_ (PDF)
