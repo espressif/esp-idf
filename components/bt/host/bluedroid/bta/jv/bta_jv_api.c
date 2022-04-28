@@ -861,6 +861,7 @@ tBTA_JV_STATUS BTA_JvL2capWriteFixed(UINT16 channel, BD_ADDR *addr, UINT32 req_i
 }
 #endif /* BTA_JV_L2CAP_INCLUDED */
 
+#if BTA_JV_RFCOMM_INCLUDED
 /*******************************************************************************
 **
 ** Function         BTA_JvRfcommConnect
@@ -1166,6 +1167,7 @@ tBTA_JV_STATUS BTA_JvRfcommFlowControl(UINT32 handle, UINT16 credits_given)
     }
     return (status);
 }
+#endif /* BTA_JV_RFCOMM_INCLUDED */
 
 /*******************************************************************************
  **

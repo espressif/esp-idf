@@ -80,12 +80,12 @@
 #if (UC_BT_SPP_ENABLED == TRUE)
 #define RFCOMM_INCLUDED             TRUE
 #define BTA_JV_INCLUDED             TRUE
+#define BTA_JV_RFCOMM_INCLUDED      TRUE
 #define BTC_SPP_INCLUDED            TRUE
 #endif /* UC_BT_SPP_ENABLED */
 
 #if (UC_BT_L2CAP_ENABLED == TRUE)
 #define BTA_JV_INCLUDED             TRUE
-#define RFCOMM_INCLUDED             TRUE
 #define BTC_L2CAP_INCLUDED          TRUE
 #define BTC_SDP_INCLUDED            TRUE
 #define VND_BT_JV_BTA_L2CAP         TRUE
@@ -95,6 +95,7 @@
 #define BTC_HF_INCLUDED             TRUE
 #define BTA_AG_INCLUDED             TRUE
 #define PLC_INCLUDED                TRUE
+#define BTA_JV_RFCOMM_INCLUDED      TRUE
 #ifndef RFCOMM_INCLUDED
 #define RFCOMM_INCLUDED             TRUE
 #endif
@@ -1486,6 +1487,10 @@
 ******************************************************************************/
 #ifndef RFCOMM_INCLUDED
 #define RFCOMM_INCLUDED             FALSE
+#endif
+
+#ifndef BTA_JV_RFCOMM_INCLUDED
+#define BTA_JV_RFCOMM_INCLUDED      FALSE
 #endif
 
 /* The maximum number of ports supported. */
