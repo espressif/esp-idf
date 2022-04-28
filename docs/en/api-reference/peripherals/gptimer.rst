@@ -32,7 +32,7 @@ The following sections of this document cover the typical steps to install and o
 Resource Allocation
 ^^^^^^^^^^^^^^^^^^^
 
-Different ESP chip might have different number of independent timer groups, and within each group, there could also be several independent timers. Please refer to the [`TRM <{IDF_TARGET_TRM_EN_URL}#timg>`__] to find out how many hardware timers exist.
+The GPTimer is implemented using {IDF_TARGET_NAME} Timer Group module. Different ESP chips might have different number of independent timer groups, and within each group, there could also be several independent timers. Please refer to Chapter `Timer Group (TIMG) <{IDF_TARGET_TRM_EN_URL}#timg>`__ in {IDF_TARGET_NAME} Technical Reference Manual to find out how many hardware timers exist.
 
 From driver's point of view, a GPTimer instance is represented by :cpp:type:`gptimer_handle_t`. The driver behind will manage all available hardware resources in a pool, so that users don't need to care about which timer and which group it belongs to.
 
